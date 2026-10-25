@@ -13,7 +13,7 @@ Branch `leo-season-end` (origin/main merged in at the start). Everything sits be
 | Found while filming: silent cheers | The awards night's cheer at each name was **silent if no match had been played since the app opened** (the cheer uses the match sound, which only a match switched on). Fixed: the night switches it on itself. | see "Cheer check" below |
 
 ## Cheer check
-VERIFY_LINE
+Re-run with the fix, the app opened straight at the season end and no match played (the failing case), the whole flow, sound recorded: **a cheer at all 5 names**. Loudest quarter-second after each name vs the second before: +9.3, +16.2, +8.4, +8.3, +14.7 dB (measured). On a plain 1 s vs 1.5 s average, 2 of 5 reach +4 dB (+3.0 to +9.9): the cheer is short and the window dilutes it. No control run without the fix was made; before the fix a fresh-open take had no cheer at any name (seen by the filmer).
 
 ## Not done / unsure
 
