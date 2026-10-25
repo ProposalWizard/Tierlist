@@ -23,9 +23,9 @@ const kinds = road.map((n) => findCard(DEFAULT_PASS_LEVELS[n], BUILT_IN_CATALOGU
 check(kinds.every((k, i) => i === 0 || k !== kinds[i - 1]), "never the same kind twice in a row");
 check(JSON.stringify(claimableLevels(career(13), DEFAULT_PASS_LEVELS)) === "[2,4,6,8,10,12]", "six rewards waiting at level 13");
 // Not made yet: shown as Soon, never claimable.
-check(!claimableLevels(career(100), DEFAULT_PASS_LEVELS).includes(44), "a coming-soon card (level 44) can't be claimed");
-check(claimLevel(career(50), 44, findCard("pass-corner-flag-dance", BUILT_IN_CATALOGUE)).starPassClaimed === undefined, "claiming a coming-soon card does nothing");
-check(claimableLevels(career(100), DEFAULT_PASS_LEVELS).length === 46, "46 of 50 can be claimed now (4 celebrations are coming soon)");
+const soon = { ...findCard("acc-celeb-statue", BUILT_IN_CATALOGUE)!, comingSoon: true };
+check(claimLevel(career(100), 96, soon).starPassClaimed === undefined, "claiming a coming-soon card does nothing");
+check(claimableLevels(career(100), DEFAULT_PASS_LEVELS).length === 50, "all 50 can be claimed at level 100");
 
 // Claimable: reached, a card there, not claimed yet. (The old five-reward road, as a fixed example.)
 const OLD: Record<number, string> = { 5: "pass-hop-penalty", 10: "pass-red-sports-car", 15: "pass-star-ball", 20: "pass-slow-runup", 25: "pass-gold-aviators" };
