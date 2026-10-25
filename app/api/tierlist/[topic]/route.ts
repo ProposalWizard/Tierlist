@@ -20,6 +20,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { TierlistPlayer, TierlistTopic, TierlistRanking, TopicPageData } from "@/lib/types";
+import { notGuest } from "@/lib/guest/config";
 
 interface RouteParams {
   params: Promise<{ topic: string }>;
@@ -31,9 +32,10 @@ export async function GET(_request: Request, { params }: RouteParams) {
   // ── Auth check ─────────────────────────────────────────────────────────
   const supabase = await createClient();
   const {
-    data: { user },
+    data: { user: signedIn },
     error: authError,
   } = await supabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
 
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

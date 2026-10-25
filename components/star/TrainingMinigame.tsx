@@ -600,7 +600,7 @@ function StrikeDrill({
   // Your Aerial rides on the kick skills, so the strike screen can show your jump.
   const kickSkills = useMemo(() => ({ power: skills.power, technique: skills.technique, aerial: skills.aerial }), [skills.power, skills.technique, skills.aerial]);
   const instruction = kind === "aerial"
-    ? "The cross is in the air. Drag back to aim, then meet it: head it on top of the ball, or volley it as it drops."
+    ? "The cross comes in and you meet it: tap the ball before the ring runs out. Hit its left side to send it right; head it on top, volley it as it drops."
     : kind === "technique"
     ? "Drag back to aim and set power. Pick a spot on the ball to bend it through the cones."
     : kind === "freeKick"

@@ -36,7 +36,8 @@ export default async function GlobalNav() {
           <NavGameLinks />
         </div>
         <div className="shrink-0">
-          <NavMenu isLoggedIn={!!user} isAdmin={userIsAdmin} />
+          {/* A guest (lib/guest/config.ts) still sees "Sign in". */}
+          <NavMenu isLoggedIn={!!user && user.is_anonymous !== true} isAdmin={userIsAdmin} />
         </div>
       </div>
       <NavGameLinks mobile />

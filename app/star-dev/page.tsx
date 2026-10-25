@@ -29,6 +29,14 @@ import { addToHall, loadHall, syncHall, hallEntryFor, type HallEntry } from "@/l
 import { hallRecordBook, freshHallRecords, hallChaseLine, amount as hallAmount } from "@/lib/star/hallRecords";
 import { createClient } from "@/lib/supabase/client";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
+// Guest accounts + ad landing pages (25 Oct 2026). All of it is off unless
+// NEXT_PUBLIC_GUEST_ACCOUNTS=on: see lib/guest/config.ts.
+import { guestAccountsOn, isGuestUser } from "@/lib/guest/config";
+import { moveGuestSavesInto } from "@/lib/guest/moveSaves";
+import { noteUpgradeFinished } from "@/lib/guest/start";
+import { takePendingCampaign, hasPendingCampaign, campaignPlayer, campaignDivision } from "@/lib/guest/campaignCareer";
+import GuestSavePrompt from "@/components/guest/GuestSavePrompt";
+import GuestPlayButton from "@/components/guest/GuestPlayButton";
 import { mulberry32, sortLeague } from "@/lib/star/season";
 import { trialComplete, startTrial, trialScore, noteReload } from "@/lib/star/trial";
 import { trialOffers, clubsForDivision, SOURED_OFFER_SHARE, SOURED_PITCH, type ScoutOffer } from "@/lib/star/scoutOffers";
@@ -795,6 +803,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       }
       setSignedIn(true);
       scopeRef.current = user.id;
+      // Guests (lib/guest): a guest saves like any account. A real account
+      // that has just signed in from a guest's "Save your career" gets that
+      // guest's careers moved into its empty slots (lib/guest/moveSaves.ts).
+      if (guestAccountsOn() && !isGuestUser(user)) {
+        noteUpgradeFinished(user);
+        const { moved } = moveGuestSavesInto(user.id);
+        if (moved.length) saveActiveSlot(user.id, moved[0]);
+      }
       const slot = loadActiveSlot(scopeRef.current);
       activeSlotRef.current = slot;
       setActiveSlotState(slot);
@@ -1050,7 +1066,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    * request never lands, the generated squad it was born with is a working
    * squad.
    */
-  const handleProfileComplete = useCallback((player: StarPlayer, clubs: string[], division: CareerDivision) => {
+  const handleProfileComplete = useCallback((player: StarPlayer, clubs: string[], division: CareerDivision, startDivision?: CareerDivision) => {
     // ── Into the trial, not the dashboard ──
     //
     // A career opens on a trial: five stages on the live match engine, seeded
@@ -1070,7 +1086,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     //
     // The club you picked on the setup screen is where the trial IS, not where
     // you play — `attachClub` runs later, once somebody actually offers.
-    const created = { ...makeIdentity(player, division), trial: startTrial() };
+    // `startDivision`: an ad's custom start point (lib/campaigns.ts startLeague);
+    // the trial's scout then offers a club from that division. Absent = as before.
+    const created = { ...makeIdentity(player, division), trial: { ...startTrial(), ...(startDivision ? { startDivision } : {}) } };
     setCareer(created);
     setPhase("trial-stages");
     // ── The squad fetches have MOVED to the signing ──
@@ -1100,6 +1118,26 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       setCareer(c => (c ? { ...c, externalSquads } : c));
     });
   }, []);
+
+  // An ad's landing page (/play/<campaign>, lib/campaigns.ts) left a note:
+  // start its ready-made career now, instead of the set-up screen. Only when
+  // there is no career; a player who has one keeps it. Off unless guests are on.
+  // `campaignStartRef` keeps the ad's career until its trial is under way: a
+  // second, slower save-load at start-up (React runs the load twice in
+  // development) can land after the career was made and blank it; the ref
+  // starts it again instead of dropping to the set-up screen.
+  const campaignStartRef = useRef<ReturnType<typeof takePendingCampaign>>(null);
+  useEffect(() => {
+    if (!guestAccountsOn()) return;
+    if (career && (phase !== "trial-stages" || Object.keys(career.trial?.results ?? {}).length > 0)) campaignStartRef.current = null;
+    if (cloudLoading || career || phase !== "profile-setup") return;
+    const campaign = campaignStartRef.current ?? takePendingCampaign();
+    if (!campaign) return;
+    campaignStartRef.current = campaign;
+    setTitleOpen(false);
+    handleProfileComplete(campaignPlayer(campaign), [], campaignDivision(campaign), campaign.startLeague);
+  }, [cloudLoading, career, phase, handleProfileComplete]);
+  useEffect(() => { if (guestAccountsOn() && hasPendingCampaign()) setTitleOpen(false); }, []);
 
   /**
    * The month you won, held until you dismiss it.
@@ -3605,14 +3643,24 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
         <div className="max-w-sm w-full text-center">
           <div className="text-3xl mb-3">⚽</div>
-          <h1 className="text-xl font-black text-white mb-2">Sign in to play</h1>
+          <h1 className="text-xl font-black text-white mb-2">{guestAccountsOn() ? "Start your career" : "Sign in to play"}</h1>
+          {guestAccountsOn() ? (
+            <p className="text-sm text-white/60 mb-6">
+              Play now and your career saves as you go. Sign in with Google any time to keep
+              it on every device.
+            </p>
+          ) : (
           <p className="text-sm text-white/60 mb-6">
             Road to Ballon d&apos;Or saves to your account, so your career follows you between
             devices instead of being stuck on whichever one you started it on.
           </p>
+          )}
+          {guestAccountsOn() && <div className="mb-3"><GuestPlayButton /></div>}
           <a
             href="/auth?next=/star-dev"
-            className="inline-block w-full rounded-xl bg-emerald-500 px-5 py-3 text-sm font-black text-emerald-950 active:scale-95"
+            className={guestAccountsOn()
+              ? "inline-block w-full rounded-xl border border-white/20 px-5 py-3 text-sm font-black text-white active:scale-95"
+              : "inline-block w-full rounded-xl bg-emerald-500 px-5 py-3 text-sm font-black text-emerald-950 active:scale-95"}
           >
             Sign in
           </a>
@@ -5531,6 +5579,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       {potmWin && career && (
         <PotmWinModal award={potmWin} career={career} onClose={() => setPotmWin(null)} />
       )}
+      {/* Guests only (lib/guest): "Save your career — sign in with Google". */}
+      {guestAccountsOn() && !potmWin && <GuestSavePrompt career={career} />}
     </DashboardShell>
     </PitchScope>
   );

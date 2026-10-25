@@ -26,8 +26,8 @@ import { isJobMarker, jobOwners, type TeamJob } from "./jobs";
 import type { TeamMessage, TeamTask } from "./logic";
 
 /** Why someone gets the buzz. When several apply, the first in this list names it. */
-export type RingWhy = "point" | "reply" | "mention" | "all" | "task" | "job";
-const ORDER: RingWhy[] = ["point", "reply", "mention", "all", "task", "job"];
+export type RingWhy = "point" | "reply" | "mention" | "all" | "task" | "job" | "message";
+const ORDER: RingWhy[] = ["point", "reply", "mention", "all", "task", "job", "message"];
 
 /** What the worker shows. `url` opens on tap; `tag` groups a thread. */
 export interface PushPayload { title: string; body: string; tag: string; url: string; icon?: string }
@@ -105,7 +105,8 @@ export function ringsForJob(j: Pick<TeamJob, "owner" | "from">): Ring[] {
 
 /** Does the text even need asking about? (The phone skips the trip for "ok 👍".) */
 export function mayRing(body: string): boolean {
-  return /@|^\[re:|kib-point=/i.test(body ?? "");
+  // A reply may sit behind a channel tag: "[#ideas] [re:12] …" (channels.ts).
+  return /@|\[re:\d|kib-point=/i.test(body ?? "");
 }
 
 const cut = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
@@ -117,12 +118,29 @@ export function chatTag(body: string): string {
 }
 
 export function payloadForMessage(m: Pick<TeamMessage, "id" | "person" | "body" | "image_url">, why: RingWhy): PushPayload {
+  const p = parseMessage(m.body);
   const title =
     why === "point" ? `${m.person} pointed at something for you`
       : why === "reply" ? `${m.person} replied to you`
         : why === "all" ? `${m.person} to the team`
-          : `${m.person} mentioned you`;
-  return { title, body: cut(quoteLine(m, 160), 160), tag: chatTag(m.body), url: `${TEAM_ROOM.home}?tab=chat&m=${m.id}`, icon: TEAM_ROOM.push.icon };
+          // A buzz only because the channel's 🔔 says every new message (bells.ts).
+          : why === "message" ? `${m.person} in #${p.channel ?? "general"}`
+            : `${m.person} mentioned you`;
+  const where = p.channel && p.channel !== "general" ? ` in #${p.channel}` : "";
+  // Opens the right channel, and the thread when it is a reply in one.
+  const url = `${TEAM_ROOM.home}?tab=chat${p.channel && p.channel !== "general" ? `&ch=${p.channel}` : ""}&m=${m.id}${p.replyTo ? `&t=${p.replyTo}` : ""}`;
+  return { title: why === "message" ? title : title + where, body: cut(quoteLine(m, 160), 160), tag: chatTag(m.body), url, icon: TEAM_ROOM.push.icon };
+}
+
+/** A private DM rings the one person it is to (team_room_v3.sql, team_dms). */
+export function payloadForDm(d: { id: number; from_person: TeamPerson; body: string }): PushPayload {
+  return {
+    title: `${d.from_person} sent you a private message`, body: cut((d.body ?? "").replace(/\s+/g, " ").trim() || "…", 160),
+    tag: `kib-dm-${d.from_person}`, url: `${TEAM_ROOM.home}?tab=chat&dm=${d.from_person}`, icon: TEAM_ROOM.push.icon,
+  };
+}
+export function ringsForDm(d: { from_person: TeamPerson; to_person: TeamPerson }): Ring[] {
+  return pick([{ person: d.to_person, why: "mention" }], d.from_person);
 }
 
 export function payloadForTask(t: Pick<TeamTask, "made_by" | "title">): PushPayload {

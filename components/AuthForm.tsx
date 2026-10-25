@@ -18,6 +18,10 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+// The bot check (Cloudflare Turnstile). Once Supabase's captcha switch is on,
+// Supabase wants a token on EVERY email sign-in and sign-up, not just guests,
+// so this form fetches one too. No site key = null = exactly as before.
+import { captchaToken } from "@/lib/guest/captcha";
 
 type Mode = "signin" | "signup";
 
@@ -55,10 +59,21 @@ export default function AuthForm() {
     setError(null);
     setSuccess(null);
 
+    let token: string | null = null;
+    try {
+      token = await captchaToken();
+    } catch {
+      setError("We couldn't check you're not a robot. Try again.");
+      setLoading(false);
+      return;
+    }
+    const captcha = token ? { captchaToken: token } : {};
+
     if (mode === "signin") {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: captcha,
       });
 
       if (error) {
@@ -74,6 +89,7 @@ export default function AuthForm() {
         options: {
           // After email confirmation, redirect back to the auth callback
           emailRedirectTo: `${window.location.origin}/auth/callback`,
+          ...captcha,
         },
       });
 
