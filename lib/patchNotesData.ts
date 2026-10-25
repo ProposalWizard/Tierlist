@@ -28,71 +28,90 @@ import type { PatchNote } from "./patchNotes";
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
       "version": "0.110",
-      "title": "Leo's patch notes: overnight build (running today), 7 chats finishing the 24 Oct update (in progress, for you to judge)",
+      "title": "Leo's patch notes: overnight build results, 7 parts for you to pick",
       "publishedAt": "2026-10-25T12:40:00Z",
-      "updatedAt": null,
+      "updatedAt": "2026-10-25T17:05:00Z",
+      "updateNote": "Results are in: all 7 jobs done and checked (clips watched, numbers checked). Nothing is in the game yet; reply with the part numbers you want.",
       "artifactUrl": "https://claude.ai/artifact/4aeZs72kiGCS7r4xMgBg2A",
-      "summary": "Leo, 25 Oct. Leo went to sleep and asked for the most productive work possible, written up for the morning. The jobs only reached the 7 chats at 12:28 UTC (the hub chat restarted and lost about 10 hours), so they are running today; results due 16:30 UTC. 7 chats each have one job on their own branch. Nothing goes into the game until Leo picks what is good. Everything new sits behind Leo's 24 Oct switch. This note is updated with the results, clips and numbers.",
+      "summary": "Leo, 25 Oct. 7 chats, each on its own branch behind Leo's 24 Oct switch; nothing in the game until Leo picks. 1 Celebrations: nobody stands on you (closest 0.23 m → 1.60 m), 15 goals checked by eye. 2 Feed: 0 scroll hiccups at 4× slow (was 9); your goal's post always has its video (48% → 100%). 3 Filming: 0 repeated frames in clips (was 14-17%). 4 Weather in real matches, its own toggle; goals +1.6% to +2.8%. 5 Real Goals: 35 levels on a slow phone, 2 bugs fixed, a plan for players. 6 End of season: silent cheers fixed, season video sound fixed, white screen not seen in 10 runs. 7 Bug hunt: 13 found, 4 fixed. Big-moment banner: none (being removed). Late start: jobs reached the chats at 12:28 UTC.",
       "stats": [
         {
           "value": "7",
-          "label": "chats working overnight"
+          "label": "parts for you to pick"
         },
         {
           "value": "0",
-          "label": "changes in the game until Leo picks"
+          "label": "repeated frames in new clips (was 14-17%)"
         },
         {
-          "value": "16:30",
-          "label": "UTC today, results due"
+          "value": "0",
+          "label": "scroll hiccups at 4× slow (was 9)"
+        },
+        {
+          "value": "13 / 4",
+          "label": "bugs found / fixed"
         }
       ],
       "sections": [
         {
-          "kind": "added",
-          "title": "Being worked on tonight",
+          "kind": "fixed",
+          "title": "Built, behind your switch (pick by number)",
           "items": [
             {
-              "title": "Chat 1 · Celebrations, finished",
-              "detail": "Nobody stands on you during the knee slide (live or in the video). The 3D celebration filmed for the first time, if 3D loads here. 10 real goals checked by eye."
+              "title": "1 · Celebrations: nobody on top of you",
+              "detail": "Anyone near your run steps aside, live and in goal videos. Closest anyone gets: 0.23 m → 1.60 m (14 real recordings, measured). 15 goals checked by eye: right move, nearer corner, skip works."
             },
             {
-              "title": "Chat 2 · Smooth feed scrolling",
-              "detail": "Target: no hiccup over 0.1 s on a slow phone (now 11-16 of 0.14-0.17 s). Plus: how fast your own goal's post plays after a match."
+              "title": "2 · Smooth social feed",
+              "detail": "Phone 4× slow: 9 hiccups → 0 (worst 0.20 → 0.06 s). 6× slow: 39 → 0-6. Your goal's post has its video 48% → 100%; plays in about 0.1 s."
             },
             {
-              "title": "Chat 3 · Clips that look like the game",
-              "detail": "The test machine repeats 1 frame in 4, which is why the ball looks jumpy in our clips. A new frame-by-frame recorder; the knee slide, big moment and aeroplane goals re-filmed with sound."
+              "title": "3 · Clips that look like the game (filming only)",
+              "detail": "Frame-by-frame recorder with sound: repeated frames 14-17% → 0. No game code."
             },
             {
-              "title": "Chat 4 · Weather in real matches",
-              "detail": "A new part of your switch: rain, wind and pitch quality in career matches, shown before kick-off. Measured on vs off; kept modest. Off = no change."
+              "title": "4 · Weather in real matches (new toggle)",
+              "detail": "Rain, wind, pitch from the match date, on the team sheet and drawn in the match. Goals +1.6% to +2.8%, passes +0.5% (1,500 matches). Off = no change. Your and Harry's call."
             },
             {
-              "title": "Chat 5 · Real Goals, ready for players",
-              "detail": "Every path played on a slow phone and its bugs fixed; why the realGoals test fails on main; a short plan for putting it in the game (you decide)."
+              "title": "5 · Real Goals ready for players (test page)",
+              "detail": "35 levels on a slow phone, 0 errors; fixed a stuck FULL TIME card and white stars on a miss; a plan for putting it in the game."
             },
             {
-              "title": "Chat 6 · End of season, solid",
-              "detail": "The white screen during the awards night chased down; awards-night frame rate on a slow phone; season video sound checked; the whole season end filmed."
+              "title": "6 · End of season",
+              "detail": "Awards-night cheers were silent (fixed); season video sound fixed (measured); white screen not seen in 10 runs; awards night ~30% lighter."
             },
             {
-              "title": "Chat 7 · Bug hunt, round 2",
-              "detail": "2 full seasons with your switch on (and one off), refresh at 10 moments, back on every new screen. Fixes behind \"Bug fixes\"; others' bugs listed, no to-dos."
+              "title": "7 · Bug hunt round 2",
+              "detail": "2 seasons on, 1 off, 10 refreshes: 13 found, 4 fixed (talks back button, goal card wording, Escape, signing-scene manager name)."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Your calls",
+          "items": [
+            {
+              "title": "Big-moment banner",
+              "detail": "None, as you said: being removed; heartbeat, crowd and slow motion stay."
+            },
+            {
+              "title": "Ideas, not built",
+              "detail": "Team-mates run to you when you celebrate; a longer run for long-range goals; simpler posts for the slowest phones; a louder awards night."
             }
           ]
         },
         {
           "kind": "known",
-          "title": "Rules for tonight",
+          "title": "Not checked",
           "items": [
             {
-              "title": "Own branches only",
-              "detail": "No pushes to Leo or main, no to-dos, nothing bicycle-related (Harry's), real clips only with sound."
+              "title": "Real phone, ears",
+              "detail": "Nothing tried on a real phone; sound measured, not heard. The 3D celebration is still being filmed."
             },
             {
-              "title": "Waiting on Leo",
-              "detail": "The big-moment banner: A, B, C or none."
+              "title": "For Harry and Mikey (findings, no to-dos)",
+              "detail": "Harry: 0.101h notes wording fails the realGoals test; daily goal camera; mid-match refresh; 3D contexts; Ballon d'Or silent cheers. Mikey: Star Pass pop-up can't close; talks wage changes between visits."
             }
           ]
         }
