@@ -380,6 +380,10 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
     // "everything starts at 40"); the fixture has the old 30, and the opening
     // star rating is worked out from the skills, so it moves with it.
     if (rest.skills) { const sk = { ...(rest.skills as Record<string, number>) }; delete sk.freeKick; rest.skills = sk; }
+    // Aerial & Acrobatics (21 Oct 2026) is a sixth skill the fixture predates:
+    // it starts at 40 and is trained like the rest.
+    if (rest.skills) { const sk = { ...(rest.skills as Record<string, number>) }; delete sk.aerial; rest.skills = sk; }
+    if (rest.lastTrainedWeek) { const lw = { ...(rest.lastTrainedWeek as Record<string, number>) }; delete lw.aerial; rest.lastTrainedWeek = lw; }
     delete rest.starRating;
     // …and the squad number is drawn from a seed that includes the star rating.
     delete rest.squadNumber;

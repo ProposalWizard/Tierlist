@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isGuestUser } from "@/lib/guest/config";
 import { NextResponse } from "next/server";
 import { GEMS_OFF_MESSAGE, walletDbMissing } from "@/lib/star/wallet";
 
@@ -35,7 +36,8 @@ export async function GET() {
   const catalogue = ((items.data ?? []) as ItemRow[]).map(r => ({ id: r.item_id, name: r.name, kind: r.kind, price: r.gem_price }));
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ signedOut: true, gems: 0, owned: [], catalogue });
+  // Guests (lib/guest/config.ts) see the shop as signed out: sign in to buy.
+  if (!user || isGuestUser(user)) return NextResponse.json({ signedOut: true, gems: 0, owned: [], catalogue });
 
   const [wallet, ents] = await Promise.all([
     supabase.from("star_wallet").select("gems").eq("user_id", user.id).maybeSingle(),

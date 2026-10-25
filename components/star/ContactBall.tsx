@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { gradeContact } from "@/lib/star/shotModel";
-import { airContactRead, airCentreR, VOLLEY_SWEET } from "@/lib/star/airborneChance";
+import { airContactRead, airCentreR, airLateContact, airStrikeTimerS, VOLLEY_SWEET } from "@/lib/star/airborneChance";
 import { headerJump } from "@/lib/star/aerial";
+import { airTapCleanR, airTapContactCx, AIR_TAP_POST_CX } from "@/lib/star/airTap";
 
 /**
  * How the ball is moving while you pick where to hit it (Mikey, 27 Sep 2026).
@@ -41,7 +42,7 @@ interface Props {
   power: number;
   /** `lift` (0 grass … 1 top of the arc) only for a ball in the air
    *  (float/bounce): how high it was when you hit it (lib/star/airborneChance.ts). */
-  onContact: (contact: { cx: number; cy: number; lift?: number }) => void;
+  onContact: (contact: { cx: number; cy: number; lift?: number; late?: boolean }) => void;
   /** The three "how to read the ball" badges and the explanatory line under
    *  them — the tutorial copy, only actually needed the first time anyone
    *  sees this screen. TrialPenalty (the profile-setup trial) passes true;
@@ -54,7 +55,8 @@ interface Props {
    * but a run-up penalty — there is no time limit, exactly as before.
    */
   timeLimitS?: number;
-  /** Called once if the countdown runs out before a tap (the kick is scuffed). */
+  /** Called once if the countdown runs out before a tap (the kick is scuffed).
+   *  A ball in the air never calls it: it is met late instead (onContact). */
   onTimeout?: () => void;
   /** How the ball moves on this screen; still when not given. */
   motion?: BallMotion;
@@ -76,6 +78,11 @@ interface Props {
   grades?: boolean;
   /** A hard strike through the dead centre knuckles (only with `grades`). */
   knuckles?: boolean;
+  /** A header or volley with no arrow (lib/star/airTap.ts, 25 Oct 2026): the
+   *  side of the ball you hit aims it (its left side sends it right). The
+   *  clean middle is drawn as a band across the ball, wider with Aerial,
+   *  with a tick where each post is. Absent: exactly the old screen. */
+  aimFromTap?: boolean;
   /** Contact field on (lib/star/shotFeel.ts, Oct 13): a faint guide on the
    *  ball — the up/down lines fade out toward the sides, where a strike is a
    *  low curler. Absent: exactly the old screen. */
@@ -84,17 +91,22 @@ interface Props {
 
 /** How long "TOO SLOW" shows before the scuffed kick is taken. */
 const TOO_SLOW_MS = 350;
+/** A header or volley: how long its verdict (NODDED DOWN …) shows before the
+ *  ball goes (was the ground strike's 420 ms; Harry, 0.108h: "quicker"). */
+const AIR_VERDICT_MS = 300;
 
 /** How far out from the ball's centre a touch still strikes it, in ball
  *  radii: the ball plus a margin reaching the countdown ring (1.14). */
 export const STRIKE_ZONE_R = 1.18;
 
 // Phase 2 — pick where on the ball to strike.
-export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, aerial, ballZ, hold = false, grades = false, knuckles = false, field = false }: Props) {
+export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, aerial, ballZ, hold = false, grades = false, knuckles = false, field = false, aimFromTap = false }: Props) {
   const ballRef = useRef<HTMLDivElement>(null);
   const moverRef = useRef<HTMLDivElement>(null);
   const shadowRef = useRef<HTMLDivElement>(null);
   const liftRef = useRef(0);
+  /** Where the moving ball is across the screen (-0.12 … 0.12), for a late touch. */
+  const sweepXRef = useRef(0);
   // B10: the volley's height meter (its marker follows the ball's height).
   const meterRef = useRef<HTMLDivElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
@@ -111,6 +123,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
       if (!area || !mover) return;
       const { x, y } = ballMotionAt(motion, (performance.now() - t0) / 1000, period);
       mover.style.transform = `translate(${x * area.clientWidth}px, ${y * area.clientHeight}px)`;
+      sweepXRef.current = x;
       // How high it is now, 0..1 of this motion's top (float sits ~0.42-0.5 up).
       const top = motion === "float" ? 0.5 : motion === "bounce" ? 0.26 : 0.05;
       liftRef.current = Math.max(0, Math.min(1, -y / top));
@@ -133,7 +146,14 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
   const onTimeoutRef = useRef(onTimeout);
   onTimeoutRef.current = onTimeout;
 
-  const timed = !!timeLimitS && timeLimitS > 0;
+  // A ball in the air (Head it? / Volley it?) is always timed (Harry, 0.108h,
+  // 24 Oct 2026: "maybe have it be timed"): the run-up's own countdown, its
+  // length from your Aerial (airborneChance.ts airStrikeTimerS). Run out and
+  // you meet it late: a weak glance (header) or a scuffed volley, struck
+  // through the normal onContact, never a stall.
+  const airKind: "header" | "volley" | null = motion === "float" ? "header" : motion === "bounce" ? "volley" : null;
+  const limitS = timeLimitS && timeLimitS > 0 ? timeLimitS : airKind ? airStrikeTimerS(airKind, aerial) : undefined;
+  const timed = !!limitS && limitS > 0;
 
   // The clock starts on the second frame after this screen appears — i.e.
   // once it has actually been drawn — not the instant it mounts. A slow
@@ -149,17 +169,23 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
 
   // The deadline. A tap locks the screen (below) and a locked screen never
   // times out.
+  const onContactRef = useRef(onContact);
+  onContactRef.current = onContact;
   useEffect(() => {
-    if (!started || !timeLimitS || !(timeLimitS > 0)) return;
+    if (!started || !limitS || !(limitS > 0)) return;
     let fire = 0;
     const id = window.setTimeout(() => {
       if (locked.current) return;
       locked.current = true;
       setTimedOut(true);
-      fire = window.setTimeout(() => onTimeoutRef.current?.(), TOO_SLOW_MS);
-    }, timeLimitS * 1000);
+      fire = window.setTimeout(() => {
+        // A ball in the air: met late, off-centre, where it is now.
+        if (airKind && !(timeLimitS && timeLimitS > 0)) onContactRef.current({ ...airLateContact(airKind, liftRef.current, sweepXRef.current), late: true });
+        else onTimeoutRef.current?.();
+      }, TOO_SLOW_MS);
+    }, limitS * 1000);
     return () => { window.clearTimeout(id); window.clearTimeout(fire); };
-  }, [started, timeLimitS]);
+  }, [started, limitS, airKind, timeLimitS]);
 
   // The ring and bar sit full until the clock starts, and stop where they
   // are the moment you tap (or run out).
@@ -200,7 +226,10 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
     const lift = liftRef.current;
     if (air) {
       // B10: a header or volley says how it came off (the same read the strike uses).
-      const rd = airContactRead({ kind: motion === "float" ? "header" : "volley", lift, cx, cy, tech: technique, aerial },
+      const kind = motion === "float" ? "header" : "volley";
+      // No arrow (airTap.ts): the side only aims it, until the edge of the clean band.
+      const readCx = aimFromTap ? airTapContactCx(kind, cx, aerial) : cx;
+      const rd = airContactRead({ kind, lift, cx: readCx, cy, tech: technique, aerial },
         motion === "float" && ballZ !== undefined ? ballZ * (0.85 + 0.15 * lift) : undefined);
       setGraded({ label: rd.label, good: rd.good });
     } else if (grades) {
@@ -208,7 +237,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
       if (g.label) setGraded({ label: g.label, good: g.grade === "clean" || g.grade === "knuckle" || g.label === "CURLER" });
     }
     // A graded strike holds a beat longer so the verdict can be read.
-    setTimeout(() => onContact(air ? { cx, cy, lift } : { cx, cy }), grades || air ? 420 : 200);
+    setTimeout(() => onContact(air ? { cx, cy, lift } : { cx, cy }), air ? AIR_VERDICT_MS : grades ? 420 : 200);
   };
 
   const jump = motion === "float" && ballZ !== undefined && aerial !== undefined ? headerJump(ballZ, aerial) : null;
@@ -279,7 +308,9 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
         {/* B10: what matters for a ball in the air, in one line. */}
         {(motion === "float" || motion === "bounce") && (
           <div data-air-hint className="mt-1.5 text-[11px] font-bold text-white/90" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
-            {motion === "float" ? "Top nods it down · the sides glance it · under loops it up" : "Hit the middle as it drops through the green"}
+            {aimFromTap
+              ? (motion === "float" ? "Hit its left side to send it right · top nods it down" : "Hit its left side to send it right · as it drops through the green")
+              : motion === "float" ? "Top nods it down · the sides glance it · under loops it up" : "Hit the middle as it drops through the green"}
           </div>
         )}
         {/* The jump (Aerial sets how high you go): the cross's height against your reach. */}
@@ -311,7 +342,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
                 ? { transformOrigin: "left center", transform: "scaleX(0)" }
                 : {
                   transformOrigin: "left center",
-                  animation: `kibCountBar ${timeLimitS}s linear forwards`,
+                  animation: `kibCountBar ${limitS}s linear forwards`,
                   animationPlayState: countdownState,
                 }}
             />
@@ -323,7 +354,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
       {timedOut && (
         <div className="absolute inset-x-0 top-[34%] z-50 flex justify-center pointer-events-none">
           <div className="kib-pop rounded-xl bg-black/70 px-4 py-2 text-3xl font-black italic tracking-wider text-red-300 drop-shadow-[0_3px_10px_rgba(0,0,0,0.9)]">
-            TOO SLOW!
+            {airKind ? "TOO LATE!" : "TOO SLOW!"}
           </div>
         </div>
       )}
@@ -433,7 +464,21 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
           {/* B10: a ball in the air — the middle of it, where a header or a
               volley is struck clean (airCentreR either side: bigger with a
               better Aerial, 22 Oct 2026). */}
-          {(motion === "float" || motion === "bounce") && (
+          {(motion === "float" || motion === "bounce") && aimFromTap && (() => {
+            // No arrow (airTap.ts): the clean band across the middle (wider
+            // with Aerial) and a tick where each post is aimed.
+            const W = airTapCleanR(motion === "float" ? "header" : "volley", aerial), H = airCentreR(aerial) + 0.08;
+            return (
+              <svg data-air-band data-air-band-w={W.toFixed(3)} className="absolute inset-0 pointer-events-none" viewBox="-1 -1 2 2" aria-hidden="true">
+                <rect x={-W} y={-H} width={2 * W} height={2 * H} rx={H} fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth="0.06" />
+                <rect x={-W} y={-H} width={2 * W} height={2 * H} rx={H} fill="none" stroke="#fde047" strokeOpacity="0.95" strokeWidth="0.035" strokeDasharray="0.07 0.05" />
+                {[-AIR_TAP_POST_CX, AIR_TAP_POST_CX].map((x) => (
+                  <line key={x} x1={x} x2={x} y1={-H - 0.1} y2={H + 0.1} stroke="#fde047" strokeOpacity="0.9" strokeWidth="0.03" />
+                ))}
+              </svg>
+            );
+          })()}
+          {(motion === "float" || motion === "bounce") && !aimFromTap && (
             <svg data-air-centre data-air-centre-r={airCentreR(aerial).toFixed(3)} className="absolute inset-0 pointer-events-none" viewBox="-1 -1 2 2" aria-hidden="true">
               {/* Gold with a dark edge so it reads on the white ball (Harry, 22 Oct 2026: the circle grows with Aerial). */}
               <circle cx="0" cy="0" r={airCentreR(aerial) + 0.08} fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth="0.06" />
@@ -471,9 +516,9 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
               viewBox="0 0 100 100"
               aria-hidden="true"
             >
-              <circle cx="50" cy="50" r="47" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth="4" />
+              <circle cx="50" cy="50" r="47" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth={airKind ? 8 : 4} />
               <circle
-                cx="50" cy="50" r="47" fill="none" strokeWidth="4.5" strokeLinecap="round"
+                cx="50" cy="50" r="47" fill="none" strokeWidth={airKind ? 8 : 4.5} strokeLinecap="round"
                 pathLength={100} strokeDasharray="100"
                 style={timedOut
                   // Out of time: the ring shows fully empty, never a frozen
@@ -481,7 +526,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
                   ? { transform: "rotate(-90deg)", transformOrigin: "50% 50%", strokeDashoffset: 100 }
                   : {
                     transform: "rotate(-90deg)", transformOrigin: "50% 50%",
-                    animation: `kibCountRing ${timeLimitS}s linear forwards`,
+                    animation: `kibCountRing ${limitS}s linear forwards`,
                     animationPlayState: countdownState,
                   }}
               />

@@ -1,0 +1,438 @@
+<title>Game fixes 0.109h</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: one column, stacked cards, stills under their text. Tokens first, then components. */
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+    --pill:#3ddc84;--pillink:#06170e;--r:12px;--orange:#ff9a4d;
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+      --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+      --pill:#0b7a43;--pillink:#ffffff;--orange:#c4570a;
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;--orange:#c4570a;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  a{color:var(--blue)}
+  header{padding:30px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 12px;letter-spacing:-.02em;text-wrap:balance}
+  .status{display:flex;align-items:center;gap:8px;margin:0 0 2px;font-weight:700;font-size:14.5px}
+  .status i{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none}
+  .sub{color:var(--ink3);font-size:13px;margin:0 0 14px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
+  .chip{display:inline-block;font-size:12.5px;font-weight:700;padding:6px 11px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink2);text-decoration:none}
+  .chip.hot{color:var(--amber);border-color:var(--amber)}
+  .back{display:inline-block;font-size:13px;font-weight:700;margin:0 0 4px}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+  h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+  h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+  h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+  h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+  .snote{color:var(--ink3);font-size:13px;margin:-4px 0 12px}
+
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+  .ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 9px}
+  .ih b{font-size:16px;line-height:1.3}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .t-seen{background:var(--gbg);color:var(--green)}
+  .t-meas{background:var(--bbg);color:var(--blue)}
+  .t-reas{background:var(--abg);color:var(--amber)}
+  .t-no{background:var(--rbg);color:var(--red)}
+  .row{margin:0 0 9px;min-width:0}
+  .rl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:0 0 2px}
+  .rl.p{color:var(--red)} .rl.w{color:var(--amber)} .rl.f{color:var(--green)} .rl.s{color:var(--blue)}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row p b,.row li b{color:var(--ink)}
+  .row ul{margin:4px 0 0;padding-left:18px;color:var(--ink2);font-size:14.5px}
+  .row li{margin-bottom:4px}
+  .nr{color:var(--ink3);font-style:italic}
+  .tile{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+  .tile>b{display:block;font-size:15px}
+  .tile>p{margin:3px 0 0;color:var(--ink2);font-size:14.5px}
+
+  .bars{margin:8px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+  .bar .bl{grid-column:1/-1;color:var(--ink2)}
+  .track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+  .fill{position:absolute;left:0;height:8px;border-radius:3px}
+  .fill.was{top:1px;background:var(--ink3);opacity:.55}
+  .fill.now{bottom:1px;background:var(--green);opacity:.9}
+  .track.solo{height:14px}
+  .track.solo .fill.now{top:0;bottom:0;height:auto}
+  .fill.now.warn{background:var(--amber)}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.blue{background:var(--blue)}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:line-through;opacity:.9}
+  .bnote{color:var(--ink3);font-size:12.5px;margin:2px 0 0}
+
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  figure figcaption b{color:var(--ink2)}
+  figure.ph{max-width:270px;width:100%;margin-left:auto;margin-right:auto}
+  .figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px 14px;margin:10px 0 0}
+  .figs.wide{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+  .figs figure{margin:0}
+  .figs.pair{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .figs.pair figure.ph{max-width:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  details .figs{margin-top:2px}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;vertical-align:1px}
+  .p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+  .p-grn{background:var(--gbg);color:var(--green)} .p-blu{background:var(--bbg);color:var(--blue)}
+
+  .sbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px 12px}
+  .sbox h3{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;margin:14px 0 4px}
+  .sbox h3.g{color:var(--green)} .sbox h3.b{color:var(--blue)} .sbox h3.a{color:var(--amber)} .sbox h3.r{color:var(--red)}
+  .sbox ul{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}
+  .sbox li{margin-bottom:4px}
+
+  .okbox{border:1px solid var(--line);border-left:4px solid var(--amber);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .okbox ol{margin:0;padding:0;list-style:none;counter-reset:q}
+  .okbox li{position:relative;padding:12px 0 12px 32px;border-bottom:1px solid var(--line);counter-increment:q}
+  .okbox li:last-child{border-bottom:0}
+  .okbox li::before{content:counter(q);position:absolute;left:0;top:12px;width:22px;height:22px;border-radius:50%;background:var(--amber);color:var(--bg);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .okbox .q{font-weight:700}
+  .okbox .opts{margin:6px 0 0;display:flex;flex-wrap:wrap;gap:6px}
+  .okbox .d{color:var(--ink2);font-size:14px;margin-top:4px}
+  .okbox .who{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-right:6px}
+
+  .vid{border:2px dashed var(--line);border-radius:var(--r);padding:12px 14px;background:var(--card)}
+  .vid b{color:var(--amber)}
+  .vid p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .vid ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  .cards{display:grid;gap:10px;margin:0}
+  .bcard{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;min-width:0}
+  .bcard .n{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 4px}
+  .bcard .n b{font-size:17px}
+  .bcard p{margin:0;color:var(--ink2);font-size:14.5px}
+  .bcard .go{display:inline-block;margin-top:8px;font-size:13px;font-weight:800;color:var(--blue)}
+  .bcard.soon{border-style:dashed;opacity:.85}
+
+  /* --- how these patch notes work --- */
+  .how{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 14px 10px;min-width:0}
+  .how svg{display:block;width:100%;max-width:340px;height:auto;margin:2px auto 10px}
+  .how ol{margin:0;padding-left:20px;color:var(--ink2);font-size:14.5px}
+  .how li{margin:0 0 6px}
+  .how li b{color:var(--ink)}
+  .how .mini{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:999px;vertical-align:1px}
+  .how .btn{display:inline-block;font-size:12.5px;font-weight:800;background:var(--pill);color:var(--pillink);padding:2px 9px;border-radius:999px;vertical-align:1px}
+  .how .where{margin:8px 0 0;font-size:13px;color:var(--ink3)}
+  /* --- already decided --- */
+  .donebox{border:1px solid var(--line);border-left:4px solid var(--green);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .donebox ul{margin:0;padding:0;list-style:none}
+  .donebox li{padding:11px 0 11px 28px;border-bottom:1px solid var(--line);position:relative}
+  .donebox li:last-child{border-bottom:0}
+  .donebox li::before{content:"\2713";position:absolute;left:2px;top:11px;width:20px;height:20px;border-radius:50%;background:var(--green);color:var(--pillink);font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .donebox .q{font-weight:700}
+  .donebox .d{color:var(--ink2);font-size:14px;margin-top:3px}
+  .donebox .by{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-right:6px}
+  /* --- video --- */
+  .clip{margin:12px 0 2px}
+  .clip video{display:block;width:100%;max-width:100%;height:auto;border-radius:var(--r);border:1px solid var(--line);background:#000}
+  .clip .look{font-size:13px;color:var(--ink2);margin:0 0 7px}
+  .clip .look b{color:var(--ink)}
+  .clip figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px}
+  .clip.ph{max-width:390px;margin-left:auto;margin-right:auto}
+  /* --- tabs (index) --- */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px;position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0}
+  .tab{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink2);font:inherit;font-size:13.5px;font-weight:800;padding:8px 13px;border-radius:999px;cursor:pointer;min-height:40px}
+  .tab[aria-selected="true"]{background:var(--pill);color:var(--pillink);border-color:var(--pill)}
+  .tab small{font-weight:700;opacity:.8;margin-left:4px}
+  .js .panel[hidden]{display:none}
+  .panel h3.grp{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:18px 0 8px}
+  .bcard .vtag{font-size:11px;font-weight:800;color:var(--ink3);letter-spacing:.04em}
+  .qlist{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px}
+  .qlist ul{margin:0;padding:0;list-style:none}
+  .qlist li{padding:10px 0;border-bottom:1px solid var(--line);color:var(--ink2);font-size:14px}
+  .qlist li:last-child{border-bottom:0}
+  .qlist li b{color:var(--ink)}
+
+  /* --- steps (vertical list) --- */
+  .steps{list-style:none;margin:6px 0 0;padding:0;counter-reset:st}
+  .steps li{position:relative;padding:9px 0 9px 36px;border-bottom:1px solid var(--line);counter-increment:st;color:var(--ink2);font-size:14.5px;min-width:0}
+  .steps li:last-child{border-bottom:0}
+  .steps li::before{content:counter(st);position:absolute;left:0;top:9px;width:24px;height:24px;border-radius:50%;background:var(--card2);border:1px solid var(--line);color:var(--ink);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .steps li b{color:var(--ink)}
+  .steps li.done::before{background:var(--green);border-color:var(--green);color:var(--pillink);content:"\2713"}
+  .steps li.next::before{background:var(--amber);border-color:var(--amber);color:var(--bg)}
+  .mock{border:2px solid var(--red);border-radius:var(--r);background:var(--rbg);padding:12px 14px;margin:10px 0 2px}
+  .mock b{display:block;color:var(--red);font-size:15px;letter-spacing:.02em}
+  .mock p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .mock .mb{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .mock .mb span{font-size:13px;font-weight:800;padding:5px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink2)}
+  .mock .mb span.go{background:var(--card2)}
+
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+  .clip .spd{display:flex;gap:6px;align-items:center;margin:7px 0 0;font-size:13px;color:var(--ink3)}
+  .clip .spd button{font:700 13px/1 system-ui,sans-serif;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink2);cursor:pointer}
+  .clip .spd button.on{background:var(--ink);color:var(--bg)}
+  .clip video{max-height:80vh;object-fit:contain}
+  .clip .look{background:var(--card2);border-radius:10px;padding:9px 12px}
+  .clip .look b{color:var(--green);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+  .row ul{margin-top:6px}
+</style>
+<style>
+  /* explainer cards and drawings (from the Supabase and Cloudflare explainer pages) */
+  .verdict{border:1px solid var(--line);border-left:3px solid var(--green);background:var(--card);border-radius:var(--r);padding:13px 15px;margin:0 0 8px}
+  .verdict .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-bottom:5px}
+  .verdict p{margin:0 0 6px;font-size:14.5px;color:var(--ink2)}.verdict p:last-child{margin:0}.verdict b{color:var(--ink)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+  .card .hd{font-weight:800;font-size:16px;color:var(--ink);display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+  .card .num{display:inline-flex;width:24px;height:24px;border-radius:50%;font-size:12.5px;font-weight:800;align-items:center;justify-content:center;flex:0 0 auto;background:var(--green);color:var(--pillink)}
+  .card .num.cf{background:var(--orange);color:#1a0d02}
+  .card p{margin:0 0 6px;color:var(--ink2);font-size:14.5px}.card p b{color:var(--ink)}
+  .lbl{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin:11px 0 2px}
+  .use{border-left:3px solid var(--blue);padding:2px 0 2px 10px;margin-top:4px;color:var(--ink2);font-size:14.5px}.use b{color:var(--ink)}
+  .sv{display:block;width:100%;max-width:100%;height:auto}
+  .fig{background:var(--card2);border:1px solid var(--line);border-radius:var(--r);padding:10px;margin:10px 0 2px;min-width:0}
+  .cap{font-size:12px;color:var(--ink3);margin:6px 0 0;line-height:1.4}
+  .calls{margin:0;padding:0 14px;list-style:none;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .calls li{padding:11px 0;border-bottom:1px solid var(--line)}.calls li:last-child{border-bottom:0}
+  .calls .q{font-weight:700}.calls .a{color:var(--ink2);font-size:14px;margin-top:3px}
+  .rec{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;padding:2px 7px;border-radius:999px;background:var(--gbg);color:var(--green);margin-right:6px}
+  .grp{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:18px 0 8px;font-weight:800}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+</style>
+<div class="wrap">
+<header>
+  <br>
+  <span class="ver">v0.109h &middot; 25 OCT &middot; GAME FIXES</span>
+  <h1>Game: fixes from the 0.108h comments</h1>
+  <p class="status"><i></i>Live on the site since 25 Oct 2026, about 16:10 UK.</p>
+  <p class="sub">25 Oct 2026. Your comments on 0.108h, worked through and now live: skin in the cut scenes, men the same size on every chance, a smooth build-up camera, and headers and volleys redone to your notes.</p>
+</header>
+
+<div class="verdict"><div class="t">The short version</div>
+<p><b>1. Cut scenes: one skin colour</b> at light tones. Face against neck 5.9 &rarr; 1.0. Darker tones wait on a call.</p>
+<p><b>2. Every chance kind draws men at 22 px.</b> Penalties, cutbacks, one-on-ones, crosses, drills and the trial. Was up to 31 px (37 on a byline cross).</p>
+<p><b>3. Build-ups: one smooth camera glide.</b> Worst one-frame jump 640 &rarr; 38 px a second.</p>
+<p><b>4. Headers and volleys: redone to your notes, live.</b> No drag-back arrow: straight to the ball screen, tap the ball. No late zoom, men stay 22 px, the cross comes in once.</p>
+</div>
+
+<h2 class="nxt"><i></i>CHECK THESE</h2>
+<p class="snote">All live on the site now.</p>
+<ul class="ck">
+<li><label><input type="checkbox" data-k="c0"><span><span class="q">Cut-scene skin</span><span class="a">Photo faces off &rarr; sign for a club at a light skin tone: face and neck are one colour.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c1"><span><span class="q">Men at 22 px on every chance</span><span class="a">A penalty, a cutback, a one-on-one and a cross: men are the same size as on a long-range chance.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c2"><span><span class="q">Smooth build-up camera</span><span class="a">Highlights &rarr; a build-up: one glide, no stop-start, no snap at OFFSIDE.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c3"><span><span class="q">Headers and volleys</span><span class="a">A header or volley chance: no arrow, the &ldquo;Head it?&rdquo; or &ldquo;Volley it?&rdquo; ball screen opens, tap the ball. Same in the Head &amp; Volley drill.</span></span></label></li>
+</ul>
+
+<h2 class="fix"><i></i>1 &middot; FIXED: CUT SCENES, ONE SKIN COLOUR</h2>
+<div class="item">
+  <div class="ih"><b>The fair face in the signing scene now matches the neck</b><span class="pill p-grn">live</span><span class="tag t-seen">seen</span><span class="tag t-meas">measured</span></div>
+  <div class="row"><div class="rl p">Problem</div><p>In the signing cut scene, at a light tone, the cheeks were pinker than the neck, with a pale edge at the jaw.</p></div>
+  <div class="row"><div class="rl w">Why</div><p>The cut scenes laid a photo face over the drawn head, even with photo faces switched off. The photo was a different colour from the neck.</p></div>
+  <div class="row"><div class="rl f">Fix</div><p>Cut scenes now use the <b>drawn head</b> when photo faces are off. The same fix is in the signing, office, farewell and award scenes.</p></div>
+  <div class="bars">
+    <div class="bar"><div class="bl">Light tone: face against neck, how different they look (under 2 = can't see it)</div><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:17%"></div></div><div class="vv"><s>5.9</s> 1.0</div></div>
+    <div class="bar"><div class="bl">Deep, brown and dark tones: still a touch lighter than the neck</div><div class="track solo"><div class="fill now warn" style="width:100%"></div></div><div class="vv">4.6&ndash;6.6</div></div>
+  </div>
+  <p class="bnote">The darker tones need a change to the shared skin paint. That waits on a call (below).</p>
+  <figure class="ph"><img src="img/fu-skin-signing.jpg" alt="Signing cut scene at a fair and a deep tone, before and after, on the test page and in a real career." loading="lazy"><figcaption><b>Left of each pair before, right after.</b> Look at the fair face against the neck: one colour now. Tap to enlarge.</figcaption></figure>
+</div>
+
+<h2 class="fix"><i></i>2 &middot; FIXED: EVERY CHANCE KIND DRAWS MEN AT 22 PX</h2>
+<div class="item">
+  <div class="ih"><b>Men, keeper and ball are the same size on every chance</b><span class="pill p-grn">live</span><span class="tag t-seen">seen</span><span class="tag t-meas">measured</span></div>
+  <div class="row"><div class="rl p">Problem</div><p>Penalties, cutbacks, one-on-ones and crosses drew men up to 31 px on a phone. A byline cross drew them up to 37 px. Other chances: 22 px.</p></div>
+  <div class="row"><div class="rl w">Why</div><p>The men were sized against each chance's camera, so a closer camera made bigger men. Headers had the same fault in 0.108h.</p></div>
+  <div class="row"><div class="rl f">Fix</div><p>Men, keeper and ball are drawn at 22 px on every chance kind, the drills and the trial. Only the pitch zooms. Goal rates are the same: this changes the drawing only (15 match test sets pass).</p></div>
+  <div class="bars">
+    <div class="bar"><div class="bl">A man on a penalty, cutback or one-on-one (px, phone)</div><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:71%"></div></div><div class="vv"><s>up to 31</s> 22</div></div>
+    <div class="bar"><div class="bl">A man on a byline cross (px, phone)</div><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:59%"></div></div><div class="vv"><s>up to 37</s> 22</div></div>
+  </div>
+  <details><summary>The size sheet: every chance kind, before and after (a long picture)</summary>
+    <figure><img src="img/fu-size-sheet.jpg" alt="Before and after for penalty, cutback, one-on-one, tight angle, long range, trial penalty and power drill." loading="lazy"><figcaption><b>Left before, right after.</b> Compare each pair with the long-range row, which did not change.</figcaption></figure>
+  </details>
+  <div class="row" style="margin-top:10px"><div class="rl s">Your call</div><p>The trial shootout penalty is a close-up. At 22 px the men look small inside the big goal. It can stay bigger with one line.</p></div>
+</div>
+
+<h2 class="chg"><i></i>3 &middot; CHANGED: BUILD-UPS USE ONE SMOOTH CAMERA GLIDE</h2>
+<div class="item">
+  <div class="ih"><b>The camera plans the whole move, then glides once</b><span class="pill p-grn">live</span><span class="tag t-seen">seen frame by frame</span><span class="tag t-meas">measured</span></div>
+  <div class="row"><div class="rl p">You said</div><p>"I don't like how the camera can move in multiple movements, it should be smooth."</p></div>
+  <div class="row"><div class="rl w">Why</div><p>The camera re-aimed at every pass. It moved, stopped and moved again. It also snapped back when a build-up ended offside.</p></div>
+  <div class="row"><div class="rl f">Fix</div><p>The whole move is planned first. Then the camera makes <b>one eased glide</b> from the start to the chance. It leans with the ball and zooms out a little on long balls. The ball never leaves the screen.</p></div>
+  <div class="bars">
+    <div class="bar"><div class="bl">Biggest one-frame camera jump (pixels a second)</div><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:6%"></div></div><div class="vv"><s>640</s> 38</div></div>
+  </div>
+  <div class="clip ph"><p class="look"><b>Look for</b>a long ball, then tiki-taka ending OFFSIDE: the camera stops and starts, and snaps at OFFSIDE.</p>
+<video src="clips/fu-buildup-before.mp4" poster="img/fu-buildup-before.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption>Before.</figcaption></div>
+  <div class="clip ph"><p class="look"><b>Look for</b>the same two: one smooth glide each, no snap at OFFSIDE.</p>
+<video src="clips/fu-buildup-after.mp4" poster="img/fu-buildup-after.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption>After.</figcaption></div>
+</div>
+
+<h2 class="fix"><i></i>4 &middot; FIXED: HEADERS AND VOLLEYS, REDONE TO YOUR NOTES</h2>
+<div class="item">
+  <div class="ih"><b>Straight to the ball screen: tap the ball</b><span class="pill p-grn">live</span><span class="tag t-seen">seen frame by frame</span><span class="tag t-meas">measured</span></div>
+  <div class="row"><div class="rl p">What happened</div><p>A tap-the-goal version was tried and you turned it down. It never went live. This is the redo, built to your notes.</p></div>
+  <div class="row"><div class="rl f">What it does now</div><ol class="steps">
+    <li><b>No drag-back arrow.</b> Everything else about the chance stays.</li>
+    <li><b>Straight to the ball screen.</b> &ldquo;Head it?&rdquo; or &ldquo;Volley it?&rdquo; opens by itself; you tap the ball.</li>
+    <li><b>No late zoom.</b> Men stay 22 px the whole time.</li>
+    <li><b>The cross comes in once.</b> No second run before you play it.</li>
+    <li><b>The trail follows the ball</b> from the cross to your man.</li>
+    <li><b>The same in the Head &amp; Volley drill.</b> No other acrobatic kinds exist in the game, so there is nothing else to change.</li>
+  </ol></div>
+  <div class="bars">
+    <div class="bar"><div class="bl">Header, goals per 100 chances at Aerial 30 / 60 / 90 (now, then before)</div><div class="track solo"><div class="fill now" style="width:100%"></div></div><div class="vv">17.7 / 24.8 / 34.3 <s>19.0 / 25.0 / 35.3</s></div></div>
+    <div class="bar"><div class="bl">Volley, goals per 100 chances at Aerial 30 / 60 / 90 (now, then before)</div><div class="track solo"><div class="fill now" style="width:100%"></div></div><div class="vv">19.0 / 27.2 / 33.8 <s>19.3 / 26.3 / 35.3</s></div></div>
+  </div>
+  <p class="bnote">Every rate is within about 1 of before, so the new way scores about as often as the old one.</p>
+  <div class="clip ph"><p class="look"><b>Look for</b>the cross comes in once from the right. The &ldquo;Head it?&rdquo; screen opens by itself, no arrow. Tap the ball&rsquo;s right side, high: it goes left, away from the keeper. The trail follows the ball. Goal. The men stay 22 px; the camera never zooms.</p>
+<video src="clips/hv-header.mp4" poster="img/hv-header.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption>A header, built version.</figcaption></div>
+  <div class="clip ph"><p class="look"><b>Look for</b>the cross bounces in once to your man at the edge of the box. &ldquo;Volley it?&rdquo; opens by itself and the height marker drops into the green. Tap the right side: SWEET VOLLEY to the left, goal. Men 22 px, no zoom.</p>
+<video src="clips/hv-volley.mp4" poster="img/hv-volley.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption>A volley, built version.</figcaption></div>
+</div>
+
+<h2 class="bug"><i></i>KNOWN ISSUES</h2>
+<div class="item">
+  <div class="ih"><b>Darker skin tones in cut scenes</b><span class="pill p-amb">waiting on a call</span></div>
+  <div class="row"><div class="rl p">Problem</div><p>Deep, brown and dark faces in cut scenes are still a touch lighter than the neck (gap 4.6 to 6.6; under 2 can't be seen).</p></div>
+  <div class="row"><div class="rl s">Status</div><p>The fix means changing the shared skin paint, which every 3D man uses. Your call 1.</p></div>
+</div>
+
+<h2 class="nxt"><i></i>YOUR CALLS</h2>
+<div class="okbox"><ol>
+<li><div class="q">Change the shared skin paint so darker tones match too?</div><div class="d">It closes the 4.6 to 6.6 gap. It touches every 3D man, so the garden, shop and card need a fresh look after.</div></li>
+<li><div class="q">Trial shootout penalty: keep 22 px, or let it stay bigger?</div><div class="d">It is a close-up, so men look small in the big goal at 22 px. One line keeps it bigger.</div></li>
+</ol></div>
+
+<h2 class="bug"><i></i>SEEN / NOT SEEN</h2>
+<div class="sbox">
+  <h3 class="g">Seen on a screen</h3>
+  <ul><li>Signing scene, fair and deep, before and after, on the test page and in a real career</li><li>Every chance kind before and after (the size sheet)</li><li>Build-ups before and after, frame by frame</li><li>A header and a volley in the built version, every frame at 4 a second (arrow gone, no zoom, one cross)</li></ul>
+  <h3 class="b">Measured (numbers)</h3>
+  <ul><li>Face against neck colour gap at 4 tones</li><li>Men in px per chance kind</li><li>Camera speed per frame in build-ups</li><li>Men in px in the header and volley clips (22.2 every frame)</li><li>Goal rates: 15 match test sets pass</li></ul>
+  <h3 class="a">Reasoned, not seen</h3>
+  <ul><li>The office, farewell and award scenes (same fix as signing, not filmed)</li><li>All three on a real phone</li></ul>
+</div>
+
+<details><summary>The numbers, if you want them</summary>
+  <ul>
+    <li>Skin, signing scene, fair: face against neck 5.9 before, 1.0 after. Deep: 4.9 before, 6.2 after on the test page (the drawn head; part of the darker-tone call).</li>
+    <li>Size: 22 px is size B, the long-range size from 0.108h. Before: up to 31 px (penalty, cutback, one-on-one), up to 37 px (byline cross).</li>
+    <li>Headers and volleys, goals per 100 at Aerial 30 / 60 / 90: header 17.7 / 24.8 / 34.3 (before 19.0 / 25.0 / 35.3), volley 19.0 / 27.2 / 33.8 (before 19.3 / 26.3 / 35.3).</li>
+    <li>Build-up camera: biggest one-frame move about 640 px a second before, 38 after.</li>
+  </ul>
+</details>
+
+<footer>25 Oct 2026. Live on the site since about 16:10 UK. Follow-ups from the comments on 0.108h. Still open: darker skin tones, trial penalty size.</footer>
+</div>
+
+<script>
+(function(){
+  var K="kib-pn-0.109h-checks", s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll('.ck input');
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute('data-k'); if(s[id]) b.checked=true;
+    b.addEventListener('change',function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+  document.addEventListener('click',function(e){
+    var r=e.target.closest&&e.target.closest('.spd button'); if(!r) return;
+    var c=r.closest('.clip'), v=c.querySelector('video');
+    c.querySelectorAll('.spd button').forEach(function(x){ x.classList.toggle('on', x===r); });
+    if(v){ var rate=parseFloat(r.getAttribute('data-r')); v.playbackRate=rate; v.defaultPlaybackRate=rate; if(v.paused) v.play().catch(function(){}); }
+  });
+})();
+</script>
+<style>
+.zm-t{cursor:zoom-in}
+.zm-ov{position:fixed;inset:0;z-index:1000;background:rgba(10,14,12,.92);overflow:auto;-webkit-overflow-scrolling:touch;padding:calc(56px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.zm-ov[hidden]{display:none!important}
+.zm-bar{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));display:flex;gap:8px;z-index:1001}
+.zm-bar button{font:600 15px/1 system-ui,sans-serif;padding:10px 14px;border-radius:10px;border:0;background:#fff;color:#111;cursor:pointer}
+.zm-st{transform-origin:0 0;background:var(--bg,#fff);border-radius:10px;display:inline-block}
+.zm-st img,.zm-st svg{max-width:none!important}
+.zm-hint{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));color:#fff;font:13px system-ui,sans-serif;opacity:.8}
+</style>
+<div class="zm-ov" id="zmOv" hidden><div class="zm-hint">Pinch or + / − to zoom</div><div class="zm-bar"><button id="zmOut" aria-label="Zoom out">−</button><button id="zmIn" aria-label="Zoom in">+</button><button id="zmX" aria-label="Close">✕</button></div><div id="zmBox"></div></div>
+<script>
+(function(){
+  var sel='img,svg';
+  var ov=document.getElementById('zmOv'),box=document.getElementById('zmBox'),st=null,sc=1,w=0,h=0;
+  function zoomable(el){
+    if(el.closest('.zm-ov'))return false;
+    if(el.tagName.toLowerCase()==='svg'){var r=el.getBoundingClientRect();if(r.width<120)return false;}
+    var p=el.parentElement&&el.parentElement.closest(sel);
+    return !p;
+  }
+  function apply(){st.style.transform='scale('+sc+')';box.style.width=(w*sc)+'px';box.style.height=(h*sc)+'px';}
+  function open(el){
+    var r=el.getBoundingClientRect();
+    var c=el.cloneNode(true);c.classList.remove('zm-t');
+    st=document.createElement('div');st.className='zm-st';st.appendChild(c);
+    box.innerHTML='';box.appendChild(st);ov.hidden=false;document.body.style.overflow='hidden';
+    if(c.tagName.toLowerCase()==='img'){c.style.width=(c.naturalWidth||r.width*2)+'px';c.style.height='auto';}
+    else if(c.tagName.toLowerCase()==='svg'){c.style.width=Math.max(r.width,900)+'px';c.style.height='auto';}
+    else{c.style.width=Math.max(el.scrollWidth,r.width)+'px';}
+    w=st.offsetWidth;h=st.offsetHeight;
+    var fit=(ov.clientWidth-32)/w;sc=Math.min(fit,Math.max(1,fit));apply();ov.scrollTo(0,0);
+  }
+  function close(){ov.hidden=true;box.innerHTML='';document.body.style.overflow='';}
+  document.querySelectorAll(sel).forEach(function(el){if(zoomable(el)){el.classList.add('zm-t');el.setAttribute('title','Tap to enlarge');}});
+  document.addEventListener('click',function(e){
+    if(ov.contains(e.target)){if(e.target===ov)close();return;}
+    var t=e.target.closest('.zm-t');if(!t)return;
+    if(e.target.closest('a,button,summary,input,label'))return;
+    e.preventDefault();open(t);
+  });
+  document.getElementById('zmX').onclick=close;
+  document.getElementById('zmIn').onclick=function(){sc=Math.min(sc*1.4,6);apply();};
+  document.getElementById('zmOut').onclick=function(){sc=Math.max(sc/1.4,.2);apply();};
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!ov.hidden)close();});
+})();
+</script>

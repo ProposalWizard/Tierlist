@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isReservedTeamName } from "@/lib/seasonSimulator";
+import { notGuest } from "@/lib/guest/config";
 
 export async function POST(
   req: Request,
@@ -8,7 +9,8 @@ export async function POST(
 ) {
   const { code } = await params;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user: signedIn } } = await supabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
   if (!user) return new Response("Unauthorized", { status: 401 });
 
   const { teamName } = await req.json().catch(() => ({}));

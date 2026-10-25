@@ -47,7 +47,7 @@ const INTRO: Record<keyof Skills, { title: string; steps: string[] }> = {
   },
   aerial: {
     title: "Aerial",
-    steps: ["The cross comes in: drag back to aim", "Head it on top of the ball, or volley it as it drops", "Score past the keeper"],
+    steps: ["The cross comes in, then tap the ball", "Hit its left side to send it right", "Score past the keeper"],
   },
 };
 

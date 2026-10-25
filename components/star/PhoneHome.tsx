@@ -82,7 +82,7 @@ const APP_STORE_ICON: App = { id: "appstore", label: "App Store", icon: "🅰️
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 const appOf = (id: AppId | "relations") => (id === "appstore" ? APP_STORE_ICON : id === "scout" ? SCOUT_APP : APPS.find((a) => a.id === (id === "relationships" ? "relations" : id))!);
 
-export default function PhoneHome({ career, onToggleLike, onLeave, onClose, installed, onInstall, isNew, onOpened, hallChase, relations, relationsIntro }: {
+export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClose, installed, onInstall, isNew, onOpened, hallChase, relations, relationsIntro }: {
   career: CareerState;
   /** Relationships drawn INSIDE the phone, like Squad (Mikey's playtest, 24 Oct
    *  2026). Absent: the app leaves the phone for the Relations page, as before. */
@@ -92,6 +92,7 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
   /** Your Hall of Fame chase line, for the team-mate's record message (phoneUnread.ts). */
   hallChase?: string | null;
   onToggleLike?: (postId: string) => void;
+  onVote?: (postId: string, index: number) => void;
   onLeave: (ph: Leave) => void;
   /** Put the phone down: back to Home. Harry got stuck on the phone's home
    *  screen with no way out (1 Oct 2026, 04:36). */
@@ -184,7 +185,7 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
                   className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-[22px]"
                   style={{ background: `radial-gradient(110% 38% at 50% 0%, ${rgba(theme.glow, 0.24)} 0%, transparent 70%), linear-gradient(180deg, #0b1220, #05080f)` }}
                 >
-                  {app === "social" && <MediaFeed career={career} mode="browse" onToggleLike={onToggleLike} inPhone />}
+                  {app === "social" && <MediaFeed career={career} mode="browse" onToggleLike={onToggleLike} onVote={onVote} inPhone />}
                   {app === "kickabout" && <Kickabout ready />}
                   {app === "squad" && (
                     <AppShell app={appOf("squad")}>

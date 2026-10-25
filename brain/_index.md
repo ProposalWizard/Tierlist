@@ -9,11 +9,12 @@ FACT-ALL-004 | show-options agent: renders candidates at phone size for a number
 FACT-ALL-005 | explain-and-prompt agent: writing up a build so it can be judged without opening a file. | brain
 FACT-ALL-006 | playtest-video skill: a screen recording becomes timestamped pictures and a transcript. | process,brain
 FACT-ALL-007 | make-artifact agent: a shareable page for a build, review or batch of changes. | brain
-FACT-DAT-001 | star_tuning_notes.sql is PENDING: the table still does not exist live, so run this one again. | data
-FACT-DAT-002 | star_xp_config.sql is PENDING, seen missing in the live database on 20 Oct 2026. | data
+FACT-DAT-001 | [SUPERSEDED] star_tuning_notes.sql is PENDING: the table still does not exist live, so run this one again. | data
+FACT-DAT-002 | [SUPERSEDED] star_xp_config.sql is PENDING, seen missing in the live database on 20 Oct 2026. | data
 FACT-DAT-003 | star_casino.sql: DO NOT RUN; the casino stays on the phone with CASINO_ON_SERVER false. | economy,data
 FACT-DAT-004 | Every other listed migration (draft, sofifa, security, star tables) is RUN, no action needed; full rows are in SESSION_LOG.md. | data
-FACT-DAT-005 | Patch-note pictures live in the R2 bucket under patch-notes/<path>; the file route sends a signed link when the object is there, else the bundled copy; one button on /admin/patch-notes moves them. | admin,data
+FACT-DAT-005 | star_xp_config and star_tuning_notes were run live on 23 Oct 2026 (Claude via the Supabase connector, Harry's yes); update_login_streak now only updates the signed-in player. | data
+FACT-DAT-006 | The Supabase connector works in cloud Claude chats since 23 Oct 2026 (project cagkgfketucousksgtbk); CLAUDE.md's "Pending Setup" line saying cloud connectors fail is out of date for Supabase. | process,data
 FACT-ENG-001 | The guard also fails on a direct CanvasMatch mount, a grown KNOWN_COPIES list, a new canvas animation loop or a blind canary. | engine
 FACT-ENG-002 | Trial penalties, free kicks, training strike drills and the gauntlet mount EngineFeature; a difference is a named dial. | engine
 FACT-ENG-003 | Still copies, to port next: five-a-side only; the /star-match-dev fork was deleted (18 Oct 2026). | admin,engine
@@ -44,6 +45,7 @@ FACT-UI-014 | Cut scenes: people and camera New, no row; the Version picker went
 FACT-UI-015 | Faces: photo faces OFF for everyone, every head is the drawn one (PHOTO_FACES); face editors hidden until the photo revamp. | ui
 PRO-3D-001 | Any 3D, animation, mocap, model or cut-scene work: merge main first, then read docs/3D_HANDBOOK.md. | three-d,deploy
 PRO-DAT-001 | Run a pending migration in the Supabase SQL Editor before touching the related features. | data
+PRO-DAT-002 | Bug report? Use the supabase-bug-hunt skill: read the report and the player's save, compare normal saves, reproduce, fix the code. | data
 PRO-ENG-001 | After a match engine change: say so in the reply and patch notes, run the match tests and playtest before pushing. | engine,process,deploy,style
 PRO-TEAM-001 | Push means merge Harry into main after tsc, both guards, the tests and npm run build pass, once the team reviewed the patch notes. | team,process,deploy
 PRO-TEAM-002 | [SUPERSEDED] Patch notes order: stills on the page, push, publish; then film the gameplay clips; never hold the push for a video. | process,rule,deploy
@@ -75,6 +77,8 @@ RUL-ALL-009 | Play it before claiming it works: a type-check and a green suite c
 RUL-ALL-010 | Ask about the one ambiguous word; build the rest, then ask one question that can be answered in a word. | style,rule
 RUL-ALL-011 | When Harry points at a picture, name it back in one line (which picture you are copying) before building. | rule
 RUL-ALL-012 | Do not agree to be agreeable: before agreeing with a design call, find what argues against it. | rule
+RUL-DAT-001 | SQL for a person to run goes out as an artifact page (each file's name, one line on what it does, a Copy all button and the full text), never as links; build it with scripts/supabase/sql-page.py. | rule,data
+RUL-DAT-002 | Every Supabase request Claude makes starts with a plain-English header in the SQL (READ ONLY or CHANGES THE DATABASE, What, Why) and the same lines in chat before the Allow box; changes wait for a yes. | process,data
 RUL-ENG-001 | [SUPERSEDED] The match engine may change, with a warning: the engine-warn hook asks every time with a red notice. | engine
 RUL-ENG-002 | Every screen except the real match mounts EnginePlay; a feature never gets its own loop. | engine,rule
 RUL-ENG-003 | The one-engine guard runs inside npm run build and blocks every Vercel deploy on a new copy of the loop. | engine,deploy
@@ -108,6 +112,9 @@ RUL-TEAM-019 | Deploy only when told: merge feature code to main only when Harry
 RUL-TEAM-020 | Every deploy's patch notes are already live, shipped on their own first; Harry still decides when the feature itself is pushed. | process,deploy,team
 RUL-TEAM-021 | In Mikey's chats, write or update patch notes only when Mikey says "create patch notes"; never on your own, not even at a deploy. | team,process,rule,deploy,style
 RUL-TEAM-022 | In Mikey's chats, never run a playtest unless Mikey asks; when one would really help, recommend it in one line and stop. | team,process,rule
+RUL-TEAM-023 | Everything goes on the admin page, always: every patch note and every update to one is shipped to the site and checked live; an update is marked (updatedAt + updateNote) so it shows UPDATED, moves to the front and is unread again. | admin,process,team
+RUL-TEAM-024 | "Only give people todos if it is actually needed; if someone needs to do something, tell Leo first (no team/jobs.json from a Leo chat without his OK)." | team,process
+RUL-TEAM-025 | Feedback on a patch note is answered on that same patch note page (a follow-up section with before/after), never a new artifact. | process,rule,style,team
 RUL-UI-001 | Decide, don't toggle: a new look or gameplay change is built as THE game, with no new New/Old row in Settings. | ui
 RUL-UI-002 | Unfinished work lives on a test page (a /star-*-dev page), not behind a switch in the real game. | ui,admin
 RUL-UI-003 | Existing switches stay until someone decides each one; never delete one unasked. | rule,ui

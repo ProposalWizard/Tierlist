@@ -56,6 +56,7 @@ import { INJURIES_ON } from "./injurySwitch";
 import { stepBar, drift, happinessEnergyFactor, happinessOf, REL_KEYS, capRel } from "./relationships";
 import { getTuning } from "./tuningStore";
 import { generateSquad, clubNameSeed } from "./squadData";
+import { logMatchGoals } from "./goalLog";
 import { dayFor, transferWindowFor, divisionOf, divisionRank, leagueNameFor, fixtureTimestamp, hasClub, type CareerDivision } from "./calendar";
 import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
 import { wageForFixture } from "./wages";
@@ -1386,6 +1387,10 @@ export function creditMatchResult(
       : syncIntl(managerAfterClubMatch(next, stats.rating)));
   }
 
+  // Every goal of yours, one small row each (goalLog.ts): the season reel
+  // and Stats → Goals read it.
+  if (!alreadyPlayed) next.goalLog = logMatchGoals(career, fixture, stats, leagueNameFor(divisionOf(career)));
+
   const settled = applyAchievements(next);
   return {
     career: withStars({ ...settled.career, starRating: computeStarRating(settled.career) }),
@@ -1722,6 +1727,10 @@ export function advanceSeason(
    * Loyalty simply does not apply this rollover when this is true.
    */
   justTransferred = false,
+  /** Leo's 24 Oct update, bug fixes (lib/star/leoUpdate.ts), read by the
+   *  caller: a manager who just won promotion is never sacked. Off (the
+   *  default, and every test and the soak) = the old rule. */
+  opts: { noSackAfterPromotion?: boolean } = {},
 ): { career: CareerState; newlyUnlocked: string[] } {
   // A loan spell is exactly the season it was made in — home before
   // anything else this rollover touches a squad, so every squad-carrying
@@ -1770,7 +1779,9 @@ export function advanceSeason(
 
   // The board's view of the manager, taken on the season the CLUB had rather
   // than the one you had — nobody is sacked because a forward was quiet.
-  const sack = sackCheck(career, judgeSeason(career).score);
+  const sack = sackCheck(career, judgeSeason(career).score,
+    !!opts.noSackAfterPromotion && !justTransferred && !career.placement
+      && seasonClubMove(career.player.club, divisionOf(career), ladder) === "promoted");
 
   // Individual honours for the season that has just finished, taken BEFORE the
   // stats are reset — they are a verdict on those numbers.

@@ -267,3 +267,66 @@ export function playGlove(v: number, gain: number, held: boolean) {
   tone(held ? 140 : 190, held ? 0.16 : 0.1, "sine", (0.3 + 0.3 * k) * gain, held ? 70 : 100);
   noiseBurst(0.05, (0.22 + 0.25 * k) * gain, held ? 900 : 1800, 1.1, "bandpass");
 }
+
+// ── BIG MOMENTS (Leo, 22 Oct 2026; lib/star/bigMoment.ts) ──
+// 85'+, level or one down, a chance falls to you: the crowd rises and a
+// heartbeat beats under the sound until the chance is over. Made in code.
+
+/** A murmur that swells over ~2 s: the crowd getting to its feet. */
+export function playCrowdRise() {
+  if (!may("crowd-rise") || !ctx) return;
+  const c = ctx, t = now(), dur = 2.2;
+  const size = Math.floor(c.sampleRate * dur);
+  const buf = c.createBuffer(1, size, c.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < size; i++) d[i] = Math.random() * 2 - 1;
+  const src = c.createBufferSource();
+  src.buffer = buf;
+  const f = c.createBiquadFilter();
+  f.type = "bandpass"; f.Q.value = 0.7;
+  f.frequency.setValueAtTime(500, t);
+  f.frequency.linearRampToValueAtTime(1300, t + dur);
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.2, t + dur * 0.85);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  src.connect(f); f.connect(g); g.connect(c.destination);
+  src.start(t); src.stop(t + dur + 0.05);
+}
+
+/** A heartbeat (lub-dub, ~72 a minute) until the returned stop is called (or 20 s). */
+export function startHeartbeat(): () => void {
+  if (!ctx || muted) return () => {};
+  try { if (!sfxOn()) return () => {}; } catch { /* no storage: on */ }
+  const c = ctx;
+  let stopped = false;
+  const beat = (at: number, peak: number) => {
+    const o = c.createOscillator();
+    o.type = "sine";
+    o.frequency.setValueAtTime(62, at);
+    o.frequency.exponentialRampToValueAtTime(38, at + 0.12);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0, at);
+    g.gain.linearRampToValueAtTime(peak, at + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.001, at + 0.16);
+    o.connect(g); g.connect(c.destination);
+    o.start(at); o.stop(at + 0.2);
+  };
+  const period = 60 / 72;
+  let next = now() + 0.05, n = 0;
+  const tick = () => {
+    if (stopped || n > 24) return;
+    while (next < now() + 0.25) { beat(next, 0.55); beat(next + 0.17, 0.38); next += period; n++; }
+    timer = setTimeout(tick, 120);
+  };
+  let timer: ReturnType<typeof setTimeout> = setTimeout(tick, 0);
+  return () => { stopped = true; clearTimeout(timer); };
+}
+
+/** The big roar for a late goal: the usual cheer and a longer, deeper wall of noise. */
+export function playBigRoar() {
+  if (!may("crowd-roar") || !ctx) return;
+  noiseBurst(3.2, 0.3, 900, 0.5, "bandpass");
+  noiseBurst(2.6, 0.2, 2600, 0.4, "highpass");
+  noiseBurst(3.0, 0.16, 260, 0.7, "lowpass");
+}

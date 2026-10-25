@@ -97,6 +97,12 @@ export const DATA_CREDITS: readonly DataCredit[] = [
     licenceFile: "data/ballondor/README.md",
     note: "Kept for a future game mode; not used in a match.",
   },
+  {
+    id: "bangers-public-record", source: "Public match reports", licence: "facts only", use: "facts",
+    line: "Real Goals Bangers, 2010–2025: famous goals written by us from public match reports (scorer, sides, date, minute, spot); names as labels only.",
+    licenceFile: "data/realmoments/README.md",
+    note: "Each goal's own source link is in data/realmoments/bangers.json.",
+  },
   // ── 3D models, textures and motion ──
   {
     id: "kenney", source: "Kenney", licence: "CC0 1.0", use: "art",
@@ -157,7 +163,7 @@ export const CREDIT_GROUPS: readonly { use: CreditUse; title: string; note: stri
   { use: "patterns", title: "How real football plays", note: "Averages and counts only: no real match is replayed." },
   { use: "roles", title: "Player roles", note: "What each position does on the ball, as averages." },
   { use: "moments", title: "Real moments", note: "Single real shots and corners, with where everyone stood." },
-  { use: "facts", title: "Facts", note: "Kit colours and award records." },
+  { use: "facts", title: "Facts", note: "Kit colours, award records and famous goals." },
   { use: "art", title: "3D models, textures and motion", note: "Free packs; most ask for no credit, credited anyway." },
   { use: "sound", title: "Sound", note: "Commentary voices made on our own machine." },
   { use: "fonts", title: "Fonts", note: "" },
@@ -195,6 +201,8 @@ export const DATA_FILE_CREDITS: Readonly<Record<string, readonly string[]>> = {
   "data/realmoments/wyscout_league_germany.json": ["wyscout-moments"],
   "data/realmoments/wyscout_league_italy.json": ["wyscout-moments"],
   "data/realmoments/wyscout_league_spain.json": ["wyscout-moments"],
+  "data/realmoments/bangers.json": ["bangers-public-record"],
+  "data/realmoments/rg_index.json": ["wyscout-moments", "bangers-public-record"],
   "data/ballondor/rankings.json": ["ballondor"],
   "data/ballondor/players.json": ["ballondor"],
   "data/ballondor/year_notes.json": ["ballondor"],

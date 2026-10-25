@@ -19,7 +19,7 @@ NEVER = {"Supabase":{"pause_project","restore_project","create_project","delete_
   # Mikey, 24 Oct 2026: site down, can't be undone, or create/restore a project.
   "Vercel":{"pause_project","revoke_kms_signing_key","replace_domain_dns_records","create_project","create_git_project",
             "restore_edge_config_backup","restore_redirects"}}
-FORCE_ASK = {"execute_sql","d1_database_query","scene_builder_3d_query_python","scene_builder_3d_run_python","sandbox_exec",
+FORCE_ASK = {"confirm_cost","execute_sql","d1_database_query","scene_builder_3d_query_python","scene_builder_3d_run_python","sandbox_exec",
   "website_secrets","website_repo_access","set_active_account","slack_get_file_upload_url","virality_predictor",
   "get_access_to_vercel_url","get_project_deletion_link","asset_get_presigned_urls"}
 FORCE_READ = {"generate_typescript_types","create_visual_design_express_skill","html_export_readiness_skill","adobe_mandatory_init",

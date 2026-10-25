@@ -32,6 +32,8 @@ import PlayerCard from "./PlayerCard";
 import ContractPaper from "./ContractPaper";
 import { AchievementList } from "./SecondaryScreens";
 import { ArcChart, CabinetGrid, Heading, SeasonList } from "./CareerOverview";
+import CareerGoalsGallery from "./CareerGoalsGallery";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 const seasonLabel = (c: CareerState, s: number) => {
@@ -44,6 +46,8 @@ const VIEWS = [
   { id: "records", label: "Records", icon: "🏅" },
   { id: "achievements", label: "Achievements", icon: "⭐" },
   { id: "contract", label: "Contract", icon: "📝" },
+  // Every goal of your career (Leo, 22 Oct 2026). Shown only with Leo's 24 Oct update on (lib/star/leoUpdate.ts).
+  { id: "goals", label: "Goals", icon: "⚽" },
 ] as const;
 type View = (typeof VIEWS)[number]["id"];
 let lastView: View = "stats";
@@ -60,10 +64,14 @@ export default function StatsTabs({ career, onRenew, hallRecords, startView, ach
   const [view, setViewState] = useState<View>(startView ?? lastView);
   const setView = (v: View) => { lastView = v; setViewState(v); };
   const { glow } = useClubTheme(career);
+  const goalsOn = useLeoUpdate("goalsGallery");
+  const views = VIEWS.filter((v) => v.id !== "goals" || goalsOn);
+  // The update switched off while on Goals: back to Stats.
+  const shown: View = view === "goals" && !goalsOn ? "stats" : view;
   const tabs = (
     <div data-stats-row role="tablist" aria-label="Stats" className="flex flex-1 flex-col gap-1.5">
-      {VIEWS.map((v) => {
-        const on = v.id === view;
+      {views.map((v) => {
+        const on = v.id === shown;
         return (
           <button
             key={v.id}
@@ -86,11 +94,12 @@ export default function StatsTabs({ career, onRenew, hallRecords, startView, ach
   return (
     <div className="pb-2">
       <PlayerCard career={career} aside={tabs} saveButton={false} scale={0.93} />
-      <RiseIn key={view} className="mt-2">
-        {view === "stats" && <StatsTab career={career} />}
-        {view === "records" && <Records career={career} glow={glow} hallRecords={hallRecords} />}
-        {view === "achievements" && <AchievementList career={career} top={achievementsTop} />}
-        {view === "contract" && <ContractPaper career={career} onRenew={onRenew} />}
+      <RiseIn key={shown} className="mt-2">
+        {shown === "stats" && <StatsTab career={career} />}
+        {shown === "records" && <Records career={career} glow={glow} hallRecords={hallRecords} />}
+        {shown === "achievements" && <AchievementList career={career} top={achievementsTop} />}
+        {shown === "contract" && <ContractPaper career={career} onRenew={onRenew} />}
+        {shown === "goals" && goalsOn && <CareerGoalsGallery career={career} />}
       </RiseIn>
     </div>
   );
@@ -134,7 +143,8 @@ function SeasonCareer({ label, season, career, gold = false }: { label: string; 
 
 /** The Stats tab: numbers, seasons, cabinet, goals by season, per club, your country. */
 function StatsTab({ career }: { career: CareerState }) {
-  const o = useMemo(() => careerOverview(career), [career]);
+  const calYears = useLeoUpdate("bugFixes"); // Leo's 24 Oct update: calendar season years
+  const o = useMemo(() => careerOverview(career, { calendarYears: calYears }), [career, calYears]);
   const team = o.honours.filter((h) => h.competition !== "Ballon d'Or");
   const awards = [...o.honours.filter((h) => h.competition === "Ballon d'Or"), ...o.individual];
   const seasonTrophies = career.trophies.filter((t) => t.season === career.season).length;

@@ -174,7 +174,7 @@ const MOOD_LABEL: Record<CounterpartMood, string> = {
 };
 
 export default function NegotiationScreen({
-  mode, playerName, marketValue, counterpartLabel, initialState, onStepAway, onDone, onSettings, kicker, valueLabel, note,
+  mode, playerName, marketValue, counterpartLabel, initialState, onStepAway, onDone, onSettings, kicker, valueLabel, note, valueIsTheirOffer,
 }: {
   mode: NegotiationMode;
   playerName: string;
@@ -212,6 +212,11 @@ export default function NegotiationScreen({
   kicker?: string;
   /** In place of "Estimated value". */
   valueLabel?: string;
+  /** The header number is their CURRENT offer (the card's number), not the
+   *  hidden market value the haggle opens below. The transfer talks label it
+   *  "Their wage offer": showing the market value there put ★28 over a card
+   *  that said ★21 (playtest 22 Oct 2026). */
+  valueIsTheirOffer?: boolean;
   /** One more line under the value (the transfer window's talks say the
    *  numbers are a season's wages and what that is a week). */
   note?: string;
@@ -297,7 +302,7 @@ export default function NegotiationScreen({
             {kicker ?? (mode === "buying" ? "Negotiating a Signing" : "Negotiating a Sale")}
           </div>
           <div className="mt-1 font-black uppercase text-white text-2xl leading-tight drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">{playerName}</div>
-          <div className="text-[11px] font-bold text-white/70">{valueLabel ?? "Estimated value"}: <span className="text-amber-300">★{money(marketValue)}</span></div>
+          <div className="text-[11px] font-bold text-white/70">{valueLabel ?? "Estimated value"}: <span className="text-amber-300">★{money(valueIsTheirOffer ? state.theirPosition : marketValue)}</span></div>
           {note && <div className="mt-0.5 text-[11px] font-bold text-white">{note}</div>}
         </div>
 

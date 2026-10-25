@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { stageNextRound } from "@/lib/americanDraft";
 import type { AmericanState } from "@/lib/americanDraft";
+import { notGuest } from "@/lib/guest/config";
 
 /**
  * Pre-build the NEXT round's pool while the current round is being played.
@@ -22,7 +23,8 @@ export async function POST(
   { params }: { params: { code: string } }
 ) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user: signedIn } } = await supabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
   if (!user) return new Response("Unauthorized", { status: 401 });
 
   try {

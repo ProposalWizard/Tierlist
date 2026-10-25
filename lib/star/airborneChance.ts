@@ -298,3 +298,53 @@ function offLine(ball: Ball, read: AirRead): void {
   if (read.pace !== 1) ball.vel = { x: ball.vel.x * read.pace, y: ball.vel.y * read.pace };
   ball.vz += read.vzAdd;
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+//  THE STRIKE SCREEN IS TIMED FOR A BALL IN THE AIR (Harry, 0.108h, 24 Oct
+//  2026: "the header animation needs to be quicker, it standing still after
+//  a live animation for too long is weird, maybe have it be timed").
+//  "Head it?" / "Volley it?" get the penalty run-up's own countdown (the ring
+//  round the ball, ContactBall timeLimitS). Run out and you meet it late.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Seconds to meet a header / a volley at Aerial 60. */
+export const AIR_TIMER_HEADER_S = 1.5;
+export const AIR_TIMER_VOLLEY_S = 1.3;
+/** More time per Aerial point over 60: +0.3 s at 90. */
+export const AIR_TIMER_PER_PT = 0.01;
+/** Less time per point under 60, half as steep: -0.15 s at 30. (The full
+ *  slope, 1.0 s for a volley at Aerial 30, ran out on 39 of 100 assumed
+ *  human taps and cost 6 goals per 100: scripts/aerial/timer-measure.mts.) */
+export const AIR_TIMER_PER_PT_UNDER = 0.005;
+/** Aerial is read between these for the timer. */
+export const AIR_TIMER_AERIAL_MIN = 30;
+export const AIR_TIMER_AERIAL_MAX = 100;
+
+/**
+ * How long the strike screen waits for a ball in the air, in seconds:
+ * header 1.5 s and volley 1.3 s at Aerial 60; 0.01 s more per point over,
+ * 0.005 s less per point under (Aerial 30: 1.35 / 1.15, 90: 1.8 / 1.6,
+ * 100: 1.9 / 1.7). Absent Aerial = 60.
+ */
+export function airStrikeTimerS(kind: "header" | "volley", aerial?: number): number {
+  const a = aerial === undefined || !Number.isFinite(aerial) ? 60
+    : Math.max(AIR_TIMER_AERIAL_MIN, Math.min(AIR_TIMER_AERIAL_MAX, aerial));
+  const base = kind === "header" ? AIR_TIMER_HEADER_S : AIR_TIMER_VOLLEY_S;
+  const add = a >= 60 ? (a - 60) * AIR_TIMER_PER_PT : (a - 60) * AIR_TIMER_PER_PT_UNDER;
+  return Math.round((base + add) * 100) / 100;
+}
+
+/**
+ * The touch you get when the timer runs out: late, so the ball clips you
+ * off-centre. A header comes off the side and under the ball (GLANCED, looped
+ * up); a volley is met nearly on the grass and off-centre (MISTIMED, scuffed).
+ * `side` is which way the ball sits (+1 right, -1 left): it is met on that
+ * side. No random draw, so the match's random stream is untouched. It goes
+ * through the normal strike (airContactRead / applyAirborne), so Aerial still
+ * softens it a little.
+ */
+export function airLateContact(kind: "header" | "volley", lift: number, side: number): { cx: number; cy: number; lift: number } {
+  const s = side < 0 ? -1 : 1;
+  if (kind === "header") return { cx: 0.8 * s, cy: 0.55, lift: Math.max(0, Math.min(1, lift)) };
+  return { cx: 0.6 * s, cy: 0.35, lift: 0.04 };
+}

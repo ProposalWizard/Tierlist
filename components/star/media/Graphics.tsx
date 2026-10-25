@@ -8,7 +8,7 @@ import type { GraphicSpec, PotmNominee } from "@/lib/star/media/types";
 import { kitsOf, labelInk } from "@/lib/star/kits";
 import { initialsOf, ordinal, shortClub, surname } from "@/lib/star/media/grammar";
 import { paletteFor } from "@/lib/star/media/graphics/palette";
-import GoalVideo from "./GoalVideo";
+import GoalVideo, { useLeoNow } from "./GoalVideoSwitch";
 import type { StoredPost } from "@/lib/star/media/types";
 
 /**
@@ -378,6 +378,7 @@ function Thumbnail({ s, author }: { s: Extract<GraphicSpec, { type: "thumbnail" 
  * and the award belongs in that set rather than in a set of one.
  */
 function PotmNominees({ s }: { s: Extract<GraphicSpec, { type: "potmNominees" }> }) {
+  const fixLabels = useLeoNow("bugFixes");
   return (
     <div className={PANEL}>
       <div className="border-b border-amber-300/25 bg-amber-400/10 px-3 py-2 text-center">
@@ -385,7 +386,8 @@ function PotmNominees({ s }: { s: Extract<GraphicSpec, { type: "potmNominees" }>
           Player of the Month
         </div>
         <div className="mt-1 text-[10px] font-bold text-white/75">
-          Premier League nominees — {s.month}
+          {/* The division's name: a bug fix in Leo's 24 Oct update; off, as on main. */}
+          {fixLabels ? (s.league ? `${s.league} nominees` : "Nominees") : "Premier League nominees"} — {s.month}
         </div>
       </div>
 
