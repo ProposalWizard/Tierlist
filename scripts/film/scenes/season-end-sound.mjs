@@ -87,6 +87,21 @@ await pg.goto(`http://localhost:${PORT}/star-dev`, { waitUntil: "domcontentloade
 await pg.waitForSelector('[data-tour="nav-play"]', { state: "visible", timeout: 180000 });
 await wait(2500);
 await tours();
+// --play-last: play the season's last match first, for real (match-lib.mjs: real drags and taps,
+// never a moved ball), in this same page visit, the way a player reaches End of Season. Its
+// goals are recorded on this device, so the season video shows them. Not part of the film.
+if (process.argv.includes("--play-last")) {
+  const { playToReactions } = await import("./match-lib.mjs");
+  const half = setInterval(() => { pg.evaluate(() => { const b = [...document.querySelectorAll("button")].find((b) => b.getClientRects().length && /^SECOND HALF/i.test(b.innerText.trim())); if (b) b.click(); }).catch(() => {}); }, 2000);
+  const r = await playToReactions(pg, { log: (m) => console.log("  match " + m), timeoutMs: 480000 });
+  clearInterval(half);
+  marks.lastMatch = { goalsByYou: r.goalsByYou, score: r.score, shots: r.shots };
+  for (let k = 0; k < 20 && !(await pg.locator('[data-tour="nav-play"]:visible').count()); k++) {
+    await tap(/^(CONTINUE|Continue|BACK TO THE CLUB|Done|Got it|OK|Next ▸|Thanks)/); await wait(1500);
+  }
+  await wait(2000);
+  mark("last-match-done");
+}
 // Pop-ups waiting on the Home screen (an achievement unlocked by the season's numbers): close them.
 for (let i = 0; i < 6; i++) { if (!(await tap(/^CLOSE$/))) break; await wait(1200); }
 await tours();
