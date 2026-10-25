@@ -12,7 +12,6 @@
  */
 import { useRef, useState } from "react";
 import type { EdgeArrow } from "./ui/Nav";
-import { leoUpdateOn } from "@/lib/star/leoUpdate";
 
 /** A TAP on a tab or an arrow turns the page on the same frame: no slide
  *  (Harry, 14 Oct 2026: "If I click on something, it should just go
@@ -54,12 +53,6 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
   const vp = useRef<HTMLDivElement>(null);
 
   const onDown = (e: React.PointerEvent) => {
-    // Leo's bug fixes: a sheet a page opens over everything (a portal, e.g.
-    // Stats → Goals' goal sheet) still bubbles its pointer events here in
-    // React. A drag on it turned the page underneath to Home, so Home's pop-ups
-    // (the manager's "a word") came up over the open sheet. Only drags that
-    // start on the pages themselves turn them.
-    if (leoUpdateOn("bugFixes") && !(e.currentTarget as HTMLElement).contains(e.target as Node)) return;
     start.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
     dragged.current = false;
     setWidth(vp.current?.clientWidth ?? 1);
