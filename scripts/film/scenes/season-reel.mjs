@@ -6,7 +6,7 @@
 // of the season and the end card.
 import { phone, startRec, stopRec } from "/home/user/film-leo/scripts/film/rec.mjs";
 import fs from "node:fs";
-import { hideChrome } from "./lib.mjs";
+import { hideChrome } from "./lib-season.mjs";
 
 const base = process.argv[2] ?? "http://localhost:3300";
 const out = process.argv[3] ?? ".";

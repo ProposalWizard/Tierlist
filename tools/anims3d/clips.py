@@ -678,109 +678,6 @@ def volley(rig, t):
     return p
 
 
-# -- the bicycle kick --------------------------------------------------------
-#
-# Leo, 22 Oct 2026: "do it WELL! proper good animation". A real overhead kick,
-# right foot: he springs off the RIGHT (the kicking leg) as the LEFT swings up
-# first, the body lies back in the air, then the scissor: the left drops as the
-# right snaps up and over and meets the ball ABOVE his head (`contact`), back
-# near flat, chin on chest watching it. Arms wide for balance, then down beside
-# him to take the fall; he lands on his upper back and shoulders, the hips
-# come down after, and he lies, then starts to sit up. The hips rise and fall
-# with a jump's arc (a touch faster than real gravity) and he ends 0.3 m back
-# from where he took off (`end`). Every leg is placed by its angle at the hip
-# (`_bk_leg`), so the knee and the foot follow the leg round wherever it points.
-
-BIKE_LAUNCH = 0.26   # the right foot leaves the grass
-BIKE_CONTACT = 0.48  # right instep on the ball, above the head
-BIKE_LAND = 0.90     # upper back and hands on the grass
-BIKE_DUR = 1.5
-BIKE_END_Z = -0.30
-
-
-def _bk_hips_y(t):
-    """The hips' height off their rest: dip, spring, a jump's arc (g ~ 1.2x, top 0.42 m: the game
-    scales the hips' height to each body, so a Style A man's peak is ~0.35 m), the fall, the ground."""
-    apex, top, g = 0.47, 0.42, 12.0
-    if t < BIKE_LAUNCH:
-        return K([(0, -0.015), (0.13, -0.13), (BIKE_LAUNCH, top - 0.5 * g * (BIKE_LAUNCH - apex) ** 2)], t)
-    if t < BIKE_LAND:
-        return top - 0.5 * g * (t - apex) ** 2
-    land = top - 0.5 * g * (BIKE_LAND - apex) ** 2
-    return K([(BIKE_LAND, land), (1.0, -0.845), (1.12, -0.855), (BIKE_DUR, -0.845)], t)
-
-
-def _bk_leg(rig, side, off, rot, phi, k, spread, plantar, pole_x=0.12, flat=0.0, floor=0.0):
-    """A leg placed by its angle at the hip: `phi` = hip flexion (0 = hanging down along
-    the body, + = forward / up towards the chest) in the hips' own turned frame; k = how
-    straight (1 = full length); the foot pointed `plantar` past square to the shin.
-    The knee faces the way the thigh's front faces; nothing goes below the grass.
-    flat (0..1) lays the foot flat on the grass instead (a bent knee, sole down)."""
-    d = (spread * SX[side], -np.cos(phi), np.sin(phi))
-    a = leg_dir(rig, side, off, rot, d, k)
-    a[1] = max(floor, a[1])
-    th = phi - rot[0]  # the leg's angle in the world, from hanging straight down, + forward
-    return leg(a, pitch=(-th + plantar) * (1 - flat), side=side, pole=(SX[side] * pole_x, np.sin(th), np.cos(th)))
-
-
-def bicycle(rig, t):
-    """Bicycle kick with the right: spring off the right as the left swings up, lie back,
-    scissor, right instep through the ball over his head (`contact`), arms out, land on the
-    upper back with the hands down beside him, lie, start to sit up. 1.5 s."""
-    pit = K([(0, 0.06), (0.13, 0.02), (BIKE_LAUNCH, -0.42), (0.36, -1.08), (BIKE_CONTACT, -1.72),
-             (0.62, -1.98), (0.78, -1.98), (BIKE_LAND, -1.86), (1.05, -1.60), (1.2, -1.55), (BIKE_DUR, -1.30)], t)
-    hy = _bk_hips_y(t)
-    hz = K([(0, 0), (0.13, 0.02), (BIKE_LAUNCH, -0.04), (BIKE_CONTACT, -0.14), (BIKE_LAND, -0.28), (BIKE_DUR, BIKE_END_Z)], t)
-    off, rot = (0.0, hy, hz), (pit, 0.0, 0.0)
-    p = {"hips": {"pos": off, "rot": rot}}
-    # spine: a touch of arch on the spring, then piked (curled) in the air to bring the legs over,
-    # rounded on landing (rolls onto the shoulders), curling up to sit at the end
-    p["spine"] = (K([(0, 0.08), (0.13, 0.12), (BIKE_LAUNCH, -0.10), (0.38, 0.22), (BIKE_CONTACT, 0.30), (0.7, 0.30),
-                     (BIKE_LAND, 0.42), (1.1, 0.30), (BIKE_DUR, 0.55)], t), 0.0, 0.0)
-    # head: eyes up on the cross, then chin on the chest, watching the ball onto the foot
-    p["head"] = (K([(0, -0.30), (0.13, -0.40), (BIKE_LAUNCH, -0.10), (0.38, 0.45), (BIKE_CONTACT, 0.62), (0.75, 0.70),
-                    (BIKE_LAND, 0.75), (1.15, 0.40), (BIKE_DUR, 0.35)], t), 0.0, 0.0)
-    aL, aR = rest_ankle(rig, "L"), rest_ankle(rig, "R")
-    # LEFT, the lead: swung up first and high, then the scissor brings it down as the right goes up
-    phiL = K([(0, 0.0), (0.10, 0.10), (0.20, 0.85), (0.32, 1.30), (0.40, 1.05), (BIKE_CONTACT, 0.22), (0.62, 0.22),
-              (BIKE_LAND, 0.95), (1.05, 0.55), (1.2, 0.14), (BIKE_DUR, 0.38)], t)
-    kL = K([(0, 0.97), (0.20, 0.70), (0.32, 0.80), (BIKE_CONTACT, 0.78), (0.7, 0.8), (BIKE_LAND, 0.72), (1.1, 0.62), (BIKE_DUR, 0.60)], t)
-    # RIGHT, the striker: pushes off, trails, then snaps up straight and over the head, through the ball
-    phiR = K([(0, 0.0), (BIKE_LAUNCH, -0.05), (0.33, 0.20), (0.41, 0.85), (BIKE_CONTACT, 1.40), (0.55, 1.50),
-              (0.66, 1.40), (0.80, 1.05), (BIKE_LAND, 0.95), (1.05, 0.45), (1.2, 0.08), (BIKE_DUR, 0.32)], t)
-    kR = K([(0, 0.97), (0.13, 0.86), (BIKE_LAUNCH, 0.98), (0.34, 0.80), (0.42, 0.90), (BIKE_CONTACT, 0.985), (0.6, 0.97),
-            (0.8, 0.9), (BIKE_LAND, 0.9), (1.2, 0.96), (BIKE_DUR, 0.97)], t)
-    plL = K([(0, 0.0), (0.2, 0.5), (0.6, 0.5), (BIKE_LAND, 0.3), (1.1, 0.0), (BIKE_DUR, 0.0)], t)
-    plR = K([(0, 0.0), (0.13, 0.0), (BIKE_LAUNCH, 0.7), (0.4, 0.75), (BIKE_CONTACT, 0.85), (0.7, 0.6), (1.1, 0.3), (BIKE_DUR, 0.25)], t)
-    airL = K([(0, 0.0), (0.06, 0.0), (0.18, 1.0)], t)       # the left leaves the grass
-    airR = K([(0, 0.0), (0.22, 0.0), (0.32, 1.0)], t)       # the right pushes off, then flies
-    flyL = _bk_leg(rig, "L", off, rot, phiL, kL, 0.10, plL, flat=K([(0, 0), (1.05, 0), (1.25, 1)], t))
-    flyR = _bk_leg(rig, "R", off, rot, phiR, kR, 0.06, plR, floor=K([(0, 0), (1.0, 0), (1.2, 0.035)], t))
-    # on the grass: the left steps in and plants a beat, the right is the spring
-    stL = leg((aL[0], 0.0, aL[1] + 0.06), side="L")
-    stR = leg((aR[0], K([(0, 0), (0.13, 0.0), (BIKE_LAUNCH, 0.08)], t), aR[1] - 0.02), pitch=K([(0, 0), (0.13, 0.0), (BIKE_LAUNCH, 0.55)], t), side="R")
-    p["legL"] = blend(stL, flyL, airL)
-    p["legR"] = blend(stR, flyR, airR)
-    # arms: down and back on the dip, out wide for balance in the air (a touch towards the grass),
-    # then the hands go down beside him, a little out, palms to the grass, to take the landing
-    def above(v, y=0.07):
-        v = np.array(v, float)
-        v[1] = max(y, v[1])
-        return v
-    dip = K([(0, 0), (0.13, 1), (BIKE_LAUNCH, 0)], t)
-    wide = K([(0, 0), (0.13, 0), (0.30, 1), (0.66, 1), (BIKE_LAND - 0.06, 0)], t)
-    down = K([(0, 0), (0.62, 0), (BIKE_LAND - 0.04, 1), (1.15, 1), (BIKE_DUR, 0.85)], t)
-    for s in "LR":
-        bk = (lambda s: lambda c: chest(c, s, (0.10, -0.40, -0.22)))(s)
-        wd = (lambda s: lambda c: chest(c, s, (0.37, 0.04, -0.12)))(s)
-        dn = (lambda s: lambda c: above(chest(c, s, (0.30, -0.28, -0.12))))(s)
-        ready = (lambda s: lambda c: chest(c, s, (0.13, -0.44, 0.06)))(s)  # a touch off the thighs, waiting on the cross
-        p["arm" + s] = arm((lambda s, bk, wd, dn, ready, dip=dip, wide=wide, down=down: lambda c:
-                            above(lerp(lerp(lerp(ready(c), bk(c), dip), wd(c), wide), dn(c), down), 0.06))(s, bk, wd, dn, ready),
-                           s, pole=(SX[s] * 0.9, -0.2, -0.3), rot=(K([(0, 0), (0.62, 0), (BIKE_LAND, -0.5)], t), 0, 0))
-    return p
-
-
 # -- first touches --------------------------------------------------------
 
 TOUCH_CONTACT = 0.32
@@ -1134,7 +1031,6 @@ FOOTBALL = {
     "header_stand": (1.1, False, header_stand, {"contact": HEAD_CONTACT, "part": "head"}),
     "header_diving": (1.3, False, header_diving, {"contact": DIVE_HEAD_CONTACT, "part": "head", "end": [0, 0.82]}),
     "volley": (1.15, False, volley, {"contact": VOLLEY_CONTACT, "foot": "R"}),
-    "bicycle": (BIKE_DUR, False, bicycle, {"contact": BIKE_CONTACT, "foot": "R", "launch": BIKE_LAUNCH, "land": BIKE_LAND, "end": [0, BIKE_END_Z]}),
     "first_touch": (0.85, False, first_touch, {"contact": TOUCH_CONTACT, "foot": "R"}),
     "chest_control": (1.0, False, chest_control, {"contact": CHEST_CONTACT, "part": "chest"}),
     "thigh_control": (0.9, False, thigh_control, {"contact": THIGH_CONTACT, "part": "thighR"}),

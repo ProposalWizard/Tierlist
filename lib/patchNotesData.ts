@@ -27,6 +27,436 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.112h",
+      "title": "Harry's patch notes: Marketing Studio Plan",
+      "publishedAt": "2026-10-25T06:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Plan only, nothing built. What the Marketing tab has today (Board, Client, Studio, Uploads; Calendar, Scripts, Statics and a card page not built) and the plan for Mikey: paste a TikTok link and Claude logs it, breaks it down, writes our version and builds the video. A link in #marketing or the tab's paste box makes the same card; each card's updates post into one #marketing thread. Nine build slices, smallest first. Guest accounts and ad landing pages now belong in the Marketing studio, with their switch-on list (Turnstile first).",
+      "stats": [
+        {
+          "value": "4 of 7",
+          "label": "Marketing views built"
+        },
+        {
+          "value": "0",
+          "label": "links that start work on their own today"
+        },
+        {
+          "value": "9",
+          "label": "build slices, smallest first"
+        },
+        {
+          "value": "Plan",
+          "label": "nothing built or changed"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Read the plan",
+              "detail": "Admin → Patch notes → 0.112h: today, the link-to-video flow, the board and #marketing mock-ups, the slices."
+            },
+            {
+              "title": "Answer the calls",
+              "detail": "Bottom of the page: your calls."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Plan: Marketing studio",
+          "items": [
+            {
+              "title": "Paste a link, get a card",
+              "detail": "A TikTok, Reels or Shorts link in #marketing or the paste box makes a card with its picture in seconds (slice 1)."
+            },
+            {
+              "title": "Claude picks up new links",
+              "detail": "A breakdown within the hour, then our script, then the video builds itself after Script OK (slices 3 and 4)."
+            },
+            {
+              "title": "Done in the Studio wakes Claude",
+              "detail": "Today Done and Lock & render wait until someone opens a chat (slice 5)."
+            },
+            {
+              "title": "Calendar, library and learnings, statics",
+              "detail": "Later slices."
+            },
+            {
+              "title": "Guest accounts and ad pages belong here",
+              "detail": "Each ad is a campaign made in the studio. Switch-on list: Turnstile first, then the Supabase secret, the guest SQL and settings, then the Vercel switch."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues today",
+          "items": [
+            {
+              "title": "Uploads and Studio read an old copy of the board",
+              "pill": {
+                "text": "bug",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "The site cannot wake Claude",
+              "detail": "Done and Lock & render wait for a chat."
+            },
+            {
+              "title": "Uploads do not resume",
+              "detail": "A dropped signal on a big file starts again from zero."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.111h",
+      "title": "Harry's patch notes: Team Room, The Slack-Style Plan",
+      "publishedAt": "2026-10-25T06:20:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Being built now on the Harry branch, not live. The Team room in Slack's layout with our colours: channel list, chat, thread; the list folds with « or Cmd/Ctrl Shift D, 220 px wide; a home button instead of the admin menu. The board's sections become 9 preset channels. Bots sit in the list like people with a BOT tag and a live job line. Notifications per channel (every message, mentions, off) plus computer pop-ups. #bugs posts a Bug bot card for each report; #health posts every morning. #connectors lets you @ any service; /show lists every connection. Draw a box on a page and tag a bot. Each person's bot checks its own connections. Schedules in your status, #today check-ins and gentle nudges. Build order and questions for the team.",
+      "stats": [
+        {
+          "value": "9",
+          "label": "preset channels"
+        },
+        {
+          "value": "220 px",
+          "label": "channel list, folds away"
+        },
+        {
+          "value": "14 + 3",
+          "label": "usage cards + running the team"
+        },
+        {
+          "value": "Building",
+          "label": "Harry branch, not live"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The whole screen (U0)",
+              "detail": "Tap « on the mock to fold the list."
+            },
+            {
+              "title": "The usage cards",
+              "detail": "U1 to U14: chat, #todo, #ideas, #bugs, #health, #patch-notes, #connectors, bots, approvals, drawn boxes, DMs, notifications, search, new channels."
+            },
+            {
+              "title": "Your calls",
+              "detail": "Bottom of the page: questions for the team."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Plan: the Team room UI",
+          "items": [
+            {
+              "title": "Slack's layout, our colours",
+              "detail": "List, chat, thread. The list folds with « or Cmd/Ctrl Shift D. One home button instead of the admin menu."
+            },
+            {
+              "title": "Channels instead of sections",
+              "detail": "Ideas, to-do, bugs, health, patch notes and more as 9 preset channels; you can add more."
+            },
+            {
+              "title": "Bots as members",
+              "detail": "A BOT tag and a live line of what each bot is doing."
+            },
+            {
+              "title": "Notifications per channel",
+              "detail": "Every message, only mentions, or off; plus pop-ups on the computer."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Plan: bots and channels",
+          "items": [
+            {
+              "title": "#bugs fills itself",
+              "detail": "A player's report posts as a Bug bot card with Hand to… and Mark fixed."
+            },
+            {
+              "title": "#health",
+              "detail": "A morning post and a weekly post."
+            },
+            {
+              "title": "#connectors and /show",
+              "detail": "@ any service; /show lists every connection for every person."
+            },
+            {
+              "title": "Draw a box, tag a bot",
+              "detail": "A box drawn on a page goes to a bot with the picture."
+            },
+            {
+              "title": "Each person's connections",
+              "detail": "@me lists what your own bot is connected to."
+            },
+            {
+              "title": "Schedules, #today and nudges",
+              "detail": "Repeating statuses, morning and evening check-ins, gentle nudges."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Build order",
+              "detail": "The list first, then messages, status, notifications, #todo, phone tabs, search, bots, channel kinds, #today."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.110h",
+      "title": "Harry's patch notes: Supabase And Cloudflare",
+      "publishedAt": "2026-10-25T06:10:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Claude can now see and work in Supabase: look-only by default, every change asked first with a READ ONLY / CHANGES THE DATABASE header (live). Done in the live database on 25 Oct: the 2 missing tables made, the login-streak hole closed, 19 missing indexes added. Measured: the FIFA stats table is 312 MB of 383 MB; shrink step 1 frees about 78 MB (bundle 144 to 66 MB). Next tidy steps: drop 4 unused indexes, FIFA shrink and space clean-up, 42 row rules, nightly draft-room tidy. On the Harry branch: one login check per request instead of two; guest accounts and ad landing pages (built, switched off; switch-on list on 0.112h); the bug-hunt skill. Plus what Supabase and Cloudflare are for us.",
+      "stats": [
+        {
+          "value": "3",
+          "label": "fixes in the live database"
+        },
+        {
+          "value": "312 of 383 MB",
+          "label": "FIFA table share of the database"
+        },
+        {
+          "value": "~78 MB",
+          "label": "freed by shrink step 1"
+        },
+        {
+          "value": "2 → 1",
+          "label": "login checks per request"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Supabase asks first",
+              "detail": "Any Claude chat that uses Supabase: READ ONLY or CHANGES THE DATABASE, then What and Why."
+            },
+            {
+              "title": "The 2 tables exist",
+              "detail": "Supabase → Table editor: star_xp_config and star_tuning_notes."
+            },
+            {
+              "title": "Missing-index warnings gone",
+              "detail": "Supabase → Advisors → Performance."
+            },
+            {
+              "title": "Guest test page",
+              "detail": "After a push: /star-guest-dev (team only)."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: Claude can see and work in Supabase",
+          "items": [
+            {
+              "title": "Look-only by default, every change asked first",
+              "detail": "Changes go out as an SQL page and wait for a yes.",
+              "pill": {
+                "text": "live",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed: three changes in the live database (25 Oct)",
+          "items": [
+            {
+              "title": "The 2 missing tables are made"
+            },
+            {
+              "title": "The login-streak hole is closed",
+              "detail": "Only the signed-in player can update their own streak."
+            },
+            {
+              "title": "19 missing indexes added"
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed (Harry branch, not live)",
+          "items": [
+            {
+              "title": "One login check per request, not two",
+              "detail": "Game files (sounds, pictures, models) skip it."
+            },
+            {
+              "title": "Guest accounts and ad landing pages",
+              "detail": "Built, switched off. Turnstile human check. Decided: players name their own player, a League Two start, a daily sign-in nudge for 7 days. Switch-on list on 0.112h."
+            },
+            {
+              "title": "The bug-hunt skill",
+              "detail": "Read a bug report, find the save, compare, reproduce, fix. Look-only."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Guest accounts not tested end to end",
+              "detail": "About 90 server routes still need the one-line guest check."
+            },
+            {
+              "title": "No downloadable database backup",
+              "detail": "Free plan. Your call: a nightly copy to R2.",
+              "pill": {
+                "text": "open",
+                "tone": "red"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Drop 4 unused indexes"
+            },
+            {
+              "title": "FIFA shrink step 1, then a space clean-up",
+              "detail": "About 78 MB back."
+            },
+            {
+              "title": "42 row rules re-worded",
+              "detail": "Check the login once per read, not once per row."
+            },
+            {
+              "title": "Nightly draft-room tidy",
+              "detail": "Rooms older than 30 days."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.109h",
+      "title": "Harry's patch notes: Game Fixes From The 0.108h Comments",
+      "publishedAt": "2026-10-25T06:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "On the Harry branch, not live. Cut scenes use the drawn head when photo faces are off: light-tone face against neck 5.9 to 1.0 (signing, office, farewell, award scenes); darker tones still 4.6 to 6.6, waiting on a call. Every chance kind draws men at 22 px (was up to 31, 37 on a byline cross); only the pitch zooms; goal rates unchanged. Build-ups use one smooth camera glide (worst jump 640 to 38 px a second). Headers and volleys: the tap-the-goal version was turned down and is being redone to Harry's notes: skip only the drag-back arrow and go straight to clicking the ball, no late zoom, men stay the same size, the cross comes in once, ball and trail track properly, same for volleys and acrobatics.",
+      "stats": [
+        {
+          "value": "5.9 → 1.0",
+          "label": "light-tone face vs neck in cut scenes"
+        },
+        {
+          "value": "31 → 22 px",
+          "label": "men on every chance kind"
+        },
+        {
+          "value": "640 → 38",
+          "label": "worst build-up camera jump (px/s)"
+        },
+        {
+          "value": "Redo",
+          "label": "headers and volleys"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Cut-scene skin",
+              "detail": "Photo faces off, sign for a club at a light tone: face and neck one colour."
+            },
+            {
+              "title": "Men at 22 px on every chance",
+              "detail": "Penalty, cutback, one-on-one, cross: same size as long range."
+            },
+            {
+              "title": "Smooth build-up camera",
+              "detail": "Highlights: one glide, no snap at OFFSIDE."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Cut scenes: one skin colour at light tones",
+              "detail": "Drawn head when photo faces are off. Face against neck 5.9 → 1.0."
+            },
+            {
+              "title": "Every chance kind draws men at 22 px",
+              "detail": "Penalties, cutbacks, one-on-ones, crosses, drills and the trial. Only the pitch zooms."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Build-ups use one smooth camera glide",
+              "detail": "The move is planned first, then one eased glide. Worst jump 640 → 38 px a second."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Headers and volleys being redone",
+              "detail": "Skip only the drag-back arrow, click the ball, no late zoom, same size men, the cross comes in once, ball and trail track properly; same for volleys and acrobatics.",
+              "pill": {
+                "text": "being redone",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Darker skin tones in cut scenes",
+              "detail": "Still 4.6 to 6.6. Needs a change to the shared skin paint: your call.",
+              "pill": {
+                "text": "waiting on a call",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Trial shootout penalty size",
+              "detail": "At 22 px men look small in the close-up goal. Your call."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.108h",
       "title": "Harry's patch notes: Your 3D Man On The Player Card, Even 3D Skin, And Players Back To Normal Size",
       "publishedAt": "2026-10-23T05:00:00Z",
@@ -446,12 +876,12 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     },
     {
       "version": "0.108",
-      "title": "Leo's tonight build: celebrations, fast feed, bicycle kicks, Real Goals, season end, 17 bugs (on branch Leo, not live)",
+      "title": "Leo's tonight build: celebrations, fast feed, Real Goals, season end, 17 bugs (on the site behind a switch)",
       "publishedAt": "2026-10-22T23:15:00Z",
-      "updatedAt": "2026-10-24T06:20:00Z",
-      "updateNote": "The 6 to-dos given to Harry and everyone were taken off the to-do list (Leo: only when needed, and ask him first); they are listed here as findings only.",
+      "updatedAt": "2026-10-25T01:30:00Z",
+      "updateNote": "Bicycle kick taken out (Harry is building it). Fixed: after your goal the keeper stayed in the middle of the screen while the camera followed you; now he stays by the goal.",
       "artifactUrl": "https://claude.ai/artifact/PQvHUgssX7CAdad2jitPjA",
-      "summary": "Leo v0.20, 22 Oct. What the 7 chats built from plan 0.107, joined on branch Leo. NOT live until Leo says push. Goal celebrations from the shop (run to the corner, skippable, in videos) and big late moments; the social feed opens in 0.29 s on a cheap phone (was 1.5 s) plus Goal of the Month; bicycle kicks; weather and pitch quality (test page only); Real Goals paths, 61 bangers, a daily goal, a fast home; a season video, a goals gallery, a 3D awards night; 17 bugs fixed, including refresh sending you Home. Harry: the match file and keeper were touched (additive, match tests pass); findings for him are listed, not given as to-dos. Mikey: 3 lines in manager.ts and an injuries plan for you.",
+      "summary": "Leo v0.20, 22 Oct. What the 7 chats built from plan 0.107, joined on branch Leo. On the live site since 24 Oct behind Settings → Updates → \"Leo's 24 Oct update\" (admins, off by default, one switch per part). Goal celebrations from the shop (run to the corner, skippable, in videos) and big late moments; the social feed opens in 0.29 s on a cheap phone (was 1.5 s) plus Goal of the Month; weather and pitch quality (test page only); Real Goals paths, 61 bangers, a daily goal, a fast home; a season video, a goals gallery, a 3D awards night; 17 bugs fixed, including refresh sending you Home. 25 Oct: the bicycle kick is taken back out (Harry is building it); the keeper no longer stays stuck mid-screen while you celebrate. Harry: the match file and keeper were touched (additive, match tests pass); findings for him are listed, not given as to-dos. Mikey: 3 lines in manager.ts and an injuries plan for you.",
       "stats": [
         {
           "value": "0.29 s",
@@ -484,10 +914,6 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
               "detail": "85'+ level or one down: banner, crowd rise, heartbeat; score = slow motion of the last 0.5 s (result unchanged), roar, 14 new late commentary lines."
             },
             {
-              "title": "Bicycle kicks",
-              "detail": "Only for a cross above your head moving across you. Offered by Aerial (1.4 in 40 matches at 40, 8.6 at 80+). Clean: 40 goals in 100. New 2D and 3D move. The 15 real overhead goals are back in Real Moments."
-            },
-            {
               "title": "Goal of the Month",
               "detail": "Monthly poll in the feed: your 3 best goals v 2 by others in your league. Fans vote, you vote once, a win adds fans."
             },
@@ -514,6 +940,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
               "detail": "Cheap phone (6× slower CPU): open 1.5 → 0.29 s, worst scroll freeze 0.76 → 0.17 s, first video 47 → 12 s, reopened 1.9 → 0.56 s. Videos made off the main thread, kept on the phone, started at full time."
             },
             {
+              "title": "Keeper stuck mid-screen in celebrations (25 Oct)",
+              "detail": "After his dive the keeper's landing was kept as a point on the screen, so when the camera followed you he stayed put. Now it is a spot on the pitch and he leaves the screen with the goal. Drawing only."
+            },
+            {
               "title": "Refresh sent you Home",
               "detail": "Now the Ballon d'Or, window list, talks and 'Deal agreed' come back. A refresh after 'Deal agreed' used to lose the transfer."
             },
@@ -529,7 +959,11 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "items": [
             {
               "title": "Harry: match file and keeper",
-              "detail": "CanvasMatch.tsx (celebrations, big moments, bicycle, video length), keeperBrain.ts (bicycle delay, penalty habits: unchanged with no habit), canvasEngine.ts/ballPhysics.ts (weather, inert unless the test page sets it). All additive; match tests pass."
+              "detail": "CanvasMatch.tsx (celebrations, big moments, video length, where the fallen keeper is drawn), keeperBrain.ts (penalty habits: unchanged with no habit), canvasEngine.ts/ballPhysics.ts (weather, inert unless the test page sets it). All additive; match tests pass."
+            },
+            {
+              "title": "Bicycle kick taken back out (25 Oct)",
+              "detail": "Harry is building it. Gone: the Bicycle! button, the move (2D and 3D), banner, media posts, its switch; the 15 overhead Real Moments are left out again."
             },
             {
               "title": "AdminNavPanel.tsx",

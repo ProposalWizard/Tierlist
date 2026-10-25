@@ -5,7 +5,7 @@
 // marks.json (seconds into the raw clip of each step) for the cut.
 import { phone, startRec, stopRec, shot } from "/home/user/film-leo/scripts/film/rec.mjs";
 import fs from "node:fs";
-import { hideChrome } from "./lib.mjs";
+import { hideChrome } from "./lib-season.mjs";
 
 const base = process.argv[2] ?? "http://localhost:3300";
 const out = process.argv[3] ?? ".";

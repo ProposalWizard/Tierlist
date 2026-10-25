@@ -16,7 +16,6 @@
 import type { SaveResult } from "./canvasEngine";
 import { animDuration, ONE_HAND_Z, type ActorAnim } from "./actionAnim";
 import type { SpriteClip } from "./sprites";
-import { isBicycleMode } from "./bicycle";
 
 /** Frames and speed of each new clip, as baked (index.json is the truth; a
  *  test keeps these in step). `strike`: the frame the boot meets the ball. */
@@ -24,8 +23,6 @@ export const NEW_CLIP_SHAPE: Record<string, { frames: number; strike?: number }>
   touch: { frames: 3 }, passKick: { frames: 4, strike: 1 }, shotKick: { frames: 5, strike: 2 },
   volley: { frames: 4, strike: 2 }, chipKick: { frames: 4, strike: 2 }, header: { frames: 5, strike: 3 },
   block: { frames: 3, strike: 1 }, clearance: { frames: 5, strike: 2 },
-  // plant, take-off, STRIKE (on his back in the air, right boot over his head), follow-through, fall, on his back, sitting up
-  bicycle: { frames: 7, strike: 2 },
 };
 
 /** The new clip for an outfield man's animation (by what he did and how). */
@@ -33,7 +30,6 @@ export function outfieldClipFor(a: Pick<ActorAnim, "kind" | "mode">): SpriteClip
   if (a.kind === "touch") return "touch";
   if (a.kind === "block") return "block";
   if (a.kind === "save") return null;
-  if (isBicycleMode(a.mode)) return "bicycle";
   if (a.mode === "header") return "header";
   if (a.kind === "clearance") return "clearance";
   if (a.mode === "volley") return "volley";

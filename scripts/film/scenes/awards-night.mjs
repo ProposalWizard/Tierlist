@@ -9,7 +9,7 @@
 import { phone } from "/home/user/film-leo/scripts/film/rec.mjs";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
-import { hideChrome } from "./lib.mjs";
+import { hideChrome } from "./lib-season.mjs";
 
 const [base = "http://localhost:3300", out = ".", fpsArg = "15", fromArg, toArg] = process.argv.slice(2);
 const fps = Number(fpsArg);

@@ -6,10 +6,10 @@
  * everything should be toggleable …) i wanna try the stuff out now without
  * affecting game".
  *
- * So every part of the 22-24 Oct build (celebrations, big moments, bicycle
- * kicks, the fast feed, Goal of the Month, goal videos that play at once,
- * the season video, the goals list, the awards night, the bug fixes) checks
- * here before it does anything. OFF by default, per device: with the switch
+ * So every part of the 22-24 Oct build (celebrations, big moments, the fast
+ * feed, Goal of the Month, goal videos that play at once, the season video,
+ * the goals list, the awards night, the bug fixes) checks here before it does
+ * anything. OFF by default, per device: with the switch
  * off the live game is exactly as it was. Admins turn it on in Settings →
  * Updates → "Leo's 24 Oct update" (components/star/LeoUpdateCard.tsx), then
  * each part has its own switch underneath (all on once the update is on).
@@ -26,7 +26,6 @@ const EVENT = "kib-leo-update";
 export const LEO_FEATURES = [
   { id: "celebrations", label: "Goal celebrations", line: "After your goal: run to the corner and your shop celebration; tap to skip; in goal videos." },
   { id: "bigMoments", label: "Big moments", line: "85'+ level or one down: banner, heartbeat, slow motion on a goal, late commentary." },
-  { id: "bicycle", label: "Bicycle kicks", line: "The Bicycle! button on high crosses across you, and the overhead Real Moments." },
   { id: "feedSpeed", label: "Fast social feed", line: "Only posts near the screen drawn; videos made off the main thread and kept." },
   { id: "goalVideoNow", label: "Goal videos play at once", line: "Your goal and the highlights play straight away from the recording." },
   { id: "goalOfMonth", label: "Goal of the Month", line: "A monthly poll in the feed: your 3 best goals v 2 others." },

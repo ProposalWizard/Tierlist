@@ -142,7 +142,7 @@ export interface HallRecord {
   history: HallMark[];
 }
 
-const markOf = (def: HallRecordDef, e: HallEntry): HallMark | null => {
+const markOf = (def: HallRecordDef, e: HallEntry, calendar = false): HallMark | null => {
   let b: { value: number; season?: number } | null = null;
   try { b = def.best(e.career); } catch { b = null; }
   if (!b || !(b.value > 0)) return null;
@@ -151,7 +151,7 @@ const markOf = (def: HallRecordDef, e: HallEntry): HallMark | null => {
     entryId: e.id,
     name: e.card.name,
     value: b.value,
-    ...(b.season ? { season: b.season, seasonLabel: longSeason(startYear, b.season) } : {}),
+    ...(b.season ? { season: b.season, seasonLabel: longSeason(startYear, b.season, calendar) } : {}),
   };
 };
 
@@ -160,14 +160,16 @@ const markOf = (def: HallRecordDef, e: HallEntry): HallMark | null => {
  * it: a later career only takes it by beating it, never by equalling it, and
  * the one it took it from goes in the record's history.
  */
-export function hallRecordBook(entries: HallEntry[]): HallRecord[] {
+/** `opts.calendarYears` — Leo's 24 Oct update, bug fixes (read by the screen):
+ *  season labels in the calendar's year. Off = the old labels. */
+export function hallRecordBook(entries: HallEntry[], opts: { calendarYears?: boolean } = {}): HallRecord[] {
   const oldestFirst = [...entries].sort((a, b) => a.addedAt - b.addedAt);
   const out: HallRecord[] = [];
   for (const def of HALL_RECORDS) {
     let holder: HallMark | null = null;
     const history: HallMark[] = [];
     for (const e of oldestFirst) {
-      const m = markOf(def, e);
+      const m = markOf(def, e, !!opts.calendarYears);
       if (!m) continue;
       if (!holder || m.value > holder.value) {
         if (holder) history.push(holder);

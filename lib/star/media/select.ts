@@ -1,4 +1,5 @@
 import type { FootballEvent, MediaAccount } from "./types";
+import { labelFixesOn } from "./updateFlags";
 import { rngFor, shuffle } from "./grammar";
 import { PLAYER_GOAL_CHANTS } from "./chants";
 
@@ -124,6 +125,7 @@ export function selectPairings(
  * career award, say) is still open to them.
  */
 export function ownCompetition(a: MediaAccount, e: FootballEvent): number {
+  if (!labelFixesOn()) return 1;
   if (a.archetype !== "league" && a.archetype !== "competition") return 1;
   const comp = e.facts.competition;
   if (typeof comp !== "string" || !comp) return 1;

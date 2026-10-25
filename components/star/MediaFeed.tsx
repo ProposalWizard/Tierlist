@@ -7,6 +7,7 @@ import { feedFor } from "@/lib/star/media/feed";
 import { formatVolume } from "@/lib/star/media/trending";
 import PostCard, { FEED_LIST_CLASS } from "./media/PostCard";
 import { FeedWindow, FeedSlot } from "./media/FeedWindow";
+import { useLeoNow } from "./media/GoalVideoSwitch";
 import type { StoredPost } from "@/lib/star/media/types";
 import TransfersPanel from "./TransfersPanel";
 import PhoneFrame from "./PhoneFrame";
@@ -81,6 +82,9 @@ const FILTERS: { id: string; label: string; scope?: "club" | "league" }[] = [
 
 export default function MediaFeed({ career, mode, onContinue, onToggleLike, onVote, inPhone = false }: Props) {
   const scroller = useRef<HTMLDivElement>(null);
+  // Leo's 24 Oct update (lib/star/leoUpdate.ts): off = the feed exactly as on main.
+  const fast = useLeoNow("feedSpeed");
+  const gotmOn = useLeoNow("goalOfMonth");
   const { glow } = useClubTheme(career);
   const [filter, setFilter] = useState("all");
   // Feed vs Transfers — two tabs of the one app on the phone, not two
@@ -95,12 +99,14 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, onVo
 
   const shown = useMemo(() => {
     const f = FILTERS.find(x => x.id === filter);
-    if (!f?.scope) return posts;
+    // Goal of the Month off: none of its posts show (none are made either).
+    const all = gotmOn ? posts : posts.filter(p => p.graphic?.type !== "gotmPoll" && !String(p.eventId ?? "").startsWith("gotm-"));
+    if (!f?.scope) return all;
     // A post saved before `scope` existed carries neither value — it stays
     // under All rather than vanishing from both narrower tabs, which is
     // what filtering strictly by equality would otherwise do to it.
-    return posts.filter(p => p.scope === f.scope);
-  }, [posts, filter]);
+    return all.filter(p => p.scope === f.scope);
+  }, [posts, filter, gotmOn]);
 
   // The status bar's own clock, reading real — the Saturday of whatever week
   // the career is on, its own week granularity being the finest date this
@@ -179,7 +185,7 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, onVo
             </div>
           )}
 
-          <div ref={scroller} className="kib-noscroll min-h-0 flex-1 overflow-y-auto" style={{ willChange: "scroll-position", transform: "translateZ(0)" }} data-tour={mode === "moment" ? "reactions-feed" : undefined} data-feed-scroll>
+          <div ref={scroller} className="kib-noscroll min-h-0 flex-1 overflow-y-auto" style={fast ? { willChange: "scroll-position", transform: "translateZ(0)" } : undefined} data-tour={mode === "moment" ? "reactions-feed" : undefined} data-feed-scroll>
             <FeedWindow scroller={scroller}>
             <div className={FEED_LIST_CLASS}>
               {/* The second of the two Continue buttons — this one scrolls
@@ -198,14 +204,17 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, onVo
                   </svg>
                 </PressButton>
               )}
-              {/* Only posts near the screen are drawn (FeedWindow.tsx). */}
-              {shown.map((p, i) => (
+              {/* Only posts near the screen are drawn (FeedWindow.tsx), with the
+                  update on; off, every post as on main. */}
+              {fast ? shown.map((p, i) => (
                 <FeedSlot key={p.id} id={p.id} estimate={estimateHeight(p)} first={i < 4}>
                   {i < 8
-                    ? <RiseIn index={i} step={55}><PostCard post={p} now={now} onToggleLike={onToggleLike} onVote={onVote} /></RiseIn>
-                    : <PostCard post={p} now={now} onToggleLike={onToggleLike} onVote={onVote} />}
+                    ? <RiseIn index={i} step={55}><PostCard post={p} now={now} onToggleLike={onToggleLike} onVote={gotmOn ? onVote : undefined} /></RiseIn>
+                    : <PostCard post={p} now={now} onToggleLike={onToggleLike} onVote={gotmOn ? onVote : undefined} />}
                 </FeedSlot>
-              ))}
+              )) : shown.map((p, i) => i < 8
+                ? <RiseIn key={p.id} index={i} step={55}><PostCard post={p} now={now} onToggleLike={onToggleLike} onVote={gotmOn ? onVote : undefined} /></RiseIn>
+                : <PostCard key={p.id} post={p} now={now} onToggleLike={onToggleLike} onVote={gotmOn ? onVote : undefined} />)}
               {shown.length === 0 && (
                 // Not a blank page: blacked-out posts where posts will be
                 // (Harry, 1 Oct 2026, P90). No words.
