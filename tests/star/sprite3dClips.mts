@@ -79,8 +79,8 @@ for (const char of ["player", "keeper"] as const) {
     if (c.cells) inside(c.cells, idx.atlas.w, idx.atlas.h, `old ${char}.${name}`);
   }
   const extra = Object.keys(idx.chars[char].clips).filter((n) => !(OLD[char] as readonly string[]).includes(n) && !((char === "player" ? NEW_PLAYER_CLIPS : NEW_KEEPER_CLIPS) as readonly string[]).includes(n)
-    // After you score (Leo, 22 Oct 2026): the six celebrations, atlas 2.
-    && !(char === "player" && (CELEB_PLAYER_CLIPS as readonly string[]).includes(n) && idx.chars.player.clips[n]?.atlas === 2));
+    // After you score (Leo, 22 Oct 2026): the six celebrations, atlas 2; the Star Pass four (25 Oct 2026), atlas 3.
+    && !(char === "player" && (CELEB_PLAYER_CLIPS as readonly string[]).includes(n) && [2, 3].includes(idx.chars.player.clips[n]?.atlas ?? -1)));
   check(extra.length === 0, `${char} has clips nobody knows: ${extra.join(", ")}`);
 }
 check(idx.atlas.color === "atlas-0.webp" && idx.atlas.mask === "mask-0.webp" /* lossless WebP, same pixels (12 Oct 2026) */ && idx.atlas.w === 1024 && idx.atlas.h === 1251, "atlas 0's entry changed");

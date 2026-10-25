@@ -103,7 +103,8 @@ export const SLOT_LABEL: Record<AccessorySlot, string> = {
 };
 
 /** The move it plays after your goal (lib/star/celebration.ts; Leo, 22 Oct 2026: real moves, not poses). */
-export type Celebration = "arms_out" | "knee_slide" | "hands_up" | "fist_pump" | "jump" | "roar";
+export type Celebration = "arms_out" | "knee_slide" | "hands_up" | "fist_pump" | "jump" | "roar"
+  | "corner_flag" | "backflip" | "own_name" | "statue";
 
 export interface AccessoryItem {
   kind: "accessory";
@@ -145,10 +146,23 @@ export const ACCESSORIES: AccessoryItem[] = [
   { kind: "accessory", id: "celeb-fist-pump", name: "Fist Pump", slot: "celebration", rarity: "common", color: "#facc15", celebration: "fist_pump" },
   { kind: "accessory", id: "celeb-jump", name: "Jump", slot: "celebration", rarity: "rare", color: "#a78bfa", celebration: "jump" },
   { kind: "accessory", id: "celeb-roar", name: "Roar", slot: "celebration", rarity: "rare", color: "#fb923c", celebration: "roar" },
+  // Star Pass rewards (25 Oct 2026): won on the pass, never sold (STAR_PASS_CELEBRATION_IDS). Keyed clips:
+  // tools/mocap3d/keyed_celebs.py.
+  { kind: "accessory", id: "celeb-corner-flag", name: "Corner Flag Dance", slot: "celebration", rarity: "epic", color: "#ef4444", color2: "#facc15", celebration: "corner_flag" },
+  { kind: "accessory", id: "celeb-backflip", name: "Backflip", slot: "celebration", rarity: "legendary", color: "#22d3ee", color2: "#0e7490", celebration: "backflip" },
+  { kind: "accessory", id: "celeb-own-name", name: "Your Own Celebration", slot: "celebration", rarity: "legendary", color: "#facc15", color2: "#111827", celebration: "own_name" },
+  { kind: "accessory", id: "celeb-statue", name: "Statue Pose", slot: "celebration", rarity: "legendary", color: "#cbd5e1", color2: "#64748b", celebration: "statue" },
 ];
 
 /** The three celebrations added in Leo's 24 Oct update: shown only while its "celebrations" switch is on. */
 export const LEO_CELEBRATION_IDS: ReadonlySet<string> = new Set(["celeb-fist-pump", "celeb-jump", "celeb-roar"]);
+
+/**
+ * The four Star Pass celebrations: won on the pass, never sold. Not a daily
+ * special (so the specials stay exactly as before), and the shop lists one
+ * only once you own it (to wear it).
+ */
+export const STAR_PASS_CELEBRATION_IDS: ReadonlySet<string> = new Set(["celeb-corner-flag", "celeb-backflip", "celeb-own-name", "celeb-statue"]);
 
 // ── Boosts (these genuinely help) ──────────────────────────────────────────
 

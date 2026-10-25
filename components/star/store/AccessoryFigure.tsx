@@ -38,6 +38,11 @@ export const CELEBRATION_POSE: Record<Celebration, BodyPose> = {
   fist_pump: { armLift: 0.75, armSpread: 0.2, armLead: 1 },
   jump: { armLift: 1, armSpread: 0.35, crouch: 0.25 },
   roar: { armLift: -0.55, armSpread: 0.7 },
+  // the Star Pass four: the shop's still figure can only hint at them
+  corner_flag: { armLift: 0.8, armSpread: 0.3, armLead: 1, crouch: 0.4 },
+  backflip: { armLift: 1, armSpread: 0.25, crouch: 0.5 },
+  own_name: { armLift: 0.35, armSpread: 0.05 },
+  statue: { armLift: -0.15, armSpread: 0 },
 };
 
 // One face photo for every preview, loaded once.
