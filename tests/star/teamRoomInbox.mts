@@ -108,7 +108,7 @@ console.log("An updated note is news again (Leo, 24 Oct 2026)");
   const now = Date.parse("2026-10-21T12:30:00Z");
   const r = patchesToRing(UPD, now, { Mikey: ["0.62", "0.97h", "0.50"] }, "2026-10-20", 6 * 3600_000).find((x) => x.person === "Mikey");
   ok(!!r && vs(r.notes) === "0.62", "rung for the old version: the update buzzes again");
-  ok(payloadForPatches([UPD[1]]).title.startsWith("Updated patch notes from Leo"), "the buzz says Updated, not New");
+  ok(payloadForPatches([UPD[1]]).title.startsWith("@everyone Updated patch notes from Leo"), "the buzz says Updated, not New");
   const r2 = patchesToRing(UPD, now, { Mikey: ["0.62@2026-10-21T12:00:00Z", "0.97h", "0.50"] }, "2026-10-20", 6 * 3600_000).find((x) => x.person === "Mikey");
   ok(!r2, "rung for the update already: no second buzz");
 }
