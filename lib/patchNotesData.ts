@@ -28,11 +28,11 @@ import type { PatchNote } from "./patchNotes";
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
       "version": "0.110",
-      "title": "Leo's patch notes: overnight build, 7 chats finishing the 24 Oct update (in progress, for you to judge)",
-      "publishedAt": "2026-10-25T02:05:00Z",
+      "title": "Leo's patch notes: overnight build (running today), 7 chats finishing the 24 Oct update (in progress, for you to judge)",
+      "publishedAt": "2026-10-25T12:40:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/4aeZs72kiGCS7r4xMgBg2A",
-      "summary": "Leo, 25 Oct overnight. Leo went to sleep and asked for the most productive work possible, written up for the morning. 7 chats each have one job on their own branch. Nothing goes into the game until Leo picks what is good. Everything new sits behind Leo's 24 Oct switch. This note is updated in the morning with the results, clips and numbers.",
+      "summary": "Leo, 25 Oct. Leo went to sleep and asked for the most productive work possible, written up for the morning. The jobs only reached the 7 chats at 12:28 UTC (the hub chat restarted and lost about 10 hours), so they are running today; results due 16:30 UTC. 7 chats each have one job on their own branch. Nothing goes into the game until Leo picks what is good. Everything new sits behind Leo's 24 Oct switch. This note is updated with the results, clips and numbers.",
       "stats": [
         {
           "value": "7",
@@ -43,8 +43,8 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "label": "changes in the game until Leo picks"
         },
         {
-          "value": "06:30",
-          "label": "UTC, results due"
+          "value": "16:30",
+          "label": "UTC today, results due"
         }
       ],
       "sections": [
