@@ -22,7 +22,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CareerState } from "@/lib/star/types";
-import { bestGoals, type CareerGoal } from "@/lib/star/goalLog";
+import { bestGoals, goalHowLabel, type CareerGoal } from "@/lib/star/goalLog";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 import { getClip, listClips } from "@/lib/star/goalClip/store";
 import { makeEdit, posterMoment } from "@/lib/star/goalClip/edit";
 import { drawEditFrame, prepareClipSprites } from "@/lib/star/goalClip/render";
@@ -240,6 +241,7 @@ function onTop(node: React.ReactElement): React.ReactElement {
 }
 
 function FactsCard({ goal, startYear, note, picture = true }: { goal: CareerGoal; startYear: number; note?: string; picture?: boolean }) {
+  const bugFixesOn = useLeoUpdate("bugFixes");
   const facts: [string, string][] = [
     ["Minute", `${goal.minute}'`],
     ["Against", `${goal.opponent} (${goal.home ? "home" : "away"})`],
@@ -250,7 +252,7 @@ function FactsCard({ goal, startYear, note, picture = true }: { goal: CareerGoal
   ];
   if (typeof goal.distance === "number") facts.push(["Distance", `${Math.round(goal.distance)} m`]);
   if (goal.finish) facts.push(["Finish", goal.finish === "chip" ? "Chip" : "Curler"]);
-  if (goal.how) facts.push(["How", goal.how]);
+  if (goal.how) facts.push(["How", bugFixesOn ? goalHowLabel(goal.how) : goal.how]);
   if (goal.assist) facts.push(["Assist", goal.assist]);
   return (
     <div data-goal-facts>
