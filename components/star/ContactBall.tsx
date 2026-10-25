@@ -41,7 +41,7 @@ interface Props {
   power: number;
   /** `lift` (0 grass … 1 top of the arc) only for a ball in the air
    *  (float/bounce): how high it was when you hit it (lib/star/airborneChance.ts). */
-  onContact: (contact: { cx: number; cy: number; lift?: number }) => void;
+  onContact: (contact: { cx: number; cy: number; lift?: number; late?: boolean }) => void;
   /** The three "how to read the ball" badges and the explanatory line under
    *  them — the tutorial copy, only actually needed the first time anyone
    *  sees this screen. TrialPenalty (the profile-setup trial) passes true;
@@ -174,7 +174,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
       setTimedOut(true);
       fire = window.setTimeout(() => {
         // A ball in the air: met late, off-centre, where it is now.
-        if (airKind && !(timeLimitS && timeLimitS > 0)) onContactRef.current(airLateContact(airKind, liftRef.current, sweepXRef.current));
+        if (airKind && !(timeLimitS && timeLimitS > 0)) onContactRef.current({ ...airLateContact(airKind, liftRef.current, sweepXRef.current), late: true });
         else onTimeoutRef.current?.();
       }, TOO_SLOW_MS);
     }, limitS * 1000);
@@ -491,9 +491,9 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
               viewBox="0 0 100 100"
               aria-hidden="true"
             >
-              <circle cx="50" cy="50" r="47" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth="4" />
+              <circle cx="50" cy="50" r="47" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth={airKind ? 8 : 4} />
               <circle
-                cx="50" cy="50" r="47" fill="none" strokeWidth="4.5" strokeLinecap="round"
+                cx="50" cy="50" r="47" fill="none" strokeWidth={airKind ? 8 : 4.5} strokeLinecap="round"
                 pathLength={100} strokeDasharray="100"
                 style={timedOut
                   // Out of time: the ring shows fully empty, never a frozen

@@ -153,7 +153,7 @@ export function drawMatchFigure(
  * and the tilt already add a little, so a touch under 1 puts both at about the
  * same size on the pitch (about 22 px on a phone).
  */
-const SPRITE_HEIGHT_K = 0.86;
+export const SPRITE_HEIGHT_K = 0.86;
 
 /** The star over your head and a name, upright, above a 3D figure's crown. */
 function drawMarkers(ctx: CanvasRenderingContext2D, x: number, crown: number, r: number, opts: FigureDrawOpts) {
