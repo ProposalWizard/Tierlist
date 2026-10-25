@@ -23,7 +23,7 @@
  */
 import { useSyncExternalStore } from "react";
 import type { Facing, Scenario, ScenarioKind, Vec2, Viewport } from "./canvasEngine";
-import { goalInView, standOff } from "./canvasEngine";
+import { goalInView, standOff, SCENARIO_KINDS } from "./canvasEngine";
 import { wideChances } from "./wideChances";
 /** Tests and measuring scripts: force Wide chances (re-exported so they set the copy this file reads). */
 export { setWideChancesOverride } from "./wideChances";
@@ -121,15 +121,17 @@ export const NEW_KEEPER_GROW = 1.25;
  *  keeps its size (0.7 × the old 0.8 shrink = 0.56, ~5.6 px on a phone). */
 export const NEW_BALL_SCALE = 0.56;
 
-/** Headers and volleys: the men and the ball are drawn the long-range size
- *  (size B, ~22 px on a 390 × 844 phone) whatever the camera. Harry, 23 Oct 2026:
- *  "the headers and new skill still showing crazy big guys". Their own camera is
- *  27 m across (NEW_VIEW_KIND_WIDTH_M), and the Head & Volley drill's 26 m, so the
- *  men came out 1.2 to 1.45 times a long-range man. Only the pitch zooms now. */
-export const FIGURES_AT_FULL_VIEW: readonly ScenarioKind[] = ["header", "volley"];
+/** Every chance kind: the men, the keeper and the ball are drawn the long-range
+ *  size (size B, ~22 px on a 390 × 844 phone) whatever the camera. Only the pitch
+ *  zooms. Headers and volleys first (Harry, 23 Oct 2026: "the headers and new
+ *  skill still showing crazy big guys"); every other kind on 25 Oct 2026 (patch
+ *  note 0.108h's known issue: penalties, cutbacks and one-on-ones still drew men
+ *  up to ~31 px, because their camera is 27 to 30 m across, not 38). A camera
+ *  wider than 38 m never grows them. Was `["header", "volley"]`. */
+export const FIGURES_AT_FULL_VIEW: readonly ScenarioKind[] = SCENARIO_KINDS;
 /** How much smaller than the camera would draw them: `across` is the metres
  *  across the screen that the men are sized against (the chance's own camera
- *  before any Zoom). 1 for every other kind, and never bigger than 1. */
+ *  before any Zoom, or a feature's own close camera). Never bigger than 1. */
 export function figureShrinkFor(kind: ScenarioKind, across: number): number {
   if (!FIGURES_AT_FULL_VIEW.includes(kind) || !(across > 0)) return 1;
   return Math.min(1, across / NEW_VIEW_WIDTH_M);
