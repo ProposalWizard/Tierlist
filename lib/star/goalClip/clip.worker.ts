@@ -68,7 +68,7 @@ async function runLive(job: LiveJob): Promise<void> {
   lives.set(job.id, me);
   try {
     g.__setWorkerSettings?.(job.settings);
-    await prepareClipSprites(job.edit.moves, undefined, job.edit);
+    await prepareClipSprites(job.edit.moves);
     const ctx = job.canvas.getContext("2d", { alpha: false }) as unknown as CanvasRenderingContext2D | null;
     if (!ctx || me.stop) return;
     const dur = editDuration(job.edit);
@@ -114,7 +114,7 @@ self.onmessage = (ev: MessageEvent<WorkerJob | PosterJob | LiveJob | { kind: "li
     void (async () => {
       try {
         g.__setWorkerSettings?.(job.settings);
-        await prepareClipSprites(job.edit.moves, undefined, job.edit);
+        await prepareClipSprites(job.edit.moves);
         const c = new OffscreenCanvas(job.edit.w, job.edit.h);
         const ctx = c.getContext("2d") as unknown as CanvasRenderingContext2D | null;
         if (ctx) drawEditFrame(ctx, job.edit, 0.5, job.credit);
@@ -128,7 +128,7 @@ self.onmessage = (ev: MessageEvent<WorkerJob | PosterJob | LiveJob | { kind: "li
     posters = posters.then(async () => {
       try {
         g.__setWorkerSettings?.(job.settings);
-        await prepareClipSprites(job.edit.moves, undefined, job.edit);
+        await prepareClipSprites(job.edit.moves);
         const c = new OffscreenCanvas(job.edit.w, job.edit.h);
         const ctx = c.getContext("2d");
         if (!ctx) throw new Error("no 2d");

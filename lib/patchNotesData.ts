@@ -446,12 +446,12 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     },
     {
       "version": "0.108",
-      "title": "Leo's tonight build: celebrations, fast feed, bicycle kicks, Real Goals, season end, 17 bugs (on the site behind a switch)",
+      "title": "Leo's tonight build: celebrations, fast feed, Real Goals, season end, 17 bugs (on the site behind a switch)",
       "publishedAt": "2026-10-22T23:15:00Z",
-      "updatedAt": "2026-10-24T19:20:00Z",
-      "updateNote": "Now on the live site, switched off for everyone: admins turn it on in Settings → Updates → \"Leo's 24 Oct update\", with one switch per part.",
+      "updatedAt": "2026-10-25T01:30:00Z",
+      "updateNote": "Bicycle kick taken out (Harry is building it). Fixed: after your goal the keeper stayed in the middle of the screen while the camera followed you; now he stays by the goal.",
       "artifactUrl": "https://claude.ai/artifact/PQvHUgssX7CAdad2jitPjA",
-      "summary": "Leo v0.20, 22 Oct. What the 7 chats built from plan 0.107, joined on branch Leo. On the live site since 24 Oct behind Settings → Updates → \"Leo's 24 Oct update\" (admins, off by default, one switch per part). Goal celebrations from the shop (run to the corner, skippable, in videos) and big late moments; the social feed opens in 0.29 s on a cheap phone (was 1.5 s) plus Goal of the Month; bicycle kicks; weather and pitch quality (test page only); Real Goals paths, 61 bangers, a daily goal, a fast home; a season video, a goals gallery, a 3D awards night; 17 bugs fixed, including refresh sending you Home. Harry: the match file and keeper were touched (additive, match tests pass); findings for him are listed, not given as to-dos. Mikey: 3 lines in manager.ts and an injuries plan for you.",
+      "summary": "Leo v0.20, 22 Oct. What the 7 chats built from plan 0.107, joined on branch Leo. On the live site since 24 Oct behind Settings → Updates → \"Leo's 24 Oct update\" (admins, off by default, one switch per part). Goal celebrations from the shop (run to the corner, skippable, in videos) and big late moments; the social feed opens in 0.29 s on a cheap phone (was 1.5 s) plus Goal of the Month; weather and pitch quality (test page only); Real Goals paths, 61 bangers, a daily goal, a fast home; a season video, a goals gallery, a 3D awards night; 17 bugs fixed, including refresh sending you Home. 25 Oct: the bicycle kick is taken back out (Harry is building it); the keeper no longer stays stuck mid-screen while you celebrate. Harry: the match file and keeper were touched (additive, match tests pass); findings for him are listed, not given as to-dos. Mikey: 3 lines in manager.ts and an injuries plan for you.",
       "stats": [
         {
           "value": "0.29 s",
@@ -484,10 +484,6 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
               "detail": "85'+ level or one down: banner, crowd rise, heartbeat; score = slow motion of the last 0.5 s (result unchanged), roar, 14 new late commentary lines."
             },
             {
-              "title": "Bicycle kicks",
-              "detail": "Only for a cross above your head moving across you. Offered by Aerial (1.4 in 40 matches at 40, 8.6 at 80+). Clean: 40 goals in 100. New 2D and 3D move. The 15 real overhead goals are back in Real Moments."
-            },
-            {
               "title": "Goal of the Month",
               "detail": "Monthly poll in the feed: your 3 best goals v 2 by others in your league. Fans vote, you vote once, a win adds fans."
             },
@@ -514,6 +510,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
               "detail": "Cheap phone (6× slower CPU): open 1.5 → 0.29 s, worst scroll freeze 0.76 → 0.17 s, first video 47 → 12 s, reopened 1.9 → 0.56 s. Videos made off the main thread, kept on the phone, started at full time."
             },
             {
+              "title": "Keeper stuck mid-screen in celebrations (25 Oct)",
+              "detail": "After his dive the keeper's landing was kept as a point on the screen, so when the camera followed you he stayed put. Now it is a spot on the pitch and he leaves the screen with the goal. Drawing only."
+            },
+            {
               "title": "Refresh sent you Home",
               "detail": "Now the Ballon d'Or, window list, talks and 'Deal agreed' come back. A refresh after 'Deal agreed' used to lose the transfer."
             },
@@ -529,7 +529,11 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "items": [
             {
               "title": "Harry: match file and keeper",
-              "detail": "CanvasMatch.tsx (celebrations, big moments, bicycle, video length), keeperBrain.ts (bicycle delay, penalty habits: unchanged with no habit), canvasEngine.ts/ballPhysics.ts (weather, inert unless the test page sets it). All additive; match tests pass."
+              "detail": "CanvasMatch.tsx (celebrations, big moments, video length, where the fallen keeper is drawn), keeperBrain.ts (penalty habits: unchanged with no habit), canvasEngine.ts/ballPhysics.ts (weather, inert unless the test page sets it). All additive; match tests pass."
+            },
+            {
+              "title": "Bicycle kick taken back out (25 Oct)",
+              "detail": "Harry is building it. Gone: the Bicycle! button, the move (2D and 3D), banner, media posts, its switch; the 15 overhead Real Moments are left out again."
             },
             {
               "title": "AdminNavPanel.tsx",

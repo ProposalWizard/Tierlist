@@ -18,9 +18,7 @@ import type { SynthGoal } from "../goalClip/synth";
 export type GoalKind =
   | "one_on_one" | "tight_angle" | "long_range" | "volley" | "header"
   | "penalty" | "free_kick" | "corner" | "cutback" | "byline_cross"
-  | "through_ball" | "midfield_pass" | "buildup" | "rebound" | "solo"
-  /** An overhead kick of yours (lib/star/bicycle.ts, 22 Oct 2026). */
-  | "bicycle";
+  | "through_ball" | "midfield_pass" | "buildup" | "rebound" | "solo";
 
 export interface GoalRecord {
   minute: number;

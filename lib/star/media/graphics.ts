@@ -458,7 +458,6 @@ function headlineFrom(e: FootballEvent, you: string): string {
   const short = String(f.short ?? surname(you));
   switch (e.id) {
     case "hat-trick": return `${short} hat-trick`;
-    case "bicycle-kick": return `${short} overhead kick`;
     case "four-goals": return `${short} scores four`;
     case "five-goals": return `${short} scores five`;
     case "late-winner": return `${short} wins it at ${f.minute}`;

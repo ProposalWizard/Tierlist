@@ -86,6 +86,8 @@ await pg.addInitScript(([seed, key, move, v3d]) => {
   localStorage.setItem(key, JSON.stringify(c));
   localStorage.setItem("star-career-saved-at-v1::anon", String(Date.now() + 1e6));
   localStorage.setItem("star-look-match-3d", v3d ? "on" : "off");
+  // Leo's 24 Oct update (lib/star/leoUpdate.ts): celebrations and big moments only play with it on
+  localStorage.setItem("kib-update-leo-2026-10-24", JSON.stringify({ on: true, off: [] }));
   if (v3d) window.__ev3dDiag = {}; // dev only (an object, as engineView.ts expects): lets the scene project the posts through the 3D camera
 }, [seed, KEY, MOVE, VIEW3D]);
 await pg.goto(`${BASE}/star-dev`, { waitUntil: "domcontentloaded", timeout: 300000 });

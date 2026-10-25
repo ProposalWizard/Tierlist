@@ -130,26 +130,6 @@ function contactMotion(kind: string, seed: number): BallMotion {
   return "still";
 }
 
-/** The BICYCLE button is on: start loading its picture now (sprite atlas 3),
- *  so the move is ready by the time you strike. Returns the offer unchanged. */
-function withBicycleClip<T>(offer: T): T {
-  if (offer) spriteClipReady("player", "bicycle");
-  return offer;
-}
-
-/** A bicycle kick (lib/star/bicycle.ts): the goal, and the try that did not go in. */
-const BICYCLE_GOAL_LINES = [
-  "AN OVERHEAD KICK! {name} — you will not see a better goal than that!",
-  "BICYCLE KICK! {name} has done it! Upside down and into the net!",
-  "Oh my word, {name}! Back to goal, feet over his head — and it's in!",
-  "{name} with the overhead kick! The whole ground is on its feet!",
-];
-const BICYCLE_MISS_LINES = [
-  "{name} goes for the spectacular — the overhead kick doesn't come off.",
-  "A bicycle kick from {name}! Brave, but not this time.",
-  "{name} throws himself into the overhead — just not quite.",
-];
-
 /** A goal or assist line that varies without drawing a random number (so
  *  nothing else in a seeded match moves): picked by the minute and the name. */
 function variedLine(pool: string[], name: string, minute: number): string {
@@ -173,8 +153,7 @@ import {
   RUNUP_MOTION, type RunupId, type PenaltyRunupId, type FreeKickRunupId, type StyledRunup, type RunupPose,
 } from "@/lib/star/runupStyles";
 import { createFaceImageCache, fallbackFaceFor } from "@/lib/star/faceImageCache";
-import { airborneOn, airborneMotion, applyAirborne, bicycleMarkOf, bicycleGoalOf, type StrikeContact } from "@/lib/star/airborneChance";
-import { bicycleOfferFor } from "@/lib/star/bicycle";
+import { airborneOn, airborneMotion, applyAirborne, type StrikeContact } from "@/lib/star/airborneChance";
 import { isAirKind, airWaitZ, airZOf, HEADER_Z } from "@/lib/star/airDrawings";
 import { useFitWidth } from "./useFitWidth";
 import ArcadeBanner, { useArcadeBanner, type BannerSide } from "./ArcadeBanner";
@@ -229,7 +208,7 @@ import type { GoalTrack, ClipBody, FrameState as ClipFrame } from "@/lib/star/go
 import { switchOn } from "@/lib/star/compareSwitches";
 import { strikingPower } from "@/lib/star/strikePower";
 import {
-  brainOptionsHere, hasBrain, brainSetup, keeperSaltFor, brainAim, brainRunUp, brainStrike, brainStep, brainSnapshot, brainRestore, brainReactLater,
+  brainOptionsHere, hasBrain, brainSetup, keeperSaltFor, brainAim, brainRunUp, brainStrike, brainStep, brainSnapshot, brainRestore,
 } from "@/lib/star/keeperBrain";
 import {
   RUNUP, strikeTimerFor, hasRunup, canNudge, plantBeside, goalLineX, nudgedDir, nudgeFromDrag,
@@ -2538,7 +2517,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** When the 3D keeper's dive clip started (seconds), or null. */
   const keeperDiveStartRef = useRef<number | null>(null);
   /** Where the 3D keeper landed (canvas px), held while he lies there. */
-  const keeperLandRef = useRef<{ x: number; y: number; sc: Scenario; clip: SpriteClip } | null>(null);
+  // Where he landed is kept as a spot on the PITCH (x, y in metres) plus his sideways lean in
+  // keeper radii (offR), never as screen pixels: the celebration camera follows you after a
+  // goal, and a landing kept in pixels stayed fixed on the screen (Leo, 24 Oct 2026).
+  const keeperLandRef = useRef<{ x: number; y: number; offR: number; sc: Scenario; clip: SpriteClip } | null>(null);
   const spriteMotionRef = useRef<Map<string, { x: number; y: number; t: number; vx: number; vy: number; dist: number; facing: number }>>(new Map());
   // Whose goal it was, while the result is up (they celebrate). Picture only.
   const goalSideRef = useRef<"us" | "them" | null>(null);
@@ -2846,8 +2828,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (r.keeperBrain) {
         brainRestore(scenarioRef.current, r.keeperBrain);
         brainStrike(scenarioRef.current, ballRef.current, r.keeperBrain.strikeSeed);
-        // A clean bicycle kick: he reacts later (bicycle.ts), the same in the replay.
-        brainReactLater(scenarioRef.current, bicycleMarkOf(ballRef.current)?.keeperLateS ?? 0);
       } else if (r.penaltyRead) applyPenaltyRead(scenarioRef.current, r.penaltyRead);
       strikeRuleRef.current = r.kindStrike ?? null;
       if (r.kindStrike) replayStrike(scenarioRef.current, ballRef.current, r.kindStrike);
@@ -3914,8 +3894,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // always with Animations: Old, the old clips below.
       const na = opts.anim ? animNow.get(id) : undefined;
       const nc = na ? outfieldSpriteClip(na.a, na.e, (c) => spriteClipFps("player", c)) : null;
-      // Your bicycle kick (bicycle.ts) plays its own clip even through the kick pose.
-      const newClip = !!nc && !(opts.pose === "kick" && id === "you" && nc.clip !== "bicycle") && spriteClipReady("player", nc.clip);
+      const newClip = !!nc && !(opts.pose === "kick" && id === "you") && spriteClipReady("player", nc.clip);
       if (newClip && nc) {
         clip = nc.clip; t = nc.t;
       } else if (opts.pose === "kick" && id === "you") {
@@ -4773,6 +4752,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // right as seen on screen, as far into the clip as the lunge has got.
       let keeperSprite: MatchSpriteHint | undefined;
       let keeperDrawAt: { x: number; y: number } | null = null;
+      // His landing spot through this frame's camera (see keeperLandRef).
+      const landPx = (l: { x: number; y: number; offR: number }) => { const q = toPx(l.x, l.y); return { x: q.px + l.offR * KR, y: q.py }; };
       if (nv) {
         // Harry, 3 Oct 2026: "he's usually not facing the right way, I think
         // his animations need slowing." He has four facings; turning to the
@@ -4811,15 +4792,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             const nc = keeperDiveClipNew(ka.save, ka.at?.z ?? 0, kind === "high" || kind === "fingertip", sideOfDive(clip));
             if (nc && spriteClipReady("keeper", nc)) clip = nc;
           }
-          if (t >= 0.55 && keeperLandRef.current?.sc !== sc) keeperLandRef.current = { x: cx + KR * weight * (1 - lunge), y: py, sc, clip };
-          if (keeperLandRef.current?.sc === sc) keeperDrawAt = keeperLandRef.current;
+          if (t >= 0.55 && keeperLandRef.current?.sc !== sc) keeperLandRef.current = { x: kk.x, y: kk.y, offR: (cx + KR * weight * (1 - lunge) - px) / (KR || 1), sc, clip };
+          if (keeperLandRef.current?.sc === sc) keeperDrawAt = landPx(keeperLandRef.current);
           keeperSprite = { char: "keeper", clip, t, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt }, centre: Math.min(1, t / 0.4) };
         } else if (keeperLandRef.current?.sc === sc) {
           // Down is down: once he has landed in this chance he stays lying
           // where he landed until the next one (a goal briefly stood him back
           // up mid-celebration — playtest film, 3 Oct 2026).
           const land = keeperLandRef.current;
-          keeperDrawAt = land;
+          keeperDrawAt = landPx(land);
           keeperSprite = { char: "keeper", clip: land.clip, t: 1, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt }, centre: 1 };
           // Animations: New — he pushes himself back up off the grass.
           const upClip: SpriteClip = sideOfDive(land.clip) === "R" ? "getUpR" : "getUpL";
@@ -6985,16 +6966,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (res === "post") playPost(); else playSave();
       playCrowdSwell("groan");
     } else if (kind === "goal") {
-      // A bicycle kick of yours (bicycle.ts): its own banner, and the crowd
-      // goes up twice, as for a hat-trick.
-      const bikeGoal = res !== "rebound" && !!bicycleGoalOf(ballRef.current);
-      showAction(bikeGoal ? "BICYCLE!" : "GOAL");
+      showAction("GOAL");
       spawnGoalFx();
-      if (bikeGoal) window.setTimeout(() => spawnGoalFx(), 450);
       if (soundSet() === "arcade") playGoalSting(); // the Arcade pack's goal sting
       playNet();
       playCrowdSwell("cheer");
-      if (bikeGoal) window.setTimeout(() => playCrowdSwell("cheer"), 750);
       // Your own goal in a real match: the run to the corner and your celebration.
       if (!isShootoutKick && !auto && d.goals > 0 && matchModeRef.current && !replayOfRef.current && leoUpdateOn("celebrations")) startCelebration(sc);
     } else if (res === "tackled" || res === "blocked") {
@@ -7103,9 +7079,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // thirty-yard volley, so nothing downstream could say so. `res` is a
       // rebound outcome when it came off a second phase, which is a different
       // kind of goal again.
-      // A bicycle kick of yours (bicycle.ts) is its own kind of goal: the media
-      // and the crowd treat it like a hat-trick.
-      const how = res === "rebound" ? "rebound" : bicycleGoalOf(ballRef.current) ? "bicycle" : sc.kind;
+      const how = res === "rebound" ? "rebound" : sc.kind;
       const distance = Math.hypot(sc.ball.x - (sc.goal.x1 + sc.goal.x2) / 2, sc.ball.y);
 
       // A team-mate's goal: either you assisted it, or another team-mate did.
@@ -7228,13 +7202,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       roleLabel: commentaryRoleLabel,
       isPass: isSimplePass,
     }));
-    // A bicycle kick (bicycle.ts): the line that goes with it. Picked by the
-    // minute, no random number, so the match's stream is untouched.
-    if (res !== "rebound" && bicycleGoalOf(ballRef.current)) {
-      if (OUTCOME_TEXT[res]?.kind === "goal") pushLine(variedLine(BICYCLE_GOAL_LINES, playerLabel(), matchMinuteRef.current));
-    } else if (bicycleMarkOf(ballRef.current) && OUTCOME_TEXT[res]?.kind !== "goal") {
-      pushLine(variedLine(BICYCLE_MISS_LINES, playerLabel(), matchMinuteRef.current));
-    }
 
     // ── Report the real outcome back to the shootout, and stop here ──
     //
@@ -9384,7 +9351,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   //     team-mate or an opponent with HIS aim and HIS skills (`skills`) —
   //     the SAME strike as yours from here on.
   const handleContact = (
-    tapped: { cx: number; cy: number; lift?: number; bicycle?: boolean },
+    tapped: { cx: number; cy: number; lift?: number },
     over?: { dir: { x: number; y: number }; power: number; skills?: KickSkills },
     extras?: ShotExtras,
   ) => {
@@ -9402,8 +9369,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (!over && tapped.lift !== undefined && (airborneOn() || isAirKind(scenarioRef.current.kind))) {
       const m = strikeMotion(scenarioRef.current.kind, seedRef.current);
       if (m === "float" || m === "bounce") contact = { ...contact, air: { kind: m === "float" ? "header" : "volley", lift: tapped.lift, cx: tapped.cx, cy: tapped.cy } };
-      // The BICYCLE button (bicycle.ts): the same header chance, struck overhead with the foot.
-      if (tapped.bicycle && contact.air?.kind === "header") contact = { ...contact, air: { ...contact.air, style: "bicycle" } };
     }
     const auto = over?.skills ? { skills: over.skills } : null;
     setContactTimerS(null);
@@ -9492,8 +9457,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const bs = ((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0xc2b2ae35)) ^ 0x4b7f ^ (keeperSaltRef.current ?? 0)) >>> 0;
       if (pendingReplayRef.current) pendingReplayRef.current.keeperBrain = brainSnapshot(scenarioRef.current, bs);
       brainStrike(scenarioRef.current, ballRef.current, bs);
-      // A clean bicycle kick: he cannot read your body, so he reacts later (bicycle.ts).
-      brainReactLater(scenarioRef.current, bicycleMarkOf(ballRef.current)?.keeperLateS ?? 0);
     } else
     // ── A penalty keeper reads your kick (Harry, 24 Sep 2026) ──
     // He stood still until now; at the strike he decides whether to go and
@@ -10104,8 +10067,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             timeLimitS={contactTimerS ?? undefined}
             onTimeout={contactTimerS ? handleScuff : undefined}
             hold={held}
-            // Leo's 24 Oct update (leoUpdate.ts): off = no Bicycle! button, the strike screen as on main.
-            bicycle={!leoUpdateOn("bicycle") ? undefined : withBicycleClip(bicycleOfferFor(scenarioRef.current, career ? Math.round(aerialOf(career.skills) * (1 - fatigueCut(liveEnergyAt(matchMinuteRef.current)))) : (skills as KickSkills & { aerial?: number }).aerial, seedRef.current))}
           />
         )}
 
