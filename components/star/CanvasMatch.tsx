@@ -2538,7 +2538,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** When the 3D keeper's dive clip started (seconds), or null. */
   const keeperDiveStartRef = useRef<number | null>(null);
   /** Where the 3D keeper landed (canvas px), held while he lies there. */
-  const keeperLandRef = useRef<{ x: number; y: number; sc: Scenario; clip: SpriteClip } | null>(null);
+  // Where he landed is kept as a spot on the PITCH (x, y in metres) plus his sideways lean in
+  // keeper radii (offR), never as screen pixels: the celebration camera follows you after a
+  // goal, and a landing kept in pixels stayed fixed on the screen (Leo, 24 Oct 2026).
+  const keeperLandRef = useRef<{ x: number; y: number; offR: number; sc: Scenario; clip: SpriteClip } | null>(null);
   const spriteMotionRef = useRef<Map<string, { x: number; y: number; t: number; vx: number; vy: number; dist: number; facing: number }>>(new Map());
   // Whose goal it was, while the result is up (they celebrate). Picture only.
   const goalSideRef = useRef<"us" | "them" | null>(null);
@@ -4773,6 +4776,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // right as seen on screen, as far into the clip as the lunge has got.
       let keeperSprite: MatchSpriteHint | undefined;
       let keeperDrawAt: { x: number; y: number } | null = null;
+      // His landing spot through this frame's camera (see keeperLandRef).
+      const landPx = (l: { x: number; y: number; offR: number }) => { const q = toPx(l.x, l.y); return { x: q.px + l.offR * KR, y: q.py }; };
       if (nv) {
         // Harry, 3 Oct 2026: "he's usually not facing the right way, I think
         // his animations need slowing." He has four facings; turning to the
@@ -4811,15 +4816,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             const nc = keeperDiveClipNew(ka.save, ka.at?.z ?? 0, kind === "high" || kind === "fingertip", sideOfDive(clip));
             if (nc && spriteClipReady("keeper", nc)) clip = nc;
           }
-          if (t >= 0.55 && keeperLandRef.current?.sc !== sc) keeperLandRef.current = { x: cx + KR * weight * (1 - lunge), y: py, sc, clip };
-          if (keeperLandRef.current?.sc === sc) keeperDrawAt = keeperLandRef.current;
+          if (t >= 0.55 && keeperLandRef.current?.sc !== sc) keeperLandRef.current = { x: kk.x, y: kk.y, offR: (cx + KR * weight * (1 - lunge) - px) / (KR || 1), sc, clip };
+          if (keeperLandRef.current?.sc === sc) keeperDrawAt = landPx(keeperLandRef.current);
           keeperSprite = { char: "keeper", clip, t, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt }, centre: Math.min(1, t / 0.4) };
         } else if (keeperLandRef.current?.sc === sc) {
           // Down is down: once he has landed in this chance he stays lying
           // where he landed until the next one (a goal briefly stood him back
           // up mid-celebration — playtest film, 3 Oct 2026).
           const land = keeperLandRef.current;
-          keeperDrawAt = land;
+          keeperDrawAt = landPx(land);
           keeperSprite = { char: "keeper", clip: land.clip, t: 1, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt }, centre: 1 };
           // Animations: New — he pushes himself back up off the grass.
           const upClip: SpriteClip = sideOfDive(land.clip) === "R" ? "getUpR" : "getUpL";
