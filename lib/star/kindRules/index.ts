@@ -47,6 +47,12 @@ export interface StrikeContext {
   /** Your shooting power / technique, 0-100. */
   power: number;
   technique: number;
+  /**
+   * The taker's run-up style (runupStyles.ts), when the match knows it. Only
+   * The Leaf ("fk_leaf") changes anything: its free kick flies as a falling
+   * leaf (lib/star/leafFlight.ts). Absent / any other style: exactly as before.
+   */
+  runup?: string;
 }
 
 /** A strike-time decision: plain data, so it can ride along in a replay. */

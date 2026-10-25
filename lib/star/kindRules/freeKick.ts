@@ -40,6 +40,11 @@ import type { Ball, Scenario } from "../canvasEngine";
 import { CX, GOAL_W, POST_L, POST_R, ARC_R } from "../pitch";
 import { topCornerReach } from "../keeperBrain";
 import { oldKeepers } from "../gameplayVersion";
+import { startLeaf, stepLeaf, type LeafState } from "../leafFlight";
+
+/** The Leaf's run-up id (runupStyles.ts LEAF_RUNUP), kept here as a plain
+ *  string so the rule set does not import the run-up module. */
+const LEAF_RUNUP = "fk_leaf";
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
@@ -215,6 +220,8 @@ interface FlightState {
   fromX: number;
 }
 const flights = new WeakMap<Ball, FlightState>();
+/** The Leaf's flight, per ball struck with it (leafFlight.ts). */
+const leafs = new WeakMap<Ball, LeafState>();
 
 /** Seconds from seeing it to moving, from a uniform draw and his rating. */
 export function freeKickReaction(draw: number, keeperStrength: number, drill = false): number {
@@ -241,10 +248,16 @@ export const freeKickRules: KindRule = {
         jump: draws[0] >= FREE_KICK.wallStaysDown,
         react: freeKickReaction(draws[1], ctx.keeperStrength, drill),
         drill,
+        // The Leaf (Star Pass, piece 4): only written when it is the run-up,
+        // so every other free kick's decision is exactly what it was.
+        ...(ctx.runup === LEAF_RUNUP ? { leaf: true } : {}),
       },
     };
   },
-  apply(sc, ball) {
+  apply(sc, ball, d) {
+    // The Leaf's flight (leafFlight.ts), from the strike. In the decision, so
+    // a replay flies the same way.
+    if (d.data.leaf === true) leafs.set(ball, startLeaf(ball));
     // Fresh per strike, so a replay starts from nothing exactly as the live
     // strike did; nothing is written back into the saved decision.
     const wall = sc.defenders.filter((d) => d.baseRole === "hold");
@@ -254,6 +267,12 @@ export const freeKickRules: KindRule = {
     flights.set(ball, { t: 0, seenAt: null, trail: [], wallDist, baseReach: sc.keeperReach, fromX: sc.keeper.x });
   },
   step(sc, ball, dt, d) {
+    // The Leaf: its extra bend and drop for this substep, before the engine
+    // moves the ball. Its own state, apart from the keeper's below.
+    if (d.data.leaf === true) {
+      const lf = leafs.get(ball);
+      if (lf) stepLeaf(lf, ball, dt);
+    }
     const st = flights.get(ball);
     if (!st) return;
     st.t += dt;
