@@ -32,6 +32,7 @@ import { finishServedFrame } from "@/lib/star/goalFrame";
 import { pressSpeedFor, PRESS_REACT_S, PRESS_WIN_R, pressFromBehind, foulShareFor, pressStep } from "@/lib/star/pressure";
 import { setPieceSkills, type SetPieceDuties } from "@/lib/star/setPieces";
 import { conditionsFor, conditionsLine, type Conditions } from "@/lib/star/weather";
+import WeatherLayer from "@/components/star/WeatherLayer";
 import {
   newDribble, stepDribble, flick, dribbleProgress, dribbleViewport, type DribbleState,
 } from "@/lib/star/dribble";
@@ -9837,6 +9838,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             // of the ball took a tap). It keeps drawing; nothing else changes.
             phase === "contact" ? " invisible pointer-events-none" : ""}`}
         />
+
+        {/* Leo's update, "weather": light rain and the wind arrow, only when the
+            match was handed conditions that ask to be drawn (matchWeather.ts). On the pitch
+            only: not over the strike screen or the commentary feed. */}
+        {conditionsRef.current.drawn && phase !== "contact" && phase !== "feed" && <WeatherLayer cond={conditionsRef.current} facing={facingRef.current} />}
 
         {/* Added time on the pitch (item 30): the clock otherwise only lives on
             the commentary, so a chance in added time says so. */}

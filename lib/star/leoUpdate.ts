@@ -32,6 +32,7 @@ export const LEO_FEATURES = [
   { id: "seasonReel", label: "Season video", line: "Every goal of your season before the Ballon d'Or." },
   { id: "goalsGallery", label: "Career goals list", line: "Stats → Goals: every goal of your career; best 10 in the Hall of Fame." },
   { id: "awardsNight", label: "Season awards night", line: "The 3D awards night in place of the awards page." },
+  { id: "weather", label: "Weather and pitch", line: "Wind bends the ball, rain skids it, a poor dry pitch kills it; shown before kick-off and in the match." },
   { id: "bugFixes", label: "Bug fixes (17)", line: "Refresh comes back where you were, labels, tour once, no sack after promotion…" },
 ] as const;
 export type LeoFeature = (typeof LEO_FEATURES)[number]["id"];
