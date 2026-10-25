@@ -283,6 +283,16 @@ export function GoalSheet({ goal, startYear, here, onClose }: { goal: CareerGoal
     ? "Its video is on the phone that recorded it."
     : !goal.clipId ? "No video of this one: it was not recorded." : undefined;
   const facts = <FactsCard goal={goal} startYear={startYear} note={away} />;
+  // Leo's bug fixes: Escape closes the sheet, like ✕.
+  const bugFixesOn = useLeoUpdate("bugFixes");
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    if (!bugFixesOn) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeRef.current(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [bugFixesOn]);
   return onTop(
     <div className="fixed inset-0 z-[80] overflow-y-auto px-3 pb-6 pt-3" style={{ background: "#05080f" }} role="dialog" aria-label={title} data-goal-sheet>
       <div className="mx-auto max-w-[480px]">
