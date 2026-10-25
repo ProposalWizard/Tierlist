@@ -237,7 +237,7 @@ export const DATA_TEMPLATES: Template[] = [
 
   // ── The pundit ────────────────────────────────────────────────────────────
   {
-    id: "pu-praise", archetype: "pundit", events: ["masterclass", "star-man", "hat-trick", "red-hot", "bicycle-kick"],
+    id: "pu-praise", archetype: "pundit", events: ["masterclass", "star-man", "hat-trick", "red-hot"],
     frames: ["analyse"], requires: ["short"],
     body: "I've been saying it for weeks and nobody wanted to hear it. {player} is the best {role} in this division right now. It isn't close.",
     threadBody: "{thread.goals} in {thread.matches}. At some point we have to stop calling it a purple patch and start calling it a level.",

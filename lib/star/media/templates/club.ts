@@ -74,11 +74,6 @@ export const CLUB_TEMPLATES: Template[] = [
     graphic: "hatTrick", hashtag: true, weight: 3,
   },
   {
-    id: "club-bicycle", archetype: "club", events: ["bicycle-kick"], requires: ["minute"],
-    body: "{short|caps}. OVERHEAD KICK. {minute}'. We have no words. 🚲",
-    graphic: "hatTrick", hashtag: true, weight: 4,
-  },
-  {
     // `subject: "you"` on all three of these — see templates/index.ts's doc
     // comment. `club-goal-plain` in particular was a real, live bug: it
     // requires `goals` and excludes `matches`, which TEAMMATE_HAUL (detect/
