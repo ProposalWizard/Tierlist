@@ -33,6 +33,7 @@ import {
 } from "@/lib/star/store/catalogue";
 import { dailySpecials, msUntilReset, formatCountdown } from "@/lib/star/store/daily";
 import { LEO_CELEBRATION_IDS, STAR_PASS_CELEBRATION_IDS } from "@/lib/star/store/catalogue";
+import { REWARD_RUNUPS, type RunupId } from "@/lib/star/runupStyles";
 import { useLeoUpdate } from "@/lib/star/leoUpdate";
 import BackButton from "../ui/BackButton";
 import { owns, priceNow, type StoreState, type Currency } from "@/lib/star/store/purchase";
@@ -254,9 +255,10 @@ export default function StoreView(p: StoreViewProps) {
 
   // Leo's 24 Oct update, "celebrations": the three new celebrations (and their wording) only while it is on.
   const celebsOn = useLeoUpdate("celebrations");
-  // The Star Pass celebrations are never for sale: listed only once won, so you can wear them.
+  // The Star Pass celebrations and run-ups are never for sale: listed only once won, so you can use them.
+  const passOnly = (id: string) => STAR_PASS_CELEBRATION_IDS.has(id) || REWARD_RUNUPS.has(id as RunupId);
   const shown = (it: StoreItem) => !hide?.(it) && (celebsOn || !LEO_CELEBRATION_IDS.has(it.id))
-    && (!STAR_PASS_CELEBRATION_IDS.has(it.id) || owns(state, it.id));
+    && (!passOnly(it.id) || owns(state, it.id));
   const specials = useMemo(
     () => dailySpecials(dateKey).filter((s) => { const it = findItem(s.itemId); return !!it && !hide?.(it); }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
