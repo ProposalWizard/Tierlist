@@ -94,3 +94,11 @@ Off by default. With it off the match and shop are as on main.
 - **bigMoments:** banner, crowd rise, heartbeat, slow motion, roar, late call, groan (`maybeBigMoment` in `CanvasMatch.tsx`), and the late lines in goal videos (`markGoalClip`).
 - **Stays on:** the item list in `catalogue.ts` (owned items keep working), the fixed knee-slide clip (only used by dev cut-scene pages outside a celebration), the new commentary files on the admin Sound Board, the admin Star Pass list.
 - Seen on a production build (`leo-switch/`): OFF, no banner on a big-moment chance and back to the feed 2 s after the goal; ON, the banner, then the run to the corner with "Tap to skip". Script: `scripts/film/scenes/leo-switch-stills.mjs`.
+
+## Keeper stuck on the screen during the celebration (fixed 25 Oct)
+Leo: "the goalie stays locked to the middle of the screen while u move". Cause: once the keeper had dived and landed, the 2D match kept his landing point in screen pixels, so when the celebration camera moved he stayed put on the screen. Fix (`CanvasMatch.tsx`, `keeperLandRef` + `landPx`): the landing is kept as a spot on the pitch and put through the camera every frame. With a still camera the picture is the same as before; it differs only while the camera moves after a landed dive.
+- Seen (production build, real goals, 5 frames 0.8 s apart; red ring = his pitch spot): before, he stays at the same screen spot while the goal slides off (`keeper-fix/before-2d-a.jpg`, `-b`); after, he leaves with the goal (`after-2d-a.jpg`, `-b`).
+- Other players, the ball and the confetti were already drawn from pitch spots: no change.
+- Goal video: the landing was already a pitch spot (`goalClip/render.ts`); seen fine (`after-goal-video.jpg`).
+- 3D view: reads the keeper's pitch spot every frame (`engineFrame.ts keeperFrame`); checked in the code, not seen (the 3D runs stuck on loading in this sandbox).
+- Scripts: `scripts/film/scenes/celeb-keeper-probe.mjs`, `celeb-keeper-strip.py`.
