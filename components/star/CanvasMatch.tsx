@@ -1529,6 +1529,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * engine moves them as it moves everyone. Null: nobody is still running.
    */
   const runOnRef = useRef<{ lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[] } | null>(null);
+  /**
+   * The men a build-up added to its chance (LeadIn.joiners: a covering
+   * defender in from off the screen). They stay in the chance, but the chance's
+   * CAMERA is the one it has with no build-up (Mikey + Harry, 25 Oct 2026:
+   * "make sure they all land on the same size"), so a re-frame (a resize)
+   * frames it without them — see frameOnChance. Drawing only.
+   */
+  const leadJoinersRef = useRef<Set<object>>(new Set());
   // ── The move plays on after your pass (lib/star/playOn.ts, Chances: New) ──
   /** A lead-in played before this chance (a build-up, or a carry-on). */
   const leadPlayedRef = useRef(false);
@@ -6037,6 +6045,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     try { lead = build(sc, moment ?? opening); } catch (e) { console.error("Lead-in could not be built (the chance plays as normal)", e); }
     if (!lead || !(lead.durS > 0)) return;
     runOnRef.current = null;
+    leadJoinersRef.current = new Set();
     const ents = leadInEntities(sc);
     const ends = ents.map((e) => e.get());
     // Men who JOIN the chance (a covering defender in from off the screen):
@@ -6046,6 +6055,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const at = lead.posAt(j.key, 0) ?? j.end;
       const d: Scenario["defenders"][number] = { x: at.x, y: at.y, homeX: j.end.x, homeY: j.end.y, containT: 0, speed: 1, role: "cover", baseRole: "cover" };
       sc.defenders.push(d);
+      leadJoinersRef.current.add(d);
       ents.push({ key: j.key, side: "opp", get: () => ({ x: d.x, y: d.y }), set: (p) => { d.x = p.x; d.y = p.y; } });
       ends.push({ ...j.end });
     }
@@ -6195,21 +6205,37 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * actual camera we have been using in game"). So its men and the ball are
    * put on the chance's spots for the framing — the build-up's own extras
    * out of it — and straight back. Outside a build-up: frameScenario as ever.
+   *
+   * The men a build-up ADDS to its chance (a covering defender, LeadIn.joiners)
+   * are left out of the framing too, during the build-up, its run-on and after:
+   * the chance's camera is the one it has with no build-up (Mikey + Harry,
+   * 25 Oct 2026: "make sure they all land on the same size"). Measured on
+   * Infinite Highlights before this: a resize while a build-up played (the
+   * pitch box measuring itself) framed one in 9 one-on-ones and long shots
+   * with him in, landing up to 7.2% tighter and 48 px off the chance's own
+   * frame (scripts/camera/landing-probe.mjs).
    */
   const frameOnChance = () => {
     const sc = scenarioRef.current;
     const L = leadRef.current, R = runOnRef.current;
-    if (!L && !R) { frameScenario(sc); return; }
-    const ents = L ? L.ents : R!.ents, ends = L ? L.ends : R!.ends;
+    const joined = leadJoinersRef.current;
+    const hasJoined = joined.size > 0 && sc.defenders.some((d) => joined.has(d));
+    if (!L && !R && !hasJoined) { frameScenario(sc); return; }
+    const ents = L ? L.ents : R ? R.ents : [], ends = L ? L.ends : R ? R.ends : [];
     const now = ents.map((e) => e.get());
     const ball = { x: sc.ball.x, y: sc.ball.y };
-    const mates = L ? sc.teammates.splice(L.mates0) : [];
-    const opps = L ? sc.defenders.splice(L.defs0) : [];
+    const matesAll = sc.teammates.slice(), defsAll = sc.defenders.slice();
+    if (L) sc.teammates.length = L.mates0;
+    const chanceDefs = defsAll.filter((d, i) => (!L || i < L.defs0) && !joined.has(d));
+    sc.defenders.length = 0;
+    sc.defenders.push(...chanceDefs);
     ents.forEach((e, i) => { if (i < ends.length) e.set(ends[i]); });
     if (L) { sc.ball.x = L.ball.x; sc.ball.y = L.ball.y; }
     try { frameScenario(sc); } finally {
-      sc.teammates.push(...mates);
-      sc.defenders.push(...opps);
+      sc.teammates.length = 0;
+      sc.teammates.push(...matesAll);
+      sc.defenders.length = 0;
+      sc.defenders.push(...defsAll);
       ents.forEach((e, i) => e.set(now[i]));
       sc.ball.x = ball.x; sc.ball.y = ball.y;
     }
