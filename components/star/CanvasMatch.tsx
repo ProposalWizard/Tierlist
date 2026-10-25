@@ -212,7 +212,7 @@ import { revealOnScreen, pinnedTopHeight } from "@/lib/revealOnScreen";
 import {
   matchView, frameForNewView, crossCutCamera, newViewCanvasHeight, engineFrameOf, turnWideChance,
   NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, NEW_KEEPER_GROW, MATCH_VIEW_DEFAULT, figureGrow, figureShrinkFor,
-  playZoom, playZoomOf, playZoomProbe, figureDivFor, widenToMinimum,
+  playZoom, playZoomOf, playZoomProbe,
 } from "@/lib/star/matchView";
 import { drawMatchFigure } from "@/lib/star/matchFigure";
 import {
@@ -2966,8 +2966,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    *  ball drawn this much smaller, so they are the long-range size. 1 otherwise. */
   const figShrinkRef = useRef(1);
   /** Figures and ball: divide their size by this (Z2 keeps them today's size). */
-  // One size for the men (matchView.ts FIXED_FIGURES): the same metres on every camera.
-  const figZoomDiv = () => figureDivFor(playZoomRef.current, figShrinkRef.current);
+  const figZoomDiv = () => (playZoom() === "z2" || playZoom() === "z2max" ? playZoomRef.current : 1) / figShrinkRef.current;
 
   /**
    * Which way the frame is turned. "up" is the ordinary view; a crossing
@@ -3006,10 +3005,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           if (h / w < hw) sc.viewport = { ...v, y2: v.y1 + w * hw };
           else { const cx = (v.x1 + v.x2) / 2, w2 = h / hw; sc.viewport = { ...v, x1: cx - w2 / 2, x2: cx + w2 / 2 }; }
         }
-        // One size for the men: a close feature camera (the manager's four
-        // shots was 14 m across, a keeper as wide as a quarter of the goal)
-        // is widened to the match's narrowest camera.
-        sc.viewport = widenToMinimum(sc.viewport, sc.facing ?? "up");
       }
       viewportRef.current = { ...sc.viewport };
       baseViewportRef.current = { ...sc.viewport };

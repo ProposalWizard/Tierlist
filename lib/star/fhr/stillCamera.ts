@@ -26,7 +26,7 @@
 import { type Scenario } from "../canvasEngine";
 import { frameFromScenario, type Frame } from "../scenarioFrame";
 import {
-  frameForNewView, turnWideChance, playZoomOf, figureDivFor, figureShrinkFor,
+  frameForNewView, turnWideChance, playZoomOf, playZoom,
   NEW_FIGURE_SCALE, NEW_OUTFIELD_SHRINK, NEW_KEEPER_GROW, NEW_BALL_SCALE, figureGrow, newViewCanvasHeight, matchView,
 } from "../matchView";
 import { hasRunup } from "../penaltyRunup";
@@ -91,7 +91,7 @@ export function matchStill(sc0: Scenario, hw: number, tiltSetting = matchView() 
     if (youHidden) frame.items = frame.items.filter((it) => it.side !== "you");
     // CanvasMatch's sizes (its `R`, `KR`, `BALL_PX`): the new view's men are
     // drawn smaller, and the Zoom keeps them today's size as the pitch zooms.
-    const zoomDiv = figureDivFor(playZoomOf(sc), figureShrinkFor(sc.kind, ((sc.facing ?? "up") === "up" ? cam.x2 - cam.x1 : cam.y2 - cam.y1) * playZoomOf(sc)));
+    const zoomDiv = playZoom() === "z2" || playZoom() === "z2max" ? playZoomOf(sc) : 1;
     const g = figureGrow() / zoomDiv;
     return {
       frame, tilt, hw, youHidden,
