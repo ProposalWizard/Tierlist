@@ -105,7 +105,14 @@ export interface SeasonAwardStats {
    */
   communityShieldGuess: string | null;
   superCupGuess: string | null;
+  /** The three up for each award, best first (the winner is [0]), ranked on
+   *  the same number as the award itself. For the season awards night
+   *  (lib/star/awardsNight.ts). Absent on a save from before 22 Oct 2026. */
+  nominees?: Partial<Record<SeasonAwardKey, AwardWinner[]>>;
 }
+
+/** The five individual awards, in the order the awards night calls them. */
+export type SeasonAwardKey = "goldenBoot" | "assistKing" | "goldenGlove" | "youngPlayerOfSeason" | "playerOfSeason";
 
 const VALID_ROLES = new Set<Role>(["GK", "CB", "LB", "RB", "CDM", "CM", "CAM", "LW", "RW", "ST"]);
 function asRole(position: string, fallback: Role = "ST"): Role {
@@ -397,9 +404,27 @@ export function computeSeasonAwardStats(career: CareerState): SeasonAwardStats {
   const youngPool = byScore.filter(c => c.age !== null && c.age <= YOUNG_AGE_CUTOFF);
   const youngPlayerOfSeason = youngPool[0] ? toWinner(youngPool[0], Math.round(compositeScore(youngPool[0]))) : null;
 
+  // The three up for each award (the awards night): the same rankings, top three.
+  const top3 = (list: Candidate[], value: (c: Candidate) => number) =>
+    list.filter(c => value(c) > 0).slice(0, 3).map(c => toWinner(c, Math.round(value(c))));
+  const gloves: AwardWinner[] = [];
+  for (const [club, count] of Array.from(sheets.entries()).sort((a, b) => b[1] - a[1])) {
+    if (gloves.length >= 3) break;
+    const gk = findGoalkeeper(career, club);
+    if (gk && count > 0) gloves.push(toWinner(gk, count));
+  }
+  const nominees: Partial<Record<SeasonAwardKey, AwardWinner[]>> = {
+    goldenBoot: goldenBoot ? top3(byGoals, c => c.leagueGoals) : [],
+    assistKing: assistKing ? top3(byAssists, c => c.leagueAssists) : [],
+    goldenGlove: goldenGlove ? gloves : [],
+    youngPlayerOfSeason: top3(youngPool, compositeScore),
+    playerOfSeason: top3(byScore, compositeScore),
+  };
+
   return {
     season: career.season,
     leagueName: leagueNameFor(divisionOf(career)),
+    nominees,
     goldenBoot,
     assistKing,
     goldenGlove,

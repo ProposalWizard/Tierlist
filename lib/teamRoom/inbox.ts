@@ -9,6 +9,8 @@
  *   The Inbox     every patch note published on or after TEAM_ROOM.inboxFrom,
  *                 not your own, that you have not marked "Read and understood"
  *                 (the same receipts as the Patch notes page). Newest first.
+ *   Updates       an updated note (updatedAt set) is unread and buzzes again:
+ *                 its receipt and ring key is "version@updatedAt" (extras.ts).
  *   The buzz      when a new patch note reaches the site, everyone but its
  *                 author gets ONE buzz (several new notes = one buzz that
  *                 counts them). Each person is rung for a version once ever:
@@ -16,7 +18,7 @@
  *                 (app_metadata.teamPushPatches), so no table and no SQL.
  */
 import { TEAM_PEOPLE, TEAM_ROOM, type TeamPerson } from "./config";
-import { mentionsIn, patchAuthor, type PatchMeta, type TeamAck } from "./extras";
+import { mentionsIn, patchAuthor, patchIsUpdated, patchReadKey, patchTime, type PatchMeta, type TeamAck } from "./extras";
 import { mentionsAll, type PushPayload } from "./notify";
 import type { TeamNote } from "./logic";
 
@@ -41,8 +43,8 @@ export function inboxFor(notes: PatchMeta[], person: TeamPerson | null, acks: Te
   const start = at(from);
   return notes
     .map((n, i) => ({ n, i }))
-    .filter(({ n }) => at(n.publishedAt) >= start && patchAuthor(n.title) !== person && !hasRead(acks, person, n.version))
-    .sort((a, b) => at(b.n.publishedAt) - at(a.n.publishedAt) || a.i - b.i)
+    .filter(({ n }) => at(patchTime(n)) >= start && patchAuthor(n.title) !== person && !hasRead(acks, person, patchReadKey(n)))
+    .sort((a, b) => at(patchTime(b.n)) - at(patchTime(a.n)) || a.i - b.i)
     .map(({ n }) => n);
 }
 
@@ -79,14 +81,14 @@ export function patchesToRing(
 ): { person: TeamPerson; notes: PatchMeta[] }[] {
   const start = at(from);
   const fresh = notes.filter((n) => {
-    const t = at(n.publishedAt);
+    const t = at(patchTime(n));
     const age = now - t;
     return t >= start && age >= -5 * 60_000 && age <= freshMs;
   });
   const out: { person: TeamPerson; notes: PatchMeta[] }[] = [];
   for (const p of TEAM_PEOPLE) {
     const had = rung[p] ?? [];
-    const mine = fresh.filter((n) => patchAuthor(n.title) !== p && !had.includes(n.version));
+    const mine = fresh.filter((n) => patchAuthor(n.title) !== p && !had.includes(patchReadKey(n)));
     if (mine.length) out.push({ person: p, notes: inboxFor(mine, p, [], from) });
   }
   return out;
@@ -101,7 +103,7 @@ export function payloadForPatches(notes: PatchMeta[]): PushPayload {
   if (notes.length <= 1) {
     const who = newest ? patchAuthor(newest.title) : null;
     return {
-      title: `New patch notes${who ? ` from ${who}` : ""}${newest ? ` · v${newest.version}` : ""}`,
+      title: `${newest && patchIsUpdated(newest) ? "Updated" : "New"} patch notes${who ? ` from ${who}` : ""}${newest ? ` · v${newest.version}` : ""}`,
       body: cut(newest ? shortPatchTitle(newest.title) : "Open the Inbox to read it.", 160),
       tag: "kib-patch", url, icon: TEAM_ROOM.push.icon,
     };

@@ -1,5 +1,7 @@
 import type { Detector } from "../types";
 import { base, club, ev } from "./kit";
+import { leagueNameFor } from "../../calendar";
+import { labelFixesOn } from "../updateFlags";
 
 /**
  * The table, which is the only story that runs all year.
@@ -36,12 +38,16 @@ const CLIMB: Detector = (r) => {
       ...base(r), to, position: to, left: r.table.matchesLeft,
     }, "hour", "relegation-fight");
   }
-  if (to <= 4 && from > 4) {
+  // Europe is a top-flight story: a League One club going fourth is a
+  // play-off place, not "into Europe" (22 Oct 2026: a League One career's
+  // week 1 had the FA Cup account posting its slide "out of Europe").
+  const europe = !labelFixesOn() || r.competition === leagueNameFor("premier");
+  if (europe && to <= 4 && from > 4) {
     return ev("into-europe", club(r), 56, ["table", "europe"], {
       ...base(r), to, position: to, left: r.table.matchesLeft,
     }, "hour");
   }
-  if (from <= 4 && to > 4) {
+  if (europe && from <= 4 && to > 4) {
     return ev("out-of-europe", club(r), 44, ["table", "europe"], { ...base(r), to, position: to }, "evening");
   }
   return null;
@@ -100,7 +106,8 @@ const SEASON_OVER: Detector = (r) => {
       ...base(r), position: pos, points: r.table.after.points,
     }, "instant", "relegation-fight");
   }
-  if (pos <= 4) {
+  // Europe again: only the top flight's top four qualify for it.
+  if (pos <= 4 && (!labelFixesOn() || r.competition === leagueNameFor("premier"))) {
     return ev("qualified", club(r), 72, ["europe", "table"], {
       ...base(r), position: pos, points: r.table.after.points,
     }, "hour");

@@ -9,6 +9,7 @@ import { formatMoney, formatMoneyPrecise } from "@/lib/star/money";
 import ClubBadge from "./ClubBadge";
 import { BarButton, KitStyles, Shine, useClubTheme, clubTheme, rgba } from "./ui";
 import { shortClub } from "@/lib/star/media/grammar";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 
 /**
  * THE TRANSFER WINDOW (18 Oct 2026) — New Star Soccer's screen in the Home
@@ -137,6 +138,7 @@ function WindowFrame({ glow, kicker, title, sub, right, ticker, bottom, children
 }
 
 export default function TransferHub({ career, interest, onNegotiate, onStay }: Props) {
+  const fixesOn = useLeoUpdate("bugFixes"); // Leo's 24 Oct update; off = the old look
   const theme = useClubTheme(career);
   // Your league next season (the list shows next season's leagues).
   const own = interest.ownDivision ?? divisionOf(career);
@@ -281,7 +283,7 @@ export default function TransferHub({ career, interest, onNegotiate, onStay }: P
               </Chooser>
             </div>
 
-            {!club && <p className="mt-4 text-[14px] font-bold text-white" style={{ textShadow: SMALL_OUTLINE }}>Pick a club to see what they offer.</p>}
+            {!club && <p className={fixesOn ? "mt-4 inline-block rounded-md bg-black/75 px-3 py-1.5 text-[14px] font-bold text-white" : "mt-4 text-[14px] font-bold text-white"} style={{ textShadow: SMALL_OUTLINE }}>Pick a club to see what they offer.</p>}
 
             {/* The club you picked, lit in its own colours. */}
             {club && <div data-picked-club className="relative mt-3 overflow-hidden rounded-xl px-3 pb-3 pt-3" style={tile(clubGlow, 0.6)}>

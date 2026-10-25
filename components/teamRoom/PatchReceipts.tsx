@@ -14,7 +14,7 @@
 import { useState } from "react";
 import { TEAM_PEOPLE, TEAM_ROOM } from "@/lib/teamRoom/config";
 import { notesFor } from "@/lib/teamRoom/logic";
-import { patchAuthor, patchReaders, type PatchMeta } from "@/lib/teamRoom/extras";
+import { patchAuthor, patchReaders, patchReadKey, patchTime, type PatchMeta } from "@/lib/teamRoom/extras";
 import { setAck, useTeamRoom } from "@/lib/teamRoom/store";
 import { Av } from "./bits";
 import { takeNotesRequest } from "@/lib/teamRoom/patchQuote";
@@ -38,7 +38,7 @@ export function PatchReadBar({ note, lines }: { note: PatchMeta; lines?: string[
   const toggle = async () => {
     if (!me || me === author) return;
     setBusy(true); setErr(null);
-    const r = await setAck("patch", note.version, !iRead);
+    const r = await setAck("patch", patchReadKey(note), !iRead);
     setBusy(false);
     if (!r.ok) setErr(r.error);
   };
@@ -85,6 +85,6 @@ export function PatchUnreadDot({ note }: { note: PatchMeta }) {
   const s = useTeamRoom();
   if (s.status !== "ready" || !s.me) return null;
   const start = Date.parse(TEAM_ROOM.patchReceiptsFrom) || 0;
-  const unread = (Date.parse(note.publishedAt) || 0) >= start && !patchReaders(note, s.acks).includes(s.me);
+  const unread = (Date.parse(patchTime(note)) || 0) >= start && !patchReaders(note, s.acks).includes(s.me);
   return unread ? <span className="tr-vars tr-unreaddot" title="You haven't read this one yet" aria-label="Not read yet" /> : null;
 }

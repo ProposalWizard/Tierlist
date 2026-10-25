@@ -29,7 +29,8 @@ import type { GoalTrack } from "./track";
 import { frameAt } from "./track";
 import {
   pickCall, pickLine, pickReplayLine, SCORE_LINES, REEL_LINES, REPLAY_LINES, allCommentaryLines,
-  type FinishTag, type ScoreTag,
+  LATE_CALLS, LATE_REPLAY_LINES,
+  type FinishTag, type ScoreTag, type LateKind,
 } from "./commentary";
 import { COMMENTARY_SECONDS } from "./commentaryDurations";
 
@@ -73,6 +74,12 @@ export function scoreTagOf(tr: GoalTrack): ScoreTag {
   if (us - them >= 3) return "rout";
   if (us - them === 1) return tr.meta.minute >= 80 ? "late_winner" : "ahead";
   return "none";
+}
+
+/** A big late moment (ClipMeta.late), or undefined. Only YOUR goals. */
+export function lateOf(tr: GoalTrack): LateKind | undefined {
+  const k = tr.meta.late;
+  return tr.meta.isYou && (k === "winner" || k === "level") ? k : undefined;
 }
 
 /** How many saves the keeper made before it went in. */
@@ -183,7 +190,11 @@ export function planAudio(edit: Edit): AudioPlan {
         cues.push({ at: Math.max(acc, out(tr.goalT) - 0.05), sound: "crowd-cheer-stadium", gain: fan ? 1 : 0.85, rate: 1 });
         if (!fan) {
           // The call, then (if there is room before the next goal) what it means.
-          const call = pickCall(finishOf(tr), `${id}:${base}:${goalNo}`, used);
+          // A big late moment gets a late call; every other goal as before.
+          const late = lateOf(tr);
+          const call = late
+            ? pickLine(LATE_CALLS[late], `${id}:${base}:${goalNo}:late`, used)
+            : pickCall(finishOf(tr), `${id}:${base}:${goalNo}`, used);
           used.push(call.id);
           const at = Math.max(out(tr.goalT) + COMMENTARY_DELAY, voiceFree);
           cues.push({ at, sound: call.id, gain: 1, rate: 1 });
@@ -193,7 +204,8 @@ export function planAudio(edit: Edit): AudioPlan {
           // Leave room for the co-commentator over the replay, if there is one.
           const replayAfter = edit.shots.some((sh, k) => k > si && sh.replay);
           const keep = replayAfter && edit.style !== "tiktok" ? MIN_REPLAY_LINE + 0.4 : 0;
-          if (tag !== "none") {
+          // A late call already says what it means: no second line.
+          if (tag !== "none" && !late) {
             const say = pickLine(SCORE_LINES[tag], `${id}:score`, used);
             if (voiceFree + secs(say.id) + keep < Math.min(nextGoal, total) - 0.2) {
               cues.push({ at: voiceFree, sound: say.id, gain: 1, rate: 1 });
@@ -214,7 +226,9 @@ export function planAudio(edit: Edit): AudioPlan {
         const reel = edit.tracks.length > 1;
         const lines = [
           ...(reel ? [pickLine(REEL_LINES, `${id}:reel`, used)] : []),
-          pickReplayLine(finishOf(tr), savesOf(tr), `${id}:replay`, used),
+          lateOf(tr)
+            ? pickLine(LATE_REPLAY_LINES, `${id}:replay`, used)
+            : pickReplayLine(finishOf(tr), savesOf(tr), `${id}:replay`, used),
         ];
         for (let line of lines) {
           const at = Math.max(acc + 0.35, voiceFree);
@@ -268,27 +282,40 @@ function decode(ctx: BaseAudioContext, data: ArrayBuffer): Promise<AudioBuffer |
 }
 
 /** Two seconds of crowd: pink noise, slowly swelling, a little different per ear. */
-function crowdNoise(ctx: BaseAudioContext): AudioBuffer {
+/** The murmur's samples, made once per sample rate and copied into each mix
+ *  (speed pass, 22 Oct 2026: making it for every video took ~1 s on a slow phone). */
+const noiseCache = new Map<number, Float32Array[]>();
+
+async function crowdNoise(ctx: BaseAudioContext): Promise<AudioBuffer> {
   const len = Math.floor(ctx.sampleRate * 4);
   const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+  const hit = noiseCache.get(ctx.sampleRate);
+  if (hit) { for (let ch = 0; ch < 2; ch++) buf.getChannelData(ch).set(hit[ch]); return buf; }
   for (let ch = 0; ch < 2; ch++) {
     const d = buf.getChannelData(ch);
     let b0 = 0, b1 = 0, b2 = 0, seed = 12345 + ch * 777;
     const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x3fffffff - 1; };
-    for (let i = 0; i < len; i++) {
-      const w = rnd();
-      b0 = 0.99765 * b0 + w * 0.099046;
-      b1 = 0.963 * b1 + w * 0.2965164;
-      b2 = 0.57 * b2 + w * 1.0526913;
-      const t = i / ctx.sampleRate;
-      // A slow swell of voices, so it never sounds like a hiss.
-      const swell = 0.75 + 0.25 * Math.sin(2 * Math.PI * (0.5 * t + ch * 0.3)) * Math.sin(2 * Math.PI * 0.25 * t);
-      d[i] = (b0 + b1 + b2 + w * 0.1848) * 0.11 * swell;
+    // Made a slice at a time so the page never stops for it (same samples).
+    const SLICE = 16000;
+    for (let i0 = 0; i0 < len; i0 += SLICE) {
+      const i1 = Math.min(len, i0 + SLICE);
+      for (let i = i0; i < i1; i++) {
+        const w = rnd();
+        b0 = 0.99765 * b0 + w * 0.099046;
+        b1 = 0.963 * b1 + w * 0.2965164;
+        b2 = 0.57 * b2 + w * 1.0526913;
+        const t = i / ctx.sampleRate;
+        // A slow swell of voices, so it never sounds like a hiss.
+        const swell = 0.75 + 0.25 * Math.sin(2 * Math.PI * (0.5 * t + ch * 0.3)) * Math.sin(2 * Math.PI * 0.25 * t);
+        d[i] = (b0 + b1 + b2 + w * 0.1848) * 0.11 * swell;
+      }
+      if (i1 < len) await new Promise<void>(r => setTimeout(r, 0));
     }
     // Fade the ends into each other so the loop has no click.
     const f = Math.floor(ctx.sampleRate * 0.05);
     for (let i = 0; i < f; i++) { const k = i / f; d[i] *= k; d[len - 1 - i] *= k; }
   }
+  noiseCache.set(ctx.sampleRate, [buf.getChannelData(0).slice(), buf.getChannelData(1).slice()]);
   return buf;
 }
 
@@ -351,7 +378,7 @@ export async function mixAudio(plan: AudioPlan): Promise<AudioBuffer | null> {
   // The crowd murmur.
   if (plan.bed.length) {
     const src = ctx.createBufferSource();
-    src.buffer = crowdNoise(ctx);
+    src.buffer = await crowdNoise(ctx);
     src.loop = true;
     const band = ctx.createBiquadFilter();
     band.type = "bandpass";

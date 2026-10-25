@@ -1,0 +1,8 @@
+
+HEADER — goals per 100 (600 each)     30     60     90
+before (Power = Technique = skill)    22.8   28.2   36.0
+after  (Aerial = skill, P/T 60)       20.3   26.7   34.5
+
+VOLLEY — goals per 100 (600 each)     30     60     90
+before (Power = Technique = skill)    25.0   29.5   27.0
+after  (Aerial = skill, P/T 60)       25.8   29.5   34.5

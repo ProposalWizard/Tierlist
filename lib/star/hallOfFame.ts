@@ -30,6 +30,7 @@
 import type { CareerState } from "./types";
 import { careerVerdict } from "./retirement";
 import { careerOverview } from "./careerOverview";
+import { bestGoals } from "./goalLog";
 
 export const HALL_KEY = "star-hall-of-fame-v1";
 
@@ -114,6 +115,9 @@ const WORLD_FIELDS = [
 export function slimCareer(career: CareerState): CareerState {
   const out = { ...career } as Record<string, unknown>;
   for (const k of WORLD_FIELDS) delete out[k];
+  // Every league's winners each season (League → History): a live-career
+  // screen, about 1.3 KB a season, never read by the Hall's overview.
+  delete out.compHistory;
   // Each season's best team-mates are kept for the farewell match, which is
   // played before a career goes in: about 15 KB over 20 seasons, not kept.
   if (Array.isArray(career.seasonHistory) && career.seasonHistory.some(r => r.mates)) {
@@ -123,6 +127,9 @@ export function slimCareer(career: CareerState): CareerState {
       return row;
     });
   }
+  // Every goal of the career (lib/star/goalLog.ts) can be 600 rows: the Hall
+  // keeps only the best 10, which it shows as "Best goals".
+  if (Array.isArray(career.goalLog)) out.goalLog = bestGoals(career.goalLog, 10);
   return out as unknown as CareerState;
 }
 

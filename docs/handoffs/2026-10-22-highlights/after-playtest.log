@@ -1,0 +1,66 @@
+trial simmed
+  stuck? buttons: ? | 1 | ⤓ SAVE IMAGE | 📊 SEASON | 🗓️ CAREER | 🏅 RECORDS | 🏆 TROPHIES | 📝 CONTRACT | 🏆 NATIONAL LEAGUE 23rd ▾ | FULL | ★44 | USE | ★22 | USE | ★44 | 🏠 MY HOME | 📊 STATS | 🛍️ SHOP | 🏆 League | ⚽ Training | PLAY | ❤️ Relations | 📱 Phone | ADMIN | BALLON D'OR
+step: KICK OFF
+in match: true (58 s to get there)
+    [0.0 s] feed/- one_on_one
+    [18.4 s] aim/- long_range
+    [18.8 s] aim/bu long_range
+    [21.6 s] aim/- long_range
+  build-up 1: 2.78 s wall (planned 3.33 s, long_range)
+  chance 1: long_range at 21.6 s
+    [23.3 s] contact/- long_range
+    [23.6 s] flight/- long_range
+    [24.9 s] result/- long_range
+    [26.7 s] feed/- long_range
+    [30.4 s] aim/bu tight_angle
+    [33.3 s] aim/- tight_angle
+  build-up 2: 2.89 s wall (planned 3.03 s, tight_angle)
+  chance 2: tight_angle at 33.3 s
+    [35.0 s] contact/- tight_angle
+    [35.2 s] flight/- tight_angle
+    [36.0 s] result/- tight_angle
+    [36.7 s] feed/- tight_angle
+    [38.9 s] aim/- penalty
+  chance 3: penalty at 38.9 s
+    [42.8 s] contact/- penalty
+    [43.1 s] flight/- penalty
+    [45.9 s] result/- penalty
+    [47.7 s] feed/- penalty
+  (stall 1: has true, phase feed, kind penalty; buttons: 2D | 49' ▶ | SCORES ▸ | LOW | MEDIUM | HIGH | BALLON D'OR | WEBSITE | STUDIO | MARKETING)
+    [69.6 s] aim/bu midfield_pass
+    [72.0 s] aim/- midfield_pass
+  build-up 3: 2.39 s wall (planned 2.36 s, midfield_pass)
+  chance 4: midfield_pass at 72.0 s
+    [73.6 s] contact/- midfield_pass
+    [73.9 s] flight/- midfield_pass
+    [75.3 s] result/- midfield_pass
+    [77.1 s] feed/- midfield_pass
+    [90.6 s] aim/bu long_range
+    [93.5 s] aim/- long_range
+  build-up 4: 2.91 s wall (planned 3.03 s, long_range)
+  chance 5: long_range at 93.5 s
+    [95.1 s] contact/- long_range
+    [95.4 s] flight/- long_range
+    [96.7 s] result/- long_range
+    [98.5 s] feed/- long_range
+    [110.7 s] aim/- penalty
+  chance 6: penalty at 110.7 s
+    [114.6 s] contact/- penalty
+    [114.9 s] flight/- penalty
+    [115.3 s] result/- penalty
+    [117.2 s] feed/- penalty
+    [120.1 s] aim/bu cutback
+    [123.0 s] aim/- cutback
+  build-up 5: 2.93 s wall (planned 3.06 s, cutback)
+  chance 7: cutback at 123.0 s
+    [124.6 s] contact/- cutback
+    [124.9 s] flight/- cutback
+    [125.1 s] result/- cutback
+    [126.9 s] feed/- cutback
+    [141.0 s] null/- 
+→ full time: 15/08 Post Match Reactions Continue League Table 🔥 8.8K posts Hornchurch 🔥 8.6K posts Gateshead 🔥 4.9K posts Talking Points 🔥 4.1K posts Harrogate Town 2.4K
+
+RESULT after: chances 7 (shots taken 7), build-ups 5, wall seconds in build-ups 13.9 (mean 2.78, min 2.39, max 2.93), page fps 58.8, match 151 s wall, score text "2-0"
+kinds: long_range, tight_angle, penalty, midfield_pass, long_range, penalty, cutback
+planned vs wall: 3.3/2.8 3.0/2.9 2.4/2.4 3.0/2.9 3.1/2.9
+errors: (none)

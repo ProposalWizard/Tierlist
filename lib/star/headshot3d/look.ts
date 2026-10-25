@@ -20,7 +20,7 @@ import { playerLookFor } from "../playerLook";
 import type { ToonBody, ToonHead, ToonPick } from "../style3d/toon/bodies";
 
 /** Bump this when the camera, light, pose or expression change: every kept picture is then made again. */
-export const HEADSHOT_VERSION = 1;
+export const HEADSHOT_VERSION = 2; // 2: the even skin paint (toon/shader.ts TOON_SKIN_PAINT, 23 Oct 2026)
 
 /** The picture, in pixels (square). The biggest card shows it at 112 px wide (224 on a 2× phone). */
 export const HEADSHOT_PX = 256;
@@ -60,6 +60,29 @@ export const HEADSHOT_LIGHT = {
   rim: "#fff4e6", rimStrength: 0.8, rimFrom: [0.45, 0.5, -1] as [number, number, number],
 } as const;
 
+/**
+ * THE PLAYER CARD'S PORTRAIT (Harry, 22-23 Oct 2026: "add the 3d model to the
+ * fifa card"). The same man, pose, smile and studio light as the headshot,
+ * framed head to waist like a FUT card portrait: the camera stands back on the
+ * same lens until his crown (overHead above the head bone) and his waist
+ * (underHips below the hips bone) both fit. Measured off his own bones, so a
+ * tall build is framed the same way (he is never resized).
+ */
+export const CARD_SHOT = {
+  /** The picture, in pixels (square). The card shows it at about 132 px (264 on a 2× phone). */
+  px: 320,
+  /** Room above the head bone: the crown plus a little air. */
+  overHead: 0.26,
+  /** The frame's bottom edge under the hips bone (the waistband; the card fades this part out). */
+  underHips: 0.02,
+} as const;
+
+/** Bump this when the card portrait's framing changes: every kept card portrait is then made again. */
+export const CARD_SHOT_VERSION = 1;
+
+/** Which picture: the round head-and-shoulders headshot, or the card's head-to-waist portrait. */
+export type HeadshotFrame = "head" | "card";
+
 export interface HeadshotKit { shirt: string; trim: string; shorts?: string }
 
 /** Everything that changes the picture. Two men with the same look give the same pixels. */
@@ -98,8 +121,8 @@ export function headshotLookFor(w: HeadshotWho, youPick?: ToonPick): HeadshotLoo
 }
 
 /** The key his picture is kept under (memory and this device's database): version, his id and his look. */
-export function headshotKey(id: string, look: HeadshotLook): string {
-  return [`hs${HEADSHOT_VERSION}`, id, look.head, look.body, look.skin, look.hair, look.shirt, look.trim, look.shorts].join("|");
+export function headshotKey(id: string, look: HeadshotLook, frame: HeadshotFrame = "head"): string {
+  return [frame === "card" ? `hs${HEADSHOT_VERSION}c${CARD_SHOT_VERSION}` : `hs${HEADSHOT_VERSION}`, id, look.head, look.body, look.skin, look.hair, look.shirt, look.trim, look.shorts].join("|");
 }
 
 /** The id a card uses for a man it only knows by name and club (the PotM rule: `${club}|${name}`). */

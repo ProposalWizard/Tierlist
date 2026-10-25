@@ -127,11 +127,12 @@ function newCareer(seed = 1): CareerState {
       else if (g.type !== "goalVideo" || !g.priority || g.clips.length + (g.synth?.length ?? 0) !== goals) noYours++;
       else yoursVideo++;
     }
-    const nVid = fresh.filter(p => p.graphic?.type === "goalVideo" || (p.graphic?.type === "thumbnail" && (p.graphic.clips?.length ?? 0) + (p.graphic.synth?.length ?? 0) > 0)).length;
+    const nVid = fresh.filter(p => p.eventId !== "gotm-winner").filter(p => p.graphic?.type === "goalVideo" || (p.graphic?.type === "thumbnail" && (p.graphic.clips?.length ?? 0) + (p.graphic.synth?.length ?? 0) > 0)).length;
     if (nVid > 2) overCap++;
     if (total > 0 && seenThisMatch) counts.push(nVid);
     for (const p of fresh) {
-      if (p.eventId === "match-highlights" || p.eventId === "your-highlights") continue;
+      // Goal of the Month's winner (media/goalOfMonth.ts) plays a goal from last month, on purpose.
+      if (p.eventId === "match-highlights" || p.eventId === "your-highlights" || p.eventId === "gotm-winner") continue;
       if (p.graphic?.type === "goalVideo") {
         videos++;
         if (p.author.archetype === "club") clubVideos++;

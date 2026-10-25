@@ -222,7 +222,7 @@ function restOfWeek(c: CareerState, week: number): LeagueResult[] {
   check(posts.filter(p => p.scope === "league").every(p => !!p.eventId), "every league post still carries a real event id");
   // The match highlights post (Leo, 8 Oct 2026) plays every goal, so goals
   // nobody recorded are made; every other post of yours stays recordings only.
-  check(posts.filter(p => p.scope === "club" && p.eventId !== "match-highlights" && p.eventId !== "your-highlights").every(p => !p.graphic || !("synth" in p.graphic) || !p.graphic.synth?.length), "your own match never plays a made-up goal");
+  check(posts.filter(p => p.scope === "club" && p.eventId !== "match-highlights" && p.eventId !== "your-highlights" && p.eventId !== "gotm-winner").every(p => !p.graphic || !("synth" in p.graphic) || !p.graphic.synth?.length), "your own match never plays a made-up goal");
 
   // The replay guard: generating the SAME week's league pass twice must not
   // double the posts, the same "a replayed cycle must not post twice" rule

@@ -103,6 +103,125 @@ export interface PenaltyReadSettings {
    * Absent = 0, a keeper who always guesses a side.
    */
   middleRead?: number;
+  /**
+   * SHOOTOUT HABITS (Leo, 22 Oct 2026 — test page only, /star-shootout-dev):
+   * what he has learnt from your earlier kicks in this shootout
+   * (`readKickHabits`). Absent, or strength 0 = the keeper exactly as before.
+   * Passing ONLY this (no other field) keeps the real match's keeper; it is
+   * not a trial override.
+   */
+  habit?: KeeperHabitRead;
+}
+
+// ── The keeper reads your habits (shootout test page) ──────────────────────
+
+/** Where one of your kicks went, AS YOU — THE TAKER — SEE IT: "left" is your
+ *  left as you face the goal, which is pitch x below the goal's middle (the
+ *  same "-1" side the keeper's dive uses). */
+export type KickSide = "left" | "centre" | "right";
+export type KickHeight = "low" | "high";
+export interface PastKick { side: KickSide; height: KickHeight }
+
+/** The habit rules. One place, so the test and the page read the same. */
+export const KICK_HABITS = {
+  /** He starts leaning only after this many of your kicks. */
+  minKicks: 2,
+  /** Each older kick counts this much less than the one after it (the latest = 1). */
+  fade: 0.7,
+  /** One side has to be at least this share of your (weighted) kicks before he leans. */
+  leanFrom: 0.6,
+  /** The most he ever leans: the share of kicks on which he goes your habit's way
+   *  whatever he reads off your body. A mixed-up taker sits under `leanFrom`
+   *  and gets 0. */
+  cap: 0.6,
+  /** Kicks needed for full confidence (fewer = a weaker lean). */
+  fullAfter: 4,
+  /** Ball under this height (m) at the goal line = low. */
+  highFrom: 1.2,
+  /** Within this far of the goal's middle (m) = down the middle. */
+  centreWithin: 0.6,
+};
+
+/** The keeper's read of your habits. */
+export interface KeeperHabitRead {
+  /** The side he leans to, or null when he has no lean. */
+  side: KickSide | null;
+  /** The same as a dive side: -1 left, 0 middle (he stays), +1 right. 0 when no lean. */
+  dir: -1 | 0 | 1;
+  /** 0..KICK_HABITS.cap: the share of kicks on which he goes that way regardless. */
+  strength: number;
+  /** strength / cap, 0..1, for a bar. */
+  share: number;
+  counts: Record<KickSide, number>;
+  total: number;
+  /** Most of your kicks low or high, when there is a clear one (shown only —
+   *  the dive does not use height). */
+  height: KickHeight | null;
+  /** One plain line for the screen. */
+  words: string;
+}
+
+/** Turn a pitch-x crossing point and height into one of your kicks. */
+export function pastKickFrom(crossX: number, goalMiddleX: number, heightM: number): PastKick {
+  const off = crossX - goalMiddleX;
+  const side: KickSide = Math.abs(off) < KICK_HABITS.centreWithin ? "centre" : off < 0 ? "left" : "right";
+  return { side, height: heightM >= KICK_HABITS.highFrom ? "high" : "low" };
+}
+
+const SIDE_DIR: Record<KickSide, -1 | 0 | 1> = { left: -1, centre: 0, right: 1 };
+const SIDE_WORD: Record<KickSide, string> = { left: "left", centre: "down the middle", right: "right" };
+
+/**
+ * What he has read from your kicks so far (oldest first). Pure.
+ * Recent kicks weigh more (`fade`); he needs `minKicks`; he leans only when
+ * one side is at least `leanFrom` of the weighted kicks; the lean grows from
+ * there to `cap` and with how many kicks he has seen (`fullAfter`).
+ */
+export function readKickHabits(kicks: readonly PastKick[] | undefined): KeeperHabitRead {
+  const H = KICK_HABITS;
+  const list = kicks ?? [];
+  const counts: Record<KickSide, number> = { left: 0, centre: 0, right: 0 };
+  for (const k of list) counts[k.side]++;
+  const total = list.length;
+  const none = (words: string): KeeperHabitRead => ({ side: null, dir: 0, strength: 0, share: 0, counts, total, height: null, words });
+  if (total < H.minKicks) {
+    return none(total === 0 ? "No kicks yet → he has nothing to read" : "1 kick → he needs 2 before he leans");
+  }
+  const w: Record<KickSide, number> = { left: 0, centre: 0, right: 0 };
+  let wSum = 0, wHigh = 0;
+  list.forEach((k, i) => {
+    const wt = Math.pow(H.fade, total - 1 - i);
+    w[k.side] += wt; wSum += wt;
+    if (k.height === "high") wHigh += wt;
+  });
+  const top = (Object.keys(w) as KickSide[]).reduce((a, b) => (w[b] > w[a] ? b : a));
+  const p = w[top] / wSum;
+  const hp = wHigh / wSum;
+  const height: KickHeight | null = hp >= 0.7 ? "high" : hp <= 0.3 ? "low" : null;
+  const conf = Math.min(1, (total - 1) / (H.fullAfter - 1));
+  const lean = p >= H.leanFrom ? Math.min(1, (p - 0.5) / 0.5) : 0;
+  const strength = Math.round(H.cap * lean * conf * 1000) / 1000;
+  if (strength <= 0) return { ...none(`Your ${total} kicks are mixed → he can't read you`), height };
+  const n = counts[top];
+  const lead = `${n} of your ${total} kicks went ${SIDE_WORD[top]}`;
+  const verb = top === "centre" ? "stays in the middle more" : `leans ${top}`;
+  const words = strength >= H.cap * 0.4 ? `${lead} → he now ${verb}` : `${lead} → he starts to ${top === "centre" ? "stay in the middle" : `lean ${top}`}`;
+  return { side: top, dir: SIDE_DIR[top], strength, share: strength / H.cap, counts, total, height, words };
+}
+
+/**
+ * Pick a side with a habit in play, from ONE uniform draw `u`. With no lean
+ * (no habit, strength 0, or a middle habit) this is exactly the old rule:
+ * `u < readChance` → the side you aimed. With a side lean: `u < strength` →
+ * the habit's side; otherwise the same draw, rescaled, is the old rule.
+ */
+export function sideWithHabit(aimedSide: number, readChance: number, u: number, habit?: KeeperHabitRead): number {
+  const hs = habit && habit.dir !== 0 ? Math.max(0, Math.min(KICK_HABITS.cap, habit.strength)) : 0;
+  if (hs > 0) {
+    if (u < hs) return habit!.dir;
+    u = (u - hs) / (1 - hs);
+  }
+  return u < readChance ? aimedSide : -aimedSide;
 }
 
 /**
@@ -161,16 +280,25 @@ export function penaltyTrialReach(keeperStrength: number): number {
  */
 export function penaltyReadFor(keeperStrength: number, override?: Partial<PenaltyReadSettings>): PenaltyReadSettings {
   const k = Math.max(20, Math.min(99, Number.isFinite(keeperStrength) ? keeperStrength : 62));
+  // Shootout habits ride along on either keeper; on their own they are not an
+  // override (the real match's keeper, reading your habits).
+  const habit = override?.habit;
+  if (override && "habit" in override) {
+    const { habit: _h, ...rest } = override;
+    void _h;
+    override = Object.keys(rest).length > 0 ? rest : undefined;
+  }
+  const withHabit = (r: PenaltyReadSettings): PenaltyReadSettings => (habit && habit.strength > 0 ? { ...r, habit } : r);
   if (!override) {
     const d = PENALTY_READ_DEFAULT;
-    return {
+    return withHabit({
       commitChance: d.commitChance,
       readChance: Math.max(0.5, Math.min(0.65, d.readChance + (k - 62) / 250)),
       shortest: d.shortest,
       metres: Math.max(3.0, Math.min(3.7, d.metres + (k - 62) * 0.015)),
       reach: d.reach,
       middleRead: Math.max(0.03, Math.min(0.15, d.middleRead! + (k - 62) * 0.003)),
-    };
+    });
   }
   const base: PenaltyReadSettings = {
     ...PENALTY_READ_TRIAL,
@@ -191,7 +319,7 @@ export function penaltyReadFor(keeperStrength: number, override?: Partial<Penalt
   // The trial keeper reads a kick down the middle as well as he reads a side
   // (Harry's option (b), v0.15) unless the override says otherwise.
   s.middleRead = clamp01(override.middleRead ?? s.readChance);
-  return s;
+  return withHabit(s);
 }
 
 /** Where a struck ball is heading on the goal line — "where you aimed". */
@@ -230,15 +358,33 @@ export function decidePenaltyRead(sc: Scenario, ball: Ball, s: PenaltyReadSettin
   const aimedSide = Math.abs(off) < 0.5 ? 0 : Math.sign(off);
   let side: number;
   let correct: boolean;
+  // Shootout habits (test page only): on `hs` of kicks he goes your habit's
+  // way whatever he reads — a middle habit means he stays. The same second
+  // draw, rescaled, is the old rule otherwise; absent, nothing changes.
+  const h = s.habit;
+  const hs = h ? Math.max(0, Math.min(KICK_HABITS.cap, h.strength)) : 0;
+  let u = roll[1];
+  if (hs > 0) {
+    if (u < hs) {
+      if (h!.dir === 0) return { went: false, side: 0, correct: aimedSide === 0, metres: 0 };
+      side = h!.dir;
+      correct = side === aimedSide;
+      const lo0 = s.shortest ?? s.metres;
+      const d0: PenaltyReadDecision = { went: true, side, correct, metres: lo0 + (roll[0] / s.commitChance) * (s.metres - lo0) };
+      if (s.reach !== undefined && s.reach !== 1) d0.reach = s.reach;
+      return d0;
+    }
+    u = (u - hs) / (1 - hs);
+  }
   if (aimedSide === 0) {
     // Down the middle: sometimes he reads it and stays (v0.15). The same
     // draw, rescaled, picks his side otherwise — still two draws in all.
     const mr = clamp01(s.middleRead ?? 0);
-    if (roll[1] < mr) return { went: false, side: 0, correct: true, metres: 0 };
-    side = (roll[1] - mr) / Math.max(1e-9, 1 - mr) < 0.5 ? -1 : 1;
+    if (u < mr) return { went: false, side: 0, correct: true, metres: 0 };
+    side = (u - mr) / Math.max(1e-9, 1 - mr) < 0.5 ? -1 : 1;
     correct = false;
   } else {
-    correct = roll[1] < s.readChance;
+    correct = u < s.readChance;
     side = correct ? aimedSide : -aimedSide;
   }
   const lo = s.shortest ?? s.metres;

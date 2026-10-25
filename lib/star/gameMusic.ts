@@ -57,6 +57,15 @@ export const MENU_VOLUME = 0.32;
 export const MATCH_VOLUME = 0.17;
 export const RESULT_VOLUME = 0.34;
 const FADE_S = 1.6;
+/**
+ * A change of track: the old one fades out fast, and the new one starts only as
+ * it finishes, so two tracks are never heard together for long (Mikey, 21 Oct
+ * 2026: after a quick goal each way "it felt as though two songs were playing
+ * at the same time"; the old 1.6 s crossfade overlapped keys a half-step apart).
+ */
+const SWAP_OUT_S = 0.7;
+const SWAP_IN_S = 1.2;
+let fadeEndAt = 0;
 /** A bed stays at least this long before the score can swap it (stops flip-flopping). */
 export const MIN_BED_S = 8;
 
@@ -182,11 +191,11 @@ function currentScene(): MusicScene {
   return best?.scene ?? { kind: "none" };
 }
 
-function fadeOut(g: GainNode, src: AudioBufferSourceNode, ctx: AudioContext): void {
+function fadeOut(g: GainNode, src: AudioBufferSourceNode, ctx: AudioContext, secs = SWAP_OUT_S): void {
   const t = ctx.currentTime;
   try {
     g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t);
-    g.gain.linearRampToValueAtTime(0, t + FADE_S); src.stop(t + FADE_S + 0.05);
+    g.gain.linearRampToValueAtTime(0, t + secs); src.stop(t + secs + 0.05);
   } catch { /* already stopped */ }
 }
 
@@ -210,7 +219,7 @@ function apply(): void {
     pending = setTimeout(() => { pending = null; apply(); }, Math.max(200, (MIN_BED_S - since) * 1000));
     return;
   }
-  if (playing) { fadeOut(playing.gain, playing.src, ctx); playing = null; }
+  if (playing) { fadeOut(playing.gain, playing.src, ctx); fadeEndAt = ctx.currentTime + SWAP_OUT_S; playing = null; }
   if (!want) return;
   const id = want;
   void load(id).then((buf) => {
@@ -220,8 +229,11 @@ function apply(): void {
     if (meta.loop) { src.loop = true; src.loopStart = meta.pre; src.loopEnd = meta.pre + meta.len; }
     const g = ctx.createGain(); g.gain.value = 0;
     src.connect(g); g.connect(out(ctx));
-    const t = ctx.currentTime;
-    g.gain.linearRampToValueAtTime(muted ? 0 : sceneVolume(currentScene()), t + FADE_S);
+    // a first track fades in gently; a replacement waits for the old one to go
+    const swap = fadeEndAt > ctx.currentTime;
+    const t = Math.max(ctx.currentTime, fadeEndAt - 0.1);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(muted ? 0 : sceneVolume(currentScene()), t + (swap ? SWAP_IN_S : FADE_S));
     try { src.start(t, meta.loop ? meta.pre : 0); } catch { return; }
     playing = { id, src, gain: g, since: t };
   });

@@ -38,6 +38,8 @@ export const NOT_IN_CAREER_YET = new Set<string>(["training-boost", "stat-can"])
 
 /** The one line under accessories: they're on your store figure, not yet on the pitch. */
 export const ACCESSORIES_IN_MATCH_NOTE = "Shows in matches soon";
+/** The same line with Leo's 24 Oct "celebrations" switch on: the celebration plays after your goals. */
+export const ACCESSORIES_IN_MATCH_NOTE_LEO = "Your celebration plays after every goal you score";
 
 export interface CareerStoreResult { ok: boolean; career: CareerState; reason?: string }
 

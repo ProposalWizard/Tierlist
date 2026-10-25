@@ -18,6 +18,8 @@
  *   node scripts/patch-notes/ship.mjs 0.95h --pr             also push it and open a PR to main (gh)
  *   node scripts/patch-notes/ship.mjs 0.95h --from origin/Mikey
  *   node scripts/patch-notes/ship.mjs 0.95h --update         replace an entry main already has
+ *                                                            (needs a newer "updatedAt" + an "updateNote": the archive
+ *                                                            then marks it UPDATED, moves it to the front, unread again)
  *   node scripts/patch-notes/ship.mjs 0.95h --tsc            also type-check the two files on the branch
  *   node scripts/patch-notes/ship.mjs --dry 0.95h            show what would change, write nothing
  *
@@ -44,8 +46,10 @@ const ROOT = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "
 const git = (a, cwd = ROOT) => execFileSync("git", a, { cwd, encoding: "utf8", maxBuffer: 1 << 28 });
 const DATA = "lib/patchNotesData.ts";
 const PAGES = "lib/patchNotePages.ts";
+/** The 🔔 Inbox's small list, made from DATA (scripts/patch-notes/build-headlines.mjs). */
+const HEADLINES = "lib/patchNoteHeadlines.json";
 /** The only paths a patch-notes-only branch may change. */
-export const ALLOWED = (p) => p === DATA || p === PAGES || p.startsWith("patch-notes/");
+export const ALLOWED = (p) => p === DATA || p === PAGES || p === HEADLINES || p.startsWith("patch-notes/");
 
 /* ── Reading the archive (TypeScript → plain data, no app code run) ──────── */
 const req = createRequire(path.join(ROOT, "package.json"));
@@ -133,6 +137,13 @@ async function main() {
     const span = entrySpan(data, e.version);
     if (span) {
       if (!flag("--update")) { console.log(`  v${e.version}: already on main (use --update to replace it)`); continue; }
+      // An update must say so (Leo, 24 Oct 2026: "if u update an old patch notes then make sure its clear").
+      // The archive shows UPDATED, moves it to the front and makes it unread again only when
+      // updatedAt is newer than main's, so an update without one would be invisible.
+      const old = /"updatedAt":\s*"([^"]+)"/.exec(data.slice(span[0], span[1]))?.[1] ?? null;
+      if (!e.updatedAt || (old && Date.parse(e.updatedAt) <= Date.parse(old)) || !e.updateNote) {
+        throw new Error(`v${e.version}: an update needs "updatedAt" newer than main's (${old ?? "none"}) and a one-line "updateNote" saying what changed, in ${DATA} on ${FROM}.`);
+      }
       data = data.slice(0, span[0]) + body + data.slice(span[1]);
       replaced.push(e.version);
     } else {
@@ -144,6 +155,12 @@ async function main() {
     }
   }
   write(DATA, data);
+  // the bell's headlines, remade from the new archive (main keeps them current too)
+  if (W) {
+    const { writeHeadlines } = await import(new URL("./build-headlines.mjs", import.meta.url).href);
+    fs.symlinkSync(path.join(ROOT, "node_modules"), path.join(W, "node_modules"));
+    try { await writeHeadlines(W); } finally { fs.unlinkSync(path.join(W, "node_modules")); }
+  }
 
   // 2. the kept pages' lines
   let pages = read(PAGES);

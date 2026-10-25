@@ -16,6 +16,7 @@
  * real retirement draw the same thing. Anything a save never recorded is
  * blacked out, never guessed (house rule).
  */
+import { ArcChart } from "./ArcChart";
 import type React from "react";
 import { useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
@@ -35,6 +36,7 @@ import {
 import { Rays } from "./ui/Screen";
 import { TapTip } from "./ui/TapTip";
 import { ShareCardSheet } from "./ShareCard";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 
 export interface OverviewAction { icon?: React.ReactNode; label: string; onClick: () => void; primary?: boolean }
 
@@ -82,7 +84,8 @@ export default function CareerOverview({ career, actions, startPage = "career", 
    */
   share?: { onLink?: () => void };
 }) {
-  const o = useMemo(() => careerOverview(career), [career]);
+  const calYears = useLeoUpdate("bugFixes"); // Leo's 24 Oct update: calendar season years
+  const o = useMemo(() => careerOverview(career, { calendarYears: calYears }), [career, calYears]);
   const [page, setPage] = useState<OverviewPage>(startPage);
   const [picture, setPicture] = useState(false);
   const i = OVERVIEW_PAGES.findIndex(p => p.id === page);
@@ -295,7 +298,7 @@ function CareerPage({ o, onOpen, share }: {
       <Journey o={o} />
 
       {/* Goals, season by season, coloured by the club you were at. */}
-      <Heading right={<span className="text-[10.5px] font-bold text-white/60">age {o.seasons[0]?.age}–{o.ageAtEnd}</span>}>Goals by season</Heading>
+      <Heading right={<span className="text-[10.5px] font-bold text-white/60">age {o.seasons[0]?.age}–{o.ageAtEnd}</span>}>Goals &amp; assists by season</Heading>
       <FlatPanel bleed fade="none" edge className="px-3 py-2.5">
         <ArcChart o={o} />
       </FlatPanel>
@@ -365,51 +368,7 @@ function Journey({ o }: { o: CareerOverviewData }) {
   );
 }
 
-/** Goals each season as bars in the club's colour; the star rating as a line. */
-export function ArcChart({ o }: { o: CareerOverviewData }) {
-  const W = 340, H = 118, top = 16, bottom = 18;
-  const n = Math.max(1, o.arc.length);
-  const max = Math.max(1, ...o.arc.map(a => a.goals ?? 0));
-  const bw = W / n;
-  const y = (g: number) => top + (H - top - bottom) * (1 - g / max);
-  const peak = o.peak?.season;
-  const stars = o.arc.filter(a => typeof a.stars === "number");
-  const sy = (s: number) => top + (H - top - bottom) * (1 - s / 100);
-  const ages = o.arc.map((a, k) => ({ k, age: a.age })).filter(({ age, k }) => k === 0 || k === n - 1 || age % 5 === 0);
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-label="Goals by season">
-      {[0.5, 1].map(f => <line key={f} x1={0} x2={W} y1={y(max * f)} y2={y(max * f)} stroke="rgba(255,255,255,.08)" strokeDasharray="3 4" />)}
-      {/* The scale on the left: the best season (the crown) is often the
-          last bar, and a number on the right sat on top of it. */}
-      <text x={1} y={y(max) - 3} textAnchor="start" fontSize="9" fontWeight="800" fill="rgba(255,255,255,.55)">{max}</text>
-      {o.arc.map((a, k) => {
-        const x = k * bw + bw * 0.14;
-        const w = bw * 0.72;
-        if (a.goals === undefined) {
-          return <rect key={a.season} x={x} y={H - bottom - 6} width={w} height={6} fill="rgba(0,0,0,.6)" />;
-        }
-        const h = Math.max(2, H - bottom - y(a.goals));
-        const club = o.seasons[k]?.club ?? o.finalClub;
-        const colour = a.season === peak ? GOLD : clubTheme(club).glow;
-        return (
-          <g key={a.season}>
-            <rect x={x} y={H - bottom - h} width={w} height={h} rx={1} fill={colour} opacity={a.live ? 0.55 : 0.92} />
-            {a.season === peak && <text x={x + w / 2} y={H - bottom - h - 3} textAnchor="middle" fontSize="11">👑</text>}
-          </g>
-        );
-      })}
-      {stars.length > 1 && (
-        <polyline
-          fill="none" stroke="rgba(255,255,255,.85)" strokeWidth={1.4} strokeDasharray="2 2"
-          points={stars.map(a => `${(a.season - 1) * bw + bw / 2},${sy(a.stars!)}`).join(" ")}
-        />
-      )}
-      {ages.map(({ k, age }) => (
-        <text key={k} x={k * bw + bw / 2} y={H - 4} textAnchor="middle" fontSize="9" fontWeight="800" fill="rgba(255,255,255,.6)">{age}</text>
-      ))}
-    </svg>
-  );
-}
+export { ArcChart };
 
 // ── 2. Seasons ───────────────────────────────────────────────────────────────
 
@@ -450,7 +409,11 @@ function SeasonsPage({ o }: { o: CareerOverviewData }) {
 /** Every season, one row each: club, finish, trophies, goals, assists,
  *  rating. Tap a row for who won what that season. `newestFirst` for a
  *  career still being played (the in-game All seasons page). */
-export function SeasonList({ o, newestFirst = false }: { o: CareerOverviewData; newestFirst?: boolean }) {
+export function SeasonList({ o, newestFirst = false, awardsFor }: {
+  o: CareerOverviewData; newestFirst?: boolean;
+  /** Tap a season: the awards you won in it, named in full (lib/star/awardText.ts). */
+  awardsFor?: (season: number) => { title: string; sub: string }[];
+}) {
   const [open, setOpen] = useState<number | null>(null);
   const rows = newestFirst ? [...o.seasons].reverse() : o.seasons;
   return (
@@ -492,7 +455,7 @@ export function SeasonList({ o, newestFirst = false }: { o: CareerOverviewData; 
                 <><Blank w={22} /><Blank w={22} /><Blank w={28} /></>
               )}
             </button>
-            {isOpen && <SeasonDetail s={s} o={o} />}
+            {isOpen && <SeasonDetail s={s} o={o} won={awardsFor?.(s.season)} />}
           </div>
         );
       })}
@@ -501,7 +464,7 @@ export function SeasonList({ o, newestFirst = false }: { o: CareerOverviewData; 
   );
 }
 
-function SeasonDetail({ s, o }: { s: OverviewSeason; o: CareerOverviewData }) {
+function SeasonDetail({ s, o, won }: { s: OverviewSeason; o: CareerOverviewData; won?: { title: string; sub: string }[] }) {
   const w = s.world;
   const rows: { label: string; club?: string; person?: string }[] = w ? [
     { label: leagueNameFor(w.division), club: w.winners.league },
@@ -518,6 +481,19 @@ function SeasonDetail({ s, o }: { s: OverviewSeason; o: CareerOverviewData }) {
           <span><b className="text-white">{s.stats.apps}</b> apps</span>
           <span><b className="text-white">{s.stats.motm}</b> Star Man</span>
           {s.arrivedFrom && <span>from <b className="text-white">{short(s.arrivedFrom.club)}</b>{s.arrivedFrom.fee > 0 ? ` · ★${formatMoney(s.arrivedFrom.fee)}` : ""}</span>}
+        </div>
+      )}
+      {won && won.length > 0 && (
+        <div className="mb-2" data-season-awards>
+          <div className="text-[9.5px] font-black uppercase tracking-[0.18em] text-amber-300">Your awards {s.label}</div>
+          <div className="mt-1 space-y-0.5">
+            {won.map((a, k) => (
+              <div key={k} className="px-1.5 py-1" style={{ background: "rgba(251,191,36,.12)", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.35)" }}>
+                <div className="truncate text-[11.5px] font-black text-white">{a.title}</div>
+                {a.sub && <div className="truncate text-[10px] font-bold text-amber-100/85">{a.sub}</div>}
+              </div>
+            ))}
+          </div>
         </div>
       )}
       <div className="text-[9.5px] font-black uppercase tracking-[0.18em] text-amber-300">Who won {s.label}</div>
