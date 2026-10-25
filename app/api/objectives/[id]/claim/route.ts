@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { levelFromXp } from "@/lib/xp";
+import { notGuest } from "@/lib/guest/config";
 
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
   const authClient = await createClient();
-  const { data: { user } } = await authClient.auth.getUser();
+  const { data: { user: signedIn } } = await authClient.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const service = createServiceClient();

@@ -1,12 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { notGuest } from "@/lib/guest/config";
 
 interface Props { params: Promise<{ id: string }> }
 
 export async function GET(_req: Request, { params }: Props) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user: signedIn } } = await supabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
 
   if (!user) return NextResponse.json({ saved: false, isLoggedIn: false });
 
@@ -24,7 +26,8 @@ export async function GET(_req: Request, { params }: Props) {
 export async function POST(_req: Request, { params }: Props) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user: signedIn } } = await supabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
   if (!user) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
   const { data: existing } = await supabase

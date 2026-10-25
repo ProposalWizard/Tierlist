@@ -16,7 +16,14 @@
 import { useEffect, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
 import { BroadcastPage, Panel, PanelGrid, Btn, Label, Note } from "@/components/admin/broadcast/BroadcastPage";
-import { CAMPAIGNS, campaignFor } from "@/lib/campaigns";
+import { CAMPAIGNS, campaignFor, type Campaign } from "@/lib/campaigns";
+import ManagerTalk from "@/components/star/ManagerTalk";
+import { startTrial } from "@/lib/star/trial";
+import { simRemaining } from "@/lib/star/trialDev";
+import { scoutedOfferForTrial } from "@/lib/star/scoutedPlacement";
+import { managerTalkFor } from "@/lib/star/signingTalk";
+import { mulberry32 } from "@/lib/star/season";
+import { leagueNameFor } from "@/lib/star/calendar";
 import { CampaignLandingView } from "@/app/campaign/[campaign]/CampaignLanding";
 import { GuestSaveSheet, type GuestSaveVariant } from "@/components/guest/GuestSavePrompt";
 import { guestAccountsOn, isGuestUser, turnstileSiteKey } from "@/lib/guest/config";
@@ -26,10 +33,36 @@ import { createClient } from "@/lib/supabase/client";
 const VARIANTS: { key: GuestSaveVariant; name: string }[] = [
   { key: "first-match", name: "After the first match" },
   { key: "first-season", name: "After the first season" },
+  { key: "daily", name: "Every day from day 7" },
   { key: "taken", name: "Google account already taken" },
 ];
 const SAMPLE_LINE = "Jay Carter · 1 game · 1 goal";
+const DAILY_LINE = "Jay Carter · 14 games · 6 goals";
+/** The daily card's sample day. */
+const SAMPLE_DAY = 9;
 const noop = () => {};
+/** A fixed trial seed so the picture is the same every time. */
+const SAMPLE_SEED = 20261025;
+
+/**
+ * The trial's first club for an ad, made by the SAME functions the game uses
+ * (scoutedOfferForTrial, as offersForTrial in app/star-dev/page.tsx calls it;
+ * managerTalkFor for the screen), on an average sample trial.
+ */
+function firstClubTalk(c: Campaign, seed = SAMPLE_SEED) {
+  const trial = simRemaining({ ...startTrial(seed), ...(c.startLeague ? { startDivision: c.startLeague } : {}) }, "average");
+  const offer = scoutedOfferForTrial(trial);
+  const talk = managerTalkFor({
+    trial, club: offer.club, division: offer.division, clubStrength: offer.strength,
+    playerFirstName: c.player.firstName, rng: mulberry32(seed ^ 0x1a9b3), scoutNouns: true,
+  });
+  return { offer, talk };
+}
+
+function FirstClub({ campaign }: { campaign: Campaign }) {
+  const { talk } = firstClubTalk(campaign);
+  return <ManagerTalk talk={talk} managerName="The manager" onNegotiate={noop} onAccept={noop} onSeeOthers={noop} />;
+}
 
 /** A 390 × 844 phone, scaled down. `transform` makes the prompt's fixed
  *  position sit inside the phone instead of over the whole page. */
@@ -47,7 +80,12 @@ function PromptBackdrop({ variant }: { variant: GuestSaveVariant }) {
   return (
     <div className="relative h-full min-h-[844px] bg-gray-900 p-4 text-white">
       <div className="rounded-2xl bg-white/5 p-4 text-sm font-bold text-white/40">The career&apos;s home screen sits behind the prompt.</div>
-      <GuestSaveSheet variant={variant} playerLine={variant === "taken" ? undefined : SAMPLE_LINE} onSave={noop} onExisting={noop} onLater={noop} />
+      <GuestSaveSheet
+        variant={variant}
+        day={variant === "daily" ? SAMPLE_DAY : undefined}
+        playerLine={variant === "taken" ? undefined : variant === "daily" ? DAILY_LINE : SAMPLE_LINE}
+        onSave={noop} onExisting={noop} onLater={noop}
+      />
     </div>
   );
 }
@@ -71,6 +109,10 @@ export default function StarGuestDevPage() {
   if (shot?.startsWith("prompt:")) {
     const v = VARIANTS.find((x) => x.key === shot.slice(7));
     if (v) return <PromptBackdrop variant={v.key} />;
+  }
+  if (shot?.startsWith("club:")) {
+    const c = campaignFor(shot.slice(5));
+    if (c) return <FirstClub campaign={c} />;
   }
 
   const tryGuest = async () => {
@@ -131,6 +173,19 @@ export default function StarGuestDevPage() {
               <Phone><PromptBackdrop variant={v.key} /></Phone>
             </div>
           ))}
+        </div>
+      </Panel>
+      <Panel title="First club (custom start point)" note="lib/campaigns.ts startLeague">
+        <div className="flex flex-wrap gap-4">
+          {CAMPAIGNS.map((c) => {
+            const { offer } = firstClubTalk(c);
+            return (
+              <div key={c.slug}>
+                <Label>/play/{c.slug} · {c.startLeague ? `start: ${leagueNameFor(c.startLeague)}` : "normal roll"} · {offer.club} ({leagueNameFor(offer.division)})</Label>
+                <Phone><FirstClub campaign={c} /></Phone>
+              </div>
+            );
+          })}
         </div>
       </Panel>
       <PageGuide page="/star-guest-dev" />

@@ -34,7 +34,7 @@ import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { guestAccountsOn, isGuestUser } from "@/lib/guest/config";
 import { moveGuestSavesInto } from "@/lib/guest/moveSaves";
 import { noteUpgradeFinished } from "@/lib/guest/start";
-import { takePendingCampaign, hasPendingCampaign, campaignPlayer } from "@/lib/guest/campaignCareer";
+import { takePendingCampaign, hasPendingCampaign, campaignPlayer, campaignDivision } from "@/lib/guest/campaignCareer";
 import GuestSavePrompt from "@/components/guest/GuestSavePrompt";
 import GuestPlayButton from "@/components/guest/GuestPlayButton";
 import { mulberry32, sortLeague } from "@/lib/star/season";
@@ -1066,7 +1066,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    * request never lands, the generated squad it was born with is a working
    * squad.
    */
-  const handleProfileComplete = useCallback((player: StarPlayer, clubs: string[], division: CareerDivision) => {
+  const handleProfileComplete = useCallback((player: StarPlayer, clubs: string[], division: CareerDivision, startDivision?: CareerDivision) => {
     // ── Into the trial, not the dashboard ──
     //
     // A career opens on a trial: five stages on the live match engine, seeded
@@ -1086,7 +1086,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     //
     // The club you picked on the setup screen is where the trial IS, not where
     // you play — `attachClub` runs later, once somebody actually offers.
-    const created = { ...makeIdentity(player, division), trial: startTrial() };
+    // `startDivision`: an ad's custom start point (lib/campaigns.ts startLeague);
+    // the trial's scout then offers a club from that division. Absent = as before.
+    const created = { ...makeIdentity(player, division), trial: { ...startTrial(), ...(startDivision ? { startDivision } : {}) } };
     setCareer(created);
     setPhase("trial-stages");
     // ── The squad fetches have MOVED to the signing ──
@@ -1120,12 +1122,20 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // An ad's landing page (/play/<campaign>, lib/campaigns.ts) left a note:
   // start its ready-made career now, instead of the set-up screen. Only when
   // there is no career; a player who has one keeps it. Off unless guests are on.
+  // `campaignStartRef` keeps the ad's career until its trial is under way: a
+  // second, slower save-load at start-up (React runs the load twice in
+  // development) can land after the career was made and blank it; the ref
+  // starts it again instead of dropping to the set-up screen.
+  const campaignStartRef = useRef<ReturnType<typeof takePendingCampaign>>(null);
   useEffect(() => {
-    if (!guestAccountsOn() || cloudLoading || career || phase !== "profile-setup") return;
-    const campaign = takePendingCampaign();
+    if (!guestAccountsOn()) return;
+    if (career && (phase !== "trial-stages" || Object.keys(career.trial?.results ?? {}).length > 0)) campaignStartRef.current = null;
+    if (cloudLoading || career || phase !== "profile-setup") return;
+    const campaign = campaignStartRef.current ?? takePendingCampaign();
     if (!campaign) return;
+    campaignStartRef.current = campaign;
     setTitleOpen(false);
-    handleProfileComplete(campaignPlayer(campaign), [], "premier");
+    handleProfileComplete(campaignPlayer(campaign), [], campaignDivision(campaign), campaign.startLeague);
   }, [cloudLoading, career, phase, handleProfileComplete]);
   useEffect(() => { if (guestAccountsOn() && hasPendingCampaign()) setTitleOpen(false); }, []);
 

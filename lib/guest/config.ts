@@ -36,6 +36,16 @@ export function isGuestUser(user: Pick<User, "is_anonymous"> | null | undefined)
   return user?.is_anonymous === true;
 }
 
+/**
+ * The signed-in user, or null for a guest: for server routes that treat a
+ * guest as signed out (the table in docs/plans/2026-10-25/guest-accounts-plan.md,
+ * section 11). With guests off nobody is a guest, so this returns the user
+ * unchanged and the route behaves exactly as before.
+ */
+export function notGuest<T extends Pick<User, "is_anonymous">>(user: T | null | undefined): T | null {
+  return user && !isGuestUser(user) ? user : null;
+}
+
 /** Cloudflare Turnstile site key (public by design). Unset = no captcha step. */
 export function turnstileSiteKey(): string | null {
   return process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || null;

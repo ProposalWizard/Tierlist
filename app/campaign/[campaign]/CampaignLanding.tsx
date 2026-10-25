@@ -13,7 +13,8 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { pitchFont } from "@/components/star/ui/pitchFont";
-import { utmFrom, type Campaign } from "@/lib/campaigns";
+import { utmFrom, cleanPlayerName, NAME_MAX, type Campaign } from "@/lib/campaigns";
+import { leagueNameFor } from "@/lib/star/calendar";
 import { startGuest, track } from "@/lib/guest/start";
 import { setPendingCampaign } from "@/lib/guest/campaignCareer";
 
@@ -21,9 +22,21 @@ export function CampaignLandingView({ campaign: c, busy, error, onPlay }: {
   campaign: Campaign;
   busy?: boolean;
   error?: string | null;
-  onPlay: () => void;
+  /** The typed name, tidied (null for a locked campaign: its own name is used). */
+  onPlay: (name: { firstName: string; lastName: string } | null) => void;
 }) {
   const [a, b] = c.colours;
+  const [first, setFirst] = useState(c.player.firstName);
+  const [last, setLast] = useState(c.player.lastName);
+  const [nameMissing, setNameMissing] = useState(false);
+  const clean = c.lockName ? null : cleanPlayerName(first, last);
+  // The shirt follows the typing; a long name shrinks to fit (cut at 12 letters).
+  const shirtName = ((c.lockName ? c.player.lastName : last.trim()) || " ").toUpperCase().slice(0, 12);
+  const play = () => {
+    if (!c.lockName && !clean) { setNameMissing(true); return; }
+    setNameMissing(false);
+    onPlay(clean);
+  };
   return (
     <div className={`${pitchFont.variable} relative min-h-[100dvh] overflow-hidden bg-gray-950 text-white`}>
       {/* The site's top menu and footer hide while this marker is on the page (globals.css). */}
@@ -53,9 +66,10 @@ export function CampaignLandingView({ campaign: c, busy, error, onPlay }: {
           ))}
         </div>
 
-        {/* The ready-made player: a shirt with his name and number. */}
-        <div className="mx-auto mt-8 flex flex-col items-center">
-          <svg width="120" height="120" viewBox="0 0 120 120" aria-hidden="true">
+        {/* The player: a shirt with his name and number. The name is his to
+            type (Harry: "always let them have it"), unless the ad locks it. */}
+        <div className="mx-auto mt-6 flex w-full flex-col items-center">
+          <svg width="104" height="104" viewBox="0 0 120 120" aria-hidden="true">
             <defs>
               <linearGradient id="kit" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0" stopColor={a} />
@@ -63,18 +77,48 @@ export function CampaignLandingView({ campaign: c, busy, error, onPlay }: {
               </linearGradient>
             </defs>
             <path d="M38 14 L22 22 L6 44 L22 56 L30 48 L30 110 L90 110 L90 48 L98 56 L114 44 L98 22 L82 14 C78 24 70 28 60 28 C50 28 42 24 38 14 Z" fill="url(#kit)" stroke="rgba(255,255,255,0.5)" strokeWidth="2" />
-            <text x="60" y="56" textAnchor="middle" fontSize="11" fontWeight="900" fill="white" letterSpacing="1">{c.player.lastName.toUpperCase()}</text>
+            <text x="60" y="56" textAnchor="middle" fontSize="11" fontWeight="900" fill="white" letterSpacing="1" {...(shirtName.length > 8 ? { textLength: 58, lengthAdjust: "spacingAndGlyphs" } : {})}>{shirtName}</text>
             <text x="60" y="96" textAnchor="middle" fontSize="38" fontWeight="900" fill="white" style={{ fontFamily: "var(--font-pitch), Impact, sans-serif" }}>{c.player.preferredNumber}</text>
           </svg>
-          <p className="mt-2 text-sm font-black">{c.player.firstName} {c.player.lastName}</p>
-          <p className="text-xs font-bold text-white/55">Age 16 · Striker · Trial today</p>
+          {c.lockName ? (
+            <p className="mt-2 text-sm font-black">{c.player.firstName} {c.player.lastName}</p>
+          ) : (
+            <div className="mt-3 w-full">
+              <p className="mb-1.5 text-center text-[11px] font-black uppercase tracking-[0.18em] text-white/55">Your name</p>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  aria-label="First name"
+                  value={first}
+                  onChange={(e) => setFirst(e.target.value)}
+                  maxLength={NAME_MAX}
+                  autoComplete="given-name"
+                  className="w-full rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 text-center text-base font-black text-white placeholder:text-white/35 focus:border-white/50 focus:outline-none"
+                  placeholder="First name"
+                />
+                <input
+                  aria-label="Last name"
+                  value={last}
+                  onChange={(e) => setLast(e.target.value)}
+                  maxLength={NAME_MAX}
+                  autoComplete="family-name"
+                  className="w-full rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 text-center text-base font-black text-white placeholder:text-white/35 focus:border-white/50 focus:outline-none"
+                  placeholder="Last name"
+                />
+              </div>
+            </div>
+          )}
+          <p className="mt-2 text-xs font-bold text-white/55">
+            Age 16 · Striker · {c.startLeague ? `Trial in ${leagueNameFor(c.startLeague)}` : "Trial today"}
+          </p>
         </div>
 
-        <div className="mt-auto pt-8">
-          {error && <p className="mb-3 text-center text-sm font-bold text-amber-300">{error}</p>}
+        <div className="mt-auto pt-6">
+          {(error || nameMissing) && (
+            <p className="mb-3 text-center text-sm font-bold text-amber-300">{nameMissing ? "Type your first and last name." : error}</p>
+          )}
           <button
             type="button"
-            onClick={onPlay}
+            onClick={play}
             disabled={busy}
             className="w-full rounded-2xl px-5 py-4 text-lg font-black text-gray-950 shadow-lg active:scale-95 disabled:opacity-60"
             style={{ background: `linear-gradient(90deg, ${a}, ${b})` }}
@@ -103,12 +147,14 @@ export default function CampaignLanding({ campaign }: { campaign: Campaign }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaign.slug]);
 
-  const play = async () => {
+  const play = async (name: { firstName: string; lastName: string } | null) => {
     setBusy(true); setError(null);
-    track("campaign_play_clicked", { campaign: campaign.slug, ...utm });
+    const renamed = !!name && (name.firstName !== campaign.player.firstName || name.lastName !== campaign.player.lastName);
+    track("campaign_play_clicked", { campaign: campaign.slug, renamed, ...utm });
+    // Turnstile (the human check) runs inside startGuest, invisibly, when its key is set.
     const r = await startGuest({ campaign: campaign.slug, utm, landing: `/play/${campaign.slug}` });
     if (!r.ok) { setBusy(false); setError(r.message); return; }
-    setPendingCampaign(campaign.slug);
+    setPendingCampaign(campaign.slug, name);
     window.location.assign(`/star-dev?from=${encodeURIComponent(campaign.slug)}`);
   };
 

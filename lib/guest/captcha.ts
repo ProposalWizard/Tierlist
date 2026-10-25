@@ -10,8 +10,16 @@
  * is made without one (fine while Supabase's captcha switch is off too; if
  * Supabase demands a captcha and the key is missing, sign-in fails politely).
  *
- * Turnstile is mostly invisible ("interaction-only"): it only shows a box when
- * Cloudflare is unsure, in the middle of the screen, then disappears.
+ * Turnstile is THE human check (Harry, 25 Oct 2026: "let's make the turnstile
+ * a human check"). It is mostly invisible: the widget is made as "Managed" (or
+ * "Invisible") in the Cloudflare dashboard, and drawn here "interaction-only",
+ * so a normal player sees nothing; only when Cloudflare is unsure does a box
+ * show in the middle of the screen, then disappear.
+ *
+ * Used by guest sign-up (lib/guest/start.ts) AND the email sign-in/sign-up form
+ * (components/AuthForm.tsx): once Supabase's captcha switch is on, Supabase
+ * wants a token on every email sign-in too. Google sign-in needs none.
+ * Steps for Harry: docs/plans/2026-10-25/guest-accounts-plan.md, section 5.
  */
 
 import { turnstileSiteKey } from "./config";
