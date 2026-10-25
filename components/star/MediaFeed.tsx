@@ -241,7 +241,7 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, onVo
           the post-match reaction is a single-purpose read, not something
           to navigate around in. */}
       {mode === "browse" && (
-        <div className="grid shrink-0 grid-cols-2 gap-1 border-t border-white/10 px-2 pb-1 pt-1.5" style={{ background: "rgba(0,0,0,.35)", backdropFilter: "blur(8px)" }}>
+        <div className="grid shrink-0 grid-cols-2 gap-1 border-t border-white/10 px-2 pb-1 pt-1.5" style={fast ? { background: "rgba(6,10,18,.82)" } : { background: "rgba(0,0,0,.35)", backdropFilter: "blur(8px)" }}>
           <TabButton active={tab === "feed"} label="Feed" onClick={() => setTab("feed")}>
             <FeedIcon />
           </TabButton>

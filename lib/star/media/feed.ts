@@ -26,7 +26,7 @@ import { metricsFor, resolve, rngFor, speak, surname } from "./grammar";
 import { clockAt, timeFor, visible, FEED_HORIZON, FIRST_WAVE } from "./schedule";
 import { buildTrends } from "./trending";
 import { goalOfMonthAfterMatch } from "./goalOfMonth";
-import { goalOfMonthOn } from "./updateFlags";
+import { goalOfMonthOn, yourGoalVideoOn } from "./updateFlags";
 export { voteGoalOfMonth, applyGoalOfMonthBoost } from "./goalOfMonth";
 
 /**
@@ -494,7 +494,10 @@ function capVideos(posts: StoredPost[], cycleId: string): void {
   const rng = rngFor("videos", cycleId);
   // 1 or 2, at random (Leo, 16 Oct 2026: "we wanted to make it random"):
   // the match's highlights always, a second video about half the time.
-  const max = rng() < 0.5 ? 1 : MAX_VIDEOS_PER_MATCH;
+  let max = rng() < 0.5 ? 1 : MAX_VIDEOS_PER_MATCH;
+  // Leo's 24 Oct update (updateFlags.ts): your goals' post always keeps its
+  // video next to the highlights ("I don't EVER wanna wait … for MY GOALS").
+  if (yourGoalVideoOn() && vids.some(p => p.eventId === "your-highlights") && vids.some(p => p.eventId === "match-highlights")) max = Math.max(max, 2);
   if (vids.length <= max) return;
   // The match's highlights and your goals' video stay (Leo, 8 Oct: every
   // match ALWAYS has them); anything else is the random one.

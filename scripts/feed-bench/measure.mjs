@@ -37,8 +37,11 @@ await pg.addInitScript(() => {
 });
 await pg.goto(`${BASE}/star-dev`, { waitUntil: "domcontentloaded", timeout: 180000 });
 const PLAYER = argv.includes("--player");
-await pg.evaluate(async ({ career, clips, player }) => {
+// Leo's 24 Oct update switch (lib/star/leoUpdate.ts): the fast feed is behind it.
+const LEO = val("--leo", "on") === "on";
+await pg.evaluate(async ({ career, clips, player, leo }) => {
   localStorage.clear();
+  if (leo) localStorage.setItem("kib-update-leo-2026-10-24", JSON.stringify({ on: true, off: [] }));
   // --player: a player's phone, not the team's (no admin tab).
   if (player) localStorage.setItem("kib-admin-mode", "off");
   localStorage.setItem("star-career-v2::anon", JSON.stringify(career));
@@ -55,14 +58,14 @@ await pg.evaluate(async ({ career, clips, player }) => {
   for (const c of clips) tx.objectStore("clips").put(c);
   await new Promise(res => { tx.oncomplete = res; });
   db.close();
-}, { ...seed, player: PLAYER });
+}, { ...seed, player: PLAYER, leo: LEO });
 await pg.reload({ waitUntil: "networkidle", timeout: 180000 });
 await pg.waitForTimeout(4000);
 // Warm the feed's code once (dev server compiles on first use), then leave it.
 const phoneBtn = pg.locator('[data-tour="nav-phone"]').first();
 await phoneBtn.click(); await pg.waitForTimeout(3000);
 await pg.locator("button").filter({ hasText: /Social\s*$/ }).first().click().catch(() => {}); await pg.waitForTimeout(8000);
-const otherNav = async () => { const b = pg.locator('[data-tour="nav-life"]').first(); await b.click(); await pg.waitForTimeout(2500); };
+const otherNav = async () => { const b = pg.locator('[data-tour="nav-training"]').first(); await b.click(); await pg.waitForTimeout(2500); };
 await otherNav();
 // Fresh tab state: nothing made in memory, nothing kept on the phone.
 await pg.evaluate(() => new Promise(res => { const d = indexedDB.deleteDatabase("star-goal-videos"); d.onsuccess = d.onerror = d.onblocked = () => res(); }));
@@ -159,7 +162,7 @@ if (TRACE) {
   await cdp.send("Tracing.end"); await ended;
   const main = traceEvents.find(e => e.name === "thread_name" && e.args?.name === "CrRendererMain");
   const ev = traceEvents.filter(e => e.ph === "X" && e.pid === main?.pid && e.tid === main?.tid);
-  const tasks = ev.filter(e => e.name === "RunTask" && e.dur > 100000).sort((a, b) => b.dur - a.dur);
+  const tasks = ev.filter(e => e.name === "RunTask" && e.dur > Number(val("--trace-ms", "100")) * 1000).sort((a, b) => b.dur - a.dur);
   console.log(`TRACE long tasks >100ms: ${tasks.length}`);
   for (const t of tasks.slice(0, 14)) {
     const kids = ev.filter(e => e !== t && e.ts >= t.ts && e.ts + e.dur <= t.ts + t.dur && e.name !== "RunTask");
@@ -195,7 +198,7 @@ cdp = await ctx.newCDPSession(pg);
 const reload = await openFeed("open-3-reload");
 
 const f = v => v === null || v === undefined ? "—" : `${Math.round(v)} ms`;
-console.log(`${PLAYER ? "player view" : "admin view (team)"} · CPU ${RATE}× · 390×844 · posts in seed ${seed.career.media.posts.length}`);
+console.log(`${PLAYER ? "player view" : "admin view (team)"} · update ${LEO ? "on" : "off"} · CPU ${RATE}× · 390×844 · posts in seed ${seed.career.media.posts.length}`);
 console.log(`open (first)     painted ${f(first.painted)} · posts drawn ${domPosts} · longest task while opening ${first.openLongest} ms · still ${f(first.still)} · first video ready ${f(first.video)}`);
 console.log(`long tasks 10 s after open: ${first.lt10s.length} (longest ${Math.max(0, ...first.lt10s)} ms, >100ms: ${first.lt10s.filter(x => x > 100).length})`);
 console.log(`scroll           ${JSON.stringify(scroll)}`);
