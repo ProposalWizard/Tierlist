@@ -17,6 +17,7 @@ import { setPrefs, toggleIn, useRoomPrefs } from "./roomPrefs";
 import { PersonFace } from "./roomFace";
 import { StatusEditor } from "./roomProfile";
 import { WelcomeEditor } from "./roomWelcome";
+import { ScheduleEditor } from "./roomSchedules";
 
 const where = (m: TeamMessage, names: Map<string, string>) => {
   const c = channelOf(m.body);
@@ -102,6 +103,7 @@ export function YouPanel() {
         </div>
       )}
       <StatusEditor />
+      <ScheduleEditor />
       <p className="tr-lbl" style={{ marginTop: 6 }}>Buzzes on this device</p>
       <PushToggle />
       <p className="tr-lbl" style={{ marginTop: 10 }}>Message look</p>

@@ -342,3 +342,19 @@
 .trr-rcpt span:last-child:not(.ok) { color: var(--ash-ink3); }
 
 .trr-you { max-width: 680px; }
+
+/* Schedules (T2) */
+.trr-emojis.small button { width: 36px; height: 36px; min-height: 36px; font-size: 17px; }
+.trr-days { display: flex; gap: 4px; }
+.trr-days button { width: 36px; height: 36px; min-height: 36px; border-radius: 50%; border: 1px solid var(--ash-line2); background: var(--ash-panel2); color: var(--ash-ink2); font: inherit; font-weight: 900; cursor: pointer; }
+.trr-days button[aria-pressed="true"] { background: var(--ash-accent); border-color: var(--ash-accent); color: var(--ash-accent-ink); }
+.trr-times { display: flex; align-items: center; gap: 8px; color: var(--ash-ink2); font-size: 13px; }
+.trr-times input { border-radius: 10px; border: 1px solid var(--ash-line2); background: var(--ash-panel2); color: var(--ash-ink); padding: 8px 10px; font: inherit; font-size: 15px; color-scheme: inherit; }
+.trr-preview { margin: 0; font-size: 12.5px; color: var(--ash-ink3); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.trr-preview .who { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 8px; background: var(--ash-panel2); color: var(--ash-ink); }
+.trr-preview .who small { color: var(--ash-amber); font-weight: 800; }
+.trr-schedlist { display: flex; flex-direction: column; gap: 6px; }
+.trr-schedrow { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--ash-line); background: var(--ash-panel2); }
+.trr-schedrow .em { font-size: 20px; }
+.trr-schedrow .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.trr-schedrow .tx small { color: var(--ash-ink3); font-size: 12px; }
