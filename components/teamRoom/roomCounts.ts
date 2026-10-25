@@ -17,11 +17,22 @@ export const PATCH_META: PatchMeta[] = HEADLINES.map((n) => ({ version: n.versio
 export function useRoomCounts(): RoomCounts {
   const s = useTeamRoom();
   const channels = useMemo(() => listChannels(s.channelRows), [s.channelRows]);
-  return useMemo(() => roomCounts({
-    messages: s.messages, me: s.me, reads: s.chRead, chatReadAt: s.read.chat, channels, dms: s.dms,
-    patchToRead: s.me ? patchUnread(PATCH_META, s.me, s.acks, TEAM_ROOM.inboxFrom).length : 0,
-    newJobs: newPushedJobs(s.jobs, s.tasks, s.me, s.seenJobs),
-  }), [s.messages, s.me, s.chRead, s.read.chat, channels, s.dms, s.acks, s.jobs, s.tasks, s.seenJobs]);
+  return useMemo(() => {
+    const c = roomCounts({
+      messages: s.messages, me: s.me, reads: s.chRead, chatReadAt: s.read.chat, channels, dms: s.dms,
+      patchToRead: s.me ? patchUnread(PATCH_META, s.me, s.acks, TEAM_ROOM.inboxFrom).length : 0,
+      newJobs: newPushedJobs(s.jobs, s.tasks, s.me, s.seenJobs),
+    });
+    // A bot's new rows (a Bug bot report) make its channel bold until it is opened (no red number:
+    // that is for @mentions and DMs). A channel never opened here counts from when the chat was last read.
+    for (const r of s.botRows) {
+      const n = c.channels[r.channel];
+      if (!n) continue;
+      const seen = s.chRead[`bot:${r.channel}`];
+      if (seen !== undefined ? r.id > seen : (Date.parse(r.created_at) || 0) > s.read.chat) { n.unread++; c.total++; }
+    }
+    return c;
+  }, [s.messages, s.me, s.chRead, s.read.chat, channels, s.dms, s.acks, s.jobs, s.tasks, s.seenJobs, s.botRows]);
 }
 
 /** Every bot post, by channel: the patch-notes bot, the jobs bot and any rows a future bot wrote. */

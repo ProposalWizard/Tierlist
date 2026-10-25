@@ -98,9 +98,14 @@ export function ChatThread({ visible = true, autoFocus, jumpTo, view = GENERAL_V
   // Read: the open channel (its thread replies too) or DM, up to its newest message (this browser).
   useEffect(() => {
     if (!visible || !s.me) return;
-    if (view.kind === "channel") markChannelRead(view.slug, newestIn(s.messages, view.slug));
+    if (view.kind === "channel") {
+      markChannelRead(view.slug, newestIn(s.messages, view.slug));
+      // Rows a bot wrote (a Bug bot report) count as new until the channel is opened: "bot:bugs".
+      const top = s.botRows.reduce((n, r) => (r.channel === view.slug && r.id > n ? r.id : n), 0);
+      if (top) markChannelRead(`bot:${view.slug}`, top);
+    }
     if (view.kind === "dm") { const d = dmsWith(s.dms, s.me, view.with); if (d.length) markChannelRead(dmKey(view.with), d[d.length - 1].id); }
-  }, [visible, s.me, s.messages, s.dms, view]);
+  }, [visible, s.me, s.messages, s.dms, s.botRows, view]);
 
   // Seen = the message was on screen in the open #general (TEAM_ROOM.seenShare of it).
   // Seen marks are one number per person (team_room_v2.sql), so they are kept to #general.
