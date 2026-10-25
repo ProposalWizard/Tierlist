@@ -1,0 +1,14 @@
+{
+ "mode": "off",
+ "chance": {
+  "banner": false,
+  "bar": "CARLISLE 1 0 SOUTHEND NL GOALS 0 ASSISTS 0 PASS 0% AVG RAT 6.1 2D Build-up · tap to skip KNOWITBALL GAMES GAMES Home Browse all games & news Road to Ballon d'Or BETA Live a career and win the wor"
+ },
+ "goal": {
+  "tries": 2,
+  "celebrationOverlay": false,
+  "tapToSkip": false,
+  "bar": "CARLISLE 1 1 SOUTHEND NL GOALS 1 ASSISTS 0 PASS 100% AVG RAT 7.2 2D 0 KICK OFF 16 The Southend full-back overlaps, but the cross is cut out. 17 Southend look to go down the left. 25 A shot from the ed"
+ },
+ "errors": []
+}

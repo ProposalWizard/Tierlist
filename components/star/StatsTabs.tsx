@@ -143,7 +143,8 @@ function SeasonCareer({ label, season, career, gold = false }: { label: string; 
 
 /** The Stats tab: numbers, seasons, cabinet, goals by season, per club, your country. */
 function StatsTab({ career }: { career: CareerState }) {
-  const o = useMemo(() => careerOverview(career), [career]);
+  const calYears = useLeoUpdate("bugFixes"); // Leo's 24 Oct update: calendar season years
+  const o = useMemo(() => careerOverview(career, { calendarYears: calYears }), [career, calYears]);
   const team = o.honours.filter((h) => h.competition !== "Ballon d'Or");
   const awards = [...o.honours.filter((h) => h.competition === "Ballon d'Or"), ...o.individual];
   const seasonTrophies = career.trophies.filter((t) => t.season === career.season).length;

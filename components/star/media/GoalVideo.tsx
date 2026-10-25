@@ -158,11 +158,13 @@ export interface GoalVideoProps {
   /** Full screen, edge to edge, no buttons (the shop's For You highlights, Harry 12 Oct 2026):
    *  the video covers its box, loops, and only a thin progress line shows it playing. */
   fill?: boolean;
+  /** Leo's 24 Oct update "goalVideoNow": play a goal at once, live, while its file is made. */
+  live?: boolean;
 }
 
 type Status = "idle" | "making" | "ready" | "unsupported" | "failed";
 
-export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, title, badge, fallback, autoStart = false, priority = 0, fill = false }: GoalVideoProps) {
+export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, title, badge, fallback, autoStart = false, priority = 0, fill = false, live = false }: GoalVideoProps) {
   const [played, setPlayed] = useState(0);
   const [tracks, setTracks] = useState<GoalTrack[] | null>(null);
   const [status, setStatus] = useState<Status>("idle");
@@ -319,7 +321,7 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
   const liveSession = useRef(0);
   useEffect(() => {
     // Playing live needs only the player worker, not the file encoder (canPlay).
-    const want = wanted && !fill && status !== "ready" && !!edit && canPlay !== false && onView;
+    const want = live && wanted && !fill && status !== "ready" && !!edit && canPlay !== false && onView;
     if (!want) {
       if (liveState !== "off") {
         liveSession.current++;
@@ -356,14 +358,14 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
       liveStop.current = stop;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wanted, status, edit, canPlay, onView, liveGen]);
+  }, [wanted, status, edit, canPlay, onView, liveGen, live]);
   useEffect(() => { if (liveSound.current) liveSound.current.gain.gain.value = audible ? 1 : 0; }, [audible]);
   // Your goals, your match's highlights and a replay you opened: the live
   // player is readied for them as soon as they are on the page.
   useEffect(() => {
-    if (edit && canPlay && !fill && (priority > 0 || autoStart) && status !== "ready") warmLive(key, edit, credit);
+    if (live && edit && canPlay && !fill && (priority > 0 || autoStart) && status !== "ready") warmLive(key, edit, credit);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [edit, canPlay, key]);
+  }, [edit, canPlay, key, live]);
   useEffect(() => () => { liveSession.current++; stopLiveNow(); }, []);
 
   useEffect(() => {

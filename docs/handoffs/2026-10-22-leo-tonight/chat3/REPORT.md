@@ -162,3 +162,15 @@ Proved: tsc; one-engine guard; finishing, keeper (×6), aiming, outcomes, bicycl
 airChances, realMoments (13 files), realMomentHighlights, goalClip all pass; production build with
 NEXT_PUBLIC_STAR_OFFLINE_DEV=1 on a real overhead moment: `switch-off.jpg` (Head it?, no button) and
 `switch-on.jpg` (the Bicycle! button). Driver: `scripts/film/scenes/bicycle-switch.mjs`.
+
+## Taken back out (25 Oct 2026)
+
+Leo, 24 Oct: "harry's gonna do bicycle kick stuff so get rid of all that." Every bicycle commit of this
+chat was reversed against main (64a3c12b), keeping everything else: the bicycle code, tests and
+measuring script, the strike screen's button and mode (Harry's Aerial-sized gold circle kept), the strike
+rule, the keeper's later reaction, the match banner, roar, commentary and pose rule, the goal-video wait,
+the media story, posts and press question, the 2D sprite (slot 3 files and index entries; slot 2, the
+celebrations, untouched and still lazy), the 3D clip (football.glb and football-ual.glb back to their
+pre-bicycle files: 27 clips), the bake and look tools made for it, and the "bicycle" part of Leo's
+24 Oct update switch. The 15 overhead Real Moments are left out again. These notes, stills and films are
+kept as the record. Proof: `removed-switch-on.jpg` (switch on, "Head it?", no button).

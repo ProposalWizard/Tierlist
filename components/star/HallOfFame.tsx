@@ -17,6 +17,7 @@ import { collectRetiredIntoHall } from "@/lib/star/storage";
 import { askConfirm } from "@/lib/star/askConfirm";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { seasonStartYear } from "@/lib/star/calendar";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 import { kitsOf } from "@/lib/star/kits";
 import CareerOverview from "./CareerOverview";
 import { ShareLinkSheet, CompareFlow } from "./LegendShare";
@@ -31,7 +32,8 @@ const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|A
 /** "2026–46": the first season's start year to the last season's end year. */
 // `first` is the card's FIFA edition (2027 = the 2026/27 season): the
 // calendar's seasonStartYear turns it into the year the first season began.
-const years = (first: number, seasons: number) => { const y = seasonStartYear(first, 1); return `${y}–${String(y + Math.max(1, seasons)).slice(-2)}`; };
+// `calendar` = Leo's 24 Oct update, bug fixes; off = the old years (one later).
+const years = (first: number, seasons: number, calendar = false) => { const y = calendar ? seasonStartYear(first, 1) : first; return `${y}–${String(y + Math.max(1, seasons)).slice(-2)}`; };
 
 const CLOUD_LINE: Record<HallCloud, string | null> = {
   synced: null,
@@ -55,6 +57,8 @@ export default function HallOfFame({ account, onBack, backLabel = "Back" }: {
   const [comparing, setComparing] = useState<{ start?: string } | null>(null);
   /** The career's best 10 goals, over its overview (Leo, 22 Oct 2026). */
   const [goalsOpen, setGoalsOpen] = useState(false);
+  // Best goals: Leo's 24 Oct update only (lib/star/leoUpdate.ts).
+  const goalsOn = useLeoUpdate("goalsGallery");
 
   useEffect(() => {
     let alive = true;
@@ -84,7 +88,7 @@ export default function HallOfFame({ account, onBack, backLabel = "Back" }: {
         actions={[
           { icon: "‹", label: "Hall of Fame", onClick: () => { setOpen(null); setGoalsOpen(false); window.scrollTo({ top: 0 }); } },
           { icon: "⚖️", label: "Compare", onClick: () => { setComparing({ start: opened.id }); window.scrollTo({ top: 0 }); } },
-          ...((opened.career.goalLog?.length ?? 0) > 0 ? [{ icon: "⚽", label: "Best goals", onClick: () => setGoalsOpen(true) }] : []),
+          ...(goalsOn && (opened.career.goalLog?.length ?? 0) > 0 ? [{ icon: "⚽", label: "Best goals", onClick: () => setGoalsOpen(true) }] : []),
           {
             icon: "🗑", label: "Remove", onClick: () => {
               void askConfirm(`Take ${opened.card.name} out of the Hall of Fame? This can't be undone.`, "Remove").then(ok => {
@@ -99,7 +103,7 @@ export default function HallOfFame({ account, onBack, backLabel = "Back" }: {
         ]}
       />
       {linkOpen && <ShareLinkSheet entry={opened} onClose={() => setLinkOpen(false)} />}
-      {goalsOpen && <BestGoalsSheet career={opened.career} onClose={() => setGoalsOpen(false)} />}
+      {goalsOn && goalsOpen && <BestGoalsSheet career={opened.career} onClose={() => setGoalsOpen(false)} />}
       </>
     );
   }
@@ -185,6 +189,7 @@ export function HallOfFameList({ entries, loading = false, note, onOpen, onBack,
 }
 
 function HallCardRow({ entry, onOpen }: { entry: HallEntry; onOpen: () => void }) {
+  const calYears = useLeoUpdate("bugFixes");
   const c = entry.card;
   const th = clubTheme(c.mainClub);
   return (
@@ -201,7 +206,7 @@ function HallCardRow({ entry, onOpen }: { entry: HallEntry; onOpen: () => void }
         <div className="min-w-0 flex-1">
           <div className="truncate text-[19px] uppercase leading-tight text-white sk-display">{c.name}</div>
           <div className="truncate text-[11px] font-black uppercase tracking-wide text-amber-200">{c.title}</div>
-          <div className="truncate text-[11px] font-bold text-white/75">{short(c.mainClub)} · {years(c.firstYear, c.seasons)} · {c.seasons} seasons</div>
+          <div className="truncate text-[11px] font-bold text-white/75">{short(c.mainClub)} · {years(c.firstYear, c.seasons, calYears)} · {c.seasons} seasons</div>
         </div>
         <div className="shrink-0 text-right">
           <div className="sk-num text-[24px] leading-none tabular-nums text-white">{c.goals}</div>

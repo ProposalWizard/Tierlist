@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { leoUpdateOn } from "./leoUpdate";
 
 /**
  * REAL CLUB BADGES — NOW THAT THEY ACTUALLY EXIST.
@@ -97,6 +98,8 @@ const FAIL_RETRY_MS = 30 * 1000;
 
 export async function getClubLogoMap(): Promise<Map<string, string>> {
   if (cache && Date.now() - cache.at < TTL_MS) return cache.map;
+  // Leo's 24 Oct update, bug fixes off: the old way, one read per ask.
+  if (!leoUpdateOn("bugFixes")) return readClubLogoMap();
   if (inFlight) return inFlight;
   if (Date.now() - failedAt < FAIL_RETRY_MS) return cache?.map ?? new Map();
   inFlight = readClubLogoMap().finally(() => { inFlight = null; });

@@ -1,0 +1,384 @@
+<!doctype html><html><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Injuries revamp plan</title><style>
+*{box-sizing:border-box}
+html,body{margin:0;background:#fff;color:#111;}
+body{font:16px/1.5 -apple-system,system-ui,'Segoe UI',Roboto,sans-serif;padding:16px 16px 60px;}
+h1{font-size:24px;line-height:1.2;margin:4px 0 12px}
+h2{font-size:20px;margin:28px 0 10px;padding:8px 10px;background:#0b3d2e;color:#fff;border-radius:6px}
+h3{font-size:18px;margin:20px 0 8px;color:#0b3d2e}
+p,li{font-size:16px}
+code{font-size:14px;background:#f1f1f1;padding:0 3px;border-radius:3px;word-break:break-all}
+table{width:100%;border-collapse:collapse;margin:10px 0;table-layout:auto}
+th,td{border:1px solid #ccc;padding:5px 5px;font-size:16px;vertical-align:top;text-align:left;overflow-wrap:break-word}pre{white-space:pre-wrap;font-size:14px;background:#f6f6f6;padding:8px;border-radius:6px}pre code{background:none;word-break:normal}
+th{background:#eef5f1}
+td code{font-size:14px}
+hr{border:0;border-top:1px solid #ddd;margin:16px 0}
+blockquote{margin:8px 0;padding:4px 12px;border-left:4px solid #0b3d2e;color:#333}
+</style></head><body><h1>Injuries revamp: a plan for Mikey to say yes or no to</h1>
+<p>Written 22 Oct 2026 for Mikey. Plan only, no code. Roadmap item 11 (<code>STAR_ROADMAP.md:55</code>).
+Tags: <strong>[code]</strong> = number read from the code today. <strong>[proposal]</strong> = my suggestion, you decide. <strong>[reasoned]</strong> = worked out on paper, not measured.</p>
+<p>Reply with letters, like "1a yes". Questions are in section 10.</p>
+<hr />
+<h2>1. What exists today, and why it is off</h2>
+<p>You switched injuries off on 4 Oct 2026: <em>"take injuries out of the game right now. They will be added in later, once a revamp has happened"</em> (<code>lib/star/injurySwitch.ts:1-4</code>). That quote is the only reason on record. I found no bug behind it.</p>
+<p>The old system is still all there, ready to switch back on:</p>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Where</th>
+<th>What it does today [code]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The switch</td>
+<td><code>injurySwitch.ts:7</code></td>
+<td><code>INJURIES_ON = false</code></td>
+</tr>
+<tr>
+<td>The roll</td>
+<td><code>careerFlow.ts:827-831</code></td>
+<td>One roll at full time, once per match you play</td>
+</tr>
+<tr>
+<td>The chance</td>
+<td><code>careerFlow.ts:102-112</code></td>
+<td>1.5% base, plus up to 8.5% more as end-of-match energy falls below 30</td>
+</tr>
+<tr>
+<td>The length</td>
+<td><code>careerFlow.ts:118-130</code></td>
+<td>60% knock (1-2), 30% injury (3-4), 10% serious (5-8)</td>
+</tr>
+<tr>
+<td>The countdown</td>
+<td><code>careerFlow.ts:2347</code></td>
+<td>Drops by 1 for each fixture you miss</td>
+</tr>
+<tr>
+<td>Who plays</td>
+<td><code>selection.ts:200-206</code></td>
+<td>Injured = "Injured", cannot be picked</td>
+</tr>
+<tr>
+<td>The screen</td>
+<td><code>MatchdayScreen.tsx:427-433</code></td>
+<td>Red box with the note and weeks left</td>
+</tr>
+<tr>
+<td>Old saves</td>
+<td><code>storage.ts:411</code></td>
+<td>While off, a saved injury is wiped on load</td>
+</tr>
+<tr>
+<td>Match radar</td>
+<td><code>matchRadar.ts:136-139</code></td>
+<td>Same full-time check for the unseen match</td>
+</tr>
+<tr>
+<td>Tired hook</td>
+<td><code>selection.ts:427</code></td>
+<td>"Legs gone, withdrawn before you get injured"</td>
+</tr>
+</tbody>
+</table>
+<p>Today's chance is about 1.5% to 2% a match <strong>[reasoned]</strong>: that is about 1 injury per 50 to 65 matches. Too rare to feel.
+Not there today: no feed posts about injuries (the feed has no injury detector, <code>lib/star/media/detect/</code>), no moment in the match, no rehab choice, no comeback period.</p>
+<p>Note: "weeks" in the code really means fixtures missed. A midweek cup game counts as one.</p>
+<h2>2. Kinds of injury and weeks out</h2>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Share [proposal]</th>
+<th>Weeks out [proposal]</th>
+<th>Average</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Knock</td>
+<td>45%</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Strain</td>
+<td>35%</td>
+<td>2 to 4</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Tear</td>
+<td>17%</td>
+<td>6 to 10</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Long one (rare)</td>
+<td>3%</td>
+<td>12 to 20</td>
+<td>16</td>
+</tr>
+</tbody>
+</table>
+<p>Average = 0.45 + 1.05 + 1.36 + 0.48 = <strong>3.3 weeks per injury</strong> [reasoned]. Today's average is 2.6 [code].
+At 1 injury per 20 matches and about 50 matches a season, that is 2.5 injuries and about 8 weeks out a year: roughly 1 week in 5. That is a lot. See question 2.</p>
+<h2>3. Risk from tiredness, and from too many matches</h2>
+<p>The chance per match, by your energy at the moment it is rolled. Today's energy numbers [code]: a full Medium match costs 60, you regain 8 a day resting, a tired starter below 65 cannot start.</p>
+<table>
+<thead>
+<tr>
+<th>Energy</th>
+<th>Today [code]</th>
+<th>Proposed per match</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>70 to 100</td>
+<td>1.5%</td>
+<td>2.0%</td>
+</tr>
+<tr>
+<td>50 to 69</td>
+<td>1.5%</td>
+<td>3.5%</td>
+</tr>
+<tr>
+<td>30 to 49</td>
+<td>1.5%</td>
+<td>5.5%</td>
+</tr>
+<tr>
+<td>15 to 29</td>
+<td>1.5% to 6.9%</td>
+<td>9.0%</td>
+</tr>
+<tr>
+<td>under 15</td>
+<td>up to 10%</td>
+<td>14.0%</td>
+</tr>
+</tbody>
+</table>
+<p>Many matches in a short time <strong>[proposal]</strong>: the 3rd match in 7 days adds +2 points; the 4th adds +4. This would count cup and international games. It also makes the "rotate or rest" choice matter.</p>
+<h2>4. Going down in the match</h2>
+<p>What you see <strong>[proposal]</strong>:</p>
+<p><code>minute 63 ──► play stops ──► "You're down" banner ──► physio runs on
+          ──► short pause (about 3 s) ──► "Subbed off: [kind], out N weeks"
+          ──► you keep watching from the bench, score carries on</code></p>
+<p>How: the match picks a minute at kick-off from the match seed (between 20 and 88). At that minute the game reads your live energy and rolls once, using the table in section 3. This keeps the same result on a replay. If you are hurt, you leave the pitch and your minutes are cut to that minute (the stats already carry minutes).</p>
+<p>Which file: only <code>components/star/CanvasMatch.tsx</code> changes, and only lightly: one "stop and show" step beside the existing withdraw step. The match physics do not change. <strong>The engine-warning hook will ask</strong> (this file is in its list), and I would say so in the reply (<code>PRO-ENG-001</code>). Most of the work sits in <code>selection.ts</code>, with a new reason "injury".
+The unseen match keeps its full-time roll (<code>matchRadar.ts</code>), on the same table.</p>
+<h2>5. A rehab choice</h2>
+<p>When you are hurt, Home offers two buttons <strong>[proposal]</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Choice</th>
+<th>Weeks out</th>
+<th>Risk</th>
+<th>Comeback</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Full rest</td>
+<td>all of them</td>
+<td>none</td>
+<td>Energy cap 75 / 85 / 95 for 3 matches</td>
+</tr>
+<tr>
+<td>Rush back</td>
+<td>half (round up, at least 1)</td>
+<td>20% it flares up in your first match back (then a new injury, one kind worse, 1 extra week)</td>
+<td>Energy cap 60 / 70 / 80, and injury chance x1.5 for 3 matches</td>
+</tr>
+</tbody>
+</table>
+<p>Example: a 4-week strain. Rest = 4 weeks, safe. Rush = 2 weeks, 20% chance of a 6-week tear. Expected: 2 + 0.2 x 6 = 3.2 weeks [reasoned]. So rushing is faster on average, but you can lose a big game to it.
+Knocks (1 week) have no choice; there is nothing to rush.</p>
+<h2>6. Coming back below full fitness</h2>
+<p>After any layoff of 3 weeks or more, your first 3 matches back are at lower energy caps (section 5 numbers) <strong>[proposal]</strong>. Match sharpness (<code>matchFitness</code>, today 20 to 100 and already falls when you miss fixtures, <code>careerFlow.ts:2343</code>) starts at no more than 70 after a 3+ week layoff and climbs +3 a match as it does today (<code>careerFlow.ts:1190</code>). The Matchday screen shows a small "Match fit 2 of 3" pill next to the tired pills (<code>MatchdayScreen.tsx:398</code>).</p>
+<h2>7. Feed posts</h2>
+<p>Today there are none <strong>[code]</strong>. Proposed, one new detector, <code>detect/injury.ts</code> <strong>[proposal]</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Account</th>
+<th>Posts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Your club</td>
+<td>"Update on [you]: [kind], expected back in N weeks"</td>
+</tr>
+<tr>
+<td>Press / journalist</td>
+<td>"Scan results: [tear]. Out around N weeks." (for tears and long ones only)</td>
+</tr>
+<tr>
+<td>Your fan account</td>
+<td>Worried reaction; welcome-back post on return</td>
+</tr>
+<tr>
+<td>Rival fan</td>
+<td>A cheeky post on a tear or long one</td>
+</tr>
+<tr>
+<td>Stats account</td>
+<td>"First game back after N weeks"</td>
+</tr>
+<tr>
+<td>Manager</td>
+<td>One line at the press talk: "We'll be careful with him."</td>
+</tr>
+<tr>
+<td>League account</td>
+<td>Nothing (keeps it quiet)</td>
+</tr>
+</tbody>
+</table>
+<p>A flare-up after a rush gets a press post: "Rushed back too soon?".</p>
+<h2>8. Target: about 1 injury per 20 matches (5%)</h2>
+<p>The arithmetic <strong>[reasoned, mix of energy bands is my guess, not measured]</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Energy band</th>
+<th>Share of matches (guess)</th>
+<th>Chance</th>
+<th>Contribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>70 to 100</td>
+<td>25%</td>
+<td>2.0%</td>
+<td>0.50</td>
+</tr>
+<tr>
+<td>50 to 69</td>
+<td>35%</td>
+<td>3.5%</td>
+<td>1.23</td>
+</tr>
+<tr>
+<td>30 to 49</td>
+<td>25%</td>
+<td>5.5%</td>
+<td>1.38</td>
+</tr>
+<tr>
+<td>15 to 29</td>
+<td>12%</td>
+<td>9.0%</td>
+<td>1.08</td>
+</tr>
+<tr>
+<td>under 15</td>
+<td>3%</td>
+<td>14.0%</td>
+<td>0.42</td>
+</tr>
+<tr>
+<td><strong>Sum</strong></td>
+<td></td>
+<td></td>
+<td><strong>4.6%</strong></td>
+</tr>
+<tr>
+<td>Short-gap extra (20% of matches, +2)</td>
+<td></td>
+<td></td>
+<td>+0.4%</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td></td>
+<td></td>
+<td><strong>5.0%, 1 in 20</strong></td>
+</tr>
+</tbody>
+</table>
+<p>How we measure it for real: copy <code>scripts/soak/careerSoak.mts</code> (20 seasons x 21 careers = about 20,000 matches in about 85 s [code comment]) into a new <code>scripts/soak/injurySoak.mts</code>. It switches injuries on, counts injuries per match and weeks out per season, per energy band, and checks 4.0% to 6.0%. Add a rule test <code>tests/star/injuries.mts</code> (kind shares, weeks ranges, rush maths, comeback caps, same result on replay). If the soak says 3% or 8%, I change the table in section 3, not the target.</p>
+<h2>9. Which files change</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Change</th>
+<th>Size</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lib/star/injurySwitch.ts</code></td>
+<td>Switch to true when you say go</td>
+<td>small</td>
+</tr>
+<tr>
+<td><code>lib/star/careerFlow.ts</code></td>
+<td>New chance table, kinds, countdown by fixture, rush, comeback caps</td>
+<td>medium</td>
+</tr>
+<tr>
+<td><code>lib/star/selection.ts</code></td>
+<td>Hook reason "injury" at the rolled minute</td>
+<td>small</td>
+</tr>
+<tr>
+<td><code>components/star/CanvasMatch.tsx</code></td>
+<td>Stop-and-show moment, sub off (engine warning)</td>
+<td>medium</td>
+</tr>
+<tr>
+<td><code>components/star/MatchdayScreen.tsx</code></td>
+<td>Rehab buttons, "match fit" pill</td>
+<td>medium</td>
+</tr>
+<tr>
+<td><code>lib/star/types.ts</code></td>
+<td>Add fields: kind, rushed, comeback count (add only)</td>
+<td>small</td>
+</tr>
+<tr>
+<td><code>lib/star/storage.ts</code></td>
+<td>Fill the new fields for old saves; stop wiping</td>
+<td>small</td>
+</tr>
+<tr>
+<td><code>lib/star/media/detect/injury.ts</code> (new) + template files</td>
+<td>The posts in section 7</td>
+<td>medium</td>
+</tr>
+<tr>
+<td><code>lib/star/tuning.ts</code></td>
+<td>The numbers become tuning rows</td>
+<td>small</td>
+</tr>
+<tr>
+<td><code>scripts/soak/injurySoak.mts</code>, <code>tests/star/injuries.mts</code> (new)</td>
+<td>Measurement</td>
+<td>small</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Stays untouched:</strong> match physics and AI in <code>canvasEngine.ts</code>, <code>hiddenMatch.ts</code>, suspensions in <code>corruption.ts</code> (they share the same slot and keep working), the old-UI folder <code>components/star/legacy/</code>, <code>app/star-dev/page.tsx</code> (only if a new phase is needed; I expect none).</p>
+<h2>10. Questions for Mikey</h2>
+<p>Reply with letters, e.g. "1a yes, 2b".</p>
+<ol>
+<li><strong>Go ahead with the whole plan?</strong> a) yes, build it in steps below. b) no, keep injuries off.</li>
+<li><strong>Target 1 injury per 20 matches (about 1 week in 5 out)?</strong> a) yes. b) lower it to 1 in 30 (recommended if you do not want to miss games often). Recommended: <strong>b</strong>. My arithmetic says 1 in 20 costs about 8 weeks a year.</li>
+<li><strong>Kinds and lengths from section 2?</strong> a) yes. b) no long one. Recommended: <strong>a</strong>.</li>
+<li><strong>Fatigue table from section 3 plus the "3rd match in 7 days" extra?</strong> a) yes. b) fatigue only. Recommended: <strong>a</strong>.</li>
+<li><strong>Injury moment inside the match (touches CanvasMatch, engine warning)?</strong> a) yes. b) no, keep it at full time as today, with a banner. Recommended: <strong>a</strong>.</li>
+<li><strong>Rehab choice with the 20% flare-up?</strong> a) yes. b) full rest only. c) rush at 30% flare-up. Recommended: <strong>a</strong>.</li>
+<li><strong>Comeback caps for 3 matches?</strong> a) yes. b) no. Recommended: <strong>a</strong>.</li>
+<li><strong>Feed posts from section 7?</strong> a) all. b) club and press only. Recommended: <strong>a</strong>.</li>
+<li><strong>Build order?</strong> a) all in one go. b) 1: table + kinds + soak, 2: match moment, 3: rehab + comeback + feed (recommended), each shown to you first. Recommended: <strong>b</strong>.</li>
+<li><strong>Playtest at the end?</strong> Per your standing rule I will not run one unless you ask. Recommended: yes, one, after step 2, because the moment in the match is something only your eyes can judge.</li>
+</ol></body></html>

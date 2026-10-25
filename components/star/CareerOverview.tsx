@@ -36,6 +36,7 @@ import {
 import { Rays } from "./ui/Screen";
 import { TapTip } from "./ui/TapTip";
 import { ShareCardSheet } from "./ShareCard";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 
 export interface OverviewAction { icon?: React.ReactNode; label: string; onClick: () => void; primary?: boolean }
 
@@ -83,7 +84,8 @@ export default function CareerOverview({ career, actions, startPage = "career", 
    */
   share?: { onLink?: () => void };
 }) {
-  const o = useMemo(() => careerOverview(career), [career]);
+  const calYears = useLeoUpdate("bugFixes"); // Leo's 24 Oct update: calendar season years
+  const o = useMemo(() => careerOverview(career, { calendarYears: calYears }), [career, calYears]);
   const [page, setPage] = useState<OverviewPage>(startPage);
   const [picture, setPicture] = useState(false);
   const i = OVERVIEW_PAGES.findIndex(p => p.id === page);

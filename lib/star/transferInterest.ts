@@ -363,7 +363,9 @@ export function keenest(clubs: InterestedClub[]): InterestedClub | undefined {
  * Every club interested in you, this window. Empty leagues are left out.
  * Your own club, clubs that walked away and rivals that won't deal are never in it.
  */
-export function windowInterest(career: CareerState, window: WindowKind): WindowInterest {
+/** `opts.step3Promoted` — Leo's 24 Oct update, bug fixes (read by the caller):
+ *  clubs up from Step 3 say Promoted, not "Finished 24th". Off = the old list. */
+export function windowInterest(career: CareerState, window: WindowKind, opts: { step3Promoted?: boolean } = {}): WindowInterest {
   const report = seasonReport(career, window);
   const own = divisionOf(career);
   const yourLevel = levelOf(own);
@@ -411,7 +413,7 @@ export function windowInterest(career: CareerState, window: WindowKind): WindowI
       // "Finished 24th", the bottom of a list it was not in), so: Promoted.
       const moved: InterestedClub["moved"] = was
         ? (was !== division ? (levelOf(division) > levelOf(was) ? "promoted" : "relegated") : undefined)
-        : (next ? "promoted" : undefined);
+        : (opts.step3Promoted && next ? "promoted" : undefined);
       if (seeded(career, window, club, 3) > rivalInterestOdds(career.player.club, club)) continue;
       const need = squadNeed(career, club, overall);
       const gap = need.known && need.better === 0;

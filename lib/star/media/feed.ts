@@ -26,6 +26,7 @@ import { metricsFor, resolve, rngFor, speak, surname } from "./grammar";
 import { clockAt, timeFor, visible, FEED_HORIZON, FIRST_WAVE } from "./schedule";
 import { buildTrends } from "./trending";
 import { goalOfMonthAfterMatch } from "./goalOfMonth";
+import { goalOfMonthOn } from "./updateFlags";
 export { voteGoalOfMonth, applyGoalOfMonthBoost } from "./goalOfMonth";
 
 /**
@@ -101,7 +102,7 @@ export function generateForMatch(
   const clock = clockAt(record.season, record.week, 0);
   const committed = commit(after, state, record, events, withEvents, record.id, clock);
   // Goal of the Month: close last week's poll, open a finished month's.
-  return goalOfMonthAfterMatch(committed, before, after, fixture, stats, record, clock);
+  return goalOfMonthOn() ? goalOfMonthAfterMatch(committed, before, after, fixture, stats, record, clock) : committed;
 }
 
 export function generateForCareer(career: CareerState, moment: CareerRecord["moment"], key: string): MediaState {

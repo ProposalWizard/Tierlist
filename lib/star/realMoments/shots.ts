@@ -99,10 +99,6 @@ export function kindForShot(s: RealShot): ScenarioKind {
   if (s.type === "Free Kick") return "free_kick";
   const air = airKindOf(s);
   if (air === "header" || air === "volley") return air;
-  // Struck with the foot above the waist or over 2.6 m (a scissor or bicycle
-  // kick): served as a header chance with the BICYCLE button always on
-  // (lib/star/bicycle.ts, 22 Oct 2026).
-  if (air === "high") return "header";
   const { ball, opps } = peopleOf(s);
   if (ball.y >= 17) return "long_range";
   if (Math.abs(ball.x - CX) >= 9 && ball.y <= 15) return "tight_angle";
@@ -132,7 +128,7 @@ export function shotKindLabel(s: RealShot): string {
   const air = airKindOf(s);
   if (air === "header") return "Header";
   if (air === "volley") return "Volley";
-  if (air === "high") return "Overhead";
+  if (air === "high") return "Overhead (not served)";
   const k = kindForShot(s);
   return KIND_LABEL[k] ?? k;
 }
@@ -361,8 +357,6 @@ export function scenarioForShot(s: RealShot, opts: { wideFrame?: boolean } = {})
   // A real header or volley: the ball reaches you at the height it really was
   // (airDrawings.ts airZOf; held inside the kind's range).
   if ((kind === "header" || kind === "volley") && typeof s.z === "number") setAirZ(sc as Scenario & AirHeighted, s.z);
-  // A real overhead kick (airKindOf "high"): the BICYCLE button is always on (bicycle.ts).
-  if (airKindOf(s) === "high") (sc as Scenario & { overhead?: boolean }).overhead = true;
   return sc;
 }
 
