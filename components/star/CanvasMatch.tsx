@@ -2931,9 +2931,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const keepRunCamRef = useRef(false);
   /** B14b: an eased widen in progress (from, to, seconds in, zoom at the start). */
   const camEaseRef = useRef<{ from: Viewport; to: Viewport; t: number; zoom0: number } | null>(null);
-  /** Headers and volleys (matchView.ts FIGURES_AT_FULL_VIEW): the men and the
-   *  ball drawn this much smaller, so they are the long-range size. 1 otherwise. */
+  /** Every chance kind (matchView.ts FIGURES_AT_FULL_VIEW): the men, the keeper
+   *  and the ball drawn this much smaller, so they are the long-range size
+   *  whatever the camera. 1 on a 38 m camera, and in the dribble views. */
   const figShrinkRef = useRef(1);
+  /** …and the chance's own value of it. A build-up's lead-in camera moves (it
+   *  starts tighter or wider than the chance's frame), so while it plays the men
+   *  are re-sized against it to stay this size (leadFigSize). */
+  const figShrinkBaseRef = useRef(1);
   /** Figures and ball: divide their size by this (Z2 keeps them today's size). */
   const figZoomDiv = () => (playZoom() === "z2" || playZoom() === "z2max" ? playZoomRef.current : 1) / figShrinkRef.current;
 
@@ -2977,11 +2982,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       }
       viewportRef.current = { ...sc.viewport };
       baseViewportRef.current = { ...sc.viewport };
-      // A feature's own close camera (the Head & Volley drill): headers and
-      // volleys still draw the men the long-range size.
+      // A feature's own close camera (a training drill, the Head & Volley
+      // drill): the men are still drawn the long-range size.
       {
         const v = sc.viewport, up = (sc.facing ?? "up") === "up";
         figShrinkRef.current = newViewRef.current ? figureShrinkFor(sc.kind, up ? v.x2 - v.x1 : v.y2 - v.y1) : 1;
+        figShrinkBaseRef.current = figShrinkRef.current;
       }
       return;
     }
@@ -2993,12 +2999,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     viewportRef.current = { ...cam };
     baseViewportRef.current = { ...cam };
     playZoomRef.current = playZoomOf(sc);
-    // Headers and volleys: the men the long-range size. The chance's own
-    // camera before the Zoom is what they would otherwise be sized against.
+    // Every kind: the men the long-range size. The chance's own camera
+    // before the Zoom is what they would otherwise be sized against.
     {
       const up = (sc.facing ?? "up") === "up", across = up ? cam.x2 - cam.x1 : cam.y2 - cam.y1;
       const zoomed = playZoom() === "z2" || playZoom() === "z2max";
       figShrinkRef.current = figureShrinkFor(sc.kind, across * (zoomed ? playZoomRef.current : 1));
+      figShrinkBaseRef.current = figShrinkRef.current;
     }
     if (playZoomProbe() && typeof window !== "undefined") {
       (window as unknown as { __zg?: unknown }).__zg = {
@@ -5864,6 +5871,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const b = L.lead.ballAt(L.t);
     sc.ball.x = b.x; sc.ball.y = b.y; L.z = b.z;
     viewportRef.current = L.cam.at(L.t, baseViewportRef.current);
+    leadFigSize();
+  };
+  /** The lead-in's camera is not the chance's: keep the men the chance's size
+   *  on it (only the pitch zooms), never bigger than that camera would draw them. */
+  const leadFigSize = () => {
+    if (!newViewRef.current) return;
+    const b = baseViewportRef.current, v = viewportRef.current, wb = b.x2 - b.x1, wv = v.x2 - v.x1;
+    if (wb > 0 && wv > 0) figShrinkRef.current = Math.min(1, figShrinkBaseRef.current * wv / wb);
   };
   const startLeadIn = (moment?: LeadMoment, own?: (sc: Scenario) => LeadIn | null) => {
     const build = own ? ((s: Scenario) => own(s)) : leadInPropRef.current;
@@ -5954,6 +5969,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     sc.defenders.length = L.defs0;
     sc.ball.x = L.ball.x; sc.ball.y = L.ball.y;
     viewportRef.current = baseViewportRef.current;
+    figShrinkRef.current = figShrinkBaseRef.current;
     leadRef.current = null;
     runOnRef.current = runEnts.length ? { lead: L.lead, t: 0, ents: runEnts, ends: runEnds } : null;
     setLeadInOn(false);
@@ -6006,6 +6022,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     setLeadInOn(false);
     if (leadCapRef.current !== null) { leadCapRef.current = null; setLeadCap(null); }
     baseViewportRef.current = { ...viewportRef.current };
+    figShrinkBaseRef.current = figShrinkRef.current;
     try { L.lead.onTick?.(L.lead.durS, true); } catch { /* an observer never breaks the match */ }
     const sc = scenarioRef.current;
     setOutcome("offside");
@@ -6043,7 +6060,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       ents.forEach((e, i) => e.set(now[i]));
       sc.ball.x = ball.x; sc.ball.y = ball.y;
     }
-    if (L) viewportRef.current = L.cam.at(L.t, baseViewportRef.current);
+    if (L) { viewportRef.current = L.cam.at(L.t, baseViewportRef.current); leadFigSize(); }
   };
   /** A tap on a skippable lead-in (the career's build-ups): straight to the chance. */
   const skipLeadIn = () => {
@@ -6215,6 +6232,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           viewportRef.current = { ...view };
           baseViewportRef.current = { ...view };
           playZoomRef.current = 1;
+          // The men keep the long-range size across the cut (FIGURES_AT_FULL_VIEW).
+          if (newViewRef.current) figShrinkRef.current = figShrinkBaseRef.current = figureShrinkFor(sc.kind, view.x2 - view.x1);
           // The engine reads the frame too — out of it is out of the game — so
           // the situation moves with the picture.
           sc.viewport = { ...view };
