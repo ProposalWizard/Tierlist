@@ -102,7 +102,7 @@ export function demoRoom(now: number) {
     },
   };
   const welcome: WelcomeRow = {
-    body: "Welcome to the Team room, {name}. Chat, bugs, plans and bots now live here, in channels on the left.\n\nSet a status so the others know when you're free. Busy is fine.",
+    body: "Welcome to the Team room, {name}\n\nChat, bugs, plans and bots now live here, in channels on the left.\n\nSet a status so the others know when you're free. Busy is fine.",
     lines: { Mikey: "Sample line for Mikey.", Leo: "Sample line for Leo." }, version: 1, updated_at: ago(60), updated_by: "Harry",
   };
   const welcomeReads: WelcomeRead[] = [{ person: "Harry", version: 1, at: ago(60) }, { person: "Mikey", version: 1, at: ago(20) }];

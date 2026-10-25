@@ -16,6 +16,7 @@ import { useRoomCounts } from "./roomCounts";
 import { setPrefs, toggleIn, useRoomPrefs } from "./roomPrefs";
 import { PersonFace } from "./roomFace";
 import { StatusEditor } from "./roomProfile";
+import { WelcomeEditor } from "./roomWelcome";
 
 const where = (m: TeamMessage, names: Map<string, string>) => {
   const c = channelOf(m.body);
@@ -109,6 +110,7 @@ export function YouPanel() {
         <button aria-pressed={prefs.density === "compact"} onClick={() => setPrefs({ density: "compact" })}>Compact · tighter</button>
       </div>
       <small className="tr-muted">Kept on this device. Clean shows a 36 px face by each message; Compact uses 20 px faces and less space.</small>
+      <WelcomeEditor />
     </div>
   );
 }

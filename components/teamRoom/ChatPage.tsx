@@ -39,6 +39,7 @@ import { TOOL_TAB, ToolPanel } from "./roomTools";
 import { ActivityPanel, DmsPanel, JumpBox, LaterPanel, YouPanel } from "./roomPanels";
 import { LastPush, PersonFace, StatusBit, usePersonStatus, type LastPushes } from "./roomFace";
 import { ProfileCard } from "./roomProfile";
+import { WelcomeGate, WelcomePin } from "./roomWelcome";
 import { BellIcon, BellMenu, useQuiet } from "./roomBells";
 import { setViewing, wirePopups } from "@/lib/teamRoom/popups";
 import { dmKey } from "@/lib/teamRoom/channels";
@@ -266,6 +267,7 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
           </nav>
         )}
         <div className="trw-body" data-tab={channel ? tab : view ? "tool" : "messages"}>
+          {channel?.slug === GENERAL && tab === "messages" && <WelcomePin />}
           {place && (!channel || tab === "messages") && (
             <ChatThread key={channel ? `c-${channel.slug}` : `d-${(place as { with: string }).with}`}
               view={channel ? { kind: "channel", slug: channel.slug } : { kind: "dm", with: (place as { with: TeamPerson }).with }}
@@ -311,6 +313,7 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
         </nav>
       )}
       {profile && <ProfileCard p={profile.p} at={profile.at} sheet={profile.sheet} onClose={() => setProfile(null)} onMessage={(p) => go({ kind: "dm", with: p })} onStatus={() => go({ kind: "view", view: "you" })} />}
+      <WelcomeGate />
       {jumper && <JumpBox channels={channels} onClose={() => setJumper(false)} onGo={(w2) => { setJumper(false); go(w2); }} onJump={(id) => { setJumper(false); goTo(id); }} />}
     </div>
   );
