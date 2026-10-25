@@ -43,6 +43,7 @@ FACT-UI-012 | Screens decided: badges, all seasons, Ballon d'Or night, home, sho
 FACT-UI-013 | Rows that stay: full screen, sound, 3D quality, skip the line-up, Keepers, Match view 3D, player names, UI Old/New, v0.15 test box. | three-d,ui
 FACT-UI-014 | Cut scenes: people and camera New, no row; the Version picker went; the rows left live in lib/star/lookRows.ts. | ui
 FACT-UI-015 | Faces: photo faces OFF for everyone, every head is the drawn one (PHOTO_FACES); face editors hidden until the photo revamp. | ui
+FACT-UI-016 | A new career opens its match moves one at a time (headers and volleys after game 3, steer at Pace 60, sprint at Pace 65, dribble after game 4); power shot, knuckleball, skill moves and one-twos wait for an update. | career,ui
 PRO-3D-001 | Any 3D, animation, mocap, model or cut-scene work: merge main first, then read docs/3D_HANDBOOK.md. | three-d,deploy
 PRO-DAT-001 | Run a pending migration in the Supabase SQL Editor before touching the related features. | data
 PRO-DAT-002 | Bug report? Use the supabase-bug-hunt skill: read the report and the player's save, compare normal saves, reproduce, fix the code. | data
@@ -115,6 +116,8 @@ RUL-TEAM-022 | In Mikey's chats, never run a playtest unless Mikey asks; when on
 RUL-TEAM-023 | Everything goes on the admin page, always: every patch note and every update to one is shipped to the site and checked live; an update is marked (updatedAt + updateNote) so it shows UPDATED, moves to the front and is unread again. | admin,process,team
 RUL-TEAM-024 | "Only give people todos if it is actually needed; if someone needs to do something, tell Leo first (no team/jobs.json from a Leo chat without his OK)." | team,process
 RUL-TEAM-025 | Feedback on a patch note is answered on that same patch note page (a follow-up section with before/after), never a new artifact. | process,rule,style,team
+RUL-TEAM-026 | Big tasks: do every step that needs no approval first; leave anything that may ask Mikey to tap Allow (artifact publish, connector call) until the end. | team
+RUL-TEAM-027 | When Mikey asks to measure, report or discuss something, report back and do not change the game; build only what he asks to be built. | team
 RUL-UI-001 | Decide, don't toggle: a new look or gameplay change is built as THE game, with no new New/Old row in Settings. | ui
 RUL-UI-002 | Unfinished work lives on a test page (a /star-*-dev page), not behind a switch in the real game. | ui,admin
 RUL-UI-003 | Existing switches stay until someone decides each one; never delete one unasked. | rule,ui
