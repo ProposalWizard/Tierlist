@@ -28,20 +28,22 @@ const ctx = await chromium.launchPersistentContext(prof, {
 const pg = ctx.pages()[0] || (await ctx.newPage());
 const errors = []; pg.on("pageerror", (e) => errors.push(e.message));
 const seed = JSON.parse(fs.readFileSync(SEED, "utf8"));
-await pg.addInitScript(([seed, on]) => {
+// MOVE=<shop item id> picks the equipped celebration (default the knee slide)
+const ITEM = process.env.MOVE || "celeb-knee-slide";
+await pg.addInitScript(([seed, on, item]) => {
   if (sessionStorage.getItem("seeded")) return;
   sessionStorage.setItem("seeded", "1");
   localStorage.clear();
   for (const [k, v] of Object.entries(seed)) localStorage.setItem(k, v);
   const c = JSON.parse(localStorage.getItem("star-career-v2::anon"));
-  c.ownedAccessories = [...new Set([...(c.ownedAccessories || []), "celeb-knee-slide"])];
-  c.equippedAccessories = { ...(c.equippedAccessories || {}), celebration: "celeb-knee-slide" };
+  c.ownedAccessories = [...new Set([...(c.ownedAccessories || []), item])];
+  c.equippedAccessories = { ...(c.equippedAccessories || {}), celebration: item };
   localStorage.setItem("star-career-v2::anon", JSON.stringify(c));
   localStorage.setItem("star-career-saved-at-v1::anon", String(Date.now() + 1e6));
   localStorage.setItem("star-look-match-3d", "off");
   // Leo's 24 Oct update (lib/star/leoUpdate.ts): the whole update on or off on this device
   localStorage.setItem("kib-update-leo-2026-10-24", JSON.stringify({ on, off: [] }));
-}, [seed, ON]);
+}, [seed, ON, ITEM]);
 await pg.goto(`http://localhost:${PORT}/star-dev`, { waitUntil: "domcontentloaded", timeout: 300000 });
 await wait(6000);
 const out = { mode: MODE };
@@ -118,6 +120,12 @@ while (Date.now() - T0 < 20 * 60000 && !(goalShot && lateShot)) {
     }).catch((e) => ({ err: e.message }));
     f.t = i * GAP / 1000; out.frames.push(f);
     await shot(`celeb-${i}`); log("frame", i, JSON.stringify(f));
+    // SKIP=1: a tap 1.5 s in must close the celebration (how long it takes to go)
+    if (process.env.SKIP && i === 3) {
+      const t0 = Date.now(); await pg.mouse.click(195, 420);
+      let gone = null; for (let k = 0; k < 40; k++) { if (!(await pg.evaluate(() => !!document.querySelector("[data-celebration]")))) { gone = (Date.now() - t0) / 1000; break; } await wait(25); }
+      out.skip = { goneAfterS: gone }; log("skip", JSON.stringify(out.skip));
+    }
     await wait(GAP);
   }
   // the match saves the goal's recording once the celebration is over (for the goal-video check)
