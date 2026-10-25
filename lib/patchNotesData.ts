@@ -27,6 +27,1141 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.112h",
+      "title": "Harry's patch notes: Marketing Studio Plan",
+      "publishedAt": "2026-10-25T06:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Plan only, nothing built. What the Marketing tab has today (Board, Client, Studio, Uploads; Calendar, Scripts, Statics and a card page not built) and the plan for Mikey: paste a TikTok link and Claude logs it, breaks it down, writes our version and builds the video. A link in #marketing or the tab's paste box makes the same card; each card's updates post into one #marketing thread. Nine build slices, smallest first. Guest accounts and ad landing pages now belong in the Marketing studio, with their switch-on list (Turnstile first).",
+      "stats": [
+        {
+          "value": "4 of 7",
+          "label": "Marketing views built"
+        },
+        {
+          "value": "0",
+          "label": "links that start work on their own today"
+        },
+        {
+          "value": "9",
+          "label": "build slices, smallest first"
+        },
+        {
+          "value": "Plan",
+          "label": "nothing built or changed"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Read the plan",
+              "detail": "Admin → Patch notes → 0.112h: today, the link-to-video flow, the board and #marketing mock-ups, the slices."
+            },
+            {
+              "title": "Answer the calls",
+              "detail": "Bottom of the page: your calls."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Plan: Marketing studio",
+          "items": [
+            {
+              "title": "Paste a link, get a card",
+              "detail": "A TikTok, Reels or Shorts link in #marketing or the paste box makes a card with its picture in seconds (slice 1)."
+            },
+            {
+              "title": "Claude picks up new links",
+              "detail": "A breakdown within the hour, then our script, then the video builds itself after Script OK (slices 3 and 4)."
+            },
+            {
+              "title": "Done in the Studio wakes Claude",
+              "detail": "Today Done and Lock & render wait until someone opens a chat (slice 5)."
+            },
+            {
+              "title": "Calendar, library and learnings, statics",
+              "detail": "Later slices."
+            },
+            {
+              "title": "Guest accounts and ad pages belong here",
+              "detail": "Each ad is a campaign made in the studio. Switch-on list: Turnstile first, then the Supabase secret, the guest SQL and settings, then the Vercel switch."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues today",
+          "items": [
+            {
+              "title": "Uploads and Studio read an old copy of the board",
+              "pill": {
+                "text": "bug",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "The site cannot wake Claude",
+              "detail": "Done and Lock & render wait for a chat."
+            },
+            {
+              "title": "Uploads do not resume",
+              "detail": "A dropped signal on a big file starts again from zero."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.111h",
+      "title": "Harry's patch notes: Team Room, The Slack-Style Plan",
+      "publishedAt": "2026-10-25T06:20:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Being built now on the Harry branch, not live. The Team room in Slack's layout with our colours: channel list, chat, thread; the list folds with « or Cmd/Ctrl Shift D, 220 px wide; a home button instead of the admin menu. The board's sections become 9 preset channels. Bots sit in the list like people with a BOT tag and a live job line. Notifications per channel (every message, mentions, off) plus computer pop-ups. #bugs posts a Bug bot card for each report; #health posts every morning. #connectors lets you @ any service; /show lists every connection. Draw a box on a page and tag a bot. Each person's bot checks its own connections. Schedules in your status, #today check-ins and gentle nudges. Build order and questions for the team.",
+      "stats": [
+        {
+          "value": "9",
+          "label": "preset channels"
+        },
+        {
+          "value": "220 px",
+          "label": "channel list, folds away"
+        },
+        {
+          "value": "14 + 3",
+          "label": "usage cards + running the team"
+        },
+        {
+          "value": "Building",
+          "label": "Harry branch, not live"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The whole screen (U0)",
+              "detail": "Tap « on the mock to fold the list."
+            },
+            {
+              "title": "The usage cards",
+              "detail": "U1 to U14: chat, #todo, #ideas, #bugs, #health, #patch-notes, #connectors, bots, approvals, drawn boxes, DMs, notifications, search, new channels."
+            },
+            {
+              "title": "Your calls",
+              "detail": "Bottom of the page: questions for the team."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Plan: the Team room UI",
+          "items": [
+            {
+              "title": "Slack's layout, our colours",
+              "detail": "List, chat, thread. The list folds with « or Cmd/Ctrl Shift D. One home button instead of the admin menu."
+            },
+            {
+              "title": "Channels instead of sections",
+              "detail": "Ideas, to-do, bugs, health, patch notes and more as 9 preset channels; you can add more."
+            },
+            {
+              "title": "Bots as members",
+              "detail": "A BOT tag and a live line of what each bot is doing."
+            },
+            {
+              "title": "Notifications per channel",
+              "detail": "Every message, only mentions, or off; plus pop-ups on the computer."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Plan: bots and channels",
+          "items": [
+            {
+              "title": "#bugs fills itself",
+              "detail": "A player's report posts as a Bug bot card with Hand to… and Mark fixed."
+            },
+            {
+              "title": "#health",
+              "detail": "A morning post and a weekly post."
+            },
+            {
+              "title": "#connectors and /show",
+              "detail": "@ any service; /show lists every connection for every person."
+            },
+            {
+              "title": "Draw a box, tag a bot",
+              "detail": "A box drawn on a page goes to a bot with the picture."
+            },
+            {
+              "title": "Each person's connections",
+              "detail": "@me lists what your own bot is connected to."
+            },
+            {
+              "title": "Schedules, #today and nudges",
+              "detail": "Repeating statuses, morning and evening check-ins, gentle nudges."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Build order",
+              "detail": "The list first, then messages, status, notifications, #todo, phone tabs, search, bots, channel kinds, #today."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.110h",
+      "title": "Harry's patch notes: Supabase And Cloudflare",
+      "publishedAt": "2026-10-25T06:10:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Claude can now see and work in Supabase: look-only by default, every change asked first with a READ ONLY / CHANGES THE DATABASE header (live). Done in the live database on 25 Oct: the 2 missing tables made, the login-streak hole closed, 19 missing indexes added. Measured: the FIFA stats table is 312 MB of 383 MB; shrink step 1 frees about 78 MB (bundle 144 to 66 MB). Next tidy steps: drop 4 unused indexes, FIFA shrink and space clean-up, 42 row rules, nightly draft-room tidy. On the Harry branch: one login check per request instead of two; guest accounts and ad landing pages (built, switched off; switch-on list on 0.112h); the bug-hunt skill. Plus what Supabase and Cloudflare are for us.",
+      "stats": [
+        {
+          "value": "3",
+          "label": "fixes in the live database"
+        },
+        {
+          "value": "312 of 383 MB",
+          "label": "FIFA table share of the database"
+        },
+        {
+          "value": "~78 MB",
+          "label": "freed by shrink step 1"
+        },
+        {
+          "value": "2 → 1",
+          "label": "login checks per request"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Supabase asks first",
+              "detail": "Any Claude chat that uses Supabase: READ ONLY or CHANGES THE DATABASE, then What and Why."
+            },
+            {
+              "title": "The 2 tables exist",
+              "detail": "Supabase → Table editor: star_xp_config and star_tuning_notes."
+            },
+            {
+              "title": "Missing-index warnings gone",
+              "detail": "Supabase → Advisors → Performance."
+            },
+            {
+              "title": "Guest test page",
+              "detail": "After a push: /star-guest-dev (team only)."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: Claude can see and work in Supabase",
+          "items": [
+            {
+              "title": "Look-only by default, every change asked first",
+              "detail": "Changes go out as an SQL page and wait for a yes.",
+              "pill": {
+                "text": "live",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed: three changes in the live database (25 Oct)",
+          "items": [
+            {
+              "title": "The 2 missing tables are made"
+            },
+            {
+              "title": "The login-streak hole is closed",
+              "detail": "Only the signed-in player can update their own streak."
+            },
+            {
+              "title": "19 missing indexes added"
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed (Harry branch, not live)",
+          "items": [
+            {
+              "title": "One login check per request, not two",
+              "detail": "Game files (sounds, pictures, models) skip it."
+            },
+            {
+              "title": "Guest accounts and ad landing pages",
+              "detail": "Built, switched off. Turnstile human check. Decided: players name their own player, a League Two start, a daily sign-in nudge for 7 days. Switch-on list on 0.112h."
+            },
+            {
+              "title": "The bug-hunt skill",
+              "detail": "Read a bug report, find the save, compare, reproduce, fix. Look-only."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Guest accounts not tested end to end",
+              "detail": "About 90 server routes still need the one-line guest check."
+            },
+            {
+              "title": "No downloadable database backup",
+              "detail": "Free plan. Your call: a nightly copy to R2.",
+              "pill": {
+                "text": "open",
+                "tone": "red"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Drop 4 unused indexes"
+            },
+            {
+              "title": "FIFA shrink step 1, then a space clean-up",
+              "detail": "About 78 MB back."
+            },
+            {
+              "title": "42 row rules re-worded",
+              "detail": "Check the login once per read, not once per row."
+            },
+            {
+              "title": "Nightly draft-room tidy",
+              "detail": "Rooms older than 30 days."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.109h",
+      "title": "Harry's patch notes: Game Fixes From The 0.108h Comments",
+      "publishedAt": "2026-10-25T06:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "On the Harry branch, not live. Cut scenes use the drawn head when photo faces are off: light-tone face against neck 5.9 to 1.0 (signing, office, farewell, award scenes); darker tones still 4.6 to 6.6, waiting on a call. Every chance kind draws men at 22 px (was up to 31, 37 on a byline cross); only the pitch zooms; goal rates unchanged. Build-ups use one smooth camera glide (worst jump 640 to 38 px a second). Headers and volleys: the tap-the-goal version was turned down and is being redone to Harry's notes: skip only the drag-back arrow and go straight to clicking the ball, no late zoom, men stay the same size, the cross comes in once, ball and trail track properly, same for volleys and acrobatics.",
+      "stats": [
+        {
+          "value": "5.9 → 1.0",
+          "label": "light-tone face vs neck in cut scenes"
+        },
+        {
+          "value": "31 → 22 px",
+          "label": "men on every chance kind"
+        },
+        {
+          "value": "640 → 38",
+          "label": "worst build-up camera jump (px/s)"
+        },
+        {
+          "value": "Redo",
+          "label": "headers and volleys"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Cut-scene skin",
+              "detail": "Photo faces off, sign for a club at a light tone: face and neck one colour."
+            },
+            {
+              "title": "Men at 22 px on every chance",
+              "detail": "Penalty, cutback, one-on-one, cross: same size as long range."
+            },
+            {
+              "title": "Smooth build-up camera",
+              "detail": "Highlights: one glide, no snap at OFFSIDE."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Cut scenes: one skin colour at light tones",
+              "detail": "Drawn head when photo faces are off. Face against neck 5.9 → 1.0."
+            },
+            {
+              "title": "Every chance kind draws men at 22 px",
+              "detail": "Penalties, cutbacks, one-on-ones, crosses, drills and the trial. Only the pitch zooms."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Build-ups use one smooth camera glide",
+              "detail": "The move is planned first, then one eased glide. Worst jump 640 → 38 px a second."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Headers and volleys being redone",
+              "detail": "Skip only the drag-back arrow, click the ball, no late zoom, same size men, the cross comes in once, ball and trail track properly; same for volleys and acrobatics.",
+              "pill": {
+                "text": "being redone",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Darker skin tones in cut scenes",
+              "detail": "Still 4.6 to 6.6. Needs a change to the shared skin paint: your call.",
+              "pill": {
+                "text": "waiting on a call",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Trial shootout penalty size",
+              "detail": "At 22 px men look small in the close-up goal. Your call."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.108h",
+      "title": "Harry's patch notes: Your 3D Man On The Player Card, Even 3D Skin, And Players Back To Normal Size",
+      "publishedAt": "2026-10-23T05:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "22-23 Oct, all on main. Your own 3D footballer on the FIFA player card (Stats) in your club's home kit, in Save image too; drawn head if a phone can't do 3D. 3D skin one even colour for every 3D man (garden face vs arm gap 13-28 to 0-2.4: clearly different to the same). Players back to size B (about 22 px on a phone long-range chance, was 28) and the keeper back to a man's height. Headers, volleys and the Head & Volley drill drew men 1.2-1.45x too big; now 22 px like every chance. Build-ups play a whole move in about 3 s: long ball, tiki-taka, or a run then a pass. Better Aerial = bigger gold perfect circle. Full highlights rebuild and Match feel on by default for new phones. Move media to Cloudflare button; lighter bell (admin pages about 680 KB lighter). Only main makes a Vercel deploy (side branches made 92 of 104 builds on 22 Oct).",
+      "stats": [
+        {
+          "value": "3D",
+          "label": "your man on the player card"
+        },
+        {
+          "value": "13-28 → 0-2.4",
+          "label": "face vs arm colour gap"
+        },
+        {
+          "value": "28 → 22 px",
+          "label": "a man on a phone chance"
+        },
+        {
+          "value": "~3 s",
+          "label": "one build-up, three styles"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "3D man on the player card",
+              "detail": "Stats: the card at the top shows your own 3D footballer in your club's home kit."
+            },
+            {
+              "title": "Save image with the 3D man",
+              "detail": "Stats, player card, Save image: the PNG has him in it."
+            },
+            {
+              "title": "One skin colour",
+              "detail": "Garden or shop: face, neck, arms and hands are the same colour, at a dark and a light tone."
+            },
+            {
+              "title": "Player size",
+              "detail": "Play a real match chance: men are normal size again (about 22 px on a phone long-range chance)."
+            },
+            {
+              "title": "Keeper height",
+              "detail": "Any chance: the keeper is a man's height, not a giant."
+            },
+            {
+              "title": "Header and volley size",
+              "detail": "A header or volley chance, and Training, Head & Volley: men are the same size as every other chance."
+            },
+            {
+              "title": "Build-ups",
+              "detail": "Highlights: a build-up plays a whole move in about 3 s. Long ball, tiki-taka, or a run then a pass."
+            },
+            {
+              "title": "Gold perfect circle",
+              "detail": "Header or volley strike screen: the circle is gold and grows with Aerial."
+            },
+            {
+              "title": "New defaults",
+              "detail": "A new phone: Settings shows Full highlights rebuild and Match feel on. Both rows are still there."
+            },
+            {
+              "title": "Move media to Cloudflare",
+              "detail": "Admin, Patch notes: \"Move media to Cloudflare\"."
+            },
+            {
+              "title": "Faster bell",
+              "detail": "Admin: the bell opens a short headline list."
+            },
+            {
+              "title": "Deploys from main only",
+              "detail": "Vercel: only main makes a deploy. Side branches do not."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: Your 3D man on the player card",
+          "items": [
+            {
+              "title": "The card shows the same 3D man as the shop and the garden",
+              "detail": "Problem: the card on Stats showed a flat drawn head. Fix: it draws your own 3D footballer in your club's home kit, and Save image puts him in the PNG. A phone that can't run 3D shows the drawn head, as before."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed: 3D skin is one even colour",
+          "items": [
+            {
+              "title": "Face, neck, arms and hands match the tone you pick",
+              "detail": "Problem: the face was a different colour from the arms; on dark tones it looked pale. Fix: one colour from the tone you pick, for every 3D man everywhere (shop, garden, cut scenes, card, team-mates). Garden face against arm: clearly different (13-28) to the same (0-2.4). Seen on test renders."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed: Players back to normal size",
+          "items": [
+            {
+              "title": "Men are size B again, the keeper is a man's height",
+              "detail": "Problem: \"players are huge\": size C made men 1.56x the old size. Fix: back to size B, about 22 px on a phone long-range chance (was 28). The keeper is back to a man's height."
+            },
+            {
+              "title": "Headers, volleys and the drill drew men too big",
+              "detail": "Problem: men were 1.2 to 1.45x bigger on headers, volleys and the Head & Volley drill (their closer camera). Fix: men are drawn the same size whatever the camera, 22 px on a phone."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: Highlights and headers",
+          "items": [
+            {
+              "title": "Build-ups play a whole move in about 3 s",
+              "detail": "Three styles: a fast long ball, tiki-taka (about four short passes), or a run then a pass."
+            },
+            {
+              "title": "Better Aerial = bigger gold circle",
+              "detail": "The perfect circle on headers and volleys grows with Aerial (0.11 at 30, 0.29 at 90) and is gold so it shows on the ball."
+            },
+            {
+              "title": "Two settings on by default",
+              "detail": "Full highlights rebuild and Match feel start on for new phones. Both rows stay in Settings."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: Site and admin",
+          "items": [
+            {
+              "title": "Move patch-note media to Cloudflare",
+              "detail": "Admin, Patch notes, \"Move media to Cloudflare\" copies old pictures and clips across (test run: 2,118 files, 175 MB). The bell now loads a short headline list: admin pages about 680 KB lighter."
+            },
+            {
+              "title": "Only main makes a Vercel deploy",
+              "detail": "On 22 Oct side branches made 92 of 104 builds and hit the free 100-a-day limit. Now only main deploys."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Penalties, cutbacks and one-on-ones still draw men up to about 31 px",
+              "detail": "The same closer-camera effect headers had. Harry to decide."
+            },
+            {
+              "title": "Skin fix not yet seen on a phone",
+              "detail": "Seen on test renders only. Recommended: look on a phone at a dark and a light tone."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Penalties, cutbacks and one-on-ones",
+              "detail": "Harry decides if men there go to 22 px too."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.109",
+      "title": "Mikey's patch notes v0.21: one bottom bar, Stats with your card, League for every competition, a fuller Phone",
+      "publishedAt": "2026-10-23T03:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/J1GDXrx1SSHrLTroCa3C2K",
+      "summary": "The master plan built: one bottom bar, a Stats page with your card and four tabs, League as one page for every competition, a Phone with Relationships, Squad, Fixtures & results and real messages.",
+      "stats": [
+        {
+          "value": "5",
+          "label": "master-plan steps built"
+        },
+        {
+          "value": "12/12 → 27/10",
+          "label": "phone clock on the same save"
+        },
+        {
+          "value": "211",
+          "label": "nations in the FIFA ranking view"
+        },
+        {
+          "value": "1.9 s → 0.3 s",
+          "label": "Phone back to Home"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Bottom bar",
+              "detail": "League · Training · Home · Phone · Play on every screen"
+            },
+            {
+              "title": "Home",
+              "detail": "Rep/Fame left, Goals/Assists right; boots line above the cans; Settings → Home numbers"
+            },
+            {
+              "title": "Stats",
+              "detail": "swipe left of Home: card on the left, Stats · Records · Achievements · Contract"
+            },
+            {
+              "title": "League",
+              "detail": "bar → League: Table · Results ‹ Round › · Goals · Assists · History; Change ▾ → International"
+            },
+            {
+              "title": "Phone",
+              "detail": "Relationships, Squad, Fixtures & results apps; Messages → tap the gaffer's scout report"
+            },
+            {
+              "title": "Phone clock",
+              "detail": "top-left of the phone: the day of your last game"
+            },
+            {
+              "title": "Shots",
+              "detail": "about a third fewer wide misses"
+            },
+            {
+              "title": "Midweek games",
+              "detail": "a quarter-week's wage extra for each one you play"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "One bottom bar on every screen",
+              "detail": "League · Training · Home · Phone · Play, the same on Home, League, the Shop, Sponsors and every full screen. Home glows; the round Play button sits on the right. The Phone opens the boss's talk while it is due. (seen)"
+            },
+            {
+              "title": "The Stats page: your card and four tabs",
+              "detail": "Your card shows whole on the left, with Stats · Records · Achievements · Contract stacked beside it and Save image under them. (seen)",
+              "more": {
+                "summary": "What each tab holds",
+                "points": [
+                  "Stats: this season and your career side by side (Apps, Goals, Assists, Trophies), season by season (tap one for the awards you won), the cabinet, goals and assists by season, per club, one International row.",
+                  "Records: your bests open; real-world records and Hall of Fame folded shut.",
+                  "Achievements: one list, rarity only (Bronze, Silver, Gold, Legend), no XP, no box of its own. Your first steps leave once done.",
+                  "Contract: on paper, with both signatures, and Propose renewal."
+                ]
+              }
+            },
+            {
+              "title": "League is one page for every competition",
+              "detail": "Opens on your league's table. Tabs: Table, Results, Goals, Assists, History. Results opens on the latest round; ‹ › walks back through played rounds and on to future fixtures. (seen)",
+              "more": {
+                "summary": "More",
+                "points": [
+                  "Other leagues' past rounds are replayed from each round's own seed: all 6 matched the stored scores exactly (measured). Only each league's latest round has scorer names.",
+                  "History: winner and runner-up of every league and cup, each season. It fills in from the end of this season.",
+                  "Change ▾ → International: your nation, the full FIFA ranking (211 nations, yours lit), and every international competition with its group tables, rounds and finals. A competition appears once it is drawn.",
+                  "Scout, Awards, Squad, Fixtures and the separate Table page left League."
+                ]
+              }
+            },
+            {
+              "title": "International on the League page",
+              "detail": "Every international competition like a league: groups, ‹ Matchday ›, and every final the game has played. (seen)"
+            },
+            {
+              "title": "The Phone does the rest",
+              "detail": "New apps: Relationships, Squad, Fixtures & results. League and Awards left the phone. (seen)",
+              "more": {
+                "summary": "More",
+                "points": [
+                  "Fixtures & results: every game of the season in date order, league, cups and Europe, with score and W/D/L; the next game is lit and the list opens on it.",
+                  "Messages: the gaffer's scout report before each match (tap to read it), each sponsor offer (tap for Sponsors), and a team-mate when you are close to a record: \"You're only 2 matches away from Jamie Vardy's record\" on the test save."
+                ]
+              }
+            },
+            {
+              "title": "Left out for energy: drink a can",
+              "detail": "Under the manager's office: drink one, or buy and drink one, to make the bench. (seen)"
+            },
+            {
+              "title": "Run hint",
+              "detail": "Under the run joystick: \"Steer into space: he may pass it back\". (seen)"
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Home is cleaner",
+              "detail": "Rep and Fame on the left of your player, Goals and Assists on the right (Settings → Home numbers: Sides | Top). Your boots and what they give sit above the cans. The crests sit side by side. Removed: the record line, the transfer window line, the links row, non-urgent chips. (seen)"
+            },
+            {
+              "title": "Shots miss a third less",
+              "detail": "Sideways spread cut by a third. One-on-ones scored 46.9% → 48.1%. (measured)"
+            },
+            {
+              "title": "Midweek games pay extra",
+              "detail": "Every club game you play that is not on a Saturday pays 25% of the weekly wage on top. About 13 a season at the start. (measured)"
+            },
+            {
+              "title": "Crowded chances zoom in",
+              "detail": "Five or more men within 10 m of the ball: the camera frames the crowd. Header zoom 1.03 → 1.62, volley 1.12 → 1.60, one-on-one 1.17 → 1.47. (measured)"
+            },
+            {
+              "title": "The Shop's tabs moved to the top",
+              "detail": "Shop · For You · 3D · Boots · Sponsors are a strip under the header; the main bar is at the bottom. (seen)"
+            },
+            {
+              "title": "Top-down dribble view shows more",
+              "detail": "29 m → 40 m deep. (seen)"
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "The phone's clock showed the wrong day",
+              "detail": "It read the date as if every week were a league week, so with cup and European games it ran ahead: 12/12 when the next match was Sat 31 Oct. Now 27/10, the day of your last game (a Tuesday Champions League match). (measured)",
+              "more": {
+                "summary": "Why",
+                "points": [
+                  "The clock counted the game's week number as a league matchweek. Cup and European games add weeks, so it drifted.",
+                  "Now it reads the real date of your last played fixture; before the first game, the day before it. lib/star/phoneClock.ts"
+                ]
+              }
+            },
+            {
+              "title": "Scorers are written once",
+              "detail": "\"Smith 5', Smith 15'\" is now \"Smith 5', 15'\" on every league's results. (not yet seen)",
+              "more": {
+                "summary": "Why",
+                "points": [
+                  "The All-leagues results printed the name before every goal; the old League screen already grouped them. Scorer names need squad data, which the test browser does not have, so this is not seen yet."
+                ]
+              }
+            },
+            {
+              "title": "Awards say the month, not the week",
+              "detail": "\"S1 wk 36\" is now \"Season 1 · February\", with the league's name: \"National League Player of the Month\". (seen)"
+            },
+            {
+              "title": "Going back to Home is quick again",
+              "detail": "Phone → Home took 1.9 s (it re-saved the player's picture every visit). Now 0.3 s. (measured)"
+            },
+            {
+              "title": "Extra time: a player taken off stays off",
+              "detail": "He was handed chances again in extra time after coming off at 84'. (measured)"
+            },
+            {
+              "title": "Music changes cleanly",
+              "detail": "A new track fades the old one out first: two tracks at once dropped from 2.1 s to 0.1 s. (measured)"
+            },
+            {
+              "title": "Smaller fixes from the first playtest",
+              "detail": "Stamina bar hidden on commentary and full time; the cup draw opens at full size; Swipe right on the Showroom goes Home; a chance closes live scores so you come back to the commentary; Premier League records count Premier League games only. (seen)"
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Scorer names on League results not seen yet",
+              "detail": "The test browser has no squad data. Check on the real site: League → Results.",
+              "pill": {
+                "text": "Low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "History is empty until a season ends",
+              "detail": "New saves start counting at the end of this season; older saves show the winners they kept.",
+              "pill": {
+                "text": "Low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Before launch: cookie consent, error reports, two database changes",
+              "detail": "No Accept/Reject pop-up yet for the visit counter (UK rules need one). Sentry has no project yet, so crashes go unreported. star_xp_config.sql and star_tuning_notes.sql still need running in Supabase.",
+              "pill": {
+                "text": "High",
+                "tone": "red"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Launch items",
+              "detail": "Waiting on Mikey's calls: cookie pop-up and Privacy page, Sentry setup, the two database changes, which roadmap base-game items go in."
+            },
+            {
+              "title": "Room in the database",
+              "detail": "Later, as decided."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.108",
+      "title": "Leo's tonight build: celebrations, fast feed, Real Goals, season end, 17 bugs (on the site behind a switch)",
+      "publishedAt": "2026-10-22T23:15:00Z",
+      "updatedAt": "2026-10-25T01:30:00Z",
+      "updateNote": "Bicycle kick taken out (Harry is building it). Fixed: after your goal the keeper stayed in the middle of the screen while the camera followed you; now he stays by the goal.",
+      "artifactUrl": "https://claude.ai/artifact/PQvHUgssX7CAdad2jitPjA",
+      "summary": "Leo v0.20, 22 Oct. What the 7 chats built from plan 0.107, joined on branch Leo. On the live site since 24 Oct behind Settings → Updates → \"Leo's 24 Oct update\" (admins, off by default, one switch per part). Goal celebrations from the shop (run to the corner, skippable, in videos) and big late moments; the social feed opens in 0.29 s on a cheap phone (was 1.5 s) plus Goal of the Month; weather and pitch quality (test page only); Real Goals paths, 61 bangers, a daily goal, a fast home; a season video, a goals gallery, a 3D awards night; 17 bugs fixed, including refresh sending you Home. 25 Oct: the bicycle kick is taken back out (Harry is building it); the keeper no longer stays stuck mid-screen while you celebrate. Harry: the match file and keeper were touched (additive, match tests pass); findings for him are listed, not given as to-dos. Mikey: 3 lines in manager.ts and an injuries plan for you.",
+      "stats": [
+        {
+          "value": "0.29 s",
+          "label": "feed opens on a cheap phone (was 1.5 s)"
+        },
+        {
+          "value": "17",
+          "label": "bugs fixed"
+        },
+        {
+          "value": "61",
+          "label": "famous goals added"
+        },
+        {
+          "value": "422 / 430",
+          "label": "star test files passing (the 8 left fail on main too)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Goal celebrations",
+              "detail": "Your goals only: run to the nearer corner, then the move equipped in the shop (6: Hands Up, Fist Pump, Jump, Roar, Aeroplane, Knee Slide). Tap skips. 2D, 3D and goal videos (2.5 s longer). Knee slide fixed (knees were together)."
+            },
+            {
+              "title": "Big moments",
+              "detail": "85'+ level or one down: banner, crowd rise, heartbeat; score = slow motion of the last 0.5 s (result unchanged), roar, 14 new late commentary lines."
+            },
+            {
+              "title": "Goal of the Month",
+              "detail": "Monthly poll in the feed: your 3 best goals v 2 by others in your league. Fans vote, you vote once, a win adds fans."
+            },
+            {
+              "title": "Weather and pitch (test page only)",
+              "detail": "/star-weather-dev: wind with direction, rain skid, each club's pitch quality, dry spells. Real game unchanged (12/12 fingerprints). Found: the live heavy pitch already kills 56 in 100 normal passes."
+            },
+            {
+              "title": "Real Goals (test page)",
+              "detail": "8 paths, 411 levels; 61 bangers 2010-2025 (checked twice, 22 corrected) with an admin fixer; a daily goal with a streak; home 0.4-0.55 s on a cheap phone (was 4.8-5.2 s). Shootout keeper that reads your habits on /star-shootout-dev."
+            },
+            {
+              "title": "End of season",
+              "detail": "A season video of every goal; Stats → Goals gallery (best 10 in the Hall of Fame); a 3D season awards night (5 awards, ~44 s, skippable); an injuries plan for Mikey (docs only)."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Social feed speed",
+              "detail": "Cheap phone (6× slower CPU): open 1.5 → 0.29 s, worst scroll freeze 0.76 → 0.17 s, first video 47 → 12 s, reopened 1.9 → 0.56 s. Videos made off the main thread, kept on the phone, started at full time."
+            },
+            {
+              "title": "Keeper stuck mid-screen in celebrations (25 Oct)",
+              "detail": "After his dive the keeper's landing was kept as a point on the screen, so when the camera followed you he stayed put. Now it is a spot on the pitch and he leaves the screen with the goal. Drawing only."
+            },
+            {
+              "title": "Refresh sent you Home",
+              "detail": "Now the Ballon d'Or, window list, talks and 'Deal agreed' come back. A refresh after 'Deal agreed' used to lose the transfer."
+            },
+            {
+              "title": "16 more bugs",
+              "detail": "No sack after promotion (Mikey's manager.ts, 3 lines); first season 2027/28 → 2026/27; talks header wage; welcome tour replaying; team-sheet manager name; line-up buttons overlap; see-through dropdown; setup step count; scout wording; offline badge retries; 'Promoted' in the window list; goal videos stopping early; cup accounts' wrong news; the admin tab eating a slow phone's CPU."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Touches other areas",
+          "items": [
+            {
+              "title": "Harry: match file and keeper",
+              "detail": "CanvasMatch.tsx (celebrations, big moments, video length, where the fallen keeper is drawn), keeperBrain.ts (penalty habits: unchanged with no habit), canvasEngine.ts/ballPhysics.ts (weather, inert unless the test page sets it). All additive; match tests pass."
+            },
+            {
+              "title": "Bicycle kick taken back out (25 Oct)",
+              "detail": "Harry is building it. Gone: the Bicycle! button, the move (2D and 3D), banner, media posts, its switch; the 15 overhead Real Moments are left out again."
+            },
+            {
+              "title": "AdminNavPanel.tsx",
+              "detail": "The admin tab checked ~700 points every 0.5 s; now ~50, in idle time only."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Feed scroll",
+              "detail": "Still 11-16 hiccups of 0.14-0.17 s while scrolling (target none over 0.1 s)."
+            },
+            {
+              "title": "Not heard or not on a real phone",
+              "detail": "Big-moment and reel sound measured only; awards night frame rate not measured on a phone; no real squads in the sandbox."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Found for Harry (not given as to-dos)",
+          "items": [
+            {
+              "title": "Harry",
+              "detail": "Match camera 1 px short at 372×704; a long-range drawing breaks a law; the removed data source's name in two patch notes; 3D training freeze; two chance tests failing on main after the build-up work."
+            },
+            {
+              "title": "Everyone",
+              "detail": "The save is ~1 MB and rewritten on every change."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.107h",
+      "title": "Harry's patch notes: Players Back To Size B, The Marketing Studio And Uploads, And Fewer Dropped Highlights",
+      "publishedAt": "2026-10-22T18:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "22 Oct. Players back to size B (PR #760): NEW_FIGURE_SCALE 1 to 0.8; men about 22 px on a phone long-range chance (was about 28, 1.56x the old), now 1.25x the old; keeper back to his old size; pitch unchanged. Marketing Studio and uploads (PR #761): Admin, Marketing tabs Board, Client, Studio, Uploads; direct-to-R2 uploads, 500 MB a file, 30 files and 5 GB per admin per day; Studio, Editing suite; Statics soon; recorder Send to Marketing. Highlights fix (PR #763): Match flow New chances back (striker even 6.29 to 6.46, strong 7.61 to 7.84); real moments about 1 in 10 (was 1 in 7); build-ups 4.9 s to about 3.1 s; foul lead-in about 6 s to about 3.5 s; offside 5.3 s to 4.4 s.",
+      "stats": [
+        {
+          "value": "28 → 22 px",
+          "label": "a man on a phone long-range chance"
+        },
+        {
+          "value": "500 MB",
+          "label": "max per uploaded file"
+        },
+        {
+          "value": "1 in 7 → 1 in 10",
+          "label": "real moments"
+        },
+        {
+          "value": "4.9 → 3.1 s",
+          "label": "one build-up"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Player size",
+              "detail": "Play a real match chance: men are about 22 px on a phone long-range chance (were about 28). The keeper is back to his old size."
+            },
+            {
+              "title": "Marketing tabs",
+              "detail": "Admin, Marketing: tabs Board, Client, Studio, Uploads."
+            },
+            {
+              "title": "Uploads",
+              "detail": "Admin, Marketing, Uploads: pick a video or picture and it goes straight to storage. Max 500 MB a file."
+            },
+            {
+              "title": "Studio, Editing",
+              "detail": "Admin, Marketing, Studio, Editing: open a cut. Timeline, filmstrip, waveform, For Claude and Review notes."
+            },
+            {
+              "title": "Lock and render, Done",
+              "detail": "In the suite: Lock & render, and Done."
+            },
+            {
+              "title": "Studio, Statics",
+              "detail": "Admin, Marketing, Studio, Statics: shows \"Soon\"."
+            },
+            {
+              "title": "Recorder",
+              "detail": "The admin recorder has a \"Send to Marketing\" button."
+            },
+            {
+              "title": "Highlights count",
+              "detail": "Match flow: New. A match should show as many chances as with Old."
+            },
+            {
+              "title": "Real moments",
+              "detail": "Real moments on: about 1 real moment in 10 chances (was 1 in 7)."
+            },
+            {
+              "title": "Build-ups",
+              "detail": "Highlights build-ups are about 3.1 s each (were 4.9 s)."
+            },
+            {
+              "title": "Fouls and offsides",
+              "detail": "A foul clip leads in about 3.5 s before the foul (was about 6 s). An offside leads in 4.4 s (was 5.3 s)."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: Players back to size B (PR #760)",
+          "items": [
+            {
+              "title": "Men are smaller again, the keeper is back to his old size",
+              "detail": "Harry found the players \"HUGE\" in real match chances. The cause was B20's size C: both shrinks were dropped, so men came out 1.56 times the old size, about 28 px on a phone long-range chance. It was not the build-ups. NEW_FIGURE_SCALE went from 1 to 0.8. The outfield shrink stays dropped. Men are now about 22 px (1.25 times the old). The keeper is back to his old size. The pitch is unchanged. Merged as PR #760."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: Marketing Studio and uploads (PR #761)",
+          "items": [
+            {
+              "title": "Admin, Marketing has four tabs: Board, Client, Studio, Uploads",
+              "detail": "Reasoned: videos and pictures for marketing had no home in the admin. Reasoned: nothing else held a cut, its notes and its files in one place. Admin, Marketing now has the tabs Board, Client, Studio and Uploads. Merged as PR #761."
+            },
+            {
+              "title": "Uploads go straight from the browser to private storage",
+              "detail": "Reasoned: a big video sent through the site would be slow and heavy for the site. Reasoned: so the file goes from the browser straight to Cloudflare R2, never through the site. A 15-minute signed link starts each upload.. Max 500 MB per file. Video and image only.. Max 30 files and 5 GB per admin per day.. The bucket is private. Playback uses 1-hour signed links.."
+            },
+            {
+              "title": "Studio, Editing: the newest editing suite",
+              "detail": "Reasoned: notes on a video lived in chat, away from the video. Reasoned: the suite puts the notes on the timeline, at the moment they are about. It comes from Harry's other tool. Timeline, filmstrip, waveform and lanes.. Two tabs that never mix: For Claude and Review notes .. Lock & render, and Done.. An auto-check lane, taste notes, and a mic.. The notes are saved as JSON next to the video in R2, not in the public code.."
+            },
+            {
+              "title": "Recorder: \"Send to Marketing\"",
+              "detail": "Reasoned: a recording had to be downloaded and uploaded by hand. Reasoned: the recorder now has a button that sends it to Marketing. The admin recorder has a \"Send to Marketing\" button."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed: Highlights drop fewer chances and run shorter (PR #763)",
+          "items": [
+            {
+              "title": "Match flow: New dropped 3 to 4% of chances",
+              "detail": "With Match flow: New a match showed fewer chances than before: striker even 6.47 to 6.29 a match, strong 7.92 to 7.61. Only sim piece 4 dropped chances. Your miss's second ball was won in midfield, so the move never became a chance. The second ball is now won on the edge of their box. Striker even 6.46, strong 7.84. With Match flow: Old (the default) the count never changed: 4.5 to 7 chances a match is normal, and a sub appearance gives fewer."
+            },
+            {
+              "title": "Real moments: 1 in 7 is now about 1 in 10",
+              "detail": "With the toggle on, about 1 chance in 7 was a real moment (11.7 to 15.1%). Headers and volleys joined at \"1 in 4 of each kind\". Now 1 in 6 of each kind. That is about 1 in 10 (8.3 to 10.6%)."
+            },
+            {
+              "title": "Build-ups are shorter",
+              "detail": "Each build-up ran 4.9 s, 22 to 27 s a match. Reasoned: the build-ups were cut too long. About 3.1 s each, 14 to 17 s a match. Seen live: 2.4 to 2.9 s each, 13.9 s for 5."
+            },
+            {
+              "title": "Fouls and offsides lead in closer to the moment",
+              "detail": "A foul clip began about 6 s before the foul. An offside clip began 5.3 s before. Reasoned: the lead-in was longer than the moment needed. Fouls now start 0.8 s before the foul: the lead-in was about 6 s and is now about 3.5 s. Offsides start 0.6 s before the pass: 5.3 s down to 4.4 s."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Not tried with the real keys yet",
+              "detail": "The Studio and uploads were seen on a local build with no storage keys. A real upload needs Harry to send one video."
+            },
+            {
+              "title": "A dropped upload restarts",
+              "detail": "If an upload is cut, it starts again from the beginning."
+            },
+            {
+              "title": "Last save wins",
+              "detail": "If two people save the same cut at the same time, the last save wins."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Real upload test",
+              "detail": "Harry uploads one video to prove the keys work."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.107",
       "title": "Leo's plan for tonight: 15 parts, 7 chats (approved, building)",
       "publishedAt": "2026-10-22T17:45:00Z",
@@ -34,20 +1169,54 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "artifactUrl": "https://claude.ai/artifact/RERQk9D5BLaDv14ebha8qf",
       "summary": "Leo, 22 Oct. A plan, not a release: what 7 chats are building tonight on Leo's branches (nothing live until Leo says push). Goal celebrations bought in the shop (run to the corner, skippable, in videos); a fast social feed on slow phones; Goal of the Month; bicycle kicks (Aerial skill); weather and pitch quality changing the ball (test page first); big late moments; shootout keeper that reads your habits (test page); Real Goals league paths, 60 hand-written bangers 2010-2025 and a daily goal; a season video reel; a career goals gallery; a season awards night; an injuries plan for Mikey; a bug hunt. Harry: parts 3, 4 and 13 touch your areas (match file, ball physics, the night) — say if you object.",
       "stats": [
-        { "value": "15", "label": "parts" },
-        { "value": "7", "label": "chats building at once" },
-        { "value": "408 / 414", "label": "tests passing on main tonight" }
+        {
+          "value": "15",
+          "label": "parts"
+        },
+        {
+          "value": "7",
+          "label": "chats building at once"
+        },
+        {
+          "value": "408 / 414",
+          "label": "tests passing on main tonight"
+        }
       ],
       "sections": [
-        { "kind": "added", "title": "Being built tonight", "items": [
-          { "title": "Celebrations + big moments", "detail": "Chat 1. Touches the match file (the engine warning will ask)." },
-          { "title": "Social feed speed + Goal of the Month + 2 video bugs", "detail": "Chat 2." },
-          { "title": "Bicycle kicks", "detail": "Chat 3. Touches the match file." },
-          { "title": "Weather and pitch", "detail": "Chat 4. Test page only; the real match is unchanged." },
-          { "title": "Real Goals + shootout keeper test page", "detail": "Chat 5." },
-          { "title": "Season reel, goals gallery, awards night, injuries plan", "detail": "Chat 6." },
-          { "title": "Bug hunt", "detail": "Chat 7. Match-engine bugs become team jobs, not fixes." }
-        ] }
+        {
+          "kind": "added",
+          "title": "Being built tonight",
+          "items": [
+            {
+              "title": "Celebrations + big moments",
+              "detail": "Chat 1. Touches the match file (the engine warning will ask)."
+            },
+            {
+              "title": "Social feed speed + Goal of the Month + 2 video bugs",
+              "detail": "Chat 2."
+            },
+            {
+              "title": "Bicycle kicks",
+              "detail": "Chat 3. Touches the match file."
+            },
+            {
+              "title": "Weather and pitch",
+              "detail": "Chat 4. Test page only; the real match is unchanged."
+            },
+            {
+              "title": "Real Goals + shootout keeper test page",
+              "detail": "Chat 5."
+            },
+            {
+              "title": "Season reel, goals gallery, awards night, injuries plan",
+              "detail": "Chat 6."
+            },
+            {
+              "title": "Bug hunt",
+              "detail": "Chat 7. Match-engine bugs become team jobs, not fixes."
+            }
+          ]
+        }
       ]
     },
     {

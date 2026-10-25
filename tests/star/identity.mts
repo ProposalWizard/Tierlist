@@ -380,6 +380,10 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
     // "everything starts at 40"); the fixture has the old 30, and the opening
     // star rating is worked out from the skills, so it moves with it.
     if (rest.skills) { const sk = { ...(rest.skills as Record<string, number>) }; delete sk.freeKick; rest.skills = sk; }
+    // Aerial & Acrobatics (21 Oct 2026) is a sixth skill the fixture predates:
+    // it starts at 40 and is trained like the rest.
+    if (rest.skills) { const sk = { ...(rest.skills as Record<string, number>) }; delete sk.aerial; rest.skills = sk; }
+    if (rest.lastTrainedWeek) { const lw = { ...(rest.lastTrainedWeek as Record<string, number>) }; delete lw.aerial; rest.lastTrainedWeek = lw; }
     delete rest.starRating;
     // …and the squad number is drawn from a seed that includes the star rating.
     delete rest.squadNumber;
@@ -479,10 +483,11 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
       boot.power === was.power && boot.technique === was.technique && boot.pace === was.pace,
       `${g.player.club}: the starter boot's stats are untouched`,
     );
+    // Mikey, 24 Oct 2026: a new career opens with no boots; a team-mate hands
+    // over his old pair (5 games) before the first game (story.ts, tests/star/storyOrder.mts).
     check(
-      boot.matches === STARTER_BOOT_MATCHES && boot.matches === was.matches,
-      `${g.player.club}: the free pair is still worth ${was.matches} matches, not a brand-new boot off `
-      + `the shelf (got ${boot.matches})`,
+      boot.matches === 0 && STARTER_BOOT_MATCHES === was.matches,
+      `${g.player.club}: no boots of your own until the team-mate's pair (got ${boot.matches})`,
     );
     // Same treatment as the wage above: what is claimed is that the price
     // is DERIVED (it is whatever the catalogue's cheapest entry costs today,

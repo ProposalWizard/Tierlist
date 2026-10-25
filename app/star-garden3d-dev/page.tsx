@@ -9,6 +9,7 @@
  * box; ?bare=1 or ?film=1 opens it full screen as before. The casino and the
  * training pitch still open full screen over the page. Approved 3D Scene
  * Editor edits ticked for "the test page" play here.
+ * ?skin=porcelain|…|dark and ?head=h1..h6: your look (the skin sheet, scripts/bench3d/skin.mjs).
  */
 import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -16,10 +17,13 @@ import PageGuide from "@/components/admin/PageGuide";
 import { BroadcastPage, Btn, Pill } from "@/components/admin/broadcast/BroadcastPage";
 import Garden3D from "@/components/star/Garden3D";
 import "../star-3d-area-dev/stage3d.css";
-import { setToonYou } from "@/lib/star/style3d/toon/bodies";
+import { setToonYou, type ToonHead } from "@/lib/star/style3d/toon/bodies";
 
 // the test player's name on the back of his Style A shirt (a career sets it from the save)
-if (typeof window !== "undefined") setToonYou({ name: "Player" });
+if (typeof window !== "undefined") {
+  const h = new URLSearchParams(window.location.search).get("head");
+  setToonYou({ name: "Player", ...(h && /^h[1-6]$/.test(h) ? { head: h as ToonHead } : {}) });
+}
 import Casino3D from "@/components/star/Casino3D";
 import Casino from "@/components/star/Casino";
 import TrainingPitchScreen from "@/components/star/TrainingPitchScreen";
@@ -52,7 +56,7 @@ function Garden3DTest() {
   const [key, setKey] = useState(0);
 
   const career = useMemo(() => {
-    const player = { firstName: "Test", lastName: "Player", age: 24, skinTone: "medium", club: "Arsenal", clubBadge: null, position: "ST", nationality: "England", startYear: 2027 } as unknown as StarPlayer;
+    const player = { firstName: "Test", lastName: "Player", age: 24, skinTone: params.get("skin") ?? "medium", club: "Arsenal", clubBadge: null, position: "ST", nationality: "England", startYear: 2027 } as unknown as StarPlayer;
     const c: CareerState = makeInitialCareer(player, [...PREMIER_LEAGUE_CLUBS], "premier");
     c.squad = generateSquad(7);
     if (full) {

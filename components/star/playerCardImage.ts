@@ -10,13 +10,17 @@
  * How: the card's shape is its own SVG (serialised and drawn); every word or
  * number marked `data-pc-text` is drawn with its own font, colour and
  * alignment inside its own box; `data-pc-img` holds the flag and the badge
- * (an <svg> or <img>); the face is the head canvas already on screen.
+ * (an <svg> or <img>); the face is the 3D portrait still already on screen
+ * (Headshot3D frame "card"), or the drawn head's canvas while it waits.
  * Browser only.
  */
 
 /** The face's soft edges, shared by the screen (a CSS mask) and the PNG:
- *  solid down to 62% of its height then fading out; 16% fade at each side. */
-export const FACE_FADE = { bottomFrom: 0.62, side: 0.16 };
+ *  solid down to 82% of its height then fading out; 5% fade at each side.
+ *  (Was 62% and 16%, 23 Oct 2026: the arms sit in those edges, so the card's
+ *  own colour showed through them — pale on silver, purple on a special card —
+ *  and his arms read a different skin colour from his face.) */
+export const FACE_FADE = { bottomFrom: 0.82, side: 0.05 };
 export const FACE_MASK_CSS =
   `linear-gradient(to bottom, #000 ${FACE_FADE.bottomFrom * 100}%, transparent 100%), ` +
   `linear-gradient(to right, transparent 0%, #000 ${FACE_FADE.side * 100}%, #000 ${100 - FACE_FADE.side * 100}%, transparent 100%)`;
@@ -76,14 +80,24 @@ export async function drawPlayerCardPng(card: HTMLElement, scale = 3): Promise<B
   // 2. The face (the drawn head, already a canvas) and its fade.
   // The same soft edges as the screen's mask (FACE_FADE), cut on a scratch
   // canvas so the card behind stays untouched.
-  const face = card.querySelector<HTMLCanvasElement>("[data-pc-face] canvas");
+  // The face is either the 3D portrait (an <img> of the kept still, shown
+  // object-fit: cover) or, before it lands / with no WebGL, the drawn head's canvas.
+  const portrait = card.querySelector<HTMLImageElement>("[data-pc-face] img");
+  const face: HTMLCanvasElement | HTMLImageElement | null =
+    portrait && portrait.complete && portrait.naturalWidth > 0 && safeToDraw(portrait) ? portrait : card.querySelector<HTMLCanvasElement>("[data-pc-face] canvas");
   if (face) {
     const p = at(face);
     const s = document.createElement("canvas");
     s.width = Math.round(p.w * scale); s.height = Math.round(p.h * scale);
     const f = s.getContext("2d");
     if (f) {
-      f.drawImage(face, 0, 0, s.width, s.height);
+      if (face instanceof HTMLImageElement) {
+        // object-fit: cover, as on screen: the middle of the picture, cut evenly
+        const iw = face.naturalWidth, ih = face.naturalHeight;
+        const k = Math.max(s.width / iw, s.height / ih);
+        const sw = s.width / k, sh = s.height / k;
+        f.drawImage(face, (iw - sw) / 2, (ih - sh) / 2, sw, sh, 0, 0, s.width, s.height);
+      } else f.drawImage(face, 0, 0, s.width, s.height);
       f.globalCompositeOperation = "destination-in";
       const down = f.createLinearGradient(0, 0, 0, s.height);
       down.addColorStop(0, "#000"); down.addColorStop(FACE_FADE.bottomFrom, "#000"); down.addColorStop(1, "rgba(0,0,0,0)");

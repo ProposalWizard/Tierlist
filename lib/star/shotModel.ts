@@ -143,9 +143,11 @@ const KIND_SPREAD: Partial<Record<ScenarioKind, number>> = {
   tight_angle: 1.3,
   penalty: 0.5,
 };
-/** Sideways spread at technique 100 and how much a technique-0 player adds (degrees, full power). */
-const SPREAD_BASE = 2.6;
-const SPREAD_SKILL = 6.0;
+/** Sideways spread at technique 100 and how much a technique-0 player adds (degrees, full power).
+ *  Cut by a third on 22 Oct 2026 (Mikey's playtest: "you see how it goes towards the
+ *  middle … something is definitely being changed"): was 2.6 and 6.0. */
+const SPREAD_BASE = 1.73;
+const SPREAD_SKILL = 4.0;
 /** Up/down spread as a share of the sideways one (an angle too, so it grows
  *  with distance: a strike from 25 m is blazed over far more than one from 8). */
 const VERT_RATIO = 0.75;

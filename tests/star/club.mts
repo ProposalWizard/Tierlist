@@ -102,6 +102,7 @@ function finishNth(c: CareerState, place: number): CareerState {
   const settled: CareerState = { ...c, season: 4, manager: { ...c.manager!, since: 1 } };
   check(sackCheck(settled, -0.5).sacked, "a bad season for a manager who has had time is");
   check(sackCheck(settled, -0.5).reason.length > 0, "and the player is told why");
+  check(!sackCheck(settled, -0.9, true).sacked, "a manager who just won promotion is never sacked");
   check(!sackCheck(settled, -0.2).sacked, "a middling one is not");
 
   // A new man walks in and everything you built goes with the old one.

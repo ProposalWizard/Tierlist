@@ -24,6 +24,9 @@ import {
 // Re-exported so a test that imports the engine flips the SAME switch the
 // engine reads (a node test can load this file and ballPhysics.ts twice).
 export { setBallPhysics, realBallOn } from "./ballPhysics";
+// Wind with a direction, rain skid, a bad dry pitch: /star-weather-dev only.
+// Every hook is a no-op when its field is absent (the real game never sets them).
+import { applyWind, windAccel, skidKeep, grabDrop, type PitchWeatherExtras } from "./pitchWeather";
 import {
   hitboxesOn, hitboxDials, bodyReach, headTop, startJump, stepJump, wantsJump, type JumpState,
 } from "./hitbox";
@@ -745,7 +748,7 @@ export interface Scenario {
    * what every match in the game was until now — so nothing that does not set
    * this changes at all.
    */
-  conditions?: { drag: number; friction: number; bounce: number; wind: number };
+  conditions?: { drag: number; friction: number; bounce: number; wind: number } & PitchWeatherExtras;
   /**
    * THE CAPTAIN'S ORDERS: the man you want it laid off to.
    *
@@ -5633,6 +5636,7 @@ export function firstBounceAt(
         : Math.max(0, 1 - AIR_DRAG * (conditions?.drag ?? 1) * dt);
       vx *= k; vy *= k; if (real) vz *= k;
       if (conditions?.wind) vx += conditions.wind * dt;
+      if (conditions?.windV) { const a = windAccel(vx, vy, vz, z, conditions.windV, real); vx += a.ax * dt; vy += a.ay * dt; vz += a.az * dt; }
     }
     vz -= G * dt;
     const nz = z + vz * dt;
@@ -7018,12 +7022,14 @@ export function settleBall(ball: Ball, dt: number, scenario?: Scenario) {
     // would in August.
     if (ball.vz < -MIN_BOUNCE_VZ) {
       ball.vz = -ball.vz * BOUNCE_VZ * (cond?.bounce ?? 1);
-      ball.vel.x *= BOUNCE_H; ball.vel.y *= BOUNCE_H;
+      const keep = cond?.skid ? skidKeep(BOUNCE_H, cond) : BOUNCE_H;
+      ball.vel.x *= keep; ball.vel.y *= keep;
     } else ball.vz = 0;
   }
   if (ball.z <= 0.03 && ball.vz <= 0.01) {
     const s = Math.hypot(ball.vel.x, ball.vel.y);
-    const drop = GROUND_FRICTION * (cond?.friction ?? 1) * dt;
+    let drop = GROUND_FRICTION * (cond?.friction ?? 1) * dt;
+    if (cond?.deadBelow) drop = grabDrop(drop, s, cond, dt);
     if (s <= drop) { ball.vel.x = 0; ball.vel.y = 0; ball.resting = true; }
     else { const f = (s - drop) / s; ball.vel.x *= f; ball.vel.y *= f; }
   }
@@ -7114,6 +7120,7 @@ export function integrateBallOld(ball: Ball, cond: Scenario["conditions"], dt: n
     // Wind only touches a ball that is off the ground, which is why a driven
     // shot is unaffected and a chip is at its mercy.
     if (cond?.wind) ball.vel.x += cond.wind * dt;
+    if (cond?.windV) applyWind(ball, cond, dt, false);
   }
 
   // --- Gravity / height ---
@@ -7133,7 +7140,8 @@ export function integrateBallOld(ball: Ball, cond: Scenario["conditions"], dt: n
       // Topspin flattens the bounce and runs on; backspin sits up and checks.
       // A wet pitch skids and a heavy one deadens, both through this one number.
       ball.vz = -ball.vz * BOUNCE_VZ * (cond?.bounce ?? 1) * (1 - top * BOUNCE_TOPSPIN_VZ);
-      const keep = BOUNCE_H * (1 + top * BOUNCE_TOPSPIN_H);
+      let keep = BOUNCE_H * (1 + top * BOUNCE_TOPSPIN_H);
+      if (cond?.skid) keep = skidKeep(keep, cond);
       ball.vel.x *= keep;
       ball.vel.y *= keep;
 
@@ -7162,7 +7170,8 @@ export function integrateBallOld(ball: Ball, cond: Scenario["conditions"], dt: n
   // pulled up so sharply.
   if (ball.z <= 0.03 && !bouncedThisStep && ball.vz <= 0.01) {
     const s = Math.hypot(ball.vel.x, ball.vel.y);
-    const drop = GROUND_FRICTION * (cond?.friction ?? 1) * dt;
+    let drop = GROUND_FRICTION * (cond?.friction ?? 1) * dt;
+    if (cond?.deadBelow) drop = grabDrop(drop, s, cond, dt);
     if (s <= drop) {
       ball.vel.x = 0;
       ball.vel.y = 0;

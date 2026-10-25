@@ -167,6 +167,23 @@ function bestAndWorst(trial: TrialProgress): { best: TrialStage | null; worst: T
  * and the division his club is in. Nothing here is a generic
  * congratulations — a 38 gets told it was a 38.
  */
+/**
+ * What the scout calls each trial stage when he talks about it. The stage
+ * titles ("Through the gate", "Take him on") are names of drills, not things
+ * a player has, so dropping them into a sentence read wrong ("The through the
+ * gate is nowhere near it yet"). Each one here is a singular noun phrase that
+ * fits "Your ___ is / was …".
+ */
+export const SCOUT_STAGE_NOUN: Record<TrialStage, string> = {
+  freeKicks: "free-kick taking",
+  technique: "first touch",
+  dribbling: "dribbling",
+  shootout: "penalty taking",
+  penalties: "penalty taking",
+  vision: "passing",
+  fiveASide: "five-a-side game",
+};
+
 export function managerTalkFor(args: {
   trial: TrialProgress;
   club: string;
@@ -174,8 +191,12 @@ export function managerTalkFor(args: {
   clubStrength: number;
   playerFirstName: string;
   rng: () => number;
+  /** Leo's 24 Oct update, bug fixes (read by the caller): "Your first touch
+   *  is…" instead of the drill title ("The through the gate is…"). */
+  scoutNouns?: boolean;
 }): ManagerTalk {
   const { trial, club, division, clubStrength, playerFirstName, rng } = args;
+  const stageWord = (st: TrialStage) => args.scoutNouns ? `Your ${SCOUT_STAGE_NOUN[st]}` : `The ${STAGE_LABEL[st].toLowerCase()}`;
   const score = trialScore(trial);
   const { best, worst } = bestAndWorst(trial);
 
@@ -195,12 +216,12 @@ export function managerTalkFor(args: {
 
   const onBest = best
     ? score >= 50
-      ? `The ${STAGE_LABEL[best].toLowerCase()} — that is the bit I keep thinking about.`
-      : `The ${STAGE_LABEL[best].toLowerCase()} was the one thing that stood up.`
+      ? `${stageWord(best)} — that is the bit I keep thinking about.`
+      : `${stageWord(best)} was the one thing that stood up.`
     : "";
 
   const onWorst = worst
-    ? `The ${STAGE_LABEL[worst].toLowerCase()} is nowhere near it yet. We would work on that every day.`
+    ? `${stageWord(worst)} is nowhere near it yet. We would work on that every day.`
     : "";
 
   const onClub = `We are ${club}. You would be training with us from Monday.`;

@@ -54,8 +54,8 @@ check(!/cutscenePeople|cutsceneCamera/.test(settings), "Settings still has a cut
 // 3.
 const expected = ["keepers", "keeperPro", "shotsPro", "knucklePower", "ballPhysics", "matchFlow", "shotPower", "contactField", "keeperFeel", "mateShots", "hitboxes", "keeperFinish", "matchRadar", "matchFeel", "fhr", "ui"]; // + the Oct 13 gameplay update (Old by default); hitboxes (Leo, 14 Oct, New) + Keeper realism (Leo, round 16, New)
 // Match feel (Leo, 13 Oct 2026): a testing row, Old by default.
-check(LOOK_ROWS.fhr.standard === "off", "Full highlights rebuild must default to Off");
-check(LOOK_ROWS.matchFeel.standard === "old", "Match feel must default to Old while tested");
+check(LOOK_ROWS.fhr.standard === "on", "Full highlights rebuild must default to On (Harry, 22 Oct 2026)");
+check(LOOK_ROWS.matchFeel.standard === "new", "Match feel must default to New (Harry, 22 Oct 2026)");
 // Mikey's new pop-ups: a pack since 21 Oct 2026 (Settings → Pop-up pack: Classic | Broadcast), default Classic = the old pop-ups.
 check(POPUP_PACK_DEFAULT === "classic" && MIKEY_POPUPS_DEFAULT === "old", "Pop-up pack must default to Classic (the old pop-ups)");
 check(/<PopupPackRow \/>/.test(settings), "Settings has no Pop-up pack row");

@@ -1,0 +1,9 @@
+player view · CPU 6× · 390×844 · posts in seed 150
+open (first)     painted 291 ms · posts drawn 4 · longest task while opening 144 ms · still 965 ms · first video ready 12300 ms
+long tasks 10 s after open: 15 (longest 156 ms, >100ms: 3)
+scroll           {"ms":12081,"steps":82,"height":10244,"longTasks":84,"longest":171,"over100":12,"total":7104}
+open (again)     painted 238 ms · longest 107 ms · first video ready 560 ms
+open (new visit) painted 389 ms · longest 150 ms · first video ready 1662 ms
+errors: Failed to fetch RSC payload for http://localhost:3202/tierlists. Falling back to browser navigation. TypeError: network error | Failed to fetch RSC payload for http://localhost:3202/admin/team. Falling back to browser navigation. TypeError: network error | Failed to fetch RSC payload for http://localhost:3202/star-highlights-dev. Falling back to browser navigation. TypeError: network error | Failed to fetch RSC payload for http://localhost:3202/blind-rankings. Falling back to browser navigation. TypeError: network error | Failed to fetch RSC payload for http://localhost:3202/star-gallery-dev. Falling back to browser navigation. TypeError: network error | club_logos read failed — every badge will fall back to initials: TypeError: Failed to fetch
+JSON {"first":{"painted":290.69999999925494,"posts":4,"video":12300,"still":965.0999999996275,"t0":19685.599999999627,"openLongest":144,"lt10s":[135,50,50,56,53,144,156,62,65,55,59,97,58,72,96]},"scroll":{"ms":12081,"steps":82,"height":10244,"longTasks":84,"longest":171,"over100":12,"total":7104},"again":{"painted":238.30000000074506,"posts":4,"video":559.9000000003725,"still":null,"t0":50041.699999999255,"openLongest":107,"lt10s":[107]},"reload":{"painted":388.6000000014901,"posts":4,"video":1662.4000000003725,"still":1255.4000000003725,"t0":18362.89999999851,"openLongest":150,"lt10s":[150,65,68,78,55,52,78,65,117,73]}}
+BROWSER GONE

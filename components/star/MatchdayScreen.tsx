@@ -59,6 +59,7 @@ import ScoutReportCard from "./ScoutReport";
 import VersusScreen from "./VersusScreen";
 import { CanTile, cardStyle, glowOf, short } from "./HomeHub";
 import { HomeFxStyles, useCountUp } from "./HomeFx";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 
 interface Props {
   career: CareerState;
@@ -87,6 +88,7 @@ const ordinal = (n: number) => (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "
 
 export default function MatchdayScreen(p: Props) {
   const { career, nextFixture, preMatchEnergy, preMatchSelection, showTeams } = p;
+  const fixesOn = useLeoUpdate("bugFixes"); // Leo's 24 Oct update: your manager's name from the career
   // Fixtures · Match · Scout — always opens on Match.
   const [page, setPage] = useState(1);
   // Tell the live-score pop-ups which week is being played, so a bell rung
@@ -119,6 +121,7 @@ export default function MatchdayScreen(p: Props) {
         date={fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind, divisionOf(career))}
         results={career.results}
         clubKits={career.clubKits}
+        managers={fixesOn && career.manager ? { [career.player.club]: career.manager.name } : undefined}
         competition={
           !nextFixture.kind || nextFixture.kind === "league"
             ? `${leagueNameFor(divisionOf(career))} · Matchday ${nextFixture.week}`

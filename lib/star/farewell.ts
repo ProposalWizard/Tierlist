@@ -33,6 +33,7 @@ import { kitsOf, type ClubKits } from "./kits";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { shortNameOf } from "./realSquad";
 import { displayOverall } from "./rating";
+import { longSeason } from "./careerOverview";
 
 /** The minute you come off to the ovation. */
 export const FAREWELL_OFF_AT = 85;
@@ -56,10 +57,6 @@ const GROUPS = {
 const COVER_RIVALS: [Role[], number][] = [[GROUPS.gk, 2], [GROUPS.def, 6], [GROUPS.mid, 4], [GROUPS.fwd, 3]];
 const COVER_OURS: [Role[], number][] = [[GROUPS.gk, 2], [GROUPS.def, 5], [GROUPS.mid, 4], [GROUPS.fwd, 2]];
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-const longSeason = (startYear: number, season: number) => {
-  const y = startYear + season - 1;
-  return `${y}/${String(y + 1).slice(2)}`;
-};
 
 /** "Calloway XI". */
 export function farewellTeamName(career: Pick<CareerState, "player">): string {
@@ -284,7 +281,7 @@ export function ballonDorRivals(career: CareerState): { name: string; club: stri
 }
 
 /** The Rivals XI's pool: Ballon d'Or winners, then the title clubs' best, then the strongest clubs. */
-export function rivalsPool(career: CareerState, notThese: Set<string>, surnamesTaken: Set<string> = new Set()): FarewellRival[] {
+export function rivalsPool(career: CareerState, notThese: Set<string>, surnamesTaken: Set<string> = new Set(), calendarYears = false): FarewellRival[] {
   const squads = squadsByClub(career);
   const startYear = career.player.startYear ?? 2025;
   const out: FarewellRival[] = [];
@@ -331,7 +328,7 @@ export function rivalsPool(career: CareerState, notThese: Set<string>, surnamesT
   // 1. The men who beat you to a Ballon d'Or.
   for (const b of ballonDorRivals(career)) {
     const hit = findByName(b.name, b.club);
-    const when = b.seasons.length > 1 ? `Ballon d'Or ×${b.seasons.length}` : `Ballon d'Or ${longSeason(startYear, b.seasons[0])}`;
+    const when = b.seasons.length > 1 ? `Ballon d'Or ×${b.seasons.length}` : `Ballon d'Or ${longSeason(startYear, b.seasons[0], calendarYears)}`;
     take(hit?.p ?? null, hit?.club ?? b.club, when, true, b.name);
   }
   // 2. The clubs that beat you to titles: their best men.
@@ -468,7 +465,9 @@ function pickXI(
 const avg = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 70);
 
 /** The two sides, from the career as it ends. Deterministic: the same career gives the same sides. */
-export function farewellSides(career: CareerState): FarewellSides {
+/** `opts.calendarYears` — Leo's 24 Oct update, bug fixes: a rival's
+ *  "Ballon d'Or 2026/27" in the calendar's year. Off = the old label. */
+export function farewellSides(career: CareerState, opts: { calendarYears?: boolean } = {}): FarewellSides {
   const host = career.player.club;
   const ourName = farewellTeamName(career);
   const youPos = ((career.player.position as Role) || "ST");
@@ -510,7 +509,7 @@ export function farewellSides(career: CareerState): FarewellSides {
   const ours = new Set(allMates.map(m => norm(m.name)));
   ours.add(norm(`${career.player.firstName} ${career.player.lastName}`));
   const ourSurnames = new Set([...ourSquad.map(p => norm(shortNameOf(p.name))), norm(career.player.lastName)]);
-  const who = rivalsPool(career, ours, ourSurnames);
+  const who = rivalsPool(career, ours, ourSurnames, !!opts.calendarYears);
   const rivalPlayers: LeaguePlayer[] = who.map(r => ({
     id: r.id, name: r.name, position: r.position, overall: r.overall, goals: 0, assists: 0,
     ...(r.positions ? { positions: r.positions } : {}),

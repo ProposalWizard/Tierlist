@@ -62,14 +62,16 @@ export default function BossChat({ career, onFinish, onCancel }: { career: Caree
     <GameShell title="Office talk" who="Boss" current={current} tone="#60a5fa" onBack={round === 0 && !picked ? onCancel : undefined}>
       {room === "3d" && !room3dFailed && (
         <Office3DCareer career={career} speaker={picked && !result ? "you" : "boss"} onFail={() => setRoom3dFailed(true)}
-          className="mb-3 w-full" style={{ height: "36vh", borderRadius: 4 }} />
+          className="mb-3 w-full" style={{ height: "30vh", borderRadius: 4 }} />
       )}
       <div className="mb-2 flex items-center justify-between text-[13px] font-black uppercase">
         <span>Question {Math.min(round + 1, TALK_ROUNDS)} / {TALK_ROUNDS}</span>
         <span>{grades.map((g, i) => <span key={i} className={g === "best" ? "text-emerald-300" : g === "clash" ? "text-red-400" : "text-white/50"}>●</span>)}</span>
       </div>
       <div className="space-y-2" data-boss-talk={talk.style}>
-        {log.slice(-3).map((m, i) => <Bubble key={`${round}-${i}`} who={m.who} text={m.text} mine={m.mine} faded />)}
+        {/* Only his last answer stays above the new question, so the three
+            replies never drop off the bottom of a phone (Mikey's playtest, 24 Oct 2026). */}
+        {log.slice(-1).map((m, i) => <Bubble key={`${round}-${i}`} who={m.who} text={m.text} mine={m.mine} faded />)}
         <Bubble who={boss} text={r.line} />
         {!picked && !result && r.replies.map((rep) => (
           <button key={rep.text} onClick={() => pick(rep)} data-reply className="kib-press block w-full bg-blue-500/20 px-3 py-3 text-left text-[15px] font-black text-white ring-1 ring-blue-300/60" style={{ borderRadius: 4 }}>

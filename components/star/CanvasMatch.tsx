@@ -72,7 +72,11 @@ import {
 import {
   primeMatchSound, setMatchSoundMuted, playKick, playNet, playPost, playSave, playWhistle, playCrowdSwell,
   playStrike, playThud, playClang, playGlove, playGoalSting, playHeader,
+  playCrowdRise, startHeartbeat, playBigRoar,
 } from "@/lib/star/matchSound";
+import { isBigMoment, headingIn, BIG_SLOW_RATE } from "@/lib/star/bigMoment";
+import { leoUpdateOn } from "@/lib/star/leoUpdate";
+import { playLateGoalCall, preloadLateGoalCalls } from "@/lib/star/lateCommentary";
 import { finaliseMatch, liveRating, regressForMinutes, fairRating } from "@/lib/star/matchStats";
 import { goalZone, passGrade, missKind } from "@/lib/star/chanceRating";
 import { runStretch } from "@/lib/star/stretchRun";
@@ -196,6 +200,9 @@ import { penaltyReadFor, decidePenaltyRead, applyPenaltyRead, type PenaltyReadSe
 import { setupKind, strikeKind, replayStrike, stepKind, enforceHardRules, type StrikeDecision } from "@/lib/star/kindRules";
 import { drawMatchGoal } from "@/lib/star/matchGoal";
 import { GoalRecorder } from "@/lib/star/goalClip/recorder";
+import { lateKindOf } from "@/lib/star/goalClip/commentary";
+import { planCelebration, celebAt, celebrationMoveFor, CELEB_SPECS, type CelebPlan } from "@/lib/star/celebration";
+import { ACCESSORIES } from "@/lib/star/store/catalogue";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import type { GoalTrack, ClipBody, FrameState as ClipFrame } from "@/lib/star/goalClip/track";
 import { switchOn } from "@/lib/star/compareSwitches";
@@ -211,7 +218,7 @@ import {
 import { revealOnScreen, pinnedTopHeight } from "@/lib/revealOnScreen";
 import {
   matchView, frameForNewView, crossCutCamera, newViewCanvasHeight, engineFrameOf, turnWideChance,
-  NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, MATCH_VIEW_DEFAULT, figureGrow,
+  NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, NEW_KEEPER_GROW, MATCH_VIEW_DEFAULT, figureGrow, figureShrinkFor,
   playZoom, playZoomOf, playZoomProbe,
 } from "@/lib/star/matchView";
 import { drawMatchFigure } from "@/lib/star/matchFigure";
@@ -2044,6 +2051,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         } }, 10);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- extraTimeEligibility reads refs; the fixture is fixed for the match
   }, [matchMode, phase, displayScore, matchMinute, MATCH_DURATION]);
+  // A chance closes the live scores: after it you are back on the commentary,
+  // not the scores (Mikey's playtest, 21 Oct 2026).
+  useEffect(() => { if (phase !== "feed") setScoresOpen(false); }, [phase]);
   useEffect(() => { if (matchMode) setMusicMuted(muted); }, [matchMode, muted]);
   useEffect(() => () => { clearMusicScene("match"); setMusicMuted(false); }, []);
 
@@ -2507,10 +2517,29 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** When the 3D keeper's dive clip started (seconds), or null. */
   const keeperDiveStartRef = useRef<number | null>(null);
   /** Where the 3D keeper landed (canvas px), held while he lies there. */
-  const keeperLandRef = useRef<{ x: number; y: number; sc: Scenario; clip: SpriteClip } | null>(null);
+  // Where he landed is kept as a spot on the PITCH (x, y in metres) plus his sideways lean in
+  // keeper radii (offR), never as screen pixels: the celebration camera follows you after a
+  // goal, and a landing kept in pixels stayed fixed on the screen (Leo, 24 Oct 2026).
+  const keeperLandRef = useRef<{ x: number; y: number; offR: number; sc: Scenario; clip: SpriteClip } | null>(null);
   const spriteMotionRef = useRef<Map<string, { x: number; y: number; t: number; vx: number; vy: number; dist: number; facing: number }>>(new Map());
   // Whose goal it was, while the result is up (they celebrate). Picture only.
   const goalSideRef = useRef<"us" | "them" | null>(null);
+  // AFTER YOUR GOAL (lib/star/celebration.ts; Leo, 22 Oct 2026): the run to
+  // the corner, then the celebration equipped in the shop. `t0` is
+  // performance.now() / 1000 at the goal. Picture only: it moves where YOU
+  // are drawn (2D, the 3D frame, the goal video), never the engine.
+  const celebRef = useRef<{ plan: CelebPlan; t0: number; vp0?: Viewport } | null>(null);
+  /** The hand-over waiting at the end of the celebration; a tap runs it now. */
+  const celebNextRef = useRef<(() => void) | null>(null);
+  const [celebOn, setCelebOn] = useState(false);
+  // BIG MOMENTS (lib/star/bigMoment.ts; Leo, 22 Oct 2026): 85'+, level or one
+  // down, your chance. `stop` ends the heartbeat. Sound and picture only.
+  const bigRef = useRef<{ stop: () => void } | null>(null);
+  const [bigBanner, setBigBanner] = useState(0);
+  const celebState = () => {
+    const c = celebRef.current;
+    return c ? celebAt(c.plan, performance.now() / 1000 - c.t0) : null;
+  };
   // Action banner ("PASS" / "GOAL") and how long it stays up. The texture pack
   // picks the style (texturePack.ts bannerStyle): the Arcade pack plays
   // "Arcade pop" (ArcadeBanner.tsx, its own clock); every other pack keeps the
@@ -2928,8 +2957,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const keepRunCamRef = useRef(false);
   /** B14b: an eased widen in progress (from, to, seconds in, zoom at the start). */
   const camEaseRef = useRef<{ from: Viewport; to: Viewport; t: number; zoom0: number } | null>(null);
+  /** Headers and volleys (matchView.ts FIGURES_AT_FULL_VIEW): the men and the
+   *  ball drawn this much smaller, so they are the long-range size. 1 otherwise. */
+  const figShrinkRef = useRef(1);
   /** Figures and ball: divide their size by this (Z2 keeps them today's size). */
-  const figZoomDiv = () => (playZoom() === "z2" || playZoom() === "z2max" ? playZoomRef.current : 1);
+  const figZoomDiv = () => (playZoom() === "z2" || playZoom() === "z2max" ? playZoomRef.current : 1) / figShrinkRef.current;
 
   /**
    * Which way the frame is turned. "up" is the ordinary view; a crossing
@@ -2971,6 +3003,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       }
       viewportRef.current = { ...sc.viewport };
       baseViewportRef.current = { ...sc.viewport };
+      // A feature's own close camera (the Head & Volley drill): headers and
+      // volleys still draw the men the long-range size.
+      {
+        const v = sc.viewport, up = (sc.facing ?? "up") === "up";
+        figShrinkRef.current = newViewRef.current ? figureShrinkFor(sc.kind, up ? v.x2 - v.x1 : v.y2 - v.y1) : 1;
+      }
       return;
     }
     applyTilt(tiltForChance(sc));
@@ -2981,6 +3019,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     viewportRef.current = { ...cam };
     baseViewportRef.current = { ...cam };
     playZoomRef.current = playZoomOf(sc);
+    // Headers and volleys: the men the long-range size. The chance's own
+    // camera before the Zoom is what they would otherwise be sized against.
+    {
+      const up = (sc.facing ?? "up") === "up", across = up ? cam.x2 - cam.x1 : cam.y2 - cam.y1;
+      const zoomed = playZoom() === "z2" || playZoom() === "z2max";
+      figShrinkRef.current = figureShrinkFor(sc.kind, across * (zoomed ? playZoomRef.current : 1));
+    }
     if (playZoomProbe() && typeof window !== "undefined") {
       (window as unknown as { __zg?: unknown }).__zg = {
         sc, cam: { ...cam }, zoom: playZoomRef.current,
@@ -3866,6 +3911,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // Animations: New — the kick clip on whoever actually struck it.
         clip = "kick";
         t = Math.max(0, spriteKickStrikeT() * opts.anim.kickClipU);
+      } else if (id === "you" && celebRef.current && phaseRef.current === "result") {
+        // After your goal: the run (sprint / jog by his pace), then your move.
+        const c = celebRef.current, cs = celebAt(c.plan, performance.now() / 1000 - c.t0), spec = CELEB_SPECS[c.plan.move];
+        if (cs.phase === "move" || cs.phase === "done") {
+          const sp = spec.sprite as SpriteClip;
+          const ok = sp !== "celebrate" && spriteClipReady("player", sp);
+          clip = ok ? sp : "celebrate"; t = ok ? cs.clipT : now + spriteSeed(id);
+          // A move on the spot faces the camera; a slide or a jog on faces where he goes.
+          facing = spec.travel(spec.playS) > 0 ? screenAngle(x, y, x + c.plan.dir.x, y + c.plan.dir.y) : Math.PI / 2;
+          m.facing = facing;
+        } else if (speed > 4.8) { clip = "sprint"; t = m.dist / 5.2; }
+        else if (speed > 0.6) { clip = "jog"; t = m.dist / 2.8; }
+        else { clip = "idle"; t = now + spriteSeed(id); }
       } else if (phaseRef.current === "result" && goalSideRef.current === (them ? "them" : "us")) {
         clip = "celebrate"; t = now + spriteSeed(id);
       } else if (speed > 4.8) {
@@ -3895,6 +3953,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           sid, x, y, shirt, shorts: opts.shorts ?? rim, team: them ? "them" : "us",
           kick: opts.pose === "kick", kickFoot: opts.kickFoot ?? 1, act: sid === "you" ? undefined : actOf(sid),
           star: opts.star, label: opts.label, face: opts.face?.src, drawn: true,
+          ...(sid === "you" ? celebFrame() : {}),
         });
       }
       if (figureQueue) {
@@ -4503,7 +4562,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
     const drawnTaker = hasRunup(sc.kind) ? drawnTakerAt(sc.ball, sc.player, takerFoot) : { at: sc.player, mirrored: false };
     const runBody = runBody0 && drawnTaker.mirrored ? { ...runBody0, lean: -runBody0.lean } : runBody0;
-    const tx = drawnTaker.at.x, ty = drawnTaker.at.y;
+    // After your goal: where the run to the corner has got to (celebration.ts).
+    const celebPos = !auto ? celebState() : null;
+    const tx = celebPos ? celebPos.x : drawnTaker.at.x, ty = celebPos ? celebPos.y : drawnTaker.at.y;
     // New view (option D): a thin ring on the grass under the man on the
     // ball, so he is findable at the smaller size. Under everyone: the figure
     // queue has not painted anybody yet.
@@ -4511,7 +4572,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // the ball, with this ring under it, is "you". lib/star/newLook.ts.
     // During a lead-in you are a man running onto the last pass, so you are drawn.
     // …and while your pass plays on you are the man making the run (playOn.ts).
-    const youShown = leadRef.current || playOnRef.current ? sceneRef.current?.you !== false : showYouFigure(sc.kind, { newView: nv, sceneYou: sceneRef.current?.you });
+    const youShown = celebPos ? true : leadRef.current || playOnRef.current ? sceneRef.current?.you !== false : showYouFigure(sc.kind, { newView: nv, sceneYou: sceneRef.current?.you });
     const ringOnBall = !auto && !youShown && sceneRef.current?.you !== false;
     if (nv && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || youShown || ringOnBall)) {
       const f = ringOnBall ? toPx(sc.ball.x, sc.ball.y) : toPx(tx, ty);
@@ -4638,7 +4699,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // a save is being played.
       const diveN = clamp(Math.abs(kk.dive) / 1.6, 0, 1) * 0.45 + lunge * (K ? K.reachK : 0.55);
       const sign = kk.saveLunge > 0 ? (kk.saveDir || 1) : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
-      const KR = R * MATCH_KEEPER_R_SHARE * kScale / (nv ? NEW_OUTFIELD_SHRINK : 1);   // smaller than an outfielder, smaller again far away; the keeper is not shrunk with the men
+      const KR = R * MATCH_KEEPER_R_SHARE * kScale * (nv ? NEW_KEEPER_GROW / NEW_OUTFIELD_SHRINK : 1);   // smaller again far away; the keeper is not shrunk with the men and stands about a man's height (NEW_KEEPER_GROW)
       // Capped just past flat — see MAX_KEEPER_LEAN. Purely the artwork:
       // nothing in the engine reads this rotation.
       // Animations: New — what he did with the ball (lib/star/actionAnim.ts):
@@ -4691,6 +4752,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // right as seen on screen, as far into the clip as the lunge has got.
       let keeperSprite: MatchSpriteHint | undefined;
       let keeperDrawAt: { x: number; y: number } | null = null;
+      // His landing spot through this frame's camera (see keeperLandRef).
+      const landPx = (l: { x: number; y: number; offR: number }) => { const q = toPx(l.x, l.y); return { x: q.px + l.offR * KR, y: q.py }; };
       if (nv) {
         // Harry, 3 Oct 2026: "he's usually not facing the right way, I think
         // his animations need slowing." He has four facings; turning to the
@@ -4729,15 +4792,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             const nc = keeperDiveClipNew(ka.save, ka.at?.z ?? 0, kind === "high" || kind === "fingertip", sideOfDive(clip));
             if (nc && spriteClipReady("keeper", nc)) clip = nc;
           }
-          if (t >= 0.55 && keeperLandRef.current?.sc !== sc) keeperLandRef.current = { x: cx + KR * weight * (1 - lunge), y: py, sc, clip };
-          if (keeperLandRef.current?.sc === sc) keeperDrawAt = keeperLandRef.current;
+          if (t >= 0.55 && keeperLandRef.current?.sc !== sc) keeperLandRef.current = { x: kk.x, y: kk.y, offR: (cx + KR * weight * (1 - lunge) - px) / (KR || 1), sc, clip };
+          if (keeperLandRef.current?.sc === sc) keeperDrawAt = landPx(keeperLandRef.current);
           keeperSprite = { char: "keeper", clip, t, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt }, centre: Math.min(1, t / 0.4) };
         } else if (keeperLandRef.current?.sc === sc) {
           // Down is down: once he has landed in this chance he stays lying
           // where he landed until the next one (a goal briefly stood him back
           // up mid-celebration — playtest film, 3 Oct 2026).
           const land = keeperLandRef.current;
-          keeperDrawAt = land;
+          keeperDrawAt = landPx(land);
           keeperSprite = { char: "keeper", clip: land.clip, t: 1, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt }, centre: 1 };
           // Animations: New — he pushes himself back up off the grass.
           const upClip: SpriteClip = sideOfDive(land.clip) === "R" ? "getUpR" : "getUpL";
@@ -5209,7 +5272,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ctx.fillStyle = "rgba(255,255,255,0.85)";
         ctx.font = `700 ${Math.max(11, Math.round(W * 0.03))}px system-ui, sans-serif`;
         ctx.textAlign = "center";
-        ctx.fillText("Keep running", ox, oy - rr - 8);
+        ctx.fillText("Keep running", ox, oy - rr - 8 - Math.max(12, Math.round(W * 0.032)));
+        // What the run is for (Mikey's playtest, 21 Oct 2026: "what does the
+        // running even do if you can't get the ball?"): steer into space, and
+        // the man on the ball may give it back to you.
+        ctx.font = `600 ${Math.max(10, Math.round(W * 0.026))}px system-ui, sans-serif`;
+        ctx.fillStyle = "rgba(255,255,255,0.8)";
+        const hint = "Steer into space: he may pass it back";
+        const hx = Math.max(ox, ctx.measureText(hint).width / 2 + 6);
+        ctx.fillText(hint, hx, oy - rr - 8);
         ctx.textAlign = "left";
       }
     }
@@ -5457,6 +5528,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ring: nv && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || youShown || ringOnBall)
           ? (ringOnBall ? { x: sc.ball.x, y: sc.ball.y } : { x: tx, y: ty }) : null,
         goalSide: phaseRef.current === "result" ? goalSideRef.current : null,
+        celebrating: phaseRef.current === "result" && !!celebRef.current,
         goalInView: goalInView(sc.kind) || goalOnCamera,
         orders: captainOrdersFrame(sc),
         runup: phaseRef.current === "runup" && runupRef.current ? { t: runupRef.current.t, runS: runupRef.current.runS } : null,
@@ -5672,7 +5744,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const foot = auto
       ? takerFootSign(auto.taker.id || auto.taker.name)
       : footSign(preferredFootRef.current ?? careerRef.current?.player.preferredFoot ?? activeFoot());
-    const you = hasRunup(sc.kind) ? drawnTakerAt(sc.ball, sc.player, foot).at : sc.player;
+    const celeb = !auto ? celebState() : null;
+    const you = celeb ?? (hasRunup(sc.kind) ? drawnTakerAt(sc.ball, sc.player, foot).at : sc.player);
     const runners = [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners];
     return {
       ball: b ? { x: b.pos.x, y: b.pos.y, z: b.z } : { x: sc.ball.x, y: sc.ball.y, z: 0 },
@@ -5697,7 +5770,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const sc = scenarioRef.current;
     const live = (ph === "aim" || ph === "runup" || ph === "contact" || ph === "flight" || (ph === "result" && !dribbleRef.current && !tdRef.current))
       && goalInView(sc.kind);
-    if (live) {
+    // A goal keeps being recorded after the match moves on (the commentary
+    // comes back 1.8 s after it): the recorder cuts at POST_GOAL_S itself.
+    // Only a new chance (begin) or the match closing cuts it early.
+    // (Leo's 24 Oct update "bugFixes"; off, the recording stops with the phase as on main.)
+    if (live || (rec.recordingGoal && recSceneRef.current === sc && leoUpdateOn("bugFixes"))) {
       const bodies = 3 + sc.teammates.length + (sc.runner ? 1 : 0) + sc.secondaryRunners.length + sc.defenders.length;
       if (recSceneRef.current !== sc || rec.bodyIds().length !== bodies) {
         recSceneRef.current = sc;
@@ -5730,7 +5807,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       competition: fixture?.competition,
       weather: conditionsRef.current.weather !== "clear" ? conditionsRef.current.weather : undefined,
       season: careerRef.current?.season, week: careerRef.current?.week,
+      // A big late moment (commentary.ts): the video calls it with the late lines.
+      ...(isYou && leoUpdateOn("bigMoments") ? (() => { const late = lateKindOf(matchMinuteRef.current, true, userScoreRef.current, oppScoreRef.current); return late ? { late } : {}; })() : {}),
     });
+    // Your goal: the run to the corner and your move are in the video too.
+    const cel = celebRef.current;
+    if (isYou && cel) rec.celebrate(cel.plan.move, cel.plan.from);
     return id;
   };
 
@@ -6040,6 +6122,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // build-up in about 13 s at 10 fps. The match's own steps keep the clamp.
       const replayDt = Math.min(Math.max(0, dt), LEAD_REPLAY_MAX_DT);
       dt = Math.min(dt, 0.05); // clamp big frame gaps
+      // Big moments: the last half-second of your shot that is going in, slowed.
+      // The new ball steps in fixed 1/180 s steps, so the flight is step for step the same.
+      if (bigSlowNow()) dt *= BIG_SLOW_RATE;
 
       // Match feel: New (lib/star/matchFeel.ts) — the picture holds at the
       // contact (the wind-up, then the hit-stop). Nothing is stepped while it
@@ -6531,6 +6616,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           playZoomRef.current = ce.zoom0 * (ce.from.x2 - ce.from.x1) / (v.x2 - v.x1);
           baseViewportRef.current = v;
           if (ce.t >= BACK_EASE_S) camEaseRef.current = null;
+        } else if (nvOk && celebRef.current && phaseRef.current === "result") {
+          // After your goal the camera follows your run to the corner (never jumps).
+          // It also eases in to 70% of the frame, centred on you, so the move reads on a phone.
+          const cs = celebState(), c = celebRef.current;
+          if (cs && c) {
+            const v = baseViewportRef.current;
+            c.vp0 ??= { ...v };
+            const w = (c.vp0.x2 - c.vp0.x1) * 0.7, h = (c.vp0.y2 - c.vp0.y1) * 0.7;
+            const cx = Math.max(-4 + w / 2, Math.min(PITCH_W + 4 - w / 2, cs.x));
+            const cy = Math.max(-6 + h / 2, cs.y);
+            const want = { x1: cx - w / 2, x2: cx + w / 2, y1: cy - h / 2, y2: cy + h / 2 };
+            const k = 1 - Math.exp(-2.6 * dt);
+            baseViewportRef.current = { x1: v.x1 + (want.x1 - v.x1) * k, x2: v.x2 + (want.x2 - v.x2) * k, y1: v.y1 + (want.y1 - v.y1) * k, y2: v.y2 + (want.y2 - v.y2) * k };
+          }
         } else if (nvOk && playOnRef.current && phaseRef.current === "flight") {
           const sc = scenarioRef.current, po = playOnRef.current, b = ballRef.current;
           const pts = [sc.player, ...(po.layOffLive && b ? [b.pos] : [])];
@@ -6609,6 +6708,77 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const run = () => { if (sceneGenRef.current === gen) fn(); };
     if (bootRef.current) bootRef.current.then = run;
     else window.setTimeout(run, ms);
+  };
+
+  /** A chance served: is it a big moment? The banner, the crowd rising, the heartbeat. */
+  const maybeBigMoment = () => {
+    const sc = scenarioRef.current;
+    // Leo's 24 Oct update, "bigMoments": off = no big moments at all (the old match).
+    const ok = leoUpdateOn("bigMoments") && matchModeRef.current && !replayOfRef.current && shootoutKickRef.current == null && !autoKickOf(sc)
+      && (isBigMoment(matchMinuteRef.current, MATCH_DURATION, userScoreRef.current, oppScoreRef.current, goalInView(sc.kind))
+        // development only (compiled out of the live site): a playtest can ask for one
+        || (offlineDevPlayEnabled() && goalInView(sc.kind) && !!(window as unknown as { __bigMomentNext?: boolean }).__bigMomentNext));
+    // The same move carrying on (a pass that found its man): the heartbeat goes on, no second banner.
+    if (ok && bigRef.current) return;
+    endBigMoment();
+    if (!ok) return;
+    bigRef.current = { stop: startHeartbeat() };
+    playCrowdRise();
+    preloadLateGoalCalls();
+    setBigBanner((n) => n + 1);
+  };
+  const endBigMoment = () => {
+    const b = bigRef.current;
+    bigRef.current = null;
+    if (b) { try { b.stop(); } catch { /* sound never breaks the match */ } }
+  };
+  /** Slow motion: a big moment's shot of yours that is about to go in (the last half-second). */
+  const bigSlowNow = (): boolean => {
+    if (!bigRef.current || phaseRef.current !== "flight") return false;
+    const b = ballRef.current;
+    if (!b || b.inNet || !b.youStruckAtGoal) return false;
+    return headingIn(b.pos, b.z, b.vel, b.vz ?? 0);
+  };
+
+  /** Your goal is in: plan the run to the nearer corner and the move you equipped. */
+  const startCelebration = (sc: Scenario) => {
+    const foot = footSign(preferredFootRef.current ?? careerRef.current?.player.preferredFoot ?? activeFoot());
+    const from = hasRunup(sc.kind) ? drawnTakerAt(sc.ball, sc.player, foot).at : sc.player;
+    const eq = careerRef.current?.equippedAccessories?.celebration;
+    const item = eq ? ACCESSORIES.find((a) => a.id === eq && a.slot === "celebration") : undefined;
+    const plan = planCelebration({ x: from.x, y: from.y }, celebrationMoveFor(item?.celebration));
+    celebRef.current = { plan, t0: performance.now() / 1000 };
+    setCelebOn(true);
+  };
+  /** What the 3D view needs of your celebration this frame (engineFrame.ts EngineFrameFigure.celeb). */
+  const celebFrame = (): { celeb?: { clip: string; t: number; loop: boolean } } => {
+    const c = celebRef.current;
+    if (!c || phaseRef.current !== "result") return {};
+    const cs = celebAt(c.plan, performance.now() / 1000 - c.t0);
+    if (cs.phase !== "move" && cs.phase !== "done") return {};
+    const spec = CELEB_SPECS[c.plan.move];
+    return { celeb: { clip: spec.clip3d, t: cs.clipT, loop: spec.loop } };
+  };
+  const endCelebration = () => {
+    celebRef.current = null;
+    celebNextRef.current = null;
+    setCelebOn(false);
+  };
+  /** Go on once the celebration is over — or at once, on a tap (celebNextRef). */
+  const handOverCelebration = (fn: () => void) => {
+    const c = celebRef.current;
+    if (!c) { handOver(fn, 1800); return; }
+    const gen = sceneGenRef.current;
+    let done = false;
+    const run = () => {
+      if (done) return;
+      done = true;
+      endCelebration();
+      if (sceneGenRef.current === gen) fn();
+    };
+    celebNextRef.current = run;
+    const left = Math.max(1800, (c.plan.totalS - (performance.now() / 1000 - c.t0)) * 1000);
+    window.setTimeout(run, left);
   };
 
   const resolveOutcome = (res: Outcome) => {
@@ -6801,6 +6971,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (soundSet() === "arcade") playGoalSting(); // the Arcade pack's goal sting
       playNet();
       playCrowdSwell("cheer");
+      // Your own goal in a real match: the run to the corner and your celebration.
+      if (!isShootoutKick && !auto && d.goals > 0 && matchModeRef.current && !replayOfRef.current && leoUpdateOn("celebrations")) startCelebration(sc);
     } else if (res === "tackled" || res === "blocked") {
       // It says what happened, like a goal or a pass does. Losing the ball used
       // to resolve into a beat of nothing and then the next highlight, so you
@@ -6851,6 +7023,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       nudge(0.18, 0.14);
       playSave();
     }
+
+    // Big moments: the heartbeat stops; your goal is a huge roar, the late call and the
+    // turning-point music; anything else of yours a groan.
+    if (bigRef.current && !isShootoutKick && !auto) {
+      endBigMoment();
+      if (kind === "goal" && d.goals > 0) {
+        playBigRoar();
+        const us = userScoreRef.current, them = oppScoreRef.current;
+        const late = lateKindOf(matchMinuteRef.current, true, us, them);
+        if (late) playLateGoalCall(late, Math.round(matchMinuteRef.current * 7 + us * 3 + them));
+        if (!isTurningPoint(us - 1, them, us)) playTurningPoint();
+      } else if (kind !== "goal" && res !== "delivered" && res !== "touchOn" && res !== "saved" && res !== "post") {
+        playCrowdSwell("groan");
+      }
+    } else if (bigRef.current && kind !== "goal" && res === "delivered") {
+      // a pass in the big moment: the moment goes on to whoever gets it
+    } else endBigMoment();
 
     // Match feel: New — the net bulges on a goal, the woodwork clangs.
     if (matchFeelOn()) feelOutcome(res, kind === "goal");
@@ -7191,7 +7380,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
     // In career/match mode, enter simulation phase. In sandbox, go directly.
     if (matchModeRef.current) {
-      handOver(() => startSimulation(), 1800);
+      if (celebRef.current) handOverCelebration(() => startSimulation());
+      else handOver(() => startSimulation(), 1800);
     } else {
       // Sandbox mode: after 6 chances, show post-match
       if (attemptsRef.current >= 6) {
@@ -7307,17 +7497,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     viewportRef.current = topDownViewport(run);
     baseViewportRef.current = { ...viewportRef.current };
     playZoomRef.current = 1;
+    figShrinkRef.current = 1;
     return "tdDribble";
   };
 
-  /** Top-down: the frame follows you up the pitch, about 30 m deep, and sideways too, centred on
+  /** Top-down: the frame follows you up the pitch, about 40 m deep (was 29: "so zoomed in", Mikey's
+   *  playtest 21 Oct 2026), and sideways too, centred on
    *  you (Harry, 13 Oct 2026: "what happened to our top-down dribbling that was actually moving with
    *  the ball?" — it was fixed sideways at the pitch centre). Same width; never past a touchline.
    *  The picture only: the run's rules and the hidden match are untouched. */
   const topDownViewport = (run: FpRunState) => {
     const c = canvasRef.current;
     const aspect = c && c.height > 0 ? c.width / c.height : 5 / 8;
-    const y1 = run.y - 20, y2 = run.y + 9;
+    const y1 = run.y - 28, y2 = run.y + 12;
     const w = (y2 - y1) * aspect;
     const cx = Math.max(w / 2, Math.min(PITCH_W - w / 2, run.x));
     return { x1: cx - w / 2, x2: cx + w / 2, y1, y2 };
@@ -7566,7 +7758,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Set pieces you do not take go to whoever does, and the match runs on.
     // runStretch keeps EVERY run's lines (lib/star/stretchRun.ts: the lost
     // goal that put the stats screen a goal ahead of the scoreboard).
-    let step = runStretch(st, baseInputs, rng, stretchEnd, mayTake, handedOver);
+    // Already taken off: extra time plays on without you, exactly like the
+    // minutes after you came off (Mikey's playtest, 21 Oct 2026: replaced at
+    // 84', then handed chances at 2-2 in extra time, energy frozen at 20).
+    let step = hookedRef.current
+      ? { events: [...handedOver, ...advanceTo(st, baseInputs, rng, matchCeilingRef.current)], request: null, fullTime: true }
+      : runStretch(st, baseInputs, rng, stretchEnd, mayTake, handedOver);
     /** Item 25: the stretch ran out because his legs did, not the clock. */
     const legsGone = !step.request && offAt < matchCeilingRef.current && st.minute >= offAt;
     if (legsGone) step = { ...step, fullTime: false };
@@ -8321,6 +8518,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       viewportRef.current = dribbleViewport(dribbleRef.current);
       baseViewportRef.current = { ...viewportRef.current };
       playZoomRef.current = 1;
+      figShrinkRef.current = 1;
       setPhase("dribble");
       onChanceServedRef.current?.({ kind: "dribble", minute: matchMinuteRef.current, reason: request.reason });
       logMoment(momentLine(), "you");
@@ -8497,6 +8695,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       reason: request?.reason,
       scenario: snapshotScenario(scenarioRef.current),
     });
+    maybeBigMoment();
     // One line, once per chance — see logMoment. This is the single thing kept
     // from what used to be an unbroken flood of buildup commentary: the moment
     // the ball actually reaches a player of yours to do something with.
@@ -9691,7 +9890,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             (the dim part past the line is energy you no longer have); drains as
             you sprint, refills as you ease off. B14b: in the first corner of the
             pitch clear of the goal, the ball and every man (lib/star/barSpot.ts). */}
-        {stamUi && !leadInOn && (runLive || ((phase === "aim" || phase === "result") && goalInView(scenarioRef.current.kind) && acceptsCaptainOrders(scenarioRef.current.kind))) && (
+        {stamUi && !leadInOn && phase !== "feed" && phase !== "postmatch" && (runLive || ((phase === "aim" || phase === "result") && goalInView(scenarioRef.current.kind) && acceptsCaptainOrders(scenarioRef.current.kind))) && (
           <div
             data-stamina={stamUi.v.toFixed(2)}
             data-stamina-cap={stamUi.cap.toFixed(2)}
@@ -9732,6 +9931,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           </div>
         )}
 
+        {/* Big moments (bigMoment.ts): the banner as the chance opens. Never takes a touch. */}
+        {bigBanner > 0 && <BigMomentBanner key={bigBanner} />}
+        {/* After your goal (celebration.ts): a tap anywhere skips the run and the celebration. */}
+        {celebOn && (
+          <div
+            data-celebration
+            className="absolute inset-0 z-40 pointer-events-auto"
+            onPointerDown={(e) => { e.stopPropagation(); celebNextRef.current?.(); }}
+          >
+            <div className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-[11px] font-black text-white">
+              Tap to skip
+            </div>
+          </div>
+        )}
         {/* A build-up before the chance (lib/star/leadInGen.ts): a tap skips it. */}
         {leadInOn && leadRef.current?.lead.skippable && (
           <div data-buildup className="absolute bottom-2 left-1/2 -translate-x-1/2 pointer-events-none rounded-full bg-black/60 px-3 py-1 text-[11px] font-black text-white">
@@ -10032,6 +10245,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           />
         </div>
       )}
+    </div>
+  );
+}
+
+/** "BIG MOMENT": up for 1.9 s as a big-moment chance opens (lib/star/bigMoment.ts). */
+function BigMomentBanner() {
+  const [on, setOn] = useState(true);
+  useEffect(() => { const t = window.setTimeout(() => setOn(false), 1900); return () => window.clearTimeout(t); }, []);
+  if (!on) return null;
+  return (
+    <div data-big-moment className="pointer-events-none absolute inset-x-0 top-[14%] z-30 flex justify-center">
+      <div className="kib-pop -skew-x-6 border-y-2 border-amber-300 bg-gradient-to-r from-red-700/90 via-red-600/95 to-red-700/90 px-6 py-2 shadow-[0_0_24px_rgba(239,68,68,0.6)]">
+        <div className="skew-x-6 text-center">
+          <div className="text-[30px] leading-none tracking-wider text-white" style={{ fontFamily: "Anton, Impact, sans-serif" }}>BIG MOMENT</div>
+          <div className="mt-1 text-[11px] font-black uppercase tracking-[0.2em] text-amber-200">Late on · it&apos;s on you</div>
+        </div>
+      </div>
     </div>
   );
 }

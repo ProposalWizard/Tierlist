@@ -57,7 +57,11 @@ export function setPieceDuties(
   const freeKickNeeded = Math.max(30, Math.min(88, s - 12));
   const penaltyNeeded = Math.max(25, Math.min(80, s - 20));
   // You have to be on the pitch. A substitute can absolutely take a penalty.
-  const onThePitch = status !== "Squad";
+  // The story's first hour (Mikey, 24 Oct 2026): a new player earns set
+  // pieces with his first goal, not on day one, so the manager's "I'm making
+  // you our penalty taker" never lands in the tutorial (story.ts, setPieceTalk.ts).
+  const earned = !career.unlocks?.story || career.unlocks.seen.includes("beat-stats");
+  const onThePitch = status !== "Squad" && earned;
   const eff = effectiveTaker(career);
   const penaltyStarWeight = opts.penaltyStarWeight ?? PENALTY_STAR_WEIGHT;
   const penaltyStanding = effectiveTaker(career, penaltyStarWeight);

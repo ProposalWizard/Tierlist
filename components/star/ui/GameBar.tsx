@@ -16,7 +16,7 @@ import { useCountUp } from "./motion";
  * spacer, so nothing ever shifts sideways. Rendered by DashboardShell and,
  * through page.tsx's `screenTop`, above every full-screen page.
  */
-export default function GameBar({ career, onHome, atHome = false, onHelp, onSettings }: {
+export default function GameBar({ career, onHelp, onSettings }: {
   career: CareerState;
   onHome: () => void;
   /** On Home itself: the house is dimmed and does nothing (navigation round 1,
@@ -32,19 +32,9 @@ export default function GameBar({ career, onHome, atHome = false, onHelp, onSett
     // that blends with the HUD under it, no outline, after New Star Soccer's
     // home screen. Colours are the --sk-top-* tokens in ui/flat.css.
     <div data-game-bar className="sk-bar sk-top flex h-[48px] shrink-0 items-center gap-1.5 px-3" style={{ background: "var(--sk-top-bg)" }}>
-      {/* Home, top left. Lit green when you are off the home screens, so the way back is obvious. */}
-      <button
-        data-home-button
-        data-tour="home"
-        onClick={atHome ? undefined : onHome}
-        aria-label={atHome ? "Home (you are here)" : "Home"}
-        aria-disabled={atHome || undefined}
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[3px] transition-colors ${
-          atHome ? "sk-top-btn cursor-default opacity-40" : "kib-press bg-gradient-to-b from-emerald-400 to-emerald-600 text-white shadow-[0_1px_3px_rgba(0,0,0,.25)]"
-        }`}
-      >
-        <HouseIcon />
-      </button>
+      {/* No house here any more (Mikey, 22 Oct 2026, master plan 1): Home is
+          the middle button of the bottom bar on every screen. `onHome` and
+          `atHome` stay on the props so every caller still compiles. */}
       <div className="sk-display min-w-0 flex-1 truncate text-[15px] font-black uppercase leading-tight tracking-wide" style={{ color: "var(--sk-top-ink)" }}>
         {fullName}
       </div>
@@ -66,16 +56,6 @@ export default function GameBar({ career, onHome, atHome = false, onHelp, onSett
         <GearIcon />
       </button>
     </div>
-  );
-}
-
-function HouseIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 10.5 12 3l9 7.5" />
-      <path d="M5.5 9v11h13V9" />
-      <path d="M10 20v-5.5h4V20" />
-    </svg>
   );
 }
 

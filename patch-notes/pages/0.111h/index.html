@@ -1,0 +1,1494 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Team room plan</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  /* before → after bar */
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  figure{margin:12px 0 2px}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:12px 0 2px}
+  .shots figure{margin:0}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+  .flow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 26px}
+  .flow span{font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink3)}
+  .flow span.done{color:var(--green)}
+  .flow span.cur{background:var(--green);color:#06170e;border-color:var(--green)}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+  th,td{text-align:left;vertical-align:top;padding:9px 11px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  tr:last-child td{border-bottom:0}
+  td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700}
+  td.s{color:var(--ink2)}
+  .p-grn{background:rgba(61,220,132,.15);color:var(--green)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  .ck{list-style:none;margin:0;padding:0}
+  .ck li{padding:10px 0 10px 26px;border-bottom:1px solid var(--line);position:relative}
+  .ck li:last-child{border-bottom:0}
+  .ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);font-weight:800}
+  .ck .q{font-weight:700}.ck .a{color:var(--ink2);font-size:14px;margin-top:2px}
+  .ltr{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:5px;background:var(--card2);border:1px solid var(--line);font-size:12px;margin-right:7px;color:var(--ink)}
+</style>
+<style>.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.calls li{padding:11px 0;border-bottom:1px solid var(--line);list-style:none}.calls{margin:0;padding:0}
+.calls .q{font-weight:700}.calls .a{color:var(--ink2);font-size:14px;margin-top:3px}
+.verdict{border:1px solid var(--line);border-left:3px solid var(--green);background:var(--card);border-radius:var(--r);padding:13px 15px;margin:0 0 8px}
+.verdict .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-bottom:5px}
+.verdict p{margin:0 0 6px;font-size:14.5px;color:var(--ink2)}.verdict p:last-child{margin:0}
+</style>
+<style>
+.bars2{margin:10px 0 4px}.b2{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:6px 0;font-size:13.5px}
+.b2 .l{grid-column:1/-1;color:var(--ink2)}.b2 .t{height:14px;background:var(--card2);border-radius:4px;overflow:hidden}.b2 .f{height:100%;border-radius:4px}
+.b2 .v{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;font-size:12.5px}
+</style>
+<style>
+.lbl{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin:10px 0 2px}
+.lbl+p{margin-top:0}
+.conn summary{color:var(--ink);font-size:14.5px;flex-wrap:wrap}
+.conn summary .one{flex-basis:100%;font-weight:400;font-size:13px;color:var(--ink2);padding-left:16px}
+.feat>li{padding:13px 0}
+.use{border-left:3px solid var(--blue);padding:2px 0 2px 10px;margin-top:6px;color:var(--ink2);font-size:14px}
+.use b{color:var(--ink)}
+.cap{font-size:12px;color:var(--ink3);margin:7px 0 0;line-height:1.4}
+.sv{display:block;width:100%;height:auto}
+.note{border:1px solid var(--line);border-left:3px solid var(--amber);background:var(--card);border-radius:var(--r);padding:13px 15px;margin:12px 0}
+.note .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-bottom:5px}
+.note p{margin:0 0 6px;font-size:14px;color:var(--ink2)}.note p:last-child{margin:0}
+.toc{list-style:none;margin:0 0 6px;padding:0;counter-reset:t}
+.toc li{padding:7px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}
+.toc li b{color:var(--ink)}
+.calls .rec{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;padding:2px 7px;border-radius:999px;background:rgba(61,220,132,.15);color:var(--green);margin-right:6px}
+.calls .rec.no{background:rgba(255,107,107,.15);color:var(--red)}
+</style>
+</head><body>
+<style>
+details li,details p,.dt,.cap{overflow-wrap:anywhere}
+.sv text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.tree{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.7;color:var(--ink2);background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;white-space:pre-wrap;word-break:break-word}
+.tree b{color:var(--ink)}.tree .g{color:var(--green)}.tree .a{color:var(--amber)}.tree .m{color:var(--ink3)}
+.free{background:rgba(61,220,132,.15);color:var(--green)}
+.paid{background:rgba(245,185,66,.15);color:var(--amber)}
+.used{background:rgba(111,184,255,.15);color:var(--blue)}
+.step{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;padding:2px 7px;border-radius:999px;background:var(--card2);border:1px solid var(--line);color:var(--ink2);margin-left:6px;vertical-align:1px}
+.you{border-left:3px solid var(--amber);padding:2px 0 2px 10px;margin-top:6px;color:var(--ink2);font-size:14px}
+.you b{color:var(--ink)}
+</style>
+<div class="wrap">
+<header>
+  <span class="ver">v0.111h · 25 OCT · PLAN, BEING BUILT</span>
+  <h1>Team room: the Slack-style plan</h1>
+  <p style="display:flex;align-items:center;gap:8px;margin:0 0 4px;font-weight:700;font-size:14.5px"><i style="width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none;display:inline-block"></i>Being built now on the Harry branch. Not live.</p>
+  <p class="sub">How the Team room will look and work, Slack-style: channels instead of board sections, bots listed as members, notifications per channel with computer pop-ups, #bugs and #health that fill themselves, a connectors chat with /show, draw a box and tag a bot, each person's own connections, and schedules with #today check-ins. Then the build order and the questions for the team.</p>
+</header>
+
+<style>
+.cardx{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 16px}
+.cardx h3{margin:0 0 4px;font-size:16.5px;line-height:1.25;letter-spacing:-.01em}
+.cardx h3 .no{display:inline-block;min-width:26px;color:var(--blue);font-weight:800}
+.cardx .one{color:var(--ink2);font-size:14px;margin:0 0 10px}
+.cardx .tw{background:var(--card2);margin:8px 0 2px}
+.cardx ol.steps{margin:6px 0 8px;padding-left:20px;color:var(--ink2);font-size:14px}
+.cardx ol.steps li{margin-bottom:4px}
+.cardx ol.steps b{color:var(--ink)}
+.needs{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:13px;color:var(--ink2)}
+.needs .k{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+.needs .pill{margin-left:0}
+.harry{background:rgba(177,140,255,.16);color:var(--violet)}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}
+.rules div{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;color:var(--ink2);background:var(--card2)}
+.rules b{display:block;color:var(--ink);font-size:13.5px;margin-bottom:2px}
+.rules .l b{color:var(--green)}.rules .c b{color:var(--amber)}.rules .w b{color:var(--red)}
+.tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--ink3);margin-left:6px;vertical-align:1px}
+.uses li{padding:10px 0}
+.uses .u{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;color:var(--ink);background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;margin-top:5px;word-break:break-word}
+.ov{width:100%;border-collapse:collapse;min-width:0;font-size:13.5px}
+.ov th,.ov td{white-space:normal}
+.ov td:first-child{white-space:normal}
+</style>
+
+<h2 class="add"><i></i>New in this version (25 Oct)</h2>
+<div class="dt" style="margin-bottom:10px">Harry's feedback from the Supabase page, as seven cards for the Team room. Each has a picture, three steps and what it needs. <span class="pill free">free</span> costs nothing at our size. <span class="pill harry">needs Harry</span> a step only you can do. <span class="pill paid">costs</span> money or credits.</div>
+<ul class="toc">
+<li><b>U</b> · UI: how the Team room looks and works <span class="pill p-blu">new</span> (14 usage cards + 3 on running the team)</li>
+<li><b>A1</b> · #connectors: talk to any service through a bot</li>
+<li><b>A2</b> · #bugs fills itself</li>
+<li><b>A3</b> · Small servers for fast bot replies</li>
+<li><b>A4</b> · #health: a morning post and a weekly post</li>
+<li><b>A5</b> · Draw a box, tag a bot (plus 9 more uses)</li>
+<li><b>A6</b> · Notifications: every message, per channel, on your desktop</li>
+<li><b>A7</b> · Each person's bot checks its own connections</li>
+<li><b>Then</b> · build order, questions for the team</li>
+</ul>
+
+<!-- ================= UI SECTION (25 Oct, Harry: "a whole UI section") ================= -->
+<style>
+/* source tags: seen / measured / reasoned */
+.src{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:999px;margin-left:5px;vertical-align:1px;border:1px solid var(--line);white-space:nowrap}
+.src.se{color:var(--blue)}.src.me{color:var(--green)}.src.re{color:var(--amber)}
+.uxh{font-size:20px;letter-spacing:-.015em;margin:28px 0 6px;line-height:1.2}
+.uxh .no{color:var(--blue);margin-right:6px}
+/* scroll box for desktop-size mocks */
+.ux-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card2);padding:10px;margin:10px 0 4px;-webkit-overflow-scrolling:touch}
+.ux-hint{font-size:12px;color:var(--ink3);margin:4px 0 0}
+/* the app paint inside every mock */
+.ux{--ux-bg:var(--bg);--ux-side:var(--card);--ux-main:var(--card);--ux-hov:var(--card2);--ux-acc:var(--green);--ux-bot:var(--violet);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+.ux *{box-sizing:border-box}
+.ux-desk{display:grid;grid-template-columns:220px minmax(0,1fr) 380px;width:1180px;height:780px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--ux-bg)}
+.ux-desk.closed{grid-template-columns:0 minmax(0,1fr) 380px}
+.ux-desk.closed .ux-side{visibility:hidden;border-right:0}
+.ux-desk .ux-open{display:none}
+.ux-desk.closed .ux-open{display:inline-flex}
+button.ux-ib{font:inherit;font-size:14px;padding:0;cursor:pointer;line-height:1}
+.ux-ib.home{color:var(--ink);font-size:15px}
+.ux-ib.tog{border-color:var(--ux-acc);color:var(--ux-acc);font-weight:900;font-size:15px}
+.ux-ib.tog:focus-visible{outline:2px solid var(--ux-acc);outline-offset:2px}
+.ux-open{gap:6px;flex:0 0 auto}
+.ux-desk .ux-shead{gap:6px;padding:0 10px 0 12px}
+.ux-ttl{font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ux-xclose{margin-left:4px}
+.ux-closehint{position:absolute;right:0;top:30px;bottom:0;width:20%;z-index:3;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;text-align:center;line-height:1.3;padding:4px}
+/* #bugs card, matched to the mood picture (img/mood-phone.jpg) */
+.ux-bug{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:6px;background:var(--ux-hov);font-size:14px;line-height:20px}
+.ux-bug .bt{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:800;color:var(--ink)}
+.ux-bug .bt i{font-style:normal;color:var(--ux-acc)}
+.ux-bug .f{margin-top:8px}
+.ux-bug .f small{display:block;font-size:12.5px;color:var(--ink3);line-height:18px}
+.ux-bug .f ol{margin:0;padding-left:18px;color:var(--ink)}
+.ux-bug .ux-shot{height:auto;aspect-ratio:16/9;border-radius:8px;margin-top:10px}
+.ux-bug .two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.ux-bug .two span{height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:800;white-space:nowrap;padding:0 6px}
+.ux-bug .two .ol{border:1px solid var(--ux-acc);color:var(--ux-acc);background:rgba(61,220,132,.08)}
+.ux-bug .two .fi{background:var(--ux-acc);color:#06170e}
+.ux-bug .more{margin-top:6px;font-size:12.5px;color:var(--ink3);text-align:right}
+.ux-msg .who.g{color:var(--ux-acc)}
+.ux-side{background:var(--ux-side);border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0;position:relative}
+.ux-side .grip{position:absolute;top:0;right:-3px;width:6px;height:100%;cursor:col-resize}
+.ux-side .grip::after{content:"";position:absolute;top:50%;right:2px;width:2px;height:40px;margin-top:-20px;border-radius:2px;background:var(--line)}
+.ux-shead{height:49px;display:flex;align-items:center;gap:8px;padding:0 12px 0 16px;border-bottom:1px solid var(--line);font-weight:800;font-size:16px}
+.ux-shead .sp{flex:1}
+.ux-ib{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;color:var(--ink2);font-size:14px;border:1px solid var(--line);background:var(--ux-hov);flex:0 0 auto}
+.ux-list{padding:8px 8px;overflow:hidden;flex:1}
+.ux-sec{height:26px;display:flex;align-items:center;gap:5px;padding:0 8px;font-size:12.5px;font-weight:700;color:var(--ink3);margin-top:8px}
+.ux-sec:first-child{margin-top:0}
+.ux-row{height:28px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:6px;font-size:15px;color:var(--ink2);white-space:nowrap;min-width:0}
+.ux-row .h{width:16px;text-align:center;color:var(--ink3);font-weight:700;flex:0 0 auto}
+.ux-row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ux-row.unread{color:var(--ink);font-weight:800}
+.ux-row.cur{background:var(--ux-acc);color:#06170e;font-weight:700}
+.ux-row.cur .h{color:#06170e;opacity:.75}
+.ux-row.muted{opacity:.45}
+.ux-row.add{color:var(--ink3)}
+.ux-n{min-width:20px;height:18px;padding:0 6px;border-radius:9px;background:var(--red);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center}
+.ux-av{position:relative;flex:0 0 auto;display:grid;place-items:center;font-weight:800;color:#06170e;border-radius:8px}
+.ux-av.s20{width:20px;height:20px;font-size:10px;border-radius:5px}
+.ux-av.s36{width:36px;height:36px;font-size:15px}
+.ux-av.s72{width:72px;height:72px;font-size:28px;border-radius:14px}
+.ux-av.H{background:#3ddc84}.ux-av.M{background:#6fb8ff}.ux-av.L{background:#f5b942}
+.ux-av.B{background:var(--ux-bot);color:#fff}
+.ux-dot{position:absolute;right:-3px;bottom:-3px;width:10px;height:10px;border-radius:50%;border:2px solid var(--ux-side);background:var(--ux-side)}
+.ux-dot.on{background:#2fbf6b}
+.ux-dot.away{background:var(--ux-side);box-shadow:inset 0 0 0 1.5px var(--ink3)}
+.ux-dot.dnd{background:#e5484d}
+.ux-dot.dnd::after{content:"";position:absolute;left:1px;right:1px;top:2px;height:2px;background:#fff;border-radius:1px}
+.ux-dot.work{background:var(--amber)}
+.ux-s36 .ux-dot{width:12px;height:12px}
+.ux-bt{font-size:9.5px;font-weight:800;letter-spacing:.05em;padding:1px 4px;border-radius:4px;background:var(--ux-hov);border:1px solid var(--line);color:var(--ink3);flex:0 0 auto}
+.ux-st{font-size:13px;flex:0 0 auto}
+.ux-main{display:flex;flex-direction:column;min-width:0;background:var(--ux-main)}
+.ux-chead{height:49px;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--line);min-width:0}
+.ux-chead b{font-size:17px;font-weight:800;white-space:nowrap}
+.ux-chead small{color:var(--ink3);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.ux-faces{display:flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:7px;padding:2px 6px 2px 3px;font-size:12px;color:var(--ink2);gap:3px;flex:0 0 auto}
+.ux-msgs{flex:1;overflow:hidden;padding:8px 0}
+.ux-day{display:flex;align-items:center;gap:10px;margin:6px 16px;font-size:12px;font-weight:700;color:var(--ink3)}
+.ux-day::before,.ux-day::after{content:"";flex:1;height:1px;background:var(--line)}
+.ux-msg{display:grid;grid-template-columns:36px minmax(0,1fr);gap:8px;padding:8px 20px;position:relative}
+.ux-msg.hov{background:var(--ux-hov)}
+.ux-msg .who{font-size:15px;font-weight:800;line-height:22px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ux-msg .who time{font-size:12px;color:var(--ink3);font-weight:400}
+.ux-msg .tx{font-size:15px;line-height:22px;color:var(--ink);overflow-wrap:anywhere}
+.ux-msg .tx .at{background:rgba(111,184,255,.18);color:var(--blue);border-radius:4px;padding:0 2px;font-weight:600}
+.ux-msg.cont{padding-top:0}
+.ux-reacts{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.ux-reacts span{height:24px;padding:0 7px;border-radius:12px;border:1px solid var(--line);background:var(--ux-hov);font-size:12px;display:inline-flex;align-items:center;gap:4px;color:var(--ink2)}
+.ux-reacts span.mine{border-color:var(--blue);background:rgba(111,184,255,.14);color:var(--blue)}
+.ux-thr{display:inline-flex;align-items:center;gap:6px;margin-top:4px;font-size:13px;color:var(--blue);font-weight:700}
+.ux-thr em{font-style:normal;color:var(--ink3);font-weight:400}
+.ux-acts{position:absolute;top:-14px;right:20px;display:flex;border:1px solid var(--line);background:var(--ux-main);border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.25);overflow:hidden}
+.ux-acts span{width:32px;height:32px;display:grid;place-items:center;font-size:14px;color:var(--ink2)}
+.ux-comp{margin:0 16px 16px;border:1px solid var(--line);border-radius:8px;background:var(--ux-main)}
+.ux-fmt{height:32px;display:flex;align-items:center;gap:2px;padding:0 6px;border-bottom:1px solid var(--line);font-size:12px;color:var(--ink3)}
+.ux-fmt span{width:26px;height:24px;display:grid;place-items:center;border-radius:5px;font-weight:700}
+.ux-box{min-height:44px;display:flex;align-items:center;padding:0 12px;font-size:15px;color:var(--ink3);gap:8px}
+.ux-box .sp{flex:1}
+.ux-send{width:32px;height:28px;border-radius:6px;background:var(--ux-acc);color:#06170e;display:grid;place-items:center;font-weight:900}
+.ux-thread{border-left:1px solid var(--line);display:flex;flex-direction:column;background:var(--ux-main);min-width:0}
+.ux-thread .ux-chead b{font-size:16px}
+.ux-rep{display:flex;align-items:center;gap:10px;margin:4px 16px;font-size:12px;color:var(--ink3)}
+.ux-rep::after{content:"";flex:1;height:1px;background:var(--line)}
+.ux-also{font-size:12px;color:var(--ink2);padding:0 16px 8px;display:flex;align-items:center;gap:6px}
+.ux-also i{width:13px;height:13px;border:1.5px solid var(--ink3);border-radius:3px;display:inline-block}
+.ux-btn{display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 12px;border-radius:7px;font-size:13px;font-weight:800;border:1px solid var(--line);background:var(--ux-hov);color:var(--ink)}
+.ux-btn.go{background:var(--ux-acc);border-color:var(--ux-acc);color:#06170e}
+.ux-btn.no{color:var(--ink2)}
+.ux-card{border:1px solid var(--line);border-left:4px solid var(--ux-bot);border-radius:8px;padding:10px 12px;margin-top:6px;background:var(--ux-main);font-size:14px;line-height:20px}
+.ux-card .k{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+.ux-card .row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ux-shot{height:90px;border-radius:6px;margin-top:8px;background:linear-gradient(135deg,#1f4d33,#2a6b46 45%,#183526);position:relative;overflow:hidden}
+.ux-shot::after{content:"";position:absolute;left:38%;top:30%;width:22%;height:42%;border:2px dashed #f5b942;border-radius:4px}
+/* phone mocks */
+.ux-phones{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin:10px 0 4px}
+.ux-ph{width:100%;max-width:330px;margin:0 auto;aspect-ratio:390/760;border:1px solid var(--line);border-radius:28px;overflow:hidden;display:flex;flex-direction:column;background:var(--ux-main);position:relative}
+.ux-ph .stat{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:11px;font-weight:800;color:var(--ink2)}
+.ux-ph .top{height:48px;display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid var(--line)}
+.ux-ph .top b{font-size:16px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ux-burger{position:relative;width:34px;height:34px;border-radius:9px;display:grid;place-items:center;border:1px solid var(--line);font-size:15px;color:var(--ink2);flex:0 0 auto}
+.ux-burger .ux-n{position:absolute;top:-6px;right:-7px;min-width:17px;height:16px;font-size:10px;padding:0 4px}
+.ux-ph .ux-msgs{padding:4px 0}
+.ux-ph .ux-msg{padding:7px 12px;grid-template-columns:36px minmax(0,1fr)}
+.ux-ph .ux-msg .tx{font-size:16px;line-height:22px}
+.ux-ph .ux-comp{margin:0 10px 8px}
+.ux-ph .ux-box{font-size:16px}
+.ux-drawer{position:absolute;left:0;top:30px;bottom:0;width:80%;max-width:300px;background:var(--ux-side);border-right:1px solid var(--line);box-shadow:8px 0 24px rgba(0,0,0,.35);display:flex;flex-direction:column;z-index:2}
+.ux-drawer .ux-row{height:44px;font-size:16px}
+.ux-dim{position:absolute;inset:30px 0 0 0;background:rgba(0,0,0,.45);z-index:1}
+.ux-sheet{position:absolute;left:0;right:0;bottom:0;background:var(--ux-side);border-top:1px solid var(--line);border-radius:18px 18px 0 0;padding:8px 14px 14px;z-index:2}
+.ux-sheet .grab{width:36px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 10px}
+.ux-sheet .opt{height:44px;display:flex;align-items:center;gap:10px;font-size:15px;border-bottom:1px solid var(--line)}
+.ux-sheet .opt:last-child{border-bottom:0}
+.ux-sheet .opt .sp{flex:1}
+.ux-radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--ink3);flex:0 0 auto}
+.ux-radio.on{border-color:var(--ux-acc);box-shadow:inset 0 0 0 4px var(--ux-side);background:var(--ux-acc)}
+/* mini mock = one fluid panel that fits a phone */
+.ux-mini{border:1px solid var(--line);border-radius:10px;background:var(--ux-main);overflow:hidden;margin:10px 0 4px;max-width:560px}
+.ux-mini .ux-chead{height:44px;padding:0 12px}
+.ux-mini .ux-chead b{font-size:15.5px}
+.ux-mini .ux-msg{padding:8px 12px}
+.ux-mini .ux-comp{margin:0 10px 10px}
+.ux-tick{width:20px;height:20px;border-radius:50%;border:2px solid var(--ink3);flex:0 0 auto;margin-top:1px;display:grid;place-items:center;font-size:11px;font-weight:900}
+.ux-tick.done{background:var(--ux-acc);border-color:var(--ux-acc);color:#06170e}
+.ux-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:3px}
+.ux-chip{height:22px;padding:0 7px;border-radius:6px;border:1px solid var(--line);background:var(--ux-hov);font-size:12px;display:inline-flex;align-items:center;gap:4px;color:var(--ink2);font-weight:600;text-decoration:none}
+.ux-chip.late{color:var(--red);border-color:rgba(255,107,107,.4)}
+.ux-vote{display:flex;flex-direction:column;align-items:center;justify-content:center;width:44px;height:48px;border:1px solid var(--line);border-radius:8px;font-size:12px;font-weight:800;color:var(--ink2);flex:0 0 auto}
+.ux-vote.on{border-color:var(--ux-acc);color:var(--ux-acc);background:rgba(61,220,132,.1)}
+.ux-pop{border:1px solid var(--line);border-radius:10px;background:var(--ux-main);box-shadow:0 6px 22px rgba(0,0,0,.28);padding:6px;font-size:14px;max-width:340px}
+.ux-pop .it{display:flex;align-items:center;gap:8px;height:34px;padding:0 8px;border-radius:6px}
+.ux-pop .it.on{background:var(--ux-hov)}
+.ux-pop .it small{color:var(--ink3);font-size:12px;margin-left:auto;white-space:nowrap}
+.ux-pop .hd2{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);padding:6px 8px 2px}
+.ux-hcard{border:1px solid var(--line);border-radius:12px;background:var(--ux-main);box-shadow:0 8px 26px rgba(0,0,0,.3);padding:14px;max-width:300px;font-size:14px}
+.ux-hcard .top2{display:flex;gap:12px;align-items:center}
+.ux-hcard .nm2{font-size:18px;font-weight:800}
+.ux-hcard .ln{display:flex;align-items:center;gap:8px;margin-top:8px;color:var(--ink2)}
+.ux-bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:6px}
+.ux-bar i{display:block;height:100%;background:var(--amber)}
+.ux-toast{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;background:var(--card2);box-shadow:0 8px 24px rgba(0,0,0,.3);padding:10px 12px;max-width:360px;font-size:13.5px}
+.ux-toast b{display:block;font-size:13.5px}
+.ux-toast small{color:var(--ink3)}
+.ux-pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;align-items:start;margin:10px 0 4px}
+.ux-cap{font-size:12px;color:var(--ink3);margin:6px 0 0;line-height:1.4}
+.ux-field{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:15px;margin-top:6px;background:var(--ux-hov);color:var(--ink)}
+.ux-kind{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:6px}
+.ux-kind div{border:1px solid var(--line);border-radius:8px;padding:7px 8px;font-size:13px;color:var(--ink2)}
+.ux-kind div b{display:block;color:var(--ink);font-size:13.5px}
+.ux-kind div.on{border-color:var(--ux-acc);box-shadow:inset 0 0 0 1px var(--ux-acc)}
+.ux-sw{width:34px;height:20px;border-radius:10px;background:var(--line);position:relative;flex:0 0 auto}
+.ux-sw::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff}
+.ux-sw.on{background:var(--ux-acc)}.ux-sw.on::after{left:16px}
+.ux-kbd{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--card2);color:var(--ink)}
+.cardx.ux h3 .no{margin-right:6px}
+.changed{border:1px solid var(--line);border-left:3px solid var(--violet);background:var(--card2);border-radius:10px;padding:10px 12px;margin:10px 0 0;font-size:13.5px;color:var(--ink2)}
+.changed b.t{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--violet);margin-bottom:3px}
+.changed b{color:var(--ink)}
+</style>
+
+<h2 class="chg" id="ui"><i></i>U · UI: HOW THE TEAM ROOM LOOKS AND WORKS</h2>
+<div class="verdict">
+<div class="t">The short version</div>
+<p><b>Slack's layout, our colours.</b> A channel list on the left, the chat in the middle, a thread on the right.</p>
+<p><b>The board's sections become channels.</b> Ideas, to-do, bugs, health and patch notes are 9 preset channels. You can add more.</p>
+<p><b>Bots sit in the list like people.</b> Each has a BOT tag and a live line of what it is doing.</p>
+</div>
+<div class="dt" style="margin:8px 0 4px">Every fact carries a tag: <span class="src se">seen</span> read in a source or in our code · <span class="src me">measured</span> counted by me · <span class="src re">reasoned</span> my design call or a guess. Slack's own pixel sizes are not published; where I give one, it is marked <span class="src re">reasoned</span> (estimated from the app, not measured).</div>
+
+<!-- Mood pictures -->
+<div class="lbl" style="margin-top:16px">AI mood pictures (Higgsfield), not the real screen</div>
+<div class="shots">
+<figure><img src="img/mood-desktop.jpg" alt="AI mood picture: desktop Team room with channel list, chat and thread panel" loading="lazy"><figcaption>Desktop feel: list, chat, thread. Look at the calm spacing.</figcaption></figure>
+<figure><img src="img/mood-collapsed.jpg" alt="AI mood picture: sidebar folded to icons, to-do channel with ticks and a profile hover card" loading="lazy"><figcaption>List folded away; #todo ticks; a hover card with a status.</figcaption></figure>
+<figure><img src="img/mood-phone.jpg" alt="AI mood picture: phone with a bug bot post and bottom tabs" loading="lazy"><figcaption>Phone: a Bug bot post with buttons, four tabs at the bottom. <b>Harry, 25 Oct: "the bug bot in this picture works really cool, I like that for ours." Decided: #bugs posts look like this.</b></figcaption></figure>
+<figure><img src="img/mood-bot.jpg" alt="AI mood picture: a bot asking Approve or No, and a bot progress line" loading="lazy"><figcaption>A bot asks "Approve?"; another shows its live progress.</figcaption></figure>
+</div>
+<p class="cap">Made with Higgsfield (GPT Image 2.5, 4 pictures, 1 credit). The names and faces in them are invented, the text is the AI's. The real design is the drawn mock-ups below, at exact sizes.</p>
+
+<!-- What we learned -->
+<h3 class="uxh"><span class="no">R</span>What Slack, Teams and Discord do</h3>
+<ul class="n">
+<li><div class="hd">Slack: the list folds away with one key. <span class="src se">seen</span></div><div class="dt"><span class="ux-kbd">⌘ Shift D</span> (Mac) or <span class="ux-kbd">Ctrl Shift D</span> hides or shows the left list. You drag its edge to set the width. Right-click switches it to icons only. (Slack help, "Adjust your sidebar preferences" and "Keyboard shortcuts", read 25 Oct 2026.)</div></li>
+<li><div class="hd">Slack: two looks for messages, Clean and Compact. <span class="src se">seen</span></div><div class="dt">Clean (the default) shows a photo by each message. Compact has less space and hides photos. The phone app cannot switch; it follows the phone's text size. (Slack help 213893898.)</div></li>
+<li><div class="hd">Slack: a rail of 5 tabs since August 2023. <span class="src se">seen</span></div><div class="dt">Home, DMs, Activity, Later, More, plus a + button. On a narrow window, DMs, Activity and Later fold into More. You can pick which tabs show. (Slack help 16764236868755; Stanford UIT, Dec 2023.)</div></li>
+<li><div class="hd">Slack: Activity is one inbox; Later is your saved list. <span class="src se">seen</span></div><div class="dt">Activity holds mentions, threads, reactions and app posts. Later holds saved messages and reminders, in tabs starting with "In progress". (Slack help 360042650274.)</div></li>
+<li><div class="hd">Slack: away after 10 minutes. <span class="src se">seen</span></div><div class="dt">Active while the app is open; away after 10 minutes idle on a computer, at once when you leave the phone app. A status is an emoji plus words, with "Remove after…". Up to 5 statuses can be planned ahead. (Slack help 201864558; docs.slack.dev presence page.)</div></li>
+<li><div class="hd">Slack: each channel has a 3-way notification menu. <span class="src se">seen</span></div><div class="dt">Every new message, only mentions, or nothing. A muted channel still goes bold when it has new messages, but never buzzes. (Slack help 360056534254; the bold-while-muted detail is from a third-party guide.)</div></li>
+<li><div class="hd">Slack: hover a message for a small action bar. <span class="src se">seen</span></div><div class="dt">React, Reply in thread, Save for later, More (⋯). A thread reply has a tick box "Also send to #channel". (Slack help 115000769927.)</div></li>
+<li><div class="hd">Teams: chats and channels in one list since May 2025. <span class="src se">seen</span></div><div class="dt">A left app bar of apps. The new combined list has Favourites, custom sections and filters: Unread, Chats, Channels, Muted, Meetings. People can switch back to separate lists. (Microsoft adoption guide PDF; Tarleton IT, 2025.)</div></li>
+<li><div class="hd">Discord: bots wear a tag; names wear a role colour. <span class="src se">seen</span></div><div class="dt">A bot account shows a small blue tag. A role's colour shows on the name in messages and in the online list on the right. (Discord support community; Zapier guide.) Its status colours (green, yellow idle, red do-not-disturb) came only from weak pages, so treat them as <span class="src re">reasoned</span>.</div></li>
+<li><div class="hd">Mattermost (open Slack-like app): list 240 px, drag 200 to 440 px. <span class="src se">seen</span></div><div class="dt">The only published numbers I found for a Slack-like list. (Mattermost "Resizable panels" design page.) Slack's own min and max are not published.</div></li>
+</ul>
+<div class="tw" style="margin-top:10px"><table class="ov">
+<tr><th>Take</th><th>From</th><th>Leave</th></tr>
+<tr><td>3 columns, thread on the right, ⌘/Ctrl Shift D</td><td class="s">Slack</td><td class="s">Slack's 5-tab rail: inside the room, one ⌂ button back to the admin home</td></tr>
+<tr><td>Bold = new, red number = for you</td><td class="s">Slack</td><td class="s">Paid-plan extras: huddles, canvases, workflows</td></tr>
+<tr><td>"Unread only" filter on the list</td><td class="s">Teams</td><td class="s">Teams' "Posts vs Chat" split: one kind of channel is simpler</td></tr>
+<tr><td>BOT tag; each person's own colour</td><td class="s">Discord</td><td class="s">Discord's member list on the right: we are 3 people</td></tr>
+</table></div>
+
+<!-- U0 -->
+<h3 class="uxh"><span class="no">U0</span>The whole screen</h3>
+<p class="dt">Three strips, left to right: the channel list, the chat, the thread. Inside the Team room the admin menu is gone; one ⌂ button at the top of the list takes you back to the admin home. <b>Tap « on the mock</b> to close the list, » to open it. Swipe the box sideways on a phone.</p>
+<div class="ux-scroll ux" role="img" aria-label="Desktop mock of the Team room at real size: admin icons, channel list, #general chat, thread panel">
+<div class="ux-desk">
+  <div class="ux-side"><div class="grip"></div>
+    <div class="ux-shead"><span class="ux-ib home" title="Back to the admin home">⌂</span><span class="ux-ttl">Team room</span><span class="sp"></span><span class="ux-ib">✎</span><button type="button" class="ux-ib tog" data-uxtog aria-label="Close the channel list" title="Close the list (⌘/Ctrl Shift D)">«</button></div>
+    <div class="ux-list">
+      <div class="ux-row"><span class="h">🔍</span><span class="nm">Search</span><span class="ux-kbd" style="font-size:10.5px">⌘K</span></div>
+      <div class="ux-row unread"><span class="h">🔔</span><span class="nm">Activity</span><span class="ux-n">2</span></div>
+      <div class="ux-row"><span class="h">🔖</span><span class="nm">Later</span></div>
+      <div class="ux-row"><span class="h">✓</span><span class="nm">Tasks</span><span style="font-size:12px;color:var(--ink3)">4</span></div>
+      <div class="ux-sec">▾ Starred</div>
+      <div class="ux-row unread"><span class="h">#</span><span class="nm">bugs</span><span class="ux-n">1</span></div>
+      <div class="ux-sec">▾ Channels</div>
+      <div class="ux-row cur"><span class="h">#</span><span class="nm">general</span></div>
+      <div class="ux-row unread"><span class="h">#</span><span class="nm">ideas</span></div>
+      <div class="ux-row"><span class="h">#</span><span class="nm">todo</span></div>
+      <div class="ux-row"><span class="h">#</span><span class="nm">health</span></div>
+      <div class="ux-row unread"><span class="h">#</span><span class="nm">patch-notes</span><span class="ux-n">1</span></div>
+      <div class="ux-row"><span class="h">#</span><span class="nm">connectors</span></div>
+      <div class="ux-row"><span class="h">#</span><span class="nm">marketing</span></div>
+      <div class="ux-row muted"><span class="h">#</span><span class="nm">context</span><span style="font-size:11px">🔕</span></div>
+      <div class="ux-row add"><span class="h">+</span><span class="nm">Add channel</span></div>
+      <div class="ux-sec">▾ Direct messages</div>
+      <div class="ux-row"><span class="ux-av s20 H">H<span class="ux-dot on"></span></span><span class="nm">Harry <span style="color:var(--ink3)">(you)</span></span></div>
+      <div class="ux-row unread"><span class="ux-av s20 M">M<span class="ux-dot on"></span></span><span class="nm">Mikey</span><span class="ux-st">🎬</span><span class="ux-n">1</span></div>
+      <div class="ux-row"><span class="ux-av s20 L">L<span class="ux-dot away"></span></span><span class="nm">Leo</span></div>
+      <div class="ux-sec">▾ Bots</div>
+      <div class="ux-row"><span class="ux-av s20 B">C<span class="ux-dot on"></span></span><span class="nm">Claude</span><span class="ux-bt">BOT</span></div>
+      <div class="ux-row"><span class="ux-av s20 B">L<span class="ux-dot work"></span></span><span class="nm">Leo bot · 40%</span><span class="ux-bt">BOT</span></div>
+      <div class="ux-row"><span class="ux-av s20 B">♥<span class="ux-dot away"></span></span><span class="nm">Health bot</span><span class="ux-bt">BOT</span></div>
+      <div class="ux-row add"><span class="h">+</span><span class="nm">Add a bot</span></div>
+    </div>
+  </div>
+  <div class="ux-main">
+    <div class="ux-chead"><span class="ux-open"><span class="ux-ib home" title="Back to the admin home">⌂</span><button type="button" class="ux-ib tog" data-uxtog aria-label="Open the channel list" title="Open the list (⌘/Ctrl Shift D)">»</button></span><b># general</b><small>The team chat: anything and everything</small><span class="ux-faces"><span class="ux-av s20 H">H</span><span class="ux-av s20 M">M</span><span class="ux-av s20 L">L</span> 3 · 2 bots</span><span class="ux-ib">🔔</span><span class="ux-ib">⋯</span></div>
+    <div class="ux-tabs"><span class="on">Messages</span><span>📌 Pinned 2</span><span>Files</span></div>
+    <div class="ux-msgs">
+      <div class="ux-day">Today</div>
+      <div class="ux-msg"><span class="ux-av s36 M">M<span class="ux-dot on"></span></span><div><div class="who">Mikey <span class="ux-st">🎬</span><time>10:21</time></div><div class="tx">Filmed the new goal replays. Clips are in #marketing.</div><div class="ux-reacts"><span class="mine">🔥 2</span><span>👀 1</span></div></div></div>
+      <div class="ux-msg hov"><div class="ux-acts"><span>😀</span><span>💬</span><span>🔖</span><span>⋯</span></div><span class="ux-av s36 L">L<span class="ux-dot away"></span></span><div><div class="who">Leo <time>10:40</time></div><div class="tx">Header fix is half done. <span class="at">@Leo bot</span> carry on and ping me when it builds.</div><div class="ux-thr"><span class="ux-av s20 B">L</span><span class="ux-av s20 H">H</span> 3 replies <em>Last reply 11:20</em></div></div></div>
+      <div class="ux-msg"><span class="ux-av s36 B">L<span class="ux-dot work"></span></span><div><div class="who">Leo bot <span class="ux-bt">BOT</span><time>10:41</time></div><div class="tx">On it: building the header fix. I will post here at each step.</div><div class="ux-bar" style="max-width:260px"><i style="width:40%"></i></div></div></div>
+      <div class="ux-msg"><span class="ux-av s36 H">H<span class="ux-dot on"></span></span><div><div class="who">Harry <time>11:02</time></div><div class="tx">Nice. <span class="at">@everyone</span> patch notes at 3pm.</div></div></div>
+    </div>
+    <div class="ux-comp"><div class="ux-fmt"><span>B</span><span><i>I</i></span><span><s>S</s></span><span>🔗</span><span>•</span><span>1.</span><span>❝</span></div><div class="ux-box">Message #general<span class="sp"></span><span>＋</span><span>@</span><span>😀</span><span>/</span><span class="ux-send">➤</span></div></div>
+  </div>
+  <div class="ux-thread">
+    <div class="ux-chead"><b>Thread</b><small># general</small><span class="ux-ib">✕</span></div>
+    <div class="ux-msgs">
+      <div class="ux-msg"><span class="ux-av s36 L">L</span><div><div class="who">Leo <time>10:40</time></div><div class="tx">Header fix is half done. <span class="at">@Leo bot</span> carry on and ping me when it builds.</div></div></div>
+      <div class="ux-rep">3 replies</div>
+      <div class="ux-msg"><span class="ux-av s36 B">L</span><div><div class="who">Leo bot <span class="ux-bt">BOT</span><time>10:58</time></div><div class="tx">Built. 0 errors. Stills attached.</div></div></div>
+      <div class="ux-msg"><span class="ux-av s36 H">H</span><div><div class="who">Harry <time>11:20</time></div><div class="tx">Looks right. Ship it with the patch notes.</div></div></div>
+    </div>
+    <div class="ux-comp"><div class="ux-box">Reply…<span class="sp"></span><span class="ux-send">➤</span></div></div>
+    <div class="ux-also"><i></i> Also send to #general</div>
+  </div>
+</div>
+</div>
+<p class="ux-hint">Drawn at real size: 1180 × 780 px. List 220 px (was 260); grey bar on its right edge = drag 180 to 320 px. Leo's hovered message shows the action bar.</p>
+<div class="changed"><b class="t">Changed (Harry, 25 Oct)</b>Your words: <i>"it should just be a home icon rather than a whole column … the sidebar comes out too far while open and needs to be closable."</i> <b>1.</b> The 64 px admin icon column is gone inside the Team room. One <b>⌂</b> at the top left of the list goes back to the admin home; the room gets the 64 px. <b>2.</b> The list is 220 px, not 260 (drag 180 to 320). <b>3.</b> A green <b>«</b> in the list's header closes it (or <span class="ux-kbd">⌘/Ctrl Shift D</span>). Closed, the chat's header shows <b>⌂ »</b>; » opens it again. The « on the mock above works: tap it.</div>
+
+<div class="lbl" style="margin-top:16px">The same room on a phone (390 px wide)</div>
+<div class="ux-phones ux">
+  <div>
+  <div class="ux-ph">
+    <div class="stat"><span>9:41</span><span>●●● ▮</span></div>
+    <div class="top"><span class="ux-burger">☰<span class="ux-n">3</span></span><b># general</b><span class="ux-ib">🔔</span></div>
+    <div class="ux-msgs">
+      <div class="ux-msg"><span class="ux-av s36 M">M<span class="ux-dot on"></span></span><div><div class="who">Mikey <span class="ux-st">🎬</span><time>10:21</time></div><div class="tx">Filmed the new goal replays.</div><div class="ux-reacts"><span class="mine">🔥 2</span></div></div></div>
+      <div class="ux-msg"><span class="ux-av s36 L">L</span><div><div class="who">Leo <time>10:40</time></div><div class="tx">Header fix is half done.</div><div class="ux-thr">3 replies</div></div></div>
+      <div class="ux-msg"><span class="ux-av s36 B">L</span><div><div class="who">Leo bot <span class="ux-bt">BOT</span></div><div class="tx">Building · 40%</div><div class="ux-bar"><i style="width:40%"></i></div></div></div>
+    </div>
+    <div class="ux-comp"><div class="ux-box">Message #general<span class="sp"></span><span class="ux-send">➤</span></div></div>
+    <div class="ux-tabsb"><span class="on"><i>⌂</i>Home</span><span><i>✉︎</i>DMs<span class="ux-n">1</span></span><span><i>🔔</i>Activity<span class="ux-n">2</span></span><span><i>☺︎</i>You</span></div>
+  </div>
+  <p class="ux-cap">Chat fills the screen. ☰ opens the list; its red 3 = things for you elsewhere.</p>
+  </div>
+  <div>
+  <div class="ux-ph">
+    <div class="stat"><span>9:41</span><span>●●● ▮</span></div>
+    <div class="top"><span class="ux-burger">☰</span><b># general</b></div>
+    <div class="ux-dim"></div>
+    <div class="ux-closehint">Tap here<br>to close</div>
+    <div class="ux-drawer">
+      <div class="ux-shead"><span class="ux-ib home">⌂</span><span class="ux-ttl">Team room</span><span class="sp"></span><span class="ux-ib">🔍</span><span class="ux-ib ux-xclose">✕</span></div>
+      <div class="ux-list">
+        <div class="ux-sec">Channels</div>
+        <div class="ux-row cur"><span class="h">#</span><span class="nm">general</span></div>
+        <div class="ux-row unread"><span class="h">#</span><span class="nm">bugs</span><span class="ux-n">1</span></div>
+        <div class="ux-row unread"><span class="h">#</span><span class="nm">ideas</span></div>
+        <div class="ux-row"><span class="h">#</span><span class="nm">todo</span></div>
+        <div class="ux-row"><span class="h">#</span><span class="nm">health</span></div>
+        <div class="ux-sec">Bots</div>
+        <div class="ux-row"><span class="ux-av s20 B">L<span class="ux-dot work"></span></span><span class="nm">Leo bot · 40%</span><span class="ux-bt">BOT</span></div>
+      </div>
+    </div>
+    <div class="ux-msgs"></div>
+  </div>
+  <p class="ux-cap">The list slides in from the left: 80% of the width, at most 300 px, so a strip of the chat stays in view. Close it with ✕, a tap on the dark strip, or a swipe left. ⌂ = back to the admin home. Rows are 44 px tall for thumbs.</p>
+  <div class="changed"><b class="t">Changed (Harry, 25 Oct)</b>The phone list no longer covers the screen: 80% wide (was 85%), at most 300 px (was 320). It has a <b>✕</b> and a <b>⌂</b> in its header. Tap the dark strip or swipe left to close.</div>
+  </div>
+</div>
+
+<div class="lbl" style="margin-top:14px">Sizes: ours next to Slack's</div>
+<div class="tw"><table style="min-width:760px">
+<tr><th>Part</th><th>Ours (plan)</th><th>Today on the branch</th><th>Slack / others</th></tr>
+<tr><td>Channel list width</td><td class="s"><b>220 px</b>; drag 180 to 320 px; double-click the edge = back to 220 <span class="src re">reasoned</span><br><span style="color:var(--violet);font-size:12px;font-weight:700">Changed (Harry, 25 Oct): was 260, drag 200 to 420</span></td><td class="s">236 px fixed (220 px under 1400 px) <span class="src se">seen</span></td><td class="s">Slack: drag to resize, numbers not published <span class="src se">seen</span>; about 260 px <span class="src re">reasoned</span>. Mattermost: 240, 200 to 440 <span class="src se">seen</span></td></tr>
+<tr><td>Folded list</td><td class="s">0 px (gone). Close: « in the list header or ⌘/Ctrl Shift D; open: » in the chat header. No admin icon column in the room: one ⌂ button instead<br><span style="color:var(--violet);font-size:12px;font-weight:700">Changed (Harry, 25 Oct): was "admin icons stay at 64 px"</span></td><td class="s">Admin menu folds to 64 px <span class="src se">seen</span>; the channel list cannot fold</td><td class="s">Slack: ⌘/Ctrl Shift D hides it <span class="src se">seen</span></td></tr>
+<tr><td>Phone list</td><td class="s">80% of the width, at most 300 px; close with ✕, tap outside or swipe left<br><span style="color:var(--violet);font-size:12px;font-weight:700">Changed (Harry, 25 Oct): was 85%, at most 320 px</span></td><td class="s">☰ list <span class="src se">seen</span></td><td class="s">Slack phone: the list is its own Home screen <span class="src re">reasoned</span></td></tr>
+<tr><td>Thread panel</td><td class="s">380 px; drag 320 to 560 px</td><td class="s">300 to 380 px <span class="src se">seen</span></td><td class="s">Slack: about 400 px, can be widened <span class="src re">reasoned</span></td></tr>
+<tr><td>Avatar</td><td class="s">Clean 36 px · Compact 20 px · list 20 px · card 72 px</td><td class="s">26 px; 18 px small <span class="src se">seen</span></td><td class="s">Slack Clean shows photos, Compact hides them <span class="src se">seen</span>; 36 px <span class="src re">reasoned</span></td></tr>
+<tr><td>Message text</td><td class="s">15 px, line 22 px (computer) · 16 px on a phone</td><td class="s">14 px, line 1.45 <span class="src se">seen</span></td><td class="s">Slack about 15 / 22 px <span class="src re">reasoned</span>; phone follows the phone's text size <span class="src se">seen</span></td></tr>
+<tr><td>Message look</td><td class="s">Full width, no bubbles; name over text</td><td class="s">Bubbles up to 84% wide <span class="src se">seen</span></td><td class="s">Slack: full width, no bubbles <span class="src se">seen</span></td></tr>
+<tr><td>List row</td><td class="s">28 px computer · 44 px phone</td><td class="s">34 px <span class="src se">seen</span></td><td class="s">Slack about 28 px <span class="src re">reasoned</span>; 44 px is Apple's smallest tap size <span class="src re">reasoned</span></td></tr>
+<tr><td>Top bar</td><td class="s">49 px; phone 48 px</td><td class="s">54 px <span class="src se">seen</span></td><td class="s">Slack about 49 px <span class="src re">reasoned</span></td></tr>
+<tr><td>Typing box</td><td class="s">44 px, grows to 40% of the screen; phone text 16 px</td><td class="s">Round box, grows to 120 px <span class="src se">seen</span></td><td class="s">Slack: formatting bar on top <span class="src se">seen</span>. Under 16 px an iPhone zooms in on tap <span class="src re">reasoned</span></td></tr>
+<tr><td>Presence dot</td><td class="s">10 px (12 px on 36 px faces), 2 px ring</td><td class="s">8 px "live" dot, green under 30 min <span class="src se">seen</span></td><td class="s">Slack: away after 10 min <span class="src se">seen</span></td></tr>
+<tr><td>Phone bottom tabs</td><td class="s">56 px + the phone's safe edge; 4 tabs</td><td class="s">None; ☰ list only <span class="src se">seen</span></td><td class="s">Slack 2020 phone: Home, DMs, Mentions, You <span class="src se">seen</span></td></tr>
+<tr><td>Message gap</td><td class="s">8 px above and below (Clean), 2 px (Compact)</td><td class="s">10 px between bubbles <span class="src se">seen</span></td><td class="s">Slack Compact: "less white space" <span class="src se">seen</span></td></tr>
+</table></div>
+<p class="cap">"Today" = the Slack-style build on branch worktree-agent-abe056dfab1b60454 (23 Oct), read in teamRoom.css, not run.</p>
+
+<!-- Sidebar in/out -->
+<h3 class="uxh"><span class="no">U0.1</span>The list goes in and out</h3>
+<div class="ux-pair ux">
+  <div class="ux-mini" style="margin:0">
+    <div class="ux-chead"><span class="ux-ib home">⌂</span><b style="flex:1">Team room</b><span class="ux-ib tog">«</span></div>
+    <div class="ux-msg"><span class="ux-av s36 H">H</span><div><div class="who">The « button</div><div class="tx">In the list's own header, top right, in green. Closed, the chat's header shows <b>⌂ »</b>; » brings the list back.</div></div></div>
+  </div>
+  <div class="ux-mini" style="margin:0">
+    <div class="ux-chead"><b>Keys</b></div>
+    <div class="ux-msg" style="grid-template-columns:1fr"><div class="tx"><span class="ux-kbd">⌘ Shift D</span> / <span class="ux-kbd">Ctrl Shift D</span> list in and out<br><span class="ux-kbd">⌘ K</span> jump to any channel or person<br><span class="ux-kbd">Esc</span> close the thread</div></div>
+  </div>
+</div>
+<ol class="steps" style="margin:10px 0 0;padding-left:20px;color:var(--ink2);font-size:14px">
+<li><b>Computer:</b> press « or the keys. The chat widens at once, no slide. Drag the edge to set the width: 220 px to start, 180 to 320.</li>
+<li><b>Phone:</b> tap ☰, or swipe right from the left edge. The list covers 80%. Close it with ✕, a swipe left or a tap on the dark strip.</li>
+<li><b>Remembered per device</b>, like the admin menu's « today. Your phone and your laptop each keep their own.</li>
+</ol>
+<div class="dt">Same keys as Slack, so muscle memory carries over <span class="src se">seen</span>. Under 900 px wide the list stops pushing and lays over the chat instead <span class="src re">reasoned</span>.</div>
+<div class="changed"><b class="t">Changed (Harry, 25 Oct)</b>The « moved from the chat into the list's header, so it is clearly the list's close button. The list starts at 220 px (was 260) and drags 180 to 320 (was 200 to 420). The admin menu does not show in the room; ⌂ sits next to «.</div>
+
+<!-- Profiles and status -->
+<h3 class="uxh"><span class="no">U0.2</span>Little profiles with live status</h3>
+<div class="rules">
+<div class="l"><b><span class="ux" style="display:inline-block;vertical-align:-1px"><span class="ux-av s20 H" style="display:inline-grid">H<span class="ux-dot on" style="border-color:var(--card2)"></span></span></span> Active</b>Green dot. The room is open on any device and used in the last 10 min.</div>
+<div><b><span class="ux" style="display:inline-block;vertical-align:-1px"><span class="ux-av s20 L" style="display:inline-grid">L<span class="ux-dot away" style="border-color:var(--card2)"></span></span></span> Away</b>Empty ring. Idle 10 min, or the phone app closed.</div>
+<div class="w"><b><span class="ux" style="display:inline-block;vertical-align:-1px"><span class="ux-av s20 M" style="display:inline-grid">M<span class="ux-dot dnd" style="border-color:var(--card2)"></span></span></span> Do not disturb</b>Red dot with a bar. Buzzes paused until a time you pick.</div>
+<div class="c"><b><span class="ux" style="display:inline-block;vertical-align:-1px"><span class="ux-av s20 B" style="display:inline-grid">L<span class="ux-dot work" style="border-color:var(--card2)"></span></span></span> Bot working</b>Amber dot. A bot is on a job. Green = ready, ring = off.</div>
+</div>
+<div class="ux-pair ux">
+  <div>
+  <div class="ux-hcard">
+    <div class="top2"><span class="ux-av s72 M">M<span class="ux-dot on" style="width:16px;height:16px;border-width:3px;border-color:var(--card)"></span></span><div><div class="nm2">Mikey</div><div style="color:var(--green);font-size:13px;font-weight:700">● Active</div></div></div>
+    <div class="ln">🎬 <span>filming clips · until 6pm</span></div>
+    <div class="ln">🕒 <span>14:32 for him</span></div>
+    <div class="ln">⬆ <span>Last push 12 min ago · v0.21</span></div>
+    <div class="row" style="display:flex;gap:6px;margin-top:12px"><span class="ux-btn go">Message</span><span class="ux-btn">Tasks 3</span><span class="ux-btn no">🔕</span></div>
+  </div>
+  <p class="ux-cap">Hover a face for half a second (computer) or tap it (phone, as a bottom sheet).</p>
+  </div>
+  <div>
+  <div class="ux-hcard">
+    <div class="top2"><span class="ux-av s72 B">L<span class="ux-dot work" style="width:16px;height:16px;border-width:3px;border-color:var(--card)"></span></span><div><div class="nm2">Leo bot <span class="ux-bt">BOT</span></div><div style="color:var(--amber);font-size:13px;font-weight:700">● Working</div></div></div>
+    <div class="ln">🔧 <span>building header fix · 40%</span></div>
+    <div class="ux-bar"><i style="width:40%"></i></div>
+    <div class="ln">👤 <span>Runs as Leo · 3 connections</span></div>
+    <div class="ln">📍 <span>In #general, #bugs, #todo</span></div>
+    <div class="row" style="display:flex;gap:6px;margin-top:12px"><span class="ux-btn go">Message</span><span class="ux-btn">Stop job</span></div>
+  </div>
+  <p class="ux-cap">A bot's status is the job it is on, not an emoji. It updates as it works.</p>
+  </div>
+</div>
+<ol class="steps" style="margin:10px 0 0;padding-left:20px;color:var(--ink2);font-size:14px">
+<li><b>Set a status:</b> tap your face → "Update status" → pick an emoji and words ("🎬 filming clips") → "Clear after": 1 hour, today, this week, never.</li>
+<li><b>See it everywhere:</b> the emoji sits after your name in the list and on each message. The words show on hover.</li>
+<li><b>Do not disturb:</b> same menu → "Pause buzzes" → 30 min, 1 h, until tomorrow. Your dot turns red for the others.</li>
+</ol>
+<div class="dt">10 minutes is Slack's rule <span class="src se">seen</span>. Today's room calls you "live" for 30 minutes <span class="src se">seen</span>; moving to 10 is <span class="src re">reasoned</span> (it makes green mean "here now"). The hover card's "last push" reuses the Team board's push list, which exists <span class="src se">seen</span>.</div>
+
+<!-- ============ RUNNING THE TEAM (Harry, 25 Oct) ============ -->
+<style>
+.ux-ph .ux-ph .ux-flab{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-top:10px}
+.ux-days{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.ux-days span{width:34px;height:30px;border-radius:7px;border:1px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:800;color:var(--ink3)}
+.ux-days span.on{background:var(--ux-acc);border-color:var(--ux-acc);color:#06170e}
+.ux-seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:13px;font-weight:700;margin-top:6px}
+.ux-seg span{padding:5px 12px;color:var(--ink3)}
+.ux-seg span.on{background:var(--ux-hov);color:var(--ink)}
+.ux-srow{display:flex;align-items:center;gap:8px;font-size:14px;padding:8px 0;border-bottom:1px solid var(--line)}
+.ux-srow:last-child{border-bottom:0}
+.ux-srow .sp{flex:1;min-width:0}
+.ux-srow small{color:var(--ink3);font-size:12.5px}
+.ux-wk{display:grid;grid-template-columns:58px repeat(7,minmax(0,1fr));gap:4px;padding:10px 12px;font-size:12px;align-items:center}
+.ux-wk .d{text-align:center;font-weight:800;color:var(--ink3);font-size:11px}
+.ux-wk .n{display:flex;align-items:center;gap:5px;font-weight:700;font-size:12.5px}
+.ux-wk .c{height:30px;border-radius:6px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--ink3);gap:1px}
+.ux-wk .c.pd{background:rgba(61,220,132,.15);border-color:rgba(61,220,132,.45);color:var(--ink)}
+.ux-wk .c.p{background:rgba(245,185,66,.12);border-color:rgba(245,185,66,.4);color:var(--ink)}
+.ux-wk .c.sel{box-shadow:0 0 0 2px var(--blue)}
+.ux-day2{margin:0 12px 12px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13.5px;line-height:19px;color:var(--ink2)}
+.ux-day2 b{color:var(--ink)}
+</style>
+<h3 class="uxh" style="margin-top:34px" id="team"><span class="no">T</span>Running the team: schedules, check-ins</h3>
+<div class="changed"><b class="t">Changed (Harry, 25 Oct)</b>New section. Cards on how the three of us run Knowitball as a business in the room: schedules in your status, day updates, and gentle nudges. Each person controls their own status and their own check-ins.</div>
+<div class="dt" style="margin:8px 0">The idea: everyone can see when the others are free, what they plan to do and what got done. Busy is normal. Nothing is expected from someone while their status says busy. <span class="src re">reasoned</span></div>
+
+<!-- T1 -->
+<div class="cardx ux">
+<h3><span class="no">T1</span>Schedules in your status</h3>
+<p class="one">Set a repeating status once, like "🎓 Uni · 9–5 weekdays" or "💼 Work · 8–4". It turns on and off by itself at those times.</p>
+<div class="ux-mini">
+  <div class="ux-chead"><b>Set a status</b><small>Your own; only you change it</small></div>
+  <div style="padding:4px 12px 12px">
+    <div class="ux-field">🎓 Uni</div>
+    <div class="ux-seg"><span>Once</span><span class="on">Repeats</span></div>
+    <div class="ux-days"><span class="on">M</span><span class="on">T</span><span class="on">W</span><span class="on">T</span><span class="on">F</span><span>S</span><span>S</span></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:14px"><span class="ux-field" style="margin:0">09:00</span>to<span class="ux-field" style="margin:0">17:00</span></div>
+    <div class="ux-srow" style="margin-top:6px"><span class="sp">Pause buzzes while it's on</span><span class="ux-sw on"></span></div>
+    <div class="ux-flab">Your schedules</div>
+    <div class="ux-srow"><span class="sp">🎓 Uni<br><small>Mon–Fri · 9:00–17:00</small></span><span class="ux-sw on"></span></div>
+    <div class="ux-srow"><span class="sp">💼 Work<br><small>Sat · 8:00–16:00</small></span><span class="ux-sw on"></span></div>
+  </div>
+</div>
+<div class="ux-pair">
+  <div class="ux-mini" style="margin:0">
+    <div class="ux-chead"><b>How others see it</b></div>
+    <div class="ux-list" style="padding:8px">
+      <div class="ux-row"><span class="ux-av s20 M">M<span class="ux-dot dnd"></span></span><span class="nm">Mikey · back at 5</span><span class="ux-st">💼</span></div>
+      <div class="ux-row"><span class="ux-av s20 L">L<span class="ux-dot on"></span></span><span class="nm">Leo</span></div>
+    </div>
+    <div class="ux-msg" style="grid-template-columns:1fr"><div class="tx" style="font-size:13.5px;color:var(--ink2)">Hover card: "💼 Busy until 17:00 · nothing expected until then". Names and statuses here are examples only.</div></div>
+  </div>
+  <div class="ux-mini" style="margin:0">
+    <div class="ux-chead"><b>At 17:00</b></div>
+    <div class="ux-list" style="padding:8px">
+      <div class="ux-row"><span class="ux-av s20 M">M<span class="ux-dot on"></span></span><span class="nm">Mikey</span></div>
+    </div>
+    <div class="ux-msg" style="grid-template-columns:1fr"><div class="tx" style="font-size:13.5px;color:var(--ink2)">The status clears by itself. Buzzes that waited arrive as one summary.</div></div>
+  </div>
+</div>
+<ol class="steps">
+<li><b>Tap your face → "Update status" → Repeats.</b> Pick the days and the times. Save several (uni, work, gym).</li>
+<li><b>While it's on</b>, your dot shows busy and your name says "back at 5". Buzzes wait unless you switch that off.</li>
+<li><b>Busy is fine.</b> No one expects a reply then, and bot nudges (T3) wait until it ends.</li>
+</ol>
+<div class="needs"><span class="k">Needs</span><span>Builds on U0.2's status. New: days and times on a status <span class="src re">reasoned</span>. Size S, inside UI step 4.</span></div>
+</div>
+
+<!-- T2 -->
+<div class="cardx ux">
+<h3><span class="no">T2</span>Day updates in #today</h3>
+<p class="one">A Today bot asks each person, at a time they choose: in the morning "What's your plan today?", in the evening "What got done?". Anything counts, not only Knowitball.</p>
+<div class="ux-phones">
+  <div>
+  <div class="ux-ph">
+    <div class="stat"><span>9:41</span><span>●●● ▮</span></div>
+    <div class="top"><span class="ux-burger">☰</span><b># today</b><span class="ux-ib">🔔</span></div>
+    <div class="ux-msgs">
+      <div class="ux-msg"><span class="ux-av s36 B">☀</span><div><div class="who">Today bot <span class="ux-bt">BOT</span><time>08:30</time></div><div class="tx">Morning, Leo. What's your plan today? Anything counts.</div>
+        <div class="ux-reacts"><span>☀ Good morning</span></div></div></div>
+      <div class="ux-msg"><span class="ux-av s36 L">L</span><div><div class="who">Leo <time>08:41</time></div><div class="tx">Header fix, then test it on a phone.</div></div></div>
+      <div class="ux-msg"><span class="ux-av s36 M">M</span><div><div class="who">Mikey <time>08:55</time></div><div class="tx">Busy till 5, then cut the replay short.</div></div></div>
+    </div>
+    <div class="ux-comp"><div class="ux-box">Your plan for today…<span class="sp"></span><span class="ux-send">➤</span></div></div>
+  </div>
+  <p class="ux-cap">The morning ask. Each person picks their own time. "☀ Good morning" only shows if you switched it on.</p>
+  </div>
+  <div>
+  <div class="ux-ph">
+    <div class="stat"><span>9:41</span><span>●●● ▮</span></div>
+    <div class="top"><b>You · Check-ins</b></div>
+    <div style="padding:6px 14px">
+      <div class="ux-srow"><span class="sp">Morning ask<br><small>Plan for today</small></span><span class="ux-field" style="margin:0;font-size:14px">08:30</span></div>
+      <div class="ux-srow"><span class="sp">Evening ask<br><small>What got done</small></span><span class="ux-field" style="margin:0;font-size:14px">21:00</span></div>
+      <div class="ux-srow"><span class="sp">Skip days<br><small>Sat, Sun</small></span><span class="ux-sw on"></span></div>
+      <div class="ux-srow"><span class="sp">Good morning / good night taps<br><small>Off unless you turn it on. Logs the time you tap. You can turn it off any time.</small></span><span class="ux-sw"></span></div>
+    </div>
+  </div>
+  <p class="ux-cap">Each person's own settings. Only they can change them.</p>
+  </div>
+</div>
+<div class="ux-mini">
+  <div class="ux-chead"><b>This week</b><small>☀ = plan posted · ✓ = done posted</small></div>
+  <div class="ux-wk">
+    <span></span><span class="d">M</span><span class="d">T</span><span class="d">W</span><span class="d">T</span><span class="d">F</span><span class="d">S</span><span class="d">S</span>
+    <span class="n"><span class="ux-av s20 H">H</span>Harry</span><span class="c pd">☀✓</span><span class="c pd">☀✓</span><span class="c p">☀</span><span class="c pd">☀✓</span><span class="c pd">☀✓</span><span class="c"></span><span class="c"></span>
+    <span class="n"><span class="ux-av s20 M">M</span>Mikey</span><span class="c pd">☀✓</span><span class="c p">☀</span><span class="c pd">☀✓</span><span class="c pd">☀✓</span><span class="c p">☀</span><span class="c"></span><span class="c"></span>
+    <span class="n"><span class="ux-av s20 L">L</span>Leo</span><span class="c p">☀</span><span class="c pd sel">☀✓</span><span class="c pd">☀✓</span><span class="c"></span><span class="c p">☀</span><span class="c"></span><span class="c"></span>
+  </div>
+  <div class="ux-day2"><b>Leo · Tuesday</b><br><b>Plan:</b> Header fix, then test it on a phone.<br><b>Done:</b> Header fix built. Phone test moved to Wednesday.</div>
+</div>
+<ol class="steps">
+<li><b>Set your times</b> in You → Check-ins, or skip days. The bot asks in #today at that time.</li>
+<li><b>Answer in a line.</b> Plans and done lists can be about anything. No answer is fine; the day just stays blank.</li>
+<li><b>The week view</b> shows who posted and plan next to done. Tap a square to read that day. Who can see it is your call (below).</li>
+</ol>
+<div class="needs"><span class="k">Needs</span><span>New: #today channel, the Today bot's timed asks (the same small servers as A3/A4), a week view. Good morning / good night taps are off for everyone until each person turns them on. Size M.</span></div>
+</div>
+
+<!-- T3 -->
+<div class="cardx ux">
+<h3><span class="no">T3</span>Gentle nudges</h3>
+<p class="one">Harry sets short reminders the Team room bot posts at a set time. For example, every Sunday: "What's next week?".</p>
+<div class="ux-mini">
+  <div class="ux-chead"><b>Nudges</b><small>Set by Harry</small><span class="ux-btn" style="height:28px">+ New</span></div>
+  <div style="padding:2px 12px 8px">
+    <div class="ux-srow"><span class="sp"><b>What's next week? One line each.</b><br><small>Sundays 18:00 · #general</small></span><span class="ux-sw on"></span></div>
+    <div class="ux-srow"><span class="sp"><b>Anything to ship this week?</b><br><small>Fridays 16:00 · #patch-notes</small></span><span class="ux-sw on"></span></div>
+    <div class="ux-srow"><span class="sp"><b>Patch notes at 3pm</b><br><small>Once · Sat 14:30 · #general</small></span><span class="ux-sw"></span></div>
+  </div>
+  <div class="ux-msg" style="border-top:1px solid var(--line);padding-top:10px"><span class="ux-av s36 B">T</span><div><div class="who">Team room bot <span class="ux-bt">BOT</span><time>Sun 18:00</time></div><div class="tx">What's next week? One line each.</div><div class="ux-thr"><span class="ux-av s20 M">M</span><span class="ux-av s20 L">L</span> 2 replies</div></div></div>
+</div>
+<ol class="steps">
+<li><b>"+ New"</b> → words → when (once, or which days and time) → where (a channel, or each person's DM).</li>
+<li><b>Replies go in a thread</b> under the nudge, so the channel stays tidy.</li>
+<li><b>A nudge waits</b> for anyone whose schedule says busy (T1), and arrives when it ends.</li>
+</ol>
+<div class="needs"><span class="k">Needs</span><span>Same timed small server as #today (T2). Size S once T2 exists.</span></div>
+</div>
+
+<!-- ============ USAGE CARDS ============ -->
+<h3 class="uxh" style="margin-top:34px">One card for each way you use it</h3>
+<div class="dt" style="margin-bottom:8px">14 cards. Each has a drawn mock that fits a phone, then the steps.</div>
+
+<!-- U1 -->
+<div class="cardx ux">
+<h3><span class="no">U1</span>Normal chat, threads and reactions</h3>
+<p class="one">Talk in the channel. Answer one message in a thread so the channel stays tidy.</p>
+<div class="ux-mini">
+  <div class="ux-chead"><b># general</b></div>
+  <div class="ux-msg hov" style="margin-top:14px"><div class="ux-acts" style="right:12px"><span>😀</span><span>💬</span><span>🔖</span><span>⋯</span></div><span class="ux-av s36 H">H</span><div><div class="who">Harry <time>09:12</time></div><div class="tx">Which garden look do we keep?</div><div class="ux-reacts"><span class="mine">👍 2</span><span>❤️ 1</span><span>＋</span></div><div class="ux-thr"><span class="ux-av s20 M">M</span><span class="ux-av s20 L">L</span> 4 replies <em>Last reply 09:40</em></div></div></div>
+</div>
+<ol class="steps">
+<li><b>Hover</b> a message (or tap it on a phone): 😀 react · 💬 reply in thread · 🔖 save for Later · ⋯ more (edit, pin, copy link, make a task).</li>
+<li><b>The thread</b> opens on the right (full screen on a phone). Tick "Also send to #general" when everyone should see the answer.</li>
+<li><b>Threads you are in</b> land in Activity when someone replies.</li>
+</ol>
+<div class="needs"><span class="k">Exists</span><span>Threads, reactions, pins and in-line actions are on the branch <span class="src se">seen</span>. New: the hover bar on computers, 🔖 Later, "Also send to".</span></div>
+</div>
+
+<!-- U2 -->
+<div class="cardx ux">
+<h3><span class="no">U2</span>#todo: a message becomes a task</h3>
+<p class="one">Each message in #todo is a task with a tick, a person and a day. A Tasks view shows them all.</p>
+<div class="ux-mini">
+  <div class="ux-chead"><b># todo</b><small>Mine 3 · All 7 · Done</small></div>
+  <div class="ux-task"><span class="ux-tick"></span><div class="t">Film the new goal replays<div class="ux-chips"><span class="ux-chip"><span class="ux-av s20 M" style="width:16px;height:16px;font-size:8px">M</span>Mikey</span><span class="ux-chip">📅 Fri</span></div></div></div>
+  <div class="ux-task"><span class="ux-tick"></span><div class="t">Header fix on the shop<div class="ux-chips"><span class="ux-chip"><span class="ux-av s20 B" style="width:16px;height:16px;font-size:8px">L</span>Leo bot</span><span class="ux-chip late">📅 Yesterday</span></div></div></div>
+  <div class="ux-task done"><span class="ux-tick done">✓</span><div class="t">Run star_xp_config.sql<div class="ux-chips"><span class="ux-chip">Harry</span><span class="ux-chip">Done Thu</span></div></div></div>
+  <div class="ux-comp" style="margin-top:8px"><div class="ux-box">Add a task… @who, a day<span class="sp"></span><span class="ux-send">➤</span></div></div>
+</div>
+<ol class="steps">
+<li><b>Type</b> in #todo: "Film the replays @Mikey fri". It posts as a task: tick, Mikey's chip, a Friday chip.</li>
+<li><b>Anywhere else:</b> ⋯ on any message → "Make a task" copies it into #todo with a link back.</li>
+<li><b>Tick it</b> and it greys out with "Done Thu". The ✓ Tasks line at the top of the list counts your open ones.</li>
+</ol>
+<div class="needs"><span class="k">Changes</span><span>Today #bugs holds "bugs, jobs and to-dos" <span class="src se">seen</span>. This splits to-dos into their own #todo. The old My to-do list becomes the Tasks view.</span></div>
+</div>
+
+<!-- U3 -->
+<div class="cardx ux">
+<h3><span class="no">U3</span>#ideas: post an idea, everyone votes</h3>
+<p class="one">One message per idea, with a vote box on its left and a stage chip under it.</p>
+<div class="ux-mini">
+  <div class="ux-chead"><b># ideas</b><small>Top · New · Building</small></div>
+  <div class="ux-task"><span class="ux-vote on">▲<br>3</span><div class="t"><b>Ballon d'Or quiz mode</b><div class="ux-chips"><span class="ux-chip">Mikey · 2 days</span><span class="ux-chip" style="color:var(--green)">● Yes, build it</span><span class="ux-chip">💬 5</span></div></div></div>
+  <div class="ux-task"><span class="ux-vote">▲<br>1</span><div class="t"><b>Night matches with floodlights</b><div class="ux-chips"><span class="ux-chip">Leo · today</span><span class="ux-chip">● New</span></div></div></div>
+</div>
+<ol class="steps">
+<li><b>Post</b> the idea as a normal message. It gets a ▲ vote box. One vote each.</li>
+<li><b>Talk</b> about it in its thread, so the list stays one line per idea.</li>
+<li><b>Move it on:</b> ⋯ → stage: New, Yes, Building, Done, No. The 💡 Board tab sorts by stage.</li>
+</ol>
+<div class="needs"><span class="k">Exists</span><span>The ideas board is #ideas' tool tab on the branch <span class="src se">seen</span>. New: votes shown in line with the message.</span></div>
+</div>
+
+<!-- U4 -->
+<div class="cardx ux">
+<h3><span class="no">U4</span>#bugs: reports post themselves</h3>
+<p class="one">A player's bug report arrives as a Bug bot card with the screen, the version and two buttons. Ties to A2.</p>
+<div class="ux-mini">
+  <div class="ux-chead"><b># bugs</b><small>Team room · Open 4 · Mine 1</small></div>
+  <div class="ux-msg"><span class="ux-av s36 L">L</span><div><div class="who g">Leo <time>09:12</time></div><div class="tx">Still seeing the keeper bug on the latest build.</div></div></div>
+  <div class="ux-msg"><span class="ux-av s36 B">🤖</span><div><div class="who g">Bug bot <span class="ux-bt">BOT</span><time>09:27</time></div>
+  <div class="ux-bug"><div class="bt"><i>🐞</i>Bug report #482</div>
+    <div class="f"><small>Title</small>Keeper froze mid dive in the cup semi</div>
+    <div class="f"><small>Game version · device</small>v0.109 · iPhone · /star-dev</div>
+    <div class="f"><small>What they did</small><ol><li>Cup semi, second half</li><li>Took the penalty</li><li>Keeper stopped mid dive</li></ol></div>
+    <div class="ux-shot"></div>
+    <div class="two"><span class="ol">🤖 Hand to…</span><span class="fi">✓ Mark fixed</span></div>
+    <div class="more">⋯ Same as…</div>
+  </div></div></div>
+  <div class="ux-msg"><span class="ux-av s36 L">L</span><div><div class="who g">Leo <time>09:29</time></div><div class="tx">Taking this one.</div></div></div>
+</div>
+<ol class="steps">
+<li><b>It posts by itself</b> within seconds of the report. Its thread holds all the talk.</li>
+<li><b>"Hand to…"</b> opens one picker: Harry, Mikey, Leo, then the bots. Picking a bot starts the job; picking a person makes a #todo task.</li>
+<li><b>Mark fixed</b> greys the card and adds "Fixed by Leo, v0.110". "Same as…" (under ⋯) links two reports.</li>
+</ol>
+<div class="changed"><b class="t">Changed (Harry, 25 Oct)</b>The card now matches the Bug bot post in the mood picture you liked: a title line with the bug icon and number, labelled fields (Title, Game version, What they did), a large screen picture, and two wide buttons side by side (<b>Hand to…</b> outlined, <b>Mark fixed</b> filled green). "Same as…" moved under ⋯ so two buttons stay big.</div>
+</div>
+
+<!-- U5 -->
+<div class="cardx ux">
+<h3><span class="no">U5</span>#health: the morning post</h3>
+<p class="one">One card at 07:30. Green, amber or red per line. Ties to A4.</p>
+<div class="ux-mini">
+  <div class="ux-chead"><b># health</b><small>🔕 quiet unless red</small></div>
+  <div class="ux-msg"><span class="ux-av s36 B">♥</span><div><div class="who">Health bot <span class="ux-bt">BOT</span><time>07:30</time></div>
+  <div class="ux-card" style="border-left-color:var(--green)"><div class="k">Morning · all fine but one</div>
+  <div style="display:grid;grid-template-columns:auto 1fr auto;gap:2px 8px;margin-top:6px;font-size:13.5px">
+  <span style="color:var(--green)">●</span><span>Site up</span><b>yes</b>
+  <span style="color:var(--amber)">●</span><span>Database</span><b>372 / 500 MB</b>
+  <span style="color:var(--green)">●</span><span>Errors overnight</span><b>3</b>
+  <span style="color:var(--green)">●</span><span>Failed saves</span><b>0</b></div>
+  <div class="row"><span class="ux-btn">Ask why</span><span class="ux-btn no">Week view</span></div></div></div></div>
+</div>
+<ol class="steps">
+<li><b>Read it</b> in 5 seconds. Lines are sorted red, amber, green.</li>
+<li><b>"Ask why"</b> opens a thread with @claude already typed.</li>
+<li><b>Buzz rule:</b> #health buzzes only when a line is red (bell set to "Only red", a 4th option this channel alone gets).</li>
+</ol>
+<div class="needs"><span class="k">Note</span><span>The numbers are drawn, not real. 372 MB echoes "about 0.37 GB" in the project notes <span class="src se">seen</span>.</span></div>
+</div>
+
+<!-- U6 -->
+<div class="cardx ux">
+<h3><span class="no">U6</span>#patch-notes: posted for everyone, with who has read it</h3>
+<p class="one">Every patch note posts itself and @'s everyone. Faces under it show who opened it.</p>
+<div class="ux-mini">
+  <div class="ux-chead"><b># patch-notes</b></div>
+  <div class="ux-msg"><span class="ux-av s36 B">📄</span><div><div class="who">Patch bot <span class="ux-bt">BOT</span><time>15:02</time></div><div class="tx"><span class="at">@everyone</span> Mikey v0.21 is out: one bottom bar everywhere.</div>
+  <div class="ux-card" style="border-left-color:var(--blue)"><b>Patch Notes Mikey v0.21</b><div style="color:var(--ink3);font-size:13px">5 changes · 6 pictures</div><div class="row"><span class="ux-btn go">Open</span><span class="ux-btn">👍 Seen</span></div></div>
+  <div class="ux-chips" style="margin-top:6px"><span class="ux-chip"><span class="ux-av s20 H" style="width:16px;height:16px;font-size:8px">H</span><span class="ux-av s20 L" style="width:16px;height:16px;font-size:8px">L</span>Read by 2 of 3</span></div></div></div>
+</div>
+<ol class="steps">
+<li><b>It posts by itself</b> when a patch note goes out. @everyone buzzes all 3, even with the bell on "mentions".</li>
+<li><b>Open</b> shows the page; that counts as read.</li>
+<li><b>Feedback</b> goes in its thread, or as a drawn box (U10).</li>
+</ol>
+<div class="needs"><span class="k">Exists</span><span>The Patch bot posts, @everyone and read receipts are on the branch <span class="src se">seen</span>. New: the faces row in line.</span></div>
+</div>
+
+<!-- U7 -->
+<div class="cardx ux">
+<h3><span class="no">U7</span>#connectors and /commands</h3>
+<p class="one">Type / for a menu. /show lists every connection. Ties to A1 and A7.</p>
+<div class="ux-mini">
+  <div class="ux-chead"><b># connectors</b></div>
+  <div style="padding:10px 12px 0"><div class="ux-pop">
+    <div class="hd2">Commands</div>
+    <div class="it on"><b>/show</b><small>every connection, every person</small></div>
+    <div class="it"><b>/todo</b><small>make a task</small></div>
+    <div class="it"><b>/status</b><small>set your status</small></div>
+    <div class="it"><b>/mute</b><small>quiet this channel</small></div>
+    <div class="it"><b>/bot</b><small>add a bot here</small></div>
+  </div></div>
+  <div class="ux-comp" style="margin-top:8px"><div class="ux-box" style="color:var(--ink)">/sh<span class="sp"></span><span class="ux-send">➤</span></div></div>
+</div>
+<ol class="steps">
+<li><b>Type /</b> in any channel. The list narrows as you type. ↑ ↓ and Enter pick.</li>
+<li><b>/show</b> posts a card only you see: a row per service, a column per person, ✓ or ✕, credits left.</li>
+<li><b>@supabase what's happening?</b> works the same as in A1. #connectors is just where those talks live.</li>
+</ol>
+</div>
+
+<!-- U8 -->
+<div class="cardx ux">
+<h3><span class="no">U8</span>Add a bot to a channel, then @ it</h3>
+<p class="one">Type @ and pick. People come first, bots after with a BOT tag.</p>
+<div class="ux-mini">
+  <div class="ux-chead"><b># ideas</b><span class="ux-faces" style="margin-left:auto">3 · 1 bot ▾</span></div>
+  <div style="padding:10px 12px 0"><div class="ux-pop">
+    <div class="hd2">People</div>
+    <div class="it"><span class="ux-av s20 L">L<span class="ux-dot away"></span></span>Leo<small>away</small></div>
+    <div class="hd2">Bots</div>
+    <div class="it on"><span class="ux-av s20 B">L<span class="ux-dot work"></span></span>Leo bot <span class="ux-bt">BOT</span><small>building · 40%</small></div>
+    <div class="it"><span class="ux-av s20 B">C<span class="ux-dot on"></span></span>Claude <span class="ux-bt">BOT</span><small>not in #ideas</small></div>
+  </div></div>
+  <div class="ux-comp" style="margin-top:8px"><div class="ux-box" style="color:var(--ink)">@le<span class="sp"></span><span class="ux-send">➤</span></div></div>
+</div>
+<ol class="steps">
+<li><b>Add:</b> tap "3 · 1 bot ▾" in the channel's top bar → "Add a bot" → pick. Or type /bot.</li>
+<li><b>Mention:</b> type @ and the first letters. The bot's live job shows next to its name.</li>
+<li><b>Not in the channel?</b> Sending asks "Add Claude to #ideas?" with Add / Just this once.</li>
+</ol>
+</div>
+
+<!-- U9 -->
+<div class="cardx ux">
+<h3><span class="no">U9</span>A bot asks before it changes anything</h3>
+<p class="one">Look-only answers come at once. A change, a send or a spend posts this card.</p>
+<div class="ux-pair">
+<div class="ux-mini" style="margin:0">
+  <div class="ux-msg"><span class="ux-av s36 B">V</span><div><div class="who">Vercel bot <span class="ux-bt">BOT</span><time>10:24</time></div>
+  <div class="ux-card" style="border-left-color:var(--amber)"><div class="k">Needs approval · changes the live site</div>Push branch Harry to live?<div class="row"><span class="ux-btn go">Approve</span><span class="ux-btn no">No</span><span class="ux-btn no">Details</span></div><div style="font-size:12px;color:var(--ink3);margin-top:6px">Asked by Harry · Harry or Mikey may approve · ends in 24 h</div></div></div></div>
+</div>
+<div class="ux-mini" style="margin:0">
+  <div class="ux-msg"><span class="ux-av s36 B">V</span><div><div class="who">Vercel bot <span class="ux-bt">BOT</span><time>10:25</time></div>
+  <div class="ux-card" style="border-left-color:var(--green)"><div class="k" style="color:var(--green)">✓ Approved by Mikey 10:25</div>Pushed. Live in 1 min 40 s.<div class="row"><span class="ux-btn" style="opacity:.5">Approve</span><span class="ux-btn no" style="opacity:.5">No</span></div></div></div></div>
+</div>
+</div>
+<ol class="steps">
+<li><b>Amber edge</b> = waiting. It shows who asked, who may approve and when it runs out.</li>
+<li><b>Approve</b> turns the edge green and greys the buttons, so nobody taps twice.</li>
+<li><b>Waiting cards</b> also sit in Activity, and buzz the people who may approve.</li>
+</ol>
+</div>
+
+<!-- U10 -->
+<div class="cardx ux">
+<h3><span class="no">U10</span>Draw a box on a page, it lands in chat</h3>
+<p class="one">A box drawn on a patch note or artifact posts the picture and your words into a thread. Ties to A5.</p>
+<div class="ux-mini">
+  <div class="ux-chead"><b># patch-notes</b><small>thread on v0.21</small></div>
+  <div class="ux-msg"><span class="ux-av s36 H">H</span><div><div class="who">Harry <time>15:20</time></div><div class="tx"><span class="at">@Leo bot</span> this button is off the screen on a phone</div><div class="ux-shot" style="max-width:260px"></div><div class="ux-chips" style="margin-top:4px"><span class="ux-chip">📄 v0.21 · picture 3</span></div></div></div>
+</div>
+<ol class="steps">
+<li><b>Shift X</b> (or 👉 on a phone), drag a box, write, name a bot or a person.</li>
+<li><b>It posts</b> in the page's own channel thread: a patch note → under its #patch-notes post; any other page → #general.</li>
+<li><b>Tap the picture</b> to jump back to the exact spot on the page.</li>
+</ol>
+</div>
+
+<!-- U11 -->
+<div class="cardx ux">
+<h3><span class="no">U11</span>DMs and private channels</h3>
+<p class="one">A DM is a private chat for two. A private channel has a 🔒 and only its members see it.</p>
+<div class="ux-mini">
+  <div class="ux-chead"><span class="ux-av s20 M">M<span class="ux-dot on"></span></span><b>Mikey</b><small>🔒 Only you and Mikey</small></div>
+  <div class="ux-msg"><span class="ux-av s36 M">M</span><div><div class="who">Mikey <time>12:01</time></div><div class="tx">Can you look at my roadmap before Leo does?</div></div></div>
+  <div style="padding:0 12px 10px"><div class="ux-row" style="padding:0"><span class="h">🔒</span><span class="nm">leadership</span><span class="ux-bt">2 people</span></div></div>
+</div>
+<ol class="steps">
+<li><b>DM a person:</b> tap their name in the list. <b>DM a bot:</b> same; it is the bot's home, where it posts its own job logs.</li>
+<li><b>Private channel:</b> "+ Add channel" → switch on "Private" → pick members.</li>
+<li><b>Bots never read</b> a DM or private channel unless they were added to it.</li>
+</ol>
+<div class="needs"><span class="k">Exists</span><span>Private DMs between people (team_dms, row rules) are on the branch <span class="src se">seen</span>. New: private channels and bot DMs.</span></div>
+</div>
+
+<!-- U12 -->
+<div class="cardx ux">
+<h3><span class="no">U12</span>Notifications per channel, and pop-ups on the computer</h3>
+<p class="one">The 🔔 in each channel's top bar has three choices, like Slack. Ties to A6.</p>
+<div class="ux-pair">
+<div class="ux-pop" style="max-width:none">
+  <div class="hd2">Buzz me for #bugs</div>
+  <div class="it on"><span class="ux-radio on"></span>Every new message</div>
+  <div class="it"><span class="ux-radio"></span>Only @mentions</div>
+  <div class="it"><span class="ux-radio"></span>Off <small>still goes bold</small></div>
+  <div class="hd2">Also</div>
+  <div class="it"><span class="ux-sw"></span>Mute for 1 hour</div>
+  <div class="it"><span class="ux-sw on"></span>Pop-ups on this computer</div>
+</div>
+<div>
+  <div class="ux-toast"><span class="ux-av s36 B">🐞</span><div><b>Bug bot in #bugs</b>Keeper froze mid dive in the cup semi<br><small>Knowitball admin · now</small></div></div>
+  <p class="ux-cap">The computer pop-up (like WhatsApp). Click it to open the post.</p>
+</div>
+</div>
+<ol class="steps">
+<li><b>Tap 🔔</b> in the channel's top bar and pick one. A channel set to Off shows 🔕 in the list.</li>
+<li><b>Starting setup:</b> DMs and @mentions everywhere; every message in #bugs; #health only when red; the rest on "Only @mentions".</li>
+<li><b>Computer:</b> the first visit asks "Allow notifications?" once. Your choices follow you to every device.</li>
+</ol>
+</div>
+
+<!-- U13 -->
+<div class="cardx ux">
+<h3><span class="no">U13</span>Search and jump</h3>
+<p class="one">One box searches messages, tasks, ideas, files and people. ⌘K jumps to any channel.</p>
+<div class="ux-mini">
+  <div style="padding:10px 12px"><div class="ux-field">🔍 keeper from:Mikey in:#bugs</div></div>
+  <div class="ux-tabs" style="padding:0 12px"><span class="on">Messages 4</span><span>Tasks 1</span><span>Files 2</span><span>People</span></div>
+  <div class="ux-msg"><span class="ux-av s36 M">M</span><div><div class="who">Mikey <time>Tue · #bugs</time></div><div class="tx">The <b style="background:rgba(245,185,66,.25);border-radius:3px;padding:0 2px">keeper</b> dives late on cup penalties.</div></div></div>
+</div>
+<ol class="steps">
+<li><b>Click the 🔍</b> at the top of the list (or ⌘F / Ctrl F inside the room).</li>
+<li><b>Narrow it</b> with words: in:#bugs, from:Mikey, has:picture, is:task. Tap a chip instead of typing on a phone.</li>
+<li><b>⌘K</b> (Ctrl K) opens a small box: type "bu" → #bugs → Enter.</li>
+</ol>
+</div>
+
+<!-- U14 -->
+<div class="cardx ux">
+<h3><span class="no">U14</span>Make a new channel</h3>
+<p class="one">Pick a name and a kind. The kind decides its tool tab.</p>
+<div class="ux-mini" style="padding:12px">
+  <b style="font-size:16px">New channel</b>
+  <div class="ux-field">#&nbsp;match-engine</div>
+  <div class="ux-field" style="color:var(--ink3)">What it's for (optional)</div>
+  <div class="ux-kind">
+    <div class="on"><b>💬 Chat</b>Messages only</div>
+    <div><b>✓ Tasks</b>Like #todo</div>
+    <div><b>💡 Ideas</b>Votes and stages</div>
+    <div><b>🤖 Bot feed</b>A bot posts, people reply</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px"><span class="ux-sw"></span>Private <span style="flex:1"></span><span class="ux-btn go">Create</span></div>
+</div>
+<ol class="steps">
+<li><b>"+ Add channel"</b> at the bottom of Channels → name → kind → Create.</li>
+<li><b>Preset channels</b> (the 9) can be renamed, muted and starred, but never deleted.</li>
+<li><b>New channels</b> can be archived by the person who made them. Archived ones stay searchable.</li>
+</ol>
+<div class="needs"><span class="k">Exists</span><span>New channels and renames (team_channels) are on the branch <span class="src se">seen</span>. New: the kind picker, private, archive.</span></div>
+</div>
+
+<!-- What the UI answers -->
+<h3 class="uxh"><span class="no">✓</span>What the UI answers on this page</h3>
+<ul class="ck">
+<li><div class="q">Where does #connectors live, and where does /show work? (A1)</div><div class="a">A preset channel. /show is a / command in any channel, shown only to you (U7). Updated in A1.</div></li>
+<li><div class="q">How does "Hand to a bot" work before bots exist? (A2)</div><div class="a">One "Hand to…" picker lists people first, then bots. Before bots, only people show and it makes a #todo task (U4). Updated in A2.</div></li>
+<li><div class="q">Where does a drawn-box comment's answer appear? (A5)</div><div class="a">In a thread under the page's own post: patch note → #patch-notes; anything else → #general (U10). Updated in A5.</div></li>
+<li><div class="q">On/off switch per channel, or more? (A6)</div><div class="a">Three choices per channel, Slack's: every message, only @mentions, off. Plus "Mute for 1 hour" (U12). Updated in A6 and in Your calls.</div></li>
+<li><div class="q">Who is "@me"? (A7)</div><div class="a">Your own bot ("Harry bot") in the Bots list; @me is a short name for it. Its hover card shows its connections (U0.2). Updated in A7.</div></li>
+<li><div class="q">Which channels does the room start with?</div><div class="a">9, up from 6 on the branch: #general, #ideas, #todo, #bugs, #health, #patch-notes, #connectors, #marketing, #context <span class="src se">seen</span> for the 6, <span class="src re">reasoned</span> for the 3 new ones.</div></li>
+</ul>
+
+<!-- UI build order -->
+<h3 class="uxh"><span class="no">B</span>Build order for the UI: smallest useful first</h3>
+<div class="dt" style="margin-bottom:6px">S = one sitting · M = about a day · L = several days <span class="src re">reasoned</span>. Builds on the branch, never from scratch.</div>
+<ul class="n">
+<li><div class="hd">1. The list: 9 presets, sections, bold vs red number, fold and drag <span class="step">S</span></div><div class="dt">« button, ⌘/Ctrl Shift D, 220 px (drag 180 to 320), ⌂ instead of the admin menu, remembered per device. Red number only for @mentions and DMs; bold for the rest.</div><div class="you"><b>You:</b> nothing.</div></li>
+<li><div class="hd">2. Messages without bubbles, Clean and Compact, the hover bar <span class="step">M</span></div><div class="dt">15 / 22 px text, 36 px faces; Compact 20 px. Phone keeps tap-for-actions.</div><div class="you"><b>You:</b> pick the default look (Your calls).</div></li>
+<li><div class="hd">3. Presence dots, status and hover cards <span class="step">M</span></div><div class="dt">10-minute away rule, do-not-disturb, "clear after", last push from the Team board. <b>Plus repeating schedules (T1).</b></div><div class="you"><b>You:</b> nothing.</div></li>
+<li><div class="hd">4. The 🔔 menu per channel and computer pop-ups <span class="step">M</span></div><div class="dt">Same as step 1 of the bots build order below (A6). Do them as one.</div><div class="you"><b>You:</b> tap Allow on each computer.</div></li>
+<li><div class="hd">5. #todo with tasks, and the Tasks view <span class="step">M</span></div><div class="dt">Moves to-dos out of #bugs. "Make a task" on any message.</div><div class="you"><b>You:</b> nothing.</div></li>
+<li><div class="hd">6. Phone: bottom tabs, Activity, Later, swipe drawer <span class="step">M</span></div><div class="dt">Home · DMs · Activity · You. Later sits inside Activity as a tab.</div><div class="you"><b>You:</b> try it on your phone.</div></li>
+<li><div class="hd">7. Search and ⌘K <span class="step">M</span></div><div class="dt">Words first; in:/from:/has: chips after.</div><div class="you"><b>You:</b> nothing.</div></li>
+<li><div class="hd">8. Bots in the list: BOT tag, live job line, @ picker, Approve card <span class="step">L</span></div><div class="dt">Waits for "prove one bot end to end" below. The look can be built first with the Patch bot, which exists.</div><div class="you"><b>You:</b> set who may approve what.</div></li>
+<li><div class="hd">9. New channel kinds, private channels, archive <span class="step">S</span></div><div class="dt">Kind picker reuses the tool tabs that exist.</div><div class="you"><b>You:</b> nothing.</div></li>
+<li><div class="hd">10. #today, the week view and nudges <span class="step">M</span></div><div class="dt">Morning and evening asks at each person's time, the week view, opt-in good morning / good night, Harry's nudges (T2, T3). Uses the same timed small servers as #health.</div><div class="you"><b>You:</b> pick who sees the week view (Your calls).</div><div class="changed" style="margin-top:6px"><b class="t">Changed (Harry, 25 Oct)</b>New step.</div></li>
+</ul>
+<details><summary>Sources for the UI research (read 25 Oct 2026)</summary>
+<ul>
+<li>Slack help: "Adjust your sidebar preferences" (212596808); "Slack keyboard shortcuts" (201374536); "Change how messages are displayed" (213893898); "An overview of Slack's new design" (16764236868755); "Set your Slack status and availability" (201864558); "Manage notifications for specific channels and direct messages" (360056534254); "Use threads to organize discussions" (115000769927); "Save messages and files for later" (360042650274); "Organize your sidebar with custom sections" (360043207674).</li>
+<li>docs.slack.dev, "User presence and status" (away after 10 minutes).</li>
+<li>Stanford UIT, "Slack redesign 2023: sidebar" (Dec 2023); Tom's Guide and Creative Bloq on the 2023 redesign.</li>
+<li>9to5Mac and Computerworld, May 2020: Slack phone app's four bottom tabs.</li>
+<li>Microsoft adoption guide, "Teams new chat and channels user guide" (PDF); Tarleton State IT KB 18675 (May 2025); WashU IT news.</li>
+<li>Mattermost wiki, "Resizable panels" (240 px default, 200 min, 440 max at 1680 px and wider).</li>
+<li>Discord support community post on the bot tag; Zapier, "Discord roles".</li>
+<li>Not found anywhere: Slack's own pixel sizes (list, avatar, text). Every Slack size above is marked reasoned. No Slack, Microsoft or Discord pictures are used on this page.</li>
+</ul>
+</details>
+
+
+<!-- A1 -->
+<h2 class="add"><i></i>A1 · #CONNECTORS: TALK TO ANY SERVICE</h2>
+<div class="cardx">
+<h3><span class="no">A1</span>Type to a service. Its bot answers.</h3>
+<p class="one">This replaces the static cards. #connectors is a chat. You write "@supabase what's happening?" and the Supabase bot replies.</p>
+<div class="tw" style="padding:10px">
+<svg class="sv" viewBox="0 0 360 400" width="100%" role="img" aria-label="A chat in #connectors: questions to four bots, answers, and an Approve button">
+<rect x="8" y="4" width="344" height="392" rx="18" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>
+<text x="22" y="28" font-size="13" font-weight="800" fill="var(--ink)"># connectors</text>
+<text x="22" y="43" font-size="10" fill="var(--ink3)">Type @ then a service name. /show lists them all.</text>
+<!-- me 1 -->
+<rect x="150" y="54" width="190" height="26" rx="10" fill="rgba(111,184,255,.18)" stroke="var(--blue)"/><text x="160" y="71" font-size="11" fill="var(--ink)">@supabase what's happening?</text>
+<rect x="20" y="88" width="250" height="44" rx="10" fill="var(--card2)" stroke="var(--line)"/>
+<text x="30" y="104" font-size="10" font-weight="800" fill="var(--green)">SUPABASE BOT · for Harry</text>
+<text x="30" y="121" font-size="11" fill="var(--ink2)">382 of 500 MB. 0 errors since 07:00.</text>
+<!-- 2 -->
+<rect x="150" y="142" width="190" height="26" rx="10" fill="rgba(111,184,255,.18)" stroke="var(--blue)"/><text x="160" y="159" font-size="11" fill="var(--ink)">@higgsfield how many credits?</text>
+<rect x="20" y="176" width="250" height="32" rx="10" fill="var(--card2)" stroke="var(--line)"/>
+<text x="30" y="196" font-size="11" fill="var(--ink2)"><tspan font-weight="800" fill="var(--amber)">HIGGSFIELD BOT</tspan> · 1,240 left</text>
+<!-- 3 -->
+<rect x="150" y="218" width="190" height="26" rx="10" fill="rgba(111,184,255,.18)" stroke="var(--blue)"/><text x="160" y="235" font-size="11" fill="var(--ink)">@vercel push to live</text>
+<rect x="20" y="252" width="300" height="86" rx="10" fill="var(--card2)" stroke="var(--amber)"/>
+<text x="30" y="270" font-size="10" font-weight="800" fill="var(--amber)">VERCEL BOT · this changes the live site</text>
+<text x="30" y="287" font-size="11" fill="var(--ink2)">Approve? Put "main" live (9 changes).</text>
+<rect x="30" y="298" width="92" height="30" rx="15" fill="var(--green)"/><text x="76" y="318" font-size="12" font-weight="800" text-anchor="middle" fill="#06170e">Approve</text>
+<rect x="132" y="298" width="64" height="30" rx="15" fill="none" stroke="var(--line)"/><text x="164" y="318" font-size="12" text-anchor="middle" fill="var(--ink2)">No</text>
+<!-- 4 -->
+<rect x="130" y="348" width="210" height="26" rx="10" fill="rgba(111,184,255,.18)" stroke="var(--blue)"/><text x="140" y="365" font-size="11" fill="var(--ink)">@cloudflare how full is storage?</text>
+<text x="22" y="388" font-size="10" fill="var(--ink3)">… the bot is typing</text>
+</svg></div>
+<p class="cap">A drawing, not the built screen. Example numbers.</p>
+
+<div class="lbl">/show: one list of every connection</div>
+<div class="tw" style="padding:10px">
+<svg class="sv" viewBox="0 0 360 250" width="100%" role="img" aria-label="/show list: service, account, connected, credits left">
+<g font-size="9.5" font-weight="800" fill="var(--ink3)" letter-spacing=".5"><text x="14" y="18">SERVICE</text><text x="100" y="18">ACCOUNT</text><text x="196" y="18">ON?</text><text x="238" y="18">LEFT (EXAMPLE)</text></g>
+<g stroke="var(--line)"><line x1="8" y1="26" x2="352" y2="26"/><line x1="8" y1="64" x2="352" y2="64"/><line x1="8" y1="102" x2="352" y2="102"/><line x1="8" y1="140" x2="352" y2="140"/><line x1="8" y1="178" x2="352" y2="178"/></g>
+<g font-size="12" font-weight="700" fill="var(--ink)"><text x="14" y="50">Supabase</text><text x="14" y="88">Vercel</text><text x="14" y="126">Higgsfield</text><text x="14" y="164">Cloudflare</text><text x="14" y="202">GitHub</text></g>
+<g font-size="11" fill="var(--ink2)"><text x="100" y="50">Harry's</text><text x="100" y="88">Harry's</text><text x="100" y="126">Harry's</text><text x="100" y="164">not linked</text><text x="100" y="202">Harry's</text></g>
+<g><circle cx="205" cy="46" r="6" fill="var(--green)"/><circle cx="205" cy="84" r="6" fill="var(--green)"/><circle cx="205" cy="122" r="6" fill="var(--green)"/><circle cx="205" cy="160" r="6" fill="var(--ink3)"/><circle cx="205" cy="198" r="6" fill="var(--green)"/></g>
+<g font-size="11" fill="var(--ink2)"><text x="238" y="42">382 / 500 MB</text><text x="238" y="56" font-size="9.5" fill="var(--ink3)">vs free limit</text><text x="238" y="80">12 / 100</text><text x="238" y="94" font-size="9.5" fill="var(--ink3)">deploys today</text><text x="238" y="118">1,240 credits</text><text x="238" y="132" font-size="9.5" fill="var(--green)">ON · enough</text><text x="238" y="166">no number</text><text x="238" y="204">no limit</text></g>
+<text x="14" y="232" font-size="10" fill="var(--ink3)">Higgsfield turns OFF when credits run out, back ON when they return.</text>
+</svg></div>
+<p class="cap">/show works in any channel. "/show higgsfield" opens one row in full.</p>
+
+<div class="lbl">What it does</div>
+<p class="one" style="margin:0">Each service gets a bot you can @. It answers as the person who asked, using that person's own connections. Look-only questions answer at once. Anything that changes, sends or spends asks first.</p>
+<div class="rules">
+<div class="l"><b>Look</b>Always allowed. Reads, counts, lists.</div>
+<div class="c"><b>Change / send / spend</b>Asks "Approve?" with a button.</div>
+<div class="w"><b>Wipe</b>Never. The bot says no.</div>
+</div>
+<p class="cap" style="margin-top:0">Same three rules as the permissions page.</p>
+<div class="lbl">Why</div>
+<p class="one" style="margin:0">You said static cards are dull. One place to ask any service, no tab-hopping, and the answer stays in the chat for the others to see. The old page's "parked" Higgsfield wording is replaced: it is on or off by credits.</p>
+<div class="lbl">How it works</div>
+<ol class="steps">
+<li><b>You write</b> "@vercel push to live". The room sees the @name and makes a job for that bot.</li>
+<li><b>The bot runs as you</b>, with your Vercel link, not Mikey's or Leo's. Look-only: it replies. Anything else: it posts an Approve button.</li>
+<li><b>You tap Approve</b> (or No). The bot does it and replies with the result. Every step is logged in the channel.</li>
+</ol>
+<details><summary>How "runs as you" could work (reasoned, not tested)</summary>
+<p><b>Route 1, your own Claude:</b> the job goes to your own Claude session, which already holds your connections. It is the closest fit to "as the person asking". It needs your Claude to be reachable; replies take seconds to a minute.</p>
+<p><b>Route 2, look-only tokens on the server:</b> a read-only key per service sits in Vercel. Fast, but the key belongs to whoever made it, not to the asker. Fine for look-only questions and the health posts (A4). Never for changes.</p>
+<p><b>Suggested:</b> Route 2 for look-only, Route 1 for anything that changes. Test one connector end to end before building all of them. The branch's job system (team/jobs.json, pushed jobs) is the nearest thing that exists.</p>
+</details>
+<div class="needs"><span class="k">Needs</span><span class="pill free">free</span><span class="pill harry">needs Harry</span><span class="pill paid">costs: credits when a bot spends them</span> <span>You: link each service once, and say which of the three can approve what.</span></div>
+<div class="changed"><b class="t">Changed 25 Oct by the UI section</b>#connectors is one of the 9 preset channels. <b>/show</b> works in any channel and only you see its card (U7). The Approve card has an amber edge, says who may approve, and runs out after 24 h (U9).</div>
+</div>
+
+<!-- A2 -->
+<h2 class="add"><i></i>A2 · #BUGS FILLS ITSELF</h2>
+<div class="cardx">
+<h3><span class="no">A2</span>A player reports a bug. It lands in #bugs in seconds.</h3>
+<p class="one">No one has to copy it across. The post carries the player's screen, the game version and a button to hand it to a bot.</p>
+<div class="tw" style="padding:10px">
+<svg class="sv" viewBox="0 0 360 330" width="100%" role="img" aria-label="Flow from bug report row to #bugs post, and the post itself">
+<defs><marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs>
+<rect x="6" y="6" width="104" height="52" rx="10" fill="rgba(61,220,132,.12)" stroke="var(--green)"/><text x="58" y="28" font-size="11" font-weight="700" text-anchor="middle" fill="var(--ink)">New bug row</text><text x="58" y="44" font-size="9.5" text-anchor="middle" fill="var(--ink2)">in Supabase</text>
+<rect x="128" y="6" width="104" height="52" rx="10" fill="var(--card2)" stroke="var(--line)"/><text x="180" y="28" font-size="11" font-weight="700" text-anchor="middle" fill="var(--ink)">Trigger</text><text x="180" y="44" font-size="9.5" text-anchor="middle" fill="var(--ink2)">fires on insert</text>
+<rect x="250" y="6" width="104" height="52" rx="10" fill="var(--card2)" stroke="var(--line)"/><text x="302" y="28" font-size="11" font-weight="700" text-anchor="middle" fill="var(--ink)">Small server</text><text x="302" y="44" font-size="9.5" text-anchor="middle" fill="var(--ink2)">Edge Function</text>
+<g stroke="var(--ink3)" stroke-width="1.8" fill="none" marker-end="url(#ab)"><path d="M110 32H126"/><path d="M232 32H248"/><path d="M302 58V74Q302 84 290 84H70Q58 84 58 96V104"/></g>
+<rect x="8" y="104" width="344" height="216" rx="16" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>
+<text x="22" y="126" font-size="12" font-weight="800" fill="var(--ink)"># bugs</text>
+<rect x="20" y="136" width="320" height="174" rx="12" fill="var(--card2)" stroke="var(--amber)"/>
+<text x="32" y="154" font-size="10" font-weight="800" fill="var(--amber)">BUG BOT · new report · 09:41</text>
+<text x="32" y="172" font-size="11.5" font-weight="700" fill="var(--ink)">"My career did not save after the match"</text>
+<rect x="32" y="182" width="104" height="66" rx="8" fill="var(--bg)" stroke="var(--line)"/>
+<path d="M44 238l22-26 16 18 12-12 28 20z" fill="var(--line)"/><circle cx="108" cy="198" r="6" fill="var(--line)"/>
+<text x="84" y="260" font-size="9" text-anchor="middle" fill="var(--ink3)">player's screen</text>
+<g font-size="10.5" fill="var(--ink2)"><text x="148" y="198">Game version: 0.109</text><text x="148" y="214">Page: /star-dev</text><text x="148" y="230">Device: phone</text><text x="148" y="246">From: signed-in player</text></g>
+<rect x="32" y="270" width="132" height="30" rx="15" fill="var(--green)"/><text x="98" y="289" font-size="11.5" font-weight="800" text-anchor="middle" fill="#06170e">Hand to a bot ▾</text>
+<rect x="174" y="270" width="80" height="30" rx="15" fill="none" stroke="var(--line)"/><text x="214" y="289" font-size="11" text-anchor="middle" fill="var(--ink2)">Open</text>
+</svg></div>
+<p class="cap">Top row = what happens behind the scenes. Bottom = what you see. A drawing with example text.</p>
+<div class="lbl">What it does</div>
+<p class="one" style="margin:0">Every new bug-report row makes one post in #bugs. "Hand to a bot" lets you pick Harry, Mikey, Leo or Claude. The bot gets the report and the screen as a job.</p>
+<div class="lbl">Why</div>
+<p class="one" style="margin:0">Today a report waits until someone looks. A post plus a phone buzz (A6) means it is seen the same hour, and the hand-off is one tap.</p>
+<div class="lbl">How it works</div>
+<ol class="steps">
+<li><b>A database trigger</b> (a rule: "when a row is added, do this") fires on each new report.</li>
+<li><b>A small server</b> (A3) wraps it: report text, screen link, game version. It posts to the Team room as the Bug bot.</li>
+<li><b>You tap "Hand to a bot".</b> The job goes to that person's bot, with the screen attached.</li>
+</ol>
+<details><summary>Not checked</summary><p>I could not find the bug-report table in the code (searched app, lib, supabase, components). Its name and columns, and whether it keeps a screenshot, need confirming. #bugs already exists on the Team room branch as a jobs list. This adds the automatic posts to it.</p></details>
+<div class="needs"><span class="k">Needs</span><span class="pill free">free</span><span class="pill harry">needs Harry</span> <span>You: run one SQL page (the trigger) and set one secret on the small server. Claude builds both.</span></div>
+<div class="changed"><b class="t">Changed 25 Oct by the UI section</b>The post is a Bug bot card with <b>Hand to… · Mark fixed · Same as…</b> (U4). "Hand to…" lists people first, bots after, so the same button works before bots exist: a person = a #todo task. To-dos move out of #bugs into #todo (U2).</div>
+</div>
+
+<!-- A3 -->
+<h2 class="add"><i></i>A3 · SMALL SERVERS FOR FAST BOT REPLIES</h2>
+<div class="cardx">
+<h3><span class="no">A3</span>A tiny always-ready program next to the database.</h3>
+<p class="one">Supabase Edge Functions are small programs that run when called. They are the fast path for "@claude" and for personal bots in channels.</p>
+<div class="tw" style="padding:10px">
+<svg class="sv" viewBox="0 0 360 200" width="100%" role="img" aria-label="Two paths: slow through the website, fast through a small server">
+<defs><marker id="ac" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs>
+<text x="10" y="18" font-size="10.5" font-weight="800" fill="var(--ink3)">TODAY: CHECKED ABOUT ONCE A MINUTE</text>
+<rect x="10" y="26" width="96" height="40" rx="9" fill="var(--card)" stroke="var(--line)"/><text x="58" y="50" font-size="11" text-anchor="middle" fill="var(--ink)">Message</text>
+<rect x="132" y="26" width="96" height="40" rx="9" fill="var(--card)" stroke="var(--line)"/><text x="180" y="50" font-size="11" text-anchor="middle" fill="var(--ink)">Wait ~60 s</text>
+<rect x="254" y="26" width="96" height="40" rx="9" fill="var(--card)" stroke="var(--line)"/><text x="302" y="50" font-size="11" text-anchor="middle" fill="var(--ink)">Bot sees it</text>
+<text x="10" y="102" font-size="10.5" font-weight="800" fill="var(--green)">WITH A SMALL SERVER: AT ONCE</text>
+<rect x="10" y="110" width="96" height="40" rx="9" fill="rgba(61,220,132,.12)" stroke="var(--green)"/><text x="58" y="134" font-size="11" text-anchor="middle" fill="var(--ink)">Message</text>
+<rect x="132" y="110" width="96" height="40" rx="9" fill="rgba(61,220,132,.12)" stroke="var(--green)"/><text x="180" y="134" font-size="11" text-anchor="middle" fill="var(--ink)">Small server</text>
+<rect x="254" y="110" width="96" height="40" rx="9" fill="rgba(61,220,132,.12)" stroke="var(--green)"/><text x="302" y="134" font-size="11" text-anchor="middle" fill="var(--ink)">Bot starts</text>
+<g stroke="var(--ink3)" stroke-width="1.8" fill="none" marker-end="url(#ac)"><path d="M106 46H130"/><path d="M228 46H252"/><path d="M106 130H130"/><path d="M228 130H252"/></g>
+<text x="10" y="184" font-size="10" fill="var(--ink3)">Today's pushed jobs are read about every 60 s (measured: config.ts).</text>
+</svg></div>
+<div class="lbl">What it does</div>
+<p class="one" style="margin:0">When a message names a bot, a small server sees it within a second and starts that bot. It also holds the secrets (keys) so the phone never does.</p>
+<div class="lbl">Why</div>
+<p class="one" style="margin:0">A bot that answers a minute late feels broken. The same small servers carry A2 (#bugs) and A4 (#health), so it is one thing built once.</p>
+<div class="lbl">How it works</div>
+<ol class="steps">
+<li><b>Supabase tells it</b> when a message row is added (a database webhook).</li>
+<li><b>It reads the @names</b>, checks who sent it, and decides which bot gets the job.</li>
+<li><b>It starts the bot</b> and later posts the reply back into the channel.</li>
+</ol>
+<details><summary>The numbers, if you want them</summary><p>Supabase's free plan allows 500,000 small-server calls a month (supabase.com/pricing, from memory; re-check before relying on it). Three people at about 200 messages a day is about 18,000 a month (reasoned). Plenty of room.</p></details>
+<div class="needs"><span class="k">Needs</span><span class="pill free">free</span><span class="pill harry">needs Harry</span> <span>You: say yes to deploying a function to your Supabase project. Claude writes it; secrets go in Supabase, never in chat.</span></div>
+</div>
+
+<!-- A4 -->
+<h2 class="add"><i></i>A4 · #HEALTH: A MORNING POST AND A WEEKLY POST</h2>
+<div class="cardx">
+<h3><span class="no">A4</span>The site's health, in your chat, before you ask.</h3>
+<p class="one">One short post each morning. One longer post each week with the trend. No dashboards to open.</p>
+<div class="tw" style="padding:10px">
+<svg class="sv" viewBox="0 0 360 372" width="100%" role="img" aria-label="Morning health post and weekly trend post">
+<rect x="8" y="4" width="344" height="176" rx="14" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>
+<text x="20" y="24" font-size="10" font-weight="800" fill="var(--green)">HEALTH BOT · 07:30 · morning check</text>
+<g font-size="11" fill="var(--ink2)"><text x="20" y="46">Site up</text><text x="20" y="66">Errors overnight</text><text x="20" y="86">Database</text><text x="20" y="106">Storage</text><text x="20" y="126">New sign-ups</text><text x="20" y="146">Failed saves</text></g>
+<g font-size="11" font-weight="700" fill="var(--ink)" text-anchor="end"><text x="340" y="46" fill="var(--green)">Yes</text><text x="340" y="66">0</text><text x="340" y="86">382 of 500 MB</text><text x="340" y="106">612 MB of 1 GB</text><text x="340" y="126">7 (yesterday 4)</text><text x="340" y="146" fill="var(--amber)">2</text></g>
+<text x="20" y="168" font-size="10" fill="var(--ink3)">Example numbers. Tap a line to ask @claude why.</text>
+<rect x="8" y="192" width="344" height="176" rx="14" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>
+<text x="20" y="212" font-size="10" font-weight="800" fill="var(--blue)">HEALTH BOT · Monday · the week</text>
+<text x="20" y="232" font-size="11" fill="var(--ink2)">Database size, last 7 days (MB)</text>
+<polyline points="24,330 76,324 128,318 180,310 232,298 284,292 336,282" fill="none" stroke="var(--amber)" stroke-width="2.5"/>
+<g fill="var(--amber)"><circle cx="24" cy="330" r="3"/><circle cx="76" cy="324" r="3"/><circle cx="128" cy="318" r="3"/><circle cx="180" cy="310" r="3"/><circle cx="232" cy="298" r="3"/><circle cx="284" cy="292" r="3"/><circle cx="336" cy="282" r="3"/></g>
+<line x1="20" y1="342" x2="340" y2="342" stroke="var(--line)"/>
+<g font-size="9.5" fill="var(--ink3)" text-anchor="middle"><text x="24" y="356">Mon</text><text x="128" y="356">Wed</text><text x="232" y="356">Fri</text><text x="336" y="356">Sun</text></g>
+<text x="20" y="252" font-size="11" fill="var(--ink)">Up 26 MB this week. Full in about 4 months at this pace.</text>
+<text x="20" y="270" font-size="10" fill="var(--ink3)">Example line (reasoned from the 500 MB limit).</text>
+</svg></div>
+<p class="cap">Top = every morning. Bottom = every week. Drawn with invented numbers.</p>
+<div class="lbl">What it does</div>
+<p class="one" style="margin:0">Morning: is the site up, errors overnight, database size of 500 MB, storage of 1 GB, new sign-ups, failed saves. Weekly: the same, as a trend, with one plain sentence on what changed.</p>
+<div class="lbl">Why</div>
+<p class="one" style="margin:0">The free plan has hard limits and no alarm. You hear about a full database when saves fail. A post warns you months early. It uses the health checks from the Supabase page.</p>
+<div class="lbl">How it works</div>
+<ol class="steps">
+<li><b>A timer</b> (Supabase Cron, a built-in alarm clock) wakes a small server (A3) at 07:30.</li>
+<li><b>It reads the numbers</b> (database size, storage, sign-ups, save-guard failures, errors from the logs) and checks the site is up.</li>
+<li><b>It posts</b> to #health as the Health bot. A weekly timer does the same on Mondays with the 7-day line.</li>
+</ol>
+<details><summary>Not checked</summary><p>"Failed saves" assumes the save guard's flags (STAR_SAVE_GUARD) are stored in a table that can be counted. Not looked up. Site-up needs a simple web address check. Storage of 1 GB is the free-plan file limit from the earlier page.</p></details>
+<div class="needs"><span class="k">Needs</span><span class="pill free">free</span> <span>Nothing from you, once A3 exists. Claude builds it. One look-only database key, set as a secret.</span></div>
+</div>
+
+<!-- A5 -->
+<h2 class="add"><i></i>A5 · DRAW A BOX, TAG A BOT</h2>
+<div class="cardx">
+<h3><span class="no">A5</span>Comment on any page. Send the comment and the picture to a bot.</h3>
+<p class="one">Builds on the 👉 Point tool that exists (Shift+X, drag a box, write a note). Now the note can name a bot, and the boxed screenshot goes with it.</p>
+<div class="tw" style="padding:10px">
+<svg class="sv" viewBox="0 0 360 330" width="100%" role="img" aria-label="A patch-note page with a dragged box, a comment, and a bot tag">
+<rect x="8" y="4" width="344" height="322" rx="14" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>
+<text x="20" y="26" font-size="12" font-weight="800" fill="var(--ink)">Patch notes Leo v0.64</text>
+<rect x="20" y="36" width="320" height="14" rx="4" fill="var(--card2)"/><rect x="20" y="58" width="250" height="14" rx="4" fill="var(--card2)"/>
+<rect x="20" y="82" width="150" height="86" rx="8" fill="var(--card2)" stroke="var(--line)"/>
+<path d="M32 156l30-34 22 24 16-14 36 28z" fill="var(--line)"/>
+<rect x="14" y="76" width="168" height="98" rx="6" fill="rgba(245,185,66,.14)" stroke="var(--amber)" stroke-width="2" stroke-dasharray="6 4"/>
+<rect x="190" y="82" width="150" height="14" rx="4" fill="var(--card2)"/><rect x="190" y="104" width="120" height="14" rx="4" fill="var(--card2)"/>
+<rect x="20" y="186" width="320" height="130" rx="12" fill="var(--card2)" stroke="var(--blue)"/>
+<text x="32" y="206" font-size="10" font-weight="800" fill="var(--blue)">YOUR NOTE · boxed picture attached</text>
+<text x="32" y="228" font-size="11.5" fill="var(--ink)">@Leo bot analyse my changes and</text>
+<text x="32" y="245" font-size="11.5" fill="var(--ink)">push them to Leo's Claude.</text>
+<text x="32" y="262" font-size="11.5" fill="var(--ink2)">This corner pass looks wrong to me.</text>
+<g font-size="10.5" font-weight="700"><rect x="32" y="276" width="76" height="26" rx="13" fill="none" stroke="var(--line)"/><text x="70" y="293" text-anchor="middle" fill="var(--ink2)">@Leo bot</text><rect x="114" y="276" width="76" height="26" rx="13" fill="none" stroke="var(--line)"/><text x="152" y="293" text-anchor="middle" fill="var(--ink2)">@claude</text></g>
+<rect x="250" y="272" width="80" height="32" rx="16" fill="var(--green)"/><text x="290" y="293" font-size="12" font-weight="800" text-anchor="middle" fill="#06170e">Send</text>
+</svg></div>
+<p class="cap">Dashed amber box = what you dragged. It works on patch-note pages and artifact pages inside the admin.</p>
+<div class="lbl">What it does</div>
+<p class="one" style="margin:0">You drag a box on the page and write a comment. Tag a bot. The comment, a cut-out picture of the box, and the page link go to that bot as one job. The bot answers in the chat, in a thread.</p>
+<div class="lbl">Why</div>
+<p class="one" style="margin:0">Feedback on each other's patch notes is slow if you type "the thing in the third picture". A box says exactly where. Leo's bot can then look at it with Leo's own Claude.</p>
+<div class="lbl">How it works</div>
+<ol class="steps">
+<li><b>Shift+X (or 👉 on a phone)</b>, drag a box, write the note. The picture of the box is saved (today it only saves where the box sits).</li>
+<li><b>Name a bot</b> (@Harry bot, @Mikey bot, @Leo bot, @claude). A small server (A3) reads the name.</li>
+<li><b>The bot gets the job</b>: your words, the picture, the link. It replies in the thread, or does the work and asks Approve for anything that changes.</li>
+</ol>
+<div class="lbl">Ten uses</div>
+<ul class="n uses">
+<li><div class="hd">1. Ask another person's Claude to look</div><div class="u">Box a changed section → "@Leo bot look over the changes"</div></li>
+<li><div class="hd">2. Send your changes across</div><div class="u">"@Leo bot analyse my changes and push them to Leo's Claude"</div></li>
+<li><div class="hd">3. Fix something small</div><div class="u">Box a typo or a wrong number → "@claude fix this"</div></li>
+<li><div class="hd">4. Report a bug from a playtest still</div><div class="u">Box the glitch on the still → posts into #bugs with the picture</div></li>
+<li><div class="hd">5. Ask why a health number moved</div><div class="u">Box the database line on the health post → "@claude why did this drop?"</div></li>
+<li><div class="hd">6. Match a screen to another</div><div class="u">Box a button on a dev page → "@Mikey bot make this match the home screen"</div></li>
+<li><div class="hd">7. Review a video frame</div><div class="u">Box a face on a paused frame → "@Harry bot note for the editor: crop tighter"</div></li>
+<li><div class="hd">8. Approve a patch note</div><div class="u">Box nothing, tap "Approve" on the note → the bot marks it read and ships it when asked</div></li>
+<li><div class="hd">9. Ask for a before / after</div><div class="u">Box a screen → "@claude show before and after for this change"</div></li>
+<li><div class="hd">10. Turn a comment into a to-do</div><div class="u">Box anything → "@claude add this to Leo's to-do list"</div></li>
+</ul>
+<div class="needs"><span class="k">Needs</span><span class="pill free">free</span><span class="pill harry">needs Harry</span> <span>Needs the bots from A1 first. You: pick which bot may do what without asking.</span></div>
+<div class="changed"><b class="t">Changed 25 Oct by the UI section</b>Answers go in a <b>thread under the page's own post</b>: a patch note → its #patch-notes post; any other page → #general (U10). Tapping the picture jumps back to the spot.</div>
+</div>
+
+<!-- A6 -->
+<h2 class="add"><i></i>A6 · NOTIFICATIONS: EVERY MESSAGE, PER CHANNEL, ON THE DESKTOP</h2>
+<div class="cardx">
+<h3><span class="no">A6</span>A buzz for every message, with a switch for each channel.</h3>
+<p class="one">Builds on what exists: phone notifications by web push (the TEAM_PUSH keys). Today they buzz for @mentions, replies, points and jobs. This widens them.</p>
+<div class="tw" style="padding:10px">
+<svg class="sv" viewBox="0 0 360 340" width="100%" role="img" aria-label="Per-channel notification switches and a desktop pop-up">
+<rect x="8" y="4" width="200" height="226" rx="16" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>
+<text x="20" y="26" font-size="12" font-weight="800" fill="var(--ink)">Notify me about…</text>
+<g stroke="var(--line)"><line x1="16" y1="64" x2="200" y2="64"/><line x1="16" y1="92" x2="200" y2="92"/><line x1="16" y1="120" x2="200" y2="120"/><line x1="16" y1="148" x2="200" y2="148"/><line x1="16" y1="176" x2="200" y2="176"/><line x1="16" y1="204" x2="200" y2="204"/></g>
+<g font-size="11.5" fill="var(--ink)"><text x="20" y="54">Direct messages</text><text x="20" y="82">@mentions</text><text x="20" y="110"># connectors</text><text x="20" y="138"># bugs</text><text x="20" y="166"># health</text><text x="20" y="194"># general</text><text x="20" y="222" fill="var(--ink3)" font-size="10">Default: DMs + @mentions on</text></g>
+<g><rect x="150" y="40" width="40" height="20" rx="10" fill="var(--green)"/><circle cx="180" cy="50" r="7" fill="#fff"/>
+<rect x="150" y="68" width="40" height="20" rx="10" fill="var(--green)"/><circle cx="180" cy="78" r="7" fill="#fff"/>
+<rect x="150" y="96" width="40" height="20" rx="10" fill="var(--line)"/><circle cx="160" cy="106" r="7" fill="#fff"/>
+<rect x="150" y="124" width="40" height="20" rx="10" fill="var(--green)"/><circle cx="180" cy="134" r="7" fill="#fff"/>
+<rect x="150" y="152" width="40" height="20" rx="10" fill="var(--line)"/><circle cx="160" cy="162" r="7" fill="#fff"/>
+<rect x="150" y="180" width="40" height="20" rx="10" fill="var(--green)"/><circle cx="180" cy="190" r="7" fill="#fff"/></g>
+<rect x="222" y="4" width="130" height="226" rx="16" fill="var(--card2)" stroke="var(--line)"/>
+<text x="287" y="30" font-size="10.5" font-weight="800" text-anchor="middle" fill="var(--ink3)">YOUR PHONE</text>
+<rect x="232" y="42" width="110" height="52" rx="10" fill="var(--card)" stroke="var(--line)"/><text x="240" y="60" font-size="9.5" font-weight="800" fill="var(--green)">#bugs</text><text x="240" y="75" font-size="9.5" fill="var(--ink2)">Bug bot: career</text><text x="240" y="87" font-size="9.5" fill="var(--ink2)">did not save</text>
+<rect x="232" y="102" width="110" height="52" rx="10" fill="var(--card)" stroke="var(--line)"/><text x="240" y="120" font-size="9.5" font-weight="800" fill="var(--blue)">Leo</text><text x="240" y="135" font-size="9.5" fill="var(--ink2)">looks good, shipping</text>
+<rect x="8" y="244" width="344" height="90" rx="12" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>
+<rect x="116" y="254" width="228" height="50" rx="10" fill="var(--card2)" stroke="var(--green)"/>
+<rect x="124" y="262" width="26" height="26" rx="6" fill="var(--green)"/><text x="137" y="280" font-size="12" font-weight="800" text-anchor="middle" fill="#06170e">K</text>
+<text x="158" y="274" font-size="10.5" font-weight="800" fill="var(--ink)">Knowitball · #health</text><text x="158" y="290" font-size="10" fill="var(--ink2)">Morning check: 2 failed saves</text>
+<text x="20" y="322" font-size="10" fill="var(--ink3)">Desktop pop-up, top corner, like WhatsApp. Works with the tab closed once installed.</text>
+</svg></div>
+<div class="lbl">What it does</div>
+<p class="one" style="margin:0">Every message can buzz your phone. Each channel and each chat has its own on/off switch. Default: on for direct messages and @mentions; you choose the rest. On a Mac or PC you get a pop-up like WhatsApp.</p>
+<div class="lbl">Why</div>
+<p class="one" style="margin:0">Bots will post often (A2, A4). You want #bugs and #health to buzz and #general to stay quiet. A per-channel switch gives that.</p>
+<div class="lbl">How it works</div>
+<ol class="steps">
+<li><b>Your settings</b> (which channels are on) are saved with your account, the way your phone list already is. No new table.</li>
+<li><b>When a message lands</b>, the server checks who has that channel on, and sends the web push to their phones and computers. Same sender, same keys.</li>
+<li><b>On the desktop</b> the admin page asks "Allow notifications?" once. Pick "Install as app" and the pop-ups also arrive with the tab closed.</li>
+</ol>
+<details><summary>What is already there, and what is not</summary>
+<p><b>Exists (read in the code):</b> web push with a key pair; up to 5 devices per person; a worker that shows them; buzzes for @mention, @all, replies, points and jobs; the sender is never buzzed; a thread groups into one line. App icons (192, 512, maskable) are in place.</p>
+<p><b>New:</b> buzz for any message; the per-channel switch; a "mute for 1 hour" option (suggested); the desktop permission prompt and install step. Safari on Mac supports web push from macOS 13 (from memory; re-check). iPhones need the app on the Home Screen (the code already says so).</p>
+<p><b>Not checked:</b> whether the admin already has an install manifest. The icons suggest part of it.</p>
+</details>
+<div class="needs"><span class="k">Needs</span><span class="pill free">free</span><span class="pill harry">needs Harry</span> <span>You: tap Allow once on each computer. The private key is already set in Vercel.</span></div>
+<div class="changed"><b class="t">Changed 25 Oct by the UI section</b>The on/off switch becomes Slack's <b>three choices</b> in a 🔔 menu per channel: every message, only @mentions, off; plus "Mute for 1 hour". #health gets a 4th, "only when red" (U12, U5). A channel set to off still goes bold but never buzzes.</div>
+</div>
+
+<!-- A7 -->
+<h2 class="add"><i></i>A7 · EACH PERSON'S BOT CHECKS ITS OWN CONNECTIONS</h2>
+<div class="cardx">
+<h3><span class="no">A7</span>"@me what am I connected to?"</h3>
+<p class="one">Connections differ per person. Harry may have Higgsfield and Cloudflare. Leo may not. Each person's bot reports its own.</p>
+<div class="tw" style="padding:10px">
+<svg class="sv" viewBox="0 0 360 214" width="100%" role="img" aria-label="Three people, each with different connections">
+<g font-size="11" font-weight="800" fill="var(--ink)"><text x="14" y="22">Harry's bot</text><text x="14" y="86">Mikey's bot</text><text x="14" y="150">Leo's bot</text></g>
+<g font-size="10.5" font-weight="700" text-anchor="middle">
+<rect x="14" y="30" width="62" height="24" rx="12" fill="rgba(61,220,132,.16)" stroke="var(--green)"/><text x="45" y="46" fill="var(--green)">Supabase</text>
+<rect x="82" y="30" width="52" height="24" rx="12" fill="rgba(61,220,132,.16)" stroke="var(--green)"/><text x="108" y="46" fill="var(--green)">Vercel</text>
+<rect x="140" y="30" width="72" height="24" rx="12" fill="rgba(61,220,132,.16)" stroke="var(--green)"/><text x="176" y="46" fill="var(--green)">Higgsfield</text>
+<rect x="218" y="30" width="76" height="24" rx="12" fill="none" stroke="var(--line)" stroke-dasharray="4 3"/><text x="256" y="46" fill="var(--ink3)">Cloudflare</text>
+<rect x="14" y="94" width="62" height="24" rx="12" fill="rgba(61,220,132,.16)" stroke="var(--green)"/><text x="45" y="110" fill="var(--green)">Supabase</text>
+<rect x="82" y="94" width="52" height="24" rx="12" fill="none" stroke="var(--line)" stroke-dasharray="4 3"/><text x="108" y="110" fill="var(--ink3)">Vercel</text>
+<rect x="140" y="94" width="72" height="24" rx="12" fill="rgba(61,220,132,.16)" stroke="var(--green)"/><text x="176" y="110" fill="var(--green)">Higgsfield</text>
+<rect x="14" y="158" width="62" height="24" rx="12" fill="none" stroke="var(--line)" stroke-dasharray="4 3"/><text x="45" y="174" fill="var(--ink3)">Supabase</text>
+<rect x="82" y="158" width="52" height="24" rx="12" fill="rgba(61,220,132,.16)" stroke="var(--green)"/><text x="108" y="174" fill="var(--green)">Vercel</text>
+<rect x="140" y="158" width="72" height="24" rx="12" fill="none" stroke="var(--line)" stroke-dasharray="4 3"/><text x="176" y="174" fill="var(--ink3)">Higgsfield</text></g>
+<text x="14" y="204" font-size="10" fill="var(--ink3)">Invented example. Solid green = connected. Dashed = not connected.</text>
+</svg></div>
+<div class="lbl">What it does</div>
+<p class="one" style="margin:0">Ask your bot and it lists your connected accounts, what is on, and credits left. /show (A1) shows the same list for the whole team side by side.</p>
+<div class="lbl">Why</div>
+<p class="one" style="margin:0">A bot cannot use a connection its owner does not have. This tells you which jobs can go to whom, before you send one.</p>
+<div class="lbl">How it works</div>
+<ol class="steps">
+<li><b>Each bot runs a look-only check</b> on every service it holds a link to.</li>
+<li><b>It reads the account name and the number</b> (credits, MB, deploys left). Nothing is changed.</li>
+<li><b>It posts one tidy list</b>, and caches it for a few minutes so /show is quick.</li>
+</ol>
+<div class="needs"><span class="k">Needs</span><span class="pill free">free</span> <span>Look-only calls cost no credits. Needs A1's bots.</span></div>
+<div class="changed"><b class="t">Changed 25 Oct by the UI section</b><b>@me</b> is a short name for your own bot ("Harry bot"), listed under Bots in the channel list. Its hover card shows "Runs as Harry · N connections" and its live job (U0.2).</div>
+</div>
+
+<!-- OVERLAP -->
+<h2 class="nxt"><i></i>YOUR CALLS: QUESTIONS FOR THE TEAM</h2>
+<div class="dt" style="margin-bottom:8px">Each has the plan's recommended answer. Say if you see it differently.</div>
+<ul class="calls">
+<li><div class="q"><span class="rec">YES</span>Build notifications, #bugs and #health before the bots?</div><div class="a">They need no bot, they build on what works, and they make every later bot visible.</div></li>
+<li><div class="q"><span class="rec">YES</span>Higgsfield on or off by credits, not parked?</div><div class="a">The Higgsfield bot reports credits and turns off at zero. Spending credits always asks first.</div></li>
+<li><div class="q"><span class="rec">YES</span>Look-only answers at once, changes ask "Approve?"</div><div class="a">Same three rules as the permissions page. Wipes are never allowed.</div></li>
+<li><div class="q"><span class="rec">YES</span>Prove one bot end to end before building the rest?</div><div class="a">How a bot "runs as you" is reasoned, not tested. One test settles Route 1 or 2.</div></li>
+<li><div class="q"><span class="rec">YES</span>Default notifications: DMs and @mentions everywhere, every message in #bugs, #health only when red?</div><div class="a">Bots will post often. Quiet by default, loud by choice. <b>Changed 25 Oct (UI):</b> was "DMs and @mentions on, the rest your choice"; now a 3-way 🔔 per channel with these starting settings (U12).</div></li>
+<li><div class="q"><span class="rec">YES</span>Slack's layout: list 220 px, chat, thread 380 px, list folds with « and ⌘/Ctrl Shift D?</div><div class="a">Same keys as Slack, remembered per device. Under 900 px the list lays over the chat (U0, U0.1).</div></li>
+<li><div class="q"><span class="rec">YES</span>Messages without bubbles, Clean (36 px faces) by default, Compact as a choice?</div><div class="a">Bubbles at 84% wide waste a third of a computer screen. Phone stays Clean, like Slack's phone app.</div></li>
+<li><div class="q"><span class="rec">YES</span>Nine preset channels: add #todo, #health and #connectors to today's six?</div><div class="a">To-dos leave #bugs, so #bugs is only bugs. Presets can be renamed, never deleted (U14).</div></li>
+<li><div class="q"><span class="rec">YES</span>Away after 10 minutes, not 30?</div><div class="a">Slack's rule. Green then means "here now". Today's room says "live" for 30 min.</div></li>
+<li><div class="q"><span class="rec">YES</span>Red number only for @mentions and DMs; plain new messages just go bold?</div><div class="a">With bots posting, a red number on every channel stops meaning anything.</div></li>
+<li><div class="q"><span class="rec">YES</span>Phone: four bottom tabs (Home, DMs, Activity, You)?</div><div class="a">Slack's phone app used these four from 2020. Later lives inside Activity.</div></li>
+<li><div class="q"><span class="rec">ALL 3</span>Who can see the #today week view (T2): all three of us, or Harry only?</div><div class="a">My pick: all three. The answers are already posted in #today for everyone, and the same view for each person keeps it a shared tool, not a check on one person <span class="src re">reasoned</span>. Harry only is the other choice. Good morning / good night times follow the same rule, and only for people who switched them on.</div><div class="changed"><b class="t">Changed (Harry, 25 Oct)</b>New call.</div></li>
+</ul>
+
+<!-- BOT BUILD ORDER -->
+<h2 class="nxt"><i></i>BUILD ORDER: TEAM ROOM AND BOTS</h2>
+<div class="dt" style="margin-bottom:6px">S = one sitting · M = about a day · L = several days (reasoned guesses).</div>
+<div class="lbl">First: needs no bots</div>
+<ul class="n">
+<li><div class="hd">1. Notifications per channel, and desktop pop-ups (A6) <span class="step">M</span></div><div class="dt">Builds on the phone push that works. Gives you the buzz that everything after relies on.</div><div class="you"><b>You:</b> tap Allow on each computer.</div></li>
+<li><div class="hd">2. #bugs fills itself (A2) <span class="step">M</span></div><div class="dt">Trigger, one small server, the post. "Hand to a bot" can start as "assign to a person" until bots exist.</div><div class="you"><b>You:</b> run one SQL page; confirm the bug table's name.</div></li>
+<li><div class="hd">3. #health morning post, then weekly (A4) <span class="step">M</span></div><div class="dt">Reuses the same small server. Weekly trend needs a week of saved numbers first.</div><div class="you"><b>You:</b> nothing beyond the step 2 yes.</div></li>
+</ul>
+<div class="lbl">Then: needs the bots first</div>
+<ul class="n">
+<li><div class="hd">4. Prove one bot end to end <span class="step">M</span></div><div class="dt">"@supabase what's happening?" answered, as the asker, with a look-only check. Decide Route 1 or 2 (A1) from what works.</div><div class="you"><b>You:</b> say yes to the small server (A3) and link Supabase.</div></li>
+<li><div class="hd">5. The connectors channel, /show and the Approve button (A1, A7) <span class="step">L</span></div><div class="dt">Add Vercel, Higgsfield, Cloudflare one at a time. Changes always ask first.</div><div class="you"><b>You:</b> link each service; set who may approve what.</div></li>
+<li><div class="hd">6. Comment-box bots (A5) <span class="step">L</span></div><div class="dt">Saves the boxed picture, reads the @bot name, sends the job. Start with "@claude fix this" and "@Leo bot look over the changes".</div><div class="you"><b>You:</b> pick which bot jobs run without asking.</div></li>
+</ul>
+
+<details><summary>What this page could not check</summary>
+<ul>
+<li>UI (new): Slack does not publish its pixel sizes; every Slack size is an estimate. Slack's current phone tabs were not confirmed (only the 2020 set). Nothing was built or run; "today" sizes were read from the branch CSS.</li>
+<li>Team room and bots (new): how a bot runs with a person's own connections is a design, not a tested fact. The bug-report table's name and columns. Edge Function free-plan limits (from memory). Safari desktop push support (from memory). Whether an install manifest exists. The permissions page was named in your brief; I did not open it.</li>
+</ul>
+</details>
+
+<footer>25 Oct 2026. A plan that is being built now on the Harry branch: nothing here is live yet. UI research: Slack, Teams, Discord and Mattermost (sources in the UI toggle). 4 Higgsfield mood pictures; every other picture is a mock-up drawn in the page, with made-up names and numbers.</footer>
+</div>
+
+<style>
+.zm-t{cursor:zoom-in}
+.zm-ov{position:fixed;inset:0;z-index:1000;background:rgba(10,14,12,.92);overflow:auto;-webkit-overflow-scrolling:touch;padding:calc(56px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.zm-ov[hidden]{display:none!important}
+.zm-bar{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));display:flex;gap:8px;z-index:1001}
+.zm-bar button{font:600 15px/1 system-ui,sans-serif;padding:10px 14px;border-radius:10px;border:0;background:#fff;color:#111;cursor:pointer}
+.zm-st{transform-origin:0 0;background:var(--bg,#fff);border-radius:10px;display:inline-block}
+.zm-st img,.zm-st svg{max-width:none!important}
+.zm-hint{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));color:#fff;font:13px system-ui,sans-serif;opacity:.8}
+</style>
+<div class="zm-ov" id="zmOv" hidden><div class="zm-hint">Pinch or + / − to zoom</div><div class="zm-bar"><button id="zmOut" aria-label="Zoom out">−</button><button id="zmIn" aria-label="Zoom in">+</button><button id="zmX" aria-label="Close">✕</button></div><div id="zmBox"></div></div>
+<script>
+document.addEventListener('click',function(e){var b=e.target.closest('[data-uxtog]');if(!b)return;var d=b.closest('.ux-desk');if(!d)return;var c=d.classList.toggle('closed');d.querySelectorAll('[data-uxtog]').forEach(function(x){x.setAttribute('aria-expanded',String(!c));});});
+</script>
+<script>
+(function(){
+  var sel='img,.ux-desk,.ux-phones,.ux-box,.ux-mini,svg';
+  var ov=document.getElementById('zmOv'),box=document.getElementById('zmBox'),st=null,sc=1,w=0,h=0;
+  function zoomable(el){
+    if(el.closest('.zm-ov'))return false;
+    if(el.tagName.toLowerCase()==='svg'){var r=el.getBoundingClientRect();if(r.width<120)return false;}
+    var p=el.parentElement&&el.parentElement.closest(sel);
+    return !p;
+  }
+  function apply(){st.style.transform='scale('+sc+')';box.style.width=(w*sc)+'px';box.style.height=(h*sc)+'px';}
+  function open(el){
+    var r=el.getBoundingClientRect();
+    var c=el.cloneNode(true);c.classList.remove('zm-t');
+    st=document.createElement('div');st.className='zm-st';st.appendChild(c);
+    box.innerHTML='';box.appendChild(st);ov.hidden=false;document.body.style.overflow='hidden';
+    if(c.tagName.toLowerCase()==='img'){c.style.width=(c.naturalWidth||r.width*2)+'px';c.style.height='auto';}
+    else if(c.tagName.toLowerCase()==='svg'){c.style.width=Math.max(r.width,900)+'px';c.style.height='auto';}
+    else{c.style.width=Math.max(el.scrollWidth,r.width)+'px';}
+    w=st.offsetWidth;h=st.offsetHeight;
+    var fit=(ov.clientWidth-32)/w;sc=Math.min(fit,Math.max(1,fit));apply();ov.scrollTo(0,0);
+  }
+  function close(){ov.hidden=true;box.innerHTML='';document.body.style.overflow='';}
+  document.querySelectorAll(sel).forEach(function(el){if(zoomable(el)){el.classList.add('zm-t');el.setAttribute('title','Tap to enlarge');}});
+  document.addEventListener('click',function(e){
+    if(ov.contains(e.target)){if(e.target===ov)close();return;}
+    var t=e.target.closest('.zm-t');if(!t)return;
+    if(e.target.closest('a,button,summary,input,label'))return;
+    e.preventDefault();open(t);
+  });
+  document.getElementById('zmX').onclick=close;
+  document.getElementById('zmIn').onclick=function(){sc=Math.min(sc*1.4,6);apply();};
+  document.getElementById('zmOut').onclick=function(){sc=Math.max(sc/1.4,.2);apply();};
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!ov.hidden)close();});
+})();
+</script>
+</body></html>

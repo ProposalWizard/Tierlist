@@ -18,6 +18,7 @@ import type { CareerState } from "@/lib/star/types";
 import { careerOverview, type CareerOverviewData } from "@/lib/star/careerOverview";
 import { pitchFont } from "./ui/pitchFont";
 import { CARD_W, CARD_H, makeCareerCardPicture } from "./shareCardDraw";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 
 const GOLD = "#fbbf24";
 
@@ -43,7 +44,8 @@ type Made = { kind: "making" } | { kind: "ready"; url: string; file: File } | { 
 
 /** Make the career's picture once; its object URL is freed when it goes. */
 function useCardPicture(career: CareerState): { o: CareerOverviewData; made: Made } {
-  const o = useMemo(() => careerOverview(career), [career]);
+  const calYears = useLeoUpdate("bugFixes"); // Leo's 24 Oct update: calendar season years
+  const o = useMemo(() => careerOverview(career, { calendarYears: calYears }), [career, calYears]);
   const [made, setMade] = useState<Made>({ kind: "making" });
   useEffect(() => {
     let alive = true;
