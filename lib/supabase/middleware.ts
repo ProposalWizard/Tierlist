@@ -16,7 +16,7 @@ import { type NextRequest, NextResponse } from "next/server";
 
 export async function updateSession(
   request: NextRequest,
-): Promise<{ response: NextResponse; userId: string | null }> {
+): Promise<{ response: NextResponse; userId: string | null; isAnonymous: boolean }> {
   // Start with a plain "pass-through" response; we'll mutate cookies on it.
   let supabaseResponse = NextResponse.next({ request });
 
@@ -52,12 +52,15 @@ export async function updateSession(
   // A failed check (no session, bad token, network) counts as signed out,
   // exactly as a failed getUser() did.
   let sub: unknown = null;
+  let anon = false;
   try {
     const { data } = await supabase.auth.getClaims();
     sub = data?.claims?.sub;
+    // Guest accounts (lib/guest/config.ts) carry is_anonymous in the token.
+    anon = data?.claims?.is_anonymous === true;
   } catch {
     sub = null;
   }
 
-  return { response: supabaseResponse, userId: typeof sub === "string" && sub ? sub : null };
+  return { response: supabaseResponse, userId: typeof sub === "string" && sub ? sub : null, isAnonymous: anon };
 }

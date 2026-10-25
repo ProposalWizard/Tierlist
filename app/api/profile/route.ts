@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { NextResponse } from "next/server";
+import { isGuestUser } from "@/lib/guest/config";
 
 // GET /api/profile — return current user's profile
 export async function GET() {
@@ -18,10 +19,12 @@ export async function GET() {
 }
 
 // PUT /api/profile — update username / anonymous flag
+// ("anonymous" here is the old hide-my-name choice, NOT a guest account.)
 export async function PUT(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+  // Guests (lib/guest/config.ts) get a username only after saving with Google.
+  if (!user || isGuestUser(user)) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
   let body: Record<string, unknown>;
   try {

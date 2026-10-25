@@ -15,6 +15,8 @@
 
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { guestAccountsOn } from "@/lib/guest/config";
+import { campaignFor } from "@/lib/campaigns";
 
 const SKIP_USERNAME_PREFIXES = [
   "/setup-username",
@@ -35,13 +37,33 @@ export async function middleware(request: NextRequest) {
   // One login check per request (was two: updateSession asked Supabase, then
   // this file built a second client and asked again). updateSession refreshes
   // the cookie and says who is signed in.
-  const { response, userId } = await updateSession(request);
+  const { response, userId, isAnonymous } = await updateSession(request);
   const user = userId ? { id: userId } : null;
 
   const { pathname } = request.nextUrl;
 
+  // Guest accounts (lib/guest/config.ts): a guest is a real Supabase user with
+  // is_anonymous set. Everywhere outside Road to Ballon d'Or it counts as
+  // signed out: no tierlist making, no username screen. With the switch off
+  // no guest can exist, so this changes nothing today.
+  const guest = isAnonymous;
+
+  // Ad landing pages: /play/<campaign> shows app/campaign/[campaign] (the
+  // address stays /play/...). Only for a slug in lib/campaigns.ts, so a
+  // tierlist at /play/<id> is untouched; switch off = a 404 as before.
+  if (guestAccountsOn()) {
+    const m = /^\/play\/([a-z0-9-]+)\/?$/.exec(pathname);
+    if (m && campaignFor(m[1])) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/campaign/${m[1]}`;
+      const rewritten = NextResponse.rewrite(url);
+      response.cookies.getAll().forEach((c) => rewritten.cookies.set(c));
+      return rewritten;
+    }
+  }
+
   if (pathname.startsWith("/tierlist") || pathname.startsWith("/create")) {
-    if (!user) {
+    if (!user || guest) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/auth";
       redirectUrl.searchParams.set("next", pathname);
@@ -49,7 +71,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (user && !shouldSkipUsernameCheck(pathname)) {
+  if (user && !guest && !shouldSkipUsernameCheck(pathname)) {
     const hasUsernameCookie = request.cookies.get("has-username")?.value === "1";
     if (!hasUsernameCookie) {
       const { createClient: createServiceClient } = await import("@supabase/supabase-js");

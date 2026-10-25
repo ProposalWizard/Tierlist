@@ -245,6 +245,44 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts, the ovation ovation.ts, ovation3d.ts, ovationLook.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts; the Ballon d'Or night components/star/BallonDorNight.tsx, lib/star/ballonDorNight.ts, ballonDor3d.ts, ballonDorNightLook.ts; the season awards components/star/SeasonAwardsScreen.tsx (lib/star/seasonAwards.ts computeSeasonAwardStats); the faces on the award cards components/star/Headshot3D.tsx, lib/star/headshot3d/.",
   },
+  "/star-guest-dev": {
+    title: "Guest accounts",
+    what: "Playing Road to Ballon d'Or without signing in. A guest gets a hidden account that saves like a real one; later, Save with Google keeps the same account so nothing is lost. Also the ad landing pages at /play/… that drop a player straight into a ready-made career. This page shows every screen at phone size.",
+    buttons: [
+      { group: "The switch", items: [
+        ["ON / OFF", "Whether this build has guest accounts. OFF = the live site works exactly as before: no Play now button, the /play/ pages are not found, no prompt."],
+        ["Bot check (Turnstile)", "Whether the robot check before a new guest is set up. Not set up = guests are made without it."],
+        ["You right now", "Signed out, a guest account, or a real account."],
+      ] },
+      { group: "Try it for real", items: [
+        ["Start a guest account", "Makes a REAL guest account in Supabase for this browser. Greyed out while the switch is OFF. Fails politely until Supabase's \"Allow anonymous sign-ins\" is on."],
+        ["Save with Google", "Turns the guest account you are on into a real Google account (same account, nothing lost). Needs Supabase's \"Allow manual linking\" on."],
+        ["/play/league-two-striker · /play/wonderkid", "Opens that ad landing page as a player would see it."],
+      ] },
+      { group: "The pictures", items: [
+        ["Ad landing pages", "Each landing page in a phone. Its button makes a guest account, records which ad it came from, and starts that player's trial. Here the button does nothing."],
+        ["Save your career", "The three versions of the prompt: after the first match, after the first season, and when the Google account is already taken. Here the buttons do nothing."],
+      ] },
+    ],
+    saving: [
+      "The pictures save nothing.",
+      "Start a guest account makes a real account in Supabase (shared). Its careers save like any account's (the star_careers table).",
+      "Which ad a guest came from is saved on the account itself and, once guest_accounts.sql is run, in the account_campaigns table.",
+    ],
+    inGame: [
+      "Switch ON: the game's \"Sign in to play\" screen gets a Play now — no sign-up button first.",
+      "The /play/<name> pages are the links to put in TikTok and Instagram ads.",
+      "Guests see Save your career after their first match and after their first season, on the home screens only.",
+      "A guest counts as signed out everywhere else: no tierlist making, no username, no buying in the shop.",
+    ],
+    needs: [
+      "Vercel: NEXT_PUBLIC_GUEST_ACCOUNTS=on, then redeploy. Unset = off.",
+      "Supabase → Authentication: \"Allow anonymous sign-ins\" ON and \"Allow manual linking\" ON.",
+      "Optional bot check: a Cloudflare Turnstile site key in NEXT_PUBLIC_TURNSTILE_SITE_KEY, and its secret in Supabase → Authentication → Attack Protection.",
+      "supabase/migrations/guest_accounts.sql (PENDING, not run): keeps guests out of team, community and leaderboard tables, records campaigns, and tidies idle guests each night.",
+    ],
+    dev: "app/star-guest-dev/page.tsx; switch lib/guest/config.ts; start/upgrade lib/guest/start.ts, captcha.ts, moveSaves.ts, campaignCareer.ts; campaigns lib/campaigns.ts; landing app/campaign/[campaign] (middleware.ts rewrites /play/<slug>); prompt components/guest/GuestSavePrompt.tsx, GuestPlayButton.tsx; hooks in app/star-dev/page.tsx; app/auth/callback/route.ts (guest_link=taken); SQL supabase/migrations/guest_accounts.sql; plan docs/plans/2026-10-25/guest-accounts-plan.md.",
+  },
   "/star-awards-night-dev": {
     title: "Season awards night",
     what: "The season's awards read out in a small hall: the host calls each award, the three nominees show, then the winner walks up from his table and lifts the trophy. Made-up results: you win 2 of the 5 (Golden Boot, Player of the Season) and lose 3.",

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isGuestUser } from "@/lib/guest/config";
 import { NextResponse } from "next/server";
 import { GEMS_OFF_MESSAGE, IDEM_KEY, PAID_ITEM_ID, walletDbMissing } from "@/lib/star/wallet";
 
@@ -26,7 +27,8 @@ const KNOWN = new Set(["signed-out", "not-for-sale", "price-changed", "not-enoug
 export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ ok: false, code: "signed-out" }, { status: 401 });
+  // Guests (lib/guest/config.ts) cannot buy: a guest account can be tidied away.
+  if (!user || isGuestUser(user)) return NextResponse.json({ ok: false, code: "signed-out" }, { status: 401 });
 
   let body: { item_id?: unknown; idem_key?: unknown; expected_price?: unknown } | null = null;
   try { body = await req.json(); } catch { /* handled below */ }
