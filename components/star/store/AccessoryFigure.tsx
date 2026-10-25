@@ -35,6 +35,9 @@ export const CELEBRATION_POSE: Record<Celebration, BodyPose> = {
   hands_up: { armLift: 1, armSpread: 0.12 },
   arms_out: { armSpread: 1, armLift: 0.1 },
   knee_slide: { crouch: 1, armSpread: 0.45, armLift: 1 },
+  fist_pump: { armLift: 0.75, armSpread: 0.2, armLead: 1 },
+  jump: { armLift: 1, armSpread: 0.35, crouch: 0.25 },
+  roar: { armLift: -0.55, armSpread: 0.7 },
 };
 
 // One face photo for every preview, loaded once.

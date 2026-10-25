@@ -61,7 +61,7 @@ export const HUD_SPEC: Record<HudScreen, HudLeft> = {
   style: "reputation",
 };
 
-export default function TopHud({ career, screen, onCareer, className = "" }: {
+export default function TopHud({ career, screen, onCareer, onStarPass, className = "" }: {
   career: CareerState;
   screen: HudScreen;
   /** Kept for callers: the can left the HUD in v0.24 (it lives on Home). */
@@ -70,9 +70,12 @@ export default function TopHud({ career, screen, onCareer, className = "" }: {
   onOpenCans?: () => void;
   /** Saves a Star Pass claim / Locker change. Without it the Star Pass is look-only. */
   onCareer?: (c: CareerState) => void;
+  /** Told when the Star Pass opens and shuts, so nothing pops up over it. */
+  onStarPass?: (open: boolean) => void;
   className?: string;
 }) {
-  const [starPass, setStarPass] = useState(false);
+  const [starPass, setStarPassRaw] = useState(false);
+  const setStarPass = (open: boolean) => { setStarPassRaw(open); onStarPass?.(open); };
   return (
     // Room on top for the icons that rise above the bars.
     <div data-hud={screen} className={`sk-top relative z-10 shrink-0 px-2 pb-2 pt-2.5 ${className}`} style={{ background: "var(--sk-top-bg)", boxShadow: "0 4px 10px -4px rgba(0,0,0,.4)" }}>

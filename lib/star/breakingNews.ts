@@ -9,7 +9,7 @@
  * trophy. Nothing else.
  */
 import type { CareerState, Fixture } from "./types";
-import { divisionOf, leagueNameFor, relegationPlaces, isRegionalDivision, divisionBelow } from "./calendar";
+import { divisionOf, leagueNameFor, type CareerDivision, relegationPlaces, isRegionalDivision, divisionBelow } from "./calendar";
 import { sortLeague } from "./season";
 import { shortClub } from "./media/grammar";
 import { faceOrFake } from "./fakeFaces";
@@ -26,11 +26,19 @@ const faceOf = (career: CareerState) =>
 
 const upper = (s: string) => s.toUpperCase();
 
-/** "Youngster signs for Brentford" — a player under 21 is a youngster. */
-export function signingNews(career: CareerState, club: string): BreakingNews {
-  const p = career.player;
+/**
+ * "Youngster signs for Brentford" — a player under 21 is a youngster.
+ *
+ * `next` is for a summer move: the card shows over the NEW season, but the
+ * career passed in is still last season's (old division, last season's age).
+ * Pass the new club's division and next season's age so the card matches
+ * the HUD (playtest 22 Oct 2026: "Leo Mid, 16, … the National League" for
+ * a 17-year-old joining a National League North club).
+ */
+export function signingNews(career: CareerState, club: string, next?: { division?: CareerDivision; age?: number }): BreakingNews {
+  const p = { ...career.player, age: next?.age ?? career.player.age };
   const who = p.age <= 20 ? "Youngster" : "Player";
-  const league = leagueNameFor(divisionOf(career));
+  const league = leagueNameFor(next?.division ?? divisionOf(career));
   return {
     headline: upper(`${who} signs for ${shortClub(club)}`),
     line: `${p.firstName} ${p.lastName}, ${p.age}, has joined ${shortClub(club)} and wants to take charge of the ${league}.`,

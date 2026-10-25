@@ -227,6 +227,7 @@ function pose(ch, clip, time, facing, dive) {
     ch.inner.position.set(-dive.side * dive.carry * p, FIT.dy - dive.drop * p, 0);
   }
   ch.holder.updateMatrixWorld(true);
+  if (window.__postPose) { window.__postPose(ch); ch.holder.updateMatrixWorld(true); }
 }
 function restBones(ch) {
   ch.inner.traverse((o) => { if (o.isBone) o.userData.rest = { p: o.position.clone(), q: o.quaternion.clone(), s: o.scale.clone() }; });
@@ -783,6 +784,167 @@ window.rebakeA = async (index) => {
   idx.standH = standing[5];
   idx.style = "styleA";
   return { files, index: idx };
+};
+
+/**
+ * GOAL CELEBRATIONS (Leo, 22 Oct 2026: "After you score"). Six capture clips
+ * from anims3d/mocap.glb baked on the same body, camera, size, outline, kit
+ * masks and 8 facings as every other player clip, into atlas 2. The hips'
+ * height is brought to this body's (as people3d.ts does: rest Hips.y / the
+ * file's hipsY). Travel is taken out: the knee slide's 5.88 m run is zeroed
+ * (the game slides him along the grass itself); the others lose only their
+ * start-to-end drift, so a sway or lean stays.
+ */
+const CELEBS = [
+  { name: "celebHandsUp", file: "celebrate_safe", frames: 6, loop: "loop", spread: 4 },
+  // the capture runs a whole circle (out of the frame, and round to his back): baked
+  // running straight on the spot, arms out, so the facing the game gives is the one he shows
+  // times: off the moments its crossover steps bring the knees together (celebbones)
+  { name: "celebArmsOut", file: "celebrate_airplane", frames: 10, loop: "once", zero: true, noYaw: true, spread: 5, times: [0, 0.33, 0.6, 0.95, 1.35, 1.75, 1.95, 2.4, 2.7, 3.0] },
+  // times: even through the slide. (The knees used to press together between 1.3 s and
+  // 1.9 s and those frames were skipped; keyed.py's knee_slide was fixed on 22 Oct 2026:
+  // knees ~33 cm apart through the whole slide, measured with celebbones.)
+  { name: "celebKneeSlide", file: "knee_slide", frames: 9, loop: "once", zero: true, times: [0, 0.3, 0.6, 0.95, 1.3, 1.7, 2.1, 2.6, 3.2] },
+  { name: "celebFistPump", file: "celebrate_pump", frames: 8, loop: "once" },
+  { name: "celebJump", file: "celebrate_jump", frames: 7, loop: "once", spread: 4 },
+  { name: "celebRoar", file: "celebrate_roar", frames: 7, loop: "once" },
+];
+/** Legs a few degrees wider about his own forward line (spread, degrees each side): the
+ *  captures that stand feet together or run a crossover gait bring the boots or knees
+ *  into each other; a little wider keeps every limb clear (RUL-3D-005). */
+function spreadLegs(deg) {
+  if (!deg) return null;
+  const P = new THREE.Quaternion(), R = new THREE.Quaternion(), f = new THREE.Vector3();
+  return (ch) => {
+    f.set(0, 0, 1).applyQuaternion(ch.holder.quaternion);
+    for (const [nm, sg] of [["LeftUpLeg", 1], ["RightUpLeg", -1]]) {
+      let b = null; ch.inner.traverse((o) => { if (o.isBone && o.name === nm) b = o; });
+      if (!b) continue;
+      b.parent.getWorldQuaternion(P);
+      R.setFromAxisAngle(f, (sg * deg * Math.PI) / 180);
+      b.quaternion.premultiply(P.clone().invert().multiply(R).multiply(P));
+    }
+  };
+}
+async function celebClip(c, ch) {
+  window.__postPose = spreadLegs(c.spread);
+  if (!window.__mocapGltf) window.__mocapGltf = await parse(stripToAnimation(await fetchBuf("/star/anims3d/mocap.glb")));
+  const g = window.__mocapGltf;
+  const src = g.animations.find((a) => a.name === c.file);
+  if (!src) throw new Error("mocap has no " + c.file);
+  const clip = src.clone();
+  let hips = null; ch.inner.traverse((o) => { if (o.isBone && o.name === "Hips") hips = o; });
+  const k = hips.userData.rest.p.y / (g.scene.userData.hipsY || hips.userData.rest.p.y);
+  for (const tr of clip.tracks) {
+    if (!/\.position$/.test(tr.name)) continue;
+    const v = tr.values.slice(); for (let i = 0; i < v.length; i++) v[i] *= k;
+    if (/^Hips\.position$/.test(tr.name)) {
+      const n = tr.times.length, x0 = v[0], z0 = v[2], x1 = v[(n - 1) * 3], z1 = v[(n - 1) * 3 + 2];
+      for (let i = 0; i < n; i++) {
+        if (c.zero) { v[i * 3] = 0; v[i * 3 + 2] = 0; continue; }
+        const f = n > 1 ? i / (n - 1) : 0;
+        v[i * 3] -= x0 + (x1 - x0) * f; v[i * 3 + 2] -= z0 + (z1 - z0) * f;
+      }
+    }
+    tr.values = v;
+  }
+  if (c.noYaw) {
+    // take the hips' turn about the vertical out (keep the first frame's), so he stays facing one way
+    const tr = clip.tracks.find((t) => /^Hips\.quaternion$/.test(t.name));
+    const v = tr.values, q = new THREE.Quaternion(), tw = new THREE.Quaternion();
+    const twist = (qq) => { const t = new THREE.Quaternion(0, qq.y, 0, qq.w); return t.lengthSq() < 1e-9 ? new THREE.Quaternion() : t.normalize(); };
+    const t0 = twist(q.fromArray(v, 0));
+    for (let i = 0; i < v.length; i += 4) {
+      q.fromArray(v, i); tw.copy(twist(q));
+      q.premultiply(tw.invert()).premultiply(t0); q.toArray(v, i);
+    }
+  }
+  return clip;
+}
+function celebTimes(c, clip) {
+  // a once clip's last frame a hair before the end (at the end exactly the mixer wraps to the first pose)
+  const d = clip.duration, end = d - 1e-3;
+  if (c.times) return c.times.map((t) => Math.min(t, end));
+  return Array.from({ length: c.frames }, (_, i) => c.loop === "loop" ? (d * i) / c.frames : Math.min(end, (d * i) / (c.frames - 1)));
+}
+async function bakeCelebCells(only) {
+  await ready; show("player");
+  const out = [];
+  for (const c of CELEBS) {
+    if (only && !only.includes(c.name)) continue;
+    const clip = await celebClip(c, chars.player);
+    const ts = celebTimes(c, clip);
+    // a once clip's last frame is held: frames / duration plays it in its real length
+    const cl = { name: c.name, fps: +(c.frames / clip.duration).toFixed(3), loop: c.loop, dirs: 8, frames: c.frames, duration: +clip.duration.toFixed(3), t3d: ts.map((t) => +t.toFixed(3)), cells: [] };
+    for (const fac of DIRS8) for (const t of ts) cl.cells.push(bakeFrame(chars.player, clip, t, fac, null));
+    out.push(cl);
+  }
+  window.__postPose = null;
+  return out;
+}
+window.bakeCelebs = async (tag, q = 0.84) => {
+  const clips = await bakeCelebCells();
+  const atl = pack([{ clips }]);
+  { const mc = atl.mask.getContext("2d"); const im = mc.getImageData(0, 0, atl.w, atl.h); const d = im.data;
+    for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) d[i + k] = Math.round(d[i + k] / 63.75) * 63.75 | 0;
+    mc.putImageData(im, 0, 0); }
+  const frag = { atlas: { color: `atlas-2${tag}.webp`, mask: `mask-2${tag}.webp`, w: atl.w, h: atl.h }, clips: {} };
+  // t3d (once clips): each frame's second in the 3D clip; the game shows the last frame at or before t
+  for (const c of clips) frag.clips[c.name] = { fps: c.fps, loop: c.loop, dirs: 8, frames: c.frames, atlas: 2, ...(c.loop === "once" ? { t3d: c.t3d } : {}),
+    cells: c.cells.map((f) => [f.px, f.py, f.w, f.h, +f.ax.toFixed(1), +f.ay.toFixed(1)]) };
+  const durations = Object.fromEntries(clips.map((c) => [c.name, c.duration]));
+  return { color: atl.col.toDataURL("image/webp", q), mask: atl.mask.toDataURL("image/png"), frag: JSON.stringify(frag), durations };
+};
+/** A look sheet of the celebrations: spec "clip,clip:dirIdx,dirIdx" (empty = all six, facing down). */
+window.celebSheet = async (spec = "") => {
+  const [names, ds] = spec.split(":");
+  const only = names ? names.split(",") : null;
+  const clips = await bakeCelebCells(only);
+  const dsel = (ds || "2").split(",").map(Number);
+  const cols = Math.max(...clips.map((c) => c.frames));
+  const cells = [];
+  for (const c of clips) for (const d of dsel) {
+    for (let i = 0; i < c.frames; i++) cells.push(c.cells[d * c.frames + i]);
+    for (let i = c.frames; i < cols; i++) cells.push({ color: small(1, 1), ax: 0, ay: 0, w: 1, h: 1 });
+  }
+  return { url: bigSheet(cells, cols).toDataURL(), cols };
+};
+/** Numbers per frame for one celebration: lowest point of the body, and key joints (metres, world). */
+window.celebBones = async (name, n = 17) => { // n = 0: the baked frames' times
+  await ready; show("player");
+  const c = CELEBS.find((x) => x.name === name);
+  const clip = await celebClip(c, chars.player);
+  const sk = chars.player.skinned, v = new THREE.Vector3(), out = [];
+  const B = (nm) => { let b = null; chars.player.inner.traverse((o) => { if (o.isBone && o.name === nm) b = o; }); return b; };
+  const names = ["Hips", "LeftUpLeg", "RightUpLeg", "LeftLeg", "RightLeg", "LeftFoot", "RightFoot", "LeftToeBase", "RightToeBase", "Spine2", "Head", "LeftForeArm", "RightForeArm", "LeftHand", "RightHand"];
+  const ts = n ? Array.from({ length: n }, (_, i) => (clip.duration * i) / (n - 1)) : celebTimes(c, clip);
+  for (const t of ts) {
+    pose(chars.player, clip, t, Math.PI / 2, null); sk.skeleton.update();
+    let minY = Infinity, maxY = -Infinity;
+    const cnt = sk.geometry.attributes.position.count;
+    for (let k = 0; k < cnt; k += 3) { sk.getVertexPosition(k, v); v.applyMatrix4(sk.matrixWorld); if (v.y < minY) minY = v.y; if (v.y > maxY) maxY = v.y; }
+    const j = {}; for (const nm of names) { const b = B(nm); if (b) { b.getWorldPosition(v); j[nm] = [+v.x.toFixed(2), +v.y.toFixed(2), +v.z.toFixed(2)]; } }
+    out.push({ t: +t.toFixed(2), minY: +minY.toFixed(3), maxY: +maxY.toFixed(3), ...j });
+  }
+  window.__postPose = null;
+  return out;
+};
+/** A big uncropped close-up of one celebration at given frame times, one facing (to check limbs). */
+window.celebClose = async (name, facing, n = 9, tilt = CFG.tilt) => { // n = 0: the baked frames' times
+  await ready; show("player");
+  setCamera(tilt);
+  const c = CELEBS.find((x) => x.name === name);
+  const clip = await celebClip(c, chars.player);
+  const urls = [];
+  const ts = n ? Array.from({ length: n }, (_, i) => (clip.duration * i) / (n - 1)) : celebTimes(c, clip);
+  for (const t of ts) {
+    pose(chars.player, clip, t, facing, null);
+    const col = renderer.domElement; renderer.setClearColor(0x3f8f3a, 1); chars.player.uniforms.uMode.value = 0; renderer.render(scene, cam);
+    const cv = small(col.width / 2, col.height / 2); cv.getContext("2d").drawImage(col, 0, 0, cv.width, cv.height);
+    urls.push(cv.toDataURL("image/jpeg", 0.85));
+  }
+  renderer.setClearColor(0x000000, 0); setCamera(CFG.tilt); window.__postPose = null;
+  return urls;
 };
 
 /** Rows of pairs: top = a, bottom = b, each at 2x bake size and zoomed 3x. */

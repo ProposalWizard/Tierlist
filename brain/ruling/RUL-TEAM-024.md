@@ -2,10 +2,15 @@
 id: RUL-TEAM-024
 type: ruling
 client: team
-tags: [process, rule, style, team]
+tags: [team, process]
 status: live
-date: 2026-10-25
-source: "docs/plans/2026-10-25/harry-feedback-0108h.md:5"
-summary: Feedback on a patch note is answered on that same patch note page (a follow-up section with before/after), never a new artifact.
+date: 2026-10-24
+source: "docs/brain-sources/leo-no-todos-2026-10-24.md:3"
+summary: "Only give people todos if it is actually needed; if someone needs to do something, tell Leo first (no team/jobs.json from a Leo chat without his OK)."
 ---
-When Harry comments on a patch note, the fix, its before/after clips and the "push?" question go into a "Follow-ups (not live yet)" section on that same patch-note page, republished at the same link. No new review page for it. Every clip says what to watch for, step by step.
+A Leo chat that finds something for someone else (a failing test in their
+area, a slow screen, a question) writes it in its report and the patch notes
+(Known issues, or a line "For Harry: …"), and asks Leo in plain words whether
+to give it to that person as a to-do. Only Leo's yes puts it in team/jobs.json.
+Six bug-hunt to-dos were removed from Harry's list on 24 Oct 2026 for this.
+Narrows RUL-TEAM-007 for Leo's chats.

@@ -871,6 +871,11 @@ export interface CareerUnlocks {
    *  after the first game, Relations after the manager's talk, the Shop by
    *  about game 3. Absent = the v0.24 order (a save part-way through it). */
   gameFirst?: boolean;
+  /** The first hour as a story (Mikey, 23 Oct 2026, lib/star/story.ts): each
+   *  feature is brought in by a person after a game. Only new careers. */
+  story?: boolean;
+  /** The story's training day: the drills done so far (each one once). */
+  trainingDay?: string[];
 }
 
 export interface CareerState {
@@ -1601,6 +1606,13 @@ export interface CareerState {
    * Settings' admin-only "Goal Replays" section, for testing.
    */
   recentGoals?: GoalReplay[];
+  /** Every goal of your career, one small row each (lib/star/goalLog.ts;
+   *  Leo, 22 Oct 2026). Feeds the season reel and Stats → Goals. Absent on
+   *  a save from before, which starts its list from the next goal. */
+  goalLog?: import("./goalLog").CareerGoal[];
+  /** The last season whose reel ("Your season") was made or skipped. Until
+   *  then that season's recordings are kept from the newest-80 prune. */
+  reelDoneSeason?: number;
   /**
    * Up to 3 goals deliberately kept from `recentGoals` — a real choice, not
    * everything you've ever scored. Decoupled from `recentGoals`'s own churn
@@ -1839,6 +1851,9 @@ export type StarPhase =
    *  Season, Team of the Season and every trophy this season handed out —
    *  shown once, right after the season rolls over. See SeasonAwardsScreen. */
   | "season-awards"
+  /** "Your season": the reel of every goal of the season just finished,
+   *  shown at the season end before the Ballon d'Or (SeasonReel.tsx). */
+  | "season-reel"
   /** LEGACY, and kept only so a save written before the five-stage trial
    *  still parses. It was one penalty taken until it went in; its screen is
    *  deleted, and the resume path in page.tsx moves anyone still carrying it

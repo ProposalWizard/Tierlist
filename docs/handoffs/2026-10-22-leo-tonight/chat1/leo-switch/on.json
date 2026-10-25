@@ -1,0 +1,14 @@
+{
+ "mode": "on",
+ "chance": {
+  "banner": true,
+  "bar": "CARLISLE 1 0 SOUTHEND NL GOALS 0 ASSISTS 0 PASS 0% AVG RAT 6.1 2D BIG MOMENT LATE ON · IT'S ON YOU Build-up · tap to skip KNOWITBALL GAMES GAMES Home Browse all games & news Road to Ballon d'Or BE"
+ },
+ "goal": {
+  "tries": 2,
+  "celebrationOverlay": true,
+  "tapToSkip": true,
+  "bar": "CARLISLE 1 1 SOUTHEND NL GOALS 1 ASSISTS 0 PASS 0% AVG RAT 6.8 2D STAMINA Tap to skip KNOWITBALL GAMES GAMES Home Browse all games & news Road to Ballon d'Or BETA Live a career and win the world'"
+ },
+ "errors": []
+}

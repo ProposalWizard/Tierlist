@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import GoalVideo from "./media/GoalVideo";
+import GoalVideo from "./media/GoalVideoSwitch";
 import { getClip } from "@/lib/star/goalClip/store";
 import type { ClipStyle } from "@/lib/star/goalClip/edit";
 

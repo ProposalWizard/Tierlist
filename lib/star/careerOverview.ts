@@ -18,7 +18,7 @@
  * as `undefined`, never as a guess, and the screen shows it blacked out.
  */
 import type { CareerState, FarewellRecord, SeasonHistoryRow, Trophy } from "./types";
-import type { CareerDivision } from "./calendar";
+import { seasonStartYear, type CareerDivision } from "./calendar";
 import { careerVerdict, type CareerVerdict } from "./retirement";
 import { allSeasons } from "./careerRecords";
 import { ACHIEVEMENTS } from "./achievements";
@@ -27,15 +27,26 @@ import { fameOf } from "./fame";
 
 // ── Labels ───────────────────────────────────────────────────────────────────
 
-/** "26/27" — season 1 is the start year's season. */
-export function shortSeason(startYear: number, season: number): string {
-  const y = startYear + season - 1;
+/**
+ * The year a season starts in. `calendar` = Leo's 24 Oct update, bug fixes
+ * (read by the screen, passed in): the calendar's year, 2026/27 for a 2027
+ * edition's first season, like Home and the fixtures. Off = the old labels
+ * (one year later), exactly as before.
+ */
+export function yearOfSeason(startYear: number, season: number, calendar = false): number {
+  return calendar ? seasonStartYear(startYear, season) : startYear + season - 1;
+}
+
+/** "26/27". `startYear` is the FIFA edition (2027 = the 2026/27 season), so
+ *  the calendar's seasonStartYear names the year, like every other screen. */
+export function shortSeason(startYear: number, season: number, calendar = false): string {
+  const y = yearOfSeason(startYear, season, calendar);
   return `${String(y).slice(2)}/${String(y + 1).slice(2)}`;
 }
 
 /** "2026/27". */
-export function longSeason(startYear: number, season: number): string {
-  const y = startYear + season - 1;
+export function longSeason(startYear: number, season: number, calendar = false): string {
+  const y = yearOfSeason(startYear, season, calendar);
   return `${y}/${String(y + 1).slice(2)}`;
 }
 
@@ -232,7 +243,7 @@ function countBy(items: string[]): Map<string, number> {
   return m;
 }
 
-function yearsSpan(startYear: number, seasons: number[]): string {
+function yearsSpan(startYear: number, seasons: number[], calendar = false): string {
   // Consecutive runs: 1,2,3,7,8 → "2026–29 · 2032–34".
   const sorted = Array.from(new Set(seasons)).sort((a, b) => a - b);
   const runs: [number, number][] = [];
@@ -242,8 +253,8 @@ function yearsSpan(startYear: number, seasons: number[]): string {
     else runs.push([s, s]);
   }
   return runs.map(([a, b]) => {
-    const from = startYear + a - 1;
-    const to = startYear + b;
+    const from = yearOfSeason(startYear, a, calendar);
+    const to = yearOfSeason(startYear, b, calendar) + 1;
     return `${from}–${String(to).slice(2)}`;
   }).join(" · ");
 }
@@ -255,8 +266,9 @@ function withoutMates(row: SeasonHistoryRow): SeasonHistoryRow {
   return rest;
 }
 
-export function careerOverview(career: CareerState): CareerOverviewData {
+export function careerOverview(career: CareerState, opts: { calendarYears?: boolean } = {}): CareerOverviewData {
   const startYear = career.player.startYear;
+  const cal = !!opts.calendarYears;
   const lastSeason = Math.max(1, career.season);
   const stats = allSeasons(career);
   const statsBy = new Map(stats.map(r => [r.season, r]));
@@ -283,7 +295,7 @@ export function careerOverview(career: CareerState): CareerOverviewData {
     const live = !!st?.live && !career.retired;
     seasons.push({
       season: s,
-      label: shortSeason(startYear, s),
+      label: shortSeason(startYear, s, cal),
       age: world?.age ?? career.player.age - (lastSeason - s),
       club,
       ...(st ? { stats: { apps: st.apps, goals: st.goals, assists: st.assists, avgRating: st.avgRating, motm: st.motm } } : {}),
@@ -316,7 +328,7 @@ export function careerOverview(career: CareerState): CareerOverviewData {
     const feeOut = [...transfers].reverse().find(t => t.from === club)?.fee;
     return {
       club,
-      years: yearsSpan(startYear, mine.map(s => s.season)),
+      years: yearsSpan(startYear, mine.map(s => s.season), cal),
       firstSeason: mine[0].season,
       seasons: mine.length,
       apps: mine.reduce((n, s) => n + (s.stats?.apps ?? 0), 0),
@@ -343,7 +355,7 @@ export function careerOverview(career: CareerState): CareerOverviewData {
   }
   for (let i = 0; i < spells.length; i++) {
     const sp = spells[i];
-    sp.years = yearsSpan(startYear, Array.from({ length: sp.to - sp.from + 1 }, (_, k) => sp.from + k));
+    sp.years = yearsSpan(startYear, Array.from({ length: sp.to - sp.from + 1 }, (_, k) => sp.from + k), cal);
     const out = transfers.find(t => t.season === sp.to && t.from === sp.club);
     if (i < spells.length - 1 && out) sp.feeOut = out.fee;
   }
@@ -354,7 +366,7 @@ export function careerOverview(career: CareerState): CareerOverviewData {
   const honours: OverviewHonour[] = Array.from(bySeasons.entries()).map(([competition, list]) => ({
     competition,
     count: list.length,
-    seasons: [...list].sort((a, b) => a - b).map(s => shortSeason(startYear, s)),
+    seasons: [...list].sort((a, b) => a - b).map(s => shortSeason(startYear, s, cal)),
   }));
   if (career.ballonDorWins > 0) {
     const won = (career.seasonHistory ?? []).filter(r => r.ballonDor?.yourRank === 1).map(r => r.season);
@@ -362,7 +374,7 @@ export function careerOverview(career: CareerState): CareerOverviewData {
       competition: "Ballon d'Or",
       count: career.ballonDorWins,
       // Seasons only for the wins the save recorded; never more than the count.
-      seasons: won.slice(0, career.ballonDorWins).map(s => shortSeason(startYear, s)),
+      seasons: won.slice(0, career.ballonDorWins).map(s => shortSeason(startYear, s, cal)),
     });
   }
   honours.sort((a, b) => honourRank(a.competition) - honourRank(b.competition) || b.count - a.count);
@@ -372,7 +384,7 @@ export function careerOverview(career: CareerState): CareerOverviewData {
   const individual: OverviewHonour[] = Array.from(byAward.entries()).map(([competition, list]) => ({
     competition,
     count: list.length,
-    seasons: Array.from(new Set(list)).sort((a, b) => a - b).map(s => shortSeason(startYear, s)),
+    seasons: Array.from(new Set(list)).sort((a, b) => a - b).map(s => shortSeason(startYear, s, cal)),
   })).sort((a, b) => honourRank(a.competition) - honourRank(b.competition) || b.count - a.count);
 
   // ── Totals ──
@@ -395,7 +407,7 @@ export function careerOverview(career: CareerState): CareerOverviewData {
 
   // ── Records ──
   const b = career.careerBests ?? {};
-  const seasonText = (s: number) => longSeason(startYear, s);
+  const seasonText = (s: number) => longSeason(startYear, s, cal);
   const withStats = seasons.filter(s => s.stats && s.stats.apps > 0);
   const bestRated = [...withStats].filter(s => s.stats!.apps >= 10)
     .sort((a, b2) => b2.stats!.avgRating - a.stats!.avgRating)[0];
@@ -474,19 +486,20 @@ export function careerOverview(career: CareerState): CareerOverviewData {
   const peakSeason = [...withStats].sort((a, b2) =>
     (b2.stats!.goals + b2.stats!.assists) - (a.stats!.goals + a.stats!.assists))[0];
   const peak = peakSeason?.stats ? {
-    season: peakSeason.season, label: longSeason(startYear, peakSeason.season), club: peakSeason.club,
+    season: peakSeason.season, label: longSeason(startYear, peakSeason.season, cal), club: peakSeason.club,
     goals: peakSeason.stats.goals, assists: peakSeason.stats.assists,
   } : undefined;
 
   const firstHistory = (career.seasonHistory ?? []).map(r => r.season).sort((a, b2) => a - b2)[0];
-  const lastYear = startYear + lastSeason;
+  const firstYear = yearOfSeason(startYear, 1, cal);
+  const lastYear = yearOfSeason(startYear, lastSeason, cal) + 1;
 
   return {
     name: `${career.player.firstName} ${career.player.lastName}`,
     nation: career.player.nationality,
     position: career.player.position,
-    years: `${startYear}–${lastYear}`,
-    firstYear: startYear,
+    years: `${firstYear}–${lastYear}`,
+    firstYear,
     lastYear,
     ageAtEnd: career.player.age,
     seasonsPlayed: lastSeason,

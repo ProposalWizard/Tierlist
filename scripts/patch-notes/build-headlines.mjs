@@ -27,7 +27,7 @@ export function authorOf(title) {
 }
 
 export const headlinesFrom = (notes) =>
-  notes.map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt, author: authorOf(n.title) }));
+  notes.map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt, ...(n.updateNote && n.updatedAt ? { updatedAt: n.updatedAt, updateNote: n.updateNote } : {}), author: authorOf(n.title) }));
 
 /** The file's text: one note per line, so a diff shows exactly which line changed. */
 export const render = (list) => `[\n${list.map((h) => `  ${JSON.stringify(h)}`).join(",\n")}\n]\n`;

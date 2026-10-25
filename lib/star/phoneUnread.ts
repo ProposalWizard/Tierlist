@@ -1,3 +1,5 @@
+import { agentHello } from "./story";
+import { appInstalled } from "./unlocks";
 import type { CareerState } from "@/lib/star/types";
 import { nextFixtureFor } from "./competitions";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
@@ -66,6 +68,9 @@ export function recordChaseText(career: CareerState, hall?: string | null): stri
 export function buildMessages(career: CareerState, hallChase?: string | null): Msg[] {
   const next = nextFixtureFor(career);
   const msgs: Msg[] = [];
+  // The story order: your agent texts first, on the cracked phone (story.ts).
+  const hello = agentHello(career);
+  if (hello) msgs.push({ from: "Agent", icon: "💼", text: hello, tone: ["#fbbf24", "#b45309"], key: "agent-hello" });
   if (career.managerNews) msgs.push({ from: "The club", icon: "🏟️", text: career.managerNews, tone: ["#60a5fa", "#1d4ed8"] });
   if (next) msgs.push({ from: career.manager?.name ? `Gaffer (${career.manager.name})` : "Gaffer", icon: "🧢", text: `Here's the scout report for ${short(next.opponent)}. Read it before we play.`, tone: ["#34d399", "#047857"], open: "scout" });
   for (const o of brandsOf(career).offers) {
@@ -99,6 +104,9 @@ export function readSocialSeen(): number {
 /** Everything unread on the phone: messages (sponsor offers are messages now) and social. */
 export function phoneUnreadCount(career: CareerState, hallChase?: string | null): number {
   const seen = readSeenMsgs();
+  // The cracked phone has no Social: its posts are not counted until you
+  // have an app that can show them (Mikey's playtest, 24 Oct 2026: 5 on the
+  // Phone button, 4 in Messages).
   return buildMessages(career, hallChase).filter((m) => !seen.has(msgKey(m))).length
-    + socialUnread(career, readSocialSeen());
+    + (appInstalled(career, "social") ? socialUnread(career, readSocialSeen()) : 0);
 }

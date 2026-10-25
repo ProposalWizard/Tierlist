@@ -82,11 +82,12 @@ const APP_STORE_ICON: App = { id: "appstore", label: "App Store", icon: "🅰️
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 const appOf = (id: AppId) => (id === "appstore" ? APP_STORE_ICON : id === "scout" ? SCOUT_APP : APPS.find((a) => a.id === id)!);
 
-export default function PhoneHome({ career, onToggleLike, onLeave, onClose, installed, onInstall, isNew, onOpened, hallChase }: {
+export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClose, installed, onInstall, isNew, onOpened, hallChase }: {
   career: CareerState;
   /** Your Hall of Fame chase line, for the team-mate's record message (phoneUnread.ts). */
   hallChase?: string | null;
   onToggleLike?: (postId: string) => void;
+  onVote?: (postId: string, index: number) => void;
   onLeave: (ph: Leave) => void;
   /** Put the phone down: back to Home. Harry got stuck on the phone's home
    *  screen with no way out (1 Oct 2026, 04:36). */
@@ -178,7 +179,7 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
                   className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-[22px]"
                   style={{ background: `radial-gradient(110% 38% at 50% 0%, ${rgba(theme.glow, 0.24)} 0%, transparent 70%), linear-gradient(180deg, #0b1220, #05080f)` }}
                 >
-                  {app === "social" && <MediaFeed career={career} mode="browse" onToggleLike={onToggleLike} inPhone />}
+                  {app === "social" && <MediaFeed career={career} mode="browse" onToggleLike={onToggleLike} onVote={onVote} inPhone />}
                   {app === "kickabout" && <Kickabout ready />}
                   {app === "squad" && (
                     <AppShell app={appOf("squad")}>
@@ -230,7 +231,7 @@ function AppIcon({ app, size = 50, badge = 0, index = 0, onOpen, label = true, o
     </button>
   );
   return (
-    <button onClick={() => onOpen(app.id, ref.current)} className="kib-press flex min-w-0 flex-col items-center gap-1">
+    <button onClick={() => onOpen(app.id, ref.current)} data-tour={`app-${app.id}`} className="kib-press flex min-w-0 flex-col items-center gap-1">
       <span
         ref={ref}
         className="relative grid aspect-square place-items-center rounded-[28%]"
@@ -288,7 +289,7 @@ function Grid({ career, glow, badges, onOpen, onClose, installed, isNew }: {
         style={{ background: "rgba(255,255,255,.11)", backdropFilter: "blur(10px)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.18), 0 8px 20px -10px rgba(0,0,0,.8)" }}
       >
         {dock.map((a, i) => (
-          <AppIcon key={a.id} app={a} index={grid.length + i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} fresh={!!isNew?.(a.id)} />
+          <AppIcon key={a.id} app={a} index={grid.length + i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} off={!!installed && !installed(a.id)} fresh={!!isNew?.(a.id)} />
         ))}
       </div>
       {/* Back (PhoneFrame's nav bar) puts the phone down from here. */}
@@ -483,6 +484,7 @@ function Messages({ msgs, onOpen }: { msgs: Msg[]; onOpen: (to: "scout" | "spons
                   <button
                     onClick={() => onOpen(m.open!)}
                     data-msg-open={m.open}
+                    data-tour={`msg-${m.open}`}
                     className="kib-press block rounded-2xl rounded-bl-md px-3 py-1.5 text-left text-[11.5px] font-bold leading-snug text-white"
                     style={{ background: "linear-gradient(180deg, rgba(52,211,153,.32), rgba(16,185,129,.16))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px rgba(52,211,153,.4)" }}
                   >

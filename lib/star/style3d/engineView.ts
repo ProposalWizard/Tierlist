@@ -24,6 +24,8 @@
  */
 import { humanBodyLook } from "../human3d/look";
 import { CX } from "../pitch";
+/** Your celebration on the spot turns back towards the middle of your half (y metres out from the goal line). */
+const HALF_W_CELEB = 30;
 import type { EngineFrame, EngineFrameFigure } from "../engineFrame";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
 import { acquireRenderer, disposeObject3D, flushReleased, warmUp } from "../three3d/perf";
@@ -856,6 +858,17 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       if (!aiming && !onceActive() && !b.windup && sp < MO.turnClipBelow && Math.abs(d) > MO.turnClipMin && f.t >= b.turnReady) startTurn(b, d, f.t);
       else turnTo(b, want, dt, sp > 0.7 ? 7 : 4);
     }
+    // After your goal (lib/star/celebration.ts): the move you equipped, at exactly the 2D's moment
+    // in it. The 2D moves him along the grass (a knee slide, a jog with his arms up); his hips stay put.
+    if (fig.celeb && b.play.has(fig.celeb.clip)) {
+      const c = fig.celeb.clip, st = `celeb:${c}`;
+      if (b.state !== st) { b.play.play(c, { fade: 0.18, once: !fig.celeb.loop, from: fig.celeb.t }); b.state = st; }
+      const a = b.p.actions[c], d = clipDur(b, c);
+      if (a) { a.time = fig.celeb.loop ? fig.celeb.t % d : Math.min(fig.celeb.t, d - 0.02); a.timeScale = 0; }
+      b.play.update(dt);
+      b.p.mixer.update(dt);
+      return;
+    }
     // the kick: your own swing, off the right foot or the left, and as hard as the real kick
     // (Harry, 9 Oct 2026: "every kick animation is the same no matter the power")
     let started = false;
@@ -1062,7 +1075,10 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // facing: where he runs, else the ball, else up the pitch
     const bl = f.ball;
     let want: number | null = null;
-    if (sp > (smooth() ? (LOCO.has(b.state) ? 0.5 : 0.9) : 0.7)) want = yawOf(Math.atan2(b.vy, b.vx));
+    if (fig.celeb) {
+      // your celebration: a slide or a jog on faces where he goes; a move on the spot turns back to the pitch
+      want = sp > 0.9 ? yawOf(Math.atan2(b.vy, b.vx)) : yawOf(Math.atan2(HALF_W_CELEB - b.y, CX - b.x));
+    } else if (sp > (smooth() ? (LOCO.has(b.state) ? 0.5 : 0.9) : 0.7)) want = yawOf(Math.atan2(b.vy, b.vx));
     else if (fig.sid === "you" && f.aim) want = yawOf(Math.atan2(f.aim.to.y - f.aim.from.y, f.aim.to.x - f.aim.from.x));
     else if (fig.sid === "you" && f.phase === "aim" && bl && animFix && Math.hypot(bl.x - b.x, bl.y - b.y) > 0.6) {
       // the stance: looking down his run at the ball (a penalty, a free kick, a corner, open play)
@@ -1085,7 +1101,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       if (c) started = startOnce(b, c, Math.max(0, f.t - fig.act.start));
     }
     if (!started && !once) {
-      if (f.goalSide && ((f.goalSide === "us") === (fig.team === "us"))) startLoop(b, b.play.has("celebrate_jump") ? "celebrate_jump" : "celebrate_fist");
+      if (fig.celeb && b.play.has(fig.celeb.clip)) startLoop(b, fig.celeb.clip);
+      else if (f.goalSide && ((f.goalSide === "us") === (fig.team === "us"))) startLoop(b, b.play.has("celebrate_jump") ? "celebrate_jump" : "celebrate_fist");
       else if (f.goalSide && b.play.has("dejected") && sp < 0.5) startLoop(b, "dejected");
       else if (sp < 0.35) startLoop(b, "idle");
       else startLoop(b, sp > 5.4 ? "sprint" : "jog");
@@ -1098,7 +1115,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // a one-shot (pass, shot, tackle, header, celebration) plays on his spot: its own travel never
     // walks him off where the 2D put him and back again (the "half teleport"); a short tail covers the fade out
     if (animFix && b.sid !== "keeper") {
-      if (b.state.startsWith("once:") || b.state.startsWith("wind:") || b.state.startsWith("shot1:")) b.pinUntil = nowT + 0.4;
+      if (b.state.startsWith("once:") || b.state.startsWith("wind:") || b.state.startsWith("shot1:") || b.state.startsWith("celeb:")) b.pinUntil = nowT + 0.4;
       if (b.pinUntil !== undefined && nowT < b.pinUntil) pinHips(b.p);
     }
     // Mocap, a left-foot kick: kick_l's ball sits further on than shot_r's, so he stands back by the difference
@@ -1335,7 +1352,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    * inside the nearest framed spot, so a stand between the camera and the pitch is
    * never drawn (Harry's corner still: the roof over two thirds of the screen).
    */
-  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "", cornerA: null as Match2DCamera | null, aimBall: null as { x: number; y: number } | null, cornerStart: "" as "" | "B" | "C", cornerT0: -1, spWide: null as Match2DCamera | null };
+  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "", cornerA: null as Match2DCamera | null, aimBall: null as { x: number; y: number } | null, cornerStart: "" as "" | "B" | "C", cornerT0: -1, spWide: null as Match2DCamera | null, celebT0: -1 };
   /** The camera swipe (match2dCam.ts ORBIT): degrees turned round the ball now, where it is heading, a finger on it. */
   /** The turned camera's framing, eased frame to frame (match2dCam.ts solveTurnFit / easeFit). */
   const turn = { fit: null as TurnFit | null, want: null as TurnFit | null, key: "", at: 0 };
@@ -1432,6 +1449,16 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         const A = land ? { ...m2.cornerA, tx: m2.cornerA.tx + (land.x - CX - m2.cornerA.tx) * CORNER_CAM.followLanding * 0.5, tz: m2.cornerA.tz + (land.y - m2.cornerA.tz) * CORNER_CAM.followLanding * 0.5 } : m2.cornerA;
         def = lerpCamera(m2.sp, A, e);
       }
+    }
+    // after your goal (lib/star/celebration.ts): the camera eases onto you and follows your run to the
+    // corner and your celebration, a little closer (it only moves; sizes stay absolute)
+    {
+      const you = f.celebrating ? f.figures.find((g) => g.sid === "you") : undefined;
+      if (you) {
+        if (m2.celebT0 < 0) m2.celebT0 = f.t;
+        const u = Math.min(1, (f.t - m2.celebT0) / 0.9), e = u * u * (3 - 2 * u);
+        def = { ...def, tx: def.tx + (you.x - CX - def.tx) * e, tz: def.tz + (you.y - def.tz) * e, D: def.D * (1 - 0.25 * e), minDepth: def.minDepth * (1 - 0.25 * e) };
+      } else m2.celebT0 = -1;
     }
     // room to drag back (match2dCam.ts keepDragRoom): while aiming, the ball's spot stays a full-power
     // drag above the screen's bottom in every framing (default, pinched, a corner's start view); the

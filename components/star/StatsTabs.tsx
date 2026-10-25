@@ -32,6 +32,8 @@ import PlayerCard from "./PlayerCard";
 import ContractPaper from "./ContractPaper";
 import { AchievementList } from "./SecondaryScreens";
 import { ArcChart, CabinetGrid, Heading, SeasonList } from "./CareerOverview";
+import CareerGoalsGallery from "./CareerGoalsGallery";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 const seasonLabel = (c: CareerState, s: number) => {
@@ -44,6 +46,8 @@ const VIEWS = [
   { id: "records", label: "Records", icon: "🏅" },
   { id: "achievements", label: "Achievements", icon: "⭐" },
   { id: "contract", label: "Contract", icon: "📝" },
+  // Every goal of your career (Leo, 22 Oct 2026). Shown only with Leo's 24 Oct update on (lib/star/leoUpdate.ts).
+  { id: "goals", label: "Goals", icon: "⚽" },
 ] as const;
 type View = (typeof VIEWS)[number]["id"];
 let lastView: View = "stats";
@@ -60,10 +64,14 @@ export default function StatsTabs({ career, onRenew, hallRecords, startView, ach
   const [view, setViewState] = useState<View>(startView ?? lastView);
   const setView = (v: View) => { lastView = v; setViewState(v); };
   const { glow } = useClubTheme(career);
+  const goalsOn = useLeoUpdate("goalsGallery");
+  const views = VIEWS.filter((v) => v.id !== "goals" || goalsOn);
+  // The update switched off while on Goals: back to Stats.
+  const shown: View = view === "goals" && !goalsOn ? "stats" : view;
   const tabs = (
     <div data-stats-row role="tablist" aria-label="Stats" className="flex flex-1 flex-col gap-1.5">
-      {VIEWS.map((v) => {
-        const on = v.id === view;
+      {views.map((v) => {
+        const on = v.id === shown;
         return (
           <button
             key={v.id}
@@ -85,12 +93,13 @@ export default function StatsTabs({ career, onRenew, hallRecords, startView, ach
   );
   return (
     <div className="pb-2">
-      <PlayerCard career={career} aside={tabs} />
-      <RiseIn key={view} className="mt-2">
-        {view === "stats" && <StatsTab career={career} />}
-        {view === "records" && <Records career={career} glow={glow} hallRecords={hallRecords} />}
-        {view === "achievements" && <AchievementList career={career} top={achievementsTop} />}
-        {view === "contract" && <ContractPaper career={career} onRenew={onRenew} />}
+      <PlayerCard career={career} aside={tabs} saveButton={false} scale={0.93} />
+      <RiseIn key={shown} className="mt-2">
+        {shown === "stats" && <StatsTab career={career} />}
+        {shown === "records" && <Records career={career} glow={glow} hallRecords={hallRecords} />}
+        {shown === "achievements" && <AchievementList career={career} top={achievementsTop} />}
+        {shown === "contract" && <ContractPaper career={career} onRenew={onRenew} />}
+        {shown === "goals" && goalsOn && <CareerGoalsGallery career={career} />}
       </RiseIn>
     </div>
   );
@@ -107,8 +116,8 @@ function Card({ title, children, note, glow }: { title: string; children: ReactN
 }
 
 /** A block that opens on a tap (Records: real-world and Hall of Fame start closed). */
-function Fold({ title, right, children, glow, id }: { title: string; right?: ReactNode; children: ReactNode; glow: string; id: string }) {
-  const [open, setOpen] = useState(false);
+function Fold({ title, right, children, glow, id, startOpen = false }: { title: string; right?: ReactNode; children: ReactNode; glow: string; id: string; startOpen?: boolean }) {
+  const [open, setOpen] = useState(startOpen);
   return (
     <ClubCard glow={glow} className="mt-2 p-0">
       <button onClick={() => setOpen(!open)} aria-expanded={open} data-fold={id} className="flex w-full items-center gap-2 px-2.5 py-2.5 text-left">
@@ -134,7 +143,8 @@ function SeasonCareer({ label, season, career, gold = false }: { label: string; 
 
 /** The Stats tab: numbers, seasons, cabinet, goals by season, per club, your country. */
 function StatsTab({ career }: { career: CareerState }) {
-  const o = useMemo(() => careerOverview(career), [career]);
+  const calYears = useLeoUpdate("bugFixes"); // Leo's 24 Oct update: calendar season years
+  const o = useMemo(() => careerOverview(career, { calendarYears: calYears }), [career, calYears]);
   const team = o.honours.filter((h) => h.competition !== "Ballon d'Or");
   const awards = [...o.honours.filter((h) => h.competition === "Ballon d'Or"), ...o.individual];
   const seasonTrophies = career.trophies.filter((t) => t.season === career.season).length;
@@ -296,7 +306,9 @@ function Records({ career, glow, hallRecords }: { career: CareerState; glow: str
   const beaten = RECORDS.filter((r) => r.progress(career) >= r.value).length;
   return (
     <>
-      <Card glow={glow} title="Your bests" note={fresh ? "Furthest goal/assist and match bests start counting from now on this save." : undefined}>
+      {/* Open to start, folds away on a tap (Mikey, 23 Oct 2026). */}
+      <Fold id="bests" glow={glow} title="Your bests" startOpen>
+        {fresh && <div className="mb-1.5 text-[10px] font-bold text-white/55">Furthest goal/assist and match bests start counting from now on this save.</div>}
         <Row icon="🚀" label="Furthest goal" value={b.furthestGoal ? `${b.furthestGoal.metres} m` : "—"} sub={b.furthestGoal ? `v ${short(b.furthestGoal.opponent)} · ${s(b.furthestGoal.season)}` : undefined} />
         <Row icon="🎯" label="Furthest assist (your pass)" value={b.furthestAssist ? `${b.furthestAssist.metres} m` : "—"} sub={b.furthestAssist ? `v ${short(b.furthestAssist.opponent)} · ${s(b.furthestAssist.season)}` : undefined} />
         <Row icon="⚽" label="Most goals in a game" value={b.mostGoalsMatch ? String(b.mostGoalsMatch.goals) : "—"} sub={b.mostGoalsMatch ? `v ${short(b.mostGoalsMatch.opponent)} · ${s(b.mostGoalsMatch.season)}` : undefined} />
@@ -307,7 +319,7 @@ function Records({ career, glow, hallRecords }: { career: CareerState; glow: str
         <Row icon="💥" label="Biggest win" value={b.biggestWin ? `${b.biggestWin.us}–${b.biggestWin.them}` : "—"} sub={b.biggestWin ? `v ${short(b.biggestWin.opponent)} · ${s(b.biggestWin.season)}` : undefined} />
         <Row icon="🔥" label="Longest scoring run" value={career.feats?.bestScoringRun ? `${career.feats.bestScoringRun} games` : "—"} sub={career.feats?.bestScoringRunSeason ? s(career.feats.bestScoringRunSeason) : undefined} />
         <Row icon="🧢" label="Caps" value={String(career.caps ?? 0)} sub={(career.internationalGoals ?? 0) > 0 ? `${career.internationalGoals} international goals` : undefined} />
-      </Card>
+      </Fold>
       <Fold id="real" glow={glow} title="Real-world records" right={<span className="text-[10px] font-black text-white/60">{beaten} / {RECORDS.length}</span>}>
         {RECORDS.map((r) => {
           const p = r.progress(career);

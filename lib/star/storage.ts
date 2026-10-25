@@ -163,6 +163,10 @@ function claimAnonSave(scope: string): void {
  */
 const RESUMABLE: StarPhase[] = [
   "ballon-dor", "contract-renewal", "dilemma", "retirement", "final-season", "season-transfer",
+  // The season end (Leo, 22 Oct 2026): a refresh on "Your season" or on the
+  // awards night lands back on it. The awards screen's Continue is the only
+  // way on to a forced contract renewal, so skipping it skipped the renewal.
+  "season-reel", "season-awards",
   // Relegated out of the Championship: the club you were at has dropped into
   // a pool with no fixtures and no table, so a new one has to be chosen
   // before the season can roll over at all — `advanceSeason` needs to know

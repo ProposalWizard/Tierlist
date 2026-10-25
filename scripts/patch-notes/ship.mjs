@@ -18,6 +18,8 @@
  *   node scripts/patch-notes/ship.mjs 0.95h --pr             also push it and open a PR to main (gh)
  *   node scripts/patch-notes/ship.mjs 0.95h --from origin/Mikey
  *   node scripts/patch-notes/ship.mjs 0.95h --update         replace an entry main already has
+ *                                                            (needs a newer "updatedAt" + an "updateNote": the archive
+ *                                                            then marks it UPDATED, moves it to the front, unread again)
  *   node scripts/patch-notes/ship.mjs 0.95h --tsc            also type-check the two files on the branch
  *   node scripts/patch-notes/ship.mjs --dry 0.95h            show what would change, write nothing
  *
@@ -135,6 +137,13 @@ async function main() {
     const span = entrySpan(data, e.version);
     if (span) {
       if (!flag("--update")) { console.log(`  v${e.version}: already on main (use --update to replace it)`); continue; }
+      // An update must say so (Leo, 24 Oct 2026: "if u update an old patch notes then make sure its clear").
+      // The archive shows UPDATED, moves it to the front and makes it unread again only when
+      // updatedAt is newer than main's, so an update without one would be invisible.
+      const old = /"updatedAt":\s*"([^"]+)"/.exec(data.slice(span[0], span[1]))?.[1] ?? null;
+      if (!e.updatedAt || (old && Date.parse(e.updatedAt) <= Date.parse(old)) || !e.updateNote) {
+        throw new Error(`v${e.version}: an update needs "updatedAt" newer than main's (${old ?? "none"}) and a one-line "updateNote" saying what changed, in ${DATA} on ${FROM}.`);
+      }
       data = data.slice(0, span[0]) + body + data.slice(span[1]);
       replaced.push(e.version);
     } else {
