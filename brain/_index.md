@@ -19,6 +19,7 @@ FACT-ENG-002 | Trial penalties, free kicks, training strike drills and the gaunt
 FACT-ENG-003 | Still copies, to port next: five-a-side only; the /star-match-dev fork was deleted (18 Oct 2026). | admin,engine
 FACT-ENG-004 | [SUPERSEDED] The engine-warn hook also asks, as SOMETHING MAY DRIFT, on CanvasMatch, EnginePlay, hiddenMatch and the other play-screen files. | engine
 FACT-ENG-005 | The engine-warn hook warns (no Allow prompt) on canvasEngine and on the play-screen drift files; its old ask() is kept to switch back. | engine
+FACT-ENG-006 | Every camera draws a man 1.54 m tall (21% of the goal's width); no upright camera is narrower than 19 m across. FIXED_FIGURES=false brings back the old sizes. | engine
 FACT-KIB-001 | Knowitball as a client: three mates building the best football game ever; client code KIB. | client-kib
 FACT-KIB-002 | Audience: football fans 16 to 30 on TikTok, Reels and Shorts (Harry to confirm). | client-kib
 FACT-KIB-003 | Video format: 1080×1920 (9:16), 30 fps, H.264, AAC stereo; v01 ran 44.7 s at -13.4 LUFS. | client-kib

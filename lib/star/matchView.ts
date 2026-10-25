@@ -30,6 +30,7 @@ export { setWideChancesOverride } from "./wideChances";
 import { PITCH_W, NET_DEPTH, POST_L, POST_R } from "./pitch";
 import { tiltFor, visibleOnScreen, canvasToScreen } from "./cameraTilt";
 import { chanceFraming } from "./chanceFraming";
+import { MATCH_FIGURE_HEIGHT_R, MATCH_FIGURE_R_MULT } from "./fiveASide/render";
 
 export type MatchView = "new" | "classic";
 
@@ -141,6 +142,53 @@ export function figureShrinkFor(kind: ScenarioKind, across: number): number {
 let figureGrowOverride = 1;
 export function setFigureGrowOverride(g: number | null): void { figureGrowOverride = g && g > 0 ? g : 1; }
 export function figureGrow(): number { return figureGrowOverride; }
+
+/**
+ * ONE SIZE FOR THE MEN (Mikey's playtest, 24 Oct 2026: "the goals are too big,
+ * sometimes the players are too big, sometimes too small … keeper is huge").
+ * Measured on 60 chances of every kind (390 × 844 phone): a man was drawn
+ * 0.69 m to 2.31 m tall next to the same 7.32 m goal, because the Zoom kept
+ * the men's screen size while the goal grew (z2), headers and volleys shrank
+ * them again (figureShrinkFor), and a feature's close camera (the manager's
+ * four shots, training) drew them at full size in a 14 m frame.
+ *
+ * Now a man is FIXED_MAN_M tall on every camera, like the goal: the men, the
+ * keeper and the ball grow and shrink with the pitch. FIXED_MAN_M is today's
+ * long-range man (size B, Harry 22 Oct 2026), so a long shot looks as it did.
+ * No camera is narrower than MIN_CAMERA_ACROSS_M, so the closest chance draws
+ * a man at most 1.33 times a long-range man on screen (headers were 1.45 times,
+ * which Harry called "crazy big guys"). false: the old sizes, exactly.
+ */
+export const FIXED_FIGURES = true;
+/** A man's drawn height, metres (head to boots, as the figure is drawn). */
+export const FIXED_MAN_M = 1.54;
+/** The narrowest camera, metres across, when FIXED_FIGURES is on. */
+export const MIN_CAMERA_ACROSS_M = 19;
+/** A man's drawn height with no zoom and no shrink (2.31 m). */
+const MAN_M_UNZOOMED = MATCH_FIGURE_R_MULT * MATCH_FIGURE_HEIGHT_R * NEW_FIGURE_SCALE;
+/** Divide the new view's figure and ball sizes by this. `zoom` is the chance's
+ *  Zoom (playZoomOf), `shrink` its header/volley shrink (figureShrinkFor). */
+export function figureDivFor(zoom: number, shrink: number): number {
+  if (FIXED_FIGURES) return MAN_M_UNZOOMED / FIXED_MAN_M;
+  return (playZoom() === "z2" || playZoom() === "z2max" ? zoom : 1) / shrink;
+}
+
+/** Widen an upright camera to MIN_CAMERA_ACROSS_M about its top-centre (where
+ *  the goal hangs), keeping its shape. Returns the camera unchanged when it is
+ *  wide enough, FIXED_FIGURES is off, or it is side-on. */
+export function widenToMinimum(cam: Viewport, facing: Facing, ok?: (v: Viewport) => boolean): Viewport {
+  if (!FIXED_FIGURES || facing !== "up") return cam;
+  const w = cam.x2 - cam.x1, h = cam.y2 - cam.y1;
+  if (!(w > 0) || w >= MIN_CAMERA_ACROSS_M) return cam;
+  const at = (W: number): Viewport => {
+    const H = h * (W / w);
+    const cx = Math.max(W / 2 - EDGE_M, Math.min(PITCH_W + EDGE_M - W / 2, (cam.x1 + cam.x2) / 2));
+    return { x1: cx - W / 2, x2: cx + W / 2, y1: cam.y1, y2: cam.y1 + H };
+  };
+  // Wider half a metre at a time until nobody is cut in half by an edge (`ok`).
+  if (ok) for (let W = MIN_CAMERA_ACROSS_M; W <= NEW_VIEW_WIDTH_M + 1e-9; W += 0.5) { const v = at(W); if (ok(v)) return v; }
+  return at(MIN_CAMERA_ACROSS_M);
+}
 
 /** How far behind the goal line the frame starts (the net plus a little). */
 const BEHIND_GOAL_M = NET_DEPTH + 2.6;
@@ -500,6 +548,11 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, 
       cam = pf;
       f.playZoom = playZoom() === "z1" ? 1 : k;
     }
+  }
+  // One size for the men (FIXED_FIGURES): no camera closer than the minimum.
+  {
+    const wide = widenToMinimum(cam, facing, (v) => !framingFaults(sc, v, hw, tiltDeg).length);
+    if (wide !== cam) { f.playZoom = (f.playZoom ?? 1) * ((cam.x2 - cam.x1) / (wide.x2 - wide.x1)); cam = wide; }
   }
   if (!keepPlayArea) sc.viewport = playAreaFor(sc, cam, f.engineFrame);
   return cam;
