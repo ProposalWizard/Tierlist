@@ -103,6 +103,7 @@ import { openFrom as navOpenFrom, backFrom as navBackFrom, ROOT_PHASES, type Nav
 import { isStory, storyBeat, ackBeat, beatText, trainingDayOn, trainingDayLeft, recordTrainingDayDrill, TRAINING_DAY, type Beat } from "@/lib/star/story";
 import { isOpen, hasSeen, markSeen, recordDrill, drillMessageDue, recordLeagueVisit, recordFirstMatch, recordBossMeeting, recordPhoneBought, lockHint, installApp, appInstalled, appIsNew, newAppCount, markAppOpened, LOCK_HINT, pendingAnnouncements, markAnnounced, nextStep, slotQuestionDue, setBottomLeft, bottomLeft, gameFirst, managerTalkDue, phoneShortfall, phoneStepLine, DRILLS_TO_OPEN_SHOP } from "@/lib/star/unlocks";
 import { applyGameGain } from "@/lib/star/relationshipGame";
+import { mechanicGuideDue, mechanicDef, type Mechanic } from "@/lib/star/mechanics";
 import { AchievementPop, UnlockChallenges, LockedPage, StoryBeatPop, UnlockPop, AchievementToasts, SlotQuestion, type StepGo, type StarStep } from "@/components/star/UnlockChain";
 
 /** Pop-up cards for achievement ids. */
@@ -1098,7 +1099,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const created = { ...makeIdentity(player, division), trial: { ...startTrial(), ...(startDivision ? { startDivision } : {}) } };
     // A new save starts its matches at normal speed, not the last save's
     // (Mikey's playtest, 24 Oct 2026: "it should start at one time speed").
-    try { localStorage.removeItem("star-match-speed"); localStorage.removeItem("star-first-header-coached"); } catch { /* no storage */ }
+    try { localStorage.removeItem("star-match-speed"); localStorage.removeItem("star-first-header-coached"); localStorage.removeItem("star-first-coached"); } catch { /* no storage */ }
     setCareer(created);
     setPhase("trial-stages");
     // ── The squad fetches have MOVED to the signing ──
@@ -5351,6 +5352,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // The first hour as a story (lib/star/story.ts): a person brings the next
   // thing in, on Home, when nothing else is showing.
   const beat: Beat | null = swipeActive && homePage === 1 && quiet && !tour && !energyToast && !potmWin && !starPassOpen ? storyBeat(career, starsNow(career)) : null;
+  // A move that just opened (lib/star/mechanics.ts): its guide, once, on Home,
+  // after any story beat.
+  const mechGuide: Mechanic | null = !beat && swipeActive && homePage === 1 && quiet && !tour && !energyToast && !potmWin && !starPassOpen ? mechanicGuideDue(career) : null;
   const goBeat = (b: Beat) => {
     setCareer(c => (c ? ackBeat(c, b) : c));
     const point = (target: string, text: string) => setHelpTour([{ target, text, press: true }]);
@@ -5460,6 +5464,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         />
       )}
       {beat && <StoryBeatPop key={beat} text={beatText(career, beat)} onGo={() => goBeat(beat)} />}
+      {mechGuide && (() => {
+        const g = mechanicDef(mechGuide).guide;
+        return <StoryBeatPop key={`mech-${mechGuide}`} text={{ who: "New in your game", icon: g.icon, title: g.title, line: g.line, button: "Got it" }}
+          onGo={() => setCareer(c => (c ? markSeen(c, `mech-${mechGuide}`) : c))} />;
+      })()}
       {askSlot && (
         <SlotQuestion
           onLeague={() => setCareer(c => (c ? setBottomLeft(c, "league") : c))}
