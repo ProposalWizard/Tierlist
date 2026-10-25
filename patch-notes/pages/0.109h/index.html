@@ -245,28 +245,29 @@
   <br>
   <span class="ver">v0.109h &middot; 25 OCT &middot; GAME FIXES</span>
   <h1>Game: fixes from the 0.108h comments</h1>
-  <p class="status"><i></i>On the Harry branch. Not live.</p>
-  <p class="sub">25 Oct 2026. Your comments on 0.108h, worked through: skin in the cut scenes, men the same size on every chance, a smooth build-up camera, and headers and volleys being redone to your notes.</p>
+  <p class="status"><i></i>Live on the site since 25 Oct 2026, about 16:10 UK.</p>
+  <p class="sub">25 Oct 2026. Your comments on 0.108h, worked through and now live: skin in the cut scenes, men the same size on every chance, a smooth build-up camera, and headers and volleys redone to your notes.</p>
 </header>
 
 <div class="verdict"><div class="t">The short version</div>
 <p><b>1. Cut scenes: one skin colour</b> at light tones. Face against neck 5.9 &rarr; 1.0. Darker tones wait on a call.</p>
 <p><b>2. Every chance kind draws men at 22 px.</b> Penalties, cutbacks, one-on-ones, crosses, drills and the trial. Was up to 31 px (37 on a byline cross).</p>
 <p><b>3. Build-ups: one smooth camera glide.</b> Worst one-frame jump 640 &rarr; 38 px a second.</p>
-<p><b>4. Headers and volleys: being redone.</b> The tap-the-goal version was turned down. The new one follows your notes.</p>
+<p><b>4. Headers and volleys: redone to your notes, live.</b> No drag-back arrow: straight to the ball screen, tap the ball. No late zoom, men stay 22 px, the cross comes in once.</p>
 </div>
 
 <h2 class="nxt"><i></i>CHECK THESE</h2>
-<p class="snote">On the Harry branch only. They show on the live site after a push.</p>
+<p class="snote">All live on the site now.</p>
 <ul class="ck">
 <li><label><input type="checkbox" data-k="c0"><span><span class="q">Cut-scene skin</span><span class="a">Photo faces off &rarr; sign for a club at a light skin tone: face and neck are one colour.</span></span></label></li>
 <li><label><input type="checkbox" data-k="c1"><span><span class="q">Men at 22 px on every chance</span><span class="a">A penalty, a cutback, a one-on-one and a cross: men are the same size as on a long-range chance.</span></span></label></li>
 <li><label><input type="checkbox" data-k="c2"><span><span class="q">Smooth build-up camera</span><span class="a">Highlights &rarr; a build-up: one glide, no stop-start, no snap at OFFSIDE.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c3"><span><span class="q">Headers and volleys</span><span class="a">A header or volley chance: no arrow, the &ldquo;Head it?&rdquo; or &ldquo;Volley it?&rdquo; ball screen opens, tap the ball. Same in the Head &amp; Volley drill.</span></span></label></li>
 </ul>
 
 <h2 class="fix"><i></i>1 &middot; FIXED: CUT SCENES, ONE SKIN COLOUR</h2>
 <div class="item">
-  <div class="ih"><b>The fair face in the signing scene now matches the neck</b><span class="tag t-seen">seen</span><span class="tag t-meas">measured</span></div>
+  <div class="ih"><b>The fair face in the signing scene now matches the neck</b><span class="pill p-grn">live</span><span class="tag t-seen">seen</span><span class="tag t-meas">measured</span></div>
   <div class="row"><div class="rl p">Problem</div><p>In the signing cut scene, at a light tone, the cheeks were pinker than the neck, with a pale edge at the jaw.</p></div>
   <div class="row"><div class="rl w">Why</div><p>The cut scenes laid a photo face over the drawn head, even with photo faces switched off. The photo was a different colour from the neck.</p></div>
   <div class="row"><div class="rl f">Fix</div><p>Cut scenes now use the <b>drawn head</b> when photo faces are off. The same fix is in the signing, office, farewell and award scenes.</p></div>
@@ -280,7 +281,7 @@
 
 <h2 class="fix"><i></i>2 &middot; FIXED: EVERY CHANCE KIND DRAWS MEN AT 22 PX</h2>
 <div class="item">
-  <div class="ih"><b>Men, keeper and ball are the same size on every chance</b><span class="tag t-seen">seen</span><span class="tag t-meas">measured</span></div>
+  <div class="ih"><b>Men, keeper and ball are the same size on every chance</b><span class="pill p-grn">live</span><span class="tag t-seen">seen</span><span class="tag t-meas">measured</span></div>
   <div class="row"><div class="rl p">Problem</div><p>Penalties, cutbacks, one-on-ones and crosses drew men up to 31 px on a phone. A byline cross drew them up to 37 px. Other chances: 22 px.</p></div>
   <div class="row"><div class="rl w">Why</div><p>The men were sized against each chance's camera, so a closer camera made bigger men. Headers had the same fault in 0.108h.</p></div>
   <div class="row"><div class="rl f">Fix</div><p>Men, keeper and ball are drawn at 22 px on every chance kind, the drills and the trial. Only the pitch zooms. Goal rates are the same: this changes the drawing only (15 match test sets pass).</p></div>
@@ -296,7 +297,7 @@
 
 <h2 class="chg"><i></i>3 &middot; CHANGED: BUILD-UPS USE ONE SMOOTH CAMERA GLIDE</h2>
 <div class="item">
-  <div class="ih"><b>The camera plans the whole move, then glides once</b><span class="tag t-seen">seen frame by frame</span><span class="tag t-meas">measured</span></div>
+  <div class="ih"><b>The camera plans the whole move, then glides once</b><span class="pill p-grn">live</span><span class="tag t-seen">seen frame by frame</span><span class="tag t-meas">measured</span></div>
   <div class="row"><div class="rl p">You said</div><p>"I don't like how the camera can move in multiple movements, it should be smooth."</p></div>
   <div class="row"><div class="rl w">Why</div><p>The camera re-aimed at every pass. It moved, stopped and moved again. It also snapped back when a build-up ended offside.</p></div>
   <div class="row"><div class="rl f">Fix</div><p>The whole move is planned first. Then the camera makes <b>one eased glide</b> from the start to the chance. It leans with the ball and zooms out a little on long balls. The ball never leaves the screen.</p></div>
@@ -311,35 +312,29 @@
 <div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption>After.</figcaption></div>
 </div>
 
-<h2 class="bug"><i></i>4 &middot; BEING REDONE: HEADERS AND VOLLEYS</h2>
+<h2 class="fix"><i></i>4 &middot; FIXED: HEADERS AND VOLLEYS, REDONE TO YOUR NOTES</h2>
 <div class="item">
-  <div class="ih"><b>Headers and volleys are being rebuilt to your notes</b><span class="pill p-amb">being redone &middot; not ready to check</span></div>
-  <div class="row"><div class="rl p">What happened</div><p>A tap-the-goal version was tried: a timer bar, then one tap on a small goal. You turned it down. It is not shown here, and it will not go live.</p></div>
-  <div class="row"><div class="rl f">The redo, from your notes</div><ol class="steps">
-    <li><b>Skip only the drag-back arrow.</b> Everything else about the chance stays.</li>
-    <li><b>Go straight to clicking the ball.</b> You click the ball to meet it.</li>
-    <li><b>No late zoom.</b> The camera does not jump in at the end.</li>
-    <li><b>Men stay the same size</b>: 22 px, like every other chance.</li>
-    <li><b>The cross comes in once.</b> No second run of the cross before you play it.</li>
-    <li><b>The ball and its trail track properly</b> from the cross to your man.</li>
-    <li><b>The same for volleys and acrobatic finishes.</b></li>
+  <div class="ih"><b>Straight to the ball screen: tap the ball</b><span class="pill p-grn">live</span><span class="tag t-seen">seen frame by frame</span><span class="tag t-meas">measured</span></div>
+  <div class="row"><div class="rl p">What happened</div><p>A tap-the-goal version was tried and you turned it down. It never went live. This is the redo, built to your notes.</p></div>
+  <div class="row"><div class="rl f">What it does now</div><ol class="steps">
+    <li><b>No drag-back arrow.</b> Everything else about the chance stays.</li>
+    <li><b>Straight to the ball screen.</b> &ldquo;Head it?&rdquo; or &ldquo;Volley it?&rdquo; opens by itself; you tap the ball.</li>
+    <li><b>No late zoom.</b> Men stay 22 px the whole time.</li>
+    <li><b>The cross comes in once.</b> No second run before you play it.</li>
+    <li><b>The trail follows the ball</b> from the cross to your man.</li>
+    <li><b>The same in the Head &amp; Volley drill.</b> No other acrobatic kinds exist in the game, so there is nothing else to change.</li>
   </ol></div>
-  <div class="fig">
-<svg class="sv" viewBox="0 0 360 200" font-family="-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-label="Drawing: a cross from the wing curves once into the box; the attacker stands at normal size; a ring on the ball says click the ball.">
-<rect x="0" y="0" width="360" height="200" rx="10" fill="#1f5c38"/>
-<g fill="none" stroke="#e8f5ec" stroke-width="1.6" opacity=".8"><path d="M70 4H290V100H70Z"/><path d="M130 4H230V36H130Z"/></g>
-<rect x="152" y="0" width="56" height="5" fill="#e8f5ec" opacity=".9"/>
-<path d="M330 160 Q 260 40 200 50" fill="none" stroke="#f5b942" stroke-width="2" stroke-dasharray="5 4"/>
-<circle cx="330" cy="160" r="5" fill="#6fb8ff"/><text x="330" y="182" text-anchor="middle" font-size="10" fill="#e8f5ec">crosser</text>
-<circle cx="182" cy="60" r="6" fill="#3ddc84"/><text x="150" y="84" text-anchor="middle" font-size="10" fill="#e8f5ec">you, 22 px</text>
-<circle cx="200" cy="50" r="3.5" fill="#fff"/>
-<circle cx="200" cy="50" r="11" fill="none" stroke="#fff" stroke-width="2"/>
-<text x="216" y="74" font-size="10.5" font-weight="700" fill="#fff">click the ball</text>
-<circle cx="180" cy="14" r="6" fill="#ff6b6b"/><text x="196" y="18" font-size="10" fill="#e8f5ec">keeper</text>
-<text x="180" y="132" text-anchor="middle" font-size="11" fill="#e8f5ec">The cross comes in once.</text>
-<text x="180" y="148" text-anchor="middle" font-size="11" fill="#e8f5ec">No drag-back arrow. No late zoom.</text>
-</svg>
-  <div class="cap">A drawing of the plan, not the built screen. Not to scale.</div></div>
+  <div class="bars">
+    <div class="bar"><div class="bl">Header, goals per 100 chances at Aerial 30 / 60 / 90 (now, then before)</div><div class="track solo"><div class="fill now" style="width:100%"></div></div><div class="vv">17.7 / 24.8 / 34.3 <s>19.0 / 25.0 / 35.3</s></div></div>
+    <div class="bar"><div class="bl">Volley, goals per 100 chances at Aerial 30 / 60 / 90 (now, then before)</div><div class="track solo"><div class="fill now" style="width:100%"></div></div><div class="vv">19.0 / 27.2 / 33.8 <s>19.3 / 26.3 / 35.3</s></div></div>
+  </div>
+  <p class="bnote">Every rate is within about 1 of before, so the new way scores about as often as the old one.</p>
+  <div class="clip ph"><p class="look"><b>Look for</b>the cross comes in once from the right. The &ldquo;Head it?&rdquo; screen opens by itself, no arrow. Tap the ball&rsquo;s right side, high: it goes left, away from the keeper. The trail follows the ball. Goal. The men stay 22 px; the camera never zooms.</p>
+<video src="clips/hv-header.mp4" poster="img/hv-header.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption>A header, built version.</figcaption></div>
+  <div class="clip ph"><p class="look"><b>Look for</b>the cross bounces in once to your man at the edge of the box. &ldquo;Volley it?&rdquo; opens by itself and the height marker drops into the green. Tap the right side: SWEET VOLLEY to the left, goal. Men 22 px, no zoom.</p>
+<video src="clips/hv-volley.mp4" poster="img/hv-volley.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption>A volley, built version.</figcaption></div>
 </div>
 
 <h2 class="bug"><i></i>KNOWN ISSUES</h2>
@@ -347,10 +342,6 @@
   <div class="ih"><b>Darker skin tones in cut scenes</b><span class="pill p-amb">waiting on a call</span></div>
   <div class="row"><div class="rl p">Problem</div><p>Deep, brown and dark faces in cut scenes are still a touch lighter than the neck (gap 4.6 to 6.6; under 2 can't be seen).</p></div>
   <div class="row"><div class="rl s">Status</div><p>The fix means changing the shared skin paint, which every 3D man uses. Your call 1.</p></div>
-</div>
-<div class="item">
-  <div class="ih"><b>Headers and volleys</b><span class="pill p-amb">being redone</span></div>
-  <div class="row"><p>The redo above is in progress. Nothing to check yet.</p></div>
 </div>
 
 <h2 class="nxt"><i></i>YOUR CALLS</h2>
@@ -362,9 +353,9 @@
 <h2 class="bug"><i></i>SEEN / NOT SEEN</h2>
 <div class="sbox">
   <h3 class="g">Seen on a screen</h3>
-  <ul><li>Signing scene, fair and deep, before and after, on the test page and in a real career</li><li>Every chance kind before and after (the size sheet)</li><li>Build-ups before and after, frame by frame</li></ul>
+  <ul><li>Signing scene, fair and deep, before and after, on the test page and in a real career</li><li>Every chance kind before and after (the size sheet)</li><li>Build-ups before and after, frame by frame</li><li>A header and a volley in the built version, every frame at 4 a second (arrow gone, no zoom, one cross)</li></ul>
   <h3 class="b">Measured (numbers)</h3>
-  <ul><li>Face against neck colour gap at 4 tones</li><li>Men in px per chance kind</li><li>Camera speed per frame in build-ups</li><li>Goal rates: 15 match test sets pass</li></ul>
+  <ul><li>Face against neck colour gap at 4 tones</li><li>Men in px per chance kind</li><li>Camera speed per frame in build-ups</li><li>Men in px in the header and volley clips (22.2 every frame)</li><li>Goal rates: 15 match test sets pass</li></ul>
   <h3 class="a">Reasoned, not seen</h3>
   <ul><li>The office, farewell and award scenes (same fix as signing, not filmed)</li><li>All three on a real phone</li></ul>
 </div>
@@ -373,11 +364,12 @@
   <ul>
     <li>Skin, signing scene, fair: face against neck 5.9 before, 1.0 after. Deep: 4.9 before, 6.2 after on the test page (the drawn head; part of the darker-tone call).</li>
     <li>Size: 22 px is size B, the long-range size from 0.108h. Before: up to 31 px (penalty, cutback, one-on-one), up to 37 px (byline cross).</li>
+    <li>Headers and volleys, goals per 100 at Aerial 30 / 60 / 90: header 17.7 / 24.8 / 34.3 (before 19.0 / 25.0 / 35.3), volley 19.0 / 27.2 / 33.8 (before 19.3 / 26.3 / 35.3).</li>
     <li>Build-up camera: biggest one-frame move about 640 px a second before, 38 after.</li>
   </ul>
 </details>
 
-<footer>25 Oct 2026. On the Harry branch, not live. Follow-ups from the comments on 0.108h.</footer>
+<footer>25 Oct 2026. Live on the site since about 16:10 UK. Follow-ups from the comments on 0.108h. Still open: darker skin tones, trial penalty size.</footer>
 </div>
 
 <script>

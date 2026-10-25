@@ -245,16 +245,16 @@
   <br>
   <span class="ver">v0.110h &middot; 25 OCT &middot; SUPABASE + CLOUDFLARE</span>
   <h1>Supabase and Cloudflare</h1>
-  <p class="status"><i></i>Some live, some on the Harry branch, some plan. Each item says which.</p>
-  <p class="sub">25 Oct 2026. Claude can now look inside the database. Three fixes went into the live database. The FIFA table is measured and the shrink is planned. Guest accounts are built and switched off.</p>
+  <p class="status"><i></i>Live since 25 Oct 2026, about 16:10 UK: the login change. Guest accounts and ad pages are on the site but switched off. The rest of the tidy is plan. Each item says which.</p>
+  <p class="sub">25 Oct 2026. Claude can now look inside the database. Three fixes went into the live database. The FIFA table is measured and the shrink is planned. Guest accounts are on the site, switched off.</p>
 </header>
 
 <div class="verdict"><div class="t">The short version</div>
 <p><b>1. Claude can see and work in Supabase.</b> Look-only by default. Every change is asked first. <span class="pill p-grn">live</span></p>
 <p><b>2. Three fixes in the live database:</b> 2 missing tables made, the login-streak hole closed, 19 missing indexes added. <span class="pill p-grn">live</span></p>
 <p><b>3. The FIFA stats table is 312 MB of 383 MB.</b> Shrink step 1 frees about 78 MB. <span class="pill p-amb">next</span></p>
-<p><b>4. One login check per request, not two.</b> <span class="pill p-blu">Harry branch</span></p>
-<p><b>5. Guest accounts and ad landing pages:</b> built, switched off. <span class="pill p-blu">Harry branch</span></p>
+<p><b>4. One login check per request, not two.</b> <span class="pill p-grn">live</span></p>
+<p><b>5. Guest accounts and ad landing pages:</b> on the site, switched off. <span class="pill p-amb">off</span></p>
 </div>
 
 <h2 class="nxt"><i></i>CHECK THESE</h2>
@@ -262,7 +262,7 @@
 <li><label><input type="checkbox" data-k="c0"><span><span class="q">Supabase asks first</span><span class="a">Any Claude chat that uses Supabase: each request opens with READ ONLY or CHANGES THE DATABASE, then What and Why.</span></span></label></li>
 <li><label><input type="checkbox" data-k="c1"><span><span class="q">The 2 tables exist</span><span class="a">Supabase &rarr; Table editor: star_xp_config and star_tuning_notes are there.</span></span></label></li>
 <li><label><input type="checkbox" data-k="c2"><span><span class="q">Missing-index warnings gone</span><span class="a">Supabase &rarr; Advisors &rarr; Performance: the 19 "unindexed foreign key" lines are gone.</span></span></label></li>
-<li><label><input type="checkbox" data-k="c3"><span><span class="q">Guest test page</span><span class="a">After a push: /star-guest-dev (team only) shows both landing pages and the save card at phone size.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c3"><span><span class="q">Guest test page</span><span class="a">/star-guest-dev (team only; the guest feature itself is off) shows both landing pages and the save card at phone size.</span></span></label></li>
 </ul>
 
 <h2 class="add"><i></i>1 &middot; ADDED: CLAUDE CAN SEE AND WORK IN SUPABASE</h2>
@@ -330,7 +330,7 @@
 
 <h2 class="chg"><i></i>4 &middot; CHANGED: ONE LOGIN CHECK PER REQUEST</h2>
 <div class="item">
-  <div class="ih"><b>The site asks "who is this?" once, not twice</b><span class="pill p-blu">Harry branch &middot; not live</span><span class="tag t-reas">reasoned</span></div>
+  <div class="ih"><b>The site asks "who is this?" once, not twice</b><span class="pill p-grn">live</span><span class="tag t-reas">reasoned</span></div>
   <div class="row"><div class="rl p">Problem</div><p>Every page request asked Supabase who you are twice. Even sounds and 3D model files did.</p></div>
   <div class="row"><div class="rl f">Fix</div><p>One check, done on the spot from the login token. Game files (sounds, pictures and models) skip it.</p></div>
   <div class="fig">
@@ -351,7 +351,7 @@
 
 <h2 class="add"><i></i>5 &middot; ADDED: GUEST ACCOUNTS AND AD LANDING PAGES</h2>
 <div class="item">
-  <div class="ih"><b>Play Road to Ballon d'Or with no sign-in, keep it later with Google</b><span class="pill p-blu">Harry branch &middot; switched off</span></div>
+  <div class="ih"><b>Play Road to Ballon d'Or with no sign-in, keep it later with Google</b><span class="pill p-amb">off</span></div>
   <div class="row"><p>A player taps an ad, lands on a page made for that ad, taps one button and plays. A hidden guest account saves the career. After the first match, a card offers "Save with Google". The account stays the same, so nothing is lost.</p></div>
   <div class="fig">
 <svg class="sv" viewBox="0 0 360 100" font-family="-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-label="Flow: taps an ad, plays at once; hidden guest, career saves; signs in later, same account.">
@@ -362,17 +362,17 @@
 <g stroke="var(--ink3)" stroke-width="1.5" marker-end="url(#m2)"><path d="M102 40H128"/><path d="M230 40H256"/></g>
 <text x="180" y="90" text-anchor="middle" font-size="10" fill="var(--green)">Nothing lost on the way</text></svg></div>
   <ul class="row" style="padding-left:18px;color:var(--ink2);font-size:14.5px">
-    <li><b>Built, off:</b> two example ad pages, the "Play now, no sign-up" button, the save card, and guests kept out of everything else (tierlists, usernames, the shop).</li>
+    <li><b>On the site, off:</b> two example ad pages, the "Play now, no sign-up" button, the save card, and guests kept out of everything else (tierlists, usernames, the shop).</li>
     <li><b>Human check:</b> Cloudflare Turnstile before a guest is made, so a bot can't make thousands.</li>
-    <li><b>Decided 25 Oct, being added:</b> players name their own player; the ad's career starts in League Two; a daily sign-in nudge for the first 7 days.</li>
-    <li><b>The switch:</b> one Vercel setting. Off, the site is exactly as today (checked in a local run).</li>
+    <li><b>Built (decided 25 Oct):</b> players name their own player; the ad's career starts in League Two; a daily sign-in nudge for the first 7 days. All off with the rest.</li>
+    <li><b>The switch:</b> one Vercel setting. Off, the site is exactly as today (checked in a local run). The guest SQL (<code>guest_accounts.sql</code>) has not been run.</li>
   </ul>
   <p class="bnote"><b>Switching it on:</b> guest accounts and ad pages now belong in the Marketing studio. The switch-on list (Turnstile first) is on <b>0.112h, Marketing studio plan</b>.</p>
 </div>
 
 <h2 class="add"><i></i>6 &middot; ADDED: THE BUG-HUNT SKILL</h2>
 <div class="item">
-  <div class="ih"><b>"My career didn't save" stops being a guess</b><span class="pill p-blu">Harry branch</span></div>
+  <div class="ih"><b>"My career didn't save" stops being a guess</b><span class="pill p-grn">live</span></div>
   <div class="row"><p>A saved recipe for Claude: read the bug report, find that player's save, set it beside normal saves, spot the impossible state, replay it in the career test, fix the code. Say "bug report" or "find this bug" in a chat to use it.</p></div>
   <div class="row"><p><b>Look-only.</b> No personal details go in chat or the repo: players are "player A", "player B". A change to a save needs an SQL page and a yes.</p></div>
 </div>
@@ -534,7 +534,7 @@
   </ul>
 </details>
 
-<footer>25 Oct 2026. Live: the Supabase connection rules and the three database changes. Harry branch, not live: one login check, guest accounts (off), the bug-hunt skill. Plan: the rest of the tidy steps.</footer>
+<footer>25 Oct 2026. Live (about 16:10 UK): the Supabase connection rules, the three database changes, one login check, the bug-hunt skill. Off: guest accounts and ad pages (guest SQL not run). Plan: the rest of the tidy steps, waiting on your yes.</footer>
 </div>
 
 <script>
