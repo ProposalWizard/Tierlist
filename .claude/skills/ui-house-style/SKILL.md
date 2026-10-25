@@ -56,6 +56,19 @@ Newest first. Each is something that was actually said.
   game (kept behind ?airpick=old). Controls for a moment like this sit at the
   bottom, where the thumb is, in a flat band fading into the pitch (inferred).
 
+### 23 Oct 2026 — the Team chat is a Slack-style workspace (Harry)
+- **"Channels with all of the tools and things we already have available in
+  team board … reactions, threads, private DMs, a bot that automatically
+  uploads patch notes into a patch notes channel and @'s everyone."** Team →
+  Chat is channels (components/teamRoom/ChatPage.tsx): a channel list on the
+  left (on a phone a full-screen list behind ☰, per the chooser rule), each
+  channel carries its tool as a tab under its name (Messages | tool | 📌), a
+  thread opens on the right (full screen on a phone). On a phone the big
+  "Team chat" title steps aside so the channel fills the screen (inferred).
+- A tapped message shows its actions IN LINE under it, not floating: the
+  floating strip covered the words and ran off the screen on your own
+  messages at 390 px (seen in the build stills, 23 Oct).
+
 ### 20 Oct 2026 — the Team area is the admin's home (Harry)
 - **"The team area should be the default home area, and it should open on
   Team board, and have its own tab on the left."** Every way into the admin
