@@ -1,0 +1,1114 @@
+{
+ "cpu": 4,
+ "base": "http://localhost:3300",
+ "at": "2026-10-25T13:19:32.728Z",
+ "paths": [
+  {
+   "id": "bundes",
+   "pathReadyMs": 2623,
+   "levels": [
+    {
+     "path": "bundes",
+     "level": 1,
+     "open": "true",
+     "matchReadyMs": 2097,
+     "goal": "wy227249977",
+     "header": "LEVEL 1 · BUNDESLIGA 2017/18 · 10 FEB 2018 Hoffenheim 1–1 Mainz 05 · 67' You are Andrej Kramarić (Hoffenheim) · Right Foot · xG 92% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). MATCH LAB GOALS ",
+     "buildUpMs": 106,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": true,
+       "pct": 0,
+       "you": "You: low, down the middle (2.98 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 0,
+     "starsShown": 1,
+     "cardStars": 1
+    },
+    {
+     "path": "bundes",
+     "level": 2,
+     "open": "true",
+     "matchReadyMs": 876,
+     "goal": "wy235289581",
+     "header": "LEVEL 2 · BUNDESLIGA 2017/18 · 18 MAR 2018 Köln 1–0 Bayer Leverkusen · 69' You are Simon Zoller (Köln) · Right Foot · xG 82% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). MATCH LAB GOALS 0 ASSIS",
+     "buildUpMs": 36,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom left corner (1.72 m off)"
+      },
+      {
+       "dx": 25,
+       "pull": 120,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 25,
+       "pull": 165,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 25,
+       "pull": 120,
+       "lift": 0.5,
+       "goal": true,
+       "pct": 27,
+       "you": "You: right side, mid-height (1.27 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 27,
+     "starsShown": 1,
+     "cardStars": 1
+    },
+    {
+     "path": "bundes",
+     "level": 3,
+     "open": "true",
+     "matchReadyMs": 704,
+     "goal": "wy238957804",
+     "header": "LEVEL 3 · BUNDESLIGA 2017/18 · 31 MAR 2018 Hoffenheim 4–0 Köln · 65' You are Mark Uth (Hoffenheim) · Left Foot · xG 72% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). MATCH LAB GOALS 0 ASSISTS 0 ",
+     "buildUpMs": 48,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom right corner (3.21 m off)"
+      },
+      {
+       "dx": -25,
+       "pull": 120,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom left corner (2.39 m off)"
+      },
+      {
+       "dx": -14.4245358045631,
+       "pull": 120,
+       "lift": 0.65,
+       "goal": false,
+       "pct": 0,
+       "you": "You: right side, mid-height (1.56 m off)"
+      },
+      {
+       "dx": -18.577474977089075,
+       "pull": 120,
+       "lift": 0.8,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom right corner (2.70 m off)"
+      },
+      {
+       "dx": -8.867966441158375,
+       "pull": 120,
+       "lift": 0.9,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": -8.867966441158375,
+       "pull": 165,
+       "lift": 0.9,
+       "goal": true,
+       "pct": 52,
+       "you": "You: down the middle (0.91 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 52,
+     "starsShown": 1,
+     "cardStars": 1
+    },
+    {
+     "path": "bundes",
+     "level": 4,
+     "open": "true",
+     "matchReadyMs": 900,
+     "goal": "wy189035807",
+     "header": "LEVEL 4 · BUNDESLIGA 2017/18 · 19 SEPT 2017 Wolfsburg 0–0 Werder Bremen · 28' You are Divock Origi (Wolfsburg) · Right Foot · xG 62% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). Ntep → Origi MA",
+     "buildUpMs": 1328,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": true,
+       "pct": 98,
+       "you": "You: down the middle (0.17 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 98,
+     "starsShown": 3,
+     "cardStars": 3
+    },
+    {
+     "path": "bundes",
+     "level": 5,
+     "open": "true",
+     "matchReadyMs": 718,
+     "goal": "wy242847862",
+     "header": "LEVEL 5 · BUNDESLIGA 2017/18 · 14 APR 2018 Hertha BSC 1–1 Köln · 52' You are Davie Selke (Hertha BSC) · Right Foot · xG 59% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). Kalou → Plattenhardt MAT",
+     "buildUpMs": 2235,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: low, down the middle (1.16 m off)"
+      },
+      {
+       "dx": 25,
+       "pull": 120,
+       "lift": 0.19999999999999998,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 25,
+       "pull": 165,
+       "lift": 0.19999999999999998,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 25,
+       "pull": 120,
+       "lift": 0.19999999999999998,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 25,
+       "pull": 165,
+       "lift": 0.19999999999999998,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom left corner (2.40 m off)"
+      },
+      {
+       "dx": -23.127485170887276,
+       "pull": 165,
+       "lift": 0.04999999999999999,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": -23.127485170887276,
+       "pull": 120,
+       "lift": 0.04999999999999999,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": -23.127485170887276,
+       "pull": 165,
+       "lift": 0.04999999999999999,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": -23.127485170887276,
+       "pull": 120,
+       "lift": 0.04999999999999999,
+       "goal": true,
+       "pct": 38,
+       "you": "You: down the middle (1.22 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 38,
+     "starsShown": 1,
+     "cardStars": 1
+    }
+   ],
+   "afterReloadTotal": "★ 7 / 150"
+  },
+  {
+   "id": "l1",
+   "pathReadyMs": 1370,
+   "levels": [
+    {
+     "path": "l1",
+     "level": 1,
+     "open": "true",
+     "matchReadyMs": 2127,
+     "goal": "wy180400278",
+     "header": "LEVEL 1 · LIGUE 1 2017/18 · 20 AUG 2017 Lille 0–1 Caen · 69' You are Ivan Santini (Caen) · Left Foot · xG 89% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). Féret → Rodelin MATCH LAB GOALS 0 ASSI",
+     "buildUpMs": 9914,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": true,
+       "pct": 25,
+       "you": "You: bottom right corner (1.65 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 25,
+     "starsShown": 1,
+     "cardStars": 1
+    },
+    {
+     "path": "l1",
+     "level": 2,
+     "open": "true",
+     "matchReadyMs": 1085,
+     "goal": "wy253394573",
+     "header": "LEVEL 2 · LIGUE 1 2017/18 · 19 MAY 2018 Olympique Lyonnais 0–1 Nice · 48' You are Memphis Depay (Olympique Lyonnais) · Right Foot · xG 74% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). Aouar → M",
+     "buildUpMs": 12518,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: low, down the middle (1.20 m off)"
+      },
+      {
+       "dx": -25,
+       "pull": 120,
+       "lift": 0.5,
+       "goal": true,
+       "pct": 0,
+       "you": "You: left side, mid-height (2.68 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 0,
+     "starsShown": 1,
+     "cardStars": 1
+    },
+    {
+     "path": "l1",
+     "level": 3,
+     "open": "true",
+     "matchReadyMs": 726,
+     "goal": "wy245062160",
+     "header": "LEVEL 3 · LIGUE 1 2017/18 · 21 APR 2018 Amiens SC 3–0 Strasbourg · 94' You are Idriss Saadi (Strasbourg) · Left Foot · xG 68% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). Blayac → Saadi MATCH L",
+     "buildUpMs": 573,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: left side, mid-height (2.59 m off)"
+      },
+      {
+       "dx": 25,
+       "pull": 165,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 25,
+       "pull": 120,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 25,
+       "pull": 165,
+       "lift": 0.5,
+       "goal": true,
+       "pct": 0,
+       "you": "You: right side, mid-height (3.32 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 0,
+     "starsShown": 1,
+     "cardStars": 1
+    },
+    {
+     "path": "l1",
+     "level": 4,
+     "open": "true",
+     "matchReadyMs": 865,
+     "goal": "wy178131978",
+     "header": "LEVEL 4 · LIGUE 1 2017/18 · 12 AUG 2017 Nantes 0–0 Olympique Marseille · 87' You are Lucas Ocampos (Olympique Marseille) · Right Foot · xG 60% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). MATCH",
+     "buildUpMs": 48,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": true,
+       "pct": 0,
+       "you": "You: left side, mid-height (3.04 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 0,
+     "starsShown": 1,
+     "cardStars": 1
+    },
+    {
+     "path": "l1",
+     "level": 5,
+     "open": "true",
+     "matchReadyMs": 859,
+     "goal": "wy253347329",
+     "header": "LEVEL 5 · LIGUE 1 2017/18 · 19 MAY 2018 Olympique Marseille 1–0 Amiens SC · 18' You are Konstantinos Mitroglou (Olympique Marseille) · Left Foot · xG 56% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match ",
+     "buildUpMs": 41,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: right side, mid-height (0.88 m off)"
+      },
+      {
+       "dx": -25,
+       "pull": 165,
+       "lift": 0.19999999999999998,
+       "goal": true,
+       "pct": 0,
+       "you": "You: left side, mid-height (5.16 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 0,
+     "starsShown": 1,
+     "cardStars": 1
+    }
+   ],
+   "afterReloadTotal": "★ 5 / 150"
+  },
+  {
+   "id": "worldies",
+   "pathReadyMs": 1519,
+   "levels": [
+    {
+     "path": "worldies",
+     "level": 1,
+     "open": "true",
+     "matchReadyMs": 2024,
+     "goal": "wy234950722",
+     "header": "LEVEL 1 · SERIE A 2017/18 · 17 MAR 2018 Udinese 0–1 Sassuolo · 44' You are Seko Fofana (Udinese) · Right Foot · xG 3% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). Samir → Samir MATCH LAB GOALS ",
+     "buildUpMs": 9797,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: top left corner (8.59 m off)"
+      },
+      {
+       "dx": 25,
+       "pull": 120,
+       "lift": 0.19999999999999998,
+       "goal": false,
+       "pct": 36,
+       "you": "You: top right corner (1.27 m off)"
+      },
+      {
+       "dx": 27.66672883617589,
+       "pull": 120,
+       "lift": 0.04999999999999999,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 27.66672883617589,
+       "pull": 165,
+       "lift": 0.04999999999999999,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 27.66672883617589,
+       "pull": 120,
+       "lift": 0.04999999999999999,
+       "goal": true,
+       "pct": 0,
+       "you": "You: high, down the middle (2.59 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 0,
+     "starsShown": 1,
+     "cardStars": 1
+    },
+    {
+     "path": "worldies",
+     "level": 2,
+     "open": "true",
+     "matchReadyMs": 792,
+     "goal": "wy227299664",
+     "header": "LEVEL 2 · SERIE A 2017/18 · 10 FEB 2018 Napoli 2–1 Lazio · 56' You are Mário Rui (Napoli) · Left Foot · xG 3% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). Hysaj on the ball MATCH LAB GOALS 0 AS",
+     "buildUpMs": 13436,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": -8,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": 16,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": -24,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": 32,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": -40,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": 48,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": -56,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": 64,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": -72,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": 80,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": -88,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      }
+     ],
+     "starsShown": 0,
+     "cardStars": 0
+    },
+    {
+     "path": "worldies",
+     "level": 3,
+     "open": "false",
+     "note": "locked"
+    },
+    {
+     "path": "worldies",
+     "level": 4,
+     "open": "false",
+     "note": "locked"
+    },
+    {
+     "path": "worldies",
+     "level": 5,
+     "open": "false",
+     "note": "locked"
+    }
+   ],
+   "afterReloadTotal": "★ 1 / 150"
+  },
+  {
+   "id": "bangers",
+   "pathReadyMs": 975,
+   "levels": [
+    {
+     "path": "bangers",
+     "level": 1,
+     "open": "true",
+     "matchReadyMs": 1985,
+     "goal": "bg-mkhitaryan-sunderland-2016",
+     "header": "LEVEL 1 · PREMIER LEAGUE 2016/17 · 26 DEC 2016 Manchester United 2–0 Sunderland · 86' You are Henrikh Mkhitaryan (Manchester United) · Right Foot · xG 57% Mkhitaryan v Sunderland — the scorpion kick Drafted from public record · scorpion kick · the shot spot, w",
+     "buildUpMs": 3121,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom right corner (2.63 m off)"
+      },
+      {
+       "dx": -25,
+       "pull": 120,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": -25,
+       "pull": 165,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": -25,
+       "pull": 120,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": -25,
+       "pull": 165,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": -25,
+       "pull": 120,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": -25,
+       "pull": 165,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": -25,
+       "pull": 120,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": -25,
+       "pull": 165,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: down the middle (0.45 m off)"
+      },
+      {
+       "dx": -21.731393829805217,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: right side, mid-height (2.16 m off)"
+      },
+      {
+       "dx": -24.496203093898938,
+       "pull": 165,
+       "lift": 0.19999999999999998,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom right corner (2.67 m off)"
+      },
+      {
+       "dx": -9.711036739138551,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": true,
+       "pct": 84,
+       "you": "You: down the middle (0.54 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 84,
+     "starsShown": 2,
+     "cardStars": 2
+    },
+    {
+     "path": "bangers",
+     "level": 2,
+     "open": "true",
+     "matchReadyMs": 986,
+     "goal": "bg-sergiroberto-psg-2017",
+     "header": "LEVEL 2 · CHAMPIONS LEAGUE 2016/17 · ROUND OF 16, 2ND LEG Barcelona 5–1 Paris Saint-Germain · 95' You are Sergi Roberto (Barcelona) · Right Foot · xG 38% Sergi Roberto v PSG — the 6-1 Drafted from public record · volley · the shot spot, where it went in and th",
+     "buildUpMs": 1561,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom left corner (2.98 m off)"
+      },
+      {
+       "dx": 25,
+       "pull": 120,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 25,
+       "pull": 165,
+       "lift": 0.5,
+       "goal": true,
+       "pct": 10,
+       "you": "You: top right corner (1.88 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 10,
+     "starsShown": 1,
+     "cardStars": 1
+    },
+    {
+     "path": "bangers",
+     "level": 3,
+     "open": "true",
+     "matchReadyMs": 906,
+     "goal": "bg-lewandowski-augsburg-2021",
+     "header": "LEVEL 3 · BUNDESLIGA 2020/21 · 22 MAY 2021 Bayern Munich 4–2 FC Augsburg · 90' You are Robert Lewandowski (Bayern Munich) · Right Foot · xG 35% Lewandowski v Augsburg — the record 41st Drafted from public record · rebound, rounded the keeper · the shot spot, w",
+     "buildUpMs": 2579,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": true,
+       "pct": 3,
+       "you": "You: high, down the middle (2.30 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 3,
+     "starsShown": 1,
+     "cardStars": 1
+    },
+    {
+     "path": "bangers",
+     "level": 4,
+     "open": "true",
+     "matchReadyMs": 888,
+     "goal": "bg-gotze-argentina-2014",
+     "header": "LEVEL 4 · WORLD CUP 2014 · FINAL Germany 0–0 Argentina · 113' You are Mario Götze (Germany) · Left Foot · xG 30% Götze v Argentina — the World Cup winner Drafted from public record · chest control and volley · the shot spot, where it went in and the passes are",
+     "buildUpMs": 3590,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: right side, mid-height (1.34 m off)"
+      },
+      {
+       "dx": 25,
+       "pull": 120,
+       "lift": 0.19999999999999998,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom right corner (0.57 m off)"
+      },
+      {
+       "dx": 49.04467733573211,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: right side, mid-height (1.17 m off)"
+      },
+      {
+       "dx": 2.055045184420706,
+       "pull": 120,
+       "lift": 0.19999999999999998,
+       "goal": false,
+       "pct": 0,
+       "you": "You: down the middle (2.56 m off)"
+      },
+      {
+       "dx": 87.77588864360068,
+       "pull": 120,
+       "lift": 0.04999999999999999,
+       "goal": false,
+       "pct": 0,
+       "you": "You: right side, mid-height (1.80 m off)"
+      },
+      {
+       "dx": 140,
+       "pull": 120,
+       "lift": -0.1,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom right corner (0.38 m off)"
+      },
+      {
+       "dx": 140,
+       "pull": 120,
+       "lift": 0.04999999999999999,
+       "goal": true,
+       "pct": 0,
+       "you": "You: high, down the middle (3.75 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 0,
+     "starsShown": 1,
+     "cardStars": 1
+    },
+    {
+     "path": "bangers",
+     "level": 5,
+     "open": "true",
+     "matchReadyMs": 936,
+     "goal": "bg-robben-dortmund-2013",
+     "header": "LEVEL 5 · CHAMPIONS LEAGUE 2012/13 · FINAL Borussia Dortmund 1–1 Bayern Munich · 89' You are Arjen Robben (Bayern Munich) · Left Foot · xG 29% Robben v Dortmund — the 89th-minute winner Drafted from public record · slotted finish · the shot spot, where it went",
+     "buildUpMs": 3025,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": -8,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": 16,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": -24,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": 32,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": -40,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": 48,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": -56,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": 64,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": -72,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": 80,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      },
+      {
+       "dx": -88,
+       "pull": 120,
+       "lift": 0.35,
+       "out": "no strike"
+      }
+     ],
+     "starsShown": 0,
+     "cardStars": 0
+    }
+   ],
+   "afterReloadTotal": "★ 5 / 183"
+  }
+ ],
+ "errors": []
+}

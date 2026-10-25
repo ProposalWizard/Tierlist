@@ -88,15 +88,22 @@ export async function findBall(page) {
     const c = document.createElement("canvas"); c.width = im.width; c.height = im.height; const g = c.getContext("2d"); g.drawImage(im, 0, 0);
     const cv = document.querySelector("canvas").getBoundingClientRect();
     const d = g.getImageData(0, 0, c.width, c.height).data, W = c.width, H = c.height, seen = new Uint8Array(W * H), out = [];
-    const y0c = Math.max(0, Math.floor(cv.top * sc)), y1c = Math.min(H, Math.floor(cv.bottom * sc));
+    // Not the commentary box and tip at the bottom of the pitch (white text).
+    const y0c = Math.max(0, Math.floor(cv.top * sc)), y1c = Math.min(H, Math.floor(Math.min(cv.bottom, innerHeight) * sc));
+    // Skip the commentary box and the tip (white words over the pitch).
+    const boxes = [...document.querySelectorAll("div")].filter((e) => { const t = e.textContent ?? ""; return (t.startsWith("LIVE COMMENTARY") || t.startsWith("💡")) && t.length < 400; }).map((e) => e.getBoundingClientRect()).filter((r) => r.height < 140);
+    const inBox = (x, y) => boxes.some((r) => x >= r.left - 4 && x <= r.right + 4 && y >= r.top - 4 && y <= r.bottom + 4);
     const w = (x, y) => { const i = (y * W + x) * 4; const mx = Math.max(d[i], d[i + 1], d[i + 2]), mn = Math.min(d[i], d[i + 1], d[i + 2]); return mn > 150 && mx - mn < 28; };
+    // Grass just beside the blob (the commentary words sit on a dark box, not on grass).
+    const green = (x, y) => { if (x < 0 || y < 0 || x >= W || y >= H) return false; const i = (y * W + x) * 4; return d[i + 1] > 90 && d[i + 1] > d[i] + 30 && d[i + 1] > d[i + 2] + 30; };
+    const onGrass = (x0, x1, ya, yb) => { const m = Math.round((ya + yb) / 2), g = Math.round(4 * sc); return [green(x0 - g, m), green(x1 + g, m), green(Math.round((x0 + x1) / 2), ya - g), green(Math.round((x0 + x1) / 2), yb + g)].filter(Boolean).length >= 2; };
     for (let y = y0c; y < y1c; y++) for (let x = 0; x < W; x++) {
       if (seen[y * W + x] || !w(x, y)) continue;
       const st = [[x, y]]; seen[y * W + x] = 1; let n = 0, x0 = x, x1 = x, ya = y, yb = y;
       while (st.length) { const [a, b] = st.pop(); n++; x0 = Math.min(x0, a); x1 = Math.max(x1, a); ya = Math.min(ya, b); yb = Math.max(yb, b);
         for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const u = a + dx, v = b + dy; if (u < 0 || v < y0c || u >= W || v >= y1c || seen[v * W + u] || !w(u, v)) continue; seen[v * W + u] = 1; st.push([u, v]); } }
       const bw = (x1 - x0 + 1) / sc, bh = (yb - ya + 1) / sc;
-      if (bw >= 3 && bw <= 11 && bh >= 3 && bh <= 11 && n / ((x1 - x0 + 1) * (yb - ya + 1)) > 0.4) out.push([(x0 + x1) / 2 / sc, (ya + yb) / 2 / sc]);
+      if (bw >= 3 && bw <= 11 && bh >= 3 && bh <= 11 && n / ((x1 - x0 + 1) * (yb - ya + 1)) > 0.4 && !inBox((x0 + x1) / 2 / sc, (ya + yb) / 2 / sc) && onGrass(x0, x1, ya, yb)) out.push([(x0 + x1) / 2 / sc, (ya + yb) / 2 / sc]);
     }
     return out;
   }, buf.toString("base64"));
