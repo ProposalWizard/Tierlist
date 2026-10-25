@@ -102,9 +102,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "version": "0.112h",
       "title": "Harry's patch notes: Marketing Studio Plan",
       "publishedAt": "2026-10-25T06:30:00Z",
-      "updatedAt": null,
+      "updatedAt": "2026-10-25T16:20:00Z",
+      "updateNote": "Still a plan. The guest account and ad pages from 0.110h now exist on the site, switched off.",
       "artifactUrl": null,
-      "summary": "Plan only, nothing built. What the Marketing tab has today (Board, Client, Studio, Uploads; Calendar, Scripts, Statics and a card page not built) and the plan for Mikey: paste a TikTok link and Claude logs it, breaks it down, writes our version and builds the video. A link in #marketing or the tab's paste box makes the same card; each card's updates post into one #marketing thread. Nine build slices, smallest first. Guest accounts and ad landing pages now belong in the Marketing studio, with their switch-on list (Turnstile first).",
+      "summary": "Plan only, nothing built. What the Marketing tab has today (Board, Client, Studio, Uploads; Calendar, Scripts, Statics and a card page not built) and the plan for Mikey: paste a TikTok link and Claude logs it, breaks it down, writes our version and builds the video. A link in #marketing or the tab's paste box makes the same card; each card's updates post into one #marketing thread. Nine build slices, smallest first. Guest accounts and ad landing pages now belong in the Marketing studio, with their switch-on list (Turnstile first); they are on the site now, switched off.",
       "stats": [
         {
           "value": "4 of 7",
@@ -191,9 +192,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "version": "0.111h",
       "title": "Harry's patch notes: Team Room, The Slack-Style Plan",
       "publishedAt": "2026-10-25T06:20:00Z",
-      "updatedAt": null,
+      "updatedAt": "2026-10-25T16:20:00Z",
+      "updateNote": "Now live: the Slack-style Team room in Admin → Team (channel list, 9 presets, presence and status, schedules, bells and pop-ups, #bugs fills itself). Bots that run Claude are not built yet.",
       "artifactUrl": null,
-      "summary": "Being built now on the Harry branch, not live. The Team room in Slack's layout with our colours: channel list, chat, thread; the list folds with « or Cmd/Ctrl Shift D, 220 px wide; a home button instead of the admin menu. The board's sections become 9 preset channels. Bots sit in the list like people with a BOT tag and a live job line. Notifications per channel (every message, mentions, off) plus computer pop-ups. #bugs posts a Bug bot card for each report; #health posts every morning. #connectors lets you @ any service; /show lists every connection. Draw a box on a page and tag a bot. Each person's bot checks its own connections. Schedules in your status, #today check-ins and gentle nudges. Build order and questions for the team.",
+      "summary": "Live in Admin → Team since 25 Oct, about 16:10 UK: channel list with a home button and « to fold it, 9 preset channels, presence and status, schedules, bells per channel with desktop pop-ups, and #bugs fills itself from bug reports as Bug bot cards. Bots that run Claude are not built yet; the rest below is the plan. The Team room in Slack's layout with our colours: channel list, chat, thread; the list folds with « or Cmd/Ctrl Shift D, 220 px wide; a home button instead of the admin menu. The board's sections become 9 preset channels. Bots sit in the list like people with a BOT tag and a live job line. Notifications per channel (every message, mentions, off) plus computer pop-ups. #bugs posts a Bug bot card for each report; #health posts every morning. #connectors lets you @ any service; /show lists every connection. Draw a box on a page and tag a bot. Each person's bot checks its own connections. Schedules in your status, #today check-ins and gentle nudges. Build order and questions for the team.",
       "stats": [
         {
           "value": "9",
@@ -208,8 +210,8 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "label": "usage cards + running the team"
         },
         {
-          "value": "Building",
-          "label": "Harry branch, not live"
+          "value": "Live",
+          "label": "Admin → Team; Claude bots not built"
         }
       ],
       "sections": [
@@ -299,9 +301,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "version": "0.110h",
       "title": "Harry's patch notes: Supabase And Cloudflare",
       "publishedAt": "2026-10-25T06:10:00Z",
-      "updatedAt": null,
+      "updatedAt": "2026-10-25T16:20:00Z",
+      "updateNote": "Now live: one login check per request and the Team room tables. Guest accounts and ad pages are on the site but switched off (guest SQL not run). 19 indexes done; the rest of the tidy waits on your yes.",
       "artifactUrl": null,
-      "summary": "Claude can now see and work in Supabase: look-only by default, every change asked first with a READ ONLY / CHANGES THE DATABASE header (live). Done in the live database on 25 Oct: the 2 missing tables made, the login-streak hole closed, 19 missing indexes added. Measured: the FIFA stats table is 312 MB of 383 MB; shrink step 1 frees about 78 MB (bundle 144 to 66 MB). Next tidy steps: drop 4 unused indexes, FIFA shrink and space clean-up, 42 row rules, nightly draft-room tidy. On the Harry branch: one login check per request instead of two; guest accounts and ad landing pages (built, switched off; switch-on list on 0.112h); the bug-hunt skill. Plus what Supabase and Cloudflare are for us.",
+      "summary": "Claude can now see and work in Supabase: look-only by default, every change asked first with a READ ONLY / CHANGES THE DATABASE header (live). Done in the live database on 25 Oct: the 2 missing tables made, the login-streak hole closed, 19 missing indexes added. Measured: the FIFA stats table is 312 MB of 383 MB; shrink step 1 frees about 78 MB (bundle 144 to 66 MB). Next tidy steps: drop 4 unused indexes, FIFA shrink and space clean-up, 42 row rules, nightly draft-room tidy. Live since 25 Oct, about 16:10 UK: one login check per request instead of two, the Team room tables (team_room_v3 and v4), the bug-hunt skill. Guest accounts and ad landing pages are on the site but switched off (guest_accounts.sql not run; switch-on list on 0.112h). Plus what Supabase and Cloudflare are for us.",
       "stats": [
         {
           "value": "3",
@@ -375,15 +378,23 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         },
         {
           "kind": "changed",
-          "title": "Changed (Harry branch, not live)",
+          "title": "Changed (live)",
           "items": [
             {
               "title": "One login check per request, not two",
-              "detail": "Game files (sounds, pictures, models) skip it."
+              "detail": "Game files (sounds, pictures, models) skip it.",
+              "pill": {
+                "text": "live",
+                "tone": "amber"
+              }
             },
             {
               "title": "Guest accounts and ad landing pages",
-              "detail": "Built, switched off. Turnstile human check. Decided: players name their own player, a League Two start, a daily sign-in nudge for 7 days. Switch-on list on 0.112h."
+              "detail": "On the site, switched off (guest_accounts.sql not run). Turnstile human check. Built: players name their own player, a League Two start, a daily sign-in nudge for 7 days. Switch-on list on 0.112h.",
+              "pill": {
+                "text": "off",
+                "tone": "amber"
+              }
             },
             {
               "title": "The bug-hunt skill",
@@ -436,9 +447,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "version": "0.109h",
       "title": "Harry's patch notes: Game Fixes From The 0.108h Comments",
       "publishedAt": "2026-10-25T06:00:00Z",
-      "updatedAt": null,
+      "updatedAt": "2026-10-25T16:20:00Z",
+      "updateNote": "Now live: headers and volleys redone (no arrow, tap the ball, no late zoom, men 22 px, one cross), plus the cut-scene skin, 22 px men and smooth build-up camera. Darker tones and trial penalty size still open.",
       "artifactUrl": null,
-      "summary": "On the Harry branch, not live. Cut scenes use the drawn head when photo faces are off: light-tone face against neck 5.9 to 1.0 (signing, office, farewell, award scenes); darker tones still 4.6 to 6.6, waiting on a call. Every chance kind draws men at 22 px (was up to 31, 37 on a byline cross); only the pitch zooms; goal rates unchanged. Build-ups use one smooth camera glide (worst jump 640 to 38 px a second). Headers and volleys: the tap-the-goal version was turned down and is being redone to Harry's notes: skip only the drag-back arrow and go straight to clicking the ball, no late zoom, men stay the same size, the cross comes in once, ball and trail track properly, same for volleys and acrobatics.",
+      "summary": "Live on the site since 25 Oct, about 16:10 UK. Cut scenes use the drawn head when photo faces are off: light-tone face against neck 5.9 to 1.0 (signing, office, farewell, award scenes); darker tones still 4.6 to 6.6, waiting on a call. Every chance kind draws men at 22 px (was up to 31, 37 on a byline cross); only the pitch zooms; goal rates unchanged. Build-ups use one smooth camera glide (worst jump 640 to 38 px a second). Headers and volleys redone to Harry's notes: no drag-back arrow, straight to the Head it? / Volley it? ball screen where you tap the ball, no late zoom, men stay 22 px, the cross comes in once, the trail follows the ball, same in the Head & Volley drill. Goals per 100 within about 1 of before (header 17.7 / 24.8 / 34.3 vs 19.0 / 25.0 / 35.3; volley 19.0 / 27.2 / 33.8 vs 19.3 / 26.3 / 35.3 at Aerial 30 / 60 / 90).",
       "stats": [
         {
           "value": "5.9 → 1.0",
@@ -453,8 +465,8 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "label": "worst build-up camera jump (px/s)"
         },
         {
-          "value": "Redo",
-          "label": "headers and volleys"
+          "value": "Live",
+          "label": "headers and volleys, redone"
         }
       ],
       "sections": [
@@ -473,6 +485,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             {
               "title": "Smooth build-up camera",
               "detail": "Highlights: one glide, no snap at OFFSIDE."
+            },
+            {
+              "title": "Headers and volleys",
+              "detail": "No arrow: the Head it? / Volley it? ball screen opens, tap the ball."
             }
           ]
         },
@@ -487,6 +503,14 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             {
               "title": "Every chance kind draws men at 22 px",
               "detail": "Penalties, cutbacks, one-on-ones, crosses, drills and the trial. Only the pitch zooms."
+            },
+            {
+              "title": "Headers and volleys redone to your notes",
+              "detail": "No drag-back arrow, straight to the ball screen, no late zoom, men 22 px, the cross comes in once, the trail follows the ball; same in the Head & Volley drill. Goal rates within about 1 of before.",
+              "pill": {
+                "text": "live",
+                "tone": "amber"
+              }
             }
           ]
         },
@@ -504,14 +528,6 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "kind": "known",
           "title": "Known issues",
           "items": [
-            {
-              "title": "Headers and volleys being redone",
-              "detail": "Skip only the drag-back arrow, click the ball, no late zoom, same size men, the cross comes in once, ball and trail track properly; same for volleys and acrobatics.",
-              "pill": {
-                "text": "being redone",
-                "tone": "amber"
-              }
-            },
             {
               "title": "Darker skin tones in cut scenes",
               "detail": "Still 4.6 to 6.6. Needs a change to the shared skin paint: your call.",
