@@ -27,6 +27,78 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.110",
+      "title": "Leo's overnight build: 7 chats finishing the 24 Oct update (in progress, for you to judge)",
+      "publishedAt": "2026-10-25T02:05:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/4aeZs72kiGCS7r4xMgBg2A",
+      "summary": "Leo, 25 Oct overnight. Leo went to sleep and asked for the most productive work possible, written up for the morning. 7 chats each have one job on their own branch. Nothing goes into the game until Leo picks what is good. Everything new sits behind Leo's 24 Oct switch. This note is updated in the morning with the results, clips and numbers.",
+      "stats": [
+        {
+          "value": "7",
+          "label": "chats working overnight"
+        },
+        {
+          "value": "0",
+          "label": "changes in the game until Leo picks"
+        },
+        {
+          "value": "06:30",
+          "label": "UTC, results due"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Being worked on tonight",
+          "items": [
+            {
+              "title": "Chat 1 · Celebrations, finished",
+              "detail": "Nobody stands on you during the knee slide (live or in the video). The 3D celebration filmed for the first time, if 3D loads here. 10 real goals checked by eye."
+            },
+            {
+              "title": "Chat 2 · Smooth feed scrolling",
+              "detail": "Target: no hiccup over 0.1 s on a slow phone (now 11-16 of 0.14-0.17 s). Plus: how fast your own goal's post plays after a match."
+            },
+            {
+              "title": "Chat 3 · Clips that look like the game",
+              "detail": "The test machine repeats 1 frame in 4, which is why the ball looks jumpy in our clips. A new frame-by-frame recorder; the knee slide, big moment and aeroplane goals re-filmed with sound."
+            },
+            {
+              "title": "Chat 4 · Weather in real matches",
+              "detail": "A new part of your switch: rain, wind and pitch quality in career matches, shown before kick-off. Measured on vs off; kept modest. Off = no change."
+            },
+            {
+              "title": "Chat 5 · Real Goals, ready for players",
+              "detail": "Every path played on a slow phone and its bugs fixed; why the realGoals test fails on main; a short plan for putting it in the game (you decide)."
+            },
+            {
+              "title": "Chat 6 · End of season, solid",
+              "detail": "The white screen during the awards night chased down; awards-night frame rate on a slow phone; season video sound checked; the whole season end filmed."
+            },
+            {
+              "title": "Chat 7 · Bug hunt, round 2",
+              "detail": "2 full seasons with your switch on (and one off), refresh at 10 moments, back on every new screen. Fixes behind \"Bug fixes\"; others' bugs listed, no to-dos."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Rules for tonight",
+          "items": [
+            {
+              "title": "Own branches only",
+              "detail": "No pushes to Leo or main, no to-dos, nothing bicycle-related (Harry's), real clips only with sound."
+            },
+            {
+              "title": "Waiting on Leo",
+              "detail": "The big-moment banner: A, B, C or none."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.108h",
       "title": "Harry's patch notes: Your 3D Man On The Player Card, Even 3D Skin, And Players Back To Normal Size",
       "publishedAt": "2026-10-23T05:00:00Z",
