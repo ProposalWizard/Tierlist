@@ -11,7 +11,8 @@
  */
 export type ShopItemsView = 1 | 3 | 5;
 export const SHOP_ITEMS_VIEW_KEY = "star-shop-items-view";
-export const SHOP_ITEMS_VIEW_DEFAULT: ShopItemsView = 3;
+// 5 by default since 25 Oct 2026 (Mikey: "make it the default for everyone").
+export const SHOP_ITEMS_VIEW_DEFAULT: ShopItemsView = 5;
 
 export function loadShopItemsView(): ShopItemsView {
   try {

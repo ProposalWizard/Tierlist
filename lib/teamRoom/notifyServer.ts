@@ -13,6 +13,8 @@ import webpush from "web-push";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { TEAM_ROOM, isTeamPerson, type TeamPerson } from "./config";
 import { cleanDevices, deliver, type Delivery, type PushDevice, type PushPayload } from "./notify";
+import { BELLS_KEY, cleanBells, type BellPrefs } from "./bells";
+import { cleanStatus, liveStatus } from "./status";
 
 /** The private key is set (the button says "not switched on yet" until it is). */
 export const pushReady = () => !!process.env.TEAM_PUSH_PRIVATE_KEY?.trim() && !!TEAM_ROOM.push.publicKey;
@@ -60,6 +62,24 @@ export async function rungPatchesOf(sb: Admin, id: string): Promise<string[]> {
 
 export async function saveRungPatches(sb: Admin, id: string, versions: string[]) {
   await sb.auth.admin.updateUserById(id, { app_metadata: { [TEAM_ROOM.push.patchesKey]: versions } });
+}
+
+/** Each person's 🔔 choices (user_metadata.teamBells, written by their own browser). */
+export async function bellsOf(sb: Admin, accounts: Partial<Record<TeamPerson, string>>): Promise<Partial<Record<TeamPerson, BellPrefs>>> {
+  const out: Partial<Record<TeamPerson, BellPrefs>> = {};
+  await Promise.all((Object.keys(accounts) as TeamPerson[]).map(async (p) => {
+    const u = await account(sb, accounts[p]!);
+    out[p] = cleanBells((u?.user_metadata as Record<string, unknown> | undefined)?.[BELLS_KEY]);
+  }));
+  return out;
+}
+
+/** Who has buzzes paused right now (do not disturb, or a schedule that pauses them; team_status). Missing table = nobody. */
+export async function quietPeople(sb: Admin, now = new Date()): Promise<TeamPerson[]> {
+  const { data, error } = await sb.from("team_status").select("*");
+  if (error) return [];
+  return ((data ?? []) as Record<string, unknown>[]).filter((r) => isTeamPerson(r.person))
+    .filter((r) => liveStatus(cleanStatus(r, r.person as TeamPerson), now).quiet).map((r) => r.person as TeamPerson);
 }
 
 /** Send one push to one device with the site's key. Throws (with statusCode) when refused. */

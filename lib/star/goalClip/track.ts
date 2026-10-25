@@ -94,6 +94,17 @@ export interface ClipMeta {
   /** Your career's season and week, so a reel can find a match's goals. */
   season?: number;
   week?: number;
+  /** A big late moment (commentary.ts lateKindOf): YOUR goal at 85'+ that
+   *  wins it ("winner") or levels it ("level"). The video's commentator then
+   *  calls it with the late lines. Absent on every other goal and on clips
+   *  recorded before 22 Oct 2026. */
+  late?: "winner" | "level";
+  /** YOUR goal's run to the corner and the move you had equipped
+   *  (lib/star/celebration.ts): the move, where you set off from (pitch m)
+   *  and when, in seconds after the goal. The video works your run out from
+   *  these with the same plan the match used, so it is whole even when the
+   *  match was tapped past. Absent on other goals and on older clips. */
+  celebration?: { move: string; from: [number, number]; at: number };
 }
 
 export interface GoalTrack {

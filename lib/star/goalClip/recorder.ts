@@ -16,11 +16,16 @@ import {
   CLIP_FPS, TRACK_VERSION, SAVE_KINDS, frameStride,
   type ClipBody, type ClipEvent, type ClipEventKind, type ClipMeta, type FrameState, type GoalTrack,
 } from "./track";
+import { planCelebration, celebAt, CELEB_SPECS, type CelebrationMove } from "../celebration";
 
 /** How much of the run-up before the first kick a clip shows. */
 export const LEAD_IN_S = 0.9;
 /** How long after the ball crosses the line a clip keeps going. */
 export const POST_GOAL_S = 2.2;
+/** YOUR goal with a celebration runs on this much longer (Leo, 22 Oct 2026): the run and the move. */
+export const CELEB_EXTRA_S = 2.5;
+/** How long after the goal a clip runs: longer when it carries your celebration. */
+export const postGoalFor = (facts: { celebration?: unknown }): number => POST_GOAL_S + (facts.celebration ? CELEB_EXTRA_S : 0);
 /** The longest a clip can be. A long move is cut from the front. */
 export const MAX_CLIP_S = 12;
 /** How much the recorder remembers while nothing has happened yet. */
@@ -82,7 +87,7 @@ export class GoalRecorder {
       // move that began before the oldest sample still has its first kick, so
       // its clip starts as early as the recording goes rather than 2 s before
       // the goal.
-    } else if (this.clock >= this.goal.t + POST_GOAL_S) {
+    } else if (this.clock >= this.goal.t + postGoalFor(this.goal.facts)) {
       this.finishNow();
     }
   }
@@ -102,6 +107,13 @@ export class GoalRecorder {
     this.finishNow();
     this.events.push({ t: this.clock, kind: "goal", ...(facts.scorerBody ? { who: facts.scorerBody } : {}) });
     this.goal = { t: this.clock, facts };
+  }
+
+  /** Your goal: the run to the corner and the move begin now (celebration.ts). */
+  celebrate(move: string, from: { x: number; y: number }): void {
+    const g = this.goal;
+    if (!g || !g.facts.isYou) return;
+    g.facts = { ...g.facts, celebration: { move, from: [Math.round(from.x * 100) / 100, Math.round(from.y * 100) / 100], at: Math.max(0, Math.round((this.clock - g.t) * 1000) / 1000) } };
   }
 
   /** True while a goal's last moments are still being recorded. */
@@ -146,7 +158,7 @@ export function cutClip(
   // after 1.3-1.8 s, measured 7 Oct 2026), so the frames after the last one
   // recorded are carried on from it: everyone eases to a stop (extendRow).
   // Before 11 Oct 2026 the clip simply ended where the recording did.
-  const endT = goalT + POST_GOAL_S;
+  const endT = goalT + postGoalFor(facts);
   const tail = extendRow(samples, bodies.length);
   let startT = Math.max(samples[0].t, (first ? first.t : goalT - 2) - LEAD_IN_S);
   if (endT - startT > MAX_CLIP_S) startT = endT - MAX_CLIP_S;
@@ -179,6 +191,24 @@ export function cutClip(
       // other number in centimetres.
       const scaled = c === stride - 2 ? v * 1000 : v * 100;
       data[base + c] = Math.max(-32767, Math.min(32767, Math.round(scaled)));
+    }
+  }
+  // Your celebration: your run and your move come from the plan the match
+  // played (celebration.ts), so the video has all of it even when the match
+  // was tapped past before the recording got there.
+  const cel = facts.celebration;
+  const youIdx = bodies.findIndex(b => b.id === "you");
+  if (cel && youIdx >= 0 && cel.move in CELEB_SPECS) {
+    const plan = planCelebration({ x: cel.from[0], y: cel.from[1] }, cel.move as CelebrationMove);
+    const t0 = goalT + cel.at;
+    for (let k = 0; k < n; k++) {
+      const T = startT + k / CLIP_FPS;
+      if (T < t0) continue;
+      const st = celebAt(plan, T - t0);
+      const c = 3 + youIdx * 3;
+      data[k * stride + c] = Math.round(st.x * 100);
+      data[k * stride + c + 1] = Math.round(st.y * 100);
+      data[k * stride + c + 2] = 0;
     }
   }
   const at = (t: number) => Math.round((t - startT) * 1000) / 1000;

@@ -9,9 +9,10 @@ import { NATIONAL_LEAGUE_NORTH_CLUBS } from "../../lib/star/clubs";
 import { nextFixtureFor } from "../../lib/star/competitions";
 import { starsNow } from "../../lib/star/starPoints";
 import { isOpen, recordFirstMatch, recordBossMeeting, recordDrill, appInstalled, lockHint, recordPhoneBought } from "../../lib/star/unlocks";
-import { storyBeat, ackBeat, trainingDayOn, trainingDayLeft, recordTrainingDayDrill, TRAINING_DAY, type Beat } from "../../lib/star/story";
+import { firstCanDealPrice, storyBeat, ackBeat, trainingDayOn, trainingDayLeft, recordTrainingDayDrill, TRAINING_DAY, type Beat } from "../../lib/star/story";
 import { buildMessages } from "../../lib/star/phoneUnread";
 import { setPieceTalkDue } from "../../lib/star/setPieceTalk";
+import { setPieceDuties } from "../../lib/star/setPieces";
 import type { CareerState, StarPlayer } from "../../lib/star/types";
 
 let fails = 0;
@@ -47,31 +48,34 @@ check(c.currentBoot.matches === 5 && (c.currentBoot.power ?? 0) > 0, `his old bo
 check(beat() === null, "then nothing more before the first game");
 check(lockHint(c, "shop") === "After your third game", "Shop lock line says game 3");
 
-// 1 · After game 1 (no goal): the gaffer, then training
+// 1 · After game 1 (no goal): straight to training, then the club shop's can
 play(0);
 check(c.energy === 100, `before game 2 the rest days fill you up (energy ${c.energy})`);
-check(beat() === "boss", "game 1: the gaffer calls you in first");
-check(!isOpen(c, "training"), "game 1: Training still shut before the talk");
-c = ackBeat(c, "boss"); c = recordBossMeeting(c);
-check(beat() === "training", "after the talk: 'Training tomorrow'");
+check(c.kibCans.basic === 0, "no KIB cans of your own yet");
+check(beat() === "training", "game 1: 'Time to train' straight away (no boss talk)");
 c = ackBeat(c, "training");
 check(isOpen(c, "training") && trainingDayOn(c), "training opens, the training day is on");
 check(!isOpen(c, "relations"), "Relations waits for the phone");
+check(beat() === null, "nothing more until both drills are done");
 for (const s of TRAINING_DAY) { c = recordTrainingDayDrill(recordDrill(c), s); }
 check(trainingDayLeft(c).length === 0 && !trainingDayOn(c), "both drills done: training day over");
 check(!isOpen(c, "shop"), "drills do not open the Shop on the story order");
-const r = drain();
-check(r[0] === "ready", `then 'You're ready for Saturday' (got ${r.join(",")})`);
+check(beat() === "candeal", "then the club shop's half-price can");
+const price = firstCanDealPrice(c);
+check(c.money >= price, `game 1's wage pays for it (money ★${c.money}, half-price can ★${price})`);
+const moneyBefore = c.money;
+c = ackBeat(c, "candeal");
+check(c.kibCans.basic === 1 && c.money === moneyBefore - price, "bought: one KIB can, paid half price");
+check(beat() === null, "no 'you're ready' before game 2");
 
-// 2 · After game 2: the can, then the phone
+// 2 · After game 2: the physio's can, then the phone
 play(0);
 check(c.energy < 100, `after game 2 rest is normal again (energy ${c.energy})`);
-const energyBefore = c.kibCans.basic;
 const r2 = drain();
 check(r2.indexOf("can") >= 0 && r2.indexOf("phone") > r2.indexOf("can"), `game 2: can then phone (got ${r2.join(",")})`);
-check(c.kibCans.basic >= 1 && energyBefore >= 0, "a Basic can to use");
+check(c.kibCans.basic >= 1, "a Basic can to use");
 check(isOpen(c, "phone") && isOpen(c, "relations"), "the cracked phone opens Phone and Relations");
-check(appInstalled(c, "messages") && appInstalled(c, "squad") && appInstalled(c, "fixtures") && !appInstalled(c, "social"), "cracked phone: Messages, Squad, Fixtures; no Social");
+check(appInstalled(c, "messages") && appInstalled(c, "squad") && appInstalled(c, "fixtures") && appInstalled(c, "social") && !appInstalled(c, "kickabout"), "cracked phone: Messages, Squad, Fixtures, Social; no Kickabout");
 check(buildMessages(c)[0]?.key === "agent-hello", "first message is from the agent");
 check(!isOpen(c, "shop"), "Shop still shut after game 2");
 
@@ -86,11 +90,15 @@ check(setPieceTalkDue(c) === null, "no penalty-taker talk during the first hour"
 play(1);
 const r4 = drain();
 check(r4.includes("stats") && isOpen(c, "stats") && isOpen(c, "achievements"), `first goal: Stats and Achievements open (got ${r4.join(",")})`);
+check(setPieceTalkDue(c) === null, "one goal is not enough for penalties");
+for (let i = 0; i < 4; i++) play(3);
+check((c.careerStats?.goals ?? 0) >= 10 && setPieceDuties(c, "1st Team").penalties, `10 goals: penalties are yours (${c.careerStats?.goals} goals)`);
+check(!setPieceDuties(c, "1st Team").freeKicks, "free kicks wait for Technique and Vision");
+drain();
 
-check(setPieceTalkDue(c) !== null, "after the first goal the manager can hand you set pieces");
 // Your own phone, bought later
 c = recordPhoneBought(c);
-check(appInstalled(c, "social") && appInstalled(c, "kickabout"), "your own phone adds Social and Kickabout");
+check(appInstalled(c, "kickabout") && appInstalled(c, "home-3d"), "your own phone adds Kickabout and Your house");
 
 // Nothing twice
 play(2); play(1);

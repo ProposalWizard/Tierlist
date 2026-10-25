@@ -26,6 +26,7 @@ import { formatMoney } from "@/lib/star/money";
 import { fakeFaceFor, DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import { shortNameOf } from "@/lib/star/realSquad";
 import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
+import { PHOTO_FACES } from "@/lib/star/faceStyle";
 import { fitImage, getFittedHead, type FittedHead } from "@/lib/star/faceFit";
 import { wornAccessories } from "@/lib/star/signing3d";
 import type { SigningYou } from "@/lib/star/signing3dScene";
@@ -292,6 +293,8 @@ export function useYouLook(career: CareerState, kit: Kit): SigningYou | null {
   const faceUrl = career.player.portrait ?? DEFAULT_FAKE_FACE;
   const [fitted, setFitted] = useState<FittedHead | null | undefined>(undefined);
   useEffect(() => {
+    // Photo faces are off (PHOTO_FACES): the drawn head, no picture to wait for.
+    if (!PHOTO_FACES) { setFitted(null); return; }
     const img = fitImage(faceUrl);
     const done = () => setFitted(getFittedHead(faceUrl));
     if (img.complete && img.naturalWidth) { done(); return; }

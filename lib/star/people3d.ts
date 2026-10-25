@@ -44,6 +44,7 @@ import { TOON_HEADS, toonFileFor, toonFileIsJudged, TOON_BUILD_SCALE, TOON_SUIT_
 import { patchToonBody, toonUniforms, toonShirtLayout } from "./style3d/toon/shader";
 import { toonProportions, warpToonBody, type ToonPropId } from "./style3d/toon/proportions";
 import { SMALL_INK } from "./style3d/smallMen";
+import { PHOTO_FACES } from "./faceStyle";
 import { kitPatternFor, KIT_PATTERN_CODE, type KitPattern } from "./style3d/toon/kitPattern";
 import { relaxIdleArms, IDLE_POSTURE_CLIPS, RELAXED_FINGERS_DEG } from "./three3d/runPosture";
 
@@ -1028,8 +1029,12 @@ export function dressPerson3d(T: Three, p: Person3D, look: PersonLook) {
   u.uArmN.value = stripes.length;
   stripes.forEach((s, i) => { (u.uArmC.value as THREE.Color[])[i] = lin(T, s); });
 
-  // The face picture.
-  const f = look.face;
+  // The face picture. Photo faces are off (PHOTO_FACES, faceStyle.ts; FACT-UI-015): every head is the
+  // drawn one. The cut scenes (signing, office, walk-out, farewell, award nights) still hand over your
+  // portrait or the default fake face, and it was pasted over the drawn head at the photo's own colour
+  // times a per-channel ratio: at a light tone a pink-cheeked face over the even skin paint, with a pale
+  // rim round its oval at the jaw and the photo's highlight over one eyebrow (25 Oct 2026).
+  const f = PHOTO_FACES ? look.face : null;
   if (f) {
     const old = u.uFaceTex.value as THREE.Texture;
     const tex = f.canvas instanceof HTMLCanvasElement ? new T.CanvasTexture(f.canvas) : new T.Texture(f.canvas);

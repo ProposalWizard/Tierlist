@@ -6,6 +6,9 @@
  * ?tab=chat&m=<id> opens the chat on that message (where a phone notification
  * lands). A local dev build lets everyone in, like AdminOnly.
  *
+ * Channels (23 Oct 2026): ?tab=chat&ch=ideas opens a channel, &dm=Mikey a
+ * private DM, &t=<id> a thread, &v=<version> the patch-notes bot's post.
+ *
  * The Team area is the admin's home (Harry, 20 Oct 2026): every way into the
  * admin lands here, on the Team board. A tester has no Team room and goes to
  * their own home (the first game's) instead.
@@ -22,7 +25,7 @@ import TeamBoard from "./TeamBoard";
 export const metadata: Metadata = { title: "Team board", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-export default async function TeamPage({ searchParams }: { searchParams?: { tab?: string; v?: string; m?: string } }) {
+export default async function TeamPage({ searchParams }: { searchParams?: { tab?: string; v?: string; m?: string; ch?: string; dm?: string; t?: string } }) {
   if (!offlineDevPlayEnabled()) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -35,8 +38,10 @@ export default async function TeamPage({ searchParams }: { searchParams?: { tab?
   const tab = t === "notes" || t === "ideas" || t === "chat" || t === "todo" ? t : "team";
   return (
     <>
-      <TeamBoard initialTab={tab} initialVersion={searchParams?.v} initialMessage={Number(searchParams?.m) > 0 ? Number(searchParams?.m) : null} />
-      <PageGuide page="/admin/team" />
+      <TeamBoard initialTab={tab} initialVersion={searchParams?.v} initialMessage={Number(searchParams?.m) > 0 ? Number(searchParams?.m) : null}
+        initialPlace={{ ch: searchParams?.ch ?? null, dm: searchParams?.dm ?? null, t: Number(searchParams?.t) > 0 ? Number(searchParams?.t) : null }} />
+      {/* In the Team room the eye sits top right (bottom right would cover Send); the room keeps 56 px free there. */}
+      <PageGuide page="/admin/team" corner={tab === "team" || tab === "notes" ? undefined : "top-right"} />
     </>
   );
 }

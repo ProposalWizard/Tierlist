@@ -261,11 +261,10 @@ function Shell({
             style={{ boxShadow: `0 0 0 1px ${rgba(glow, 0.45)}, 0 0 18px -4px ${rgba(glow, 0.6)}` }}>
             {children}
           </div>
-          {/* Right padding keeps the corner "?" off the words (Mikey's playtest, 24 Oct 2026). */}
-          <div className="relative mt-2 rounded-xl py-1.5 pl-3 pr-11 text-center text-[11.5px] font-black leading-snug text-white"
-            style={{ background: "rgba(0,0,0,.35)", boxShadow: `inset 0 0 0 1px ${rgba(look.accent, 0.35)}` }}>
-            {instruction}
-          </div>
+          {/* No instruction strip under the pitch: the drill's "How it works"
+              card has just said it (Mikey's playtest, 24 Oct 2026). The words
+              stay for screen readers. */}
+          <span className="sr-only">{instruction}</span>
         </div>
       </div>
     </div>
@@ -600,7 +599,7 @@ function StrikeDrill({
   // Your Aerial rides on the kick skills, so the strike screen can show your jump.
   const kickSkills = useMemo(() => ({ power: skills.power, technique: skills.technique, aerial: skills.aerial }), [skills.power, skills.technique, skills.aerial]);
   const instruction = kind === "aerial"
-    ? "The cross is in the air. Drag back to aim, then meet it: head it on top of the ball, or volley it as it drops."
+    ? "The cross comes in and you meet it: tap the ball before the ring runs out. Hit its left side to send it right; head it on top, volley it as it drops."
     : kind === "technique"
     ? "Drag back to aim and set power. Pick a spot on the ball to bend it through the cones."
     : kind === "freeKick"
@@ -1083,7 +1082,8 @@ function TrainingMinigameInner({ skill, trainingLevel, skills, onComplete, onExi
   useEffect(() => {
     if (result !== null && !calledRef.current) {
       calledRef.current = true;
-      const t = setTimeout(() => onComplete(result), 1400);
+      // Long enough to see your stars (Mikey: "way too quick").
+      const t = setTimeout(() => onComplete(result), 3000);
       return () => clearTimeout(t);
     }
   }, [result, onComplete]);

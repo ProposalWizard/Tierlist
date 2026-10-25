@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { CHALLENGE_DRAFT_MODE } from "@/lib/challengeRoom";
+import { notGuest } from "@/lib/guest/config";
 
 /**
  * Create a Challenge draft room.
@@ -12,7 +13,8 @@ import { CHALLENGE_DRAFT_MODE } from "@/lib/challengeRoom";
  */
 export async function POST(req: Request) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user: signedIn } } = await supabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
   if (!user) return new Response("Unauthorized", { status: 401 });
 
   const body = await req.json().catch(() => ({})) as { eraStart?: number; eraEnd?: number };

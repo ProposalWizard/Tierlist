@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { leoUpdateOn } from "./leoUpdate";
 
 /**
  * REAL CLUB BADGES — NOW THAT THEY ACTUALLY EXIST.
@@ -87,9 +88,25 @@ function candidateKeysFor(club: string): string[] {
 let cache: { map: Map<string, string>; at: number } | null = null;
 const TTL_MS = 10 * 60 * 1000;
 
+// One read at a time: every badge on a screen asks at once (24 on a league
+// table). And a failed read waits FAIL_RETRY_MS before trying again, so an
+// offline phone does not send a request per badge per redraw (seen in the
+// 22 Oct 2026 bug hunt: ~2,000 failed reads in one session).
+let inFlight: Promise<Map<string, string>> | null = null;
+let failedAt = 0;
+const FAIL_RETRY_MS = 30 * 1000;
+
 export async function getClubLogoMap(): Promise<Map<string, string>> {
   if (cache && Date.now() - cache.at < TTL_MS) return cache.map;
+  // Leo's 24 Oct update, bug fixes off: the old way, one read per ask.
+  if (!leoUpdateOn("bugFixes")) return readClubLogoMap();
+  if (inFlight) return inFlight;
+  if (Date.now() - failedAt < FAIL_RETRY_MS) return cache?.map ?? new Map();
+  inFlight = readClubLogoMap().finally(() => { inFlight = null; });
+  return inFlight;
+}
 
+async function readClubLogoMap(): Promise<Map<string, string>> {
   const supabase = createClient();
   const map = new Map<string, string>();
   const { data, error } = await supabase.from("club_logos").select("club, logo_url").limit(5000);
@@ -111,6 +128,7 @@ export async function getClubLogoMap(): Promise<Map<string, string>> {
   // Don't cache an empty result — that's usually a transient failure, and
   // caching it would blank every badge for the whole TTL.
   if (map.size > 0) cache = { map, at: Date.now() };
+  else failedAt = Date.now();
   return map;
 }
 

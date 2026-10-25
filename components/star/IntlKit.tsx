@@ -24,6 +24,7 @@ import { fixtureTimestamp, divisionOf } from "@/lib/star/calendar";
 import NationFlag from "./NationFlag";
 import { ClubCard, Glow, PressButton, RiseIn, SquareBar, KitStyles, glowOf, rgba, tint } from "./ui";
 import { SegTabs, CardTitle, youRowStyle } from "./screenKit";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 
 export const nationGlow = (nation: string) => {
   const k = nationKits(nation).home;
@@ -306,6 +307,7 @@ export function NationalLeague({ career, duty, onClub }: { career: CareerState; 
 // ── Home while on duty: the group, as the league dropdown ─────────────────
 
 export function NationDropdown({ career, duty, onOpen }: { career: CareerState; duty: DutyView; onOpen?: () => void }) {
+  const fixesOn = useLeoUpdate("bugFixes"); // Leo's 24 Oct update; off = the old look
   const [open, setOpen] = useState(false);
   const m = duty.period.matches.find((x) => x.group);
   const g = m ? groupOf(career, m) : null;
@@ -329,7 +331,7 @@ export function NationDropdown({ career, duty, onOpen }: { career: CareerState; 
         </span>
       </button>
       {open && g && (
-        <div className="absolute inset-x-0 top-full px-2 pt-1" style={{ background: "rgba(4,10,16,.9)", boxShadow: "0 8px 18px rgba(0,0,0,.5)" }}>
+        <div className="absolute inset-x-0 top-full px-2 pt-1" style={{ background: fixesOn ? "rgb(4,10,16)" : "rgba(4,10,16,.9)", boxShadow: "0 8px 18px rgba(0,0,0,.5)" }}>
           <NationTable group={g} nation={duty.nation} glow={glow} />
           {onOpen && <button onClick={onOpen} className="kib-press my-1 w-full rounded-lg bg-white/10 py-1 text-[10.5px] font-black uppercase text-white">Full {duty.nation} page ›</button>}
         </div>

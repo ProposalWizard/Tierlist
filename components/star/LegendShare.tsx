@@ -24,6 +24,7 @@ import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsOf } from "@/lib/star/kits";
 import ClubBadge from "./ClubBadge";
 import { ScreenShell, BottomBar, BarButton, RiseIn, clubTheme, rgba } from "./ui";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 
 const GOLD = "#fbbf24";
 const SKY = "#38bdf8";
@@ -124,8 +125,9 @@ function Side({ o, colour, tag }: { o: CareerOverviewData; colour: string; tag: 
 export function CompareCareers({ a, b, aTag = "You", bTag = "Friend", onBack, backLabel = "Back" }: {
   a: HallEntry; b: HallEntry; aTag?: string; bTag?: string; onBack: () => void; backLabel?: string;
 }) {
-  const oa = useMemo(() => careerOverview(a.career), [a]);
-  const ob = useMemo(() => careerOverview(b.career), [b]);
+  const calYears = useLeoUpdate("bugFixes"); // Leo's 24 Oct update: calendar season years
+  const oa = useMemo(() => careerOverview(a.career, { calendarYears: calYears }), [a, calYears]);
+  const ob = useMemo(() => careerOverview(b.career, { calendarYears: calYears }), [b, calYears]);
   const rows = useMemo(() => compareRows(oa, ob), [oa, ob]);
   const score = compareScore(rows);
   return (

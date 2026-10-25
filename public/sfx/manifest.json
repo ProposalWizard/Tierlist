@@ -823,6 +823,118 @@
       "kb": 12.0,
       "purpose": "Your header in the live match (Match feel: New)",
       "prompt": "Made in code: scripts/sfx/header.py (own work, CC0)."
+    },
+    {
+      "name": "cl-late-1",
+      "file": "/sfx/cl-late-1.mp3",
+      "duration": 1.41,
+      "kb": 11.7,
+      "purpose": "Commentator: Late, late, he's won it!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Late, late, he's won it!"
+    },
+    {
+      "name": "cl-late-2",
+      "file": "/sfx/cl-late-2.mp3",
+      "duration": 2.18,
+      "kb": 17.7,
+      "purpose": "Commentator: In the dying minutes! Unbelievable!",
+      "prompt": "(Kokoro bm_george, speed 1.12) In the dying minutes! Unbelievable!"
+    },
+    {
+      "name": "cl-late-3",
+      "file": "/sfx/cl-late-3.mp3",
+      "duration": 2.73,
+      "kb": 22.0,
+      "purpose": "Commentator: Oh, he's won it! He's only gone and won it!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Oh, he's won it! He's only gone and won it!"
+    },
+    {
+      "name": "cl-late-4",
+      "file": "/sfx/cl-late-4.mp3",
+      "duration": 2.47,
+      "kb": 19.9,
+      "purpose": "Commentator: Right at the death! That has to be the winner!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Right at the death! That has to be the winner!"
+    },
+    {
+      "name": "cl-late-5",
+      "file": "/sfx/cl-late-5.mp3",
+      "duration": 2.59,
+      "kb": 20.9,
+      "purpose": "Commentator: Can you believe it? He's snatched it, late on!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Can you believe it? He's snatched it, late on!"
+    },
+    {
+      "name": "cl-late-6",
+      "file": "/sfx/cl-late-6.mp3",
+      "duration": 3.42,
+      "kb": 27.4,
+      "purpose": "Commentator: Last gasp! And this place has gone absolutely wild!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Last gasp! And this place has gone absolutely wild!"
+    },
+    {
+      "name": "cl-late-7",
+      "file": "/sfx/cl-late-7.mp3",
+      "duration": 1.85,
+      "kb": 15.2,
+      "purpose": "Commentator: He's levelled it at the death!",
+      "prompt": "(Kokoro bm_george, speed 1.12) He's levelled it at the death!"
+    },
+    {
+      "name": "cl-late-8",
+      "file": "/sfx/cl-late-8.mp3",
+      "duration": 3.03,
+      "kb": 24.4,
+      "purpose": "Commentator: A late, late equaliser! They're not beaten yet!",
+      "prompt": "(Kokoro bm_george, speed 1.12) A late, late equaliser! They're not beaten yet!"
+    },
+    {
+      "name": "cl-late-9",
+      "file": "/sfx/cl-late-9.mp3",
+      "duration": 2.38,
+      "kb": 19.4,
+      "purpose": "Commentator: He's dragged them level, right at the end!",
+      "prompt": "(Kokoro bm_george, speed 1.12) He's dragged them level, right at the end!"
+    },
+    {
+      "name": "cl-late-10",
+      "file": "/sfx/cl-late-10.mp3",
+      "duration": 2.16,
+      "kb": 17.7,
+      "purpose": "Commentator: At the very last, it's all square!",
+      "prompt": "(Kokoro bm_george, speed 1.12) At the very last, it's all square!"
+    },
+    {
+      "name": "cc-late-1",
+      "file": "/sfx/cc-late-1.mp3",
+      "duration": 1.81,
+      "kb": 14.9,
+      "purpose": "Co-commentator: You can't write it. What a moment.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) You can't write it. What a moment."
+    },
+    {
+      "name": "cc-late-2",
+      "file": "/sfx/cc-late-2.mp3",
+      "duration": 1.92,
+      "kb": 15.8,
+      "purpose": "Co-commentator: That's why you never, ever give up.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) That's why you never, ever give up."
+    },
+    {
+      "name": "cc-late-3",
+      "file": "/sfx/cc-late-3.mp3",
+      "duration": 2.71,
+      "kb": 21.8,
+      "purpose": "Co-commentator: Look at the clock. Nerves of steel, that.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) Look at the clock. Nerves of steel, that."
+    },
+    {
+      "name": "cc-late-4",
+      "file": "/sfx/cc-late-4.mp3",
+      "duration": 2.44,
+      "kb": 19.7,
+      "purpose": "Co-commentator: They'll be talking about that one for years.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) They'll be talking about that one for years."
     }
   ]
 }

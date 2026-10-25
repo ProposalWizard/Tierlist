@@ -1,0 +1,1028 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Marketing studio plan</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  /* before → after bar */
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  figure{margin:12px 0 2px}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:12px 0 2px}
+  .shots figure{margin:0}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+  .flow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 26px}
+  .flow span{font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink3)}
+  .flow span.done{color:var(--green)}
+  .flow span.cur{background:var(--green);color:#06170e;border-color:var(--green)}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+  th,td{text-align:left;vertical-align:top;padding:9px 11px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  tr:last-child td{border-bottom:0}
+  td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700}
+  td.s{color:var(--ink2)}
+  .p-grn{background:rgba(61,220,132,.15);color:var(--green)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  .ck{list-style:none;margin:0;padding:0}
+  .ck li{padding:10px 0 10px 26px;border-bottom:1px solid var(--line);position:relative}
+  .ck li:last-child{border-bottom:0}
+  .ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);font-weight:800}
+  .ck .q{font-weight:700}.ck .a{color:var(--ink2);font-size:14px;margin-top:2px}
+  .ltr{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:5px;background:var(--card2);border:1px solid var(--line);font-size:12px;margin-right:7px;color:var(--ink)}
+</style>
+<style>.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.calls li{padding:11px 0;border-bottom:1px solid var(--line);list-style:none}.calls{margin:0;padding:0}
+.calls .q{font-weight:700}.calls .a{color:var(--ink2);font-size:14px;margin-top:3px}
+.verdict{border:1px solid var(--line);border-left:3px solid var(--green);background:var(--card);border-radius:var(--r);padding:13px 15px;margin:0 0 8px}
+.verdict .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-bottom:5px}
+.verdict p{margin:0 0 6px;font-size:14.5px;color:var(--ink2)}.verdict p:last-child{margin:0}
+</style>
+<style>
+.bars2{margin:10px 0 4px}.b2{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:6px 0;font-size:13.5px}
+.b2 .l{grid-column:1/-1;color:var(--ink2)}.b2 .t{height:14px;background:var(--card2);border-radius:4px;overflow:hidden}.b2 .f{height:100%;border-radius:4px}
+.b2 .v{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;font-size:12.5px}
+</style>
+<style>
+.lbl{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin:10px 0 2px}
+.lbl+p{margin-top:0}
+.conn summary{color:var(--ink);font-size:14.5px;flex-wrap:wrap}
+.conn summary .one{flex-basis:100%;font-weight:400;font-size:13px;color:var(--ink2);padding-left:16px}
+.feat>li{padding:13px 0}
+.use{border-left:3px solid var(--blue);padding:2px 0 2px 10px;margin-top:6px;color:var(--ink2);font-size:14px}
+.use b{color:var(--ink)}
+.cap{font-size:12px;color:var(--ink3);margin:7px 0 0;line-height:1.4}
+.sv{display:block;width:100%;height:auto}
+.note{border:1px solid var(--line);border-left:3px solid var(--amber);background:var(--card);border-radius:var(--r);padding:13px 15px;margin:12px 0}
+.note .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-bottom:5px}
+.note p{margin:0 0 6px;font-size:14px;color:var(--ink2)}.note p:last-child{margin:0}
+.toc{list-style:none;margin:0 0 6px;padding:0;counter-reset:t}
+.toc li{padding:7px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}
+.toc li b{color:var(--ink)}
+.calls .rec{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;padding:2px 7px;border-radius:999px;background:rgba(61,220,132,.15);color:var(--green);margin-right:6px}
+.calls .rec.no{background:rgba(255,107,107,.15);color:var(--red)}
+</style>
+</head><body>
+<style>
+details li,details p,.dt,.cap{overflow-wrap:anywhere}
+.sv text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.tree{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.7;color:var(--ink2);background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;white-space:pre-wrap;word-break:break-word}
+.tree b{color:var(--ink)}.tree .g{color:var(--green)}.tree .a{color:var(--amber)}.tree .m{color:var(--ink3)}
+.free{background:rgba(61,220,132,.15);color:var(--green)}
+.paid{background:rgba(245,185,66,.15);color:var(--amber)}
+.used{background:rgba(111,184,255,.15);color:var(--blue)}
+.step{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;padding:2px 7px;border-radius:999px;background:var(--card2);border:1px solid var(--line);color:var(--ink2);margin-left:6px;vertical-align:1px}
+.you{border-left:3px solid var(--amber);padding:2px 0 2px 10px;margin-top:6px;color:var(--ink2);font-size:14px}
+.you b{color:var(--ink)}
+</style>
+<style>
+.cardx{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 16px}
+.cardx h3{margin:0 0 4px;font-size:16.5px;line-height:1.25;letter-spacing:-.01em}
+.cardx h3 .no{display:inline-block;min-width:26px;color:var(--blue);font-weight:800}
+.cardx .one{color:var(--ink2);font-size:14px;margin:0 0 10px}
+.cardx .tw{background:var(--card2);margin:8px 0 2px}
+.cardx ol.steps{margin:6px 0 8px;padding-left:20px;color:var(--ink2);font-size:14px}
+.cardx ol.steps li{margin-bottom:4px}
+.cardx ol.steps b{color:var(--ink)}
+.needs{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:13px;color:var(--ink2)}
+.needs .k{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+.needs .pill{margin-left:0}
+.harry{background:rgba(177,140,255,.16);color:var(--violet)}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}
+.rules div{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;color:var(--ink2);background:var(--card2)}
+.rules b{display:block;color:var(--ink);font-size:13.5px;margin-bottom:2px}
+.rules .l b{color:var(--green)}.rules .c b{color:var(--amber)}.rules .w b{color:var(--red)}
+.tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--ink3);margin-left:6px;vertical-align:1px}
+.uses li{padding:10px 0}
+.uses .u{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;color:var(--ink);background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;margin-top:5px;word-break:break-word}
+.ov{width:100%;border-collapse:collapse;min-width:0;font-size:13.5px}
+.ov th,.ov td{white-space:normal}
+.ov td:first-child{white-space:normal}
+</style>
+<style>
+/* source tags: seen / measured / reasoned */
+.src{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:999px;margin-left:5px;vertical-align:1px;border:1px solid var(--line);white-space:nowrap}
+.src.se{color:var(--blue)}.src.me{color:var(--green)}.src.re{color:var(--amber)}
+.uxh{font-size:20px;letter-spacing:-.015em;margin:28px 0 6px;line-height:1.2}
+.uxh .no{color:var(--blue);margin-right:6px}
+/* scroll box for desktop-size mocks */
+.ux-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card2);padding:10px;margin:10px 0 4px;-webkit-overflow-scrolling:touch}
+.ux-hint{font-size:12px;color:var(--ink3);margin:4px 0 0}
+/* the app paint inside every mock */
+.ux{--ux-bg:var(--bg);--ux-side:var(--card);--ux-main:var(--card);--ux-hov:var(--card2);--ux-acc:var(--green);--ux-bot:var(--violet);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+.ux *{box-sizing:border-box}
+.ux-desk{display:grid;grid-template-columns:220px minmax(0,1fr) 380px;width:1180px;height:780px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--ux-bg)}
+.ux-desk.closed{grid-template-columns:0 minmax(0,1fr) 380px}
+.ux-desk.closed .ux-side{visibility:hidden;border-right:0}
+.ux-desk .ux-open{display:none}
+.ux-desk.closed .ux-open{display:inline-flex}
+button.ux-ib{font:inherit;font-size:14px;padding:0;cursor:pointer;line-height:1}
+.ux-ib.home{color:var(--ink);font-size:15px}
+.ux-ib.tog{border-color:var(--ux-acc);color:var(--ux-acc);font-weight:900;font-size:15px}
+.ux-ib.tog:focus-visible{outline:2px solid var(--ux-acc);outline-offset:2px}
+.ux-open{gap:6px;flex:0 0 auto}
+.ux-desk .ux-shead{gap:6px;padding:0 10px 0 12px}
+.ux-ttl{font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ux-xclose{margin-left:4px}
+.ux-closehint{position:absolute;right:0;top:30px;bottom:0;width:20%;z-index:3;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;text-align:center;line-height:1.3;padding:4px}
+/* #bugs card, matched to the mood picture (img/mood-phone.jpg) */
+.ux-bug{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:6px;background:var(--ux-hov);font-size:14px;line-height:20px}
+.ux-bug .bt{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:800;color:var(--ink)}
+.ux-bug .bt i{font-style:normal;color:var(--ux-acc)}
+.ux-bug .f{margin-top:8px}
+.ux-bug .f small{display:block;font-size:12.5px;color:var(--ink3);line-height:18px}
+.ux-bug .f ol{margin:0;padding-left:18px;color:var(--ink)}
+.ux-bug .ux-shot{height:auto;aspect-ratio:16/9;border-radius:8px;margin-top:10px}
+.ux-bug .two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.ux-bug .two span{height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:800;white-space:nowrap;padding:0 6px}
+.ux-bug .two .ol{border:1px solid var(--ux-acc);color:var(--ux-acc);background:rgba(61,220,132,.08)}
+.ux-bug .two .fi{background:var(--ux-acc);color:#06170e}
+.ux-bug .more{margin-top:6px;font-size:12.5px;color:var(--ink3);text-align:right}
+.ux-msg .who.g{color:var(--ux-acc)}
+.ux-side{background:var(--ux-side);border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0;position:relative}
+.ux-side .grip{position:absolute;top:0;right:-3px;width:6px;height:100%;cursor:col-resize}
+.ux-side .grip::after{content:"";position:absolute;top:50%;right:2px;width:2px;height:40px;margin-top:-20px;border-radius:2px;background:var(--line)}
+.ux-shead{height:49px;display:flex;align-items:center;gap:8px;padding:0 12px 0 16px;border-bottom:1px solid var(--line);font-weight:800;font-size:16px}
+.ux-shead .sp{flex:1}
+.ux-ib{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;color:var(--ink2);font-size:14px;border:1px solid var(--line);background:var(--ux-hov);flex:0 0 auto}
+.ux-list{padding:8px 8px;overflow:hidden;flex:1}
+.ux-sec{height:26px;display:flex;align-items:center;gap:5px;padding:0 8px;font-size:12.5px;font-weight:700;color:var(--ink3);margin-top:8px}
+.ux-sec:first-child{margin-top:0}
+.ux-row{height:28px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:6px;font-size:15px;color:var(--ink2);white-space:nowrap;min-width:0}
+.ux-row .h{width:16px;text-align:center;color:var(--ink3);font-weight:700;flex:0 0 auto}
+.ux-row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ux-row.unread{color:var(--ink);font-weight:800}
+.ux-row.cur{background:var(--ux-acc);color:#06170e;font-weight:700}
+.ux-row.cur .h{color:#06170e;opacity:.75}
+.ux-row.muted{opacity:.45}
+.ux-row.add{color:var(--ink3)}
+.ux-n{min-width:20px;height:18px;padding:0 6px;border-radius:9px;background:var(--red);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center}
+.ux-av{position:relative;flex:0 0 auto;display:grid;place-items:center;font-weight:800;color:#06170e;border-radius:8px}
+.ux-av.s20{width:20px;height:20px;font-size:10px;border-radius:5px}
+.ux-av.s36{width:36px;height:36px;font-size:15px}
+.ux-av.s72{width:72px;height:72px;font-size:28px;border-radius:14px}
+.ux-av.H{background:#3ddc84}.ux-av.M{background:#6fb8ff}.ux-av.L{background:#f5b942}
+.ux-av.B{background:var(--ux-bot);color:#fff}
+.ux-dot{position:absolute;right:-3px;bottom:-3px;width:10px;height:10px;border-radius:50%;border:2px solid var(--ux-side);background:var(--ux-side)}
+.ux-dot.on{background:#2fbf6b}
+.ux-dot.away{background:var(--ux-side);box-shadow:inset 0 0 0 1.5px var(--ink3)}
+.ux-dot.dnd{background:#e5484d}
+.ux-dot.dnd::after{content:"";position:absolute;left:1px;right:1px;top:2px;height:2px;background:#fff;border-radius:1px}
+.ux-dot.work{background:var(--amber)}
+.ux-s36 .ux-dot{width:12px;height:12px}
+.ux-bt{font-size:9.5px;font-weight:800;letter-spacing:.05em;padding:1px 4px;border-radius:4px;background:var(--ux-hov);border:1px solid var(--line);color:var(--ink3);flex:0 0 auto}
+.ux-st{font-size:13px;flex:0 0 auto}
+.ux-main{display:flex;flex-direction:column;min-width:0;background:var(--ux-main)}
+.ux-chead{height:49px;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--line);min-width:0}
+.ux-chead b{font-size:17px;font-weight:800;white-space:nowrap}
+.ux-chead small{color:var(--ink3);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.ux-faces{display:flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:7px;padding:2px 6px 2px 3px;font-size:12px;color:var(--ink2);gap:3px;flex:0 0 auto}
+.ux-tabs{display:flex;gap:16px;padding:0 16px;border-bottom:1px solid var(--line);font-size:13px;font-weight:700;color:var(--ink3);height:36px;align-items:center}
+.ux-tabs .on{color:var(--ink);box-shadow:inset 0 -2px 0 var(--ux-acc);height:100%;display:flex;align-items:center}
+.ux-msgs{flex:1;overflow:hidden;padding:8px 0}
+.ux-day{display:flex;align-items:center;gap:10px;margin:6px 16px;font-size:12px;font-weight:700;color:var(--ink3)}
+.ux-day::before,.ux-day::after{content:"";flex:1;height:1px;background:var(--line)}
+.ux-msg{display:grid;grid-template-columns:36px minmax(0,1fr);gap:8px;padding:8px 20px;position:relative}
+.ux-msg.hov{background:var(--ux-hov)}
+.ux-msg .who{font-size:15px;font-weight:800;line-height:22px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ux-msg .who time{font-size:12px;color:var(--ink3);font-weight:400}
+.ux-msg .tx{font-size:15px;line-height:22px;color:var(--ink);overflow-wrap:anywhere}
+.ux-msg .tx .at{background:rgba(111,184,255,.18);color:var(--blue);border-radius:4px;padding:0 2px;font-weight:600}
+.ux-msg.cont{padding-top:0}
+.ux-reacts{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.ux-reacts span{height:24px;padding:0 7px;border-radius:12px;border:1px solid var(--line);background:var(--ux-hov);font-size:12px;display:inline-flex;align-items:center;gap:4px;color:var(--ink2)}
+.ux-reacts span.mine{border-color:var(--blue);background:rgba(111,184,255,.14);color:var(--blue)}
+.ux-thr{display:inline-flex;align-items:center;gap:6px;margin-top:4px;font-size:13px;color:var(--blue);font-weight:700}
+.ux-thr em{font-style:normal;color:var(--ink3);font-weight:400}
+.ux-acts{position:absolute;top:-14px;right:20px;display:flex;border:1px solid var(--line);background:var(--ux-main);border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.25);overflow:hidden}
+.ux-acts span{width:32px;height:32px;display:grid;place-items:center;font-size:14px;color:var(--ink2)}
+.ux-comp{margin:0 16px 16px;border:1px solid var(--line);border-radius:8px;background:var(--ux-main)}
+.ux-fmt{height:32px;display:flex;align-items:center;gap:2px;padding:0 6px;border-bottom:1px solid var(--line);font-size:12px;color:var(--ink3)}
+.ux-fmt span{width:26px;height:24px;display:grid;place-items:center;border-radius:5px;font-weight:700}
+.ux-box{min-height:44px;display:flex;align-items:center;padding:0 12px;font-size:15px;color:var(--ink3);gap:8px}
+.ux-box .sp{flex:1}
+.ux-send{width:32px;height:28px;border-radius:6px;background:var(--ux-acc);color:#06170e;display:grid;place-items:center;font-weight:900}
+.ux-thread{border-left:1px solid var(--line);display:flex;flex-direction:column;background:var(--ux-main);min-width:0}
+.ux-thread .ux-chead b{font-size:16px}
+.ux-rep{display:flex;align-items:center;gap:10px;margin:4px 16px;font-size:12px;color:var(--ink3)}
+.ux-rep::after{content:"";flex:1;height:1px;background:var(--line)}
+.ux-also{font-size:12px;color:var(--ink2);padding:0 16px 8px;display:flex;align-items:center;gap:6px}
+.ux-also i{width:13px;height:13px;border:1.5px solid var(--ink3);border-radius:3px;display:inline-block}
+.ux-btn{display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 12px;border-radius:7px;font-size:13px;font-weight:800;border:1px solid var(--line);background:var(--ux-hov);color:var(--ink)}
+.ux-btn.go{background:var(--ux-acc);border-color:var(--ux-acc);color:#06170e}
+.ux-btn.no{color:var(--ink2)}
+.ux-card{border:1px solid var(--line);border-left:4px solid var(--ux-bot);border-radius:8px;padding:10px 12px;margin-top:6px;background:var(--ux-main);font-size:14px;line-height:20px}
+.ux-card .k{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+.ux-card .row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ux-shot{height:90px;border-radius:6px;margin-top:8px;background:linear-gradient(135deg,#1f4d33,#2a6b46 45%,#183526);position:relative;overflow:hidden}
+.ux-shot::after{content:"";position:absolute;left:38%;top:30%;width:22%;height:42%;border:2px dashed #f5b942;border-radius:4px}
+/* phone mocks */
+.ux-phones{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin:10px 0 4px}
+.ux-ph{width:100%;max-width:330px;margin:0 auto;aspect-ratio:390/760;border:1px solid var(--line);border-radius:28px;overflow:hidden;display:flex;flex-direction:column;background:var(--ux-main);position:relative}
+.ux-ph .stat{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:11px;font-weight:800;color:var(--ink2)}
+.ux-ph .top{height:48px;display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid var(--line)}
+.ux-ph .top b{font-size:16px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ux-burger{position:relative;width:34px;height:34px;border-radius:9px;display:grid;place-items:center;border:1px solid var(--line);font-size:15px;color:var(--ink2);flex:0 0 auto}
+.ux-burger .ux-n{position:absolute;top:-6px;right:-7px;min-width:17px;height:16px;font-size:10px;padding:0 4px}
+.ux-ph .ux-msgs{padding:4px 0}
+.ux-ph .ux-msg{padding:7px 12px;grid-template-columns:36px minmax(0,1fr)}
+.ux-ph .ux-msg .tx{font-size:16px;line-height:22px}
+.ux-ph .ux-comp{margin:0 10px 8px}
+.ux-ph .ux-box{font-size:16px}
+.ux-tabsb{height:56px;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);font-size:10.5px;font-weight:700;color:var(--ink3);padding-bottom:4px}
+.ux-tabsb span{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative}
+.ux-tabsb span i{font-style:normal;font-size:17px;line-height:1}
+.ux-tabsb span.on{color:var(--ux-acc)}
+.ux-tabsb .ux-n{position:absolute;top:5px;left:calc(50% + 4px);min-width:16px;height:15px;font-size:9.5px;padding:0 4px}
+.ux-drawer{position:absolute;left:0;top:30px;bottom:0;width:80%;max-width:300px;background:var(--ux-side);border-right:1px solid var(--line);box-shadow:8px 0 24px rgba(0,0,0,.35);display:flex;flex-direction:column;z-index:2}
+.ux-drawer .ux-row{height:44px;font-size:16px}
+.ux-dim{position:absolute;inset:30px 0 0 0;background:rgba(0,0,0,.45);z-index:1}
+.ux-sheet{position:absolute;left:0;right:0;bottom:0;background:var(--ux-side);border-top:1px solid var(--line);border-radius:18px 18px 0 0;padding:8px 14px 14px;z-index:2}
+.ux-sheet .grab{width:36px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 10px}
+.ux-sheet .opt{height:44px;display:flex;align-items:center;gap:10px;font-size:15px;border-bottom:1px solid var(--line)}
+.ux-sheet .opt:last-child{border-bottom:0}
+.ux-sheet .opt .sp{flex:1}
+.ux-radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--ink3);flex:0 0 auto}
+.ux-radio.on{border-color:var(--ux-acc);box-shadow:inset 0 0 0 4px var(--ux-side);background:var(--ux-acc)}
+/* mini mock = one fluid panel that fits a phone */
+.ux-mini{border:1px solid var(--line);border-radius:10px;background:var(--ux-main);overflow:hidden;margin:10px 0 4px;max-width:560px}
+.ux-mini .ux-chead{height:44px;padding:0 12px}
+.ux-mini .ux-chead b{font-size:15.5px}
+.ux-mini .ux-msg{padding:8px 12px}
+.ux-mini .ux-comp{margin:0 10px 10px}
+.ux-task{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line);font-size:15px;line-height:22px}
+.ux-task:last-child{border-bottom:0}
+.ux-tick{width:20px;height:20px;border-radius:50%;border:2px solid var(--ink3);flex:0 0 auto;margin-top:1px;display:grid;place-items:center;font-size:11px;font-weight:900}
+.ux-tick.done{background:var(--ux-acc);border-color:var(--ux-acc);color:#06170e}
+.ux-task .t{flex:1;min-width:0}
+.ux-task.done .t{color:var(--ink3);text-decoration:line-through}
+.ux-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:3px}
+.ux-chip{height:22px;padding:0 7px;border-radius:6px;border:1px solid var(--line);background:var(--ux-hov);font-size:12px;display:inline-flex;align-items:center;gap:4px;color:var(--ink2);font-weight:600;text-decoration:none}
+.ux-chip.late{color:var(--red);border-color:rgba(255,107,107,.4)}
+.ux-vote{display:flex;flex-direction:column;align-items:center;justify-content:center;width:44px;height:48px;border:1px solid var(--line);border-radius:8px;font-size:12px;font-weight:800;color:var(--ink2);flex:0 0 auto}
+.ux-vote.on{border-color:var(--ux-acc);color:var(--ux-acc);background:rgba(61,220,132,.1)}
+.ux-pop{border:1px solid var(--line);border-radius:10px;background:var(--ux-main);box-shadow:0 6px 22px rgba(0,0,0,.28);padding:6px;font-size:14px;max-width:340px}
+.ux-pop .it{display:flex;align-items:center;gap:8px;height:34px;padding:0 8px;border-radius:6px}
+.ux-pop .it.on{background:var(--ux-hov)}
+.ux-pop .it small{color:var(--ink3);font-size:12px;margin-left:auto;white-space:nowrap}
+.ux-pop .hd2{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);padding:6px 8px 2px}
+.ux-hcard{border:1px solid var(--line);border-radius:12px;background:var(--ux-main);box-shadow:0 8px 26px rgba(0,0,0,.3);padding:14px;max-width:300px;font-size:14px}
+.ux-hcard .top2{display:flex;gap:12px;align-items:center}
+.ux-hcard .nm2{font-size:18px;font-weight:800}
+.ux-hcard .ln{display:flex;align-items:center;gap:8px;margin-top:8px;color:var(--ink2)}
+.ux-bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:6px}
+.ux-bar i{display:block;height:100%;background:var(--amber)}
+.ux-toast{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;background:var(--card2);box-shadow:0 8px 24px rgba(0,0,0,.3);padding:10px 12px;max-width:360px;font-size:13.5px}
+.ux-toast b{display:block;font-size:13.5px}
+.ux-toast small{color:var(--ink3)}
+.ux-pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;align-items:start;margin:10px 0 4px}
+.ux-cap{font-size:12px;color:var(--ink3);margin:6px 0 0;line-height:1.4}
+.ux-field{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:15px;margin-top:6px;background:var(--ux-hov);color:var(--ink)}
+.ux-kind{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:6px}
+.ux-kind div{border:1px solid var(--line);border-radius:8px;padding:7px 8px;font-size:13px;color:var(--ink2)}
+.ux-kind div b{display:block;color:var(--ink);font-size:13.5px}
+.ux-kind div.on{border-color:var(--ux-acc);box-shadow:inset 0 0 0 1px var(--ux-acc)}
+.ux-sw{width:34px;height:20px;border-radius:10px;background:var(--line);position:relative;flex:0 0 auto}
+.ux-sw::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff}
+.ux-sw.on{background:var(--ux-acc)}.ux-sw.on::after{left:16px}
+.ux-kbd{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--card2);color:var(--ink)}
+.cardx.ux h3 .no{margin-right:6px}
+.changed{border:1px solid var(--line);border-left:3px solid var(--violet);background:var(--card2);border-radius:10px;padding:10px 12px;margin:10px 0 0;font-size:13.5px;color:var(--ink2)}
+.changed b.t{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--violet);margin-bottom:3px}
+.changed b{color:var(--ink)}
+</style>
+<style>
+/* Marketing page extras */
+.ux-desk.mkb{display:block;height:auto;width:1180px;background:var(--ux-main)}
+.mk-top{display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.mk-top b{font-size:18px}
+.mk-tabsm{display:flex;gap:6px;flex-wrap:wrap}
+.mk-tabsm span{height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line);display:inline-flex;align-items:center;font-size:13px;font-weight:700;color:var(--ink2);background:var(--ux-hov)}
+.mk-tabsm span.on{background:var(--green);border-color:var(--green);color:#06170e}
+.mk-tabsm span.new{border-style:dashed;color:var(--blue)}
+.mk-paste{display:flex;gap:8px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.mk-in{flex:1;min-width:0;height:40px;border:1.5px solid var(--blue);border-radius:10px;display:flex;align-items:center;padding:0 12px;font-size:14.5px;color:var(--ink3);background:var(--ux-hov);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mk-in.filled{color:var(--ink)}
+.mk-go{height:40px;padding:0 14px;border-radius:10px;background:var(--green);color:#06170e;font-weight:800;font-size:14px;display:inline-flex;align-items:center;white-space:nowrap}
+.mk-cols{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;padding:14px 16px 18px}
+.mk-col h4{margin:0 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);display:flex;justify-content:space-between}
+.mk-col h4 b{color:var(--ink)}
+.mk-c{border:1px solid var(--line);border-left:4px solid var(--st,var(--line));border-radius:10px;background:var(--card2);padding:9px;margin-bottom:8px;font-size:12.5px;line-height:1.35}
+.mk-c .tt{font-weight:800;font-size:13px;color:var(--ink);display:block}
+.mk-c .mt{color:var(--ink3);font-size:11.5px;margin-top:3px;display:block}
+.mk-c .th{height:62px;border-radius:7px;margin:0 0 7px;background:linear-gradient(160deg,#20263a,#3a2a4a 55%,#1b1f2b);position:relative;overflow:hidden}
+.mk-c .th::after{content:"▶";position:absolute;inset:0;display:grid;place-items:center;color:#fff;opacity:.8;font-size:18px}
+.mk-c img{width:100%;height:62px;object-fit:cover;border-radius:7px;display:block;margin:0 0 7px}
+.mk-c .ux-bar{margin-top:6px}
+.mk-chip{display:inline-block;margin-top:6px;font-size:10.5px;font-weight:800;letter-spacing:.04em;padding:2px 7px;border-radius:999px;border:1px solid var(--line)}
+.mk-chip.wait{color:var(--amber);border-color:rgba(245,185,66,.45)}
+.mk-chip.you{color:var(--violet);border-color:rgba(177,140,255,.5)}
+.mk-chip.ok{color:var(--green);border-color:rgba(61,220,132,.45)}
+.mk-empty{border:1px dashed var(--line);border-radius:10px;padding:14px 8px;text-align:center;color:var(--ink3);font-size:12px}
+.st-idea{--st:var(--ink3)}.st-script{--st:var(--blue)}.st-ok{--st:var(--violet)}.st-make{--st:var(--amber)}.st-edit{--st:var(--amber)}.st-check{--st:var(--green)}.st-post{--st:var(--green)}
+/* phone board */
+.ux-ph.fr{aspect-ratio:auto;min-height:0}.ux-ph.fr .ux-msgs{padding-bottom:10px}
+.ph-body{padding:10px 12px;display:flex;flex-direction:column;gap:8px;flex:1}
+.ph-pills{display:flex;gap:6px;overflow:hidden}
+.ph-pills span{flex:0 0 auto;height:30px;padding:0 10px;border-radius:999px;border:1px solid var(--line);display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--ink2)}
+.ph-pills span.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.ph-row{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-left:4px solid var(--st,var(--line));border-radius:10px;padding:9px;background:var(--card2);font-size:13px;line-height:1.35}
+.ph-row .th,.ph-row img{width:46px;height:64px;border-radius:6px;flex:0 0 auto;object-fit:cover;background:linear-gradient(160deg,#20263a,#3a2a4a 55%,#1b1f2b)}
+.ph-row b{display:block;font-size:14px}
+.ph-row small{display:block;color:var(--ink3);font-size:12px;margin-top:2px}
+/* card page */
+.cd-head{padding:14px 18px 10px;border-bottom:1px solid var(--line)}
+.cd-head .bk{font-size:13px;color:var(--ink3)}
+.cd-head h5{margin:4px 0 8px;font-size:22px;letter-spacing:-.01em}
+.cd-steps{display:flex;gap:4px;flex-wrap:wrap}
+.cd-steps span{height:26px;padding:0 9px;border-radius:999px;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;border:1px solid var(--line);color:var(--ink3)}
+.cd-steps span.d{color:var(--green);border-color:rgba(61,220,132,.4)}
+.cd-steps span.c{background:var(--blue);border-color:var(--blue);color:#061220}
+.cd-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.cd-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px 18px 18px}
+.cd-p{border:1px solid var(--line);border-radius:12px;background:var(--card2);padding:12px;font-size:13.5px;line-height:1.4;margin-bottom:12px}
+.cd-p h6{margin:0 0 8px;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);display:flex;justify-content:space-between;gap:8px}
+.cd-ref{display:flex;gap:12px}
+.cd-ref .th{width:84px;height:150px;border-radius:9px;flex:0 0 auto;background:linear-gradient(160deg,#20263a,#3a2a4a 55%,#1b1f2b);display:grid;place-items:center;color:#fff;font-size:22px}
+.cd-ref dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:13px}
+.cd-ref dt{color:var(--ink3)}.cd-ref dd{margin:0;color:var(--ink)}
+.cd-t{width:100%;border-collapse:collapse;min-width:0;font-size:12.5px}
+.cd-t td,.cd-t th{padding:6px 6px;border-bottom:1px solid var(--line);white-space:normal;vertical-align:top}
+.cd-t td:first-child{white-space:nowrap;font-weight:700}
+.cd-t tr:last-child td{border-bottom:0}
+.sg{font-size:9.5px;font-weight:800;padding:1px 5px;border-radius:999px;border:1px solid var(--line);white-space:nowrap}
+.sg.se2{color:var(--blue)}.sg.gu{color:var(--amber)}
+.cd-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:8px}
+.cd-strip i{display:block;aspect-ratio:9/16;border-radius:4px;background:linear-gradient(160deg,#2a3150,#4a3360 60%,#202638);position:relative;font-style:normal}
+.cd-strip i::after{content:attr(data-t);position:absolute;left:3px;bottom:2px;font-size:9px;color:#fff;font-weight:700}
+.cd-opt{border:1px solid var(--line);border-radius:10px;padding:9px 10px;margin-bottom:7px;display:flex;gap:10px;align-items:flex-start}
+.cd-opt b{display:block}
+.cd-opt small{color:var(--ink2);font-size:12.5px;display:block;margin-top:2px}
+.cd-opt .ux-btn{margin-left:auto;flex:0 0 auto}
+.cd-opt.on{border-color:var(--violet);box-shadow:inset 0 0 0 1px var(--violet)}
+.cd-log{list-style:none;margin:0;padding:0;font-size:12.5px;color:var(--ink2)}
+.cd-log li{padding:5px 0;border-bottom:1px solid var(--line)}
+.cd-log li:last-child{border-bottom:0}
+.cd-log time{color:var(--ink3);margin-right:6px;font-variant-numeric:tabular-nums}
+/* phone card page */
+.ph-tabs{display:flex;gap:14px;border-bottom:1px solid var(--line);padding:0 12px;font-size:13px;font-weight:700;color:var(--ink3);height:38px;align-items:center;overflow:hidden}
+.ph-tabs .on{color:var(--ink);box-shadow:inset 0 -2px 0 var(--blue);height:100%;display:flex;align-items:center}
+/* step phones */
+.steps5{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:10px 0 4px}
+.stepl{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);margin:0 0 6px}
+.stepl small{display:block;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink3);font-size:12px;margin-top:2px}
+.bp{border:1px solid var(--line);border-left:4px solid var(--violet);border-radius:9px;padding:9px 10px;margin-top:6px;background:var(--ux-hov);font-size:13.5px;line-height:1.4}
+.bp .k{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--violet)}
+.bp .rw{display:flex;gap:9px;align-items:center;margin-top:7px}
+.bp .th{width:40px;height:62px;border-radius:6px;flex:0 0 auto;background:linear-gradient(160deg,#20263a,#3a2a4a 55%,#1b1f2b);display:grid;place-items:center;color:#fff;font-size:13px}
+.bp .bt{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.bp .bt .ux-btn{height:30px;font-size:12.5px;padding:0 10px}
+.bp table{width:100%;min-width:0;font-size:12px;margin-top:6px}
+.bp td{padding:3px 4px;border-bottom:1px solid var(--line);white-space:normal}
+.bp td:first-child{font-weight:700;white-space:nowrap}
+.bp tr:last-child td{border-bottom:0}
+.bp .ux-bar i{background:var(--violet)}
+/* flow table */
+.who-s{color:var(--blue);font-weight:700}.who-c{color:var(--violet);font-weight:700}.who-p{color:var(--amber);font-weight:700}
+.auto{font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:8px;white-space:normal;display:inline-block}
+.auto.y{background:rgba(61,220,132,.15);color:var(--green)}.auto.n{background:rgba(255,107,107,.15);color:var(--red)}.auto.b{background:rgba(245,185,66,.15);color:var(--amber)}
+.ft td{font-size:13px}
+.ft td:first-child{white-space:normal;min-width:130px}
+.slice{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;margin:0 0 10px}
+.slice h3{margin:0 0 4px;font-size:16px;line-height:1.3}
+.slice h3 .no{color:var(--blue);margin-right:6px}
+.slice .dt{margin:3px 0 0}
+.slice .after{border-left:3px solid var(--green);padding:2px 0 2px 10px;margin-top:8px;color:var(--ink2);font-size:14px}
+.slice .after b{color:var(--ink)}
+.figpair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.1fr);gap:11px;align-items:start;margin:12px 0 2px}
+.figpair figure{margin:0}
+@media (max-width:560px){.figpair{grid-template-columns:1fr}.figpair figure:first-child img{max-width:220px;margin:0 auto}}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="ver">v0.112h · 25 OCT · PLAN ONLY</span>
+  <h1>Marketing studio plan</h1>
+  <p style="display:flex;align-items:center;gap:8px;margin:0 0 4px;font-weight:700;font-size:14.5px"><i style="width:9px;height:9px;border-radius:50%;background:var(--ink3);flex:none;display:inline-block"></i>Plan only. Nothing here is built. (The guest account and ad pages from 0.110h now exist on the site, switched off.)</p>
+  <p class="sub">What the Marketing tab has today, what was half-built, and the plan for Mikey: paste a TikTok link, and Claude logs it, breaks it down, writes our version and builds the video. Fits the Team room plan: #marketing is the chat, the Marketing tab is the workshop.</p>
+</header>
+
+<div class="verdict">
+<div class="t">The short version</div>
+<p><b>1. The workshop exists.</b> Board, Client, Studio (the editing suite) and Uploads are built and merged. Calendar, Scripts, Statics and a card page are not.</p>
+<p><b>2. The missing piece is the start button.</b> Today nothing happens when a link arrives. Someone must open a Claude chat. The plan adds a paste box, a card page, and a Claude that checks for new links on its own.</p>
+<p><b>3. Two places, one card.</b> A link in #marketing or in the tab's paste box makes the same card. Each card's updates post into one thread in #marketing.</p>
+<p><b>4. First useful slice is small.</b> Paste a link, get a card with its picture in seconds. Breakdown within the hour comes in slice 3.</p>
+</div>
+
+<div class="dt" style="margin:10px 0 4px">Every fact carries a tag: <span class="src se">seen</span> read in our code or looked at in a picture · <span class="src me">measured</span> counted or run by me today · <span class="src re">reasoned</span> my design call or a guess. Nothing here was built or changed.</div>
+
+<div class="strip">
+  <div class="s"><b>4 of 7</b><span>Marketing views built (Board, Client, Studio, Uploads) <span class="src se">seen</span></span></div>
+  <div class="s"><b>6,247</b><span>lines of Marketing + Studio code <span class="src me">measured</span></span></div>
+  <div class="s"><b>1</b><span>video on the board: v01, posted <span class="src me">measured</span></span></div>
+  <div class="s"><b>0</b><span>links that start work on their own today <span class="src se">seen</span></span></div>
+</div>
+
+<ol class="toc">
+<li><b>1 · What's there today</b>: built, half-built, broken</li>
+<li><b>2 · The link-to-video flow</b>: step by step, who runs each step, costs</li>
+<li><b>3 · Marketing tab ↔ #marketing</b>: the board, the card page, the bot posts</li>
+<li><b>4 · Studio build slices</b>: smallest useful first</li>
+<li><b>5 · Your calls</b></li>
+</ol>
+
+<!-- ============ 1 ============ -->
+<h2 class="fix"><i></i>1 · What's there today</h2>
+<div class="dt" style="margin-bottom:6px">Read on branch Harry, 25 Oct. Slice 1 merged 21 Oct, slice 2 merged 22 Oct (commit dbbec934). I did not open the live site.</div>
+
+<div class="lbl">Built and working</div>
+<ul class="n">
+<li><div class="hd">The Marketing tab, admins only <span class="src se">seen</span></div><div class="dt">Four views: <b>Board · Client · Studio · Uploads</b>. "Soon: Calendar · Scripts" shows as grey text. Every page has the eye guide.</div></li>
+<li><div class="hd">The board: 7 columns, 1 card <span class="src se">seen</span> <span class="src me">measured</span></div><div class="dt">Idea → Script → Script OK → Making → In edit → Final check → Posted. Cards live in <code>marketing/board.json</code>. The site reads it from GitHub on 4 branches (main, Harry, Mikey, Leo) every 60 s. Only Claude moves cards, by pushing. The one card is v01 (patch notes 0.1 to 0.3, 44.7 s, posted 21 Oct).</div></li>
+<li><div class="hd">The Client page <span class="src se">seen</span></div><div class="dt">Knowitball's record: voice, audience, rules, brand, learnings, winning scripts. 13 Brain notes tagged client-kib <span class="src me">measured</span>. Brand colours, fonts and logo: no note yet.</div></li>
+<li><div class="hd">Uploads straight to private storage (Cloudflare R2) <span class="src se">seen</span></div><div class="dt">The phone sends the file straight to R2 with a 15-minute link. Caps: <b>500 MB a file, 30 files and 5 GB a day</b>. The Videos recorder has "Send to Marketing".</div></li>
+<li><div class="hd">The Studio: the full editing suite <span class="src se">seen</span></div><div class="dt">One cut on a timeline. Two tabs: <b>For Claude</b> (edits: cut out, change at 0:07, whole video) and <b>Review notes</b> (fix, keep, check). Lock & render, Done: render all, an auto-check lane, tap a lane to change it, a mic on every box. Notes save next to the video in R2, never in the code.</div></li>
+<li><div class="hd">6 skills, 3 helper scripts <span class="src me">measured</span></div><div class="dt">Skills: video-board, patch-note-video, tiktok-remix, review-timeline, suite-inbox, screen-video (538 lines). Scripts: studio-prep.py (filmstrip, sound wave, shots), suite-notes.mts (read and answer the suite), private-names-guard.mjs (stops other businesses' names going into this public repo).</div></li>
+<li><div class="hd">Both Marketing test suites pass <span class="src me">measured</span></div><div class="dt">adminMarketing and marketingStorage, run today: all passed.</div></li>
+</ul>
+
+<div class="figpair">
+<figure><img src="img/suite-phone.jpg" alt="Phone still of the Studio editing suite with v01 loaded: video on top, filmstrip, sound wave, note lanes, For Claude tab" loading="lazy"><figcaption>Phone: the suite with v01 loaded.</figcaption></figure>
+<figure><img src="img/suite-desktop.jpg" alt="Computer still of the Studio editing suite with v01: video left, edits for Claude right, timeline below" loading="lazy"><figcaption>Computer: video left, edits right, timeline below. Stills from 22 Oct, made on a dev server with made-up notes <span class="src se">seen</span>.</figcaption></figure>
+</div>
+
+<div class="lbl">Planned, not built (the "mid-build")</div>
+<ul class="n">
+<li><div class="hd">Calendar (plan piece 3) <span class="src se">seen</span></div><div class="dt">Month view and a 14-day strip of post dates and patch-note days. Not started.</div></li>
+<li><div class="hd">Scripts page (piece 6) <span class="src se">seen</span></div><div class="dt">Write, grade and keep versions of a script. Not started. The scripts live as files today.</div></li>
+<li><div class="hd">Move a card by hand (piece 2) <span class="src se">seen</span></div><div class="dt">The plan said Harry can move a card like a to-do tick. The board has filters and "Check now", no move buttons.</div></li>
+<li><div class="hd">A page per card <span class="src se">seen</span></div><div class="dt">A card shows a title, a line and a log. Its script and cover open as files on GitHub.</div></li>
+<li><div class="hd">Filmstrip made on upload (piece 5) <span class="src se">seen</span></div><div class="dt">The plan said upload makes a filmstrip and a small copy. Today a Claude chat runs <code>studio-prep.py</code> by hand per cut.</div></li>
+<li><div class="hd">Statics (picture posts) <span class="src se">seen</span></div><div class="dt">A placeholder. You said to wait.</div></li>
+<li><div class="hd">6 more skills to port (piece 7) <span class="src se">seen</span></div><div class="dt">scriptwriting, creative-research, editor-feedback, batch-planner, brief-artifact, mashup-build. Method only, nothing from other clients.</div></li>
+<li><div class="hd">The video library <span class="src se">seen</span></div><div class="dt">"Every video, tap to watch, from R2" (commit f17ef9f4) sits on an agent branch only, not on Harry.</div></li>
+</ul>
+
+<div class="lbl">Broken or weak</div>
+<ul class="n">
+<li><div class="hd">1. Uploads and Studio use an old copy of the board <span class="pill p-red">bug</span> <span class="src se">seen</span></div><div class="dt">Both pages read the board built into the site, not the live one. A card Claude pushes shows on the Board in about 1 minute, but is missing from the Uploads card list until the next deploy.</div></li>
+<li><div class="hd">2. The site cannot wake Claude <span class="pill p-amb">gap</span> <span class="src se">seen</span></div><div class="dt">Done and Lock & render are saved and wait. Nothing happens until someone opens a chat and runs suite-inbox.</div></li>
+<li><div class="hd">3. Uploads do not resume <span class="pill p-amb">gap</span> <span class="src se">seen</span></div><div class="dt">One upload in one go. A dropped phone signal on a 300 MB file starts again from zero. The plan listed this as risk 8.</div></li>
+<li><div class="hd">4. The TikTok remix has never run <span class="src me">measured</span></div><div class="dt">The tiktok-remix skill is a draft (39 lines). No card other than v01 exists.</div></li>
+<li><div class="hd">5. R2 on the live site: not seen</div><div class="dt">The code is ready for it. The 22 Oct stills say "Storage not connected" because they were made locally. I could not check the live site.</div></li>
+</ul>
+
+<!-- ============ 2 ============ -->
+<h2 class="add"><i></i>2 · The link-to-video flow</h2>
+<div class="dt">Mikey pastes a TikTok, Reels or Shorts link. Here is every step from paste to a cut in the Studio. <b>Blue</b> = the site. <b>Violet</b> = a Claude session in the cloud. <b>Amber</b> = a person.</div>
+
+<h3 class="uxh"><span class="no">F1</span>What Mikey sees, step by step (phone)</h3>
+<p class="dt">Drawn mock-ups at phone size. Names and numbers are examples; 9.8% → 47.6% is v01's real line from patch note 0.1.</p>
+<div class="steps5 ux">
+
+<div>
+<div class="stepl">1 · Paste<small>0 s. In #marketing, or the tab's paste box.</small></div>
+<div class="ux-ph fr">
+  <div class="stat"><span>14:02</span><span>●●●</span></div>
+  <div class="top"><span class="ux-burger">☰</span><b># marketing</b></div>
+  <div class="ux-msgs" style="flex:1">
+    <div class="ux-msg"><span class="ux-av s36 M">M</span><div><div class="who">Mikey <time>14:02</time></div><div class="tx">tiktok.com/@somecreator/video/74…<br>do this for us</div></div></div>
+  </div>
+  <div class="ux-comp"><div class="ux-box">Message #marketing<span class="sp"></span><span class="ux-send">➤</span></div></div>
+</div>
+</div>
+
+<div>
+<div class="stepl">2 · Logged<small>About 2 s. The site, no Claude yet.</small></div>
+<div class="ux-ph fr">
+  <div class="stat"><span>14:02</span><span>●●●</span></div>
+  <div class="top"><span class="ux-burger">☰</span><b># marketing</b></div>
+  <div class="ux-msgs" style="flex:1">
+    <div class="ux-msg"><span class="ux-av s36 B">📣</span><div><div class="who">Marketing bot <span class="ux-bt">BOT</span><time>14:02</time></div>
+    <div class="bp"><div class="k">New card · v04 · Idea</div>
+      <div class="rw"><span class="th">▶</span><div><b>"When your keeper finally…"</b><br><small style="color:var(--ink3)">@somecreator · TikTok</small></div></div>
+      <div style="margin-top:7px;color:var(--ink2)">Claude looks at it by <b>15:00</b>.</div>
+      <div class="bt"><span class="ux-btn go">Open card</span><span class="ux-btn">Start now</span></div>
+    </div></div></div>
+  </div>
+</div>
+</div>
+
+<div>
+<div class="stepl">3 · Breakdown<small>Up to 1 hour, then about 10 min of work.</small></div>
+<div class="ux-ph fr">
+  <div class="stat"><span>14:51</span><span>●●●</span></div>
+  <div class="top"><span class="ux-burger">☰</span><b>Thread · v04</b></div>
+  <div class="ux-msgs" style="flex:1">
+    <div class="ux-msg"><span class="ux-av s36 B">📣</span><div><div class="who">Marketing bot <span class="ux-bt">BOT</span></div>
+    <div class="bp"><div class="k">Their format · 27 s</div>
+      <table>
+        <tr><td>Hook</td><td>0–2 s: text "POV:" + a fail</td></tr>
+        <tr><td>Beats</td><td>6 beats, about 4 s each</td></tr>
+        <tr><td>Cuts</td><td>1.4 a second</td></tr>
+        <tr><td>Sound</td><td>song, no voice</td></tr>
+        <tr><td>End</td><td>loops to the start</td></tr>
+      </table>
+      <div class="k" style="margin-top:8px">3 ways to make it ours</div>
+      <div style="color:var(--ink2);font-size:13px">A · Keeper 9.8% → 47.6%<br>B · Goalie Mode<br>C · Ballon d'Or night</div>
+      <div class="bt"><span class="ux-btn go">Pick A</span><span class="ux-btn">B</span><span class="ux-btn">C</span><span class="ux-btn no">None</span></div>
+    </div></div></div>
+  </div>
+</div>
+</div>
+
+<div>
+<div class="stepl">4 · Script OK<small>Mikey reads and says yes.</small></div>
+<div class="ux-ph fr">
+  <div class="stat"><span>15:20</span><span>●●●</span></div>
+  <div class="top"><span class="ux-burger">☰</span><b>Thread · v04</b></div>
+  <div class="ux-msgs" style="flex:1">
+    <div class="ux-msg"><span class="ux-av s36 B">📣</span><div><div class="who">Marketing bot <span class="ux-bt">BOT</span></div>
+    <div class="bp"><div class="k">Script v1 · A · 26 s</div>
+      <table>
+        <tr><td>0:00</td><td>POV: your keeper in v0.1</td></tr>
+        <tr><td>0:02</td><td>"Nine point eight percent."</td></tr>
+        <tr><td>0:06</td><td>…5 more beats</td></tr>
+      </table>
+      <div class="bt"><span class="ux-btn go">OK, build it</span><span class="ux-btn">Change…</span><span class="ux-btn">Full script</span></div>
+    </div></div></div>
+    <div class="ux-msg"><span class="ux-av s36 M">M</span><div><div class="who">Mikey <time>15:24</time></div><div class="tx">OK, build it</div></div></div>
+  </div>
+</div>
+</div>
+
+<div>
+<div class="stepl">5 · Built<small>About 20–40 min in the cloud (guess).</small></div>
+<div class="ux-ph fr">
+  <div class="stat"><span>16:01</span><span>●●●</span></div>
+  <div class="top"><span class="ux-burger">☰</span><b>Thread · v04</b></div>
+  <div class="ux-msgs" style="flex:1">
+    <div class="ux-msg"><span class="ux-av s36 B">📣</span><div><div class="who">Marketing bot <span class="ux-bt">BOT</span></div>
+    <div class="bp"><div class="k">Building v04</div><div style="color:var(--ink2)">Voice done · frames 1,350 of 1,350 · sound</div><div class="ux-bar"><i style="width:100%"></i></div></div>
+    <div class="bp" style="border-left-color:var(--green)"><div class="k" style="color:var(--green)">Ready to review · In edit</div>
+      <div class="rw"><span class="th">▶</span><div><b>v04 · cut 1 · 26.4 s</b><br><small style="color:var(--ink3)">In the Studio, with its filmstrip</small></div></div>
+      <div class="bt"><span class="ux-btn go">Open in Studio</span><span class="ux-btn">Open card</span></div>
+    </div></div></div>
+  </div>
+</div>
+</div>
+
+</div>
+<p class="cap">Step 2 shows "by 15:00" because Claude checks once an hour (your call 2). With the faster wake it reads "in about a minute". <span class="src re">reasoned</span></p>
+
+<h3 class="uxh"><span class="no">F2</span>Who runs each step, and what works today</h3>
+<div class="tw"><table class="ft">
+<tr><th>Step</th><th>Runs where</th><th>Automatic today?</th><th>Cost</th></tr>
+<tr><td>1. Paste a link</td><td><span class="who-s">Site</span>: #marketing (needs the Team room channels) or the Marketing tab's paste box</td><td><span class="auto n">not built</span></td><td>free</td></tr>
+<tr><td>2. Card at Idea, with picture and title</td><td><span class="who-s">Site</span>. TikTok and YouTube give a picture, a title and the creator's name to anyone who asks <span class="src re">reasoned</span>, from memory, not tested. Instagram asks for a Facebook key.</td><td><span class="auto n">not built</span></td><td>free</td></tr>
+<tr><td>3. Wake Claude</td><td>Option A: a <b>scheduled task</b> starts a fresh cloud Claude session every hour; it checks for new links. Option B: a <b>GitHub job</b> starts Claude within about a minute. Option C: Mikey opens a chat.</td><td><span class="auto b">C works today</span> A and B need building</td><td>A: inside the Claude plan. B: see below.</td></tr>
+<tr><td>4. Download and watch it</td><td><span class="who-c">Claude session</span>: <code>screen-video</code> fetch + breakdown (frames + transcript)</td><td><span class="auto y">works in a chat</span></td><td>free tools</td></tr>
+<tr><td>5. Format table + 3 ways to make it ours</td><td><span class="who-c">Claude session</span>: tiktok-remix steps 3 to 5. Writes them to the card and posts in the thread.</td><td><span class="auto b">steps work; posting back not built</span></td><td>Claude usage</td></tr>
+<tr><td>6. Pick one; OK the script</td><td><span class="who-p">Mikey</span>: a tap in the thread or on the card. The skills say a person picks the premise.</td><td><span class="auto n">buttons not built</span></td><td>—</td></tr>
+<tr><td>7. Build: voice, frames, sound, render</td><td><span class="who-c">Claude session</span>: Kokoro voice, a browser draws each frame, ffmpeg joins them. v01 was made this way in a cloud session. Game footage: the star sandbox on a dev server.</td><td><span class="auto y">works in a chat</span></td><td>free tools</td></tr>
+<tr><td>8. Upload + filmstrip into the Studio</td><td><span class="who-c">Claude session</span> with the R2 settings in its environment</td><td><span class="auto b">works if the settings are there</span> not seen</td><td>R2: pennies</td></tr>
+<tr><td>9. Review, notes, Done</td><td><span class="who-p">Mikey</span> in the Studio</td><td><span class="auto y">built</span></td><td>—</td></tr>
+<tr><td>10. Apply the edits</td><td><span class="who-c">Claude session</span>: suite-inbox. Same wake as step 3.</td><td><span class="auto b">only when a chat opens</span></td><td>Claude usage</td></tr>
+<tr><td>11. Post on TikTok</td><td><span class="who-p">Mikey</span>, by hand</td><td>stays manual (your call 5)</td><td>—</td></tr>
+<tr><td>12. Views and learnings</td><td><span class="who-p">Mikey</span> pastes the post link; Claude reads views when it can and writes a Brain note</td><td><span class="auto n">not built</span></td><td>free</td></tr>
+</table></div>
+
+<div class="note">
+<div class="t">Does anything need a computer?</div>
+<p><b>No, for the normal path.</b> Every Claude step runs in a cloud session, and Mikey works from his phone. <span class="src re">reasoned</span></p>
+<p><b>One likely exception:</b> TikTok often blocks downloads from cloud servers <span class="src re">reasoned</span>, not tested. Then the bot asks Mikey to save the video on his phone and drop it in the paste box. It goes to R2, and Claude takes it from there.</p>
+</div>
+
+<details><summary>The wake options, with costs (all reasoned, nothing tested)</summary>
+<p><b>A · Scheduled task, hourly.</b> A Claude scheduled task can start a fresh cloud session on a timer. The shortest gap is normally 1 hour. Each run reads new links, does the breakdowns, posts back, and stops. It runs on the account's Claude plan, so no extra money; it uses that account's usage. A run with nothing new ends in seconds. Wait: up to 60 minutes.</p>
+<p><b>B · GitHub job on demand.</b> The site asks GitHub to start a job; the job runs Claude Code. Start: about 1 minute. Cost: GitHub job minutes are free on a public repo (from memory). Claude: either a plan sign-in token (counts against the plan) or a paid API key. With an API key, one breakdown is a guess of <b>£1 to £5</b> (many frames are read as pictures). <b>Risk:</b> job logs on a public repo are public. The breakdown and our unreleased scripts could show there. So B needs a private repo for the job, or logs kept short.</p>
+<p><b>C · Open a chat.</b> Works today. Mikey types "go through the marketing inbox". Free, but it is not "automatic".</p>
+<p><b>Suggested:</b> start with A. Add B only if an hour's wait annoys Mikey. A's session needs four things in its cloud environment: GitHub push, the R2 settings, a key to write cards, and the bot's posting key. Keys go in the environment settings, never in chat or code.</p>
+</details>
+
+<!-- ============ 3 ============ -->
+<h2 class="chg"><i></i>3 · Marketing tab ↔ #marketing</h2>
+<div class="verdict">
+<div class="t">The rule</div>
+<p><b>#marketing is the front door.</b> Talk, paste links, answer the bot.</p>
+<p><b>The Marketing tab is the workshop.</b> The board, each card's page, the Studio, uploads, later the calendar and library.</p>
+<p><b>One card = one thread.</b> Every card has one thread in #marketing. The card page links to it; the thread links back.</p>
+</div>
+
+<div class="tw" style="padding:10px;margin-top:10px">
+<svg class="sv" viewBox="0 0 360 300" width="100%" role="img" aria-label="How #marketing and the Marketing tab link: a link makes a card, card changes post into the card's thread, replies in the thread become notes on the card">
+<defs><marker id="mka" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs>
+<rect x="6" y="8" width="150" height="262" rx="14" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>
+<text x="81" y="30" font-size="12" font-weight="800" text-anchor="middle" fill="var(--violet)"># marketing</text>
+<text x="81" y="45" font-size="9.5" text-anchor="middle" fill="var(--ink3)">Team room: talk</text>
+<rect x="18" y="58" width="126" height="36" rx="8" fill="var(--card2)" stroke="var(--line)"/><text x="81" y="80" font-size="10.5" text-anchor="middle" fill="var(--ink)">Mikey: a TikTok link</text>
+<rect x="18" y="128" width="126" height="44" rx="8" fill="var(--card2)" stroke="var(--violet)"/><text x="81" y="146" font-size="10.5" text-anchor="middle" fill="var(--ink)">Thread · v04</text><text x="81" y="161" font-size="9.5" text-anchor="middle" fill="var(--ink3)">one post per step</text>
+<rect x="18" y="214" width="126" height="44" rx="8" fill="var(--card2)" stroke="var(--line)"/><text x="81" y="232" font-size="10.5" text-anchor="middle" fill="var(--ink)">Reply in thread</text><text x="81" y="247" font-size="9.5" text-anchor="middle" fill="var(--ink3)">"make the hook faster"</text>
+<rect x="204" y="8" width="150" height="262" rx="14" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>
+<text x="279" y="30" font-size="12" font-weight="800" text-anchor="middle" fill="var(--green)">Marketing tab</text>
+<text x="279" y="45" font-size="9.5" text-anchor="middle" fill="var(--ink3)">Admin: the workshop</text>
+<rect x="216" y="58" width="126" height="36" rx="8" fill="rgba(61,220,132,.12)" stroke="var(--green)"/><text x="279" y="80" font-size="10.5" text-anchor="middle" fill="var(--ink)">Card v04 at Idea</text>
+<rect x="216" y="128" width="126" height="44" rx="8" fill="var(--card2)" stroke="var(--line)"/><text x="279" y="146" font-size="10.5" text-anchor="middle" fill="var(--ink)">Card moves stage</text><text x="279" y="161" font-size="9.5" text-anchor="middle" fill="var(--ink3)">by Claude or by hand</text>
+<rect x="216" y="214" width="126" height="44" rx="8" fill="var(--card2)" stroke="var(--line)"/><text x="279" y="232" font-size="10.5" text-anchor="middle" fill="var(--ink)">Card log + note</text><text x="279" y="247" font-size="9.5" text-anchor="middle" fill="var(--ink3)">for Claude's next run</text>
+<g stroke="var(--ink3)" stroke-width="1.8" fill="none" marker-end="url(#mka)"><path d="M144 76H214"/><path d="M216 150H146"/><path d="M144 236H214"/></g>
+<g font-size="9.5" fill="var(--ink2)" text-anchor="middle"><text x="180" y="70">makes</text><text x="180" y="144">posts</text><text x="180" y="230">adds</text></g>
+<text x="180" y="292" font-size="10" text-anchor="middle" fill="var(--ink3)">The paste box on the tab posts into #marketing for you.</text>
+</svg></div>
+<p class="cap">One card, one thread. Nothing is copied twice: the card holds the facts, the thread holds the talk. <span class="src re">reasoned</span></p>
+
+<div class="lbl">What posts where (so #marketing stays readable)</div>
+<div class="tw"><table class="ov">
+<tr><th>Event</th><th>In the channel</th><th>In the card's thread</th></tr>
+<tr><td>A new link → new card</td><td class="s">Yes: one post with the picture</td><td class="s">Starts the thread</td></tr>
+<tr><td>Breakdown ready; 3 ways to pick</td><td class="s">Yes, it needs Mikey</td><td class="s">The full table</td></tr>
+<tr><td>Script ready for OK</td><td class="s">Yes, it needs Mikey</td><td class="s">The script</td></tr>
+<tr><td>Build progress</td><td class="s">No</td><td class="s">One post, its bar updates in place</td></tr>
+<tr><td>Cut ready in the Studio</td><td class="s">Yes</td><td class="s">Link to the Studio</td></tr>
+<tr><td>Card moved by hand</td><td class="s">No</td><td class="s">One line</td></tr>
+<tr><td>Same link pasted twice</td><td class="s">Bot replies "Already v04" with the card</td><td class="s">—</td></tr>
+</table></div>
+<p class="cap">Rule of thumb: the channel only hears about things that need a person. <span class="src re">reasoned</span></p>
+
+<h3 class="uxh"><span class="no">M1</span>#marketing on a computer, with the card's thread open</h3>
+<p class="dt">Same look as the Team room plan (U0). Example messages. Swipe sideways inside the box on a phone, or tap it to enlarge.</p>
+<div class="ux-scroll ux" role="img" aria-label="Desktop mock of #marketing: channel list, messages with a bot card, and the v04 thread on the right">
+<div class="ux-desk" style="height:700px">
+  <div class="ux-side">
+    <div class="ux-shead"><span class="ux-ib home">⌂</span><span class="ux-ttl">Team room</span></div>
+    <div class="ux-list">
+      <div class="ux-sec">▾ Channels</div>
+      <div class="ux-row"><span class="h">#</span><span class="nm">general</span></div>
+      <div class="ux-row"><span class="h">#</span><span class="nm">ideas</span></div>
+      <div class="ux-row"><span class="h">#</span><span class="nm">bugs</span></div>
+      <div class="ux-row"><span class="h">#</span><span class="nm">patch-notes</span></div>
+      <div class="ux-row cur"><span class="h">#</span><span class="nm">marketing</span></div>
+      <div class="ux-row"><span class="h">#</span><span class="nm">connectors</span></div>
+      <div class="ux-sec">▾ Bots</div>
+      <div class="ux-row"><span class="ux-av s20 B">C</span><span class="nm">Claude</span><span class="ux-bt">BOT</span></div>
+      <div class="ux-row"><span class="ux-av s20 B">📣</span><span class="nm">Marketing bot</span><span class="ux-bt">BOT</span></div>
+      <div class="ux-sec">▾ Marketing</div>
+      <div class="ux-row"><span class="h">▦</span><span class="nm">Board ↗</span></div>
+      <div class="ux-row"><span class="h">▶</span><span class="nm">Studio ↗</span></div>
+    </div>
+  </div>
+  <div class="ux-main">
+    <div class="ux-chead"><b># marketing</b><small>Paste a TikTok, Reels or Shorts link and the bot starts a video</small><span class="ux-ib">▦</span></div>
+    <div class="ux-tabs"><span class="on">Messages</span><span>Cards 4</span><span>Files</span></div>
+    <div class="ux-msgs">
+      <div class="ux-day">Today</div>
+      <div class="ux-msg"><span class="ux-av s36 M">M</span><div><div class="who">Mikey <time>14:02</time></div><div class="tx">tiktok.com/@somecreator/video/74… do this for us</div></div></div>
+      <div class="ux-msg hov"><span class="ux-av s36 B">📣</span><div><div class="who">Marketing bot <span class="ux-bt">BOT</span><time>14:02</time></div>
+        <div class="ux-card"><div class="k">New card · v04 · Idea</div>
+          <div style="display:flex;gap:10px;margin-top:6px"><div style="width:48px;height:80px;border-radius:6px;background:linear-gradient(160deg,#20263a,#3a2a4a 55%,#1b1f2b);display:grid;place-items:center;color:#fff">▶</div>
+          <div><b>"When your keeper finally…"</b><br><span style="color:var(--ink3)">@somecreator · TikTok · 27 s</span><br><span style="color:var(--ink2)">Claude looks at it by 15:00.</span></div></div>
+          <div class="row"><span class="ux-btn go">Open card</span><span class="ux-btn">Start now</span></div></div>
+        <div class="ux-thr"><span class="ux-av s20 B">📣</span><span class="ux-av s20 M">M</span> 5 replies <em>Last reply 16:01</em></div></div></div>
+      <div class="ux-msg"><span class="ux-av s36 B">📣</span><div><div class="who">Marketing bot <span class="ux-bt">BOT</span><time>14:51</time></div><div class="tx">v04: breakdown ready. 3 ways to make it ours. <span class="at">@Mikey</span> pick one in the thread.</div></div></div>
+      <div class="ux-msg"><span class="ux-av s36 H">H</span><div><div class="who">Harry <time>15:10</time></div><div class="tx">A is the strongest. The 9.8% number does the work.</div></div></div>
+    </div>
+    <div class="ux-comp"><div class="ux-box">Message #marketing, or paste a link<span class="sp"></span><span>＋</span><span class="ux-send">➤</span></div></div>
+  </div>
+  <div class="ux-thread">
+    <div class="ux-chead"><b>Thread · v04</b><small>card: In edit</small><span class="ux-ib">✕</span></div>
+    <div class="ux-msgs">
+      <div class="ux-msg"><span class="ux-av s36 B">📣</span><div><div class="who">Marketing bot <span class="ux-bt">BOT</span><time>14:51</time></div><div class="tx">Their format: hook 0–2 s, 6 beats, 1.4 cuts a second, song, loops. A · Keeper 9.8% → 47.6% · B · Goalie Mode · C · Ballon d'Or night.</div></div></div>
+      <div class="ux-msg"><span class="ux-av s36 M">M</span><div><div class="who">Mikey <time>15:12</time></div><div class="tx">A</div></div></div>
+      <div class="ux-msg"><span class="ux-av s36 B">📣</span><div><div class="who">Marketing bot <span class="ux-bt">BOT</span><time>15:20</time></div><div class="tx">Script v1 for A, 26 s. <b>OK, build it</b> · Change…</div></div></div>
+      <div class="ux-msg"><span class="ux-av s36 M">M</span><div><div class="who">Mikey <time>15:24</time></div><div class="tx">OK, build it</div></div></div>
+      <div class="ux-msg"><span class="ux-av s36 B">📣</span><div><div class="who">Marketing bot <span class="ux-bt">BOT</span><time>16:01</time></div><div class="tx">Cut 1 is in the Studio. <span class="at">Open in Studio</span></div><div class="ux-bar" style="max-width:220px"><i style="width:100%;background:var(--green)"></i></div></div></div>
+    </div>
+    <div class="ux-comp"><div class="ux-box">Reply · goes on the card too<span class="sp"></span><span class="ux-send">➤</span></div></div>
+  </div>
+</div>
+</div>
+
+<h3 class="uxh"><span class="no">M2</span>The board, with the paste box (computer)</h3>
+<p class="dt">Today's board plus three things: the paste box, live cards from #marketing, and status chips. v01 is real; v02 to v05 are made-up examples.</p>
+<div class="ux-scroll ux" role="img" aria-label="Desktop mock of the Marketing board: tabs, paste box, seven columns with example cards">
+<div class="ux-desk mkb">
+  <div class="mk-top"><b>Marketing</b><div class="mk-tabsm"><span class="on">Board</span><span>Studio</span><span>Uploads</span><span>Client</span><span class="new">Calendar</span><span class="new">Library</span></div><span style="flex:1"></span><span class="ux-btn">↻ Check now</span></div>
+  <div class="mk-paste"><span class="mk-in">Paste a TikTok, Reels or Shorts link, or type an idea…</span><span class="mk-go">Add to board</span><span style="font-size:12px;color:var(--ink3);max-width:220px">Posts in #marketing for you, so the talk stays in one place.</span></div>
+  <div class="mk-cols">
+    <div class="mk-col"><h4>Idea <b>2</b></h4>
+      <div class="mk-c st-idea"><div class="th"></div><span class="tt">v04 · From TikTok</span><span class="mt">@somecreator · 27 s · Mikey</span><span class="mk-chip wait">Claude by 15:00</span></div>
+      <div class="mk-c st-idea"><span class="tt">v05 · Ballon d'Or night reveal</span><span class="mt">Typed idea · Harry</span></div>
+    </div>
+    <div class="mk-col"><h4>Script <b>1</b></h4>
+      <div class="mk-c st-script"><div class="th"></div><span class="tt">v03 · POV: your keeper</span><span class="mt">From TikTok · Mikey</span><span class="mk-chip you">Pick 1 of 3 · Mikey</span></div>
+    </div>
+    <div class="mk-col"><h4>Script OK <b>0</b></h4><div class="mk-empty">Nothing here</div></div>
+    <div class="mk-col"><h4>Making <b>1</b></h4>
+      <div class="mk-c st-make"><span class="tt">v02 · Goalie Mode</span><span class="mt">Patch note 0.2 · Claude</span><div class="ux-bar"><i style="width:40%"></i></div><span class="mt">Frames 540 of 1,350</span></div>
+    </div>
+    <div class="mk-col"><h4>In edit <b>0</b></h4><div class="mk-empty">Nothing here</div></div>
+    <div class="mk-col"><h4>Final check <b>0</b></h4><div class="mk-empty">Nothing here</div></div>
+    <div class="mk-col"><h4>Posted <b>1</b></h4>
+      <div class="mk-c st-post"><img src="img/v01-cover.jpg" alt="v01 cover"><span class="tt">v01 · Patch notes 0.1 to 0.3</span><span class="mt">44.7 s · out 21 Oct</span><span class="mk-chip ok">No views logged yet</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<h3 class="uxh"><span class="no">M3</span>The board and a card page on a phone</h3>
+<div class="ux-phones ux">
+<div class="ux-ph fr">
+  <div class="stat"><span>14:03</span><span>●●●</span></div>
+  <div class="top"><span class="ux-burger">‹</span><b>Marketing · Board</b><span class="ux-burger">↻</span></div>
+  <div class="ph-body">
+    <div style="display:flex;gap:6px"><span class="mk-in" style="height:42px">Paste a link or an idea…</span><span class="mk-go" style="height:42px">Add</span></div>
+    <div class="ph-pills"><span class="on">All 5</span><span>Idea 2</span><span>Script 1</span><span>Making 1</span><span>Posted 1</span></div>
+    <div class="ph-row st-idea"><span class="th"></span><div><b>v04 · From TikTok</b><small>Idea · Claude by 15:00</small></div></div>
+    <div class="ph-row st-idea"><span class="th"></span><div><b>v05 · Ballon d'Or night</b><small>Idea · typed by Harry</small></div></div>
+    <div class="ph-row st-script"><span class="th"></span><div><b>v03 · POV: your keeper</b><small style="color:var(--violet)">Script · pick 1 of 3 · you</small></div></div>
+    <div class="ph-row st-make"><span class="th"></span><div style="flex:1"><b>v02 · Goalie Mode</b><small>Making · frames 40%</small><div class="ux-bar"><i style="width:40%"></i></div></div></div>
+    <div class="ph-row st-post"><img src="img/v01-cover.jpg" alt="v01 cover"><div><b>v01 · Patch notes 0.1–0.3</b><small>Posted 21 Oct</small></div></div>
+  </div>
+</div>
+
+<div class="ux-ph fr">
+  <div class="stat"><span>14:52</span><span>●●●</span></div>
+  <div class="top"><span class="ux-burger">‹</span><b>v03 · POV: your keeper</b><span class="ux-burger">⋯</span></div>
+  <div class="ph-tabs"><span>Reference</span><span class="on">Breakdown</span><span>Script</span><span>Cuts</span><span>Log</span></div>
+  <div class="ph-body">
+    <div class="cd-steps"><span class="d">Idea</span><span class="c">Script</span><span>OK</span><span>Making</span><span>Edit</span><span>Check</span><span>Posted</span></div>
+    <div class="cd-p" style="margin:0"><h6>Their format · 27 s</h6>
+      <table class="cd-t">
+        <tr><td>0–2 s</td><td>Hook: "POV:" text, a fail</td><td><span class="sg se2">SEEN</span></td></tr>
+        <tr><td>Beats</td><td>6, about 4 s each</td><td><span class="sg se2">SEEN</span></td></tr>
+        <tr><td>Sound</td><td>trending song</td><td><span class="sg gu">GUESSED</span></td></tr>
+      </table>
+      <div class="cd-strip"><i data-t="0.0"></i><i data-t="2.1"></i><i data-t="6.4"></i><i data-t="11"></i><i data-t="17"></i><i data-t="24"></i></div>
+    </div>
+    <div class="cd-opt on"><div><b>A · Keeper 9.8% → 47.6%</b><small>Patch 0.1. Real footage exists.</small></div><span class="ux-btn go">Pick</span></div>
+    <div class="cd-opt"><div><b>B · Goalie Mode</b><small>Patch 0.2. No stills: drawn, ILLUSTRATION.</small></div><span class="ux-btn">Pick</span></div>
+    <div style="display:flex;gap:6px;margin-top:auto"><span class="ux-btn" style="flex:1">Thread in #marketing</span><span class="ux-btn" style="flex:1">Move ▾</span></div>
+  </div>
+</div>
+</div>
+
+<h3 class="uxh"><span class="no">M4</span>A card's page on a computer</h3>
+<p class="dt">New page: <code>/admin/marketing/card/v03</code>. Everything about one video in one place. Example content.</p>
+<div class="ux-scroll ux" role="img" aria-label="Desktop mock of one card's page: stage steps, reference, breakdown, three options, script, cuts, log">
+<div class="ux-desk mkb">
+  <div class="cd-head"><span class="bk">‹ Board</span><h5>v03 · POV: your keeper in v0.1</h5>
+    <div class="cd-steps"><span class="d">Idea ✓</span><span class="c">Script</span><span>Script OK</span><span>Making</span><span>In edit</span><span>Final check</span><span>Posted</span></div>
+    <div class="cd-acts"><span class="ux-btn">Move to ▾</span><span class="ux-btn">Owner: Mikey</span><span class="ux-btn">Post on: 31 Oct</span><span class="ux-btn">Thread in #marketing ↗</span><span class="ux-btn">Script file ↗</span></div>
+  </div>
+  <div class="cd-grid">
+    <div>
+      <div class="cd-p"><h6>Reference <span>pasted by Mikey 14:02</span></h6>
+        <div class="cd-ref"><div class="th">▶</div><dl>
+          <dt>Link</dt><dd>tiktok.com/@somecreator/video/74…</dd>
+          <dt>Creator</dt><dd>@somecreator</dd>
+          <dt>Length</dt><dd>27 s</dd>
+          <dt>Views</dt><dd>1.2M (read when Claude downloaded it)</dd>
+          <dt>Likes</dt><dd>140k</dd>
+          <dt>File</dt><dd>kept in the session only, never in the repo</dd>
+        </dl></div></div>
+      <div class="cd-p"><h6>Their format <span>tiktok-remix step 3</span></h6>
+        <table class="cd-t">
+          <tr><td>Hook 0–2 s</td><td>White text "POV:" top third; a keeper lets in a soft goal</td><td><span class="sg se2">SEEN</span></td></tr>
+          <tr><td>Beats</td><td>6 beats, 3.5 to 5 s each; each one a bigger fail</td><td><span class="sg se2">SEEN</span></td></tr>
+          <tr><td>Cuts</td><td>1.4 a second</td><td><span class="sg se2">SEEN</span></td></tr>
+          <tr><td>Captions</td><td>Centre, bold, 2 words at a time</td><td><span class="sg se2">SEEN</span></td></tr>
+          <tr><td>Sound</td><td>A song; no voice</td><td><span class="sg gu">GUESSED</span></td></tr>
+          <tr><td>End</td><td>Cuts back to frame 1, so it loops</td><td><span class="sg se2">SEEN</span></td></tr>
+        </table>
+        <div class="cd-strip"><i data-t="0.0"></i><i data-t="2.1"></i><i data-t="6.4"></i><i data-t="11.0"></i><i data-t="17.2"></i><i data-t="24.8"></i></div>
+      </div>
+    </div>
+    <div>
+      <div class="cd-p"><h6>3 ways to make it ours <span>a person picks</span></h6>
+        <div class="cd-opt on"><div><b>A · Keeper 9.8% → 47.6%</b><small>Same "POV" fail beats, then the fix. Patch 0.1. Real footage.</small></div><span class="ux-btn go">Pick</span></div>
+        <div class="cd-opt"><div><b>B · Goalie Mode</b><small>You are the keeper now. Patch 0.2. Drawn, ILLUSTRATION.</small></div><span class="ux-btn">Pick</span></div>
+        <div class="cd-opt"><div><b>C · Ballon d'Or night</b><small>Builds up to the trophy. Needs a capture.</small></div><span class="ux-btn">Pick</span></div>
+      </div>
+      <div class="cd-p"><h6>Script <span>appears after a pick</span></h6><p style="margin:0;color:var(--ink3)">Time · voice · on screen · source line, in v01's shape. Buttons: OK, build it · Change…</p></div>
+      <div class="cd-p"><h6>Cuts <span>in the Studio</span></h6><p style="margin:0;color:var(--ink3)">None yet. Each render is listed here and opens in the Studio.</p></div>
+      <div class="cd-p"><h6>What happened</h6>
+        <ul class="cd-log"><li><time>14:02</time>Mikey pasted the link. Card made at Idea.</li><li><time>14:41</time>Claude downloaded it (27 s, 1.2M views).</li><li><time>14:51</time>Breakdown and 3 ways posted. Card to Script.</li></ul>
+        <div class="ux-field" style="margin-top:8px;color:var(--ink3)">Note for Claude… (also posts in the thread)</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============ 4 ============ -->
+<h2 class="nxt"><i></i>4 · Studio build slices</h2>
+<div class="dt" style="margin-bottom:8px">Smallest useful first. S = one sitting · M = about a day · L = several days <span class="src re">reasoned</span> guesses. Slices 1 to 5 do not wait for the Team room. Slice 6 uses its channels.</div>
+
+<div class="slice"><h3><span class="no">1</span>Paste box, card page, live cards everywhere <span class="step">M</span></h3>
+<div class="dt">A paste box on the board. A link makes a card at Idea in seconds, with the video's picture and title. A page per card. Uploads and Studio read the live cards (fixes bug 1).</div>
+<div class="after"><b>Mikey can:</b> paste a link from his phone and see it on the board straight away. Open any card and see everything about it. Upload a cut to a brand-new card.</div></div>
+
+<div class="slice"><h3><span class="no">2</span>Run the board by hand <span class="step">S</span></h3>
+<div class="dt">Move a card, set the owner and the post date, leave a note. Each change is saved and logged.</div>
+<div class="after"><b>Mikey can:</b> manage every video himself, with or without Claude.</div></div>
+
+<div class="slice"><h3><span class="no">3</span>Claude picks up new links: the breakdown <span class="step">M</span></h3>
+<div class="dt">An hourly scheduled task (call 2). It downloads each new link, fills the format table and frames on the card, and offers 3 ways with Pick buttons. If the download is blocked, the card asks for the file.</div>
+<div class="after"><b>Mikey can:</b> paste a link and, within the hour, read the breakdown and pick one, without opening a chat.</div></div>
+
+<div class="slice"><h3><span class="no">4</span>Script OK → the video builds itself <span class="step">L</span></h3>
+<div class="dt">After a pick, Claude writes the script on the card. "OK, build it" starts the build on the next run: voice, frames, sound, render, upload, filmstrip. A progress bar on the card. Saves the render scripts in the repo (v01's were lost with its session).</div>
+<div class="after"><b>Mikey can:</b> go from a link to a cut in the Studio with three taps: Pick, OK, Open.</div></div>
+
+<div class="slice"><h3><span class="no">5</span>Done in the Studio wakes Claude <span class="step">M</span></h3>
+<div class="dt">The same hourly run also works through the Studio's Done and Lock presses (suite-inbox). Filmstrip made on every upload. Uploads resume after a dropped signal.</div>
+<div class="after"><b>Mikey can:</b> leave edits, press Done, and get the new render back on its own.</div></div>
+
+<div class="slice"><h3><span class="no">6</span>#marketing and the Marketing bot <span class="step">M</span></h3>
+<div class="dt">Needs the Team room channels. A link in #marketing makes a card. Each card gets one thread. The bot posts the steps that need a person, with buttons. Thread replies become card notes.</div>
+<div class="after"><b>Mikey can:</b> do everything from the chat on his phone, and only open the tab to review cuts.</div></div>
+
+<div class="slice"><h3><span class="no">7</span>Calendar <span class="step">M</span></h3>
+<div class="dt">Month view and a 14-day strip: post dates and patch-note days.</div>
+<div class="after"><b>Mikey can:</b> plan what goes out when, and see gaps.</div></div>
+
+<div class="slice"><h3><span class="no">8</span>Library and learnings <span class="step">M</span></h3>
+<div class="dt">Every posted video with its post links and numbers (pasted, or read when possible). What each one taught us becomes a Brain note (client-kib). Brings the video library over from its agent branch.</div>
+<div class="after"><b>Mikey can:</b> see what worked, and Claude writes the next script from it.</div></div>
+
+<div class="slice"><h3><span class="no">9</span>Statics <span class="step">L</span></h3>
+<div class="dt">Picture posts: covers, thumbnails, single-image posts, steered one version at a time.</div>
+<div class="after"><b>Waiting:</b> you said to wait on it.</div></div>
+
+<details><summary>What each slice needs from a person</summary>
+<ul>
+<li>Slice 1: your call 1 (where cards live). If a database table: run one SQL page.</li>
+<li>Slice 3: your call 2 (how Claude wakes) and 3 (whose account). Add the GitHub, R2 and card-writing keys to that account's cloud environment.</li>
+<li>Slice 4: nothing new by default: every picture is real game footage or marked ILLUSTRATION (RUL-KIB-002). Higgsfield only if you say so (call 6).</li>
+<li>Slice 6: the Team room's channels built first (Team room plan).</li>
+</ul>
+</details>
+
+<!-- ============ 5 ============ -->
+<div class="changed" style="margin:18px 0"><b class="t">Added (Harry, 25 Oct)</b>Guest accounts and ad landing pages belong here, in the Marketing studio. They are on the site now, switched off. Their switch-on list lives here: (1) Cloudflare Turnstile human check for knowitball.co.uk, public key in Vercel, push live; (2) only then the secret key in Supabase bot protection; (3) run the guest SQL, allow guest sign-ins and account linking, timed jobs on; (4) the Vercel switch on. Each ad (e.g. League Two to the Ballon d'Or) is a campaign made here.</div>
+<h2 class="nxt"><i></i>5 · Your calls</h2>
+<ul class="calls">
+<li><div class="q">1. Where do cards live?</div><div class="a"><span class="rec">Pick</span><b>A database table (Supabase).</b> The site must write cards: a paste, a hand move, a note. Today only a Claude push can change a card, which takes about a minute and needs git. Claude would write to the table too. <b>Other way:</b> keep <code>board.json</code> and only add "waiting links" from #marketing on top. This undoes the "just use pushes" way (RUL-TEAM-007) for this one board, so it is your call. <span class="src re">reasoned</span></div></li>
+<li><div class="q">2. How does Claude wake up?</div><div class="a"><span class="rec">Pick</span><b>A · An hourly scheduled task first.</b> No extra money; waits up to an hour. Add B (a GitHub job, about 1 minute) only if the wait annoys Mikey, and only with a private place for its logs. <span class="src re">reasoned</span></div></li>
+<li><div class="q">3. Whose Claude account runs it?</div><div class="a"><span class="rec">Pick</span><b>Mikey's</b>, since marketing is his. Its usage comes off his plan. The keys go in his cloud environment. <span class="src re">reasoned</span></div></li>
+<li><div class="q">4. How far does Claude go without asking?</div><div class="a"><span class="rec">Pick</span><b>Stop after the 3 ways.</b> A person picks the premise and OKs the script (the skills already say so). Rendering then runs without asking. <span class="src se">seen</span> in video-board step 2</div></li>
+<li><div class="q">5. Posting to TikTok</div><div class="a"><span class="rec">Pick</span><b>Stays by hand.</b> Mikey posts and pastes the post link on the card. Auto-posting can come later. <span class="src re">reasoned</span></div></li>
+<li><div class="q">6. Higgsfield for marketing videos</div><div class="a"><span class="rec no">Your call</span>The old rule (RUL-3D-002, 21 Oct) says no Higgsfield for builders. On 25 Oct you said Higgsfield is not parked, it's on/off around credits. Recommended: allowed for marketing with a credit cap per video (e.g. 20 credits), shown on the card. <span class="src re">reasoned</span></div></li>
+<li><div class="q">7. Fix bug 1 now?</div><div class="a"><span class="rec">Pick</span><b>Yes, inside slice 1.</b> Uploads and Studio read the live cards. Small. <span class="src se">seen</span></div></li>
+</ul>
+
+<details><summary>What this page could not check</summary>
+<ul>
+<li>The live site: whether R2 is connected there, and whether the board reads GitHub there. I read the code only.</li>
+<li>Whether TikTok, Reels and Shorts download from a cloud session. Not tested.</li>
+<li>What TikTok's free "embed" answer gives (picture, title, creator): from memory. Views and likes: only from the download, also not tested.</li>
+<li>Scheduled-task limits (1 hour shortest gap) are from the tool's own description today. Cost per breakdown with an API key is a guess.</li>
+<li>Build times (10 min breakdown, 20–40 min render) are guesses. v01's real render time was not recorded.</li>
+<li>The Team room's channels are a plan, not built. #marketing does not exist yet.</li>
+</ul>
+</details>
+
+<footer>25 Oct 2026. A plan: nothing was built, pushed or changed. Read: app/admin/marketing, components/admin/{marketing,studio}, lib/{marketing,studio}, marketing/board.json, docs/plans/2026-10-21-marketing-production.md, the 6 Marketing skills, the Team room plan page. Ran: the two Marketing test suites (both passed). Stills: the 22 Oct suite stills and v01's cover. All other pictures are drawn mock-ups with made-up names and numbers.</footer>
+</div>
+
+<style>
+.zm-t{cursor:zoom-in}
+.zm-ov{position:fixed;inset:0;z-index:1000;background:rgba(10,14,12,.92);overflow:auto;-webkit-overflow-scrolling:touch;padding:calc(56px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.zm-ov[hidden]{display:none!important}
+.zm-bar{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));display:flex;gap:8px;z-index:1001}
+.zm-bar button{font:600 15px/1 system-ui,sans-serif;padding:10px 14px;border-radius:10px;border:0;background:#fff;color:#111;cursor:pointer}
+.zm-st{transform-origin:0 0;background:var(--bg,#fff);border-radius:10px;display:inline-block}
+.zm-st img,.zm-st svg{max-width:none!important}
+.zm-hint{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));color:#fff;font:13px system-ui,sans-serif;opacity:.8}
+</style>
+<div class="zm-ov" id="zmOv" hidden><div class="zm-hint">Pinch or + / − to zoom</div><div class="zm-bar"><button id="zmOut" aria-label="Zoom out">−</button><button id="zmIn" aria-label="Zoom in">+</button><button id="zmX" aria-label="Close">✕</button></div><div id="zmBox"></div></div>
+<script>
+document.addEventListener('click',function(e){var b=e.target.closest('[data-uxtog]');if(!b)return;var d=b.closest('.ux-desk');if(!d)return;var c=d.classList.toggle('closed');d.querySelectorAll('[data-uxtog]').forEach(function(x){x.setAttribute('aria-expanded',String(!c));});});
+</script>
+<script>
+(function(){
+  var sel='img,.ux-desk,.ux-phones,.ux-box,.ux-mini,svg';
+  var ov=document.getElementById('zmOv'),box=document.getElementById('zmBox'),st=null,sc=1,w=0,h=0;
+  function zoomable(el){
+    if(el.closest('.zm-ov'))return false;
+    if(el.tagName.toLowerCase()==='svg'){var r=el.getBoundingClientRect();if(r.width<120)return false;}
+    var p=el.parentElement&&el.parentElement.closest(sel);
+    return !p;
+  }
+  function apply(){st.style.transform='scale('+sc+')';box.style.width=(w*sc)+'px';box.style.height=(h*sc)+'px';}
+  function open(el){
+    var r=el.getBoundingClientRect();
+    var c=el.cloneNode(true);c.classList.remove('zm-t');
+    st=document.createElement('div');st.className='zm-st';st.appendChild(c);
+    box.innerHTML='';box.appendChild(st);ov.hidden=false;document.body.style.overflow='hidden';
+    if(c.tagName.toLowerCase()==='img'){c.style.width=(c.naturalWidth||r.width*2)+'px';c.style.height='auto';}
+    else if(c.tagName.toLowerCase()==='svg'){c.style.width=Math.max(r.width,900)+'px';c.style.height='auto';}
+    else{c.style.width=Math.max(el.scrollWidth,r.width)+'px';}
+    w=st.offsetWidth;h=st.offsetHeight;
+    var fit=(ov.clientWidth-32)/w;sc=Math.min(fit,Math.max(1,fit));apply();ov.scrollTo(0,0);
+  }
+  function close(){ov.hidden=true;box.innerHTML='';document.body.style.overflow='';}
+  document.querySelectorAll(sel).forEach(function(el){if(zoomable(el)){el.classList.add('zm-t');el.setAttribute('title','Tap to enlarge');}});
+  document.addEventListener('click',function(e){
+    if(ov.contains(e.target)){if(e.target===ov)close();return;}
+    var t=e.target.closest('.zm-t');if(!t)return;
+    if(e.target.closest('a,button,summary,input,label'))return;
+    e.preventDefault();open(t);
+  });
+  document.getElementById('zmX').onclick=close;
+  document.getElementById('zmIn').onclick=function(){sc=Math.min(sc*1.4,6);apply();};
+  document.getElementById('zmOut').onclick=function(){sc=Math.max(sc/1.4,.2);apply();};
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!ov.hidden)close();});
+})();
+</script>
+</body></html>

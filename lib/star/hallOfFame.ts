@@ -30,6 +30,7 @@
 import type { CareerState } from "./types";
 import { careerVerdict } from "./retirement";
 import { careerOverview } from "./careerOverview";
+import { bestGoals } from "./goalLog";
 
 export const HALL_KEY = "star-hall-of-fame-v1";
 
@@ -126,6 +127,9 @@ export function slimCareer(career: CareerState): CareerState {
       return row;
     });
   }
+  // Every goal of the career (lib/star/goalLog.ts) can be 600 rows: the Hall
+  // keeps only the best 10, which it shows as "Best goals".
+  if (Array.isArray(career.goalLog)) out.goalLog = bestGoals(career.goalLog, 10);
   return out as unknown as CareerState;
 }
 

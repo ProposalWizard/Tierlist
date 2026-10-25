@@ -1,7 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "mcp__Adobe_for_creativity__*"
+      "mcp__Adobe_for_creativity__*",
+      "Bash",
+      "mcp__Vercel__*",
+      "mcp__Google_Drive__*",
+      "mcp__github__*",
+      "mcp__Supabase__list_*",
+      "mcp__Supabase__get_*",
+      "mcp__claude-code-remote__*",
+      "Artifact",
+      "WebFetch",
+      "WebSearch"
     ]
   },
   "hooks": {
