@@ -183,3 +183,55 @@ export function celebAt(p: CelebPlan, t: number): CelebState {
   const v = u < spec.playS ? (k * (spec.travel(Math.min(spec.playS, u + 0.05)) - spec.travel(u))) / 0.05 : 0;
   return { ...at(d), phase: t - p.moveAt >= spec.playS ? "done" : "move", moveT: u, clipT: spec.from3d + u, speed: Math.max(0, v) };
 }
+
+// ── Room for you (Leo's overnight job, 25 Oct 2026) ──
+// "a defender can stand on top of you during the knee slide": nobody stands
+// on your run or where your move ends. A man within ROOM_M of the line you
+// run (from where you scored to where the move ends) steps aside, off the
+// line, while you are still CLEAR_FROM_M away from him; he has finished by
+// the time you are CLEAR_BY_M away, and he stays aside. Picture only: the
+// live match (2D and 3D) and the goal video both move him with this.
+
+/** How far everyone keeps from your run (m): about two bodies. */
+export const ROOM_M = 1.6;
+const CLEAR_FROM_M = 4.0;
+const CLEAR_BY_M = 1.0;
+/** The first step aside eases in over this long (s), so nobody jumps as the ball goes in. */
+const ROOM_EASE_S = 0.6;
+
+const smooth = (u: number) => { const v = Math.max(0, Math.min(1, u)); return v * v * (3 - 2 * v); };
+
+/** How far along his line he is at the end of the move (m). */
+export function celebEndDist(p: CelebPlan): number {
+  const spec = CELEB_SPECS[p.move];
+  return p.runDist + spec.travel(spec.playS) * (p.travelK ?? 1);
+}
+
+/**
+ * Where a man standing at `m` is drawn `t` seconds after your goal, so he is
+ * never on top of you. Pure and stateless: the same answer for the same
+ * spot and time, live or in a video. Anyone already clear is returned as is.
+ */
+export function roomFor(p: CelebPlan, m: Vec, t: number): Vec {
+  if (t <= 0) return m;
+  const L = celebEndDist(p);
+  const rx = m.x - p.from.x, ry = m.y - p.from.y;
+  const s = Math.max(0, Math.min(L, rx * p.dir.x + ry * p.dir.y));
+  const q = { x: p.from.x + p.dir.x * s, y: p.from.y + p.dir.y * s };
+  const ox = m.x - q.x, oy = m.y - q.y, d = Math.hypot(ox, oy);
+  if (d >= ROOM_M) return m;
+  // which way he steps: away from the line; a man right on it steps towards the middle of the pitch
+  let nx: number, ny: number;
+  if (d > 1e-3) { nx = ox / d; ny = oy / d; }
+  else {
+    nx = -p.dir.y; ny = p.dir.x;
+    const mid = PITCH_W / 2 - q.x;
+    if (nx * mid < 0 || (Math.abs(nx) < 1e-6 && ny < 0)) { nx = -nx; ny = -ny; }
+  }
+  // how far along you have got (it only grows, so once aside he stays aside)
+  const st = celebAt(p, t);
+  const along = (st.x - p.from.x) * p.dir.x + (st.y - p.from.y) * p.dir.y;
+  const w = smooth((along - (s - CLEAR_FROM_M)) / (CLEAR_FROM_M - CLEAR_BY_M)) * smooth(t / ROOM_EASE_S);
+  const push = (ROOM_M - d) * w;
+  return { x: m.x + nx * push, y: m.y + ny * push };
+}

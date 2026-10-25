@@ -3,7 +3,7 @@
  * equipped, the goal video's extra 2.5 s, and big moments.
  * lib/star/celebration.ts, lib/star/bigMoment.ts, goalClip/recorder.ts.
  */
-import { planCelebration, celebAt, celebrationMoveFor, CELEB_SPECS, CELEB_RUN_S, type CelebrationMove } from "../../lib/star/celebration";
+import { planCelebration, celebAt, celebrationMoveFor, roomFor, celebEndDist, ROOM_M, CELEB_SPECS, CELEB_RUN_S, type CelebrationMove } from "../../lib/star/celebration";
 import { isBigMoment, headingIn } from "../../lib/star/bigMoment";
 import { GoalRecorder, POST_GOAL_S, CELEB_EXTRA_S } from "../../lib/star/goalClip/recorder";
 import { frameAt, trackDuration } from "../../lib/star/goalClip/track";
@@ -98,6 +98,41 @@ for (const t of [1, 2, 3.5]) {
 check(celebCut(full) !== null && celebCut(plain) === null, "the tight cut only with a celebration");
 check(makeEdit([full], "broadcast").shots.some((s) => s.angle === "tight"), "broadcast goes tight on your celebration");
 check(!makeEdit([plain], "broadcast").shots.some((s) => s.angle === "tight"), "an ordinary goal's edit is unchanged");
+
+// Room for you (25 Oct 2026): a man on your run or where your move ends steps
+// aside before you get there and stays aside. Every move, from every spot, with
+// men standing along the line, on it and either side of it, and at its end.
+{
+  let worst = Infinity, worstAt = "", fastest = 0;
+  for (const move of Object.keys(CELEB_SPECS) as CelebrationMove[]) {
+    for (const from of spots) {
+      const p = planCelebration(from, move);
+      const L = celebEndDist(p), nx = -p.dir.y, ny = p.dir.x;
+      const men: { x: number; y: number }[] = [];
+      for (let s = 0; s <= L + 1.5; s += 0.75) for (const o of [-1.2, -0.5, 0, 0.4, 1.0])
+        men.push({ x: p.from.x + p.dir.x * s + nx * o, y: p.from.y + p.dir.y * s + ny * o });
+      for (const m of men) {
+        let prev = roomFor(p, m, 0);
+        for (let t = 1 / 60; t <= p.totalS + 0.5; t += 1 / 60) {
+          const q = roomFor(p, m, t), you = celebAt(p, t);
+          fastest = Math.max(fastest, Math.hypot(q.x - prev.x, q.y - prev.y) * 60);
+          prev = q;
+          // the moment the ball goes in he may still be where he stood; from 0.4 s on, never on top of you
+          const d = Math.hypot(q.x - you.x, q.y - you.y);
+          if (t >= 0.4 && d < worst) { worst = d; worstAt = `${move} from ${JSON.stringify(from)} man ${m.x.toFixed(1)},${m.y.toFixed(1)} at ${t.toFixed(2)} s`; }
+        }
+      }
+      // anyone already clear is left exactly where he stands
+      const far = { x: p.from.x + nx * (ROOM_M + 0.3), y: p.from.y + ny * (ROOM_M + 0.3) };
+      const fr = roomFor(p, far, 1.5);
+      check(fr.x === far.x && fr.y === far.y, `${move}: a man ${ROOM_M + 0.3} m off the line is not moved`);
+      check(roomFor(p, men[3], 0) === men[3], `${move}: nobody moves before the goal`);
+    }
+  }
+  check(worst >= 1.2, `nobody within 1.2 m of you from 0.4 s on (closest ${worst.toFixed(2)} m: ${worstAt})`);
+  check(fastest <= 7.5, `nobody steps aside faster than a run (fastest ${fastest.toFixed(1)} m/s)`);
+  console.log(`room for you: closest ${worst.toFixed(2)} m from 0.4 s on; fastest step aside ${fastest.toFixed(1)} m/s`);
+}
 
 if (problems.length) {
   console.error(`celebration: ${problems.length} problem(s)\n  ` + problems.slice(0, 30).join("\n  "));

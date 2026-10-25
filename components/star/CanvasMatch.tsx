@@ -201,7 +201,7 @@ import { setupKind, strikeKind, replayStrike, stepKind, enforceHardRules, type S
 import { drawMatchGoal } from "@/lib/star/matchGoal";
 import { GoalRecorder } from "@/lib/star/goalClip/recorder";
 import { lateKindOf } from "@/lib/star/goalClip/commentary";
-import { planCelebration, celebAt, celebrationMoveFor, CELEB_SPECS, type CelebPlan } from "@/lib/star/celebration";
+import { planCelebration, celebAt, celebrationMoveFor, roomFor, CELEB_SPECS, type CelebPlan } from "@/lib/star/celebration";
 import { ACCESSORIES } from "@/lib/star/store/catalogue";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import type { GoalTrack, ClipBody, FrameState as ClipFrame } from "@/lib/star/goalClip/track";
@@ -3946,6 +3946,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       shirt: string, rim: string,
       opts: FigureOpts = {},
     ) => {
+      // After your goal (celebration.ts roomFor): anyone on your run steps aside, in 2D and 3D alike.
+      const cr = celebRef.current;
+      if (cr && opts.sid !== "you" && phaseRef.current === "result") ({ x, y } = roomFor(cr.plan, { x, y }, performance.now() / 1000 - cr.t0));
       if (rec) {
         const sid = opts.sid ?? `fig${rec.figures.length}`;
         const them = shirt === theirKit().shirt || sid.startsWith("def") || sid.startsWith("chase");

@@ -106,15 +106,19 @@ while (Date.now() - T0 < 20 * 60000 && !(goalShot && lateShot)) {
   // 5 frames across the run and the celebration. Each logs where the match says the keeper
   // stands (his pitch spot, put through the camera) and where the goal posts are on screen.
   goalShot = true; out.frames = [];
-  for (let i = 0; i < 5; i++) {
+  const N = Number(process.env.FRAMES || 5), GAP = Number(process.env.GAP_MS || 800);
+  for (let i = 0; i < N; i++) {
     const f = await pg.evaluate(() => {
       const fr = window.__starMatch.frame(); const by = (r) => fr.men.find((x) => x.role === r);
       const k = by("keeper"), pl = by("postL"), pr = by("postR");
-      return { keeper: k && { x: k.x, y: k.y, cx: k.cx, cy: k.cy }, postL: pl && { cx: pl.cx, cy: pl.cy }, postR: pr && { cx: pr.cx, cy: pr.cy }, cam: fr.cam, celeb: !!document.querySelector("[data-celebration]") };
+      return { keeper: k && { x: k.x, y: k.y, cx: k.cx, cy: k.cy }, postL: pl && { cx: pl.cx, cy: pl.cy }, postR: pr && { cx: pr.cx, cy: pr.cy }, cam: fr.cam, celeb: !!document.querySelector("[data-celebration]"),
+        // the drawn spots the 3D view is handed (RealGame3D's dev hook): how near the nearest man is to you
+        near: (() => { const ef = window.__engineFrame; const you = ef?.figures?.find((g) => g.sid === "you"); if (!you) return null;
+          let best = null; for (const g of ef.figures) { if (g.sid === "you") continue; const d = Math.hypot(g.x - you.x, g.y - you.y); if (!best || d < best.d) best = { d: Math.round(d * 100) / 100, sid: g.sid }; } return best; })() };
     }).catch((e) => ({ err: e.message }));
-    f.t = i * 0.8; out.frames.push(f);
+    f.t = i * GAP / 1000; out.frames.push(f);
     await shot(`celeb-${i}`); log("frame", i, JSON.stringify(f));
-    await wait(800);
+    await wait(GAP);
   }
   // the match saves the goal's recording once the celebration is over (for the goal-video check)
   await wait(8000);
