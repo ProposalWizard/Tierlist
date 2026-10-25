@@ -99,17 +99,19 @@ const cut = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" 
 /** One buzz for one or more new patch notes (newest first). Tap opens the newest. */
 export function payloadForPatches(notes: PatchMeta[]): PushPayload {
   const newest = notes[0];
-  const url = `${TEAM_ROOM.home}?tab=notes${newest ? `&v=${encodeURIComponent(newest.version)}` : ""}`;
+  // The Patch notes bot's post in #patch-notes (23 Oct 2026: "a bot that automatically uploads
+  // patch notes into a patch notes channel and @'s everyone"). The buzz says @everyone.
+  const url = `${TEAM_ROOM.home}?tab=chat&ch=patch-notes${newest ? `&v=${encodeURIComponent(newest.version)}` : ""}`;
   if (notes.length <= 1) {
     const who = newest ? patchAuthor(newest.title) : null;
     return {
-      title: `${newest && patchIsUpdated(newest) ? "Updated" : "New"} patch notes${who ? ` from ${who}` : ""}${newest ? ` · v${newest.version}` : ""}`,
+      title: `@everyone ${newest && patchIsUpdated(newest) ? "Updated" : "New"} patch notes${who ? ` from ${who}` : ""}${newest ? ` · v${newest.version}` : ""}`,
       body: cut(newest ? shortPatchTitle(newest.title) : "Open the Inbox to read it.", 160),
       tag: "kib-patch", url, icon: TEAM_ROOM.push.icon,
     };
   }
   return {
-    title: `${notes.length} new patch notes to read`,
+    title: `@everyone ${notes.length} new patch notes to read`,
     body: cut(notes.map((n) => `v${n.version} ${shortPatchTitle(n.title)}`).join(" · "), 160),
     tag: "kib-patch", url, icon: TEAM_ROOM.push.icon,
   };
