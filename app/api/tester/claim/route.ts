@@ -9,6 +9,7 @@
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isGuestUser } from "@/lib/guest/config";
 import { createServiceClient } from "@/lib/supabase/service";
 import { claimTesterLink, type TesterClient } from "@/lib/testerLinks";
 
@@ -17,7 +18,8 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ outcome: "signed-out" }, { status: 401 });
+  // Guests (lib/guest/config.ts) count as signed out here.
+  if (!user || isGuestUser(user)) return NextResponse.json({ outcome: "signed-out" }, { status: 401 });
 
   let code: unknown = null;
   try {

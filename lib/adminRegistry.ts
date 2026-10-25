@@ -124,6 +124,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/draft/preview", "Draft design preview", "Draft screen redesigns, sample data", "old", "old", "Harry", "old", "none", "team"),
   P("/star-dev", "Play the game", "Road to Ballon d'Or, as players see it", "rbd", "career", "Shared", "live", "own", "open"),
   P("/star-retirement-dev", "Retirement screens", "Every end-of-career screen, with made-up or real saves", "rbd", "career", "Leo", "live", "own", "team"),
+  P("/star-guest-dev", "Guest accounts", "Play without signing in: the ad landing pages and the save-your-career prompt", "rbd", "career", "Harry", "live", "own", "team"),
   P("/star-awards-night-dev", "Season awards night", "The awards read out in a small 3D hall, made-up results", "rbd", "career", "Leo", "live", "none", "team"),
   P("/star-relgames-dev", "Relationship games", "Play the boss, team-mate and fan mini-games", "rbd", "career", "Mikey", "live", "none", "team"),
   P("/star-goals-gallery-dev", "Career goals", "Stats → Goals with a made-up career; Hall of Fame best goals", "rbd", "career", "Leo", "live", "browser", "team"),
