@@ -88,6 +88,7 @@ import { ageFetchedForCareer, ageOwnFetchedForCareer } from "@/lib/star/worldAge
 import { hydrateSquads } from "@/lib/star/squadSaveCodec";
 import { externalClubsFor } from "@/lib/star/clubs";
 import { conditionsFor } from "@/lib/star/weather";
+import { matchConditions } from "@/lib/star/matchWeather";
 import { matchTodFor } from "@/lib/star/style3d/matchTod";
 import { ovationLook } from "@/lib/star/ovationLook";
 import {
@@ -4248,7 +4249,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             startMinute={selection?.onAt ?? 0}
             plannedOffAt={selection?.offAt}
             duties={duties ?? undefined}
-            conditions={conditionsFor(career.season, nextFixture.week, career.homeCity)}
+            // Leo's update, "weather" (lib/star/matchWeather.ts): off = exactly as before.
+            conditions={leoUpdateOn("weather") ? matchConditions(career, nextFixture) : conditionsFor(career.season, nextFixture.week, career.homeCity)}
             seed={career.season * 1000 + career.week}
             onGoalScored={handleGoalScored}
             onGoalClip={handleGoalClip}

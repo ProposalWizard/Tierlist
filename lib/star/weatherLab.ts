@@ -195,8 +195,10 @@ export function measure(strike: Strike, cond: Conditions | undefined, mode: "old
 export function plannedDials(season: number, week: number, homeClub: string, homeCity = ""): WeatherDials {
   const today = conditionsFor(season, week, homeCity);
   const strength = Math.abs(today.wind) / 2.6;          // 0.4..1 on a windy day
-  let h = Math.imul(season * 9176 + week * 313 + 7, 2654435761) >>> 0;
-  h ^= h >>> 13;
+  let h = season * 9176 + week * 313 + 7;
+  for (let i = 0; i < homeClub.length; i++) h = Math.imul(h ^ homeClub.charCodeAt(i), 16777619);
+  h = Math.imul(h, 2654435761) >>> 0;
+  h = (h ^ (h >>> 13)) >>> 0;   // unsigned: a negative here gave every match the same direction (fixed 25 Oct)
   return {
     weather: today.weather,
     windSpeed: today.weather === "wind" ? Math.round(4 + strength * 9) : 0,
