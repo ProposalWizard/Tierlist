@@ -37,6 +37,10 @@ import { testAreaBuildUp, snappyBuildUp, snappyCapS, fhrShareRoll, fhrBuildUpOn,
 import { standBackFor, yourRunupFor, penaltyRunupOf, freeKickRunupOf } from "../../lib/star/runupStyles";
 import { servedChances } from "../../lib/star/fhr/servedChances";
 import { airZOf, type AirHeighted } from "../../lib/star/airDrawings";
+import { setBuildUpMistimeForTests } from "../../lib/star/fhr/buildUp";
+// The build-up's offside law is measured here as built; the game hides the
+// calls (buildUp.ts BUILDUP_OFFSIDE_CALLS) and drops such a build-up instead.
+setBuildUpMistimeForTests(true);
 
 /** A lead-in's shape, for comparing two (the ball every twelfth of it). */
 const leadSigOf = (l: LeadIn | null) => {
