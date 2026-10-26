@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { simulateSharedSeason, getSeasonTeams } from "@/lib/seasonSimulator";
 import { sanitizeSquad } from "@/lib/squadSanitize";
 import type { DraftPlayer, SharedSeasonInput, LeagueTeam } from "@/lib/seasonSimulator";
+import { notGuest } from "@/lib/guest/config";
 
 function hashRoomId(roomId: string): number {
   let h = 2166136261;
@@ -19,7 +20,8 @@ export async function POST(
 ) {
   const { code } = await params;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user: signedIn } } = await supabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
   if (!user) return new Response("Unauthorized", { status: 401 });
 
   const service = createServiceClient();

@@ -574,7 +574,7 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
                   <div className="mt-0.5 text-[10px] font-black uppercase tracking-wider text-white">{Math.round(progress * 100)}%</div>
                 </div>
               ) : (
-                <div className="grid h-12 w-12 place-items-center rounded-full bg-black/45 ring-2 ring-white/80 backdrop-blur-sm">
+                <div className="grid h-12 w-12 place-items-center rounded-full bg-black/55 ring-2 ring-white/80">
                   <div className="ml-1 h-0 w-0 border-y-[9px] border-l-[14px] border-y-transparent border-l-white" />
                 </div>
               )}

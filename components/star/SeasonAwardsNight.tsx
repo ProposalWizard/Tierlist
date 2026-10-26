@@ -24,7 +24,7 @@ import { awardsPlan, awardAt, beatAt, skipTarget, personId, type AwardsPlan, typ
 import type { AwardsSceneHandle } from "@/lib/star/awardsNight3d";
 import { kitsOf, type Kit } from "@/lib/star/kits";
 import { shortClub } from "@/lib/star/media/grammar";
-import { playCrowdSwell } from "@/lib/star/matchSound";
+import { playCrowdSwell, primeMatchSound } from "@/lib/star/matchSound";
 import { PHOTO_FACES } from "@/lib/star/faceStyle";
 import { faceOrFake } from "@/lib/star/fakeFaces";
 import ImageWithFallback from "@/components/ImageWithFallback";
@@ -105,6 +105,10 @@ export function AwardsCeremony({ career, plan, onDone, drawn = false }: {
   const a = awardAt(plan, t);
   const revealed = !!a && t >= a.revealAt;
   const revealKey = revealed ? a!.key : "";
+  // The cheer plays on the match's sound, which only a match switched on until
+  // now: opening the app straight at the season end gave a silent night. Switch
+  // it on here (the earlier taps have already unlocked sound) and on every tap.
+  useEffect(() => { primeMatchSound(); }, []);
   useEffect(() => { if (revealKey && frozenRef.current === null) playCrowdSwell("cheer"); }, [revealKey]);
 
   // Stills for checking: window.__awardsNight.seek(t) holds the night at t.
@@ -122,7 +126,7 @@ export function AwardsCeremony({ career, plan, onDone, drawn = false }: {
   const youWonThis = revealed && a!.winner.isYou;
   return (
     <HeadshotCareer career={career}>
-      <div className="relative h-[100dvh] w-full select-none overflow-hidden bg-[#120a07] text-white" data-awards-night={mode} onClick={skip}>
+      <div className="relative h-[100dvh] w-full select-none overflow-hidden bg-[#120a07] text-white" data-awards-night={mode} onPointerDown={() => primeMatchSound()} onClick={skip}>
         <KitStyles />
         {mode === "3d" && <PreloadFaces plan={plan} />}
         {mode === "3d"

@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Patch notes v0.16</title>
+<style>
+:root{
+  --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+  --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+  --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+  --pill:#3ddc84;--pillink:#06170e;--r:12px;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+  --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+  --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+  --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+  --pill:#0b7a43;--pillink:#ffffff;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+.wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{padding:30px 0 4px}
+.ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 10px;letter-spacing:-.02em;text-wrap:balance}
+.by{color:var(--ink3);font-size:13px;margin:0 0 4px}
+.upd{color:var(--green);font-size:13px;margin:0 0 4px}
+.lead{color:var(--ink2);font-size:15px;margin:14px 0 0}
+h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+.ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+.ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+.ck li:last-child{border-bottom:0}
+.ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+.ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+.ck .q{font-weight:700;display:block}
+.ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+.item.alert{border-left:4px solid var(--red)}
+.ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.ih b{font-size:16px;line-height:1.3;min-width:0}
+.dt{margin:6px 0 0;color:var(--ink2);font-size:14.5px}
+.pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+.p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+.bars{margin:8px 0 2px}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+.bar .bl{grid-column:1/-1;color:var(--ink2)}
+.track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+.fill{position:absolute;left:0;height:8px;border-radius:3px}
+.fill.was{top:1px;background:var(--ink3);opacity:.55}
+.fill.now{bottom:1px;background:var(--green);opacity:.9}
+.fill.now.warn{background:var(--amber)}
+.fill.now.bad{background:var(--red)}
+.vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+.vv s{color:var(--ink3);font-weight:400;opacity:.9}
+details{background:var(--card2);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+details.nums{background:var(--card);margin-top:34px}
+details[open]{padding-bottom:12px}
+summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+details[open]>summary::before{transform:rotate(90deg)}
+details ul{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}
+details li{margin-bottom:6px}
+details li b{color:var(--ink)}
+footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <span class="ver">v0.16</span>
+  <h1>Every drawn player plays, penalty run-ups</h1>
+  <p class="by">Made by Harry &middot; 27 Sept 2026, 22:00 UK time</p>
+  <p class="upd">Updated 26 Oct 2026, 17:04 UK time: Tidied 26 Oct: title gives what it is about.</p>
+  <p class="lead">The v0.15 plan, built for real, tested and filmed at phone size. The headline: the drawing is the team, so every player you drew now plays. Penalties get a run-up, a keeper who dives once and can read you, and your club plays at its real strength.</p>
+</header>
+<h2 class="nxt"><i></i>Check these</h2>
+<ul class="ck"><li><label><input type="checkbox" data-k="c0"><span><span class="q">Corners and byline crosses: is the whole goal on screen?</span><span class="a">Try any career match with a corner or byline cross.</span></span></label></li><li><label><input type="checkbox" data-k="c1"><span><span class="q">The penalty run-up and the keeper&#39;s hop</span><span class="a">Try any career penalty.</span></span></label></li><li><label><input type="checkbox" data-k="c2"><span><span class="q">Get closed down while holding the ball: about 1 in 3 should be a foul</span><span class="a">Pull back and wait on a Premier League side.</span></span></label></li><li><label><input type="checkbox" data-k="c3"><span><span class="q">Shootout: you take a kick and the result reads your score first</span><span class="a">A cup match that goes to penalties.</span></span></label></li><li><label><input type="checkbox" data-k="c4"><span><span class="q">Faces on a real phone: nobody has a blank head</span><span class="a">Any career match.</span></span></label></li><li><label><input type="checkbox" data-k="c5"><span><span class="q">Late subs get chances, and a sub only comes off for energy</span><span class="a">Settings → Energy low, get benched, come on late.</span></span></label></li></ul>
+<h2 class="fix"><i></i>Fixed · The headlines</h2>
+<div class="item"><div class="ih"><b>The drawing is the team: every player you drew now plays</b></div><p class="dt">Problem: you drew a cutback with 5 defenders and the game served 4, and it invented men you never drew.</p><div class="bars"><div class="bar"><div class="bl">Cutback missing a drawn defender (%)</div><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:0.0%"></div></div><div class="vv"><s>77%</s> 0%</div></div><div class="bar"><div class="bl">Midfield pass missing one (%)</div><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:0.0%"></div></div><div class="vv"><s>79%</s> 0%</div></div><div class="bar"><div class="bl">Byline cross missing one (%)</div><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:0.0%"></div></div><div class="vv"><s>59%</s> 0%</div></div><div class="bar"><div class="bl">Corner keeper moved off your spot (%)</div><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:0.0%"></div></div><div class="vv"><s>100%</s> 0%</div></div></div><details><summary>Why, and the fix</summary><ul><li>Why: months of hand-written &quot;always&quot; rules piled on top of your drawings: keeper never on his line, pick some defenders, nudge the ball, move you after a pass, move the free-kick team-mate.</li><li>Fix: all of them deleted. The same men, keeper spot and ball you drew. Extra team-mates you drew become real runners with a name and a face.</li><li>Penalty ball moved off the spot 100% → 0; you moved after a pass 100% → 0; stacked players in through balls 75 → 0 per 400.</li><li>Left for you: 23 older drawings still carry the old keeper spots.</li></ul></details></div>
+<div class="item"><div class="ih"><b>Penalties: a run-up, one dive, and a keeper who can read you</b></div><p class="dt">Problem: penalties into the corners went in 88% of the time, the keeper dived and then dived back, and there was no run-up.</p><div class="bars"><div class="bar"><div class="bl">Corner penalties scored (%)</div><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:85.6%"></div></div><div class="vv"><s>87.6%</s> 75%</div></div><div class="bar"><div class="bl">All penalties scored (%)</div><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:92.3%"></div></div><div class="vv"><s>82.3%</s> 76%</div></div></div><details><summary>Why, and the fix</summary><ul><li>Why: the keeper could change his mind mid-dive, and the strike happened the instant you let go.</li><li>Fix: you stand 1.8 m behind the ball, aim, then jog in for 2.4 s with a 1-second countdown. Run out of time and you scuff it. He makes one dive and finishes it, and about half the time hops to a side first and dives that way.</li><li>Open question: watching the hop and aiming the other way scores 81.7% against 74.3% if you ignore it.</li></ul></details></div>
+<h2 class="fix"><i></i>Fixed · Caught in the final playtest</h2>
+<div class="item"><div class="ih"><b>Corners and byline crosses cut the goal off</b></div><p class="dt">The view widens a little when it needs to: whole goal in view 0 → 300 of 300 corners, 113 → 300 byline crosses.</p></div>
+<div class="item"><div class="ih"><b>Test screens: a foul said PENALTY, then reloaded the same picture</b></div><p class="dt">It now serves the penalty straight away (3 of 3).</p></div>
+<div class="item"><div class="ih"><b>Test screens: every penalty was the same</b></div><p class="dt">The keeper now varies and hops there too (hop 0% → 51.5%).</p></div>
+<div class="item"><div class="ih"><b>Shootouts: you never got to kick, and a loss said &quot;Won 2–4&quot;</b></div><p class="dt">You&#39;re always one of the five takers and the result reads your score first.</p></div>
+<div class="item"><div class="ih"><b>The ball started off the bottom of the screen</b></div><p class="dt">The pitch is scrolled into view when a chance starts: 44% → 0.</p></div>
+<div class="item"><div class="ih"><b>Buildup: two team-mates standing 0.33 m apart</b><span class="pill p-red">blocked on Harry</span></div><p class="dt">That&#39;s how the drawing was made, not a code bug.</p></div>
+<h2 class="fix"><i></i>Fixed · Match, camera and shots</h2>
+<div class="item"><div class="ih"><b>Your club now plays at its real strength</b></div><p class="dt">The unseen match was told 60 for every club. Strongest clubs win 38–49% → 71–78% (planned figure, not re-measured after the build).</p></div>
+<div class="item"><div class="ih"><b>You can shoot past a man, and team-mates curl round him</b></div><p class="dt">A body is 0.7 m wide now. Long-range shots blocked 26% → 18%, cutbacks 45% → 37%.</p><div class="bars"><div class="bar"><div class="bl">Long range shots blocked (%)</div><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:69.2%"></div></div><div class="vv"><s>26%</s> 18%</div></div></div></div>
+<div class="item"><div class="ih"><b>A team-mate no longer takes your shot</b></div><p class="dt">A team-mate right on your shot&#39;s line lets it go. Through balls he took 60% → 33%.</p></div>
+<div class="item"><div class="ih"><b>The whole goal is always on screen</b></div><p class="dt">The camera slides or zooms out instead of moving the chance closer. Through balls now score 21.8% → 25.2%.</p></div>
+<div class="item"><div class="ih"><b>Subbed on, then subbed off: gone</b></div><p class="dt">A sub only comes off for energy now.</p></div>
+<h2 class="add"><i></i>Added</h2>
+<div class="item"><div class="ih"><b>Free-kick run-up</b></div><p class="dt">Same jog and 1-second countdown as penalties.</p></div>
+<div class="item"><div class="ih"><b>Shootouts and penalties won without you are played live</b></div><p class="dt">Every kick on the real pitch. A top side wins one about every 6 games.</p></div>
+<div class="item"><div class="ih"><b>A cheeky miss costs reputation</b></div><p class="dt">A missed penalty down the middle or a missed chip: -1 each, at most -2 a match.</p></div>
+<div class="item"><div class="ih"><b>Late subs get chances</b></div><p class="dt">A 99 striker on at 80&#39;: 0.75 → 2.15 chances a cameo.</p><div class="bars"><div class="bar"><div class="bl">Chances, on at 80&#39;</div><div class="track"><div class="fill was" style="width:34.9%"></div><div class="fill now" style="width:100.0%"></div></div><div class="vv"><s>0.75</s> 2.15</div></div></div></div>
+<div class="item"><div class="ih"><b>Live scores during your match</b></div><p class="dt">Cards only for clubs you tick, one at a time, and a Scores panel with every game.</p></div>
+<div class="item"><div class="ih"><b>Sim this match</b></div><p class="dt">Score, your goals and assists, rating and star bar. Deliberately a bit worse than playing.</p></div>
+<div class="item"><div class="ih"><b>Real players in League One and Two</b><span class="pill p-red">blocked on Harry</span></div><p class="dt">43 clubs, 1,154 players copied from last season a year older. Needs a database step run first.</p></div>
+<div class="item"><div class="ih"><b>Match Radar</b></div><p class="dt">Watch the unseen 90 minutes, with injuries and energy at kick-off.</p></div>
+<h2 class="chg"><i></i>Changed</h2>
+<div class="item"><div class="ih"><b>One keeper everywhere, set to Middle</b></div><p class="dt">He walks up to 2.2 m while you aim, then dives once, paced to arrive with the ball. Keepers who are 88 rated now concede fewer than 45-rated ones in every kind of chance; the Hard / Middle / Easier setting is a test-screen dial only.</p></div>
+<div class="item"><div class="ih"><b>Every chance is made the same way: your drawings, varied</b></div><p class="dt">Mirrored half the time and never one of the last 5. One-on-ones a match 0.34 → 1.85.</p></div>
+<div class="item"><div class="ih"><b>The drag is 25% shorter, measured from your thumb</b></div><p class="dt">Full power at power 55: 12.6% → 9.5% of the screen.</p></div>
+<div class="item"><div class="ih"><b>Figures are the same size in training, trial and the match</b></div><p class="dt">Drills were up to 46% too big; now within 2.3%.</p></div>
+<h2 class="bug"><i></i>Known issues</h2>
+<div class="item"><div class="ih"><b>3 test files fail</b></div><p class="dt">authoredChance, freeKickRules and longRangeRules. They fail on the live version too.</p></div>
+<div class="item"><div class="ih"><b>23 drawings still carry the old keeper spots, and none of the 10 penalty drawings obey the penalty rules</b><span class="pill p-red">blocked on Harry</span></div><p class="dt">The game corrects the penalties when played, so nothing looks wrong in a match.</p></div>
+<div class="item"><div class="ih"><b>Fouls when closed down and OFF THE WALL labels haven&#39;t been seen by a person</b><span class="pill p-amb">not played</span></div></div>
+<div class="item"><div class="ih"><b>Blank faces were seen only on the test machine</b><span class="pill p-amb">half fixed</span></div><p class="dt">A failed photo now shows a fake face. Not checked on a real phone.</p></div>
+<h2 class="nxt"><i></i>Next</h2>
+<div class="item"><div class="ih"><b>Your answers to decisions (a) to (i)</b></div><p class="dt">The penalty hop can be beaten, tight angles are now the most common striker chance, the 6.5 pull on short cameos, saves, National League data, shootout slot.</p></div>
+<div class="item"><div class="ih"><b>Highlight choosing, redesigned</b></div><p class="dt">&quot;The last big hurdle&quot;: fun over realism, different kinds of striker.</p></div>
+<details class="nums"><summary>The numbers</summary><ul><li><b>77% → 0</b> cutback chances that left out a defender you drew</li><li><b>88% → 75%</b> penalties into the corners that go in (all penalties 82% → 76%)</li><li><b>0.75 → 2.15</b> chances for a sub coming on at 80&#39;</li><li><b>187 / 190</b> tests pass. The 3 that fail also fail on the live version</li></ul></details>
+<footer>Made from the archive data on 26 Oct 2026 (this note had no page)</footer>
+</div>
+<script>
+(function(){
+  var K="kib-pn-0.16-checks", s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||"{}")||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll(".ck input");
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute("data-k"); if(s[id]) b.checked=true;
+    b.addEventListener("change",function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+})();
+</script>
+</body>
+</html>

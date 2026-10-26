@@ -3,6 +3,19 @@ name: artifact-house-style
 description: How Knowitball artifacts are built — start from references/tuning-plan-standard.html (Harry, 14 Oct 2026: "this should be standard"): numbered points, a drawn diagram for each idea, numbers hidden in a toggle. Load BEFORE writing ANY artifact for this project: patch notes, a build write-up, a review, a decision page, a handover. Triggers on "make artifact", "make an artifact", "patch notes", "write this up", "give me a page", "something I can send the team".
 ---
 
+> **Every patch note, everyone's (RUL-TEAM-028, Leo 26 Oct 2026).** In
+> `lib/patchNotesData.ts`: `"author"` (Harry/Mikey/Leo); `"publishedAt"` = the
+> real time it was made; title `"<Name>'s patch notes: <what it is about, 3-8
+> words>"` (the menu shows that part); `"updates": [{ "at", "where", "note" }]`
+> — every update appends one AND sets `updatedAt` + `updateNote` to the same
+> time and line. **Number:** take the next number nobody has used on ANY branch
+> (main, Harry, Mikey, Leo); `0.121` and `0.121h` may not both exist; never
+> reuse 0.60-0.63, 0.103, 0.107-0.110. **Page:** every note has one, built from
+> `artifact-house-style` (tuning-plan-standard.html + clip-card.html, "Check
+> these" first, numbers in one closed toggle). `npx tsx tests/star/patchNoteRules.mts`
+> checks all of it, and `ship.mjs` refuses a note that breaks a rule.
+
+
 Standing rules: search the Brain first (grep brain/_index*.md), cite codes.
 
 # The Knowitball artifact recipe

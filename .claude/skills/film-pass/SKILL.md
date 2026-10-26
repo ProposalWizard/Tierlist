@@ -103,6 +103,37 @@ no sound and why.
 - Hide dev-only bars while filming (a `film=1` flag), so no "DEV: SKIP" strip
   shows in the clips. Real players never see it.
 
+### 6c. Film the match frame by frame, never as a screen recording
+Leo, 25 Oct 2026: the clips "look bad" and "the ball moves weird". Cause, measured: this
+machine has no graphics card, so a real-time recording (Playwright recordVideo, the CDP
+screencast) stalls. From the shot to the end of the camera pan after the scorer, chat 1's
+knee slide, big moment and aeroplane clips have 14%, 15% and 17% of moving frames that are
+an exact copy of the one before, then a jump (`scripts/film/smoothness.py`). The same
+moments filmed frame by frame: 0%.
+- Use `scripts/film/vclock.mjs`. It takes over the page's clock (performance.now,
+  Date.now, requestAnimationFrame, timers, CSS animations): the game only moves when the
+  script steps it, exactly 1/60 s a step, and every step is captured after a real repaint.
+  No frame can repeat or drop, however slow the machine.
+- Sound comes with it: the game's Web Audio context becomes an offline one on the same
+  clock, so every sound sits on its exact frame and is rendered to a WAV at the end.
+- `encode()` reads the frames as an exact 60 fps image sequence and keeps every 2nd for
+  30 fps. Never join frames with an ffmpeg concat list of per-image durations: the
+  rounding repeated 16% of frames in a clean capture (measured).
+- Menus and loading run in real time; call `vStart` once the page is up. Between steps
+  you can drag and tap as usual (step a frame or two between mouse moves).
+- A real goal: `node scripts/film/scenes/vgoal.mjs <port> <knee-slide|aeroplane|big-moment|plain> <outDir> --seed seed.json`
+  (real shots only, misses thrown away; about 1 goal in 13 shots on the seed save; about
+  1-2 s of machine time per frame of film, so several clips at once is fine: the clock
+  does not care how busy the machine is).
+- Seed: `node scripts/film/scenes/celebrations.mjs <port> setup <outDir>`. The drivers drop
+  the save's unlock list so first-hour tours and pop-ups stay out of the way.
+- Check a clip: `python3 scripts/film/smoothness.py clip.mp4 --from S --to S` over a stretch
+  where the picture moves every frame: stalls must be 0. Outside such a stretch the game's
+  own slow animations (a celebration figure changes pose ~8 times a second) hold still
+  legitimately; the vgoal driver also logs the ball every frame (`<clip>-ball.json`).
+- Not for `<video>` elements (goal-video playback runs on its own clock): those clips stay
+  screen recordings, with sound through `audio-tap.mjs`.
+
 ### 7. Run the scenes as one script; the agent only checks
 - **Not built yet (2 Oct 2026):** `run-scenes.mjs` is written with the library
   (rule 5).

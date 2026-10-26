@@ -62,8 +62,12 @@ export interface LeadIn {
    * chance's own, so the passer and the man the pass goes to are both on the
    * screen; it zooms out before a long pass and back in onto the chance's frame
    * at the end. Absent: the build-ups' camera (never wider than the chance's frame).
+   *
+   * "glide": ONE smooth move for the whole build-up (the Full highlights
+   * rebuild's build-ups; Harry, 0.108h: "I don't like how the camera can move
+   * in multiple movements, it should be smooth"). See glideCamera.
    */
-  camera?: "tv";
+  camera?: "tv" | "glide";
   /**
    * PLAYERS ALREADY MOVING (the rebuild's phase 3). The men in `runOnKeys`
    * are still running when the chance becomes yours: posAt answers for them
@@ -341,6 +345,7 @@ export function leadLockTime(lead: LeadIn, chance: Viewport, area: "six" | "box"
  * Ask it for times in order (a match's frames); an earlier time starts it again.
  */
 export function leadInCamera(lead: LeadIn, keys: readonly string[] = []) {
+  if (lead.camera === "glide") return glideCamera(lead);
   // A camera operator: a critically damped spring on the frame's middle and size
   // (it speeds up and slows down smoothly, never a jolt when the play moves on to
   // the next pass), with a top speed.
@@ -513,6 +518,168 @@ export function leadInCamera(lead: LeadIn, keys: readonly string[] = []) {
       // 1.7 px onto the chance's camera at the hand-over. B2b, measured in
       // tests/star/fhrCameraHandover.mts.)
       return { x1: mix(own.x1, chance.x1), x2: mix(own.x2, chance.x2), y1: mix(own.y1, chance.y1), y2: mix(own.y2, chance.y2) };
+    },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  THE GLIDE CAMERA (lead.camera "glide"; Harry, 0.108h, 24 Oct 2026: "I
+//  don't like how the camera can move in multiple movements, it should be
+//  smooth").
+//
+//  The follow camera above re-aims at every pass: its target jumps to the
+//  next pass, so the spring sets off, slows, and sets off again. This one
+//  plans the whole build-up before the first frame:
+//   1. START: the ball where the move begins (smoothed), at the build-up's own
+//      size (never closer than LEAD_FRAME_MIN_W, never wider than the chance).
+//   2. END: the chance's own frame, reached exactly at the lock time (the ball
+//      in the six-yard box, leadLockTime) or the end, gliding in over
+//      LEAD_SETTLE_S with an ease (no jump at the hand-over).
+//   3. BETWEEN: one eased glide from start to end, leaning GLIDE_FOLLOW of
+//      the way toward the ball's path SMOOTHED BOTH WAYS IN TIME (a Gaussian
+//      over GLIDE_SIGMA_S: no lag, no snap, and it starts moving a moment
+//      before a pass is hit).
+//   4. ZOOM: only as far out as keeps the ball inside the frame (a long ball),
+//      eased in before and out after (held GLIDE_HOLD_S either side, then
+//      smoothed), never past GLIDE_WIDE_MAX x the chance's width.
+//  Measured: scripts/fhr/glide-measure.mts; pinned: tests/star/fhrGlideCamera.mts.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** How far the glide leans from the straight start-to-end move toward the (smoothed) ball. */
+export const GLIDE_FOLLOW = 0.7;
+/** The ball's path is smoothed over this (s, one standard deviation, both ways in time). */
+export const GLIDE_SIGMA_S = 0.5;
+/** The zoom: held this long (s) either side of the moment it is needed, then smoothed over GLIDE_ZOOM_SIGMA_S. */
+export const GLIDE_HOLD_S = 0.5;
+export const GLIDE_ZOOM_SIGMA_S = 0.22;
+/** The widest it goes, × the chance's width. */
+export const GLIDE_WIDE_MAX = 1.5;
+/** Room kept round the ball when working out the zoom (m). */
+export const GLIDE_BALL_ROOM = 3;
+/** A ball past the edge even so: the frame's nudge after it is held this long either side, then smoothed (s). */
+export const GLIDE_NUDGE_HOLD_S = 0.45;
+export const GLIDE_NUDGE_SIGMA_S = 0.25;
+
+const smoother = (f: number) => { const c = Math.min(1, Math.max(0, f)); return c * c * c * (c * (c * 6 - 15) + 10); };
+
+/** A Gaussian smoothing of evenly spaced samples, both ways in time (no lag), ends held. */
+function gaussSmooth(v: number[], sigma: number): number[] {
+  if (!(sigma > 0) || v.length < 2) return [...v];
+  const R = Math.ceil(3 * sigma);
+  const k: number[] = [];
+  for (let j = -R; j <= R; j++) k.push(Math.exp(-(j * j) / (2 * sigma * sigma)));
+  const n = v.length;
+  return v.map((_, i) => {
+    let s = 0, w = 0;
+    for (let j = -R; j <= R; j++) { const q = v[Math.min(n - 1, Math.max(0, i + j))]; s += q * k[j + R]; w += k[j + R]; }
+    return s / w;
+  });
+}
+
+function glideCamera(lead: LeadIn) {
+  const STEP = 1 / 60;
+  const SETTLE = LEAD_SETTLE_S;
+  const n = Math.max(1, Math.ceil(lead.durS / STEP));
+  const tOf = (i: number) => Math.min(lead.durS, i * STEP);
+  let lockMemo: { key: string; t: number } | null = null;
+  const lockTime = (chance: Viewport) => {
+    const key = `${chance.x1},${chance.x2},${chance.y1},${chance.y2}`;
+    if (!lockMemo || lockMemo.key !== key) lockMemo = { key, t: leadLockTime(lead, chance) };
+    return lockMemo.t;
+  };
+  /** 1 while it glides, easing to 0 as it lands on the chance's frame. A move
+   *  that ends in a called offside has no chance to land on: it glides to the end. */
+  const followW = (t: number, chance: Viewport) => {
+    if (lead.offside) return 1;
+    const lt = lockTime(chance);
+    if (lt <= 0) return 0;
+    return 1 - smoother((t - (lt - SETTLE)) / SETTLE);
+  };
+  // The planned move, worked out once per chance frame.
+  let plan: { key: string; cx: number[]; cy: number[]; w: number[] } | null = null;
+  const planFor = (chance: Viewport) => {
+    const key = `${chance.x1},${chance.x2},${chance.y1},${chance.y2}`;
+    if (plan && plan.key === key) return plan;
+    const cw = chance.x2 - chance.x1, ch = chance.y2 - chance.y1;
+    const ex = (chance.x1 + chance.x2) / 2, ey = (chance.y1 + chance.y2) / 2;
+    const bx: number[] = [], by: number[] = [];
+    for (let i = 0; i <= n; i++) { const b = lead.ballAt(tOf(i)); bx.push(b.x); by.push(b.y); }
+    const sig = GLIDE_SIGMA_S / STEP;
+    const fx = gaussSmooth(bx, sig), fy = gaussSmooth(by, sig);
+    // The move lands on the chance at the lock time (or the end).
+    const lt = lead.offside ? lead.durS : Math.max(STEP, lockTime(chance));
+    const sx0 = fx[0], sy0 = fy[0];
+    // The opening size: the first pass (or the first second) in view, inside LEAD_FRAME_MIN_W..the chance's width.
+    const p0 = lead.passEnd && lead.passEnd.length ? lead.ballAt(Math.min(lead.durS, lead.passEnd[0])) : lead.ballAt(Math.min(lead.durS, 1));
+    const b0 = lead.ballAt(0);
+    const startW = Math.min(cw, Math.max(LEAD_FRAME_MIN_W, Math.abs(p0.x - b0.x) + 14, (Math.abs(p0.y - b0.y) + 14) * cw / ch));
+    const z0 = startW / cw;
+    const rawX: number[] = [], rawY: number[] = [], zBase: number[] = [];
+    for (let i = 0; i <= n; i++) {
+      const u = smoother(tOf(i) / lt);
+      // One eased move from start to end…
+      const gx = sx0 + (ex - sx0) * u, gy = sy0 + (ey - sy0) * u;
+      // …leaning toward the smoothed ball.
+      rawX.push(gx + (fx[i] - gx) * GLIDE_FOLLOW);
+      rawY.push(gy + (fy[i] - gy) * GLIDE_FOLLOW);
+      zBase.push(z0 + (1 - z0) * u);
+    }
+    // Kept on the pitch (as the follow camera is), then smoothed again so the edge never kinks it.
+    const cxs = gaussSmooth(rawX.map((x) => Math.min(72 - cw / 2, Math.max(-4 + cw / 2, x))), sig * 0.5);
+    const cys = gaussSmooth(rawY.map((y) => Math.min(112 - ch / 2, Math.max(-7 + ch / 2, y))), sig * 0.5);
+    // How far out it must be to keep the ball (with room) in view — measured
+    // from where the camera will really be (the landing blend included).
+    const wOf = (i: number) => followW(tOf(i), chance);
+    const need = cxs.map((x, i) => {
+      const w = wOf(i), fx2 = ex + (x - ex) * w, fy2 = ey + (cys[i] - ey) * w;
+      return Math.max(zBase[i],
+        (2 * (Math.abs(bx[i] - fx2) + GLIDE_BALL_ROOM)) / cw,
+        (2 * (Math.abs(by[i] - fy2) + GLIDE_BALL_ROOM)) / ch);
+    });
+    const H = Math.round(GLIDE_HOLD_S / STEP);
+    const held = need.map((_, i) => { let m = 0; for (let j = Math.max(0, i - H); j <= Math.min(n, i + H); j++) m = Math.max(m, need[j]); return m; });
+    // The zoom is the frame's own width (not blended by the landing): it eases
+    // back to the chance's width over the last GLIDE_HOLD_S before the lock.
+    const zs = gaussSmooth(held, GLIDE_ZOOM_SIGMA_S / STEP).map((z, i) => {
+      const out = Math.min(GLIDE_WIDE_MAX, Math.max(zBase[i], z));
+      const fade = lead.offside ? 1 : 1 - smoother((tOf(i) - (lt - GLIDE_HOLD_S)) / GLIDE_HOLD_S);
+      return 1 + (out - 1) * fade;
+    });
+    // Where the camera really is: the glide, blended onto the chance's frame as it lands.
+    const fxs = cxs.map((x, i) => ex + (x - ex) * wOf(i)), fys = cys.map((y, i) => ey + (y - ey) * wOf(i));
+    // Last, a ball still past the edge at the widest zoom (a very long ball):
+    // the frame is nudged after it, the nudge itself held and smoothed like the
+    // zoom, and gone by the landing.
+    const past = (b: number, c: number, half: number) => {
+      const m = Math.min(1, half / 4);
+      return b > c + half - m ? b - (c + half - m) : b < c - half + m ? b - (c - half + m) : 0;
+    };
+    const nudge = (raw: number[]) => {
+      const Hn = Math.round(GLIDE_NUDGE_HOLD_S / STEP);
+      const held2 = raw.map((_, i) => { let m = 0; for (let j = Math.max(0, i - Hn); j <= Math.min(n, i + Hn); j++) if (Math.abs(raw[j]) > Math.abs(m)) m = raw[j]; return m; });
+      return gaussSmooth(held2, GLIDE_NUDGE_SIGMA_S / STEP).map((d, i) => d * smoother(2 * wOf(i)));
+    };
+    const nx = nudge(fxs.map((x, i) => past(bx[i], x, (zs[i] * cw) / 2)));
+    const ny = nudge(fys.map((y, i) => past(by[i], y, (zs[i] * ch) / 2)));
+    plan = { key, cx: fxs.map((x, i) => x + nx[i]), cy: fys.map((y, i) => y + ny[i]), w: zs.map((z) => z * cw) };
+    return plan;
+  };
+  const sample = (a: number[], t: number) => {
+    const f = Math.min(n, Math.max(0, t / STEP)), i = Math.floor(f), g = f - i;
+    return a[i] + (a[Math.min(n, i + 1)] - a[i]) * g;
+  };
+  return {
+    lockTime,
+    /** 0 = gliding, 1 = on the chance's frame. */
+    lockAt: (t: number, chance: Viewport) => (lead.offside ? 0 : 1 - followW(t, chance)),
+    at(t: number, chance: Viewport): Viewport {
+      const w = followW(t, chance);
+      if (w <= 0) return { ...chance };
+      const P = planFor(chance);
+      const cw = chance.x2 - chance.x1, ch = chance.y2 - chance.y1;
+      const cx = sample(P.cx, t), cy = sample(P.cy, t);
+      const fw = sample(P.w, t), fh = fw * ch / cw;
+      return { x1: cx - fw / 2, x2: cx + fw / 2, y1: cy - fh / 2, y2: cy + fh / 2 };
     },
   };
 }

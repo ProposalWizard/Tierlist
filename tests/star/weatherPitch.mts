@@ -7,6 +7,8 @@
 import { buildConditions, CLEAR_DIALS, flyBall, measure, STRIKES, windVector, type WeatherDials } from "../../lib/star/weatherLab";
 import { clubPitch, pitchLabel, groundFor } from "../../lib/star/pitchQuality";
 import { windAtHeight } from "../../lib/star/pitchWeather";
+import { matchConditions, matchDials, weatherLine } from "../../lib/star/matchWeather";
+import { conditionsFor } from "../../lib/star/weather";
 import { PREMIER_LEAGUE_CLUBS, NATIONAL_LEAGUE_NORTH_CLUBS, STEP3_NORTH_CLUBS, LEAGUE_ONE_CLUBS } from "../../lib/star/clubs";
 
 import { integrateBallOld, type Ball } from "../../lib/star/canvasEngine";
@@ -101,6 +103,24 @@ for (const mode of ["old", "new"] as const) {
   check(pitchLabel(0.4, "dry") === "Pitch: very poor, dry" && pitchLabel(1, "normal") === "Pitch: perfect", "the pre-match line reads \"Pitch: poor, dry\"");
   const weeks = Array.from({ length: 38 }, (_, i) => groundFor(1, i + 1, false));
   check(weeks.slice(8, 30).every((g) => g === "normal") && weeks.some((g) => g === "dry"), "dry spells only at the ends of the season");
+}
+
+// Leo's update, part "weather": a real fixture's conditions (matchWeather.ts).
+{
+  const career = { season: 2, homeCity: "Leeds", player: { club: "Accrington Stanley" } } as never;
+  const sameRoll = Array.from({ length: 38 }, (_, i) => i + 1).every((w) =>
+    matchConditions(career, { week: w, home: true, opponent: "Arsenal", kind: "league" }).weather === conditionsFor(2, w, "Leeds").weather);
+  check(sameRoll, "a match keeps today's weather roll (same days windy or wet)");
+  const home = matchDials(career, { week: 5, home: true, opponent: "Arsenal", kind: "league" });
+  const away = matchDials(career, { week: 5, home: false, opponent: "Arsenal", kind: "league" });
+  check(home.pitch === clubPitch("Accrington Stanley").quality && away.pitch === 1, "the pitch is the HOME club's (Accrington at home, Arsenal's away)");
+  check(matchDials(career, { week: 5, home: true, opponent: "France", kind: "international" }).pitch === 1, "an international is on a perfect pitch");
+  check(matchConditions(career, { week: 5, home: true, opponent: "Arsenal", kind: "league" }).drawn === true, "a real match's conditions ask to be drawn");
+  check(conditionsFor(2, 5, "Leeds").drawn === undefined, "today's conditions never do (switch off: nothing drawn)");
+  const line = weatherLine({ weather: "rain", windSpeed: 0, windTo: 0, pitch: 0.45, ground: "wet" });
+  check(line === "Rain · poor, wet pitch", `the pre-match line reads "${line}"`);
+  const wl = weatherLine({ weather: "wind", windSpeed: 12, windTo: 90, pitch: 1, ground: "normal" });
+  check(wl === "Windy 12 m/s · perfect pitch", `and in wind "${wl}"`);
 }
 
 if (problems.length) { console.error(`\n${problems.length} problem(s)`); process.exit(1); }

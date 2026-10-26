@@ -29,7 +29,8 @@ export default function TrainingLevelSelect({ career, skill, onPlay, onBack }: {
   career: CareerState;
   skill: keyof Skills;
   onPlay: (level: number) => void;
-  onBack: () => void;
+  /** Absent: no way back (the story's two drills must be done). */
+  onBack?: () => void;
 }) {
   const levels = starsOf(career, skill);
   const open = highestUnlocked(levels);
@@ -47,7 +48,7 @@ export default function TrainingLevelSelect({ career, skill, onPlay, onBack }: {
       <KitStyles />
       <div className="mx-auto w-full max-w-sm">
         <div className="flex items-center justify-between">
-          <BackButton onClick={onBack} />
+          {onBack ? <BackButton onClick={onBack} /> : <span />}
           <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: a }}>Training</div>
         </div>
 
@@ -81,10 +82,11 @@ export default function TrainingLevelSelect({ career, skill, onPlay, onBack }: {
             </span>
           </div>
           <SquareBar value={Math.max(2, (stars / max) * 100)} colors={[a, "#fde68a"]} className="mt-2 h-3" animate />
-          <div className="relative mt-2 text-[11.5px] font-bold text-white">
-            3 tries a level: first ★★★, second ★★, third ★. Every 3 new stars is +2 {look.title}.
-            {value < ceiling && ` You've lost ${ceiling - value} since your best — pass any level to win them back.`}
-          </div>
+          {/* The 3-tries line is gone: it is plain once you have played a level
+              (Mikey's playtest, 24 Oct 2026). Only a lost-skill note stays. */}
+          {value < ceiling && (
+            <div className="relative mt-2 text-[11.5px] font-bold text-white">{`You've lost ${ceiling - value} since your best — pass any level to win them back.`}</div>
+          )}
         </div>
 
         {/* The ladder. Done levels glow gold by stars, the next one pulses in

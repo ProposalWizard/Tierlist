@@ -19,6 +19,16 @@ export async function GET(request: Request) {
   const rawNext = searchParams.get("next") ?? "/";
   const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
 
+  // A guest's "Save your career — sign in with Google" (lib/guest/start.ts)
+  // picked a Google account that already has a Knowitball account: Supabase
+  // refuses to link it. Back to the game, which offers to sign in to that
+  // account and bring the guest's career along. Only guests ever send guest=link.
+  if (searchParams.get("guest") === "link" && searchParams.get("error_code") === "identity_already_exists") {
+    const back = new URL(next, origin);
+    back.searchParams.set("guest_link", "taken");
+    return NextResponse.redirect(back.toString());
+  }
+
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);

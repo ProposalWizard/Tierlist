@@ -40,10 +40,19 @@ export interface PointBox {
 }
 
 export interface MessageCard { url: string; path: string; point: PointBox | null }
-export interface ParsedMessage { replyTo: number | null; text: string; cards: MessageCard[]; mentions: TeamPerson[] }
+export interface ParsedMessage {
+  replyTo: number | null; text: string; cards: MessageCard[]; mentions: TeamPerson[];
+  /** The channel tag at the front ("[#ideas] "), or null = #general (lib/teamRoom/channels.ts). */
+  channel: string | null;
+  /** A thread reply also shown in its channel ("Also send to #channel", 25 Oct 2026). */
+  also: boolean;
+}
 
 export const POINT_KEY = "kib-point=";
 const REPLY = /^\[re:(\d{1,12})\]\s?/;
+const ALSO = /^\[also\]\s?/;
+/** "[#ideas] " at the very front: the message's channel (23 Oct 2026, channels.ts). Comes before any [re:…]. */
+export const CHANNEL_TAG = /^\[#([a-z0-9][a-z0-9-]{0,29})\]\s?/;
 const MENTION = /(^|[^\w@])@(harry|mikey|leo)\b/gi;
 
 const isName = (s: unknown): s is TeamPerson => typeof s === "string" && (TEAM_PEOPLE as readonly string[]).includes(s);
@@ -107,9 +116,15 @@ export function mentionsIn(text: string): TeamPerson[] {
  */
 export function parseMessage(body: string, origins: string[] = []): ParsedMessage {
   let rest = body ?? "";
+  let channel: string | null = null;
+  const ch = CHANNEL_TAG.exec(rest);
+  if (ch) { channel = ch[1]; rest = rest.slice(ch[0].length); }
   let replyTo: number | null = null;
   const r = REPLY.exec(rest);
   if (r) { replyTo = Number(r[1]); rest = rest.slice(r[0].length); }
+  let also = false;
+  const a = replyTo ? ALSO.exec(rest) : null;
+  if (a) { also = true; rest = rest.slice(a[0].length); }
   const cards: MessageCard[] = [];
   const lines: string[] = [];
   for (const line of rest.split("\n")) {
@@ -125,12 +140,16 @@ export function parseMessage(body: string, origins: string[] = []): ParsedMessag
     else lines.push(line);
   }
   const text = lines.join("\n").replace(/^\s*\n+|\n+\s*$/g, "");
-  return { replyTo, text, cards, mentions: mentionsIn(rest) };
+  return { replyTo, text, cards, mentions: mentionsIn(rest), channel, also };
 }
 
-/** Build the text that goes in the database: [re:id], the words, then one link per line. */
-export function composeBody(text: string, opts: { replyTo?: number | null; links?: string[] } = {}): string {
-  const head = opts.replyTo ? `[re:${opts.replyTo}] ` : "";
+/**
+ * Build the text that goes in the database: [#channel] (not for #general),
+ * [re:id], the words, then one link per line.
+ */
+export function composeBody(text: string, opts: { replyTo?: number | null; links?: string[]; channel?: string | null; also?: boolean } = {}): string {
+  const ch = opts.channel && opts.channel !== "general" && /^[a-z0-9][a-z0-9-]{0,29}$/.test(opts.channel) ? `[#${opts.channel}] ` : "";
+  const head = ch + (opts.replyTo ? `[re:${opts.replyTo}] ${opts.also ? "[also] " : ""}` : "");
   const links = (opts.links ?? []).filter(Boolean);
   return (head + [text.trim(), ...links].filter(Boolean).join("\n")).slice(0, 2000);
 }

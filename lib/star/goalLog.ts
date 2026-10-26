@@ -14,6 +14,7 @@
  * Pure. Tests: tests/star/goalLog.mts.
  */
 import type { CareerState, Fixture, GoalEvent, MatchStats } from "./types";
+import { CHANCE_KIND_LABEL } from "./chanceLog";
 
 export interface CareerGoal {
   /** Unique in the career: season, fixture week, minute, order in the match. */
@@ -127,4 +128,16 @@ export function protectedClipIds(career: CareerState | null | undefined): string
   const reelPending = log.filter((g) => g.clipId && (career.reelDoneSeason ?? 0) < g.season);
   const best = bestGoals(log.filter((g) => g.clipId), 10);
   return Array.from(new Set([...reelPending, ...best].map((g) => g.clipId as string)));
+}
+
+/**
+ * The goal card's "How" in words (Leo's bug fixes, 25 Oct 2026): the chance
+ * kind the engine logged ("one_on_one") read through the chance list's own
+ * labels ("One-on-one"). Anything else keeps its words, underscores spaced.
+ */
+export function goalHowLabel(how: string): string {
+  const known = CHANCE_KIND_LABEL[how];
+  if (known) return known;
+  const words = how.replace(/_/g, " ").trim();
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : how;
 }

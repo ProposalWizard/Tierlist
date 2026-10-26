@@ -6,6 +6,7 @@ import { trainingLeft, TRAINING_SESSIONS_PER_WEEK } from "@/lib/star/week";
 import { getTuning } from "@/lib/star/tuningStore";
 import { ClubCard, Glow, Pop, Shine, Shake, Burst, FloatText, rgba, tint, useClubTheme } from "./ui";
 import { CardTitle, DeltaBar, useSeen, seenScope } from "./screenKit";
+import { mechanicOpen, mechanicDef } from "@/lib/star/mechanics";
 
 /**
  * TRAINING — one card per skill.
@@ -78,22 +79,27 @@ export default function SkillsScreen({ career, onTrain }: Props) {
           (Harry, 1 Oct 2026, P4, P78): the manager tells you once, in a
           conversation, when you become the taker (lib/star/setPieceTalk.ts). */}
 
-      {SKILL_LABELS.map(([key, label, icon, desc]) => (
+      {SKILL_LABELS.map(([key, label, icon, desc]) => {
+        // A new career's Aerial drill opens with headers and volleys, after
+        // game 3 (lib/star/mechanics.ts).
+        const shut = key === "aerial" && !mechanicOpen(career, "aerial");
+        return (
         <SkillCard
           key={key}
           skill={key}
           label={label}
           icon={icon}
-          desc={desc}
+          desc={shut ? `Opens ${mechanicDef("aerial").when.toLowerCase()}` : desc}
           value={career.skills[key]}
           stars={totalStars(starsOf(career, key))}
-          canTrain={career.energy >= ENERGY_COST && career.skills[key] < 100 && left > 0}
+          canTrain={!shut && career.energy >= ENERGY_COST && career.skills[key] < 100 && left > 0}
           // Out of sessions, the card still answers a tap — with the pop-up.
           outOfSessions={left <= 0}
-          onTrain={() => (left <= 0 ? setNoMore(true) : onTrain(key))}
+          onTrain={() => (shut ? undefined : left <= 0 ? setNoMore(true) : onTrain(key))}
           scope={scope}
         />
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -172,7 +178,8 @@ function SkillCard({ skill, label, icon, desc, value, stars, canTrain, outOfSess
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-[15px] font-black leading-tight text-white">{label}</div>
-          <div className="text-[10.5px] font-bold leading-snug text-white/70">{desc}</div>
+          {/* The name only; what it does is on the skill's own page (Mikey's playtest, 24 Oct 2026). */}
+          <span className="sr-only">{desc}</span>
         </div>
         <div className="relative shrink-0 text-center">
           <div className="text-[24px] font-black leading-none tabular-nums" style={{ color: c2, textShadow: `0 0 12px ${rgba(c1, 0.7)}` }}>

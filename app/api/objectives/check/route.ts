@@ -4,10 +4,12 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { evaluateObjective } from "@/lib/objectiveEvaluator";
 import { levelFromXp } from "@/lib/xp";
 import type { ObjectiveCondition, ObjectiveProgress, SeasonCheckData } from "@/lib/objectiveTypes";
+import { notGuest } from "@/lib/guest/config";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user: signedIn } } = await supabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body: SeasonCheckData = await req.json();

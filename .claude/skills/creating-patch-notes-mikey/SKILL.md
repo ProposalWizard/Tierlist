@@ -3,6 +3,19 @@ name: creating-patch-notes-mikey
 description: Build "Knowitball Patch Notes Mikey (version)" — a shareable artifact page for Harry and Leo listing what changed in the game since the last patch notes (fixed, added, changed, known issues, next), with before→after numbers. Use whenever Mikey asks for patch notes, a changelog, an update summary for the team, or "what changed". Only when Mikey says "create patch notes" (RUL-TEAM-021): never on your own, never offered after a push.
 ---
 
+> **Every patch note, everyone's (RUL-TEAM-028, Leo 26 Oct 2026).** In
+> `lib/patchNotesData.ts`: `"author"` (Harry/Mikey/Leo); `"publishedAt"` = the
+> real time it was made; title `"<Name>'s patch notes: <what it is about, 3-8
+> words>"` (the menu shows that part); `"updates": [{ "at", "where", "note" }]`
+> — every update appends one AND sets `updatedAt` + `updateNote` to the same
+> time and line. **Number:** take the next number nobody has used on ANY branch
+> (main, Harry, Mikey, Leo); `0.121` and `0.121h` may not both exist; never
+> reuse 0.60-0.63, 0.103, 0.107-0.110. **Page:** every note has one, built from
+> `artifact-house-style` (tuning-plan-standard.html + clip-card.html, "Check
+> these" first, numbers in one closed toggle). `npx tsx tests/star/patchNoteRules.mts`
+> checks all of it, and `ship.mjs` refuses a note that breaks a rule.
+
+
 Standing rules: search the Brain first (grep brain/_index*.md), cite codes.
 
 # Creating patch notes — Mikey

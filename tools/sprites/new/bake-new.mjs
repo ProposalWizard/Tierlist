@@ -29,9 +29,9 @@
  *            limb into another are skipped or the legs set a few degrees wider (CELEBS in
  *            bake-new.html says which and why). Once clips carry `t3d`, each frame's second
  *            in the 3D clip (lib/star/sprites.ts spriteFrame).
- *        node tools/sprites/new/bake-new.mjs celebs both 3   THE STAR PASS FOUR (25 Oct 2026): celebCornerFlag,
+ *        node tools/sprites/new/bake-new.mjs celebs both 4   THE STAR PASS FOUR (25 Oct 2026): celebCornerFlag,
  *            celebBackflip, celebOwnName, celebStatue (keyed: tools/mocap3d/keyed_celebs.py) → their own
- *            atlas 3 (atlas-3/-3a, mask-3/-3a); atlas 2 untouched. A group number picks the CELEBS with that
+ *            atlas 4 (atlas-4/-4a, mask-4/-4a); atlas 2 and 3 untouched. A group number picks the CELEBS with that
  *            `group` (none = 2, the six above).
  *        node tools/sprites/new/bake-new.mjs celebsheet a "celebJump,celebRoar:2,0"   look sheet → preview/
  *        node tools/sprites/new/bake-new.mjs celebbones a celebKneeSlide [n]   per frame: lowest point and
@@ -99,6 +99,55 @@ async function openLook(tag) {
 function losslessWebp(png, out) {
   const r = spawnSync("python3", ["-I", "-c", "import sys;from PIL import Image;Image.open(sys.argv[1]).save(sys.argv[2],'WEBP',lossless=True,exact=True)", png, out], { stdio: "inherit" });
   if (r.status !== 0) throw new Error("webp conversion failed (needs python3 + Pillow)");
+}
+if (mode.startsWith("aerial")) {
+  // aerials [a|current|both]  ·  aerialsheet <a|current> <clip,clip:dirIdx,dirIdx>
+  // THE AERIAL MOVES (Harry, 25 Oct 2026; aerials.js): eight clips into atlas 3
+  // (atlas-3a.webp + mask-3a.webp in index-a.json, atlas-3.webp + mask-3.webp in
+  // index.json), each cell with its contact points (`pts`). Only atlases["3"] and
+  // those eight entries are written.
+  const which = (arg || (mode === "aerials" ? "both" : "a"));
+  const looks = which === "both" ? ["a", ""] : [which === "current" ? "" : "a"];
+  try {
+    for (const tag of looks) {
+      const page = await openLook(tag);
+      const t0 = Date.now();
+      if (mode === "aerials") {
+        const r = await page.evaluate(([t, q]) => window.bakeAerials(t, q), [tag, tag === "a" ? 0.8 : 0.74]);
+        const color = path.join(outDir, `atlas-3${tag}.webp`);
+        fs.writeFileSync(color, dataOf(r.color));
+        fs.mkdirSync(previewDir, { recursive: true });
+        const tmp = path.join(previewDir, `mask-3${tag}.png`);
+        fs.writeFileSync(tmp, dataOf(r.mask));
+        const mask = path.join(outDir, `mask-3${tag}.webp`);
+        losslessWebp(tmp, mask); fs.unlinkSync(tmp);
+        const frag = JSON.parse(r.frag);
+        const ip = path.join(outDir, tag === "a" ? "index-a.json" : "index.json");
+        const idx = JSON.parse(fs.readFileSync(ip, "utf8"));
+        const keep = JSON.stringify({ atlas: idx.atlas, a1: idx.atlases?.["1"], a2: idx.atlases?.["2"], standH: idx.standH });
+        idx.atlases = { ...(idx.atlases ?? {}), 3: frag.atlas };
+        for (const [n, cl] of Object.entries(frag.clips)) {
+          const was = idx.chars.player.clips[n];
+          if (was && was.atlas !== 3) throw new Error(`refusing to overwrite clip player.${n}`);
+          idx.chars.player.clips[n] = cl;
+        }
+        if (JSON.stringify({ atlas: idx.atlas, a1: idx.atlases["1"], a2: idx.atlases["2"], standH: idx.standH }) !== keep) throw new Error("atlas 0/1/2 entry changed");
+        fs.writeFileSync(ip, JSON.stringify(idx));
+        console.log(`atlas-3${tag}.webp`, (fs.statSync(color).size / 1024).toFixed(0), "KB ·", `mask-3${tag}.webp`, (fs.statSync(mask).size / 1024).toFixed(0), "KB ·", frag.atlas.w + "x" + frag.atlas.h);
+        console.log(path.basename(ip), "updated ·", ((Date.now() - t0) / 1000).toFixed(0), "s");
+      } else {
+        fs.mkdirSync(previewDir, { recursive: true });
+        const r = await page.evaluate((s) => window.aerialSheet(s), process.argv[4] ?? "");
+        const f = path.join(previewDir, `aerials-${tag || "current"}-${(process.argv[4] ?? "all").replace(/\W+/g, "_")}.png`);
+        fs.writeFileSync(f, dataOf(r.url)); console.log("wrote", f);
+      }
+      await page.close();
+    }
+  } finally {
+    await browser.close();
+    server.close();
+  }
+  process.exit(0);
 }
 if (mode.startsWith("celeb")) {
   // celebs [a|current|both]  ·  celebsheet <a|current> <clip,clip:dirIdx,dirIdx>  ·  celebclose <a|current> <clip> <facingDeg> [tiltDeg: 25 = game camera, 88 = from the side]

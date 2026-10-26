@@ -3,7 +3,7 @@ import {
 } from "./clubs";
 import type { CareerDivision } from "./calendar";
 import { weeklyWageFor, goalBonusFor, assistBonusFor } from "./economy";
-import { scoutedClubStrength, type ScoutOffer } from "./scoutOffers";
+import { scoutedClubStrength, clubsForDivision, type ScoutOffer } from "./scoutOffers";
 import { mulberry32 } from "./season";
 
 /**
@@ -32,10 +32,18 @@ import { mulberry32 } from "./season";
 export type ScoutedDivision = "national_league" | "national_league_north" | "national_league_south";
 
 /** Chance of each division, by whether the final shootout penalty went in. */
+// Mikey, 25 Oct 2026: "always starting National League North and South".
+// Half and half, whatever the final penalty did. (Was: scored 50% National
+// League / 25 / 25, missed 20 / 40 / 40.)
 export const SCOUTED_ODDS: Record<"scored" | "missed", Record<ScoutedDivision, number>> = {
-  scored: { national_league: 0.5, national_league_north: 0.25, national_league_south: 0.25 },
-  missed: { national_league: 0.2, national_league_north: 0.4, national_league_south: 0.4 },
+  scored: { national_league: 0, national_league_north: 0.5, national_league_south: 0.5 },
+  missed: { national_league: 0, national_league_north: 0.5, national_league_south: 0.5 },
 };
+
+/** Your first contract: ★35 a week, no haggling (Mikey, 24-25 Oct 2026). A
+ *  Basic KIB can is two weeks' wage, so the club shop's half-price first can
+ *  costs exactly what game 1 pays you. */
+export const FIRST_CONTRACT_WAGE = 35;
 
 const CLUBS_OF: Record<ScoutedDivision, readonly string[]> = {
   national_league: NATIONAL_LEAGUE_CLUBS,
@@ -87,6 +95,17 @@ export function finalPenScoredOf(trial: {
   return !!shootout && shootout.quality >= 0.5;
 }
 
+/**
+ * An ad's custom start point (lib/campaigns.ts `startLeague`): one club from
+ * that division, every club equally likely. Seeded like the normal roll, so a
+ * reload lands at the same club.
+ */
+export function startPointPlacement(division: CareerDivision, rng: () => number): { club: string; division: CareerDivision; clubs: string[] } {
+  const clubs = clubsForDivision(division);
+  const club = clubs[Math.min(clubs.length - 1, Math.floor(rng() * clubs.length))];
+  return { club, division, clubs };
+}
+
 /** The trial's own seed, salted the same way the old offer screen was, so
  *  the same trial always lands at the same club. */
 const SCOUT_SALT = 0x5c0a7;
@@ -104,10 +123,15 @@ export function scoutedOfferForTrial(trial: {
   seed: number;
   finalPenScored?: boolean;
   results?: Partial<Record<string, { quality: number } | undefined>>;
+  /** An ad's custom start point (TrialProgress.startDivision): the club comes from this division. */
+  startDivision?: CareerDivision;
 }): ScoutOffer {
-  const placement = scoutedPlacement(finalPenScoredOf(trial), mulberry32(trial.seed ^ SCOUT_SALT));
+  const rng = mulberry32(trial.seed ^ SCOUT_SALT);
+  const placement = trial.startDivision
+    ? startPointPlacement(trial.startDivision, rng)
+    : scoutedPlacement(finalPenScoredOf(trial), rng);
   const division: CareerDivision = placement.division;
-  const wage = weeklyWageFor(placement.club, division);
+  const wage = FIRST_CONTRACT_WAGE;
   return {
     club: placement.club,
     division,

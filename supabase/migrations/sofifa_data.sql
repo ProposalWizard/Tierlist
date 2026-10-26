@@ -22,11 +22,13 @@ CREATE TABLE IF NOT EXISTS sofifa_players (
   UNIQUE(sofifa_id, fifa_year)
 );
 
-CREATE INDEX IF NOT EXISTS idx_sofifa_year ON sofifa_players(fifa_year);
+-- idx_sofifa_year was dropped 25 Oct 2026 (fifa_stats_shrink.sql): idx_sofifa_year_league covers it.
 CREATE INDEX IF NOT EXISTS idx_sofifa_club_year ON sofifa_players(club, fifa_year);
 CREATE INDEX IF NOT EXISTS idx_sofifa_league_year ON sofifa_players(league, fifa_year);
 CREATE INDEX IF NOT EXISTS idx_sofifa_overall ON sofifa_players(overall DESC);
-CREATE INDEX IF NOT EXISTS idx_sofifa_name ON sofifa_players USING gin(name gin_trgm_ops);
+-- Name search index. Renamed 25 Oct 2026 (fifa_stats_shrink.sql): the live database had two
+-- identical copies, idx_sofifa_name and idx_sofifa_name_trgm; only idx_sofifa_name_trgm is kept.
+CREATE INDEX IF NOT EXISTS idx_sofifa_name_trgm ON sofifa_players USING gin(name gin_trgm_ops);
 
 ALTER TABLE sofifa_players ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public read sofifa_players" ON sofifa_players FOR SELECT USING (true);
