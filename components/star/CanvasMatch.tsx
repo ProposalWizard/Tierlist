@@ -1078,6 +1078,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const [overlayTop, setOverlayTop] = useState(false);
   const careerRef = useRef(career);
   careerRef.current = career;
+  /** The last request's deal rules, for a move that carries on. */
+  const lastDealRef = useRef<import("@/lib/star/kindMix").DealRules | undefined>(undefined);
   /** A new career's moves open one at a time (lib/star/mechanics.ts); every other save has them all. */
   const mechOpen = (id: Mechanic) => mechanicOpen(careerRef.current, id);
   const preferredFootRef = useRef(preferredFoot);
@@ -9012,7 +9014,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (chain && isTouchContinuation) {
       resetForTouchOn(scenarioRef.current, chain.pos);
     } else {
+      // A move carrying on keeps the last request's deal rules (play style,
+      // kinds not open yet: kindMix.ts DealRules).
+      if (request) lastDealRef.current = request.deal;
       const made = makeChance({
+        deal: lastDealRef.current,
         source: chain?.kind ? { from: "kind", kind: chain.kind }
           : chain ? { from: "chain", pos: chain.pos, ambition: chain.ambition, position: positionRef.current }
           : setPiece ? { from: "kind", kind: setPiece }
