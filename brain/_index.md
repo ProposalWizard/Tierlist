@@ -97,7 +97,7 @@ RUL-TEAM-002 | [SUPERSEDED] Every deploy comes with patch notes; Harry decides e
 RUL-TEAM-003 | Progress updates every 5 minutes on every task, with % and time left on every bar and the token/weekly usage block. | process,team
 RUL-TEAM-004 | No forced new chats: after about 3 hours of chat, add one line that it could be a good time to restart. | process,team
 RUL-TEAM-005 | Patch notes never link the Vercel test build; mostly stills, a short after clip only for gameplay and animation. | process,rule,team
-RUL-TEAM-006 | Patch-note version keys must be unique: search the data file for the number on BOTH branches first. | team,rule
+RUL-TEAM-006 | [SUPERSEDED] Patch-note version keys must be unique: search the data file for the number on BOTH branches first. | team,rule
 RUL-TEAM-007 | Jobs for the team go in team/jobs.json and arrive by push, never SQL. | team,rule,deploy
 RUL-TEAM-008 | Branches are per-person: this session develops on Harry; never push to another person's branch. | team,rule,deploy
 RUL-TEAM-009 | Build slowly and correctly: deep plan first, then build one piece at a time, each checked and signed off. | team
@@ -119,6 +119,7 @@ RUL-TEAM-024 | "Only give people todos if it is actually needed; if someone need
 RUL-TEAM-025 | Feedback on a patch note is answered on that same patch note page (a follow-up section with before/after), never a new artifact. | process,rule,style,team
 RUL-TEAM-026 | Big tasks: do every step that needs no approval first; leave anything that may ask Mikey to tap Allow (artifact publish, connector call) until the end. | team
 RUL-TEAM-027 | When Mikey asks to measure, report or discuss something, report back and do not change the game; build only what he asks to be built. | team
+RUL-TEAM-028 | "Every patch note: author, real date and time, every update with time and where, its own number (no base shared with anyone's, search all branches), a menu name saying what it is about, and the one standard page; checked by rules.mjs." | team,process
 RUL-UI-001 | Decide, don't toggle: a new look or gameplay change is built as THE game, with no new New/Old row in Settings. | ui
 RUL-UI-002 | Unfinished work lives on a test page (a /star-*-dev page), not behind a switch in the real game. | ui,admin
 RUL-UI-003 | Existing switches stay until someone decides each one; never delete one unasked. | rule,ui

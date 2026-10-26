@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Leo v0.119</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Same tokens and parts as Harry's pages (0.109h). One column, stacked cards. */
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+    --pill:#3ddc84;--pillink:#06170e;--r:12px;
+    --turf:#1f6b3d;--turf2:#24763f;--chalk:rgba(255,255,255,.75);
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+      --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+      --pill:#0b7a43;--pillink:#ffffff;
+      --turf:#2f8a50;--turf2:#358f55;--chalk:rgba(255,255,255,.85);
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    --turf:#2f8a50;--turf2:#358f55;--chalk:rgba(255,255,255,.85);
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  header{padding:30px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 12px;letter-spacing:-.02em;text-wrap:balance}
+  .status{display:flex;align-items:flex-start;gap:8px;margin:0 0 6px;font-weight:700;font-size:14.5px}
+  .status i{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none;margin-top:7px}
+  .sub{color:var(--ink3);font-size:13px;margin:0 0 10px}
+  .upd{border:1px solid var(--line);border-left:3px solid var(--blue);background:var(--card);border-radius:var(--r);padding:9px 12px;margin:0 0 4px;font-size:14px;color:var(--ink2)}
+  .upd b{color:var(--blue);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+  h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+  h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+  h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+  h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+  .snote{color:var(--ink3);font-size:13px;margin:-4px 0 12px}
+
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+  .ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 9px}
+  .ih b{font-size:16px;line-height:1.3}
+  .idea{margin:0 0 10px;color:var(--ink2);font-size:14.5px}
+  .idea b{color:var(--ink)}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .t-seen{background:var(--gbg);color:var(--green)}
+  .t-meas{background:var(--bbg);color:var(--blue)}
+  .t-reas{background:var(--abg);color:var(--amber)}
+  .t-no{background:var(--rbg);color:var(--red)}
+  .row{margin:0 0 9px;min-width:0}
+  .rl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:0 0 2px}
+  .rl.p{color:var(--red)} .rl.w{color:var(--amber)} .rl.f{color:var(--green)} .rl.s{color:var(--blue)}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row p b{color:var(--ink)}
+  .sub3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:var(--ink3);margin:16px 0 6px;padding-top:12px;border-top:1px solid var(--line)}
+
+  .bars{margin:8px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+  .bar .bl{grid-column:1/-1;color:var(--ink2)}
+  .track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+  .fill{position:absolute;left:0;height:8px;border-radius:3px}
+  .fill.was{top:1px;background:var(--ink3);opacity:.55}
+  .fill.now{bottom:1px;background:var(--green);opacity:.9}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:line-through;opacity:.9}
+
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  figure figcaption b{color:var(--ink2)}
+  figure.ph{max-width:270px;width:100%;margin-left:auto;margin-right:auto}
+
+  /* drawn diagrams */
+  .fig{background:var(--card2);border:1px solid var(--line);border-radius:var(--r);padding:10px;margin:10px 0 2px;min-width:0}
+  .fig svg{display:block;width:100%;max-width:390px;height:auto;margin:0 auto}
+  .cap{font-size:12.5px;color:var(--ink3);margin:6px 0 0;line-height:1.4}
+  .cap b{color:var(--ink2)}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  .item details{background:var(--card2)}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  details li b{color:var(--ink)}
+  details h4{margin:12px 0 4px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;vertical-align:1px;white-space:nowrap}
+  .p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+  .p-grn{background:var(--gbg);color:var(--green)} .p-blu{background:var(--bbg);color:var(--blue)}
+
+  .okbox{border:1px solid var(--line);border-left:4px solid var(--amber);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .okbox ol{margin:0;padding:0;list-style:none;counter-reset:q}
+  .okbox li{position:relative;padding:12px 0 12px 32px;border-bottom:1px solid var(--line);counter-increment:q}
+  .okbox li:last-child{border-bottom:0}
+  .okbox li::before{content:counter(q);position:absolute;left:0;top:12px;width:22px;height:22px;border-radius:50%;background:var(--amber);color:var(--bg);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .okbox li.done::before{background:var(--green);content:"\2713"}
+  .okbox .q{font-weight:700}
+  .okbox .d{color:var(--ink2);font-size:14px;margin-top:4px}
+
+  .note{border:1px dashed var(--line);border-radius:var(--r);padding:10px 12px;margin:14px 0 0;color:var(--ink2);font-size:13.5px;background:var(--card)}
+  .note b{color:var(--ink)}
+
+  /* clip card (references/clip-card.html) */
+  .clip{margin:12px auto 2px;max-width:390px;min-width:0}
+  .clip .look{font-size:14px;color:var(--ink2);margin:0 0 7px;background:var(--card2);border-radius:10px;padding:9px 12px}
+  .clip .look b{color:var(--green);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+  .clip video{display:block;width:100%;max-width:100%;height:auto;max-height:80vh;object-fit:contain;border-radius:var(--r);border:1px solid var(--line);background:#000}
+  .clip .spd{display:flex;gap:6px;align-items:center;margin:7px 0 0;font-size:13px;color:var(--ink3)}
+  .clip .spd button{font:700 13px/1 system-ui,sans-serif;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink2);cursor:pointer}
+  .clip .spd button.on{background:var(--ink);color:var(--bg)}
+  .clip figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .clip figcaption b{color:var(--ink2)}
+  details .clip{margin-top:4px;margin-bottom:16px}
+
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+</head><body>
+<div class="wrap">
+<header>
+  <span class="ver">v0.119 &middot; 23 OCT &middot; LEO</span>
+  <h1>Celebrations, fast feed, Real Goals, season end</h1>
+  <p class="status"><i></i><span>On the live site since 24 Oct, switched off for everyone. Admins turn it on in Settings &rarr; Updates; the card is now called &ldquo;Leo&rsquo;s 26 Oct update&rdquo; (it was &ldquo;Leo&rsquo;s 24 Oct update&rdquo;), one switch per part.</span></p>
+  <p class="sub">Made by Leo &middot; 23 Oct 2026, 00:15 UK &middot; built 22&ndash;24 Oct by 7 chats, from plan 0.107</p>
+  <p class="upd"><b>Updated 25 Oct, 01:30 UK</b>Bicycle kick taken out (Harry is building it). Fixed: after your goal the keeper stayed in the middle of the screen while the camera followed you; now he stays by the goal.</p>
+</header>
+
+<h2 class="nxt"><i></i>CHECK THESE</h2>
+<p class="snote">Turn the card on first: Settings &rarr; Updates &rarr; &ldquo;Leo&rsquo;s 26 Oct update&rdquo;. It changes only your phone. Test pages are linked on the card.</p>
+<ul class="ck">
+<li><label><input type="checkbox" data-k="c1"><span><span class="q">1 &middot; Goal celebrations</span><span class="a">Shop &rarr; Store &rarr; buy a move &rarr; &ldquo;Use after my goals&rdquo;. Card &rarr; Goal celebrations on &rarr; score in a match.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c2"><span><span class="q">2 &middot; Keeper stays by the goal</span><span class="a">Score, then watch the keeper while the camera follows your run.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c3"><span><span class="q">3 &middot; Big moments</span><span class="a">Card &rarr; Big moments on &rarr; a chance at 85&prime; or later, level or one down.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c4"><span><span class="q">4 &middot; Fast feed</span><span class="a">Card &rarr; Fast social feed on &rarr; Phone &rarr; Social: open it and scroll.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c5"><span><span class="q">5 &middot; Goal of the Month</span><span class="a">Card &rarr; Goal of the Month on &rarr; the poll in the feed, once a month: vote.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c6"><span><span class="q">6 &middot; Your goal plays at once</span><span class="a">Card &rarr; Goal videos play at once on &rarr; after a match: Post Match Reactions, or Stats &rarr; Goals.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c7"><span><span class="q">7 &middot; No Bicycle! button</span><span class="a">A header chance: &ldquo;Head it?&rdquo; and no Bicycle! button.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c8"><span><span class="q">8 &middot; Weather and pitch</span><span class="a">Test page /star-weather-dev.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c9"><span><span class="q">9 &middot; Real Goals and the shootout keeper</span><span class="a">Test pages /star-real-goals-dev and /star-shootout-dev.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c10"><span><span class="q">10 &middot; Season video, goals list, awards night</span><span class="a">Card &rarr; Season video, Career goals list, Season awards night on &rarr; finish a season; Stats &rarr; Goals.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c11"><span><span class="q">11 &middot; 17 bug fixes</span><span class="a">Card &rarr; Bug fixes on &rarr; refresh on the Ballon d&rsquo;Or and after &ldquo;Deal agreed&rdquo;; the welcome tour plays once; the talks header wage.</span></span></label></li>
+</ul>
+
+<p class="note"><b>About the clips.</b> Every goal is a real shot. Only the weather clips replay one fixed strike, on purpose. &#128266; = the game&rsquo;s own sound: tap the speaker on the video. The test machine has no graphics card, so about 1 frame in 4 repeats and the ball can look jumpy: that is the recording, not the game (not checked on a phone). Sandbox with no database: players and badges are invented, and a thin &ldquo;ADMIN&rdquo; tab shows at the left edge (players never see it).</p>
+
+<!-- 1 -->
+<h2 class="add"><i></i>1 &middot; ADDED: GOAL CELEBRATIONS</h2>
+<div class="item">
+  <div class="ih"><b>You score, run to the corner, do your shop move</b><span class="pill p-grn">on the site, switched off</span><span class="tag t-seen">seen</span></div>
+  <p class="idea">After your own goal you run to the nearer corner and do the move you bought in the shop. <b>Tap anywhere to skip.</b> Six moves: Hands Up, Fist Pump, Jump, Roar, Aeroplane, Knee Slide. Goal videos run 2.5 s longer to show it, even if you skipped.</p>
+  <div class="fig"><svg viewBox="0 0 360 200" role="img" aria-label="Top-down drawing: you score, run to the nearer corner flag and do your shop move there; tap anywhere to skip">
+<defs><marker id="arc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#fff"/></marker></defs>
+<rect x="0" y="0" width="360" height="200" rx="8" fill="var(--turf)"/>
+<g fill="none" stroke="var(--chalk)" stroke-width="1.5"><path d="M0 12H320V200"/><rect x="250" y="50" width="70" height="110"/><rect x="298" y="85" width="22" height="40"/><rect x="320" y="92" width="10" height="26"/></g>
+<circle cx="320" cy="12" r="3.5" fill="#f5b942"/>
+<path d="M225 118L322 104" stroke="#fff" stroke-width="1" stroke-dasharray="2 3" opacity=".6"/>
+<path d="M225 118L297 37" stroke="#fff" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#arc)"/>
+<circle cx="225" cy="118" r="6" fill="#6fb8ff" stroke="#fff" stroke-width="1.5" opacity=".55"/>
+<circle cx="303" cy="32" r="6" fill="#6fb8ff" stroke="#fff" stroke-width="1.5"/>
+<circle cx="312" cy="112" r="6" fill="#f5b942" stroke="#fff" stroke-width="1.5"/>
+<g font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="11.5" font-weight="700" fill="#fff" style="paint-order:stroke;stroke:rgba(0,0,0,.35);stroke-width:3px">
+<text x="225" y="140" text-anchor="middle">you score</text>
+<text x="232" y="102" text-anchor="end">run to the nearer corner</text>
+<text x="290" y="36" text-anchor="end">your shop move</text>
+<text x="20" y="186">tap anywhere: skip</text>
+<text x="312" y="136" text-anchor="middle">keeper</text>
+</g></svg>
+    <p class="cap"><b>Drawing, from above.</b> Blue is you. The move happens at the corner flag.</p>
+  </div>
+<div class="clip"><p class="look"><b>Look for</b>a real volley goes in, the run to the corner, the knee slide. It was a 90+1&prime; big moment, so you hear the heartbeat, the crowd rise, the net and the roar.</p>
+<video src="celeb-knee-slide-2d.mp4" poster="celeb-knee-slide-2d.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Knee slide &#128266;</b> The 3rd real shot of the run.</figcaption></div>
+  <details><summary>More clips (4)</summary>
+<div class="clip"><p class="look"><b>Look for</b>the real volley goal, then the run with arms out.</p>
+<video src="celeb-aeroplane-2d.mp4" poster="celeb-aeroplane-2d.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Aeroplane &#128266;</b> The 8th real shot.</figcaption></div>
+<div class="clip"><p class="look"><b>Look for</b>the tap after the goal: the celebration goes at once and the match moves on.</p>
+<video src="celeb-skip.mp4" poster="celeb-skip.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Tap to skip &#128266;</b></figcaption></div>
+<div class="clip"><p class="look"><b>Look for</b>the run and the slide inside the goal video: live, a tight shot on the slide, two replays.</p>
+<video src="celeb-video.mp4" poster="celeb-video.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>In the goal video &#128266;</b> The 90+1&prime; knee-slide goal, with its own commentary and crowd.</figcaption></div>
+<div class="clip"><p class="look"><b>Look for</b>Shop &rarr; Store &rarr; Roar &rarr; buy &rarr; &ldquo;Use after my goals&rdquo;.</p>
+<video src="celeb-shop.mp4" poster="celeb-shop.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Buying one.</b></figcaption></div>
+  </details>
+  <div class="row" style="margin-top:12px"><div class="rl f">Also fixed</div><p>The knee slide: his knees were pressed together, now 33 cm apart.</p></div>
+</div>
+
+<!-- 2 -->
+<h2 class="fix"><i></i>2 &middot; FIXED: THE KEEPER STAYS BY THE GOAL (25 OCT)</h2>
+<div class="item">
+  <div class="ih"><b>He no longer sticks to the middle of the screen</b><span class="pill p-grn">on the site, switched off</span><span class="tag t-seen">seen</span></div>
+  <div class="row"><div class="rl p">You said</div><p>When you run off to celebrate, the keeper stays locked to the middle of the screen while you move.</p></div>
+  <div class="row"><div class="rl w">Why</div><p>After his dive, the game kept where he landed as a point on the screen, not a spot on the pitch.</p></div>
+  <div class="row"><div class="rl f">Fix</div><p>He stays on his spot by the goal and leaves the screen with it. Only the drawing changed: nothing in the match plays differently.</p></div>
+  <div class="fig"><svg viewBox="0 0 360 214" role="img" aria-label="Two rows of three small screens as the camera follows you. Before: the goal slides off but the keeper stays on the screen. After: the keeper leaves with the goal.">
+<defs>
+<clipPath id="kcb0"><rect x="12" y="22" width="104" height="74" rx="6"/></clipPath>
+<clipPath id="kcb1"><rect x="128" y="22" width="104" height="74" rx="6"/></clipPath>
+<clipPath id="kcb2"><rect x="244" y="22" width="104" height="74" rx="6"/></clipPath>
+<clipPath id="kca0"><rect x="12" y="128" width="104" height="74" rx="6"/></clipPath>
+<clipPath id="kca1"><rect x="128" y="128" width="104" height="74" rx="6"/></clipPath>
+<clipPath id="kca2"><rect x="244" y="128" width="104" height="74" rx="6"/></clipPath>
+</defs>
+<g font-family="-apple-system,Segoe UI,Roboto,sans-serif"><text x="12" y="15" font-size="12" font-weight="700" fill="var(--red)">Before: he stays put on the screen</text><text x="12" y="121" font-size="12" font-weight="700" fill="var(--green)">After: he stays by the goal</text></g>
+<rect x="12" y="22" width="104" height="74" rx="6" fill="var(--turf)" stroke="var(--line)"/>
+<g clip-path="url(#kcb0)" fill="none" stroke="var(--chalk)" stroke-width="1.5"><path d="M42 22 V96"/><rect x="34" y="46" width="8" height="26"/><rect x="42" y="34" width="26" height="50"/></g>
+<circle cx="92" cy="52" r="5.5" fill="#6fb8ff" stroke="#fff" stroke-width="1.5"/>
+<g clip-path="url(#kcb0)"><circle cx="50" cy="68" r="8" fill="none" stroke="#ff6b6b" stroke-width="2" stroke-dasharray="3 2"/></g>
+<circle cx="50" cy="68" r="5.5" fill="#f5b942" stroke="#fff" stroke-width="1.5"/>
+<text x="110" y="90" text-anchor="end" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="11.5" font-weight="700" fill="#fff" style="paint-order:stroke;stroke:rgba(0,0,0,.35);stroke-width:3px">0 s</text>
+<rect x="128" y="22" width="104" height="74" rx="6" fill="var(--turf)" stroke="var(--line)"/>
+<g clip-path="url(#kcb1)" fill="none" stroke="var(--chalk)" stroke-width="1.5"><path d="M136 22 V96"/><rect x="128" y="46" width="8" height="26"/><rect x="136" y="34" width="26" height="50"/></g>
+<circle cx="208" cy="52" r="5.5" fill="#6fb8ff" stroke="#fff" stroke-width="1.5"/>
+<g clip-path="url(#kcb1)"><circle cx="144" cy="68" r="8" fill="none" stroke="#ff6b6b" stroke-width="2" stroke-dasharray="3 2"/></g>
+<circle cx="166" cy="68" r="5.5" fill="#f5b942" stroke="#fff" stroke-width="1.5"/>
+<text x="226" y="90" text-anchor="end" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="11.5" font-weight="700" fill="#fff" style="paint-order:stroke;stroke:rgba(0,0,0,.35);stroke-width:3px">0.8 s</text>
+<rect x="244" y="22" width="104" height="74" rx="6" fill="var(--turf)" stroke="var(--line)"/>
+<g clip-path="url(#kcb2)" fill="none" stroke="var(--chalk)" stroke-width="1.5"><path d="M230 22 V96"/><rect x="222" y="46" width="8" height="26"/><rect x="230" y="34" width="26" height="50"/></g>
+<circle cx="324" cy="52" r="5.5" fill="#6fb8ff" stroke="#fff" stroke-width="1.5"/>
+<g clip-path="url(#kcb2)"><circle cx="238" cy="68" r="8" fill="none" stroke="#ff6b6b" stroke-width="2" stroke-dasharray="3 2"/></g>
+<circle cx="282" cy="68" r="5.5" fill="#f5b942" stroke="#fff" stroke-width="1.5"/>
+<text x="342" y="90" text-anchor="end" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="11.5" font-weight="700" fill="#fff" style="paint-order:stroke;stroke:rgba(0,0,0,.35);stroke-width:3px">1.6 s</text>
+<rect x="12" y="128" width="104" height="74" rx="6" fill="var(--turf)" stroke="var(--line)"/>
+<g clip-path="url(#kca0)" fill="none" stroke="var(--chalk)" stroke-width="1.5"><path d="M42 128 V202"/><rect x="34" y="152" width="8" height="26"/><rect x="42" y="140" width="26" height="50"/></g>
+<circle cx="92" cy="158" r="5.5" fill="#6fb8ff" stroke="#fff" stroke-width="1.5"/>
+<g clip-path="url(#kca0)"><circle cx="50" cy="174" r="5.5" fill="#f5b942" stroke="#fff" stroke-width="1.5"/></g>
+<text x="110" y="196" text-anchor="end" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="11.5" font-weight="700" fill="#fff" style="paint-order:stroke;stroke:rgba(0,0,0,.35);stroke-width:3px">0 s</text>
+<rect x="128" y="128" width="104" height="74" rx="6" fill="var(--turf)" stroke="var(--line)"/>
+<g clip-path="url(#kca1)" fill="none" stroke="var(--chalk)" stroke-width="1.5"><path d="M136 128 V202"/><rect x="128" y="152" width="8" height="26"/><rect x="136" y="140" width="26" height="50"/></g>
+<circle cx="208" cy="158" r="5.5" fill="#6fb8ff" stroke="#fff" stroke-width="1.5"/>
+<g clip-path="url(#kca1)"><circle cx="144" cy="174" r="5.5" fill="#f5b942" stroke="#fff" stroke-width="1.5"/></g>
+<text x="226" y="196" text-anchor="end" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="11.5" font-weight="700" fill="#fff" style="paint-order:stroke;stroke:rgba(0,0,0,.35);stroke-width:3px">0.8 s</text>
+<rect x="244" y="128" width="104" height="74" rx="6" fill="var(--turf)" stroke="var(--line)"/>
+<g clip-path="url(#kca2)" fill="none" stroke="var(--chalk)" stroke-width="1.5"><path d="M230 128 V202"/><rect x="222" y="152" width="8" height="26"/><rect x="230" y="140" width="26" height="50"/></g>
+<circle cx="324" cy="158" r="5.5" fill="#6fb8ff" stroke="#fff" stroke-width="1.5"/>
+<g clip-path="url(#kca2)"><circle cx="238" cy="174" r="5.5" fill="#f5b942" stroke="#fff" stroke-width="1.5"/></g>
+<text x="342" y="196" text-anchor="end" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="11.5" font-weight="700" fill="#fff" style="paint-order:stroke;stroke:rgba(0,0,0,.35);stroke-width:3px">1.6 s</text>
+</svg>
+    <p class="cap"><b>Drawing.</b> The camera follows you (blue) to the right, so the goal slides off to the left. The red ring is where the keeper really is.</p>
+  </div>
+  <figure><img src="keeper-before.jpg" alt="Before: 5 frames 0.8 s apart, keeper stays on the screen" loading="lazy"><figcaption><b>Before.</b> 5 frames 0.8 s apart. The red ring slides away with the goal, but he stays put on the screen. Tap to enlarge.</figcaption></figure>
+  <figure><img src="keeper-after.jpg" alt="After: keeper lies on his ring and leaves with the goal" loading="lazy"><figcaption><b>After.</b> The same moment: he lies on his ring and goes off the screen with the goal.</figcaption></figure>
+</div>
+
+<!-- 3 -->
+<h2 class="add"><i></i>3 &middot; ADDED: BIG MOMENTS</h2>
+<div class="item">
+  <div class="ih"><b>A late chance feels big</b><span class="pill p-grn">on the site, switched off</span><span class="tag t-seen">seen</span><span class="tag t-meas">sound measured</span></div>
+  <p class="idea">At 85&prime; or later, level or one down, a chance for you brings a heartbeat and a rising crowd. Score it and the end of the shot plays in slow motion, then a roar and a late commentary line. The result is never changed.</p>
+  <div class="fig"><svg viewBox="0 0 360 222" role="img" aria-label="Flow: late chance, then heartbeat and crowd, then if you score, slow motion and a roar."><defs><marker id="arb" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs><g font-family="-apple-system,Segoe UI,Roboto,sans-serif"><rect x="20" y="6" width="320" height="52" rx="12" fill="var(--card)" stroke="var(--line)" stroke-width="2"/><text x="180" y="28" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">85′ or later, level or one down</text><text x="180" y="47" text-anchor="middle" font-size="12" fill="var(--ink2)">a chance falls to you</text><rect x="20" y="82" width="320" height="52" rx="12" fill="var(--card)" stroke="var(--amber)" stroke-width="2"/><text x="180" y="104" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">Heartbeat · the crowd rises</text><text x="180" y="123" text-anchor="middle" font-size="12" fill="var(--ink2)">(and the banner, in this version)</text><rect x="20" y="158" width="320" height="52" rx="12" fill="var(--card)" stroke="var(--green)" stroke-width="2"/><text x="180" y="180" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">You score: the last 0.5 s in slow motion</text><text x="180" y="199" text-anchor="middle" font-size="12" fill="var(--ink2)">a roar and one of 14 new late lines</text><path d="M180 60V80" stroke="var(--ink3)" stroke-width="2" marker-end="url(#arb)"/><path d="M180 136V156" stroke="var(--ink3)" stroke-width="2" marker-end="url(#arb)"/><text x="190" y="149" font-size="11" fill="var(--ink3)">the result is never changed</text></g></svg>
+    <p class="cap"><b>Drawing: what happens, top to bottom.</b></p>
+  </div>
+<div class="clip"><p class="look"><b>Look for</b>the heartbeat from the start, slow motion only because the shot was really going in, GOAL, the big roar.</p>
+<video src="big-moment.mp4" poster="big-moment.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>A late chance &#128266;</b> A real shot, the 2nd of the run, with the banner of the time. The test switch set up only the late chance, not the shot. The match has no background crowd, so it goes quiet after the roar.</figcaption></div>
+  <details><summary>The 4 banner options (you picked none on 26 Oct)</summary>
+    <p>You said the banner looked bad. These were the 3 replacements and &ldquo;no banner&rdquo;, over the same real frame. You picked none; it was removed in 0.121.</p>
+<div class="clip"><p class="look"><b>Look for</b>the match&rsquo;s own GOAL letters in amber, beating twice with the heartbeat.</p>
+<video src="banner-A.mp4" poster="banner-A.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>A &middot; The GOAL lettering.</b> &ldquo;BIG MOMENT &middot; LATE ON 1&ndash;1&rdquo;, gone after 1.9 s.</figcaption></div>
+<div class="clip"><p class="look"><b>Look for</b>a navy strip with a red 89&prime; tab wiping in at the top.</p>
+<video src="banner-B.mp4" poster="banner-B.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>B &middot; TV caption.</b> Mikey&rsquo;s Broadcast pop-up look: &ldquo;BIG MOMENT &middot; LEVEL &middot; IT&rsquo;S ON YOU&rdquo;.</figcaption></div>
+<div class="clip"><p class="look"><b>Look for</b>the pitch edges pulse red with the heartbeat; a small chip under the score.</p>
+<video src="banner-C.mp4" poster="banner-C.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>C &middot; No words on the pitch.</b> &ldquo;BIG MOMENT &middot; 89&prime;&rdquo; chip.</figcaption></div>
+    <figure class="ph"><img src="banner-none.jpg" alt="No banner" loading="lazy"><figcaption><b>None.</b> No banner: the heartbeat and the crowd rise still tell you.</figcaption></figure>
+  </details>
+</div>
+
+<!-- 4 -->
+<h2 class="fix"><i></i>4 &middot; FIXED: SOCIAL FEED, FAST ON A CHEAP PHONE</h2>
+<div class="item">
+  <div class="ih"><b>The feed opens in a third of a second on a cheap phone</b><span class="pill p-grn">on the site, switched off</span><span class="tag t-seen">seen</span><span class="tag t-meas">measured</span></div>
+  <p class="idea">Posts appear as you reach them, with no empty boxes. Goal videos are made in the background, kept on the phone, and started at full time, so they are ready sooner.</p>
+  <div class="bars">
+    <div class="bar"><div class="bl">Feed opens, phone 6&times; slower</div><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:19%"></div></div><div class="vv"><s>1.5 s</s> 0.29 s</div></div>
+  </div>
+<div class="clip"><p class="look"><b>Look for</b>posts are there as you reach them, all the way to &ldquo;You&rsquo;re all caught up&rdquo;.</p>
+<video src="feed-scroll.mp4" poster="feed-scroll.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Scrolling 150 posts.</b> Phone slowed 4&times;.</figcaption></div>
+  <details><summary>More clips (1)</summary>
+<div class="clip"><p class="look"><b>Look for</b>the still shows at once, then the goal plays.</p>
+<video src="feed-video.mp4" poster="feed-video.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>A goal video.</b> A first open on a slow phone takes a few seconds to make the video; after a real match it is made at full time.</figcaption></div>
+  </details>
+  <div class="row" style="margin-top:12px"><div class="rl f">Also fixed</div><p>Videos no longer stop 1 to 2 s after the goal. Cup accounts no longer post other competitions&rsquo; news.</p></div>
+</div>
+
+<!-- 5 -->
+<h2 class="add"><i></i>5 &middot; ADDED: GOAL OF THE MONTH</h2>
+<div class="item">
+  <div class="ih"><b>A monthly poll in the feed</b><span class="pill p-grn">on the site, switched off</span><span class="tag t-seen">seen</span></div>
+  <p class="idea">Your 3 best goals of the month against 2 by others in your league. Fans vote and you vote once. <b>A win adds fans.</b></p>
+<div class="clip"><p class="look"><b>Look for</b>watch a goal, tap vote: the bars move and it says &ldquo;You voted&rdquo;.</p>
+<video src="gotm-vote.mp4" poster="gotm-vote.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Goal of the Month.</b></figcaption></div>
+  <details><summary>More pictures (1)</summary>
+    <figure class="ph"><img src="gotm.jpg" alt="The Goal of the Month post in the feed" loading="lazy"><figcaption><b>The poll in the feed.</b> &ldquo;November Goal of the Month. Which of Striker&rsquo;s 3 goals was the best?&rdquo;</figcaption></figure>
+  </details>
+</div>
+
+<!-- 6 -->
+<h2 class="fix"><i></i>6 &middot; FIXED: AFTER A MATCH, YOUR GOAL PLAYS AT ONCE</h2>
+<div class="item">
+  <div class="ih"><b>No more 20-second wait for your goal</b><span class="pill p-grn">on the site, switched off</span><span class="tag t-seen">seen</span><span class="tag t-meas">measured</span></div>
+  <div class="row"><div class="rl p">You said</div><p>You used to wait 20 seconds or more for your goal or the highlights after a match.</p></div>
+  <div class="row"><div class="rl f">Fix</div><p>If the video is not made yet, the goal plays straight away from its recording, with sound. The finished video then takes over without a jump.</p></div>
+  <div class="bars">
+    <div class="bar"><div class="bl">Your goal, from the tap to the goal moving, phone 4&times; slower</div><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:17%"></div></div><div class="vv"><s>9.5 s</s> 1.6 s</div></div>
+  </div>
+<div class="clip"><p class="look"><b>Look for</b>the goal starts moving after 1.6 s, with sound. The time is shown in the clip.</p>
+<video src="am-goal-gallery-4x.mp4" poster="am-goal-gallery-4x.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>After: 1.6 s &#128266;</b> Your goal from the Goals list on a slow phone.</figcaption></div>
+  <details><summary>More clips (3)</summary>
+<div class="clip"><p class="look"><b>Look for</b>the ring climbs for 9.5 s before the goal plays.</p>
+<video src="am-before-goal-gallery-4x.mp4" poster="am-before-goal-gallery-4x.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Before: 9.5 s &#128266;</b> The same goal, the same slow phone, before the fix.</figcaption></div>
+<div class="clip"><p class="look"><b>Look for</b>Post Match Reactions &rarr; the highlights: playing in 0.13 s.</p>
+<video src="am-highlights-reactions-4x.mp4" poster="am-highlights-reactions-4x.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Highlights after the match &#128266;</b></figcaption></div>
+<div class="clip"><p class="look"><b>Look for</b>Phone &rarr; Social later on: the highlights play at once.</p>
+<video src="am-highlights-social-4x.mp4" poster="am-highlights-social-4x.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Highlights later, from the Phone &#128266;</b></figcaption></div>
+  </details>
+</div>
+
+<!-- 7 -->
+<h2 class="chg"><i></i>7 &middot; CHANGED: BICYCLE KICK TAKEN BACK OUT (25 OCT)</h2>
+<div class="item">
+  <div class="ih"><b>Harry is building it, so ours is gone</b><span class="pill p-grn">on the site, switched off</span><span class="tag t-seen">seen</span></div>
+  <p class="idea">Gone: the Bicycle! button, the move in 2D and 3D, its banner, the media posts and its switch. The 15 overhead Real Moments are left out again, as before. Harry&rsquo;s gold Aerial circle stays.</p>
+  <figure class="ph"><img src="bicycle-removed.jpg" alt="Header screen with Head it? and no Bicycle button" loading="lazy"><figcaption><b>After: no Bicycle! button.</b> Real build, your switch on, a real header: &ldquo;Head it?&rdquo; only.</figcaption></figure>
+</div>
+
+<!-- 8 -->
+<h2 class="add"><i></i>8 &middot; ADDED: WEATHER AND PITCH</h2>
+<div class="item">
+  <div class="ih"><b>Wind, rain and pitch change the ball</b><span class="pill p-amb">test page only</span><span class="tag t-seen">seen</span><span class="tag t-meas">measured</span></div>
+  <p class="idea">Wind with a direction, rain that makes the ball skid, and each club&rsquo;s own pitch: lower leagues are worse, the Premier League is always perfect. The real game is unchanged. Each clip replays the same strike, so only the weather changes: <b>watch the small white dot.</b></p>
+  <div class="fig"><svg viewBox="0 0 360 170" role="img" aria-label="One long ball three times: still air goes straight, a side gale bends it away, a head gale drops it short."><rect x="0" y="0" width="360" height="170" rx="8" fill="var(--turf)"/><path d="M30 130L320 40" stroke="#fff" stroke-width="2" stroke-dasharray="6 4" opacity=".85"/><path d="M30 130Q220 70 330 125" fill="none" stroke="#f5b942" stroke-width="2.5"/><path d="M30 130L210 74" stroke="#ff6b6b" stroke-width="3.5"/><circle cx="320" cy="40" r="5" fill="#fff"/><circle cx="330" cy="125" r="5" fill="#f5b942" stroke="#fff"/><circle cx="210" cy="74" r="5" fill="#ff6b6b" stroke="#fff"/><circle cx="30" cy="130" r="6.5" fill="#6fb8ff" stroke="#fff" stroke-width="1.5"/><g font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="11.5" font-weight="700" fill="#fff" style="paint-order:stroke;stroke:rgba(0,0,0,.35);stroke-width:3px"><text x="314" y="28" text-anchor="end">still air: on target</text><text x="340" y="150" text-anchor="end">side gale: angles away</text><text x="186" y="66" text-anchor="end">head gale: drops short</text><text x="30" y="154" text-anchor="middle">kick</text></g></svg>
+    <p class="cap"><b>Drawing: one long ball, three times.</b> Bends exaggerated so you can see them.</p>
+  </div>
+<div class="clip"><p class="look"><b>Look for</b>the same long ball three times: still air, a side gale (it angles away), a head gale (it drops short).</p>
+<video src="wind-play.mp4" poster="wind-play.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Wind.</b></figcaption></div>
+  <details><summary>More clips and pictures (4)</summary>
+<div class="clip"><p class="look"><b>Look for</b>wind direction and a gale; on a very poor dry pitch the long ball bends 13 m and the lofted pass stops short.</p>
+<video src="weather-page.mp4" poster="weather-page.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>The test page.</b></figcaption></div>
+<div class="clip"><p class="look"><b>Look for</b>a lofted pass on a perfect pitch, then on a very poor dry one: it sits down and stops about 9 m sooner.</p>
+<video src="dry-pitch-play.mp4" poster="dry-pitch-play.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Dry bad pitch.</b></figcaption></div>
+<div class="clip"><p class="look"><b>Look for</b>a low pass: still air, rain (it skids on), heavy rain (it dies early).</p>
+<video src="rain-play.mp4" poster="rain-play.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Rain.</b></figcaption></div>
+    <figure class="ph"><img src="dry-pitch.jpg" alt="The weather test page controls" loading="lazy"><figcaption><b>The test page.</b> Weather, wind, pitch and the pre-match line.</figcaption></figure>
+  </details>
+</div>
+
+<!-- 9 -->
+<h2 class="add"><i></i>9 &middot; ADDED: REAL GOALS</h2>
+<div class="item">
+  <div class="ih"><b>8 paths, 411 levels, a daily goal</b><span class="pill p-amb">test page</span><span class="tag t-seen">seen</span><span class="tag t-meas">measured</span></div>
+  <p class="idea">Was 1 path and 50 levels. Now the World Cup and Euro, the five big leagues of 2017/18, Worldies, and <b>61 Bangers from 2010&ndash;2025</b> (checked twice, 22 corrected). A daily goal with a streak. The home opens in about half a second on a cheap phone (was about 5 s).</p>
+<div class="clip"><p class="look"><b>Look for</b>the daily card and the 8 path tiles are on screen at once.</p>
+<video src="rg-home.mp4" poster="rg-home.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>The new home.</b> Phone slowed 6&times;.</figcaption></div>
+  <details><summary>More clips and pictures (7)</summary>
+<div class="clip"><p class="look"><b>Look for</b>Premier League, Worldies and Bangers, each with its own stages and stars.</p>
+<video src="rg-paths.mp4" poster="rg-paths.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>The paths.</b></figcaption></div>
+<div class="clip"><p class="look"><b>Look for</b>the real move, the strike, GOAL, 44% and a star.</p>
+<video src="rg-banger-play.mp4" poster="rg-banger-play.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Playing a banger.</b> Sergi Roberto v PSG, the 6&ndash;1.</figcaption></div>
+<div class="clip"><p class="look"><b>Look for</b>score today&rsquo;s goal, back home: &ldquo;&#128293; 1 day &middot; &#10003; Beaten today&rdquo;.</p>
+<video src="rg-daily.mp4" poster="rg-daily.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Daily goal.</b></figcaption></div>
+<div class="clip"><p class="look"><b>Look for</b>drag Charlie Adam&rsquo;s shot spot and where it went in, then play it.</p>
+<video src="rg-fixer.mp4" poster="rg-fixer.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Fix a banger (admin).</b></figcaption></div>
+<div class="clip"><p class="look"><b>Look for</b>4 kicks to the left: his read goes 0% &rarr; 100%, &ldquo;he now leans left&rdquo;.</p>
+<video src="shootout-keeper.mp4" poster="shootout-keeper.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Shootout keeper reads you.</b> Test page only. Sped up about 3&times;.</figcaption></div>
+    <figure class="ph"><img src="rg-bangers.jpg" alt="The Bangers path" loading="lazy"><figcaption><b>The Bangers path.</b> Next level: Mkhitaryan v Sunderland, the scorpion kick.</figcaption></figure>
+    <figure class="ph"><img src="shootout.jpg" alt="Shootout keeper test page" loading="lazy"><figcaption><b>The shootout keeper.</b> 4 of your 4 kicks went right: &ldquo;Reading you 100%&rdquo;.</figcaption></figure>
+  </details>
+</div>
+
+<!-- 10 -->
+<h2 class="add"><i></i>10 &middot; ADDED: END OF SEASON</h2>
+<div class="item">
+  <div class="ih"><b>A season video, every goal in one list, a 3D awards night</b><span class="pill p-grn">on the site, switched off</span><span class="tag t-seen">seen</span></div>
+  <p class="idea">Your season video plays every goal, then the Goal of the Season. Stats &rarr; Goals lists every goal of your career, with the best 10 in the Hall of Fame. The 3D awards night hands out 5 awards in about 44 s, and you can skip it.</p>
+<div class="clip"><p class="look"><b>Look for</b>title card, goals with the counter, then the Goal of the Season live and slow from behind the net, then the end card.</p>
+<video src="season-reel.mp4" poster="season-reel.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Your season video.</b> Cut to 25 s here; the real one is about 72 s.</figcaption></div>
+  <details><summary>More clips and pictures (6)</summary>
+<div class="clip"><p class="look"><b>Look for</b>scroll, tap a goal to play it; Hall of Fame &rarr; Best goals.</p>
+<video src="goals-gallery.mp4" poster="goals-gallery.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Every goal you score.</b> Stats &rarr; Goals.</figcaption></div>
+<div class="clip"><p class="look"><b>Look for</b>the Golden Boot nominees, &ldquo;YOU!&rdquo;, you walk up and lift it. Then Assist King, which a rival wins.</p>
+<video src="awards-night.mp4" poster="awards-night.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Season awards night (3D).</b></figcaption></div>
+<div class="clip"><p class="look"><b>Look for</b>kinds and weeks, risk, a rehab choice, feed posts, 10 questions with letters.</p>
+<video src="injuries.mp4" poster="injuries.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Injuries plan for Mikey.</b> A plan only, no game code.</figcaption></div>
+    <figure class="ph"><img src="reel.jpg" alt="Season video, Goal of the Season" loading="lazy"><figcaption><b>Season video: Goal of the Season.</b></figcaption></figure>
+    <figure class="ph"><img src="gallery.jpg" alt="Career goals list" loading="lazy"><figcaption><b>Stats &rarr; Goals.</b> Every goal with its date, score and kind.</figcaption></figure>
+    <figure class="ph"><img src="awards.jpg" alt="Awards night Golden Boot" loading="lazy"><figcaption><b>Awards night.</b> Golden Boot: &ldquo;YOU!&rdquo;.</figcaption></figure>
+  </details>
+</div>
+
+<!-- 11 -->
+<h2 class="fix"><i></i>11 &middot; FIXED: BUG HUNT, 17 FIXED</h2>
+<div class="item">
+  <div class="ih"><b>A refresh brings you back where you were</b><span class="pill p-grn">on the site, switched off</span><span class="tag t-seen">seen</span></div>
+  <p class="idea">A refresh used to throw you to Home. Now the Ballon d&rsquo;Or, the window list, the talks and &ldquo;Deal agreed&rdquo; come back. A refresh after &ldquo;Deal agreed&rdquo; used to lose the transfer; now it keeps it.</p>
+<div class="clip"><p class="look"><b>Look for</b>refresh during the ceremony: it comes back on the Ballon d&rsquo;Or.</p>
+<video src="refresh-ballondor.mp4" poster="refresh-ballondor.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Refresh on the Ballon d&rsquo;Or.</b></figcaption></div>
+  <details><summary>More clips and pictures (6)</summary>
+<div class="clip"><p class="look"><b>Look for</b>refresh after &ldquo;Deal agreed&rdquo;: back on the window list, the move kept.</p>
+<video src="refresh-deal.mp4" poster="refresh-deal.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Refresh after &ldquo;Deal agreed&rdquo;.</b></figcaption></div>
+<div class="clip"><p class="look"><b>Look for</b>through the tour, play, reload: it does not come back.</p>
+<video src="tour-once.mp4" poster="tour-once.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Welcome tour plays once.</b> It replayed every visit.</figcaption></div>
+<div class="clip"><p class="look"><b>Look for</b>their offer and the header change together.</p>
+<video src="talks-header.mp4" poster="talks-header.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Talks header.</b> They showed different wages.</figcaption></div>
+<div class="clip"><p class="look"><b>Look for</b>&ldquo;Step 1, 2, 3 of 3&rdquo;.</p>
+<video src="setup-steps.mp4" poster="setup-steps.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>Setup steps.</b> It said &ldquo;Step 1 of 2&rdquo; twice.</figcaption></div>
+    <figure class="ph"><img src="refresh-fix.jpg" alt="Ballon d'Or ceremony" loading="lazy"><figcaption><b>The Ballon d&rsquo;Or ceremony.</b></figcaption></figure>
+    <figure class="ph"><img src="window-fix.jpg" alt="Transfer window list" loading="lazy"><figcaption><b>The window list.</b></figcaption></figure>
+  </details>
+  <div class="row" style="margin-top:12px"><div class="rl f">Also fixed</div><p>A manager is never sacked the summer he wins promotion (Mikey&rsquo;s area, 3 lines). The first season said 2027/28, now 2026/27. The team sheet showed a different manager. Line-up buttons overlapped. The league dropdown was see-through. &ldquo;Pick a club&rdquo; was hard to read. The scout said &ldquo;The through the gate&hellip;&rdquo;. Offline badges retried about 2,000 times. Clubs up from Step 3 said &ldquo;Finished 24th&rdquo;. The admin tab used too much of a slow phone.</p></div>
+</div>
+
+<!-- 12 -->
+<h2 class="chg"><i></i>12 &middot; CHANGED: HARRY&rsquo;S AND MIKEY&rsquo;S AREAS TOUCHED</h2>
+<div class="item">
+  <div class="ih"><b>Small additions only; match tests all pass</b><span class="tag t-meas">tests pass</span></div>
+  <p class="idea"><b>Harry:</b> the match file (celebrations, big moments, longer goal videos, and where the fallen keeper is drawn) and the keeper&rsquo;s penalty habits (with no habit he is exactly as before). The core engine changes only for weather, and only on the test page. <b>Mikey:</b> 3 lines for no sack after promotion, and an injuries plan (part 10).</p>
+  <details><summary>The files</summary>
+    <ul>
+      <li><b>CanvasMatch.tsx</b> (the match file, sensitive): celebrations, big moments, video length, where the fallen keeper is drawn.</li>
+      <li><b>keeperBrain.ts</b>: penalty habits; unchanged with no habit.</li>
+      <li><b>canvasEngine.ts / ballPhysics.ts</b> (the core engine, sensitive): weather, inert unless the test page sets it.</li>
+      <li><b>manager.ts</b> (Mikey): 3 lines.</li>
+      <li><b>AdminNavPanel.tsx</b>: the admin tab checked about 700 points every 0.5 s; now about 50, in idle time only.</li>
+    </ul>
+  </details>
+</div>
+
+<h2 class="nxt"><i></i>YOUR CALLS</h2>
+<div class="okbox"><ol>
+<li class="done"><div class="q">Big-moment banner: A, B, C or none?</div><div class="d">Decided: none (26 Oct). Removed in 0.121.</div></li>
+<li><div class="q">Harry: keep the live goal player on a timer?</div><div class="d">It draws a recorded goal on a canvas, with no physics. The one-engine guard flagged its loop, so it runs on a timer instead of being added to the guard&rsquo;s list of known canvases. Say if you would rather it were listed.</div></li>
+</ol></div>
+
+<h2 class="bug"><i></i>KNOWN ISSUES</h2>
+<div class="item">
+  <div class="ih"><b>Feed scrolling still has short hiccups</b><span class="pill p-amb">half fixed</span></div>
+  <p class="idea">11 to 16 hiccups of 0.14&ndash;0.17 s on a phone slowed 6&times;. The aim is none over 0.1 s.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Celebrations</b></div>
+  <ul style="margin:0;padding-left:18px;color:var(--ink2);font-size:14.5px">
+    <li>In the goal video a defender can stand on top of you during the slide (fixed in 0.121).</li>
+    <li>The 3D view is not filmed yet: 3 chances per run here, all missed. A blank screen after full time was the filming script, not the game (3D on and off, two runs, no errors).</li>
+    <li>The keeper fix in 3D: checked in the code, not seen (3D does not load on the test machine). The goal video was already right (seen).</li>
+    <li>Your goal&rsquo;s own post in the after-match feed gets a video only about half the time (fixed in 0.121).</li>
+  </ul>
+</div>
+<div class="item">
+  <div class="ih"><b>Not heard, not on a real phone</b><span class="pill p-amb">not checked</span></div>
+  <p class="idea">Big-moment and season video sound measured only. The awards night frame rate is not measured on a phone. No real squads in the sandbox.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Found for others</b><span class="pill p-blu">findings, not to-dos</span></div>
+  <ul style="margin:0;padding-left:18px;color:var(--ink2);font-size:14.5px">
+    <li>Harry: the match camera is 1 px short at 372&times;704; a long-range drawing breaks a law; the removed data source&rsquo;s name is in two old patch notes; 3D training freezes (Head/Volley &harr; Free Roam); two chance tests fail on main after the build-up work.</li>
+    <li>Everyone: the save is about 1 MB and is rewritten on every change.</li>
+  </ul>
+</div>
+
+<details><summary>The numbers, if you want them</summary>
+  <h4>Feed (production build, phone 6&times; slower, 150 posts)</h4>
+  <ul><li>Feed opens: 1.5 &rarr; 0.29 s.</li><li>Worst scroll freeze: 0.76 &rarr; 0.17 s.</li><li>First video: 47 &rarr; 12 s.</li><li>Video, reopened: 1.9 &rarr; 0.56 s.</li></ul>
+  <h4>After a match (phone 4&times; slower, dev server: the worst case)</h4>
+  <ul><li>Your goal: 9.5 &rarr; 1.6 s. Highlights: 3.2 &rarr; 0.13 s. Next video: 7.0 &rarr; 0.05 s.</li><li>Timed after a real match (Arsenal v Man City, a goal the bot really scored), from the tap to the goal moving. Every case measured is under 3 s.</li></ul>
+  <h4>Celebrations and big moments</h4>
+  <ul><li>Knee slide: knees 33 cm apart. Goal videos: 2.5 s longer.</li><li>Big moments: slow motion on the last 0.5 s; 14 new late commentary lines.</li></ul>
+  <h4>Weather (test page)</h4>
+  <ul><li>Real game: 12 of 12 ball fingerprints identical.</li><li>Lab: the long ball bends 13 m in a gale on a very poor dry pitch; a lofted pass stops about 9 m sooner on a very poor dry pitch.</li><li>Found: the live game&rsquo;s heavy pitch already kills 56 in 100 normal passes.</li></ul>
+  <h4>Real Goals</h4>
+  <ul><li>8 paths, 411 levels (was 1 path, 50). 61 Bangers, 22 corrected after two checks.</li><li>Home on a cheap phone: 4.8&ndash;5.2 &rarr; 0.4&ndash;0.55 s.</li><li>Penalty keeper with no habits: 400 decisions and 300 kicks identical to before.</li></ul>
+  <h4>Checks</h4>
+  <ul><li>Production build passes on the joined branch.</li><li>422 of 430 star test files pass. The 8 that fail, fail the same way on main (Harry&rsquo;s chance and camera work, or his old notes): chanceMaker, chanceJudge, freshness, kindMix, leadInGen, longRangeRules, match2dCam, realGoals.</li><li>Four failures from the join (credits, licences, headlines, test-page lock) were found and fixed.</li></ul>
+</details>
+
+<footer>v0.119 &middot; Leo &middot; 22&ndash;24 Oct 2026 &middot; built by 7 chats on branches leo-*, joined into Leo &middot; plan: 0.107. Renumbered 26 Oct from 0.108 (it shared a number with Harry&rsquo;s 0.108h).</footer>
+</div>
+<script>
+(function(){
+  var K="kib-pn-0.119-checks", s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll('.ck input');
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute('data-k'); if(s[id]) b.checked=true;
+    b.addEventListener('change',function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+  document.addEventListener('click',function(e){
+    var r=e.target.closest&&e.target.closest('.spd button'); if(!r) return;
+    var c=r.closest('.clip'), v=c.querySelector('video');
+    c.querySelectorAll('.spd button').forEach(function(x){ x.classList.toggle('on', x===r); });
+    if(v){ var rate=parseFloat(r.getAttribute('data-r')); v.playbackRate=rate; v.defaultPlaybackRate=rate; if(v.paused) v.play().catch(function(){}); }
+  });
+  document.querySelectorAll('details').forEach(function(d){
+    d.addEventListener('toggle',function(){ if(!d.open) d.querySelectorAll('video').forEach(function(v){ v.pause(); }); });
+  });
+})();
+</script>
+<style>
+.zm-t{cursor:zoom-in}
+.zm-ov{position:fixed;inset:0;z-index:1000;background:rgba(10,14,12,.92);overflow:auto;-webkit-overflow-scrolling:touch;padding:calc(56px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.zm-ov[hidden]{display:none!important}
+.zm-bar{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));display:flex;gap:8px;z-index:1001}
+.zm-bar button{font:600 15px/1 system-ui,sans-serif;padding:10px 14px;border-radius:10px;border:0;background:#fff;color:#111;cursor:pointer}
+.zm-st{transform-origin:0 0;background:var(--bg,#fff);border-radius:10px;display:inline-block}
+.zm-st img,.zm-st svg{max-width:none!important}
+.zm-hint{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));color:#fff;font:13px system-ui,sans-serif;opacity:.8}
+</style>
+<div class="zm-ov" id="zmOv" hidden><div class="zm-hint">Pinch or + / − to zoom</div><div class="zm-bar"><button id="zmOut" aria-label="Zoom out">−</button><button id="zmIn" aria-label="Zoom in">+</button><button id="zmX" aria-label="Close">✕</button></div><div id="zmBox"></div></div>
+<script>
+(function(){
+  var sel='figure img,.fig svg';
+  var ov=document.getElementById('zmOv'),box=document.getElementById('zmBox'),st=null,sc=1,w=0,h=0;
+  function apply(){st.style.transform='scale('+sc+')';box.style.width=(w*sc)+'px';box.style.height=(h*sc)+'px';}
+  function open(el){
+    var r=el.getBoundingClientRect();
+    var c=el.cloneNode(true);c.classList.remove('zm-t');
+    st=document.createElement('div');st.className='zm-st';st.appendChild(c);
+    box.innerHTML='';box.appendChild(st);ov.hidden=false;document.body.style.overflow='hidden';
+    if(c.tagName.toLowerCase()==='img'){c.style.width=(c.naturalWidth||r.width*2)+'px';c.style.height='auto';}
+    else{c.style.width=Math.max(r.width,780)+'px';c.style.maxWidth='none';c.style.height='auto';}
+    w=st.offsetWidth;h=st.offsetHeight;
+    var fit=(ov.clientWidth-32)/w;sc=Math.min(fit,Math.max(1,fit));apply();ov.scrollTo(0,0);
+  }
+  function close(){ov.hidden=true;box.innerHTML='';document.body.style.overflow='';}
+  document.querySelectorAll(sel).forEach(function(el){el.classList.add('zm-t');el.setAttribute('title','Tap to enlarge');});
+  document.addEventListener('click',function(e){
+    if(ov.contains(e.target)){if(e.target===ov)close();return;}
+    var t=e.target.closest('.zm-t');if(!t)return;
+    if(e.target.closest('a,button,summary,input,label'))return;
+    e.preventDefault();open(t);
+  });
+  document.getElementById('zmX').onclick=close;
+  document.getElementById('zmIn').onclick=function(){sc=Math.min(sc*1.4,6);apply();};
+  document.getElementById('zmOut').onclick=function(){sc=Math.max(sc/1.4,.2);apply();};
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!ov.hidden)close();});
+})();
+</script>
+</body></html>

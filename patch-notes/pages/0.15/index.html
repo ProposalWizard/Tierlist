@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Patch notes v0.15</title>
+<style>
+:root{
+  --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+  --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+  --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+  --pill:#3ddc84;--pillink:#06170e;--r:12px;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+  --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+  --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+  --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+  --pill:#0b7a43;--pillink:#ffffff;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+.wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{padding:30px 0 4px}
+.ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 10px;letter-spacing:-.02em;text-wrap:balance}
+.by{color:var(--ink3);font-size:13px;margin:0 0 4px}
+.upd{color:var(--green);font-size:13px;margin:0 0 4px}
+.lead{color:var(--ink2);font-size:15px;margin:14px 0 0}
+h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+.ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+.ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+.ck li:last-child{border-bottom:0}
+.ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+.ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+.ck .q{font-weight:700;display:block}
+.ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+.item.alert{border-left:4px solid var(--red)}
+.ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.ih b{font-size:16px;line-height:1.3;min-width:0}
+.dt{margin:6px 0 0;color:var(--ink2);font-size:14.5px}
+.pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+.p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+.bars{margin:8px 0 2px}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+.bar .bl{grid-column:1/-1;color:var(--ink2)}
+.track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+.fill{position:absolute;left:0;height:8px;border-radius:3px}
+.fill.was{top:1px;background:var(--ink3);opacity:.55}
+.fill.now{bottom:1px;background:var(--green);opacity:.9}
+.fill.now.warn{background:var(--amber)}
+.fill.now.bad{background:var(--red)}
+.vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+.vv s{color:var(--ink3);font-weight:400;opacity:.9}
+details{background:var(--card2);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+details.nums{background:var(--card);margin-top:34px}
+details[open]{padding-bottom:12px}
+summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+details[open]>summary::before{transform:rotate(90deg)}
+details ul{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}
+details li{margin-bottom:6px}
+details li b{color:var(--ink)}
+footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <span class="ver">v0.15</span>
+  <h1>Playtest plan: 35 of 38 changes</h1>
+  <p class="by">Made by Harry &middot; 27 Sept 2026, 12:00 UK time</p>
+  <p class="upd">Updated 26 Oct 2026, 17:04 UK time: Tidied 26 Oct: title gives what it is about.</p>
+  <p class="lead">The plan from your 40-minute playtest: every problem you raised and what we&#39;d do about it, with 35 of the 38 changes built as a test version and filmed. The headline is that every match you play has told your club it was a 60-rated side.</p>
+</header>
+<h2 class="nxt"><i></i>Check these</h2>
+<ul class="ck"><li><label><input type="checkbox" data-k="c0"><span><span class="q">Nothing on this page is kept until you say so</span><span class="a">It is a plan, filmed from a test version that was never saved to the project. Tick each change once you have looked at its pictures.</span></span></label></li><li><label><input type="checkbox" data-k="c1"><span><span class="q">Corner penalties would score 88%, not 79%</span><span class="a">With the keeper back on his line he reaches less of the angle. Your research says a bit more than 70%, so the plan tunes it with the new keeper.</span></span></label></li><li><label><input type="checkbox" data-k="c2"><span><span class="q">Trial gets easier with one dive</span><span class="a">Turning back was how the trial keeper saved kicks down the middle. Hardest kick goes 25% → 50% scored unless he sometimes reads a middle kick.</span></span></label></li><li><label><input type="checkbox" data-k="c3"><span><span class="q">A 99 power strike would look like an 82</span><span class="a">Was &quot;too strong&quot; about how fast it looks, or how often it scores? A 99 would still score slightly more, so the thing to change is the keeper.</span></span></label></li><li><label><input type="checkbox" data-k="c4"><span><span class="q">About 30 more one-word questions, each with a recommended answer</span><span class="a">Camera, drag length, run-up timer, live scores, cans, added time, home layout, lower-league faces.</span></span></label></li></ul>
+<h2 class="chg"><i></i>Changed · The four headlines</h2>
+<div class="item"><div class="ih"><b>Problem: in every match you play, your club has played like a 60-rated side</b></div><p class="dt">Whatever club you&#39;re at you win about 4 in 10, top or bottom of the table. That&#39;s why a max-stat Chelsea striker went 20+ games without a penalty.</p><div class="bars"><div class="bar"><div class="bl">Chelsea 99 striker, wins (%)</div><div class="track"><div class="fill was" style="width:49.2%"></div><div class="fill now" style="width:100.0%"></div></div><div class="vv"><s>30%</s> 61%</div></div><div class="bar"><div class="bl">Goals against a game</div><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:59.6%"></div></div><div class="vv"><s>1.78</s> 1.06</div></div><div class="bar"><div class="bl">Games between penalties</div><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:50.0%"></div></div><div class="vv"><s>12.2</s> 6.1</div></div></div><details><summary>Why, and the fix</summary><ul><li>Why: the unseen part of the match was told your relationship with team-mates (60 for everyone) instead of your club&#39;s strength (Chelsea: 83). It has been like that in every match, every career, as far back as the history goes. Matches you don&#39;t play used real strengths, so the rest of the table was right.</li><li>Fix: tell the match your club&#39;s real strength. Team-mate relationship keeps its real job, how well team-mates combine inside a chance. It goes in first because it changes every other number.</li><li>Strongest clubs win 38–49% → 71–78%; middle 38–43% → 49–57%; weakest 34–42% → 30–36%.</li></ul></details></div>
+<div class="item"><div class="ih"><b>Problem: a rule nobody asked for moved every drawn keeper at least 1.6 m off his line</b></div><p class="dt">You drew all 10 penalty keepers on the line; the real match started him 1.6 m out every time (200 of 200). It also moved every cutback keeper and 44% of tight-angle keepers.</p><details><summary>Why, and the fix</summary><ul><li>Why: one line added on 21 Sep, while all the drawings were one-on-ones, went into the shared step that places every drawn keeper. Nothing was measured. As more kinds got drawings it moved all of them, and it had been writing itself into saved drawings.</li><li>Fix: delete it. Each kind&#39;s keeper comes from its own drawings; penalties come from the penalty rules.</li><li>Correction: an earlier check said the penalty keeper wasn&#39;t off his line. That was wrong; the check didn&#39;t go through the real match.</li><li>A search found 11 rules sitting between your drawings and the screen: you asked for 3, one is a missing line, seven nobody asked for.</li><li>Free kicks: an ordinary taker scored 18% with him 1.6 m out against 6% on his line; your target is 4–7%.</li></ul></details></div>
+<div class="item"><div class="ih"><b>Problem: the keeper moves differently in every kind of chance, and a 45 and an 88 are almost the same</b></div><p class="dt">On your shots he stands still until the ball arrives (he moves early in 1% of one-on-ones); on penalties he dives, then dives back.</p><div class="bars"><div class="bar"><div class="bl">One-on-ones conceded vs an 88 keeper (%)</div><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:60.7%"></div></div><div class="vv"><s>28%</s> 17%</div></div></div><details><summary>Why, and the fix</summary><ul><li>Why: several separate keeper rulebooks, one per situation, each hand-tuned.</li><li>Fix: one keeper who gets set while you aim, reacts in 0.29 s (45 rated) to 0.21 s (90), reads where the ball will cross, dives once and never turns round. Built from your idea.</li><li>He moves before the ball arrives in 71–93% of one-on-ones, up from 1%.</li><li>He deliberately does not read your arrow: that turns aiming into a feint game.</li></ul></details></div>
+<div class="item"><div class="ih"><b>Problem: highlights look alike: 85% of tight angles look like one from your last 20</b></div><p class="dt">Long shots are a straight copy of one drawing every time, and a striker gets 1.8 one-on-ones a match.</p><div class="bars"><div class="bar"><div class="bl">Tight angles like one of your last 5 (%)</div><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:25.5%"></div></div><div class="vv"><s>51%</s> 13%</div></div></div><details><summary>Why, and the fix</summary><ul><li>Why: 68% of highlights are one of your drawings nudged up to 2 m, your 12 tight angles sit within about 2 m of each other, and the memory of recent pictures is wiped every match.</li><li>Fix: both ways built and switchable. (A) your drawings, cleaned up and mirrored half the time. (B) a true generator built from the spread of all your drawings.</li><li>Straight copies of a drawing: tight angles 31% → 2%, one-on-ones 48% → 7%, long shots 100% → 0% with (B).</li></ul></details></div>
+<h2 class="chg"><i></i>Changed · The rest of the plan</h2>
+<div class="item"><div class="ih"><b>Penalties</b></div><p class="dt">Goal drawn where the real one is, hard penalty rules nobody can edit, a run-up and 1-second timer, one dive, 99 power capped near 102 km/h, a reputation hit for a cheeky miss.</p></div>
+<div class="item"><div class="ih"><b>Shootouts and penalties won without you</b></div><p class="dt">Every kick played live on the real pitch, a Shootout button in the highlights, and penalties won at about one every 6 games for a top side.</p></div>
+<div class="item"><div class="ih"><b>The keeper&#39;s pieces</b></div><p class="dt">A dive that shows why he was beaten, and his lean set from where you drew him (8 of 10 dives leaned the wrong way first).</p></div>
+<div class="item"><div class="ih"><b>Around the shot</b></div><p class="dt">A team-mate no longer takes your shot, you can shoot past a man, team-mates curl round one, and a block can go in.</p></div>
+<div class="item"><div class="ih"><b>Camera and the drag</b></div><p class="dt">The whole goal always on screen, byline crosses filmed from the corner flag, room near the side, a shorter drag, and captain runs that start when you pull back.</p></div>
+<div class="item"><div class="ih"><b>Subs, ratings and energy</b></div><p class="dt">Late subs get chances, a sub isn&#39;t taken off again, a ratings list, and a can button that fits kick-off.</p></div>
+<div class="item"><div class="ih"><b>Match day and the season</b></div><p class="dt">Added time and Fergie time, a cup tab that names the right round, no draw after you&#39;re out, live scores, and a Sim this match button.</p></div>
+<div class="item"><div class="ih"><b>Screens and tools</b></div><p class="dt">Swipe pages for Stats, Home and Training, real League One and Two players, and a Match Radar to watch the unseen 90 minutes.</p></div>
+<h2 class="bug"><i></i>Known issues</h2>
+<div class="item"><div class="ih"><b>The keeper fixes and &quot;nobody moves after a pass&quot; are measured, not seen on screen</b><span class="pill p-amb">not filmed</span></div></div>
+<div class="item"><div class="ih"><b>Some drawings always carry a fault and would be served as drawn</b><span class="pill p-amb">yours to fix</span></div><p class="dt">Byline crosses, cutbacks, corners and one one-on-one (offside 12 of 14 times).</p></div>
+<div class="item"><div class="ih"><b>60 of your 120 drawings have the keeper nearer than 1.6 m</b></div><p class="dt">They&#39;ll look different once the 1.6 m rule goes.</p></div>
+<h2 class="nxt"><i></i>Next · Build order once you approve</h2>
+<div class="item"><div class="ih"><b>First and alone: your club&#39;s real strength</b></div><p class="dt">It changes every other number on the page.</p></div>
+<div class="item"><div class="ih"><b>Then the keeper rules, penalties, highlights, camera, around the shot, the new keeper, subs, season and screens</b></div><p class="dt">Each step is built only after you approve its pictures, then filmed again in the real game.</p></div>
+<details class="nums"><summary>The numbers</summary><ul><li><b>60 → 83</b> the strength a Chelsea match was told, against Chelsea&#39;s real one</li><li><b>38–49% → 71–78%</b> wins for the strongest clubs once the real strength is used</li><li><b>35 of 38</b> changes built as a test version and filmed in the real game</li><li><b>7 of 11</b> hand-written rules nobody asked for, found moving your drawn chances</li></ul></details>
+<footer>Made from the archive data on 26 Oct 2026 (this note had no page)</footer>
+</div>
+<script>
+(function(){
+  var K="kib-pn-0.15-checks", s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||"{}")||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll(".ck input");
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute("data-k"); if(s[id]) b.checked=true;
+    b.addEventListener("change",function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+})();
+</script>
+</body>
+</html>
