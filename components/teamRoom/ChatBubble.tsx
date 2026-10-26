@@ -5,6 +5,10 @@
  * Chat | To-do (a sheet from the bottom on a phone). A red number = new chat
  * messages; an amber dot = a new job given to you.
  *
+ * Channels (23 Oct 2026): the red number counts every channel and private
+ * DM; the box's "# general ▾" picks which channel it shows. Threads and
+ * DMs open in the full Team room (Open ↗).
+ *
  * Mounted once by GlobalNav for admins only, portaled into <body> so it
  * survives full-screen pages.
  *
@@ -30,9 +34,11 @@ import { usePathname } from "next/navigation";
 import { ADMIN_PAGES } from "@/lib/adminRegistry";
 import { useAdminLook } from "@/lib/adminLook";
 import { TEAM_ROOM } from "@/lib/teamRoom/config";
-import { BUBBLE_CLEAR, BUBBLE_EDGE as EDGE, BUBBLE_SIZE as SIZE, bubbleBottom, bubbleOn, newGivenTasks, unreadChat } from "@/lib/teamRoom/logic";
+import { BUBBLE_CLEAR, BUBBLE_EDGE as EDGE, BUBBLE_SIZE as SIZE, bubbleBottom, bubbleOn, newGivenTasks } from "@/lib/teamRoom/logic";
 import { newPushedJobs } from "@/lib/teamRoom/jobs";
-import { waitingOnMe } from "@/lib/teamRoom/extras";
+import { pointsWaiting } from "@/lib/teamRoom/extras";
+import { GENERAL, listChannels, roomUrl } from "@/lib/teamRoom/channels";
+import { useBotPosts, useRoomCounts } from "./roomCounts";
 import { startPointing, useTeamRoom } from "@/lib/teamRoom/store";
 import { ChatThread, RoomGate, TodoList } from "./parts";
 import PointLayer from "./PointLayer";
@@ -59,6 +65,9 @@ function Bubble({ path }: { path: string }) {
   const look = useAdminLook();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"chat" | "todo">("chat");
+  const [ch, setCh] = useState(GENERAL);
+  const counts = useRoomCounts();
+  const bots = useBotPosts();
   const [bottom, setBottom] = useState(EDGE);
   const [left, setLeft] = useState(EDGE);
   const [quiet, setQuiet] = useState(false);
@@ -146,9 +155,11 @@ function Bubble({ path }: { path: string }) {
   useEffect(() => { if (s.pointing) setOpen(false); }, [s.pointing]);
 
   if (s.pageOpen || s.pointing) return null;
-  const unread = unreadChat(s.messages, s.me, s.read.chat);
+  // New in every channel and DM (the jobs and patch notes counted on their own below and in the bell).
+  const unread = Math.max(0, counts.total - counts.patchToRead - counts.newJobs);
   const jobs = newGivenTasks(s.tasks, s.me, s.read.tasks) + newPushedJobs(s.jobs, s.tasks, s.me, s.seenJobs);
-  const waiting = waitingOnMe(s.messages, s.me, s.marks, s.acks).length;
+  const waiting = Math.max(0, counts.mentions - counts.patchToRead) + pointsWaiting(s.messages, s.me, s.acks).length;
+  const channels = listChannels(s.channelRows);
   const chatTitle = [unread ? `${unread} new` : "", waiting ? `${waiting} waiting on you` : ""].filter(Boolean).join(", ");
 
   return (
@@ -163,11 +174,21 @@ function Bubble({ path }: { path: string }) {
               <button aria-pressed={tab === "todo"} onClick={() => setTab("todo")}>To-do{jobs > 0 && tab !== "todo" && <span className="tr-badge amber dot" />}</button>
             </div>
             <button className="tr-open tr-pointbtn" onClick={() => startPointing()} disabled={!s.me} title="Point at part of this page (Shift+X on a computer)">👉 Point</button>
-            <Link className="tr-open" href={`${TEAM_ROOM.home}?tab=${tab}`} onClick={() => setOpen(false)} title="Open the full Team room">Open ↗</Link>
+            <Link className="tr-open" href={tab === "chat" ? roomUrl({ kind: "channel", slug: ch }) : `${TEAM_ROOM.home}?tab=${tab}`} onClick={() => setOpen(false)} title="Open the full Team room">Open ↗</Link>
             <button className="tr-x" onClick={() => setOpen(false)} aria-label="Close">✕</button>
           </div>
           <div className="tr-pop-b">
-            <RoomGate>{tab === "chat" ? <ChatThread visible autoFocus={false} /> : <TodoList visible />}</RoomGate>
+            {tab === "chat" && s.status === "ready" && s.me && (
+              <div className="tr-popch">
+                <select value={ch} onChange={(e) => setCh(e.target.value)} aria-label="Channel">
+                  {channels.map((c) => {
+                    const n = counts.channels[c.slug]?.unread ?? 0;
+                    return <option key={c.slug} value={c.slug}># {c.name}{n ? ` (${n})` : ""}</option>;
+                  })}
+                </select>
+              </div>
+            )}
+            <RoomGate>{tab === "chat" ? <ChatThread key={ch} visible autoFocus={false} view={{ kind: "channel", slug: ch }} bots={bots} /> : <TodoList visible />}</RoomGate>
           </div>
         </div>
       )}

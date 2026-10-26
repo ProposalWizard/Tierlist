@@ -11,7 +11,7 @@ import type { PostHog } from "posthog-js";
  * dropped with it. With no key set it is never fetched at all.
  */
 let client: Promise<PostHog | null> | null = null;
-function posthogClient(): Promise<PostHog | null> {
+export function posthogClient(): Promise<PostHog | null> {
   const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
   if (!key) return Promise.resolve(null);
   if (!client) {

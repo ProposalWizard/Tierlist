@@ -64,9 +64,12 @@ function Hand({ down }: { down: boolean }) {
   );
 }
 
-export default function PointerTour({ steps, onDone, skippable = false }: {
+export default function PointerTour({ steps, onDone, skippable = false, forced = false }: {
   steps: TourStep[];
   onDone: () => void;
+  /** No "Later" on a press step: you have to do it (the story's first hour,
+   *  Mikey's playtest 24 Oct 2026: "this should be forceful"). */
+  forced?: boolean;
   /** A small Skip in the corner (the welcome tour has one; a replayed help tour just ends). */
   skippable?: boolean;
 }) {
@@ -152,9 +155,10 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
         off?.();
         el = found;
         if (step.press) {
-          // The last press finishes at once, before the button's own
-          // handler can take you off this screen.
-          const onPress = () => { if (fixesRef.current && i + 1 >= steps.length) finish(); else setTimeout(next, 30); };
+          // The last step finishes at once: its button often leaves the
+          // screen (Play), which unmounts the tour before a timeout fires, so
+          // the tour was never marked done and came back (playtest 25 Oct).
+          const onPress = () => { if (i + 1 >= steps.length) finish(); else setTimeout(next, 30); };
           found.addEventListener("click", onPress, true);
           off = () => found.removeEventListener("click", onPress, true);
         }
@@ -237,28 +241,42 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
         />
         {place !== "inside" && <div className="kit-hand-bob fixed pointer-events-none" style={handStyle}><Hand down={above} /></div>}
       </>)}
-      <div
+      {/* A press step with no words is the finger and the glow alone (Mikey:
+          "we have enough with the finger being pointed there"). */}
+      {!(press && !step.text) && <div
         key={i}
         ref={bubbleRef}
-        className="kit-rise fixed rounded-[6px] px-3 py-2.5 text-white"
-        style={{ ...bubbleStyle, pointerEvents: "auto", background: "linear-gradient(180deg,#1f2937,#0b1220)", boxShadow: "inset 0 0 0 2px #fde047, 0 12px 30px -8px rgba(0,0,0,.9)" }}
+        className="kit-rise fixed rounded-2xl px-3 py-2.5 text-[#0e1613]"
+        style={{ ...bubbleStyle, pointerEvents: "auto", background: "#fff", boxShadow: "0 12px 28px -8px rgba(0,0,0,.75)" }}
         onClick={press ? undefined : next}
       >
-        <div className="text-[16px] font-black leading-snug">{step.text}</div>
-        {press && (
+        {/* Option C, the coach bubble (Mikey, 25 Oct 2026): white, who is
+            talking on the left, and a tail pointing at the thing to tap. */}
+        {place !== "inside" && !wholeScreen && (
+          <span aria-hidden className="absolute h-0 w-0" style={{
+            left: Math.max(14, Math.min(bubbleW - 32, cx - left - 9)),
+            ...(above ? { bottom: -9, borderLeft: "9px solid transparent", borderRight: "9px solid transparent", borderTop: "9px solid #fff" }
+                      : { top: -9, borderLeft: "9px solid transparent", borderRight: "9px solid transparent", borderBottom: "9px solid #fff" }),
+          }} />
+        )}
+        <div className="flex items-start gap-2.5">
+          <span aria-hidden className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-emerald-600 text-[15px]">🧢</span>
+          <div className="min-w-0 flex-1 text-[16px] font-black leading-snug">{step.text}</div>
+        </div>
+        {press && !forced && (
           <div className="mt-1 flex justify-end">
-            <button onClick={(e) => { e.stopPropagation(); setLater(true); }} className="kib-press text-[11px] font-black uppercase tracking-widest text-white/70">Later</button>
+            <button onClick={(e) => { e.stopPropagation(); setLater(true); }} className="kib-press text-[11px] font-black uppercase tracking-widest text-gray-500">Later</button>
           </div>
         )}
         {!press && (
           <div className="mt-1 flex items-center justify-between">
             {skippable
-              ? <button onClick={(e) => { e.stopPropagation(); skip(); }} className="kib-press text-[11px] font-black uppercase tracking-widest text-white/55">Skip</button>
+              ? <button onClick={(e) => { e.stopPropagation(); skip(); }} className="kib-press text-[11px] font-black uppercase tracking-widest text-gray-500">Skip</button>
               : <span />}
-            {!press && <span className="text-[12px] font-black uppercase tracking-widest text-amber-300">{last ? "Got it" : "Next ▸"}</span>}
+            {!press && <span className="text-[12px] font-black uppercase tracking-widest text-emerald-700">{last ? "Got it" : "Next ▸"}</span>}
           </div>
         )}
-      </div>
+      </div>}
     </div>,
     document.body,
   );

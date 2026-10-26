@@ -322,6 +322,8 @@ function foulAttempt(sc: Scenario, seed: number, tryNo: number): FhrFoulBuildUp 
     skippable: true,
     // The camera frames the carry, then the place where it is set up.
     passStart: [HOLD, tS], passEnd: [tF, durS - 0.1],
+    // One smooth camera move (leadIn.ts glideCamera; Harry, 0.108h).
+    camera: "glide" as const,
     captionAt: (t) => (t < tF ? "Build-up" : call),
     captionShown: true,
     whistleAt: tF + 0.08,

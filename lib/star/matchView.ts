@@ -23,7 +23,7 @@
  */
 import { useSyncExternalStore } from "react";
 import type { Facing, Scenario, ScenarioKind, Vec2, Viewport } from "./canvasEngine";
-import { goalInView, standOff } from "./canvasEngine";
+import { goalInView, standOff, SCENARIO_KINDS } from "./canvasEngine";
 import { wideChances } from "./wideChances";
 /** Tests and measuring scripts: force Wide chances (re-exported so they set the copy this file reads). */
 export { setWideChancesOverride } from "./wideChances";
@@ -121,15 +121,17 @@ export const NEW_KEEPER_GROW = 1.25;
  *  keeps its size (0.7 × the old 0.8 shrink = 0.56, ~5.6 px on a phone). */
 export const NEW_BALL_SCALE = 0.56;
 
-/** Headers and volleys: the men and the ball are drawn the long-range size
- *  (size B, ~22 px on a 390 × 844 phone) whatever the camera. Harry, 23 Oct 2026:
- *  "the headers and new skill still showing crazy big guys". Their own camera is
- *  27 m across (NEW_VIEW_KIND_WIDTH_M), and the Head & Volley drill's 26 m, so the
- *  men came out 1.2 to 1.45 times a long-range man. Only the pitch zooms now. */
-export const FIGURES_AT_FULL_VIEW: readonly ScenarioKind[] = ["header", "volley"];
+/** Every chance kind: the men, the keeper and the ball are drawn the long-range
+ *  size (size B, ~22 px on a 390 × 844 phone) whatever the camera. Only the pitch
+ *  zooms. Headers and volleys first (Harry, 23 Oct 2026: "the headers and new
+ *  skill still showing crazy big guys"); every other kind on 25 Oct 2026 (patch
+ *  note 0.108h's known issue: penalties, cutbacks and one-on-ones still drew men
+ *  up to ~31 px, because their camera is 27 to 30 m across, not 38). A camera
+ *  wider than 38 m never grows them. Was `["header", "volley"]`. */
+export const FIGURES_AT_FULL_VIEW: readonly ScenarioKind[] = SCENARIO_KINDS;
 /** How much smaller than the camera would draw them: `across` is the metres
  *  across the screen that the men are sized against (the chance's own camera
- *  before any Zoom). 1 for every other kind, and never bigger than 1. */
+ *  before any Zoom, or a feature's own close camera). Never bigger than 1. */
 export function figureShrinkFor(kind: ScenarioKind, across: number): number {
   if (!FIGURES_AT_FULL_VIEW.includes(kind) || !(across > 0)) return 1;
   return Math.min(1, across / NEW_VIEW_WIDTH_M);
@@ -451,7 +453,15 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, 
   // build-up stay exactly as they were.
   if (playZoom() !== "off" && facing === "up" && goalInView(sc.kind)) {
     const z = zoomToPlay(base, sc, hw);
-    const zc = playZoom() === "z2max" ? z : fitCameraToTilt(z, facing, hw, tiltDeg, framedKeyPointsOf(sc));
+    // The tilt fit also keeps ZOOM_MIN_PULL_M of grass under the ball ON THE
+    // GLASS. zoomToPlay checks that room on the flat canvas only, and the
+    // tipped-back picture pushes the bottom of the canvas off the screen: a
+    // served long-range shot (seed 4, 372 × 704) kept its 5 m flat, but 2.7 m
+    // of it fell below the glass, leaving 40 px under the ball where a
+    // full-power drag needs 62 (tests/star/match2dCam.mts). fitToPlay already
+    // checks this room on the glass; this is the same rule for the zoom.
+    const pull = { x: sc.ball.x, y: sc.ball.y + ZOOM_MIN_PULL_M };
+    const zc = playZoom() === "z2max" ? z : fitCameraToTilt(z, facing, hw, tiltDeg, [...framedKeyPointsOf(sc), pull]);
     if (playZoom() === "z2" && actionFitOn()) {
       // Match camera: New (camera round 3). Every candidate camera is held to
       // the one rule — the action wholly on the glass, nobody else cut in
@@ -501,9 +511,48 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, 
       f.playZoom = playZoom() === "z1" ? 1 : k;
     }
   }
+  // Headers: never framed tighter than AIR_MIN_ACROSS_M across (Harry, 25
+  // Oct 2026: the header "zooms in way too much, and then the players look
+  // really small. The rest are fine."). The men keep their size on screen
+  // (they are sized against the chance's own frame, not this one), so pulling
+  // the camera back shrinks the box round them, not them. Volleys are left
+  // as they were: he called the volley right, and a wider volley breaks the
+  // "people fill the screen" rule on real volleys (tests/star/emptyGrass.mts).
+  if (facing === "up" && sc.kind === "header") {
+    const w = cam.x2 - cam.x1, h = cam.y2 - cam.y1;
+    if (w > 0 && w < AIR_MIN_ACROSS_M) {
+      const mid = (cam.x1 + cam.x2) / 2;
+      // Held at the top (the goal stays where it was), wider either side, deeper below.
+      const at = (W: number, pan: number): Viewport => ({ x1: mid + pan - W / 2, x2: mid + pan + W / 2, y1: cam.y1, y2: cam.y1 + (h * W) / w });
+      let best = at(AIR_MIN_ACROSS_M, 0);
+      // Match camera: New keeps its rule (nobody cut in half by an edge): a
+      // little wider or panned until it holds, if it can.
+      if (actionFitOn() && framingFaults(sc, best, hw, tiltDeg).length) {
+        search: for (let W = AIR_MIN_ACROSS_M; W <= AIR_MIN_ACROSS_M + 8; W += 0.5) {
+          for (const pan of [0, -1, 1, -2, 2, -3, 3, -4, 4]) {
+            const c = at(W, pan);
+            if (!framingFaults(sc, c, hw, tiltDeg).length) { best = c; break search; }
+          }
+        }
+      }
+      f.playZoom = (f.playZoom ?? 1) * (w / (best.x2 - best.x1));
+      cam = best;
+    }
+  }
   if (!keepPlayArea) sc.viewport = playAreaFor(sc, cam, f.engineFrame);
   return cam;
 }
+
+/**
+ * The tightest a header or volley is framed: metres across (Harry, 25 Oct
+ * 2026). Measured on the live build (390 px phone, 20° tilt): the header he
+ * called too tight was 20.6 m across, the volley he called right 26.0 m; the
+ * other chances (300 served each, scripts in the aerial round) sit at a median
+ * of 22.7 (penalty), 23.8 (tight angle), 27.7 (cutback), 27.9 (long range).
+ * 25 m is between the volley he liked and the penalty, so a header now reads
+ * like the rest; before it, headers had a median of 18.1 m (p90 20.9).
+ */
+export const AIR_MIN_ACROSS_M = 25;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ZOOM TO THE PLAY — Settings → Look → "Chance framing: Zoom | Old"

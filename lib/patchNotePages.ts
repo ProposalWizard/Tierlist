@@ -20,6 +20,7 @@
  * A version with no entry here just shows the Text view, as before.
  */
 export const PATCH_NOTE_PAGES: Record<string, string> = {
+  "0.110": "pages/0.110/index.html",
   "0.112h": "pages/0.112h/index.html",
   "0.111h": "pages/0.111h/index.html",
   "0.110h": "pages/0.110h/index.html",

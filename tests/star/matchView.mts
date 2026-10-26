@@ -136,7 +136,16 @@ check(newViewCanvasHeight(366, 700) === 700, "fills the room it has");
 check(Math.abs(figureShrinkFor("header", 27) - 27 / NEW_VIEW_WIDTH_M) < 1e-9, "header on a 27 m camera: men shrunk to the 38 m size");
 check(Math.abs(figureShrinkFor("volley", 26.25) - 26.25 / NEW_VIEW_WIDTH_M) < 1e-9, "volley drill on 26.25 m: men shrunk to the 38 m size");
 check(figureShrinkFor("header", 45) === 1, "a camera wider than 38 m never grows the men");
-for (const k of ["long_range", "one_on_one", "penalty", "corner"] as const) check(figureShrinkFor(k, 27) === 1, `${k}: unchanged`);
+// Every kind since 25 Oct 2026 (0.108h known issue: penalties, cutbacks, one-on-ones ~31 px):
+// a man is the long-range size whatever the kind's own camera (NEW_VIEW_KIND_WIDTH_M).
+for (const k of SCENARIO_KINDS) {
+  const w = NEW_VIEW_KIND_WIDTH_M[k];
+  const across = typeof w === "number" ? w : 22; // build-up: its tightest passers camera
+  const drawn = (NEW_VIEW_WIDTH_M / across) * figureShrinkFor(k, across); // a man, as a share of a long-range man
+  check(Math.abs(drawn - 1) < 1e-9, `${k}: a man on its ${across} m camera is the long-range size (got ${drawn.toFixed(3)})`);
+  check(figureShrinkFor(k, 45) === 1, `${k}: a 45 m camera never grows the men`);
+}
+check(figureShrinkFor("long_range", NEW_VIEW_WIDTH_M) === 1, "long range: unchanged");
 
 if (problems.length) {
   console.error(problems.slice(0, 20).join("\n"));
