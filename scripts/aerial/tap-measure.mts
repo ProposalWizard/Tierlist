@@ -15,6 +15,10 @@
  *    little over the middle.
  *  - The finger lands --sd ball radii off the spot it meant, both ways
  *    (normal). An assumption: nobody has measured real taps here.
+ *  --moves: each chance also picks its aerial move (lib/star/aerialMoves.ts)
+ *    and the strike gets that move's tint (aerialStrikeTint), as the match
+ *    does. Flair is Technique in the game; here it is set to the Aerial
+ *    (--flair=N to fix it), so the bicycle and scorpion gates open at 90.
  */
 import { shoot, type Thumb, type LabOptions } from "../../tests/star/shotLab";
 import { applyAirborne, airStrikeTimerS, airLateContact } from "../../lib/star/airborneChance";
@@ -23,12 +27,18 @@ import { readFileSync } from "node:fs";
 import type { Scenario, ScenarioKind } from "../../lib/star/canvasEngine";
 import { mulberry32 } from "../../lib/star/season";
 import { CX, GOAL_W, POST_L, POST_R } from "../../lib/star/pitch";
+import { pickAerialMove, aerialStrikeTint, type AerialMove } from "../../lib/star/aerialMoves";
+import { airZOf } from "../../lib/star/airDrawings";
 
 const arg = (k: string, d: string) => process.argv.find((a) => a.startsWith(`--${k}=`))?.split("=")[1] ?? d;
 const N = Number(arg("n", "600"));
 const SD = Number(arg("sd", "0.15"));
 const MED = Number(arg("median", "0.9")), SPREAD = Number(arg("spread", "0.35"));
 const TIME_SD = 0.22;
+const MOVES = process.argv.includes("--moves");
+const FLAIR = arg("flair", "");
+/** How often each move was picked, over the last tapRate calls. */
+export const moveCount: Record<string, number> = {};
 
 function gauss(r: () => number) { let u = 0, v = 0; while (u === 0) u = r(); while (v === 0) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
 
@@ -68,8 +78,19 @@ export function tapRate(kind: AirKind, aerial: number, n = N, sd = SD): { goals:
       st = late
         ? airTapStrike(kind, sc.ball, { ...airLateContact(kind, lift0, side), late: true }, aerial)
         : airTapStrike(kind, sc.ball, { cx, cy, lift: lift0 }, aerial);
-      const ax = late ? CX : airTapAimX(cx);
-      return { aimErrDeg: 0, power: st.aim.power, contact: { cx: st.contact.cx, cy: st.contact.cy }, intent: "placed", targetX, aimX: ax };
+      let ax = late ? CX : airTapAimX(cx);
+      let power = st.aim.power;
+      if (MOVES) {
+        const mate = sc.teammates[0];
+        const move: AerialMove = pickAerialMove({ kind, ballZ: airZOf(sc), inDir: mate ? { x: sc.ball.x - mate.x, y: sc.ball.y - mate.y } : { x: 0, y: -1 },
+          toGoal: { x: CX - sc.ball.x, y: -sc.ball.y }, aerial, flair: FLAIR ? Number(FLAIR) : aerial, seed });
+        moveCount[move] = (moveCount[move] ?? 0) + 1;
+        const dx = ax - sc.ball.x, dy = -sc.ball.y, L = Math.hypot(dx, dy) || 1;
+        const t = aerialStrikeTint(move, { x: dx / L, y: dy / L }, power, seed);
+        ax = sc.ball.x + (t.dir.x / -t.dir.y) * sc.ball.y;
+        power = t.power;
+      }
+      return { aimErrDeg: 0, power, contact: { cx: st.contact.cx, cy: st.contact.cy }, intent: "placed", targetX, aimX: ax };
     };
     const o: LabOptions = { skills: { power: 60, technique: 60 }, thumbFor };
     o.afterLaunch = (ball, sc) => {
@@ -100,5 +121,6 @@ if (isMain && GRID) {
     console.log(`\n${kind.toUpperCase()}                Aerial 30      60      90`);
     console.log(`goals per 100              ${cells.map((x) => x.goals.toFixed(1).padStart(6)).join("  ")}`);
     console.log(`ran out, per 100           ${cells.map((x) => x.late.toFixed(1).padStart(6)).join("  ")}`);
+    if (MOVES) { console.log(`moves picked (all three columns): ${JSON.stringify(moveCount)}`); for (const k of Object.keys(moveCount)) delete moveCount[k]; }
   }
 }
