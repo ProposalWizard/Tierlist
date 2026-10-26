@@ -222,7 +222,7 @@ import { revealOnScreen, pinnedTopHeight } from "@/lib/revealOnScreen";
 import {
   matchView, frameForNewView, crossCutCamera, newViewCanvasHeight, engineFrameOf, turnWideChance,
   NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, NEW_KEEPER_GROW, MATCH_VIEW_DEFAULT, figureGrow, figureShrinkFor,
-  playZoom, playZoomOf, playZoomProbe,
+  playZoom, playZoomOf, playZoomProbe, figureDivFor,
 } from "@/lib/star/matchView";
 import { drawMatchFigure, SPRITE_HEIGHT_K } from "@/lib/star/matchFigure";
 import {
@@ -3050,7 +3050,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    *  are re-sized against it to stay this size (leadFigSize). */
   const figShrinkBaseRef = useRef(1);
   /** Figures and ball: divide their size by this (Z2 keeps them today's size). */
-  const figZoomDiv = () => (playZoom() === "z2" || playZoom() === "z2max" ? playZoomRef.current : 1) / figShrinkRef.current;
+  // One size in metres (matchView.ts FIXED_FIGURES): the same on every camera.
+  const figZoomDiv = () => figureDivFor(playZoomRef.current, figShrinkRef.current);
 
   /**
    * Which way the frame is turned. "up" is the ordinary view; a crossing
