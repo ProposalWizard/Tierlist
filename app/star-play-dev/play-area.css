@@ -46,3 +46,19 @@
   .pa-pic b { padding: 0 12px 10px; }
   .pa-reset .bc-btn { width: 100%; justify-content: center; }
 }
+
+/* Power curve (Mikey, 26 Oct 2026): a box per Power point, the game's and the
+   old numbers beside it, and two thin bars (yours cyan, before grey). */
+.pa-curve { display: flex; flex-direction: column; margin: 4px 0 8px; }
+.pa-curve-row { display: grid; grid-template-columns: 44px minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr); gap: 4px 10px; align-items: center;
+  padding: 7px 0; border-bottom: 1px solid rgba(90, 150, 255, 0.1); font-size: 13px; color: var(--bc-ink); }
+.pa-curve-row b { font-family: ui-monospace, monospace; color: #3ff0f0; font-size: 15px; }
+.pa-curve-row > span { white-space: nowrap; }
+.pa-curve-row i { font-style: normal; color: var(--bc-ink2); font-size: 12px; margin-left: 4px; }
+.pa-curve-head { font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--bc-ink2); padding-bottom: 4px; }
+.pa-curve-in { width: 72px; height: 36px; padding: 0 8px; border-radius: 4px; border: 1px solid rgba(80, 200, 255, 0.5);
+  background: rgba(4, 14, 40, 0.8); color: #fff; font: 700 15px ui-monospace, monospace; }
+.pa-curve-bars { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 2px; }
+.pa-curve-bar { height: 4px; border-radius: 2px; }
+.pa-curve-bar.yours { background: #12d6e6; }
+.pa-curve-bar.before { background: rgba(200, 210, 230, 0.35); }

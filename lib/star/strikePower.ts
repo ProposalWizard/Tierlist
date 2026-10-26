@@ -40,15 +40,74 @@
  * puts the old straight line back on one device's test screens only.
  */
 
-/** Where the curve bends. */
+/**
+ * POWER 40 IS A STARTING PLAYER (Mikey, 26 Oct 2026: "40 already gives a shot
+ * hard enough for the whole game … 40 should be a lot less actual power").
+ *
+ * The curve is now set by SPEEDS: how fast a full-power strike through the
+ * middle leaves the boot (metres a second) at each Power. Straight lines
+ * between the points. Today's straight line (18 + 0.18 × Power, flattened above
+ * 80) is beside it for reference:
+ *
+ *   Power        20     40     60     80    100
+ *   this curve   19.5   21.0   23.4   30.6  32.8 m/s
+ *   before       21.6   25.2   28.8   32.4  32.8 m/s
+ *
+ * So 40 is clearly short of what it was, today's 40 (25.2 m/s) comes at 65,
+ * and the top is where it was. Every kick is struck with it: shots, passes,
+ * crosses. Your device can try other numbers (the Play Area's "Power curve"
+ * panel, setPowerCurveOverride) without changing anyone else's game.
+ */
+export const POWER_POINTS = [0, 20, 40, 60, 80, 100] as const;
+export const DEFAULT_POWER_SPEEDS = [18, 19.5, 21, 23.4, 30.6, 32.8];
+/** Today's line for reference (18 + 0.18 × Power, the v0.15 knee above 80). */
+export const OLD_POWER_SPEEDS = [18, 21.6, 25.2, 28.8, 32.4, 32.8];
+const OVERRIDE_KEY = "star-power-curve";
+let override: number[] | null | undefined;
+
+/** This device's own speeds (the Play Area panel), or null for the game's. */
+export function powerCurveOverride(): number[] | null {
+  if (override !== undefined) return override;
+  override = null;
+  try {
+    const raw = typeof localStorage === "undefined" ? null : localStorage.getItem(OVERRIDE_KEY);
+    const v = raw ? (JSON.parse(raw) as unknown) : null;
+    if (Array.isArray(v) && v.length === POWER_POINTS.length && v.every((x) => typeof x === "number" && x > 5 && x < 60)) override = v as number[];
+  } catch { override = null; }
+  return override;
+}
+/** Set (or with null, clear) this device's own speeds. */
+export function setPowerCurveOverride(speeds: number[] | null): void {
+  override = speeds && speeds.length === POWER_POINTS.length ? [...speeds] : null;
+  try {
+    if (typeof localStorage === "undefined") return;
+    if (override) localStorage.setItem(OVERRIDE_KEY, JSON.stringify(override)); else localStorage.removeItem(OVERRIDE_KEY);
+  } catch { /* the setting still holds this visit */ }
+}
+
+/** The speeds in use: this device's, else the game's. */
+export function powerSpeeds(): number[] { return powerCurveOverride() ?? DEFAULT_POWER_SPEEDS; }
+
+/** Full-power speed (m/s, struck through the middle) at this Power. */
+export function fullPowerSpeed(power: number, speeds: readonly number[] = powerSpeeds()): number {
+  const p = Math.max(0, Math.min(100, power));
+  for (let i = 1; i < POWER_POINTS.length; i++) {
+    if (p <= POWER_POINTS[i]) {
+      const a = POWER_POINTS[i - 1], b = POWER_POINTS[i];
+      return speeds[i - 1] + ((speeds[i] - speeds[i - 1]) * (p - a)) / (b - a);
+    }
+  }
+  return speeds[speeds.length - 1];
+}
+
+/** Kept for the old tests and the compare switch's reading: where the v0.15 curve bent. */
 export const POWER_KNEE = 80;
-/** What each point of power above the knee is still worth, as a share of a point below it. */
 export const POWER_ABOVE_KNEE = 0.1;
 
-/** The power the ball is struck WITH. The same number at or below the knee. */
+/** The power the ball is struck WITH: the stat that gives this curve's speed
+ *  in launch's own model (pace 18 + 0.18 × stat; the rise follows it). */
 export function strikingPower(power: number): number {
-  if (!(power > POWER_KNEE)) return power;
-  return POWER_KNEE + (power - POWER_KNEE) * POWER_ABOVE_KNEE;
+  return Math.max(-50, (fullPowerSpeed(power) - 18) / 0.18);
 }
 
 /**

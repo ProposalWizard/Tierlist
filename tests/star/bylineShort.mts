@@ -11,6 +11,7 @@ import {
 import { makeChance } from "../../lib/star/chanceMaker";
 import { frameForNewView } from "../../lib/star/matchView";
 import { SHORT_MIN_M, SHORT_MAX_M, CLEAR_M } from "../../lib/star/bylineShort";
+import { strikingPower } from "../../lib/star/strikePower";
 
 let fails = 0;
 const check = (ok: boolean, what: string) => { if (!ok) { fails++; console.log("  ✗", what); } else console.log("  ✓", what); };
@@ -36,13 +37,14 @@ for (let s = 1; s <= N; s++) {
   const inside = (p: { x: number; y: number }) => p.x >= Math.min(cam.x1, cam.x2) && p.x <= Math.max(cam.x1, cam.x2) && p.y >= Math.min(cam.y1, cam.y2) && p.y <= Math.max(cam.y1, cam.y2);
   if (inside(short.pos)) onScreen++;
 
-  // A soft pass to him, at a new player's Power and Technique (40).
+  // A soft pass to him, at a new player's Power and Technique (40), struck
+  // with the power curve as the match strikes it (strikingPower).
   initDefenders(sc, rng);
   sc.secondaryRunners.forEach((r, i) => { r.who = id(r === short ? "SHORT" : `R${i}`); });
   if (sc.runner) sc.runner.who = id(sc.runner === short ? "SHORT" : "R");
   const dir = { x: short.pos.x - sc.ball.x, y: short.pos.y - sc.ball.y };
   const power = Math.min(0.6, 0.18 + d / 32);
-  const ball = launch(sc, dir, power, { cx: 0, cy: -0.25 }, { power: 40, technique: 40 }, rng);
+  const ball = launch(sc, dir, power, { cx: 0, cy: -0.25 }, { power: strikingPower(40), technique: 40 }, rng);
   passed++;
   let out: Outcome | null = null;
   for (let i = 0; i < 180 * 8 && !out; i++) {
