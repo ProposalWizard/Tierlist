@@ -51,6 +51,7 @@ import {
   type Scenario, type ScenarioKind, type Vec2,
 } from "./canvasEngine";
 import { kindsForZone, type ScenarioRequest, type Zone } from "./hiddenMatch";
+import { addShortOption } from "./bylineShort";
 import { EVEN_KIND_MIX, EVEN_KINDS, newKindBag, nextEvenKind, guardedDeal, guardAllows, noteDealt, styledRound, DECK_STYLE, type DealRules } from "./kindMix";
 import { newChancesOn } from "./newChances";
 import { selectChance, newSelectionMemory, FREQ, type SelectionMemory } from "./scenarioSelect";
@@ -618,6 +619,9 @@ export interface MadeChance {
  */
 export function makeChance(o: MakeChanceOptions): MadeChance {
   const rng = o.rng;
+  // Every byline cross has a short option (bylineShort.ts, Mikey 26 Oct 2026),
+  // added before the camera's last word so the frame holds him.
+  const finishServed = (sc: Scenario) => { addShortOption(sc); return finishServedFrame(sc); };
   const ks = o.strength?.keeper ?? 62, tr = o.strength?.team ?? 60, vis = o.strength?.vision ?? 55;
   const build = (k: ScenarioKind) => buildScenario(k, rng, ks, tr, vis);
 
@@ -699,7 +703,7 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     const real = serveRealMoment(kind, rng);
     if (real) {
       const separated = separateBodies(real.sc);
-      finishServedFrame(real.sc);
+      finishServed(real.sc);
       o.memory?.remember(pictureOf(real.sc));
       return {
         sc: real.sc, shape: null, how: "real", appliedPlan: false, appliedAuthored: false, sourceId: real.id,
@@ -734,7 +738,7 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     if (!appliedPlan) applyFormationShape(sc, o.formation ?? null);
     setupKind(sc, prng, { appliedAuthored: false, appliedPlan, keeperStrength: ks });
     const separated = separateBodies(sc);
-    finishServedFrame(sc);
+    finishServed(sc);
     return {
       sc, shape: null, how: appliedPlan ? "plan" : "builder", appliedPlan, appliedAuthored: false, sourceId: null,
       faultRebuilds: 0, memoryRebuilds: 0, faults: [], nearestRecent: Infinity, separated,
@@ -781,12 +785,12 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     applyFormationShape(sc, o.formation ?? null);
     setupKind(sc, rng, { appliedAuthored: false, appliedPlan: false, keeperStrength: ks });
     const separated = separateBodies(sc);
-    finishServedFrame(sc);
+    finishServed(sc);
     return { sc, shape: null, how: "builder", appliedPlan: false, appliedAuthored: false, sourceId: null, faultRebuilds, memoryRebuilds, faults: [], nearestRecent: Infinity, separated };
   }
   // The camera's last word (v0.15 items 12 and 20): the whole goal, and room
   // to pull back — the camera moves, never the chance (lib/star/goalFrame.ts).
-  finishServedFrame(best.sc);
+  finishServed(best.sc);
   o.memory?.remember(pictureOf(best.sc));
   return {
     sc: best.sc, shape: best.shape, how: best.how, appliedPlan: false, appliedAuthored: true, sourceId: best.shape.sourceId,

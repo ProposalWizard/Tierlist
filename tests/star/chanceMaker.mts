@@ -51,7 +51,9 @@ for (const kind of DRAWN) {
     const made = makeChance({ source: { from: "kind", kind }, rng: mulberry32(100 + i * 7919), memory: null });
     if (!made.shape) continue;
     n++;
-    const mates = mateBodiesOf(made.sc).filter((p) => !parked(p)).length;
+    // A byline cross also gets its short option (bylineShort.ts), one man the
+    // drawing does not have: counted out here.
+    const mates = mateBodiesOf(made.sc).filter((p) => !parked(p)).length - (kind === "byline_cross" ? 1 : 0);
     if (made.sc.defenders.length !== made.shape.defenders.length) wrongD++;
     // A drawing can hold a team-mate parked off the pitch; count the same way on both sides.
     if (mates !== made.shape.mates.filter((p) => !parked(p)).length) wrongM++;
