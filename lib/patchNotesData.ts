@@ -30,10 +30,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "version": "0.110",
       "title": "Leo's patch notes: overnight build results, 7 parts for you to pick",
       "publishedAt": "2026-10-25T12:40:00Z",
-      "updatedAt": "2026-10-25T17:05:00Z",
-      "updateNote": "Results are in: all 7 jobs done and checked (clips watched, numbers checked). Nothing is in the game yet; reply with the part numbers you want.",
+      "updatedAt": "2026-10-26T01:50:00Z",
+      "updateNote": "Big-moment banner removed, as you asked (heartbeat, crowd and slow motion stay); it is part of 1 · Celebrations.",
       "artifactUrl": "https://claude.ai/artifact/4aeZs72kiGCS7r4xMgBg2A",
-      "summary": "Leo, 25 Oct. 7 chats, each on its own branch behind Leo's 24 Oct switch; nothing in the game until Leo picks. 1 Celebrations: nobody stands on you (closest 0.23 m → 1.60 m), 15 goals checked by eye. 2 Feed: 0 scroll hiccups at 4× slow (was 9); your goal's post always has its video (48% → 100%). 3 Filming: 0 repeated frames in clips (was 14-17%). 4 Weather in real matches, its own toggle; goals +1.6% to +2.8%. 5 Real Goals: 35 levels on a slow phone, 2 bugs fixed, a plan for players. 6 End of season: silent cheers fixed, season video sound fixed, white screen not seen in 10 runs. 7 Bug hunt: 13 found, 4 fixed. Big-moment banner: none (being removed). Late start: jobs reached the chats at 12:28 UTC.",
+      "summary": "Leo, 25 Oct. 7 chats, each on its own branch behind Leo's 24 Oct switch; nothing in the game until Leo picks. 1 Celebrations: nobody stands on you (closest 0.23 m → 1.60 m), 15 goals checked by eye. 2 Feed: 0 scroll hiccups at 4× slow (was 9); your goal's post always has its video (48% → 100%). 3 Filming: 0 repeated frames in clips (was 14-17%). 4 Weather in real matches, its own toggle; goals +1.6% to +2.8%. 5 Real Goals: 35 levels on a slow phone, 2 bugs fixed, a plan for players. 6 End of season: silent cheers fixed, season video sound fixed, white screen not seen in 10 runs. 7 Bug hunt: 13 found, 4 fixed. Big-moment banner: removed (part 1). Late start: jobs reached the chats at 12:28 UTC.",
       "stats": [
         {
           "value": "7",
@@ -93,7 +93,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "items": [
             {
               "title": "Big-moment banner",
-              "detail": "None, as you said: being removed; heartbeat, crowd and slow motion stay."
+              "detail": "None, as you said: removed on the celebrations branch (part 1); heartbeat, crowd and slow motion stay. Seen: no banner."
             },
             {
               "title": "Ideas, not built",
