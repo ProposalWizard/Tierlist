@@ -1,6 +1,6 @@
 "use client";
 /**
- * Settings → Updates → "Leo's 24 Oct update" (admins only). One switch for
+ * Settings → Updates → "Leo's 26 Oct update" (admins only; the 24 Oct update plus the 25-26 Oct fixes and weather). One switch for
  * the whole update, then one per part (lib/star/leoUpdate.ts). Off = the game
  * exactly as before. Per device.
  */
@@ -28,8 +28,8 @@ export default function LeoUpdateCard({ glow }: { glow: string }) {
   const partOn = (f: LeoFeature) => leoUpdateOn(f);
   return (
     <SetCard tone={glow} data-leo-update>
-      <SetHead>Leo&apos;s 24 Oct update</SetHead>
-      <SetNote>Admins only, this phone only. Off = the game exactly as before. Turn it on to try everything; each part has its own switch.</SetNote>
+      <SetHead>Leo&apos;s 26 Oct update</SetHead>
+      <SetNote>Admins only, this phone only. Off = the game exactly as before. Turn it on to try everything; each part has its own switch. Includes the 24 Oct parts plus 26 Oct: weather, smooth feed, no banner, celebration and end-of-season fixes.</SetNote>
       <div className="mt-2">
         <SetToggle label={on ? "On: the update is in your game" : "Off: the game as before"} on={on} onClick={() => setLeoUpdate(!on)} last={!on} />
         {on && LEO_FEATURES.map((f, i) => (
