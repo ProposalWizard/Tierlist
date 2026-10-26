@@ -50,8 +50,8 @@
  * 80) is beside it for reference:
  *
  *   Power        20     40     60     80    100
- *   this curve   19.5   21.0   23.4   30.6  32.8 m/s
- *   before       21.6   25.2   28.8   32.4  32.8 m/s
+ *   this curve   19.5   21.0   23.4   30.6  32.76 m/s
+ *   before       21.6   25.2   28.8   32.4  32.76 m/s
  *
  * So 40 is clearly short of what it was, today's 40 (25.2 m/s) comes at 65,
  * and the top is where it was. Every kick is struck with it: shots, passes,
@@ -59,9 +59,9 @@
  * panel, setPowerCurveOverride) without changing anyone else's game.
  */
 export const POWER_POINTS = [0, 20, 40, 60, 80, 100] as const;
-export const DEFAULT_POWER_SPEEDS = [18, 19.5, 21, 23.4, 30.6, 32.8];
+export const DEFAULT_POWER_SPEEDS = [18, 19.5, 21, 23.4, 30.6, 32.76];
 /** Today's line for reference (18 + 0.18 × Power, the v0.15 knee above 80). */
-export const OLD_POWER_SPEEDS = [18, 21.6, 25.2, 28.8, 32.4, 32.8];
+export const OLD_POWER_SPEEDS = [18, 21.6, 25.2, 28.8, 32.4, 32.76];
 const OVERRIDE_KEY = "star-power-curve";
 let override: number[] | null | undefined;
 
