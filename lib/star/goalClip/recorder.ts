@@ -16,7 +16,7 @@ import {
   CLIP_FPS, TRACK_VERSION, SAVE_KINDS, frameStride,
   type ClipBody, type ClipEvent, type ClipEventKind, type ClipMeta, type FrameState, type GoalTrack,
 } from "./track";
-import { planCelebration, celebAt, CELEB_SPECS, type CelebrationMove } from "../celebration";
+import { planCelebration, celebAt, roomFor, CELEB_SPECS, type CelebrationMove } from "../celebration";
 
 /** How much of the run-up before the first kick a clip shows. */
 export const LEAD_IN_S = 0.9;
@@ -209,6 +209,15 @@ export function cutClip(
       data[k * stride + c] = Math.round(st.x * 100);
       data[k * stride + c + 1] = Math.round(st.y * 100);
       data[k * stride + c + 2] = 0;
+      // Nobody stands on your run or where your move ends (celebration.ts roomFor):
+      // the same step aside the live match draws. The recording holds raw spots.
+      for (let b = 0; b < bodies.length; b++) {
+        if (b === youIdx || bodies[b].id === "keeper") continue;
+        const o = k * stride + 3 + b * 3;
+        const m = roomFor(plan, { x: data[o] / 100, y: data[o + 1] / 100 }, T - t0);
+        data[o] = Math.round(m.x * 100);
+        data[o + 1] = Math.round(m.y * 100);
+      }
     }
   }
   const at = (t: number) => Math.round((t - startT) * 1000) / 1000;

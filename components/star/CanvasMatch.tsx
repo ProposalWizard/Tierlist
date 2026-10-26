@@ -206,7 +206,7 @@ import { setupKind, strikeKind, replayStrike, stepKind, enforceHardRules, type S
 import { drawMatchGoal } from "@/lib/star/matchGoal";
 import { GoalRecorder } from "@/lib/star/goalClip/recorder";
 import { lateKindOf } from "@/lib/star/goalClip/commentary";
-import { planCelebration, celebAt, celebrationMoveFor, CELEB_SPECS, type CelebPlan } from "@/lib/star/celebration";
+import { planCelebration, celebAt, celebrationMoveFor, roomFor, CELEB_SPECS, type CelebPlan } from "@/lib/star/celebration";
 import { ACCESSORIES } from "@/lib/star/store/catalogue";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import type { GoalTrack, ClipBody, FrameState as ClipFrame } from "@/lib/star/goalClip/track";
@@ -2649,7 +2649,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // BIG MOMENTS (lib/star/bigMoment.ts; Leo, 22 Oct 2026): 85'+, level or one
   // down, your chance. `stop` ends the heartbeat. Sound and picture only.
   const bigRef = useRef<{ stop: () => void } | null>(null);
-  const [bigBanner, setBigBanner] = useState(0);
   const celebState = () => {
     const c = celebRef.current;
     return c ? celebAt(c.plan, performance.now() / 1000 - c.t0) : null;
@@ -4074,6 +4073,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       shirt: string, rim: string,
       opts: FigureOpts = {},
     ) => {
+      // After your goal (celebration.ts roomFor): anyone on your run steps aside, in 2D and 3D alike.
+      const cr = celebRef.current;
+      if (cr && opts.sid !== "you" && phaseRef.current === "result") ({ x, y } = roomFor(cr.plan, { x, y }, performance.now() / 1000 - cr.t0));
       if (rec) {
         const sid = opts.sid ?? `fig${rec.figures.length}`;
         const them = shirt === theirKit().shirt || sid.startsWith("def") || sid.startsWith("chase");
@@ -7163,7 +7165,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     bigRef.current = { stop: startHeartbeat() };
     playCrowdRise();
     preloadLateGoalCalls();
-    setBigBanner((n) => n + 1);
+    // No banner (Leo, 25 Oct 2026: "no one really likes the big moment thing"): the sound and slow motion stay.
   };
   const endBigMoment = () => {
     const b = bigRef.current;
@@ -10412,8 +10414,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           </div>
         )}
 
-        {/* Big moments (bigMoment.ts): the banner as the chance opens. Never takes a touch. */}
-        {bigBanner > 0 && <BigMomentBanner key={bigBanner} />}
         {/* After your goal (celebration.ts): a tap anywhere skips the run and the celebration. */}
         {celebOn && (
           <div
@@ -10765,19 +10765,3 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   );
 }
 
-/** "BIG MOMENT": up for 1.9 s as a big-moment chance opens (lib/star/bigMoment.ts). */
-function BigMomentBanner() {
-  const [on, setOn] = useState(true);
-  useEffect(() => { const t = window.setTimeout(() => setOn(false), 1900); return () => window.clearTimeout(t); }, []);
-  if (!on) return null;
-  return (
-    <div data-big-moment className="pointer-events-none absolute inset-x-0 top-[14%] z-30 flex justify-center">
-      <div className="kib-pop -skew-x-6 border-y-2 border-amber-300 bg-gradient-to-r from-red-700/90 via-red-600/95 to-red-700/90 px-6 py-2 shadow-[0_0_24px_rgba(239,68,68,0.6)]">
-        <div className="skew-x-6 text-center">
-          <div className="text-[30px] leading-none tracking-wider text-white" style={{ fontFamily: "Anton, Impact, sans-serif" }}>BIG MOMENT</div>
-          <div className="mt-1 text-[11px] font-black uppercase tracking-[0.2em] text-amber-200">Late on · it&apos;s on you</div>
-        </div>
-      </div>
-    </div>
-  );
-}
