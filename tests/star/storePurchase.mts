@@ -19,8 +19,10 @@ const DAY = "2026-09-27";
 const rich: StoreState = { ...START_STATE, stars: 1_000_000, coins: 100_000 };
 
 // Catalogue shape.
-const pens = ANIMATIONS.filter((a) => a.set === "penalty").map((a) => a.id).join();
-const fks = ANIMATIONS.filter((a) => a.set === "free_kick").map((a) => a.id).join();
+// The two Star Pass run-ups (golden, fk_leaf) sit at the end of their lists and are never sold.
+const sold = ANIMATIONS.filter((a) => a.id !== "golden" && a.id !== "fk_leaf");
+const pens = sold.filter((a) => a.set === "penalty").map((a) => a.id).join();
+const fks = sold.filter((a) => a.set === "free_kick").map((a) => a.id).join();
 check(pens === "standard,stroll,skip,sprint,stutter,two_step,arc", `the 7 penalty run-ups, in the contract's order (${pens})`);
 check(fks === "fk_standard,fk_power_stance,fk_stance_sprint,fk_calm_curl,fk_stutter_curl,fk_angled_whip,fk_long_diagonal", `the 7 free-kick run-ups (${fks})`);
 check(ANIMATIONS.filter((a) => a.free).map((a) => a.id).join() === "standard,fk_standard", "only the two Standards are free");

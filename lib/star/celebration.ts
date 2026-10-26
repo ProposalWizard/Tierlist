@@ -17,7 +17,8 @@
  */
 import { PITCH_W } from "./pitch";
 
-export type CelebrationMove = "hands_up" | "arms_out" | "knee_slide" | "fist_pump" | "jump" | "roar" | "fist";
+export type CelebrationMove = "hands_up" | "arms_out" | "knee_slide" | "fist_pump" | "jump" | "roar" | "fist"
+  | "corner_flag" | "backflip" | "own_name" | "statue";
 
 export interface CelebSpec {
   /** The 3D clip (public/star/anims3d/mocap.glb). */
@@ -34,6 +35,8 @@ export interface CelebSpec {
   travel: (u: number) => number;
   /** His speed as the move begins (m/s): the run slows to it, not to a stop. */
   enterSpeed: number;
+  /** A move done AT the flag: he runs on until he is this far from it (m), not SHORT_OF_FLAG short of the corner. */
+  atFlag?: number;
 }
 
 /** Piecewise-linear through (t, v) keys. */
@@ -66,6 +69,13 @@ export const CELEB_SPECS: Record<CelebrationMove, CelebSpec> = {
   fist_pump: { clip3d: "celebrate_pump", from3d: 0, sprite: "celebFistPump", playS: 2.2, loop: false, travel: still, enterSpeed: 0 },
   jump: { clip3d: "celebrate_jump", from3d: 0, sprite: "celebJump", playS: 1.7, loop: false, travel: still, enterSpeed: 0 },
   roar: { clip3d: "celebrate_roar", from3d: 0, sprite: "celebRoar", playS: 2.2, loop: false, travel: still, enterSpeed: 0 },
+  // The Star Pass four (25 Oct 2026), keyed by hand in tools/mocap3d/keyed_celebs.py; all on the spot.
+  // The corner flag dance is done right by the flag; your own celebration turns his back to the camera
+  // inside the clip (so the name on his shirt faces whoever is watching, 2D or 3D).
+  corner_flag: { clip3d: "celebrate_corner_flag", from3d: 0, sprite: "celebCornerFlag", playS: 3.2, loop: false, travel: still, enterSpeed: 0, atFlag: 1.3 },
+  backflip: { clip3d: "celebrate_backflip", from3d: 0, sprite: "celebBackflip", playS: 2.6, loop: false, travel: still, enterSpeed: 0 },
+  own_name: { clip3d: "celebrate_own_name", from3d: 0, sprite: "celebOwnName", playS: 3.0, loop: false, travel: still, enterSpeed: 0 },
+  statue: { clip3d: "celebrate_statue", from3d: 0, sprite: "celebStatue", playS: 2.6, loop: false, travel: still, enterSpeed: 0 },
   // Nothing equipped: the team-mates' own fist celebration.
   fist: { clip3d: "celebrate_fist", from3d: 0, sprite: "celebrate", playS: 2.0, loop: false, travel: still, enterSpeed: 0 },
 };
@@ -73,6 +83,7 @@ export const CELEB_SPECS: Record<CelebrationMove, CelebSpec> = {
 /** The shop's celebration items, by the `celebration` they carry (lib/star/store/catalogue.ts). */
 const SHOP_MOVE: Record<string, CelebrationMove> = {
   hands_up: "hands_up", arms_out: "arms_out", knee_slide: "knee_slide", fist_pump: "fist_pump", jump: "jump", roar: "roar",
+  corner_flag: "corner_flag", backflip: "backflip", own_name: "own_name", statue: "statue",
 };
 
 /** The move a career's equipped celebration item plays (`item.celebration`), or the plain fist. */
@@ -122,14 +133,16 @@ export function cornerFor(from: Vec, pitchW = PITCH_W): Vec {
 export function planCelebration(from: Vec, move: CelebrationMove, pitchW = PITCH_W): CelebPlan {
   const spec = CELEB_SPECS[move];
   const corner = cornerFor(from, pitchW);
-  // Aim a little in from the flag so he stays on the grass.
-  const aim = { x: corner.x === 0 ? 1.5 : pitchW - 1.5, y: 1.5 };
+  // Aim a little in from the flag so he stays on the grass (a move done at the flag: nearer it, and no shortfall).
+  const inset = spec.atFlag !== undefined ? spec.atFlag / Math.SQRT2 : 1.5;
+  const short = spec.atFlag !== undefined ? 0 : SHORT_OF_FLAG;
+  const aim = { x: corner.x === 0 ? inset : pitchW - inset, y: inset };
   let dx = aim.x - from.x, dy = aim.y - from.y;
   const D = Math.hypot(dx, dy);
   if (D < 1e-6) { dx = 0; dy = -1; } else { dx /= D; dy /= D; }
   const moveDist = spec.travel(spec.playS);
-  const travelK = moveDist > 0 ? Math.max(0, Math.min(1, (D - SHORT_OF_FLAG) / moveDist)) : 1;
-  const room = Math.max(0, D - SHORT_OF_FLAG - moveDist * travelK);
+  const travelK = moveDist > 0 ? Math.max(0, Math.min(1, (D - short) / moveDist)) : 1;
+  const room = Math.max(0, D - short - moveDist * travelK);
   const runDist = Math.min(room, RUN_TOP * (CELEB_RUN_S - (ACCEL_S + DECEL_S) / 2));
   const runS = runDist <= 0.5 ? 0.4 : Math.max(0.9, Math.min(CELEB_RUN_S, runDist / (RUN_TOP * 0.82)));
   const ve = Math.min(spec.enterSpeed * travelK, RUN_TOP);
@@ -182,4 +195,56 @@ export function celebAt(p: CelebPlan, t: number): CelebState {
   const d = d0 + spec.travel(u) * k;
   const v = u < spec.playS ? (k * (spec.travel(Math.min(spec.playS, u + 0.05)) - spec.travel(u))) / 0.05 : 0;
   return { ...at(d), phase: t - p.moveAt >= spec.playS ? "done" : "move", moveT: u, clipT: spec.from3d + u, speed: Math.max(0, v) };
+}
+
+// ── Room for you (Leo's overnight job, 25 Oct 2026) ──
+// "a defender can stand on top of you during the knee slide": nobody stands
+// on your run or where your move ends. A man within ROOM_M of the line you
+// run (from where you scored to where the move ends) steps aside, off the
+// line, while you are still CLEAR_FROM_M away from him; he has finished by
+// the time you are CLEAR_BY_M away, and he stays aside. Picture only: the
+// live match (2D and 3D) and the goal video both move him with this.
+
+/** How far everyone keeps from your run (m): about two bodies. */
+export const ROOM_M = 1.6;
+const CLEAR_FROM_M = 4.0;
+const CLEAR_BY_M = 1.0;
+/** The first step aside eases in over this long (s), so nobody jumps as the ball goes in. */
+const ROOM_EASE_S = 0.6;
+
+const smooth = (u: number) => { const v = Math.max(0, Math.min(1, u)); return v * v * (3 - 2 * v); };
+
+/** How far along his line he is at the end of the move (m). */
+export function celebEndDist(p: CelebPlan): number {
+  const spec = CELEB_SPECS[p.move];
+  return p.runDist + spec.travel(spec.playS) * (p.travelK ?? 1);
+}
+
+/**
+ * Where a man standing at `m` is drawn `t` seconds after your goal, so he is
+ * never on top of you. Pure and stateless: the same answer for the same
+ * spot and time, live or in a video. Anyone already clear is returned as is.
+ */
+export function roomFor(p: CelebPlan, m: Vec, t: number): Vec {
+  if (t <= 0) return m;
+  const L = celebEndDist(p);
+  const rx = m.x - p.from.x, ry = m.y - p.from.y;
+  const s = Math.max(0, Math.min(L, rx * p.dir.x + ry * p.dir.y));
+  const q = { x: p.from.x + p.dir.x * s, y: p.from.y + p.dir.y * s };
+  const ox = m.x - q.x, oy = m.y - q.y, d = Math.hypot(ox, oy);
+  if (d >= ROOM_M) return m;
+  // which way he steps: away from the line; a man right on it steps towards the middle of the pitch
+  let nx: number, ny: number;
+  if (d > 1e-3) { nx = ox / d; ny = oy / d; }
+  else {
+    nx = -p.dir.y; ny = p.dir.x;
+    const mid = PITCH_W / 2 - q.x;
+    if (nx * mid < 0 || (Math.abs(nx) < 1e-6 && ny < 0)) { nx = -nx; ny = -ny; }
+  }
+  // how far along you have got (it only grows, so once aside he stays aside)
+  const st = celebAt(p, t);
+  const along = (st.x - p.from.x) * p.dir.x + (st.y - p.from.y) * p.dir.y;
+  const w = smooth((along - (s - CLEAR_FROM_M)) / (CLEAR_FROM_M - CLEAR_BY_M)) * smooth(t / ROOM_EASE_S);
+  const push = (ROOM_M - d) * w;
+  return { x: m.x + nx * push, y: m.y + ny * push };
 }

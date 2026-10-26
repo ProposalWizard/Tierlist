@@ -19,6 +19,8 @@ import { ownsCard, isUsing, equipCard, stopUsing, showsInGame } from "@/lib/star
 import { DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP } from "@/lib/star/runupStyles";
 import { BottomBar, BarButton, Chev } from "./ui";
 import RewardArt from "./RewardArt";
+import { SignatureContext } from "./store/AccessoryFigure";
+import { signatureOf } from "@/lib/star/signatureBoots";
 
 /** The two free Standard run-ups: always owned, so you can switch back. */
 const STANDARDS: CatalogueItem[] = [
@@ -37,7 +39,7 @@ export default function LockerSheet({ career, catalogue, onCareer, onClose }: {
   const [cat, setCat] = useState<RewardCategory>(() =>
     CATEGORIES.find((k) => catalogue.some((c) => c.category === k.id && ownsCard(career, c)))?.id ?? "penalty-runup");
   const cards = useMemo(() => {
-    const all = [...STANDARDS, ...catalogue].filter((c) => c.category === cat && c.status !== "idea");
+    const all = [...STANDARDS, ...catalogue].filter((c) => c.category === cat && (c.status !== "idea" || ownsCard(career, c)));
     return [...all.filter(owns), ...all.filter((c) => !owns(c))];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cat, catalogue, career]);
@@ -51,7 +53,8 @@ export default function LockerSheet({ career, catalogue, onCareer, onClose }: {
   };
 
   return createPortal(
-    <div data-locker className="fixed inset-0 z-[80] flex flex-col bg-[#05080f] text-white">
+    // Signature Boots carry your own name and number in the Locker's pictures.
+    <SignatureContext.Provider value={signatureOf(career)}><div data-locker className="fixed inset-0 z-[80] flex flex-col bg-[#05080f] text-white">
       <div className="mx-auto w-full max-w-md px-4 pt-4">
         <div className="font-display text-[23px] font-black uppercase leading-none tracking-[0.12em]" style={{
           background: "linear-gradient(180deg, #fff6c8 0%, #fde047 45%, #f59e0b 100%)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
@@ -99,7 +102,7 @@ export default function LockerSheet({ career, catalogue, onCareer, onClose }: {
       <BottomBar cols="1fr">
         <BarButton icon={<Chev dir="left" size={16} className="text-amber-300" />} label="Back" onClick={onClose} />
       </BottomBar>
-    </div>,
+    </div></SignatureContext.Provider>,
     document.body,
   );
 }

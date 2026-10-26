@@ -17,6 +17,10 @@
  * `node tools/sprites/new/bake-new.mjs celebs`. It is never preloaded: it loads
  * only when one of them is first asked for (spriteClipReady), so a match with
  * no celebration never fetches it. Until it is in, callers draw "celebrate".
+ * A FIFTH (atlas-4 / atlas-4a, 25 Oct 2026) holds the four Star Pass
+ * celebrations (corner flag dance, backflip, your own celebration, statue
+ * pose), keyed in tools/mocap3d/keyed_celebs.py and baked by
+ * `node tools/sprites/new/bake-new.mjs celebs both 4`; atlas 2 is unchanged.
  *
  * A SECOND atlas (atlas-1.webp + mask-1.png, Leo, 7 Oct 2026) holds the
  * Animations: New clips — the touch, pass, shot, volley, chip, header, block
@@ -40,7 +44,8 @@ export type SpriteClip =
   | "idle" | "jog" | "sprint" | "kick" | "celebrate" // player
   | "ready" | "diveL" | "diveR"                      // keeper (and "jog")
   | NewSpriteClip
-  | CelebSpriteClip;
+  | CelebSpriteClip
+  | AerialSpriteClip;
 
 /** Animations: New only (atlas 1). */
 export const NEW_PLAYER_CLIPS = ["touch", "passKick", "shotKick", "volley", "chipKick", "header", "block", "clearance"] as const;
@@ -50,13 +55,27 @@ export const NEW_KEEPER_CLIPS = [
 export type NewSpriteClip = (typeof NEW_PLAYER_CLIPS)[number] | (typeof NEW_KEEPER_CLIPS)[number];
 
 /**
- * Goal celebrations (atlas 2, loaded on first ask). Hands up and the knee slide's
+ * Goal celebrations (atlas 2, the Star Pass four atlas 4; loaded on first ask). Hands up and the knee slide's
  * travel: the sprite stays on its spot (the knee slide is baked in place; the
  * game moves him along the grass). Hands up loops; the rest play once and hold
  * their last frame.
  */
-export const CELEB_PLAYER_CLIPS = ["celebHandsUp", "celebArmsOut", "celebKneeSlide", "celebFistPump", "celebJump", "celebRoar"] as const;
+export const CELEB_PLAYER_CLIPS = [
+  "celebHandsUp", "celebArmsOut", "celebKneeSlide", "celebFistPump", "celebJump", "celebRoar",
+  // the Star Pass four (25 Oct 2026)
+  "celebCornerFlag", "celebBackflip", "celebOwnName", "celebStatue",
+] as const;
 export type CelebSpriteClip = (typeof CELEB_PLAYER_CLIPS)[number];
+
+/**
+ * The aerial moves (atlas 3, Harry 25 Oct 2026; lib/star/aerialMoves.ts,
+ * tools/sprites/new/aerials.js): headers and volleys you see happen. Each cell
+ * carries `pts`, where the head, chest and foot meet the ball (spritePoints).
+ * Loaded on first ask (a header or volley chance warms it while the cross
+ * comes in).
+ */
+export const AERIAL_PLAYER_CLIPS = ["airStandHeader", "airJumpHeader", "airDivingHeader", "airChestVolley", "airFrontVolley", "airSideVolley", "airBicycle", "airScorpion"] as const;
+export type AerialSpriteClip = (typeof AERIAL_PLAYER_CLIPS)[number];
 
 export interface SpriteKit {
   shirt: string;
@@ -82,6 +101,8 @@ interface ClipIndex {
   t3d?: number[];
   /** [x, y, w, h, anchorX, anchorY] per cell; cell = dir * frames + frame. */
   cells?: [number, number, number, number, number, number][];
+  /** The aerial moves: per cell, head / chest / foot as [x, y, g, nx, ny] × 3 (spritePoints). */
+  pts?: number[][];
 }
 interface AtlasInfo { color: string; mask: string; w: number; h: number }
 interface SpriteIndex {
@@ -218,10 +239,12 @@ function loadAtlas(n: number): Promise<boolean> {
 
 /** Atlases fetched only when one of their clips is first asked for (never in
  *  the idle preload): 2 the goal celebrations. */
-const LAZY_ATLASES: ReadonlySet<number> = new Set([2]);
+const LAZY_ATLASES: ReadonlySet<number> = new Set([2, 3]);
 /** Load and colour every later atlas in the background, after atlas 0 (idle time). */
 function preloadLaterAtlases(): void {
-  const ns = Object.keys(index?.atlases ?? {}).map(Number).filter((n) => n >= 1);
+  // The aerial moves' atlas (3) waits for a header/volley chance to ask for it.
+  // (Atlas 2 is listed lazy too but has always been preloaded here; kept as it was.)
+  const ns = Object.keys(index?.atlases ?? {}).map(Number).filter((n) => n >= 1 && n !== 3);
   if (!ns.length || typeof window === "undefined") return;
   const ric = (window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
   const go = () => { for (const n of ns) void loadAtlas(n).then((ok) => { if (ok) warmAtlas(n); }); };
@@ -632,4 +655,29 @@ export function spriteClipFps(char: SpriteChar, clip: SpriteClip): number {
 /** A clip's frame count as baked (0 if the index does not have it). */
 export function spriteClipFrames(char: SpriteChar, clip: SpriteClip): number {
   return index?.chars[char]?.clips[clip]?.frames ?? 0;
+}
+
+/** One baked contact point, in screen px from his boots at `height`: the touching surface
+ *  (x, y), its shadow's y on the grass (g), and the unit offset to the ball's centre (nx, ny:
+ *  × the drawn ball's radius in px). */
+export interface SpritePoint { x: number; y: number; g: number; nx: number; ny: number }
+/**
+ * Where an aerial clip's head, chest and foot meet the ball on the frame
+ * drawSprite would show for (clip, t, facing, mirror) at this height, or null
+ * (not loaded / no points). The same cell drawSprite picks, so the ball drawn
+ * there sits on the drawn body exactly.
+ */
+export function spritePoints(char: SpriteChar, clip: SpriteClip, t: number, facingRad: number, height: number, mirror = false): { head: SpritePoint; chest: SpritePoint; foot: SpritePoint } | null {
+  if (!spriteClipReady(char, clip) || !index) return null;
+  const r = resolveClip(char, clip);
+  if (!r || !r.src.pts) return null;
+  const facing = mirror ? mirroredFacing(facingRad) : facingRad;
+  const k = cellDir(clip, facing, r.c.dirs);
+  const dir = r.mirror ? mirrorDir(k, r.c.dirs) : k;
+  const p = r.src.pts[dir * r.src.frames + spriteFrame(r.src, t)];
+  if (!p) return null;
+  const s = height / index.standH;
+  const flip = (mirror ? -1 : 1) * (r.mirror ? -1 : 1);
+  const at = (i: number): SpritePoint => ({ x: flip * p[i] * s, y: p[i + 1] * s, g: p[i + 2] * s, nx: flip * p[i + 3], ny: p[i + 4] });
+  return { head: at(0), chest: at(5), foot: at(10) };
 }

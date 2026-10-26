@@ -30,6 +30,7 @@ export { setWideChancesOverride } from "./wideChances";
 import { PITCH_W, NET_DEPTH, POST_L, POST_R } from "./pitch";
 import { tiltFor, visibleOnScreen, canvasToScreen } from "./cameraTilt";
 import { chanceFraming } from "./chanceFraming";
+import { MATCH_FIGURE_HEIGHT_R, MATCH_FIGURE_R_MULT } from "./fiveASide/render";
 
 export type MatchView = "new" | "classic";
 
@@ -143,6 +144,39 @@ export function figureShrinkFor(kind: ScenarioKind, across: number): number {
 let figureGrowOverride = 1;
 export function setFigureGrowOverride(g: number | null): void { figureGrowOverride = g && g > 0 ? g : 1; }
 export function figureGrow(): number { return figureGrowOverride; }
+
+/**
+ * ONE SIZE IN METRES FOR THE MEN, THE KEEPER AND THE BALL (Mikey, 26 Oct
+ * 2026, Harry agreed: "it has to be consistent throughout every camera angle,
+ * camera zoom, everything").
+ *
+ * Measured before (780 game chances, 200 real moments, 390 × 844 phone): every
+ * man was 22 px on every camera while the goal went from 84 to 236 px, so a
+ * man was 9% to 27% of the goal's width depending on the chance. The Zoom kept
+ * the men their screen size (z2) and FIGURES_AT_FULL_VIEW drew every kind at
+ * the 38 m camera's size.
+ *
+ * Now a man is FIXED_MAN_M tall on every camera, like the goal is 7.32 m: they
+ * grow and shrink with the pitch, zoomed in or out, upright or side-on. The
+ * cameras themselves are untouched. FIXED_MAN_M is the size Mikey picked from
+ * his screenshot (Leicester v Grimsby, 4-0: a build-up, 26.8 m across), about
+ * 22% of the goal's width. FIXED_FIGURES false: the old screen-size rule.
+ * Locked by tests/star/figureScale.mts.
+ */
+export const FIXED_FIGURES = true;
+/** The camera of Mikey's reference picture (a build-up), metres across. */
+export const REFERENCE_CAMERA_M = 26.8;
+/** A man's drawn height with no zoom and no shrink (2.31 m). */
+const MAN_M_UNZOOMED = MATCH_FIGURE_R_MULT * MATCH_FIGURE_HEIGHT_R * NEW_FIGURE_SCALE;
+/** A man's drawn height, metres (head to boots, as drawn): 1.63 m. */
+export const FIXED_MAN_M = MAN_M_UNZOOMED * REFERENCE_CAMERA_M / NEW_VIEW_WIDTH_M;
+/** Divide the new view's figure and ball sizes by this. `zoom` is the chance's
+ *  Zoom (playZoomOf), `shrink` its figureShrinkFor; both are ignored when the
+ *  size is fixed in metres. */
+export function figureDivFor(zoom: number, shrink: number): number {
+  if (FIXED_FIGURES) return MAN_M_UNZOOMED / FIXED_MAN_M;
+  return (playZoom() === "z2" || playZoom() === "z2max" ? zoom : 1) / shrink;
+}
 
 /** How far behind the goal line the frame starts (the net plus a little). */
 const BEHIND_GOAL_M = NET_DEPTH + 2.6;
@@ -453,7 +487,15 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, 
   // build-up stay exactly as they were.
   if (playZoom() !== "off" && facing === "up" && goalInView(sc.kind)) {
     const z = zoomToPlay(base, sc, hw);
-    const zc = playZoom() === "z2max" ? z : fitCameraToTilt(z, facing, hw, tiltDeg, framedKeyPointsOf(sc));
+    // The tilt fit also keeps ZOOM_MIN_PULL_M of grass under the ball ON THE
+    // GLASS. zoomToPlay checks that room on the flat canvas only, and the
+    // tipped-back picture pushes the bottom of the canvas off the screen: a
+    // served long-range shot (seed 4, 372 × 704) kept its 5 m flat, but 2.7 m
+    // of it fell below the glass, leaving 40 px under the ball where a
+    // full-power drag needs 62 (tests/star/match2dCam.mts). fitToPlay already
+    // checks this room on the glass; this is the same rule for the zoom.
+    const pull = { x: sc.ball.x, y: sc.ball.y + ZOOM_MIN_PULL_M };
+    const zc = playZoom() === "z2max" ? z : fitCameraToTilt(z, facing, hw, tiltDeg, [...framedKeyPointsOf(sc), pull]);
     if (playZoom() === "z2" && actionFitOn()) {
       // Match camera: New (camera round 3). Every candidate camera is held to
       // the one rule — the action wholly on the glass, nobody else cut in
@@ -503,9 +545,48 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, 
       f.playZoom = playZoom() === "z1" ? 1 : k;
     }
   }
+  // Headers: never framed tighter than AIR_MIN_ACROSS_M across (Harry, 25
+  // Oct 2026: the header "zooms in way too much, and then the players look
+  // really small. The rest are fine."). The men keep their size on screen
+  // (they are sized against the chance's own frame, not this one), so pulling
+  // the camera back shrinks the box round them, not them. Volleys are left
+  // as they were: he called the volley right, and a wider volley breaks the
+  // "people fill the screen" rule on real volleys (tests/star/emptyGrass.mts).
+  if (facing === "up" && sc.kind === "header") {
+    const w = cam.x2 - cam.x1, h = cam.y2 - cam.y1;
+    if (w > 0 && w < AIR_MIN_ACROSS_M) {
+      const mid = (cam.x1 + cam.x2) / 2;
+      // Held at the top (the goal stays where it was), wider either side, deeper below.
+      const at = (W: number, pan: number): Viewport => ({ x1: mid + pan - W / 2, x2: mid + pan + W / 2, y1: cam.y1, y2: cam.y1 + (h * W) / w });
+      let best = at(AIR_MIN_ACROSS_M, 0);
+      // Match camera: New keeps its rule (nobody cut in half by an edge): a
+      // little wider or panned until it holds, if it can.
+      if (actionFitOn() && framingFaults(sc, best, hw, tiltDeg).length) {
+        search: for (let W = AIR_MIN_ACROSS_M; W <= AIR_MIN_ACROSS_M + 8; W += 0.5) {
+          for (const pan of [0, -1, 1, -2, 2, -3, 3, -4, 4]) {
+            const c = at(W, pan);
+            if (!framingFaults(sc, c, hw, tiltDeg).length) { best = c; break search; }
+          }
+        }
+      }
+      f.playZoom = (f.playZoom ?? 1) * (w / (best.x2 - best.x1));
+      cam = best;
+    }
+  }
   if (!keepPlayArea) sc.viewport = playAreaFor(sc, cam, f.engineFrame);
   return cam;
 }
+
+/**
+ * The tightest a header or volley is framed: metres across (Harry, 25 Oct
+ * 2026). Measured on the live build (390 px phone, 20° tilt): the header he
+ * called too tight was 20.6 m across, the volley he called right 26.0 m; the
+ * other chances (300 served each, scripts in the aerial round) sit at a median
+ * of 22.7 (penalty), 23.8 (tight angle), 27.7 (cutback), 27.9 (long range).
+ * 25 m is between the volley he liked and the penalty, so a header now reads
+ * like the rest; before it, headers had a median of 18.1 m (p90 20.9).
+ */
+export const AIR_MIN_ACROSS_M = 25;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ZOOM TO THE PLAY — Settings → Look → "Chance framing: Zoom | Old"

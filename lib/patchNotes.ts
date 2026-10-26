@@ -95,9 +95,28 @@ export interface PatchSection {
   items: PatchItem[];
 }
 
+/** Who made a patch note. Every note has one (Leo, 26 Oct 2026: "they should all say who made it"). */
+export type PatchAuthor = "Harry" | "Mikey" | "Leo";
+
+/**
+ * One update to a note after it first went up: when, what part changed
+ * (`where`: "Text", "Page", "Title", "Number", or a mix) and one plain line.
+ * Oldest first. The newest one's time and line are also in `updatedAt` /
+ * `updateNote`, which decide UPDATED and unread; a history entry alone does
+ * not make a note unread again (old entries were filled in from git on 26 Oct).
+ */
+export interface PatchUpdate {
+  at: string;
+  where: string;
+  note: string;
+}
+
 export interface PatchNote {
   version: string;
+  /** "Leo's patch notes: <what it is about>" — the part after the colon is the menu name. */
   title: string;
+  author: PatchAuthor;
+  /** When it was made (real time, UTC). */
   publishedAt: string;
   summary: string | null;
   stats: PatchStat[];
@@ -106,6 +125,8 @@ export interface PatchNote {
   updatedAt: string | null;
   /** What the last update changed, one line (shown in green on the archive). Set with updatedAt. */
   updateNote?: string;
+  /** Every update, oldest first (see PatchUpdate). */
+  updates?: PatchUpdate[];
 }
 
 /* ── Colours ──────────────────────────────────────────────────────────────
@@ -253,6 +274,15 @@ export function formatPatchDate(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+
+/** "25 Oct 2026, 12:40 UK time" — date and time, in UK time (the team's clock). */
+export function formatPatchDateTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const p = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(d);
+  const g = (t: string) => p.find((x) => x.type === t)?.value ?? "";
+  return `${g("day")} ${g("month")} ${g("year")}, ${g("hour")}:${g("minute")} UK time`;
 }
 
 /**

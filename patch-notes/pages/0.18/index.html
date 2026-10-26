@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Patch notes v0.18</title>
+<style>
+:root{
+  --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+  --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+  --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+  --pill:#3ddc84;--pillink:#06170e;--r:12px;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+  --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+  --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+  --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+  --pill:#0b7a43;--pillink:#ffffff;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+.wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{padding:30px 0 4px}
+.ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 10px;letter-spacing:-.02em;text-wrap:balance}
+.by{color:var(--ink3);font-size:13px;margin:0 0 4px}
+.upd{color:var(--green);font-size:13px;margin:0 0 4px}
+.lead{color:var(--ink2);font-size:15px;margin:14px 0 0}
+h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+.ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+.ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+.ck li:last-child{border-bottom:0}
+.ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+.ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+.ck .q{font-weight:700;display:block}
+.ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+.item.alert{border-left:4px solid var(--red)}
+.ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.ih b{font-size:16px;line-height:1.3;min-width:0}
+.dt{margin:6px 0 0;color:var(--ink2);font-size:14.5px}
+.pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+.p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+.bars{margin:8px 0 2px}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+.bar .bl{grid-column:1/-1;color:var(--ink2)}
+.track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+.fill{position:absolute;left:0;height:8px;border-radius:3px}
+.fill.was{top:1px;background:var(--ink3);opacity:.55}
+.fill.now{bottom:1px;background:var(--green);opacity:.9}
+.fill.now.warn{background:var(--amber)}
+.fill.now.bad{background:var(--red)}
+.vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+.vv s{color:var(--ink3);font-weight:400;opacity:.9}
+details{background:var(--card2);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+details.nums{background:var(--card);margin-top:34px}
+details[open]{padding-bottom:12px}
+summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+details[open]>summary::before{transform:rotate(90deg)}
+details ul{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}
+details li{margin-bottom:6px}
+details li b{color:var(--ink)}
+footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <span class="ver">v0.18</span>
+  <h1>Road to the app stores, smoother aiming</h1>
+  <p class="by">Made by Harry &middot; 28 Sept 2026, 15:00 UK time</p>
+  <p class="upd">Updated 26 Oct 2026, 17:04 UK time: Tidied 26 Oct: title gives what it is about.</p>
+  <p class="lead">The game is now the base for a real App Store and Play Store app. The headline is the road map to it (step 3 of 8), plus what shipped since v0.17: aiming three times smoother on a slow phone, a smaller download, and 3D as everyone&#39;s look.</p>
+</header>
+<h2 class="nxt"><i></i>Check these</h2>
+<ul class="ck"><li><label><input type="checkbox" data-k="c0"><span><span class="q">Open Home and tap the 3D / 2D button</span><span class="a">Top right of your player card. Your player flips look straight away.</span></span></label></li><li><label><input type="checkbox" data-k="c1"><span><span class="q">Play a chance: does aiming feel smoother?</span><span class="a">Most noticeable on an older phone.</span></span></label></li><li><label><input type="checkbox" data-k="c2"><span><span class="q">Score updates during your match</span><span class="a">Back to the old pop-up card, not lines in the commentary.</span></span></label></li></ul>
+<h2 class="chg"><i></i>Changed · The headline: the road to the App Store and Play Store</h2>
+<div class="item"><div class="ih"><b>2 of 8 steps done: smooth on slow phones, and 3D players as standard</b></div><p class="dt">Step 3, safe saves, is ready and waiting on your yes.</p></div>
+<div class="item"><div class="ih"><b>Safe saves come next</b></div><p class="dt">Stop careers being lost between phone and PC. Saves shrink from 1.4 MB to about 300 KB, so about 400 careers fit in the free database instead of about 85.</p></div>
+<div class="item"><div class="ih"><b>Then accounts, the app itself, testing, 12 testers for 14 days, and store review</b></div><p class="dt">Apple is $99 a year (1–3 days to approve); Google is $25 once. The 12-testers step is the slowest, so start it early.</p><details><summary>The rest of the steps</summary><ul><li>The app itself wraps the real game and adds what Apple requires: Sign in with Apple, a phone-style Google sign-in, saves kept on the phone, an offline screen and the back button.</li><li>Apple review takes about 1.5 days; Google&#39;s first review takes 7–14 days.</li><li>After it&#39;s live: no store review for game changes. The app opens the live game from the website, so anything pushed there reaches everyone next time they open it. Worked out from Apple&#39;s and Google&#39;s rules; not tested yet because the app doesn&#39;t exist yet.</li></ul></details></div>
+<div class="item"><div class="ih"><b>Problem: 4 ways a player can lose a career today</b></div><p class="dt">Offline on the phone then PC (the PC save wins with no warning), closing within 3 seconds of a change, an iPhone clearing website storage after 7 days, and a full phone silently dropping the save.</p><details><summary>Fixes, and how sure we are</summary><ul><li>Fixes: ask which save to keep, save the moment the app is hidden, keep saves on the phone in the app, smaller saves plus a storage warning.</li><li>Read from the save code, not reproduced on two real devices.</li></ul></details></div>
+<h2 class="fix"><i></i>Fixed · Shipped since v0.17</h2>
+<div class="item"><div class="ih"><b>The match lag: each face was drawn 13 times from the full-size photo, every frame</b></div><p class="dt">Now drawn once and reused. The fake-face pictures went from 1.9 MB to about 95 KB each. Faces look identical.</p><div class="bars"><div class="bar"><div class="bl">Aiming, 2D look (ms a frame)</div><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:35.5%"></div></div><div class="vv"><s>124.5 ms</s> 44.2 ms</div></div><div class="bar"><div class="bl">Aiming, 3D look (ms a frame)</div><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:29.1%"></div></div><div class="vv"><s>155.1 ms</s> 45.2 ms</div></div><div class="bar"><div class="bl">Five-a-side (ms a frame)</div><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:64.8%"></div></div><div class="vv"><s>48.9 ms</s> 31.7 ms</div></div><div class="bar"><div class="bl">Ball in flight (ms a frame)</div><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:80.4%"></div></div><div class="vv"><s>50 ms</s> 40.2 ms</div></div></div><details><summary>How it was measured</summary><ul><li>A real browser at phone size, processor slowed 6×, average of 2 runs. Lower is smoother.</li></ul></details></div>
+<h2 class="chg"><i></i>Changed</h2>
+<div class="item"><div class="ih"><b>3D is the default look</b></div><p class="dt">Your answer in v0.17. Classic 2D is one tap away.</p></div>
+<div class="item"><div class="ih"><b>Dribble camera C1, a smoother 3D kick, League Two&#39;s top 3 go straight up</b></div><p class="dt">Your answers to the v0.17 questions.</p></div>
+<div class="item"><div class="ih"><b>Live scores are the pop-up card again</b></div><p class="dt">&quot;Fit the aesthetic more.&quot;</p></div>
+<h2 class="add"><i></i>Added</h2>
+<div class="item"><div class="ih"><b>National League North and South player names</b></div><p class="dt">1,540 players at 63 clubs, from Wikipedia. Stored only; nothing plays with them yet. The ratings (42–56) are estimates, not real ratings.</p></div>
+<h2 class="bug"><i></i>Known issues</h2>
+<div class="item"><div class="ih"><b>The 3D / 2D button sits on the card&#39;s dotted light icon</b></div><p class="dt">Seen at both phone sizes. Quick fix.</p></div>
+<div class="item"><div class="ih"><b>On small Androids (360 px) the match bar reads &quot;ASSISTSPASS&quot;</b></div><p class="dt">The labels touch. Quick fix.</p></div>
+<div class="item"><div class="ih"><b>Aiming is still about 20 frames a second on a slow phone</b><span class="pill p-amb">half fixed</span></div><p class="dt">The next step is to stop repainting the pitch while nothing moves, only if players notice.</p></div>
+<div class="item"><div class="ih"><b>3 test files fail</b></div><p class="dt">They fail on the live version too.</p></div>
+<h2 class="nxt"><i></i>Next · Your calls</h2>
+<div class="item"><div class="ih"><b>Start safe saves now?</b></div><p class="dt">Recommended: yes. It protects players today, and the app needs it anyway.</p></div>
+<div class="item"><div class="ih"><b>Apple account: you, or a company?</b></div><p class="dt">Individual: your name shows as the seller, 1–3 days. Company: &quot;Knowitball&quot; shows, needs a company and a free D-U-N-S number, 1–2 weeks.</p></div>
+<div class="item"><div class="ih"><b>Who are the 12 testers?</b></div><p class="dt">They must opt in and play for 14 days in a row.</p></div>
+<div class="item"><div class="ih"><b>Will coins ever cost real money?</b></div><p class="dt">If yes, Apple and Google require their own payment system and take 15–30%.</p></div>
+<details class="nums"><summary>The numbers</summary><ul><li><b>3× faster</b> while aiming on a slow phone (124 → 44 ms a frame)</li><li><b>4.9 → 2.6 MB</b> to open the game</li><li><b>3D</b> is now everyone&#39;s look, with a 3D/2D button to flip it back</li><li><b>0</b> store reviews needed to ship a game change to the app</li></ul></details>
+<footer>Made from the archive data on 26 Oct 2026 (this note had no page)</footer>
+</div>
+<script>
+(function(){
+  var K="kib-pn-0.18-checks", s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||"{}")||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll(".ck input");
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute("data-k"); if(s[id]) b.checked=true;
+    b.addEventListener("change",function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+})();
+</script>
+</body>
+</html>

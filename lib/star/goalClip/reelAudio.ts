@@ -20,8 +20,10 @@ import { musicLevels, reelMusicFor, type ClipTiming, type ReelPlan } from "./ree
 
 /** The crowd's level on a card with no recording, and on the title/end. */
 const BED_CARD = 0.07;
-/** The quick-fire run: the crowd a step back, the music leads. */
-const QUICK_CROWD = 0.6;
+/** The quick-fire run: the crowd a little back (the music leads between
+ *  goals and steps aside at each one, reel.ts MUSIC_QUICK_DIP). Was 0.6 until
+ *  the 25 Oct sound pass: the roar sat only ~1 dB over the music. */
+export const QUICK_CROWD = 0.8;
 
 /** The sound plan for the whole reel (crowd, kicks, nets, the commentator). */
 export function reelCrowdPlan(plan: ReelPlan, tracks: Map<string, GoalTrack>): AudioPlan {
@@ -107,10 +109,17 @@ const WHOOSH_GAIN = 0.22;
  * The music's overall level and the mix's last trim, set by measuring the
  * mixed track (22 Oct 2026, 40-goal season, the winning track): music about
  * -18 dB RMS on the title card and -15 dB on the end card; under a goal's
- * roar the crowd sits about 6-7 dB above it; the loudest peak about -1.5 dBFS.
+ * roar the crowd sits about 6-7 dB above it. (Levels moved 2.5 dB down by
+ * OUT_TRIM on 25 Oct: title -21.8, end -18.9 dB; true peak -3.8 dBTP.)
  */
 const MUSIC_LIFT = 2.4;
-const OUT_TRIM = 0.84;
+/**
+ * Sound pass, 25 Oct 2026 (measured with ffmpeg ebur128 on the 20- and
+ * 40-goal test seasons): at 0.84 the reel measured -12.8 / -12.3 LUFS, louder
+ * than a phone video should be (aim -16 to -14, the level the apps play
+ * at), so the trim is ~2 dB lower. True peak stays under -1 dBTP.
+ */
+export const OUT_TRIM = 0.63;
 
 const musicBytes = new Map<string, Promise<ArrayBuffer | null>>();
 function fetchMusic(url: string): Promise<ArrayBuffer | null> {

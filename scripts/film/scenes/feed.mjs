@@ -35,15 +35,18 @@ pg.on("pageerror", e => errors.push(e.message));
 // ── Open the seeded save (a player's phone: no admin tab) ────────────────────
 const seed = JSON.parse(readFileSync(seedFile, "utf8"));
 await pg.goto(`${BASE}/star-dev`, { waitUntil: "domcontentloaded", timeout: 180000 });
-await pg.evaluate(async ({ career, clips }) => {
+// --leo on|off: Leo's 24 Oct update switch (the fast feed is behind it). Default on.
+const LEO = val("--leo", "on") === "on";
+await pg.evaluate(async ({ career, clips, leo }) => {
   localStorage.clear();
   localStorage.setItem("kib-admin-mode", "off");
+  if (leo) localStorage.setItem("kib-update-leo-2026-10-24", JSON.stringify({ on: true, off: [] }));
   localStorage.setItem("star-career-v2::anon", JSON.stringify(career));
   localStorage.setItem("star-career-phase-v1::anon", JSON.stringify({ phase: "dashboard" }));
   for (const n of ["star-goal-clips", "star-goal-videos"]) await new Promise(res => { const d = indexedDB.deleteDatabase(n); d.onsuccess = d.onerror = d.onblocked = () => res(); });
   const db = await new Promise((res, rej) => { const r = indexedDB.open("star-goal-clips", 1); r.onupgradeneeded = () => { const st = r.result.createObjectStore("clips", { keyPath: "id" }); st.createIndex("createdAt", "createdAt"); }; r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
   const tx = db.transaction("clips", "readwrite"); for (const c of clips) tx.objectStore("clips").put(c); await new Promise(res => { tx.oncomplete = res; }); db.close();
-}, seed);
+}, { ...seed, leo: LEO });
 await pg.reload({ waitUntil: "networkidle", timeout: 180000 });
 await pg.waitForSelector('[data-tour="nav-phone"]', { timeout: 120000 });
 await pg.waitForTimeout(2000);
@@ -75,7 +78,8 @@ async function scrollToArticle(re, maxSwipes = 40) {
   }
   return false;
 }
-const tmp = path.join(outDir, `${scene}.raw.mp4`);
+const NAME = val("--name", scene);
+const tmp = path.join(outDir, `${NAME}.raw.mp4`);
 let rec;
 
 if (scene === "feed-scroll") {
@@ -125,9 +129,9 @@ if (scene === "feed-scroll") {
 
 await stopRec(rec, tmp, { holdEnd: 0.6 });
 await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 }).catch(() => {});
-await shot(pg, path.join(outDir, `${scene}.jpg`)).catch(async () => { await pg.screenshot({ path: path.join(outDir, `${scene}.jpg`), type: "jpeg", quality: 75 }); });
+await shot(pg, path.join(outDir, `${NAME}.jpg`)).catch(async () => { await pg.screenshot({ path: path.join(outDir, `${NAME}.jpg`), type: "jpeg", quality: 75 }); });
 // 390 wide, small enough to send in WhatsApp.
-const out = path.join(outDir, `${scene}.mp4`);
+const out = path.join(outDir, `${NAME}.mp4`);
 const r = spawnSync("ffmpeg", ["-y", "-loglevel", "error", "-i", tmp, "-vf", "scale=390:-2:flags=lanczos,format=yuv420p", "-c:v", "libx264", "-preset", "slow", "-crf", "25", "-movflags", "+faststart", "-an", out]);
 if (r.status !== 0) throw new Error(String(r.stderr));
 spawnSync("rm", ["-f", tmp]);

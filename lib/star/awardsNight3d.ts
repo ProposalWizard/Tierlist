@@ -22,11 +22,12 @@ import {
 } from "./people3d";
 import { people3dLook } from "./look3d";
 import { solveArm } from "./signing3dRig";
-import { rememberGpu } from "./three3d/perf";
+import { rememberGpu, mergeStaticByMaterial } from "./three3d/perf";
 import { loadCrestTexture } from "./crestTexture";
 import { withMeshopt } from "./three3d/meshopt";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "./three3d/quality";
 import { governScene } from "./three3d/governThree";
+import { cullSkinned } from "./three3d/cullPeople";
 import { makeWalkClip } from "./walkClip";
 import { SKIN_TONES, HAIR_COLOURS } from "./playerIdentity";
 import { guardRand } from "./guardOfHonour";
@@ -35,6 +36,12 @@ import { makeScreenTexture } from "./awardsNightScreen";
 import type { SigningYou } from "./signing3dScene";
 
 type Three = typeof import("three");
+
+/** ?awardslite=0 on any page: the awards night built as before the lighter room (a before/after still). */
+export function awardsLiteOn(): boolean {
+  if (typeof window === "undefined") return true;
+  try { return new URLSearchParams(window.location.search).get("awardslite") !== "0"; } catch { return true; }
+}
 
 export interface AwardsKit { shirt: string; trim: string }
 
@@ -114,41 +121,51 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
   scene.add(front);
 
   // ── The room ──
+  // The lighter room (Leo, 25 Oct 2026: the night measured on a slow phone).
+  // ?awardslite=0 builds it as before, for a before/after still.
+  // Every saving keeps the picture exactly as it was, on every tier.
+  const lite = awardsLiteOn();
   const std = (color: number, rough = 0.85, metal = 0) => new T.MeshStandardMaterial({ color, roughness: rough, metalness: metal });
   const glow = (color: number, opacity = 1) => new T.MeshBasicMaterial({ color, toneMapped: false, transparent: opacity < 1, opacity });
   const add = <O extends THREE.Object3D>(o: O): O => { scene.add(o); return o; };
+  // The still room (floor, stage, walls, curtains, tables): built piece by
+  // piece into one group, then merged to one draw per material below.
+  const room = new T.Group();
+  scene.add(room);
+  const addR = <O extends THREE.Object3D>(o: O): O => { room.add(o); return o; };
   const shade = (m: THREE.Mesh, cast = true) => { m.castShadow = prof.shadows && cast; m.receiveShadow = prof.shadows; return m; };
   // The floor: dark wood.
-  const floor = add(new T.Mesh(new T.PlaneGeometry(24, 20), std(0x2a1a10, 0.75)));
+  const floor = addR(new T.Mesh(new T.PlaneGeometry(24, 20), std(0x2a1a10, 0.75)));
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(0, 0, 4);
   shade(floor, false);
   // The stage: low, a deep red carpet on top, a warm glowing strip along its front.
   const STAGE_BACK = -1.85;
   const stageDepth = ROOM.stageFront - STAGE_BACK;
-  const stage = add(new T.Mesh(new T.BoxGeometry(7.2, H, stageDepth), std(0x1c120c, 0.6)));
+  const stage = addR(new T.Mesh(new T.BoxGeometry(7.2, H, stageDepth), std(0x1c120c, 0.6)));
   stage.position.set(0, H / 2, STAGE_BACK + stageDepth / 2);
   shade(stage, false);
-  const carpet = add(new T.Mesh(new T.PlaneGeometry(7.1, stageDepth - 0.04), std(0x5a1418, 0.95)));
+  const carpet = addR(new T.Mesh(new T.PlaneGeometry(7.1, stageDepth - 0.04), std(0x5a1418, 0.95)));
   carpet.rotation.x = -Math.PI / 2;
   carpet.position.set(0, H + 0.004, stage.position.z);
   shade(carpet, false);
-  const edge = add(new T.Mesh(new T.BoxGeometry(7.2, 0.035, 0.03), glow(0xffc46b)));
+  const edge = addR(new T.Mesh(new T.BoxGeometry(7.2, 0.035, 0.03), glow(0xffc46b)));
   edge.position.set(0, H - 0.03, ROOM.stageFront + 0.016);
   // The steps (two treads) at the front left, where the winner comes up.
   const tread = std(0x3a2416, 0.7);
   // The same treads the walk climbs (awardsNight.ts STEPS), so his feet land on them.
   for (const { top: h, zBack: z0, zFront: z1 } of STEPS.treads) {
-    const st = add(new T.Mesh(new T.BoxGeometry(STEPS.width, h, z1 - z0), tread));
+    const st = addR(new T.Mesh(new T.BoxGeometry(STEPS.width, h, z1 - z0), tread));
     st.position.set(ROOM.stepFoot.x, h / 2, (z0 + z1) / 2);
     shade(st, false);
   }
   // The back wall: warm wood with slim lit slats, and the screen.
-  const wall = add(new T.Mesh(new T.PlaneGeometry(16, 7), std(0x2b1a12, 0.9)));
+  const wall = addR(new T.Mesh(new T.PlaneGeometry(16, 7), std(0x2b1a12, 0.9)));
   wall.position.set(0, 3.2, STAGE_BACK - 0.02);
+  const slatMat = glow(0xffb45a, 0.35);
   for (let i = -7; i <= 7; i++) {
     if (Math.abs(i) <= 2) continue; // the screen's place
-    const s = add(new T.Mesh(new T.PlaneGeometry(0.04, 4.2), glow(0xffb45a, 0.35)));
+    const s = addR(new T.Mesh(new T.PlaneGeometry(0.04, 4.2), lite ? slatMat : glow(0xffb45a, 0.35)));
     s.position.set(i * 0.62, 2.6, STAGE_BACK);
   }
   const screenWords = makeScreenTexture(T);
@@ -156,29 +173,29 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
   const screen = add(new T.Mesh(new T.PlaneGeometry(SCREEN_W, SCREEN_H), new T.MeshBasicMaterial({ map: screenWords.texture, toneMapped: false })));
   const SCREEN_Y = 2.55;
   screen.position.set(0, SCREEN_Y, STAGE_BACK + 0.01);
-  const frame = add(new T.Mesh(new T.PlaneGeometry(SCREEN_W + 0.12, SCREEN_H + 0.12), std(0x0b0806, 0.4, 0.3)));
+  const frame = addR(new T.Mesh(new T.PlaneGeometry(SCREEN_W + 0.12, SCREEN_H + 0.12), std(0x0b0806, 0.4, 0.3)));
   frame.position.set(0, SCREEN_Y, STAGE_BACK + 0.005);
   // Red curtains at the sides of the stage.
   const curtainMat = std(0x4a0e12, 0.95);
   for (const side of [-1, 1]) {
     for (let k = 0; k < 4; k++) {
-      const fold = add(new T.Mesh(new T.CylinderGeometry(0.16, 0.16, 5.2, 10), curtainMat));
+      const fold = addR(new T.Mesh(new T.CylinderGeometry(0.16, 0.16, 5.2, 10), curtainMat));
       fold.position.set(side * (3.35 + k * 0.26), 2.6, STAGE_BACK + 0.2 + (k % 2) * 0.06);
     }
   }
   // The lectern: wood, a little brass plate.
-  const lectern = add(new T.Mesh(new T.BoxGeometry(0.62, 1.1, 0.42), std(0x4a2c18, 0.55)));
+  const lectern = addR(new T.Mesh(new T.BoxGeometry(0.62, 1.1, 0.42), std(0x4a2c18, 0.55)));
   lectern.position.set(ROOM.lectern.x, H + 0.55, ROOM.lectern.z);
   lectern.rotation.y = -0.3;
   shade(lectern);
-  const plate = add(new T.Mesh(new T.PlaneGeometry(0.34, 0.08), glow(0xf6c445)));
+  const plate = addR(new T.Mesh(new T.PlaneGeometry(0.34, 0.08), glow(0xf6c445)));
   plate.position.set(ROOM.lectern.x - 0.06, H + 0.82, ROOM.lectern.z + 0.215);
   plate.rotation.y = -0.3;
   // The trophy table behind the spot.
   const tt = ROOM.trophyTable;
-  const ttop = add(new T.Mesh(new T.CylinderGeometry(0.32, 0.32, 0.04, 28), std(0x1a1210, 0.4)));
+  const ttop = addR(new T.Mesh(new T.CylinderGeometry(0.32, 0.32, 0.04, 28), std(0x1a1210, 0.4)));
   ttop.position.set(tt.x, H + 0.86, tt.z);
-  const tcloth = add(new T.Mesh(new T.CylinderGeometry(0.33, 0.38, 0.84, 28, 1, true), std(0xe9e1d2, 0.9)));
+  const tcloth = addR(new T.Mesh(new T.CylinderGeometry(0.33, 0.38, 0.84, 28, 1, true), std(0xe9e1d2, 0.9)));
   tcloth.position.set(tt.x, H + 0.42, tt.z);
   shade(tcloth);
 
@@ -218,12 +235,16 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
   const lampGlow = glow(0xffcf7a);
   const lampHalo = new T.MeshBasicMaterial({ color: 0xffa040, transparent: true, opacity: 0.16, blending: T.AdditiveBlending, depthWrite: false, toneMapped: false });
   const lamps: THREE.Mesh[][] = [];
+  /** The lamps' glowing bulbs (where each table's light is), for the camera's checks. */
+  const lampAt: THREE.Vector3[] = [];
   for (const tb of ROOM.tables) {
-    const top = add(new T.Mesh(new T.CylinderGeometry(ROOM.tableR, ROOM.tableR, 0.04, 36), tableTop));
+    const top = addR(new T.Mesh(new T.CylinderGeometry(ROOM.tableR, ROOM.tableR, 0.04, 36), tableTop));
     top.position.set(tb.x, 0.76, tb.z);
-    const cl = add(new T.Mesh(new T.CylinderGeometry(ROOM.tableR + 0.02, ROOM.tableR + 0.08, 0.74, 36, 1, true), cloth));
+    const cl = addR(new T.Mesh(new T.CylinderGeometry(ROOM.tableR + 0.02, ROOM.tableR + 0.08, 0.74, 36, 1, true), cloth));
     cl.position.set(tb.x, 0.39, tb.z);
     shade(cl);
+    lampAt.push(new T.Vector3(tb.x, 0.97, tb.z));
+    if (lite) continue; // drawn as three instanced sets below
     const lb = add(new T.Mesh(new T.CylinderGeometry(0.035, 0.05, 0.16, 12), lampBase));
     lb.position.set(tb.x, 0.86, tb.z);
     const lg = add(new T.Mesh(new T.SphereGeometry(0.06, 14, 10), lampGlow));
@@ -232,6 +253,22 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
     lh.position.copy(lg.position);
     lamps.push([lb, lg, lh]);
   }
+  // The same lamps as three instanced sets (base, bulb, halo): 3 draws, not 21.
+  // A lamp left out of a shot is scaled to nothing, as the guests are.
+  const lampSets = lite ? ([
+    [new T.CylinderGeometry(0.035, 0.05, 0.16, 12), lampBase, -0.11],
+    [new T.SphereGeometry(0.06, 14, 10), lampGlow, 0],
+    [new T.SphereGeometry(0.3, 16, 12), lampHalo, 0],
+  ] as const).map(([geo, mat, dy]) => { const mesh = add(new T.InstancedMesh(geo, mat, lampAt.length)); mesh.frustumCulled = false; return { mesh, dy }; }) : [];
+  const lampMat = new T.Matrix4();
+  const showLamp = (j: number, show: boolean) => {
+    if (!lite) { for (const m of lamps[j]) m.visible = show; return; }
+    for (const ls of lampSets) {
+      if (show) lampMat.makeTranslation(lampAt[j].x, lampAt[j].y + ls.dy, lampAt[j].z);
+      else lampMat.makeScale(0, 0, 0);
+      ls.mesh.setMatrixAt(j, lampMat);
+    }
+  };
   // Guests: seated, round the back and sides of each table (the stage side is
   // left free, where the winners wait), shoulders and a head each (instanced).
   interface Guest { x: number; y: number; z: number; s: number; face: number; phase: number }
@@ -322,12 +359,19 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
     }
     bulbs.instanceMatrix.needsUpdate = true;
     // A table lamp low in the picture would glow under the winner's name: left out.
-    lamps.forEach((l, j) => {
-      ndc.copy(l[1].position).project(camera);
-      const show = !(ndc.y < -0.5 && ndc.z < 1) && !hide?.has(G + j);
-      for (const m of l) m.visible = show;
+    lampAt.forEach((lp, j) => {
+      ndc.copy(lp).project(camera);
+      showLamp(j, !(ndc.y < -0.5 && ndc.z < 1) && !hide?.has(G + j));
     });
+    for (const ls of lampSets) ls.mesh.instanceMatrix.needsUpdate = true;
   };
+
+  // The still room as one draw per material (the curtains' eight folds, the
+  // slats, the seven tables and cloths ...): the same picture, far fewer draws.
+  if (lite) {
+    const { mergeGeometries } = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
+    mergeStaticByMaterial(T, mergeGeometries, room);
+  }
 
   // ── People ──
   const loader = await withMeshopt(new GLTFLoader()); // meshopt-packed files (scripts/perf3d/shrink-models.mjs)
@@ -358,6 +402,9 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
   host.root.position.set(ROOM.lectern.x + 0.12, H, ROOM.lectern.z - 0.42);
   host.root.rotation.y = -0.45;
   scene.add(host.root);
+  // Off-screen people are not drawn (the host while the camera is on the
+  // screen or the walk): three3d/cullPeople.ts, the same as the match and garden.
+  if (lite) cullSkinned(T, host.root);
   const hostIdle = host.actions["boss-idle"] ?? host.actions.idle ?? null;
   const hostTalk = host.actions["boss-talk"] ?? null;
   const hostWave = host.actions["boss-wave"] ?? null;
@@ -385,6 +432,7 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
     }
     p.root.visible = false;
     scene.add(p.root);
+    if (lite) cullSkinned(T, p.root);
     const walk = p.actions.jog && p.actions.idle ? p.mixer.clipAction(makeWalkClip(T, p.actions.jog.getClip(), p.actions.idle.getClip())) : null;
     walk?.play();
     p.actions.idle?.play();
@@ -501,8 +549,7 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
         if (Math.abs(gTop.x - wFeet.x) < halfW + 0.07 && gTop.y > wFeet.y - 0.02 && gTop.y > -1 && wHead.y > -1) hide.add(i);
       }
       // A table lamp's glow between the lens and him would wash over his legs: off too (kept after the guests, from G on).
-      lamps.forEach((l, j) => {
-        const lp = l[1].position;
+      lampAt.forEach((lp, j) => {
         if (Math.hypot(lp.x - camera.position.x, lp.z - camera.position.z) >= wd - 0.2) return;
         gTop.copy(lp).project(camera);
         if (Math.abs(gTop.x - wFeet.x) < 0.3 && gTop.y > wFeet.y - 0.1) hide.add(G + j);
@@ -588,6 +635,9 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
   let lastT = 0;
   let lastNow = performance.now();
   const minFrame = prof.fpsCap === 30 ? 1000 / 31 : 0;
+  const cutTimes = frames.filter((f) => f.cut).map((f) => f.at);
+  const cutIndexAt = (t: number) => { let i = 0; while (i < cutTimes.length && cutTimes[i] <= t) i++; return i; };
+  let lastCut = 0;
   const tick = (now: number) => {
     if (disposed) return;
     raf = requestAnimationFrame(tick);
@@ -598,6 +648,9 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
     const dt = Math.max(0, Math.min(0.25, t - lastT));
     lastT = t;
     pose(t, dt);
+    // A camera cut: its first frames are not judged (the governor's hush).
+    const cutNow = cutIndexAt(t);
+    if (lite && cutNow !== lastCut) { lastCut = cutNow; governed.gov.hush(now); }
     governed.frame(now);
     draw();
   };

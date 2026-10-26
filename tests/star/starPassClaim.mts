@@ -15,9 +15,22 @@ check(BUILT_IN_CATALOGUE.every((c) => CATEGORIES.some((k) => k.id === c.category
 for (const [lv, id] of Object.entries(DEFAULT_PASS_LEVELS)) check(!!findCard(id, BUILT_IN_CATALOGUE), `level ${lv}'s card ${id} exists`);
 check(BUILT_IN_CATALOGUE.length >= 25, `the catalogue starts with everything already in the game (${BUILT_IN_CATALOGUE.length} cards)`);
 
-// Claimable: reached, a card there, not claimed yet.
-check(claimableLevels(career(4), DEFAULT_PASS_LEVELS).length === 0, "nothing to claim before level 5");
-check(JSON.stringify(claimableLevels(career(17), DEFAULT_PASS_LEVELS)) === "[5,10,15]", "levels 5, 10, 15 claimable at 17");
+// The road (Star Pass Concept, applied 25 Oct 2026): a reward every 2 levels, 2 to 100.
+const road = Object.keys(DEFAULT_PASS_LEVELS).map(Number).sort((a, b) => a - b);
+check(road.length === 50 && road.every((n, i) => n === (i + 1) * 2), "the road has a reward on every even level, 2 to 100");
+check(new Set(Object.values(DEFAULT_PASS_LEVELS)).size === 50, "no card twice on the road");
+const kinds = road.map((n) => findCard(DEFAULT_PASS_LEVELS[n], BUILT_IN_CATALOGUE)!.category);
+check(kinds.every((k, i) => i === 0 || k !== kinds[i - 1]), "never the same kind twice in a row");
+check(JSON.stringify(claimableLevels(career(13), DEFAULT_PASS_LEVELS)) === "[2,4,6,8,10,12]", "six rewards waiting at level 13");
+// Not made yet: shown as Soon, never claimable.
+const soon = { ...findCard("acc-celeb-statue", BUILT_IN_CATALOGUE)!, comingSoon: true };
+check(claimLevel(career(100), 96, soon).starPassClaimed === undefined, "claiming a coming-soon card does nothing");
+check(claimableLevels(career(100), DEFAULT_PASS_LEVELS).length === 50, "all 50 can be claimed at level 100");
+
+// Claimable: reached, a card there, not claimed yet. (The old five-reward road, as a fixed example.)
+const OLD: Record<number, string> = { 5: "pass-hop-penalty", 10: "pass-red-sports-car", 15: "pass-star-ball", 20: "pass-slow-runup", 25: "pass-gold-aviators" };
+check(claimableLevels(career(4), OLD).length === 0, "nothing to claim before level 5");
+check(JSON.stringify(claimableLevels(career(17), OLD)) === "[5,10,15]", "levels 5, 10, 15 claimable at 17");
 check(claimableLevels(career(30), { 5: "pass-hop-penalty" }).length === 1, "an empty level has nothing to claim");
 // Any level can hold a reward (5 Oct 2026): 2, 4, 6 … or 1 to 9.
 check(JSON.stringify(claimableLevels(career(7), { 1: "pass-hop-penalty", 2: "a", 4: "b", 6: "c", 8: "d" })) === "[1,2,4,6]", "odd levels claimable once reached");
@@ -28,8 +41,8 @@ check(JSON.stringify(rewardLevelsOf({})) === "[100]", "empty layout: only the le
 // Claiming each kind puts it where the rest of the game looks.
 const cat = fullCatalogue();
 let c = career(30);
-for (const lv of [5, 10, 15, 20, 25]) c = claimLevel(c, lv, findCard(DEFAULT_PASS_LEVELS[lv], cat));
-check(claimableLevels(c, DEFAULT_PASS_LEVELS).length === 0, "all five claimed");
+for (const lv of [5, 10, 15, 20, 25]) c = claimLevel(c, lv, findCard(OLD[lv], cat));
+check(claimableLevels(c, OLD).length === 0, "all five claimed");
 check((c.ownedAnimations ?? []).includes("skip") && (c.ownedAnimations ?? []).includes("stutter"), "run-ups go to owned animations");
 check(JSON.stringify(c.ownedRewards) === JSON.stringify(["pass-red-sports-car", "pass-star-ball", "pass-gold-aviators"]), "collectibles go to the Locker");
 // Claiming twice changes nothing.

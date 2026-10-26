@@ -22,7 +22,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CareerState } from "@/lib/star/types";
-import { bestGoals, type CareerGoal } from "@/lib/star/goalLog";
+import { bestGoals, goalHowLabel, type CareerGoal } from "@/lib/star/goalLog";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 import { getClip, listClips } from "@/lib/star/goalClip/store";
 import { makeEdit, posterMoment } from "@/lib/star/goalClip/edit";
 import { drawEditFrame, prepareClipSprites } from "@/lib/star/goalClip/render";
@@ -240,6 +241,7 @@ function onTop(node: React.ReactElement): React.ReactElement {
 }
 
 function FactsCard({ goal, startYear, note, picture = true }: { goal: CareerGoal; startYear: number; note?: string; picture?: boolean }) {
+  const bugFixesOn = useLeoUpdate("bugFixes");
   const facts: [string, string][] = [
     ["Minute", `${goal.minute}'`],
     ["Against", `${goal.opponent} (${goal.home ? "home" : "away"})`],
@@ -250,7 +252,7 @@ function FactsCard({ goal, startYear, note, picture = true }: { goal: CareerGoal
   ];
   if (typeof goal.distance === "number") facts.push(["Distance", `${Math.round(goal.distance)} m`]);
   if (goal.finish) facts.push(["Finish", goal.finish === "chip" ? "Chip" : "Curler"]);
-  if (goal.how) facts.push(["How", goal.how]);
+  if (goal.how) facts.push(["How", bugFixesOn ? goalHowLabel(goal.how) : goal.how]);
   if (goal.assist) facts.push(["Assist", goal.assist]);
   return (
     <div data-goal-facts>
@@ -281,6 +283,16 @@ export function GoalSheet({ goal, startYear, here, onClose }: { goal: CareerGoal
     ? "Its video is on the phone that recorded it."
     : !goal.clipId ? "No video of this one: it was not recorded." : undefined;
   const facts = <FactsCard goal={goal} startYear={startYear} note={away} />;
+  // Leo's bug fixes: Escape closes the sheet, like ✕.
+  const bugFixesOn = useLeoUpdate("bugFixes");
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    if (!bugFixesOn) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeRef.current(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [bugFixesOn]);
   return onTop(
     <div className="fixed inset-0 z-[80] overflow-y-auto px-3 pb-6 pt-3" style={{ background: "#05080f" }} role="dialog" aria-label={title} data-goal-sheet>
       <div className="mx-auto max-w-[480px]">

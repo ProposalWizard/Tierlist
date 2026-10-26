@@ -46,6 +46,7 @@ import { useBossRoomLook } from "@/lib/star/look3d";
 import { benchMomentFor } from "@/lib/star/managerMoments";
 import { ManagerSays } from "./ManagerMoments";
 import { useLeoUpdate } from "@/lib/star/leoUpdate";
+import { matchDials, weatherLine } from "@/lib/star/matchWeather";
 
 // Left out of the squad: told in the manager's office when Settings → Look →
 // "Talk to your manager" is "3D office" (MANAGER_PLAN.md §2). The card's own
@@ -201,6 +202,7 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
   ) : null;
 
   const fixesOn = useLeoUpdate("bugFixes");
+  const weatherOn = useLeoUpdate("weather");
   // Sim and Settings sit in the header's top-right corner, mirroring Back.
   // They floated fixed on the right edge at 116/160 px, over the away crest
   // and the Play as pill ("PLAY AS ST" cut off at 390 px, 22 Oct 2026).
@@ -286,7 +288,10 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
         {settingsOpen && <PreMatchSettings glow={glow} onClose={() => setSettingsOpen(false)} />}
         <VersusScreen
           matchday={matchday}
-          date={fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind, divisionOf(career))}
+          date={weatherOn
+            // Leo's update, "weather": the day's weather and the home pitch on the date line.
+            ? `${fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind, divisionOf(career))} · ${weatherLine(matchDials(career, nextFixture))}`
+            : fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind, divisionOf(career))}
           results={career.results}
           clubKits={(intlCareer ?? career).clubKits}
           managers={fixesOn && career.manager ? { [career.player.club]: career.manager.name } : undefined}

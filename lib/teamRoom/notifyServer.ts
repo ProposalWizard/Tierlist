@@ -9,6 +9,7 @@
  * jobs they have had is in app_metadata.teamPushJobs, which only the server
  * can write. Found through team_members (who is Harry, Mikey, Leo).
  */
+import { canonicalPatchVersion } from "@/lib/patchVersionAliases";
 import webpush from "web-push";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { TEAM_ROOM, isTeamPerson, type TeamPerson } from "./config";
@@ -57,7 +58,8 @@ export async function saveRungJobs(sb: Admin, id: string, ids: string[]) {
 export async function rungPatchesOf(sb: Admin, id: string): Promise<string[]> {
   const u = await account(sb, id);
   const v = (u?.app_metadata as Record<string, unknown> | undefined)?.[TEAM_ROOM.push.patchesKey];
-  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  // Renumbered notes (lib/patchVersionAliases.ts) count as rung under their new number.
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").map(canonicalPatchVersion) : [];
 }
 
 export async function saveRungPatches(sb: Admin, id: string, versions: string[]) {

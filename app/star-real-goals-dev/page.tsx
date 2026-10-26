@@ -69,7 +69,9 @@ const LOCK_KEY = "star-cam3d-lock";
 
 const STAR = (n: number, of = 3, size = 16) => (
   <span style={{ fontSize: size, letterSpacing: 1 }}>
-    {Array.from({ length: of }, (_, i) => <span key={i} style={{ color: i < n ? "#facc15" : "rgba(255,255,255,0.25)" }}>★</span>)}
+    {/* Empty stars are outlines in a mid grey: a faint white one was turned bright white by the
+        admin look's ink guard and read as a star won (25 Oct 2026). */}
+    {Array.from({ length: of }, (_, i) => <span key={i} data-star={i < n ? "on" : "off"} style={{ color: i < n ? "#facc15" : "#94a3b8" }}>{i < n ? "★" : "☆"}</span>)}
   </span>
 );
 
@@ -107,6 +109,9 @@ function GoalMouth({ real, you }: { real: { x: number; z: number }; you: { x: nu
   );
 }
 
+/** Tries in one match before it starts again (the match itself ends after 6 chances). */
+const TRIES_PER_MATCH = 5;
+
 interface Attempt { scored: boolean; pct: number; stars: number; you: { x: number; z: number } | null; outcome: string; best: boolean }
 
 function PlayGoal({ goal, level, onClose, onResult, onNext }: {
@@ -117,6 +122,12 @@ function PlayGoal({ goal, level, onClose, onResult, onNext }: {
   const [buildUp, setBuildUp] = useState(true);
   const [camera, setCamera] = useState<Camera>("tv");
   const [run, setRun] = useState(0);
+  // The match underneath ends after 6 chances (its FULL TIME card, with pay):
+  // every few tries it starts again on the same goal, without the build-up.
+  const [seg, setSeg] = useState(0);
+  const triesInMatchRef = useRef(0);
+  // A new run (a camera or build-up change) starts a fresh match: count again.
+  useEffect(() => { setSeg(0); triesInMatchRef.current = 0; }, [run]);
   const [caption, setCaption] = useState<{ text: string; done: boolean }>({ text: "", done: false });
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [tries, setTries] = useState(0);
@@ -174,6 +185,10 @@ function PlayGoal({ goal, level, onClose, onResult, onNext }: {
     setAttempt({ scored, pct, stars, you, outcome: r.outcome, best });
     setTries((n) => n + 1);
     onResult(stars, pct);
+    if (++triesInMatchRef.current >= TRIES_PER_MATCH) {
+      triesInMatchRef.current = 0;
+      window.setTimeout(() => setSeg((n) => n + 1), 1800);
+    }
     crossRef.current = null; prevRef.current = null;
   }, [real, onResult]);
 
@@ -217,12 +232,12 @@ function PlayGoal({ goal, level, onClose, onResult, onNext }: {
       )}
 
       <div className="pt-2">
-        <Match3DLayer key={`${goal.id}-${run}`}>
+        <Match3DLayer key={`${goal.id}-${run}-${seg}`}>
           <EnginePlay
             seed={7}
             settings={SETTINGS}
             openOn={openOn}
-            leadIn={buildUp && realLead ? leadIn : undefined}
+            leadIn={buildUp && realLead && seg === 0 ? leadIn : undefined}
             scene={{ ownFrame: true }}
             realGoal={view}
             onBallStep={onBallStep}

@@ -44,6 +44,40 @@ const VIEW_H = 960;
 /** Never wait longer than this for the recordings before starting. */
 const LOAD_CAP_MS = 2500;
 
+/** The sound is restarted in step when it is this far from the picture
+ *  (was 0.2 s; a roar 0.2 s late is easy to hear). */
+const RESYNC_S = 0.06;
+/** …and only once it has stayed that far this long (one late frame or a
+ *  wobble in the browser's clock is not worth an audible jump). A jump of
+ *  RESYNC_NOW_S or more (a seek) restarts at once. */
+const RESYNC_HOLD_MS = 300;
+const RESYNC_NOW_S = 0.25;
+/** A restart crossfades over this long, so it never clicks. */
+const XFADE_S = 0.03;
+/** Never believe an output delay longer than this. */
+const MAX_LEAD_S = 0.5;
+
+/**
+ * The context's clock time of the sound leaving the speaker right now. Uses
+ * getOutputTimestamp (smooth, tied to performance.now) where the browser has
+ * it, else the context's own output delay figures; Safari before 14.1 has
+ * neither and gets the queued time (the old behaviour).
+ */
+function heardContextTime(c: AudioContext): number {
+  try {
+    const o = c.getOutputTimestamp?.();
+    if (o && o.contextTime !== undefined && o.performanceTime !== undefined && o.performanceTime > 0) {
+      // Never past the queued time (the audio thread running a little late
+      // between callbacks); switching to the other estimate mid-play would
+      // step the sound by tens of ms (measured, 25 Oct).
+      const t = Math.min(c.currentTime, o.contextTime + (performance.now() - o.performanceTime) / 1000);
+      if (t >= c.currentTime - MAX_LEAD_S) return t;
+    }
+  } catch { /* fall back */ }
+  const lat = (c.outputLatency || 0) + (c.baseLatency || 0);
+  return c.currentTime - Math.max(0, Math.min(MAX_LEAD_S, lat));
+}
+
 type SaveState =
   | { kind: "idle" }
   | { kind: "making"; k: number }
@@ -142,11 +176,27 @@ export default function SeasonReel({ career, onDone }: { career: CareerState; on
     return c.running ? c.base + (now() - c.startedAt) / 1000 : c.base;
   }, []);
 
-  // The sound plays alongside, kept in step with the clock.
-  const voice = useRef<{ src: AudioBufferSourceNode; at: number; ctxAt: number } | null>(null);
-  const stopVoice = () => {
-    try { voice.current?.src.stop(); } catch { /* already stopped */ }
+  // The sound plays alongside, kept in step with the clock. Kept in step with
+  // what comes OUT of the speaker, not what is queued: a phone's output delay
+  // (Bluetooth earbuds: 0.1-0.25 s) would otherwise put every roar that late
+  // behind its goal (sound pass, 25 Oct 2026). `at` is the reel second that
+  // is heard when the context's clock reads `ctxAt` + that delay.
+  const voice = useRef<{ src: AudioBufferSourceNode; gain: GainNode; at: number; ctxAt: number } | null>(null);
+  /** performance.now() when the sound first drifted past RESYNC_S, or 0. */
+  const driftSince = useRef(0);
+  const stopVoice = (fade = 0) => {
+    const v = voice.current;
     voice.current = null;
+    driftSince.current = 0;
+    if (!v) return;
+    try {
+      if (fade > 0) {
+        const at = v.gain.context.currentTime;
+        v.gain.gain.setValueAtTime(1, at);
+        v.gain.gain.linearRampToValueAtTime(0, at + fade);
+        v.src.stop(at + fade + 0.01);
+      } else v.src.stop();
+    } catch { /* already stopped */ }
   };
   const syncVoice = useCallback(() => {
     const c = audioContext();
@@ -154,17 +204,35 @@ export default function SeasonReel({ career, onDone }: { career: CareerState; on
     const want = !!audioBuf && soundOn && clock.current.running && !!plan && t < plan.duration;
     if (!want || !c || !audioBuf) { stopVoice(); return; }
     if (c.state !== "running") { c.resume().catch(() => { /* needs a tap */ }); stopVoice(); return; }
+    const heardNow = heardContextTime(c);
     const v = voice.current;
+    let fade = 0;
     if (v) {
-      const pos = v.at + (c.currentTime - v.ctxAt);
-      if (Math.abs(pos - t) < 0.2) return;
+      // The reel second leaving the speaker now, against the picture's.
+      const off = Math.abs(v.at + (heardNow - v.ctxAt) - t);
+      if (off < RESYNC_S) { driftSince.current = 0; return; }
+      if (off < RESYNC_NOW_S) {
+        const ms = now();
+        if (!driftSince.current) driftSince.current = ms;
+        if (ms - driftSince.current < RESYNC_HOLD_MS) return;
+        fade = XFADE_S; // a small correction: crossfade, no click
+      }
     }
-    stopVoice();
+    stopVoice(fade);
     const src = c.createBufferSource();
     src.buffer = audioBuf;
-    src.connect(c.destination);
-    try { src.start(0, Math.max(0, t)); } catch { return; }
-    voice.current = { src, at: t, ctxAt: c.currentTime };
+    const gain = c.createGain();
+    src.connect(gain);
+    gain.connect(c.destination);
+    if (fade) {
+      gain.gain.setValueAtTime(0, c.currentTime);
+      gain.gain.linearRampToValueAtTime(1, c.currentTime + fade);
+    }
+    // What is queued now is heard `lead` seconds from now, when the picture
+    // is `lead` further on: start the sound that much further in.
+    const lead = Math.max(0, Math.min(MAX_LEAD_S, c.currentTime - heardNow));
+    try { src.start(0, Math.max(0, t + lead)); } catch { return; }
+    voice.current = { src, gain, at: t + lead, ctxAt: c.currentTime };
   }, [audioBuf, soundOn, plan, timeNow]);
   useEffect(() => () => stopVoice(), []);
 
@@ -234,9 +302,15 @@ export default function SeasonReel({ career, onDone }: { career: CareerState; on
       // For measuring the mix (the test page): the soundtrack, and its crowd or music alone.
       audio: () => audioBuf,
       stem: (only: "crowd" | "music") => (tracks ? mixReelAudio(plan, tracks, timings, only) : Promise.resolve(null)),
+      // For measuring sync: the picture's second and the second being heard.
+      sync: () => {
+        const c = audioContext();
+        const v = voice.current;
+        return { picture: timeNow(), heard: c && v ? v.at + (heardContextTime(c) - v.ctxAt) : null };
+      },
     };
     return () => { delete w.__seasonReel; };
-  }, [plan, audioBuf, tracks, timings]);
+  }, [plan, audioBuf, tracks, timings, timeNow]);
 
   const tapVideo = () => {
     audioContext()?.resume().catch(() => { /* still blocked */ });

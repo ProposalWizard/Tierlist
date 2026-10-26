@@ -15,7 +15,7 @@
  * `stars`; `career.stars` is only the last saved copy of it.
  */
 import type { CareerState } from "./types";
-import type { CatalogueItem } from "./rewardCatalogue";
+import { COMING_SOON_IDS, type CatalogueItem } from "./rewardCatalogue";
 import { careerStoreEquip, careerStoreUnequip } from "./store/career";
 import { ACCESSORIES } from "./store/catalogue";
 import { DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP } from "./runupStyles";
@@ -27,7 +27,7 @@ const add = (list: string[] | undefined, id: string) => (list?.includes(id) ? li
 export function claimableLevels(c: CareerState, levels: Record<number, string>, stars = c.stars ?? 1): number[] {
   const claimed = new Set(c.starPassClaimed ?? []);
   return Object.keys(levels).map(Number)
-    .filter((n) => isPassLevel(n) && n <= stars && !claimed.has(n) && !!levels[n])
+    .filter((n) => isPassLevel(n) && n <= stars && !claimed.has(n) && !!levels[n] && !COMING_SOON_IDS.has(levels[n]))
     .sort((a, b) => a - b);
 }
 
@@ -45,7 +45,7 @@ export function grantCard(c: CareerState, card: CatalogueItem): CareerState {
 
 /** Claim the reward at `level`. Does nothing if it isn't claimable. */
 export function claimLevel(c: CareerState, level: number, card: CatalogueItem | undefined, stars = c.stars ?? 1): CareerState {
-  if (!card || isClaimed(c, level) || level > stars) return c;
+  if (!card || card.comingSoon || isClaimed(c, level) || level > stars) return c;
   const next = grantCard(c, card);
   return { ...next, starPassClaimed: [...(c.starPassClaimed ?? []), level].sort((a, b) => a - b) };
 }

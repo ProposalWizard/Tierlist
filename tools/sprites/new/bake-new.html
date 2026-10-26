@@ -21,6 +21,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { installClips } from "/clips.js";
 import "/defs.js";
+import "/aerials.js";
 
 const CFG = {
   tilt: 25,          // degrees from straight down
@@ -808,6 +809,14 @@ const CELEBS = [
   { name: "celebFistPump", file: "celebrate_pump", frames: 8, loop: "once" },
   { name: "celebJump", file: "celebrate_jump", frames: 7, loop: "once", spread: 4 },
   { name: "celebRoar", file: "celebrate_roar", frames: 7, loop: "once" },
+  // The Star Pass four (25 Oct 2026), keyed in tools/mocap3d/keyed_celebs.py, in their OWN atlas 4
+  // (atlas-4 / atlas-4a; atlas 3 is the aerial moves): atlas 2 and the six above stay byte for byte as they were.
+  // Times: the dance a frame every half beat (0.42 s beats) then the arms up; the flip dense through
+  // the air (takeoff 0.46 s, landing 1.08 s); the turn and the two jabs; the statue settles, then holds.
+  { name: "celebCornerFlag", file: "celebrate_corner_flag", frames: 10, loop: "once", group: 4, times: [0, 0.21, 0.42, 0.63, 0.84, 1.05, 1.26, 1.68, 2.73, 3.2] },
+  { name: "celebBackflip", file: "celebrate_backflip", frames: 12, loop: "once", zero: true, group: 4, times: [0, 0.28, 0.44, 0.55, 0.66, 0.77, 0.88, 0.98, 1.08, 1.25, 1.7, 2.6] },
+  { name: "celebOwnName", file: "celebrate_own_name", frames: 9, loop: "once", zero: true, group: 4, times: [0, 0.25, 0.45, 0.65, 0.9, 1.2, 1.45, 1.6, 3.0] },
+  { name: "celebStatue", file: "celebrate_statue", frames: 5, loop: "once", zero: true, group: 4, times: [0, 0.25, 0.45, 0.7, 2.6] },
 ];
 /** Legs a few degrees wider about his own forward line (spread, degrees each side): the
  *  captures that stand feet together or run a crossover gait bring the boots or knees
@@ -867,11 +876,12 @@ function celebTimes(c, clip) {
   if (c.times) return c.times.map((t) => Math.min(t, end));
   return Array.from({ length: c.frames }, (_, i) => c.loop === "loop" ? (d * i) / c.frames : Math.min(end, (d * i) / (c.frames - 1)));
 }
-async function bakeCelebCells(only) {
+async function bakeCelebCells(only, group) {
   await ready; show("player");
   const out = [];
   for (const c of CELEBS) {
     if (only && !only.includes(c.name)) continue;
+    if (group && (c.group ?? 2) !== group) continue;
     const clip = await celebClip(c, chars.player);
     const ts = celebTimes(c, clip);
     // a once clip's last frame is held: frames / duration plays it in its real length
@@ -882,15 +892,15 @@ async function bakeCelebCells(only) {
   window.__postPose = null;
   return out;
 }
-window.bakeCelebs = async (tag, q = 0.84) => {
-  const clips = await bakeCelebCells();
+window.bakeCelebs = async (tag, q = 0.84, group = 2) => {
+  const clips = await bakeCelebCells(null, group);
   const atl = pack([{ clips }]);
   { const mc = atl.mask.getContext("2d"); const im = mc.getImageData(0, 0, atl.w, atl.h); const d = im.data;
     for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) d[i + k] = Math.round(d[i + k] / 63.75) * 63.75 | 0;
     mc.putImageData(im, 0, 0); }
-  const frag = { atlas: { color: `atlas-2${tag}.webp`, mask: `mask-2${tag}.webp`, w: atl.w, h: atl.h }, clips: {} };
+  const frag = { atlas: { color: `atlas-${group}${tag}.webp`, mask: `mask-${group}${tag}.webp`, w: atl.w, h: atl.h }, clips: {} };
   // t3d (once clips): each frame's second in the 3D clip; the game shows the last frame at or before t
-  for (const c of clips) frag.clips[c.name] = { fps: c.fps, loop: c.loop, dirs: 8, frames: c.frames, atlas: 2, ...(c.loop === "once" ? { t3d: c.t3d } : {}),
+  for (const c of clips) frag.clips[c.name] = { fps: c.fps, loop: c.loop, dirs: 8, frames: c.frames, atlas: group, ...(c.loop === "once" ? { t3d: c.t3d } : {}),
     cells: c.cells.map((f) => [f.px, f.py, f.w, f.h, +f.ax.toFixed(1), +f.ay.toFixed(1)]) };
   const durations = Object.fromEntries(clips.map((c) => [c.name, c.duration]));
   return { color: atl.col.toDataURL("image/webp", q), mask: atl.mask.toDataURL("image/png"), frag: JSON.stringify(frag), durations };
@@ -945,6 +955,110 @@ window.celebClose = async (name, facing, n = 9, tilt = CFG.tilt) => { // n = 0: 
   }
   renderer.setClearColor(0x000000, 0); setCamera(CFG.tilt); window.__postPose = null;
   return urls;
+};
+
+/**
+ * THE AERIAL MOVES (Harry, 25 Oct 2026; aerials.js, lib/star/aerialMoves.ts).
+ * Eight keyframed clips, 8 facings, into a NEW atlas 3 (atlas-3a / atlas-3).
+ * Each cell also carries `pts`: where the head, the chest and the foot meet
+ * the ball, so the game draws the ball ON the contact point when the ball
+ * screen opens. Per point: [x, y, g, nx, ny] —
+ *   x, y  the body's touching surface, baked px from the anchor (his boots);
+ *   g     the y of that point's shadow on the grass (baked px from the anchor);
+ *   nx,ny the outward direction to the ball's centre, as the screen offset of
+ *         one metre along it over ppm (so × the drawn ball's radius in px).
+ * Head: the brow (40% from headfront to head_end), out along the head's own forward line.
+ * Chest: Spine02 + 0.1 m forward. Foot: between RightFoot and RightToeBase,
+ * out along the way the foot is moving into the ball (this frame against a
+ * third of a frame before). All with the same camera as the cells.
+ */
+const AERIAL_NAMES = Object.keys(window.AERIALS);
+function boneOf(ch, nm) { let b = null; ch.inner.traverse((o) => { if (o.isBone && o.name === nm) b = o; }); return b; }
+function screenOf(v) {
+  const q = v.clone().project(cam);
+  return [((q.x + 1) / 2) * (W / CFG.ss) - anchorX, ((1 - q.y) / 2) * (Hh / CFG.ss) - anchorY];
+}
+function rawPts(ch) {
+  const P = (nm) => boneOf(ch, nm).getWorldPosition(new THREE.Vector3());
+  const head = P("Head"), front = P("headfront"), crown = P("head_end"), sp = P("Spine02"), foot = P("RightFoot"), toe = P("RightToeBase");
+  const fwd = front.clone().sub(head).normalize();
+  // The forehead: headfront is mid-face on the toon head; 40% of the way up to the crown is the brow.
+  const brow = front.clone().lerp(crown, 0.4);
+  return { head: brow, headN: fwd, chest: sp.clone().addScaledVector(fwd, 0.1), chestN: fwd, foot: foot.clone().add(toe).multiplyScalar(0.5) };
+}
+function packPt(p, n) {
+  const [x, y] = screenOf(p);
+  const g = screenOf(new THREE.Vector3(p.x, 0, p.z))[1];
+  const [ex, ey] = screenOf(p.clone().add(n));
+  return [+x.toFixed(2), +y.toFixed(2), +g.toFixed(2), +((ex - x) / CFG.ppm).toFixed(3), +((ey - y) / CFG.ppm).toFixed(3)];
+}
+function aerialPts(ch, clip, i, facing) {
+  pose(ch, clip, Math.max(0, i - 0.34), facing, null);
+  const before = rawPts(ch).foot;
+  pose(ch, clip, i, facing, null);
+  const r = rawPts(ch);
+  let fn = r.foot.clone().sub(before);
+  if (fn.length() < 1e-4) fn = r.headN.clone();
+  fn.normalize();
+  return [...packPt(r.head, r.headN), ...packPt(r.chest, r.chestN), ...packPt(r.foot, fn)];
+}
+async function bakeAerialCells(only) {
+  await ready; show("player");
+  const out = [];
+  for (const nm of AERIAL_NAMES) {
+    if (only && !only.includes(nm)) continue;
+    const def = window.AERIALS[nm];
+    window.__clipCache = {}; delete clipCache["js:" + nm];
+    const clip = await loadClip("js:" + nm, {});
+    const n = def.poses.length;
+    const cl = { name: nm, fps: def.fps, loop: "once", dirs: 8, frames: n, strikeFrame: def.contactFrame, point: def.point, cells: [], pts: [] };
+    for (const fac of DIRS8) for (let i = 0; i < n; i++) {
+      cl.pts.push(aerialPts(chars.player, clip, i, fac));
+      cl.cells.push(bakeFrame(chars.player, clip, i, fac, null));
+    }
+    out.push(cl);
+  }
+  return out;
+}
+window.bakeAerials = async (tag, q = 0.84) => {
+  const clips = await bakeAerialCells();
+  const atl = pack([{ clips }]);
+  { const mc = atl.mask.getContext("2d"); const im = mc.getImageData(0, 0, atl.w, atl.h); const d = im.data;
+    for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) d[i + k] = Math.round(d[i + k] / 63.75) * 63.75 | 0;
+    mc.putImageData(im, 0, 0); }
+  const frag = { atlas: { color: `atlas-3${tag}.webp`, mask: `mask-3${tag}.webp`, w: atl.w, h: atl.h }, clips: {} };
+  for (const c of clips) frag.clips[c.name] = { fps: c.fps, loop: "once", dirs: 8, frames: c.frames, strikeFrame: c.strikeFrame, atlas: 3,
+    cells: c.cells.map((f) => [f.px, f.py, f.w, f.h, +f.ax.toFixed(1), +f.ay.toFixed(1)]), pts: c.pts };
+  return { color: atl.col.toDataURL("image/webp", q), mask: atl.mask.toDataURL("image/png"), frag: JSON.stringify(frag) };
+};
+/** A look sheet: spec "clip,clip:dirIdx,dirIdx" (empty = all, dir 6 = facing up the screen). The ball drawn on each frame's contact point (gold on the hit frame). */
+window.aerialSheet = async (spec = "") => {
+  const [names, ds, kk] = spec.split(":");
+  const only = names ? names.split(",") : null;
+  const clips = await bakeAerialCells(only);
+  const dsel = (ds || "6").split(",").map(Number);
+  const cols = Math.max(...clips.map((c) => c.frames));
+  const Z = +(kk || 1), cw = 150 * Z, chh = 200 * Z;
+  const c = small(cols * cw, clips.length * dsel.length * chh); const g = c.getContext("2d");
+  g.fillStyle = "#3f8f3a"; g.fillRect(0, 0, c.width, c.height);
+  let row = 0;
+  for (const cl of clips) for (const d of dsel) {
+    for (let i = 0; i < cl.frames; i++) {
+      const f = cl.cells[d * cl.frames + i], pt = cl.pts[d * cl.frames + i];
+      const x = i * cw, y = row * chh, K = 1.5 * Z, ox = x + 75 * Z, oy = y + 140 * Z;
+      g.imageSmoothingEnabled = false; g.drawImage(f.color, ox - f.ax * K, oy - f.ay * K, f.w * K, f.h * K);
+      g.fillStyle = "#f00"; g.fillRect(ox - 1, oy - 1, 3, 3);
+      const w = cl.point === "head" ? 0 : cl.point === "chest" ? 5 : 10;
+      const ballR = 5; // baked px, about the game's ball next to a man this size
+      const bx = ox + (pt[w] + pt[w + 3] * ballR) * K, by = oy + (pt[w + 1] + pt[w + 4] * ballR) * K;
+      g.strokeStyle = i === cl.strikeFrame ? "#fde047" : "rgba(255,255,255,0.55)"; g.lineWidth = i === cl.strikeFrame ? 2 : 1;
+      g.beginPath(); g.arc(bx, by, ballR * K, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = "rgba(0,0,0,0.6)"; g.fillRect(ox + pt[w] * K - 2, oy + pt[w + 2] * K - 1, 4, 2);
+      g.fillStyle = "#fff"; g.font = "11px sans-serif"; g.fillText(`${cl.name.replace("air", "")} d${d} f${i}${i === cl.strikeFrame ? " HIT" : ""}`, x + 3, y + 12);
+    }
+    row++;
+  }
+  return { url: c.toDataURL(), cols };
 };
 
 /** Rows of pairs: top = a, bottom = b, each at 2x bake size and zoomed 3x. */
