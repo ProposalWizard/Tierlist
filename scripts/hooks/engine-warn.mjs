@@ -54,7 +54,9 @@ if (["Edit", "Write", "MultiEdit", "NotebookEdit"].includes(tool)) {
   drift = !hit && DRIFT.test(cmd) && writes(DRIFT);
 }
 
+// Mikey, 25 Oct 2026: the engine-warn hook warns, never stops to ask (no Allow prompt) — on canvasEngine and on the play-screen drift files. The warning goes into Claude's notes and the chat; the old ask() below is kept to switch back.
 // No colour codes: the app shows them as raw text. The red squares are the colour.
+// `ask` is kept for anyone who wants the old Allow-each-time prompt back: spread it in below.
 const ask = (title, line) => ({
   permissionDecision: "ask",
   permissionDecisionReason:
@@ -66,7 +68,6 @@ if (hit) {
     systemMessage: `🟥 THIS IS A MATCH ENGINE CHANGE. EVERY MATCH WILL PLAY DIFFERENTLY.`,
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
-      ...ask("THIS IS A MATCH ENGINE CHANGE", "It changes the physics every match runs on (lib/star/canvasEngine.ts)."),
       additionalContext:
         "MATCH ENGINE WARNING: you are changing lib/star/canvasEngine.ts. This is allowed, but it changes every match. " +
         "Say so plainly in your reply and in the patch notes (what changed, why, and the before/after numbers), " +
@@ -78,7 +79,6 @@ if (hit) {
     systemMessage: `🟥 SOMETHING MAY DRIFT: this file decides what a play screen hands the match engine.`,
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
-      ...ask("SOMETHING MAY DRIFT FROM THE REAL MATCH", `This file decides what a play screen hands the engine (${(ti.file_path ?? "").split("/").slice(-1)[0] || "a drift file"}). Test screens can stop matching the real game.`),
       additionalContext:
         "DRIFT WARNING: you are changing a file that decides what a play screen hands the match engine. " +
         "Before pushing, re-measure the play screens against the real match (docs/handoffs/2026-10-19-ui-lookover/drift-audit.md: pitch width 366 px on a 390 phone, 384 on a computer; same props as the career) and say the before/after in the reply and patch notes.",

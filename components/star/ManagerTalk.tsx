@@ -64,7 +64,8 @@ export default function ManagerTalk({
   /** The real manager's name when the club has one; a plain "The manager"
    *  when it does not, rather than an invented person. */
   managerName: string;
-  onNegotiate: () => void;
+  /** Absent: no haggling, just sign (your first contract, Mikey 25 Oct 2026). */
+  onNegotiate?: () => void;
   onAccept: () => void;
   /** Go to the list of every club that came in for you. */
   onSeeOthers?: () => void;
@@ -156,21 +157,21 @@ export default function ManagerTalk({
               <ClubBadge club={talk.club} size={34} />
             </div>
             <p className="mt-1.5 text-[11.5px] font-bold leading-snug text-white">
-              Take it, or argue for more. Push too hard and he comes back with a worse, final offer.
+              {onNegotiate ? "Take it, or argue for more. Push too hard and he comes back with a worse, final offer." : "Your first contract. Sign it and you're in the squad."}
             </p>
-            <div className="mt-2.5 grid grid-cols-2 gap-2">
+            <div className={`mt-2.5 grid gap-2 ${onNegotiate ? "grid-cols-2" : "grid-cols-1"}`}>
               <button
                 onClick={onAccept}
                 className="kib-press rounded-xl bg-emerald-500 py-3 text-[12px] font-black uppercase tracking-widest text-white hover:bg-emerald-400"
               >
                 Accept &amp; sign
               </button>
-              <button
+              {onNegotiate && <button
                 onClick={onNegotiate}
                 className="kib-press rounded-xl bg-amber-400 py-3 text-[12px] font-black uppercase tracking-widest text-gray-950 hover:bg-amber-300"
               >
                 Negotiate
-              </button>
+              </button>}
             </div>
             {onSeeOthers && (
               <button

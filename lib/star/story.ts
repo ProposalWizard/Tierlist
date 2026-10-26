@@ -23,15 +23,19 @@
  */
 import type { CareerState, CareerUnlocks } from "./types";
 import type { Feature } from "./unlocks";
-import { BOOTS_CATALOGUE } from "./shopData";
+import { BOOTS_CATALOGUE, KIB_CANS, kibCanPrice } from "./shopData";
+import { formatMoney } from "./money";
 
-export type Beat = "boots" | "boss" | "training" | "ready" | "can" | "phone" | "shop" | "stats" | "starpass" | "sponsor";
+export type Beat = "boots" | "boss" | "training" | "ready" | "candeal" | "can" | "phone" | "shop" | "stats" | "starpass" | "sponsor";
 
 /** The two drills of the training day (Mikey, 24 Oct 2026: "only do 2 drills, the power and technique"), in the order the pointer shows them. */
 export const TRAINING_DAY: string[] = ["power", "technique"];
 
 /** The order the beats come in. The first one that is due and not seen shows. */
-const ORDER: Beat[] = ["boots", "boss", "training", "ready", "starpass", "can", "phone", "shop", "stats", "sponsor"];
+// "boss" and "ready" are retired (Mikey's playtest, 24 Oct 2026: no boss talk
+// after game 1, and no "you're ready" before game 2). Kept in the type so an
+// old save that saw them still reads.
+const ORDER: Beat[] = ["boots", "training", "candeal", "starpass", "can", "phone", "shop", "stats", "sponsor"];
 
 type C = Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures" | "brands">;
 
@@ -61,7 +65,9 @@ function due(c: C, b: Beat, stars: number): boolean {
   switch (b) {
     case "boots": return n === 0;
     case "boss": return n >= 1 && !c.achievements.includes("boss-meeting");
-    case "training": return c.achievements.includes("boss-meeting");
+    case "training": return n >= 1;
+    // Both drills done: the club shop's half-price first KIB can.
+    case "candeal": return seenBeat(c, "training") && trainingDayLeft(c).length === 0;
     case "ready": return seenBeat(c, "training") && trainingDayLeft(c).length === 0 && n < 2;
     case "starpass": return stars >= 2 && n >= 1;
     case "can": return n >= 2;
@@ -100,11 +106,17 @@ export function ackBeat(c: CareerState, b: Beat): CareerState {
   const opens = OPENS[b] ?? [];
   const u: CareerUnlocks = {
     ...c.unlocks,
-    seen: [...c.unlocks.seen.filter((k) => k !== `beat-${b}`), `beat-${b}`, ...(b === "phone" ? ["phone-tour"] : [])],
+    seen: [...c.unlocks.seen.filter((k) => k !== `beat-${b}`), `beat-${b}`,
+      // The phone opens with no tour inside it; your card with no tour on it.
+      ...(b === "phone" ? ["phone-tour", "help-phone"] : []), ...(b === "stats" ? ["help-stats"] : [])],
     open: [...c.unlocks.open, ...opens.filter((f) => !c.unlocks!.open.includes(f))],
   };
   let out: CareerState = { ...c, unlocks: u };
   if (b === "boots") out = { ...out, currentBoot: storyBoots() };
+  if (b === "candeal") {
+    const price = Math.min(Math.floor(out.money), firstCanDealPrice(out));
+    out = { ...out, money: out.money - price, kibCans: { ...out.kibCans, basic: (out.kibCans?.basic ?? 0) + 1 } };
+  }
   if (b === "can") out = { ...out, kibCans: { ...out.kibCans, basic: (out.kibCans?.basic ?? 0) + 1 } };
   if (b === "phone" && !out.achievements.includes("buy-phone")) out = { ...out, achievements: [...out.achievements, "buy-phone"] };
   return out;
@@ -116,6 +128,12 @@ export function recordTrainingDayDrill(c: CareerState, skill: string): CareerSta
   const done = c.unlocks!.trainingDay ?? [];
   if (done.includes(skill)) return c;
   return { ...c, unlocks: { ...c.unlocks!, trainingDay: [...done, skill] } };
+}
+
+/** The first KIB can at half price: a Basic can is two weeks' wage, so half
+ *  is one week's, which game 1 has just paid you (Mikey, 24 Oct 2026). */
+export function firstCanDealPrice(c: Pick<CareerState, "contract">): number {
+  return Math.max(1, Math.round(kibCanPrice(KIB_CANS[0], c.contract.wage) / 2));
 }
 
 /** The person, their words and the button, for the beat's sheet. */
@@ -146,20 +164,16 @@ export function beatText(c: CareerState, b: Beat): BeatText {
       };
     }
     case "boss": return { who: gaffer, icon: "🧢", title: "Come and see me", line: "Good first game, son. Come to my office, I want a word.", button: "Go to his office" };
-    case "training": return { who: gaffer, icon: "🧢", title: "Time to train", line: "Training's open. Do two drills for me now, Power and Technique, so I can see what you've got. They cost no energy.", button: "Go to training" };
+    case "training": return { who: gaffer, icon: "🧢", title: "Time to train", line: "Training's open. Do two drills for me now, Power and Technique, so I can see what you've got.", button: "Go to training" };
+    case "candeal": return { who: "The club shop", icon: "🥫", title: "Half price for you", line: "Training's tiring. Your first KIB can is half price today. A KIB can tops your energy up.", button: `Buy it for ★${formatMoney(firstCanDealPrice(c))}` };
     case "ready": return { who: gaffer, icon: "🧢", title: "You're ready", line: "Great work. You're ready for the next game.", button: "Play" };
     // "Claim your reward" once the Star Pass has a reward at level 2 (the
     // level ladder is the next build); until then it shows the Pass.
-    case "starpass": return { who: "Star Pass", icon: "⭐", title: "You levelled up", line: "You're star level 2. Every level on the Star Pass gives you something. Take a look.", button: "Open the Star Pass" };
-    case "can": {
-      const e = Math.round(c.energy ?? 0);
-      return e < 75
-        ? { who: "The physio", icon: "🩺", title: "Your energy's low", line: `Two games in and you're at ${e}% energy. Here's a free can. Drink it.`, button: "Use the can" }
-        : { who: "The physio", icon: "🩺", title: "A can for you", line: `Two games in and you're at ${e}% energy. Here's a free can. When your energy drops, one can tops it up.`, button: "Use the can" };
-    }
-    case "phone": return { who: mate, icon: "📱", title: "Have my old phone", line: "Here, take my old phone. The screen's cracked but it works. Your agent's already texted you.", button: "Open the phone" };
-    case "shop": return { who: "The chairman", icon: "💷", title: "Wages are in", line: "Wages are in. The lads are off to the shop. Get yourself some cans and some boots.", button: "Go to the shop" };
-    case "stats": return { who: gaffer, icon: "⚽", title: "Your first goal", line: "Your first goal is on your card. Your stats, records and achievements are open now.", button: "See your card" };
+    case "starpass": return { who: "Star Pass", icon: "⭐", title: "You levelled up", line: "", button: "Take a look" };
+    case "can": return { who: "The physio", icon: "🩺", title: "Your energy's low", line: "Your energy is low. Here's a free KIB can. Drink it.", button: "Use the can" };
+    case "phone": return { who: mate, icon: "📱", title: "Have my old phone", line: `${c.player.firstName}, I've just bought a new phone. Here, take my old one.`, button: "Thanks!" };
+    case "shop": return { who: "The chairman", icon: "💷", title: "Wages are in", line: "Wages are in. The lads are off to the shop. Tag along with them.", button: "Tag along" };
+    case "stats": return { who: gaffer, icon: "⚽", title: "Your first goal", line: "Your first goal is on your card. Your stats, records and achievements are open now.", button: "Got it" };
     case "sponsor": {
       const brand = c.brands?.offers[0]?.brand ?? "A brand";
       return { who: "Your agent", icon: "💼", title: "A brand wants you", line: `${brand} want to sponsor you. I've sent you the offer. It's in your messages.`, button: "Open the phone" };
@@ -178,7 +192,7 @@ function teamMateName(c: CareerState): string {
 export function storyLockHint(c: Pick<CareerState, "unlocks">, f: Feature): string | null {
   if (!isStory(c)) return null;
   const hints: Partial<Record<Feature, string>> = {
-    training: "The gaffer wants a word after your first game",
+    training: "After your first game",
     phone: "After your second game",
     relations: "After your second game",
     shop: "After your third game",

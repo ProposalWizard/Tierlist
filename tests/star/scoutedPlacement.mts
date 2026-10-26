@@ -41,11 +41,12 @@ for (const scored of [true, false]) {
   for (const d of Object.keys(counts) as ScoutedDivision[]) {
     const got = counts[d] / N;
     check(Math.abs(got - odds[d]) < 0.01, `${scored ? "scored" : "missed"}: ${d} ${(got * 100).toFixed(1)}% vs ${odds[d] * 100}%`);
-    check((seenClubs.get(d)?.size ?? 0) === 24, `${scored ? "scored" : "missed"}: every ${d} club gets picked (${seenClubs.get(d)?.size})`);
+    if (odds[d] > 0) check((seenClubs.get(d)?.size ?? 0) === 24, `${scored ? "scored" : "missed"}: every ${d} club gets picked (${seenClubs.get(d)?.size})`);
   }
   console.log(`  ${scored ? "scored final pen" : "missed final pen"}: National League ${(counts.national_league / N * 100).toFixed(1)}% · North ${(counts.national_league_north / N * 100).toFixed(1)}% · South ${(counts.national_league_south / N * 100).toFixed(1)}%`);
 }
-check(SCOUTED_ODDS.scored.national_league > SCOUTED_ODDS.missed.national_league, "scoring the final pen makes the National League likelier");
+// Mikey, 25 Oct 2026: always National League North or South.
+check(SCOUTED_ODDS.scored.national_league === 0 && SCOUTED_ODDS.missed.national_league === 0, "a trial never places you in the National League");
 
 // The flag, and its fallback until the rebuilt trial sets it.
 check(finalPenScoredOf({ finalPenScored: true }) === true, "an explicit true is read");
@@ -59,7 +60,7 @@ check(finalPenScoredOf({ results: {} }) === false && finalPenScoredOf(null) === 
   const t = { seed: 424242, finalPenScored: true };
   const a = scoutedOfferForTrial(t), b = scoutedOfferForTrial(t);
   check(a.club === b.club && a.division === b.division && a.wage === b.wage, `a trial always lands at the same club (${a.club})`);
-  check(a.wage > 0 && a.seasons === 2 && a.strength > 0, `the offer is a real contract (★${a.wage}/wk, ${a.seasons} seasons, strength ${a.strength})`);
+  check(a.wage === 35 && a.seasons === 2 && a.strength > 0, `the offer is a real contract at the fixed ★35 a week (★${a.wage}/wk, ${a.seasons} seasons, strength ${a.strength})`);
 }
 
 // The offer starts a real season in that division.
@@ -78,7 +79,7 @@ for (let seed = 1; seed < 400 && reached.size < 3; seed++) {
   check(!!fa && stillIn(fa, c.player.club) && !c.fixtures.some(f => f.competition === "League Cup"),
     `${offer.division}: in the FA Cup, not the League Cup`);
 }
-check(reached.size === 3, `careers started in all three divisions (${Array.from(reached).join(", ")})`);
+check(reached.size === 2 && !reached.has("national_league"), `careers start in North and South only (${Array.from(reached).join(", ")})`);
 
 if (fail) { console.log(`FAIL (${fail})`); process.exit(1); }
 console.log("PASS — scouted into the National League / North / South at the set odds, same club on reload, a real season");

@@ -35,6 +35,7 @@ default | fact:3d | three-d
 default | ruling:car | career
 default | fact:car | career
 default | ruling:adm | admin
+default | ruling:dat | data
 default | fact:adm | admin
 default | ruling:med | media
 default | fact:med | media

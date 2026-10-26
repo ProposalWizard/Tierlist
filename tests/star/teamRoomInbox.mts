@@ -60,11 +60,12 @@ console.log("The buzz for new patch notes");
   ok(patchesToRing(NOTES.filter((n) => n.version === "0.80"), Date.parse("2026-10-20T10:00:00Z"), {}).length === 0, "a note from before the start day is never rung");
 
   const one = payloadForPatches([NOTES[2]]);
-  ok(one.title === "New patch notes from Leo · v0.62" && one.body === "Goals", "one note: who, which version, its name");
-  ok(one.url === "/admin/team?tab=notes&v=0.62" && one.tag === "kib-patch", "tap opens that note on the Patch notes tab; one tag so buzzes group");
+  // 23 Oct 2026: the buzz is the Patch notes bot's @everyone, and opens its post in #patch-notes.
+  ok(one.title === "@everyone New patch notes from Leo · v0.62" && one.body === "Goals", "one note: @everyone, who, which version, its name");
+  ok(one.url === "/admin/team?tab=chat&ch=patch-notes&v=0.62" && one.tag === "kib-patch", "tap opens the bot's post in #patch-notes; one tag so buzzes group");
   const many = payloadForPatches([NOTES[0], NOTES[2]]);
-  ok(many.title === "2 new patch notes to read" && many.body.startsWith("v0.97h Merge · v0.62 Goals"), "several: one buzz that counts them");
-  ok(many.url === "/admin/team?tab=notes&v=0.97h", "several: tap opens the newest");
+  ok(many.title === "@everyone 2 new patch notes to read" && many.body.startsWith("v0.97h Merge · v0.62 Goals"), "several: one buzz that counts them");
+  ok(many.url === "/admin/team?tab=chat&ch=patch-notes&v=0.97h", "several: tap opens the newest");
   ok(JSON.stringify(withRungPatches(["a", "b"], ["b", "c"])) === '["a","b","c"]', "remembered versions: no doubles");
   ok(withRungPatches(Array.from({ length: 400 }, (_, i) => `v${i}`), ["new"]).length === 300 && withRungPatches(null, ["x"])[0] === "x", "kept to the newest 300; junk ignored");
 }
@@ -107,7 +108,7 @@ console.log("An updated note is news again (Leo, 24 Oct 2026)");
   const now = Date.parse("2026-10-21T12:30:00Z");
   const r = patchesToRing(UPD, now, { Mikey: ["0.62", "0.97h", "0.50"] }, "2026-10-20", 6 * 3600_000).find((x) => x.person === "Mikey");
   ok(!!r && vs(r.notes) === "0.62", "rung for the old version: the update buzzes again");
-  ok(payloadForPatches([UPD[1]]).title.startsWith("Updated patch notes from Leo"), "the buzz says Updated, not New");
+  ok(payloadForPatches([UPD[1]]).title.startsWith("@everyone Updated patch notes from Leo"), "the buzz says Updated, not New");
   const r2 = patchesToRing(UPD, now, { Mikey: ["0.62@2026-10-21T12:00:00Z", "0.97h", "0.50"] }, "2026-10-20", 6 * 3600_000).find((x) => x.person === "Mikey");
   ok(!r2, "rung for the update already: no second buzz");
 }

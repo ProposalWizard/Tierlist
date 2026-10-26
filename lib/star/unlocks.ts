@@ -266,7 +266,8 @@ export function recordFirstMatch(c: CareerState): CareerState {
 /** v0.25: the manager's talk is due — the first game is played and the talk
  *  is not done. Tapping Relations goes straight into it. */
 export function managerTalkDue(c: Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">): boolean {
-  return !!c.unlocks?.gameFirst && gamesPlayed(c) >= 1 && !c.achievements.includes("boss-meeting");
+  // The story order has no manager's talk after game 1 (Mikey, 24 Oct 2026).
+  return !!c.unlocks?.gameFirst && !c.unlocks.story && gamesPlayed(c) >= 1 && !c.achievements.includes("boss-meeting");
 }
 
 /** A boss meeting was played (won or lost — he asked for a meeting, not a
@@ -472,9 +473,10 @@ export const APP_STORE: { id: string; label: string; icon: string; note: string;
 ];
 
 /** The story order: the cracked phone runs only these (Mikey, 23 Oct 2026). */
-export const STORY_STARTER_APPS = ["messages", "fixtures", "squad", "relations", "settings", "league"];
-/** ...and your own new phone, bought in the Shop, adds these. */
-export const NEW_PHONE_APPS = ["social", "kickabout", "home-3d"];
+export const STORY_STARTER_APPS = ["messages", "fixtures", "squad", "relations", "settings", "league", "social"];
+/** ...and your own new phone, bought in the Shop, adds these. Social is on
+ *  the cracked phone from the start (Mikey's playtest, 24 Oct 2026). */
+export const NEW_PHONE_APPS = ["kickabout", "home-3d"];
 
 export function appInstalled(c: Pick<CareerState, "unlocks">, id: string): boolean {
   if (!c.unlocks) return true;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
+import { notGuest } from "@/lib/guest/config";
 
 // User-personalized and DB-backed — must run per request, never a build snapshot.
 export const dynamic = "force-dynamic";
@@ -30,7 +31,8 @@ export async function GET() {
   }
 
   const serverSupabase = await createClient();
-  const { data: { user } } = await serverSupabase.auth.getUser();
+  const { data: { user: signedIn } } = await serverSupabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
 
   let completed: string[] = [];
   let unclaimed: string[] = [];

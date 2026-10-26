@@ -1650,7 +1650,7 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
   // running. No way in that keeps him off the screen first: no cover.
   let cover: Person | null = null, coverEnter = 0;
   if (coverEnd) {
-    const cam = leadInCamera({ durS, ballAt, posAt: () => null, passStart: acts.map((a) => a.t0), passEnd: acts.map((a) => a.t1) }, []);
+    const cam = leadInCamera({ durS, ballAt, posAt: () => null, passStart: acts.map((a) => a.t0), passEnd: acts.map((a) => a.t1), camera: "glide" }, []);
     const frames: Viewport[] = [];
     for (let i = 0; i <= N; i++) frames.push(cam.at(tOf(i), frame));
     const offScreen = (p: Vec2, i: number, m = 1.5) => { const f = frames[clamp(i, 0, N)]; return p.x < f.x1 - m || p.x > f.x2 + m || p.y < f.y1 - m || p.y > f.y2 + m; };
@@ -1941,6 +1941,8 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
     ...(oppx.length ? { extraOpps: oppx.length } : {}),
     passStart: shown.map((a) => a.t0),
     passEnd: shown.map((a) => a.t1),
+    // One smooth camera move for the whole build-up (leadIn.ts glideCamera; Harry, 0.108h).
+    camera: "glide" as const,
     skippable: true,
     captionAt: caption,
     captionShown: true,

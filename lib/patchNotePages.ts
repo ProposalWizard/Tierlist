@@ -21,6 +21,10 @@
  */
 export const PATCH_NOTE_PAGES: Record<string, string> = {
   "0.110": "pages/0.110/index.html",
+  "0.112h": "pages/0.112h/index.html",
+  "0.111h": "pages/0.111h/index.html",
+  "0.110h": "pages/0.110h/index.html",
+  "0.109h": "pages/0.109h/index.html",
   "0.108h": "pages/0.108h/index.html",
   "0.108": "pages/0.108/index.html",
   "0.107h": "pages/0.107h/index.html",

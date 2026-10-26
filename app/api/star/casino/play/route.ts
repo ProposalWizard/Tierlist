@@ -5,6 +5,7 @@ import { handlePlay } from "@/lib/star/casinoEngine";
 import { cryptoRng } from "@/lib/star/casinoRules";
 import { casinoTableReady, pruneOldPlays, readTrusted, supabaseCasinoStore } from "@/lib/star/casinoDb";
 import { walletDbMissing } from "@/lib/star/wallet";
+import { notGuest } from "@/lib/guest/config";
 
 /**
  * /api/star/casino/play — the casino, rolled and paid by the server
@@ -35,7 +36,8 @@ function service() {
 
 export async function GET() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user: signedIn } } = await supabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
   if (!user) return NextResponse.json({ signedOut: true });
   const db = service();
   if (!db || !(await casinoTableReady(db))) return NextResponse.json({ migrationMissing: true });
@@ -44,7 +46,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user: signedIn } } = await supabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
   if (!user) return NextResponse.json({ signedOut: true });
   const db = service();
   if (!db) return NextResponse.json({ migrationMissing: true });

@@ -58,6 +58,7 @@ import { pickBarCorner, type BarCorner, type Box as BarBox } from "@/lib/star/ba
 import { panToKeep, followStep, widenToHold, easeCam, BACK_EASE_S } from "@/lib/star/runCamera";
 import { takeEnergySpent, setLegsEnergy, barCap, moveKeyOf, keysScreenDir, noKeys, KEY_PUSH, type MoveKeys } from "@/lib/star/legs";
 import { afterPassStickOn } from "@/lib/star/afterPass";
+import { mechanicOpen, aerialIntroGame, mechanicDef, type Mechanic } from "@/lib/star/mechanics";
 import { dealDribble, dribbleLevelFor, newDribbleDeal, type DribbleDeal } from "@/lib/star/dribbleDeal";
 import { ruleBookFor } from "@/lib/star/ruleBook";
 import { deflectBlock } from "@/lib/star/deflection";
@@ -155,6 +156,10 @@ import {
 import { createFaceImageCache, fallbackFaceFor } from "@/lib/star/faceImageCache";
 import { airborneOn, airborneMotion, applyAirborne, type StrikeContact } from "@/lib/star/airborneChance";
 import { isAirKind, airWaitZ, airZOf, HEADER_Z } from "@/lib/star/airDrawings";
+import { crossDrawT, syntheticCross, headerBeat, headerLiftPx, headerBallLiftK, CROSS_TAIL_S, HEADER_RISE_S, HEAD_AT, BALL_SETTLE_S, type CrossPath } from "@/lib/star/headerBeat";
+import { airTapOn, airTapAim, airTapStrike, AIR_TAP_OPEN_S, AIR_TAP_OPEN_NO_LEAD_S, type AirKind } from "@/lib/star/airTap";
+import { aerialMovesOn, forcedAerialMove, pickAerialMove, aerialFacing, aerialRise, aerialFollow, aerialStrikeTint, liftToMeet, AERIAL_SPECS, CONTACT_SHOW_S, type AerialMove } from "@/lib/star/aerialMoves";
+import { spritePoints, type SpritePoint } from "@/lib/star/sprites";
 import { useFitWidth } from "./useFitWidth";
 import ArcadeBanner, { useArcadeBanner, type BannerSide } from "./ArcadeBanner";
 import { bannerStyle, soundSet } from "@/lib/star/style3d/texturePack";
@@ -221,9 +226,9 @@ import {
   NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, NEW_KEEPER_GROW, MATCH_VIEW_DEFAULT, figureGrow, figureShrinkFor,
   playZoom, playZoomOf, playZoomProbe,
 } from "@/lib/star/matchView";
-import { drawMatchFigure } from "@/lib/star/matchFigure";
+import { drawMatchFigure, SPRITE_HEIGHT_K } from "@/lib/star/matchFigure";
 import {
-  animFromAction, outfieldAnimFrame, keeperAnimFrame, keeperLeanWithAnim, STRIKE_S,
+  animFromAction, outfieldAnimFrame, keeperAnimFrame, keeperLeanWithAnim, STRIKE_S, HEADER_S,
   type ActorAnim, type OutfieldAnimFrame,
 } from "@/lib/star/actionAnim";
 import { animSettings, animFamilyOn, type AnimFamily } from "@/lib/star/animDials";
@@ -670,7 +675,7 @@ const SCENARIO_LABEL: Record<ScenarioKind, { verb: string; hint: string }> = {
   one_on_one: { verb: "1-ON-1!", hint: "Clean through on goal — pick your finish." },
   tight_angle: { verb: "TIGHT ANGLE!", hint: "Acute angle — the keeper's covering the near post." },
   long_range: { verb: "SHOOT!", hint: "Long way out — give it some pace." },
-  volley: { verb: "VOLLEY!", hint: "Meet it first time — drag back to strike." },
+  volley: { verb: "VOLLEY!", hint: "Meet it first time as it drops." },
   header: { verb: "HEADER!", hint: "Get up and meet the cross." },
   cutback: { verb: "CUTBACK!", hint: "Square it back — find the man arriving." },
   byline_cross: { verb: "CROSS IT!", hint: "Whip it in — pick out a man in the middle." },
@@ -1072,6 +1077,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const [overlayTop, setOverlayTop] = useState(false);
   const careerRef = useRef(career);
   careerRef.current = career;
+  /** A new career's moves open one at a time (lib/star/mechanics.ts); every other save has them all. */
+  const mechOpen = (id: Mechanic) => mechanicOpen(careerRef.current, id);
   const preferredFootRef = useRef(preferredFoot);
   preferredFootRef.current = preferredFoot;
 
@@ -1483,6 +1490,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (!d) return true;
     if (kind === "free_kick") return d.freeKicks;
     if (kind === "penalty") return d.penalties;
+    // A new career's corners wait for Technique and Vision (setPieces.ts).
+    if (kind === "corner") return d.corners ?? true;
     return true;
   };
   // The situation the simulation has just produced, consumed by the next
@@ -1501,7 +1510,44 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // B10: when a header or volley chance became yours (for the ball hanging /
   // bouncing while you aim — lib/star/airDrawings.ts airWaitZ). Drawing only.
   const airT0Ref = useRef<{ sc: Scenario; t0: number } | null>(null);
+  /**
+   * A header's cross while you aim (lib/star/headerBeat.ts, Harry 25 Oct
+   * 2026): the build-up's last pass (or a cross drawn from the crosser when
+   * no build-up played) keeps creeping in instead of stopping dead in the
+   * air. `startS` is the cross's clock when the chance became yours, `t0`
+   * the wall clock then. Drawing only: the strike starts from the chance's ball.
+   */
+  const crossTailRef = useRef<{ sc: Scenario; path: CrossPath; startS: number; t0: number } | null>(null);
+  /** Your header after "Head it?": you move under it and jump, the ball comes onto your head (headerBeat). Drawing only. */
+  const headerBeatRef = useRef<{ sc: Scenario; e: number; last: number; rise: number; late: boolean; from: Vec2; to: Vec2; ballFrom: { x: number; y: number; z: number }; metZ: number } | null>(null);
   const leadTriedRef = useRef(false);
+  /** A header/volley (airTap.ts): how long the cross has crept in on this chance, and the chance whose ball screen opened. */
+  const airTapWaitRef = useRef<{ sc: Scenario; t: number } | null>(null);
+  const airTapOpenedRef = useRef<Scenario | null>(null);
+  /** The chance whose build-up has just handed over (a header/volley opens its ball screen sooner after one). */
+  const airTapLeadRef = useRef<Scenario | null>(null);
+  /**
+   * Your aerial move (lib/star/aerialMoves.ts, Harry 25 Oct 2026): the cross
+   * comes in, you take off and rise, and the ball screen opens on the frame
+   * your head / foot meets it; after the tap, the follow-through. `e` is the
+   * beat's clock (seconds since the hand-over: `preS` of the cross first,
+   * then the rise); `struck` is set by the tap. Drawing only, except the
+   * strike's small tint (aerialStrikeTint). `probe`: the numbers the frame
+   * the screen opened was drawn with (dev probe, __starMatch.aerial()).
+   */
+  const aerialRef = useRef<{
+    sc: Scenario; move: AerialMove; e: number; preS: number; foot: number;
+    from: Vec2; ballFrom: { x: number; y: number; z: number };
+    opened: boolean;
+    struck: { at: number; holdS: number; zDraw: number; zPhys: number } | null;
+    /** Where the ball is drawn at the touch (pitch, metres; z is the drawn height). */
+    contactBall: { x: number; y: number; z: number } | null;
+    probe: Record<string, unknown> | null;
+  } | null>(null);
+  /** The old flow's numbers on the frame its ball screen opened (?airmoves=old): the ball against your head. */
+  const oldAirProbeRef = useRef<Record<string, unknown> | null>(null);
+  /** Where the ball was last DRAWN (a header's ball is drawn onto his head before it leaves): the trail follows this. */
+  const shownBallRef = useRef<{ x: number; y: number; z: number } | null>(null);
   /**
    * PLAYERS ALREADY MOVING (the lead-in's `runOnS`, Full highlights rebuild
    * phase 3): after the hand-over the men in `ents` keep running along the
@@ -1510,6 +1556,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * engine moves them as it moves everyone. Null: nobody is still running.
    */
   const runOnRef = useRef<{ lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[] } | null>(null);
+  /**
+   * The men a build-up added to its chance (LeadIn.joiners: a covering
+   * defender in from off the screen). They stay in the chance, but the chance's
+   * CAMERA is the one it has with no build-up (Mikey + Harry, 25 Oct 2026:
+   * "make sure they all land on the same size"), so a re-frame (a resize)
+   * frames it without them — see frameOnChance. Drawing only.
+   */
+  const leadJoinersRef = useRef<Set<object>>(new Set());
   // ── The move plays on after your pass (lib/star/playOn.ts, Chances: New) ──
   /** A lead-in played before this chance (a build-up, or a carry-on). */
   const leadPlayedRef = useRef(false);
@@ -1820,11 +1874,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       addedTime: ADDED,
       fullTime: MATCH_DURATION,
     };
-    return matchInputsFor(car
+    const inputs = matchInputsFor(car
       // Your CLUB's strength (Chelsea 83), not the team relationship (60 on
       // day one) — see matchTeamStrength (lib/star/matchday.ts, item 0).
       ? careerMatchSpec(car, fixture, { ...live, teamFallback: teamRef.current, playstyle: playstyleRef.current })
       : { ...live, teamStrength: teamRef.current, home: fixture?.home, skills: { power: 55, technique: 55, vision: 55 }, context: { playstyle: playstyleRef.current } });
+    // A new career's corners wait for Technique and Vision 70 (setPieces.ts,
+    // Mikey 25 Oct 2026): until then a team-mate takes them.
+    const withCorners = dutiesRef.current?.corners === false ? { ...inputs, canTakeCorners: false } : inputs;
+    // A new career's headers, volleys and runs with the ball (mechanics.ts):
+    // none before they open, and game 4 brings one header and one volley.
+    const cc = careerRef.current;
+    return cc?.unlocks?.story
+      ? { ...withCorners, mechanics: { air: mechanicOpen(cc, "aerial"), airIntro: aerialIntroGame(cc), dribble: mechanicOpen(cc, "dribble") } }
+      : withCorners;
   };
 
   // Translate what the physics produced into what the match needs to know.
@@ -2028,6 +2091,57 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const phaseRef = useRef<Phase>("aim");
   const [phase, setPhaseState] = useState<Phase>("aim");
   const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); };
+  // A new career's very first chance (the story's first match): two short
+  // lines, "drag back… then let go" while aiming and "tap the part of the
+  // ball" on the strike screen, on that one chance only (Mikey's playtest,
+  // 24 Oct 2026). Pure display: nothing in the match reads it.
+  const coachChanceRef = useRef(0);
+  const prevPhaseForCoach = useRef<Phase>("aim");
+  useEffect(() => {
+    if (phase === "aim" && prevPhaseForCoach.current !== "aim") coachChanceRef.current += 1;
+    prevPhaseForCoach.current = phase;
+  }, [phase]);
+  // The count as of this render (the effect above catches up after it).
+  const coachChanceNow = coachChanceRef.current + (phase === "aim" && prevPhaseForCoach.current !== "aim" ? 1 : 0);
+  const coachFirstChance = !!career?.unlocks?.story && (career.careerStats?.appearances ?? 0) === 0 && coachChanceNow <= 1;
+  // ...and the first HEADER of a new career gets its own two lines, whenever
+  // it comes (Mikey, 25 Oct 2026). Counted per career, kept on this device.
+  const isHeaderNow = scenarioRef.current?.kind === "header";
+  const [headerCoachDone, setHeaderCoachDone] = useState(() => {
+    try { return localStorage.getItem("star-first-header-coached") === "1"; } catch { return true; }
+  });
+  const coachFirstHeader = !!career?.unlocks?.story && isHeaderNow && !headerCoachDone && !coachFirstChance;
+  useEffect(() => {
+    if (coachFirstHeader && phase === "flight") {
+      setHeaderCoachDone(true);
+      try { localStorage.setItem("star-first-header-coached", "1"); } catch { /* fine */ }
+    }
+  }, [coachFirstHeader, phase]);
+  // The first time a new career meets a move that just opened (mechanics.ts):
+  // its volley, steering its run, sprinting. Once each, kept on this device
+  // (a new save clears it).
+  const [coached, setCoached] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem("star-first-coached") ?? "{}") as Record<string, boolean>; } catch { return {}; }
+  });
+  const isStoryCareer = !!career?.unlocks?.story;
+  const firstUse: { key: string; text: string } | null = !isStoryCareer || coachFirstChance || coachFirstHeader ? null
+    : scenarioRef.current?.kind === "volley" && (phase === "aim" || phase === "contact") && !coached.volley
+      ? { key: "volley", text: "A volley! Tap the ball as it drops, before the ring runs out. Its left side sends it right" }
+    : runLive && mechOpen("steer") && !coached.steer ? { key: "steer", text: mechanicDef("steer").firstUse ?? "" }
+    : runLive && mechOpen("sprint") && !coached.sprint ? { key: "sprint", text: mechanicDef("sprint").firstUse ?? "" }
+    : null;
+  const firstUseShown = useRef<string | null>(null);
+  useEffect(() => {
+    const was = firstUseShown.current;
+    firstUseShown.current = firstUse?.key ?? null;
+    if (was && was !== firstUse?.key) {
+      setCoached((c) => {
+        const next = { ...c, [was]: true };
+        try { localStorage.setItem("star-first-coached", JSON.stringify(next)); } catch { /* fine */ }
+        return next;
+      });
+    }
+  }, [firstUse?.key]);
 
   // Game music (Settings → Game music, off by default; lib/star/gameMusic.ts).
   // A career match only: the score, the clock, a knockout and a dribble pick
@@ -2957,9 +3071,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const keepRunCamRef = useRef(false);
   /** B14b: an eased widen in progress (from, to, seconds in, zoom at the start). */
   const camEaseRef = useRef<{ from: Viewport; to: Viewport; t: number; zoom0: number } | null>(null);
-  /** Headers and volleys (matchView.ts FIGURES_AT_FULL_VIEW): the men and the
-   *  ball drawn this much smaller, so they are the long-range size. 1 otherwise. */
+  /** Every chance kind (matchView.ts FIGURES_AT_FULL_VIEW): the men, the keeper
+   *  and the ball drawn this much smaller, so they are the long-range size
+   *  whatever the camera. 1 on a 38 m camera, and in the dribble views. */
   const figShrinkRef = useRef(1);
+  /** …and the chance's own value of it. A build-up's lead-in camera moves (it
+   *  starts tighter or wider than the chance's frame), so while it plays the men
+   *  are re-sized against it to stay this size (leadFigSize). */
+  const figShrinkBaseRef = useRef(1);
   /** Figures and ball: divide their size by this (Z2 keeps them today's size). */
   const figZoomDiv = () => (playZoom() === "z2" || playZoom() === "z2max" ? playZoomRef.current : 1) / figShrinkRef.current;
 
@@ -3003,11 +3122,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       }
       viewportRef.current = { ...sc.viewport };
       baseViewportRef.current = { ...sc.viewport };
-      // A feature's own close camera (the Head & Volley drill): headers and
-      // volleys still draw the men the long-range size.
+      // A feature's own close camera (a training drill, the Head & Volley
+      // drill): the men are still drawn the long-range size.
       {
         const v = sc.viewport, up = (sc.facing ?? "up") === "up";
         figShrinkRef.current = newViewRef.current ? figureShrinkFor(sc.kind, up ? v.x2 - v.x1 : v.y2 - v.y1) : 1;
+        figShrinkBaseRef.current = figShrinkRef.current;
       }
       return;
     }
@@ -3019,12 +3139,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     viewportRef.current = { ...cam };
     baseViewportRef.current = { ...cam };
     playZoomRef.current = playZoomOf(sc);
-    // Headers and volleys: the men the long-range size. The chance's own
-    // camera before the Zoom is what they would otherwise be sized against.
+    // Every kind: the men the long-range size. The chance's own camera
+    // before the Zoom is what they would otherwise be sized against.
     {
       const up = (sc.facing ?? "up") === "up", across = up ? cam.x2 - cam.x1 : cam.y2 - cam.y1;
       const zoomed = playZoom() === "z2" || playZoom() === "z2max";
       figShrinkRef.current = figureShrinkFor(sc.kind, across * (zoomed ? playZoomRef.current : 1));
+      figShrinkBaseRef.current = figShrinkRef.current;
     }
     if (playZoomProbe() && typeof window !== "undefined") {
       (window as unknown as { __zg?: unknown }).__zg = {
@@ -3831,6 +3952,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       /** Animations: New — what he is doing with the ball right now
        *  (lib/star/actionAnim.ts). Replaces `pose`. Looks only. */
       anim?: OutfieldAnimFrame | null;
+      /** Your aerial move (aerialMoves.ts): its 3D clip, frame time, facing and
+       *  mirror, and how high (px) he is off the grass. Looks only. */
+      aerial?: { clip: SpriteClip; t: number; facing: number; mirror: boolean; liftPx: number } | null;
     };
 
     // ── Nearer men in front of further ones ──
@@ -3863,6 +3987,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     };
     const spriteHint = (x: number, y: number, opts: FigureOpts, shirt: string, shorts: string): MatchSpriteHint | undefined => {
       if (!nv || !opts.sid) return undefined;
+      // Your aerial move: its own clip and frame, never the running clips (aerialMoves.ts).
+      if (opts.aerial && spriteClipReady("player", opts.aerial.clip)) {
+        return { char: "player", clip: opts.aerial.clip, t: opts.aerial.t, facing: opts.aerial.facing, kit: { shirt, shorts, socks: shirt }, ...(opts.aerial.mirror ? { mirror: true } : {}) };
+      }
       const id = opts.sid;
       let m = spriteMotion.get(id);
       if (!m) { m = { x, y, t: now, vx: 0, vy: 0, dist: 0, facing: NaN }; spriteMotion.set(id, m); }
@@ -4018,7 +4146,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         faceStyle: faceStyleRef.current, fakeFaceStyle: fakeFaceStyleRef.current,
         opts: {
           facing: anim ? ((opts.facing ?? 0) + anim.lean) || undefined : opts.facing ?? (body?.lean || undefined),
-          liftPx: body ? body.lift * r * FIGURE_HEIGHT_R : anim && anim.liftR > 0 ? anim.liftR * r : undefined,
+          liftPx: opts.aerial ? opts.aerial.liftPx : body ? body.lift * r * FIGURE_HEIGHT_R : anim && anim.liftR > 0 ? anim.liftR * r : undefined,
           shadowR: r * 0.42,
           pose: limbs,
           label: opts.label,
@@ -4555,10 +4683,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (!auto && phaseRef.current === "aim" && !leadRef.current && !playOnRef.current
       && !hasRunup(sc.kind) && sceneRef.current?.you !== false && !youPlacedRef.current.has(sc)) {
       youPlacedRef.current.add(sc);
-      const vpNow = viewportRef.current;
-      const span = facingRef.current === "up" ? vpNow.y2 - vpNow.y1 : vpNow.x2 - vpNow.x1;
-      const spot = clearYouSpot({ ball: sc.ball, player: sc.player, foot: takerFoot, toPx, R, ballR: BALL_PX, arrowM: span * 0.132 * 1.05 });
-      sc.player.x = spot.x; sc.player.y = spot.y;
+      // A header or volley has no arrow to keep clear (lib/star/airTap.ts): he
+      // stays where the chance and its build-up put him (no jump at the hand-over).
+      if (!(isAirKind(sc.kind) && airTapOn())) {
+        const vpNow = viewportRef.current;
+        const span = facingRef.current === "up" ? vpNow.y2 - vpNow.y1 : vpNow.x2 - vpNow.x1;
+        const spot = clearYouSpot({ ball: sc.ball, player: sc.player, foot: takerFoot, toPx, R, ballR: BALL_PX, arrowM: span * 0.132 * 1.05 });
+        sc.player.x = spot.x; sc.player.y = spot.y;
+      }
     }
     const drawnTaker = hasRunup(sc.kind) ? drawnTakerAt(sc.ball, sc.player, takerFoot) : { at: sc.player, mirrored: false };
     const runBody = runBody0 && drawnTaker.mirrored ? { ...runBody0, lean: -runBody0.lean } : runBody0;
@@ -4574,7 +4706,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // …and while your pass plays on you are the man making the run (playOn.ts).
     const youShown = celebPos ? true : leadRef.current || playOnRef.current ? sceneRef.current?.you !== false : showYouFigure(sc.kind, { newView: nv, sceneYou: sceneRef.current?.you });
     const ringOnBall = !auto && !youShown && sceneRef.current?.you !== false;
-    if (nv && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || youShown || ringOnBall)) {
+    // Not while your aerial move plays: he has left that spot (aerialMoves.ts).
+    const aerialGoing = !auto && aerialRef.current?.sc === sc && aerialRef.current.e > aerialRef.current.preS;
+    if (nv && !aerialGoing && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || youShown || ringOnBall)) {
       const f = ringOnBall ? toPx(sc.ball.x, sc.ball.y) : toPx(tx, ty);
       const rr = R * 0.62;
       ctx.save();
@@ -4605,6 +4739,160 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         youFeelAnim = outfieldAnimFrame({ kind: "shot", mode: "ground", start: 0, scene: sc }, Math.min(STRIKE_S, e), fs, dials);
       }
     }
+    // ── Your header (lib/star/headerBeat.ts, Harry 25 Oct 2026) ── after
+    // "Head it?" you move under the ball and jump; the ball comes the last of
+    // the way onto your head during the wind-up and leaves at the top of the
+    // jump (a late one: early in the jump, lower). His lift is set from how
+    // high the ball is drawn, so his head is where the ball is. Drawing only.
+    let youX = tx, youY = ty;
+    let headerAnim: OutfieldAnimFrame | null = null;
+    let headerBallAt: { x: number; y: number; z: number } | null = null;
+    const hb = !auto && headerBeatRef.current?.sc === sc && phaseRef.current !== "aim" ? headerBeatRef.current : null;
+    if (hb) {
+      // The beat's clock stops while the picture freezes on the contact.
+      const dtB = Math.max(0, Math.min(0.1, now - hb.last));
+      hb.last = now;
+      if (!(feelOn && feelSt.hitStop > 0 && feelSt.windUp <= 0 && hb.e >= hb.rise)) hb.e += dtB;
+      const beat = headerBeat(hb.e, hb.rise, hb.late);
+      youX = hb.from.x + (hb.to.x - hb.from.x) * beat.moveU;
+      youY = hb.from.y + (hb.to.y - hb.from.y) * beat.moveU;
+      const fs = takerFoot >= 0 ? 1 : -1;
+      const ha: ActorAnim = { kind: "shot", mode: "header", start: 0, scene: sc };
+      const fr = outfieldAnimFrame(ha, Math.min(HEADER_S, beat.animE), fs, animSet.dials);
+      // How tall he is drawn (the 3D figure is SPRITE_HEIGHT_K of the drawn one), at the spot he meets it.
+      const gTo = toPx(hb.to.x, hb.to.y);
+      const figH = R * gTo.scale * MATCH_FIGURE_HEIGHT_R;
+      const shownH = figH * (nv && matchPlayersLook() === "3d" ? SPRITE_HEIGHT_K : 1);
+      const pxPerM = heightScale * gTo.scale;
+      const apexLiftPx = headerLiftPx(hb.metZ * pxPerM, shownH);
+      // A ball below his head at the top of the jump is drawn up onto it (and settles back after).
+      const ballUpM = Math.max(0, (apexLiftPx + HEAD_AT * shownH) / pxPerM - hb.metZ) * headerBallLiftK(hb.e, hb.rise);
+      if (fr && beat.animE < HEADER_S) {
+        headerAnim = { ...fr, liftR: (apexLiftPx * beat.up) / figureRForHeight(figH) };
+        animNow.set("you", { a: ha, e: beat.animE });
+      }
+      // The ball is held for the wind-up: it comes from where the cross was onto your head.
+      if (ballRef.current && (hb.e < hb.rise || ballUpM > 0)) {
+        const b = ballRef.current, u = hb.e < hb.rise ? beat.ballU : 1;
+        headerBallAt = { x: hb.ballFrom.x + (b.pos.x - hb.ballFrom.x) * u, y: hb.ballFrom.y + (b.pos.y - hb.ballFrom.y) * u, z: hb.ballFrom.z + (b.z - hb.ballFrom.z) * u + ballUpM };
+      }
+    }
+    // ── Your aerial move (lib/star/aerialMoves.ts, Harry 25 Oct 2026) ──
+    // The rise before the ball screen, the touch it opens on, the
+    // follow-through after the tap. The ball is drawn ON the move's contact
+    // point (the baked sprite's own head / chest / foot point): his ground
+    // spot and his jump are set so that point meets the ball; when his jump
+    // can't reach (or can't go lower) the DRAWN ball is moved, never the
+    // contact point. Looks only: the strike starts where the physics says.
+    let aerialFig: { clip: SpriteClip; t: number; facing: number; mirror: boolean; liftPx: number } | null = null;
+    const aer = !auto && aerialRef.current?.sc === sc ? aerialRef.current : null;
+    if (aer) {
+      const spec = AERIAL_SPECS[aer.move];
+      const clip = spec.clip as SpriteClip;
+      const fps = spriteClipFps("player", clip) || 10;
+      const G = { x: sc.ball.x, y: sc.ball.y };
+      const gP = toPx(G.x, G.y);
+      const unitH = heightScale * gP.scale; // px per metre of height at the ball
+      // His drawn size (paintFootballer's own numbers) and the ball's radius there.
+      const rFig = figureRForHeight(R * gP.scale * MATCH_FIGURE_HEIGHT_R);
+      const shownH = rFig * FIGURE_HEIGHT_R * (nv && matchPlayersLook() === "3d" ? SPRITE_HEIGHT_K : 1);
+      const mirror = takerFoot < 0;
+      // Which way he faces: the goal, the ball's line in, the move's own rule.
+      const goalAng = screenAngle(G.x, G.y, CX, 0);
+      const mate = sc.teammates[0];
+      const fromAng = mate ? screenAngle(G.x, G.y, mate.x, mate.y) : goalAng + Math.PI / 2;
+      const facing = aerialFacing(aer.move, goalAng, fromAng, takerFoot);
+      // The clock: the rise (before the screen), then the touch held, then the follow-through.
+      const riseE = Math.max(0, aer.e - aer.preS);
+      const st = aer.struck;
+      const followE = st ? Math.max(0, now - st.at - st.holdS) : 0;
+      const ph = st ? aerialFollow(aer.move, followE) : aerialRise(aer.move, riseE);
+      const tFrame = (ph.frame + 0.5) / fps;
+      const tHit = (spec.contactFrame + 0.5) / fps;
+      // The contact point on the touch frame (px from his boots), with the ball's radius out from the body.
+      const ballRpx = BALL_PX * gP.scale * (1 + Math.min(Math.max(0, aer.contactBall?.z ?? airZOf(sc)), 8) * 0.09);
+      const pts = spritePoints("player", clip, tHit, facing, shownH, mirror);
+      const pick = (p: { head: SpritePoint; chest: SpritePoint; foot: SpritePoint }) => p[spec.point];
+      const P = pts ? pick(pts) : null;
+      // No baked points yet (the atlas still loading, or the drawn look): the
+      // drawn figure's own head / boot height.
+      const cx = P ? P.x + P.nx * ballRpx : 0;
+      const cy = P ? P.y + P.ny * ballRpx : -(spec.point === "head" ? HEAD_AT : spec.point === "chest" ? 0.68 : 0.3) * shownH - (spec.point === "head" ? ballRpx : 0);
+      const cg = P ? P.g : 0;
+      // The ball's height at the touch: where the cross arrives (a volley: its top).
+      const zReal = airZOf(sc);
+      const meet = liftToMeet(aer.move, zReal * unitH, cg - cy, unitH);
+      // His ground spot at the touch: the ball's shadow, less the contact point's own offset.
+      const inv = (px: number, py: number): Vec2 => {
+        const e = 0.25, a = toPx(G.x + e, G.y), b = toPx(G.x, G.y + e);
+        const j11 = (a.px - gP.px) / e, j21 = (a.py - gP.py) / e, j12 = (b.px - gP.px) / e, j22 = (b.py - gP.py) / e;
+        const det = j11 * j22 - j12 * j21 || 1, dx = px - gP.px, dy = py - gP.py;
+        return { x: G.x + (j22 * dx - j12 * dy) / det, y: G.y + (-j21 * dx + j11 * dy) / det };
+      };
+      const anchorHit = inv(gP.px - cx, gP.py - cg);
+      const u = st ? 1 : ph.moveU;
+      youX = aer.from.x + (anchorHit.x - aer.from.x) * u;
+      youY = aer.from.y + (anchorHit.y - aer.from.y) * u;
+      aerialFig = { clip, t: tFrame, facing, mirror, liftPx: meet.liftPx * ph.liftK };
+      const zDraw = meet.ballUpPx / unitH;
+      aer.contactBall = { x: G.x, y: G.y, z: zDraw };
+      if (!st) {
+        // The ball comes in to the touch: from where it was at the hand-over to
+        // the contact point, arriving on the touch frame. A chest-down volley
+        // meets the chest first, then drops onto the laces.
+        const uB = Math.min(1, riseE / Math.max(1e-3, spec.riseS));
+        const end = { x: G.x, y: G.y, z: zDraw };
+        let from = aer.ballFrom, k = uB;
+        if (spec.chestFrame >= 0 && pts) {
+          const uc = spec.chestFrame / spec.contactFrame;
+          const pc = spritePoints("player", clip, (spec.chestFrame + 0.5) / fps, facing, shownH, mirror);
+          if (pc) {
+            const ax = aer.from.x + (anchorHit.x - aer.from.x) * aerialRise(aer.move, uc * spec.riseS).moveU;
+            const ay = aer.from.y + (anchorHit.y - aer.from.y) * aerialRise(aer.move, uc * spec.riseS).moveU;
+            const aP = toPx(ax, ay);
+            const c = pc.chest, ccx = aP.px + c.x + c.nx * ballRpx, ccy = aP.py + c.y + c.ny * ballRpx;
+            const g2 = inv(ccx, aP.py + c.g);
+            const zc = Math.max(0, (toPx(g2.x, g2.y).py - ccy) / unitH);
+            const chestAt = { x: g2.x, y: g2.y, z: zc };
+            if (uB < uc) { k = uB / uc; headerBallAt = { x: from.x + (chestAt.x - from.x) * k, y: from.y + (chestAt.y - from.y) * k, z: from.z + (chestAt.z - from.z) * k }; }
+            else { from = chestAt; k = (uB - uc) / (1 - uc); }
+          }
+        }
+        if (!headerBallAt) {
+          headerBallAt = { x: from.x + (end.x - from.x) * k, y: from.y + (end.y - from.y) * k, z: from.z + (end.z - from.z) * k };
+        }
+        // The probe: on the touch frame, the drawn ball's centre against the drawn contact point (px).
+        if (riseE >= spec.riseS && !aer.probe) {
+          const bPx = { x: gP.px, y: gP.py - zDraw * unitH };
+          const aP = toPx(anchorHit.x, anchorHit.y);
+          const ptsNow = spritePoints("player", clip, tFrame, facing, shownH, mirror);
+          const Pn = ptsNow ? pick(ptsNow) : null;
+          const cP = Pn ? { x: aP.px + Pn.x + Pn.nx * ballRpx, y: aP.py - meet.liftPx + Pn.y + Pn.ny * ballRpx } : { x: aP.px + cx, y: aP.py - meet.liftPx + cy };
+          aer.probe = {
+            move: aer.move, part: spec.part, frame: ph.frame, contactFrame: spec.contactFrame, baked: !!Pn,
+            gapPx: +Math.hypot(bPx.x - cP.x, bPx.y - cP.y).toFixed(2),
+            ballPx: { x: +bPx.x.toFixed(1), y: +bPx.y.toFixed(1) }, contactPx: { x: +cP.x.toFixed(1), y: +cP.y.toFixed(1) },
+            ballRpx: +ballRpx.toFixed(2), figPx: +shownH.toFixed(1), liftPx: +meet.liftPx.toFixed(1),
+            zRealM: +zReal.toFixed(2), zDrawnM: +zDraw.toFixed(2), facingDeg: Math.round((facing * 180) / Math.PI),
+          };
+        }
+      } else if (ballRef.current) {
+        // After the tap: held on the contact point through the wind-up and the
+        // freeze, then off on its real flight, the drawn height settling onto
+        // the real one over BALL_SETTLE_S.
+        const b = ballRef.current;
+        const rel = now - st.at - st.holdS;
+        const k = rel <= 0 ? 1 : Math.max(0, 1 - rel / BALL_SETTLE_S);
+        if (k > 0) headerBallAt = { x: b.pos.x, y: b.pos.y, z: b.z + (st.zDraw - st.zPhys) * k };
+        // The probe, once, while the touch is held after the tap: the same gap.
+        if (rel <= 0 && headerBallAt && aer.probe && aer.probe.holdGapPx === undefined) {
+          const bP = toPx(headerBallAt.x, headerBallAt.y), aP = toPx(youX, youY);
+          const ptsNow = spritePoints("player", clip, tFrame, facing, shownH, mirror);
+          const Pn = ptsNow ? pick(ptsNow) : null;
+          if (Pn) aer.probe.holdGapPx = +Math.hypot(bP.px - (aP.px + Pn.x + Pn.nx * ballRpx), bP.py - headerBallAt.z * unitH - (aP.py - meet.liftPx * ph.liftK + Pn.y + Pn.ny * ballRpx)).toFixed(2);
+        }
+      }
+    }
     if (auto) {
       footballer(tx, ty, R, takerKit.shirt, takerKit.trim, {
         anim: youFeelAnim,
@@ -4621,12 +4909,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // eleven, not a differently-coloured avatar. The armband of a name label is
     // what picks you out, which is how you pick a player out watching football.
     // (A feature can leave you off the picture: `scene.you === false`.)
-    footballer(tx, ty, R, ourKit().shirt, ourKit().trim, {
+    footballer(youX, youY, R, ourKit().shirt, ourKit().trim, {
       // Held briefly after a strike so the swing is visible rather than
       // happening entirely between two frames.
       sid: "you",
-      pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", tx, ty),
-      anim: youFeelAnim,
+      pose: aerialFig ? "receive" : headerAnim ? "receive" : hb ? poseFor("you", youX, youY) : kickPoseRef.current > 0 ? "kick" : poseFor("you", youX, youY),
+      anim: aerialFig ? null : hb ? headerAnim : youFeelAnim,
+      aerial: aerialFig,
       phase: runPhase(tx),
       body: runBody,
       kickFoot: takerFoot,
@@ -4949,7 +5238,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     } else if (feelOn && feelBall && trail.length > 1) {
       const want = streakMetres(feelSpeed, feelDials());
       const pts: { x: number; y: number }[] = [];
-      const head = { x: feelBall.pos.x, y: feelBall.pos.y, z: Math.max(0, feelBall.z) };
+      const head = headerBallAt ? { x: headerBallAt.x, y: headerBallAt.y, z: Math.max(0, headerBallAt.z) } : { x: feelBall.pos.x, y: feelBall.pos.y, z: Math.max(0, feelBall.z) };
       let acc = 0, last = head;
       const toS = (q: { x: number; y: number; z: number }) => { const f = toPx(q.x, q.y); return { x: f.px, y: f.py - q.z * heightScale * f.scale }; };
       pts.push(toS(head));
@@ -5114,14 +5403,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // its shadow on the grass under it (the gap is the height): a header hangs
     // at your head, a volley bounces (lib/star/airDrawings.ts airWaitZ).
     let airZ = 0;
+    // A header's cross still coming in (headerBeat.ts): drawn where it is now, not on the spot.
+    let crossAt: { x: number; y: number; z: number } | null = null;
     if (onTheSpot && !leadRef.current && isAirKind(sc.kind)) {
       const now = performance.now() / 1000;
       if (airT0Ref.current?.sc !== sc) airT0Ref.current = { sc, t0: now };
       airZ = airWaitZ(sc.kind, now - airT0Ref.current.t0, sc);
+      crossAt = crossBallNow(sc);
+      if (crossAt) airZ = crossAt.z;
       // …and a faint line from its shadow up to it, so the height reads at a
       // phone's size (the gap alone is a few pixels on a wide frame).
       if (airZ > 0.12) {
-        const g = toPx(sc.ball.x, sc.ball.y);
+        const g = crossAt ? toPx(crossAt.x, crossAt.y) : toPx(sc.ball.x, sc.ball.y);
         ctx.save();
         ctx.strokeStyle = "rgba(255,255,255,0.55)";
         ctx.lineWidth = Math.max(1, BALL_PX * g.scale * 0.25);
@@ -5133,8 +5426,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ctx.restore();
       }
     }
-    const ballAt = ball ? { x: ball.pos.x, y: ball.pos.y, z: ball.z }
-      : onTheSpot ? { x: sc.ball.x, y: sc.ball.y, z: leadRef.current?.z ?? airZ } : null;
+    const ballAt = headerBallAt ?? (ball ? { x: ball.pos.x, y: ball.pos.y, z: ball.z }
+      : onTheSpot ? (crossAt ?? { x: sc.ball.x, y: sc.ball.y, z: leadRef.current?.z ?? airZ }) : null);
+    shownBallRef.current = ball && ballAt ? { x: ballAt.x, y: ballAt.y, z: ballAt.z } : null;
+    // The old flow (?airmoves=old): the last pitch frame before its ball screen
+    // opened (the screen draws no ball under it), the drawn ball's centre
+    // against your drawn head (dev probe; kept from the last aim frame).
+    if (!aer && !auto && ballAt && phaseRef.current === "aim" && !leadRef.current && isAirKind(sc.kind)) {
+      const yP = toPx(youX, youY), bP = toPx(ballAt.x, ballAt.y);
+      const rF = figureRForHeight(R * yP.scale * MATCH_FIGURE_HEIGHT_R);
+      const sh = rF * FIGURE_HEIGHT_R * (nv && matchPlayersLook() === "3d" ? SPRITE_HEIGHT_K : 1);
+      const ballPx = { x: bP.px, y: bP.py - Math.max(0, ballAt.z) * heightScale * bP.scale };
+      const headPx = { x: yP.px, y: yP.py - HEAD_AT * sh };
+      oldAirProbeRef.current = { sc, flow: "old", gapPx: +Math.hypot(ballPx.x - headPx.x, ballPx.y - headPx.y).toFixed(1), ballPx, headPx, figPx: +sh.toFixed(1), zM: +ballAt.z.toFixed(2) };
+    }
     if (ballAt) {
       const drawIt = () => drawBall(ballAt.x, ballAt.y, ballAt.z);
       if (figureQueue) figureQueue.push({ py: toPx(ballAt.x, ballAt.y).py, draw: drawIt });
@@ -5840,6 +6145,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         };
       },
       ball: () => pitchToClient(ballRef.current ? ballRef.current.pos : scenarioRef.current.ball),
+      // the build-up playing now: its clock, length and passes (film scenes start a clip at the cross)
+      leadIn: () => {
+        const L = leadRef.current;
+        return L ? { t: L.t, durS: L.lead.durS, passStart: L.lead.passStart ?? null, passEnd: L.lead.passEnd ?? null } : null;
+      },
+      // your header as drawn (headerBeat.ts): its clock, and where you are on the glass
+      header: () => {
+        const hb = headerBeatRef.current;
+        return hb && hb.sc === scenarioRef.current ? { e: hb.e, rise: hb.rise, late: hb.late, to: pitchToClient(hb.to) } : null;
+      },
+      // your aerial move (aerialMoves.ts): the move, and on the frame the ball
+      // screen opened the drawn ball's centre against the drawn contact point (px).
+      // With ?airmoves=old: the old flow's ball against your head on that frame.
+      aerial: () => {
+        const ar = aerialRef.current;
+        if (ar && ar.sc === scenarioRef.current) return { ...(ar.probe ?? {}), move: ar.move, opened: ar.opened, struck: !!ar.struck };
+        const o = oldAirProbeRef.current;
+        return o && o.sc === scenarioRef.current ? { ...o, sc: undefined } : null;
+      },
       // show a banner word now, as the match would (banner stills)
       banner: (text: string) => showAction(text),
       goal: () => pitchToClient({ x: CX, y: 0 }),
@@ -5911,14 +6235,34 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // A replay: the people and the ball are put where it says, and the frame is
   // carried with the ball. Nothing is stepped. At the end everyone is put back
   // exactly where the chance has them, and the chance starts.
+  /** Where a header's cross is drawn right now while you aim (headerBeat.ts): null for any other chance. */
+  const crossBallNow = (sc: Scenario): { x: number; y: number; z: number } | null => {
+    if (sc.kind !== "header") return null;
+    let ct = crossTailRef.current;
+    if (!ct || ct.sc !== sc) {
+      const path = syntheticCross(sc);
+      if (!path) { crossTailRef.current = null; return null; }
+      ct = crossTailRef.current = { sc, path, startS: path.durS - CROSS_TAIL_S, t0: performance.now() / 1000 };
+    }
+    return ct.path.at(crossDrawT(ct.startS + (performance.now() / 1000 - ct.t0), ct.path.durS));
+  };
   const applyLeadIn = () => {
     const L = leadRef.current;
     if (!L) return;
     const sc = scenarioRef.current;
     L.ents.forEach((e) => { const p = L.lead.posAt(e.key, L.t); if (p) e.set(p); });
-    const b = L.lead.ballAt(L.t);
+    // A header: the cross's last part slows into the aim and never stops dead (headerBeat.ts).
+    const b = L.lead.ballAt(sc.kind === "header" ? crossDrawT(L.t, L.lead.durS) : L.t);
     sc.ball.x = b.x; sc.ball.y = b.y; L.z = b.z;
     viewportRef.current = L.cam.at(L.t, baseViewportRef.current);
+    leadFigSize();
+  };
+  /** The lead-in's camera is not the chance's: keep the men the chance's size
+   *  on it (only the pitch zooms), never bigger than that camera would draw them. */
+  const leadFigSize = () => {
+    if (!newViewRef.current) return;
+    const b = baseViewportRef.current, v = viewportRef.current, wb = b.x2 - b.x1, wv = v.x2 - v.x1;
+    if (wb > 0 && wv > 0) figShrinkRef.current = Math.min(1, figShrinkBaseRef.current * wv / wb);
   };
   const startLeadIn = (moment?: LeadMoment, own?: (sc: Scenario) => LeadIn | null) => {
     const build = own ? ((s: Scenario) => own(s)) : leadInPropRef.current;
@@ -5934,6 +6278,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     try { lead = build(sc, moment ?? opening); } catch (e) { console.error("Lead-in could not be built (the chance plays as normal)", e); }
     if (!lead || !(lead.durS > 0)) return;
     runOnRef.current = null;
+    leadJoinersRef.current = new Set();
     const ents = leadInEntities(sc);
     const ends = ents.map((e) => e.get());
     // Men who JOIN the chance (a covering defender in from off the screen):
@@ -5943,6 +6288,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const at = lead.posAt(j.key, 0) ?? j.end;
       const d: Scenario["defenders"][number] = { x: at.x, y: at.y, homeX: j.end.x, homeY: j.end.y, containT: 0, speed: 1, role: "cover", baseRole: "cover" };
       sc.defenders.push(d);
+      leadJoinersRef.current.add(d);
       ents.push({ key: j.key, side: "opp", get: () => ({ x: d.x, y: d.y }), set: (p) => { d.x = p.x; d.y = p.y; } });
       ends.push({ ...j.end });
     }
@@ -6008,9 +6354,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     sc.teammates.length = L.mates0;
     sc.defenders.length = L.defs0;
     sc.ball.x = L.ball.x; sc.ball.y = L.ball.y;
+    // A header: the same cross keeps creeping in while you aim (crossBallNow).
+    crossTailRef.current = sc.kind === "header"
+      ? { sc, path: { durS: L.lead.durS, at: (t) => L.lead.ballAt(t) }, startS: L.lead.durS, t0: performance.now() / 1000 }
+      : null;
     viewportRef.current = baseViewportRef.current;
+    figShrinkRef.current = figShrinkBaseRef.current;
     leadRef.current = null;
     runOnRef.current = runEnts.length ? { lead: L.lead, t: 0, ents: runEnts, ends: runEnds } : null;
+    airTapLeadRef.current = sc;
     setLeadInOn(false);
     try { L.lead.onTick?.(L.lead.durS, true); } catch { /* an observer never breaks the match */ }
   };
@@ -6060,7 +6412,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     runOnRef.current = null;
     setLeadInOn(false);
     if (leadCapRef.current !== null) { leadCapRef.current = null; setLeadCap(null); }
-    baseViewportRef.current = { ...viewportRef.current };
+    // The build-up's own camera at its end. (Not viewportRef: the frame loop
+    // has already put that back on the chance's frame before the lead-in
+    // steps, so copying it jumped the camera 6.9 m onto the OFFSIDE frame —
+    // filmed, Harry's 0.108h note "the camera can move in multiple movements".)
+    baseViewportRef.current = { ...L.cam.at(L.lead.durS, baseViewportRef.current) };
+    viewportRef.current = baseViewportRef.current;
+    figShrinkBaseRef.current = figShrinkRef.current;
     try { L.lead.onTick?.(L.lead.durS, true); } catch { /* an observer never breaks the match */ }
     const sc = scenarioRef.current;
     setOutcome("offside");
@@ -6080,25 +6438,41 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * actual camera we have been using in game"). So its men and the ball are
    * put on the chance's spots for the framing — the build-up's own extras
    * out of it — and straight back. Outside a build-up: frameScenario as ever.
+   *
+   * The men a build-up ADDS to its chance (a covering defender, LeadIn.joiners)
+   * are left out of the framing too, during the build-up, its run-on and after:
+   * the chance's camera is the one it has with no build-up (Mikey + Harry,
+   * 25 Oct 2026: "make sure they all land on the same size"). Measured on
+   * Infinite Highlights before this: a resize while a build-up played (the
+   * pitch box measuring itself) framed one in 9 one-on-ones and long shots
+   * with him in, landing up to 7.2% tighter and 48 px off the chance's own
+   * frame (scripts/camera/landing-probe.mjs).
    */
   const frameOnChance = () => {
     const sc = scenarioRef.current;
     const L = leadRef.current, R = runOnRef.current;
-    if (!L && !R) { frameScenario(sc); return; }
-    const ents = L ? L.ents : R!.ents, ends = L ? L.ends : R!.ends;
+    const joined = leadJoinersRef.current;
+    const hasJoined = joined.size > 0 && sc.defenders.some((d) => joined.has(d));
+    if (!L && !R && !hasJoined) { frameScenario(sc); return; }
+    const ents = L ? L.ents : R ? R.ents : [], ends = L ? L.ends : R ? R.ends : [];
     const now = ents.map((e) => e.get());
     const ball = { x: sc.ball.x, y: sc.ball.y };
-    const mates = L ? sc.teammates.splice(L.mates0) : [];
-    const opps = L ? sc.defenders.splice(L.defs0) : [];
+    const matesAll = sc.teammates.slice(), defsAll = sc.defenders.slice();
+    if (L) sc.teammates.length = L.mates0;
+    const chanceDefs = defsAll.filter((d, i) => (!L || i < L.defs0) && !joined.has(d));
+    sc.defenders.length = 0;
+    sc.defenders.push(...chanceDefs);
     ents.forEach((e, i) => { if (i < ends.length) e.set(ends[i]); });
     if (L) { sc.ball.x = L.ball.x; sc.ball.y = L.ball.y; }
     try { frameScenario(sc); } finally {
-      sc.teammates.push(...mates);
-      sc.defenders.push(...opps);
+      sc.teammates.length = 0;
+      sc.teammates.push(...matesAll);
+      sc.defenders.length = 0;
+      sc.defenders.push(...defsAll);
       ents.forEach((e, i) => e.set(now[i]));
       sc.ball.x = ball.x; sc.ball.y = ball.y;
     }
-    if (L) viewportRef.current = L.cam.at(L.t, baseViewportRef.current);
+    if (L) { viewportRef.current = L.cam.at(L.t, baseViewportRef.current); leadFigSize(); }
   };
   /** A tap on a skippable lead-in (the career's build-ups): straight to the chance. */
   const skipLeadIn = () => {
@@ -6192,6 +6566,65 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           setPhase("contact");
         }
       }
+      // ── A header or volley: no arrow (lib/star/airTap.ts, Harry 25 Oct
+      // 2026: "skip straight to the ball-hitting animation ... where you just
+      // click on the ball"). Once the build-up has handed over, the cross
+      // creeps in for AIR_TAP_OPEN_S and the old "Head it?" / "Volley it?"
+      // ball screen opens, timed as ever. The tap aims it (airTapStrike).
+      {
+        const sc = scenarioRef.current;
+        if (phaseRef.current === "aim" && !leadRef.current && !playOnRef.current && !ballRef.current && !heldRef.current
+          && isAirKind(sc.kind) && airTapOn() && !autoKickOf(sc) && windUpRef.current === null && !draggingRef.current
+          && aerialMovesOn() && sceneRef.current?.you !== false) {
+          // ── Your aerial move (lib/star/aerialMoves.ts, Harry 25 Oct 2026) ──
+          // The cross comes in (preS with no build-up, as before), you take
+          // off and rise (the move's riseS), and the ball screen opens on the
+          // frame your head / foot meets the ball.
+          let ar = aerialRef.current;
+          const ballNow = () => crossBallNow(sc) ?? { x: sc.ball.x, y: sc.ball.y, z: airZOf(sc) };
+          if (!ar || ar.sc !== sc) {
+            const kind = sc.kind as "header" | "volley";
+            const mate = sc.teammates[0];
+            const tech = careerRef.current?.skills.technique ?? skills.technique;
+            const move = forcedAerialMove(kind) ?? pickAerialMove({
+              kind, ballZ: airZOf(sc),
+              inDir: mate ? { x: sc.ball.x - mate.x, y: sc.ball.y - mate.y } : { x: 0, y: -1 },
+              toGoal: { x: CX - sc.ball.x, y: -sc.ball.y },
+              aerial: airAerialNow() ?? 60, flair: tech ?? 50,
+              seed: (seedRef.current ^ Math.imul(Math.round(sc.ball.x * 100), 31) ^ Math.round(sc.ball.y * 100)) >>> 0,
+            });
+            spriteClipReady("player", AERIAL_SPECS[move].clip as SpriteClip); // starts its atlas loading
+            ar = aerialRef.current = {
+              sc, move, e: 0, preS: airTapLeadRef.current === sc ? 0 : AIR_TAP_OPEN_NO_LEAD_S - AIR_TAP_OPEN_S,
+              foot: 1, from: { x: sc.player.x, y: sc.player.y }, ballFrom: ballNow(), opened: false, struck: null, contactBall: null, probe: null,
+            };
+          } else ar.e += dt;
+          // Until he takes off, the ball is wherever the cross has got to.
+          if (ar.e <= ar.preS) ar.ballFrom = ballNow();
+          // The touch is shown for CONTACT_SHOW_S (a few frames) before the screen covers it.
+          if (!ar.opened && ar.e >= ar.preS + AERIAL_SPECS[ar.move].riseS + CONTACT_SHOW_S) {
+            ar.opened = true;
+            airTapOpenedRef.current = sc;
+            setAim(airTapAim(sc.kind as AirKind, sc.ball, 0));
+            setPowerStrike(false);
+            setPhase("contact");
+            tryHold("contact");
+          }
+        } else if (phaseRef.current === "aim" && !leadRef.current && !playOnRef.current && !ballRef.current && !heldRef.current
+          && isAirKind(sc.kind) && airTapOn() && !autoKickOf(sc) && windUpRef.current === null && !draggingRef.current) {
+          const w = airTapWaitRef.current;
+          const t = w && w.sc === sc ? w.t + dt : 0;
+          airTapWaitRef.current = { sc, t };
+          // No build-up (the Head & Volley drill): a little longer, so the cross is seen coming in first.
+          if (t >= (airTapLeadRef.current === sc ? AIR_TAP_OPEN_S : AIR_TAP_OPEN_NO_LEAD_S) && airTapOpenedRef.current !== sc) {
+            airTapOpenedRef.current = sc;
+            setAim(airTapAim(sc.kind as AirKind, sc.ball, 0));
+            setPowerStrike(false);
+            setPhase("contact");
+            tryHold("contact");
+          }
+        }
+      }
       // v0.15 item 22: once the drag is committed, ordered runs
       // are under way and the presser is coming — until you let go. See
       // stepCommitted.
@@ -6273,6 +6706,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           viewportRef.current = { ...view };
           baseViewportRef.current = { ...view };
           playZoomRef.current = 1;
+          // The men keep the long-range size across the cut (FIGURES_AT_FULL_VIEW).
+          if (newViewRef.current) figShrinkRef.current = figShrinkBaseRef.current = figureShrinkFor(sc.kind, view.x2 - view.x1);
           // The engine reads the frame too — out of it is out of the game — so
           // the situation moves with the picture.
           sc.viewport = { ...view };
@@ -6653,7 +7088,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const b = ballRef.current;
       if (phaseRef.current === "flight" && b && !b.resting) {
         seamRef.current += (b.spin * 0.3 + Math.hypot(b.vel.x, b.vel.y) * 0.06) * dt;
-        trailRef.current.push({ x: b.pos.x, y: b.pos.y, z: b.z });
+        // Where the ball was last drawn (a header's is drawn onto his head
+        // before it leaves, then settles): the trail never kinks off the ball.
+        const sb = shownBallRef.current;
+        trailRef.current.push(sb ? { ...sb } : { x: b.pos.x, y: b.pos.y, z: b.z });
         if (trailRef.current.length > 16) trailRef.current.shift();
       } else if (trailRef.current.length) {
         trailRef.current.shift(); // let it dissolve after the play resolves
@@ -8207,6 +8645,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     setAim(null);
     runupRef.current = null;
     setContactTimerS(null);
+    airTapWaitRef.current = null; airTapOpenedRef.current = null;
     setOutcome(null);
     dragRef.current = null;
     draggingRef.current = false;
@@ -8252,6 +8691,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     setAim(null);
     runupRef.current = null;
     setContactTimerS(null);
+    airTapWaitRef.current = null; airTapOpenedRef.current = null;
     setOutcome(null);
     dragRef.current = null;
     draggingRef.current = false;
@@ -8397,6 +8837,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       setAim(null);
       runupRef.current = null;
       setContactTimerS(null);
+      airTapWaitRef.current = null; airTapOpenedRef.current = null;
       setOutcome(null);
       dragRef.current = null;
       draggingRef.current = false;
@@ -8484,6 +8925,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         setAim(null);
         runupRef.current = null;
         setContactTimerS(null);
+        airTapWaitRef.current = null; airTapOpenedRef.current = null;
         setOutcome(null);
         dragRef.current = null;
         draggingRef.current = false;
@@ -8509,6 +8951,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       setAim(null);
       runupRef.current = null;
       setContactTimerS(null);
+      airTapWaitRef.current = null; airTapOpenedRef.current = null;
       setOutcome(null);
       dragRef.current = null;
       draggingRef.current = false;
@@ -8670,6 +9113,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     setAim(null);
     runupRef.current = null;
     setContactTimerS(null);
+    airTapWaitRef.current = null; airTapOpenedRef.current = null;
     setOutcome(null);
     dragRef.current = null;
     draggingRef.current = false;
@@ -8893,7 +9337,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    */
   const poStickInput = (kind: "down" | "move" | "up", e: React.PointerEvent): boolean => {
     const po = playOnRef.current, c = canvasRef.current;
-    if (!po?.stick || !c) { poStickUiRef.current = null; return false; }
+    if (!po?.stick || !c || !mechOpen("steer")) { poStickUiRef.current = null; return false; }
     const rect = c.getBoundingClientRect();
     const rr = Math.min(rect.width, rect.height) * 0.13;
     if (kind === "down") {
@@ -8941,8 +9385,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const applyRunKeys = () => {
     const po = playOnRef.current, c = canvasRef.current;
     if (!po?.stick || !c) return;
+    // A new career: W A S D from Pace 60, Shift from 65 (lib/star/mechanics.ts).
+    if (!mechOpen("steer")) return;
     const k = keysRef.current;
-    sprintPlayOn(po, k.sprint);
+    sprintPlayOn(po, k.sprint && mechOpen("sprint"));
     const d = keysScreenDir(k);
     if (d.x === 0 && d.y === 0) {
       if (keysSteeringRef.current) { keysSteeringRef.current = false; if (!poStickUiRef.current) steerPlayOn(po, 0, 0); }
@@ -8987,6 +9433,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (leadRef.current) { if (leadRef.current.lead.skippable) skipLeadIn(); return; }
     // Somebody else's penalty (v0.15 items 6/7): you watch it, you don't take it.
     if (phaseRef.current === "aim" && autoKickOf(scenarioRef.current)) return;
+    // A header or volley (airTap.ts): no arrow to drag; the ball screen opens by itself.
+    if (phaseRef.current === "aim" && isAirKind(scenarioRef.current.kind) && airTapOn()) return;
     if (phaseRef.current === "tdDribble" && dribbleControlRef.current === "stick") { tdStickInput("down", e); return; }
     if (phaseRef.current === "tdDribble") {
       const run = tdRef.current;
@@ -9176,7 +9624,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         if (mi >= 0) { fpPass(run, mi, visionRef.current); return; }
         if (!run.duels) { fpSteer(run, run.laneTarget + 1.8 * g.side); return; }
       }
-      if (g.kind !== "none" && run.duels) fpFeint(run, g.kind, g.side);
+      // A new career's step-over waits for the skill moves update (mechanics.ts).
+      if (g.kind !== "none" && run.duels && !(g.kind === "stepover" && !mechOpen("skillMoves"))) fpFeint(run, g.kind, g.side);
       return;
     }
     // A flick is a direction and nothing else. Short taps are ignored so a
@@ -9291,7 +9740,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     setAim({ dir, power });
     // An armed power shot winds up first (shotModel.ts): the pitch keeps
     // moving for POWER_SHOT_WINDUP_S, then the green-circle screen opens.
-    if (powerArmedRef.current && knucklePowerOn() && aimedAtGoal(scenarioRef.current, dir)) {
+    if (powerArmedRef.current && knucklePowerOn() && mechOpen("powerShot") && aimedAtGoal(scenarioRef.current, dir)) {
       setPowerStrike(true);
       setPowerArmed(false);
       windUpRef.current = POWER_SHOT_WINDUP_S;
@@ -9351,12 +9800,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   //     team-mate or an opponent with HIS aim and HIS skills (`skills`) —
   //     the SAME strike as yours from here on.
   const handleContact = (
-    tapped: { cx: number; cy: number; lift?: number },
+    tapped: { cx: number; cy: number; lift?: number; late?: boolean; aim?: { dir: { x: number; y: number }; power: number } },
     over?: { dir: { x: number; y: number }; power: number; skills?: KickSkills },
     extras?: ShotExtras,
   ) => {
-    const a = over ? { dir: over.dir, power: over.power } : aim;
+    // A header or volley with no arrow (airTap.ts) brings its aim from the tap.
+    let a = over ? { dir: over.dir, power: over.power } : tapped.aim ?? aim;
     if (!a) return;
+    // Your aerial move tints the strike a little (aerialMoves.ts aerialStrikeTint):
+    // a bicycle or scorpion wider, a diving header harder. Its own seeded draw.
+    const aerNow = !over && aerialRef.current?.sc === scenarioRef.current && aerialRef.current.opened ? aerialRef.current : null;
+    if (aerNow) a = aerialStrikeTint(aerNow.move, a.dir, a.power, (seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x27d4eb2d)) >>> 0);
     // Struck while the men were still running after the hand-over (phase 3):
     // each carries his speed into the play. Before the replay snapshot, so a
     // goal replay throws the same runs. Nobody running: nothing happens.
@@ -9412,7 +9866,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // "Knuckleball & power shot") ── only ever your own kick. Both Old: the
     // plain `launch` below, exactly as before.
     const shotPro = !auto && shotsPro();
-    const shotKnuckle = !auto && knucklePowerOn();
+    const shotKnuckle = !auto && knucklePowerOn() && mechOpen("knuckle");
     // Oct 13: the contact field and the power curve's rise ride the same record.
     const shotField = !auto && contactFieldOn();
     const shotLift = feelPow ? feelLift(strikeWith.power) : 1;
@@ -9448,6 +9902,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       ballRef.current = launch(scenarioRef.current, a.dir, a.power, contact, launchWith, rngRef.current);
     }
     applyAirborne(ballRef.current, scenarioRef.current, contact.air);
+    // Your header (headerBeat.ts): drawn as you moving under it and jumping to
+    // meet it, the ball coming onto your head from where the cross was. Looks only.
+    headerBeatRef.current = null;
+    if (aerNow) {
+      const bl = ballRef.current;
+      aerNow.struck = { at: performance.now() / 1000, holdS: 0, zDraw: aerNow.contactBall?.z ?? bl.z, zPhys: bl.z };
+      const banner = AERIAL_SPECS[aerNow.move].banner;
+      if (banner) showAction(banner);
+    } else if (!over && contact.air?.kind === "header") {
+      const bl = ballRef.current, sc = scenarioRef.current;
+      const nowS = performance.now() / 1000;
+      const from = crossBallNow(sc) ?? { x: bl.pos.x, y: bl.pos.y, z: bl.z };
+      headerBeatRef.current = {
+        sc, e: 0, last: nowS, rise: matchFeelOn() ? HEADER_RISE_S : 0, late: tapped.late === true,
+        from: { x: sc.player.x, y: sc.player.y }, to: { x: bl.pos.x, y: bl.pos.y },
+        ballFrom: from, metZ: bl.z,
+      };
+    }
     // ── The keeper brain sees you strike it ── its own seeded stream (built
     // the way the penalty read's is), and a snapshot of him as he stands, so
     // a goal replay throws exactly the same dive. For a penalty the brain
@@ -9550,7 +10022,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       })) {
         playOnRngRef.current = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x9e3779b1)) ^ 0x61a7) >>> 0);
         const bl = ballRef.current;
-        const stick = afterPassStickOn();
+        // A new career steers its run from Pace 60 (lib/star/mechanics.ts).
+        const stick = afterPassStickOn() && mechOpen("steer");
         // B20 (Harry, 21 Oct 2026: "your player runs after the ball while it's
         // being kicked whilst being in position"): you stay on the spot you were
         // standing on (youSpot.ts puts you beside the ball, ~1.4-1.6 m off it);
@@ -9610,9 +10083,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const f = strikeFeel(speed, grade, D, contact.air?.kind);
       const fl = feelRef.current;
       fl.pending = { f, x: bl.pos.x, y: bl.pos.y, z: bl.z, vx: bl.vel.x, vy: bl.vel.y };
-      fl.windUp = f.windUpS;
-      fl.windUpTotal = f.windUpS;
-      fl.hitStop = f.windUpS + f.hitStopS;
+      // Your header: the wind-up is the time you take to rise to the ball (headerBeat.ts HEADER_RISE_S).
+      const windUpS = headerBeatRef.current ? Math.max(f.windUpS, HEADER_RISE_S) : f.windUpS;
+      // Your aerial move: the touch is held through the wind-up and the freeze, then the follow-through.
+      if (aerNow?.struck) aerNow.struck.holdS = windUpS + f.hitStopS;
+      fl.windUp = windUpS;
+      fl.windUpTotal = windUpS;
+      fl.hitStop = windUpS + f.hitStopS;
       fl.followRate = 1.2 - 0.5 * f.power;
       fl.prev = null;
       fl.net = null;
@@ -9623,6 +10100,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     kickPoseRef.current = KICK_POSE_S;
   };
   handleContactRef.current = handleContact;
+  /** Your Aerial now (tired legs count), as the strike screen reads it. */
+  const airAerialNow = (): number | undefined => career
+    ? Math.round(aerialOf(career.skills) * (1 - fatigueCut(liveEnergyAt(matchMinuteRef.current))))
+    : (skills as KickSkills & { aerial?: number }).aerial;
 
   /**
    * The strike screen's countdown ran out (the run-up): the kick happens
@@ -9772,7 +10253,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             {statCell("Goals", `${stats.goals}`, "text-amber-300")}
             {statCell("Assists", `${stats.assists}`, "text-emerald-300")}
             {statCell("Pass", `${passPct}%`, "text-violet-300")}
-            {statCell("Avg Rat", regressForMinutes(
+            {statCell("Rating", regressForMinutes(
               // Item 26: the same formula the post-match screen uses (the old
               // box counted only lost dribbles as waste, the final counted
               // every chance — two different numbers for one match).
@@ -9890,7 +10371,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             (the dim part past the line is energy you no longer have); drains as
             you sprint, refills as you ease off. B14b: in the first corner of the
             pitch clear of the goal, the ball and every man (lib/star/barSpot.ts). */}
-        {stamUi && !leadInOn && phase !== "feed" && phase !== "postmatch" && (runLive || ((phase === "aim" || phase === "result") && goalInView(scenarioRef.current.kind) && acceptsCaptainOrders(scenarioRef.current.kind))) && (
+        {stamUi && mechOpen("sprint") && !leadInOn && phase !== "feed" && phase !== "postmatch" && (runLive || ((phase === "aim" || phase === "result") && goalInView(scenarioRef.current.kind) && acceptsCaptainOrders(scenarioRef.current.kind))) && (
           <div
             data-stamina={stamUi.v.toFixed(2)}
             data-stamina-cap={stamUi.cap.toFixed(2)}
@@ -9955,7 +10436,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             lib/star/shotModel.ts). Arms the next shot at goal; bottom-left,
             clear of the ball's own pull room. Its own pointer-events-auto so
             a tap never starts an aim-drag underneath. */}
-        {knucklePowerOn() && phase === "aim" && !leadInOn && !windingUp && !replayOf
+        {knucklePowerOn() && mechOpen("powerShot") && phase === "aim" && !leadInOn && !windingUp && !replayOf
           && !["penalty", "free_kick", "corner", "byline_cross"].includes(scenarioRef.current.kind) && (
           <button
             onClick={() => setPowerArmed((v) => !v)}
@@ -9992,7 +10473,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
                   {tdRef.current?.stick
                     ? "Left thumb: push the stick to run with it. Flick it sideways to knock it past him. Right side: tap a team-mate to pass."
                     : tdRef.current?.duels
-                    ? "He backs off and shows you one way. Sell him a step-over or a dropped shoulder, then go the other way — or flick past him the moment he plants."
+                    ? (mechOpen("skillMoves")
+                      ? "He backs off and shows you one way. Sell him a step-over or a dropped shoulder, then go the other way — or flick past him the moment he plants."
+                      : "He backs off and shows you one way. Drop a shoulder, then go the other way — or flick past him the moment he plants.")
                     : "Drag to steer. Flick to burst past him."}
                 </span>
               </div>
@@ -10000,7 +10483,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
               <div className="absolute inset-x-0 bottom-0 px-2 pb-2">
                 <p className="bg-black/70 px-3 py-2 text-center text-[12px] font-bold leading-snug text-white">
                   {tdRef.current?.duels
-                    ? "Tap a side: drop the shoulder. Swipe down: step-over. Flick: knock it past as he plants."
+                    ? (mechOpen("skillMoves") ? "Tap a side: drop the shoulder. Swipe down: step-over. Flick: knock it past as he plants." : "Tap a side: drop the shoulder. Flick: knock it past as he plants.")
                     : "Drag to steer. Flick to burst past him. Tap a team-mate to pass."}
                 </p>
               </div>
@@ -10044,6 +10527,31 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
         {/* Contact overlay. After a run-up it has a countdown
             (penaltyRunup.ts); run out and the kick is scuffed. */}
+        {/* The coach lines sit clear of the skip pill and STAMINA (aim), the
+            power bar on the right, and a header's ball in mid-air (playtest 25 Oct). */}
+        {coachFirstHeader && (phase === "aim" || phase === "contact") && (
+          <div data-first-header-coach className={`pointer-events-none absolute z-40 ${phase === "aim" ? "inset-x-3 bottom-[64px]" : "left-3 right-14 bottom-[64px]"} rounded-xl px-3 py-2 text-center text-[13px] font-black leading-snug text-white`}
+            style={{ background: "rgba(5,8,15,.82)", boxShadow: "inset 0 0 0 2px #fde047, 0 8px 20px -8px rgba(0,0,0,.9)" }}>
+            {phase === "aim" ? "A header! Watch him go up for the cross" : "A header! Tap the ball before the ring runs out. Its left side sends it right"}
+          </div>
+        )}
+        {coachFirstChance && (phase === "aim" || phase === "contact") && (
+          <div data-first-chance-coach className={`pointer-events-none absolute z-40 ${phase === "aim" ? "inset-x-3 bottom-[64px]" : "left-3 right-14 top-[40%]"} rounded-xl px-3 py-2 text-center text-[13px] font-black leading-snug text-white`}
+            style={{ background: "rgba(5,8,15,.82)", boxShadow: "inset 0 0 0 2px #fde047, 0 8px 20px -8px rgba(0,0,0,.9)" }}>
+            {/* A header or volley has no arrow to drag (airTap.ts): say what happens instead. */}
+            {isAirKind(scenarioRef.current.kind) && airTapOn()
+              ? (phase === "aim"
+                ? (scenarioRef.current.kind === "header" ? "A header! Watch him go up for the cross" : "A volley! Watch him meet the ball")
+                : "Tap the ball before the ring runs out. Its left side sends it right")
+              : phase === "aim" ? "Drag back from the ball to aim and control your power, then let go" : "Tap the part of the ball you want to kick"}
+          </div>
+        )}
+        {firstUse && (
+          <div data-first-use-coach={firstUse.key} className={`pointer-events-none absolute z-40 left-3 right-14 ${firstUse.key === "volley" ? "bottom-[64px]" : "top-[12%]"} rounded-xl px-3 py-2 text-center text-[13px] font-black leading-snug text-white`}
+            style={{ background: "rgba(5,8,15,.82)", boxShadow: "inset 0 0 0 2px #fde047, 0 8px 20px -8px rgba(0,0,0,.9)" }}>
+            {firstUse.text}
+          </div>
+        )}
         {phase === "contact" && aim && powerStrike && (
           <PowerShotContact power={aim.power} onStrike={(q) => {
             // Its own seeded draw, so the match's random stream is untouched.
@@ -10056,12 +10564,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           <ContactBall
             power={aim.power}
             grades={shotsPro() && aimedAtGoal(scenarioRef.current, aim.dir)}
-            knuckles={knucklePowerOn()}
+            knuckles={knucklePowerOn() && mechOpen("knuckle")}
             field={contactFieldOn() && fieldApplies(scenarioRef.current.kind)}
-            onContact={(c) => handleContact(c)}
+            onContact={(c) => {
+              // A header or volley (airTap.ts): no arrow, so the side of the ball you hit aims it.
+              const sc = scenarioRef.current;
+              if (isAirKind(sc.kind) && airTapOn()) {
+                const st = airTapStrike(sc.kind as AirKind, sc.ball, c, airAerialNow());
+                handleContact({ ...st.contact, aim: st.aim });
+              } else handleContact(c);
+            }}
+            aimFromTap={isAirKind(scenarioRef.current.kind) && airTapOn()}
             motion={strikeMotion(scenarioRef.current.kind, seedRef.current)}
             technique={skills.technique}
-            aerial={career ? Math.round(aerialOf(career.skills) * (1 - fatigueCut(liveEnergyAt(matchMinuteRef.current)))) : (skills as KickSkills & { aerial?: number }).aerial}
+            aerial={airAerialNow()}
             // A header: how high the cross reaches you, so the screen can say your jump (aerial.ts headerJump).
             ballZ={strikeMotion(scenarioRef.current.kind, seedRef.current) === "float" ? (scenarioRef.current.kind === "header" ? airZOf(scenarioRef.current) : HEADER_Z) : undefined}
             timeLimitS={contactTimerS ?? undefined}

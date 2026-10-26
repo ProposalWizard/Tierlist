@@ -10,6 +10,7 @@
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isGuestUser } from "@/lib/guest/config";
 import { createServiceClient } from "@/lib/supabase/service";
 import { XP_AWARDS, levelFromXp } from "@/lib/xp";
 
@@ -29,7 +30,8 @@ export async function POST(request: Request) {
     error: authError,
   } = await supabase.auth.getUser();
 
-  if (authError || !user) {
+  // Guests (lib/guest/config.ts) count as signed out here.
+  if (authError || !user || isGuestUser(user)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
