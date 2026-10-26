@@ -287,8 +287,16 @@ export function aerialMovesOn(): boolean {
   } catch { return true; }
 }
 
+// The aerials test page (/star-aerials-dev, admins only behind DevGate) sets
+// this while it is open, so its forced move works on the live site too. Null
+// everywhere else, so the game always makes its own pick.
+let testPageMove: AerialMove | null = null;
+/** /star-aerials-dev only: force this move on every header/volley while the page is open; null clears it. */
+export function setTestAerialMove(move: AerialMove | null): void { testPageMove = move; }
+
 /** Test pages only (filming): force one move on every header/volley, ?airmove=<move>. Null in the game. */
 export function forcedAerialMove(kind: "header" | "volley"): AerialMove | null {
+  if (testPageMove && AERIAL_SPECS[testPageMove].kind === kind) return testPageMove;
   try {
     if (typeof window === "undefined") return null;
     if (!offlineDevPlayEnabled()) return null;

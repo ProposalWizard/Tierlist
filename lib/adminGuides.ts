@@ -909,6 +909,25 @@ export const ADMIN_GUIDES = {
     needs: ["Real squads need the normal Supabase connection; without it both sides are made-up players (the kicks still work)."],
     dev: "app/star-shootout-dev/page.tsx · components/star/ShootoutPlay.tsx (`readsHabits`, `onHabits`) · components/star/EnginePlay.tsx (`penaltyRead` passed through) · lib/star/penaltyKeeper.ts (`readKickHabits`, `KICK_HABITS`, `habit`, `sideWithHabit`) · lib/star/keeperBrain.ts (the run-up hop uses `sideWithHabit`) · tests/star/penaltyKeeperHabits.mts",
   },
+  "/star-aerials-dev": {
+    title: "Headers and volleys",
+    what: "Play a header or volley chance in the real match with one aerial move forced, to see each move's animation and the ball screen on its contact frame.",
+    buttons: [
+      { group: "1 · The move", items: [
+        ["Standing header / Jumping header / Diving header", "Forces that header on every header chance, and plays a header chance now."],
+        ["Chest volley / Front volley / Side volley / Bicycle kick / Scorpion kick", "Forces that volley move on every volley chance, and plays a volley chance now."],
+        ["🎲 Random (game picks)", "No force: the game picks the move from the ball's height and angle, your Aerial and your Technique, as in a career."],
+      ] },
+      { group: "2 · The chance", items: [
+        ["Header chance / Volley chance", "Which chance plays. Picking the other kind while a move is forced goes back to Random."],
+        ["New chance", "A fresh chance of the same kind, same move."],
+        ["Tap the ball", "When the head or foot meets the ball, the ball screen opens: tap it to strike, as in the real match."],
+      ] },
+    ],
+    saving: ["Nothing. The forced move lives on this page only and is cleared when you leave."],
+    inGame: ["The moves are the game's own (career, highlights, the Head & Volley drill). Only the force is test-page only: the game always picks its own move."],
+    dev: "app/star-aerials-dev/page.tsx · lib/star/aerialMoves.ts (setTestAerialMove, forcedAerialMove, pickAerialMove) · components/star/CanvasMatch.tsx (reads forcedAerialMove) · tests/star/aerialMoves.mts",
+  },
   "/star-weather-dev": {
     title: "Weather and pitch",
     what: "Try wind, rain and a bad pitch on the real ball before any of it goes into the game. The real game is unchanged.",
