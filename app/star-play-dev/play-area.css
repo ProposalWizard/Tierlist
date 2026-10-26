@@ -56,7 +56,7 @@
 .pa-curve-row > span { white-space: nowrap; }
 .pa-curve-row i { font-style: normal; color: var(--bc-ink2); font-size: 12px; margin-left: 4px; }
 .pa-curve-head { font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--bc-ink2); padding-bottom: 4px; }
-.pa-curve-in { width: 72px; height: 36px; padding: 0 8px; border-radius: 4px; border: 1px solid rgba(80, 200, 255, 0.5);
+.pa-curve-in { width: 84px; height: 36px; padding: 0 8px; border-radius: 4px; border: 1px solid rgba(80, 200, 255, 0.5);
   background: rgba(4, 14, 40, 0.8); color: #fff; font: 700 15px ui-monospace, monospace; }
 .pa-curve-bars { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 2px; }
 .pa-curve-bar { height: 4px; border-radius: 2px; }
