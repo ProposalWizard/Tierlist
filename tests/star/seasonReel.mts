@@ -152,6 +152,88 @@ for (const n of [26, 30, 40, 45, 50]) {
 check(seasonLabelOf(2027, 1) === "2026/27" && seasonLabelOf(2027, 4) === "2029/30" && seasonLabelOf(2027, 74) === "2099/00", "season labels");
 check(goalCaption(goal(3, { minute: 34, opponent: "Arsenal", competition: "FA Cup" })) === "34' v Arsenal · FA Cup", "the caption reads 34' v Arsenal · FA Cup");
 
+// ── 6. The sound lands with the picture (sound pass, 25 Oct 2026) ───────────
+// Real recordings (the goal-video maker's synth, as on the test page), the
+// reel's own sound plan. For every goal on screen: the net sound within
+// 10 ms of the ball going in, the roar starting 0-80 ms before it; the slow
+// replay's net on the slowed picture; commentary lines never overlap and
+// never run past the end; at each quick-fire goal the music steps aside.
+// (Loudness and clipping need a browser's audio engine: measured with
+// ffmpeg, docs/handoffs/2026-10-25-leo-overnight/chat6/sound/sound.md.)
+{
+  const { synthTrack } = await import("../../lib/star/goalClip/synth");
+  const { reelCrowdPlan, timingOf, QUICK_CROWD, OUT_TRIM } = await import("../../lib/star/goalClip/reelAudio");
+  const { COMMENTARY_SECONDS } = await import("../../lib/star/goalClip/commentaryDurations");
+  const { screenGoalAt, MUSIC_QUICK_DIP } = await import("../../lib/star/goalClip/reel");
+  type Kind = Parameters<typeof synthTrack>[0]["kind"];
+  const kinds: Kind[] = ["run_in", "tap_in", "long_range", "header", "penalty"];
+  for (const n of [20, 40]) {
+    const inp = input(n);
+    const tracks = new Map<string, NonNullable<ReturnType<typeof synthTrack>>>();
+    inp.goals.forEach((g, i) => {
+      const tr = synthTrack({ home: "Arsenal", away: "Chelsea", scorer: "Leo Vale", scorerShort: "Vale", scorerHome: true, minute: g.minute, scoreAfter: [1 + (i % 3), i % 2], competition: g.competition, season: 1, week: i + 1, seed: `reel-test:${i}`, kind: kinds[i % kinds.length] });
+      if (tr) { tr.meta.isYou = true; tracks.set(tr.meta.id, tr); g.clipId = tr.meta.id; }
+    });
+    inp.timings = {};
+    tracks.forEach((t, id) => { inp.timings[id] = timingOf(t); });
+    const p = planReel(inp);
+    const ap = reelCrowdPlan(p, tracks);
+    const lv = musicLevels(p, inp.timings);
+    const musicAt = (t: number) => {
+      let k = lv.findIndex((x) => x.at > t);
+      if (k < 0) return lv[lv.length - 1].gain;
+      if (k === 0) return lv[0].gain;
+      const a = lv[k - 1], b = lv[k];
+      return b.at === a.at ? b.gain : a.gain + (b.gain - a.gain) * (t - a.at) / (b.at - a.at);
+    };
+    const off: number[] = [];
+    let goalsOnScreen = 0;
+    for (const s of p.segs) {
+      if ((s.kind !== "goal" && s.kind !== "best") || !s.shots.length) continue;
+      const tr = tracks.get(s.goal.clipId!)!;
+      let acc = 0;
+      for (const sh of s.shots) {
+        if (tr.goalT >= sh.from && tr.goalT <= sh.to) {
+          goalsOnScreen++;
+          const at = s.at + acc + (tr.goalT - sh.from) / sh.rate;
+          const net = ap.cues.filter((c) => c.sound === "goal-net").map((c) => c.at - at).sort((a, b) => Math.abs(a) - Math.abs(b))[0];
+          off.push(net * 1000);
+          check(Math.abs(net) <= 0.01, `${n} goals: goal ${s.n}${sh.replay ? " (slow replay)" : ""}: net sound ${Math.round(net * 1000)} ms from the ball going in`);
+          if (!sh.replay) {
+            const roar = ap.cues.filter((c) => c.sound === "crowd-cheer-stadium").map((c) => c.at - at).filter((d) => d > -0.5 && d < 0.5);
+            check(roar.some((d) => d >= -0.08 && d <= 0.0), `${n} goals: goal ${s.n}: the roar starts with the ball going in (${roar.map((d) => Math.round(d * 1000)).join(",")} ms)`);
+            check(Math.abs((screenGoalAt(s, inp.timings) ?? -9) - at) < 1e-6, `${n} goals: screenGoalAt finds goal ${s.n}`);
+            if (s.kind === "goal" && s.quick) {
+              const m = musicAt(at + 0.15);
+              check(m <= MUSIC_QUICK_DIP + 1e-6, `${n} goals: quick goal ${s.n}: the music steps aside as it goes in (${m.toFixed(2)})`);
+              // The roar over the music, as at a full goal (crowd 0.9 over the
+              // music's duck): within 2 dB of it (it was 8 dB under before).
+              const quickDb = 20 * Math.log10(QUICK_CROWD / m), fullDb = 20 * Math.log10(0.9 / MUSIC_DUCK);
+              check(quickDb > fullDb - 2, `${n} goals: quick goal ${s.n}: the roar stands over the music like a full goal's (${quickDb.toFixed(1)} v ${fullDb.toFixed(1)} dB)`);
+            }
+          }
+        }
+        acc += (sh.to - sh.from) / sh.rate;
+      }
+    }
+    check(goalsOnScreen === n + 2, `${n} goals: every goal and the goal of the season (live + slow) on screen (${goalsOnScreen})`);
+    // Commentary: one voice at a time, all inside the reel.
+    const talk = ap.cues.filter((c) => c.sound.startsWith("cl-") || c.sound.startsWith("cc-")).map((c) => ({ a: c.at, b: c.at + (COMMENTARY_SECONDS[c.sound] ?? 1.8), id: c.sound }));
+    check(talk.length >= 1, `${n} goals: the goal of the season has a commentator (${talk.length} lines)`);
+    check(talk.every((x, i) => i === 0 || x.a >= talk[i - 1].b), `${n} goals: commentary lines never overlap (${talk.map((x) => `${x.a.toFixed(2)}-${x.b.toFixed(2)}`).join(" ")})`);
+    check(talk.every((x) => x.b <= p.duration), `${n} goals: no commentary line runs past the end`);
+    const best = p.segs.find((s) => s.kind === "best")!;
+    check(talk.every((x) => x.a >= best.at && x.a < best.at + best.dur), `${n} goals: commentary only over the goal of the season`);
+    // Never more than this much roar at once (the quick-fire run stacks them;
+    // 3.2 measured clean through the limiter, 25 Oct).
+    const cheers = ap.cues.filter((c) => c.sound === "crowd-cheer-stadium");
+    const most = Math.max(...cheers.map((c) => cheers.filter((d) => d.at <= c.at && d.at > c.at - 4).reduce((a, d) => a + d.gain, 0)));
+    check(most <= 3.2, `${n} goals: stacked roars stay under 3.2 (${most.toFixed(2)})`);
+    if (n === 40) console.log(`  sound: ${goalsOnScreen} goals on screen, net within ${Math.max(...off.map(Math.abs)).toFixed(1)} ms, ${talk.length} commentary lines, most roar at once ${most.toFixed(2)}`);
+  }
+  check(OUT_TRIM > 0 && OUT_TRIM < 0.84, `the mix's last trim is under the old 0.84 (-12.8 LUFS) (${OUT_TRIM})`);
+}
+
 if (problems.length) {
   console.error(`seasonReel: ${problems.length} problem(s)\n - ${problems.join("\n - ")}`);
   process.exit(1);

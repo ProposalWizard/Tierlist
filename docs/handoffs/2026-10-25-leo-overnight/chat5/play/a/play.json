@@ -1,0 +1,1032 @@
+{
+ "cpu": 4,
+ "base": "http://localhost:3300",
+ "at": "2026-10-25T13:19:32.741Z",
+ "paths": [
+  {
+   "id": "wc",
+   "pathReadyMs": 2946,
+   "levels": [
+    {
+     "path": "wc",
+     "level": 1,
+     "open": "true",
+     "matchReadyMs": 2200,
+     "goal": "wy88880187",
+     "header": "LEVEL 1 · EURO 2016 · GROUP STAGE Croatia 0–0 Spain · 7' You are Álvaro Morata (Spain) · Left Foot · xG 88% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). Silva → Fàbregas MATCH LAB GOALS 0 ASSIS",
+     "buildUpMs": 855,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom right corner (3.07 m off)"
+      },
+      {
+       "dx": -25,
+       "pull": 120,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom right corner (3.18 m off)"
+      },
+      {
+       "dx": 140,
+       "pull": 120,
+       "lift": 0.65,
+       "goal": true,
+       "pct": 92,
+       "you": "You: down the middle (0.37 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 92,
+     "starsShown": 3,
+     "cardStars": 3
+    },
+    {
+     "path": "wc",
+     "level": 2,
+     "open": "true",
+     "matchReadyMs": 1088,
+     "goal": "wy261386462",
+     "header": "LEVEL 2 · WORLD CUP 2018 · ROUND OF 16 Brazil 0–0 Mexico · 51' You are Neymar (Brazil) · Right Foot · xG 65% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). Casemiro → Coutinho MATCH LAB GOALS 0 A",
+     "buildUpMs": 12879,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": true,
+       "pct": 1,
+       "you": "You: right side, mid-height (2.41 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 1,
+     "starsShown": 1,
+     "cardStars": 1
+    },
+    {
+     "path": "wc",
+     "level": 3,
+     "open": "true",
+     "matchReadyMs": 943,
+     "goal": "wy260339441",
+     "header": "LEVEL 3 · WORLD CUP 2018 · GROUP STAGE Spain 0–1 Morocco · 19' You are Isco (Spain) · Right Foot · xG 52% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). Alcântara → Ramos MATCH LAB GOALS 0 ASSIST",
+     "buildUpMs": 12750,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: right side, mid-height (5.10 m off)"
+      },
+      {
+       "dx": -25,
+       "pull": 165,
+       "lift": 0.5,
+       "goal": true,
+       "pct": 28,
+       "you": "You: left side, mid-height (1.30 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 28,
+     "starsShown": 1,
+     "cardStars": 1
+    },
+    {
+     "path": "wc",
+     "level": 4,
+     "open": "true",
+     "matchReadyMs": 813,
+     "goal": "wy260874301",
+     "header": "LEVEL 4 · WORLD CUP 2018 · GROUP STAGE Panama 1–1 Tunisia · 66' You are Wahbi Khazri (Tunisia) · Right Foot · xG 48% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). Bedoui → Meriah MATCH LAB GOALS",
+     "buildUpMs": 11353,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom left corner (1.50 m off)"
+      },
+      {
+       "dx": 25,
+       "pull": 120,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom left corner (1.82 m off)"
+      },
+      {
+       "dx": -140,
+       "pull": 120,
+       "lift": 0.65,
+       "goal": false,
+       "pct": 0,
+       "you": "You: left side, mid-height (2.79 m off)"
+      },
+      {
+       "dx": 140,
+       "pull": 120,
+       "lift": 0.8,
+       "goal": false,
+       "pct": 0,
+       "you": "You: left side, mid-height (2.31 m off)"
+      },
+      {
+       "dx": 140,
+       "pull": 120,
+       "lift": 0.9,
+       "goal": false,
+       "pct": 0,
+       "you": ""
+      },
+      {
+       "dx": 140,
+       "pull": 165,
+       "lift": 0.9,
+       "out": "no strike"
+      },
+      {
+       "dx": -132,
+       "pull": 165,
+       "lift": 0.9,
+       "out": "no strike"
+      },
+      {
+       "dx": 124,
+       "pull": 165,
+       "lift": 0.9,
+       "out": "no strike"
+      },
+      {
+       "dx": -116,
+       "pull": 165,
+       "lift": 0.9,
+       "out": "no strike"
+      },
+      {
+       "dx": 108,
+       "pull": 165,
+       "lift": 0.9,
+       "out": "no strike"
+      }
+     ],
+     "starsShown": 0,
+     "cardStars": 0
+    },
+    {
+     "path": "wc",
+     "level": 5,
+     "open": "false",
+     "note": "locked"
+    }
+   ],
+   "afterReloadTotal": "★ 5 / 150"
+  },
+  {
+   "id": "pl",
+   "pathReadyMs": 1063,
+   "levels": [
+    {
+     "path": "pl",
+     "level": 1,
+     "open": "true",
+     "matchReadyMs": 2069,
+     "goal": "wy196354031",
+     "header": "LEVEL 1 · PREMIER LEAGUE 2017/18 · 14 OCT 2017 Swansea City 1–0 Huddersfield Town · 48' You are Tammy Abraham (Swansea City) · Right Foot · xG 88% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). M",
+     "buildUpMs": 79,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: left side, mid-height (5.60 m off)"
+      },
+      {
+       "dx": 25,
+       "pull": 120,
+       "lift": 0.19999999999999998,
+       "goal": true,
+       "pct": 81,
+       "you": "You: bottom right corner (0.54 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 81,
+     "starsShown": 2,
+     "cardStars": 2
+    },
+    {
+     "path": "pl",
+     "level": 2,
+     "open": "true",
+     "matchReadyMs": 989,
+     "goal": "wy240843588",
+     "header": "LEVEL 2 · PREMIER LEAGUE 2017/18 · 7 APR 2018 Leicester City 0–2 Newcastle United · 84' You are Jamie Vardy (Leicester City) · Left Foot · xG 76% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). Ma",
+     "buildUpMs": 11855,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": true,
+       "pct": 0,
+       "you": "You: bottom left corner (2.96 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 0,
+     "starsShown": 1,
+     "cardStars": 1
+    },
+    {
+     "path": "pl",
+     "level": 3,
+     "open": "true",
+     "matchReadyMs": 671,
+     "goal": "wy217266231",
+     "header": "LEVEL 3 · PREMIER LEAGUE 2017/18 · 23 DEC 2017 West Ham United 1–3 Newcastle United · 69' You are André Ayew (West Ham United) · Right Foot · xG 69% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar).",
+     "buildUpMs": 127,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: low, down the middle (2.07 m off)"
+      },
+      {
+       "dx": 25,
+       "pull": 120,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom left corner (4.80 m off)"
+      },
+      {
+       "dx": -5.683683180648121,
+       "pull": 120,
+       "lift": 0.65,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": -5.683683180648121,
+       "pull": 165,
+       "lift": 0.65,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": -5.683683180648121,
+       "pull": 120,
+       "lift": 0.65,
+       "goal": true,
+       "pct": 19,
+       "you": "You: right side, mid-height (1.50 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 19,
+     "starsShown": 1,
+     "cardStars": 1
+    },
+    {
+     "path": "pl",
+     "level": 4,
+     "open": "true",
+     "matchReadyMs": 917,
+     "goal": "wy251596263",
+     "header": "LEVEL 4 · PREMIER LEAGUE 2017/18 · 13 MAY 2018 West Ham United 2–0 Everton · 74' You are El-Hadji Niasse (Everton) · Right Foot · xG 61% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). Baines → Sc",
+     "buildUpMs": 7073,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      }
+     ],
+     "starsShown": 0,
+     "cardStars": 0
+    },
+    {
+     "path": "pl",
+     "level": 5,
+     "open": "false",
+     "note": "locked"
+    }
+   ],
+   "afterReloadTotal": "★ 4 / 150"
+  },
+  {
+   "id": "liga",
+   "pathReadyMs": 1462,
+   "levels": [
+    {
+     "path": "liga",
+     "level": 1,
+     "open": "true",
+     "matchReadyMs": 1702,
+     "goal": "wy215495430",
+     "header": "LEVEL 1 · LA LIGA 2017/18 · 17 DEC 2017 Barcelona 3–0 Deportivo La Coruña · 75' You are Paulinho (Barcelona) · Right Foot · xG 88% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). MATCH LAB GOALS 0",
+     "buildUpMs": 128,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": true,
+       "pct": 14,
+       "you": "You: bottom right corner (1.62 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 14,
+     "starsShown": 1,
+     "cardStars": 1
+    },
+    {
+     "path": "liga",
+     "level": 2,
+     "open": "true",
+     "matchReadyMs": 873,
+     "goal": "wy230691564",
+     "header": "LEVEL 2 · LA LIGA 2017/18 · 25 FEB 2018 Valencia 1–1 Real Sociedad · 68' You are Santi Mina (Valencia) · Right Foot · xG 73% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). MATCH LAB GOALS 0 ASSIS",
+     "buildUpMs": 102,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": true,
+       "pct": 58,
+       "you": "You: down the middle (1.03 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 58,
+     "starsShown": 1,
+     "cardStars": 1
+    },
+    {
+     "path": "liga",
+     "level": 3,
+     "open": "true",
+     "matchReadyMs": 782,
+     "goal": "wy228707180",
+     "header": "LEVEL 3 · LA LIGA 2017/18 · 17 FEB 2018 Las Palmas 0–0 Sevilla · 35' You are Wissam Ben Yedder (Sevilla) · Left Foot · xG 67% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). MATCH LAB GOALS 0 ASSI",
+     "buildUpMs": 26,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: right side, mid-height (4.12 m off)"
+      },
+      {
+       "dx": -25,
+       "pull": 120,
+       "lift": 0.19999999999999998,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom right corner (3.78 m off)"
+      },
+      {
+       "dx": -140,
+       "pull": 120,
+       "lift": 0.04999999999999999,
+       "goal": false,
+       "pct": 0,
+       "you": "You: left side, mid-height (3.22 m off)"
+      },
+      {
+       "dx": -87.29073062696017,
+       "pull": 120,
+       "lift": -0.1,
+       "goal": false,
+       "pct": 1,
+       "you": "You: bottom left corner (2.54 m off)"
+      },
+      {
+       "dx": 111.36094572968372,
+       "pull": 120,
+       "lift": -0.25,
+       "goal": true,
+       "pct": 98,
+       "you": "You: bottom left corner (0.19 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 98,
+     "starsShown": 3,
+     "cardStars": 3
+    },
+    {
+     "path": "liga",
+     "level": 4,
+     "open": "true",
+     "matchReadyMs": 883,
+     "goal": "wy227580999",
+     "header": "LEVEL 4 · LA LIGA 2017/18 · 11 FEB 2018 Valencia 1–1 Levante · 65' You are Luciano Vietto (Valencia) · Right Foot · xG 60% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). MATCH LAB GOALS 0 ASSISTS",
+     "buildUpMs": 54,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": true,
+       "pct": 0,
+       "you": "You: right side, mid-height (3.03 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 0,
+     "starsShown": 1,
+     "cardStars": 1
+    },
+    {
+     "path": "liga",
+     "level": 5,
+     "open": "true",
+     "matchReadyMs": 840,
+     "goal": "wy253291886",
+     "header": "LEVEL 5 · LA LIGA 2017/18 · 19 MAY 2018 Celta de Vigo 1–1 Levante · 41' You are Iago Aspas (Celta de Vigo) · Left Foot · xG 54% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). MATCH LAB GOALS 0 AS",
+     "buildUpMs": 55,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: low, down the middle (0.68 m off)"
+      },
+      {
+       "dx": -25,
+       "pull": 165,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: left side, mid-height (4.21 m off)"
+      },
+      {
+       "dx": -2.077349890528893,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": -2.077349890528893,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom right corner (1.74 m off)"
+      },
+      {
+       "dx": -7.944695566542166,
+       "pull": 120,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: left side, mid-height (3.95 m off)"
+      },
+      {
+       "dx": -3.6527181582580024,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": -3.6527181582580024,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: down the middle (1.17 m off)"
+      },
+      {
+       "dx": -1.8513164057346612,
+       "pull": 165,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": -1.8513164057346612,
+       "pull": 120,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom right corner (1.73 m off)"
+      },
+      {
+       "dx": -2.83502100527002,
+       "pull": 120,
+       "lift": 0.65,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom right corner (3.81 m off)"
+      },
+      {
+       "dx": -1.2285747278129246,
+       "pull": 120,
+       "lift": 0.8,
+       "goal": false,
+       "pct": 0,
+       "you": ""
+      }
+     ],
+     "starsShown": 0,
+     "cardStars": 0
+    }
+   ],
+   "afterReloadTotal": "★ 6 / 150"
+  },
+  {
+   "id": "seriea",
+   "pathReadyMs": 1406,
+   "levels": [
+    {
+     "path": "seriea",
+     "level": 1,
+     "open": "true",
+     "matchReadyMs": 1945,
+     "goal": "wy192612382",
+     "header": "LEVEL 1 · SERIE A 2017/18 · 1 OCT 2017 Torino 2–0 Hellas Verona · 87' You are Moise Kean (Hellas Verona) · Right Foot · xG 88% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). Bessa → Kean MATCH LA",
+     "buildUpMs": 126,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: right side, mid-height (2.21 m off)"
+      },
+      {
+       "dx": -25,
+       "pull": 165,
+       "lift": 0.19999999999999998,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom right corner (3.55 m off)"
+      },
+      {
+       "dx": 38.552210714704636,
+       "pull": 165,
+       "lift": 0.04999999999999999,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom right corner (2.43 m off)"
+      },
+      {
+       "dx": 140,
+       "pull": 165,
+       "lift": -0.1,
+       "goal": true,
+       "pct": 93,
+       "you": "You: low, down the middle (0.32 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 93,
+     "starsShown": 3,
+     "cardStars": 3
+    },
+    {
+     "path": "seriea",
+     "level": 2,
+     "open": "true",
+     "matchReadyMs": 1042,
+     "goal": "wy226086192",
+     "header": "LEVEL 2 · SERIE A 2017/18 · 4 FEB 2018 Juventus 1–0 Sassuolo · 24' You are Sami Khedira (Juventus) · Right Foot · xG 74% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). Pjanić → Sandro MATCH LAB G",
+     "buildUpMs": 1546,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": true,
+       "pct": 95,
+       "you": "You: left side, mid-height (0.31 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 95,
+     "starsShown": 3,
+     "cardStars": 3
+    },
+    {
+     "path": "seriea",
+     "level": 3,
+     "open": "true",
+     "matchReadyMs": 913,
+     "goal": "wy201089401",
+     "header": "LEVEL 3 · SERIE A 2017/18 · 29 OCT 2017 Sampdoria 2–1 Chievo · 44' You are Duván Zapata (Sampdoria) · Left Foot · xG 65% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). Torreira → Caprari MATCH LA",
+     "buildUpMs": 5912,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": true,
+       "pct": 100,
+       "you": "You: left side, mid-height (0.06 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 100,
+     "starsShown": 3,
+     "cardStars": 3
+    },
+    {
+     "path": "seriea",
+     "level": 4,
+     "open": "true",
+     "matchReadyMs": 1008,
+     "goal": "wy244320085",
+     "header": "LEVEL 4 · SERIE A 2017/18 · 18 APR 2018 Roma 0–0 Genoa · 17' You are Cengiz Ünder (Roma) · Left Foot · xG 61% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). Kolarov → Ünder MATCH LAB GOALS 0 ASSI",
+     "buildUpMs": 974,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 0,
+       "pull": 165,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: bottom left corner (3.73 m off)"
+      },
+      {
+       "dx": 25,
+       "pull": 165,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: left side, mid-height (4.86 m off)"
+      },
+      {
+       "dx": -77.25813329076229,
+       "pull": 165,
+       "lift": 0.65,
+       "goal": true,
+       "pct": 92,
+       "you": "You: right side, mid-height (0.32 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 92,
+     "starsShown": 3,
+     "cardStars": 3
+    },
+    {
+     "path": "seriea",
+     "level": 5,
+     "open": "true",
+     "matchReadyMs": 759,
+     "goal": "wy235224700",
+     "header": "LEVEL 5 · SERIE A 2017/18 · 18 MAR 2018 Hellas Verona 0–4 Atalanta · 71' You are Alejandro Gómez (Atalanta) · Head · xG 75% ✕ 👻 Ghost on ▶ Build-up on 🎥 TV 🎥 Behind him 🎥 Side-on Cameras turn the 3D view (3D | 2D in the match bar). MATCH LAB GOALS 0 ASSIST",
+     "buildUpMs": 32,
+     "buildUpDone": true,
+     "tries": [
+      {
+       "dx": 0,
+       "pull": 120,
+       "lift": 0.35,
+       "goal": false,
+       "pct": 0,
+       "you": "You: down the middle (2.88 m off)"
+      },
+      {
+       "dx": 25,
+       "pull": 120,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": 25,
+       "pull": 165,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: low, down the middle (3.32 m off)"
+      },
+      {
+       "dx": -140,
+       "pull": 165,
+       "lift": 0.65,
+       "goal": false,
+       "pct": 0,
+       "you": "You: down the middle (3.06 m off)"
+      },
+      {
+       "dx": -140,
+       "pull": 165,
+       "lift": 0.5,
+       "goal": false,
+       "pct": 0,
+       "you": "You: never reached the line"
+      },
+      {
+       "dx": -140,
+       "pull": 120,
+       "lift": 0.5,
+       "goal": true,
+       "pct": 51,
+       "you": "You: top right corner (1.05 m off)"
+      }
+     ],
+     "scored": true,
+     "pct": 51,
+     "starsShown": 1,
+     "cardStars": 1
+    }
+   ],
+   "afterReloadTotal": "★ 13 / 150"
+  }
+ ],
+ "errors": []
+}

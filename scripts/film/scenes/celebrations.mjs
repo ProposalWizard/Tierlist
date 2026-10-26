@@ -107,7 +107,11 @@ while (!done && at() < (VIEW3D ? 3300 : 1700)) {
   }
   if (!st.ph || st.ph === "feed") {
     let clicked = false;
-    for (const re of [/full time/i, /get out there/i, /play match|kick off/i, /team sheets/i, /second half|^next|play on|resume/i, /^▶ *play|^play$/i, /continue|tap to hear|^ok$|skip|close|done/i]) {
+    // the first-time tour (PointerTour.tsx): its "Next ▸" / "Got it" is text on a tappable card, not a button
+    const tip = pg.getByText(/^\s*(Next ▸|Got it)\s*$/).first();
+    if (await tip.isVisible().catch(() => false)) { await tip.click({ timeout: 2000 }).catch(() => {}); await wait(600); continue; }
+    // pop-ups first ("Thanks!" on the old-boots gift, "GOT IT" tips): they cover the buttons under them
+    for (const re of [/^\s*thanks!?\s*$|^\s*got it\s*$|^\s*next\s*▸?\s*$|^\s*skip tour\s*$/i, /full time/i, /get out there/i, /play match|kick off/i, /team sheets/i, /second half|^next|play on|resume/i, /^▶ *play|^play$/i, /continue|tap to hear|^ok$|skip|close|done|thanks|got it/i]) {
       const b = pg.locator("button:visible").filter({ hasText: re }).first();
       if (await b.count()) { await b.click({ timeout: 2000 }).catch(() => {}); clicked = true; break; }
     }
@@ -121,7 +125,12 @@ while (!done && at() < (VIEW3D ? 3300 : 1700)) {
   if (st.ph !== "aim") { await wait(250); continue; }
   marks.lastAim = at();
   // The 3D clip must really be 3D: a broken GPU profile quietly falls back to the 2D picture.
-  if (VIEW3D && !(await pg.evaluate(() => !!window.__engineView3dReady && !!window.__engineView3dBall))) { log("the 3D view is not drawing; giving up the run"); break; }
+  // (it can take a while to load at kick-off on a slow machine: wait up to 90 s before giving up)
+  if (VIEW3D) {
+    let ok3 = false;
+    for (let k = 0; k < 90 && !ok3; k++) { ok3 = await pg.evaluate(() => !!window.__engineView3dReady && !!window.__engineView3dBall); if (!ok3) await wait(1000); }
+    if (!ok3) { log("the 3D view is not drawing; giving up the run"); break; }
+  }
   const f = await pg.evaluate(() => ({ b: window.__starMatch.ball(), g: window.__starMatch.goal(), big: !!document.querySelector("[data-big-moment]") }));
   if (!f.g || !f.b) { await wait(300); continue; }
   // A big moment: the banner is up as the chance opens. Any other chance is still a real shot.

@@ -32,6 +32,9 @@ export interface Conditions extends PitchWeatherExtras {
   bounce: number;
   /** Sideways push, m/s². Only ever non-zero in wind. */
   wind: number;
+  /** Draw the weather in the match (light rain, the wind arrow). Set only by
+   *  Leo's "weather" part (matchWeather.ts) and the weather test page. */
+  drawn?: boolean;
 }
 
 const CLEAR: Conditions = {
