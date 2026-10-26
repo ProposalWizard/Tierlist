@@ -88,6 +88,7 @@ import { ageFetchedForCareer, ageOwnFetchedForCareer } from "@/lib/star/worldAge
 import { hydrateSquads } from "@/lib/star/squadSaveCodec";
 import { externalClubsFor } from "@/lib/star/clubs";
 import { conditionsFor } from "@/lib/star/weather";
+import { matchConditions } from "@/lib/star/matchWeather";
 import { matchTodFor } from "@/lib/star/style3d/matchTod";
 import { ovationLook } from "@/lib/star/ovationLook";
 import {
@@ -1307,7 +1308,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // Leo's 24 Oct update → the media pass (lib/star/media/updateFlags.ts): the
   // label fixes and Goal of the Month follow the switch; off = as on main.
   useEffect(() => {
-    const sync = () => setMediaUpdate({ labelFixes: leoUpdateOn("bugFixes"), goalOfMonth: leoUpdateOn("goalOfMonth") });
+    const sync = () => setMediaUpdate({ labelFixes: leoUpdateOn("bugFixes"), goalOfMonth: leoUpdateOn("goalOfMonth"), yourGoalVideo: leoUpdateOn("goalVideoNow") });
     sync();
     window.addEventListener("kib-leo-update", sync);
     window.addEventListener("storage", sync);
@@ -4248,7 +4249,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             startMinute={selection?.onAt ?? 0}
             plannedOffAt={selection?.offAt}
             duties={duties ?? undefined}
-            conditions={conditionsFor(career.season, nextFixture.week, career.homeCity)}
+            // Leo's update, "weather" (lib/star/matchWeather.ts): off = exactly as before.
+            conditions={leoUpdateOn("weather") ? matchConditions(career, nextFixture) : conditionsFor(career.season, nextFixture.week, career.homeCity)}
             seed={career.season * 1000 + career.week}
             onGoalScored={handleGoalScored}
             onGoalClip={handleGoalClip}
@@ -4651,7 +4653,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           setPendingSignOffer({ offer: withAgreedWage(talkOffer, weekly), wasRelegationMove: false });
           setPhase("transfer-signing");
         }}
-        onSettings={() => setPhase("settings")}
+        // Leo's bug fixes: Settings' Back returns to these talks (the offer
+        // stays held), not Home with the window lost.
+        onSettings={() => { if (bugFixesOn) pushFrom({ phase, nav: activeNav, homePage, trainingTab }, "settings"); setPhase("settings"); }}
       />
     );
   }

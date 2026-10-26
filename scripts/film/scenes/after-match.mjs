@@ -36,6 +36,8 @@ const browser = await chromium.launch({
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 await showTouches(ctx);
 await installAudioTap(ctx);
+// Leo's 24 Oct update on (the new feed and goal videos are behind it); survives the save loader's clear().
+if (!process.argv.includes("--leo-off")) await ctx.addInitScript(() => { try { localStorage.setItem("kib-update-leo-2026-10-24", JSON.stringify({ on: true, off: [] })); } catch {} });
 const pg = await ctx.newPage();
 const errors = [];
 pg.on("pageerror", e => errors.push(e.message));

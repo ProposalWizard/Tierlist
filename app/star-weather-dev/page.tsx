@@ -251,7 +251,7 @@ export default function WeatherDevPage() {
               </div>
               <Btn onClick={() => setPlaying(false)}>■ Stop</Btn>
             </div>
-            <EnginePlay key={JSON.stringify(dials)} seed={11} conditions={cond} />
+            <EnginePlay key={JSON.stringify(dials)} seed={11} conditions={{ ...cond, drawn: true }} />
           </div>
         )}
       </Panel>
