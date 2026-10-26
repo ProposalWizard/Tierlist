@@ -152,8 +152,9 @@ import {
 } from "@/lib/star/fiveASide/render";
 import {
   penaltyRunupOf, freeKickRunupOf, takerRunupFor, yourRunupFor, standBackFor, planRunup, runupPositionAt, runupPoseAt,
-  RUNUP_MOTION, type RunupId, type PenaltyRunupId, type FreeKickRunupId, type StyledRunup, type RunupPose,
+  RUNUP_MOTION, LEAF_RUNUP, type RunupId, type PenaltyRunupId, type FreeKickRunupId, type StyledRunup, type RunupPose,
 } from "@/lib/star/runupStyles";
+import { goldenTrailAt, mirrorTrail, isGolden, goldTrailPoints, type GoldenTrail } from "@/lib/star/goldenTrail";
 import { createFaceImageCache, fallbackFaceFor } from "@/lib/star/faceImageCache";
 import { airborneOn, airborneMotion, applyAirborne, type StrikeContact } from "@/lib/star/airborneChance";
 import { isAirKind, airWaitZ, airZOf, HEADER_Z } from "@/lib/star/airDrawings";
@@ -2198,6 +2199,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     /** Somebody else's penalty (v0.15 items 6/7): struck for him on arrival, no strike screen. */
     auto?: { contact: { cx: number; cy: number }; skills: KickSkills };
   } | null>(null);
+  /** The Golden Run-up's trail (goldenTrail.ts): the run it follows, and when he
+   *  got to the ball (null: still running) so it fades after. Looks only. */
+  const goldTrailRef = useRef<{ styled: StyledRunup; t: number; ball: Vec2; mirrored: boolean; arrivedAt: number | null } | null>(null);
   /** A sideways drag during the run-up: where it started, and the swing then. */
   const nudgeDragRef = useRef<{ x0: number; y0: number; base: number } | null>(null);
   /** Your two run-up styles, read live (a prop can change between chances). */
@@ -4727,6 +4731,66 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       ctx.stroke();
       ctx.restore();
     }
+    // ── The Golden Run-up's gold trail (lib/star/goldenTrail.ts) ── looks
+    // only: a streak on the grass where he has just run and sparks that
+    // float up and fade. Under the figures (none painted yet). Kept for a
+    // moment after the strike so it fades rather than vanishing.
+    let goldNow: GoldenTrail | null = null;
+    {
+      const nowS = performance.now() / 1000;
+      const ru = runupRef.current;
+      const g0 = goldTrailRef.current;
+      if (ru && isGolden(ru.styled) && (phaseRef.current === "runup" || phaseRef.current === "contact")) {
+        goldTrailRef.current = {
+          styled: ru.styled, t: ru.t, ball: { ...sc.ball }, mirrored: drawnTaker.mirrored,
+          arrivedAt: ru.arrived ? (g0 && g0.styled === ru.styled && g0.arrivedAt !== null ? g0.arrivedAt : nowS) : null,
+        };
+      } else if (g0 && g0.arrivedAt === null) {
+        goldTrailRef.current = { ...g0, arrivedAt: nowS };
+      }
+      const g = goldTrailRef.current;
+      if (g) {
+        const raw = goldenTrailAt(g.styled, g.t, g.arrivedAt === null ? 0 : nowS - g.arrivedAt);
+        if (!raw.streak.length && !raw.sparks.length && g.arrivedAt !== null) goldTrailRef.current = null;
+        else goldNow = g.mirrored ? mirrorTrail(raw, g.ball) : raw;
+      }
+      if (goldNow && (goldNow.streak.length || goldNow.sparks.length)) {
+        ctx.save();
+        ctx.lineCap = "round";
+        const st = goldNow.streak;
+        // Gold, painted (not added: added light on green grass reads lime),
+        // with a soft gold glow round it.
+        ctx.shadowColor = "rgba(251,191,36,0.9)";
+        ctx.shadowBlur = Math.max(4, R * 0.5);
+        for (let i = 1; i < st.length; i++) {
+          const a = toPx(st[i - 1].x, st[i - 1].y), b = toPx(st[i].x, st[i].y);
+          const life = st[i].life;
+          // A wide soft band, then a bright core, both thinning with age.
+          ctx.strokeStyle = `rgba(217,119,6,${(0.55 * life).toFixed(3)})`;
+          ctx.lineWidth = Math.max(2, R * 0.5 * (0.3 + 0.7 * life));
+          ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
+          ctx.strokeStyle = `rgba(254,240,138,${(0.95 * life).toFixed(3)})`;
+          ctx.lineWidth = Math.max(1, R * 0.16 * (0.3 + 0.7 * life));
+          ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
+        }
+        ctx.shadowBlur = Math.max(3, R * 0.3);
+        for (const s of goldNow.sparks) {
+          const f = toPx(s.x, s.y);
+          const x = f.px, y = f.py - s.h * heightScale;
+          const a = s.life * s.twinkle;
+          const rad = Math.max(2, R * 0.22 * s.size * (0.4 + 0.6 * s.life));
+          ctx.fillStyle = `rgba(245,158,11,${(0.45 * a).toFixed(3)})`;
+          ctx.beginPath(); ctx.arc(x, y, rad * 0.9, 0, Math.PI * 2); ctx.fill();
+          // A four-point star.
+          ctx.fillStyle = `rgba(255,247,205,${(0.95 * a).toFixed(3)})`;
+          ctx.beginPath();
+          ctx.moveTo(x, y - rad); ctx.lineTo(x + rad * 0.28, y - rad * 0.28); ctx.lineTo(x + rad, y);
+          ctx.lineTo(x + rad * 0.28, y + rad * 0.28); ctx.lineTo(x, y + rad); ctx.lineTo(x - rad * 0.28, y + rad * 0.28);
+          ctx.lineTo(x - rad, y); ctx.lineTo(x - rad * 0.28, y - rad * 0.28); ctx.closePath(); ctx.fill();
+        }
+        ctx.restore();
+      }
+    }
     // Match feel: New — your own strike (drawn players): a wind-up, then the
     // big follow-through from the Animations system, sized by how hard you
     // hit it. The 3D players get the same from their kick clip (spriteHint).
@@ -5841,6 +5905,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         goalInView: goalInView(sc.kind) || goalOnCamera,
         orders: captainOrdersFrame(sc),
         runup: phaseRef.current === "runup" && runupRef.current ? { t: runupRef.current.t, runS: runupRef.current.runS } : null,
+        goldTrail: goldNow && (goldNow.streak.length || goldNow.sparks.length) ? goldTrailPoints(goldNow) : null,
         leadIn: leadRef.current ? {
           lock: leadRef.current.cam.lockAt(leadRef.current.t, baseViewportRef.current),
           ball: { ...leadRef.current.ball }, keeper: leadRef.current.endKeeper, at: leadRef.current.endAt,
@@ -9968,6 +10033,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const kd = strikeKind(scenarioRef.current, ballRef.current, r, {
         keeperStrength: strengthRef.current, setPieceSkill: setPieceSkillRef.current,
         power: strikeWith.power, technique: strikeWith.technique,
+        // Your own free-kick run-up: The Leaf's flight (leafFlight.ts) rides
+        // on the decision. Somebody else's kick never flies as a leaf.
+        ...(!auto && runupStyleFor(scenarioRef.current) === LEAF_RUNUP ? { runup: LEAF_RUNUP } : {}),
       });
       strikeRuleRef.current = kd;
       if (pendingReplayRef.current && kd) pendingReplayRef.current.kindStrike = kd;

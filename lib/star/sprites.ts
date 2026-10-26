@@ -17,6 +17,10 @@
  * `node tools/sprites/new/bake-new.mjs celebs`. It is never preloaded: it loads
  * only when one of them is first asked for (spriteClipReady), so a match with
  * no celebration never fetches it. Until it is in, callers draw "celebrate".
+ * A FIFTH (atlas-4 / atlas-4a, 25 Oct 2026) holds the four Star Pass
+ * celebrations (corner flag dance, backflip, your own celebration, statue
+ * pose), keyed in tools/mocap3d/keyed_celebs.py and baked by
+ * `node tools/sprites/new/bake-new.mjs celebs both 4`; atlas 2 is unchanged.
  *
  * A SECOND atlas (atlas-1.webp + mask-1.png, Leo, 7 Oct 2026) holds the
  * Animations: New clips — the touch, pass, shot, volley, chip, header, block
@@ -51,12 +55,16 @@ export const NEW_KEEPER_CLIPS = [
 export type NewSpriteClip = (typeof NEW_PLAYER_CLIPS)[number] | (typeof NEW_KEEPER_CLIPS)[number];
 
 /**
- * Goal celebrations (atlas 2, loaded on first ask). Hands up and the knee slide's
+ * Goal celebrations (atlas 2, the Star Pass four atlas 4; loaded on first ask). Hands up and the knee slide's
  * travel: the sprite stays on its spot (the knee slide is baked in place; the
  * game moves him along the grass). Hands up loops; the rest play once and hold
  * their last frame.
  */
-export const CELEB_PLAYER_CLIPS = ["celebHandsUp", "celebArmsOut", "celebKneeSlide", "celebFistPump", "celebJump", "celebRoar"] as const;
+export const CELEB_PLAYER_CLIPS = [
+  "celebHandsUp", "celebArmsOut", "celebKneeSlide", "celebFistPump", "celebJump", "celebRoar",
+  // the Star Pass four (25 Oct 2026)
+  "celebCornerFlag", "celebBackflip", "celebOwnName", "celebStatue",
+] as const;
 export type CelebSpriteClip = (typeof CELEB_PLAYER_CLIPS)[number];
 
 /**

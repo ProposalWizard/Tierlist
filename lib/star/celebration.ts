@@ -17,7 +17,8 @@
  */
 import { PITCH_W } from "./pitch";
 
-export type CelebrationMove = "hands_up" | "arms_out" | "knee_slide" | "fist_pump" | "jump" | "roar" | "fist";
+export type CelebrationMove = "hands_up" | "arms_out" | "knee_slide" | "fist_pump" | "jump" | "roar" | "fist"
+  | "corner_flag" | "backflip" | "own_name" | "statue";
 
 export interface CelebSpec {
   /** The 3D clip (public/star/anims3d/mocap.glb). */
@@ -34,6 +35,8 @@ export interface CelebSpec {
   travel: (u: number) => number;
   /** His speed as the move begins (m/s): the run slows to it, not to a stop. */
   enterSpeed: number;
+  /** A move done AT the flag: he runs on until he is this far from it (m), not SHORT_OF_FLAG short of the corner. */
+  atFlag?: number;
 }
 
 /** Piecewise-linear through (t, v) keys. */
@@ -66,6 +69,13 @@ export const CELEB_SPECS: Record<CelebrationMove, CelebSpec> = {
   fist_pump: { clip3d: "celebrate_pump", from3d: 0, sprite: "celebFistPump", playS: 2.2, loop: false, travel: still, enterSpeed: 0 },
   jump: { clip3d: "celebrate_jump", from3d: 0, sprite: "celebJump", playS: 1.7, loop: false, travel: still, enterSpeed: 0 },
   roar: { clip3d: "celebrate_roar", from3d: 0, sprite: "celebRoar", playS: 2.2, loop: false, travel: still, enterSpeed: 0 },
+  // The Star Pass four (25 Oct 2026), keyed by hand in tools/mocap3d/keyed_celebs.py; all on the spot.
+  // The corner flag dance is done right by the flag; your own celebration turns his back to the camera
+  // inside the clip (so the name on his shirt faces whoever is watching, 2D or 3D).
+  corner_flag: { clip3d: "celebrate_corner_flag", from3d: 0, sprite: "celebCornerFlag", playS: 3.2, loop: false, travel: still, enterSpeed: 0, atFlag: 1.3 },
+  backflip: { clip3d: "celebrate_backflip", from3d: 0, sprite: "celebBackflip", playS: 2.6, loop: false, travel: still, enterSpeed: 0 },
+  own_name: { clip3d: "celebrate_own_name", from3d: 0, sprite: "celebOwnName", playS: 3.0, loop: false, travel: still, enterSpeed: 0 },
+  statue: { clip3d: "celebrate_statue", from3d: 0, sprite: "celebStatue", playS: 2.6, loop: false, travel: still, enterSpeed: 0 },
   // Nothing equipped: the team-mates' own fist celebration.
   fist: { clip3d: "celebrate_fist", from3d: 0, sprite: "celebrate", playS: 2.0, loop: false, travel: still, enterSpeed: 0 },
 };
@@ -73,6 +83,7 @@ export const CELEB_SPECS: Record<CelebrationMove, CelebSpec> = {
 /** The shop's celebration items, by the `celebration` they carry (lib/star/store/catalogue.ts). */
 const SHOP_MOVE: Record<string, CelebrationMove> = {
   hands_up: "hands_up", arms_out: "arms_out", knee_slide: "knee_slide", fist_pump: "fist_pump", jump: "jump", roar: "roar",
+  corner_flag: "corner_flag", backflip: "backflip", own_name: "own_name", statue: "statue",
 };
 
 /** The move a career's equipped celebration item plays (`item.celebration`), or the plain fist. */
@@ -122,14 +133,16 @@ export function cornerFor(from: Vec, pitchW = PITCH_W): Vec {
 export function planCelebration(from: Vec, move: CelebrationMove, pitchW = PITCH_W): CelebPlan {
   const spec = CELEB_SPECS[move];
   const corner = cornerFor(from, pitchW);
-  // Aim a little in from the flag so he stays on the grass.
-  const aim = { x: corner.x === 0 ? 1.5 : pitchW - 1.5, y: 1.5 };
+  // Aim a little in from the flag so he stays on the grass (a move done at the flag: nearer it, and no shortfall).
+  const inset = spec.atFlag !== undefined ? spec.atFlag / Math.SQRT2 : 1.5;
+  const short = spec.atFlag !== undefined ? 0 : SHORT_OF_FLAG;
+  const aim = { x: corner.x === 0 ? inset : pitchW - inset, y: inset };
   let dx = aim.x - from.x, dy = aim.y - from.y;
   const D = Math.hypot(dx, dy);
   if (D < 1e-6) { dx = 0; dy = -1; } else { dx /= D; dy /= D; }
   const moveDist = spec.travel(spec.playS);
-  const travelK = moveDist > 0 ? Math.max(0, Math.min(1, (D - SHORT_OF_FLAG) / moveDist)) : 1;
-  const room = Math.max(0, D - SHORT_OF_FLAG - moveDist * travelK);
+  const travelK = moveDist > 0 ? Math.max(0, Math.min(1, (D - short) / moveDist)) : 1;
+  const room = Math.max(0, D - short - moveDist * travelK);
   const runDist = Math.min(room, RUN_TOP * (CELEB_RUN_S - (ACCEL_S + DECEL_S) / 2));
   const runS = runDist <= 0.5 ? 0.4 : Math.max(0.9, Math.min(CELEB_RUN_S, runDist / (RUN_TOP * 0.82)));
   const ve = Math.min(spec.enterSpeed * travelK, RUN_TOP);

@@ -16,10 +16,11 @@ const check = (ok: boolean, msg: string) => { if (!ok) problems.push(msg); };
 
 // Every shop celebration maps to its own move; nothing equipped is the plain fist.
 const celebs = ACCESSORIES.filter((a) => a.slot === "celebration");
-check(celebs.length === 6, `six celebrations in the shop (got ${celebs.length})`);
+check(celebs.length === 10, `ten celebrations in the shop (got ${celebs.length}): six, plus the Star Pass four`);
 for (const a of celebs) check(celebrationMoveFor(a.celebration) !== "fist", `${a.id} plays a move`);
 check(celebrationMoveFor(undefined) === "fist", "nothing equipped: fist");
-check(new Set(celebs.map((a) => celebrationMoveFor(a.celebration))).size === 6, "six different moves");
+check(new Set(celebs.map((a) => celebrationMoveFor(a.celebration))).size === 10, "ten different moves");
+for (const id of ["celeb-corner-flag", "celeb-backflip", "celeb-own-name", "celeb-statue"]) check(celebs.some((a) => a.id === id), `${id} in the catalogue`);
 
 // From many spots in and around the box, every move: he runs towards the nearer
 // corner for at most ~2 s, stays on the pitch, never passes the flag, and moves smoothly.
@@ -41,7 +42,10 @@ for (const move of Object.keys(CELEB_SPECS) as CelebrationMove[]) {
     const end = celebAt(p, p.totalS);
     const d0 = Math.hypot(from.x - corner, from.y), d1 = Math.hypot(end.x - corner, end.y);
     check(d1 <= d0 + 1e-6, `${move} ${JSON.stringify(from)}: ended further from the corner`);
-    check(d1 >= 2.5 || d0 < 3, `${move} ${JSON.stringify(from)}: ran past the flag (${d1.toFixed(2)} m from it)`);
+    const minGap = Math.min(2.5, (CELEB_SPECS[move].atFlag ?? 2.5) - 0.05);
+    check(d1 >= minGap || d0 < 3, `${move} ${JSON.stringify(from)}: ran past the flag (${d1.toFixed(2)} m from it)`);
+    // a move done at the flag: right by it whenever the ~2 s run reaches it (from further out, as near as the run gets)
+    if (CELEB_SPECS[move].atFlag !== undefined && d0 > 4 && d0 < 11) check(d1 < 2.0,`${move} ${JSON.stringify(from)}: done at the flag, but ${d1.toFixed(2)} m from it`);
   }
 }
 // A long way out: about 2 s of real running, about 2 s of move.
