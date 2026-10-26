@@ -3945,7 +3945,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     type Pose = FigurePose;
 
     type FigureOpts = {
-      pose?: Pose; phase?: number; facing?: number; label?: string; labelColor?: string; shorts?: string; star?: boolean; face?: HTMLImageElement;
+      pose?: Pose; phase?: number; facing?: number; label?: string; labelColor?: string; labelBig?: boolean; shorts?: string; star?: boolean; face?: HTMLImageElement;
       /** A run-up style's own body (runupStyles.ts): stride, arms, crouch, a skip off the ground, a lean. Replaces `pose`. */
       body?: RunupPose | null;
       /** Which foot a kick is struck with: +1 right, −1 left (lib/star/kickFoot.ts). Looks only. */
@@ -4157,6 +4157,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           pose: limbs,
           label: opts.label,
           labelColor: opts.labelColor,
+          labelBig: opts.labelBig,
           star: opts.star,
           // A gold star on a bright shirt or against a floodlit sky needs an
           // edge or it dissolves into whatever is behind it.
@@ -4909,6 +4910,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         kickFoot: takerFoot,
         face: readyFaceOr(auto.taker.face, auto.taker.id || auto.taker.name),
         label: auto.taker.shortName,
+        // Mikey, 26 Oct 2026: the taker's name big enough to read at a glance.
+        labelBig: true,
       });
     } else if (youShown)
     // You wear the same shirt as everybody else on your side — you are one of
@@ -5149,8 +5152,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             armLead: sign,
             ...(kAnim && (kAnim.trailDrop > 0 || kAnim.handsIn > 0) ? { trailDrop: kAnim.trailDrop, handsIn: kAnim.handsIn } : {}),
           },
-          // A kick you are watching names both men: who is taking it, who is in goal.
-          label: namesOn() || autoKickOf(sc) ? kk.who?.shortName : undefined,
+          // A kick you are watching names the taker only (Mikey, 26 Oct 2026:
+          // "it doesn't need to show the goalkeeper's name").
+          label: namesOn() ? kk.who?.shortName : undefined,
         },
       });
 
@@ -8196,7 +8200,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const scored = rng() < (handover === "penalty" ? 0.76 : 0.09);
       handedOver.push(scored
         ? { minute: st.minute, text: `⚽ Your side score the ${label}!`, isGoal: true, teammateGoal: true }
-        : { minute: st.minute, text: `A ${label} — someone else steps up, and it comes to nothing.` });
+        : { minute: st.minute, text: `A ${label} — someone else steps up, and it comes to nothing.`, isOpponent: false });
       resolveScenario(st, scored ? "goal" : "saved");
     }
     // Set pieces you do not take go to whoever does, and the match runs on.
