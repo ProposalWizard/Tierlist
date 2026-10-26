@@ -156,8 +156,10 @@ import {
 import { createFaceImageCache, fallbackFaceFor } from "@/lib/star/faceImageCache";
 import { airborneOn, airborneMotion, applyAirborne, type StrikeContact } from "@/lib/star/airborneChance";
 import { isAirKind, airWaitZ, airZOf, HEADER_Z } from "@/lib/star/airDrawings";
-import { crossDrawT, syntheticCross, headerBeat, headerLiftPx, headerBallLiftK, CROSS_TAIL_S, HEADER_RISE_S, HEAD_AT, type CrossPath } from "@/lib/star/headerBeat";
+import { crossDrawT, syntheticCross, headerBeat, headerLiftPx, headerBallLiftK, CROSS_TAIL_S, HEADER_RISE_S, HEAD_AT, BALL_SETTLE_S, type CrossPath } from "@/lib/star/headerBeat";
 import { airTapOn, airTapAim, airTapStrike, AIR_TAP_OPEN_S, AIR_TAP_OPEN_NO_LEAD_S, type AirKind } from "@/lib/star/airTap";
+import { aerialMovesOn, forcedAerialMove, pickAerialMove, aerialFacing, aerialRise, aerialFollow, aerialStrikeTint, liftToMeet, AERIAL_SPECS, CONTACT_SHOW_S, type AerialMove } from "@/lib/star/aerialMoves";
+import { spritePoints, type SpritePoint } from "@/lib/star/sprites";
 import { useFitWidth } from "./useFitWidth";
 import ArcadeBanner, { useArcadeBanner, type BannerSide } from "./ArcadeBanner";
 import { bannerStyle, soundSet } from "@/lib/star/style3d/texturePack";
@@ -1524,6 +1526,26 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const airTapOpenedRef = useRef<Scenario | null>(null);
   /** The chance whose build-up has just handed over (a header/volley opens its ball screen sooner after one). */
   const airTapLeadRef = useRef<Scenario | null>(null);
+  /**
+   * Your aerial move (lib/star/aerialMoves.ts, Harry 25 Oct 2026): the cross
+   * comes in, you take off and rise, and the ball screen opens on the frame
+   * your head / foot meets it; after the tap, the follow-through. `e` is the
+   * beat's clock (seconds since the hand-over: `preS` of the cross first,
+   * then the rise); `struck` is set by the tap. Drawing only, except the
+   * strike's small tint (aerialStrikeTint). `probe`: the numbers the frame
+   * the screen opened was drawn with (dev probe, __starMatch.aerial()).
+   */
+  const aerialRef = useRef<{
+    sc: Scenario; move: AerialMove; e: number; preS: number; foot: number;
+    from: Vec2; ballFrom: { x: number; y: number; z: number };
+    opened: boolean;
+    struck: { at: number; holdS: number; zDraw: number; zPhys: number } | null;
+    /** Where the ball is drawn at the touch (pitch, metres; z is the drawn height). */
+    contactBall: { x: number; y: number; z: number } | null;
+    probe: Record<string, unknown> | null;
+  } | null>(null);
+  /** The old flow's numbers on the frame its ball screen opened (?airmoves=old): the ball against your head. */
+  const oldAirProbeRef = useRef<Record<string, unknown> | null>(null);
   /** Where the ball was last DRAWN (a header's ball is drawn onto his head before it leaves): the trail follows this. */
   const shownBallRef = useRef<{ x: number; y: number; z: number } | null>(null);
   /**
@@ -3930,6 +3952,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       /** Animations: New — what he is doing with the ball right now
        *  (lib/star/actionAnim.ts). Replaces `pose`. Looks only. */
       anim?: OutfieldAnimFrame | null;
+      /** Your aerial move (aerialMoves.ts): its 3D clip, frame time, facing and
+       *  mirror, and how high (px) he is off the grass. Looks only. */
+      aerial?: { clip: SpriteClip; t: number; facing: number; mirror: boolean; liftPx: number } | null;
     };
 
     // ── Nearer men in front of further ones ──
@@ -3962,6 +3987,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     };
     const spriteHint = (x: number, y: number, opts: FigureOpts, shirt: string, shorts: string): MatchSpriteHint | undefined => {
       if (!nv || !opts.sid) return undefined;
+      // Your aerial move: its own clip and frame, never the running clips (aerialMoves.ts).
+      if (opts.aerial && spriteClipReady("player", opts.aerial.clip)) {
+        return { char: "player", clip: opts.aerial.clip, t: opts.aerial.t, facing: opts.aerial.facing, kit: { shirt, shorts, socks: shirt }, ...(opts.aerial.mirror ? { mirror: true } : {}) };
+      }
       const id = opts.sid;
       let m = spriteMotion.get(id);
       if (!m) { m = { x, y, t: now, vx: 0, vy: 0, dist: 0, facing: NaN }; spriteMotion.set(id, m); }
@@ -4117,7 +4146,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         faceStyle: faceStyleRef.current, fakeFaceStyle: fakeFaceStyleRef.current,
         opts: {
           facing: anim ? ((opts.facing ?? 0) + anim.lean) || undefined : opts.facing ?? (body?.lean || undefined),
-          liftPx: body ? body.lift * r * FIGURE_HEIGHT_R : anim && anim.liftR > 0 ? anim.liftR * r : undefined,
+          liftPx: opts.aerial ? opts.aerial.liftPx : body ? body.lift * r * FIGURE_HEIGHT_R : anim && anim.liftR > 0 ? anim.liftR * r : undefined,
           shadowR: r * 0.42,
           pose: limbs,
           label: opts.label,
@@ -4677,7 +4706,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // …and while your pass plays on you are the man making the run (playOn.ts).
     const youShown = celebPos ? true : leadRef.current || playOnRef.current ? sceneRef.current?.you !== false : showYouFigure(sc.kind, { newView: nv, sceneYou: sceneRef.current?.you });
     const ringOnBall = !auto && !youShown && sceneRef.current?.you !== false;
-    if (nv && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || youShown || ringOnBall)) {
+    // Not while your aerial move plays: he has left that spot (aerialMoves.ts).
+    const aerialGoing = !auto && aerialRef.current?.sc === sc && aerialRef.current.e > aerialRef.current.preS;
+    if (nv && !aerialGoing && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || youShown || ringOnBall)) {
       const f = ringOnBall ? toPx(sc.ball.x, sc.ball.y) : toPx(tx, ty);
       const rr = R * 0.62;
       ctx.save();
@@ -4746,6 +4777,122 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         headerBallAt = { x: hb.ballFrom.x + (b.pos.x - hb.ballFrom.x) * u, y: hb.ballFrom.y + (b.pos.y - hb.ballFrom.y) * u, z: hb.ballFrom.z + (b.z - hb.ballFrom.z) * u + ballUpM };
       }
     }
+    // ── Your aerial move (lib/star/aerialMoves.ts, Harry 25 Oct 2026) ──
+    // The rise before the ball screen, the touch it opens on, the
+    // follow-through after the tap. The ball is drawn ON the move's contact
+    // point (the baked sprite's own head / chest / foot point): his ground
+    // spot and his jump are set so that point meets the ball; when his jump
+    // can't reach (or can't go lower) the DRAWN ball is moved, never the
+    // contact point. Looks only: the strike starts where the physics says.
+    let aerialFig: { clip: SpriteClip; t: number; facing: number; mirror: boolean; liftPx: number } | null = null;
+    const aer = !auto && aerialRef.current?.sc === sc ? aerialRef.current : null;
+    if (aer) {
+      const spec = AERIAL_SPECS[aer.move];
+      const clip = spec.clip as SpriteClip;
+      const fps = spriteClipFps("player", clip) || 10;
+      const G = { x: sc.ball.x, y: sc.ball.y };
+      const gP = toPx(G.x, G.y);
+      const unitH = heightScale * gP.scale; // px per metre of height at the ball
+      // His drawn size (paintFootballer's own numbers) and the ball's radius there.
+      const rFig = figureRForHeight(R * gP.scale * MATCH_FIGURE_HEIGHT_R);
+      const shownH = rFig * FIGURE_HEIGHT_R * (nv && matchPlayersLook() === "3d" ? SPRITE_HEIGHT_K : 1);
+      const mirror = takerFoot < 0;
+      // Which way he faces: the goal, the ball's line in, the move's own rule.
+      const goalAng = screenAngle(G.x, G.y, CX, 0);
+      const mate = sc.teammates[0];
+      const fromAng = mate ? screenAngle(G.x, G.y, mate.x, mate.y) : goalAng + Math.PI / 2;
+      const facing = aerialFacing(aer.move, goalAng, fromAng, takerFoot);
+      // The clock: the rise (before the screen), then the touch held, then the follow-through.
+      const riseE = Math.max(0, aer.e - aer.preS);
+      const st = aer.struck;
+      const followE = st ? Math.max(0, now - st.at - st.holdS) : 0;
+      const ph = st ? aerialFollow(aer.move, followE) : aerialRise(aer.move, riseE);
+      const tFrame = (ph.frame + 0.5) / fps;
+      const tHit = (spec.contactFrame + 0.5) / fps;
+      // The contact point on the touch frame (px from his boots), with the ball's radius out from the body.
+      const ballRpx = BALL_PX * gP.scale * (1 + Math.min(Math.max(0, aer.contactBall?.z ?? airZOf(sc)), 8) * 0.09);
+      const pts = spritePoints("player", clip, tHit, facing, shownH, mirror);
+      const pick = (p: { head: SpritePoint; chest: SpritePoint; foot: SpritePoint }) => p[spec.point];
+      const P = pts ? pick(pts) : null;
+      // No baked points yet (the atlas still loading, or the drawn look): the
+      // drawn figure's own head / boot height.
+      const cx = P ? P.x + P.nx * ballRpx : 0;
+      const cy = P ? P.y + P.ny * ballRpx : -(spec.point === "head" ? HEAD_AT : spec.point === "chest" ? 0.68 : 0.3) * shownH - (spec.point === "head" ? ballRpx : 0);
+      const cg = P ? P.g : 0;
+      // The ball's height at the touch: where the cross arrives (a volley: its top).
+      const zReal = airZOf(sc);
+      const meet = liftToMeet(aer.move, zReal * unitH, cg - cy, unitH);
+      // His ground spot at the touch: the ball's shadow, less the contact point's own offset.
+      const inv = (px: number, py: number): Vec2 => {
+        const e = 0.25, a = toPx(G.x + e, G.y), b = toPx(G.x, G.y + e);
+        const j11 = (a.px - gP.px) / e, j21 = (a.py - gP.py) / e, j12 = (b.px - gP.px) / e, j22 = (b.py - gP.py) / e;
+        const det = j11 * j22 - j12 * j21 || 1, dx = px - gP.px, dy = py - gP.py;
+        return { x: G.x + (j22 * dx - j12 * dy) / det, y: G.y + (-j21 * dx + j11 * dy) / det };
+      };
+      const anchorHit = inv(gP.px - cx, gP.py - cg);
+      const u = st ? 1 : ph.moveU;
+      youX = aer.from.x + (anchorHit.x - aer.from.x) * u;
+      youY = aer.from.y + (anchorHit.y - aer.from.y) * u;
+      aerialFig = { clip, t: tFrame, facing, mirror, liftPx: meet.liftPx * ph.liftK };
+      const zDraw = meet.ballUpPx / unitH;
+      aer.contactBall = { x: G.x, y: G.y, z: zDraw };
+      if (!st) {
+        // The ball comes in to the touch: from where it was at the hand-over to
+        // the contact point, arriving on the touch frame. A chest-down volley
+        // meets the chest first, then drops onto the laces.
+        const uB = Math.min(1, riseE / Math.max(1e-3, spec.riseS));
+        const end = { x: G.x, y: G.y, z: zDraw };
+        let from = aer.ballFrom, k = uB;
+        if (spec.chestFrame >= 0 && pts) {
+          const uc = spec.chestFrame / spec.contactFrame;
+          const pc = spritePoints("player", clip, (spec.chestFrame + 0.5) / fps, facing, shownH, mirror);
+          if (pc) {
+            const ax = aer.from.x + (anchorHit.x - aer.from.x) * aerialRise(aer.move, uc * spec.riseS).moveU;
+            const ay = aer.from.y + (anchorHit.y - aer.from.y) * aerialRise(aer.move, uc * spec.riseS).moveU;
+            const aP = toPx(ax, ay);
+            const c = pc.chest, ccx = aP.px + c.x + c.nx * ballRpx, ccy = aP.py + c.y + c.ny * ballRpx;
+            const g2 = inv(ccx, aP.py + c.g);
+            const zc = Math.max(0, (toPx(g2.x, g2.y).py - ccy) / unitH);
+            const chestAt = { x: g2.x, y: g2.y, z: zc };
+            if (uB < uc) { k = uB / uc; headerBallAt = { x: from.x + (chestAt.x - from.x) * k, y: from.y + (chestAt.y - from.y) * k, z: from.z + (chestAt.z - from.z) * k }; }
+            else { from = chestAt; k = (uB - uc) / (1 - uc); }
+          }
+        }
+        if (!headerBallAt) {
+          headerBallAt = { x: from.x + (end.x - from.x) * k, y: from.y + (end.y - from.y) * k, z: from.z + (end.z - from.z) * k };
+        }
+        // The probe: on the touch frame, the drawn ball's centre against the drawn contact point (px).
+        if (riseE >= spec.riseS && !aer.probe) {
+          const bPx = { x: gP.px, y: gP.py - zDraw * unitH };
+          const aP = toPx(anchorHit.x, anchorHit.y);
+          const ptsNow = spritePoints("player", clip, tFrame, facing, shownH, mirror);
+          const Pn = ptsNow ? pick(ptsNow) : null;
+          const cP = Pn ? { x: aP.px + Pn.x + Pn.nx * ballRpx, y: aP.py - meet.liftPx + Pn.y + Pn.ny * ballRpx } : { x: aP.px + cx, y: aP.py - meet.liftPx + cy };
+          aer.probe = {
+            move: aer.move, part: spec.part, frame: ph.frame, contactFrame: spec.contactFrame, baked: !!Pn,
+            gapPx: +Math.hypot(bPx.x - cP.x, bPx.y - cP.y).toFixed(2),
+            ballPx: { x: +bPx.x.toFixed(1), y: +bPx.y.toFixed(1) }, contactPx: { x: +cP.x.toFixed(1), y: +cP.y.toFixed(1) },
+            ballRpx: +ballRpx.toFixed(2), figPx: +shownH.toFixed(1), liftPx: +meet.liftPx.toFixed(1),
+            zRealM: +zReal.toFixed(2), zDrawnM: +zDraw.toFixed(2), facingDeg: Math.round((facing * 180) / Math.PI),
+          };
+        }
+      } else if (ballRef.current) {
+        // After the tap: held on the contact point through the wind-up and the
+        // freeze, then off on its real flight, the drawn height settling onto
+        // the real one over BALL_SETTLE_S.
+        const b = ballRef.current;
+        const rel = now - st.at - st.holdS;
+        const k = rel <= 0 ? 1 : Math.max(0, 1 - rel / BALL_SETTLE_S);
+        if (k > 0) headerBallAt = { x: b.pos.x, y: b.pos.y, z: b.z + (st.zDraw - st.zPhys) * k };
+        // The probe, once, while the touch is held after the tap: the same gap.
+        if (rel <= 0 && headerBallAt && aer.probe && aer.probe.holdGapPx === undefined) {
+          const bP = toPx(headerBallAt.x, headerBallAt.y), aP = toPx(youX, youY);
+          const ptsNow = spritePoints("player", clip, tFrame, facing, shownH, mirror);
+          const Pn = ptsNow ? pick(ptsNow) : null;
+          if (Pn) aer.probe.holdGapPx = +Math.hypot(bP.px - (aP.px + Pn.x + Pn.nx * ballRpx), bP.py - headerBallAt.z * unitH - (aP.py - meet.liftPx * ph.liftK + Pn.y + Pn.ny * ballRpx)).toFixed(2);
+        }
+      }
+    }
     if (auto) {
       footballer(tx, ty, R, takerKit.shirt, takerKit.trim, {
         anim: youFeelAnim,
@@ -4766,8 +4913,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // Held briefly after a strike so the swing is visible rather than
       // happening entirely between two frames.
       sid: "you",
-      pose: headerAnim ? "receive" : hb ? poseFor("you", youX, youY) : kickPoseRef.current > 0 ? "kick" : poseFor("you", youX, youY),
-      anim: hb ? headerAnim : youFeelAnim,
+      pose: aerialFig ? "receive" : headerAnim ? "receive" : hb ? poseFor("you", youX, youY) : kickPoseRef.current > 0 ? "kick" : poseFor("you", youX, youY),
+      anim: aerialFig ? null : hb ? headerAnim : youFeelAnim,
+      aerial: aerialFig,
       phase: runPhase(tx),
       body: runBody,
       kickFoot: takerFoot,
@@ -5281,6 +5429,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const ballAt = headerBallAt ?? (ball ? { x: ball.pos.x, y: ball.pos.y, z: ball.z }
       : onTheSpot ? (crossAt ?? { x: sc.ball.x, y: sc.ball.y, z: leadRef.current?.z ?? airZ }) : null);
     shownBallRef.current = ball && ballAt ? { x: ballAt.x, y: ballAt.y, z: ballAt.z } : null;
+    // The old flow (?airmoves=old): the last pitch frame before its ball screen
+    // opened (the screen draws no ball under it), the drawn ball's centre
+    // against your drawn head (dev probe; kept from the last aim frame).
+    if (!aer && !auto && ballAt && phaseRef.current === "aim" && !leadRef.current && isAirKind(sc.kind)) {
+      const yP = toPx(youX, youY), bP = toPx(ballAt.x, ballAt.y);
+      const rF = figureRForHeight(R * yP.scale * MATCH_FIGURE_HEIGHT_R);
+      const sh = rF * FIGURE_HEIGHT_R * (nv && matchPlayersLook() === "3d" ? SPRITE_HEIGHT_K : 1);
+      const ballPx = { x: bP.px, y: bP.py - Math.max(0, ballAt.z) * heightScale * bP.scale };
+      const headPx = { x: yP.px, y: yP.py - HEAD_AT * sh };
+      oldAirProbeRef.current = { sc, flow: "old", gapPx: +Math.hypot(ballPx.x - headPx.x, ballPx.y - headPx.y).toFixed(1), ballPx, headPx, figPx: +sh.toFixed(1), zM: +ballAt.z.toFixed(2) };
+    }
     if (ballAt) {
       const drawIt = () => drawBall(ballAt.x, ballAt.y, ballAt.z);
       if (figureQueue) figureQueue.push({ py: toPx(ballAt.x, ballAt.y).py, draw: drawIt });
@@ -5996,6 +6155,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         const hb = headerBeatRef.current;
         return hb && hb.sc === scenarioRef.current ? { e: hb.e, rise: hb.rise, late: hb.late, to: pitchToClient(hb.to) } : null;
       },
+      // your aerial move (aerialMoves.ts): the move, and on the frame the ball
+      // screen opened the drawn ball's centre against the drawn contact point (px).
+      // With ?airmoves=old: the old flow's ball against your head on that frame.
+      aerial: () => {
+        const ar = aerialRef.current;
+        if (ar && ar.sc === scenarioRef.current) return { ...(ar.probe ?? {}), move: ar.move, opened: ar.opened, struck: !!ar.struck };
+        const o = oldAirProbeRef.current;
+        return o && o.sc === scenarioRef.current ? { ...o, sc: undefined } : null;
+      },
       // show a banner word now, as the match would (banner stills)
       banner: (text: string) => showAction(text),
       goal: () => pitchToClient({ x: CX, y: 0 }),
@@ -6406,6 +6574,43 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       {
         const sc = scenarioRef.current;
         if (phaseRef.current === "aim" && !leadRef.current && !playOnRef.current && !ballRef.current && !heldRef.current
+          && isAirKind(sc.kind) && airTapOn() && !autoKickOf(sc) && windUpRef.current === null && !draggingRef.current
+          && aerialMovesOn() && sceneRef.current?.you !== false) {
+          // ── Your aerial move (lib/star/aerialMoves.ts, Harry 25 Oct 2026) ──
+          // The cross comes in (preS with no build-up, as before), you take
+          // off and rise (the move's riseS), and the ball screen opens on the
+          // frame your head / foot meets the ball.
+          let ar = aerialRef.current;
+          const ballNow = () => crossBallNow(sc) ?? { x: sc.ball.x, y: sc.ball.y, z: airZOf(sc) };
+          if (!ar || ar.sc !== sc) {
+            const kind = sc.kind as "header" | "volley";
+            const mate = sc.teammates[0];
+            const tech = careerRef.current?.skills.technique ?? skills.technique;
+            const move = forcedAerialMove(kind) ?? pickAerialMove({
+              kind, ballZ: airZOf(sc),
+              inDir: mate ? { x: sc.ball.x - mate.x, y: sc.ball.y - mate.y } : { x: 0, y: -1 },
+              toGoal: { x: CX - sc.ball.x, y: -sc.ball.y },
+              aerial: airAerialNow() ?? 60, flair: tech ?? 50,
+              seed: (seedRef.current ^ Math.imul(Math.round(sc.ball.x * 100), 31) ^ Math.round(sc.ball.y * 100)) >>> 0,
+            });
+            spriteClipReady("player", AERIAL_SPECS[move].clip as SpriteClip); // starts its atlas loading
+            ar = aerialRef.current = {
+              sc, move, e: 0, preS: airTapLeadRef.current === sc ? 0 : AIR_TAP_OPEN_NO_LEAD_S - AIR_TAP_OPEN_S,
+              foot: 1, from: { x: sc.player.x, y: sc.player.y }, ballFrom: ballNow(), opened: false, struck: null, contactBall: null, probe: null,
+            };
+          } else ar.e += dt;
+          // Until he takes off, the ball is wherever the cross has got to.
+          if (ar.e <= ar.preS) ar.ballFrom = ballNow();
+          // The touch is shown for CONTACT_SHOW_S (a few frames) before the screen covers it.
+          if (!ar.opened && ar.e >= ar.preS + AERIAL_SPECS[ar.move].riseS + CONTACT_SHOW_S) {
+            ar.opened = true;
+            airTapOpenedRef.current = sc;
+            setAim(airTapAim(sc.kind as AirKind, sc.ball, 0));
+            setPowerStrike(false);
+            setPhase("contact");
+            tryHold("contact");
+          }
+        } else if (phaseRef.current === "aim" && !leadRef.current && !playOnRef.current && !ballRef.current && !heldRef.current
           && isAirKind(sc.kind) && airTapOn() && !autoKickOf(sc) && windUpRef.current === null && !draggingRef.current) {
           const w = airTapWaitRef.current;
           const t = w && w.sc === sc ? w.t + dt : 0;
@@ -9600,8 +9805,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     extras?: ShotExtras,
   ) => {
     // A header or volley with no arrow (airTap.ts) brings its aim from the tap.
-    const a = over ? { dir: over.dir, power: over.power } : tapped.aim ?? aim;
+    let a = over ? { dir: over.dir, power: over.power } : tapped.aim ?? aim;
     if (!a) return;
+    // Your aerial move tints the strike a little (aerialMoves.ts aerialStrikeTint):
+    // a bicycle or scorpion wider, a diving header harder. Its own seeded draw.
+    const aerNow = !over && aerialRef.current?.sc === scenarioRef.current && aerialRef.current.opened ? aerialRef.current : null;
+    if (aerNow) a = aerialStrikeTint(aerNow.move, a.dir, a.power, (seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x27d4eb2d)) >>> 0);
     // Struck while the men were still running after the hand-over (phase 3):
     // each carries his speed into the play. Before the replay snapshot, so a
     // goal replay throws the same runs. Nobody running: nothing happens.
@@ -9696,7 +9905,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Your header (headerBeat.ts): drawn as you moving under it and jumping to
     // meet it, the ball coming onto your head from where the cross was. Looks only.
     headerBeatRef.current = null;
-    if (!over && contact.air?.kind === "header") {
+    if (aerNow) {
+      const bl = ballRef.current;
+      aerNow.struck = { at: performance.now() / 1000, holdS: 0, zDraw: aerNow.contactBall?.z ?? bl.z, zPhys: bl.z };
+      const banner = AERIAL_SPECS[aerNow.move].banner;
+      if (banner) showAction(banner);
+    } else if (!over && contact.air?.kind === "header") {
       const bl = ballRef.current, sc = scenarioRef.current;
       const nowS = performance.now() / 1000;
       const from = crossBallNow(sc) ?? { x: bl.pos.x, y: bl.pos.y, z: bl.z };
@@ -9871,6 +10085,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       fl.pending = { f, x: bl.pos.x, y: bl.pos.y, z: bl.z, vx: bl.vel.x, vy: bl.vel.y };
       // Your header: the wind-up is the time you take to rise to the ball (headerBeat.ts HEADER_RISE_S).
       const windUpS = headerBeatRef.current ? Math.max(f.windUpS, HEADER_RISE_S) : f.windUpS;
+      // Your aerial move: the touch is held through the wind-up and the freeze, then the follow-through.
+      if (aerNow?.struck) aerNow.struck.holdS = windUpS + f.hitStopS;
       fl.windUp = windUpS;
       fl.windUpTotal = windUpS;
       fl.hitStop = windUpS + f.hitStopS;
@@ -10316,13 +10532,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         {coachFirstHeader && (phase === "aim" || phase === "contact") && (
           <div data-first-header-coach className={`pointer-events-none absolute z-40 ${phase === "aim" ? "inset-x-3 bottom-[64px]" : "left-3 right-14 bottom-[64px]"} rounded-xl px-3 py-2 text-center text-[13px] font-black leading-snug text-white`}
             style={{ background: "rgba(5,8,15,.82)", boxShadow: "inset 0 0 0 2px #fde047, 0 8px 20px -8px rgba(0,0,0,.9)" }}>
-            {phase === "aim" ? "A header! Wait for the cross" : "A header! Tap the ball before the ring runs out. Its left side sends it right"}
+            {phase === "aim" ? "A header! Watch him go up for the cross" : "A header! Tap the ball before the ring runs out. Its left side sends it right"}
           </div>
         )}
         {coachFirstChance && (phase === "aim" || phase === "contact") && (
           <div data-first-chance-coach className={`pointer-events-none absolute z-40 ${phase === "aim" ? "inset-x-3 bottom-[64px]" : "left-3 right-14 top-[40%]"} rounded-xl px-3 py-2 text-center text-[13px] font-black leading-snug text-white`}
             style={{ background: "rgba(5,8,15,.82)", boxShadow: "inset 0 0 0 2px #fde047, 0 8px 20px -8px rgba(0,0,0,.9)" }}>
-            {phase === "aim" ? "Drag back from the ball to aim and control your power, then let go" : "Tap the part of the ball you want to kick"}
+            {/* A header or volley has no arrow to drag (airTap.ts): say what happens instead. */}
+            {isAirKind(scenarioRef.current.kind) && airTapOn()
+              ? (phase === "aim"
+                ? (scenarioRef.current.kind === "header" ? "A header! Watch him go up for the cross" : "A volley! Watch him meet the ball")
+                : "Tap the ball before the ring runs out. Its left side sends it right")
+              : phase === "aim" ? "Drag back from the ball to aim and control your power, then let go" : "Tap the part of the ball you want to kick"}
           </div>
         )}
         {firstUse && (
