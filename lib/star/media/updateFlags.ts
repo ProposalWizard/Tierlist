@@ -17,10 +17,19 @@ import { leoUpdateOn } from "@/lib/star/leoUpdate";
 // In the browser they start from the switch itself (off for every player until
 // an admin turns it on), so nothing can run the new path before the page syncs.
 // With no browser (the tests) they start ON, as before.
-let flags = typeof window === "undefined"
-  ? { labelFixes: true, goalOfMonth: true }
-  : { labelFixes: leoUpdateOn("bugFixes"), goalOfMonth: leoUpdateOn("goalOfMonth") };
+// yourGoalVideo starts OFF with no browser: the tests check the 16 Oct rule.
+type Flags = { labelFixes: boolean; goalOfMonth: boolean; yourGoalVideo: boolean };
+// Kept on globalThis, so a second copy of this file (a test runner can load it
+// twice) still reads the same flags.
+const G = globalThis as { __kibMediaFlags?: Flags };
+if (!G.__kibMediaFlags) {
+  G.__kibMediaFlags = typeof window === "undefined"
+    ? { labelFixes: true, goalOfMonth: true, yourGoalVideo: false }
+    : { labelFixes: leoUpdateOn("bugFixes"), goalOfMonth: leoUpdateOn("goalOfMonth"), yourGoalVideo: leoUpdateOn("goalVideoNow") };
+}
+const flags = (): Flags => G.__kibMediaFlags!;
 
-export function setMediaUpdate(f: Partial<typeof flags>): void { flags = { ...flags, ...f }; }
-export const labelFixesOn = (): boolean => flags.labelFixes;
-export const goalOfMonthOn = (): boolean => flags.goalOfMonth;
+export function setMediaUpdate(f: Partial<Flags>): void { G.__kibMediaFlags = { ...flags(), ...f }; }
+export const labelFixesOn = (): boolean => flags().labelFixes;
+export const goalOfMonthOn = (): boolean => flags().goalOfMonth;
+export const yourGoalVideoOn = (): boolean => flags().yourGoalVideo;

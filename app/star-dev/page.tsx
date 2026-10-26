@@ -1307,7 +1307,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // Leo's 24 Oct update → the media pass (lib/star/media/updateFlags.ts): the
   // label fixes and Goal of the Month follow the switch; off = as on main.
   useEffect(() => {
-    const sync = () => setMediaUpdate({ labelFixes: leoUpdateOn("bugFixes"), goalOfMonth: leoUpdateOn("goalOfMonth") });
+    const sync = () => setMediaUpdate({ labelFixes: leoUpdateOn("bugFixes"), goalOfMonth: leoUpdateOn("goalOfMonth"), yourGoalVideo: leoUpdateOn("goalVideoNow") });
     sync();
     window.addEventListener("kib-leo-update", sync);
     window.addEventListener("storage", sync);
