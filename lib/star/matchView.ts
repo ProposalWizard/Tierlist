@@ -453,7 +453,15 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, 
   // build-up stay exactly as they were.
   if (playZoom() !== "off" && facing === "up" && goalInView(sc.kind)) {
     const z = zoomToPlay(base, sc, hw);
-    const zc = playZoom() === "z2max" ? z : fitCameraToTilt(z, facing, hw, tiltDeg, framedKeyPointsOf(sc));
+    // The tilt fit also keeps ZOOM_MIN_PULL_M of grass under the ball ON THE
+    // GLASS. zoomToPlay checks that room on the flat canvas only, and the
+    // tipped-back picture pushes the bottom of the canvas off the screen: a
+    // served long-range shot (seed 4, 372 × 704) kept its 5 m flat, but 2.7 m
+    // of it fell below the glass, leaving 40 px under the ball where a
+    // full-power drag needs 62 (tests/star/match2dCam.mts). fitToPlay already
+    // checks this room on the glass; this is the same rule for the zoom.
+    const pull = { x: sc.ball.x, y: sc.ball.y + ZOOM_MIN_PULL_M };
+    const zc = playZoom() === "z2max" ? z : fitCameraToTilt(z, facing, hw, tiltDeg, [...framedKeyPointsOf(sc), pull]);
     if (playZoom() === "z2" && actionFitOn()) {
       // Match camera: New (camera round 3). Every candidate camera is held to
       // the one rule — the action wholly on the glass, nobody else cut in
