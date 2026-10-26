@@ -70,7 +70,7 @@ export function addShortOption(sc: Scenario): boolean {
   if (sc.kind !== "byline_cross" || hasShortOption(sc)) return false;
   const p = shortOptionSpot(sc);
   if (!p) return false;
-  const r: Runner = { pos: { ...p }, to: { ...p }, speed: 6, moving: false, role: "support", sprint: false } as Runner;
+  const r: Runner = { pos: { ...p }, to: { ...p }, speed: 6, moving: false, role: "support", sprint: false, shortOption: true } as Runner;
   sc.secondaryRunners = [...(sc.secondaryRunners ?? []), r];
   return true;
 }

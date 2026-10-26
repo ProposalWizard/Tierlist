@@ -110,6 +110,13 @@ export function strikingPower(power: number): number {
   return Math.max(-50, (fullPowerSpeed(power) - 18) / 0.18);
 }
 
+/** The same, on the line from before 26 Oct 2026 (OLD_POWER_SPEEDS). For the
+ *  tests that measure something else (the keeper, the Shots pro model) at a
+ *  fixed strike, so a change to the curve doesn't move their numbers. */
+export function oldStrikingPower(power: number): number {
+  return Math.max(-50, (fullPowerSpeed(power, OLD_POWER_SPEEDS) - 18) / 0.18);
+}
+
 /**
  * How much of the old pace the curve keeps, for a kicker of this power.
  * `launch`'s pace is drag × (18 + 0.18 × stat) × (1 − loft/4)
