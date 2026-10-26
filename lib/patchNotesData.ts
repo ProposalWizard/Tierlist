@@ -30,8 +30,8 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "version": "0.110",
       "title": "Leo's patch notes: overnight build results, 7 parts for you to pick",
       "publishedAt": "2026-10-25T12:40:00Z",
-      "updatedAt": "2026-10-26T01:50:00Z",
-      "updateNote": "Big-moment banner removed, as you asked (heartbeat, crowd and slow motion stay); it is part of 1 · Celebrations.",
+      "updatedAt": "2026-10-26T02:40:00Z",
+      "updateNote": "1 · Celebrations: the 3D celebration was tried again and not seen (no goal in 6 real shots in 3D); check it on a phone. Banner removed as before.",
       "artifactUrl": "https://claude.ai/artifact/4aeZs72kiGCS7r4xMgBg2A",
       "summary": "Leo, 25 Oct. 7 chats, each on its own branch behind Leo's 24 Oct switch; nothing in the game until Leo picks. 1 Celebrations: nobody stands on you (closest 0.23 m → 1.60 m), 15 goals checked by eye. 2 Feed: 0 scroll hiccups at 4× slow (was 9); your goal's post always has its video (48% → 100%). 3 Filming: 0 repeated frames in clips (was 14-17%). 4 Weather in real matches, its own toggle; goals +1.6% to +2.8%. 5 Real Goals: 35 levels on a slow phone, 2 bugs fixed, a plan for players. 6 End of season: silent cheers fixed, season video sound fixed, white screen not seen in 10 runs. 7 Bug hunt: 13 found, 4 fixed. Big-moment banner: removed (part 1). Late start: jobs reached the chats at 12:28 UTC.",
       "stats": [
@@ -107,7 +107,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "items": [
             {
               "title": "Real phone, ears",
-              "detail": "Nothing tried on a real phone; sound measured, not heard. The 3D celebration is still being filmed."
+              "detail": "Nothing tried on a real phone; sound measured, not heard. The 3D celebration was not seen: 3D draws on the test machine but very slowly; a whole run from kick-off took 6 real shots in 18 minutes and none went in. Check it on a phone (score once with the 3D view on)."
             },
             {
               "title": "For Harry and Mikey (findings, no to-dos)",
