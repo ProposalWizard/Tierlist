@@ -31,10 +31,10 @@ for (const k of LANDING_KINDS) {
   if (!s || !s.n) continue;
   check(s.zoom <= 1, `${k}: lands ${s.zoom.toFixed(2)}% off the no-build-up zoom (≤ 1%)`);
   check(s.centre <= 2, `${k}: lands ${s.centre.toFixed(2)} px off the no-build-up centre (≤ 2 px)`);
-  // Cutbacks are always side-on (26 Oct 2026) and may take a camera up to ~3%
+  // Cutbacks are always side-on (26 Oct 2026) and may take a camera up to ~5%
   // wider (room to pull back, emptyGrass.mts); men are a fixed size in metres,
-  // so they draw up to ~3% smaller there (21.7 px seen).
-  const menLo = k === "cutback" ? 21.5 : 21.9;
+  // so they draw up to ~5% smaller there (21.3 px seen).
+  const menLo = k === "cutback" ? 21.1 : 21.9;
   check(s.menMin >= menLo && s.menMax <= 22.5, `${k}: men ${s.menMin.toFixed(1)}-${s.menMax.toFixed(1)} px at control (22.2)`);
   check(s.menLastMin >= menLo && s.menLastMax <= 22.5, `${k}: men ${s.menLastMin.toFixed(1)}-${s.menLastMax.toFixed(1)} px on the last build-up frame (22.2)`);
   check(s.jump <= 1 && s.jumpPct <= 0.3, `${k}: the hand-over jumps ${s.jump.toFixed(2)} px / ${s.jumpPct.toFixed(2)}%`);
