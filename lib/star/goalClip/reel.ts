@@ -324,9 +324,32 @@ export const MUSIC_TITLE = 0.85;
 export const MUSIC_UNDER = 0.5;
 export const MUSIC_DUCK = 0.42;
 export const MUSIC_END = 1;
-/** Under the quick-fire run the music leads (no dip per goal: 1.4 s goals
- *  would make it pump). */
+/** Under the quick-fire run the music leads… */
 export const MUSIC_MONTAGE = 0.7;
+/** …but steps back for a moment as each ball goes in, so every goal's roar
+ *  is heard (sound pass, 25 Oct 2026: with no dip the crowd sat only ~1 dB
+ *  over the music at a quick-fire goal; the aim is ~6 dB). A short notch,
+ *  not a long duck, so the 1.2-1.6 s goals do not make the music pump. */
+export const MUSIC_QUICK_DIP = 0.4;
+/** Seconds: the notch falls in this long before the goal, holds this long
+ *  after it, and is back up this long after it. */
+export const QUICK_DIP_IN = 0.05;
+export const QUICK_DIP_HOLD = 0.3;
+export const QUICK_DIP_BACK = 0.75;
+
+/** Reel seconds the ball goes in, on screen, in a goal's live shot (null for
+ *  a card or a recording whose goal is outside the shot). */
+export function screenGoalAt(s: ReelSeg, timings: Record<string, ClipTiming>): number | null {
+  if ((s.kind !== "goal" && s.kind !== "best") || !s.goal.clipId) return null;
+  const t = timings[s.goal.clipId];
+  if (!t) return null;
+  let acc = 0;
+  for (const sh of s.shots) {
+    if (!sh.replay && t.goalT >= sh.from && t.goalT <= sh.to) return s.at + acc + (t.goalT - sh.from) / sh.rate;
+    acc += (sh.to - sh.from) / sh.rate;
+  }
+  return null;
+}
 
 /**
  * The music's loudness line: fades in under the title, sits under the goals,
@@ -336,9 +359,24 @@ export const MUSIC_MONTAGE = 0.7;
  */
 export function musicLevels(plan: ReelPlan, timings: Record<string, ClipTiming>): LevelPoint[] {
   const pts: LevelPoint[] = [{ at: 0, gain: 0 }, { at: 1.6, gain: MUSIC_TITLE }];
-  for (const s of plan.segs) {
+  plan.segs.forEach((s, i) => {
     if (s.kind === "goal" && s.quick) {
-      pts.push({ at: s.at, gain: MUSIC_MONTAGE }, { at: s.at + s.dur, gain: MUSIC_MONTAGE });
+      const prevQuick = i > 0 && plan.segs[i - 1].kind === "goal" && !!(plan.segs[i - 1] as { quick?: boolean }).quick;
+      const nextQuick = plan.segs[i + 1]?.kind === "goal" && !!(plan.segs[i + 1] as { quick?: boolean }).quick;
+      const goal = screenGoalAt(s, timings);
+      // Coming back up from the last goal's notch: no point at the cut, the
+      // music is still rising (a point here would step it).
+      if (!prevQuick) pts.push({ at: s.at, gain: MUSIC_MONTAGE });
+      if (goal !== null) {
+        pts.push({ at: Math.max(s.at, goal - QUICK_DIP_IN), gain: MUSIC_MONTAGE });
+        pts.push({ at: goal, gain: MUSIC_QUICK_DIP });
+        pts.push({ at: goal + QUICK_DIP_HOLD, gain: MUSIC_QUICK_DIP });
+        // Back up under the next quick goal; the last one hands over to the
+        // goal of the season's beat, which sets its own level.
+        if (nextQuick) pts.push({ at: goal + QUICK_DIP_BACK, gain: MUSIC_MONTAGE });
+      } else {
+        pts.push({ at: s.at + s.dur, gain: MUSIC_MONTAGE });
+      }
     } else if (s.kind === "goal") {
       pts.push({ at: s.at, gain: MUSIC_UNDER });
       const t = s.goal.clipId ? timings[s.goal.clipId] : undefined;
@@ -365,7 +403,7 @@ export function musicLevels(plan: ReelPlan, timings: Record<string, ClipTiming>)
       pts.push({ at: Math.max(s.at + 0.8, s.at + s.dur - 1.4), gain: MUSIC_END });
       pts.push({ at: s.at + s.dur, gain: 0 });
     }
-  }
+  });
   pts.sort((a, b) => a.at - b.at);
   return pts;
 }
