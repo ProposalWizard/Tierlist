@@ -30,6 +30,7 @@ export { setWideChancesOverride } from "./wideChances";
 import { PITCH_W, NET_DEPTH, POST_L, POST_R } from "./pitch";
 import { tiltFor, visibleOnScreen, canvasToScreen } from "./cameraTilt";
 import { chanceFraming } from "./chanceFraming";
+import { MATCH_FIGURE_HEIGHT_R, MATCH_FIGURE_R_MULT } from "./fiveASide/render";
 
 export type MatchView = "new" | "classic";
 
@@ -143,6 +144,39 @@ export function figureShrinkFor(kind: ScenarioKind, across: number): number {
 let figureGrowOverride = 1;
 export function setFigureGrowOverride(g: number | null): void { figureGrowOverride = g && g > 0 ? g : 1; }
 export function figureGrow(): number { return figureGrowOverride; }
+
+/**
+ * ONE SIZE IN METRES FOR THE MEN, THE KEEPER AND THE BALL (Mikey, 26 Oct
+ * 2026, Harry agreed: "it has to be consistent throughout every camera angle,
+ * camera zoom, everything").
+ *
+ * Measured before (780 game chances, 200 real moments, 390 × 844 phone): every
+ * man was 22 px on every camera while the goal went from 84 to 236 px, so a
+ * man was 9% to 27% of the goal's width depending on the chance. The Zoom kept
+ * the men their screen size (z2) and FIGURES_AT_FULL_VIEW drew every kind at
+ * the 38 m camera's size.
+ *
+ * Now a man is FIXED_MAN_M tall on every camera, like the goal is 7.32 m: they
+ * grow and shrink with the pitch, zoomed in or out, upright or side-on. The
+ * cameras themselves are untouched. FIXED_MAN_M is the size Mikey picked from
+ * his screenshot (Leicester v Grimsby, 4-0: a build-up, 26.8 m across), about
+ * 22% of the goal's width. FIXED_FIGURES false: the old screen-size rule.
+ * Locked by tests/star/figureScale.mts.
+ */
+export const FIXED_FIGURES = true;
+/** The camera of Mikey's reference picture (a build-up), metres across. */
+export const REFERENCE_CAMERA_M = 26.8;
+/** A man's drawn height with no zoom and no shrink (2.31 m). */
+const MAN_M_UNZOOMED = MATCH_FIGURE_R_MULT * MATCH_FIGURE_HEIGHT_R * NEW_FIGURE_SCALE;
+/** A man's drawn height, metres (head to boots, as drawn): 1.63 m. */
+export const FIXED_MAN_M = MAN_M_UNZOOMED * REFERENCE_CAMERA_M / NEW_VIEW_WIDTH_M;
+/** Divide the new view's figure and ball sizes by this. `zoom` is the chance's
+ *  Zoom (playZoomOf), `shrink` its figureShrinkFor; both are ignored when the
+ *  size is fixed in metres. */
+export function figureDivFor(zoom: number, shrink: number): number {
+  if (FIXED_FIGURES) return MAN_M_UNZOOMED / FIXED_MAN_M;
+  return (playZoom() === "z2" || playZoom() === "z2max" ? zoom : 1) / shrink;
+}
 
 /** How far behind the goal line the frame starts (the net plus a little). */
 const BEHIND_GOAL_M = NET_DEPTH + 2.6;
