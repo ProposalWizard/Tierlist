@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Patch notes v0.17</title>
+<style>
+:root{
+  --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+  --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+  --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+  --pill:#3ddc84;--pillink:#06170e;--r:12px;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+  --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+  --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+  --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+  --pill:#0b7a43;--pillink:#ffffff;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+.wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{padding:30px 0 4px}
+.ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 10px;letter-spacing:-.02em;text-wrap:balance}
+.by{color:var(--ink3);font-size:13px;margin:0 0 4px}
+.upd{color:var(--green);font-size:13px;margin:0 0 4px}
+.lead{color:var(--ink2);font-size:15px;margin:14px 0 0}
+h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+.ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+.ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+.ck li:last-child{border-bottom:0}
+.ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+.ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+.ck .q{font-weight:700;display:block}
+.ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+.item.alert{border-left:4px solid var(--red)}
+.ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.ih b{font-size:16px;line-height:1.3;min-width:0}
+.dt{margin:6px 0 0;color:var(--ink2);font-size:14.5px}
+.pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+.p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+.bars{margin:8px 0 2px}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+.bar .bl{grid-column:1/-1;color:var(--ink2)}
+.track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+.fill{position:absolute;left:0;height:8px;border-radius:3px}
+.fill.was{top:1px;background:var(--ink3);opacity:.55}
+.fill.now{bottom:1px;background:var(--green);opacity:.9}
+.fill.now.warn{background:var(--amber)}
+.fill.now.bad{background:var(--red)}
+.vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+.vv s{color:var(--ink3);font-weight:400;opacity:.9}
+details{background:var(--card2);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+details.nums{background:var(--card);margin-top:34px}
+details[open]{padding-bottom:12px}
+summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+details[open]>summary::before{transform:rotate(90deg)}
+details ul{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}
+details li{margin-bottom:6px}
+details li b{color:var(--ink)}
+footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <span class="ver">v0.17</span>
+  <h1>Whole game reskinned, 3D players</h1>
+  <p class="by">Made by Harry &middot; 28 Sept 2026, 12:00 UK time</p>
+  <p class="upd">Updated 26 Oct 2026, 17:04 UK time: Tidied 26 Oct: title gives what it is about.</p>
+  <p class="lead">The whole game reskinned in the new home-screen look, 3D players, face scans, a Blender footballer for later, run-ups and the Store, and YouTube links finally working. The headline is the look: every screen rebuilt on one shared kit.</p>
+</header>
+<h2 class="nxt"><i></i>Check these</h2>
+<ul class="ck"><li><label><input type="checkbox" data-k="c0"><span><span class="q">Open the game on your phone</span><span class="a">The new title screen: Continue, New Game, Load Game, Settings.</span></span></label></li><li><label><input type="checkbox" data-k="c1"><span><span class="q">Swipe Home, Stats and Shop with your finger</span><span class="a">It was filmed with a mouse drag, not a finger.</span></span></label></li><li><label><input type="checkbox" data-k="c2"><span><span class="q">Tap Play: can you see Play, energy, Sharpness and the three cans without scrolling?</span><span class="a">44 px spare on an iPhone 13, 9 px on a small Android.</span></span></label></li><li><label><input type="checkbox" data-k="c3"><span><span class="q">Play one match, then watch the post-match screen</span><span class="a">The score slams in, the rating counts up, pay and relationships float up.</span></span></label></li><li><label><input type="checkbox" data-k="c4"><span><span class="q">Settings → Player look → 3D, then play a chance</span><span class="a">Do the players look right on your phone, and does the kick look smooth?</span></span></label></li><li><label><input type="checkbox" data-k="c5"><span><span class="q">Upload your own photo in Settings → Photo</span><span class="a">The scan animation runs, then your face sits on the avatar with hair.</span></span></label></li></ul>
+<h2 class="chg"><i></i>Changed · The headlines</h2>
+<div class="item"><div class="ih"><b>Problem: the home screen was &quot;all messed up&quot; and every other screen looked like an older game</b></div><p class="dt">Flat cans, six squashed buttons, a 2D avatar with no flash, and uploaded photos sitting on it like a sticker.</p><details><summary>Why, and the fix</summary><ul><li>Why: each screen was built on its own over the months with its own colours and buttons, so there was no single place to change the look.</li><li>Fix: one shared design kit (club-lit glass cards, pills, buttons that press in, bursts, count-ups) with every screen rebuilt on it, and 3D-look players.</li><li>A real title screen, and Home with you in the middle and Play raised in the middle.</li><li>Matchday: Play, role, energy, Sharpness and all three cans now fit above the pinned bar (the match box went from about 245 px tall to 80).</li><li>League, Stats, Training, Relations, Phone, Shop, Store, Casino, awards, transfers, votes, team sheets, cup draw and Settings all rebuilt. Every number stays on screen.</li></ul></details></div>
+<div class="item"><div class="ih"><b>3D players on the pitch</b></div><p class="dt">Shaded kits, boots, a soft shadow and a fitted face. A player with no photo gets drawn hair in 5 styles, so nobody is bald.</p><details><summary>How it works</summary><ul><li>They use the same skeleton as today&#39;s players, so every run, kick and dive moves exactly as before; only the drawing on top is new.</li><li>Off by default, tried from Settings → Player look. It&#39;s no slower: 67–69 ms a frame against Classic&#39;s 74–79 ms on a slowed-down phone test.</li></ul></details></div>
+<div class="item"><div class="ih"><b>The dribble: 3D and three new cameras</b></div><p class="dt">Your old complaint, the ball sitting on your body instead of in front, was measured over 42 ball positions.</p><div class="bars"><div class="bar"><div class="bl">Ball drawn over your body, of 42</div><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:0.0%"></div></div><div class="vv"><s>12</s> 0</div></div></div><details><summary>The four views</summary><ul><li>Today: 12 of 42. C1 low over the shoulder: 0. C2 higher from behind: 0. C3 closing in near a defender: 0–2.</li><li>The cameras change the view only, not the difficulty. In the C1 view the legs look like a normal stride.</li></ul></details></div>
+<div class="item"><div class="ih"><b>Face scan: your photo becomes your face</b></div><p class="dt">Problem: &quot;still an issue when the player takes a picture&quot;, and &quot;everyone can&#39;t be bald&quot;. An uploaded photo is now cut out, straightened and fitted once, with a scan animation, and the hair is recreated.</p><details><summary>How it works</summary><ul><li>A face-finding tool that runs on the phone itself finds the face and outline, lines up the eyes, removes the background and redraws the hair. It works on busy backgrounds.</li><li>Your own photo has only been tested from a screenshot crop.</li></ul></details></div>
+<div class="item"><div class="ih"><b>Recording tool: video links, and YouTube from your own Mac</b></div><p class="dt">Problem: the tool only took files, and YouTube blocks cloud servers, so a pasted YouTube link failed every way it was tried.</p><details><summary>Why, and the fix</summary><ul><li>From the cloud: TikTok, Drive, Dropbox and about 1,000 other video sites now work from a link.</li><li>From your Mac: a one-click Download YouTube button on the desktop. You tested it: &quot;unreal, it worked&quot;.</li><li>720p is the default; a 25-minute video is 133 MB at 720p against 263 MB at 1080p.</li></ul></details></div>
+<h2 class="add"><i></i>Added</h2>
+<div class="item"><div class="ih"><b>Blender: a real 3D footballer, for celebrations and cut-scenes</b></div><p class="dt">5 stills, hair in several styles and 3 animation loops, on its own test page. Nothing reaches the game yet.</p></div>
+<div class="item"><div class="ih"><b>Run-ups: 7 for penalties, 7 for free kicks</b></div><p class="dt">Chosen in Settings. Free kicks include Ronaldo&#39;s power stance, Bale, Messi&#39;s calm curl, Neymar, Maddison and Trent.</p></div>
+<div class="item"><div class="ih"><b>The penalty keeper sometimes leans</b></div><p class="dt">About 35% of penalties. Right-corner penalties score 86.1% if he leans left, 72.3% with no lean and 55.7% if he leans right.</p></div>
+<div class="item"><div class="ih"><b>The Store and Coins, inside the career</b></div><p class="dt">Daily specials, run-up animations, accessories and boosts. Coin packs say &quot;Coming soon&quot;: there is no real payment.</p></div>
+<h2 class="fix"><i></i>Fixed</h2>
+<div class="item"><div class="ih"><b>Swiping between home pages didn&#39;t work with a finger</b></div><p class="dt">It only worked with a mouse. Tested with real touch events now.</p></div>
+<div class="item"><div class="ih"><b>Post-match always said your stars went up by +0.1</b></div><p class="dt">It shows the real jump now.</p></div>
+<div class="item"><div class="ih"><b>Two old display bugs in Settings</b></div><p class="dt">A switch&#39;s knob sat outside its track, and the current save was cut off.</p></div>
+<h2 class="chg"><i></i>Changed</h2>
+<div class="item"><div class="ih"><b>Fitness is now called Sharpness</b></div><p class="dt">Same number; it goes up by playing and drops each week you don&#39;t.</p></div>
+<div class="item"><div class="ih"><b>League table zones follow each division</b></div><p class="dt">The Premier League shows title, Champions League, Europa League and relegation; lower divisions show promotion and play-offs.</p></div>
+<div class="item"><div class="ih"><b>Settings, reorganised</b></div><p class="dt">Game, You, Player graphics, Saves, Developer tools, then Exit career. Main menu is at the top right.</p></div>
+<h2 class="bug"><i></i>Known issues</h2>
+<div class="item"><div class="ih"><b>3 test files fail</b></div><p class="dt">They fail on the live version too. 198 of 201 pass.</p></div>
+<div class="item"><div class="ih"><b>Not seen on a screen</b><span class="pill p-amb">not played</span></div><p class="dt">The Ballon d&#39;Or countdown, a signing through a real transfer window, reduce-motion on a real phone, and the photo picker&#39;s camera and crop stages.</p></div>
+<div class="item"><div class="ih"><b>Most reskinned screens were filmed on a test page</b><span class="pill p-amb">half fixed</span></div><p class="dt">Only Sim this match was filmed inside a real career.</p></div>
+<div class="item"><div class="ih"><b>The 3D test switch is visible to real players</b></div><p class="dt">Settings → Player look (test).</p></div>
+<h2 class="nxt"><i></i>Next · Your calls</h2>
+<div class="item"><div class="ih"><b>Push the UI rebuild?</b></div><p class="dt">Recommended: push, so it goes up to your branch for you to merge.</p></div>
+<div class="item"><div class="ih"><b>Which dribble camera does the real game use?</b></div><p class="dt">Recommended: C1, the ball is always clearly in front of you.</p></div>
+<div class="item"><div class="ih"><b>When do the 3D players become everyone&#39;s look?</b></div><p class="dt">Recommended: later. Check the kick first, then switch.</p></div>
+<div class="item"><div class="ih"><b>Blender: what next?</b></div><p class="dt">Recommended: a goal celebration clip after you score.</p></div>
+<div class="item"><div class="ih"><b>League Two: is 3rd place promoted or in the play-offs?</b></div><p class="dt">The reskinned table marks 3rd as promoted; the season code puts it in the play-offs. Recommended: real, top 3 promoted.</p></div>
+<details class="nums"><summary>The numbers</summary><ul><li><b>40+</b> screens rebuilt in the new look, each filmed before and after at two phone sizes</li><li><b>12 → 0</b> of 42 dribble positions where the ball sat on your body (new C1 camera)</li><li><b>7 + 7</b> run-ups: penalties, and free kicks modelled on Ronaldo, Bale, Messi, Neymar, Maddison and Trent</li><li><b>198 / 201</b> tests pass. The 3 that fail also fail on the live version</li></ul></details>
+<footer>Made from the archive data on 26 Oct 2026 (this note had no page)</footer>
+</div>
+<script>
+(function(){
+  var K="kib-pn-0.17-checks", s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||"{}")||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll(".ck input");
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute("data-k"); if(s[id]) b.checked=true;
+    b.addEventListener("change",function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+})();
+</script>
+</body>
+</html>

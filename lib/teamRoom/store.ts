@@ -14,6 +14,7 @@
  * channels, reactions, private DMs and bot rows need team_room_v3.sql;
  * until it runs `v3` is "off" and those screens say so in place.
  */
+import { canonicalPatchVersion } from "@/lib/patchVersionAliases";
 import { useSyncExternalStore } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/imageUtils";
@@ -182,7 +183,7 @@ async function loadAll() {
     ideas: (ide.data ?? []) as TeamIdea[],
     votes: (vot.data ?? []) as TeamVote[],
     tasks: (tas.data ?? []) as TeamTask[],
-    notes: [...((not.data ?? []) as TeamNote[]), ...readJson<TeamNote[]>(LOCAL_NOTES_KEY, [])],
+    notes: [...((not.data ?? []) as TeamNote[]), ...readJson<TeamNote[]>(LOCAL_NOTES_KEY, [])].map(patchNoteKey),
   });
   await loadV2();
   await loadV3();
@@ -253,6 +254,14 @@ async function loadV3() {
   });
 }
 
+/** Renumbered patch notes (lib/patchVersionAliases.ts): a tick or note saved on an old number counts on the new one. */
+function patchAckKey(a: TeamAck): TeamAck {
+  return a.kind === "patch" ? { ...a, target: canonicalPatchVersion(a.target) } : a;
+}
+function patchNoteKey(n: TeamNote): TeamNote {
+  return n.target_kind === "patch" ? { ...n, target_id: canonicalPatchVersion(n.target_id) } : n;
+}
+
 /** Round two's tables. Missing → "off": everything still works, kept on this device. */
 async function loadV2() {
   if (!sb) return;
@@ -268,12 +277,12 @@ async function loadV2() {
   }
   const marks: ReadMarks = {};
   for (const r of (mk.data ?? []) as { person: string; last_seen_id: number }[]) if (isTeamPerson(r.person)) marks[r.person] = Number(r.last_seen_id) || 0;
-  set({ v2: "on", marks, acks: ((ak.data ?? []) as TeamAck[]).filter((a) => isTeamPerson(a.person)) });
+  set({ v2: "on", marks, acks: ((ak.data ?? []) as TeamAck[]).filter((a) => isTeamPerson(a.person)).map(patchAckKey) });
 }
 function localV2(): Pick<TeamRoomState, "marks" | "acks"> {
   const me = state.me;
   const seen = readJson<number>(SEEN_KEY, 0);
-  return { marks: me ? { [me]: +seen || 0 } : {}, acks: readJson<TeamAck[]>(ACKS_KEY, []) };
+  return { marks: me ? { [me]: +seen || 0 } : {}, acks: readJson<TeamAck[]>(ACKS_KEY, []).map(patchAckKey) };
 }
 
 type Change = { eventType: "INSERT" | "UPDATE" | "DELETE"; new: Record<string, unknown>; old: Record<string, unknown> };
@@ -309,7 +318,7 @@ function apply(table: string, c: Change) {
     return;
   }
   if (table === "team_acks") {
-    const a = row as unknown as TeamAck;
+    const a = patchAckKey(row as unknown as TeamAck);
     if (!isTeamPerson(a.person)) return;
     set((s) => ({ acks: withAck(s.acks, a, !del) }));
     return;
@@ -360,7 +369,8 @@ function apply(table: string, c: Change) {
   set((s) => {
     const list = s[key] as { id: number }[];
     const id = Number(row.id);
-    return { [key]: del ? list.filter((x) => x.id !== id) : upsertById(list, row as unknown as { id: number }) } as Partial<TeamRoomState>;
+    const r = (key as string) === "notes" ? patchNoteKey(row as unknown as TeamNote) : row;
+    return { [key]: del ? list.filter((x) => x.id !== id) : upsertById(list, r as unknown as { id: number }) } as Partial<TeamRoomState>;
   });
 }
 
@@ -438,7 +448,7 @@ function startDemo() {
   if (DEMO_WELCOME) set({ welcomeReads: [] });
   loadBells();
   watchActivity();
-  if (noV2) set({ ...localV2(), notes: [...room.notes, ...readJson<TeamNote[]>(LOCAL_NOTES_KEY, [])] });
+  if (noV2) set({ ...localV2(), notes: [...room.notes, ...readJson<TeamNote[]>(LOCAL_NOTES_KEY, [])].map(patchNoteKey) });
 }
 
 export function startTeamRoom() {

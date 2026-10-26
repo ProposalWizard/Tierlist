@@ -1,5 +1,6 @@
 "use client";
 
+import { canonicalPatchVersion, formerPatchVersion } from "@/lib/patchVersionAliases";
 import { linesOf, watchSelection } from "@/lib/teamRoom/patchQuote";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
@@ -14,6 +15,7 @@ import {
   barWidths,
   formatBarValue,
   formatPatchDate,
+  formatPatchDateTime,
   type PatchBar,
   type PatchItem,
   type PatchNote,
@@ -73,7 +75,9 @@ export default function PatchNotesArchive({ initialVersion }: { initialVersion?:
     .map((n, i) => ({ n, i }))
     .sort((a, b) => (Date.parse(lastChange(b.n)) || 0) - (Date.parse(lastChange(a.n)) || 0) || a.i - b.i)
     .map(({ n }) => n), []);
-  // The team board opens a push's patch note here (initialVersion).
+  // The team board opens a push's patch note here (initialVersion). An old
+  // number from before the 26 Oct renumbering opens the note's new number.
+  initialVersion = initialVersion ? canonicalPatchVersion(initialVersion) : initialVersion;
   const [selected, setSelected] = useState<string | null>(
     (initialVersion && notes.some((n) => n.version === initialVersion) ? initialVersion : null) ?? notes[0]?.version ?? null,
   );
@@ -140,7 +144,7 @@ function VersionRail({
             <button
               key={n.version}
               onClick={() => onSelect(n.version)}
-              className={`relative shrink-0 rounded-full border px-3.5 py-1.5 text-[13px] font-extrabold transition ${
+              className={`relative max-w-[210px] shrink-0 rounded-2xl border px-3.5 py-1.5 text-left text-[13px] font-extrabold transition ${
                 on
                   ? "border-[#3ddc84] bg-[#3ddc84]/15 text-[#3ddc84]"
                   : `${LINE} ${CARD} ${INK2}`
@@ -148,6 +152,7 @@ function VersionRail({
             >
               v{n.version}
               {patchIsUpdated(n) && <UpdatedTag />}
+              <span className="block truncate text-[11px] font-semibold opacity-80">{n.author} · {railName(n.title)}</span>
               <PatchUnreadDot note={n} />
             </button>
           );
@@ -173,7 +178,7 @@ function VersionRail({
                 <span className={`block text-sm font-extrabold ${on ? "text-[#3ddc84]" : INK}`}>
                   v{n.version}{patchIsUpdated(n) && <UpdatedTag />}
                 </span>
-                <span className={`flex items-center justify-between gap-2 text-[11px] ${INK3}`}>{patchIsUpdated(n) ? `Updated ${formatPatchDate(n.updatedAt!)}` : formatPatchDate(n.publishedAt)}<PatchRailFaces note={n} /></span>
+                <span className={`flex items-center justify-between gap-2 text-[11px] ${INK3}`}>{n.author} · {patchIsUpdated(n) ? `Updated ${formatPatchDate(n.updatedAt!)}` : formatPatchDate(n.publishedAt)}<PatchRailFaces note={n} /></span>
                 {railName(n.title) && <span className={`mt-0.5 block truncate text-[11.5px] ${INK2}`}>{railName(n.title)}</span>}
               </button>
             );
@@ -218,6 +223,7 @@ function VersionView({ note }: { note: PatchNote }) {
     : "The same notes as plain data.";
   return (
     <>
+      <NoteMeta note={note} />
       {patchIsUpdated(note) && (
         <div className="mb-3 rounded-xl border border-[#3ddc84]/40 bg-[#3ddc84]/10 px-3.5 py-2.5 text-[13px]">
           <span className="font-black uppercase tracking-wider text-[#3ddc84]">Updated {formatPatchDate(note.updatedAt!)}</span>
@@ -237,6 +243,42 @@ function VersionView({ note }: { note: PatchNote }) {
         : view === "page" && hasPage ? <PageFrame pageKey={note.version} artifactUrl={note.artifactUrl} />
         : <NoteBody note={note} />}
     </>
+  );
+}
+
+/**
+ * THE SAME HEAD ON EVERY NOTE (Leo, 26 Oct 2026): who made it, when (date and
+ * time), its number (and the old one if it moved), and every update to it,
+ * with when and what part changed. Harry's, Mikey's and Leo's look the same.
+ */
+function NoteMeta({ note }: { note: PatchNote }) {
+  const was = formerPatchVersion(note.version);
+  const ups = note.updates ?? [];
+  return (
+    <div className={`mb-3 rounded-xl border ${LINE} ${CARD} px-3.5 py-3`} data-note-meta>
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <span className="text-[15px] font-black text-[#3ddc84]">v{note.version}</span>
+        <span className={`text-[14px] font-extrabold ${INK}`}>{railName(note.title) || note.title}</span>
+      </div>
+      <p className={`mt-1 text-[12.5px] ${INK2}`}>
+        Made by <b className={INK}>{note.author}</b> · {formatPatchDateTime(note.publishedAt)}
+        {was && <> · was v{was}</>}
+      </p>
+      {ups.length > 0 ? (
+        <details className="mt-2">
+          <summary className={`cursor-pointer text-[12.5px] font-bold ${INK2}`}>Updates ({ups.length}) · last {formatPatchDateTime(ups[ups.length - 1].at)}</summary>
+          <ul className="mt-1.5 space-y-1.5">
+            {ups.slice().reverse().map((u, i) => (
+              <li key={i} className={`text-[12.5px] leading-snug ${INK2}`}>
+                <span className={`font-bold ${INK}`}>{formatPatchDateTime(u.at)}</span> · <span className="font-bold text-[#6fb8ff]">{u.where}</span> · {u.note}
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : (
+        <p className={`mt-1 text-[12px] ${INK3}`}>No updates since it went up.</p>
+      )}
+    </div>
   );
 }
 
