@@ -7321,7 +7321,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     {
       const ch = cheekyStrikeRef.current;
       cheekyStrikeRef.current = null;
-      if (ch && (sc.kind === "penalty" || youShot) && isCheekyMiss(res)) {
+      // Only a kick YOU took (Mikey, 26 Oct 2026: a team-mate's missed
+      // penalty was written up as your Panenka and cost you reputation).
+      if (ch && !auto && (sc.kind === "penalty" || youShot) && isCheekyMiss(res)) {
         cheekyMissesRef.current.push({ kind: ch, minute: matchMinuteRef.current });
       }
     }

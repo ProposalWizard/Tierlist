@@ -799,6 +799,34 @@ const RUN_ROW = (rows: { label: string; value: string }[]) =>
   check(JSON.stringify(quiet) === JSON.stringify(again), "the same cycle id always pads out to the same trends");
 }
 
+// ── One of each kind of post per match (Mikey, 26 Oct 2026) ──
+// "Who is to blame?" came twice, each with a poll. Per match: one poll at
+// most, and one post per kind of graphic per event; text may repeat a kind
+// but never the same words.
+{
+  let multiPoll = 0, dupGraphic = 0, dupText = 0, cycles = 0;
+  for (const seed of [11, 23, 37]) {
+    const c = season(seed, 20);
+    const byCycle = new Map<string, typeof c.media.posts>();
+    for (const p of c.media?.posts ?? []) {
+      const cyc = p.id.split(":")[0];
+      (byCycle.get(cyc) ?? byCycle.set(cyc, []).get(cyc)!).push(p);
+    }
+    byCycle.forEach((ps) => {
+      cycles++;
+      const g = ps.map((p) => (p.graphic as { type?: string } | undefined)?.type).filter(Boolean) as string[];
+      if (g.filter((t) => t === "poll" || t === "gotmPoll").length > 1) multiPoll++;
+      const keys = ps.filter((p) => p.graphic && (p.graphic as { type: string }).type !== "goalVideo").map((p) => `${(p.graphic as { type: string }).type}|${p.eventId}`);
+      if (new Set(keys).size !== keys.length) dupGraphic++;
+      const texts = ps.map((p) => p.text);
+      if (new Set(texts).size !== texts.length) dupText++;
+    });
+  }
+  check(multiPoll === 0, `at most one poll a match (${multiPoll} of ${cycles} matches had more)`);
+  check(dupGraphic === 0, `one post per kind of graphic per event (${dupGraphic} matches repeated one)`);
+  check(dupText === 0, `no two posts with the same words in a match (${dupText})`);
+}
+
 if (problems.length) {
   console.log("FAIL");
   for (const p of problems) console.log("  ✗ " + p);
