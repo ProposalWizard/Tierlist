@@ -43,6 +43,11 @@ for i = 1, PRESSES do
 	end
 	assert(b, "no button on " .. s.id)
 	if s.id == "dashboard" and i % 30 == 0 then
+		call("tab", "train")
+		call("train-skill", "power")
+		call("tab", "life")
+		call("life", "boots")
+		call("life", "sponsors")
 		call("tab", "league")
 		call("tab", "fixtures")
 		call("tab", "stats")

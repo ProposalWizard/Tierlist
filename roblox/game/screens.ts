@@ -27,6 +27,7 @@ import { shortClub } from "../../lib/star/media/grammar";
 import type { TransferOffer } from "../../lib/star/transfers";
 import * as TF from "./trialFlow";
 import * as TR from "./trainingFlow";
+import * as LF from "./lifeFlow";
 import { trainingLeft } from "../../lib/star/week";
 import { STAGE_LABEL, TRIAL_STAGES, trialScore } from "../../lib/star/trial";
 
@@ -61,6 +62,10 @@ export interface UiState {
   /** Training: the skill whose levels are open, and the last session's result line. */
   trainSkill?: string;
   trainResult?: string;
+  /** Life: which page is open (a shop, sponsors, the day off, the office talk), its last line, the talk under way. */
+  life?: string;
+  lifeNote?: string;
+  bossTalk?: LF.TalkState;
 }
 export type RobloxGame = Game & { ui?: UiState };
 
@@ -109,7 +114,7 @@ function ordinal(n: number): string {
   return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`;
 }
 
-const TABS = [["home", "Home"], ["train", "Train"], ["league", "League"], ["fixtures", "Fixtures"], ["stats", "Stats"]] as const;
+const TABS = [["home", "Home"], ["train", "Train"], ["life", "Life"], ["league", "League"], ["fixtures", "Fixtures"], ["stats", "Stats"]] as const;
 
 // ─────────────────────────────────────────────────────── the new career ──
 
@@ -425,6 +430,148 @@ function trainTab(g: RobloxGame, s: Screen): Screen {
   return s;
 }
 
+/** Life between matches: rest, the relationships' games, the shop, sponsors (the website's Life tab and its screens). */
+function lifeTab(g: RobloxGame, s: Screen): Screen {
+  const c = g.career;
+  const ui = g.ui ?? {};
+  const page = ui.life;
+  if (ui.lifeNote) s.blocks.push({ kind: "text", text: ui.lifeNote, tone: "gold" });
+  const back: Button = { label: "Back", action: "life", style: "secondary" };
+  if (page === "cans") {
+    s.title = "🥤 KIB energy cans";
+    s.blocks.push({ kind: "list", items: LF.cans(c).map((k) => ({
+      text: `${k.can.name}: ${k.label}`, sub: `${money(k.price)} · you have ${k.owned}`,
+      tone: (c.money < k.price ? "dim" : "normal") as Tone, action: "buy-can", arg: k.can.id })) });
+    s.buttons.push(back);
+    return s;
+  }
+  if (page === "boots") {
+    s.title = "👟 Boots";
+    const cb = c.currentBoot;
+    s.blocks.push({ kind: "text", text: cb.matches > 0 ? `Wearing: ${cb.name} (+${cb.power} power, +${cb.technique} technique), ${cb.matches} matches left.` : "No boots on. A pair adds power and technique for its matches." });
+    s.blocks.push({ kind: "list", items: LF.boots(c).map((b) => ({
+      text: `${b.name}: +${b.power} power, +${b.technique} technique${b.curve ? ", curve" : ""}${b.extraTouch ? ", Touch Mode" : ""}`,
+      sub: `${money(b.price)} · ${b.matches} matches${cb.id === b.id ? " · adds to yours" : ""}`,
+      tone: (c.money < b.price ? "dim" : "normal") as Tone, action: "buy-boot", arg: b.id })) });
+    s.buttons.push(back);
+    return s;
+  }
+  if (page === "style") {
+    s.title = "🏠 Lifestyle";
+    s.blocks.push({ kind: "text", text: "Things you own raise your fame. Some wear out after a few seasons.", tone: "dim" });
+    s.blocks.push({ kind: "list", items: LF.lifestyle(c).map(({ item, status, needStars }) => ({
+      text: `${item.name}${item.level ? ` (level ${item.level})` : ""}`,
+      sub: status === "locked" ? `Opens at ★${needStars}` : status === "owned" ? "Yours" : status === "lower" ? "You own a better one" : `${money(item.price)} · +${item.lifestyleValue} fame${status === "worn" ? " · yours is worn out" : ""}`,
+      tone: (status === "owned" ? "good" : status === "locked" || status === "lower" || c.money < item.price ? "dim" : "normal") as Tone,
+      ...(status === "buy" || status === "worn" ? { action: "buy-item", arg: item.id } : {}) })) });
+    s.buttons.push(back);
+    return s;
+  }
+  if (page === "dayoff") {
+    s.title = "🌴 Day off";
+    s.blocks.push({ kind: "text", text: "How do you want to spend it? Happier players get more energy back when they rest." });
+    s.blocks.push({ kind: "list", items: LF.dayOffOptions(c).map((o) => ({
+      text: `${o.icon} ${o.name}`, sub: `+${o.gain} happiness${o.cost ? ` · ${money(o.cost)}` : " · free"}`,
+      tone: (c.money < o.cost ? "dim" : "normal") as Tone, action: "dayoff", arg: o.id })) });
+    s.buttons.push(back);
+    return s;
+  }
+  if (page === "talk" && ui.bossTalk) {
+    const t = ui.bossTalk;
+    const r = t.talk.rounds[Math.min(t.round, LF.TALK_ROUNDS - 1)];
+    s.title = "💬 Office talk";
+    s.blocks.push({ kind: "text", text: `Question ${t.round + 1} of ${LF.TALK_ROUNDS}. Say what he wants to hear: his lines are the only clue.`, tone: "dim" });
+    if (t.last) s.blocks.push({ kind: "text", text: `You: “${t.last.you}”` }, { kind: "text", text: `${c.manager?.name ?? "The manager"}: “${t.last.him}”`, tone: "gold" });
+    s.blocks.push({ kind: "heading", text: `${c.manager?.name ?? "The manager"}: “${r.line}”` });
+    s.blocks.push({ kind: "list", items: r.replies.map((rep, i) => ({ text: rep.text, action: "talk-pick", arg: String(i) })) });
+    return s;
+  }
+  if (page === "sponsors" || (page ?? "").startsWith("offer:") || (page ?? "").startsWith("deal:")) {
+    const b = LF.brandsOf(c);
+    s.title = "🤝 Sponsors";
+    if ((page ?? "").startsWith("offer:")) {
+      const o = b.offers.find((x) => x.id === page!.slice(6));
+      if (o) {
+        s.title = `${o.brand} (${o.category})`;
+        s.blocks.push({ kind: "stats", items: [
+          { label: "A week", value: money(o.weekly), tone: "gold" }, { label: "Seasons", value: String(o.seasons) },
+          { label: "On signing", value: money(o.signingOn) }] });
+        s.blocks.push({ kind: "list", items: o.targets.map((t) => ({ text: LF.targetLabel(t), sub: `Bonus ${money(t.bonus)}` })) });
+        s.buttons.push({ label: "Sign ✍️", action: "sponsor", arg: `sign:${o.id}`, style: "primary" },
+          { label: "Ask for a longer deal", action: "sponsor", arg: `longer:${o.id}` },
+          { label: "Ask for easier targets", action: "sponsor", arg: `easier:${o.id}` },
+          ...(o.replaces ? [{ label: "Ask your sponsor to match it", action: "sponsor", arg: `counter:${o.id}` }] : []),
+          { label: "Decline", action: "sponsor", arg: `decline:${o.id}`, style: "danger" as const });
+      }
+      s.buttons.push({ label: "Back", action: "life", arg: "sponsors", style: "secondary" });
+      return s;
+    }
+    if ((page ?? "").startsWith("deal:")) {
+      const d = b.deals.find((x) => x.id === page!.slice(5));
+      if (d) {
+        s.title = `${d.brand} (${d.category})`;
+        s.blocks.push({ kind: "stats", items: [{ label: "A week", value: money(d.weekly), tone: "gold" }, { label: "Seasons left", value: String(d.seasonsLeft) },
+          { label: "Their mood", value: `${Math.round(d.happiness)}%` }] });
+        s.blocks.push({ kind: "list", items: d.targets.map((t) => ({ text: LF.targetLabel(t), sub: `${t.progress} of ${t.target} · bonus ${money(t.bonus)}`, tone: (t.done ? "good" : "normal") as Tone })) });
+        s.buttons.push({ label: `Walk away (costs ${money(d.guaranteed)})`, action: "sponsor", arg: `walk:${d.id}`, style: "danger" });
+      }
+      s.buttons.push({ label: "Back", action: "life", arg: "sponsors", style: "secondary" });
+      return s;
+    }
+    s.blocks.push({ kind: "stats", items: [{ label: "Deals", value: `${b.deals.length} / ${LF.slotsFor(c)}` }, { label: "Offers", value: String(b.offers.length) }] });
+    s.blocks.push({ kind: "heading", text: "Your deals" });
+    s.blocks.push(b.deals.length ? { kind: "list", items: b.deals.map((d) => ({ text: `${d.brand} (${d.category})`, sub: `${money(d.weekly)} a week · ${d.seasonsLeft} seasons left`, action: "life", arg: `deal:${d.id}` })) }
+      : { kind: "text", text: "No deals yet. Play well and get famous: the brands come to you.", tone: "dim" });
+    if (b.offers.length) {
+      s.blocks.push({ kind: "heading", text: "Offers" });
+      s.blocks.push({ kind: "list", items: b.offers.map((o) => ({ text: `${o.brand} (${o.category})`, sub: `${money(o.weekly)} a week · ${o.seasons} seasons`, tone: "gold" as Tone, action: "life", arg: `offer:${o.id}` })) });
+    }
+    if (b.news.length) s.blocks.push({ kind: "list", items: b.news.slice(0, 4).map((n) => ({ text: n, tone: "dim" as Tone })) });
+    s.buttons.push(back);
+    return s;
+  }
+  // the Life page itself
+  s.title = "Life";
+  const left = LF.actionsLeft(c);
+  s.blocks.push({ kind: "stats", items: [
+    { label: "Energy", value: `${Math.round(c.energy)}%`, tone: c.energy < 40 ? "bad" : "normal" },
+    { label: "Happiness", value: `${Math.round(c.happiness)}%` },
+    { label: "Days left this week", value: String(left), tone: left > 0 ? "normal" : "bad" },
+    { label: "Money", value: money(c.money), tone: "gold" },
+  ] });
+  const rel = (k: LF.RelKind, icon: string, name: string, value: number, action: string | null): { text: string; sub?: string; tone?: Tone; action?: string } => {
+    const st = LF.relGame(c, k);
+    return {
+      text: `${icon} ${name}: ${Math.round(value)}`,
+      sub: action ? `${LF.REL_GAME_LABEL[k]} · ${st.why ?? `1 day, ${TR.trainingEnergyCost()} energy`}` : `${LF.REL_GAME_LABEL[k]} · not in Roblox yet`,
+      tone: (st.canPlay && action ? "normal" : "dim") as Tone,
+      ...(st.canPlay && action ? { action } : {}),
+    };
+  };
+  s.blocks.push({ kind: "heading", text: "Relationships" });
+  s.blocks.push({ kind: "list", items: [
+    rel("boss", "👔", "Manager", c.relationships.boss, "rel-boss"),
+    rel("team", "🤝", "Team-mates", c.relationships.team, null),
+    rel("fans", "📣", "Fans", c.relationships.fans, null),
+    rel("happiness", "🌴", "Happiness", c.happiness, "life-dayoff"),
+  ] });
+  const owned = LF.cans(c).filter((k) => k.owned > 0);
+  if (owned.length) {
+    s.blocks.push({ kind: "heading", text: "Your cans" });
+    s.blocks.push({ kind: "list", items: owned.map((k) => ({ text: `Drink ${k.can.name} (${k.owned})`, sub: k.label, action: "use-can", arg: k.can.id })) });
+  }
+  const offers = LF.brandsOf(c).offers.length;
+  s.blocks.push({ kind: "heading", text: "Shop" });
+  s.blocks.push({ kind: "list", items: [
+    { text: "🥤 KIB energy cans", action: "life", arg: "cans" },
+    { text: "👟 Boots", sub: c.currentBoot.matches > 0 ? `${c.currentBoot.name}: ${c.currentBoot.matches} matches left` : "No boots on", action: "life", arg: "boots" },
+    { text: "🏠 Lifestyle", sub: "Cars, homes, watches: fame", action: "life", arg: "style" },
+    { text: `🤝 Sponsors${offers ? ` (${offers} new offer${offers === 1 ? "" : "s"})` : ""}`, tone: (offers ? "gold" : "normal") as Tone, action: "life", arg: "sponsors" },
+  ] });
+  if (LF.canAct(c)) s.buttons.push({ label: `😴 Rest (+${LF.restGain(c)} energy, 1 day)`, action: "rest", style: "secondary" });
+  return s;
+}
+
 /** The stars from a level played on the device (or, in tests, played by nobody). */
 export function trainingDone(g: RobloxGame, skill: string, level: number, stars: number): RobloxGame | null {
   const label = TR.SKILL_LABELS.find((l) => l[0] === skill);
@@ -443,6 +590,7 @@ function dashboard(g: RobloxGame): Screen {
   const tabs = TABS.map(([id, label]) => ({ id, label, active: id === tab }));
   const s: Screen = { id: "dashboard", hud: hud(c), title: c.player.club, tabs, blocks: [], buttons: [] };
   if (tab === "train") return trainTab(g, s);
+  if (tab === "life") return lifeTab(g, s);
   if (tab === "league") {
     const table = sortLeague(c.league);
     s.title = leagueNameFor(divisionOf(c));
@@ -629,8 +777,41 @@ function niceStep(n: number): number {
 export function act(g: RobloxGame, action: string, arg: string | undefined, rng: () => number = Math.random): RobloxGame {
   const ui: UiState = g.ui ?? {};
   switch (action) {
-    case "tab": return { ...g, ui: { ...ui, tab: arg ?? "home", trainResult: undefined } };
+    case "tab": return { ...g, ui: { ...ui, tab: arg ?? "home", trainResult: undefined, life: undefined, lifeNote: undefined, bossTalk: undefined } };
     case "home": return { ...F.backToDashboard(g), ui: { ...ui, tab: "home" } };
+    case "life": return { ...g, ui: { ...ui, tab: "life", life: arg, lifeNote: undefined } };
+    case "rest": return { ...g, career: LF.rest(g.career), ui: { ...ui, lifeNote: "You put your feet up." } };
+    case "use-can": case "buy-can": case "buy-boot": case "buy-item": {
+      const f = action === "use-can" ? LF.useCan : action === "buy-can" ? LF.buyKib : action === "buy-boot" ? LF.buyBoot : LF.buyItem;
+      const next = f(g.career, arg ?? "");
+      return next
+        ? { ...g, career: next, ui: { ...ui, lifeNote: action === "use-can" ? "Drunk." : "Bought." } }
+        : { ...g, ui: { ...ui, lifeNote: action === "use-can" ? "That can would do nothing now." : "Not enough money for that." } };
+    }
+    case "life-dayoff": return LF.relGame(g.career, "happiness").canPlay ? { ...g, ui: { ...ui, tab: "life", life: "dayoff", lifeNote: undefined } } : g;
+    case "dayoff": {
+      if (!LF.relGame(g.career, "happiness").canPlay) return g;
+      const r = LF.dayOff(g.career, arg ?? "");
+      if (!r) return { ...g, ui: { ...ui, lifeNote: "Not enough money for that." } };
+      return { ...g, career: LF.relGameComplete(g.career, "happiness", r), ui: { ...ui, life: undefined, lifeNote: `${r.line} Happiness +${r.gain}.` } };
+    }
+    case "rel-boss": {
+      if (!LF.relGame(g.career, "boss").canPlay) return g;
+      return { ...g, ui: { ...ui, tab: "life", life: "talk", lifeNote: undefined, bossTalk: LF.startTalk(g.career, Math.floor(rng() * 100000)) } };
+    }
+    case "talk-pick": {
+      const t = ui.bossTalk;
+      if (!t || !LF.relGame(g.career, "boss").canPlay) return g;
+      const next = LF.talkPick(t, Number(arg));
+      if (!LF.talkOver(next)) return { ...g, ui: { ...ui, bossTalk: next } };
+      const r = LF.talkResult(next);
+      return { ...g, career: LF.relGameComplete(g.career, "boss", r), ui: { ...ui, life: undefined, bossTalk: undefined, lifeNote: `${r.line} Manager ${r.gain >= 0 ? "+" : ""}${r.gain}.` } };
+    }
+    case "sponsor": {
+      const [what, id] = (arg ?? "").split(":");
+      const r = LF.sponsorAction(g.career, what, id ?? "", rng());
+      return { ...g, career: r.career, ui: { ...ui, life: what === "sign" || what === "decline" || what === "walk" ? "sponsors" : ui.life, lifeNote: r.note } };
+    }
     case "train-skill": return { ...g, ui: { ...ui, tab: "train", trainSkill: arg, trainResult: undefined } };
     case "train-back": return { ...g, ui: { ...ui, tab: "train", trainSkill: undefined, trainResult: undefined } };
     // played on the device (the server's Training remote); with no device (tests) two stars

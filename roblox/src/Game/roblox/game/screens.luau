@@ -15,10 +15,11 @@ return function(exports, import, Js)
 	local M_grammar = import("lib/star/media/grammar")
 	local M_week = import("lib/star/week")
 	local M_trainingFlow = import("roblox/game/trainingFlow")
+	local M_lifeFlow = import("roblox/game/lifeFlow")
 	local M_season = import("lib/star/season")
 	local M_careerFlow = import("lib/star/careerFlow")
 	local M_negotiation = import("lib/star/negotiation")
-	local money, hud, fixtureLine, dateOf, score, ordinal, TABS, DIVISIONS, setupScreen, divisionByName, clubScreen, startGame, startWithoutTrial, simTrial, trialDone, trialScreen, managerTalkScreen, trialRewardScreen, screen, trainTab, trainingDone, dashboard, youthScreen, postMatch, renewalScreen, windowScreen, talkScreen, niceStep, act
+	local money, hud, fixtureLine, dateOf, score, ordinal, TABS, DIVISIONS, setupScreen, divisionByName, clubScreen, startGame, startWithoutTrial, simTrial, trialDone, trialScreen, managerTalkScreen, trialRewardScreen, screen, trainTab, lifeTab, trainingDone, dashboard, youthScreen, postMatch, renewalScreen, windowScreen, talkScreen, niceStep, act
 	money = function(n)
 		local sign = (if (n < 0) then "-" else "")
 		local a = math.abs(Math.round(n))
@@ -363,6 +364,145 @@ return function(exports, import, Js)
 		end) }, { "kind", "items" }))
 		do return s end
 	end
+	lifeTab = function(g, s)
+		local c = g.career
+		local ui = (if g.ui ~= nil then g.ui else Js.O({}, nil))
+		local page = ui.life
+		if Js.T(ui.lifeNote) then
+			A.push(s.blocks, Js.O({ kind = "text", text = ui.lifeNote, tone = "gold" }, { "kind", "text", "tone" }))
+		end
+		local back = Js.O({ label = "Back", action = "life", style = "secondary" }, { "label", "action", "style" })
+		if (page == "cans") then
+			s.title = "🥤 KIB energy cans"
+			A.push(s.blocks, Js.O({ kind = "list", items = A.map(M_lifeFlow.cans(c), function(k)
+				return Js.O({ text = (k.can.name .. ": " .. k.label), sub = (money(k.price) .. " · you have " .. Js.numstr(k.owned)), tone = (if (c.money < k.price) then "dim" else "normal"), action = "buy-can", arg = k.can.id }, { "text", "sub", "tone", "action", "arg" })
+			end) }, { "kind", "items" }))
+			A.push(s.buttons, back)
+			do return s end
+		end
+		if (page == "boots") then
+			s.title = "👟 Boots"
+			local cb = c.currentBoot
+			A.push(s.blocks, Js.O({ kind = "text", text = (if (cb.matches > 0) then ("Wearing: " .. cb.name .. " (+" .. Js.numstr(cb.power) .. " power, +" .. Js.numstr(cb.technique) .. " technique), " .. Js.numstr(cb.matches) .. " matches left.") else "No boots on. A pair adds power and technique for its matches.") }, { "kind", "text" }))
+			A.push(s.blocks, Js.O({ kind = "list", items = A.map(M_lifeFlow.boots(c), function(b)
+				return Js.O({ text = (b.name .. ": +" .. Js.numstr(b.power) .. " power, +" .. Js.numstr(b.technique) .. " technique" .. (if b.curve then ", curve" else "") .. (if b.extraTouch then ", Touch Mode" else "")), sub = (money(b.price) .. " · " .. Js.numstr(b.matches) .. " matches" .. (if (cb.id == b.id) then " · adds to yours" else "")), tone = (if (c.money < b.price) then "dim" else "normal"), action = "buy-boot", arg = b.id }, { "text", "sub", "tone", "action", "arg" })
+			end) }, { "kind", "items" }))
+			A.push(s.buttons, back)
+			do return s end
+		end
+		if (page == "style") then
+			s.title = "🏠 Lifestyle"
+			A.push(s.blocks, Js.O({ kind = "text", text = "Things you own raise your fame. Some wear out after a few seasons.", tone = "dim" }, { "kind", "text", "tone" }))
+			A.push(s.blocks, Js.O({ kind = "list", items = A.map(M_lifeFlow.lifestyle(c), function(_p15)
+				local item = _p15.item
+				local status = _p15.status
+				local needStars = _p15.needStars
+				return Js.ospread(Js.O({ text = (item.name .. (if Js.T(item.level) then (" (level " .. Js.numstr(item.level) .. ")") else "")), sub = (if (status == "locked") then ("Opens at ★" .. Js.numstr(needStars)) else (if (status == "owned") then "Yours" else (if (status == "lower") then "You own a better one" else (money(item.price) .. " · +" .. Js.numstr(item.lifestyleValue) .. " fame" .. (if (status == "worn") then " · yours is worn out" else ""))))), tone = (if (status == "owned") then "good" else (if (((status == "locked") or (status == "lower")) or (c.money < item.price)) then "dim" else "normal")) }, { "text", "sub", "tone" }), (if ((status == "buy") or (status == "worn")) then Js.O({ action = "buy-item", arg = item.id }, { "action", "arg" }) else Js.O({}, nil)))
+			end) }, { "kind", "items" }))
+			A.push(s.buttons, back)
+			do return s end
+		end
+		if (page == "dayoff") then
+			s.title = "🌴 Day off"
+			A.push(s.blocks, Js.O({ kind = "text", text = "How do you want to spend it? Happier players get more energy back when they rest." }, { "kind", "text" }))
+			A.push(s.blocks, Js.O({ kind = "list", items = A.map(M_lifeFlow.dayOffOptions(c), function(o)
+				return Js.O({ text = (o.icon .. " " .. o.name), sub = ("+" .. Js.numstr(o.gain) .. " happiness" .. (if Js.T(o.cost) then (" · " .. money(o.cost)) else " · free")), tone = (if (c.money < o.cost) then "dim" else "normal"), action = "dayoff", arg = o.id }, { "text", "sub", "tone", "action", "arg" })
+			end) }, { "kind", "items" }))
+			A.push(s.buttons, back)
+			do return s end
+		end
+		if ((page == "talk") and ui.bossTalk) then
+			local t = ui.bossTalk
+			local r = t.talk.rounds[Math.min(t.round, (M_lifeFlow.TALK_ROUNDS - 1)) + 1]
+			s.title = "💬 Office talk"
+			A.push(s.blocks, Js.O({ kind = "text", text = ("Question " .. Js.numstr((t.round + 1)) .. " of " .. Js.numstr(M_lifeFlow.TALK_ROUNDS) .. ". Say what he wants to hear: his lines are the only clue."), tone = "dim" }, { "kind", "text", "tone" }))
+			if t.last then
+				A.push(s.blocks, Js.O({ kind = "text", text = ("You: “" .. t.last.you .. "”") }, { "kind", "text" }), Js.O({ kind = "text", text = (((function() local _v = c.manager; if _v == nil then return nil end; _v = _v.name; return _v end)() or "The manager") .. ": “" .. t.last.him .. "”"), tone = "gold" }, { "kind", "text", "tone" }))
+			end
+			A.push(s.blocks, Js.O({ kind = "heading", text = (((function() local _v = c.manager; if _v == nil then return nil end; _v = _v.name; return _v end)() or "The manager") .. ": “" .. r.line .. "”") }, { "kind", "text" }))
+			A.push(s.blocks, Js.O({ kind = "list", items = A.map(r.replies, function(rep, i)
+				return Js.O({ text = rep.text, action = "talk-pick", arg = Js.numstr(i) }, { "text", "action", "arg" })
+			end) }, { "kind", "items" }))
+			do return s end
+		end
+		if (((page == "sponsors") or S.startsWith((if page ~= nil then page else ""), "offer:")) or S.startsWith((if page ~= nil then page else ""), "deal:")) then
+			local b = M_lifeFlow.brandsOf(c)
+			s.title = "🤝 Sponsors"
+			if S.startsWith((if page ~= nil then page else ""), "offer:") then
+				local o = A.find(b.offers, function(x)
+					return (x.id == S.slice(page, 6))
+				end)
+				if o then
+					s.title = (o.brand .. " (" .. o.category .. ")")
+					A.push(s.blocks, Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "A week", value = money(o.weekly), tone = "gold" }, { "label", "value", "tone" }), Js.O({ label = "Seasons", value = Js.numstr(o.seasons) }, { "label", "value" }), Js.O({ label = "On signing", value = money(o.signingOn) }, { "label", "value" })) }, { "kind", "items" }))
+					A.push(s.blocks, Js.O({ kind = "list", items = A.map(o.targets, function(t)
+						return Js.O({ text = M_lifeFlow.targetLabel(t), sub = ("Bonus " .. money(t.bonus)) }, { "text", "sub" })
+					end) }, { "kind", "items" }))
+					A.push(s.buttons, Js.unpack(Js.aspread(Js.alit(Js.O({ label = "Sign ✍️", action = "sponsor", arg = ("sign:" .. o.id), style = "primary" }, { "label", "action", "arg", "style" }), Js.O({ label = "Ask for a longer deal", action = "sponsor", arg = ("longer:" .. o.id) }, { "label", "action", "arg" }), Js.O({ label = "Ask for easier targets", action = "sponsor", arg = ("easier:" .. o.id) }, { "label", "action", "arg" })), (if Js.T(o.replaces) then Js.alit(Js.O({ label = "Ask your sponsor to match it", action = "sponsor", arg = ("counter:" .. o.id) }, { "label", "action", "arg" })) else Js.alit()), Js.alit(Js.O({ label = "Decline", action = "sponsor", arg = ("decline:" .. o.id), style = "danger" }, { "label", "action", "arg", "style" })))))
+				end
+				A.push(s.buttons, Js.O({ label = "Back", action = "life", arg = "sponsors", style = "secondary" }, { "label", "action", "arg", "style" }))
+				do return s end
+			end
+			if S.startsWith((if page ~= nil then page else ""), "deal:") then
+				local d = A.find(b.deals, function(x)
+					return (x.id == S.slice(page, 5))
+				end)
+				if d then
+					s.title = (d.brand .. " (" .. d.category .. ")")
+					A.push(s.blocks, Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "A week", value = money(d.weekly), tone = "gold" }, { "label", "value", "tone" }), Js.O({ label = "Seasons left", value = Js.numstr(d.seasonsLeft) }, { "label", "value" }), Js.O({ label = "Their mood", value = (Js.numstr(Math.round(d.happiness)) .. "%") }, { "label", "value" })) }, { "kind", "items" }))
+					A.push(s.blocks, Js.O({ kind = "list", items = A.map(d.targets, function(t)
+						return Js.O({ text = M_lifeFlow.targetLabel(t), sub = (Js.numstr(t.progress) .. " of " .. Js.numstr(t.target) .. " · bonus " .. money(t.bonus)), tone = (if t.done then "good" else "normal") }, { "text", "sub", "tone" })
+					end) }, { "kind", "items" }))
+					A.push(s.buttons, Js.O({ label = ("Walk away (costs " .. money(d.guaranteed) .. ")"), action = "sponsor", arg = ("walk:" .. d.id), style = "danger" }, { "label", "action", "arg", "style" }))
+				end
+				A.push(s.buttons, Js.O({ label = "Back", action = "life", arg = "sponsors", style = "secondary" }, { "label", "action", "arg", "style" }))
+				do return s end
+			end
+			A.push(s.blocks, Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Deals", value = (Js.numstr(Js.alen(b.deals)) .. " / " .. Js.numstr(M_lifeFlow.slotsFor(c))) }, { "label", "value" }), Js.O({ label = "Offers", value = Js.numstr(Js.alen(b.offers)) }, { "label", "value" })) }, { "kind", "items" }))
+			A.push(s.blocks, Js.O({ kind = "heading", text = "Your deals" }, { "kind", "text" }))
+			A.push(s.blocks, (if Js.T(Js.alen(b.deals)) then Js.O({ kind = "list", items = A.map(b.deals, function(d)
+				return Js.O({ text = (d.brand .. " (" .. d.category .. ")"), sub = (money(d.weekly) .. " a week · " .. Js.numstr(d.seasonsLeft) .. " seasons left"), action = "life", arg = ("deal:" .. d.id) }, { "text", "sub", "action", "arg" })
+			end) }, { "kind", "items" }) else Js.O({ kind = "text", text = "No deals yet. Play well and get famous: the brands come to you.", tone = "dim" }, { "kind", "text", "tone" })))
+			if Js.T(Js.alen(b.offers)) then
+				A.push(s.blocks, Js.O({ kind = "heading", text = "Offers" }, { "kind", "text" }))
+				A.push(s.blocks, Js.O({ kind = "list", items = A.map(b.offers, function(o)
+					return Js.O({ text = (o.brand .. " (" .. o.category .. ")"), sub = (money(o.weekly) .. " a week · " .. Js.numstr(o.seasons) .. " seasons"), tone = "gold", action = "life", arg = ("offer:" .. o.id) }, { "text", "sub", "tone", "action", "arg" })
+				end) }, { "kind", "items" }))
+			end
+			if Js.T(Js.alen(b.news)) then
+				A.push(s.blocks, Js.O({ kind = "list", items = A.map(A.slice(b.news, 0, 4), function(n)
+					return Js.O({ text = n, tone = "dim" }, { "text", "tone" })
+				end) }, { "kind", "items" }))
+			end
+			A.push(s.buttons, back)
+			do return s end
+		end
+		s.title = "Life"
+		local left = M_lifeFlow.actionsLeft(c)
+		A.push(s.blocks, Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Energy", value = (Js.numstr(Math.round(c.energy)) .. "%"), tone = (if (c.energy < 40) then "bad" else "normal") }, { "label", "value", "tone" }), Js.O({ label = "Happiness", value = (Js.numstr(Math.round(c.happiness)) .. "%") }, { "label", "value" }), Js.O({ label = "Days left this week", value = Js.numstr(left), tone = (if (left > 0) then "normal" else "bad") }, { "label", "value", "tone" }), Js.O({ label = "Money", value = money(c.money), tone = "gold" }, { "label", "value", "tone" })) }, { "kind", "items" }))
+		local rel = function(k, icon, name, value, action)
+			local st = M_lifeFlow.relGame(c, k)
+			do return Js.ospread(Js.O({ text = (icon .. " " .. name .. ": " .. Js.numstr(Math.round(value))), sub = (if Js.T(action) then (M_lifeFlow.REL_GAME_LABEL[k] .. " · " .. (if st.why ~= nil then st.why else ("1 day, " .. Js.numstr(M_trainingFlow.trainingEnergyCost()) .. " energy"))) else (M_lifeFlow.REL_GAME_LABEL[k] .. " · not in Roblox yet")), tone = (if (st.canPlay and Js.T(action)) then "normal" else "dim") }, { "text", "sub", "tone" }), (if (st.canPlay and Js.T(action)) then Js.O({ action = action }, { "action" }) else Js.O({}, nil))) end
+		end
+		A.push(s.blocks, Js.O({ kind = "heading", text = "Relationships" }, { "kind", "text" }))
+		A.push(s.blocks, Js.O({ kind = "list", items = Js.alit(rel("boss", "👔", "Manager", c.relationships.boss, "rel-boss"), rel("team", "🤝", "Team-mates", c.relationships.team, nil), rel("fans", "📣", "Fans", c.relationships.fans, nil), rel("happiness", "🌴", "Happiness", c.happiness, "life-dayoff")) }, { "kind", "items" }))
+		local owned = A.filter(M_lifeFlow.cans(c), function(k)
+			return (k.owned > 0)
+		end)
+		if Js.T(Js.alen(owned)) then
+			A.push(s.blocks, Js.O({ kind = "heading", text = "Your cans" }, { "kind", "text" }))
+			A.push(s.blocks, Js.O({ kind = "list", items = A.map(owned, function(k)
+				return Js.O({ text = ("Drink " .. k.can.name .. " (" .. Js.numstr(k.owned) .. ")"), sub = k.label, action = "use-can", arg = k.can.id }, { "text", "sub", "action", "arg" })
+			end) }, { "kind", "items" }))
+		end
+		local offers = Js.alen(M_lifeFlow.brandsOf(c).offers)
+		A.push(s.blocks, Js.O({ kind = "heading", text = "Shop" }, { "kind", "text" }))
+		A.push(s.blocks, Js.O({ kind = "list", items = Js.alit(Js.O({ text = "🥤 KIB energy cans", action = "life", arg = "cans" }, { "text", "action", "arg" }), Js.O({ text = "👟 Boots", sub = (if (c.currentBoot.matches > 0) then (c.currentBoot.name .. ": " .. Js.numstr(c.currentBoot.matches) .. " matches left") else "No boots on"), action = "life", arg = "boots" }, { "text", "sub", "action", "arg" }), Js.O({ text = "🏠 Lifestyle", sub = "Cars, homes, watches: fame", action = "life", arg = "style" }, { "text", "sub", "action", "arg" }), Js.O({ text = ("🤝 Sponsors" .. (if Js.T(offers) then (" (" .. Js.numstr(offers) .. " new offer" .. (if (offers == 1) then "" else "s") .. ")") else "")), tone = (if Js.T(offers) then "gold" else "normal"), action = "life", arg = "sponsors" }, { "text", "tone", "action", "arg" })) }, { "kind", "items" }))
+		if M_lifeFlow.canAct(c) then
+			A.push(s.buttons, Js.O({ label = ("😴 Rest (+" .. Js.numstr(M_lifeFlow.restGain(c)) .. " energy, 1 day)"), action = "rest", style = "secondary" }, { "label", "action", "style" }))
+		end
+		do return s end
+	end
 	trainingDone = function(g, skill, level, stars)
 		local label = A.find(M_trainingFlow.SKILL_LABELS, function(l)
 			return (l[1] == skill)
@@ -381,14 +521,17 @@ return function(exports, import, Js)
 	dashboard = function(g)
 		local c = g.career
 		local tab = ((function() local _v = g.ui; if _v == nil then return nil end; _v = _v.tab; return _v end)() or "home")
-		local tabs = A.map(TABS, function(_p15)
-			local id = _p15[1]
-			local label = _p15[2]
+		local tabs = A.map(TABS, function(_p16)
+			local id = _p16[1]
+			local label = _p16[2]
 			return Js.O({ id = id, label = label, active = (id == tab) }, { "id", "label", "active" })
 		end)
 		local s = Js.O({ id = "dashboard", hud = hud(c), title = c.player.club, tabs = tabs, blocks = Js.alit(), buttons = Js.alit() }, { "id", "hud", "title", "tabs", "blocks", "buttons" })
 		if (tab == "train") then
 			do return trainTab(g, s) end
+		end
+		if (tab == "life") then
+			do return lifeTab(g, s) end
 		end
 		if (tab == "league") then
 			local table_ = M_season.sortLeague(c.league)
@@ -413,9 +556,9 @@ return function(exports, import, Js)
 			local ss = c.seasonStats
 			local cs = c.careerStats
 			s.title = "Your numbers"
-			A.push(s.blocks, Js.O({ kind = "heading", text = "This season" }, { "kind", "text" }), Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Apps", value = Js.numstr(ss.appearances) }, { "label", "value" }), Js.O({ label = "Goals", value = Js.numstr(ss.goals) }, { "label", "value" }), Js.O({ label = "Assists", value = Js.numstr(ss.assists) }, { "label", "value" })) }, { "kind", "items" }), Js.O({ kind = "heading", text = "Career" }, { "kind", "text" }), Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Apps", value = Js.numstr(cs.appearances) }, { "label", "value" }), Js.O({ label = "Goals", value = Js.numstr(cs.goals) }, { "label", "value" }), Js.O({ label = "Assists", value = Js.numstr(cs.assists) }, { "label", "value" }), Js.O({ label = "Trophies", value = Js.numstr(Js.alen(c.trophies)) }, { "label", "value" }), Js.O({ label = "Ballon d'Ors", value = Js.numstr((if c.ballonDorWins ~= nil then c.ballonDorWins else 0)) }, { "label", "value" })) }, { "kind", "items" }), Js.O({ kind = "heading", text = "Skills" }, { "kind", "text" }), Js.O({ kind = "stats", items = A.map(Js.Object.entries(c.skills), function(_p16)
-				local k = _p16[1]
-				local v = _p16[2]
+			A.push(s.blocks, Js.O({ kind = "heading", text = "This season" }, { "kind", "text" }), Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Apps", value = Js.numstr(ss.appearances) }, { "label", "value" }), Js.O({ label = "Goals", value = Js.numstr(ss.goals) }, { "label", "value" }), Js.O({ label = "Assists", value = Js.numstr(ss.assists) }, { "label", "value" })) }, { "kind", "items" }), Js.O({ kind = "heading", text = "Career" }, { "kind", "text" }), Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Apps", value = Js.numstr(cs.appearances) }, { "label", "value" }), Js.O({ label = "Goals", value = Js.numstr(cs.goals) }, { "label", "value" }), Js.O({ label = "Assists", value = Js.numstr(cs.assists) }, { "label", "value" }), Js.O({ label = "Trophies", value = Js.numstr(Js.alen(c.trophies)) }, { "label", "value" }), Js.O({ label = "Ballon d'Ors", value = Js.numstr((if c.ballonDorWins ~= nil then c.ballonDorWins else 0)) }, { "label", "value" })) }, { "kind", "items" }), Js.O({ kind = "heading", text = "Skills" }, { "kind", "text" }), Js.O({ kind = "stats", items = A.map(Js.Object.entries(c.skills), function(_p17)
+				local k = _p17[1]
+				local v = _p17[2]
 				return Js.O({ label = (S.toUpperCase(S.idx(k, 0)) .. S.slice(k, 1)), value = Js.numstr(Math.round(v)) }, { "label", "value" })
 			end) }, { "kind", "items" }), Js.O({ kind = "heading", text = "Contract" }, { "kind", "text" }), Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Wage a week", value = money(c.contract.wage) }, { "label", "value" }), Js.O({ label = "Seasons left", value = Js.numstr(c.contract.seasonsRemaining) }, { "label", "value" }), Js.O({ label = "Goal bonus", value = money(c.contract.goalBonus) }, { "label", "value" })) }, { "kind", "items" }), Js.O({ kind = "heading", text = "Relationships" }, { "kind", "text" }), Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Manager", value = Js.numstr(Math.round(c.relationships.boss)) }, { "label", "value" }), Js.O({ label = "Team-mates", value = Js.numstr(Math.round(c.relationships.team)) }, { "label", "value" }), Js.O({ label = "Fans", value = Js.numstr(Math.round(c.relationships.fans)) }, { "label", "value" })) }, { "kind", "items" }))
 			A.push(s.buttons, Js.O({ label = "Ask for a new contract", action = "ask-contract", style = "secondary" }, { "label", "action", "style" }))
@@ -517,11 +660,11 @@ return function(exports, import, Js)
 		if t then
 			A.push(blocks, Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Their offer", value = money(t.theirPosition), tone = "gold" }, { "label", "value", "tone" }), Js.O({ label = "You're asking", value = money(((function() local _v = g.ui; if _v == nil then return nil end; _v = _v.ask; return _v end)() or t.yourPosition)) }, { "label", "value" }), Js.O({ label = "Mood", value = (Js.numstr(Math.round(t.moodScore)) .. "/100"), tone = (if (t.moodScore < 35) then "bad" else "normal") }, { "label", "value", "tone" })) }, { "kind", "items" }))
 			do
-				local _arr17 = A.slice(t.log, -4)
-				local _i18 = 0
-				while _i18 < Js.alen(_arr17) do
-					_i18 += 1
-					local line = _arr17[_i18]
+				local _arr18 = A.slice(t.log, -4)
+				local _i19 = 0
+				while _i19 < Js.alen(_arr18) do
+					_i19 += 1
+					local line = _arr18[_i19]
 					A.push(blocks, Js.O({ kind = "text", text = line, tone = "dim" }, { "kind", "text", "tone" }))
 				end
 			end
@@ -553,79 +696,138 @@ return function(exports, import, Js)
 	act = function(g, action, arg, rng)
 		if rng == nil then rng = Math.random end
 		local ui = (if g.ui ~= nil then g.ui else Js.O({}, nil))
-		local _sw19 = action
-		local _ci20 = (if _sw19 == "tab" then 1 elseif _sw19 == "home" then 2 elseif _sw19 == "train-skill" then 3 elseif _sw19 == "train-back" then 4 elseif _sw19 == "play-training" then 5 elseif _sw19 == "sim" then 6 elseif _sw19 == "play-match" then 7 elseif _sw19 == "watch" then 8 elseif _sw19 == "youth-week" then 9 elseif _sw19 == "youth-promote" then 10 elseif _sw19 == "post-continue" then 11 elseif _sw19 == "draw-continue" then 12 elseif _sw19 == "ko-continue" then 13 elseif _sw19 == "playoff-continue" then 14 elseif _sw19 == "deadline-continue" then 15 elseif _sw19 == "callup-continue" then 16 elseif _sw19 == "end-season" then 17 elseif _sw19 == "ballon-continue" then 18 elseif _sw19 == "play-on" then 19 elseif _sw19 == "retire" then 20 elseif _sw19 == "play-trial" then 21 elseif _sw19 == "trial-sign" then 22 elseif _sw19 == "trial-reward-done" then 23 elseif _sw19 == "awards-continue" then 24 elseif _sw19 == "ladder-continue" then 25 elseif _sw19 == "stay" then 26 elseif _sw19 == "sign" then 27 elseif _sw19 == "relegation-pick" then 28 elseif _sw19 == "ask-contract" then 29 elseif _sw19 == "renewal-start" then 30 elseif _sw19 == "renewal-guess" then 31 elseif _sw19 == "renewal-sign" then 32 elseif _sw19 == "renewal-cancel" then 33 elseif _sw19 == "window-talk" then 34 elseif _sw19 == "talk-nudge" then 35 elseif _sw19 == "talk-offer" then 36 elseif _sw19 == "talk-done" then 37 elseif _sw19 == "talk-walk" then 38 else 0)
-		local _cont21 = false
+		local _sw20 = action
+		local _ci21 = (if _sw20 == "tab" then 1 elseif _sw20 == "home" then 2 elseif _sw20 == "life" then 3 elseif _sw20 == "rest" then 4 elseif _sw20 == "use-can" then 5 elseif _sw20 == "buy-can" then 6 elseif _sw20 == "buy-boot" then 7 elseif _sw20 == "buy-item" then 8 elseif _sw20 == "life-dayoff" then 9 elseif _sw20 == "dayoff" then 10 elseif _sw20 == "rel-boss" then 11 elseif _sw20 == "talk-pick" then 12 elseif _sw20 == "sponsor" then 13 elseif _sw20 == "train-skill" then 14 elseif _sw20 == "train-back" then 15 elseif _sw20 == "play-training" then 16 elseif _sw20 == "sim" then 17 elseif _sw20 == "play-match" then 18 elseif _sw20 == "watch" then 19 elseif _sw20 == "youth-week" then 20 elseif _sw20 == "youth-promote" then 21 elseif _sw20 == "post-continue" then 22 elseif _sw20 == "draw-continue" then 23 elseif _sw20 == "ko-continue" then 24 elseif _sw20 == "playoff-continue" then 25 elseif _sw20 == "deadline-continue" then 26 elseif _sw20 == "callup-continue" then 27 elseif _sw20 == "end-season" then 28 elseif _sw20 == "ballon-continue" then 29 elseif _sw20 == "play-on" then 30 elseif _sw20 == "retire" then 31 elseif _sw20 == "play-trial" then 32 elseif _sw20 == "trial-sign" then 33 elseif _sw20 == "trial-reward-done" then 34 elseif _sw20 == "awards-continue" then 35 elseif _sw20 == "ladder-continue" then 36 elseif _sw20 == "stay" then 37 elseif _sw20 == "sign" then 38 elseif _sw20 == "relegation-pick" then 39 elseif _sw20 == "ask-contract" then 40 elseif _sw20 == "renewal-start" then 41 elseif _sw20 == "renewal-guess" then 42 elseif _sw20 == "renewal-sign" then 43 elseif _sw20 == "renewal-cancel" then 44 elseif _sw20 == "window-talk" then 45 elseif _sw20 == "talk-nudge" then 46 elseif _sw20 == "talk-offer" then 47 elseif _sw20 == "talk-done" then 48 elseif _sw20 == "talk-walk" then 49 else 0)
+		local _cont22 = false
 		repeat
-			if _ci20 ~= 0 and _ci20 <= 1 then
-				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = (if arg ~= nil then arg else "home"), trainResult = nil }, { "tab", "trainResult" })) }, { "ui" })) end
+			if _ci21 ~= 0 and _ci21 <= 1 then
+				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = (if arg ~= nil then arg else "home"), trainResult = nil, life = nil, lifeNote = nil, bossTalk = nil }, { "tab", "trainResult", "life", "lifeNote", "bossTalk" })) }, { "ui" })) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 2 then
+			if _ci21 ~= 0 and _ci21 <= 2 then
 				do return Js.ospread(M_flow.backToDashboard(g), Js.O({ ui = Js.ospread(ui, Js.O({ tab = "home" }, { "tab" })) }, { "ui" })) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 3 then
+			if _ci21 ~= 0 and _ci21 <= 3 then
+				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "life", life = arg, lifeNote = nil }, { "tab", "life", "lifeNote" })) }, { "ui" })) end
+			end
+			if _ci21 ~= 0 and _ci21 <= 4 then
+				do return Js.ospread(g, Js.O({ career = M_lifeFlow.rest(g.career), ui = Js.ospread(ui, Js.O({ lifeNote = "You put your feet up." }, { "lifeNote" })) }, { "career", "ui" })) end
+			end
+			if _ci21 ~= 0 and _ci21 <= 8 then
+				do
+					local f = (if (action == "use-can") then M_lifeFlow.useCan else (if (action == "buy-can") then M_lifeFlow.buyKib else (if (action == "buy-boot") then M_lifeFlow.buyBoot else M_lifeFlow.buyItem)))
+					local next_ = f(g.career, (if arg ~= nil then arg else ""))
+					do return (if next_ then Js.ospread(g, Js.O({ career = next_, ui = Js.ospread(ui, Js.O({ lifeNote = (if (action == "use-can") then "Drunk." else "Bought.") }, { "lifeNote" })) }, { "career", "ui" })) else Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ lifeNote = (if (action == "use-can") then "That can would do nothing now." else "Not enough money for that.") }, { "lifeNote" })) }, { "ui" }))) end
+				end
+			end
+			if _ci21 ~= 0 and _ci21 <= 9 then
+				do return (if M_lifeFlow.relGame(g.career, "happiness").canPlay then Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "life", life = "dayoff", lifeNote = nil }, { "tab", "life", "lifeNote" })) }, { "ui" })) else g) end
+			end
+			if _ci21 ~= 0 and _ci21 <= 10 then
+				do
+					if (not M_lifeFlow.relGame(g.career, "happiness").canPlay) then
+						do return g end
+					end
+					local r = M_lifeFlow.dayOff(g.career, (if arg ~= nil then arg else ""))
+					if (not r) then
+						do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ lifeNote = "Not enough money for that." }, { "lifeNote" })) }, { "ui" })) end
+					end
+					do return Js.ospread(g, Js.O({ career = M_lifeFlow.relGameComplete(g.career, "happiness", r), ui = Js.ospread(ui, Js.O({ life = nil, lifeNote = (r.line .. " Happiness +" .. Js.numstr(r.gain) .. ".") }, { "life", "lifeNote" })) }, { "career", "ui" })) end
+				end
+			end
+			if _ci21 ~= 0 and _ci21 <= 11 then
+				do
+					if (not M_lifeFlow.relGame(g.career, "boss").canPlay) then
+						do return g end
+					end
+					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "life", life = "talk", lifeNote = nil, bossTalk = M_lifeFlow.startTalk(g.career, math.floor((rng() * 100000))) }, { "tab", "life", "lifeNote", "bossTalk" })) }, { "ui" })) end
+				end
+			end
+			if _ci21 ~= 0 and _ci21 <= 12 then
+				do
+					local t = ui.bossTalk
+					if ((not t) or (not M_lifeFlow.relGame(g.career, "boss").canPlay)) then
+						do return g end
+					end
+					local next_ = M_lifeFlow.talkPick(t, Js.Number(arg))
+					if (not M_lifeFlow.talkOver(next_)) then
+						do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ bossTalk = next_ }, { "bossTalk" })) }, { "ui" })) end
+					end
+					local r = M_lifeFlow.talkResult(next_)
+					do return Js.ospread(g, Js.O({ career = M_lifeFlow.relGameComplete(g.career, "boss", r), ui = Js.ospread(ui, Js.O({ life = nil, bossTalk = nil, lifeNote = (r.line .. " Manager " .. (if (r.gain >= 0) then "+" else "") .. Js.numstr(r.gain) .. ".") }, { "life", "bossTalk", "lifeNote" })) }, { "career", "ui" })) end
+				end
+			end
+			if _ci21 ~= 0 and _ci21 <= 13 then
+				do
+					local _d23 = S.split((if arg ~= nil then arg else ""), ":")
+					local what = _d23[1]
+					local id = _d23[2]
+					local r = M_lifeFlow.sponsorAction(g.career, what, (if id ~= nil then id else ""), rng())
+					do return Js.ospread(g, Js.O({ career = r.career, ui = Js.ospread(ui, Js.O({ life = (if (((what == "sign") or (what == "decline")) or (what == "walk")) then "sponsors" else ui.life), lifeNote = r.note }, { "life", "lifeNote" })) }, { "career", "ui" })) end
+				end
+			end
+			if _ci21 ~= 0 and _ci21 <= 14 then
 				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "train", trainSkill = arg, trainResult = nil }, { "tab", "trainSkill", "trainResult" })) }, { "ui" })) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 4 then
+			if _ci21 ~= 0 and _ci21 <= 15 then
 				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "train", trainSkill = nil, trainResult = nil }, { "tab", "trainSkill", "trainResult" })) }, { "ui" })) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 5 then
+			if _ci21 ~= 0 and _ci21 <= 16 then
 				do
-					local _d22 = S.split((if arg ~= nil then arg else ""), ":")
-					local sk = _d22[1]
-					local lv = _d22[2]
+					local _d24 = S.split((if arg ~= nil then arg else ""), ":")
+					local sk = _d24[1]
+					local lv = _d24[2]
 					do return (trainingDone(g, sk, Js.Number(lv), 2) or g) end
 				end
 			end
-			if _ci20 ~= 0 and _ci20 <= 6 then
+			if _ci21 ~= 0 and _ci21 <= 17 then
 				do return M_flow.simMatch(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 7 then
+			if _ci21 ~= 0 and _ci21 <= 18 then
 				do return M_flow.simMatch(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 8 then
+			if _ci21 ~= 0 and _ci21 <= 19 then
 				do return M_flow.watchFromStands(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 9 then
+			if _ci21 ~= 0 and _ci21 <= 20 then
 				do return M_flow.youthWeek(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 10 then
+			if _ci21 ~= 0 and _ci21 <= 21 then
 				do return M_flow.youthPromotion(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 11 then
+			if _ci21 ~= 0 and _ci21 <= 22 then
 				do return M_flow.postMatchContinue(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 12 then
+			if _ci21 ~= 0 and _ci21 <= 23 then
 				do return M_flow.drawContinue(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 13 then
+			if _ci21 ~= 0 and _ci21 <= 24 then
 				do return M_flow.knockoutContinue(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 14 then
+			if _ci21 ~= 0 and _ci21 <= 25 then
 				do return M_flow.playoffContinue(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 15 then
+			if _ci21 ~= 0 and _ci21 <= 26 then
 				do return M_flow.deadlineDayContinue(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 16 then
+			if _ci21 ~= 0 and _ci21 <= 27 then
 				do return M_flow.callUpContinue(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 17 then
+			if _ci21 ~= 0 and _ci21 <= 28 then
 				do return M_flow.endSeason(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 18 then
+			if _ci21 ~= 0 and _ci21 <= 29 then
 				do return M_flow.ballonDorContinue(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 19 then
+			if _ci21 ~= 0 and _ci21 <= 30 then
 				do return M_flow.playOn(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 20 then
+			if _ci21 ~= 0 and _ci21 <= 31 then
 				do return M_flow.retireNow(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 21 then
+			if _ci21 ~= 0 and _ci21 <= 32 then
 				do return (if (g.phase == "trial") then simTrial(g) else g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 22 then
+			if _ci21 ~= 0 and _ci21 <= 33 then
 				do
 					if (g.phase ~= "manager-talk") then
 						do return g end
@@ -638,31 +840,31 @@ return function(exports, import, Js)
 					do return (if youth then Js.ospread(M_flow.afterSigning(Js.ospread(g, Js.O({ career = youth }, { "career" }))), Js.O({ ui = ui }, { "ui" })) else g) end
 				end
 			end
-			if _ci20 ~= 0 and _ci20 <= 23 then
+			if _ci21 ~= 0 and _ci21 <= 34 then
 				do return (if (g.phase == "trial-reward") then Js.ospread(M_flow.afterSigning(g), Js.O({ ui = Js.ospread(ui, Js.O({ tab = "home" }, { "tab" })) }, { "ui" })) else g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 24 then
+			if _ci21 ~= 0 and _ci21 <= 35 then
 				do return M_flow.seasonAwardsContinue(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 25 then
+			if _ci21 ~= 0 and _ci21 <= 36 then
 				do return M_flow.ladderContinue(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 26 then
+			if _ci21 ~= 0 and _ci21 <= 37 then
 				do return M_flow.stayPut(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 27 then
+			if _ci21 ~= 0 and _ci21 <= 38 then
 				do return M_flow.signingDone(g) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 28 then
+			if _ci21 ~= 0 and _ci21 <= 39 then
 				do return M_flow.chooseTransfer(g, (if g.transferOffers ~= nil then g.transferOffers else Js.alit())[Js.Number(arg) + 1]) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 29 then
+			if _ci21 ~= 0 and _ci21 <= 40 then
 				do return Js.ospread(g, Js.O({ phase = "contract-renewal", contractOfferReason = nil, ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "phase", "contractOfferReason", "ui" })) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 30 then
+			if _ci21 ~= 0 and _ci21 <= 41 then
 				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ renewal = Js.O({ current = (3 + math.floor((rng() * 8))), next = nil, wins = 0, locked = false, rounds = 0, message = "", started = true }, { "current", "next", "wins", "locked", "rounds", "message", "started" }) }, { "renewal" })) }, { "ui" })) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 31 then
+			if _ci21 ~= 0 and _ci21 <= 42 then
 				do
 					local r = ui.renewal
 					if ((not r) or r.locked) then
@@ -677,34 +879,34 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ renewal = next_ }, { "renewal" })) }, { "ui" })) end
 				end
 			end
-			if _ci20 ~= 0 and _ci20 <= 32 then
+			if _ci21 ~= 0 and _ci21 <= 43 then
 				do
 					local r = ui.renewal
 					local offer = M_flow.renewalOffer(g, ((function() local _v = r; if _v == nil then return nil end; _v = _v.wins; return _v end)() or 0), (function() local _l = (function() local _v = r; if _v == nil then return nil end; _v = _v.locked; return _v end)(); if _l ~= nil then return _l end; return false end)(), ((function() local _v = r; if _v == nil then return nil end; _v = _v.rounds; return _v end)() or 0))
 					do return Js.ospread(M_flow.contractComplete(g, offer), Js.O({ ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "ui" })) end
 				end
 			end
-			if _ci20 ~= 0 and _ci20 <= 33 then
+			if _ci21 ~= 0 and _ci21 <= 44 then
 				do return Js.ospread(M_flow.contractComplete(g, nil), Js.O({ ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "ui" })) end
 			end
-			if _ci20 ~= 0 and _ci20 <= 34 then
+			if _ci21 ~= 0 and _ci21 <= 45 then
 				do
-					local _d23 = A.map(S.split((if arg ~= nil then arg else "0:0"), ":"), Js.Number)
-					local li = _d23[1]
-					local ci = _d23[2]
+					local _d25 = A.map(S.split((if arg ~= nil then arg else "0:0"), ":"), Js.Number)
+					local li = _d25[1]
+					local ci = _d25[2]
 					local offer = ((M_flow.transferInterest(g).leagues)[li + 1].clubs)[ci + 1].offer
 					local talk = M_negotiation.startNegotiation(offer.wage, "selling", rng)
 					do return Js.ospread(M_flow.transferNegotiate(g, offer), Js.O({ ui = Js.ospread(ui, Js.O({ talk = talk, ask = talk.yourPosition }, { "talk", "ask" })) }, { "ui" })) end
 				end
 			end
-			if _ci20 ~= 0 and _ci20 <= 35 then
+			if _ci21 ~= 0 and _ci21 <= 46 then
 				do
 					local a = ((if ui.ask ~= nil then ui.ask else (function() local _v = ui.talk; if _v == nil then return nil end; _v = _v.yourPosition; return _v end)()) or 0)
 					local dir = (if (Js.Number(arg) < 0) then -1 else 1)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ ask = Math.max(1, (a + (dir * niceStep((if (dir < 0) then (a - 1) else a))))) }, { "ask" })) }, { "ui" })) end
 				end
 			end
-			if _ci20 ~= 0 and _ci20 <= 36 then
+			if _ci21 ~= 0 and _ci21 <= 47 then
 				do
 					if (not ui.talk) then
 						do return g end
@@ -713,21 +915,21 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ talk = t }, { "talk" })) }, { "ui" })) end
 				end
 			end
-			if _ci20 ~= 0 and _ci20 <= 37 then
+			if _ci21 ~= 0 and _ci21 <= 48 then
 				do
 					local t = ui.talk
 					local r = M_flow.transferTalkDone(g, (if (t and (t.status == "accepted")) then (if t.finalPrice ~= nil then t.finalPrice else nil) else nil))
 					do return Js.ospread(r, Js.O({ ui = Js.ospread(ui, Js.O({ talk = nil }, { "talk" })) }, { "ui" })) end
 				end
 			end
-			if _ci20 ~= 0 and _ci20 <= 38 then
+			if _ci21 ~= 0 and _ci21 <= 49 then
 				do return Js.ospread(M_flow.transferTalkDone(g, nil), Js.O({ ui = Js.ospread(ui, Js.O({ talk = nil }, { "talk" })) }, { "ui" })) end
 			end
 		until true
 		do return g end
 	end
 	exports.act = act
-	TABS = Js.alit(Js.alit("home", "Home"), Js.alit("train", "Train"), Js.alit("league", "League"), Js.alit("fixtures", "Fixtures"), Js.alit("stats", "Stats"))
+	TABS = Js.alit(Js.alit("home", "Home"), Js.alit("train", "Train"), Js.alit("life", "Life"), Js.alit("league", "League"), Js.alit("fixtures", "Fixtures"), Js.alit("stats", "Stats"))
 	DIVISIONS = Js.alit("premier", "championship", "league_one", "league_two", "national_league", "national_league_north", "national_league_south")
 	exports.DIVISIONS = DIVISIONS
 end

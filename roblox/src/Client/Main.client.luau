@@ -101,7 +101,7 @@ local function textOutline(o)
 	make("UIStroke", { Color = C.outline, Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual }).Parent = o
 	return o
 end
-local TAB_ICON = { home = "🏠", train = "🏋️", league = "🏆", fixtures = "📅", stats = "📊" }
+local TAB_ICON = { home = "🏠", train = "🏋️", life = "🌴", league = "🏆", fixtures = "📅", stats = "📊" }
 
 local function pad(px)
 	return make("UIPadding", {
@@ -441,6 +441,10 @@ local function drawScreen(s)
 			})
 			rounded(tb, 12)
 			outline(tb, C.outline, 2)
+			-- six tabs on a phone: the label shrinks to fit
+			tb.TextScaled = true
+			make("UITextSizeConstraint", { MaxTextSize = 16, MinTextSize = 9 }).Parent = tb
+			make("UIPadding", { PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 4) }).Parent = tb
 			tb.Activated:Connect(function()
 				send("tab", t.id)
 			end)

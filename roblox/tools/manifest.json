@@ -1,5 +1,5 @@
 {
- "commit": "1caf4cfa",
+ "commit": "55ef9cb4",
  "modules": [
   "__pkg/react",
   "data/fifa/knockout-tables_json",
@@ -219,6 +219,7 @@
   "lib/star/realSquad",
   "lib/star/recognition",
   "lib/star/records",
+  "lib/star/relationshipGame",
   "lib/star/relationships",
   "lib/star/relegationOffers",
   "lib/star/reputation",
@@ -294,6 +295,7 @@
   "lib/star/xpConfig",
   "lib/star/youth",
   "roblox/game/flow",
+  "roblox/game/lifeFlow",
   "roblox/game/match",
   "roblox/game/matchView",
   "roblox/game/screens",
