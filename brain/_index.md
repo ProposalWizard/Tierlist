@@ -29,6 +29,7 @@ FACT-KIB-005 | End card: KNOWITBALL, the versions so far, a green knowitball.co.
 FACT-KIB-006 | Voice-over: Kokoro v1.0 offline, voice bm_george, speed 1.2, en-gb; the same setup as the game's commentary. | media,client-kib
 FACT-KIB-007 | Learning from v01: v0.2 and v0.3 had no screenshots in the repo, so their beats had to be drawn diagrams. | client-kib
 FACT-KIB-008 | Learning from v01: render frames in chunks of 250, one page per chunk; one long session crashed the page. | client-kib
+FACT-TEAM-001 | next build needs about 6.5 GB; package.json gives it 6 GB of heap (node --max-old-space-size=6144). A Vercel deploy that fails with no other clue may be out of memory again: build locally with no NODE_OPTIONS to check. | deploy,team
 FACT-UI-001 | Settings keeps only real player preferences (sound, full screen, 3D quality, faces, names) and the Settings UI Old/New row. | three-d,ui
 FACT-UI-002 | Decided, no toggle: to see or bring back an old option, read the files at ebe02ad; old stored values are ignored. | ui
 FACT-UI-003 | Chances: the team's drawn chances only, everywhere; the New chance library and the Generator were DELETED. | team,ui
