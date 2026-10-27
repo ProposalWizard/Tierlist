@@ -12,7 +12,7 @@ import { trainingLeft, spendTrainingSession, TRAINING_SESSIONS_PER_WEEK } from "
 import { getTuning } from "../../lib/star/tuningStore";
 import { mechanicOpen, mechanicDef } from "../../lib/star/mechanics";
 import { trainingDayOn, trainingDayLeft, recordTrainingDayDrill } from "../../lib/star/story";
-import { recordDrill } from "../../lib/star/unlocks";
+import { recordDrill, isOpen, lockHint } from "../../lib/star/unlocks";
 import { computeStarRating } from "../../lib/star/rating";
 import { starsNow, starStatus } from "../../lib/star/starPoints";
 import { trainingOverlay } from "../../lib/star/trainingLevelData";
@@ -42,8 +42,9 @@ export function skillCard(c: CareerState, skill: TrainingSkill): {
   const cost = trainingEnergyCost();
   const value = c.skills[skill];
   const day = trainingDayOn(c) && trainingDayLeft(c).includes(skill);
-  const canTrain = !shut && c.energy >= cost && value < 100 && (left > 0 || day);
-  const why = shut ? null : value >= 100 ? "Maxed out." : left <= 0 && !day ? "No more sessions this week." : c.energy < cost ? `Needs ${cost} energy.` : null;
+  const locked = !isOpen(c, "training");
+  const canTrain = !locked && !shut && c.energy >= cost && value < 100 && (left > 0 || day);
+  const why = locked ? lockHint(c, "training") : shut ? null : value >= 100 ? "Maxed out." : left <= 0 && !day ? "No more sessions this week." : c.energy < cost ? `Needs ${cost} energy.` : null;
   const levels = starsOf(c, skill);
   return {
     value, stars: totalStars(levels), shut,

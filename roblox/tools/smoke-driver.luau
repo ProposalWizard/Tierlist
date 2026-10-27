@@ -32,6 +32,14 @@ for i = 1, PRESSES do
 		end
 	end
 	b = b or s.buttons[1]
+	-- a story beat can leave you on another tab: the robot plays from Home
+	if s.id == "dashboard" and s.tabs then
+		for j = 1, Js.alen(s.tabs) do
+			if s.tabs[j].active and s.tabs[j].id ~= "home" then
+				b = { action = "home" }
+			end
+		end
+	end
 	if not b then
 		-- a list to pick from (relegation move)
 		for j = 1, Js.alen(s.blocks) do

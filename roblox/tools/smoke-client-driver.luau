@@ -143,143 +143,185 @@ if s.id == "trial" then
 	print("career", s.hud.club, s.hud.league, s.id)
 end
 
--- training: a level of each skill, played through the client script
-local trainingRemote = rs._children.Remotes._children.Training
-for _, skill in ipairs({ "power", "vision" }) do
-	local co = coroutine.create(function()
-		return MatchClient.playTraining(trainingRemote, skill .. ":1")
-	end)
-	task.wait = function()
-		coroutine.yield()
-	end
-	local frames, pf, last, tryNo = 0, 0, "", 0
-	local result
-	while true do
-		local ok, r = coroutine.resume(co)
-		if not ok then
-			error("training client crashed: " .. tostring(r))
-		end
-		if coroutine.status(co) == "dead" then
-			result = r
-			break
-		end
-		frames += 1
-		assert(frames < 100000, "the training level never ended: " .. skill)
-		local tp, hud, m = MatchClient.training, MatchClient.hud, MatchClient.current
-		if tp and hud then
-			local key = (m and m.phase or "none") .. tostring(tp.results and #tp.results)
-			if key ~= last then
-				last = key
-				pf = 0
+-- a new career's story (lib/star/story.ts): answer every beat on Home
+local function answerBeats()
+	s = call("home")
+	for _ = 1, 20 do
+		local beat
+		for j = 1, Js.alen(s.buttons) do
+			if s.buttons[j].action == "beat" then
+				beat = s.buttons[j]
 			end
-			pf += 1
-			MOVE = Vector3.new(0, 0, 0)
-			if hud.tapStart.Visible and pf == 15 then
-				hud.tapStart.Activated:Fire()
-			elseif m then
-				if m.phase == "aim" and pf % 90 == 25 then
-					tryNo += 1
-					local b = m.sc.ball
-					local gx, gy = (m.sc.goal.x1 + m.sc.goal.x2) / 2 + (tryNo % 3 - 1) * 2, 0
-					local g = tp.strike and tp.strike.setup and tp.strike.setup.gate
-					if g then
-						gx, gy = g.centre.x, g.centre.y
+		end
+		if not beat then
+			return
+		end
+		print("  story: " .. tostring(beat.arg) .. " (" .. tostring(beat.label) .. ")")
+		call("beat", beat.arg)
+		s = call("home")
+	end
+end
+
+-- training and the relationship games open with the story, after the first matches
+local function trainAndRelate()
+	-- energy back first: the story's free can, then a rest
+	call("use-can", "basic")
+	s = call("rest")
+	print("  energy before training: " .. tostring(s.hud and s.hud.energy))
+	local life = call("tab", "life")
+	for i = 1, Js.alen(life.blocks) do
+		local b = life.blocks[i]
+		if b.kind == "list" then
+			for k = 1, Js.alen(b.items) do
+				print("  life: " .. tostring(b.items[k].text) .. " | " .. tostring(b.items[k].sub))
+			end
+		elseif b.kind == "text" then
+			print("  life: " .. tostring(b.text))
+		end
+	end
+	-- training: a level of each skill, played through the client script
+	local trainingRemote = rs._children.Remotes._children.Training
+	for _, skill in ipairs({ "power", "vision" }) do
+		local co = coroutine.create(function()
+			return MatchClient.playTraining(trainingRemote, skill .. ":1")
+		end)
+		task.wait = function()
+			coroutine.yield()
+		end
+		local frames, pf, last, tryNo = 0, 0, "", 0
+		local result
+		while true do
+			local ok, r = coroutine.resume(co)
+			if not ok then
+				error("training client crashed: " .. tostring(r))
+			end
+			if coroutine.status(co) == "dead" then
+				result = r
+				break
+			end
+			frames += 1
+			assert(frames < 100000, "the training level never ended: " .. skill)
+			local tp, hud, m = MatchClient.training, MatchClient.hud, MatchClient.current
+			if tp and hud then
+				local key = (m and m.phase or "none") .. tostring(tp.results and #tp.results)
+				if key ~= last then
+					last = key
+					pf = 0
+				end
+				pf += 1
+				MOVE = Vector3.new(0, 0, 0)
+				if hud.tapStart.Visible and pf == 15 then
+					hud.tapStart.Activated:Fire()
+				elseif m then
+					if m.phase == "aim" and pf % 90 == 25 then
+						tryNo += 1
+						local b = m.sc.ball
+						local gx, gy = (m.sc.goal.x1 + m.sc.goal.x2) / 2 + (tryNo % 3 - 1) * 2, 0
+						local g = tp.strike and tp.strike.setup and tp.strike.setup.gate
+						if g then
+							gx, gy = g.centre.x, g.centre.y
+						end
+						local dx, dy = gx - b.x, gy - b.y
+						local n = math.sqrt(dx * dx + dy * dy)
+						local pull = (m.camera.x2 - m.camera.x1) * 0.18
+						local down = mouse(b.x, b.y)
+						UIS.InputBegan:Fire(down, false)
+						UIS.InputChanged:Fire(mouse(b.x - dx / n * pull, b.y - dy / n * pull, Enum.UserInputType.MouseMovement))
+						UIS.InputEnded:Fire(down)
+					elseif m.phase == "contact" and hud.strike.Visible and pf == 15 then
+						local c = hud.ball.AbsolutePosition + hud.ball.AbsoluteSize / 2
+						tapScreen(hud, c.X, c.Y + hud.ball.AbsoluteSize.Y * 0.1)
 					end
-					local dx, dy = gx - b.x, gy - b.y
+				elseif tp.pace and tp.pace.started then
+					MOVE = Vector3.new(math.sin(pf / 35) * 0.7, 0, -1)
+					if pf % 50 == 20 then
+						UIS.InputBegan:Fire(key(pf % 100 == 20 and "Q" or "E"), false)
+					end
+				elseif tp.vision and tp.vision.phase == "play" and pf % 20 == 0 then
+					local v = tp.vision
+					local pic = v.pics[math.min(v.tryIdx, Js.alen(v.pics) - 1) + 1]
+					local man = pic.options[pic.best + 1]
+					UIS.InputBegan:Fire(mouse(man.x, man.y), false)
+				end
+			end
+			RENDER:Fire(1 / 60)
+		end
+		if result == nil then
+			print("  training " .. skill .. ": refused (no session, energy or not open yet)")
+		else
+			local after = Js.JSON.parse(result)
+			print(string.format("  training %s level 1 in %d frames -> %s", skill, frames, tostring(after.blocks[1] and after.blocks[1].text)))
+			s = after
+		end
+	end
+	-- relationship games, played through the client script
+	local relRemote = rs._children.Remotes._children.Relgame
+	for _, game in ipairs({ "signing", "woodwork" }) do
+		local co = coroutine.create(function()
+			return MatchClient.playRelGame(relRemote, game)
+		end)
+		task.wait = function()
+			coroutine.yield()
+		end
+		local frames, pf, last, shotNo = 0, 0, "", 0
+		local result
+		while true do
+			local ok, r = coroutine.resume(co)
+			if not ok then
+				error("relationship game client crashed: " .. tostring(r))
+			end
+			if coroutine.status(co) == "dead" then
+				result = r
+				break
+			end
+			frames += 1
+			assert(frames < 60000, "the relationship game never ended: " .. game)
+			local rp, hud, m = MatchClient.rel, MatchClient.hud, MatchClient.current
+			if rp and hud then
+				local k = (m and m.phase or "none") .. tostring(rp.shot)
+				if k ~= last then
+					last = k
+					pf = 0
+				end
+				pf += 1
+				if hud.tapStart.Visible and pf == 10 then
+					hud.tapStart.Activated:Fire()
+				elseif m and m.phase == "aim" and pf % 90 == 25 then
+					shotNo += 1
+					local b = m.sc.ball
+					local tx = shotNo % 2 == 1 and 30.5 or 37.5
+					local dx, dy = tx - b.x, -b.y
 					local n = math.sqrt(dx * dx + dy * dy)
-					local pull = (m.camera.x2 - m.camera.x1) * 0.18
+					local pull = (m.camera.x2 - m.camera.x1) * 0.16
 					local down = mouse(b.x, b.y)
 					UIS.InputBegan:Fire(down, false)
 					UIS.InputChanged:Fire(mouse(b.x - dx / n * pull, b.y - dy / n * pull, Enum.UserInputType.MouseMovement))
 					UIS.InputEnded:Fire(down)
-				elseif m.phase == "contact" and hud.strike.Visible and pf == 15 then
+				elseif m and m.phase == "contact" and hud.strike.Visible and pf == 15 then
 					local c = hud.ball.AbsolutePosition + hud.ball.AbsoluteSize / 2
-					tapScreen(hud, c.X, c.Y + hud.ball.AbsoluteSize.Y * 0.1)
-				end
-			elseif tp.pace and tp.pace.started then
-				MOVE = Vector3.new(math.sin(pf / 35) * 0.7, 0, -1)
-				if pf % 50 == 20 then
-					UIS.InputBegan:Fire(key(pf % 100 == 20 and "Q" or "E"), false)
-				end
-			elseif tp.vision and tp.vision.phase == "play" and pf % 20 == 0 then
-				local v = tp.vision
-				local pic = v.pics[math.min(v.tryIdx, Js.alen(v.pics) - 1) + 1]
-				local man = pic.options[pic.best + 1]
-				UIS.InputBegan:Fire(mouse(man.x, man.y), false)
-			end
-		end
-		RENDER:Fire(1 / 60)
-	end
-	local after = Js.JSON.parse(result)
-	print(string.format("  training %s level 1 in %d frames -> %s", skill, frames, tostring(after.blocks[1] and after.blocks[1].text)))
-	s = after
-end
--- relationship games, played through the client script
-local relRemote = rs._children.Remotes._children.Relgame
-for _, game in ipairs({ "signing", "woodwork" }) do
-	local co = coroutine.create(function()
-		return MatchClient.playRelGame(relRemote, game)
-	end)
-	task.wait = function()
-		coroutine.yield()
-	end
-	local frames, pf, last, shotNo = 0, 0, "", 0
-	local result
-	while true do
-		local ok, r = coroutine.resume(co)
-		if not ok then
-			error("relationship game client crashed: " .. tostring(r))
-		end
-		if coroutine.status(co) == "dead" then
-			result = r
-			break
-		end
-		frames += 1
-		assert(frames < 60000, "the relationship game never ended: " .. game)
-		local rp, hud, m = MatchClient.rel, MatchClient.hud, MatchClient.current
-		if rp and hud then
-			local k = (m and m.phase or "none") .. tostring(rp.shot)
-			if k ~= last then
-				last = k
-				pf = 0
-			end
-			pf += 1
-			if hud.tapStart.Visible and pf == 10 then
-				hud.tapStart.Activated:Fire()
-			elseif m and m.phase == "aim" and pf % 90 == 25 then
-				shotNo += 1
-				local b = m.sc.ball
-				local tx = shotNo % 2 == 1 and 30.5 or 37.5
-				local dx, dy = tx - b.x, -b.y
-				local n = math.sqrt(dx * dx + dy * dy)
-				local pull = (m.camera.x2 - m.camera.x1) * 0.16
-				local down = mouse(b.x, b.y)
-				UIS.InputBegan:Fire(down, false)
-				UIS.InputChanged:Fire(mouse(b.x - dx / n * pull, b.y - dy / n * pull, Enum.UserInputType.MouseMovement))
-				UIS.InputEnded:Fire(down)
-			elseif m and m.phase == "contact" and hud.strike.Visible and pf == 15 then
-				local c = hud.ball.AbsolutePosition + hud.ball.AbsoluteSize / 2
-				tapScreen(hud, c.X, c.Y + hud.ball.AbsoluteSize.Y * 0.2)
-			elseif game == "signing" and rp.fan and frames % 25 == 0 and hud.signing.Visible then
-				local want = rp.fan.want[rp.fan.got + 1]
-				for i = 1, 4 do
-					if rp.order[i] == want then
-						hud.signBtns[i].Activated:Fire()
+					tapScreen(hud, c.X, c.Y + hud.ball.AbsoluteSize.Y * 0.2)
+				elseif game == "signing" and rp.fan and frames % 25 == 0 and hud.signing.Visible then
+					local want = rp.fan.want[rp.fan.got + 1]
+					for i = 1, 4 do
+						if rp.order[i] == want then
+							hud.signBtns[i].Activated:Fire()
+						end
 					end
 				end
 			end
+			RENDER:Fire(1 / 60)
 		end
-		RENDER:Fire(1 / 60)
-	end
-	if result == nil then
-		print("  " .. game .. ": refused (as it should be when there is no energy or day left)")
-		s = call("get")
-	else
-		local after = Js.JSON.parse(result)
-		print(string.format("  %s in %d frames -> %s", game, frames, tostring(after.blocks[1] and after.blocks[1].text)))
-		s = after
+		if result == nil then
+			print("  " .. game .. ": refused (as it should be when there is no energy or day left)")
+			s = call("get")
+		else
+			local after = Js.JSON.parse(result)
+			print(string.format("  %s in %d frames -> %s", game, frames, tostring(after.blocks[1] and after.blocks[1].text)))
+			s = after
+		end
 	end
 end
+
 s = call("tab", "home")
 
 local played = 0
@@ -300,7 +342,7 @@ while played < MATCHES and presses < 300 do
 				break
 			end
 		end
-		b = b or s.buttons[1]
+		b = b or s.buttons[1] or { action = "tab", arg = "home" }
 		s = call(b.action, b.arg)
 		continue
 	end
@@ -419,6 +461,8 @@ while played < MATCHES and presses < 300 do
 	end
 end
 print("matches played on the client:", played)
+answerBeats()
+trainAndRelate()
 if FRAME_MS and #FRAME_MS > 0 then
 	table.sort(FRAME_MS)
 	local sum = 0

@@ -8,7 +8,8 @@ import { show } from "./_out";
 
 const rng = mulberry32(77);
 let g = S.startWithoutTrial({ firstName: "Life", lastName: "Robot", nationality: "England", division: "League One", club: "Wigan Athletic" });
-g = { ...g, career: { ...g.career, money: 250000, energy: 60 } };
+// an older save (no story): everything open, as the website keeps it
+g = { ...g, career: { ...g.career, money: 250000, energy: 60, unlocks: undefined } };
 const press = (action: string, arg?: string, label = "") => {
   g = S.act(g, action, arg, rng);
   const s = S.screen(g);

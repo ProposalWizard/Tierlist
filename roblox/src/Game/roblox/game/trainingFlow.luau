@@ -7,10 +7,10 @@ return function(exports, import, Js)
 	local M_week = import("lib/star/week")
 	local M_mechanics = import("lib/star/mechanics")
 	local M_story = import("lib/star/story")
+	local M_unlocks = import("lib/star/unlocks")
 	local M_trainingLevels = import("lib/star/trainingLevels")
 	local M_trainingLevelData = import("lib/star/trainingLevelData")
 	local M_rating = import("lib/star/rating")
-	local M_unlocks = import("lib/star/unlocks")
 	local M_starPoints = import("lib/star/starPoints")
 	local M_trainingLevelStore = import("lib/star/trainingLevelStore")
 	local SKILL_LABELS, trainingEnergyCost, skillCard, levelList, mayPlayLevel, levelOverlay, trainingComplete
@@ -24,8 +24,9 @@ return function(exports, import, Js)
 		local cost = trainingEnergyCost()
 		local value = c.skills[skill]
 		local day = (M_story.trainingDayOn(c) and A.includes(M_story.trainingDayLeft(c), skill))
-		local canTrain = ((((not shut) and (c.energy >= cost)) and (value < 100)) and ((left > 0) or day))
-		local why = (if shut then nil else (if (value >= 100) then "Maxed out." else (if ((left <= 0) and (not day)) then "No more sessions this week." else (if (c.energy < cost) then ("Needs " .. Js.numstr(cost) .. " energy.") else nil))))
+		local locked = (not M_unlocks.isOpen(c, "training"))
+		local canTrain = (((((not locked) and (not shut)) and (c.energy >= cost)) and (value < 100)) and ((left > 0) or day))
+		local why = (if locked then M_unlocks.lockHint(c, "training") else (if shut then nil else (if (value >= 100) then "Maxed out." else (if ((left <= 0) and (not day)) then "No more sessions this week." else (if (c.energy < cost) then ("Needs " .. Js.numstr(cost) .. " energy.") else nil)))))
 		local levels = M_trainingLevels.starsOf(c, skill)
 		do return Js.O({ value = value, stars = M_trainingLevels.totalStars(levels), shut = shut, shutWhy = (if shut then ("Opens " .. S.toLowerCase(M_mechanics.mechanicDef("aerial").when)) else nil), canTrain = canTrain, why = why, highest = M_trainingLevels.highestUnlocked(levels) }, { "value", "stars", "shut", "shutWhy", "canTrain", "why", "highest" }) end
 	end

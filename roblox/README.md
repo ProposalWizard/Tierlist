@@ -125,6 +125,13 @@ The Life tab has what the website has between matches, with the same rules:
 - **Sponsors**: offers as they come; ask for longer or easier targets, sign
   or decline, and answer a rival's poach.
 
+A new career opens these one at a time, as on the website
+(`lib/star/story.ts`): a person on Home brings each one in (a team-mate's
+old boots, the gaffer's "time to train", the half-price can, the old phone
+that opens relationships, the chairman's shop trip, your agent's first
+sponsor). Until then the tab or section shows a 🔒 and how it opens. A save
+from before the story has everything open.
+
 ## The trial
 
 A new career starts as on the website: no club, a trial at the club you

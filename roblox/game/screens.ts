@@ -31,6 +31,11 @@ import * as LF from "./lifeFlow";
 import { relgameGain, type RelGame } from "./relgamePlay";
 import { trainingLeft } from "../../lib/star/week";
 import { STAGE_LABEL, TRIAL_STAGES, trialScore } from "../../lib/star/trial";
+import { isOpen, lockHint, type Feature } from "../../lib/star/unlocks";
+import { storyBeat, ackBeat, beatText, type Beat } from "../../lib/star/story";
+import { starsNow, withStars } from "../../lib/star/starPoints";
+import { checkNewAchievements, ACHIEVEMENTS } from "../../lib/star/achievements";
+import { computeStarRating } from "../../lib/star/rating";
 
 // ───────────────────────────────────────────────────────────── the screen ──
 
@@ -67,6 +72,8 @@ export interface UiState {
   life?: string;
   lifeNote?: string;
   bossTalk?: LF.TalkState;
+  /** Achievements just earned (shown once, on the next screen). */
+  achieved?: string[];
 }
 export type RobloxGame = Game & { ui?: UiState };
 
@@ -116,6 +123,13 @@ function ordinal(n: number): string {
 }
 
 const TABS = [["home", "Home"], ["train", "Train"], ["life", "Life"], ["league", "League"], ["fixtures", "Fixtures"], ["stats", "Stats"]] as const;
+/** What each tab needs open on a new career's story (lib/star/story.ts); Home and Life are always there. */
+const TAB_FEATURE: Record<string, Feature> = { train: "training", league: "league", fixtures: "league", stats: "stats" };
+const tabOpen = (c: CareerState, id: string) => !TAB_FEATURE[id] || isOpen(c, TAB_FEATURE[id]);
+/** Where a story beat's button takes you (page.tsx goBeat: the website points a finger there). */
+const BEAT_GOES: Partial<Record<Beat, { tab: string; life?: string }>> = {
+  training: { tab: "train" }, can: { tab: "life" }, phone: { tab: "life" }, shop: { tab: "life", life: "cans" }, stats: { tab: "stats" }, sponsor: { tab: "life", life: "sponsors" },
+};
 
 // ─────────────────────────────────────────────────────── the new career ──
 
@@ -431,11 +445,18 @@ function trainTab(g: RobloxGame, s: Screen): Screen {
   return s;
 }
 
+/** What a Life page needs open on the story (lib/star/story.ts). */
+function lifePageNeeds(page: string): Feature {
+  if (page === "cans" || page === "boots" || page === "style") return "shop";
+  if (page === "sponsors" || page.startsWith("offer:") || page.startsWith("deal:")) return "sponsors";
+  return "relations";
+}
+
 /** Life between matches: rest, the relationships' games, the shop, sponsors (the website's Life tab and its screens). */
 function lifeTab(g: RobloxGame, s: Screen): Screen {
   const c = g.career;
   const ui = g.ui ?? {};
-  const page = ui.life;
+  const page = ui.life && isOpen(c, lifePageNeeds(ui.life)) ? ui.life : undefined;
   if (ui.lifeNote) s.blocks.push({ kind: "text", text: ui.lifeNote, tone: "gold" });
   const back: Button = { label: "Back", action: "life", style: "secondary" };
   if (page === "cans") {
@@ -561,7 +582,8 @@ function lifeTab(g: RobloxGame, s: Screen): Screen {
     };
   };
   s.blocks.push({ kind: "heading", text: "Relationships" });
-  s.blocks.push({ kind: "list", items: [
+  if (!isOpen(c, "relations")) s.blocks.push({ kind: "text", text: `🔒 ${lockHint(c, "relations")}`, tone: "dim" });
+  else s.blocks.push({ kind: "list", items: [
     rel("boss", "👔", "Manager", c.relationships.boss, "life-boss"),
     { ...rel("team", "🤝", "Team-mates", c.relationships.team, "play-relgame"), ...(LF.relGame(c, "team").canPlay ? { arg: "woodwork" } : {}) },
     { ...rel("fans", "📣", "Fans", c.relationships.fans, "play-relgame"), ...(LF.relGame(c, "fans").canPlay ? { arg: "signing" } : {}) },
@@ -574,14 +596,32 @@ function lifeTab(g: RobloxGame, s: Screen): Screen {
   }
   const offers = LF.brandsOf(c).offers.length;
   s.blocks.push({ kind: "heading", text: "Shop" });
+  const shop = isOpen(c, "shop"), sponsors = isOpen(c, "sponsors");
   s.blocks.push({ kind: "list", items: [
-    { text: "🥤 KIB energy cans", action: "life", arg: "cans" },
-    { text: "👟 Boots", sub: c.currentBoot.matches > 0 ? `${c.currentBoot.name}: ${c.currentBoot.matches} matches left` : "No boots on", action: "life", arg: "boots" },
-    { text: "🏠 Lifestyle", sub: "Cars, homes, watches: fame", action: "life", arg: "style" },
-    { text: `🤝 Sponsors${offers ? ` (${offers} new offer${offers === 1 ? "" : "s"})` : ""}`, tone: (offers ? "gold" : "normal") as Tone, action: "life", arg: "sponsors" },
+    ...(shop ? [
+      { text: "🥤 KIB energy cans", action: "life", arg: "cans" },
+      { text: "👟 Boots", sub: c.currentBoot.matches > 0 ? `${c.currentBoot.name}: ${c.currentBoot.matches} matches left` : "No boots on", action: "life", arg: "boots" },
+      { text: "🏠 Lifestyle", sub: "Cars, homes, watches: fame", action: "life", arg: "style" },
+    ] : [{ text: "🔒 Cans, boots and lifestyle", sub: lockHint(c, "shop"), tone: "dim" as Tone }]),
+    sponsors
+      ? { text: `🤝 Sponsors${offers ? ` (${offers} new offer${offers === 1 ? "" : "s"})` : ""}`, tone: (offers ? "gold" : "normal") as Tone, action: "life", arg: "sponsors" }
+      : { text: "🔒 Sponsors", sub: lockHint(c, "sponsors"), tone: "dim" as Tone },
   ] });
   if (LF.canAct(c)) s.buttons.push({ label: `😴 Rest (+${LF.restGain(c)} energy, 1 day)`, action: "rest", style: "secondary" });
   return s;
+}
+
+/**
+ * page.tsx's effect after any change outside a match: achievements earned
+ * off the pitch (the shop, a contract...) unlock at once and the star rating
+ * is brought up to date. Match ones come with the match (creditMatchResult).
+ */
+function settle(g: RobloxGame): RobloxGame {
+  const ids = checkNewAchievements(g.career);
+  if (!ids.length) return g;
+  const unlocked: CareerState = { ...g.career, achievements: [...g.career.achievements, ...ids] };
+  const next = withStars({ ...unlocked, starRating: computeStarRating(unlocked) });
+  return { ...g, career: next, ui: { ...(g.ui ?? {}), achieved: ids } };
 }
 
 /** A relationship game's count from the device (or, in tests, a middling one): the gain worked out here. */
@@ -592,7 +632,7 @@ export function relgameDone(g: RobloxGame, game: string, count: number, roll: nu
   const r = relgameGain(g.career, game as RelGame, count, roll);
   if (!r) return null;
   const who = kind === "boss" ? "Manager" : kind === "team" ? "Team-mates" : "Fans";
-  return { ...g, career: LF.relGameComplete(g.career, kind, { gain: r.gain }), ui: { ...(g.ui ?? {}), tab: "life", life: undefined, lifeNote: `${r.line} ${who} ${r.gain >= 0 ? "+" : ""}${r.gain}.` } };
+  return settle({ ...g, career: LF.relGameComplete(g.career, kind, { gain: r.gain }), ui: { ...(g.ui ?? {}), achieved: undefined, tab: "life", life: undefined, lifeNote: `${r.line} ${who} ${r.gain >= 0 ? "+" : ""}${r.gain}.` } });
 }
 
 /** The stars from a level played on the device (or, in tests, played by nobody). */
@@ -604,14 +644,23 @@ export function trainingDone(g: RobloxGame, skill: string, level: number, stars:
   const line = stars > 0
     ? `Level ${level}: ${"★".repeat(stars)}. ${label[1]} ${res.gained > 0 ? `+${res.gained}` : "unchanged"}${res.newStars > 0 ? ` (${res.newStars} new star${res.newStars === 1 ? "" : "s"})` : ""}.`
     : `Level ${level}: no stars this time.`;
-  return { ...g, career: res.career, ui: { ...(g.ui ?? {}), tab: "train", trainSkill: label[0], trainResult: line } };
+  return settle({ ...g, career: res.career, ui: { ...(g.ui ?? {}), achieved: undefined, tab: "train", trainSkill: label[0], trainResult: line } });
 }
 
 function dashboard(g: RobloxGame): Screen {
   const c = g.career;
   const tab = g.ui?.tab ?? "home";
-  const tabs = TABS.map(([id, label]) => ({ id, label, active: id === tab }));
+  const tabs = TABS.map(([id, label]) => ({ id, label: tabOpen(c, id) ? label : `${label} 🔒`, active: id === tab }));
   const s: Screen = { id: "dashboard", hud: hud(c), title: c.player.club, tabs, blocks: [], buttons: [] };
+  for (const id of g.ui?.achieved ?? []) {
+    const a = ACHIEVEMENTS.find((x) => x.id === id);
+    if (a) s.blocks.push({ kind: "text", text: `⭐ Achievement: ${a.label}. ${a.description}.`, tone: "gold" });
+  }
+  if (!tabOpen(c, tab)) {
+    s.title = `🔒 ${TABS.find((t) => t[0] === tab)?.[1] ?? ""}`;
+    s.blocks.push({ kind: "text", text: lockHint(c, TAB_FEATURE[tab]), tone: "dim" });
+    return s;
+  }
   if (tab === "train") return trainTab(g, s);
   if (tab === "life") return lifeTab(g, s);
   if (tab === "league") {
@@ -654,6 +703,11 @@ function dashboard(g: RobloxGame): Screen {
       { kind: "heading", text: "Relationships" },
       { kind: "stats", items: [{ label: "Manager", value: String(Math.round(c.relationships.boss)) }, { label: "Team-mates", value: String(Math.round(c.relationships.team)) },
         { label: "Fans", value: String(Math.round(c.relationships.fans)) }] });
+    if (isOpen(c, "achievements")) {
+      const got = ACHIEVEMENTS.filter((a) => c.achievements.includes(a.id));
+      s.blocks.push({ kind: "heading", text: `Achievements: ${got.length} of ${ACHIEVEMENTS.length}` });
+      if (got.length) s.blocks.push({ kind: "list", items: got.map((a) => ({ text: `⭐ ${a.label}`, sub: a.description, tone: (a.tier === "legendary" || a.tier === "hard" ? "gold" : "normal") as Tone })) });
+    }
     s.buttons.push({ label: "Ask for a new contract", action: "ask-contract", style: "secondary" });
     return s;
   }
@@ -665,6 +719,17 @@ function dashboard(g: RobloxGame): Screen {
     { label: "Energy", value: `${Math.round(c.energy)}%`, tone: c.energy < 40 ? "bad" : "normal" },
   ] });
   if (c.managerNews) s.blocks.push({ kind: "text", text: c.managerNews, tone: "gold" });
+  // the first hour as a story: a person brings the next thing in, and you answer before anything else
+  const beat = storyBeat(c, starsNow(c));
+  if (beat) {
+    const t = beatText(c, beat);
+    s.blocks.push({ kind: "heading", text: `${t.icon} ${t.title}` }, { kind: "text", text: t.who, tone: "dim" });
+    if (t.line) s.blocks.push({ kind: "text", text: `“${t.line}”`, tone: "gold" });
+    if (beat === "starpass") s.blocks.push({ kind: "text", text: `You are a ★${starsNow(c)} player now. Every new star in training and every good game moves you up.` });
+    if (t.boot) s.blocks.push({ kind: "stats", items: [...t.boot.stats.map((x) => ({ label: x.split(" ")[0], value: x.split(" ")[1] })), { label: "Games", value: String(t.boot.games) }] });
+    s.buttons.push({ label: t.button, action: "beat", arg: beat, style: "primary" });
+    return s;
+  }
   if (m.seasonOver) {
     s.blocks.push({ kind: "heading", text: "The season is over" }, { kind: "text", text: "Every match is played. Time for the awards." });
     s.buttons.push({ label: "End of season 🏆", action: "end-season", style: "primary" });
@@ -798,10 +863,19 @@ function niceStep(n: number): number {
 
 /** One button press. `rng` is the website's Math.random for its two mini-games. */
 export function act(g: RobloxGame, action: string, arg: string | undefined, rng: () => number = Math.random): RobloxGame {
+  return settle(actInner(g.ui?.achieved ? { ...g, ui: { ...g.ui, achieved: undefined } } : g, action, arg, rng));
+}
+function actInner(g: RobloxGame, action: string, arg: string | undefined, rng: () => number): RobloxGame {
   const ui: UiState = g.ui ?? {};
   switch (action) {
     case "tab": return { ...g, ui: { ...ui, tab: arg ?? "home", trainResult: undefined, life: undefined, lifeNote: undefined, bossTalk: undefined } };
     case "home": return { ...F.backToDashboard(g), ui: { ...ui, tab: "home" } };
+    case "beat": {
+      const b = storyBeat(g.career, starsNow(g.career));
+      if (!b || b !== arg) return g;
+      const go = BEAT_GOES[b];
+      return { ...g, career: ackBeat(g.career, b), ui: go ? { ...ui, tab: go.tab, life: go.life, lifeNote: undefined, trainSkill: undefined, trainResult: undefined } : ui };
+    }
     case "life": return { ...g, ui: { ...ui, tab: "life", life: arg, lifeNote: undefined } };
     case "rest": return { ...g, career: LF.rest(g.career), ui: { ...ui, lifeNote: "You put your feet up." } };
     case "use-can": case "buy-can": case "buy-boot": case "buy-item": {

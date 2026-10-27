@@ -6,10 +6,10 @@ return function(exports, import, Js)
 	local M_week = import("lib/star/week")
 	local M_relationships = import("lib/star/relationships")
 	local M_shopData = import("lib/star/shopData")
+	local M_unlocks = import("lib/star/unlocks")
 	local M_ruleBook = import("lib/star/ruleBook")
 	local M_sponsorDeals = import("lib/star/sponsorDeals")
 	local M_starPoints = import("lib/star/starPoints")
-	local M_unlocks = import("lib/star/unlocks")
 	local M_fame = import("lib/star/fame")
 	local M_story = import("lib/star/story")
 	local M_tuningStore = import("lib/star/tuningStore")
@@ -31,6 +31,9 @@ return function(exports, import, Js)
 	end
 	exports.cans = cans
 	buyKib = function(c, id)
+		if (not M_unlocks.isOpen(c, "shop")) then
+			do return nil end
+		end
 		local can = A.find(M_shopData.KIB_CANS, function(k)
 			return (k.id == id)
 		end)
@@ -73,7 +76,7 @@ return function(exports, import, Js)
 		local boot = A.find(boots(c), function(b)
 			return (b.id == id)
 		end)
-		if ((not boot) or (c.money < boot.price)) then
+		if (((not M_unlocks.isOpen(c, "shop")) or (not boot)) or (c.money < boot.price)) then
 			do return nil end
 		end
 		local stacking = (c.currentBoot.id == boot.id)
@@ -112,7 +115,7 @@ return function(exports, import, Js)
 		local item = A.find(M_shopData.LIFESTYLE_ALL_LEVELS, function(i)
 			return (i.id == id)
 		end)
-		if ((not item) or (c.money < item.price)) then
+		if (((not M_unlocks.isOpen(c, "shop")) or (not item)) or (c.money < item.price)) then
 			do return nil end
 		end
 		local row = A.find(lifestyle(c), function(r)
@@ -145,8 +148,9 @@ return function(exports, import, Js)
 		local tired = (c.energy < cost)
 		local left = M_week.actionsLeft(c)
 		local done = M_relationships.gamePlayedThisWeek(c.relGamesPlayed, c.season, c.week, kind)
-		local canPlay = (((left > 0) and (not tired)) and (not done))
-		do return Js.O({ done = done, canPlay = canPlay, why = (if done then "Done this week" else (if (left <= 0) then "No days left this week" else (if tired then "Not enough energy" else nil))) }, { "done", "canPlay", "why" }) end
+		local locked = (not M_unlocks.isOpen(c, "relations"))
+		local canPlay = ((((not locked) and (left > 0)) and (not tired)) and (not done))
+		do return Js.O({ done = done, canPlay = canPlay, why = (if locked then M_unlocks.lockHint(c, "relations") else (if done then "Done this week" else (if (left <= 0) then "No days left this week" else (if tired then "Not enough energy" else nil)))) }, { "done", "canPlay", "why" }) end
 	end
 	exports.relGame = relGame
 	relGameComplete = function(c, kind, res)
@@ -208,6 +212,9 @@ return function(exports, import, Js)
 	end
 	exports.talkResult = talkResult
 	sponsorAction = function(c, action, id, roll)
+		if (not M_unlocks.isOpen(c, "sponsors")) then
+			do return Js.O({ career = c, note = M_unlocks.lockHint(c, "sponsors") }, { "career", "note" }) end
+		end
 		local _sw3 = action
 		local _ci4 = (if _sw3 == "sign" then 1 elseif _sw3 == "decline" then 2 elseif _sw3 == "longer" then 3 elseif _sw3 == "easier" then 4 elseif _sw3 == "counter" then 5 elseif _sw3 == "walk" then 6 else 0)
 		local _cont5 = false

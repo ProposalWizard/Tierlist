@@ -5,7 +5,7 @@ client: car
 tags: [three-d, career, team]
 status: live
 date: 2026-10-27
-source: "roblox/README.md:94-98"
+source: "roblox/README.md:137-142"
 summary: The Roblox copy starts a new career with the website's trial: five tests on the 3D pitch, then a scout's offer, the manager's talk and a fixed first contract (Mikey, 27 Oct 2026).
 ---
 Mikey: "There should be a trial, and the trial should be adapted for Roblox."

@@ -5,7 +5,7 @@ client: car
 tags: [career, team]
 status: live
 date: 2026-10-27
-source: "roblox/README.md:74-78"
+source: "roblox/README.md:82-84"
 summary: The Roblox match is played on the player's device with the website's own rules; the server checks the stats and puts them in the career (Mikey, 27 Oct 2026).
 ---
 Mikey: "matches should be played in a similar fashion to how we currently play

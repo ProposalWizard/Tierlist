@@ -13,7 +13,7 @@ import { bootPrice } from "../../lib/star/sponsorDeals";
 import { ruleBookFor } from "../../lib/star/ruleBook";
 import { freshItem, isWornOut } from "../../lib/star/fame";
 import { isStory } from "../../lib/star/story";
-import { isOpen, recordPhoneBought, styleUnlockStar, recordBossMeeting, markAnnounced, gameFirst } from "../../lib/star/unlocks";
+import { lockHint, isOpen, recordPhoneBought, styleUnlockStar, recordBossMeeting, markAnnounced, gameFirst } from "../../lib/star/unlocks";
 import { starsNow } from "../../lib/star/starPoints";
 import { applyGameGain } from "../../lib/star/relationshipGame";
 import { talkFor, talkGain, talkHits, TALK_ROUNDS, type BossTalk, type Grade } from "../../lib/star/bossTalk";
@@ -34,6 +34,7 @@ export function cans(c: CareerState): { can: KibCan; price: number; owned: numbe
 }
 /** handleBuyKib. */
 export function buyKib(c: CareerState, id: string): CareerState | null {
+  if (!isOpen(c, "shop")) return null;
   const can = KIB_CANS.find((k) => k.id === id);
   if (!can) return null;
   const price = kibCanPrice(can, c.contract.wage ?? 0);
@@ -63,7 +64,7 @@ export function boots(c: CareerState): Boot[] {
 /** handleBuyBoot: the same pair stacks its matches; a different pair replaces it. */
 export function buyBoot(c: CareerState, id: string): CareerState | null {
   const boot = boots(c).find((b) => b.id === id);
-  if (!boot || c.money < boot.price) return null;
+  if (!isOpen(c, "shop") || !boot || c.money < boot.price) return null;
   const stacking = c.currentBoot.id === boot.id;
   return {
     ...c,
@@ -95,7 +96,7 @@ export function lifestyle(c: CareerState): { item: OwnedItem; status: "owned" | 
 /** handleBuyItem (the phone opens the phone, as on the website). */
 export function buyItem(c: CareerState, id: string): CareerState | null {
   const item = LIFESTYLE_ALL_LEVELS.find((i) => i.id === id);
-  if (!item || c.money < item.price) return null;
+  if (!isOpen(c, "shop") || !item || c.money < item.price) return null;
   const row = lifestyle(c).find((r) => r.item.id === id);
   if (!row || row.status === "locked") return null;
   const base = baseOf(item);
@@ -123,8 +124,9 @@ export function relGame(c: CareerState, kind: RelKind): { done: boolean; canPlay
   const tired = c.energy < cost;
   const left = actionsLeft(c);
   const done = gamePlayedThisWeek(c.relGamesPlayed, c.season, c.week, kind);
-  const canPlay = left > 0 && !tired && !done;
-  return { done, canPlay, why: done ? "Done this week" : left <= 0 ? "No days left this week" : tired ? "Not enough energy" : null };
+  const locked = !isOpen(c, "relations");
+  const canPlay = !locked && left > 0 && !tired && !done;
+  return { done, canPlay, why: locked ? lockHint(c, "relations") : done ? "Done this week" : left <= 0 ? "No days left this week" : tired ? "Not enough energy" : null };
 }
 
 /** page.tsx handleRelationshipGameComplete. */
@@ -182,6 +184,7 @@ export { TALK_ROUNDS };
 // ── sponsors (lib/star/sponsorDeals.ts; page.tsx sponsorActions) ──
 export { brandsOf, targetLabel, slotsFor };
 export function sponsorAction(c: CareerState, action: string, id: string, roll: number): { career: CareerState; note: string } {
+  if (!isOpen(c, "sponsors")) return { career: c, note: lockHint(c, "sponsors") };
   switch (action) {
     case "sign": { const r = signOffer(c, id); return r.ok ? { career: r.career, note: r.message } : { career: c, note: r.reason }; }
     case "decline": return { career: declineOffer(c, id), note: "Declined." };
