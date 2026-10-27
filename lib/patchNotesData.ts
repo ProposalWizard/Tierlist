@@ -537,8 +537,8 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "title": "Leo's patch notes: Keeper catches, dives and the ball",
       "author": "Leo",
       "publishedAt": "2026-10-26T22:08:00Z",
-      "updatedAt": "2026-10-27T02:26:32Z",
-      "updateNote": "A real catch added, filmed in all three looks: the ball goes into his gloves and he stands up holding it. A diving catch is still being filmed. Page edited.",
+      "updatedAt": "2026-10-27T03:03:13Z",
+      "updateNote": "A real diving catch filmed (look A): the ball goes into his gloves and stays there as he lands, lies and gets up. B and C are being filmed. Page edited.",
       "artifactUrl": null,
       "summary": "Leo, 26 Oct, updated 27 Oct. Built on a test branch and filmed, not in the game yet: the keeper dives in time (his gloves meet the ball), a caught ball goes into his gloves and moves with him, he lands on the grass, lies a beat and gets up. 16 new keeper moves, 11-19 drawings each. Real catches filmed (ball held in his gloves). Three looks to pick from: A Natural, B Broadcast (slow motion at the save), C Arcade (quicker, longer dive). Results unchanged; behind Leo's switch.",
       "stats": [
@@ -623,6 +623,11 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "at": "2026-10-27T02:26:32Z",
           "where": "Text, Page",
           "note": "A real catch added, filmed in all three looks: the ball goes into his gloves and he stands up holding it. A diving catch is still being filmed. Page edited."
+        },
+        {
+          "at": "2026-10-27T03:03:13Z",
+          "where": "Text, Page",
+          "note": "A real diving catch filmed (look A): the ball goes into his gloves and stays there as he lands, lies and gets up. B and C are being filmed. Page edited."
         }
       ]
     },
