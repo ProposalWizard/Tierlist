@@ -28,7 +28,7 @@ local player = Players.LocalPlayer
 local Match = {}
 
 -- ─────────────────────────────────────────────────────────── the code ──
-local Loader, Js, M, V, S
+local Loader, Js, M, V, S, C3
 local function loadCode()
 	if Loader then
 		return
@@ -38,6 +38,7 @@ local function loadCode()
 	M = Loader.import("roblox/game/match")
 	V = Loader.import("roblox/game/matchView")
 	S = Loader.import("roblox/game/strikeScreen")
+	C3 = Loader.import("roblox/game/camera3d")
 end
 
 -- ─────────────────────────────────────────────────────────── the look ──
@@ -320,32 +321,9 @@ local function pose(f, pos, yaw, k, roll, list, cfs)
 end
 
 -- ─────────────────────────────────────────────────────────── the camera ──
-local function chanceCamera(f, aspect, vfov)
-	local cam = f.camera
-	local facing = cam.facing or "up"
-	local cx, cy = (cam.x1 + cam.x2) / 2, (cam.y1 + cam.y2) / 2
-	local across = facing == "up" and (cam.x2 - cam.x1) or (cam.y2 - cam.y1)
-	local down = facing == "up" and (cam.y2 - cam.y1) or (cam.x2 - cam.x1)
-	local look = facing == "up" and Vector3.new(0, 0, -1) or facing == "right" and Vector3.new(-1, 0, 0) or Vector3.new(1, 0, 0)
-	local elev = math.rad(52)
-	local hfov = 2 * math.atan(math.tan(math.rad(vfov) / 2) * aspect)
-	local dist = math.max((across * 0.5) / math.tan(hfov / 2), (down * 0.5 * math.sin(elev)) / math.tan(math.rad(vfov) / 2))
-	dist = math.max(dist * 1.08, 9)
-	local target = w(cx, cy, 0)
-	local pos = target - look * (dist * math.cos(elev) * SCALE) + Vector3.new(0, dist * math.sin(elev) * SCALE, 0)
-	return CFrame.lookAt(pos, target)
-end
-
-local function dribbleCamera(you)
-	local target = w(you.x, you.y - 9, 0)
-	local pos = w(you.x, you.y + 9, 7.5)
-	return CFrame.lookAt(pos, target)
-end
-
-local function broadcastCamera(t)
-	local target = w(PITCH_W / 2 + math.sin(t * 0.07) * 10, 35, 0)
-	local pos = w(PITCH_W + 30, 45 + math.sin(t * 0.05) * 6, 24)
-	return CFrame.lookAt(pos, target)
+-- roblox/game/camera3d.ts works out where to stand (pitch metres); this turns it into studs
+local function toCFrame(cam)
+	return CFrame.lookAt(w(cam.pos.x, cam.pos.y, cam.pos.h), w(cam.target.x, cam.target.y, cam.target.h))
 end
 
 -- ─────────────────────────────────────────────────────────── the screen ──
@@ -852,18 +830,17 @@ local function runPitch(hud, driver)
 		end
 	end
 
+	local camWant, camWait = nil, 0
 	local function drawFrame(f, dt)
 		local aspect = camera.ViewportSize.X / math.max(1, camera.ViewportSize.Y)
 		-- the camera
-		local want
-		if f.cameraMode == "broadcast" then
-			want = broadcastCamera(clock)
-		elseif f.cameraMode == "chase" then
-			local you = f.bodies[1]
-			want = dribbleCamera(you)
-		else
-			want = chanceCamera(f, aspect, camera.FieldOfView)
+		-- the chance camera is worked out a few times a second; the ease covers the rest
+		camWait -= dt
+		if f.cameraMode ~= "chance" or camWait <= 0 or lastPhase ~= f.phase or not camWant then
+			camWant = toCFrame(C3.cameraFor(f, aspect, camera.FieldOfView, clock))
+			camWait = 0.2
 		end
+		local want = camWant
 		local a = 1 - math.exp(-5 * dt)
 		if lastPhase ~= f.phase and (f.phase == "aim" or f.phase == "tdDribble" or f.phase == "trialDribble" or f.phase == "trialVision") then
 			a = 1 -- a new chance: cut, as the website does

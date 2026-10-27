@@ -1,5 +1,5 @@
 {
- "commit": "8868b04c",
+ "commit": "3b6c395d",
  "modules": [
   "__pkg/react",
   "data/fifa/knockout-tables_json",
@@ -295,6 +295,7 @@
   "lib/star/worldAgeing",
   "lib/star/xpConfig",
   "lib/star/youth",
+  "roblox/game/camera3d",
   "roblox/game/flow",
   "roblox/game/lifeFlow",
   "roblox/game/match",
