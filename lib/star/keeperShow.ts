@@ -29,9 +29,9 @@ export type KeeperLook = "natural" | "broadcast" | "arcade";
 
 /** The looks Leo picks between (Settings → Updates → Leo's update → Keeper look). */
 export const KEEPER_LOOKS: { id: KeeperLook; label: string; line: string }[] = [
-  { id: "natural", label: "A · Natural", line: "Real time: dive, catch, land, get up." },
+  { id: "natural", label: "A · Natural", line: "Real time: dive, catch, land, get up, a small dust puff." },
   { id: "broadcast", label: "B · Broadcast", line: "A short slow-motion as the ball reaches him, a dust puff when he lands." },
-  { id: "arcade", label: "C · Arcade", line: "Bigger, snappier dive, a roll after a diving catch, a glove flash." },
+  { id: "arcade", label: "C · Arcade", line: "A quicker dive (1.25× speed) that goes a little further, a bigger dust puff, up sooner after a catch." },
 ];
 
 export interface KeeperPlan {
