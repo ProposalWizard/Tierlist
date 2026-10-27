@@ -59,8 +59,26 @@ Each stage ends with something you can open in Studio and play.
    6. Transfers: the summer window list, negotiation.
    7. End of season: awards, Ballon d'Or vote, season history.
    8. Screens: simple Roblox menus for all of the above. A 20-season soak test.
-2. **The match on a 3D pitch:** chances, shooting, passing, keepers, all on the
-   website's rules, played by Roblox characters.
+2. **Playable match and the trial** (Mikey, 27 Oct 2026: "the trial adapted for
+   Roblox ... matches should be played, not simulated ... maybe you can move
+   around a bit more ... try Roblox-type menus. Contract and transfer are fine
+   as they are.")
+   1. **The match, without the screen** (`game/match.ts`): the website's
+      CanvasMatch steps copied once, like `flow.ts` copies the page: the 90
+      hidden minutes, a chance whenever one comes to you, your input, the real
+      physics each frame, the result, the chain to the next chance, full time.
+      Converted and twin-tested with the same inputs on both sides.
+   2. **The 3D pitch**: a stadium, both teams as Roblox characters in kit
+      colours, the ball, a camera that frames each chance. Every position
+      comes from the engine; Roblox only draws it.
+   3. **The controls**, as on the website: drag back from the ball to aim and
+      set power, then tap the ball where you want to strike it; swipe to curve;
+      tap to head; penalty run-up. **Moving more**: after a pass, and in the
+      dribble, you run your own Roblox character with WASD or the thumbstick.
+   4. **The trial**, all five stages as on the website: free kicks, through the
+      gate, take him on, find the pass, the shootout. Then the manager's talk,
+      the scout's offers and the signing.
+   5. **Roblox-style menus**: big rounded buttons, icons, bold colour.
 3. **Full screens:** home, league, transfer hub, stats, shop, Ballon d'Or night,
    in the Roblox look.
 4. **Extras:** garden, casino, cut scenes, media feed, music, sponsors.
