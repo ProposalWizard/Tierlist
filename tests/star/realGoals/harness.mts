@@ -27,7 +27,7 @@ import { strikeKind, stepKind, enforceHardRules } from "../../../lib/star/kindRu
 import { mulberry32 } from "../../../lib/star/season";
 import { launchShot, shotsPro } from "../../../lib/star/shotModel";
 import { shotPowerOn, contactFieldOn, feelPower, feelLift } from "../../../lib/star/shotFeel";
-import { strikingPower } from "../../../lib/star/strikePower";
+import { oldStrikingPower } from "../../../lib/star/strikePower";
 import { joinGoals, scenarioForGoal, realEnd, type RealGoal, type RgFile } from "../../../lib/star/realGoals";
 import type { WyscoutShotFile } from "../../../lib/star/realMoments";
 
@@ -53,7 +53,8 @@ function setUp(g: RealGoal, lane: boolean, seed: number): E.Scenario {
 
 function strike(sc: E.Scenario, angle: number, power: number, cy: number, seed: number): E.Ball {
   const feel = shotPowerOn();
-  const skills = { power: feel ? feelPower(SKILL) : strikingPower(SKILL), technique: SKILL };
+  // The power line from before 26 Oct 2026: these tests measure the lane, not the power curve.
+  const skills = { power: feel ? feelPower(SKILL) : oldStrikingPower(SKILL), technique: SKILL };
   const pro = shotsPro(), field = contactFieldOn(), lift = feel ? feelLift(SKILL) : 1;
   const rec = { seed: (seed * 2654435761) >>> 0, pro, knuckle: false, field, lift };
   const dir = { x: Math.sin(angle), y: -Math.cos(angle) };

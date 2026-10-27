@@ -1,6 +1,6 @@
 import { buildScenario, goalInView, SCENARIO_KINDS, type Scenario, type Viewport } from "../../lib/star/canvasEngine";
 import { POST_L, POST_R } from "../../lib/star/pitch";
-import { frameForNewView, setPlayZoomOverride, playZoomOf, bodiesOf, framedBodiesOf, setActionFit, framingFaults } from "../../lib/star/matchView";
+import { frameForNewView, setPlayZoomOverride, playZoomOf, bodiesOf, framedBodiesOf, setActionFit, framingFaults, DRAG_ROOM_SHARE } from "../../lib/star/matchView";
 
 /**
  * CHANCE FRAMING: Zoom | Old (lib/star/chanceFraming.ts, Harry 9 Oct 2026).
@@ -46,7 +46,14 @@ for (const kind of SCENARIO_KINDS) for (let seed = 1; seed <= 40; seed++) for (c
   const old = frame(kind, seed, "off", tilt);
   const z = frame(kind, seed, "z2", tilt);
   const tag = `${camMode} ${kind} #${seed} tilt ${tilt}`;
-  check(old.k === 1, `${tag}: Old has zoom ${old.k}`);
+  // Room to pull back (matchView.ts dragRoomCamera, Mikey 26 Oct 2026): a
+  // camera may widen a little so the ball is a full drag from the side; then
+  // the ball sits on that limit.
+  const atDragLimit = (r: { sc: Scenario; cam: Viewport }) => {
+    const m = DRAG_ROOM_SHARE * (r.cam.x2 - r.cam.x1);
+    return Math.min(r.sc.ball.x - r.cam.x1, r.cam.x2 - r.sc.ball.x) <= m * 1.6;
+  };
+  check(old.k === 1 || (old.k < 1 && atDragLimit(old)), `${tag}: Old has zoom ${old.k}`);
   const facing = z.sc.facing ?? "up";
   if (facing !== "up") {
     check(same(old.cam, z.cam) && z.k === 1, `${tag}: side-on was zoomed`);
@@ -54,7 +61,7 @@ for (const kind of SCENARIO_KINDS) for (let seed = 1; seed <= 40; seed++) for (c
   }
   if (!goalInView(kind)) {
     // Build-up: Old untouched; New fits the passers (passersFit), never wider.
-    if (camMode === "old") check(same(old.cam, z.cam) && z.k === 1, `${tag}: build-up was zoomed`);
+    if (camMode === "old") check((same(old.cam, z.cam) && z.k === 1) || atDragLimit(z), `${tag}: build-up was zoomed`);
     else {
       check(z.k >= 1 / 1.45 - 1e-9, `${tag}: build-up pulled back past the widest camera (${z.k})`);
       for (const f of framingFaults(z.sc, z.cam, HW, tilt)) check(false, `${tag}: ${f}`);
@@ -66,7 +73,7 @@ for (const kind of SCENARIO_KINDS) for (let seed = 1; seed <= 40; seed++) for (c
   const c = z.cam, w = c.x2 - c.x1, h = c.y2 - c.y1;
   check(Math.abs(h / w - (old.cam.y2 - old.cam.y1) / (old.cam.x2 - old.cam.x1)) < 1e-6, `${tag}: shape changed`);
   if (camMode === "old") {
-    check(z.k >= 1, `${tag}: zoomed OUT (${z.k})`);
+    check(z.k >= 1 || atDragLimit(z), `${tag}: zoomed OUT (${z.k})`);
     if (z.k === 1) continue;
     // A crowded chance frames the crowd (Mikey, 21 Oct 2026): far men may be off.
     for (const p of framedBodiesOf(z.sc)) {

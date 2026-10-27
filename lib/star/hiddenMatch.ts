@@ -428,11 +428,11 @@ const ATT_STARVE = 0.6;
 export const PLAYSTYLE_KIND: Record<Playstyle, Partial<Record<ScenarioKind, number>>> = {
   defensive: {
     buildup: 1.6, midfield_pass: 1.8, through_ball: 1.5, long_range: 1.5,
-    one_on_one: 0.6, tight_angle: 0.55, cutback: 0.8, byline_cross: 0.8,
+    one_on_one: 0.6, tight_angle: 0.55, cutback: 0.8, byline_cross: 1.6,
   },
   balanced: {},
   attacking: {
-    one_on_one: 1.7, cutback: 1.5, byline_cross: 1.4, tight_angle: 1.1,
+    one_on_one: 1.7, cutback: 1.5, byline_cross: 0.3, tight_angle: 1.1,
     buildup: 0.45, midfield_pass: 0.45, long_range: 0.7, through_ball: 0.75,
   },
 };
@@ -581,6 +581,9 @@ export interface ScenarioRequest {
    * union would mean every one of them had to pretend it could.
    */
   dribble?: boolean;
+  /** What the even deck may deal (lib/star/kindMix.ts DealRules): your play
+   *  style, and kinds not open yet. Absent: the deck as it always was. */
+  deal?: import("./kindMix").DealRules;
   /** Which channel the ball was worked down. Absent reads as "centre". */
   lane?: Lane;
   /** How the chance came about. Absent reads as "settled". */
@@ -1722,6 +1725,9 @@ const AIR_INTRO_BY = [60, 80];
  */
 function gateMechanics(state: HiddenMatchState, inputs: HiddenMatchInputs, req: ScenarioRequest): ScenarioRequest {
   const m = inputs.mechanics;
+  // The even deck follows your play style, and leaves out what is not open yet.
+  const style = inputs.context ? playstyleAt(inputs.context, state.minute) : undefined;
+  if (style || (m && !m.air)) req = { ...req, deal: { style, exclude: m && !m.air ? AIR_KINDS : undefined } };
   if (!m) return req;
   let out = req;
   if (!m.dribble && out.dribble) out = { ...out, dribble: false };
