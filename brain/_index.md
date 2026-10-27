@@ -11,6 +11,7 @@ FACT-ALL-006 | playtest-video skill: a screen recording becomes timestamped pict
 FACT-ALL-007 | make-artifact agent: a shareable page for a build, review or batch of changes. | brain
 FACT-CAR-001 | Road to Ballon d'Or has a Roblox copy in roblox/ (Mikey, 27 Oct 2026); the website's code is converted, never rewritten, and twin tests check it. | team,rule,career
 FACT-CAR-002 | The Roblox match is played on the player's device with the website's own rules; the server checks the stats and puts them in the career (Mikey, 27 Oct 2026). | career,team
+FACT-CAR-003 | The Roblox copy starts a new career with the website's trial: five tests on the 3D pitch, then a scout's offer, the manager's talk and a fixed first contract (Mikey, 27 Oct 2026). | three-d,career,team
 FACT-DAT-001 | [SUPERSEDED] star_tuning_notes.sql is PENDING: the table still does not exist live, so run this one again. | data
 FACT-DAT-002 | [SUPERSEDED] star_xp_config.sql is PENDING, seen missing in the live database on 20 Oct 2026. | data
 FACT-DAT-003 | star_casino.sql: DO NOT RUN; the casino stays on the phone with CASINO_ON_SERVER false. | economy,data
