@@ -13,6 +13,11 @@
  *   - extra time a match, from the unseen match's own highlights.
  */
 import { makeChance } from "../../lib/star/chanceMaker";
+import { forceFhrMode } from "../../lib/star/fhr/toggle";
+// This suite measures leadInGen's own build-ups (Chances: New with Full
+// highlights rebuild Off). The rebuild defaults On since 22 Oct 2026 and has
+// its own tests (fhr.mts, fhrIntel.mts), so it is switched off here.
+forceFhrMode("off");
 import { mulberry32 } from "../../lib/star/season";
 import { EVEN_KINDS, newKindBag, nextEvenKind } from "../../lib/star/kindMix";
 import type { ScenarioKind, Scenario } from "../../lib/star/canvasEngine";
@@ -65,9 +70,7 @@ for (const kind of KINDS) {
   const share = got / N;
   console.log(`  ${kind.padEnd(14)} ${pct(got, N).padStart(6)}  (table ${Math.round((set ? 0 : want) * 100)}%)`);
   if (set || want === 0) check(`${kind}: none`, got === 0, got);
-  // 26 Oct 2026: a build-up that ends offside in every style is dropped while
-  // offside calls are hidden (fhr/builders.ts), about 1 in 300.
-  else if (want >= 1) check(`${kind}: every one (bar an all-offside move)`, got >= N * 0.99, got);
+  else if (want >= 1) check(`${kind}: every one`, got === N, got);
   else check(`${kind}: about ${Math.round(want * 100)}% (seeded)`, Math.abs(share - want) < 0.1, share);
   check(`${kind}: none with Chances Old`, oldGot === 0, oldGot);
   check(`${kind}: none for a move carrying on / the opening picture`, carryOn === 0 && opening === 0, { carryOn, opening });
