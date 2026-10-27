@@ -35,6 +35,8 @@ for (let i = 0; i < STEPS; i++) {
     const item = s.blocks.flatMap((x) => (x.kind === "list" ? x.items : [])).find((x) => x.action);
     if (item) b = { label: "", action: item.action!, arg: item.arg };
   }
+  // a story beat can leave you on another tab: the robot plays from Home
+  if (s.id === "dashboard" && s.tabs?.some((t) => t.active && t.id !== "home")) b = { label: "", action: "home" };
   if (!b) { console.log("no button"); break; }
   console.log(`press ${b.action} ${b.arg ?? ""}`);
   g = S.act(g, b.action, b.arg, rng);
