@@ -59,7 +59,7 @@ import { pickBarCorner, type BarCorner, type Box as BarBox } from "@/lib/star/ba
 import { panToKeep, followStep, widenToHold, easeCam, BACK_EASE_S } from "@/lib/star/runCamera";
 import { takeEnergySpent, setLegsEnergy, barCap, moveKeyOf, keysScreenDir, noKeys, KEY_PUSH, type MoveKeys } from "@/lib/star/legs";
 import { afterPassStickOn } from "@/lib/star/afterPass";
-import { mechanicOpen, aerialIntroGame, mechanicDef, type Mechanic } from "@/lib/star/mechanics";
+import { mechanicOpen, mechanicDef, type Mechanic } from "@/lib/star/mechanics";
 import { dealDribble, dribbleLevelFor, newDribbleDeal, type DribbleDeal } from "@/lib/star/dribbleDeal";
 import { ruleBookFor } from "@/lib/star/ruleBook";
 import { deflectBlock } from "@/lib/star/deflection";
@@ -1877,20 +1877,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       addedTime: ADDED,
       fullTime: MATCH_DURATION,
     };
-    const inputs = matchInputsFor(car
+    return matchInputsFor(car
       // Your CLUB's strength (Chelsea 83), not the team relationship (60 on
       // day one) — see matchTeamStrength (lib/star/matchday.ts, item 0).
       ? careerMatchSpec(car, fixture, { ...live, teamFallback: teamRef.current, playstyle: playstyleRef.current })
       : { ...live, teamStrength: teamRef.current, home: fixture?.home, skills: { power: 55, technique: 55, vision: 55 }, context: { playstyle: playstyleRef.current } });
-    // A new career's corners wait for Technique and Vision 70 (setPieces.ts,
-    // Mikey 25 Oct 2026): until then a team-mate takes them.
-    const withCorners = dutiesRef.current?.corners === false ? { ...inputs, canTakeCorners: false } : inputs;
-    // A new career's headers, volleys and runs with the ball (mechanics.ts):
-    // none before they open, and game 4 brings one header and one volley.
-    const cc = careerRef.current;
-    return cc?.unlocks?.story
-      ? { ...withCorners, mechanics: { air: mechanicOpen(cc, "aerial"), airIntro: aerialIntroGame(cc), dribble: mechanicOpen(cc, "dribble") } }
-      : withCorners;
+    // A new career's corners (Technique and Vision 70) and its moves (headers,
+    // volleys, the run with the ball) come from careerMatchSpec, so "Sim this
+    // match" plays them the same way (lib/star/matchInputs.ts).
   };
 
   // Translate what the physics produced into what the match needs to know.
