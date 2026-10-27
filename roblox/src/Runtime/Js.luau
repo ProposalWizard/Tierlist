@@ -4143,6 +4143,29 @@ Js.Event = { new = function(kind, init)
 	return O({ type = kind, detail = init and init.detail }, { "type", "detail" })
 end }
 
+-- a page address: Roblox has none, so every ?switch reads as not given
+Js.URLSearchParams = { new = function()
+	return { get = function()
+		return nil
+	end, has = function()
+		return false
+	end }
+end }
+Js.URL = { new = function(u)
+	error(Js.TypeError("Invalid URL: " .. tostring(u)))
+end }
+-- typed arrays: a plain array of zeros (numbers are never wrapped here)
+function Js.typedArray(n)
+	local t = {}
+	if type(n) == "number" then
+		for i = 1, n do
+			t[i] = 0
+		end
+		return mkarr(t, n)
+	end
+	return mkarr(t, 0)
+end
+
 Js.process = { env = {} }
 Js.globalThis = {}
 Js.window = nil

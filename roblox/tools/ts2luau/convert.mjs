@@ -310,8 +310,8 @@ class FileEmitter {
       case "clearTimeout": return "Js.clearTimeout";
       case "performance": return "Js.performance";
       case "window": return "Js.window";
-      case "document": return "nil";
-      case "navigator": return "nil";
+      case "document": case "navigator":
+      case "location": case "crypto": case "createImageBitmap": case "requestAnimationFrame": return `Js.${name}`; // nil in Roblox
       case "arguments": this.err(node, "`arguments` is not supported");
     }
     this.err(node, `unknown global '${name}'`);
@@ -885,6 +885,12 @@ class FileEmitter {
           case "WeakMap": return `Js.Map.new(${args})`;
           case "WeakSet": return `Js.Set.new(${args})`;
           case "Event": case "CustomEvent": return `Js.Event.new(${args})`;
+          case "URLSearchParams": return `Js.URLSearchParams.new(${args})`;
+          case "URL": return `Js.URL.new(${args})`;
+          case "Image": return `Js.O({}, {})`; // a picture never loads in Roblox
+          case "Uint8Array": case "Uint8ClampedArray": case "Uint16Array": case "Uint32Array":
+          case "Int8Array": case "Int16Array": case "Int32Array": case "Float32Array": case "Float64Array":
+            return `Js.typedArray(${args})`;
         }
         this.err(node, `new ${callee.text}`);
       }
