@@ -190,7 +190,17 @@ class FileEmitter {
 
   t(prefix = "_t") { this.tmp += 1; return `${prefix}${this.tmp}`; }
 
-  emit(line) { this.lines.push("\t".repeat(this.ind) + line); }
+  emit(line) {
+    // a statement starting with "(" would read as a call on the line before
+    if (line.startsWith("(") || line.startsWith(";(")) {
+      if (line.startsWith(";")) line = line.slice(1);
+      const prev = this.lines[this.lines.length - 1];
+      if (prev !== undefined && !/(\bthen|\bdo|\belse|\brepeat|^\s*function.*\)|= function\(.*\)|\bfunction\(.*\))\s*$/.test(prev) && !prev.trimEnd().endsWith(";")) {
+        this.lines[this.lines.length - 1] = prev + ";";
+      }
+    }
+    this.lines.push("\t".repeat(this.ind) + line);
+  }
 
   typeOf(node) {
     return typeInfo(this.checker, this.checker.getTypeAtLocation(node));
@@ -629,20 +639,18 @@ class FileEmitter {
     }
     for (let i = start; i < links.length; i++) {
       const l = links[i];
+      const next = links[i + 1];
       if (l.questionDotToken) stmts.push(`if ${v} == nil then return nil end`);
-      if (ts.isCallExpression(l)) {
-        // a call: v is the function; for a method call the link before is the receiver
-        // handled by re-emitting the call on a simple receiver below
-        const callee = l.expression;
-        if ((ts.isPropertyAccessExpression(callee) || ts.isElementAccessExpression(callee)) && i > 0 && links[i - 1] === callee) {
-          // method call: v currently holds the method; recompute with receiver
-          const recv = "_r";
-          stmts.pop(); // drop nil-check for the call link if any; re-add below
-          // receiver value is the link before the property
-          stmts.length = stmts.length; // no-op
-          // rebuild: we stored property value in v; need receiver: store receiver earlier
-          this.err(l, "optional method call chains like a?.b.c() are not supported yet");
+      // a method call: o.m(...) as one step, with o as the receiver
+      if (ts.isPropertyAccessExpression(l) && next && ts.isCallExpression(next) && this.skipParens(next.expression) === l) {
+        if (next.questionDotToken) {
+          stmts.push(`if ${this.dot(v, l.name.text)} == nil then return nil end`);
         }
+        stmts.push(`${v} = ${this.methodCall(next, l, v)}`);
+        i++;
+        continue;
+      }
+      if (ts.isCallExpression(l)) {
         stmts.push(`${v} = ${v}(${this.args(l.arguments)})`);
       } else if (ts.isPropertyAccessExpression(l)) {
         const name = l.name.text;
@@ -1185,22 +1193,49 @@ class FileEmitter {
   // ──────────────────────────────────────────────────────────── statements ──
 
   // Emit a block's statements. Function declarations are hoisted.
-  block(stmts, { hoistAll = false } = {}) {
+  block(stmts) {
+    this.fwdStack = this.fwdStack || [];
+    this.fwdStack.push(new Set());
+    try { this.blockInner(stmts); } finally { this.fwdStack.pop(); }
+  }
+
+  // mark these declaration-name nodes as forward-declared in this block
+  markForward(nameNodes) {
+    const set = this.fwdStack[this.fwdStack.length - 1];
+    const names = [];
+    for (const id of nameNodes) {
+      const sym = this.checker.getSymbolAtLocation(id);
+      const n = this.declName(id);
+      if (n.includes(".")) continue;
+      if (sym) set.add(sym);
+      if (!names.includes(n)) names.push(n);
+    }
+    for (let i = 0; i < names.length; i += 60) this.emit(`local ${names.slice(i, i + 60).join(", ")}`);
+  }
+
+  isForwardId(id) {
+    const sym = this.checker.getSymbolAtLocation(id);
+    const set = this.fwdStack && this.fwdStack[this.fwdStack.length - 1];
+    return !!(sym && set && set.has(sym));
+  }
+
+  blockInner(stmts) {
     const fnDecls = stmts.filter((s) => ts.isFunctionDeclaration(s) && s.body);
     const classDecls = stmts.filter(ts.isClassDeclaration);
+    // names used (inside a function) before the line that declares them
+    const early = this.usedBeforeDeclared(stmts);
+    if (early.length && !(fnDecls.length || classDecls.length)) this.markForward(early);
     if (fnDecls.length || classDecls.length) {
       // forward-declare every name in this block so hoisted functions see them
-      const names = [];
+      const ids = [];
       for (const s of stmts) {
-        if (ts.isFunctionDeclaration(s) && s.name && s.body) names.push(this.declName(s.name));
-        if (ts.isClassDeclaration(s) && s.name) names.push(this.declName(s.name));
+        if (ts.isFunctionDeclaration(s) && s.name && s.body) ids.push(s.name);
+        if ((ts.isClassDeclaration(s) || ts.isEnumDeclaration(s)) && s.name) ids.push(s.name);
         if (ts.isVariableStatement(s)) {
-          for (const d of s.declarationList.declarations) names.push(...this.bindingNames(d.name));
+          for (const d of s.declarationList.declarations) ids.push(...this.bindingIds(d.name));
         }
       }
-      const fresh = names.filter((n) => !n.includes("."));
-      this.forward = new Set([...(this.forward || []), ...fresh]);
-      for (let i = 0; i < fresh.length; i += 60) this.emit(`local ${fresh.slice(i, i + 60).join(", ")}`);
+      this.markForward(ids);
       for (const f of fnDecls) this.stmt(f, true);
     }
     for (let i = 0; i < stmts.length; i++) {
@@ -1209,6 +1244,50 @@ class FileEmitter {
       this.stmt(s, false);
       if (isTerminator(s)) break;
     }
+  }
+
+  usedBeforeDeclared(stmts) {
+    const declAt = new Map(); // symbol -> [stmt index, lua name]
+    stmts.forEach((st, i) => {
+      if (ts.isVariableStatement(st)) {
+        for (const d of st.declarationList.declarations) {
+          const walk = (nm) => {
+            if (ts.isIdentifier(nm)) {
+              const sym = this.checker.getSymbolAtLocation(nm);
+              if (sym) declAt.set(sym, [i, nm, d]);
+            } else nm.elements.forEach((e) => { if (!ts.isOmittedExpression(e)) walk(e.name); });
+          };
+          walk(d.name);
+        }
+      }
+    });
+    if (!declAt.size) return [];
+    const out = new Set();
+    stmts.forEach((st, i) => {
+      const visit = (n, inFn) => {
+        if (ts.isIdentifier(n)) {
+          const sym = this.checker.getSymbolAtLocation(n);
+          const hit = sym && declAt.get(sym);
+          if (hit) {
+            // used by a function written at or before the declaration
+            if (inFn && hit[0] >= i) out.add(hit[1]);
+          }
+        }
+        ts.forEachChild(n, (c) => visit(c, inFn || ts.isFunctionLike(c)));
+      };
+      visit(st, false);
+    });
+    return [...out];
+  }
+
+  bindingIds(name) {
+    if (ts.isIdentifier(name)) return [name];
+    const out = [];
+    for (const el of name.elements) {
+      if (ts.isOmittedExpression(el)) continue;
+      out.push(...this.bindingIds(el.name));
+    }
+    return out;
   }
 
   bindingNames(name) {
@@ -1221,7 +1300,6 @@ class FileEmitter {
     return out;
   }
 
-  isForward(n) { return this.forward && this.forward.has(n); }
 
   stmt(s, hoisted) {
     const K = ts.SyntaxKind;
@@ -1242,7 +1320,7 @@ class FileEmitter {
         if (!s.body) return; // overload signature
         const n = this.declName(s.name);
         const f = this.funcExpr(s);
-        if (this.isForward(n) || n.includes(".")) this.emit(`${n} = ${f}`);
+        if (this.isForwardId(s.name) || n.includes(".")) this.emit(`${n} = ${f}`);
         else this.emit(`local function ${n}${f.slice("function".length)}`);
         this.afterDecl(s.name, n);
         return;
@@ -1348,14 +1426,14 @@ class FileEmitter {
         const n = this.declName(d.name);
         const init = d.initializer ? this.expr(d.initializer) : "nil";
         if (this.exportedLets.has(sym)) this.emit(`${n} = ${init}`);
-        else if (this.isForward(n) || n.includes(".")) this.emit(`${n} = ${init}`);
+        else if (this.isForwardId(d.name) || n.includes(".")) this.emit(`${n} = ${init}`);
         else this.emit(`local ${n} = ${init}`);
         this.afterDecl(d.name, n);
       } else {
         const t = this.t("_d");
         this.emit(`local ${t} = ${this.expr(d.initializer)}`);
         const names = this.bindingNames(d.name);
-        const declare = !names.some((n) => this.isForward(n) || n.includes("."));
+        const declare = !this.bindingIds(d.name).some((id) => this.isForwardId(id) || this.declName(id).includes("."));
         for (const l of this.destructure(d.name, t, declare)) this.emit(l);
         if (this.isTopLevel(d.name)) {
           const exported = (ts.getCombinedModifierFlags(s) & ts.ModifierFlags.Export) !== 0;
@@ -1903,7 +1981,7 @@ class FileEmitter {
 
   enumDecl(s) {
     const n = this.declName(s.name);
-    this.emit(`${this.isForward(n) ? "" : "local "}${n} = Js.O({}, nil)`);
+    this.emit(`${this.isForwardId(s.name) || n.includes(".") ? "" : "local "}${n} = Js.O({}, nil)`);
     let next = 0;
     for (const m of s.members) {
       const key = this.propKey(m.name);
@@ -1922,7 +2000,7 @@ class FileEmitter {
   classDecl(s) {
     const n = this.declName(s.name);
     if (s.heritageClauses && s.heritageClauses.some((h) => h.token === ts.SyntaxKind.ExtendsKeyword)) this.err(s, "class extends");
-    this.emit(`${this.isForward(n) ? "" : "local "}${n} = {}`);
+    this.emit(`${this.isForwardId(s.name) || n.includes(".") ? "" : "local "}${n} = {}`);
     this.emit(`${n}.__jsclass = true`);
     const getters = s.members.filter((m) => ts.isGetAccessor(m) && !hasStatic(m));
     const setters = s.members.filter((m) => ts.isSetAccessor(m) && !hasStatic(m));
@@ -2224,7 +2302,7 @@ export function convert(entries, { quiet = false } = {}) {
   }
   // the list of converted modules and where they came from
   const manifest = { commit: commitOf(), modules: written };
-  fs.writeFileSync(path.join(OUT_DIR, "_manifest.json"), JSON.stringify(manifest, null, 1) + "\n");
+  fs.writeFileSync(path.join(REPO, "roblox/tools/manifest.json"), JSON.stringify(manifest, null, 1) + "\n");
   if (!quiet) {
     console.log(`converted ${written.length} of ${files.size} files`);
     for (const f of failures) console.log("FAIL " + f);

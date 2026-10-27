@@ -1,0 +1,21 @@
+{
+  "name": "RoadToBallonDor",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Runtime": { "$path": "src/Runtime" },
+      "Game": { "$path": "src/Game" }
+    },
+    "ServerScriptService": {
+      "Server": { "$path": "src/Server" }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Client": { "$path": "src/Client" }
+      }
+    },
+    "HttpService": {
+      "$properties": { "HttpEnabled": true }
+    }
+  }
+}

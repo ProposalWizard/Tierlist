@@ -14,14 +14,22 @@ const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../.
 export const LUAU = process.env.LUAU || "/tmp/claude-0/tools/luau";
 
 export function bundle(entryKey) {
-  const manifest = JSON.parse(fs.readFileSync(path.join(REPO, "roblox/src/Game/_manifest.json"), "utf8"));
+  const manifest = JSON.parse(fs.readFileSync(path.join(REPO, "roblox/tools/manifest.json"), "utf8"));
   const parts = [];
   const js = fs.readFileSync(path.join(REPO, "roblox/src/Runtime/Js.luau"), "utf8");
   parts.push("local Js = (function()\n" + js.replace(/^--!.*$/gm, "") + "\nend)()");
+  // pass test settings (CAREER_*, TWIN_*) through, as process.env
+  const env = Object.entries(process.env).filter(([k]) => /^(CAREER_|TWIN_)/.test(k));
+  parts.push(`Js.process.env = { ${env.map(([k, v]) => `${k} = ${JSON.stringify(v)}`).join(", ")} }`);
   parts.push("local MODULES = {}");
+  bundle.map = [];
+  let line = parts.join("\n").split("\n").length + 1;
   for (const key of manifest.modules) {
     const src = fs.readFileSync(path.join(REPO, "roblox/src/Game", key + ".luau"), "utf8").replace(/^--!.*$/gm, "");
-    parts.push(`MODULES[${JSON.stringify(key)}] = (function()\n${src}\nend)()`);
+    bundle.map.push([line + 1, key]);
+    const chunk = `MODULES[${JSON.stringify(key)}] = (function()\n${src}\nend)()`;
+    parts.push(chunk);
+    line += chunk.split("\n").length;
   }
   parts.push("local import = Js.makeImporter(function(p) return MODULES[p] end)");
   parts.push(`import(${JSON.stringify(entryKey)})`);
@@ -37,7 +45,14 @@ export function runLuau(entry, { doConvert = true } = {}) {
   const out = path.join("/tmp/claude-0", "bundle-" + key.replace(/\//g, "_") + ".luau");
   fs.writeFileSync(out, bundle(key));
   const r = spawnSync(LUAU, [out], { encoding: "utf8", maxBuffer: 1 << 28 });
-  return { status: r.status, stdout: r.stdout, stderr: r.stderr, bundle: out };
+  // bundle line numbers -> converted file and line
+  const where = (n) => {
+    let hit = null;
+    for (const [start, key] of bundle.map) if (start <= n) hit = [start, key];
+    return hit ? `${hit[1]}.luau:${n - hit[0] + 1}` : `Js.luau:${n - 1}`;
+  };
+  const stderr = (r.stderr || "").replace(/\S*bundle-[^:]*:(\d+)/g, (_, n) => where(Number(n)));
+  return { status: r.status, stdout: r.stdout, stderr, bundle: out };
 }
 
 if (process.argv[1] && import.meta.url.endsWith(path.basename(process.argv[1]))) {
