@@ -149,6 +149,12 @@ export interface EngineFrame {
    */
   runup?: { t: number; runS: number } | null;
   /**
+   * The Golden Run-up's trail (lib/star/goldenTrail.ts), while it shows:
+   * glowing gold dots in pitch metres (`h` above the grass, `life` 0..1
+   * brightness, `size` ~0.5..1.4). Absent / null for every other run-up.
+   */
+  goldTrail?: { x: number; y: number; h: number; life: number; size: number }[] | null;
+  /**
    * A lead-in replaying (CanvasMatch's `leadIn`: test pages only, never in the
    * real game). `lock`: how fixed the 2D camera is on the chance's own frame
    * (0 following the passes .. 1 fixed; lib/star/leadIn.ts leadInCamera).

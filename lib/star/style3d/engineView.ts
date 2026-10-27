@@ -422,6 +422,35 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   }
   cross.position.y = 0.02; cross.renderOrder = 4; root.add(cross);
 
+  // ── the Golden Run-up's gold trail (EngineFrame.goldTrail, lib/star/goldenTrail.ts):
+  // a pool of glowing sparks, placed from the 2D's own trail every frame. Looks only.
+  const GOLD_POOL = 64;
+  const goldTex = (() => {
+    const c = document.createElement("canvas"); c.width = c.height = 64;
+    const g = c.getContext("2d")!;
+    const rg = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    rg.addColorStop(0, "rgba(255,250,220,1)"); rg.addColorStop(0.25, "rgba(253,224,120,0.9)");
+    rg.addColorStop(0.6, "rgba(245,158,11,0.35)"); rg.addColorStop(1, "rgba(245,158,11,0)");
+    g.fillStyle = rg; g.fillRect(0, 0, 64, 64);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  })();
+  const goldSparks: any[] = [];
+  for (let i = 0; i < GOLD_POOL; i++) {
+    const m = new THREE.SpriteMaterial({ map: goldTex, color: "#ffd75e", transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+    const s = new THREE.Sprite(m); s.visible = false; s.renderOrder = 5; root.add(s); goldSparks.push(s);
+  }
+  const placeGoldTrail = (f: EngineFrame) => {
+    const pts = f.goldTrail ?? [];
+    for (let i = 0; i < GOLD_POOL; i++) {
+      const s = goldSparks[i], p = pts[i];
+      s.visible = !!p;
+      if (!p) continue;
+      s.position.set(p.x - CX, p.h, p.y);
+      s.scale.setScalar(0.42 * p.size * (0.45 + 0.55 * p.life));
+      s.material.opacity = Math.max(0, Math.min(1, p.life));
+    }
+  };
+
   // ── the captain's orders on the grass (EngineFrame.orders), in the Free
   // Roam style: flat gold marks on the pitch, as the 3D drills' rings. A run
   // is an arrow from the man to where he was sent (the one being dragged
@@ -2085,6 +2114,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       ring.visible = !!f.ring;
       if (f.ring) { ring.position.set(f.ring.x - CX, 0.02, f.ring.y); ring.scale.setScalar(figNow() * 0.8); }
       placeOrders(f);
+      placeGoldTrail(f);
       cross.visible = !!f.landing;
       if (f.landing) { cross.position.set(f.landing.x - CX, 0.02, f.landing.y); cross.scale.setScalar(figNow() * 0.6); }
       // the crowd goes up for a goal
@@ -2145,6 +2175,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       spareBins.forEach((l) => { for (const p of l) disposeObject3D(p.root); }); spareBins.clear();
       numberCache.forEach((t) => t.dispose()); numberCache.clear();
       new Set(smallMaps.values()).forEach((t) => t?.dispose()); smallMaps.clear();
+      goldSparks.forEach((s) => s.material.dispose()); goldTex.dispose();
       svg.remove();
       camBtn?.remove();
       canvas3d.removeEventListener("webglcontextlost", onLostEv);

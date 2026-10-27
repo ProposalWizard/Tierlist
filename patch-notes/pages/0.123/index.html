@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Keeper Catches Plan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Same tokens and parts as Harry's pages (0.109h). One column, stacked cards. */
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+    --pill:#3ddc84;--pillink:#06170e;--r:12px;
+    --turf:#1f6b3d;--turf2:#24763f;--chalk:rgba(255,255,255,.75);
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+      --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+      --pill:#0b7a43;--pillink:#ffffff;
+      --turf:#2f8a50;--turf2:#358f55;--chalk:rgba(255,255,255,.85);
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    --turf:#2f8a50;--turf2:#358f55;--chalk:rgba(255,255,255,.85);
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  header{padding:30px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 12px;letter-spacing:-.02em;text-wrap:balance}
+  .status{display:flex;align-items:flex-start;gap:8px;margin:0 0 6px;font-weight:700;font-size:14.5px}
+  .status i{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none;margin-top:7px}
+  .sub{color:var(--ink3);font-size:13px;margin:0 0 10px}
+  .upd{border:1px solid var(--line);border-left:3px solid var(--blue);background:var(--card);border-radius:var(--r);padding:9px 12px;margin:0 0 4px;font-size:14px;color:var(--ink2)}
+  .upd b{color:var(--blue);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+  h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+  h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+  h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+  h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+  .snote{color:var(--ink3);font-size:13px;margin:-4px 0 12px}
+
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+  .ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 9px}
+  .ih b{font-size:16px;line-height:1.3}
+  .idea{margin:0 0 10px;color:var(--ink2);font-size:14.5px}
+  .idea b{color:var(--ink)}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .t-seen{background:var(--gbg);color:var(--green)}
+  .t-meas{background:var(--bbg);color:var(--blue)}
+  .t-reas{background:var(--abg);color:var(--amber)}
+  .t-no{background:var(--rbg);color:var(--red)}
+  .row{margin:0 0 9px;min-width:0}
+  .rl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:0 0 2px}
+  .rl.p{color:var(--red)} .rl.w{color:var(--amber)} .rl.f{color:var(--green)} .rl.s{color:var(--blue)}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row p b{color:var(--ink)}
+  .sub3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:var(--ink3);margin:16px 0 6px;padding-top:12px;border-top:1px solid var(--line)}
+
+  .bars{margin:8px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+  .bar .bl{grid-column:1/-1;color:var(--ink2)}
+  .track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+  .fill{position:absolute;left:0;height:8px;border-radius:3px}
+  .fill.was{top:1px;background:var(--ink3);opacity:.55}
+  .fill.now{bottom:1px;background:var(--green);opacity:.9}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:line-through;opacity:.9}
+
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  figure figcaption b{color:var(--ink2)}
+  figure.ph{max-width:270px;width:100%;margin-left:auto;margin-right:auto}
+
+  /* drawn diagrams */
+  .fig{background:var(--card2);border:1px solid var(--line);border-radius:var(--r);padding:10px;margin:10px 0 2px;min-width:0}
+  .fig svg{display:block;width:100%;max-width:390px;height:auto;margin:0 auto}
+  .cap{font-size:12.5px;color:var(--ink3);margin:6px 0 0;line-height:1.4}
+  .cap b{color:var(--ink2)}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  .item details{background:var(--card2)}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  details li b{color:var(--ink)}
+  details h4{margin:12px 0 4px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;vertical-align:1px;white-space:nowrap}
+  .p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+  .p-grn{background:var(--gbg);color:var(--green)} .p-blu{background:var(--bbg);color:var(--blue)}
+
+  .okbox{border:1px solid var(--line);border-left:4px solid var(--amber);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .okbox ol{margin:0;padding:0;list-style:none;counter-reset:q}
+  .okbox li{position:relative;padding:12px 0 12px 32px;border-bottom:1px solid var(--line);counter-increment:q}
+  .okbox li:last-child{border-bottom:0}
+  .okbox li::before{content:counter(q);position:absolute;left:0;top:12px;width:22px;height:22px;border-radius:50%;background:var(--amber);color:var(--bg);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .okbox li.done::before{background:var(--green);content:"\2713"}
+  .okbox .q{font-weight:700}
+  .okbox .d{color:var(--ink2);font-size:14px;margin-top:4px}
+
+  .note{border:1px dashed var(--line);border-radius:var(--r);padding:10px 12px;margin:14px 0 0;color:var(--ink2);font-size:13.5px;background:var(--card)}
+  .note b{color:var(--ink)}
+
+  /* clip card (references/clip-card.html) */
+  .clip{margin:12px auto 2px;max-width:390px;min-width:0}
+  .clip .look{font-size:14px;color:var(--ink2);margin:0 0 7px;background:var(--card2);border-radius:10px;padding:9px 12px}
+  .clip .look b{color:var(--green);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+  .clip video{display:block;width:100%;max-width:100%;height:auto;max-height:80vh;object-fit:contain;border-radius:var(--r);border:1px solid var(--line);background:#000}
+  .clip .spd{display:flex;gap:6px;align-items:center;margin:7px 0 0;font-size:13px;color:var(--ink3)}
+  .clip .spd button{font:700 13px/1 system-ui,sans-serif;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink2);cursor:pointer}
+  .clip .spd button.on{background:var(--ink);color:var(--bg)}
+  .clip figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .clip figcaption b{color:var(--ink2)}
+  details .clip{margin-top:4px;margin-bottom:16px}
+
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+</head><body>
+<div class="wrap">
+<div class="wrap">
+<header>
+  <span class="ver">v0.123 &middot; 26 OCT &middot; LEO &middot; PLAN</span>
+  <h1>Keeper catches, dives and the ball</h1>
+  <p class="status"><i></i><span>A plan for you to look at and comment on. Nothing is built yet. Nothing changes in the game until you say go.</span></p>
+  <p class="sub">Made by Leo &middot; 26 Oct 2026, 22:08 UK time</p>
+</header>
+
+<h2 class="nxt"><i></i>WHAT YOU ASKED FOR</h2>
+<p class="snote">&ldquo;Make it so the goalie actually catches the ball &hellip; ball should go in his hands and move with the goalie if he dives &hellip; dive more realistic and fall on floor and if he gets up get up &hellip; better animations, better graphics, ball should look fitting.&rdquo;</p>
+
+<!-- NOW -->
+<h2 class="bug"><i></i>NOW: WHAT IS WRONG</h2>
+<div class="item">
+  <div class="ih"><b>The ball stops in the air and he does a pose</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">When he catches it, the ball <b>stops where it met him and stays there</b>. He slides to it in one dive pose and lies still; the match cuts away before he gets up. On a dive, <b>the ball is pushed away before his dive even starts</b>. In 3D he gets up, then <b>dives a second time at nothing</b>.</p>
+  <div class="fig"><svg viewBox="0 0 362 346" role="img" aria-label="Now: the keeper does a dive pose, the ball stops in mid air where it met him, he slides in one pose, lies still, then snaps back to standing" style="width:100%;height:auto;max-width:362px" font-family="-apple-system,Segoe UI,Roboto,sans-serif"><g transform="translate(0,0)"><rect x="1" y="1" width="118" height="168" rx="8" fill="var(--turf)"/><path d="M6 128.5H114" stroke="var(--chalk)" stroke-width="1.2"/><path d="M55.0 102.0L47.0 115.0L45.0 127.0" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M55.0 102.0L64.0 115.0L66.0 127.0" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M55.0 102.0L55.0 76.0" stroke="#f5b942" stroke-width="11" stroke-linecap="round"/><path d="M55.0 76.0L41.0 80.0" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="41.0" cy="80.0" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><path d="M55.0 76.0L69.0 80.0" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="69.0" cy="80.0" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><circle cx="55.0" cy="66.0" r="7" fill="#e9c39b" stroke="#3a2a1d" stroke-width="1"/><g><circle cx="100.0" cy="70.0" r="6.5" fill="#fff" stroke="#222" stroke-width="1.2"/><path d="M97.5 68.0l2.5-2 2.5 2-1 3h-3z" fill="#222"/></g><text x="60" y="16" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">Shot comes</text><text x="60" y="152" text-anchor="middle" font-size="10" font-weight="700" fill="#3ddc84">set</text><text x="60" y="164" text-anchor="middle" font-size="10" font-weight="700" fill="#3ddc84"></text></g><g transform="translate(122,0)"><rect x="1" y="1" width="118" height="168" rx="8" fill="var(--turf)"/><path d="M6 128.5H114" stroke="var(--chalk)" stroke-width="1.2"/><path d="M58.0 100.0L44.0 106.1L35.5 114.7" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M58.0 100.0L57.9 115.8L52.7 126.8" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M58.0 100.0L72.9 78.7" stroke="#f5b942" stroke-width="11" stroke-linecap="round"/><path d="M72.9 78.7L83.4 81.2" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="83.4" cy="81.2" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><path d="M72.9 78.7L85.7 77.9" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="85.7" cy="77.9" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><circle cx="78.6" cy="70.5" r="7" fill="#e9c39b" stroke="#3a2a1d" stroke-width="1"/><g><circle cx="88.0" cy="60.0" r="6.5" fill="#fff" stroke="#222" stroke-width="1.2"/><path d="M85.5 58.0l2.5-2 2.5 2-1 3h-3z" fill="#222"/></g><g stroke="#ff6b6b" stroke-width="1.6"><path d="M77.0 49.0l4 4M99.0 49.0l-4 4M88.0 46.0v5"/></g><text x="60" y="16" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">Contact</text><text x="60" y="152" text-anchor="middle" font-size="10" font-weight="700" fill="#ff6b6b">ball stops</text><text x="60" y="164" text-anchor="middle" font-size="10" font-weight="700" fill="#ff6b6b">in the air</text></g><g transform="translate(244,0)"><rect x="1" y="1" width="118" height="168" rx="8" fill="var(--turf)"/><path d="M6 128.5H114" stroke="var(--chalk)" stroke-width="1.2"/><path d="M70.0 108.0L56.9 108.3L44.0 110.5" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M70.0 108.0L57.7 113.2L45.3 117.4" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M70.0 108.0L95.6 103.5" stroke="#f5b942" stroke-width="11" stroke-linecap="round"/><path d="M95.6 103.5L101.3 112.6" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="101.3" cy="112.6" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><path d="M95.6 103.5L105.2 111.9" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="105.2" cy="111.9" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><circle cx="105.5" cy="101.7" r="7" fill="#e9c39b" stroke="#3a2a1d" stroke-width="1"/><g><circle cx="88.0" cy="60.0" r="6.5" fill="#fff" stroke="#222" stroke-width="1.2"/><path d="M85.5 58.0l2.5-2 2.5 2-1 3h-3z" fill="#222"/></g><g stroke="#ff6b6b" stroke-width="1.6"><path d="M77.0 49.0l4 4M99.0 49.0l-4 4M88.0 46.0v5"/></g><text x="60" y="16" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">+0.3 s</text><text x="60" y="152" text-anchor="middle" font-size="10" font-weight="700" fill="#ff6b6b">slides along</text><text x="60" y="164" text-anchor="middle" font-size="10" font-weight="700" fill="#ff6b6b">in one pose</text></g><g transform="translate(0,176)"><rect x="1" y="1" width="118" height="168" rx="8" fill="var(--turf)"/><path d="M6 128.5H114" stroke="var(--chalk)" stroke-width="1.2"/><path d="M66.0 119.0L53.0 117.0L40.0 117.0" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M66.0 119.0L53.0 122.0L40.0 124.0" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M66.0 119.0L92.0 119.0" stroke="#f5b942" stroke-width="11" stroke-linecap="round"/><path d="M92.0 119.0L96.0 129.0" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="96.0" cy="129.0" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><path d="M92.0 119.0L100.0 129.0" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="100.0" cy="129.0" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><circle cx="102.0" cy="119.0" r="7" fill="#e9c39b" stroke="#3a2a1d" stroke-width="1"/><g><circle cx="88.0" cy="60.0" r="6.5" fill="#fff" stroke="#222" stroke-width="1.2"/><path d="M85.5 58.0l2.5-2 2.5 2-1 3h-3z" fill="#222"/></g><g stroke="#ff6b6b" stroke-width="1.6"><path d="M77.0 49.0l4 4M99.0 49.0l-4 4M88.0 46.0v5"/></g><text x="60" y="16" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">+0.8 s</text><text x="60" y="152" text-anchor="middle" font-size="10" font-weight="700" fill="#ff6b6b">lies still,</text><text x="60" y="164" text-anchor="middle" font-size="10" font-weight="700" fill="#ff6b6b">ball hangs</text></g><g transform="translate(122,176)"><rect x="1" y="1" width="118" height="168" rx="8" fill="var(--turf)"/><path d="M6 128.5H114" stroke="var(--chalk)" stroke-width="1.2"/><path d="M60.0 102.0L52.0 115.0L50.0 127.0" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M60.0 102.0L69.0 115.0L71.0 127.0" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M60.0 102.0L60.0 76.0" stroke="#f5b942" stroke-width="11" stroke-linecap="round"/><path d="M60.0 76.0L46.0 80.0" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="46.0" cy="80.0" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><path d="M60.0 76.0L74.0 80.0" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="74.0" cy="80.0" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><circle cx="60.0" cy="66.0" r="7" fill="#e9c39b" stroke="#3a2a1d" stroke-width="1"/><text x="60" y="16" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">+1.5 s</text><text x="60" y="152" text-anchor="middle" font-size="10" font-weight="700" fill="#ff6b6b">snaps up,</text><text x="60" y="164" text-anchor="middle" font-size="10" font-weight="700" fill="#ff6b6b">walks off</text></g></svg><p class="cap"><b>Drawing, from the side.</b> What a diving catch looks like today. Red = what is wrong.</p></div>
+  <div class="clip"><p class="look"><b>Look for</b>the ball stops dead where it meets him, then he slides under it in one pose and lies still.</p>
+<video src="catch-now.mp4" poster="catch-now.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>A real catch today, half speed &#128266;</b> Real shot in a career match (filmed frame by frame, nothing moved).</figcaption></div>
+  <figure><img src="catch-strip-now.jpg" alt="The same catch in 7 stills" loading="lazy"><figcaption><b>The same catch in 7 stills.</b> From contact on, the ball sits on his middle, not in his hands, and never moves. The match cuts away while he is still lying down. Tap to enlarge.</figcaption></figure>
+  <details><summary>More clips (2)</summary>
+<div class="clip"><p class="look"><b>Look for</b>the ball is pushed away while he is still standing; he dives after it has gone.</p>
+<video src="dive-now.mp4" poster="dive-now.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>A diving save today (a penalty), half speed &#128266;</b></figcaption></div><div class="clip"><p class="look"><b>Look for</b>he gets up, then about 2 s later dives a second time at nothing.</p>
+<video src="dive3d-now.mp4" poster="dive3d-now.jpg" controls playsinline muted preload="none"></video>
+<div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div><figcaption><b>3D view today, half speed &#128266;</b> Real low save.</figcaption></div>
+  <figure><img src="dive3d-second-now.jpg" alt="3D: the second dive at nothing, frame by frame" loading="lazy"><figcaption><b>3D: the second dive at nothing.</b> Top row standing again, bottom row diving again with no ball near. Tap to enlarge.</figcaption></figure>
+  </details>
+  <figure><img src="keeper-frames-now.jpg" alt="Every keeper drawing the game has today, 4 to 6 per move" loading="lazy"><figcaption><b>Every keeper drawing the game has today.</b> 4 to 6 drawings per move, played at 9 a second, so it jumps. No drawing has a ball in it, and none record where his hands are, so the ball can&rsquo;t follow them. There is no &ldquo;dive and catch&rdquo; drawing at all. Tap to enlarge.</figcaption></figure>
+</div>
+
+<!-- 1 -->
+<h2 class="add"><i></i>1 &middot; THE BALL GOES INTO HIS GLOVES AND STAYS THERE</h2>
+<div class="item">
+  <div class="ih"><b>He catches it, and it moves with him</b><span class="pill p-amb">plan</span></div>
+  <p class="idea">When he catches it, the ball <b>goes into his gloves</b> and moves with his hands through the dive, the landing and getting up. Then he holds it and the play moves on, as now. To do that, every new drawing <b>records where his gloves are</b>, so the game can put the ball exactly there in each frame.</p>
+  <div class="fig"><svg viewBox="0 0 362 346" role="img" aria-label="Planned: set, push off, flies with the ball in his gloves, lands on his side with the ball tucked in, gets up onto a knee holding it, stands with it" style="width:100%;height:auto;max-width:362px" font-family="-apple-system,Segoe UI,Roboto,sans-serif"><g transform="translate(0,0)"><rect x="1" y="1" width="118" height="168" rx="8" fill="var(--turf)"/><path d="M6 128.5H114" stroke="var(--chalk)" stroke-width="1.2"/><path d="M45.0 102.0L37.0 115.0L35.0 127.0" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M45.0 102.0L54.0 115.0L56.0 127.0" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M45.0 102.0L45.0 76.0" stroke="#f5b942" stroke-width="11" stroke-linecap="round"/><path d="M45.0 76.0L31.0 80.0" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="31.0" cy="80.0" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><path d="M45.0 76.0L59.0 80.0" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="59.0" cy="80.0" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><circle cx="45.0" cy="66.0" r="7" fill="#e9c39b" stroke="#3a2a1d" stroke-width="1"/><g><circle cx="100.0" cy="62.0" r="6.5" fill="#fff" stroke="#222" stroke-width="1.2"/><path d="M97.5 60.0l2.5-2 2.5 2-1 3h-3z" fill="#222"/></g><text x="60" y="16" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">Shot comes</text><text x="60" y="152" text-anchor="middle" font-size="10" font-weight="700" fill="#3ddc84">set, weight</text><text x="60" y="164" text-anchor="middle" font-size="10" font-weight="700" fill="#3ddc84">forward</text></g><g transform="translate(122,0)"><rect x="1" y="1" width="118" height="168" rx="8" fill="var(--turf)"/><path d="M6 128.5H114" stroke="var(--chalk)" stroke-width="1.2"/><path d="M52.0 98.0L41.1 105.8L29.7 114.4" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M52.0 98.0L59.7 113.4L62.0 126.0" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M52.0 98.0L64.2 75.0" stroke="#f5b942" stroke-width="11" stroke-linecap="round"/><path d="M64.2 75.0L68.2 59.0" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="68.2" cy="59.0" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><path d="M64.2 75.0L75.2 62.8" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="75.2" cy="62.8" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><circle cx="68.9" cy="66.2" r="7" fill="#e9c39b" stroke="#3a2a1d" stroke-width="1"/><g><circle cx="86.0" cy="50.0" r="6.5" fill="#fff" stroke="#222" stroke-width="1.2"/><path d="M83.5 48.0l2.5-2 2.5 2-1 3h-3z" fill="#222"/></g><text x="60" y="16" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">Push off</text><text x="60" y="152" text-anchor="middle" font-size="10" font-weight="700" fill="#3ddc84">drives off</text><text x="60" y="164" text-anchor="middle" font-size="10" font-weight="700" fill="#3ddc84">his leg</text></g><g transform="translate(244,0)"><rect x="1" y="1" width="118" height="168" rx="8" fill="var(--turf)"/><path d="M6 128.5H114" stroke="var(--chalk)" stroke-width="1.2"/><path d="M55.0 76.0L42.0 78.1L29.7 82.1" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M55.0 76.0L43.6 82.9L31.8 88.8" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M55.0 76.0L79.7 68.0" stroke="#f5b942" stroke-width="11" stroke-linecap="round"/><path d="M79.7 68.0L86.6 76.2" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="86.6" cy="76.2" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><path d="M79.7 68.0L90.4 75.0" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="90.4" cy="75.0" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><circle cx="89.2" cy="64.9" r="7" fill="#e9c39b" stroke="#3a2a1d" stroke-width="1"/><g><circle cx="93.5" cy="75.6" r="6" fill="#fff" stroke="#222" stroke-width="1.2"/><path d="M91.0 73.6l2.5-2 2.5 2-1 3h-3z" fill="#222"/></g><text x="60" y="16" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">In the air</text><text x="60" y="152" text-anchor="middle" font-size="10" font-weight="700" fill="#3ddc84">ball in</text><text x="60" y="164" text-anchor="middle" font-size="10" font-weight="700" fill="#3ddc84">his gloves</text></g><g transform="translate(0,176)"><rect x="1" y="1" width="118" height="168" rx="8" fill="var(--turf)"/><path d="M6 128.5H114" stroke="var(--chalk)" stroke-width="1.2"/><path d="M55.0 118.0L42.1 115.5L29.1 115.1" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M55.0 118.0L41.9 120.5L28.8 122.1" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M55.0 118.0L81.0 118.9" stroke="#f5b942" stroke-width="11" stroke-linecap="round"/><path d="M81.0 118.9L73.7 125.7" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="73.7" cy="125.7" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><path d="M81.0 118.9L77.7 126.8" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="77.7" cy="126.8" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><circle cx="91.0" cy="119.3" r="7" fill="#e9c39b" stroke="#3a2a1d" stroke-width="1"/><g><circle cx="79.7" cy="123.8" r="6" fill="#fff" stroke="#222" stroke-width="1.2"/><path d="M77.2 121.8l2.5-2 2.5 2-1 3h-3z" fill="#222"/></g><g fill="rgba(255,255,255,.55)"><circle cx="40" cy="126" r="3"/><circle cx="72" cy="127" r="2.4"/><circle cx="30" cy="124" r="2"/></g><text x="60" y="16" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">Lands</text><text x="60" y="152" text-anchor="middle" font-size="10" font-weight="700" fill="#3ddc84">on his side,</text><text x="60" y="164" text-anchor="middle" font-size="10" font-weight="700" fill="#3ddc84">ball tucked</text></g><g transform="translate(122,176)"><rect x="1" y="1" width="118" height="168" rx="8" fill="var(--turf)"/><path d="M6 128.5H114" stroke="var(--chalk)" stroke-width="1.2"/><path d="M58.0 112.0L43.5 116.8L34.3 124.7" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M58.0 112.0L56.5 127.7L50.4 138.2" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M58.0 112.0L74.7 92.1" stroke="#f5b942" stroke-width="11" stroke-linecap="round"/><path d="M74.7 92.1L75.6 101.9" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="75.6" cy="101.9" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><path d="M74.7 92.1L78.9 99.5" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="78.9" cy="99.5" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><circle cx="81.1" cy="84.4" r="7" fill="#e9c39b" stroke="#3a2a1d" stroke-width="1"/><g><circle cx="80.9" cy="97.5" r="6" fill="#fff" stroke="#222" stroke-width="1.2"/><path d="M78.4 95.5l2.5-2 2.5 2-1 3h-3z" fill="#222"/></g><text x="60" y="16" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">Gets up</text><text x="60" y="152" text-anchor="middle" font-size="10" font-weight="700" fill="#3ddc84">onto a knee,</text><text x="60" y="164" text-anchor="middle" font-size="10" font-weight="700" fill="#3ddc84">holding it</text></g><g transform="translate(244,176)"><rect x="1" y="1" width="118" height="168" rx="8" fill="var(--turf)"/><path d="M6 128.5H114" stroke="var(--chalk)" stroke-width="1.2"/><path d="M60.0 102.0L52.0 115.0L50.0 127.0" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M60.0 102.0L69.0 115.0L71.0 127.0" stroke="#1d2b44" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M60.0 102.0L60.0 76.0" stroke="#f5b942" stroke-width="11" stroke-linecap="round"/><path d="M60.0 76.0L67.0 83.0" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="67.0" cy="83.0" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><path d="M60.0 76.0L68.0 79.0" stroke="#f5b942" stroke-width="4.5" stroke-linecap="round"/><circle cx="68.0" cy="79.0" r="3.6" fill="#3ddc84" stroke="#0b100e" stroke-width=".8"/><circle cx="60.0" cy="66.0" r="7" fill="#e9c39b" stroke="#3a2a1d" stroke-width="1"/><g><circle cx="71.0" cy="76.0" r="6" fill="#fff" stroke="#222" stroke-width="1.2"/><path d="M68.5 74.0l2.5-2 2.5 2-1 3h-3z" fill="#222"/></g><text x="60" y="16" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">Stands</text><text x="60" y="152" text-anchor="middle" font-size="10" font-weight="700" fill="#3ddc84">ball held,</text><text x="60" y="164" text-anchor="middle" font-size="10" font-weight="700" fill="#3ddc84">play moves on</text></g></svg><p class="cap"><b>Drawing, from the side.</b> The diving catch, planned: set, push off, ball in his gloves in the air, lands on his side with it tucked in, up onto a knee, stands holding it.</p></div>
+</div>
+
+<!-- 2 -->
+<h2 class="add"><i></i>2 &middot; A REAL DIVE: PUSH OFF, FLY, LAND, GET UP</h2>
+<div class="item">
+  <div class="ih"><b>He dives, hits the floor, and gets up properly</b><span class="pill p-amb">plan</span></div>
+  <p class="idea">The dive becomes one move from start to finish: he <b>pushes off</b> his leg, flies, <b>lands on his side</b> with a bump and a puff off the grass, lies for a moment, then <b>gets up</b> (rolls onto a knee, stands). No more sliding along in one pose, and no snap from lying to walking. <b>The dive starts in time</b>, so his hands reach the ball as it arrives (today the ball is pushed away before he moves), and <b>no second dive</b> after he gets up (3D).</p>
+  <ul class="pts" style="margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:14px">
+    <li><b>Smoother:</b> about 18 drawings per move at 24 a second (now 4 to 6 at 9).</li>
+    <li><b>Made from the 3D keeper</b>, as the drawings are now, so 2D and 3D match.</li>
+    <li><b>New moves:</b> diving catch (high and low, both sides), catch at his feet, catch at his chest, dive and palm it away, spill it, get up with the ball, get up without it.</li>
+  </ul>
+</div>
+
+<!-- 3 -->
+<h2 class="add"><i></i>3 &middot; BETTER GRAPHICS: THE KEEPER AND THE BALL</h2>
+<div class="item">
+  <div class="ih"><b>He and the ball look like they belong together</b><span class="pill p-amb">plan</span></div>
+  <p class="idea">The ball gets <b>the same light and shade as the players</b>: a soft shadow on the grass that follows it into his hands, the right size next to his gloves, and a small squash when it hits his gloves. His drawings are made at <b>twice the detail</b> (sharper edges), and his shadow stretches as he dives.</p>
+</div>
+
+<!-- 4 -->
+<h2 class="add"><i></i>4 &middot; THE SAME EVERYWHERE</h2>
+<div class="item">
+  <div class="ih"><b>2D, 3D and goal videos all show it</b><span class="pill p-amb">plan</span></div>
+  <p class="idea">The 2D match, the 3D view (the ball sits in the 3D keeper&rsquo;s hands) and the goal videos and highlights all use it, because they all draw the same keeper.</p>
+</div>
+
+<!-- 5 -->
+<h2 class="chg"><i></i>5 &middot; SAFE: BEHIND YOUR SWITCH, RESULTS UNCHANGED</h2>
+<div class="item">
+  <div class="ih"><b>Only the picture changes</b><span class="pill p-amb">plan</span></div>
+  <p class="idea">A new part on your card: <b>&ldquo;Keeper catches and dives&rdquo;</b> (Settings &rarr; Updates &rarr; Leo&rsquo;s update). Off = exactly as now. <b>Saves and goals don&rsquo;t change</b>: only how it is drawn. The match tests prove the same results, and every new clip is checked so no body part goes through another (Brain RUL-3D-005).</p>
+</div>
+
+<!-- CALLS -->
+<h2 class="nxt"><i></i>YOUR CALLS</h2>
+<div class="okbox"><ol>
+<li><div class="q">After a catch, what then?</div><div class="d">A: he holds it a moment and the play moves on, as now. B: he rolls it out or kicks it up the pitch (a second or two longer).</div></li>
+<li><div class="q">Roll after landing?</div><div class="d">Sometimes roll over once after a big diving catch (looks great, adds half a second), or always get straight up?</div></li>
+<li><div class="q">Stay on him until he is up?</div><div class="d">Today the match cuts away while he is still on the floor. Stay about 1 s longer so you see him get up with the ball?</div></li>
+<li><div class="q">All at once, or 2D first?</div><div class="d">2D, 3D and goal videos together (about a day), or 2D first so you can try it sooner (about half a day), then 3D.</div></li>
+</ol></div>
+
+<h2 class="bug"><i></i>GOOD TO KNOW</h2>
+<div class="item">
+  <div class="ih"><b>Harry&rsquo;s area</b><span class="pill p-amb">tell Harry</span></div>
+  <p class="idea">The keeper&rsquo;s drawing and the 3D keeper are Harry&rsquo;s. This only adds to the drawing, behind your switch; nothing in the match maths changes.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>3D needs a phone check</b><span class="pill p-amb">not checked</span></div>
+  <p class="idea">The test machine has no graphics chip, so 3D is very slow here. The 2D and the goal videos can be filmed properly; the 3D part needs a quick look on a phone.</p>
+</div>
+
+<details><summary>The numbers, if you want them</summary>
+  <p>Today: 14 keeper moves, 4 to 6 drawings each, 7 to 9 drawings a second; 0 drawings with a ball or hand position. Planned: about 18 drawings per move at 24 a second, each with the glove position; drawn at 2&times; size.</p>
+</details>
+<footer>Leo &middot; site 0.123 &middot; 26 Oct 2026 &middot; plan, not built</footer>
+</div>
+</div>
+<script>
+(function(){
+  var K="{CKKEY}", s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll('.ck input');
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute('data-k'); if(s[id]) b.checked=true;
+    b.addEventListener('change',function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+  document.addEventListener('click',function(e){
+    var r=e.target.closest&&e.target.closest('.spd button'); if(!r) return;
+    var c=r.closest('.clip'), v=c.querySelector('video');
+    c.querySelectorAll('.spd button').forEach(function(x){ x.classList.toggle('on', x===r); });
+    if(v){ var rate=parseFloat(r.getAttribute('data-r')); v.playbackRate=rate; v.defaultPlaybackRate=rate; if(v.paused) v.play().catch(function(){}); }
+  });
+  document.querySelectorAll('details').forEach(function(d){
+    d.addEventListener('toggle',function(){ if(!d.open) d.querySelectorAll('video').forEach(function(v){ v.pause(); }); });
+  });
+})();
+</script>
+<style>
+.zm-t{cursor:zoom-in}
+.zm-ov{position:fixed;inset:0;z-index:1000;background:rgba(10,14,12,.92);overflow:auto;-webkit-overflow-scrolling:touch;padding:calc(56px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.zm-ov[hidden]{display:none!important}
+.zm-bar{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));display:flex;gap:8px;z-index:1001}
+.zm-bar button{font:600 15px/1 system-ui,sans-serif;padding:10px 14px;border-radius:10px;border:0;background:#fff;color:#111;cursor:pointer}
+.zm-st{transform-origin:0 0;background:var(--bg,#fff);border-radius:10px;display:inline-block}
+.zm-st img,.zm-st svg{max-width:none!important}
+.zm-hint{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));color:#fff;font:13px system-ui,sans-serif;opacity:.8}
+</style>
+<div class="zm-ov" id="zmOv" hidden><div class="zm-hint">Pinch or + / − to zoom</div><div class="zm-bar"><button id="zmOut" aria-label="Zoom out">−</button><button id="zmIn" aria-label="Zoom in">+</button><button id="zmX" aria-label="Close">✕</button></div><div id="zmBox"></div></div>
+<script>
+(function(){
+  var sel='figure img,.fig svg';
+  var ov=document.getElementById('zmOv'),box=document.getElementById('zmBox'),st=null,sc=1,w=0,h=0;
+  function apply(){st.style.transform='scale('+sc+')';box.style.width=(w*sc)+'px';box.style.height=(h*sc)+'px';}
+  function open(el){
+    var r=el.getBoundingClientRect();
+    var c=el.cloneNode(true);c.classList.remove('zm-t');
+    st=document.createElement('div');st.className='zm-st';st.appendChild(c);
+    box.innerHTML='';box.appendChild(st);ov.hidden=false;document.body.style.overflow='hidden';
+    if(c.tagName.toLowerCase()==='img'){c.style.width=(c.naturalWidth||r.width*2)+'px';c.style.height='auto';}
+    else{c.style.width=Math.max(r.width,780)+'px';c.style.maxWidth='none';c.style.height='auto';}
+    w=st.offsetWidth;h=st.offsetHeight;
+    var fit=(ov.clientWidth-32)/w;sc=Math.min(fit,Math.max(1,fit));apply();ov.scrollTo(0,0);
+  }
+  function close(){ov.hidden=true;box.innerHTML='';document.body.style.overflow='';}
+  document.querySelectorAll(sel).forEach(function(el){el.classList.add('zm-t');el.setAttribute('title','Tap to enlarge');});
+  document.addEventListener('click',function(e){
+    if(ov.contains(e.target)){if(e.target===ov)close();return;}
+    var t=e.target.closest('.zm-t');if(!t)return;
+    if(e.target.closest('a,button,summary,input,label'))return;
+    e.preventDefault();open(t);
+  });
+  document.getElementById('zmX').onclick=close;
+  document.getElementById('zmIn').onclick=function(){sc=Math.min(sc*1.4,6);apply();};
+  document.getElementById('zmOut').onclick=function(){sc=Math.max(sc/1.4,.2);apply();};
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!ov.hidden)close();});
+})();
+</script>
+</body></html>

@@ -1,6 +1,7 @@
 """Frames -> one (animated) WebP for the Star Pass.
 
   python tools/star-pass-art/make_webp.py <frames_dir> <prefix> <out.webp> <fps> [hold_last_ms] [width]
+  (env: Q=quality, MAX_OVER=see below, PODIUM_W=podium width in px)
 
 Crops every frame to the same box: the union of what is drawn in any frame,
 kept symmetric about the podium's centre so the podium sits in the middle of
@@ -38,6 +39,10 @@ if os.environ.get("MAX_OVER"):
 crop = (int(cx - half), max(0, box[1] - 6), int(cx + half), min(H, box[3] + 6))
 
 frames = [im.crop(crop) for im in frames]
+# PODIUM_W: size the picture so its podium comes out this many pixels wide
+# (the still rewards: 430 medium, 520 great and the level-100 stand).
+if os.environ.get("PODIUM_W"):
+    width = round(float(os.environ["PODIUM_W"]) * (crop[2] - crop[0]) / plinth_w)
 if width:
     h = round(frames[0].height * width / frames[0].width)
     frames = [im.resize((width, h), Image.LANCZOS) for im in frames]

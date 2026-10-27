@@ -43,7 +43,7 @@ import {
   penaltyRunupOf, freeKickRunupOf, isPenaltyRunupId, isFreeKickRunupId, ownsRunup,
   ownedPenaltyRunups, ownedFreeKickRunups, careerPenaltyRunup, careerFreeKickRunup,
   takerPenaltyRunup, takerFreeKickRunup, takerRunupFor, yourRunupFor,
-  standBackFor, planRunup, runupPositionAt, runupPoseAt, runupProgress, type RunupId,
+  standBackFor, planRunup, runupPositionAt, runupPoseAt, runupProgress, REWARD_RUNUPS, type RunupId,
 } from "../../lib/star/runupStyles";
 
 let failed = 0;
@@ -55,13 +55,13 @@ const ALL = [...PENALTY_RUNUPS, ...FREE_KICK_RUNUPS];
 // ─────────────────────────────────────────────────────────────────────────
 console.log("\nTHE TWO SETS");
 {
-  ok(PENALTY_RUNUPS.map((s) => s.id).join() === "standard,stroll,skip,sprint,stutter,two_step,arc", `penalties: ${PENALTY_RUNUPS.map((s) => s.name).join(", ")}`);
-  ok(FREE_KICK_RUNUPS.map((s) => s.id).join() === "fk_standard,fk_power_stance,fk_stance_sprint,fk_calm_curl,fk_stutter_curl,fk_angled_whip,fk_long_diagonal", `free kicks: ${FREE_KICK_RUNUPS.map((s) => s.name).join(", ")}`);
-  ok(PENALTY_RUNUPS.map((s) => s.name).join() === "Standard,The Stroll,The Skip,The Sprint,Stutter Step,Two Steps,The Arc", "the penalty set's on-screen names (the shop contract)");
+  ok(PENALTY_RUNUPS.map((s) => s.id).join() === "standard,stroll,skip,sprint,stutter,two_step,arc,golden", `penalties: ${PENALTY_RUNUPS.map((s) => s.name).join(", ")}`);
+  ok(FREE_KICK_RUNUPS.map((s) => s.id).join() === "fk_standard,fk_power_stance,fk_stance_sprint,fk_calm_curl,fk_stutter_curl,fk_angled_whip,fk_long_diagonal,fk_leaf", `free kicks: ${FREE_KICK_RUNUPS.map((s) => s.name).join(", ")}`);
+  ok(PENALTY_RUNUPS.map((s) => s.name).join() === "Standard,The Stroll,The Skip,The Sprint,Stutter Step,Two Steps,The Arc,Golden Run-up", "the penalty set's on-screen names (the shop contract)");
   ok(new Set(ALL.map((s) => s.id)).size === ALL.length, "no id is in both sets (ownedAnimations holds both)");
   ok(FREE_KICK_RUNUPS.every((s) => s.id.startsWith("fk_")) && !PENALTY_RUNUPS.some((s) => s.id.startsWith("fk_")), "free-kick ids start fk_, penalty ids never do");
   const players = FREE_KICK_RUNUPS.map((s) => s.player).filter(Boolean).join(",");
-  ok(players === "Ronaldo,Bale,Messi,Neymar,Maddison,Trent", `each free-kick style is modelled on one elite taker (${players})`);
+  ok(players === "Ronaldo,Bale,Messi,Neymar,Maddison,Trent,Juninho", `each free-kick style is modelled on one elite taker (${players})`);
   ok(ALL.every((s) => s.blurb.length > 0), "every one has a line to show in the shop");
   ok(DEFAULT_PENALTY_RUNUP === "standard" && DEFAULT_FREE_KICK_RUNUP === "fk_standard", "each set's Standard is the default");
   ok(RUNUP_STYLES === PENALTY_RUNUPS && DEFAULT_RUNUP_STYLE === "standard", "the shop contract's first names are the penalty set");
@@ -250,7 +250,9 @@ console.log("\nTEAM-MATES AND OPPONENTS");
     const counts = new Map<string, number>();
     for (const id of ids) { const s = (pick as (k: string) => string)(id); counts.set(s, (counts.get(s) ?? 0) + 1); }
     console.log(`  350 players: ${set.map((s) => `${s.id} ${counts.get(s.id) ?? 0}`).join(", ")}`);
-    ok(set.every((s) => (counts.get(s.id) ?? 0) >= 20), "a squad spreads across all seven");
+    // The reward styles (the Golden Run-up, The Leaf) are earned, never handed out.
+    ok(set.filter((s) => !REWARD_RUNUPS.has(s.id)).every((s) => (counts.get(s.id) ?? 0) >= 20), "a squad spreads across all seven");
+    ok(set.filter((s) => REWARD_RUNUPS.has(s.id)).every((s) => !counts.get(s.id)), "…and nobody the game controls gets a reward run-up");
   }
   const sameIndex = ids.filter((id) => PENALTY_RUNUPS.findIndex((s) => s.id === takerPenaltyRunup(id)) === FREE_KICK_RUNUPS.findIndex((s) => s.id === takerFreeKickRunup(id))).length;
   ok(sameIndex < ids.length * 0.3, `his free-kick style isn't just his penalty style's twin (${sameIndex}/${ids.length} line up)`);

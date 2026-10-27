@@ -32,7 +32,8 @@ import {
   type StoreItem, type Rarity, type AccessoryItem, type AccessorySlot, type PriceContext, type AnimationSet,
 } from "@/lib/star/store/catalogue";
 import { dailySpecials, msUntilReset, formatCountdown } from "@/lib/star/store/daily";
-import { LEO_CELEBRATION_IDS } from "@/lib/star/store/catalogue";
+import { LEO_CELEBRATION_IDS, STAR_PASS_CELEBRATION_IDS } from "@/lib/star/store/catalogue";
+import { REWARD_RUNUPS, type RunupId } from "@/lib/star/runupStyles";
 import { useLeoUpdate } from "@/lib/star/leoUpdate";
 import BackButton from "../ui/BackButton";
 import { owns, priceNow, type StoreState, type Currency } from "@/lib/star/store/purchase";
@@ -158,7 +159,8 @@ function rarityOf(item: StoreItem): Rarity | null {
  * to the old drawing if its file can't load. Celebrations are poses, not objects, so they stay the drawn player.
  */
 export function storeRenderFor(item: StoreItem): string | null {
-  if (item.kind === "accessory") return item.slot === "celebration" ? null : `/shop/store/acc-${item.id}.webp`;
+  // Signature Boots have no studio render: their picture is drawn, with your name on it.
+  if (item.kind === "accessory") return item.slot === "celebration" || item.signature ? null : `/shop/store/acc-${item.id}.webp`;
   if (item.kind === "boost") return item.id === "training-boost" ? "/shop/store/boost-training.webp" : item.id === "stat-can" ? "/shop/store/boost-stat.webp" : null;
   return null;
 }
@@ -253,7 +255,10 @@ export default function StoreView(p: StoreViewProps) {
 
   // Leo's 24 Oct update, "celebrations": the three new celebrations (and their wording) only while it is on.
   const celebsOn = useLeoUpdate("celebrations");
-  const shown = (it: StoreItem) => !hide?.(it) && (celebsOn || !LEO_CELEBRATION_IDS.has(it.id));
+  // The Star Pass celebrations and run-ups are never for sale: listed only once won, so you can use them.
+  const passOnly = (id: string) => STAR_PASS_CELEBRATION_IDS.has(id) || REWARD_RUNUPS.has(id as RunupId);
+  const shown = (it: StoreItem) => !hide?.(it) && (celebsOn || !LEO_CELEBRATION_IDS.has(it.id))
+    && (!passOnly(it.id) || owns(state, it.id));
   const specials = useMemo(
     () => dailySpecials(dateKey).filter((s) => { const it = findItem(s.itemId); return !!it && !hide?.(it); }),
     // eslint-disable-next-line react-hooks/exhaustive-deps

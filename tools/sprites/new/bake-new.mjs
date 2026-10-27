@@ -29,6 +29,10 @@
  *            limb into another are skipped or the legs set a few degrees wider (CELEBS in
  *            bake-new.html says which and why). Once clips carry `t3d`, each frame's second
  *            in the 3D clip (lib/star/sprites.ts spriteFrame).
+ *        node tools/sprites/new/bake-new.mjs celebs both 4   THE STAR PASS FOUR (25 Oct 2026): celebCornerFlag,
+ *            celebBackflip, celebOwnName, celebStatue (keyed: tools/mocap3d/keyed_celebs.py) → their own
+ *            atlas 4 (atlas-4/-4a, mask-4/-4a); atlas 2 and 3 untouched. A group number picks the CELEBS with that
+ *            `group` (none = 2, the six above).
  *        node tools/sprites/new/bake-new.mjs celebsheet a "celebJump,celebRoar:2,0"   look sheet → preview/
  *        node tools/sprites/new/bake-new.mjs celebbones a celebKneeSlide [n]   per frame: lowest point and
  *            the joints closer than 14 cm (n = 0: the baked frames; n > 0: n even steps)
@@ -148,6 +152,7 @@ if (mode.startsWith("aerial")) {
 if (mode.startsWith("celeb")) {
   // celebs [a|current|both]  ·  celebsheet <a|current> <clip,clip:dirIdx,dirIdx>  ·  celebclose <a|current> <clip> <facingDeg> [tiltDeg: 25 = game camera, 88 = from the side]
   const which = (arg || (mode === "celebs" ? "both" : "a"));
+  const group = mode === "celebs" ? Number(process.argv[4] ?? 2) : 2;
   const looks = which === "both" ? ["a", ""] : [which === "current" ? "" : "a"];
   try {
     for (const tag of looks) {
@@ -155,26 +160,28 @@ if (mode.startsWith("celeb")) {
       const t0 = Date.now();
       if (mode === "celebs") {
         // WebP quality: kept under ~400 KB an atlas (Style A 0.8, current 0.74)
-        const r = await page.evaluate(([t, q]) => window.bakeCelebs(t, q), [tag, tag === "a" ? 0.8 : 0.74]);
-        const color = path.join(outDir, `atlas-2${tag}.webp`);
+        const r = await page.evaluate(([t, q, g]) => window.bakeCelebs(t, q, g), [tag, tag === "a" ? 0.8 : 0.74, group]);
+        const color = path.join(outDir, `atlas-${group}${tag}.webp`);
         fs.writeFileSync(color, dataOf(r.color));
-        const tmp = path.join(previewDir, `mask-2${tag}.png`); fs.mkdirSync(previewDir, { recursive: true });
+        const tmp = path.join(previewDir, `mask-${group}${tag}.png`); fs.mkdirSync(previewDir, { recursive: true });
         fs.writeFileSync(tmp, dataOf(r.mask));
-        const mask = path.join(outDir, `mask-2${tag}.webp`);
+        const mask = path.join(outDir, `mask-${group}${tag}.webp`);
         losslessWebp(tmp, mask); fs.unlinkSync(tmp);
         const frag = JSON.parse(r.frag);
         const ip = path.join(outDir, tag === "a" ? "index-a.json" : "index.json");
         const idx = JSON.parse(fs.readFileSync(ip, "utf8"));
-        const keep = JSON.stringify({ atlas: idx.atlas, a1: idx.atlases?.["1"], standH: idx.standH });
-        idx.atlases = { ...(idx.atlases ?? {}), 2: frag.atlas };
+        // every other atlas entry must come through unchanged
+        const others = (x) => JSON.stringify({ atlas: x.atlas, rest: Object.entries(x.atlases ?? {}).filter(([k]) => k !== String(group)), standH: x.standH });
+        const keep = others(idx);
+        idx.atlases = { ...(idx.atlases ?? {}), [group]: frag.atlas };
         for (const [n, cl] of Object.entries(frag.clips)) {
           const was = idx.chars.player.clips[n];
-          if (was && was.atlas !== 2) throw new Error(`refusing to overwrite clip player.${n}`);
+          if (was && was.atlas !== group) throw new Error(`refusing to overwrite clip player.${n}`);
           idx.chars.player.clips[n] = cl;
         }
-        if (JSON.stringify({ atlas: idx.atlas, a1: idx.atlases["1"], standH: idx.standH }) !== keep) throw new Error("atlas 0/1 entry changed");
+        if (others(idx) !== keep) throw new Error("another atlas entry changed");
         fs.writeFileSync(ip, JSON.stringify(idx));
-        console.log(`atlas-2${tag}.webp`, (fs.statSync(color).size / 1024).toFixed(0), "KB ·", `mask-2${tag}.webp`, (fs.statSync(mask).size / 1024).toFixed(0), "KB ·", frag.atlas.w + "x" + frag.atlas.h);
+        console.log(`atlas-${group}${tag}.webp`, (fs.statSync(color).size / 1024).toFixed(0), "KB ·", `mask-${group}${tag}.webp`, (fs.statSync(mask).size / 1024).toFixed(0), "KB ·", frag.atlas.w + "x" + frag.atlas.h);
         for (const [n, cl] of Object.entries(frag.clips)) console.log(" ", n, cl.frames, "frames ·", cl.fps, "fps ·", r.durations[n], "s ·", cl.loop);
         console.log(path.basename(ip), "updated ·", ((Date.now() - t0) / 1000).toFixed(0), "s");
       } else if (mode === "celebsheet") {

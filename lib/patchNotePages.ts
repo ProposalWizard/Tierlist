@@ -21,6 +21,7 @@
  */
 export const PATCH_NOTE_PAGES: Record<string, string> = {
   "0.124": "pages/0.124/index.html",
+  "0.123": "pages/0.123/index.html",
   "0.122": "pages/0.122/index.html",
   "0.121": "pages/0.121/index.html",
   // 26 Oct 2026: standard pages made from the archive data for notes that had

@@ -533,6 +533,97 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "updates": []
     },
     {
+      "version": "0.123",
+      "title": "Leo's patch notes: Keeper catches, dives and the ball (plan)",
+      "author": "Leo",
+      "publishedAt": "2026-10-26T22:08:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Leo, 26 Oct. A plan for Leo to look at, not built. Today a caught ball stops in mid air where it met the keeper, he slides to it in one pose, and on dives the ball is pushed away before he moves; in 3D he dives a second time at nothing. Plan: the ball goes into his gloves and moves with him; a real dive (push off, fly, land on his side, get up) with about 18 drawings per move at 24 a second; better keeper and ball graphics; the same in 2D, 3D and goal videos; behind Leo's switch; results unchanged.",
+      "stats": [
+        {
+          "value": "4-6",
+          "label": "keeper drawings per move today"
+        },
+        {
+          "value": "0",
+          "label": "drawings with the ball in his hands today"
+        },
+        {
+          "value": "~18",
+          "label": "drawings per move planned"
+        },
+        {
+          "value": "3",
+          "label": "calls for Leo"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "known",
+          "title": "Now: what is wrong",
+          "items": [
+            {
+              "title": "A caught ball stops in the air where it met him",
+              "detail": "He slides to it in one dive pose and lies still; the ball sits on his middle. Seen in a real catch, filmed frame by frame."
+            },
+            {
+              "title": "On a dive the ball goes before he does",
+              "detail": "The push happens while he is still standing; he dives after it has gone."
+            },
+            {
+              "title": "3D: a second dive at nothing",
+              "detail": "He gets up, then about 2 s later dives again with no ball near."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "The plan",
+          "items": [
+            {
+              "title": "1 · The ball goes into his gloves and stays there",
+              "detail": "Every new drawing records where his gloves are, so the ball follows them through the dive, landing and getting up."
+            },
+            {
+              "title": "2 · A real dive: push off, fly, land, get up",
+              "detail": "About 18 drawings per move at 24 a second (now 4-6 at 9); the dive starts in time; no second dive."
+            },
+            {
+              "title": "3 · Better graphics: the keeper and the ball",
+              "detail": "The ball lit like the players, the right size in his gloves, a squash on contact; his drawings at twice the detail; his shadow stretches as he dives."
+            },
+            {
+              "title": "4 · The same everywhere",
+              "detail": "2D match, 3D view and goal videos."
+            },
+            {
+              "title": "5 · Safe: behind your switch, results unchanged",
+              "detail": "New part \"Keeper catches and dives\"; off = as now; only the picture changes."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Your calls",
+          "items": [
+            {
+              "title": "After a catch: hold it and play on, or roll/kick it out?"
+            },
+            {
+              "title": "Roll over after a big diving catch, or straight up?"
+            },
+            {
+              "title": "Stay on him about 1 s longer so you see him get up?"
+            },
+            {
+              "title": "All at once (about a day), or 2D first (about half a day)?"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.122",
       "title": "Leo's patch notes: Every patch note tidied and made the same",
       "author": "Leo",

@@ -61,6 +61,11 @@ export const ANIM_TILES: { group: string; tiles: AnimTile[] }[] = [
     { label: "Slide tackle", clips: ["sliding_tackle"] },
     { label: "Celebrate (jump)", clips: ["celebrate_jump", "celebrate_fist"] },
     { label: "Celebrate (fist)", clips: ["celebrate_fist"] },
+    // the Star Pass celebrations (25 Oct 2026, tools/mocap3d/keyed_celebs.py)
+    { label: "Corner flag dance", clips: ["celebrate_corner_flag", "celebrate_fist"] },
+    { label: "Backflip", clips: ["celebrate_backflip", "celebrate_fist"] },
+    { label: "Own celebration", clips: ["celebrate_own_name", "celebrate_fist"] },
+    { label: "Statue pose", clips: ["celebrate_statue", "celebrate_fist"] },
     { label: "Dejected", clips: ["dejected", "frustrated"] },
   ] },
   { group: "Keeper", tiles: [
