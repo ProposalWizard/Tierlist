@@ -462,6 +462,9 @@ export interface Runner {
    *          the scenario opened, and stretches for a ball played near him.
    */
   role?: "target" | "support";
+  /** The byline cross's short option (lib/star/bylineShort.ts): he plays it
+   *  himself, never lays it back into your run. Type only; the engine ignores it. */
+  shortOption?: boolean;
   /** True while he is reacting to a ball that has come near him. */
   sprint?: boolean;
   /** Who this is. See Identity. */

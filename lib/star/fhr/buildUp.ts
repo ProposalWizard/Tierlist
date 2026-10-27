@@ -1126,7 +1126,7 @@ export function fhrBuildUpFor(sc: Scenario, moment0: LeadMoment, adjust?: FhrAdj
   if (showRegain) { plans.push([cover, false]); if (cover) plans.push([null, false]); }
   for (let pi = 0; pi < plans.length; pi++) {
     const [cv, rg] = plans[pi];
-    const o: AttemptOpts = { intel, regain: rg, caughtU, ...(opt.style ? { style: opt.style } : {}) };
+    const o: AttemptOpts = { intel, regain: rg, caughtU, ...(opt.style ? { style: opt.style } : {}), ...(mistimeForTests ? { mistimeAnyway: true } : {}) };
     // (The fallbacks get fewer tries: the generator stays about as quick as before B2b.)
     for (let k = 0; k < (pi === 0 ? FHR_TRIES : FHR_FALLBACK_TRIES); k++) {
       // (A try that already has as many problems as the best so far can never be picked: it stops early, null.)
@@ -1138,6 +1138,8 @@ export function fhrBuildUpFor(sc: Scenario, moment0: LeadMoment, adjust?: FhrAdj
   }
   if (best && bestOpts && best.problems.some((p) => p.startsWith(UNTIMED))) {
     // Offside and it could not be timed in any try: the flag goes up (never an uncalled offside).
+    // (With the calls hidden, BUILDUP_OFFSIDE_CALLS, the game never shows such
+    // a build-up: fhrBuildUpOn drops it and the chance starts without one.)
     const b = attempt(sc, moment, bestSeed, best.tries, tp, bestCover, { ...bestOpts, callUntimed: true });
     if (b) return b;
   }
@@ -1154,11 +1156,26 @@ interface AttemptOpts {
   caughtU: number;
   /** A run that can't be timed is called (the last resort; never left uncalled). */
   callUntimed?: boolean;
+  /** Test pages: roll the mistimed run even with the calls hidden. */
+  mistimeAnyway?: boolean;
   /** A whole short move in this style (the career's). Absent: the long move (routeFor's data route). */
   style?: FhrStyle;
 }
 /** The problem a try lists when a run is offside and can't be held back in time. */
 const UNTIMED = "offside run not timed";
+
+/**
+ * OFFSIDE CALLS IN A BUILD-UP (Mikey, 26 Oct 2026: "it shows the build-up …
+ * and then it just says offside … you have no ability to affect that").
+ * Hidden for now, kept: true brings back the mistimed run and the flag. Off,
+ * a team-mate's run is still held back to stay onside where it can be; one
+ * that can't is let go, never flagged. Offside in your own chances (the
+ * engine's law) is untouched.
+ */
+export const BUILDUP_OFFSIDE_CALLS = false;
+/** TEST ONLY: roll mistimed runs as before (the build-up tests measure the law). */
+let mistimeForTests = false;
+export function setBuildUpMistimeForTests(on: boolean): void { mistimeForTests = on; }
 
 /**
  * One try. `giveUpAt`: stop and return null as soon as this try has that many
@@ -1815,7 +1832,7 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
       // (A whole short move: only its key ball — the last one, or one into space — is ever mistimed;
       // the quick passes before it are timed. With every pass of a tiki move open to it, 3 in 10 ended in a flag.)
       const keyBall = !o.style || k === acts.length - 1 || !!a.through;
-      if (keyBall && o.caughtU < o.intel.mistime * (o.style ? COMPACT_MISTIME : 1) * (Math.abs(a.to.x - CX) > BOX_HALF_W ? WIDE_RUN_MISTIME : 1)) { row.called = true; called = { k, by, why: "mistimed" }; }
+      if ((BUILDUP_OFFSIDE_CALLS || o.mistimeAnyway) && keyBall && o.caughtU < o.intel.mistime * (o.style ? COMPACT_MISTIME : 1) * (Math.abs(a.to.x - CX) > BOX_HALF_W ? WIDE_RUN_MISTIME : 1)) { row.called = true; called = { k, by, why: "mistimed" }; }
       else {
         const [m0, m1] = o.intel.onsideM;
         const D = Math.min(line, a.from.y) + m0 + (m1 - m0) * r() - y;

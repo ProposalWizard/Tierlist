@@ -44,6 +44,10 @@ import { PRESSURE_DIALS } from "@/lib/star/pressure";
 import { PENALTY_RUNUPS, FREE_KICK_RUNUPS } from "@/lib/star/runupStyles";
 import { useFhrMode } from "@/lib/star/fhr/toggle";
 import { setLookRow } from "@/lib/star/lookRows";
+import {
+  POWER_POINTS, DEFAULT_POWER_SPEEDS, OLD_POWER_SPEEDS,
+  powerCurveOverride, setPowerCurveOverride, fullPowerSpeed,
+} from "@/lib/star/strikePower";
 
 type Screen = "home" | "match";
 
@@ -238,6 +242,9 @@ export default function PlayAreaPage() {
         </div>
       </Panel>
 
+      {/* ── THE POWER CURVE (Mikey, 26 Oct 2026) ── */}
+      <PowerCurvePanel power={settings.power} />
+
       {/* ── COMPARE OLD AND NEW (v0.15) ── */}
       {compare && (
         <Panel title="Compare old and new" note="Each starts on New">
@@ -291,6 +298,75 @@ function KeeperBrainRows() {
         </Toggle>
       ))}
     </Row>
+  );
+}
+
+/* ── The power curve ─────────────────────────────────────────────────────
+ * Mikey: "some sort of area where I can input numbers … meters per second …
+ * so that I could test what is the best power for the starting power".
+ * Each box is how fast a full-power strike through the middle leaves the boot
+ * at that Power. This device only, but everywhere on it (lib/star/strikePower.ts
+ * reads it for every kick), until "Back to the game's". */
+function PowerCurvePanel({ power }: { power: number }) {
+  const [speeds, setSpeeds] = useState<number[]>(() => powerCurveOverride() ?? DEFAULT_POWER_SPEEDS);
+  const [mine, setMine] = useState<boolean>(() => powerCurveOverride() !== null);
+  const [copied, setCopied] = useState(false);
+  const ok = speeds.every((v) => Number.isFinite(v) && v > 5 && v < 60);
+  const kmh = (ms: number) => Math.round(ms * 3.6);
+  const put = (i: number, v: number) => setSpeeds((s) => s.map((x, j) => (j === i ? v : x)));
+  const use = () => { if (!ok) return; setPowerCurveOverride(speeds); setMine(true); };
+  const reset = () => { setPowerCurveOverride(null); setSpeeds([...DEFAULT_POWER_SPEEDS]); setMine(false); };
+  const copy = () => {
+    const text = `Power curve (m/s at Power ${POWER_POINTS.join("/")}): ${speeds.map((v) => v.toFixed(1)).join(", ")}`;
+    navigator.clipboard?.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }, () => {});
+  };
+  const now = fullPowerSpeed(power, ok ? speeds : DEFAULT_POWER_SPEEDS);
+  const max = 40;
+  return (
+    <Panel title="Power curve" note={mine ? "Your numbers · this device" : "The game's numbers"}>
+      <Note>
+        How fast a full-power strike leaves the boot at each Power, in metres a second
+        (km/h beside it). Every kick uses it: shots, passes, crosses. Type numbers, press
+        Use these, then play Infinite Match with the Power dial above. This device only,
+        careers on it included, until Back to the game&apos;s.
+      </Note>
+      <div className="pa-curve">
+        <div className="pa-curve-row pa-curve-head">
+          <span>Power</span><span>Yours</span><span>Game</span><span>Before</span>
+        </div>
+        {POWER_POINTS.map((p, i) => (
+          <div key={p} className="pa-curve-row">
+            <b>{p}</b>
+            <span>
+              <input
+                type="number" step={0.1} min={5} max={60} inputMode="decimal"
+                aria-label={`Speed at Power ${p}`} className="pa-curve-in"
+                value={Number.isFinite(speeds[i]) ? speeds[i] : ""}
+                onChange={(e) => put(i, e.target.value === "" ? NaN : Number(e.target.value))}
+              />
+              <i>{Number.isFinite(speeds[i]) ? String(kmh(speeds[i])) : ""}</i>
+            </span>
+            <span>{DEFAULT_POWER_SPEEDS[i].toFixed(1)} <i>{kmh(DEFAULT_POWER_SPEEDS[i])}</i></span>
+            <span>{OLD_POWER_SPEEDS[i].toFixed(1)} <i>{kmh(OLD_POWER_SPEEDS[i])}</i></span>
+            <div className="pa-curve-bars" aria-hidden>
+              <div style={{ width: `${(Math.min(max, speeds[i] || 0) / max) * 100}%` }} className="pa-curve-bar yours" />
+              <div style={{ width: `${(OLD_POWER_SPEEDS[i] / max) * 100}%` }} className="pa-curve-bar before" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <Note>
+        Power dial now {power}: full power {now.toFixed(1)} m/s ({kmh(now)} km/h). Between the
+        boxes it goes in a straight line. A shot with lift comes off a little slower.
+      </Note>
+      {!ok && <Note>Every box needs a number between 5 and 60.</Note>}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <Btn main onClick={use} disabled={!ok}>Use these</Btn>
+        <Btn onClick={reset}>Back to the game&apos;s</Btn>
+        <Btn onClick={() => setSpeeds([...OLD_POWER_SPEEDS])}>Fill in Before</Btn>
+        <Btn onClick={copy}>{copied ? "Copied" : "Copy numbers"}</Btn>
+      </div>
+    </Panel>
   );
 }
 

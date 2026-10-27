@@ -55,7 +55,7 @@ function fingerprint(extra: Partial<HiddenMatchInputs>): string {
       while (st.minute < 94) {
         const { events, request } = tick(st, inputs, rng);
         feed(JSON.stringify(events));
-        if (request) { feed(JSON.stringify({ ...request, regain: undefined })); resolveScenario(st, standIn(request.zone, rng)); }
+        if (request) { feed(JSON.stringify({ ...request, regain: undefined, deal: undefined })); resolveScenario(st, standIn(request.zone, rng)); }
         feed(`${st.minute}:${st.userScore}-${st.oppScore}:${st.zone}:${st.possession}:${st.momentum.toFixed(6)}`);
       }
     }
@@ -67,7 +67,11 @@ function fingerprint(extra: Partial<HiddenMatchInputs>): string {
 // draw, nothing reads it back), which changed the JSON of every request. The
 // fingerprint leaves that one note out (`regain: undefined`), so it still pins
 // every event, score, zone and the rest of every request to the old match.
-const OLD_FINGERPRINT = "4173b349";
+// 26 Oct 2026 (Mikey, play style changes chances): Defensive's byline-cross
+// weight went 0.8 → 1.6, which changes the third matchup's requested kinds
+// (was 4173b349; with the old 0.8 it still is). The new `deal` note is left
+// out like `regain`.
+const OLD_FINGERPRINT = "64861bcd";
 console.log("\n== Old is exactly the old match");
 check(fingerprint({}) === OLD_FINGERPRINT, `no matchFlow: fingerprint ${fingerprint({})} = ${OLD_FINGERPRINT}`);
 check(fingerprint({ matchFlow: false }) === OLD_FINGERPRINT, "matchFlow: false is the same");

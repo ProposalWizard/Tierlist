@@ -23,7 +23,7 @@
  */
 import { useSyncExternalStore } from "react";
 import type { Facing, Scenario, ScenarioKind, Vec2, Viewport } from "./canvasEngine";
-import { goalInView, standOff, SCENARIO_KINDS } from "./canvasEngine";
+import { goalInView, standOff, SCENARIO_KINDS, dragForFullPower } from "./canvasEngine";
 import { wideChances } from "./wideChances";
 /** Tests and measuring scripts: force Wide chances (re-exported so they set the copy this file reads). */
 export { setWideChancesOverride } from "./wideChances";
@@ -573,6 +573,12 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, 
       cam = best;
     }
   }
+  // Room to pull back: the ball a full-power drag clear of both sides
+  // (Mikey, 26 Oct 2026; the old rule only kept room below the ball).
+  if (facing === "up" && !keepPlayArea) {
+    const roomy = dragRoomCamera(cam, sc, hw, tiltDeg);
+    if (roomy !== cam) { f.playZoom = (f.playZoom ?? 1) * ((cam.x2 - cam.x1) / (roomy.x2 - roomy.x1)); cam = roomy; }
+  }
   if (!keepPlayArea) sc.viewport = playAreaFor(sc, cam, f.engineFrame);
   return cam;
 }
@@ -933,6 +939,49 @@ export const CLEARLY_OFF_EDGE = 0.04;
  * on the screen as seen (tilt included), every `extra` wholly on or clearly
  * off. Returns what broke, in words; empty when the camera keeps its promise.
  */
+/** A full-power drag, as a share of the screen's width (the same pull the
+ *  aim reads: tests/star/match2dCam.mts). */
+export const DRAG_ROOM_SHARE = dragForFullPower(0) * 1.6;
+
+/**
+ * THE BALL NEVER SITS AGAINST A SIDE OF THE SCREEN (Mikey, 26 Oct 2026, a
+ * rule from the first playtests: "chances for yourself should not be on the
+ * edge of the screen, because you cannot drag your finger back"). Upright, the
+ * ball is kept at least a full-power drag from the left and right edges.
+ * First the camera slides sideways (same zoom); if that would cut the goal or
+ * a man in half (framingFaults), it widens a little at a time about the ball
+ * instead. Measured before on 80 chances a kind: the ball was within a drag
+ * of a side on 21% of tight angles, 18% of long shots and 10% of cutbacks.
+ */
+export function dragRoomCamera(cam: Viewport, sc: Scenario, hw: number, tiltDeg = 0): Viewport {
+  const fits = (v: Viewport) => {
+    const m = DRAG_ROOM_SHARE * (v.x2 - v.x1);
+    return sc.ball.x >= v.x1 + m - 1e-6 && sc.ball.x <= v.x2 - m + 1e-6;
+  };
+  if (fits(cam)) return cam;
+  // The slide or widen may never lose anyone the camera showed before: every
+  // man it held stays fully on (ZOOM_SIDE_M from a side), the goal too.
+  const held = framedBodiesOf(sc).filter((p) => p.x >= cam.x1 && p.x <= cam.x2);
+  const before = framingFaults(sc, cam, hw, tiltDeg).length;
+  const ok = (v: Viewport) => (!goalInView(sc.kind) || (v.x1 <= POST_L && v.x2 >= POST_R))
+    && held.every((p) => p.x >= v.x1 + ZOOM_SIDE_M && p.x <= v.x2 - ZOOM_SIDE_M)
+    && framingFaults(sc, v, hw, tiltDeg).length <= before;
+  const slide = (v: Viewport): Viewport => {
+    const w = v.x2 - v.x1, m = DRAG_ROOM_SHARE * w;
+    const dx = sc.ball.x < v.x1 + m ? sc.ball.x - (v.x1 + m) : sc.ball.x > v.x2 - m ? sc.ball.x - (v.x2 - m) : 0;
+    return { ...v, x1: v.x1 + dx, x2: v.x2 + dx };
+  };
+  const s0 = slide(cam);
+  if (ok(s0)) return s0;
+  // Wider about its top-centre, half a metre at a time, then slid again.
+  const w0 = cam.x2 - cam.x1, h0 = cam.y2 - cam.y1, cx = (cam.x1 + cam.x2) / 2;
+  for (let w = w0 + 0.5; w <= NEW_VIEW_WIDTH_M * 1.25; w += 0.5) {
+    const v = slide({ x1: cx - w / 2, x2: cx + w / 2, y1: cam.y1, y2: cam.y1 + h0 * (w / w0) });
+    if (fits(v) && ok(v)) return v;
+  }
+  return cam;
+}
+
 export function framingFaults(sc: Scenario, cam: Viewport, hw: number, tiltDeg = 0): string[] {
   const H = Math.max(NEW_VIEW_MIN_HW, hw);
   const t = tiltFor(tiltDeg, 1, H);
@@ -1073,7 +1122,11 @@ export function turnsSideOn(sc: Scenario): boolean {
  */
 export function turnWideChance(sc: Scenario, restand = true, hw = NEW_VIEW_MAX_HW): boolean {
   const f = sc as Framed;
-  if (wideChances() !== "new" || !turnsSideOn(sc) || f.wideChecked) return false;
+  // Every cutback is watched side-on, whatever the Wide chances setting (Mikey,
+  // 26 Oct 2026: "it is quite uncomfortable to put your finger in that odd
+  // position"). Tight angles and penalties follow the setting.
+  const always = sc.kind === "cutback";
+  if ((wideChances() !== "new" && !always) || !turnsSideOn(sc) || f.wideChecked) return false;
   // Decided once per chance: a resize re-frames it but never flips it.
   f.wideChecked = true;
   // Turn only when side-on is the tighter picture. A cutback with runners
@@ -1083,7 +1136,7 @@ export function turnWideChance(sc: Scenario, restand = true, hw = NEW_VIEW_MAX_H
   const was = sc.facing;
   sc.facing = sideOnFacing(sc);
   const cam = sideOnCamera(sc, hw);
-  if (typeof upright === "number" && cam.y2 - cam.y1 > upright + 1e-6) { sc.facing = was; return false; }
+  if (!always && typeof upright === "number" && cam.y2 - cam.y1 > upright + 1e-6) { sc.facing = was; return false; }
   // A penalty's taker already stands back for his run-up (pitch geometry,
   // which reads the same side-on), so he is left where he is.
   if (restand) standOff(sc);

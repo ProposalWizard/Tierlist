@@ -32,7 +32,7 @@ import { mulberry32 } from "../../../lib/star/season";
 import { CX, POST_L, POST_R } from "../../../lib/star/pitch";
 import { launchShot, shotsPro } from "../../../lib/star/shotModel";
 import { shotPowerOn, contactFieldOn, feelPower, feelLift } from "../../../lib/star/shotFeel";
-import { strikingPower } from "../../../lib/star/strikePower";
+import { oldStrikingPower } from "../../../lib/star/strikePower";
 
 export const H = 1 / 180;
 const DEBUG = !!process.env.KDEBUG;
@@ -131,7 +131,9 @@ function picture(p: Placed): E.Scenario {
 function strike(sc: E.Scenario, dir: E.Vec2, p: Placed, cy: number): E.Ball {
   const stat = p.skill;
   const feel = shotPowerOn();
-  const skills = { power: feel ? feelPower(stat) : strikingPower(stat), technique: stat };
+  // The power line from before 26 Oct 2026: these tests measure the keeper,
+  // and a change to the power curve must not move their fingerprints.
+  const skills = { power: feel ? feelPower(stat) : oldStrikingPower(stat), technique: stat };
   const contact = { cx: p.curl, cy };
   const pro = shotsPro(), field = contactFieldOn(), lift = feel ? feelLift(stat) : 1;
   const rec = { seed: (p.seed * 2654435761) >>> 0, pro, knuckle: false, field, lift };

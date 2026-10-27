@@ -57,6 +57,7 @@ PRO-TEAM-005 | Clear disk space before every new build: remove old agent worktre
 PRO-TEAM-006 | Builders check light: ONE quick check per change (loads, no console errors, one still); Harry judges 3D on his phone. | three-d,process
 PRO-TEAM-007 | Ship patch notes alone: node scripts/patch-notes/ship.mjs <versions> --pr makes a patch-notes-only PR to main; feature code waits for Harry's push. | process,deploy
 PRO-TEAM-008 | Patch notes order: stills on the page, ship the notes with ship.mjs, publish; push the feature when Harry says; then film clips. | process,deploy
+PRO-TEAM-009 | Before shipping a patch note, run scripts/patch-notes/squeeze-media.sh <version> (clips CRF 30, stills JPEG ~80%); the patch-notes folder must stay under Vercel's 250 MB route cap. | process,rule
 REF-ALL-001 | Big documents and skills stay whole; each gets one reference note that links to the source. | brain
 REF-KIB-001 | Script v01, patch notes 0.1 to 0.3: the first Knowitball short, word for word with its sources. | process,client-kib
 RUL-3D-001 | Fully 3D games are the exception: own physics and rules in lib/star/play3d/, never importing canvasEngine.ts. | engine,three-d,rule

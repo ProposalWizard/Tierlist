@@ -35,6 +35,10 @@ import { fhrBuildUpFor, fhrWantsBuildUp, REGAIN_BAND, type FhrBuildUp } from "..
 import { goalInView } from "../../lib/star/canvasEngine";
 import { HALF_LEN } from "../../lib/star/pitch";
 import type { HiddenMatchInputs } from "../../lib/star/hiddenMatch";
+import { setBuildUpMistimeForTests } from "../../lib/star/fhr/buildUp";
+// The build-up's offside law is measured here as built; the game hides the
+// calls (buildUp.ts BUILDUP_OFFSIDE_CALLS) and drops such a build-up instead.
+setBuildUpMistimeForTests(true);
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };

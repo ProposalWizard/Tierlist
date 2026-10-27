@@ -51,7 +51,8 @@ import {
   type Scenario, type ScenarioKind, type Vec2,
 } from "./canvasEngine";
 import { kindsForZone, type ScenarioRequest, type Zone } from "./hiddenMatch";
-import { EVEN_KIND_MIX, EVEN_KINDS, newKindBag, nextEvenKind, guardedDeal, guardAllows, noteDealt } from "./kindMix";
+import { addShortOption } from "./bylineShort";
+import { EVEN_KIND_MIX, EVEN_KINDS, newKindBag, nextEvenKind, guardedDeal, guardAllows, noteDealt, styledRound, DECK_STYLE, type DealRules } from "./kindMix";
 import { newChancesOn } from "./newChances";
 import { selectChance, newSelectionMemory, FREQ, type SelectionMemory } from "./scenarioSelect";
 import { applyChancePlan, type ChancePlan } from "./chanceFormula";
@@ -585,6 +586,9 @@ export interface MakeChanceOptions {
   /** Deal open play from the real mix, not the even one (kindMix.ts's
    *  REAL_MIX; Settings → Match → Chance mix). Absent: the even mix. */
   realMix?: boolean;
+  /** A move carrying on (source "chain"): the match's deal rules, as the last
+   *  request had them (play style, kinds not open yet). */
+  deal?: DealRules;
 }
 
 export interface MadeChance {
@@ -615,6 +619,9 @@ export interface MadeChance {
  */
 export function makeChance(o: MakeChanceOptions): MadeChance {
   const rng = o.rng;
+  // Every byline cross has a short option (bylineShort.ts, Mikey 26 Oct 2026),
+  // added before the camera's last word so the frame holds him.
+  const finishServed = (sc: Scenario) => { addShortOption(sc); return finishServedFrame(sc); };
   const ks = o.strength?.keeper ?? 62, tr = o.strength?.team ?? 60, vis = o.strength?.vision ?? 55;
   const build = (k: ScenarioKind) => buildScenario(k, rng, ks, tr, vis);
 
@@ -630,10 +637,15 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
   let side: -1 | 1 | undefined;
   // Harry, 3 Oct 2026 — an even mix of highlights for now (lib/star/kindMix.ts):
   // open play and a move that carries on are dealt from a shuffled bag.
+  // The match's deal rules (play style, kinds not open yet): kindMix.ts DealRules.
+  const rules = src.from === "request" ? src.request.deal : o.deal;
   const evenDeal = (): ScenarioKind => {
-    if (!o.selection) return EVEN_KINDS[Math.floor(rng() * EVEN_KINDS.length) % EVEN_KINDS.length];
+    if (!o.selection) {
+      const pool = rules ? styledRound(rules) : EVEN_KINDS;
+      return pool[Math.floor(rng() * pool.length) % pool.length];
+    }
     o.selection.kindBag ??= newKindBag();
-    return nextEvenKind(o.selection.kindBag, rng, !!o.realMix);
+    return nextEvenKind(o.selection.kindBag, rng, !!o.realMix, rules);
   };
   if (nc && src.from === "request") {
     const r = newRequestKind(src.request, src.position, rng, o.selection);
@@ -676,7 +688,7 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
   // hand-written builder — it becomes the nearest kind that has drawings.
   // (A dev tool asking for a kind by name still gets that kind.)
   if (nc && src.from !== "kind") {
-    const k2 = drawnKindFor(kind);
+    const k2 = drawnKindFor(kind, src.from === "request" || src.from === "chain" ? bannedBy(rules) : undefined);
     if (k2 !== kind) { kind = k2; plan = null; first = null; }
     if (o.selection) noteDealt((o.selection.dealt ??= []), kind);
   }
@@ -691,7 +703,7 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     const real = serveRealMoment(kind, rng);
     if (real) {
       const separated = separateBodies(real.sc);
-      finishServedFrame(real.sc);
+      finishServed(real.sc);
       o.memory?.remember(pictureOf(real.sc));
       return {
         sc: real.sc, shape: null, how: "real", appliedPlan: false, appliedAuthored: false, sourceId: real.id,
@@ -726,7 +738,7 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     if (!appliedPlan) applyFormationShape(sc, o.formation ?? null);
     setupKind(sc, prng, { appliedAuthored: false, appliedPlan, keeperStrength: ks });
     const separated = separateBodies(sc);
-    finishServedFrame(sc);
+    finishServed(sc);
     return {
       sc, shape: null, how: appliedPlan ? "plan" : "builder", appliedPlan, appliedAuthored: false, sourceId: null,
       faultRebuilds: 0, memoryRebuilds: 0, faults: [], nearestRecent: Infinity, separated,
@@ -773,12 +785,12 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     applyFormationShape(sc, o.formation ?? null);
     setupKind(sc, rng, { appliedAuthored: false, appliedPlan: false, keeperStrength: ks });
     const separated = separateBodies(sc);
-    finishServedFrame(sc);
+    finishServed(sc);
     return { sc, shape: null, how: "builder", appliedPlan: false, appliedAuthored: false, sourceId: null, faultRebuilds, memoryRebuilds, faults: [], nearestRecent: Infinity, separated };
   }
   // The camera's last word (v0.15 items 12 and 20): the whole goal, and room
   // to pull back — the camera moves, never the chance (lib/star/goalFrame.ts).
-  finishServedFrame(best.sc);
+  finishServed(best.sc);
   o.memory?.remember(pictureOf(best.sc));
   return {
     sc: best.sc, shape: best.shape, how: best.how, appliedPlan: false, appliedAuthored: true, sourceId: best.shape.sourceId,
@@ -814,6 +826,16 @@ export function requestSide(req: ScenarioRequest, position: string | undefined):
 }
 
 /** Open-play kinds with 5+ drawings — what a thin kind can turn into. */
+/** Kinds the match's deal rules do not allow now (kindMix.ts DealRules): kinds
+ *  not open yet, and kinds your play style never gets (a byline cross on
+ *  Attacking). */
+export function bannedBy(rules: DealRules | undefined): Set<ScenarioKind> {
+  const out = new Set<ScenarioKind>(rules?.exclude ?? []);
+  const w = rules?.style ? DECK_STYLE[rules.style] : undefined;
+  if (w) for (const [k, n] of Object.entries(w)) if (n === 0) out.add(k as ScenarioKind);
+  return out;
+}
+
 function drawnOpenKinds(): ScenarioKind[] {
   return EVEN_KINDS.filter((k) => servesDrawings(k));
 }
@@ -834,11 +856,11 @@ const drawnKindCache = new Map<string, ScenarioKind>();
  * current drawings: through ball → long range, build-up → midfield pass.
  * A kind that has drawings comes back as it is. Never a set piece.
  */
-export function drawnKindFor(kind: ScenarioKind): ScenarioKind {
-  if (servesDrawings(kind)) return kind;
-  const pool = drawnOpenKinds();
+export function drawnKindFor(kind: ScenarioKind, banned?: ReadonlySet<ScenarioKind>): ScenarioKind {
+  if (servesDrawings(kind) && !banned?.has(kind)) return kind;
+  const pool = banned?.size ? drawnOpenKinds().filter((k) => !banned.has(k)) : drawnOpenKinds();
   if (!pool.length) return kind;
-  const key = `${kind}|${pool.map((k) => `${k}:${ruleSetFor(k)?.n ?? 0}`).join(",")}|${ruleSetFor(kind)?.n ?? 0}`;
+  const key = `${kind}|${pool.map((k) => `${k}:${ruleSetFor(k)?.n ?? 0}`).join(",")}|${ruleSetFor(kind)?.n ?? 0}|${banned ? Array.from(banned).join(",") : ""}`;
   const hit = drawnKindCache.get(key);
   if (hit) return hit;
   const c = kindCentroid(kind);
@@ -887,8 +909,11 @@ function newRequestKind(
   const side = requestSide(req, position);
   const offered = offeredKinds(req.kinds, req, rng);
   const openPlay = !req.dribble && req.pattern !== "set_piece" && req.kinds.length > 1;
-  if (!openPlay) return { kind: drawnKindFor(rollKind({ ...req, kinds: offered }, position, rng)), side };
-  const swap = (ks: ScenarioKind[]) => withoutSwitchedOff(ks).map(drawnKindFor);
+  // The match's deal rules (kindMix.ts DealRules): kinds not open yet and
+  // kinds your play style never gets are never dealt, nor swapped in.
+  const banned = bannedBy(req.deal);
+  if (!openPlay) return { kind: drawnKindFor(rollKind({ ...req, kinds: offered }, position, rng), banned), side };
+  const swap = (ks: ScenarioKind[]) => withoutSwitchedOff(ks).filter((k) => !banned.has(k)).map((k) => drawnKindFor(k, banned));
   // For when the guard blocks every offered kind: the zone's own kinds (both
   // lanes), then the zones either side. A one-on-one is never added this way
   // (it is once a match).
