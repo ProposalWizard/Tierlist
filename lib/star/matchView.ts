@@ -575,7 +575,10 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, 
   }
   // Room to pull back: the ball a full-power drag clear of both sides
   // (Mikey, 26 Oct 2026; the old rule only kept room below the ball).
-  if (facing === "up" && !keepPlayArea) {
+  // Not for a picture with no goal (a build-up, a midfield pass): there the
+  // screen IS the play area, exactly the engine's frame (tests/star/matchView.mts
+  // "the play area is not the screen"), so sliding it would move the out line.
+  if (facing === "up" && !keepPlayArea && goalInView(sc.kind)) {
     const roomy = dragRoomCamera(cam, sc, hw, tiltDeg);
     if (roomy !== cam) { f.playZoom = (f.playZoom ?? 1) * ((cam.x2 - cam.x1) / (roomy.x2 - roomy.x1)); cam = roomy; }
   }
