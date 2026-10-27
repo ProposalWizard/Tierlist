@@ -136,7 +136,10 @@ for (let g = 0; g <= 1; g += 0.05) { const f = Math.floor(keeperGetUpT(g, gu.fra
 const src = fs.readFileSync(path.resolve("components/star/CanvasMatch.tsx"), "utf8");
 const animOf = src.slice(src.indexOf("const animOf = "), src.indexOf("const animOf = ") + 1200);
 check(animOf.indexOf("if (!animNew) return null;") >= 0 && animOf.indexOf("if (!animNew) return null;") < animOf.indexOf("animNow.set("), "animOf fills animNow before checking Animations: Old");
-check((src.match(/animNow\.set\(/g) ?? []).length === 1, "something else fills animNow");
+// Two writers since 25 Oct 2026: animOf, and the header's jump (you rise and
+// meet the cross, the "you" sprite set from the header beat). Animations are
+// always New (decided 12 Oct), so Old can no longer reach either.
+check((src.match(/animNow\.set\(/g) ?? []).length === 2 && src.includes('animNow.set("you", { a: ha, e: beat.animE })'), "something other than animOf and the header jump fills animNow");
 check(/const kAnim0 = ka && /.test(src) && /const ka = animNew \?/.test(src), "the keeper's kAnim no longer depends on Animations: New");
 for (const fn of ["keeperDiveClipNew(", "keeperStandingClip(", "keeperGetUpT("]) {
   const i = src.indexOf(fn);
