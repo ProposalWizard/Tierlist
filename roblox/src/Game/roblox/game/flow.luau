@@ -9,6 +9,8 @@ return function(exports, import, Js)
 	local M_leagueSquads = import("lib/star/leagueSquads")
 	local M_clubs = import("lib/star/clubs")
 	local M_calendar = import("lib/star/calendar")
+	local M_squadSaveCodec = import("lib/star/squadSaveCodec")
+	local M_starPoints = import("lib/star/starPoints")
 	local M_worldAgeing = import("lib/star/worldAgeing")
 	local M_competitions = import("lib/star/competitions")
 	local M_selection = import("lib/star/selection")
@@ -34,7 +36,7 @@ return function(exports, import, Js)
 	local M_transferRequest = import("lib/star/transferRequest")
 	local M_signingTalk = import("lib/star/signingTalk")
 	local M_transfers = import("lib/star/transfers")
-	local at, settle, newGame, loadRealSquads, loadNewClubSquad, matchday, simMatch, matchComplete, watchFromStands, youthWeek, youthPromotion, postMatchContinue, continueAfterMatch, drawContinue, knockoutContinue, playoffContinue, deadlineDayContinue, backToDashboard, callUp, callUpContinue, renewalOffer, contractComplete, endSeason, ballonDor, ballonDorContinue, playOn, transferInterest, openTransferWindowOrRoll, transferNegotiate, transferTalkDone, chooseTransfer, signingDone, stayPut, rollOverSeason, continueAfterRollover, seasonAwardsContinue, ladderContinue, retireNow, leagueTable
+	local at, settle, newGame, loadRealSquads, forSave, fromSave, resumeSquads, loadNewClubSquad, matchday, simMatch, matchComplete, watchFromStands, youthWeek, youthPromotion, postMatchContinue, continueAfterMatch, drawContinue, knockoutContinue, playoffContinue, deadlineDayContinue, backToDashboard, callUp, callUpContinue, renewalOffer, contractComplete, endSeason, ballonDor, ballonDorContinue, playOn, transferInterest, openTransferWindowOrRoll, transferNegotiate, transferTalkDone, chooseTransfer, signingDone, stayPut, rollOverSeason, continueAfterRollover, seasonAwardsContinue, ladderContinue, retireNow, leagueTable
 	settle = function(g)
 		if ((g.phase == "dashboard") and ((function() local _v = g.career.placement; if _v == nil then return nil end; _v = _v.kind; return _v end)() == "youth")) then
 			do return Js.ospread(g, Js.O({ phase = "youth" }, { "phase" })) end
@@ -69,6 +71,57 @@ return function(exports, import, Js)
 		do return Js.ospread(g, Js.O({ career = next_ }, { "career" })) end
 	end
 	exports.loadRealSquads = loadRealSquads
+	forSave = function(g)
+		do return Js.ospread(g, Js.O({ career = M_squadSaveCodec.toSavedForm(M_starPoints.withStars(g.career)) }, { "career" })) end
+	end
+	exports.forSave = forSave
+	fromSave = function(g)
+		do return Js.ospread(g, Js.O({ career = M_squadSaveCodec.fromSavedForm(g.career) }, { "career" })) end
+	end
+	exports.fromSave = fromSave
+	resumeSquads = function(g)
+		local c = g.career
+		if (not Js.T(c.player.club)) then
+			do return g end
+		end
+		if M_realSquad.shouldUpgradeSquad((if c.squad ~= nil then c.squad else Js.alit())) then
+			local real = Js.await(M_realSquad.fetchRealSquad(c.player.club))
+			if M_realSquad.shouldUpgradeSquad((if c.squad ~= nil then c.squad else Js.alit())) then
+				local squad = M_realSquad.squadAfterFetch((if c.squad ~= nil then c.squad else Js.alit()), M_worldAgeing.ageOwnFetchedForCareer(c, c.player.club, real))
+				if squad then
+					c = Js.ospread(c, Js.O({ squad = squad }, { "squad" }))
+				end
+			end
+		end
+		local leagueClubs = A.map(c.league, function(t)
+			return t.name
+		end)
+		if (not Js.T(Js.alen((if c.leagueSquads ~= nil then c.leagueSquads else Js.alit())))) then
+			local leagueSquads = Js.await(M_leagueSquads.fetchLeagueSquads(leagueClubs))
+			c = Js.ospread(c, Js.O({ leagueSquads = leagueSquads, league = M_leagueSquads.syncLeagueStrengthFromSquads(c.league, leagueSquads, M_calendar.divisionOf(c)) }, { "leagueSquads", "league" }))
+		else
+			local fresh = Js.await(M_leagueSquads.fetchLeagueSquads(leagueClubs))
+			local filled = M_leagueSquads.relabelOutOfPosition(M_squadSaveCodec.hydrateSquads((if c.leagueSquads ~= nil then c.leagueSquads else Js.alit())))
+			if (M_leagueSquads.isRealFetch(fresh) and M_leagueSquads.shouldUpgradeLeagueSquads(filled)) then
+				local leagueSquads = M_leagueSquads.mergeLeagueSquadStats(M_worldAgeing.ageFetchedForCareer(c, fresh), filled)
+				c = Js.ospread(c, Js.O({ leagueSquads = leagueSquads, league = M_leagueSquads.syncLeagueStrengthFromSquads(c.league, leagueSquads, M_calendar.divisionOf(c)) }, { "leagueSquads", "league" }))
+			elseif (filled ~= c.leagueSquads) then
+				c = Js.ospread(c, Js.O({ leagueSquads = filled }, { "leagueSquads" }))
+			end
+		end
+		local abroad = M_clubs.externalClubsFor(leagueClubs)
+		if (not Js.T(Js.alen((if c.externalSquads ~= nil then c.externalSquads else Js.alit())))) then
+			c = Js.ospread(c, Js.O({ externalSquads = Js.await(M_leagueSquads.fetchLeagueSquads(abroad)) }, { "externalSquads" }))
+		else
+			local fresh = Js.await(M_leagueSquads.fetchLeagueSquads(abroad))
+			local externalSquads = M_leagueSquads.reconcileExternalSquads(M_leagueSquads.relabelOutOfPosition(M_squadSaveCodec.hydrateSquads((if c.externalSquads ~= nil then c.externalSquads else Js.alit()))), M_worldAgeing.ageFetchedForCareer(c, fresh), function(club)
+				return (not (not Js.T((function() local _v = c.ownedClubs; if _v == nil then return nil end; _v = _v[club]; if _v == nil then return nil end; _v = _v.dissolvedInto; return _v end)())))
+			end)
+			c = Js.ospread(c, Js.O({ externalSquads = externalSquads }, { "externalSquads" }))
+		end
+		do return Js.ospread(g, Js.O({ career = c }, { "career" })) end
+	end
+	exports.resumeSquads = resumeSquads
 	loadNewClubSquad = function(g)
 		local club = g.career.player.club
 		local squad = Js.await(M_realSquad.fetchRealSquad(club))

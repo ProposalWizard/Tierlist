@@ -2356,14 +2356,15 @@ function commitOf() {
   try { return execSync("git rev-parse --short HEAD", { cwd: REPO }).toString().trim(); } catch { return "?"; }
 }
 
-export function convert(entries, { quiet = false } = {}) {
+export function convert(entries, { quiet = false, outDir = OUT_DIR, manifestPath = path.join(REPO, "roblox/tools/manifest.json"), clean = false } = {}) {
+  if (clean) fs.rmSync(outDir, { recursive: true, force: true });
   const program = makeProgram(entries.filter((e) => !e.endsWith(".json")));
   const files = collect(program, entries);
   const failures = [];
   const written = [];
   for (const f of [...files].sort()) {
     const key = modKey(f);
-    const outFile = path.join(OUT_DIR, key + ".luau");
+    const outFile = path.join(outDir, key + ".luau");
     fs.mkdirSync(path.dirname(outFile), { recursive: true });
     const override = path.join(OVERRIDES, key + ".luau");
     if (f.startsWith(PKG) && !fs.existsSync(override)) { failures.push(`no stand-in for package ${key}`); continue; }
@@ -2381,7 +2382,8 @@ export function convert(entries, { quiet = false } = {}) {
   }
   // the list of converted modules and where they came from
   const manifest = { commit: commitOf(), modules: written };
-  fs.writeFileSync(path.join(REPO, "roblox/tools/manifest.json"), JSON.stringify(manifest, null, 1) + "\n");
+  fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 1) + "\n");
   if (!quiet) {
     console.log(`converted ${written.length} of ${files.size} files`);
     for (const f of failures) console.log("FAIL " + f);

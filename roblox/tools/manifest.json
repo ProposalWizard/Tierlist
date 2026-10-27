@@ -1,5 +1,5 @@
 {
- "commit": "51e73e46",
+ "commit": "ced4ec48",
  "modules": [
   "__pkg/react",
   "data/fifa/knockout-tables_json",
@@ -202,8 +202,6 @@
   "lib/star/xpConfig",
   "lib/star/youth",
   "roblox/game/flow",
-  "roblox/game/screens",
-  "roblox/twin/_out",
-  "roblox/twin/screens.twin"
+  "roblox/game/screens"
  ]
 }

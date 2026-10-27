@@ -11,10 +11,13 @@ import { spawnSync } from "node:child_process";
 import { convert } from "./ts2luau/convert.mjs";
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../..");
+// tests convert into their own folder, never into the game (roblox/src/Game)
+const TEST_OUT = path.join(REPO, "roblox/build/test-game");
+const TEST_MANIFEST = path.join(TEST_OUT, "manifest.json");
 export const LUAU = process.env.LUAU || "/tmp/claude-0/tools/luau";
 
 export function bundle(entryKey) {
-  const manifest = JSON.parse(fs.readFileSync(path.join(REPO, "roblox/tools/manifest.json"), "utf8"));
+  const manifest = JSON.parse(fs.readFileSync(TEST_MANIFEST, "utf8"));
   const parts = [];
   const js = fs.readFileSync(path.join(REPO, "roblox/src/Runtime/Js.luau"), "utf8");
   parts.push("local Js = (function()\n" + js.replace(/^--!.*$/gm, "") + "\nend)()");
@@ -25,7 +28,7 @@ export function bundle(entryKey) {
   bundle.map = [];
   let line = parts.join("\n").split("\n").length + 1;
   for (const key of manifest.modules) {
-    const src = fs.readFileSync(path.join(REPO, "roblox/src/Game", key + ".luau"), "utf8").replace(/^--!.*$/gm, "");
+    const src = fs.readFileSync(path.join(TEST_OUT, key + ".luau"), "utf8").replace(/^--!.*$/gm, "");
     bundle.map.push([line + 1, key]);
     const chunk = `MODULES[${JSON.stringify(key)}] = (function()\n${src}\nend)()`;
     parts.push(chunk);
@@ -38,7 +41,7 @@ export function bundle(entryKey) {
 
 export function runLuau(entry, { doConvert = true } = {}) {
   if (doConvert) {
-    const { failures } = convert([entry], { quiet: true });
+    const { failures } = convert([entry], { quiet: true, outDir: TEST_OUT, manifestPath: TEST_MANIFEST, clean: true });
     if (failures.length) return { status: 99, stdout: "", stderr: "CONVERT FAILURES:\n" + failures.join("\n") };
   }
   const key = path.relative(REPO, path.resolve(REPO, entry)).replace(/\.(ts|mts)$/, "");

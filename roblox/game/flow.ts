@@ -55,10 +55,15 @@ import { renewalWage, renewalMultiplier } from "../../lib/star/economy";
 import { offerClauses } from "../../lib/star/contracts";
 import { computeBallonDorShortlist, type BallonDorResult } from "../../lib/star/ballonDor";
 import { nationKits, nationStrength } from "../../lib/star/international";
-import { fetchRealSquad } from "../../lib/star/realSquad";
-import { fetchLeagueSquads, fetchFreeAgents, syncLeagueStrengthFromSquads } from "../../lib/star/leagueSquads";
+import { fetchRealSquad, shouldUpgradeSquad, squadAfterFetch } from "../../lib/star/realSquad";
+import {
+  fetchLeagueSquads, fetchFreeAgents, syncLeagueStrengthFromSquads, relabelOutOfPosition, isRealFetch,
+  shouldUpgradeLeagueSquads, mergeLeagueSquadStats, reconcileExternalSquads,
+} from "../../lib/star/leagueSquads";
 import { externalClubsFor } from "../../lib/star/clubs";
-import { ageOwnFetchedForCareer } from "../../lib/star/worldAgeing";
+import { ageOwnFetchedForCareer, ageFetchedForCareer } from "../../lib/star/worldAgeing";
+import { toSavedForm, fromSavedForm, hydrateSquads } from "../../lib/star/squadSaveCodec";
+import { withStars } from "../../lib/star/starPoints";
 
 export type Phase =
   | "dashboard" | "youth" | "post-match" | "draw" | "knockout-roundup" | "playoff-roundup" | "deadline-day"
@@ -125,6 +130,60 @@ export async function loadRealSquads(g: Game): Promise<Game> {
     externalSquads,
   };
   return { ...g, career: next };
+}
+
+/**
+ * The save, as the website writes it (storage.ts saveCareer): the star rating
+ * banked, the other clubs' squads in their thin form (squadSaveCodec.ts).
+ */
+export function forSave(g: Game): Game {
+  return { ...g, career: toSavedForm(withStars(g.career)) as CareerState };
+}
+
+/** A save read back (fromSavedForm runs on every save read, as on the website). */
+export function fromSave(g: Game): Game {
+  return { ...g, career: fromSavedForm(g.career as Parameters<typeof fromSavedForm>[0]) };
+}
+
+/**
+ * Opening a saved career (page.tsx loadCareerAndDecidePhase): your dressing
+ * room upgraded if it is still invented, the division and the clubs abroad
+ * refetched and filled back in. Never loses what the career changed.
+ */
+export async function resumeSquads(g: Game): Promise<Game> {
+  let c = g.career;
+  if (!c.player.club) return g;
+  if (shouldUpgradeSquad(c.squad ?? [])) {
+    const real = await fetchRealSquad(c.player.club);
+    if (shouldUpgradeSquad(c.squad ?? [])) {
+      const squad = squadAfterFetch(c.squad ?? [], ageOwnFetchedForCareer(c, c.player.club, real));
+      if (squad) c = { ...c, squad };
+    }
+  }
+  const leagueClubs = c.league.map((t) => t.name);
+  if (!(c.leagueSquads ?? []).length) {
+    const leagueSquads = await fetchLeagueSquads(leagueClubs);
+    c = { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads, divisionOf(c)) };
+  } else {
+    const fresh = await fetchLeagueSquads(leagueClubs);
+    const filled = relabelOutOfPosition(hydrateSquads(c.leagueSquads ?? []));
+    if (isRealFetch(fresh) && shouldUpgradeLeagueSquads(filled)) {
+      const leagueSquads = mergeLeagueSquadStats(ageFetchedForCareer(c, fresh), filled);
+      c = { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads, divisionOf(c)) };
+    } else if (filled !== c.leagueSquads) c = { ...c, leagueSquads: filled };
+  }
+  const abroad = externalClubsFor(leagueClubs);
+  if (!(c.externalSquads ?? []).length) {
+    c = { ...c, externalSquads: await fetchLeagueSquads(abroad) };
+  } else {
+    const fresh = await fetchLeagueSquads(abroad);
+    const externalSquads = reconcileExternalSquads(
+      relabelOutOfPosition(hydrateSquads(c.externalSquads ?? [])), ageFetchedForCareer(c, fresh),
+      (club) => !!c.ownedClubs?.[club]?.dissolvedInto,
+    );
+    c = { ...c, externalSquads };
+  }
+  return { ...g, career: c };
 }
 
 /** After a move (handleSigningDone): the new club's real dressing room. */
