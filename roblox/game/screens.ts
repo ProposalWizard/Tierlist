@@ -348,7 +348,9 @@ function dashboard(g: RobloxGame): Screen {
     s.blocks.push({ kind: "heading", text: "Next match" },
       { kind: "text", text: fixtureLine(c, m.fixture) }, { kind: "text", text: dateOf(c, m.fixture), tone: "dim" });
     if (m.canPlay) {
-      s.buttons.push({ label: "Sim this match ⚽", action: "sim", style: "primary" });
+      // "play-match" is played on the player's device (roblox/src/Client/Match.luau)
+      s.buttons.push({ label: "Play match ⚽", action: "play-match", style: "primary" });
+      s.buttons.push({ label: "Sim it", action: "sim" });
     } else {
       const why = m.status === "Injured" ? "You're injured." : m.fixture.watch ? "Your country plays. Watch it on TV." : m.reason ?? "You're not in the squad this week.";
       s.blocks.push({ kind: "text", text: why, tone: "bad" });
@@ -474,6 +476,8 @@ export function act(g: RobloxGame, action: string, arg: string | undefined, rng:
     case "tab": return { ...g, ui: { ...ui, tab: arg ?? "home" } };
     case "home": return { ...F.backToDashboard(g), ui: { ...ui, tab: "home" } };
     case "sim": return F.simMatch(g);
+    // Played on the player's device (the server's Match remote); with no device (tests) it is simmed.
+    case "play-match": return F.simMatch(g);
     case "watch": return F.watchFromStands(g);
     case "youth-week": return F.youthWeek(g);
     case "youth-promote": return F.youthPromotion(g);

@@ -3,11 +3,13 @@
 // sides: drags back from the ball towards goal, taps the strike screen, runs
 // after a pass, dribbles on the stick, presses every pause button. Each
 // chance's outcome and the final stats must print the same.
-// Each match is also played from the trimmed career (matchCareer, what a
-// player's device is sent): it must play exactly the same.
+// Each match is also played as a player's device gets it (the trimmed
+// career, through JSON): it must play exactly the same.
 //   TWIN_MATCHES=3 TWIN_MATCH_DIVS=premier npx tsx roblox/twin/match.twin.ts
 import * as F from "../game/flow";
 import * as M from "../game/match";
+import * as S from "../game/strikeScreen";
+import * as V from "../game/matchView";
 import * as C from "../../lib/star/clubs";
 import type { StarPlayer, MatchStats } from "../../lib/star/types";
 import { PictureMemory } from "../../lib/star/chanceMaker";
@@ -34,6 +36,7 @@ function play(setup: M.MatchSetup): { lines: string[]; stats: MatchStats | null 
   let chance = 0;
   let lastPhase = "";
   let phaseFrames = 0;
+  let strike: S.StrikeScreen | null = null;
   let frames = 0;
   while (!m.result && frames++ < 400000) {
     const ph: string = m.phase;
@@ -41,7 +44,11 @@ function play(setup: M.MatchSetup): { lines: string[]; stats: MatchStats | null 
       if (ph === "result" || lastPhase === "flight" || lastPhase === "tdDribble") {
         lines.push(`  c${chance} ${m.minute}' ${m.sc.kind} ${lastPhase} -> ${ph} ${m.outcome ?? "-"} ${m.userScore}-${m.oppScore} t${r2(m.now)}`);
       }
-      if (ph === "aim" || ph === "tdDribble") chance++;
+      if (ph === "aim" || ph === "tdDribble") {
+        chance++;
+        const f = V.frameOf(m);
+        lines.push(`  view ${f.phase} ${f.bodies.map((b) => b.side[0]).join("")} ball ${f.ball ? `${r2(f.ball.x)},${r2(f.ball.y)}` : "-"} cam ${r2(f.camera.x1)}..${r2(f.camera.x2)} ${f.camera.facing} ${f.score.usName} ${f.score.us}-${f.score.them} ${f.score.themName} e${r2(f.energy)} ${JSON.stringify(f.controls)}`);
+      }
       if (ph === "tdDribble" || ph === "runup") lines.push(`  phase ${ph} ${m.minute}`);
       lastPhase = ph;
       phaseFrames = 0;
@@ -61,10 +68,18 @@ function play(setup: M.MatchSetup): { lines: string[]; stats: MatchStats | null 
       M.pointerMove(m, { x: b.x - (dx / n) * pull * 0.5, y: b.y - (dy / n) * pull * 0.5 });
       M.pointerMove(m, { x: b.x - (dx / n) * pull, y: b.y - (dy / n) * pull });
       M.pointerUp(m);
-    } else if (m.phase === "contact" && phaseFrames === 15) {
-      if (m.powerStrike) M.powerContact(m, ((chance * 29) % 10) / 10);
-      else if (chance % 7 === 6) M.contactTimeout(m);
-      else M.contact(m, { cx: (((chance * 13) % 5) - 2) * 0.12, cy: (((chance * 7) % 5) - 2) * 0.12, lift: (chance % 3) * 0.3 });
+    } else if (m.phase === "contact") {
+      // the strike screen (roblox/game/strikeScreen.ts): tap the ball, or let the clock run out
+      if (phaseFrames === 1) strike = S.openStrike(m);
+      if (strike) {
+        const v = S.strikeView(strike);
+        // let the clock run out now and then (only a timed screen has one)
+        if (phaseFrames === 15 + (chance % 4) * 10 && (chance % 7 !== 6 || (v.ring === null && !v.powerSpot && !strike.inputs.powerShot))) {
+          const sp = v.powerSpot;
+          S.strikeTap(strike, sp ? sp.x : (((chance * 13) % 5) - 2) * 0.22, sp ? sp.y : (((chance * 7) % 5) - 2) * 0.22);
+        }
+        S.strikeStep(strike, m, DT);
+      }
     } else if (m.phase === "runup" && phaseFrames === 10) {
       M.runupNudge(m, (((chance * 3) % 5) - 2) * 0.03, 0);
     } else if (m.phase === "flight") {
@@ -108,10 +123,14 @@ for (const [div, clubs, pick, count] of DIVS) {
     console.log(`match ${played + 1} v ${day.fixture.opponent} ${day.fixture.home ? "home" : "away"} on ${setup.startMinute}' seed ${setup.seed}`);
     const full = play(setup);
     for (const l of full.lines) console.log(l);
-    const thin = play({ ...setup, career: M.matchCareer(setup.career) });
-    const same = thin.lines.join("\n") === full.lines.join("\n");
-    console.log(`  trimmed career: ${same ? "same" : "DIFFERENT"}`);
-    if (!same) for (const l of thin.lines) console.log(`  thin${l}`);
+    // the real path: the server sends the trimmed setup as JSON, the device plays it
+    const sent = JSON.parse(JSON.stringify(M.deviceSetup(setup))) as M.MatchSetup;
+    const device = play(sent);
+    const same = device.lines.join("\n") === full.lines.join("\n");
+    console.log(`  on the device: ${same ? "same" : "DIFFERENT"}`);
+    if (!same) for (const l of device.lines) console.log(`  device${l}`);
+    const back = M.checkedStats(JSON.parse(JSON.stringify(device.stats)));
+    console.log(`  stats accepted: ${back ? "yes" : "NO"}`);
     if (!full.stats) break;
     g = F.matchComplete(g, full.stats, readied, day.fixture);
     played++;

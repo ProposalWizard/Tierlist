@@ -107,7 +107,7 @@ import { kitsFor, keeperKit, type MatchKits } from "../../lib/star/kits";
 import { shortClub } from "../../lib/star/media/grammar";
 import { divisionOf } from "../../lib/star/calendar";
 import type { CareerState, MatchStats, Fixture, GoalEvent, OppGoalEvent, SquadPlayer, Playstyle } from "../../lib/star/types";
-import { shotPowerOn, contactFieldOn, feelPower, feelLift, struckAtGoal } from "../../lib/star/shotFeel";
+import { shotPowerOn, contactFieldOn, feelPower, feelLift, struckAtGoal, fieldApplies } from "../../lib/star/shotFeel";
 import { energyFactorFor, energyPerMinute, clampEnergy, tiredKickSkills, fatigueCut, type EnergyMode } from "../../lib/star/energy";
 import { aerialOf } from "../../lib/star/aerial";
 import { penaltyReadFor, decidePenaltyRead, applyPenaltyRead } from "../../lib/star/penaltyKeeper";
@@ -2158,13 +2158,22 @@ export function aimPreview(m: MatchState): { dir: Vec2; power: number } | null {
   const b = m.sc.ball;
   return { dir: { x: b.x - m.drag.x, y: b.y - m.drag.y }, power: powerFromDrag(m, m.drag, b) };
 }
-/** The strike screen: what kind of ball to draw and its countdown. */
-export function contactScreen(m: MatchState): { motion: string; timerS: number | null; power: number; power2: boolean; aimFromTap: boolean; ballZ?: number } | null {
+/** The strike screen's inputs: CanvasMatch's <ContactBall> props (or the power shot's). */
+export interface StrikeInputs {
+  motion: BallMotion; timeLimitS: number | null; power: number; powerShot: boolean; aimFromTap: boolean; ballZ?: number;
+  technique: number; aerial: number; grades: boolean; knuckles: boolean; field: boolean;
+}
+export function strikeInputs(m: MatchState): StrikeInputs | null {
   if (m.phase !== "contact" || !m.aim) return null;
-  const motion = strikeMotion(m.sc.kind, m.seed);
+  const sc = m.sc;
+  const motion = strikeMotion(sc.kind, m.seed);
   return {
-    motion, timerS: m.contactTimerS, power: m.aim.power, power2: m.powerStrike, aimFromTap: isAirKind(m.sc.kind) && airTapOn(),
-    ballZ: motion === "float" ? (m.sc.kind === "header" ? airZOf(m.sc) : HEADER_Z) : undefined,
+    motion, timeLimitS: m.contactTimerS, power: m.aim.power, powerShot: m.powerStrike, aimFromTap: isAirKind(sc.kind) && airTapOn(),
+    ballZ: motion === "float" ? (sc.kind === "header" ? airZOf(sc) : HEADER_Z) : undefined,
+    technique: m.setup.skills.technique, aerial: airAerialNow(m),
+    grades: shotsPro() && aimedAtGoal(sc, m.aim.dir),
+    knuckles: knucklePowerOn() && mechOpen(m, "knuckle"),
+    field: contactFieldOn() && fieldApplies(sc.kind),
   };
 }
 /** Your side's and their kit colours. */
@@ -2172,3 +2181,44 @@ export function matchKits(m: MatchState): { us: { shirt: string; trim: string };
   return { us: m.fixture.home ? m.kits.home : m.kits.away, them: m.fixture.home ? m.kits.away : m.kits.home, keeper: m.kits.keeper, ourKeeper: m.ourKeeperKit };
 }
 export { POST_L, POST_R };
+
+/** Which buttons the match screen shows now (CanvasMatch's overlay buttons). */
+export function controlsOf(m: MatchState): {
+  powerShot: boolean; powerArmed: boolean; curve: boolean; steer: boolean; callForIt: boolean;
+  nudge: boolean; dribble: boolean; touchMode: boolean;
+} {
+  const ph = m.phase;
+  return {
+    powerShot: ph === "aim" && knucklePowerOn() && mechOpen(m, "powerShot") && !hasRunup(m.sc.kind),
+    powerArmed: m.powerArmed,
+    curve: ph === "flight" && m.setup.canCurve && !!m.ball,
+    steer: ph === "flight" && !!m.playOn?.stick,
+    callForIt: ph === "flight" && !!m.playOn?.stick && !!m.career.captain,
+    nudge: ph === "runup" && !!m.runup?.nudge && !m.runup.arrived,
+    dribble: ph === "tdDribble" && !!m.td && m.td.phase === "running",
+    touchMode: m.touchModeOn,
+  };
+}
+
+// ──────────────────────────────────────────────────── server ⇄ device ──
+
+/** What the server sends a player's device to play: the setup with the trimmed career. */
+export function deviceSetup(setup: MatchSetup): MatchSetup {
+  return { ...setup, career: matchCareer(setup.career) };
+}
+
+/**
+ * The stats a device sends back, checked before they touch the career: every
+ * number present and finite, and nothing a real match could not produce.
+ * Null = refused (the server then plays nothing into the career).
+ */
+export function checkedStats(raw: unknown): MatchStats | null {
+  if (!raw || typeof raw !== "object") return null;
+  const s = raw as Record<string, unknown>;
+  const num = (k: string, lo: number, hi: number) => typeof s[k] === "number" && Number.isFinite(s[k] as number) && (s[k] as number) >= lo && (s[k] as number) <= hi;
+  if (!num("goals", 0, 12) || !num("assists", 0, 12) || !num("chances", 0, 60) || !num("passes", 0, 200)) return null;
+  if (!num("rating", 0, 10) || !num("homeScore", 0, 30) || !num("awayScore", 0, 30)) return null;
+  for (const k of ["bossChange", "teamChange", "fansChange", "wage", "goalBonus", "sponsorPay", "totalCash"]) if (!num(k, -1e9, 1e9)) return null;
+  if (typeof s.starMan !== "boolean") return null;
+  return s as unknown as MatchStats;
+}
