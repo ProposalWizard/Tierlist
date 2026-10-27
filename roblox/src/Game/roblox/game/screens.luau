@@ -16,10 +16,11 @@ return function(exports, import, Js)
 	local M_week = import("lib/star/week")
 	local M_trainingFlow = import("roblox/game/trainingFlow")
 	local M_lifeFlow = import("roblox/game/lifeFlow")
+	local M_relgamePlay = import("roblox/game/relgamePlay")
 	local M_season = import("lib/star/season")
 	local M_careerFlow = import("lib/star/careerFlow")
 	local M_negotiation = import("lib/star/negotiation")
-	local money, hud, fixtureLine, dateOf, score, ordinal, TABS, DIVISIONS, setupScreen, divisionByName, clubScreen, startGame, startWithoutTrial, simTrial, trialDone, trialScreen, managerTalkScreen, trialRewardScreen, screen, trainTab, lifeTab, trainingDone, dashboard, youthScreen, postMatch, renewalScreen, windowScreen, talkScreen, niceStep, act
+	local money, hud, fixtureLine, dateOf, score, ordinal, TABS, DIVISIONS, setupScreen, divisionByName, clubScreen, startGame, startWithoutTrial, simTrial, trialDone, trialScreen, managerTalkScreen, trialRewardScreen, screen, trainTab, lifeTab, REL_KIND, relgameDone, trainingDone, dashboard, youthScreen, postMatch, renewalScreen, windowScreen, talkScreen, niceStep, act
 	money = function(n)
 		local sign = (if (n < 0) then "-" else "")
 		local a = math.abs(Math.round(n))
@@ -402,6 +403,13 @@ return function(exports, import, Js)
 			A.push(s.buttons, back)
 			do return s end
 		end
+		if (page == "boss") then
+			s.title = "👔 Your manager"
+			A.push(s.blocks, Js.O({ kind = "text", text = "All three move the Manager bar the same amount: up to +6, or −2 if it goes badly." }, { "kind", "text" }))
+			A.push(s.blocks, Js.O({ kind = "list", items = Js.alit(Js.O({ text = "🎯 Penalties", sub = "He names a spot. Hit it. Three kicks.", action = "play-relgame", arg = "penalties" }, { "text", "sub", "action", "arg" }), Js.O({ text = "💬 Office talk", sub = "Three questions. Say what he wants to hear.", action = "rel-boss" }, { "text", "sub", "action" }), Js.O({ text = "⚽ Extra session", sub = "Four shots while he watches. Each one harder.", action = "play-relgame", arg = "session" }, { "text", "sub", "action", "arg" })) }, { "kind", "items" }))
+			A.push(s.buttons, back)
+			do return s end
+		end
 		if (page == "dayoff") then
 			s.title = "🌴 Day off"
 			A.push(s.blocks, Js.O({ kind = "text", text = "How do you want to spend it? Happier players get more energy back when they rest." }, { "kind", "text" }))
@@ -482,10 +490,10 @@ return function(exports, import, Js)
 		A.push(s.blocks, Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Energy", value = (Js.numstr(Math.round(c.energy)) .. "%"), tone = (if (c.energy < 40) then "bad" else "normal") }, { "label", "value", "tone" }), Js.O({ label = "Happiness", value = (Js.numstr(Math.round(c.happiness)) .. "%") }, { "label", "value" }), Js.O({ label = "Days left this week", value = Js.numstr(left), tone = (if (left > 0) then "normal" else "bad") }, { "label", "value", "tone" }), Js.O({ label = "Money", value = money(c.money), tone = "gold" }, { "label", "value", "tone" })) }, { "kind", "items" }))
 		local rel = function(k, icon, name, value, action)
 			local st = M_lifeFlow.relGame(c, k)
-			do return Js.ospread(Js.O({ text = (icon .. " " .. name .. ": " .. Js.numstr(Math.round(value))), sub = (if Js.T(action) then (M_lifeFlow.REL_GAME_LABEL[k] .. " · " .. (if st.why ~= nil then st.why else ("1 day, " .. Js.numstr(M_trainingFlow.trainingEnergyCost()) .. " energy"))) else (M_lifeFlow.REL_GAME_LABEL[k] .. " · not in Roblox yet")), tone = (if (st.canPlay and Js.T(action)) then "normal" else "dim") }, { "text", "sub", "tone" }), (if (st.canPlay and Js.T(action)) then Js.O({ action = action }, { "action" }) else Js.O({}, nil))) end
+			do return Js.ospread(Js.O({ text = (icon .. " " .. name .. ": " .. Js.numstr(Math.round(value))), sub = (M_lifeFlow.REL_GAME_LABEL[k] .. " · " .. (if st.why ~= nil then st.why else ("1 day, " .. Js.numstr(M_trainingFlow.trainingEnergyCost()) .. " energy"))), tone = (if (st.canPlay and Js.T(action)) then "normal" else "dim") }, { "text", "sub", "tone" }), (if (st.canPlay and Js.T(action)) then Js.O({ action = action }, { "action" }) else Js.O({}, nil))) end
 		end
 		A.push(s.blocks, Js.O({ kind = "heading", text = "Relationships" }, { "kind", "text" }))
-		A.push(s.blocks, Js.O({ kind = "list", items = Js.alit(rel("boss", "👔", "Manager", c.relationships.boss, "rel-boss"), rel("team", "🤝", "Team-mates", c.relationships.team, nil), rel("fans", "📣", "Fans", c.relationships.fans, nil), rel("happiness", "🌴", "Happiness", c.happiness, "life-dayoff")) }, { "kind", "items" }))
+		A.push(s.blocks, Js.O({ kind = "list", items = Js.alit(rel("boss", "👔", "Manager", c.relationships.boss, "life-boss"), Js.ospread(rel("team", "🤝", "Team-mates", c.relationships.team, "play-relgame"), (if M_lifeFlow.relGame(c, "team").canPlay then Js.O({ arg = "woodwork" }, { "arg" }) else Js.O({}, nil))), Js.ospread(rel("fans", "📣", "Fans", c.relationships.fans, "play-relgame"), (if M_lifeFlow.relGame(c, "fans").canPlay then Js.O({ arg = "signing" }, { "arg" }) else Js.O({}, nil))), rel("happiness", "🌴", "Happiness", c.happiness, "life-dayoff")) }, { "kind", "items" }))
 		local owned = A.filter(M_lifeFlow.cans(c), function(k)
 			return (k.owned > 0)
 		end)
@@ -503,6 +511,19 @@ return function(exports, import, Js)
 		end
 		do return s end
 	end
+	relgameDone = function(g, game_, count, roll)
+		local kind = REL_KIND[game_]
+		if ((not Js.T(kind)) or (not M_lifeFlow.relGame(g.career, kind).canPlay)) then
+			do return nil end
+		end
+		local r = M_relgamePlay.relgameGain(g.career, game_, count, roll)
+		if (not r) then
+			do return nil end
+		end
+		local who = (if (kind == "boss") then "Manager" else (if (kind == "team") then "Team-mates" else "Fans"))
+		do return Js.ospread(g, Js.O({ career = M_lifeFlow.relGameComplete(g.career, kind, Js.O({ gain = r.gain }, { "gain" })), ui = Js.ospread((if g.ui ~= nil then g.ui else Js.O({}, nil)), Js.O({ tab = "life", life = nil, lifeNote = (r.line .. " " .. who .. " " .. (if (r.gain >= 0) then "+" else "") .. Js.numstr(r.gain) .. ".") }, { "tab", "life", "lifeNote" })) }, { "career", "ui" })) end
+	end
+	exports.relgameDone = relgameDone
 	trainingDone = function(g, skill, level, stars)
 		local label = A.find(M_trainingFlow.SKILL_LABELS, function(l)
 			return (l[1] == skill)
@@ -697,7 +718,7 @@ return function(exports, import, Js)
 		if rng == nil then rng = Math.random end
 		local ui = (if g.ui ~= nil then g.ui else Js.O({}, nil))
 		local _sw20 = action
-		local _ci21 = (if _sw20 == "tab" then 1 elseif _sw20 == "home" then 2 elseif _sw20 == "life" then 3 elseif _sw20 == "rest" then 4 elseif _sw20 == "use-can" then 5 elseif _sw20 == "buy-can" then 6 elseif _sw20 == "buy-boot" then 7 elseif _sw20 == "buy-item" then 8 elseif _sw20 == "life-dayoff" then 9 elseif _sw20 == "dayoff" then 10 elseif _sw20 == "rel-boss" then 11 elseif _sw20 == "talk-pick" then 12 elseif _sw20 == "sponsor" then 13 elseif _sw20 == "train-skill" then 14 elseif _sw20 == "train-back" then 15 elseif _sw20 == "play-training" then 16 elseif _sw20 == "sim" then 17 elseif _sw20 == "play-match" then 18 elseif _sw20 == "watch" then 19 elseif _sw20 == "youth-week" then 20 elseif _sw20 == "youth-promote" then 21 elseif _sw20 == "post-continue" then 22 elseif _sw20 == "draw-continue" then 23 elseif _sw20 == "ko-continue" then 24 elseif _sw20 == "playoff-continue" then 25 elseif _sw20 == "deadline-continue" then 26 elseif _sw20 == "callup-continue" then 27 elseif _sw20 == "end-season" then 28 elseif _sw20 == "ballon-continue" then 29 elseif _sw20 == "play-on" then 30 elseif _sw20 == "retire" then 31 elseif _sw20 == "play-trial" then 32 elseif _sw20 == "trial-sign" then 33 elseif _sw20 == "trial-reward-done" then 34 elseif _sw20 == "awards-continue" then 35 elseif _sw20 == "ladder-continue" then 36 elseif _sw20 == "stay" then 37 elseif _sw20 == "sign" then 38 elseif _sw20 == "relegation-pick" then 39 elseif _sw20 == "ask-contract" then 40 elseif _sw20 == "renewal-start" then 41 elseif _sw20 == "renewal-guess" then 42 elseif _sw20 == "renewal-sign" then 43 elseif _sw20 == "renewal-cancel" then 44 elseif _sw20 == "window-talk" then 45 elseif _sw20 == "talk-nudge" then 46 elseif _sw20 == "talk-offer" then 47 elseif _sw20 == "talk-done" then 48 elseif _sw20 == "talk-walk" then 49 else 0)
+		local _ci21 = (if _sw20 == "tab" then 1 elseif _sw20 == "home" then 2 elseif _sw20 == "life" then 3 elseif _sw20 == "rest" then 4 elseif _sw20 == "use-can" then 5 elseif _sw20 == "buy-can" then 6 elseif _sw20 == "buy-boot" then 7 elseif _sw20 == "buy-item" then 8 elseif _sw20 == "life-boss" then 9 elseif _sw20 == "play-relgame" then 10 elseif _sw20 == "life-dayoff" then 11 elseif _sw20 == "dayoff" then 12 elseif _sw20 == "rel-boss" then 13 elseif _sw20 == "talk-pick" then 14 elseif _sw20 == "sponsor" then 15 elseif _sw20 == "train-skill" then 16 elseif _sw20 == "train-back" then 17 elseif _sw20 == "play-training" then 18 elseif _sw20 == "sim" then 19 elseif _sw20 == "play-match" then 20 elseif _sw20 == "watch" then 21 elseif _sw20 == "youth-week" then 22 elseif _sw20 == "youth-promote" then 23 elseif _sw20 == "post-continue" then 24 elseif _sw20 == "draw-continue" then 25 elseif _sw20 == "ko-continue" then 26 elseif _sw20 == "playoff-continue" then 27 elseif _sw20 == "deadline-continue" then 28 elseif _sw20 == "callup-continue" then 29 elseif _sw20 == "end-season" then 30 elseif _sw20 == "ballon-continue" then 31 elseif _sw20 == "play-on" then 32 elseif _sw20 == "retire" then 33 elseif _sw20 == "play-trial" then 34 elseif _sw20 == "trial-sign" then 35 elseif _sw20 == "trial-reward-done" then 36 elseif _sw20 == "awards-continue" then 37 elseif _sw20 == "ladder-continue" then 38 elseif _sw20 == "stay" then 39 elseif _sw20 == "sign" then 40 elseif _sw20 == "relegation-pick" then 41 elseif _sw20 == "ask-contract" then 42 elseif _sw20 == "renewal-start" then 43 elseif _sw20 == "renewal-guess" then 44 elseif _sw20 == "renewal-sign" then 45 elseif _sw20 == "renewal-cancel" then 46 elseif _sw20 == "window-talk" then 47 elseif _sw20 == "talk-nudge" then 48 elseif _sw20 == "talk-offer" then 49 elseif _sw20 == "talk-done" then 50 elseif _sw20 == "talk-walk" then 51 else 0)
 		local _cont22 = false
 		repeat
 			if _ci21 ~= 0 and _ci21 <= 1 then
@@ -720,9 +741,15 @@ return function(exports, import, Js)
 				end
 			end
 			if _ci21 ~= 0 and _ci21 <= 9 then
-				do return (if M_lifeFlow.relGame(g.career, "happiness").canPlay then Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "life", life = "dayoff", lifeNote = nil }, { "tab", "life", "lifeNote" })) }, { "ui" })) else g) end
+				do return (if M_lifeFlow.relGame(g.career, "boss").canPlay then Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "life", life = "boss", lifeNote = nil }, { "tab", "life", "lifeNote" })) }, { "ui" })) else g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 10 then
+				do return (relgameDone(g, (if arg ~= nil then arg else ""), (if (arg == "signing") then 6 else 2), rng()) or g) end
+			end
+			if _ci21 ~= 0 and _ci21 <= 11 then
+				do return (if M_lifeFlow.relGame(g.career, "happiness").canPlay then Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "life", life = "dayoff", lifeNote = nil }, { "tab", "life", "lifeNote" })) }, { "ui" })) else g) end
+			end
+			if _ci21 ~= 0 and _ci21 <= 12 then
 				do
 					if (not M_lifeFlow.relGame(g.career, "happiness").canPlay) then
 						do return g end
@@ -734,7 +761,7 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ career = M_lifeFlow.relGameComplete(g.career, "happiness", r), ui = Js.ospread(ui, Js.O({ life = nil, lifeNote = (r.line .. " Happiness +" .. Js.numstr(r.gain) .. ".") }, { "life", "lifeNote" })) }, { "career", "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 11 then
+			if _ci21 ~= 0 and _ci21 <= 13 then
 				do
 					if (not M_lifeFlow.relGame(g.career, "boss").canPlay) then
 						do return g end
@@ -742,7 +769,7 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "life", life = "talk", lifeNote = nil, bossTalk = M_lifeFlow.startTalk(g.career, math.floor((rng() * 100000))) }, { "tab", "life", "lifeNote", "bossTalk" })) }, { "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 12 then
+			if _ci21 ~= 0 and _ci21 <= 14 then
 				do
 					local t = ui.bossTalk
 					if ((not t) or (not M_lifeFlow.relGame(g.career, "boss").canPlay)) then
@@ -756,7 +783,7 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ career = M_lifeFlow.relGameComplete(g.career, "boss", r), ui = Js.ospread(ui, Js.O({ life = nil, bossTalk = nil, lifeNote = (r.line .. " Manager " .. (if (r.gain >= 0) then "+" else "") .. Js.numstr(r.gain) .. ".") }, { "life", "bossTalk", "lifeNote" })) }, { "career", "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 13 then
+			if _ci21 ~= 0 and _ci21 <= 15 then
 				do
 					local _d23 = S.split((if arg ~= nil then arg else ""), ":")
 					local what = _d23[1]
@@ -765,13 +792,13 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ career = r.career, ui = Js.ospread(ui, Js.O({ life = (if (((what == "sign") or (what == "decline")) or (what == "walk")) then "sponsors" else ui.life), lifeNote = r.note }, { "life", "lifeNote" })) }, { "career", "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 14 then
+			if _ci21 ~= 0 and _ci21 <= 16 then
 				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "train", trainSkill = arg, trainResult = nil }, { "tab", "trainSkill", "trainResult" })) }, { "ui" })) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 15 then
+			if _ci21 ~= 0 and _ci21 <= 17 then
 				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "train", trainSkill = nil, trainResult = nil }, { "tab", "trainSkill", "trainResult" })) }, { "ui" })) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 16 then
+			if _ci21 ~= 0 and _ci21 <= 18 then
 				do
 					local _d24 = S.split((if arg ~= nil then arg else ""), ":")
 					local sk = _d24[1]
@@ -779,55 +806,55 @@ return function(exports, import, Js)
 					do return (trainingDone(g, sk, Js.Number(lv), 2) or g) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 17 then
-				do return M_flow.simMatch(g) end
-			end
-			if _ci21 ~= 0 and _ci21 <= 18 then
-				do return M_flow.simMatch(g) end
-			end
 			if _ci21 ~= 0 and _ci21 <= 19 then
-				do return M_flow.watchFromStands(g) end
+				do return M_flow.simMatch(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 20 then
-				do return M_flow.youthWeek(g) end
+				do return M_flow.simMatch(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 21 then
-				do return M_flow.youthPromotion(g) end
+				do return M_flow.watchFromStands(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 22 then
-				do return M_flow.postMatchContinue(g) end
+				do return M_flow.youthWeek(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 23 then
-				do return M_flow.drawContinue(g) end
+				do return M_flow.youthPromotion(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 24 then
-				do return M_flow.knockoutContinue(g) end
+				do return M_flow.postMatchContinue(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 25 then
-				do return M_flow.playoffContinue(g) end
+				do return M_flow.drawContinue(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 26 then
-				do return M_flow.deadlineDayContinue(g) end
+				do return M_flow.knockoutContinue(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 27 then
-				do return M_flow.callUpContinue(g) end
+				do return M_flow.playoffContinue(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 28 then
-				do return M_flow.endSeason(g) end
+				do return M_flow.deadlineDayContinue(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 29 then
-				do return M_flow.ballonDorContinue(g) end
+				do return M_flow.callUpContinue(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 30 then
-				do return M_flow.playOn(g) end
+				do return M_flow.endSeason(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 31 then
-				do return M_flow.retireNow(g) end
+				do return M_flow.ballonDorContinue(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 32 then
-				do return (if (g.phase == "trial") then simTrial(g) else g) end
+				do return M_flow.playOn(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 33 then
+				do return M_flow.retireNow(g) end
+			end
+			if _ci21 ~= 0 and _ci21 <= 34 then
+				do return (if (g.phase == "trial") then simTrial(g) else g) end
+			end
+			if _ci21 ~= 0 and _ci21 <= 35 then
 				do
 					if (g.phase ~= "manager-talk") then
 						do return g end
@@ -840,31 +867,31 @@ return function(exports, import, Js)
 					do return (if youth then Js.ospread(M_flow.afterSigning(Js.ospread(g, Js.O({ career = youth }, { "career" }))), Js.O({ ui = ui }, { "ui" })) else g) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 34 then
+			if _ci21 ~= 0 and _ci21 <= 36 then
 				do return (if (g.phase == "trial-reward") then Js.ospread(M_flow.afterSigning(g), Js.O({ ui = Js.ospread(ui, Js.O({ tab = "home" }, { "tab" })) }, { "ui" })) else g) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 35 then
+			if _ci21 ~= 0 and _ci21 <= 37 then
 				do return M_flow.seasonAwardsContinue(g) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 36 then
+			if _ci21 ~= 0 and _ci21 <= 38 then
 				do return M_flow.ladderContinue(g) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 37 then
+			if _ci21 ~= 0 and _ci21 <= 39 then
 				do return M_flow.stayPut(g) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 38 then
+			if _ci21 ~= 0 and _ci21 <= 40 then
 				do return M_flow.signingDone(g) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 39 then
+			if _ci21 ~= 0 and _ci21 <= 41 then
 				do return M_flow.chooseTransfer(g, (if g.transferOffers ~= nil then g.transferOffers else Js.alit())[Js.Number(arg) + 1]) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 40 then
+			if _ci21 ~= 0 and _ci21 <= 42 then
 				do return Js.ospread(g, Js.O({ phase = "contract-renewal", contractOfferReason = nil, ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "phase", "contractOfferReason", "ui" })) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 41 then
+			if _ci21 ~= 0 and _ci21 <= 43 then
 				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ renewal = Js.O({ current = (3 + math.floor((rng() * 8))), next = nil, wins = 0, locked = false, rounds = 0, message = "", started = true }, { "current", "next", "wins", "locked", "rounds", "message", "started" }) }, { "renewal" })) }, { "ui" })) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 42 then
+			if _ci21 ~= 0 and _ci21 <= 44 then
 				do
 					local r = ui.renewal
 					if ((not r) or r.locked) then
@@ -879,17 +906,17 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ renewal = next_ }, { "renewal" })) }, { "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 43 then
+			if _ci21 ~= 0 and _ci21 <= 45 then
 				do
 					local r = ui.renewal
 					local offer = M_flow.renewalOffer(g, ((function() local _v = r; if _v == nil then return nil end; _v = _v.wins; return _v end)() or 0), (function() local _l = (function() local _v = r; if _v == nil then return nil end; _v = _v.locked; return _v end)(); if _l ~= nil then return _l end; return false end)(), ((function() local _v = r; if _v == nil then return nil end; _v = _v.rounds; return _v end)() or 0))
 					do return Js.ospread(M_flow.contractComplete(g, offer), Js.O({ ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 44 then
+			if _ci21 ~= 0 and _ci21 <= 46 then
 				do return Js.ospread(M_flow.contractComplete(g, nil), Js.O({ ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "ui" })) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 45 then
+			if _ci21 ~= 0 and _ci21 <= 47 then
 				do
 					local _d25 = A.map(S.split((if arg ~= nil then arg else "0:0"), ":"), Js.Number)
 					local li = _d25[1]
@@ -899,14 +926,14 @@ return function(exports, import, Js)
 					do return Js.ospread(M_flow.transferNegotiate(g, offer), Js.O({ ui = Js.ospread(ui, Js.O({ talk = talk, ask = talk.yourPosition }, { "talk", "ask" })) }, { "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 46 then
+			if _ci21 ~= 0 and _ci21 <= 48 then
 				do
 					local a = ((if ui.ask ~= nil then ui.ask else (function() local _v = ui.talk; if _v == nil then return nil end; _v = _v.yourPosition; return _v end)()) or 0)
 					local dir = (if (Js.Number(arg) < 0) then -1 else 1)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ ask = Math.max(1, (a + (dir * niceStep((if (dir < 0) then (a - 1) else a))))) }, { "ask" })) }, { "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 47 then
+			if _ci21 ~= 0 and _ci21 <= 49 then
 				do
 					if (not ui.talk) then
 						do return g end
@@ -915,14 +942,14 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ talk = t }, { "talk" })) }, { "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 48 then
+			if _ci21 ~= 0 and _ci21 <= 50 then
 				do
 					local t = ui.talk
 					local r = M_flow.transferTalkDone(g, (if (t and (t.status == "accepted")) then (if t.finalPrice ~= nil then t.finalPrice else nil) else nil))
 					do return Js.ospread(r, Js.O({ ui = Js.ospread(ui, Js.O({ talk = nil }, { "talk" })) }, { "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 49 then
+			if _ci21 ~= 0 and _ci21 <= 51 then
 				do return Js.ospread(M_flow.transferTalkDone(g, nil), Js.O({ ui = Js.ospread(ui, Js.O({ talk = nil }, { "talk" })) }, { "ui" })) end
 			end
 		until true
@@ -932,4 +959,5 @@ return function(exports, import, Js)
 	TABS = Js.alit(Js.alit("home", "Home"), Js.alit("train", "Train"), Js.alit("life", "Life"), Js.alit("league", "League"), Js.alit("fixtures", "Fixtures"), Js.alit("stats", "Stats"))
 	DIVISIONS = Js.alit("premier", "championship", "league_one", "league_two", "national_league", "national_league_north", "national_league_south")
 	exports.DIVISIONS = DIVISIONS
+	REL_KIND = Js.O({ woodwork = "team", penalties = "boss", session = "boss", signing = "fans" }, { "woodwork", "penalties", "session", "signing" })
 end

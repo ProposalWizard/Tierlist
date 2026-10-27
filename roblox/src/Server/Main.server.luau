@@ -24,6 +24,7 @@ local Flow = Loader.import("roblox/game/flow")
 local Match = Loader.import("roblox/game/match")
 local TrialFlow = Loader.import("roblox/game/trialFlow")
 local TrainingFlow = Loader.import("roblox/game/trainingFlow")
+local LifeFlow = Loader.import("roblox/game/lifeFlow")
 
 local SAVE_VERSION = 1
 -- A DataStore key holds at most 4 MB (counted after Roblox escapes the text),
@@ -488,6 +489,64 @@ trainingRemote.OnServerInvoke = function(player, action, arg)
 	return res
 end
 
+-- The relationship games that are played (roblox/game/relgamePlay.ts): "start"
+-- checks the game may be played and sends the career, "done" takes the count.
+local pendingRel = {} -- [Player] = { game, career }
+local function relAction(player, action, arg)
+	local g = games[player]
+	if not g then
+		error("no career")
+	end
+	if action == "start" then
+		local kinds = { woodwork = "team", penalties = "boss", session = "boss", signing = "fans" }
+		local kind = kinds[arg or ""]
+		if not kind or g.phase ~= "dashboard" or not LifeFlow.relGame(g.career, kind).canPlay then
+			error("that game cannot be played now")
+		end
+		pendingRel[player] = { game = arg, career = g.career }
+		return Js.JSON.stringify(Js.O({ career = Match.matchCareer(g.career), game = arg }, { "career", "game" }))
+	end
+	local p = pendingRel[player]
+	pendingRel[player] = nil
+	if action == "done" and p and g.career == p.career then
+		local ok, back = pcall(Js.JSON.parse, arg)
+		local nextGame = ok and type(back) == "table" and Screens.relgameDone(g, p.game, back.count, math.random()) or nil
+		if nextGame then
+			games[player] = nextGame
+			dirty[player] = true
+			return encode(Screens.screen(nextGame))
+		end
+		warn("relationship game: the count from the device was refused")
+	end
+	return encode(Screens.screen(g))
+end
+
+local relRemote = Instance.new("RemoteFunction")
+relRemote.Name = "Relgame"
+relRemote.Parent = remotes
+
+relRemote.OnServerInvoke = function(player, action, arg)
+	if type(action) ~= "string" or (arg ~= nil and type(arg) ~= "string") then
+		return nil
+	end
+	local waited = 0
+	while busy[player] and waited < 30 do
+		task.wait(0.1)
+		waited += 0.1
+	end
+	busy[player] = true
+	local ok, res = xpcall(relAction, debug.traceback, player, action, arg)
+	busy[player] = nil
+	if not ok then
+		warn("Relgame '" .. action .. "' failed:", res)
+		if action == "start" then
+			return nil
+		end
+		return encode(errorScreen(res))
+	end
+	return res
+end
+
 -- the website's shared training levels (its level editor's saved rows)
 task.spawn(function()
 	local ok, err = pcall(TrainingFlow.fetchSharedTrainingLevels)
@@ -518,6 +577,7 @@ Players.PlayerRemoving:Connect(function(player)
 	loaded[player] = nil
 	pendingMatch[player] = nil
 	pendingTraining[player] = nil
+	pendingRel[player] = nil
 end)
 
 game:BindToClose(function()

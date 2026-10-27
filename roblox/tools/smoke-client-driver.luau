@@ -214,6 +214,72 @@ for _, skill in ipairs({ "power", "vision" }) do
 	print(string.format("  training %s level 1 in %d frames -> %s", skill, frames, tostring(after.blocks[1] and after.blocks[1].text)))
 	s = after
 end
+-- relationship games, played through the client script
+local relRemote = rs._children.Remotes._children.Relgame
+for _, game in ipairs({ "signing", "woodwork" }) do
+	local co = coroutine.create(function()
+		return MatchClient.playRelGame(relRemote, game)
+	end)
+	task.wait = function()
+		coroutine.yield()
+	end
+	local frames, pf, last, shotNo = 0, 0, "", 0
+	local result
+	while true do
+		local ok, r = coroutine.resume(co)
+		if not ok then
+			error("relationship game client crashed: " .. tostring(r))
+		end
+		if coroutine.status(co) == "dead" then
+			result = r
+			break
+		end
+		frames += 1
+		assert(frames < 60000, "the relationship game never ended: " .. game)
+		local rp, hud, m = MatchClient.rel, MatchClient.hud, MatchClient.current
+		if rp and hud then
+			local k = (m and m.phase or "none") .. tostring(rp.shot)
+			if k ~= last then
+				last = k
+				pf = 0
+			end
+			pf += 1
+			if hud.tapStart.Visible and pf == 10 then
+				hud.tapStart.Activated:Fire()
+			elseif m and m.phase == "aim" and pf % 90 == 25 then
+				shotNo += 1
+				local b = m.sc.ball
+				local tx = shotNo % 2 == 1 and 30.5 or 37.5
+				local dx, dy = tx - b.x, -b.y
+				local n = math.sqrt(dx * dx + dy * dy)
+				local pull = (m.camera.x2 - m.camera.x1) * 0.16
+				local down = mouse(b.x, b.y)
+				UIS.InputBegan:Fire(down, false)
+				UIS.InputChanged:Fire(mouse(b.x - dx / n * pull, b.y - dy / n * pull, Enum.UserInputType.MouseMovement))
+				UIS.InputEnded:Fire(down)
+			elseif m and m.phase == "contact" and hud.strike.Visible and pf == 15 then
+				local c = hud.ball.AbsolutePosition + hud.ball.AbsoluteSize / 2
+				tapScreen(hud, c.X, c.Y + hud.ball.AbsoluteSize.Y * 0.2)
+			elseif game == "signing" and rp.fan and frames % 25 == 0 and hud.signing.Visible then
+				local want = rp.fan.want[rp.fan.got + 1]
+				for i = 1, 4 do
+					if rp.order[i] == want then
+						hud.signBtns[i].Activated:Fire()
+					end
+				end
+			end
+		end
+		RENDER:Fire(1 / 60)
+	end
+	if result == nil then
+		print("  " .. game .. ": refused (as it should be when there is no energy or day left)")
+		s = call("get")
+	else
+		local after = Js.JSON.parse(result)
+		print(string.format("  %s in %d frames -> %s", game, frames, tostring(after.blocks[1] and after.blocks[1].text)))
+		s = after
+	end
+end
 s = call("tab", "home")
 
 local played = 0

@@ -1,5 +1,5 @@
 {
- "commit": "55ef9cb4",
+ "commit": "8868b04c",
  "modules": [
   "__pkg/react",
   "data/fifa/knockout-tables_json",
@@ -22,6 +22,7 @@
   "lib/star/ballonDor",
   "lib/star/baseScenario",
   "lib/star/bossPenalties",
+  "lib/star/bossSession",
   "lib/star/bossTalk",
   "lib/star/bylineShort",
   "lib/star/calendar",
@@ -298,6 +299,7 @@
   "roblox/game/lifeFlow",
   "roblox/game/match",
   "roblox/game/matchView",
+  "roblox/game/relgamePlay",
   "roblox/game/screens",
   "roblox/game/strikeScreen",
   "roblox/game/trainingFlow",

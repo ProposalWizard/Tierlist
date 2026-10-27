@@ -23,6 +23,7 @@ local remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Career")
 local matchRemote = ReplicatedStorage.Remotes:WaitForChild("Match")
 local trialRemote = ReplicatedStorage.Remotes:WaitForChild("Trial")
 local trainingRemote = ReplicatedStorage.Remotes:WaitForChild("Training")
+local relRemote = ReplicatedStorage.Remotes:WaitForChild("Relgame")
 local MatchClient = require(script.Parent:WaitForChild("Match"))
 
 pcall(function()
@@ -620,13 +621,15 @@ send = function(action, arg)
 	sending = true
 	busyCover.Visible = true
 	local ok, json
-	if action == "play-match" or action == "play-trial" or action == "play-training" then
+	if action == "play-match" or action == "play-trial" or action == "play-training" or action == "play-relgame" then
 		-- played here on the device; the menus wait underneath
 		gui.Enabled = false
 		if action == "play-match" then
 			ok, json = pcall(MatchClient.play, matchRemote)
 		elseif action == "play-training" then
 			ok, json = pcall(MatchClient.playTraining, trainingRemote, arg)
+		elseif action == "play-relgame" then
+			ok, json = pcall(MatchClient.playRelGame, relRemote, arg)
 		else
 			ok, json = pcall(MatchClient.playTrial, trialRemote)
 		end

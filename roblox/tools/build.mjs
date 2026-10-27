@@ -14,7 +14,7 @@ import { convert } from "./ts2luau/convert.mjs";
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../..");
 const ROJO = process.env.ROJO || "/tmp/claude-0/tools/rojo";
-const ENTRIES = ["roblox/game/screens.ts", "roblox/game/match.ts", "roblox/game/matchView.ts", "roblox/game/strikeScreen.ts", "roblox/game/trialPlay.ts", "roblox/game/trainingPlay.ts"];
+const ENTRIES = ["roblox/game/screens.ts", "roblox/game/match.ts", "roblox/game/matchView.ts", "roblox/game/strikeScreen.ts", "roblox/game/trialPlay.ts", "roblox/game/trainingPlay.ts", "roblox/game/relgamePlay.ts"];
 
 const { written, failures } = convert(ENTRIES, { clean: true, outDir: path.join(REPO, "roblox/src/Game") });
 if (failures.length) { console.error(failures.join("\n")); process.exit(1); }

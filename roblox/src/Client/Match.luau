@@ -498,6 +498,22 @@ local function buildHud()
 	h.trialCardTitle = label("", 40, C.gold, TITLE_FONT, { Position = UDim2.fromOffset(10, 18), Size = UDim2.new(1, -20, 0, 70), ZIndex = 19, Parent = h.trialCard })
 	h.trialCardSub = label("", 17, C.text, BODY_BOLD, { Position = UDim2.fromOffset(16, 94), Size = UDim2.new(1, -32, 0, 44), ZIndex = 19, Parent = h.trialCard })
 	h.trialCardGo = bigButton("CONTINUE", h.trialCard, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 148), Size = UDim2.new(1, -40, 0, 52), ZIndex = 19, Visible = false })
+	-- the signing session: the fan, what he holds, his patience, your four buttons
+	h.signing = make("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.55), Size = UDim2.fromOffset(340, 300), BackgroundColor3 = C.panel, BackgroundTransparency = 0.05, BorderSizePixel = 0, Visible = false, ZIndex = 9, Parent = gui }, {
+		make("UICorner", { CornerRadius = UDim.new(0, 14) }),
+		make("UIStroke", { Color = Color3.fromHex("f472b6"), Thickness = 3 }),
+	})
+	h.fanIcon = label("", 56, C.text, BODY_FONT, { Position = UDim2.fromOffset(0, 10), Size = UDim2.new(1, 0, 0, 64), ZIndex = 10, Parent = h.signing })
+	h.wants = label("", 36, C.text, BODY_FONT, { Position = UDim2.fromOffset(0, 78), Size = UDim2.new(1, 0, 0, 44), ZIndex = 10, Parent = h.signing })
+	local patBack = make("Frame", { Position = UDim2.new(0, 20, 0, 130), Size = UDim2.new(1, -40, 0, 10), BackgroundColor3 = Color3.fromHex("1e293b"), BorderSizePixel = 0, ZIndex = 10, Parent = h.signing }, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	h.patience = make("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromHex("f472b6"), BorderSizePixel = 0, ZIndex = 11, Parent = patBack }, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	h.signBtns = {}
+	for i = 1, 4 do
+		h.signBtns[i] = bigButton("", h.signing, {
+			Position = UDim2.new(((i - 1) % 2) * 0.5, ((i - 1) % 2 == 0) and 16 or 4, 0, 156 + math.floor((i - 1) / 2) * 66),
+			Size = UDim2.new(0.5, -20, 0, 56), TextSize = 22, ZIndex = 10,
+		})
+	end
 	-- getting ready
 	h.cover = make("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = C.panel, ZIndex = 30, Parent = gui })
 	h.coverText = label("Getting the pitch ready…", 26, C.text, TITLE_FONT, { Size = UDim2.fromScale(1, 1), ZIndex = 31, Parent = h.cover })
@@ -1094,6 +1110,46 @@ local function runPitch(hud, driver)
 			end
 		end
 
+		-- a relationship game: which, how it's going, what he asks
+		local rv = f.rel
+		hud.signing.Visible = false
+		if rv then
+			hud.trialTop.Visible = true
+			hud.trialHint.Visible = true
+			hud.trialTop.Text = string.upper(rv.title) .. " · " .. rv.progress
+			hud.trialHint.Text = (rv.ask ~= "" and (rv.ask .. "\n") or "") .. rv.line
+			hud.score.Text = string.upper(rv.title)
+			hud.minute.Text = ""
+			if rv.flash then
+				hud.banner.Visible = true
+				hud.banner.Text = rv.flash.text
+				hud.banner.TextColor3 = rv.flash.good and C.good or C.bad
+			else
+				hud.banner.TextColor3 = C.gold
+			end
+			local sg = rv.signing
+			if sg then
+				if not sg.started then
+					hud.tapStart.Visible = true
+					hud.tapStart.Text = "START"
+				else
+					hud.signing.Visible = true
+					hud.fanIcon.Text = sg.fanIcon
+					local w = ""
+					for i = 1, Js.alen(sg.wants) do
+						local it = sg.wants[i]
+						w ..= (it.got and "✅" or it.icon) .. " "
+					end
+					hud.wants.Text = w
+					hud.patience.Size = UDim2.fromScale(math.clamp(sg.left, 0, 1), 1)
+					for i = 1, 4 do
+						local o = sg.order[i]
+						hud.signBtns[i].Text = o and (o.icon .. " " .. string.upper(o.label)) or ""
+					end
+				end
+			end
+		end
+
 		-- the strike screen
 		hud.strike.Visible = strike ~= nil
 		if strike then
@@ -1411,6 +1467,76 @@ function Match.playTraining(remote, arg)
 	end
 	hud.gui:Destroy()
 	Match.current, Match.hud, Match.training = nil, nil, nil
+	return nextScreen
+end
+
+--[[
+  Plays one relationship game (roblox/game/relgamePlay.ts): the woodwork
+  challenge, the manager's penalties or extra session on the pitch, or the
+  signing session. `remote` is ReplicatedStorage.Remotes.Relgame.
+]]
+function Match.playRelGame(remote, game)
+	loadCode()
+	local R = Loader.import("roblox/game/relgamePlay")
+	local hud = buildHud()
+	local okStart, json = pcall(function()
+		return remote:InvokeServer("start", game)
+	end)
+	if not okStart or type(json) ~= "string" then
+		hud.gui:Destroy()
+		warn("relationship game: could not start:", json)
+		return nil
+	end
+	local rp
+	local okMount, err = pcall(function()
+		local s = Js.JSON.parse(json)
+		rp = R.startRelGame(s.career, s.game)
+	end)
+	if not okMount then
+		hud.gui:Destroy()
+		warn("relationship game: could not mount:", err)
+		return remote:InvokeServer("abandon")
+	end
+	Match.rel = rp
+	for i = 1, 4 do
+		hud.signBtns[i].Activated:Connect(function()
+			local id = rp.order[i]
+			if id then
+				R.signingTap(rp, id)
+			end
+		end)
+	end
+	local failure = runPitch(hud, {
+		match = function()
+			return R.pitchMatch(rp)
+		end,
+		step = function(dt)
+			R.tick(rp, dt)
+		end,
+		frame = function()
+			return R.relFrame(rp)
+		end,
+		done = function()
+			return rp.done
+		end,
+		tapToGo = function()
+			R.signingStart(rp)
+		end,
+	})
+	local nextScreen
+	hud.cover.Visible = true
+	hud.coverText.Text = "…"
+	if failure then
+		warn("relationship game: stopped by an error:", failure)
+		nextScreen = remote:InvokeServer("abandon")
+	else
+		local ok, res = pcall(function()
+			return remote:InvokeServer("done", Js.JSON.stringify(Js.O({ count = rp.count }, { "count" })))
+		end)
+		nextScreen = ok and res or nil
+	end
+	hud.gui:Destroy()
+	Match.current, Match.hud, Match.rel = nil, nil, nil
 	return nextScreen
 end
 

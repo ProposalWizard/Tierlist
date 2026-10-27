@@ -28,6 +28,7 @@ import type { TransferOffer } from "../../lib/star/transfers";
 import * as TF from "./trialFlow";
 import * as TR from "./trainingFlow";
 import * as LF from "./lifeFlow";
+import { relgameGain, type RelGame } from "./relgamePlay";
 import { trainingLeft } from "../../lib/star/week";
 import { STAGE_LABEL, TRIAL_STAGES, trialScore } from "../../lib/star/trial";
 
@@ -467,6 +468,17 @@ function lifeTab(g: RobloxGame, s: Screen): Screen {
     s.buttons.push(back);
     return s;
   }
+  if (page === "boss") {
+    s.title = "👔 Your manager";
+    s.blocks.push({ kind: "text", text: "All three move the Manager bar the same amount: up to +6, or −2 if it goes badly." });
+    s.blocks.push({ kind: "list", items: [
+      { text: "🎯 Penalties", sub: "He names a spot. Hit it. Three kicks.", action: "play-relgame", arg: "penalties" },
+      { text: "💬 Office talk", sub: "Three questions. Say what he wants to hear.", action: "rel-boss" },
+      { text: "⚽ Extra session", sub: "Four shots while he watches. Each one harder.", action: "play-relgame", arg: "session" },
+    ] });
+    s.buttons.push(back);
+    return s;
+  }
   if (page === "dayoff") {
     s.title = "🌴 Day off";
     s.blocks.push({ kind: "text", text: "How do you want to spend it? Happier players get more energy back when they rest." });
@@ -543,16 +555,16 @@ function lifeTab(g: RobloxGame, s: Screen): Screen {
     const st = LF.relGame(c, k);
     return {
       text: `${icon} ${name}: ${Math.round(value)}`,
-      sub: action ? `${LF.REL_GAME_LABEL[k]} · ${st.why ?? `1 day, ${TR.trainingEnergyCost()} energy`}` : `${LF.REL_GAME_LABEL[k]} · not in Roblox yet`,
+      sub: `${LF.REL_GAME_LABEL[k]} · ${st.why ?? `1 day, ${TR.trainingEnergyCost()} energy`}`,
       tone: (st.canPlay && action ? "normal" : "dim") as Tone,
       ...(st.canPlay && action ? { action } : {}),
     };
   };
   s.blocks.push({ kind: "heading", text: "Relationships" });
   s.blocks.push({ kind: "list", items: [
-    rel("boss", "👔", "Manager", c.relationships.boss, "rel-boss"),
-    rel("team", "🤝", "Team-mates", c.relationships.team, null),
-    rel("fans", "📣", "Fans", c.relationships.fans, null),
+    rel("boss", "👔", "Manager", c.relationships.boss, "life-boss"),
+    { ...rel("team", "🤝", "Team-mates", c.relationships.team, "play-relgame"), ...(LF.relGame(c, "team").canPlay ? { arg: "woodwork" } : {}) },
+    { ...rel("fans", "📣", "Fans", c.relationships.fans, "play-relgame"), ...(LF.relGame(c, "fans").canPlay ? { arg: "signing" } : {}) },
     rel("happiness", "🌴", "Happiness", c.happiness, "life-dayoff"),
   ] });
   const owned = LF.cans(c).filter((k) => k.owned > 0);
@@ -570,6 +582,17 @@ function lifeTab(g: RobloxGame, s: Screen): Screen {
   ] });
   if (LF.canAct(c)) s.buttons.push({ label: `😴 Rest (+${LF.restGain(c)} energy, 1 day)`, action: "rest", style: "secondary" });
   return s;
+}
+
+/** A relationship game's count from the device (or, in tests, a middling one): the gain worked out here. */
+const REL_KIND: Record<RelGame, LF.RelKind> = { woodwork: "team", penalties: "boss", session: "boss", signing: "fans" };
+export function relgameDone(g: RobloxGame, game: string, count: number, roll: number): RobloxGame | null {
+  const kind = REL_KIND[game as RelGame];
+  if (!kind || !LF.relGame(g.career, kind).canPlay) return null;
+  const r = relgameGain(g.career, game as RelGame, count, roll);
+  if (!r) return null;
+  const who = kind === "boss" ? "Manager" : kind === "team" ? "Team-mates" : "Fans";
+  return { ...g, career: LF.relGameComplete(g.career, kind, { gain: r.gain }), ui: { ...(g.ui ?? {}), tab: "life", life: undefined, lifeNote: `${r.line} ${who} ${r.gain >= 0 ? "+" : ""}${r.gain}.` } };
 }
 
 /** The stars from a level played on the device (or, in tests, played by nobody). */
@@ -788,6 +811,9 @@ export function act(g: RobloxGame, action: string, arg: string | undefined, rng:
         ? { ...g, career: next, ui: { ...ui, lifeNote: action === "use-can" ? "Drunk." : "Bought." } }
         : { ...g, ui: { ...ui, lifeNote: action === "use-can" ? "That can would do nothing now." : "Not enough money for that." } };
     }
+    case "life-boss": return LF.relGame(g.career, "boss").canPlay ? { ...g, ui: { ...ui, tab: "life", life: "boss", lifeNote: undefined } } : g;
+    // played on the device (the server's Relgame remote); with no device (tests) a middling count
+    case "play-relgame": return relgameDone(g, arg ?? "", arg === "signing" ? 6 : 2, rng()) ?? g;
     case "life-dayoff": return LF.relGame(g.career, "happiness").canPlay ? { ...g, ui: { ...ui, tab: "life", life: "dayoff", lifeNote: undefined } } : g;
     case "dayoff": {
       if (!LF.relGame(g.career, "happiness").canPlay) return g;

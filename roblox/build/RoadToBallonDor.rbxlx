@@ -3424,6 +3424,33 @@ end
           </Item>
           <Item class="ModuleScript" referent="31">
             <Properties>
+              <string name="Name">bossSession</string>
+              <string name="Source"><![CDATA[--!nocheck
+--!nolint
+-- Generated from lib/star/bossSession.ts by roblox/tools/ts2luau. Do not edit.
+return function(exports, import, Js)
+	local A, S, N, Math = Js.A, Js.S, Js.N, Js.Math
+	local M_bossPenalties = import("lib/star/bossPenalties")
+	local SESSION_REPS, SESSION_FIRST_LEVEL, sessionHits, sessionGain
+	sessionHits = function(goals)
+		local g = Math.max(0, Math.min(SESSION_REPS, Math.round(goals)))
+		do return Math.round(((g * M_bossPenalties.BOSS_KICKS) / SESSION_REPS)) end
+	end
+	exports.sessionHits = sessionHits
+	sessionGain = function(goals)
+		do return M_bossPenalties.bossGain(sessionHits(goals)) end
+	end
+	exports.sessionGain = sessionGain
+	SESSION_REPS = 4
+	exports.SESSION_REPS = SESSION_REPS
+	SESSION_FIRST_LEVEL = 3
+	exports.SESSION_FIRST_LEVEL = SESSION_FIRST_LEVEL
+end
+]]></string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="32">
+            <Properties>
               <string name="Name">bossTalk</string>
               <string name="Source"><![CDATA[--!nocheck
 --!nolint
@@ -3554,7 +3581,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="32">
+          <Item class="ModuleScript" referent="33">
             <Properties>
               <string name="Name">bylineShort</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -3655,7 +3682,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="33">
+          <Item class="ModuleScript" referent="34">
             <Properties>
               <string name="Name">calendar</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -4113,7 +4140,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="34">
+          <Item class="ModuleScript" referent="35">
             <Properties>
               <string name="Name">cameraTilt</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -4239,7 +4266,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="35">
+          <Item class="ModuleScript" referent="36">
             <Properties>
               <string name="Name">canvasEngine</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -8740,7 +8767,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="36">
+          <Item class="ModuleScript" referent="37">
             <Properties>
               <string name="Name">careerFlow</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -9847,7 +9874,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="37">
+          <Item class="ModuleScript" referent="38">
             <Properties>
               <string name="Name">careerRecords</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -10047,7 +10074,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="38">
+          <Item class="ModuleScript" referent="39">
             <Properties>
               <string name="Name">chanceFormula</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -10889,7 +10916,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="39">
+          <Item class="ModuleScript" referent="40">
             <Properties>
               <string name="Name">chanceFraming</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -10959,7 +10986,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="40">
+          <Item class="ModuleScript" referent="41">
             <Properties>
               <string name="Name">chanceLog</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -10980,7 +11007,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="41">
+          <Item class="ModuleScript" referent="42">
             <Properties>
               <string name="Name">chanceMaker</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -11967,7 +11994,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="42">
+          <Item class="ModuleScript" referent="43">
             <Properties>
               <string name="Name">chanceRating</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -12020,7 +12047,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="43">
+          <Item class="ModuleScript" referent="44">
             <Properties>
               <string name="Name">clubFormation</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -12051,7 +12078,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="44">
+          <Item class="ModuleScript" referent="45">
             <Properties>
               <string name="Name">clubLeagues</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -12078,7 +12105,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="45">
+          <Item class="ModuleScript" referent="46">
             <Properties>
               <string name="Name">clubPowers</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -12473,7 +12500,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="46">
+          <Item class="ModuleScript" referent="47">
             <Properties>
               <string name="Name">clubReputation</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -12540,7 +12567,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="47">
+          <Item class="ModuleScript" referent="48">
             <Properties>
               <string name="Name">clubTier</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -12583,7 +12610,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="48">
+          <Item class="ModuleScript" referent="49">
             <Properties>
               <string name="Name">clubs</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -12665,7 +12692,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="49">
+          <Item class="ModuleScript" referent="50">
             <Properties>
               <string name="Name">commentaryExtra</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -12721,7 +12748,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="50">
+          <Item class="ModuleScript" referent="51">
             <Properties>
               <string name="Name">compareSwitches</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -12812,7 +12839,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="51">
+          <Item class="ModuleScript" referent="52">
             <Properties>
               <string name="Name">competitionBetting</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -12938,7 +12965,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="52">
+          <Item class="ModuleScript" referent="53">
             <Properties>
               <string name="Name">competitions</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -13638,7 +13665,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="53">
+          <Item class="ModuleScript" referent="54">
             <Properties>
               <string name="Name">contracts</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -13737,7 +13764,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="54">
+          <Item class="ModuleScript" referent="55">
             <Properties>
               <string name="Name">cornerReach</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -13805,7 +13832,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="55">
+          <Item class="ModuleScript" referent="56">
             <Properties>
               <string name="Name">credit</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -13905,7 +13932,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="56">
+          <Item class="ModuleScript" referent="57">
             <Properties>
               <string name="Name">cups</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -14391,11 +14418,11 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="Folder" referent="57">
+          <Item class="Folder" referent="58">
             <Properties>
               <string name="Name">data</string>
             </Properties>
-            <Item class="ModuleScript" referent="58">
+            <Item class="ModuleScript" referent="59">
               <Properties>
                 <string name="Name">clubProfileData</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -14415,7 +14442,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="59">
+            <Item class="ModuleScript" referent="60">
               <Properties>
                 <string name="Name">clubProfiles</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -14627,7 +14654,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="60">
+            <Item class="ModuleScript" referent="61">
               <Properties>
                 <string name="Name">footballClubDatabase</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -14641,7 +14668,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="61">
+            <Item class="ModuleScript" referent="62">
               <Properties>
                 <string name="Name">nationKits</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -14700,11 +14727,11 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="Folder" referent="62">
+            <Item class="Folder" referent="63">
               <Properties>
                 <string name="Name">sources</string>
               </Properties>
-              <Item class="ModuleScript" referent="63">
+              <Item class="ModuleScript" referent="64">
                 <Properties>
                   <string name="Name">claude_ratings_2026-10_json</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -14716,7 +14743,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="64">
+              <Item class="ModuleScript" referent="65">
                 <Properties>
                   <string name="Name">nation_kits_2026-10_json</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -14728,7 +14755,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="65">
+              <Item class="ModuleScript" referent="66">
                 <Properties>
                   <string name="Name">researched_2026-10_json</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -14741,7 +14768,7 @@ end
                 </Properties>
               </Item>
             </Item>
-            <Item class="ModuleScript" referent="66">
+            <Item class="ModuleScript" referent="67">
               <Properties>
                 <string name="Name">trainingLevels_json</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -14753,7 +14780,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="67">
+            <Item class="ModuleScript" referent="68">
               <Properties>
                 <string name="Name">visionChecks_json</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -14765,7 +14792,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="68">
+            <Item class="ModuleScript" referent="69">
               <Properties>
                 <string name="Name">visionMoments_json</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -14778,7 +14805,7 @@ end
               </Properties>
             </Item>
           </Item>
-          <Item class="ModuleScript" referent="69">
+          <Item class="ModuleScript" referent="70">
             <Properties>
               <string name="Name">dataCredits</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -14809,7 +14836,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="70">
+          <Item class="ModuleScript" referent="71">
             <Properties>
               <string name="Name">defenderTouch</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -14851,7 +14878,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="71">
+          <Item class="ModuleScript" referent="72">
             <Properties>
               <string name="Name">deflection</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -14911,7 +14938,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="72">
+          <Item class="ModuleScript" referent="73">
             <Properties>
               <string name="Name">devMode</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -14935,7 +14962,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="73">
+          <Item class="ModuleScript" referent="74">
             <Properties>
               <string name="Name">drawPlayerHead</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -15094,7 +15121,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="74">
+          <Item class="ModuleScript" referent="75">
             <Properties>
               <string name="Name">dribbleDeal</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -15177,7 +15204,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="75">
+          <Item class="ModuleScript" referent="76">
             <Properties>
               <string name="Name">dribbleReward</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -15238,7 +15265,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="76">
+          <Item class="ModuleScript" referent="77">
             <Properties>
               <string name="Name">economy</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -15542,7 +15569,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="77">
+          <Item class="ModuleScript" referent="78">
             <Properties>
               <string name="Name">edition</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -15562,7 +15589,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="78">
+          <Item class="ModuleScript" referent="79">
             <Properties>
               <string name="Name">energy</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -15697,7 +15724,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="79">
+          <Item class="ModuleScript" referent="80">
             <Properties>
               <string name="Name">englishTopFlight</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -15785,7 +15812,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="80">
+          <Item class="ModuleScript" referent="81">
             <Properties>
               <string name="Name">euro</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -16413,7 +16440,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="81">
+          <Item class="ModuleScript" referent="82">
             <Properties>
               <string name="Name">euroBracket</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -16662,7 +16689,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="82">
+          <Item class="ModuleScript" referent="83">
             <Properties>
               <string name="Name">expectations</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -16743,7 +16770,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="83">
+          <Item class="ModuleScript" referent="84">
             <Properties>
               <string name="Name">faceFit</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -17284,7 +17311,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="84">
+          <Item class="ModuleScript" referent="85">
             <Properties>
               <string name="Name">faceScanLayout</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -17313,7 +17340,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="85">
+          <Item class="ModuleScript" referent="86">
             <Properties>
               <string name="Name">faceStyle</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -17382,7 +17409,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="86">
+          <Item class="ModuleScript" referent="87">
             <Properties>
               <string name="Name">facilities</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -17567,7 +17594,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="87">
+          <Item class="ModuleScript" referent="88">
             <Properties>
               <string name="Name">fakeFaceStyle</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -17620,7 +17647,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="88">
+          <Item class="ModuleScript" referent="89">
             <Properties>
               <string name="Name">fakeFaces</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -17652,7 +17679,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="89">
+          <Item class="ModuleScript" referent="90">
             <Properties>
               <string name="Name">fame</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -17786,7 +17813,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="90">
+          <Item class="ModuleScript" referent="91">
             <Properties>
               <string name="Name">feats</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -17933,11 +17960,11 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="Folder" referent="91">
+          <Item class="Folder" referent="92">
             <Properties>
               <string name="Name">fhr</string>
             </Properties>
-            <Item class="ModuleScript" referent="92">
+            <Item class="ModuleScript" referent="93">
               <Properties>
                 <string name="Name">realMomentHighlights</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -18259,7 +18286,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="93">
+            <Item class="ModuleScript" referent="94">
               <Properties>
                 <string name="Name">realMomentToggle</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -18386,7 +18413,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="94">
+            <Item class="ModuleScript" referent="95">
               <Properties>
                 <string name="Name">toggle</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -18500,7 +18527,7 @@ end
               </Properties>
             </Item>
           </Item>
-          <Item class="ModuleScript" referent="95">
+          <Item class="ModuleScript" referent="96">
             <Properties>
               <string name="Name">figure3d</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -19154,7 +19181,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="96">
+          <Item class="ModuleScript" referent="97">
             <Properties>
               <string name="Name">figureSkin</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -19245,7 +19272,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="97">
+          <Item class="ModuleScript" referent="98">
             <Properties>
               <string name="Name">firstPersonDribble</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -20479,11 +20506,11 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="Folder" referent="98">
+          <Item class="Folder" referent="99">
             <Properties>
               <string name="Name">fiveASide</string>
             </Properties>
-            <Item class="ModuleScript" referent="99">
+            <Item class="ModuleScript" referent="100">
               <Properties>
                 <string name="Name">geometry</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -20553,7 +20580,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="100">
+            <Item class="ModuleScript" referent="101">
               <Properties>
                 <string name="Name">render</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -21300,7 +21327,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="101">
+            <Item class="ModuleScript" referent="102">
               <Properties>
                 <string name="Name">rules</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -21381,7 +21408,7 @@ end
               </Properties>
             </Item>
           </Item>
-          <Item class="ModuleScript" referent="102">
+          <Item class="ModuleScript" referent="103">
             <Properties>
               <string name="Name">formationShape</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -21632,7 +21659,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="103">
+          <Item class="ModuleScript" referent="104">
             <Properties>
               <string name="Name">formations</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -21798,7 +21825,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="104">
+          <Item class="ModuleScript" referent="105">
             <Properties>
               <string name="Name">gameplayVersion</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -21882,7 +21909,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="105">
+          <Item class="ModuleScript" referent="106">
             <Properties>
               <string name="Name">giveAndGo</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -21909,7 +21936,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="106">
+          <Item class="ModuleScript" referent="107">
             <Properties>
               <string name="Name">goalFrame</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -22236,7 +22263,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="107">
+          <Item class="ModuleScript" referent="108">
             <Properties>
               <string name="Name">goalLog</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -22363,7 +22390,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="108">
+          <Item class="ModuleScript" referent="109">
             <Properties>
               <string name="Name">governingBodies</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -22412,7 +22439,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="109">
+          <Item class="ModuleScript" referent="110">
             <Properties>
               <string name="Name">heroFigure</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -22879,7 +22906,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="110">
+          <Item class="ModuleScript" referent="111">
             <Properties>
               <string name="Name">hiddenMatch</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -23773,7 +23800,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="111">
+          <Item class="ModuleScript" referent="112">
             <Properties>
               <string name="Name">hitbox</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -23986,7 +24013,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="112">
+          <Item class="ModuleScript" referent="113">
             <Properties>
               <string name="Name">horse</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -24030,7 +24057,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="113">
+          <Item class="ModuleScript" referent="114">
             <Properties>
               <string name="Name">incumbency</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -24173,7 +24200,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="114">
+          <Item class="ModuleScript" referent="115">
             <Properties>
               <string name="Name">injurySwitch</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -24192,7 +24219,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="115">
+          <Item class="ModuleScript" referent="116">
             <Properties>
               <string name="Name">international</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -24522,11 +24549,11 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="Folder" referent="116">
+          <Item class="Folder" referent="117">
             <Properties>
               <string name="Name">intl</string>
             </Properties>
-            <Item class="ModuleScript" referent="117">
+            <Item class="ModuleScript" referent="118">
               <Properties>
                 <string name="Name">afc</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -24731,7 +24758,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="118">
+            <Item class="ModuleScript" referent="119">
               <Properties>
                 <string name="Name">build</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -25149,7 +25176,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="119">
+            <Item class="ModuleScript" referent="120">
               <Properties>
                 <string name="Name">caf</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -25376,7 +25403,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="120">
+            <Item class="ModuleScript" referent="121">
               <Properties>
                 <string name="Name">career</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -26395,7 +26422,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="121">
+            <Item class="ModuleScript" referent="122">
               <Properties>
                 <string name="Name">concacaf</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -26739,7 +26766,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="122">
+            <Item class="ModuleScript" referent="123">
               <Properties>
                 <string name="Name">conmebol</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -26823,7 +26850,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="123">
+            <Item class="ModuleScript" referent="124">
               <Properties>
                 <string name="Name">engine</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -27240,7 +27267,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="124">
+            <Item class="ModuleScript" referent="125">
               <Properties>
                 <string name="Name">friendlies</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -27344,7 +27371,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="125">
+            <Item class="ModuleScript" referent="126">
               <Properties>
                 <string name="Name">hosts</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -27407,7 +27434,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="126">
+            <Item class="ModuleScript" referent="127">
               <Properties>
                 <string name="Name">nations</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -27487,7 +27514,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="127">
+            <Item class="ModuleScript" referent="128">
               <Properties>
                 <string name="Name">ofc</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -27586,7 +27613,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="128">
+            <Item class="ModuleScript" referent="129">
               <Properties>
                 <string name="Name">realData</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -27624,7 +27651,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="129">
+            <Item class="ModuleScript" referent="130">
               <Properties>
                 <string name="Name">replay</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -27729,7 +27756,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="130">
+            <Item class="ModuleScript" referent="131">
               <Properties>
                 <string name="Name">scorers</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -27949,7 +27976,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="131">
+            <Item class="ModuleScript" referent="132">
               <Properties>
                 <string name="Name">uefa</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -28620,7 +28647,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="132">
+            <Item class="ModuleScript" referent="133">
               <Properties>
                 <string name="Name">windows</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -28692,7 +28719,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="133">
+            <Item class="ModuleScript" referent="134">
               <Properties>
                 <string name="Name">world</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -28998,7 +29025,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="134">
+            <Item class="ModuleScript" referent="135">
               <Properties>
                 <string name="Name">worldCup</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -29113,7 +29140,7 @@ end
               </Properties>
             </Item>
           </Item>
-          <Item class="ModuleScript" referent="135">
+          <Item class="ModuleScript" referent="136">
             <Properties>
               <string name="Name">investments</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -29539,7 +29566,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="136">
+          <Item class="ModuleScript" referent="137">
             <Properties>
               <string name="Name">keeperBrain</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -30592,7 +30619,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="137">
+          <Item class="ModuleScript" referent="138">
             <Properties>
               <string name="Name">kindMix</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -30712,11 +30739,11 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="Folder" referent="138">
+          <Item class="Folder" referent="139">
             <Properties>
               <string name="Name">kindRules</string>
             </Properties>
-            <Item class="ModuleScript" referent="139">
+            <Item class="ModuleScript" referent="140">
               <Properties>
                 <string name="Name">freeKick</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -30949,7 +30976,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="140">
+            <Item class="ModuleScript" referent="141">
               <Properties>
                 <string name="Name">index</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -31004,7 +31031,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="141">
+            <Item class="ModuleScript" referent="142">
               <Properties>
                 <string name="Name">penalty</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -31329,7 +31356,7 @@ end
               </Properties>
             </Item>
           </Item>
-          <Item class="ModuleScript" referent="142">
+          <Item class="ModuleScript" referent="143">
             <Properties>
               <string name="Name">kits</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -31590,7 +31617,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="143">
+          <Item class="ModuleScript" referent="144">
             <Properties>
               <string name="Name">knockoutView</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -31912,7 +31939,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="144">
+          <Item class="ModuleScript" referent="145">
             <Properties>
               <string name="Name">leadIn</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -32612,7 +32639,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="145">
+          <Item class="ModuleScript" referent="146">
             <Properties>
               <string name="Name">leadership</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -32673,7 +32700,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="146">
+          <Item class="ModuleScript" referent="147">
             <Properties>
               <string name="Name">leafFlight</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -32736,7 +32763,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="147">
+          <Item class="ModuleScript" referent="148">
             <Properties>
               <string name="Name">leagueSquads</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -33489,7 +33516,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="148">
+          <Item class="ModuleScript" referent="149">
             <Properties>
               <string name="Name">leagueTransfers</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -34135,7 +34162,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="149">
+          <Item class="ModuleScript" referent="150">
             <Properties>
               <string name="Name">legs</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -34255,7 +34282,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="150">
+          <Item class="ModuleScript" referent="151">
             <Properties>
               <string name="Name">leoUpdate</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -34353,7 +34380,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="151">
+          <Item class="ModuleScript" referent="152">
             <Properties>
               <string name="Name">lineup</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -34595,7 +34622,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="152">
+          <Item class="ModuleScript" referent="153">
             <Properties>
               <string name="Name">lineupStore</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -34774,7 +34801,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="153">
+          <Item class="ModuleScript" referent="154">
             <Properties>
               <string name="Name">liveScores</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -34902,7 +34929,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="154">
+          <Item class="ModuleScript" referent="155">
             <Properties>
               <string name="Name">lowerLeagueTrophy</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -35069,7 +35096,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="155">
+          <Item class="ModuleScript" referent="156">
             <Properties>
               <string name="Name">manager</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -35162,7 +35189,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="156">
+          <Item class="ModuleScript" referent="157">
             <Properties>
               <string name="Name">managerMoments</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -35264,7 +35291,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="157">
+          <Item class="ModuleScript" referent="158">
             <Properties>
               <string name="Name">managerPool</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -35441,7 +35468,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="158">
+          <Item class="ModuleScript" referent="159">
             <Properties>
               <string name="Name">marketValue</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -35489,7 +35516,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="159">
+          <Item class="ModuleScript" referent="160">
             <Properties>
               <string name="Name">matchCommentary</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -35580,7 +35607,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="160">
+          <Item class="ModuleScript" referent="161">
             <Properties>
               <string name="Name">matchGoal</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -35674,7 +35701,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="161">
+          <Item class="ModuleScript" referent="162">
             <Properties>
               <string name="Name">matchInputs</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -35725,7 +35752,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="162">
+          <Item class="ModuleScript" referent="163">
             <Properties>
               <string name="Name">matchLog</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -35783,7 +35810,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="163">
+          <Item class="ModuleScript" referent="164">
             <Properties>
               <string name="Name">matchStats</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -35947,7 +35974,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="164">
+          <Item class="ModuleScript" referent="165">
             <Properties>
               <string name="Name">matchView</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -37474,7 +37501,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="165">
+          <Item class="ModuleScript" referent="166">
             <Properties>
               <string name="Name">matchWeather</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -37512,7 +37539,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="166">
+          <Item class="ModuleScript" referent="167">
             <Properties>
               <string name="Name">matchday</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -37535,7 +37562,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="167">
+          <Item class="ModuleScript" referent="168">
             <Properties>
               <string name="Name">mechanics</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -37630,11 +37657,11 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="Folder" referent="168">
+          <Item class="Folder" referent="169">
             <Properties>
               <string name="Name">media</string>
             </Properties>
-            <Item class="ModuleScript" referent="169">
+            <Item class="ModuleScript" referent="170">
               <Properties>
                 <string name="Name">accounts</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -37863,7 +37890,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="170">
+            <Item class="ModuleScript" referent="171">
               <Properties>
                 <string name="Name">chants</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -37888,11 +37915,11 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="Folder" referent="171">
+            <Item class="Folder" referent="172">
               <Properties>
                 <string name="Name">detect</string>
               </Properties>
-              <Item class="ModuleScript" referent="172">
+              <Item class="ModuleScript" referent="173">
                 <Properties>
                   <string name="Name">career</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -38005,7 +38032,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="173">
+              <Item class="ModuleScript" referent="174">
                 <Properties>
                   <string name="Name">competition</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -38073,7 +38100,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="174">
+              <Item class="ModuleScript" referent="175">
                 <Properties>
                   <string name="Name">creation</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -38163,7 +38190,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="175">
+              <Item class="ModuleScript" referent="176">
                 <Properties>
                   <string name="Name">goalOfMonth</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -38370,7 +38397,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="176">
+              <Item class="ModuleScript" referent="177">
                 <Properties>
                   <string name="Name">goals</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -38509,7 +38536,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="177">
+              <Item class="ModuleScript" referent="178">
                 <Properties>
                   <string name="Name">index</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -38595,7 +38622,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="178">
+              <Item class="ModuleScript" referent="179">
                 <Properties>
                   <string name="Name">kit</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -38642,7 +38669,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="179">
+              <Item class="ModuleScript" referent="180">
                 <Properties>
                   <string name="Name">league</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -38905,7 +38932,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="180">
+              <Item class="ModuleScript" referent="181">
                 <Properties>
                   <string name="Name">personal</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -39014,7 +39041,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="181">
+              <Item class="ModuleScript" referent="182">
                 <Properties>
                   <string name="Name">result</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -39128,7 +39155,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="182">
+              <Item class="ModuleScript" referent="183">
                 <Properties>
                   <string name="Name">retirements</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -39164,7 +39191,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="183">
+              <Item class="ModuleScript" referent="184">
                 <Properties>
                   <string name="Name">streaks</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -39294,7 +39321,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="184">
+              <Item class="ModuleScript" referent="185">
                 <Properties>
                   <string name="Name">table</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -39396,7 +39423,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="185">
+              <Item class="ModuleScript" referent="186">
                 <Properties>
                   <string name="Name">wonderkids</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -39447,7 +39474,7 @@ end
                 </Properties>
               </Item>
             </Item>
-            <Item class="ModuleScript" referent="186">
+            <Item class="ModuleScript" referent="187">
               <Properties>
                 <string name="Name">feed</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -39996,7 +40023,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="187">
+            <Item class="ModuleScript" referent="188">
               <Properties>
                 <string name="Name">goalOfMonth</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -40221,7 +40248,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="188">
+            <Item class="ModuleScript" referent="189">
               <Properties>
                 <string name="Name">grammar</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -40512,7 +40539,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="189">
+            <Item class="ModuleScript" referent="190">
               <Properties>
                 <string name="Name">graphics</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -40945,7 +40972,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="190">
+            <Item class="ModuleScript" referent="191">
               <Properties>
                 <string name="Name">importance</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -41036,7 +41063,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="191">
+            <Item class="ModuleScript" referent="192">
               <Properties>
                 <string name="Name">memory</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -41194,7 +41221,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="192">
+            <Item class="ModuleScript" referent="193">
               <Properties>
                 <string name="Name">narrate</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -41240,7 +41267,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="193">
+            <Item class="ModuleScript" referent="194">
               <Properties>
                 <string name="Name">record</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -41364,7 +41391,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="194">
+            <Item class="ModuleScript" referent="195">
               <Properties>
                 <string name="Name">schedule</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -41433,7 +41460,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="195">
+            <Item class="ModuleScript" referent="196">
               <Properties>
                 <string name="Name">select</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -41618,11 +41645,11 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="Folder" referent="196">
+            <Item class="Folder" referent="197">
               <Properties>
                 <string name="Name">templates</string>
               </Properties>
-              <Item class="ModuleScript" referent="197">
+              <Item class="ModuleScript" referent="198">
                 <Properties>
                   <string name="Name">casino</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -41636,7 +41663,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="198">
+              <Item class="ModuleScript" referent="199">
                 <Properties>
                   <string name="Name">chants</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -41684,7 +41711,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="199">
+              <Item class="ModuleScript" referent="200">
                 <Properties>
                   <string name="Name">cheeky</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -41698,7 +41725,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="200">
+              <Item class="ModuleScript" referent="201">
                 <Properties>
                   <string name="Name">club</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -41712,7 +41739,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="201">
+              <Item class="ModuleScript" referent="202">
                 <Properties>
                   <string name="Name">data</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -41726,7 +41753,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="202">
+              <Item class="ModuleScript" referent="203">
                 <Properties>
                   <string name="Name">index</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -41847,7 +41874,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="203">
+              <Item class="ModuleScript" referent="204">
                 <Properties>
                   <string name="Name">international</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -41861,7 +41888,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="204">
+              <Item class="ModuleScript" referent="205">
                 <Properties>
                   <string name="Name">press</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -41875,7 +41902,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="205">
+              <Item class="ModuleScript" referent="206">
                 <Properties>
                   <string name="Name">retirements</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -41892,7 +41919,7 @@ end
 ]]></string>
                 </Properties>
               </Item>
-              <Item class="ModuleScript" referent="206">
+              <Item class="ModuleScript" referent="207">
                 <Properties>
                   <string name="Name">social</string>
                   <string name="Source"><![CDATA[--!nocheck
@@ -41907,7 +41934,7 @@ end
                 </Properties>
               </Item>
             </Item>
-            <Item class="ModuleScript" referent="207">
+            <Item class="ModuleScript" referent="208">
               <Properties>
                 <string name="Name">trending</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -42010,7 +42037,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="208">
+            <Item class="ModuleScript" referent="209">
               <Properties>
                 <string name="Name">updateFlags</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -42048,7 +42075,7 @@ end
               </Properties>
             </Item>
           </Item>
-          <Item class="ModuleScript" referent="209">
+          <Item class="ModuleScript" referent="210">
             <Properties>
               <string name="Name">money</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -42139,7 +42166,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="210">
+          <Item class="ModuleScript" referent="211">
             <Properties>
               <string name="Name">nationNames</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -42224,7 +42251,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="211">
+          <Item class="ModuleScript" referent="212">
             <Properties>
               <string name="Name">negotiation</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -42362,7 +42389,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="212">
+          <Item class="ModuleScript" referent="213">
             <Properties>
               <string name="Name">newChances</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -42487,7 +42514,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="213">
+          <Item class="ModuleScript" referent="214">
             <Properties>
               <string name="Name">nonLeagueRegions</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -42516,7 +42543,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="214">
+          <Item class="ModuleScript" referent="215">
             <Properties>
               <string name="Name">penaltyKeeper</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -42721,7 +42748,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="215">
+          <Item class="ModuleScript" referent="216">
             <Properties>
               <string name="Name">penaltyRunup</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -42850,7 +42877,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="216">
+          <Item class="ModuleScript" referent="217">
             <Properties>
               <string name="Name">penaltyTaking</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -42976,7 +43003,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="217">
+          <Item class="ModuleScript" referent="218">
             <Properties>
               <string name="Name">pitch</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -43043,7 +43070,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="218">
+          <Item class="ModuleScript" referent="219">
             <Properties>
               <string name="Name">pitchQuality</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -43131,7 +43158,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="219">
+          <Item class="ModuleScript" referent="220">
             <Properties>
               <string name="Name">pitchWeather</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -43209,7 +43236,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="220">
+          <Item class="ModuleScript" referent="221">
             <Properties>
               <string name="Name">playOn</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -44008,7 +44035,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="221">
+          <Item class="ModuleScript" referent="222">
             <Properties>
               <string name="Name">playoffs</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -44244,7 +44271,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="222">
+          <Item class="ModuleScript" referent="223">
             <Properties>
               <string name="Name">playstyle</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -44294,7 +44321,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="223">
+          <Item class="ModuleScript" referent="224">
             <Properties>
               <string name="Name">portrait</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -44366,7 +44393,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="224">
+          <Item class="ModuleScript" referent="225">
             <Properties>
               <string name="Name">potm</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -44685,7 +44712,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="225">
+          <Item class="ModuleScript" referent="226">
             <Properties>
               <string name="Name">pressure</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -44801,7 +44828,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="226">
+          <Item class="ModuleScript" referent="227">
             <Properties>
               <string name="Name">promotion</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -45364,7 +45391,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="227">
+          <Item class="ModuleScript" referent="228">
             <Properties>
               <string name="Name">qualification</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -45450,7 +45477,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="228">
+          <Item class="ModuleScript" referent="229">
             <Properties>
               <string name="Name">rating</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -45510,11 +45537,11 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="Folder" referent="229">
+          <Item class="Folder" referent="230">
             <Properties>
               <string name="Name">realMoments</string>
             </Properties>
-            <Item class="ModuleScript" referent="230">
+            <Item class="ModuleScript" referent="231">
               <Properties>
                 <string name="Name">pickStore</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -45703,7 +45730,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="231">
+            <Item class="ModuleScript" referent="232">
               <Properties>
                 <string name="Name">picks</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -45810,7 +45837,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="232">
+            <Item class="ModuleScript" referent="233">
               <Properties>
                 <string name="Name">shots</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -46352,7 +46379,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="233">
+            <Item class="ModuleScript" referent="234">
               <Properties>
                 <string name="Name">track</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -46579,7 +46606,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="234">
+            <Item class="ModuleScript" referent="235">
               <Properties>
                 <string name="Name">types</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -46601,7 +46628,7 @@ end
               </Properties>
             </Item>
           </Item>
-          <Item class="ModuleScript" referent="235">
+          <Item class="ModuleScript" referent="236">
             <Properties>
               <string name="Name">realSquad</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -46792,7 +46819,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="236">
+          <Item class="ModuleScript" referent="237">
             <Properties>
               <string name="Name">recognition</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -47009,7 +47036,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="237">
+          <Item class="ModuleScript" referent="238">
             <Properties>
               <string name="Name">records</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -47104,7 +47131,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="238">
+          <Item class="ModuleScript" referent="239">
             <Properties>
               <string name="Name">relationshipGame</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -47150,7 +47177,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="239">
+          <Item class="ModuleScript" referent="240">
             <Properties>
               <string name="Name">relationships</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -47253,7 +47280,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="240">
+          <Item class="ModuleScript" referent="241">
             <Properties>
               <string name="Name">relegationOffers</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -47355,7 +47382,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="241">
+          <Item class="ModuleScript" referent="242">
             <Properties>
               <string name="Name">reputation</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -47440,7 +47467,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="242">
+          <Item class="ModuleScript" referent="243">
             <Properties>
               <string name="Name">retirement</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -47520,7 +47547,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="243">
+          <Item class="ModuleScript" referent="244">
             <Properties>
               <string name="Name">retirementNews</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -47666,7 +47693,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="244">
+          <Item class="ModuleScript" referent="245">
             <Properties>
               <string name="Name">rivalries</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -47765,7 +47792,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="245">
+          <Item class="ModuleScript" referent="246">
             <Properties>
               <string name="Name">ruleBook</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -47943,7 +47970,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="246">
+          <Item class="ModuleScript" referent="247">
             <Properties>
               <string name="Name">runupStyles</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -48353,7 +48380,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="247">
+          <Item class="ModuleScript" referent="248">
             <Properties>
               <string name="Name">scenarioEdit</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -48955,7 +48982,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="248">
+          <Item class="ModuleScript" referent="249">
             <Properties>
               <string name="Name">scenarioFrame</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -49432,7 +49459,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="249">
+          <Item class="ModuleScript" referent="250">
             <Properties>
               <string name="Name">scenarioRender</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -49885,7 +49912,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="250">
+          <Item class="ModuleScript" referent="251">
             <Properties>
               <string name="Name">scenarioRules</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -50151,7 +50178,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="251">
+          <Item class="ModuleScript" referent="252">
             <Properties>
               <string name="Name">scenarioSelect</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -50221,7 +50248,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="252">
+          <Item class="ModuleScript" referent="253">
             <Properties>
               <string name="Name">scenarioStore</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -50471,7 +50498,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="253">
+          <Item class="ModuleScript" referent="254">
             <Properties>
               <string name="Name">scenarios</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -50525,7 +50552,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="254">
+          <Item class="ModuleScript" referent="255">
             <Properties>
               <string name="Name">scenePicture</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -50562,7 +50589,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="255">
+          <Item class="ModuleScript" referent="256">
             <Properties>
               <string name="Name">scoutOffers</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -50733,7 +50760,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="256">
+          <Item class="ModuleScript" referent="257">
             <Properties>
               <string name="Name">scoutedPlacement</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -50804,7 +50831,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="257">
+          <Item class="ModuleScript" referent="258">
             <Properties>
               <string name="Name">season</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -51034,7 +51061,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="258">
+          <Item class="ModuleScript" referent="259">
             <Properties>
               <string name="Name">seasonAwards</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -51308,7 +51335,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="259">
+          <Item class="ModuleScript" referent="260">
             <Properties>
               <string name="Name">seasonStanding</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -51450,7 +51477,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="260">
+          <Item class="ModuleScript" referent="261">
             <Properties>
               <string name="Name">selection</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -51699,7 +51726,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="261">
+          <Item class="ModuleScript" referent="262">
             <Properties>
               <string name="Name">setPieces</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -51754,7 +51781,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="262">
+          <Item class="ModuleScript" referent="263">
             <Properties>
               <string name="Name">shootout</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -51967,7 +51994,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="263">
+          <Item class="ModuleScript" referent="264">
             <Properties>
               <string name="Name">shopData</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -52014,7 +52041,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="264">
+          <Item class="ModuleScript" referent="265">
             <Properties>
               <string name="Name">shopDefaults</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -52165,7 +52192,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="265">
+          <Item class="ModuleScript" referent="266">
             <Properties>
               <string name="Name">shotFeel</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -52256,7 +52283,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="266">
+          <Item class="ModuleScript" referent="267">
             <Properties>
               <string name="Name">shotModel</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -52614,7 +52641,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="267">
+          <Item class="ModuleScript" referent="268">
             <Properties>
               <string name="Name">signingTalk</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -52728,7 +52755,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="268">
+          <Item class="ModuleScript" referent="269">
             <Properties>
               <string name="Name">simMatch</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -53007,7 +53034,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="269">
+          <Item class="ModuleScript" referent="270">
             <Properties>
               <string name="Name">spacing</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -53308,7 +53335,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="270">
+          <Item class="ModuleScript" referent="271">
             <Properties>
               <string name="Name">sponsorDeals</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -54001,7 +54028,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="271">
+          <Item class="ModuleScript" referent="272">
             <Properties>
               <string name="Name">sponsors</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -54205,7 +54232,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="272">
+          <Item class="ModuleScript" referent="273">
             <Properties>
               <string name="Name">squadData</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -54299,7 +54326,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="273">
+          <Item class="ModuleScript" referent="274">
             <Properties>
               <string name="Name">squadSaveCodec</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -54555,7 +54582,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="274">
+          <Item class="ModuleScript" referent="275">
             <Properties>
               <string name="Name">starPoints</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -55137,7 +55164,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="275">
+          <Item class="ModuleScript" referent="276">
             <Properties>
               <string name="Name">story</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -55349,7 +55376,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="276">
+          <Item class="ModuleScript" referent="277">
             <Properties>
               <string name="Name">stretchRun</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -55394,7 +55421,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="277">
+          <Item class="ModuleScript" referent="278">
             <Properties>
               <string name="Name">strikePower</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -55488,7 +55515,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="278">
+          <Item class="ModuleScript" referent="279">
             <Properties>
               <string name="Name">switchedOffKinds</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -55524,7 +55551,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="279">
+          <Item class="ModuleScript" referent="280">
             <Properties>
               <string name="Name">teamsheet</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -56150,11 +56177,11 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="Folder" referent="280">
+          <Item class="Folder" referent="281">
             <Properties>
               <string name="Name">three3d</string>
             </Properties>
-            <Item class="ModuleScript" referent="281">
+            <Item class="ModuleScript" referent="282">
               <Properties>
                 <string name="Name">gait</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -56330,7 +56357,7 @@ end
               </Properties>
             </Item>
           </Item>
-          <Item class="ModuleScript" referent="282">
+          <Item class="ModuleScript" referent="283">
             <Properties>
               <string name="Name">tournament</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -56806,7 +56833,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="283">
+          <Item class="ModuleScript" referent="284">
             <Properties>
               <string name="Name">trainingDrills</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -56976,7 +57003,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="284">
+          <Item class="ModuleScript" referent="285">
             <Properties>
               <string name="Name">trainingLevelData</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -57349,7 +57376,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="285">
+          <Item class="ModuleScript" referent="286">
             <Properties>
               <string name="Name">trainingLevelStore</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -57559,7 +57586,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="286">
+          <Item class="ModuleScript" referent="287">
             <Properties>
               <string name="Name">trainingLevels</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -57649,7 +57676,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="287">
+          <Item class="ModuleScript" referent="288">
             <Properties>
               <string name="Name">trainingRender</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -58038,7 +58065,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="288">
+          <Item class="ModuleScript" referent="289">
             <Properties>
               <string name="Name">transferInterest</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -58445,7 +58472,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="289">
+          <Item class="ModuleScript" referent="290">
             <Properties>
               <string name="Name">transferRequest</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -58776,7 +58803,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="290">
+          <Item class="ModuleScript" referent="291">
             <Properties>
               <string name="Name">transfers</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -58864,7 +58891,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="291">
+          <Item class="ModuleScript" referent="292">
             <Properties>
               <string name="Name">trial</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -59040,7 +59067,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="292">
+          <Item class="ModuleScript" referent="293">
             <Properties>
               <string name="Name">trialShootoutRig</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -59306,7 +59333,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="293">
+          <Item class="ModuleScript" referent="294">
             <Properties>
               <string name="Name">trialStages</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -59603,7 +59630,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="294">
+          <Item class="ModuleScript" referent="295">
             <Properties>
               <string name="Name">tuning</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -59617,7 +59644,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="295">
+          <Item class="ModuleScript" referent="296">
             <Properties>
               <string name="Name">tuningStore</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -59742,7 +59769,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="296">
+          <Item class="ModuleScript" referent="297">
             <Properties>
               <string name="Name">unlocks</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -60128,7 +60155,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="297">
+          <Item class="ModuleScript" referent="298">
             <Properties>
               <string name="Name">visionRound</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -60941,7 +60968,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="298">
+          <Item class="ModuleScript" referent="299">
             <Properties>
               <string name="Name">voting</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -61033,7 +61060,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="299">
+          <Item class="ModuleScript" referent="300">
             <Properties>
               <string name="Name">wages</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -61098,7 +61125,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="300">
+          <Item class="ModuleScript" referent="301">
             <Properties>
               <string name="Name">weather</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -61134,7 +61161,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="301">
+          <Item class="ModuleScript" referent="302">
             <Properties>
               <string name="Name">weatherLab</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -61325,7 +61352,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="302">
+          <Item class="ModuleScript" referent="303">
             <Properties>
               <string name="Name">week</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -61395,7 +61422,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="303">
+          <Item class="ModuleScript" referent="304">
             <Properties>
               <string name="Name">wideChances</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -61481,11 +61508,11 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="Folder" referent="304">
+          <Item class="Folder" referent="305">
             <Properties>
               <string name="Name">world</string>
             </Properties>
-            <Item class="ModuleScript" referent="305">
+            <Item class="ModuleScript" referent="306">
               <Properties>
                 <string name="Name">clubRating</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -61560,7 +61587,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="306">
+            <Item class="ModuleScript" referent="307">
               <Properties>
                 <string name="Name">europe</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -61718,7 +61745,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="307">
+            <Item class="ModuleScript" referent="308">
               <Properties>
                 <string name="Name">history</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -61804,7 +61831,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="308">
+            <Item class="ModuleScript" referent="309">
               <Properties>
                 <string name="Name">holders</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -61818,7 +61845,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="309">
+            <Item class="ModuleScript" referent="310">
               <Properties>
                 <string name="Name">index</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -62079,7 +62106,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="310">
+            <Item class="ModuleScript" referent="311">
               <Properties>
                 <string name="Name">leagues</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -62223,7 +62250,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="311">
+            <Item class="ModuleScript" referent="312">
               <Properties>
                 <string name="Name">summary</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -62425,7 +62452,7 @@ end
               </Properties>
             </Item>
           </Item>
-          <Item class="ModuleScript" referent="312">
+          <Item class="ModuleScript" referent="313">
             <Properties>
               <string name="Name">worldAgeing</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -62954,7 +62981,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="313">
+          <Item class="ModuleScript" referent="314">
             <Properties>
               <string name="Name">xpConfig</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -63062,7 +63089,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="314">
+          <Item class="ModuleScript" referent="315">
             <Properties>
               <string name="Name">youth</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -63349,15 +63376,15 @@ end
           </Item>
         </Item>
       </Item>
-      <Item class="Folder" referent="315">
+      <Item class="Folder" referent="316">
         <Properties>
           <string name="Name">roblox</string>
         </Properties>
-        <Item class="Folder" referent="316">
+        <Item class="Folder" referent="317">
           <Properties>
             <string name="Name">game</string>
           </Properties>
-          <Item class="ModuleScript" referent="317">
+          <Item class="ModuleScript" referent="318">
             <Properties>
               <string name="Name">flow</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -63884,7 +63911,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="318">
+          <Item class="ModuleScript" referent="319">
             <Properties>
               <string name="Name">lifeFlow</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -64153,7 +64180,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="319">
+          <Item class="ModuleScript" referent="320">
             <Properties>
               <string name="Name">match</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -66525,7 +66552,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="320">
+          <Item class="ModuleScript" referent="321">
             <Properties>
               <string name="Name">matchView</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -66587,7 +66614,354 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="321">
+          <Item class="ModuleScript" referent="322">
+            <Properties>
+              <string name="Name">relgamePlay</string>
+              <string name="Source"><![CDATA[--!nocheck
+--!nolint
+-- Generated from roblox/game/relgamePlay.ts by roblox/tools/ts2luau. Do not edit.
+return function(exports, import, Js)
+	local A, S, N, Math = Js.A, Js.S, Js.N, Js.Math
+	local M_season = import("lib/star/season")
+	local M_relationships = import("lib/star/relationships")
+	local M_bossPenalties = import("lib/star/bossPenalties")
+	local M_bossSession = import("lib/star/bossSession")
+	local M_trainingPlay = import("roblox/game/trainingPlay")
+	local M_trainingDrills = import("lib/star/trainingDrills")
+	local M_pitch = import("lib/star/pitch")
+	local M_goalFrame = import("lib/star/goalFrame")
+	local M_match = import("roblox/game/match")
+	local M_runupStyles = import("lib/star/runupStyles")
+	local M_matchView = import("roblox/game/matchView")
+	local REL_GAME_TITLE, SHOTS, woodworkMates, relgameGain, SIGNING_ITEMS, SIGNING_QUEUE, SIGNING_PAR, signingGain, signingPatience, PRESS_CHANCE, PRESS_MS, NEXT_FAN_MS, BLINK_MS, itemsWanted, FIXTURE, startRelGame, shotSeed, openShot, tick_, shuffled, nextFan, blink, tickSigning, signingStart, signingTap, pitchMatch, relView, KITS, relFrame
+	woodworkMates = function(c)
+		local rng = M_season.mulberry32(((c.season * 991) + (c.week * 37)))
+		local pool = A.filter((if c.squad ~= nil then c.squad else Js.alit()), function(p)
+			return (p.position ~= "GK")
+		end)
+		local pick = A.filter(Js.alit(pool[math.floor((rng() * Js.alen(pool))) + 1], pool[math.floor((rng() * Js.alen(pool))) + 1]), Js.Boolean)
+		do return A.map(A.slice(pick, 0, 2), function(p)
+			local chance = (0.16 + (Math.min(99, (if p.overall ~= nil then p.overall else 60)) / 600))
+			local hits = 0
+			do
+				local s = 0
+				local _first1 = true
+				while true do
+					if not _first1 then
+						s += 1
+					end
+					_first1 = false
+					if not (s < SHOTS.woodwork) then break end
+					if (rng() < chance) then
+						hits += 1
+					end
+				end
+			end
+			do return Js.O({ name = A.slice(S.split(p.name, " "), -1)[1], hits = hits }, { "name", "hits" }) end
+		end) end
+	end
+	exports.woodworkMates = woodworkMates
+	relgameGain = function(c, game_, count, roll)
+		if ((not Js.NumberNS.isInteger(count)) or (count < 0)) then
+			do return nil end
+		end
+		if (game_ == "woodwork") then
+			if (count > SHOTS.woodwork) then
+				do return nil end
+			end
+			local best = Math.max(Js.unpack(Js.aspread(Js.alit(1), A.map(woodworkMates(c), function(m)
+				return m.hits
+			end))))
+			local won = (count >= best)
+			do return Js.O({ won = won, gain = M_relationships.gameReward(won, c.relationships.team, roll, "team"), line = ("You hit the frame " .. Js.numstr(count) .. " of " .. Js.numstr(SHOTS.woodwork) .. ". Best of the lads: " .. Js.numstr(best) .. ".") }, { "won", "gain", "line" }) end
+		end
+		if (game_ == "penalties") then
+			if (count > M_bossPenalties.BOSS_KICKS) then
+				do return nil end
+			end
+			do return Js.O({ won = (count > 0), gain = M_bossPenalties.bossGain(count), line = (if (count == M_bossPenalties.BOSS_KICKS) then "Every one. He's impressed." else (if (count > 0) then (Js.numstr(count) .. " of " .. Js.numstr(M_bossPenalties.BOSS_KICKS) .. " where he asked.") else "None where he asked. He walks off.")) }, { "won", "gain", "line" }) end
+		end
+		if (game_ == "session") then
+			if (count > M_bossSession.SESSION_REPS) then
+				do return nil end
+			end
+			do return Js.O({ won = (count > 0), gain = M_bossSession.sessionGain(count), line = (if (count == M_bossSession.SESSION_REPS) then "Every one in. He nods and writes something down." else (if (count > 0) then (Js.numstr(count) .. " of " .. Js.numstr(M_bossSession.SESSION_REPS) .. " in.") else "Not one in. He walks off before you finish.")) }, { "won", "gain", "line" }) end
+		end
+		if (count > SIGNING_QUEUE) then
+			do return nil end
+		end
+		local gain = signingGain(count)
+		do return Js.O({ won = (gain > 0), gain = gain, line = (Js.numstr(count) .. " of " .. Js.numstr(SIGNING_QUEUE) .. " done right.") }, { "won", "gain", "line" }) end
+	end
+	exports.relgameGain = relgameGain
+	itemsWanted = function(n, roll)
+		if (n < 2) then
+			do return 1 end
+		end
+		local three = Math.min(0.3, (0.04 * (n - 1)))
+		local two = Math.min(0.45, (0.07 * (n - 1)))
+		do return (if (roll < three) then 3 else (if (roll < (three + two)) then 2 else 1)) end
+	end
+	exports.itemsWanted = itemsWanted
+	startRelGame = function(career, game_)
+		local rp = Js.O({ game = game_, career = career, clock = 0, shot = 0, count = 0, flash = nil, nextAt = nil, done = false, m = nil, hit = false, cross = nil, spots = Js.alit(), lines = Js.alit(), mates = (if (game_ == "woodwork") then woodworkMates(career) else Js.alit()), started = false, fan = nil, order = A.map(SIGNING_ITEMS, function(i)
+			return i.id
+		end), missed = 0, served = 0, fanAt = nil }, { "game", "career", "clock", "shot", "count", "flash", "nextAt", "done", "m", "hit", "cross", "spots", "lines", "mates", "started", "fan", "order", "missed", "served", "fanAt" })
+		if (game_ == "penalties") then
+			local rng = M_season.mulberry32((((career.season * 7307) + (career.week * 131)) + math.floor((Math.random() * 100000))))
+			rp.spots = M_bossPenalties.pickSpots(rng)
+			rp.lines = A.map(rp.spots, function(sp, i)
+				return M_bossPenalties.askLine(sp, i, rng)
+			end)
+		end
+		if (game_ ~= "signing") then
+			openShot(rp)
+		end
+		do return rp end
+	end
+	exports.startRelGame = startRelGame
+	shotSeed = function(rp)
+		local c = rp.career
+		do return (if (rp.game == "woodwork") then (((c.season * 131) + (c.week * 17)) + rp.shot) else (if (rp.game == "penalties") then ((c.season * 7307) + (c.week * 131)) else ((c.season * 5113) + (c.week * 173)))) end
+	end
+	openShot = function(rp)
+		local c = rp.career
+		local seed = shotSeed(rp)
+		rp.hit = false
+		rp.cross = nil
+		local openOn = function()
+			if (rp.game == "penalties") then
+				local setup = M_trainingPlay.buildStrikeFrom("power", Js.ospread(M_trainingDrills.powerDrillForLevel(1, rp.shot, c.skills.power), Js.O({ pass = 0.5 }, { "pass" })), M_season.mulberry32((seed + (rp.shot * 977))))
+				local sc = setup.scenario
+				sc.ball = Js.O({ x = M_pitch.CX, y = M_pitch.PEN_SPOT_Y }, { "x", "y" })
+				sc.player = Js.O({ x = M_pitch.CX, y = (M_pitch.PEN_SPOT_Y + 1.2) }, { "x", "y" })
+				sc.defenders = Js.alit()
+				local h = 22
+				local w = (h * (5 / 8))
+				local cx = Math.max((w / 2), Math.min((M_pitch.PITCH_W - (w / 2)), M_pitch.CX))
+				sc.viewport = Js.O({ x1 = (cx - (w / 2)), x2 = (cx + (w / 2)), y1 = M_goalFrame.FRAME_TOP_FOR_GOAL, y2 = (M_goalFrame.FRAME_TOP_FOR_GOAL + h) }, { "x1", "x2", "y1", "y2" })
+				rp.cross = nil
+				do return sc end
+			end
+			local level = (if (rp.game == "session") then (M_bossSession.SESSION_FIRST_LEVEL + rp.shot) else 1)
+			local rng = (if (rp.game == "session") then M_season.mulberry32((seed + (rp.shot * 911))) else M_season.mulberry32(seed))
+			local setup = M_trainingPlay.buildStrikeFrom("power", Js.ospread(M_trainingDrills.powerDrillForLevel(level, rp.shot, c.skills.power), Js.O({ pass = 0.5 }, { "pass" })), rng)
+			local ball = setup.scenario.ball
+			local h = Math.max(22, (ball.y + 10))
+			local w = (h * (5 / 8))
+			local cx = Math.max((w / 2), Math.min((M_pitch.PITCH_W - (w / 2)), ((ball.x + M_pitch.CX) / 2)))
+			setup.scenario.viewport = Js.O({ x1 = (cx - (w / 2)), x2 = (cx + (w / 2)), y1 = M_goalFrame.FRAME_TOP_FOR_GOAL, y2 = (M_goalFrame.FRAME_TOP_FOR_GOAL + h) }, { "x1", "x2", "y1", "y2" })
+			rp.hit = false
+			do return setup.scenario end
+		end
+		local sessionDrill = (if (rp.game == "session") then M_trainingDrills.powerDrillForLevel((M_bossSession.SESSION_FIRST_LEVEL + rp.shot), rp.shot, c.skills.power) else nil)
+		local drill = Js.O({ openOn = openOn, scene = (if (function() local _v = sessionDrill; if _v == nil then return nil end; _v = _v.keeper; return _v end)() then Js.O({ teammates = false, banners = false, ownFrame = true }, { "teammates", "banners", "ownFrame" }) else Js.O({ teammates = false, banners = false, ownFrame = true, keeper = false }, { "teammates", "banners", "ownFrame", "keeper" })), onBallStep = function(b)
+			if (((rp.game == "woodwork") and (not rp.hit)) and M_relationships.touchingFrame(b)) then
+				rp.hit = true
+			end
+			if (((rp.game == "penalties") and (not rp.cross)) and (b.y <= 0)) then
+				rp.cross = Js.O({ x = b.x, z = b.z }, { "x", "z" })
+			end
+		end, onChanceResolved = function(info)
+			if ((rp.nextAt ~= nil) or rp.done) then
+				do return end
+			end
+			local good = nil
+			local text = nil
+			if (rp.game == "woodwork") then
+				good = rp.hit
+				text = (if good then "OFF THE WOODWORK!" else "MISSED THE FRAME")
+			elseif (rp.game == "penalties") then
+				local at = (if rp.cross ~= nil then rp.cross else (if (info.ball and (info.ball.y <= 0.5)) then Js.O({ x = info.ball.x, z = info.ball.z }, { "x", "z" }) else nil))
+				local target = rp.spots[Math.min(rp.shot, (M_bossPenalties.BOSS_KICKS - 1)) + 1]
+				good = ((not (not at)) and (M_bossPenalties.spotOf(at.x, at.z) == target))
+				text = (if good then "BANG ON!" else (if (at and Js.T(M_bossPenalties.spotOf(at.x, at.z))) then "WRONG SPOT" else "MISSED THE GOAL"))
+			else
+				local o = (if info.teammateShot then "saved" else info.outcome)
+				good = ((o == "goal") or (o == "rebound"))
+				text = (if good then "GOAL!" else (if (((o == "saved") or (o == "tipped")) or (o == "caught")) then "SAVED" else (if ((o == "blocked") or (o == "tackled")) then "BLOCKED" else (if (o == "post") then "OFF THE POST" else (if (o == "over") then "OVER" else "WIDE")))))
+			end
+			if good then
+				rp.count += 1
+			end
+			rp.flash = Js.O({ text = text, good = good, at = rp.clock }, { "text", "good", "at" })
+			rp.nextAt = (rp.clock + (if (rp.game == "woodwork") then 0.9 else 1.1))
+		end }, { "openOn", "scene", "onBallStep", "onChanceResolved" })
+		local shotsSeed = (if (rp.game == "woodwork") then seed else (seed + rp.shot))
+		rp.m = M_match.startMatch(Js.ospread(Js.O({ career = c, fixture = FIXTURE, skills = Js.O({ power = c.skills.power, technique = c.skills.technique }, { "power", "technique" }), canCurve = false, canExtraTouch = false, keeperStrength = (if sessionDrill then sessionDrill.keeperStrength else 0), oppStrength = 70, position = c.player.position, teamRelationship = 60, startMinute = 0, conditions = nil, seed = shotsSeed, pressure = 0 }, { "career", "fixture", "skills", "canCurve", "canExtraTouch", "keeperStrength", "oppStrength", "position", "teamRelationship", "startMinute", "conditions", "seed", "pressure" }), (if (rp.game == "penalties") then Js.O({ penaltyRunup = M_runupStyles.careerPenaltyRunup(c) }, { "penaltyRunup" }) else Js.O({}, nil)), Js.O({ drill = drill }, { "drill" })))
+	end
+	tick_ = function(rp, dt)
+		dt = Math.min(Math.max(0, dt), 0.05)
+		rp.clock += dt
+		if (rp.flash and ((rp.clock - rp.flash.at) > 1)) then
+			rp.flash = nil
+		end
+		if (rp.game == "signing") then
+			tickSigning(rp)
+			do return end
+		end
+		if rp.m then
+			M_match.tick(rp.m, dt)
+		end
+		if ((rp.nextAt ~= nil) and (rp.clock >= rp.nextAt)) then
+			rp.nextAt = nil
+			rp.shot += 1
+			if (rp.shot >= SHOTS[rp.game]) then
+				rp.done = true
+				rp.m = nil
+			else
+				openShot(rp)
+			end
+		end
+	end
+	exports.tick = tick_
+	shuffled = function(xs)
+		local a = Js.aspread(xs)
+		for i = (Js.alen(a) - 1), 1, -1 do
+			local j = math.floor((Math.random() * (i + 1)))
+			local _d2 = Js.alit(a[j + 1], a[i + 1])
+			A.set(a, i, _d2[1])
+			A.set(a, j, _d2[2])
+		end
+		do return a end
+	end
+	nextFan = function(rp)
+		local n = (function() local _o = rp.served; rp.served = _o + 1; return _o end)()
+		local press = ((n >= 2) and (Math.random() < PRESS_CHANCE))
+		local k = (if press then 0 else itemsWanted(n, Math.random()))
+		local pick = function()
+			return SIGNING_ITEMS[math.floor((Math.random() * Js.alen(SIGNING_ITEMS))) + 1].id
+		end
+		local want = Js.Array.from(Js.O({ length = k }, { "length" }), pick)
+		local total = (if press then PRESS_MS else Math.round((signingPatience(n) * (1 + (0.6 * (k - 1))))))
+		rp.order = shuffled(A.map(SIGNING_ITEMS, function(i)
+			return i.id
+		end))
+		rp.fan = Js.O({ n = n, press = press, want = want, got = 0, ["until"] = ((rp.clock * 1000) + total), total = total }, { "n", "press", "want", "got", "until", "total" })
+	end
+	blink = function(rp, good)
+		rp.flash = Js.O({ text = (if good then "✓" else "✕"), good = good, at = ((rp.clock - 1) + (BLINK_MS / 1000)) }, { "text", "good", "at" })
+	end
+	tickSigning = function(rp)
+		if ((not rp.started) or rp.done) then
+			do return end
+		end
+		local t = (rp.clock * 1000)
+		local f = rp.fan
+		if (f and (t > f["until"])) then
+			if f.press then
+				rp.count += 1
+				blink(rp, true)
+			else
+				rp.missed += 1
+				blink(rp, false)
+			end
+			rp.fan = nil
+			rp.fanAt = nil
+		end
+		if (not rp.fan) then
+			if ((rp.count + rp.missed) >= SIGNING_QUEUE) then
+				rp.done = true
+				do return end
+			end
+			if (rp.fanAt == nil) then
+				rp.fanAt = (t + NEXT_FAN_MS)
+			elseif (t >= rp.fanAt) then
+				rp.fanAt = nil
+				nextFan(rp)
+			end
+		end
+	end
+	signingStart = function(rp)
+		rp.started = true
+	end
+	exports.signingStart = signingStart
+	signingTap = function(rp, id)
+		local fan = rp.fan
+		if ((not fan) or rp.done) then
+			do return end
+		end
+		if (fan.press or (id ~= fan.want[fan.got + 1])) then
+			rp.missed += 1
+			blink(rp, false)
+			rp.fan = nil
+			do return end
+		end
+		if ((fan.got + 1) < Js.alen(fan.want)) then
+			rp.fan = Js.ospread(fan, Js.O({ got = (fan.got + 1) }, { "got" }))
+			blink(rp, true)
+			do return end
+		end
+		rp.count += 1
+		blink(rp, true)
+		rp.fan = nil
+	end
+	exports.signingTap = signingTap
+	pitchMatch = function(rp)
+		do return rp.m end
+	end
+	exports.pitchMatch = pitchMatch
+	relView = function(rp)
+		local shots = (if (rp.game == "signing") then SIGNING_QUEUE else SHOTS[rp.game])
+		local view = Js.O({ title = REL_GAME_TITLE[rp.game], progress = (if (rp.game == "signing") then ("Done " .. Js.numstr(rp.count) .. " / " .. Js.numstr(SIGNING_QUEUE)) else ((if (rp.game == "penalties") then "Kick" else "Shot") .. " " .. Js.numstr(Math.min((rp.shot + 1), shots)) .. " / " .. Js.numstr(shots) .. " · " .. Js.numstr(rp.count) .. " " .. (if (rp.game == "woodwork") then "on the frame" else (if (rp.game == "penalties") then "on the spot" else "in")))), line = (if (rp.game == "woodwork") then ("Hit the post or the bar. Beat the lads: " .. A.join(A.map(rp.mates, function(m)
+			return (m.name .. " " .. Js.numstr(m.hits))
+		end), ", ") .. ".") else (if (rp.game == "penalties") then "Hit the spot he names." else (if (rp.game == "session") then "The manager is watching. Score as many as you can." else "Tap what each fan holds, in order, before they give up. Never sign for a journalist 🎤."))), ask = (if (rp.game == "penalties") then ((rp.lines[Math.min(rp.shot, (M_bossPenalties.BOSS_KICKS - 1)) + 1] or "") .. " (" .. (M_bossPenalties.SPOT_LABEL[rp.spots[Math.min(rp.shot, (M_bossPenalties.BOSS_KICKS - 1)) + 1]] or "") .. ")") else ""), flash = (if rp.flash then Js.O({ text = rp.flash.text, good = rp.flash.good }, { "text", "good" }) else nil), signing = nil }, { "title", "progress", "line", "ask", "flash", "signing" })
+		if (rp.game == "signing") then
+			local f = rp.fan
+			local icon = function(id)
+				return ((function() local _v = A.find(SIGNING_ITEMS, function(i)
+					return (i.id == id)
+				end); if _v == nil then return nil end; _v = _v.icon; return _v end)() or "?")
+			end
+			view.signing = Js.O({ started = rp.started, done = rp.count, missed = rp.missed, fanIcon = (if f then (if f.press then "🎤" else "🙋") else ""), wants = (if f then A.map(f.want, function(w, i)
+				return Js.O({ icon = icon(w), got = (i < f.got) }, { "icon", "got" })
+			end) else Js.alit()), left = (if f then Math.max(0, ((f["until"] - (rp.clock * 1000)) / f.total)) else 0), order = A.map(rp.order, function(id)
+				local it = A.find(SIGNING_ITEMS, function(i)
+					return (i.id == id)
+				end)
+				do return Js.O({ id = id, icon = it.icon, label = it.label }, { "id", "icon", "label" }) end
+			end) }, { "started", "done", "missed", "fanIcon", "wants", "left", "order" })
+		end
+		do return view end
+	end
+	exports.relView = relView
+	relFrame = function(rp)
+		local rel = relView(rp)
+		if rp.m then
+			local f = M_matchView.frameOf(rp.m)
+			do return Js.ospread(f, Js.O({ kits = KITS, score = Js.ospread(f.score, Js.O({ usName = rel.title, themName = "" }, { "usName", "themName" })), mode = "pitch", trial = nil, training = nil, rel = rel }, { "kits", "score", "mode", "trial", "training", "rel" })) end
+		end
+		do return Js.O({ phase = "relgame", cameraMode = "broadcast", minute = 0, score = Js.O({ us = 0, them = 0, usName = rel.title, themName = "", home = true }, { "us", "them", "usName", "themName", "home" }), kits = KITS, bodies = Js.alit(), ball = nil, camera = Js.O({ x1 = 10, x2 = 58, y1 = -5, y2 = 40, facing = "up", tilt = 0 }, { "x1", "x2", "y1", "y2", "facing", "tilt" }), goal = Js.O({ x1 = 30.34, x2 = 37.66, crossbar = 2.44 }, { "x1", "x2", "crossbar" }), aim = nil, passTarget = nil, feed = Js.alit(), log = Js.alit(), banner = nil, pause = nil, energy = 100, stamina = nil, speed = 1, energyMode = "medium", playstyle = "balanced", controls = Js.O({ powerShot = false, powerArmed = false, curve = false, steer = false, callForIt = false, nudge = false, dribble = false, touchMode = false }, { "powerShot", "powerArmed", "curve", "steer", "callForIt", "nudge", "dribble", "touchMode" }), shootout = nil, mode = "signing", trial = nil, training = nil, rel = rel }, { "phase", "cameraMode", "minute", "score", "kits", "bodies", "ball", "camera", "goal", "aim", "passTarget", "feed", "log", "banner", "pause", "energy", "stamina", "speed", "energyMode", "playstyle", "controls", "shootout", "mode", "trial", "training", "rel" }) end
+	end
+	exports.relFrame = relFrame
+	REL_GAME_TITLE = Js.O({ woodwork = "Woodwork challenge", penalties = "The manager's penalties", session = "Extra session", signing = "Signing session" }, { "woodwork", "penalties", "session", "signing" })
+	exports.REL_GAME_TITLE = REL_GAME_TITLE
+	SHOTS = Js.O({ woodwork = 5, penalties = M_bossPenalties.BOSS_KICKS, session = M_bossSession.SESSION_REPS }, { "woodwork", "penalties", "session" })
+	SIGNING_ITEMS = Js.alit(Js.O({ id = "shirt", icon = "👕", label = "Shirt" }, { "id", "icon", "label" }), Js.O({ id = "ball", icon = "⚽", label = "Ball" }, { "id", "icon", "label" }), Js.O({ id = "photo", icon = "📸", label = "Photo" }, { "id", "icon", "label" }), Js.O({ id = "boot", icon = "👟", label = "Boot" }, { "id", "icon", "label" }))
+	exports.SIGNING_ITEMS = SIGNING_ITEMS
+	SIGNING_QUEUE = 10
+	exports.SIGNING_QUEUE = SIGNING_QUEUE
+	SIGNING_PAR = 5
+	exports.SIGNING_PAR = SIGNING_PAR
+	signingGain = function(done)
+		return (done - SIGNING_PAR)
+	end
+	exports.signingGain = signingGain
+	signingPatience = function(n)
+		return Math.max(800, (1700 - (n * 75)))
+	end
+	exports.signingPatience = signingPatience
+	PRESS_CHANCE = 0.15
+	PRESS_MS = 1300
+	NEXT_FAN_MS = 260
+	BLINK_MS = 250
+	FIXTURE = Js.O({ opponent = "Training", home = true, week = 0, competition = "Training", kind = "league" }, { "opponent", "home", "week", "competition", "kind" })
+	KITS = Js.O({ us = Js.O({ shirt = "#2563eb", trim = "#f8fafc" }, { "shirt", "trim" }), them = Js.O({ shirt = "#dc2626", trim = "#111827" }, { "shirt", "trim" }), keeper = Js.O({ shirt = "#16a34a", trim = "#052e16" }, { "shirt", "trim" }), ourKeeper = Js.O({ shirt = "#f59e0b", trim = "#111827" }, { "shirt", "trim" }) }, { "us", "them", "keeper", "ourKeeper" })
+end
+]]></string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="323">
             <Properties>
               <string name="Name">screens</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -66608,10 +66982,11 @@ return function(exports, import, Js)
 	local M_week = import("lib/star/week")
 	local M_trainingFlow = import("roblox/game/trainingFlow")
 	local M_lifeFlow = import("roblox/game/lifeFlow")
+	local M_relgamePlay = import("roblox/game/relgamePlay")
 	local M_season = import("lib/star/season")
 	local M_careerFlow = import("lib/star/careerFlow")
 	local M_negotiation = import("lib/star/negotiation")
-	local money, hud, fixtureLine, dateOf, score, ordinal, TABS, DIVISIONS, setupScreen, divisionByName, clubScreen, startGame, startWithoutTrial, simTrial, trialDone, trialScreen, managerTalkScreen, trialRewardScreen, screen, trainTab, lifeTab, trainingDone, dashboard, youthScreen, postMatch, renewalScreen, windowScreen, talkScreen, niceStep, act
+	local money, hud, fixtureLine, dateOf, score, ordinal, TABS, DIVISIONS, setupScreen, divisionByName, clubScreen, startGame, startWithoutTrial, simTrial, trialDone, trialScreen, managerTalkScreen, trialRewardScreen, screen, trainTab, lifeTab, REL_KIND, relgameDone, trainingDone, dashboard, youthScreen, postMatch, renewalScreen, windowScreen, talkScreen, niceStep, act
 	money = function(n)
 		local sign = (if (n < 0) then "-" else "")
 		local a = math.abs(Math.round(n))
@@ -66994,6 +67369,13 @@ return function(exports, import, Js)
 			A.push(s.buttons, back)
 			do return s end
 		end
+		if (page == "boss") then
+			s.title = "👔 Your manager"
+			A.push(s.blocks, Js.O({ kind = "text", text = "All three move the Manager bar the same amount: up to +6, or −2 if it goes badly." }, { "kind", "text" }))
+			A.push(s.blocks, Js.O({ kind = "list", items = Js.alit(Js.O({ text = "🎯 Penalties", sub = "He names a spot. Hit it. Three kicks.", action = "play-relgame", arg = "penalties" }, { "text", "sub", "action", "arg" }), Js.O({ text = "💬 Office talk", sub = "Three questions. Say what he wants to hear.", action = "rel-boss" }, { "text", "sub", "action" }), Js.O({ text = "⚽ Extra session", sub = "Four shots while he watches. Each one harder.", action = "play-relgame", arg = "session" }, { "text", "sub", "action", "arg" })) }, { "kind", "items" }))
+			A.push(s.buttons, back)
+			do return s end
+		end
 		if (page == "dayoff") then
 			s.title = "🌴 Day off"
 			A.push(s.blocks, Js.O({ kind = "text", text = "How do you want to spend it? Happier players get more energy back when they rest." }, { "kind", "text" }))
@@ -67074,10 +67456,10 @@ return function(exports, import, Js)
 		A.push(s.blocks, Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Energy", value = (Js.numstr(Math.round(c.energy)) .. "%"), tone = (if (c.energy < 40) then "bad" else "normal") }, { "label", "value", "tone" }), Js.O({ label = "Happiness", value = (Js.numstr(Math.round(c.happiness)) .. "%") }, { "label", "value" }), Js.O({ label = "Days left this week", value = Js.numstr(left), tone = (if (left > 0) then "normal" else "bad") }, { "label", "value", "tone" }), Js.O({ label = "Money", value = money(c.money), tone = "gold" }, { "label", "value", "tone" })) }, { "kind", "items" }))
 		local rel = function(k, icon, name, value, action)
 			local st = M_lifeFlow.relGame(c, k)
-			do return Js.ospread(Js.O({ text = (icon .. " " .. name .. ": " .. Js.numstr(Math.round(value))), sub = (if Js.T(action) then (M_lifeFlow.REL_GAME_LABEL[k] .. " · " .. (if st.why ~= nil then st.why else ("1 day, " .. Js.numstr(M_trainingFlow.trainingEnergyCost()) .. " energy"))) else (M_lifeFlow.REL_GAME_LABEL[k] .. " · not in Roblox yet")), tone = (if (st.canPlay and Js.T(action)) then "normal" else "dim") }, { "text", "sub", "tone" }), (if (st.canPlay and Js.T(action)) then Js.O({ action = action }, { "action" }) else Js.O({}, nil))) end
+			do return Js.ospread(Js.O({ text = (icon .. " " .. name .. ": " .. Js.numstr(Math.round(value))), sub = (M_lifeFlow.REL_GAME_LABEL[k] .. " · " .. (if st.why ~= nil then st.why else ("1 day, " .. Js.numstr(M_trainingFlow.trainingEnergyCost()) .. " energy"))), tone = (if (st.canPlay and Js.T(action)) then "normal" else "dim") }, { "text", "sub", "tone" }), (if (st.canPlay and Js.T(action)) then Js.O({ action = action }, { "action" }) else Js.O({}, nil))) end
 		end
 		A.push(s.blocks, Js.O({ kind = "heading", text = "Relationships" }, { "kind", "text" }))
-		A.push(s.blocks, Js.O({ kind = "list", items = Js.alit(rel("boss", "👔", "Manager", c.relationships.boss, "rel-boss"), rel("team", "🤝", "Team-mates", c.relationships.team, nil), rel("fans", "📣", "Fans", c.relationships.fans, nil), rel("happiness", "🌴", "Happiness", c.happiness, "life-dayoff")) }, { "kind", "items" }))
+		A.push(s.blocks, Js.O({ kind = "list", items = Js.alit(rel("boss", "👔", "Manager", c.relationships.boss, "life-boss"), Js.ospread(rel("team", "🤝", "Team-mates", c.relationships.team, "play-relgame"), (if M_lifeFlow.relGame(c, "team").canPlay then Js.O({ arg = "woodwork" }, { "arg" }) else Js.O({}, nil))), Js.ospread(rel("fans", "📣", "Fans", c.relationships.fans, "play-relgame"), (if M_lifeFlow.relGame(c, "fans").canPlay then Js.O({ arg = "signing" }, { "arg" }) else Js.O({}, nil))), rel("happiness", "🌴", "Happiness", c.happiness, "life-dayoff")) }, { "kind", "items" }))
 		local owned = A.filter(M_lifeFlow.cans(c), function(k)
 			return (k.owned > 0)
 		end)
@@ -67095,6 +67477,19 @@ return function(exports, import, Js)
 		end
 		do return s end
 	end
+	relgameDone = function(g, game_, count, roll)
+		local kind = REL_KIND[game_]
+		if ((not Js.T(kind)) or (not M_lifeFlow.relGame(g.career, kind).canPlay)) then
+			do return nil end
+		end
+		local r = M_relgamePlay.relgameGain(g.career, game_, count, roll)
+		if (not r) then
+			do return nil end
+		end
+		local who = (if (kind == "boss") then "Manager" else (if (kind == "team") then "Team-mates" else "Fans"))
+		do return Js.ospread(g, Js.O({ career = M_lifeFlow.relGameComplete(g.career, kind, Js.O({ gain = r.gain }, { "gain" })), ui = Js.ospread((if g.ui ~= nil then g.ui else Js.O({}, nil)), Js.O({ tab = "life", life = nil, lifeNote = (r.line .. " " .. who .. " " .. (if (r.gain >= 0) then "+" else "") .. Js.numstr(r.gain) .. ".") }, { "tab", "life", "lifeNote" })) }, { "career", "ui" })) end
+	end
+	exports.relgameDone = relgameDone
 	trainingDone = function(g, skill, level, stars)
 		local label = A.find(M_trainingFlow.SKILL_LABELS, function(l)
 			return (l[1] == skill)
@@ -67289,7 +67684,7 @@ return function(exports, import, Js)
 		if rng == nil then rng = Math.random end
 		local ui = (if g.ui ~= nil then g.ui else Js.O({}, nil))
 		local _sw20 = action
-		local _ci21 = (if _sw20 == "tab" then 1 elseif _sw20 == "home" then 2 elseif _sw20 == "life" then 3 elseif _sw20 == "rest" then 4 elseif _sw20 == "use-can" then 5 elseif _sw20 == "buy-can" then 6 elseif _sw20 == "buy-boot" then 7 elseif _sw20 == "buy-item" then 8 elseif _sw20 == "life-dayoff" then 9 elseif _sw20 == "dayoff" then 10 elseif _sw20 == "rel-boss" then 11 elseif _sw20 == "talk-pick" then 12 elseif _sw20 == "sponsor" then 13 elseif _sw20 == "train-skill" then 14 elseif _sw20 == "train-back" then 15 elseif _sw20 == "play-training" then 16 elseif _sw20 == "sim" then 17 elseif _sw20 == "play-match" then 18 elseif _sw20 == "watch" then 19 elseif _sw20 == "youth-week" then 20 elseif _sw20 == "youth-promote" then 21 elseif _sw20 == "post-continue" then 22 elseif _sw20 == "draw-continue" then 23 elseif _sw20 == "ko-continue" then 24 elseif _sw20 == "playoff-continue" then 25 elseif _sw20 == "deadline-continue" then 26 elseif _sw20 == "callup-continue" then 27 elseif _sw20 == "end-season" then 28 elseif _sw20 == "ballon-continue" then 29 elseif _sw20 == "play-on" then 30 elseif _sw20 == "retire" then 31 elseif _sw20 == "play-trial" then 32 elseif _sw20 == "trial-sign" then 33 elseif _sw20 == "trial-reward-done" then 34 elseif _sw20 == "awards-continue" then 35 elseif _sw20 == "ladder-continue" then 36 elseif _sw20 == "stay" then 37 elseif _sw20 == "sign" then 38 elseif _sw20 == "relegation-pick" then 39 elseif _sw20 == "ask-contract" then 40 elseif _sw20 == "renewal-start" then 41 elseif _sw20 == "renewal-guess" then 42 elseif _sw20 == "renewal-sign" then 43 elseif _sw20 == "renewal-cancel" then 44 elseif _sw20 == "window-talk" then 45 elseif _sw20 == "talk-nudge" then 46 elseif _sw20 == "talk-offer" then 47 elseif _sw20 == "talk-done" then 48 elseif _sw20 == "talk-walk" then 49 else 0)
+		local _ci21 = (if _sw20 == "tab" then 1 elseif _sw20 == "home" then 2 elseif _sw20 == "life" then 3 elseif _sw20 == "rest" then 4 elseif _sw20 == "use-can" then 5 elseif _sw20 == "buy-can" then 6 elseif _sw20 == "buy-boot" then 7 elseif _sw20 == "buy-item" then 8 elseif _sw20 == "life-boss" then 9 elseif _sw20 == "play-relgame" then 10 elseif _sw20 == "life-dayoff" then 11 elseif _sw20 == "dayoff" then 12 elseif _sw20 == "rel-boss" then 13 elseif _sw20 == "talk-pick" then 14 elseif _sw20 == "sponsor" then 15 elseif _sw20 == "train-skill" then 16 elseif _sw20 == "train-back" then 17 elseif _sw20 == "play-training" then 18 elseif _sw20 == "sim" then 19 elseif _sw20 == "play-match" then 20 elseif _sw20 == "watch" then 21 elseif _sw20 == "youth-week" then 22 elseif _sw20 == "youth-promote" then 23 elseif _sw20 == "post-continue" then 24 elseif _sw20 == "draw-continue" then 25 elseif _sw20 == "ko-continue" then 26 elseif _sw20 == "playoff-continue" then 27 elseif _sw20 == "deadline-continue" then 28 elseif _sw20 == "callup-continue" then 29 elseif _sw20 == "end-season" then 30 elseif _sw20 == "ballon-continue" then 31 elseif _sw20 == "play-on" then 32 elseif _sw20 == "retire" then 33 elseif _sw20 == "play-trial" then 34 elseif _sw20 == "trial-sign" then 35 elseif _sw20 == "trial-reward-done" then 36 elseif _sw20 == "awards-continue" then 37 elseif _sw20 == "ladder-continue" then 38 elseif _sw20 == "stay" then 39 elseif _sw20 == "sign" then 40 elseif _sw20 == "relegation-pick" then 41 elseif _sw20 == "ask-contract" then 42 elseif _sw20 == "renewal-start" then 43 elseif _sw20 == "renewal-guess" then 44 elseif _sw20 == "renewal-sign" then 45 elseif _sw20 == "renewal-cancel" then 46 elseif _sw20 == "window-talk" then 47 elseif _sw20 == "talk-nudge" then 48 elseif _sw20 == "talk-offer" then 49 elseif _sw20 == "talk-done" then 50 elseif _sw20 == "talk-walk" then 51 else 0)
 		local _cont22 = false
 		repeat
 			if _ci21 ~= 0 and _ci21 <= 1 then
@@ -67312,9 +67707,15 @@ return function(exports, import, Js)
 				end
 			end
 			if _ci21 ~= 0 and _ci21 <= 9 then
-				do return (if M_lifeFlow.relGame(g.career, "happiness").canPlay then Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "life", life = "dayoff", lifeNote = nil }, { "tab", "life", "lifeNote" })) }, { "ui" })) else g) end
+				do return (if M_lifeFlow.relGame(g.career, "boss").canPlay then Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "life", life = "boss", lifeNote = nil }, { "tab", "life", "lifeNote" })) }, { "ui" })) else g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 10 then
+				do return (relgameDone(g, (if arg ~= nil then arg else ""), (if (arg == "signing") then 6 else 2), rng()) or g) end
+			end
+			if _ci21 ~= 0 and _ci21 <= 11 then
+				do return (if M_lifeFlow.relGame(g.career, "happiness").canPlay then Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "life", life = "dayoff", lifeNote = nil }, { "tab", "life", "lifeNote" })) }, { "ui" })) else g) end
+			end
+			if _ci21 ~= 0 and _ci21 <= 12 then
 				do
 					if (not M_lifeFlow.relGame(g.career, "happiness").canPlay) then
 						do return g end
@@ -67326,7 +67727,7 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ career = M_lifeFlow.relGameComplete(g.career, "happiness", r), ui = Js.ospread(ui, Js.O({ life = nil, lifeNote = (r.line .. " Happiness +" .. Js.numstr(r.gain) .. ".") }, { "life", "lifeNote" })) }, { "career", "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 11 then
+			if _ci21 ~= 0 and _ci21 <= 13 then
 				do
 					if (not M_lifeFlow.relGame(g.career, "boss").canPlay) then
 						do return g end
@@ -67334,7 +67735,7 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "life", life = "talk", lifeNote = nil, bossTalk = M_lifeFlow.startTalk(g.career, math.floor((rng() * 100000))) }, { "tab", "life", "lifeNote", "bossTalk" })) }, { "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 12 then
+			if _ci21 ~= 0 and _ci21 <= 14 then
 				do
 					local t = ui.bossTalk
 					if ((not t) or (not M_lifeFlow.relGame(g.career, "boss").canPlay)) then
@@ -67348,7 +67749,7 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ career = M_lifeFlow.relGameComplete(g.career, "boss", r), ui = Js.ospread(ui, Js.O({ life = nil, bossTalk = nil, lifeNote = (r.line .. " Manager " .. (if (r.gain >= 0) then "+" else "") .. Js.numstr(r.gain) .. ".") }, { "life", "bossTalk", "lifeNote" })) }, { "career", "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 13 then
+			if _ci21 ~= 0 and _ci21 <= 15 then
 				do
 					local _d23 = S.split((if arg ~= nil then arg else ""), ":")
 					local what = _d23[1]
@@ -67357,13 +67758,13 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ career = r.career, ui = Js.ospread(ui, Js.O({ life = (if (((what == "sign") or (what == "decline")) or (what == "walk")) then "sponsors" else ui.life), lifeNote = r.note }, { "life", "lifeNote" })) }, { "career", "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 14 then
+			if _ci21 ~= 0 and _ci21 <= 16 then
 				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "train", trainSkill = arg, trainResult = nil }, { "tab", "trainSkill", "trainResult" })) }, { "ui" })) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 15 then
+			if _ci21 ~= 0 and _ci21 <= 17 then
 				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "train", trainSkill = nil, trainResult = nil }, { "tab", "trainSkill", "trainResult" })) }, { "ui" })) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 16 then
+			if _ci21 ~= 0 and _ci21 <= 18 then
 				do
 					local _d24 = S.split((if arg ~= nil then arg else ""), ":")
 					local sk = _d24[1]
@@ -67371,55 +67772,55 @@ return function(exports, import, Js)
 					do return (trainingDone(g, sk, Js.Number(lv), 2) or g) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 17 then
-				do return M_flow.simMatch(g) end
-			end
-			if _ci21 ~= 0 and _ci21 <= 18 then
-				do return M_flow.simMatch(g) end
-			end
 			if _ci21 ~= 0 and _ci21 <= 19 then
-				do return M_flow.watchFromStands(g) end
+				do return M_flow.simMatch(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 20 then
-				do return M_flow.youthWeek(g) end
+				do return M_flow.simMatch(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 21 then
-				do return M_flow.youthPromotion(g) end
+				do return M_flow.watchFromStands(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 22 then
-				do return M_flow.postMatchContinue(g) end
+				do return M_flow.youthWeek(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 23 then
-				do return M_flow.drawContinue(g) end
+				do return M_flow.youthPromotion(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 24 then
-				do return M_flow.knockoutContinue(g) end
+				do return M_flow.postMatchContinue(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 25 then
-				do return M_flow.playoffContinue(g) end
+				do return M_flow.drawContinue(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 26 then
-				do return M_flow.deadlineDayContinue(g) end
+				do return M_flow.knockoutContinue(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 27 then
-				do return M_flow.callUpContinue(g) end
+				do return M_flow.playoffContinue(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 28 then
-				do return M_flow.endSeason(g) end
+				do return M_flow.deadlineDayContinue(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 29 then
-				do return M_flow.ballonDorContinue(g) end
+				do return M_flow.callUpContinue(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 30 then
-				do return M_flow.playOn(g) end
+				do return M_flow.endSeason(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 31 then
-				do return M_flow.retireNow(g) end
+				do return M_flow.ballonDorContinue(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 32 then
-				do return (if (g.phase == "trial") then simTrial(g) else g) end
+				do return M_flow.playOn(g) end
 			end
 			if _ci21 ~= 0 and _ci21 <= 33 then
+				do return M_flow.retireNow(g) end
+			end
+			if _ci21 ~= 0 and _ci21 <= 34 then
+				do return (if (g.phase == "trial") then simTrial(g) else g) end
+			end
+			if _ci21 ~= 0 and _ci21 <= 35 then
 				do
 					if (g.phase ~= "manager-talk") then
 						do return g end
@@ -67432,31 +67833,31 @@ return function(exports, import, Js)
 					do return (if youth then Js.ospread(M_flow.afterSigning(Js.ospread(g, Js.O({ career = youth }, { "career" }))), Js.O({ ui = ui }, { "ui" })) else g) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 34 then
+			if _ci21 ~= 0 and _ci21 <= 36 then
 				do return (if (g.phase == "trial-reward") then Js.ospread(M_flow.afterSigning(g), Js.O({ ui = Js.ospread(ui, Js.O({ tab = "home" }, { "tab" })) }, { "ui" })) else g) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 35 then
+			if _ci21 ~= 0 and _ci21 <= 37 then
 				do return M_flow.seasonAwardsContinue(g) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 36 then
+			if _ci21 ~= 0 and _ci21 <= 38 then
 				do return M_flow.ladderContinue(g) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 37 then
+			if _ci21 ~= 0 and _ci21 <= 39 then
 				do return M_flow.stayPut(g) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 38 then
+			if _ci21 ~= 0 and _ci21 <= 40 then
 				do return M_flow.signingDone(g) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 39 then
+			if _ci21 ~= 0 and _ci21 <= 41 then
 				do return M_flow.chooseTransfer(g, (if g.transferOffers ~= nil then g.transferOffers else Js.alit())[Js.Number(arg) + 1]) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 40 then
+			if _ci21 ~= 0 and _ci21 <= 42 then
 				do return Js.ospread(g, Js.O({ phase = "contract-renewal", contractOfferReason = nil, ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "phase", "contractOfferReason", "ui" })) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 41 then
+			if _ci21 ~= 0 and _ci21 <= 43 then
 				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ renewal = Js.O({ current = (3 + math.floor((rng() * 8))), next = nil, wins = 0, locked = false, rounds = 0, message = "", started = true }, { "current", "next", "wins", "locked", "rounds", "message", "started" }) }, { "renewal" })) }, { "ui" })) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 42 then
+			if _ci21 ~= 0 and _ci21 <= 44 then
 				do
 					local r = ui.renewal
 					if ((not r) or r.locked) then
@@ -67471,17 +67872,17 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ renewal = next_ }, { "renewal" })) }, { "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 43 then
+			if _ci21 ~= 0 and _ci21 <= 45 then
 				do
 					local r = ui.renewal
 					local offer = M_flow.renewalOffer(g, ((function() local _v = r; if _v == nil then return nil end; _v = _v.wins; return _v end)() or 0), (function() local _l = (function() local _v = r; if _v == nil then return nil end; _v = _v.locked; return _v end)(); if _l ~= nil then return _l end; return false end)(), ((function() local _v = r; if _v == nil then return nil end; _v = _v.rounds; return _v end)() or 0))
 					do return Js.ospread(M_flow.contractComplete(g, offer), Js.O({ ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 44 then
+			if _ci21 ~= 0 and _ci21 <= 46 then
 				do return Js.ospread(M_flow.contractComplete(g, nil), Js.O({ ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "ui" })) end
 			end
-			if _ci21 ~= 0 and _ci21 <= 45 then
+			if _ci21 ~= 0 and _ci21 <= 47 then
 				do
 					local _d25 = A.map(S.split((if arg ~= nil then arg else "0:0"), ":"), Js.Number)
 					local li = _d25[1]
@@ -67491,14 +67892,14 @@ return function(exports, import, Js)
 					do return Js.ospread(M_flow.transferNegotiate(g, offer), Js.O({ ui = Js.ospread(ui, Js.O({ talk = talk, ask = talk.yourPosition }, { "talk", "ask" })) }, { "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 46 then
+			if _ci21 ~= 0 and _ci21 <= 48 then
 				do
 					local a = ((if ui.ask ~= nil then ui.ask else (function() local _v = ui.talk; if _v == nil then return nil end; _v = _v.yourPosition; return _v end)()) or 0)
 					local dir = (if (Js.Number(arg) < 0) then -1 else 1)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ ask = Math.max(1, (a + (dir * niceStep((if (dir < 0) then (a - 1) else a))))) }, { "ask" })) }, { "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 47 then
+			if _ci21 ~= 0 and _ci21 <= 49 then
 				do
 					if (not ui.talk) then
 						do return g end
@@ -67507,14 +67908,14 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ talk = t }, { "talk" })) }, { "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 48 then
+			if _ci21 ~= 0 and _ci21 <= 50 then
 				do
 					local t = ui.talk
 					local r = M_flow.transferTalkDone(g, (if (t and (t.status == "accepted")) then (if t.finalPrice ~= nil then t.finalPrice else nil) else nil))
 					do return Js.ospread(r, Js.O({ ui = Js.ospread(ui, Js.O({ talk = nil }, { "talk" })) }, { "ui" })) end
 				end
 			end
-			if _ci21 ~= 0 and _ci21 <= 49 then
+			if _ci21 ~= 0 and _ci21 <= 51 then
 				do return Js.ospread(M_flow.transferTalkDone(g, nil), Js.O({ ui = Js.ospread(ui, Js.O({ talk = nil }, { "talk" })) }, { "ui" })) end
 			end
 		until true
@@ -67524,11 +67925,12 @@ return function(exports, import, Js)
 	TABS = Js.alit(Js.alit("home", "Home"), Js.alit("train", "Train"), Js.alit("life", "Life"), Js.alit("league", "League"), Js.alit("fixtures", "Fixtures"), Js.alit("stats", "Stats"))
 	DIVISIONS = Js.alit("premier", "championship", "league_one", "league_two", "national_league", "national_league_north", "national_league_south")
 	exports.DIVISIONS = DIVISIONS
+	REL_KIND = Js.O({ woodwork = "team", penalties = "boss", session = "boss", signing = "fans" }, { "woodwork", "penalties", "session", "signing" })
 end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="322">
+          <Item class="ModuleScript" referent="324">
             <Properties>
               <string name="Name">strikeScreen</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -67691,7 +68093,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="323">
+          <Item class="ModuleScript" referent="325">
             <Properties>
               <string name="Name">trainingFlow</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -67762,7 +68164,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="324">
+          <Item class="ModuleScript" referent="326">
             <Properties>
               <string name="Name">trainingPlay</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -68248,7 +68650,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="325">
+          <Item class="ModuleScript" referent="327">
             <Properties>
               <string name="Name">trialFlow</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -68396,7 +68798,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="326">
+          <Item class="ModuleScript" referent="328">
             <Properties>
               <string name="Name">trialPlay</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -69008,11 +69410,11 @@ end
         </Item>
       </Item>
     </Item>
-    <Item class="Folder" referent="327">
+    <Item class="Folder" referent="329">
       <Properties>
         <string name="Name">Runtime</string>
       </Properties>
-      <Item class="ModuleScript" referent="328">
+      <Item class="ModuleScript" referent="330">
         <Properties>
           <string name="Name">Js</string>
           <string name="Source"><![CDATA[--!nocheck
@@ -73222,7 +73624,7 @@ return Js
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="329">
+      <Item class="ModuleScript" referent="331">
         <Properties>
           <string name="Name">Loader</string>
           <string name="Source"><![CDATA[--!strict
@@ -73263,15 +73665,15 @@ return Loader
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="330">
+  <Item class="ServerScriptService" referent="332">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="331">
+    <Item class="Folder" referent="333">
       <Properties>
         <string name="Name">Server</string>
       </Properties>
-      <Item class="Script" referent="332">
+      <Item class="Script" referent="334">
         <Properties>
           <string name="Name">Main</string>
           <token name="RunContext">0</token>
@@ -73301,6 +73703,7 @@ local Flow = Loader.import("roblox/game/flow")
 local Match = Loader.import("roblox/game/match")
 local TrialFlow = Loader.import("roblox/game/trialFlow")
 local TrainingFlow = Loader.import("roblox/game/trainingFlow")
+local LifeFlow = Loader.import("roblox/game/lifeFlow")
 
 local SAVE_VERSION = 1
 -- A DataStore key holds at most 4 MB (counted after Roblox escapes the text),
@@ -73765,6 +74168,64 @@ trainingRemote.OnServerInvoke = function(player, action, arg)
 	return res
 end
 
+-- The relationship games that are played (roblox/game/relgamePlay.ts): "start"
+-- checks the game may be played and sends the career, "done" takes the count.
+local pendingRel = {} -- [Player] = { game, career }
+local function relAction(player, action, arg)
+	local g = games[player]
+	if not g then
+		error("no career")
+	end
+	if action == "start" then
+		local kinds = { woodwork = "team", penalties = "boss", session = "boss", signing = "fans" }
+		local kind = kinds[arg or ""]
+		if not kind or g.phase ~= "dashboard" or not LifeFlow.relGame(g.career, kind).canPlay then
+			error("that game cannot be played now")
+		end
+		pendingRel[player] = { game = arg, career = g.career }
+		return Js.JSON.stringify(Js.O({ career = Match.matchCareer(g.career), game = arg }, { "career", "game" }))
+	end
+	local p = pendingRel[player]
+	pendingRel[player] = nil
+	if action == "done" and p and g.career == p.career then
+		local ok, back = pcall(Js.JSON.parse, arg)
+		local nextGame = ok and type(back) == "table" and Screens.relgameDone(g, p.game, back.count, math.random()) or nil
+		if nextGame then
+			games[player] = nextGame
+			dirty[player] = true
+			return encode(Screens.screen(nextGame))
+		end
+		warn("relationship game: the count from the device was refused")
+	end
+	return encode(Screens.screen(g))
+end
+
+local relRemote = Instance.new("RemoteFunction")
+relRemote.Name = "Relgame"
+relRemote.Parent = remotes
+
+relRemote.OnServerInvoke = function(player, action, arg)
+	if type(action) ~= "string" or (arg ~= nil and type(arg) ~= "string") then
+		return nil
+	end
+	local waited = 0
+	while busy[player] and waited < 30 do
+		task.wait(0.1)
+		waited += 0.1
+	end
+	busy[player] = true
+	local ok, res = xpcall(relAction, debug.traceback, player, action, arg)
+	busy[player] = nil
+	if not ok then
+		warn("Relgame '" .. action .. "' failed:", res)
+		if action == "start" then
+			return nil
+		end
+		return encode(errorScreen(res))
+	end
+	return res
+end
+
 -- the website's shared training levels (its level editor's saved rows)
 task.spawn(function()
 	local ok, err = pcall(TrainingFlow.fetchSharedTrainingLevels)
@@ -73795,6 +74256,7 @@ Players.PlayerRemoving:Connect(function(player)
 	loaded[player] = nil
 	pendingMatch[player] = nil
 	pendingTraining[player] = nil
+	pendingRel[player] = nil
 end)
 
 game:BindToClose(function()
@@ -73822,19 +74284,19 @@ end
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="333">
+  <Item class="StarterPlayer" referent="335">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="334">
+    <Item class="StarterPlayerScripts" referent="336">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="335">
+      <Item class="Folder" referent="337">
         <Properties>
           <string name="Name">Client</string>
         </Properties>
-        <Item class="LocalScript" referent="336">
+        <Item class="LocalScript" referent="338">
           <Properties>
             <string name="Name">Main</string>
             <string name="Source"><![CDATA[--[[
@@ -73862,6 +74324,7 @@ local remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Career")
 local matchRemote = ReplicatedStorage.Remotes:WaitForChild("Match")
 local trialRemote = ReplicatedStorage.Remotes:WaitForChild("Trial")
 local trainingRemote = ReplicatedStorage.Remotes:WaitForChild("Training")
+local relRemote = ReplicatedStorage.Remotes:WaitForChild("Relgame")
 local MatchClient = require(script.Parent:WaitForChild("Match"))
 
 pcall(function()
@@ -74459,13 +74922,15 @@ send = function(action, arg)
 	sending = true
 	busyCover.Visible = true
 	local ok, json
-	if action == "play-match" or action == "play-trial" or action == "play-training" then
+	if action == "play-match" or action == "play-trial" or action == "play-training" or action == "play-relgame" then
 		-- played here on the device; the menus wait underneath
 		gui.Enabled = false
 		if action == "play-match" then
 			ok, json = pcall(MatchClient.play, matchRemote)
 		elseif action == "play-training" then
 			ok, json = pcall(MatchClient.playTraining, trainingRemote, arg)
+		elseif action == "play-relgame" then
+			ok, json = pcall(MatchClient.playRelGame, relRemote, arg)
 		else
 			ok, json = pcall(MatchClient.playTrial, trialRemote)
 		end
@@ -74498,7 +74963,7 @@ send("get")
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="337">
+        <Item class="ModuleScript" referent="339">
           <Properties>
             <string name="Name">Match</string>
             <string name="Source"><![CDATA[--[[
@@ -75001,6 +75466,22 @@ local function buildHud()
 	h.trialCardTitle = label("", 40, C.gold, TITLE_FONT, { Position = UDim2.fromOffset(10, 18), Size = UDim2.new(1, -20, 0, 70), ZIndex = 19, Parent = h.trialCard })
 	h.trialCardSub = label("", 17, C.text, BODY_BOLD, { Position = UDim2.fromOffset(16, 94), Size = UDim2.new(1, -32, 0, 44), ZIndex = 19, Parent = h.trialCard })
 	h.trialCardGo = bigButton("CONTINUE", h.trialCard, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 148), Size = UDim2.new(1, -40, 0, 52), ZIndex = 19, Visible = false })
+	-- the signing session: the fan, what he holds, his patience, your four buttons
+	h.signing = make("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.55), Size = UDim2.fromOffset(340, 300), BackgroundColor3 = C.panel, BackgroundTransparency = 0.05, BorderSizePixel = 0, Visible = false, ZIndex = 9, Parent = gui }, {
+		make("UICorner", { CornerRadius = UDim.new(0, 14) }),
+		make("UIStroke", { Color = Color3.fromHex("f472b6"), Thickness = 3 }),
+	})
+	h.fanIcon = label("", 56, C.text, BODY_FONT, { Position = UDim2.fromOffset(0, 10), Size = UDim2.new(1, 0, 0, 64), ZIndex = 10, Parent = h.signing })
+	h.wants = label("", 36, C.text, BODY_FONT, { Position = UDim2.fromOffset(0, 78), Size = UDim2.new(1, 0, 0, 44), ZIndex = 10, Parent = h.signing })
+	local patBack = make("Frame", { Position = UDim2.new(0, 20, 0, 130), Size = UDim2.new(1, -40, 0, 10), BackgroundColor3 = Color3.fromHex("1e293b"), BorderSizePixel = 0, ZIndex = 10, Parent = h.signing }, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	h.patience = make("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromHex("f472b6"), BorderSizePixel = 0, ZIndex = 11, Parent = patBack }, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	h.signBtns = {}
+	for i = 1, 4 do
+		h.signBtns[i] = bigButton("", h.signing, {
+			Position = UDim2.new(((i - 1) % 2) * 0.5, ((i - 1) % 2 == 0) and 16 or 4, 0, 156 + math.floor((i - 1) / 2) * 66),
+			Size = UDim2.new(0.5, -20, 0, 56), TextSize = 22, ZIndex = 10,
+		})
+	end
 	-- getting ready
 	h.cover = make("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = C.panel, ZIndex = 30, Parent = gui })
 	h.coverText = label("Getting the pitch ready…", 26, C.text, TITLE_FONT, { Size = UDim2.fromScale(1, 1), ZIndex = 31, Parent = h.cover })
@@ -75597,6 +76078,46 @@ local function runPitch(hud, driver)
 			end
 		end
 
+		-- a relationship game: which, how it's going, what he asks
+		local rv = f.rel
+		hud.signing.Visible = false
+		if rv then
+			hud.trialTop.Visible = true
+			hud.trialHint.Visible = true
+			hud.trialTop.Text = string.upper(rv.title) .. " · " .. rv.progress
+			hud.trialHint.Text = (rv.ask ~= "" and (rv.ask .. "\n") or "") .. rv.line
+			hud.score.Text = string.upper(rv.title)
+			hud.minute.Text = ""
+			if rv.flash then
+				hud.banner.Visible = true
+				hud.banner.Text = rv.flash.text
+				hud.banner.TextColor3 = rv.flash.good and C.good or C.bad
+			else
+				hud.banner.TextColor3 = C.gold
+			end
+			local sg = rv.signing
+			if sg then
+				if not sg.started then
+					hud.tapStart.Visible = true
+					hud.tapStart.Text = "START"
+				else
+					hud.signing.Visible = true
+					hud.fanIcon.Text = sg.fanIcon
+					local w = ""
+					for i = 1, Js.alen(sg.wants) do
+						local it = sg.wants[i]
+						w ..= (it.got and "✅" or it.icon) .. " "
+					end
+					hud.wants.Text = w
+					hud.patience.Size = UDim2.fromScale(math.clamp(sg.left, 0, 1), 1)
+					for i = 1, 4 do
+						local o = sg.order[i]
+						hud.signBtns[i].Text = o and (o.icon .. " " .. string.upper(o.label)) or ""
+					end
+				end
+			end
+		end
+
 		-- the strike screen
 		hud.strike.Visible = strike ~= nil
 		if strike then
@@ -75914,6 +76435,76 @@ function Match.playTraining(remote, arg)
 	end
 	hud.gui:Destroy()
 	Match.current, Match.hud, Match.training = nil, nil, nil
+	return nextScreen
+end
+
+--[[
+  Plays one relationship game (roblox/game/relgamePlay.ts): the woodwork
+  challenge, the manager's penalties or extra session on the pitch, or the
+  signing session. `remote` is ReplicatedStorage.Remotes.Relgame.
+]]
+function Match.playRelGame(remote, game)
+	loadCode()
+	local R = Loader.import("roblox/game/relgamePlay")
+	local hud = buildHud()
+	local okStart, json = pcall(function()
+		return remote:InvokeServer("start", game)
+	end)
+	if not okStart or type(json) ~= "string" then
+		hud.gui:Destroy()
+		warn("relationship game: could not start:", json)
+		return nil
+	end
+	local rp
+	local okMount, err = pcall(function()
+		local s = Js.JSON.parse(json)
+		rp = R.startRelGame(s.career, s.game)
+	end)
+	if not okMount then
+		hud.gui:Destroy()
+		warn("relationship game: could not mount:", err)
+		return remote:InvokeServer("abandon")
+	end
+	Match.rel = rp
+	for i = 1, 4 do
+		hud.signBtns[i].Activated:Connect(function()
+			local id = rp.order[i]
+			if id then
+				R.signingTap(rp, id)
+			end
+		end)
+	end
+	local failure = runPitch(hud, {
+		match = function()
+			return R.pitchMatch(rp)
+		end,
+		step = function(dt)
+			R.tick(rp, dt)
+		end,
+		frame = function()
+			return R.relFrame(rp)
+		end,
+		done = function()
+			return rp.done
+		end,
+		tapToGo = function()
+			R.signingStart(rp)
+		end,
+	})
+	local nextScreen
+	hud.cover.Visible = true
+	hud.coverText.Text = "…"
+	if failure then
+		warn("relationship game: stopped by an error:", failure)
+		nextScreen = remote:InvokeServer("abandon")
+	else
+		local ok, res = pcall(function()
+			return remote:InvokeServer("done", Js.JSON.stringify(Js.O({ count = rp.count }, { "count" })))
+		end)
+		nextScreen = ok and res or nil
+	end
+	hud.gui:Destroy()
+	Match.current, Match.hud, Match.rel = nil, nil, nil
 	return nextScreen
 end
 
