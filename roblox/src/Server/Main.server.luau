@@ -21,6 +21,7 @@ local Loader = require(ReplicatedStorage:WaitForChild("Runtime"):WaitForChild("L
 local Js = Loader.Js
 local Screens = Loader.import("roblox/game/screens")
 local Flow = Loader.import("roblox/game/flow")
+local Match = Loader.import("roblox/game/match")
 
 local SAVE_VERSION = 1
 -- A DataStore key holds at most 4 MB (counted after Roblox escapes the text),
@@ -72,6 +73,7 @@ local drafts = {} -- [Player] = the new-career form
 local dirty = {} -- [Player] = true when unsaved changes
 local busy = {} -- [Player] = true while an action runs
 local loaded = {} -- [Player] = true once the save has been read
+local pendingMatch = {} -- [Player] = the match being played on the device
 
 local function keyFor(player)
 	return "career_" .. player.UserId
@@ -236,6 +238,7 @@ local function handle(player, action, arg, form)
 		return currentScreen(player)
 	end
 	if action ~= "get" then
+		pendingMatch[player] = nil
 		local before = g
 		local nextGame = Screens.act(g, action, arg)
 		-- a move to a new club: its real dressing room
@@ -295,6 +298,77 @@ career.OnServerInvoke = function(player, action, arg, form)
 	return encode(screen)
 end
 
+-- The match is played on the device (roblox/src/Client/Match.luau): "start"
+-- sends it the setup, "done" takes the stats back into the career, "abandon"
+-- sims the match instead (the device could not play it).
+local function matchAction(player, action, json)
+	local g = games[player]
+	if not g then
+		error("no career")
+	end
+	if action == "start" then
+		if g.phase ~= "dashboard" then
+			error("there is no match to play now")
+		end
+		local day = Flow.matchday(g)
+		if not day.canPlay then
+			error("you are not playing this week")
+		end
+		local readied = Match.readyForMatch(g.career)
+		local setup = Match.matchSetupFor(readied)
+		if not setup then
+			error("no fixture")
+		end
+		pendingMatch[player] = { readied = readied, fixture = setup.fixture, career = g.career }
+		return Js.JSON.stringify(Match.deviceSetup(setup))
+	end
+	local p = pendingMatch[player]
+	pendingMatch[player] = nil
+	local nextGame
+	if action == "done" and p and g.career == p.career then
+		local ok, raw = pcall(Js.JSON.parse, json)
+		local stats = ok and Match.checkedStats(raw) or nil
+		if stats then
+			nextGame = Flow.matchComplete(g, stats, p.readied, p.fixture)
+		else
+			warn("match: the result from the device was refused; simming it")
+		end
+	end
+	if not nextGame then
+		nextGame = Flow.simMatch(g)
+	end
+	nextGame.ui = g.ui
+	games[player] = nextGame
+	dirty[player] = true
+	return encode(Screens.screen(nextGame))
+end
+
+local matchRemote = Instance.new("RemoteFunction")
+matchRemote.Name = "Match"
+matchRemote.Parent = remotes
+
+matchRemote.OnServerInvoke = function(player, action, json)
+	if type(action) ~= "string" or (json ~= nil and type(json) ~= "string") then
+		return nil
+	end
+	local waited = 0
+	while busy[player] and waited < 30 do
+		task.wait(0.1)
+		waited += 0.1
+	end
+	busy[player] = true
+	local ok, res = pcall(matchAction, player, action, json)
+	busy[player] = nil
+	if not ok then
+		warn("Match '" .. action .. "' failed:", res)
+		if action == "start" then
+			return nil
+		end
+		return encode(errorScreen(res))
+	end
+	return res
+end
+
 -- ─────────────────────────────────────────────────────────── join / leave ──
 local function onJoin(player)
 	local g = load(player)
@@ -315,6 +389,7 @@ Players.PlayerRemoving:Connect(function(player)
 	dirty[player] = nil
 	busy[player] = nil
 	loaded[player] = nil
+	pendingMatch[player] = nil
 end)
 
 game:BindToClose(function()

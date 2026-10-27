@@ -17,6 +17,8 @@ export interface Body {
   name?: string;
   /** A man you can pass to (the dribble's team-mates, the pass target). */
   option?: boolean;
+  /** The keeper's lean or dive, metres sideways (+ = towards pitch x). */
+  dive?: number;
 }
 
 export interface Frame {
@@ -59,7 +61,7 @@ export function frameOf(m: M.MatchState): Frame {
     ball = { x: run.x, y: run.y - 0.6, z: 0 };
   } else if (sc) {
     bodies.push({ id: "you", side: "you", x: sc.player.x, y: sc.player.y, name: m.career.player.lastName });
-    bodies.push({ id: "keeper", side: "keeper", x: sc.keeper.x, y: sc.keeper.y, name: sc.keeper.who?.shortName });
+    bodies.push({ id: "keeper", side: "keeper", x: sc.keeper.x, y: sc.keeper.y, name: sc.keeper.who?.shortName, dive: sc.keeper.dive });
     sc.defenders.forEach((d, i) => bodies.push({ id: `d${i}`, side: "opp", x: d.x, y: d.y, name: (d as { who?: { shortName: string } }).who?.shortName }));
     sc.teammates.forEach((t, i) => bodies.push({ id: `t${i}`, side: "mate", x: t.x, y: t.y, name: t.who?.shortName }));
     if (sc.runner) bodies.push({ id: "runner", side: "mate", x: sc.runner.pos.x, y: sc.runner.pos.y, name: sc.runner.who?.shortName, option: true });

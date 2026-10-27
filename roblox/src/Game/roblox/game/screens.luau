@@ -306,7 +306,8 @@ return function(exports, import, Js)
 		if m.fixture then
 			A.push(s.blocks, Js.O({ kind = "heading", text = "Next match" }, { "kind", "text" }), Js.O({ kind = "text", text = fixtureLine(c, m.fixture) }, { "kind", "text" }), Js.O({ kind = "text", text = dateOf(c, m.fixture), tone = "dim" }, { "kind", "text", "tone" }))
 			if m.canPlay then
-				A.push(s.buttons, Js.O({ label = "Sim this match ⚽", action = "sim", style = "primary" }, { "label", "action", "style" }))
+				A.push(s.buttons, Js.O({ label = "Play match ⚽", action = "play-match", style = "primary" }, { "label", "action", "style" }))
+				A.push(s.buttons, Js.O({ label = "Sim it", action = "sim" }, { "label", "action" }))
 			else
 				local why = (if (m.status == "Injured") then "You're injured." else (if m.fixture.watch then "Your country plays. Watch it on TV." else (if m.reason ~= nil then m.reason else "You're not in the squad this week.")))
 				A.push(s.blocks, Js.O({ kind = "text", text = why, tone = "bad" }, { "kind", "text", "tone" }))
@@ -423,7 +424,7 @@ return function(exports, import, Js)
 		if rng == nil then rng = Math.random end
 		local ui = (if g.ui ~= nil then g.ui else Js.O({}, nil))
 		local _sw18 = action
-		local _ci19 = (if _sw18 == "tab" then 1 elseif _sw18 == "home" then 2 elseif _sw18 == "sim" then 3 elseif _sw18 == "watch" then 4 elseif _sw18 == "youth-week" then 5 elseif _sw18 == "youth-promote" then 6 elseif _sw18 == "post-continue" then 7 elseif _sw18 == "draw-continue" then 8 elseif _sw18 == "ko-continue" then 9 elseif _sw18 == "playoff-continue" then 10 elseif _sw18 == "deadline-continue" then 11 elseif _sw18 == "callup-continue" then 12 elseif _sw18 == "end-season" then 13 elseif _sw18 == "ballon-continue" then 14 elseif _sw18 == "play-on" then 15 elseif _sw18 == "retire" then 16 elseif _sw18 == "awards-continue" then 17 elseif _sw18 == "ladder-continue" then 18 elseif _sw18 == "stay" then 19 elseif _sw18 == "sign" then 20 elseif _sw18 == "relegation-pick" then 21 elseif _sw18 == "ask-contract" then 22 elseif _sw18 == "renewal-start" then 23 elseif _sw18 == "renewal-guess" then 24 elseif _sw18 == "renewal-sign" then 25 elseif _sw18 == "renewal-cancel" then 26 elseif _sw18 == "window-talk" then 27 elseif _sw18 == "talk-nudge" then 28 elseif _sw18 == "talk-offer" then 29 elseif _sw18 == "talk-done" then 30 elseif _sw18 == "talk-walk" then 31 else 0)
+		local _ci19 = (if _sw18 == "tab" then 1 elseif _sw18 == "home" then 2 elseif _sw18 == "sim" then 3 elseif _sw18 == "play-match" then 4 elseif _sw18 == "watch" then 5 elseif _sw18 == "youth-week" then 6 elseif _sw18 == "youth-promote" then 7 elseif _sw18 == "post-continue" then 8 elseif _sw18 == "draw-continue" then 9 elseif _sw18 == "ko-continue" then 10 elseif _sw18 == "playoff-continue" then 11 elseif _sw18 == "deadline-continue" then 12 elseif _sw18 == "callup-continue" then 13 elseif _sw18 == "end-season" then 14 elseif _sw18 == "ballon-continue" then 15 elseif _sw18 == "play-on" then 16 elseif _sw18 == "retire" then 17 elseif _sw18 == "awards-continue" then 18 elseif _sw18 == "ladder-continue" then 19 elseif _sw18 == "stay" then 20 elseif _sw18 == "sign" then 21 elseif _sw18 == "relegation-pick" then 22 elseif _sw18 == "ask-contract" then 23 elseif _sw18 == "renewal-start" then 24 elseif _sw18 == "renewal-guess" then 25 elseif _sw18 == "renewal-sign" then 26 elseif _sw18 == "renewal-cancel" then 27 elseif _sw18 == "window-talk" then 28 elseif _sw18 == "talk-nudge" then 29 elseif _sw18 == "talk-offer" then 30 elseif _sw18 == "talk-done" then 31 elseif _sw18 == "talk-walk" then 32 else 0)
 		local _cont20 = false
 		repeat
 			if _ci19 ~= 0 and _ci19 <= 1 then
@@ -436,66 +437,69 @@ return function(exports, import, Js)
 				do return M_flow.simMatch(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 4 then
-				do return M_flow.watchFromStands(g) end
+				do return M_flow.simMatch(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 5 then
-				do return M_flow.youthWeek(g) end
+				do return M_flow.watchFromStands(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 6 then
-				do return M_flow.youthPromotion(g) end
+				do return M_flow.youthWeek(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 7 then
-				do return M_flow.postMatchContinue(g) end
+				do return M_flow.youthPromotion(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 8 then
-				do return M_flow.drawContinue(g) end
+				do return M_flow.postMatchContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 9 then
-				do return M_flow.knockoutContinue(g) end
+				do return M_flow.drawContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 10 then
-				do return M_flow.playoffContinue(g) end
+				do return M_flow.knockoutContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 11 then
-				do return M_flow.deadlineDayContinue(g) end
+				do return M_flow.playoffContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 12 then
-				do return M_flow.callUpContinue(g) end
+				do return M_flow.deadlineDayContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 13 then
-				do return M_flow.endSeason(g) end
+				do return M_flow.callUpContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 14 then
-				do return M_flow.ballonDorContinue(g) end
+				do return M_flow.endSeason(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 15 then
-				do return M_flow.playOn(g) end
+				do return M_flow.ballonDorContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 16 then
-				do return M_flow.retireNow(g) end
+				do return M_flow.playOn(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 17 then
-				do return M_flow.seasonAwardsContinue(g) end
+				do return M_flow.retireNow(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 18 then
-				do return M_flow.ladderContinue(g) end
+				do return M_flow.seasonAwardsContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 19 then
-				do return M_flow.stayPut(g) end
+				do return M_flow.ladderContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 20 then
-				do return M_flow.signingDone(g) end
+				do return M_flow.stayPut(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 21 then
-				do return M_flow.chooseTransfer(g, (if g.transferOffers ~= nil then g.transferOffers else Js.alit())[Js.Number(arg) + 1]) end
+				do return M_flow.signingDone(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 22 then
-				do return Js.ospread(g, Js.O({ phase = "contract-renewal", contractOfferReason = nil, ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "phase", "contractOfferReason", "ui" })) end
+				do return M_flow.chooseTransfer(g, (if g.transferOffers ~= nil then g.transferOffers else Js.alit())[Js.Number(arg) + 1]) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 23 then
-				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ renewal = Js.O({ current = (3 + math.floor((rng() * 8))), next = nil, wins = 0, locked = false, rounds = 0, message = "", started = true }, { "current", "next", "wins", "locked", "rounds", "message", "started" }) }, { "renewal" })) }, { "ui" })) end
+				do return Js.ospread(g, Js.O({ phase = "contract-renewal", contractOfferReason = nil, ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "phase", "contractOfferReason", "ui" })) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 24 then
+				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ renewal = Js.O({ current = (3 + math.floor((rng() * 8))), next = nil, wins = 0, locked = false, rounds = 0, message = "", started = true }, { "current", "next", "wins", "locked", "rounds", "message", "started" }) }, { "renewal" })) }, { "ui" })) end
+			end
+			if _ci19 ~= 0 and _ci19 <= 25 then
 				do
 					local r = ui.renewal
 					if ((not r) or r.locked) then
@@ -510,17 +514,17 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ renewal = next_ }, { "renewal" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 25 then
+			if _ci19 ~= 0 and _ci19 <= 26 then
 				do
 					local r = ui.renewal
 					local offer = M_flow.renewalOffer(g, ((function() local _v = r; if _v == nil then return nil end; _v = _v.wins; return _v end)() or 0), (function() local _l = (function() local _v = r; if _v == nil then return nil end; _v = _v.locked; return _v end)(); if _l ~= nil then return _l end; return false end)(), ((function() local _v = r; if _v == nil then return nil end; _v = _v.rounds; return _v end)() or 0))
 					do return Js.ospread(M_flow.contractComplete(g, offer), Js.O({ ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 26 then
+			if _ci19 ~= 0 and _ci19 <= 27 then
 				do return Js.ospread(M_flow.contractComplete(g, nil), Js.O({ ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "ui" })) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 27 then
+			if _ci19 ~= 0 and _ci19 <= 28 then
 				do
 					local _d21 = A.map(S.split((if arg ~= nil then arg else "0:0"), ":"), Js.Number)
 					local li = _d21[1]
@@ -530,14 +534,14 @@ return function(exports, import, Js)
 					do return Js.ospread(M_flow.transferNegotiate(g, offer), Js.O({ ui = Js.ospread(ui, Js.O({ talk = talk, ask = talk.yourPosition }, { "talk", "ask" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 28 then
+			if _ci19 ~= 0 and _ci19 <= 29 then
 				do
 					local a = ((if ui.ask ~= nil then ui.ask else (function() local _v = ui.talk; if _v == nil then return nil end; _v = _v.yourPosition; return _v end)()) or 0)
 					local dir = (if (Js.Number(arg) < 0) then -1 else 1)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ ask = Math.max(1, (a + (dir * niceStep((if (dir < 0) then (a - 1) else a))))) }, { "ask" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 29 then
+			if _ci19 ~= 0 and _ci19 <= 30 then
 				do
 					if (not ui.talk) then
 						do return g end
@@ -546,14 +550,14 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ talk = t }, { "talk" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 30 then
+			if _ci19 ~= 0 and _ci19 <= 31 then
 				do
 					local t = ui.talk
 					local r = M_flow.transferTalkDone(g, (if (t and (t.status == "accepted")) then (if t.finalPrice ~= nil then t.finalPrice else nil) else nil))
 					do return Js.ospread(r, Js.O({ ui = Js.ospread(ui, Js.O({ talk = nil }, { "talk" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 31 then
+			if _ci19 ~= 0 and _ci19 <= 32 then
 				do return Js.ospread(M_flow.transferTalkDone(g, nil), Js.O({ ui = Js.ospread(ui, Js.O({ talk = nil }, { "talk" })) }, { "ui" })) end
 			end
 		until true

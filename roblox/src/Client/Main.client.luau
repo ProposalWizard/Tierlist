@@ -6,8 +6,11 @@
   what a button does is decided on the server (roblox/game/screens.ts).
 
   House style (.claude/skills/ui-house-style): taps go straight in, no menu
-  animations; flat panels, no floating pills; the heavy font only for titles
-  and big numbers; the lighter green pitch; the main buttons always on screen.
+  animations; the heavy font only for titles and big numbers; the lighter
+  green pitch; the main buttons always on screen.
+  Roblox look (Mikey, 27 Oct 2026: "try and do Roblox-type menus"): chunky
+  rounded buttons with a dark outline and a shine, the Fredoka font, icons,
+  bold colour.
 ]]
 
 local Players = game:GetService("Players")
@@ -17,6 +20,8 @@ local StarterGui = game:GetService("StarterGui")
 
 local player = Players.LocalPlayer
 local remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Career")
+local matchRemote = ReplicatedStorage.Remotes:WaitForChild("Match")
+local MatchClient = require(script.Parent:WaitForChild("Match"))
 
 pcall(function()
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
@@ -35,13 +40,15 @@ local C = {
 	good = Color3.fromHex("34d399"),
 	bad = Color3.fromHex("f87171"),
 	gold = Color3.fromHex("fde047"),
-	primary = Color3.fromHex("fde047"),
-	primaryText = Color3.fromHex("0b1220"),
-	secondary = Color3.fromHex("1e293b"),
-	danger = Color3.fromHex("b91c1c"),
+	primary = Color3.fromHex("22c55e"),
+	primaryText = Color3.fromHex("ffffff"),
+	secondary = Color3.fromHex("3b82f6"),
+	danger = Color3.fromHex("ef4444"),
+	outline = Color3.fromHex("0b1220"),
+	field = Color3.fromHex("1e293b"),
 	highlight = Color3.fromHex("fde047"),
 }
-local TITLE_FONT = Enum.Font.Oswald -- tall and heavy, the nearest to the website's Anton
+local TITLE_FONT = Enum.Font.FredokaOne -- the round, heavy font Roblox games use
 local BODY_FONT = Enum.Font.Gotham
 local BODY_BOLD = Enum.Font.GothamBold
 local MAX_WIDTH = 560
@@ -70,6 +77,29 @@ local function make(class, props, children)
 	end
 	return o
 end
+
+-- the Roblox look: round corners, a dark outline, a shine from the top
+local function rounded(o, r)
+	make("UICorner", { CornerRadius = UDim.new(0, r or 12) }).Parent = o
+	return o
+end
+local function outline(o, col, thick)
+	local st = make("UIStroke", { Color = col or C.outline, Thickness = thick or 3, ApplyStrokeMode = Enum.ApplyStrokeMode.Border })
+	st.Parent = o
+	return st
+end
+local function shine(o)
+	make("UIGradient", {
+		Rotation = 90,
+		Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(190, 190, 190)),
+	}).Parent = o
+	return o
+end
+local function textOutline(o)
+	make("UIStroke", { Color = C.outline, Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual }).Parent = o
+	return o
+end
+local TAB_ICON = { home = "🏠", league = "🏆", fixtures = "📅", stats = "📊" }
 
 local function pad(px)
 	return make("UIPadding", {
@@ -140,13 +170,15 @@ local topSafe = 36 -- room for Roblox's own top bar
 
 -- HUD: name / club / league / season, money, star rating, energy bar
 local hud = make("Frame", {
-	Size = UDim2.new(1, 0, 0, 86),
-	Position = UDim2.new(0, 0, 0, topSafe),
+	Size = UDim2.new(1, -16, 0, 86),
+	Position = UDim2.new(0, 8, 0, topSafe),
 	BackgroundColor3 = C.panel,
-	BackgroundTransparency = 0.12,
+	BackgroundTransparency = 0.08,
 	BorderSizePixel = 0,
 	Parent = column,
 }, { pad(10) })
+rounded(hud, 14)
+outline(hud, Color3.fromHex("fde047"), 2)
 local hudName = label("", 18, C.text, TITLE_FONT, { Size = UDim2.new(0.62, 0, 0, 24), AutomaticSize = Enum.AutomaticSize.None, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = hud })
 local hudClub = label("", 13, C.dim, BODY_FONT, { Position = UDim2.new(0, 0, 0, 24), Size = UDim2.new(0.62, 0, 0, 16), AutomaticSize = Enum.AutomaticSize.None, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = hud })
 local hudMoney = label("", 20, C.gold, TITLE_FONT, { Position = UDim2.new(0.62, 0, 0, 0), Size = UDim2.new(0.38, 0, 0, 24), AutomaticSize = Enum.AutomaticSize.None, TextXAlignment = Enum.TextXAlignment.Right, Parent = hud })
@@ -172,12 +204,14 @@ local energyText = label("", 11, C.text, BODY_BOLD, { Size = UDim2.fromScale(1, 
 
 -- tabs
 local tabsBar = make("Frame", {
-	Size = UDim2.new(1, 0, 0, 40),
-	BackgroundColor3 = C.panel2,
-	BackgroundTransparency = 0.1,
+	Size = UDim2.new(1, 0, 0, 46),
+	BackgroundTransparency = 1,
 	BorderSizePixel = 0,
 	Parent = column,
-}, { make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, SortOrder = Enum.SortOrder.LayoutOrder }) })
+}, {
+	make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+	make("UIPadding", { PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8) }),
+})
 
 -- the page
 local page = make("ScrollingFrame", {
@@ -257,11 +291,15 @@ local function button(b, order, parent)
 		BorderSizePixel = 0,
 		AutoButtonColor = true, -- press feedback on the button itself
 		Text = string.upper(b.label or ""),
-		TextSize = 20,
+		TextSize = 22,
 		Font = TITLE_FONT,
 		TextColor3 = fg,
 		Parent = parent,
 	})
+	rounded(btn, 14)
+	outline(btn, C.outline, 3)
+	shine(btn)
+	textOutline(btn)
 	btn.Activated:Connect(function()
 		send(b.action, b.arg)
 	end)
@@ -269,15 +307,18 @@ local function button(b, order, parent)
 end
 
 local function panel(order)
-	return make("Frame", {
+	local p = make("Frame", {
 		LayoutOrder = order,
 		Size = UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = C.panel,
-		BackgroundTransparency = 0.18,
+		BackgroundTransparency = 0.12,
 		BorderSizePixel = 0,
 		Parent = page,
 	}, { pad(12), make("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }) })
+	rounded(p, 12)
+	outline(p, Color3.new(1, 1, 1), 1.5).Transparency = 0.8
+	return p
 end
 
 local function openChooser(block, onPick)
@@ -302,7 +343,7 @@ local function openChooser(block, onPick)
 	local search = make("TextBox", {
 		Position = UDim2.new(0, 12, 0, 62 + topSafe),
 		Size = UDim2.new(1, -24, 0, 40),
-		BackgroundColor3 = C.secondary,
+		BackgroundColor3 = C.field,
 		BorderSizePixel = 0,
 		PlaceholderText = "Search",
 		Text = "",
@@ -333,7 +374,7 @@ local function openChooser(block, onPick)
 				local row = make("TextButton", {
 					LayoutOrder = i,
 					Size = UDim2.new(1, 0, 0, 48),
-					BackgroundColor3 = opt == block.value and C.secondary or C.panel,
+					BackgroundColor3 = opt == block.value and C.field or C.panel,
 					BorderSizePixel = 0,
 					Text = "   " .. opt .. (opt == block.value and "  ✓" or ""),
 					TextXAlignment = Enum.TextXAlignment.Left,
@@ -386,21 +427,23 @@ local function drawScreen(s)
 		for i, t in ipairs(s.tabs) do
 			local tb = make("TextButton", {
 				LayoutOrder = i,
-				Size = UDim2.new(1 / #s.tabs, 0, 1, 0),
+				Size = UDim2.new(1 / #s.tabs, -6, 1, -6),
 				BackgroundColor3 = t.active and C.gold or C.panel2,
-				BackgroundTransparency = t.active and 0 or 1,
+				BackgroundTransparency = 0,
 				BorderSizePixel = 0,
-				Text = t.label,
-				TextSize = 15,
-				Font = BODY_BOLD,
-				TextColor3 = t.active and C.primaryText or C.text,
+				Text = (TAB_ICON[t.id] and (TAB_ICON[t.id] .. " ") or "") .. t.label,
+				TextSize = 16,
+				Font = TITLE_FONT,
+				TextColor3 = t.active and C.outline or C.text,
 				Parent = tabsBar,
 			})
+			rounded(tb, 12)
+			outline(tb, C.outline, 2)
 			tb.Activated:Connect(function()
 				send("tab", t.id)
 			end)
 		end
-		y += 40
+		y += 46
 	else
 		tabsBar.Visible = false
 	end
@@ -416,7 +459,7 @@ local function drawScreen(s)
 	-- the page
 	clear(page)
 	if s.title and s.title ~= "" then
-		label(string.upper(s.title), 30, C.text, TITLE_FONT, { LayoutOrder = 0, Parent = page })
+		textOutline(label(string.upper(s.title), 32, C.text, TITLE_FONT, { LayoutOrder = 0, Parent = page }))
 	end
 	for i, b in ipairs(s.blocks or {}) do
 		drawBlock(b, i)
@@ -439,7 +482,9 @@ drawBlock = function(b, order)
 			Parent = page,
 		}, { make("UIGridLayout", { CellSize = UDim2.new(0.5, -4, 0, 66), CellPadding = UDim2.new(0, 8, 0, 8), SortOrder = Enum.SortOrder.LayoutOrder }) })
 		for i, it in ipairs(b.items or {}) do
-			local cell = make("Frame", { LayoutOrder = i, BackgroundColor3 = C.panel, BackgroundTransparency = 0.18, BorderSizePixel = 0, Parent = grid }, { pad(8) })
+			local cell = make("Frame", { LayoutOrder = i, BackgroundColor3 = C.panel, BackgroundTransparency = 0.12, BorderSizePixel = 0, Parent = grid }, { pad(8) })
+			rounded(cell, 12)
+			outline(cell, Color3.new(1, 1, 1), 1.5).Transparency = 0.8
 			label(string.upper(it.label), 12, C.dim, BODY_BOLD, { Size = UDim2.new(1, 0, 0, 16), AutomaticSize = Enum.AutomaticSize.None, Parent = cell })
 			label(it.value, 24, toneColor(it.tone), TITLE_FONT, { Position = UDim2.new(0, 0, 0, 18), Size = UDim2.new(1, 0, 0, 30), AutomaticSize = Enum.AutomaticSize.None, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = cell })
 		end
@@ -491,12 +536,13 @@ drawBlock = function(b, order)
 					LayoutOrder = i,
 					Size = UDim2.new(1, 0, 0, 0),
 					AutomaticSize = Enum.AutomaticSize.Y,
-					BackgroundColor3 = C.secondary,
+					BackgroundColor3 = C.field,
 					BackgroundTransparency = 0.3,
 					BorderSizePixel = 0,
 					Text = "",
 					Parent = p,
 				})
+				rounded(holder, 10)
 				holder.Activated:Connect(function()
 					send(it.action, it.arg)
 				end)
@@ -517,7 +563,7 @@ drawBlock = function(b, order)
 		local box = make("TextBox", {
 			LayoutOrder = 2,
 			Size = UDim2.new(1, 0, 0, 40),
-			BackgroundColor3 = C.secondary,
+			BackgroundColor3 = C.field,
 			BorderSizePixel = 0,
 			Text = b.value or "",
 			PlaceholderText = b.label,
@@ -529,6 +575,7 @@ drawBlock = function(b, order)
 			ClearTextOnFocus = false,
 			Parent = p,
 		}, { pad(8) })
+		rounded(box, 10)
 		box:GetPropertyChangedSignal("Text"):Connect(function()
 			form[b.id] = string.sub(box.Text, 1, 24)
 		end)
@@ -539,7 +586,7 @@ drawBlock = function(b, order)
 		local pick = make("TextButton", {
 			LayoutOrder = 2,
 			Size = UDim2.new(1, 0, 0, 40),
-			BackgroundColor3 = C.secondary,
+			BackgroundColor3 = C.field,
 			BorderSizePixel = 0,
 			Text = "  " .. tostring(b.value) .. "  ▾",
 			TextXAlignment = Enum.TextXAlignment.Left,
@@ -548,6 +595,7 @@ drawBlock = function(b, order)
 			TextColor3 = C.text,
 			Parent = p,
 		})
+		rounded(pick, 10)
 		pick.Activated:Connect(function()
 			openChooser({ label = b.label, options = b.options, value = form[b.id] }, function(v)
 				form[b.id] = v
@@ -565,9 +613,22 @@ send = function(action, arg)
 	end
 	sending = true
 	busyCover.Visible = true
-	local ok, json = pcall(function()
-		return remote:InvokeServer(action, arg, form)
-	end)
+	local ok, json
+	if action == "play-match" then
+		-- played here on the device; the menus wait underneath
+		gui.Enabled = false
+		ok, json = pcall(MatchClient.play, matchRemote)
+		gui.Enabled = true
+		if ok and json == nil then
+			ok, json = pcall(function()
+				return remote:InvokeServer("get", nil, form)
+			end)
+		end
+	else
+		ok, json = pcall(function()
+			return remote:InvokeServer(action, arg, form)
+		end)
+	end
 	busyCover.Visible = false
 	sending = false
 	if not ok then

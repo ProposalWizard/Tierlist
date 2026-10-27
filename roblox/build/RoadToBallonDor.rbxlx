@@ -61288,7 +61288,7 @@ return function(exports, import, Js)
 	local M_deflection = import("lib/star/deflection")
 	local M_defenderTouch = import("lib/star/defenderTouch")
 	local BALL_GRAB_FRACTION, MIN_PULL, CAPTAIN_DRAG_MIN, DEFAULT_MATCH_DURATION, MINUTE_TICK_MS, QUICK_START_MAX, FOLLOWER_RUN_SPEED, PITCH_HW, SIM_COMMENTARY_USER, SIM_COMMENTARY_OPP, matchSetupFor, readyForMatch, matchCareer, newTally, countedRng, after, setPhase, showAction, pushLine, logMoment, playerLabel, attributeClub, onPitch, mayTake, mechOpen, displayScore, liveEnergyAt, chargeEnergyTo, setClock, tiredSkills, ratingSoFar, matchExtras, hiddenInputs, matchResultFor, applyClearanceRules, formationShapeFor, nameTeamGoals, variedLine, strikeMotion, contactMotion, frameScenario, tiltForChance, acrossM, screenPull, powerFromDrag, sameOnScreenM, startMatch, setUpKeeper, dressAutoKeeper, runupStyleFor, standBackForRunup, extraTimeEligibility, startSimulation, fullTime, finish, clearChance, loadScenario, momentLine, targetName, startTopDownDribble
-	local loadTeammatePenalty, ourTakers, theirTakers, scheduleAutoKick, startShootout, nextShootoutKick, loadShootoutKick, finishShootout, pointerDown, pointerMove, pointerUp, armPowerShot, curveSwipe, runupNudge, contact, powerContact, contactTimeout, steerRun, callForBall, dribbleStick, dribbleBurst, dribblePass, continuePause, drinkKib, cycleSpeed, setEnergyMode, setPlaystyle, toggleTouchMode, captainPickAt, nearestCaptainCandidateDist, commitAim, loseChance, fouled, stepCommitted, startRunup, airAerialNow, handleContact, resolveOutcome, handOver, finishTopDownDribble, tick_, stepFeed, feedStep, showHalfTime, stepPlay, stepFlight, noteRunStep, energyNow, staminaNow, aimPreview, contactScreen, matchKits
+	local loadTeammatePenalty, ourTakers, theirTakers, scheduleAutoKick, startShootout, nextShootoutKick, loadShootoutKick, finishShootout, pointerDown, pointerMove, pointerUp, armPowerShot, curveSwipe, runupNudge, contact, powerContact, contactTimeout, steerRun, callForBall, dribbleStick, dribbleBurst, dribblePass, continuePause, drinkKib, cycleSpeed, setEnergyMode, setPlaystyle, toggleTouchMode, captainPickAt, nearestCaptainCandidateDist, commitAim, loseChance, fouled, stepCommitted, startRunup, airAerialNow, handleContact, resolveOutcome, handOver, finishTopDownDribble, tick_, stepFeed, feedStep, showHalfTime, stepPlay, stepFlight, noteRunStep, energyNow, staminaNow, aimPreview, strikeInputs, matchKits, controlsOf, deviceSetup, checkedStats
 	matchSetupFor = function(career)
 		local nextFixture = M_competitions.nextFixtureFor(career)
 		if (not nextFixture) then
@@ -63462,18 +63462,59 @@ return function(exports, import, Js)
 		do return Js.O({ dir = Js.O({ x = (b.x - m.drag.x), y = (b.y - m.drag.y) }, { "x", "y" }), power = powerFromDrag(m, m.drag, b) }, { "dir", "power" }) end
 	end
 	exports.aimPreview = aimPreview
-	contactScreen = function(m)
+	strikeInputs = function(m)
 		if ((m.phase ~= "contact") or (not m.aim)) then
 			do return nil end
 		end
-		local motion = strikeMotion(m.sc.kind, m.seed)
-		do return Js.O({ motion = motion, timerS = m.contactTimerS, power = m.aim.power, power2 = m.powerStrike, aimFromTap = (M_airDrawings.isAirKind(m.sc.kind) and M_airTap.airTapOn()), ballZ = (if (motion == "float") then (if (m.sc.kind == "header") then M_airDrawings.airZOf(m.sc) else M_airDrawings.HEADER_Z) else nil) }, { "motion", "timerS", "power", "power2", "aimFromTap", "ballZ" }) end
+		local sc = m.sc
+		local motion = strikeMotion(sc.kind, m.seed)
+		do return Js.O({ motion = motion, timeLimitS = m.contactTimerS, power = m.aim.power, powerShot = m.powerStrike, aimFromTap = (M_airDrawings.isAirKind(sc.kind) and M_airTap.airTapOn()), ballZ = (if (motion == "float") then (if (sc.kind == "header") then M_airDrawings.airZOf(sc) else M_airDrawings.HEADER_Z) else nil), technique = m.setup.skills.technique, aerial = airAerialNow(m), grades = (M_shotModel.shotsPro() and M_shotModel.aimedAtGoal(sc, m.aim.dir)), knuckles = (M_shotModel.knucklePowerOn() and mechOpen(m, "knuckle")), field = (M_shotFeel.contactFieldOn() and M_shotFeel.fieldApplies(sc.kind)) }, { "motion", "timeLimitS", "power", "powerShot", "aimFromTap", "ballZ", "technique", "aerial", "grades", "knuckles", "field" }) end
 	end
-	exports.contactScreen = contactScreen
+	exports.strikeInputs = strikeInputs
 	matchKits = function(m)
 		do return Js.O({ us = (if m.fixture.home then m.kits.home else m.kits.away), them = (if m.fixture.home then m.kits.away else m.kits.home), keeper = m.kits.keeper, ourKeeper = m.ourKeeperKit }, { "us", "them", "keeper", "ourKeeper" }) end
 	end
 	exports.matchKits = matchKits
+	controlsOf = function(m)
+		local ph = m.phase
+		do return Js.O({ powerShot = ((((ph == "aim") and M_shotModel.knucklePowerOn()) and mechOpen(m, "powerShot")) and (not M_penaltyRunup.hasRunup(m.sc.kind))), powerArmed = m.powerArmed, curve = (((ph == "flight") and m.setup.canCurve) and (not (not m.ball))), steer = ((ph == "flight") and (not (not (function() local _v = m.playOn; if _v == nil then return nil end; _v = _v.stick; return _v end)()))), callForIt = (((ph == "flight") and (not (not (function() local _v = m.playOn; if _v == nil then return nil end; _v = _v.stick; return _v end)()))) and (not (not m.career.captain))), nudge = (((ph == "runup") and (not (not (function() local _v = m.runup; if _v == nil then return nil end; _v = _v.nudge; return _v end)()))) and (not m.runup.arrived)), dribble = (((ph == "tdDribble") and (not (not m.td))) and (m.td.phase == "running")), touchMode = m.touchModeOn }, { "powerShot", "powerArmed", "curve", "steer", "callForIt", "nudge", "dribble", "touchMode" }) end
+	end
+	exports.controlsOf = controlsOf
+	deviceSetup = function(setup)
+		do return Js.ospread(setup, Js.O({ career = matchCareer(setup.career) }, { "career" })) end
+	end
+	exports.deviceSetup = deviceSetup
+	checkedStats = function(raw)
+		if ((not Js.T(raw)) or (type(raw) ~= "table")) then
+			do return nil end
+		end
+		local s = raw
+		local num = function(k, lo, hi)
+			return ((((type(s[k]) == "number") and Js.NumberNS.isFinite(s[k])) and (s[k] >= lo)) and (s[k] <= hi))
+		end
+		if ((((not num("goals", 0, 12)) or (not num("assists", 0, 12))) or (not num("chances", 0, 60))) or (not num("passes", 0, 200))) then
+			do return nil end
+		end
+		if (((not num("rating", 0, 10)) or (not num("homeScore", 0, 30))) or (not num("awayScore", 0, 30))) then
+			do return nil end
+		end
+		do
+			local _arr16 = Js.alit("bossChange", "teamChange", "fansChange", "wage", "goalBonus", "sponsorPay", "totalCash")
+			local _i17 = 0
+			while _i17 < Js.alen(_arr16) do
+				_i17 += 1
+				local k = _arr16[_i17]
+				if (not num(k, -1000000000, 1000000000)) then
+					do return nil end
+				end
+			end
+		end
+		if (type(s.starMan) ~= "boolean") then
+			do return nil end
+		end
+		do return s end
+	end
+	exports.checkedStats = checkedStats
 	BALL_GRAB_FRACTION = 0.18
 	MIN_PULL = 0.008
 	CAPTAIN_DRAG_MIN = 3
@@ -63495,6 +63536,68 @@ end
             </Properties>
           </Item>
           <Item class="ModuleScript" referent="307">
+            <Properties>
+              <string name="Name">matchView</string>
+              <string name="Source"><![CDATA[--!nocheck
+--!nolint
+-- Generated from roblox/game/matchView.ts by roblox/tools/ts2luau. Do not edit.
+return function(exports, import, Js)
+	local A, S, N, Math = Js.A, Js.S, Js.N, Js.Math
+	local M_pitch = import("lib/star/pitch")
+	local M_match = import("roblox/game/match")
+	local M_grammar = import("lib/star/media/grammar")
+	local BANNER_S, frameOf
+	frameOf = function(m)
+		local sc = m.sc
+		local bodies = Js.alit()
+		local ball = nil
+		if ((m.phase == "tdDribble") and m.td) then
+			local run = m.td
+			A.push(bodies, Js.O({ id = "you", side = "you", x = run.x, y = run.y, name = m.career.player.lastName }, { "id", "side", "x", "y", "name" }))
+			A.forEach(run.defenders, function(d, i)
+				return A.push(bodies, Js.O({ id = ("fd" .. Js.numstr(i)), side = "opp", x = d.x, y = d.y }, { "id", "side", "x", "y" }))
+			end)
+			A.forEach(run.mates, function(t, i)
+				return A.push(bodies, Js.O({ id = ("fm" .. Js.numstr(i)), side = "mate", x = t.x, y = t.y, option = true }, { "id", "side", "x", "y", "option" }))
+			end)
+			A.push(bodies, Js.O({ id = "keeper", side = "keeper", x = M_pitch.CX, y = 0.6 }, { "id", "side", "x", "y" }))
+			ball = Js.O({ x = run.x, y = (run.y - 0.6), z = 0 }, { "x", "y", "z" })
+		elseif sc then
+			A.push(bodies, Js.O({ id = "you", side = "you", x = sc.player.x, y = sc.player.y, name = m.career.player.lastName }, { "id", "side", "x", "y", "name" }))
+			A.push(bodies, Js.O({ id = "keeper", side = "keeper", x = sc.keeper.x, y = sc.keeper.y, name = (function() local _v = sc.keeper.who; if _v == nil then return nil end; _v = _v.shortName; return _v end)(), dive = sc.keeper.dive }, { "id", "side", "x", "y", "name", "dive" }))
+			A.forEach(sc.defenders, function(d, i)
+				return A.push(bodies, Js.O({ id = ("d" .. Js.numstr(i)), side = "opp", x = d.x, y = d.y, name = (function() local _v = d.who; if _v == nil then return nil end; _v = _v.shortName; return _v end)() }, { "id", "side", "x", "y", "name" }))
+			end)
+			A.forEach(sc.teammates, function(t, i)
+				return A.push(bodies, Js.O({ id = ("t" .. Js.numstr(i)), side = "mate", x = t.x, y = t.y, name = (function() local _v = t.who; if _v == nil then return nil end; _v = _v.shortName; return _v end)() }, { "id", "side", "x", "y", "name" }))
+			end)
+			if sc.runner then
+				A.push(bodies, Js.O({ id = "runner", side = "mate", x = sc.runner.pos.x, y = sc.runner.pos.y, name = (function() local _v = sc.runner.who; if _v == nil then return nil end; _v = _v.shortName; return _v end)(), option = true }, { "id", "side", "x", "y", "name", "option" }))
+			end
+			A.forEach(sc.secondaryRunners, function(r, i)
+				return A.push(bodies, Js.O({ id = ("r" .. Js.numstr(i)), side = "mate", x = r.pos.x, y = r.pos.y, name = (function() local _v = r.who; if _v == nil then return nil end; _v = _v.shortName; return _v end)(), option = true }, { "id", "side", "x", "y", "name", "option" }))
+			end)
+			if sc.follower then
+				A.push(bodies, Js.O({ id = "follower", side = "mate", x = sc.follower.x, y = sc.follower.y, name = (function() local _v = sc.follower.who; if _v == nil then return nil end; _v = _v.shortName; return _v end)() }, { "id", "side", "x", "y", "name" }))
+			end
+			ball = (if m.ball then Js.O({ x = m.ball.pos.x, y = m.ball.pos.y, z = m.ball.z }, { "x", "y", "z" }) else Js.O({ x = sc.ball.x, y = sc.ball.y, z = 0 }, { "x", "y", "z" }))
+		end
+		local shown = M_match.displayScore(m)
+		local us = m.career.player.club
+		local them = m.fixture.opponent
+		local ls = m.liveShootout
+		local usHome = (if ls then (ls.yourSide == "home") else true)
+		do return Js.O({ phase = m.phase, minute = m.minute, score = Js.O({ us = shown.user, them = shown.opp, usName = M_grammar.shortClub(us), themName = M_grammar.shortClub(them), home = m.fixture.home }, { "us", "them", "usName", "themName", "home" }), kits = M_match.matchKits(m), bodies = bodies, ball = ball, camera = Js.ospread(m.camera, Js.O({ facing = m.facing, tilt = m.tiltDeg }, { "facing", "tilt" })), goal = Js.O({ x1 = (if sc then sc.goal.x1 else M_match.POST_L), x2 = (if sc then sc.goal.x2 else M_match.POST_R), crossbar = (if sc then sc.crossbar else 2.44) }, { "x1", "x2", "crossbar" }), aim = M_match.aimPreview(m), passTarget = (if (function() local _v = sc; if _v == nil then return nil end; _v = _v.passTarget; return _v end)() then Js.O({ x = sc.passTarget.x, y = sc.passTarget.y }, { "x", "y" }) else nil), feed = A.slice(m.feed), log = A.map(A.slice(m.log, -8), function(l)
+			return Js.O({ minute = (if l.minute ~= nil then l.minute else nil), text = l.text, tone = l.tone }, { "minute", "text", "tone" })
+		end), banner = (if (m.banner and ((m.now - m.banner.at) < BANNER_S)) then m.banner.text else nil), pause = (if m.pause then Js.O({ label = (if m.pause.label ~= nil then m.pause.label else nil), cta = m.pause.cta, halfTime = (not (not m.pause.halfTime)), kib = Math.max(0, (((function() local _v = m.career.kibCans; if _v == nil then return nil end; _v = _v.basic; return _v end)() or 0) - m.kibUsed)) }, { "label", "cta", "halfTime", "kib" }) else nil), energy = M_match.energyNow(m), stamina = M_match.staminaNow(m), speed = m.speed, energyMode = m.energyMode, playstyle = m.playstyle, controls = M_match.controlsOf(m), shootout = (if ls then Js.O({ us = (if usHome then ls.state.homeScore else ls.state.awayScore), them = (if usHome then ls.state.awayScore else ls.state.homeScore), kicks = Js.alen(ls.state.kicks) }, { "us", "them", "kicks" }) else nil) }, { "phase", "minute", "score", "kits", "bodies", "ball", "camera", "goal", "aim", "passTarget", "feed", "log", "banner", "pause", "energy", "stamina", "speed", "energyMode", "playstyle", "controls", "shootout" }) end
+	end
+	exports.frameOf = frameOf
+	BANNER_S = 1.4
+end
+]]></string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="308">
             <Properties>
               <string name="Name">screens</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -63805,7 +63908,8 @@ return function(exports, import, Js)
 		if m.fixture then
 			A.push(s.blocks, Js.O({ kind = "heading", text = "Next match" }, { "kind", "text" }), Js.O({ kind = "text", text = fixtureLine(c, m.fixture) }, { "kind", "text" }), Js.O({ kind = "text", text = dateOf(c, m.fixture), tone = "dim" }, { "kind", "text", "tone" }))
 			if m.canPlay then
-				A.push(s.buttons, Js.O({ label = "Sim this match ⚽", action = "sim", style = "primary" }, { "label", "action", "style" }))
+				A.push(s.buttons, Js.O({ label = "Play match ⚽", action = "play-match", style = "primary" }, { "label", "action", "style" }))
+				A.push(s.buttons, Js.O({ label = "Sim it", action = "sim" }, { "label", "action" }))
 			else
 				local why = (if (m.status == "Injured") then "You're injured." else (if m.fixture.watch then "Your country plays. Watch it on TV." else (if m.reason ~= nil then m.reason else "You're not in the squad this week.")))
 				A.push(s.blocks, Js.O({ kind = "text", text = why, tone = "bad" }, { "kind", "text", "tone" }))
@@ -63922,7 +64026,7 @@ return function(exports, import, Js)
 		if rng == nil then rng = Math.random end
 		local ui = (if g.ui ~= nil then g.ui else Js.O({}, nil))
 		local _sw18 = action
-		local _ci19 = (if _sw18 == "tab" then 1 elseif _sw18 == "home" then 2 elseif _sw18 == "sim" then 3 elseif _sw18 == "watch" then 4 elseif _sw18 == "youth-week" then 5 elseif _sw18 == "youth-promote" then 6 elseif _sw18 == "post-continue" then 7 elseif _sw18 == "draw-continue" then 8 elseif _sw18 == "ko-continue" then 9 elseif _sw18 == "playoff-continue" then 10 elseif _sw18 == "deadline-continue" then 11 elseif _sw18 == "callup-continue" then 12 elseif _sw18 == "end-season" then 13 elseif _sw18 == "ballon-continue" then 14 elseif _sw18 == "play-on" then 15 elseif _sw18 == "retire" then 16 elseif _sw18 == "awards-continue" then 17 elseif _sw18 == "ladder-continue" then 18 elseif _sw18 == "stay" then 19 elseif _sw18 == "sign" then 20 elseif _sw18 == "relegation-pick" then 21 elseif _sw18 == "ask-contract" then 22 elseif _sw18 == "renewal-start" then 23 elseif _sw18 == "renewal-guess" then 24 elseif _sw18 == "renewal-sign" then 25 elseif _sw18 == "renewal-cancel" then 26 elseif _sw18 == "window-talk" then 27 elseif _sw18 == "talk-nudge" then 28 elseif _sw18 == "talk-offer" then 29 elseif _sw18 == "talk-done" then 30 elseif _sw18 == "talk-walk" then 31 else 0)
+		local _ci19 = (if _sw18 == "tab" then 1 elseif _sw18 == "home" then 2 elseif _sw18 == "sim" then 3 elseif _sw18 == "play-match" then 4 elseif _sw18 == "watch" then 5 elseif _sw18 == "youth-week" then 6 elseif _sw18 == "youth-promote" then 7 elseif _sw18 == "post-continue" then 8 elseif _sw18 == "draw-continue" then 9 elseif _sw18 == "ko-continue" then 10 elseif _sw18 == "playoff-continue" then 11 elseif _sw18 == "deadline-continue" then 12 elseif _sw18 == "callup-continue" then 13 elseif _sw18 == "end-season" then 14 elseif _sw18 == "ballon-continue" then 15 elseif _sw18 == "play-on" then 16 elseif _sw18 == "retire" then 17 elseif _sw18 == "awards-continue" then 18 elseif _sw18 == "ladder-continue" then 19 elseif _sw18 == "stay" then 20 elseif _sw18 == "sign" then 21 elseif _sw18 == "relegation-pick" then 22 elseif _sw18 == "ask-contract" then 23 elseif _sw18 == "renewal-start" then 24 elseif _sw18 == "renewal-guess" then 25 elseif _sw18 == "renewal-sign" then 26 elseif _sw18 == "renewal-cancel" then 27 elseif _sw18 == "window-talk" then 28 elseif _sw18 == "talk-nudge" then 29 elseif _sw18 == "talk-offer" then 30 elseif _sw18 == "talk-done" then 31 elseif _sw18 == "talk-walk" then 32 else 0)
 		local _cont20 = false
 		repeat
 			if _ci19 ~= 0 and _ci19 <= 1 then
@@ -63935,66 +64039,69 @@ return function(exports, import, Js)
 				do return M_flow.simMatch(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 4 then
-				do return M_flow.watchFromStands(g) end
+				do return M_flow.simMatch(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 5 then
-				do return M_flow.youthWeek(g) end
+				do return M_flow.watchFromStands(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 6 then
-				do return M_flow.youthPromotion(g) end
+				do return M_flow.youthWeek(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 7 then
-				do return M_flow.postMatchContinue(g) end
+				do return M_flow.youthPromotion(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 8 then
-				do return M_flow.drawContinue(g) end
+				do return M_flow.postMatchContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 9 then
-				do return M_flow.knockoutContinue(g) end
+				do return M_flow.drawContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 10 then
-				do return M_flow.playoffContinue(g) end
+				do return M_flow.knockoutContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 11 then
-				do return M_flow.deadlineDayContinue(g) end
+				do return M_flow.playoffContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 12 then
-				do return M_flow.callUpContinue(g) end
+				do return M_flow.deadlineDayContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 13 then
-				do return M_flow.endSeason(g) end
+				do return M_flow.callUpContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 14 then
-				do return M_flow.ballonDorContinue(g) end
+				do return M_flow.endSeason(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 15 then
-				do return M_flow.playOn(g) end
+				do return M_flow.ballonDorContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 16 then
-				do return M_flow.retireNow(g) end
+				do return M_flow.playOn(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 17 then
-				do return M_flow.seasonAwardsContinue(g) end
+				do return M_flow.retireNow(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 18 then
-				do return M_flow.ladderContinue(g) end
+				do return M_flow.seasonAwardsContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 19 then
-				do return M_flow.stayPut(g) end
+				do return M_flow.ladderContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 20 then
-				do return M_flow.signingDone(g) end
+				do return M_flow.stayPut(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 21 then
-				do return M_flow.chooseTransfer(g, (if g.transferOffers ~= nil then g.transferOffers else Js.alit())[Js.Number(arg) + 1]) end
+				do return M_flow.signingDone(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 22 then
-				do return Js.ospread(g, Js.O({ phase = "contract-renewal", contractOfferReason = nil, ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "phase", "contractOfferReason", "ui" })) end
+				do return M_flow.chooseTransfer(g, (if g.transferOffers ~= nil then g.transferOffers else Js.alit())[Js.Number(arg) + 1]) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 23 then
-				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ renewal = Js.O({ current = (3 + math.floor((rng() * 8))), next = nil, wins = 0, locked = false, rounds = 0, message = "", started = true }, { "current", "next", "wins", "locked", "rounds", "message", "started" }) }, { "renewal" })) }, { "ui" })) end
+				do return Js.ospread(g, Js.O({ phase = "contract-renewal", contractOfferReason = nil, ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "phase", "contractOfferReason", "ui" })) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 24 then
+				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ renewal = Js.O({ current = (3 + math.floor((rng() * 8))), next = nil, wins = 0, locked = false, rounds = 0, message = "", started = true }, { "current", "next", "wins", "locked", "rounds", "message", "started" }) }, { "renewal" })) }, { "ui" })) end
+			end
+			if _ci19 ~= 0 and _ci19 <= 25 then
 				do
 					local r = ui.renewal
 					if ((not r) or r.locked) then
@@ -64009,17 +64116,17 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ renewal = next_ }, { "renewal" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 25 then
+			if _ci19 ~= 0 and _ci19 <= 26 then
 				do
 					local r = ui.renewal
 					local offer = M_flow.renewalOffer(g, ((function() local _v = r; if _v == nil then return nil end; _v = _v.wins; return _v end)() or 0), (function() local _l = (function() local _v = r; if _v == nil then return nil end; _v = _v.locked; return _v end)(); if _l ~= nil then return _l end; return false end)(), ((function() local _v = r; if _v == nil then return nil end; _v = _v.rounds; return _v end)() or 0))
 					do return Js.ospread(M_flow.contractComplete(g, offer), Js.O({ ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 26 then
+			if _ci19 ~= 0 and _ci19 <= 27 then
 				do return Js.ospread(M_flow.contractComplete(g, nil), Js.O({ ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "ui" })) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 27 then
+			if _ci19 ~= 0 and _ci19 <= 28 then
 				do
 					local _d21 = A.map(S.split((if arg ~= nil then arg else "0:0"), ":"), Js.Number)
 					local li = _d21[1]
@@ -64029,14 +64136,14 @@ return function(exports, import, Js)
 					do return Js.ospread(M_flow.transferNegotiate(g, offer), Js.O({ ui = Js.ospread(ui, Js.O({ talk = talk, ask = talk.yourPosition }, { "talk", "ask" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 28 then
+			if _ci19 ~= 0 and _ci19 <= 29 then
 				do
 					local a = ((if ui.ask ~= nil then ui.ask else (function() local _v = ui.talk; if _v == nil then return nil end; _v = _v.yourPosition; return _v end)()) or 0)
 					local dir = (if (Js.Number(arg) < 0) then -1 else 1)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ ask = Math.max(1, (a + (dir * niceStep((if (dir < 0) then (a - 1) else a))))) }, { "ask" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 29 then
+			if _ci19 ~= 0 and _ci19 <= 30 then
 				do
 					if (not ui.talk) then
 						do return g end
@@ -64045,14 +64152,14 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ talk = t }, { "talk" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 30 then
+			if _ci19 ~= 0 and _ci19 <= 31 then
 				do
 					local t = ui.talk
 					local r = M_flow.transferTalkDone(g, (if (t and (t.status == "accepted")) then (if t.finalPrice ~= nil then t.finalPrice else nil) else nil))
 					do return Js.ospread(r, Js.O({ ui = Js.ospread(ui, Js.O({ talk = nil }, { "talk" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 31 then
+			if _ci19 ~= 0 and _ci19 <= 32 then
 				do return Js.ospread(M_flow.transferTalkDone(g, nil), Js.O({ ui = Js.ospread(ui, Js.O({ talk = nil }, { "talk" })) }, { "ui" })) end
 			end
 		until true
@@ -64066,14 +64173,177 @@ end
 ]]></string>
             </Properties>
           </Item>
+          <Item class="ModuleScript" referent="309">
+            <Properties>
+              <string name="Name">strikeScreen</string>
+              <string name="Source"><![CDATA[--!nocheck
+--!nolint
+-- Generated from roblox/game/strikeScreen.ts by roblox/tools/ts2luau. Do not edit.
+return function(exports, import, Js)
+	local A, S, N, Math = Js.A, Js.S, Js.N, Js.Math
+	local M_match = import("roblox/game/match")
+	local M_airborneChance = import("lib/star/airborneChance")
+	local M_shotModel = import("lib/star/shotModel")
+	local M_airTap = import("lib/star/airTap")
+	local M_aerial = import("lib/star/aerial")
+	local ballMotionAt, TOO_SLOW_MS, AIR_VERDICT_MS, STRIKE_ZONE_R, POWER_GIVE_UP_S, openStrike, strikeStep, strikeTap, finishPower, strikeView
+	ballMotionAt = function(motion, t, period)
+		if (motion == "still") then
+			do return Js.O({ x = 0, y = 0 }, { "x", "y" }) end
+		end
+		local phase = math.fmod((t / period), 2)
+		local sweep = (if (phase < 1) then phase else (2 - phase))
+		local x = (-0.12 + (0.24 * (0.5 - (0.5 * Math.cos((Math.PI * sweep))))))
+		if (motion == "float") then
+			do return Js.O({ x = x, y = (-0.42 - (0.08 * Math.sin((Math.PI * sweep)))) }, { "x", "y" }) end
+		end
+		if (motion == "bounce") then
+			local b = math.abs(Math.sin(((Math.PI * 2.5) * sweep)))
+			do return Js.O({ x = x, y = (-0.26 * b) }, { "x", "y" }) end
+		end
+		local b = math.abs(Math.sin(((Math.PI * 6) * sweep)))
+		do return Js.O({ x = (x * 0.6), y = (-0.05 * b) }, { "x", "y" }) end
+	end
+	exports.ballMotionAt = ballMotionAt
+	openStrike = function(m)
+		local inputs = M_match.strikeInputs(m)
+		if (not inputs) then
+			do return nil end
+		end
+		local airKind = (if (inputs.motion == "float") then "header" else (if (inputs.motion == "bounce") then "volley" else nil))
+		local limitS = (if (Js.T(inputs.timeLimitS) and (inputs.timeLimitS > 0)) then inputs.timeLimitS else (if Js.T(airKind) then M_airborneChance.airStrikeTimerS(airKind, inputs.aerial) else nil))
+		local a = ((Math.random() * Math.PI) * 2)
+		local r = (Math.sqrt(Math.random()) * 0.55)
+		do return Js.O({ inputs = inputs, t = 0, period = (2.2 + ((Math.max(0, (Math.min(100, inputs.technique) - 40)) / 60) * 1.2)), airKind = airKind, limitS = limitS, framesSeen = 0, startedAt = nil, locked = false, timedOut = false, spark = nil, verdict = nil, send = nil, lift = 0, sweepX = 0, powerSpot = Js.O({ x = (Math.cos(a) * r), y = (Math.sin(a) * r) }, { "x", "y" }), powerShowAt = (0.25 + (Math.random() * 0.5)), powerShownAt = nil }, { "inputs", "t", "period", "airKind", "limitS", "framesSeen", "startedAt", "locked", "timedOut", "spark", "verdict", "send", "lift", "sweepX", "powerSpot", "powerShowAt", "powerShownAt" }) end
+	end
+	exports.openStrike = openStrike
+	strikeStep = function(s, m, dt)
+		s.framesSeen += 1
+		if (not s.locked) then
+			s.t += dt
+			local p = ballMotionAt(s.inputs.motion, s.t, s.period)
+			s.sweepX = p.x
+			local top = (if (s.inputs.motion == "float") then 0.5 else (if (s.inputs.motion == "bounce") then 0.26 else 0.05))
+			s.lift = Math.max(0, Math.min(1, ((-p.y) / top)))
+		else
+			s.t += dt
+		end
+		if s.inputs.powerShot then
+			if ((s.powerShownAt == nil) and (s.t >= s.powerShowAt)) then
+				s.powerShownAt = s.t
+			end
+			if ((not s.locked) and (s.t >= (0.75 + POWER_GIVE_UP_S))) then
+				finishPower(s, 0, (0/0))
+			end
+		else
+			if (((s.startedAt == nil) and (s.framesSeen >= 2)) and Js.T(s.limitS)) then
+				s.startedAt = s.t
+			end
+			if ((((not s.locked) and (s.startedAt ~= nil)) and Js.T(s.limitS)) and ((s.t - s.startedAt) >= s.limitS)) then
+				s.locked = true
+				s.timedOut = true
+				local lift = s.lift
+				local sweep = s.sweepX
+				local airKind = s.airKind
+				local ownTimer = (not (not (Js.T(s.inputs.timeLimitS) and (s.inputs.timeLimitS > 0))))
+				s.send = Js.O({ at = (s.t + (TOO_SLOW_MS / 1000)), fire = function(mm)
+					if (Js.T(airKind) and (not ownTimer)) then
+						M_match.contact(mm, Js.ospread(M_airborneChance.airLateContact(airKind, lift, sweep), Js.O({ late = true }, { "late" })))
+					else
+						M_match.contactTimeout(mm)
+					end
+				end }, { "at", "fire" })
+			end
+		end
+		if (s.send and (s.t >= s.send.at)) then
+			local f = s.send.fire
+			s.send = nil
+			f(m)
+		end
+	end
+	exports.strikeStep = strikeStep
+	strikeTap = function(s, cx, cy)
+		if s.locked then
+			do return end
+		end
+		if s.inputs.powerShot then
+			if (((cx * cx) + (cy * cy)) > 1.15) then
+				do return end
+			end
+			if (s.powerShownAt == nil) then
+				finishPower(s, 0, (0/0))
+				do return end
+			end
+			local rt = (s.t - s.powerShownAt)
+			local hit = (Math.hypot((cx - s.powerSpot.x), (cy - s.powerSpot.y)) < 0.3)
+			finishPower(s, M_shotModel.powerShotQuality(rt, hit), (if hit then rt else (0/0)))
+			do return end
+		end
+		local d = Math.hypot(cx, cy)
+		if (d > STRIKE_ZONE_R) then
+			do return end
+		end
+		if (d > 1) then
+			cx /= d
+			cy /= d
+		end
+		s.locked = true
+		s.spark = Js.O({ cx = cx, cy = cy }, { "cx", "cy" })
+		local inp = s.inputs
+		local air = ((inp.motion == "float") or (inp.motion == "bounce"))
+		local lift = s.lift
+		if air then
+			local kind = (if (inp.motion == "float") then "header" else "volley")
+			local readCx = (if inp.aimFromTap then M_airTap.airTapContactCx(kind, cx, inp.aerial) else cx)
+			local rd = M_airborneChance.airContactRead(Js.O({ kind = kind, lift = lift, cx = readCx, cy = cy, tech = inp.technique, aerial = inp.aerial }, { "kind", "lift", "cx", "cy", "tech", "aerial" }), (if ((inp.motion == "float") and (inp.ballZ ~= nil)) then (inp.ballZ * (0.85 + (0.15 * lift))) else nil))
+			s.verdict = Js.O({ label = rd.label, good = rd.good }, { "label", "good" })
+		elseif inp.grades then
+			local g = M_shotModel.gradeContact(Js.O({ cx = cx, cy = cy }, { "cx", "cy" }), inp.power, inp.knuckles, inp.field)
+			if Js.T(g.label) then
+				s.verdict = Js.O({ label = g.label, good = (((g.grade == "clean") or (g.grade == "knuckle")) or (g.label == "CURLER")) }, { "label", "good" })
+			end
+		end
+		local c = (if air then Js.O({ cx = cx, cy = cy, lift = lift }, { "cx", "cy", "lift" }) else Js.O({ cx = cx, cy = cy }, { "cx", "cy" }))
+		s.send = Js.O({ at = (s.t + ((if air then AIR_VERDICT_MS else (if inp.grades then 420 else 200)) / 1000)), fire = function(mm)
+			return M_match.contact(mm, c)
+		end }, { "at", "fire" })
+	end
+	exports.strikeTap = strikeTap
+	finishPower = function(s, q, _rt)
+		if s.locked then
+			do return end
+		end
+		s.locked = true
+		s.verdict = Js.O({ label = (if (q >= 0.95) then "PERFECT!" else (if (q >= 0.6) then "GOOD" else (if (q > 0) then "LATE" else "MISSED"))), good = (q >= 0.6) }, { "label", "good" })
+		s.send = Js.O({ at = (s.t + 0.35), fire = function(mm)
+			return M_match.powerContact(mm, q)
+		end }, { "at", "fire" })
+	end
+	strikeView = function(s)
+		local inp = s.inputs
+		local p = (if s.locked then Js.O({ x = s.sweepX, y = ((-s.lift) * (if (inp.motion == "float") then 0.5 else (if (inp.motion == "bounce") then 0.26 else 0.05))) }, { "x", "y" }) else ballMotionAt(inp.motion, s.t, s.period))
+		local powerPct = Math.round((inp.power * 100))
+		local ring = (if (s.inputs.powerShot or (not Js.T(s.limitS))) then nil else (if (s.startedAt == nil) then 1 else Math.max(0, (1 - ((s.t - s.startedAt) / s.limitS)))))
+		do return Js.O({ ballX = p.x, ballY = p.y, lift = s.lift, ring = ring, powerPct = powerPct, powerColor = (if (powerPct < 40) then "#22c55e" else (if (powerPct < 75) then "#eab308" else "#ef4444")), verdict = s.verdict, spark = s.spark, timedOut = s.timedOut, heading = (if inp.powerShot then "Power shot" else (if (s.airKind == "header") then "Head it!" else (if (s.airKind == "volley") then "Volley it!" else "Strike it!"))), jump = (if ((inp.motion == "float") and (inp.ballZ ~= nil)) then M_aerial.headerJump(inp.ballZ, inp.aerial) else nil), powerSpot = (if ((inp.powerShot and (s.powerShownAt ~= nil)) and (not s.locked)) then s.powerSpot else nil) }, { "ballX", "ballY", "lift", "ring", "powerPct", "powerColor", "verdict", "spark", "timedOut", "heading", "jump", "powerSpot" }) end
+	end
+	exports.strikeView = strikeView
+	TOO_SLOW_MS = 350
+	AIR_VERDICT_MS = 300
+	STRIKE_ZONE_R = 1.18
+	exports.STRIKE_ZONE_R = STRIKE_ZONE_R
+	POWER_GIVE_UP_S = 1.2
+end
+]]></string>
+            </Properties>
+          </Item>
         </Item>
       </Item>
     </Item>
-    <Item class="Folder" referent="308">
+    <Item class="Folder" referent="310">
       <Properties>
         <string name="Name">Runtime</string>
       </Properties>
-      <Item class="ModuleScript" referent="309">
+      <Item class="ModuleScript" referent="311">
         <Properties>
           <string name="Name">Js</string>
           <string name="Source"><![CDATA[--!nocheck
@@ -68267,7 +68537,7 @@ return Js
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="310">
+      <Item class="ModuleScript" referent="312">
         <Properties>
           <string name="Name">Loader</string>
           <string name="Source"><![CDATA[--!strict
@@ -68308,15 +68578,15 @@ return Loader
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="311">
+  <Item class="ServerScriptService" referent="313">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="312">
+    <Item class="Folder" referent="314">
       <Properties>
         <string name="Name">Server</string>
       </Properties>
-      <Item class="Script" referent="313">
+      <Item class="Script" referent="315">
         <Properties>
           <string name="Name">Main</string>
           <token name="RunContext">0</token>
@@ -68343,6 +68613,7 @@ local Loader = require(ReplicatedStorage:WaitForChild("Runtime"):WaitForChild("L
 local Js = Loader.Js
 local Screens = Loader.import("roblox/game/screens")
 local Flow = Loader.import("roblox/game/flow")
+local Match = Loader.import("roblox/game/match")
 
 local SAVE_VERSION = 1
 -- A DataStore key holds at most 4 MB (counted after Roblox escapes the text),
@@ -68394,6 +68665,7 @@ local drafts = {} -- [Player] = the new-career form
 local dirty = {} -- [Player] = true when unsaved changes
 local busy = {} -- [Player] = true while an action runs
 local loaded = {} -- [Player] = true once the save has been read
+local pendingMatch = {} -- [Player] = the match being played on the device
 
 local function keyFor(player)
 	return "career_" .. player.UserId
@@ -68558,6 +68830,7 @@ local function handle(player, action, arg, form)
 		return currentScreen(player)
 	end
 	if action ~= "get" then
+		pendingMatch[player] = nil
 		local before = g
 		local nextGame = Screens.act(g, action, arg)
 		-- a move to a new club: its real dressing room
@@ -68617,6 +68890,77 @@ career.OnServerInvoke = function(player, action, arg, form)
 	return encode(screen)
 end
 
+-- The match is played on the device (roblox/src/Client/Match.luau): "start"
+-- sends it the setup, "done" takes the stats back into the career, "abandon"
+-- sims the match instead (the device could not play it).
+local function matchAction(player, action, json)
+	local g = games[player]
+	if not g then
+		error("no career")
+	end
+	if action == "start" then
+		if g.phase ~= "dashboard" then
+			error("there is no match to play now")
+		end
+		local day = Flow.matchday(g)
+		if not day.canPlay then
+			error("you are not playing this week")
+		end
+		local readied = Match.readyForMatch(g.career)
+		local setup = Match.matchSetupFor(readied)
+		if not setup then
+			error("no fixture")
+		end
+		pendingMatch[player] = { readied = readied, fixture = setup.fixture, career = g.career }
+		return Js.JSON.stringify(Match.deviceSetup(setup))
+	end
+	local p = pendingMatch[player]
+	pendingMatch[player] = nil
+	local nextGame
+	if action == "done" and p and g.career == p.career then
+		local ok, raw = pcall(Js.JSON.parse, json)
+		local stats = ok and Match.checkedStats(raw) or nil
+		if stats then
+			nextGame = Flow.matchComplete(g, stats, p.readied, p.fixture)
+		else
+			warn("match: the result from the device was refused; simming it")
+		end
+	end
+	if not nextGame then
+		nextGame = Flow.simMatch(g)
+	end
+	nextGame.ui = g.ui
+	games[player] = nextGame
+	dirty[player] = true
+	return encode(Screens.screen(nextGame))
+end
+
+local matchRemote = Instance.new("RemoteFunction")
+matchRemote.Name = "Match"
+matchRemote.Parent = remotes
+
+matchRemote.OnServerInvoke = function(player, action, json)
+	if type(action) ~= "string" or (json ~= nil and type(json) ~= "string") then
+		return nil
+	end
+	local waited = 0
+	while busy[player] and waited < 30 do
+		task.wait(0.1)
+		waited += 0.1
+	end
+	busy[player] = true
+	local ok, res = pcall(matchAction, player, action, json)
+	busy[player] = nil
+	if not ok then
+		warn("Match '" .. action .. "' failed:", res)
+		if action == "start" then
+			return nil
+		end
+		return encode(errorScreen(res))
+	end
+	return res
+end
+
 -- ─────────────────────────────────────────────────────────── join / leave ──
 local function onJoin(player)
 	local g = load(player)
@@ -68637,6 +68981,7 @@ Players.PlayerRemoving:Connect(function(player)
 	dirty[player] = nil
 	busy[player] = nil
 	loaded[player] = nil
+	pendingMatch[player] = nil
 end)
 
 game:BindToClose(function()
@@ -68664,19 +69009,19 @@ end
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="314">
+  <Item class="StarterPlayer" referent="316">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="315">
+    <Item class="StarterPlayerScripts" referent="317">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="316">
+      <Item class="Folder" referent="318">
         <Properties>
           <string name="Name">Client</string>
         </Properties>
-        <Item class="LocalScript" referent="317">
+        <Item class="LocalScript" referent="319">
           <Properties>
             <string name="Name">Main</string>
             <string name="Source"><![CDATA[--[[
@@ -68687,8 +69032,11 @@ end
   what a button does is decided on the server (roblox/game/screens.ts).
 
   House style (.claude/skills/ui-house-style): taps go straight in, no menu
-  animations; flat panels, no floating pills; the heavy font only for titles
-  and big numbers; the lighter green pitch; the main buttons always on screen.
+  animations; the heavy font only for titles and big numbers; the lighter
+  green pitch; the main buttons always on screen.
+  Roblox look (Mikey, 27 Oct 2026: "try and do Roblox-type menus"): chunky
+  rounded buttons with a dark outline and a shine, the Fredoka font, icons,
+  bold colour.
 ]]
 
 local Players = game:GetService("Players")
@@ -68698,6 +69046,8 @@ local StarterGui = game:GetService("StarterGui")
 
 local player = Players.LocalPlayer
 local remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Career")
+local matchRemote = ReplicatedStorage.Remotes:WaitForChild("Match")
+local MatchClient = require(script.Parent:WaitForChild("Match"))
 
 pcall(function()
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
@@ -68716,13 +69066,15 @@ local C = {
 	good = Color3.fromHex("34d399"),
 	bad = Color3.fromHex("f87171"),
 	gold = Color3.fromHex("fde047"),
-	primary = Color3.fromHex("fde047"),
-	primaryText = Color3.fromHex("0b1220"),
-	secondary = Color3.fromHex("1e293b"),
-	danger = Color3.fromHex("b91c1c"),
+	primary = Color3.fromHex("22c55e"),
+	primaryText = Color3.fromHex("ffffff"),
+	secondary = Color3.fromHex("3b82f6"),
+	danger = Color3.fromHex("ef4444"),
+	outline = Color3.fromHex("0b1220"),
+	field = Color3.fromHex("1e293b"),
 	highlight = Color3.fromHex("fde047"),
 }
-local TITLE_FONT = Enum.Font.Oswald -- tall and heavy, the nearest to the website's Anton
+local TITLE_FONT = Enum.Font.FredokaOne -- the round, heavy font Roblox games use
 local BODY_FONT = Enum.Font.Gotham
 local BODY_BOLD = Enum.Font.GothamBold
 local MAX_WIDTH = 560
@@ -68751,6 +69103,29 @@ local function make(class, props, children)
 	end
 	return o
 end
+
+-- the Roblox look: round corners, a dark outline, a shine from the top
+local function rounded(o, r)
+	make("UICorner", { CornerRadius = UDim.new(0, r or 12) }).Parent = o
+	return o
+end
+local function outline(o, col, thick)
+	local st = make("UIStroke", { Color = col or C.outline, Thickness = thick or 3, ApplyStrokeMode = Enum.ApplyStrokeMode.Border })
+	st.Parent = o
+	return st
+end
+local function shine(o)
+	make("UIGradient", {
+		Rotation = 90,
+		Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(190, 190, 190)),
+	}).Parent = o
+	return o
+end
+local function textOutline(o)
+	make("UIStroke", { Color = C.outline, Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual }).Parent = o
+	return o
+end
+local TAB_ICON = { home = "🏠", league = "🏆", fixtures = "📅", stats = "📊" }
 
 local function pad(px)
 	return make("UIPadding", {
@@ -68821,13 +69196,15 @@ local topSafe = 36 -- room for Roblox's own top bar
 
 -- HUD: name / club / league / season, money, star rating, energy bar
 local hud = make("Frame", {
-	Size = UDim2.new(1, 0, 0, 86),
-	Position = UDim2.new(0, 0, 0, topSafe),
+	Size = UDim2.new(1, -16, 0, 86),
+	Position = UDim2.new(0, 8, 0, topSafe),
 	BackgroundColor3 = C.panel,
-	BackgroundTransparency = 0.12,
+	BackgroundTransparency = 0.08,
 	BorderSizePixel = 0,
 	Parent = column,
 }, { pad(10) })
+rounded(hud, 14)
+outline(hud, Color3.fromHex("fde047"), 2)
 local hudName = label("", 18, C.text, TITLE_FONT, { Size = UDim2.new(0.62, 0, 0, 24), AutomaticSize = Enum.AutomaticSize.None, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = hud })
 local hudClub = label("", 13, C.dim, BODY_FONT, { Position = UDim2.new(0, 0, 0, 24), Size = UDim2.new(0.62, 0, 0, 16), AutomaticSize = Enum.AutomaticSize.None, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = hud })
 local hudMoney = label("", 20, C.gold, TITLE_FONT, { Position = UDim2.new(0.62, 0, 0, 0), Size = UDim2.new(0.38, 0, 0, 24), AutomaticSize = Enum.AutomaticSize.None, TextXAlignment = Enum.TextXAlignment.Right, Parent = hud })
@@ -68853,12 +69230,14 @@ local energyText = label("", 11, C.text, BODY_BOLD, { Size = UDim2.fromScale(1, 
 
 -- tabs
 local tabsBar = make("Frame", {
-	Size = UDim2.new(1, 0, 0, 40),
-	BackgroundColor3 = C.panel2,
-	BackgroundTransparency = 0.1,
+	Size = UDim2.new(1, 0, 0, 46),
+	BackgroundTransparency = 1,
 	BorderSizePixel = 0,
 	Parent = column,
-}, { make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, SortOrder = Enum.SortOrder.LayoutOrder }) })
+}, {
+	make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+	make("UIPadding", { PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8) }),
+})
 
 -- the page
 local page = make("ScrollingFrame", {
@@ -68938,11 +69317,15 @@ local function button(b, order, parent)
 		BorderSizePixel = 0,
 		AutoButtonColor = true, -- press feedback on the button itself
 		Text = string.upper(b.label or ""),
-		TextSize = 20,
+		TextSize = 22,
 		Font = TITLE_FONT,
 		TextColor3 = fg,
 		Parent = parent,
 	})
+	rounded(btn, 14)
+	outline(btn, C.outline, 3)
+	shine(btn)
+	textOutline(btn)
 	btn.Activated:Connect(function()
 		send(b.action, b.arg)
 	end)
@@ -68950,15 +69333,18 @@ local function button(b, order, parent)
 end
 
 local function panel(order)
-	return make("Frame", {
+	local p = make("Frame", {
 		LayoutOrder = order,
 		Size = UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = C.panel,
-		BackgroundTransparency = 0.18,
+		BackgroundTransparency = 0.12,
 		BorderSizePixel = 0,
 		Parent = page,
 	}, { pad(12), make("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }) })
+	rounded(p, 12)
+	outline(p, Color3.new(1, 1, 1), 1.5).Transparency = 0.8
+	return p
 end
 
 local function openChooser(block, onPick)
@@ -68983,7 +69369,7 @@ local function openChooser(block, onPick)
 	local search = make("TextBox", {
 		Position = UDim2.new(0, 12, 0, 62 + topSafe),
 		Size = UDim2.new(1, -24, 0, 40),
-		BackgroundColor3 = C.secondary,
+		BackgroundColor3 = C.field,
 		BorderSizePixel = 0,
 		PlaceholderText = "Search",
 		Text = "",
@@ -69014,7 +69400,7 @@ local function openChooser(block, onPick)
 				local row = make("TextButton", {
 					LayoutOrder = i,
 					Size = UDim2.new(1, 0, 0, 48),
-					BackgroundColor3 = opt == block.value and C.secondary or C.panel,
+					BackgroundColor3 = opt == block.value and C.field or C.panel,
 					BorderSizePixel = 0,
 					Text = "   " .. opt .. (opt == block.value and "  ✓" or ""),
 					TextXAlignment = Enum.TextXAlignment.Left,
@@ -69067,21 +69453,23 @@ local function drawScreen(s)
 		for i, t in ipairs(s.tabs) do
 			local tb = make("TextButton", {
 				LayoutOrder = i,
-				Size = UDim2.new(1 / #s.tabs, 0, 1, 0),
+				Size = UDim2.new(1 / #s.tabs, -6, 1, -6),
 				BackgroundColor3 = t.active and C.gold or C.panel2,
-				BackgroundTransparency = t.active and 0 or 1,
+				BackgroundTransparency = 0,
 				BorderSizePixel = 0,
-				Text = t.label,
-				TextSize = 15,
-				Font = BODY_BOLD,
-				TextColor3 = t.active and C.primaryText or C.text,
+				Text = (TAB_ICON[t.id] and (TAB_ICON[t.id] .. " ") or "") .. t.label,
+				TextSize = 16,
+				Font = TITLE_FONT,
+				TextColor3 = t.active and C.outline or C.text,
 				Parent = tabsBar,
 			})
+			rounded(tb, 12)
+			outline(tb, C.outline, 2)
 			tb.Activated:Connect(function()
 				send("tab", t.id)
 			end)
 		end
-		y += 40
+		y += 46
 	else
 		tabsBar.Visible = false
 	end
@@ -69097,7 +69485,7 @@ local function drawScreen(s)
 	-- the page
 	clear(page)
 	if s.title and s.title ~= "" then
-		label(string.upper(s.title), 30, C.text, TITLE_FONT, { LayoutOrder = 0, Parent = page })
+		textOutline(label(string.upper(s.title), 32, C.text, TITLE_FONT, { LayoutOrder = 0, Parent = page }))
 	end
 	for i, b in ipairs(s.blocks or {}) do
 		drawBlock(b, i)
@@ -69120,7 +69508,9 @@ drawBlock = function(b, order)
 			Parent = page,
 		}, { make("UIGridLayout", { CellSize = UDim2.new(0.5, -4, 0, 66), CellPadding = UDim2.new(0, 8, 0, 8), SortOrder = Enum.SortOrder.LayoutOrder }) })
 		for i, it in ipairs(b.items or {}) do
-			local cell = make("Frame", { LayoutOrder = i, BackgroundColor3 = C.panel, BackgroundTransparency = 0.18, BorderSizePixel = 0, Parent = grid }, { pad(8) })
+			local cell = make("Frame", { LayoutOrder = i, BackgroundColor3 = C.panel, BackgroundTransparency = 0.12, BorderSizePixel = 0, Parent = grid }, { pad(8) })
+			rounded(cell, 12)
+			outline(cell, Color3.new(1, 1, 1), 1.5).Transparency = 0.8
 			label(string.upper(it.label), 12, C.dim, BODY_BOLD, { Size = UDim2.new(1, 0, 0, 16), AutomaticSize = Enum.AutomaticSize.None, Parent = cell })
 			label(it.value, 24, toneColor(it.tone), TITLE_FONT, { Position = UDim2.new(0, 0, 0, 18), Size = UDim2.new(1, 0, 0, 30), AutomaticSize = Enum.AutomaticSize.None, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = cell })
 		end
@@ -69172,12 +69562,13 @@ drawBlock = function(b, order)
 					LayoutOrder = i,
 					Size = UDim2.new(1, 0, 0, 0),
 					AutomaticSize = Enum.AutomaticSize.Y,
-					BackgroundColor3 = C.secondary,
+					BackgroundColor3 = C.field,
 					BackgroundTransparency = 0.3,
 					BorderSizePixel = 0,
 					Text = "",
 					Parent = p,
 				})
+				rounded(holder, 10)
 				holder.Activated:Connect(function()
 					send(it.action, it.arg)
 				end)
@@ -69198,7 +69589,7 @@ drawBlock = function(b, order)
 		local box = make("TextBox", {
 			LayoutOrder = 2,
 			Size = UDim2.new(1, 0, 0, 40),
-			BackgroundColor3 = C.secondary,
+			BackgroundColor3 = C.field,
 			BorderSizePixel = 0,
 			Text = b.value or "",
 			PlaceholderText = b.label,
@@ -69210,6 +69601,7 @@ drawBlock = function(b, order)
 			ClearTextOnFocus = false,
 			Parent = p,
 		}, { pad(8) })
+		rounded(box, 10)
 		box:GetPropertyChangedSignal("Text"):Connect(function()
 			form[b.id] = string.sub(box.Text, 1, 24)
 		end)
@@ -69220,7 +69612,7 @@ drawBlock = function(b, order)
 		local pick = make("TextButton", {
 			LayoutOrder = 2,
 			Size = UDim2.new(1, 0, 0, 40),
-			BackgroundColor3 = C.secondary,
+			BackgroundColor3 = C.field,
 			BorderSizePixel = 0,
 			Text = "  " .. tostring(b.value) .. "  ▾",
 			TextXAlignment = Enum.TextXAlignment.Left,
@@ -69229,6 +69621,7 @@ drawBlock = function(b, order)
 			TextColor3 = C.text,
 			Parent = p,
 		})
+		rounded(pick, 10)
 		pick.Activated:Connect(function()
 			openChooser({ label = b.label, options = b.options, value = form[b.id] }, function(v)
 				form[b.id] = v
@@ -69246,9 +69639,22 @@ send = function(action, arg)
 	end
 	sending = true
 	busyCover.Visible = true
-	local ok, json = pcall(function()
-		return remote:InvokeServer(action, arg, form)
-	end)
+	local ok, json
+	if action == "play-match" then
+		-- played here on the device; the menus wait underneath
+		gui.Enabled = false
+		ok, json = pcall(MatchClient.play, matchRemote)
+		gui.Enabled = true
+		if ok and json == nil then
+			ok, json = pcall(function()
+				return remote:InvokeServer("get", nil, form)
+			end)
+		end
+	else
+		ok, json = pcall(function()
+			return remote:InvokeServer(action, arg, form)
+		end)
+	end
 	busyCover.Visible = false
 	sending = false
 	if not ok then
@@ -69264,6 +69670,1103 @@ send = function(action, arg)
 end
 
 send("get")
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="320">
+          <Properties>
+            <string name="Name">Match</string>
+            <string name="Source"><![CDATA[--[[
+  The match, played on the player's device.
+
+  The rules are the website's (roblox/game/match.ts, converted): this file
+  only draws what roblox/game/matchView.ts says is on the pitch, and passes
+  your input in. Nothing about the football is decided here.
+
+  Controls, as on the website:
+    - drag back from the ball and let go: aim and power;
+    - the strike screen: tap where on the ball to hit it;
+    - a swipe while the ball flies: curve (curve boots);
+    - the penalty run-up: drag sideways to change where you aim.
+  Moving more (Mikey, 27 Oct 2026): after a pass you run your own man with
+  W A S D or the thumb stick (Shift / the Sprint button to sprint), and the
+  top-down dribble is played the same way (Q / E or the buttons to knock it
+  past your man, tap a team-mate to pass).
+]]
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
+local Lighting = game:GetService("Lighting")
+
+local player = Players.LocalPlayer
+
+local Match = {}
+
+-- ─────────────────────────────────────────────────────────── the code ──
+local Loader, Js, M, V, S
+local function loadCode()
+	if Loader then
+		return
+	end
+	Loader = require(ReplicatedStorage:WaitForChild("Runtime"):WaitForChild("Loader"))
+	Js = Loader.Js
+	M = Loader.import("roblox/game/match")
+	V = Loader.import("roblox/game/matchView")
+	S = Loader.import("roblox/game/strikeScreen")
+end
+
+-- ─────────────────────────────────────────────────────────── the look ──
+local SCALE = 3 -- studs per metre (a Roblox figure is about 5.5 studs, a man 1.83 m)
+local PITCH_W, PITCH_Y1, PITCH_Y2 = 68, -8, 105
+local TITLE_FONT = Enum.Font.FredokaOne
+local BODY_FONT = Enum.Font.Gotham
+local BODY_BOLD = Enum.Font.GothamBold
+local SKIN = {
+	Color3.fromRGB(241, 194, 158),
+	Color3.fromRGB(198, 140, 100),
+	Color3.fromRGB(141, 85, 54),
+	Color3.fromRGB(92, 58, 38),
+}
+local GRASS_A = Color3.fromHex("3f9b55")
+local GRASS_B = Color3.fromHex("37904d")
+
+local function w(x, y, z)
+	return Vector3.new(x * SCALE, (z or 0) * SCALE, y * SCALE)
+end
+
+local function color(hex, fallback)
+	if type(hex) == "string" then
+		local ok, c = pcall(Color3.fromHex, (string.gsub(hex, "^#", "")))
+		if ok then
+			return c
+		end
+	end
+	return fallback or Color3.fromRGB(200, 200, 200)
+end
+
+local function part(props)
+	local p = Instance.new("Part")
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.TopSurface = Enum.SurfaceType.Smooth
+	p.BottomSurface = Enum.SurfaceType.Smooth
+	p.Material = Enum.Material.SmoothPlastic
+	for k, v in pairs(props) do
+		p[k] = v
+	end
+	return p
+end
+
+local function make(class, props, children)
+	local o = Instance.new(class)
+	for k, v in pairs(props or {}) do
+		if k ~= "Parent" then
+			o[k] = v
+		end
+	end
+	for _, ch in ipairs(children or {}) do
+		ch.Parent = o
+	end
+	if props and props.Parent then
+		o.Parent = props.Parent
+	end
+	return o
+end
+
+local function label(text, size, col, font, props)
+	local l = make("TextLabel", {
+		BackgroundTransparency = 1,
+		Text = text,
+		TextSize = size,
+		TextColor3 = col,
+		Font = font,
+		TextWrapped = true,
+	})
+	for k, v in pairs(props or {}) do
+		l[k] = v
+	end
+	return l
+end
+
+-- ─────────────────────────────────────────────────────────── the stadium ──
+local function line(folder, x1, y1, x2, y2)
+	local len = math.sqrt((x2 - x1) ^ 2 + (y2 - y1) ^ 2)
+	local mid = w((x1 + x2) / 2, (y1 + y2) / 2, 0.012)
+	part({
+		Size = Vector3.new(0.12 * SCALE, 0.05, len * SCALE + 0.12 * SCALE),
+		CFrame = CFrame.lookAt(mid, mid + Vector3.new((x2 - x1), 0, (y2 - y1))),
+		Color = Color3.new(1, 1, 1),
+		Material = Enum.Material.SmoothPlastic,
+		Parent = folder,
+	})
+end
+
+local function arc(folder, cx, cy, r, a1, a2)
+	local n = 24
+	for i = 0, n - 1 do
+		local t1 = a1 + (a2 - a1) * i / n
+		local t2 = a1 + (a2 - a1) * (i + 1) / n
+		line(folder, cx + r * math.cos(t1), cy + r * math.sin(t1), cx + r * math.cos(t2), cy + r * math.sin(t2))
+	end
+end
+
+local function buildStadium(kitUs, kitThem)
+	local folder = Instance.new("Folder")
+	folder.Name = "MatchWorld"
+	-- the grass, in stripes
+	local stripe = 5.5
+	local y = PITCH_Y1
+	local i = 0
+	while y < PITCH_Y2 do
+		local y2 = math.min(PITCH_Y2, y + stripe)
+		part({
+			Size = Vector3.new((PITCH_W + 16) * SCALE, 1, (y2 - y) * SCALE),
+			Position = w(PITCH_W / 2, (y + y2) / 2, 0) - Vector3.new(0, 0.5, 0),
+			Color = i % 2 == 0 and GRASS_A or GRASS_B,
+			Material = Enum.Material.Grass,
+			Parent = folder,
+		})
+		y = y2
+		i += 1
+	end
+	-- the lines (IFAB sizes)
+	local CXm = PITCH_W / 2
+	line(folder, 0, 0, PITCH_W, 0)
+	line(folder, 0, 0, 0, PITCH_Y2 - 0.5)
+	line(folder, PITCH_W, 0, PITCH_W, PITCH_Y2 - 0.5)
+	line(folder, 0, 52.5, PITCH_W, 52.5)
+	arc(folder, CXm, 52.5, 9.15, math.pi, 2 * math.pi)
+	arc(folder, CXm, 52.5, 9.15, 0, math.pi)
+	line(folder, CXm - 20.16, 0, CXm - 20.16, 16.5)
+	line(folder, CXm + 20.16, 0, CXm + 20.16, 16.5)
+	line(folder, CXm - 20.16, 16.5, CXm + 20.16, 16.5)
+	line(folder, CXm - 9.16, 0, CXm - 9.16, 5.5)
+	line(folder, CXm + 9.16, 0, CXm + 9.16, 5.5)
+	line(folder, CXm - 9.16, 5.5, CXm + 9.16, 5.5)
+	local dA = math.acos(5.5 / 9.15)
+	arc(folder, CXm, 11, 9.15, math.pi / 2 - dA, math.pi / 2 + dA)
+	part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.05, 0.3 * SCALE, 0.3 * SCALE), CFrame = CFrame.new(w(CXm, 11, 0.015)) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.new(1, 1, 1), Parent = folder })
+	arc(folder, 0, 0, 1, 0, math.pi / 2)
+	arc(folder, PITCH_W, 0, 1, math.pi / 2, math.pi)
+	-- the goal: posts, bar and net
+	local POST_L, POST_R, BAR = 30.34, 37.66, 2.44
+	local postR = 0.06
+	local white = Color3.new(1, 1, 1)
+	for _, px in ipairs({ POST_L - postR, POST_R + postR }) do
+		part({ Size = Vector3.new(postR * 2 * SCALE, (BAR + postR) * SCALE, postR * 2 * SCALE), Position = w(px, -postR, (BAR + postR) / 2), Color = white, Material = Enum.Material.Metal, Parent = folder })
+	end
+	part({ Size = Vector3.new((POST_R - POST_L + postR * 4) * SCALE, postR * 2 * SCALE, postR * 2 * SCALE), Position = w(CXm, -postR, BAR + postR), Color = white, Material = Enum.Material.Metal, Parent = folder })
+	local net = { Color = Color3.fromRGB(235, 235, 235), Transparency = 0.72, Material = Enum.Material.ForceField, Parent = folder }
+	local depth = 2
+	local function netPart(size, pos)
+		local t = table.clone(net)
+		t.Size = size
+		t.Position = pos
+		part(t)
+	end
+	netPart(Vector3.new((POST_R - POST_L) * SCALE, BAR * SCALE, 0.1), w(CXm, -depth, BAR / 2))
+	netPart(Vector3.new((POST_R - POST_L) * SCALE, 0.1, depth * SCALE), w(CXm, -depth / 2, BAR))
+	netPart(Vector3.new(0.1, BAR * SCALE, depth * SCALE), w(POST_L, -depth / 2, BAR / 2))
+	netPart(Vector3.new(0.1, BAR * SCALE, depth * SCALE), w(POST_R, -depth / 2, BAR / 2))
+	-- advertising boards and the stands, in both teams' colours
+	local boardCol = { color(kitUs.shirt), Color3.fromHex("0b1220"), color(kitThem.shirt), Color3.fromHex("0b1220") }
+	local bi = 0
+	for x = 0, PITCH_W - 8, 8 do
+		bi += 1
+		part({ Size = Vector3.new(8 * SCALE, 0.9 * SCALE, 0.2 * SCALE), Position = w(x + 4, -5, 0.45), Color = boardCol[bi % 4 + 1], Material = Enum.Material.Neon, Parent = folder })
+	end
+	local function stand(cx, cy, sx, sy, facingX, facingY)
+		for row = 0, 7 do
+			local step = row * 1.2
+			part({
+				Size = Vector3.new((sx + (facingX ~= 0 and step * 2 or 0)) * SCALE, 1.1 * SCALE, (sy + (facingY ~= 0 and step * 2 or 0)) * SCALE),
+				Position = w(cx - facingX * step, cy - facingY * step, 0.55 + row * 1.1),
+				Color = row % 2 == 0 and Color3.fromHex("1e293b") or Color3.fromHex("334155"),
+				Parent = folder,
+			})
+		end
+		-- the crowd: dots of colour on the rows
+		local rng = Random.new(cx * 1000 + cy)
+		for k = 1, 90 do
+			local row = rng:NextInteger(0, 7)
+			local along = rng:NextNumber(-0.5, 0.5)
+			local px = cx - facingX * row * 1.2 + (facingX == 0 and along * sx or 0)
+			local py = cy - facingY * row * 1.2 + (facingY == 0 and along * sy or 0)
+			local col = rng:NextNumber() < 0.45 and color(kitUs.shirt) or rng:NextNumber() < 0.5 and color(kitThem.shirt) or Color3.fromHSV(rng:NextNumber(), 0.3, 0.9)
+			part({ Size = Vector3.new(0.5 * SCALE, 0.7 * SCALE, 0.5 * SCALE), Position = w(px, py, 1.45 + row * 1.1), Color = col, Parent = folder })
+		end
+	end
+	stand(CXm, -9, PITCH_W + 10, 3, 0, 1)
+	stand(-7, 50, 3, 120, 1, 0)
+	stand(PITCH_W + 7, 50, 3, 120, -1, 0)
+	folder.Parent = workspace
+	return folder
+end
+
+-- ─────────────────────────────────────────────────────────── the figures ──
+-- A man in kit: legs, shorts, shirt, arms, head. Blocky, Roblox-style.
+local LEG_H, HIP_Y, SHORTS_H, TORSO_H, HEAD_R = 0.86, 0.86, 0.26, 0.6, 0.14
+
+local function newFigure(folder)
+	local f = { parts = {} }
+	local function add(name, size, shape)
+		local p = part({ Name = name, Size = size * SCALE, Parent = folder })
+		if shape then
+			p.Shape = shape
+		end
+		f.parts[name] = p
+		return p
+	end
+	add("legL", Vector3.new(0.17, LEG_H, 0.17))
+	add("legR", Vector3.new(0.17, LEG_H, 0.17))
+	add("shorts", Vector3.new(0.44, SHORTS_H, 0.26))
+	add("torso", Vector3.new(0.46, TORSO_H, 0.26))
+	add("armL", Vector3.new(0.13, 0.6, 0.13))
+	add("armR", Vector3.new(0.13, 0.6, 0.13))
+	add("head", Vector3.new(HEAD_R * 2, HEAD_R * 2, HEAD_R * 2), Enum.PartType.Ball)
+	add("hair", Vector3.new(HEAD_R * 2.05, HEAD_R * 0.9, HEAD_R * 2.05))
+	f.parts.hair.Color = Color3.fromRGB(40, 28, 20)
+	local tag = make("BillboardGui", {
+		Size = UDim2.fromOffset(120, 20),
+		StudsOffset = Vector3.new(0, 1.6, 0),
+		AlwaysOnTop = true,
+		MaxDistance = 160,
+		LightInfluence = 0,
+		Parent = f.parts.head,
+	})
+	f.tag = label("", 14, Color3.new(1, 1, 1), BODY_BOLD, { Size = UDim2.fromScale(1, 1), TextStrokeTransparency = 0.4, Parent = tag })
+	f.pos = nil
+	f.yaw = 0
+	f.stride = 0
+	f.side = nil
+	return f
+end
+
+local function dress(f, kit, shorts, skin)
+	local shirt = color(kit.shirt)
+	local trim = color(kit.trim, shirt)
+	f.parts.torso.Color = shirt
+	f.parts.armL.Color = shirt
+	f.parts.armR.Color = shirt
+	f.parts.shorts.Color = shorts or trim
+	f.parts.legL.Color = shirt:Lerp(Color3.new(1, 1, 1), 0.15)
+	f.parts.legR.Color = shirt:Lerp(Color3.new(1, 1, 1), 0.15)
+	f.parts.head.Color = skin
+end
+
+local function hideFigure(f)
+	for _, p in pairs(f.parts) do
+		p.Transparency = 1
+	end
+	f.tag.Visible = false
+	f.hidden = true
+end
+
+local function showFigure(f)
+	for name, p in pairs(f.parts) do
+		p.Transparency = 0
+	end
+	f.tag.Visible = true
+	f.hidden = false
+end
+
+-- Pose a figure: feet at `pos` (world), facing `yaw`, legs by `stride`, `roll` to dive.
+local function pose(f, pos, yaw, k, roll, list, cfs)
+	local root = CFrame.new(pos) * CFrame.Angles(0, yaw, 0) * CFrame.Angles(0, 0, roll)
+	local swing = math.sin(f.stride) * 0.75 * k
+	local function put(name, cf)
+		table.insert(list, f.parts[name])
+		table.insert(cfs, cf)
+	end
+	local s = SCALE
+	put("legL", root * CFrame.new(-0.11 * s, HIP_Y * s, 0) * CFrame.Angles(swing, 0, 0) * CFrame.new(0, -LEG_H / 2 * s, 0))
+	put("legR", root * CFrame.new(0.11 * s, HIP_Y * s, 0) * CFrame.Angles(-swing, 0, 0) * CFrame.new(0, -LEG_H / 2 * s, 0))
+	put("shorts", root * CFrame.new(0, (HIP_Y + 0.02) * s, 0))
+	local torsoY = HIP_Y + SHORTS_H / 2 + TORSO_H / 2
+	put("torso", root * CFrame.new(0, torsoY * s, 0))
+	local shoulderY = torsoY + TORSO_H / 2 - 0.05
+	put("armL", root * CFrame.new(-0.3 * s, shoulderY * s, 0) * CFrame.Angles(-swing * 0.8, 0, -0.08) * CFrame.new(0, -0.3 * s, 0))
+	put("armR", root * CFrame.new(0.3 * s, shoulderY * s, 0) * CFrame.Angles(swing * 0.8, 0, 0.08) * CFrame.new(0, -0.3 * s, 0))
+	local headY = torsoY + TORSO_H / 2 + HEAD_R + 0.02
+	put("head", root * CFrame.new(0, headY * s, 0))
+	put("hair", root * CFrame.new(0, (headY + HEAD_R * 0.55) * s, 0.02 * s))
+end
+
+-- ─────────────────────────────────────────────────────────── the camera ──
+local function chanceCamera(f, aspect, vfov)
+	local cam = f.camera
+	local facing = cam.facing or "up"
+	local cx, cy = (cam.x1 + cam.x2) / 2, (cam.y1 + cam.y2) / 2
+	local across = facing == "up" and (cam.x2 - cam.x1) or (cam.y2 - cam.y1)
+	local down = facing == "up" and (cam.y2 - cam.y1) or (cam.x2 - cam.x1)
+	local look = facing == "up" and Vector3.new(0, 0, -1) or facing == "right" and Vector3.new(-1, 0, 0) or Vector3.new(1, 0, 0)
+	local elev = math.rad(52)
+	local hfov = 2 * math.atan(math.tan(math.rad(vfov) / 2) * aspect)
+	local dist = math.max((across * 0.5) / math.tan(hfov / 2), (down * 0.5 * math.sin(elev)) / math.tan(math.rad(vfov) / 2))
+	dist = math.max(dist * 1.08, 9)
+	local target = w(cx, cy, 0)
+	local pos = target - look * (dist * math.cos(elev) * SCALE) + Vector3.new(0, dist * math.sin(elev) * SCALE, 0)
+	return CFrame.lookAt(pos, target)
+end
+
+local function dribbleCamera(you)
+	local target = w(you.x, you.y - 9, 0)
+	local pos = w(you.x, you.y + 9, 7.5)
+	return CFrame.lookAt(pos, target)
+end
+
+local function broadcastCamera(t)
+	local target = w(PITCH_W / 2 + math.sin(t * 0.07) * 10, 35, 0)
+	local pos = w(PITCH_W + 30, 45 + math.sin(t * 0.05) * 6, 24)
+	return CFrame.lookAt(pos, target)
+end
+
+-- ─────────────────────────────────────────────────────────── the screen ──
+local C = {
+	panel = Color3.fromHex("0b1220"),
+	panel2 = Color3.fromHex("111a2e"),
+	text = Color3.new(1, 1, 1),
+	dim = Color3.fromHex("b6c2d4"),
+	good = Color3.fromHex("34d399"),
+	bad = Color3.fromHex("f87171"),
+	gold = Color3.fromHex("fde047"),
+	ink = Color3.fromHex("0b1220"),
+	button = Color3.fromHex("1e293b"),
+}
+
+local function bigButton(text, parent, props)
+	local b = make("TextButton", {
+		Size = UDim2.fromOffset(150, 52),
+		BackgroundColor3 = C.gold,
+		BorderSizePixel = 0,
+		AutoButtonColor = true,
+		Text = text,
+		TextSize = 20,
+		Font = TITLE_FONT,
+		TextColor3 = C.ink,
+		Parent = parent,
+	}, {
+		make("UICorner", { CornerRadius = UDim.new(0, 12) }),
+		make("UIStroke", { Color = C.ink, Thickness = 3, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }),
+		make("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(190, 190, 190)) }),
+	})
+	for k, v in pairs(props or {}) do
+		b[k] = v
+	end
+	return b
+end
+
+local function buildHud()
+	local gui = make("ScreenGui", { Name = "MatchHud", ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = 5, Parent = player:WaitForChild("PlayerGui") })
+	local h = { gui = gui }
+	-- the score
+	local bar = make("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 44), Size = UDim2.fromOffset(300, 40), BackgroundColor3 = C.panel, BackgroundTransparency = 0.1, BorderSizePixel = 0, Parent = gui }, { make("UICorner", { CornerRadius = UDim.new(0, 8) }) })
+	h.score = label("", 22, C.text, TITLE_FONT, { Size = UDim2.new(1, -64, 1, 0), Position = UDim2.fromOffset(8, 0), Parent = bar })
+	h.minute = label("", 20, C.gold, TITLE_FONT, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 0), Size = UDim2.new(0, 56, 1, 0), TextXAlignment = Enum.TextXAlignment.Right, Parent = bar })
+	local eBack = make("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 88), Size = UDim2.fromOffset(220, 10), BackgroundColor3 = Color3.fromHex("1e293b"), BorderSizePixel = 0, Parent = gui }, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	h.energy = make("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = C.good, BorderSizePixel = 0, Parent = eBack }, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	-- the big word (GOAL!, SAVED)
+	h.banner = label("", 64, C.gold, TITLE_FONT, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.36), Size = UDim2.new(1, 0, 0, 80), TextStrokeTransparency = 0.2, Visible = false, Parent = gui })
+	-- the chance's commentary
+	h.feed = make("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 12, 1, -12), Size = UDim2.new(0.6, 0, 0, 84), BackgroundTransparency = 1, Parent = gui }, {
+		make("UIListLayout", { VerticalAlignment = Enum.VerticalAlignment.Bottom, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) }),
+	})
+	h.feedLines = {}
+	for i = 1, 3 do
+		h.feedLines[i] = label("", 16, C.text, BODY_BOLD, { LayoutOrder = i, Size = UDim2.new(1, 0, 0, 24), TextXAlignment = Enum.TextXAlignment.Left, TextStrokeTransparency = 0.35, Parent = h.feed })
+	end
+	-- the buttons on the right
+	h.side = make("Frame", { AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -12, 1, -12), Size = UDim2.fromOffset(150, 260), BackgroundTransparency = 1, Parent = gui }, {
+		make("UIListLayout", { VerticalAlignment = Enum.VerticalAlignment.Bottom, HorizontalAlignment = Enum.HorizontalAlignment.Right, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8) }),
+	})
+	h.power = bigButton("⚡ POWER", h.side, { LayoutOrder = 1 })
+	h.call = bigButton("CALL FOR IT", h.side, { LayoutOrder = 2 })
+	h.sprint = bigButton("SPRINT", h.side, { LayoutOrder = 3 })
+	local knocks = make("Frame", { LayoutOrder = 4, Size = UDim2.fromOffset(150, 52), BackgroundTransparency = 1, Parent = h.side })
+	h.knocks = knocks
+	h.knockL = bigButton("◀ KNOCK", knocks, { Size = UDim2.new(0.5, -4, 1, 0) })
+	h.knockR = bigButton("KNOCK ▶", knocks, { Size = UDim2.new(0.5, -4, 1, 0), Position = UDim2.new(0.5, 4, 0, 0) })
+	-- the ninety minutes: the commentary panel
+	h.sim = make("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 108), Size = UDim2.new(1, -24, 1, -120), BackgroundTransparency = 1, Visible = false, Parent = gui }, {
+		make("UISizeConstraint", { MaxSize = Vector2.new(560, math.huge) }),
+	})
+	local logBox = make("Frame", { Size = UDim2.new(1, 0, 1, -136), BackgroundColor3 = C.panel, BackgroundTransparency = 0.12, BorderSizePixel = 0, Parent = h.sim }, {
+		make("UICorner", { CornerRadius = UDim.new(0, 10) }),
+		make("UIPadding", { PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10) }),
+		make("UIListLayout", { VerticalAlignment = Enum.VerticalAlignment.Bottom, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4) }),
+	})
+	h.logLines = {}
+	for i = 1, 8 do
+		h.logLines[i] = label("", 16, C.text, BODY_FONT, { LayoutOrder = i, Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, TextXAlignment = Enum.TextXAlignment.Left, Parent = logBox })
+	end
+	local controls = make("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, 0), Size = UDim2.new(1, 0, 0, 128), BackgroundTransparency = 1, Parent = h.sim }, {
+		make("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
+	})
+	local function row(order)
+		return make("Frame", { LayoutOrder = order, Size = UDim2.new(1, 0, 0, 38), BackgroundTransparency = 1, Parent = controls }, {
+			make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
+		})
+	end
+	local function chip(parent, text, order)
+		return make("TextButton", { LayoutOrder = order, Size = UDim2.new(0.25, -6, 1, 0), BackgroundColor3 = C.button, BorderSizePixel = 0, AutoButtonColor = true, Text = text, TextSize = 15, Font = BODY_BOLD, TextColor3 = C.text, Parent = parent }, {
+			make("UICorner", { CornerRadius = UDim.new(0, 8) }),
+		})
+	end
+	local r1 = row(1)
+	label("Energy", 14, C.dim, BODY_BOLD, { LayoutOrder = 0, Size = UDim2.new(0.25, -6, 1, 0), TextXAlignment = Enum.TextXAlignment.Left, Parent = r1 })
+	h.modes = { low = chip(r1, "Low", 1), medium = chip(r1, "Medium", 2), high = chip(r1, "High", 3) }
+	local r2 = row(2)
+	label("Style", 14, C.dim, BODY_BOLD, { LayoutOrder = 0, Size = UDim2.new(0.25, -6, 1, 0), TextXAlignment = Enum.TextXAlignment.Left, Parent = r2 })
+	h.styles = { defensive = chip(r2, "Defend", 1), balanced = chip(r2, "Balanced", 2), attacking = chip(r2, "Attack", 3) }
+	local r3 = row(3)
+	label("Speed", 14, C.dim, BODY_BOLD, { LayoutOrder = 0, Size = UDim2.new(0.25, -6, 1, 0), TextXAlignment = Enum.TextXAlignment.Left, Parent = r3 })
+	h.speed = chip(r3, "1×", 1)
+	-- the pause card (half time, full time, coming on)
+	h.pause = make("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(320, 190), BackgroundColor3 = C.panel2, BorderSizePixel = 0, Visible = false, ZIndex = 5, Parent = gui }, {
+		make("UICorner", { CornerRadius = UDim.new(0, 12) }),
+		make("UIStroke", { Color = C.gold, Thickness = 2 }),
+	})
+	h.pauseLabel = label("", 26, C.text, TITLE_FONT, { Position = UDim2.fromOffset(0, 14), Size = UDim2.new(1, 0, 0, 34), ZIndex = 6, Parent = h.pause })
+	h.pauseGo = bigButton("", h.pause, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 62), Size = UDim2.new(1, -40, 0, 52), ZIndex = 6 })
+	h.kib = bigButton("", h.pause, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 122), Size = UDim2.new(1, -40, 0, 44), BackgroundColor3 = C.button, TextColor3 = C.text, ZIndex = 6 })
+	-- the strike screen
+	h.strike = make("TextButton", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromHex("4a71b8"), AutoButtonColor = false, Text = "", Visible = false, ZIndex = 10, Parent = gui }, {
+		make("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromHex("4a71b8"), Color3.fromHex("a8c4e8")) }),
+	})
+	make("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.fromScale(1, 0.3), BackgroundColor3 = GRASS_A, BorderSizePixel = 0, ZIndex = 10, Parent = h.strike })
+	h.strikeHead = label("", 34, C.text, TITLE_FONT, { Position = UDim2.fromOffset(0, 50), Size = UDim2.new(1, 0, 0, 40), ZIndex = 12, TextStrokeTransparency = 0.5, Parent = h.strike })
+	h.strikeSub = label("Tap where you want to strike the ball", 16, C.text, BODY_BOLD, { Position = UDim2.fromOffset(0, 90), Size = UDim2.new(1, 0, 0, 22), ZIndex = 12, Parent = h.strike })
+	h.shadow = make("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.6, BorderSizePixel = 0, ZIndex = 11, Parent = h.strike }, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	h.ball = make("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, ZIndex = 12, Parent = h.strike }, {
+		make("UICorner", { CornerRadius = UDim.new(1, 0) }),
+		make("UIStroke", { Color = Color3.fromHex("111827"), Thickness = 3 }),
+	})
+	h.ballFace = label("⚽", 10, C.text, BODY_FONT, { Size = UDim2.fromScale(1.12, 1.12), Position = UDim2.fromScale(-0.06, -0.06), TextScaled = true, ZIndex = 13, Parent = h.ball })
+	h.spark = make("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.fromOffset(18, 18), BackgroundColor3 = C.gold, BorderSizePixel = 0, Visible = false, ZIndex = 15, Parent = h.ball }, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	h.spot = make("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = C.good, BorderSizePixel = 0, Visible = false, ZIndex = 15, Parent = h.ball }, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	local ringBack = make("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 1, -70), Size = UDim2.fromOffset(240, 12), BackgroundColor3 = Color3.fromHex("1e293b"), BorderSizePixel = 0, ZIndex = 12, Parent = h.strike }, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	h.ringBack = ringBack
+	h.ring = make("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = C.gold, BorderSizePixel = 0, ZIndex = 13, Parent = ringBack }, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	local powBack = make("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -24, 0.5, 0), Size = UDim2.fromOffset(18, 220), BackgroundColor3 = Color3.fromHex("1e293b"), BorderSizePixel = 0, ZIndex = 12, Parent = h.strike }, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	h.pow = make("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.fromScale(1, 0.5), BorderSizePixel = 0, ZIndex = 13, Parent = powBack }, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	h.powText = label("", 16, C.text, TITLE_FONT, { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, -6), Size = UDim2.fromOffset(60, 20), ZIndex = 13, Parent = powBack })
+	h.verdict = label("", 40, C.gold, TITLE_FONT, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 1, -130), Size = UDim2.new(1, 0, 0, 46), ZIndex = 14, TextStrokeTransparency = 0.3, Parent = h.strike })
+	-- full time
+	h.final = make("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(340, 230), BackgroundColor3 = C.panel2, BorderSizePixel = 0, Visible = false, ZIndex = 20, Parent = gui }, {
+		make("UICorner", { CornerRadius = UDim.new(0, 12) }),
+		make("UIStroke", { Color = C.gold, Thickness = 2 }),
+	})
+	h.finalTitle = label("FULL TIME", 30, C.gold, TITLE_FONT, { Position = UDim2.fromOffset(0, 12), Size = UDim2.new(1, 0, 0, 36), ZIndex = 21, Parent = h.final })
+	h.finalScore = label("", 30, C.text, TITLE_FONT, { Position = UDim2.fromOffset(0, 50), Size = UDim2.new(1, 0, 0, 36), ZIndex = 21, Parent = h.final })
+	h.finalLine = label("", 16, C.dim, BODY_BOLD, { Position = UDim2.fromOffset(12, 92), Size = UDim2.new(1, -24, 0, 44), ZIndex = 21, Parent = h.final })
+	h.finalGo = bigButton("CONTINUE", h.final, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 156), Size = UDim2.new(1, -40, 0, 52), ZIndex = 21 })
+	-- getting ready
+	h.cover = make("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = C.panel, ZIndex = 30, Parent = gui })
+	h.coverText = label("Getting the pitch ready…", 26, C.text, TITLE_FONT, { Size = UDim2.fromScale(1, 1), ZIndex = 31, Parent = h.cover })
+	return h
+end
+
+-- ─────────────────────────────────────────────────────────── the match ──
+local function int(n)
+	return math.floor((tonumber(n) or 0) + 0.5)
+end
+
+local function obj(t, keys)
+	return Js.O(t, keys)
+end
+
+local function vec(x, y)
+	return obj({ x = x, y = y }, { "x", "y" })
+end
+
+-- Where a point on the screen lands on the grass, in pitch metres.
+local function groundAt(camera, sx, sy)
+	local ray = camera:ScreenPointToRay(sx, sy)
+	if math.abs(ray.Direction.Y) < 1e-4 then
+		return nil
+	end
+	local t = -ray.Origin.Y / ray.Direction.Y
+	if t < 0 then
+		return nil
+	end
+	local p = ray.Origin + ray.Direction * t
+	return p.X / SCALE, p.Z / SCALE
+end
+
+--[[
+  Plays one match. `remote` is ReplicatedStorage.Remotes.Match.
+  Returns the next screen's JSON from the server (or nil if it failed).
+]]
+function Match.play(remote)
+	loadCode()
+	local camera = workspace.CurrentCamera
+	local hud = buildHud()
+	local okStart, setupJson = pcall(function()
+		return remote:InvokeServer("start")
+	end)
+	if not okStart or type(setupJson) ~= "string" then
+		hud.gui:Destroy()
+		warn("match: could not start:", setupJson)
+		return nil
+	end
+	local m
+	local okMount, err = pcall(function()
+		local setup = Js.JSON.parse(setupJson)
+		m = M.startMatch(setup)
+	end)
+	if not okMount then
+		hud.gui:Destroy()
+		warn("match: could not mount:", err)
+		return remote:InvokeServer("abandon")
+	end
+	-- for the smoke test's robot (roblox/tools/smoke-client.mjs); nothing reads it in the game
+	Match.current, Match.hud = m, hud
+	local kits = M.matchKits(m)
+	local world = buildStadium(kits.us, kits.them)
+	local figFolder = Instance.new("Folder")
+	figFolder.Name = "Figures"
+	figFolder.Parent = world
+	local ball = part({ Shape = Enum.PartType.Ball, Size = Vector3.new(0.34, 0.34, 0.34) * SCALE, Color = Color3.new(1, 1, 1), Material = Enum.Material.SmoothPlastic, Parent = world })
+	local ballShadow = part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.04, 0.4 * SCALE, 0.4 * SCALE), Color = Color3.new(0, 0, 0), Transparency = 0.55, Parent = world })
+	local arrow = part({ Size = Vector3.new(0.3 * SCALE, 0.05, 1), Color = Color3.fromHex("fde047"), Material = Enum.Material.Neon, Transparency = 1, Parent = world })
+	local youRing = part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.05, 1.3 * SCALE, 1.3 * SCALE), Color = Color3.fromHex("fde047"), Material = Enum.Material.Neon, Transparency = 0.35, Parent = world })
+	local targetRing = part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.05, 1.6 * SCALE, 1.6 * SCALE), Color = Color3.fromHex("34d399"), Material = Enum.Material.Neon, Transparency = 1, Parent = world })
+
+	-- the sky and light of a match day (put back afterwards)
+	local saved = { ClockTime = Lighting.ClockTime, Brightness = Lighting.Brightness }
+	Lighting.ClockTime = 15
+	Lighting.Brightness = 2.2
+	local camSaved = { type = camera.CameraType, fov = camera.FieldOfView }
+	camera.CameraType = Enum.CameraType.Scriptable
+	camera.FieldOfView = 50
+	-- your own Roblox character waits off the pitch
+	local char = player.Character
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	local wasAnchored = hrp and hrp.Anchored
+	if hrp then
+		hrp.Anchored = true
+	end
+	local controls
+	pcall(function()
+		controls = require(player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")):GetControls()
+	end)
+
+	local figures = {}
+	local skinFor = {}
+	local function skinOf(id)
+		if not skinFor[id] then
+			local h = 0
+			for i = 1, #id do
+				h = (h * 31 + string.byte(id, i)) % 9973
+			end
+			skinFor[id] = SKIN[h % #SKIN + 1]
+		end
+		return skinFor[id]
+	end
+
+	-- input state
+	local sprintHeld, sprintButton = false, false
+	local pointer = nil -- { kind, start = Vector2, startPitch = {x,y}, base }
+	local strike = nil
+	local lastPhase = ""
+	local finished = false
+	local failure = nil
+	local clock = 0
+
+	local function safe(fn)
+		local ok, e = pcall(fn)
+		if not ok then
+			failure = e
+		end
+	end
+
+	-- the strike screen's taps
+	hud.strike.InputBegan:Connect(function(input)
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then
+			return
+		end
+		if not strike then
+			return
+		end
+		local inset = GuiService:GetGuiInset()
+		local px, py = input.Position.X + inset.X, input.Position.Y + inset.Y
+		local c = hud.ball.AbsolutePosition + hud.ball.AbsoluteSize / 2
+		local r = hud.ball.AbsoluteSize.X / 2
+		if r <= 0 then
+			return
+		end
+		safe(function()
+			S.strikeTap(strike, (px - c.X) / r, (py - c.Y) / r)
+		end)
+	end)
+
+	-- the pitch: drag to aim, drag to nudge the run-up, swipe to curve, tap a team-mate
+	local inputConns = {}
+	table.insert(inputConns, UserInputService.InputBegan:Connect(function(input, processed)
+		if input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.RightShift then
+			sprintHeld = true
+		end
+		if input.KeyCode == Enum.KeyCode.Q or input.KeyCode == Enum.KeyCode.E then
+			safe(function()
+				M.dribbleBurst(m, input.KeyCode == Enum.KeyCode.Q and -1 or 1)
+			end)
+		end
+		if processed or finished then
+			return
+		end
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then
+			return
+		end
+		if pointer then
+			return
+		end
+		local x, y = groundAt(camera, input.Position.X, input.Position.Y)
+		if not x then
+			return
+		end
+		pointer = { input = input, sx = input.Position.X, sy = input.Position.Y, x = x, y = y, phase = m.phase }
+		safe(function()
+			if m.phase == "aim" then
+				M.pointerDown(m, vec(x, y))
+			elseif m.phase == "runup" and m.runup then
+				pointer.base = m.runup.nudgeM
+			elseif m.phase == "tdDribble" then
+				M.dribblePass(m, vec(x, y))
+			end
+		end)
+	end))
+	table.insert(inputConns, UserInputService.InputChanged:Connect(function(input)
+		if not pointer then
+			return
+		end
+		if input.UserInputType ~= Enum.UserInputType.MouseMovement and input ~= pointer.input then
+			return
+		end
+		local x, y = groundAt(camera, input.Position.X, input.Position.Y)
+		if not x then
+			return
+		end
+		pointer.lx, pointer.ly = x, y
+		safe(function()
+			if m.phase == "aim" then
+				M.pointerMove(m, vec(x, y))
+			elseif m.phase == "runup" and pointer.base ~= nil then
+				local cam = m.camera
+				local width = (m.facing == "up") and (cam.x2 - cam.x1) or (cam.y2 - cam.y1)
+				local along = (m.facing == "up") and (x - pointer.x) or (y - pointer.y)
+				M.runupNudge(m, along / math.max(1, width), pointer.base)
+			end
+		end)
+	end))
+	table.insert(inputConns, UserInputService.InputEnded:Connect(function(input)
+		if input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.RightShift then
+			sprintHeld = false
+		end
+		if not pointer or (input ~= pointer.input and input.UserInputType ~= Enum.UserInputType.MouseButton1) then
+			return
+		end
+		local p = pointer
+		pointer = nil
+		safe(function()
+			if m.phase == "aim" then
+				M.pointerUp(m)
+			elseif m.phase == "flight" and p.lx then
+				local dx, dy = p.lx - p.x, p.ly - p.y
+				if math.abs(dx) + math.abs(dy) > 0.8 then
+					M.curveSwipe(m, dx, dy)
+				end
+			end
+		end)
+	end))
+
+	-- the buttons
+	hud.power.Activated:Connect(function()
+		safe(function()
+			M.armPowerShot(m, not m.powerArmed)
+		end)
+	end)
+	hud.call.Activated:Connect(function()
+		safe(function()
+			local said = M.callForBall(m)
+			if said then
+				hud.banner.Text = said
+			end
+		end)
+	end)
+	hud.sprint.MouseButton1Down:Connect(function()
+		sprintButton = true
+	end)
+	hud.sprint.MouseButton1Up:Connect(function()
+		sprintButton = false
+	end)
+	hud.knockL.Activated:Connect(function()
+		safe(function()
+			M.dribbleBurst(m, -1)
+		end)
+	end)
+	hud.knockR.Activated:Connect(function()
+		safe(function()
+			M.dribbleBurst(m, 1)
+		end)
+	end)
+	for mode, b in pairs(hud.modes) do
+		b.Activated:Connect(function()
+			safe(function()
+				M.setEnergyMode(m, mode)
+			end)
+		end)
+	end
+	for style, b in pairs(hud.styles) do
+		b.Activated:Connect(function()
+			safe(function()
+				M.setPlaystyle(m, style)
+			end)
+		end)
+	end
+	hud.speed.Activated:Connect(function()
+		safe(function()
+			M.cycleSpeed(m)
+		end)
+	end)
+	hud.pauseGo.Activated:Connect(function()
+		safe(function()
+			M.continuePause(m)
+		end)
+	end)
+	hud.kib.Activated:Connect(function()
+		safe(function()
+			M.drinkKib(m)
+		end)
+	end)
+
+	-- ─────────────────────────────────────────── one frame ──
+	local function moveDir()
+		if not controls then
+			return 0, 0
+		end
+		local mv = controls:GetMoveVector()
+		return mv.X, mv.Z
+	end
+
+	local function stepInput()
+		local mx, mz = moveDir()
+		local ctl = M.controlsOf(m)
+		if ctl.steer then
+			-- the stick, turned into pitch directions by where the camera looks
+			local look = camera.CFrame.LookVector
+			local fwd = Vector3.new(look.X, 0, look.Z)
+			if fwd.Magnitude < 1e-3 then
+				fwd = Vector3.new(0, 0, -1)
+			end
+			fwd = fwd.Unit
+			local right = Vector3.new(-fwd.Z, 0, fwd.X)
+			local d = right * mx + fwd * (-mz)
+			M.steerRun(m, d.X, d.Z, sprintHeld or sprintButton)
+		elseif ctl.dribble then
+			M.dribbleStick(m, mx, -mz)
+		end
+	end
+
+	local function drawFrame(f, dt)
+		local aspect = camera.ViewportSize.X / math.max(1, camera.ViewportSize.Y)
+		-- the camera
+		local want
+		if f.phase == "feed" then
+			want = broadcastCamera(clock)
+		elseif f.phase == "tdDribble" then
+			local you = f.bodies[1]
+			want = dribbleCamera(you)
+		else
+			want = chanceCamera(f, aspect, camera.FieldOfView)
+		end
+		local a = 1 - math.exp(-5 * dt)
+		if lastPhase ~= f.phase and (f.phase == "aim" or f.phase == "tdDribble") then
+			a = 1 -- a new chance: cut, as the website does
+		end
+		camera.CFrame = camera.CFrame:Lerp(want, a)
+
+		-- the people
+		local seen = {}
+		local parts, cfs = {}, {}
+		local n = Js.alen(f.bodies)
+		local ballPos = f.ball
+		for i = 1, n do
+			local b = f.bodies[i]
+			seen[b.id] = true
+			local fig = figures[b.id]
+			if not fig then
+				fig = newFigure(figFolder)
+				figures[b.id] = fig
+			end
+			if fig.side ~= b.side then
+				fig.side = b.side
+				local kit = (b.side == "you" or b.side == "mate") and kits.us or b.side == "keeper" and kits.keeper or kits.them
+				dress(fig, kit, nil, skinOf(b.id))
+			end
+			if fig.hidden then
+				showFigure(fig)
+			end
+			fig.tag.Text = b.side == "you" and "YOU" or (b.name or "")
+			fig.tag.TextColor3 = b.side == "you" and C.gold or Color3.new(1, 1, 1)
+			local pos = w(b.x, b.y, 0)
+			local speed = 0
+			if fig.pos then
+				local d = (pos - fig.pos)
+				speed = d.Magnitude / SCALE / math.max(dt, 1e-3)
+				if d.Magnitude > 0.02 and speed < 20 then
+					fig.yaw = math.atan2(-d.X, -d.Z)
+				elseif ballPos and speed < 0.3 then
+					local to = w(ballPos.x, ballPos.y, 0) - pos
+					if to.Magnitude > 0.5 then
+						local want2 = math.atan2(-to.X, -to.Z)
+						fig.yaw = fig.yaw + math.atan2(math.sin(want2 - fig.yaw), math.cos(want2 - fig.yaw)) * math.min(1, dt * 6)
+					end
+				end
+				if speed > 20 then
+					speed = 0 -- a new chance put him somewhere else
+				end
+			end
+			fig.pos = pos
+			local k = math.clamp(speed / 6, 0, 1)
+			fig.stride += dt * (4 + speed * 1.6) * (k > 0.05 and 1 or 0)
+			local roll = 0
+			if b.side == "keeper" and b.dive then
+				roll = -math.clamp(b.dive / 1.6, -1, 1) * 1.25
+			end
+			pose(fig, pos, fig.yaw, k, roll, parts, cfs)
+			if b.side == "you" then
+				youRing.CFrame = CFrame.new(w(b.x, b.y, 0.02)) * CFrame.Angles(0, 0, math.pi / 2)
+			end
+		end
+		for id, fig in pairs(figures) do
+			if not seen[id] and not fig.hidden then
+				hideFigure(fig)
+			end
+		end
+		if #parts > 0 then
+			workspace:BulkMoveTo(parts, cfs, Enum.BulkMoveMode.FireCFrameChanged)
+		end
+		-- the ball
+		if ballPos then
+			ball.Transparency = 0
+			ball.CFrame = CFrame.new(w(ballPos.x, ballPos.y, 0.17 + (ballPos.z or 0)))
+			ballShadow.Transparency = 0.55
+			ballShadow.CFrame = CFrame.new(w(ballPos.x, ballPos.y, 0.015)) * CFrame.Angles(0, 0, math.pi / 2)
+		else
+			ball.Transparency = 1
+			ballShadow.Transparency = 1
+		end
+		-- the aim arrow while you drag
+		if f.aim and ballPos then
+			local d = f.aim.dir
+			local len = math.sqrt(d.x * d.x + d.y * d.y)
+			if len > 1e-3 then
+				local L = 2 + f.aim.power * 14
+				local ux, uy = d.x / len, d.y / len
+				local from = w(ballPos.x, ballPos.y, 0.03)
+				local to = w(ballPos.x + ux * L, ballPos.y + uy * L, 0.03)
+				arrow.Size = Vector3.new(0.3 * SCALE, 0.05, L * SCALE)
+				arrow.CFrame = CFrame.lookAt((from + to) / 2, to)
+				arrow.Color = f.aim.power < 0.4 and C.good or f.aim.power < 0.75 and C.gold or C.bad
+				arrow.Transparency = 0.1
+			end
+		else
+			arrow.Transparency = 1
+		end
+		if f.passTarget and f.phase == "aim" then
+			targetRing.Transparency = 0.4
+			targetRing.CFrame = CFrame.new(w(f.passTarget.x, f.passTarget.y, 0.02)) * CFrame.Angles(0, 0, math.pi / 2)
+		else
+			targetRing.Transparency = 1
+		end
+
+		-- the screen
+		local sc = f.score
+		local home = sc.home
+		hud.score.Text = home and string.format("%s  %d – %d  %s", sc.usName, int(sc.us), int(sc.them), sc.themName) or string.format("%s  %d – %d  %s", sc.themName, int(sc.them), int(sc.us), sc.usName)
+		if f.shootout then
+			hud.minute.Text = string.format("P %d–%d", int(f.shootout.us), int(f.shootout.them))
+		else
+			hud.minute.Text = tostring(f.minute) .. "'"
+		end
+		hud.energy.Size = UDim2.fromScale(math.clamp(f.energy / 100, 0, 1), 1)
+		hud.energy.BackgroundColor3 = f.energy < 35 and C.bad or f.energy < 65 and C.gold or C.good
+		hud.banner.Visible = f.banner ~= nil
+		if f.banner then
+			hud.banner.Text = f.banner
+		end
+		local feedN = Js.alen(f.feed)
+		for i = 1, 3 do
+			local idx = feedN - 3 + i
+			hud.feedLines[i].Text = idx >= 1 and f.feed[idx] or ""
+		end
+		hud.feed.Visible = f.phase ~= "feed"
+		local ctl = f.controls
+		hud.power.Visible = ctl.powerShot
+		hud.power.BackgroundColor3 = ctl.powerArmed and C.bad or C.gold
+		hud.call.Visible = ctl.callForIt
+		hud.sprint.Visible = ctl.steer and UserInputService.TouchEnabled
+		hud.knocks.Visible = ctl.dribble
+		-- the ninety minutes
+		hud.sim.Visible = f.phase == "feed"
+		if f.phase == "feed" then
+			local logN = Js.alen(f.log)
+			for i = 1, 8 do
+				local idx = logN - 8 + i
+				local l = idx >= 1 and f.log[idx] or nil
+				local t = hud.logLines[i]
+				if l then
+					t.Text = (l.minute and (tostring(l.minute) .. "'  ") or "      ") .. l.text
+					t.TextColor3 = (l.tone == "goal" and C.good) or (l.tone == "oppGoal" and C.bad) or (l.tone == "you" and C.gold) or (l.tone == "period" and C.dim) or C.text
+					t.Font = (l.tone == "goal" or l.tone == "oppGoal") and BODY_BOLD or BODY_FONT
+				else
+					t.Text = ""
+				end
+			end
+			for mode, b in pairs(hud.modes) do
+				b.BackgroundColor3 = f.energyMode == mode and C.gold or C.button
+				b.TextColor3 = f.energyMode == mode and C.ink or C.text
+			end
+			for style, b in pairs(hud.styles) do
+				b.BackgroundColor3 = f.playstyle == style and C.gold or C.button
+				b.TextColor3 = f.playstyle == style and C.ink or C.text
+			end
+			hud.speed.Text = tostring(f.speed) .. "×"
+		end
+		hud.pause.Visible = f.pause ~= nil
+		if f.pause then
+			hud.pauseLabel.Text = f.pause.label or (f.pause.halfTime and "Half time" or "")
+			hud.pauseGo.Text = string.upper(f.pause.cta)
+			hud.kib.Visible = f.pause.halfTime and f.pause.kib > 0 and f.energy < 100
+			hud.kib.Text = string.format("DRINK A KIB CAN (%d LEFT)", int(f.pause.kib))
+		end
+		-- the strike screen
+		hud.strike.Visible = strike ~= nil
+		if strike then
+			local v = S.strikeView(strike)
+			local size = hud.strike.AbsoluteSize
+			local A = math.min(size.X, size.Y) * 0.7
+			local r = A * 0.26
+			local cx = size.X / 2 + v.ballX * A
+			local cy = size.Y * 0.52 + v.ballY * A
+			hud.ball.Size = UDim2.fromOffset(r * 2, r * 2)
+			hud.ball.Position = UDim2.fromOffset(cx, cy)
+			hud.shadow.Size = UDim2.fromOffset(r * 1.6 * (1 - 0.45 * v.lift), r * 0.35)
+			hud.shadow.Position = UDim2.fromOffset(cx, size.Y * 0.52 + r + 10)
+			hud.strikeHead.Text = v.heading
+			hud.ringBack.Visible = v.ring ~= nil
+			if v.ring then
+				hud.ring.Size = UDim2.fromScale(v.ring, 1)
+				hud.ring.BackgroundColor3 = v.ring < 0.3 and C.bad or C.gold
+			end
+			hud.pow.Size = UDim2.fromScale(1, math.clamp(v.powerPct / 100, 0, 1))
+			hud.pow.BackgroundColor3 = color(v.powerColor)
+			hud.powText.Text = tostring(v.powerPct) .. "%"
+			hud.verdict.Text = v.verdict and v.verdict.label or (v.timedOut and "TOO SLOW!" or "")
+			hud.verdict.TextColor3 = (v.verdict and v.verdict.good) and C.good or (v.verdict or v.timedOut) and C.bad or C.gold
+			hud.spark.Visible = v.spark ~= nil
+			if v.spark then
+				hud.spark.Position = UDim2.fromScale(0.5 + v.spark.cx / 2, 0.5 + v.spark.cy / 2)
+			end
+			hud.spot.Visible = v.powerSpot ~= nil
+			if v.powerSpot then
+				hud.spot.Size = UDim2.fromScale(0.3, 0.3)
+				hud.spot.Position = UDim2.fromScale(0.5 + v.powerSpot.x / 2, 0.5 + v.powerSpot.y / 2)
+			end
+		end
+	end
+
+	local conn
+	conn = RunService.RenderStepped:Connect(function(dt)
+		if finished then
+			return
+		end
+		clock += dt
+		safe(function()
+			stepInput()
+			if m.phase == "contact" and lastPhase ~= "contact" then
+				strike = S.openStrike(m)
+			elseif m.phase ~= "contact" then
+				strike = nil
+			end
+			if strike then
+				S.strikeStep(strike, m, dt)
+			end
+			M.tick(m, dt)
+			local f = V.frameOf(m)
+			drawFrame(f, dt)
+			lastPhase = f.phase
+			if m.result then
+				finished = true
+			end
+		end)
+		if failure then
+			finished = true
+		end
+	end)
+	hud.cover.Visible = false
+
+	while not finished do
+		task.wait()
+	end
+	conn:Disconnect()
+	for _, c in ipairs(inputConns) do
+		c:Disconnect()
+	end
+
+	local nextScreen
+	if failure then
+		warn("match: stopped by an error:", failure)
+		hud.cover.Visible = true
+		hud.coverText.Text = "The match hit a problem. It will be simmed instead."
+		task.wait(1.5)
+		nextScreen = remote:InvokeServer("abandon")
+	else
+		-- full time
+		local r = m.result
+		hud.final.Visible = true
+		hud.sim.Visible = false
+		hud.pause.Visible = false
+		local sc = V.frameOf(m).score
+		hud.finalScore.Text = sc.home and string.format("%s %d – %d %s", sc.usName, int(r.homeScore), int(r.awayScore), sc.themName)
+			or string.format("%s %d – %d %s", sc.themName, int(r.homeScore), int(r.awayScore), sc.usName)
+		hud.finalLine.Text = string.format("Goals %d · Assists %d · Rating %.1f%s", int(r.goals), int(r.assists), r.rating, r.starMan and " · Star man ⭐" or "")
+		local go = false
+		local c = hud.finalGo.Activated:Connect(function()
+			go = true
+		end)
+		while not go do
+			task.wait()
+		end
+		c:Disconnect()
+		hud.cover.Visible = true
+		hud.coverText.Text = "…"
+		local ok, res = pcall(function()
+			return remote:InvokeServer("done", Js.JSON.stringify(r))
+		end)
+		nextScreen = ok and res or nil
+	end
+
+	-- put everything back
+	world:Destroy()
+	hud.gui:Destroy()
+	Lighting.ClockTime = saved.ClockTime
+	Lighting.Brightness = saved.Brightness
+	camera.CameraType = camSaved.type
+	camera.FieldOfView = camSaved.fov
+	if hrp then
+		hrp.Anchored = wasAnchored
+	end
+	Match.current, Match.hud = nil, nil
+	return nextScreen
+end
+
+return Match
 ]]></string>
           </Properties>
         </Item>

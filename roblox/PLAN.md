@@ -63,15 +63,15 @@ Each stage ends with something you can open in Studio and play.
    Roblox ... matches should be played, not simulated ... maybe you can move
    around a bit more ... try Roblox-type menus. Contract and transfer are fine
    as they are.")
-   1. **The match, without the screen** (`game/match.ts`): the website's
+   1. **The match, without the screen** (built 27 Oct 2026, twin test passes) (`game/match.ts`): the website's
       CanvasMatch steps copied once, like `flow.ts` copies the page: the 90
       hidden minutes, a chance whenever one comes to you, your input, the real
       physics each frame, the result, the chain to the next chance, full time.
       Converted and twin-tested with the same inputs on both sides.
-   2. **The 3D pitch**: a stadium, both teams as Roblox characters in kit
+   2. **The 3D pitch** (built 27 Oct 2026; robot-played in the client smoke test; waiting on a look in Studio): a stadium, both teams as Roblox characters in kit
       colours, the ball, a camera that frames each chance. Every position
       comes from the engine; Roblox only draws it.
-   3. **The controls**, as on the website: drag back from the ball to aim and
+   3. **The controls** (built with 2.2), as on the website: drag back from the ball to aim and
       set power, then tap the ball where you want to strike it; swipe to curve;
       tap to head; penalty run-up. **Moving more**: after a pass, and in the
       dribble, you run your own Roblox character with WASD or the thumbstick.

@@ -77,7 +77,7 @@ return function(exports, import, Js)
 	local M_deflection = import("lib/star/deflection")
 	local M_defenderTouch = import("lib/star/defenderTouch")
 	local BALL_GRAB_FRACTION, MIN_PULL, CAPTAIN_DRAG_MIN, DEFAULT_MATCH_DURATION, MINUTE_TICK_MS, QUICK_START_MAX, FOLLOWER_RUN_SPEED, PITCH_HW, SIM_COMMENTARY_USER, SIM_COMMENTARY_OPP, matchSetupFor, readyForMatch, matchCareer, newTally, countedRng, after, setPhase, showAction, pushLine, logMoment, playerLabel, attributeClub, onPitch, mayTake, mechOpen, displayScore, liveEnergyAt, chargeEnergyTo, setClock, tiredSkills, ratingSoFar, matchExtras, hiddenInputs, matchResultFor, applyClearanceRules, formationShapeFor, nameTeamGoals, variedLine, strikeMotion, contactMotion, frameScenario, tiltForChance, acrossM, screenPull, powerFromDrag, sameOnScreenM, startMatch, setUpKeeper, dressAutoKeeper, runupStyleFor, standBackForRunup, extraTimeEligibility, startSimulation, fullTime, finish, clearChance, loadScenario, momentLine, targetName, startTopDownDribble
-	local loadTeammatePenalty, ourTakers, theirTakers, scheduleAutoKick, startShootout, nextShootoutKick, loadShootoutKick, finishShootout, pointerDown, pointerMove, pointerUp, armPowerShot, curveSwipe, runupNudge, contact, powerContact, contactTimeout, steerRun, callForBall, dribbleStick, dribbleBurst, dribblePass, continuePause, drinkKib, cycleSpeed, setEnergyMode, setPlaystyle, toggleTouchMode, captainPickAt, nearestCaptainCandidateDist, commitAim, loseChance, fouled, stepCommitted, startRunup, airAerialNow, handleContact, resolveOutcome, handOver, finishTopDownDribble, tick_, stepFeed, feedStep, showHalfTime, stepPlay, stepFlight, noteRunStep, energyNow, staminaNow, aimPreview, contactScreen, matchKits
+	local loadTeammatePenalty, ourTakers, theirTakers, scheduleAutoKick, startShootout, nextShootoutKick, loadShootoutKick, finishShootout, pointerDown, pointerMove, pointerUp, armPowerShot, curveSwipe, runupNudge, contact, powerContact, contactTimeout, steerRun, callForBall, dribbleStick, dribbleBurst, dribblePass, continuePause, drinkKib, cycleSpeed, setEnergyMode, setPlaystyle, toggleTouchMode, captainPickAt, nearestCaptainCandidateDist, commitAim, loseChance, fouled, stepCommitted, startRunup, airAerialNow, handleContact, resolveOutcome, handOver, finishTopDownDribble, tick_, stepFeed, feedStep, showHalfTime, stepPlay, stepFlight, noteRunStep, energyNow, staminaNow, aimPreview, strikeInputs, matchKits, controlsOf, deviceSetup, checkedStats
 	matchSetupFor = function(career)
 		local nextFixture = M_competitions.nextFixtureFor(career)
 		if (not nextFixture) then
@@ -2251,18 +2251,59 @@ return function(exports, import, Js)
 		do return Js.O({ dir = Js.O({ x = (b.x - m.drag.x), y = (b.y - m.drag.y) }, { "x", "y" }), power = powerFromDrag(m, m.drag, b) }, { "dir", "power" }) end
 	end
 	exports.aimPreview = aimPreview
-	contactScreen = function(m)
+	strikeInputs = function(m)
 		if ((m.phase ~= "contact") or (not m.aim)) then
 			do return nil end
 		end
-		local motion = strikeMotion(m.sc.kind, m.seed)
-		do return Js.O({ motion = motion, timerS = m.contactTimerS, power = m.aim.power, power2 = m.powerStrike, aimFromTap = (M_airDrawings.isAirKind(m.sc.kind) and M_airTap.airTapOn()), ballZ = (if (motion == "float") then (if (m.sc.kind == "header") then M_airDrawings.airZOf(m.sc) else M_airDrawings.HEADER_Z) else nil) }, { "motion", "timerS", "power", "power2", "aimFromTap", "ballZ" }) end
+		local sc = m.sc
+		local motion = strikeMotion(sc.kind, m.seed)
+		do return Js.O({ motion = motion, timeLimitS = m.contactTimerS, power = m.aim.power, powerShot = m.powerStrike, aimFromTap = (M_airDrawings.isAirKind(sc.kind) and M_airTap.airTapOn()), ballZ = (if (motion == "float") then (if (sc.kind == "header") then M_airDrawings.airZOf(sc) else M_airDrawings.HEADER_Z) else nil), technique = m.setup.skills.technique, aerial = airAerialNow(m), grades = (M_shotModel.shotsPro() and M_shotModel.aimedAtGoal(sc, m.aim.dir)), knuckles = (M_shotModel.knucklePowerOn() and mechOpen(m, "knuckle")), field = (M_shotFeel.contactFieldOn() and M_shotFeel.fieldApplies(sc.kind)) }, { "motion", "timeLimitS", "power", "powerShot", "aimFromTap", "ballZ", "technique", "aerial", "grades", "knuckles", "field" }) end
 	end
-	exports.contactScreen = contactScreen
+	exports.strikeInputs = strikeInputs
 	matchKits = function(m)
 		do return Js.O({ us = (if m.fixture.home then m.kits.home else m.kits.away), them = (if m.fixture.home then m.kits.away else m.kits.home), keeper = m.kits.keeper, ourKeeper = m.ourKeeperKit }, { "us", "them", "keeper", "ourKeeper" }) end
 	end
 	exports.matchKits = matchKits
+	controlsOf = function(m)
+		local ph = m.phase
+		do return Js.O({ powerShot = ((((ph == "aim") and M_shotModel.knucklePowerOn()) and mechOpen(m, "powerShot")) and (not M_penaltyRunup.hasRunup(m.sc.kind))), powerArmed = m.powerArmed, curve = (((ph == "flight") and m.setup.canCurve) and (not (not m.ball))), steer = ((ph == "flight") and (not (not (function() local _v = m.playOn; if _v == nil then return nil end; _v = _v.stick; return _v end)()))), callForIt = (((ph == "flight") and (not (not (function() local _v = m.playOn; if _v == nil then return nil end; _v = _v.stick; return _v end)()))) and (not (not m.career.captain))), nudge = (((ph == "runup") and (not (not (function() local _v = m.runup; if _v == nil then return nil end; _v = _v.nudge; return _v end)()))) and (not m.runup.arrived)), dribble = (((ph == "tdDribble") and (not (not m.td))) and (m.td.phase == "running")), touchMode = m.touchModeOn }, { "powerShot", "powerArmed", "curve", "steer", "callForIt", "nudge", "dribble", "touchMode" }) end
+	end
+	exports.controlsOf = controlsOf
+	deviceSetup = function(setup)
+		do return Js.ospread(setup, Js.O({ career = matchCareer(setup.career) }, { "career" })) end
+	end
+	exports.deviceSetup = deviceSetup
+	checkedStats = function(raw)
+		if ((not Js.T(raw)) or (type(raw) ~= "table")) then
+			do return nil end
+		end
+		local s = raw
+		local num = function(k, lo, hi)
+			return ((((type(s[k]) == "number") and Js.NumberNS.isFinite(s[k])) and (s[k] >= lo)) and (s[k] <= hi))
+		end
+		if ((((not num("goals", 0, 12)) or (not num("assists", 0, 12))) or (not num("chances", 0, 60))) or (not num("passes", 0, 200))) then
+			do return nil end
+		end
+		if (((not num("rating", 0, 10)) or (not num("homeScore", 0, 30))) or (not num("awayScore", 0, 30))) then
+			do return nil end
+		end
+		do
+			local _arr16 = Js.alit("bossChange", "teamChange", "fansChange", "wage", "goalBonus", "sponsorPay", "totalCash")
+			local _i17 = 0
+			while _i17 < Js.alen(_arr16) do
+				_i17 += 1
+				local k = _arr16[_i17]
+				if (not num(k, -1000000000, 1000000000)) then
+					do return nil end
+				end
+			end
+		end
+		if (type(s.starMan) ~= "boolean") then
+			do return nil end
+		end
+		do return s end
+	end
+	exports.checkedStats = checkedStats
 	BALL_GRAB_FRACTION = 0.18
 	MIN_PULL = 0.008
 	CAPTAIN_DRAG_MIN = 3
