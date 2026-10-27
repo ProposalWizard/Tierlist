@@ -160,8 +160,12 @@ function signature(list: Served[]): string {
  *  Re-measured 22 Oct 2026 (was 239:e7c688f6), bug hunt: 712caeb3 (licensed
  *  numbers re-sourced to free data: back-line shape, keeper depth, real mix)
  *  moved it. Checked: its parent 712caeb3^ still gives 239:e7c688f6, and
- *  712caeb3 itself gives 239:9e68dc38, so that data swap is the whole change. */
-const OLD_SIGNATURE = "239:9e68dc38";
+ *  712caeb3 itself gives 239:9e68dc38, so that data swap is the whole change.
+ *  Re-measured 26 Oct 2026 (was 239:9e68dc38): every byline cross gets a short
+ *  option (lib/star/bylineShort.ts, Mikey). Checked: the code just before it
+ *  (5b5444ff) still gives 239:9e68dc38; adding the short option alone gives
+ *  239:34edfb6f. */
+const OLD_SIGNATURE = "239:34edfb6f";
 
 const pct = (n: number, d: number) => (d ? `${((100 * n) / d).toFixed(1)}%` : "  —  ");
 function stats(list: Served[]) {

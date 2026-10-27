@@ -37,6 +37,10 @@ import { testAreaBuildUp, snappyBuildUp, snappyCapS, fhrShareRoll, fhrBuildUpOn,
 import { standBackFor, yourRunupFor, penaltyRunupOf, freeKickRunupOf } from "../../lib/star/runupStyles";
 import { servedChances } from "../../lib/star/fhr/servedChances";
 import { airZOf, type AirHeighted } from "../../lib/star/airDrawings";
+import { setBuildUpMistimeForTests, BUILDUP_OFFSIDE_CALLS } from "../../lib/star/fhr/buildUp";
+// The build-up's offside law is measured here as built; the game hides the
+// calls (buildUp.ts BUILDUP_OFFSIDE_CALLS) and drops such a build-up instead.
+setBuildUpMistimeForTests(true);
 
 /** A lead-in's shape, for comparing two (the ball every twelfth of it). */
 const leadSigOf = (l: LeadIn | null) => {
@@ -267,7 +271,10 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
   check(open > 100, `only ${open} open-play chances served`);
   check(runOns >= (open - skipped - called) * 0.9, `phase 3: only ${runOns} of ${open - skipped - called} build-ups hand over with men still running`);
   check(skipped > 0 && skipped < open * 0.35, `B20 (A2): ${skipped} of ${open} open-play chances arrived cold`);
-  check(called > 0 && called <= open * 0.2, `B2b: ${called} of ${open} build-ups ended in a called offside`);
+  // 26 Oct 2026 (Mikey): offside build-ups are hidden in the game (buildUp.ts
+  // BUILDUP_OFFSIDE_CALLS false; fhr/builders.ts tries another style or drops it).
+  if (BUILDUP_OFFSIDE_CALLS) check(called > 0 && called <= open * 0.2, `B2b: ${called} of ${open} build-ups ended in a called offside`);
+  else check(called === 0, `B2b: ${called} of ${open} build-ups ended in an offside while the calls are hidden`);
   check(regains > 0, "B2b: no build-up showed the match's regain");
   runSpeeds.sort((a, b) => a - b);
   check(runSpeeds[runSpeeds.length >> 1] > 1, `phase 3: median speed at the hand-over ${runSpeeds[runSpeeds.length >> 1]?.toFixed(2)} m/s (nobody really moving)`);

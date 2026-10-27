@@ -1027,6 +1027,9 @@ export interface FigureDrawOpts {
   label?: string;
   /** Defaults to white, as the five-a-side and the trial draw it. */
   labelColor?: string;
+  /** A name meant to be read at a glance (a team-mate taking a kick you are
+   *  watching): about twice the size, never under 15 px. */
+  labelBig?: boolean;
   star?: boolean;
   /**
    * A dark rim under the star. Off by default — the trial's figures stand on
@@ -1114,15 +1117,15 @@ export function drawFigureAt(
   }
 
   if (opts.label) {
-    ctx.font = `700 ${Math.max(8, r * 0.3)}px system-ui, sans-serif`;
+    ctx.font = opts.labelBig ? `800 ${Math.max(15, r * 0.6)}px system-ui, sans-serif` : `700 ${Math.max(8, r * 0.3)}px system-ui, sans-serif`;
     ctx.textAlign = "center";
     // Pinned, not inherited: a caller that last drew a scoreboard may well
     // have left the baseline somewhere else, and a name half a head out of
     // place reads as a bug rather than as a setting.
     ctx.textBaseline = "alphabetic";
-    ctx.lineWidth = Math.max(2, r * 0.1);
-    ctx.strokeStyle = "rgba(0,0,0,0.65)";
-    const ly = crown - r * (opts.star ? 0.78 : 0.16);
+    ctx.lineWidth = opts.labelBig ? Math.max(3.5, r * 0.18) : Math.max(2, r * 0.1);
+    ctx.strokeStyle = opts.labelBig ? "rgba(0,0,0,0.85)" : "rgba(0,0,0,0.65)";
+    const ly = crown - r * (opts.star ? 0.78 : 0.16) - (opts.labelBig ? 4 : 0);
     ctx.strokeText(opts.label, x, ly);
     ctx.fillStyle = opts.labelColor ?? "#ffffff";
     ctx.fillText(opts.label, x, ly);

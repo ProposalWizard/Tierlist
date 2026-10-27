@@ -1536,6 +1536,11 @@ export const ADMIN_GUIDES = {
           ["Penalty run-up", "How you run up to a penalty: Standard, The Stroll, The Skip, The Sprint, Stutter Step, Two Steps or The Arc — every style, owned or not, so each can be seen on the real pitch (open a penalty card in Infinite Highlights or the gallery and press Play, or play a shootout). Looks only: who scores is the same with every style. Test screens only — a career uses the one it has equipped in Settings → Run-ups."],
           ["Free-kick run-up", "A separate set for direct free kicks, each modelled on an elite taker: Standard, Power Stance (Ronaldo), Stance and Sprint (Bale), The Calm Curl (Messi), Stutter Curl (Neymar), The Whip (Maddison), Long Diagonal (Trent). Looks only — the strike is still yours. Test screens only."],
           ["Back to the defaults", "Resets every dial, the keeper row and the Compare switches."],
+          ["Power curve: the boxes", "How fast a full-power strike leaves the boot at Power 0, 20, 40, 60, 80 and 100, in metres a second (km/h beside it). The game's numbers and the ones from before 26 Oct 2026 sit beside each box. Straight lines in between."],
+          ["Use these", "Puts your numbers into every kick on this device (shots, passes, crosses), careers on it included. Then play Infinite Match with the Power slider to feel them."],
+          ["Back to the game's", "Clears your numbers; the game's curve again."],
+          ["Fill in Before", "Fills the boxes with the old straight line (40 = 25.2 m/s), to compare. Press Use these to play it."],
+          ["Copy numbers", "Copies your six numbers as one line, to paste into a chat."],
           ["Compare old and new: New / Old", "Two switches: Penalty rules and Shot power. Old puts that one change back to how it was, so the two can be played side by side. Test screens only — a real career, its trial and its shootouts always play New."],
         ],
       },
@@ -1567,6 +1572,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: [
       "The dials save the moment you change them, on this device only. There's no Save button.",
+      "Power curve: saved on this device only when you press Use these; it stays until Back to the game's. Nothing goes to the team or the repo — copy the numbers into a chat to make them the game's.",
       "The Compare old and new switches and the keeper dial save the same way, instantly, on this device only, and stay until you set them back (\"Back to the defaults\" resets them too).",
       "Save as a scenario: " + SCENARIO_SAVE_SHARED,
       TUNING_NOTES_SAVING,
@@ -1578,11 +1584,12 @@ export const ADMIN_GUIDES = {
     inGame: [
       "Every test screen here (Infinite Match, Infinite Highlights, the gallery's Play) plays the drawn chances, the only chances the game has (12 Oct 2026: the New chance library and the generator were deleted).",
       "The dials, the Compare old and new switches and the keeper dial only affect the test screens (Infinite Highlights, Infinite Match, the gallery and its Play) — never a real career, its trial or its shootouts, which always play the new penalty rules, the new shot power and the Middle keeper.",
+      "The Power curve is the exception: once you press Use these it changes every kick on this device, a career included, until you press Back to the game's.",
       "Everything else is the real game: the same engine, the same size on screen, the real squads (real faces, real finishing), and fresh legs every 90 minutes in a long match.",
       "A chance you commit from the editor is used by real /star-dev matches once the deploy finishes.",
     ],
     needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED, TUNING_NOTES_NEEDED],
-    dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor,TuningSessionPanel}.tsx · lib/star/{tuningSession,tuningNotes}.ts · /api/star/tuning-notes · lib/star/{playArea,engineProfile,liveEdit}.ts · lib/star/{goalFrame,pressure,runupStyles}.ts",
+    dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor,TuningSessionPanel}.tsx · lib/star/{tuningSession,tuningNotes}.ts · /api/star/tuning-notes · lib/star/{playArea,engineProfile,liveEdit}.ts · lib/star/{goalFrame,pressure,runupStyles,strikePower}.ts",
   },
 
   "/star-wallet-dev": {

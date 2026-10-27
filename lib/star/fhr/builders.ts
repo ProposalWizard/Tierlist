@@ -26,7 +26,7 @@
 import type { Scenario, ScenarioKind } from "../canvasEngine";
 import type { LeadIn, LeadMoment } from "../leadIn";
 import { fhrOn } from "./toggle";
-import { fhrBuildUpFor, fhrWantsBuildUp, fhrStyleFor, fhrStyleWeights, FHR_STYLES, chanceSeed, FHR_ADJUST_AUTO, FHR_COMPACT_BIG_MAX_S, type FhrAdjust, type FhrBuildUp } from "./buildUp";
+import { fhrBuildUpFor, fhrWantsBuildUp, fhrStyleFor, fhrStyleWeights, FHR_STYLES, chanceSeed, FHR_ADJUST_AUTO, FHR_COMPACT_BIG_MAX_S, BUILDUP_OFFSIDE_CALLS, type FhrAdjust, type FhrBuildUp } from "./buildUp";
 import { fhrFoulBuildUpFor, fhrWantsFoul } from "./foulBuildUp";
 import { realMomentLeadIn, lastSecondsOf } from "./realMomentHighlights";
 import { CX } from "../pitch";
@@ -192,7 +192,15 @@ export function fhrBuildUpOn(sc: Scenario, moment: LeadMoment, adjust?: FhrAdjus
     // before, only if it ever runs past FHR_COMPACT_BIG_MAX_S (a called offside's hold).
     // A test page asking for a long build-up still sees the long move, whole.
     const long = adjust?.length === "long";
-    const whole = long ? fhrBuildUpFor(sc, moment, adjust) : fhrStyledBuildUp(sc, moment, adjust);
+    let whole = long ? fhrBuildUpFor(sc, moment, adjust) : fhrStyledBuildUp(sc, moment, adjust);
+    // A build-up that ends in an offside flag is not shown while the calls are
+    // hidden (buildUp.ts BUILDUP_OFFSIDE_CALLS, Mikey 26 Oct 2026): another
+    // style is tried; only if every one is flagged does the chance start without one.
+    if (!BUILDUP_OFFSIDE_CALLS && whole.offside) {
+      const onside = FHR_STYLES.map((style) => fhrBuildUpFor(sc, moment, adjust, { style })).find((x) => !x.offside);
+      if (!onside) return null;
+      whole = onside;
+    }
     const b = long || whole.durS <= FHR_COMPACT_BIG_MAX_S + 0.05 ? whole : snappyBuildUp(whole, FHR_COMPACT_BIG_MAX_S);
     const la = b.acts[b.acts.length - 1];
     note({ kind: sc.kind, what: "open", cover: !!b.cover, drama: b.drama, durS: b.durS, runOnS: b.runOnS ?? 0, offside: !!b.offside, regain: !!b.regain, style: b.style, passes: b.acts.filter((a) => a.type === "pass").length, last: { t0: la.t0, t1: la.t1, endZ: la.endZ ?? 0 } });

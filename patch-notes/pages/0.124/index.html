@@ -1,0 +1,243 @@
+<title>Knowitball Patch Notes Mikey v0.22</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  :root{color-scheme:dark;
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){color-scheme:light;
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#2c3f36;--ink3:#44594e;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="light"]{color-scheme:light;
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#2c3f36;--ink3:#44594e;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  :root[data-theme="dark"]{color-scheme:dark;
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 70px}
+  .shot{margin:10px 0 0}.shot img{display:block;width:100%;max-width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}
+  .check{list-style:none;margin:0;padding:0}.check li{padding:7px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}.check b{color:var(--ink)}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px;border:1px solid var(--line);color:var(--ink3)}
+  .tag.seen{color:var(--green);border-color:var(--green)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,110px) 1fr auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:4px}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .prev{list-style:none;margin:0;padding:0}
+  .prev li{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}
+  .prev a{color:var(--green);font-weight:700}
+  @media (prefers-reduced-motion: reduce){summary::before{transition:none}}
+
+  .area{margin:38px 0 4px;padding-top:14px;border-top:2px solid var(--line)}
+  .area h2{margin:0 0 2px;color:var(--ink);font-size:15px}
+  .area .why{color:var(--ink3);font-size:13px;margin:0 0 6px}
+  .k{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:999px;margin-right:8px;vertical-align:2px}
+  .k.fix{background:rgba(61,220,132,.15);color:var(--green)} .k.add{background:rgba(111,184,255,.15);color:var(--blue)} .k.chg{background:rgba(177,140,255,.15);color:var(--violet)}
+  .tag.meas{color:var(--blue);border-color:var(--blue)} .tag.unseen{color:var(--amber);border-color:var(--amber)}
+  .cap{font-size:12.5px;color:var(--ink3);margin-top:5px}
+  ol.steps{margin:8px 0 2px;padding-left:20px;color:var(--ink2);font-size:14px} ol.steps li{padding:3px 0}
+  .legend{font-size:12.5px;color:var(--ink3);margin:-14px 0 20px}
+  .check li label{display:flex;gap:9px;align-items:flex-start;cursor:pointer} .check input{margin-top:4px;flex:0 0 auto;accent-color:var(--green)}
+  .check li span.w{display:block;font-size:12.5px;color:var(--ink3)}
+  .wrap > *{min-width:0}
+</style>
+<div class="wrap"><header>
+<span class="ver">v0.22</span>
+<h1>Knowitball Patch Notes Mikey v0.22</h1>
+<p class="sub">26 October 2026 · branch Mikey (not on main yet) · 34 commits since v0.21 · build passes · site 0.124</p></header>
+<div class="strip"><div class="s"><b>79 → 66 km/h</b><span>Power 40 full shot</span></div><div class="s"><b>0%</b><span>byline crosses on Attacking</span></div><div class="s"><b>300 / 300</b><span>byline crosses with a short option</span></div><div class="s"><b>21% → 0</b><span>tight angles with no room to pull back</span></div></div>
+<p class="legend">Each change is tagged <span class="k fix">Fixed</span><span class="k add">New</span><span class="k chg">Changed</span> and says whether it was <b>seen</b>, <b>measured</b> or <b>not yet seen</b>.</p>
+<h2 class="nxt"><i></i>Check these</h2><ul class="check" id="check">
+<li><label><input type="checkbox" data-i="0"><span><b>Power</b><span class="w">Play Area → Power curve; then a new career&#x27;s first shots at Power 40</span></span></label></li>
+<li><label><input type="checkbox" data-i="1"><span><b>Play style</b><span class="w">Match → play style Attacking: no byline crosses</span></span></label></li>
+<li><label><input type="checkbox" data-i="2"><span><b>Short option</b><span class="w">any byline cross: a team-mate 6-10 m back</span></span></label></li>
+<li><label><input type="checkbox" data-i="3"><span><b>Offside build-ups</b><span class="w">no build-up ends &quot;Offside!&quot; before your touch</span></span></label></li>
+<li><label><input type="checkbox" data-i="4"><span><b>A chance a half</b><span class="w">Medium or High energy</span></span></label></li>
+<li><label><input type="checkbox" data-i="5"><span><b>Moves one at a time</b><span class="w">new career: guides on Home; no header before game 4</span></span></label></li>
+<li><label><input type="checkbox" data-i="6"><span><b>Set pieces</b><span class="w">new career: pens at 10 goals, FK at 60, corners at 70</span></span></label></li>
+<li><label><input type="checkbox" data-i="7"><span><b>Sizes</b><span class="w">men the same size next to the goal on every camera</span></span></label></li>
+<li><label><input type="checkbox" data-i="8"><span><b>Room to pull back</b><span class="w">the ball never against a side of the screen</span></span></label></li>
+<li><label><input type="checkbox" data-i="9"><span><b>Cutbacks</b><span class="w">always side-on</span></span></label></li>
+<li><label><input type="checkbox" data-i="10"><span><b>First hour story</b><span class="w">new career: games 1 to 3</span></span></label></li>
+<li><label><input type="checkbox" data-i="11"><span><b>Boots gift, ★35 contract, half-price can</b><span class="w">new career</span></span></label></li>
+<li><label><input type="checkbox" data-i="12"><span><b>Guided first match and first sponsor</b><span class="w">new career</span></span></label></li>
+<li><label><input type="checkbox" data-i="13"><span><b>Coach bubble pointers</b><span class="w">any pointer</span></span></label></li>
+<li><label><input type="checkbox" data-i="14"><span><b>Small achievement banner</b><span class="w">earn an achievement</span></span></label></li>
+<li><label><input type="checkbox" data-i="15"><span><b>Training, Home, Stats, Shop, League, Phone</b><span class="w">each screen</span></span></label></li>
+<li><label><input type="checkbox" data-i="16"><span><b>Match labels</b><span class="w">a team-mate&#x27;s penalty; &quot;Rating&quot;</span></span></label></li>
+<li><label><input type="checkbox" data-i="17"><span><b>Social feed</b><span class="w">Phone → Social after a match</span></span></label></li>
+<li><label><input type="checkbox" data-i="18"><span><b>Career robot</b><span class="w">npx tsx scripts/robot/careerRobot.mts</span></span></label></li>
+</ul>
+<section class="area"><h2>Gameplay</h2><p class="why">What happens in a match. 7 changes.</p><ul class="n">
+<li><div class="hd"><span class="k chg">Changed</span>Power 40 is a starting player now</div><div class="dt">A full-power shot at Power 40 leaves the boot at 66 km/h (was 79). Power 65 now hits like the old 40. The top is unchanged. <span class="tag meas">measured</span></div><div class="bars"><div class="bar"><span class="lb">Power 40 shot</span><span class="track"><span class="fill was" style="width:90.9%"></span><span class="fill now warn" style="width:75.9%;"></span></span><span class="vv"><s>79</s> → 66km/h</span></div><div class="bar"><span class="lb">1-on-1 goals at 40</span><span class="track"><span class="fill was" style="width:90.9%"></span><span class="fill now warn" style="width:80.0%;"></span></span><span class="vv"><s>50</s> → 44%</span></div><div class="bar"><span class="lb">Long shots at 40</span><span class="track"><span class="fill was" style="width:90.9%"></span><span class="fill now warn" style="width:64.0%;"></span></span><span class="vv"><s>27</s> → 19%</span></div></div><figure class="shot"><img src="v0.22/power-curve.png" alt="Play Area → Power curve: one box per Power level, the game&#x27;s numbers and the old ones beside it" loading="lazy"><figcaption class="cap">Play Area → Power curve: one box per Power level, the game&#x27;s numbers and the old ones beside it</figcaption></figure><details><summary>The numbers</summary><ul><li>Full-power speed off the boot, metres a second, at Power 0 / 20 / 40 / 60 / 80 / 100: now 18 / 19.5 / 21 / 23.4 / 30.6 / 32.76, before 18 / 21.6 / 25.2 / 28.8 / 32.4 / 32.76. Straight lines in between.</li><li>Every kick uses it: shots, passes and crosses. The fully 3D games keep their own numbers.</li><li>Goals measured with the same shooting thumb, 300 kicks each. At Power 65 to 80 scoring goes up a little, because fewer shots fly over the bar.</li><li>Pinned by tests/star/strikePower.mts.</li></ul></details></li>
+<li><div class="hd"><span class="k chg">Changed</span>Chances follow your play style</div><div class="dt">Attacking no longer gets byline crosses. Share of chances that are byline crosses: <span class="tag meas">measured</span></div><div class="bars"><div class="bar"><span class="lb">Attacking</span><span class="track"><span class="fill now" style="width:0.8%;"></span></span><span class="vv">0%</span></div><div class="bar"><span class="lb">Balanced</span><span class="track"><span class="fill now" style="width:60.9%;"></span></span><span class="vv">6.1%</span></div><div class="bar"><span class="lb">Defensive</span><span class="track"><span class="fill now" style="width:90.9%;"></span></span><span class="vv">9.1%</span></div></div><details><summary>Why</summary><ul><li>Open-play chances came from one even deck that ignored the match: any kind, any style. A thin kind was swapped for its nearest drawing, which could be a header, so a new career saw a header in game 2.</li><li>Now the deal carries your play style and what is open. Measured over 120 matches for each style.</li></ul></details></li>
+<li><div class="hd"><span class="k add">New</span>Every byline cross has a short option</div><div class="dt">A team-mate stands 6 to 10 m away, behind the ball and in space, for a cutback or a square ball. So weak power still has a play. <span class="tag meas">measured</span></div><figure class="shot"><svg viewBox="0 0 340 190" role="img" aria-label="Byline cross: the ball at the byline, a team-mate 6 to 10 metres back" style="width:100%;height:auto;max-width:340px;display:block">
+<rect x="4" y="4" width="332" height="182" rx="10" fill="var(--card2)" stroke="var(--line)"/>
+<line x1="4" y1="30" x2="336" y2="30" stroke="var(--ink3)"/><rect x="130" y="16" width="80" height="14" fill="none" stroke="var(--ink3)"/>
+<rect x="90" y="30" width="160" height="70" fill="none" stroke="var(--ink3)" stroke-dasharray="4 3"/>
+<circle cx="300" cy="44" r="7" fill="var(--blue)"/><text x="300" y="66" text-anchor="middle" font-size="11" fill="var(--ink2)">you</text>
+<circle cx="250" cy="110" r="7" fill="var(--green)"/><text x="250" y="132" text-anchor="middle" font-size="11" fill="var(--green)">short option</text>
+<line x1="296" y1="50" x2="256" y2="104" stroke="var(--green)" stroke-width="2.5" marker-end="url(#a)"/>
+<text x="292" y="92" font-size="11" fill="var(--green)">6–10 m</text>
+<circle cx="170" cy="60" r="7" fill="var(--blue)" opacity=".6"/><circle cx="150" cy="72" r="7" fill="var(--red)" opacity=".7"/><circle cx="190" cy="52" r="7" fill="var(--red)" opacity=".7"/>
+<line x1="294" y1="44" x2="178" y2="58" stroke="var(--ink3)" stroke-dasharray="4 3"/><text x="16" y="160" font-size="11" fill="var(--ink3)">The cross into the box needs power;</text><text x="16" y="174" font-size="11" fill="var(--ink3)">the short ball does not.</text>
+<defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--green)"/></marker></defs>
+</svg><figcaption class="cap">Drawing. He stands behind the ball, so he is never offside, and at least 2.5 m from anybody.</figcaption></figure><details><summary>The numbers</summary><ul><li>300 of 300 byline crosses have him, 6 to 10 m away, behind the ball (never offside), at least 2.5 m from everybody, on screen.</li><li>A soft pass at Power and Technique 40 reaches him 300 times in 300.</li><li>He plays it himself. He used to try a lay-off back across the box, and defenders took 24 of 44.</li></ul></details></li>
+<li><div class="hd"><span class="k chg">Changed</span>No more build-ups that end &quot;Offside!&quot;</div><div class="dt">A build-up that ended in an offside flag before you touched the ball now tries another style. Only if every style ends offside does the chance start without one (about 1 in 300). <span class="tag meas">measured</span></div><details><summary>Kept as a feature</summary><ul><li>Your own offside passes are unchanged.</li><li>One switch brings the build-up offside calls back (BUILDUP_OFFSIDE_CALLS in buildUp.ts).</li></ul></details></li>
+<li><div class="hd"><span class="k add">New</span>A chance in every half on Medium and High</div><div class="dt">If you have had no chance by 43&#x27; or 88&#x27;, the ball comes to you in the final third. Not on Low, not in extra time. Halves with no chance for you: <span class="tag meas">measured</span></div><div class="bars"><div class="bar"><span class="lb">Medium</span><span class="track"><span class="fill was" style="width:90.9%"></span><span class="fill now" style="width:0.8%;"></span></span><span class="vv"><s>20</s> → 0 of 600</span></div><div class="bar"><span class="lb">High</span><span class="track"><span class="fill was" style="width:90.9%"></span><span class="fill now" style="width:0.8%;"></span></span><span class="vv"><s>19</s> → 0 of 600</span></div></div><details><summary>The numbers</summary><ul><li>300 seeded matches of a weak side away. Chances a match: 3.4 → 3.5.</li></ul></details></li>
+<li><div class="hd"><span class="k add">New</span>A new career learns its moves one at a time</div><div class="dt">Each move opens with a guide on Home and a first-use line in the match. No header or volley in games 1 to 3 (0 in 1,285 chances). <span class="tag meas">measured</span></div><details><summary>When each opens</summary><ul><li>Game 1: shoot (curl and chip are part of the tap), pass, play style.</li><li>After game 3: headers and volleys. Game 4 brings one of each for certain (by 60&#x27; and 80&#x27;). The Aerial drill opens with them.</li><li>Pace 60: steer your run (auto run before). Pace 65: sprint and the stamina bar.</li><li>After game 4: moving with the ball.</li><li>Built with guides but switched off for now: power shot (Power 60), knuckleball (Power 70 + Technique 60), skill moves (Technique 65), one-twos (Vision 60).</li><li>Saves from before this keep everything.</li></ul></details></li>
+<li><div class="hd"><span class="k chg">Changed</span>Set pieces are earned on a new career</div><div class="dt">Penalties at 10 goals, free kicks at Technique and Vision 60, corners at 70. A team-mate takes them until then. <span class="tag unseen">not yet seen</span></div></li>
+</ul></section>
+<section class="area"><h2>Camera and sizes</h2><p class="why">How the pitch is framed. 3 changes.</p><ul class="n">
+<li><div class="hd"><span class="k chg">Changed</span>Men, keeper and ball are one size next to the goal on every camera</div><div class="dt">A man is 1.63 m tall everywhere: 22.2% of the goal&#x27;s width (was 9% to 27%, by camera). The size of your 4-0 build-up screenshot. Cameras themselves are unchanged. <span class="tag seen">seen</span></div></li>
+<li><div class="hd"><span class="k chg">Changed</span>Room to pull back: the ball a full drag from both sides</div><div class="dt">The camera slides, or widens a little, so you can always drag to full power. It never loses the goal or anyone it showed. <span class="tag meas">measured</span></div><div class="bars"><div class="bar"><span class="lb">Tight angles</span><span class="track"><span class="fill was" style="width:90.9%"></span><span class="fill now" style="width:0.8%;"></span></span><span class="vv"><s>21</s> → 0%</span></div><div class="bar"><span class="lb">Long shots</span><span class="track"><span class="fill was" style="width:90.9%"></span><span class="fill now" style="width:0.8%;"></span></span><span class="vv"><s>18</s> → 0%</span></div><div class="bar"><span class="lb">Cutbacks</span><span class="track"><span class="fill was" style="width:90.9%"></span><span class="fill now" style="width:0.8%;"></span></span><span class="vv"><s>10</s> → 0%</span></div></div><figure class="shot"><svg viewBox="0 0 340 200" role="img" aria-label="Before and after: ball near the side, then a full drag clear" style="width:100%;height:auto;max-width:340px;display:block">
+<rect x="4" y="4" width="160" height="192" rx="10" fill="var(--card2)" stroke="var(--line)"/><text x="84" y="22" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink2)">Before</text>
+<rect x="44" y="30" width="80" height="10" fill="none" stroke="var(--ink3)"/><circle cx="18" cy="120" r="5" fill="var(--ink)"/><line x1="18" y1="120" x2="18" y2="190" stroke="var(--red)" stroke-width="3"/><text x="28" y="160" font-size="11" fill="var(--red)">drag cut off</text>
+<rect x="176" y="4" width="160" height="192" rx="10" fill="var(--card2)" stroke="var(--line)"/><text x="256" y="22" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink2)">Now</text>
+<rect x="216" y="30" width="80" height="10" fill="none" stroke="var(--ink3)"/><circle cx="226" cy="110" r="5" fill="var(--ink)"/><line x1="226" y1="110" x2="226" y2="182" stroke="var(--green)" stroke-width="3"/><line x1="180" y1="110" x2="221" y2="110" stroke="var(--green)" stroke-dasharray="3 3"/><text x="240" y="150" font-size="11" fill="var(--green)">a full drag</text><text x="240" y="164" font-size="11" fill="var(--green)">each side</text>
+</svg><figcaption class="cap">Drawing. The ball keeps a full-power drag from both sides of the screen.</figcaption></figure><details><summary>The numbers</summary><ul><li>Share of chances with the ball within a full drag of a side. Now 0 of 1,600 upright chances, both framings, flat and tilted.</li></ul></details></li>
+<li><div class="hd"><span class="k chg">Changed</span>Every cutback is side-on</div><div class="dt">Whatever the Wide chances setting says. <span class="tag meas">measured</span></div></li>
+</ul></section>
+<section class="area"><h2>A new career&#x27;s first hour</h2><p class="why">From the trial to game 5. 10 changes.</p><ul class="n">
+<li><div class="hd"><span class="k add">New</span>The first hour is a story: a person brings in each feature after a game</div><div class="dt">A new career opens with Home, League and Play only. Old saves keep everything. <span class="tag seen">seen</span></div><ol class="steps"><li>After game 1: training day, two drills (Power and Technique), at normal energy.</li><li>After game 2: the physio gives a can; a team-mate gives you his cracked phone (Messages, Fixtures, Squad, Relationships, Social). The agent texts first.</li><li>After game 3: the chairman opens the Shop (pointer on cans, then boots).</li><li>Star level 2: a pointer at the Star Pass.</li><li>First goal: Stats and Achievements open.</li></ol></li>
+<li><div class="hd"><span class="k add">New</span>A team-mate gives you his old boots before game 1</div><div class="dt">NS-Pure, 5 games left, Power +5 and Technique +5. New careers start with no boots and no cans. <span class="tag seen">seen</span></div></li>
+<li><div class="hd"><span class="k chg">Changed</span>First contract: ★35 a week, North or South</div><div class="dt">The trial always places you in National League North or South (50/50). Sign only: no Negotiate, no other clubs. <span class="tag seen">seen</span></div></li>
+<li><div class="hd"><span class="k chg">Changed</span>The club shop&#x27;s first KIB can is half price</div><div class="dt">One week&#x27;s wage. <span class="tag seen">seen</span></div></li>
+<li><div class="hd"><span class="k add">New</span>The first sponsor offer is guided</div><div class="dt">The agent&#x27;s message, then the phone, Messages, the offer, with a pointer at each. <span class="tag seen">seen</span></div></li>
+<li><div class="hd"><span class="k add">New</span>The first match is guided</div><div class="dt">Energy (Low / Medium / High), play style and speed. First chance: &quot;drag back … then let go&quot;. Strike screen: &quot;tap the part of the ball&quot;. First header: two short lines. A new save starts at normal speed. <span class="tag seen">seen</span></div></li>
+<li><div class="hd"><span class="k chg">Changed</span>The trial waits for you</div><div class="dt">The shootout&#x27;s team-mates wait until you have read how it works. &quot;A scout has spotted you&quot; waits for your tap. The pass stage says the red shirts are marking. <span class="tag seen">seen</span></div></li>
+<li><div class="hd"><span class="k fix">Fixed</span>Full rest before game 2</div><div class="dt">No low-energy warning before the physio&#x27;s can. <span class="tag seen">seen</span></div></li>
+<li><div class="hd"><span class="k fix">Fixed</span>Nothing pops up over the Star Pass</div><div class="dt">The first-goal pop-up and the set-piece chat wait until it shuts. Lines that said &quot;Saturday&quot; or &quot;tomorrow&quot; on other days now say &quot;next game&quot; or &quot;now&quot;. <span class="tag seen">seen</span></div></li>
+<li><div class="hd"><span class="k fix">Fixed</span>The welcome tour no longer comes back after game 1</div><div class="dt">Pressing Play on its last step marks it done. The first-match tour holds the match, so the first chance waits, and it reaches its speed step. <span class="tag seen">seen</span></div></li>
+</ul></section>
+<section class="area"><h2>Screens and UI</h2><p class="why">What the screens look like. 10 changes.</p><ul class="n">
+<li><div class="hd"><span class="k chg">Changed</span>Pointers are a coach bubble</div><div class="dt">White, with a 🧢 and a tail pointing at the button. Grey Later and Skip, green Next. Your pick, option C. <span class="tag seen">seen</span></div></li>
+<li><div class="hd"><span class="k chg">Changed</span>Achievements and records are a small banner</div><div class="dt">At the top for about 3 s, nothing to close (was a full pop-up). <span class="tag seen">seen</span></div></li>
+<li><div class="hd"><span class="k chg">Changed</span>Training trimmed</div><div class="dt">The drill card shows the skill&#x27;s name, its steps and the stars. Stars stay up 3 s (was 1.4). No Back during the story&#x27;s two drills. <span class="tag seen">seen</span></div></li>
+<li><div class="hd"><span class="k chg">Changed</span>Home tidied</div><div class="dt">The Stats and Shop hints at the bottom are words (swipe; a tap does nothing). Your numbers are always in the top row; the Sides | Top switch is gone. <span class="tag seen">seen</span></div></li>
+<li><div class="hd"><span class="k chg">Changed</span>Stats: a smaller card</div><div class="dt">7% smaller, the four tabs match its height, no Save image, Your bests folds. <span class="tag seen">seen</span></div></li>
+<li><div class="hd"><span class="k chg">Changed</span>Shop: tabs on the main bar, 5 items a screen</div><div class="dt">Shop · For You · 3D · Boots · Sponsors sit straight on top of the bottom bar. Opens on 5 a screen for everyone (was 3). Sponsors stay locked until your first offer. <span class="tag seen">seen</span></div></li>
+<li><div class="hd"><span class="k add">New</span>League: scorers for every cup and international</div><div class="dt">Goals and Assists for the FA Cup, League Cup, both shields and every international competition. The shields get Final · Goals · Assists · History. <span class="tag seen">seen</span></div></li>
+<li><div class="hd"><span class="k chg">Changed</span>Phone tidied</div><div class="dt">Relationships opens inside the phone with one general line. Fixtures: a draw is yellow-orange, the next game glows blue. The badge no longer counts Social posts the cracked phone cannot open. Match reactions wait for the phone. <span class="tag seen">seen</span></div></li>
+<li><div class="hd"><span class="k chg">Changed</span>Match labels</div><div class="dt">&quot;Avg Rat&quot; reads &quot;Rating&quot;. Your team&#x27;s build-up lines are in your kit colour. A team-mate&#x27;s penalty or free-kick taker: his name about twice the size (at least 15 px), no keeper name. &quot;Someone else steps up&quot; is in your kit colour. <span class="tag unseen">not yet seen</span></div></li>
+<li><div class="hd"><span class="k fix">Fixed</span>Boss talk keeps all three answers on screen</div><div class="dt">And the Technique drill hint is shorter and clear of the ? button. <span class="tag seen">seen</span></div></li>
+</ul></section>
+<section class="area"><h2>Social feed</h2><p class="why">Posts after a match. 3 changes.</p><ul class="n">
+<li><div class="hd"><span class="k chg">Changed</span>Highlights land in a random place</div><div class="dt">3rd to 6th in the feed (were always the top two). Still on the first screen. <span class="tag meas">measured</span></div></li>
+<li><div class="hd"><span class="k fix">Fixed</span>No more repeated posts</div><div class="dt">At most one poll a match, and one post of each graphic. Fan posts may share a kind, never the same words. <span class="tag meas">measured</span></div></li>
+<li><div class="hd"><span class="k fix">Fixed</span>A missed Panenka is yours only when you took it</div><div class="dt">A team-mate&#x27;s miss was written up as yours and cost you reputation. <span class="tag meas">measured</span></div><details><summary>How it was checked</summary><ul><li>tests/star/media.mts plays three 20-week seasons and checks every match&#x27;s feed.</li></ul></details></li>
+</ul></section>
+<section class="area"><h2>Lag and saves</h2><p class="why">Speed and save size. 1 change.</p><ul class="n">
+<li><div class="hd"><span class="k fix">Fixed</span>The Hall of Fame copy of a save is back under its limit</div><div class="dt">114 KB (limit 120 KB). League History (about 1.3 KB a season) is left out of that copy. <span class="tag meas">measured</span></div></li>
+</ul></section>
+<section class="area"><h2>Test tools</h2><p class="why">For the team, not players. 2 changes.</p><ul class="n">
+<li><div class="hd"><span class="k add">New</span>Play Area → Power curve</div><div class="dt">Type the full-power speed at each Power level, press Use these, then play Infinite Match with the Power slider. Back to the game&#x27;s, Fill in Before, Copy numbers. This device only, careers on it included. <span class="tag seen">seen</span></div></li>
+<li><div class="hd"><span class="k add">New</span>Career robot</div><div class="dt">Plays a 20-season average-player career in about 6 s and reports each season: club, league, goals, assists, Star Pass, money, and anything that broke. <span class="tag meas">measured</span></div></li>
+</ul></section>
+<h2 class="bug"><i></i>Known issues</h2><ul class="n">
+<li><div class="hd">The 26 Oct gameplay batch is not seen on a phone yet <span class="pill p-amb">Low</span></div><div class="dt">Power, play style, short option, room to pull back, cutbacks, offside build-ups, match labels and social. Measured in tests; the Power curve box was seen at phone size.</div></li>
+<li><div class="hd">Weaker Power 40 scores fewer goals <span class="pill p-amb">Low</span></div><div class="dt">One-on-ones 50% → 44% and long shots 27% → 19% at Power 40. Judge it in play with the Power curve box.</div></li>
+<li><div class="hd">Side-on cutbacks draw the men up to 5% smaller <span class="pill p-amb">Low</span></div><div class="dt">The camera widens a little to keep room to pull back, and men are a fixed size in metres.</div></li>
+<li><div class="hd">Aerial training auto-played and got stuck <span class="pill p-red">High</span></div><div class="dt">From the 26 Oct playtest. Not fixed in this version.</div></li>
+<li><div class="hd">Other points from the 26 Oct playtest <span class="pill p-amb">Low</span></div><div class="dt">Header timing too quick, tutorial slow to load, no Settings guide, boots should show their stats, free-kick line green, first-goal pointer pressed a button instead of a swipe, the can purchase guide, too much too soon. The start of a career and unlock pacing are being built in a separate chat.</div></li>
+<li><div class="hd">12 test files were already failing before this version <span class="pill p-amb">Low</span></div><div class="dt">None got worse in this version (checked line by line).</div></li>
+</ul><h2 class="nxt"><i></i>Next</h2><ul class="n">
+<li><div class="hd">The start of a career and unlock pacing</div><div class="dt">Being built in a separate chat.</div></li>
+<li><div class="hd">Pick the final power numbers</div><div class="dt">After playing the Power curve box.</div></li>
+<li><div class="hd">Switch on the last four moves</div><div class="dt">Power shot, knuckleball, skill moves, one-twos: built, off for now.</div></li>
+<li><div class="hd">Star Pass reward ladder</div><div class="dt">Proposal still to come.</div></li>
+</ul><h2 class="nxt"><i></i>Previous versions</h2><ul class="prev">
+<li><a href="https://claude.ai/artifact/J1GDXrx1SSHrLTroCa3C2K">v0.21</a> · 2026-10-23 · The master plan built: one bottom bar, a Stats page with your card and four tabs, League as one page for every competition, a Phone with Relationships, Squad, Fixtures &amp; results and real messages</li>
+<li><a href="https://claude.ai/artifact/DrwirnxpBBqLzqqjmfipd3">v0.20</a> · 2026-10-21 · Game music: 11 original orchestral tracks for home, matches, full time and the Ballon d&#x27;Or night, behind a Settings switch</li>
+<li><a href="https://claude.ai/artifact/QsxGeWuEK6C7GwcCQJSD3r">v0.19</a> · 2026-10-20 · Mikey&#x27;s new pop-ups (scoreboard goals, TV captions), the real 10-round FA Cup, team-mate goals kept on reload, PL Draft FC 27 back to 20 clubs</li>
+<li><a href="https://claude.ai/artifact/6Gz5vvm7PVwXUrJ3ZMBB7V">v0.18</a> · 2026-10-19 · The world season: every league, cup and European competition played for real, week by week, with a screen to see them all; transfer talk fixes</li>
+<li><a href="https://claude.ai/artifact/1A6Wc8XFM2pu2ftCZcymQU">v0.17</a> · 2026-10-18 · The new transfer window (clubs come to you, season letters S to D), the world ages (decline from 31, retire 35–41, replacements), real kits for 211 nations, 1–2 post-match videos</li>
+<li><a href="https://claude.ai/artifact/S5EvHkuf7wJTaGPeXd3WeM">v0.16</a> · 2026-10-13 · Gameplay review: fewer feed videos that wait for ▶, upright goal posts, achievements unlock and level you up at once; test switches for new framing and headers/volleys</li>
+<li><a href="https://claude.ai/artifact/1VrPsvpikmWNaxcTFzpgGt">v0.15</a> · 2026-10-13 · International football: call-ups, duty mode, watching on TV, scorers for every goal; the Ballon d&#x27;Or counts club and country (Star Man out); casino scandals</li>
+<li><a href="https://claude.ai/artifact/843j4zo8tXx2CKCzYceAFh">v0.14</a> · 2026-10-09 · Real Premier League shots playable as test chances; Chances (testing): about 9 Kane-style highlights a match, Old still the default</li>
+<li><a href="https://claude.ai/artifact/D2mVBLe6QDF2jqzHnrjiWt">v0.13</a> · 2026-10-08 · Play-off, cup and European round-ups with animated brackets; the real UEFA knockout; two-legged League Cup semis; ±25% wage when your club goes down or up; relegation day</li>
+<li><a href="https://claude.ai/artifact/6tgaVydhSjEeQea6tkA3oX">v0.12</a> · 2026-10-08 · The ovation&#x27;s hugs, dap-ups, pat and claps made in Blender; the farewell&#x27;s 3D ovation checked in a real match</li>
+<li><a href="https://claude.ai/artifact/23eP6tYuyTjuvAbBisnkCj">v0.11</a> · 2026-10-08 · 3D standing ovation; centre-back Golden Boot and day-one line-ups fixed; more assists; clearances, negotiations and Relations reworked</li>
+<li><a href="https://claude.ai/artifact/26Lh4jWsraDKYSaZZpqWWk">v0.10</a> · 2026-10-04 · Relationships rebuilt: bars that move slowly, one game per relationship, happiness decides recovery, no Sponsors bar; injuries switched off</li>
+<li><a href="https://claude.ai/artifact/UTFsvaBcLbYJjWmnYtXLHg">v0.9</a> · 2026-10-03 · XP rebuilt (slower start, XP by the minute, no double pay) and the XP Book to edit every amount; 3D garden, North/South 2026/27, Club Data</li>
+<li><a href="https://claude.ai/artifact/6degCbK833CTu3YAZtoyCz">v0.8</a> · 2026-09-30 · Sponsors Revamp: brands send offers, deal slots by fame, weekly fees, targets, brand happiness, bidding wars, buy-outs and scandals</li>
+<li><a href="https://claude.ai/artifact/YYDBCrSHUiCb8kKSe9vVfo">v0.7</a> · 2026-09-30 · A new 1-10 star career rating separate from overall, 7 boots, dearer Style, 2 training sessions a week, restyled training, contract terms</li>
+<li><a href="https://claude.ai/artifact/XCqpEXqtnZ7Dp4yf4vyTue">v0.6</a> · 2026-09-27 · Five levels of every boot and lifestyle item, a moving ball on the strike screen, commentary that barely repeats, new chants</li>
+<li><a href="https://claude.ai/artifact/Q681hvwMs83X9895Aevav7">v0.5</a> · 2026-09-26 · How you get picked: win your shirt from a better-rated rival, form over 3 games, subs when the score says, cup rotation</li>
+<li><a href="https://claude.ai/artifact/FYpjCv5GQ4NPTN9qv4BhwQ">v0.4</a> · 2026-09-25 · Training rebuilt the New Star Soccer way: 30 fixed levels, three tries, stars raise the skill; pace, vision and free kick matter in matches</li>
+<li><a href="https://claude.ai/artifact/SoBMWDhZGj58LXwP4CFARm">v0.3</a> · 2026-09-25 · What you see on the pitch matches where people stand: nearer players and the ball drawn right, corners from the flag; trophy pictures, instant energy modes, feed likes</li>
+<li><a href="https://claude.ai/artifact/4fuKfUh73WvRmxLdiU9tPu">v0.2</a> · 2026-09-22 · Energy master plan: in-match energy modes, a real ticking clock, half-time KIB cans, rest days, tougher fatigue rules</li>
+<li><a href="https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6">v0.1</a> · 2026-09-21 · Economy, fame and reputation rebuild: Premier League wages to ★100k, fame levels, one reputation number, 50-season careers</li>
+</ul></div>
+<script>
+(function(){var K="pn-mikey-v022-check",s={};try{s=JSON.parse(localStorage.getItem(K)||"{}")}catch(_){}
+document.querySelectorAll('#check input').forEach(function(b){b.checked=!!s[b.dataset.i];b.addEventListener('change',function(){s[b.dataset.i]=b.checked;try{localStorage.setItem(K,JSON.stringify(s))}catch(_){}})})})();
+</script>

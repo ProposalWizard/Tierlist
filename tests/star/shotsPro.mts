@@ -4,6 +4,7 @@
  *
  * Run: npx tsx tests/star/shotsPro.mts
  */
+import { oldStrikingPower } from "../../lib/star/strikePower";
 import * as E from "../../lib/star/canvasEngine";
 import { mulberry32 } from "../../lib/star/season";
 import {
@@ -69,11 +70,13 @@ const ok = (c: boolean, what: string) => { if (!c) { failed++; console.error(`  
 }
 
 // ── Conversion with a human-like thumb (see shotLab.ts), before → after ──
+// Struck on the power line from before 26 Oct 2026 (oldStrikingPower): this
+// measures the Shots pro model, not the power curve (tests/star/strikePower.mts).
 {
   const N = 160;
   const rate = (kind: E.ScenarioKind, model: { pro: boolean; knuckle: boolean } | null) => {
     let g = 0, ot = 0;
-    for (let s = 1; s <= N; s++) { const r = shoot(kind, s * 7919 + 13, { model }); if (r.goal) g++; if (r.onTarget) ot++; }
+    for (let s = 1; s <= N; s++) { const r = shoot(kind, s * 7919 + 13, { model, strikePower: oldStrikingPower }); if (r.goal) g++; if (r.onTarget) ot++; }
     return { g: g / N, ot: ot / N };
   };
   const pOld = rate("penalty", null), pNew = rate("penalty", { pro: true, knuckle: true });

@@ -65,7 +65,9 @@ for (const kind of KINDS) {
   const share = got / N;
   console.log(`  ${kind.padEnd(14)} ${pct(got, N).padStart(6)}  (table ${Math.round((set ? 0 : want) * 100)}%)`);
   if (set || want === 0) check(`${kind}: none`, got === 0, got);
-  else if (want >= 1) check(`${kind}: every one`, got === N, got);
+  // 26 Oct 2026: a build-up that ends offside in every style is dropped while
+  // offside calls are hidden (fhr/builders.ts), about 1 in 300.
+  else if (want >= 1) check(`${kind}: every one (bar an all-offside move)`, got >= N * 0.99, got);
   else check(`${kind}: about ${Math.round(want * 100)}% (seeded)`, Math.abs(share - want) < 0.1, share);
   check(`${kind}: none with Chances Old`, oldGot === 0, oldGot);
   check(`${kind}: none for a move carrying on / the opening picture`, carryOn === 0 && opening === 0, { carryOn, opening });

@@ -437,6 +437,13 @@ function commit(
   // draw against a mid-table side does — and reading two identical lines a
   // couple of scrolls apart is the same tell as reading them side by side.
   const recentText = new Set(state.posts.slice(-24).map(p => p.text));
+  // ── One of each kind of post per match (Mikey, 26 Oct 2026) ──
+  // "Who is to blame?" came twice, each with its own poll. A post with a
+  // graphic (a poll, a card, a table) is one per kind per cycle, and one poll
+  // in all; plain fan text may repeat its kind (love, anger) as long as the
+  // words differ, which recentText already keeps.
+  const graphicKinds = new Set<string>();
+  let polls = 0;
 
   // Indexed rather than `.entries()` — this project's TypeScript target does
   // not down-level iterate an array iterator.
@@ -445,6 +452,15 @@ function commit(
     const made = render(p, career, record, memory, cycleId, usedThisCycle, slot);
     if (!made) continue;
     if (recentText.has(made.post.text)) continue;
+    const gType = (made.post.graphic as { type?: string } | undefined)?.type;
+    if (gType) {
+      const isPoll = gType === "poll" || gType === "gotmPoll";
+      if (isPoll && polls >= 1) continue;
+      const key = isPoll ? "poll" : `${gType}|${made.post.eventId ?? ""}`;
+      if (graphicKinds.has(key)) continue;
+      graphicKinds.add(key);
+      if (isPoll) polls++;
+    }
     recentText.add(made.post.text);
     usedThisCycle.add(made.templateId);
     posts.push({ ...made.post, scope });
@@ -737,9 +753,20 @@ export function pinHighlights(posts: StoredPost[], cycleId: string): StoredPost[
   // random … no guarantee that there's a specific line … at the top"): each
   // goes somewhere in the first screenful (one of the first five places),
   // the same place every time you open this feed.
+  // Mikey, 26 Oct 2026: still "consistently" first or second. Each now goes
+  // in a random place from the 3rd to the 6th (still the first screenful,
+  // Leo's rule), never the top two unless the feed is that short.
   const out = posts.filter(p => rank(p) === 2);
   const rng = rngFor("pin", cycleId);
-  for (const p of top) out.splice(Math.min(out.length, Math.floor(rng() * 5)), 0, p);
+  const lo = Math.min(2, out.length), hi = Math.max(lo, Math.min(5, out.length + top.length - 1));
+  const placed: { p: StoredPost; at: number }[] = [];
+  for (const p of top) {
+    let at = lo + Math.floor(rng() * (hi - lo + 1));
+    for (let t = 0; t < 6 && placed.some((x) => x.at === at); t++) at = lo + Math.floor(rng() * (hi - lo + 1));
+    placed.push({ p, at });
+  }
+  // Lowest place first, so a later one never pushes an earlier one down.
+  for (const { p, at } of placed.sort((a, b) => a.at - b.at)) out.splice(Math.min(out.length, at), 0, p);
   return out;
 }
 

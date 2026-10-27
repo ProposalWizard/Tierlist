@@ -27,6 +27,512 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.124",
+      "title": "Mikey's patch notes: First hour story, power and smarter chances",
+      "author": "Mikey",
+      "publishedAt": "2026-10-26T23:45:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/PYipsSX5z6VbYPQqUoXKm2",
+      "summary": "A new career's first hour as a story (each feature brought in by a person after a game, moves opened one at a time), Power 40 clearly weaker with a Power curve test box, chances that follow your play style, a short option on every byline cross, room to pull back on every chance, one size for men next to the goal, no offside build-ups, and a tidier social feed.",
+      "stats": [
+        {
+          "value": "79 → 66 km/h",
+          "label": "Power 40 full shot"
+        },
+        {
+          "value": "0%",
+          "label": "byline crosses on Attacking"
+        },
+        {
+          "value": "300 / 300",
+          "label": "byline crosses with a short option"
+        },
+        {
+          "value": "21% → 0",
+          "label": "tight angles with no room to pull back"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Power",
+              "detail": "Play Area → Power curve; then a new career's first shots at Power 40"
+            },
+            {
+              "title": "Play style",
+              "detail": "Match → play style Attacking: no byline crosses"
+            },
+            {
+              "title": "Short option",
+              "detail": "any byline cross: a team-mate 6-10 m back"
+            },
+            {
+              "title": "Offside build-ups",
+              "detail": "no build-up ends \"Offside!\" before your touch"
+            },
+            {
+              "title": "A chance a half",
+              "detail": "Medium or High energy"
+            },
+            {
+              "title": "Moves one at a time",
+              "detail": "new career: guides on Home; no header before game 4"
+            },
+            {
+              "title": "Set pieces",
+              "detail": "new career: pens at 10 goals, FK at 60, corners at 70"
+            },
+            {
+              "title": "Sizes",
+              "detail": "men the same size next to the goal on every camera"
+            },
+            {
+              "title": "Room to pull back",
+              "detail": "the ball never against a side of the screen"
+            },
+            {
+              "title": "Cutbacks",
+              "detail": "always side-on"
+            },
+            {
+              "title": "First hour story",
+              "detail": "new career: games 1 to 3"
+            },
+            {
+              "title": "Boots gift, ★35 contract, half-price can",
+              "detail": "new career"
+            },
+            {
+              "title": "Guided first match and first sponsor",
+              "detail": "new career"
+            },
+            {
+              "title": "Coach bubble pointers",
+              "detail": "any pointer"
+            },
+            {
+              "title": "Small achievement banner",
+              "detail": "earn an achievement"
+            },
+            {
+              "title": "Training, Home, Stats, Shop, League, Phone",
+              "detail": "each screen"
+            },
+            {
+              "title": "Match labels",
+              "detail": "a team-mate's penalty; \"Rating\""
+            },
+            {
+              "title": "Social feed",
+              "detail": "Phone → Social after a match"
+            },
+            {
+              "title": "Career robot",
+              "detail": "npx tsx scripts/robot/careerRobot.mts"
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Gameplay",
+          "items": [
+            {
+              "title": "Changed: Power 40 is a starting player now",
+              "detail": "A full-power shot at Power 40 leaves the boot at 66 km/h (was 79). Power 65 now hits like the old 40. The top is unchanged. (measured)",
+              "bars": [
+                {
+                  "label": "Power 40 shot",
+                  "was": 79,
+                  "now": 66,
+                  "state": "warn",
+                  "unit": "km/h"
+                },
+                {
+                  "label": "1-on-1 goals at 40",
+                  "was": 50,
+                  "now": 44,
+                  "state": "warn",
+                  "unit": "%"
+                },
+                {
+                  "label": "Long shots at 40",
+                  "was": 27,
+                  "now": 19,
+                  "state": "warn",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "The numbers",
+                "points": [
+                  "Full-power speed off the boot, metres a second, at Power 0 / 20 / 40 / 60 / 80 / 100: now 18 / 19.5 / 21 / 23.4 / 30.6 / 32.76, before 18 / 21.6 / 25.2 / 28.8 / 32.4 / 32.76. Straight lines in between.",
+                  "Every kick uses it: shots, passes and crosses. The fully 3D games keep their own numbers.",
+                  "Goals measured with the same shooting thumb, 300 kicks each. At Power 65 to 80 scoring goes up a little, because fewer shots fly over the bar.",
+                  "Pinned by tests/star/strikePower.mts."
+                ]
+              }
+            },
+            {
+              "title": "Changed: Chances follow your play style",
+              "detail": "Attacking no longer gets byline crosses. Share of chances that are byline crosses: (measured)",
+              "more": {
+                "summary": "Why",
+                "points": [
+                  "Open-play chances came from one even deck that ignored the match: any kind, any style. A thin kind was swapped for its nearest drawing, which could be a header, so a new career saw a header in game 2.",
+                  "Now the deal carries your play style and what is open. Measured over 120 matches for each style."
+                ]
+              }
+            },
+            {
+              "title": "New: Every byline cross has a short option",
+              "detail": "A team-mate stands 6 to 10 m away, behind the ball and in space, for a cutback or a square ball. So weak power still has a play. (measured)",
+              "more": {
+                "summary": "The numbers",
+                "points": [
+                  "300 of 300 byline crosses have him, 6 to 10 m away, behind the ball (never offside), at least 2.5 m from everybody, on screen.",
+                  "A soft pass at Power and Technique 40 reaches him 300 times in 300.",
+                  "He plays it himself. He used to try a lay-off back across the box, and defenders took 24 of 44."
+                ]
+              }
+            },
+            {
+              "title": "Changed: No more build-ups that end \"Offside!\"",
+              "detail": "A build-up that ended in an offside flag before you touched the ball now tries another style. Only if every style ends offside does the chance start without one (about 1 in 300). (measured)",
+              "more": {
+                "summary": "Kept as a feature",
+                "points": [
+                  "Your own offside passes are unchanged.",
+                  "One switch brings the build-up offside calls back (BUILDUP_OFFSIDE_CALLS in buildUp.ts)."
+                ]
+              }
+            },
+            {
+              "title": "New: A chance in every half on Medium and High",
+              "detail": "If you have had no chance by 43' or 88', the ball comes to you in the final third. Not on Low, not in extra time. Halves with no chance for you: (measured)",
+              "bars": [
+                {
+                  "label": "Medium",
+                  "was": 20,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "of 600"
+                },
+                {
+                  "label": "High",
+                  "was": 19,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "of 600"
+                }
+              ],
+              "more": {
+                "summary": "The numbers",
+                "points": [
+                  "300 seeded matches of a weak side away. Chances a match: 3.4 → 3.5."
+                ]
+              }
+            },
+            {
+              "title": "New: A new career learns its moves one at a time",
+              "detail": "Each move opens with a guide on Home and a first-use line in the match. No header or volley in games 1 to 3 (0 in 1,285 chances). (measured)",
+              "more": {
+                "summary": "When each opens",
+                "points": [
+                  "Game 1: shoot (curl and chip are part of the tap), pass, play style.",
+                  "After game 3: headers and volleys. Game 4 brings one of each for certain (by 60' and 80'). The Aerial drill opens with them.",
+                  "Pace 60: steer your run (auto run before). Pace 65: sprint and the stamina bar.",
+                  "After game 4: moving with the ball.",
+                  "Built with guides but switched off for now: power shot (Power 60), knuckleball (Power 70 + Technique 60), skill moves (Technique 65), one-twos (Vision 60).",
+                  "Saves from before this keep everything."
+                ]
+              }
+            },
+            {
+              "title": "Changed: Set pieces are earned on a new career",
+              "detail": "Penalties at 10 goals, free kicks at Technique and Vision 60, corners at 70. A team-mate takes them until then. (not yet seen)"
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Camera and sizes",
+          "items": [
+            {
+              "title": "Changed: Men, keeper and ball are one size next to the goal on every camera",
+              "detail": "A man is 1.63 m tall everywhere: 22.2% of the goal's width (was 9% to 27%, by camera). The size of your 4-0 build-up screenshot. Cameras themselves are unchanged. (seen)"
+            },
+            {
+              "title": "Changed: Room to pull back: the ball a full drag from both sides",
+              "detail": "The camera slides, or widens a little, so you can always drag to full power. It never loses the goal or anyone it showed. (measured)",
+              "bars": [
+                {
+                  "label": "Tight angles",
+                  "was": 21,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Long shots",
+                  "was": 18,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Cutbacks",
+                  "was": 10,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "The numbers",
+                "points": [
+                  "Share of chances with the ball within a full drag of a side. Now 0 of 1,600 upright chances, both framings, flat and tilted."
+                ]
+              }
+            },
+            {
+              "title": "Changed: Every cutback is side-on",
+              "detail": "Whatever the Wide chances setting says. (measured)"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "A new career's first hour",
+          "items": [
+            {
+              "title": "New: The first hour is a story: a person brings in each feature after a game",
+              "detail": "A new career opens with Home, League and Play only. Old saves keep everything. (seen)",
+              "more": {
+                "summary": "The steps",
+                "points": [
+                  "After game 1: training day, two drills (Power and Technique), at normal energy.",
+                  "After game 2: the physio gives a can; a team-mate gives you his cracked phone (Messages, Fixtures, Squad, Relationships, Social). The agent texts first.",
+                  "After game 3: the chairman opens the Shop (pointer on cans, then boots).",
+                  "Star level 2: a pointer at the Star Pass.",
+                  "First goal: Stats and Achievements open."
+                ]
+              }
+            },
+            {
+              "title": "New: A team-mate gives you his old boots before game 1",
+              "detail": "NS-Pure, 5 games left, Power +5 and Technique +5. New careers start with no boots and no cans. (seen)"
+            },
+            {
+              "title": "Changed: First contract: ★35 a week, North or South",
+              "detail": "The trial always places you in National League North or South (50/50). Sign only: no Negotiate, no other clubs. (seen)"
+            },
+            {
+              "title": "Changed: The club shop's first KIB can is half price",
+              "detail": "One week's wage. (seen)"
+            },
+            {
+              "title": "New: The first sponsor offer is guided",
+              "detail": "The agent's message, then the phone, Messages, the offer, with a pointer at each. (seen)"
+            },
+            {
+              "title": "New: The first match is guided",
+              "detail": "Energy (Low / Medium / High), play style and speed. First chance: \"drag back … then let go\". Strike screen: \"tap the part of the ball\". First header: two short lines. A new save starts at normal speed. (seen)"
+            },
+            {
+              "title": "Changed: The trial waits for you",
+              "detail": "The shootout's team-mates wait until you have read how it works. \"A scout has spotted you\" waits for your tap. The pass stage says the red shirts are marking. (seen)"
+            },
+            {
+              "title": "Fixed: Full rest before game 2",
+              "detail": "No low-energy warning before the physio's can. (seen)"
+            },
+            {
+              "title": "Fixed: Nothing pops up over the Star Pass",
+              "detail": "The first-goal pop-up and the set-piece chat wait until it shuts. Lines that said \"Saturday\" or \"tomorrow\" on other days now say \"next game\" or \"now\". (seen)"
+            },
+            {
+              "title": "Fixed: The welcome tour no longer comes back after game 1",
+              "detail": "Pressing Play on its last step marks it done. The first-match tour holds the match, so the first chance waits, and it reaches its speed step. (seen)"
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Screens and UI",
+          "items": [
+            {
+              "title": "Changed: Pointers are a coach bubble",
+              "detail": "White, with a 🧢 and a tail pointing at the button. Grey Later and Skip, green Next. Your pick, option C. (seen)"
+            },
+            {
+              "title": "Changed: Achievements and records are a small banner",
+              "detail": "At the top for about 3 s, nothing to close (was a full pop-up). (seen)"
+            },
+            {
+              "title": "Changed: Training trimmed",
+              "detail": "The drill card shows the skill's name, its steps and the stars. Stars stay up 3 s (was 1.4). No Back during the story's two drills. (seen)"
+            },
+            {
+              "title": "Changed: Home tidied",
+              "detail": "The Stats and Shop hints at the bottom are words (swipe; a tap does nothing). Your numbers are always in the top row; the Sides | Top switch is gone. (seen)"
+            },
+            {
+              "title": "Changed: Stats: a smaller card",
+              "detail": "7% smaller, the four tabs match its height, no Save image, Your bests folds. (seen)"
+            },
+            {
+              "title": "Changed: Shop: tabs on the main bar, 5 items a screen",
+              "detail": "Shop · For You · 3D · Boots · Sponsors sit straight on top of the bottom bar. Opens on 5 a screen for everyone (was 3). Sponsors stay locked until your first offer. (seen)"
+            },
+            {
+              "title": "New: League: scorers for every cup and international",
+              "detail": "Goals and Assists for the FA Cup, League Cup, both shields and every international competition. The shields get Final · Goals · Assists · History. (seen)"
+            },
+            {
+              "title": "Changed: Phone tidied",
+              "detail": "Relationships opens inside the phone with one general line. Fixtures: a draw is yellow-orange, the next game glows blue. The badge no longer counts Social posts the cracked phone cannot open. Match reactions wait for the phone. (seen)"
+            },
+            {
+              "title": "Changed: Match labels",
+              "detail": "\"Avg Rat\" reads \"Rating\". Your team's build-up lines are in your kit colour. A team-mate's penalty or free-kick taker: his name about twice the size (at least 15 px), no keeper name. \"Someone else steps up\" is in your kit colour. (not yet seen)"
+            },
+            {
+              "title": "Fixed: Boss talk keeps all three answers on screen",
+              "detail": "And the Technique drill hint is shorter and clear of the ? button. (seen)"
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Social feed",
+          "items": [
+            {
+              "title": "Changed: Highlights land in a random place",
+              "detail": "3rd to 6th in the feed (were always the top two). Still on the first screen. (measured)"
+            },
+            {
+              "title": "Fixed: No more repeated posts",
+              "detail": "At most one poll a match, and one post of each graphic. Fan posts may share a kind, never the same words. (measured)"
+            },
+            {
+              "title": "Fixed: A missed Panenka is yours only when you took it",
+              "detail": "A team-mate's miss was written up as yours and cost you reputation. (measured)",
+              "more": {
+                "summary": "How it was checked",
+                "points": [
+                  "tests/star/media.mts plays three 20-week seasons and checks every match's feed."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Lag and saves",
+          "items": [
+            {
+              "title": "Fixed: The Hall of Fame copy of a save is back under its limit",
+              "detail": "114 KB (limit 120 KB). League History (about 1.3 KB a season) is left out of that copy. (measured)"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Test tools",
+          "items": [
+            {
+              "title": "New: Play Area → Power curve",
+              "detail": "Type the full-power speed at each Power level, press Use these, then play Infinite Match with the Power slider. Back to the game's, Fill in Before, Copy numbers. This device only, careers on it included. (seen)"
+            },
+            {
+              "title": "New: Career robot",
+              "detail": "Plays a 20-season average-player career in about 6 s and reports each season: club, league, goals, assists, Star Pass, money, and anything that broke. (measured)"
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "The 26 Oct gameplay batch is not seen on a phone yet",
+              "detail": "Power, play style, short option, room to pull back, cutbacks, offside build-ups, match labels and social. Measured in tests; the Power curve box was seen at phone size.",
+              "pill": {
+                "text": "low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Weaker Power 40 scores fewer goals",
+              "detail": "One-on-ones 50% → 44% and long shots 27% → 19% at Power 40. Judge it in play with the Power curve box.",
+              "pill": {
+                "text": "low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Side-on cutbacks draw the men up to 5% smaller",
+              "detail": "The camera widens a little to keep room to pull back, and men are a fixed size in metres.",
+              "pill": {
+                "text": "low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Aerial training auto-played and got stuck",
+              "detail": "From the 26 Oct playtest. Not fixed in this version.",
+              "pill": {
+                "text": "high",
+                "tone": "red"
+              }
+            },
+            {
+              "title": "Other points from the 26 Oct playtest",
+              "detail": "Header timing too quick, tutorial slow to load, no Settings guide, boots should show their stats, free-kick line green, first-goal pointer pressed a button instead of a swipe, the can purchase guide, too much too soon. The start of a career and unlock pacing are being built in a separate chat.",
+              "pill": {
+                "text": "low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "12 test files were already failing before this version",
+              "detail": "None got worse in this version (checked line by line).",
+              "pill": {
+                "text": "low",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "The start of a career and unlock pacing",
+              "detail": "Being built in a separate chat."
+            },
+            {
+              "title": "Pick the final power numbers",
+              "detail": "After playing the Power curve box."
+            },
+            {
+              "title": "Switch on the last four moves",
+              "detail": "Power shot, knuckleball, skill moves, one-twos: built, off for now."
+            },
+            {
+              "title": "Star Pass reward ladder",
+              "detail": "Proposal still to come."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+    {
       "version": "0.123",
       "title": "Leo's patch notes: Keeper catches, dives and the ball",
       "author": "Leo",
