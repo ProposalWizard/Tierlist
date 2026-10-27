@@ -7322,10 +7322,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (ks && ks.sc !== sc) keeperShowRef.current = null;
     if (!keeperShowOn()) return;
     spriteClipReady("keeper", "kCatchDiveR"); // fetches the keeper-catch drawings the first time
-    if (keeperShowRef.current || phaseRef.current !== "flight" || !sc || sceneRef.current?.keeper === false) return;
+    // Until his move starts, re-time it every frame from the ball as it is now:
+    // the first guess ignores air drag, so on a long shot it had him down and
+    // waiting for the ball (seen, Broadcast take, 27 Oct).
+    const cur = keeperShowRef.current;
+    if (cur && (cur.ending || showClockRef.current >= cur.start)) return;
+    if (phaseRef.current !== "flight" || !sc || sceneRef.current?.keeper === false) return;
     const b = ballRef.current;
     if (!b || b.inNet || sc.keeper.done) return;
-    const k = sc.keeper;
+    const k = cur ? { x: cur.from.x, y: cur.from.y } : sc.keeper;
     const hit = predictLine({ x: b.pos.x, y: b.pos.y, z: b.z, vx: b.vel.x, vy: b.vel.y, vz: b.vz ?? 0 }, k.y, b.clock ?? 0);
     if (!hit || Math.abs(hit.x - k.x) > KEEPER_REACH_M + 1.5 || hit.z > 3) return;
     const { move, side } = pickMove(hit.x - k.x, hit.z);

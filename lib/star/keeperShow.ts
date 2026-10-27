@@ -63,23 +63,47 @@ export interface ClipTiming { fps: number; frames: number; contactFrame?: number
 export const KEEPER_REACH_M = 2.9;
 const G = 9.81;
 
+/** The engine's own ball numbers (lib/star/canvasEngine.ts AIR_DRAG, GROUND_FRICTION), copied so this stays pure. */
+const AIR_DRAG = 0.12;
+const GROUND_FRICTION = 1.9;
+
 /**
- * When and where will the ball reach his line (y = keeperY)? Plain projectile
- * flight from the ball's state now: enough to time a dive (drag and spin move
- * the real ball a few cm over this distance; the contact moment re-syncs).
+ * When and where will the ball reach his line (y = keeperY)? Steps the ball
+ * forward with the engine's air drag and grass friction (a bounce just lands
+ * it). Without them a long or rolling shot arrived much later than guessed and
+ * he was down, or even back up, before it reached him (seen, 27 Oct). The
+ * caller re-asks every frame until his move starts, and the contact moment
+ * re-syncs the rest.
  */
 export function predictLine(
   ball: { x: number; y: number; z: number; vx: number; vy: number; vz: number },
   keeperY: number,
   clockNow: number,
 ): { tLine: number; x: number; z: number } | null {
-  const dy = keeperY - ball.y;
-  if (Math.abs(ball.vy) < 0.5 || Math.sign(dy) !== Math.sign(ball.vy)) return null;
-  const t = dy / ball.vy;
-  if (!(t > 0) || t > 3) return null;
-  let z = ball.z + ball.vz * t - 0.5 * G * t * t;
-  if (z < 0) z = 0; // it has bounced; on the floor is close enough for choosing a move
-  return { tLine: clockNow + t, x: ball.x + ball.vx * t, z };
+  let { x, y, z, vx, vy, vz } = ball;
+  const sgn = Math.sign(keeperY - y);
+  if (Math.abs(vy) < 0.5 || sgn !== Math.sign(vy)) return null;
+  const dt = 1 / 120;
+  for (let t = 0; t < 3; t += dt) {
+    if (z > 0.02 || vz > 0) {
+      const k = Math.max(0, 1 - AIR_DRAG * dt);
+      vx *= k; vy *= k;
+      vz -= G * dt; z += vz * dt;
+      if (z <= 0) { z = 0; vz = 0; }
+    } else {
+      const sp = Math.hypot(vx, vy);
+      if (sp < 0.3) return null; // it stops before it gets to him
+      const f = Math.max(0, sp - GROUND_FRICTION * dt) / sp;
+      vx *= f; vy *= f;
+    }
+    const ny = y + vy * dt;
+    if (Math.sign(keeperY - ny) !== sgn) {
+      const frac = (keeperY - y) / (ny - y);
+      return { tLine: clockNow + t + frac * dt, x: x + vx * dt * frac, z };
+    }
+    x += vx * dt; y = ny;
+  }
+  return null;
 }
 
 /** Which move: standing (chest or feet) when it comes at him, a dive (high or low) when it doesn't. */
