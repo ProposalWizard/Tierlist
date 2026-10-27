@@ -33,6 +33,9 @@ The website's own code is converted, file for file, into Roblox's language
 | `game/trialPlay.ts` | The trial's five tests without the drawing (played on the device). |
 | `game/trainingPlay.ts` | A training level's drill without the drawing (played on the device). |
 | `game/trainingFlow.ts` | Training's server rules: sessions, energy, which levels are open, banking the stars. |
+| `game/lifeFlow.ts` | The Life tab's server rules: rest, the shop (cans, boots, lifestyle), the day off, the office talk, sponsors. |
+| `game/relgamePlay.ts` | The relationship games without the drawing (woodwork challenge, signing session), played on the device. |
+| `game/camera3d.ts` | The match camera: where it stands for each chance, the run and the commentary. Roblox only. |
 | `game/trialFlow.ts` | The trial's server steps: the results checked, the scout's offer, the manager's talk, the signing. |
 | `src/Server/` | The Roblox server: careers, saving (DataStore), real squads (HttpService). |
 | `src/Client/Main.client.luau` | The Roblox menus: draws what the server sends. |
@@ -91,6 +94,12 @@ them in the career). Controls:
 
 "Sim it" on the matchday screen still sims the match, as on the website.
 
+The camera (`game/camera3d.ts`) films each chance from behind the ball
+towards goal, as close as it can while the ball, the goal and you stay in
+view; the keeper and the men nearest the ball come in when they fit. The run
+follows behind you. To check a change by eye without Studio:
+`npx tsx roblox/bench/frames.dump.ts` then `python3 roblox/tools/camera-preview.py`.
+
 ## Training
 
 As on the website, training is the only way your skills grow. Train tab:
@@ -100,6 +109,21 @@ sessions a week (back after a Saturday match), each costing energy. Power,
 Technique, Free Kick and Aerial are played on the 3D pitch like a match
 chance; Pace is the run (W A S D / stick, Q / E to knock it past him); Vision
 is a tap on the right team-mate (or, on higher levels, the pass itself).
+
+## Life
+
+The Life tab has what the website has between matches, with the same rules:
+
+- **Rest**: energy back (more when you are happy). One of the week's days.
+- **Shop**: energy cans (buy, then drink), boots (the same pair adds its
+  matches; a new pair replaces it), lifestyle (cars, homes, phone...; star
+  locks as on the website).
+- **Relationships**: one game per bar each week, each costing energy and a
+  day. Boss: the office talk (three answers). Team: the woodwork challenge
+  (hit the posts and bar, on the 3D pitch). Fans: the signing session (tap
+  the shirts in time). Happiness: a day off (home, golf, a weekend away).
+- **Sponsors**: offers as they come; ask for longer or easier targets, sign
+  or decline, and answer a rival's poach.
 
 ## The trial
 
