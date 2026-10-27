@@ -184,8 +184,12 @@ export function keeperShowFrame(
 }
 
 /** Broadcast look: slow the picture just before, at and after the ball reaches him. */
-export function keeperSlowRate(s: KeeperShow | null, clockNow: number): number {
+export function keeperSlowRate(s: KeeperShow | null, clockNow: number, showNow = 0): number {
   if (!s || s.look !== "broadcast") return 1;
+  // Once he has it, the slow motion ends a beat later by the picture's own
+  // clock: after a catch the ball stops, so its clock never left the window
+  // and he lay in slow motion for about 3 s (seen, 27 Oct).
+  if (s.contactAt !== null) return showNow - s.contactAt < 0.1 ? 0.35 : 1;
   const d = clockNow - s.plan.tLine;
   return d > -0.18 && d < 0.3 ? 0.35 : 1;
 }

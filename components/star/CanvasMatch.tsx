@@ -6634,7 +6634,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // The new ball steps in fixed 1/180 s steps, so the flight is step for step the same.
       if (bigSlowNow()) dt *= BIG_SLOW_RATE;
       // Keeper catches, broadcast look: a short slow-motion as the ball reaches him (same fixed steps).
-      if (keeperShowRef.current && keeperShowRef.current.sc === scenarioRef.current) dt *= keeperSlowRate(keeperShowRef.current, ballRef.current?.clock ?? 0);
+      if (keeperShowRef.current && keeperShowRef.current.sc === scenarioRef.current) dt *= keeperSlowRate(keeperShowRef.current, ballRef.current?.clock ?? 0, showClockRef.current);
 
       // Match feel: New (lib/star/matchFeel.ts) — the picture holds at the
       // contact (the wind-up, then the hit-stop). Nothing is stepped while it
