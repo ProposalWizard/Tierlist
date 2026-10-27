@@ -15,13 +15,13 @@ website changes.
 
 ## How it works
 
-- **Language:** Roblox runs Luau, not TypeScript. Every website file is
-  rewritten by hand, one to one. A file on the website = one file here, same
-  name, same functions, same order.
-- **Why not an automatic converter:** the converter that exists (roblox-ts)
-  refuses the website's code. The career code alone has 562 uses of `null`,
-  which it forbids, and 29 places that touch the browser. Making it fit would
-  mean editing the website, which is ruled out.
+- **Language:** Roblox runs Luau, not TypeScript. Our own converter
+  (`tools/ts2luau`, built 27 Oct 2026) turns each website file into a Luau
+  file, one to one. Changed from the first plan (by hand): 320,000 lines
+  would take months by hand and drift from the website every day.
+- **Why not roblox-ts:** the converter that exists refuses the website's code
+  (562 uses of `null` in the career code alone). Making it fit would mean
+  editing the website, which is ruled out. Ours accepts it as it is.
 - **"Exactly the same" is tested, not hoped:** the website rolls its dice with
   one seeded generator (`mulberry32`, `lib/star/season.ts`). The Luau copy gives
   the same numbers to 15 decimal places (checked 27 Oct 2026, 4 seeds × 5 rolls).
@@ -49,7 +49,8 @@ data.
 
 Each stage ends with something you can open in Studio and play.
 
-1. **Career core** (now)
+1. **Career core** (built 27 Oct 2026: all of 2-7 below convert and pass
+   their twin tests; the screens are built; waiting on a first play in Studio)
    1. Base: dice, tuning numbers, data converter, clubs, squads. Twin tests on.
    2. Season: fixtures, calendar, league tables, simulated matches.
    3. Cups and Europe: FA Cup (ten rounds), League Cup, Trophy, CL/EL/Conference.
