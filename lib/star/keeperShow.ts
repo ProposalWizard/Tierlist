@@ -193,5 +193,7 @@ export function keeperSlowRate(s: KeeperShow | null, clockNow: number): number {
 /** How long the match holds on him after a save, so you see him get up (ms). Off = the old 1800. */
 export function keeperHoldMs(s: KeeperShow | null): number {
   if (!s || !s.ending || s.ending === "beaten") return 1800;
-  return s.plan.move === "diveHigh" || s.plan.move === "diveLow" ? 3400 : 2400;
+  // Broadcast's slow motion stretches the save by about a second of real time.
+  const slow = s.look === "broadcast" ? 1000 : 0;
+  return (s.plan.move === "diveHigh" || s.plan.move === "diveLow" ? 3400 : 2400) + slow;
 }

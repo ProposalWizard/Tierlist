@@ -7350,7 +7350,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** After a save with keeper catches on, hold long enough to see him get up (else the old 1.8 s). */
   const keeperResultHoldMs = (): number => {
     const ks = keeperShowRef.current;
-    return ks && ks.sc === scenarioRef.current && keeperShowOn() ? keeperHoldMs(ks) : 1800;
+    if (!ks || ks.sc !== scenarioRef.current || !keeperShowOn()) return 1800;
+    // A catch ends the chance in the same step as the save, before the frame
+    // loop has passed it on: read it off the ball now, or the hold was the old
+    // 1.8 s and the match cut away while he lay on the floor (seen, 27 Oct).
+    if (!ks.ending) {
+      const save = ballRef.current?.actionLog?.find((a) => a.kind === "save" && a.actor === "keeper" && a.save);
+      if (save?.save) keeperShowContact(save.save, 0);
+    }
+    return keeperHoldMs(ks);
   };
   /** The engine's save, as the keeper's ending (the ball reached him). */
   const keeperShowContact = (save: string, agoS: number) => {
