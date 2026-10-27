@@ -534,92 +534,90 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     },
     {
       "version": "0.123",
-      "title": "Leo's patch notes: Keeper catches, dives and the ball (plan)",
+      "title": "Leo's patch notes: Keeper catches, dives and the ball",
       "author": "Leo",
       "publishedAt": "2026-10-26T22:08:00Z",
-      "updatedAt": null,
+      "updatedAt": "2026-10-27T01:57:38Z",
+      "updateNote": "Built and filmed: the AFTER is on the page. Three looks (A Natural, B Broadcast, C Arcade), each a real save filmed frame by frame; pick one. A real catch is still filming. Page edited.",
       "artifactUrl": null,
-      "summary": "Leo, 26 Oct. A plan for Leo to look at, not built. Today a caught ball stops in mid air where it met the keeper, he slides to it in one pose, and on dives the ball is pushed away before he moves; in 3D he dives a second time at nothing. Plan: the ball goes into his gloves and moves with him; a real dive (push off, fly, land on his side, get up) with about 18 drawings per move at 24 a second; better keeper and ball graphics; the same in 2D, 3D and goal videos; behind Leo's switch; results unchanged.",
+      "summary": "Leo, 26 Oct, updated 27 Oct. Built on a test branch and filmed, not in the game yet: the keeper dives in time (his gloves meet the ball), a caught ball goes into his gloves and moves with him, he lands on the grass, lies a beat and gets up. 16 new keeper moves, 11-19 drawings each. Three looks to pick from: A Natural, B Broadcast (slow motion at the save), C Arcade (quicker, longer dive). Results unchanged; behind Leo's switch.",
       "stats": [
         {
-          "value": "4-6",
-          "label": "keeper drawings per move today"
+          "value": "16",
+          "label": "new keeper moves"
         },
         {
-          "value": "0",
-          "label": "drawings with the ball in his hands today"
-        },
-        {
-          "value": "~18",
-          "label": "drawings per move planned"
+          "value": "11-19",
+          "label": "drawings per move (was 4-6)"
         },
         {
           "value": "3",
-          "label": "calls for Leo"
+          "label": "looks to pick from"
+        },
+        {
+          "value": "3.4 s",
+          "label": "hold after a diving save (was 1.8 s)"
         }
       ],
       "sections": [
         {
           "kind": "known",
-          "title": "Now: what is wrong",
+          "title": "Before: what was wrong",
           "items": [
             {
-              "title": "A caught ball stops in the air where it met him",
-              "detail": "He slides to it in one dive pose and lies still; the ball sits on his middle. Seen in a real catch, filmed frame by frame."
+              "title": "A caught ball stopped in the air where it met him",
+              "detail": "He slid to it in one dive pose and lay still; the ball sat on his middle."
             },
             {
-              "title": "On a dive the ball goes before he does",
-              "detail": "The push happens while he is still standing; he dives after it has gone."
+              "title": "On a dive the ball went before he did",
+              "detail": "The push happened while he was still standing."
             },
             {
               "title": "3D: a second dive at nothing",
-              "detail": "He gets up, then about 2 s later dives again with no ball near."
+              "detail": "Not fixed yet (2D first)."
             }
           ]
         },
         {
           "kind": "added",
-          "title": "The plan",
+          "title": "Built and filmed",
           "items": [
             {
-              "title": "1 · The ball goes into his gloves and stays there",
-              "detail": "Every new drawing records where his gloves are, so the ball follows them through the dive, landing and getting up."
+              "title": "The dive starts in time",
+              "detail": "Timed from the shot with the match's own drag and grass friction; his gloves meet the ball. First takes dived up to 1 s early on long or rolling shots; fixed and refilmed."
             },
             {
-              "title": "2 · A real dive: push off, fly, land, get up",
-              "detail": "About 18 drawings per move at 24 a second (now 4-6 at 9); the dive starts in time; no second dive."
+              "title": "Ball in his gloves; land; get up",
+              "detail": "On a catch the ball moves with his gloves; on a palm away it flies off as the match sends it. Lands, lies 0.45 s, gets up."
             },
             {
-              "title": "3 · Better graphics: the keeper and the ball",
-              "detail": "The ball lit like the players, the right size in his gloves, a squash on contact; his drawings at twice the detail; his shadow stretches as he dives."
+              "title": "16 new keeper moves",
+              "detail": "Diving catch high and low, palm away, chest and feet catches, get up with or without the ball, hold. Checked: no body part through another, sizes unchanged."
             },
             {
-              "title": "4 · The same everywhere",
-              "detail": "2D match, 3D view and goal videos."
-            },
-            {
-              "title": "5 · Safe: behind your switch, results unchanged",
-              "detail": "New part \"Keeper catches and dives\"; off = as now; only the picture changes."
+              "title": "Results unchanged",
+              "detail": "Picture only; match tests pass as before."
             }
           ]
         },
         {
           "kind": "next",
-          "title": "Your calls",
+          "title": "Your call",
           "items": [
             {
-              "title": "After a catch: hold it and play on, or roll/kick it out?"
+              "title": "Pick a look: A Natural, B Broadcast or C Arcade"
             },
             {
-              "title": "Roll over after a big diving catch, or straight up?"
-            },
-            {
-              "title": "Stay on him about 1 s longer so you see him get up?"
-            },
-            {
-              "title": "All at once (about a day), or 2D first (about half a day)?"
+              "title": "Then: 3D view and goal videos"
             }
           ]
+        }
+      ],
+      "updates": [
+        {
+          "at": "2026-10-27T01:57:38Z",
+          "where": "Title, Text, Page",
+          "note": "Built and filmed: the AFTER is on the page. Three looks (A Natural, B Broadcast, C Arcade), each a real save filmed frame by frame; pick one. A real catch is still filming. Page edited."
         }
       ]
     },
