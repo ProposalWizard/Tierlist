@@ -69,7 +69,7 @@ return function(exports, import, Js)
 		if (g.minute >= 85) then
 			s += 6
 		end
-		local _d1 = A.map(S.split(g.score, "-"), Js.NumberNS)
+		local _d1 = A.map(S.split(g.score, "-"), Js.Number)
 		local us = _d1[1]
 		local them = _d1[2]
 		if ((Js.NumberNS.isFinite(us) and Js.NumberNS.isFinite(them)) and ((us - them) == 1)) then

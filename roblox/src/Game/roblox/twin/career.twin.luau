@@ -18,15 +18,15 @@ return function(exports, import, Js)
 		do return M__out.show(Js.O({ season = c.season, club = c.player.club, money = r2(c.money), fame = r2(c.fame), star = r2(c.starRating), table = table_, fixtures = Js.alen(c.fixtures), unplayed = Js.alen(A.filter(c.fixtures, function(f)
 			return (not f.played)
 		end)), trophies = A.map((if c.trophies ~= nil then c.trophies else Js.alit()), function(t)
-			return (Js.str(t.name) .. "@" .. Js.numstr(t.season))
+			return (t.competition .. "@" .. Js.numstr(t.season))
 		end), winners = c.lastSeasonWinners, squad = Js.alen(c.squad) }, { "season", "club", "money", "fame", "star", "table", "fixtures", "unplayed", "trophies", "winners", "squad" })) end
 	end
-	SEASONS = Js.Number((if Js.idx(Js.process.env, "CAREER_SEASONS") ~= nil then Js.idx(Js.process.env, "CAREER_SEASONS") else 2))
-	ONLY = (function() local _r = Js.idx(Js.process.env, "CAREER_DIVS"); if _r == nil then return nil end; return Js.call(_r, "split", ",") end)()
+	SEASONS = Js.Number((if Js.process.env.CAREER_SEASONS ~= nil then Js.process.env.CAREER_SEASONS else 2))
+	ONLY = (function() local _r = Js.process.env.CAREER_DIVS; if _r == nil then return nil end; return S.split(_r, ",") end)()
 	DIVS0 = Js.alit(Js.alit("premier", M_clubs.PREMIER_LEAGUE_CLUBS), Js.alit("championship", M_clubs.CHAMPIONSHIP_CLUBS), Js.alit("league_one", M_clubs.LEAGUE_ONE_CLUBS), Js.alit("league_two", M_clubs.LEAGUE_TWO_CLUBS), Js.alit("national_league", M_clubs.NATIONAL_LEAGUE_CLUBS), Js.alit("national_league_north", M_clubs.NATIONAL_LEAGUE_NORTH_CLUBS), Js.alit("national_league_south", M_clubs.NATIONAL_LEAGUE_SOUTH_CLUBS))
-	DIVS = (if Js.T(ONLY) then A.filter(DIVS0, function(_p1)
+	DIVS = (if ONLY then A.filter(DIVS0, function(_p1)
 		local d = _p1[1]
-		return Js.call(ONLY, "includes", d)
+		return A.includes(ONLY, d)
 	end) else DIVS0)
 	label = function(f)
 		return ((if f.competition ~= nil then f.competition else "League") .. "/" .. ((if f.round ~= nil then f.round else f.kind) or "") .. (if Js.T(f.leg) then (" L" .. Js.numstr(f.leg)) else "") .. "@" .. Js.numstr(f.week) .. " v " .. f.opponent)
@@ -51,7 +51,7 @@ return function(exports, import, Js)
 					local club = clubs[math.fmod((if (style == "win") then 0 else (if (style == "lose") then 5 else 11)), Js.alen(clubs)) + 1]
 					local p = Js.O({ firstName = "Soak", lastName = "Test", age = 17, skinTone = "light", club = club, clubBadge = nil, position = "ST", nationality = "England", startYear = 2027 }, { "firstName", "lastName", "age", "skinTone", "club", "clubBadge", "position", "nationality", "startYear" })
 					local c = M_careerFlow.makeInitialCareer(p, Js.aspread(clubs), div)
-					Js.console.log(("== " .. Js.str(div) .. "/" .. style .. " start " .. fingerprint(c)))
+					Js.console.log(("== " .. div .. "/" .. style .. " start " .. fingerprint(c)))
 					for s = 1, math.floor(SEASONS) do
 						local g = 0
 						while ((function() local _o = g; g = _o + 1; return _o end)() < 250) do
@@ -68,7 +68,7 @@ return function(exports, import, Js)
 							Js.console.log((label(next_) .. " | " .. (if me then (Js.numstr(me.played) .. "/" .. Js.numstr(me.points)) else "-") .. " | " .. Js.numstr(r2(c.money)) .. " | " .. Js.numstr(r2(c.fame))))
 						end
 						c = M_careerFlow.advanceSeason(c, false).career
-						Js.console.log(("== " .. Js.str(div) .. "/" .. style .. " after season " .. Js.numstr(s) .. " " .. fingerprint(c)))
+						Js.console.log(("== " .. div .. "/" .. style .. " after season " .. Js.numstr(s) .. " " .. fingerprint(c)))
 					end
 				end
 			end

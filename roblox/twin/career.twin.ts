@@ -7,7 +7,9 @@
 import { makeInitialCareer, creditMatchResult, advanceSeason, simulateMissedFixture } from "../../lib/star/careerFlow";
 import * as C from "../../lib/star/clubs";
 import { nextFixtureFor } from "../../lib/star/competitions";
-import type { CareerState, Fixture, MatchStats, StarPlayer, CareerDivision } from "../../lib/star/types";
+import type { CareerState, Fixture, MatchStats, StarPlayer } from "../../lib/star/types";
+import type { CareerDivision } from "../../lib/star/calendar";
+declare const process: { env: Record<string, string | undefined> };
 import { show } from "./_out";
 
 const SEASONS = Number(process.env.CAREER_SEASONS ?? 2);
@@ -31,7 +33,7 @@ function fingerprint(c: CareerState): string {
   return show({
     season: c.season, club: c.player.club, money: r2(c.money), fame: r2(c.fame), star: r2(c.starRating),
     table, fixtures: c.fixtures.length, unplayed: c.fixtures.filter((f) => !f.played).length,
-    trophies: (c.trophies ?? []).map((t) => `${t.name}@${t.season}`),
+    trophies: (c.trophies ?? []).map((t) => `${t.competition}@${t.season}`),
     winners: c.lastSeasonWinners, squad: c.squad.length,
   });
 }

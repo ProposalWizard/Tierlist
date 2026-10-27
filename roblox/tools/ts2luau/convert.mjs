@@ -70,6 +70,7 @@ function luaNumber(n) {
 }
 
 function modKey(file) {
+  if (file.startsWith(PKG)) return "__pkg/" + file.slice(PKG.length);
   // repo-relative path without .ts; JSON keeps a _json suffix
   let rel = path.relative(REPO, file).split(path.sep).join("/");
   if (rel.endsWith(".json")) return rel.slice(0, -5) + "_json";
@@ -88,7 +89,13 @@ function makeProgram(entries) {
   return ts.createProgram(entries.map((e) => path.resolve(REPO, e)), options);
 }
 
+// A package import (e.g. "react") maps to a hand-written stand-in in
+// roblox/src/Overrides/__pkg/<name>.luau; there is none for a package not listed.
+const PKG = "\0pkg:";
 function resolveImport(program, fromFile, spec) {
+  if (!spec.startsWith(".") && !spec.startsWith("@/") && !spec.startsWith("/")) {
+    if (fs.existsSync(path.join(OVERRIDES, "__pkg", spec + ".luau"))) return PKG + spec;
+  }
   const r = ts.resolveModuleName(spec, fromFile, program.getCompilerOptions(), ts.sys);
   if (r.resolvedModule) return r.resolvedModule.resolvedFileName;
   // JSON with resolveJsonModule
@@ -144,6 +151,7 @@ function typeInfo(checker, type) {
       if (name === "String") { info.str = true; return; }
       if (name === "Number") { info.num = true; return; }
       if (name === "Promise" || name === "PromiseLike") { info.promise = true; return; }
+      if (name === "Generator" || name === "IterableIterator" || name === "Iterator") { info.regex = true; return; }
       if (t.getCallSignatures().length > 0 && t.getProperties().length === 0) { info.fn = true; return; }
       if (sym && sym.flags & ts.SymbolFlags.Class) { info.cls = true; info.obj = true; return; }
       info.obj = true;
@@ -257,6 +265,9 @@ class FileEmitter {
       }
     }
     if (!decl) return this.globalRef(node, name);
+    // `declare const x` only describes a global
+    const declStmt = ts.isVariableDeclaration(decl) ? decl.parent?.parent : decl;
+    if (declStmt && (ts.getCombinedModifierFlags(declStmt) & ts.ModifierFlags.Ambient)) return this.globalRef(node, name);
     const declFile = decl.getSourceFile().fileName;
     if (declFile !== this.file) {
       return this.globalRef(node, name);
@@ -271,7 +282,7 @@ class FileEmitter {
       case "Math": return "Math";
       case "JSON": return "Js.JSON";
       case "Object": return "Js.Object";
-      case "Number": return "Js.NumberNS";
+      case "Number": return "Js.Number";
       case "Array": return "Js.Array";
       case "String": return "Js.String";
       case "Boolean": return "Js.Boolean";
@@ -403,6 +414,9 @@ class FileEmitter {
         this.err(node, "delete of this kind");
       }
       case K.AwaitExpression: return `Js.await(${this.expr(node.expression)})`;
+      case K.YieldExpression:
+        if (node.asteriskToken) this.err(node, "yield*");
+        return `coroutine.yield(${node.expression ? this.expr(node.expression) : "nil"})`;
       case K.SpreadElement: this.err(node, "spread here");
       case K.ClassExpression: this.err(node, "class expression");
       case K.CommaListExpression: this.err(node, "comma list");
@@ -776,6 +790,8 @@ class FileEmitter {
       if (ns) {
         const special = this.namespaceCall(node, ns, callee.name.text);
         if (special !== undefined) return special;
+        const fn = this.namespaceProp(callee, ns, callee.name.text);
+        if (fn !== undefined) return `${fn}(${this.args(node.arguments)})`;
       }
       return this.methodCall(node, callee, null);
     }
@@ -868,6 +884,7 @@ class FileEmitter {
           case "Promise": return `Js.Promise.new(${args})`;
           case "WeakMap": return `Js.Map.new(${args})`;
           case "WeakSet": return `Js.Set.new(${args})`;
+          case "Event": case "CustomEvent": return `Js.Event.new(${args})`;
         }
         this.err(node, `new ${callee.text}`);
       }
@@ -1091,6 +1108,11 @@ class FileEmitter {
     this.ind = saved.ind;
     this.loopStack = saved.loopStack;
     const plist = selfParam ? (list ? `self, ${list}` : "self") : list;
+    if (fn.asteriskToken) {
+      // a generator: calling it makes an iterator that runs the body as a coroutine
+      const pad = "\t".repeat(this.ind);
+      return `function(${plist})\n${pad}\treturn Js.gen(function()\n${body.map((l) => "\t" + l).join("\n")}\n${pad}\tend)\n${pad}end`;
+    }
     if (body.length === 0) return `function(${plist}) end`;
     return `function(${plist})\n${body.join("\n")}\n${"\t".repeat(this.ind)}end`;
   }
@@ -1231,7 +1253,7 @@ class FileEmitter {
       for (const s of stmts) {
         if (ts.isFunctionDeclaration(s) && s.name && s.body) ids.push(s.name);
         if ((ts.isClassDeclaration(s) || ts.isEnumDeclaration(s)) && s.name) ids.push(s.name);
-        if (ts.isVariableStatement(s)) {
+        if (ts.isVariableStatement(s) && !(ts.getCombinedModifierFlags(s) & ts.ModifierFlags.Ambient)) {
           for (const d of s.declarationList.declarations) ids.push(...this.bindingIds(d.name));
         }
       }
@@ -1326,7 +1348,9 @@ class FileEmitter {
         return;
       }
       case K.ClassDeclaration: return this.classDecl(s);
-      case K.VariableStatement: return this.varStmt(s);
+      case K.VariableStatement:
+        if (ts.getCombinedModifierFlags(s) & ts.ModifierFlags.Ambient) return;
+        return this.varStmt(s);
       case K.ExpressionStatement: return this.exprStmt(s.expression);
       case K.ReturnStatement: {
         const fn = this.fnStack[this.fnStack.length - 1];
@@ -1344,35 +1368,28 @@ class FileEmitter {
         this.emit("end");
         return;
       }
-      case K.ForStatement: return this.forStmt(s);
-      case K.ForOfStatement: return this.forOfStmt(s);
-      case K.ForInStatement: return this.forInStmt(s);
+      case K.ForStatement: this.forStmt(s); return this.labelChecks();
+      case K.ForOfStatement: this.forOfStmt(s); return this.labelChecks();
+      case K.ForInStatement: this.forInStmt(s); return this.labelChecks();
       case K.WhileStatement: {
         this.emit(`while ${this.cond(s.expression)} do`);
         this.loopBody(s.statement);
         this.emit("end");
-        return;
+        return this.labelChecks();
       }
       case K.DoStatement: {
-        const f = this.t("_first");
-        this.emit(`local ${f} = true`);
-        this.emit(`while ${f} or ${this.cond(s.expression)} do`);
-        this.ind++;
-        this.emit(`${f} = false`);
-        this.ind--;
-        this.loopBody(s.statement);
-        this.emit("end");
-        return;
+        this.doStmt(s);
+        return this.labelChecks();
       }
       case K.BreakStatement: {
-        if (s.label) this.err(s, "labelled break");
+        if (s.label) { this.labelJump(s, "brk"); return; }
         const top = this.loopStack[this.loopStack.length - 1];
         if (this.fnStack.length && this.fnStack[this.fnStack.length - 1].inTry && !top?.insideTry) this.err(s, "break inside try");
         this.emit("do break end");
         return;
       }
       case K.ContinueStatement: {
-        if (s.label) this.err(s, "labelled continue");
+        if (s.label) { this.labelJump(s, "cont"); return; }
         // a continue inside a switch-as-repeat must leave the repeat first
         const sw = [...this.loopStack].reverse().find((x) => x.kind === "loop" || x.kind === "switch-repeat");
         if (sw && sw.kind === "switch-repeat") {
@@ -1390,7 +1407,7 @@ class FileEmitter {
       }
       case K.TryStatement: return this.tryStmt(s);
       case K.SwitchStatement: return this.switchStmt(s);
-      case K.LabeledStatement: this.err(s, "labelled statement");
+      case K.LabeledStatement: return this.labelled(s);
     }
     this.err(s, `statement kind ${ts.SyntaxKind[s.kind]}`);
   }
@@ -1576,9 +1593,70 @@ class FileEmitter {
   }
 
   loopBody(st) {
-    this.loopStack.push({ kind: "loop" });
+    const frame = { kind: "loop", label: this.pendingLabel || null };
+    this.pendingLabel = null;
+    this.loopStack.push(frame);
     this.subBlock(st);
     this.loopStack.pop();
+    // after an inner loop ends: pass a labelled break/continue outwards
+    this.afterLoop = frame;
+  }
+
+  doStmt(s) {
+    const f = this.t("_first");
+    this.emit(`local ${f} = true`);
+    this.emit(`while ${f} or ${this.cond(s.expression)} do`);
+    this.ind++;
+    this.emit(`${f} = false`);
+    this.ind--;
+    this.loopBody(s.statement);
+    this.emit("end");
+  }
+
+  // after a loop that a labelled break/continue passed out of
+  labelChecks() {
+    const inner = this.afterLoop;
+    this.afterLoop = null;
+    if (!inner || !inner.passOut) return;
+    const top = this.loopStack[this.loopStack.length - 1];
+    for (const f of this.labels || []) {
+      if (!this.loopStack.some((x) => x.label === f.label)) continue;
+      if (top && top.label === f.label) {
+        this.emit(`if ${f.brk} then break end`);
+        this.emit(`if ${f.cont} then ${f.cont} = false; continue end`);
+      } else {
+        this.emit(`if ${f.brk} or ${f.cont} then break end`);
+      }
+    }
+  }
+
+  // outer: for (...) { ... break outer / continue outer ... }
+  labelled(s) {
+    const label = s.label.text;
+    const L = this.labels || (this.labels = []);
+    const flags = { label, brk: `_brk_${label}`, cont: `_cont_${label}` };
+    this.emit(`local ${flags.brk}, ${flags.cont} = false, false`);
+    L.push(flags);
+    this.pendingLabel = label;
+    this.stmt(s.statement, false);
+    L.pop();
+  }
+
+  labelJump(s, kind) {
+    const label = s.label.text;
+    const f = (this.labels || []).find((x) => x.label === label);
+    if (!f) this.err(s, "unknown label");
+    // the loop that carries this label
+    const idx = this.loopStack.findIndex((x) => x.label === label);
+    const top = this.loopStack.length - 1;
+    if (idx === top) {
+      this.emit(kind === "brk" ? "do break end" : "do continue end");
+      return;
+    }
+    this.emit(`${kind === "brk" ? f.brk : f.cont} = true`);
+    this.emit("do break end");
+    // every loop between here and the labelled one checks the flag on exit
+    for (let i = idx + 1; i <= top; i++) this.loopStack[i].passOut = true;
   }
 
   forStmt(s) {
@@ -2239,7 +2317,7 @@ function collect(program, entries) {
     const f = queue.pop();
     if (files.has(f)) continue;
     files.add(f);
-    if (f.endsWith(".json")) continue;
+    if (f.endsWith(".json") || f.startsWith(PKG)) continue;
     const sf = program.getSourceFile(f);
     if (!sf) throw new Error(`not in program: ${f}`);
     for (const st of sf.statements) {
@@ -2266,7 +2344,7 @@ function collect(program, entries) {
       }
       if (!spec) continue;
       const target = resolveImport(program, f, spec);
-      if (!target) throw new Error(`${path.relative(REPO, f)}: cannot resolve ${spec}`);
+      if (!target) throw new Error(`${path.relative(REPO, f)}: cannot resolve ${spec} (a package needs roblox/src/Overrides/__pkg/${spec}.luau)`);
       if (target.includes("node_modules")) throw new Error(`${path.relative(REPO, f)}: imports a package (${spec}); needs an override`);
       queue.push(target);
     }
@@ -2288,6 +2366,7 @@ export function convert(entries, { quiet = false } = {}) {
     const outFile = path.join(OUT_DIR, key + ".luau");
     fs.mkdirSync(path.dirname(outFile), { recursive: true });
     const override = path.join(OVERRIDES, key + ".luau");
+    if (f.startsWith(PKG) && !fs.existsSync(override)) { failures.push(`no stand-in for package ${key}`); continue; }
     try {
       let code;
       if (fs.existsSync(override)) code = fs.readFileSync(override, "utf8");

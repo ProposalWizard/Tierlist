@@ -3960,6 +3960,41 @@ function Js.instanceof(x, cls)
 	return mt ~= nil and (mt == cls or mt.__index == cls)
 end
 
+-- generators (function*): the body runs as a coroutine; next() resumes it
+local Gen = {}
+Gen.__index = Gen
+Gen.__jsclass = true
+function Js.gen(body)
+	return setmetatable({ _co = coroutine.create(body), _done = false }, Gen)
+end
+function Gen:next(v)
+	if self._done then
+		return O({ value = nil, done = true }, { "value", "done" })
+	end
+	local ok, val = coroutine.resume(self._co, v)
+	if not ok then
+		self._done = true
+		error(val, 0)
+	end
+	if coroutine.status(self._co) == "dead" then
+		self._done = true
+		return O({ value = val, done = true }, { "value", "done" })
+	end
+	return O({ value = val, done = false }, { "value", "done" })
+end
+Gen.__jsiter = function(g)
+	local out, n = {}, 0
+	while true do
+		local r = g:next()
+		if r.done then
+			break
+		end
+		n += 1
+		out[n] = r.value
+	end
+	return mkarr(out, n)
+end
+
 -- marks a `return` from inside a try block (the converter's pcall wrapper)
 Js.RET = setmetatable({}, { __tostring = function()
 	return "Js.RET"
@@ -4102,6 +4137,11 @@ function Js.decodeURIComponent(s)
 		return schar(tonumber(h, 16))
 	end))
 end
+
+-- browser events: made, never sent (there is no window in Roblox)
+Js.Event = { new = function(kind, init)
+	return O({ type = kind, detail = init and init.detail }, { "type", "detail" })
+end }
 
 Js.process = { env = {} }
 Js.globalThis = {}

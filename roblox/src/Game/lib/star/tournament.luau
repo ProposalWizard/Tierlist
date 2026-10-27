@@ -52,7 +52,7 @@ return function(exports, import, Js)
 			local b = _d1[2]
 			local c = _d1[3]
 			local d = _d1[4]
-			do return Js.O({ name = Js.String.fromCharCode((65 + g)), teams = teams, matches = Js.alit(Js.O({ md = 1, home = a, away = b }, { "md", "home", "away" }), Js.O({ md = 1, home = c, away = d }, { "md", "home", "away" }), Js.O({ md = 2, home = a, away = c }, { "md", "home", "away" }), Js.O({ md = 2, home = d, away = b }, { "md", "home", "away" }), Js.O({ md = 3, home = d, away = a }, { "md", "home", "away" }), Js.O({ md = 3, home = b, away = c }, { "md", "home", "away" })) }, { "name", "teams", "matches" }) end
+			do return Js.O({ name = Js.fromCharCode((65 + g)), teams = teams, matches = Js.alit(Js.O({ md = 1, home = a, away = b }, { "md", "home", "away" }), Js.O({ md = 1, home = c, away = d }, { "md", "home", "away" }), Js.O({ md = 2, home = a, away = c }, { "md", "home", "away" }), Js.O({ md = 2, home = d, away = b }, { "md", "home", "away" }), Js.O({ md = 3, home = d, away = a }, { "md", "home", "away" }), Js.O({ md = 3, home = b, away = c }, { "md", "home", "away" })) }, { "name", "teams", "matches" }) end
 		end) end
 	end
 	exports.drawGroups = drawGroups

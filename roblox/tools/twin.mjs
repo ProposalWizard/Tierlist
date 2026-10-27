@@ -17,7 +17,7 @@ const tests = fs.readdirSync(dir).filter((f) => f.endsWith(".twin.ts") && (!filt
 let failed = 0;
 for (const t of tests) {
   const file = path.join("roblox/twin", t);
-  const web = spawnSync("npx", ["tsx", file], { cwd: REPO, encoding: "utf8", maxBuffer: 1 << 28 });
+  const web = spawnSync("npx", ["tsx", file], { cwd: REPO, encoding: "utf8", maxBuffer: 1 << 28, env: { ...process.env, NODE_PATH: path.join(REPO, "roblox/tools/stubs") } });
   const t0 = Date.now();
   const rbx = runLuau(file);
   const ms = Date.now() - t0;

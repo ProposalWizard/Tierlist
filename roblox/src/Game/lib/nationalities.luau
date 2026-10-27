@@ -6,7 +6,7 @@ return function(exports, import, Js)
 	local isoToFlagEmoji, SUBDIVISION_FLAGS, NATIONALITY_ISO, NOT_FIFA, ALL_NATIONALITIES, nationalityKey, canonNat, SUBDIVISION_FLAGS_LC, NATIONALITY_ISO_LC, nationalityFlag, FLAGCDN_SUBDIVISIONS, FLAGCDN_SUBDIVISIONS_LC, getFlagUrl
 	isoToFlagEmoji = function(iso2)
 		local upper = S.toUpperCase(iso2)
-		do return (Js.String.fromCodePoint((127462 + (S.charCodeAt(upper, 0) - 65))) .. Js.String.fromCodePoint((127462 + (S.charCodeAt(upper, 1) - 65)))) end
+		do return (Js.fromCodePoint((127462 + (S.charCodeAt(upper, 0) - 65))) .. Js.fromCodePoint((127462 + (S.charCodeAt(upper, 1) - 65)))) end
 	end
 	nationalityKey = function(nationality)
 		if (not Js.T(nationality)) then
