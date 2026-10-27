@@ -77,7 +77,8 @@ import {
   playCrowdRise, startHeartbeat, playBigRoar,
 } from "@/lib/star/matchSound";
 import { isBigMoment, headingIn, BIG_SLOW_RATE } from "@/lib/star/bigMoment";
-import { leoUpdateOn } from "@/lib/star/leoUpdate";
+import { keeperLookChoice, leoUpdateOn } from "@/lib/star/leoUpdate";
+import { clipFor, keeperHoldMs, keeperShowFrame, keeperSlowRate, pickMove, predictLine, startFor, KEEPER_REACH_M, type KeeperEnding, type KeeperShow } from "@/lib/star/keeperShow";
 import { playLateGoalCall, preloadLateGoalCalls } from "@/lib/star/lateCommentary";
 import { finaliseMatch, liveRating, regressForMinutes, fairRating } from "@/lib/star/matchStats";
 import { goalZone, passGrade, missKind } from "@/lib/star/chanceRating";
@@ -249,7 +250,7 @@ import LiveScorePop from "./LiveScorePop";
 import LiveScoresPanel from "./LiveScoresPanel";
 import FigureSkinToggle from "./FigureSkinToggle";
 import type { MatchSpriteHint } from "@/lib/star/matchFigure";
-import { spriteKickStrikeT, keeperDiveClip, spriteClipReady, spriteClipFps, spriteClipFrames, warmSpriteKits, type SpriteClip } from "@/lib/star/sprites";
+import { spriteKickStrikeT, keeperDiveClip, keeperBallPoint, keeperBallRadius, spriteClipTiming, spriteClipReady, spriteClipFps, spriteClipFrames, warmSpriteKits, type SpriteClip } from "@/lib/star/sprites";
 import { outfieldSpriteClip, keeperDiveClipNew, keeperStandingClip, keeperGetUpT, sideOfDive } from "@/lib/star/sprite3dAnim";
 import { POST_L, POST_R, GOAL_H as VFX_GOAL_H } from "@/lib/star/pitch";
 import { cameraTilt, tiltFor, tiltCss, screenToCanvas, canvasToScreen, type Tilt } from "@/lib/star/cameraTilt";
@@ -2637,6 +2638,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const tiltGeomRef = useRef<Tilt | null>(null);
   /** When the 3D keeper's dive clip started (seconds), or null. */
   const keeperDiveStartRef = useRef<number | null>(null);
+  /** Keeper catches and dives (Leo's "keeperCatch" switch, lib/star/keeperShow.ts): this chance's
+   *  planned move, the picture's own clock (slows with the broadcast look), where his held ball is
+   *  drawn, and his dust puff. Picture only. */
+  const keeperShowRef = useRef<(KeeperShow & { sc: Scenario; from: { x: number; y: number }; dir: "R" | "L"; to: { x: number; y: number } | null }) | null>(null);
+  const showClockRef = useRef(0);
+  const keeperHeldBallRef = useRef<{ px: number; by: number; gy: number; r: number } | null>(null);
   /** Where the 3D keeper landed (canvas px), held while he lies there. */
   // Where he landed is kept as a spot on the PITCH (x, y in metres) plus his sideways lean in
   // keeper radii (offR), never as screen pixels: the celebration camera follows you after a
@@ -5132,7 +5139,58 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // ball rolling out (playtest film, 3 Oct 2026). Drawing only.
         const bl = ballRef.current;
         const wideOfGoal = !!bl && kk.saves === 0 && Math.abs(bl.pos.x - (POST_L + POST_R) / 2) > (POST_R - POST_L) / 2 + 2.5;
-        if (lunge > 0.04 && sign !== 0 && wideOfGoal && keeperLandRef.current?.sc !== sc) {
+        // Keeper catches and dives (Leo's "keeperCatch" switch): his planned move, timed so
+        // his gloves reach the ball as it arrives; the ball sits in them from a catch on.
+        const ks = keeperShowRef.current;
+        const ksF = ks && ks.sc === sc && keeperShowOn() ? keeperShowFrame(ks, showClockRef.current, ks.dir, keeperTiming) : null;
+        if (ks && ksF) {
+          const kit = { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt };
+          const speed = ks.look === "arcade" ? 1.25 : 1;
+          keeperSprite = { char: "keeper", clip: ksF.clip as SpriteClip, t: ksF.t * speed, facing: kFacing, kit, centre: 0 };
+          feelLiftPx = 0;
+          const sprH = kr * FIGURE_HEIGHT_R * SPRITE_HEIGHT_K;
+          const fromPx = toPx(ks.from.x, ks.from.y);
+          // Where his boots go so the gloves meet the ball: worked out once, from the
+          // contact frame's glove point and the ball's planned arrival.
+          if (!ks.to) {
+            const main = clipFor(ks.plan.move, null, ks.dir);
+            const T = keeperTiming(main);
+            const cT = T ? (T.contactFrame ?? Math.round(T.frames * 0.4)) / T.fps : 0;
+            const gp = keeperBallPoint(main as SpriteClip, cT, kFacing, sprH);
+            const at = toPx(ks.plan.x, ks.from.y);
+            const ballY = at.py - Math.max(0, ks.plan.z) * heightScale * at.scale;
+            const br = BALL_PX * at.scale;
+            ks.to = gp ? { x: at.px - (gp.x + gp.nx * br) - fromPx.px, y: ballY - (gp.y + gp.ny * br) - fromPx.py } : { x: at.px - fromPx.px, y: 0 };
+            // A standing catch moves him at most a step; a dive the whole way.
+            if (ks.plan.move === "chest" || ks.plan.move === "feet") ks.to = { x: Math.max(-KR * 1.2, Math.min(KR * 1.2, ks.to.x)), y: Math.max(-KR * 0.6, Math.min(KR * 0.6, ks.to.y)) };
+            if (ks.look === "arcade" && ks.plan.side) ks.to = { x: ks.to.x * 1.08, y: ks.to.y };
+          }
+          const e = ksF.travel < 1 ? 1 - (1 - ksF.travel) * (1 - ksF.travel) : 1;
+          keeperDrawAt = { x: fromPx.px + ks.to.x * e, y: fromPx.py + ks.to.y * e };
+          // After a dive the get-up starts where his body landed: the dive clip carries
+          // him across in the frame, its anchor stays at the take-off (landM, metres).
+          if (ksF.afterDive) {
+            const lm = keeperTiming(clipFor(ks.plan.move, ks.ending, ks.dir))?.landM;
+            if (lm) {
+              const sgn = ks.plan.side || 1;
+              const p0 = toPx(ks.from.x, ks.from.y), p1 = toPx(ks.from.x + sgn * lm[0], ks.from.y - lm[1]);
+              keeperDrawAt = { x: keeperDrawAt.x + (p1.px - p0.px), y: keeperDrawAt.y + (p1.py - p0.py) };
+            }
+          }
+          // Where the held ball is drawn this frame (drawBall reads it).
+          if (ksF.ballInHands) {
+            const gp = keeperBallPoint(ksF.clip as SpriteClip, ksF.t * speed, kFacing, sprH);
+            const br = keeperBallRadius(ksF.clip as SpriteClip, sprH) ?? BALL_PX * kScale;
+            keeperHeldBallRef.current = gp
+              ? { px: keeperDrawAt.x + gp.x + gp.nx * br, by: keeperDrawAt.y + gp.y + gp.ny * br, gy: keeperDrawAt.y + gp.g, r: br }
+              : null;
+          } else keeperHeldBallRef.current = null;
+          // His landing: a puff off the grass (bigger in the broadcast and arcade looks).
+          if (ksF.landedFor >= 0 && ksF.landedFor < 0.55) {
+            const big = ks.look === "natural" ? 0.7 : ks.look === "arcade" ? 1.35 : 1;
+            drawLandingPuff(ctx, keeperDrawAt.x, keeperDrawAt.y, KR * big, ksF.landedFor / 0.55);
+          }
+        } else if (lunge > 0.04 && sign !== 0 && wideOfGoal && keeperLandRef.current?.sc !== sc) {
           const a = toPx(kk.x, kk.y), b = toPx(kk.x + sign, kk.y);
           keeperDiveStartRef.current = null;
           keeperSprite = { char: "keeper", clip: "jog", t: kk.idleT, facing: Math.atan2(b.py - a.py, b.px - a.px), kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
@@ -5221,6 +5279,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           label: namesOn() ? kk.who?.shortName : undefined,
         },
       });
+
+      // Keeper catches: the ball he is holding, in front of him.
+      if (keeperHeldBallRef.current && keeperShowRef.current?.sc === sc) drawBall(0, 0, 0, keeperHeldBallRef.current);
 
       // The contact flash at the ball the moment he touches it (the glow
       // Keeper.flash has always marked and nothing ever drew). New only.
@@ -5344,10 +5405,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     //   3. the ball itself grows as it rises toward the camera.
     // The old version had the first of these and almost none of the other two,
     // which is why a chip and a driven shot looked much the same.
-    const drawBall = (x: number, y: number, z: number) => {
-      const { px, py, scale } = toPx(x, y);
-      const bScale = BALL_PX * scale;
-      const h = Math.max(0, z);
+    const drawBall = (x: number, y: number, z: number, held?: { px: number; by: number; gy: number; r: number }) => {
+      // Keeper catches: the ball in his gloves, at the screen point his clip baked
+      // (keeperBallPoint), its shadow on the grass under it, sized to his gloves.
+      const tp = toPx(x, y);
+      const px = held ? held.px : tp.px, py = held ? held.gy : tp.py, scale = held ? 1 : tp.scale;
+      const bScale = held ? held.r : BALL_PX * scale;
+      const h = held ? 0 : Math.max(0, z);
 
       // Ground shadow — stays ON the pitch, directly under the ball.
       const shadowShrink = 1 / (1 + h * 0.16);
@@ -5359,7 +5423,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       }
 
       // The ball, lifted off the shadow and grown a little with height.
-      const by = py - h * heightScale * scale;
+      const by = held ? held.by : py - h * heightScale * scale;
       // Harry, 13 Oct 2026: "actually the ball rising up in the air": it grows clearly as it climbs (was +5.5%
       // a metre, now +9%, up to +72% at 8 m), and leaves faint puffs of air behind it while it is up.
       const br = bScale * (1 + Math.min(h, 8) * 0.09);
@@ -5514,7 +5578,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const headPx = { x: yP.px, y: yP.py - HEAD_AT * sh };
       oldAirProbeRef.current = { sc, flow: "old", gapPx: +Math.hypot(ballPx.x - headPx.x, ballPx.y - headPx.y).toFixed(1), ballPx, headPx, figPx: +sh.toFixed(1), zM: +ballAt.z.toFixed(2) };
     }
-    if (ballAt) {
+    const keeperHolds = !!keeperHeldBallRef.current && keeperShowRef.current?.sc === sc && keeperShowOn();
+    if (ballAt && !keeperHolds) {
       const drawIt = () => drawBall(ballAt.x, ballAt.y, ballAt.z);
       if (figureQueue) figureQueue.push({ py: toPx(ballAt.x, ballAt.y).py, draw: drawIt });
       else drawIt();
@@ -6574,11 +6639,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // Big moments: the last half-second of your shot that is going in, slowed.
       // The new ball steps in fixed 1/180 s steps, so the flight is step for step the same.
       if (bigSlowNow()) dt *= BIG_SLOW_RATE;
+      // Keeper catches, broadcast look: a short slow-motion as the ball reaches him (same fixed steps).
+      if (keeperShowRef.current && keeperShowRef.current.sc === scenarioRef.current) dt *= keeperSlowRate(keeperShowRef.current, ballRef.current?.clock ?? 0, showClockRef.current);
 
       // Match feel: New (lib/star/matchFeel.ts) — the picture holds at the
       // contact (the wind-up, then the hit-stop). Nothing is stepped while it
       // holds: the flight starts, step for step the same, when it lets go.
       if (feelTick(dt)) { render(); rafRef.current = requestAnimationFrame(loop); return; }
+      showClockRef.current += dt;
+      keeperShowTick();
 
       // Top-down dribble (Dribble style: Top-down): the duel's own sim, stepped
       // here in the match's one loop — no loop of its own.
@@ -6948,6 +7017,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
               if (onGoalClipRef.current) goalRecRef.current?.event(a.kind, a.actor, { mode: a.mode, save: a.save }, Math.max(0, (bl.clock ?? 0) - a.t));
               // Match feel: New — the ball into the keeper's gloves.
               if (a.kind === "save" && a.actor === "keeper" && a.save && a.save !== "beaten" && a.at && matchFeelOn()) feelGlove(a.at, a.save);
+              if (a.kind === "save" && a.actor === "keeper" && a.save) keeperShowContact(a.save, Math.max(0, (bl.clock ?? 0) - a.t));
               // The lab (vfxOverride): the same moments, the picked pictures.
               if (vfxRef.current && a.at) {
                 const at = a.at, bv = bl.vel;
@@ -7245,6 +7315,66 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     bigRef.current = null;
     if (b) { try { b.stop(); } catch { /* sound never breaks the match */ } }
   };
+  /**
+   * KEEPER CATCHES AND DIVES (Leo, 26 Oct 2026; lib/star/keeperShow.ts). Picture only.
+   * While a ball is flying at goal, plan his move once: when and where it reaches his
+   * line, which move, and when to start it so his gloves arrive with the ball.
+   */
+  const keeperShowOn = (): boolean => newViewRef.current && matchPlayersLook() === "3d" && leoUpdateOn("keeperCatch");
+  const keeperTiming = (clip: string) => spriteClipTiming("keeper", clip as SpriteClip);
+  const keeperShowTick = () => {
+    const sc = scenarioRef.current;
+    const ks = keeperShowRef.current;
+    if (ks && ks.sc !== sc) keeperShowRef.current = null;
+    if (!keeperShowOn()) return;
+    spriteClipReady("keeper", "kCatchDiveR"); // fetches the keeper-catch drawings the first time
+    // Until his move starts, re-time it every frame from the ball as it is now:
+    // the first guess ignores air drag, so on a long shot it had him down and
+    // waiting for the ball (seen, Broadcast take, 27 Oct).
+    const cur = keeperShowRef.current;
+    if (cur && (cur.ending || showClockRef.current >= cur.start)) return;
+    if (phaseRef.current !== "flight" || !sc || sceneRef.current?.keeper === false) return;
+    const b = ballRef.current;
+    if (!b || b.inNet || sc.keeper.done) return;
+    const k = cur ? { x: cur.from.x, y: cur.from.y } : sc.keeper;
+    const hit = predictLine({ x: b.pos.x, y: b.pos.y, z: b.z, vx: b.vel.x, vy: b.vel.y, vz: b.vz ?? 0 }, k.y, b.clock ?? 0);
+    if (!hit || Math.abs(hit.x - k.x) > KEEPER_REACH_M + 1.5 || hit.z > 3) return;
+    const { move, side } = pickMove(hit.x - k.x, hit.z);
+    const f = facingRef.current;
+    const kFacing = f === "right" ? Math.PI : f === "left" ? 0 : Math.PI / 2;
+    const a = toPx(k.x, k.y), c = toPx(k.x + (side || 1), k.y);
+    const dir: "R" | "L" = a && c ? (keeperDiveClip(kFacing, c.px - a.px, c.py - a.py) === "diveR" ? "R" : "L") : "R";
+    const plan = { tLine: hit.tLine, x: hit.x, z: hit.z, side, move };
+    const T = keeperTiming(clipFor(move, null, dir));
+    if (!T) return; // clips not loaded yet: the old drawing this time
+    keeperShowRef.current = {
+      plan, sc, dir, from: { x: k.x, y: k.y }, to: null,
+      start: startFor(plan, T, showClockRef.current, b.clock ?? 0),
+      ending: null, contactAt: null, look: keeperLookChoice(),
+    };
+  };
+  /** After a save with keeper catches on, hold long enough to see him get up (else the old 1.8 s). */
+  const keeperResultHoldMs = (): number => {
+    const ks = keeperShowRef.current;
+    if (!ks || ks.sc !== scenarioRef.current || !keeperShowOn()) return 1800;
+    // A catch ends the chance in the same step as the save, before the frame
+    // loop has passed it on: read it off the ball now, or the hold was the old
+    // 1.8 s and the match cut away while he lay on the floor (seen, 27 Oct).
+    if (!ks.ending) {
+      const save = ballRef.current?.actionLog?.find((a) => a.kind === "save" && a.actor === "keeper" && a.save);
+      if (save?.save) keeperShowContact(save.save, 0);
+    }
+    return keeperHoldMs(ks);
+  };
+  /** The engine's save, as the keeper's ending (the ball reached him). */
+  const keeperShowContact = (save: string, agoS: number) => {
+    const ks = keeperShowRef.current;
+    if (!ks || ks.sc !== scenarioRef.current || ks.ending) return;
+    const ending: KeeperEnding = save === "catch" ? "catch" : save === "beaten" ? "beaten" : save === "fumble" ? "fumble" : "parry";
+    ks.ending = ending;
+    ks.contactAt = showClockRef.current - Math.max(0, agoS);
+  };
+
   /** Slow motion: a big moment's shot of yours that is about to go in (the last half-second). */
   const bigSlowNow = (): boolean => {
     if (!bigRef.current || phaseRef.current !== "flight") return false;
@@ -7896,7 +8026,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // In career/match mode, enter simulation phase. In sandbox, go directly.
     if (matchModeRef.current) {
       if (celebRef.current) handOverCelebration(() => startSimulation());
-      else handOver(() => startSimulation(), 1800);
+      else handOver(() => startSimulation(), keeperResultHoldMs());
     } else {
       // Sandbox mode: after 6 chances, show post-match
       if (attemptsRef.current >= 6) {
@@ -7915,7 +8045,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         };
         handOver(() => { setFinalStats(stats); setPhase("postmatch"); }, 1800);
       } else {
-        handOver(() => loadScenario(false), 1800);
+        handOver(() => loadScenario(false), keeperResultHoldMs());
       }
     }
   };
@@ -10852,3 +10982,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   );
 }
 
+/** Keeper catches: a puff off the grass where he lands (t 0..1 over about half a second). Picture only. */
+function drawLandingPuff(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, t: number) {
+  const a = Math.max(0, 1 - t);
+  ctx.save();
+  for (let i = 0; i < 6; i++) {
+    const ang = Math.PI * (0.08 + (i / 5) * 0.84);
+    const d = r * (0.5 + t * 1.3);
+    ctx.globalAlpha = 0.32 * a;
+    ctx.fillStyle = "#e9e3cf";
+    ctx.beginPath();
+    ctx.ellipse(x + Math.cos(ang) * d * (i % 2 ? 1 : -1), y - Math.sin(ang) * d * 0.35, r * (0.22 + t * 0.25), r * (0.12 + t * 0.12), 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}

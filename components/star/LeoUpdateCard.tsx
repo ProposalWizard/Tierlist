@@ -5,7 +5,8 @@
  * exactly as before. Per device.
  */
 import { useEffect, useState } from "react";
-import { LEO_FEATURES, leoUpdateOn, setLeoFeature, setLeoUpdate, type LeoFeature } from "@/lib/star/leoUpdate";
+import { LEO_FEATURES, keeperLookChoice, leoUpdateOn, setKeeperLookChoice, setLeoFeature, setLeoUpdate, type LeoFeature } from "@/lib/star/leoUpdate";
+import { KEEPER_LOOKS } from "@/lib/star/keeperShow";
 import { SetCard, SetHead, SetNote, SetToggle } from "./settingsKit";
 
 const TEST_PAGES: [string, string][] = [
@@ -36,6 +37,14 @@ export default function LeoUpdateCard({ glow }: { glow: string }) {
           <div key={f.id} data-leo-feature={f.id}>
             <SetToggle label={f.label} on={partOn(f.id)} onClick={() => setLeoFeature(f.id, !partOn(f.id))} last={i === LEO_FEATURES.length - 1} />
             <p className="-mt-1 mb-1 pl-1 text-[10.5px] font-semibold leading-snug text-white/70">{f.line}</p>
+            {f.id === "keeperCatch" && partOn("keeperCatch") && (
+              <div className="mb-2 flex flex-wrap gap-1.5 pl-1" data-keeper-look>
+                {KEEPER_LOOKS.map((l) => (
+                  <button key={l.id} type="button" onClick={() => setKeeperLookChoice(l.id)} title={l.line}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${keeperLookChoice() === l.id ? "bg-white text-black" : "bg-white/10 text-white"}`}>{l.label}</button>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>

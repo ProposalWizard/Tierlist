@@ -22,6 +22,7 @@ import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { installClips } from "/clips.js";
 import "/defs.js";
 import "/aerials.js";
+import "/keeper.js";
 
 const CFG = {
   tilt: 25,          // degrees from straight down
@@ -32,6 +33,9 @@ const CFG = {
   outline: [16, 22, 18],
   waist: 0.545, knee: 0.335, ankle: 0.072, // fractions of standing height
 };
+// ?view=wide (the keeper catches): a dive carries him ~2.3 m to one side, past the
+// ±2.1 m frame. Only the render window grows; camera, ppm, size and anchor stay.
+if (new URLSearchParams(location.search).get("view") === "wide") CFG.view = { l: -2.9, r: 2.9, t: 2.9, b: -2.9 };
 
 // ── GLB helpers ──
 async function fetchBuf(url) { const r = await fetch(url); if (!r.ok) throw new Error(url + " " + r.status); return r.arrayBuffer(); }
@@ -1059,6 +1063,192 @@ window.aerialSheet = async (spec = "") => {
     row++;
   }
   return { url: c.toDataURL(), cols };
+};
+
+/**
+ * THE KEEPER CATCHES (Leo, 26 Oct 2026; keeper.js). Keyed keeper clips, 4 facings,
+ * into a NEW atlas 5 (atlas-5a / atlas-5). Each cell carries `pts`: ONE point,
+ * [x, y, g, 0, 0] in the aerials' units — x, y the CENTRE of the ball between his
+ * gloves, baked px from the anchor (his boots); g the y of its shadow on the grass
+ * (baked px from the anchor); nx, ny are 0 (x, y is the ball centre already).
+ * Height above the grass in metres = (g - y) / (ppm · sin tilt).
+ * The ball centre: hold "both" = the midpoint of his two palms (each palm 7 cm on
+ * from the wrist along the hand); "R" (the parry) = 16 cm on from the right wrist,
+ * the ball just off the palm. Same camera as the cells. A dive's anchor stays
+ * where he took off; the clip carries him across (landM says where his hips end).
+ */
+const KEEPER_BALL_M = 0.22;
+/** World units per real metre: the baked body is scaled to atlas-0's height (FIT), so a real
+ *  keeper standing 1.86 m (boots to crown, idle stance) is standHW world units tall
+ *  (keeperGround measures it). The ball, the palm offsets and the checks scale with it. */
+const KEEPER_REAL_H = 1.86;
+let handDirs = null, groundY = null, standHW = null;
+const kScale = () => standHW / KEEPER_REAL_H;
+/** The grass: the lowest point of the body standing in the idle stance (world y). The bodies'
+ *  boots do not sit exactly on y = 0 (Style A ~ +7 cm world, current ~ -6 cm), and every other
+ *  clip is baked on the same anchor, so a man lying down is put on THIS level, not on y = 0. */
+async function keeperGround(ch) {
+  const idle = await loadClip("anim:idle", {});
+  pose(ch, idle, 0, Math.PI / 2, null); ch.skinned.skeleton.update();
+  const v = new THREE.Vector3(); let m = Infinity, top = -Infinity;
+  for (let k = 0; k < ch.skinned.geometry.attributes.position.count; k += 2) { ch.skinned.getVertexPosition(k, v); v.applyMatrix4(ch.skinned.matrixWorld); if (v.y < m) m = v.y; if (v.y > top) top = v.y; }
+  standHW = top - m;
+  return m;
+}
+/** The floor (RUL: he lies ON the grass, never in it). Frames outside the clip's `air` window are set
+ *  down so the body's lowest point is on the grass (boots, knee, hip or shoulder, whichever is lowest);
+ *  frames inside it are only lifted out if they would dip under it. Set per frame by keeperFrame. */
+let kFloor = null;
+function keeperFloorHook(ch) {
+  if (!kFloor || groundY == null) return;
+  const sk = ch.skinned; sk.skeleton.update();
+  const v = new THREE.Vector3(); let m = Infinity;
+  for (let k = 0; k < sk.geometry.attributes.position.count; k += 3) { sk.getVertexPosition(k, v); v.applyMatrix4(sk.matrixWorld); if (v.y < m) m = v.y; }
+  const d = groundY - m;
+  if (kFloor === "snap" || d > 0) ch.inner.position.y += d;
+}
+/** Which floor rule frame i of a clip gets. */
+function keeperFloorFor(def, i) {
+  const t = window.keeperTimes(def)[i];
+  return def.air && t > def.air[0] && t < def.air[1] ? "lift" : "snap";
+}
+function keeperHandDirs(ch) {
+  // each hand's "along the fingers" axis, in the hand's own frame (rest pose: forearm → wrist)
+  ch.inner.traverse((o) => { if (o.isBone && o.userData.rest) { o.position.copy(o.userData.rest.p); o.quaternion.copy(o.userData.rest.q); } });
+  ch.holder.updateMatrixWorld(true);
+  const out = {};
+  for (const s of ["Left", "Right"]) {
+    const h = boneOf(ch, s + "Hand"), f = boneOf(ch, s + "ForeArm");
+    const d = h.getWorldPosition(new THREE.Vector3()).sub(f.getWorldPosition(new THREE.Vector3())).normalize();
+    out[s] = d.applyQuaternion(h.getWorldQuaternion(new THREE.Quaternion()).invert());
+  }
+  return out;
+}
+function palmOf(ch, s, along = 0.07) {
+  along *= kScale();
+  const h = boneOf(ch, s + "Hand");
+  const d = handDirs[s].clone().applyQuaternion(h.getWorldQuaternion(new THREE.Quaternion()));
+  return h.getWorldPosition(new THREE.Vector3()).addScaledVector(d, along);
+}
+/** The ball's centre in his gloves (world metres), for the pose he is in now. */
+function keeperBall(ch, hold) {
+  if (hold === "R") return palmOf(ch, "Right", 0.16);
+  return palmOf(ch, "Left").add(palmOf(ch, "Right")).multiplyScalar(0.5);
+}
+function keeperClip(nm) {
+  window.CLIPS[nm] = { poses: window.keeperPoses(nm) };
+  delete clipCache["js:" + nm];
+  return loadClip("js:" + nm, {});
+}
+async function bakeKeeperCells(only) {
+  await ready; show("keeper"); if (!chars.keeper.holder.parent) scene.add(chars.keeper.holder);
+  if (groundY == null) groundY = await keeperGround(chars.keeper);
+  if (!handDirs) handDirs = keeperHandDirs(chars.keeper);
+  const out = [];
+  for (const nm of only ?? window.KEEPER2_ORDER) {
+    const def = window.KEEPER2[nm];
+    const clip = await keeperClip(nm);
+    const n = def.frames;
+    const cl = { name: nm, def, fps: def.fps, loop: def.loop ?? "once", dirs: 4, frames: n, cells: [], pts: [] };
+    window.__postPose = keeperFloorHook;
+    for (const fac of DIRS4) for (let i = 0; i < n; i++) {
+      kFloor = keeperFloorFor(def, i);
+      pose(chars.keeper, clip, i, fac, null);
+      const b = keeperBall(chars.keeper, def.hold), [bx, by] = screenOf(b), g = screenOf(new THREE.Vector3(b.x, groundY, b.z))[1];
+      cl.pts.push([+bx.toFixed(2), +by.toFixed(2), +g.toFixed(2), 0, 0]);
+      cl.cells.push(bakeFrame(chars.keeper, clip, i, fac, null));
+    }
+    // where his hips end, REAL metres [toward the side he dives (his right), forward]: a get-up's anchor
+    kFloor = keeperFloorFor(def, n - 1); pose(chars.keeper, clip, n - 1, Math.PI / 2, null);
+    const hp = boneOf(chars.keeper, "Hips").getWorldPosition(new THREE.Vector3());
+    cl.landM = [+(-hp.x / kScale()).toFixed(3), +(hp.z / kScale()).toFixed(3)];
+    kFloor = null; window.__postPose = null;
+    out.push(cl);
+  }
+  return out;
+}
+window.bakeKeepers = async (tag, q = 0.84) => {
+  const clips = await bakeKeeperCells();
+  const atl = pack([{ clips }]);
+  { const mc = atl.mask.getContext("2d"); const im = mc.getImageData(0, 0, atl.w, atl.h); const d = im.data;
+    for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) d[i + k] = Math.round(d[i + k] / 63.75) * 63.75 | 0;
+    mc.putImageData(im, 0, 0); }
+  const frag = { atlas: { color: `atlas-5${tag}.webp`, mask: `mask-5${tag}.webp`, w: atl.w, h: atl.h }, clips: {} };
+  const ballPx = +(KEEPER_BALL_M * kScale() * CFG.ppm).toFixed(2);
+  for (const c of clips) {
+    const d = c.def;
+    frag.clips[c.name] = { fps: c.fps, loop: c.loop, dirs: 4, frames: c.frames, atlas: 5,
+      ...(d.contactFrame != null ? { contactFrame: d.contactFrame } : {}), ...(d.landFrame != null ? { landFrame: d.landFrame } : {}),
+      ...(d.landFrame != null ? { landM: c.landM } : {}),
+      hold: d.hold, ballPx,
+      cells: c.cells.map((f) => [f.px, f.py, f.w, f.h, +f.ax.toFixed(1), +f.ay.toFixed(1)]), pts: c.pts };
+  }
+  for (const [l, r] of Object.entries(window.KEEPER2_MIRRORS)) {
+    const { cells: _c, pts: _p, ...rest } = frag.clips[r];
+    frag.clips[l] = { ...rest, ...(rest.landM ? { landM: rest.landM } : {}), mirrorOf: r };
+  }
+  return { color: atl.col.toDataURL("image/webp", q), mask: atl.mask.toDataURL("image/png"), frag: JSON.stringify(frag) };
+};
+/** Look sheet: spec "clip,clip:dirIdx,dirIdx[:tilt]" (empty = all, dir 1 = facing down the screen).
+ *  The ball drawn round each frame's point (gold on the contact frame, its shadow a dark dash;
+ *  "LAND" on the land frame). tilt 25 = the game camera; 80 = nearly from the side (heights). */
+window.keeperSheet = async (spec = "") => {
+  const [names, ds, tl, zm] = spec.split(":");
+  const tilt = +(tl || CFG.tilt);
+  setCamera(tilt);
+  const only = names ? names.split(",") : null;
+  const clips = await bakeKeeperCells(only);
+  setCamera(CFG.tilt);
+  const dsel = (ds || "1").split(",").map(Number);
+  const cols = Math.max(...clips.map((c) => c.frames));
+  const Z = +(zm || 1), cw = 330 * Z, chh = 380 * Z, PER = Z > 1 ? 6 : 10;
+  const c = small(Math.min(cols, PER) * cw, clips.reduce((a, cl) => a + Math.ceil(cl.frames / PER), 0) * dsel.length * chh); const g = c.getContext("2d");
+  g.fillStyle = "#3f8f3a"; g.fillRect(0, 0, c.width, c.height);
+  let row = 0;
+  for (const cl of clips) for (const d of dsel) {
+    for (let i = 0; i < cl.frames; i++) {
+      const f = cl.cells[d * cl.frames + i], pt = cl.pts[d * cl.frames + i];
+      const r = row + Math.floor(i / PER), x = (i % PER) * cw, y = r * chh, Kz = 1.5 * Z, ox = x + cw / 2, oy = y + 220 * Z;
+      g.imageSmoothingEnabled = false; g.drawImage(f.color, ox - f.ax * Kz, oy - f.ay * Kz, f.w * Kz, f.h * Kz);
+      g.fillStyle = "#f00"; g.fillRect(ox - 1, oy - 1, 3, 3);
+      const R = (KEEPER_BALL_M / 2) * kScale() * CFG.ppm * Kz;
+      g.fillStyle = "rgba(0,0,0,0.55)"; g.fillRect(ox + pt[0] * Kz - 3, oy + pt[2] * Kz - 1, 6, 2);
+      const hit = i === cl.def.contactFrame;
+      g.strokeStyle = hit ? "#fde047" : "#fff"; g.lineWidth = hit ? 2.5 : 1.5;
+      g.beginPath(); g.arc(ox + pt[0] * Kz, oy + pt[1] * Kz, R, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = "#fff"; g.font = "12px sans-serif";
+      g.fillText(`${cl.name} d${d} f${i}${hit ? " HIT" : ""}${i === cl.def.landFrame ? " LAND" : ""}`, x + 3, y + 13);
+    }
+    row += Math.ceil(cl.frames / PER);
+  }
+  return { url: c.toDataURL(), cols };
+};
+/** Numbers per baked frame of one keeper clip (world metres, facing down): lowest point of the body,
+ *  the joints closer than they should be, the gloves' gap and the ball's distance to his body. */
+window.keeperBones = async (name) => {
+  await ready; show("keeper"); if (!chars.keeper.holder.parent) scene.add(chars.keeper.holder);
+  if (groundY == null) groundY = await keeperGround(chars.keeper);
+  if (!handDirs) handDirs = keeperHandDirs(chars.keeper);
+  const def = window.KEEPER2[name]; const clip = await keeperClip(name);
+  const sk = chars.keeper.skinned, v = new THREE.Vector3(), out = [];
+  const names = ["Hips", "LeftUpLeg", "RightUpLeg", "LeftLeg", "RightLeg", "LeftFoot", "RightFoot", "Spine01", "Spine02", "Head", "LeftArm", "RightArm", "LeftForeArm", "RightForeArm", "LeftHand", "RightHand"];
+  window.__postPose = keeperFloorHook;
+  for (let i = 0; i < def.frames; i++) {
+    kFloor = keeperFloorFor(def, i);
+    pose(chars.keeper, clip, i, Math.PI / 2, null); sk.skeleton.update();
+    let minY = Infinity;
+    const cnt = sk.geometry.attributes.position.count;
+    for (let k = 0; k < cnt; k += 2) { sk.getVertexPosition(k, v); v.applyMatrix4(sk.matrixWorld); if (v.y < minY) minY = v.y; }
+    const j = {}; for (const nm of names) { const b = boneOf(chars.keeper, nm); if (b) j[nm] = b.getWorldPosition(new THREE.Vector3()).toArray(); }
+    const ball = keeperBall(chars.keeper, def.hold);
+    const pl = palmOf(chars.keeper, "Left"), pr = palmOf(chars.keeper, "Right");
+    // heights from the grass
+    const up = (a) => [a[0], a[1] - groundY, a[2]];
+    for (const nm of Object.keys(j)) j[nm] = up(j[nm]);
+    out.push({ i, minY: minY - groundY, j, ball: up(ball.toArray()), palmGap: pl.distanceTo(pr), S: kScale(), floor: kFloor });
+  }
+  kFloor = null; window.__postPose = null;
+  return out;
 };
 
 /** Rows of pairs: top = a, bottom = b, each at 2x bake size and zoomed 3x. */
