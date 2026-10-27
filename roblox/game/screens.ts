@@ -26,6 +26,8 @@ import { startNegotiation, makeOffer, type NegotiationState } from "../../lib/st
 import { shortClub } from "../../lib/star/media/grammar";
 import type { TransferOffer } from "../../lib/star/transfers";
 import * as TF from "./trialFlow";
+import * as TR from "./trainingFlow";
+import { trainingLeft } from "../../lib/star/week";
 import { STAGE_LABEL, TRIAL_STAGES, trialScore } from "../../lib/star/trial";
 
 // ───────────────────────────────────────────────────────────── the screen ──
@@ -56,6 +58,9 @@ export interface UiState {
   renewal?: { current: number; next: number | null; wins: number; locked: boolean; rounds: number; message: string; started: boolean };
   talk?: NegotiationState | null;
   ask?: number;
+  /** Training: the skill whose levels are open, and the last session's result line. */
+  trainSkill?: string;
+  trainResult?: string;
 }
 export type RobloxGame = Game & { ui?: UiState };
 
@@ -104,7 +109,7 @@ function ordinal(n: number): string {
   return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`;
 }
 
-const TABS = [["home", "Home"], ["league", "League"], ["fixtures", "Fixtures"], ["stats", "Stats"]] as const;
+const TABS = [["home", "Home"], ["train", "Train"], ["league", "League"], ["fixtures", "Fixtures"], ["stats", "Stats"]] as const;
 
 // ─────────────────────────────────────────────────────── the new career ──
 
@@ -242,7 +247,9 @@ export function screen(g: RobloxGame): Screen {
   const base = { hud: hud(c), tabs: undefined } as Pick<Screen, "hud" | "tabs">;
   switch (g.phase) {
     case "dashboard": return dashboard(g);
-    case "youth": return youthScreen(g);
+    case "youth": return g.ui?.tab === "train"
+      ? trainTab(g, { id: "youth-train", hud: hud(c), title: "", blocks: [], buttons: [{ label: "Back to the youth team", action: "tab", arg: "home", style: "secondary" }] })
+      : youthScreen(g);
     case "post-match": return postMatch(g);
     case "draw": {
       const d = g.pendingDraw!;
@@ -372,11 +379,70 @@ export function screen(g: RobloxGame): Screen {
   return dashboard(g);
 }
 
+/** The skills screen (SkillsScreen) and a skill's levels (TrainingLevelSelect). */
+function trainTab(g: RobloxGame, s: Screen): Screen {
+  const c = g.career;
+  const ui = g.ui ?? {};
+  const left = trainingLeft(c);
+  s.title = "Training";
+  if (ui.trainResult) s.blocks.push({ kind: "text", text: ui.trainResult, tone: "gold" });
+  const skill = ui.trainSkill as TR.TrainingSkill | undefined;
+  const label = skill ? TR.SKILL_LABELS.find((l) => l[0] === skill) : undefined;
+  if (skill && label) {
+    const card = TR.skillCard(c, skill);
+    s.title = `${label[2]} ${label[1]}`;
+    s.blocks.push({ kind: "stats", items: [
+      { label: label[1], value: String(Math.round(card.value)) },
+      { label: "Stars", value: `${card.stars} / 90` },
+      { label: "Sessions left", value: `${left} / ${TR.TRAINING_SESSIONS_PER_WEEK}`, tone: left > 0 ? "normal" : "bad" },
+      { label: "Energy", value: `${Math.round(c.energy)}%`, tone: c.energy < TR.trainingEnergyCost() ? "bad" : "normal" },
+    ] });
+    if (card.why) s.blocks.push({ kind: "text", text: card.why, tone: "bad" });
+    s.blocks.push({ kind: "text", text: "Three tries a level: in first time is ★★★, second ★★, third ★. Every new star adds to the skill.", tone: "dim" });
+    const levels = TR.levelList(c, skill).filter((l) => l.open);
+    s.blocks.push({ kind: "list", items: levels.map((l) => ({
+      text: `Level ${l.level}`, sub: l.stars ? "★".repeat(l.stars) + "☆".repeat(3 - l.stars) : "Not played yet",
+      tone: (l.stars === 3 ? "good" : "normal") as Tone,
+      ...(card.canTrain ? { action: "play-training", arg: `${skill}:${l.level}` } : {}),
+    })).reverse() });
+    s.buttons.push({ label: "Back to skills", action: "train-back", style: "secondary" });
+    return s;
+  }
+  s.blocks.push({ kind: "stats", items: [
+    { label: "Sessions left", value: `${left} / ${TR.TRAINING_SESSIONS_PER_WEEK}`, tone: left > 0 ? "normal" : "bad" },
+    { label: "A session costs", value: `${TR.trainingEnergyCost()} energy` },
+  ] });
+  if (left <= 0) s.blocks.push({ kind: "text", text: "No more sessions this week. They come back after a Saturday match.", tone: "dim" });
+  s.blocks.push({ kind: "list", items: TR.SKILL_LABELS.map(([key, name, icon, desc]) => {
+    const card = TR.skillCard(c, key);
+    return {
+      text: `${icon} ${name}: ${Math.round(card.value)}`,
+      sub: card.shutWhy ?? `${card.stars}/90 stars · ${desc}`,
+      tone: (card.shut ? "dim" : "normal") as Tone,
+      ...(card.shut ? {} : { action: "train-skill", arg: key }),
+    };
+  }) });
+  return s;
+}
+
+/** The stars from a level played on the device (or, in tests, played by nobody). */
+export function trainingDone(g: RobloxGame, skill: string, level: number, stars: number): RobloxGame | null {
+  const label = TR.SKILL_LABELS.find((l) => l[0] === skill);
+  if (!label || !TR.mayPlayLevel(g.career, label[0], level)) return null;
+  if (typeof stars !== "number" || !Number.isFinite(stars) || stars < 0 || stars > 3) return null;
+  const res = TR.trainingComplete(g.career, label[0], level, stars);
+  const line = stars > 0
+    ? `Level ${level}: ${"★".repeat(stars)}. ${label[1]} ${res.gained > 0 ? `+${res.gained}` : "unchanged"}${res.newStars > 0 ? ` (${res.newStars} new star${res.newStars === 1 ? "" : "s"})` : ""}.`
+    : `Level ${level}: no stars this time.`;
+  return { ...g, career: res.career, ui: { ...(g.ui ?? {}), tab: "train", trainSkill: label[0], trainResult: line } };
+}
+
 function dashboard(g: RobloxGame): Screen {
   const c = g.career;
   const tab = g.ui?.tab ?? "home";
   const tabs = TABS.map(([id, label]) => ({ id, label, active: id === tab }));
   const s: Screen = { id: "dashboard", hud: hud(c), title: c.player.club, tabs, blocks: [], buttons: [] };
+  if (tab === "train") return trainTab(g, s);
   if (tab === "league") {
     const table = sortLeague(c.league);
     s.title = leagueNameFor(divisionOf(c));
@@ -456,6 +522,7 @@ function youthScreen(g: RobloxGame): Screen {
   if (m.seasonOver) buttons.push({ label: "End of season 🏆", action: "end-season", style: "primary" });
   else buttons.push({ label: "Play the youth week", action: "youth-week", style: "primary" });
   buttons.push({ label: "Ask for promotion", action: "youth-promote", style: "secondary" });
+  buttons.push({ label: "🏋️ Train", action: "tab", arg: "train", style: "secondary" });
   return { id: "youth", hud: hud(c), title: `${c.player.club} youth team`,
     blocks: [{ kind: "text", text: "Your form dropped you to the youth team. Play well and the first team will call." }], buttons };
 }
@@ -562,8 +629,15 @@ function niceStep(n: number): number {
 export function act(g: RobloxGame, action: string, arg: string | undefined, rng: () => number = Math.random): RobloxGame {
   const ui: UiState = g.ui ?? {};
   switch (action) {
-    case "tab": return { ...g, ui: { ...ui, tab: arg ?? "home" } };
+    case "tab": return { ...g, ui: { ...ui, tab: arg ?? "home", trainResult: undefined } };
     case "home": return { ...F.backToDashboard(g), ui: { ...ui, tab: "home" } };
+    case "train-skill": return { ...g, ui: { ...ui, tab: "train", trainSkill: arg, trainResult: undefined } };
+    case "train-back": return { ...g, ui: { ...ui, tab: "train", trainSkill: undefined, trainResult: undefined } };
+    // played on the device (the server's Training remote); with no device (tests) two stars
+    case "play-training": {
+      const [sk, lv] = (arg ?? "").split(":");
+      return trainingDone(g, sk, Number(lv), 2) ?? g;
+    }
     case "sim": return F.simMatch(g);
     // Played on the player's device (the server's Match remote); with no device (tests) it is simmed.
     case "play-match": return F.simMatch(g);

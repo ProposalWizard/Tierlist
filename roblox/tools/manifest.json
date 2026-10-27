@@ -1,5 +1,5 @@
 {
- "commit": "8c357026",
+ "commit": "1caf4cfa",
  "modules": [
   "__pkg/react",
   "data/fifa/knockout-tables_json",
@@ -55,6 +55,9 @@
   "lib/star/data/sources/claude_ratings_2026-10_json",
   "lib/star/data/sources/nation_kits_2026-10_json",
   "lib/star/data/sources/researched_2026-10_json",
+  "lib/star/data/trainingLevels_json",
+  "lib/star/data/visionChecks_json",
+  "lib/star/data/visionMoments_json",
   "lib/star/dataCredits",
   "lib/star/defenderTouch",
   "lib/star/deflection",
@@ -260,6 +263,8 @@
   "lib/star/three3d/gait",
   "lib/star/tournament",
   "lib/star/trainingDrills",
+  "lib/star/trainingLevelData",
+  "lib/star/trainingLevelStore",
   "lib/star/trainingLevels",
   "lib/star/trainingRender",
   "lib/star/transferInterest",
@@ -271,6 +276,7 @@
   "lib/star/tuning",
   "lib/star/tuningStore",
   "lib/star/unlocks",
+  "lib/star/visionRound",
   "lib/star/voting",
   "lib/star/wages",
   "lib/star/weather",
@@ -292,6 +298,8 @@
   "roblox/game/matchView",
   "roblox/game/screens",
   "roblox/game/strikeScreen",
+  "roblox/game/trainingFlow",
+  "roblox/game/trainingPlay",
   "roblox/game/trialFlow",
   "roblox/game/trialPlay"
  ]

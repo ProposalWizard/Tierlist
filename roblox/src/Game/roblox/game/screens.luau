@@ -13,10 +13,12 @@ return function(exports, import, Js)
 	local M_flow = import("roblox/game/flow")
 	local M_trial = import("lib/star/trial")
 	local M_grammar = import("lib/star/media/grammar")
+	local M_week = import("lib/star/week")
+	local M_trainingFlow = import("roblox/game/trainingFlow")
 	local M_season = import("lib/star/season")
 	local M_careerFlow = import("lib/star/careerFlow")
 	local M_negotiation = import("lib/star/negotiation")
-	local money, hud, fixtureLine, dateOf, score, ordinal, TABS, DIVISIONS, setupScreen, divisionByName, clubScreen, startGame, startWithoutTrial, simTrial, trialDone, trialScreen, managerTalkScreen, trialRewardScreen, screen, dashboard, youthScreen, postMatch, renewalScreen, windowScreen, talkScreen, niceStep, act
+	local money, hud, fixtureLine, dateOf, score, ordinal, TABS, DIVISIONS, setupScreen, divisionByName, clubScreen, startGame, startWithoutTrial, simTrial, trialDone, trialScreen, managerTalkScreen, trialRewardScreen, screen, trainTab, trainingDone, dashboard, youthScreen, postMatch, renewalScreen, windowScreen, talkScreen, niceStep, act
 	money = function(n)
 		local sign = (if (n < 0) then "-" else "")
 		local a = math.abs(Math.round(n))
@@ -154,7 +156,7 @@ return function(exports, import, Js)
 				do return dashboard(g) end
 			end
 			if _ci5 ~= 0 and _ci5 <= 2 then
-				do return youthScreen(g) end
+				do return (if ((function() local _v = g.ui; if _v == nil then return nil end; _v = _v.tab; return _v end)() == "train") then trainTab(g, Js.O({ id = "youth-train", hud = hud(c), title = "", blocks = Js.alit(), buttons = Js.alit(Js.O({ label = "Back to the youth team", action = "tab", arg = "home", style = "secondary" }, { "label", "action", "arg", "style" })) }, { "id", "hud", "title", "blocks", "buttons" })) else youthScreen(g)) end
 			end
 			if _ci5 ~= 0 and _ci5 <= 3 then
 				do return postMatch(g) end
@@ -318,15 +320,76 @@ return function(exports, import, Js)
 		do return dashboard(g) end
 	end
 	exports.screen = screen
+	trainTab = function(g, s)
+		local c = g.career
+		local ui = (if g.ui ~= nil then g.ui else Js.O({}, nil))
+		local left = M_week.trainingLeft(c)
+		s.title = "Training"
+		if Js.T(ui.trainResult) then
+			A.push(s.blocks, Js.O({ kind = "text", text = ui.trainResult, tone = "gold" }, { "kind", "text", "tone" }))
+		end
+		local skill = ui.trainSkill
+		local label = (if Js.T(skill) then A.find(M_trainingFlow.SKILL_LABELS, function(l)
+			return (l[1] == skill)
+		end) else nil)
+		if (Js.T(skill) and label) then
+			local card = M_trainingFlow.skillCard(c, skill)
+			s.title = (label[3] .. " " .. label[2])
+			A.push(s.blocks, Js.O({ kind = "stats", items = Js.alit(Js.O({ label = label[2], value = Js.numstr(Math.round(card.value)) }, { "label", "value" }), Js.O({ label = "Stars", value = (Js.numstr(card.stars) .. " / 90") }, { "label", "value" }), Js.O({ label = "Sessions left", value = (Js.numstr(left) .. " / " .. Js.numstr(M_trainingFlow.TRAINING_SESSIONS_PER_WEEK)), tone = (if (left > 0) then "normal" else "bad") }, { "label", "value", "tone" }), Js.O({ label = "Energy", value = (Js.numstr(Math.round(c.energy)) .. "%"), tone = (if (c.energy < M_trainingFlow.trainingEnergyCost()) then "bad" else "normal") }, { "label", "value", "tone" })) }, { "kind", "items" }))
+			if Js.T(card.why) then
+				A.push(s.blocks, Js.O({ kind = "text", text = card.why, tone = "bad" }, { "kind", "text", "tone" }))
+			end
+			A.push(s.blocks, Js.O({ kind = "text", text = "Three tries a level: in first time is ★★★, second ★★, third ★. Every new star adds to the skill.", tone = "dim" }, { "kind", "text", "tone" }))
+			local levels = A.filter(M_trainingFlow.levelList(c, skill), function(l)
+				return l.open
+			end)
+			A.push(s.blocks, Js.O({ kind = "list", items = A.reverse(A.map(levels, function(l)
+				return Js.ospread(Js.O({ text = ("Level " .. Js.numstr(l.level)), sub = (if Js.T(l.stars) then (S["repeat"]("★", l.stars) .. S["repeat"]("☆", (3 - l.stars))) else "Not played yet"), tone = (if (l.stars == 3) then "good" else "normal") }, { "text", "sub", "tone" }), (if card.canTrain then Js.O({ action = "play-training", arg = (skill .. ":" .. Js.numstr(l.level)) }, { "action", "arg" }) else Js.O({}, nil)))
+			end)) }, { "kind", "items" }))
+			A.push(s.buttons, Js.O({ label = "Back to skills", action = "train-back", style = "secondary" }, { "label", "action", "style" }))
+			do return s end
+		end
+		A.push(s.blocks, Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Sessions left", value = (Js.numstr(left) .. " / " .. Js.numstr(M_trainingFlow.TRAINING_SESSIONS_PER_WEEK)), tone = (if (left > 0) then "normal" else "bad") }, { "label", "value", "tone" }), Js.O({ label = "A session costs", value = (Js.numstr(M_trainingFlow.trainingEnergyCost()) .. " energy") }, { "label", "value" })) }, { "kind", "items" }))
+		if (left <= 0) then
+			A.push(s.blocks, Js.O({ kind = "text", text = "No more sessions this week. They come back after a Saturday match.", tone = "dim" }, { "kind", "text", "tone" }))
+		end
+		A.push(s.blocks, Js.O({ kind = "list", items = A.map(M_trainingFlow.SKILL_LABELS, function(_p14)
+			local key = _p14[1]
+			local name = _p14[2]
+			local icon = _p14[3]
+			local desc = _p14[4]
+			local card = M_trainingFlow.skillCard(c, key)
+			do return Js.ospread(Js.O({ text = (icon .. " " .. name .. ": " .. Js.numstr(Math.round(card.value))), sub = (if card.shutWhy ~= nil then card.shutWhy else (Js.numstr(card.stars) .. "/90 stars · " .. desc)), tone = (if card.shut then "dim" else "normal") }, { "text", "sub", "tone" }), (if card.shut then Js.O({}, nil) else Js.O({ action = "train-skill", arg = key }, { "action", "arg" }))) end
+		end) }, { "kind", "items" }))
+		do return s end
+	end
+	trainingDone = function(g, skill, level, stars)
+		local label = A.find(M_trainingFlow.SKILL_LABELS, function(l)
+			return (l[1] == skill)
+		end)
+		if ((not label) or (not M_trainingFlow.mayPlayLevel(g.career, label[1], level))) then
+			do return nil end
+		end
+		if ((((type(stars) ~= "number") or (not Js.NumberNS.isFinite(stars))) or (stars < 0)) or (stars > 3)) then
+			do return nil end
+		end
+		local res = M_trainingFlow.trainingComplete(g.career, label[1], level, stars)
+		local line = (if (stars > 0) then ("Level " .. Js.numstr(level) .. ": " .. S["repeat"]("★", stars) .. ". " .. label[2] .. " " .. (if (res.gained > 0) then ("+" .. Js.numstr(res.gained)) else "unchanged") .. (if (res.newStars > 0) then (" (" .. Js.numstr(res.newStars) .. " new star" .. (if (res.newStars == 1) then "" else "s") .. ")") else "") .. ".") else ("Level " .. Js.numstr(level) .. ": no stars this time."))
+		do return Js.ospread(g, Js.O({ career = res.career, ui = Js.ospread((if g.ui ~= nil then g.ui else Js.O({}, nil)), Js.O({ tab = "train", trainSkill = label[1], trainResult = line }, { "tab", "trainSkill", "trainResult" })) }, { "career", "ui" })) end
+	end
+	exports.trainingDone = trainingDone
 	dashboard = function(g)
 		local c = g.career
 		local tab = ((function() local _v = g.ui; if _v == nil then return nil end; _v = _v.tab; return _v end)() or "home")
-		local tabs = A.map(TABS, function(_p14)
-			local id = _p14[1]
-			local label = _p14[2]
+		local tabs = A.map(TABS, function(_p15)
+			local id = _p15[1]
+			local label = _p15[2]
 			return Js.O({ id = id, label = label, active = (id == tab) }, { "id", "label", "active" })
 		end)
 		local s = Js.O({ id = "dashboard", hud = hud(c), title = c.player.club, tabs = tabs, blocks = Js.alit(), buttons = Js.alit() }, { "id", "hud", "title", "tabs", "blocks", "buttons" })
+		if (tab == "train") then
+			do return trainTab(g, s) end
+		end
 		if (tab == "league") then
 			local table_ = M_season.sortLeague(c.league)
 			s.title = M_calendar.leagueNameFor(M_calendar.divisionOf(c))
@@ -350,9 +413,9 @@ return function(exports, import, Js)
 			local ss = c.seasonStats
 			local cs = c.careerStats
 			s.title = "Your numbers"
-			A.push(s.blocks, Js.O({ kind = "heading", text = "This season" }, { "kind", "text" }), Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Apps", value = Js.numstr(ss.appearances) }, { "label", "value" }), Js.O({ label = "Goals", value = Js.numstr(ss.goals) }, { "label", "value" }), Js.O({ label = "Assists", value = Js.numstr(ss.assists) }, { "label", "value" })) }, { "kind", "items" }), Js.O({ kind = "heading", text = "Career" }, { "kind", "text" }), Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Apps", value = Js.numstr(cs.appearances) }, { "label", "value" }), Js.O({ label = "Goals", value = Js.numstr(cs.goals) }, { "label", "value" }), Js.O({ label = "Assists", value = Js.numstr(cs.assists) }, { "label", "value" }), Js.O({ label = "Trophies", value = Js.numstr(Js.alen(c.trophies)) }, { "label", "value" }), Js.O({ label = "Ballon d'Ors", value = Js.numstr((if c.ballonDorWins ~= nil then c.ballonDorWins else 0)) }, { "label", "value" })) }, { "kind", "items" }), Js.O({ kind = "heading", text = "Skills" }, { "kind", "text" }), Js.O({ kind = "stats", items = A.map(Js.Object.entries(c.skills), function(_p15)
-				local k = _p15[1]
-				local v = _p15[2]
+			A.push(s.blocks, Js.O({ kind = "heading", text = "This season" }, { "kind", "text" }), Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Apps", value = Js.numstr(ss.appearances) }, { "label", "value" }), Js.O({ label = "Goals", value = Js.numstr(ss.goals) }, { "label", "value" }), Js.O({ label = "Assists", value = Js.numstr(ss.assists) }, { "label", "value" })) }, { "kind", "items" }), Js.O({ kind = "heading", text = "Career" }, { "kind", "text" }), Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Apps", value = Js.numstr(cs.appearances) }, { "label", "value" }), Js.O({ label = "Goals", value = Js.numstr(cs.goals) }, { "label", "value" }), Js.O({ label = "Assists", value = Js.numstr(cs.assists) }, { "label", "value" }), Js.O({ label = "Trophies", value = Js.numstr(Js.alen(c.trophies)) }, { "label", "value" }), Js.O({ label = "Ballon d'Ors", value = Js.numstr((if c.ballonDorWins ~= nil then c.ballonDorWins else 0)) }, { "label", "value" })) }, { "kind", "items" }), Js.O({ kind = "heading", text = "Skills" }, { "kind", "text" }), Js.O({ kind = "stats", items = A.map(Js.Object.entries(c.skills), function(_p16)
+				local k = _p16[1]
+				local v = _p16[2]
 				return Js.O({ label = (S.toUpperCase(S.idx(k, 0)) .. S.slice(k, 1)), value = Js.numstr(Math.round(v)) }, { "label", "value" })
 			end) }, { "kind", "items" }), Js.O({ kind = "heading", text = "Contract" }, { "kind", "text" }), Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Wage a week", value = money(c.contract.wage) }, { "label", "value" }), Js.O({ label = "Seasons left", value = Js.numstr(c.contract.seasonsRemaining) }, { "label", "value" }), Js.O({ label = "Goal bonus", value = money(c.contract.goalBonus) }, { "label", "value" })) }, { "kind", "items" }), Js.O({ kind = "heading", text = "Relationships" }, { "kind", "text" }), Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Manager", value = Js.numstr(Math.round(c.relationships.boss)) }, { "label", "value" }), Js.O({ label = "Team-mates", value = Js.numstr(Math.round(c.relationships.team)) }, { "label", "value" }), Js.O({ label = "Fans", value = Js.numstr(Math.round(c.relationships.fans)) }, { "label", "value" })) }, { "kind", "items" }))
 			A.push(s.buttons, Js.O({ label = "Ask for a new contract", action = "ask-contract", style = "secondary" }, { "label", "action", "style" }))
@@ -392,6 +455,7 @@ return function(exports, import, Js)
 			A.push(buttons, Js.O({ label = "Play the youth week", action = "youth-week", style = "primary" }, { "label", "action", "style" }))
 		end
 		A.push(buttons, Js.O({ label = "Ask for promotion", action = "youth-promote", style = "secondary" }, { "label", "action", "style" }))
+		A.push(buttons, Js.O({ label = "🏋️ Train", action = "tab", arg = "train", style = "secondary" }, { "label", "action", "arg", "style" }))
 		do return Js.O({ id = "youth", hud = hud(c), title = (c.player.club .. " youth team"), blocks = Js.alit(Js.O({ kind = "text", text = "Your form dropped you to the youth team. Play well and the first team will call." }, { "kind", "text" })), buttons = buttons }, { "id", "hud", "title", "blocks", "buttons" }) end
 	end
 	postMatch = function(g)
@@ -453,11 +517,11 @@ return function(exports, import, Js)
 		if t then
 			A.push(blocks, Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Their offer", value = money(t.theirPosition), tone = "gold" }, { "label", "value", "tone" }), Js.O({ label = "You're asking", value = money(((function() local _v = g.ui; if _v == nil then return nil end; _v = _v.ask; return _v end)() or t.yourPosition)) }, { "label", "value" }), Js.O({ label = "Mood", value = (Js.numstr(Math.round(t.moodScore)) .. "/100"), tone = (if (t.moodScore < 35) then "bad" else "normal") }, { "label", "value", "tone" })) }, { "kind", "items" }))
 			do
-				local _arr16 = A.slice(t.log, -4)
-				local _i17 = 0
-				while _i17 < Js.alen(_arr16) do
-					_i17 += 1
-					local line = _arr16[_i17]
+				local _arr17 = A.slice(t.log, -4)
+				local _i18 = 0
+				while _i18 < Js.alen(_arr17) do
+					_i18 += 1
+					local line = _arr17[_i18]
 					A.push(blocks, Js.O({ kind = "text", text = line, tone = "dim" }, { "kind", "text", "tone" }))
 				end
 			end
@@ -489,65 +553,79 @@ return function(exports, import, Js)
 	act = function(g, action, arg, rng)
 		if rng == nil then rng = Math.random end
 		local ui = (if g.ui ~= nil then g.ui else Js.O({}, nil))
-		local _sw18 = action
-		local _ci19 = (if _sw18 == "tab" then 1 elseif _sw18 == "home" then 2 elseif _sw18 == "sim" then 3 elseif _sw18 == "play-match" then 4 elseif _sw18 == "watch" then 5 elseif _sw18 == "youth-week" then 6 elseif _sw18 == "youth-promote" then 7 elseif _sw18 == "post-continue" then 8 elseif _sw18 == "draw-continue" then 9 elseif _sw18 == "ko-continue" then 10 elseif _sw18 == "playoff-continue" then 11 elseif _sw18 == "deadline-continue" then 12 elseif _sw18 == "callup-continue" then 13 elseif _sw18 == "end-season" then 14 elseif _sw18 == "ballon-continue" then 15 elseif _sw18 == "play-on" then 16 elseif _sw18 == "retire" then 17 elseif _sw18 == "play-trial" then 18 elseif _sw18 == "trial-sign" then 19 elseif _sw18 == "trial-reward-done" then 20 elseif _sw18 == "awards-continue" then 21 elseif _sw18 == "ladder-continue" then 22 elseif _sw18 == "stay" then 23 elseif _sw18 == "sign" then 24 elseif _sw18 == "relegation-pick" then 25 elseif _sw18 == "ask-contract" then 26 elseif _sw18 == "renewal-start" then 27 elseif _sw18 == "renewal-guess" then 28 elseif _sw18 == "renewal-sign" then 29 elseif _sw18 == "renewal-cancel" then 30 elseif _sw18 == "window-talk" then 31 elseif _sw18 == "talk-nudge" then 32 elseif _sw18 == "talk-offer" then 33 elseif _sw18 == "talk-done" then 34 elseif _sw18 == "talk-walk" then 35 else 0)
-		local _cont20 = false
+		local _sw19 = action
+		local _ci20 = (if _sw19 == "tab" then 1 elseif _sw19 == "home" then 2 elseif _sw19 == "train-skill" then 3 elseif _sw19 == "train-back" then 4 elseif _sw19 == "play-training" then 5 elseif _sw19 == "sim" then 6 elseif _sw19 == "play-match" then 7 elseif _sw19 == "watch" then 8 elseif _sw19 == "youth-week" then 9 elseif _sw19 == "youth-promote" then 10 elseif _sw19 == "post-continue" then 11 elseif _sw19 == "draw-continue" then 12 elseif _sw19 == "ko-continue" then 13 elseif _sw19 == "playoff-continue" then 14 elseif _sw19 == "deadline-continue" then 15 elseif _sw19 == "callup-continue" then 16 elseif _sw19 == "end-season" then 17 elseif _sw19 == "ballon-continue" then 18 elseif _sw19 == "play-on" then 19 elseif _sw19 == "retire" then 20 elseif _sw19 == "play-trial" then 21 elseif _sw19 == "trial-sign" then 22 elseif _sw19 == "trial-reward-done" then 23 elseif _sw19 == "awards-continue" then 24 elseif _sw19 == "ladder-continue" then 25 elseif _sw19 == "stay" then 26 elseif _sw19 == "sign" then 27 elseif _sw19 == "relegation-pick" then 28 elseif _sw19 == "ask-contract" then 29 elseif _sw19 == "renewal-start" then 30 elseif _sw19 == "renewal-guess" then 31 elseif _sw19 == "renewal-sign" then 32 elseif _sw19 == "renewal-cancel" then 33 elseif _sw19 == "window-talk" then 34 elseif _sw19 == "talk-nudge" then 35 elseif _sw19 == "talk-offer" then 36 elseif _sw19 == "talk-done" then 37 elseif _sw19 == "talk-walk" then 38 else 0)
+		local _cont21 = false
 		repeat
-			if _ci19 ~= 0 and _ci19 <= 1 then
-				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = (if arg ~= nil then arg else "home") }, { "tab" })) }, { "ui" })) end
+			if _ci20 ~= 0 and _ci20 <= 1 then
+				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = (if arg ~= nil then arg else "home"), trainResult = nil }, { "tab", "trainResult" })) }, { "ui" })) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 2 then
+			if _ci20 ~= 0 and _ci20 <= 2 then
 				do return Js.ospread(M_flow.backToDashboard(g), Js.O({ ui = Js.ospread(ui, Js.O({ tab = "home" }, { "tab" })) }, { "ui" })) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 3 then
+			if _ci20 ~= 0 and _ci20 <= 3 then
+				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "train", trainSkill = arg, trainResult = nil }, { "tab", "trainSkill", "trainResult" })) }, { "ui" })) end
+			end
+			if _ci20 ~= 0 and _ci20 <= 4 then
+				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ tab = "train", trainSkill = nil, trainResult = nil }, { "tab", "trainSkill", "trainResult" })) }, { "ui" })) end
+			end
+			if _ci20 ~= 0 and _ci20 <= 5 then
+				do
+					local _d22 = S.split((if arg ~= nil then arg else ""), ":")
+					local sk = _d22[1]
+					local lv = _d22[2]
+					do return (trainingDone(g, sk, Js.Number(lv), 2) or g) end
+				end
+			end
+			if _ci20 ~= 0 and _ci20 <= 6 then
 				do return M_flow.simMatch(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 4 then
+			if _ci20 ~= 0 and _ci20 <= 7 then
 				do return M_flow.simMatch(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 5 then
+			if _ci20 ~= 0 and _ci20 <= 8 then
 				do return M_flow.watchFromStands(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 6 then
+			if _ci20 ~= 0 and _ci20 <= 9 then
 				do return M_flow.youthWeek(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 7 then
+			if _ci20 ~= 0 and _ci20 <= 10 then
 				do return M_flow.youthPromotion(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 8 then
+			if _ci20 ~= 0 and _ci20 <= 11 then
 				do return M_flow.postMatchContinue(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 9 then
+			if _ci20 ~= 0 and _ci20 <= 12 then
 				do return M_flow.drawContinue(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 10 then
+			if _ci20 ~= 0 and _ci20 <= 13 then
 				do return M_flow.knockoutContinue(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 11 then
+			if _ci20 ~= 0 and _ci20 <= 14 then
 				do return M_flow.playoffContinue(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 12 then
+			if _ci20 ~= 0 and _ci20 <= 15 then
 				do return M_flow.deadlineDayContinue(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 13 then
+			if _ci20 ~= 0 and _ci20 <= 16 then
 				do return M_flow.callUpContinue(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 14 then
+			if _ci20 ~= 0 and _ci20 <= 17 then
 				do return M_flow.endSeason(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 15 then
+			if _ci20 ~= 0 and _ci20 <= 18 then
 				do return M_flow.ballonDorContinue(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 16 then
+			if _ci20 ~= 0 and _ci20 <= 19 then
 				do return M_flow.playOn(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 17 then
+			if _ci20 ~= 0 and _ci20 <= 20 then
 				do return M_flow.retireNow(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 18 then
+			if _ci20 ~= 0 and _ci20 <= 21 then
 				do return (if (g.phase == "trial") then simTrial(g) else g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 19 then
+			if _ci20 ~= 0 and _ci20 <= 22 then
 				do
 					if (g.phase ~= "manager-talk") then
 						do return g end
@@ -560,31 +638,31 @@ return function(exports, import, Js)
 					do return (if youth then Js.ospread(M_flow.afterSigning(Js.ospread(g, Js.O({ career = youth }, { "career" }))), Js.O({ ui = ui }, { "ui" })) else g) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 20 then
+			if _ci20 ~= 0 and _ci20 <= 23 then
 				do return (if (g.phase == "trial-reward") then Js.ospread(M_flow.afterSigning(g), Js.O({ ui = Js.ospread(ui, Js.O({ tab = "home" }, { "tab" })) }, { "ui" })) else g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 21 then
+			if _ci20 ~= 0 and _ci20 <= 24 then
 				do return M_flow.seasonAwardsContinue(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 22 then
+			if _ci20 ~= 0 and _ci20 <= 25 then
 				do return M_flow.ladderContinue(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 23 then
+			if _ci20 ~= 0 and _ci20 <= 26 then
 				do return M_flow.stayPut(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 24 then
+			if _ci20 ~= 0 and _ci20 <= 27 then
 				do return M_flow.signingDone(g) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 25 then
+			if _ci20 ~= 0 and _ci20 <= 28 then
 				do return M_flow.chooseTransfer(g, (if g.transferOffers ~= nil then g.transferOffers else Js.alit())[Js.Number(arg) + 1]) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 26 then
+			if _ci20 ~= 0 and _ci20 <= 29 then
 				do return Js.ospread(g, Js.O({ phase = "contract-renewal", contractOfferReason = nil, ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "phase", "contractOfferReason", "ui" })) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 27 then
+			if _ci20 ~= 0 and _ci20 <= 30 then
 				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ renewal = Js.O({ current = (3 + math.floor((rng() * 8))), next = nil, wins = 0, locked = false, rounds = 0, message = "", started = true }, { "current", "next", "wins", "locked", "rounds", "message", "started" }) }, { "renewal" })) }, { "ui" })) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 28 then
+			if _ci20 ~= 0 and _ci20 <= 31 then
 				do
 					local r = ui.renewal
 					if ((not r) or r.locked) then
@@ -599,34 +677,34 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ renewal = next_ }, { "renewal" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 29 then
+			if _ci20 ~= 0 and _ci20 <= 32 then
 				do
 					local r = ui.renewal
 					local offer = M_flow.renewalOffer(g, ((function() local _v = r; if _v == nil then return nil end; _v = _v.wins; return _v end)() or 0), (function() local _l = (function() local _v = r; if _v == nil then return nil end; _v = _v.locked; return _v end)(); if _l ~= nil then return _l end; return false end)(), ((function() local _v = r; if _v == nil then return nil end; _v = _v.rounds; return _v end)() or 0))
 					do return Js.ospread(M_flow.contractComplete(g, offer), Js.O({ ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 30 then
+			if _ci20 ~= 0 and _ci20 <= 33 then
 				do return Js.ospread(M_flow.contractComplete(g, nil), Js.O({ ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "ui" })) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 31 then
+			if _ci20 ~= 0 and _ci20 <= 34 then
 				do
-					local _d21 = A.map(S.split((if arg ~= nil then arg else "0:0"), ":"), Js.Number)
-					local li = _d21[1]
-					local ci = _d21[2]
+					local _d23 = A.map(S.split((if arg ~= nil then arg else "0:0"), ":"), Js.Number)
+					local li = _d23[1]
+					local ci = _d23[2]
 					local offer = ((M_flow.transferInterest(g).leagues)[li + 1].clubs)[ci + 1].offer
 					local talk = M_negotiation.startNegotiation(offer.wage, "selling", rng)
 					do return Js.ospread(M_flow.transferNegotiate(g, offer), Js.O({ ui = Js.ospread(ui, Js.O({ talk = talk, ask = talk.yourPosition }, { "talk", "ask" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 32 then
+			if _ci20 ~= 0 and _ci20 <= 35 then
 				do
 					local a = ((if ui.ask ~= nil then ui.ask else (function() local _v = ui.talk; if _v == nil then return nil end; _v = _v.yourPosition; return _v end)()) or 0)
 					local dir = (if (Js.Number(arg) < 0) then -1 else 1)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ ask = Math.max(1, (a + (dir * niceStep((if (dir < 0) then (a - 1) else a))))) }, { "ask" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 33 then
+			if _ci20 ~= 0 and _ci20 <= 36 then
 				do
 					if (not ui.talk) then
 						do return g end
@@ -635,21 +713,21 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ talk = t }, { "talk" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 34 then
+			if _ci20 ~= 0 and _ci20 <= 37 then
 				do
 					local t = ui.talk
 					local r = M_flow.transferTalkDone(g, (if (t and (t.status == "accepted")) then (if t.finalPrice ~= nil then t.finalPrice else nil) else nil))
 					do return Js.ospread(r, Js.O({ ui = Js.ospread(ui, Js.O({ talk = nil }, { "talk" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 35 then
+			if _ci20 ~= 0 and _ci20 <= 38 then
 				do return Js.ospread(M_flow.transferTalkDone(g, nil), Js.O({ ui = Js.ospread(ui, Js.O({ talk = nil }, { "talk" })) }, { "ui" })) end
 			end
 		until true
 		do return g end
 	end
 	exports.act = act
-	TABS = Js.alit(Js.alit("home", "Home"), Js.alit("league", "League"), Js.alit("fixtures", "Fixtures"), Js.alit("stats", "Stats"))
+	TABS = Js.alit(Js.alit("home", "Home"), Js.alit("train", "Train"), Js.alit("league", "League"), Js.alit("fixtures", "Fixtures"), Js.alit("stats", "Stats"))
 	DIVISIONS = Js.alit("premier", "championship", "league_one", "league_two", "national_league", "national_league_north", "national_league_south")
 	exports.DIVISIONS = DIVISIONS
 end

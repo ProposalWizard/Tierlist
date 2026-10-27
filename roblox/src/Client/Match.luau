@@ -1058,6 +1058,42 @@ local function runPitch(hud, driver)
 			end
 		end
 
+		-- a training level: which, the tries, what to do
+		local tr = f.training
+		if tr then
+			hud.trialTop.Visible = true
+			hud.trialHint.Visible = true
+			local pips = ""
+			for i = 1, int(tr.tries.total) do
+				local r = tr.tries.results[i]
+				pips ..= (r == nil and "○" or r and "✓" or "✗")
+			end
+			hud.trialTop.Text = string.format("%s · LEVEL %d   %s", string.upper(tr.title), int(tr.level), pips)
+			hud.trialHint.Text = (tr.line ~= "" and (tr.line .. "\n") or "") .. (tr.brief ~= "" and (tr.brief .. " · ") or "") .. tr.instruction
+			hud.score.Text = "TRAINING"
+			hud.minute.Text = ""
+			if tr.flash then
+				hud.banner.Visible = true
+				hud.banner.Text = tr.flash.text
+				hud.banner.TextColor3 = tr.flash.good and C.good or C.bad
+			elseif tr.count > 0 then
+				hud.banner.Visible = true
+				hud.banner.Text = tostring(int(tr.count))
+				hud.banner.TextColor3 = C.gold
+			else
+				hud.banner.TextColor3 = C.gold
+			end
+			if tr.stars ~= nil then
+				hud.banner.Visible = true
+				hud.banner.Text = string.rep("★", int(tr.stars)) .. string.rep("☆", 3 - int(tr.stars))
+				hud.banner.TextColor3 = C.gold
+			end
+			if tr.tapToStart then
+				hud.tapStart.Visible = true
+				hud.tapStart.Text = "TAP TO START"
+			end
+		end
+
 		-- the strike screen
 		hud.strike.Visible = strike ~= nil
 		if strike then
@@ -1304,6 +1340,77 @@ function Match.playTrial(remote)
 	end
 	hud.gui:Destroy()
 	Match.current, Match.hud, Match.trial = nil, nil, nil
+	return nextScreen
+end
+
+--[[
+  Plays one training level (roblox/game/trainingPlay.ts) on the same pitch.
+  `remote` is ReplicatedStorage.Remotes.Training, `arg` "skill:level".
+  Returns the next screen's JSON from the server (or nil if it failed).
+]]
+function Match.playTraining(remote, arg)
+	loadCode()
+	local T = Loader.import("roblox/game/trainingPlay")
+	local hud = buildHud()
+	local okStart, json = pcall(function()
+		return remote:InvokeServer("start", arg)
+	end)
+	if not okStart or type(json) ~= "string" then
+		hud.gui:Destroy()
+		warn("training: could not start:", json)
+		return nil
+	end
+	local tp
+	local okMount, err = pcall(function()
+		local s = Js.JSON.parse(json)
+		tp = T.startTraining(s.career, s.skill, s.level, s.overlay)
+	end)
+	if not okMount then
+		hud.gui:Destroy()
+		warn("training: could not mount:", err)
+		return remote:InvokeServer("abandon")
+	end
+	Match.training = tp
+	local failure = runPitch(hud, {
+		match = function()
+			return T.pitchMatch(tp)
+		end,
+		step = function(dt)
+			T.tick(tp, dt)
+		end,
+		frame = function()
+			return T.trainingFrame(tp)
+		end,
+		done = function()
+			return tp.done
+		end,
+		tapGround = function(x, y)
+			T.visionTap(tp, vec(x, y))
+		end,
+		stick = function(mx, _mz)
+			T.paceSteer(tp, mx)
+		end,
+		knock = function(dir)
+			T.paceKnock(tp, dir)
+		end,
+		tapToGo = function()
+			T.tapToGo(tp)
+		end,
+	})
+	local nextScreen
+	hud.cover.Visible = true
+	hud.coverText.Text = "…"
+	if failure then
+		warn("training: stopped by an error:", failure)
+		nextScreen = remote:InvokeServer("abandon")
+	else
+		local ok, res = pcall(function()
+			return remote:InvokeServer("done", Js.JSON.stringify(Js.O({ stars = tp.stars or 0 }, { "stars" })))
+		end)
+		nextScreen = ok and res or nil
+	end
+	hud.gui:Destroy()
+	Match.current, Match.hud, Match.training = nil, nil, nil
 	return nextScreen
 end
 

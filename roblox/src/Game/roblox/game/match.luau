@@ -2361,6 +2361,6 @@ return function(exports, import, Js)
 	newTally = function()
 		return Js.O({ shots = 0, goals = 0, passes = 0, passesCompleted = 0, chances = 0, assists = 0, misses = 0, lost = 0, dribbles = 0, goalsPen = 0, goalsTap = 0, goalsOut = 0, passesSafe = 0, passesAmb = 0, missesOn = 0, missesPen = 0, misses1v1 = 0 }, { "shots", "goals", "passes", "passesCompleted", "chances", "assists", "misses", "lost", "dribbles", "goalsPen", "goalsTap", "goalsOut", "passesSafe", "passesAmb", "missesOn", "missesPen", "misses1v1" })
 	end
-	exports.POST_L = POST_L
-	exports.POST_R = POST_R
+	exports.POST_L = M_pitch.POST_L
+	exports.POST_R = M_pitch.POST_R
 end

@@ -31,6 +31,8 @@ The website's own code is converted, file for file, into Roblox's language
 | `game/strikeScreen.ts` | The strike screen (tap where on the ball) and the power shot, without the drawing. |
 | `game/matchView.ts` | What is on the pitch each frame, for the Roblox match to draw. |
 | `game/trialPlay.ts` | The trial's five tests without the drawing (played on the device). |
+| `game/trainingPlay.ts` | A training level's drill without the drawing (played on the device). |
+| `game/trainingFlow.ts` | Training's server rules: sessions, energy, which levels are open, banking the stars. |
 | `game/trialFlow.ts` | The trial's server steps: the results checked, the scout's offer, the manager's talk, the signing. |
 | `src/Server/` | The Roblox server: careers, saving (DataStore), real squads (HttpService). |
 | `src/Client/Main.client.luau` | The Roblox menus: draws what the server sends. |
@@ -88,6 +90,16 @@ them in the career). Controls:
 | Dribble | W A S D, Q / E to knock it past him, click a team-mate to pass | thumb stick, KNOCK buttons, tap a team-mate |
 
 "Sim it" on the matchday screen still sims the match, as on the website.
+
+## Training
+
+As on the website, training is the only way your skills grow. Train tab:
+pick a skill, then a level (30 per skill). Three tries a level: in first time
+is three stars, second two, third one; every new star adds to the skill. Two
+sessions a week (back after a Saturday match), each costing energy. Power,
+Technique, Free Kick and Aerial are played on the 3D pitch like a match
+chance; Pace is the run (W A S D / stick, Q / E to knock it past him); Vision
+is a tap on the right team-mate (or, on higher levels, the pass itself).
 
 ## The trial
 

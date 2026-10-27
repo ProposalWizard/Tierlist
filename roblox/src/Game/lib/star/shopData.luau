@@ -4,8 +4,8 @@
 return function(exports, import, Js)
 	local A, S, N, Math = Js.A, Js.S, Js.N, Js.Math
 	local M_economy = import("lib/star/economy")
-	local M_tuningStore = import("lib/star/tuningStore")
 	local M_shopDefaults = import("lib/star/shopDefaults")
+	local M_tuningStore = import("lib/star/tuningStore")
 	local KIB_CANS, kibCanEffectLabel, BOOTS_CATALOGUE, LIFESTYLE_ITEMS, BOOTS_ALL_LEVELS, LIFESTYLE_ALL_LEVELS, kibCanPrice
 	kibCanEffectLabel = function(can)
 		local plus = (if (can.restore > 0) then (" + " .. Js.numstr(can.restore) .. " energy") else "")
@@ -33,9 +33,9 @@ return function(exports, import, Js)
 	exports.BOOTS_ALL_LEVELS = BOOTS_ALL_LEVELS
 	LIFESTYLE_ALL_LEVELS = M_tuningStore.applyPriceOverrides("lifestyle", M_shopDefaults.LIFESTYLE_LEVELS)
 	exports.LIFESTYLE_ALL_LEVELS = LIFESTYLE_ALL_LEVELS
-	exports.PRICE_SPECS = PRICE_SPECS
-	exports.shopTierOf = shopTierOf
-	exports.KIB_CAN_TIERS = KIB_CAN_TIERS
-	exports.SHOP_LEVEL_COUNT = SHOP_LEVEL_COUNT
-	exports.baseIdOf = baseIdOf
+	exports.PRICE_SPECS = M_shopDefaults.PRICE_SPECS
+	exports.shopTierOf = M_shopDefaults.shopTierOf
+	exports.KIB_CAN_TIERS = M_shopDefaults.KIB_CAN_TIERS
+	exports.SHOP_LEVEL_COUNT = M_shopDefaults.SHOP_LEVEL_COUNT
+	exports.baseIdOf = M_shopDefaults.baseIdOf
 end

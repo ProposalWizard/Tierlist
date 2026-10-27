@@ -7,6 +7,7 @@ return function(exports, import, Js)
 	local M_figure3d = import("lib/star/figure3d")
 	local M_drawPlayerHead = import("lib/star/drawPlayerHead")
 	local M_figureSkin = import("lib/star/figureSkin")
+	local M_geometry = import("lib/star/fiveASide/geometry")
 	local TC, ROLE_KIT, GRASS_TILE, grassTile, makeGrassTile, cameraFor, cameraContaining, projectionFor, drawPitch, drawRaisedGoal, drawGoal, FIGURE_R, FEET_Y, HIP_Y, SHOULDER_Y, NECK_Y, HEAD_BASE_R, HEAD_ANCHOR, ANATOMY, FIGURE_HEIGHT_R, FIGURE_HEAD_R, runPhase, poseFor, bodyPoseFor, feetFor, paintBody, drawFigure, figureRForHeight, MATCH_FIGURE_HEIGHT_R, MATCH_FIGURE_R_MULT, MATCH_SCALE, MATCH_KEEPER_R_SHARE, MATCH_KEEPER_SCALE, MATCH_FRAME_W_M, sameSizeScale, MAX_KEEPER_LEAN, drawFigureAt, drawKeeper, drawKeeperAt, BALL_MIN_R, drawBall, AIM_ARROW_LENGTH, drawAim
 	makeGrassTile = function()
 		if (Js.document == nil) then
@@ -736,5 +737,5 @@ return function(exports, import, Js)
 	AIM_ARROW_LENGTH = 0.132
 	exports.AIM_ARROW_LENGTH = AIM_ARROW_LENGTH
 	exports.FIVE_COLOURS = TC
-	exports.FIVE_HALFWAY_Y = FIVE_HALFWAY_Y
+	exports.FIVE_HALFWAY_Y = M_geometry.FIVE_HALFWAY_Y
 end

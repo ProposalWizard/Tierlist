@@ -1097,5 +1097,5 @@ return function(exports, import, Js)
 	FORM_OFFER_THRESHOLD = 7.5
 	FORM_OFFER_MIN_MATCHES = 5
 	WINDOW_ORDER = Js.O({ summer = 0, january = 1 }, { "summer", "january" })
-	exports.hasClub = hasClub
+	exports.hasClub = M_calendar.hasClub
 end

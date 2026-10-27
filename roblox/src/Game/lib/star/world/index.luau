@@ -251,5 +251,5 @@ return function(exports, import, Js)
 	exports.WORLD_LIVE = WORLD_LIVE
 	ratedCache = Js.Map.new()
 	finished = Js.Map.new()
-	exports.SEASON_ONE_HOLDERS = SEASON_ONE_HOLDERS
+	exports.SEASON_ONE_HOLDERS = M_holders.SEASON_ONE_HOLDERS
 end

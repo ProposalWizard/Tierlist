@@ -539,5 +539,5 @@ return function(exports, import, Js)
 		do return ((not (not g)) and ((g["type"] == "goalVideo") or ((g["type"] == "thumbnail") and ((((function() local _v = g.clips; if _v == nil then return nil end; _v = Js.len(_v); return _v end)() or 0) + ((function() local _v = g.synth; if _v == nil then return nil end; _v = Js.len(_v); return _v end)() or 0)) > 0)))) end
 	end
 	WEEK_SPAN = (M_schedule.clockAt(1, 2, 0) - M_schedule.clockAt(1, 1, 0))
-	exports.surname = surname
+	exports.surname = M_grammar.surname
 end

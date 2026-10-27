@@ -143,6 +143,79 @@ if s.id == "trial" then
 	print("career", s.hud.club, s.hud.league, s.id)
 end
 
+-- training: a level of each skill, played through the client script
+local trainingRemote = rs._children.Remotes._children.Training
+for _, skill in ipairs({ "power", "vision" }) do
+	local co = coroutine.create(function()
+		return MatchClient.playTraining(trainingRemote, skill .. ":1")
+	end)
+	task.wait = function()
+		coroutine.yield()
+	end
+	local frames, pf, last, tryNo = 0, 0, "", 0
+	local result
+	while true do
+		local ok, r = coroutine.resume(co)
+		if not ok then
+			error("training client crashed: " .. tostring(r))
+		end
+		if coroutine.status(co) == "dead" then
+			result = r
+			break
+		end
+		frames += 1
+		assert(frames < 100000, "the training level never ended: " .. skill)
+		local tp, hud, m = MatchClient.training, MatchClient.hud, MatchClient.current
+		if tp and hud then
+			local key = (m and m.phase or "none") .. tostring(tp.results and #tp.results)
+			if key ~= last then
+				last = key
+				pf = 0
+			end
+			pf += 1
+			MOVE = Vector3.new(0, 0, 0)
+			if hud.tapStart.Visible and pf == 15 then
+				hud.tapStart.Activated:Fire()
+			elseif m then
+				if m.phase == "aim" and pf % 90 == 25 then
+					tryNo += 1
+					local b = m.sc.ball
+					local gx, gy = (m.sc.goal.x1 + m.sc.goal.x2) / 2 + (tryNo % 3 - 1) * 2, 0
+					local g = tp.strike and tp.strike.setup and tp.strike.setup.gate
+					if g then
+						gx, gy = g.centre.x, g.centre.y
+					end
+					local dx, dy = gx - b.x, gy - b.y
+					local n = math.sqrt(dx * dx + dy * dy)
+					local pull = (m.camera.x2 - m.camera.x1) * 0.18
+					local down = mouse(b.x, b.y)
+					UIS.InputBegan:Fire(down, false)
+					UIS.InputChanged:Fire(mouse(b.x - dx / n * pull, b.y - dy / n * pull, Enum.UserInputType.MouseMovement))
+					UIS.InputEnded:Fire(down)
+				elseif m.phase == "contact" and hud.strike.Visible and pf == 15 then
+					local c = hud.ball.AbsolutePosition + hud.ball.AbsoluteSize / 2
+					tapScreen(hud, c.X, c.Y + hud.ball.AbsoluteSize.Y * 0.1)
+				end
+			elseif tp.pace and tp.pace.started then
+				MOVE = Vector3.new(math.sin(pf / 35) * 0.7, 0, -1)
+				if pf % 50 == 20 then
+					UIS.InputBegan:Fire(key(pf % 100 == 20 and "Q" or "E"), false)
+				end
+			elseif tp.vision and tp.vision.phase == "play" and pf % 20 == 0 then
+				local v = tp.vision
+				local pic = v.pics[math.min(v.tryIdx, Js.alen(v.pics) - 1) + 1]
+				local man = pic.options[pic.best + 1]
+				UIS.InputBegan:Fire(mouse(man.x, man.y), false)
+			end
+		end
+		RENDER:Fire(1 / 60)
+	end
+	local after = Js.JSON.parse(result)
+	print(string.format("  training %s level 1 in %d frames -> %s", skill, frames, tostring(after.blocks[1] and after.blocks[1].text)))
+	s = after
+end
+s = call("tab", "home")
+
 local played = 0
 local presses = 0
 while played < MATCHES and presses < 300 do

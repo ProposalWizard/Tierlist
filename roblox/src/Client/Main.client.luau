@@ -22,6 +22,7 @@ local player = Players.LocalPlayer
 local remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Career")
 local matchRemote = ReplicatedStorage.Remotes:WaitForChild("Match")
 local trialRemote = ReplicatedStorage.Remotes:WaitForChild("Trial")
+local trainingRemote = ReplicatedStorage.Remotes:WaitForChild("Training")
 local MatchClient = require(script.Parent:WaitForChild("Match"))
 
 pcall(function()
@@ -100,7 +101,7 @@ local function textOutline(o)
 	make("UIStroke", { Color = C.outline, Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual }).Parent = o
 	return o
 end
-local TAB_ICON = { home = "🏠", league = "🏆", fixtures = "📅", stats = "📊" }
+local TAB_ICON = { home = "🏠", train = "🏋️", league = "🏆", fixtures = "📅", stats = "📊" }
 
 local function pad(px)
 	return make("UIPadding", {
@@ -615,11 +616,13 @@ send = function(action, arg)
 	sending = true
 	busyCover.Visible = true
 	local ok, json
-	if action == "play-match" or action == "play-trial" then
+	if action == "play-match" or action == "play-trial" or action == "play-training" then
 		-- played here on the device; the menus wait underneath
 		gui.Enabled = false
 		if action == "play-match" then
 			ok, json = pcall(MatchClient.play, matchRemote)
+		elseif action == "play-training" then
+			ok, json = pcall(MatchClient.playTraining, trainingRemote, arg)
 		else
 			ok, json = pcall(MatchClient.playTrial, trialRemote)
 		end

@@ -23,6 +23,7 @@ local Screens = Loader.import("roblox/game/screens")
 local Flow = Loader.import("roblox/game/flow")
 local Match = Loader.import("roblox/game/match")
 local TrialFlow = Loader.import("roblox/game/trialFlow")
+local TrainingFlow = Loader.import("roblox/game/trainingFlow")
 
 local SAVE_VERSION = 1
 -- A DataStore key holds at most 4 MB (counted after Roblox escapes the text),
@@ -293,7 +294,7 @@ career.OnServerInvoke = function(player, action, arg, form)
 		waited += 0.1
 	end
 	busy[player] = true
-	local ok, screen = pcall(handle, player, action, arg, form)
+	local ok, screen = xpcall(handle, debug.traceback, player, action, arg, form)
 	busy[player] = nil
 	if not ok then
 		warn("Career action '" .. action .. "' failed:", screen)
@@ -361,7 +362,7 @@ matchRemote.OnServerInvoke = function(player, action, json)
 		waited += 0.1
 	end
 	busy[player] = true
-	local ok, res = pcall(matchAction, player, action, json)
+	local ok, res = xpcall(matchAction, debug.traceback, player, action, json)
 	busy[player] = nil
 	if not ok then
 		warn("Match '" .. action .. "' failed:", res)
@@ -412,7 +413,7 @@ trialRemote.OnServerInvoke = function(player, action, json)
 		waited += 0.1
 	end
 	busy[player] = true
-	local ok, res = pcall(trialAction, player, action, json)
+	local ok, res = xpcall(trialAction, debug.traceback, player, action, json)
 	busy[player] = nil
 	if not ok then
 		warn("Trial '" .. action .. "' failed:", res)
@@ -423,6 +424,77 @@ trialRemote.OnServerInvoke = function(player, action, json)
 	end
 	return res
 end
+
+-- Training is played on the device (roblox/game/trainingPlay.ts): "start"
+-- checks the level may be played and sends it, "done" banks the stars.
+local pendingTraining = {} -- [Player] = { skill, level, career }
+local function trainingAction(player, action, arg)
+	local g = games[player]
+	if not g then
+		error("no career")
+	end
+	if action == "start" then
+		local skill, level = string.match(arg or "", "^(%a+):(%d+)$")
+		level = tonumber(level)
+		if not skill or not level or (g.phase ~= "dashboard" and g.phase ~= "youth") or not TrainingFlow.mayPlayLevel(g.career, skill, level) then
+			error("that level cannot be played now")
+		end
+		pendingTraining[player] = { skill = skill, level = level, career = g.career }
+		return Js.JSON.stringify(Js.O({
+			career = Match.matchCareer(g.career),
+			skill = skill,
+			level = level,
+			overlay = TrainingFlow.levelOverlay(),
+		}, { "career", "skill", "level", "overlay" }))
+	end
+	local p = pendingTraining[player]
+	pendingTraining[player] = nil
+	if action == "done" and p and g.career == p.career then
+		local ok, back = pcall(Js.JSON.parse, arg)
+		local nextGame = ok and type(back) == "table" and Screens.trainingDone(g, p.skill, p.level, back.stars) or nil
+		if nextGame then
+			games[player] = nextGame
+			dirty[player] = true
+			return encode(Screens.screen(nextGame))
+		end
+		warn("training: the stars from the device were refused")
+	end
+	return encode(Screens.screen(g))
+end
+
+local trainingRemote = Instance.new("RemoteFunction")
+trainingRemote.Name = "Training"
+trainingRemote.Parent = remotes
+
+trainingRemote.OnServerInvoke = function(player, action, arg)
+	if type(action) ~= "string" or (arg ~= nil and type(arg) ~= "string") then
+		return nil
+	end
+	local waited = 0
+	while busy[player] and waited < 30 do
+		task.wait(0.1)
+		waited += 0.1
+	end
+	busy[player] = true
+	local ok, res = xpcall(trainingAction, debug.traceback, player, action, arg)
+	busy[player] = nil
+	if not ok then
+		warn("Training '" .. action .. "' failed:", res)
+		if action == "start" then
+			return nil
+		end
+		return encode(errorScreen(res))
+	end
+	return res
+end
+
+-- the website's shared training levels (its level editor's saved rows)
+task.spawn(function()
+	local ok, err = pcall(TrainingFlow.fetchSharedTrainingLevels)
+	if not ok then
+		warn("training levels: using the built-in rows:", err)
+	end
+end)
 
 -- ─────────────────────────────────────────────────────────── join / leave ──
 local function onJoin(player)
@@ -445,6 +517,7 @@ Players.PlayerRemoving:Connect(function(player)
 	busy[player] = nil
 	loaded[player] = nil
 	pendingMatch[player] = nil
+	pendingTraining[player] = nil
 end)
 
 game:BindToClose(function()

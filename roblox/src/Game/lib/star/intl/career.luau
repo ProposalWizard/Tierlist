@@ -1009,5 +1009,5 @@ return function(exports, import, Js)
 	viewOf = function(m)
 		return Js.ospread(Js.O({ id = m.id, date = m.date, comp = m.comp, stage = m.stage, home = m.home, away = m.away, hs = m.hs, as = m.as }, { "id", "date", "comp", "stage", "home", "away", "hs", "as" }), (if m.pens then Js.O({ pens = (Js.numstr(m.pens.hs) .. "-" .. Js.numstr(m.pens.as) .. " pens") }, { "pens" }) else Js.O({}, nil)))
 	end
-	exports.loserOf = loserOf
+	exports.loserOf = M_engine.loserOf
 end

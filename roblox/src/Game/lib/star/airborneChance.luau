@@ -272,6 +272,6 @@ return function(exports, import, Js)
 	exports.AIR_TIMER_AERIAL_MIN = AIR_TIMER_AERIAL_MIN
 	AIR_TIMER_AERIAL_MAX = 100
 	exports.AIR_TIMER_AERIAL_MAX = AIR_TIMER_AERIAL_MAX
-	exports.HEADER_Z = HEADER_Z
-	exports.VOLLEY_MAX_Z = VOLLEY_MAX_Z
+	exports.HEADER_Z = M_airDrawings.HEADER_Z
+	exports.VOLLEY_MAX_Z = M_airDrawings.VOLLEY_MAX_Z
 end

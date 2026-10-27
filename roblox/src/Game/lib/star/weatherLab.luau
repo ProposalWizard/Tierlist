@@ -181,5 +181,5 @@ return function(exports, import, Js)
 	end
 	STRIKES = Js.alit(Js.O({ id = "ground", name = "Ground pass", speed = 14, angle = 1.5 }, { "id", "name", "speed", "angle" }), Js.O({ id = "driven", name = "Driven shot", speed = 27, angle = 8 }, { "id", "name", "speed", "angle" }), Js.O({ id = "chip", name = "Lofted pass", speed = 17, angle = 35 }, { "id", "name", "speed", "angle" }), Js.O({ id = "long", name = "Long ball", speed = 25, angle = 30 }, { "id", "name", "speed", "angle" }))
 	exports.STRIKES = STRIKES
-	exports.pitchWord = pitchWord
+	exports.pitchWord = M_pitchQuality.pitchWord
 end

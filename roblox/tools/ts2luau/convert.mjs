@@ -756,6 +756,15 @@ class FileEmitter {
   }
 
   call(node) {
+    // import("./x"): Roblox has the whole game at once, so the module is simply
+    // loaded with this file and handed back as a finished promise
+    if (node.expression.kind === ts.SyntaxKind.ImportKeyword) {
+      const a = node.arguments[0];
+      if (!a || !ts.isStringLiteral(a)) this.err(node, "import() of a computed path");
+      const target = resolveImport(this.program, this.file, a.text);
+      if (!target) this.err(node, `cannot resolve import(${a.text})`);
+      return `Js.Promise.resolve(${this.importLocal(target)})`;
+    }
     if (node.questionDotToken || this.hasOptionalChain(node.expression)) {
       const callee = this.skipParens(node.expression);
       // f?.(x) and o.m?.(x)
@@ -2181,8 +2190,12 @@ class FileEmitter {
           const aliased = this.checker.getAliasedSymbol(sym);
           if (aliased && !(aliased.flags & ts.SymbolFlags.Value)) continue;
         }
+        // an imported name passed on (import { A } ...; export { A }): read it from its module
+        const decl = sym && sym.declarations && sym.declarations[0];
+        const ref = decl && (ts.isImportSpecifier(decl) || ts.isImportClause(decl) || ts.isNamespaceImport(decl)) && decl.name
+          ? this.identRef(decl.name) : this.identRef(localId);
         // deferred: written at the end of the file so later declarations exist
-        this.deferredExports.push(`exports.${el.name.text} = ${this.identRef(localId)}`);
+        this.deferredExports.push(`exports.${el.name.text} = ${ref}`);
       }
     }
   }
@@ -2355,6 +2368,15 @@ function collect(program, entries) {
       if (target.includes("node_modules")) throw new Error(`${path.relative(REPO, f)}: imports a package (${spec}); needs an override`);
       queue.push(target);
     }
+    // import("./x.json"): the module is loaded with the file (see call())
+    const walk = (n) => {
+      if (ts.isCallExpression(n) && n.expression.kind === ts.SyntaxKind.ImportKeyword && n.arguments.length === 1 && ts.isStringLiteral(n.arguments[0])) {
+        const target = resolveImport(program, f, n.arguments[0].text);
+        if (target && !target.includes("node_modules")) queue.push(target);
+      }
+      ts.forEachChild(n, walk);
+    };
+    walk(sf);
   }
   return files;
 }
