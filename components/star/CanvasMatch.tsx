@@ -162,11 +162,10 @@ import { crossDrawT, syntheticCross, headerBeat, headerLiftPx, headerBallLiftK, 
 import { airTapOn, airTapAim, airTapStrike, AIR_TAP_OPEN_S, AIR_TAP_OPEN_NO_LEAD_S, type AirKind } from "@/lib/star/airTap";
 import { aerialMovesOn, forcedAerialMove, pickAerialMove, aerialFacing, aerialRise, aerialFollow, aerialStrikeTint, liftToMeet, AERIAL_SPECS, CONTACT_SHOW_S, type AerialMove } from "@/lib/star/aerialMoves";
 import { spritePoints, type SpritePoint } from "@/lib/star/sprites";
-import { useFitWidth } from "./useFitWidth";
-import ArcadeBanner, { useArcadeBanner, type BannerSide } from "./ArcadeBanner";
-import { bannerStyle, soundSet } from "@/lib/star/style3d/texturePack";
+import { type BannerSide } from "./ArcadeBanner";
+import { soundSet } from "@/lib/star/style3d/texturePack";
 import MikeyPopup, { useMikeyPopup, type PopupGoal } from "./MikeyPopup";
-import { mikeyPopupsLook, popupName, useMikeyPopupsLook } from "@/lib/star/mikeyPopups";
+import { popupName } from "@/lib/star/mikeyPopups";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, assistFor, noteMatePlays, probeMatePlays, type CreditDelta, type MatePlay } from "@/lib/star/credit";
 import { kitsFor, keeperKit, type MatchKits } from "@/lib/star/kits";
@@ -821,8 +820,8 @@ function countedRng(seed: number, counter: { current: number }): () => number {
 /** useLayoutEffect in the browser, useEffect on the server (no warning). */
 const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
-/** How long the old "PASS" / "GOAL" banner stays up, and when BACK TO YOU follows a PASS (ms).
- *  The Arcade pack's PASS is up 0.7 s (ArcadeBanner.tsx), so its BACK TO YOU pops fresh. */
+/** When BACK TO YOU follows a PASS (ms, less 100): the PASS caption is up 0.8 s
+ *  (mikeyPopups.ts popupMs), so BACK TO YOU pops fresh. */
 const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
@@ -2660,27 +2659,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const c = celebRef.current;
     return c ? celebAt(c.plan, performance.now() / 1000 - c.t0) : null;
   };
-  // Action banner ("PASS" / "GOAL") and how long it stays up. The texture pack
-  // picks the style (texturePack.ts bannerStyle): the Arcade pack plays
-  // "Arcade pop" (ArcadeBanner.tsx, its own clock); every other pack keeps the
-  // old banner exactly as it was.
-  const arcade = useArcadeBanner();
-  const [actionBanner, setActionBanner] = useState<string | null>(null);
-  const actionBannerTextRef = useRef<HTMLDivElement>(null);
-  const offsideBannerTextRef = useRef<HTMLDivElement>(null);
-  const bannerTimerRef = useRef<number | null>(null);
-  // Mikey's new pop-ups (Settings, default Old): TV graphics instead
-  // (MikeyPopup.tsx). Old leaves everything below exactly as it was.
+  // The words that pop up when an action finishes (GOAL, PASS, OFFSIDE…) are
+  // Mikey's Broadcast pop-ups (MikeyPopup.tsx): a scoreboard for a goal, a TV
+  // caption for the rest. The only pop-ups since 27 Oct 2026 (Mikey: "no
+  // toggle … the new base version"); the Classic and Arcade words are gone.
   const mikey = useMikeyPopup();
-  const mikeyLook = useMikeyPopupsLook();
   const showAction = useCallback((text: string) => {
     if (sceneRef.current?.banners === false) return;
-    if (mikeyPopupsLook() === "new") { showMikeyPopup(text); return; }
-    if (bannerStyle() === "arcade") { arcade.show(text, bannerSideNow()); return; }
-    setActionBanner(text);
-    if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
-    bannerTimerRef.current = window.setTimeout(() => setActionBanner(null), ACTION_BANNER_MS);
-  }, [arcade.show]); // eslint-disable-line react-hooks/exhaustive-deps
+    showMikeyPopup(text);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Cosmetic FX state (never touches physics) ---
   const reducedMotionRef = useRef(false);
@@ -10233,17 +10220,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     textShadow: "-1px -1px 1.5px #000, 1px -1px 1.5px #000, -1px 1px 1.5px #000, 1px 1px 1.5px #000",
   };
 
-  // The big banner words fit the pitch they are on: on the phone's Kickabout
-  // pitch (~226 px) a 48 px "DEFLECTED" ran off both edges. Only ever shrinks —
-  // a word that already fits keeps its size (useFitWidth.ts).
-  useFitWidth(actionBannerTextRef, actionBanner);
-  // The Arcade banner never carries over onto a new screen: half time, full
-  // time (both a `pause`), the scores sheet, the end of the match. It fades out
-  // fast instead (ArcadeBanner.tsx cut). A cut to the commentary is not one.
+  // A pop-up never carries over onto a new screen: half time, full time (both
+  // a `pause`), the scores sheet, the end of the match. It fades out fast
+  // instead (MikeyPopup.tsx cut). A cut to the commentary is not one.
   useEffect(() => {
-    if (pause || scoresOpen || phase === "postmatch" || phase === "shootout") { arcade.cut(); mikey.cut(); }
-  }, [pause, scoresOpen, phase, arcade.item?.id, mikey.item?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  useFitWidth(offsideBannerTextRef, phase === "result" && outcome === "offside");
+    if (pause || scoresOpen || phase === "postmatch" || phase === "shootout") mikey.cut();
+  }, [pause, scoresOpen, phase, mikey.item?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── The sandbox's live commentary and the situation hint ──
   // Classic: two rows under the pitch. New view: the pitch fills the phone,
@@ -10700,38 +10682,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           />
         )}
 
-        {/* Action banner — Arcade pop (ArcadeBanner.tsx). Over the commentary
-            too, so a cut away never cuts it short. */}
-        <ArcadeBanner item={arcade.item} follow={bannerSideNow} />
-        {/* Mikey's new pop-ups (Settings, default Old): MikeyPopup.tsx. */}
+        {/* The pop-ups (MikeyPopup.tsx): over the commentary too, so a cut away
+            never cuts one short. An offside is its caption; there is no other banner. */}
         <MikeyPopup item={mikey.item} follow={() => (bannerSideNow() === "bottom" ? "bottom" : "top")} />
-
-        {/* The old action banner (every pack but Arcade): the moment an action
-            completes. "PASS" when a team-mate brings your ball under control,
-            "GOAL" when it goes in. Sits high so it never covers the strike itself. */}
-        {actionBanner && (
-          <div className="absolute inset-x-0 top-[18%] flex items-center justify-center pointer-events-none z-20">
-            <div
-              ref={actionBannerTextRef}
-              className={`kib-pop text-5xl font-black italic tracking-wider drop-shadow-[0_3px_10px_rgba(0,0,0,0.95)] ${
-                actionBanner === "GOAL" ? "text-emerald-300" : "text-cyan-200"
-              }`}
-            >
-              {actionBanner}
-            </div>
-          </div>
-        )}
-
-        {/* Outcome. Deliberately NOT announced for anything the pitch already
-            shows you — the ball in the net, off the post, wide, in the keeper's
-            hands. The only banner is the referee's call, which has no visual. */}
-        {phase === "result" && outcome === "offside" && scene?.banners !== false && mikeyLook !== "new" && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div ref={offsideBannerTextRef} className="kib-pop text-4xl font-black tracking-wider drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] px-6 py-3 rounded-xl text-yellow-200 bg-gray-950/70 ring-1 ring-yellow-400/50">
-              OFFSIDE
-            </div>
-          </div>
-        )}
 
         {/* ── The match itself ──
             Not an overlay over the pitch: the commentary IS the match, and the

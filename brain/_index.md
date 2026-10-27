@@ -45,6 +45,7 @@ FACT-UI-013 | Rows that stay: full screen, sound, 3D quality, skip the line-up, 
 FACT-UI-014 | Cut scenes: people and camera New, no row; the Version picker went; the rows left live in lib/star/lookRows.ts. | ui
 FACT-UI-015 | Faces: photo faces OFF for everyone, every head is the drawn one (PHOTO_FACES); face editors hidden until the photo revamp. | ui
 FACT-UI-016 | A new career opens its match moves one at a time (headers and volleys after game 3, steer at Pace 60, sprint at Pace 65, dribble after game 4); power shot, knuckleball, skill moves and one-twos wait for an update. | career,ui
+FACT-UI-017 | Mikey's Broadcast pop-ups (scoreboard for a goal, TV caption for the rest) are the only match pop-ups; no setting, the Classic and Arcade words are gone. | team,ui
 PRO-3D-001 | Any 3D, animation, mocap, model or cut-scene work: merge main first, then read docs/3D_HANDBOOK.md. | three-d,deploy
 PRO-DAT-001 | Run a pending migration in the Supabase SQL Editor before touching the related features. | data
 PRO-DAT-002 | Bug report? Use the supabase-bug-hunt skill: read the report and the player's save, compare normal saves, reproduce, fix the code. | data
