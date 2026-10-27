@@ -487,6 +487,17 @@ local function buildHud()
 	h.finalScore = label("", 30, C.text, TITLE_FONT, { Position = UDim2.fromOffset(0, 50), Size = UDim2.new(1, 0, 0, 36), ZIndex = 21, Parent = h.final })
 	h.finalLine = label("", 16, C.dim, BODY_BOLD, { Position = UDim2.fromOffset(12, 92), Size = UDim2.new(1, -24, 0, 44), ZIndex = 21, Parent = h.final })
 	h.finalGo = bigButton("CONTINUE", h.final, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 156), Size = UDim2.new(1, -40, 0, 52), ZIndex = 21 })
+	-- the trial: which test, what to do, the cards between tests
+	h.trialTop = label("", 20, C.gold, TITLE_FONT, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 104), Size = UDim2.new(1, -24, 0, 26), TextStrokeTransparency = 0.3, Visible = false, Parent = gui })
+	h.trialHint = label("", 16, C.text, BODY_BOLD, { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -96), Size = UDim2.new(1, -40, 0, 48), TextStrokeTransparency = 0.35, Visible = false, Parent = gui })
+	h.tapStart = bigButton("TAP TO START", gui, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.55), Size = UDim2.fromOffset(240, 64), TextSize = 26, Visible = false, ZIndex = 8 })
+	h.trialCard = make("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(340, 220), BackgroundColor3 = C.panel2, BorderSizePixel = 0, Visible = false, ZIndex = 18, Parent = gui }, {
+		make("UICorner", { CornerRadius = UDim.new(0, 14) }),
+		make("UIStroke", { Color = C.gold, Thickness = 3 }),
+	})
+	h.trialCardTitle = label("", 40, C.gold, TITLE_FONT, { Position = UDim2.fromOffset(10, 18), Size = UDim2.new(1, -20, 0, 70), ZIndex = 19, Parent = h.trialCard })
+	h.trialCardSub = label("", 17, C.text, BODY_BOLD, { Position = UDim2.fromOffset(16, 94), Size = UDim2.new(1, -32, 0, 44), ZIndex = 19, Parent = h.trialCard })
+	h.trialCardGo = bigButton("CONTINUE", h.trialCard, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 148), Size = UDim2.new(1, -40, 0, 52), ZIndex = 19, Visible = false })
 	-- getting ready
 	h.cover = make("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = C.panel, ZIndex = 30, Parent = gui })
 	h.coverText = label("Getting the pitch ready…", 26, C.text, TITLE_FONT, { Size = UDim2.fromScale(1, 1), ZIndex = 31, Parent = h.cover })
@@ -521,34 +532,21 @@ local function groundAt(camera, sx, sy)
 end
 
 --[[
-  Plays one match. `remote` is ReplicatedStorage.Remotes.Match.
-  Returns the next screen's JSON from the server (or nil if it failed).
+  The pitch, the people, the camera and your input, for whatever `driver`
+  plays: one match (Match.play) or the trial (Match.playTrial).
+    driver.match()      the match state on the pitch now, or nil (the trial's dribble and pass stages, its cards)
+    driver.step(dt)     moves it on
+    driver.frame()      what to draw (roblox/game/matchView.ts's Frame; the trial's adds `trial`)
+    driver.done()       true when it is over
+    driver.tapGround(x, y), driver.stick(x, z), driver.knock(dir), driver.tapToGo()   (no match on the pitch)
+  Returns an error message if it stopped on one.
 ]]
-function Match.play(remote)
-	loadCode()
+local function runPitch(hud, driver)
 	local camera = workspace.CurrentCamera
-	local hud = buildHud()
-	local okStart, setupJson = pcall(function()
-		return remote:InvokeServer("start")
-	end)
-	if not okStart or type(setupJson) ~= "string" then
-		hud.gui:Destroy()
-		warn("match: could not start:", setupJson)
-		return nil
-	end
-	local m
-	local okMount, err = pcall(function()
-		local setup = Js.JSON.parse(setupJson)
-		m = M.startMatch(setup)
-	end)
-	if not okMount then
-		hud.gui:Destroy()
-		warn("match: could not mount:", err)
-		return remote:InvokeServer("abandon")
-	end
+	local m = driver.match()
 	-- for the smoke test's robot (roblox/tools/smoke-client.mjs); nothing reads it in the game
 	Match.current, Match.hud = m, hud
-	local kits = M.matchKits(m)
+	local kits = driver.frame().kits
 	local world = buildStadium(kits.us, kits.them)
 	local figFolder = Instance.new("Folder")
 	figFolder.Name = "Figures"
@@ -557,6 +555,10 @@ function Match.play(remote)
 	local ballShadow = part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.04, 0.4 * SCALE, 0.4 * SCALE), Color = Color3.new(0, 0, 0), Transparency = 0.55, Parent = world })
 	local arrow = part({ Size = Vector3.new(0.3 * SCALE, 0.05, 1), Color = Color3.fromHex("fde047"), Material = Enum.Material.Neon, Transparency = 1, Parent = world })
 	local youRing = part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.05, 1.3 * SCALE, 1.3 * SCALE), Color = Color3.fromHex("fde047"), Material = Enum.Material.Neon, Transparency = 0.35, Parent = world })
+	local cones = {}
+	for i = 1, 2 do
+		cones[i] = part({ Shape = Enum.PartType.Ball, Size = Vector3.new(0.5, 0.7, 0.5) * SCALE, Color = Color3.fromHex("f97316"), Material = Enum.Material.Neon, Transparency = 1, Parent = world })
+	end
 	local targetRing = part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.05, 1.6 * SCALE, 1.6 * SCALE), Color = Color3.fromHex("34d399"), Material = Enum.Material.Neon, Transparency = 1, Parent = world })
 
 	-- the sky and light of a match day (put back afterwards)
@@ -635,7 +637,12 @@ function Match.play(remote)
 		end
 		if input.KeyCode == Enum.KeyCode.Q or input.KeyCode == Enum.KeyCode.E then
 			safe(function()
-				M.dribbleBurst(m, input.KeyCode == Enum.KeyCode.Q and -1 or 1)
+				local dir = input.KeyCode == Enum.KeyCode.Q and -1 or 1
+				if m then
+					M.dribbleBurst(m, dir)
+				elseif driver.knock then
+					driver.knock(dir)
+				end
 			end)
 		end
 		if processed or finished then
@@ -651,6 +658,14 @@ function Match.play(remote)
 		if not x then
 			return
 		end
+		if not m then
+			safe(function()
+				if driver.tapGround then
+					driver.tapGround(x, y)
+				end
+			end)
+			return
+		end
 		pointer = { input = input, sx = input.Position.X, sy = input.Position.Y, x = x, y = y, phase = m.phase }
 		safe(function()
 			if m.phase == "aim" then
@@ -663,7 +678,7 @@ function Match.play(remote)
 		end)
 	end))
 	table.insert(inputConns, UserInputService.InputChanged:Connect(function(input)
-		if not pointer then
+		if not pointer or not m then
 			return
 		end
 		if input.UserInputType ~= Enum.UserInputType.MouseMovement and input ~= pointer.input then
@@ -694,6 +709,9 @@ function Match.play(remote)
 		end
 		local p = pointer
 		pointer = nil
+		if not m then
+			return
+		end
 		safe(function()
 			if m.phase == "aim" then
 				M.pointerUp(m)
@@ -709,11 +727,17 @@ function Match.play(remote)
 	-- the buttons
 	hud.power.Activated:Connect(function()
 		safe(function()
+			if not m then
+				return
+			end
 			M.armPowerShot(m, not m.powerArmed)
 		end)
 	end)
 	hud.call.Activated:Connect(function()
 		safe(function()
+			if not m then
+				return
+			end
 			local said = M.callForBall(m)
 			if said then
 				hud.banner.Text = said
@@ -726,43 +750,55 @@ function Match.play(remote)
 	hud.sprint.MouseButton1Up:Connect(function()
 		sprintButton = false
 	end)
-	hud.knockL.Activated:Connect(function()
+	local function knock(dir)
 		safe(function()
-			M.dribbleBurst(m, -1)
+			if m then
+				M.dribbleBurst(m, dir)
+			elseif driver.knock then
+				driver.knock(dir)
+			end
 		end)
+	end
+	hud.knockL.Activated:Connect(function()
+		knock(-1)
 	end)
 	hud.knockR.Activated:Connect(function()
+		knock(1)
+	end)
+	hud.tapStart.Activated:Connect(function()
 		safe(function()
-			M.dribbleBurst(m, 1)
+			if driver.tapToGo then
+				driver.tapToGo()
+			end
 		end)
 	end)
 	for mode, b in pairs(hud.modes) do
 		b.Activated:Connect(function()
 			safe(function()
-				M.setEnergyMode(m, mode)
+				if m then M.setEnergyMode(m, mode) end
 			end)
 		end)
 	end
 	for style, b in pairs(hud.styles) do
 		b.Activated:Connect(function()
 			safe(function()
-				M.setPlaystyle(m, style)
+				if m then M.setPlaystyle(m, style) end
 			end)
 		end)
 	end
 	hud.speed.Activated:Connect(function()
 		safe(function()
-			M.cycleSpeed(m)
+			if m then M.cycleSpeed(m) end
 		end)
 	end)
 	hud.pauseGo.Activated:Connect(function()
 		safe(function()
-			M.continuePause(m)
+			if m then M.continuePause(m) end
 		end)
 	end)
 	hud.kib.Activated:Connect(function()
 		safe(function()
-			M.drinkKib(m)
+			if m then M.drinkKib(m) end
 		end)
 	end)
 
@@ -777,6 +813,12 @@ function Match.play(remote)
 
 	local function stepInput()
 		local mx, mz = moveDir()
+		if not m then
+			if driver.stick then
+				driver.stick(mx, mz)
+			end
+			return
+		end
 		local ctl = M.controlsOf(m)
 		if ctl.steer then
 			-- the stick, turned into pitch directions by where the camera looks
@@ -798,16 +840,16 @@ function Match.play(remote)
 		local aspect = camera.ViewportSize.X / math.max(1, camera.ViewportSize.Y)
 		-- the camera
 		local want
-		if f.phase == "feed" then
+		if f.cameraMode == "broadcast" then
 			want = broadcastCamera(clock)
-		elseif f.phase == "tdDribble" then
+		elseif f.cameraMode == "chase" then
 			local you = f.bodies[1]
 			want = dribbleCamera(you)
 		else
 			want = chanceCamera(f, aspect, camera.FieldOfView)
 		end
 		local a = 1 - math.exp(-5 * dt)
-		if lastPhase ~= f.phase and (f.phase == "aim" or f.phase == "tdDribble") then
+		if lastPhase ~= f.phase and (f.phase == "aim" or f.phase == "tdDribble" or f.phase == "trialDribble" or f.phase == "trialVision") then
 			a = 1 -- a new chance: cut, as the website does
 		end
 		camera.CFrame = camera.CFrame:Lerp(want, a)
@@ -825,15 +867,16 @@ function Match.play(remote)
 				fig = newFigure(figFolder)
 				figures[b.id] = fig
 			end
-			if fig.side ~= b.side then
+			local kit = (b.side == "you" or b.side == "mate") and f.kits.us or b.side == "keeper" and f.kits.keeper or f.kits.them
+			if fig.side ~= b.side or fig.kit ~= kit.shirt then
 				fig.side = b.side
-				local kit = (b.side == "you" or b.side == "mate") and kits.us or b.side == "keeper" and kits.keeper or kits.them
+				fig.kit = kit.shirt
 				dress(fig, kit, nil, skinOf(b.id))
 			end
 			if fig.hidden then
 				showFigure(fig)
 			end
-			fig.tag.Text = b.side == "you" and "YOU" or (b.name or "")
+			fig.tag.Text = b.side == "you" and "YOU" or (b.name or (b.option and f.trial and "•" or ""))
 			fig.tag.TextColor3 = b.side == "you" and C.gold or Color3.new(1, 1, 1)
 			local pos = w(b.x, b.y, 0)
 			local speed = 0
@@ -967,6 +1010,54 @@ function Match.play(remote)
 			hud.kib.Visible = f.pause.halfTime and f.pause.kib > 0 and f.energy < 100
 			hud.kib.Text = string.format("DRINK A KIB CAN (%d LEFT)", int(f.pause.kib))
 		end
+		-- the trial's cones, words and cards
+		local tv = f.trial
+		local coneN = tv and Js.alen(tv.cones) or 0
+		for i = 1, 2 do
+			if i <= coneN then
+				local c = tv.cones[i]
+				cones[i].Transparency = 0
+				cones[i].CFrame = CFrame.new(w(c.x, c.y, 0.35))
+			else
+				cones[i].Transparency = 1
+			end
+		end
+		hud.trialTop.Visible = tv ~= nil
+		hud.trialHint.Visible = tv ~= nil and tv.card == nil
+		hud.trialCard.Visible = tv ~= nil and tv.card ~= nil
+		hud.tapStart.Visible = false
+		if tv then
+			hud.trialTop.Text = string.format("TRIAL %d/%d · %s", int(tv.stageNo), int(tv.stages), string.upper(tv.title))
+			hud.trialHint.Text = (tv.line ~= "" and (tv.line .. "\n") or "") .. tv.hint
+			if tv.card then
+				if tv.card.kind == "countdown" then
+					hud.trialCardTitle.Text = tostring(int(tv.card.n))
+					hud.trialCardSub.Text = "Next: " .. tostring(tv.card.label)
+					hud.trialCardGo.Visible = false
+				else
+					hud.trialCardTitle.Text = "A SCOUT HAS SPOTTED YOU"
+					hud.trialCardSub.Text = "He has seen enough. Time to hear what the club thinks."
+					hud.trialCardGo.Visible = true
+				end
+			end
+			local d, v = tv.dribble, tv.vision
+			if d and not d.started then
+				hud.tapStart.Visible = true
+				hud.tapStart.Text = "TAP TO START"
+			elseif v and v.phase == "ready" then
+				hud.tapStart.Visible = true
+				hud.tapStart.Text = "TAP TO START"
+			end
+			if v and v.phase == "count" and v.count > 0 then
+				hud.banner.Visible = true
+				hud.banner.Text = tostring(int(v.count))
+			end
+			if tv.shootout then
+				hud.minute.Text = ""
+				hud.score.Text = string.format("TRIALISTS  %d – %d  ACADEMY", int(tv.shootout.us), int(tv.shootout.them))
+			end
+		end
+
 		-- the strike screen
 		hud.strike.Visible = strike ~= nil
 		if strike then
@@ -1010,20 +1101,32 @@ function Match.play(remote)
 		end
 		clock += dt
 		safe(function()
-			stepInput()
-			if m.phase == "contact" and lastPhase ~= "contact" then
-				strike = S.openStrike(m)
-			elseif m.phase ~= "contact" then
+			-- the match on the pitch can change (the trial's stages): start its input afresh
+			local now = driver.match()
+			if now ~= m then
+				m = now
+				Match.current = m
 				strike = nil
+				pointer = nil
+				lastPhase = ""
 			end
-			if strike then
-				S.strikeStep(strike, m, dt)
+			stepInput()
+			if m then
+				-- the strike screen opens whenever the phase is "contact" (a run-up gets there mid-frame)
+				if m.phase == "contact" and strike == nil then
+					strike = S.openStrike(m)
+				elseif m.phase ~= "contact" then
+					strike = nil
+				end
+				if strike then
+					S.strikeStep(strike, m, dt)
+				end
 			end
-			M.tick(m, dt)
-			local f = V.frameOf(m)
+			driver.step(dt)
+			local f = driver.frame()
 			drawFrame(f, dt)
 			lastPhase = f.phase
-			if m.result then
+			if driver.done() then
 				finished = true
 			end
 		end)
@@ -1041,6 +1144,56 @@ function Match.play(remote)
 		c:Disconnect()
 	end
 
+	-- put everything back
+	world:Destroy()
+	Lighting.ClockTime = saved.ClockTime
+	Lighting.Brightness = saved.Brightness
+	camera.CameraType = camSaved.type
+	camera.FieldOfView = camSaved.fov
+	if hrp then
+		hrp.Anchored = wasAnchored
+	end
+	return failure
+end
+
+--[[
+  Plays one match. `remote` is ReplicatedStorage.Remotes.Match.
+  Returns the next screen's JSON from the server (or nil if it failed).
+]]
+function Match.play(remote)
+	loadCode()
+	local hud = buildHud()
+	local okStart, setupJson = pcall(function()
+		return remote:InvokeServer("start")
+	end)
+	if not okStart or type(setupJson) ~= "string" then
+		hud.gui:Destroy()
+		warn("match: could not start:", setupJson)
+		return nil
+	end
+	local m
+	local okMount, err = pcall(function()
+		m = M.startMatch(Js.JSON.parse(setupJson))
+	end)
+	if not okMount then
+		hud.gui:Destroy()
+		warn("match: could not mount:", err)
+		return remote:InvokeServer("abandon")
+	end
+	local failure = runPitch(hud, {
+		match = function()
+			return m
+		end,
+		step = function(dt)
+			M.tick(m, dt)
+		end,
+		frame = function()
+			return V.frameOf(m)
+		end,
+		done = function()
+			return m.result ~= nil
+		end,
+	})
 	local nextScreen
 	if failure then
 		warn("match: stopped by an error:", failure)
@@ -1073,18 +1226,84 @@ function Match.play(remote)
 		end)
 		nextScreen = ok and res or nil
 	end
-
-	-- put everything back
-	world:Destroy()
 	hud.gui:Destroy()
-	Lighting.ClockTime = saved.ClockTime
-	Lighting.Brightness = saved.Brightness
-	camera.CameraType = camSaved.type
-	camera.FieldOfView = camSaved.fov
-	if hrp then
-		hrp.Anchored = wasAnchored
-	end
 	Match.current, Match.hud = nil, nil
+	return nextScreen
+end
+
+--[[
+  Plays the trial (roblox/game/trialPlay.ts): the five stages, on the same
+  pitch. `remote` is ReplicatedStorage.Remotes.Trial. Returns the next
+  screen's JSON from the server (or nil if it failed).
+]]
+function Match.playTrial(remote)
+	loadCode()
+	local T = Loader.import("roblox/game/trialPlay")
+	local hud = buildHud()
+	local okStart, json = pcall(function()
+		return remote:InvokeServer("start")
+	end)
+	if not okStart or type(json) ~= "string" then
+		hud.gui:Destroy()
+		warn("trial: could not start:", json)
+		return nil
+	end
+	local tp
+	local okMount, err = pcall(function()
+		tp = T.startTrialPlay(Js.JSON.parse(json))
+	end)
+	if not okMount then
+		hud.gui:Destroy()
+		warn("trial: could not mount:", err)
+		return nil
+	end
+	Match.trial = tp
+	hud.trialCardGo.Activated:Connect(function()
+		T.tapToGo(tp)
+	end)
+	local failure = runPitch(hud, {
+		match = function()
+			return T.pitchMatch(tp)
+		end,
+		step = function(dt)
+			T.tick(tp, dt)
+		end,
+		frame = function()
+			return T.trialFrame(tp)
+		end,
+		done = function()
+			return tp.done
+		end,
+		tapGround = function(x, y)
+			T.visionTap(tp, vec(x, y))
+		end,
+		stick = function(mx, _mz)
+			T.dribbleSteer(tp, mx)
+		end,
+		knock = function(dir)
+			T.dribbleKnock(tp, dir)
+		end,
+		tapToGo = function()
+			T.tapToGo(tp)
+		end,
+	})
+	local nextScreen
+	if failure then
+		warn("trial: stopped by an error:", failure)
+		hud.cover.Visible = true
+		hud.coverText.Text = "The trial hit a problem. Try it again from the menu."
+		task.wait(1.5)
+		nextScreen = remote:InvokeServer("abandon")
+	else
+		hud.cover.Visible = true
+		hud.coverText.Text = "…"
+		local ok, res = pcall(function()
+			return remote:InvokeServer("done", Js.JSON.stringify(tp.back))
+		end)
+		nextScreen = ok and res or nil
+	end
+	hud.gui:Destroy()
+	Match.current, Match.hud, Match.trial = nil, nil, nil
 	return nextScreen
 end
 

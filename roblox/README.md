@@ -30,6 +30,8 @@ The website's own code is converted, file for file, into Roblox's language
 | `game/match.ts` | The website's match (CanvasMatch) without the drawing: the 90 minutes, every chance, your input, the ball. TypeScript, converted. |
 | `game/strikeScreen.ts` | The strike screen (tap where on the ball) and the power shot, without the drawing. |
 | `game/matchView.ts` | What is on the pitch each frame, for the Roblox match to draw. |
+| `game/trialPlay.ts` | The trial's five tests without the drawing (played on the device). |
+| `game/trialFlow.ts` | The trial's server steps: the results checked, the scout's offer, the manager's talk, the signing. |
 | `src/Server/` | The Roblox server: careers, saving (DataStore), real squads (HttpService). |
 | `src/Client/Main.client.luau` | The Roblox menus: draws what the server sends. |
 | `src/Client/Match.luau` | The 3D match: the stadium, the players, the camera, your controls. Draws `matchView`, decides nothing. |
@@ -68,8 +70,7 @@ Node with TypeScript. Twin tests run the website side with `npx tsx`.
 - Sorting text by `localeCompare` copies the browser's order for every letter
   in the game's club and player names (accents, Æ, Ø, ß...), not for every
   alphabet in the world.
-- No trial yet: a new career picks its club, as the website's career soak
-  does. The trial is next (stage 2.4).
+- The trial's teaching cards are not copied: each test shows a one-line hint.
 
 ## The match
 
@@ -87,3 +88,12 @@ them in the career). Controls:
 | Dribble | W A S D, Q / E to knock it past him, click a team-mate to pass | thumb stick, KNOCK buttons, tap a team-mate |
 
 "Sim it" on the matchday screen still sims the match, as on the website.
+
+## The trial
+
+A new career starts as on the website: no club, a trial at the club you
+picked, five tests on the same 3D pitch (free kicks, through the gate, take
+him on, find the pass, a penalty shootout), then a scout's offer, the
+manager's talk and a fixed first contract (National League North or South).
+Take him on is played with W A S D or the thumb stick (Q / E or the KNOCK
+buttons to knock it past him); find the pass is a tap on the free man.

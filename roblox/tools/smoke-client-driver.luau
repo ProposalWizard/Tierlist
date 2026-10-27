@@ -4,6 +4,7 @@ RUN_SERVER()
 local rs = game:GetService("ReplicatedStorage")
 local careerRemote = rs._children.Remotes._children.Career
 local matchRemote = rs._children.Remotes._children.Match
+local trialRemote = rs._children.Remotes._children.Trial
 local me = { UserId = 42, Name = "Tester" }
 ME = me
 local clientPlayer = CLIENT_PLAYER(me)
@@ -27,7 +28,7 @@ local function call(action, arg, form)
 end
 local s = call("setup-clubs", nil, { firstName = "Client", lastName = "Robot", nationality = "England", division = DIVISION })
 s = call("start", s.blocks[1].items[CLUB_PICK].arg)
-print("career", s.hud.club, s.hud.league)
+print("screen", s.id, s.title)
 
 local MatchClient = MATCH_CLIENT()
 MATCH_MODULE = MatchClient
@@ -39,6 +40,107 @@ local function mouse(x, y, kind)
 end
 local function key(k)
 	return { UserInputType = Enum.UserInputType.Keyboard, Position = Vector2.new(0, 0), KeyCode = Enum.KeyCode[k] }
+end
+
+-- the trial, played through the client script
+local function tapScreen(hud, x, y)
+	hud.strike.InputBegan:Fire({ UserInputType = Enum.UserInputType.MouseButton1, Position = Vector2.new(x, y), KeyCode = Enum.KeyCode.Unknown })
+end
+if s.id == "trial" then
+	local co = coroutine.create(function()
+		return MatchClient.playTrial(trialRemote)
+	end)
+	task.wait = function()
+		coroutine.yield()
+	end
+	local frames, pf, lastKey, lastPhase, chance = 0, 0, "", "", 0
+	local result
+	while true do
+		local ok, r = coroutine.resume(co)
+		if not ok then
+			error("trial client crashed: " .. tostring(r))
+		end
+		if coroutine.status(co) == "dead" then
+			result = r
+			break
+		end
+		frames += 1
+		assert(frames < 200000, "the trial never ended: stage " .. tostring(MatchClient.trial and MatchClient.trial.stage))
+		local tp, hud, m = MatchClient.trial, MatchClient.hud, MatchClient.current
+		if frames % 3000 == 1 then
+			print("  dbg", frames, tp and tp.stage, tp and tp.card and tp.card.kind, m and m.phase, hud and hud.tapStart.Visible, tp and tp.clock)
+		end
+		if tp and hud then
+			local stateKey = tostring(tp.stage) .. (tp.card and tp.card.kind or "") .. (m and m.phase or "")
+			if stateKey ~= lastKey then
+				lastKey = stateKey
+				pf = 0
+				if tp.card then
+					print("  trial card", tp.card.kind, tostring(tp.card.label))
+				end
+			end
+			pf += 1
+			MOVE = Vector3.new(0, 0, 0)
+			if hud.trialCardGo.Visible and pf == 20 then
+				hud.trialCardGo.Activated:Fire()
+			elseif hud.tapStart.Visible and pf == 20 then
+				hud.tapStart.Activated:Fire()
+			elseif m then
+				if m.phase ~= lastPhase then
+					if m.phase == "result" then
+						print("  " .. tostring(tp.stage) .. " " .. tostring(m.sc.kind) .. " -> " .. tostring(m.outcome))
+					end
+					if m.phase == "aim" then
+						chance += 1
+					end
+					lastPhase = m.phase
+				end
+				if m.phase == "aim" and pf == 25 then
+					local b = m.sc.ball
+					local gx, gy = (m.sc.goal.x1 + m.sc.goal.x2) / 2, 0
+					local cones = tp.strike and tp.strike.gate
+					if cones then
+						gx, gy = cones.gate.centre.x, cones.gate.centre.y
+					end
+					local dx, dy = gx - b.x, gy - b.y
+					local n = math.sqrt(dx * dx + dy * dy)
+					local pull = (m.camera.x2 - m.camera.x1) * 0.18
+					local down = mouse(b.x, b.y)
+					UIS.InputBegan:Fire(down, false)
+					UIS.InputChanged:Fire(mouse(b.x - dx / n * pull, b.y - dy / n * pull, Enum.UserInputType.MouseMovement))
+					UIS.InputEnded:Fire(down)
+				elseif m.phase == "contact" and hud.strike.Visible and pf == 15 then
+					local c = hud.ball.AbsolutePosition + hud.ball.AbsoluteSize / 2
+					tapScreen(hud, c.X, c.Y + hud.ball.AbsoluteSize.Y * 0.1)
+				end
+			elseif tp.dribble and tp.dribble.started then
+				MOVE = Vector3.new(math.sin(pf / 40) * 0.8, 0, -1)
+				if pf % 70 == 35 then
+					UIS.InputBegan:Fire(key(pf % 140 == 35 and "Q" or "E"), false)
+				end
+			elseif tp.vision and tp.vision.phase == "live" and pf % 15 == 0 then
+				local v = tp.vision
+				local man = v.layout.men[v.setup.correct + 1]
+				UIS.InputBegan:Fire(mouse(man.x, man.y), false)
+			end
+		end
+		RENDER:Fire(1 / 60)
+	end
+	for _, r in ipairs(Match_back_results or {}) do
+		print(r)
+	end
+	s = Js.JSON.parse(result)
+	print(string.format("  trial done in %d frames -> %s (%s)", frames, s.id, s.title))
+	for i = 1, Js.alen(s.blocks) do
+		local b = s.blocks[i]
+		if b.kind == "text" then
+			print("   ", b.text)
+		end
+	end
+	s = call("trial-sign")
+	print("screen", s.id, s.title)
+	s = call("trial-reward-done")
+	print("career", s.hud.club, s.hud.league, s.id)
 end
 
 local played = 0
@@ -83,7 +185,12 @@ while played < MATCHES and presses < 300 do
 			break
 		end
 		frames += 1
-		assert(frames < 300000, "the match never ended")
+		if frames >= 300000 then
+			local m = MatchClient.current
+			error(string.format("the match never ended: phase %s, minute %s, %d frames in that phase, pause %s, strike %s, sc %s, runup %s, powerStrike %s",
+				tostring(m and m.phase), tostring(m and m.minute), pf, tostring(m and m.pause and m.pause.cta), tostring(MatchClient.hud and MatchClient.hud.strike.Visible),
+				tostring(m and m.sc and m.sc.kind), tostring(m and m.runup ~= nil), tostring(m and m.powerStrike)))
+		end
 		local m, hud = MatchClient.current, MatchClient.hud
 		if m and hud then
 			if m.phase ~= lastPhase then
@@ -110,7 +217,8 @@ while played < MATCHES and presses < 300 do
 				hud.modes.high.Activated:Fire()
 				hud.speed.Activated:Fire()
 				hud.speed.Activated:Fire()
-			elseif m.phase == "aim" and pf == 20 then
+			elseif m.phase == "aim" and pf % 90 == 20 then
+				if pf > 20 then print("  retry aim", tostring(m.sc.kind), pf) end
 				local b = m.sc.ball
 				local gx = (m.sc.goal.x1 + m.sc.goal.x2) / 2 + ((chance * 37) % 7 - 3) * 0.6
 				local dx, dy = gx - b.x, -b.y

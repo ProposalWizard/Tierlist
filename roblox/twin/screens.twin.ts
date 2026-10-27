@@ -11,6 +11,8 @@ const STEPS = Number(process.env.TWIN_SCREEN_STEPS ?? 160);
 const rng = mulberry32(2026);
 console.log(show(S.setupScreen()));
 console.log(show(S.clubScreen("League Two")));
+// the trial's seed is drawn from Math.random, as on the website: seeded here so both sides match
+Math.random = mulberry32(0x5eed);
 let g = S.startGame({ firstName: "Robo", lastName: "Striker", nationality: "Wales", division: "League Two", club: "Bristol Rovers" });
 let talked = 0;
 for (let i = 0; i < STEPS; i++) {

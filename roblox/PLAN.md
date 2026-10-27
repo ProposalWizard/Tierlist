@@ -75,10 +75,10 @@ Each stage ends with something you can open in Studio and play.
       set power, then tap the ball where you want to strike it; swipe to curve;
       tap to head; penalty run-up. **Moving more**: after a pass, and in the
       dribble, you run your own Roblox character with WASD or the thumbstick.
-   4. **The trial**, all five stages as on the website: free kicks, through the
+   4. **The trial** (built 27 Oct 2026, twin test passes; robot-played through the Roblox scripts), all five stages as on the website: free kicks, through the
       gate, take him on, find the pass, the shootout. Then the manager's talk,
       the scout's offers and the signing.
-   5. **Roblox-style menus**: big rounded buttons, icons, bold colour.
+   5. **Roblox-style menus** (built 27 Oct 2026): big rounded buttons, icons, bold colour.
 3. **Full screens:** home, league, transfer hub, stats, shop, Ballon d'Or night,
    in the Roblox look.
 4. **Extras:** garden, casino, cut scenes, media feed, music, sponsors.

@@ -36,7 +36,7 @@ return function(exports, import, Js)
 	local M_transferRequest = import("lib/star/transferRequest")
 	local M_signingTalk = import("lib/star/signingTalk")
 	local M_transfers = import("lib/star/transfers")
-	local at, settle, newGame, loadRealSquads, forSave, fromSave, resumeSquads, loadNewClubSquad, matchday, simMatch, matchComplete, watchFromStands, youthWeek, youthPromotion, postMatchContinue, continueAfterMatch, drawContinue, knockoutContinue, playoffContinue, deadlineDayContinue, backToDashboard, callUp, callUpContinue, renewalOffer, contractComplete, endSeason, ballonDor, ballonDorContinue, playOn, transferInterest, openTransferWindowOrRoll, transferNegotiate, transferTalkDone, chooseTransfer, signingDone, stayPut, rollOverSeason, continueAfterRollover, seasonAwardsContinue, ladderContinue, retireNow, leagueTable
+	local at, settle, newGame, afterSigning, loadRealSquads, forSave, fromSave, resumeSquads, loadNewClubSquad, matchday, simMatch, matchComplete, watchFromStands, youthWeek, youthPromotion, postMatchContinue, continueAfterMatch, drawContinue, knockoutContinue, playoffContinue, deadlineDayContinue, backToDashboard, callUp, callUpContinue, renewalOffer, contractComplete, endSeason, ballonDor, ballonDorContinue, playOn, transferInterest, openTransferWindowOrRoll, transferNegotiate, transferTalkDone, chooseTransfer, signingDone, stayPut, rollOverSeason, continueAfterRollover, seasonAwardsContinue, ladderContinue, retireNow, leagueTable
 	settle = function(g)
 		if ((g.phase == "dashboard") and ((function() local _v = g.career.placement; if _v == nil then return nil end; _v = _v.kind; return _v end)() == "youth")) then
 			do return Js.ospread(g, Js.O({ phase = "youth" }, { "phase" })) end
@@ -57,6 +57,10 @@ return function(exports, import, Js)
 		do return settle(Js.O({ career = career, phase = "dashboard", koShown = Js.alit() }, { "career", "phase", "koShown" })) end
 	end
 	exports.newGame = newGame
+	afterSigning = function(g)
+		do return settle(Js.ospread(g, Js.O({ phase = "dashboard" }, { "phase" }))) end
+	end
+	exports.afterSigning = afterSigning
 	loadRealSquads = function(g)
 		local c = g.career
 		local club = c.player.club

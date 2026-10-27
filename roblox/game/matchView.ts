@@ -23,6 +23,8 @@ export interface Body {
 
 export interface Frame {
   phase: string;
+  /** How Roblox frames it: the chance's own camera, behind you (the dribble), or the broadcast view (the commentary). */
+  cameraMode: "chance" | "chase" | "broadcast";
   minute: number;
   score: { us: number; them: number; usName: string; themName: string; home: boolean };
   kits: ReturnType<typeof M.matchKits>;
@@ -75,6 +77,7 @@ export function frameOf(m: M.MatchState): Frame {
   const usHome = ls ? ls.yourSide === "home" : true;
   return {
     phase: m.phase,
+    cameraMode: m.phase === "feed" ? "broadcast" : m.phase === "tdDribble" ? "chase" : "chance",
     minute: m.minute,
     score: { us: shown.user, them: shown.opp, usName: shortClub(us), themName: shortClub(them), home: m.fixture.home },
     kits: M.matchKits(m),

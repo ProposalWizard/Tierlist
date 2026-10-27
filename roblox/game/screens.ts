@@ -25,6 +25,8 @@ import { willingToRenegotiate } from "../../lib/star/careerFlow";
 import { startNegotiation, makeOffer, type NegotiationState } from "../../lib/star/negotiation";
 import { shortClub } from "../../lib/star/media/grammar";
 import type { TransferOffer } from "../../lib/star/transfers";
+import * as TF from "./trialFlow";
+import { STAGE_LABEL, TRIAL_STAGES, trialScore } from "../../lib/star/trial";
 
 // ───────────────────────────────────────────────────────────── the screen ──
 
@@ -146,7 +148,91 @@ export function startGame(choice: SetupChoice): RobloxGame {
     firstName: (choice.firstName || "Kai").trim(), lastName: (choice.lastName || "Ball").trim(), age: 17, skinTone: "tan",
     club: choice.club, clubBadge: null, position: "ST", nationality: choice.nationality || "England", startYear: STAR_FIFA_YEAR,
   } as StarPlayer;
+  // handleProfileComplete: no club yet; the trial at the club picked decides where you start
+  return { career: TF.newTrialCareer(player, div), phase: "trial", koShown: [], ui: { tab: "home" } };
+}
+
+/** The career-soak start (tests only): signed straight to the club picked, no trial. */
+export function startWithoutTrial(choice: SetupChoice): RobloxGame {
+  const div = divisionByName(choice.division);
+  const clubs = clubsForDivision(div);
+  const player = {
+    firstName: (choice.firstName || "Kai").trim(), lastName: (choice.lastName || "Ball").trim(), age: 17, skinTone: "tan",
+    club: choice.club, clubBadge: null, position: "ST", nationality: choice.nationality || "England", startYear: STAR_FIFA_YEAR,
+  } as StarPlayer;
   return { ...F.newGame(player, [...clubs], div), ui: { tab: "home" } };
+}
+
+/** With no device to play it on (tests), the trial is played by nobody: every stage at half marks. */
+function simTrial(g: RobloxGame): RobloxGame {
+  const t = g.career.trial;
+  if (!t) return g;
+  const results = TRIAL_STAGES.filter((stage) => !t.results[stage]).map((stage) => ({ stage: stage as string, quality: 0.5 }));
+  return trialDone(g, { results, finalPenScored: false }) ?? g;
+}
+
+/** The device's trial results into the career, then the manager's talk (or, with nobody in for you, a youth team). */
+export function trialDone(g: RobloxGame, back: TF.TrialReturn): RobloxGame | null {
+  const recorded = TF.recordTrialReturn(g.career, back);
+  if (!recorded) return null;
+  if (TF.managerTalk(recorded)) return { ...g, career: recorded, phase: "manager-talk" };
+  const youth = TF.youthAfterTrial(recorded);
+  return youth ? { ...F.afterSigning({ ...g, career: youth }), ui: g.ui } : { ...g, career: recorded, phase: "manager-talk" };
+}
+
+function trialScreen(g: RobloxGame): Screen {
+  const c = g.career;
+  const t = c.trial;
+  const done = t ? TF.trialSummary(t).filter((r) => r.score !== null) : [];
+  return {
+    id: "trial", hud: hud(c), title: `Your trial at ${c.player.club}`,
+    blocks: [
+      { kind: "text", text: "Five tests. A scout is watching every one." },
+      { kind: "list", items: (t ? TF.trialSummary(t) : []).map((r, i) => ({
+        text: `${i + 1}. ${STAGE_LABEL[r.stage]}`, sub: r.score === null ? undefined : `${r.score} / 100`, tone: (r.score === null ? "normal" : "good") as Tone })) },
+      { kind: "text", text: "Free kicks, the gate and the shootout are played on the pitch: drag back from the ball, then tap the ball where you want to strike it. Take him on: W A S D or the stick. Find the pass: tap the free man.", tone: "dim" },
+    ],
+    buttons: [{ label: done.length ? "Carry on with the trial ⚽" : "Start the trial ⚽", action: "play-trial", style: "primary" }],
+  };
+}
+
+function managerTalkScreen(g: RobloxGame): Screen {
+  const c = g.career;
+  const mt = TF.managerTalk(c);
+  if (!mt) return { id: "manager-talk", hud: hud(c), title: "Nobody came in", blocks: [{ kind: "text", text: "No club made an offer." }], buttons: [{ label: "Continue", action: "trial-sign", style: "primary" }] };
+  return {
+    id: "manager-talk", hud: hud(c), title: `${mt.offer.club} want you`,
+    blocks: [
+      { kind: "stats", items: [
+        { label: "Trial score", value: `${c.trial ? trialScore(c.trial) : 0}` },
+        { label: "Club", value: shortClub(mt.offer.club) },
+        { label: "League", value: leagueNameFor(mt.offer.division) },
+        { label: "Wage", value: `${money(mt.talk.openingWeekly)} a week`, tone: "gold" },
+      ] },
+      { kind: "heading", text: "The manager" },
+      ...mt.talk.lines.map((l) => ({ kind: "text", text: `“${l}”` }) as Block),
+      { kind: "text", text: `${mt.offer.seasons} seasons. Your first contract is fixed: sign it, no haggling.`, tone: "dim" },
+    ],
+    buttons: [{ label: "Accept & sign ✍️", action: "trial-sign", style: "primary" }],
+  };
+}
+
+function trialRewardScreen(g: RobloxGame): Screen {
+  const c = g.career;
+  return {
+    id: "trial-reward", hud: hud(c), title: `Welcome to ${c.contract.club}`,
+    blocks: [
+      { kind: "text", text: `${c.player.firstName} ${c.player.lastName} signs for ${c.contract.club}.`, tone: "gold" },
+      { kind: "stats", items: [
+        { label: "Wage", value: `${money(c.contract.wage)} a week` },
+        { label: "Seasons", value: String(c.contract.seasonsRemaining) },
+        { label: "Goal bonus", value: money(c.contract.goalBonus) },
+        { label: "League", value: leagueNameFor(divisionOf(c)) },
+      ] },
+      ...(c.placement?.kind === "loan" ? [{ kind: "text", text: `On loan to ${c.player.club}.`, tone: "gold" } as Block] : []),
+    ],
+    buttons: [{ label: "Let's go", action: "trial-reward-done", style: "primary" }],
+  };
 }
 
 // ──────────────────────────────────────────────────────────── the screens ──
@@ -266,6 +352,9 @@ export function screen(g: RobloxGame): Screen {
         ],
         buttons: [{ label: "Continue", action: "ladder-continue", style: "primary" }] };
     }
+    case "trial": return trialScreen(g);
+    case "manager-talk": return managerTalkScreen(g);
+    case "trial-reward": return trialRewardScreen(g);
     case "legacy": {
       const s = c.careerStats;
       return { ...base, id: "legacy", title: "Career over",
@@ -491,6 +580,16 @@ export function act(g: RobloxGame, action: string, arg: string | undefined, rng:
     case "ballon-continue": return F.ballonDorContinue(g);
     case "play-on": return F.playOn(g);
     case "retire": return F.retireNow(g);
+    // the trial: played on the device (the server's Trial remote); with no device (tests) played by nobody
+    case "play-trial": return g.phase === "trial" ? simTrial(g) : g;
+    case "trial-sign": {
+      if (g.phase !== "manager-talk") return g;
+      const signed = TF.acceptManagerOffer(g.career);
+      if (signed) return { ...g, career: signed, phase: "trial-reward" };
+      const youth = TF.youthAfterTrial(g.career);
+      return youth ? { ...F.afterSigning({ ...g, career: youth }), ui: ui } : g;
+    }
+    case "trial-reward-done": return g.phase === "trial-reward" ? { ...F.afterSigning(g), ui: { ...ui, tab: "home" } } : g;
     case "awards-continue": return F.seasonAwardsContinue(g);
     case "ladder-continue": return F.ladderContinue(g);
     case "stay": return F.stayPut(g);

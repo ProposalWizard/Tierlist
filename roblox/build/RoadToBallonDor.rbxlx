@@ -30926,11 +30926,11 @@ return function(exports, import, Js)
 	end
 	exports.ruleFor = ruleFor
 	setupKind = function(sc, rng, ctx)
-		(function() local _r = ruleFor(sc.kind); if _r == nil then return nil end; return _r.setup(sc, rng, ctx) end)()
+		(function() local _r = ruleFor(sc.kind); if _r == nil then return nil end; if _r.setup == nil then return nil end; return _r.setup(sc, rng, ctx) end)()
 	end
 	exports.setupKind = setupKind
 	enforceHardRules = function(sc)
-		(function() local _r = ruleFor(sc.kind); if _r == nil then return nil end; return _r.enforce(sc) end)()
+		(function() local _r = ruleFor(sc.kind); if _r == nil then return nil end; if _r.enforce == nil then return nil end; return _r.enforce(sc) end)()
 	end
 	exports.enforceHardRules = enforceHardRules
 	strikeKind = function(sc, ball, rand, ctx)
@@ -30949,14 +30949,14 @@ return function(exports, import, Js)
 	end
 	exports.strikeKind = strikeKind
 	replayStrike = function(sc, ball, d)
-		(function() local _r = ruleFor(d.kind); if _r == nil then return nil end; return _r.apply(sc, ball, d) end)()
+		(function() local _r = ruleFor(d.kind); if _r == nil then return nil end; if _r.apply == nil then return nil end; return _r.apply(sc, ball, d) end)()
 	end
 	exports.replayStrike = replayStrike
 	stepKind = function(sc, ball, dt, d)
 		if (not d) then
 			do return end
 		end;
-		(function() local _r = ruleFor(d.kind); if _r == nil then return nil end; return _r.step(sc, ball, dt, d) end)()
+		(function() local _r = ruleFor(d.kind); if _r == nil then return nil end; if _r.step == nil then return nil end; return _r.step(sc, ball, dt, d) end)()
 	end
 	exports.stepKind = stepKind
 	Js.reexport(exports, M_freeKick, { ["isMatchFreeKick"] = "isMatchFreeKick", ["freeKickReaction"] = "freeKickReaction" })
@@ -50650,6 +50650,77 @@ end
           </Item>
           <Item class="ModuleScript" referent="252">
             <Properties>
+              <string name="Name">scoutedPlacement</string>
+              <string name="Source"><![CDATA[--!nocheck
+--!nolint
+-- Generated from lib/star/scoutedPlacement.ts by roblox/tools/ts2luau. Do not edit.
+return function(exports, import, Js)
+	local A, S, N, Math = Js.A, Js.S, Js.N, Js.Math
+	local M_scoutOffers = import("lib/star/scoutOffers")
+	local M_season = import("lib/star/season")
+	local M_economy = import("lib/star/economy")
+	local M_clubs = import("lib/star/clubs")
+	local SCOUTED_ODDS, FIRST_CONTRACT_WAGE, CLUBS_OF, scoutedPlacement, finalPenScoredOf, startPointPlacement, SCOUT_SALT, scoutedOfferForTrial
+	scoutedPlacement = function(finalPenScored, rng)
+		local odds = SCOUTED_ODDS[(if finalPenScored then "scored" else "missed")]
+		local order = Js.alit("national_league", "national_league_north", "national_league_south")
+		local roll = rng()
+		local division = order[Js.alen(order)]
+		do
+			local _arr1 = order
+			local _i2 = 0
+			while _i2 < Js.alen(_arr1) do
+				_i2 += 1
+				local d = _arr1[_i2]
+				if (roll < odds[d]) then
+					division = d
+					do break end
+				end
+				roll -= odds[d]
+			end
+		end
+		local clubs = Js.aspread(CLUBS_OF[division])
+		local club = clubs[Math.min((Js.alen(clubs) - 1), math.floor((rng() * Js.alen(clubs)))) + 1]
+		do return Js.O({ club = club, division = division, clubs = clubs }, { "club", "division", "clubs" }) end
+	end
+	exports.scoutedPlacement = scoutedPlacement
+	finalPenScoredOf = function(trial)
+		if (not trial) then
+			do return false end
+		end
+		if (type(trial.finalPenScored) == "boolean") then
+			do return trial.finalPenScored end
+		end
+		local shootout = (function() local _v = trial.results; if _v == nil then return nil end; _v = _v.shootout; return _v end)()
+		do return ((not (not shootout)) and (shootout.quality >= 0.5)) end
+	end
+	exports.finalPenScoredOf = finalPenScoredOf
+	startPointPlacement = function(division, rng)
+		local clubs = M_scoutOffers.clubsForDivision(division)
+		local club = clubs[Math.min((Js.alen(clubs) - 1), math.floor((rng() * Js.alen(clubs)))) + 1]
+		do return Js.O({ club = club, division = division, clubs = clubs }, { "club", "division", "clubs" }) end
+	end
+	exports.startPointPlacement = startPointPlacement
+	scoutedOfferForTrial = function(trial)
+		local rng = M_season.mulberry32(Js.bxor(trial.seed, SCOUT_SALT))
+		local placement = (if Js.T(trial.startDivision) then startPointPlacement(trial.startDivision, rng) else scoutedPlacement(finalPenScoredOf(trial), rng))
+		local division = placement.division
+		local wage = FIRST_CONTRACT_WAGE
+		do return Js.O({ club = placement.club, division = division, wage = wage, goalBonus = M_economy.goalBonusFor(wage), assistBonus = M_economy.assistBonusFor(wage), seasons = 2, pitch = "A scout has spotted you. We'd like you here.", strength = M_scoutOffers.scoutedClubStrength(placement.club, division) }, { "club", "division", "wage", "goalBonus", "assistBonus", "seasons", "pitch", "strength" }) end
+	end
+	exports.scoutedOfferForTrial = scoutedOfferForTrial
+	SCOUTED_ODDS = Js.O({ scored = Js.O({ national_league = 0, national_league_north = 0.5, national_league_south = 0.5 }, { "national_league", "national_league_north", "national_league_south" }), missed = Js.O({ national_league = 0, national_league_north = 0.5, national_league_south = 0.5 }, { "national_league", "national_league_north", "national_league_south" }) }, { "scored", "missed" })
+	exports.SCOUTED_ODDS = SCOUTED_ODDS
+	FIRST_CONTRACT_WAGE = 35
+	exports.FIRST_CONTRACT_WAGE = FIRST_CONTRACT_WAGE
+	CLUBS_OF = Js.O({ national_league = M_clubs.NATIONAL_LEAGUE_CLUBS, national_league_north = M_clubs.NATIONAL_LEAGUE_NORTH_CLUBS, national_league_south = M_clubs.NATIONAL_LEAGUE_SOUTH_CLUBS }, { "national_league", "national_league_north", "national_league_south" })
+	SCOUT_SALT = 376999
+end
+]]></string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="253">
+            <Properties>
               <string name="Name">season</string>
               <string name="Source"><![CDATA[--!nocheck
 --!nolint
@@ -50878,7 +50949,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="253">
+          <Item class="ModuleScript" referent="254">
             <Properties>
               <string name="Name">seasonAwards</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -51152,7 +51223,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="254">
+          <Item class="ModuleScript" referent="255">
             <Properties>
               <string name="Name">seasonStanding</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -51294,7 +51365,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="255">
+          <Item class="ModuleScript" referent="256">
             <Properties>
               <string name="Name">selection</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -51543,7 +51614,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="256">
+          <Item class="ModuleScript" referent="257">
             <Properties>
               <string name="Name">setPieces</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -51598,7 +51669,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="257">
+          <Item class="ModuleScript" referent="258">
             <Properties>
               <string name="Name">shootout</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -51811,7 +51882,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="258">
+          <Item class="ModuleScript" referent="259">
             <Properties>
               <string name="Name">shopData</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -51858,7 +51929,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="259">
+          <Item class="ModuleScript" referent="260">
             <Properties>
               <string name="Name">shopDefaults</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -52009,7 +52080,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="260">
+          <Item class="ModuleScript" referent="261">
             <Properties>
               <string name="Name">shotFeel</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -52100,7 +52171,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="261">
+          <Item class="ModuleScript" referent="262">
             <Properties>
               <string name="Name">shotModel</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -52458,7 +52529,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="262">
+          <Item class="ModuleScript" referent="263">
             <Properties>
               <string name="Name">signingTalk</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -52572,7 +52643,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="263">
+          <Item class="ModuleScript" referent="264">
             <Properties>
               <string name="Name">simMatch</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -52851,7 +52922,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="264">
+          <Item class="ModuleScript" referent="265">
             <Properties>
               <string name="Name">spacing</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -53152,7 +53223,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="265">
+          <Item class="ModuleScript" referent="266">
             <Properties>
               <string name="Name">sponsorDeals</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -53845,7 +53916,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="266">
+          <Item class="ModuleScript" referent="267">
             <Properties>
               <string name="Name">sponsors</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -54049,7 +54120,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="267">
+          <Item class="ModuleScript" referent="268">
             <Properties>
               <string name="Name">squadData</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -54143,7 +54214,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="268">
+          <Item class="ModuleScript" referent="269">
             <Properties>
               <string name="Name">squadSaveCodec</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -54399,7 +54470,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="269">
+          <Item class="ModuleScript" referent="270">
             <Properties>
               <string name="Name">starPoints</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -54981,7 +55052,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="270">
+          <Item class="ModuleScript" referent="271">
             <Properties>
               <string name="Name">story</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -55193,7 +55264,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="271">
+          <Item class="ModuleScript" referent="272">
             <Properties>
               <string name="Name">stretchRun</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -55238,7 +55309,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="272">
+          <Item class="ModuleScript" referent="273">
             <Properties>
               <string name="Name">strikePower</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -55332,7 +55403,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="273">
+          <Item class="ModuleScript" referent="274">
             <Properties>
               <string name="Name">switchedOffKinds</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -55368,7 +55439,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="274">
+          <Item class="ModuleScript" referent="275">
             <Properties>
               <string name="Name">teamsheet</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -55994,11 +56065,11 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="Folder" referent="275">
+          <Item class="Folder" referent="276">
             <Properties>
               <string name="Name">three3d</string>
             </Properties>
-            <Item class="ModuleScript" referent="276">
+            <Item class="ModuleScript" referent="277">
               <Properties>
                 <string name="Name">gait</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -56174,7 +56245,7 @@ end
               </Properties>
             </Item>
           </Item>
-          <Item class="ModuleScript" referent="277">
+          <Item class="ModuleScript" referent="278">
             <Properties>
               <string name="Name">tournament</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -56650,7 +56721,177 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="278">
+          <Item class="ModuleScript" referent="279">
+            <Properties>
+              <string name="Name">trainingDrills</string>
+              <string name="Source"><![CDATA[--!nocheck
+--!nolint
+-- Generated from lib/star/trainingDrills.ts by roblox/tools/ts2luau. Do not edit.
+return function(exports, import, Js)
+	local A, S, N, Math = Js.A, Js.S, Js.N, Js.Math
+	local M_pitch = import("lib/star/pitch")
+	local ladder, ramp, powerDrill, POWER_LEVELS, OPEN_GOAL_LEVELS, FIRST_BLOCKER_LEVEL, POWER_EASE, powerProgress, powerDrillForLevel, techniqueDrill, freeKickDrill, paceDrill, visionDrill, strikeSpot, powerManSpots, wallSpots, placedMen, techniqueBallSpot, conePositions, gateCrossing, gateQuality, shotQuality
+	ladder = function(level)
+		do return (Math.max(0, Math.min(100, level)) / 100) end
+	end
+	exports.ladder = ladder
+	ramp = function(level, atZero, atHundred)
+		do return (atZero + ((atHundred - atZero) * ladder(level))) end
+	end
+	powerDrill = function(level, rep)
+		local l = ladder(level)
+		do return Js.O({ distance = (ramp(level, 10, 34) + (rep * 1.2)), offset = (((if (math.fmod(rep, 2) == 0) then -1 else 1) * ramp(level, 0, 7)) * (0.6 + (math.fmod(rep, 3) * 0.2))), blockers = (if (l < 0.25) then 0 else (if (l < 0.5) then 1 else (if (l < 0.7) then 2 else (if (l < 0.85) then 3 else 4)))), keeperStrength = ramp(level, 38, 93) }, { "distance", "offset", "blockers", "keeperStrength" }) end
+	end
+	exports.powerDrill = powerDrill
+	powerProgress = function(trainingLevel, power)
+		local n = Math.max(1, Math.min(POWER_LEVELS, Math.round(trainingLevel)))
+		local q = ((n - 1) / (POWER_LEVELS - 1))
+		if ((power == nil) or (not Js.NumberNS.isFinite(power))) then
+			do return q end
+		end
+		local qp = Math.max(0, Math.min(1, ((power - 40) / 60)))
+		do return (q - (POWER_EASE * Math.max(0, (q - qp)))) end
+	end
+	exports.powerProgress = powerProgress
+	powerDrillForLevel = function(trainingLevel, rep, power)
+		local n = Math.max(1, Math.min(POWER_LEVELS, Math.round(trainingLevel)))
+		local q = powerProgress(n, power)
+		local keeper = (n > OPEN_GOAL_LEVELS)
+		do return Js.O({ distance = ((12 + (22 * q)) + (rep * 1.2)), offset = ((((if (math.fmod(rep, 2) == 0) then -1 else 1) * 7) * q) * (0.6 + (math.fmod(rep, 3) * 0.2))), blockers = (if (n < FIRST_BLOCKER_LEVEL) then 0 else Math.max(1, Math.min(4, Math.round((q * 4.4))))), keeperStrength = (if keeper then (25 + (70 * q)) else 0), keeper = keeper }, { "distance", "offset", "blockers", "keeperStrength", "keeper" }) end
+	end
+	exports.powerDrillForLevel = powerDrillForLevel
+	techniqueDrill = function(level, rep)
+		do return Js.O({ gateDistance = (ramp(level, 12, 32) + (rep * 0.8)), gateWidth = Math.max(1.6, (ramp(level, 5, 1.9) - (rep * 0.12))), gateOffset = (((if (math.fmod(rep, 2) == 0) then 1 else -1) * ramp(level, 0, 9)) * (0.75 + (math.fmod(rep, 3) * 0.2))), maxHeight = 1.6 }, { "gateDistance", "gateWidth", "gateOffset", "maxHeight" }) end
+	end
+	exports.techniqueDrill = techniqueDrill
+	freeKickDrill = function(level, rep)
+		do return Js.O({ distance = (ramp(level, 16, 30) + (rep * 0.9)), offset = (((if (math.fmod(rep, 2) == 0) then -1 else 1) * ramp(level, 1.5, 14)) * (0.5 + (math.fmod(rep, 3) * 0.25))), wall = Math.round(ramp(level, 2, 5)), keeperStrength = ramp(level, 45, 95) }, { "distance", "offset", "wall", "keeperStrength" }) end
+	end
+	exports.freeKickDrill = freeKickDrill
+	paceDrill = function(level, rep)
+		do return Js.O({ chasers = (Math.round(ramp(level, 2, 6)) + (if (rep >= 2) then 1 else 0)), oppStrength = ramp(level, 35, 95) }, { "chasers", "oppStrength" }) end
+	end
+	exports.paceDrill = paceDrill
+	visionDrill = function(level, rep)
+		do return Js.O({ options = (Math.round(ramp(level, 3, 8)) + (if (rep >= 3) then 1 else 0)), window = Math.max(0.85, (ramp(level, 2.6, 0.95) - (rep * 0.06))), margin = Math.max(0.6, ramp(level, 7, 1.1)) }, { "options", "window", "margin" }) end
+	end
+	exports.visionDrill = visionDrill
+	strikeSpot = function(distance, offset)
+		do return Js.O({ x = Math.max(3, Math.min(65, (M_pitch.CX + offset))), y = Math.max(6, distance) }, { "x", "y" }) end
+	end
+	exports.strikeSpot = strikeSpot
+	powerManSpots = function(ball, count)
+		do return Js.Array.from(Js.O({ length = count }, { "length" }), function(_, i)
+			local f = (0.3 + ((i / Math.max(1, count)) * 0.42))
+			local laneX = (ball.x + ((M_pitch.CX - ball.x) * f))
+			local spread = ((if (math.fmod(i, 2) == 0) then -1 else 1) * (1.1 + (i * 0.7)))
+			do return Js.O({ x = Math.max(1, Math.min((M_pitch.PITCH_W - 1), (laneX + spread))), y = Math.max(1.5, (ball.y * (1 - f))) }, { "x", "y" }) end
+		end) end
+	end
+	exports.powerManSpots = powerManSpots
+	wallSpots = function(ball, count)
+		local gx = (M_pitch.CX - ball.x)
+		local gy = (0 - ball.y)
+		local gl = (function() local _l = Math.hypot(gx, gy); if Js.T(_l) then return _l end; return 1 end)()
+		local ux = (gx / gl)
+		local uy = (gy / gl)
+		local wallCx = (ball.x + (ux * 9.15))
+		local wallCy = (ball.y + (uy * 9.15))
+		local px = (-uy)
+		local py = ux
+		do return Js.Array.from(Js.O({ length = count }, { "length" }), function(_, i)
+			local off = ((i - ((count - 1) / 2)) * 1.15)
+			do return Js.O({ x = Math.max(1, Math.min((M_pitch.PITCH_W - 1), (wallCx + (px * off)))), y = Math.max(0.6, (wallCy + (py * off))) }, { "x", "y" }) end
+		end) end
+	end
+	exports.wallSpots = wallSpots
+	placedMen = function(own, placed, count)
+		do return Js.Array.from(Js.O({ length = count }, { "length" }), function(_, i)
+			return ((function() local _v = placed; if _v == nil then return nil end; _v = _v[i + 1]; return _v end)() or own[i + 1])
+		end) end
+	end
+	exports.placedMen = placedMen
+	techniqueBallSpot = function(cfg)
+		do return (if cfg.ball then Js.ospread(cfg.ball) else strikeSpot((cfg.gateDistance + 6), 0)) end
+	end
+	exports.techniqueBallSpot = techniqueBallSpot
+	conePositions = function(ball, cfg)
+		local centre = Js.O({ x = Math.max(4, Math.min(64, (ball.x + cfg.gateOffset))), y = Math.max(2, (ball.y - cfg.gateDistance)) }, { "x", "y" })
+		do return Js.O({ left = Js.O({ x = (centre.x - (cfg.gateWidth / 2)), y = centre.y }, { "x", "y" }), right = Js.O({ x = (centre.x + (cfg.gateWidth / 2)), y = centre.y }, { "x", "y" }), centre = centre }, { "left", "right", "centre" }) end
+	end
+	exports.conePositions = conePositions
+	gateCrossing = function(prev, now, gateY)
+		if (prev.y == now.y) then
+			do return nil end
+		end
+		if (((prev.y - gateY) * (now.y - gateY)) > 0) then
+			do return nil end
+		end
+		local f = ((prev.y - gateY) / (prev.y - now.y))
+		if ((f < 0) or (f > 1)) then
+			do return nil end
+		end
+		do return Js.O({ x = (prev.x + ((now.x - prev.x) * f)), z = (prev.z + ((now.z - prev.z) * f)) }, { "x", "z" }) end
+	end
+	exports.gateCrossing = gateCrossing
+	gateQuality = function(crossing, cfg, centreX)
+		if (not crossing) then
+			do return 0 end
+		end
+		if (crossing.z > cfg.maxHeight) then
+			do return 0 end
+		end
+		local off = math.abs((crossing.x - centreX))
+		local half = (cfg.gateWidth / 2)
+		if (off > half) then
+			do return Math.max(0, (0.18 * (1 - ((off - half) / Math.max(1, cfg.gateWidth))))) end
+		end
+		do return Math.max(0.25, (1 - ((off / half) * 0.75))) end
+	end
+	exports.gateQuality = gateQuality
+	shotQuality = function(outcome, crossX)
+		if ((outcome == "goal") or (outcome == "rebound")) then
+			if (crossX == nil) then
+				do return 0.7 end
+			end
+			local fromCentre = (math.abs((crossX - M_pitch.CX)) / (M_pitch.GOAL_W / 2))
+			do return Math.max(0.55, Math.min(1, (0.55 + (fromCentre * 0.45)))) end
+		end
+		if ((outcome == "saved") or (outcome == "tipped")) then
+			do return 0.34 end
+		end
+		if (outcome == "caught") then
+			do return 0.24 end
+		end
+		if (outcome == "post") then
+			do return 0.42 end
+		end
+		if (outcome == "blocked") then
+			do return 0.16 end
+		end
+		if ((outcome == "wide") or (outcome == "over")) then
+			if (crossX == nil) then
+				do return 0.08 end
+			end
+			local miss = (if (crossX < M_pitch.POST_L) then (M_pitch.POST_L - crossX) else (if (crossX > M_pitch.POST_R) then (crossX - M_pitch.POST_R) else 0))
+			do return Math.max(0.04, (0.2 * Math.max(0, (1 - (miss / 4))))) end
+		end
+		do return 0.05 end
+	end
+	exports.shotQuality = shotQuality
+	POWER_LEVELS = 30
+	exports.POWER_LEVELS = POWER_LEVELS
+	OPEN_GOAL_LEVELS = 2
+	exports.OPEN_GOAL_LEVELS = OPEN_GOAL_LEVELS
+	FIRST_BLOCKER_LEVEL = 5
+	exports.FIRST_BLOCKER_LEVEL = FIRST_BLOCKER_LEVEL
+	POWER_EASE = 0.75
+	exports.POWER_EASE = POWER_EASE
+end
+]]></string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="280">
             <Properties>
               <string name="Name">trainingLevels</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -56740,7 +56981,396 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="279">
+          <Item class="ModuleScript" referent="281">
+            <Properties>
+              <string name="Name">trainingRender</string>
+              <string name="Source"><![CDATA[--!nocheck
+--!nolint
+-- Generated from lib/star/trainingRender.ts by roblox/tools/ts2luau. Do not edit.
+return function(exports, import, Js)
+	local A, S, N, Math = Js.A, Js.S, Js.N, Js.Math
+	local M_pitch = import("lib/star/pitch")
+	local M_render = import("lib/star/fiveASide/render")
+	local M_faceStyle = import("lib/star/faceStyle")
+	local M_fakeFaceStyle = import("lib/star/fakeFaceStyle")
+	local M_goalFrame = import("lib/star/goalFrame")
+	local C, GRASS_TILE, cachedGrass, grassTile, clamp, renderTrainingScene, MATCH_FRAME_H, strikeViewport, gateViewport
+	grassTile = function()
+		if cachedGrass then
+			do return cachedGrass end
+		end
+		if (Js.document == nil) then
+			do return nil end
+		end
+		local c = Js.document.createElement("canvas")
+		c.width = GRASS_TILE
+		c.height = GRASS_TILE
+		local g = c.getContext("2d")
+		if (not g) then
+			do return nil end
+		end
+		local img = g.createImageData(GRASS_TILE, GRASS_TILE)
+		local seed = 3108651
+		do
+			local i = 0
+			local _first1 = true
+			while true do
+				if not _first1 then
+					i += 4
+				end
+				_first1 = false
+				if not (i < img.data.length) then break end
+				seed = Js.ushr(((seed * 1664525) + 1013904223), 0)
+				local n = (Js.band(Js.ushr(seed, 16), 255) / 255)
+				local light = (n > 0.5)
+				img.data[Js.key(i)] = (if light then 255 else 0)
+				img.data[Js.key((i + 1))] = (if light then 255 else 0)
+				img.data[Js.key((i + 2))] = (if light then 255 else 0)
+				img.data[Js.key((i + 3))] = Math.round(((math.abs((n - 0.5)) * 2) * 16))
+			end
+		end
+		g.putImageData(img, 0, 0)
+		cachedGrass = c
+		do return c end
+	end
+	clamp = function(v, lo, hi)
+		do return Math.max(lo, Math.min(hi, v)) end
+	end
+	renderTrainingScene = function(canvas, opts)
+		local ctx = canvas.getContext("2d")
+		if (not ctx) then
+			do return end
+		end
+		local W = canvas.width
+		local H = canvas.height
+		local vp = opts.viewport
+		local sx = (W / (vp.x2 - vp.x1))
+		local sy = (H / (vp.y2 - vp.y1))
+		local unit = Math.min(sx, sy)
+		local px = function(x)
+			return ((x - vp.x1) * sx)
+		end
+		local py = function(y)
+			return ((y - vp.y1) * sy)
+		end
+		ctx.fillStyle = C.pitch
+		ctx.fillRect(0, 0, W, H)
+		local grass = grassTile()
+		if grass then
+			local pat = ctx.createPattern(grass, "repeat")
+			if pat then
+				ctx.save()
+				ctx.translate(math.fmod(px(0), GRASS_TILE), math.fmod(py(0), GRASS_TILE))
+				ctx.fillStyle = pat
+				ctx.fillRect((-GRASS_TILE), (-GRASS_TILE), (W + (GRASS_TILE * 2)), (H + (GRASS_TILE * 2)))
+				ctx.restore()
+			end
+		end
+		do
+			local wear = function(x, y, rx, ry, alpha)
+				local cx = px(x)
+				local cy = py(y)
+				local g = ctx.createRadialGradient(cx, cy, 0, cx, cy, (Math.max(rx, ry) * unit))
+				g.addColorStop(0, ("rgba(120,132,26," .. Js.numstr(alpha) .. ")"))
+				g.addColorStop(1, "rgba(120,132,26,0)")
+				ctx.save()
+				ctx.translate(cx, cy)
+				ctx.scale(1, (ry / rx))
+				ctx.translate((-cx), (-cy))
+				ctx.fillStyle = g
+				ctx.fillRect((cx - ((rx * unit) * 1.2)), (cy - ((rx * unit) * 1.2)), ((rx * unit) * 2.4), ((rx * unit) * 2.4))
+				ctx.restore()
+			end
+			if opts.goal then
+				wear(M_pitch.CX, 1.9, 6.2, 2.4, 0.22)
+				wear(M_pitch.CX, M_pitch.PEN_SPOT_Y, 3.2, 2.2, 0.16)
+			end
+		end
+		local line = function(x1, y1, x2, y2)
+			ctx.beginPath()
+			ctx.moveTo(px(x1), py(y1))
+			ctx.lineTo(px(x2), py(y2))
+			ctx.stroke()
+		end
+		ctx.strokeStyle = C.line
+		ctx.lineWidth = Math.max(1.4, (unit * 0.12))
+		if opts.goal then
+			line(vp.x1, 0, vp.x2, 0)
+			ctx.strokeRect(px(M_pitch.SIX_L), py(0), ((M_pitch.SIX_R - M_pitch.SIX_L) * sx), (M_pitch.SIX_DEPTH * sy))
+			ctx.strokeRect(px(M_pitch.BOX_L), py(0), ((M_pitch.BOX_R - M_pitch.BOX_L) * sx), (M_pitch.BOX_DEPTH * sy))
+			ctx.strokeStyle = C.lineFaint
+			ctx.beginPath()
+			local halfD = Math.acos(clamp(((M_pitch.BOX_DEPTH - M_pitch.PEN_SPOT_Y) / M_pitch.ARC_R), -1, 1))
+			ctx.arc(px(M_pitch.CX), py(M_pitch.PEN_SPOT_Y), (M_pitch.ARC_R * unit), ((Math.PI / 2) - halfD), ((Math.PI / 2) + halfD))
+			ctx.stroke()
+			ctx.beginPath()
+			ctx.arc(px(M_pitch.CX), py(M_pitch.PEN_SPOT_Y), Math.max(2, (unit * 0.16)), 0, (Math.PI * 2))
+			ctx.fillStyle = C.line
+			ctx.fill()
+		else
+			ctx.strokeStyle = C.lineFaint
+			line(0, vp.y1, 0, vp.y2)
+			line(M_pitch.PITCH_W, vp.y1, M_pitch.PITCH_W, vp.y2)
+			ctx.save()
+			ctx.globalAlpha = 0.1
+			local band = 5
+			local first = (math.floor((vp.y1 / band)) * band)
+			do
+				local y = first
+				local _first2 = true
+				while true do
+					if not _first2 then
+						y += (band * 2)
+					end
+					_first2 = false
+					if not (y < (vp.y2 + band)) then break end
+					ctx.fillStyle = "#0d5c04"
+					ctx.fillRect(0, py(y), W, (band * sy))
+				end
+			end
+			ctx.restore()
+		end
+		if (opts.offsideLine ~= nil) then
+			ctx.save()
+			ctx.strokeStyle = "rgba(250,204,21,0.55)"
+			ctx.lineWidth = Math.max(1.5, (unit * 0.09))
+			ctx.setLineDash(Js.alit((unit * 0.9), (unit * 0.6)))
+			line(vp.x1, opts.offsideLine, vp.x2, opts.offsideLine)
+			ctx.setLineDash(Js.alit())
+			ctx.restore()
+		end
+		if opts.goal then
+			local hpx = (M_pitch.GOAL_H * sy)
+			local bl = Js.O({ px = px(M_pitch.POST_L), py = py(0) }, { "px", "py" })
+			local br = Js.O({ px = px(M_pitch.POST_R), py = py(0) }, { "px", "py" })
+			local tl = Js.O({ px = bl.px, py = (bl.py - hpx) }, { "px", "py" })
+			local tr = Js.O({ px = br.px, py = (br.py - hpx) }, { "px", "py" })
+			local rl = Js.O({ px = px(M_pitch.POST_L), py = py((-M_pitch.NET_DEPTH)) }, { "px", "py" })
+			local rr = Js.O({ px = px(M_pitch.POST_R), py = py((-M_pitch.NET_DEPTH)) }, { "px", "py" })
+			local ul = Js.O({ px = rl.px, py = (rl.py - hpx) }, { "px", "py" })
+			local ur = Js.O({ px = rr.px, py = (rr.py - hpx) }, { "px", "py" })
+			local path = function(q)
+				ctx.beginPath()
+				ctx.moveTo(q[1].px, q[1].py)
+				for i = 1, (Js.alen(q)) - 1 do
+					ctx.lineTo(q[i + 1].px, q[i + 1].py)
+				end
+				ctx.closePath()
+			end
+			local quad = function(q, fill)
+				path(q)
+				ctx.fillStyle = fill
+				ctx.fill()
+			end
+			local seg = function(a, b)
+				ctx.beginPath()
+				ctx.moveTo(a.px, a.py)
+				ctx.lineTo(b.px, b.py)
+				ctx.stroke()
+			end
+			local lerp = function(a, b, f)
+				return Js.O({ px = (a.px + ((b.px - a.px) * f)), py = (a.py + ((b.py - a.py) * f)) }, { "px", "py" })
+			end
+			local netting = function(q, cols, rows, alpha)
+				ctx.save()
+				path(q)
+				ctx.clip()
+				ctx.strokeStyle = ("rgba(255,255,255," .. Js.numstr(alpha) .. ")")
+				ctx.lineWidth = Math.max(0.7, (unit * 0.028))
+				for i = 0, math.floor(cols) do
+					local f = (i / cols)
+					seg(lerp(q[1], q[2], f), lerp(q[4], q[3], f))
+				end
+				for j = 0, math.floor(rows) do
+					local f = (j / rows)
+					seg(lerp(q[1], q[4], f), lerp(q[2], q[3], f))
+				end
+				ctx.restore()
+			end
+			local sh = (unit * 0.5)
+			quad(A.map(Js.alit(rl, rr, br, bl), function(q)
+				return Js.O({ px = (q.px + sh), py = (q.py + (sh * 0.3)) }, { "px", "py" })
+			end), "rgba(0,0,0,0.09)")
+			quad(Js.alit(bl, br, rr, rl), "rgba(20,50,32,0.05)")
+			quad(Js.alit(rl, rr, ur, ul), "rgba(22,52,34,0.16)")
+			netting(Js.alit(rl, rr, ur, ul), 34, 10, 0.42)
+			ctx.strokeStyle = "#0f1a14"
+			ctx.lineWidth = Math.max(1.8, (unit * 0.15))
+			seg(rl, ul)
+			seg(rr, ur)
+			seg(ul, ur)
+			quad(Js.alit(tl, tr, ur, ul), "rgba(236,245,239,0.30)")
+			netting(Js.alit(tl, tr, ur, ul), 34, 5, 0.8)
+			ctx.lineCap = "round"
+			ctx.strokeStyle = "#f6faf7"
+			ctx.lineWidth = Math.max(1.8, (unit * 0.12))
+			seg(bl, tl)
+			seg(br, tr)
+			ctx.lineWidth = Math.max(2, (unit * 0.16))
+			seg(tl, tr)
+			ctx.lineCap = "butt"
+			ctx.strokeStyle = "rgba(255,255,255,0.9)"
+			ctx.lineWidth = Math.max(1.5, (unit * 0.11))
+			line(M_pitch.POST_L, 0, M_pitch.POST_R, 0)
+		end
+		local proj = Js.O({ px = px, py = py, unit = unit, W = W, H = H }, { "px", "py", "unit", "W", "H" })
+		local FIG = M_render.sameSizeScale(unit, W)
+		local footballer = function(x, y, shirt, rim, o)
+			if o == nil then o = Js.O({}, nil) end
+			ctx.save()
+			if o.dim then
+				ctx.globalAlpha = 0.55
+			end
+			if Js.T(o.ring) then
+				local r = Math.max(5, ((unit * 1) * FIG))
+				ctx.beginPath()
+				ctx.arc(px(x), py(y), (r * 1.5), 0, (Math.PI * 2))
+				ctx.strokeStyle = o.ring
+				ctx.lineWidth = Math.max(1.6, (r * 0.16))
+				ctx.stroke()
+			end
+			M_render.drawFigure(ctx, proj, Js.O({ x = x, y = y }, { "x", "y" }), Js.O({ shirt = shirt, shorts = rim, trim = rim, skin = C.skin, star = o.star, lift = o.z, face = o.face }, { "shirt", "shorts", "trim", "skin", "star", "lift", "face" }), M_faceStyle.DEFAULT_FACE_STYLE, M_fakeFaceStyle.DEFAULT_FAKE_FACE_STYLE, Js.O({ pose = o.pose, scale = FIG }, { "pose", "scale" }))
+			ctx.restore()
+		end
+		do
+			local _arr3 = (if opts.defenders ~= nil then opts.defenders else Js.alit())
+			local _i4 = 0
+			while _i4 < Js.alen(_arr3) do
+				_i4 += 1
+				local d = _arr3[_i4]
+				footballer(d.x, d.y, (if (d.awake == false) then "#7a8a8f" else C.opp), (if (d.awake == false) then "#3f4a4e" else C.oppRim), Js.O({ z = d.z, pose = d.pose, face = d.face }, { "z", "pose", "face" }))
+			end
+		end
+		do
+			local _arr5 = (if opts.mates ~= nil then opts.mates else Js.alit())
+			local _i6 = 0
+			while _i6 < Js.alen(_arr5) do
+				_i6 += 1
+				local m = _arr5[_i6]
+				footballer(m.x, m.y, "#3b82f6", "#1e3a5f", Js.O({ dim = m.dim, ring = (if m.highlight then "#facc15" else nil), face = m.face }, { "dim", "ring", "face" }))
+			end
+		end
+		if opts.gate then
+			local cone = function(x, y)
+				local cx = px(x)
+				local cy = py(y)
+				local h = Math.max(6, (unit * 0.85))
+				local w = Math.max(5, (unit * 0.7))
+				ctx.beginPath()
+				ctx.ellipse(cx, cy, (w * 0.62), (w * 0.24), 0, 0, (Math.PI * 2))
+				ctx.fillStyle = "rgba(0,0,0,0.32)"
+				ctx.fill()
+				ctx.beginPath()
+				ctx.moveTo(cx, (cy - h))
+				ctx.lineTo((cx + (w * 0.55)), cy)
+				ctx.lineTo((cx - (w * 0.55)), cy)
+				ctx.closePath()
+				ctx.fillStyle = C.cone
+				ctx.fill()
+				ctx.strokeStyle = C.coneRim
+				ctx.lineWidth = Math.max(1, (unit * 0.07))
+				ctx.stroke()
+				ctx.beginPath()
+				ctx.moveTo((cx - (w * 0.34)), (cy - (h * 0.38)))
+				ctx.lineTo((cx + (w * 0.34)), (cy - (h * 0.38)))
+				ctx.strokeStyle = "rgba(255,255,255,0.85)"
+				ctx.lineWidth = Math.max(1, (unit * 0.11))
+				ctx.stroke()
+			end
+			ctx.save()
+			ctx.strokeStyle = "rgba(250,204,21,0.35)"
+			ctx.lineWidth = Math.max(1, (unit * 0.07))
+			ctx.setLineDash(Js.alit((unit * 0.4), (unit * 0.35)))
+			line(opts.gate.left.x, opts.gate.left.y, opts.gate.right.x, opts.gate.right.y)
+			ctx.setLineDash(Js.alit())
+			ctx.restore()
+			cone(opts.gate.left.x, opts.gate.left.y)
+			cone(opts.gate.right.x, opts.gate.right.y)
+		end
+		if opts.keeper then
+			local k = opts.keeper
+			M_render.drawKeeper(ctx, proj, Js.O({ x = k.x, y = k.y }, { "x", "y" }), Js.O({ shirt = C.gk, shorts = C.gkRim, trim = C.gkRim, skin = C.skin, face = k.face }, { "shirt", "shorts", "trim", "skin", "face" }), Js.O({ dive = Math.max(-1, Math.min(1, (if k.dive ~= nil then k.dive else 0))), lunge = Math.max(0, Math.min(1, (if k.lunge ~= nil then k.lunge else 0))) }, { "dive", "lunge" }), M_faceStyle.DEFAULT_FACE_STYLE, M_fakeFaceStyle.DEFAULT_FAKE_FACE_STYLE, Js.O({ scale = (FIG * M_render.MATCH_KEEPER_R_SHARE) }, { "scale" }))
+		end
+		if opts.you then
+			footballer(opts.you.x, opts.you.y, C.you, C.youRim, Js.O({ star = true, pose = opts.you.pose, face = opts.you.face }, { "star", "pose", "face" }))
+		end
+		if (opts.trail and (Js.alen(opts.trail) > 1)) then
+			ctx.save()
+			ctx.strokeStyle = "rgba(255,255,255,0.35)"
+			ctx.lineWidth = Math.max(1, (unit * 0.09))
+			ctx.setLineDash(Js.alit((unit * 0.35), (unit * 0.3)))
+			ctx.beginPath()
+			ctx.moveTo(px(opts.trail[1].x), py(opts.trail[1].y))
+			do
+				local i = 1
+				local _first7 = true
+				while true do
+					if not _first7 then
+						i += 1
+					end
+					_first7 = false
+					if not (i < Js.alen(opts.trail)) then break end
+					ctx.lineTo(px(opts.trail[i + 1].x), py(opts.trail[i + 1].y))
+				end
+			end
+			ctx.stroke()
+			ctx.setLineDash(Js.alit())
+			ctx.restore()
+		end
+		if opts.ball then
+			local b = opts.ball
+			local img = opts.ballImage
+			if ((img and img.complete) and (img.naturalWidth > 0)) then
+				local lift = Math.max(0, b.z)
+				local br = Math.max(2.5, ((unit * 0.286) * (1 + (lift * 0.06))))
+				local bx = px(b.x)
+				local by = py(b.y)
+				ctx.fillStyle = "rgba(0,0,0,0.32)"
+				ctx.beginPath()
+				ctx.ellipse(bx, by, (br * (1 - Math.min(0.4, (lift * 0.05)))), (br * 0.5), 0, 0, (Math.PI * 2))
+				ctx.fill()
+				ctx.drawImage(img, (bx - br), ((by - ((lift * unit) * 0.5)) - br), (br * 2), (br * 2))
+			else
+				M_render.drawBall(ctx, proj, Js.O({ x = b.x, y = b.y }, { "x", "y" }), Math.max(0, b.z), FIG)
+			end
+		end
+		if opts.aim then
+			local a = opts.aim
+			M_render.drawAim(ctx, proj, a.from, a.dir, a.power)
+		end
+	end
+	exports.renderTrainingScene = renderTrainingScene
+	strikeViewport = function(ball)
+		local y1 = M_goalFrame.FRAME_TOP_FOR_GOAL
+		local height = Math.max(MATCH_FRAME_H, ((ball.y - y1) / (1 - M_goalFrame.roomShare())), (((ball.y + 0.8) + 1.4) - y1))
+		local width = (height * (5 / 8))
+		local cx = clamp(((ball.x + M_pitch.CX) / 2), (width / 2), (M_pitch.PITCH_W - (width / 2)))
+		do return Js.O({ x1 = (cx - (width / 2)), x2 = (cx + (width / 2)), y1 = y1, y2 = (y1 + height) }, { "x1", "x2", "y1", "y2" }) end
+	end
+	exports.strikeViewport = strikeViewport
+	gateViewport = function(ball, gate)
+		local y2 = (ball.y + 5)
+		local y1 = (Math.min(gate.left.y, gate.right.y) - 6)
+		local height = (y2 - y1)
+		local width = (height * (5 / 8))
+		local spanCx = ((ball.x + ((gate.left.x + gate.right.x) / 2)) / 2)
+		local needed = ((math.abs((gate.right.x - ball.x)) + math.abs((gate.left.x - ball.x))) + 6)
+		local w = Math.max(width, needed, (MATCH_FRAME_H * (5 / 8)))
+		local h = (w / (5 / 8))
+		local cy = ((y1 + y2) / 2)
+		do return Js.O({ x1 = (spanCx - (w / 2)), x2 = (spanCx + (w / 2)), y1 = (cy - (h / 2)), y2 = (cy + (h / 2)) }, { "x1", "x2", "y1", "y2" }) end
+	end
+	exports.gateViewport = gateViewport
+	C = Js.O({ pitch = "#1f9006", line = "rgba(255,255,250,0.85)", lineFaint = "rgba(255,255,250,0.5)", you = M_render.ROLE_KIT.you, youRim = M_render.ROLE_KIT.youRim, opp = M_render.ROLE_KIT.opp, oppRim = M_render.ROLE_KIT.oppRim, gk = M_render.ROLE_KIT.gk, gkRim = M_render.ROLE_KIT.gkRim, cone = "#f97316", coneRim = "#7c2d12", skin = "#c68642" }, { "pitch", "line", "lineFaint", "you", "youRim", "opp", "oppRim", "gk", "gkRim", "cone", "coneRim", "skin" })
+	GRASS_TILE = 96
+	cachedGrass = nil
+	MATCH_FRAME_H = 42
+	exports.MATCH_FRAME_H = MATCH_FRAME_H
+end
+]]></string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="282">
             <Properties>
               <string name="Name">transferInterest</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -57147,7 +57777,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="280">
+          <Item class="ModuleScript" referent="283">
             <Properties>
               <string name="Name">transferRequest</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -57478,7 +58108,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="281">
+          <Item class="ModuleScript" referent="284">
             <Properties>
               <string name="Name">transfers</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -57566,7 +58196,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="282">
+          <Item class="ModuleScript" referent="285">
             <Properties>
               <string name="Name">trial</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -57742,7 +58372,570 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="283">
+          <Item class="ModuleScript" referent="286">
+            <Properties>
+              <string name="Name">trialShootoutRig</string>
+              <string name="Source"><![CDATA[--!nocheck
+--!nolint
+-- Generated from lib/star/trialShootoutRig.ts by roblox/tools/ts2luau. Do not edit.
+return function(exports, import, Js)
+	local A, S, N, Math = Js.A, Js.S, Js.N, Js.Math
+	local M_season = import("lib/star/season")
+	local M_penaltyTaking = import("lib/star/penaltyTaking")
+	local M_runupStyles = import("lib/star/runupStyles")
+	local SHOOTOUT_KICKS, SHOOTOUT_TOTAL, MISS_STYLES, createRig, rigNextSide, rigGoals, rigKicksTaken, isYourKick, isWinningPenalty, isTeamMateKick, choose, RIG_LEVEL, MATE_KICK_INDEX, createRigScript, rigIntent, rigApply, winningPenaltyScored, RIG_GOAL_OFF, RIG_GOAL_POWER, RIG_GOAL_CONTACT, RIG_MISS, RIG_MISS_OFF, RIG_MISS_POWER, rigPlanFor, rigKeeperRead, MISS_LINE, pickRunups, idForRunup
+	createRig = function()
+		do return Js.O({ kicks = Js.alit(), over = false, winner = nil }, { "kicks", "over", "winner" }) end
+	end
+	exports.createRig = createRig
+	rigNextSide = function(kicks)
+		do return (if (math.fmod(Js.alen(kicks), 2) == 0) then "them" else "you") end
+	end
+	exports.rigNextSide = rigNextSide
+	rigGoals = function(kicks, side)
+		do return Js.alen(A.filter(kicks, function(k)
+			return ((k.side == side) and k.scored)
+		end)) end
+	end
+	exports.rigGoals = rigGoals
+	rigKicksTaken = function(kicks, side)
+		do return Js.alen(A.filter(kicks, function(k)
+			return (k.side == side)
+		end)) end
+	end
+	exports.rigKicksTaken = rigKicksTaken
+	isYourKick = function(state)
+		do return (((not state.over) and (rigNextSide(state.kicks) == "you")) and (rigKicksTaken(state.kicks, "you") == (SHOOTOUT_KICKS - 1))) end
+	end
+	exports.isYourKick = isYourKick
+	isTeamMateKick = function(state)
+		do return (((not state.over) and (rigNextSide(state.kicks) == "you")) and (not isYourKick(state))) end
+	end
+	exports.isTeamMateKick = isTeamMateKick
+	choose = function(n, k, rng)
+		local idx = Js.Array.from(Js.O({ length = n }, { "length" }), function(_, i)
+			return i
+		end)
+		do
+			local i = (n - 1)
+			local _first1 = true
+			while true do
+				if not _first1 then
+					i -= 1
+				end
+				_first1 = false
+				if not (i > 0) then break end
+				local j = math.floor((rng() * (i + 1)))
+				local _d2 = Js.alit(idx[j + 1], idx[i + 1])
+				A.set(idx, i, _d2[1])
+				A.set(idx, j, _d2[2])
+			end
+		end
+		do return Js.Set.new(A.slice(idx, 0, k)) end
+	end
+	createRigScript = function(seed)
+		local rng = M_season.mulberry32(Js.ushr(Js.bxor(seed, 372743), 0))
+		rng()
+		local level = RIG_LEVEL
+		local theirs = choose(SHOOTOUT_KICKS, level, rng)
+		local ours = choose((SHOOTOUT_KICKS - 1), level, rng)
+		local intents = Js.alit()
+		for i = 0, (SHOOTOUT_TOTAL - 1) - 1 do
+			local round = math.floor((i / 2))
+			A.push(intents, (if (math.fmod(i, 2) == 0) then theirs:has(round) else ours:has(round)))
+		end
+		local misses = Js.alit()
+		local bag = Js.alit()
+		for i = 0, (SHOOTOUT_TOTAL - 1) - 1 do
+			if (Js.alen(bag) == 0) then
+				bag = Js.aspread(MISS_STYLES)
+				for a = (Js.alen(bag) - 1), 1, -1 do
+					local b = math.floor((rng() * (a + 1)))
+					local _d3 = Js.alit(bag[b + 1], bag[a + 1])
+					A.set(bag, a, _d3[1])
+					A.set(bag, b, _d3[2])
+				end
+				local last = A.find(A.reverse(Js.aspread(misses)), function(_, k)
+					return (not intents[((Js.alen(misses) - 1) - k) + 1])
+				end)
+				if (Js.T(last) and (bag[Js.alen(bag)] == last)) then
+					local _d4 = Js.alit(bag[Js.alen(bag)], bag[1])
+					A.set(bag, 0, _d4[1])
+					A.set(bag, (Js.alen(bag) - 1), _d4[2])
+				end
+			end
+			A.push(misses, (if intents[i + 1] then "wide" else A.pop(bag)))
+		end
+		local sides = A.map(intents, function()
+			return (if (rng() < 0.5) then -1 else 1)
+		end)
+		local _d5 = MATE_KICK_INDEX
+		local m1 = _d5[1]
+		local m2 = _d5[2]
+		local other = function(...)
+			local not_ = Js.alit(...)
+			return (A.find(MISS_STYLES, function(m)
+				return (not A.includes(not_, m))
+			end) or MISS_STYLES[1])
+		end
+		if (((not intents[m1 + 1]) and (not intents[m2 + 1])) and (misses[m1 + 1] == misses[m2 + 1])) then
+			A.set(misses, m2, other(misses[m1 + 1], (if intents[m2] then nil else misses[m2])))
+			local after = (m2 + 1)
+			if (((after < Js.alen(misses)) and (not intents[after + 1])) and (misses[after + 1] == misses[m2 + 1])) then
+				A.set(misses, after, other(misses[m2 + 1], (if intents[m2] then nil else misses[m2])))
+			end
+		end
+		do
+			local i = 0
+			local _first6 = true
+			while true do
+				if not _first6 then
+					i += 1
+				end
+				_first6 = false
+				if not (i < Js.alen(misses)) then break end
+				if (not intents[i + 1]) then
+					do continue end
+				end
+				local mate = A.indexOf(MATE_KICK_INDEX, i)
+				A.set(misses, i, other((if (mate >= 0) then misses[MATE_KICK_INDEX[(1 - mate) + 1] + 1] else nil), (if (i > 0) then misses[i] else nil)))
+			end
+		end
+		A.set(sides, m2, (-(sides[m1 + 1])))
+		do return Js.O({ intents = intents, sides = sides, misses = misses, level = level }, { "intents", "sides", "misses", "level" }) end
+	end
+	exports.createRigScript = createRigScript
+	rigIntent = function(state, script_)
+		local i = Js.alen(state.kicks)
+		if (i >= (SHOOTOUT_TOTAL - 1)) then
+			do return false end
+		end
+		local planned = script_.intents[i + 1]
+		local theirs = rigGoals(state.kicks, "them")
+		local ours = rigGoals(state.kicks, "you")
+		local side = rigNextSide(state.kicks)
+		local restThem = 0
+		local restUs = 0
+		local leftThem = 0
+		local leftUs = 0
+		for j = (i + 1), (SHOOTOUT_TOTAL - 1) - 1 do
+			if (math.fmod(j, 2) == 0) then
+				leftThem += 1
+				if script_.intents[j + 1] then
+					restThem += 1
+				end
+			else
+				leftUs += 1
+				if script_.intents[j + 1] then
+					restUs += 1
+				end
+			end
+		end
+		local endsLevel = function(scores)
+			local t = ((theirs + (if ((side == "them") and scores) then 1 else 0)) + restThem)
+			local u = ((ours + (if ((side == "you") and scores) then 1 else 0)) + restUs)
+			do return (t == u) end
+		end
+		if endsLevel(planned) then
+			do return planned end
+		end
+		local reachable = function(scores)
+			local d = ((theirs + (if ((side == "them") and scores) then 1 else 0)) - (ours + (if ((side == "you") and scores) then 1 else 0)))
+			do return ((d >= (-leftThem)) and (d <= leftUs)) end
+		end
+		if reachable(planned) then
+			do return planned end
+		end
+		do return (not planned) end
+	end
+	exports.rigIntent = rigIntent
+	rigApply = function(state, scored)
+		if state.over then
+			do return state end
+		end
+		local side = rigNextSide(state.kicks)
+		local kicks = Js.aspread(state.kicks, Js.alit(Js.O({ side = side, scored = scored }, { "side", "scored" })))
+		local over = (Js.alen(kicks) >= SHOOTOUT_TOTAL)
+		local yours = rigGoals(kicks, "you")
+		local theirs = rigGoals(kicks, "them")
+		do return Js.O({ kicks = kicks, over = over, winner = (if over then (if (yours > theirs) then "you" else (if (theirs > yours) then "them" else nil)) else nil) }, { "kicks", "over", "winner" }) end
+	end
+	exports.rigApply = rigApply
+	winningPenaltyScored = function(state)
+		if (not state.over) then
+			do return false end
+		end
+		local last = state.kicks[Js.alen(state.kicks)]
+		do return (((not (not last)) and (last.side == "you")) and last.scored) end
+	end
+	exports.winningPenaltyScored = winningPenaltyScored
+	rigPlanFor = function(scores, side, techniqueOfTaker, miss)
+		if miss == nil then miss = "wide" end
+		if scores then
+			do return Js.O({ style = "placed", off = (side * RIG_GOAL_OFF), power = RIG_GOAL_POWER, cy = M_penaltyTaking.sameHeight(RIG_GOAL_CONTACT, techniqueOfTaker) }, { "style", "off", "power", "cy" }) end
+		end
+		local m = RIG_MISS[miss]
+		do return Js.O({ style = "placed", off = (side * m.off), power = m.power, cy = M_penaltyTaking.sameHeight(m.cy, techniqueOfTaker) }, { "style", "off", "power", "cy" }) end
+	end
+	exports.rigPlanFor = rigPlanFor
+	rigKeeperRead = function(scores, read)
+		do return (if scores then Js.ospread(read, Js.O({ readChance = 0 }, { "readChance" })) else read) end
+	end
+	exports.rigKeeperRead = rigKeeperRead
+	pickRunups = function(seed, n)
+		local rng = M_season.mulberry32(Js.ushr(Js.bxor(seed, 10769), 0))
+		local all = A.map(A.filter(M_runupStyles.PENALTY_RUNUPS, function(s)
+			return (not M_runupStyles.REWARD_RUNUPS:has(s.id))
+		end), function(s)
+			return s.id
+		end)
+		for i = (Js.alen(all) - 1), 1, -1 do
+			local j = math.floor((rng() * (i + 1)))
+			local _d7 = Js.alit(all[j + 1], all[i + 1])
+			A.set(all, i, _d7[1])
+			A.set(all, j, _d7[2])
+		end
+		do return A.slice(all, 0, Math.max(0, Math.min(Js.alen(all), n))) end
+	end
+	exports.pickRunups = pickRunups
+	idForRunup = function(base, wanted)
+		for i = 0, 499 do
+			local id = (base .. "-" .. Js.numstr(i))
+			if (M_runupStyles.takerPenaltyRunup(id) == wanted) then
+				do return id end
+			end
+		end
+		do return base end
+	end
+	exports.idForRunup = idForRunup
+	SHOOTOUT_KICKS = 3
+	exports.SHOOTOUT_KICKS = SHOOTOUT_KICKS
+	SHOOTOUT_TOTAL = (SHOOTOUT_KICKS * 2)
+	exports.SHOOTOUT_TOTAL = SHOOTOUT_TOTAL
+	MISS_STYLES = Js.alit("wide", "skied", "over")
+	exports.MISS_STYLES = MISS_STYLES
+	isWinningPenalty = isYourKick
+	exports.isWinningPenalty = isWinningPenalty
+	RIG_LEVEL = 2
+	exports.RIG_LEVEL = RIG_LEVEL
+	MATE_KICK_INDEX = Js.alit(1, 3)
+	exports.MATE_KICK_INDEX = MATE_KICK_INDEX
+	RIG_GOAL_OFF = 3.3
+	exports.RIG_GOAL_OFF = RIG_GOAL_OFF
+	RIG_GOAL_POWER = 0.94
+	exports.RIG_GOAL_POWER = RIG_GOAL_POWER
+	RIG_GOAL_CONTACT = -0.8
+	exports.RIG_GOAL_CONTACT = RIG_GOAL_CONTACT
+	RIG_MISS = Js.O({ wide = Js.O({ off = 5.2, power = 0.75, cy = 0 }, { "off", "power", "cy" }), skied = Js.O({ off = 4.4, power = 0.85, cy = 0.6 }, { "off", "power", "cy" }), over = Js.O({ off = 3.3, power = 1, cy = 1 }, { "off", "power", "cy" }) }, { "wide", "skied", "over" })
+	exports.RIG_MISS = RIG_MISS
+	RIG_MISS_OFF = RIG_MISS.wide.off
+	exports.RIG_MISS_OFF = RIG_MISS_OFF
+	RIG_MISS_POWER = RIG_MISS.wide.power
+	exports.RIG_MISS_POWER = RIG_MISS_POWER
+	MISS_LINE = Js.O({ wide = "Dragged wide!", skied = "Skied it, high and wide!", over = "Over the bar!" }, { "wide", "skied", "over" })
+	exports.MISS_LINE = MISS_LINE
+end
+]]></string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="287">
+            <Properties>
+              <string name="Name">trialStages</string>
+              <string name="Source"><![CDATA[--!nocheck
+--!nolint
+-- Generated from lib/star/trialStages.ts by roblox/tools/ts2luau. Do not edit.
+return function(exports, import, Js)
+	local A, S, N, Math = Js.A, Js.S, Js.N, Js.Math
+	local M_trial = import("lib/star/trial")
+	local M_trainingDrills = import("lib/star/trainingDrills")
+	local M_tuningStore = import("lib/star/tuningStore")
+	local M_pitch = import("lib/star/pitch")
+	local ladderLevel, attemptSeed, REPS, PENALTY_TELL_EASY, PENALTY_TELL_HARD, PENALTY_TELL_RAMP, penaltyTell, COLD_KEEPER_TELL, PENALTY_COMMIT_M, PENALTY_COMMIT_CHANCE_EASY, PENALTY_COMMIT_CHANCE_HARD, penaltyCommit, penaltyReadForTrial, PENALTY_RAMP_FIRST, PENALTY_RAMP_LAST, penaltyRampFor, techniqueSetup, COLD_KEEPER_READ_BONUS, shootoutOurKeeperFor, shootoutTheirRating, shootoutKeeperFor, shootoutQuality, trialInvisibleStats, penaltySetup, BIG_WALL_MEN, LONG_RANGE_M, freeKickSetup, QUICK_FEET_BONUS, EXTRA_MAN, dribbleSetup, dribbleQuality, SNAP_DECISION_WINDOW, SNAP_DECISION_FLOOR, CROWDED_PICTURE_MEN, CROWDED_PICTURE_MAX, TIGHT_MARGINS_SCALE, TIGHT_MARGINS_FLOOR, VISION_WINDOWS, visionWindowFor, visionSetup, VISION_REACTION_S, VISION_FREE_FRACTION, visionFreeSeconds, visionQuality, meanQuality, REP_WEIGHT_RAMP, weightedQuality, strikeQuality, TEACH_SEEN_KEY, TEACHABLE_DRILLS, teachKeyFor, teachSeen, markTeachSeen, clearTeachSeen
+	ladderLevel = function(difficulty)
+		do return Math.max(0, Math.min(100, ((if Js.NumberNS.isFinite(difficulty) then difficulty else 0) * 100))) end
+	end
+	exports.ladderLevel = ladderLevel
+	attemptSeed = function(trial)
+		local reloads = Math.max(0, math.floor((if Js.NumberNS.isFinite(trial.reloads) then trial.reloads else 0)))
+		do return Js.ushr(Js.bxor(Js.ushr(trial.seed, 0), ((reloads + 1) * 2654435761)), 0) end
+	end
+	exports.attemptSeed = attemptSeed
+	penaltyTell = function(trial, rep)
+		local d = M_trial.difficultyFor(trial, "penalties")
+		local i = Math.max(0, math.floor((if Js.NumberNS.isFinite(rep) then rep else 0)))
+		local step = PENALTY_TELL_RAMP[Math.min(i, (Js.alen(PENALTY_TELL_RAMP) - 1)) + 1]
+		local ceiling = (PENALTY_TELL_EASY + ((PENALTY_TELL_HARD - PENALTY_TELL_EASY) * d))
+		local tell = (step * ceiling)
+		do return (if ((function() local _v = M_trial.adversityOn(trial, "penalties"); if _v == nil then return nil end; _v = _v.id; return _v end)() == "cold-keeper") then (tell * COLD_KEEPER_TELL) else tell) end
+	end
+	exports.penaltyTell = penaltyTell
+	penaltyCommit = function(trial, rep)
+		local d = M_trial.difficultyFor(trial, "penalties")
+		local chance = (PENALTY_COMMIT_CHANCE_EASY + ((PENALTY_COMMIT_CHANCE_HARD - PENALTY_COMMIT_CHANCE_EASY) * d))
+		local wobble = (Math.sin(((math.fmod(attemptSeed(trial), 1013) * 3.77) + (rep * 57.31))) * 12911.7)
+		do return (if ((wobble - math.floor(wobble)) < chance) then PENALTY_COMMIT_M else 0) end
+	end
+	exports.penaltyCommit = penaltyCommit
+	penaltyReadForTrial = function(trial)
+		local d = M_trial.difficultyFor(trial, "penalties")
+		do return Js.O({ commitChance = (PENALTY_COMMIT_CHANCE_EASY + ((PENALTY_COMMIT_CHANCE_HARD - PENALTY_COMMIT_CHANCE_EASY) * d)), readChance = (0.55 + (0.17 * d)) }, { "commitChance", "readChance" }) end
+	end
+	exports.penaltyReadForTrial = penaltyReadForTrial
+	penaltyRampFor = function(rep, reps)
+		local i = Math.max(0, math.floor((if Js.NumberNS.isFinite(rep) then rep else 0)))
+		local p = (if (reps > 1) then Math.min(1, (i / (reps - 1))) else 0)
+		local lerp = function(a, b)
+			return (a + ((b - a) * p))
+		end
+		local r2 = function(v)
+			return (Math.round((v * 100)) / 100)
+		end
+		local F = PENALTY_RAMP_FIRST
+		local L = PENALTY_RAMP_LAST
+		do return Js.O({ keeperStrength = Math.round(lerp(F.keeperStrength, L.keeperStrength)), read = Js.O({ commitChance = r2(lerp(F.commitChance, L.commitChance)), readChance = r2(lerp(F.readChance, L.readChance)), metres = r2(lerp(F.metres, L.metres)) }, { "commitChance", "readChance", "metres" }) }, { "keeperStrength", "read" }) end
+	end
+	exports.penaltyRampFor = penaltyRampFor
+	techniqueSetup = function(trial, rep)
+		do return M_trainingDrills.techniqueDrill(ladderLevel(M_trial.difficultyFor(trial, "technique")), rep) end
+	end
+	exports.techniqueSetup = techniqueSetup
+	shootoutOurKeeperFor = function(theirKick)
+		do return penaltyRampFor(Math.min(theirKick, (REPS.shootout - 1)), REPS.shootout) end
+	end
+	exports.shootoutOurKeeperFor = shootoutOurKeeperFor
+	shootoutTheirRating = function(trial)
+		do return Math.round((52 + (M_trial.difficultyFor(trial, "shootout") * 36))) end
+	end
+	exports.shootoutTheirRating = shootoutTheirRating
+	shootoutKeeperFor = function(trial, yourKick)
+		local ramp = penaltyRampFor(Math.min(yourKick, (REPS.shootout - 1)), REPS.shootout)
+		local cold = ((function() local _v = M_trial.adversityOn(trial, "shootout"); if _v == nil then return nil end; _v = _v.id; return _v end)() == "cold-keeper")
+		do return Js.O({ keeperStrength = Math.min(99, (ramp.keeperStrength + M_trial.keeperBonusFor(trial, "shootout"))), read = (if cold then Js.ospread(ramp.read, Js.O({ readChance = Math.min(0.95, (ramp.read.readChance + COLD_KEEPER_READ_BONUS)) }, { "readChance" })) else ramp.read) }, { "keeperStrength", "read" }) end
+	end
+	exports.shootoutKeeperFor = shootoutKeeperFor
+	shootoutQuality = function(yourKicks)
+		if (Js.alen(yourKicks) == 0) then
+			do return 0 end
+		end
+		do return (Js.alen(A.filter(yourKicks, Js.Boolean)) / Js.alen(yourKicks)) end
+	end
+	exports.shootoutQuality = shootoutQuality
+	trialInvisibleStats = function()
+		do return Js.O({ setPieceSkill = M_tuningStore.getTuning("startingSkills.freeKick"), canCurve = false }, { "setPieceSkill", "canCurve" }) end
+	end
+	exports.trialInvisibleStats = trialInvisibleStats
+	penaltySetup = function(trial, rep)
+		local d = M_trial.difficultyFor(trial, "penalties")
+		local bonus = M_trial.keeperBonusFor(trial, "penalties")
+		local wobble = (Math.sin((math.fmod(attemptSeed(trial), 1000) + (rep * 12.9898))) * 43758.5453)
+		local side = (if ((wobble - math.floor(wobble)) < 0.5) then -1 else 1)
+		do return Js.O({ ball = Js.O({ x = M_pitch.CX, y = M_pitch.PEN_SPOT_Y }, { "x", "y" }), keeperStrength = Math.min(99, ((45 + (d * 45)) + bonus)), keeperLean = (side * penaltyTell(trial, rep)), keeperCommit = penaltyCommit(trial, rep) }, { "ball", "keeperStrength", "keeperLean", "keeperCommit" }) end
+	end
+	exports.penaltySetup = penaltySetup
+	freeKickSetup = function(trial, rep)
+		local d = M_trial.difficultyFor(trial, "freeKicks")
+		local cfg = M_trainingDrills.freeKickDrill(ladderLevel(d), rep)
+		local ev = M_trial.adversityOn(trial, "freeKicks")
+		local keeperStrength = Math.min(99, (cfg.keeperStrength + M_trial.keeperBonusFor(trial, "freeKicks")))
+		local wall = (if ((function() local _v = ev; if _v == nil then return nil end; _v = _v.id; return _v end)() == "big-wall") then Math.min(6, (cfg.wall + BIG_WALL_MEN)) else cfg.wall)
+		local distance = (if ((function() local _v = ev; if _v == nil then return nil end; _v = _v.id; return _v end)() == "long-range") then (cfg.distance + LONG_RANGE_M) else cfg.distance)
+		local withAdversity = Js.ospread(cfg, Js.O({ keeperStrength = keeperStrength, wall = wall, distance = distance }, { "keeperStrength", "wall", "distance" }))
+		do return Js.ospread(withAdversity, Js.O({ ball = M_trainingDrills.strikeSpot(distance, cfg.offset) }, { "ball" })) end
+	end
+	exports.freeKickSetup = freeKickSetup
+	dribbleSetup = function(trial)
+		local d = M_trial.difficultyFor(trial, "dribbling")
+		local ev = M_trial.adversityOn(trial, "dribbling")
+		local waves = (if (d >= 0.7) then 3 else 2)
+		local sizes = Js.alit()
+		local total = 0
+		for i = 0, math.ceil(waves) - 1 do
+			local want = Math.max(1, Math.round(((1 + (d * 1.2)) + (if (i == (waves - 1)) then 1 else 0))))
+			local room = Math.max(0, (10 - total))
+			local take = Math.min(want, room)
+			if (take <= 0) then
+				do break end
+			end
+			A.push(sizes, take)
+			total += take
+		end
+		if ((((function() local _v = ev; if _v == nil then return nil end; _v = _v.id; return _v end)() == "extra-man") and (total < 10)) and (Js.alen(sizes) > 0)) then
+			A.set(sizes, (Js.alen(sizes) - 1), sizes[Js.alen(sizes)] + EXTRA_MAN)
+			total += EXTRA_MAN
+		end
+		do return Js.O({ oppStrength = Math.min(100, ((35 + (d * 60)) + (if ((function() local _v = ev; if _v == nil then return nil end; _v = _v.id; return _v end)() == "quick-feet") then QUICK_FEET_BONUS else 0))), waveSizes = sizes, defenders = total }, { "oppStrength", "waveSizes", "defenders" }) end
+	end
+	exports.dribbleSetup = dribbleSetup
+	dribbleQuality = function(result, setup)
+		local share = (if (setup.defenders > 0) then Math.min(1, (result.beaten / setup.defenders)) else 0)
+		do return Math.max(0, Math.min(1, ((share * 0.75) + (if result.cleared then 0.25 else 0)))) end
+	end
+	exports.dribbleQuality = dribbleQuality
+	visionWindowFor = function(rep)
+		do return VISION_WINDOWS[Math.max(0, Math.min((Js.alen(VISION_WINDOWS) - 1), math.floor(rep))) + 1] end
+	end
+	exports.visionWindowFor = visionWindowFor
+	visionSetup = function(trial, rep)
+		local d = M_trial.difficultyFor(trial, "vision")
+		local base = M_trainingDrills.visionDrill(ladderLevel(d), rep)
+		local ev = M_trial.adversityOn(trial, "vision")
+		local cfg = Js.O({ options = (if ((function() local _v = ev; if _v == nil then return nil end; _v = _v.id; return _v end)() == "crowded-picture") then Math.min(CROWDED_PICTURE_MAX, (base.options + CROWDED_PICTURE_MEN)) else base.options), window = (if ((function() local _v = ev; if _v == nil then return nil end; _v = _v.id; return _v end)() == "snap-decision") then Math.min(visionWindowFor(rep), Math.max(SNAP_DECISION_FLOOR, (visionWindowFor(rep) * SNAP_DECISION_WINDOW))) else visionWindowFor(rep)), margin = (if ((function() local _v = ev; if _v == nil then return nil end; _v = _v.id; return _v end)() == "tight-margins") then Math.max(TIGHT_MARGINS_FLOOR, (base.margin * TIGHT_MARGINS_SCALE)) else base.margin) }, { "options", "window", "margin" })
+		local wobble = (Math.sin(((math.fmod(attemptSeed(trial), 997) * 7.13) + (rep * 91.7))) * 24634.6345)
+		local pick = math.floor(((wobble - math.floor(wobble)) * cfg.options))
+		do return Js.ospread(cfg, Js.O({ correct = Math.max(0, Math.min((cfg.options - 1), pick)) }, { "correct" })) end
+	end
+	exports.visionSetup = visionSetup
+	visionFreeSeconds = function(window)
+		local w = Math.max(0.2, (if Js.NumberNS.isFinite(window) then window else 0.2))
+		do return Math.min((w * 0.6), Math.max(VISION_REACTION_S, (w * VISION_FREE_FRACTION))) end
+	end
+	exports.visionFreeSeconds = visionFreeSeconds
+	visionQuality = function(picked, setup, tookSeconds)
+		if (picked == nil) then
+			do return 0 end
+		end
+		if (picked ~= setup.correct) then
+			do return 0.08 end
+		end
+		local w = Math.max(0.2, setup.window)
+		local free = visionFreeSeconds(w)
+		local took = (if Js.NumberNS.isFinite(tookSeconds) then Math.max(0, tookSeconds) else w)
+		local speed = Math.max(0, Math.min(1, (1 - (Math.max(0, (took - free)) / Math.max(0.1, (w - free))))))
+		do return Math.max(0, Math.min(1, (0.65 + (speed * 0.35)))) end
+	end
+	exports.visionQuality = visionQuality
+	meanQuality = function(reps)
+		if (not Js.T(Js.alen(reps))) then
+			do return 0 end
+		end
+		local clean = A.map(reps, function(q)
+			return (if Js.NumberNS.isFinite(q) then Math.max(0, Math.min(1, q)) else 0)
+		end)
+		do return (A.reduce(clean, function(s, q)
+			return (s + q)
+		end, 0) / Js.alen(clean)) end
+	end
+	exports.meanQuality = meanQuality
+	weightedQuality = function(reps)
+		if (not Js.T(Js.alen(reps))) then
+			do return 0 end
+		end
+		local top = 0
+		local bottom = 0
+		A.forEach(reps, function(raw, i)
+			local q = (if Js.NumberNS.isFinite(raw) then Math.max(0, Math.min(1, raw)) else 0)
+			local w = REP_WEIGHT_RAMP[Math.min(i, (Js.alen(REP_WEIGHT_RAMP) - 1)) + 1]
+			top += (q * w)
+			bottom += w
+		end)
+		do return (if (bottom > 0) then Math.max(0, Math.min(1, (top / bottom))) else 0) end
+	end
+	exports.weightedQuality = weightedQuality
+	strikeQuality = function(outcome, crossX)
+		do return M_trainingDrills.shotQuality(outcome, crossX) end
+	end
+	exports.strikeQuality = strikeQuality
+	teachKeyFor = function(drill)
+		do return (TEACH_SEEN_KEY .. "-" .. drill) end
+	end
+	teachSeen = function(drill)
+		local _ok1, _err2, _rv3 = pcall(function()
+			do return Js.RET, (Js.localStorage.getItem(teachKeyFor(drill)) == "1") end
+		end)
+		if not _ok1 then
+			do return false end
+		elseif _err2 == Js.RET then
+			return _rv3
+		end
+	end
+	exports.teachSeen = teachSeen
+	markTeachSeen = function(drill)
+		local _ok4, _err5, _rv6 = pcall(function()
+			Js.localStorage.setItem(teachKeyFor(drill), "1")
+		end)
+		if not _ok4 then
+		elseif _err5 == Js.RET then
+			return _rv6
+		end
+	end
+	exports.markTeachSeen = markTeachSeen
+	clearTeachSeen = function()
+		local _ok7, _err8, _rv9 = pcall(function()
+			do
+				local _arr10 = TEACHABLE_DRILLS
+				local _i11 = 0
+				while _i11 < Js.alen(_arr10) do
+					_i11 += 1
+					local d = _arr10[_i11]
+					Js.localStorage.removeItem(teachKeyFor(d))
+				end
+			end
+		end)
+		if not _ok7 then
+		elseif _err8 == Js.RET then
+			return _rv9
+		end
+	end
+	exports.clearTeachSeen = clearTeachSeen
+	REPS = Js.O({ penalties = 3, freeKicks = 1, technique = 1, dribbling = 1, vision = 5, shootout = 3 }, { "penalties", "freeKicks", "technique", "dribbling", "vision", "shootout" })
+	exports.REPS = REPS
+	PENALTY_TELL_EASY = 1
+	exports.PENALTY_TELL_EASY = PENALTY_TELL_EASY
+	PENALTY_TELL_HARD = 0.6
+	exports.PENALTY_TELL_HARD = PENALTY_TELL_HARD
+	PENALTY_TELL_RAMP = Js.alit(1, 0.42, 0.12)
+	exports.PENALTY_TELL_RAMP = PENALTY_TELL_RAMP
+	COLD_KEEPER_TELL = 0.35
+	exports.COLD_KEEPER_TELL = COLD_KEEPER_TELL
+	PENALTY_COMMIT_M = 1.4
+	exports.PENALTY_COMMIT_M = PENALTY_COMMIT_M
+	PENALTY_COMMIT_CHANCE_EASY = 0.65
+	exports.PENALTY_COMMIT_CHANCE_EASY = PENALTY_COMMIT_CHANCE_EASY
+	PENALTY_COMMIT_CHANCE_HARD = 0.95
+	exports.PENALTY_COMMIT_CHANCE_HARD = PENALTY_COMMIT_CHANCE_HARD
+	PENALTY_RAMP_FIRST = Js.O({ keeperStrength = 45, commitChance = 0.6, readChance = 0.5, metres = 1.3 }, { "keeperStrength", "commitChance", "readChance", "metres" })
+	exports.PENALTY_RAMP_FIRST = PENALTY_RAMP_FIRST
+	PENALTY_RAMP_LAST = Js.O({ keeperStrength = 88, commitChance = 0.95, readChance = 0.75, metres = 1.65 }, { "keeperStrength", "commitChance", "readChance", "metres" })
+	exports.PENALTY_RAMP_LAST = PENALTY_RAMP_LAST
+	COLD_KEEPER_READ_BONUS = 0.12
+	exports.COLD_KEEPER_READ_BONUS = COLD_KEEPER_READ_BONUS
+	BIG_WALL_MEN = 1
+	exports.BIG_WALL_MEN = BIG_WALL_MEN
+	LONG_RANGE_M = 3.5
+	exports.LONG_RANGE_M = LONG_RANGE_M
+	QUICK_FEET_BONUS = 15
+	exports.QUICK_FEET_BONUS = QUICK_FEET_BONUS
+	EXTRA_MAN = 1
+	exports.EXTRA_MAN = EXTRA_MAN
+	SNAP_DECISION_WINDOW = 0.75
+	exports.SNAP_DECISION_WINDOW = SNAP_DECISION_WINDOW
+	SNAP_DECISION_FLOOR = 0.85
+	exports.SNAP_DECISION_FLOOR = SNAP_DECISION_FLOOR
+	CROWDED_PICTURE_MEN = 2
+	exports.CROWDED_PICTURE_MEN = CROWDED_PICTURE_MEN
+	CROWDED_PICTURE_MAX = 9
+	exports.CROWDED_PICTURE_MAX = CROWDED_PICTURE_MAX
+	TIGHT_MARGINS_SCALE = 0.65
+	exports.TIGHT_MARGINS_SCALE = TIGHT_MARGINS_SCALE
+	TIGHT_MARGINS_FLOOR = 0.6
+	exports.TIGHT_MARGINS_FLOOR = TIGHT_MARGINS_FLOOR
+	VISION_WINDOWS = Js.alit(2.5, 2, 1.5, 1, 0.5)
+	exports.VISION_WINDOWS = VISION_WINDOWS
+	VISION_REACTION_S = 0.45
+	exports.VISION_REACTION_S = VISION_REACTION_S
+	VISION_FREE_FRACTION = 0.35
+	exports.VISION_FREE_FRACTION = VISION_FREE_FRACTION
+	REP_WEIGHT_RAMP = Js.alit(1, 1.25, 1.5)
+	exports.REP_WEIGHT_RAMP = REP_WEIGHT_RAMP
+	TEACH_SEEN_KEY = "star-trial-taught"
+	exports.TEACH_SEEN_KEY = TEACH_SEEN_KEY
+	TEACHABLE_DRILLS = Js.alit("penalties", "freeKicks", "technique", "dribbling", "vision", "shootout", "freeKickRunup", "freeKickStrike")
+	exports.TEACHABLE_DRILLS = TEACHABLE_DRILLS
+end
+]]></string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="288">
             <Properties>
               <string name="Name">tuning</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -57756,7 +58949,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="284">
+          <Item class="ModuleScript" referent="289">
             <Properties>
               <string name="Name">tuningStore</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -57881,7 +59074,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="285">
+          <Item class="ModuleScript" referent="290">
             <Properties>
               <string name="Name">unlocks</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -58267,7 +59460,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="286">
+          <Item class="ModuleScript" referent="291">
             <Properties>
               <string name="Name">voting</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -58359,7 +59552,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="287">
+          <Item class="ModuleScript" referent="292">
             <Properties>
               <string name="Name">wages</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -58424,7 +59617,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="288">
+          <Item class="ModuleScript" referent="293">
             <Properties>
               <string name="Name">weather</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -58460,7 +59653,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="289">
+          <Item class="ModuleScript" referent="294">
             <Properties>
               <string name="Name">weatherLab</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -58651,7 +59844,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="290">
+          <Item class="ModuleScript" referent="295">
             <Properties>
               <string name="Name">week</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -58721,7 +59914,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="291">
+          <Item class="ModuleScript" referent="296">
             <Properties>
               <string name="Name">wideChances</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -58807,11 +60000,11 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="Folder" referent="292">
+          <Item class="Folder" referent="297">
             <Properties>
               <string name="Name">world</string>
             </Properties>
-            <Item class="ModuleScript" referent="293">
+            <Item class="ModuleScript" referent="298">
               <Properties>
                 <string name="Name">clubRating</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -58886,7 +60079,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="294">
+            <Item class="ModuleScript" referent="299">
               <Properties>
                 <string name="Name">europe</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -59044,7 +60237,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="295">
+            <Item class="ModuleScript" referent="300">
               <Properties>
                 <string name="Name">history</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -59130,7 +60323,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="296">
+            <Item class="ModuleScript" referent="301">
               <Properties>
                 <string name="Name">holders</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -59144,7 +60337,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="297">
+            <Item class="ModuleScript" referent="302">
               <Properties>
                 <string name="Name">index</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -59405,7 +60598,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="298">
+            <Item class="ModuleScript" referent="303">
               <Properties>
                 <string name="Name">leagues</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -59549,7 +60742,7 @@ end
 ]]></string>
               </Properties>
             </Item>
-            <Item class="ModuleScript" referent="299">
+            <Item class="ModuleScript" referent="304">
               <Properties>
                 <string name="Name">summary</string>
                 <string name="Source"><![CDATA[--!nocheck
@@ -59751,7 +60944,7 @@ end
               </Properties>
             </Item>
           </Item>
-          <Item class="ModuleScript" referent="300">
+          <Item class="ModuleScript" referent="305">
             <Properties>
               <string name="Name">worldAgeing</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -60280,7 +61473,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="301">
+          <Item class="ModuleScript" referent="306">
             <Properties>
               <string name="Name">xpConfig</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -60388,7 +61581,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="302">
+          <Item class="ModuleScript" referent="307">
             <Properties>
               <string name="Name">youth</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -60675,15 +61868,15 @@ end
           </Item>
         </Item>
       </Item>
-      <Item class="Folder" referent="303">
+      <Item class="Folder" referent="308">
         <Properties>
           <string name="Name">roblox</string>
         </Properties>
-        <Item class="Folder" referent="304">
+        <Item class="Folder" referent="309">
           <Properties>
             <string name="Name">game</string>
           </Properties>
-          <Item class="ModuleScript" referent="305">
+          <Item class="ModuleScript" referent="310">
             <Properties>
               <string name="Name">flow</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -60724,7 +61917,7 @@ return function(exports, import, Js)
 	local M_transferRequest = import("lib/star/transferRequest")
 	local M_signingTalk = import("lib/star/signingTalk")
 	local M_transfers = import("lib/star/transfers")
-	local at, settle, newGame, loadRealSquads, forSave, fromSave, resumeSquads, loadNewClubSquad, matchday, simMatch, matchComplete, watchFromStands, youthWeek, youthPromotion, postMatchContinue, continueAfterMatch, drawContinue, knockoutContinue, playoffContinue, deadlineDayContinue, backToDashboard, callUp, callUpContinue, renewalOffer, contractComplete, endSeason, ballonDor, ballonDorContinue, playOn, transferInterest, openTransferWindowOrRoll, transferNegotiate, transferTalkDone, chooseTransfer, signingDone, stayPut, rollOverSeason, continueAfterRollover, seasonAwardsContinue, ladderContinue, retireNow, leagueTable
+	local at, settle, newGame, afterSigning, loadRealSquads, forSave, fromSave, resumeSquads, loadNewClubSquad, matchday, simMatch, matchComplete, watchFromStands, youthWeek, youthPromotion, postMatchContinue, continueAfterMatch, drawContinue, knockoutContinue, playoffContinue, deadlineDayContinue, backToDashboard, callUp, callUpContinue, renewalOffer, contractComplete, endSeason, ballonDor, ballonDorContinue, playOn, transferInterest, openTransferWindowOrRoll, transferNegotiate, transferTalkDone, chooseTransfer, signingDone, stayPut, rollOverSeason, continueAfterRollover, seasonAwardsContinue, ladderContinue, retireNow, leagueTable
 	settle = function(g)
 		if ((g.phase == "dashboard") and ((function() local _v = g.career.placement; if _v == nil then return nil end; _v = _v.kind; return _v end)() == "youth")) then
 			do return Js.ospread(g, Js.O({ phase = "youth" }, { "phase" })) end
@@ -60745,6 +61938,10 @@ return function(exports, import, Js)
 		do return settle(Js.O({ career = career, phase = "dashboard", koShown = Js.alit() }, { "career", "phase", "koShown" })) end
 	end
 	exports.newGame = newGame
+	afterSigning = function(g)
+		do return settle(Js.ospread(g, Js.O({ phase = "dashboard" }, { "phase" }))) end
+	end
+	exports.afterSigning = afterSigning
 	loadRealSquads = function(g)
 		local c = g.career
 		local club = c.player.club
@@ -61206,7 +62403,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="306">
+          <Item class="ModuleScript" referent="311">
             <Properties>
               <string name="Name">match</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -61382,7 +62579,7 @@ return function(exports, import, Js)
 		do return true end
 	end
 	mechOpen = function(m, id)
-		do return M_mechanics.mechanicOpen(m.career, id) end
+		do return M_mechanics.mechanicOpen((if m.setup.drill then nil else m.career), id) end
 	end
 	displayScore = function(m)
 		do return Js.O({ user = Js.alen(A.filter(m.log, function(l)
@@ -61544,8 +62741,9 @@ return function(exports, import, Js)
 		local MATCH_DURATION = (M_ruleBook.ruleBookFor(career, "FA").matchLengthMinutes or DEFAULT_MATCH_DURATION)
 		M_canvasEngine.setOffsideRuleEnabled((not M_ruleBook.ruleBookFor(career, "FA").offsideAbolished))
 		applyClearanceRules()
-		local startingXI = M_teamsheet.startingTeammateRoles(career, fixture)
-		local oppXI = M_teamsheet.opponentStartingXI(career, fixture)
+		local drill = setup.drill
+		local startingXI = (if drill then nil else M_teamsheet.startingTeammateRoles(career, fixture))
+		local oppXI = (if drill then nil else M_teamsheet.opponentStartingXI(career, fixture))
 		local oppXIForCast = (if oppXI then A.map(oppXI, function(p)
 			return Js.O({ id = p.id, name = p.name, shortName = p.short, position = p.role, overall = p.overall, face = (if p.face ~= nil then p.face else M_fakeFaces.fakeFaceFor(p.id)), isGK = (p.role == "GK"), y = p.y, defending = p.defending }, { "id", "name", "shortName", "position", "overall", "face", "isGK", "y", "defending" })
 		end) else nil)
@@ -61562,17 +62760,21 @@ return function(exports, import, Js)
 		local kits = (if fixture.home then M_kits.kitsFor(career.player.club, fixture.opponent, (function() local _v = career.clubKits; if _v == nil then return nil end; _v = _v[career.player.club]; return _v end)(), (function() local _v = career.clubKits; if _v == nil then return nil end; _v = _v[fixture.opponent]; return _v end)()) else M_kits.kitsFor(fixture.opponent, career.player.club, (function() local _v = career.clubKits; if _v == nil then return nil end; _v = _v[fixture.opponent]; return _v end)(), (function() local _v = career.clubKits; if _v == nil then return nil end; _v = _v[career.player.club]; return _v end)()))
 		local ourKit = (if fixture.home then kits.home else kits.away)
 		local vision = (if career.skills.vision ~= nil then career.skills.vision else 55)
-		local m = Js.O({ setup = setup, career = career, fixture = fixture, now = 0, timers = Js.alit(), sceneGen = 0, phase = "aim", sc = nil, ball = nil, rng = Math.random, rngCalls = 0, seed = setup.seed, MATCH_DURATION = MATCH_DURATION, ADDED = ADDED, matchCeiling = (MATCH_DURATION + ADDED), extraTimeStage = 0, wentToExtraTime = false, shootoutResult = nil, st = M_hiddenMatch.newMatch(M_season.mulberry32(setup.seed)), pendingRequest = nil, chain = nil, chanceMemory = M_scenarioSelect.newSelectionMemory(), lastDeal = nil, dribbleDeal = nil, setPieceNext = nil, handover = nil, tally = newTally(), attempts = 0, userScore = 0, oppScore = 0, goalEvents = Js.alit(), oppGoalEvents = Js.alit(), chanceLog = Js.alit(), cheekyStrike = nil, cheekyMisses = Js.alit(), strikeAt = nil, matePlays = Js.alit(), deflections = 0, minute = 0, log = Js.alit(), queue = Js.alit(), feed = Js.alit(), speed = 1, pause = nil, halfTimeShown = false, simContinue = nil, feedWait = nil, quickStart = false, boardShown = false, stretch = nil, energy = (if career.energy ~= nil then career.energy else 100), energyClock = 0, energyMode = "medium", energyFactor = M_energy.energyFactorFor(career, fixture), playstyle = (if career.playstyle ~= nil then career.playstyle else "balanced"), playstyleChanges = Js.alit(), kibUsed = 0, enteredAt = setup.startMinute, subOn = false, subChances = 0, subFitness = 100, hooked = nil, hookedAt = nil, aim = nil, drag = nil, thumbOrigin = nil, dragging = false, aimCommitAt = nil, presser = nil, presserBehind = false, captainDrag = nil, runup = nil, contactTimerS = nil, windUp = nil, powerArmed = false, powerStrike = false, strikeRule = nil, outcome = nil, banner = nil, keeperSalt = M_keeperBrain.keeperSaltFor(false), physAcc = 0, airWait = nil, airOpened = nil, aerial = nil, playOn = nil, playOnRng = Math.random, layOffsLeft = M_playOn.MAX_LAY_OFFS, playOnCaught = false, bar = 1, steer = nil, touchModeOn = false, bootWait = nil, td = nil, tdReady = false, fpDribble = nil, liveShootout = nil, shootoutKick = nil, camera = Js.O({ x1 = -5, x2 = 105, y1 = -5, y2 = 100 }, { "x1", "x2", "y1", "y2" }), facing = "up", tiltSetting = (if (M_matchView.matchView() == "new") then M_cameraTilt.cameraTilt() else 0), tiltDeg = 0, strength = strength, vision = vision, kits = kits, ourKeeperKit = M_kits.keeperKit(ourKit.shirt, kits.keeper.shirt), startingXI = startingXI, oppXIForCast = oppXIForCast, oppXI = oppXI, fpRoster = fpRoster, result = nil }, { "setup", "career", "fixture", "now", "timers", "sceneGen", "phase", "sc", "ball", "rng", "rngCalls", "seed", "MATCH_DURATION", "ADDED", "matchCeiling", "extraTimeStage", "wentToExtraTime", "shootoutResult", "st", "pendingRequest", "chain", "chanceMemory", "lastDeal", "dribbleDeal", "setPieceNext", "handover", "tally", "attempts", "userScore", "oppScore", "goalEvents", "oppGoalEvents", "chanceLog", "cheekyStrike", "cheekyMisses", "strikeAt", "matePlays", "deflections", "minute", "log", "queue", "feed", "speed", "pause", "halfTimeShown", "simContinue", "feedWait", "quickStart", "boardShown", "stretch", "energy", "energyClock", "energyMode", "energyFactor", "playstyle", "playstyleChanges", "kibUsed", "enteredAt", "subOn", "subChances", "subFitness", "hooked", "hookedAt", "aim", "drag", "thumbOrigin", "dragging", "aimCommitAt", "presser", "presserBehind", "captainDrag", "runup", "contactTimerS", "windUp", "powerArmed", "powerStrike", "strikeRule", "outcome", "banner", "keeperSalt", "physAcc", "airWait", "airOpened", "aerial", "playOn", "playOnRng", "layOffsLeft", "playOnCaught", "bar", "steer", "touchModeOn", "bootWait", "td", "tdReady", "fpDribble", "liveShootout", "shootoutKick", "camera", "facing", "tiltSetting", "tiltDeg", "strength", "vision", "kits", "ourKeeperKit", "startingXI", "oppXIForCast", "oppXI", "fpRoster", "result" })
+		local m = Js.O({ setup = setup, career = career, fixture = fixture, now = 0, timers = Js.alit(), sceneGen = 0, phase = "aim", sc = nil, ball = nil, rng = Math.random, rngCalls = 0, seed = setup.seed, MATCH_DURATION = MATCH_DURATION, ADDED = ADDED, matchCeiling = (MATCH_DURATION + ADDED), extraTimeStage = 0, wentToExtraTime = false, shootoutResult = nil, st = M_hiddenMatch.newMatch(M_season.mulberry32(setup.seed)), pendingRequest = nil, chain = nil, chanceMemory = M_scenarioSelect.newSelectionMemory(), lastDeal = nil, dribbleDeal = nil, setPieceNext = nil, handover = nil, tally = newTally(), attempts = 0, userScore = 0, oppScore = 0, goalEvents = Js.alit(), oppGoalEvents = Js.alit(), chanceLog = Js.alit(), cheekyStrike = nil, cheekyMisses = Js.alit(), strikeAt = nil, matePlays = Js.alit(), deflections = 0, minute = 0, log = Js.alit(), queue = Js.alit(), feed = Js.alit(), speed = 1, pause = nil, halfTimeShown = false, simContinue = nil, feedWait = nil, quickStart = false, boardShown = false, stretch = nil, energy = (if drill then 100 else (if career.energy ~= nil then career.energy else 100)), energyClock = 0, energyMode = "medium", energyFactor = (if drill then 1 else M_energy.energyFactorFor(career, fixture)), playstyle = (if career.playstyle ~= nil then career.playstyle else "balanced"), playstyleChanges = Js.alit(), kibUsed = 0, enteredAt = setup.startMinute, subOn = false, subChances = 0, subFitness = 100, hooked = nil, hookedAt = nil, aim = nil, drag = nil, thumbOrigin = nil, dragging = false, aimCommitAt = nil, presser = nil, presserBehind = false, captainDrag = nil, runup = nil, contactTimerS = nil, windUp = nil, powerArmed = false, powerStrike = false, strikeRule = nil, outcome = nil, banner = nil, keeperSalt = M_keeperBrain.keeperSaltFor((not (not drill))), physAcc = 0, airWait = nil, airOpened = nil, aerial = nil, playOn = nil, playOnRng = Math.random, layOffsLeft = M_playOn.MAX_LAY_OFFS, playOnCaught = false, bar = 1, steer = nil, touchModeOn = false, bootWait = nil, td = nil, tdReady = false, fpDribble = nil, liveShootout = nil, shootoutKick = nil, camera = Js.O({ x1 = -5, x2 = 105, y1 = -5, y2 = 100 }, { "x1", "x2", "y1", "y2" }), facing = "up", tiltSetting = (if (M_matchView.matchView() == "new") then M_cameraTilt.cameraTilt() else 0), tiltDeg = 0, strength = strength, vision = vision, kits = kits, ourKeeperKit = M_kits.keeperKit(ourKit.shirt, kits.keeper.shirt), startingXI = startingXI, oppXIForCast = oppXIForCast, oppXI = oppXI, fpRoster = fpRoster, result = nil }, { "setup", "career", "fixture", "now", "timers", "sceneGen", "phase", "sc", "ball", "rng", "rngCalls", "seed", "MATCH_DURATION", "ADDED", "matchCeiling", "extraTimeStage", "wentToExtraTime", "shootoutResult", "st", "pendingRequest", "chain", "chanceMemory", "lastDeal", "dribbleDeal", "setPieceNext", "handover", "tally", "attempts", "userScore", "oppScore", "goalEvents", "oppGoalEvents", "chanceLog", "cheekyStrike", "cheekyMisses", "strikeAt", "matePlays", "deflections", "minute", "log", "queue", "feed", "speed", "pause", "halfTimeShown", "simContinue", "feedWait", "quickStart", "boardShown", "stretch", "energy", "energyClock", "energyMode", "energyFactor", "playstyle", "playstyleChanges", "kibUsed", "enteredAt", "subOn", "subChances", "subFitness", "hooked", "hookedAt", "aim", "drag", "thumbOrigin", "dragging", "aimCommitAt", "presser", "presserBehind", "captainDrag", "runup", "contactTimerS", "windUp", "powerArmed", "powerStrike", "strikeRule", "outcome", "banner", "keeperSalt", "physAcc", "airWait", "airOpened", "aerial", "playOn", "playOnRng", "layOffsLeft", "playOnCaught", "bar", "steer", "touchModeOn", "bootWait", "td", "tdReady", "fpDribble", "liveShootout", "shootoutKick", "camera", "facing", "tiltSetting", "tiltDeg", "strength", "vision", "kits", "ourKeeperKit", "startingXI", "oppXIForCast", "oppXI", "fpRoster", "result" })
 		m.rng = countedRng(m, setup.seed)
-		local sc = M_canvasEngine.buildWeightedScenario(M_season.mulberry32(setup.seed), setup.position, strength, setup.teamRelationship, vision)
-		if M_switchedOffKinds.isSwitchedOff(sc.kind) then
+		local sc = (if drill then drill.openOn() else M_canvasEngine.buildWeightedScenario(M_season.mulberry32(setup.seed), setup.position, strength, setup.teamRelationship, vision))
+		if ((not drill) and M_switchedOffKinds.isSwitchedOff(sc.kind)) then
 			local r = M_season.mulberry32(Js.bxor(setup.seed, 20983))
 			sc = M_canvasEngine.buildScenario(M_switchedOffKinds.playableKind(sc.kind, r), r, strength, setup.teamRelationship, vision)
 		end
-		M_index.setupKind(sc, M_season.mulberry32(Js.bxor(setup.seed, 32273)), Js.O({ appliedAuthored = false, appliedPlan = false, keeperStrength = strength }, { "appliedAuthored", "appliedPlan", "keeperStrength" }))
+		if (not drill) then
+			M_index.setupKind(sc, M_season.mulberry32(Js.bxor(setup.seed, 32273)), Js.O({ appliedAuthored = false, appliedPlan = false, keeperStrength = strength }, { "appliedAuthored", "appliedPlan", "keeperStrength" }))
+		end
 		M_index.enforceHardRules(sc)
-		M_goalFrame.finishServedFrame(sc)
-		M_scenePicture.stageScene(sc, nil)
+		if (not drill) then
+			M_goalFrame.finishServedFrame(sc)
+		end
+		M_scenePicture.stageScene(sc, (function() local _v = drill; if _v == nil then return nil end; _v = _v.scene; return _v end)())
 		m.sc = sc
 		sc.conditions = setup.conditions
 		M_lineup.castScenario(sc, onPitch(m, (if career.squad ~= nil then career.squad else Js.alit())))
@@ -61582,6 +62784,11 @@ return function(exports, import, Js)
 		standBackForRunup(m, sc)
 		setUpKeeper(m, sc, Js.ushr(Js.bxor(setup.seed, 19326), 0))
 		frameScenario(m, sc)
+		if drill then
+			m.enteredAt = 0
+			scheduleAutoKick(m)
+			do return m end
+		end
 		if (setup.startMinute > 0) then
 			m.seed += 1
 			local rng = countedRng(m, m.seed)
@@ -61626,7 +62833,7 @@ return function(exports, import, Js)
 		seed = Js.ushr(Js.bxor(seed, m.keeperSalt), 0)
 		local opts = M_keeperBrain.brainOptionsHere()
 		local facing = ((function() local _v = M_penaltyTaking.autoKickOf(sc); if _v == nil then return nil end; _v = _v.keeper; if _v == nil then return nil end; _v = _v.strength; return _v end)() or m.strength)
-		opts.penalty = M_penaltyKeeper.penaltyReadFor(facing, nil)
+		opts.penalty = M_penaltyKeeper.penaltyReadFor(facing, (function() local _v = m.setup.drill; if _v == nil then return nil end; _v = _v.penaltyRead; return _v end)())
 		M_keeperBrain.brainSetup(sc, seed, sc.keeperStrength, opts)
 	end
 	dressAutoKeeper = function(sc)
@@ -61936,6 +63143,28 @@ return function(exports, import, Js)
 		m.seed += 1
 		m.rng = countedRng(m, m.seed)
 		local rng = m.rng
+		local drill = m.setup.drill
+		if ((drill and (not m.chain)) and (not Js.T(m.setPieceNext))) then
+			m.chain = nil
+			m.pendingRequest = nil
+			local sc = drill.openOn()
+			M_index.enforceHardRules(sc)
+			sc.conditions = m.setup.conditions
+			M_lineup.castScenario(sc, onPitch(m, (if m.career.squad ~= nil then m.career.squad else Js.alit())))
+			M_canvasEngine.initDefenders(sc, rng)
+			M_lineup.castDefence(sc, m.oppXIForCast)
+			M_scenePicture.stageScene(sc, drill.scene)
+			m.sc = sc
+			dressAutoKeeper(sc)
+			standBackForRunup(m, sc)
+			setUpKeeper(m, sc, Js.ushr(Js.bxor(m.seed, 19326), 0))
+			frameScenario(m, sc)
+			m.ball = nil
+			clearChance(m)
+			setPhase(m, "aim")
+			scheduleAutoKick(m)
+			do return end
+		end
 		local rawRequest = (if attacking then nil else m.pendingRequest)
 		m.pendingRequest = nil
 		local chain = m.chain
@@ -62691,6 +63920,9 @@ return function(exports, import, Js)
 		pushLine(m, "He runs up…")
 	end
 	airAerialNow = function(m)
+		if m.setup.drill then
+			do return m.setup.skills.aerial end
+		end
 		do return Math.round((M_aerial.aerialOf(m.career.skills) * (1 - M_energy.fatigueCut(liveEnergyAt(m, m.minute))))) end
 	end
 	handleContact = function(m, tapped, over, extras)
@@ -62712,12 +63944,12 @@ return function(exports, import, Js)
 		local auto = (if (function() local _v = over; if _v == nil then return nil end; _v = _v.skills; return _v end)() then Js.O({ skills = over.skills }, { "skills" }) else nil)
 		m.contactTimerS = nil
 		local tired = tiredSkills(m)
-		local fkRaw = m.career.skills.freeKick
+		local fkRaw = (if m.setup.drill then m.setup.drill.setPieceSkill else m.career.skills.freeKick)
 		local strikeWith = (if auto then auto.skills else M_setPieces.setPieceSkills(tired, (if (fkRaw == nil) then tired.technique else (fkRaw * (1 - M_energy.fatigueCut(liveEnergyAt(m, m.minute))))), m.sc.kind))
 		local feelPow = (((not auto) and M_shotFeel.shotPowerOn()) and M_shotFeel.struckAtGoal(m.sc, a.dir, ct.cx))
 		local launchWith = (if feelPow then Js.ospread(strikeWith, Js.O({ power = M_shotFeel.feelPower(strikeWith.power) }, { "power" })) else (if M_compareSwitches.switchOn("powerCurve") then Js.ospread(strikeWith, Js.O({ power = M_strikePower.strikingPower(strikeWith.power) }, { "power" })) else strikeWith))
 		if ct.air then
-			ct = Js.ospread(ct, Js.O({ air = Js.ospread(ct.air, Js.O({ tech = launchWith.technique, aerial = Math.round((M_aerial.aerialOf(m.career.skills) * (1 - M_energy.fatigueCut(liveEnergyAt(m, m.minute))))) }, { "tech", "aerial" })) }, { "air" }))
+			ct = Js.ospread(ct, Js.O({ air = Js.ospread(ct.air, Js.O({ tech = launchWith.technique, aerial = airAerialNow(m) }, { "tech", "aerial" })) }, { "air" }))
 		end
 		local shotPro = ((not auto) and M_shotModel.shotsPro())
 		local shotKnuckle = (((not auto) and M_shotModel.knucklePowerOn()) and mechOpen(m, "knuckle"))
@@ -62739,7 +63971,7 @@ return function(exports, import, Js)
 			M_keeperBrain.brainStrike(m.sc, m.ball, bs)
 		elseif (m.sc.kind == "penalty") then
 			local facing = ((function() local _v = M_penaltyTaking.autoKickOf(m.sc); if _v == nil then return nil end; _v = _v.keeper; if _v == nil then return nil end; _v = _v.strength; return _v end)() or m.strength)
-			local read = M_penaltyKeeper.penaltyReadFor(facing, nil)
+			local read = M_penaltyKeeper.penaltyReadFor(facing, (function() local _v = m.setup.drill; if _v == nil then return nil end; _v = _v.penaltyRead; return _v end)())
 			local r = M_season.mulberry32(Js.ushr(Js.bxor(Js.bxor(Js.bxor(m.seed, Math.imul((m.rngCalls + 1), 2654435761)), 24301), m.keeperSalt), 0))
 			M_penaltyKeeper.applyPenaltyRead(m.sc, M_penaltyKeeper.decidePenaltyRead(m.sc, m.ball, read, Js.alit(r(), r())))
 		end
@@ -62786,6 +64018,11 @@ return function(exports, import, Js)
 		local youShot = (((not auto) and ((function() local _v = m.ball; if _v == nil then return nil end; _v = _v.youStruckAtGoal; return _v end)() == true)) and (not receiverShot))
 		local isSimplePass = (((not youShot) and (not receiverShot)) and (sc.passTarget ~= nil))
 		local kind = M_canvasEngine.OUTCOME_TEXT[res].kind
+		local onResolved = (function() local _v = m.setup.drill; if _v == nil then return nil end; _v = _v.onChanceResolved; return _v end)()
+		if onResolved then
+			local b = m.ball
+			onResolved(Js.ospread(Js.O({ outcome = res, kind = sc.kind, youShot = youShot, teammateShot = receiverShot, ball = (if b then Js.O({ x = b.pos.x, y = b.pos.y, z = b.z }, { "x", "y", "z" }) else nil) }, { "outcome", "kind", "youShot", "teammateShot", "ball" }), (if auto then Js.O({ autoKick = auto.side }, { "autoKick" }) else Js.O({}, nil))))
+		end
 		local yourFinish = (function()
 			if auto then
 				do return nil end
@@ -62998,7 +64235,7 @@ return function(exports, import, Js)
 			do return end
 		end
 		handOver(m, function()
-			return startSimulation(m)
+			return (if m.setup.drill then loadScenario(m, false) else startSimulation(m))
 		end, 1800)
 	end
 	handOver = function(m, fn, ms)
@@ -63386,6 +64623,9 @@ return function(exports, import, Js)
 				showAction(m, "DEFLECTED")
 				pushLine(m, "Blocked — and it's come off him loose!")
 			end
+			if (function() local _v = m.setup.drill; if _v == nil then return nil end; _v = _v.onBallStep; return _v end)() then
+				m.setup.drill.onBallStep(Js.O({ x = ball.pos.x, y = ball.pos.y, z = ball.z }, { "x", "y", "z" }))
+			end
 			if ((not Js.T(res)) and caughtUp) then
 				res = "touchOn"
 			end
@@ -63535,7 +64775,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="307">
+          <Item class="ModuleScript" referent="312">
             <Properties>
               <string name="Name">matchView</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -63587,9 +64827,9 @@ return function(exports, import, Js)
 		local them = m.fixture.opponent
 		local ls = m.liveShootout
 		local usHome = (if ls then (ls.yourSide == "home") else true)
-		do return Js.O({ phase = m.phase, minute = m.minute, score = Js.O({ us = shown.user, them = shown.opp, usName = M_grammar.shortClub(us), themName = M_grammar.shortClub(them), home = m.fixture.home }, { "us", "them", "usName", "themName", "home" }), kits = M_match.matchKits(m), bodies = bodies, ball = ball, camera = Js.ospread(m.camera, Js.O({ facing = m.facing, tilt = m.tiltDeg }, { "facing", "tilt" })), goal = Js.O({ x1 = (if sc then sc.goal.x1 else M_match.POST_L), x2 = (if sc then sc.goal.x2 else M_match.POST_R), crossbar = (if sc then sc.crossbar else 2.44) }, { "x1", "x2", "crossbar" }), aim = M_match.aimPreview(m), passTarget = (if (function() local _v = sc; if _v == nil then return nil end; _v = _v.passTarget; return _v end)() then Js.O({ x = sc.passTarget.x, y = sc.passTarget.y }, { "x", "y" }) else nil), feed = A.slice(m.feed), log = A.map(A.slice(m.log, -8), function(l)
+		do return Js.O({ phase = m.phase, cameraMode = (if (m.phase == "feed") then "broadcast" else (if (m.phase == "tdDribble") then "chase" else "chance")), minute = m.minute, score = Js.O({ us = shown.user, them = shown.opp, usName = M_grammar.shortClub(us), themName = M_grammar.shortClub(them), home = m.fixture.home }, { "us", "them", "usName", "themName", "home" }), kits = M_match.matchKits(m), bodies = bodies, ball = ball, camera = Js.ospread(m.camera, Js.O({ facing = m.facing, tilt = m.tiltDeg }, { "facing", "tilt" })), goal = Js.O({ x1 = (if sc then sc.goal.x1 else M_match.POST_L), x2 = (if sc then sc.goal.x2 else M_match.POST_R), crossbar = (if sc then sc.crossbar else 2.44) }, { "x1", "x2", "crossbar" }), aim = M_match.aimPreview(m), passTarget = (if (function() local _v = sc; if _v == nil then return nil end; _v = _v.passTarget; return _v end)() then Js.O({ x = sc.passTarget.x, y = sc.passTarget.y }, { "x", "y" }) else nil), feed = A.slice(m.feed), log = A.map(A.slice(m.log, -8), function(l)
 			return Js.O({ minute = (if l.minute ~= nil then l.minute else nil), text = l.text, tone = l.tone }, { "minute", "text", "tone" })
-		end), banner = (if (m.banner and ((m.now - m.banner.at) < BANNER_S)) then m.banner.text else nil), pause = (if m.pause then Js.O({ label = (if m.pause.label ~= nil then m.pause.label else nil), cta = m.pause.cta, halfTime = (not (not m.pause.halfTime)), kib = Math.max(0, (((function() local _v = m.career.kibCans; if _v == nil then return nil end; _v = _v.basic; return _v end)() or 0) - m.kibUsed)) }, { "label", "cta", "halfTime", "kib" }) else nil), energy = M_match.energyNow(m), stamina = M_match.staminaNow(m), speed = m.speed, energyMode = m.energyMode, playstyle = m.playstyle, controls = M_match.controlsOf(m), shootout = (if ls then Js.O({ us = (if usHome then ls.state.homeScore else ls.state.awayScore), them = (if usHome then ls.state.awayScore else ls.state.homeScore), kicks = Js.alen(ls.state.kicks) }, { "us", "them", "kicks" }) else nil) }, { "phase", "minute", "score", "kits", "bodies", "ball", "camera", "goal", "aim", "passTarget", "feed", "log", "banner", "pause", "energy", "stamina", "speed", "energyMode", "playstyle", "controls", "shootout" }) end
+		end), banner = (if (m.banner and ((m.now - m.banner.at) < BANNER_S)) then m.banner.text else nil), pause = (if m.pause then Js.O({ label = (if m.pause.label ~= nil then m.pause.label else nil), cta = m.pause.cta, halfTime = (not (not m.pause.halfTime)), kib = Math.max(0, (((function() local _v = m.career.kibCans; if _v == nil then return nil end; _v = _v.basic; return _v end)() or 0) - m.kibUsed)) }, { "label", "cta", "halfTime", "kib" }) else nil), energy = M_match.energyNow(m), stamina = M_match.staminaNow(m), speed = m.speed, energyMode = m.energyMode, playstyle = m.playstyle, controls = M_match.controlsOf(m), shootout = (if ls then Js.O({ us = (if usHome then ls.state.homeScore else ls.state.awayScore), them = (if usHome then ls.state.awayScore else ls.state.homeScore), kicks = Js.alen(ls.state.kicks) }, { "us", "them", "kicks" }) else nil) }, { "phase", "cameraMode", "minute", "score", "kits", "bodies", "ball", "camera", "goal", "aim", "passTarget", "feed", "log", "banner", "pause", "energy", "stamina", "speed", "energyMode", "playstyle", "controls", "shootout" }) end
 	end
 	exports.frameOf = frameOf
 	BANNER_S = 1.4
@@ -63597,7 +64837,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="308">
+          <Item class="ModuleScript" referent="313">
             <Properties>
               <string name="Name">screens</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -63611,12 +64851,14 @@ return function(exports, import, Js)
 	local M_nationalities = import("lib/nationalities")
 	local M_scoutOffers = import("lib/star/scoutOffers")
 	local M_edition = import("lib/star/edition")
+	local M_trialFlow = import("roblox/game/trialFlow")
 	local M_flow = import("roblox/game/flow")
+	local M_trial = import("lib/star/trial")
 	local M_grammar = import("lib/star/media/grammar")
 	local M_season = import("lib/star/season")
 	local M_careerFlow = import("lib/star/careerFlow")
 	local M_negotiation = import("lib/star/negotiation")
-	local money, hud, fixtureLine, dateOf, score, ordinal, TABS, DIVISIONS, setupScreen, divisionByName, clubScreen, startGame, screen, dashboard, youthScreen, postMatch, renewalScreen, windowScreen, talkScreen, niceStep, act
+	local money, hud, fixtureLine, dateOf, score, ordinal, TABS, DIVISIONS, setupScreen, divisionByName, clubScreen, startGame, startWithoutTrial, simTrial, trialDone, trialScreen, managerTalkScreen, trialRewardScreen, screen, dashboard, youthScreen, postMatch, renewalScreen, windowScreen, talkScreen, niceStep, act
 	money = function(n)
 		local sign = (if (n < 0) then "-" else "")
 		local a = math.abs(Math.round(n))
@@ -63685,14 +64927,69 @@ return function(exports, import, Js)
 			error(Js.Error((choice.club .. " is not in " .. M_calendar.leagueNameFor(div))), 0)
 		end
 		local player = Js.O({ firstName = S.trim((if Js.T(choice.firstName) then choice.firstName else "Kai")), lastName = S.trim((if Js.T(choice.lastName) then choice.lastName else "Ball")), age = 17, skinTone = "tan", club = choice.club, clubBadge = nil, position = "ST", nationality = (if Js.T(choice.nationality) then choice.nationality else "England"), startYear = M_edition.STAR_FIFA_YEAR }, { "firstName", "lastName", "age", "skinTone", "club", "clubBadge", "position", "nationality", "startYear" })
-		do return Js.ospread(M_flow.newGame(player, Js.aspread(clubs), div), Js.O({ ui = Js.O({ tab = "home" }, { "tab" }) }, { "ui" })) end
+		do return Js.O({ career = M_trialFlow.newTrialCareer(player, div), phase = "trial", koShown = Js.alit(), ui = Js.O({ tab = "home" }, { "tab" }) }, { "career", "phase", "koShown", "ui" }) end
 	end
 	exports.startGame = startGame
+	startWithoutTrial = function(choice)
+		local div = divisionByName(choice.division)
+		local clubs = M_scoutOffers.clubsForDivision(div)
+		local player = Js.O({ firstName = S.trim((if Js.T(choice.firstName) then choice.firstName else "Kai")), lastName = S.trim((if Js.T(choice.lastName) then choice.lastName else "Ball")), age = 17, skinTone = "tan", club = choice.club, clubBadge = nil, position = "ST", nationality = (if Js.T(choice.nationality) then choice.nationality else "England"), startYear = M_edition.STAR_FIFA_YEAR }, { "firstName", "lastName", "age", "skinTone", "club", "clubBadge", "position", "nationality", "startYear" })
+		do return Js.ospread(M_flow.newGame(player, Js.aspread(clubs), div), Js.O({ ui = Js.O({ tab = "home" }, { "tab" }) }, { "ui" })) end
+	end
+	exports.startWithoutTrial = startWithoutTrial
+	simTrial = function(g)
+		local t = g.career.trial
+		if (not t) then
+			do return g end
+		end
+		local results = A.map(A.filter(M_trial.TRIAL_STAGES, function(stage)
+			return (not t.results[stage])
+		end), function(stage)
+			return Js.O({ stage = stage, quality = 0.5 }, { "stage", "quality" })
+		end)
+		do return (trialDone(g, Js.O({ results = results, finalPenScored = false }, { "results", "finalPenScored" })) or g) end
+	end
+	trialDone = function(g, back)
+		local recorded = M_trialFlow.recordTrialReturn(g.career, back)
+		if (not recorded) then
+			do return nil end
+		end
+		if M_trialFlow.managerTalk(recorded) then
+			do return Js.ospread(g, Js.O({ career = recorded, phase = "manager-talk" }, { "career", "phase" })) end
+		end
+		local youth = M_trialFlow.youthAfterTrial(recorded)
+		do return (if youth then Js.ospread(M_flow.afterSigning(Js.ospread(g, Js.O({ career = youth }, { "career" }))), Js.O({ ui = g.ui }, { "ui" })) else Js.ospread(g, Js.O({ career = recorded, phase = "manager-talk" }, { "career", "phase" }))) end
+	end
+	exports.trialDone = trialDone
+	trialScreen = function(g)
+		local c = g.career
+		local t = c.trial
+		local done = (if t then A.filter(M_trialFlow.trialSummary(t), function(r)
+			return (r.score ~= nil)
+		end) else Js.alit())
+		do return Js.O({ id = "trial", hud = hud(c), title = ("Your trial at " .. c.player.club), blocks = Js.alit(Js.O({ kind = "text", text = "Five tests. A scout is watching every one." }, { "kind", "text" }), Js.O({ kind = "list", items = A.map((if t then M_trialFlow.trialSummary(t) else Js.alit()), function(r, i)
+			return Js.O({ text = (Js.numstr((i + 1)) .. ". " .. M_trial.STAGE_LABEL[r.stage]), sub = (if (r.score == nil) then nil else (Js.numstr(r.score) .. " / 100")), tone = (if (r.score == nil) then "normal" else "good") }, { "text", "sub", "tone" })
+		end) }, { "kind", "items" }), Js.O({ kind = "text", text = "Free kicks, the gate and the shootout are played on the pitch: drag back from the ball, then tap the ball where you want to strike it. Take him on: W A S D or the stick. Find the pass: tap the free man.", tone = "dim" }, { "kind", "text", "tone" })), buttons = Js.alit(Js.O({ label = (if Js.T(Js.alen(done)) then "Carry on with the trial ⚽" else "Start the trial ⚽"), action = "play-trial", style = "primary" }, { "label", "action", "style" })) }, { "id", "hud", "title", "blocks", "buttons" }) end
+	end
+	managerTalkScreen = function(g)
+		local c = g.career
+		local mt = M_trialFlow.managerTalk(c)
+		if (not mt) then
+			do return Js.O({ id = "manager-talk", hud = hud(c), title = "Nobody came in", blocks = Js.alit(Js.O({ kind = "text", text = "No club made an offer." }, { "kind", "text" })), buttons = Js.alit(Js.O({ label = "Continue", action = "trial-sign", style = "primary" }, { "label", "action", "style" })) }, { "id", "hud", "title", "blocks", "buttons" }) end
+		end
+		do return Js.O({ id = "manager-talk", hud = hud(c), title = (mt.offer.club .. " want you"), blocks = Js.aspread(Js.alit(Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Trial score", value = (Js.numstr((if c.trial then M_trial.trialScore(c.trial) else 0))) }, { "label", "value" }), Js.O({ label = "Club", value = M_grammar.shortClub(mt.offer.club) }, { "label", "value" }), Js.O({ label = "League", value = M_calendar.leagueNameFor(mt.offer.division) }, { "label", "value" }), Js.O({ label = "Wage", value = (money(mt.talk.openingWeekly) .. " a week"), tone = "gold" }, { "label", "value", "tone" })) }, { "kind", "items" }), Js.O({ kind = "heading", text = "The manager" }, { "kind", "text" })), A.map(mt.talk.lines, function(l)
+			return Js.O({ kind = "text", text = ("“" .. l .. "”") }, { "kind", "text" })
+		end), Js.alit(Js.O({ kind = "text", text = (Js.numstr(mt.offer.seasons) .. " seasons. Your first contract is fixed: sign it, no haggling."), tone = "dim" }, { "kind", "text", "tone" }))), buttons = Js.alit(Js.O({ label = "Accept & sign ✍️", action = "trial-sign", style = "primary" }, { "label", "action", "style" })) }, { "id", "hud", "title", "blocks", "buttons" }) end
+	end
+	trialRewardScreen = function(g)
+		local c = g.career
+		do return Js.O({ id = "trial-reward", hud = hud(c), title = ("Welcome to " .. c.contract.club), blocks = Js.aspread(Js.alit(Js.O({ kind = "text", text = (c.player.firstName .. " " .. c.player.lastName .. " signs for " .. c.contract.club .. "."), tone = "gold" }, { "kind", "text", "tone" }), Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Wage", value = (money(c.contract.wage) .. " a week") }, { "label", "value" }), Js.O({ label = "Seasons", value = Js.numstr(c.contract.seasonsRemaining) }, { "label", "value" }), Js.O({ label = "Goal bonus", value = money(c.contract.goalBonus) }, { "label", "value" }), Js.O({ label = "League", value = M_calendar.leagueNameFor(M_calendar.divisionOf(c)) }, { "label", "value" })) }, { "kind", "items" })), (if ((function() local _v = c.placement; if _v == nil then return nil end; _v = _v.kind; return _v end)() == "loan") then Js.alit(Js.O({ kind = "text", text = ("On loan to " .. c.player.club .. "."), tone = "gold" }, { "kind", "text", "tone" })) else Js.alit())), buttons = Js.alit(Js.O({ label = "Let's go", action = "trial-reward-done", style = "primary" }, { "label", "action", "style" })) }, { "id", "hud", "title", "blocks", "buttons" }) end
+	end
 	screen = function(g)
 		local c = g.career
 		local base = Js.O({ hud = hud(c), tabs = nil }, { "hud", "tabs" })
 		local _sw4 = g.phase
-		local _ci5 = (if _sw4 == "dashboard" then 1 elseif _sw4 == "youth" then 2 elseif _sw4 == "post-match" then 3 elseif _sw4 == "draw" then 4 elseif _sw4 == "knockout-roundup" then 5 elseif _sw4 == "playoff-roundup" then 6 elseif _sw4 == "deadline-day" then 7 elseif _sw4 == "intl-callup" then 8 elseif _sw4 == "intl-watched" then 9 elseif _sw4 == "intl-tournament-table" then 10 elseif _sw4 == "contract-renewal" then 11 elseif _sw4 == "ballon-dor" then 12 elseif _sw4 == "final-season" then 13 elseif _sw4 == "retirement" then 14 elseif _sw4 == "season-transfer" then 15 elseif _sw4 == "transfer-request-talk" then 16 elseif _sw4 == "transfer-signing" then 17 elseif _sw4 == "relegation-move" then 18 elseif _sw4 == "season-awards" then 19 elseif _sw4 == "ladder" then 20 elseif _sw4 == "legacy" then 21 else 0)
+		local _ci5 = (if _sw4 == "dashboard" then 1 elseif _sw4 == "youth" then 2 elseif _sw4 == "post-match" then 3 elseif _sw4 == "draw" then 4 elseif _sw4 == "knockout-roundup" then 5 elseif _sw4 == "playoff-roundup" then 6 elseif _sw4 == "deadline-day" then 7 elseif _sw4 == "intl-callup" then 8 elseif _sw4 == "intl-watched" then 9 elseif _sw4 == "intl-tournament-table" then 10 elseif _sw4 == "contract-renewal" then 11 elseif _sw4 == "ballon-dor" then 12 elseif _sw4 == "final-season" then 13 elseif _sw4 == "retirement" then 14 elseif _sw4 == "season-transfer" then 15 elseif _sw4 == "transfer-request-talk" then 16 elseif _sw4 == "transfer-signing" then 17 elseif _sw4 == "relegation-move" then 18 elseif _sw4 == "season-awards" then 19 elseif _sw4 == "ladder" then 20 elseif _sw4 == "trial" then 21 elseif _sw4 == "manager-talk" then 22 elseif _sw4 == "trial-reward" then 23 elseif _sw4 == "legacy" then 24 else 0)
 		local _cont6 = false
 		repeat
 			if _ci5 ~= 0 and _ci5 <= 1 then
@@ -63843,6 +65140,15 @@ return function(exports, import, Js)
 				end
 			end
 			if _ci5 ~= 0 and _ci5 <= 21 then
+				do return trialScreen(g) end
+			end
+			if _ci5 ~= 0 and _ci5 <= 22 then
+				do return managerTalkScreen(g) end
+			end
+			if _ci5 ~= 0 and _ci5 <= 23 then
+				do return trialRewardScreen(g) end
+			end
+			if _ci5 ~= 0 and _ci5 <= 24 then
 				do
 					local s = c.careerStats
 					do return Js.ospread(base, Js.O({ id = "legacy", title = "Career over", blocks = Js.alit(Js.O({ kind = "stats", items = Js.alit(Js.O({ label = "Appearances", value = Js.numstr(s.appearances) }, { "label", "value" }), Js.O({ label = "Goals", value = Js.numstr(s.goals) }, { "label", "value" }), Js.O({ label = "Assists", value = Js.numstr(s.assists) }, { "label", "value" }), Js.O({ label = "Trophies", value = Js.numstr(Js.alen(c.trophies)) }, { "label", "value" }), Js.O({ label = "Ballon d'Ors", value = Js.numstr((if c.ballonDorWins ~= nil then c.ballonDorWins else 0)), tone = "gold" }, { "label", "value", "tone" })) }, { "kind", "items" }), Js.O({ kind = "list", items = A.map(c.trophies, function(t)
@@ -64026,7 +65332,7 @@ return function(exports, import, Js)
 		if rng == nil then rng = Math.random end
 		local ui = (if g.ui ~= nil then g.ui else Js.O({}, nil))
 		local _sw18 = action
-		local _ci19 = (if _sw18 == "tab" then 1 elseif _sw18 == "home" then 2 elseif _sw18 == "sim" then 3 elseif _sw18 == "play-match" then 4 elseif _sw18 == "watch" then 5 elseif _sw18 == "youth-week" then 6 elseif _sw18 == "youth-promote" then 7 elseif _sw18 == "post-continue" then 8 elseif _sw18 == "draw-continue" then 9 elseif _sw18 == "ko-continue" then 10 elseif _sw18 == "playoff-continue" then 11 elseif _sw18 == "deadline-continue" then 12 elseif _sw18 == "callup-continue" then 13 elseif _sw18 == "end-season" then 14 elseif _sw18 == "ballon-continue" then 15 elseif _sw18 == "play-on" then 16 elseif _sw18 == "retire" then 17 elseif _sw18 == "awards-continue" then 18 elseif _sw18 == "ladder-continue" then 19 elseif _sw18 == "stay" then 20 elseif _sw18 == "sign" then 21 elseif _sw18 == "relegation-pick" then 22 elseif _sw18 == "ask-contract" then 23 elseif _sw18 == "renewal-start" then 24 elseif _sw18 == "renewal-guess" then 25 elseif _sw18 == "renewal-sign" then 26 elseif _sw18 == "renewal-cancel" then 27 elseif _sw18 == "window-talk" then 28 elseif _sw18 == "talk-nudge" then 29 elseif _sw18 == "talk-offer" then 30 elseif _sw18 == "talk-done" then 31 elseif _sw18 == "talk-walk" then 32 else 0)
+		local _ci19 = (if _sw18 == "tab" then 1 elseif _sw18 == "home" then 2 elseif _sw18 == "sim" then 3 elseif _sw18 == "play-match" then 4 elseif _sw18 == "watch" then 5 elseif _sw18 == "youth-week" then 6 elseif _sw18 == "youth-promote" then 7 elseif _sw18 == "post-continue" then 8 elseif _sw18 == "draw-continue" then 9 elseif _sw18 == "ko-continue" then 10 elseif _sw18 == "playoff-continue" then 11 elseif _sw18 == "deadline-continue" then 12 elseif _sw18 == "callup-continue" then 13 elseif _sw18 == "end-season" then 14 elseif _sw18 == "ballon-continue" then 15 elseif _sw18 == "play-on" then 16 elseif _sw18 == "retire" then 17 elseif _sw18 == "play-trial" then 18 elseif _sw18 == "trial-sign" then 19 elseif _sw18 == "trial-reward-done" then 20 elseif _sw18 == "awards-continue" then 21 elseif _sw18 == "ladder-continue" then 22 elseif _sw18 == "stay" then 23 elseif _sw18 == "sign" then 24 elseif _sw18 == "relegation-pick" then 25 elseif _sw18 == "ask-contract" then 26 elseif _sw18 == "renewal-start" then 27 elseif _sw18 == "renewal-guess" then 28 elseif _sw18 == "renewal-sign" then 29 elseif _sw18 == "renewal-cancel" then 30 elseif _sw18 == "window-talk" then 31 elseif _sw18 == "talk-nudge" then 32 elseif _sw18 == "talk-offer" then 33 elseif _sw18 == "talk-done" then 34 elseif _sw18 == "talk-walk" then 35 else 0)
 		local _cont20 = false
 		repeat
 			if _ci19 ~= 0 and _ci19 <= 1 then
@@ -64081,27 +65387,46 @@ return function(exports, import, Js)
 				do return M_flow.retireNow(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 18 then
-				do return M_flow.seasonAwardsContinue(g) end
+				do return (if (g.phase == "trial") then simTrial(g) else g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 19 then
-				do return M_flow.ladderContinue(g) end
+				do
+					if (g.phase ~= "manager-talk") then
+						do return g end
+					end
+					local signed = M_trialFlow.acceptManagerOffer(g.career)
+					if signed then
+						do return Js.ospread(g, Js.O({ career = signed, phase = "trial-reward" }, { "career", "phase" })) end
+					end
+					local youth = M_trialFlow.youthAfterTrial(g.career)
+					do return (if youth then Js.ospread(M_flow.afterSigning(Js.ospread(g, Js.O({ career = youth }, { "career" }))), Js.O({ ui = ui }, { "ui" })) else g) end
+				end
 			end
 			if _ci19 ~= 0 and _ci19 <= 20 then
-				do return M_flow.stayPut(g) end
+				do return (if (g.phase == "trial-reward") then Js.ospread(M_flow.afterSigning(g), Js.O({ ui = Js.ospread(ui, Js.O({ tab = "home" }, { "tab" })) }, { "ui" })) else g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 21 then
-				do return M_flow.signingDone(g) end
+				do return M_flow.seasonAwardsContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 22 then
-				do return M_flow.chooseTransfer(g, (if g.transferOffers ~= nil then g.transferOffers else Js.alit())[Js.Number(arg) + 1]) end
+				do return M_flow.ladderContinue(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 23 then
-				do return Js.ospread(g, Js.O({ phase = "contract-renewal", contractOfferReason = nil, ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "phase", "contractOfferReason", "ui" })) end
+				do return M_flow.stayPut(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 24 then
-				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ renewal = Js.O({ current = (3 + math.floor((rng() * 8))), next = nil, wins = 0, locked = false, rounds = 0, message = "", started = true }, { "current", "next", "wins", "locked", "rounds", "message", "started" }) }, { "renewal" })) }, { "ui" })) end
+				do return M_flow.signingDone(g) end
 			end
 			if _ci19 ~= 0 and _ci19 <= 25 then
+				do return M_flow.chooseTransfer(g, (if g.transferOffers ~= nil then g.transferOffers else Js.alit())[Js.Number(arg) + 1]) end
+			end
+			if _ci19 ~= 0 and _ci19 <= 26 then
+				do return Js.ospread(g, Js.O({ phase = "contract-renewal", contractOfferReason = nil, ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "phase", "contractOfferReason", "ui" })) end
+			end
+			if _ci19 ~= 0 and _ci19 <= 27 then
+				do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ renewal = Js.O({ current = (3 + math.floor((rng() * 8))), next = nil, wins = 0, locked = false, rounds = 0, message = "", started = true }, { "current", "next", "wins", "locked", "rounds", "message", "started" }) }, { "renewal" })) }, { "ui" })) end
+			end
+			if _ci19 ~= 0 and _ci19 <= 28 then
 				do
 					local r = ui.renewal
 					if ((not r) or r.locked) then
@@ -64116,17 +65441,17 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ renewal = next_ }, { "renewal" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 26 then
+			if _ci19 ~= 0 and _ci19 <= 29 then
 				do
 					local r = ui.renewal
 					local offer = M_flow.renewalOffer(g, ((function() local _v = r; if _v == nil then return nil end; _v = _v.wins; return _v end)() or 0), (function() local _l = (function() local _v = r; if _v == nil then return nil end; _v = _v.locked; return _v end)(); if _l ~= nil then return _l end; return false end)(), ((function() local _v = r; if _v == nil then return nil end; _v = _v.rounds; return _v end)() or 0))
 					do return Js.ospread(M_flow.contractComplete(g, offer), Js.O({ ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 27 then
+			if _ci19 ~= 0 and _ci19 <= 30 then
 				do return Js.ospread(M_flow.contractComplete(g, nil), Js.O({ ui = Js.ospread(ui, Js.O({ renewal = nil }, { "renewal" })) }, { "ui" })) end
 			end
-			if _ci19 ~= 0 and _ci19 <= 28 then
+			if _ci19 ~= 0 and _ci19 <= 31 then
 				do
 					local _d21 = A.map(S.split((if arg ~= nil then arg else "0:0"), ":"), Js.Number)
 					local li = _d21[1]
@@ -64136,14 +65461,14 @@ return function(exports, import, Js)
 					do return Js.ospread(M_flow.transferNegotiate(g, offer), Js.O({ ui = Js.ospread(ui, Js.O({ talk = talk, ask = talk.yourPosition }, { "talk", "ask" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 29 then
+			if _ci19 ~= 0 and _ci19 <= 32 then
 				do
 					local a = ((if ui.ask ~= nil then ui.ask else (function() local _v = ui.talk; if _v == nil then return nil end; _v = _v.yourPosition; return _v end)()) or 0)
 					local dir = (if (Js.Number(arg) < 0) then -1 else 1)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ ask = Math.max(1, (a + (dir * niceStep((if (dir < 0) then (a - 1) else a))))) }, { "ask" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 30 then
+			if _ci19 ~= 0 and _ci19 <= 33 then
 				do
 					if (not ui.talk) then
 						do return g end
@@ -64152,14 +65477,14 @@ return function(exports, import, Js)
 					do return Js.ospread(g, Js.O({ ui = Js.ospread(ui, Js.O({ talk = t }, { "talk" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 31 then
+			if _ci19 ~= 0 and _ci19 <= 34 then
 				do
 					local t = ui.talk
 					local r = M_flow.transferTalkDone(g, (if (t and (t.status == "accepted")) then (if t.finalPrice ~= nil then t.finalPrice else nil) else nil))
 					do return Js.ospread(r, Js.O({ ui = Js.ospread(ui, Js.O({ talk = nil }, { "talk" })) }, { "ui" })) end
 				end
 			end
-			if _ci19 ~= 0 and _ci19 <= 32 then
+			if _ci19 ~= 0 and _ci19 <= 35 then
 				do return Js.ospread(M_flow.transferTalkDone(g, nil), Js.O({ ui = Js.ospread(ui, Js.O({ talk = nil }, { "talk" })) }, { "ui" })) end
 			end
 		until true
@@ -64173,7 +65498,7 @@ end
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="309">
+          <Item class="ModuleScript" referent="314">
             <Properties>
               <string name="Name">strikeScreen</string>
               <string name="Source"><![CDATA[--!nocheck
@@ -64324,7 +65649,7 @@ return function(exports, import, Js)
 		local p = (if s.locked then Js.O({ x = s.sweepX, y = ((-s.lift) * (if (inp.motion == "float") then 0.5 else (if (inp.motion == "bounce") then 0.26 else 0.05))) }, { "x", "y" }) else ballMotionAt(inp.motion, s.t, s.period))
 		local powerPct = Math.round((inp.power * 100))
 		local ring = (if (s.inputs.powerShot or (not Js.T(s.limitS))) then nil else (if (s.startedAt == nil) then 1 else Math.max(0, (1 - ((s.t - s.startedAt) / s.limitS)))))
-		do return Js.O({ ballX = p.x, ballY = p.y, lift = s.lift, ring = ring, powerPct = powerPct, powerColor = (if (powerPct < 40) then "#22c55e" else (if (powerPct < 75) then "#eab308" else "#ef4444")), verdict = s.verdict, spark = s.spark, timedOut = s.timedOut, heading = (if inp.powerShot then "Power shot" else (if (s.airKind == "header") then "Head it!" else (if (s.airKind == "volley") then "Volley it!" else "Strike it!"))), jump = (if ((inp.motion == "float") and (inp.ballZ ~= nil)) then M_aerial.headerJump(inp.ballZ, inp.aerial) else nil), powerSpot = (if ((inp.powerShot and (s.powerShownAt ~= nil)) and (not s.locked)) then s.powerSpot else nil) }, { "ballX", "ballY", "lift", "ring", "powerPct", "powerColor", "verdict", "spark", "timedOut", "heading", "jump", "powerSpot" }) end
+		do return Js.O({ ballX = p.x, ballY = p.y, lift = s.lift, ring = ring, powerPct = powerPct, powerColor = (if (powerPct < 40) then "#22c55e" else (if (powerPct < 75) then "#eab308" else "#ef4444")), verdict = s.verdict, spark = s.spark, timedOut = s.timedOut, heading = (if inp.powerShot then "Power shot" else (if (s.airKind == "header") then "Head it!" else (if (s.airKind == "volley") then "Volley it!" else "Strike it!"))), jump = (if (((inp.motion == "float") and (inp.ballZ ~= nil)) and (inp.aerial ~= nil)) then M_aerial.headerJump(inp.ballZ, inp.aerial) else nil), powerSpot = (if ((inp.powerShot and (s.powerShownAt ~= nil)) and (not s.locked)) then s.powerSpot else nil) }, { "ballX", "ballY", "lift", "ring", "powerPct", "powerColor", "verdict", "spark", "timedOut", "heading", "jump", "powerSpot" }) end
 	end
 	exports.strikeView = strikeView
 	TOO_SLOW_MS = 350
@@ -64336,14 +65661,771 @@ end
 ]]></string>
             </Properties>
           </Item>
+          <Item class="ModuleScript" referent="315">
+            <Properties>
+              <string name="Name">trialFlow</string>
+              <string name="Source"><![CDATA[--!nocheck
+--!nolint
+-- Generated from roblox/game/trialFlow.ts by roblox/tools/ts2luau. Do not edit.
+return function(exports, import, Js)
+	local A, S, N, Math = Js.A, Js.S, Js.N, Js.Math
+	local M_careerFlow = import("lib/star/careerFlow")
+	local M_trial = import("lib/star/trial")
+	local M_scoutedPlacement = import("lib/star/scoutedPlacement")
+	local M_scoutOffers = import("lib/star/scoutOffers")
+	local M_season = import("lib/star/season")
+	local M_signingTalk = import("lib/star/signingTalk")
+	local M_leoUpdate = import("lib/star/leoUpdate")
+	local M_story = import("lib/star/story")
+	local M_economy = import("lib/star/economy")
+	local M_youth = import("lib/star/youth")
+	local M_career = import("lib/star/intl/career")
+	local newTrialCareer, recordTrialReturn, offersForTrial, talkingClubFor, managerTalk, offersWithAgreedTerms, acceptManagerOffer, signTrialOffer, youthAfterTrial, trialSummary
+	newTrialCareer = function(player, division, seed)
+		do return Js.ospread(M_careerFlow.makeIdentity(player, division), Js.O({ trial = (if (seed == nil) then M_trial.startTrial() else M_trial.startTrial(seed)) }, { "trial" })) end
+	end
+	exports.newTrialCareer = newTrialCareer
+	recordTrialReturn = function(career, back)
+		local trial = career.trial
+		if (((not trial) or (not back)) or (not Js.Array.isArray(back.results))) then
+			do return nil end
+		end
+		do
+			local _arr1 = back.results
+			local _i2 = 0
+			while _i2 < Js.alen(_arr1) do
+				_i2 += 1
+				local r = _arr1[_i2]
+				local want = M_trial.nextStage(trial)
+				if ((not Js.T(want)) or (r.stage ~= want)) then
+					do return nil end
+				end
+				if ((((type(r.quality) ~= "number") or (not Js.NumberNS.isFinite(r.quality))) or (r.quality < 0)) or (r.quality > 1)) then
+					do return nil end
+				end
+				trial = M_trial.recordStage(trial, want, r.quality)
+				if (want == "shootout") then
+					trial = Js.ospread(trial, Js.O({ finalPenScored = (not (not back.finalPenScored)) }, { "finalPenScored" }))
+				end
+			end
+		end
+		if (not M_trial.trialComplete(trial)) then
+			do return nil end
+		end
+		do return Js.ospread(career, Js.O({ trial = trial }, { "trial" })) end
+	end
+	exports.recordTrialReturn = recordTrialReturn
+	offersForTrial = function(career)
+		if (not career.trial) then
+			do return Js.alit() end
+		end
+		if ((if career.trialsTaken ~= nil then career.trialsTaken else 1) <= 1) then
+			do return Js.alit(M_scoutedPlacement.scoutedOfferForTrial(career.trial)) end
+		end
+		do return M_scoutOffers.trialOffers(M_trial.trialScore(career.trial), M_season.mulberry32(Js.bxor(career.trial.seed, 376999)), Js.O({ retrial = ((if career.trialsTaken ~= nil then career.trialsTaken else 1) > 1) }, { "retrial" })) end
+	end
+	exports.offersForTrial = offersForTrial
+	talkingClubFor = function(career, offers)
+		if (not Js.T(Js.alen(offers))) then
+			do return nil end
+		end
+		do return (A.find(offers, function(o)
+			return (o.club == career.player.club)
+		end) or offers[1]) end
+	end
+	exports.talkingClubFor = talkingClubFor
+	managerTalk = function(career)
+		local offers = offersForTrial(career)
+		local talking = talkingClubFor(career, offers)
+		if ((not talking) or (not career.trial)) then
+			do return nil end
+		end
+		local talk = M_signingTalk.managerTalkFor(Js.O({ trial = career.trial, club = talking.club, division = talking.division, clubStrength = talking.strength, playerFirstName = career.player.firstName, scoutNouns = M_leoUpdate.leoUpdateOn("bugFixes"), rng = M_season.mulberry32(Js.bxor(career.trial.seed, 108979)) }, { "trial", "club", "division", "clubStrength", "playerFirstName", "scoutNouns", "rng" }))
+		local firstContract = M_story.isStory(career)
+		do return Js.O({ talk = (if firstContract then Js.ospread(talk, Js.O({ openingWeekly = M_scoutedPlacement.FIRST_CONTRACT_WAGE }, { "openingWeekly" })) else talk), offer = talking, firstContract = firstContract }, { "talk", "offer", "firstContract" }) end
+	end
+	exports.managerTalk = managerTalk
+	offersWithAgreedTerms = function(career, offers)
+		local agreed = career.agreedTerms
+		if (not agreed) then
+			do return offers end
+		end
+		if (agreed.wage <= 0) then
+			local rest = A.filter(offers, function(o)
+				return (o.club ~= agreed.club)
+			end)
+			do return (if Js.T(Js.alen(rest)) then rest else offers) end
+		end
+		do return A.map(offers, function(o)
+			return (if (o.club == agreed.club) then Js.ospread(o, Js.O({ wage = agreed.wage, goalBonus = M_economy.goalBonusFor(agreed.wage), assistBonus = M_economy.assistBonusFor(agreed.wage) }, { "wage", "goalBonus", "assistBonus" })) else o)
+		end) end
+	end
+	acceptManagerOffer = function(career)
+		local mt = managerTalk(career)
+		if (not mt) then
+			do return nil end
+		end
+		local agreed = Js.ospread(career, Js.O({ agreedTerms = Js.O({ club = mt.offer.club, wage = mt.talk.openingWeekly }, { "club", "wage" }) }, { "agreedTerms" }))
+		local offer = A.find(offersWithAgreedTerms(agreed, offersForTrial(agreed)), function(o)
+			return (o.club == mt.offer.club)
+		end)
+		do return (if offer then signTrialOffer(agreed, offer) else nil) end
+	end
+	exports.acceptManagerOffer = acceptManagerOffer
+	signTrialOffer = function(career, offer)
+		local loan = M_youth.rollLoanWildcard(offer.club, offer.division, offer.seasons, M_season.mulberry32(Js.bxor(Js.bxor(((function() local _v = career.trial; if _v == nil then return nil end; _v = _v.seed; return _v end)() or 1), 28834), S.len(offer.club))))
+		local homeClub = (if loan then loan.hostClub else offer.club)
+		local homeDivision = (if loan then loan.hostDivision else offer.division)
+		local wage = (if loan then loan.wage else offer.wage)
+		local clubs = (if loan then loan.hostClubs else M_scoutOffers.clubsForDivision(offer.division))
+		local signed = M_careerFlow.attachClub(career, homeClub, clubs, homeDivision, wage)
+		local out = Js.ospread(signed, Js.O({ contract = Js.O({ club = (if loan then loan.parentClub else offer.club), wage = wage, goalBonus = (if loan then M_economy.goalBonusFor(wage) else offer.goalBonus), assistBonus = (if loan then M_economy.assistBonusFor(wage) else offer.assistBonus), seasonsRemaining = offer.seasons }, { "club", "wage", "goalBonus", "assistBonus", "seasonsRemaining" }), agreedTerms = nil }, { "contract", "agreedTerms" }), (if loan then Js.O({ placement = M_youth.startLoanSpell(loan, signed.seasonStats.goals) }, { "placement" }) else nil))
+		if (Js.T((function() local _v = out.fixtures; if _v == nil then return nil end; _v = Js.len(_v); return _v end)()) and (not (function() local _v = out.intl; if _v == nil then return nil end; _v = _v.xi; if _v == nil then return nil end; _v = _v[Js.key(out.season)]; return _v end)())) then
+			out = M_career.syncIntl(out)
+		end
+		do return out end
+	end
+	exports.signTrialOffer = signTrialOffer
+	youthAfterTrial = function(career)
+		if (not career.trial) then
+			do return nil end
+		end
+		local taker = M_youth.youthTakerFor(M_trial.trialScore(career.trial), M_season.mulberry32(Js.bxor(career.trial.seed, 40465)))
+		if (not taker) then
+			do return nil end
+		end
+		local wage = M_youth.youthWage(taker.club, taker.division)
+		local signed = M_careerFlow.attachClub(career, taker.club, taker.clubs, taker.division, wage)
+		do return Js.ospread(signed, Js.O({ contract = Js.O({ club = taker.club, wage = wage, goalBonus = M_economy.goalBonusFor(wage), assistBonus = M_economy.assistBonusFor(wage), seasonsRemaining = 2 }, { "club", "wage", "goalBonus", "assistBonus", "seasonsRemaining" }), agreedTerms = nil, placement = M_youth.startYouthSpell(taker.club, taker.division, "trial") }, { "contract", "agreedTerms", "placement" })) end
+	end
+	exports.youthAfterTrial = youthAfterTrial
+	trialSummary = function(trial)
+		do return A.map(M_trial.trialStagesFor(trial), function(s)
+			return Js.O({ stage = s, score = ((function() local _v = trial.results[s]; if _v == nil then return nil end; _v = _v.score; return _v end)() or nil) }, { "stage", "score" })
+		end) end
+	end
+	exports.trialSummary = trialSummary
+end
+]]></string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="316">
+            <Properties>
+              <string name="Name">trialPlay</string>
+              <string name="Source"><![CDATA[--!nocheck
+--!nolint
+-- Generated from roblox/game/trialPlay.ts by roblox/tools/ts2luau. Do not edit.
+return function(exports, import, Js)
+	local A, S, N, Math = Js.A, Js.S, Js.N, Js.Math
+	local M_pitch = import("lib/star/pitch")
+	local M_canvasEngine = import("lib/star/canvasEngine")
+	local M_trialStages = import("lib/star/trialStages")
+	local M_trainingDrills = import("lib/star/trainingDrills")
+	local M_trainingRender = import("lib/star/trainingRender")
+	local M_season = import("lib/star/season")
+	local M_trialShootoutRig = import("lib/star/trialShootoutRig")
+	local M_squadData = import("lib/star/squadData")
+	local M_fakeFaces = import("lib/star/fakeFaces")
+	local M_runupStyles = import("lib/star/runupStyles")
+	local M_trial = import("lib/star/trial")
+	local M_match = import("roblox/game/match")
+	local M_firstPersonDribble = import("lib/star/firstPersonDribble")
+	local M_penaltyTaking = import("lib/star/penaltyTaking")
+	local M_matchView = import("roblox/game/matchView")
+	local BEHIND_BALL, SIDE_PAD, BASE_VIEW_H, freeKickView, freeKickWall, buildFreeKickScenario, buildGate, VISION_YOU, AREA, MARKER_BOX, BASE_SPACE, MIN_SPACE, REQUIRED_GAP_FRACTION, LAYOUT_ATTEMPTS, dist, oneLayout, layoutVision, US, THEM, MATE_KICKS, takersFor, LAST_RESULT_HOLD_S, FINAL_HOLD_S, COUNTDOWN_FROM, COUNTDOWN_STEP_S, VISION_WAIT_S, VISION_COUNT_S, VISION_REVEAL_S, VISION_PICK_M, DRIBBLE_HOLD_S, DRILL_FIXTURE, drillSetup, startTrialPlay, openStage, finishStage, openStrike, openDribble, visionRep, openVision, openShootout, tick_, settleVision, tapToGo, visionTap, dribbleSteer, dribbleKnock, pitchMatch, HINTS, trialView, TRIAL_KITS, VISION_CAMERA, trialFrame
+	freeKickView = function(ball)
+		local back = (M_pitch.NET_DEPTH + 2.5)
+		local needH = ((ball.y + BEHIND_BALL) + back)
+		local nx1 = (Math.min(M_pitch.POST_L, ball.x) - SIDE_PAD)
+		local nx2 = (Math.max(M_pitch.POST_R, ball.x) + SIDE_PAD)
+		local h = Math.max(BASE_VIEW_H, needH, ((nx2 - nx1) / M_canvasEngine.VIEW_ASPECT))
+		local w = (h * M_canvasEngine.VIEW_ASPECT)
+		local cx = ((nx1 + nx2) / 2)
+		cx = M_canvasEngine.clamp(cx, (-5 + (w / 2)), ((M_pitch.PITCH_W + 5) - (w / 2)))
+		cx = M_canvasEngine.clamp(cx, (nx2 - (w / 2)), (nx1 + (w / 2)))
+		do return Js.O({ x1 = (cx - (w / 2)), x2 = (cx + (w / 2)), y1 = (-back), y2 = ((-back) + h) }, { "x1", "x2", "y1", "y2" }) end
+	end
+	exports.freeKickView = freeKickView
+	freeKickWall = function(setup)
+		local dx = (M_pitch.CX - setup.ball.x)
+		local dy = (-setup.ball.y)
+		local len = (function() local _l = Math.hypot(dx, dy); if Js.T(_l) then return _l end; return 1 end)()
+		local to = Js.O({ x = (dx / len), y = (dy / len) }, { "x", "y" })
+		local across = Js.O({ x = (-to.y), y = to.x }, { "x", "y" })
+		local wallCx = (setup.ball.x + (to.x * 9.15))
+		local wallCy = (setup.ball.y + (to.y * 9.15))
+		local n = Math.max(1, Math.round(setup.wall))
+		local men = Js.alit()
+		for i = 0, math.ceil(n) - 1 do
+			local off = ((i - ((n - 1) / 2)) * 1.15)
+			A.push(men, Js.O({ x = M_canvasEngine.clamp((wallCx + (across.x * off)), 4, (M_pitch.PITCH_W - 4)), y = M_canvasEngine.clamp((wallCy + (across.y * off)), 2, M_pitch.HALF_LEN) }, { "x", "y" }))
+		end
+		do return men end
+	end
+	exports.freeKickWall = freeKickWall
+	buildFreeKickScenario = function(trial, rep, rng)
+		local setup = M_trialStages.freeKickSetup(trial, rep)
+		local sc = M_canvasEngine.buildScenario("free_kick", rng, setup.keeperStrength, 60, 55)
+		sc.ball = Js.ospread(setup.ball)
+		sc.player = Js.O({ x = setup.ball.x, y = (setup.ball.y + 2) }, { "x", "y" })
+		sc.defenders = freeKickWall(setup)
+		sc.keeperStrength = setup.keeperStrength
+		M_canvasEngine.initDefenders(sc, rng)
+		sc.viewport = freeKickView(setup.ball)
+		do return sc end
+	end
+	exports.buildFreeKickScenario = buildFreeKickScenario
+	buildGate = function(level, rep, rng)
+		local cfg = Js.ospread(M_trainingDrills.techniqueDrill(level, rep), Js.O({ pass = 0.25 }, { "pass" }))
+		local ball = M_trainingDrills.techniqueBallSpot(cfg)
+		local gate = M_trainingDrills.conePositions(ball, cfg)
+		local sc = M_canvasEngine.buildScenario("long_range", rng, 40, 60, 55)
+		sc.ball = Js.O({ x = ball.x, y = ball.y }, { "x", "y" })
+		sc.player = Js.O({ x = ball.x, y = (ball.y + 0.8) }, { "x", "y" })
+		sc.defenders = Js.alit()
+		sc.teammates = Js.alit()
+		sc.runner = nil
+		sc.passTarget = nil
+		sc.receiver = nil
+		sc.secondaryRunners = Js.alit()
+		M_canvasEngine.initDefenders(sc, rng)
+		sc.defenders = Js.alit()
+		sc.viewport = Js.ospread(M_trainingRender.gateViewport(ball, gate))
+		sc.player = Js.O({ x = (sc.ball.x + 1.2), y = (sc.ball.y + 1.8) }, { "x", "y" })
+		do return Js.O({ scenario = sc, gate = gate, gateCfg = cfg }, { "scenario", "gate", "gateCfg" }) end
+	end
+	exports.buildGate = buildGate
+	oneLayout = function(setup, rng)
+		local n = Math.max(2, Math.round(setup.options))
+		local cols = math.ceil(Math.sqrt(n))
+		local rows = math.ceil((n / cols))
+		local cw = ((AREA.x2 - AREA.x1) / cols)
+		local ch = ((AREA.y2 - AREA.y1) / rows)
+		local pos = Js.alit()
+		for i = 0, math.ceil(n) - 1 do
+			local c = math.fmod(i, cols)
+			local r = math.floor((i / cols))
+			A.push(pos, Js.O({ x = ((AREA.x1 + (cw * (c + 0.5))) + (((rng() - 0.5) * cw) * 0.5)), y = ((AREA.y1 + (ch * (r + 0.5))) + (((rng() - 0.5) * ch) * 0.5)) }, { "x", "y" }))
+		end
+		local best = (BASE_SPACE + setup.margin)
+		local markers = Js.alit()
+		for i = 0, math.ceil(n) - 1 do
+			local want = (if (i == setup.correct) then best else Math.max(MIN_SPACE, (best - (setup.margin * (0.85 + (rng() * 0.3))))))
+			local a0 = ((rng() * Math.PI) * 2)
+			local placed = nil
+			do
+				local k = 0
+				local _first1 = true
+				while true do
+					if not _first1 then
+						k += 1
+					end
+					_first1 = false
+					if not ((k < 8) and (not placed)) then break end
+					local a = (a0 + ((k * Math.PI) / 4))
+					local m = Js.O({ x = (pos[i + 1].x + (Math.cos(a) * want)), y = (pos[i + 1].y + (Math.sin(a) * want)) }, { "x", "y" })
+					if ((((m.x >= MARKER_BOX.x1) and (m.x <= MARKER_BOX.x2)) and (m.y >= MARKER_BOX.y1)) and (m.y <= MARKER_BOX.y2)) then
+						placed = m
+					end
+				end
+			end
+			A.push(markers, (if placed ~= nil then placed else Js.O({ x = Math.min(MARKER_BOX.x2, Math.max(MARKER_BOX.x1, (pos[i + 1].x + want))), y = Math.min(MARKER_BOX.y2, Math.max(MARKER_BOX.y1, pos[i + 1].y)) }, { "x", "y" })))
+		end
+		local men = A.map(pos, function(p, i)
+			return Js.O({ x = p.x, y = p.y, marker = markers[i + 1], space = Math.min(Js.unpack(A.map(markers, function(m)
+				return dist(p, m)
+			end))) }, { "x", "y", "marker", "space" })
+		end)
+		local others = A.map(A.filter(men, function(_, i)
+			return (i ~= setup.correct)
+		end), function(m)
+			return m.space
+		end)
+		local gap = (men[setup.correct + 1].space - Math.max(Js.unpack(others)))
+		do return Js.O({ you = Js.ospread(VISION_YOU), men = men, gap = gap }, { "you", "men", "gap" }) end
+	end
+	layoutVision = function(setup, seed, rep)
+		local need = (setup.margin * REQUIRED_GAP_FRACTION)
+		local bestLayout = nil
+		for a = 0, LAYOUT_ATTEMPTS - 1 do
+			local rng = M_season.mulberry32(Js.ushr(Js.bxor(Js.bxor(seed, ((rep + 1) * 668265261)), ((a + 1) * 374761393)), 0))
+			local l = oneLayout(setup, rng)
+			if (l.gap >= need) then
+				do return l end
+			end
+			if ((not bestLayout) or (l.gap > bestLayout.gap)) then
+				bestLayout = l
+			end
+		end
+		do return bestLayout end
+	end
+	exports.layoutVision = layoutVision
+	takersFor = function(trial, seed)
+		local rating = M_trialStages.shootoutTheirRating(trial)
+		local runups = M_trialShootoutRig.pickRunups(seed, (M_trialShootoutRig.SHOOTOUT_KICKS + MATE_KICKS))
+		local rng = M_season.mulberry32(Js.ushr(Js.bxor(trial.seed, 31262), 0))
+		local side = function(squadSeed, n, base, runupFrom)
+			return A.map(A.slice(A.filter(M_squadData.generateSquad(squadSeed), function(p)
+				return (p.position ~= "GK")
+			end), 0, n), function(p, i)
+				return Js.O({ id = M_trialShootoutRig.idForRunup((base .. "-" .. Js.numstr(i)), runups[(runupFrom + i) + 1]), name = p.name, shortName = p.shortName, face = (if p.imageUrl ~= nil then p.imageUrl else M_fakeFaces.fakeFaceFor((base .. "-" .. Js.numstr(i)))), rating = Math.max(30, Math.min(95, Math.round((rating + ((rng() - 0.5) * 10))))) }, { "id", "name", "shortName", "face", "rating" })
+			end)
+		end
+		do return Js.O({ them = side(Js.ushr(Js.bxor(trial.seed, 20974), 0), M_trialShootoutRig.SHOOTOUT_KICKS, "academy", 0), mates = side(Js.ushr(Js.bxor(trial.seed, 14974), 0), MATE_KICKS, "trialist", M_trialShootoutRig.SHOOTOUT_KICKS) }, { "them", "mates" }) end
+	end
+	drillSetup = function(tp, seed, keeperStrength, drill)
+		local c = tp.career
+		do return Js.O({ career = c, fixture = DRILL_FIXTURE, skills = Js.O({ power = c.skills.power, technique = c.skills.technique }, { "power", "technique" }), canCurve = false, canExtraTouch = false, keeperStrength = keeperStrength, oppStrength = 70, position = c.player.position, teamRelationship = 60, startMinute = 0, conditions = nil, seed = seed, pressure = 0, penaltyRunup = M_runupStyles.careerPenaltyRunup(c), freeKickRunup = M_runupStyles.careerFreeKickRunup(c), drill = drill }, { "career", "fixture", "skills", "canCurve", "canExtraTouch", "keeperStrength", "oppStrength", "position", "teamRelationship", "startMinute", "conditions", "seed", "pressure", "penaltyRunup", "freeKickRunup", "drill" }) end
+	end
+	startTrialPlay = function(career)
+		local tp = Js.O({ career = career, trial = career.trial, stage = nil, clock = 0, card = nil, strike = nil, dribble = nil, vision = nil, shootout = nil, back = Js.O({ results = Js.alit(), finalPenScored = false }, { "results", "finalPenScored" }), done = false }, { "career", "trial", "stage", "clock", "card", "strike", "dribble", "vision", "shootout", "back", "done" })
+		openStage(tp)
+		do return tp end
+	end
+	exports.startTrialPlay = startTrialPlay
+	openStage = function(tp)
+		local stage = M_trial.nextStage(tp.trial)
+		tp.stage = stage
+		tp.shootout = nil
+		tp.vision = tp.shootout
+		tp.dribble = tp.vision
+		tp.strike = tp.dribble
+		if (not Js.T(stage)) then
+			tp.card = Js.O({ kind = "scout" }, { "kind" })
+			do return end
+		end
+		tp.trial = M_trial.beginStage(tp.trial, stage)
+		if (stage == "freeKicks") then
+			openStrike(tp, "freeKicks")
+		elseif (stage == "technique") then
+			openStrike(tp, "technique")
+		elseif (stage == "dribbling") then
+			openDribble(tp)
+		elseif (stage == "vision") then
+			openVision(tp)
+		elseif (stage == "shootout") then
+			openShootout(tp)
+		else
+			finishStage(tp, stage, 0)
+		end
+	end
+	finishStage = function(tp, stage, q, finalPenScored)
+		tp.trial = M_trial.recordStage(tp.trial, stage, q)
+		if (finalPenScored ~= nil) then
+			tp.trial = Js.ospread(tp.trial, Js.O({ finalPenScored = finalPenScored }, { "finalPenScored" }))
+			tp.back.finalPenScored = finalPenScored
+		end
+		A.push(tp.back.results, Js.O({ stage = stage, quality = Math.max(0, Math.min(1, q)) }, { "stage", "quality" }))
+		local next_ = M_trial.nextStage(tp.trial)
+		if (not Js.T(next_)) then
+			tp.card = Js.O({ kind = "scout" }, { "kind" })
+			tp.shootout = nil
+			tp.vision = tp.shootout
+			tp.dribble = tp.vision
+			tp.strike = tp.dribble
+			do return end
+		end
+		tp.card = Js.O({ kind = "countdown", at = tp.clock, label = M_trial.STAGE_LABEL[next_] }, { "kind", "at", "label" })
+	end
+	openStrike = function(tp, kind)
+		local trial = tp.trial
+		local seed = Js.ushr(Js.bxor(trial.seed, (if (kind == "freeKicks") then 24414 else 32332)), 0)
+		local st = Js.O({ kind = kind, reps = M_trialStages.REPS[kind], rep = 0, points = Js.alit(), text = "", doneAt = nil, gate = nil, crossed = nil, prev = nil }, { "kind", "reps", "rep", "points", "text", "doneAt", "gate", "crossed", "prev" })
+		local level = M_trialStages.ladderLevel(M_trial.difficultyFor(trial, "technique"))
+		local openOn = function()
+			local r = st.rep
+			local rng = M_season.mulberry32(Js.ushr(Js.bxor(seed, ((r + 1) * 2654435761)), 0))
+			if (kind == "freeKicks") then
+				if st.m then
+					st.m.strength = M_trialStages.freeKickSetup(tp.trial, r).keeperStrength
+				end
+				do return buildFreeKickScenario(tp.trial, r, rng) end
+			end
+			local g = buildGate(level, r, rng)
+			st.gate = g
+			st.prev = nil
+			st.crossed = nil
+			do return g.scenario end
+		end
+		local drill = Js.O({ openOn = openOn, setPieceSkill = M_trialStages.trialInvisibleStats().setPieceSkill, scene = (if (kind == "technique") then Js.O({ keeper = false, goal = false, teammates = false, banners = false, you = false, box = false }, { "keeper", "goal", "teammates", "banners", "you", "box" }) else Js.O({ teammates = false }, { "teammates" })), onBallStep = (if (kind == "technique") then function(b)
+			if ((not st.gate) or st.crossed) then
+				do return end
+			end
+			local prev = st.prev
+			if prev then
+				local c = M_trainingDrills.gateCrossing(prev, b, st.gate.gate.centre.y)
+				if c then
+					st.crossed = c
+				end
+			end
+			st.prev = Js.ospread(b)
+		end else nil), onChanceResolved = function(info)
+			if (st.doneAt ~= nil) then
+				do return end
+			end
+			local pts = nil
+			if (kind == "technique") then
+				local g = st.gate
+				pts = (if g then M_trainingDrills.gateQuality(st.crossed, g.gateCfg, g.gate.centre.x) else 0)
+				st.text = (if (pts >= 0.9) then "Threaded it!" else (if (pts >= 0.45) then "Through." else (if (pts > 0) then "Clipped it." else "Missed the gate.")))
+			else
+				local yours = (not info.teammateShot)
+				pts = (if (not yours) then 0 else (if ((info.outcome == "goal") or (info.outcome == "rebound")) then 1 else (if ((info.outcome == "saved") or (info.outcome == "tipped")) then 0.5 else 0)))
+				st.text = (if (not yours) then "A team-mate gets on the end of it." else (if (pts == 1) then "Goal!" else (if (pts == 0.5) then "Saved." else "Missed.")))
+			end
+			A.push(st.points, pts)
+			local next_ = (st.rep + 1)
+			if (next_ >= st.reps) then
+				st.doneAt = (tp.clock + LAST_RESULT_HOLD_S)
+			else
+				st.rep = next_
+			end
+		end }, { "openOn", "setPieceSkill", "scene", "onBallStep", "onChanceResolved" })
+		local keeper = (if (kind == "freeKicks") then M_trialStages.freeKickSetup(trial, 0).keeperStrength else 62)
+		st.m = M_match.startMatch(drillSetup(tp, seed, keeper, drill))
+		tp.strike = st
+	end
+	openDribble = function(tp)
+		local setup = M_trialStages.dribbleSetup(tp.trial)
+		local run = M_firstPersonDribble.newRun(Js.O({ pace = (if tp.career.skills.pace ~= nil then tp.career.skills.pace else 60), oppStrength = setup.oppStrength, rounds = 3, waveSizes = setup.waveSizes, rng = M_season.mulberry32(M_trialStages.attemptSeed(tp.trial)), mates = 0 }, { "pace", "oppStrength", "rounds", "waveSizes", "rng", "mates" }))
+		tp.dribble = Js.O({ setup = setup, run = run, started = false, endAt = nil, result = nil }, { "setup", "run", "started", "endAt", "result" })
+	end
+	visionRep = function(tp, rep, qualities)
+		local setup = M_trialStages.visionSetup(tp.trial, rep)
+		local layout = layoutVision(setup, M_trialStages.attemptSeed(tp.trial), rep)
+		do return Js.O({ rep = rep, setup = setup, layout = layout, phase = (if (rep == 0) then "ready" else "count"), at = tp.clock, startedAt = 0, picked = nil, qualities = qualities }, { "rep", "setup", "layout", "phase", "at", "startedAt", "picked", "qualities" }) end
+	end
+	openVision = function(tp)
+		tp.vision = visionRep(tp, 0, Js.alit())
+	end
+	openShootout = function(tp)
+		local drill
+		local trial = tp.trial
+		local seed = M_trialStages.attemptSeed(trial)
+		local _d8 = takersFor(trial, seed)
+		local them = _d8.them
+		local mates = _d8.mates
+		local st = Js.O({ seed = seed, rig = M_trialShootoutRig.createRig(), script = M_trialShootoutRig.createRigScript(seed), takers = them, mates = mates, yourKicks = Js.alit(), line = "", doneAt = nil }, { "seed", "rig", "script", "takers", "mates", "yourKicks", "line", "doneAt" })
+		local takerNow = function(s)
+			if (s.over or M_trialShootoutRig.isYourKick(s)) then
+				do return nil end
+			end
+			local side = M_trialShootoutRig.rigNextSide(s.kicks)
+			local list = (if (side == "them") then st.takers else st.mates)
+			do return list[Math.min(M_trialShootoutRig.rigKicksTaken(s.kicks, side), (Js.alen(list) - 1)) + 1] end
+		end
+		local dial = function(drill)
+			local s = st.rig
+			local side = M_trialShootoutRig.rigNextSide(s.kicks)
+			local theirKeeper = M_trialStages.shootoutKeeperFor(trial, M_trialShootoutRig.rigKicksTaken(s.kicks, "you"))
+			local ourKeeper = M_trialStages.shootoutOurKeeperFor(M_trialShootoutRig.rigKicksTaken(s.kicks, "them"))
+			local yours = M_trialShootoutRig.isYourKick(s)
+			local intent = (if (s.over or yours) then false else M_trialShootoutRig.rigIntent(s, st.script))
+			drill.penaltyRead = (if yours then theirKeeper.read else (if (side == "them") then M_trialShootoutRig.rigKeeperRead(intent, ourKeeper.read) else M_trialShootoutRig.rigKeeperRead(intent, theirKeeper.read)))
+			if st.m then
+				st.m.strength = theirKeeper.keeperStrength
+			end
+			do return theirKeeper.keeperStrength end
+		end
+		drill = Js.O({ scene = Js.O({ teammates = false }, { "teammates" }), setPieceSkill = M_trialStages.trialInvisibleStats().setPieceSkill, openOn = function()
+			local s = st.rig
+			local side = M_trialShootoutRig.rigNextSide(s.kicks)
+			local n = Js.alen(s.kicks)
+			local rng = M_season.mulberry32(Js.ushr(((seed * 7919) + (n * 2654435761)), 0))
+			local ourNo = M_trialShootoutRig.rigKicksTaken(s.kicks, "you")
+			if (s.over or ((side == "you") and M_trialShootoutRig.isYourKick(s))) then
+				local k = M_trialStages.shootoutKeeperFor(trial, ourNo)
+				local sc = M_canvasEngine.buildScenario("penalty", rng, k.keeperStrength, 60, 55)
+				M_canvasEngine.initDefenders(sc, rng)
+				sc.ball = Js.O({ x = M_pitch.CX, y = M_pitch.PEN_SPOT_Y }, { "x", "y" })
+				M_penaltyTaking.clearForShootout(sc)
+				do return sc end
+			end
+			local taker = takerNow(s)
+			local sc0 = (if (side == "them") then M_canvasEngine.buildScenario("penalty", rng, M_trialStages.shootoutOurKeeperFor(M_trialShootoutRig.rigKicksTaken(s.kicks, "them")).keeperStrength, 60, 55) else M_canvasEngine.buildScenario("penalty", rng, M_trialStages.shootoutKeeperFor(trial, ourNo).keeperStrength, 60, 55))
+			M_canvasEngine.initDefenders(sc0, rng)
+			sc0.ball = Js.O({ x = M_pitch.CX, y = M_pitch.PEN_SPOT_Y }, { "x", "y" })
+			M_penaltyTaking.clearForShootout(sc0)
+			local goes = M_trialShootoutRig.rigIntent(s, st.script)
+			M_penaltyTaking.attachAutoKick(sc0, Js.O({ side = (if (side == "them") then "them" else "us"), taker = taker, plan = M_trialShootoutRig.rigPlanFor(goes, (if st.script.sides[n + 1] ~= nil then st.script.sides[n + 1] else 1), taker.rating, (if st.script.misses[n + 1] ~= nil then st.script.misses[n + 1] else "wide")), keeper = (if (side == "them") then Js.O({ strength = M_trialStages.shootoutOurKeeperFor(M_trialShootoutRig.rigKicksTaken(s.kicks, "them")).keeperStrength, name = "Trialist keeper", shortName = "Your keeper" }, { "strength", "name", "shortName" }) else Js.O({ strength = M_trialStages.shootoutKeeperFor(trial, ourNo).keeperStrength, name = "Academy keeper", shortName = "Their keeper" }, { "strength", "name", "shortName" })), context = "shootout" }, { "side", "taker", "plan", "keeper", "context" }))
+			do return sc0 end
+		end, onChanceResolved = function(info)
+			if ((st.doneAt ~= nil) or st.rig.over) then
+				do return end
+			end
+			local s = st.rig
+			local n = Js.alen(s.kicks)
+			local scored = (((info.outcome == "goal") or (info.outcome == "rebound")) and (not info.teammateShot))
+			if M_trialShootoutRig.isYourKick(s) then
+				A.push(st.yourKicks, scored)
+				st.line = (if scored then "Scored!" else (if (((info.outcome == "saved") or (info.outcome == "tipped")) or (info.outcome == "caught")) then "Saved." else (if (info.outcome == "post") then "Off the post!" else "Missed.")))
+			else
+				local who = takerNow(s)
+				local miss = (if st.script.misses[n + 1] ~= nil then st.script.misses[n + 1] else "wide")
+				local how = (if (((info.outcome == "saved") or (info.outcome == "caught")) or (info.outcome == "tipped")) then "Saved!" else M_trialShootoutRig.MISS_LINE[miss])
+				if (M_trialShootoutRig.rigNextSide(s.kicks) == "them") then
+					st.line = (if scored then "They score." else (((function() local _v = who; if _v == nil then return nil end; _v = _v.shortName; return _v end)() or "Their man") .. ": " .. how))
+				else
+					st.line = (if scored then (((function() local _v = who; if _v == nil then return nil end; _v = _v.shortName; return _v end)() or "He") .. " scores!") else (((function() local _v = who; if _v == nil then return nil end; _v = _v.shortName; return _v end)() or "He") .. ": " .. how))
+				end
+			end
+			st.rig = M_trialShootoutRig.rigApply(s, scored)
+			dial(drill)
+			if st.rig.over then
+				st.doneAt = (tp.clock + FINAL_HOLD_S)
+			end
+		end }, { "scene", "setPieceSkill", "openOn", "onChanceResolved" })
+		local keeper = dial(drill)
+		st.m = M_match.startMatch(drillSetup(tp, seed, keeper, drill))
+		dial(drill)
+		tp.shootout = st
+	end
+	tick_ = function(tp, dt)
+		dt = Math.min(Math.max(0, dt), 0.05)
+		tp.clock += dt
+		local card = tp.card
+		if card then
+			if ((card.kind == "countdown") and ((tp.clock - card.at) >= (COUNTDOWN_FROM * COUNTDOWN_STEP_S))) then
+				tp.card = nil
+				openStage(tp)
+			end
+			do return end
+		end
+		local s = tp.strike
+		if s then
+			M_match.tick(s.m, dt)
+			if ((s.doneAt ~= nil) and (tp.clock >= s.doneAt)) then
+				local q = (A.reduce(s.points, function(a, b)
+					return (a + b)
+				end, 0) / Math.max(1, Js.alen(s.points)))
+				finishStage(tp, s.kind, q)
+			end
+			do return end
+		end
+		local d = tp.dribble
+		if d then
+			if (not d.started) then
+				do return end
+			end
+			if (d.endAt == nil) then
+				local ph = M_firstPersonDribble.stepRun(d.run, dt)
+				if (ph ~= "running") then
+					d.result = Js.O({ cleared = (ph == "clear"), beaten = Js.alen(A.filter(d.run.defenders, function(x)
+						return (x.phase == "beaten")
+					end)) }, { "cleared", "beaten" })
+					d.endAt = (tp.clock + DRIBBLE_HOLD_S)
+				end
+			elseif (tp.clock >= d.endAt) then
+				finishStage(tp, "dribbling", M_trialStages.dribbleQuality(d.result, d.setup))
+			end
+			do return end
+		end
+		local v = tp.vision
+		if v then
+			if ((v.phase == "count") and ((tp.clock - v.at) >= (if (v.rep == 0) then (3 * VISION_COUNT_S) else VISION_WAIT_S))) then
+				v.phase = "live"
+				v.startedAt = tp.clock
+			elseif ((v.phase == "live") and ((tp.clock - v.startedAt) >= v.setup.window)) then
+				settleVision(tp, v, nil, v.setup.window)
+			elseif ((v.phase == "reveal") and ((tp.clock - v.at) >= VISION_REVEAL_S)) then
+				if ((v.rep + 1) >= M_trialStages.REPS.vision) then
+					finishStage(tp, "vision", M_trialStages.weightedQuality(v.qualities))
+				else
+					tp.vision = visionRep(tp, (v.rep + 1), v.qualities)
+				end
+			end
+			do return end
+		end
+		local so = tp.shootout
+		if so then
+			M_match.tick(so.m, dt)
+			if ((so.doneAt ~= nil) and (tp.clock >= so.doneAt)) then
+				finishStage(tp, "shootout", M_trialStages.shootoutQuality(so.yourKicks), M_trialShootoutRig.winningPenaltyScored(so.rig))
+			end
+		end
+	end
+	exports.tick = tick_
+	settleVision = function(tp, v, picked, took)
+		v.picked = picked
+		v.qualities = Js.aspread(v.qualities, Js.alit(M_trialStages.visionQuality(picked, v.setup, took)))
+		v.phase = "reveal"
+		v.at = tp.clock
+	end
+	tapToGo = function(tp)
+		if ((function() local _v = tp.card; if _v == nil then return nil end; _v = _v.kind; return _v end)() == "scout") then
+			tp.done = true
+			do return end
+		end
+		if (tp.dribble and (not tp.dribble.started)) then
+			tp.dribble.started = true
+		end
+		if (tp.vision and (tp.vision.phase == "ready")) then
+			tp.vision.phase = "count"
+			tp.vision.at = tp.clock
+		end
+	end
+	exports.tapToGo = tapToGo
+	visionTap = function(tp, p)
+		local v = tp.vision
+		if ((not v) or (v.phase ~= "live")) then
+			do return false end
+		end
+		local best = -1
+		local bestD = VISION_PICK_M
+		A.forEach(v.layout.men, function(mm, i)
+			local d = dist(mm, p)
+			if (d < bestD) then
+				bestD = d
+				best = i
+			end
+		end)
+		if (best < 0) then
+			do return false end
+		end
+		settleVision(tp, v, best, (tp.clock - v.startedAt))
+		do return true end
+	end
+	exports.visionTap = visionTap
+	dribbleSteer = function(tp, x)
+		local d = tp.dribble
+		if (((not d) or (not d.started)) or (d.endAt ~= nil)) then
+			do return end
+		end
+		if (math.abs(x) < 0.08) then
+			do return end
+		end
+		M_firstPersonDribble.applySteer(d.run, (d.run.x + (x * 3)))
+	end
+	exports.dribbleSteer = dribbleSteer
+	dribbleKnock = function(tp, dir)
+		local d = tp.dribble
+		if (((not d) or (not d.started)) or (d.endAt ~= nil)) then
+			do return false end
+		end
+		do return M_firstPersonDribble.applyBurst(d.run, dir) end
+	end
+	exports.dribbleKnock = dribbleKnock
+	pitchMatch = function(tp)
+		if tp.card then
+			do return nil end
+		end
+		do return (((function() local _v = tp.strike; if _v == nil then return nil end; _v = _v.m; return _v end)() or (function() local _v = tp.shootout; if _v == nil then return nil end; _v = _v.m; return _v end)()) or nil) end
+	end
+	exports.pitchMatch = pitchMatch
+	trialView = function(tp)
+		local stages = Js.alen(M_trial.TRIAL_STAGES)
+		local stage = tp.stage
+		local stageNo = (if Js.T(stage) then (A.indexOf(M_trial.TRIAL_STAGES, stage) + 1) else stages)
+		local card = tp.card
+		local out = Js.O({ stage = stage, stageNo = stageNo, stages = stages, title = (if Js.T(stage) then M_trial.STAGE_LABEL[stage] else "Trial over"), hint = (if Js.T(stage) then (if HINTS[stage] ~= nil then HINTS[stage] else "") else ""), line = (((function() local _v = tp.strike; if _v == nil then return nil end; _v = _v.text; return _v end)() or (function() local _v = tp.shootout; if _v == nil then return nil end; _v = _v.line; return _v end)()) or ""), card = (if card then (if (card.kind == "countdown") then Js.O({ kind = "countdown", label = card.label, n = Math.max(1, (COUNTDOWN_FROM - math.floor(((tp.clock - card.at) / COUNTDOWN_STEP_S)))) }, { "kind", "label", "n" }) else Js.O({ kind = "scout" }, { "kind" })) else nil), cones = (if (function() local _v = tp.strike; if _v == nil then return nil end; _v = _v.gate; return _v end)() then Js.alit(tp.strike.gate.gate.left, tp.strike.gate.gate.right) else Js.alit()), dribble = nil, vision = nil, shootout = nil }, { "stage", "stageNo", "stages", "title", "hint", "line", "card", "cones", "dribble", "vision", "shootout" })
+		local d = tp.dribble
+		if d then
+			out.dribble = Js.O({ you = Js.O({ x = d.run.x, y = d.run.y }, { "x", "y" }), opp = A.map(d.run.defenders, function(x)
+				return Js.O({ x = x.x, y = x.y, phase = x.phase }, { "x", "y", "phase" })
+			end), started = d.started, waves = Js.alen(d.setup.waveSizes) }, { "you", "opp", "started", "waves" })
+			if d.result then
+				out.line = (if d.result.cleared then "Through!" else ("Beat " .. Js.numstr(d.result.beaten) .. " of " .. Js.numstr(d.setup.defenders) .. "."))
+			end
+		end
+		local v = tp.vision
+		if v then
+			local count = (if ((v.phase == "count") and (v.rep == 0)) then Math.max(1, (3 - math.floor(((tp.clock - v.at) / VISION_COUNT_S)))) else 0)
+			out.vision = Js.O({ you = v.layout.you, men = A.map(v.layout.men, function(mm)
+				return Js.O({ x = mm.x, y = mm.y, marker = mm.marker }, { "x", "y", "marker" })
+			end), phase = v.phase, count = count, left = (if (v.phase == "live") then (Math.max(0, (v.setup.window - (tp.clock - v.startedAt))) / v.setup.window) else (if (v.phase == "reveal") then 0 else 1)), picked = v.picked, correct = (if (v.phase == "reveal") then v.setup.correct else nil), rep = v.rep, reps = M_trialStages.REPS.vision }, { "you", "men", "phase", "count", "left", "picked", "correct", "rep", "reps" })
+			if (v.phase == "reveal") then
+				out.line = (if (v.picked == nil) then "Too slow." else (if (v.picked == v.setup.correct) then "Found him!" else "Not him."))
+			end
+		end
+		local so = tp.shootout
+		if so then
+			local s = so.rig
+			local side = M_trialShootoutRig.rigNextSide(s.kicks)
+			out.shootout = Js.O({ us = M_trialShootoutRig.rigGoals(s.kicks, "you"), them = M_trialShootoutRig.rigGoals(s.kicks, "them"), kicks = A.map(s.kicks, function(k)
+				return Js.O({ side = k.side, scored = k.scored }, { "side", "scored" })
+			end), next = (if s.over then "" else (if M_trialShootoutRig.isYourKick(s) then "You" else (if (side == "them") then THEM else US))) }, { "us", "them", "kicks", "next" })
+		end
+		do return out end
+	end
+	exports.trialView = trialView
+	trialFrame = function(tp)
+		local tv = trialView(tp)
+		local m = pitchMatch(tp)
+		if m then
+			local f = M_matchView.frameOf(m)
+			do return Js.ospread(f, Js.O({ mode = "pitch", trial = tv, score = Js.ospread(f.score, Js.O({ usName = US, themName = THEM }, { "usName", "themName" })) }, { "mode", "trial", "score" })) end
+		end
+		local base = Js.O({ phase = "trial", cameraMode = "chance", minute = 0, score = Js.O({ us = 0, them = 0, usName = US, themName = THEM, home = true }, { "us", "them", "usName", "themName", "home" }), kits = TRIAL_KITS, bodies = Js.alit(), ball = nil, camera = Js.ospread(VISION_CAMERA, Js.O({ facing = "up", tilt = 0 }, { "facing", "tilt" })), goal = Js.O({ x1 = M_pitch.POST_L, x2 = M_pitch.POST_R, crossbar = 2.44 }, { "x1", "x2", "crossbar" }), aim = nil, passTarget = nil, feed = Js.alit(), log = Js.alit(), banner = nil, pause = nil, energy = 100, stamina = nil, speed = 1, energyMode = "medium", playstyle = "balanced", controls = Js.O({ powerShot = false, powerArmed = false, curve = false, steer = false, callForIt = false, nudge = false, dribble = false, touchMode = false }, { "powerShot", "powerArmed", "curve", "steer", "callForIt", "nudge", "dribble", "touchMode" }), shootout = nil }, { "phase", "cameraMode", "minute", "score", "kits", "bodies", "ball", "camera", "goal", "aim", "passTarget", "feed", "log", "banner", "pause", "energy", "stamina", "speed", "energyMode", "playstyle", "controls", "shootout" })
+		local d = tv.dribble
+		if (d and tp.dribble) then
+			A.push(base.bodies, Js.O({ id = "you", side = "you", x = d.you.x, y = d.you.y, name = tp.career.player.lastName }, { "id", "side", "x", "y", "name" }))
+			A.forEach(d.opp, function(o, i)
+				return A.push(base.bodies, Js.O({ id = ("fd" .. Js.numstr(i)), side = "opp", x = o.x, y = o.y }, { "id", "side", "x", "y" }))
+			end)
+			A.push(base.bodies, Js.O({ id = "keeper", side = "keeper", x = M_pitch.CX, y = 0.6 }, { "id", "side", "x", "y" }))
+			base.ball = Js.O({ x = d.you.x, y = (d.you.y - 0.6), z = 0 }, { "x", "y", "z" })
+			base.cameraMode = "chase"
+			base.phase = "trialDribble"
+			base.controls = Js.ospread(base.controls, Js.O({ dribble = (d.started and (tp.dribble.endAt == nil)) }, { "dribble" }))
+			do return Js.ospread(base, Js.O({ mode = "dribble", trial = tv }, { "mode", "trial" })) end
+		end
+		local v = tv.vision
+		if v then
+			A.push(base.bodies, Js.O({ id = "you", side = "you", x = v.you.x, y = v.you.y, name = tp.career.player.lastName }, { "id", "side", "x", "y", "name" }))
+			A.forEach(v.men, function(mm, i)
+				A.push(base.bodies, Js.O({ id = ("vm" .. Js.numstr(i)), side = "mate", x = mm.x, y = mm.y, option = true, name = (if (v.correct == i) then "FREE" else (if (v.picked == i) then "✗" else nil)) }, { "id", "side", "x", "y", "option", "name" }))
+				A.push(base.bodies, Js.O({ id = ("vk" .. Js.numstr(i)), side = "opp", x = mm.marker.x, y = mm.marker.y }, { "id", "side", "x", "y" }))
+			end)
+			A.push(base.bodies, Js.O({ id = "keeper", side = "keeper", x = M_pitch.CX, y = 0.6 }, { "id", "side", "x", "y" }))
+			base.ball = Js.O({ x = v.you.x, y = (v.you.y - 0.6), z = 0 }, { "x", "y", "z" })
+			base.phase = "trialVision"
+			do return Js.ospread(base, Js.O({ mode = "vision", trial = tv }, { "mode", "trial" })) end
+		end
+		base.phase = "trialCard"
+		do return Js.ospread(base, Js.O({ mode = "card", trial = tv }, { "mode", "trial" })) end
+	end
+	exports.trialFrame = trialFrame
+	BEHIND_BALL = 7
+	SIDE_PAD = 2.5
+	BASE_VIEW_H = 42
+	VISION_YOU = Js.O({ x = M_pitch.CX, y = 36 }, { "x", "y" })
+	AREA = Js.O({ x1 = 20, x2 = 48, y1 = 4.5, y2 = 30 }, { "x1", "x2", "y1", "y2" })
+	MARKER_BOX = Js.O({ x1 = 18.5, x2 = 49.5, y1 = 1.5, y2 = 33.5 }, { "x1", "x2", "y1", "y2" })
+	BASE_SPACE = 2.4
+	MIN_SPACE = 1.1
+	REQUIRED_GAP_FRACTION = 0.6
+	LAYOUT_ATTEMPTS = 24
+	dist = function(a, b)
+		return Math.hypot((a.x - b.x), (a.y - b.y))
+	end
+	US = "Trialists"
+	THEM = "Academy"
+	MATE_KICKS = (M_trialShootoutRig.SHOOTOUT_KICKS - 1)
+	LAST_RESULT_HOLD_S = 1.4
+	FINAL_HOLD_S = 1.5
+	COUNTDOWN_FROM = 3
+	COUNTDOWN_STEP_S = 0.55
+	VISION_WAIT_S = 0.65
+	VISION_COUNT_S = 0.6
+	VISION_REVEAL_S = 1.2
+	VISION_PICK_M = 3.4
+	DRIBBLE_HOLD_S = 1.2
+	DRILL_FIXTURE = Js.O({ opponent = "Academy", home = true, week = 0, competition = "Trial", kind = "league" }, { "opponent", "home", "week", "competition", "kind" })
+	HINTS = Js.O({ freeKicks = "Bend it round the wall or lift it over: the sides of the ball curl it, the bottom lifts it.", technique = "Put it through the cones: strike the side of the ball to bend it in.", dribbling = "Move with W A S D or the stick. Knock it past him with Q / E or the buttons.", vision = "Tap the man in the most space before the time runs out.", shootout = "Three kicks each. Yours is the last one." }, { "freeKicks", "technique", "dribbling", "vision", "shootout" })
+	TRIAL_KITS = Js.O({ us = Js.O({ shirt = "#2563eb", trim = "#f8fafc" }, { "shirt", "trim" }), them = Js.O({ shirt = "#dc2626", trim = "#111827" }, { "shirt", "trim" }), keeper = Js.O({ shirt = "#16a34a", trim = "#052e16" }, { "shirt", "trim" }), ourKeeper = Js.O({ shirt = "#f59e0b", trim = "#111827" }, { "shirt", "trim" }) }, { "us", "them", "keeper", "ourKeeper" })
+	VISION_CAMERA = Js.O({ x1 = 16.5, x2 = 51.5, y1 = ((-M_pitch.NET_DEPTH) - 1), y2 = (36 + 1.6) }, { "x1", "x2", "y1", "y2" })
+end
+]]></string>
+            </Properties>
+          </Item>
         </Item>
       </Item>
     </Item>
-    <Item class="Folder" referent="310">
+    <Item class="Folder" referent="317">
       <Properties>
         <string name="Name">Runtime</string>
       </Properties>
-      <Item class="ModuleScript" referent="311">
+      <Item class="ModuleScript" referent="318">
         <Properties>
           <string name="Name">Js</string>
           <string name="Source"><![CDATA[--!nocheck
@@ -68537,7 +70619,7 @@ return Js
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="312">
+      <Item class="ModuleScript" referent="319">
         <Properties>
           <string name="Name">Loader</string>
           <string name="Source"><![CDATA[--!strict
@@ -68578,15 +70660,15 @@ return Loader
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="313">
+  <Item class="ServerScriptService" referent="320">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="314">
+    <Item class="Folder" referent="321">
       <Properties>
         <string name="Name">Server</string>
       </Properties>
-      <Item class="Script" referent="315">
+      <Item class="Script" referent="322">
         <Properties>
           <string name="Name">Main</string>
           <token name="RunContext">0</token>
@@ -68614,6 +70696,7 @@ local Js = Loader.Js
 local Screens = Loader.import("roblox/game/screens")
 local Flow = Loader.import("roblox/game/flow")
 local Match = Loader.import("roblox/game/match")
+local TrialFlow = Loader.import("roblox/game/trialFlow")
 
 local SAVE_VERSION = 1
 -- A DataStore key holds at most 4 MB (counted after Roblox escapes the text),
@@ -68806,14 +70889,7 @@ local function handle(player, action, arg, form)
 			division = d.division or "League Two",
 			club = arg,
 		}, { "firstName", "lastName", "nationality", "division", "club" }))
-		-- the real players, as the website loads them at the signing
-		local ok, withReal = pcall(Flow.loadRealSquads, g)
-		if ok and withReal then
-			withReal.ui = g.ui
-			g = withReal
-		else
-			warn("real squads not loaded (is Allow HTTP Requests on?):", withReal)
-		end
+		-- a new career starts on its trial; the real players come at the signing
 		games[player] = g
 		dirty[player] = true
 		save(player)
@@ -68833,6 +70909,16 @@ local function handle(player, action, arg, form)
 		pendingMatch[player] = nil
 		local before = g
 		local nextGame = Screens.act(g, action, arg)
+		-- the trial's signing: the real players, as the website loads them then
+		if action == "trial-sign" and before.phase == "manager-talk" and nextGame.phase ~= "manager-talk" then
+			local ok, withReal = pcall(Flow.loadRealSquads, nextGame)
+			if ok and withReal then
+				withReal.ui = nextGame.ui
+				nextGame = withReal
+			else
+				warn("real squads not loaded (is Allow HTTP Requests on?):", withReal)
+			end
+		end
 		-- a move to a new club: its real dressing room
 		if action == "sign" and nextGame.career.player.club ~= before.career.player.club then
 			local ok, withSquad = pcall(Flow.loadNewClubSquad, nextGame)
@@ -68844,7 +70930,7 @@ local function handle(player, action, arg, form)
 		games[player] = nextGame
 		dirty[player] = true
 		-- save at the big moments straight away; otherwise the timer below does
-		if action == "end-season" or action == "sign" or action == "stay" or action == "retire" or action == "awards-continue" then
+		if action == "end-season" or action == "sign" or action == "stay" or action == "retire" or action == "awards-continue" or action == "trial-sign" then
 			save(player)
 		end
 	end
@@ -68961,6 +71047,57 @@ matchRemote.OnServerInvoke = function(player, action, json)
 	return res
 end
 
+-- The trial is played on the device too (roblox/game/trialPlay.ts): "start"
+-- sends the career, "done" takes the five results back (checked), "abandon"
+-- leaves the trial to be started again.
+local function trialAction(player, action, json)
+	local g = games[player]
+	if not g or g.phase ~= "trial" then
+		error("there is no trial to play now")
+	end
+	if action == "start" then
+		return Js.JSON.stringify(Match.matchCareer(g.career))
+	end
+	if action == "done" then
+		local ok, back = pcall(Js.JSON.parse, json)
+		local nextGame = ok and Screens.trialDone(g, back) or nil
+		if nextGame then
+			games[player] = nextGame
+			dirty[player] = true
+			save(player)
+			return encode(Screens.screen(nextGame))
+		end
+		warn("trial: the results from the device were refused")
+	end
+	return encode(Screens.screen(g))
+end
+
+local trialRemote = Instance.new("RemoteFunction")
+trialRemote.Name = "Trial"
+trialRemote.Parent = remotes
+
+trialRemote.OnServerInvoke = function(player, action, json)
+	if type(action) ~= "string" or (json ~= nil and type(json) ~= "string") then
+		return nil
+	end
+	local waited = 0
+	while busy[player] and waited < 30 do
+		task.wait(0.1)
+		waited += 0.1
+	end
+	busy[player] = true
+	local ok, res = pcall(trialAction, player, action, json)
+	busy[player] = nil
+	if not ok then
+		warn("Trial '" .. action .. "' failed:", res)
+		if action == "start" then
+			return nil
+		end
+		return encode(errorScreen(res))
+	end
+	return res
+end
+
 -- ─────────────────────────────────────────────────────────── join / leave ──
 local function onJoin(player)
 	local g = load(player)
@@ -69009,19 +71146,19 @@ end
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="316">
+  <Item class="StarterPlayer" referent="323">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="317">
+    <Item class="StarterPlayerScripts" referent="324">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="318">
+      <Item class="Folder" referent="325">
         <Properties>
           <string name="Name">Client</string>
         </Properties>
-        <Item class="LocalScript" referent="319">
+        <Item class="LocalScript" referent="326">
           <Properties>
             <string name="Name">Main</string>
             <string name="Source"><![CDATA[--[[
@@ -69047,6 +71184,7 @@ local StarterGui = game:GetService("StarterGui")
 local player = Players.LocalPlayer
 local remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Career")
 local matchRemote = ReplicatedStorage.Remotes:WaitForChild("Match")
+local trialRemote = ReplicatedStorage.Remotes:WaitForChild("Trial")
 local MatchClient = require(script.Parent:WaitForChild("Match"))
 
 pcall(function()
@@ -69640,10 +71778,14 @@ send = function(action, arg)
 	sending = true
 	busyCover.Visible = true
 	local ok, json
-	if action == "play-match" then
+	if action == "play-match" or action == "play-trial" then
 		-- played here on the device; the menus wait underneath
 		gui.Enabled = false
-		ok, json = pcall(MatchClient.play, matchRemote)
+		if action == "play-match" then
+			ok, json = pcall(MatchClient.play, matchRemote)
+		else
+			ok, json = pcall(MatchClient.playTrial, trialRemote)
+		end
 		gui.Enabled = true
 		if ok and json == nil then
 			ok, json = pcall(function()
@@ -69673,7 +71815,7 @@ send("get")
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="320">
+        <Item class="ModuleScript" referent="327">
           <Properties>
             <string name="Name">Match</string>
             <string name="Source"><![CDATA[--[[
@@ -70165,6 +72307,17 @@ local function buildHud()
 	h.finalScore = label("", 30, C.text, TITLE_FONT, { Position = UDim2.fromOffset(0, 50), Size = UDim2.new(1, 0, 0, 36), ZIndex = 21, Parent = h.final })
 	h.finalLine = label("", 16, C.dim, BODY_BOLD, { Position = UDim2.fromOffset(12, 92), Size = UDim2.new(1, -24, 0, 44), ZIndex = 21, Parent = h.final })
 	h.finalGo = bigButton("CONTINUE", h.final, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 156), Size = UDim2.new(1, -40, 0, 52), ZIndex = 21 })
+	-- the trial: which test, what to do, the cards between tests
+	h.trialTop = label("", 20, C.gold, TITLE_FONT, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 104), Size = UDim2.new(1, -24, 0, 26), TextStrokeTransparency = 0.3, Visible = false, Parent = gui })
+	h.trialHint = label("", 16, C.text, BODY_BOLD, { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -96), Size = UDim2.new(1, -40, 0, 48), TextStrokeTransparency = 0.35, Visible = false, Parent = gui })
+	h.tapStart = bigButton("TAP TO START", gui, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.55), Size = UDim2.fromOffset(240, 64), TextSize = 26, Visible = false, ZIndex = 8 })
+	h.trialCard = make("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(340, 220), BackgroundColor3 = C.panel2, BorderSizePixel = 0, Visible = false, ZIndex = 18, Parent = gui }, {
+		make("UICorner", { CornerRadius = UDim.new(0, 14) }),
+		make("UIStroke", { Color = C.gold, Thickness = 3 }),
+	})
+	h.trialCardTitle = label("", 40, C.gold, TITLE_FONT, { Position = UDim2.fromOffset(10, 18), Size = UDim2.new(1, -20, 0, 70), ZIndex = 19, Parent = h.trialCard })
+	h.trialCardSub = label("", 17, C.text, BODY_BOLD, { Position = UDim2.fromOffset(16, 94), Size = UDim2.new(1, -32, 0, 44), ZIndex = 19, Parent = h.trialCard })
+	h.trialCardGo = bigButton("CONTINUE", h.trialCard, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 148), Size = UDim2.new(1, -40, 0, 52), ZIndex = 19, Visible = false })
 	-- getting ready
 	h.cover = make("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = C.panel, ZIndex = 30, Parent = gui })
 	h.coverText = label("Getting the pitch ready…", 26, C.text, TITLE_FONT, { Size = UDim2.fromScale(1, 1), ZIndex = 31, Parent = h.cover })
@@ -70199,34 +72352,21 @@ local function groundAt(camera, sx, sy)
 end
 
 --[[
-  Plays one match. `remote` is ReplicatedStorage.Remotes.Match.
-  Returns the next screen's JSON from the server (or nil if it failed).
+  The pitch, the people, the camera and your input, for whatever `driver`
+  plays: one match (Match.play) or the trial (Match.playTrial).
+    driver.match()      the match state on the pitch now, or nil (the trial's dribble and pass stages, its cards)
+    driver.step(dt)     moves it on
+    driver.frame()      what to draw (roblox/game/matchView.ts's Frame; the trial's adds `trial`)
+    driver.done()       true when it is over
+    driver.tapGround(x, y), driver.stick(x, z), driver.knock(dir), driver.tapToGo()   (no match on the pitch)
+  Returns an error message if it stopped on one.
 ]]
-function Match.play(remote)
-	loadCode()
+local function runPitch(hud, driver)
 	local camera = workspace.CurrentCamera
-	local hud = buildHud()
-	local okStart, setupJson = pcall(function()
-		return remote:InvokeServer("start")
-	end)
-	if not okStart or type(setupJson) ~= "string" then
-		hud.gui:Destroy()
-		warn("match: could not start:", setupJson)
-		return nil
-	end
-	local m
-	local okMount, err = pcall(function()
-		local setup = Js.JSON.parse(setupJson)
-		m = M.startMatch(setup)
-	end)
-	if not okMount then
-		hud.gui:Destroy()
-		warn("match: could not mount:", err)
-		return remote:InvokeServer("abandon")
-	end
+	local m = driver.match()
 	-- for the smoke test's robot (roblox/tools/smoke-client.mjs); nothing reads it in the game
 	Match.current, Match.hud = m, hud
-	local kits = M.matchKits(m)
+	local kits = driver.frame().kits
 	local world = buildStadium(kits.us, kits.them)
 	local figFolder = Instance.new("Folder")
 	figFolder.Name = "Figures"
@@ -70235,6 +72375,10 @@ function Match.play(remote)
 	local ballShadow = part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.04, 0.4 * SCALE, 0.4 * SCALE), Color = Color3.new(0, 0, 0), Transparency = 0.55, Parent = world })
 	local arrow = part({ Size = Vector3.new(0.3 * SCALE, 0.05, 1), Color = Color3.fromHex("fde047"), Material = Enum.Material.Neon, Transparency = 1, Parent = world })
 	local youRing = part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.05, 1.3 * SCALE, 1.3 * SCALE), Color = Color3.fromHex("fde047"), Material = Enum.Material.Neon, Transparency = 0.35, Parent = world })
+	local cones = {}
+	for i = 1, 2 do
+		cones[i] = part({ Shape = Enum.PartType.Ball, Size = Vector3.new(0.5, 0.7, 0.5) * SCALE, Color = Color3.fromHex("f97316"), Material = Enum.Material.Neon, Transparency = 1, Parent = world })
+	end
 	local targetRing = part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.05, 1.6 * SCALE, 1.6 * SCALE), Color = Color3.fromHex("34d399"), Material = Enum.Material.Neon, Transparency = 1, Parent = world })
 
 	-- the sky and light of a match day (put back afterwards)
@@ -70313,7 +72457,12 @@ function Match.play(remote)
 		end
 		if input.KeyCode == Enum.KeyCode.Q or input.KeyCode == Enum.KeyCode.E then
 			safe(function()
-				M.dribbleBurst(m, input.KeyCode == Enum.KeyCode.Q and -1 or 1)
+				local dir = input.KeyCode == Enum.KeyCode.Q and -1 or 1
+				if m then
+					M.dribbleBurst(m, dir)
+				elseif driver.knock then
+					driver.knock(dir)
+				end
 			end)
 		end
 		if processed or finished then
@@ -70329,6 +72478,14 @@ function Match.play(remote)
 		if not x then
 			return
 		end
+		if not m then
+			safe(function()
+				if driver.tapGround then
+					driver.tapGround(x, y)
+				end
+			end)
+			return
+		end
 		pointer = { input = input, sx = input.Position.X, sy = input.Position.Y, x = x, y = y, phase = m.phase }
 		safe(function()
 			if m.phase == "aim" then
@@ -70341,7 +72498,7 @@ function Match.play(remote)
 		end)
 	end))
 	table.insert(inputConns, UserInputService.InputChanged:Connect(function(input)
-		if not pointer then
+		if not pointer or not m then
 			return
 		end
 		if input.UserInputType ~= Enum.UserInputType.MouseMovement and input ~= pointer.input then
@@ -70372,6 +72529,9 @@ function Match.play(remote)
 		end
 		local p = pointer
 		pointer = nil
+		if not m then
+			return
+		end
 		safe(function()
 			if m.phase == "aim" then
 				M.pointerUp(m)
@@ -70387,11 +72547,17 @@ function Match.play(remote)
 	-- the buttons
 	hud.power.Activated:Connect(function()
 		safe(function()
+			if not m then
+				return
+			end
 			M.armPowerShot(m, not m.powerArmed)
 		end)
 	end)
 	hud.call.Activated:Connect(function()
 		safe(function()
+			if not m then
+				return
+			end
 			local said = M.callForBall(m)
 			if said then
 				hud.banner.Text = said
@@ -70404,43 +72570,55 @@ function Match.play(remote)
 	hud.sprint.MouseButton1Up:Connect(function()
 		sprintButton = false
 	end)
-	hud.knockL.Activated:Connect(function()
+	local function knock(dir)
 		safe(function()
-			M.dribbleBurst(m, -1)
+			if m then
+				M.dribbleBurst(m, dir)
+			elseif driver.knock then
+				driver.knock(dir)
+			end
 		end)
+	end
+	hud.knockL.Activated:Connect(function()
+		knock(-1)
 	end)
 	hud.knockR.Activated:Connect(function()
+		knock(1)
+	end)
+	hud.tapStart.Activated:Connect(function()
 		safe(function()
-			M.dribbleBurst(m, 1)
+			if driver.tapToGo then
+				driver.tapToGo()
+			end
 		end)
 	end)
 	for mode, b in pairs(hud.modes) do
 		b.Activated:Connect(function()
 			safe(function()
-				M.setEnergyMode(m, mode)
+				if m then M.setEnergyMode(m, mode) end
 			end)
 		end)
 	end
 	for style, b in pairs(hud.styles) do
 		b.Activated:Connect(function()
 			safe(function()
-				M.setPlaystyle(m, style)
+				if m then M.setPlaystyle(m, style) end
 			end)
 		end)
 	end
 	hud.speed.Activated:Connect(function()
 		safe(function()
-			M.cycleSpeed(m)
+			if m then M.cycleSpeed(m) end
 		end)
 	end)
 	hud.pauseGo.Activated:Connect(function()
 		safe(function()
-			M.continuePause(m)
+			if m then M.continuePause(m) end
 		end)
 	end)
 	hud.kib.Activated:Connect(function()
 		safe(function()
-			M.drinkKib(m)
+			if m then M.drinkKib(m) end
 		end)
 	end)
 
@@ -70455,6 +72633,12 @@ function Match.play(remote)
 
 	local function stepInput()
 		local mx, mz = moveDir()
+		if not m then
+			if driver.stick then
+				driver.stick(mx, mz)
+			end
+			return
+		end
 		local ctl = M.controlsOf(m)
 		if ctl.steer then
 			-- the stick, turned into pitch directions by where the camera looks
@@ -70476,16 +72660,16 @@ function Match.play(remote)
 		local aspect = camera.ViewportSize.X / math.max(1, camera.ViewportSize.Y)
 		-- the camera
 		local want
-		if f.phase == "feed" then
+		if f.cameraMode == "broadcast" then
 			want = broadcastCamera(clock)
-		elseif f.phase == "tdDribble" then
+		elseif f.cameraMode == "chase" then
 			local you = f.bodies[1]
 			want = dribbleCamera(you)
 		else
 			want = chanceCamera(f, aspect, camera.FieldOfView)
 		end
 		local a = 1 - math.exp(-5 * dt)
-		if lastPhase ~= f.phase and (f.phase == "aim" or f.phase == "tdDribble") then
+		if lastPhase ~= f.phase and (f.phase == "aim" or f.phase == "tdDribble" or f.phase == "trialDribble" or f.phase == "trialVision") then
 			a = 1 -- a new chance: cut, as the website does
 		end
 		camera.CFrame = camera.CFrame:Lerp(want, a)
@@ -70503,15 +72687,16 @@ function Match.play(remote)
 				fig = newFigure(figFolder)
 				figures[b.id] = fig
 			end
-			if fig.side ~= b.side then
+			local kit = (b.side == "you" or b.side == "mate") and f.kits.us or b.side == "keeper" and f.kits.keeper or f.kits.them
+			if fig.side ~= b.side or fig.kit ~= kit.shirt then
 				fig.side = b.side
-				local kit = (b.side == "you" or b.side == "mate") and kits.us or b.side == "keeper" and kits.keeper or kits.them
+				fig.kit = kit.shirt
 				dress(fig, kit, nil, skinOf(b.id))
 			end
 			if fig.hidden then
 				showFigure(fig)
 			end
-			fig.tag.Text = b.side == "you" and "YOU" or (b.name or "")
+			fig.tag.Text = b.side == "you" and "YOU" or (b.name or (b.option and f.trial and "•" or ""))
 			fig.tag.TextColor3 = b.side == "you" and C.gold or Color3.new(1, 1, 1)
 			local pos = w(b.x, b.y, 0)
 			local speed = 0
@@ -70645,6 +72830,54 @@ function Match.play(remote)
 			hud.kib.Visible = f.pause.halfTime and f.pause.kib > 0 and f.energy < 100
 			hud.kib.Text = string.format("DRINK A KIB CAN (%d LEFT)", int(f.pause.kib))
 		end
+		-- the trial's cones, words and cards
+		local tv = f.trial
+		local coneN = tv and Js.alen(tv.cones) or 0
+		for i = 1, 2 do
+			if i <= coneN then
+				local c = tv.cones[i]
+				cones[i].Transparency = 0
+				cones[i].CFrame = CFrame.new(w(c.x, c.y, 0.35))
+			else
+				cones[i].Transparency = 1
+			end
+		end
+		hud.trialTop.Visible = tv ~= nil
+		hud.trialHint.Visible = tv ~= nil and tv.card == nil
+		hud.trialCard.Visible = tv ~= nil and tv.card ~= nil
+		hud.tapStart.Visible = false
+		if tv then
+			hud.trialTop.Text = string.format("TRIAL %d/%d · %s", int(tv.stageNo), int(tv.stages), string.upper(tv.title))
+			hud.trialHint.Text = (tv.line ~= "" and (tv.line .. "\n") or "") .. tv.hint
+			if tv.card then
+				if tv.card.kind == "countdown" then
+					hud.trialCardTitle.Text = tostring(int(tv.card.n))
+					hud.trialCardSub.Text = "Next: " .. tostring(tv.card.label)
+					hud.trialCardGo.Visible = false
+				else
+					hud.trialCardTitle.Text = "A SCOUT HAS SPOTTED YOU"
+					hud.trialCardSub.Text = "He has seen enough. Time to hear what the club thinks."
+					hud.trialCardGo.Visible = true
+				end
+			end
+			local d, v = tv.dribble, tv.vision
+			if d and not d.started then
+				hud.tapStart.Visible = true
+				hud.tapStart.Text = "TAP TO START"
+			elseif v and v.phase == "ready" then
+				hud.tapStart.Visible = true
+				hud.tapStart.Text = "TAP TO START"
+			end
+			if v and v.phase == "count" and v.count > 0 then
+				hud.banner.Visible = true
+				hud.banner.Text = tostring(int(v.count))
+			end
+			if tv.shootout then
+				hud.minute.Text = ""
+				hud.score.Text = string.format("TRIALISTS  %d – %d  ACADEMY", int(tv.shootout.us), int(tv.shootout.them))
+			end
+		end
+
 		-- the strike screen
 		hud.strike.Visible = strike ~= nil
 		if strike then
@@ -70688,20 +72921,32 @@ function Match.play(remote)
 		end
 		clock += dt
 		safe(function()
-			stepInput()
-			if m.phase == "contact" and lastPhase ~= "contact" then
-				strike = S.openStrike(m)
-			elseif m.phase ~= "contact" then
+			-- the match on the pitch can change (the trial's stages): start its input afresh
+			local now = driver.match()
+			if now ~= m then
+				m = now
+				Match.current = m
 				strike = nil
+				pointer = nil
+				lastPhase = ""
 			end
-			if strike then
-				S.strikeStep(strike, m, dt)
+			stepInput()
+			if m then
+				-- the strike screen opens whenever the phase is "contact" (a run-up gets there mid-frame)
+				if m.phase == "contact" and strike == nil then
+					strike = S.openStrike(m)
+				elseif m.phase ~= "contact" then
+					strike = nil
+				end
+				if strike then
+					S.strikeStep(strike, m, dt)
+				end
 			end
-			M.tick(m, dt)
-			local f = V.frameOf(m)
+			driver.step(dt)
+			local f = driver.frame()
 			drawFrame(f, dt)
 			lastPhase = f.phase
-			if m.result then
+			if driver.done() then
 				finished = true
 			end
 		end)
@@ -70719,6 +72964,56 @@ function Match.play(remote)
 		c:Disconnect()
 	end
 
+	-- put everything back
+	world:Destroy()
+	Lighting.ClockTime = saved.ClockTime
+	Lighting.Brightness = saved.Brightness
+	camera.CameraType = camSaved.type
+	camera.FieldOfView = camSaved.fov
+	if hrp then
+		hrp.Anchored = wasAnchored
+	end
+	return failure
+end
+
+--[[
+  Plays one match. `remote` is ReplicatedStorage.Remotes.Match.
+  Returns the next screen's JSON from the server (or nil if it failed).
+]]
+function Match.play(remote)
+	loadCode()
+	local hud = buildHud()
+	local okStart, setupJson = pcall(function()
+		return remote:InvokeServer("start")
+	end)
+	if not okStart or type(setupJson) ~= "string" then
+		hud.gui:Destroy()
+		warn("match: could not start:", setupJson)
+		return nil
+	end
+	local m
+	local okMount, err = pcall(function()
+		m = M.startMatch(Js.JSON.parse(setupJson))
+	end)
+	if not okMount then
+		hud.gui:Destroy()
+		warn("match: could not mount:", err)
+		return remote:InvokeServer("abandon")
+	end
+	local failure = runPitch(hud, {
+		match = function()
+			return m
+		end,
+		step = function(dt)
+			M.tick(m, dt)
+		end,
+		frame = function()
+			return V.frameOf(m)
+		end,
+		done = function()
+			return m.result ~= nil
+		end,
+	})
 	local nextScreen
 	if failure then
 		warn("match: stopped by an error:", failure)
@@ -70751,18 +73046,84 @@ function Match.play(remote)
 		end)
 		nextScreen = ok and res or nil
 	end
-
-	-- put everything back
-	world:Destroy()
 	hud.gui:Destroy()
-	Lighting.ClockTime = saved.ClockTime
-	Lighting.Brightness = saved.Brightness
-	camera.CameraType = camSaved.type
-	camera.FieldOfView = camSaved.fov
-	if hrp then
-		hrp.Anchored = wasAnchored
-	end
 	Match.current, Match.hud = nil, nil
+	return nextScreen
+end
+
+--[[
+  Plays the trial (roblox/game/trialPlay.ts): the five stages, on the same
+  pitch. `remote` is ReplicatedStorage.Remotes.Trial. Returns the next
+  screen's JSON from the server (or nil if it failed).
+]]
+function Match.playTrial(remote)
+	loadCode()
+	local T = Loader.import("roblox/game/trialPlay")
+	local hud = buildHud()
+	local okStart, json = pcall(function()
+		return remote:InvokeServer("start")
+	end)
+	if not okStart or type(json) ~= "string" then
+		hud.gui:Destroy()
+		warn("trial: could not start:", json)
+		return nil
+	end
+	local tp
+	local okMount, err = pcall(function()
+		tp = T.startTrialPlay(Js.JSON.parse(json))
+	end)
+	if not okMount then
+		hud.gui:Destroy()
+		warn("trial: could not mount:", err)
+		return nil
+	end
+	Match.trial = tp
+	hud.trialCardGo.Activated:Connect(function()
+		T.tapToGo(tp)
+	end)
+	local failure = runPitch(hud, {
+		match = function()
+			return T.pitchMatch(tp)
+		end,
+		step = function(dt)
+			T.tick(tp, dt)
+		end,
+		frame = function()
+			return T.trialFrame(tp)
+		end,
+		done = function()
+			return tp.done
+		end,
+		tapGround = function(x, y)
+			T.visionTap(tp, vec(x, y))
+		end,
+		stick = function(mx, _mz)
+			T.dribbleSteer(tp, mx)
+		end,
+		knock = function(dir)
+			T.dribbleKnock(tp, dir)
+		end,
+		tapToGo = function()
+			T.tapToGo(tp)
+		end,
+	})
+	local nextScreen
+	if failure then
+		warn("trial: stopped by an error:", failure)
+		hud.cover.Visible = true
+		hud.coverText.Text = "The trial hit a problem. Try it again from the menu."
+		task.wait(1.5)
+		nextScreen = remote:InvokeServer("abandon")
+	else
+		hud.cover.Visible = true
+		hud.coverText.Text = "…"
+		local ok, res = pcall(function()
+			return remote:InvokeServer("done", Js.JSON.stringify(tp.back))
+		end)
+		nextScreen = ok and res or nil
+	end
+	hud.gui:Destroy()
+	Match.current, Match.hud, Match.trial = nil, nil, nil
 	return nextScreen
 end
 

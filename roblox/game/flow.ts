@@ -69,7 +69,9 @@ export type Phase =
   | "dashboard" | "youth" | "post-match" | "draw" | "knockout-roundup" | "playoff-roundup" | "deadline-day"
   | "intl-callup" | "intl-watched" | "intl-tournament-table" | "contract-renewal" | "ballon-dor"
   | "retirement" | "final-season" | "season-transfer" | "transfer-request-talk" | "transfer-signing"
-  | "relegation-move" | "season-awards" | "ladder" | "legacy";
+  | "relegation-move" | "season-awards" | "ladder" | "legacy"
+  // the trial (roblox/game/trialFlow.ts): played on the device, then the manager's talk and the signing
+  | "trial" | "manager-talk" | "trial-reward";
 
 /** Everything the page keeps in React state, kept here instead. */
 export interface Game {
@@ -105,6 +107,11 @@ export function newGame(player: StarPlayer, clubs: string[], division: CareerDiv
   // page.tsx: "A save from before the international world ... bring it into step once."
   if (career.player?.club && career.fixtures?.length && !career.intl?.xi?.[career.season]) career = syncIntl(career);
   return settle({ career, phase: "dashboard", koShown: [] });
+}
+
+/** A new career after the trial's signing: the website's phase settling (youth team, a call-up). */
+export function afterSigning(g: Game): Game {
+  return settle({ ...g, phase: "dashboard" });
 }
 
 /**

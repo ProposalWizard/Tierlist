@@ -171,7 +171,7 @@ return function(exports, import, Js)
 		do return true end
 	end
 	mechOpen = function(m, id)
-		do return M_mechanics.mechanicOpen(m.career, id) end
+		do return M_mechanics.mechanicOpen((if m.setup.drill then nil else m.career), id) end
 	end
 	displayScore = function(m)
 		do return Js.O({ user = Js.alen(A.filter(m.log, function(l)
@@ -333,8 +333,9 @@ return function(exports, import, Js)
 		local MATCH_DURATION = (M_ruleBook.ruleBookFor(career, "FA").matchLengthMinutes or DEFAULT_MATCH_DURATION)
 		M_canvasEngine.setOffsideRuleEnabled((not M_ruleBook.ruleBookFor(career, "FA").offsideAbolished))
 		applyClearanceRules()
-		local startingXI = M_teamsheet.startingTeammateRoles(career, fixture)
-		local oppXI = M_teamsheet.opponentStartingXI(career, fixture)
+		local drill = setup.drill
+		local startingXI = (if drill then nil else M_teamsheet.startingTeammateRoles(career, fixture))
+		local oppXI = (if drill then nil else M_teamsheet.opponentStartingXI(career, fixture))
 		local oppXIForCast = (if oppXI then A.map(oppXI, function(p)
 			return Js.O({ id = p.id, name = p.name, shortName = p.short, position = p.role, overall = p.overall, face = (if p.face ~= nil then p.face else M_fakeFaces.fakeFaceFor(p.id)), isGK = (p.role == "GK"), y = p.y, defending = p.defending }, { "id", "name", "shortName", "position", "overall", "face", "isGK", "y", "defending" })
 		end) else nil)
@@ -351,17 +352,21 @@ return function(exports, import, Js)
 		local kits = (if fixture.home then M_kits.kitsFor(career.player.club, fixture.opponent, (function() local _v = career.clubKits; if _v == nil then return nil end; _v = _v[career.player.club]; return _v end)(), (function() local _v = career.clubKits; if _v == nil then return nil end; _v = _v[fixture.opponent]; return _v end)()) else M_kits.kitsFor(fixture.opponent, career.player.club, (function() local _v = career.clubKits; if _v == nil then return nil end; _v = _v[fixture.opponent]; return _v end)(), (function() local _v = career.clubKits; if _v == nil then return nil end; _v = _v[career.player.club]; return _v end)()))
 		local ourKit = (if fixture.home then kits.home else kits.away)
 		local vision = (if career.skills.vision ~= nil then career.skills.vision else 55)
-		local m = Js.O({ setup = setup, career = career, fixture = fixture, now = 0, timers = Js.alit(), sceneGen = 0, phase = "aim", sc = nil, ball = nil, rng = Math.random, rngCalls = 0, seed = setup.seed, MATCH_DURATION = MATCH_DURATION, ADDED = ADDED, matchCeiling = (MATCH_DURATION + ADDED), extraTimeStage = 0, wentToExtraTime = false, shootoutResult = nil, st = M_hiddenMatch.newMatch(M_season.mulberry32(setup.seed)), pendingRequest = nil, chain = nil, chanceMemory = M_scenarioSelect.newSelectionMemory(), lastDeal = nil, dribbleDeal = nil, setPieceNext = nil, handover = nil, tally = newTally(), attempts = 0, userScore = 0, oppScore = 0, goalEvents = Js.alit(), oppGoalEvents = Js.alit(), chanceLog = Js.alit(), cheekyStrike = nil, cheekyMisses = Js.alit(), strikeAt = nil, matePlays = Js.alit(), deflections = 0, minute = 0, log = Js.alit(), queue = Js.alit(), feed = Js.alit(), speed = 1, pause = nil, halfTimeShown = false, simContinue = nil, feedWait = nil, quickStart = false, boardShown = false, stretch = nil, energy = (if career.energy ~= nil then career.energy else 100), energyClock = 0, energyMode = "medium", energyFactor = M_energy.energyFactorFor(career, fixture), playstyle = (if career.playstyle ~= nil then career.playstyle else "balanced"), playstyleChanges = Js.alit(), kibUsed = 0, enteredAt = setup.startMinute, subOn = false, subChances = 0, subFitness = 100, hooked = nil, hookedAt = nil, aim = nil, drag = nil, thumbOrigin = nil, dragging = false, aimCommitAt = nil, presser = nil, presserBehind = false, captainDrag = nil, runup = nil, contactTimerS = nil, windUp = nil, powerArmed = false, powerStrike = false, strikeRule = nil, outcome = nil, banner = nil, keeperSalt = M_keeperBrain.keeperSaltFor(false), physAcc = 0, airWait = nil, airOpened = nil, aerial = nil, playOn = nil, playOnRng = Math.random, layOffsLeft = M_playOn.MAX_LAY_OFFS, playOnCaught = false, bar = 1, steer = nil, touchModeOn = false, bootWait = nil, td = nil, tdReady = false, fpDribble = nil, liveShootout = nil, shootoutKick = nil, camera = Js.O({ x1 = -5, x2 = 105, y1 = -5, y2 = 100 }, { "x1", "x2", "y1", "y2" }), facing = "up", tiltSetting = (if (M_matchView.matchView() == "new") then M_cameraTilt.cameraTilt() else 0), tiltDeg = 0, strength = strength, vision = vision, kits = kits, ourKeeperKit = M_kits.keeperKit(ourKit.shirt, kits.keeper.shirt), startingXI = startingXI, oppXIForCast = oppXIForCast, oppXI = oppXI, fpRoster = fpRoster, result = nil }, { "setup", "career", "fixture", "now", "timers", "sceneGen", "phase", "sc", "ball", "rng", "rngCalls", "seed", "MATCH_DURATION", "ADDED", "matchCeiling", "extraTimeStage", "wentToExtraTime", "shootoutResult", "st", "pendingRequest", "chain", "chanceMemory", "lastDeal", "dribbleDeal", "setPieceNext", "handover", "tally", "attempts", "userScore", "oppScore", "goalEvents", "oppGoalEvents", "chanceLog", "cheekyStrike", "cheekyMisses", "strikeAt", "matePlays", "deflections", "minute", "log", "queue", "feed", "speed", "pause", "halfTimeShown", "simContinue", "feedWait", "quickStart", "boardShown", "stretch", "energy", "energyClock", "energyMode", "energyFactor", "playstyle", "playstyleChanges", "kibUsed", "enteredAt", "subOn", "subChances", "subFitness", "hooked", "hookedAt", "aim", "drag", "thumbOrigin", "dragging", "aimCommitAt", "presser", "presserBehind", "captainDrag", "runup", "contactTimerS", "windUp", "powerArmed", "powerStrike", "strikeRule", "outcome", "banner", "keeperSalt", "physAcc", "airWait", "airOpened", "aerial", "playOn", "playOnRng", "layOffsLeft", "playOnCaught", "bar", "steer", "touchModeOn", "bootWait", "td", "tdReady", "fpDribble", "liveShootout", "shootoutKick", "camera", "facing", "tiltSetting", "tiltDeg", "strength", "vision", "kits", "ourKeeperKit", "startingXI", "oppXIForCast", "oppXI", "fpRoster", "result" })
+		local m = Js.O({ setup = setup, career = career, fixture = fixture, now = 0, timers = Js.alit(), sceneGen = 0, phase = "aim", sc = nil, ball = nil, rng = Math.random, rngCalls = 0, seed = setup.seed, MATCH_DURATION = MATCH_DURATION, ADDED = ADDED, matchCeiling = (MATCH_DURATION + ADDED), extraTimeStage = 0, wentToExtraTime = false, shootoutResult = nil, st = M_hiddenMatch.newMatch(M_season.mulberry32(setup.seed)), pendingRequest = nil, chain = nil, chanceMemory = M_scenarioSelect.newSelectionMemory(), lastDeal = nil, dribbleDeal = nil, setPieceNext = nil, handover = nil, tally = newTally(), attempts = 0, userScore = 0, oppScore = 0, goalEvents = Js.alit(), oppGoalEvents = Js.alit(), chanceLog = Js.alit(), cheekyStrike = nil, cheekyMisses = Js.alit(), strikeAt = nil, matePlays = Js.alit(), deflections = 0, minute = 0, log = Js.alit(), queue = Js.alit(), feed = Js.alit(), speed = 1, pause = nil, halfTimeShown = false, simContinue = nil, feedWait = nil, quickStart = false, boardShown = false, stretch = nil, energy = (if drill then 100 else (if career.energy ~= nil then career.energy else 100)), energyClock = 0, energyMode = "medium", energyFactor = (if drill then 1 else M_energy.energyFactorFor(career, fixture)), playstyle = (if career.playstyle ~= nil then career.playstyle else "balanced"), playstyleChanges = Js.alit(), kibUsed = 0, enteredAt = setup.startMinute, subOn = false, subChances = 0, subFitness = 100, hooked = nil, hookedAt = nil, aim = nil, drag = nil, thumbOrigin = nil, dragging = false, aimCommitAt = nil, presser = nil, presserBehind = false, captainDrag = nil, runup = nil, contactTimerS = nil, windUp = nil, powerArmed = false, powerStrike = false, strikeRule = nil, outcome = nil, banner = nil, keeperSalt = M_keeperBrain.keeperSaltFor((not (not drill))), physAcc = 0, airWait = nil, airOpened = nil, aerial = nil, playOn = nil, playOnRng = Math.random, layOffsLeft = M_playOn.MAX_LAY_OFFS, playOnCaught = false, bar = 1, steer = nil, touchModeOn = false, bootWait = nil, td = nil, tdReady = false, fpDribble = nil, liveShootout = nil, shootoutKick = nil, camera = Js.O({ x1 = -5, x2 = 105, y1 = -5, y2 = 100 }, { "x1", "x2", "y1", "y2" }), facing = "up", tiltSetting = (if (M_matchView.matchView() == "new") then M_cameraTilt.cameraTilt() else 0), tiltDeg = 0, strength = strength, vision = vision, kits = kits, ourKeeperKit = M_kits.keeperKit(ourKit.shirt, kits.keeper.shirt), startingXI = startingXI, oppXIForCast = oppXIForCast, oppXI = oppXI, fpRoster = fpRoster, result = nil }, { "setup", "career", "fixture", "now", "timers", "sceneGen", "phase", "sc", "ball", "rng", "rngCalls", "seed", "MATCH_DURATION", "ADDED", "matchCeiling", "extraTimeStage", "wentToExtraTime", "shootoutResult", "st", "pendingRequest", "chain", "chanceMemory", "lastDeal", "dribbleDeal", "setPieceNext", "handover", "tally", "attempts", "userScore", "oppScore", "goalEvents", "oppGoalEvents", "chanceLog", "cheekyStrike", "cheekyMisses", "strikeAt", "matePlays", "deflections", "minute", "log", "queue", "feed", "speed", "pause", "halfTimeShown", "simContinue", "feedWait", "quickStart", "boardShown", "stretch", "energy", "energyClock", "energyMode", "energyFactor", "playstyle", "playstyleChanges", "kibUsed", "enteredAt", "subOn", "subChances", "subFitness", "hooked", "hookedAt", "aim", "drag", "thumbOrigin", "dragging", "aimCommitAt", "presser", "presserBehind", "captainDrag", "runup", "contactTimerS", "windUp", "powerArmed", "powerStrike", "strikeRule", "outcome", "banner", "keeperSalt", "physAcc", "airWait", "airOpened", "aerial", "playOn", "playOnRng", "layOffsLeft", "playOnCaught", "bar", "steer", "touchModeOn", "bootWait", "td", "tdReady", "fpDribble", "liveShootout", "shootoutKick", "camera", "facing", "tiltSetting", "tiltDeg", "strength", "vision", "kits", "ourKeeperKit", "startingXI", "oppXIForCast", "oppXI", "fpRoster", "result" })
 		m.rng = countedRng(m, setup.seed)
-		local sc = M_canvasEngine.buildWeightedScenario(M_season.mulberry32(setup.seed), setup.position, strength, setup.teamRelationship, vision)
-		if M_switchedOffKinds.isSwitchedOff(sc.kind) then
+		local sc = (if drill then drill.openOn() else M_canvasEngine.buildWeightedScenario(M_season.mulberry32(setup.seed), setup.position, strength, setup.teamRelationship, vision))
+		if ((not drill) and M_switchedOffKinds.isSwitchedOff(sc.kind)) then
 			local r = M_season.mulberry32(Js.bxor(setup.seed, 20983))
 			sc = M_canvasEngine.buildScenario(M_switchedOffKinds.playableKind(sc.kind, r), r, strength, setup.teamRelationship, vision)
 		end
-		M_index.setupKind(sc, M_season.mulberry32(Js.bxor(setup.seed, 32273)), Js.O({ appliedAuthored = false, appliedPlan = false, keeperStrength = strength }, { "appliedAuthored", "appliedPlan", "keeperStrength" }))
+		if (not drill) then
+			M_index.setupKind(sc, M_season.mulberry32(Js.bxor(setup.seed, 32273)), Js.O({ appliedAuthored = false, appliedPlan = false, keeperStrength = strength }, { "appliedAuthored", "appliedPlan", "keeperStrength" }))
+		end
 		M_index.enforceHardRules(sc)
-		M_goalFrame.finishServedFrame(sc)
-		M_scenePicture.stageScene(sc, nil)
+		if (not drill) then
+			M_goalFrame.finishServedFrame(sc)
+		end
+		M_scenePicture.stageScene(sc, (function() local _v = drill; if _v == nil then return nil end; _v = _v.scene; return _v end)())
 		m.sc = sc
 		sc.conditions = setup.conditions
 		M_lineup.castScenario(sc, onPitch(m, (if career.squad ~= nil then career.squad else Js.alit())))
@@ -371,6 +376,11 @@ return function(exports, import, Js)
 		standBackForRunup(m, sc)
 		setUpKeeper(m, sc, Js.ushr(Js.bxor(setup.seed, 19326), 0))
 		frameScenario(m, sc)
+		if drill then
+			m.enteredAt = 0
+			scheduleAutoKick(m)
+			do return m end
+		end
 		if (setup.startMinute > 0) then
 			m.seed += 1
 			local rng = countedRng(m, m.seed)
@@ -415,7 +425,7 @@ return function(exports, import, Js)
 		seed = Js.ushr(Js.bxor(seed, m.keeperSalt), 0)
 		local opts = M_keeperBrain.brainOptionsHere()
 		local facing = ((function() local _v = M_penaltyTaking.autoKickOf(sc); if _v == nil then return nil end; _v = _v.keeper; if _v == nil then return nil end; _v = _v.strength; return _v end)() or m.strength)
-		opts.penalty = M_penaltyKeeper.penaltyReadFor(facing, nil)
+		opts.penalty = M_penaltyKeeper.penaltyReadFor(facing, (function() local _v = m.setup.drill; if _v == nil then return nil end; _v = _v.penaltyRead; return _v end)())
 		M_keeperBrain.brainSetup(sc, seed, sc.keeperStrength, opts)
 	end
 	dressAutoKeeper = function(sc)
@@ -725,6 +735,28 @@ return function(exports, import, Js)
 		m.seed += 1
 		m.rng = countedRng(m, m.seed)
 		local rng = m.rng
+		local drill = m.setup.drill
+		if ((drill and (not m.chain)) and (not Js.T(m.setPieceNext))) then
+			m.chain = nil
+			m.pendingRequest = nil
+			local sc = drill.openOn()
+			M_index.enforceHardRules(sc)
+			sc.conditions = m.setup.conditions
+			M_lineup.castScenario(sc, onPitch(m, (if m.career.squad ~= nil then m.career.squad else Js.alit())))
+			M_canvasEngine.initDefenders(sc, rng)
+			M_lineup.castDefence(sc, m.oppXIForCast)
+			M_scenePicture.stageScene(sc, drill.scene)
+			m.sc = sc
+			dressAutoKeeper(sc)
+			standBackForRunup(m, sc)
+			setUpKeeper(m, sc, Js.ushr(Js.bxor(m.seed, 19326), 0))
+			frameScenario(m, sc)
+			m.ball = nil
+			clearChance(m)
+			setPhase(m, "aim")
+			scheduleAutoKick(m)
+			do return end
+		end
 		local rawRequest = (if attacking then nil else m.pendingRequest)
 		m.pendingRequest = nil
 		local chain = m.chain
@@ -1480,6 +1512,9 @@ return function(exports, import, Js)
 		pushLine(m, "He runs up…")
 	end
 	airAerialNow = function(m)
+		if m.setup.drill then
+			do return m.setup.skills.aerial end
+		end
 		do return Math.round((M_aerial.aerialOf(m.career.skills) * (1 - M_energy.fatigueCut(liveEnergyAt(m, m.minute))))) end
 	end
 	handleContact = function(m, tapped, over, extras)
@@ -1501,12 +1536,12 @@ return function(exports, import, Js)
 		local auto = (if (function() local _v = over; if _v == nil then return nil end; _v = _v.skills; return _v end)() then Js.O({ skills = over.skills }, { "skills" }) else nil)
 		m.contactTimerS = nil
 		local tired = tiredSkills(m)
-		local fkRaw = m.career.skills.freeKick
+		local fkRaw = (if m.setup.drill then m.setup.drill.setPieceSkill else m.career.skills.freeKick)
 		local strikeWith = (if auto then auto.skills else M_setPieces.setPieceSkills(tired, (if (fkRaw == nil) then tired.technique else (fkRaw * (1 - M_energy.fatigueCut(liveEnergyAt(m, m.minute))))), m.sc.kind))
 		local feelPow = (((not auto) and M_shotFeel.shotPowerOn()) and M_shotFeel.struckAtGoal(m.sc, a.dir, ct.cx))
 		local launchWith = (if feelPow then Js.ospread(strikeWith, Js.O({ power = M_shotFeel.feelPower(strikeWith.power) }, { "power" })) else (if M_compareSwitches.switchOn("powerCurve") then Js.ospread(strikeWith, Js.O({ power = M_strikePower.strikingPower(strikeWith.power) }, { "power" })) else strikeWith))
 		if ct.air then
-			ct = Js.ospread(ct, Js.O({ air = Js.ospread(ct.air, Js.O({ tech = launchWith.technique, aerial = Math.round((M_aerial.aerialOf(m.career.skills) * (1 - M_energy.fatigueCut(liveEnergyAt(m, m.minute))))) }, { "tech", "aerial" })) }, { "air" }))
+			ct = Js.ospread(ct, Js.O({ air = Js.ospread(ct.air, Js.O({ tech = launchWith.technique, aerial = airAerialNow(m) }, { "tech", "aerial" })) }, { "air" }))
 		end
 		local shotPro = ((not auto) and M_shotModel.shotsPro())
 		local shotKnuckle = (((not auto) and M_shotModel.knucklePowerOn()) and mechOpen(m, "knuckle"))
@@ -1528,7 +1563,7 @@ return function(exports, import, Js)
 			M_keeperBrain.brainStrike(m.sc, m.ball, bs)
 		elseif (m.sc.kind == "penalty") then
 			local facing = ((function() local _v = M_penaltyTaking.autoKickOf(m.sc); if _v == nil then return nil end; _v = _v.keeper; if _v == nil then return nil end; _v = _v.strength; return _v end)() or m.strength)
-			local read = M_penaltyKeeper.penaltyReadFor(facing, nil)
+			local read = M_penaltyKeeper.penaltyReadFor(facing, (function() local _v = m.setup.drill; if _v == nil then return nil end; _v = _v.penaltyRead; return _v end)())
 			local r = M_season.mulberry32(Js.ushr(Js.bxor(Js.bxor(Js.bxor(m.seed, Math.imul((m.rngCalls + 1), 2654435761)), 24301), m.keeperSalt), 0))
 			M_penaltyKeeper.applyPenaltyRead(m.sc, M_penaltyKeeper.decidePenaltyRead(m.sc, m.ball, read, Js.alit(r(), r())))
 		end
@@ -1575,6 +1610,11 @@ return function(exports, import, Js)
 		local youShot = (((not auto) and ((function() local _v = m.ball; if _v == nil then return nil end; _v = _v.youStruckAtGoal; return _v end)() == true)) and (not receiverShot))
 		local isSimplePass = (((not youShot) and (not receiverShot)) and (sc.passTarget ~= nil))
 		local kind = M_canvasEngine.OUTCOME_TEXT[res].kind
+		local onResolved = (function() local _v = m.setup.drill; if _v == nil then return nil end; _v = _v.onChanceResolved; return _v end)()
+		if onResolved then
+			local b = m.ball
+			onResolved(Js.ospread(Js.O({ outcome = res, kind = sc.kind, youShot = youShot, teammateShot = receiverShot, ball = (if b then Js.O({ x = b.pos.x, y = b.pos.y, z = b.z }, { "x", "y", "z" }) else nil) }, { "outcome", "kind", "youShot", "teammateShot", "ball" }), (if auto then Js.O({ autoKick = auto.side }, { "autoKick" }) else Js.O({}, nil))))
+		end
 		local yourFinish = (function()
 			if auto then
 				do return nil end
@@ -1787,7 +1827,7 @@ return function(exports, import, Js)
 			do return end
 		end
 		handOver(m, function()
-			return startSimulation(m)
+			return (if m.setup.drill then loadScenario(m, false) else startSimulation(m))
 		end, 1800)
 	end
 	handOver = function(m, fn, ms)
@@ -2174,6 +2214,9 @@ return function(exports, import, Js)
 				res = nil
 				showAction(m, "DEFLECTED")
 				pushLine(m, "Blocked — and it's come off him loose!")
+			end
+			if (function() local _v = m.setup.drill; if _v == nil then return nil end; _v = _v.onBallStep; return _v end)() then
+				m.setup.drill.onBallStep(Js.O({ x = ball.pos.x, y = ball.pos.y, z = ball.z }, { "x", "y", "z" }))
 			end
 			if ((not Js.T(res)) and caughtUp) then
 				res = "touchOn"

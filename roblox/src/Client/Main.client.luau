@@ -21,6 +21,7 @@ local StarterGui = game:GetService("StarterGui")
 local player = Players.LocalPlayer
 local remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Career")
 local matchRemote = ReplicatedStorage.Remotes:WaitForChild("Match")
+local trialRemote = ReplicatedStorage.Remotes:WaitForChild("Trial")
 local MatchClient = require(script.Parent:WaitForChild("Match"))
 
 pcall(function()
@@ -614,10 +615,14 @@ send = function(action, arg)
 	sending = true
 	busyCover.Visible = true
 	local ok, json
-	if action == "play-match" then
+	if action == "play-match" or action == "play-trial" then
 		-- played here on the device; the menus wait underneath
 		gui.Enabled = false
-		ok, json = pcall(MatchClient.play, matchRemote)
+		if action == "play-match" then
+			ok, json = pcall(MatchClient.play, matchRemote)
+		else
+			ok, json = pcall(MatchClient.playTrial, trialRemote)
+		end
 		gui.Enabled = true
 		if ok and json == nil then
 			ok, json = pcall(function()

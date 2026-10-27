@@ -11,11 +11,11 @@ return function(exports, import, Js)
 	end
 	exports.ruleFor = ruleFor
 	setupKind = function(sc, rng, ctx)
-		(function() local _r = ruleFor(sc.kind); if _r == nil then return nil end; return _r.setup(sc, rng, ctx) end)()
+		(function() local _r = ruleFor(sc.kind); if _r == nil then return nil end; if _r.setup == nil then return nil end; return _r.setup(sc, rng, ctx) end)()
 	end
 	exports.setupKind = setupKind
 	enforceHardRules = function(sc)
-		(function() local _r = ruleFor(sc.kind); if _r == nil then return nil end; return _r.enforce(sc) end)()
+		(function() local _r = ruleFor(sc.kind); if _r == nil then return nil end; if _r.enforce == nil then return nil end; return _r.enforce(sc) end)()
 	end
 	exports.enforceHardRules = enforceHardRules
 	strikeKind = function(sc, ball, rand, ctx)
@@ -34,14 +34,14 @@ return function(exports, import, Js)
 	end
 	exports.strikeKind = strikeKind
 	replayStrike = function(sc, ball, d)
-		(function() local _r = ruleFor(d.kind); if _r == nil then return nil end; return _r.apply(sc, ball, d) end)()
+		(function() local _r = ruleFor(d.kind); if _r == nil then return nil end; if _r.apply == nil then return nil end; return _r.apply(sc, ball, d) end)()
 	end
 	exports.replayStrike = replayStrike
 	stepKind = function(sc, ball, dt, d)
 		if (not d) then
 			do return end
 		end;
-		(function() local _r = ruleFor(d.kind); if _r == nil then return nil end; return _r.step(sc, ball, dt, d) end)()
+		(function() local _r = ruleFor(d.kind); if _r == nil then return nil end; if _r.step == nil then return nil end; return _r.step(sc, ball, dt, d) end)()
 	end
 	exports.stepKind = stepKind
 	Js.reexport(exports, M_freeKick, { ["isMatchFreeKick"] = "isMatchFreeKick", ["freeKickReaction"] = "freeKickReaction" })

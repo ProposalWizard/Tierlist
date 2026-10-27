@@ -1,5 +1,5 @@
 {
- "commit": "5028efd2",
+ "commit": "1248a8f3",
  "modules": [
   "__pkg/react",
   "data/fifa/knockout-tables_json",
@@ -233,6 +233,7 @@
   "lib/star/scenarios",
   "lib/star/scenePicture",
   "lib/star/scoutOffers",
+  "lib/star/scoutedPlacement",
   "lib/star/season",
   "lib/star/seasonAwards",
   "lib/star/seasonStanding",
@@ -258,11 +259,15 @@
   "lib/star/teamsheet",
   "lib/star/three3d/gait",
   "lib/star/tournament",
+  "lib/star/trainingDrills",
   "lib/star/trainingLevels",
+  "lib/star/trainingRender",
   "lib/star/transferInterest",
   "lib/star/transferRequest",
   "lib/star/transfers",
   "lib/star/trial",
+  "lib/star/trialShootoutRig",
+  "lib/star/trialStages",
   "lib/star/tuning",
   "lib/star/tuningStore",
   "lib/star/unlocks",
@@ -286,6 +291,8 @@
   "roblox/game/match",
   "roblox/game/matchView",
   "roblox/game/screens",
-  "roblox/game/strikeScreen"
+  "roblox/game/strikeScreen",
+  "roblox/game/trialFlow",
+  "roblox/game/trialPlay"
  ]
 }

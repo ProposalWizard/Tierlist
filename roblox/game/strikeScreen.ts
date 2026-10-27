@@ -187,7 +187,7 @@ export function strikeView(s: StrikeScreen): StrikeView {
     powerPct, powerColor: powerPct < 40 ? "#22c55e" : powerPct < 75 ? "#eab308" : "#ef4444",
     verdict: s.verdict, spark: s.spark, timedOut: s.timedOut,
     heading: inp.powerShot ? "Power shot" : s.airKind === "header" ? "Head it!" : s.airKind === "volley" ? "Volley it!" : "Strike it!",
-    jump: inp.motion === "float" && inp.ballZ !== undefined ? headerJump(inp.ballZ, inp.aerial) : null,
+    jump: inp.motion === "float" && inp.ballZ !== undefined && inp.aerial !== undefined ? headerJump(inp.ballZ, inp.aerial) : null,
     powerSpot: inp.powerShot && s.powerShownAt !== null && !s.locked ? s.powerSpot : null,
   };
 }

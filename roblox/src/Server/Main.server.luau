@@ -22,6 +22,7 @@ local Js = Loader.Js
 local Screens = Loader.import("roblox/game/screens")
 local Flow = Loader.import("roblox/game/flow")
 local Match = Loader.import("roblox/game/match")
+local TrialFlow = Loader.import("roblox/game/trialFlow")
 
 local SAVE_VERSION = 1
 -- A DataStore key holds at most 4 MB (counted after Roblox escapes the text),
@@ -214,14 +215,7 @@ local function handle(player, action, arg, form)
 			division = d.division or "League Two",
 			club = arg,
 		}, { "firstName", "lastName", "nationality", "division", "club" }))
-		-- the real players, as the website loads them at the signing
-		local ok, withReal = pcall(Flow.loadRealSquads, g)
-		if ok and withReal then
-			withReal.ui = g.ui
-			g = withReal
-		else
-			warn("real squads not loaded (is Allow HTTP Requests on?):", withReal)
-		end
+		-- a new career starts on its trial; the real players come at the signing
 		games[player] = g
 		dirty[player] = true
 		save(player)
@@ -241,6 +235,16 @@ local function handle(player, action, arg, form)
 		pendingMatch[player] = nil
 		local before = g
 		local nextGame = Screens.act(g, action, arg)
+		-- the trial's signing: the real players, as the website loads them then
+		if action == "trial-sign" and before.phase == "manager-talk" and nextGame.phase ~= "manager-talk" then
+			local ok, withReal = pcall(Flow.loadRealSquads, nextGame)
+			if ok and withReal then
+				withReal.ui = nextGame.ui
+				nextGame = withReal
+			else
+				warn("real squads not loaded (is Allow HTTP Requests on?):", withReal)
+			end
+		end
 		-- a move to a new club: its real dressing room
 		if action == "sign" and nextGame.career.player.club ~= before.career.player.club then
 			local ok, withSquad = pcall(Flow.loadNewClubSquad, nextGame)
@@ -252,7 +256,7 @@ local function handle(player, action, arg, form)
 		games[player] = nextGame
 		dirty[player] = true
 		-- save at the big moments straight away; otherwise the timer below does
-		if action == "end-season" or action == "sign" or action == "stay" or action == "retire" or action == "awards-continue" then
+		if action == "end-season" or action == "sign" or action == "stay" or action == "retire" or action == "awards-continue" or action == "trial-sign" then
 			save(player)
 		end
 	end
@@ -361,6 +365,57 @@ matchRemote.OnServerInvoke = function(player, action, json)
 	busy[player] = nil
 	if not ok then
 		warn("Match '" .. action .. "' failed:", res)
+		if action == "start" then
+			return nil
+		end
+		return encode(errorScreen(res))
+	end
+	return res
+end
+
+-- The trial is played on the device too (roblox/game/trialPlay.ts): "start"
+-- sends the career, "done" takes the five results back (checked), "abandon"
+-- leaves the trial to be started again.
+local function trialAction(player, action, json)
+	local g = games[player]
+	if not g or g.phase ~= "trial" then
+		error("there is no trial to play now")
+	end
+	if action == "start" then
+		return Js.JSON.stringify(Match.matchCareer(g.career))
+	end
+	if action == "done" then
+		local ok, back = pcall(Js.JSON.parse, json)
+		local nextGame = ok and Screens.trialDone(g, back) or nil
+		if nextGame then
+			games[player] = nextGame
+			dirty[player] = true
+			save(player)
+			return encode(Screens.screen(nextGame))
+		end
+		warn("trial: the results from the device were refused")
+	end
+	return encode(Screens.screen(g))
+end
+
+local trialRemote = Instance.new("RemoteFunction")
+trialRemote.Name = "Trial"
+trialRemote.Parent = remotes
+
+trialRemote.OnServerInvoke = function(player, action, json)
+	if type(action) ~= "string" or (json ~= nil and type(json) ~= "string") then
+		return nil
+	end
+	local waited = 0
+	while busy[player] and waited < 30 do
+		task.wait(0.1)
+		waited += 0.1
+	end
+	busy[player] = true
+	local ok, res = pcall(trialAction, player, action, json)
+	busy[player] = nil
+	if not ok then
+		warn("Trial '" .. action .. "' failed:", res)
 		if action == "start" then
 			return nil
 		end

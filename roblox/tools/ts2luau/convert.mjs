@@ -771,16 +771,17 @@ class FileEmitter {
           return `(function() local _f = ${f}; if _f == nil then return nil end; return _f(${this.args(node.arguments)}) end)()`;
         }
       }
-      // o?.m(x): evaluate receiver, stop if nil
+      // o?.m(x), and o?.m?.(x) (the method may be missing too): evaluate receiver, stop if nil
+      const noMethod = node.questionDotToken && ts.isPropertyAccessExpression(callee) ? ` if ${this.dot("_r", callee.name.text)} == nil then return nil end;` : "";
       if (ts.isPropertyAccessExpression(callee) && callee.questionDotToken) {
         const recv = this.expr(callee.expression);
         const fakeCall = this.methodCall(node, callee, "_r");
-        return `(function() local _r = ${recv}; if _r == nil then return nil end; return ${fakeCall} end)()`;
+        return `(function() local _r = ${recv}; if _r == nil then return nil end;${noMethod} return ${fakeCall} end)()`;
       }
       if (ts.isPropertyAccessExpression(callee) && this.hasOptionalChain(callee.expression)) {
         const recv = this.optionalChain(callee.expression);
         const fakeCall = this.methodCall(node, callee, "_r");
-        return `(function() local _r = ${recv}; if _r == nil then return nil end; return ${fakeCall} end)()`;
+        return `(function() local _r = ${recv}; if _r == nil then return nil end;${noMethod} return ${fakeCall} end)()`;
       }
       this.err(node, "optional call of this shape");
     }

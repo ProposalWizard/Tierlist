@@ -54,7 +54,7 @@ import {
 } from "../../lib/star/penaltyRunup";
 import { matchView, frameForNewView, crossCutCamera, turnWideChance, figureShrinkFor } from "../../lib/star/matchView";
 import { cameraTilt } from "../../lib/star/cameraTilt";
-import { stageScene } from "../../lib/star/scenePicture";
+import { stageScene, type ScenePicture } from "../../lib/star/scenePicture";
 import { isSwitchedOff, playableKind } from "../../lib/star/switchedOffKinds";
 import { KIB_CANS } from "../../lib/star/shopData";
 import { giveAndGoChance } from "../../lib/star/giveAndGo";
@@ -110,7 +110,7 @@ import type { CareerState, MatchStats, Fixture, GoalEvent, OppGoalEvent, SquadPl
 import { shotPowerOn, contactFieldOn, feelPower, feelLift, struckAtGoal, fieldApplies } from "../../lib/star/shotFeel";
 import { energyFactorFor, energyPerMinute, clampEnergy, tiredKickSkills, fatigueCut, type EnergyMode } from "../../lib/star/energy";
 import { aerialOf } from "../../lib/star/aerial";
-import { penaltyReadFor, decidePenaltyRead, applyPenaltyRead } from "../../lib/star/penaltyKeeper";
+import { penaltyReadFor, decidePenaltyRead, applyPenaltyRead, type PenaltyReadSettings } from "../../lib/star/penaltyKeeper";
 import { setupKind, strikeKind, stepKind, enforceHardRules, type StrikeDecision } from "../../lib/star/kindRules";
 import { switchOn } from "../../lib/star/compareSwitches";
 import { strikingPower } from "../../lib/star/strikePower";
@@ -180,6 +180,25 @@ export interface MatchSetup {
   freeKickRunup?: string;
   /** The pictures already shown (the website keeps them in the browser). Default: this device's. */
   pictures?: PictureMemory;
+  /** One picture at a time, no match around it: the website's EngineFeature (trial, training). */
+  drill?: Drill;
+}
+
+/** CanvasMatch's feature props (EnginePlay.tsx EngineFeature): openOn, bare, career = null. */
+export interface Drill {
+  /** The picture for the next chance. Called again after every result. */
+  openOn: () => Scenario;
+  setPieceSkill?: number;
+  penaltyRead?: Partial<PenaltyReadSettings>;
+  scene?: ScenePicture;
+  /** Watches the ball each physics step. */
+  onBallStep?: (ball: { x: number; y: number; z: number }) => void;
+  /** CanvasMatch's onChanceResolved. */
+  onChanceResolved?: (info: ChanceResolved) => void;
+}
+export interface ChanceResolved {
+  outcome: Outcome; kind: ScenarioKind; youShot: boolean; teammateShot: boolean;
+  ball: { x: number; y: number; z: number } | null; autoKick?: "us" | "them";
 }
 
 /** page.tsx's match mount, from the readied career (handlePlayMatch). */
@@ -427,7 +446,7 @@ function mayTake(m: MatchState, kind: ScenarioKind): boolean {
   if (kind === "corner") return d.corners ?? true;
   return true;
 }
-function mechOpen(m: MatchState, id: Mechanic): boolean { return mechanicOpen(m.career, id); }
+function mechOpen(m: MatchState, id: Mechanic): boolean { return mechanicOpen(m.setup.drill ? null : m.career, id); }
 
 /** The score as revealed so far (CanvasMatch's displayScore). */
 export function displayScore(m: MatchState): { user: number; opp: number } {
@@ -597,8 +616,9 @@ export function startMatch(setup: MatchSetup): MatchState {
   const MATCH_DURATION = ruleBookFor(career, "FA").matchLengthMinutes ?? DEFAULT_MATCH_DURATION;
   setOffsideRuleEnabled(!ruleBookFor(career, "FA").offsideAbolished);
   applyClearanceRules();
-  const startingXI = startingTeammateRoles(career, fixture);
-  const oppXI = opponentStartingXI(career, fixture);
+  const drill = setup.drill;
+  const startingXI = drill ? null : startingTeammateRoles(career, fixture);
+  const oppXI = drill ? null : opponentStartingXI(career, fixture);
   const oppXIForCast: OpponentSheetPlayer[] | null = oppXI
     ? oppXI.map((p) => ({ id: p.id, name: p.name, shortName: p.short, position: p.role, overall: p.overall,
       face: p.face ?? fakeFaceFor(p.id), isGK: p.role === "GK", y: p.y, defending: p.defending }))
@@ -624,12 +644,12 @@ export function startMatch(setup: MatchSetup): MatchState {
     cheekyStrike: null, cheekyMisses: [], strikeAt: null, matePlays: [], deflections: 0,
     minute: 0, log: [], queue: [], feed: [], speed: 1, pause: null, halfTimeShown: false, simContinue: null, feedWait: null,
     quickStart: false, boardShown: false, stretch: null,
-    energy: career.energy ?? 100, energyClock: 0, energyMode: "medium", energyFactor: energyFactorFor(career, fixture),
+    energy: drill ? 100 : career.energy ?? 100, energyClock: 0, energyMode: "medium", energyFactor: drill ? 1 : energyFactorFor(career, fixture),
     playstyle: career.playstyle ?? "balanced", playstyleChanges: [], kibUsed: 0,
     enteredAt: setup.startMinute, subOn: false, subChances: 0, subFitness: 100, hooked: null, hookedAt: null,
     aim: null, drag: null, thumbOrigin: null, dragging: false, aimCommitAt: null, presser: null, presserBehind: false,
     captainDrag: null, runup: null, contactTimerS: null, windUp: null, powerArmed: false, powerStrike: false,
-    strikeRule: null, outcome: null, banner: null, keeperSalt: keeperSaltFor(false), physAcc: 0,
+    strikeRule: null, outcome: null, banner: null, keeperSalt: keeperSaltFor(!!drill), physAcc: 0,
     airWait: null, airOpened: null, aerial: null,
     playOn: null, playOnRng: Math.random, layOffsLeft: MAX_LAY_OFFS, playOnCaught: false, bar: 1, steer: null,
     touchModeOn: false, bootWait: null,
@@ -640,15 +660,15 @@ export function startMatch(setup: MatchSetup): MatchState {
   } as MatchState;
   m.rng = countedRng(m, setup.seed);
   // The opening scenario (CanvasMatch's scenarioRef initial value).
-  let sc = buildWeightedScenario(mulberry32(setup.seed), setup.position, strength, setup.teamRelationship, vision);
-  if (isSwitchedOff(sc.kind)) {
+  let sc = drill ? drill.openOn() : buildWeightedScenario(mulberry32(setup.seed), setup.position, strength, setup.teamRelationship, vision);
+  if (!drill && isSwitchedOff(sc.kind)) {
     const r = mulberry32(setup.seed ^ 0x51f7);
     sc = buildScenario(playableKind(sc.kind, r), r, strength, setup.teamRelationship, vision);
   }
-  setupKind(sc, mulberry32(setup.seed ^ 0x7e11), { appliedAuthored: false, appliedPlan: false, keeperStrength: strength });
+  if (!drill) setupKind(sc, mulberry32(setup.seed ^ 0x7e11), { appliedAuthored: false, appliedPlan: false, keeperStrength: strength });
   enforceHardRules(sc);
-  finishServedFrame(sc);
-  stageScene(sc, undefined);
+  if (!drill) finishServedFrame(sc);
+  stageScene(sc, drill?.scene);
   m.sc = sc;
   // The mount effect.
   sc.conditions = setup.conditions;
@@ -659,6 +679,12 @@ export function startMatch(setup: MatchSetup): MatchState {
   standBackForRunup(m, sc);
   setUpKeeper(m, sc, (setup.seed ^ 0x4b7e) >>> 0);
   frameScenario(m, sc);
+  if (drill) {
+    // a feature opens on its picture (no match around it)
+    m.enteredAt = 0;
+    scheduleAutoKick(m);
+    return m;
+  }
   if (setup.startMinute > 0) {
     m.seed += 1;
     const rng = countedRng(m, m.seed);
@@ -697,7 +723,7 @@ function setUpKeeper(m: MatchState, sc: Scenario, seed: number) {
   seed = (seed ^ m.keeperSalt) >>> 0;
   const opts = brainOptionsHere();
   const facing = autoKickOf(sc)?.keeper?.strength ?? m.strength;
-  opts.penalty = penaltyReadFor(facing, undefined);
+  opts.penalty = penaltyReadFor(facing, m.setup.drill?.penaltyRead);
   brainSetup(sc, seed, sc.keeperStrength, opts);
 }
 function dressAutoKeeper(sc: Scenario) {
@@ -965,6 +991,28 @@ function loadScenario(m: MatchState, attacking: boolean) {
   m.seed += 1;
   m.rng = countedRng(m, m.seed);
   const rng = m.rng;
+  const drill = m.setup.drill;
+  if (drill && !m.chain && !m.setPieceNext) {
+    m.chain = null;
+    m.pendingRequest = null;
+    const sc = drill.openOn();
+    enforceHardRules(sc);
+    sc.conditions = m.setup.conditions;
+    castScenario(sc, onPitch(m, m.career.squad ?? []));
+    initDefenders(sc, rng);
+    castDefence(sc, m.oppXIForCast);
+    stageScene(sc, drill.scene);
+    m.sc = sc;
+    dressAutoKeeper(sc);
+    standBackForRunup(m, sc);
+    setUpKeeper(m, sc, (m.seed ^ 0x4b7e) >>> 0);
+    frameScenario(m, sc);
+    m.ball = null;
+    clearChance(m);
+    setPhase(m, "aim");
+    scheduleAutoKick(m);
+    return;
+  }
   const rawRequest = attacking ? null : m.pendingRequest;
   m.pendingRequest = null;
   const chain = m.chain;
@@ -1555,7 +1603,8 @@ function startRunup(m: MatchState, rawDir: Vec2, power: number, auto?: { contact
   pushLine(m, "He runs up…");
 }
 
-function airAerialNow(m: MatchState): number {
+function airAerialNow(m: MatchState): number | undefined {
+  if (m.setup.drill) return (m.setup.skills as KickSkills & { aerial?: number }).aerial;
   return Math.round(aerialOf(m.career.skills) * (1 - fatigueCut(liveEnergyAt(m, m.minute))));
 }
 
@@ -1578,13 +1627,13 @@ function handleContact(
   const auto = over?.skills ? { skills: over.skills } : null;
   m.contactTimerS = null;
   const tired = tiredSkills(m);
-  const fkRaw = m.career.skills.freeKick;
+  const fkRaw = m.setup.drill ? m.setup.drill.setPieceSkill : m.career.skills.freeKick;
   const strikeWith = auto ? auto.skills : setPieceSkills(
     tired, fkRaw === undefined ? tired.technique : fkRaw * (1 - fatigueCut(liveEnergyAt(m, m.minute))), m.sc.kind);
   const feelPow = !auto && shotPowerOn() && struckAtGoal(m.sc, a.dir, ct.cx);
   const launchWith = feelPow ? { ...strikeWith, power: feelPower(strikeWith.power) }
     : switchOn("powerCurve") ? { ...strikeWith, power: strikingPower(strikeWith.power) } : strikeWith;
-  if (ct.air) ct = { ...ct, air: { ...ct.air, tech: launchWith.technique, aerial: Math.round(aerialOf(m.career.skills) * (1 - fatigueCut(liveEnergyAt(m, m.minute)))) } };
+  if (ct.air) ct = { ...ct, air: { ...ct.air, tech: launchWith.technique, aerial: airAerialNow(m) } };
   const shotPro = !auto && shotsPro();
   const shotKnuckle = !auto && knucklePowerOn() && mechOpen(m, "knuckle");
   const shotField = !auto && contactFieldOn();
@@ -1603,7 +1652,7 @@ function handleContact(
     brainStrike(m.sc, m.ball, bs);
   } else if (m.sc.kind === "penalty") {
     const facing = autoKickOf(m.sc)?.keeper?.strength ?? m.strength;
-    const read = penaltyReadFor(facing, undefined);
+    const read = penaltyReadFor(facing, m.setup.drill?.penaltyRead);
     const r = mulberry32(((m.seed ^ Math.imul(m.rngCalls + 1, 0x9e3779b1)) ^ 0x5eed ^ m.keeperSalt) >>> 0);
     applyPenaltyRead(m.sc, decidePenaltyRead(m.sc, m.ball, read, [r(), r()]));
   }
@@ -1654,6 +1703,13 @@ function resolveOutcome(m: MatchState, res: Outcome) {
   const youShot = !auto && m.ball?.youStruckAtGoal === true && !receiverShot;
   const isSimplePass = !youShot && !receiverShot && sc.passTarget != null;
   const kind = OUTCOME_TEXT[res].kind;
+  // the observer hook for a feature built on the engine (the trial's scoring)
+  const onResolved = m.setup.drill?.onChanceResolved;
+  if (onResolved) {
+    const b = m.ball;
+    onResolved({ outcome: res, kind: sc.kind, youShot, teammateShot: receiverShot,
+      ball: b ? { x: b.pos.x, y: b.pos.y, z: b.z } : null, ...(auto ? { autoKick: auto.side } : {}) });
+  }
   const yourFinish: "chip" | "curl" | undefined = (() => {
     if (auto) return undefined;
     if (m.cheekyStrike === "chip") return "chip";
@@ -1803,7 +1859,8 @@ function resolveOutcome(m: MatchState, res: Outcome) {
   }
   m.attempts += 1;
   if (m.chain) { after(m, quickOn ? 250 : 1600, () => loadScenario(m, true)); return; }
-  handOver(m, () => startSimulation(m), 1800);
+  // a feature (no match around it) goes straight to its next picture
+  handOver(m, () => (m.setup.drill ? loadScenario(m, false) : startSimulation(m)), 1800);
 }
 
 /** CanvasMatch.handOver: after `ms`, or once a cleared ball has left the picture. */
@@ -2115,6 +2172,7 @@ function stepFlight(m: MatchState, dt: number) {
       showAction(m, "DEFLECTED");
       pushLine(m, "Blocked — and it's come off him loose!");
     }
+    if (m.setup.drill?.onBallStep) m.setup.drill.onBallStep({ x: ball.pos.x, y: ball.pos.y, z: ball.z });
     if (!res && caughtUp) res = "touchOn";
     if (res === "short") clearLooseWin(ball, sc);
     if (res) { resolveOutcome(m, res); break; }
@@ -2161,7 +2219,7 @@ export function aimPreview(m: MatchState): { dir: Vec2; power: number } | null {
 /** The strike screen's inputs: CanvasMatch's <ContactBall> props (or the power shot's). */
 export interface StrikeInputs {
   motion: BallMotion; timeLimitS: number | null; power: number; powerShot: boolean; aimFromTap: boolean; ballZ?: number;
-  technique: number; aerial: number; grades: boolean; knuckles: boolean; field: boolean;
+  technique: number; aerial?: number; grades: boolean; knuckles: boolean; field: boolean;
 }
 export function strikeInputs(m: MatchState): StrikeInputs | null {
   if (m.phase !== "contact" || !m.aim) return null;
