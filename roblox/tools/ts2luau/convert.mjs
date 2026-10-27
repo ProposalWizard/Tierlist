@@ -2359,6 +2359,30 @@ function collect(program, entries) {
   return files;
 }
 
+/**
+ * SPEED-UPS (Roblox only; the website's code is unchanged). A function listed
+ * here gives the same answer for the same argument for the whole game in
+ * Roblox, so its answer is kept per argument and a copy is handed back each
+ * time (callers may change their list). Measured 27 Oct 2026: the drawn-chance
+ * pools were rescanned and re-sorted many times per chance (up to 0.9 s a
+ * chance in Luau). Only list a function whose inputs cannot change in Roblox.
+ *   authoredPool / playPool: the drawn chances. They change only through the
+ *   website's dev tools (setLiveScenarioPool, showSavedScenarios), which
+ *   Roblox never calls.
+ */
+const REMEMBER = {
+  "lib/star/authoredChance": ["authoredPool", "playPool"],
+};
+function rememberAnswers(key, code) {
+  for (const name of REMEMBER[key] ?? []) {
+    const line = `\texports.${name} = ${name}\n`;
+    if (!code.includes(line)) throw new Error(`${key}: cannot remember ${name} (its export line moved)`);
+    code = code.replace(line, line +
+      `\tdo local _orig, _kept = ${name}, {}; ${name} = function(k) local c = _kept[k]; if c == nil then c = _orig(k); _kept[k] = c end; return A.slice(c) end; exports.${name} = ${name} end\n`);
+  }
+  return code;
+}
+
 function commitOf() {
   try { return execSync("git rev-parse --short HEAD", { cwd: REPO }).toString().trim(); } catch { return "?"; }
 }
@@ -2379,7 +2403,7 @@ export function convert(entries, { quiet = false, outDir = OUT_DIR, manifestPath
       let code;
       if (fs.existsSync(override)) code = fs.readFileSync(override, "utf8");
       else if (f.endsWith(".json")) code = convertJson(f);
-      else code = new FileEmitter(program, program.getSourceFile(f), files).run();
+      else code = rememberAnswers(key, new FileEmitter(program, program.getSourceFile(f), files).run());
       fs.writeFileSync(outFile, code);
       written.push(key);
     } catch (e) {

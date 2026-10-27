@@ -63,6 +63,7 @@ return function(exports, import, Js)
 		end) end
 	end
 	exports.authoredPool = authoredPool
+	do local _orig, _kept = authoredPool, {}; authoredPool = function(k) local c = _kept[k]; if c == nil then c = _orig(k); _kept[k] = c end; return A.slice(c) end; exports.authoredPool = authoredPool end
 	playPool = function(kind)
 		local own = authoredPool(kind)
 		if ((not M_airDrawings.isAirKind(kind)) or (Js.alen(A.filter(own, function(s)
@@ -73,6 +74,7 @@ return function(exports, import, Js)
 		do return Js.aspread(own, M_airDrawings.derivedAirDrawings(kind, authoredPool)) end
 	end
 	exports.playPool = playPool
+	do local _orig, _kept = playPool, {}; playPool = function(k) local c = _kept[k]; if c == nil then c = _orig(k); _kept[k] = c end; return A.slice(c) end; exports.playPool = playPool end
 	ruleSetFor = function(kind)
 		local pool = playPool(kind)
 		if (not Js.T(Js.alen(pool))) then

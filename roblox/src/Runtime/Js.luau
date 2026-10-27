@@ -1281,7 +1281,9 @@ local VARIANT = { -- one letter with a mark of its own (secondary difference)
 	[0xD8] = 0x4F, [0xF8] = 0x6F, [0x110] = 0x44, [0x111] = 0x64, [0xD0] = 0x44, [0xF0] = 0x64,
 	[0x141] = 0x4C, [0x142] = 0x6C, [0x131] = 0x69, [0x126] = 0x48, [0x127] = 0x68,
 }
-local function collKey(s)
+local COLL_CACHE = {} -- a string's sort key never changes: built once (sorting compares the same names many times)
+local COLL_CACHED = 0
+local function collKeyBuild(s)
 	local prim, sec, ter = {}, {}, {}
 	local ok = pcall(function()
 		local cps = {}
@@ -1342,6 +1344,20 @@ local function collKey(s)
 		end
 	end
 	return prim, sec, ter
+end
+local function collKey(s)
+	local k = COLL_CACHE[s]
+	if not k then
+		if COLL_CACHED > 20000 then
+			COLL_CACHE = {}
+			COLL_CACHED = 0
+		end
+		local p, sc, t = collKeyBuild(s)
+		k = { p, sc, t }
+		COLL_CACHE[s] = k
+		COLL_CACHED += 1
+	end
+	return k[1], k[2], k[3]
 end
 local function cmpLists(a, b)
 	for i = 1, math.max(#a, #b) do

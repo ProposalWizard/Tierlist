@@ -261,7 +261,16 @@ while played < MATCHES and presses < 300 do
 				end
 			end
 		end
+		local before = MatchClient.current and MatchClient.current.phase
+		local t0 = os.clock()
 		RENDER:Fire(1 / 60)
+		local ms = (os.clock() - t0) * 1000
+		if ms > 40 then
+			local mm = MatchClient.current
+			print(string.format("  SLOW %.0f ms: %s -> %s, minute %s, kind %s", ms, tostring(before), tostring(mm and mm.phase), tostring(mm and mm.minute), tostring(mm and mm.sc and mm.sc.kind)))
+		end
+		FRAME_MS = FRAME_MS or {}
+		table.insert(FRAME_MS, ms)
 	end
 	local after = Js.JSON.parse(result)
 	print(string.format("  back to %s (%s) after %d frames; parts made %d, moved %d", after.id, after.title, frames, PARTS or 0, MOVED or 0))
@@ -271,3 +280,15 @@ while played < MATCHES and presses < 300 do
 	end
 end
 print("matches played on the client:", played)
+if FRAME_MS and #FRAME_MS > 0 then
+	table.sort(FRAME_MS)
+	local sum = 0
+	for _, v in ipairs(FRAME_MS) do
+		sum += v
+	end
+	local function pct(p)
+		return FRAME_MS[math.max(1, math.floor(#FRAME_MS * p))]
+	end
+	print(string.format("frame time (ms): mean %.2f, median %.2f, 99%% %.2f, 99.9%% %.2f, worst %.2f over %d frames",
+		sum / #FRAME_MS, pct(0.5), pct(0.99), pct(0.999), FRAME_MS[#FRAME_MS], #FRAME_MS))
+end
