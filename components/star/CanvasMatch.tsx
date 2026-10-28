@@ -96,6 +96,8 @@ import { GOAL_LINES, ASSIST_LINES } from "@/lib/star/commentaryExtra";
  *  The pull is measured from where the thumb lands, so starting further out
  *  does not add power. */
 const BALL_GRAB_FRACTION = 0.18;
+/** The goal net bulging round the ball: off for now (Leo, 28 Oct 2026). */
+const NET_BULGE_ON = false;
 
 /** A completed pass: how long the ball takes to roll the last bit into the
  *  receiver's feet, and how far in front of his middle it stops. */
@@ -2646,6 +2648,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const keeperHeldBallRef = useRef<{ px: number; by: number; gy: number; r: number } | null>(null);
   /** Where the keeper was drawn this frame (screen px, boots) and his height: the dev probe below reads it. */
   const keeperDrawnRef = useRef<{ x: number; y: number; h: number } | null>(null);
+  /** Where the loose ball was drawn this frame (screen px): the dev probe reads it. */
+  const freeBallPxRef = useRef<{ x: number; y: number; z: number; inNet: boolean } | null>(null);
   /** The last place the held ball was drawn in his gloves (the safety net's spot). */
   const keeperLastHeldRef = useRef<{ px: number; by: number; gy: number; r: number; sc: Scenario } | null>(null);
   /** Where the 3D keeper landed (canvas px), held while he lies there. */
@@ -5135,6 +5139,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // to the pitch, so he faces straight out of his goal.
         const f = facingRef.current;
         const kFacing = f === "right" ? Math.PI : f === "left" ? 0 : Math.PI / 2;
+        // On his feet he faces the camera, whichever way it looks (Leo, 28 Oct 2026: side
+        // on, "he seems to not be able to look right ... have him face the camera
+        // direction"). A dive still goes along his goal line (kFacing).
+        const kStandFacing = Math.PI / 2;
         // Only a real save is a dive. His patrol lean used to trigger the dive
         // clip too, so he flopped about while shuffling across his line.
         // A ball going well wide of the goal is not a save to dive for: the
@@ -5151,7 +5159,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         if (ks && ksF) {
           const kit = { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt };
           const speed = ks.look === "arcade" ? 1.25 : 1;
-          keeperSprite = { char: "keeper", clip: ksF.clip as SpriteClip, t: ksF.t * speed, facing: kFacing, kit, centre: 0 };
+          const diveClip = /^k(CatchDive|CatchLow|ParryDive|GetUp)/.test(ksF.clip);
+          const kFace = diveClip ? kFacing : kStandFacing;
+          keeperSprite = { char: "keeper", clip: ksF.clip as SpriteClip, t: ksF.t * speed, facing: kFace, kit, centre: 0 };
           feelLiftPx = 0;
           const sprH = kr * FIGURE_HEIGHT_R * SPRITE_HEIGHT_K;
           const fromPx = toPx(ks.from.x, ks.from.y);
@@ -5161,7 +5171,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             const main = clipFor(ks.plan.move, null, ks.dir);
             const T = keeperTiming(main);
             const cT = T ? (T.contactFrame ?? Math.round(T.frames * 0.4)) / T.fps : 0;
-            const gp = keeperBallPoint(main as SpriteClip, cT, kFacing, sprH);
+            const gp = keeperBallPoint(main as SpriteClip, cT, /^k(CatchDive|CatchLow|ParryDive)/.test(main) ? kFacing : kStandFacing, sprH);
             const at = toPx(ks.plan.x, ks.from.y);
             const ballY = at.py - Math.max(0, ks.plan.z) * heightScale * at.scale;
             const br = BALL_PX * at.scale;
@@ -5187,8 +5197,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             // The clips record the glove point from their contact frame on; a frame just
             // before it (the ball lands in his gloves a beat early) uses the contact frame's.
             const cTk = (() => { const T = keeperTiming(ksF.clip); return T?.contactFrame != null ? T.contactFrame / T.fps : 0; })();
-            const gp = keeperBallPoint(ksF.clip as SpriteClip, ksF.t * speed, kFacing, sprH)
-              ?? keeperBallPoint(ksF.clip as SpriteClip, Math.max(ksF.t * speed, cTk), kFacing, sprH);
+            const gp = keeperBallPoint(ksF.clip as SpriteClip, ksF.t * speed, kFace, sprH)
+              ?? keeperBallPoint(ksF.clip as SpriteClip, Math.max(ksF.t * speed, cTk), kFace, sprH);
             const br = keeperBallRadius(ksF.clip as SpriteClip, sprH) ?? BALL_PX * kScale;
             keeperHeldBallRef.current = gp
               ? { px: keeperDrawAt.x + gp.x + gp.nx * br, by: keeperDrawAt.y + gp.y + gp.ny * br, gy: keeperDrawAt.y + gp.g, r: br }
@@ -5240,7 +5250,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           keeperDiveStartRef.current = null;
           keeperLandRef.current = null;
           // The ready bounce at 60% speed (about 2 frames a second).
-          keeperSprite = { char: "keeper", clip: "ready", t: kk.idleT * 0.6, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
+          keeperSprite = { char: "keeper", clip: "ready", t: kk.idleT * 0.6, facing: keeperShowOn() ? kStandFacing : kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
           // Animations: New — a ball taken standing: held to his chest, or spilled.
           const sc3 = kAnim && ka ? keeperStandingClip(ka.save) : null;
           if (sc3 && ka && spriteClipReady("keeper", sc3)) keeperSprite = { ...keeperSprite, clip: sc3, t: now - ka.start };
@@ -5315,6 +5325,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             caught: keeperCatchNow(), holds: !!held && hasIt, net: !held && hasIt, show: !!keeperShowRef.current && keeperShowRef.current.sc === sc,
             ending: keeperShowRef.current?.ending ?? null, move: keeperShowRef.current?.plan.move ?? null,
             ball: drawnAt ? { x: drawnAt.px, y: drawnAt.by } : null, keeper: kd, kind: sc.kind, t: performance.now(),
+            free: freeBallPxRef.current, phase: phaseRef.current,
+            saves: (ballRef.current?.actionLog ?? []).filter((a) => a.kind === "save" && a.actor === "keeper" && a.save).map((a) => a.save).join(","),
           };
         }
       }
@@ -5603,8 +5615,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ctx.restore();
       }
     }
-    const ballAt = headerBallAt ?? (ball ? { x: ball.pos.x, y: ball.pos.y, z: ball.z }
+    const ballAt0 = headerBallAt ?? (ball ? { x: ball.pos.x, y: ball.pos.y, z: ball.z }
       : onTheSpot ? (crossAt ?? { x: sc.ball.x, y: sc.ball.y, z: leadRef.current?.z ?? airZ }) : null);
+    const ballAt = keeperDeadBall(sc, ball, ballAt0);
     shownBallRef.current = ball && ballAt ? { x: ballAt.x, y: ballAt.y, z: ballAt.z } : null;
     // The old flow (?airmoves=old): the last pitch frame before its ball screen
     // opened (the screen draws no ball under it), the drawn ball's centre
@@ -5620,6 +5633,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Keeper catches: once the match says he has it, the ball is drawn with him (just
     // after his figure, in drawKeeper), never here at the spot where the match parks it.
     const keeperHasIt = keeperShowOn() && keeperCatchNow();
+    freeBallPxRef.current = ballAt && !keeperHasIt ? (() => { const q = toPx(ballAt.x, ballAt.y); return { x: +q.px.toFixed(1), y: +(q.py - Math.max(0, ballAt.z) * heightScale * q.scale).toFixed(1), z: +ballAt.z.toFixed(2), inNet: !!ballRef.current?.inNet }; })() : null;
     if (ballAt && !keeperHasIt) {
       const drawIt = () => drawBall(ballAt.x, ballAt.y, ballAt.z);
       if (figureQueue) figureQueue.push({ py: toPx(ballAt.x, ballAt.y).py, draw: drawIt });
@@ -5627,7 +5641,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
     // Match feel: New — the back of the net bulges round a goal and ripples
     // out (under the ball, over the goal's mesh).
-    if (feelOn && feelSt.net && feelBall && feelBall.inNet) {
+    // Off for now (Leo, 28 Oct 2026: "turn off the net effect thing around the ball
+    // for a goal for now, it looks bad"). NET_BULGE_ON = true brings it back.
+    if (NET_BULGE_ON && feelOn && feelSt.net && feelBall && feelBall.inNet) {
       const t = feelT - feelSt.net.at;
       const env = t < 0 ? 0 : t < 0.1 ? Math.sin((Math.PI / 2) * (t / 0.1))
         : (0.55 + 0.45 * Math.cos((t - 0.1) * 16) * Math.exp(-(t - 0.1) * 5)) * Math.max(0, 1 - Math.max(0, t - 1.2) / 0.8);
@@ -7409,6 +7425,51 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     else if (!k2.ending) keeperShowContact("catch", 0);
     else if (k2.ending !== "catch") keeperShowCatchLate(k2);
     return true;
+  };
+  /**
+   * A save that ends the chance without a catch ("turned behind" for a corner, a
+   * push the match calls dead) leaves the ball where it met him, still, often in
+   * the air: Leo, 28 Oct, "he dives and the ball freezes in the air and he continues
+   * his dive". With keeper catches on, the picture carries it on: off his gloves,
+   * away from goal and behind the line, gone in about a second. Picture only.
+   */
+  const deadBallRef = useRef<{ sc: Scenario; at: { x: number; y: number; z: number }; t0: number; vx: number; vy: number; vz: number } | null>(null);
+  /** The ball as last drawn by the match, and its speed then (pitch m/s by the picture's clock). */
+  const ballTrackRef = useRef<{ sc: Scenario; x: number; y: number; z: number; t: number; vx: number; vy: number; vz: number } | null>(null);
+  const keeperDeadBall = (sc: Scenario, bl: Ball | null, at: { x: number; y: number; z: number } | null) => {
+    const d0 = deadBallRef.current;
+    if (d0 && d0.sc !== sc) deadBallRef.current = null;
+    const now = showClockRef.current;
+    // Follow the match's ball while it moves, so we know where it was going.
+    const tr = ballTrackRef.current;
+    const moved = !!at && (!tr || tr.sc !== sc || Math.hypot(at.x - tr.x, at.y - tr.y, at.z - tr.z) > 1e-4);
+    if (at && moved) {
+      const dt = tr && tr.sc === sc ? now - tr.t : 0;
+      ballTrackRef.current = dt > 1e-3 && tr
+        ? { sc, x: at.x, y: at.y, z: at.z, t: now, vx: (at.x - tr.x) / dt, vy: (at.y - tr.y) / dt, vz: (at.z - tr.z) / dt }
+        : { sc, x: at.x, y: at.y, z: at.z, t: now, vx: tr?.sc === sc ? tr.vx : 0, vy: tr?.sc === sc ? tr.vy : 0, vz: tr?.sc === sc ? tr.vz : 0 };
+    }
+    if (!at || !bl || !keeperShowOn() || phaseRef.current !== "result" || bl.inNet || keeperCatchNow()) return at;
+    // development only: the catch checker turns this off to show the bug it fixes
+    if (offlineDevPlayEnabled() && typeof window !== "undefined" && window.localStorage?.getItem("kib-dev-deadball-off") === "1") return at;
+    let d = deadBallRef.current;
+    if (!d) {
+      // still in the air where the chance ended (the match stops moving it): carry it on
+      if (moved || at.z < 0.15) return at;
+      const t2 = ballTrackRef.current;
+      const sp = t2 ? Math.hypot(t2.vx, t2.vy) : 0;
+      const mid = (POST_L + POST_R) / 2;
+      const side = Math.sign(at.x - mid) || (keeperShowRef.current?.plan.side ?? 1) || 1;
+      // its own path if it had one; off his gloves and behind the line if it had stopped on him
+      d = sp > 2 && t2
+        ? { sc, at: { ...at }, t0: now, vx: t2.vx, vy: t2.vy, vz: t2.vz }
+        : { sc, at: { ...at }, t0: now, vx: side * 6.5, vy: -7, vz: 3.2 };
+      deadBallRef.current = d;
+    }
+    const t = now - d.t0;
+    if (t > 1.2) return null; // out of play
+    const z = d.at.z + d.vz * t - 4.9 * t * t;
+    return { x: d.at.x + d.vx * t, y: d.at.y + d.vy * t, z: Math.max(0, z) };
   };
   /** The match's own record says the keeper has caught the ball (a shot, a claimed cross, a smother). */
   const keeperCatchNow = (): boolean =>
