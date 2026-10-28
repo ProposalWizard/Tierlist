@@ -2644,6 +2644,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const keeperShowRef = useRef<(KeeperShow & { sc: Scenario; from: { x: number; y: number }; dir: "R" | "L"; to: { x: number; y: number } | null }) | null>(null);
   const showClockRef = useRef(0);
   const keeperHeldBallRef = useRef<{ px: number; by: number; gy: number; r: number } | null>(null);
+  /** Where the keeper was drawn this frame (screen px, boots) and his height: the dev probe below reads it. */
+  const keeperDrawnRef = useRef<{ x: number; y: number; h: number } | null>(null);
   /** Where the 3D keeper landed (canvas px), held while he lies there. */
   // Where he landed is kept as a spot on the PITCH (x, y in metres) plus his sideways lean in
   // keeper radii (offR), never as screen pixels: the celebration camera follows you after a
@@ -5237,6 +5239,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           if (sc3 && ka && spriteClipReady("keeper", sc3)) keeperSprite = { ...keeperSprite, clip: sc3, t: now - ka.start };
         }
       }
+      keeperDrawnRef.current = { x: keeperDrawAt ? keeperDrawAt.x : cx + KR * weight * (1 - lunge), y: keeperDrawAt ? keeperDrawAt.y : py, h: kr * FIGURE_HEIGHT_R * SPRITE_HEIGHT_K };
       drawMatchFigure(ctx, nv ? "new" : "classic",
         keeperDrawAt ? keeperDrawAt.x : cx + KR * weight * (1 - lunge), keeperDrawAt ? keeperDrawAt.y : py, kr, {
         sprite: keeperSprite,
@@ -5579,7 +5582,32 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       oldAirProbeRef.current = { sc, flow: "old", gapPx: +Math.hypot(ballPx.x - headPx.x, ballPx.y - headPx.y).toFixed(1), ballPx, headPx, figPx: +sh.toFixed(1), zM: +ballAt.z.toFixed(2) };
     }
     const keeperHolds = !!keeperHeldBallRef.current && keeperShowRef.current?.sc === sc && keeperShowOn();
-    if (ballAt && !keeperHolds) {
+    // Safety net: the match says he has it but this frame has no glove point (a
+    // drawing still loading): the ball sits at his chest, never left in the air.
+    const kd = keeperDrawnRef.current;
+    const keeperNet = !keeperHolds && keeperShowOn() && !!kd && keeperCatchNow();
+    if (keeperNet && kd && ballAt) {
+      const r = BALL_PX * toPx(ballAt.x, ballAt.y).scale;
+      const drawIt = () => drawBall(0, 0, 0, { px: kd.x, by: kd.y - kd.h * 0.45, gy: kd.y, r });
+      if (figureQueue) figureQueue.push({ py: kd.y + 0.5, draw: drawIt });
+      else drawIt();
+    }
+    // Development only (compiled out of the live site): where the ball and the keeper are
+    // drawn, and whether the match says he has the ball. scripts/film/keeper/catchcheck.mjs
+    // reads it every frame to catch a held ball drawn anywhere but his hands.
+    if (offlineDevPlayEnabled() && typeof window !== "undefined") {
+      const bl = ballRef.current;
+      const caught = !!bl?.actionLog?.some((a) => a.kind === "save" && a.actor === "keeper" && a.save === "catch");
+      const held = keeperHeldBallRef.current;
+      const bp = ballAt ? toPx(ballAt.x, ballAt.y) : null;
+      (window as unknown as { __kDbg?: unknown }).__kDbg = {
+        caught, holds: keeperHolds, net: keeperNet, show: !!keeperShowRef.current && keeperShowRef.current.sc === sc,
+        ending: keeperShowRef.current?.ending ?? null, move: keeperShowRef.current?.plan.move ?? null,
+        ball: held && keeperHolds ? { x: held.px, y: held.by } : keeperNet && kd ? { x: kd.x, y: kd.y - kd.h * 0.45 } : bp && ballAt ? { x: bp.px, y: bp.py - Math.max(0, ballAt.z) * heightScale * bp.scale } : null,
+        keeper: keeperDrawnRef.current, kind: sc.kind,
+      };
+    }
+    if (ballAt && !keeperHolds && !keeperNet) {
       const drawIt = () => drawBall(ballAt.x, ballAt.y, ballAt.z);
       if (figureQueue) figureQueue.push({ py: toPx(ballAt.x, ballAt.y).py, draw: drawIt });
       else drawIt();
@@ -5966,6 +5994,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           vx: lb?.vel.x ?? 0, vy: lb?.vel.y ?? 0, vz: lb?.vz ?? 0, live: !!lb, inNet: !!lb?.inNet,
         } : null,
         landing: lb && phaseRef.current === "flight" && !lb.inNet && lb.z > 0.15 && lb.landAt ? { ...lb.landAt } : null,
+        keeperHolds: leoUpdateOn("keeperCatch") && keeperCatchNow(),
         keeper: rec.keeper,
         figures: rec.figures,
         aim: rec.aim,
@@ -7328,6 +7357,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (ks && ks.sc !== sc) keeperShowRef.current = null;
     if (!keeperShowOn()) return;
     spriteClipReady("keeper", "kCatchDiveR"); // fetches the keeper-catch drawings the first time
+    // The match says he has the ball: whatever the picture was doing, it goes into
+    // his gloves. Checked every frame, not only when the save is reported: a catch
+    // ends the chance in the same step, a cross he claims was never planned, and a
+    // smother comes after a palm (Leo's playtest, 28 Oct: "ball just stayed frozen
+    // in the air ... nowhere even near goalie").
+    if (keeperCatchNow()) {
+      const k2 = keeperShowRef.current;
+      if (!k2) keeperShowGather();
+      else if (!k2.ending) keeperShowContact("catch", 0);
+      else if (k2.ending !== "catch") keeperShowCatchLate(k2);
+      return;
+    }
     // Until his move starts, re-time it every frame from the ball as it is now:
     // the first guess ignores air drag, so on a long shot it had him down and
     // waiting for the ball (seen, Broadcast take, 27 Oct).
@@ -7353,6 +7394,34 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       ending: null, contactAt: null, look: keeperLookChoice(),
     };
   };
+  /** The match's own record says the keeper has caught the ball (a shot, a claimed cross, a smother). */
+  const keeperCatchNow = (): boolean =>
+    !!ballRef.current?.actionLog?.some((a) => a.kind === "save" && a.actor === "keeper" && a.save === "catch");
+  /** A catch with no move planned for it: he gathers it where he stands (chest or feet by its height). */
+  const keeperShowGather = (at?: { from: { x: number; y: number }; to: { x: number; y: number } }) => {
+    const sc = scenarioRef.current;
+    if (!sc) return;
+    const c = ballRef.current?.actionLog?.find((a) => a.kind === "save" && a.actor === "keeper" && a.save === "catch");
+    const z = c?.at?.z ?? 0.5;
+    const move = z > 0.7 ? "chest" as const : "feet" as const;
+    const T = keeperTiming(move === "chest" ? "kCatchChest" : "kCatchFeet");
+    if (!T) return; // drawings still loading: the safety net in the draw keeps the ball on him
+    const cT = (T.contactFrame ?? 0) / T.fps;
+    keeperShowRef.current = {
+      plan: { tLine: ballRef.current?.clock ?? 0, x: sc.keeper.x, z, side: 0, move },
+      sc, dir: "R", from: at?.from ?? { x: sc.keeper.x, y: sc.keeper.y }, to: at?.to ?? { x: 0, y: 0 },
+      start: showClockRef.current - cT, ending: "catch", contactAt: showClockRef.current, look: keeperLookChoice(),
+    };
+  };
+  /** A catch after he had palmed it (a smother): still down from his dive, it goes into his hands and he gets up with it; already up, he gathers it where he is. */
+  const keeperShowCatchLate = (ks: NonNullable<typeof keeperShowRef.current>) => {
+    const f = keeperShowFrame(ks, showClockRef.current, ks.dir, keeperTiming);
+    const dive = ks.plan.move === "diveHigh" || ks.plan.move === "diveLow";
+    if (dive && f && !f.afterDive) { ks.ending = "catch"; return; }
+    const d = keeperDrawnRef.current;
+    const p0 = toPx(ks.from.x, ks.from.y);
+    keeperShowGather(d && p0 ? { from: ks.from, to: { x: d.x - p0.px, y: d.y - p0.py } } : undefined);
+  };
   /** After a save with keeper catches on, hold long enough to see him get up (else the old 1.8 s). */
   const keeperResultHoldMs = (): number => {
     const ks = keeperShowRef.current;
@@ -7373,6 +7442,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const ending: KeeperEnding = save === "catch" ? "catch" : save === "beaten" ? "beaten" : save === "fumble" ? "fumble" : "parry";
     ks.ending = ending;
     ks.contactAt = showClockRef.current - Math.max(0, agoS);
+    // The ball got there before his gloves did (it came quicker than its flight
+    // promised): his move jumps on to its contact frame, so the catch is in his hands.
+    if (ending === "catch") {
+      const T = keeperTiming(clipFor(ks.plan.move, "catch", ks.dir));
+      const cT = T ? (T.contactFrame ?? Math.round(T.frames * 0.4)) / T.fps : 0;
+      if (showClockRef.current - ks.start < cT) ks.start = showClockRef.current - cT;
+    }
   };
 
   /** Slow motion: a big moment's shot of yours that is about to go in (the last half-second). */
