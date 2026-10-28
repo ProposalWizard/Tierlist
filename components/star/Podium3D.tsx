@@ -100,7 +100,11 @@ export default function Podium3D({ cfg, dim = false }: { cfg: Live3D; dim?: bool
       scene.add(turntable);
       const loader = await withMeshopt(new GLTFLoader()); // meshopt-packed (scripts/perf3d/shrink-models.mjs)
       // the item's packed-picture twin when it has one (the glasses: lib/star/three3d/ktx2.ts)
-      const [pod, item] = await Promise.all([loader.loadAsync(cfg.podium), loadModel3d(loader, cfg.item, (u) => loader.loadAsync(u))]);
+      // No podium file: the stand is part of the model (the level-100 Golden Set).
+      const [pod, item] = await Promise.all([
+        cfg.podium ? loader.loadAsync(cfg.podium) : Promise.resolve({ scene: new THREE.Group() }),
+        loadModel3d(loader, cfg.item, (u) => loader.loadAsync(u)),
+      ]);
       if (disposed) { renderer.dispose(); return; }
 
       pod.scene.traverse((o) => {

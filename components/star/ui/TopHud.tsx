@@ -61,7 +61,7 @@ export const HUD_SPEC: Record<HudScreen, HudLeft> = {
   style: "reputation",
 };
 
-export default function TopHud({ career, screen, onCareer, onStarPass, className = "" }: {
+export default function TopHud({ career, screen, onCareer, onStarPass, passBar, className = "" }: {
   career: CareerState;
   screen: HudScreen;
   /** Kept for callers: the can left the HUD in v0.24 (it lives on Home). */
@@ -72,6 +72,8 @@ export default function TopHud({ career, screen, onCareer, onStarPass, className
   onCareer?: (c: CareerState) => void;
   /** Told when the Star Pass opens and shuts, so nothing pops up over it. */
   onStarPass?: (open: boolean) => void;
+  /** The game's bottom bar, drawn inside the Star Pass (StarRatingSheet `bar`). */
+  passBar?: (close: () => void) => React.ReactNode;
   className?: string;
 }) {
   const [starPass, setStarPassRaw] = useState(false);
@@ -79,7 +81,7 @@ export default function TopHud({ career, screen, onCareer, onStarPass, className
   return (
     // Room on top for the icons that rise above the bars.
     <div data-hud={screen} className={`sk-top relative z-10 shrink-0 px-2 pb-2 pt-2.5 ${className}`} style={{ background: "var(--sk-top-bg)", boxShadow: "0 4px 10px -4px rgba(0,0,0,.4)" }}>
-      {starPass && <StarRatingSheet career={career} onCareer={onCareer} onClose={() => setStarPass(false)} />}
+      {starPass && <StarRatingSheet career={career} onCareer={onCareer} bar={passBar} onClose={() => setStarPass(false)} />}
       {/* One block, rating | energy, on the light grey: no frame (P4, P7). */}
       <div data-hud-block className="relative grid grid-cols-2">
         {HUD_SPEC[screen] === "happiness" ? <HappinessCell career={career} /> : HUD_SPEC[screen] === "reputation" ? <ReputationCell career={career} /> : <RatingCell career={career} onOpen={() => setStarPass(true)} claimable={!!onCareer} />}

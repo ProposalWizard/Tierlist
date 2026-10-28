@@ -137,6 +137,12 @@ const POLICY = {
   "star/star-pass/3d/reward-ball.glb": { q: /.*/ },
   "star/star-pass/3d/reward-glasses.glb": { q: /.*/, anim: true },
 };
+// Every Star Pass podium and reward, for the tap-to-preview you can spin
+// (tools/star-pass-art/render_pass_rewards_more.py GLB=1, 28 Oct 2026).
+for (const f of fs.existsSync(path.join(PUB, "star/star-pass/3d")) ? fs.readdirSync(path.join(PUB, "star/star-pass/3d")) : []) {
+  const rel = `star/star-pass/3d/${f}`;
+  if (f.endsWith(".glb") && !POLICY[rel]) POLICY[rel] = { q: /.*/ };
+}
 for (const id of ["control", "curl", "elite", "maestro", "power", "speed", "starter"]) POLICY[`star/shop3d/items/boot-${id}.glb`] = { skip: "Draco (smaller than meshopt)" };
 for (const id of ["1", "2", "3", "4", "classic", "suv"]) POLICY[`star/shop3d/items/car-${id}.glb`] = { skip: "Draco (smaller than meshopt)" };
 // The generated family car (Higgsfield → Tripo, 9 Oct 2026; look H): textures cut to 1024 first

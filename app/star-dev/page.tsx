@@ -4707,7 +4707,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const screenHud = (screen: HudScreen, help?: HelpScreen) => (
     <>
       <GameBar career={career} onHome={() => handleNavigate("home")} onSettings={openSettings} onHelp={help ? () => setHelpTour(HELP_TOURS[help]) : undefined} />
-      <TopHud career={career} screen={screen} onUseCan={handleUseCan} onOpenCans={() => setPhase("shop-kib")} onCareer={setCareer} />
+      <TopHud career={career} screen={screen} onUseCan={handleUseCan} onOpenCans={() => setPhase("shop-kib")} onCareer={setCareer} passBar={passBar} />
     </>
   );
   // The bottom bar's locks (MainBar.tsx). Relations left the bar (master plan 1,
@@ -4733,6 +4733,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   );
   const mainBarRaw = (active: NavTab | null) => (
     <MainBar activeNav={active} onNavigate={navTo} onHome={() => handleNavigate("home")} locked={navLocked} mediaUnread={phoneUnread > 0} />
+  );
+  /** The same bar inside the Star Pass (Mikey, 28 Oct 2026): any button shuts the pass, then goes. */
+  const passBar = (close: () => void) => (
+    <MainBar activeNav={null} onNavigate={(t) => { close(); navTo(t); }} onHome={() => { close(); handleNavigate("home"); }} locked={navLocked} mediaUnread={phoneUnread > 0} />
   );
   const mainBar = (active: NavTab | null) => (
     <div className="fixed inset-x-0 bottom-0 z-40" data-main-bar-fixed>
@@ -5431,6 +5435,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           onOpenCans={() => setPhase("shop-kib")}
           onCareer={setCareer}
           onStarPass={setStarPassOpen}
+          passBar={passBar}
         />
       }
       // The house always means Home (navigation round 1, Harry's answer 16,
