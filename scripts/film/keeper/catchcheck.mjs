@@ -33,7 +33,7 @@ const ctx = await chromium.launchPersistentContext(prof, {
 });
 await installVClock(ctx, { fps: 60, audioMaxS: 1 });
 const seed = JSON.parse(fs.readFileSync(SEED, "utf8"));
-await ctx.addInitScript(([seed, key, look, v3d]) => {
+await ctx.addInitScript(([seed, key, look, v3d, deadOff]) => {
   if (sessionStorage.getItem("seeded")) return;
   sessionStorage.setItem("seeded", "1");
   localStorage.clear();
@@ -43,7 +43,8 @@ await ctx.addInitScript(([seed, key, look, v3d]) => {
   localStorage.setItem("star-look-match-3d", v3d ? "on" : "off");
   localStorage.setItem("kib-update-leo-2026-10-24", JSON.stringify({ on: true, off: [] }));
   localStorage.setItem("kib-keeper-look", look);
-}, [seed, KEY, LOOK, V3D]);
+  if (deadOff) localStorage.setItem("kib-dev-deadball-off", "1");
+}, [seed, KEY, LOOK, V3D, process.argv.includes("--fix-off")]);
 const pg = ctx.pages()[0] || (await ctx.newPage());
 const errors = [];
 pg.on("pageerror", (e) => errors.push(e.message.slice(0, 200)));
@@ -66,10 +67,25 @@ const dbg = () => pg.evaluate(() => { const d = window.__kDbg; return d ? JSON.p
 
 // One catch being watched: from the first frame the match says "caught" until the chance is over.
 let lastT = -1, cur = null, catches = 0, loose = 0, tries = 0, frame = 0;
+// A loose ball left still in the air after a save (not held): counted per chance.
+let still = null, frozen = 0, frozenShots = 0;
+const watchFrozen = async (d) => {
+  // a ball off the grass (above 15 cm), not in the net, not held, on screen
+  if (!d || !d.saves || d.caught || !d.free || d.phase !== "result" || d.free.inNet || !(d.free.z > 0.15) || d.free.x < 0 || d.free.y < 0 || d.free.x > 800 || d.free.y > 1700) { still = null; return; }
+  if (still && Math.abs(still.x - d.free.x) < 0.6 && Math.abs(still.y - d.free.y) < 0.6) {
+    still.n++;
+    if (still.n === 24) {
+      frozen++;
+      log("FROZEN ball after", d.saves, d.kind, JSON.stringify(d.free));
+      if (frozenShots++ < 6) await pg.screenshot({ path: path.join(OUT, `frozen-${LOOK}-${process.pid}-${frozen}.jpg`), type: "jpeg", quality: 70 }).catch(() => {});
+    }
+  } else still = { x: d.free.x, y: d.free.y, n: 0 };
+};
 const watch = async () => {
   const d = await dbg();
   frame++;
   if (!d) return;
+  await watchFrozen(d);
   if (d.caught && !cur) cur = { kind: d.kind, show: d.show, move: d.move, ending: d.ending, frames: 0, looseFrames: 0, netFrames: 0, staleFrames: 0, maxGap: 0, firstLoose: null };
   if (cur && !d.caught) { finish(); return; }
   if (cur && d.t === lastT) { cur.staleFrames++; return; }
@@ -80,9 +96,17 @@ const watch = async () => {
   // --shots: pictures of every catch at set moments, to check by eye
   if (SHOTS && [1, 2, 3, 4, 6, 9, 14, 20, 30, 45, 60, 80, 100, 120, 150].includes(cur.frames)) {
     // close up round the keeper (2x picture), the frame number on the file
-    const cx = d.keeper.x, cy = d.keeper.y - d.keeper.h * 0.5, w = d.keeper.h * 4.2, h = w * 0.62;
-    const clip = { x: Math.max(0, cx - w / 2), y: Math.max(0, cy - h / 2), width: w, height: h };
-    await pg.screenshot({ path: path.join(OUT, `shot-${LOOK}${V3D ? "-3d" : ""}-${process.pid}-${catches}-f${String(cur.frames).padStart(3, "0")}.jpg`), type: "jpeg", quality: 80, clip }).catch(() => {});
+    // canvas drawing units -> page pixels (the match canvas is the biggest one on the page)
+    const m = await pg.evaluate(() => {
+      const cs = [...document.querySelectorAll("canvas")].map((c) => ({ c, r: c.getBoundingClientRect() })).sort((a, b) => b.r.width * b.r.height - a.r.width * a.r.height);
+      const t = cs[0]; if (!t) return null;
+      return { l: t.r.left, t: t.r.top, k: t.r.width / (t.c.width / (window.devicePixelRatio || 1)), dpr: window.devicePixelRatio || 1 };
+    });
+    const name = `shot-${LOOK}${V3D ? "-3d" : ""}-${process.pid}-${catches}-f${String(cur.frames).padStart(3, "0")}`;
+    try {
+      await pg.screenshot({ path: path.join(OUT, name + ".jpg"), type: "jpeg", quality: 85 });
+      fs.writeFileSync(path.join(OUT, name + ".json"), JSON.stringify({ m, keeper: d.keeper, ball: d.ball }));
+    } catch (e) { log("shot failed", e.message.slice(0, 120)); }
   }
   // gap: ball to the middle of his body, in keeper heights
   const gap = Math.hypot(d.ball.x - d.keeper.x, d.ball.y - (d.keeper.y - d.keeper.h * 0.45)) / d.keeper.h;
@@ -124,6 +148,8 @@ while ((Date.now() - T0) / 1000 < SECS) {
     continue;
   }
   if (ph !== "aim") { await vStep(pg, 2); await watch(); continue; }
+  // --sideshots: one picture of each chance as it starts (to see the keeper on a side-on camera)
+  if (process.argv.includes("--sideshots") && tries < 40) await pg.screenshot({ path: path.join(OUT, `aim-${LOOK}-${process.pid}-${tries}.jpg`), type: "jpeg", quality: 60 }).catch(() => {});
   await vStep(pg, 20);
   const r = Math.random();
   const aim = await pg.evaluate((r) => {
@@ -170,4 +196,4 @@ while ((Date.now() - T0) / 1000 < SECS) {
 finish();
 await ctx.close();
 fs.rmSync(prof, { recursive: true, force: true });
-log("done", JSON.stringify({ tries, catches, loose, errors: [...new Set(errors)] }));
+log("done", JSON.stringify({ tries, catches, loose, frozen, errors: [...new Set(errors)] }));
