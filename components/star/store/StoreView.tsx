@@ -347,6 +347,19 @@ export default function StoreView(p: StoreViewProps) {
                   </div>
                 </div>
               ))}
+              {/* Goal celebrations live with the other moves (Leo, 28 Oct 2026: "i cant find
+                  celebration animations in shop/store"; they were filed under Accessories). */}
+              <div className="mb-5">
+                <SectionNote left="Goal celebrations" right="After every goal you score" />
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  {ACCESSORIES.filter((a) => a.slot === "celebration" && shown(a)).map((a, i) => (
+                    <RiseIn key={a.id} index={i} step={50}>
+                      <ItemCard item={a} state={state} ctx={ctx} dateKey={dateKey} onOpen={setOpenId}
+                        equipped={inUse(a, state)} equippedWear={equippedWear} />
+                    </RiseIn>
+                  ))}
+                </div>
+              </div>
             </>
           )}
 
@@ -367,7 +380,7 @@ export default function StoreView(p: StoreViewProps) {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {ACCESSORIES.filter(shown).map((a, i) => (
+                {ACCESSORIES.filter((a) => a.slot !== "celebration" && shown(a)).map((a, i) => (
                   <RiseIn key={a.id} index={i} step={50}>
                     <ItemCard item={a} state={state} ctx={ctx} dateKey={dateKey} onOpen={setOpenId}
                       equipped={inUse(a, state)} equippedWear={equippedWear} />
