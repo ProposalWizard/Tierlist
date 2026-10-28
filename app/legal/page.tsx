@@ -3,6 +3,7 @@
  */
 
 import type { Metadata } from "next";
+import { ChangeCookieChoice } from "@/components/CookieConsent";
 
 export const metadata: Metadata = {
   title: "Privacy & Terms",
@@ -69,7 +70,7 @@ export default function LegalPage() {
           </section>
 
           {/* 3 */}
-          <section>
+          <section id="cookies">
             <h2 className="mb-3 text-lg font-bold text-white">3. Cookies Policy</h2>
             <p className="mb-3">
               This website may use cookies or similar technologies to improve functionality
@@ -82,10 +83,17 @@ export default function LegalPage() {
               <li>analyze website traffic</li>
               <li>improve performance and usability</li>
             </ul>
+            <p className="mb-3">
+              Cookies needed to log in and save your progress are always on. Analytics cookies
+              (Google Analytics and PostHog, which show us how people use the site and play the
+              game) are only used if you choose Accept in the cookie box. If you choose No
+              thanks, they are never loaded.
+            </p>
             <p>
               Users can disable cookies through their browser settings if they prefer not to
               allow them.
             </p>
+            <ChangeCookieChoice />
           </section>
 
           {/* 4 */}

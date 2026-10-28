@@ -24,7 +24,7 @@ export const MINI_LEAGUE_ROW = 16;
 /** Height of the panel for `rows` rows, so Home can budget for it. */
 export const miniLeagueHeight = (rows: number) => 16 + rows * MINI_LEAGUE_ROW + 4;
 
-export default function MiniLeague({ career, glow, rows = 5, onOpen }: { career: CareerState; glow: string; rows?: number; onOpen?: () => void }) {
+export default function MiniLeague({ career, glow, rows = 5, onOpen, header = true }: { career: CareerState; glow: string; rows?: number; onOpen?: () => void; header?: boolean }) {
   const table = sortLeague(career.league);
   const me = table.findIndex((t) => t.name === career.player.club);
   const pos = useCountUp(me + 1, 700);
@@ -42,13 +42,13 @@ export default function MiniLeague({ career, glow, rows = 5, onOpen }: { career:
       onKeyDown={onOpen ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } } : undefined}
       className={`px-3 py-[2px] ${onOpen ? "kib-press cursor-pointer" : ""}`}
     >
-      <div className="flex h-[16px] items-center justify-between">
+      {header && <div className="flex h-[16px] items-center justify-between">
         <span className="text-[11px] font-black uppercase leading-none tracking-[0.14em] text-white">🏆 {leagueNameFor(divisionOf(career))}</span>
         <span className="flex items-center gap-1.5 leading-none">
           <span className="text-[13px] font-black tabular-nums text-yellow-200">{Math.round(pos)}<span className="text-[9px]">{ordinal(me + 1)}</span></span>
           <span className="text-[10px] font-black uppercase tracking-wider text-white">Full table ›</span>
         </span>
-      </div>
+      </div>}
       <div>
         {slice.map((t, i) => {
           const rank = from + i + 1, you = t.name === career.player.club;
@@ -87,24 +87,41 @@ export function LeagueDropdown({ career, glow, onOpen }: { career: CareerState; 
   const me = table.findIndex((t) => t.name === career.player.club);
   const pos = useCountUp(me + 1, 700);
   if (me < 0) return null;
+  const toggle = () => setOpen((o) => !o);
+  // One box that opens (Mikey, 28 Oct 2026): the bar stays the only header.
+  // Open, "Full table" sits in the bar between the league and your position,
+  // and the rows below carry no second copy of the name or the position.
   return (
-    <div className="relative z-20">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
+    <div className="relative z-20" style={open ? { background: "rgb(4,16,10)", boxShadow: "0 8px 18px rgba(0,0,0,.5)" } : undefined}>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={toggle}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } }}
         aria-expanded={open}
-        className="kib-press flex w-full items-center justify-between px-3 text-left"
-        style={{ height: LEAGUE_DROPDOWN_H, background: "linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.12))", textShadow: "0 1px 3px rgba(0,0,0,.85)" }}
+        className="kib-press flex w-full cursor-pointer items-center justify-between gap-2 px-3 text-left"
+        style={{ height: LEAGUE_DROPDOWN_H, background: open ? undefined : "linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.12))", textShadow: "0 1px 3px rgba(0,0,0,.85)" }}
       >
-        <span className="text-[11px] font-black uppercase leading-none tracking-[0.14em] text-white">🏆 {leagueNameFor(divisionOf(career))}</span>
-        <span className="flex items-center gap-1.5 leading-none">
+        <span className="min-w-0 truncate text-[11px] font-black uppercase leading-none tracking-[0.14em] text-white">🏆 {leagueNameFor(divisionOf(career))}</span>
+        {open && onOpen && (
+          <button
+            type="button"
+            data-full-table
+            onClick={(e) => { e.stopPropagation(); onOpen(); }}
+            className="ml-auto shrink-0 rounded-full px-2 py-[3px] text-[10px] font-black uppercase leading-none tracking-wider text-white"
+            style={{ background: "rgba(255,255,255,.12)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.25)" }}
+          >
+            Full table ›
+          </button>
+        )}
+        <span className="flex shrink-0 items-center gap-1.5 leading-none">
           <span className="text-[13px] font-black tabular-nums text-yellow-200">{Math.round(pos)}<span className="text-[9px]">{ordinal(me + 1)}</span></span>
           <span className="text-[12px] font-black text-white transition-transform" style={{ transform: open ? "rotate(180deg)" : undefined }}>▾</span>
         </span>
-      </button>
+      </div>
       {open && (
         <div className="absolute inset-x-0 top-full" style={{ background: fixesOn ? "rgb(4,16,10)" : "rgba(4,16,10,.86)", boxShadow: "0 8px 18px rgba(0,0,0,.5)" }}>
-          <MiniLeague career={career} glow={glow} rows={5} onOpen={onOpen} />
+          <MiniLeague career={career} glow={glow} rows={5} onOpen={onOpen} header={false} />
         </div>
       )}
     </div>

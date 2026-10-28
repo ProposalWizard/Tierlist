@@ -23,6 +23,7 @@
  */
 import { buildScenario, SCENARIO_KINDS, type ScenarioKind } from "@/lib/star/canvasEngine";
 import { EVEN_KIND_MIX, EVEN_KINDS } from "../../lib/star/kindMix";
+import { newChancesOn } from "../../lib/star/newChances";
 import { mulberry32 } from "@/lib/star/season";
 import {
   makeChance, drawingShape, servesDrawings, PictureMemory, pictureOf, SAME_PICTURE_M, PICTURE_MEMORY,
@@ -124,7 +125,11 @@ console.log("\n5. A ONE-ON-ONE MOSTLY ON A BREAK");
   }
   // Settled play keeps a one-on-one on offer SETTLED_ONE_ON_ONE (10%) of the
   // time, so it is served a few times in 200 — far fewer than on a break.
-  if (EVEN_KIND_MIX) {
+  // With New chances (the live path while Full highlights rebuild is on) a
+  // request is dealt from its own offered kinds (chanceMaker newRequestKind),
+  // and settled play offers a one-on-one only SETTLED_ONE_ON_ONE of the time:
+  // so "mostly on a break" again, not the even mix (26 Oct 2026).
+  if (EVEN_KIND_MIX && !newChancesOn()) {
     // The even mix (lib/star/kindMix.ts, Harry 3 Oct 2026) deals every
     // open-play kind equally, break or not: about 1 in 8 either way.
     const even = 200 / EVEN_KINDS.length;

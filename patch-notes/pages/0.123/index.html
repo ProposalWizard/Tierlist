@@ -160,6 +160,32 @@
 <h2 class="nxt"><i></i>WHAT YOU ASKED FOR</h2>
 <p class="snote">&ldquo;Make it so the goalie actually catches the ball &hellip; ball should go in his hands and move with the goalie if he dives &hellip; dive more realistic and fall on floor and if he gets up get up &hellip; better animations, better graphics, ball should look fitting.&rdquo;</p>
 
+<!-- FIX 28 OCT (2) -->
+<h2 class="bug"><i></i>FIXED AFTER YOUR SECOND PLAYTEST (28 OCT)</h2>
+<div class="item">
+  <div class="ih"><b>Ball frozen in the air after a dive that didn&rsquo;t catch it</b><span class="tag t-seen">seen</span></div>
+  <p class="idea"><b>Why:</b> when a save ends the chance, the match stops the ball where he touched it, often in mid-air. <b>Fix (corrected 28 Oct):</b> if he was the last to touch it, it goes into his hands and stays there through the landing and getting up. It never flies away. A miss that stops in mid-air (off the pitch, wide) carries on its own way. <b>Checked:</b> 21 real catches over about 150 shots, 0 frames with the ball outside his hands, and 0 balls left frozen in the air.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Side-on camera: he faces you</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">On a side-on camera he now faces the camera while he&rsquo;s on his feet, the same as in the normal view. His dives still go along his goal line, so the ball still meets his gloves.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Also</b><span class="pill p-amb">done</span></div>
+  <p class="idea">The net effect round the ball after a goal is off for now. Goal celebrations are in Store &rarr; Animations (they were under Accessories).</p>
+</div>
+
+<!-- FIX 28 OCT -->
+<h2 class="bug"><i></i>FIXED AFTER YOUR PLAYTEST (28 OCT)</h2>
+<div class="item">
+  <div class="ih"><b>The ball stayed frozen in the air, nowhere near him</b><span class="tag t-seen">seen</span></div>
+  <p class="idea"><b>Why:</b> the new keeper only took over when it had planned his move from the shot. Other catches fell back to the old drawing, which leaves the ball where the match parks it, half a metre up at the spot it met him. That covered a cross he claims, a ball he palms then falls on, a ball that arrived early, and the first catch before his new drawings had loaded. On the catch frame the ball was also drawn twice, and the white flash sat beside him.</p>
+  <p class="idea"><b>Fix:</b> every frame, if the match says he has the ball, it goes into his hands. With no move planned he gathers it where he stands. Still down after a palm, he gets up with it. If his drawing hasn&rsquo;t loaded, the ball sits at his chest, never in the air. The ball is drawn once, straight after him, and the flash is at his gloves. In the 3D view the ball sits between the 3D keeper&rsquo;s hands.</p>
+  <figure><img src="fix-held.jpg" alt="A claimed cross after the fix: the ball in his gloves from the first frame, through the landing, getting up and standing" loading="lazy"><figcaption><b>A claimed cross after the fix</b> (the kind that froze before), real play, close up. Tap to enlarge.</figcaption></figure>
+  <p class="idea"><b>Checked:</b> a new checker plays real chances without filming and measures, every frame, where the ball is drawn. After the fix: <b>31 real catches over 992 shots, 0 frames with the ball anywhere but his hands</b>, in all three looks (catches are rare: the match holds about 1 shot in 30). Pictures of every catch checked by eye.</p>
+  <p class="idea"><b>Not checked:</b> the 3D view. It is too slow on the test machine to reach a catch (2 shots in 25 minutes). It uses the same rule, so please check it on your phone.</p>
+</div>
+
 <!-- AFTER -->
 <h2 class="add"><i></i>AFTER: BUILT AND FILMED. PICK A LOOK</h2>
 <p class="snote">In the game behind your switch (off until turned on). Every clip below is a real shot in a real career match, filmed frame by frame. Nothing moved the ball. Same keeper, same drawings; the three looks differ only in speed, slow motion and dust.</p>

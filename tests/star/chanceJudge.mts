@@ -34,7 +34,7 @@ import { noteServedKind, kindsForZone, type HiddenMatchInputs, type ScenarioRequ
 import { makeChance, PictureMemory, pictureOf, servedFaults, sideOf, drawnKindFor } from "../../lib/star/chanceMaker";
 import { scenarioFaults } from "../../lib/star/baseScenario";
 import { newSelectionMemory } from "../../lib/star/scenarioSelect";
-import { forceChancesMode, type ChancesMode } from "../../lib/star/newChances";
+import { forceChancesMode, chancesMode, type ChancesMode } from "../../lib/star/newChances";
 import { withoutSwitchedOff } from "../../lib/star/switchedOffKinds";
 import { guardAllows } from "../../lib/star/kindMix";
 import { mulberry32 } from "../../lib/star/season";
@@ -164,8 +164,12 @@ function signature(list: Served[]): string {
  *  Re-measured 26 Oct 2026 (was 239:9e68dc38): every byline cross gets a short
  *  option (lib/star/bylineShort.ts, Mikey). Checked: the code just before it
  *  (5b5444ff) still gives 239:9e68dc38; adding the short option alone gives
- *  239:34edfb6f. */
-const OLD_SIGNATURE = "239:34edfb6f";
+ *  239:34edfb6f.
+ *  Re-measured 27 Oct 2026 (was 239:34edfb6f): the radar this judge plays
+ *  through now steps with hiddenMatch's stepInvolved, so it hands out the
+ *  chances the real match owes you (one a half on Medium/High). Checked: with
+ *  hiddenMatch.ts and matchRadar.ts as before that change, 239:34edfb6f. */
+const OLD_SIGNATURE = "239:78133b40";
 
 const pct = (n: number, d: number) => (d ? `${((100 * n) / d).toFixed(1)}%` : "  —  ");
 function stats(list: Served[]) {
@@ -219,7 +223,12 @@ const oldDrib = { ...runCount };
 const sigOld = signature(oldA);
 const sigDefault = signature(run(null, false));
 console.log(`  Old signature ${sigOld}`);
-ok(sigOld === sigDefault, "forcing Old serves exactly what the default (Old) serves");
+// Since 22 Oct 2026 the default is New: Full highlights rebuild defaults On,
+// and it includes Chances: New (newChances.ts chancesMode). Old stays pinned
+// by OLD_SIGNATURE below.
+void sigDefault;
+forceChancesMode(null);
+ok(chancesMode() === "new", `the default is New (Full highlights rebuild on), reads ${chancesMode()}`);
 ok(sigOld === OLD_SIGNATURE, `Old serves the same ${oldA.length} chances as the code before the New work (${OLD_SIGNATURE})`);
 
 const newA = run("new", true);
