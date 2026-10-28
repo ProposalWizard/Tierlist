@@ -393,6 +393,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
 
   // ── the ball (play3d's, dressed in look H when H is on) ──
   const ball = new THREE.Group();
+  const handA = new THREE.Vector3(), handB = new THREE.Vector3();
   {
     const s = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 24, 16), new THREE.MeshStandardMaterial({ color: "#fbfbf8", roughness: 0.45 }));
     s.castShadow = prof.shadows; ball.add(s);
@@ -2092,6 +2093,15 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         const bs = SIZE3D.ball; // real size with every camera (was up to 2x on New, the style's 1.7-2.0 x 0.85 on Old)
         ball.scale.setScalar(bs);
         const v = ballV.set(fb0.x - CX, Math.max(0, fb0.z) + BALL_R * bs, fb0.y);
+        // Caught (Leo's keeper catches): the ball between his hands, wherever his dive or get-up has them.
+        const kb = f.keeperHolds ? bodies.get("keeper") : undefined;
+        const lh = kb?.p.bones.LeftHand, rh = kb?.p.bones.RightHand;
+        if (kb && lh && rh) {
+          kb.p.root.updateMatrixWorld(true);
+          lh.getWorldPosition(handA); rh.getWorldPosition(handB);
+          v.copy(handA).add(handB).multiplyScalar(0.5);
+          if (ball.parent) { ball.parent.updateMatrixWorld(true); ball.parent.worldToLocal(v); }
+        }
         const dd = Number.isFinite(lastBall.x) ? v.distanceTo(lastBall) : 0;
         if (dd > 1e-4 && dd < 3) {
           const ax = ballAx.subVectors(v, lastBall).cross(Y).normalize().negate();

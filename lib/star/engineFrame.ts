@@ -125,6 +125,13 @@ export interface EngineFrame {
   cam: EngineFrameCamera;
   /** The ball as drawn (null: none on the pitch this frame). */
   ball: { x: number; y: number; z: number; vx: number; vy: number; vz: number; live: boolean; inNet: boolean } | null;
+  /**
+   * The keeper has caught it and Leo's "Keeper catches and dives" is on: a 3D view
+   * puts the ball between the keeper's hands instead of where the match left it
+   * (the match parks a caught ball 0.55 m up at his spot, which read as a ball
+   * frozen in the air while he dived elsewhere; Leo, 28 Oct 2026).
+   */
+  keeperHolds?: boolean;
   /** Where a ball in the air will first land (the 2D's cross on the grass). */
   landing: Vec2 | null;
   keeper: EngineFrameKeeper | null;
