@@ -537,8 +537,8 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "title": "Leo's patch notes: Keeper catches, dives and the ball",
       "author": "Leo",
       "publishedAt": "2026-10-26T22:08:00Z",
-      "updatedAt": "2026-10-27T19:19:43Z",
-      "updateNote": "In the game: merged on Leo's go, behind his switch and off by default (Settings → Updates → Leo's update → Keeper catches and dives). All three looks are buttons on the card to try; A is the default. Page edited.",
+      "updatedAt": "2026-10-28T12:08:05Z",
+      "updateNote": "Fixed after Leo's playtest: a caught ball no longer stays frozen in the air. Every catch the match reports now goes into his hands (claimed crosses, a palm then a smother, early balls, drawings still loading), drawn once, flash at his gloves; 3D too. Checked: 31 real catches over 992 shots, 0 frames loose. Page edited.",
       "artifactUrl": null,
       "summary": "Leo, 26 Oct, updated 27 Oct. In the game behind Leo's switch (off by default), filmed: the keeper dives in time (his gloves meet the ball), a caught ball goes into his gloves and moves with him, he lands on the grass, lies a beat and gets up. 16 new keeper moves, 11-19 drawings each. Real catches filmed (ball held in his gloves). Three looks to pick from: A Natural, B Broadcast (slow motion at the save), C Arcade (quicker, longer dive). Results unchanged; behind Leo's switch.",
       "stats": [
@@ -638,6 +638,11 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "at": "2026-10-27T19:19:43Z",
           "where": "Text, Page",
           "note": "In the game: merged on Leo's go, behind his switch and off by default (Settings → Updates → Leo's update → Keeper catches and dives). All three looks are buttons on the card to try; A is the default. Page edited."
+        },
+        {
+          "at": "2026-10-28T12:08:05Z",
+          "where": "Text, Page",
+          "note": "Fixed after Leo's playtest: a caught ball no longer stays frozen in the air. Every catch the match reports now goes into his hands (claimed crosses, a palm then a smother, early balls, drawings still loading), drawn once, flash at his gloves; 3D too. Checked: 31 real catches over 992 shots, 0 frames loose. Page edited."
         }
       ]
     },
