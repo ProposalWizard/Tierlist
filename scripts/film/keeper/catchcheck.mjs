@@ -29,7 +29,7 @@ const prof = path.join(OUT, `prof-cc-${LOOK}-${process.pid}`);
 fs.rmSync(prof, { recursive: true, force: true });
 const ctx = await chromium.launchPersistentContext(prof, {
   executablePath: CHROME, args: ["--disable-dev-shm-usage"],
-  viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, hasTouch: true, isMobile: true,
+  viewport: { width: 390, height: 844 }, deviceScaleFactor: SHOTS ? 3 : 1, hasTouch: true, isMobile: true,
 });
 await installVClock(ctx, { fps: 60, audioMaxS: 1 });
 const seed = JSON.parse(fs.readFileSync(SEED, "utf8"));
@@ -65,18 +65,24 @@ const phase = () => pg.evaluate(() => window.__starMatch?.phase?.() ?? null);
 const dbg = () => pg.evaluate(() => { const d = window.__kDbg; return d ? JSON.parse(JSON.stringify(d)) : null; });
 
 // One catch being watched: from the first frame the match says "caught" until the chance is over.
-let cur = null, catches = 0, loose = 0, tries = 0, frame = 0;
+let lastT = -1, cur = null, catches = 0, loose = 0, tries = 0, frame = 0;
 const watch = async () => {
   const d = await dbg();
   frame++;
   if (!d) return;
-  if (d.caught && !cur) cur = { kind: d.kind, show: d.show, move: d.move, ending: d.ending, frames: 0, looseFrames: 0, netFrames: 0, maxGap: 0, firstLoose: null };
+  if (d.caught && !cur) cur = { kind: d.kind, show: d.show, move: d.move, ending: d.ending, frames: 0, looseFrames: 0, netFrames: 0, staleFrames: 0, maxGap: 0, firstLoose: null };
   if (cur && !d.caught) { finish(); return; }
+  if (cur && d.t === lastT) { cur.staleFrames++; return; }
+  lastT = d.t;
+  if (cur && (!d.ball || !d.keeper)) { cur.frames++; cur.looseFrames++; if (!cur.firstLoose) cur.firstLoose = { frame: cur.frames, why: "no ball drawn" }; return; }
   if (!cur || !d.ball || !d.keeper) return;
   cur.frames++;
   // --shots: pictures of every catch at set moments, to check by eye
-  if (SHOTS && [1, 6, 20, 45, 80, 120].includes(cur.frames)) {
-    await pg.screenshot({ path: path.join(OUT, `shot-${LOOK}${V3D ? "-3d" : ""}-${process.pid}-${catches}-f${String(cur.frames).padStart(3, "0")}.jpg`), type: "jpeg", quality: 70 }).catch(() => {});
+  if (SHOTS && [1, 2, 3, 4, 6, 9, 14, 20, 30, 45, 60, 80, 100, 120, 150].includes(cur.frames)) {
+    // close up round the keeper (2x picture), the frame number on the file
+    const cx = d.keeper.x, cy = d.keeper.y - d.keeper.h * 0.5, w = d.keeper.h * 4.2, h = w * 0.62;
+    const clip = { x: Math.max(0, cx - w / 2), y: Math.max(0, cy - h / 2), width: w, height: h };
+    await pg.screenshot({ path: path.join(OUT, `shot-${LOOK}${V3D ? "-3d" : ""}-${process.pid}-${catches}-f${String(cur.frames).padStart(3, "0")}.jpg`), type: "jpeg", quality: 80, clip }).catch(() => {});
   }
   // gap: ball to the middle of his body, in keeper heights
   const gap = Math.hypot(d.ball.x - d.keeper.x, d.ball.y - (d.keeper.y - d.keeper.h * 0.45)) / d.keeper.h;
@@ -95,7 +101,7 @@ const finish = () => {
   if (!cur) return;
   catches++; if (cur.looseFrames) loose++;
   fs.appendFileSync(outFile, JSON.stringify({ look: LOOK, ...cur }) + "\n");
-  log("catch", catches, cur.looseFrames ? `LOOSE ${cur.looseFrames}/${cur.frames}` : `held ${cur.frames} (chest net ${cur.netFrames})`, JSON.stringify(cur.firstLoose ?? { move: cur.move, maxGap: cur.maxGap }));
+  log("catch", catches, cur.looseFrames ? `LOOSE ${cur.looseFrames}/${cur.frames}` : `held ${cur.frames} (chest net ${cur.netFrames}, stale ${cur.staleFrames})`, JSON.stringify(cur.firstLoose ?? { move: cur.move, maxGap: cur.maxGap }));
   cur = null;
 };
 
