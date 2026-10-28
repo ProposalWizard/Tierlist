@@ -7452,18 +7452,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (!at || !bl || !keeperShowOn() || phaseRef.current !== "result" || bl.inNet || keeperCatchNow()) return at;
     // development only: the catch checker turns this off to show the bug it fixes
     if (offlineDevPlayEnabled() && typeof window !== "undefined" && window.localStorage?.getItem("kib-dev-deadball-off") === "1") return at;
+    if (moved) return at;
+    // Play has stopped with the ball still. If he was the last to touch it, he has it:
+    // it goes into his hands (Leo, 28 Oct: "it is continuing to sit in between two
+    // hands"). Never flown away.
+    const saves = (bl.actionLog ?? []).filter((a) => a.kind === "save" && a.actor === "keeper" && a.save);
+    const last = saves[saves.length - 1];
+    if (last && last.save !== "beaten") { deadHeldRef.current = sc; return at; }
+    // A miss that stopped in mid-air (off the pitch, wide): it carries on its own way and is gone.
     let d = deadBallRef.current;
     if (!d) {
-      // still in the air where the chance ended (the match stops moving it): carry it on
-      if (moved || at.z < 0.15) return at;
       const t2 = ballTrackRef.current;
-      const sp = t2 ? Math.hypot(t2.vx, t2.vy) : 0;
-      const mid = (POST_L + POST_R) / 2;
-      const side = Math.sign(at.x - mid) || (keeperShowRef.current?.plan.side ?? 1) || 1;
-      // its own path if it had one; off his gloves and behind the line if it had stopped on him
-      d = sp > 2 && t2
-        ? { sc, at: { ...at }, t0: now, vx: t2.vx, vy: t2.vy, vz: t2.vz }
-        : { sc, at: { ...at }, t0: now, vx: side * 6.5, vy: -7, vz: 3.2 };
+      if (at.z < 0.15 || !t2 || Math.hypot(t2.vx, t2.vy) < 2) return at;
+      d = { sc, at: { ...at }, t0: now, vx: t2.vx, vy: t2.vy, vz: t2.vz };
       deadBallRef.current = d;
     }
     const t = now - d.t0;
@@ -7471,9 +7472,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const z = d.at.z + d.vz * t - 4.9 * t * t;
     return { x: d.at.x + d.vx * t, y: d.at.y + d.vy * t, z: Math.max(0, z) };
   };
+  /** Play stopped with the ball still after his touch: the picture treats it as his (in his hands). */
+  const deadHeldRef = useRef<Scenario | null>(null);
   /** The match's own record says the keeper has caught the ball (a shot, a claimed cross, a smother). */
   const keeperCatchNow = (): boolean =>
-    !!ballRef.current?.actionLog?.some((a) => a.kind === "save" && a.actor === "keeper" && a.save === "catch");
+    (!!scenarioRef.current && deadHeldRef.current === scenarioRef.current)
+    || !!ballRef.current?.actionLog?.some((a) => a.kind === "save" && a.actor === "keeper" && a.save === "catch");
   /** A catch with no move planned for it: he gathers it where he stands (chest or feet by its height). */
   const keeperShowGather = (at?: { from: { x: number; y: number }; to: { x: number; y: number } }) => {
     const sc = scenarioRef.current;
