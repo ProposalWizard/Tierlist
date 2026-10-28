@@ -31,6 +31,7 @@ FACT-KIB-005 | End card: KNOWITBALL, the versions so far, a green knowitball.co.
 FACT-KIB-006 | Voice-over: Kokoro v1.0 offline, voice bm_george, speed 1.2, en-gb; the same setup as the game's commentary. | media,client-kib
 FACT-KIB-007 | Learning from v01: v0.2 and v0.3 had no screenshots in the repo, so their beats had to be drawn diagrams. | client-kib
 FACT-KIB-008 | Learning from v01: render frames in chunks of 250, one page per chunk; one long session crashed the page. | client-kib
+FACT-TEAM-001 | next build needs about 6.5 GB; package.json gives it 6 GB of heap (node --max-old-space-size=6144). A Vercel deploy that fails with no other clue may be out of memory again: build locally with no NODE_OPTIONS to check. | deploy,team
 FACT-UI-001 | Settings keeps only real player preferences (sound, full screen, 3D quality, faces, names) and the Settings UI Old/New row. | three-d,ui
 FACT-UI-002 | Decided, no toggle: to see or bring back an old option, read the files at ebe02ad; old stored values are ignored. | ui
 FACT-UI-003 | Chances: the team's drawn chances only, everywhere; the New chance library and the Generator were DELETED. | team,ui
@@ -60,6 +61,7 @@ PRO-TEAM-005 | Clear disk space before every new build: remove old agent worktre
 PRO-TEAM-006 | Builders check light: ONE quick check per change (loads, no console errors, one still); Harry judges 3D on his phone. | three-d,process
 PRO-TEAM-007 | Ship patch notes alone: node scripts/patch-notes/ship.mjs <versions> --pr makes a patch-notes-only PR to main; feature code waits for Harry's push. | process,deploy
 PRO-TEAM-008 | Patch notes order: stills on the page, ship the notes with ship.mjs, publish; push the feature when Harry says; then film clips. | process,deploy
+PRO-TEAM-009 | Before shipping a patch note, run scripts/patch-notes/squeeze-media.sh <version> (clips CRF 30, stills JPEG ~80%); the patch-notes folder must stay under Vercel's 250 MB route cap. | process,rule
 REF-ALL-001 | Big documents and skills stay whole; each gets one reference note that links to the source. | brain
 REF-KIB-001 | Script v01, patch notes 0.1 to 0.3: the first Knowitball short, word for word with its sources. | process,client-kib
 RUL-3D-001 | Fully 3D games are the exception: own physics and rules in lib/star/play3d/, never importing canvasEngine.ts. | engine,three-d,rule
@@ -123,6 +125,7 @@ RUL-TEAM-025 | Feedback on a patch note is answered on that same patch note page
 RUL-TEAM-026 | Big tasks: do every step that needs no approval first; leave anything that may ask Mikey to tap Allow (artifact publish, connector call) until the end. | team
 RUL-TEAM-027 | When Mikey asks to measure, report or discuss something, report back and do not change the game; build only what he asks to be built. | team
 RUL-TEAM-028 | "Every patch note: author, real date and time, every update with time and where, its own number (no base shared with anyone's, search all branches), a menu name saying what it is about, and the one standard page; checked by rules.mjs." | team,process
+RUL-TEAM-029 | Leo's chats: start with a plan as progress bars (steps, time each, % done), update them and the admin board often; end every task with yes/no lines (works? patch notes made/updated? live on admin page? merged into the game?), then at most 5 lines; ask for every approval together at the start or end. | admin,team,process,deploy
 RUL-UI-001 | Decide, don't toggle: a new look or gameplay change is built as THE game, with no new New/Old row in Settings. | ui
 RUL-UI-002 | Unfinished work lives on a test page (a /star-*-dev page), not behind a switch in the real game. | ui,admin
 RUL-UI-003 | Existing switches stay until someone decides each one; never delete one unasked. | rule,ui

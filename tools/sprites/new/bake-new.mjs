@@ -33,6 +33,13 @@
  *            celebBackflip, celebOwnName, celebStatue (keyed: tools/mocap3d/keyed_celebs.py) → their own
  *            atlas 4 (atlas-4/-4a, mask-4/-4a); atlas 2 and 3 untouched. A group number picks the CELEBS with that
  *            `group` (none = 2, the six above).
+ *        node tools/sprites/new/bake-new.mjs keepers [a|current|both]   THE KEEPER CATCHES (Leo, 26 Oct 2026; keeper.js):
+ *            kCatchDiveR, kCatchLowR, kParryDiveR, kGetUpBallR, kGetUpR, kCatchChest, kCatchFeet, kHoldBall
+ *            (+ kCatchDiveL, kCatchLowL, kParryDiveL, kGetUpBallL, kGetUpL drawn mirrored), 4 facings, into a NEW
+ *            atlas 5 (atlas-5/-5a, mask-5/-5a). Each cell has `pts` = [x, y, g, 0, 0], the ball's centre in his
+ *            gloves (the aerials' units); clips carry contactFrame, landFrame, landM, hold, ballPx.
+ *        node tools/sprites/new/bake-new.mjs keepersheet a "kCatchDiveR,kCatchLowR:1,3[:80]"   look sheet → preview/
+ *        node tools/sprites/new/bake-new.mjs keeperbones a kCatchDiveR   joints under 14 cm, ball vs body, per frame
  *        node tools/sprites/new/bake-new.mjs celebsheet a "celebJump,celebRoar:2,0"   look sheet → preview/
  *        node tools/sprites/new/bake-new.mjs celebbones a celebKneeSlide [n]   per frame: lowest point and
  *            the joints closer than 14 cm (n = 0: the baked frames; n > 0: n even steps)
@@ -84,10 +91,10 @@ const browser = await chromium.launch({
 });
 const dataOf = (url) => Buffer.from(url.slice(url.indexOf(",") + 1), "base64");
 /** Open the baker page on one look's body: "a" = Style A (toon-p1, fitted to index-a's standH), "" = current. */
-async function openLook(tag) {
+async function openLook(tag, wide = false) {
   const page = await browser.newPage({ viewport: { width: 800, height: 800 } });
   page.on("pageerror", (e) => console.log("PAGE ERROR", e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}/bake-new.html${tag === "a" ? "?file=/star/people3d/toon-p1.glb" : FIT}`);
+  await page.goto(`http://127.0.0.1:${server.address().port}/bake-new.html${tag === "a" ? "?file=/star/people3d/toon-p1.glb" : FIT}${wide ? "&view=wide" : ""}`);
   await page.waitForFunction(() => window.bakerReady === true, null, { timeout: 120000 });
   if (tag === "a") {
     const standH = JSON.parse(fs.readFileSync(path.join(outDir, "index-a.json"), "utf8")).standH;
@@ -99,6 +106,73 @@ async function openLook(tag) {
 function losslessWebp(png, out) {
   const r = spawnSync("python3", ["-I", "-c", "import sys;from PIL import Image;Image.open(sys.argv[1]).save(sys.argv[2],'WEBP',lossless=True,exact=True)", png, out], { stdio: "inherit" });
   if (r.status !== 0) throw new Error("webp conversion failed (needs python3 + Pillow)");
+}
+if (mode.startsWith("keeper")) {
+  // keepers [a|current|both]  ·  keepersheet <a|current> "<clip,clip:dirIdx,dirIdx[:tilt]>"  ·  keeperbones <a|current> <clip>
+  // THE KEEPER CATCHES (Leo, 26 Oct 2026; keeper.js): eight keyed keeper clips (+ five
+  // mirrored L entries), 4 facings, into atlas 5 (atlas-5a.webp + mask-5a.webp in
+  // index-a.json, atlas-5.webp + mask-5.webp in index.json). Each cell carries `pts`
+  // (the ball's centre in his gloves). Only atlases["5"] and those keeper entries are written.
+  const which = (arg || (mode === "keepers" ? "both" : "a"));
+  const looks = which === "both" ? ["a", ""] : [which === "current" ? "" : "a"];
+  try {
+    for (const tag of looks) {
+      const page = await openLook(tag, true);
+      const t0 = Date.now();
+      if (mode === "keepers") {
+        const r = await page.evaluate(([t, q]) => window.bakeKeepers(t, q), [tag, tag === "a" ? 0.8 : 0.74]);
+        const color = path.join(outDir, `atlas-5${tag}.webp`);
+        fs.writeFileSync(color, dataOf(r.color));
+        fs.mkdirSync(previewDir, { recursive: true });
+        const tmp = path.join(previewDir, `mask-5${tag}.png`);
+        fs.writeFileSync(tmp, dataOf(r.mask));
+        const mask = path.join(outDir, `mask-5${tag}.webp`);
+        losslessWebp(tmp, mask); fs.unlinkSync(tmp);
+        const frag = JSON.parse(r.frag);
+        const ip = path.join(outDir, tag === "a" ? "index-a.json" : "index.json");
+        const idx = JSON.parse(fs.readFileSync(ip, "utf8"));
+        const others = (x) => JSON.stringify({ atlas: x.atlas, rest: Object.entries(x.atlases ?? {}).filter(([k]) => k !== "5"), standH: x.standH, player: x.chars.player,
+          keeper: Object.entries(x.chars.keeper.clips).filter(([n]) => !(n in frag.clips)) });
+        const keep = others(idx);
+        idx.atlases = { ...(idx.atlases ?? {}), 5: frag.atlas };
+        for (const [n, cl] of Object.entries(frag.clips)) {
+          const was = idx.chars.keeper.clips[n];
+          if (was && was.atlas !== 5) throw new Error(`refusing to overwrite clip keeper.${n}`);
+          idx.chars.keeper.clips[n] = cl;
+        }
+        if (others(idx) !== keep) throw new Error("another atlas or clip entry changed");
+        fs.writeFileSync(ip, JSON.stringify(idx));
+        console.log(`atlas-5${tag}.webp`, (fs.statSync(color).size / 1024).toFixed(0), "KB ·", `mask-5${tag}.webp`, (fs.statSync(mask).size / 1024).toFixed(0), "KB ·", frag.atlas.w + "x" + frag.atlas.h);
+        for (const [n, cl] of Object.entries(frag.clips)) if (!cl.mirrorOf) console.log(" ", n, cl.frames, "frames ·", cl.fps, "fps ·", cl.loop, cl.contactFrame != null ? "contact " + cl.contactFrame : "", cl.landFrame != null ? "land " + cl.landFrame : "");
+        console.log(path.basename(ip), "updated ·", ((Date.now() - t0) / 1000).toFixed(0), "s");
+      } else if (mode === "keepersheet") {
+        fs.mkdirSync(previewDir, { recursive: true });
+        const r = await page.evaluate((s) => window.keeperSheet(s), process.argv[4] ?? "");
+        const f = path.join(previewDir, `keepers-${tag || "current"}-${(process.argv[4] ?? "all").replace(/\W+/g, "_")}.png`);
+        fs.writeFileSync(f, dataOf(r.url)); console.log("wrote", f);
+      } else if (mode === "keeperbones") {
+        // per frame: lowest point, joints closer than 14 cm (RUL-3D-005), the gloves' gap, the ball's
+        // height and its distance to his chest / head / hips (under 0.22 m = the ball in his body)
+        const D = (a, b) => (a && b ? Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) : 9);
+        const PAIRS = [["LeftLeg", "RightLeg"], ["LeftFoot", "RightFoot"], ["LeftHand", "RightHand"], ["LeftHand", "Head"], ["RightHand", "Head"], ["LeftHand", "Hips"], ["RightHand", "Hips"], ["LeftForeArm", "Spine02"], ["RightForeArm", "Spine02"], ["LeftForeArm", "Spine01"], ["RightForeArm", "Spine01"], ["LeftHand", "Spine02"], ["RightHand", "Spine02"], ["LeftFoot", "Hips"], ["RightFoot", "Hips"], ["LeftHand", "LeftUpLeg"], ["RightHand", "RightUpLeg"], ["LeftHand", "LeftLeg"], ["RightHand", "RightLeg"], ["LeftLeg", "Spine02"], ["RightLeg", "Spine02"], ["LeftForeArm", "RightForeArm"]];
+        // all figures in REAL centimetres (world units ÷ the body's scale S)
+        let bad = 0;
+        for (const row of await page.evaluate((nm) => window.keeperBones(nm), process.argv[4])) {
+          const cm = (x) => ((x / row.S) * 100).toFixed(0);
+          const near = PAIRS.map(([a, b]) => [a + "-" + b, D(row.j[a], row.j[b]) / row.S]).filter(([, d]) => d < 0.14).map(([k, d]) => `${k} ${(d * 100).toFixed(0)}cm`);
+          const bd = ["Spine02", "Head", "Hips"].map((b) => `${b} ${cm(D(row.ball, row.j[b]))}`).join(" ");
+          if (near.length) bad++;
+          console.log(`f${row.i}${row.floor === "lift" ? "^" : " "} low ${cm(row.minY)}cm · ball x ${cm(-row.ball[0])} · hips ${cm(row.j.Hips[1])}cm · ball h ${cm(row.ball[1])}cm gap ${cm(row.palmGap)}cm · ball→ ${bd}`, near.length ? "· NEAR " + near.join(" · ") : "");
+        }
+        console.log(bad ? `${bad} frame(s) with joints under 14 cm` : "no joints under 14 cm");
+      }
+      await page.close();
+    }
+  } finally {
+    await browser.close();
+    server.close();
+  }
+  process.exit(0);
 }
 if (mode.startsWith("aerial")) {
   // aerials [a|current|both]  ·  aerialsheet <a|current> <clip,clip:dirIdx,dirIdx>

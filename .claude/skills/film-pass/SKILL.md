@@ -159,6 +159,34 @@ moments filmed frame by frame: 0%.
   In v0.24 two tries on a slow machine never served one. Use a dev-only seed
   that serves that kind first (rule 6).
 
+## Filming a rare real moment (Leo, 27 Oct 2026)
+
+Leo, after a keeper filming round lost hours: *"get better at filming what u
+need to optimally and not wasting time!"* What went wrong: takes guessed at
+the shot, a filmer sat on the stats screen for minutes, two got stuck in a
+dribble they could not play, and six ran at once on one machine.
+
+1. **Read the engine's rule for the outcome first, then aim at it.** A keeper
+   catch, for example, needs a ball under 23 m/s, below chest height, inside
+   two-thirds of his reach (`resolveKeeper` in canvasEngine.ts). Aim every try
+   inside that window. Never fire at random and wait.
+2. **The filmer judges the take, not you.** Log the numbers that decide it
+   (save result, distance from the keeper, height) on every try, and keep a
+   take only when they match. A "catch" 0.2 m from his chest is not a diving
+   catch.
+3. **Cap every take and restart fresh.** One run gets 4 minutes
+   (`timeout 240`), then a new browser from the seed save. Never let one run
+   sit on a menu, a stats screen or a phase it cannot play.
+4. **At most 3 filmers at once** on a cloud machine. Six made each of them
+   slower and none finished sooner.
+5. **Check every kept take by eye** (a close-up sheet around the moment)
+   before it goes on a page. Two of the first takes showed bugs (a dive 1 s
+   early, a keeper standing up before the ball arrived), and those had to be
+   fixed and refilmed.
+
+Keeper saves: `scripts/film/keeper/vsave.mjs` (want any | catch | dcatch, `--look`) and
+`take.sh` (the 4-minute fresh-restart loop). Reuse them; don't rewrite them.
+
 ## Which model
 - Filming is mostly waiting for a browser, so a bigger model doesn't make it faster.
   Use the everyday model at medium effort (RUL-TEAM-014, RUL-TEAM-015, RUL-TEAM-016).
