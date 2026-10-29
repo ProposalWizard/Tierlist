@@ -18,8 +18,6 @@ import { DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
 import { DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import type { AccessoryItem, Celebration } from "@/lib/star/store/catalogue";
 import { signatureText, type SignatureWho } from "@/lib/star/signatureBoots";
-import { drawSprite, loadSprites, spriteClipReady, spritesReady, type SpriteClip } from "@/lib/star/sprites";
-import { CELEB_SPECS, type CelebrationMove } from "@/lib/star/celebration";
 
 // ── The anatomy, in units of r from the figure's local origin. These mirror
 // paintBody in lib/star/fiveASide/render.ts (not exported there); the
@@ -318,30 +316,6 @@ export default function AccessoryFigure({
     const x = sigBoot ? width * 0.34 : width / 2;
     const ground = height * (celeb === "knee_slide" ? 0.86 : 0.9);
 
-    // A celebration plays, looping, with the match's own drawings (overnight sweep,
-    // 29 Oct 2026: the previews were one still pose, and "Jump" didn't jump).
-    // Until those drawings load, the still pose below.
-    const spec = celeb ? CELEB_SPECS[celeb as CelebrationMove] : undefined;
-    if (spec && wear.length === 1) {
-      if (!spritesReady()) void loadSprites();
-      let raf = 0;
-      const t0 = performance.now();
-      const loop = () => {
-        raf = requestAnimationFrame(loop);
-        const clip = spec.sprite as SpriteClip;
-        if (!spritesReady() || !spriteClipReady("player", clip)) return;
-        const t = ((performance.now() - t0) / 1000) % (spec.playS + 0.6);
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.clearRect(0, 0, width, height);
-        drawSprite(ctx, width / 2, height * 0.86, {
-          char: "player", clip, t: Math.min(t, spec.playS), facingRad: Math.PI / 2,
-          kit: { shirt: KIT.shirt, shorts: KIT.shorts, socks: KIT.shirt }, height: height * 0.62, shadow: true,
-        });
-      };
-      raf = requestAnimationFrame(loop);
-      drawFigureAt(ctx, x, ground, r, { ...KIT, face }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE, { pose, facing });
-      return () => cancelAnimationFrame(raf);
-    }
     drawFigureAt(ctx, x, ground, r, { ...KIT, face }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE, { pose, facing });
     ctx.save();
     ctx.translate(x, ground - r * FEET_Y);
