@@ -1,7 +1,7 @@
 "use client";
 import type { CareerState, Skills } from "@/lib/star/types";
 import { actionsLeft } from "@/lib/star/week";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, formatWallet } from "@/lib/star/money";
 import { leagueNameFor } from "@/lib/star/calendar";
 import {
   placementLabel, youthAbility, youthLevelFor, readyForPromotion,
@@ -76,7 +76,7 @@ export default function YouthTeam({
       </div>
 
       <div className="mt-3 flex gap-2 text-center">
-        <Stat label="In the bank" value={formatMoney(career.money)} />
+        <Stat label="In the bank" value={formatWallet(career.money)} />
         <Stat label="Wage" value={`${formatMoney(career.contract.wage)}/wk`} />
         <Stat label="This week" value={`${left} left`} />
       </div>

@@ -711,7 +711,7 @@ export function CanTile({ can: c, career, e, onUse, onBuy, compact = false, mini
         <div className="min-w-0 flex-1">
           {/* The count sits beside the name, never over the text (Mikey, 22 Oct 2026: the cans overlap). */}
           <div className="flex min-w-0 items-center gap-1">
-            <span className={`truncate font-black leading-tight text-white ${bold ? "text-[12.5px]" : "text-[11px]"}`}>{c.name.replace(" KIB Can", "")}</span>
+            <span className={`truncate font-black leading-tight tracking-tight text-white ${c.name.replace(" KIB Can", "").length > 5 ? "text-[10.5px]" : bold ? "text-[12.5px]" : "text-[11px]"}`}>{c.name.replace(" KIB Can", "")}</span>
             <span data-can-count className={`shrink-0 rounded-full text-center font-black tabular-nums text-gray-950 ${bold ? "min-w-[24px] px-1.5 text-[11.5px] leading-[16px]" : "min-w-[18px] px-1 text-[9.5px] leading-[14px]"}`}
               style={{ background: `linear-gradient(180deg, ${tint(accent, 0.35)}, ${accent})`, boxShadow: `0 1px 4px ${rgba(accent, 0.6)}` }}>×{Math.round(shownCount)}</span>
           </div>

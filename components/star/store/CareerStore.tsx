@@ -20,11 +20,10 @@ import { SignatureContext } from "./AccessoryFigure";
 import { signatureOf } from "@/lib/star/signatureBoots";
 import { useClubTheme } from "../ui";
 import { dateKeyFor } from "@/lib/star/store/daily";
-import { useLeoUpdate } from "@/lib/star/leoUpdate";
 import {
   careerStoreState, careerPriceContext, careerStoreBuy, careerStoreEquip, careerStoreUnequip,
   careerBuyCoinPack, careerConvertCoins, careerBootStatus, shownInCareer, coinPacksAreTestMode,
-  ACCESSORIES_IN_MATCH_NOTE, ACCESSORIES_IN_MATCH_NOTE_LEO, type CareerStoreResult,
+  ACCESSORIES_IN_MATCH_NOTE, type CareerStoreResult,
 } from "@/lib/star/store/career";
 
 export default function CareerStore({ career, onChange, onBack, hud }: {
@@ -35,8 +34,6 @@ export default function CareerStore({ career, onChange, onBack, hud }: {
   onChange: (next: CareerState) => void;
   onBack: () => void;
 }) {
-  // Leo's 24 Oct update, "celebrations": the shop line under accessories says they play after your goals.
-  const celebsOn = useLeoUpdate("celebrations");
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = window.setInterval(() => setNow(Date.now()), 1000);
@@ -63,7 +60,7 @@ export default function CareerStore({ career, onChange, onBack, hud }: {
       hud={hud}
       hide={(item) => !shownInCareer(item, career)}
       packs={coinPacksAreTestMode() ? "test" : "soon"}
-      accessoriesNote={celebsOn ? ACCESSORIES_IN_MATCH_NOTE_LEO : ACCESSORIES_IN_MATCH_NOTE}
+      accessoriesNote={ACCESSORIES_IN_MATCH_NOTE /* celebrations now live in Animations (29 Oct): the celebration line here read on a sweatband */}
       bootStatus={(id) => careerBootStatus(career, id)}
       onBuy={(id, cur) => run(careerStoreBuy(career, id, cur, dateKey))}
       onEquip={(id) => run(careerStoreEquip(career, id))}
