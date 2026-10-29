@@ -27,6 +27,87 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.125",
+      "title": "Leo's patch notes: Overnight sanity sweep",
+      "author": "Leo",
+      "publishedAt": "2026-10-29T14:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Five testers played the whole game overnight (match, career screens, shop/store, training, 3D/replays): 75 findings. Fixed and checked on screen: money chips read 1.9m not 1m; celebrations in Store > Animations; can't-afford line; SAVED/POST on your own shots; goal scoreboard off the goal; pop-ups don't sit over the commentary; Records season; solid league list; phone fixtures; small text fixes. Listed for a decision: store previews (Harry), shop pictures, stacked men, wide cuts, added-time goals.",
+      "stats": [
+        {
+          "value": "5",
+          "label": "testers overnight"
+        },
+        {
+          "value": "75",
+          "label": "findings"
+        },
+        {
+          "value": "20",
+          "label": "fixed and checked"
+        },
+        {
+          "value": "8",
+          "label": "need a decision"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Money reads 1.9m, not 1m",
+              "detail": "One decimal, rounded down, on every money chip."
+            },
+            {
+              "title": "Celebrations in Store > Animations",
+              "detail": "Their own section; no celebration line on accessories."
+            },
+            {
+              "title": "SAVED / POST on your own shots",
+              "detail": "A saved penalty ended in silence."
+            },
+            {
+              "title": "Goal scoreboard low on the screen",
+              "detail": "It covered the goal and keeper."
+            },
+            {
+              "title": "Pop-ups fade at the commentary",
+              "detail": "They sat over the feed lines (Mikey's pop-ups)."
+            },
+            {
+              "title": "Records season, solid league list, phone fixtures, small text",
+              "detail": "Each re-checked with a screenshot."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Needs a decision",
+          "items": [
+            {
+              "title": "Store celebration previews don't move",
+              "detail": "Needs Harry's OK (one-engine guard)."
+            },
+            {
+              "title": "Shop names don't match pictures",
+              "detail": "New pictures or new names."
+            },
+            {
+              "title": "Men stacked on one spot; wide camera cuts",
+              "detail": "Harry's area."
+            },
+            {
+              "title": "Opponent scored 3 in added time once",
+              "detail": "Suspected; needs more matches."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.124",
       "title": "Mikey's patch notes: First hour story, power and smarter chances",
       "author": "Mikey",

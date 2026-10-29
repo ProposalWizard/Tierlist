@@ -15,7 +15,7 @@
  */
 import type { CareerState } from "@/lib/star/types";
 import { baseIdOf } from "@/lib/star/shopData";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, formatWallet } from "@/lib/star/money";
 import type { HubPhase } from "../HomeHub";
 import { art } from "./parts";
 import { useShopPicsLook, shopPic3d } from "@/lib/star/shopPicsLook";
@@ -36,7 +36,7 @@ export default function StoreLanding({ career, onOpen }: { career: CareerState; 
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={bootPic} alt="" draggable={false} className="w-full max-w-[420px] select-none object-contain" />
         <div className="mt-2 text-[34px] font-black uppercase leading-none text-white">Shop</div>
-        <div className="mt-1 text-[13px] font-black tabular-nums text-amber-300">★{formatMoney(career.money)}</div>
+        <div className="mt-1 text-[13px] font-black tabular-nums text-amber-300">★{formatWallet(career.money)}</div>
         <div className="mt-4 flex gap-2">
           {ICONS.map((c) => (
             // eslint-disable-next-line @next/next/no-img-element

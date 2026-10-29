@@ -170,7 +170,8 @@ export function beatText(c: CareerState, b: Beat): BeatText {
     // "Claim your reward" once the Star Pass has a reward at level 2 (the
     // level ladder is the next build); until then it shows the Pass.
     case "starpass": return { who: "Star Pass", icon: "⭐", title: "You levelled up", line: "", button: "Take a look" };
-    case "can": return { who: "The physio", icon: "🩺", title: "Your energy's low", line: "Your energy is low. Here's a free KIB can. Drink it.", button: "Use the can" };
+    // It comes after game 2 whatever your energy: it said "your energy is low" at 79 (sweep, 29 Oct 2026).
+    case "can": return { who: "The physio", icon: "🩺", title: "One on the house", line: "Matches use up your energy. Here's a free KIB can: drink it to top up.", button: "Use the can" };
     case "phone": return { who: mate, icon: "📱", title: "Have my old phone", line: `${c.player.firstName}, I've just bought a new phone. Here, take my old one.`, button: "Thanks!" };
     case "shop": return { who: "The chairman", icon: "💷", title: "Wages are in", line: "Wages are in. The lads are off to the shop. Tag along with them.", button: "Tag along" };
     case "stats": return { who: gaffer, icon: "⚽", title: "Your first goal", line: "Your first goal is on your card. Your stats, records and achievements are open now.", button: "Got it" };

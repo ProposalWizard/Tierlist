@@ -149,7 +149,7 @@ function NowPane({ career, final, onLast }: { career: CareerState; final: boolea
       {comp.kind === "intl" && <IntlCompPane key={comp.comp} career={career} comp={comp.comp} nation={nation} />}
 
       {choosing && (
-        <div className="fixed inset-0 z-[80] overflow-y-auto bg-gray-950/95 px-4 pb-8 pt-4" data-world-chooser>
+        <div className="fixed inset-0 z-[80] overflow-y-auto px-4 pb-8 pt-4" style={{ background: "#071a10" /* solid: the table showed through (sweep, 29 Oct) */ }} data-world-chooser>
           <div className="mx-auto max-w-md">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-[18px] font-black text-white">Every league and cup</span>
