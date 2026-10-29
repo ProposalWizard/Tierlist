@@ -277,7 +277,10 @@ export default function MikeyPopup({ item, follow }: {
 
   if (!item) return <style>{CSS}</style>;
   const dur = `${item.ms}ms`;
-  const top = item.goal ? "3%" : side === "top" ? "14%" : "74%";
+  // A goal's scoreboard sits low: at 3% it covered the goal and the keeper as the
+  // ball went in (overnight sweep, 29 Oct 2026; the celebration runs to the corner
+  // flag, at the goal end, so the bottom is clear).
+  const top = item.goal ? "70%" : side === "top" ? "14%" : "74%";
   return (
     <>
       <style>{CSS}</style>

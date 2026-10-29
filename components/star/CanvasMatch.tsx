@@ -1923,6 +1923,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // call site's `st.possession` check), which this rare fallback path — a
   // whole skipped batch producing no events at all — otherwise had no way
   // to say.
+  // No line here may depend on the score ("fans restless" read at 5-0 up; sweep, 29 Oct 2026).
   const SIM_COMMENTARY_USER = [
     "{club} share the ball around patiently in midfield.",
     "{club}'s defence holds firm under pressure.",
@@ -1933,11 +1934,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     "{club}'s keeper comes out to claim a hopeful cross.",
     "A long ball forward for {club} finds nobody — easily dealt with.",
     "Neat footwork from {club} in the middle of the park creates some space.",
-    "{club}'s fans are starting to get restless.",
     "A crunching challenge from {club} draws a free kick — nothing comes of it.",
     "The tempo drops as {club} look to regroup.",
     "A lovely piece of skill from {club} on the touchline, but the final ball lets them down.",
-    "Chances have been at a premium for {club} here.",
   ];
   const SIM_COMMENTARY_OPP = [
     "They share the ball around patiently in midfield.",
@@ -1949,11 +1948,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     "Their keeper comes out to claim a hopeful cross.",
     "A long ball forward for them finds nobody — easily dealt with.",
     "Neat footwork from them in the middle of the park creates some space.",
-    "Their fans are starting to get restless.",
     "A crunching challenge from them draws a free kick — nothing comes of it.",
     "The tempo drops as they look to regroup.",
     "A lovely piece of skill from them on the touchline, but the final ball lets them down.",
-    "Chances have been at a premium for them here.",
   ];
 
   // --- Sound: muted by default until primed by the first user gesture ---
@@ -7795,14 +7792,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // what happened, like every other ending.
       showAction(res === "wide" ? "WIDE" : res === "over" ? "OVER" : res === "short" ? "NOBODY THERE" : "OUT OF PLAY");
     } else if (res === "post") {
+      // Your shot's ending says what happened like every other (sweep, 29 Oct 2026:
+      // a saved penalty ended in 3 s of silence).
+      showAction("POST");
       nudge(0.28, 0.25);
       playPost();
       playCrowdSwell("groan");
     } else if (res === "saved") {
+      showAction("SAVED");
       nudge(0.18, 0.14);
       playSave();
       playCrowdSwell("groan");
     } else if (res === "caught") {
+      showAction("SAVED");
       nudge(0.18, 0.14);
       playSave();
     }

@@ -34,10 +34,12 @@ import { AchievementList } from "./SecondaryScreens";
 import { ArcChart, CabinetGrid, Heading, SeasonList } from "./CareerOverview";
 import CareerGoalsGallery from "./CareerGoalsGallery";
 import { useLeoUpdate } from "@/lib/star/leoUpdate";
+import { seasonStartYear } from "@/lib/star/calendar";
 
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 const seasonLabel = (c: CareerState, s: number) => {
-  const y = c.player.startYear + s - 1;
+  // The same season years as Stats and Goals (calendar.ts seasonStartYear): this read one year ahead.
+  const y = seasonStartYear(c.player.startYear, s);
   return `${String(y).slice(2)}/${String(y + 1).slice(2)}`;
 };
 
