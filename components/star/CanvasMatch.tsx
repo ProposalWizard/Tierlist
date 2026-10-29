@@ -10507,7 +10507,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // a `pause`), the scores sheet, the end of the match. It fades out fast
   // instead (MikeyPopup.tsx cut). A cut to the commentary is not one.
   useEffect(() => {
-    if (pause || scoresOpen || phase === "postmatch" || phase === "shootout") mikey.cut();
+    // The cut to the commentary too (sweep, 29 Oct 2026): "SAVED" / "INTERCEPTED" sat over the feed's lines.
+    if (pause || scoresOpen || phase === "postmatch" || phase === "shootout" || phase === "feed") mikey.cut();
   }, [pause, scoresOpen, phase, mikey.item?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── The sandbox's live commentary and the situation hint ──
