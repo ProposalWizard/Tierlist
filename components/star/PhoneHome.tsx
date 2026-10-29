@@ -424,8 +424,15 @@ function fixtureLabel(f: CareerState["fixtures"][number]): { top: string; sub?: 
   if (!f.competition || f.kind === "league") return { top: `MW${f.week}` };
   const c = f.competition;
   const top = /Champions/.test(c) ? "UCL" : /Europa/.test(c) ? "UEL" : /Conference/.test(c) ? "UECL"
-    : c === "FA Cup" ? "FA Cup" : c === "League Cup" ? "Lg Cup" : c.replace(/ (Cup|Shield)$/, "").slice(0, 8);
-  const sub = [f.round?.replace("League phase", "League").replace("Round of ", "R").replace("Matchday ", "MD"), f.leg ? `L${f.leg}` : ""].filter(Boolean).join(" ");
+    : c === "FA Cup" ? "FA Cup" : c === "League Cup" ? "Lg Cup" : /Trophy/.test(c) ? "Trophy" : c.replace(/ (Cup|Shield)$/, "").slice(0, 8);
+  // Short enough for the 50 px column ("Third Qua…" was cut; sweep, 29 Oct 2026).
+  const ORD: Record<string, string> = { First: "1", Second: "2", Third: "3", Fourth: "4", Fifth: "5", Sixth: "6" };
+  const round = f.round
+    ?.replace("League phase", "League").replace("Round of ", "R").replace("Matchday ", "MD")
+    .replace(/^(First|Second|Third|Fourth|Fifth|Sixth) Qualifying( Round)?$/, (_m, o: string) => `Q${ORD[o]}`)
+    .replace(/^(First|Second|Third|Fourth|Fifth|Sixth) Round$/, (_m, o: string) => `R${ORD[o]}`)
+    .replace(/^Quarter-?[Ff]inals?$/, "QF").replace(/^Semi-?[Ff]inals?$/, "SF");
+  const sub = [round, f.leg ? `L${f.leg}` : ""].filter(Boolean).join(" ");
   return { top, sub: sub || undefined };
 }
 
