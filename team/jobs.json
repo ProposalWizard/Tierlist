@@ -94,5 +94,13 @@
     "added": "2026-10-28T19:54:00Z",
     "title": "Progress 28 Oct: Leo keeper fixes and the deploy memory fix, Mikey cookie consent and Star Pass art. Patch note 0.123 updated.",
     "prompt": "Daily progress update, 27 Oct 19:54 to 28 Oct 19:54 (UK). 7 pull requests merged to main, plus Mikey’s work pushed straight to main.\n\nLeo:\n- #811 The next build gets 6 GB of memory (fixes the failed deploy of #810); #812 Brain note FACT-TEAM-001 (a build needs about 6.5 GB).\n- #813, #816, #817 Keeper fixes from Leo’s playtest: every caught ball ends in his hands, no ball frozen in the air, the side-on keeper faces the camera, net bulge off, celebrations listed in Animations.\n- #814 Brain rule RUL-TEAM-029: Leo’s reply shape.\n\nHarry:\n- #815 Older patch notes squeezed smaller (82.7 MB to 73.8 MB).\n\nMikey (straight to main):\n- Cookie consent: Google Analytics and PostHog load only after Accept (UK PECR), before the Road to Ballon d’Or release. Brain FACT-DAT-007.\n- Star Pass: Blender art for every box reward, even sizes, tap a reward to spin its 3D model; the Home league dropdown opens as one box.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.123 Leo: keeper catches, dives and the ball, updated 28 Oct (#817).\n- No new patch note for Mikey’s cookie consent or Star Pass art yet."
+  },
+  {
+    "id": "progress-2026-10-29",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-10-29T19:54:00Z",
+    "title": "Progress 29 Oct: Leo overnight sanity sweep, 20 fixes from 5 playtesters; 5 items need a decision. Patch note 0.125.",
+    "prompt": "Daily progress update, 28 Oct 19:54 to 29 Oct 19:54 (UK). 1 pull request merged to main.\n\nLeo:\n- #818 Overnight sanity sweep: 5 testers played the whole game (75 findings), 20 fixed and checked on screen. Money chips read 1.9m not 1m; celebrations in Store > Animations; a can’t-afford line; SAVED/POST on your own shots; the goal scoreboard moved off the goal; pop-ups no longer sit over the commentary; small text fixes.\n- Listed for a decision: store previews (Harry), shop pictures, stacked men, wide cuts, added-time goals.\n\nHarry and Mikey: nothing merged to main in this window.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.125 Leo: overnight sanity sweep (#818)."
   }
 ]
