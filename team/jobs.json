@@ -102,5 +102,13 @@
     "added": "2026-10-29T19:54:00Z",
     "title": "Progress 29 Oct: Leo overnight sanity sweep, 20 fixes from 5 playtesters; 5 items need a decision. Patch note 0.125.",
     "prompt": "Daily progress update, 28 Oct 19:54 to 29 Oct 19:54 (UK). 1 pull request merged to main.\n\nLeo:\n- #818 Overnight sanity sweep: 5 testers played the whole game (75 findings), 20 fixed and checked on screen. Money chips read 1.9m not 1m; celebrations in Store > Animations; a can’t-afford line; SAVED/POST on your own shots; the goal scoreboard moved off the goal; pop-ups no longer sit over the commentary; small text fixes.\n- Listed for a decision: store previews (Harry), shop pictures, stacked men, wide cuts, added-time goals.\n\nHarry and Mikey: nothing merged to main in this window.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.125 Leo: overnight sanity sweep (#818)."
+  },
+  {
+    "id": "progress-2026-10-30",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-10-30T19:54:00Z",
+    "title": "Progress 30 Oct: Leo live chances behind a test switch (time your strike as the pass arrives). Patch note 0.126.",
+    "prompt": "Daily progress update, 29 Oct 19:54 to 30 Oct 19:54 (UK). 1 pull request merged to main.\n\nLeo:\n- #819 Live chances, behind a test switch (Settings → Updates, off by default). The last pass keeps coming to you and you time your strike as it arrives: early stabs it low, clean is a full shot, late gets under it. The ball’s pace carries into your shot. 98% of open-play chances go live; set pieces, headers and volleys stay as they are. Works in 2D and 3D, with a test page with dials.\n\nHarry and Mikey: nothing merged to main in this window.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.126 Leo: live chances (test) (#819)."
   }
 ]
