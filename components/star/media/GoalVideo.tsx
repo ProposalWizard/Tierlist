@@ -8,6 +8,8 @@ import { saveVideo, videoSupported, type EncodedClip } from "@/lib/star/goalClip
 import { makeVideo, keptVideo, posterFor, workerReady, videosOnPage, startLive, warmLive } from "@/lib/star/goalClip/makeVideo";
 import { goalVideoKey } from "@/lib/star/goalClip/premake";
 import { useAnimationsLook } from "@/lib/star/animLook";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
+import { smoothRecorded } from "@/lib/star/goalClip/smooth";
 import { synthTrack, type SynthGoal } from "@/lib/star/goalClip/synth";
 import { planAudio, mixAudio } from "@/lib/star/goalClip/audio";
 import { useClipSound, setClipSoundOn } from "@/lib/star/goalClip/sound";
@@ -193,7 +195,9 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
   if (release.current === null && priority > 0) release.current = owe(priority);
   useEffect(() => () => { release.current?.(); }, []);
   // The same name premake.ts uses, so a video made at full time is found here.
-  const key = goalVideoKey(style, variant, moves, clipIds, synth, credit?.handle);
+  // Leo's update "smoothGoals": a real goal eased like the made-up ones (goalClip/smooth.ts). Off = as before.
+  const smooth = useLeoUpdate("smoothGoals");
+  const key = goalVideoKey(style, variant, moves, clipIds, synth, credit?.handle, smooth);
 
   useEffect(() => {
     let live = true;
@@ -209,7 +213,7 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clipIds.join(","), synthKey]);
 
-  const edit = useMemo(() => (tracks && tracks.length ? makeEdit(tracks, style, moves, variant) : null), [tracks, style, moves, variant]);
+  const edit = useMemo(() => (tracks && tracks.length ? makeEdit(smooth ? smoothRecorded(tracks) : tracks, style, moves, variant) : null), [tracks, style, moves, variant, smooth]);
 
   // Can this browser make the video at all? If not, the post is its plain
   // picture (`fallback`): no play button that cannot play.
