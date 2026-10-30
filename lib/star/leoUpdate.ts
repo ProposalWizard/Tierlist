@@ -34,6 +34,7 @@ export const LEO_FEATURES = [
   { id: "awardsNight", label: "Season awards night", line: "The 3D awards night in place of the awards page." },
   { id: "weather", label: "Weather and pitch", line: "Wind bends the ball, rain skids it, a poor dry pitch kills it; shown before kick-off and in the match." },
   { id: "keeperCatch", label: "Keeper catches and dives", line: "He dives in time, the ball goes into his gloves and moves with him, he lands and gets up. Pick a look below." },
+  { id: "commentaryVoice", label: "New commentary voice", line: "A new, more natural commentator for goal videos and late goals: builds with the goal, calmer co-commentator, TV mic sound." },
   { id: "bugFixes", label: "Bug fixes (21)", line: "Refresh comes back where you were, labels, tour once, no sack after promotion, talks back button, signing manager name…" },
 ] as const;
 export type LeoFeature = (typeof LEO_FEATURES)[number]["id"];
