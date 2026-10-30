@@ -32,6 +32,9 @@ import {
   type StoreItem, type Rarity, type AccessoryItem, type AccessorySlot, type PriceContext, type AnimationSet,
 } from "@/lib/star/store/catalogue";
 import { dailySpecials, msUntilReset, formatCountdown } from "@/lib/star/store/daily";
+import { LEO_CELEBRATION_IDS, STAR_PASS_CELEBRATION_IDS } from "@/lib/star/store/catalogue";
+import { REWARD_RUNUPS, type RunupId } from "@/lib/star/runupStyles";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 import BackButton from "../ui/BackButton";
 import { owns, priceNow, type StoreState, type Currency } from "@/lib/star/store/purchase";
 import {
@@ -156,7 +159,8 @@ function rarityOf(item: StoreItem): Rarity | null {
  * to the old drawing if its file can't load. Celebrations are poses, not objects, so they stay the drawn player.
  */
 export function storeRenderFor(item: StoreItem): string | null {
-  if (item.kind === "accessory") return item.slot === "celebration" ? null : `/shop/store/acc-${item.id}.webp`;
+  // Signature Boots have no studio render: their picture is drawn, with your name on it.
+  if (item.kind === "accessory") return item.slot === "celebration" || item.signature ? null : `/shop/store/acc-${item.id}.webp`;
   if (item.kind === "boost") return item.id === "training-boost" ? "/shop/store/boost-training.webp" : item.id === "stat-can" ? "/shop/store/boost-stat.webp" : null;
   return null;
 }
@@ -249,7 +253,12 @@ export default function StoreView(p: StoreViewProps) {
     return () => window.clearTimeout(t);
   }, [toast]);
 
-  const shown = (it: StoreItem) => !hide?.(it);
+  // Leo's 24 Oct update, "celebrations": the three new celebrations (and their wording) only while it is on.
+  const celebsOn = useLeoUpdate("celebrations");
+  // The Star Pass celebrations and run-ups are never for sale: listed only once won, so you can use them.
+  const passOnly = (id: string) => STAR_PASS_CELEBRATION_IDS.has(id) || REWARD_RUNUPS.has(id as RunupId);
+  const shown = (it: StoreItem) => !hide?.(it) && (celebsOn || !LEO_CELEBRATION_IDS.has(it.id))
+    && (!passOnly(it.id) || owns(state, it.id));
   const specials = useMemo(
     () => dailySpecials(dateKey).filter((s) => { const it = findItem(s.itemId); return !!it && !hide?.(it); }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -338,6 +347,19 @@ export default function StoreView(p: StoreViewProps) {
                   </div>
                 </div>
               ))}
+              {/* Goal celebrations live with the other moves (Leo, 28 Oct 2026: "i cant find
+                  celebration animations in shop/store"; they were filed under Accessories). */}
+              <div className="mb-5">
+                <SectionNote left="Goal celebrations" right="After every goal you score" />
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  {ACCESSORIES.filter((a) => a.slot === "celebration" && shown(a)).map((a, i) => (
+                    <RiseIn key={a.id} index={i} step={50}>
+                      <ItemCard item={a} state={state} ctx={ctx} dateKey={dateKey} onOpen={setOpenId}
+                        equipped={inUse(a, state)} equippedWear={equippedWear} />
+                    </RiseIn>
+                  ))}
+                </div>
+              </div>
             </>
           )}
 
@@ -358,7 +380,7 @@ export default function StoreView(p: StoreViewProps) {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {ACCESSORIES.filter(shown).map((a, i) => (
+                {ACCESSORIES.filter((a) => a.slot !== "celebration" && shown(a)).map((a, i) => (
                   <RiseIn key={a.id} index={i} step={50}>
                     <ItemCard item={a} state={state} ctx={ctx} dateKey={dateKey} onOpen={setOpenId}
                       equipped={inUse(a, state)} equippedWear={equippedWear} />
@@ -397,7 +419,7 @@ export default function StoreView(p: StoreViewProps) {
       </div>
 
       {open && (
-        <DetailSheet item={open} state={state} ctx={ctx} dateKey={dateKey} equippedWear={equippedWear} bought={bought}
+        <DetailSheet item={open} state={state} ctx={ctx} dateKey={dateKey} equippedWear={equippedWear} bought={bought} celebsOn={celebsOn}
           accessoriesNote={p.accessoriesNote} bootStatus={p.bootStatus}
           onClose={() => setOpenId(null)} onBuy={doBuy} onEquip={doEquip}
           onUnequip={p.onUnequip}
@@ -645,7 +667,8 @@ function CoinsTab({ state, wage, value, packs, onPack, onSwap }: {
   );
 }
 
-function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote, bootStatus, onClose, onBuy, onEquip, onUnequip, onUse, bought }: {
+function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote, bootStatus, onClose, onBuy, onEquip, onUnequip, onUse, bought, celebsOn = false }: {
+  celebsOn?: boolean;
   item: StoreItem; state: StoreState; ctx: PriceContext; dateKey: string; equippedWear: AccessoryItem[]; bought: number;
   accessoriesNote?: string; bootStatus?: (bootId: string) => string | null;
   onClose: () => void; onBuy: (id: string, c: Currency) => void; onEquip: (id: string) => void;
@@ -660,7 +683,7 @@ function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote,
   const wearing = inUse(item, state);
   const setWord = item.kind === "animation" ? (item.set === "penalty" ? "penalty" : "free-kick") : "";
   const desc = item.kind === "animation" ? `${item.set === "penalty" ? "Penalty" : "Free-kick"} run-up · ${item.blurb}`
-    : item.kind === "accessory" ? `${SLOT_LABEL[item.slot]} · worn over your kit`
+    : item.kind === "accessory" ? (celebsOn && item.slot === "celebration" ? "Celebration · after every goal you score" : `${SLOT_LABEL[item.slot]} · worn over your kit`)
       : item.kind === "boost" ? item.effect
         : `+${item.boot.power} power · +${item.boot.technique} technique · ${item.boot.matches} matches${item.boot.curve ? " · curves the ball" : ""}${item.boot.extraTouch ? " · extra touch" : ""}`;
 
@@ -689,7 +712,7 @@ function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote,
           {percentOff > 0 && <span className="rounded-md bg-rose-500 px-1.5 py-0.5 text-[11px] font-black text-white">−{percentOff}% today</span>}
         </div>
         <div className="mt-0.5 text-[13px] font-semibold text-slate-400">{desc}</div>
-        {item.kind === "accessory" && accessoriesNote && (
+        {item.kind === "accessory" && item.slot !== "celebration" && accessoriesNote && (
           <div className="mt-1 text-[11px] font-bold text-sky-300">{accessoriesNote}</div>
         )}
         {bootLine && <div className="mt-1 text-[12px] font-black text-emerald-300">{bootLine}</div>}
@@ -702,6 +725,7 @@ function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote,
             <>
               <div className="grid grid-cols-2 gap-2">
                 <PressButton variant="gold" size="none" onClick={() => onBuy(item.id, "stars")} disabled={state.stars < price.stars}
+                  style={state.stars < price.stars ? { opacity: 0.35, filter: "grayscale(0.6)" } : undefined}
                   className="relative overflow-hidden rounded-2xl py-3 text-[15px] font-black text-slate-900 disabled:opacity-35">
                   {state.stars >= price.stars && <Shine loop every={3.5} />}
                   <Stars v={price.stars} className="[&>span]:text-slate-900" />
@@ -713,6 +737,11 @@ function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote,
                   {percentOff > 0 && <div className="text-[10px] font-bold line-through opacity-60">{n(full.coins)}</div>}
                 </PressButton>
               </div>
+              {state.stars < price.stars && state.coins < price.coins && (
+                <div className="rounded-xl bg-rose-500/15 px-3 py-2 text-center text-[12px] font-black text-rose-200">
+                  Not enough yet: you need ★{n(price.stars - state.stars)} more, or {n(price.coins - state.coins)} more Coins
+                </div>
+              )}
               <div className="text-center text-[11px] font-semibold text-slate-500">
                 About {price.weeks < 1 ? price.weeks.toFixed(1) : Math.round(price.weeks * 10) / 10} week{price.weeks === 1 ? "" : "s"} of your wages either way
               </div>
@@ -721,9 +750,9 @@ function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote,
           {owned && !consumable && (item.kind === "animation" || item.kind === "accessory") && (
             wearing
               ? item.kind === "accessory"
-                ? <PressButton variant="secondary" size="none" onClick={() => onUnequip(item.slot)} className="rounded-2xl py-3 text-[15px] font-black">Take off</PressButton>
+                ? <PressButton variant="secondary" size="none" onClick={() => onUnequip(item.slot)} className="rounded-2xl py-3 text-[15px] font-black">{celebsOn && item.slot === "celebration" ? "Stop using it" : "Take off"}</PressButton>
                 : <div className="rounded-2xl bg-emerald-500/20 py-3 text-center text-[15px] font-black text-emerald-200">✓ Your {setWord} run-up</div>
-              : <PressButton variant="primary" size="none" pulse onClick={() => onEquip(item.id)} className="rounded-2xl py-3 text-[15px] font-black">{item.kind === "animation" ? `Use for ${setWord === "penalty" ? "penalties" : "free kicks"}` : "Wear"}</PressButton>
+              : <PressButton variant="primary" size="none" pulse onClick={() => onEquip(item.id)} className="rounded-2xl py-3 text-[15px] font-black">{item.kind === "animation" ? `Use for ${setWord === "penalty" ? "penalties" : "free kicks"}` : celebsOn && item.kind === "accessory" && item.slot === "celebration" ? "Use after my goals" : "Wear"}</PressButton>
           )}
           {owned && item.kind === "boot" && <div className="rounded-2xl bg-sky-500/15 py-3 text-center text-[14px] font-black text-sky-200">Owned</div>}
           {onUse && consumable && (state.inventory[item.id] ?? 0) > 0 && (

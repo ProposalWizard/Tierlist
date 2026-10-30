@@ -42,7 +42,7 @@ import { hasBootDeal, bootPrice } from "@/lib/star/sponsorDeals";
 import { divisionOf } from "@/lib/star/calendar";
 import { SHOP_TIERS, weeksOfWallet } from "@/lib/star/economy";
 import { ruleBookFor } from "@/lib/star/ruleBook";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, formatWallet } from "@/lib/star/money";
 import { blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
 import { fameGainFromBuying, fameLevel, fameOf, isWornOut, itemLifeSeasons, nextFameLevel, ownedFame, OWNED_FAME_MAX } from "@/lib/star/fame";
 import { useShopPicsLook, shopPic3d } from "@/lib/star/shopPicsLook";
@@ -227,6 +227,19 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
   const bar = barOption;
   /** The bottom bar's two pages: For You (the TikTok feed) and Shop (the showroom). */
   const [tab, setTab] = useState<"foryou" | "shop">("shop");
+  // With the game's main bar: the shop's tabs sit right on top of it (Mikey,
+  // 23 Oct 2026). Their combined height decides where the items stop.
+  const stackRef = useRef<HTMLDivElement>(null);
+  const [stackH, setStackH] = useState(TAB_H + 70);
+  useLayoutEffect(() => {
+    const el = stackRef.current;
+    if (!el) return;
+    const on = () => setStackH(Math.round(el.getBoundingClientRect().height));
+    on();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(on) : null;
+    ro?.observe(el);
+    return () => ro?.disconnect();
+  }, [mainBar]);
   const [pickOpen, setPickOpen] = useState(false);
   const [adShown, setAdShown] = useState(false);
   const homeLevel = Math.max(1, SHOP_TIERS.findIndex((t) => t.anchor === divisionOf(career)) + 1);
@@ -635,8 +648,9 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
   const nItems = SHOWROOM_KEYS[cat.id].length;
   const openSheet = (c: CatId, k: string) => setSheet({ cat: c, key: k, level: viewOf(c, k).level });
   // what sits over the item: the header (+ the category strip in A, + the dots) and the bottom bar (+ the strip in C)
-  const topPx = 46 + (mainBar ? TOP_TABS_H : 0) + (tab === "shop" && bar !== "C" ? STRIP_H : 0) + (tab === "shop" && view !== 5 ? 18 : 0);
-  const botPx = TAB_H + (tab === "shop" && bar === "C" ? STRIP_H : 0);
+  const topPx = 46 + (tab === "shop" && bar !== "C" ? STRIP_H : 0) + (tab === "shop" && view !== 5 ? 18 : 0);
+  // The stack's measured height already includes the phone's home-bar inset (--sr-bot below adds it only without the stack).
+  const botPx = (mainBar ? stackH : TAB_H) + (tab === "shop" && bar === "C" ? STRIP_H : 0);
   // the bottom bar has Sponsors, Casino and the 3D shop; the rest stay under More
   const moreLinks = (links ?? []).filter((l) => !ON_BAR.has(l.id));
   // Boots is its own tab on the bar (Harry, 12 Oct 2026: "it's quite a big aspect"), so the word strip leaves it out
@@ -655,7 +669,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
   return (
     <ItemLook.Provider value={{ mark: levelMark, buy: buyStyle }}>
     <div data-showroom-shop data-items-view={view} data-shop-tab={tab} data-bar={bar} data-sk-tone="calm" className="fixed inset-0 z-[60] overflow-hidden bg-[#05080f] text-white"
-      style={{ touchAction: "pan-x pan-y", ["--sr-top" as string]: `calc(${topPx}px + env(safe-area-inset-top))`, ["--sr-bot" as string]: `calc(${botPx}px + env(safe-area-inset-bottom))` }}>
+      style={{ touchAction: "pan-x pan-y", ["--sr-top" as string]: `calc(${topPx}px + env(safe-area-inset-top))`, ["--sr-bot" as string]: mainBar ? `${botPx}px` : `calc(${botPx}px + env(safe-area-inset-bottom))` }}>
       <div data-star-game hidden />
       <style>{`
         [data-showroom-shop] .sr-noscroll{scrollbar-width:none}
@@ -765,12 +779,11 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
           )}
           <button onClick={() => { setFameOpen((v) => !v); setMoreOpen(false); }} data-balance-chip aria-label="Balance and fame"
             className="kib-press relative flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-black/60 pl-2.5 pr-2 ring-1 ring-amber-300/45 backdrop-blur">
-            <span className="text-[13.5px] font-black tabular-nums text-amber-300">★{formatMoney(career.money)}</span>
+            <span className="text-[13.5px] font-black tabular-nums text-amber-300">★{formatWallet(career.money)}</span>
             <span className="flex items-center gap-0.5 rounded-full bg-amber-300/15 px-1.5 py-0.5 text-[11px] font-black tabular-nums text-amber-100" data-fame-chip>👑{fame}</span>
             {spent.n > 0 && <span key={spent.n} className="pointer-events-none absolute right-2 top-full text-[12px] font-black text-red-300" style={{ animation: "srSpent 1.4s ease-out both" }}>{spent.text}</span>}
           </button>
         </div>
-        {mainBar && <BottomBar place="top" active={shopTabNow} links={links} onOpen3D={onOpen3D} guideCorner={false} onPick={pickShopTab} />}
         {tab === "shop" && bar === "A" && (onBoots ? <div style={{ height: STRIP_H }} /> : <CatStrip ci={ci} onPick={openCat} />)}
         {tab === "shop" && bar === "B" && (
           <div className="pointer-events-auto flex items-center justify-center" style={{ height: STRIP_H }}>
@@ -843,12 +856,17 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
       )}
 
       {tab === "shop" && bar === "C" && (
-        <div className="absolute inset-x-0 z-30 bg-gradient-to-t from-[#070b14] to-[#070b14]/70" style={{ bottom: `calc(${TAB_H}px + env(safe-area-inset-bottom))` }}>
+        <div className="absolute inset-x-0 z-30 bg-gradient-to-t from-[#070b14] to-[#070b14]/70" style={{ bottom: mainBar ? `${stackH}px` : `calc(${TAB_H}px + env(safe-area-inset-bottom))` }}>
           <CatStrip ci={ci} onPick={openCat} />
         </div>
       )}
       {mainBar
-        ? <div className="absolute inset-x-0 bottom-0 z-30" data-shop-main-bar><div className="mx-auto w-full max-w-md">{mainBar}</div></div>
+        ? (
+          <div ref={stackRef} className="absolute inset-x-0 bottom-0 z-30" data-shop-main-bar>
+            <BottomBar place="stack" active={shopTabNow} links={links} onOpen3D={onOpen3D} guideCorner={false} onPick={pickShopTab} />
+            <div className="mx-auto w-full max-w-md">{mainBar}</div>
+          </div>
+        )
         : <BottomBar active={shopTabNow} links={links} onOpen3D={onOpen3D} guideCorner={guideCorner} onPick={pickShopTab} />}
 
       {sheet && <DetailSheet sheet={sheet} onClose={() => setSheet(null)} onPick={(lv) => setSheet({ ...sheet, level: lv })} career={career} homeLevel={homeLevel}
@@ -878,8 +896,8 @@ async function lastMatchHighlights(): Promise<HighlightAd | null> {
 
 /** The bottom bar's height (above the iPhone home bar). */
 const TAB_H = 64;
-/** The shop's own tabs as a strip under the header (with the game's main bar at the bottom). */
-const TOP_TABS_H = 40;
+/** The shop's own tabs, sitting straight on top of the game's main bar. */
+const STACK_TABS_H = 52;
 /** The category text strip (A: under the header; C: above the bottom bar). */
 const STRIP_H = 38;
 const ON_BAR = new Set(["sponsors", "shop3d"]);
@@ -905,28 +923,28 @@ function BarIcon({ name, on }: { name: "foryou" | "shop" | "sponsors" | "boots";
  *  Harry, 12 Oct 2026. Casino moved off it, back under More (⋯) in the shop header. */
 function BottomBar({ active, onPick, links, onOpen3D, guideCorner, place = "bottom" }: {
   active: "shop" | "foryou" | "boots"; onPick: (t: "shop" | "foryou" | "boots") => void; links?: ShopLink[]; onOpen3D?: () => void; guideCorner: boolean;
-  /** "top": a slim strip under the header, when the game's main bar is at the bottom. */
-  place?: "bottom" | "top";
+  /** "stack": straight on top of the game's main bar (inside its bottom stack). */
+  place?: "bottom" | "stack";
 }) {
   const link = (id: string) => links?.find((l) => l.id === id);
   const sponsors = link("sponsors"), three = link("shop3d");
   const Tab = ({ on, label, icon, onClick, locked, data }: { on: boolean; label: string; icon: React.ReactNode; onClick?: () => void; locked?: boolean; data: string }) => (
-    <button onClick={onClick} disabled={!onClick} data-bar-tab={data} aria-current={on ? "page" : undefined} aria-label={label}
+    <button onClick={onClick} disabled={!onClick} data-bar-tab={data} data-tour={`shop-tab-${data}`} aria-current={on ? "page" : undefined} aria-label={label}
       className={`kib-press relative flex min-w-0 flex-1 flex-col items-center justify-center gap-[3px] disabled:opacity-30 ${on ? "text-white" : "text-white/60"} ${locked ? "opacity-50" : ""}`}>
       {icon}
       <span className="text-[10px] font-bold leading-none">{locked ? `🔒 ${label}` : label}</span>
     </button>
   );
-  const top = place === "top";
+  const top = place === "stack";
   return (
-    <nav data-shop-tabs={place} aria-label="Shop" className={top ? "pointer-events-auto relative z-30" : "absolute inset-x-0 bottom-0 z-30 border-t border-white/10 bg-[#05080f]"}
+    <nav data-shop-tabs={place} aria-label="Shop" className={top ? "relative border-t border-white/10 bg-[#05080f]" : "absolute inset-x-0 bottom-0 z-30 border-t border-white/10 bg-[#05080f]"}
       style={top ? undefined : { paddingBottom: "env(safe-area-inset-bottom)" }}>
-      <div className={`mx-auto flex max-w-[620px] items-stretch ${guideCorner ? "pr-11" : ""} ${top ? "[&_svg]:h-[19px] [&_svg]:w-[19px]" : ""}`} style={{ height: top ? TOP_TABS_H : TAB_H }}>
+      <div className={`mx-auto flex max-w-[620px] items-stretch ${guideCorner ? "pr-11" : ""} ${top ? "[&_svg]:h-[22px] [&_svg]:w-[22px]" : ""}`} style={{ height: top ? STACK_TABS_H : TAB_H }}>
         <Tab data="shop" on={active === "shop"} label="Shop" icon={<BarIcon name="shop" on={active === "shop"} />} onClick={() => onPick("shop")} />
         <Tab data="foryou" on={active === "foryou"} label="For You" icon={<BarIcon name="foryou" on={active === "foryou"} />} onClick={() => onPick("foryou")} />
         <div className="flex flex-1 items-center justify-center">
           <button onClick={three?.onClick ?? onOpen3D} disabled={!(three || onOpen3D)} data-bar-tab="shop3d" aria-label="3D shop"
-            className={`kib-press relative grid place-items-center rounded-[11px] font-black text-[#05080f] disabled:opacity-30 ${top ? "h-[28px] w-[44px] text-[13px]" : "h-[36px] w-[54px] text-[15px]"}`}
+            className={`kib-press relative grid place-items-center rounded-[11px] font-black text-[#05080f] disabled:opacity-30 ${top ? "h-[32px] w-[50px] text-[14px]" : "h-[36px] w-[54px] text-[15px]"}`}
             style={{ background: "#fff", boxShadow: "-4px 0 0 #22d3ee, 4px 0 0 #f43f5e" }}>3D</button>
         </div>
         <Tab data="boots" on={active === "boots"} label="Boots" icon={<BarIcon name="boots" on={active === "boots"} />} onClick={() => onPick("boots")} />
@@ -950,7 +968,7 @@ function CatStrip({ ci, onPick }: { ci: number; onPick: (i: number) => void }) {
         if (c.id === "boots") return null; // Boots has its own tab on the bar
         const on = i === ci;
         return (
-          <button key={c.id} onClick={() => onPick(i)} data-strip-cat={c.id} aria-current={on ? "true" : undefined}
+          <button key={c.id} onClick={() => onPick(i)} data-strip-cat={c.id} data-tour={`cat-${c.id}`} aria-current={on ? "true" : undefined}
             className="relative shrink-0 pb-1 text-[16px] font-extrabold transition-colors" style={{ color: on ? "#fff" : "rgba(255,255,255,.55)", textShadow: "0 1px 6px rgba(0,0,0,.8)" }}>
             {c.label}
             <span aria-hidden className="absolute inset-x-1/4 -bottom-[1px] h-[3px] rounded-full transition-opacity" style={{ background: on ? "#fff" : "transparent" }} />

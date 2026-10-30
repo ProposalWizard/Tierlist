@@ -31,7 +31,12 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 
 const player = { firstName: "T", lastName: "P", age: 18, skinTone: "light", club: "Liverpool", clubBadge: null,
   position: "ST", nationality: "England", startYear: 2027 } as StarPlayer;
-const fresh = (): CareerState => makeInitialCareer(player, [...PREMIER_LEAGUE_CLUBS], "premier");
+// The v0.25 game-first order, as a save part-way through it has it. A career
+// started now is on the story order instead (tests/star/storyOrder.mts).
+const fresh = (): CareerState => {
+  const c = makeInitialCareer(player, [...PREMIER_LEAGUE_CLUBS], "premier");
+  return { ...c, unlocks: { ...c.unlocks!, story: undefined, trainingDay: undefined, open: ["league", "stats", "play"] } };
+};
 /** The v0.24 order (a save part-way through it): everything shut, no gameFirst. */
 const fresh24 = (): CareerState => { const c = fresh(); return { ...c, unlocks: { open: [], seen: [], drills: 0, pointsAtStart: c.unlocks!.pointsAtStart, apps: [] } }; };
 const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "relations", "phone"];
@@ -234,7 +239,8 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   // bars are, then (training next) points at Training — at most 3 steps.
   const rt = relationsTour(nextStep(c)?.id === "first-two-sessions");
   check(rt.length <= 3 && rt[rt.length - 1].target === "nav-training" && !!rt[rt.length - 1].press, "the Relations tour is at most 3 steps and ends on 'Tap Training' (pressed)");
-  check(/boss/i.test(rt.map(t => t.text).join(" ")) && /team-mates/i.test(rt[0].text) && /fans/i.test(rt[0].text), "it names the boss, team-mates and fans");
+  // Mikey, 24 Oct 2026: one general line now, not a list of who is who.
+  check(/people feel about you/i.test(rt[0].text), "it says what the page is in one general line");
   check(!relationsTour(false).some(t => t.target === "nav-training"), "replayed (training done): no pointer to Training");
   check(HELP_TOURS.relations.every(t => t.target !== "nav-training"), "the ? replay never sends you to Training");
   c = recordDrill(c);

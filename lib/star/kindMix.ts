@@ -31,7 +31,7 @@ export const EVEN_KINDS: ScenarioKind[] = ([
 ] as ScenarioKind[]).filter((k) => !isSwitchedOff(k));
 
 /** The bag: what is left to deal this round, and the last kind dealt. */
-export interface KindBag { left: ScenarioKind[]; last?: ScenarioKind }
+export interface KindBag { left: ScenarioKind[]; last?: ScenarioKind; /** The play style the round was dealt for. */ style?: string }
 
 export function newKindBag(): KindBag { return { left: [] }; }
 
@@ -68,9 +68,45 @@ export function realMixRound(): ScenarioKind[] {
 
 /** Deal the next kind. A fresh round never starts with the kind just dealt.
  *  `real`: deal from the real mix (REAL_MIX) instead of the even one. */
-export function nextEvenKind(bag: KindBag, rng: () => number, real = false): ScenarioKind {
+/**
+ * YOUR PLAY STYLE SHAPES THE DECK (Mikey, 26 Oct 2026: "attacking should not
+ * make byline crosses more likely … you are a striker"). Copies of each kind
+ * in one round of the even deck, per play style; a kind not named is 2. A
+ * byline cross: never on Attacking, sometimes (1 in 19) on Balanced, most on
+ * Defensive (3 in 22), where the deeper, midfield chances come too.
+ */
+export const DECK_STYLE: Record<string, Partial<Record<ScenarioKind, number>>> = {
+  attacking: { byline_cross: 0, one_on_one: 3, cutback: 3, tight_angle: 3, buildup: 1, midfield_pass: 1 },
+  balanced: { byline_cross: 1 },
+  defensive: { byline_cross: 3, midfield_pass: 3, buildup: 3, through_ball: 3, long_range: 3, one_on_one: 1, tight_angle: 1 },
+};
+
+/** What the match lets the deck deal right now (ScenarioRequest.deal). */
+export interface DealRules {
+  /** Kinds not open yet (a new career's headers, volleys). */
+  exclude?: readonly ScenarioKind[];
+  /** Your play style: "attacking" | "balanced" | "defensive". */
+  style?: string;
+}
+
+/** One round of the even deck for a play style, without the excluded kinds. */
+export function styledRound(rules: DealRules): ScenarioKind[] {
+  const w = (rules.style && DECK_STYLE[rules.style]) || {};
+  const ex = new Set(rules.exclude ?? []);
+  return EVEN_KINDS.filter((k) => !ex.has(k)).flatMap((k) => Array<ScenarioKind>(w[k] ?? 2).fill(k));
+}
+
+export function nextEvenKind(bag: KindBag, rng: () => number, real = false, rules?: DealRules): ScenarioKind {
+  // The match's rules (a play style, kinds not open yet): a round dealt for
+  // another style is dealt again; a kind no longer allowed is skipped.
+  if (rules && !real) {
+    const style = rules.style ?? "balanced";
+    if (bag.style !== style) { bag.left = []; bag.style = style; }
+    const ex = new Set(rules.exclude ?? []);
+    bag.left = bag.left.filter((k) => !ex.has(k));
+  }
   if (bag.left.length === 0) {
-    const round = real ? realMixRound() : [...EVEN_KINDS];
+    const round = real ? realMixRound() : rules ? styledRound(rules) : [...EVEN_KINDS];
     for (let i = round.length - 1; i > 0; i--) {
       const j = Math.floor(rng() * (i + 1));
       [round[i], round[j]] = [round[j], round[i]];

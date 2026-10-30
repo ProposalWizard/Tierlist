@@ -37,11 +37,12 @@ export type RoomTab = "team" | "ideas" | "chat" | "todo" | "notes";
  *  Team chat, Ideas, My to-do, Patch notes). */
 const TEAM_VIEWS: { tab: RoomTab; label: string; icon: keyof typeof I }[] = [
   { tab: "team", label: "Team board", icon: "board" },
-  { tab: "chat", label: "Team chat", icon: "chat" },
-  { tab: "ideas", label: "Ideas", icon: "ideas" },
-  { tab: "todo", label: "My to-do", icon: "todo" },
+  // The Team room (25 Oct 2026): chat, ideas and to-do are its channels now.
+  { tab: "chat", label: "Team room", icon: "chat" },
   { tab: "notes", label: "Patch notes", icon: "notes" },
 ];
+/** Old addresses (?tab=ideas, ?tab=todo) still open the room on that channel. */
+const ROOM_TABS: RoomTab[] = ["ideas", "todo"];
 const FOLD_KEY = "kib-admin-side-folded";
 
 const I = {
@@ -91,7 +92,7 @@ export default function AdminShell({ tab, role, children, onTab, badges, game: g
   const game = gameProp ?? (group ? groupGame(group) : gameForPath(path));
   const G = gameOf(game) ?? GAMES[0];
   // In the Team area (admins only): Team is lit, no game is.
-  const inTeam = role === "admin" && TEAM_VIEWS.some((v) => v.tab === tab);
+  const inTeam = role === "admin" && (TEAM_VIEWS.some((v) => v.tab === tab) || ROOM_TABS.includes(tab as RoomTab));
   const pages = visibleTo(role);
   // Same count as the home's tiles and search (the admin home itself is not a page to open).
   const count = (g: string) => pages.filter((p) => p.group === g && p.url !== "/admin/star").length;

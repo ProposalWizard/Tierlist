@@ -50,7 +50,7 @@
 import type { PenaltyPlan } from "./penaltyTaking";
 import { sameHeight } from "./penaltyTaking";
 import { mulberry32 } from "./season";
-import { PENALTY_RUNUPS, takerPenaltyRunup, type PenaltyRunupId } from "./runupStyles";
+import { PENALTY_RUNUPS, REWARD_RUNUPS, takerPenaltyRunup, type PenaltyRunupId } from "./runupStyles";
 
 export type RigSide = "you" | "them";
 export interface RigKick { side: RigSide; scored: boolean }
@@ -296,7 +296,8 @@ export const MISS_LINE: Record<MissStyle, string> = {
 /** `n` different penalty run-ups (n ≤ 7), in an order seeded per save. */
 export function pickRunups(seed: number, n: number): PenaltyRunupId[] {
   const rng = mulberry32((seed ^ 0x2a11) >>> 0);
-  const all = PENALTY_RUNUPS.map(s => s.id);
+  // Star Pass run-ups (the Golden Run-up) are yours only: never a team-mate's.
+  const all = PENALTY_RUNUPS.filter(s => !REWARD_RUNUPS.has(s.id)).map(s => s.id);
   for (let i = all.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [all[i], all[j]] = [all[j], all[i]];

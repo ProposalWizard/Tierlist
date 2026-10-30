@@ -13,7 +13,8 @@
  *
  * Pure. Tested in tests/star/storeDaily.mts.
  */
-import { ANIMATIONS, ACCESSORIES, BOOSTS, type Rarity } from "./catalogue";
+import { ANIMATIONS, ACCESSORIES, BOOSTS, LEO_CELEBRATION_IDS, STAR_PASS_CELEBRATION_IDS, type Rarity } from "./catalogue";
+import { REWARD_RUNUPS, type RunupId } from "../runupStyles";
 
 export interface DailySpecial {
   itemId: string;
@@ -66,8 +67,11 @@ const HEADLINE_RARITIES: Rarity[] = ["rare", "epic", "legendary"];
 /** Everything a special can be, by id. Standard (free) is never a special. */
 export function specialPool(): { cosmetics: { id: string; rarity: Rarity }[]; all: string[] } {
   const cosmetics = [
-    ...ANIMATIONS.filter((a) => !a.free).map((a) => ({ id: a.id as string, rarity: a.rarity })),
-    ...ACCESSORIES.map((a) => ({ id: a.id, rarity: a.rarity })),
+    // The Star Pass run-ups (Golden Run-up, The Leaf) are never a special either.
+    ...ANIMATIONS.filter((a) => !a.free && !REWARD_RUNUPS.has(a.id as RunupId)).map((a) => ({ id: a.id as string, rarity: a.rarity })),
+    // Leo's 24 Oct celebrations are never a daily special: the specials stay exactly as before that update.
+    // Nor are the Star Pass ones (won on the pass, never sold).
+    ...ACCESSORIES.filter((a) => !LEO_CELEBRATION_IDS.has(a.id) && !STAR_PASS_CELEBRATION_IDS.has(a.id)).map((a) => ({ id: a.id, rarity: a.rarity })),
   ];
   return { cosmetics, all: [...cosmetics.map((c) => c.id), ...BOOSTS.map((b) => b.id)] };
 }

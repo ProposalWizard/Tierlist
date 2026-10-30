@@ -24,6 +24,8 @@
  */
 import { humanBodyLook } from "../human3d/look";
 import { CX } from "../pitch";
+/** Your celebration on the spot turns back towards the middle of your half (y metres out from the goal line). */
+const HALF_W_CELEB = 30;
 import type { EngineFrame, EngineFrameFigure } from "../engineFrame";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
 import { acquireRenderer, disposeObject3D, flushReleased, warmUp } from "../three3d/perf";
@@ -59,7 +61,7 @@ import { camZoom, setCamZoom, camHeightTest, zoomCamera, lerpCamera } from "./ca
 /** Open play: the default 3D framing sits this much closer than the whole scenario (zoom 0 vs 1). */
 /** Open play's default = the 2D's own frame of the same chance, exactly (Harry, 12 Oct 2026: a 0.85 zoom-in cut the taker off on tight angles and cutbacks). */
 const OPEN_DEFAULT_K = 1;
-import { solveMatch2D, groundUnder, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, usesKindCam, solveKindCam, wideFromSide, ORBIT, clampOrbit, limitOrbit, orbitMaxFor, orbitCamera, centreShare, frameTurned, solveTurnFit, easeFit, type TurnFit, showsGoal, grabsBall, overheadClipAlong, overStand, TILT, clampTilt, tiltCamera, type Match2DCamera } from "./match2dCam";
+import { solveMatch2D, groundUnder, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, usesKindCam, solveKindCam, wideFromSide, ORBIT, clampOrbit, limitOrbit, orbitMaxFor, orbitCamera, centreShare, frameTurned, solveTurnFit, easeFit, type TurnFit, showsGoal, grabsBall, BALL_GRAB, overheadClipAlong, overStand, TILT, clampTilt, tiltCamera, type Match2DCamera } from "./match2dCam";
 import { shotTarget, stanceFor, approachSFor, runClipTime, runBlend } from "./setPiece3d";
 import { hasRunup } from "../penaltyRunup";
 
@@ -391,6 +393,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
 
   // ── the ball (play3d's, dressed in look H when H is on) ──
   const ball = new THREE.Group();
+  const handA = new THREE.Vector3(), handB = new THREE.Vector3();
   {
     const s = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 24, 16), new THREE.MeshStandardMaterial({ color: "#fbfbf8", roughness: 0.45 }));
     s.castShadow = prof.shadows; ball.add(s);
@@ -419,6 +422,35 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     bar.rotation.set(-Math.PI / 2, 0, r); cross.add(bar);
   }
   cross.position.y = 0.02; cross.renderOrder = 4; root.add(cross);
+
+  // ── the Golden Run-up's gold trail (EngineFrame.goldTrail, lib/star/goldenTrail.ts):
+  // a pool of glowing sparks, placed from the 2D's own trail every frame. Looks only.
+  const GOLD_POOL = 64;
+  const goldTex = (() => {
+    const c = document.createElement("canvas"); c.width = c.height = 64;
+    const g = c.getContext("2d")!;
+    const rg = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    rg.addColorStop(0, "rgba(255,250,220,1)"); rg.addColorStop(0.25, "rgba(253,224,120,0.9)");
+    rg.addColorStop(0.6, "rgba(245,158,11,0.35)"); rg.addColorStop(1, "rgba(245,158,11,0)");
+    g.fillStyle = rg; g.fillRect(0, 0, 64, 64);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  })();
+  const goldSparks: any[] = [];
+  for (let i = 0; i < GOLD_POOL; i++) {
+    const m = new THREE.SpriteMaterial({ map: goldTex, color: "#ffd75e", transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+    const s = new THREE.Sprite(m); s.visible = false; s.renderOrder = 5; root.add(s); goldSparks.push(s);
+  }
+  const placeGoldTrail = (f: EngineFrame) => {
+    const pts = f.goldTrail ?? [];
+    for (let i = 0; i < GOLD_POOL; i++) {
+      const s = goldSparks[i], p = pts[i];
+      s.visible = !!p;
+      if (!p) continue;
+      s.position.set(p.x - CX, p.h, p.y);
+      s.scale.setScalar(0.42 * p.size * (0.45 + 0.55 * p.life));
+      s.material.opacity = Math.max(0, Math.min(1, p.life));
+    }
+  };
 
   // ── the captain's orders on the grass (EngineFrame.orders), in the Free
   // Roam style: flat gold marks on the pitch, as the 3D drills' rings. A run
@@ -856,6 +888,17 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       if (!aiming && !onceActive() && !b.windup && sp < MO.turnClipBelow && Math.abs(d) > MO.turnClipMin && f.t >= b.turnReady) startTurn(b, d, f.t);
       else turnTo(b, want, dt, sp > 0.7 ? 7 : 4);
     }
+    // After your goal (lib/star/celebration.ts): the move you equipped, at exactly the 2D's moment
+    // in it. The 2D moves him along the grass (a knee slide, a jog with his arms up); his hips stay put.
+    if (fig.celeb && b.play.has(fig.celeb.clip)) {
+      const c = fig.celeb.clip, st = `celeb:${c}`;
+      if (b.state !== st) { b.play.play(c, { fade: 0.18, once: !fig.celeb.loop, from: fig.celeb.t }); b.state = st; }
+      const a = b.p.actions[c], d = clipDur(b, c);
+      if (a) { a.time = fig.celeb.loop ? fig.celeb.t % d : Math.min(fig.celeb.t, d - 0.02); a.timeScale = 0; }
+      b.play.update(dt);
+      b.p.mixer.update(dt);
+      return;
+    }
     // the kick: your own swing, off the right foot or the left, and as hard as the real kick
     // (Harry, 9 Oct 2026: "every kick animation is the same no matter the power")
     let started = false;
@@ -1062,7 +1105,10 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // facing: where he runs, else the ball, else up the pitch
     const bl = f.ball;
     let want: number | null = null;
-    if (sp > (smooth() ? (LOCO.has(b.state) ? 0.5 : 0.9) : 0.7)) want = yawOf(Math.atan2(b.vy, b.vx));
+    if (fig.celeb) {
+      // your celebration: a slide or a jog on faces where he goes; a move on the spot turns back to the pitch
+      want = sp > 0.9 ? yawOf(Math.atan2(b.vy, b.vx)) : yawOf(Math.atan2(HALF_W_CELEB - b.y, CX - b.x));
+    } else if (sp > (smooth() ? (LOCO.has(b.state) ? 0.5 : 0.9) : 0.7)) want = yawOf(Math.atan2(b.vy, b.vx));
     else if (fig.sid === "you" && f.aim) want = yawOf(Math.atan2(f.aim.to.y - f.aim.from.y, f.aim.to.x - f.aim.from.x));
     else if (fig.sid === "you" && f.phase === "aim" && bl && animFix && Math.hypot(bl.x - b.x, bl.y - b.y) > 0.6) {
       // the stance: looking down his run at the ball (a penalty, a free kick, a corner, open play)
@@ -1085,7 +1131,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       if (c) started = startOnce(b, c, Math.max(0, f.t - fig.act.start));
     }
     if (!started && !once) {
-      if (f.goalSide && ((f.goalSide === "us") === (fig.team === "us"))) startLoop(b, b.play.has("celebrate_jump") ? "celebrate_jump" : "celebrate_fist");
+      if (fig.celeb && b.play.has(fig.celeb.clip)) startLoop(b, fig.celeb.clip);
+      else if (f.goalSide && ((f.goalSide === "us") === (fig.team === "us"))) startLoop(b, b.play.has("celebrate_jump") ? "celebrate_jump" : "celebrate_fist");
       else if (f.goalSide && b.play.has("dejected") && sp < 0.5) startLoop(b, "dejected");
       else if (sp < 0.35) startLoop(b, "idle");
       else startLoop(b, sp > 5.4 ? "sprint" : "jog");
@@ -1098,7 +1145,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // a one-shot (pass, shot, tackle, header, celebration) plays on his spot: its own travel never
     // walks him off where the 2D put him and back again (the "half teleport"); a short tail covers the fade out
     if (animFix && b.sid !== "keeper") {
-      if (b.state.startsWith("once:") || b.state.startsWith("wind:") || b.state.startsWith("shot1:")) b.pinUntil = nowT + 0.4;
+      if (b.state.startsWith("once:") || b.state.startsWith("wind:") || b.state.startsWith("shot1:") || b.state.startsWith("celeb:")) b.pinUntil = nowT + 0.4;
       if (b.pinUntil !== undefined && nowT < b.pinUntil) pinHips(b.p);
     }
     // Mocap, a left-foot kick: kick_l's ball sits further on than shot_r's, so he stands back by the difference
@@ -1335,7 +1382,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    * inside the nearest framed spot, so a stand between the camera and the pitch is
    * never drawn (Harry's corner still: the roof over two thirds of the screen).
    */
-  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "", cornerA: null as Match2DCamera | null, aimBall: null as { x: number; y: number } | null, cornerStart: "" as "" | "B" | "C", cornerT0: -1, spWide: null as Match2DCamera | null };
+  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "", cornerA: null as Match2DCamera | null, aimBall: null as { x: number; y: number } | null, cornerStart: "" as "" | "B" | "C", cornerT0: -1, spWide: null as Match2DCamera | null, celebT0: -1 };
   /** The camera swipe (match2dCam.ts ORBIT): degrees turned round the ball now, where it is heading, a finger on it. */
   /** The turned camera's framing, eased frame to frame (match2dCam.ts solveTurnFit / easeFit). */
   const turn = { fit: null as TurnFit | null, want: null as TurnFit | null, key: "", at: 0 };
@@ -1432,6 +1479,16 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         const A = land ? { ...m2.cornerA, tx: m2.cornerA.tx + (land.x - CX - m2.cornerA.tx) * CORNER_CAM.followLanding * 0.5, tz: m2.cornerA.tz + (land.y - m2.cornerA.tz) * CORNER_CAM.followLanding * 0.5 } : m2.cornerA;
         def = lerpCamera(m2.sp, A, e);
       }
+    }
+    // after your goal (lib/star/celebration.ts): the camera eases onto you and follows your run to the
+    // corner and your celebration, a little closer (it only moves; sizes stay absolute)
+    {
+      const you = f.celebrating ? f.figures.find((g) => g.sid === "you") : undefined;
+      if (you) {
+        if (m2.celebT0 < 0) m2.celebT0 = f.t;
+        const u = Math.min(1, (f.t - m2.celebT0) / 0.9), e = u * u * (3 - 2 * u);
+        def = { ...def, tx: def.tx + (you.x - CX - def.tx) * e, tz: def.tz + (you.y - def.tz) * e, D: def.D * (1 - 0.25 * e), minDepth: def.minDepth * (1 - 0.25 * e) };
+      } else m2.celebT0 = -1;
     }
     // room to drag back (match2dCam.ts keepDragRoom): while aiming, the ball's spot stays a full-power
     // drag above the screen's bottom in every framing (default, pinched, a corner's start view); the
@@ -1644,7 +1701,12 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const f = lastFrame;
     touch.id = e.pointerId; touch.ev0 = e; touch.start3 = { x: e.clientX, y: e.clientY }; touch.start2 = at; touch.g0 = g;
     // a team-mate first (as the 2D game does: he takes priority over the ball)
-    const mate = f?.phase === "aim" ? mateOnGlass(e.clientX, e.clientY) : null;
+    // Live chances: a press right on the spot you meet the pass is the aim, never a team-mate.
+    const onLiveSpot = !!f?.grabAt && f.phase === "aim" && (() => {
+      const r = container.getBoundingClientRect(), v = tmpV.set(f.grabAt.x - CX, 0, f.grabAt.y).project(camera);
+      return Math.hypot(e.clientX - (r.left + (v.x + 1) / 2 * r.width), e.clientY - (r.top + (1 - v.y) / 2 * r.height)) <= BALL_GRAB.px;
+    })();
+    const mate = f?.phase === "aim" && !onLiveSpot ? mateOnGlass(e.clientX, e.clientY) : null;
     const m2 = mate && to2dClient(mate);
     touch.mate = !!m2;
     if (m2 && mate) {
@@ -1670,6 +1732,17 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (touch.shot && f?.ball) {
       const b2 = to2dClient(f.ball);
       if (b2) { touch.start2 = b2; touch.g0 = { x: f.ball.x, y: f.ball.y }; }
+    }
+    // Live chances: the aim is grabbed at the spot you meet the pass (f.grabAt), not
+    // where the rolling ball is drawn. Off (no grabAt): nothing changes.
+    if (f?.grabAt && f.phase === "aim") {
+      const ga = f.grabAt, a2 = to2dClient(ga);
+      const r = container.getBoundingClientRect();
+      const v = tmpV.set(ga.x - CX, 0, ga.y).project(camera);
+      const onGlass = { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+      const in2d = !!a2 && Math.hypot(at.x - a2.x, at.y - a2.y) <= 0.2 * f.cam.H;
+      touch.shot = !!a2 && grabsBall(Math.hypot(e.clientX - onGlass.x, e.clientY - onGlass.y), in2d, Math.hypot(g.x - ga.x, g.y - ga.y));
+      if (touch.shot && a2) { touch.start2 = a2; touch.g0 = { x: ga.x, y: ga.y }; }
     }
     touch.last = performance.now();
     // THE CAMERA SWIPE: a press on open grass while aiming is held back from the 2D game until it shows
@@ -1758,7 +1831,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   // drag, which the 2D game ignores (no kick; a team-mate pressed first gets his tap, an order).
   const pinch = { pts: new Map<number, { x: number; y: number }>(), d0: 0, z0: 0, on: false };
   // dev/test: what the touch handling holds right now (scripts/star-sandbox/switch3d.mjs)
-  (window as unknown as { __cam3dInput?: () => unknown }).__cam3dInput = () => ({ visible, orbit: orbit.target, tilt: orbit.tiltTarget, zoom: camZoom(), pinchOn: pinch.on, pinchPts: pinch.pts.size, touchId: touch.id, pend: touch.pend, shot: touch.shot });
+  (window as unknown as { __cam3dInput?: () => unknown }).__cam3dInput = () => ({ visible, orbit: orbit.target, tilt: orbit.tiltTarget, zoom: camZoom(), pinchOn: pinch.on, pinchPts: pinch.pts.size, touchId: touch.id, pend: touch.pend, shot: touch.shot, mate: touch.mate, phase: lastFrame?.phase ?? null, grabAt: lastFrame?.grabAt ?? null });
   const pinchDist = () => { const a = Array.from(pinch.pts.values()); return a.length < 2 ? 0 : Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); };
   const onPinchDown = (e: PointerEvent) => {
     if (!visible || e.pointerType !== "touch") return;
@@ -2036,6 +2109,15 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         const bs = SIZE3D.ball; // real size with every camera (was up to 2x on New, the style's 1.7-2.0 x 0.85 on Old)
         ball.scale.setScalar(bs);
         const v = ballV.set(fb0.x - CX, Math.max(0, fb0.z) + BALL_R * bs, fb0.y);
+        // Caught (Leo's keeper catches): the ball between his hands, wherever his dive or get-up has them.
+        const kb = f.keeperHolds ? bodies.get("keeper") : undefined;
+        const lh = kb?.p.bones.LeftHand, rh = kb?.p.bones.RightHand;
+        if (kb && lh && rh) {
+          kb.p.root.updateMatrixWorld(true);
+          lh.getWorldPosition(handA); rh.getWorldPosition(handB);
+          v.copy(handA).add(handB).multiplyScalar(0.5);
+          if (ball.parent) { ball.parent.updateMatrixWorld(true); ball.parent.worldToLocal(v); }
+        }
         const dd = Number.isFinite(lastBall.x) ? v.distanceTo(lastBall) : 0;
         if (dd > 1e-4 && dd < 3) {
           const ax = ballAx.subVectors(v, lastBall).cross(Y).normalize().negate();
@@ -2058,6 +2140,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       ring.visible = !!f.ring;
       if (f.ring) { ring.position.set(f.ring.x - CX, 0.02, f.ring.y); ring.scale.setScalar(figNow() * 0.8); }
       placeOrders(f);
+      placeGoldTrail(f);
       cross.visible = !!f.landing;
       if (f.landing) { cross.position.set(f.landing.x - CX, 0.02, f.landing.y); cross.scale.setScalar(figNow() * 0.6); }
       // the crowd goes up for a goal
@@ -2118,6 +2201,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       spareBins.forEach((l) => { for (const p of l) disposeObject3D(p.root); }); spareBins.clear();
       numberCache.forEach((t) => t.dispose()); numberCache.clear();
       new Set(smallMaps.values()).forEach((t) => t?.dispose()); smallMaps.clear();
+      goldSparks.forEach((s) => s.material.dispose()); goldTex.dispose();
       svg.remove();
       camBtn?.remove();
       canvas3d.removeEventListener("webglcontextlost", onLostEv);

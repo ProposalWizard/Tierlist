@@ -24,10 +24,10 @@ const store = new Map<string, string>();
   getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => { store.set(k, v); },
 };
 eq(loadShopItemsView(), SHOP_ITEMS_VIEW_DEFAULT, "default");
-eq(SHOP_ITEMS_VIEW_DEFAULT, 3, "default is 3");
+eq(SHOP_ITEMS_VIEW_DEFAULT, 5, "default is 5 (Mikey, 25 Oct 2026: the shop opens on 5 a screen)");
 saveShopItemsView(5); eq(loadShopItemsView(), 5, "remembers 5");
 saveShopItemsView(1); eq(loadShopItemsView(), 1, "remembers 1");
-store.set(SHOP_ITEMS_VIEW_KEY, "7"); eq(loadShopItemsView(), 3, "junk → default");
+store.set(SHOP_ITEMS_VIEW_KEY, "7"); eq(loadShopItemsView(), SHOP_ITEMS_VIEW_DEFAULT, "junk → default");
 
 if (problems.length) {
   console.log(`shopNextItem: ${problems.length} problem(s)`);

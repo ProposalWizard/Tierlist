@@ -25,6 +25,9 @@ import type { SynthGoal } from "../goalClip/synth";
 import { metricsFor, resolve, rngFor, speak, surname } from "./grammar";
 import { clockAt, timeFor, visible, FEED_HORIZON, FIRST_WAVE } from "./schedule";
 import { buildTrends } from "./trending";
+import { goalOfMonthAfterMatch } from "./goalOfMonth";
+import { goalOfMonthOn, yourGoalVideoOn } from "./updateFlags";
+export { voteGoalOfMonth, applyGoalOfMonthBoost } from "./goalOfMonth";
 
 /**
  * THE FAÇADE
@@ -96,8 +99,10 @@ export function generateForMatch(
     season: record.season, week: record.week,
   });
 
-  return commit(after, state, record, events, withEvents, record.id,
-    clockAt(record.season, record.week, 0));
+  const clock = clockAt(record.season, record.week, 0);
+  const committed = commit(after, state, record, events, withEvents, record.id, clock);
+  // Goal of the Month: close last week's poll, open a finished month's.
+  return goalOfMonthOn() ? goalOfMonthAfterMatch(committed, before, after, fixture, stats, record, clock) : committed;
 }
 
 export function generateForCareer(career: CareerState, moment: CareerRecord["moment"], key: string): MediaState {
@@ -432,6 +437,13 @@ function commit(
   // draw against a mid-table side does — and reading two identical lines a
   // couple of scrolls apart is the same tell as reading them side by side.
   const recentText = new Set(state.posts.slice(-24).map(p => p.text));
+  // ── One of each kind of post per match (Mikey, 26 Oct 2026) ──
+  // "Who is to blame?" came twice, each with its own poll. A post with a
+  // graphic (a poll, a card, a table) is one per kind per cycle, and one poll
+  // in all; plain fan text may repeat its kind (love, anger) as long as the
+  // words differ, which recentText already keeps.
+  const graphicKinds = new Set<string>();
+  let polls = 0;
 
   // Indexed rather than `.entries()` — this project's TypeScript target does
   // not down-level iterate an array iterator.
@@ -440,6 +452,15 @@ function commit(
     const made = render(p, career, record, memory, cycleId, usedThisCycle, slot);
     if (!made) continue;
     if (recentText.has(made.post.text)) continue;
+    const gType = (made.post.graphic as { type?: string } | undefined)?.type;
+    if (gType) {
+      const isPoll = gType === "poll" || gType === "gotmPoll";
+      if (isPoll && polls >= 1) continue;
+      const key = isPoll ? "poll" : `${gType}|${made.post.eventId ?? ""}`;
+      if (graphicKinds.has(key)) continue;
+      graphicKinds.add(key);
+      if (isPoll) polls++;
+    }
     recentText.add(made.post.text);
     usedThisCycle.add(made.templateId);
     posts.push({ ...made.post, scope });
@@ -462,6 +483,8 @@ function commit(
     // Kept through the league's and the career's own cycles; set by a match.
     lastMatchCycleId: state.lastMatchCycleId,
     lastMatchCycleClock: state.lastMatchCycleClock,
+    // Goal of the Month's own state rides through every cycle untouched.
+    ...(state.gotm ? { gotm: state.gotm } : {}),
     ...(scope === "league"
       ? { lastCycleId: state.lastCycleId, lastCycleClock: state.lastCycleClock, lastLeagueCycleId: cycleId }
       : { lastCycleId: cycleId, lastCycleClock: cycleClock, lastLeagueCycleId: state.lastLeagueCycleId, ...matchCycle }),
@@ -487,7 +510,10 @@ function capVideos(posts: StoredPost[], cycleId: string): void {
   const rng = rngFor("videos", cycleId);
   // 1 or 2, at random (Leo, 16 Oct 2026: "we wanted to make it random"):
   // the match's highlights always, a second video about half the time.
-  const max = rng() < 0.5 ? 1 : MAX_VIDEOS_PER_MATCH;
+  let max = rng() < 0.5 ? 1 : MAX_VIDEOS_PER_MATCH;
+  // Leo's 24 Oct update (updateFlags.ts): your goals' post always keeps its
+  // video next to the highlights ("I don't EVER wanna wait … for MY GOALS").
+  if (yourGoalVideoOn() && vids.some(p => p.eventId === "your-highlights") && vids.some(p => p.eventId === "match-highlights")) max = Math.max(max, 2);
   if (vids.length <= max) return;
   // The match's highlights and your goals' video stay (Leo, 8 Oct: every
   // match ALWAYS has them); anything else is the random one.
@@ -727,9 +753,20 @@ export function pinHighlights(posts: StoredPost[], cycleId: string): StoredPost[
   // random … no guarantee that there's a specific line … at the top"): each
   // goes somewhere in the first screenful (one of the first five places),
   // the same place every time you open this feed.
+  // Mikey, 26 Oct 2026: still "consistently" first or second. Each now goes
+  // in a random place from the 3rd to the 6th (still the first screenful,
+  // Leo's rule), never the top two unless the feed is that short.
   const out = posts.filter(p => rank(p) === 2);
   const rng = rngFor("pin", cycleId);
-  for (const p of top) out.splice(Math.min(out.length, Math.floor(rng() * 5)), 0, p);
+  const lo = Math.min(2, out.length), hi = Math.max(lo, Math.min(5, out.length + top.length - 1));
+  const placed: { p: StoredPost; at: number }[] = [];
+  for (const p of top) {
+    let at = lo + Math.floor(rng() * (hi - lo + 1));
+    for (let t = 0; t < 6 && placed.some((x) => x.at === at); t++) at = lo + Math.floor(rng() * (hi - lo + 1));
+    placed.push({ p, at });
+  }
+  // Lowest place first, so a later one never pushes an earlier one down.
+  for (const { p, at } of placed.sort((a, b) => a.at - b.at)) out.splice(Math.min(out.length, at), 0, p);
   return out;
 }
 

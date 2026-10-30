@@ -49,27 +49,36 @@ export async function portraitsFromOtherEditions(
   const ids = Array.from(new Set(sofifaIds.filter(Boolean)));
   if (ids.length === 0) return out;
 
-  try {
-    // Newest edition first, so the first usable row seen for an id is the one
-    // that wins and everything after it for that id can be skipped.
-    const { data, error } = await supabase
-      .from("sofifa_players")
-      .select("sofifa_id, fifa_year, image_url")
-      .in("sofifa_id", ids)
-      .neq("fifa_year", excludeYear)
-      .not("image_url", "is", null)
-      .order("fifa_year", { ascending: false });
-
-    if (error || !data) return out;
-
-    for (const row of data) {
-      const id = String(row.sofifa_id);
-      if (out.has(id)) continue;
-      const url = (row.image_url as string | null)?.trim();
-      if (isSelfHosted(url)) out.set(id, url!);
+  // In pieces (27 Oct 2026): one request with every id failed silently on a
+  // big call — /api/star/league-squads' 172 outside clubs sent 1,535 ids and
+  // got 0 back (the address is too long, and every edition of every player
+  // ran past the 1,000-row cap). 150 ids a piece, in parallel, and only the
+  // pictures we host (the only ones this ever keeps) come back: the same
+  // call now finds 98. Newest edition first within each piece, so the first
+  // usable row for an id wins.
+  const CHUNK = 150;
+  const pieces: string[][] = [];
+  for (let i = 0; i < ids.length; i += CHUNK) pieces.push(ids.slice(i, i + CHUNK));
+  await Promise.all(pieces.map(async (piece) => {
+    try {
+      const { data, error } = await supabase
+        .from("sofifa_players")
+        .select("sofifa_id, fifa_year, image_url")
+        .in("sofifa_id", piece)
+        .neq("fifa_year", excludeYear)
+        .like("image_url", "%/storage/v1/object/public/%")
+        .order("fifa_year", { ascending: false })
+        .limit(1000);
+      if (error || !data) return;
+      for (const row of data) {
+        const id = String(row.sofifa_id);
+        if (out.has(id)) continue;
+        const url = (row.image_url as string | null)?.trim();
+        if (isSelfHosted(url)) out.set(id, url!);
+      }
+    } catch {
+      // Same answer as "nobody had one", for this piece only.
     }
-  } catch {
-    // Same answer as "nobody had one".
-  }
+  }));
   return out;
 }

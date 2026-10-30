@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { computeTeamStrength } from "@/lib/seasonSimulator";
 import { sanitizeSquad, MAX_SQUAD } from "@/lib/squadSanitize";
 import type { DraftPlayer } from "@/lib/seasonSimulator";
+import { notGuest } from "@/lib/guest/config";
 
 // A drafted squad is 11 starters plus subs; season 2+ can add signings. Anything
 // outside this range is not a squad this game can produce.
@@ -14,7 +15,8 @@ export async function POST(
 ) {
   const { code } = await params;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user: signedIn } } = await supabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
   if (!user) return new Response("Unauthorized", { status: 401 });
 
   // An empty or malformed body used to throw here and surface as a 500.

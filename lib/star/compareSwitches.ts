@@ -23,7 +23,7 @@ export type CompareSwitch =
 
 export const COMPARE_SWITCHES: { id: CompareSwitch; label: string; hint: string }[] = [
   { id: "penaltyRules", label: "Penalty rules", hint: "New: keeper central on his line, ball on the spot, you behind it, others on the box edge, one camera. Test screens only." },
-  { id: "powerCurve", label: "Shot power", hint: "New: 99 power hits it at 103 km/h, like an 82. Old: 113 km/h. Test screens only." },
+  { id: "powerCurve", label: "Shot power", hint: "New: the Power curve below (40 hits about 66 km/h, 99 about 103). Old: the straight line (40 about 79, 99 about 113). Test screens only." },
 ];
 
 const keyFor = (name: CompareSwitch) => `star-compare-${name}`;

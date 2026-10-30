@@ -53,7 +53,7 @@ export const MAX_FRAME_ERRORS = 3;
 /** Rebuilds a match does by itself after the phone gives the 3D back. */
 const AUTO_RETRIES = 2;
 
-export default function Match3DLayer({ children, tod = "golden" }: { children: ReactNode; tod?: TimeOfDay }) {
+export default function Match3DLayer({ children, tod = "golden", hold = false }: { children: ReactNode; tod?: TimeOfDay; /** Hold the match from outside (a pointer tour on it), as its Settings does. */ hold?: boolean }) {
   const on = useMatchView3d() === "on";
   const ev = useRef<EngineView | null>(null);
   // the fixture's light (lib/star/style3d/matchTod.ts), read when the 3D is built
@@ -196,10 +196,10 @@ export default function Match3DLayer({ children, tod = "golden" }: { children: R
 
   // Until the 3D picture is ready the 2D match shows, so the screen is never blank.
   const obs = useMemo<EngineFrameObserver>(() => ({
-    hide2D: on && status === "ready", attach, onFrame, hold: settingsOpen, chrome,
+    hide2D: on && status === "ready", attach, onFrame, hold: settingsOpen || hold, chrome,
     warming: on && (status === "idle" || status === "loading"),
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [on, status, attach, onFrame, settingsOpen, can3d, rebuild]);
+  }), [on, status, attach, onFrame, settingsOpen, hold, can3d, rebuild]);
 
   return (
     <div className="relative" data-career-3d={on ? status : "2d"}>

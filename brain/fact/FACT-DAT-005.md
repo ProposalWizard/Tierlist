@@ -2,12 +2,9 @@
 id: FACT-DAT-005
 type: fact
 client: dat
-tags: [admin, data]
+tags: [data]
 status: live
-date: 2026-10-22
-source: "lib/patchNoteMedia.ts:8-17"
-summary: Patch-note pictures live in the R2 bucket under patch-notes/<path>; the file route sends a signed link when the object is there, else the bundled copy; one button on /admin/patch-notes moves them.
+date: 2026-10-23
+source: "supabase/migrations/login_streak_own_only.sql:1"
+summary: star_xp_config and star_tuning_notes were run live on 23 Oct 2026 (Claude via the Supabase connector, Harry's yes); update_login_streak now only updates the signed-in player.
 ---
-The move runs on Vercel only (the keys are there). Until the follow-up drops
-patch-notes media from next.config.mjs outputFileTracingIncludes, each route
-still bundles the pictures as the fallback.

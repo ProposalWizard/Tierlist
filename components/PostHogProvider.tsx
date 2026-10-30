@@ -3,6 +3,7 @@
 import { useEffect, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import type { PostHog } from "posthog-js";
+import { analyticsAllowed, COOKIE_CONSENT_EVENT } from "@/lib/cookieConsent";
 
 /**
  * posthog-js (about 60 KB zipped) is fetched after the page is up, not as
@@ -11,14 +12,18 @@ import type { PostHog } from "posthog-js";
  * dropped with it. With no key set it is never fetched at all.
  */
 let client: Promise<PostHog | null> | null = null;
-function posthogClient(): Promise<PostHog | null> {
+export function posthogClient(): Promise<PostHog | null> {
   const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
   if (!key) return Promise.resolve(null);
+  // Only after a yes to cookies (lib/cookieConsent.ts, UK PECR): until then
+  // posthog-js is not even fetched, and every capture is dropped.
+  if (!analyticsAllowed()) return Promise.resolve(null);
   if (!client) {
     client = import("posthog-js").then(({ default: posthog }) => {
       if (!posthog.__loaded) {
         posthog.init(key, {
-          api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://eu.posthog.com",
+          // The project's own ingest host (PostHog project settings: api_host).
+          api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://eu.i.posthog.com",
           person_profiles: "identified_only",
           capture_pageview: false,
         });
@@ -72,6 +77,14 @@ function PostHogPageView() {
     const query = searchParams.toString();
     const url = query ? `${pathname}?${query}` : pathname;
     void posthogClient().then((ph) => ph?.capture("$pageview", { $current_url: url }));
+    // A yes on this page counts this page; a later no stops everything.
+    const onChoice = (e: Event) => {
+      const v = (e as CustomEvent<string | null>).detail;
+      if (v === "yes") void posthogClient().then((ph) => { ph?.opt_in_capturing(); ph?.capture("$pageview", { $current_url: url }); });
+      else if (client) void client.then((ph) => ph?.opt_out_capturing());
+    };
+    window.addEventListener(COOKIE_CONSENT_EVENT, onChoice);
+    return () => window.removeEventListener(COOKIE_CONSENT_EVENT, onChoice);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, searchParams]);
 

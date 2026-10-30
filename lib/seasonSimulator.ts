@@ -4285,6 +4285,11 @@ function simulateUCLPersonalPhase(
   opponents: { name: string; strength: number }[],
   rng: () => number,
   qualifiesAsWinner = false,
+  /** Every human (this one included) who qualifies as a winner from outside
+   *  the top five, the same list for every viewer: they go in pot 1, as a
+   *  title holder does. Without them the winner's own club was missing from
+   *  allTeams, and building the table threw (live: 7 crashes, Aug-Oct 2026). */
+  winnersOutsideTop5: { name: string; strength: number }[] = [],
 ): UCLPersonalPhaseResult {
   const myFinish = previousLeagueTable.findIndex(t => t.name === teamName) + 1;
 
@@ -4304,6 +4309,10 @@ function simulateUCLPersonalPhase(
     const isSelf = team.name === teamName;
     const strength = isSelf ? ratings.teamStrength : (opponentMap.get(team.name) ?? 75);
     pots[potForFinish(i + 1) - 1].push({ name: team.name, strength });
+  }
+  for (const w of winnersOutsideTop5) {
+    if (pots.some((p) => p.some((t) => t.name === w.name))) continue;
+    pots[0].push(w.name === teamName ? { name: w.name, strength: ratings.teamStrength } : w);
   }
 
   for (const uclTeam of UCL_TEAMS) {
@@ -4434,28 +4443,36 @@ function simulateUELPersonalPhase(
   previousLeagueTable: LeagueTeam[],
   opponents: { name: string; strength: number }[],
   rng: () => number,
+  /** Humans who qualify by winning the FA Cup or League Cup from outside 6th
+   *  and 7th, the same list for every viewer. They go in pot 2. Before this
+   *  such a winner was entered but this phase turned him away, so he never
+   *  played the Europa League he had won his place in (27 Oct 2026). */
+  cupWinners: { name: string; strength: number }[] = [],
 ): UCLPersonalPhaseResult {
   const myFinish = previousLeagueTable.findIndex(t => t.name === teamName) + 1;
+  const isCupWinner = cupWinners.some((w) => w.name === teamName);
 
-  if (myFinish < 6 || myFinish > 7) {
+  if (!isCupWinner && (myFinish < 6 || myFinish > 7)) {
     return {
       qualified: false, teamName, leagueMatches: [],
       pots: [[], [], [], []], allTeams: [], strengthMap: new Map(), ownRecord: emptyOwnRecord(),
     };
   }
 
-  const myPot = myFinish === 6 ? 1 : 2;
   const opponentMap = new Map(opponents.map(o => [o.name, o.strength]));
 
+  // 6th in pot 1, 7th in pot 2, then any cup winners in pot 2: the same pots
+  // whoever is looking (for 6th and 7th exactly the pots this always built).
   const pots: { name: string; strength: number }[][] = [[], [], [], []];
-  pots[myPot - 1].push({ name: teamName, strength: ratings.teamStrength });
-
-  const otherPLSlot = myFinish === 6 ? 7 : 6;
-  const otherPLPot = otherPLSlot === 6 ? 1 : 2;
-  if (previousLeagueTable.length >= otherPLSlot) {
-    const team = previousLeagueTable[otherPLSlot - 1];
+  for (const slot of [6, 7]) {
+    if (previousLeagueTable.length < slot) continue;
+    const team = previousLeagueTable[slot - 1];
     const strength = team.name === teamName ? ratings.teamStrength : (opponentMap.get(team.name) ?? 75);
-    pots[otherPLPot - 1].push({ name: team.name, strength });
+    pots[slot === 6 ? 0 : 1].push({ name: team.name, strength });
+  }
+  for (const w of cupWinners) {
+    if (pots.some((p) => p.some((t) => t.name === w.name))) continue;
+    pots[1].push(w.name === teamName ? { name: w.name, strength: ratings.teamStrength } : w);
   }
 
   for (const uelTeam of UEL_TEAMS) {
@@ -4552,8 +4569,14 @@ function simulateSharedUCL(
   // so every qualified human's ownRecord can be safely shared with everyone
   // else's table-build pass without re-simulating it.
   const personalPhases = new Map<string, UCLPersonalPhaseResult>();
+  // Winners who qualify from outside the top five, in one order for everyone.
+  const winnersOutsideTop5 = humanEntrants
+    .filter((h) => h.qualifiesAsWinner && !(h.previousLeagueTable.findIndex((t) => t.name === h.teamName) + 1 >= 1
+      && h.previousLeagueTable.findIndex((t) => t.name === h.teamName) + 1 <= 5))
+    .map((h) => ({ name: h.teamName, strength: h.ratings.teamStrength }))
+    .sort((a, b) => a.name.localeCompare(b.name));
   for (const h of humanEntrants) {
-    personalPhases.set(h.userId, simulateUCLPersonalPhase(h.teamName, h.squad, h.ratings, h.previousLeagueTable, h.oppForCups, h.rng, h.qualifiesAsWinner));
+    personalPhases.set(h.userId, simulateUCLPersonalPhase(h.teamName, h.squad, h.ratings, h.previousLeagueTable, h.oppForCups, h.rng, h.qualifiesAsWinner, winnersOutsideTop5));
   }
   const allRecordsByName = new Map<string, OwnRecord>();
   for (const h of humanEntrants) {
@@ -4816,8 +4839,13 @@ function simulateSharedUEL(
 
   // 1a. Run each human's own personal league matches (their own rng).
   const personalPhases = new Map<string, UCLPersonalPhaseResult>();
+  // Cup winners who qualify from outside 6th and 7th, in one order for everyone.
+  const cupWinners = humanEntrants
+    .filter((h) => { const f = h.previousLeagueTable.findIndex((t) => t.name === h.teamName) + 1; return f < 6 || f > 7; })
+    .map((h) => ({ name: h.teamName, strength: h.ratings.teamStrength }))
+    .sort((a, b) => a.name.localeCompare(b.name));
   for (const h of humanEntrants) {
-    personalPhases.set(h.userId, simulateUELPersonalPhase(h.teamName, h.squad, h.ratings, h.previousLeagueTable, h.oppForCups, h.rng));
+    personalPhases.set(h.userId, simulateUELPersonalPhase(h.teamName, h.squad, h.ratings, h.previousLeagueTable, h.oppForCups, h.rng, cupWinners));
   }
   const allRecordsByName = new Map<string, OwnRecord>();
   for (const h of humanEntrants) {

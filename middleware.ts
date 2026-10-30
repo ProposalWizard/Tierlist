@@ -15,6 +15,8 @@
 
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { guestAccountsOn } from "@/lib/guest/config";
+import { campaignFor } from "@/lib/campaigns";
 
 const SKIP_USERNAME_PREFIXES = [
   "/setup-username",
@@ -32,31 +34,36 @@ function shouldSkipUsernameCheck(pathname: string): boolean {
 }
 
 export async function middleware(request: NextRequest) {
-  const response = await updateSession(request);
+  // One login check per request (was two: updateSession asked Supabase, then
+  // this file built a second client and asked again). updateSession refreshes
+  // the cookie and says who is signed in.
+  const { response, userId, isAnonymous } = await updateSession(request);
+  const user = userId ? { id: userId } : null;
 
   const { pathname } = request.nextUrl;
 
-  const { createServerClient } = await import("@supabase/ssr");
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
-        setAll() {},
-      },
-    }
-  );
+  // Guest accounts (lib/guest/config.ts): a guest is a real Supabase user with
+  // is_anonymous set. Everywhere outside Road to Ballon d'Or it counts as
+  // signed out: no tierlist making, no username screen. With the switch off
+  // no guest can exist, so this changes nothing today.
+  const guest = isAnonymous;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Ad landing pages: /play/<campaign> shows app/campaign/[campaign] (the
+  // address stays /play/...). Only for a slug in lib/campaigns.ts, so a
+  // tierlist at /play/<id> is untouched; switch off = a 404 as before.
+  if (guestAccountsOn()) {
+    const m = /^\/play\/([a-z0-9-]+)\/?$/.exec(pathname);
+    if (m && campaignFor(m[1])) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/campaign/${m[1]}`;
+      const rewritten = NextResponse.rewrite(url);
+      response.cookies.getAll().forEach((c) => rewritten.cookies.set(c));
+      return rewritten;
+    }
+  }
 
   if (pathname.startsWith("/tierlist") || pathname.startsWith("/create")) {
-    if (!user) {
+    if (!user || guest) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/auth";
       redirectUrl.searchParams.set("next", pathname);
@@ -64,7 +71,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (user && !shouldSkipUsernameCheck(pathname)) {
+  if (user && !guest && !shouldSkipUsernameCheck(pathname)) {
     const hasUsernameCookie = request.cookies.get("has-username")?.value === "1";
     if (!hasUsernameCookie) {
       const { createClient: createServiceClient } = await import("@supabase/supabase-js");
@@ -102,6 +109,9 @@ export async function middleware(request: NextRequest) {
 // Skip static files and Next internals to avoid unnecessary overhead.
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Also skips the game's own files in public/star, public/sfx and public/models
+    // (3D models, sounds, music, JSON): plain files that need no login check.
+    // No page lives under those three paths (/star-dev is "star-", not "star/").
+    "/((?!_next/static|_next/image|favicon.ico|star/|sfx/|models/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

@@ -50,6 +50,12 @@ export interface EngineFrameFigure {
   face?: string;
   /** Drawn by the 2D picture. False: a man the 3D view may add (you, in open play, where 2D draws the ball as you). */
   drawn: boolean;
+  /**
+   * You, after your goal, once the run to the corner is over (lib/star/celebration.ts):
+   * the 3D clip of the move you equipped and how far into it (s). The 3D view
+   * plays exactly this frame of it; the 2D already moves him along the grass.
+   */
+  celeb?: { clip: string; t: number; loop: boolean };
 }
 
 export interface EngineFrameKeeper {
@@ -119,6 +125,13 @@ export interface EngineFrame {
   cam: EngineFrameCamera;
   /** The ball as drawn (null: none on the pitch this frame). */
   ball: { x: number; y: number; z: number; vx: number; vy: number; vz: number; live: boolean; inNet: boolean } | null;
+  /**
+   * The keeper has caught it and Leo's "Keeper catches and dives" is on: a 3D view
+   * puts the ball between the keeper's hands instead of where the match left it
+   * (the match parks a caught ball 0.55 m up at his spot, which read as a ball
+   * frozen in the air while he dived elsewhere; Leo, 28 Oct 2026).
+   */
+  keeperHolds?: boolean;
   /** Where a ball in the air will first land (the 2D's cross on the grass). */
   landing: Vec2 | null;
   keeper: EngineFrameKeeper | null;
@@ -127,6 +140,12 @@ export interface EngineFrame {
   aim: { from: Vec2; to: Vec2; power: number } | null;
   /** The ring under the man on the ball (new view): where it is. */
   ring: Vec2 | null;
+  /**
+   * Live chances (lib/star/liveChance.ts): the spot you aim from while the pass
+   * is still rolling in (the ball as drawn is not there yet). A press there
+   * grabs the aim, as a press on the ball does. Absent: the ball is the grab.
+   */
+  grabAt?: Vec2 | null;
   /** Whose goal it was while the result is up. */
   goalSide: "us" | "them" | null;
   /** The goal is part of this picture (a keeper may stand in it). */
@@ -143,6 +162,12 @@ export interface EngineFrame {
    */
   runup?: { t: number; runS: number } | null;
   /**
+   * The Golden Run-up's trail (lib/star/goldenTrail.ts), while it shows:
+   * glowing gold dots in pitch metres (`h` above the grass, `life` 0..1
+   * brightness, `size` ~0.5..1.4). Absent / null for every other run-up.
+   */
+  goldTrail?: { x: number; y: number; h: number; life: number; size: number }[] | null;
+  /**
    * A lead-in replaying (CanvasMatch's `leadIn`: test pages only, never in the
    * real game). `lock`: how fixed the 2D camera is on the chance's own frame
    * (0 following the passes .. 1 fixed; lib/star/leadIn.ts leadInCamera).
@@ -151,6 +176,8 @@ export interface EngineFrame {
    * same moment. Absent when no lead-in is playing.
    */
   leadIn?: EngineFrameLeadIn | null;
+  /** After your goal: the run to the corner and your celebration are on (lib/star/celebration.ts). The 3D camera follows you. */
+  celebrating?: boolean;
 }
 
 export interface EngineFrameLeadIn {

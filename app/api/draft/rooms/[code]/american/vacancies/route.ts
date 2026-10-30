@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { seedReplacementDraftIfReady } from "@/lib/americanReplacementSeed";
 import type { AmericanState } from "@/lib/americanDraft";
 import type { DraftPlayer } from "@/lib/seasonSimulator";
+import { notGuest } from "@/lib/guest/config";
 
 /**
  * Submit one manager's between-season position: the squad they are left with
@@ -33,7 +34,8 @@ export async function POST(
   }
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user: signedIn } } = await supabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
   if (!user) return new Response("Unauthorized", { status: 401 });
 
   const service = createServiceClient();

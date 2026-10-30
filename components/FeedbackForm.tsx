@@ -33,6 +33,9 @@ export default function FeedbackForm() {
     if (error) {
       setStatus("error");
     } else {
+      // The team's #bugs channel gets the report by itself (a database trigger);
+      // this asks the site to buzz the team about it. A failure here changes nothing.
+      fetch("/api/team/bug-ring", { method: "POST", keepalive: true }).catch(() => {});
       setStatus("success");
       setMessage("");
       setTimeout(() => setStatus("idle"), 4000);

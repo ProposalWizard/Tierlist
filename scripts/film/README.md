@@ -98,3 +98,15 @@ screen to t seconds and draws once. That is all the tool needs.
 - `?clean=1` on the Style Testing page hides its toolbar, hints and labels.
 
 Real-time loop untouched: nothing here runs unless a tool calls `seek`/`step`.
+
+## Smooth video of the real match on a machine with no graphics card — `vclock.mjs`
+(Leo, 25 Oct 2026: "the ball moves weird".) A screen recording here repeats about 1
+moving frame in 5. `vclock.mjs` steps the page's own clock instead (timers, frame
+callbacks, CSS animations, Web Audio), one 1/60 s step per captured frame, so the film is
+exactly as smooth as the game, with the game's sound placed on the same clock.
+
+```bash
+node scripts/film/scenes/vgoal.mjs 3300 knee-slide /abs/out --seed /abs/seed.json   # a real goal + celebration
+python3 scripts/film/smoothness.py /abs/out/knee-slide.mp4                       # repeated frames, evenness
+```
+Seed: `node scripts/film/scenes/celebrations.mjs <port> setup /abs/out` (a fresh career at its first match).

@@ -34,7 +34,7 @@ import { SCENARIO_KINDS, type Scenario } from "@/lib/star/canvasEngine";
 import { withoutSwitchedOff } from "@/lib/star/switchedOffKinds";
 import { nextHighlight, newSimMemory, buildSimScenario, pictureKey } from "@/lib/star/gallerySim";
 import { mulberry32 } from "@/lib/star/season";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, formatWallet } from "@/lib/star/money";
 import { SOCIAL_SEEN, MSGS_SEEN, readLS, writeLS, buildMessages, msgKey, socialUnread, type Msg } from "@/lib/star/phoneUnread";
 import { brandsOf } from "@/lib/star/sponsorDeals";
 import PhoneFrame from "./PhoneFrame";
@@ -49,7 +49,7 @@ import type { HubPhase } from "./HomeHub";
 import { HOME3D_IN_CAREER } from "@/lib/star/home3d/flag";
 import { ClubCard, CountUp, RiseIn, Glow, Badge, EmptySlots, glowOf, rgba, useClubTheme } from "./ui";
 
-type AppId = "social" | "kickabout" | "squad" | "fixtures" | "messages" | "appstore" | "scout";
+type AppId = "social" | "kickabout" | "squad" | "fixtures" | "messages" | "appstore" | "scout" | "relationships";
 type Leave = HubPhase | "settings" | "relations";
 interface App { id: AppId | Leave; label: string; icon: string; bg: [string, string]; /** The open app's heading when longer than the icon's label. */ title?: string }
 
@@ -60,7 +60,7 @@ const APPS: App[] = [
   // here (master plan step 4, Mikey 22 Oct 2026).
   { id: "relations", label: "Relationships", icon: "❤️", bg: ["#fb7185", "#be123c"] },
   { id: "squad", label: "Squad", icon: "👥", bg: ["#fcd34d", "#d97706"] },
-  { id: "fixtures", label: "Fixtures", title: "Fixtures & results", icon: "📅", bg: ["#38bdf8", "#0369a1"] },
+  { id: "fixtures", label: "Fixtures", title: "Fixtures & results", icon: "🏟️" /* 📅 draws a fixed "JUL 17" on phones */, bg: ["#38bdf8", "#0369a1"] },
   { id: "messages", label: "Messages", icon: "💌", bg: ["#f472b6", "#e11d48"] },
   { id: "shop-kib", label: "Shop", icon: "🛍️", bg: ["#fb923c", "#ea580c"] },
   { id: "store", label: "Store", icon: "🛒", bg: ["#fcd34d", "#7c3aed"] },
@@ -80,13 +80,19 @@ const SCOUT_APP: App = { id: "scout", label: "Scout report", icon: "🔍", bg: [
  *  career's phone, where the apps it does not start with are added. */
 const APP_STORE_ICON: App = { id: "appstore", label: "App Store", icon: "🅰️", bg: ["#60a5fa", "#1d4ed8"] };
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
-const appOf = (id: AppId) => (id === "appstore" ? APP_STORE_ICON : id === "scout" ? SCOUT_APP : APPS.find((a) => a.id === id)!);
+const appOf = (id: AppId | "relations") => (id === "appstore" ? APP_STORE_ICON : id === "scout" ? SCOUT_APP : APPS.find((a) => a.id === (id === "relationships" ? "relations" : id))!);
 
-export default function PhoneHome({ career, onToggleLike, onLeave, onClose, installed, onInstall, isNew, onOpened, hallChase }: {
+export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClose, installed, onInstall, isNew, onOpened, hallChase, relations, relationsIntro }: {
   career: CareerState;
+  /** Relationships drawn INSIDE the phone, like Squad (Mikey's playtest, 24 Oct
+   *  2026). Absent: the app leaves the phone for the Relations page, as before. */
+  relations?: React.ReactNode;
+  /** Its one-line tour the first time it is opened. */
+  relationsIntro?: React.ReactNode;
   /** Your Hall of Fame chase line, for the team-mate's record message (phoneUnread.ts). */
   hallChase?: string | null;
   onToggleLike?: (postId: string) => void;
+  onVote?: (postId: string, index: number) => void;
   onLeave: (ph: Leave) => void;
   /** Put the phone down: back to Home. Harry got stuck on the phone's home
    *  screen with no way out (1 Oct 2026, 04:36). */
@@ -155,6 +161,7 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
 
   const open = (id: AppId | Leave, from?: HTMLElement | null) => {
     if (isNew?.(id)) onOpened?.(id);
+    if (id === "relations" && relations) { setApp("relationships"); return; }
     if (!INSIDE.has(id)) return onLeave(id as Leave);
     markSeen(id as AppId);
     // An app opens on the tap's own frame: no zoom out of the icon (Harry,
@@ -178,7 +185,7 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
                   className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-[22px]"
                   style={{ background: `radial-gradient(110% 38% at 50% 0%, ${rgba(theme.glow, 0.24)} 0%, transparent 70%), linear-gradient(180deg, #0b1220, #05080f)` }}
                 >
-                  {app === "social" && <MediaFeed career={career} mode="browse" onToggleLike={onToggleLike} inPhone />}
+                  {app === "social" && <MediaFeed career={career} mode="browse" onToggleLike={onToggleLike} onVote={onVote} inPhone />}
                   {app === "kickabout" && <Kickabout ready />}
                   {app === "squad" && (
                     <AppShell app={appOf("squad")}>
@@ -188,6 +195,12 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
                   {app === "scout" && (
                     <AppShell app={appOf("scout")}>
                       <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2 pb-2 text-[12px]"><ScoutPane career={career} fixture={nextFixtureFor(career)} /></div>
+                    </AppShell>
+                  )}
+                  {app === "relationships" && relations && (
+                    <AppShell app={appOf("relations")}>
+                      <div data-tour="phone-relations" className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2 pb-2">{relations}</div>
+                      {relationsIntro}
                     </AppShell>
                   )}
                   {app === "fixtures" && <Fixtures career={career} glow={theme.glow} />}
@@ -230,7 +243,7 @@ function AppIcon({ app, size = 50, badge = 0, index = 0, onOpen, label = true, o
     </button>
   );
   return (
-    <button onClick={() => onOpen(app.id, ref.current)} className="kib-press flex min-w-0 flex-col items-center gap-1">
+    <button onClick={() => onOpen(app.id, ref.current)} data-tour={`app-${app.id}`} className="kib-press flex min-w-0 flex-col items-center gap-1">
       <span
         ref={ref}
         className="relative grid aspect-square place-items-center rounded-[28%]"
@@ -273,7 +286,7 @@ function Grid({ career, glow, badges, onOpen, onClose, installed, isNew }: {
       {next ? <NextMatchWidget career={career} next={next} /> : (
         <ClubCard glow={glow} className="rounded-[20px] px-3 py-2">
           <div className="text-[9px] font-black uppercase tracking-[0.18em] text-amber-200">Season complete</div>
-          <div className="text-[11px] font-bold text-white/75">★ {formatMoney(career.money)} in the bank</div>
+          <div className="text-[11px] font-bold text-white/75">★ {formatWallet(career.money)} in the bank</div>
         </ClubCard>
       )}
       <div className="mt-3 grid grid-cols-4 gap-x-2 gap-y-2.5">
@@ -288,7 +301,7 @@ function Grid({ career, glow, badges, onOpen, onClose, installed, isNew }: {
         style={{ background: "rgba(255,255,255,.11)", backdropFilter: "blur(10px)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.18), 0 8px 20px -10px rgba(0,0,0,.8)" }}
       >
         {dock.map((a, i) => (
-          <AppIcon key={a.id} app={a} index={grid.length + i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} fresh={!!isNew?.(a.id)} />
+          <AppIcon key={a.id} app={a} index={grid.length + i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} off={!!installed && !installed(a.id)} fresh={!!isNew?.(a.id)} />
         ))}
       </div>
       {/* Back (PhoneFrame's nav bar) puts the phone down from here. */}
@@ -411,8 +424,15 @@ function fixtureLabel(f: CareerState["fixtures"][number]): { top: string; sub?: 
   if (!f.competition || f.kind === "league") return { top: `MW${f.week}` };
   const c = f.competition;
   const top = /Champions/.test(c) ? "UCL" : /Europa/.test(c) ? "UEL" : /Conference/.test(c) ? "UECL"
-    : c === "FA Cup" ? "FA Cup" : c === "League Cup" ? "Lg Cup" : c.replace(/ (Cup|Shield)$/, "").slice(0, 8);
-  const sub = [f.round?.replace("League phase", "League").replace("Round of ", "R").replace("Matchday ", "MD"), f.leg ? `L${f.leg}` : ""].filter(Boolean).join(" ");
+    : c === "FA Cup" ? "FA Cup" : c === "League Cup" ? "Lg Cup" : /Trophy/.test(c) ? "Trophy" : c.replace(/ (Cup|Shield)$/, "").slice(0, 8);
+  // Short enough for the 50 px column ("Third Qua…" was cut; sweep, 29 Oct 2026).
+  const ORD: Record<string, string> = { First: "1", Second: "2", Third: "3", Fourth: "4", Fifth: "5", Sixth: "6" };
+  const round = f.round
+    ?.replace("League phase", "League").replace("Round of ", "R").replace("Matchday ", "MD")
+    .replace(/^(First|Second|Third|Fourth|Fifth|Sixth) Qualifying( Round)?$/, (_m, o: string) => `Q${ORD[o]}`)
+    .replace(/^(First|Second|Third|Fourth|Fifth|Sixth) Round$/, (_m, o: string) => `R${ORD[o]}`)
+    .replace(/^Quarter-?[Ff]inals?$/, "QF").replace(/^Semi-?[Ff]inals?$/, "SF");
+  const sub = [round, f.leg ? `L${f.leg}` : ""].filter(Boolean).join(" ");
   return { top, sub: sub || undefined };
 }
 
@@ -429,7 +449,8 @@ function Fixtures({ career, glow }: { career: CareerState; glow: string }) {
           const date = fixtureDateLabel(career.player.startYear, career.season, f.week, f.kind, divisionOf(career));
           const us = f.home ? f.homeScore : f.awayScore, them = f.home ? f.awayScore : f.homeScore;
           const res = f.played && us !== undefined && them !== undefined ? (us > them ? "W" : us === them ? "D" : "L") : null;
-          const tone = res === "W" ? "from-emerald-400 to-emerald-600" : res === "L" ? "from-red-500 to-red-700" : "from-gray-400 to-gray-600";
+          // A draw is yellow-orange (Mikey's playtest, 24 Oct 2026: "not dark green").
+          const tone = res === "W" ? "from-emerald-400 to-emerald-600" : res === "L" ? "from-red-500 to-red-700" : "from-amber-400 to-orange-500";
           const next = i === nextIdx;
           const body = (
             <div className="flex items-center gap-2 px-2.5 py-1.5">
@@ -446,12 +467,13 @@ function Fixtures({ career, glow }: { career: CareerState; glow: string }) {
                 <span className={`flex shrink-0 items-center gap-1 rounded-md bg-gradient-to-b ${tone} px-1.5 py-[1px] text-[11px] font-black tabular-nums text-white shadow`}>
                   {us}-{them} {res}
                 </span>
-              ) : next ? <span className="shrink-0 rounded-full bg-emerald-400 px-1.5 text-[8px] font-black uppercase tracking-widest text-gray-950">Next</span> : null}
+              ) : null}
             </div>
           );
           return next ? (
             <div key={`${f.week}-${f.opponent}-${f.kind}`} ref={nextRef} data-fixture-next>
-              <ClubCard glow={glow} className="relative mx-2 mb-1 rounded-xl">{body}</ClubCard>
+              {/* The next game glows blue: no "Next" label (Mikey's playtest, 24 Oct 2026). */}
+              <div className="relative mx-2 mb-1 rounded-xl bg-sky-500/15" style={{ boxShadow: "inset 0 0 0 1.5px rgba(56,189,248,.9), 0 0 14px rgba(56,189,248,.55)" }}>{body}</div>
             </div>
           ) : (
             <div key={`${f.week}-${f.opponent}-${f.kind}`} className={`mx-2 mb-1 rounded-xl ring-1 ring-white/[0.06] ${f.played ? "bg-white/[0.05]" : "bg-white/[0.025]"}`}>{body}</div>
@@ -483,6 +505,7 @@ function Messages({ msgs, onOpen }: { msgs: Msg[]; onOpen: (to: "scout" | "spons
                   <button
                     onClick={() => onOpen(m.open!)}
                     data-msg-open={m.open}
+                    data-tour={`msg-${m.open}`}
                     className="kib-press block rounded-2xl rounded-bl-md px-3 py-1.5 text-left text-[11.5px] font-bold leading-snug text-white"
                     style={{ background: "linear-gradient(180deg, rgba(52,211,153,.32), rgba(16,185,129,.16))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px rgba(52,211,153,.4)" }}
                   >

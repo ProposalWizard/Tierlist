@@ -18,6 +18,8 @@
  *   node scripts/patch-notes/ship.mjs 0.95h --pr             also push it and open a PR to main (gh)
  *   node scripts/patch-notes/ship.mjs 0.95h --from origin/Mikey
  *   node scripts/patch-notes/ship.mjs 0.95h --update         replace an entry main already has
+ *                                                            (needs a newer "updatedAt" + an "updateNote": the archive
+ *                                                            then marks it UPDATED, moves it to the front, unread again)
  *   node scripts/patch-notes/ship.mjs 0.95h --tsc            also type-check the two files on the branch
  *   node scripts/patch-notes/ship.mjs --dry 0.95h            show what would change, write nothing
  *
@@ -93,6 +95,7 @@ export function entrySpan(text, v) {
   return [start, j];
 }
 
+const menuOf = (n) => /: (.+)$/.exec(n.title ?? "")?.[1] ?? "";
 const indent = (s, n) => s.split("\n").map((l, i) => (i === 0 ? l : " ".repeat(n) + l)).join("\n");
 
 let cleanup = () => {};
@@ -114,6 +117,25 @@ async function main() {
     if (!e) throw new Error(`v${v} is not in ${DATA} on ${FROM}.`);
     return e;
   });
+  // The team's rules (scripts/patch-notes/rules.mjs, Brain RUL-TEAM-028): author, real time,
+  // a menu name, updates with time and where, and a number nobody else has used, on ANY branch.
+  const { shipProblems, baseNumber } = await import(new URL("./rules.mjs", import.meta.url).href);
+  const others = [];
+  for (const b of ["main", "Harry", "Mikey", "Leo"]) {
+    try {
+      git(["fetch", "-q", "origin", b]);
+      const { BUILT_IN_PATCH_NOTES: ns } = await loadModule(git(["show", `origin/${b}:${DATA}`]), DATA);
+      for (const n of ns) others.push({ ...n, branch: b });
+    } catch { /* branch missing or unreadable: skip */ }
+  }
+  const problems = [];
+  for (const e of want) {
+    problems.push(...shipProblems(e, fromNotes));
+    // Another note with the same number: "0.121h" next to "0.121", or "0.121" by someone else on another branch.
+    const real = others.filter((o) => baseNumber(o.version) === baseNumber(e.version) && (o.version !== e.version || (o.author ?? menuOf(o)) !== (e.author ?? menuOf(e)) && menuOf(o) !== menuOf(e)));
+    if (real.length) problems.push(`v${e.version}: number already used by ${[...new Set(real.map((o) => `v${o.version} on ${o.branch}`))].join(", ")}. Take the next free number.`);
+  }
+  if (problems.length) throw new Error("This patch note breaks the team's rules:\n  - " + problems.join("\n  - "));
 
   const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");
   const branch = opt("--branch", `patch-notes/${stamp}-${versions.join("-").replace(/[^\w.-]/g, "")}`);
@@ -135,6 +157,13 @@ async function main() {
     const span = entrySpan(data, e.version);
     if (span) {
       if (!flag("--update")) { console.log(`  v${e.version}: already on main (use --update to replace it)`); continue; }
+      // An update must say so (Leo, 24 Oct 2026: "if u update an old patch notes then make sure its clear").
+      // The archive shows UPDATED, moves it to the front and makes it unread again only when
+      // updatedAt is newer than main's, so an update without one would be invisible.
+      const old = /"updatedAt":\s*"([^"]+)"/.exec(data.slice(span[0], span[1]))?.[1] ?? null;
+      if (!e.updatedAt || (old && Date.parse(e.updatedAt) <= Date.parse(old)) || !e.updateNote) {
+        throw new Error(`v${e.version}: an update needs "updatedAt" newer than main's (${old ?? "none"}) and a one-line "updateNote" saying what changed, in ${DATA} on ${FROM}.`);
+      }
       data = data.slice(0, span[0]) + body + data.slice(span[1]);
       replaced.push(e.version);
     } else {

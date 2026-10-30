@@ -22,6 +22,8 @@ import type { CareerState, Fixture, Playstyle } from "./types";
 import { canTakeCorners } from "./cornerReach";
 import { matchTeamStrength } from "./matchday";
 import { oldMatchFlow } from "./gameplayVersion";
+import { storyCornersOpen } from "./setPieces";
+import { mechanicOpen, aerialIntroGame } from "./mechanics";
 
 type Mode = "low" | "medium" | "high";
 
@@ -57,6 +59,11 @@ export interface MatchInputsSpec {
   context?: MatchContext;
   /** Settings → Look → Gameplay → Match flow. Absent: the player's setting. */
   matchFlow?: boolean;
+  /** false: a team-mate takes your corners whatever your kick (a new career
+   *  before Technique and Vision 70, setPieces.ts). Absent: Mikey's corner rule. */
+  cornersOpen?: boolean;
+  /** A new career's moves (mechanics.ts): headers and volleys, the run with the ball. Absent: all open. */
+  mechanics?: HiddenMatchInputs["mechanics"];
 }
 
 /** Settings → Match flow, as every tool reads it (New = true). */
@@ -80,7 +87,7 @@ export function matchInputsFor(s: MatchInputsSpec): HiddenMatchInputs {
     pace: s.skills.pace,
     freeKick: s.skills.freeKick,
     // Can your best corner reach the middle of the box? (Mikey, 20 Oct 2026)
-    canTakeCorners: canTakeCorners(kick),
+    canTakeCorners: s.cornersOpen === false ? false : canTakeCorners(kick),
     position: s.position,
     energy: s.energy,
     energyMode: s.energyMode,
@@ -94,6 +101,7 @@ export function matchInputsFor(s: MatchInputsSpec): HiddenMatchInputs {
     livePenalties: true,
     lateSub: s.lateSub,
     ...(s.addedTime && s.addedTime > 0 ? { fergie: { from: s.fullTime ?? 90, to: (s.fullTime ?? 90) + s.addedTime } } : {}),
+    ...(s.mechanics ? { mechanics: s.mechanics } : {}),
   };
 }
 
@@ -122,6 +130,12 @@ export function careerMatchSpec(
     kick,
     position,
     talisman: !!career.ownedClubs?.[career.player.club]?.talisman,
+    // A new career's corners and moves open as you go (setPieces.ts,
+    // mechanics.ts): the real match and "Sim this match" both read them here.
+    ...(storyCornersOpen(career) ? {} : { cornersOpen: false }),
+    ...(career.unlocks?.story
+      ? { mechanics: { air: mechanicOpen(career, "aerial"), airIntro: aerialIntroGame(career), dribble: mechanicOpen(career, "dribble") } }
+      : {}),
     context: {
       playstyle: playstyle ?? career.playstyle ?? "balanced",
       teamRelationship: career.relationships.team,

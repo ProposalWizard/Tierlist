@@ -39,7 +39,10 @@ const pct = (a: number, b: number) => `${((100 * a) / Math.max(1, b)).toFixed(1)
 // ── 1. Auto run and Old are untouched ──
 // Hashes taken on the code before the joystick (Harry branch at 4b46681).
 // Re-pinned 14 Oct 2026: the shared scenario data (authoredScenarios.json) changed on main; the play-on code did not.
-const OLD_FP = "b3e5b1b3", AUTO_FP = "4d69dd01";
+// Re-pinned 26 Oct 2026 (was b3e5b1b3 / 4d69dd01): every byline cross now has a
+// short option (lib/star/bylineShort.ts), one more team-mate to pass to. With it
+// switched off both hashes are the old ones, so the play-on code did not change.
+const OLD_FP = "c6c8d1e1", AUTO_FP = "de90ae5d";
 check(`Old play-on fingerprint unchanged (${playOnFingerprint(false)})`, playOnFingerprint(false) === OLD_FP);
 check(`New + Auto run play-on fingerprint unchanged (${playOnFingerprint(true)})`, playOnFingerprint(true) === AUTO_FP);
 {

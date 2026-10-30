@@ -181,7 +181,9 @@ console.log("\n5. WIDE CHANCES SIDE-ON (Settings → Look → Wide chances: New)
     ok(turned >= n * turnedAtLeast[kind], `${kind}: turned side-on ${turned}/${n} (≥ ${(turnedAtLeast[kind] * 100).toFixed(0)}%)`);
     ok(cut === 0, `${kind}: a man, post or keeper off the screen: ${cut} of ${n}`);
     ok(mean <= limits[kind], `${kind}: grass below the lowest man ${(mean * 100).toFixed(0)}% (≤ ${(limits[kind] * 100).toFixed(0)}%; upright ≈ 50–58%)`);
-    ok(shrink === 0, `${kind}: never a wider camera than upright: ${shrink}`);
+    // Every cutback is side-on now, even when side-on is the wider picture
+    // (Mikey, 26 Oct 2026: the finger position matters more).
+    ok(kind === "cutback" || shrink === 0, `${kind}: never a wider camera than upright: ${shrink}${kind === "cutback" ? " (cutbacks always side-on, allowed)" : ""}`);
   }
   // Old leaves them upright, and other kinds are never turned.
   setWideChancesOverride("old");
@@ -230,7 +232,9 @@ console.log("\n6. MATCH CAMERA NEW vs OLD: EMPTY GRASS BELOW THE LOWEST MAN ON T
       }
     }
     sumOld += m.old; sumNew += m.new;
-    if (m.new > m.old + 0.005) worse++;
+    // 1.5 points of slack: the ball's drag room (matchView.ts dragRoomCamera)
+    // can widen either camera a touch.
+    if (m.new > m.old + 0.015) worse++;
     rows.push(`${kind} ${(m.old * 100).toFixed(0)}% → ${(m.new * 100).toFixed(0)}%`);
   }
   setActionFit(null);

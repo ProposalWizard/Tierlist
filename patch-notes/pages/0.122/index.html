@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Patch notes v0.122</title>
+<style>
+:root{
+  --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+  --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+  --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+  --pill:#3ddc84;--pillink:#06170e;--r:12px;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+  --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+  --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+  --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+  --pill:#0b7a43;--pillink:#ffffff;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+.wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{padding:30px 0 4px}
+.ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 10px;letter-spacing:-.02em;text-wrap:balance}
+.by{color:var(--ink3);font-size:13px;margin:0 0 4px}
+.upd{color:var(--green);font-size:13px;margin:0 0 4px}
+.lead{color:var(--ink2);font-size:15px;margin:14px 0 0}
+h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+.ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+.ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+.ck li:last-child{border-bottom:0}
+.ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+.ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+.ck .q{font-weight:700;display:block}
+.ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+.item.alert{border-left:4px solid var(--red)}
+.ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.ih b{font-size:16px;line-height:1.3;min-width:0}
+.dt{margin:6px 0 0;color:var(--ink2);font-size:14.5px}
+.pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+.p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+.bars{margin:8px 0 2px}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+.bar .bl{grid-column:1/-1;color:var(--ink2)}
+.track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+.fill{position:absolute;left:0;height:8px;border-radius:3px}
+.fill.was{top:1px;background:var(--ink3);opacity:.55}
+.fill.now{bottom:1px;background:var(--green);opacity:.9}
+.fill.now.warn{background:var(--amber)}
+.fill.now.bad{background:var(--red)}
+.vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+.vv s{color:var(--ink3);font-weight:400;opacity:.9}
+details{background:var(--card2);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+details.nums{background:var(--card);margin-top:34px}
+details[open]{padding-bottom:12px}
+summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+details[open]>summary::before{transform:rotate(90deg)}
+details ul{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}
+details li{margin-bottom:6px}
+details li b{color:var(--ink)}
+footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <span class="ver">v0.122</span>
+  <h1>Every patch note tidied and made the same</h1>
+  <p class="by">Made by Leo &middot; 26 Oct 2026, 17:17 UK time</p>
+  
+  <p class="lead">Leo, 26 Oct. All 123 patch notes on the admin page now say who made them, when (date and time), every update with its time and what changed, their own number and a title you can read on the menu; every note opens on a page, and one set of rules checks them all from now on.</p>
+</header>
+<h2 class="nxt"><i></i>Check these</h2>
+<ul class="ck"><li><label><input type="checkbox" data-k="c0"><span><span class="q">Every note says who made it and when</span><span class="a">Admin → Patch notes: the box at the top of any note: &quot;Made by … · date, time UK time&quot;. 8 old notes had a made-up midnight time; now the real time from git.</span></span></label></li><li><label><input type="checkbox" data-k="c1"><span><span class="q">Every note lists its updates</span><span class="a">Same box → &quot;Updates (n)&quot;: each with its time, what changed (Text, Page, Title, Number) and one line. Filled in from git for all old notes.</span></span></label></li><li><label><input type="checkbox" data-k="c2"><span><span class="q">Every note has its own number</span><span class="a">9 notes shared a number with one of Harry&#39;s (0.110 and 0.110h …). They are now 0.113-0.121; the box says &quot;was v0.110&quot;. Old links, ticks and notes still work.</span></span></label></li><li><label><input type="checkbox" data-k="c3"><span><span class="q">Every note has a title you can read on the menu</span><span class="a">The menu (and the phone&#39;s pills) shows who made it and what it is about, e.g. &quot;Leo · Celebrations, smooth feed and weather&quot;. About 45 were just &quot;X&#39;s patch notes&quot;.</span></span></label></li><li><label><input type="checkbox" data-k="c4"><span><span class="q">Every note opens on a page</span><span class="a">10 notes had no page, and 3 of Leo&#39;s pages weren&#39;t linked; all now open the same way, in the standard look.</span></span></label></li></ul>
+<h2 class="chg"><i></i>Changed · Renumbered (old → new)</h2>
+<div class="item"><div class="ih"><b>Leo: 0.60 → 0.113, 0.61 → 0.115, 0.107 → 0.118, 0.108 → 0.119, 0.110 → 0.121</b></div><p class="dt">Leo&#39;s numbers were the ones Harry spotted.</p></div>
+<div class="item"><div class="ih"><b>Mikey: 0.62 → 0.114, 0.63 → 0.116, 0.103 → 0.117, 0.109 → 0.120</b></div><p class="dt">Same clash with Harry&#39;s h notes. Harry&#39;s numbers did not change.</p></div>
+<h2 class="add"><i></i>Added · So it stays this way</h2>
+<div class="item"><div class="ih"><b>One set of rules for everyone&#39;s notes</b></div><p class="dt">Brain RUL-TEAM-028; in the patch-notes skills for Harry, Mikey and Leo.</p></div>
+<div class="item"><div class="ih"><b>Checked automatically</b></div><p class="dt">A test checks all notes; shipping notes to the site refuses one with no author, a midnight time, a used number, a vague title or an update not in its list.</p></div>
+<h2 class="bug"><i></i>Known issues · Not done</h2>
+<div class="item"><div class="ih"><b>Old pages keep their own look inside</b></div><p class="dt">Every note has the same box, menu and tools; Leo&#39;s two biggest recent pages were rebuilt to Harry&#39;s standard; older pages by everyone are as they were made.</p></div>
+<details class="nums"><summary>The numbers</summary><ul><li><b>123</b> notes tidied</li><li><b>9</b> notes given their own number</li><li><b>10</b> notes given a page</li><li><b>167</b> updates listed with time and where</li></ul></details>
+<footer>Leo · site 0.122 · 26 Oct 2026 · every patch note tidied (RUL-TEAM-028)</footer>
+</div>
+<script>
+(function(){
+  var K="kib-pn-0.122-checks", s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||"{}")||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll(".ck input");
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute("data-k"); if(s[id]) b.checked=true;
+    b.addEventListener("change",function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+})();
+</script>
+</body>
+</html>

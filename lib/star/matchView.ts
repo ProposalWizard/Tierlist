@@ -23,13 +23,14 @@
  */
 import { useSyncExternalStore } from "react";
 import type { Facing, Scenario, ScenarioKind, Vec2, Viewport } from "./canvasEngine";
-import { goalInView, standOff } from "./canvasEngine";
+import { goalInView, standOff, SCENARIO_KINDS, dragForFullPower } from "./canvasEngine";
 import { wideChances } from "./wideChances";
 /** Tests and measuring scripts: force Wide chances (re-exported so they set the copy this file reads). */
 export { setWideChancesOverride } from "./wideChances";
 import { PITCH_W, NET_DEPTH, POST_L, POST_R } from "./pitch";
 import { tiltFor, visibleOnScreen, canvasToScreen } from "./cameraTilt";
 import { chanceFraming } from "./chanceFraming";
+import { MATCH_FIGURE_HEIGHT_R, MATCH_FIGURE_R_MULT } from "./fiveASide/render";
 
 export type MatchView = "new" | "classic";
 
@@ -121,15 +122,17 @@ export const NEW_KEEPER_GROW = 1.25;
  *  keeps its size (0.7 × the old 0.8 shrink = 0.56, ~5.6 px on a phone). */
 export const NEW_BALL_SCALE = 0.56;
 
-/** Headers and volleys: the men and the ball are drawn the long-range size
- *  (size B, ~22 px on a 390 × 844 phone) whatever the camera. Harry, 23 Oct 2026:
- *  "the headers and new skill still showing crazy big guys". Their own camera is
- *  27 m across (NEW_VIEW_KIND_WIDTH_M), and the Head & Volley drill's 26 m, so the
- *  men came out 1.2 to 1.45 times a long-range man. Only the pitch zooms now. */
-export const FIGURES_AT_FULL_VIEW: readonly ScenarioKind[] = ["header", "volley"];
+/** Every chance kind: the men, the keeper and the ball are drawn the long-range
+ *  size (size B, ~22 px on a 390 × 844 phone) whatever the camera. Only the pitch
+ *  zooms. Headers and volleys first (Harry, 23 Oct 2026: "the headers and new
+ *  skill still showing crazy big guys"); every other kind on 25 Oct 2026 (patch
+ *  note 0.108h's known issue: penalties, cutbacks and one-on-ones still drew men
+ *  up to ~31 px, because their camera is 27 to 30 m across, not 38). A camera
+ *  wider than 38 m never grows them. Was `["header", "volley"]`. */
+export const FIGURES_AT_FULL_VIEW: readonly ScenarioKind[] = SCENARIO_KINDS;
 /** How much smaller than the camera would draw them: `across` is the metres
  *  across the screen that the men are sized against (the chance's own camera
- *  before any Zoom). 1 for every other kind, and never bigger than 1. */
+ *  before any Zoom, or a feature's own close camera). Never bigger than 1. */
 export function figureShrinkFor(kind: ScenarioKind, across: number): number {
   if (!FIGURES_AT_FULL_VIEW.includes(kind) || !(across > 0)) return 1;
   return Math.min(1, across / NEW_VIEW_WIDTH_M);
@@ -141,6 +144,39 @@ export function figureShrinkFor(kind: ScenarioKind, across: number): number {
 let figureGrowOverride = 1;
 export function setFigureGrowOverride(g: number | null): void { figureGrowOverride = g && g > 0 ? g : 1; }
 export function figureGrow(): number { return figureGrowOverride; }
+
+/**
+ * ONE SIZE IN METRES FOR THE MEN, THE KEEPER AND THE BALL (Mikey, 26 Oct
+ * 2026, Harry agreed: "it has to be consistent throughout every camera angle,
+ * camera zoom, everything").
+ *
+ * Measured before (780 game chances, 200 real moments, 390 × 844 phone): every
+ * man was 22 px on every camera while the goal went from 84 to 236 px, so a
+ * man was 9% to 27% of the goal's width depending on the chance. The Zoom kept
+ * the men their screen size (z2) and FIGURES_AT_FULL_VIEW drew every kind at
+ * the 38 m camera's size.
+ *
+ * Now a man is FIXED_MAN_M tall on every camera, like the goal is 7.32 m: they
+ * grow and shrink with the pitch, zoomed in or out, upright or side-on. The
+ * cameras themselves are untouched. FIXED_MAN_M is the size Mikey picked from
+ * his screenshot (Leicester v Grimsby, 4-0: a build-up, 26.8 m across), about
+ * 22% of the goal's width. FIXED_FIGURES false: the old screen-size rule.
+ * Locked by tests/star/figureScale.mts.
+ */
+export const FIXED_FIGURES = true;
+/** The camera of Mikey's reference picture (a build-up), metres across. */
+export const REFERENCE_CAMERA_M = 26.8;
+/** A man's drawn height with no zoom and no shrink (2.31 m). */
+const MAN_M_UNZOOMED = MATCH_FIGURE_R_MULT * MATCH_FIGURE_HEIGHT_R * NEW_FIGURE_SCALE;
+/** A man's drawn height, metres (head to boots, as drawn): 1.63 m. */
+export const FIXED_MAN_M = MAN_M_UNZOOMED * REFERENCE_CAMERA_M / NEW_VIEW_WIDTH_M;
+/** Divide the new view's figure and ball sizes by this. `zoom` is the chance's
+ *  Zoom (playZoomOf), `shrink` its figureShrinkFor; both are ignored when the
+ *  size is fixed in metres. */
+export function figureDivFor(zoom: number, shrink: number): number {
+  if (FIXED_FIGURES) return MAN_M_UNZOOMED / FIXED_MAN_M;
+  return (playZoom() === "z2" || playZoom() === "z2max" ? zoom : 1) / shrink;
+}
 
 /** How far behind the goal line the frame starts (the net plus a little). */
 const BEHIND_GOAL_M = NET_DEPTH + 2.6;
@@ -451,7 +487,15 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, 
   // build-up stay exactly as they were.
   if (playZoom() !== "off" && facing === "up" && goalInView(sc.kind)) {
     const z = zoomToPlay(base, sc, hw);
-    const zc = playZoom() === "z2max" ? z : fitCameraToTilt(z, facing, hw, tiltDeg, framedKeyPointsOf(sc));
+    // The tilt fit also keeps ZOOM_MIN_PULL_M of grass under the ball ON THE
+    // GLASS. zoomToPlay checks that room on the flat canvas only, and the
+    // tipped-back picture pushes the bottom of the canvas off the screen: a
+    // served long-range shot (seed 4, 372 × 704) kept its 5 m flat, but 2.7 m
+    // of it fell below the glass, leaving 40 px under the ball where a
+    // full-power drag needs 62 (tests/star/match2dCam.mts). fitToPlay already
+    // checks this room on the glass; this is the same rule for the zoom.
+    const pull = { x: sc.ball.x, y: sc.ball.y + ZOOM_MIN_PULL_M };
+    const zc = playZoom() === "z2max" ? z : fitCameraToTilt(z, facing, hw, tiltDeg, [...framedKeyPointsOf(sc), pull]);
     if (playZoom() === "z2" && actionFitOn()) {
       // Match camera: New (camera round 3). Every candidate camera is held to
       // the one rule — the action wholly on the glass, nobody else cut in
@@ -501,9 +545,57 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, 
       f.playZoom = playZoom() === "z1" ? 1 : k;
     }
   }
+  // Headers: never framed tighter than AIR_MIN_ACROSS_M across (Harry, 25
+  // Oct 2026: the header "zooms in way too much, and then the players look
+  // really small. The rest are fine."). The men keep their size on screen
+  // (they are sized against the chance's own frame, not this one), so pulling
+  // the camera back shrinks the box round them, not them. Volleys are left
+  // as they were: he called the volley right, and a wider volley breaks the
+  // "people fill the screen" rule on real volleys (tests/star/emptyGrass.mts).
+  if (facing === "up" && sc.kind === "header") {
+    const w = cam.x2 - cam.x1, h = cam.y2 - cam.y1;
+    if (w > 0 && w < AIR_MIN_ACROSS_M) {
+      const mid = (cam.x1 + cam.x2) / 2;
+      // Held at the top (the goal stays where it was), wider either side, deeper below.
+      const at = (W: number, pan: number): Viewport => ({ x1: mid + pan - W / 2, x2: mid + pan + W / 2, y1: cam.y1, y2: cam.y1 + (h * W) / w });
+      let best = at(AIR_MIN_ACROSS_M, 0);
+      // Match camera: New keeps its rule (nobody cut in half by an edge): a
+      // little wider or panned until it holds, if it can.
+      if (actionFitOn() && framingFaults(sc, best, hw, tiltDeg).length) {
+        search: for (let W = AIR_MIN_ACROSS_M; W <= AIR_MIN_ACROSS_M + 8; W += 0.5) {
+          for (const pan of [0, -1, 1, -2, 2, -3, 3, -4, 4]) {
+            const c = at(W, pan);
+            if (!framingFaults(sc, c, hw, tiltDeg).length) { best = c; break search; }
+          }
+        }
+      }
+      f.playZoom = (f.playZoom ?? 1) * (w / (best.x2 - best.x1));
+      cam = best;
+    }
+  }
+  // Room to pull back: the ball a full-power drag clear of both sides
+  // (Mikey, 26 Oct 2026; the old rule only kept room below the ball).
+  // Not for a picture with no goal (a build-up, a midfield pass): there the
+  // screen IS the play area, exactly the engine's frame (tests/star/matchView.mts
+  // "the play area is not the screen"), so sliding it would move the out line.
+  if (facing === "up" && !keepPlayArea && goalInView(sc.kind)) {
+    const roomy = dragRoomCamera(cam, sc, hw, tiltDeg);
+    if (roomy !== cam) { f.playZoom = (f.playZoom ?? 1) * ((cam.x2 - cam.x1) / (roomy.x2 - roomy.x1)); cam = roomy; }
+  }
   if (!keepPlayArea) sc.viewport = playAreaFor(sc, cam, f.engineFrame);
   return cam;
 }
+
+/**
+ * The tightest a header or volley is framed: metres across (Harry, 25 Oct
+ * 2026). Measured on the live build (390 px phone, 20° tilt): the header he
+ * called too tight was 20.6 m across, the volley he called right 26.0 m; the
+ * other chances (300 served each, scripts in the aerial round) sit at a median
+ * of 22.7 (penalty), 23.8 (tight angle), 27.7 (cutback), 27.9 (long range).
+ * 25 m is between the volley he liked and the penalty, so a header now reads
+ * like the rest; before it, headers had a median of 18.1 m (p90 20.9).
+ */
+export const AIR_MIN_ACROSS_M = 25;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ZOOM TO THE PLAY — Settings → Look → "Chance framing: Zoom | Old"
@@ -850,6 +942,49 @@ export const CLEARLY_OFF_EDGE = 0.04;
  * on the screen as seen (tilt included), every `extra` wholly on or clearly
  * off. Returns what broke, in words; empty when the camera keeps its promise.
  */
+/** A full-power drag, as a share of the screen's width (the same pull the
+ *  aim reads: tests/star/match2dCam.mts). */
+export const DRAG_ROOM_SHARE = dragForFullPower(0) * 1.6;
+
+/**
+ * THE BALL NEVER SITS AGAINST A SIDE OF THE SCREEN (Mikey, 26 Oct 2026, a
+ * rule from the first playtests: "chances for yourself should not be on the
+ * edge of the screen, because you cannot drag your finger back"). Upright, the
+ * ball is kept at least a full-power drag from the left and right edges.
+ * First the camera slides sideways (same zoom); if that would cut the goal or
+ * a man in half (framingFaults), it widens a little at a time about the ball
+ * instead. Measured before on 80 chances a kind: the ball was within a drag
+ * of a side on 21% of tight angles, 18% of long shots and 10% of cutbacks.
+ */
+export function dragRoomCamera(cam: Viewport, sc: Scenario, hw: number, tiltDeg = 0): Viewport {
+  const fits = (v: Viewport) => {
+    const m = DRAG_ROOM_SHARE * (v.x2 - v.x1);
+    return sc.ball.x >= v.x1 + m - 1e-6 && sc.ball.x <= v.x2 - m + 1e-6;
+  };
+  if (fits(cam)) return cam;
+  // The slide or widen may never lose anyone the camera showed before: every
+  // man it held stays fully on (ZOOM_SIDE_M from a side), the goal too.
+  const held = framedBodiesOf(sc).filter((p) => p.x >= cam.x1 && p.x <= cam.x2);
+  const before = framingFaults(sc, cam, hw, tiltDeg).length;
+  const ok = (v: Viewport) => (!goalInView(sc.kind) || (v.x1 <= POST_L && v.x2 >= POST_R))
+    && held.every((p) => p.x >= v.x1 + ZOOM_SIDE_M && p.x <= v.x2 - ZOOM_SIDE_M)
+    && framingFaults(sc, v, hw, tiltDeg).length <= before;
+  const slide = (v: Viewport): Viewport => {
+    const w = v.x2 - v.x1, m = DRAG_ROOM_SHARE * w;
+    const dx = sc.ball.x < v.x1 + m ? sc.ball.x - (v.x1 + m) : sc.ball.x > v.x2 - m ? sc.ball.x - (v.x2 - m) : 0;
+    return { ...v, x1: v.x1 + dx, x2: v.x2 + dx };
+  };
+  const s0 = slide(cam);
+  if (ok(s0)) return s0;
+  // Wider about its top-centre, half a metre at a time, then slid again.
+  const w0 = cam.x2 - cam.x1, h0 = cam.y2 - cam.y1, cx = (cam.x1 + cam.x2) / 2;
+  for (let w = w0 + 0.5; w <= NEW_VIEW_WIDTH_M * 1.25; w += 0.5) {
+    const v = slide({ x1: cx - w / 2, x2: cx + w / 2, y1: cam.y1, y2: cam.y1 + h0 * (w / w0) });
+    if (fits(v) && ok(v)) return v;
+  }
+  return cam;
+}
+
 export function framingFaults(sc: Scenario, cam: Viewport, hw: number, tiltDeg = 0): string[] {
   const H = Math.max(NEW_VIEW_MIN_HW, hw);
   const t = tiltFor(tiltDeg, 1, H);
@@ -990,7 +1125,11 @@ export function turnsSideOn(sc: Scenario): boolean {
  */
 export function turnWideChance(sc: Scenario, restand = true, hw = NEW_VIEW_MAX_HW): boolean {
   const f = sc as Framed;
-  if (wideChances() !== "new" || !turnsSideOn(sc) || f.wideChecked) return false;
+  // Every cutback is watched side-on, whatever the Wide chances setting (Mikey,
+  // 26 Oct 2026: "it is quite uncomfortable to put your finger in that odd
+  // position"). Tight angles and penalties follow the setting.
+  const always = sc.kind === "cutback";
+  if ((wideChances() !== "new" && !always) || !turnsSideOn(sc) || f.wideChecked) return false;
   // Decided once per chance: a resize re-frames it but never flips it.
   f.wideChecked = true;
   // Turn only when side-on is the tighter picture. A cutback with runners
@@ -1000,7 +1139,7 @@ export function turnWideChance(sc: Scenario, restand = true, hw = NEW_VIEW_MAX_H
   const was = sc.facing;
   sc.facing = sideOnFacing(sc);
   const cam = sideOnCamera(sc, hw);
-  if (typeof upright === "number" && cam.y2 - cam.y1 > upright + 1e-6) { sc.facing = was; return false; }
+  if (!always && typeof upright === "number" && cam.y2 - cam.y1 > upright + 1e-6) { sc.facing = was; return false; }
   // A penalty's taker already stands back for his run-up (pitch geometry,
   // which reads the same side-on), so he is left where he is.
   if (restand) standOff(sc);

@@ -27,12 +27,250 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
-      "version": "0.110w",
-      "title": "Weekly round-up: 16 to 23 Oct, everything that reached main",
+      "version": "0.128",
+      "title": "Leo's patch notes: Weekly round-up, 23 to 30 Oct",
+      "author": "Leo",
+      "publishedAt": "2026-10-30T17:50:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "One page for the week, for Harry. 41 pull requests merged into main from Fri 23 Oct to Fri 30 Oct, plus Mikey's rounds merged straight in. The 10 new patch notes (v0.109h to v0.112h, v0.121 to v0.126) are condensed here by area; each line names the version with the full detail. Biggest changes: a new career's first hour is a story (Mikey), the 50-level Star Pass road, Power 40 made weaker, chances that follow your play style, men at 22 px on every chance kind, the Slack-style Team room, Claude working in Supabase, and every patch note made the same (with its own number). Leo's builds (celebrations, feed, weather, keeper catches, live chances) are on the site behind switches that are off by default.",
+      "stats": [
+        {
+          "value": "41",
+          "label": "pull requests merged into main this week"
+        },
+        {
+          "value": "10",
+          "label": "new patch notes this week"
+        },
+        {
+          "value": "50",
+          "label": "levels on the new Star Pass road"
+        },
+        {
+          "value": "5",
+          "label": "Leo builds on the site behind switches, off by default"
+        }
+      ],
+      "updates": [],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Start a new career: the first hour is a story",
+              "detail": "Each feature is brought in by a person after a game; moves open one at a time. v0.124."
+            },
+            {
+              "title": "Star Pass: the 50-level road and its rewards",
+              "detail": "Star Pass, then the Locker. PR #801."
+            },
+            {
+              "title": "Power 40 is weaker; chances follow your play style",
+              "detail": "Any match on a new career. v0.124."
+            },
+            {
+              "title": "Men at 22 px on every chance kind; headers and volleys redone",
+              "detail": "Any 2D chance on a phone. v0.109h."
+            },
+            {
+              "title": "Team room in Slack's layout",
+              "detail": "Admin → Team. v0.111h."
+            },
+            {
+              "title": "Cookie banner: analytics only after Accept",
+              "detail": "Open the site in a private window."
+            },
+            {
+              "title": "Every patch note has an author, a time, its own number and a page",
+              "detail": "Admin → Patch notes. Old numbers moved (0.108 is now 0.119, and others). v0.122."
+            },
+            {
+              "title": "Leo's switches: Settings → Updates (admins)",
+              "detail": "Celebrations, feed, weather, keeper catches, live chances. All off by default. v0.119, v0.121, v0.123, v0.126."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Career and Star Pass (Mikey)",
+          "items": [
+            {
+              "title": "A new career's first hour is a story",
+              "detail": "Problem: everything was open at once. Fix: a person brings in each feature after a game, moves open one at a time with a guide, set pieces are earned, the first match and the first sponsor are guided. A team-mate gives you his old boots before game 1. First contract ★35 a week in North or South. v0.124."
+            },
+            {
+              "title": "Power 40 is a starting player now",
+              "detail": "A full shot at Power 40: 79 → 66 km/h. The top (Power 100) stays 32.76 m/s, the old top. A Power curve box in the Play Area to type the speeds. v0.124."
+            },
+            {
+              "title": "Chances follow your play style and what is open",
+              "detail": "0% byline crosses on Attacking; no headers or volleys before they open. Every byline cross has a short option (300 of 300). Build-ups that end in an offside flag are not shown. A chance in every half on Medium and High. v0.124."
+            },
+            {
+              "title": "Room to pull back on every chance",
+              "detail": "Tight angles with no room 21% → 0. Every cutback is side-on. Men, keeper and ball are one size next to the goal on every camera. v0.124."
+            },
+            {
+              "title": "Star Pass: 50 levels, 16 new rewards, 4 celebrations",
+              "detail": "Every even level from 2 to 100. Golden Run-up, The Leaf free kick and Signature Boots are Star Pass only. Blender art for every box reward, tap to spin. PR #801, 28 Oct."
+            },
+            {
+              "title": "Broadcast pop-ups are the only pop-ups",
+              "detail": "The Pop-up pack setting is gone. 27 Oct."
+            },
+            {
+              "title": "One match for every tool",
+              "detail": "Corners, new-career moves and owed chances go through the shared match builder. Brain FACT-ENG-007. 27 Oct."
+            },
+            {
+              "title": "Cookie consent",
+              "detail": "Google Analytics and PostHog start only after Accept. 27 Oct."
+            },
+            {
+              "title": "Small fixes",
+              "detail": "Multiplayer draft: European winners from outside the top places now play, no crash. Player photos are found in other editions again. 27 Oct."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "The match and admin (Harry)",
+          "items": [
+            {
+              "title": "Men at 22 px on every chance kind",
+              "detail": "Was up to 31 px, 37 on a byline cross. Only the pitch zooms; goal rates unchanged. Live since 25 Oct. v0.109h."
+            },
+            {
+              "title": "Headers and volleys redone to Harry's notes",
+              "detail": "No drag-back arrow: straight to the Head it? / Volley it? screen where you tap the ball. The cross comes in once. Same in the Head & Volley drill. v0.109h."
+            },
+            {
+              "title": "Build-ups: one smooth camera glide, landing on the chance's own frame",
+              "detail": "Worst camera jump 640 → 38 px a second. v0.109h, PR #793."
+            },
+            {
+              "title": "Aerial contact moves for headers and volleys",
+              "detail": "8 aerial moves; header framing 25 m; a test page at /star-aerials-dev. PRs #794, #795."
+            },
+            {
+              "title": "Cut-scene skin at light tones",
+              "detail": "Face against neck 5.9 → 1.0. Darker tones still 4.6 to 6.6, waiting on a call. v0.109h."
+            },
+            {
+              "title": "Claude can work in Supabase, asking first",
+              "detail": "Done in the live database on 25 Oct: 2 missing tables made, the login-streak hole closed, 19 missing indexes added. One login check per request (was two). v0.110h."
+            },
+            {
+              "title": "Team room in Slack's layout",
+              "detail": "Channel list, 9 preset channels, presence, bells per channel, #bugs fills itself from bug reports. Live since 25 Oct; bots that run Claude are not built. v0.111h."
+            },
+            {
+              "title": "Marketing Studio plan",
+              "detail": "Plan only: paste a TikTok link and Claude logs it, breaks it down and builds our version. 9 build slices. Guest accounts and ad pages are on the site, switched off. v0.112h."
+            },
+            {
+              "title": "Builds and media",
+              "detail": "The next build gets 6 GB of memory (fixed the failed deploy of #810). Patch-note clips and stills squeezed: Harry's notes 82.7 → 73.8 MB. PRs #805, #808, #811, #815."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Leo's builds and patch notes",
+          "items": [
+            {
+              "title": "Celebrations, fast feed, goal videos, season end, 17 bug fixes",
+              "detail": "On the site since 24 Oct behind Leo's switch, off by default. The bicycle kick was taken out (Harry is building it). PRs #785, #787. v0.119."
+            },
+            {
+              "title": "The 7 overnight parts, behind Leo's 26 Oct switch",
+              "detail": "Nobody stands on you in a celebration (closest 0.23 → 1.60 m); 0 feed scroll hiccups at 4× slow (was 9); your goal's post always has its video (48% → 100%); weather in real matches (goals +1.6% to +2.8%). PR #798. v0.121."
+            },
+            {
+              "title": "Keeper catches and dives (Leo's switch)",
+              "detail": "16 new keeper moves; a caught ball stays in his gloves; he lands, lies a beat and gets up. Ball no longer frozen in the air (21 catches checked, 0 outside his hands). Results unchanged. PRs #810, #813, #816, #817. v0.123."
+            },
+            {
+              "title": "Overnight sanity sweep: 75 findings, 20 fixed",
+              "detail": "Money reads 1.9m not 1m; SAVED and POST on your own shots; the goal scoreboard sits low; celebrations moved to Store → Animations; can't-afford line. PR #818. v0.125."
+            },
+            {
+              "title": "Live chances (test switch, off by default)",
+              "detail": "The last pass keeps coming to you; time your strike as it arrives. 98% of open-play chances go live. Test page /star-live-chances-dev. PR #819. v0.126."
+            },
+            {
+              "title": "Every patch note made the same",
+              "detail": "123 notes tidied: author, time, updates, own number, a menu title and a page. 9 notes renumbered. One set of rules checks them all. PR #800. v0.122, Brain RUL-TEAM-028."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Still open (from this week's notes, not rechecked today)",
+          "items": [
+            {
+              "title": "Mikey's 26 Oct gameplay batch is not seen on a phone yet",
+              "detail": "A weaker Power 40 scores fewer goals; side-on cutbacks draw men up to 5% smaller. v0.124."
+            },
+            {
+              "title": "Aerial training auto-played and got stuck",
+              "detail": "v0.124."
+            },
+            {
+              "title": "Darker skin tones in cut scenes still differ",
+              "detail": "Face against neck 4.6 to 6.6. v0.109h."
+            },
+            {
+              "title": "Guest accounts not tested end to end; no downloadable database backup",
+              "detail": "v0.110h."
+            },
+            {
+              "title": "Store celebration previews don't move; shop names don't match pictures",
+              "detail": "Listed for a decision. v0.125."
+            },
+            {
+              "title": "Men stacked on one spot; wide camera cuts; 3 opponent goals in added time once",
+              "detail": "Listed for a decision. v0.125."
+            },
+            {
+              "title": "12 test files were already failing on main",
+              "detail": "Named in PR #801. Several were fixed on 27 Oct (chanceMaker, chanceJudge, identity, leadInGen, kindMix, freshness); not rechecked."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Calls for Harry",
+          "items": [
+            {
+              "title": "Keeper look: A Natural, B Broadcast or C Arcade",
+              "detail": "v0.123."
+            },
+            {
+              "title": "Store celebration previews",
+              "detail": "A moving preview needs a new animation loop, which the one-engine guard blocks. Your call. v0.125."
+            },
+            {
+              "title": "Marketing Studio plan",
+              "detail": "Answer the calls on the plan. v0.112h."
+            },
+            {
+              "title": "When Leo's switches go on for everyone",
+              "detail": "All five are off by default. v0.119, v0.121, v0.123, v0.126."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.127",
+      "title": "Leo's patch notes: Weekly round-up, 16 to 23 Oct",
       "publishedAt": "2026-10-23T16:40:00Z",
       "updatedAt": null,
       "artifactUrl": null,
-      "summary": "One page for the week, for Harry. 35 pull requests merged into main from Fri 16 Oct to Fri 23 Oct (Harry 27, Leo 8), plus Mikey's rounds merged straight in. The week's 60 patch notes (v0.57 to v0.109) are condensed here by area; each line names the version that has the full detail. Biggest changes: the whole world season is played for real, the FA Cup has its ten real rounds, the transfer window, running after a chance (B14), real headers and volleys with the new Aerial & Acrobatics skill, players back to size B, the player card on Stats, Mikey's master plan (one bottom bar, a fuller Phone), and the admin's Team room, Inbox and Marketing Studio. Leo's tonight build (v0.108) is on branch Leo and is NOT live.",
+      "summary": "One page for the week, for Harry. 35 pull requests merged into main from Fri 16 Oct to Fri 23 Oct (Harry 29, Leo 6), plus Mikey's rounds merged straight in. The week's 60 patch notes (from v0.57 on) are condensed here by area; each line names the version that has the full detail. Biggest changes: the whole world season is played for real, the FA Cup has its ten real rounds, the transfer window, running after a chance (B14), real headers and volleys with the new Aerial & Acrobatics skill, players back to size B, the player card on Stats, Mikey's master plan (one bottom bar, a fuller Phone), and the admin's Team room, Inbox and Marketing Studio. Leo's tonight build (v0.119) is on branch Leo and is NOT live.",
       "stats": [
         {
           "value": "35",
@@ -40,7 +278,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         },
         {
           "value": "60",
-          "label": "patch notes this week (v0.57 to v0.109)"
+          "label": "patch notes this week"
         },
         {
           "value": "3,792",
@@ -48,7 +286,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         },
         {
           "value": "1",
-          "label": "build not live yet: Leo's v0.108, on branch Leo"
+          "label": "build not live yet: Leo's v0.119, on branch Leo"
         }
       ],
       "sections": [
@@ -58,19 +296,19 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "items": [
             {
               "title": "Stats page: the FIFA-style card with your own 3D man",
-              "detail": "Career → Stats. v0.106h, v0.108h, v0.109."
+              "detail": "Career → Stats. v0.106h, v0.108h, v0.120."
             },
             {
               "title": "One bottom bar on every career screen, and a fuller Phone",
-              "detail": "Home, then the bar and the Phone app. v0.109."
+              "detail": "Home, then the bar and the Phone app. v0.120."
             },
             {
               "title": "League: one page for every competition, plus 🌍 All leagues",
-              "detail": "League tab. v0.62, v0.109."
+              "detail": "League tab. v0.114, v0.120."
             },
             {
               "title": "FA Cup with ten rounds",
-              "detail": "Play to the FA Cup in a lower-league career. v0.63."
+              "detail": "Play to the FA Cup in a lower-league career. v0.116."
             },
             {
               "title": "Transfer window at the end of a season",
@@ -94,7 +332,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             },
             {
               "title": "Game music switch",
-              "detail": "Settings → first card → Game music. v0.103."
+              "detail": "Settings → first card → Game music. v0.117."
             },
             {
               "title": "Admin: Team board, Inbox bell, Marketing Studio",
@@ -102,7 +340,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             },
             {
               "title": "Real Goals test page: 4,625 real goals",
-              "detail": "/star-real-goals-dev. v0.58, v0.60, v0.61."
+              "detail": "/star-real-goals-dev. v0.58, v0.113, v0.115."
             }
           ]
         },
@@ -112,11 +350,11 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "items": [
             {
               "title": "The world season: every league and cup is played for real",
-              "detail": "Problem: only your own league was played. Fix: 7 English leagues, both cups, both shields, the Champions League and the Europa League play match by match on their real dates. Promotion and relegation come from those tables. League Two beat a Premier League club in a cup 34% of the time; now 8%. v0.62."
+              "detail": "Problem: only your own league was played. Fix: 7 English leagues, both cups, both shields, the Champions League and the Europa League play match by match on their real dates. Promotion and relegation come from those tables. League Two beat a Premier League club in a cup 34% of the time; now 8%. v0.114."
             },
             {
               "title": "FA Cup: ten real rounds, each league joins at its real round",
-              "detail": "Was 6 rounds. 24 byes in the 3rd Qualifying Round, never your club. 20,029 soak matches, 0 broken states. v0.63."
+              "detail": "Was 6 rounds. 24 byes in the 3rd Qualifying Round, never your club. 20,029 soak matches, 0 broken states. v0.116."
             },
             {
               "title": "Transfer window: clubs come to you each summer",
@@ -128,15 +366,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             },
             {
               "title": "New pop-ups: Settings → Match → Pop-up pack: Classic | Broadcast",
-              "detail": "Broadcast is a goal scoreboard with a rolling score, scorer and assist, and TV captions. Default Classic. v0.63, v0.100h."
+              "detail": "Broadcast is a goal scoreboard with a rolling score, scorer and assist, and TV captions. Default Classic. v0.116, v0.100h."
             },
             {
               "title": "Game music: 11 original orchestral tracks",
-              "detail": "Off by default. Home, matches, full time and the Ballon d'Or night. 17% level in a match, 32% at home. v0.103."
+              "detail": "Off by default. Home, matches, full time and the Ballon d'Or night. 17% level in a match, 32% at home. v0.117."
             },
             {
               "title": "Mikey's master plan, steps 1 to 5",
-              "detail": "One bottom bar everywhere and a cleaner Home; Stats shows the whole card and four tabs; League is one page for every competition; the Phone holds Relationships, Squad, Fixtures & results and real messages; the phone clock shows the real day. Phone back to Home 1.9 s → 0.3 s. v0.109."
+              "detail": "One bottom bar everywhere and a cleaner Home; Stats shows the whole card and four tabs; League is one page for every competition; the Phone holds Relationships, Squad, Fixtures & results and real messages; the phone clock shows the real day. Phone back to Home 1.9 s → 0.3 s. v0.120."
             }
           ]
         },
@@ -170,7 +408,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             },
             {
               "title": "Shots miss a third less; a midweek game pays a quarter-week extra",
-              "detail": "Mikey's playtest rounds, 22 Oct. Also: a player taken off in extra time stays off. v0.109."
+              "detail": "Mikey's playtest rounds, 22 Oct. Also: a player taken off in extra time stays off. v0.120."
             }
           ]
         },
@@ -252,7 +490,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             },
             {
               "title": "Real Goals test page: 50 → 4,625 real goals",
-              "detail": "A level map with stars, the real move replayed with real names and kits, and every 2017/18 league goal of the top five leagues. Test page only; the career is unchanged. v0.58, v0.60, v0.61."
+              "detail": "A level map with stars, the real move replayed with real names and kits, and every 2017/18 league goal of the top five leagues. Test page only; the career is unchanged. v0.58, v0.113, v0.115."
             },
             {
               "title": "Visual Effects Lab (test page)",
@@ -295,16 +533,1454 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "title": "Not live yet",
           "items": [
             {
-              "title": "Leo's tonight build (v0.108) is on branch Leo",
-              "detail": "Goal celebrations from the shop, a faster social feed (1.5 s → 0.29 s on a cheap phone), Goal of the Month, bicycle kicks, Real Goals paths and 61 famous goals, a season video, a goals gallery, an awards night, 17 bug fixes. It touches the match file and the keeper. It goes live only when Leo says push. Plan: v0.107."
+              "title": "Leo's tonight build (v0.119) is on branch Leo",
+              "detail": "Goal celebrations from the shop, a faster social feed (1.5 s → 0.29 s on a cheap phone), Goal of the Month, bicycle kicks, Real Goals paths and 61 famous goals, a season video, a goals gallery, an awards night, 17 bug fixes. It touches the match file and the keeper. It goes live only when Leo says push. Plan: v0.118."
+            }
+          ]
+        }
+      ],
+      "author": "Leo",
+      "updates": []
+    },
+    {
+      "version": "0.126",
+      "title": "Leo's patch notes: Live chances (test)",
+      "author": "Leo",
+      "publishedAt": "2026-10-30T12:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "The last pass keeps coming to you: time your strike as it arrives. Early stabs it low, clean is a full shot, late gets under it; miss it or let it run past and the chance is gone. The ball's pace carries into your shot. 98% of open-play chances go live; set pieces, headers and volleys stay as they are. Own switch in Settings → Updates (off by default) and a test page with dials. Works in 2D and 3D.",
+      "stats": [
+        {
+          "value": "98%",
+          "label": "open-play chances live"
+        },
+        {
+          "value": "0.35 m",
+          "label": "clean zone either side"
+        },
+        {
+          "value": "1.8 s",
+          "label": "for the pass to reach you"
+        },
+        {
+          "value": "Off",
+          "label": "by default"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Live chances (Settings → Updates)",
+              "detail": "The build-up's last pass is still rolling when the chance becomes yours; the clock slows, more as it nears you. A ring shows where you meet it. Drag from the ring; letting go is the swing."
+            },
+            {
+              "title": "Timing decides the strike",
+              "detail": "Clean within 0.35 m. Early: struck high on the ball, up to 45% weaker, skews. Late: under it, rises, up to 30% weaker. Out of reach or never swung: chance gone."
+            },
+            {
+              "title": "The ball's pace carries in",
+              "detail": "A ball rolling across you bends your shot its way (about 9° at 60% power, less when you strike harder)."
+            },
+            {
+              "title": "2D and 3D",
+              "detail": "Works in both views. In 3D a press on the ring grabs the aim. A press on the ring is never an order to a nearby team-mate."
+            },
+            {
+              "title": "Test page /star-live-chances-dev",
+              "detail": "Every kind, with or without build-up, dials for the time to reach you, slow motion, sweet zone and reach. Shows what each swing read as. Dials never reach the game."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known / next",
+          "items": [
+            {
+              "title": "Dribbled-in chances",
+              "detail": "When you carry it in, you strike it on the dribble; a proper strike-in-stride is next if you like it."
+            },
+            {
+              "title": "Build-up-only passer",
+              "detail": "A team-mate only in the build-up leaves at the hand-over, about a second before his pass arrives."
             }
           ]
         }
       ]
     },
     {
+      "version": "0.125",
+      "title": "Leo's patch notes: Overnight sanity sweep",
+      "author": "Leo",
+      "publishedAt": "2026-10-29T14:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Five testers played the whole game overnight (match, career screens, shop/store, training, 3D/replays): 75 findings. Fixed and checked on screen: money chips read 1.9m not 1m; celebrations in Store > Animations; can't-afford line; SAVED/POST on your own shots; goal scoreboard off the goal; pop-ups don't sit over the commentary; Records season; solid league list; phone fixtures; small text fixes. Listed for a decision: store previews (Harry), shop pictures, stacked men, wide cuts, added-time goals.",
+      "stats": [
+        {
+          "value": "5",
+          "label": "testers overnight"
+        },
+        {
+          "value": "75",
+          "label": "findings"
+        },
+        {
+          "value": "20",
+          "label": "fixed and checked"
+        },
+        {
+          "value": "8",
+          "label": "need a decision"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Money reads 1.9m, not 1m",
+              "detail": "One decimal, rounded down, on every money chip."
+            },
+            {
+              "title": "Celebrations in Store > Animations",
+              "detail": "Their own section; no celebration line on accessories."
+            },
+            {
+              "title": "SAVED / POST on your own shots",
+              "detail": "A saved penalty ended in silence."
+            },
+            {
+              "title": "Goal scoreboard low on the screen",
+              "detail": "It covered the goal and keeper."
+            },
+            {
+              "title": "Pop-ups fade at the commentary",
+              "detail": "They sat over the feed lines (Mikey's pop-ups)."
+            },
+            {
+              "title": "Records season, solid league list, phone fixtures, small text",
+              "detail": "Each re-checked with a screenshot."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Needs a decision",
+          "items": [
+            {
+              "title": "Store celebration previews don't move",
+              "detail": "Needs Harry's OK (one-engine guard)."
+            },
+            {
+              "title": "Shop names don't match pictures",
+              "detail": "New pictures or new names."
+            },
+            {
+              "title": "Men stacked on one spot; wide camera cuts",
+              "detail": "Harry's area."
+            },
+            {
+              "title": "Opponent scored 3 in added time once",
+              "detail": "Suspected; needs more matches."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.124",
+      "title": "Mikey's patch notes: First hour story, power and smarter chances",
+      "author": "Mikey",
+      "publishedAt": "2026-10-26T23:45:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/PYipsSX5z6VbYPQqUoXKm2",
+      "summary": "A new career's first hour as a story (each feature brought in by a person after a game, moves opened one at a time), Power 40 clearly weaker with a Power curve test box, chances that follow your play style, a short option on every byline cross, room to pull back on every chance, one size for men next to the goal, no offside build-ups, and a tidier social feed.",
+      "stats": [
+        {
+          "value": "79 → 66 km/h",
+          "label": "Power 40 full shot"
+        },
+        {
+          "value": "0%",
+          "label": "byline crosses on Attacking"
+        },
+        {
+          "value": "300 / 300",
+          "label": "byline crosses with a short option"
+        },
+        {
+          "value": "21% → 0",
+          "label": "tight angles with no room to pull back"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Power",
+              "detail": "Play Area → Power curve; then a new career's first shots at Power 40"
+            },
+            {
+              "title": "Play style",
+              "detail": "Match → play style Attacking: no byline crosses"
+            },
+            {
+              "title": "Short option",
+              "detail": "any byline cross: a team-mate 6-10 m back"
+            },
+            {
+              "title": "Offside build-ups",
+              "detail": "no build-up ends \"Offside!\" before your touch"
+            },
+            {
+              "title": "A chance a half",
+              "detail": "Medium or High energy"
+            },
+            {
+              "title": "Moves one at a time",
+              "detail": "new career: guides on Home; no header before game 4"
+            },
+            {
+              "title": "Set pieces",
+              "detail": "new career: pens at 10 goals, FK at 60, corners at 70"
+            },
+            {
+              "title": "Sizes",
+              "detail": "men the same size next to the goal on every camera"
+            },
+            {
+              "title": "Room to pull back",
+              "detail": "the ball never against a side of the screen"
+            },
+            {
+              "title": "Cutbacks",
+              "detail": "always side-on"
+            },
+            {
+              "title": "First hour story",
+              "detail": "new career: games 1 to 3"
+            },
+            {
+              "title": "Boots gift, ★35 contract, half-price can",
+              "detail": "new career"
+            },
+            {
+              "title": "Guided first match and first sponsor",
+              "detail": "new career"
+            },
+            {
+              "title": "Coach bubble pointers",
+              "detail": "any pointer"
+            },
+            {
+              "title": "Small achievement banner",
+              "detail": "earn an achievement"
+            },
+            {
+              "title": "Training, Home, Stats, Shop, League, Phone",
+              "detail": "each screen"
+            },
+            {
+              "title": "Match labels",
+              "detail": "a team-mate's penalty; \"Rating\""
+            },
+            {
+              "title": "Social feed",
+              "detail": "Phone → Social after a match"
+            },
+            {
+              "title": "Career robot",
+              "detail": "npx tsx scripts/robot/careerRobot.mts"
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Gameplay",
+          "items": [
+            {
+              "title": "Changed: Power 40 is a starting player now",
+              "detail": "A full-power shot at Power 40 leaves the boot at 66 km/h (was 79). Power 65 now hits like the old 40. The top is unchanged. (measured)",
+              "bars": [
+                {
+                  "label": "Power 40 shot",
+                  "was": 79,
+                  "now": 66,
+                  "state": "warn",
+                  "unit": "km/h"
+                },
+                {
+                  "label": "1-on-1 goals at 40",
+                  "was": 50,
+                  "now": 44,
+                  "state": "warn",
+                  "unit": "%"
+                },
+                {
+                  "label": "Long shots at 40",
+                  "was": 27,
+                  "now": 19,
+                  "state": "warn",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "The numbers",
+                "points": [
+                  "Full-power speed off the boot, metres a second, at Power 0 / 20 / 40 / 60 / 80 / 100: now 18 / 19.5 / 21 / 23.4 / 30.6 / 32.76, before 18 / 21.6 / 25.2 / 28.8 / 32.4 / 32.76. Straight lines in between.",
+                  "Every kick uses it: shots, passes and crosses. The fully 3D games keep their own numbers.",
+                  "Goals measured with the same shooting thumb, 300 kicks each. At Power 65 to 80 scoring goes up a little, because fewer shots fly over the bar.",
+                  "Pinned by tests/star/strikePower.mts."
+                ]
+              }
+            },
+            {
+              "title": "Changed: Chances follow your play style",
+              "detail": "Attacking no longer gets byline crosses. Share of chances that are byline crosses: (measured)",
+              "more": {
+                "summary": "Why",
+                "points": [
+                  "Open-play chances came from one even deck that ignored the match: any kind, any style. A thin kind was swapped for its nearest drawing, which could be a header, so a new career saw a header in game 2.",
+                  "Now the deal carries your play style and what is open. Measured over 120 matches for each style."
+                ]
+              }
+            },
+            {
+              "title": "New: Every byline cross has a short option",
+              "detail": "A team-mate stands 6 to 10 m away, behind the ball and in space, for a cutback or a square ball. So weak power still has a play. (measured)",
+              "more": {
+                "summary": "The numbers",
+                "points": [
+                  "300 of 300 byline crosses have him, 6 to 10 m away, behind the ball (never offside), at least 2.5 m from everybody, on screen.",
+                  "A soft pass at Power and Technique 40 reaches him 300 times in 300.",
+                  "He plays it himself. He used to try a lay-off back across the box, and defenders took 24 of 44."
+                ]
+              }
+            },
+            {
+              "title": "Changed: No more build-ups that end \"Offside!\"",
+              "detail": "A build-up that ended in an offside flag before you touched the ball now tries another style. Only if every style ends offside does the chance start without one (about 1 in 300). (measured)",
+              "more": {
+                "summary": "Kept as a feature",
+                "points": [
+                  "Your own offside passes are unchanged.",
+                  "One switch brings the build-up offside calls back (BUILDUP_OFFSIDE_CALLS in buildUp.ts)."
+                ]
+              }
+            },
+            {
+              "title": "New: A chance in every half on Medium and High",
+              "detail": "If you have had no chance by 43' or 88', the ball comes to you in the final third. Not on Low, not in extra time. Halves with no chance for you: (measured)",
+              "bars": [
+                {
+                  "label": "Medium",
+                  "was": 20,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "of 600"
+                },
+                {
+                  "label": "High",
+                  "was": 19,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "of 600"
+                }
+              ],
+              "more": {
+                "summary": "The numbers",
+                "points": [
+                  "300 seeded matches of a weak side away. Chances a match: 3.4 → 3.5."
+                ]
+              }
+            },
+            {
+              "title": "New: A new career learns its moves one at a time",
+              "detail": "Each move opens with a guide on Home and a first-use line in the match. No header or volley in games 1 to 3 (0 in 1,285 chances). (measured)",
+              "more": {
+                "summary": "When each opens",
+                "points": [
+                  "Game 1: shoot (curl and chip are part of the tap), pass, play style.",
+                  "After game 3: headers and volleys. Game 4 brings one of each for certain (by 60' and 80'). The Aerial drill opens with them.",
+                  "Pace 60: steer your run (auto run before). Pace 65: sprint and the stamina bar.",
+                  "After game 4: moving with the ball.",
+                  "Built with guides but switched off for now: power shot (Power 60), knuckleball (Power 70 + Technique 60), skill moves (Technique 65), one-twos (Vision 60).",
+                  "Saves from before this keep everything."
+                ]
+              }
+            },
+            {
+              "title": "Changed: Set pieces are earned on a new career",
+              "detail": "Penalties at 10 goals, free kicks at Technique and Vision 60, corners at 70. A team-mate takes them until then. (not yet seen)"
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Camera and sizes",
+          "items": [
+            {
+              "title": "Changed: Men, keeper and ball are one size next to the goal on every camera",
+              "detail": "A man is 1.63 m tall everywhere: 22.2% of the goal's width (was 9% to 27%, by camera). The size of your 4-0 build-up screenshot. Cameras themselves are unchanged. (seen)"
+            },
+            {
+              "title": "Changed: Room to pull back: the ball a full drag from both sides",
+              "detail": "The camera slides, or widens a little, so you can always drag to full power. It never loses the goal or anyone it showed. (measured)",
+              "bars": [
+                {
+                  "label": "Tight angles",
+                  "was": 21,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Long shots",
+                  "was": 18,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Cutbacks",
+                  "was": 10,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "The numbers",
+                "points": [
+                  "Share of chances with the ball within a full drag of a side. Now 0 of 1,600 upright chances, both framings, flat and tilted."
+                ]
+              }
+            },
+            {
+              "title": "Changed: Every cutback is side-on",
+              "detail": "Whatever the Wide chances setting says. (measured)"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "A new career's first hour",
+          "items": [
+            {
+              "title": "New: The first hour is a story: a person brings in each feature after a game",
+              "detail": "A new career opens with Home, League and Play only. Old saves keep everything. (seen)",
+              "more": {
+                "summary": "The steps",
+                "points": [
+                  "After game 1: training day, two drills (Power and Technique), at normal energy.",
+                  "After game 2: the physio gives a can; a team-mate gives you his cracked phone (Messages, Fixtures, Squad, Relationships, Social). The agent texts first.",
+                  "After game 3: the chairman opens the Shop (pointer on cans, then boots).",
+                  "Star level 2: a pointer at the Star Pass.",
+                  "First goal: Stats and Achievements open."
+                ]
+              }
+            },
+            {
+              "title": "New: A team-mate gives you his old boots before game 1",
+              "detail": "NS-Pure, 5 games left, Power +5 and Technique +5. New careers start with no boots and no cans. (seen)"
+            },
+            {
+              "title": "Changed: First contract: ★35 a week, North or South",
+              "detail": "The trial always places you in National League North or South (50/50). Sign only: no Negotiate, no other clubs. (seen)"
+            },
+            {
+              "title": "Changed: The club shop's first KIB can is half price",
+              "detail": "One week's wage. (seen)"
+            },
+            {
+              "title": "New: The first sponsor offer is guided",
+              "detail": "The agent's message, then the phone, Messages, the offer, with a pointer at each. (seen)"
+            },
+            {
+              "title": "New: The first match is guided",
+              "detail": "Energy (Low / Medium / High), play style and speed. First chance: \"drag back … then let go\". Strike screen: \"tap the part of the ball\". First header: two short lines. A new save starts at normal speed. (seen)"
+            },
+            {
+              "title": "Changed: The trial waits for you",
+              "detail": "The shootout's team-mates wait until you have read how it works. \"A scout has spotted you\" waits for your tap. The pass stage says the red shirts are marking. (seen)"
+            },
+            {
+              "title": "Fixed: Full rest before game 2",
+              "detail": "No low-energy warning before the physio's can. (seen)"
+            },
+            {
+              "title": "Fixed: Nothing pops up over the Star Pass",
+              "detail": "The first-goal pop-up and the set-piece chat wait until it shuts. Lines that said \"Saturday\" or \"tomorrow\" on other days now say \"next game\" or \"now\". (seen)"
+            },
+            {
+              "title": "Fixed: The welcome tour no longer comes back after game 1",
+              "detail": "Pressing Play on its last step marks it done. The first-match tour holds the match, so the first chance waits, and it reaches its speed step. (seen)"
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Screens and UI",
+          "items": [
+            {
+              "title": "Changed: Pointers are a coach bubble",
+              "detail": "White, with a 🧢 and a tail pointing at the button. Grey Later and Skip, green Next. Your pick, option C. (seen)"
+            },
+            {
+              "title": "Changed: Achievements and records are a small banner",
+              "detail": "At the top for about 3 s, nothing to close (was a full pop-up). (seen)"
+            },
+            {
+              "title": "Changed: Training trimmed",
+              "detail": "The drill card shows the skill's name, its steps and the stars. Stars stay up 3 s (was 1.4). No Back during the story's two drills. (seen)"
+            },
+            {
+              "title": "Changed: Home tidied",
+              "detail": "The Stats and Shop hints at the bottom are words (swipe; a tap does nothing). Your numbers are always in the top row; the Sides | Top switch is gone. (seen)"
+            },
+            {
+              "title": "Changed: Stats: a smaller card",
+              "detail": "7% smaller, the four tabs match its height, no Save image, Your bests folds. (seen)"
+            },
+            {
+              "title": "Changed: Shop: tabs on the main bar, 5 items a screen",
+              "detail": "Shop · For You · 3D · Boots · Sponsors sit straight on top of the bottom bar. Opens on 5 a screen for everyone (was 3). Sponsors stay locked until your first offer. (seen)"
+            },
+            {
+              "title": "New: League: scorers for every cup and international",
+              "detail": "Goals and Assists for the FA Cup, League Cup, both shields and every international competition. The shields get Final · Goals · Assists · History. (seen)"
+            },
+            {
+              "title": "Changed: Phone tidied",
+              "detail": "Relationships opens inside the phone with one general line. Fixtures: a draw is yellow-orange, the next game glows blue. The badge no longer counts Social posts the cracked phone cannot open. Match reactions wait for the phone. (seen)"
+            },
+            {
+              "title": "Changed: Match labels",
+              "detail": "\"Avg Rat\" reads \"Rating\". Your team's build-up lines are in your kit colour. A team-mate's penalty or free-kick taker: his name about twice the size (at least 15 px), no keeper name. \"Someone else steps up\" is in your kit colour. (not yet seen)"
+            },
+            {
+              "title": "Fixed: Boss talk keeps all three answers on screen",
+              "detail": "And the Technique drill hint is shorter and clear of the ? button. (seen)"
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Social feed",
+          "items": [
+            {
+              "title": "Changed: Highlights land in a random place",
+              "detail": "3rd to 6th in the feed (were always the top two). Still on the first screen. (measured)"
+            },
+            {
+              "title": "Fixed: No more repeated posts",
+              "detail": "At most one poll a match, and one post of each graphic. Fan posts may share a kind, never the same words. (measured)"
+            },
+            {
+              "title": "Fixed: A missed Panenka is yours only when you took it",
+              "detail": "A team-mate's miss was written up as yours and cost you reputation. (measured)",
+              "more": {
+                "summary": "How it was checked",
+                "points": [
+                  "tests/star/media.mts plays three 20-week seasons and checks every match's feed."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Lag and saves",
+          "items": [
+            {
+              "title": "Fixed: The Hall of Fame copy of a save is back under its limit",
+              "detail": "114 KB (limit 120 KB). League History (about 1.3 KB a season) is left out of that copy. (measured)"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Test tools",
+          "items": [
+            {
+              "title": "New: Play Area → Power curve",
+              "detail": "Type the full-power speed at each Power level, press Use these, then play Infinite Match with the Power slider. Back to the game's, Fill in Before, Copy numbers. This device only, careers on it included. (seen)"
+            },
+            {
+              "title": "New: Career robot",
+              "detail": "Plays a 20-season average-player career in about 6 s and reports each season: club, league, goals, assists, Star Pass, money, and anything that broke. (measured)"
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "The 26 Oct gameplay batch is not seen on a phone yet",
+              "detail": "Power, play style, short option, room to pull back, cutbacks, offside build-ups, match labels and social. Measured in tests; the Power curve box was seen at phone size.",
+              "pill": {
+                "text": "low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Weaker Power 40 scores fewer goals",
+              "detail": "One-on-ones 50% → 44% and long shots 27% → 19% at Power 40. Judge it in play with the Power curve box.",
+              "pill": {
+                "text": "low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Side-on cutbacks draw the men up to 5% smaller",
+              "detail": "The camera widens a little to keep room to pull back, and men are a fixed size in metres.",
+              "pill": {
+                "text": "low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Aerial training auto-played and got stuck",
+              "detail": "From the 26 Oct playtest. Not fixed in this version.",
+              "pill": {
+                "text": "high",
+                "tone": "red"
+              }
+            },
+            {
+              "title": "Other points from the 26 Oct playtest",
+              "detail": "Header timing too quick, tutorial slow to load, no Settings guide, boots should show their stats, free-kick line green, first-goal pointer pressed a button instead of a swipe, the can purchase guide, too much too soon. The start of a career and unlock pacing are being built in a separate chat.",
+              "pill": {
+                "text": "low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "12 test files were already failing before this version",
+              "detail": "None got worse in this version (checked line by line).",
+              "pill": {
+                "text": "low",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "The start of a career and unlock pacing",
+              "detail": "Being built in a separate chat."
+            },
+            {
+              "title": "Pick the final power numbers",
+              "detail": "After playing the Power curve box."
+            },
+            {
+              "title": "Switch on the last four moves",
+              "detail": "Power shot, knuckleball, skill moves, one-twos: built, off for now."
+            },
+            {
+              "title": "Star Pass reward ladder",
+              "detail": "Proposal still to come."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+    {
+      "version": "0.123",
+      "title": "Leo's patch notes: Keeper catches, dives and the ball",
+      "author": "Leo",
+      "publishedAt": "2026-10-26T22:08:00Z",
+      "updatedAt": "2026-10-28T18:44:09Z",
+      "updateNote": "Corrected: when a save stops play, the ball now goes into his hands and stays there (the last build flew it away, which was wrong). Checked: 21 real catches, 0 frames outside his hands, 0 frozen in the air. Page edited.",
+      "artifactUrl": null,
+      "summary": "Leo, 26 Oct, updated 27 Oct. In the game behind Leo's switch (off by default), filmed: the keeper dives in time (his gloves meet the ball), a caught ball goes into his gloves and moves with him, he lands on the grass, lies a beat and gets up. 16 new keeper moves, 11-19 drawings each. Real catches filmed (ball held in his gloves). Three looks to pick from: A Natural, B Broadcast (slow motion at the save), C Arcade (quicker, longer dive). Results unchanged; behind Leo's switch.",
+      "stats": [
+        {
+          "value": "16",
+          "label": "new keeper moves"
+        },
+        {
+          "value": "11-19",
+          "label": "drawings per move (was 4-6)"
+        },
+        {
+          "value": "3",
+          "label": "looks to pick from"
+        },
+        {
+          "value": "3.4 s",
+          "label": "hold after a diving save (was 1.8 s)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "known",
+          "title": "Before: what was wrong",
+          "items": [
+            {
+              "title": "A caught ball stopped in the air where it met him",
+              "detail": "He slid to it in one dive pose and lay still; the ball sat on his middle."
+            },
+            {
+              "title": "On a dive the ball went before he did",
+              "detail": "The push happened while he was still standing."
+            },
+            {
+              "title": "3D: a second dive at nothing",
+              "detail": "Not fixed yet (2D first)."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Built and filmed",
+          "items": [
+            {
+              "title": "The dive starts in time",
+              "detail": "Timed from the shot with the match's own drag and grass friction; his gloves meet the ball. First takes dived up to 1 s early on long or rolling shots; fixed and refilmed."
+            },
+            {
+              "title": "Ball in his gloves; land; get up",
+              "detail": "On a catch the ball moves with his gloves; on a palm away it flies off as the match sends it. Lands, lies 0.45 s, gets up."
+            },
+            {
+              "title": "16 new keeper moves",
+              "detail": "Diving catch high and low, palm away, chest and feet catches, get up with or without the ball, hold. Checked: no body part through another, sizes unchanged."
+            },
+            {
+              "title": "Results unchanged",
+              "detail": "Picture only; match tests pass as before."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Your call",
+          "items": [
+            {
+              "title": "Pick a look: A Natural, B Broadcast or C Arcade"
+            },
+            {
+              "title": "Then: 3D view and goal videos"
+            }
+          ]
+        }
+      ],
+      "updates": [
+        {
+          "at": "2026-10-27T01:57:38Z",
+          "where": "Title, Text, Page",
+          "note": "Built and filmed: the AFTER is on the page. Three looks (A Natural, B Broadcast, C Arcade), each a real save filmed frame by frame; pick one. A real catch is still filming. Page edited."
+        },
+        {
+          "at": "2026-10-27T02:26:32Z",
+          "where": "Text, Page",
+          "note": "A real catch added, filmed in all three looks: the ball goes into his gloves and he stands up holding it. A diving catch is still being filmed. Page edited."
+        },
+        {
+          "at": "2026-10-27T03:03:13Z",
+          "where": "Text, Page",
+          "note": "A real diving catch filmed (look A): the ball goes into his gloves and stays there as he lands, lies and gets up. B and C are being filmed. Page edited."
+        },
+        {
+          "at": "2026-10-27T12:52:40Z",
+          "where": "Text, Page",
+          "note": "Diving catches filmed in all three looks: the ball stays in his gloves as he lands, lies and gets up. Two faults found on film and fixed: the match cut away while he lay down, and Broadcast's slow motion never ended after a catch. Page edited."
+        },
+        {
+          "at": "2026-10-27T19:19:43Z",
+          "where": "Text, Page",
+          "note": "In the game: merged on Leo's go, behind his switch and off by default (Settings → Updates → Leo's update → Keeper catches and dives). All three looks are buttons on the card to try; A is the default. Page edited."
+        },
+        {
+          "at": "2026-10-28T12:08:05Z",
+          "where": "Text, Page",
+          "note": "Fixed after Leo's playtest: a caught ball no longer stays frozen in the air. Every catch the match reports now goes into his hands (claimed crosses, a palm then a smother, early balls, drawings still loading), drawn once, flash at his gloves; 3D too. Checked: 31 real catches over 992 shots, 0 frames loose. Page edited."
+        },
+        {
+          "at": "2026-10-28T17:05:54Z",
+          "where": "Text, Page",
+          "note": "Fixed after Leo's second playtest: a ball left frozen in the air when a save or miss ends the chance now carries on out of play (checker: 5 frozen with the fix off, 0 with it on); side-on camera: the keeper faces the camera on his feet; net effect round the ball off for now; celebrations moved to Store, Animations. Page edited."
+        },
+        {
+          "at": "2026-10-28T18:44:09Z",
+          "where": "Text, Page",
+          "note": "Corrected: when a save stops play, the ball now goes into his hands and stays there (the last build flew it away, which was wrong). Checked: 21 real catches, 0 frames outside his hands, 0 frozen in the air. Page edited."
+        }
+      ]
+    },
+    {
+      "version": "0.122",
+      "title": "Leo's patch notes: Every patch note tidied and made the same",
+      "author": "Leo",
+      "publishedAt": "2026-10-26T17:17:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Leo, 26 Oct. All 123 patch notes on the admin page now say who made them, when (date and time), every update with its time and what changed, their own number and a title you can read on the menu; every note opens on a page, and one set of rules checks them all from now on.",
+      "stats": [
+        {
+          "value": "123",
+          "label": "notes tidied"
+        },
+        {
+          "value": "9",
+          "label": "notes given their own number"
+        },
+        {
+          "value": "10",
+          "label": "notes given a page"
+        },
+        {
+          "value": "167",
+          "label": "updates listed with time and where"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "fixed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Every note says who made it and when",
+              "detail": "Admin → Patch notes: the box at the top of any note: \"Made by … · date, time UK time\". 8 old notes had a made-up midnight time; now the real time from git."
+            },
+            {
+              "title": "Every note lists its updates",
+              "detail": "Same box → \"Updates (n)\": each with its time, what changed (Text, Page, Title, Number) and one line. Filled in from git for all old notes."
+            },
+            {
+              "title": "Every note has its own number",
+              "detail": "9 notes shared a number with one of Harry's (0.110 and 0.110h …). They are now 0.113-0.121; the box says \"was v0.110\". Old links, ticks and notes still work."
+            },
+            {
+              "title": "Every note has a title you can read on the menu",
+              "detail": "The menu (and the phone's pills) shows who made it and what it is about, e.g. \"Leo · Celebrations, smooth feed and weather\". About 45 were just \"X's patch notes\"."
+            },
+            {
+              "title": "Every note opens on a page",
+              "detail": "10 notes had no page, and 3 of Leo's pages weren't linked; all now open the same way, in the standard look."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Renumbered (old → new)",
+          "items": [
+            {
+              "title": "Leo: 0.60 → 0.113, 0.61 → 0.115, 0.107 → 0.118, 0.108 → 0.119, 0.110 → 0.121",
+              "detail": "Leo's numbers were the ones Harry spotted."
+            },
+            {
+              "title": "Mikey: 0.62 → 0.114, 0.63 → 0.116, 0.103 → 0.117, 0.109 → 0.120",
+              "detail": "Same clash with Harry's h notes. Harry's numbers did not change."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "So it stays this way",
+          "items": [
+            {
+              "title": "One set of rules for everyone's notes",
+              "detail": "Brain RUL-TEAM-028; in the patch-notes skills for Harry, Mikey and Leo."
+            },
+            {
+              "title": "Checked automatically",
+              "detail": "A test checks all notes; shipping notes to the site refuses one with no author, a midnight time, a used number, a vague title or an update not in its list."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Not done",
+          "items": [
+            {
+              "title": "Old pages keep their own look inside",
+              "detail": "Every note has the same box, menu and tools; Leo's two biggest recent pages were rebuilt to Harry's standard; older pages by everyone are as they were made."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.121",
+      "title": "Leo's patch notes: Celebrations, smooth feed and weather",
+      "author": "Leo",
+      "publishedAt": "2026-10-25T12:40:00Z",
+      "updatedAt": "2026-10-26T03:42:00Z",
+      "updateNote": "All 7 parts are now on the live site, switched off for everyone: admins turn them on in Settings → Updates → \"Leo's 26 Oct update\" (was the 24 Oct card), one switch per part; weather is new.",
+      "artifactUrl": "https://claude.ai/artifact/4aeZs72kiGCS7r4xMgBg2A",
+      "summary": "Leo, 25 Oct. 7 chats. On the live site since 26 Oct behind Settings → Updates → \"Leo's 26 Oct update\" (admins, off by default, one switch per part). 1 Celebrations: nobody stands on you (closest 0.23 m → 1.60 m), 15 goals checked by eye. 2 Feed: 0 scroll hiccups at 4× slow (was 9); your goal's post always has its video (48% → 100%). 3 Filming: 0 repeated frames in clips (was 14-17%). 4 Weather in real matches, its own toggle; goals +1.6% to +2.8%. 5 Real Goals: 35 levels on a slow phone, 2 bugs fixed, a plan for players. 6 End of season: silent cheers fixed, season video sound fixed, white screen not seen in 10 runs. 7 Bug hunt: 13 found, 4 fixed. Big-moment banner: removed (part 1). Late start: jobs reached the chats at 12:28 UTC.",
+      "stats": [
+        {
+          "value": "7",
+          "label": "parts on the site, behind the switch"
+        },
+        {
+          "value": "0",
+          "label": "repeated frames in new clips (was 14-17%)"
+        },
+        {
+          "value": "0",
+          "label": "scroll hiccups at 4× slow (was 9)"
+        },
+        {
+          "value": "13 / 4",
+          "label": "bugs found / fixed"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "fixed",
+          "title": "On the site, behind Leo's 26 Oct switch",
+          "items": [
+            {
+              "title": "1 · Celebrations: nobody on top of you",
+              "detail": "Anyone near your run steps aside, live and in goal videos. Closest anyone gets: 0.23 m → 1.60 m (14 real recordings, measured). 15 goals checked by eye: right move, nearer corner, skip works."
+            },
+            {
+              "title": "2 · Smooth social feed",
+              "detail": "Phone 4× slow: 9 hiccups → 0 (worst 0.20 → 0.06 s). 6× slow: 39 → 0-6. Your goal's post has its video 48% → 100%; plays in about 0.1 s."
+            },
+            {
+              "title": "3 · Clips that look like the game (filming only)",
+              "detail": "Frame-by-frame recorder with sound: repeated frames 14-17% → 0. No game code."
+            },
+            {
+              "title": "4 · Weather in real matches (new toggle)",
+              "detail": "Rain, wind, pitch from the match date, on the team sheet and drawn in the match. Goals +1.6% to +2.8%, passes +0.5% (1,500 matches). Off = no change. Your and Harry's call."
+            },
+            {
+              "title": "5 · Real Goals ready for players (test page)",
+              "detail": "35 levels on a slow phone, 0 errors; fixed a stuck FULL TIME card and white stars on a miss; a plan for putting it in the game."
+            },
+            {
+              "title": "6 · End of season",
+              "detail": "Awards-night cheers were silent (fixed); season video sound fixed (measured); white screen not seen in 10 runs; awards night ~30% lighter."
+            },
+            {
+              "title": "7 · Bug hunt round 2",
+              "detail": "2 seasons on, 1 off, 10 refreshes: 13 found, 4 fixed (talks back button, goal card wording, Escape, signing-scene manager name)."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Your calls",
+          "items": [
+            {
+              "title": "Big-moment banner",
+              "detail": "None, as you said: removed on the celebrations branch (part 1); heartbeat, crowd and slow motion stay. Seen: no banner."
+            },
+            {
+              "title": "Ideas, not built",
+              "detail": "Team-mates run to you when you celebrate; a longer run for long-range goals; simpler posts for the slowest phones; a louder awards night."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Not checked",
+          "items": [
+            {
+              "title": "Real phone, ears",
+              "detail": "Nothing tried on a real phone; sound measured, not heard. The 3D celebration was not seen: 3D draws on the test machine but very slowly; a whole run from kick-off took 6 real shots in 18 minutes and none went in. Check it on a phone (score once with the 3D view on)."
+            },
+            {
+              "title": "For Harry and Mikey (findings, no to-dos)",
+              "detail": "Harry: 0.101h notes wording fails the realGoals test; daily goal camera; mid-match refresh; 3D contexts; Ballon d'Or silent cheers. Mikey: Star Pass pop-up can't close; talks wage changes between visits."
+            }
+          ]
+        }
+      ],
+      "updates": [
+        { "at": "2026-10-25T17:04:18Z", "where": "Title, Text, Page", "note": "Results are in: all 7 jobs done and checked (clips watched, numbers checked). Nothing is in the game yet; reply with the part numbers you want. Page edited." },
+        { "at": "2026-10-26T01:46:44Z", "where": "Text, Page", "note": "Big-moment banner removed, as you asked (heartbeat, crowd and slow motion stay); it is part of 1 · Celebrations. Page edited." },
+        { "at": "2026-10-26T02:37:19Z", "where": "Text, Page", "note": "1 · Celebrations: the 3D celebration was tried again and not seen (no goal in 6 real shots in 3D); check it on a phone. Banner removed as before. Page edited." },
+        { "at": "2026-10-26T03:43:35Z", "where": "Title, Text, Page", "note": "All 7 parts are now on the live site, switched off for everyone: admins turn them on in Settings → Updates → \"Leo's 26 Oct update\" (was the 24 Oct card), one switch per part; weather is new. Page edited." },
+        { "at": "2026-10-26T17:04:00Z", "where": "Number, Title", "note": "Tidied 26 Oct: number 0.110 → 0.121 (it shared a number with Harry's 0.110h); title gives what it is about." }
+      ]
+    },
+    {
+      "version": "0.112h",
+      "title": "Harry's patch notes: Marketing Studio Plan",
+      "author": "Harry",
+      "publishedAt": "2026-10-25T06:30:00Z",
+      "updatedAt": "2026-10-25T16:20:00Z",
+      "updateNote": "Still a plan. The guest account and ad pages from 0.110h now exist on the site, switched off.",
+      "artifactUrl": null,
+      "summary": "Plan only, nothing built. What the Marketing tab has today (Board, Client, Studio, Uploads; Calendar, Scripts, Statics and a card page not built) and the plan for Mikey: paste a TikTok link and Claude logs it, breaks it down, writes our version and builds the video. A link in #marketing or the tab's paste box makes the same card; each card's updates post into one #marketing thread. Nine build slices, smallest first. Guest accounts and ad landing pages now belong in the Marketing studio, with their switch-on list (Turnstile first); they are on the site now, switched off.",
+      "stats": [
+        {
+          "value": "4 of 7",
+          "label": "Marketing views built"
+        },
+        {
+          "value": "0",
+          "label": "links that start work on their own today"
+        },
+        {
+          "value": "9",
+          "label": "build slices, smallest first"
+        },
+        {
+          "value": "Plan",
+          "label": "nothing built or changed"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Read the plan",
+              "detail": "Admin → Patch notes → 0.112h: today, the link-to-video flow, the board and #marketing mock-ups, the slices."
+            },
+            {
+              "title": "Answer the calls",
+              "detail": "Bottom of the page: your calls."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Plan: Marketing studio",
+          "items": [
+            {
+              "title": "Paste a link, get a card",
+              "detail": "A TikTok, Reels or Shorts link in #marketing or the paste box makes a card with its picture in seconds (slice 1)."
+            },
+            {
+              "title": "Claude picks up new links",
+              "detail": "A breakdown within the hour, then our script, then the video builds itself after Script OK (slices 3 and 4)."
+            },
+            {
+              "title": "Done in the Studio wakes Claude",
+              "detail": "Today Done and Lock & render wait until someone opens a chat (slice 5)."
+            },
+            {
+              "title": "Calendar, library and learnings, statics",
+              "detail": "Later slices."
+            },
+            {
+              "title": "Guest accounts and ad pages belong here",
+              "detail": "Each ad is a campaign made in the studio. Switch-on list: Turnstile first, then the Supabase secret, the guest SQL and settings, then the Vercel switch."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues today",
+          "items": [
+            {
+              "title": "Uploads and Studio read an old copy of the board",
+              "pill": {
+                "text": "bug",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "The site cannot wake Claude",
+              "detail": "Done and Lock & render wait for a chat."
+            },
+            {
+              "title": "Uploads do not resume",
+              "detail": "A dropped signal on a big file starts again from zero."
+            }
+          ]
+        }
+      ],
+      "updates": [
+        { "at": "2026-10-25T16:12:52Z", "where": "Text, Page", "note": "Still a plan. The guest account and ad pages from 0.110h now exist on the site, switched off. Page edited." }
+      ]
+    },
+    {
+      "version": "0.111h",
+      "title": "Harry's patch notes: Team Room, The Slack-Style Plan",
+      "author": "Harry",
+      "publishedAt": "2026-10-25T06:20:00Z",
+      "updatedAt": "2026-10-25T16:20:00Z",
+      "updateNote": "Now live: the Slack-style Team room in Admin → Team (channel list, 9 presets, presence and status, schedules, bells and pop-ups, #bugs fills itself). Bots that run Claude are not built yet.",
+      "artifactUrl": null,
+      "summary": "Live in Admin → Team since 25 Oct, about 16:10 UK: channel list with a home button and « to fold it, 9 preset channels, presence and status, schedules, bells per channel with desktop pop-ups, and #bugs fills itself from bug reports as Bug bot cards. Bots that run Claude are not built yet; the rest below is the plan. The Team room in Slack's layout with our colours: channel list, chat, thread; the list folds with « or Cmd/Ctrl Shift D, 220 px wide; a home button instead of the admin menu. The board's sections become 9 preset channels. Bots sit in the list like people with a BOT tag and a live job line. Notifications per channel (every message, mentions, off) plus computer pop-ups. #bugs posts a Bug bot card for each report; #health posts every morning. #connectors lets you @ any service; /show lists every connection. Draw a box on a page and tag a bot. Each person's bot checks its own connections. Schedules in your status, #today check-ins and gentle nudges. Build order and questions for the team.",
+      "stats": [
+        {
+          "value": "9",
+          "label": "preset channels"
+        },
+        {
+          "value": "220 px",
+          "label": "channel list, folds away"
+        },
+        {
+          "value": "14 + 3",
+          "label": "usage cards + running the team"
+        },
+        {
+          "value": "Live",
+          "label": "Admin → Team; Claude bots not built"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The whole screen (U0)",
+              "detail": "Tap « on the mock to fold the list."
+            },
+            {
+              "title": "The usage cards",
+              "detail": "U1 to U14: chat, #todo, #ideas, #bugs, #health, #patch-notes, #connectors, bots, approvals, drawn boxes, DMs, notifications, search, new channels."
+            },
+            {
+              "title": "Your calls",
+              "detail": "Bottom of the page: questions for the team."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Plan: the Team room UI",
+          "items": [
+            {
+              "title": "Slack's layout, our colours",
+              "detail": "List, chat, thread. The list folds with « or Cmd/Ctrl Shift D. One home button instead of the admin menu."
+            },
+            {
+              "title": "Channels instead of sections",
+              "detail": "Ideas, to-do, bugs, health, patch notes and more as 9 preset channels; you can add more."
+            },
+            {
+              "title": "Bots as members",
+              "detail": "A BOT tag and a live line of what each bot is doing."
+            },
+            {
+              "title": "Notifications per channel",
+              "detail": "Every message, only mentions, or off; plus pop-ups on the computer."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Plan: bots and channels",
+          "items": [
+            {
+              "title": "#bugs fills itself",
+              "detail": "A player's report posts as a Bug bot card with Hand to… and Mark fixed."
+            },
+            {
+              "title": "#health",
+              "detail": "A morning post and a weekly post."
+            },
+            {
+              "title": "#connectors and /show",
+              "detail": "@ any service; /show lists every connection for every person."
+            },
+            {
+              "title": "Draw a box, tag a bot",
+              "detail": "A box drawn on a page goes to a bot with the picture."
+            },
+            {
+              "title": "Each person's connections",
+              "detail": "@me lists what your own bot is connected to."
+            },
+            {
+              "title": "Schedules, #today and nudges",
+              "detail": "Repeating statuses, morning and evening check-ins, gentle nudges."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Build order",
+              "detail": "The list first, then messages, status, notifications, #todo, phone tabs, search, bots, channel kinds, #today."
+            }
+          ]
+        }
+      ],
+      "updates": [
+        { "at": "2026-10-25T16:12:52Z", "where": "Text, Page", "note": "Now live: the Slack-style Team room in Admin → Team (channel list, 9 presets, presence and status, schedules, bells and pop-ups, #bugs fills itself). Bots that run Claude are not built yet. Page edited." }
+      ]
+    },
+    {
+      "version": "0.110h",
+      "title": "Harry's patch notes: Supabase And Cloudflare",
+      "author": "Harry",
+      "publishedAt": "2026-10-25T06:10:00Z",
+      "updatedAt": "2026-10-25T16:20:00Z",
+      "updateNote": "Now live: one login check per request and the Team room tables. Guest accounts and ad pages are on the site but switched off (guest SQL not run). 19 indexes done; the rest of the tidy waits on your yes.",
+      "artifactUrl": null,
+      "summary": "Claude can now see and work in Supabase: look-only by default, every change asked first with a READ ONLY / CHANGES THE DATABASE header (live). Done in the live database on 25 Oct: the 2 missing tables made, the login-streak hole closed, 19 missing indexes added. Measured: the FIFA stats table is 312 MB of 383 MB; shrink step 1 frees about 78 MB (bundle 144 to 66 MB). Next tidy steps: drop 4 unused indexes, FIFA shrink and space clean-up, 42 row rules, nightly draft-room tidy. Live since 25 Oct, about 16:10 UK: one login check per request instead of two, the Team room tables (team_room_v3 and v4), the bug-hunt skill. Guest accounts and ad landing pages are on the site but switched off (guest_accounts.sql not run; switch-on list on 0.112h). Plus what Supabase and Cloudflare are for us.",
+      "stats": [
+        {
+          "value": "3",
+          "label": "fixes in the live database"
+        },
+        {
+          "value": "312 of 383 MB",
+          "label": "FIFA table share of the database"
+        },
+        {
+          "value": "~78 MB",
+          "label": "freed by shrink step 1"
+        },
+        {
+          "value": "2 → 1",
+          "label": "login checks per request"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Supabase asks first",
+              "detail": "Any Claude chat that uses Supabase: READ ONLY or CHANGES THE DATABASE, then What and Why."
+            },
+            {
+              "title": "The 2 tables exist",
+              "detail": "Supabase → Table editor: star_xp_config and star_tuning_notes."
+            },
+            {
+              "title": "Missing-index warnings gone",
+              "detail": "Supabase → Advisors → Performance."
+            },
+            {
+              "title": "Guest test page",
+              "detail": "After a push: /star-guest-dev (team only)."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: Claude can see and work in Supabase",
+          "items": [
+            {
+              "title": "Look-only by default, every change asked first",
+              "detail": "Changes go out as an SQL page and wait for a yes.",
+              "pill": {
+                "text": "live",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed: three changes in the live database (25 Oct)",
+          "items": [
+            {
+              "title": "The 2 missing tables are made"
+            },
+            {
+              "title": "The login-streak hole is closed",
+              "detail": "Only the signed-in player can update their own streak."
+            },
+            {
+              "title": "19 missing indexes added"
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed (live)",
+          "items": [
+            {
+              "title": "One login check per request, not two",
+              "detail": "Game files (sounds, pictures, models) skip it.",
+              "pill": {
+                "text": "live",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Guest accounts and ad landing pages",
+              "detail": "On the site, switched off (guest_accounts.sql not run). Turnstile human check. Built: players name their own player, a League Two start, a daily sign-in nudge for 7 days. Switch-on list on 0.112h.",
+              "pill": {
+                "text": "off",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "The bug-hunt skill",
+              "detail": "Read a bug report, find the save, compare, reproduce, fix. Look-only."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Guest accounts not tested end to end",
+              "detail": "About 90 server routes still need the one-line guest check."
+            },
+            {
+              "title": "No downloadable database backup",
+              "detail": "Free plan. Your call: a nightly copy to R2.",
+              "pill": {
+                "text": "open",
+                "tone": "red"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Drop 4 unused indexes"
+            },
+            {
+              "title": "FIFA shrink step 1, then a space clean-up",
+              "detail": "About 78 MB back."
+            },
+            {
+              "title": "42 row rules re-worded",
+              "detail": "Check the login once per read, not once per row."
+            },
+            {
+              "title": "Nightly draft-room tidy",
+              "detail": "Rooms older than 30 days."
+            }
+          ]
+        }
+      ],
+      "updates": [
+        { "at": "2026-10-25T16:12:52Z", "where": "Text, Page", "note": "Now live: one login check per request and the Team room tables. Guest accounts and ad pages are on the site but switched off (guest SQL not run). 19 indexes done; the rest of the tidy waits on your yes. Page edited." }
+      ]
+    },
+    {
+      "version": "0.109h",
+      "title": "Harry's patch notes: Cut-scene skin, player size, headers and volleys",
+      "author": "Harry",
+      "publishedAt": "2026-10-25T06:00:00Z",
+      "updatedAt": "2026-10-25T16:20:00Z",
+      "updateNote": "Now live: headers and volleys redone (no arrow, tap the ball, no late zoom, men 22 px, one cross), plus the cut-scene skin, 22 px men and smooth build-up camera. Darker tones and trial penalty size still open.",
+      "artifactUrl": null,
+      "summary": "Live on the site since 25 Oct, about 16:10 UK. Cut scenes use the drawn head when photo faces are off: light-tone face against neck 5.9 to 1.0 (signing, office, farewell, award scenes); darker tones still 4.6 to 6.6, waiting on a call. Every chance kind draws men at 22 px (was up to 31, 37 on a byline cross); only the pitch zooms; goal rates unchanged. Build-ups use one smooth camera glide (worst jump 640 to 38 px a second). Headers and volleys redone to Harry's notes: no drag-back arrow, straight to the Head it? / Volley it? ball screen where you tap the ball, no late zoom, men stay 22 px, the cross comes in once, the trail follows the ball, same in the Head & Volley drill. Goals per 100 within about 1 of before (header 17.7 / 24.8 / 34.3 vs 19.0 / 25.0 / 35.3; volley 19.0 / 27.2 / 33.8 vs 19.3 / 26.3 / 35.3 at Aerial 30 / 60 / 90).",
+      "stats": [
+        {
+          "value": "5.9 → 1.0",
+          "label": "light-tone face vs neck in cut scenes"
+        },
+        {
+          "value": "31 → 22 px",
+          "label": "men on every chance kind"
+        },
+        {
+          "value": "640 → 38",
+          "label": "worst build-up camera jump (px/s)"
+        },
+        {
+          "value": "Live",
+          "label": "headers and volleys, redone"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Cut-scene skin",
+              "detail": "Photo faces off, sign for a club at a light tone: face and neck one colour."
+            },
+            {
+              "title": "Men at 22 px on every chance",
+              "detail": "Penalty, cutback, one-on-one, cross: same size as long range."
+            },
+            {
+              "title": "Smooth build-up camera",
+              "detail": "Highlights: one glide, no snap at OFFSIDE."
+            },
+            {
+              "title": "Headers and volleys",
+              "detail": "No arrow: the Head it? / Volley it? ball screen opens, tap the ball."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Cut scenes: one skin colour at light tones",
+              "detail": "Drawn head when photo faces are off. Face against neck 5.9 → 1.0."
+            },
+            {
+              "title": "Every chance kind draws men at 22 px",
+              "detail": "Penalties, cutbacks, one-on-ones, crosses, drills and the trial. Only the pitch zooms."
+            },
+            {
+              "title": "Headers and volleys redone to your notes",
+              "detail": "No drag-back arrow, straight to the ball screen, no late zoom, men 22 px, the cross comes in once, the trail follows the ball; same in the Head & Volley drill. Goal rates within about 1 of before.",
+              "pill": {
+                "text": "live",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Build-ups use one smooth camera glide",
+              "detail": "The move is planned first, then one eased glide. Worst jump 640 → 38 px a second."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Darker skin tones in cut scenes",
+              "detail": "Still 4.6 to 6.6. Needs a change to the shared skin paint: your call.",
+              "pill": {
+                "text": "waiting on a call",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Trial shootout penalty size",
+              "detail": "At 22 px men look small in the close-up goal. Your call."
+            }
+          ]
+        }
+      ],
+      "updates": [
+        { "at": "2026-10-25T16:12:52Z", "where": "Text, Page", "note": "Now live: headers and volleys redone (no arrow, tap the ball, no late zoom, men 22 px, one cross), plus the cut-scene skin, 22 px men and smooth build-up camera. Darker tones and trial penalty size still open. Page ed…" },
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
+    },
+    {
       "version": "0.108h",
-      "title": "Harry's patch notes: Your 3D Man On The Player Card, Even 3D Skin, And Players Back To Normal Size",
+      "title": "Harry's patch notes: 3D man on card, even skin, normal size",
+      "author": "Harry",
       "publishedAt": "2026-10-23T05:00:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -472,11 +2148,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
-      "version": "0.109",
-      "title": "Mikey v0.21: one bottom bar, Stats with your card, League for every competition, a fuller Phone",
+      "version": "0.120",
+      "title": "Mikey's patch notes: One bottom bar, Stats, League and Phone",
+      "author": "Mikey",
       "publishedAt": "2026-10-23T03:30:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/J1GDXrx1SSHrLTroCa3C2K",
@@ -718,15 +2398,21 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-23T03:29:46Z", "where": "Title", "note": "Fix 3 tests: patch note v0.21 title names its owner, headlines rebuilt, Hall copy drops League History" },
+        { "at": "2026-10-26T17:04:00Z", "where": "Number, Title", "note": "Tidied 26 Oct: number 0.109 → 0.120 (it shared a number with Harry's 0.109h); title gives what it is about." }
       ]
     },
     {
-      "version": "0.108",
-      "title": "Leo's tonight build: celebrations, fast feed, bicycle kicks, Real Goals, season end, 17 bugs (on branch Leo, not live)",
+      "version": "0.119",
+      "title": "Leo's patch notes: Celebrations, fast feed, Real Goals, season end",
+      "author": "Leo",
       "publishedAt": "2026-10-22T23:15:00Z",
-      "updatedAt": null,
+      "updatedAt": "2026-10-25T01:30:00Z",
+      "updateNote": "Bicycle kick taken out (Harry is building it). Fixed: after your goal the keeper stayed in the middle of the screen while the camera followed you; now he stays by the goal.",
       "artifactUrl": "https://claude.ai/artifact/PQvHUgssX7CAdad2jitPjA",
-      "summary": "Leo v0.20, 22 Oct. What the 7 chats built from plan 0.107, joined on branch Leo. NOT live until Leo says push. Goal celebrations from the shop (run to the corner, skippable, in videos) and big late moments; the social feed opens in 0.29 s on a cheap phone (was 1.5 s) plus Goal of the Month; bicycle kicks; weather and pitch quality (test page only); Real Goals paths, 61 bangers, a daily goal, a fast home; a season video, a goals gallery, a 3D awards night; 17 bugs fixed, including refresh sending you Home. Harry: the match file and keeper were touched (additive, match tests pass); 6 team jobs. Mikey: 3 lines in manager.ts and an injuries plan for you.",
+      "summary": "Leo v0.20, 22 Oct. What the 7 chats built from plan 0.107, joined on branch Leo. On the live site since 24 Oct behind Settings → Updates → \"Leo's 24 Oct update\" (admins, off by default, one switch per part). Goal celebrations from the shop (run to the corner, skippable, in videos) and big late moments; the social feed opens in 0.29 s on a cheap phone (was 1.5 s) plus Goal of the Month; weather and pitch quality (test page only); Real Goals paths, 61 bangers, a daily goal, a fast home; a season video, a goals gallery, a 3D awards night; 17 bugs fixed, including refresh sending you Home. 25 Oct: the bicycle kick is taken back out (Harry is building it); the keeper no longer stays stuck mid-screen while you celebrate. Harry: the match file and keeper were touched (additive, match tests pass); findings for him are listed, not given as to-dos. Mikey: 3 lines in manager.ts and an injuries plan for you.",
       "stats": [
         {
           "value": "0.29 s",
@@ -759,10 +2445,6 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
               "detail": "85'+ level or one down: banner, crowd rise, heartbeat; score = slow motion of the last 0.5 s (result unchanged), roar, 14 new late commentary lines."
             },
             {
-              "title": "Bicycle kicks",
-              "detail": "Only for a cross above your head moving across you. Offered by Aerial (1.4 in 40 matches at 40, 8.6 at 80+). Clean: 40 goals in 100. New 2D and 3D move. The 15 real overhead goals are back in Real Moments."
-            },
-            {
               "title": "Goal of the Month",
               "detail": "Monthly poll in the feed: your 3 best goals v 2 by others in your league. Fans vote, you vote once, a win adds fans."
             },
@@ -789,6 +2471,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
               "detail": "Cheap phone (6× slower CPU): open 1.5 → 0.29 s, worst scroll freeze 0.76 → 0.17 s, first video 47 → 12 s, reopened 1.9 → 0.56 s. Videos made off the main thread, kept on the phone, started at full time."
             },
             {
+              "title": "Keeper stuck mid-screen in celebrations (25 Oct)",
+              "detail": "After his dive the keeper's landing was kept as a point on the screen, so when the camera followed you he stayed put. Now it is a spot on the pitch and he leaves the screen with the goal. Drawing only."
+            },
+            {
               "title": "Refresh sent you Home",
               "detail": "Now the Ballon d'Or, window list, talks and 'Deal agreed' come back. A refresh after 'Deal agreed' used to lose the transfer."
             },
@@ -804,7 +2490,11 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "items": [
             {
               "title": "Harry: match file and keeper",
-              "detail": "CanvasMatch.tsx (celebrations, big moments, bicycle, video length), keeperBrain.ts (bicycle delay, penalty habits: unchanged with no habit), canvasEngine.ts/ballPhysics.ts (weather, inert unless the test page sets it). All additive; match tests pass."
+              "detail": "CanvasMatch.tsx (celebrations, big moments, video length, where the fallen keeper is drawn), keeperBrain.ts (penalty habits: unchanged with no habit), canvasEngine.ts/ballPhysics.ts (weather, inert unless the test page sets it). All additive; match tests pass."
+            },
+            {
+              "title": "Bicycle kick taken back out (25 Oct)",
+              "detail": "Harry is building it. Gone: the Bicycle! button, the move (2D and 3D), banner, media posts, its switch; the 15 overhead Real Moments are left out again."
             },
             {
               "title": "AdminNavPanel.tsx",
@@ -828,7 +2518,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         },
         {
           "kind": "next",
-          "title": "Team jobs (6)",
+          "title": "Found for Harry (not given as to-dos)",
           "items": [
             {
               "title": "Harry",
@@ -840,11 +2530,24 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-22T23:22:30Z", "where": "Text, Page", "note": "Wording edited. Page edited." },
+        { "at": "2026-10-23T18:34:45Z", "where": "Page", "note": "Page edited." },
+        { "at": "2026-10-24T01:19:36Z", "where": "Text", "note": "Stills swapped for 33 phone-size videos of every new feature; final build and test results added." },
+        { "at": "2026-10-24T03:56:30Z", "where": "Text, Page", "note": "Re-filmed with real shots only (the old celebration clips used a test tool that moved the ball); big moment and knee slide now have sound; 3 new banner options + none for Leo to pick; the faked 3D clip removed. Page e…" },
+        { "at": "2026-10-24T04:39:16Z", "where": "Text, Page", "note": "Every 2D celebration clip is now a real shot with the game's sound (aeroplane, tap to skip and the goal video added); the 3D clip is not filmed yet, and a blank screen seen after full time in 3D is being checked. Page…" },
+        { "at": "2026-10-24T05:49:48Z", "where": "Text, Page", "note": "Checked: the blank screen after full time in 3D was the filming script, not the game (3D on and off both go to the after-match screen, no errors). All 2D celebration clips are real shots with sound. Page edited." },
+        { "at": "2026-10-24T17:13:20Z", "where": "Text, Page", "note": "The 6 to-dos given to Harry and everyone were taken off the to-do list (Leo: only when needed, and ask him first); they are listed here as findings only. Page edited." },
+        { "at": "2026-10-24T19:16:26Z", "where": "Title, Text, Page", "note": "Now on the live site, switched off for everyone: admins turn it on in Settings → Updates → \"Leo's 24 Oct update\", with one switch per part. on the live site behind Settings → Updates → Leo's 24 Oct update" },
+        { "at": "2026-10-25T01:10:08Z", "where": "Title, Text, Page", "note": "Bicycle kick taken out (Harry is building it). Fixed: after your goal the keeper stayed in the middle of the screen while the camera followed you; now he stays by the goal. bicycle kick taken out, keeper fix" },
+        { "at": "2026-10-26T17:04:00Z", "where": "Number, Title", "note": "Tidied 26 Oct: number 0.108 → 0.119 (it shared a number with Harry's 0.108h); title gives what it is about." }
       ]
     },
     {
       "version": "0.107h",
-      "title": "Harry's patch notes: Players Back To Size B, The Marketing Studio And Uploads, And Fewer Dropped Highlights",
+      "title": "Harry's patch notes: Player size B, Marketing Studio and uploads",
+      "author": "Harry",
       "publishedAt": "2026-10-22T18:30:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -1000,11 +2703,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
-      "version": "0.107",
-      "title": "Leo's plan for tonight: 15 parts, 7 chats (approved, building)",
+      "version": "0.118",
+      "title": "Leo's patch notes: Build plan: celebrations, feed, weather, Real Goals",
+      "author": "Leo",
       "publishedAt": "2026-10-22T17:45:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/RERQk9D5BLaDv14ebha8qf",
@@ -1058,11 +2765,16 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-22T23:22:30Z", "where": "Page", "note": "Page edited." },
+        { "at": "2026-10-26T17:04:00Z", "where": "Number, Title", "note": "Tidied 26 Oct: number 0.107 → 0.118 (it shared a number with Harry's 0.107h); title gives what it is about." }
       ]
     },
     {
       "version": "0.106h",
-      "title": "Harry's patch notes: Aerial In Real Matches, Header Heights, The Player Card And Fairer Matches",
+      "title": "Harry's patch notes: Aerial in matches, header heights, player card",
+      "author": "Harry",
       "publishedAt": "2026-10-22T16:00:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -1216,11 +2928,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.105h",
-      "title": "Harry's patch notes: Real Headers And Volleys, And The Aerial & Acrobatics Skill",
+      "title": "Harry's patch notes: Real headers and volleys, Aerial skill",
+      "author": "Harry",
       "publishedAt": "2026-10-21T20:00:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -1336,11 +3052,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
-      "version": "0.103",
-      "title": "Mikey's patch notes v0.20: Game music",
+      "version": "0.117",
+      "title": "Mikey's patch notes: Game music, eleven orchestral tracks",
+      "author": "Mikey",
       "publishedAt": "2026-10-21T18:00:00Z",
       "updatedAt": "2026-10-21T18:00:00Z",
       "artifactUrl": "https://claude.ai/artifact/DrwirnxpBBqLzqqjmfipd3",
@@ -1365,11 +3085,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "The 10 new tracks are not heard yet", "detail": "Only the final boss was listened to; the rest were measured." },
           { "title": "No choir", "detail": "The free orchestra library has none." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Number, Title", "note": "Tidied 26 Oct: number 0.103 → 0.117 (it shared a number with Harry's 0.103h); title gives what it is about." }
       ]
     },
     {
       "version": "0.104h",
       "title": "Harry's patch notes: Navigation Round 1 And The Marketing Tab",
+      "author": "Harry",
       "publishedAt": "2026-10-21T16:30:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -1510,6 +3234,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
       "version": "0.103h",
       "title": "Harry's patch notes: Bigger Men And Shorter Build-ups",
+      "author": "Harry",
       "publishedAt": "2026-10-21T11:30:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -1635,7 +3360,8 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     },
     {
       "version": "0.102h",
-      "title": "Harry's patch notes: Inbox And Patch Notes Live",
+      "title": "Harry's patch notes: Admin inbox bell and comments on notes",
+      "author": "Harry",
       "publishedAt": "2026-10-21T09:17:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -1745,11 +3471,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.101h",
-      "title": "Harry's patch notes: Research Round",
+      "title": "Harry's patch notes: Research: headers, navigation, build-ups",
+      "author": "Harry",
       "publishedAt": "2026-10-21T09:16:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -1809,11 +3539,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.100h",
-      "title": "Harry's patch notes: Small Fixes Round",
+      "title": "Harry's patch notes: Faster build-ups, lag pill, square tick boxes",
+      "author": "Harry",
       "publishedAt": "2026-10-21T09:15:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -1891,11 +3625,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.99h",
       "title": "Harry's patch notes: 3D Admin Clean-up",
+      "author": "Harry",
       "publishedAt": "2026-10-21T09:14:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -1959,7 +3697,8 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     },
     {
       "version": "0.98h",
-      "title": "Harry's patch notes: The Brain",
+      "title": "Harry's patch notes: The Brain: short searchable rule notes",
+      "author": "Harry",
       "publishedAt": "2026-10-21T09:13:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -2025,11 +3764,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.97h",
-      "title": "Harry's patch notes: Main Merged In",
+      "title": "Harry's patch notes: Main merged in: Real Goals, FA Cup",
+      "author": "Harry",
       "publishedAt": "2026-10-21T09:12:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -2113,11 +3856,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.96h",
       "title": "Harry's patch notes: B14b Camera, Bar And Joystick",
+      "author": "Harry",
       "publishedAt": "2026-10-21T09:11:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -2196,6 +3943,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
       "version": "0.95h",
       "title": "Harry's patch notes: B14 Running After A Chance",
+      "author": "Harry",
       "publishedAt": "2026-10-21T09:10:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -2288,6 +4036,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
       "version": "0.94",
       "title": "Harry's patch notes: 3D Bodies & Smoother Movement",
+      "author": "Harry",
       "publishedAt": "2026-10-21T00:10:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -2434,6 +4183,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
       "version": "0.93",
       "title": "Harry's patch notes: B2b Build-ups, Round Two",
+      "author": "Harry",
       "publishedAt": "2026-10-20T19:40:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -2546,6 +4296,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
       "version": "0.92",
       "title": "Harry's patch notes: Motion References Page",
+      "author": "Harry",
       "publishedAt": "2026-10-20T18:50:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -2647,7 +4398,8 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     },
     {
       "version": "0.91",
-      "title": "Harry's patch notes: Live Share (Test)",
+      "title": "Harry's patch notes: Live share: show Claude your screen",
+      "author": "Harry",
       "publishedAt": "2026-10-20T18:50:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -2749,11 +4501,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.90",
       "title": "Harry's patch notes: Team Jobs And Notifications",
+      "author": "Harry",
       "publishedAt": "2026-10-20T17:40:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -2876,6 +4632,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
       "version": "0.89",
       "title": "Harry's patch notes: B18 Lag Test",
+      "author": "Harry",
       "publishedAt": "2026-10-20T17:40:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -2974,6 +4731,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
       "version": "0.88",
       "title": "Harry's patch notes: B10 Headers And Volleys",
+      "author": "Harry",
       "publishedAt": "2026-10-20T17:40:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -3080,8 +4838,9 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       ]
     },
     {
-      "version": "0.63",
-      "title": "Mikey's patch notes v0.19: New pop-ups and the real FA Cup",
+      "version": "0.116",
+      "title": "Mikey's patch notes: New pop-ups and the real FA Cup",
+      "author": "Mikey",
       "publishedAt": "2026-10-20T16:00:00Z",
       "updatedAt": "2026-10-20T16:00:00Z",
       "artifactUrl": "https://claude.ai/artifact/QsxGeWuEK6C7GwcCQJSD3r",
@@ -3116,11 +4875,16 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Six old test failures in keepers and long shots", "detail": "Left for Leo; they failed before this round." },
           { "title": "star_xp_config.sql not run", "detail": "The game uses its built-in XP amounts until then." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T21:56:25Z", "where": "Title, Time, Link, Text", "note": "Wording edited." },
+        { "at": "2026-10-26T17:04:00Z", "where": "Number, Title", "note": "Tidied 26 Oct: number 0.63 → 0.116 (it shared a number with Harry's 0.63h); title gives what it is about." }
       ]
     },
     {
       "version": "0.87",
       "title": "Harry's patch notes: B19 Team Is Home",
+      "author": "Harry",
       "publishedAt": "2026-10-20T15:40:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -3223,6 +4987,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
       "version": "0.86",
       "title": "Harry's patch notes: B2 Highlights Rebuild: build-ups",
+      "author": "Harry",
       "publishedAt": "2026-10-20T15:40:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -3339,6 +5104,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
       "version": "0.85",
       "title": "Harry's patch notes: B17 PC Match + Radar",
+      "author": "Harry",
       "publishedAt": "2026-10-20T15:20:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN",
@@ -3378,6 +5144,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
       "version": "0.84",
       "title": "Harry's patch notes: Everything Else",
+      "author": "Harry",
       "publishedAt": "2026-10-20T14:10:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/JVS6mefVbco5qGi7gNNfrr",
@@ -3434,11 +5201,17 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         { "kind": "next", "title": "Next", "items": [
           { "title": "Where the highlights rebuild is", "detail": "Phases 0 to 2 are done. Phase 3 is build B2: no report yet. B10, B14 and B17 have no report yet either." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T14:35:08Z", "where": "Page", "note": "take the questions and how-it-works block off the pages (work in progress) questions in their own artifact, how-it-works only on the index, B7 shows Vision rebuilt, B17 page (v0.85) shorter wording on every page, B2 (…" },
+        { "at": "2026-10-21T01:12:27Z", "where": "Text", "note": "Wording edited." },
+        { "at": "2026-10-21T08:53:18Z", "where": "Text, Page", "note": "Patch notes and admin guide: licensed source names and numbers replaced with free-data ones" }
       ]
     },
     {
       "version": "0.83",
       "title": "Harry's patch notes: Admin Pages & Skins",
+      "author": "Harry",
       "publishedAt": "2026-10-20T14:05:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/QjVrj4AdvMMPqCPm1Gq7yV",
@@ -3492,11 +5265,16 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Five pages got the frame only", "detail": "Club data, Career XP book, Team sheets, Leo’s Oct 13 update and Goal videos keep their old layout, on purpose." },
           { "title": "What was not seen", "detail": "Any page on a real phone. Any save reaching the real database. Nothing from 20 Oct is live yet." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T14:35:08Z", "where": "Page", "note": "take the questions and how-it-works block off the pages (work in progress) questions in their own artifact, how-it-works only on the index, B7 shows Vision rebuilt, B17 page (v0.85) shorter wording on every page, B2 (…" },
+        { "at": "2026-10-21T08:53:18Z", "where": "Page", "note": "Patch notes and admin guide: licensed source names and numbers replaced with free-data ones" }
       ]
     },
     {
       "version": "0.82",
       "title": "Harry's patch notes: Team Board & Team Updates",
+      "author": "Harry",
       "publishedAt": "2026-10-20T14:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/QDsYt42R113Enp6A7VR3kj",
@@ -3554,11 +5332,16 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         { "kind": "next", "title": "Next", "items": [
           { "title": "Phone alerts for chat, and chat search", "detail": "You said yes on 19 Oct. No report says they were built." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T14:35:08Z", "where": "Page", "note": "take the questions and how-it-works block off the pages (work in progress) questions in their own artifact, how-it-works only on the index, B7 shows Vision rebuilt, B17 page (v0.85) shorter wording on every page, B2 (…" },
+        { "at": "2026-10-21T01:12:27Z", "where": "Text, Page", "note": "Wording edited. Page edited." }
       ]
     },
     {
-      "version": "0.61",
-      "title": "Leo's patch notes v0.19: Real Goals — every league goal of 2017/18",
+      "version": "0.115",
+      "title": "Leo's patch notes: Real Goals — every league goal of 2017/18",
+      "author": "Leo",
       "publishedAt": "2026-10-20T14:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/WoADNDMiHYbcYfE56wUZbe",
@@ -3578,11 +5361,16 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "A few scores before a goal can be off by one", "detail": "In 4 of 1,826 matches the data's goals do not add up to the final score." },
           { "title": "Not played by a finger yet", "detail": "Tests and phone-size stills only; the real line scored 60 of 60." }
         ] }
+      ],
+      "updates": [
+        { "at": "2026-10-20T15:41:21Z", "where": "Title, Time, Link, Text", "note": "Patch notes Mikey v0.19 (site 0.61), career soak script, handoff, CLAUDE.md: pop-ups and star_xp_config" },
+        { "at": "2026-10-26T17:04:00Z", "where": "Number, Title", "note": "Tidied 26 Oct: number 0.61 → 0.115 (it shared a number with Harry's 0.61h); title gives what it is about." }
       ]
     },
     {
       "version": "0.81",
       "title": "Harry's patch notes: B16 Fairer 3D Keepers",
+      "author": "Harry",
       "publishedAt": "2026-10-20T12:30:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/NCvXEnE1cihMHCNnV1o1SD",
@@ -3612,11 +5400,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "The dive picture is the same, but his reach is shorter", "detail": "Reasoned from the code. Not seen." },
           { "title": "Seen once per game, on a test screen", "detail": "Play a few shots in each game and see if it feels fair." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T14:30:38Z", "where": "Page", "note": "take the questions and how-it-works block off the pages (work in progress) questions in their own artifact, how-it-works only on the index, B7 shows Vision rebuilt, B17 page (v0.85) Plain pass in progress: more pages …" }
       ]
     },
     {
       "version": "0.80",
       "title": "Harry's patch notes: B9b Cup Screens",
+      "author": "Harry",
       "publishedAt": "2026-10-20T12:25:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/Rdj6FwzNKmu78NTgb9rS1w",
@@ -3647,11 +5439,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "A tie you only watched goes straight back to Home", "detail": "Not fixed. Same as the FA Cup." },
           { "title": "After a Round 1 bye no draw pops up", "detail": "You can see the draw with “The draw” on the cup screen." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T14:30:38Z", "where": "Page", "note": "take the questions and how-it-works block off the pages (work in progress) questions in their own artifact, how-it-works only on the index, B7 shows Vision rebuilt, B17 page (v0.85) Plain pass in progress: more pages …" }
       ]
     },
     {
       "version": "0.79",
       "title": "Harry's patch notes: B15 3D Headshots",
+      "author": "Harry",
       "publishedAt": "2026-10-20T12:20:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/Kti6Jor9jnUAGwbuZ6gnVx",
@@ -3681,11 +5477,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Team sheets and other screens still show the old heads", "detail": "Team sheets are a one-line swap, if you want them. See Needs your OK." },
           { "title": "Not seen in a real career or on a phone", "detail": "Check the cards in a real career." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T14:30:38Z", "where": "Page", "note": "take the questions and how-it-works block off the pages (work in progress) questions in their own artifact, how-it-works only on the index, B7 shows Vision rebuilt, B17 page (v0.85) Plain pass in progress: more pages …" }
       ]
     },
     {
       "version": "0.78",
       "title": "Harry's patch notes: B13 Fixtures + Admin Fixes",
+      "author": "Harry",
       "publishedAt": "2026-10-20T12:15:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/9SPUygrStL9T6qF9LjcwzW",
@@ -3715,11 +5515,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "A Championship club in Europe that wins everything still clashes", "detail": "Not counted in the 0. Clashes in that case went from 56 to 20, all from deep runs. None come before 1 January. See Needs your OK." },
           { "title": "Mikey’s ten-round FA Cup is not merged yet", "detail": "Run the checker again after it merges. See Needs your OK." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T14:30:38Z", "where": "Page", "note": "take the questions and how-it-works block off the pages (work in progress) questions in their own artifact, how-it-works only on the index, B7 shows Vision rebuilt, B17 page (v0.85) Plain pass in progress: more pages …" }
       ]
     },
     {
       "version": "0.77",
       "title": "Harry's patch notes: B7b Training Editor",
+      "author": "Harry",
       "publishedAt": "2026-10-20T12:10:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/8WTKPhi3pNJ8RBd6FvYsrr",
@@ -3748,11 +5552,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "The Training levels page freezes on the second tab switch", "detail": "Found, not fixed. Not checked on a phone." },
           { "title": "Vision cannot be dragged yet", "detail": "One entry to add in the layout file. Not done." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T14:30:38Z", "where": "Page", "note": "take the questions and how-it-works block off the pages (work in progress) Plain pass in progress: more pages shortened" }
       ]
     },
     {
       "version": "0.76",
       "title": "Harry's patch notes: B12 Pick the Pass",
+      "author": "Harry",
       "publishedAt": "2026-10-20T12:05:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/MewEumQW9Wr9dt84kGaPuF",
@@ -3784,11 +5592,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Only 5 real offside pictures for 13 offside levels", "detail": "Open. See Needs your OK: add drawn offside pictures?" },
           { "title": "Not tried on a real phone at 0.3 s", "detail": "Harry to try on his phone. Every level’s numbers can be softened in the editor." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T14:29:30Z", "where": "Page", "note": "take the questions and how-it-works block off the pages (work in progress) questions in their own artifact, how-it-works only on the index, B7 shows Vision rebuilt, B17 page (v0.85) Reports: B2, B19; plain pass in pro…" }
       ]
     },
     {
       "version": "0.75",
-      "title": "Harry's patch notes: Last 2 Days Patch Notes",
+      "title": "Harry's patch notes: Index of the overnight build pages",
+      "author": "Harry",
       "publishedAt": "2026-10-20T12:00:00Z",
       "updatedAt": "2026-10-20T14:15:00Z",
       "artifactUrl": "https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN",
@@ -3831,11 +5643,26 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "B9b Cup Screens (v0.80)", "detail": "Each cup has its own screen: a one-screen tab, then your road, the bracket and every round. The FA Cup and League Cup work the same way." },
           { "title": "B16 Fairer 3D Keepers (v0.81)", "detail": "The keepers in the 3D games (Free Roam, Headers & Volleys, Wembley) now save about 1 shot in 3 for a decent player. Has a clip." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T13:05:20Z", "where": "Text, Page", "note": "B12 B7b B13 B15 B9b pages, B9 clip, patchNotesData v0.76-v0.80, kept pages B16 Fairer 3D Keepers page (v0.81), B3 real-moment clip, B1/B3/B9 pages rebuilt, index for 21 pages" },
+        { "at": "2026-10-20T13:56:12Z", "where": "Text, Page", "note": "three topic pages (v0.82 Team Board & Team Updates, v0.83 Admin Pages & Skins, v0.84 Everything Else), four-tab index, one multi-file artifact" },
+        { "at": "2026-10-20T14:35:08Z", "where": "Page", "note": "questions in their own artifact, how-it-works only on the index, B7 shows Vision rebuilt, B17 page (v0.85) shorter wording on every page, B2 (v0.86) and B19 (v0.87) pages, index cards" },
+        { "at": "2026-10-20T17:43:33Z", "where": "Page", "note": "Patch notes v0.88 (B10), v0.89 (lag test), v0.90 (team jobs + phone notifications); index cards; artifact version 8" },
+        { "at": "2026-10-20T18:57:08Z", "where": "Page", "note": "Patch notes v0.91 (live share), v0.92 (motion references); artifact version 9" },
+        { "at": "2026-10-20T19:44:36Z", "where": "Page", "note": "Patch notes v0.93 (B2b build-ups round two); artifact version 10" },
+        { "at": "2026-10-20T23:55:47Z", "where": "Page", "note": "Patch notes v0.94 (3D bodies & smoother movement); artifact version 11" },
+        { "at": "2026-10-21T01:12:27Z", "where": "Text, Page", "note": "Wording edited. Page edited." },
+        { "at": "2026-10-21T09:09:48Z", "where": "Text, Page", "note": "Patch notes and admin guide: licensed source names and numbers replaced with free-data ones Patch notes 0.95h-0.102h: B14, B14b, main merged in, the Brain, 3D admin clean-up, small fixes, research round, Inbox (kept p…" },
+        { "at": "2026-10-21T14:35:14Z", "where": "Page", "note": "Patch note 0.103h: B20 bigger men and shorter build-ups" },
+        { "at": "2026-10-21T16:10:06Z", "where": "Page", "note": "Patch note 0.104h: navigation round 1 and the Marketing tab" },
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.74",
-      "title": "Harry's patch notes: B11 Team Room",
+      "title": "Harry's patch notes: B11 Team Room round two",
+      "author": "Harry",
       "publishedAt": "2026-10-20T04:40:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/ThR8RjKdNvUbexGWVXKxZt",
@@ -3866,11 +5693,17 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Not tried with real people or the real database", "detail": "Replies, @ and points work without it. Seen faces and Got it stay on the device until it runs." },
           { "title": "Three lines in the pictures that the report does not cover", "detail": "The Team board pictures show six amber lines: “GitHub refused the site’s key … Check GITHUB_TOKEN in Vercel”.The patch-notes Page tab says “Forbidden — patch notes need an admin sign-in”." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T14:10:54Z", "where": "Page", "note": "take the questions and how-it-works block off the pages (work in progress)" },
+        { "at": "2026-10-20T14:35:08Z", "where": "Page", "note": "shorter wording on every page, B2 (v0.86) and B19 (v0.87) pages, index cards" },
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.73",
       "title": "Harry's patch notes: B9 Lower League Trophy",
+      "author": "Harry",
       "publishedAt": "2026-10-20T04:35:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/J1dND9UWP7nAW8fZDGShp8",
@@ -3897,11 +5730,17 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         { "kind": "known", "title": "Known issues", "items": [
           { "title": "FA Cup Round of 64 lands the day after a league game", "detail": "Fixed in B13 (Fixtures + Admin Fixes, v0.78). A new checker played 5 seasons in every division and found 170 clashes, this one among them. Now 0." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T12:55:19Z", "where": "Text, Page", "note": "B12 B7b B13 B15 B9b pages, B9 clip, patchNotesData v0.76-v0.80, kept pages" },
+        { "at": "2026-10-20T14:10:54Z", "where": "Page", "note": "take the questions and how-it-works block off the pages (work in progress)" },
+        { "at": "2026-10-20T14:35:08Z", "where": "Page", "note": "shorter wording on every page, B2 (v0.86) and B19 (v0.87) pages, index cards" }
       ]
     },
     {
       "version": "0.72",
-      "title": "Harry's patch notes: B8 Five-a-side",
+      "title": "Harry's patch notes: B8 Five-a-side test area",
+      "author": "Harry",
       "publishedAt": "2026-10-20T04:30:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/ALyk269G1eEncrBGVBgkCW",
@@ -3935,11 +5774,17 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "A pass to a team-mate never becomes his shot", "detail": "Not changed. It is a gameplay call." },
           { "title": "Chance pictures 1 and 6 never score for the bot", "detail": "Not changed. It is a gameplay call." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T14:10:54Z", "where": "Page", "note": "take the questions and how-it-works block off the pages (work in progress)" },
+        { "at": "2026-10-20T14:35:08Z", "where": "Page", "note": "shorter wording on every page, B2 (v0.86) and B19 (v0.87) pages, index cards" },
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.71",
       "title": "Harry's patch notes: B7 Training Levels",
+      "author": "Harry",
       "publishedAt": "2026-10-20T04:25:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/VuKweZcyS76Jap9zW1E6NR",
@@ -3969,11 +5814,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         { "kind": "next", "title": "Next", "items": [
           { "title": "B7b: drag and drop in the training editor", "detail": "Queued as B7b. Harry answered (20 Oct, 09:45): no slider. A level plays with the skill you would have after finishing the levels before it. Pace gets a real skill element." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T14:35:08Z", "where": "Page", "note": "take the questions and how-it-works block off the pages (work in progress) questions in their own artifact, how-it-works only on the index, B7 shows Vision rebuilt, B17 page (v0.85) shorter wording on every page, B2 (…" }
       ]
     },
     {
       "version": "0.70",
       "title": "Harry's patch notes: B6 Scene Studio",
+      "author": "Harry",
       "publishedAt": "2026-10-20T04:20:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/XTxMVD52AJN4T4F2EXLu5B",
@@ -4009,11 +5858,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         { "kind": "next", "title": "Next", "items": [
           { "title": "Pick the game moments where generated scenes should play", "detail": "Waiting for your pick (below)." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T14:35:08Z", "where": "Page", "note": "take the questions and how-it-works block off the pages (work in progress) questions in their own artifact, how-it-works only on the index, B7 shows Vision rebuilt, B17 page (v0.85) shorter wording on every page, B2 (…" }
       ]
     },
     {
       "version": "0.69",
       "title": "Harry's patch notes: B5 3D Looks",
+      "author": "Harry",
       "publishedAt": "2026-10-20T04:15:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/3VjJkbYFvSE2XrgLtueCz5",
@@ -4048,11 +5901,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         { "kind": "next", "title": "Next", "items": [
           { "title": "Where the 3D plan is", "detail": "Phases 1 to 5 are built. Phases 6 to 10 (hands and props, a stadium and real rooms, training rebuilt, one flow through the career, sharper 2D moves) are not started.Phase 1: the bench page.Phase 2: skin and light.Phase 3:…" }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T14:30:38Z", "where": "Page", "note": "take the questions and how-it-works block off the pages (work in progress) Plain pass in progress: more pages shortened" }
       ]
     },
     {
       "version": "0.68",
       "title": "Harry's patch notes: B4 Admin Skins",
+      "author": "Harry",
       "publishedAt": "2026-10-20T04:10:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/Uaf9V9vfYrErZNkYqXAYTW",
@@ -4086,11 +5943,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "3D places keep their own back button", "detail": "Decided (Harry, 20 Oct): these keep their own back button. Everything else uses the one arrow." },
           { "title": "Two things in the pictures that the report does not cover", "detail": "Queued for the next build, B13 Fixes (Harry, 20 Oct): the XP Rewards “Failed to fetch” and the bubble over “Next line ›”. Not checked yet: does “Next line ›” still take the tap?" }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T14:30:38Z", "where": "Page", "note": "take the questions and how-it-works block off the pages (work in progress) Plain pass in progress: more pages shortened" }
       ]
     },
     {
       "version": "0.67",
       "title": "Harry's patch notes: B3 Real Data",
+      "author": "Harry",
       "publishedAt": "2026-10-20T04:05:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/Pa3a8mKnzEKYbuC8My83cm",
@@ -4123,11 +5984,16 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Marks are saved on this device only", "detail": "Waiting on Mikey. Use “Commit marks to the game” to put marks in the code." },
           { "title": "Not seen inside a career match", "detail": "Not seen." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T13:05:20Z", "where": "Page", "note": "B16 Fairer 3D Keepers page (v0.81), B3 real-moment clip, B1/B3/B9 pages rebuilt, index for 21 pages" },
+        { "at": "2026-10-20T14:30:38Z", "where": "Page", "note": "take the questions and how-it-works block off the pages (work in progress) Plain pass in progress: more pages shortened" }
       ]
     },
     {
       "version": "0.66",
       "title": "Harry's patch notes: B1 Touch Fixes",
+      "author": "Harry",
       "publishedAt": "2026-10-20T04:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/3iCBAwMeNQVssqW5THU8R8",
@@ -4159,11 +6025,16 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         { "kind": "known", "title": "Known issues", "items": [
           { "title": "3 other test files still fail", "detail": "Untouched." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T13:05:20Z", "where": "Page", "note": "B16 Fairer 3D Keepers page (v0.81), B3 real-moment clip, B1/B3/B9 pages rebuilt, index for 21 pages" },
+        { "at": "2026-10-20T14:30:38Z", "where": "Page", "note": "take the questions and how-it-works block off the pages (work in progress) Reports: B2, B19; plain pass in progress (B1, B12 pages shortened so far) Plain pass in progress: more pages shortened" }
       ]
     },
     {
       "version": "0.65",
       "title": "Harry's patch notes: Admin Split + Looks",
+      "author": "Harry",
       "publishedAt": "2026-10-19T21:30:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/K7pD7AMtL1iTF9BT2BRhAA",
@@ -4197,11 +6068,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         { "kind": "fixed", "title": "Fixed", "items": [
           { "title": "Fixes found while moving the pages", "detail": "Team sheets: opening a club no longer saves. Only an edit saves.International world: the card pictures follow the picked nation.Full match: event lines show the club name, not “{club}”.Real Goals: the big card draws its own goal…" }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T14:30:38Z", "where": "Text, Page", "note": "three topic pages (v0.82 Team Board & Team Updates, v0.83 Admin Pages & Skins, v0.84 Everything Else), four-tab index, one multi-file artifact take the questions and how-it-works block off the pages (work in progress)…" }
       ]
     },
     {
-      "version": "0.62",
-      "title": "Mikey's patch notes v0.18: The world season",
+      "version": "0.114",
+      "title": "Mikey's patch notes: The world season",
+      "author": "Mikey",
       "publishedAt": "2026-10-19T21:00:00Z",
       "updatedAt": "2026-10-19T21:00:00Z",
       "artifactUrl": "https://claude.ai/artifact/6Gz5vvm7PVwXUrJ3ZMBB7V",
@@ -4235,11 +6110,17 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         { "kind": "known", "title": "Known issues", "items": [
           { "title": "Not yet seen on a phone", "detail": "End-of-season screen and phone speed not checked." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T13:56:12Z", "where": "Text", "note": "three topic pages (v0.82 Team Board & Team Updates, v0.83 Admin Pages & Skins, v0.84 Everything Else), four-tab index, one multi-file artifact" },
+        { "at": "2026-10-20T21:56:25Z", "where": "Title, Time, Link, Text", "note": "Wording edited." },
+        { "at": "2026-10-26T17:04:00Z", "where": "Number, Title", "note": "Tidied 26 Oct: number 0.62 → 0.114 (it shared a number with Harry's 0.62h); title gives what it is about." }
       ]
     },
     {
       "version": "0.64",
-      "title": "Harry's patch notes: Free Data v1",
+      "title": "Harry's patch notes: Free data: 2,104 real matches",
+      "author": "Harry",
       "publishedAt": "2026-10-19T20:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/EBHc5nzaDwyqKYWgjmduLh",
@@ -4266,11 +6147,18 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         { "kind": "next", "title": "Next", "items": [
           { "title": "What the next build did with this", "detail": "On 20 Oct, B3 removed Afriskaut (“no one’s heard of them”), added two sources (SoccerTrack v2 and SkillCorner), put the data credits in Settings and added a “Real moment highlights” switch. Matches went 2,104 → 1,983." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-20T14:10:54Z", "where": "Text, Page", "note": "three topic pages (v0.82 Team Board & Team Updates, v0.83 Admin Pages & Skins, v0.84 Everything Else), four-tab index, one multi-file artifact take the questions and how-it-works block off the pages (work in progress)" },
+        { "at": "2026-10-20T14:35:08Z", "where": "Page", "note": "shorter wording on every page, B2 (v0.86) and B19 (v0.87) pages, index cards" },
+        { "at": "2026-10-21T08:53:18Z", "where": "Text, Page", "note": "Patch notes and admin guide: licensed source names and numbers replaced with free-data ones" },
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.63h",
-      "title": "Harry's patch notes: Highlights Rebuild 0-2",
+      "title": "Harry's patch notes: Highlights rebuild, phases 0 to 2",
+      "author": "Harry",
       "publishedAt": "2026-10-19T19:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/GSD3ehL48xjdeJkxVticSz",
@@ -4298,11 +6186,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         { "kind": "next", "title": "Next", "items": [
           { "title": "Where the rebuild is", "detail": "Three phases are done. The red engine warning will ask when phase 3 starts.Phase 0: the switch and the ruler.Phase 1: the still uses the match camera.Phase 2: generated build-ups before open-play chances.Phase 3: players already…" }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.62h",
       "title": "Harry's patch notes: Drift + Play Screens",
+      "author": "Harry",
       "publishedAt": "2026-10-19T18:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/2WnB5jiriAoRw4pSv1gAiT",
@@ -4338,6 +6230,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
       "version": "0.61h",
       "title": "Harry's patch notes: Scene Editor 3a",
+      "author": "Harry",
       "publishedAt": "2026-10-19T16:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/XNFSvtGTgM37Dmi28rZHhn",
@@ -4363,8 +6256,9 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       ]
     },
     {
-      "version": "0.60",
-      "title": "Leo's patch notes v0.18: Real Goals 2 — every goal, a game",
+      "version": "0.113",
+      "title": "Leo's patch notes: Real Goals 2 — every goal, a game",
+      "author": "Leo",
       "publishedAt": "2026-10-19T14:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/LBiZVmQDLKzWpNgpuDWxgW",
@@ -4389,11 +6283,19 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Not played by a finger yet; 3D not checked", "detail": "Measured by tests and seen in stills at phone size." },
           { "title": "No real camera for some collections", "detail": "World Cup 2018, Copa, AFCON and the club classics move the men with their team's shape." }
         ] }
+      ],
+      "updates": [
+        { "at": "2026-10-19T20:37:16Z", "where": "Title, Time, Link, Text", "note": "Patch notes Mikey v0.18 (site 0.60): the world season" },
+        { "at": "2026-10-20T10:06:51Z", "where": "Title, Time, Link, Text", "note": "Patch notes for the last 2 days: 16 versions (v0.60 to v0.75) in the admin archive, one page per build" },
+        { "at": "2026-10-20T13:56:12Z", "where": "Title, Time, Link, Text", "note": "three topic pages (v0.82 Team Board & Team Updates, v0.83 Admin Pages & Skins, v0.84 Everything Else), four-tab index, one multi-file artifact" },
+        { "at": "2026-10-21T08:53:18Z", "where": "Text", "note": "Patch notes and admin guide: licensed source names and numbers replaced with free-data ones" },
+        { "at": "2026-10-26T17:04:00Z", "where": "Number, Title", "note": "Tidied 26 Oct: number 0.60 → 0.113 (it shared a number with Harry's 0.60h); title gives what it is about." }
       ]
     },
     {
       "version": "0.60h",
-      "title": "Harry's patch notes: Team Room v1",
+      "title": "Harry's patch notes: Team Room: chat, ideas and to-do",
+      "author": "Harry",
       "publishedAt": "2026-10-19T04:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/QKNPrRrgPkBr4b1Azgqh8c",
@@ -4425,11 +6327,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         { "kind": "changed", "title": "Changed", "items": [
           { "title": "The admin side menu folds on a computer", "detail": "The « button at the top of the menu folds it to a 64 px strip of icons. » opens it. Your choice is remembered per browser. The thick scrollbar is gone." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.59",
-      "title": "Mikey's patch notes v0.17: The transfer window and the world that ages",
+      "title": "Mikey's patch notes: The transfer window and the world that ages",
+      "author": "Mikey",
       "publishedAt": "2026-10-18T22:00:00Z",
       "updatedAt": "2026-10-19T12:00:00Z",
       "artifactUrl": "https://claude.ai/artifact/1A6Wc8XFM2pu2ftCZcymQU",
@@ -4471,11 +6377,18 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         { "kind": "known", "title": "Known issues", "items": [
           { "title": "Leagues slowly get stronger", "detail": "Premier League first-team average 78.8 → 83.1 by season 21 (replacements grow on Leo's numbers)." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-19T01:31:10Z", "where": "Page", "note": "Patch notes Mikey v0.17 (site 0.58): transfer window, world ageing, other; Deadline Day money total uses ★ and the money formatter" },
+        { "at": "2026-10-19T02:12:14Z", "where": "Text, Page", "note": "Patch notes v0.17: transfer fee fix added (19 Oct)" },
+        { "at": "2026-10-19T03:25:26Z", "where": "Text, Page", "note": "Patch notes v0.17: transfer window fixes added (19 Oct)" },
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.58",
       "title": "Leo's patch notes: Real Goals mode and the Visual Effects Lab",
+      "author": "Leo",
       "publishedAt": "2026-10-18T21:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/U77ee6tn8cJa7p8LD61Zss",
@@ -4499,11 +6412,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         { "kind": "known", "title": "Known issues", "items": [
           { "title": "3D and finger-played goals not seen", "detail": "Stills were steered onto the real line; cameras and the 3D view not checked." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-19T01:31:10Z", "where": "Title, Time, Link, Text", "note": "Patch notes Mikey v0.17 (site 0.58): transfer window, world ageing, other; Deadline Day money total uses ★ and the money formatter" }
       ]
     },
     {
       "version": "0.57",
       "title": "Harry's patch notes: The admin room and the team board",
+      "author": "Harry",
       "publishedAt": "2026-10-18T20:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/SdmpakSaerhCuwYrUT2PCV",
@@ -4532,11 +6449,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Two Match Dev controls need a new home", "detail": "Force a chance kind and the shot-height sliders; Infinite Highlights is the plan." },
           { "title": "The lock check runs in the tests, not the build", "detail": "Harry's answer: tests only." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-18T20:20:50Z", "where": "Text, Page", "note": "Live bars: no password" }
       ]
     },
     {
       "version": "0.56",
-      "title": "Harry's patch notes: The Arcade pack, real shots you can follow, calmer passing",
+      "title": "Harry's patch notes: Arcade pack, real shots, calmer passing",
+      "author": "Harry",
       "publishedAt": "2026-10-14T23:30:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/LBmYB7rQBTS6nd4XBq7UsG",
@@ -4563,11 +6484,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Real shots players a little small", "detail": "About 83% of chance size so long passes stay in shot; Harry's call." },
           { "title": "Not seen yet", "detail": "SAVED! / BACK TO YOU in a real match; a first-time finish in Joystick; sounds on a real phone." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.55",
       "title": "Leo's patch notes: Updates tab, Henry finish, hitboxes, sound lab",
+      "author": "Leo",
       "publishedAt": "2026-10-14T21:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/As3hzmBBUNwdgdf8DhygZm",
@@ -4596,11 +6521,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Headers score a little less", "detail": "43.8% → 41.9%: more won, but the keeper saves more high ones." },
           { "title": "Not played in a full match; sounds not heard", "detail": "Measured on the real engine only; no speakers on the build machine." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-14T23:52:28Z", "where": "Title, Time, Link, Text", "note": "Patch notes v0.55: Arcade pack, Harry changes dropdown, calmer joystick passing, real shots camera" }
       ]
     },
     {
       "version": "0.54",
       "title": "Harry's patch notes: New chances, 3D camera, build-ups that play on",
+      "author": "Harry",
       "publishedAt": "2026-10-14T16:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/1dwJjYucacMcjgxypP342X",
@@ -4632,11 +6561,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Lay-off not seen live", "detail": "Measured only." },
           { "title": "Cameras", "detail": "Some 2D/3D camera problems remain; waiting on Harry's 3D video." }
         ]}
+      ],
+      "updates": [
+        { "at": "2026-10-14T18:06:22Z", "where": "Page", "note": "Patch notes v0.54: build-up stills from a real build-up, PASS kept wording" }
       ]
     },
     {
       "version": "0.53",
-      "title": "Leo's patch notes",
+      "title": "Leo's patch notes: Slower shots, keeper feel, team-mates carry",
+      "author": "Leo",
       "publishedAt": "2026-10-13T18:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/SqbYRDsV64zyZbAoe43i99",
@@ -4796,11 +6729,17 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-14T12:08:16Z", "where": "Page", "note": "Patch notes v0.16: point at the Oct 13 update test page (one switch), not Settings" },
+        { "at": "2026-10-21T08:53:18Z", "where": "Text", "note": "Patch notes and admin guide: licensed source names and numbers replaced with free-data ones" },
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.52",
       "title": "Harry's patch notes: Camera, ball and two test pages",
+      "author": "Harry",
       "publishedAt": "2026-10-14T01:30:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/R5FFG4ugSWNiWxQEMoQjng",
@@ -4849,6 +6788,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
       "version": "0.51",
       "title": "Harry's patch notes: Camera, 3D look & keeper",
+      "author": "Harry",
       "publishedAt": "2026-10-13T21:30:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/R5FFG4ugSWNiWxQEMoQjng",
@@ -4902,7 +6842,8 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     },
     {
       "version": "0.50",
-      "title": "Mikey's patch notes v0.16: Gameplay review fixes",
+      "title": "Mikey's patch notes: Gameplay review fixes",
+      "author": "Mikey",
       "publishedAt": "2026-10-13T17:00:00Z",
       "updatedAt": "2026-10-16T12:00:00Z",
       "artifactUrl": "https://claude.ai/artifact/S5EvHkuf7wJTaGPeXd3WeM",
@@ -5012,11 +6953,17 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-13T17:52:02Z", "where": "Title, Time, Link, Text", "note": "Leo v0.16 (site 0.50), the Oct 13 gameplay update for review" },
+        { "at": "2026-10-16T21:19:11Z", "where": "Text, Page", "note": "Patch notes v0.16: completed pass ends at the receiver's feet" },
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.49",
-      "title": "Mikey's patch notes v0.15: International football",
+      "title": "Mikey's patch notes: International football and call-ups",
+      "author": "Mikey",
       "publishedAt": "2026-10-13T09:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/1VrPsvpikmWNaxcTFzpgGt",
@@ -5146,11 +7093,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.48",
-      "title": "Harry's patch notes: Gameplay & settings",
+      "title": "Harry's patch notes: Settings clean-up: 45 toggles removed",
+      "author": "Harry",
       "publishedAt": "2026-10-12T18:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/Aw5gexz5UkweXFamZB3Tqu",
@@ -5194,11 +7145,16 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-12T18:03:37Z", "where": "Text", "note": "Patch notes v0.46-0.48: marked live" },
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.47",
       "title": "Harry's patch notes: 3D match & cameras",
+      "author": "Harry",
       "publishedAt": "2026-10-12T18:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/4GnQVtDhxndhFJPjYXtMJv",
@@ -5246,11 +7202,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-12T18:03:37Z", "where": "Text", "note": "Patch notes v0.46-0.48: marked live" }
       ]
     },
     {
       "version": "0.46",
-      "title": "Harry's patch notes: Shop update",
+      "title": "Harry's patch notes: Shop pictures and boots priced by wage",
+      "author": "Harry",
       "publishedAt": "2026-10-12T18:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/Aw7yz4kbFZnEyVpC7sYNgV",
@@ -5294,11 +7254,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.45",
-      "title": "Leo's patch notes — the gameplay round: camera, keeper, shots, ball, radar, dribbling",
+      "title": "Leo's patch notes: Camera, keeper, shots, radar and dribbling",
+      "author": "Leo",
       "publishedAt": "2026-10-12T00:30:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/3x6BjhftYfYtYCYJRkKDbg",
@@ -5382,11 +7346,18 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-12T00:50:55Z", "where": "Text", "note": "Settings: one New in v0.15 box (All new / All old), camera starts on Old, Tournament test page" },
+        { "at": "2026-10-13T17:52:02Z", "where": "Link", "note": "Leo v0.16 (site 0.50), the Oct 13 gameplay update for review" },
+        { "at": "2026-10-21T08:53:18Z", "where": "Text", "note": "Patch notes and admin guide: licensed source names and numbers replaced with free-data ones" },
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.44",
-      "title": "Leo's patch notes — the big evening: camera, careers that move, a world that ages",
+      "title": "Leo's patch notes: Camera fix, transfers, internationals, ageing world",
+      "author": "Leo",
       "publishedAt": "2026-10-11T20:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/9wg6tn2XxSyT8mUBRhrbgy",
@@ -5544,11 +7515,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.43",
-      "title": "Mikey's patch notes",
+      "title": "Mikey's patch notes: Real shots as tests, Chance mix switch",
+      "author": "Mikey",
       "publishedAt": "2026-10-09T15:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/843j4zo8tXx2CKCzYceAFh",
@@ -5618,11 +7593,16 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-21T08:53:18Z", "where": "Text, Page", "note": "Patch notes and admin guide: licensed source names and numbers replaced with free-data ones" },
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.42",
-      "title": "Harry's patch notes",
+      "title": "Harry's patch notes: 3D casino, training pitch and drills",
+      "author": "Harry",
       "publishedAt": "2026-10-08T21:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/GWaupeUSruCjKW2qYtnHWW",
@@ -5831,11 +7811,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.41",
-      "title": "Mikey's patch notes — Brackets, the real UEFA knockout, relegation",
+      "title": "Mikey's patch notes: Brackets, the real UEFA knockout, relegation",
+      "author": "Mikey",
       "publishedAt": "2026-10-08T22:00:00Z",
       "updatedAt": "2026-10-08T22:00:00Z",
       "artifactUrl": "https://claude.ai/artifact/D2mVBLe6QDF2jqzHnrjiWt",
@@ -5886,11 +7870,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             { "title": "Forced-move offers follow your season", "detail": "No goals: the weakest clubs. A great season: the strongest, and National League clubs from reputation 70." }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.40",
-      "title": "Mikey's patch notes — Ovation greetings made in Blender",
+      "title": "Mikey's patch notes: Ovation greetings made in Blender",
+      "author": "Mikey",
       "publishedAt": "2026-10-08T14:00:00Z",
       "updatedAt": "2026-10-08T14:00:00Z",
       "artifactUrl": "https://claude.ai/artifact/6tgaVydhSjEeQea6tkA3oX",
@@ -5925,11 +7913,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             { "title": "Greetings made in Blender", "detail": "Hug, dap-up, pat (answered with a hand on the heart) and two claps, made with both players posed together. Seen in the 3D scene." }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.39",
-      "title": "Leo's patch notes — smart passing and highlights",
+      "title": "Leo's patch notes: Smart passing and highlights",
+      "author": "Leo",
       "publishedAt": "2026-10-08T18:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/M9DmuMCkXzeMW9EJ6mJFtZ",
@@ -6057,11 +8049,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.38",
-      "title": "Leo's patch notes — goal videos, round 3",
+      "title": "Leo's patch notes: Goal videos play themselves, new commentary",
+      "author": "Leo",
       "publishedAt": "2026-10-08T09:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/EGUKS4qyVUU6KoA1qkJAKn",
@@ -6173,11 +8169,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.37",
-      "title": "Mikey's patch notes — The standing ovation",
+      "title": "Mikey's patch notes: 3D standing ovation and season fixes",
+      "author": "Mikey",
       "publishedAt": "2026-10-08T12:00:00Z",
       "updatedAt": "2026-10-08T12:00:00Z",
       "artifactUrl": "https://claude.ai/artifact/23eP6tYuyTjuvAbBisnkCj",
@@ -6319,11 +8319,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.36",
-      "title": "Leo's patch notes",
+      "title": "Leo's patch notes: Goal videos get sound and commentary",
+      "author": "Leo",
       "publishedAt": "2026-10-08T01:30:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/2Uodrmk5Uj9Fm6ZBpUijAY",
@@ -6423,11 +8427,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.35",
-      "title": "Leo's patch notes",
+      "title": "Leo's patch notes: Goals in the feed are real videos",
+      "author": "Leo",
       "publishedAt": "2026-10-07T22:45:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/Uq2eXdooybw4HrxqC6999X",
@@ -6655,11 +8663,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.34",
-      "title": "Harry's patch notes",
+      "title": "Harry's patch notes: Gems wallet, save guard and club badges",
+      "author": "Harry",
       "publishedAt": "2026-10-07T18:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/73PxQFZCHbaKbkDd8MG96R",
@@ -6968,11 +8980,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.33",
-      "title": "Leo's patch notes",
+      "title": "Leo's patch notes: Farewell match, records and share picture",
+      "author": "Leo",
       "publishedAt": "2026-10-06T13:30:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/39iLwb8KpLGQmK9R7nbLgr",
@@ -7184,11 +9200,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.32",
-      "title": "Leo's patch notes",
+      "title": "Leo's patch notes: New keeper and team-mate animations",
+      "author": "Leo",
       "publishedAt": "2026-10-06T04:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/PhH1T34JAzEoWReV6NxWH6",
@@ -7423,11 +9443,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.31",
-      "title": "Leo's patch notes",
+      "title": "Leo's patch notes: Hall of Fame and 20-season careers",
+      "author": "Leo",
       "publishedAt": "2026-10-06T00:30:00Z",
       "updatedAt": null,
       "artifactUrl": null,
@@ -7599,11 +9623,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.30",
-      "title": "Harry's patch notes",
+      "title": "Harry's patch notes: 3D people, manager's office and garden",
+      "author": "Harry",
       "publishedAt": "2026-10-05T17:30:00Z",
       "summary": "Second update: the strike-screen ball takes a tap on its whole face (live), signing scene and office about 2x faster, a lighter garden, tap to move, a real walk. First publish: 3D people are one body with fingers, a 3D manager's office, a rebuilt garden, tester access links, the security database fix, a new match-engine rule and 244 of 244 tests passing. Harry's v0.30.",
       "stats": [
@@ -7984,11 +10012,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/AN3EiQVU8kb1cBWCFjn39A",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "0.29",
-      "title": "Harry's patch notes",
+      "title": "Harry's patch notes: Admin-only cheats, harder Ballon d'Or",
+      "author": "Harry",
       "publishedAt": "2026-10-05T14:45:00Z",
       "summary": "Cheat menus and 18 test pages locked to admins, a much harder Ballon d'Or, a play-off bug fixed, a trial shootout that is always 2-2 before your kick, a tour Later button, commentary up to 8× and boots warnings. Harry's v0.29.",
       "stats": [
@@ -8255,11 +10287,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/SRj5ZaVsgWFWca9Dy5bNWx",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "0.28",
-      "title": "Leo's patch notes",
+      "title": "Leo's patch notes: Human keepers, dribble runs, trial exits",
+      "author": "Leo",
       "publishedAt": "2026-10-05T03:30:00Z",
       "updatedAt": "2026-10-05T03:30:00Z",
       "artifactUrl": "https://claude.ai/artifact/PQCcbHkmPEQ3NrzA88nVZS",
@@ -8413,11 +10449,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.27",
-      "title": "Mikey's patch notes — Relationships",
+      "title": "Mikey's patch notes: Relationships rebuilt, one game each",
+      "author": "Mikey",
       "publishedAt": "2026-10-04T12:00:00Z",
       "updatedAt": "2026-10-04T12:00:00Z",
       "artifactUrl": "https://claude.ai/artifact/26Lh4jWsraDKYSaZZpqWWk",
@@ -8529,11 +10569,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.26",
-      "title": "Mikey's patch notes — XP rebuilt and the XP Book",
+      "title": "Mikey's patch notes: XP rebuilt and the XP Book",
+      "author": "Mikey",
       "publishedAt": "2026-10-03T22:30:00Z",
       "updatedAt": "2026-10-03T22:30:00Z",
       "artifactUrl": "https://claude.ai/artifact/UTFsvaBcLbYJjWmnYtXLHg",
@@ -8663,11 +10707,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.25",
-      "title": "Harry's patch notes",
+      "title": "Harry's patch notes: Live 3D signing, shop and garden",
+      "author": "Harry",
       "publishedAt": "2026-10-03T01:42:00Z",
       "summary": "Live 3D scenes: your own player signs live in 3D, there is a 3D shop to walk round, and the garden is rebuilt. You now play your first game before the tutorials, Play goes straight into the first chance, and the shootout, defenders, full screen and sounds play fairer. Live on knowitball.co.uk from 3 Oct; stills only, so try the rest on the test build.",
       "stats": [
@@ -9061,11 +11109,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/7LXrEgwm72sUVZH5Kcmeyz",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "0.24",
-      "title": "Harry's patch notes",
+      "title": "Harry's patch notes: Winnable highlights, new trial, square bars",
+      "author": "Harry",
       "publishedAt": "2026-10-02T22:06:00Z",
       "summary": "Highlights you can win, a reworked trial, and square top bars with 3D icons. Also a new Home with the energy cans under your player, help that opens by itself, a guided first training, unlocks announced one by one, a new title screen, boots on a plank with an unboxing and a basket, a Sound Board admin page, a 3D Test Area and a signing prototype. Everything is from your v0.23.1 review; nothing was live when written.",
       "stats": [
@@ -9555,11 +11607,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/CQ5gkXrcPk2gptL1EjX3au",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "0.23.1",
-      "title": "Harry's patch notes",
+      "title": "Harry's patch notes: Review fixes: bars, Home button, sounds",
+      "author": "Harry",
       "publishedAt": "2026-10-01T20:05:00Z",
       "summary": "Fixes from your v0.23 review: liquid bars, a quieter look, a simple way home, a nicer signing and title screen, a smaller starter house, and sounds. Filmed once on one combined copy: every Before is v0.23 and every After is v0.23.1. Nothing was live.",
       "stats": [
@@ -9827,11 +11883,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/8wzaQV41ZmrhtBXZV46Rav",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "0.23",
-      "title": "Harry's patch notes",
+      "title": "Harry's patch notes: App-like screens, regional leagues, shorter trial",
+      "author": "Harry",
       "publishedAt": "2026-10-01T18:10:00Z",
       "summary": "Harry's HUGE UPDATES review, built as test copies and filmed. Home and every screen now look like an app, National League North and South are playable, a new career starts with a scout and a pointer tutorial, the trial is half as long, and every shop picture is a Blender render. Settings has an Old UI / New UI switch. Nothing was live.",
       "stats": [
@@ -10435,11 +12495,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/HBE3svQRyVBbVcUMWjMW1g",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "0.22",
-      "title": "Harry's patch notes",
+      "title": "Harry's patch notes: Home fits one phone screen",
+      "author": "Harry",
       "publishedAt": "2026-10-01T11:15:00Z",
       "summary": "UI & Home: Harry's review of the home screen, built as test copies and filmed. Home fits one phone screen with no scrolling on three phone sizes, a new career unlocks the game step by step, and there is a green Pitch look to try. Nothing was live.",
       "stats": [
@@ -10761,11 +12825,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/AHUmDmsxzNfG1UhEkn3N7n",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "0.21",
-      "title": "Mikey's patch notes — Sponsors Revamp",
+      "title": "Mikey's patch notes: Sponsors revamp: brands send you offers",
+      "author": "Mikey",
       "publishedAt": "2026-09-30T20:00:00Z",
       "updatedAt": "2026-09-30T20:00:00Z",
       "artifactUrl": "https://claude.ai/artifact/6degCbK833CTu3YAZtoyCz",
@@ -10877,11 +12945,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.20",
-      "title": "Mikey's patch notes",
+      "title": "Mikey's patch notes: New star rating and fewer boots",
+      "author": "Mikey",
       "publishedAt": "2026-09-30T16:00:00Z",
       "updatedAt": "2026-09-30T16:00:00Z",
       "artifactUrl": "https://claude.ai/artifact/YYDBCrSHUiCb8kKSe9vVfo",
@@ -11045,11 +13117,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             }
           ]
         }
+      ],
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
       ]
     },
     {
       "version": "0.18",
-      "title": "Harry's patch notes",
+      "title": "Harry's patch notes: Road to the app stores, smoother aiming",
+      "author": "Harry",
       "publishedAt": "2026-09-28T14:00:00Z",
       "summary": "The game is now the base for a real App Store and Play Store app. The headline is the road map to it (step 3 of 8), plus what shipped since v0.17: aiming three times smoother on a slow phone, a smaller download, and 3D as everyone's look.",
       "stats": [
@@ -11250,11 +13326,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/HvagWBceebfaR9KmxRKhgh",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "0.17",
-      "title": "Harry's patch notes",
+      "title": "Harry's patch notes: Whole game reskinned, 3D players",
+      "author": "Harry",
       "publishedAt": "2026-09-28T11:00:00Z",
       "summary": "The whole game reskinned in the new home-screen look, 3D players, face scans, a Blender footballer for later, run-ups and the Store, and YouTube links finally working. The headline is the look: every screen rebuilt on one shared kit.",
       "stats": [
@@ -11496,11 +13576,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/45LCtddFQZAvSQsc2JWk6S",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "0.16",
-      "title": "Harry's patch notes",
+      "title": "Harry's patch notes: Every drawn player plays, penalty run-ups",
+      "author": "Harry",
       "publishedAt": "2026-09-27T21:00:00Z",
       "summary": "The v0.15 plan, built for real, tested and filmed at phone size. The headline: the drawing is the team, so every player you drew now plays. Penalties get a run-up, a keeper who dives once and can read you, and your club plays at its real strength.",
       "stats": [
@@ -11823,11 +13907,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/A9gwVhtt8dAVBwddYgrh7A",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "0.19",
-      "title": "Mikey's patch notes",
+      "title": "Mikey's patch notes: Five levels of every item, moving ball",
+      "author": "Mikey",
       "publishedAt": "2026-09-27T12:00:00Z",
       "summary": "The headline: five levels of every boot and lifestyle item, each priced for its league. Plus a moving ball on the strike screen (headers float, volleys bounce, ground balls bobble), commentary that barely repeats, and new chants.",
       "stats": [
@@ -11962,11 +14050,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/XCqpEXqtnZ7Dp4yf4vyTue",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "0.15",
-      "title": "Harry's patch notes",
+      "title": "Harry's patch notes: Playtest plan: 35 of 38 changes",
+      "author": "Harry",
       "publishedAt": "2026-09-27T11:00:00Z",
       "summary": "The plan from your 40-minute playtest: every problem you raised and what we'd do about it, with 35 of the 38 changes built as a test version and filmed. The headline is that every match you play has told your club it was a 60-rated side.",
       "stats": [
@@ -12189,11 +14281,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": null,
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "1.0",
-      "title": "V1: every problem and its fix",
+      "title": "Harry's patch notes: Every problem and its fix so far",
+      "author": "Harry",
       "publishedAt": "2026-09-26T18:00:00Z",
       "summary": "Every change from every patch notes version so far (v0.1 to v0.25), from Harry, Leo and Mikey, oldest first. Each item says what was wrong; open \"Why, and the fix\" for why it happened and what fixed it. The headlines are the drawing is the team (v0.16) and the guard (v0.10). v0.15 is the plan that v0.16 built; v0.19 is Mikey's page, first published as 1.1. Added 1 Oct: Mikey's v0.20 and v0.21, Harry's review of v0.20 and his v0.22. Added 3 Oct: Harry's v0.23, v0.23.1, v0.24 and v0.25, which went live that day.",
       "stats": [
@@ -16024,11 +18120,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/YEK3ykwCQjUpH4S6bQbqKR",
-      "updatedAt": "2026-10-03T03:00:00Z"
+      "updatedAt": "2026-10-03T03:00:00Z",
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "0.13",
-      "title": "Mikey's patch notes",
+      "title": "Mikey's patch notes: How you get picked for the team",
+      "author": "Mikey",
       "publishedAt": "2026-09-26T12:00:00Z",
       "summary": "The headline: how you get picked. A better-rated team-mate in your position starts ahead of you until you win the shirt; once won, you keep it on form. Form now counts over 3 games, subs come on when the score says, and fringe players start some early cup rounds.",
       "stats": [
@@ -16128,11 +18228,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/Q681hvwMs83X9895Aevav7",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "0.12",
-      "title": "Mikey's patch notes",
+      "title": "Mikey's patch notes: Training works like New Star Soccer",
+      "author": "Mikey",
       "publishedAt": "2026-09-25T22:00:00Z",
       "summary": "The headline: training works like New Star Soccer. 30 fixed levels per skill, three tries, stars raise the skill 40 → 100. Plus: pace, vision and free kick now matter in matches, every skill starts at 40, and matches no longer give skill points.",
       "stats": [
@@ -16300,11 +18404,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/FYpjCv5GQ4NPTN9qv4BhwQ",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "0.11",
-      "title": "Mikey's patch notes",
+      "title": "Mikey's patch notes: Players drawn where they really stand",
+      "author": "Mikey",
       "publishedAt": "2026-09-25T12:00:00Z",
       "summary": "The headline: what you see on the pitch now matches where people really stand. Nearer players in front, the ball behind whoever is in front of it, corners from the flag. Plus real trophy pictures, instant energy modes, likes on posts and new KIB cans.",
       "stats": [
@@ -16531,11 +18639,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/SoBMWDhZGj58LXwP4CFARm",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "0.10",
-      "title": "Harry's patch notes",
+      "title": "Harry's patch notes: The guard: one real match everywhere",
+      "author": "Harry",
       "publishedAt": "2026-09-24T12:00:00Z",
       "summary": "The headline is the guard: why the trial, training and five-a-side felt different from a match, and what now stops it happening again. Then every change as the problem, why it happened, and the fix.",
       "stats": [
@@ -16822,12 +18934,16 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/5njEpoPHxLK1oWvin2NLhZ",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "0.9",
-      "title": "Harry's patch notes",
-      "publishedAt": "2026-09-24T00:00:00Z",
+      "title": "Harry's patch notes: One engine for trial and training",
+      "author": "Harry",
+      "publishedAt": "2026-09-24T10:17:41Z",
       "summary": "One engine: why the trial, the training and the test screens felt like a different game, what is fixed, every open problem, and ten questions to paste back.",
       "stats": [
         {
@@ -16997,12 +19113,16 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/5njEpoPHxLK1oWvin2NLhZ",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about; real time it was made." }
+      ]
     },
     {
       "version": "0.8",
-      "title": "Harry's patch notes",
-      "publishedAt": "2026-09-23T00:00:00Z",
+      "title": "Harry's patch notes: How to build scenarios, save mid-match",
+      "author": "Harry",
+      "publishedAt": "2026-09-23T16:07:25Z",
       "summary": "How to build scenarios, step by step · Save and Commit from inside Infinite Match and Infinite Highlights · the difficulty argument, researched and simulated · an eye (ⓘ) on every admin page",
       "stats": [
         {
@@ -17306,12 +19426,16 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/DYAaW3Bma3zowkG5DcoQaS",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about; real time it was made." }
+      ]
     },
     {
       "version": "0.7",
-      "title": "Harry's patch notes",
-      "publishedAt": "2026-09-23T00:00:00Z",
+      "title": "Harry's patch notes: Play matches the picture, edit mid-match",
+      "author": "Harry",
+      "publishedAt": "2026-09-23T14:54:32Z",
       "summary": "Play now looks exactly like the picture · the ball moves on its own again · every browser counts the same scenarios · edit a chance mid-match in Infinite Match · the difficulty argument, researched",
       "stats": [
         {
@@ -17553,12 +19677,16 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/U1uHCBfUzgsoozGaFnKxTG",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about; real time it was made." }
+      ]
     },
     {
       "version": "0.6",
-      "title": "Mikey's patch notes",
-      "publishedAt": "2026-09-22T00:00:00Z",
+      "title": "Mikey's patch notes: Real wages, fame rebuilt, energy modes",
+      "author": "Mikey",
+      "publishedAt": "2026-09-21T21:45:19Z",
       "summary": "Premier League wages tied to real wage-bill spending · fame, reputation and careers rebuilt · buy/sell your stake properly · in-match energy modes with a real ticking clock · 151 test files green",
       "stats": [
         {
@@ -17710,11 +19838,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/4fuKfUh73WvRmxLdiU9tPu",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about; real time it was made." }
+      ]
     },
     {
       "version": "0.5",
-      "title": "Leo's patch notes",
+      "title": "Leo's patch notes: Five-a-side freeze fix and dev cheats",
+      "author": "Leo",
       "publishedAt": "2026-09-23T02:30:00Z",
       "summary": "Five-a-side could freeze solid mid-match — fixed and fuzz-tested · dev cheats to skip the grind · real power for owning the club you play for · PR #568 · 156 tests green",
       "stats": [
@@ -17870,11 +20002,15 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/YEuw3iut76VY2dZiQVarZd",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "0.4",
-      "title": "Harry's patch notes",
+      "title": "Harry's patch notes: Play Area and Infinite Match",
+      "author": "Harry",
       "publishedAt": "2026-09-22T12:00:00Z",
       "summary": "The Play button was throwing your drawing away · a new Play Area with an Infinite Match that counts what it actually serves you · and you can finally look at scenarios before committing them",
       "stats": [
@@ -18146,12 +20282,16 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/XcQqdgi1WDVUcPBwKf8vbC",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about." }
+      ]
     },
     {
       "version": "0.3.5",
-      "title": "Harry's patch notes",
-      "publishedAt": "2026-09-22T00:00:00Z",
+      "title": "Harry's patch notes: Decisions and ideas from the team call",
+      "author": "Harry",
+      "publishedAt": "2026-09-22T14:15:02Z",
       "summary": "From the 40-minute call with Leo and Mikey · what got fixed off the back of it, what was decided, and every idea that came up · nothing here is built unless it says it is",
       "stats": [
         {
@@ -18393,12 +20533,16 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/L4zdK7X44YctKBvHsPTZhB",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about; real time it was made." }
+      ]
     },
     {
       "version": "0.3",
-      "title": "Harry's patch notes",
-      "publishedAt": "2026-09-22T00:00:00Z",
+      "title": "Harry's patch notes: Scenario gallery and auto-tuner explained",
+      "author": "Harry",
+      "publishedAt": "2026-09-22T01:54:04Z",
       "summary": "The scenario gallery and the auto-tuner, explained from the top · three of the boxes below are things you can actually press · 151 test files green, every number measured",
       "stats": [
         {
@@ -18855,12 +20999,16 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/PhoNj7N3AvoR8keYRMAkZN",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about; real time it was made." }
+      ]
     },
     {
       "version": "0.2",
-      "title": "Leo's patch notes",
-      "publishedAt": "2026-09-22T00:00:00Z",
+      "title": "Leo's patch notes: Goalie Mode, a new keeper minigame",
+      "author": "Leo",
+      "publishedAt": "2026-09-22T01:54:04Z",
       "summary": "Goalie Mode · rounds 1-4 combined · a new keeper-POV minigame, its camera rebuilt against real reference footage, a real cursor bug fixed, real shot variety, and the pitch actually drawn - 151 star tests green",
       "stats": [
         {
@@ -19070,12 +21218,16 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/HD5yGHLCNQxHHwGAnrXS7o",
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about; real time it was made." }
+      ]
     },
     {
       "version": "0.1",
-      "title": "Harry's patch notes",
-      "publishedAt": "2026-09-21T00:00:00Z",
+      "title": "Harry's patch notes: Scoring fixed, steadier goal and camera",
+      "author": "Harry",
+      "publishedAt": "2026-09-21T11:27:45Z",
       "summary": "Star Career · branch Harry · 8 commits · 147 tests green · every number measured, not guessed",
       "stats": [
         {
@@ -19434,6 +21586,9 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": null,
-      "updatedAt": null
+      "updatedAt": null,
+      "updates": [
+        { "at": "2026-10-26T17:04:00Z", "where": "Title", "note": "Tidied 26 Oct: title gives what it is about; real time it was made." }
+      ]
     }
   ];

@@ -13,7 +13,7 @@
  */
 import { useMemo } from "react";
 import { ROLE_KIT } from "@/lib/star/fiveASide/render";
-import { runupPose, BALL_X, LOOP_SECONDS } from "@/lib/star/store/runupPreview";
+import { runupPose, hasTrail, BALL_X, LOOP_SECONDS } from "@/lib/star/store/runupPreview";
 import type { AnimationId } from "@/lib/star/store/catalogue";
 
 const SAMPLES = 60;
@@ -21,6 +21,9 @@ const GROUND = 66;
 const SKIN = "#e7b68f";
 /** The figure is drawn this much bigger than its 14-unit legs, so it reads on a phone card. */
 const K = 1.4;
+/** The Golden Run-up's trail: this many gold sparks, each this many seconds behind the last. */
+const TRAIL_N = 12;
+const TRAIL_GAP_S = 0.045;
 
 function num(n: number): string {
   return (Math.round(n * 100) / 100).toString();
@@ -29,6 +32,7 @@ function num(n: number): string {
 export default function RunupPreview({ style, className = "", paused = false }: { style: AnimationId; className?: string; paused?: boolean }) {
   const id = `ru-${style}`;
   const css = useMemo(() => {
+    const trail: string[] = [];
     const fig: string[] = [], back: string[] = [], front: string[] = [], arm: string[] = [], ball: string[] = [], whole: string[] = [];
     for (let i = 0; i <= SAMPLES; i++) {
       const t = i / SAMPLES;
@@ -43,6 +47,8 @@ export default function RunupPreview({ style, className = "", paused = false }: 
       arm.push(`${pct}{transform:rotate(${num(p.kick > 0 ? 70 * p.kick : -swing * 1.1)}deg)}`);
       ball.push(`${pct}{transform:translate(${num(p.ballX)}px,${num(GROUND - 2.4 - p.ballUp)}px)}`);
       whole.push(`${pct}{opacity:${num(p.opacity)}}`);
+      // Where his feet are, lit while he is running (the Golden Run-up).
+      trail.push(`${pct}{transform:translate(${num(p.x)}px,${num(GROUND - p.depth * 20 - p.hop - 2)}px);opacity:${p.stride > 0 ? 1 : 0}}`);
     }
     const anim = (name: string) => `animation:${id}-${name} ${LOOP_SECONDS}s linear infinite;`;
     const origin = "transform-box:view-box;transform-origin:0 0;";
@@ -59,6 +65,8 @@ export default function RunupPreview({ style, className = "", paused = false }: 
       `.${id} .arm{${origin}${anim("arm")}}`,
       `.${id} .ball{${origin}${anim("ball")}}`,
       `.${id} .whole{${anim("whole")}}`,
+      `@keyframes ${id}-trail{${trail.join("")}}`,
+      `.${id} .tr{${origin}animation:${id}-trail ${LOOP_SECONDS}s linear infinite;}`,
       `.${id}.paused *{animation-play-state:paused}`,
       `@media (prefers-reduced-motion: reduce){.${id} *{animation-play-state:paused}}`,
     ].join("\n");
@@ -84,6 +92,25 @@ export default function RunupPreview({ style, className = "", paused = false }: 
       <ellipse cx={BALL_X} cy={GROUND} rx="2.2" ry="0.8" fill="rgba(255,255,255,0.7)" />
 
       <g className="whole">
+        {hasTrail(style) && (
+          // A spark at each of his last few spots, older ones smaller and
+          // fainter: the same foot keyframes, each a little behind.
+          <g>
+            {Array.from({ length: TRAIL_N }, (_, k) => {
+              const life = 1 - k / TRAIL_N;
+              const lag = LOOP_SECONDS - (k + 1) * TRAIL_GAP_S;
+              const dx = (k % 3) - 1, dy = ((k * 7) % 5) - 2.5;
+              return (
+                <g key={k} className="tr" style={{ animationDelay: `${-lag}s` }}>
+                  <g opacity={num(0.25 + 0.75 * life)}>
+                    <circle cx={dx} cy={dy} r={num(2 + 3.6 * life)} fill="#f59e0b" opacity="0.35" />
+                    <circle cx={dx} cy={dy} r={num(0.8 + 2.2 * life)} fill="#fde68a" />
+                  </g>
+                </g>
+              );
+            })}
+          </g>
+        )}
         <g className="fig">
           {/* ground shadow, under the hip */}
           <ellipse cx="0" cy="14" rx="6" ry="1.4" fill="rgba(0,0,0,0.35)" />

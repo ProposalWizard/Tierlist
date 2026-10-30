@@ -13,6 +13,11 @@
  *   - extra time a match, from the unseen match's own highlights.
  */
 import { makeChance } from "../../lib/star/chanceMaker";
+import { forceFhrMode } from "../../lib/star/fhr/toggle";
+// This suite measures leadInGen's own build-ups (Chances: New with Full
+// highlights rebuild Off). The rebuild defaults On since 22 Oct 2026 and has
+// its own tests (fhr.mts, fhrIntel.mts), so it is switched off here.
+forceFhrMode("off");
 import { mulberry32 } from "../../lib/star/season";
 import { EVEN_KINDS, newKindBag, nextEvenKind } from "../../lib/star/kindMix";
 import type { ScenarioKind, Scenario } from "../../lib/star/canvasEngine";

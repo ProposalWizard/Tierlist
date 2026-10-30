@@ -50,6 +50,11 @@ export const CLIP_ALIASES: Record<string, ClipChoice[]> = {
   "celebrate-fist": [{ clip: "celebrate_fist" }, { clip: "celebrate" }],
   "celebrate-roar": [{ clip: "celebrate_roar" }, { clip: "celebrate_fist" }, { clip: "celebrate" }],
   "fist-pump": [{ clip: "celebrate_pump" }, { clip: "celebrate_fist" }, { clip: "celebrate" }],
+  // the Star Pass celebrations (25 Oct 2026, keyed: tools/mocap3d/keyed_celebs.py)
+  "corner-flag-dance": [{ clip: "celebrate_corner_flag" }, { clip: "celebrate_fist" }, { clip: "celebrate" }],
+  "backflip": [{ clip: "celebrate_backflip" }, { clip: "celebrate_jump" }, { clip: "celebrate_fist" }, { clip: "celebrate" }],
+  "own-name": [{ clip: "celebrate_own_name" }, { clip: "celebrate_fist" }, { clip: "celebrate" }],
+  "statue-pose": [{ clip: "celebrate_statue" }, { clip: "celebrate_fist" }, { clip: "celebrate" }],
   "celebrate-run": [{ clip: "celebrate_safe" }, { clip: "jog" }],
   cheer: [{ clip: "cheer_win" }, { clip: "celebrate" }],
   frustrated: [{ clip: "frustrated" }, { clip: "groan_loss" }],

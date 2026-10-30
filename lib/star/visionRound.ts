@@ -688,7 +688,7 @@ const nameOf = (p: VisionPicture, i: number) => {
 function verdict(p: VisionPicture, result: VisionResult, picked: number | null): VisionVerdict {
   const right = nameOf(p, p.best);
   const him = picked !== null ? nameOf(p, picked) : "";
-  const rightMan = right ? `${right} was the ball` : "The free man was the ball";
+  const rightMan = right ? `The pass was on to ${right}` : "The pass was on to the free man";
   switch (result) {
     case "right": return { ok: true, result, word: "RIGHT MAN", line: right ? `${right}: onside, free and the lane open.` : "Onside, free and the lane open." };
     case "offside": return { ok: false, result, word: "OFFSIDE", line: `${him || "He"} was beyond the last man. ${rightMan}.` };

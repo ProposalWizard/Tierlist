@@ -59,7 +59,9 @@ const kmh = (stat: number) => {
 };
 const powerRows = [20, 40, 60, 80, 100].map((p) => ({ p, before: kmh(strikingPower(p)), after: kmh(F.feelPower(p)) }));
 for (const r of powerRows) console.log(`  power ${r.p}: ${r.before.toFixed(0)} -> ${r.after.toFixed(0)} km/h (full pull, middle of the ball)`);
-ok(Math.abs(powerRows[2].after - kmh(strikingPower(40))) < 0.5, "a 60 now strikes it exactly like a 40 used to");
+// "Used to": the straight line from before 26 Oct 2026 (a 40 struck as a 40). The
+// game's own curve (strikingPower) changed that day; this feel stays pinned to the old 40.
+ok(Math.abs(powerRows[2].after - kmh(40)) < 0.5, "a 60 now strikes it exactly like a 40 used to");
 ok(powerRows.every((r, i) => i === 0 || r.after > powerRows[i - 1].after), "more power is still always more pace");
 ok(powerRows[4].after < 100 && powerRows[4].after > 90, `a 100: ${powerRows[4].before.toFixed(0)} -> ${powerRows[4].after.toFixed(0)} km/h`);
 {

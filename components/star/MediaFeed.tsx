@@ -1,11 +1,14 @@
 "use client";
 import { phoneClockLabel } from "@/lib/star/phoneClock";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { Trend } from "@/lib/star/media/types";
 import { feedFor } from "@/lib/star/media/feed";
 import { formatVolume } from "@/lib/star/media/trending";
 import PostCard, { FEED_LIST_CLASS } from "./media/PostCard";
+import { FeedWindow, FeedSlot } from "./media/FeedWindow";
+import { useLeoNow } from "./media/GoalVideoSwitch";
+import type { StoredPost } from "@/lib/star/media/types";
 import TransfersPanel from "./TransfersPanel";
 import PhoneFrame from "./PhoneFrame";
 import { KitStyles, PressButton, ClubCard, RiseIn, EmptySlots, useClubTheme, rgba } from "./ui";
@@ -57,6 +60,8 @@ interface Props {
   onContinue?: () => void;
   /** Tapping a post's heart. Absent: the heart is not tappable. */
   onToggleLike?: (postId: string) => void;
+  /** Voting in a Goal of the Month poll. Absent: the poll shows no Vote buttons. */
+  onVote?: (postId: string, index: number) => void;
   /** PROTOTYPE: render just the app, inside someone else's PhoneFrame. */
   inPhone?: boolean;
 }
@@ -75,7 +80,11 @@ const FILTERS: { id: string; label: string; scope?: "club" | "league" }[] = [
   { id: "club", label: "Club", scope: "club" },
 ];
 
-export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPhone = false }: Props) {
+export default function MediaFeed({ career, mode, onContinue, onToggleLike, onVote, inPhone = false }: Props) {
+  const scroller = useRef<HTMLDivElement>(null);
+  // Leo's 24 Oct update (lib/star/leoUpdate.ts): off = the feed exactly as on main.
+  const fast = useLeoNow("feedSpeed");
+  const gotmOn = useLeoNow("goalOfMonth");
   const { glow } = useClubTheme(career);
   const [filter, setFilter] = useState("all");
   // Feed vs Transfers — two tabs of the one app on the phone, not two
@@ -90,12 +99,14 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
 
   const shown = useMemo(() => {
     const f = FILTERS.find(x => x.id === filter);
-    if (!f?.scope) return posts;
+    // Goal of the Month off: none of its posts show (none are made either).
+    const all = gotmOn ? posts : posts.filter(p => p.graphic?.type !== "gotmPoll" && !String(p.eventId ?? "").startsWith("gotm-"));
+    if (!f?.scope) return all;
     // A post saved before `scope` existed carries neither value — it stays
     // under All rather than vanishing from both narrower tabs, which is
     // what filtering strictly by equality would otherwise do to it.
-    return posts.filter(p => p.scope === f.scope);
-  }, [posts, filter]);
+    return all.filter(p => p.scope === f.scope);
+  }, [posts, filter, gotmOn]);
 
   // The status bar's own clock, reading real — the Saturday of whatever week
   // the career is on, its own week granularity being the finest date this
@@ -174,7 +185,8 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
             </div>
           )}
 
-          <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto" data-tour={mode === "moment" ? "reactions-feed" : undefined}>
+          <div ref={scroller} className="kib-noscroll min-h-0 flex-1 overflow-y-auto" style={fast ? { willChange: "scroll-position", transform: "translateZ(0)" } : undefined} data-tour={mode === "moment" ? "reactions-feed" : undefined} data-feed-scroll>
+            <FeedWindow scroller={scroller}>
             <div className={FEED_LIST_CLASS}>
               {/* The second of the two Continue buttons — this one scrolls
                   away like any other post, for anyone reading the feed
@@ -192,9 +204,17 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
                   </svg>
                 </PressButton>
               )}
-              {shown.map((p, i) => i < 8
-                ? <RiseIn key={p.id} index={i} step={55}><PostCard post={p} now={now} onToggleLike={onToggleLike} /></RiseIn>
-                : <PostCard key={p.id} post={p} now={now} onToggleLike={onToggleLike} />)}
+              {/* Only posts near the screen are drawn (FeedWindow.tsx), with the
+                  update on; off, every post as on main. */}
+              {fast ? shown.map((p, i) => (
+                <FeedSlot key={p.id} id={p.id} estimate={estimateHeight(p)} first={i < 4}>
+                  {i < 8
+                    ? <RiseIn index={i} step={55}><PostCard post={p} now={now} onToggleLike={onToggleLike} onVote={gotmOn ? onVote : undefined} /></RiseIn>
+                    : <PostCard post={p} now={now} onToggleLike={onToggleLike} onVote={gotmOn ? onVote : undefined} />}
+                </FeedSlot>
+              )) : shown.map((p, i) => i < 8
+                ? <RiseIn key={p.id} index={i} step={55}><PostCard post={p} now={now} onToggleLike={onToggleLike} onVote={gotmOn ? onVote : undefined} /></RiseIn>
+                : <PostCard key={p.id} post={p} now={now} onToggleLike={onToggleLike} onVote={gotmOn ? onVote : undefined} />)}
               {shown.length === 0 && (
                 // Not a blank page: blacked-out posts where posts will be
                 // (Harry, 1 Oct 2026, P90). No words.
@@ -210,6 +230,7 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
                 </div>
               )}
             </div>
+            </FeedWindow>
           </div>
         </>
       )}
@@ -220,7 +241,7 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
           the post-match reaction is a single-purpose read, not something
           to navigate around in. */}
       {mode === "browse" && (
-        <div className="grid shrink-0 grid-cols-2 gap-1 border-t border-white/10 px-2 pb-1 pt-1.5" style={{ background: "rgba(0,0,0,.35)", backdropFilter: "blur(8px)" }}>
+        <div className="grid shrink-0 grid-cols-2 gap-1 border-t border-white/10 px-2 pb-1 pt-1.5" style={fast ? { background: "rgba(6,10,18,.82)" } : { background: "rgba(0,0,0,.35)", backdropFilter: "blur(8px)" }}>
           <TabButton active={tab === "feed"} label="Feed" onClick={() => setTab("feed")}>
             <FeedIcon />
           </TabButton>
@@ -292,6 +313,17 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
       </div>
     </div>
   );
+}
+
+/** A post's height before it has been drawn once (px, at phone width). */
+function estimateHeight(p: StoredPost): number {
+  const g = p.graphic as { type?: string; clips?: unknown[]; synth?: unknown[] } | undefined;
+  const lines = Math.ceil((p.text?.length ?? 0) / 38);
+  const base = 74 + lines * 20;
+  if (!g) return base;
+  if (g.type === "gotmPoll") return base + 520;
+  if (g.type === "goalVideo" || ((g.clips?.length ?? 0) + (g.synth?.length ?? 0)) > 0) return base + 200;
+  return base + 220;
 }
 
 /** A small drawn app icon — a ball inside a rounded square, the same

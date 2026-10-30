@@ -1,3 +1,4 @@
+import { forceChancesMode } from "../../lib/star/newChances";
 import { makeChance } from "../../lib/star/chanceMaker";
 import { newSelectionMemory } from "../../lib/star/scenarioSelect";
 import { EVEN_KIND_MIX, EVEN_KINDS, REAL_MIX, newKindBag, nextEvenKind, realMixRound } from "../../lib/star/kindMix";
@@ -33,6 +34,10 @@ for (let round = 0; round < 500; round++) {
 }
 
 // Through the real chance maker, with requests that used to favour cutbacks.
+// The even mix deals requests on the Chances: Old path; New chances (live by
+// default since Full highlights rebuild went On, 22 Oct 2026) deal from the
+// match's own request instead (chanceMaker newRequestKind, chanceJudge.mts).
+forceChancesMode("old");
 const counts: Record<string, number> = {};
 const sel = newSelectionMemory();
 const r2 = mulberry32(11);
@@ -45,6 +50,8 @@ for (let i = 0; i < N; i++) {
 }
 const share = N / EVEN_KINDS.length;
 for (const k of EVEN_KINDS) check(Math.abs((counts[k] ?? 0) - share) <= 1, `${k}: ${counts[k] ?? 0} of ${N}, wanted ${share}`);
+
+forceChancesMode(null);
 
 // A set piece is still a set piece.
 const corner = makeChance({

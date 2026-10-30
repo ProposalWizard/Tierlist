@@ -77,11 +77,62 @@ The wall clock went to server compiles, memory crashes and bot retries.
 - Shared helpers (open with a seed, jump to a trial stage, find the ball,
   bot strike) live in `scripts/film/scenes/lib.mjs`.
 
-### 6. Make outcomes certain, not lucky
-- A clip that must show a win (a shootout, a drill pass) uses a dev-only seed
-  or flag that makes the result certain. Never retry a bot until it wins.
+### 6. Film the game as it really plays: never fake the shot
+Leo, 24 Oct 2026, on celebration clips where a test tool moved the ball onto
+the goal line after the strike: *"it looks like the player shoots and the ball
+immediately goes in … have you massively changed the game?"*
+- NEVER move the ball, change its flight, or set the result in a clip
+  (`__starMatch.setBall` and the like). The viewer can't tell a filming trick
+  from a game change, so a faked shot reads as a broken game.
+- A dev switch may only set up the SITUATION (which chance is served, the
+  minute, the score), never the outcome. Say in the caption when one was used.
+- If a clip needs a goal, take real shots until one really goes in, and film
+  that one whole: before the strike, the full flight, the keeper, the net.
+  Retrying for a real result is fine; faking it is not.
+- If a clip deliberately replays one fixed strike (a weather comparison), the
+  caption says so in plain words.
+
+### 6b. Sound is part of the clip
+Leo, 24 Oct 2026: *"why no sound? that's an important thing to hear to give
+feedback for in patch notes."* Playwright's recordVideo is silent. Any clip
+where sound matters (crowd, commentary, music, heartbeat, a sting) is filmed
+with the audio tap (`scripts/film/scenes/audio-tap.mjs`) and muxed in as AAC.
+You can't hear it here, so prove it: a loudness curve showing the peaks land
+on the right moments (the net, the roar, the call). Say plainly if a clip has
+no sound and why.
 - Hide dev-only bars while filming (a `film=1` flag), so no "DEV: SKIP" strip
   shows in the clips. Real players never see it.
+
+### 6c. Film the match frame by frame, never as a screen recording
+Leo, 25 Oct 2026: the clips "look bad" and "the ball moves weird". Cause, measured: this
+machine has no graphics card, so a real-time recording (Playwright recordVideo, the CDP
+screencast) stalls. From the shot to the end of the camera pan after the scorer, chat 1's
+knee slide, big moment and aeroplane clips have 14%, 15% and 17% of moving frames that are
+an exact copy of the one before, then a jump (`scripts/film/smoothness.py`). The same
+moments filmed frame by frame: 0%.
+- Use `scripts/film/vclock.mjs`. It takes over the page's clock (performance.now,
+  Date.now, requestAnimationFrame, timers, CSS animations): the game only moves when the
+  script steps it, exactly 1/60 s a step, and every step is captured after a real repaint.
+  No frame can repeat or drop, however slow the machine.
+- Sound comes with it: the game's Web Audio context becomes an offline one on the same
+  clock, so every sound sits on its exact frame and is rendered to a WAV at the end.
+- `encode()` reads the frames as an exact 60 fps image sequence and keeps every 2nd for
+  30 fps. Never join frames with an ffmpeg concat list of per-image durations: the
+  rounding repeated 16% of frames in a clean capture (measured).
+- Menus and loading run in real time; call `vStart` once the page is up. Between steps
+  you can drag and tap as usual (step a frame or two between mouse moves).
+- A real goal: `node scripts/film/scenes/vgoal.mjs <port> <knee-slide|aeroplane|big-moment|plain> <outDir> --seed seed.json`
+  (real shots only, misses thrown away; about 1 goal in 13 shots on the seed save; about
+  1-2 s of machine time per frame of film, so several clips at once is fine: the clock
+  does not care how busy the machine is).
+- Seed: `node scripts/film/scenes/celebrations.mjs <port> setup <outDir>`. The drivers drop
+  the save's unlock list so first-hour tours and pop-ups stay out of the way.
+- Check a clip: `python3 scripts/film/smoothness.py clip.mp4 --from S --to S` over a stretch
+  where the picture moves every frame: stalls must be 0. Outside such a stretch the game's
+  own slow animations (a celebration figure changes pose ~8 times a second) hold still
+  legitimately; the vgoal driver also logs the ball every frame (`<clip>-ball.json`).
+- Not for `<video>` elements (goal-video playback runs on its own clock): those clips stay
+  screen recordings, with sound through `audio-tap.mjs`.
 
 ### 7. Run the scenes as one script; the agent only checks
 - **Not built yet (2 Oct 2026):** `run-scenes.mjs` is written with the library
@@ -107,6 +158,34 @@ The wall clock went to server compiles, memory crashes and bot retries.
 - **One kind of highlight** (a tight angle, a give-and-go) cannot be waited for.
   In v0.24 two tries on a slow machine never served one. Use a dev-only seed
   that serves that kind first (rule 6).
+
+## Filming a rare real moment (Leo, 27 Oct 2026)
+
+Leo, after a keeper filming round lost hours: *"get better at filming what u
+need to optimally and not wasting time!"* What went wrong: takes guessed at
+the shot, a filmer sat on the stats screen for minutes, two got stuck in a
+dribble they could not play, and six ran at once on one machine.
+
+1. **Read the engine's rule for the outcome first, then aim at it.** A keeper
+   catch, for example, needs a ball under 23 m/s, below chest height, inside
+   two-thirds of his reach (`resolveKeeper` in canvasEngine.ts). Aim every try
+   inside that window. Never fire at random and wait.
+2. **The filmer judges the take, not you.** Log the numbers that decide it
+   (save result, distance from the keeper, height) on every try, and keep a
+   take only when they match. A "catch" 0.2 m from his chest is not a diving
+   catch.
+3. **Cap every take and restart fresh.** One run gets 4 minutes
+   (`timeout 240`), then a new browser from the seed save. Never let one run
+   sit on a menu, a stats screen or a phase it cannot play.
+4. **At most 3 filmers at once** on a cloud machine. Six made each of them
+   slower and none finished sooner.
+5. **Check every kept take by eye** (a close-up sheet around the moment)
+   before it goes on a page. Two of the first takes showed bugs (a dive 1 s
+   early, a keeper standing up before the ball arrived), and those had to be
+   fixed and refilmed.
+
+Keeper saves: `scripts/film/keeper/vsave.mjs` (want any | catch | dcatch, `--look`) and
+`take.sh` (the 4-minute fresh-restart loop). Reuse them; don't rewrite them.
 
 ## Which model
 - Filming is mostly waiting for a browser, so a bigger model doesn't make it faster.

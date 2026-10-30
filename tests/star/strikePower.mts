@@ -12,20 +12,19 @@
 import { readFileSync } from "fs";
 import { buildScenario, launch, dragForFullPower } from "../../lib/star/canvasEngine";
 import { mulberry32 } from "../../lib/star/season";
-import { strikingPower, topSpeedScale, POWER_KNEE } from "../../lib/star/strikePower";
+import { strikingPower, topSpeedScale, fullPowerSpeed, POWER_POINTS, DEFAULT_POWER_SPEEDS } from "../../lib/star/strikePower";
 import { POST_R } from "../../lib/star/pitch";
 
 let failed = 0;
 const ok = (c: boolean, what: string) => { if (!c) { failed++; console.error(`  FAIL ${what}`); } else console.log(`  ✓ ${what}`); };
 
 console.log("\nTHE CURVE");
-let same = true;
-for (let p = 0; p <= POWER_KNEE; p += 0.5) if (strikingPower(p) !== p) same = false;
-ok(same, `nothing changes at or below ${POWER_KNEE}`);
+// Mikey, 26 Oct 2026: 40 is a starting player now (strikePower.ts DEFAULT_POWER_SPEEDS).
+ok(POWER_POINTS.every((p, i) => Math.abs(fullPowerSpeed(p) - DEFAULT_POWER_SPEEDS[i]) < 1e-9), "the curve passes through its own speeds");
 let rising = true;
 for (let p = 0; p < 100; p += 0.5) if (!(strikingPower(p + 0.5) > strikingPower(p))) rising = false;
 ok(rising, "more power is always a little more — 99 is still the best there is");
-ok(Math.abs(strikingPower(99) - 81.9) < 1e-9, `a 99 strikes the ball like an ${strikingPower(99).toFixed(1)}`);
+ok(Math.abs(strikingPower(100) - 82) < 0.3, `a 100 still strikes the ball like an ${strikingPower(100).toFixed(1)} (the top is where it was)`);
 
 console.log("\nTHE BALL (full pull, struck through the middle, aimed at the top corner from the spot)");
 /** km/h off the boot, as CanvasMatch strikes it: the curve's number into launch. */
@@ -37,9 +36,12 @@ const kmh = (stat: number) => {
 };
 const rows = [40, 60, 80, 90, 99].map((p) => ({ p, before: kmh(p), after: kmh(strikingPower(p)) }));
 for (const r of rows) console.log(`  power ${r.p}: ${r.before.toFixed(1)} -> ${r.after.toFixed(1)} km/h`);
-ok(rows.filter((r) => r.p <= 80).every((r) => r.before === r.after), "40, 60 and 80 leave the boot exactly as fast as before");
+const r40 = rows.find((r) => r.p === 40)!, old40 = r40.before;
+ok(r40.after < old40 * 0.9, `40 is clearly weaker: ${r40.after.toFixed(1)} km/h (was ${old40.toFixed(1)})`);
+const at65 = kmh(strikingPower(65));
+ok(Math.abs(at65 - old40) / old40 < 0.02, `65 hits it like the old 40: ${at65.toFixed(1)} km/h (old 40 ${old40.toFixed(1)})`);
 const r99 = rows.find((r) => r.p === 99)!;
-ok(r99.before > 112 && r99.after > 102 && r99.after < 104, `99: ${r99.before.toFixed(1)} -> ${r99.after.toFixed(1)} km/h (the plan: ~112 -> ~102-103)`);
+ok(r99.after > 102 && r99.after < 104, `99: ${r99.after.toFixed(1)} km/h, the top where it was (~102-103)`);
 
 // topSpeedScale is the share of pace the curve keeps — pinned to launch's own
 // formula, so the two cannot drift apart unnoticed.

@@ -28,7 +28,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import HEADLINES from "@/lib/patchNoteHeadlines.json";
 import { TEAM_ROOM } from "@/lib/teamRoom/config";
-import { patchAuthor, type PatchMeta } from "@/lib/teamRoom/extras";
+import { patchAuthor, patchReadKey, patchTime, type PatchMeta } from "@/lib/teamRoom/extras";
 import { bellCount, inboxFor, noteMentionsFor, noteSeenKey, shortPatchTitle } from "@/lib/teamRoom/inbox";
 import { splitQuotes } from "@/lib/teamRoom/notify";
 import { requestNotes } from "@/lib/teamRoom/patchQuote";
@@ -41,7 +41,12 @@ import "./teamRoom.css";
 // The small list (version, date, title, author; ~14 KB), not the ~1 MB notes:
 // this bell is on every admin page. Made from lib/patchNotesData.ts at build
 // time by scripts/patch-notes/build-headlines.mjs (22 Oct 2026).
-const META: PatchMeta[] = HEADLINES.map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt }));
+const META: PatchMeta[] = (HEADLINES as { version: string; title: string; publishedAt: string; updatedAt?: string | null; updateNote?: string | null }[])
+  .map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt, updatedAt: n.updatedAt ?? null, updateNote: n.updateNote ?? null }));
+/** The receipt key for a version (an updated note is read again: extras.ts patchReadKey). */
+const readKeyOf = (v: string) => { const m = META.find((x) => x.version === v); return m ? patchReadKey(m) : v; };
+/** The note that changed last (new or updated): ringing is asked again when it changes. */
+const NEWEST = [...META].sort((a, b) => (Date.parse(patchTime(b)) || 0) - (Date.parse(patchTime(a)) || 0))[0];
 /** The event the Team board listens for, so a note opens in place there (no reload). */
 export const OPEN_PATCH_EVENT = "kib-open-patch";
 
@@ -66,7 +71,7 @@ export default function InboxBell({ className }: { className?: string }) {
   const mentions = useMemo(() => (ready ? noteMentionsFor(s.notes, s.me, s.acks) : []), [ready, s.notes, s.me, s.acks]);
 
   // New patch notes in this deploy: ask the site to buzz the team (once per version per browser).
-  useEffect(() => { if (ready) ringNewPatches(META[0]?.version); }, [ready]);
+  useEffect(() => { if (ready) ringNewPatches(NEWEST ? patchReadKey(NEWEST) : undefined); }, [ready]);
 
   useEffect(() => {
     if (!open) return;
@@ -90,14 +95,14 @@ export default function InboxBell({ className }: { className?: string }) {
   };
   const openNote = async (v: string, mention?: number) => {
     setOpen(false);
-    if (mention) { void setAck("patch", noteSeenKey(mention), true); requestNotes(v); } else void markRead(v);
+    if (mention) { void setAck("patch", noteSeenKey(mention), true); requestNotes(v); } else void markRead(readKeyOf(v));
     const ev = new CustomEvent(OPEN_PATCH_EVENT, { detail: v, cancelable: true });
     window.dispatchEvent(ev);
     if (!ev.defaultPrevented) router.push(`${TEAM_ROOM.home}?tab=notes&v=${encodeURIComponent(v)}`);
   };
   const markAll = async () => {
     for (const m of mentions) if (!(await markRead(noteSeenKey(m.id)))) return;
-    for (const p of list) if (!(await markRead(p.version))) break;
+    for (const p of list) if (!(await markRead(patchReadKey(p)))) break;
   };
 
   return (
@@ -149,7 +154,7 @@ export default function InboxBell({ className }: { className?: string }) {
                         {who ? <Av p={who} sm /> : <span className="tr-av sm">?</span>}
                         <span className="t"><b>{shortPatchTitle(p.title)}</b><small>v{p.version} · {who ?? "Team"} · {day(p.publishedAt)}</small></span>
                       </button>
-                      <button className="tr-inbox-ok" onClick={() => markRead(p.version)} aria-label={`Mark v${p.version} read`} title="Mark read without opening">✓</button>
+                      <button className="tr-inbox-ok" onClick={() => markRead(patchReadKey(p))} aria-label={`Mark v${p.version} read`} title="Mark read without opening">✓</button>
                     </li>
                   );
                 })}

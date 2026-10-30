@@ -15,7 +15,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { NEW_PLAYER_CLIPS, NEW_KEEPER_CLIPS } from "../../lib/star/sprites";
+import { AERIAL_PLAYER_CLIPS, CELEB_PLAYER_CLIPS, NEW_PLAYER_CLIPS, NEW_KEEPER_CLIPS , KEEPER_CATCH_CLIPS } from "../../lib/star/sprites";
 import { NEW_CLIP_SHAPE, outfieldClipFor, outfieldSpriteClip, keeperDiveClipNew, keeperStandingClip, keeperGetUpT, sideOfDive } from "../../lib/star/sprite3dAnim";
 import { animDuration } from "../../lib/star/actionAnim";
 import type { BallActionKind, BallActionMode, SaveResult } from "../../lib/star/canvasEngine";
@@ -78,7 +78,13 @@ for (const char of ["player", "keeper"] as const) {
     check(c.dirs === want[0] && c.frames === want[1], `old ${char}.${name} changed shape`);
     if (c.cells) inside(c.cells, idx.atlas.w, idx.atlas.h, `old ${char}.${name}`);
   }
-  const extra = Object.keys(idx.chars[char].clips).filter((n) => !(OLD[char] as readonly string[]).includes(n) && !((char === "player" ? NEW_PLAYER_CLIPS : NEW_KEEPER_CLIPS) as readonly string[]).includes(n));
+  const extra = Object.keys(idx.chars[char].clips).filter((n) => !(OLD[char] as readonly string[]).includes(n) && !((char === "player" ? NEW_PLAYER_CLIPS : NEW_KEEPER_CLIPS) as readonly string[]).includes(n)
+    // After you score (Leo, 22 Oct 2026): the six celebrations, atlas 2; the Star Pass four (25 Oct 2026), atlas 4.
+    && !(char === "player" && (CELEB_PLAYER_CLIPS as readonly string[]).includes(n) && [2, 4].includes(idx.chars.player.clips[n]?.atlas ?? -1))
+    // The aerial moves (Harry, 25 Oct 2026), atlas 3.
+    && !(char === "player" && (AERIAL_PLAYER_CLIPS as readonly string[]).includes(n) && idx.chars.player.clips[n]?.atlas === 3)
+    // Keeper catches and dives (Leo, 26 Oct 2026), atlas 5.
+    && !(char === "keeper" && (KEEPER_CATCH_CLIPS as readonly string[]).includes(n) && idx.chars.keeper.clips[n]?.atlas === 5));
   check(extra.length === 0, `${char} has clips nobody knows: ${extra.join(", ")}`);
 }
 check(idx.atlas.color === "atlas-0.webp" && idx.atlas.mask === "mask-0.webp" /* lossless WebP, same pixels (12 Oct 2026) */ && idx.atlas.w === 1024 && idx.atlas.h === 1251, "atlas 0's entry changed");
@@ -132,7 +138,10 @@ for (let g = 0; g <= 1; g += 0.05) { const f = Math.floor(keeperGetUpT(g, gu.fra
 const src = fs.readFileSync(path.resolve("components/star/CanvasMatch.tsx"), "utf8");
 const animOf = src.slice(src.indexOf("const animOf = "), src.indexOf("const animOf = ") + 1200);
 check(animOf.indexOf("if (!animNew) return null;") >= 0 && animOf.indexOf("if (!animNew) return null;") < animOf.indexOf("animNow.set("), "animOf fills animNow before checking Animations: Old");
-check((src.match(/animNow\.set\(/g) ?? []).length === 1, "something else fills animNow");
+// Two writers since 25 Oct 2026: animOf, and the header's jump (you rise and
+// meet the cross, the "you" sprite set from the header beat). Animations are
+// always New (decided 12 Oct), so Old can no longer reach either.
+check((src.match(/animNow\.set\(/g) ?? []).length === 2 && src.includes('animNow.set("you", { a: ha, e: beat.animE })'), "something other than animOf and the header jump fills animNow");
 check(/const kAnim0 = ka && /.test(src) && /const ka = animNew \?/.test(src), "the keeper's kAnim no longer depends on Animations: New");
 for (const fn of ["keeperDiveClipNew(", "keeperStandingClip(", "keeperGetUpT("]) {
   const i = src.indexOf(fn);

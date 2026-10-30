@@ -1,0 +1,10 @@
+admin view (team) · CPU 6× · 390×844 · posts in seed 150
+open (first)     painted 420 ms · posts drawn 4 · longest task while opening 174 ms · still 1269 ms · first video ready 12226 ms
+long tasks 10 s after open: 16 (longest 537 ms, >100ms: 3)
+scroll           {"ms":11782,"steps":82,"height":10244,"longTasks":78,"longest":137,"over100":16,"total":6451}
+open (again)     painted 241 ms · longest 91 ms · first video ready 490 ms
+open (new visit) painted 333 ms · longest 124 ms · first video ready 1406 ms
+errors: Failed to fetch RSC payload for http://localhost:3202/blind-rankings. Falling back to browser navigation. TypeError: Failed to fetch
+    at s (http://localhost:3202/_next/static/chunks/86096-531b61d1b | Failed to fetch RSC payload for http://localhost:3202/tierlists. Falling back to browser navigation. TypeError: network error | Failed to fetch RSC payload for http://localhost:3202/tic-tac-toe. Falling back to browser navigation. TypeError: network error | Failed to fetch RSC payload for http://localhost:3202/draft. Falling back to browser navigation. TypeError: network error | Failed to fetch RSC payload for http://localhost:3202/tenable. Falling back to browser navigation. TypeError: network error | club_logos read failed — every badge will fall back to initials: TypeError: Failed to fetch
+JSON {"first":{"painted":420.30000000074506,"posts":4,"video":12225.599999999627,"still":1269.4000000003725,"t0":20808.800000000745,"openLongest":174,"lt10s":[174,65,57,54,67,148,63,83,84,95,92,61,73,58,537,51]},"scroll":{"ms":11782,"steps":82,"height":10244,"longTasks":78,"longest":137,"over100":16,"total":6451},"again":{"painted":240.5,"posts":4,"video":490,"still":null,"t0":50779.10000000149,"openLongest":91,"lt10s":[91]},"reload":{"painted":333.2000000011176,"posts":4,"video":1405.7000000011176,"still":899.0999999996275,"t0":19617.299999998882,"openLongest":124,"lt10s":[119,56,55,124,71]}}
+BROWSER GONE

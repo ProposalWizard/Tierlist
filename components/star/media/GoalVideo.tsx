@@ -2,9 +2,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
 import { getClips } from "@/lib/star/goalClip/store";
-import { makeEdit, editDuration, posterMoment, clipFileName, type ClipStyle } from "@/lib/star/goalClip/edit";
-import { drawEditFrame, prepareClipSprites, type ClipCredit } from "@/lib/star/goalClip/render";
-import { encodeEdit, saveVideo, videoSupported, type EncodedClip } from "@/lib/star/goalClip/encode";
+import { makeEdit, editDuration, clipFileName, type ClipStyle } from "@/lib/star/goalClip/edit";
+import type { ClipCredit } from "@/lib/star/goalClip/render";
+import { saveVideo, videoSupported, type EncodedClip } from "@/lib/star/goalClip/encode";
+import { makeVideo, keptVideo, posterFor, workerReady, videosOnPage, startLive, warmLive } from "@/lib/star/goalClip/makeVideo";
+import { goalVideoKey } from "@/lib/star/goalClip/premake";
 import { useAnimationsLook } from "@/lib/star/animLook";
 import { synthTrack, type SynthGoal } from "@/lib/star/goalClip/synth";
 import { planAudio, mixAudio } from "@/lib/star/goalClip/audio";
@@ -156,11 +158,13 @@ export interface GoalVideoProps {
   /** Full screen, edge to edge, no buttons (the shop's For You highlights, Harry 12 Oct 2026):
    *  the video covers its box, loops, and only a thin progress line shows it playing. */
   fill?: boolean;
+  /** Leo's 24 Oct update "goalVideoNow": play a goal at once, live, while its file is made. */
+  live?: boolean;
 }
 
 type Status = "idle" | "making" | "ready" | "unsupported" | "failed";
 
-export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, title, badge, fallback, autoStart = false, priority = 0, fill = false }: GoalVideoProps) {
+export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, title, badge, fallback, autoStart = false, priority = 0, fill = false, live = false }: GoalVideoProps) {
   const [played, setPlayed] = useState(0);
   const [tracks, setTracks] = useState<GoalTrack[] | null>(null);
   const [status, setStatus] = useState<Status>("idle");
@@ -188,7 +192,8 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
   const release = useRef<(() => void) | null>(null);
   if (release.current === null && priority > 0) release.current = owe(priority);
   useEffect(() => () => { release.current?.(); }, []);
-  const key = `${style}|${variant}|${moves}|${clipIds.join(",")}|${synthKey}|${credit?.handle ?? ""}`;
+  // The same name premake.ts uses, so a video made at full time is found here.
+  const key = goalVideoKey(style, variant, moves, clipIds, synth, credit?.handle);
 
   useEffect(() => {
     let live = true;
@@ -225,18 +230,40 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
     setStatus("ready");
   }, [key]);
 
-  // The still: one frame, drawn once the figures have loaded.
+  // The still: one frame, drawn in the video worker (makeVideo.ts) and only
+  // copied onto this canvas here, so it never holds the feed up.
   useEffect(() => {
     if (!edit || status === "ready") return;
     let live = true;
-    prepareClipSprites(edit.moves).finally(() => {
+    void posterFor(key, edit, credit).then(img => {
       const c = canvasRef.current;
-      if (!live || !c) return;
-      const ctx = c.getContext("2d");
-      if (ctx) drawEditFrame(ctx, edit, 0, credit, posterMoment(edit));
+      if (!live || !c || !img) return;
+      c.getContext("2d")?.drawImage(img, 0, 0, c.width, c.height);
     });
     return () => { live = false; };
-  }, [edit, status, credit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edit, status, key]);
+
+  // Made before on this phone (kept in IndexedDB): ready at once, no queue.
+  const [keptChecked, setKeptChecked] = useState(false);
+  useEffect(() => {
+    if (!edit || made.has(key)) { setKeptChecked(true); return; }
+    let live = true;
+    setKeptChecked(false);
+    void keptVideo(key).then(v => {
+      if (!live) return;
+      if (v) {
+        const entry = keep(key, { ...v, audio: null });
+        setUrl(entry.url);
+        setStatus("ready");
+        // A file without its own sound plays the mix alongside it.
+        if (!v.hasAudio) void mixAudio(planAudio(edit)).then(a => { entry.clip.audio = a; }).catch(() => { /* silent */ });
+      }
+      setKeptChecked(true);
+    });
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edit, key]);
 
   const start = async (quiet = false) => {
     if (!quiet) setWanted(true);
@@ -251,9 +278,10 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
       let job = making.get(key);
       if (!job) {
         const e = edit;
+        // Made in the worker when the phone allows (makeVideo.ts); kept once made.
         const make = () => mixAudio(planAudio(e))
           .catch(() => null)
-          .then(audio => encodeEdit(e, { credit, onProgress: setProgress, audio }));
+          .then(audio => makeVideo(key, e, { credit, onProgress: setProgress, audio }));
         // A tap skips the queue; a post merely near the screen waits its turn.
         job = quiet ? inTurn(make, priority) : make();
         making.set(key, job);
@@ -271,7 +299,79 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
     }
   };
 
+  // ── THE LIVE PLAYER (Leo, 24 Oct 2026: "I don't EVER wanna wait more than
+  // a few seconds … for MY GOALS OR TEAM HIGHLIGHTS"). Tapped before the file
+  // is made: the goal plays at once, drawn live from the recording in the
+  // player worker (makeVideo.ts startLive), with its sound; the moment the
+  // file is made it takes over from the same second.
+  const [liveState, setLiveState] = useState<"off" | "starting" | "playing">("off");
+  const [liveGen, setLiveGen] = useState(0);
+  const liveCanvasRef = useRef<HTMLCanvasElement>(null);
+  const liveStop = useRef<(() => void) | null>(null);
+  const liveT = useRef(0);
+  const liveSound = useRef<{ src: AudioBufferSourceNode; gain: GainNode } | null>(null);
+  const seekTo = useRef<number | null>(null);
+  const stopLiveNow = () => {
+    liveStop.current?.(); liveStop.current = null;
+    if (liveSound.current) { try { liveSound.current.src.stop(); } catch { /* done */ } liveSound.current = null; }
+  };
+  // One live session at a time; it ends only when it is no longer wanted
+  // (scrolled away, the file is ready, unmounted), never because a check
+  // finished meanwhile (that cancelled it half-started: 9 s on a slow phone).
+  const liveSession = useRef(0);
   useEffect(() => {
+    // Playing live needs only the player worker, not the file encoder (canPlay).
+    const want = live && wanted && !fill && status !== "ready" && !!edit && canPlay !== false && onView;
+    if (!want) {
+      if (liveState !== "off") {
+        liveSession.current++;
+        stopLiveNow();
+        if (status === "ready") seekTo.current = liveT.current;
+        setLiveState("off");
+        setLiveGen(g => g + 1);
+      }
+      return;
+    }
+    if (liveState !== "off" || !liveCanvasRef.current || !edit) return;
+    const session = ++liveSession.current;
+    const current = () => liveSession.current === session;
+    setLiveState("starting");
+    const startedAt = performance.now();
+    const e = edit;
+    void startLive(liveCanvasRef.current, e, credit, () => {
+      if (!current()) return;
+      setLiveState("playing");
+      // Its sound, from the same second (mixed on the page, played alongside).
+      void mixAudio(planAudio(e)).then(buf => {
+        const c = audioContext();
+        if (!buf || !c || !current() || !liveStop.current) return;
+        if (c.state === "suspended") c.resume().catch(() => { /* needs a tap */ });
+        const src = c.createBufferSource(); src.buffer = buf; src.loop = true;
+        const gain = c.createGain(); gain.gain.value = audible ? 1 : 0;
+        src.connect(gain); gain.connect(c.destination);
+        src.start(0, ((performance.now() - startedAt) / 1000) % Math.max(0.01, buf.duration));
+        liveSound.current = { src, gain };
+      }).catch(() => { /* silent */ });
+    }, t => { if (current()) liveT.current = t; }).then(stop => {
+      if (!current()) { stop?.(); return; }
+      if (!stop) { setLiveState("off"); return; }
+      liveStop.current = stop;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wanted, status, edit, canPlay, onView, liveGen, live]);
+  useEffect(() => { if (liveSound.current) liveSound.current.gain.gain.value = audible ? 1 : 0; }, [audible]);
+  // Your goals, your match's highlights and a replay you opened: the live
+  // player is readied for them as soon as they are on the page.
+  useEffect(() => {
+    if (live && edit && canPlay && !fill && (priority > 0 || autoStart) && status !== "ready") warmLive(key, edit, credit);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edit, canPlay, key, live]);
+  useEffect(() => () => { liveSession.current++; stopLiveNow(); }, []);
+
+  useEffect(() => {
+    // Opened to watch (a replay): wanted at once, so the live player starts
+    // without waiting for the file encoder's check.
+    if (autoStart && !fill) setWanted(true);
     if (autoStart && edit && canPlay && status === "idle") void start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart, edit, canPlay]);
@@ -288,11 +388,17 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
     return () => { nearObs.disconnect(); viewObs.disconnect(); };
   }, [edit, canPlay]);
 
+  // Made in the worker: start as soon as the post is drawn (the feed only
+  // draws posts near the screen, FeedWindow.tsx). Made on the page (no
+  // worker): only once it is on screen, so scrolling past never makes one.
+  const [offPage, setOffPage] = useState<boolean | null>(null);
+  useEffect(() => { let live = true; void workerReady().then(ok => { if (live) setOffPage(ok && !videosOnPage()); }); return () => { live = false; }; }, []);
   useEffect(() => {
-    // Your own match's videos start straight away, near the screen or not.
-    if ((near || priority > 0) && edit && canPlay && status === "idle") void start(true);
+    if (!keptChecked || offPage === null) return;
+    const go = offPage ? true : (onView || (priority > 0 && near));
+    if (go && edit && canPlay && status === "idle") void start(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [near, priority, edit, canPlay, status]);
+  }, [near, onView, priority, edit, canPlay, status, keptChecked, offPage]);
 
   useEffect(() => {
     // Its own job is queued (inTurn) or done: stop holding the others back.
@@ -413,6 +519,7 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
             playsInline
             muted
             loop
+            onLoadedMetadata={(ev) => { if (seekTo.current !== null) { ev.currentTarget.currentTime = seekTo.current; seekTo.current = null; } }}
             onClick={() => { const v = videoRef.current; if (v) { if (v.paused) { setWanted(true); void v.play(); } else v.pause(); } }}
             onPlay={(ev) => { const me = ev.currentTarget; onScreen.forEach(v => { if (v !== me && !v.paused) v.pause(); }); }}
             onPause={(ev) => stopSide(ev.currentTarget)}
@@ -432,6 +539,17 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
         {status === "ready" && url ? null : (
           <>
             <canvas ref={canvasRef} width={edit.w} height={edit.h} className="block h-full w-full" />
+            {/* The live player draws here (in its worker) until the file is made. */}
+            <canvas
+              key={liveGen}
+              ref={liveCanvasRef}
+              width={edit.w}
+              height={edit.h}
+              className="absolute inset-0 h-full w-full"
+              style={{ visibility: liveState === "playing" ? "visible" : "hidden" }}
+              data-goal-video-live={liveState}
+            />
+            {liveState === "playing" ? null : <>
             {badge && (
               <div className="absolute right-2 top-2 rounded bg-red-600 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
                 {badge}
@@ -456,11 +574,12 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
                   <div className="mt-0.5 text-[10px] font-black uppercase tracking-wider text-white">{Math.round(progress * 100)}%</div>
                 </div>
               ) : (
-                <div className="grid h-12 w-12 place-items-center rounded-full bg-black/45 ring-2 ring-white/80 backdrop-blur-sm">
+                <div className="grid h-12 w-12 place-items-center rounded-full bg-black/55 ring-2 ring-white/80">
                   <div className="ml-1 h-0 w-0 border-y-[9px] border-l-[14px] border-y-transparent border-l-white" />
                 </div>
               )}
             </button>
+            </>}
           </>
         )}
       </div>

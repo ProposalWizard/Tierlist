@@ -20,6 +20,7 @@ import type { AmericanState, AmPlayer, SquadPick } from "@/lib/americanDraft";
 import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { DraftPlayer } from "@/lib/seasonSimulator";
 import { applyStatChange, getSigningBoost } from "@/lib/draftBoosts";
+import { notGuest } from "@/lib/guest/config";
 
 /** Squad rows only need these fields to build the ownership exclusion set. */
 type RosterEntry = { sofifa_id?: string; name?: string };
@@ -57,7 +58,8 @@ export async function POST(
   }
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user: signedIn } } = await supabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
   if (!user) return new Response("Unauthorized", { status: 401 });
 
   const service = createServiceClient();

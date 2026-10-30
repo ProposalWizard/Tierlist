@@ -227,7 +227,7 @@ function Market({
           value={search}
           onChange={e => onSearch(e.target.value)}
           placeholder="Search clubs…"
-          className="flex-1 rounded-lg kit-input px-3 py-2 text-sm text-white placeholder:text-white/40"
+          className="w-0 min-w-0 flex-1 rounded-lg kit-input px-3 py-2 text-sm text-white placeholder:text-white/40"
         />
         <div className="flex rounded-lg overflow-hidden border border-gray-700 shrink-0">
           <button
@@ -240,7 +240,7 @@ function Market({
             onClick={() => setSortBy("value")}
             className={`px-2.5 py-2 text-[10px] font-black ${sortBy === "value" ? "bg-emerald-600 text-white" : "bg-gray-800 text-white/70"}`}
           >
-            ★ High→Low
+            ★ Value
           </button>
         </div>
       </div>

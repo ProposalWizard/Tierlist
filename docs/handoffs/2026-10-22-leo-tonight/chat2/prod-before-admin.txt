@@ -1,0 +1,13 @@
+admin view (team) · CPU 6× · 390×844 · posts in seed 150
+open (first)     painted 6441 ms · posts drawn 71 · longest task while opening 5366 ms · still 13654 ms · first video ready —
+long tasks 10 s after open: 3 (longest 5366 ms, >100ms: 3)
+scroll           {"ms":267971,"steps":40,"height":10226,"longTasks":174,"longest":5965,"over100":124,"total":268413}
+open (again)     painted 1629 ms · longest 710 ms · first video ready 7398 ms
+open (new visit) painted 6078 ms · longest 4877 ms · first video ready —
+errors: Failed to fetch RSC payload for http://localhost:3201/blind-rankings. Falling back to browser navigation. TypeError: Failed to fetch
+    at s (http://localhost:3201/_next/static/chunks/86096-531b61d1b | Failed to fetch RSC payload for http://localhost:3201/star-highlights-dev. Falling back to browser navigation. TypeError: Failed to fetch
+    at s (http://localhost:3201/_next/static/chunks/86096-531b | Failed to fetch RSC payload for http://localhost:3201/star-gallery-dev. Falling back to browser navigation. TypeError: Failed to fetch
+    at s (http://localhost:3201/_next/static/chunks/86096-531b61d | Failed to fetch RSC payload for http://localhost:3201/admin/team. Falling back to browser navigation. TypeError: Failed to fetch
+    at s (http://localhost:3201/_next/static/chunks/86096-531b61d1bc2a6 | Failed to fetch RSC payload for http://localhost:3201/tierlists. Falling back to browser navigation. TypeError: network error | club_logos read failed — every badge will fall back to initials: TypeError: Failed to fetch
+JSON {"first":{"painted":6440.799999998882,"posts":71,"video":null,"still":13654.299999998882,"t0":32022.400000000373,"openLongest":5366,"lt10s":[634,5366,3774]},"scroll":{"ms":267971,"steps":40,"height":10226,"longTasks":174,"longest":5965,"over100":124,"total":268413},"again":{"painted":1628.7999999988824,"posts":71,"video":7397.799999998882,"still":7395.799999998882,"t0":420519.4000000004,"openLongest":710,"lt10s":[710,243]},"reload":{"painted":6077.5,"posts":71,"video":null,"still":19678.200000001118,"t0":15518.799999998882,"openLongest":4877,"lt10s":[706,4877,4296]}}
+BROWSER GONE

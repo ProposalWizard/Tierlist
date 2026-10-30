@@ -23,11 +23,10 @@
  * own rules (lib/star/realMoments, "placed"). Credit: REAL_CREDIT.wyscout.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import PageGuide from "@/components/admin/PageGuide";
 import { BroadcastPage, Panel, Btn, Pill, Note } from "@/components/admin/broadcast/BroadcastPage";
 import "./real-goals.css";
-import EnginePlay from "@/components/star/EnginePlay";
-import Match3DLayer from "@/components/star/Match3DLayer";
 import type { ChanceResolved } from "@/components/star/CanvasMatch";
 import type { Scenario } from "@/lib/star/canvasEngine";
 import type { LeadIn } from "@/lib/star/leadIn";
@@ -38,8 +37,22 @@ import {
   joinGoals, buildLevels, levelOpen, totalStars, recordResult, loadProgress, saveProgress,
   accuracyPct, starsFor, realEnd, scenarioForGoal, viewForGoal, realMoveLeadin, moveWindow, realBallKeys,
   scorerShort, concededBy, minuteOf, knownAs, sideKits, stageOf, isTournament, LEAGUES, FEATURED, STAR_TWO, STAR_THREE,
-  type RealGoal, type RgFile, type Progress, type Stage, type Level,
+  type RealGoal, type RgFile, type Progress, type Stage, type Level, type LeagueFile,
 } from "@/lib/star/realGoals";
+import {
+  PATHS, pathOf, buildPath, fileOfPath, pathStars, pathMaxStars, nextLevelOf, isBanger, loadPathProgress, savePathProgress,
+  type PathId, type RgPath, type PathProgress,
+} from "@/lib/star/realGoalPaths";
+import {
+  dailyGoalId, dailyNumber, utcDate, recordDaily, currentStreak, beatToday, loadDaily, saveDaily, EMPTY_DAILY, type DailyState,
+} from "@/lib/star/realGoalDaily";
+import RG_INDEX from "@/data/realmoments/rg_index.json";
+import type { RgCard, RgFileKey, RgIndex } from "@/lib/star/realGoalIndex";
+// The match and the fixer load only when a goal is played or the fixer opens (the home stays light).
+const BangerFixer = dynamic(() => import("./BangerFixer"), { ssr: false });
+// The real match loads only when a goal is played (chat 5: the home stays light on a slow phone).
+const EnginePlay = dynamic(() => import("@/components/star/EnginePlay"), { ssr: false, loading: () => <div className="rg-matchload">Loading the match…</div> });
+const Match3DLayer = dynamic(() => import("@/components/star/Match3DLayer"), { ssr: false });
 
 /** The striker you play as: an elite real scorer (Leo: "if im yamal'in it top bins"). Clear weather, no closing down. */
 const SETTINGS: PlaySettings = {
@@ -56,7 +69,9 @@ const LOCK_KEY = "star-cam3d-lock";
 
 const STAR = (n: number, of = 3, size = 16) => (
   <span style={{ fontSize: size, letterSpacing: 1 }}>
-    {Array.from({ length: of }, (_, i) => <span key={i} style={{ color: i < n ? "#facc15" : "rgba(255,255,255,0.25)" }}>★</span>)}
+    {/* Empty stars are outlines in a mid grey: a faint white one was turned bright white by the
+        admin look's ink guard and read as a star won (25 Oct 2026). */}
+    {Array.from({ length: of }, (_, i) => <span key={i} data-star={i < n ? "on" : "off"} style={{ color: i < n ? "#facc15" : "#94a3b8" }}>{i < n ? "★" : "☆"}</span>)}
   </span>
 );
 
@@ -94,6 +109,9 @@ function GoalMouth({ real, you }: { real: { x: number; z: number }; you: { x: nu
   );
 }
 
+/** Tries in one match before it starts again (the match itself ends after 6 chances). */
+const TRIES_PER_MATCH = 5;
+
 interface Attempt { scored: boolean; pct: number; stars: number; you: { x: number; z: number } | null; outcome: string; best: boolean }
 
 function PlayGoal({ goal, level, onClose, onResult, onNext }: {
@@ -104,6 +122,12 @@ function PlayGoal({ goal, level, onClose, onResult, onNext }: {
   const [buildUp, setBuildUp] = useState(true);
   const [camera, setCamera] = useState<Camera>("tv");
   const [run, setRun] = useState(0);
+  // The match underneath ends after 6 chances (its FULL TIME card, with pay):
+  // every few tries it starts again on the same goal, without the build-up.
+  const [seg, setSeg] = useState(0);
+  const triesInMatchRef = useRef(0);
+  // A new run (a camera or build-up change) starts a fresh match: count again.
+  useEffect(() => { setSeg(0); triesInMatchRef.current = 0; }, [run]);
   const [caption, setCaption] = useState<{ text: string; done: boolean }>({ text: "", done: false });
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [tries, setTries] = useState(0);
@@ -161,6 +185,10 @@ function PlayGoal({ goal, level, onClose, onResult, onNext }: {
     setAttempt({ scored, pct, stars, you, outcome: r.outcome, best });
     setTries((n) => n + 1);
     onResult(stars, pct);
+    if (++triesInMatchRef.current >= TRIES_PER_MATCH) {
+      triesInMatchRef.current = 0;
+      window.setTimeout(() => setSeg((n) => n + 1), 1800);
+    }
     crossRef.current = null; prevRef.current = null;
   }, [real, onResult]);
 
@@ -182,6 +210,8 @@ function PlayGoal({ goal, level, onClose, onResult, onNext }: {
             You are <b className="text-yellow-300">{knownAs(goal, s.player)}</b> ({s.team}) · {s.body} · xG {Math.round(s.xg * 100)}%
           </div>
           {featured && <div className="text-xs font-bold text-sky-300">{featured.label}</div>}
+          {!featured && x.label && <div className="text-xs font-bold text-sky-300">{x.label}</div>}
+          {x.drafted && <div data-drafted className="text-[11px] font-bold text-fuchsia-300">Drafted from public record{x.technique ? ` · ${x.technique}` : ""} · the shot spot, where it went in and the passes are placed by hand from the match report</div>}
         </div>
         <button onClick={onClose} className="shrink-0 rounded-lg bg-white/15 px-3 py-1.5 text-xs font-black">✕</button>
       </div>
@@ -202,12 +232,12 @@ function PlayGoal({ goal, level, onClose, onResult, onNext }: {
       )}
 
       <div className="pt-2">
-        <Match3DLayer key={`${goal.id}-${run}`}>
+        <Match3DLayer key={`${goal.id}-${run}-${seg}`}>
           <EnginePlay
             seed={7}
             settings={SETTINGS}
             openOn={openOn}
-            leadIn={buildUp && realLead ? leadIn : undefined}
+            leadIn={buildUp && realLead && seg === 0 ? leadIn : undefined}
             scene={{ ownFrame: true }}
             realGoal={view}
             onBallStep={onBallStep}
@@ -253,6 +283,12 @@ function PlayGoal({ goal, level, onClose, onResult, onNext }: {
 /** A small goal mouth with the real goal's spot: the card's picture (drawn from the real data). */
 function MiniMouth({ goal }: { goal: RealGoal }) {
   const e = realEnd(goal);
+  return <MouthDot end={[e.x, e.z]} />;
+}
+
+/** The goal mouth with one green dot at [x across, z up] (metres). */
+function MouthDot({ end }: { end: [number, number] }) {
+  const e = { x: end[0], z: end[1] };
   const W = 160, H = 74, l = 14, r = W - 14, top = 16, line = H - 10;
   const s = (r - l) / (POST_R - POST_L);
   const x = Math.max(l - 6, Math.min(r + 6, l + (e.x - POST_L) * s));
@@ -284,9 +320,9 @@ function GoalCard({ goal, tag, open, stars, sub, onClick, data }: {
 }
 
 /** A stage as a TV rail: a row of level cards, scrolled sideways with ‹ ›. */
-function StageRail({ st, stages, progress, onPick }: { st: Stage; stages: Stage[]; progress: Progress; onPick: (lv: Level) => void }) {
+function StageRail({ st, stages, progress, onPick, stars }: { st: Stage; stages: Stage[]; progress: Progress; onPick: (lv: Level) => void; stars: (p: Progress) => number }) {
   const ref = useRef<HTMLDivElement>(null);
-  const open = totalStars(progress) >= st.gate;
+  const open = stars(progress) >= st.gate;
   const got = st.levels.reduce((a, l) => a + (progress[l.goal.id]?.stars ?? 0), 0);
   const nudge = (d: number) => ref.current?.scrollBy({ left: d * ref.current.clientWidth * 0.8, behavior: "smooth" });
   return (
@@ -301,7 +337,7 @@ function StageRail({ st, stages, progress, onPick }: { st: Stage; stages: Stage[
       </div>
       <div className="rg-row" ref={ref}>
         {st.levels.map((lv) => (
-          <GoalCard key={lv.n} goal={lv.goal} tag={`Level ${lv.n + 1}`} open={levelOpen(stages, progress, lv)}
+          <GoalCard key={lv.n} goal={lv.goal} tag={`Level ${lv.n + 1}`} open={levelOpen(stages, progress, lv, stars)}
             stars={progress[lv.goal.id]?.stars ?? 0} sub={`v ${concededBy(lv.goal)}`} onClick={() => onPick(lv)} data={{ "data-level": lv.n }} />
         ))}
       </div>
@@ -309,16 +345,18 @@ function StageRail({ st, stages, progress, onPick }: { st: Stage; stages: Stage[
   );
 }
 
-function LevelMap({ stages, progress, onPick }: { stages: Stage[]; progress: Progress; onPick: (lv: Level) => void }) {
+function LevelMap({ stages, progress, onPick, stars }: { stages: Stage[]; progress: Progress; onPick: (lv: Level) => void; stars: (p: Progress) => number }) {
   return (
     <div data-level-map className="rg-rails">
-      {stages.map((st) => <StageRail key={st.n} st={st} stages={stages} progress={progress} onPick={onPick} />)}
+      {stages.map((st) => <StageRail key={st.n} st={st} stages={stages} progress={progress} onPick={onPick} stars={stars} />)}
     </div>
   );
 }
 
 /** The competition chips over the goal list, in this order. */
-const COMPS = ["World Cup 2018", "Euro 2016", ...LEAGUES.map((l) => l.comp)];
+const COMPS = ["Bangers", "World Cup 2018", "Euro 2016", ...LEAGUES.map((l) => l.comp)];
+/** A goal's chip: every banger under "Bangers", whatever its competition. */
+const chipOf = (g: RealGoal) => (isBanger(g) ? "Bangers" : g.x.comp);
 const COMP_SHORT = (c: string) => c.replace(" 2017/18", "");
 
 function GoalList({ goals, progress, leaguesLoading, onPick }: { goals: RealGoal[]; progress: Progress; leaguesLoading: boolean; onPick: (g: RealGoal) => void }) {
@@ -327,15 +365,15 @@ function GoalList({ goals, progress, leaguesLoading, onPick }: { goals: RealGoal
   const [shown, setShown] = useState(20);
   const counts = useMemo(() => {
     const m = new Map<string, number>();
-    for (const g of goals) m.set(g.x.comp, (m.get(g.x.comp) ?? 0) + 1);
+    for (const g of goals) m.set(chipOf(g), (m.get(chipOf(g)) ?? 0) + 1);
     return m;
   }, [goals]);
   const list = useMemo(() => {
     const t = q.trim().toLowerCase();
     const feat = new Map(FEATURED.map((f, i) => [f.id, i]));
-    const all = goals.filter((g) => comp === "all" || g.x.comp === comp).filter((g) => !t || [g.shot.player, knownAs(g, g.shot.player), g.shot.team, g.shot.match, stageOf(g), g.x.comp].some((s) => s.toLowerCase().includes(t)));
+    const all = goals.filter((g) => comp === "all" || chipOf(g) === comp).filter((g) => !t || [g.shot.player, knownAs(g, g.shot.player), g.shot.team, g.shot.match, stageOf(g), g.x.comp].some((s) => s.toLowerCase().includes(t)));
     return all.sort((a, b) => (feat.get(a.id) ?? 999) - (feat.get(b.id) ?? 999));
-  }, [goals, q]);
+  }, [goals, q, comp]);
   useEffect(() => setShown(20), [q, comp]);
   return (
     <Panel title="Every goal" note={`${list.length} ${list.length === 1 ? "goal" : "goals"}`}>
@@ -357,6 +395,7 @@ function GoalList({ goals, progress, leaguesLoading, onPick }: { goals: RealGoal
                   <b>{knownAs(g, g.shot.player)} <em>· {g.shot.team}</em></b>
                   <span>{g.x.home} {g.x.score[0]}–{g.x.score[1]} {g.x.away} · {minuteOf(g)}&apos; · {stageOf(g)}</span>
                   {f && <span className="rg-feat">★ {f.label}</span>}
+                  {!f && g.x.label && <span className="rg-feat">★ {g.x.label}</span>}
                 </span>
                 <span className="rg-iright">{STAR(progress[g.id]?.stars ?? 0, 3, 12)}<span>xG {Math.round(g.shot.xg * 100)}%</span></span>
               </button>
@@ -384,7 +423,7 @@ function Hero({ level, progress, onPlay }: { level: Level; progress: Progress; o
         <div className="rg-hlabel">{p?.stars ? "Keep going" : "Next level"} · Level {level.n + 1}</div>
         <div className="rg-hname"><Swatch team={g.shot.team} size={16} /> {knownAs(g, g.shot.player)} {minuteOf(g)}&apos;</div>
         <div className="rg-hscore">{g.x.home} <b>{g.x.score[0]} – {g.x.score[1]}</b> {g.x.away}</div>
-        {f && <div className="rg-hfeat">★ {f.label}</div>}
+        {(f || g.x.label) && <div className="rg-hfeat">★ {f?.label ?? g.x.label}</div>}
         <div className="rg-hstars">{STAR(p?.stars ?? 0, 3, 22)}{p?.best ? <span>best {Math.round(p.best)}%</span> : null}</div>
         <button className="rg-playit" onClick={onPlay} data-play-hero>Play it <span aria-hidden>▶</span></button>
       </div>
@@ -393,98 +432,244 @@ function Hero({ level, progress, onPlay }: { level: Level; progress: Progress; o
 }
 
 const TAB_KEY = "star-real-goals-tab";
+const PATH_KEY = "star-real-goals-path";
+
+/** Where a goal being played came from: its stars go there. */
+type From = { kind: "path"; path: PathId; level: Level } | { kind: "list" } | { kind: "daily"; date: string };
+
+/** One path as a tile on the Real Goals home: its name, its stars, a bar. */
+function PathTile({ path, got, max, onOpen }: { path: RgPath; got: number | null; max: number; onOpen: () => void }) {
+  const pct = max && got ? Math.round((100 * got) / max) : 0;
+  return (
+    <button data-path-tile={path.id} className="rg-tile" onClick={onOpen}
+      style={{ background: `linear-gradient(135deg, ${path.colours[0]} 0%, ${path.colours[0]} 55%, ${path.colours[1]}55 100%)` }}>
+      <span className="rg-tname">{path.name}</span>
+      <span className="rg-tblurb">{path.blurb}</span>
+      <span className="rg-tfoot">{STAR(1, 1, 14)} <b>{got ?? "–"}</b><i>/ {max}</i></span>
+      <span className="rg-tbar"><span style={{ width: `${pct}%`, background: path.colours[1] }} /></span>
+    </button>
+  );
+}
+
+/** The daily goal's card, drawn from the small index (no big file needed). */
+function DailyCard({ card, date, daily, ready, waiting, onPlay }: { card: RgCard | null; date: string; daily: DailyState; ready: boolean; waiting: boolean; onPlay: () => void }) {
+  const streak = currentStreak(daily, date);
+  const beat = beatToday(daily, date);
+  const today = daily.days[date];
+  return (
+    <section className="rg-daily" data-daily={card ? dailyGoalId(date) ?? "none" : "none"}>
+      <div className="rg-dhead">
+        <span className="rg-dlabel">Daily Real Goal #{dailyNumber(date)}</span>
+        <span className="rg-dstreak" data-streak={ready ? streak : ""}>🔥 {ready ? streak : "–"} {streak === 1 ? "day" : "days"}<i> · best {ready ? daily.best : "–"}</i></span>
+      </div>
+      {card ? (
+        <div className="rg-dbody">
+          <MouthDot end={card.end} />
+          <div className="rg-dinfo">
+            <b><span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 4, background: card.kit[0], border: `2px solid ${card.kit[1]}`, verticalAlign: "-2px" }} /> {card.player} {card.minute}&apos;</b>
+            <span>{card.home} {card.score[0]}–{card.score[1]} {card.away}</span>
+            <span>{card.label}</span>
+            {beat
+              ? <span className="rg-ddone">✓ Beaten today {STAR(today?.stars ?? 0, 3, 12)} {today?.pct ?? 0}% · a new one tomorrow</span>
+              : <span className="rg-dhint">Score it to {streak ? "keep" : "start"} your streak. The same goal for everyone today.</span>}
+          </div>
+        </div>
+      ) : <div className="rg-dinfo"><span>No daily goal today.</span></div>}
+      {card && <button className="rg-dplay" onClick={onPlay} disabled={waiting} data-play-daily>{waiting ? "Loading the goal…" : beat ? "Play it again" : "Play today's goal"} ▶</button>}
+    </section>
+  );
+}
 
 export default function RealGoalsDev() {
-  const [goals, setGoals] = useState<RealGoal[] | null>(null);
-  // The 2017/18 league goals (Leo, 20 Oct 2026): loaded after the World Cup / Euro ones, for the list only.
-  const [leagueGoals, setLeagueGoals] = useState<RealGoal[]>([]);
-  const [leaguesLoading, setLeaguesLoading] = useState(true);
+  // Every data file loads only when something needs it (chat 5, 22 Oct 2026):
+  // the home draws from the small index (rg_index.json) alone, so it is on
+  // screen in the first paint even on a slow phone. "wc" = World Cup + Euro.
+  const [loaded, setLoaded] = useState<Partial<Record<RgFileKey, RealGoal[]>>>({});
+  const [wantFiles, setWantFiles] = useState<RgFileKey[]>([]);
+  const asked = useRef(new Set<RgFileKey>());
+  const [ready, setReady] = useState(false);
+  const [pendingDaily, setPendingDaily] = useState(false);
+  const [playParam, setPlayParam] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [tab, setTabState] = useState<"levels" | "all">("levels");
+  const [pathId, setPathIdState] = useState<PathId | null>(null);
   const [progress, setProgress] = useState<Progress>({});
-  const [playing, setPlaying] = useState<{ goal: RealGoal; level: Level | null } | null>(null);
+  const [pathProg, setPathProg] = useState<PathProgress>({});
+  const [daily, setDaily] = useState<DailyState>(EMPTY_DAILY);
+  const [today, setToday] = useState(() => utcDate(Date.now()));
+  const [playing, setPlaying] = useState<{ goal: RealGoal; from: From } | null>(null);
+  const [fixOpen, setFixOpen] = useState(false);
   const setTab = (t: "levels" | "all") => { setTabState(t); try { localStorage.setItem(TAB_KEY, t); } catch { /* private */ } };
+  const setPathId = (p: PathId | null) => { setPathIdState(p); try { if (p) localStorage.setItem(PATH_KEY, p); else localStorage.removeItem(PATH_KEY); } catch { /* private */ } };
 
   useEffect(() => {
     setProgress(loadProgress());
-    Promise.all([fetchRealFile<WyscoutShotFile>("shots"), fetchRealFile<RgFile>("goals")])
-      .then(([s, g]) => setGoals(joinGoals(s.shots, g.goals)))
-      .catch((e) => setError(String(e)));
-    Promise.allSettled(LEAGUES.map((l) => fetchRealFile<RgFile & WyscoutShotFile>(l.file)))
-      .then((rs) => {
-        const out: RealGoal[] = [];
-        for (const r of rs) if (r.status === "fulfilled") out.push(...joinGoals(r.value.shots, r.value.goals));
-        setLeagueGoals(out);
-      })
-      .finally(() => setLeaguesLoading(false));
+    setPathProg(loadPathProgress());
+    setDaily(loadDaily());
+    setReady(true);
     const q = new URLSearchParams(window.location.search);
-    let saved: string | null = null;
-    try { saved = localStorage.getItem(TAB_KEY); } catch { /* private */ }
+    let saved: string | null = null, savedPath: string | null = null;
+    try { saved = localStorage.getItem(TAB_KEY); savedPath = localStorage.getItem(PATH_KEY); } catch { /* private */ }
     if (q.get("tab") === "all" || (!q.get("tab") && saved === "all")) setTabState("all");
+    const wantPath = q.get("path") ?? savedPath;
+    if (wantPath && pathOf(wantPath)) setPathIdState(wantPath as PathId);
+    if (q.get("fix") === "1") setFixOpen(true);
+    setPlayParam(q.get("play"));
+    // A new UTC day while the page is open: the daily card moves on.
+    const t = window.setInterval(() => setToday(utcDate(Date.now())), 60_000);
+    return () => window.clearInterval(t);
   }, []);
 
-  // The level map stays on the World Cup / Euro goals (stars already won stay where they are).
-  const stages = useMemo(() => (goals ? buildLevels(goals.filter(isTournament)) : []), [goals]);
-  const everyGoal = useMemo(() => (goals ? [...goals, ...leagueGoals] : []), [goals, leagueGoals]);
+  useEffect(() => {
+    for (const f of wantFiles) {
+      if (asked.current.has(f)) continue;
+      asked.current.add(f);
+      const got = f === "wc"
+        ? Promise.all([fetchRealFile<WyscoutShotFile>("shots"), fetchRealFile<RgFile>("goals")]).then(([sh, g]) => joinGoals(sh.shots, g.goals))
+        : fetchRealFile<RgFile & WyscoutShotFile>(f).then((r) => joinGoals(r.shots, r.goals));
+      got.catch((e) => { setError(String(e)); return [] as RealGoal[]; })
+        .then((gs) => setLoaded((m) => ({ ...m, [f]: gs })));
+    }
+  }, [wantFiles]);
+  const goals = loaded.wc ?? null;
+  const bangers = useMemo(() => loaded.bangers ?? [], [loaded.bangers]);
+  const bangersLoaded = !!loaded.bangers;
+  const leagueGoals = useMemo(() => LEAGUES.flatMap((l) => loaded[l.file] ?? []), [loaded]);
+  const allLeagues = LEAGUES.every((l) => loaded[l.file]);
+  const leaguesLoading = !allLeagues;
+  const want = (fs: RgFileKey[]) => { if (fs.some((f) => !asked.current.has(f))) setWantFiles((w) => Array.from(new Set([...w, ...fs]))); };
+
+  const everyGoal = useMemo(() => [...bangers, ...(goals ?? []), ...leagueGoals], [goals, leagueGoals, bangers]);
+  // Every path's stages. The World Cup path is exactly the old level map (its stars stay where they are).
+  const paths = useMemo(() => {
+    const m = new Map<PathId, Stage[]>();
+    // Worldies need all five leagues; a league path only its own file.
+    // Each path only once its own files are in (Worldies need all five leagues).
+    const has = (id: PathId) => id === "wc" ? !!goals : id === "bangers" ? bangersLoaded : id === "worldies" ? allLeagues : !!loaded[fileOfPath(id) as LeagueFile];
+    for (const p of PATHS) m.set(p.id, has(p.id) ? buildPath(p.id, everyGoal) : []);
+    return m;
+  }, [everyGoal, allLeagues, goals, bangersLoaded, loaded]);
+  const progFor = useCallback((id: PathId): Progress => (id === "wc" ? progress : pathProg[id] ?? {}), [progress, pathProg]);
+  const starsFn = useCallback((id: PathId) => (id === "wc" ? totalStars : (p: Progress) => pathStars(paths.get(id) ?? [], p)), [paths]);
+
+  const stages = pathId ? paths.get(pathId) ?? [] : [];
+  const pathProgress = pathId ? progFor(pathId) : {};
   const allLevels = useMemo(() => stages.flatMap((s) => s.levels), [stages]);
+  const wcLevels = useMemo(() => (paths.get("wc") ?? []).flatMap((s) => s.levels), [paths]);
+
+  const dailyId = dailyGoalId(today);
+  const dailyGoal = useMemo(() => everyGoal.find((g) => g.id === dailyId) ?? null, [everyGoal, dailyId]);
+  const dailyCard = dailyId ? (RG_INDEX as unknown as RgIndex).daily[dailyId] ?? null : null;
+  const ALL_FILES: RgFileKey[] = ["wc", "bangers", ...LEAGUES.map((l) => l.file)];
+  // What to load: the open path's own files, everything for the list or ?play=.
+  useEffect(() => {
+    if (tab === "all" || playParam) { want(ALL_FILES); return; }
+    if (!pathId) return;
+    want(pathId === "wc" ? ["wc"] : pathId === "bangers" ? ["bangers"] : pathId === "worldies" ? LEAGUES.map((l) => l.file) : [fileOfPath(pathId) as LeagueFile]);
+  }, [tab, pathId, playParam]);
+  useEffect(() => { if (fixOpen) want(["bangers"]); }, [fixOpen]);
+  // Today's goal: its file loads when you press play; it plays as soon as it is in.
+  useEffect(() => {
+    if (pendingDaily && dailyGoal) { setPendingDaily(false); setPlaying({ goal: dailyGoal, from: { kind: "daily", date: today } }); window.scrollTo({ top: 0, behavior: "smooth" }); }
+  }, [pendingDaily, dailyGoal, today]);
+  const playDaily = () => { if (dailyGoal) { setPlaying({ goal: dailyGoal, from: { kind: "daily", date: today } }); window.scrollTo({ top: 0, behavior: "smooth" }); return; } if (dailyCard) { want([dailyCard.file]); setPendingDaily(true); } };
 
   // ?play=<id> opens a goal straight away (for checking one by eye).
   useEffect(() => {
-    if (!goals) return;
+    if (!everyGoal.length) return;
     const id = new URLSearchParams(window.location.search).get("play");
     const g = id ? everyGoal.find((q) => q.id === id) : null;
-    if (g) setPlaying((p) => p ?? { goal: g, level: allLevels.find((l) => l.goal.id === g.id) ?? null });
-  }, [goals, everyGoal, allLevels]);
+    if (g) setPlaying((p) => p ?? { goal: g, from: { kind: "list" } });
+  }, [everyGoal]);
 
   const onResult = useCallback((stars: number, pct: number) => {
     if (!playing) return;
-    setProgress((p) => { const n = recordResult(p, playing.goal.id, stars, pct); saveProgress(n); return n; });
+    const { goal, from } = playing;
+    if (from.kind === "path" && from.path !== "wc") {
+      setPathProg((pp) => { const n = { ...pp, [from.path]: recordResult(pp[from.path] ?? {}, goal.id, stars, pct) }; savePathProgress(n); return n; });
+      return;
+    }
+    if (from.kind === "daily") setDaily((d) => { const n = recordDaily(d, from.date, stars, pct); saveDaily(n); return n; });
+    // The World Cup path and the list keep their stars where they always did.
+    if (from.kind !== "daily") setProgress((p) => { const n = recordResult(p, goal.id, stars, pct); saveProgress(n); return n; });
   }, [playing]);
 
-  const nextLevel = playing?.level ? allLevels[playing.level.n + 1] : undefined;
-  // The hero: the first open level without three stars (else the first level).
+  const playingLevel = playing?.from.kind === "path" ? playing.from.level : playing?.from.kind === "list" ? wcLevels.find((l) => l.goal.id === playing.goal.id) ?? null : null;
+  const fromPath: PathId | null = playing?.from.kind === "path" ? playing.from.path : null;
+  const nextLevel = fromPath && playingLevel ? (paths.get(fromPath) ?? []).flatMap((s) => s.levels)[playingLevel.n + 1] : undefined;
   const heroLevel = useMemo(
-    () => allLevels.find((l) => levelOpen(stages, progress, l) && (progress[l.goal.id]?.stars ?? 0) < 3) ?? allLevels[0],
-    [allLevels, stages, progress],
+    () => (pathId ? nextLevelOf(stages, pathProgress, (l) => levelOpen(stages, pathProgress, l, starsFn(pathId))) : undefined),
+    [pathId, stages, pathProgress, starsFn],
   );
-  const play = (goal: RealGoal, level: Level | null) => { setPlaying({ goal, level }); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const play = (goal: RealGoal, from: From) => { setPlaying({ goal, from }); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  // A path's own store only holds its own levels, so its stars are just its store's total.
+  const tileStars = (id: PathId) => totalStars(progFor(id));
+  const IDX = RG_INDEX as unknown as RgIndex;
+  const grand = PATHS.reduce((a, p) => a + tileStars(p.id), 0);
+  const grandMax = PATHS.reduce((a, p) => a + IDX.paths[p.id].max, 0);
+  const curPath = pathId ? pathOf(pathId)! : null;
 
   return (
     <BroadcastPage
       title="Real Goals"
-      sub="Score the real goals — World Cup 2018, Euro 2016 and the 2017/18 Premier League, La Liga, Serie A, Bundesliga and Ligue 1 — the way they really went in."
-      actions={<div className="rg-total" data-total-stars>{STAR(1, 1, 22)} <b>{totalStars(progress)}</b><span>/ {allLevels.length * 3 || 150}</span></div>}
+      sub="Score the real goals the way they really went in — World Cup 2018, Euro 2016, the 2017/18 leagues, and the famous bangers of 2010-2025."
+      actions={<div className="rg-total" data-total-stars>{STAR(1, 1, 22)} <b>{ready ? (curPath ? tileStars(curPath.id) : grand) : "–"}</b><span>/ {curPath ? IDX.paths[curPath.id].max : grandMax}</span></div>}
     >
       <PageGuide page="/star-real-goals-dev" />
       <div className="rg">
         {error && <Note>Could not load the goals: {error}</Note>}
-        {!goals && !error && <Note>Loading the goals…</Note>}
 
-        {goals && playing && (
+        {playing && (
           <PlayGoal
-            key={playing.goal.id}
+            key={`${playing.goal.id}-${playing.from.kind}`}
             goal={playing.goal}
-            level={playing.level}
+            level={playingLevel}
             onClose={() => setPlaying(null)}
             onResult={onResult}
-            onNext={nextLevel && levelOpen(stages, progress, nextLevel) ? () => { setPlaying({ goal: nextLevel.goal, level: nextLevel }); window.scrollTo({ top: 0 }); } : undefined}
+            onNext={fromPath && nextLevel && levelOpen(paths.get(fromPath) ?? [], progFor(fromPath), nextLevel, starsFn(fromPath))
+              ? () => { setPlaying({ goal: nextLevel.goal, from: { kind: "path", path: fromPath, level: nextLevel } }); window.scrollTo({ top: 0 }); } : undefined}
           />
         )}
 
-        {goals && !playing && heroLevel && <Hero level={heroLevel} progress={progress} onPlay={() => play(heroLevel.goal, heroLevel)} />}
-
-        {goals && (
+        {(
           <>
             <div className="rg-tabs">
               <Pill on={tab === "levels"} onClick={() => setTab("levels")}>🗺️ Levels</Pill>
-              <Pill on={tab === "all"} onClick={() => setTab("all")}>🔎 All {everyGoal.length.toLocaleString("en-GB")}{leaguesLoading ? "…" : ""} goals</Pill>
+              <Pill on={tab === "all"} onClick={() => setTab("all")}>🔎 All {(allLeagues && goals && bangersLoaded ? everyGoal.length : 4686).toLocaleString("en-GB")} goals</Pill>
             </div>
-            {tab === "levels"
-              ? <LevelMap stages={stages} progress={progress} onPick={(lv) => play(lv.goal, lv)} />
-              : <GoalList goals={everyGoal} progress={progress} leaguesLoading={leaguesLoading} onPick={(g) => play(g, allLevels.find((l) => l.goal.id === g.id) ?? null)} />}
+            {tab === "all" && <GoalList goals={everyGoal} progress={progress} leaguesLoading={leaguesLoading} onPick={(g) => play(g, { kind: "list" })} />}
+            {tab === "levels" && !curPath && (
+              <>
+                {!playing && <DailyCard card={dailyCard} date={today} daily={daily} ready={ready} waiting={pendingDaily} onPlay={playDaily} />}
+                <div className="rg-tiles" data-path-home>
+                  {PATHS.map((p) => {
+                    return <PathTile key={p.id} path={p} got={ready ? tileStars(p.id) : null} max={IDX.paths[p.id].max}
+                      onOpen={() => { setPathId(p.id); window.scrollTo({ top: 0 }); }} />;
+                  })}
+                </div>
+              </>
+            )}
+            {tab === "levels" && curPath && (
+              <div data-path={curPath.id} className="rg-pathview">
+                <div className="rg-pathbar">
+                  <button className="rg-back" onClick={() => setPathId(null)} data-back-paths>‹ All paths</button>
+                  <h2 style={{ borderColor: curPath.colours[1] }}>{curPath.name}</h2>
+                </div>
+                {!stages.length && <Note>{(curPath.id === "wc" ? !goals : curPath.id === "bangers" ? !bangersLoaded : curPath.id === "worldies" ? !allLeagues : !loaded[fileOfPath(curPath.id) as LeagueFile]) ? "Loading the goals…" : "No goals for this path yet."}</Note>}
+                {!playing && heroLevel && <Hero level={heroLevel} progress={pathProgress} onPlay={() => play(heroLevel.goal, { kind: "path", path: curPath.id, level: heroLevel })} />}
+                <LevelMap stages={stages} progress={pathProgress} stars={starsFn(curPath.id)} onPick={(lv) => play(lv.goal, { kind: "path", path: curPath.id, level: lv })} />
+              </div>
+            )}
           </>
         )}
-        <div data-credit className="rg-credit">{REAL_CREDIT.wyscout} {PICTURE_WORDS.placed}.</div>
+
+        {(
+          <div className="rg-fix">
+            <Btn onClick={() => setFixOpen((v) => !v)}>🛠 Fix a banger (admin) {fixOpen ? "▴" : "▾"}</Btn>
+            {fixOpen && (bangersLoaded ? <BangerFixer bangers={bangers} onPlay={(g) => play(g, { kind: "list" })} /> : <Note>Loading the bangers…</Note>)}
+          </div>
+        )}
+        <div data-credit className="rg-credit">{REAL_CREDIT.wyscout} {PICTURE_WORDS.placed}. Bangers: {REAL_CREDIT.drafted}</div>
       </div>
     </BroadcastPage>
   );

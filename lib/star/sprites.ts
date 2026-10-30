@@ -11,6 +11,17 @@
  *                   colours go on at runtime and skin and hair stay as they are;
  *   - index.json    every frame's rectangle and the point under his boots.
  *
+ * A THIRD atlas (atlas-2 / atlas-2a, Leo, 22 Oct 2026: "After you score")
+ * holds the six goal celebrations your player can equip in the shop
+ * (CELEB_PLAYER_CLIPS), baked from the 3D capture clips in anims3d/mocap.glb by
+ * `node tools/sprites/new/bake-new.mjs celebs`. It is never preloaded: it loads
+ * only when one of them is first asked for (spriteClipReady), so a match with
+ * no celebration never fetches it. Until it is in, callers draw "celebrate".
+ * A FIFTH (atlas-4 / atlas-4a, 25 Oct 2026) holds the four Star Pass
+ * celebrations (corner flag dance, backflip, your own celebration, statue
+ * pose), keyed in tools/mocap3d/keyed_celebs.py and baked by
+ * `node tools/sprites/new/bake-new.mjs celebs both 4`; atlas 2 is unchanged.
+ *
  * A SECOND atlas (atlas-1.webp + mask-1.png, Leo, 7 Oct 2026) holds the
  * Animations: New clips — the touch, pass, shot, volley, chip, header, block
  * and clearance, and the keeper's one-hand stretch, low dive, parry, catch,
@@ -32,7 +43,10 @@ export type SpriteChar = "player" | "keeper";
 export type SpriteClip =
   | "idle" | "jog" | "sprint" | "kick" | "celebrate" // player
   | "ready" | "diveL" | "diveR"                      // keeper (and "jog")
-  | NewSpriteClip;
+  | NewSpriteClip
+  | CelebSpriteClip
+  | AerialSpriteClip
+  | KeeperCatchClip;
 
 /** Animations: New only (atlas 1). */
 export const NEW_PLAYER_CLIPS = ["touch", "passKick", "shotKick", "volley", "chipKick", "header", "block", "clearance"] as const;
@@ -40,6 +54,42 @@ export const NEW_KEEPER_CLIPS = [
   "oneHandR", "oneHandL", "lowDiveR", "lowDiveL", "parryR", "parryL", "catchHold", "fumble", "getUpR", "getUpL",
 ] as const;
 export type NewSpriteClip = (typeof NEW_PLAYER_CLIPS)[number] | (typeof NEW_KEEPER_CLIPS)[number];
+
+/**
+ * Goal celebrations (atlas 2, the Star Pass four atlas 4; loaded on first ask). Hands up and the knee slide's
+ * travel: the sprite stays on its spot (the knee slide is baked in place; the
+ * game moves him along the grass). Hands up loops; the rest play once and hold
+ * their last frame.
+ */
+export const CELEB_PLAYER_CLIPS = [
+  "celebHandsUp", "celebArmsOut", "celebKneeSlide", "celebFistPump", "celebJump", "celebRoar",
+  // the Star Pass four (25 Oct 2026)
+  "celebCornerFlag", "celebBackflip", "celebOwnName", "celebStatue",
+] as const;
+export type CelebSpriteClip = (typeof CELEB_PLAYER_CLIPS)[number];
+
+/**
+ * The aerial moves (atlas 3, Harry 25 Oct 2026; lib/star/aerialMoves.ts,
+ * tools/sprites/new/aerials.js): headers and volleys you see happen. Each cell
+ * carries `pts`, where the head, chest and foot meet the ball (spritePoints).
+ * Loaded on first ask (a header or volley chance warms it while the cross
+ * comes in).
+ */
+export const AERIAL_PLAYER_CLIPS = ["airStandHeader", "airJumpHeader", "airDivingHeader", "airChestVolley", "airFrontVolley", "airSideVolley", "airBicycle", "airScorpion"] as const;
+export type AerialSpriteClip = (typeof AERIAL_PLAYER_CLIPS)[number];
+
+/**
+ * KEEPER CATCHES AND DIVES (Leo, 26 Oct 2026; lib/star/keeperShow.ts,
+ * tools/sprites/new: their own atlas). Each cell carries `pts`: ONE point,
+ * where the ball sits between his gloves (keeperBallPoint), and the clip its
+ * `contactFrame` (gloves meet the ball) and `landFrame` (he hits the grass).
+ * Fetched only when a match with Leo's "keeperCatch" switch asks for one.
+ */
+export const KEEPER_CATCH_CLIPS = [
+  "kCatchDiveR", "kCatchDiveL", "kCatchLowR", "kCatchLowL", "kCatchChest", "kCatchFeet",
+  "kParryDiveR", "kParryDiveL", "kGetUpBallR", "kGetUpBallL", "kGetUpR", "kGetUpL", "kHoldBall",
+] as const;
+export type KeeperCatchClip = (typeof KEEPER_CATCH_CLIPS)[number];
 
 export interface SpriteKit {
   shirt: string;
@@ -53,12 +103,27 @@ interface ClipIndex {
   dirs: number;
   frames: number;
   strikeFrame?: number;
+  /** Keeper catches: the frame his gloves meet the ball, and the frame he lands. */
+  contactFrame?: number;
+  landFrame?: number;
+  /** Keeper dives: where his hips end, in metres [to the dive side, forward] (the get-up starts there). */
+  landM?: [number, number];
+  /** The ball's diameter in baked px for this look (it fits his gloves). */
+  ballPx?: number;
   /** Which atlas its cells are in (absent = 0). */
   atlas?: number;
   /** Drawn as this clip of the same man, flipped left to right (no cells of its own). */
   mirrorOf?: string;
+  /**
+   * A "once" clip baked from a 3D clip (the celebrations): each frame's second in
+   * that 3D clip. With it, t is seconds into the 3D clip and the frame shown is
+   * the last one at or before t (the frames need not be evenly spaced).
+   */
+  t3d?: number[];
   /** [x, y, w, h, anchorX, anchorY] per cell; cell = dir * frames + frame. */
   cells?: [number, number, number, number, number, number][];
+  /** The aerial moves: per cell, head / chest / foot as [x, y, g, nx, ny] × 3 (spritePoints). */
+  pts?: number[][];
 }
 interface AtlasInfo { color: string; mask: string; w: number; h: number }
 interface SpriteIndex {
@@ -193,9 +258,16 @@ function loadAtlas(n: number): Promise<boolean> {
   return p;
 }
 
+/** Atlases fetched only when one of their clips is first asked for (never in
+ *  the idle preload): 2 the goal celebrations. */
+const LAZY_ATLASES: ReadonlySet<number> = new Set([2, 3]);
 /** Load and colour every later atlas in the background, after atlas 0 (idle time). */
 function preloadLaterAtlases(): void {
-  const ns = Object.keys(index?.atlases ?? {}).map(Number).filter((n) => n >= 1);
+  // The aerial moves' atlas (3) waits for a header/volley chance to ask for it.
+  // (Atlas 2 is listed lazy too but has always been preloaded here; kept as it was.)
+  // So does the keeper catches' atlas (the first keeperBallPoint/spriteClipReady ask loads it).
+  const kAtlas = index?.chars.keeper?.clips.kCatchDiveR?.atlas;
+  const ns = Object.keys(index?.atlases ?? {}).map(Number).filter((n) => n >= 1 && n !== 3 && n !== kAtlas);
   if (!ns.length || typeof window === "undefined") return;
   const ric = (window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
   const go = () => { for (const n of ns) void loadAtlas(n).then((ok) => { if (ok) warmAtlas(n); }); };
@@ -420,9 +492,14 @@ export function cellDir(clip: string, facing: number, dirs: number): number {
 }
 
 /** Which frame of a clip `t` seconds in. */
-export function spriteFrame(clip: { fps: number; loop: string; frames: number }, t: number): number {
+export function spriteFrame(clip: { fps: number; loop: string; frames: number; t3d?: number[] }, t: number): number {
   const n = clip.frames;
   if (n <= 1) return 0;
+  if (clip.t3d && clip.loop === "once") {
+    let i = 0;
+    while (i + 1 < n && clip.t3d[i + 1] <= t + 1e-6) i++;
+    return i;
+  }
   const f = Math.max(0, Math.floor(t * clip.fps));
   if (clip.loop === "once") return Math.min(n - 1, f);
   if (clip.loop === "pingpong") {
@@ -601,4 +678,74 @@ export function spriteClipFps(char: SpriteChar, clip: SpriteClip): number {
 /** A clip's frame count as baked (0 if the index does not have it). */
 export function spriteClipFrames(char: SpriteChar, clip: SpriteClip): number {
   return index?.chars[char]?.clips[clip]?.frames ?? 0;
+}
+
+/** One baked contact point, in screen px from his boots at `height`: the touching surface
+ *  (x, y), its shadow's y on the grass (g), and the unit offset to the ball's centre (nx, ny:
+ *  × the drawn ball's radius in px). */
+export interface SpritePoint { x: number; y: number; g: number; nx: number; ny: number }
+/**
+ * Where an aerial clip's head, chest and foot meet the ball on the frame
+ * drawSprite would show for (clip, t, facing, mirror) at this height, or null
+ * (not loaded / no points). The same cell drawSprite picks, so the ball drawn
+ * there sits on the drawn body exactly.
+ */
+export function spritePoints(char: SpriteChar, clip: SpriteClip, t: number, facingRad: number, height: number, mirror = false): { head: SpritePoint; chest: SpritePoint; foot: SpritePoint } | null {
+  if (!spriteClipReady(char, clip) || !index) return null;
+  const r = resolveClip(char, clip);
+  if (!r || !r.src.pts) return null;
+  const facing = mirror ? mirroredFacing(facingRad) : facingRad;
+  const k = cellDir(clip, facing, r.c.dirs);
+  const dir = r.mirror ? mirrorDir(k, r.c.dirs) : k;
+  const p = r.src.pts[dir * r.src.frames + spriteFrame(r.src, t)];
+  if (!p) return null;
+  const s = height / index.standH;
+  const flip = (mirror ? -1 : 1) * (r.mirror ? -1 : 1);
+  const at = (i: number): SpritePoint => ({ x: flip * p[i] * s, y: p[i + 1] * s, g: p[i + 2] * s, nx: flip * p[i + 3], ny: p[i + 4] });
+  return { head: at(0), chest: at(5), foot: at(10) };
+}
+
+/** A keeper clip's timing as baked: frames a second, frames, and its contact and landing frames. */
+export function spriteClipTiming(char: SpriteChar, clip: SpriteClip): { fps: number; frames: number; contactFrame?: number; landFrame?: number; landM?: [number, number] } | null {
+  const r = resolveClip(char, clip);
+  if (!r) return null;
+  return { fps: r.c.fps, frames: r.c.frames, contactFrame: r.c.contactFrame ?? r.src.contactFrame, landFrame: r.c.landFrame ?? r.src.landFrame, landM: r.c.landM ?? r.src.landM };
+}
+
+/** The keeper ball's radius in screen px at this drawn height (baked to fit his gloves). */
+export function keeperBallRadius(clip: SpriteClip, height: number): number | null {
+  const r = resolveClip("keeper", clip);
+  if (!r || !index) return null;
+  const d = r.c.ballPx ?? r.src.ballPx;
+  return d ? (d * height) / index.standH / 2 : null;
+}
+
+/**
+ * Where the ball sits between the keeper's gloves on the frame drawSprite
+ * would show for (clip, t, facing) at this height: screen px from his boots
+ * (x, y), its shadow's y on the grass (g), and the unit offset to the ball's
+ * centre (nx, ny, × the drawn ball's radius). Null if not loaded or the clip
+ * has no point. With `centre` (drawSprite's dive blend) the frame is drawn
+ * shifted; pass the same value so the point moves with it.
+ */
+export function keeperBallPoint(clip: SpriteClip, t: number, facingRad: number, height: number, centre = 0): SpritePoint | null {
+  if (!spriteClipReady("keeper", clip) || !index) return null;
+  const r = resolveClip("keeper", clip);
+  if (!r || !r.src.pts) return null;
+  const k = cellDir(clip, facingRad, r.c.dirs);
+  const dir = r.mirror ? mirrorDir(k, r.c.dirs) : k;
+  const i = dir * r.src.frames + spriteFrame(r.src, t);
+  const p = r.src.pts[i];
+  const cell = r.src.cells?.[i];
+  if (!p || !cell) return null;
+  const s = height / index.standH;
+  const flip = r.mirror ? -1 : 1;
+  // drawSprite's dive blend moves the whole frame from "boots on the spot" to
+  // "frame middle on (x, y − ¼ height)": move the point by the same amount.
+  const kc = Math.max(0, Math.min(1, centre));
+  const [, , cw, ch, ax, ay] = cell;
+  const axS = r.mirror ? cw - ax : ax;
+  const shiftX = kc * ((axS - cw / 2) * s);
+  const shiftY = kc * ((ay - ch / 2) * s - height * 0.25);
+  return { x: flip * p[0] * s + shiftX, y: p[1] * s + shiftY, g: p[2] * s, nx: flip * p[3], ny: p[4] };
 }

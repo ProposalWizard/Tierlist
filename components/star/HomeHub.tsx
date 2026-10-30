@@ -48,7 +48,6 @@ import { useFigureSkin } from "./FigureSkinToggle";
 import ClubBadge from "./ClubBadge";
 import SpinPlayer from "./SpinPlayer";
 import HomePlayer from "./HomePlayer";
-import { useHomeTiles } from "@/lib/star/homeTiles";
 import { useHomeLook } from "@/lib/star/homeLook";
 import { LeagueDropdown, LEAGUE_DROPDOWN_H } from "./MiniLeague";
 import { NationDropdown, nationGlow } from "./IntlKit";
@@ -182,7 +181,6 @@ export default function HomeHub(p: Props) {
   const [ref, room] = useRoom();
   const rows = leagueRowsFor(room);
   const lookHome = useHomeLook();
-  const tilesAt = useHomeTiles();
   if (lookHome === "new") {
     // Settings → Look → "Home screen: New" (Harry, 9 Oct 2026): the stat
     // tiles go up top, the goal goes, he stands centre stage.
@@ -191,15 +189,16 @@ export default function HomeHub(p: Props) {
     // of him by default (Settings → Home numbers), the boots line sits over
     // the cans, and the record line, the transfer-window line, the links row
     // and the non-urgent chips are gone (the Phone carries those now).
-    const size = playerSizeFor(room, rows, (tilesAt === "top" ? STATS_H + 4 : 0) + BOOTS_H, 360);
+    const size = playerSizeFor(room, rows, STATS_H + 4 + BOOTS_H, 360);
     return (
-      <div ref={ref} data-home-look="new" data-home-tiles={tilesAt} className="relative -mx-3 flex min-h-full flex-col overflow-hidden">
+      <div ref={ref} data-home-look="new" className="relative -mx-3 flex min-h-full flex-col overflow-hidden">
         <HomeScene sky={homeSkyFor(career, p.nextFixture)} />
         <RiseIn onPageActive index={0} className="relative z-10"><NextMatch {...p} glow={glow} /></RiseIn>
-        {tilesAt === "top" && <RiseIn onPageActive index={1} className="relative z-10 mt-1 px-3"><StatTiles career={career} /></RiseIn>}
+        {/* The four numbers in a row at the top (Mikey, 23 Oct 2026: no switch, top only). */}
+        <RiseIn onPageActive index={1} className="relative z-10 mt-1 px-3"><StatTiles career={career} /></RiseIn>
         <div data-home-league className="relative z-20 mt-1">{duty ? <NationDropdown career={career} duty={duty} onOpen={p.onLeague} /> : <LeagueDropdown career={career} glow={glow} onOpen={p.onLeague} />}</div>
         <NeedsRow needs={urgentOnly(p.needs)} />
-        <HeroNew {...p} hallChase={null} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} sideTiles={tilesAt === "sides"} />
+        <HeroNew {...p} hallChase={null} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} />
       </div>
     );
   }
@@ -622,28 +621,7 @@ function BootsLine({ career }: { career: CareerState }) {
   );
 }
 
-/** The four numbers either side of him: Rep and Fame left, Goals and Assists
- *  right (Mikey, 22 Oct 2026). Same tiles as the row, stacked. */
-function SideTiles({ career }: { career: CareerState }) {
-  const fame = fameOf(career);
-  const ps = career.seasonStats;
-  const left: Tile[] = [
-    { key: "rep", label: "Rep", value: Math.round(career.reputation), icon: "/icons3d/world.png", color: "#0ea5e9", bar: career.reputation },
-    { key: "fame", label: "Fame", value: fame, icon: "/icons3d/fame.png", color: "#d946ef", bar: Math.min(100, fame) },
-  ];
-  const right: Tile[] = [
-    { key: "goals", label: "Goals", value: ps.goals, icon: "/star/ball.webp", color: "#22c55e" },
-    { key: "assists", label: "Assists", value: ps.assists, icon: "/shop/boot-control-L1.webp", color: "#f59e0b" },
-  ];
-  const col = (tiles: Tile[], side: "left" | "right") => (
-    <div className={`absolute top-1/2 z-10 flex w-[74px] -translate-y-1/2 flex-col gap-1.5 ${side === "left" ? "left-0" : "right-0"}`} data-home-side={side}>
-      {tiles.map((t) => <div key={t.key} style={{ height: 58 }} className="flex"><StatTile t={t} /></div>)}
-    </div>
-  );
-  return <div data-home-stats="sides">{col(left, "left")}{col(right, "right")}</div>;
-}
-
-function HeroNew({ career, kitShirt, kitTrim, glow, figW, figH, onUseCan, onBuyCan, hallChase, sideTiles = false }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number; /** Rep and Fame left of him, Goals and Assists right (Settings → Home numbers: Sides). */ sideTiles?: boolean }) {
+function HeroNew({ career, kitShirt, kitTrim, glow, figW, figH, onUseCan, onBuyCan, hallChase }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number }) {
   const [skin] = useFigureSkin();
   const style = useAvatarStyle();
   const look = skin === "classic" ? "A1" : style;
@@ -677,7 +655,6 @@ function HeroNew({ career, kitShirt, kitTrim, glow, figW, figH, onUseCan, onBuyC
             <span aria-hidden>🏛️</span><span>{hallChase}</span>
           </div>
         )}
-        {sideTiles && <SideTiles career={career} />}
       </div>
       <BootsLine career={career} />
       <div data-home-cans className="relative z-10 mt-1 grid shrink-0 grid-cols-3 gap-1.5" style={{ height: CANS_H }}>
@@ -733,8 +710,9 @@ export function CanTile({ can: c, career, e, onUse, onBuy, compact = false, mini
         </div>
         <div className="min-w-0 flex-1">
           {/* The count sits beside the name, never over the text (Mikey, 22 Oct 2026: the cans overlap). */}
-          <div className="flex min-w-0 items-center gap-1">
-            <span className={`truncate font-black leading-tight text-white ${bold ? "text-[12.5px]" : "text-[11px]"}`}>{c.name.replace(" KIB Can", "")}</span>
+          {/* The name never cuts ("Pre…"): the count drops under it when there isn't room (sweep, 29 Oct 2026). */}
+          <div className="flex min-w-0 flex-wrap items-center gap-x-1">
+            <span className={`whitespace-nowrap font-black leading-tight tracking-tight text-white ${c.name.replace(" KIB Can", "").length > 5 ? "text-[10.5px]" : bold ? "text-[12.5px]" : "text-[11px]"}`}>{c.name.replace(" KIB Can", "")}</span>
             <span data-can-count className={`shrink-0 rounded-full text-center font-black tabular-nums text-gray-950 ${bold ? "min-w-[24px] px-1.5 text-[11.5px] leading-[16px]" : "min-w-[18px] px-1 text-[9.5px] leading-[14px]"}`}
               style={{ background: `linear-gradient(180deg, ${tint(accent, 0.35)}, ${accent})`, boxShadow: `0 1px 4px ${rgba(accent, 0.6)}` }}>×{Math.round(shownCount)}</span>
           </div>
@@ -742,7 +720,7 @@ export function CanTile({ can: c, career, e, onUse, onBuy, compact = false, mini
         </div>
       </div>
       <div className="mt-1.5 grid grid-cols-2 gap-1">
-        <PressButton variant="accent" accent={accent} size="none" disabled={!canUse} onClick={use}
+        <PressButton variant="accent" accent={accent} size="none" disabled={!canUse} onClick={use} data-tour={`can-use-${c.id}`}
           className="rounded-md py-1 text-[10.5px] font-black uppercase">
           {ready ? "✓" : full ? "Full" : "Use"}
         </PressButton>

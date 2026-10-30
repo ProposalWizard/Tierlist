@@ -16,6 +16,8 @@
 import { useEffect, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import StoreView from "./StoreView";
+import { SignatureContext } from "./AccessoryFigure";
+import { signatureOf } from "@/lib/star/signatureBoots";
 import { useClubTheme } from "../ui";
 import { dateKeyFor } from "@/lib/star/store/daily";
 import {
@@ -46,6 +48,8 @@ export default function CareerStore({ career, onChange, onBack, hud }: {
   };
 
   return (
+    // Signature Boots carry your own name and number in the store's pictures.
+    <SignatureContext.Provider value={signatureOf(career)}>
     <StoreView
       state={careerStoreState(career)}
       ctx={careerPriceContext(career)}
@@ -56,7 +60,7 @@ export default function CareerStore({ career, onChange, onBack, hud }: {
       hud={hud}
       hide={(item) => !shownInCareer(item, career)}
       packs={coinPacksAreTestMode() ? "test" : "soon"}
-      accessoriesNote={ACCESSORIES_IN_MATCH_NOTE}
+      accessoriesNote={ACCESSORIES_IN_MATCH_NOTE /* celebrations now live in Animations (29 Oct): the celebration line here read on a sweatband */}
       bootStatus={(id) => careerBootStatus(career, id)}
       onBuy={(id, cur) => run(careerStoreBuy(career, id, cur, dateKey))}
       onEquip={(id) => run(careerStoreEquip(career, id))}
@@ -64,5 +68,6 @@ export default function CareerStore({ career, onChange, onBack, hud }: {
       onPack={(id) => (coinPacksAreTestMode() ? run(careerBuyCoinPack(career, id)) : { ok: false, reason: "Coming soon" })}
       onSwap={(c) => run(careerConvertCoins(career, c))}
     />
+    </SignatureContext.Provider>
   );
 }

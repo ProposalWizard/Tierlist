@@ -15,6 +15,8 @@
  */
 import { useEffect, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
+import { LEO_CELEBRATION_IDS } from "@/lib/star/store/catalogue";
+import { leoUpdateOn } from "@/lib/star/leoUpdate";
 import StoreView from "@/components/star/legacy/store/StoreView";
 import { useClubTheme } from "@/components/star/legacy/ui";
 import { dateKeyFor } from "@/lib/star/store/daily";
@@ -51,7 +53,8 @@ export default function CareerStore({ career, onChange, onBack }: {
       now={now}
       glow={glow}
       back={{ onClick: onBack }}
-      hide={(item) => !shownInCareer(item, career)}
+      // Leo's 24 Oct update, "celebrations": its three new celebrations only while that switch is on (the only change here)
+      hide={(item) => !shownInCareer(item, career) || (LEO_CELEBRATION_IDS.has(item.id) && !leoUpdateOn("celebrations"))}
       packs={coinPacksAreTestMode() ? "test" : "soon"}
       accessoriesNote={ACCESSORIES_IN_MATCH_NOTE}
       bootStatus={(id) => careerBootStatus(career, id)}

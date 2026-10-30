@@ -32,10 +32,10 @@ import { RUNUP, backDir, plantBeside, playerAt, sideOf, standBackAt } from "./pe
 
 // ── The two sets ─────────────────────────────────────────────────────────
 
-export type PenaltyRunupId = "standard" | "stroll" | "skip" | "sprint" | "stutter" | "two_step" | "arc";
+export type PenaltyRunupId = "standard" | "stroll" | "skip" | "sprint" | "stutter" | "two_step" | "arc" | "golden";
 export type FreeKickRunupId =
   | "fk_standard" | "fk_power_stance" | "fk_stance_sprint" | "fk_calm_curl"
-  | "fk_stutter_curl" | "fk_angled_whip" | "fk_long_diagonal";
+  | "fk_stutter_curl" | "fk_angled_whip" | "fk_long_diagonal" | "fk_leaf";
 export type RunupId = PenaltyRunupId | FreeKickRunupId;
 
 export interface RunupStyle<Id extends RunupId = RunupId> {
@@ -57,6 +57,9 @@ export const PENALTY_RUNUPS: RunupStyle<PenaltyRunupId>[] = [
   { id: "stutter", name: "Stutter Step", blurb: "Stop, start — a pause just before the ball." },
   { id: "two_step", name: "Two Steps", blurb: "Very short: two steps and strike." },
   { id: "arc", name: "The Arc", blurb: "A wide, curved run in from the side." },
+  // Star Pass reward (piece 4): a confident, slightly curved jog-up that
+  // leaves a glowing gold trail behind him (goldenTrail.ts draws it).
+  { id: "golden", name: "Golden Run-up", blurb: "A confident, curving jog-up that leaves a gold trail behind you." },
 ];
 
 /** Free-kick run-ups, in shop order — each modelled on an elite free-kick taker. */
@@ -68,7 +71,25 @@ export const FREE_KICK_RUNUPS: RunupStyle<FreeKickRunupId>[] = [
   { id: "fk_stutter_curl", name: "Stutter Curl", player: "Neymar", blurb: "Neymar's: a short run, a little stutter, then the curl." },
   { id: "fk_angled_whip", name: "The Whip", player: "Maddison", blurb: "Maddison's: a short, angled approach for a whipped curl." },
   { id: "fk_long_diagonal", name: "Long Diagonal", player: "Trent", blurb: "Trent's: a long diagonal run for a whip that dips." },
+  // Star Pass reward (piece 4). The one free-kick style that is more than
+  // looks: a kick taken with it flies as a "falling leaf" (leafFlight.ts) —
+  // the same aim and power, the bend and dip held back, then given late.
+  { id: "fk_leaf", name: "The Leaf", player: "Juninho", blurb: "Juninho's: the legend's free kick — it dips and swerves late." },
 ];
+
+/**
+ * Reward styles: earned (the Star Pass), never handed to a player the game
+ * controls. A team-mate's or an opponent's run-up is picked from the other
+ * styles only, so adding a reward never changes who runs up how, and The
+ * Leaf's flight is only ever YOURS.
+ */
+export const REWARD_RUNUPS: ReadonlySet<RunupId> = new Set<RunupId>(["golden", "fk_leaf"]);
+/** The Leaf: the free-kick run-up whose kick flies as a falling leaf (leafFlight.ts). */
+export const LEAF_RUNUP: FreeKickRunupId = "fk_leaf";
+/** The Golden Run-up: the penalty run-up that leaves a gold trail (goldenTrail.ts). */
+export const GOLDEN_RUNUP: PenaltyRunupId = "golden";
+const TAKER_PENALTY_POOL = PENALTY_RUNUPS.filter((s) => !REWARD_RUNUPS.has(s.id));
+const TAKER_FREE_KICK_POOL = FREE_KICK_RUNUPS.filter((s) => !REWARD_RUNUPS.has(s.id));
 
 /** Free, and everybody owns them. */
 export const DEFAULT_PENALTY_RUNUP: PenaltyRunupId = "standard";
@@ -151,12 +172,12 @@ function hashKey(k: string): number {
 export function takerPenaltyRunup(key: string | undefined | null): PenaltyRunupId {
   const k = (key ?? "").trim();
   if (!k) return DEFAULT_PENALTY_RUNUP;
-  return PENALTY_RUNUPS[hashKey(k) % PENALTY_RUNUPS.length].id;
+  return TAKER_PENALTY_POOL[hashKey(k) % TAKER_PENALTY_POOL.length].id;
 }
 export function takerFreeKickRunup(key: string | undefined | null): FreeKickRunupId {
   const k = (key ?? "").trim();
   if (!k) return DEFAULT_FREE_KICK_RUNUP;
-  return FREE_KICK_RUNUPS[hashKey(`fk:${k}`) % FREE_KICK_RUNUPS.length].id;
+  return TAKER_FREE_KICK_POOL[hashKey(`fk:${k}`) % TAKER_FREE_KICK_POOL.length].id;
 }
 /** @deprecated the contract's first name for takerPenaltyRunup. */
 export const takerRunupStyle = takerPenaltyRunup;
@@ -200,6 +221,9 @@ export const RUNUP_MOTION: Record<RunupId, RunupMotion> = {
   two_step: { runS: 1.7, startBack: 1.6, startAngleDeg: 14, curve: 0 },
   // Starts almost level with the ball out to the side and bends in behind it.
   arc: { runS: 2.8, startBack: 5.4, startAngleDeg: 74, curve: 0.8 },
+  // A confident jog on a gentle bend, from a little wider and further back
+  // than Standard — room for the trail to show.
+  golden: { runS: 2.6, startBack: 6.2, startAngleDeg: 40, curve: 0.45 },
 
   // ── Free kicks ──
   fk_standard: STANDARD_MOTION,
@@ -215,6 +239,9 @@ export const RUNUP_MOTION: Record<RunupId, RunupMotion> = {
   fk_angled_whip: { runS: 2.1, startBack: 3.2, startAngleDeg: 55, curve: 0 },
   // Trent: a long run on the diagonal.
   fk_long_diagonal: { runS: 3.0, startBack: 7.0, startAngleDeg: 42, curve: 0 },
+  // Juninho: a few paces back, nearly straight, a short measured run and a
+  // stab through the ball.
+  fk_leaf: { runS: 2.3, startBack: 3.6, startAngleDeg: 22, curve: 0 },
 };
 
 export function runupDurationS(id: RunupId): number {
@@ -314,6 +341,12 @@ export function runupProgress(id: RunupId, t: number): number {
       return lerp(0.56, 1, jog(span(t, 1.5, T)));
     case "fk_long_diagonal":
       return 0.2 * u + 0.8 * smooth(u);
+    case "golden":
+      // Unhurried at first, then into it.
+      return 0.12 * u + 0.88 * smooth(u);
+    case "fk_leaf":
+      // A still moment over the ball, then a short, measured run.
+      return t < 0.5 ? 0 : jog(span(t, 0.5, T));
   }
 }
 
@@ -439,6 +472,16 @@ export function runupPoseAt(r: StyledRunup, t: number): RunupPose | null {
       // A long, rhythmic run, leaning in as he comes across.
       const u = clamp01(t / T);
       return { ...base, legSwing: run(11, 1.1), armSpread: 0.15, lean: -r.side * 0.12 * Math.sin(Math.PI * u) };
+    }
+    case "golden": {
+      // Chest up, a long easy stride, arms a little out, leaning into the bend.
+      const u = clamp01(t / T);
+      return { ...base, legSwing: run(9.5, 1.05), armSpread: 0.22, armLift: -0.6, crouch: 0.06, lean: -r.side * 0.18 * Math.sin(Math.PI * u) };
+    }
+    case "fk_leaf": {
+      // Hands on hips over the ball, then short, light steps — the stab.
+      if (t < 0.5) return { ...base, armSpread: 0.35, armLift: -0.25, crouch: 0.05 };
+      return { ...base, legSwing: run(11, 0.85), crouch: 0.1, armSpread: 0.18 };
     }
   }
 }

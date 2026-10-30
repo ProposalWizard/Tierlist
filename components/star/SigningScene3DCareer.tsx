@@ -12,6 +12,7 @@ import type { CareerState } from "@/lib/star/types";
 import { kitsOf } from "@/lib/star/kits";
 import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
 import { DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
+import { PHOTO_FACES } from "@/lib/star/faceStyle";
 import { fitImage, getFittedHead, type FittedHead } from "@/lib/star/faceFit";
 import { managerLook } from "@/lib/star/managerFace";
 import { AVIATORS_CARD, contractRows, signingLines, wornAccessories } from "@/lib/star/signing3d";
@@ -43,6 +44,8 @@ export default function SigningScene3DCareer({
   const faceUrl = scanned ?? career.player.portrait ?? DEFAULT_FAKE_FACE;
   const [fitted, setFitted] = useState<FittedHead | null | undefined>(undefined);
   useEffect(() => {
+    // Photo faces are off (PHOTO_FACES): the drawn head, no picture to wait for.
+    if (!PHOTO_FACES) { setFitted(null); return; }
     const img = fitImage(faceUrl);
     const done = () => setFitted(getFittedHead(faceUrl));
     if (img.complete && img.naturalWidth) { done(); return; }

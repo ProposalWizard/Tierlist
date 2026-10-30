@@ -11,12 +11,13 @@
  * A still picture: drawn once, and again when the face photo arrives. No
  * animation loop.
  */
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { drawFigureAt, FEET_Y, ROLE_KIT, type BodyPose } from "@/lib/star/fiveASide/render";
 import { DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
 import { DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import type { AccessoryItem, Celebration } from "@/lib/star/store/catalogue";
+import { signatureText, type SignatureWho } from "@/lib/star/signatureBoots";
 
 // ── The anatomy, in units of r from the figure's local origin. These mirror
 // paintBody in lib/star/fiveASide/render.ts (not exported there); the
@@ -35,7 +36,21 @@ export const CELEBRATION_POSE: Record<Celebration, BodyPose> = {
   hands_up: { armLift: 1, armSpread: 0.12 },
   arms_out: { armSpread: 1, armLift: 0.1 },
   knee_slide: { crouch: 1, armSpread: 0.45, armLift: 1 },
+  fist_pump: { armLift: 0.75, armSpread: 0.2, armLead: 1 },
+  jump: { armLift: 1, armSpread: 0.35, crouch: 0.25 },
+  roar: { armLift: -0.55, armSpread: 0.7 },
+  // the Star Pass four: the shop's still figure can only hint at them
+  corner_flag: { armLift: 0.8, armSpread: 0.3, armLead: 1, crouch: 0.4 },
+  backflip: { armLift: 1, armSpread: 0.25, crouch: 0.5 },
+  own_name: { armLift: 0.35, armSpread: 0.05 },
+  statue: { armLift: -0.15, armSpread: 0 },
 };
+
+/**
+ * Whose name Signature Boots carry, for every AccessoryFigure inside (the
+ * career's store and the Locker set it from the career; absent: a placeholder).
+ */
+export const SignatureContext = createContext<SignatureWho | null>(null);
 
 // One face photo for every preview, loaded once.
 let faceImg: HTMLImageElement | null = null;
@@ -134,7 +149,20 @@ function drawAccessories(ctx: CanvasRenderingContext2D, r: number, pose: BodyPos
     }
   }
   const boots = by("boots");
-  if (boots) {
+  if (boots?.signature) {
+    // Two-tone on the small figure: white boots, a gold stripe along each.
+    const footY = FEET_Y * r;
+    for (const fx of [-r * 0.19, r * 0.19]) {
+      ctx.fillStyle = boots.color;
+      ctx.beginPath(); ctx.ellipse(fx, footY, r * 0.125, r * 0.07, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = boots.color2 ?? "#d4a017";
+      ctx.lineWidth = Math.max(1.2, r * 0.035);
+      ctx.beginPath(); ctx.moveTo(fx - r * 0.1, footY + r * 0.01); ctx.lineTo(fx + r * 0.1, footY - r * 0.015); ctx.stroke();
+      ctx.strokeStyle = "rgba(15,23,42,0.45)";
+      ctx.lineWidth = Math.max(0.8, r * 0.012);
+      ctx.beginPath(); ctx.ellipse(fx, footY, r * 0.125, r * 0.07, 0, 0, Math.PI * 2); ctx.stroke();
+    }
+  } else if (boots) {
     const footY = FEET_Y * r;
     for (const fx of [-r * 0.19, r * 0.19]) {
       ctx.fillStyle = boots.color;
@@ -186,12 +214,85 @@ function drawAccessories(ctx: CanvasRenderingContext2D, r: number, pose: BodyPos
   }
 }
 
+/**
+ * Signature Boots, close up: one boot side-on, white with a gold stripe, the
+ * name along its side and the number on the heel. `x, y` is the bottom of
+ * the heel, `L` the boot's length, toe to the right.
+ */
+export function drawSignatureBoot(ctx: CanvasRenderingContext2D, x: number, y: number, L: number, item: AccessoryItem, who?: SignatureWho | null) {
+  const H = L * 0.4;
+  const gold = item.color2 ?? "#d4a017";
+  const { name, number } = signatureText(who);
+  ctx.save();
+  ctx.translate(x, y);
+  // The upper.
+  const upper = () => {
+    ctx.beginPath();
+    ctx.moveTo(L * 0.02, -H * 0.16);
+    ctx.lineTo(L * 0.9, -H * 0.16);
+    ctx.quadraticCurveTo(L * 1.02, -H * 0.2, L * 0.99, -H * 0.42);
+    ctx.quadraticCurveTo(L * 0.86, -H * 0.62, L * 0.58, -H * 0.7);
+    ctx.quadraticCurveTo(L * 0.42, -H * 0.76, L * 0.34, -H * 1.02);
+    ctx.lineTo(L * 0.1, -H * 1.02);
+    ctx.quadraticCurveTo(-L * 0.02, -H * 0.8, L * 0.02, -H * 0.16);
+    ctx.closePath();
+  };
+  ctx.shadowColor = "rgba(0,0,0,0.45)"; ctx.shadowBlur = L * 0.06; ctx.shadowOffsetY = L * 0.02;
+  upper();
+  const fill = ctx.createLinearGradient(0, -H, 0, 0);
+  fill.addColorStop(0, "#ffffff"); fill.addColorStop(1, item.color);
+  ctx.fillStyle = fill; ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.save();
+  upper(); ctx.clip();
+  // The gold stripe, sweeping from the heel down toward the toe.
+  ctx.strokeStyle = gold;
+  ctx.lineWidth = H * 0.16;
+  ctx.lineCap = "round";
+  ctx.beginPath(); ctx.moveTo(L * 0.12, -H * 0.42); ctx.quadraticCurveTo(L * 0.5, -H * 0.24, L * 0.92, -H * 0.36); ctx.stroke();
+  // A gold heel counter.
+  ctx.fillStyle = gold;
+  ctx.fillRect(0, -H * 1.05, L * 0.1, H * 0.9);
+  ctx.restore();
+  ctx.strokeStyle = "rgba(15,23,42,0.55)"; ctx.lineWidth = Math.max(1, L * 0.012);
+  upper(); ctx.stroke();
+  // The sole and studs.
+  ctx.fillStyle = "#1f2937";
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(0, -H * 0.18, L * 0.94, H * 0.12, H * 0.05); else ctx.rect(0, -H * 0.18, L * 0.94, H * 0.12);
+  ctx.fill();
+  ctx.fillStyle = gold;
+  for (const k of [0.1, 0.3, 0.58, 0.8]) { ctx.beginPath(); ctx.rect(L * k, -H * 0.07, L * 0.06, H * 0.08); ctx.fill(); }
+  // The name along the side, above the stripe, shrunk to fit.
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  let fs = H * 0.26;
+  ctx.font = `900 italic ${fs.toFixed(1)}px system-ui, sans-serif`;
+  const room = L * 0.5;
+  const w = ctx.measureText(name).width;
+  if (w > room) { fs *= room / w; ctx.font = `900 italic ${fs.toFixed(1)}px system-ui, sans-serif`; }
+  ctx.fillStyle = "#1e293b";
+  ctx.fillText(name, L * 0.58, -H * 0.5);
+  // The number on the heel.
+  if (number && name !== number) {
+    ctx.font = `900 ${(H * 0.24).toFixed(1)}px system-ui, sans-serif`;
+    ctx.fillStyle = "#a16207";
+    ctx.fillText(number, L * 0.22, -H * 0.72);
+  }
+  ctx.restore();
+}
+
 export default function AccessoryFigure({
-  wear, width, height, className = "",
-}: { wear: AccessoryItem[]; width: number; height: number; className?: string }) {
+  wear, width, height, className = "", signature: signatureProp,
+}: {
+  wear: AccessoryItem[]; width: number; height: number; className?: string;
+  /** Whose name / number Signature Boots carry (lib/star/signatureBoots.ts). Absent: a placeholder. */
+  signature?: SignatureWho | null;
+}) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const face = useFace();
-  const key = wear.map((w) => w.id).join(",");
+  const fromContext = useContext(SignatureContext);
+  const signature = signatureProp ?? fromContext;
+  const key = wear.map((w) => w.id).join(",") + `|${signature?.name ?? ""}|${signature?.number ?? ""}`;
 
   useEffect(() => {
     const c = ref.current;
@@ -210,7 +311,9 @@ export default function AccessoryFigure({
     // leave room for both.
     const r = Math.min(width / 2.7, height * (celeb === "hands_up" || celeb === "knee_slide" ? 0.36 : 0.42));
     const facing = celeb ? CELEBRATION_LEAN[celeb] ?? 0 : 0;
-    const x = width / 2;
+    // Signature Boots: the man stands left to leave room for the close-up boot.
+    const sigBoot = wear.some((w) => w.slot === "boots" && w.signature) && width >= 70 && height >= 60;
+    const x = sigBoot ? width * 0.34 : width / 2;
     const ground = height * (celeb === "knee_slide" ? 0.86 : 0.9);
 
     drawFigureAt(ctx, x, ground, r, { ...KIT, face }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE, { pose, facing });
@@ -219,7 +322,14 @@ export default function AccessoryFigure({
     if (facing) ctx.rotate(facing);
     drawAccessories(ctx, r, pose, wear, face);
     ctx.restore();
-  }, [key, width, height, face, wear]);
+    // Signature Boots: a close-up of one boot in the corner, big enough to
+    // read the name (the feet on the figure are too small for it).
+    const sig = wear.find((w) => w.slot === "boots" && w.signature);
+    if (sig && width >= 70 && height >= 60) {
+      const L = Math.min(width * 0.5, height * 0.55);
+      drawSignatureBoot(ctx, width - L - width * 0.03, height * 0.97, L, sig, signature);
+    }
+  }, [key, width, height, face, wear, signature]);
 
   return <canvas ref={ref} style={{ width, height }} className={className} aria-hidden />;
 }

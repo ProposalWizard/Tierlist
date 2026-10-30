@@ -3,6 +3,19 @@ name: creating-patch-notes
 description: The standing workflow for turning a shipped round of work into "Knowitball Patch Notes — Leo vX.Y" — a running, versioned artifact shared with Harry and Mikey to track updates and bugs. Load whenever a round of changes ships and needs writing up for the team — "patch notes", "make the patch notes", "write up this round" — and by default after finishing and shipping any round of work, per the owner's standing instruction to use this every time going forward.
 ---
 
+> **Every patch note, everyone's (RUL-TEAM-028, Leo 26 Oct 2026).** In
+> `lib/patchNotesData.ts`: `"author"` (Harry/Mikey/Leo); `"publishedAt"` = the
+> real time it was made; title `"<Name>'s patch notes: <what it is about, 3-8
+> words>"` (the menu shows that part); `"updates": [{ "at", "where", "note" }]`
+> — every update appends one AND sets `updatedAt` + `updateNote` to the same
+> time and line. **Number:** take the next number nobody has used on ANY branch
+> (main, Harry, Mikey, Leo); `0.121` and `0.121h` may not both exist; never
+> reuse 0.60-0.63, 0.103, 0.107-0.110. **Page:** every note has one, built from
+> `artifact-house-style` (tuning-plan-standard.html + clip-card.html, "Check
+> these" first, numbers in one closed toggle). `npx tsx tests/star/patchNoteRules.mts`
+> checks all of it, and `ship.mjs` refuses a note that breaks a rule.
+
+
 Standing rules: search the Brain first (grep brain/_index*.md), cite codes.
 
 # Knowitball Patch Notes — Leo

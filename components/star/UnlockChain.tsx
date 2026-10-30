@@ -7,11 +7,12 @@
  * Harry, 1 Oct 2026 (P13-P40): "Locked, locked, locked, training." The
  * tutorial itself is pointers now (PointerTour.tsx), not cards.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { sfx } from "@/lib/star/sfx";
 import { APP_STORE, LOCK_HINT, FEATURE_INFO, stepsFor, phoneStepLine, phoneShortfall, appInstalled, hasSeen, isOpen, nextStep, stepDone, type Feature, type StepId } from "@/lib/star/unlocks";
 import { formatMoney } from "@/lib/star/money";
+import type { BeatText } from "@/lib/star/story";
 import { Burst, PressButton } from "./ui";
 import StylePicture from "./StylePicture";
 import { ffTimeout } from "./ui/fastForward";
@@ -42,12 +43,12 @@ export function LockIcon({ size = 14 }: { size?: number }) {
 }
 
 /** A swipe page (Stats, Shop) that is not open yet. */
-export function LockedPage({ title, feature }: { title: string; feature: Feature }) {
+export function LockedPage({ title, feature, hint }: { title: string; feature: Feature; /** This career's lock line (unlocks.ts lockHint). */ hint?: string }) {
   return (
     <div className="flex h-full min-h-[360px] flex-col items-center justify-center gap-2 px-6 text-center">
       <div className="grid h-16 w-16 place-items-center rounded-2xl bg-white/[0.07] text-white/80 ring-1 ring-white/15"><LockIcon size={30} /></div>
       <div className="text-[18px] font-black text-white">{title} is locked</div>
-      <div className="text-[13px] font-bold text-amber-300">{LOCK_HINT[feature]}</div>
+      <div className="text-[13px] font-bold text-amber-300">{hint ?? LOCK_HINT[feature]}</div>
     </div>
   );
 }
@@ -66,6 +67,11 @@ export function LockedPage({ title, feature }: { title: string; feature: Feature
 
 export function AchievementPop({ label, unlocked, onClose, onSeeAll, phone = false, record = false }: { label: string; unlocked: string; onClose: () => void; /** "See all achievements" — opens the Achievements screen. */ onSeeAll?: () => void; /** The phone: a big moment (Harry, P70). */ phone?: boolean; /** A record broken, not an achievement (P36). */ record?: boolean }) {
   useEffect(() => { sfx("achievement-pop"); }, []);
+  // A small banner at the top for about three seconds, no buttons (Mikey's
+  // playtest, 24 Oct 2026: "I don't know if it needs to take up the whole
+  // screen and needs me to close it … just stays for about two or three
+  // seconds"). A tap closes it sooner. The phone keeps its big moment.
+  if (!phone) return <AchievementToast label={label} unlocked={unlocked} record={record} onClose={onClose} />;
   return (
     <Sheet onClose={onClose} z={95}>
       <AchStyles />
@@ -92,6 +98,28 @@ export function AchievementPop({ label, unlocked, onClose, onSeeAll, phone = fal
         <button onClick={onClose} className="kib-press mt-2 w-full py-1 text-[12px] font-black uppercase tracking-widest text-white/60">Close</button>
       )}
     </Sheet>
+  );
+}
+
+const TOAST_MS = 2800;
+function AchievementToast({ label, unlocked, record, onClose }: { label: string; unlocked: string; record: boolean; onClose: () => void }) {
+  // The page passes a new onClose every render: keep the one timer.
+  const close = useRef(onClose);
+  close.current = onClose;
+  useEffect(() => ffTimeout(() => close.current(), TOAST_MS), []);
+  return (
+    <div className="pointer-events-none fixed inset-x-0 z-[95] flex justify-center px-4" style={{ top: "calc(env(safe-area-inset-top, 0px) + 64px)" }}>
+      <button type="button" onClick={onClose} data-ach-toast
+        className="kit-rise pointer-events-auto flex w-full max-w-[360px] items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-white"
+        style={{ background: "linear-gradient(180deg, rgba(31,41,55,.97), rgba(11,18,32,.97))", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.55), 0 12px 30px -10px rgba(0,0,0,.9)" }}>
+        <span className="text-[28px] leading-none" style={{ filter: "drop-shadow(0 0 10px rgba(251,191,36,.8))" }}>{record ? "🏆" : "⭐"}</span>
+        <span className="min-w-0">
+          <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">{record ? "Record broken" : "Achievement unlocked"}</span>
+          <span className="block truncate text-[15px] font-black leading-tight">{label}</span>
+          <span className="block truncate text-[12px] font-bold text-emerald-200">{unlocked}</span>
+        </span>
+      </button>
+    </div>
   );
 }
 
@@ -146,6 +174,44 @@ export function UnlockPop({ features, onSeeAll, onClose }: { features: Feature[]
       </div>
       <PressButton variant="primary" size="none" pulse onClick={onSeeAll} data-tour="see-all" className="mt-3 w-full rounded-2xl py-2.5 text-[14px] font-black">See all achievements</PressButton>
       <button onClick={onClose} className="kib-press mt-2 w-full py-1 text-[12px] font-black uppercase tracking-widest text-white/60">Close</button>
+    </Sheet>
+  );
+}
+
+/**
+ * A STORY BEAT (Mikey, 23 Oct 2026, lib/star/story.ts): a person brings the
+ * next thing in, in their own words, with one button that takes you there.
+ * No Close: the story moves on only by its button.
+ */
+export function StoryBeatPop({ text, onGo }: { text: BeatText; onGo: () => void }) {
+  useEffect(() => { sfx("achievement-pop"); }, []);
+  return (
+    <Sheet z={95}>
+      <AchStyles />
+      <div data-story-beat className="flex items-center gap-2.5 text-left">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white/10 text-[26px] ring-1 ring-white/20">{text.icon}</span>
+        <span className="min-w-0">
+          <span className="block text-[11px] font-black uppercase tracking-[0.18em] text-amber-300">{text.who}</span>
+          <span className="block text-[20px] font-black leading-tight">{text.title}</span>
+        </span>
+      </div>
+      {text.line && <div className="mt-3 rounded-2xl bg-white/[0.07] px-3 py-2.5 text-left text-[14px] font-bold leading-snug text-white ring-1 ring-white/10">{text.line}</div>}
+      {text.boot && (
+        <div data-beat-boot className="mt-2.5 flex items-center gap-3 rounded-2xl bg-gradient-to-b from-amber-400/20 to-amber-500/5 p-2.5 text-left ring-1 ring-amber-300/40">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={text.boot.pic} alt="" draggable={false} className="h-20 w-24 shrink-0 select-none object-contain drop-shadow-[0_6px_10px_rgba(0,0,0,.6)]" />
+          <div className="min-w-0">
+            <div className="text-[16px] font-black leading-tight text-white">{text.boot.name}</div>
+            <div className="mt-1 flex flex-wrap gap-1">
+              {text.boot.stats.map((st) => (
+                <span key={st} className="rounded-full bg-emerald-500/25 px-2 py-0.5 text-[12px] font-black text-emerald-100 ring-1 ring-emerald-400/50">{st}</span>
+              ))}
+            </div>
+            <div className="mt-1 text-[12px] font-black text-amber-200">{text.boot.games} games left</div>
+          </div>
+        </div>
+      )}
+      <PressButton variant="primary" size="none" pulse onClick={onGo} data-tour="beat-go" className="mt-3 w-full rounded-2xl py-2.5 text-[15px] font-black">{text.button}</PressButton>
     </Sheet>
   );
 }

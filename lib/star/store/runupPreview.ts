@@ -70,6 +70,10 @@ interface Style {
   loft?: number;
   /** A knuckleball wobbles side to side in flight rather than curling. */
   knuckle?: boolean;
+  /** The Golden Run-up: a gold trail follows his feet (RunupPreview draws it). */
+  trail?: boolean;
+  /** The Leaf: the ball holds its height, then dips and swerves late. */
+  leaf?: boolean;
 }
 
 const linear = (u: number) => u;
@@ -84,6 +88,7 @@ export const RUNUP_PREVIEW: Record<AnimationId, Style> = {
   stutter: { startX: 36, begin: 0.05, cycles: 3, stride: 0.6, power: 1, ease: linear, pause: [0.55, 0.85] },
   two_step: { startX: 62, begin: 0.55, cycles: 1, stride: 0.75, power: 1, ease: linear },
   arc: { startX: 30, begin: 0.08, cycles: 4, stride: 0.7, power: 1.2, ease: linear, arc: true },
+  golden: { startX: 22, begin: 0.06, cycles: 4, stride: 0.75, power: 1.2, ease: linear, arc: true, trail: true },
 
   // Free kicks — a wall between ball and goal, the ball lifted over it.
   fk_standard: { startX: 58, begin: 0.2, cycles: 2, stride: 0.6, power: 1, ease: linear, wall: true, loft: 2 },
@@ -94,11 +99,17 @@ export const RUNUP_PREVIEW: Record<AnimationId, Style> = {
   fk_stutter_curl: { startX: 58, begin: 0.15, cycles: 2, stride: 0.55, power: 1, ease: linear, pause: [0.4, 0.7], wall: true, loft: 2.3 },
   fk_angled_whip: { startX: 50, begin: 0.2, cycles: 2.5, stride: 0.65, power: 1.1, ease: linear, arc: true, wall: true, loft: 2.2 },
   fk_long_diagonal: { startX: 22, begin: 0.05, cycles: 4, stride: 0.7, power: 1.2, ease: linear, arc: true, wall: true, loft: 2.4 },
+  fk_leaf: { startX: 60, begin: 0.3, cycles: 1.8, stride: 0.5, power: 1, ease: linear, wall: true, loft: 2.4, leaf: true },
 };
 
 /** Does this style's preview stand a wall in front of the ball? */
 export function hasWall(style: AnimationId): boolean {
   return !!RUNUP_PREVIEW[style]?.wall;
+}
+
+/** Does this style's preview leave a gold trail (the Golden Run-up)? */
+export function hasTrail(style: AnimationId): boolean {
+  return !!RUNUP_PREVIEW[style]?.trail;
 }
 
 export function runupPose(style: AnimationId, tRaw: number): RunupPose {
@@ -132,7 +143,9 @@ export function runupPose(style: AnimationId, tRaw: number): RunupPose {
   const flight = Math.max(0, since);
   const loft = s.loft ?? 1;
   const ballX = BALL_X + flight * 110 * s.power + (s.knuckle && flight > 0 ? Math.sin(flight * 70) * 1.2 : 0);
-  const ballUp = flight > 0 ? Math.min(18 * loft, flight * 70 * s.power * loft) - flight * flight * 40 : 0;
+  let ballUp = flight > 0 ? Math.min(18 * loft, flight * 70 * s.power * loft) - flight * flight * 40 : 0;
+  // The Leaf: held up longer (less drop early), then a late, sharp dip.
+  if (s.leaf && flight > 0) ballUp = Math.min(18 * loft, flight * 70 * loft) - (flight > 0.12 ? (flight - 0.12) * (flight - 0.12) * 900 : 0);
 
   const opacity = t > 0.9 ? Math.max(0, 1 - (t - 0.9) / 0.08) : t < 0.04 ? t / 0.04 : 1;
 

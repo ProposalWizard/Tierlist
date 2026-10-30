@@ -93,6 +93,10 @@ export function layOffChance(sc: Scenario, at: Vec2): number {
   const gcx = (sc.goal.x1 + sc.goal.x2) / 2 || CX;
   const dGoal = Math.hypot(at.x - gcx, at.y);
   const far = Math.max(0, Math.min(1, (dGoal - SHOOT_ALWAYS_M) / (LAY_OFF_FULL_M - SHOOT_ALWAYS_M)));
+  // The byline cross's short option is the cutback / square ball himself: a
+  // lay-off from him goes back across the box, and defenders took 24 of 44
+  // (tests/star/playOn.mts, 26 Oct 2026). He plays it himself.
+  if (sc.receivedBy?.shortOption) return 0;
   return chainReturnChance(sc) * far;
 }
 

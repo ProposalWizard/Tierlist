@@ -34,8 +34,11 @@ export function keeperFingerprint(): { hash: string; n: number } {
  *  cutbacks and tight angles; now they are real headers and volleys (played
  *  off the team's cross drawings, lib/star/airDrawings.ts). Checked: the same
  *  shots over every OTHER kind give 4284c48 on the code before and after
- *  (scripts/b10/fingerprintNoAir.mts), so the keeper code did not change. */
-export const KEEPER_FINGERPRINT_BEFORE = "d2725947";
+ *  (scripts/b10/fingerprintNoAir.mts), so the keeper code did not change.
+ *  Re-recorded 26 Oct 2026 (was d2725947): byline crosses got a short option
+ *  (lib/star/bylineShort.ts), one more man on the pitch. With it switched off
+ *  the hash is d2725947 again, so the keeper code did not change. */
+export const KEEPER_FINGERPRINT_BEFORE = "cb516c52";
 
 if (process.argv[1]?.endsWith("fingerprint.mts")) {
   const store = new Map<string, string>();

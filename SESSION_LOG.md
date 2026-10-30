@@ -1315,3 +1315,12 @@ All changes type-check clean (`npx tsc --noEmit`). Could not manually verify in 
 ## 21 Oct 2026 — Sim rebuild piece 1 (credits, licensed numbers out, real-world column)
 
 Credits list in lib/star/dataCredits.ts shown in Settings and on public /credits. Every number once taken from the licensed event data was re-sourced to free Wyscout + PlayeRank + pro tracking (scripts/opendata/reduce_resource.py). Value changes: Keeper pro depth curve, back-four span, block slide 0.33, line floor 0.57, keeper shade 0.22, REAL_MIX 10/5/2. Radar path byte-identical. Real world column on /star-radar-dev. Details: docs/handoffs/2026-10-20-builds/sim1/READY.txt.
+
+## 27 Oct 2026 (Mikey, unattended bug-fix round on branch Mikey)
+
+- One match for every tool (FACT-ENG-007): a new career's corner rule and moves go through careerMatchSpec; owed chances live in hiddenMatch stepInvolved, used by the real match, the radar and sim90.
+- Multiplayer draft: a European winner from outside the top five crashed the season (7 live crashes); an FA/League Cup winner from 8th+ never played the Europa League. Fixed; tests/draft/europeWinners.mts.
+- Player photos from other editions are looked up in pieces of 150 ids (the one big request found 0 of 1,535; now 98).
+- Room to pull back no longer slides build-ups and midfield passes (their screen is the play area).
+- Stale tests brought up to date: oneFormula, matchRadar, chanceMaker, chanceJudge, identity, leadInGen, kindMix, freshness, shopNextItem, sprite3dClips. Star suite: 21 failing files -> 2 (longRangeRules: drawing data; realGoals: Harry's 0.101h patch notes name a data source).
+- Measured, not changed: cutbacks repeat a recent picture 33-36% of the time (need drawings); drawing gallery-main-long_range has a team-mate in your shot; PostHog has received no events in 30 days.
