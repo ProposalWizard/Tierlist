@@ -23,7 +23,8 @@ FACT-ENG-004 | [SUPERSEDED] The engine-warn hook also asks, as SOMETHING MAY DRI
 FACT-ENG-005 | The engine-warn hook warns (no Allow prompt) on canvasEngine and on the play-screen drift files; its old ask() is kept to switch back. | engine
 FACT-ENG-006 | Men, keeper and ball are one size in metres on every camera (a man 1.63 m, 22% of the goal's width, Mikey's 4-0 build-up picture); cameras unchanged. Locked by tests/star/figureScale.mts. | team,engine
 FACT-ENG-007 | One match for every tool: careerMatchSpec carries a new career's corner rule and moves, and hiddenMatch stepInvolved (a minute plus any owed chance) is the one step the real match, the radar and sim90 use. | career
-FACT-ENG-008 | Live chances (Leo, 30 Oct 2026): own switch kib-live-chances, off by default; the last pass keeps coming and letting go of the drag is the swing. | team,engine
+FACT-ENG-008 | [SUPERSEDED] Live chances (Leo, 30 Oct 2026): own switch kib-live-chances, off by default; the last pass keeps coming and letting go of the drag is the swing. | team,engine
+FACT-ENG-009 | Live chances (Leo, 30 Oct 2026): own switch kib-live-chances, off by default; with the strike screen (on by default) letting go locks the aim and the tap on a small ball is the kick. | team,engine
 FACT-KIB-001 | Knowitball as a client: three mates building the best football game ever; client code KIB. | client-kib
 FACT-KIB-002 | Audience: football fans 16 to 30 on TikTok, Reels and Shorts (Harry to confirm). | client-kib
 FACT-KIB-003 | Video format: 1080×1920 (9:16), 30 fps, H.264, AAC stereo; v01 ran 44.7 s at -13.4 LUFS. | client-kib
