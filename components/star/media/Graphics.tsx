@@ -36,8 +36,8 @@ export default function Graphic({ spec, author }: { spec: GraphicSpec; author?: 
         clipIds={spec.clips}
         synth={spec.synth}
         priority={spec.priority ? 2 : spec.clips.length > 0 ? 1 : 0}
-        style={clipStyleFor(author)}
-        variant={clipVariantFor(author)}
+        style={spec.style ?? clipStyleFor(author)}
+        variant={spec.variant ?? clipVariantFor(author)}
         credit={author ? { handle: author.handle, name: author.name } : undefined}
         title={spec.title}
         badge={(spec.clips.length || spec.synth?.length || 0) > 1 ? "HIGHLIGHTS" : "GOAL"}

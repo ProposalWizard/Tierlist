@@ -57,8 +57,8 @@ export async function premakeFeedVideos(posts: StoredPost[]): Promise<void> {
   const moves = animationsLook();
   for (const { p, g } of wanted) {
     try {
-      const style = clipStyleFor(p.author);
-      const variant = clipVariantFor(p.author);
+      const style = g.style ?? clipStyleFor(p.author);
+      const variant = g.variant ?? clipVariantFor(p.author);
       const tracks = await tracksFor(g.clips, g.synth);
       if (!tracks.length) continue;
       const edit = makeEdit(tracks, style, moves, variant);
