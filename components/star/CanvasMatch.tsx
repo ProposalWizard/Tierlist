@@ -78,6 +78,7 @@ import {
 } from "@/lib/star/matchSound";
 import { isBigMoment, headingIn, BIG_SLOW_RATE } from "@/lib/star/bigMoment";
 import { keeperLookChoice, leoUpdateOn } from "@/lib/star/leoUpdate";
+import { liveChancesOn, liveDials, liveKindOK, liveRate, planFromLead, planMadeUp, madeUpPasser, liveBallAt, liveSpeedAt, alongOf, runPast, stoppedShort, readSwing, swingLine, type LivePlan, type LiveDials } from "@/lib/star/liveChance";
 import { clipFor, keeperHoldMs, keeperShowFrame, keeperSlowRate, pickMove, predictLine, startFor, KEEPER_REACH_M, type KeeperEnding, type KeeperShow } from "@/lib/star/keeperShow";
 import { playLateGoalCall, preloadLateGoalCalls } from "@/lib/star/lateCommentary";
 import { finaliseMatch, liveRating, regressForMinutes, fairRating } from "@/lib/star/matchStats";
@@ -1512,7 +1513,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** See the `leadIn` prop: the builder, and the lead-in while it plays. */
   const leadInPropRef = useRef(leadIn);
   leadInPropRef.current = leadIn;
-  const leadRef = useRef<{ lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[]; ball: Vec2; z: number; mates0: number; defs0: number; cam: { at(t: number, chance: Viewport): Viewport; lockAt(t: number, chance: Viewport): number }; endAt: Record<string, Vec2>; endKeeper: Vec2 | null } | null>(null);
+  const leadRef = useRef<{ lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[]; ball: Vec2; z: number; mates0: number; defs0: number; cam: { at(t: number, chance: Viewport): Viewport; lockAt(t: number, chance: Viewport): number }; endAt: Record<string, Vec2>; endKeeper: Vec2 | null; live?: LivePlan | null } | null>(null);
+  /**
+   * LIVE CHANCES (lib/star/liveChance.ts, Leo 29 Oct 2026; Settings → Updates,
+   * off by default): the last pass still coming to you while you aim. `T` is the
+   * build-up's clock; `ents`/`ends` the build-up's men, still running to their
+   * spots; `done` once you swung (or it got away), after which the ball, if it
+   * was missed, rolls on at real speed while the result shows.
+   */
+  const liveRef = useRef<{ sc: Scenario; plan: LivePlan; dials: LiveDials; lead: LeadIn | null; ents: LeadEntity[]; ends: Vec2[]; runKeys: Set<string>; cam: { at(t: number, chance: Viewport): Viewport } | null; T: number; done: "" | "hit" | "miss"; rolled: number } | null>(null);
+  /** The last live swing, for the dev probe (__live) and the test page. */
+  const lastSwingRef = useRef<(ReturnType<typeof readSwing> & { T: number; ball: Vec2; speed: number }) | null>(null);
   // B10: when a header or volley chance became yours (for the ball hanging /
   // bouncing while you aim — lib/star/airDrawings.ts airWaitZ). Drawing only.
   const airT0Ref = useRef<{ sc: Scenario; t0: number } | null>(null);
@@ -5593,7 +5604,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ctx.restore();
       }
     }
+    // Live chances: the pass still coming to you (or, missed, rolling on).
+    const liveAt = !ball && !leadRef.current ? liveBallNow(sc) : null;
     const ballAt0 = headerBallAt ?? (ball ? { x: ball.pos.x, y: ball.pos.y, z: ball.z }
+      : liveAt ? { x: liveAt.x, y: liveAt.y, z: liveAt.z }
       : onTheSpot ? (crossAt ?? { x: sc.ball.x, y: sc.ball.y, z: leadRef.current?.z ?? airZ }) : null);
     const ballAt = keeperDeadBall(sc, ball, ballAt0);
     shownBallRef.current = ball && ballAt ? { x: ballAt.x, y: ballAt.y, z: ballAt.z } : null;
@@ -5912,6 +5926,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // — reported as redundant with the arrow's own length, which already
       // is the power readout.
     };
+    // Live chances: the spot where you meet the pass, green while it is in your sweet zone.
+    {
+      const lv = liveRef.current;
+      if (lv && lv.sc === sc && !lv.done && phaseRef.current === "aim" && !leadRef.current) {
+        const bNow = liveBallNow(sc);
+        const al = bNow ? alongOf(lv.plan, bNow) : -99;
+        const sweet = Math.abs(al) <= lv.dials.sweet, reach = al >= -lv.dials.reachEarly && al <= lv.dials.reachLate;
+        const g = toPx(lv.plan.spot.x, lv.plan.spot.y);
+        ctx.save();
+        ctx.lineWidth = Math.max(2, BALL_PX * g.scale * 0.35);
+        ctx.strokeStyle = sweet ? "rgba(74,222,128,0.95)" : reach ? "rgba(250,204,21,0.9)" : "rgba(255,255,255,0.55)";
+        ctx.beginPath();
+        ctx.ellipse(g.px, g.py, BALL_PX * g.scale * 2.2, BALL_PX * g.scale * 1.3, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
     if (phaseRef.current === "aim" && draggingRef.current && dragRef.current) {
       const d = dragRef.current;
       drawAimArrow(sc.ball.x - d.x, sc.ball.y - d.y, powerFromDrag(d, sc.ball));
@@ -6005,7 +6036,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         keeper: rec.keeper,
         figures: rec.figures,
         aim: rec.aim,
-        ring: nv && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || youShown || ringOnBall)
+        grabAt: liveRef.current && liveRef.current.sc === sc && !liveRef.current.done && phaseRef.current === "aim" && !leadRef.current
+          ? { x: liveRef.current.plan.spot.x, y: liveRef.current.plan.spot.y } : null,
+        // Live chances: the ring marks where you meet the pass (liveChance.ts).
+        ring: liveRef.current && liveRef.current.sc === sc && !liveRef.current.done && phaseRef.current === "aim" && !leadRef.current
+          ? { x: liveRef.current.plan.spot.x, y: liveRef.current.plan.spot.y }
+          : nv && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || youShown || ringOnBall)
           ? (ringOnBall ? { x: sc.ball.x, y: sc.ball.y } : { x: tx, y: ty }) : null,
         goalSide: phaseRef.current === "result" ? goalSideRef.current : null,
         celebrating: phaseRef.current === "result" && !!celebRef.current,
@@ -6454,6 +6490,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     try { lead = build(sc, moment ?? opening); } catch (e) { console.error("Lead-in could not be built (the chance plays as normal)", e); }
     if (!lead || !(lead.durS > 0)) return;
     runOnRef.current = null;
+    liveRef.current = null;
     leadJoinersRef.current = new Set();
     const ents = leadInEntities(sc);
     const ends = ents.map((e) => e.get());
@@ -6491,7 +6528,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const sid = e.key === "keeper" ? null : e.key === "run" ? "run0" : e.key.startsWith("sec") ? `run${Number(e.key.slice(3)) + 1}` : e.key;
       if (sid) endAt[sid] = { ...ends[i] }; else endKeeper = { ...ends[i] };
     });
-    leadRef.current = { lead, t: 0, ents, ends, ball: { x: sc.ball.x, y: sc.ball.y }, z: 0, mates0, defs0, cam: leadInCamera(lead, ents.map((e) => e.key)), endAt, endKeeper };
+    leadRef.current = { lead, t: 0, ents, ends, ball: { x: sc.ball.x, y: sc.ball.y }, z: 0, mates0, defs0, cam: leadInCamera(lead, ents.map((e) => e.key)), endAt, endKeeper,
+      // Live chances: the last pass is still coming when the chance becomes yours (liveChance.ts).
+      live: liveChancesOn() && liveKindOK(sc.kind) && !lead.offside && !autoKickOf(sc) ? planFromLead(lead, sc.ball, liveDials()) : null };
     leadPlayedRef.current = true;
     setLeadInOn(true);
     applyLeadIn();
@@ -6509,7 +6548,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Its line over the picture, when it asks (a state change only when the line changes).
     const cap = L.lead.captionShown && L.t < L.lead.durS ? L.lead.captionAt?.(L.t) ?? null : null;
     if (cap !== leadCapRef.current) { leadCapRef.current = cap; setLeadCap(cap); }
-    if (L.t < L.lead.durS) {
+    if (L.t < (L.live ? L.live.handT : L.lead.durS)) {
       applyLeadIn();
       try { L.lead.onTick?.(L.t, false); } catch { /* an observer never breaks the match */ }
       return;
@@ -6537,9 +6576,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     viewportRef.current = baseViewportRef.current;
     figShrinkRef.current = figShrinkBaseRef.current;
     leadRef.current = null;
-    runOnRef.current = runEnts.length ? { lead: L.lead, t: 0, ents: runEnts, ends: runEnds } : null;
+    runOnRef.current = runEnts.length && !L.live ? { lead: L.lead, t: 0, ents: runEnts, ends: runEnds } : null;
     airTapLeadRef.current = sc;
     setLeadInOn(false);
+    // Live chances: the pass is still on its way and the men still running (stepLive).
+    if (L.live) {
+      liveRef.current = { sc, plan: L.live, dials: liveDials(), lead: L.lead, ents: L.ents.slice(0, L.ends.length), ends: L.ends, runKeys: new Set(L.lead.runOnS && L.lead.runOnS > 0 ? L.lead.runOnKeys ?? [] : []), cam: L.cam, T: L.t, done: "", rolled: 0 };
+      stepLive(0);
+    }
     try { L.lead.onTick?.(L.lead.durS, true); } catch { /* an observer never breaks the match */ }
   };
   /** Is this man under the captain's orders, or the man pressing you (they move by their own rules)? */
@@ -6573,6 +6617,109 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * engine itself is unchanged.
    */
   const handOverRunOn = () => { runOnRef.current = null; };
+  /**
+   * LIVE CHANCES, each frame (lib/star/liveChance.ts). While you aim: the
+   * build-up's clock runs on (slowed, plan.slow), its men run on to their
+   * spots, its camera lands, and the pass rolls toward the spot. Let it run
+   * past you (or stop short) and the chance is gone. Once missed, it rolls on
+   * at real speed while the result shows. Nothing here touches the engine:
+   * the ball you strike is launched by handleContact as ever.
+   */
+  const stepLive = (dt: number) => {
+    const lv = liveRef.current;
+    if (!lv) return;
+    if (lv.sc !== scenarioRef.current) { liveRef.current = null; return; }
+    if (lv.done === "hit") return;
+    if (lv.done === "miss") { lv.T += dt; return; }
+    if (phaseRef.current !== "aim" && phaseRef.current !== "contact") { lv.done = "miss"; return; }
+    {
+      const l0 = lv.lead;
+      lv.T += dt * liveRate(lv.plan, liveBallAt(lv.plan, lv.T, l0 ? (t) => l0.ballAt(t) : null, lv.dials.rollDecel), lv.dials);
+    }
+    const T = lv.T, lead = lv.lead;
+    if (lead) {
+      const runEnd = lead.durS + (lead.runOnS ?? 0);
+      lv.ents.forEach((e, i) => {
+        const p = T < lead.durS || (lv.runKeys.has(e.key) && T < runEnd) ? lead.posAt(e.key, Math.min(T, runEnd)) : null;
+        e.set(p ?? lv.ends[i]);
+      });
+      if (lv.cam && T < lead.durS) { viewportRef.current = lv.cam.at(T, baseViewportRef.current); leadFigSize(); }
+      else if (lv.cam) { viewportRef.current = baseViewportRef.current; figShrinkRef.current = figShrinkBaseRef.current; lv.cam = null; }
+    }
+    const b = liveBallAt(lv.plan, T, lead ? (t) => lead.ballAt(t) : null, lv.dials.rollDecel);
+    // Development only (compiled out of the live site): read by scripts/film/live/livecheck.mjs.
+    if (offlineDevPlayEnabled() && typeof window !== "undefined") {
+      (window as unknown as { __live?: unknown }).__live = {
+        kind: lv.sc.kind, T, plan: lv.plan, ball: b, along: alongOf(lv.plan, b), speed: liveSpeedAt(lv.plan, T, lv.dials.rollDecel),
+        spotPx: pitchToClient(lv.plan.spot), ballPx: pitchToClient(b), made: !lead, last: lastSwingRef.current,
+      };
+    }
+    if (runPast(lv.plan, b, lv.dials) || stoppedShort(lv.plan, T, b, lv.dials)) liveMiss(false);
+  };
+  /** Where the live ball is right now (null: no live ball to draw). */
+  const liveBallNow = (sc: Scenario): (Vec2 & { z: number }) | null => {
+    const lv = liveRef.current;
+    if (!lv || lv.sc !== sc || lv.done === "hit") return null;
+    const lead = lv.lead;
+    return liveBallAt(lv.plan, lv.T, lead ? (t) => lead.ballAt(t) : null, lv.dials.rollDecel);
+  };
+  /** The live ball got away: swung at fresh air (`swung`) or let run past. The chance is gone. */
+  const liveMiss = (swung: boolean, early?: boolean) => {
+    const lv = liveRef.current;
+    if (!lv || lv.done) return;
+    lv.done = "miss";
+    if (!swung) { try { window.dispatchEvent(new CustomEvent("kib-live-swing", { detail: { hit: false, why: "past" } })); } catch { /* no window */ } }
+    aimCommitRef.current = null;
+    presserRef.current = null;
+    draggingRef.current = false;
+    dragRef.current = null;
+    thumbOriginRef.current = null;
+    setAim(null);
+    resolveOutcome("tackled");
+    showAction(swung ? "FRESH AIR" : "MISSED IT");
+    pushLine(swung
+      ? (early ? `${playerLabel()} swings too early — fresh air!` : `${playerLabel()} swings too late — it's gone past him.`)
+      : "He waits for it, and it runs straight past him. Chance gone.");
+  };
+  /**
+   * The swing on a live chance: your aim and power, read against where the
+   * ball is now (liveChance.ts readSwing). In reach: the ball is put where it
+   * is and struck through the real handleContact, with the contact the timing
+   * gives. Out of reach: fresh air.
+   */
+  const liveSwing = (dir: { x: number; y: number }, power: number): boolean => {
+    const lv = liveRef.current, sc = scenarioRef.current;
+    if (!lv || lv.sc !== sc || lv.done) return false;
+    const b = liveBallNow(sc);
+    if (!b) return false;
+    const speed = liveSpeedAt(lv.plan, lv.T, lv.dials.rollDecel);
+    const r = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x3c6ef372)) ^ 0x11fe) >>> 0)();
+    const read = readSwing(lv.plan, b, speed, dir, power, r, lv.dials);
+    lastSwingRef.current = { ...read, T: lv.T, ball: { ...b }, speed };
+    try { window.dispatchEvent(new CustomEvent("kib-live-swing", { detail: lastSwingRef.current })); } catch { /* no window */ }
+    if (!read.hit) { liveMiss(true, read.why === "early"); return true; }
+    lv.done = "hit";
+    // The men stop where they are (from the strike the engine moves everyone).
+    sc.ball.x = b.x; sc.ball.y = b.y;
+    viewportRef.current = baseViewportRef.current;
+    figShrinkRef.current = figShrinkBaseRef.current;
+    pushLine(swingLine(read, playerLabel()));
+    if (read.timing !== "sweet") showAction(read.timing === "early" ? "EARLY" : "LATE");
+    setAim({ dir: read.dir, power: read.power });
+    setPowerStrike(false);
+    handleContact({ cx: read.contact.cx, cy: read.contact.cy, aim: { dir: read.dir, power: read.power } });
+    return true;
+  };
+  /** A chance with no build-up, live chances on: a made-up pass from the nearest team-mate. */
+  const startLiveMadeUp = () => {
+    const sc = scenarioRef.current;
+    liveRef.current = null;
+    if (!liveChancesOn() || !liveKindOK(sc.kind) || autoKickOf(sc) || leadRef.current) return;
+    const dials = liveDials();
+    const plan = planMadeUp(madeUpPasser(sc.ball, sc.teammates), sc.ball, dials);
+    if (!plan) return;
+    liveRef.current = { sc, plan, dials, lead: null, ents: [], ends: [], runKeys: new Set(), cam: null, T: 0, done: "", rolled: 0 };
+  };
   /**
    * A BUILD-UP THAT ENDS IN A CALLED OFFSIDE (Full highlights rebuild: On,
    * lib/star/fhr/buildUp.ts; Harry, 20 Oct 2026: "Offsides can happen but
@@ -6654,7 +6801,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const skipLeadIn = () => {
     const L = leadRef.current;
     if (!L) return;
-    L.t = L.lead.durS;
+    L.t = L.live ? Math.max(L.t, L.live.handT) : L.lead.durS;
     stepLeadIn(0);
   };
 
@@ -6729,6 +6876,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (phaseRef.current === "aim" && !leadTriedRef.current && leadInPropRef.current && openOnRef.current) {
         leadTriedRef.current = true;
         startLeadIn();
+        if (!leadRef.current) startLiveMadeUp();
       }
       if (phaseRef.current === "aim" && !leadRef.current) {
         stepKeeper(scenarioRef.current, dt);
@@ -7284,6 +7432,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         else runOnRef.current = null; // the chance ended some other way: they stop where they are
       }
       if (leadRef.current) stepLeadIn(replayDt);
+      if (liveRef.current) stepLive(dt);
       recordGoalFrame(dt);
       render();
       rafRef.current = requestAnimationFrame(loop);
@@ -9198,6 +9347,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       flashRef.current.t = 0;
       feelRef.current.fx = []; feelRef.current.net = null; feelRef.current.struck = null; vfxFxRef.current = [];
       setPhase("aim");
+      // Live chances with no build-up on this screen: a made-up pass to you (liveChance.ts).
+      // (With a build-up, the frame loop starts it and asks then.)
+      if (!leadInPropRef.current) startLiveMadeUp(); else liveRef.current = null;
       playWhistle();
       scheduleAutoKick();
       return;
@@ -9545,6 +9697,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         stakes: stakesOf(fixture),
       });
     }
+    // Live chances with no build-up to read: a made-up pass to you (liveChance.ts).
+    // (A one-picture screen's build-up starts on its first frame: that path asks there.)
+    if (!leadRef.current && !(leadInPropRef.current && openOnRef.current && !leadTriedRef.current) && !isTouchContinuation && !chain && !carry) startLiveMadeUp();
+    else if (!leadRef.current) liveRef.current = null;
     playWhistle();
   };
 
@@ -9838,7 +9994,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // scenario doesn't accept orders (`acceptsCaptainOrders`), so this
     // changes nothing about when captaincy applies — only the PRIORITY
     // between "pick a man" and "grab the ball" once it does.
-    const r = captainPickAt(p);
+    // Live chances: a press right on the spot you meet the pass is the aim, never a team-mate.
+    const lvNow = liveRef.current;
+    const onLiveSpot = !!lvNow && lvNow.sc === scenarioRef.current && !lvNow.done && Math.hypot(p.x - b.x, p.y - b.y) < 1.5;
+    const r = onLiveSpot ? null : captainPickAt(p);
     if (r) {
       captainDragRef.current = { target: r, from: p, to: p };
       try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
@@ -9861,7 +10020,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // closer to a team-mate than to the ball never starts an aim-drag now,
     // even when it missed every hit-circle — better a missed order than an
     // accidental, badly-aimed kick.
-    if (ballD >= nearestCaptainCandidateDist(p)) return;
+    if (!onLiveSpot && ballD >= nearestCaptainCandidateDist(p)) return;
     // The grab zone round the ball: BALL_GRAB_FRACTION of the framed height
     // (28% let a drag start from a third of the screen away — Mikey, 28 Sep
     // 2026: "you're supposed to be able to start dragging only from the
@@ -10082,6 +10241,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // directly. Any pull past the absolute pixel floor above now counts.
     if (power < 0.02) return;
     const dir = { x: b.x - d.x, y: b.y - d.y };
+    // Live chances: letting go IS the swing, read against where the ball is now.
+    if (liveSwing(dir, power)) return;
     // A penalty or a direct free kick: you jog to the ball first, and the
     // strike screen opens when you get there (lib/star/penaltyRunup.ts).
     if (hasRunup(scenarioRef.current.kind)) {

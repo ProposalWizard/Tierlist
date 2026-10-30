@@ -27,6 +27,75 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.126",
+      "title": "Leo's patch notes: Live chances (test)",
+      "author": "Leo",
+      "publishedAt": "2026-10-30T12:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "The last pass keeps coming to you: time your strike as it arrives. Early stabs it low, clean is a full shot, late gets under it; miss it or let it run past and the chance is gone. The ball's pace carries into your shot. 98% of open-play chances go live; set pieces, headers and volleys stay as they are. Own switch in Settings → Updates (off by default) and a test page with dials. Works in 2D and 3D.",
+      "stats": [
+        {
+          "value": "98%",
+          "label": "open-play chances live"
+        },
+        {
+          "value": "0.35 m",
+          "label": "clean zone either side"
+        },
+        {
+          "value": "1.8 s",
+          "label": "for the pass to reach you"
+        },
+        {
+          "value": "Off",
+          "label": "by default"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Live chances (Settings → Updates)",
+              "detail": "The build-up's last pass is still rolling when the chance becomes yours; the clock slows, more as it nears you. A ring shows where you meet it. Drag from the ring; letting go is the swing."
+            },
+            {
+              "title": "Timing decides the strike",
+              "detail": "Clean within 0.35 m. Early: struck high on the ball, up to 45% weaker, skews. Late: under it, rises, up to 30% weaker. Out of reach or never swung: chance gone."
+            },
+            {
+              "title": "The ball's pace carries in",
+              "detail": "A ball rolling across you bends your shot its way (about 9° at 60% power, less when you strike harder)."
+            },
+            {
+              "title": "2D and 3D",
+              "detail": "Works in both views. In 3D a press on the ring grabs the aim. A press on the ring is never an order to a nearby team-mate."
+            },
+            {
+              "title": "Test page /star-live-chances-dev",
+              "detail": "Every kind, with or without build-up, dials for the time to reach you, slow motion, sweet zone and reach. Shows what each swing read as. Dials never reach the game."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known / next",
+          "items": [
+            {
+              "title": "Dribbled-in chances",
+              "detail": "When you carry it in, you strike it on the dribble; a proper strike-in-stride is next if you like it."
+            },
+            {
+              "title": "Build-up-only passer",
+              "detail": "A team-mate only in the build-up leaves at the hand-over, about a second before his pass arrives."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.125",
       "title": "Leo's patch notes: Overnight sanity sweep",
       "author": "Leo",

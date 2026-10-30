@@ -143,6 +143,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-sim90-dev", "Full match", "Full simulated 90 minutes", "rbd", "match", "Harry", "live", "none", "team"),
   P("/star-radar-dev", "Match radar", "Unseen match, minute by minute", "rbd", "match", "Harry", "live", "none", "team"),
   P("/star-fiveaside-dev", "Five-a-side", "Five-a-side chances, a full match with a radar, and 500 matches' numbers", "rbd", "match", "Harry", "live", "none", "team"),
+  P("/star-live-chances-dev", "Live chances", "The last pass keeps coming: time your strike on the run; dials for the window and slow motion", "rbd", "match", "Leo", "live", "none", "team"),
   P("/star-weather-dev", "Weather and pitch", "Wind, rain and each club's pitch change the ball: pick them, see the path, play it", "rbd", "match", "Leo", "live", "none", "team"),
   P("/star-pc-match-dev", "PC match + radar", "The real match with the whole pitch from above beside it, in 2D or 3D", "rbd", "match", "Harry", "live", "none", "team"),
   // "/star-dribble-dev" (First-person dribble): taken off the list (Harry, 19 Oct 2026: "remove as an admin page").
@@ -303,7 +304,7 @@ export const TEST_PAGES = new Set<string>([
   "/star-3d-area-dev", "/star-3d-area-dev/signing", "/star-3d-area-dev/office", "/star-shop3d-dev", "/star-garden3d-dev",
   "/star-home3d-dev", "/star-training3d-dev", "/star-anim3d-dev", "/star-people-dev", "/star-sprites-dev",
   "/star-store-dev", "/star-wallet-dev", "/star-sim90-dev", "/star-radar-dev", "/star-relgames-dev", "/star-retirement-dev",
-  "/star-animations-dev", "/star-fiveaside-dev", "/star-pc-match-dev", "/star-shootout-dev", "/star-weather-dev",
+  "/star-animations-dev", "/star-fiveaside-dev", "/star-pc-match-dev", "/star-shootout-dev", "/star-weather-dev", "/star-live-chances-dev",
   "/star-store-dev", "/star-wallet-dev", "/star-sim90-dev", "/star-radar-dev", "/star-relgames-dev", "/star-retirement-dev", "/star-awards-night-dev",
   "/star-animations-dev", "/star-fiveaside-dev", "/star-pc-match-dev",
 ]);
