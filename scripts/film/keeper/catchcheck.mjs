@@ -139,7 +139,7 @@ while ((Date.now() - T0) / 1000 < SECS) {
     const tip = pg.getByText(/^\s*(Next ▸|Got it)\s*$/).first();
     if (await tip.isVisible().catch(() => false)) { await tip.click({ timeout: 2000 }).catch(() => {}); await vStep(pg, 20); continue; }
     let clicked = false;
-    for (const re of [/^\s*thanks!?\s*$|^\s*got it\s*$|^\s*skip tour\s*$/i, /full time/i, /get out there/i, /play match|kick off/i, /team sheets/i, /second half|^next|play on|resume/i, /^▶ *play|^play$/i, /continue|tap to hear|^ok$|skip|close|done/i]) {
+    for (const re of [/^\s*no thanks\s*$/i, /^\s*thanks!?\s*$|^\s*got it\s*$|^\s*skip tour\s*$/i, /full time/i, /get out there/i, /play match|kick off/i, /team sheets/i, /second half|^next|play on|resume/i, /^▶ *play|^play$/i, /continue|tap to hear|^ok$|skip|close|done/i]) {
       const b = pg.locator("button:visible").filter({ hasText: re }).first();
       if (await b.count()) { await b.click({ timeout: 2000 }).catch(() => {}); clicked = true; break; }
     }

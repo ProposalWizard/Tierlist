@@ -1728,6 +1728,17 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       const b2 = to2dClient(f.ball);
       if (b2) { touch.start2 = b2; touch.g0 = { x: f.ball.x, y: f.ball.y }; }
     }
+    // Live chances: the aim is grabbed at the spot you meet the pass (f.grabAt), not
+    // where the rolling ball is drawn. Off (no grabAt): nothing changes.
+    if (f?.grabAt && f.phase === "aim") {
+      const ga = f.grabAt, a2 = to2dClient(ga);
+      const r = container.getBoundingClientRect();
+      const v = tmpV.set(ga.x - CX, 0, ga.y).project(camera);
+      const onGlass = { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+      const in2d = !!a2 && Math.hypot(at.x - a2.x, at.y - a2.y) <= 0.2 * f.cam.H;
+      touch.shot = !!a2 && grabsBall(Math.hypot(e.clientX - onGlass.x, e.clientY - onGlass.y), in2d, Math.hypot(g.x - ga.x, g.y - ga.y));
+      if (touch.shot && a2) { touch.start2 = a2; touch.g0 = { x: ga.x, y: ga.y }; }
+    }
     touch.last = performance.now();
     // THE CAMERA SWIPE: a press on open grass while aiming is held back from the 2D game until it shows
     // what it is. Sideways first → it turns the camera and NEVER reaches the 2D game (no kick, no order);

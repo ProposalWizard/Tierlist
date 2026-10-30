@@ -928,6 +928,33 @@ export const ADMIN_GUIDES = {
     inGame: ["The moves are the game's own (career, highlights, the Head & Volley drill). Only the force is test-page only: the game always picks its own move."],
     dev: "app/star-aerials-dev/page.tsx · lib/star/aerialMoves.ts (setTestAerialMove, forcedAerialMove, pickAerialMove) · components/star/CanvasMatch.tsx (reads forcedAerialMove) · tests/star/aerialMoves.mts",
   },
+  "/star-live-chances-dev": {
+    title: "Live chances",
+    what: "Chances where the last pass is still coming to you: time the strike as it arrives. On this page only; the game is unchanged unless the switch is on in Settings → Updates.",
+    buttons: [
+      { group: "Switches", items: [
+        ["Live: On / Off", "On: the pass keeps coming and you time the swing. Off: the game as now (the ball waits at your feet)."],
+        ["With build-up / No build-up", "With: the chance's real build-up plays first. No: a made-up pass from the nearest team-mate."],
+        ["Every kind / a kind", "Which chances to play. Penalties, free kicks, corners, headers and volleys are never live."],
+      ] },
+      { group: "Play it", items: [
+        ["Next chance", "The next chance the match serves."],
+        ["↺ Again", "The same chance again."],
+        ["The ring on the grass", "Where you meet the pass. White: not yet. Yellow: in reach. Green: sweet."],
+        ["Drag, then let go", "Aim from the ring. Letting go is the swing."],
+      ] },
+      { group: "Dials", items: [
+        ["Time for the pass to reach you", "Real seconds from the hand-over to the ball at your feet."],
+        ["Slowest slow motion", "How slow the pass may run to give you that time."],
+        ["Sweet zone / Reach (early) / Reach (late)", "The metres either side of the spot for a clean strike, and how far you can still reach it."],
+        ["Roll slows by", "How fast a missed ball slows."],
+        ["Reset to the game's", "Back to the numbers the game uses."],
+      ] },
+    ],
+    saving: ["Nothing. The switch and dials live on this page only and reset when you leave."],
+    inGame: ["Only when Settings → Updates → \"Live chances\" is on, on that phone (off by default). It uses the game's numbers, never this page's dials."],
+    dev: "app/star-live-chances-dev/page.tsx · lib/star/liveChance.ts (plan, ball, swing read; setLiveTest) · components/star/CanvasMatch.tsx (stepLive, liveSwing, liveMiss, startLiveMadeUp) · tests/star/liveChance.mts · scripts/film/live/livecheck.mjs",
+  },
   "/star-weather-dev": {
     title: "Weather and pitch",
     what: "Try wind, rain and a bad pitch on the real ball before any of it goes into the game. The real game is unchanged.",
