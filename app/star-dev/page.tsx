@@ -1,6 +1,6 @@
 "use client";
 import { protectedClipIds } from "@/lib/star/goalLog";
-import { leoUpdateOn, useLeoUpdate } from "@/lib/star/leoUpdate";
+import { leoUpdateOn, useLeoUpdate, leoUpdateLocal, adoptLeoUpdate, LEO_UPDATE_EVENT } from "@/lib/star/leoUpdate";
 import { preloadScene } from "@/lib/star/three3d/perf";
 import { useUiLook, useUiVersionOrNull } from "@/lib/star/uiLook";
 import { pitchFont } from "@/components/star/ui/pitchFont";
@@ -1305,6 +1305,24 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // never one a saved replay points at.
   const careerForClipsRef = useRef<CareerState | null>(null);
   careerForClipsRef.current = career;
+  // Leo's update switch follows the account (lib/star/leoUpdate.ts): the save
+  // carries it between devices, and the newest change wins.
+  const careerLeoAt = career?.leoUpdate?.at ?? -1;
+  useEffect(() => {
+    if (!career) return;
+    const local = leoUpdateLocal();
+    const saved = career.leoUpdate;
+    if (saved && (saved.at ?? 0) > (local?.at ?? -1)) adoptLeoUpdate(saved);
+    else if (local && local.at !== undefined && local.at !== saved?.at) setCareer(c => (c ? { ...c, leoUpdate: local } : c));
+    const onChange = () => {
+      const now = leoUpdateLocal();
+      if (now) setCareer(c => (c && c.leoUpdate?.at !== now.at ? { ...c, leoUpdate: now } : c));
+    };
+    window.addEventListener(LEO_UPDATE_EVENT, onChange);
+    return () => window.removeEventListener(LEO_UPDATE_EVENT, onChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!career, careerLeoAt]);
+
   // Leo's 24 Oct update → the media pass (lib/star/media/updateFlags.ts): the
   // label fixes and Goal of the Month follow the switch; off = as on main.
   useEffect(() => {

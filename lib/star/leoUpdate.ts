@@ -38,7 +38,7 @@ export const LEO_FEATURES = [
 ] as const;
 export type LeoFeature = (typeof LEO_FEATURES)[number]["id"];
 
-interface Saved { on: boolean; off: LeoFeature[] }
+interface Saved { on: boolean; off: LeoFeature[]; /** When it was last changed (ms), so the newest change wins across devices. */ at?: number }
 const NONE: Saved = { on: false, off: [] };
 
 function read(): Saved {
@@ -47,7 +47,7 @@ function read(): Saved {
     const raw = window.localStorage.getItem(LEO_UPDATE_KEY);
     if (!raw) return NONE;
     const s = JSON.parse(raw) as Partial<Saved>;
-    return { on: s.on === true, off: Array.isArray(s.off) ? (s.off.filter((x) => LEO_FEATURES.some((f) => f.id === x)) as LeoFeature[]) : [] };
+    return { on: s.on === true, off: Array.isArray(s.off) ? (s.off.filter((x) => LEO_FEATURES.some((f) => f.id === x)) as LeoFeature[]) : [], ...(typeof s.at === "number" ? { at: s.at } : {}) };
   } catch { return NONE; }
 }
 function write(s: Saved) {
@@ -61,11 +61,32 @@ export function leoUpdateOn(f?: LeoFeature): boolean {
   if (!s.on) return false;
   return f ? !s.off.includes(f) : true;
 }
-export function setLeoUpdate(on: boolean) { write({ ...read(), on }); }
+export function setLeoUpdate(on: boolean) { write({ ...read(), on, at: Date.now() }); }
 export function setLeoFeature(f: LeoFeature, on: boolean) {
   const s = read();
-  write({ ...s, off: on ? s.off.filter((x) => x !== f) : [...s.off.filter((x) => x !== f), f] });
+  write({ ...s, off: on ? s.off.filter((x) => x !== f) : [...s.off.filter((x) => x !== f), f], at: Date.now() });
 }
+
+/**
+ * THE SWITCH FOLLOWS YOUR ACCOUNT (Leo, 30 Oct 2026: "perfect loading time
+ * for phone, but still takes seconds on pc" — the switch was on on his phone
+ * and off on his computer, because it lived on each device). The setting is
+ * also kept in the career save (CareerState.leoUpdate), which syncs between
+ * devices; app/star-dev/page.tsx copies whichever was changed last.
+ */
+export type LeoUpdateSetting = Saved;
+/** This device's setting, or null if it was never set here. */
+export function leoUpdateLocal(): LeoUpdateSetting | null {
+  try {
+    if (typeof window === "undefined" || window.localStorage.getItem(LEO_UPDATE_KEY) === null) return null;
+  } catch { return null; }
+  return read();
+}
+/** Take the setting from the save (another device changed it more recently). */
+export function adoptLeoUpdate(s: LeoUpdateSetting) {
+  write({ on: s.on === true, off: (Array.isArray(s.off) ? s.off : []).filter((x) => LEO_FEATURES.some((f) => f.id === x)) as LeoFeature[], at: s.at ?? Date.now() });
+}
+export const LEO_UPDATE_EVENT = EVENT;
 
 /** React: re-renders when the switch changes (this tab or another). */
 export function useLeoUpdate(f?: LeoFeature): boolean {

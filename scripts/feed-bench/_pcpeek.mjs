@@ -1,0 +1,11 @@
+import { chromium } from "playwright";
+import { readFileSync } from "node:fs";
+const seed = JSON.parse(readFileSync(process.argv[2], "utf8"));
+const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" });
+const pg = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
+await pg.goto("http://localhost:3700/star-dev", { waitUntil: "domcontentloaded", timeout: 180000 });
+await pg.evaluate(({ career }) => { localStorage.clear(); localStorage.setItem("kib-update-leo-2026-10-24", JSON.stringify({ on: true, off: [] })); localStorage.setItem("star-career-v2::anon", JSON.stringify(career)); localStorage.setItem("star-career-phase-v1::anon", JSON.stringify({ phase: "dashboard" })); }, seed);
+await pg.reload({ waitUntil: "networkidle" }); await pg.waitForTimeout(5000);
+await pg.screenshot({ path: process.argv[3], type: "jpeg", quality: 60 });
+console.log(await pg.evaluate(() => Array.from(document.querySelectorAll("[data-tour]")).map(e => e.getAttribute("data-tour") + (e.getBoundingClientRect().width ? "" : "(hidden)")).join(" ")));
+await b.close();
