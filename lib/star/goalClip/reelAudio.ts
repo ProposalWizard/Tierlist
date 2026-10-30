@@ -12,6 +12,7 @@
  * that will not load = the crowd alone.
  */
 import { planAudio, mixAudio, MIX_RATE, MIX_CHANNELS, type AudioPlan, type Cue, type BedPoint } from "./audio";
+import { commentarySet } from "./commentaryVoice";
 import type { Edit } from "./edit";
 import { EDIT_FPS } from "./edit";
 import type { GoalTrack } from "./track";
@@ -27,6 +28,7 @@ export const QUICK_CROWD = 0.8;
 
 /** The sound plan for the whole reel (crowd, kicks, nets, the commentator). */
 export function reelCrowdPlan(plan: ReelPlan, tracks: Map<string, GoalTrack>): AudioPlan {
+  const voice = commentarySet();
   const cues: Cue[] = [];
   const bed: BedPoint[] = [{ at: 0, gain: 0 }];
   for (const seg of plan.segs) {
@@ -39,7 +41,7 @@ export function reelCrowdPlan(plan: ReelPlan, tracks: Map<string, GoalTrack>): A
         w: 360, h: 640, fps: EDIT_FPS, tracks: [tr],
         shots: seg.shots.map((s) => ({ track: 0, angle: s.angle, from: s.from, to: s.to, rate: s.rate, replay: s.replay })),
       };
-      const p = planAudio(edit);
+      const p = planAudio(edit, voice);
       for (const c of p.cues) if (c.at < seg.dur) cues.push({ ...c, at: c.at + seg.at, gain: seg.kind === "goal" ? c.gain * (seg.quick ? QUICK_CROWD : 0.9) : c.gain });
       for (const b of p.bed) bed.push({ at: Math.min(seg.at + seg.dur, b.at + seg.at), gain: b.gain });
     } else if (seg.kind === "goal" || seg.kind === "best") {
@@ -56,7 +58,7 @@ export function reelCrowdPlan(plan: ReelPlan, tracks: Map<string, GoalTrack>): A
   }
   cues.sort((a, b) => a.at - b.at);
   bed.sort((a, b) => a.at - b.at);
-  return { duration: plan.duration, cues, bed };
+  return voice === "v2" ? { duration: plan.duration, cues, bed, voice } : { duration: plan.duration, cues, bed };
 }
 
 /** The timings reel.ts needs, read off a recording. */

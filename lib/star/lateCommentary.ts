@@ -15,9 +15,10 @@
  * server or in a test it does nothing.
  */
 import { audioContext } from "./audioOut";
-import { sfxOn, sfxUrl } from "./sfx";
+import { sfxOn } from "./sfx";
 import { isMatchSoundMuted } from "./matchSound";
 import { LATE_CALLS, pickLine, lateKindOf, type LateKind } from "./goalClip/commentary";
+import { commentarySet, commentaryUrl } from "./goalClip/commentaryVoice";
 
 export { lateKindOf };
 export type { LateKind };
@@ -30,23 +31,25 @@ const GAIN = 0.95;
 /** A call that is not loaded within this long after the goal is dropped: a late call late is worse than none. */
 const MAX_WAIT_MS = 1500;
 
+/** By file address: the first recordings and Leo's new voice (commentaryVoice.ts) are kept apart. */
 const buffers = new Map<string, AudioBuffer | null | Promise<AudioBuffer | null>>();
 
 function load(id: string): Promise<AudioBuffer | null> {
-  const have = buffers.get(id);
+  const url = commentaryUrl(id, commentarySet());
+  const have = buffers.get(url);
   if (have !== undefined) return have instanceof Promise ? have : Promise.resolve(have);
   const c = audioContext();
   if (!c || typeof fetch === "undefined") return Promise.resolve(null);
-  const job = fetch(sfxUrl(id))
+  const job = fetch(url)
     .then(r => (r.ok ? r.arrayBuffer() : Promise.reject(new Error("no file"))))
     .then(data => new Promise<AudioBuffer>((res, rej) => {
       // The callback form: old iOS Safari has no promise-returning decodeAudioData.
       const p = c.decodeAudioData(data, res, rej);
       if (p && typeof (p as Promise<AudioBuffer>).then === "function") (p as Promise<AudioBuffer>).then(res, rej);
     }))
-    .then(b => { buffers.set(id, b); return b; })
-    .catch(() => { buffers.set(id, null); return null; });
-  buffers.set(id, job);
+    .then(b => { buffers.set(url, b); return b; })
+    .catch(() => { buffers.set(url, null); return null; });
+  buffers.set(url, job);
   return job;
 }
 

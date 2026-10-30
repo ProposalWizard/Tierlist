@@ -33,6 +33,7 @@ import {
   type FinishTag, type ScoreTag, type LateKind,
 } from "./commentary";
 import { COMMENTARY_SECONDS } from "./commentaryDurations";
+import { commentarySet, commentaryTable, commentaryUrl, type CommentarySet } from "./commentaryVoice";
 
 /** The effects a goal video may use (the commentary lines are the rest). */
 export const EFFECT_SOUNDS = ["kick-hard", "kick-soft", "goal-net", "keeper-save", "crowd-cheer-stadium"] as const;
@@ -40,10 +41,12 @@ export const EFFECT_SOUNDS = ["kick-hard", "kick-soft", "goal-net", "keeper-save
 export const CLIP_SOUNDS: string[] = [...EFFECT_SOUNDS, ...allCommentaryLines().map(l => l.id)];
 export type ClipSound = string;
 
-/** The shortest co-commentator line, seconds. */
-const MIN_REPLAY_LINE = Math.min(...Object.values(REPLAY_LINES).flat().map(l => COMMENTARY_SECONDS[l.id] ?? 2.5));
+/** The shortest co-commentator line in a set of recordings, seconds. */
+const minReplayLine = (table: Record<string, number>) => Math.min(...Object.values(REPLAY_LINES).flat().map(l => table[l.id] ?? 2.5));
+const MIN_REPLAY_LINE = minReplayLine(COMMENTARY_SECONDS);
 const isComm = (s: string) => s.startsWith("cl-") || s.startsWith("cc-");
-const secs = (id: string) => COMMENTARY_SECONDS[id] ?? 1.8;
+/** Seconds a line lasts in a set ("v1" unless Leo's new voice is on: commentaryVoice.ts). */
+const secsIn = (table: Record<string, number>) => (id: string) => table[id] ?? 1.8;
 
 /** How the goal went in, for the commentator. */
 export function finishOf(tr: GoalTrack): FinishTag {
@@ -104,6 +107,9 @@ export interface AudioPlan {
   duration: number;
   cues: Cue[];
   bed: BedPoint[];
+  /** "v2": the commentary plays from the new voice's files (Leo's switch,
+   *  commentaryVoice.ts). Absent = the first recordings, as before. */
+  voice?: CommentarySet;
 }
 
 /** Crowd murmur levels. */
@@ -127,7 +133,9 @@ function hash(s: string): number {
  * The sound plan for an edit. The same goal always gets the same lines (picked
  * from its id), so a video sounds the same every time it is made.
  */
-export function planAudio(edit: Edit): AudioPlan {
+export function planAudio(edit: Edit, voice: CommentarySet = commentarySet()): AudioPlan {
+  const secs = secsIn(commentaryTable(voice));
+  const minReplay = voice === "v2" ? minReplayLine(commentaryTable(voice)) : MIN_REPLAY_LINE;
   const cues: Cue[] = [];
   const bed: BedPoint[] = [];
   const fan = edit.style === "fan";
@@ -203,7 +211,7 @@ export function planAudio(edit: Edit): AudioPlan {
           const nextGoal = nextGoalAt(si);
           // Leave room for the co-commentator over the replay, if there is one.
           const replayAfter = edit.shots.some((sh, k) => k > si && sh.replay);
-          const keep = replayAfter && edit.style !== "tiktok" ? MIN_REPLAY_LINE + 0.4 : 0;
+          const keep = replayAfter && edit.style !== "tiktok" ? minReplay + 0.4 : 0;
           // A late call already says what it means: no second line.
           if (tag !== "none" && !late) {
             const say = pickLine(SCORE_LINES[tag], `${id}:score`, used);
@@ -249,7 +257,7 @@ export function planAudio(edit: Edit): AudioPlan {
   });
   cues.sort((a, b) => a.at - b.at);
   bed.sort((a, b) => a.at - b.at);
-  return { duration: acc, cues, bed };
+  return voice === "v2" ? { duration: acc, cues, bed, voice } : { duration: acc, cues, bed };
 }
 
 // ── Mixing ──────────────────────────────────────────────────────────────────
@@ -257,16 +265,17 @@ export function planAudio(edit: Edit): AudioPlan {
 export const MIX_RATE = 48000;
 export const MIX_CHANNELS = 2;
 
-/** The files' bytes, fetched once a session (decoded per mix). */
-const bytes = new Map<ClipSound, Promise<ArrayBuffer | null>>();
+/** The files' bytes, fetched once a session (decoded per mix), by address. */
+const bytes = new Map<string, Promise<ArrayBuffer | null>>();
 
-function fetchBytes(name: ClipSound): Promise<ArrayBuffer | null> {
-  let hit = bytes.get(name);
+function fetchBytes(name: ClipSound, voice: CommentarySet = "v1"): Promise<ArrayBuffer | null> {
+  const url = isComm(name) ? commentaryUrl(name, voice) : sfxUrl(name);
+  let hit = bytes.get(url);
   if (!hit) {
-    hit = fetch(sfxUrl(name))
+    hit = fetch(url)
       .then(r => (r.ok ? r.arrayBuffer() : null))
       .catch(() => null);
-    bytes.set(name, hit);
+    bytes.set(url, hit);
   }
   return hit;
 }
@@ -333,11 +342,13 @@ export async function mixAudio(plan: AudioPlan): Promise<AudioBuffer | null> {
     ctx = new OAC(MIX_CHANNELS, Math.ceil(plan.duration * MIX_RATE), MIX_RATE);
   } catch { return null; }
 
+  const voice: CommentarySet = plan.voice === "v2" ? "v2" : "v1";
+  const secs = secsIn(commentaryTable(voice));
   const names = Array.from(new Set(plan.cues.map(c => c.sound)));
   const decoded = new Map<ClipSound, AudioBuffer>();
   const decodedOk = (n: string) => decoded.has(n);
   await Promise.all(names.map(async n => {
-    const b = await fetchBytes(n);
+    const b = await fetchBytes(n, voice);
     const a = b ? await decode(ctx, b) : null;
     if (a) decoded.set(n, a);
   }));
@@ -363,14 +374,16 @@ export async function mixAudio(plan: AudioPlan): Promise<AudioBuffer | null> {
     pitchBus.gain.setTargetAtTime(1, end, 0.25);
   }
   // The commentary box: a broadcast mic — no rumble, a little presence.
+  // The new voice's files already carry the commentary-box sound
+  // (scripts/commentary/broadcast.py): only a gentle low cut on top.
   const lowCut = ctx.createBiquadFilter();
   lowCut.type = "highpass";
-  lowCut.frequency.value = 140;
+  lowCut.frequency.value = voice === "v2" ? 90 : 140;
   const presence = ctx.createBiquadFilter();
   presence.type = "peaking";
   presence.frequency.value = 3200;
   presence.Q.value = 0.9;
-  presence.gain.value = 3;
+  presence.gain.value = voice === "v2" ? 0 : 3;
   const boxGain = ctx.createGain();
   boxGain.gain.value = 1.2;
   lowCut.connect(presence); presence.connect(boxGain); boxGain.connect(master);
