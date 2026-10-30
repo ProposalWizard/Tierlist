@@ -70,6 +70,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
               "detail": "A ball rolling across you bends your shot its way (about 9° at 60% power, less when you strike harder)."
             },
             {
+              "title": "2D and 3D",
+              "detail": "Works in both views. In 3D a press on the ring grabs the aim. A press on the ring is never an order to a nearby team-mate."
+            },
+            {
               "title": "Test page /star-live-chances-dev",
               "detail": "Every kind, with or without build-up, dials for the time to reach you, slow motion, sweet zone and reach. Shows what each swing read as. Dials never reach the game."
             }

@@ -34,8 +34,9 @@ const glass = async (L) => {
   if (!L) return L;
   const g = await pg.evaluate((sp) => {
     const pj = window.__ev3dProject; if (!pj) return null;
-    const cs = [...document.querySelectorAll("canvas")].map((c) => ({ c, r: c.getBoundingClientRect() })).sort((a, b) => b.r.width * b.r.height - a.r.width * a.r.height);
-    const r = cs[0]?.r; if (!r) return null;
+    // the 3D view's own box (its touch layer), which is what it projects into
+    const box = [...document.querySelectorAll("div")].find((d) => d.style.pointerEvents === "auto" && d.style.inset === "0px" && d.querySelector("canvas"));
+    const r = box?.getBoundingClientRect(); if (!r) return null;
     const q = pj(sp.x, sp.y, 0); return { x: r.left + q.X, y: r.top + q.Y };
   }, L.plan.spot);
   return g ? { ...L, spotPx: g } : L;

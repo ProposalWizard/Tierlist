@@ -56,8 +56,9 @@ const glass = async (L) => {
   if (!L) return L;
   const g = await pg.evaluate((sp) => {
     const pj = window.__ev3dProject; if (!pj) return null;
-    const cs = [...document.querySelectorAll("canvas")].map((c) => ({ c, r: c.getBoundingClientRect() })).sort((a, b) => b.r.width * b.r.height - a.r.width * a.r.height);
-    const r = cs[0]?.r; if (!r) return null;
+    // the 3D view's own box (its touch layer), which is what it projects into
+    const box = [...document.querySelectorAll("div")].find((d) => d.style.pointerEvents === "auto" && d.style.inset === "0px" && d.querySelector("canvas"));
+    const r = box?.getBoundingClientRect(); if (!r) return null;
     const q = pj(sp.x, sp.y, 0); return { x: r.left + q.X, y: r.top + q.Y };
   }, L.plan.spot);
   return g ? { ...L, spotPx: g } : L;
@@ -132,7 +133,10 @@ while ((Date.now() - T0) / 1000 < SECS) {
     if (!L || (await phase()) !== "aim") break;
     if (SHOTS && !shotB && L.along > -2.5) { shotB = true; await pg.screenshot({ path: path.join(OUT, `l${liveN}-b.jpg`), type: "jpeg", quality: 80 }); }
     if (target !== "none" && !held) {
-      await pg.mouse.move(L.spotPx.x, L.spotPx.y); await pg.mouse.down();
+      await pg.mouse.move(L.spotPx.x, L.spotPx.y);
+      if (process.env.LIVE_DBG) log("before", JSON.stringify(await pg.evaluate(([x, y]) => ({ inp: window.__cam3dInput?.() ?? null, el: document.elementFromPoint(x, y)?.getAttribute("style")?.slice(0, 60) ?? null }), [L.spotPx.x, L.spotPx.y])));
+      await pg.mouse.down();
+      if (process.env.LIVE_DBG) log("down", JSON.stringify(await pg.evaluate(() => window.__cam3dInput?.() ?? null)));
       for (let k = 1; k <= 6; k++) { await pg.mouse.move(L.spotPx.x + 2 * k, L.spotPx.y + 14 * k); await vStep(pg, 1); }
       held = true;
       if (process.env.LIVE_DBG) log("press", JSON.stringify(L.spotPx), JSON.stringify(await pg.evaluate(() => ({ proj: !!window.__ev3dProject, inp: window.__cam3dInput?.() ?? null }))));

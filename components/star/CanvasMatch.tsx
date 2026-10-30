@@ -9994,7 +9994,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // scenario doesn't accept orders (`acceptsCaptainOrders`), so this
     // changes nothing about when captaincy applies — only the PRIORITY
     // between "pick a man" and "grab the ball" once it does.
-    const r = captainPickAt(p);
+    // Live chances: a press right on the spot you meet the pass is the aim, never a team-mate.
+    const lvNow = liveRef.current;
+    const onLiveSpot = !!lvNow && lvNow.sc === scenarioRef.current && !lvNow.done && Math.hypot(p.x - b.x, p.y - b.y) < 1.5;
+    const r = onLiveSpot ? null : captainPickAt(p);
     if (r) {
       captainDragRef.current = { target: r, from: p, to: p };
       try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
@@ -10017,7 +10020,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // closer to a team-mate than to the ball never starts an aim-drag now,
     // even when it missed every hit-circle — better a missed order than an
     // accidental, badly-aimed kick.
-    if (ballD >= nearestCaptainCandidateDist(p)) return;
+    if (!onLiveSpot && ballD >= nearestCaptainCandidateDist(p)) return;
     // The grab zone round the ball: BALL_GRAB_FRACTION of the framed height
     // (28% let a drag start from a third of the screen away — Mikey, 28 Sep
     // 2026: "you're supposed to be able to start dragging only from the

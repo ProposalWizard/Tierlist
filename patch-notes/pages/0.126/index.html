@@ -185,7 +185,7 @@
     <text x="150" y="124" fill="#cbd5e1" font-size="11" text-anchor="middle">-1.1 m</text><text x="300" y="124" fill="#cbd5e1" font-size="11" text-anchor="middle">-0.35</text><text x="400" y="124" fill="#cbd5e1" font-size="11" text-anchor="middle">+0.35</text><text x="510" y="124" fill="#cbd5e1" font-size="11" text-anchor="middle">+0.9 m</text>
     <text x="225" y="150" fill="#fde68a" font-size="11" text-anchor="middle">low, up to 45% weaker, skews</text><text x="350" y="150" fill="#86efac" font-size="11" text-anchor="middle">full shot</text><text x="455" y="150" fill="#fde68a" font-size="11" text-anchor="middle">rises, up to 30% weaker</text>
   </svg></figure>
-  <details><summary>The numbers</summary><p class="idea">Clean = within 0.35 m of your foot. Early: struck higher on the ball (driven low), power cut up to 45%, the toe skews it up to 10&deg;. Late: struck under it (it lifts), power cut up to 30%, dragged along the ball&rsquo;s line. Out of reach: fresh air, chance gone. Never let go: it runs past, chance gone. Measured on the test page: aimed at 0, 0.6 m early and 0.65 m late, the match read each one as clean, early and late, every time (12 of 12).</p></details>
+  <details><summary>The numbers</summary><p class="idea">Clean = within 0.35 m of your foot. Early: struck higher on the ball (driven low), power cut up to 45%, the toe skews it up to 10&deg;. Late: struck under it (it lifts), power cut up to 30%, dragged along the ball&rsquo;s line. Out of reach: fresh air, chance gone. Never let go: it runs past, chance gone. Measured: on the test page, aimed at 0, 0.6 m early and 0.65 m late, the match read each one right 12 of 12. In a career league match: clean, early, late, let it go and far too early all read right, 6 of 6; in 3D the swing read clean.</p></details>
 </div>
 <div class="item">
   <div class="ih"><b>4. The ball&rsquo;s pace carries into your shot</b><span class="tag t-meas">measured</span></div>
@@ -196,6 +196,11 @@
   <div class="ih"><b>5. Which chances</b><span class="tag t-meas">measured</span></div>
   <p class="idea">Every open-play chance where the ball comes to you on the ground: one-on-ones, through balls (a lofted one counts once it&rsquo;s down at your feet), long range, tight angles, cutbacks, byline crosses, passing moves. Penalties, free kicks and corners stay as they are; headers and volleys keep Harry&rsquo;s aerial timing.</p>
   <details><summary>The numbers</summary><p class="idea">Of 422 open-play chances the match served (with build-ups), 413 go live (98%). One-on-ones: 15 of 22 (the rest are chipped balls still above knee height when they reach you). A chance with no build-up gets a made-up pass from your nearest team-mate.</p></details>
+</div>
+<div class="item">
+  <div class="ih"><b>6. 2D and 3D</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">Works in both match views. In 3D the ring is drawn on the grass and a press on it grabs the aim. A press on the ring is always the aim, never an order to a team-mate standing near it (in 2D too).</p>
+  <figure><img src="threed.jpg" alt="Live chance in the 3D view" loading="lazy"><figcaption><b>3D: the ring, your arrow, the ball rolling in</b></figcaption></figure>
 </div>
 <h2 class="add"><i></i>WHERE TO TRY IT</h2>
 <div class="item">
@@ -221,7 +226,7 @@
   <p class="idea">This adds to the match (CanvasMatch: the live ball, the swing, the ring). Everything is behind the switch; off runs the old path untouched. One-engine guard passes.</p>
 </div>
 <details><summary>How it was checked</summary>
-  <p>25 logic checks (the plan, the ball, every timing zone, the switch off by default). Then played in a real browser on a built copy of the game: the test page (every kind, three timings, let it go, switch off) and a career league match with the switch on, start to finish, driven by real drags and releases only. Squads were the made-up ones (this machine can&rsquo;t reach the squad database).</p>
+  <p>25 logic checks (the plan, the ball, every timing zone, the switch off by default). Then played in a real browser on a built copy of the game: the test page (every kind, three timings, let it go, switch off) and a career league match with the switch on, in 2D and in 3D, driven by real drags and releases only. 17 match and keeper test files pass. Squads were the made-up ones (this machine can&rsquo;t reach the squad database).</p>
 </details>
 <footer>Leo &middot; site 0.126 &middot; 30 Oct 2026 &middot; test switch</footer>
 </div>
