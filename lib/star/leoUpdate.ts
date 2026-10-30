@@ -32,6 +32,7 @@ export const LEO_FEATURES = [
   { id: "seasonReel", label: "Season video", line: "Every goal of your season before the Ballon d'Or." },
   { id: "goalsGallery", label: "Career goals list", line: "Stats → Goals: every goal of your career; best 10 in the Hall of Fame." },
   { id: "awardsNight", label: "Season awards night", line: "The 3D awards night in place of the awards page." },
+  { id: "smoothGoals", label: "Smooth goal videos", line: "Real goals move like the made-up ones: no stop-start, no statues." },
   { id: "weather", label: "Weather and pitch", line: "Wind bends the ball, rain skids it, a poor dry pitch kills it; shown before kick-off and in the match." },
   { id: "keeperCatch", label: "Keeper catches and dives", line: "He dives in time, the ball goes into his gloves and moves with him, he lands and gets up. Pick a look below." },
   { id: "bugFixes", label: "Bug fixes (21)", line: "Refresh comes back where you were, labels, tour once, no sack after promotion, talks back button, signing manager name…" },

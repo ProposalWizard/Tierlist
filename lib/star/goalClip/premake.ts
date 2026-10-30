@@ -22,17 +22,23 @@ import { makeEdit, type ClipStyle, type ClipMoves } from "./edit";
 import { planAudio, mixAudio } from "./audio";
 import { makeVideo, workerReady, videosOnPage } from "./makeVideo";
 import type { GoalTrack } from "./track";
+import { smoothRecorded } from "./smooth";
+import { leoUpdateOn } from "../leoUpdate";
 
-/** The one name a goal video is kept under (memory and the phone). */
-export function goalVideoKey(style: ClipStyle, variant: number, moves: ClipMoves, clipIds: string[], synth: SynthGoal[] | undefined, handle: string | undefined): string {
+/** The one name a goal video is kept under (memory and the phone). A smooth
+ *  video (Leo's update "smoothGoals", goalClip/smooth.ts) has its own name, so
+ *  it is never mixed up with the stiff one; off, the name is as it always was. */
+export function goalVideoKey(style: ClipStyle, variant: number, moves: ClipMoves, clipIds: string[], synth: SynthGoal[] | undefined, handle: string | undefined, smooth = false): string {
   const synthKey = (synth ?? []).map(g => g.seed).join(",");
-  return `${style}|${variant}|${moves}|${clipIds.join(",")}|${synthKey}|${handle ?? ""}`;
+  return `${style}|${variant}|${moves}|${clipIds.join(",")}|${synthKey}|${handle ?? ""}${smooth ? "|smooth" : ""}`;
 }
 
-/** Recorded goals and made ones together, in the order they were scored (as GoalVideo does). */
-export async function tracksFor(clipIds: string[], synth: SynthGoal[] | undefined): Promise<GoalTrack[]> {
+/** Recorded goals and made ones together, in the order they were scored (as GoalVideo does).
+ *  `smooth`: the recordings eased (goalClip/smooth.ts); made goals are smooth already. */
+export async function tracksFor(clipIds: string[], synth: SynthGoal[] | undefined, smooth = false): Promise<GoalTrack[]> {
   const made = (synth ?? []).map(synthTrack).filter((t): t is GoalTrack => !!t);
-  const rec = clipIds.length ? await getClips(clipIds).catch(() => [] as GoalTrack[]) : [];
+  const got = clipIds.length ? await getClips(clipIds).catch(() => [] as GoalTrack[]) : [];
+  const rec = smooth ? smoothRecorded(got) : got;
   return [...rec, ...made].sort((a, b) => a.meta.minute - b.meta.minute);
 }
 
@@ -55,15 +61,16 @@ export async function premakeFeedVideos(posts: StoredPost[]): Promise<void> {
     .sort((a, b) => b.rank - a.rank)
     .slice(0, 3);
   const moves = animationsLook();
+  const smooth = leoUpdateOn("smoothGoals");
   for (const { p, g } of wanted) {
     try {
       const style = clipStyleFor(p.author);
       const variant = clipVariantFor(p.author);
-      const tracks = await tracksFor(g.clips, g.synth);
+      const tracks = await tracksFor(g.clips, g.synth, smooth);
       if (!tracks.length) continue;
       const edit = makeEdit(tracks, style, moves, variant);
       const credit = { handle: p.author.handle, name: p.author.name };
-      const key = goalVideoKey(style, variant, moves, g.clips, g.synth, credit.handle);
+      const key = goalVideoKey(style, variant, moves, g.clips, g.synth, credit.handle, smooth);
       const audio = await mixAudio(planAudio(edit)).catch(() => null);
       await makeVideo(key, edit, { credit, audio });
     } catch { /* the feed makes it when it opens, as before */ }
