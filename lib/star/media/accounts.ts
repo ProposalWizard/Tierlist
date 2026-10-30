@@ -109,6 +109,12 @@ const NATIONAL: Seed[] = [
   { handle: "@footyloops", name: "footy loops", archetype: "meme", platform: "tiktok", verified: false, followers: 860_000 },
 ];
 
+/** An archetype's voice and interests — for an account made in the Social
+ *  Studio (lib/star/media/studio.ts), so it writes like the rest of its kind. */
+export function accountKit(archetype: Archetype): { voice: VoiceProfile; interests: Partial<Record<Tag, number>> } {
+  return { voice: VOICES[archetype], interests: INTERESTS[archetype] };
+}
+
 const FAN_HANDLES = [
   "terrace_tom", "northbank_nia", "ninetyminutes", "matchday_mo", "stand_side",
   "awaydays_al", "programme_pat", "halfway_line", "boxtobox_bea", "endofseason_ed",

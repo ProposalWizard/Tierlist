@@ -2552,6 +2552,102 @@ export const ADMIN_GUIDES = {
     dev: "app/star-tuning-dev/page.tsx · lib/star/{tuning,tuningStore}.ts",
   },
 
+  "/admin/social": {
+    title: "Social Studio",
+    what: "The one place to run the in-game social media: every post, account, idea and goal video in the career saved on this device, with the game's own phone feed on the right showing the result as you go.",
+    buttons: [
+      {
+        group: "Along the top",
+        items: [
+          ["Save picker (only when this browser has more than one career)", "Choose which career to work on. The studio remembers your pick."],
+          ["↶ Undo: …", "Puts the feed back as it was before your last change (up to 40 steps, while this page is open). It names what it will undo."],
+          ["⬇ Export save backup", "Downloads the whole career save as a file. Do this before anything big."],
+          ["⬆ Restore backup", "Loads a backup file back into this slot (asks first). Undo can't undo a restore."],
+          ["Open the game", "Opens the game, where Phone → Social shows the same feed."],
+          ["📰 Feed · ✏️ Write · 👤 Accounts · 💡 Ideas · 🎬 Video lab · ⚙️ Settings", "The six tools. On a phone, 📱 Phone shows the live feed."],
+          ["Phone → Social / After the match (above the phone)", "The phone shows the feed as the Social app, or as the screen you see straight after a match. Hearts and Goal of the Month votes work there and save."],
+          ["Make a sample career (only when there is no career)", "Makes a test career with six matches played, in this browser's signed-out slot."],
+        ],
+      },
+      {
+        group: "📰 Feed",
+        items: [
+          ["Search words / Account / Kind of account / Picture / Phone tab / Week / Marked / Only posts with a video", "Narrow the list. Newest first, as the phone shows it."],
+          ["Tick boxes, Select all shown, Clear selection", "Pick posts for the blue bulk bar."],
+          ["Bulk bar: 📌 Pin, Unpin, 🙈 Hide, Show, → Club tab, → England tab, +1 week, −1 week, Make now, ×2 likes, Remove pictures, Duplicate, Change author to… Set, 🗑 Delete", "Does that to every picked post. Delete asks first."],
+          ["↑ ↓ on a post", "Moves it one place up or down the feed (by changing its time)."],
+          ["Tap a post", "Opens its editor: words, who posted it, name and handle on the post, phone tab, season / week / minutes, likes / reposts / replies, Blue tick, You liked it, 📌 Pin to top, Hide, Picture (with a form for every kind)."],
+          ["Save changes / Undo edits / Duplicate / ♥ Like / 🗑 Delete / Close", "In the post editor. Nothing changes until Save changes."],
+        ],
+      },
+      {
+        group: "✏️ Write",
+        items: [
+          ["Posted by", "Any account in the feed, or + A new account… (made when you publish)."],
+          ["Insert: Your name, Your club, Last opponent, Last score…", "Drops a word that fills itself in from the save, e.g. {lastScore} becomes \"Arsenal 2-1 Chelsea\"."],
+          ["Picture", "Any picture the feed can draw: scoreline, breaking news, player card, stat line, league table, top scorers, team of the week, hat-trick, transfer, trophy, poll, Player of the Month, goal video, Goal of the Month poll. Each has its own form; \"Edit as text\" edits anything."],
+          ["When: Now / A set week and time", "A future week waits in the save and appears when the career gets there."],
+          ["Set the likes by hand / 📌 Pin to top", "Your own numbers instead of the game's; pin keeps it first."],
+          ["Publish to the feed / Start again", "Adds it to the save (top of the phone if it is now)."],
+        ],
+      },
+      {
+        group: "👤 Accounts",
+        items: [
+          ["Search / Kind / + New account", "Find an account or make one."],
+          ["Tap an account", "Change its name, handle, followers, app, letters, drawing, colours, blue tick, and How often it posts (Mute = never, ×2 = twice as often)."],
+          ["Save account / Back to the game's own / Delete account", "Save it; undo all its changes; or delete one made here (its old posts stay)."],
+        ],
+      },
+      {
+        group: "💡 Ideas",
+        items: [
+          ["Quick idea cards (Hat-trick reaction, Last-minute winner, Transfer rumour, Manager meme, Ballon d'Or night…)", "Shows the posts the media would make about it, written by the game itself."],
+          ["🎲 Random idea", "Three random ideas, a few posts each."],
+          ["A match / A career moment / Any event / One line / Goal of the Month / Trends", "Build your own: a made-up match (every real detector runs on it), any career moment, any event with its facts, one template line from one account, a Goal of the Month poll, or the trends ticker."],
+          ["See the reaction / 🔁 Re-roll / Tick all / Untick all", "Make the posts, make a new set, choose which to keep."],
+          ["Dated as made / Dated now · Also update the trends · Add … to the feed", "Puts the ticked posts in the save."],
+          ["Open the poll now", "A real Goal of the Month poll: the game closes it after your next match and posts the winner."],
+          ["Save trends / 🌪️ Trend storm / 📌 on a trend", "Edit the ticker; add five hot trends about you; pin a trend so it stays first."],
+        ],
+      },
+      {
+        group: "🎬 Video lab",
+        items: [
+          ["Made-up goals / Recorded on this device", "Make goals up (scorer, minute, kind, seed: the same seed is the same goal) or pick recorded ones (several = a highlights reel)."],
+          ["Style · Cut ◀ ▶ 🎲 · Title · Badge · Watermark / posted by", "How the video is cut and who it is credited to."],
+          ["↻ Make it again", "Makes the video again."],
+          ["Save video (on the video)", "Saves the video file to this device (or the phone's share menu)."],
+          ["Post to the feed", "Posts it with your words, in that style and cut."],
+        ],
+      },
+      {
+        group: "⚙️ Settings",
+        items: [
+          ["Posts a match / Feed size", "More or fewer posts after each match; how many posts the save keeps (the game's own is 150)."],
+          ["How often each kind of account posts", "One slider per kind (fans, pundits, tabloids…). ↺ = as the game."],
+          ["Subjects / Pictures / Kinds of post chips", "Tap to turn off (red, crossed out). From the next match the game never makes them."],
+          ["🔁 Re-make last match's posts", "Replaces your last match's posts with a fresh set written from what the save remembers."],
+          ["Show all hidden / Unpin all / Delete posts made here / Clear studio settings / Reset feed", "Clean-up. Each asks first where it deletes."],
+          ["⬇ Export media / ⬆ Import media", "The feed, accounts and settings as one file, to keep or move to another career."],
+          ["Wipe kept goal videos / Wipe goal recordings", "Deletes finished video files (made again when watched) / the goal recordings themselves (can't be undone)."],
+        ],
+      },
+    ],
+    saving: [
+      "This browser only. Every change goes into the career saved on this device straight away (the same save the game uses), so the game shows it next time you open Phone → Social.",
+      "A signed-in career is sent to the cloud by the game the next time it is opened, like any other change.",
+      "It always reads the newest save before changing it, so a match played in another tab is not lost. Still: don't edit while a match is being played.",
+      "Pins, hides, account changes, weights, things turned off and pinned trends are kept on the save itself, so they carry on as the career goes on. Goal videos and recordings stay on this device.",
+    ],
+    inGame: [
+      "The player's phone: Phone → Social and the after-match reactions show exactly what the phone on the right shows.",
+      "Account changes, new accounts, weights, things turned off, feed size and posts-per-match change what the game writes after every match from now on. With none of them set the game makes the feed exactly as before.",
+      "Goal of the Month posts only show when Leo's update \"Goal of the Month\" is on.",
+    ],
+    dev: "app/admin/social/page.tsx · components/admin/social/* · lib/star/media/studioTools.ts (page helpers) · lib/star/media/studio.ts (game hooks, read in feed.ts commit/feedFor and select.ts) · MediaState.studio, StoredPost.pinned/hidden/studio (types.ts) · tests/star/socialStudio.mts",
+  },
+
   "/star-dev/media-lab": {
     title: "Media Lab",
     what: "A test bench for the media-feed graphics, laid out as a post wall: drop in a pose and a face and see every template in every club's colours, plus every screen it can open.",

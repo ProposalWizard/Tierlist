@@ -27,6 +27,7 @@ import { clockAt, timeFor, visible, FEED_HORIZON, FIRST_WAVE } from "./schedule"
 import { buildTrends } from "./trending";
 import { goalOfMonthAfterMatch } from "./goalOfMonth";
 import { goalOfMonthOn, yourGoalVideoOn } from "./updateFlags";
+import { studioCap, studioEvents, studioPosts, studioRoster, studioShown, studioTrends, studioVolume } from "./studio";
 export { voteGoalOfMonth, applyGoalOfMonthBoost } from "./goalOfMonth";
 
 /**
@@ -380,6 +381,29 @@ export function generateForRollover(career: CareerState): MediaState {
 }
 
 /**
+ * SOCIAL STUDIO (/admin/social): the posts these events WOULD make, through
+ * the same cast, selection, narration and templates as a real cycle. Nothing
+ * is saved and the game never calls it; the studio adds the posts it keeps.
+ */
+export function previewCycle(
+  career: CareerState,
+  events: FootballEvent[],
+  record: MatchRecord | null,
+  cycleId: string,
+  scope: "club" | "league" = "club",
+  onlyArchetypes?: Set<Archetype>,
+  maxPosts?: number,
+): { posts: StoredPost[]; trends: Trend[] } {
+  const state = mediaOf(career);
+  // Only the last few posts: enough for "not the same sentence as last week",
+  // never so many that the cap trims the new ones.
+  const slim: MediaState = { ...state, posts: state.posts.slice(-24) };
+  const clock = clockAt(record?.season ?? career.season, record?.week ?? career.week, 0);
+  const out = commit(career, slim, record, events, state.memory, cycleId, clock, scope, onlyArchetypes, maxPosts);
+  return { posts: out.posts.filter(p => p.id.startsWith(`${cycleId}:`)), trends: out.trends };
+}
+
+/**
  * Turn scored events into posts and fold them into the saved state.
  *
  * Shared by both entry points on purpose: a transfer and a hat-trick go through
@@ -402,7 +426,12 @@ function commit(
   /** The accounts that may post, instead of the club world (an international's own cast). */
   accountsOverride?: MediaAccount[],
 ): MediaState {
-  const world = () => accountsOverride ?? [...buildRoster(career), selfAccount(career)];
+  // Social Studio (studio.ts): every one of these hands back what it was
+  // given when the save has no studio settings.
+  const st = state.studio;
+  const cap = studioCap(st, POST_CAP);
+  events = studioEvents(events, st);
+  const world = () => studioRoster(accountsOverride ?? [...buildRoster(career), selfAccount(career)], st);
   // The league-wide weekly pass runs its OWN replay guard
   // (`lastLeagueCycleId`) rather than the match/career one below — it is
   // always called the same week as (and right after) a `generateForMatch`
@@ -415,15 +444,15 @@ function commit(
     const seenCycleIds = withSeen(state, cycleId);
     if (scope === "league") return { ...state, memory, lastLeagueCycleId: cycleId, seenCycleIds };
     // Nothing to say about it, but a match with goals still gets its videos.
-    const extra = record ? highlightPosts(career, record, world(), cycleId, cycleClock) : [];
+    const extra = record ? studioPosts(highlightPosts(career, record, world(), cycleId, cycleClock), st) : [];
     capVideos(extra, cycleId);
-    const posts = extra.length ? [...state.posts, ...extra].sort((a, b) => a.at - b.at).slice(-POST_CAP) : state.posts;
+    const posts = extra.length ? [...state.posts, ...extra].sort((a, b) => a.at - b.at).slice(-cap) : state.posts;
     return { ...state, posts, memory, lastCycleId: cycleId, lastCycleClock: cycleClock, seenCycleIds, ...matchCycle };
   }
 
   const accounts = world()
     .filter(a => !onlyArchetypes || onlyArchetypes.has(a.archetype));
-  const pairings = selectPairings(events, accounts, cycleId, career.player.club)
+  const pairings = selectPairings(events, accounts, cycleId, career.player.club, studioVolume(st))
     .slice(0, maxPosts ?? Number.POSITIVE_INFINITY);
 
   const posts: StoredPost[] = [];
@@ -463,17 +492,17 @@ function commit(
     }
     recentText.add(made.post.text);
     usedThisCycle.add(made.templateId);
-    posts.push({ ...made.post, scope });
+    posts.push(...studioPosts([{ ...made.post, scope }], st));
     used.push(made.templateId);
   }
 
-  if (scope === "club" && record) posts.push(...highlightPosts(career, record, accounts, cycleId, cycleClock));
+  if (scope === "club" && record) posts.push(...studioPosts(highlightPosts(career, record, accounts, cycleId, cycleClock), st));
   capVideos(posts, cycleId);
 
   const trends = buildTrends(events, posts, cycleId, fameOf(career));
   const all = [...state.posts, ...posts]
     .sort((a, b) => a.at - b.at)
-    .slice(-POST_CAP);
+    .slice(-cap);
 
   return {
     posts: all,
@@ -485,6 +514,8 @@ function commit(
     lastMatchCycleClock: state.lastMatchCycleClock,
     // Goal of the Month's own state rides through every cycle untouched.
     ...(state.gotm ? { gotm: state.gotm } : {}),
+    // …and so do the Social Studio's settings.
+    ...(state.studio ? { studio: state.studio } : {}),
     ...(scope === "league"
       ? { lastCycleId: state.lastCycleId, lastCycleClock: state.lastCycleClock, lastLeagueCycleId: cycleId }
       : { lastCycleId: cycleId, lastCycleClock: cycleClock, lastLeagueCycleId: state.lastLeagueCycleId, ...matchCycle }),
@@ -707,7 +738,11 @@ export function feedFor(
   const state = mediaOf(career);
   if (stage === "settled") {
     const now = clockAt(career.season, career.week, 9_999);
-    return { posts: pinHighlights(visible(state.posts, now, now - FEED_HORIZON), state.lastMatchCycleId ?? state.lastCycleId), trends: state.trends, now };
+    // A post pinned in the Social Studio stays in the Feed however old it is.
+    const old = state.posts.some(p => p.pinned)
+      ? state.posts.filter(p => p.pinned && p.at < now - FEED_HORIZON) : [];
+    const shown = pinHighlights(visible(state.posts, now, now - FEED_HORIZON), state.lastMatchCycleId ?? state.lastCycleId);
+    return { posts: studioShown(old.length ? [...shown, ...old] : shown, state.studio), trends: studioTrends(state.trends, state.studio), now };
   }
   // ── The first wave is the hour after, not the quarter of an hour ──
   //
@@ -729,7 +764,7 @@ export function feedFor(
     // Other matches' goal videos stay on the England tab of the Feed, never on
     // the post-match screen (Leo, 16 Oct 2026): this screen is your match's.
     .map(p => (p.scope === "league" && hasVideo(p) ? { ...p, graphic: undefined } : p));
-  return { posts: pinHighlights(shown, state.lastMatchCycleId ?? state.lastCycleId), trends: state.trends, now };
+  return { posts: studioShown(pinHighlights(shown, state.lastMatchCycleId ?? state.lastCycleId), state.studio), trends: studioTrends(state.trends, state.studio), now };
 }
 
 /**

@@ -64,8 +64,8 @@ export async function premakeFeedVideos(posts: StoredPost[]): Promise<void> {
   const smooth = leoUpdateOn("smoothGoals");
   for (const { p, g } of wanted) {
     try {
-      const style = clipStyleFor(p.author);
-      const variant = clipVariantFor(p.author);
+      const style = g.style ?? clipStyleFor(p.author);
+      const variant = g.variant ?? clipVariantFor(p.author);
       const tracks = await tracksFor(g.clips, g.synth, smooth);
       if (!tracks.length) continue;
       const edit = makeEdit(tracks, style, moves, variant);
