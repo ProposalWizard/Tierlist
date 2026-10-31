@@ -1,0 +1,26 @@
+The mp3 files in this folder are the COMMENTATOR TEAMS for goal videos and the
+live late-goal call (Leo's update switch, "Different commentators"). Made
+offline on 31 Oct 2026 by scripts/commentary/generate_teams.py from the lines
+in lib/star/goalClip/commentators.ts (all lines are our own writing; none
+quotes a real commentator).
+
+- Speech model: Chatterbox, Resemble AI (https://github.com/resemble-ai/chatterbox),
+  MIT licence; ONNX export onnx-community/chatterbox-ONNX (MIT).
+- Voices: seven ORIGINAL voices. Each reference recording was read by one of
+  Kokoro's bundled synthetic voices (https://github.com/hexgrad/kokoro,
+  Apache-2.0; model files from github.com/thewh1teagle/kokoro-onnx,
+  release model-files-v1.0):
+    The Anchor (lead)    bm_george
+    The Poet (lead)      bf_emma
+    The Deadpan (lead)   bf_isabella
+    The Live Wire (lead) bm_fable
+    The Old Pro (co)     bm_daniel
+    The Analyst (co)     bf_lily
+    The Mate (co)        am_puck
+  No real person's voice was recorded, cloned or imitated, and no prompt
+  names one.
+- Word check: Whisper base.en (MIT) via sherpa-onnx (Apache-2.0).
+  Cleanness: DNSMOS (Microsoft DNS-Challenge, MIT).
+- Commentary-box processing: scripts/commentary/broadcast.py (our own code).
+
+Any line can be replaced on the Sound Board (/admin/sound-board) by its id.
