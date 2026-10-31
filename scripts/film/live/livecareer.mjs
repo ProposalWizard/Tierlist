@@ -141,10 +141,11 @@ while ((Date.now() - T0) / 1000 < SECS) {
       held = true;
       if (process.env.LIVE_DBG) log("press", JSON.stringify(L.spotPx), JSON.stringify(await pg.evaluate(() => ({ proj: !!window.__ev3dProject, inp: window.__cam3dInput?.() ?? null }))));
     }
-    // The strike screen (on by default): let go at once to lock the aim, then tap the small ball at the moment.
-    if (held && !locked) { await pg.mouse.up(); locked = true; await vStep(pg, 2); bb = await pg.locator("[data-contact-compact] div.cursor-pointer").first().boundingBox().catch(() => null); }
+    // Let go at the moment; the kick screen (on by default) then opens: tap the middle of its ball.
     if (held && !swung && L.along >= target) {
-      if (bb) await pg.mouse.click(bb.x + bb.width / 2, bb.y + bb.height / 2);
+      await pg.mouse.up(); locked = true;
+      for (let k = 0; k < 120 && !bb; k++) { await vStep(pg, 1); bb = await pg.locator('div.cursor-pointer[style*="aspect-ratio"]').first().boundingBox().catch(() => null); }
+      if (bb) { await vStep(pg, 10); await pg.mouse.click(bb.x + bb.width / 2, bb.y + bb.height / 2); }
       swung = true;
       await vStep(pg, 6);
       if (SHOTS) await pg.screenshot({ path: path.join(OUT, `l${liveN}-c.jpg`), type: "jpeg", quality: 80 });
