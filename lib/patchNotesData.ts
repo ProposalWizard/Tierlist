@@ -27,6 +27,107 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.129",
+      "title": "Leo's patch notes: Social feed, new voice, smooth goals",
+      "author": "Leo",
+      "publishedAt": "2026-10-31T01:23:19Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/Fdzu2CSuNewdamVJckvuby",
+      "summary": "Four parts of Leo's update, each with its own switch (Settings → Updates → Leo's update, off by default). The switch now follows your account, so the fast feed is instant on PC too. A new commentary voice that rises for goals. A Social Studio admin page with full control of the feed. Real goals replayed smoothly instead of move-stop-move.",
+      "stats": [
+        {
+          "value": "0.05 s",
+          "label": "goal video starts on PC (was ~5 s)"
+        },
+        {
+          "value": "92",
+          "label": "commentary lines re-recorded"
+        },
+        {
+          "value": "81% → 27%",
+          "label": "players standing still in a real goal"
+        },
+        {
+          "value": "6",
+          "label": "Social Studio tabs"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "PC loading",
+              "detail": "Turn Leo's update on once; open Phone → Social on a PC; tap a goal video"
+            },
+            {
+              "title": "New commentary voice",
+              "detail": "Settings → Updates → Leo's update → New commentary voice; score a goal, then a late winner"
+            },
+            {
+              "title": "Social Studio",
+              "detail": "Admin → /admin/social"
+            },
+            {
+              "title": "Smooth goal videos",
+              "detail": "Settings → Updates → Leo's update → Smooth goal videos; watch your goal in the feed"
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Instant feed on PC",
+              "detail": "Problem: on PC the feed and goal videos took seconds. Why: the update switch was saved on each device, so it was still off on the PC. Fix: the switch now saves with your career and follows your account. Measured on desktop Chrome: feed opens in 0.05 s, video starts 0.04-0.07 s after the tap (was about 5 s)."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "New commentary voice",
+              "detail": "All 92 lines re-recorded with an original broadcast-style voice (no real person copied). Goal calls now rise much more (about +10 to +17 semitones, was +4.5) and big moments are held longer; the co-commentator stays calm. Old voice is untouched when the switch is off."
+            },
+            {
+              "title": "Social Studio (/admin/social)",
+              "detail": "Feed, Compose, Accounts, Ideas, Video and Settings tabs: pin, hide and edit posts, write your own, make graphics, tune each account's style and how often it posts, pick each goal video's style. With nothing set, the feed is exactly as before."
+            },
+            {
+              "title": "Smooth goal videos",
+              "detail": "Real goals no longer move one man, stop, then the next. Frozen stretches go from 0.53 s to 0, the sharpest jerk drops from about 50 to 12, and players standing still drop from 53-81% to 9-27%."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Voice: a few lines to listen to",
+              "detail": "The late-winner call may squeak; \"Through on goal\" and three others were doubted by the word checker. Each can be redone on its own."
+            },
+            {
+              "title": "Smooth goals: not everywhere yet",
+              "detail": "The goals gallery and season reel still show the old stiff version; runs can still surge a little."
+            },
+            {
+              "title": "Social Studio wording",
+              "detail": "One template reads \"in-manager\"."
+            },
+            {
+              "title": "Browsers",
+              "detail": "PC timing measured in Chrome only; Safari and Firefox not tested."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.126",
       "title": "Leo's patch notes: Live chances (test)",
       "author": "Leo",
