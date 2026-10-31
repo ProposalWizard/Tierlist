@@ -1,6 +1,6 @@
 "use client";
 import { useRef } from "react";
-import type { StoredPost } from "@/lib/star/media/types";
+import type { PostReply, QuotedPost, StoredPost } from "@/lib/star/media/types";
 import { relativeTime } from "@/lib/star/media/schedule";
 import Graphic from "./Graphics";
 import Avatar from "./Avatar";
@@ -34,6 +34,62 @@ function count(n: number): string {
 }
 
 const ICON = { width: 17, height: 17, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" } as const;
+
+/** Tick colours (Football Twitter): blue paid, gold organisations, grey officials. */
+const TICK = { blue: "#1d9bf0", gold: "#e2b719", grey: "#829aab" } as const;
+
+function Tick({ tick, size = 15 }: { tick?: keyof typeof TICK; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className="shrink-0" aria-label="Verified">
+      <path fill={TICK[tick ?? "blue"]} d="M12 2l2.2 2.2 3.1-.4.6 3.1L20.7 8.5l-1.4 2.8 1.4 2.8-2.8 1.6-.6 3.1-3.1-.4L12 22l-2.2-2.6-3.1.4-.6-3.1-2.8-1.6 1.4-2.8-1.4-2.8 2.8-1.6.6-3.1 3.1.4z" />
+      <path fill="#fff" d="M10.6 14.6l-2.2-2.2 1.1-1.1 1.1 1.1 3.9-3.9 1.1 1.1z" />
+    </svg>
+  );
+}
+
+/** A quoted post, boxed inside the one quoting it (Football Twitter). */
+function Quote({ q }: { q: QuotedPost }) {
+  return (
+    <div className="mt-2 rounded-2xl border border-white/15 px-3 py-2">
+      <div className="flex items-center gap-1.5 text-[13px] leading-5">
+        <Avatar initials={q.initials} tint={q.tint} tint2={q.tint2} glyph={q.glyph} size={18} />
+        <span className="truncate font-bold text-white">{q.name}</span>
+        {q.verified && <Tick tick={q.tick} size={13} />}
+        <span className="min-w-0 truncate text-white/55">{q.handle}</span>
+      </div>
+      <div className="mt-0.5 flex gap-2">
+        <p className="min-w-0 flex-1 whitespace-pre-line break-words text-[14px] leading-[1.3] text-white/90 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4] overflow-hidden">{q.text}</p>
+        {q.video && (
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-white/10" aria-label="Video">
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden><path fill="#fff" d="M8 5v14l11-7z" /></svg>
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** The top replies, under the post (Football Twitter). */
+function Replies({ thread }: { thread: PostReply[] }) {
+  return (
+    <div className="mt-2 space-y-2 border-l-2 border-white/10 pl-3">
+      {thread.map((r, i) => (
+        <div key={i} className="flex gap-2">
+          <Avatar initials={r.initials} tint={r.tint} tint2={r.tint2} glyph={r.glyph} size={22} />
+          <div className="min-w-0 flex-1 text-[13px] leading-[1.3]">
+            <span className="flex items-center gap-1">
+              <span className="truncate font-bold text-white">{r.name}</span>
+              {r.verified && <Tick tick={r.tick} size={12} />}
+              <span className="min-w-0 truncate text-white/55">{r.handle}</span>
+            </span>
+            <p className="break-words text-white/90">{r.text}</p>
+          </div>
+          <span className="shrink-0 self-start text-[12px] text-white/55">♥ {count(r.likes)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 /** The pink a liked heart turns — the same one real social apps use. */
 const LIKED = "#f91880";
@@ -80,12 +136,7 @@ export default function PostCard({ post, now, onToggleLike, onVote }: {
       <div className="min-w-0 flex-1">
         <header className="flex items-center gap-1 text-[14px] leading-5">
           <span className="truncate font-bold text-white">{post.author.name}</span>
-          {post.author.verified && (
-            <svg width="15" height="15" viewBox="0 0 24 24" className="shrink-0" aria-label="Verified">
-              <path fill="#1d9bf0" d="M12 2l2.2 2.2 3.1-.4.6 3.1L20.7 8.5l-1.4 2.8 1.4 2.8-2.8 1.6-.6 3.1-3.1-.4L12 22l-2.2-2.6-3.1.4-.6-3.1-2.8-1.6 1.4-2.8-1.4-2.8 2.8-1.6.6-3.1 3.1.4z" />
-              <path fill="#fff" d="M10.6 14.6l-2.2-2.2 1.1-1.1 1.1 1.1 3.9-3.9 1.1 1.1z" />
-            </svg>
-          )}
+          {post.author.verified && <Tick tick={post.author.tick} />}
           <span className="min-w-0 truncate text-white/55">{post.author.handle}</span>
           <span className="shrink-0 text-white/55">· {relativeTime(post.at, now)}</span>
           <svg {...ICON} width={16} height={16} className="ml-auto shrink-0 text-white/45" aria-hidden>
@@ -96,6 +147,7 @@ export default function PostCard({ post, now, onToggleLike, onVote }: {
         <p className="mt-0.5 whitespace-pre-line break-words text-[15px] leading-[1.35] text-white">
           {post.text}
         </p>
+        {post.quote && <Quote q={post.quote} />}
 
         {post.graphic?.type === "gotmPoll" ? (
           <div className="mt-2.5">
@@ -137,9 +189,13 @@ export default function PostCard({ post, now, onToggleLike, onVote }: {
             </span>
             <span className="tabular-nums">{count(likes)}</span>
           </button>
-          <svg {...ICON} aria-hidden><path d="M5 20V12M10 20V6M15 20v-9M20 20V9" /></svg>
+          <span className="flex items-center gap-1.5">
+            <svg {...ICON} aria-label="Views"><path d="M5 20V12M10 20V6M15 20v-9M20 20V9" /></svg>
+            {post.metrics.views !== undefined && <span className="tabular-nums">{count(post.metrics.views)}</span>}
+          </span>
           <svg {...ICON} aria-hidden><path d="M12 3v13M7 8l5-5 5 5M5 14v5a2 2 0 002 2h10a2 2 0 002-2v-5" /></svg>
         </footer>
+        {!!post.thread?.length && <Replies thread={post.thread} />}
       </div>
     </article>
   );

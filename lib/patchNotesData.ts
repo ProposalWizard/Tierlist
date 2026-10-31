@@ -27,6 +27,101 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.130",
+      "title": "Leo's patch notes: Football Twitter feed and full screen videos",
+      "author": "Leo",
+      "publishedAt": "2026-10-31T04:18:25Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/Ws8HSyrQXW9bLfj4fdEVbU",
+      "summary": "The Social feed now reads like football Twitter: 33 made-up account types (transfer insider, TV breaking news, scores app, fan TV ranter, hater page, memes, xG nerd, ITK, agent, kids, and more), 272 new lines, replies, quote posts, polls, view counts and a ranked feed where big moments go viral. Goal videos get a full screen button. Both behind Leo's update switch (off by default).",
+      "stats": [
+        {
+          "value": "33",
+          "label": "new made-up account types"
+        },
+        {
+          "value": "272",
+          "label": "new post lines (+90 replies)"
+        },
+        {
+          "value": "0",
+          "label": "real people or brands copied"
+        },
+        {
+          "value": "⛶",
+          "label": "full screen on every goal video"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Football Twitter feed",
+              "detail": "Settings → Updates → Leo's update → Football Twitter feed; then Phone → Social after a match"
+            },
+            {
+              "title": "Full screen",
+              "detail": "Phone → Social → any goal video → the square button next to Save video"
+            },
+            {
+              "title": "New accounts in the studio",
+              "detail": "/admin/social → Accounts → Kind: Football Twitter"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "33 made-up football Twitter accounts",
+              "detail": "Problem: the feed felt thin and samey. Fix: invented lookalike accounts, each with its own name, followers, tick, voice and catchphrases: a transfer insider (\"SEALED AND STAMPED ✍️🔒\"), a TV breaking-news desk, a scores app, a fan TV ranter, a hater/ratio page, meme, ball-knowledge quiz, xG, ITK, agent, edits, kids', away-days and rival-fan accounts, and more. No real person or brand is named; five old accounts with near-real names were renamed when the switch is on."
+            },
+            {
+              "title": "How football Twitter talks",
+              "detail": "272 new lines about your real career (goals, hat-tricks, late winners, bad games, results, transfers, sackings, awards), plus memes: tag yourself, \"me after X scores\", ratio + L, polls with vote shares, rate his game, build your XI. Club accounts sometimes post as a cheeky admin."
+            },
+            {
+              "title": "Replies, quote posts, views",
+              "detail": "The biggest posts get reply threads; journalists quote-post; every post shows views, likes, reposts and quotes in realistic ratios."
+            },
+            {
+              "title": "A real algorithm",
+              "detail": "Big accounts reach more; some posts go viral; hot takes get ratioed; haters pile on after your bad games and hype pages after good ones; your own news ranks near the top; never three posts in a row from the same kind of account."
+            },
+            {
+              "title": "Full screen goal videos",
+              "detail": "A button next to Save video. Fills the screen on phone and PC, keeps playing, with sound and close buttons. Checked on a phone-size screen, a PC-size screen and an iPhone-style screen."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Some lines repeat across weeks",
+              "detail": "Each account has 3-12 lines, so a few (like the defence 🚪 joke) come back."
+            },
+            {
+              "title": "Edit pages without their video",
+              "detail": "When the video limit drops a video, an edits account's words can show without it."
+            },
+            {
+              "title": "Older bugs now easier to see",
+              "detail": "The \"Who's to blame?\" poll's shares don't add up, and old tabloid lines treat a new manager as sacked."
+            },
+            {
+              "title": "Full screen: landscape video in a portrait phone",
+              "detail": "The video is full width but not huge; turn the phone sideways for bigger."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.129",
       "title": "Leo's patch notes: Social feed, new voice, smooth goals",
       "author": "Leo",
