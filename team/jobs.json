@@ -110,5 +110,13 @@
     "added": "2026-10-30T19:54:00Z",
     "title": "Progress 30 Oct: Leo live chances behind a test switch (time your strike as the pass arrives). Patch note 0.126.",
     "prompt": "Daily progress update, 29 Oct 19:54 to 30 Oct 19:54 (UK). 1 pull request merged to main.\n\nLeo:\n- #819 Live chances, behind a test switch (Settings → Updates, off by default). The last pass keeps coming to you and you time your strike as it arrives: early stabs it low, clean is a full shot, late gets under it. The ball’s pace carries into your shot. 98% of open-play chances go live; set pieces, headers and volleys stay as they are. Works in 2D and 3D, with a test page with dials.\n\nHarry and Mikey: nothing merged to main in this window.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.126 Leo: live chances (test) (#819)."
+  },
+  {
+    "id": "progress-2026-10-31",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-10-31T19:54:00Z",
+    "title": "Progress 31 Oct: Leo social feeds (Twitter, TikTok), goal edits, four commentary teams, live chances update. Patch notes 0.126, 0.129-0.131.",
+    "prompt": "Daily progress update, 30 Oct 19:54 to 31 Oct 19:54 (UK). 5 pull requests merged to main, all Leo’s, all behind Leo’s update switch (off by default).\n\nLeo:\n- #820, #823 Live chances (test): a strike screen, sliders in Settings, and the kick part is now the normal kick screen.\n- #821 Social feed on PC, a new commentary voice, the Social Studio, smooth goal videos.\n- #822 A football Twitter feed and full-screen goal videos.\n- #824 TikTok feed: 52 made-up accounts and 899 lines; goal videos cut five ways (TV replays, highlights, TikTok edits, fan phone videos, reverse angles); four commentary teams with their own voices and lines.\n\nHarry and Mikey: nothing merged to main in this window.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.131 TikTok feed, goal edits, commentators (#824): https://claude.ai/artifact/UCvKX1mFKX74nbAaJUQF8j\n- 0.130 Football Twitter feed and full-screen videos (#822): https://claude.ai/artifact/Ws8HSyrQXW9bLfj4fdEVbU\n- 0.129 Social feed, new voice, smooth goals (#821): https://claude.ai/artifact/Fdzu2CSuNewdamVJckvuby\n- 0.126 Live chances (test), updated twice (#820, #823)."
   }
 ]
