@@ -19,6 +19,7 @@ import { rigFor } from "./cameras";
 import { frameAt, type GoalTrack } from "./track";
 import { momentAt, shotLength, type Edit, type EditMoment } from "./edit";
 import { viewAt, anchorOf, applyView, type View } from "./betterView";
+import { drawFlatScene } from "./render2d";
 import { drawScene, roundRect, teamCode, FONT, type ClipCredit } from "./render";
 import { scorerShirt, type EditLook, type BeatHit } from "./editCold";
 
@@ -116,7 +117,8 @@ export function drawColdFrame(ctx: Any2D, edit: Edit, outT: number, credit?: Cli
     ctx.scale(v.k, v.k);
     ctx.translate(-v.ax, -v.ay);
   }
-  drawScene(ctx, W, H, track, shot.angle, m.t, edit.moves);
+  if (edit.flat) drawFlatScene(ctx, W, H, track, shot.angle, m.t, edit.moves);   // 2D goal videos ("videos2d")
+  else drawScene(ctx, W, H, track, shot.angle, m.t, edit.moves);
   ctx.restore();
 
   const hit = hitsAt(edit.hits, outT, W);
