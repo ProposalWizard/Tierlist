@@ -5,8 +5,8 @@
  * (talks over the replay). Every commentator has his or her OWN lines, in
  * his or her own style, and an own voice:
  *
- *   matchday  The Anchor (classic, measured)  + The Old Pro (former player)
- *   bignight  The Poet (lyrical, big nights)  + The Analyst (tactics)
+ *   matchday  The Anchor (classic, measured)  + The Analyst (tactics)
+ *   bignight  The Poet (lyrical, big nights)  + The Old Pro (former player)
  *   lateshow  The Deadpan (dry, understated)  + The Old Pro
  *   fantv     The Live Wire (excitable)       + The Mate (laid-back, jokey)
  *
@@ -55,8 +55,11 @@ export const COMMENTATORS: Record<LeadId | CoId, Commentator> = {
 export interface Team { id: TeamId; name: string; lead: LeadId; co: CoId; tv: boolean }
 
 export const TEAMS: Record<TeamId, Team> = {
-  matchday: { id: "matchday", name: "Matchday", lead: "anchor", co: "pro", tv: true },
-  bignight: { id: "bignight", name: "Big Night", lead: "poet", co: "analyst", tv: true },
+  // Paired so the two voices on a team are far apart (speaker fingerprints,
+  // scripts/commentary/teams-voices.json: Anchor~Old Pro 0.84 and Poet~Analyst
+  // 0.80 were too alike to share a team; Anchor~Analyst and Poet~Old Pro 0.53).
+  matchday: { id: "matchday", name: "Matchday", lead: "anchor", co: "analyst", tv: true },
+  bignight: { id: "bignight", name: "Big Night", lead: "poet", co: "pro", tv: true },
   lateshow: { id: "lateshow", name: "Late Show", lead: "deadpan", co: "pro", tv: true },
   fantv: { id: "fantv", name: "Fan TV", lead: "wire", co: "mate", tv: false },
 };
@@ -219,11 +222,11 @@ const WIRE: LeadBank = {
     free_kick: [W("f1", "Free kick! Over the wall! Get in!"), W("f2", "He's whipped it in! What a free kick!")],
     tight_angle: [W("ta1", "No angle! No problem! Goal!")],
     one_on_one: [W("o1", "He's through! He's through! Goal!")],
-    rebound: [W("r1", "Saved! Rebound! Goal! Chaos!")],
+    rebound: [W("r1", "Saved! Then the rebound! And it's in!")],
     chip: [W("c1", "He's chipped him! The cheek of it!")],
     curl: [W("cu1", "Bent it in! Oh, that's filthy!")],
     cutback: [W("cb1", "Cut it back! Smashed home!")],
-    corner: [W("k1", "Corner! Chaos! Goal!")],
+    corner: [W("k1", "From the corner! Chaos! Goal!")],
   },
   scoreLines: {
     opener: [W("s-op", "Off the mark! First goal!")],
@@ -252,7 +255,7 @@ const PRO: CoBank = {
       O("g4", "That's the kind you practise all week."),
       O("g5", "He wanted it more. Simple as that."),
       O("g6", "Watch his eyes. He knew where it was going."),
-      O("g7", "The centre half's ball watching there."),
+      O("g7", "The centre half is ball watching there."),
       O("g8", "Great movement. He's peeled off the shoulder."),
       O("g9", "When I played, I'd have given anything for that finish."),
       O("g10", "No backlift. The keeper can't read it."),
@@ -262,8 +265,8 @@ const PRO: CoBank = {
     penalty: [O("p1", "Picks his corner, doesn't change his mind."), O("p2", "Short run up, cool head. Lovely.")],
     free_kick: [O("f1", "Up and down. The keeper's a spectator."), O("f2", "He's practised that a thousand times.")],
     rebound: [O("r1", "Strikers follow in. That's the job."), O("r2", "The keeper should push that wide, mind.")],
-    one_on_one: [O("o1", "He's opened his body. Keeper's beaten."), O("o2", "Never rushed it. Proper composure.")],
-    saves: [O("s1", "The keeper's been brilliant, but not this time."), O("s2", "He kept them in it, until now.")],
+    one_on_one: [O("o1", "He's opened his body. The keeper is beaten."), O("o2", "Never rushed it. Proper composure.")],
+    saves: [O("s1", "The keeper's been brilliant, but not this time."), O("s2", "He kept them in the game, until now.")],
   },
   reelLines: [O("reel1", "Some game, this. What a watch."), O("reel2", "End to end, and I've loved every minute."), O("reel3", "You don't get many like this one.")],
   lateReplayLines: [
@@ -317,7 +320,7 @@ const MATE: CoBank = {
       M("g7", "That's going straight in the highlights."),
       M("g8", "I'm not even mad. That's just good."),
       M("g9", "Somebody give him a pay rise."),
-      M("g10", "Clip it. Post it. That's a banger."),
+      M("g10", "Clip that and post it. What a banger."),
     ],
     header: [M("h1", "Jumped like he had springs in his boots."), M("h2", "Bullet header. Proper old school.")],
     long_range: [M("lr1", "He's hit that with his whole life."), M("lr2", "He thought he was in a video game.")],

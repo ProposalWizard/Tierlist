@@ -1315,12 +1315,10 @@
    7,
    14
   ],
-  "seed": 2,
+  "seed": 5,
   "resting_f0": 131.0,
-  "dur": 2.53,
-  "weak": [
-   "noisy"
-  ],
+  "dur": 1.91,
+  "weak": [],
   "takes": [
    {
     "wer": 0.0,
@@ -1375,6 +1373,42 @@
     "squeal": false,
     "miss": 3.6,
     "seed": 3
+   },
+   {
+    "wer": 0.0,
+    "heard": "a firm header and it's in.",
+    "mos": 3.61,
+    "sig": 3.32,
+    "range": 12.6,
+    "f0": 138.0,
+    "rate": 3.53,
+    "dur": 1.98,
+    "p95": 204.0,
+    "voiced": 0.81,
+    "wer_strict": 0.0,
+    "lift": 0.9,
+    "peak": 7.7,
+    "squeal": false,
+    "miss": 6.1,
+    "seed": 4
+   },
+   {
+    "wer": 0.0,
+    "heard": "a firm header and it's in.",
+    "mos": 3.33,
+    "sig": 3.18,
+    "range": 13.8,
+    "f0": 176.0,
+    "rate": 3.66,
+    "dur": 1.91,
+    "p95": 401.0,
+    "voiced": 0.89,
+    "wer_strict": 0.0,
+    "lift": 5.1,
+    "peak": 19.4,
+    "squeal": false,
+    "miss": 1.9,
+    "seed": 5
    }
   ]
  },
@@ -1454,19 +1488,17 @@
   "who": "wire",
   "kind": "call",
   "spoken": "Header! Goal! Unreal!",
-  "exaggeration": 1.1,
+  "exaggeration": 0.94,
   "temp": 0.8,
   "heat": 0.9,
   "lift": [
    10,
    17
   ],
-  "seed": 1,
+  "seed": 5,
   "resting_f0": 126.0,
-  "dur": 2.06,
-  "weak": [
-   "squeal"
-  ],
+  "dur": 1.79,
+  "weak": [],
   "takes": [
    {
     "wer": 0.0,
@@ -1521,6 +1553,42 @@
     "squeal": false,
     "miss": 1.0,
     "seed": 3
+   },
+   {
+    "wer": 0.667,
+    "heard": "Head or goal unreal.",
+    "mos": 3.66,
+    "sig": 3.46,
+    "range": 11.0,
+    "f0": 424.0,
+    "rate": 1.61,
+    "dur": 1.86,
+    "p95": 618.0,
+    "voiced": 0.58,
+    "wer_strict": 0.667,
+    "lift": 21.0,
+    "peak": 27.5,
+    "squeal": true,
+    "miss": 4.0,
+    "seed": 4
+   },
+   {
+    "wer": 0.0,
+    "heard": "Header, goal unreal.",
+    "mos": 3.58,
+    "sig": 3.51,
+    "range": 2.4,
+    "f0": 273.0,
+    "rate": 1.68,
+    "dur": 1.79,
+    "p95": 302.0,
+    "voiced": 0.41,
+    "wer_strict": 0.0,
+    "lift": 13.4,
+    "peak": 15.1,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 5
    }
   ]
  },
@@ -2047,7 +2115,7 @@
     "seed": 1
    },
    {
-    "wer": 0.4,
+    "wer": 0.2,
     "heard": "Ma, stroke on the volley and it's in",
     "mos": 3.63,
     "sig": 3.64,
@@ -2285,7 +2353,7 @@
  "cc-pro-g7": {
   "who": "pro",
   "kind": "co",
-  "spoken": "The centre half's ball watching there.",
+  "spoken": "The centre half is ball watching there.",
   "exaggeration": 0.4,
   "temp": 0.75,
   "heat": 0.15,
@@ -2293,48 +2361,28 @@
    -2,
    4
   ],
-  "seed": 2,
+  "seed": 6,
   "resting_f0": 131.0,
-  "dur": 2.01,
-  "weak": [
-   "words"
-  ],
+  "dur": 1.99,
+  "weak": [],
   "takes": [
    {
-    "wer": 0.2,
-    "heard": "the center half ball watching there.",
-    "mos": 3.87,
-    "sig": 3.7,
-    "range": 11.7,
-    "f0": 104.0,
-    "rate": 3.43,
-    "dur": 1.75,
-    "p95": 151.0,
-    "voiced": 0.9,
-    "wer_strict": 0.333,
-    "lift": -4.0,
-    "peak": 2.5,
+    "wer": 0.0,
+    "heard": "The centre half is ball watching there.",
+    "mos": 4.04,
+    "sig": 3.59,
+    "range": 9.0,
+    "f0": 107.0,
+    "rate": 3.52,
+    "dur": 1.99,
+    "p95": 171.0,
+    "voiced": 0.87,
+    "wer_strict": 0.0,
+    "lift": -3.5,
+    "peak": 4.6,
     "squeal": false,
-    "miss": 2.0,
-    "seed": 1
-   },
-   {
-    "wer": 0.2,
-    "heard": "The centre half-spool watching there.",
-    "mos": 4.13,
-    "sig": 3.7,
-    "range": 10.4,
-    "f0": 120.0,
-    "rate": 2.99,
-    "dur": 2.01,
-    "p95": 166.0,
-    "voiced": 0.81,
-    "wer_strict": 0.333,
-    "lift": -1.5,
-    "peak": 4.1,
-    "squeal": false,
-    "miss": 0.0,
-    "seed": 2
+    "miss": 1.5,
+    "seed": 6
    }
   ]
  },
@@ -3315,7 +3363,7 @@
  "cc-mate-g10": {
   "who": "mate",
   "kind": "co",
-  "spoken": "Clip it. Post it. That's a banger.",
+  "spoken": "Clip that and post it. What a banger.",
   "exaggeration": 0.6,
   "temp": 0.8,
   "heat": 0.2,
@@ -3323,49 +3371,46 @@
    -1,
    6
   ],
-  "seed": 2,
+  "seed": 7,
   "resting_f0": 112.0,
-  "dur": 2.36,
-  "weak": [
-   "squeal",
-   "lift"
-  ],
+  "dur": 1.89,
+  "weak": [],
   "takes": [
    {
     "wer": 0.2,
-    "heard": "clip it, post it, that's a b",
-    "mos": 3.83,
-    "sig": 3.52,
-    "range": 7.0,
-    "f0": 101.0,
-    "rate": 4.37,
-    "dur": 1.83,
-    "p95": 110.0,
-    "voiced": 0.44,
+    "heard": "Click that and post it. What a banger.",
+    "mos": 3.97,
+    "sig": 3.39,
+    "range": 7.3,
+    "f0": 158.0,
+    "rate": 3.83,
+    "dur": 2.09,
+    "p95": 210.0,
+    "voiced": 0.37,
     "wer_strict": 0.125,
-    "lift": -1.8,
-    "peak": -0.3,
+    "lift": 6.0,
+    "peak": 10.9,
     "squeal": false,
-    "miss": 0.8,
-    "seed": 1
+    "miss": 0.0,
+    "seed": 6
    },
    {
     "wer": 0.0,
-    "heard": "Clip it, post it, that's a banger.",
-    "mos": 3.93,
-    "sig": 3.55,
-    "range": 27.5,
-    "f0": 223.0,
-    "rate": 3.39,
-    "dur": 2.36,
-    "p95": 474.0,
-    "voiced": 0.64,
+    "heard": "clip that and post it, what a banger.",
+    "mos": 3.8,
+    "sig": 3.54,
+    "range": 9.3,
+    "f0": 113.0,
+    "rate": 4.22,
+    "dur": 1.89,
+    "p95": 159.0,
+    "voiced": 0.68,
     "wer_strict": 0.0,
-    "lift": 11.9,
-    "peak": 25.0,
-    "squeal": true,
-    "miss": 5.9,
-    "seed": 2
+    "lift": 0.2,
+    "peak": 6.1,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 7
    }
   ]
  },
@@ -3670,13 +3715,10 @@
    7,
    14
   ],
-  "seed": 1,
+  "seed": 6,
   "resting_f0": 131.0,
-  "dur": 3.22,
-  "weak": [
-   "words",
-   "lift"
-  ],
+  "dur": 3.1,
+  "weak": [],
   "takes": [
    {
     "wer": 0.143,
@@ -3731,6 +3773,60 @@
     "squeal": false,
     "miss": 2.3,
     "seed": 3
+   },
+   {
+    "wer": 0.0,
+    "heard": "The keeper goes one way, the ball, the other. Goal.",
+    "mos": 3.84,
+    "sig": 3.24,
+    "range": 6.1,
+    "f0": 162.0,
+    "rate": 3.45,
+    "dur": 2.9,
+    "p95": 195.0,
+    "voiced": 0.76,
+    "wer_strict": 0.0,
+    "lift": 3.7,
+    "peak": 6.9,
+    "squeal": false,
+    "miss": 3.3,
+    "seed": 4
+   },
+   {
+    "wer": 0.143,
+    "heard": "The keeper goes one way, the Paul the other. Goal.",
+    "mos": 3.83,
+    "sig": 3.42,
+    "range": 10.9,
+    "f0": 158.0,
+    "rate": 3.38,
+    "dur": 2.96,
+    "p95": 214.0,
+    "voiced": 0.69,
+    "wer_strict": 0.1,
+    "lift": 3.2,
+    "peak": 8.5,
+    "squeal": false,
+    "miss": 3.8,
+    "seed": 5
+   },
+   {
+    "wer": 0.0,
+    "heard": "The keeper goes one way, the ball the other, goal.",
+    "mos": 3.74,
+    "sig": 3.39,
+    "range": 17.6,
+    "f0": 178.0,
+    "rate": 3.23,
+    "dur": 3.1,
+    "p95": 327.0,
+    "voiced": 0.71,
+    "wer_strict": 0.0,
+    "lift": 5.3,
+    "peak": 15.8,
+    "squeal": false,
+    "miss": 1.7,
+    "seed": 6
    }
   ]
  },
@@ -4694,20 +4790,17 @@
   "who": "wire",
   "kind": "call",
   "spoken": "No angle! No problem! Goal!",
-  "exaggeration": 1.1,
+  "exaggeration": 0.94,
   "temp": 0.8,
   "heat": 0.9,
   "lift": [
    10,
    17
   ],
-  "seed": 1,
+  "seed": 4,
   "resting_f0": 126.0,
-  "dur": 2.16,
-  "weak": [
-   "squeal",
-   "lift"
-  ],
+  "dur": 2.39,
+  "weak": [],
   "takes": [
    {
     "wer": 0.0,
@@ -4762,6 +4855,24 @@
     "squeal": true,
     "miss": 4.5,
     "seed": 3
+   },
+   {
+    "wer": 0.0,
+    "heard": "No angle, no problem, goal!",
+    "mos": 3.46,
+    "sig": 3.48,
+    "range": 9.4,
+    "f0": 290.0,
+    "rate": 2.09,
+    "dur": 2.39,
+    "p95": 309.0,
+    "voiced": 0.37,
+    "wer_strict": 0.0,
+    "lift": 14.4,
+    "peak": 15.5,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 4
    }
   ]
  },
@@ -4776,15 +4887,15 @@
    -2,
    4
   ],
-  "seed": 1,
+  "seed": 4,
   "resting_f0": 131.0,
-  "dur": 2.22,
+  "dur": 2.25,
   "weak": [
    "words"
   ],
   "takes": [
    {
-    "wer": 0.25,
+    "wer": 0.125,
     "heard": "Pix's corner doesn't change his mind.",
     "mos": 3.98,
     "sig": 3.65,
@@ -4802,7 +4913,7 @@
     "seed": 1
    },
    {
-    "wer": 0.25,
+    "wer": 0.125,
     "heard": "Pix's corner doesn't change his mind.",
     "mos": 3.95,
     "sig": 3.62,
@@ -4818,6 +4929,60 @@
     "squeal": false,
     "miss": 0.0,
     "seed": 2
+   },
+   {
+    "wer": 0.375,
+    "heard": "X's corner doesn't change its mind.",
+    "mos": 3.86,
+    "sig": 3.69,
+    "range": 9.0,
+    "f0": 114.0,
+    "rate": 3.5,
+    "dur": 2.0,
+    "p95": 159.0,
+    "voiced": 0.93,
+    "wer_strict": 0.429,
+    "lift": -2.4,
+    "peak": 3.4,
+    "squeal": false,
+    "miss": 0.4,
+    "seed": 3
+   },
+   {
+    "wer": 0.125,
+    "heard": "Pix's corner doesn't change his mind.",
+    "mos": 4.0,
+    "sig": 3.7,
+    "range": 11.7,
+    "f0": 126.0,
+    "rate": 3.11,
+    "dur": 2.25,
+    "p95": 175.0,
+    "voiced": 0.94,
+    "wer_strict": 0.286,
+    "lift": -0.7,
+    "peak": 5.0,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 4
+   },
+   {
+    "wer": 0.125,
+    "heard": "Pix's corner doesn't change his mind.",
+    "mos": 3.78,
+    "sig": 3.67,
+    "range": 11.2,
+    "f0": 114.0,
+    "rate": 3.35,
+    "dur": 2.09,
+    "p95": 189.0,
+    "voiced": 0.86,
+    "wer_strict": 0.286,
+    "lift": -2.4,
+    "peak": 6.3,
+    "squeal": false,
+    "miss": 0.4,
+    "seed": 5
    }
   ]
  },
@@ -4940,12 +5105,10 @@
    5,
    12
   ],
-  "seed": 2,
+  "seed": 5,
   "resting_f0": 187.0,
-  "dur": 2.43,
-  "weak": [
-   "words"
-  ],
+  "dur": 2.4,
+  "weak": [],
   "takes": [
    {
     "wer": 0.429,
@@ -5000,6 +5163,42 @@
     "squeal": false,
     "miss": 0.0,
     "seed": 3
+   },
+   {
+    "wer": 0.143,
+    "heard": "along with his thoughts and he's done it.",
+    "mos": 3.76,
+    "sig": 3.22,
+    "range": 4.9,
+    "f0": 235.0,
+    "rate": 5.05,
+    "dur": 1.78,
+    "p95": 275.0,
+    "voiced": 0.63,
+    "wer_strict": 0.111,
+    "lift": 4.0,
+    "peak": 6.7,
+    "squeal": false,
+    "miss": 1.0,
+    "seed": 4
+   },
+   {
+    "wer": 0.0,
+    "heard": "alone with his thoughts and he's done it.",
+    "mos": 3.73,
+    "sig": 3.2,
+    "range": 9.0,
+    "f0": 236.0,
+    "rate": 3.75,
+    "dur": 2.4,
+    "p95": 314.0,
+    "voiced": 0.72,
+    "wer_strict": 0.0,
+    "lift": 4.0,
+    "peak": 9.0,
+    "squeal": false,
+    "miss": 1.0,
+    "seed": 5
    }
   ]
  },
@@ -5043,19 +5242,17 @@
   "who": "wire",
   "kind": "call",
   "spoken": "He's through! He's through! Goal!",
-  "exaggeration": 1.1,
+  "exaggeration": 0.94,
   "temp": 0.8,
   "heat": 0.9,
   "lift": [
    10,
    17
   ],
-  "seed": 2,
+  "seed": 5,
   "resting_f0": 126.0,
-  "dur": 2.55,
-  "weak": [
-   "squeal"
-  ],
+  "dur": 2.51,
+  "weak": [],
   "takes": [
    {
     "wer": 0.2,
@@ -5110,6 +5307,42 @@
     "squeal": true,
     "miss": 0.1,
     "seed": 3
+   },
+   {
+    "wer": 0.0,
+    "heard": "He's through, he's through, goal!",
+    "mos": 3.91,
+    "sig": 3.54,
+    "range": 10.3,
+    "f0": 308.0,
+    "rate": 2.51,
+    "dur": 2.78,
+    "p95": 441.0,
+    "voiced": 0.68,
+    "wer_strict": 0.0,
+    "lift": 15.5,
+    "peak": 21.7,
+    "squeal": true,
+    "miss": 0.0,
+    "seed": 4
+   },
+   {
+    "wer": 0.0,
+    "heard": "He's through, he's through, goal.",
+    "mos": 3.77,
+    "sig": 3.38,
+    "range": 5.6,
+    "f0": 295.0,
+    "rate": 2.79,
+    "dur": 2.51,
+    "p95": 337.0,
+    "voiced": 0.51,
+    "wer_strict": 0.0,
+    "lift": 14.7,
+    "peak": 17.0,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 5
    }
   ]
  },
@@ -5163,12 +5396,10 @@
   "seed": 1,
   "resting_f0": 178.0,
   "dur": 2.12,
-  "weak": [
-   "words"
-  ],
+  "weak": [],
   "takes": [
    {
-    "wer": 0.333,
+    "wer": 0.0,
     "heard": "high and hard, unsavable.",
     "mos": 4.11,
     "sig": 3.61,
@@ -5186,7 +5417,7 @@
     "seed": 1
    },
    {
-    "wer": 0.333,
+    "wer": 0.0,
     "heard": "high and hard, unsavable.",
     "mos": 3.63,
     "sig": 3.53,
@@ -5252,11 +5483,11 @@
    7,
    14
   ],
-  "seed": 1,
+  "seed": 6,
   "resting_f0": 131.0,
-  "dur": 2.23,
+  "dur": 2.75,
   "weak": [
-   "words"
+   "lift"
   ],
   "takes": [
    {
@@ -5312,6 +5543,78 @@
     "squeal": false,
     "miss": 0.0,
     "seed": 3
+   },
+   {
+    "wer": 0.167,
+    "heard": "saved, but he follows up. Go!",
+    "mos": 3.33,
+    "sig": 3.54,
+    "range": 16.2,
+    "f0": 184.0,
+    "rate": 1.98,
+    "dur": 3.03,
+    "p95": 308.0,
+    "voiced": 0.58,
+    "wer_strict": 0.167,
+    "lift": 5.9,
+    "peak": 14.8,
+    "squeal": false,
+    "miss": 1.1,
+    "seed": 4
+   },
+   {
+    "wer": 0.5,
+    "heard": "Jet, say, but he follows up. Go!",
+    "mos": 3.44,
+    "sig": 3.56,
+    "range": 12.3,
+    "f0": 178.0,
+    "rate": 1.96,
+    "dur": 3.07,
+    "p95": 280.0,
+    "voiced": 0.48,
+    "wer_strict": 0.5,
+    "lift": 5.3,
+    "peak": 13.2,
+    "squeal": false,
+    "miss": 1.7,
+    "seed": 5
+   },
+   {
+    "wer": 0.0,
+    "heard": "Saved, but he follows up goal.",
+    "mos": 3.56,
+    "sig": 3.59,
+    "range": 14.0,
+    "f0": 135.0,
+    "rate": 2.18,
+    "dur": 2.75,
+    "p95": 194.0,
+    "voiced": 0.52,
+    "wer_strict": 0.0,
+    "lift": 0.5,
+    "peak": 6.8,
+    "squeal": false,
+    "miss": 6.5,
+    "seed": 6
+   },
+   {
+    "wer": 0.833,
+    "heard": "Say, when he pose up, go. (buzzer",
+    "mos": 3.46,
+    "sig": 3.53,
+    "range": 32.0,
+    "f0": 227.0,
+    "rate": 2.61,
+    "dur": 2.29,
+    "p95": 785.0,
+    "voiced": 0.52,
+    "wer_strict": 0.833,
+    "lift": 9.5,
+    "peak": 31.0,
+    "squeal": true,
+    "miss": 0.0,
+    "seed": 7
    }
   ]
  },
@@ -5408,7 +5711,7 @@
  "cl-wire-r1": {
   "who": "wire",
   "kind": "call",
-  "spoken": "Saved! Rebound! Goal! Chaos!",
+  "spoken": "Saved! Then the rebound! And it's in!",
   "exaggeration": 1.1,
   "temp": 0.8,
   "heat": 0.9,
@@ -5416,66 +5719,84 @@
    10,
    17
   ],
-  "seed": 3,
+  "seed": 8,
   "resting_f0": 126.0,
-  "dur": 2.92,
+  "dur": 3.06,
   "weak": [
-   "squeal"
+   "words"
   ],
   "takes": [
    {
-    "wer": 0.0,
-    "heard": "Saved, rebound, goal, chaos!",
-    "mos": 3.4,
-    "sig": 3.62,
-    "range": 1.7,
-    "f0": 389.0,
-    "rate": 1.23,
-    "dur": 3.26,
-    "p95": 407.0,
-    "voiced": 0.14,
-    "wer_strict": 0.0,
-    "lift": 19.5,
-    "peak": 20.3,
-    "squeal": true,
-    "miss": 2.5,
-    "seed": 1
+    "wer": 0.2,
+    "heard": "Safe, then the rebound and it's in.",
+    "mos": 3.57,
+    "sig": 3.46,
+    "range": 4.0,
+    "f0": 345.0,
+    "rate": 2.61,
+    "dur": 3.06,
+    "p95": 397.0,
+    "voiced": 0.26,
+    "wer_strict": 0.125,
+    "lift": 17.4,
+    "peak": 19.9,
+    "squeal": false,
+    "miss": 0.4,
+    "seed": 8
    },
    {
-    "wer": 0.0,
-    "heard": "Saved, rebound, goal, chaos!",
-    "mos": 3.23,
-    "sig": 3.6,
-    "range": 9.0,
-    "f0": 561.0,
-    "rate": 1.46,
-    "dur": 2.74,
-    "p95": 832.0,
-    "voiced": 0.18,
-    "wer_strict": 0.0,
-    "lift": 25.9,
-    "peak": 32.7,
+    "wer": 0.2,
+    "heard": "Saved, then the rebound, and it did!",
+    "mos": 3.09,
+    "sig": 3.43,
+    "range": 9.6,
+    "f0": 368.0,
+    "rate": 2.98,
+    "dur": 2.68,
+    "p95": 564.0,
+    "voiced": 0.41,
+    "wer_strict": 0.25,
+    "lift": 18.6,
+    "peak": 25.9,
     "squeal": true,
-    "miss": 8.9,
-    "seed": 2
+    "miss": 1.6,
+    "seed": 9
    },
    {
-    "wer": 0.0,
-    "heard": "Saved, rebound, goal, chaos.",
-    "mos": 3.55,
-    "sig": 3.58,
-    "range": 7.4,
-    "f0": 358.0,
-    "rate": 1.37,
-    "dur": 2.92,
-    "p95": 575.0,
-    "voiced": 0.28,
-    "wer_strict": 0.0,
-    "lift": 18.1,
-    "peak": 26.3,
+    "wer": 0.2,
+    "heard": "Sate, then a rebound, and it's in!",
+    "mos": 3.1,
+    "sig": 3.64,
+    "range": 19.0,
+    "f0": 351.0,
+    "rate": 2.26,
+    "dur": 3.53,
+    "p95": 414.0,
+    "voiced": 0.53,
+    "wer_strict": 0.25,
+    "lift": 17.7,
+    "peak": 20.6,
     "squeal": true,
-    "miss": 1.1,
-    "seed": 3
+    "miss": 0.7,
+    "seed": 10
+   },
+   {
+    "wer": 0.2,
+    "heard": "saved than the rebound and it's in",
+    "mos": 3.17,
+    "sig": 3.51,
+    "range": 3.8,
+    "f0": 331.0,
+    "rate": 3.0,
+    "dur": 2.67,
+    "p95": 377.0,
+    "voiced": 0.43,
+    "wer_strict": 0.125,
+    "lift": 16.7,
+    "peak": 19.0,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 11
    }
   ]
  },
@@ -5781,12 +6102,10 @@
   "seed": 1,
   "resting_f0": 131.0,
   "dur": 2.23,
-  "weak": [
-   "words"
-  ],
+  "weak": [],
   "takes": [
    {
-    "wer": 0.25,
+    "wer": 0.0,
     "heard": "He's practiced that a thousand times.",
     "mos": 3.72,
     "sig": 3.69,
@@ -5804,7 +6123,7 @@
     "seed": 1
    },
    {
-    "wer": 0.5,
+    "wer": 0.25,
     "heard": "is practiced that a thousand times.",
     "mos": 3.81,
     "sig": 3.65,
@@ -6050,12 +6369,10 @@
    10,
    17
   ],
-  "seed": 3,
+  "seed": 4,
   "resting_f0": 126.0,
-  "dur": 2.47,
-  "weak": [
-   "noisy"
-  ],
+  "dur": 2.89,
+  "weak": [],
   "takes": [
    {
     "wer": 0.0,
@@ -6071,7 +6388,7 @@
     "wer_strict": 0.0,
     "lift": -99.0,
     "peak": -99.0,
-    "squeal": false,
+    "squeal": true,
     "miss": 10.0,
     "seed": 1
    },
@@ -6110,6 +6427,24 @@
     "squeal": false,
     "miss": 0.0,
     "seed": 3
+   },
+   {
+    "wer": 0.0,
+    "heard": "Bent it in. Oh, that's filthy.",
+    "mos": 3.25,
+    "sig": 3.62,
+    "range": 5.8,
+    "f0": 332.0,
+    "rate": 2.42,
+    "dur": 2.89,
+    "p95": 394.0,
+    "voiced": 0.48,
+    "wer_strict": 0.0,
+    "lift": 16.8,
+    "peak": 19.7,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 4
    }
   ]
  },
@@ -6289,12 +6624,10 @@
   "seed": 1,
   "resting_f0": 187.0,
   "dur": 2.52,
-  "weak": [
-   "words"
-  ],
+  "weak": [],
   "takes": [
    {
-    "wer": 0.333,
+    "wer": 0.0,
     "heard": "rolled back and stroked home like a brush stroke.",
     "mos": 3.92,
     "sig": 3.48,
@@ -6312,7 +6645,7 @@
     "seed": 1
    },
    {
-    "wer": 0.667,
+    "wer": 0.333,
     "heard": "Rilled back and stroked whole like a brush stroke.",
     "mos": 3.47,
     "sig": 3.53,
@@ -6330,7 +6663,7 @@
     "seed": 2
    },
    {
-    "wer": 0.333,
+    "wer": 0.0,
     "heard": "rolled back and stroked home like a brush stroke.",
     "mos": 3.8,
     "sig": 3.53,
@@ -6658,7 +6991,7 @@
  "cl-wire-k1": {
   "who": "wire",
   "kind": "call",
-  "spoken": "Corner! Chaos! Goal!",
+  "spoken": "From the corner! Chaos! Goal!",
   "exaggeration": 1.1,
   "temp": 0.8,
   "heat": 0.9,
@@ -6666,74 +6999,91 @@
    10,
    17
   ],
-  "seed": 1,
+  "seed": 8,
   "resting_f0": 126.0,
-  "dur": 2.42,
+  "dur": 2.29,
   "weak": [
-   "squeal",
-   "lift"
+   "squeal"
   ],
   "takes": [
    {
     "wer": 0.0,
-    "heard": "Corner Chaos Goal",
-    "mos": 3.49,
-    "sig": 3.45,
-    "range": 10.1,
-    "f0": 483.0,
-    "rate": 1.24,
-    "dur": 2.42,
-    "p95": 803.0,
-    "voiced": 0.26,
-    "wer_strict": 0.0,
-    "lift": 23.3,
-    "peak": 32.1,
-    "squeal": true,
-    "miss": 6.3,
-    "seed": 1
-   },
-   {
-    "wer": 0.333,
-    "heard": "Corner, chaos, dull.",
-    "mos": 3.43,
-    "sig": 3.46,
-    "range": 3.0,
-    "f0": 428.0,
-    "rate": 1.34,
-    "dur": 2.23,
-    "p95": 450.0,
+    "heard": "from the corner. Chaos goal.",
+    "mos": 3.53,
+    "sig": 3.56,
+    "range": 6.4,
+    "f0": 301.0,
+    "rate": 2.19,
+    "dur": 2.29,
+    "p95": 421.0,
     "voiced": 0.27,
-    "wer_strict": 0.333,
-    "lift": 21.2,
-    "peak": 22.0,
+    "wer_strict": 0.0,
+    "lift": 15.1,
+    "peak": 20.9,
     "squeal": true,
-    "miss": 4.2,
-    "seed": 2
+    "miss": 0.0,
+    "seed": 8
    },
    {
-    "wer": 0.333,
-    "heard": "Corner, Chaos, Gold",
-    "mos": 3.32,
-    "sig": 3.55,
-    "range": 13.8,
-    "f0": 412.0,
-    "rate": 1.14,
-    "dur": 2.63,
-    "p95": 860.0,
-    "voiced": 0.44,
-    "wer_strict": 0.333,
-    "lift": 20.5,
-    "peak": 33.3,
+    "wer": 0.0,
+    "heard": "from the corner. Chaos goal!",
+    "mos": 3.3,
+    "sig": 3.6,
+    "range": 19.2,
+    "f0": 308.0,
+    "rate": 1.76,
+    "dur": 2.84,
+    "p95": 810.0,
+    "voiced": 0.33,
+    "wer_strict": 0.0,
+    "lift": 15.5,
+    "peak": 32.2,
     "squeal": true,
-    "miss": 3.5,
-    "seed": 3
+    "miss": 0.0,
+    "seed": 9
+   },
+   {
+    "wer": 0.75,
+    "heard": "From the corner, chaos gold. (buzzer buzzes)",
+    "mos": 3.31,
+    "sig": 3.6,
+    "range": 11.1,
+    "f0": 445.0,
+    "rate": 2.03,
+    "dur": 2.46,
+    "p95": 789.0,
+    "voiced": 0.55,
+    "wer_strict": 0.6,
+    "lift": 21.8,
+    "peak": 31.8,
+    "squeal": true,
+    "miss": 4.8,
+    "seed": 10
+   },
+   {
+    "wer": 0.5,
+    "heard": "from the corner, chaos goal. (buzzer buzzes",
+    "mos": 3.4,
+    "sig": 3.41,
+    "range": 10.8,
+    "f0": 236.0,
+    "rate": 2.18,
+    "dur": 2.29,
+    "p95": 395.0,
+    "voiced": 0.25,
+    "wer_strict": 0.4,
+    "lift": 10.9,
+    "peak": 19.8,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 11
    }
   ]
  },
  "cc-pro-o1": {
   "who": "pro",
   "kind": "co",
-  "spoken": "He's opened his body. Keeper's beaten.",
+  "spoken": "He's opened his body. The keeper is beaten.",
   "exaggeration": 0.4,
   "temp": 0.75,
   "heat": 0.15,
@@ -6741,48 +7091,28 @@
    -2,
    4
   ],
-  "seed": 2,
+  "seed": 6,
   "resting_f0": 131.0,
-  "dur": 2.3,
-  "weak": [
-   "words"
-  ],
+  "dur": 2.72,
+  "weak": [],
   "takes": [
    {
-    "wer": 0.333,
-    "heard": "He's opened his body. Keep us beaten.",
-    "mos": 4.07,
-    "sig": 3.53,
-    "range": 10.6,
-    "f0": 121.0,
-    "rate": 2.72,
-    "dur": 2.57,
+    "wer": 0.0,
+    "heard": "He's opened his body. The keeper is beaten.",
+    "mos": 4.01,
+    "sig": 3.67,
+    "range": 11.1,
+    "f0": 118.0,
+    "rate": 3.31,
+    "dur": 2.72,
     "p95": 180.0,
-    "voiced": 0.91,
-    "wer_strict": 0.286,
-    "lift": -1.4,
+    "voiced": 0.85,
+    "wer_strict": 0.0,
+    "lift": -1.8,
     "peak": 5.5,
     "squeal": false,
     "miss": 0.0,
-    "seed": 1
-   },
-   {
-    "wer": 0.333,
-    "heard": "He's opened his body. Keep his beaten.",
-    "mos": 4.22,
-    "sig": 3.62,
-    "range": 6.3,
-    "f0": 118.0,
-    "rate": 3.05,
-    "dur": 2.3,
-    "p95": 145.0,
-    "voiced": 0.86,
-    "wer_strict": 0.286,
-    "lift": -1.8,
-    "peak": 1.8,
-    "squeal": false,
-    "miss": 0.0,
-    "seed": 2
+    "seed": 6
    }
   ]
  },
@@ -6833,9 +7163,9 @@
    -1,
    6
   ],
-  "seed": 1,
+  "seed": 5,
   "resting_f0": 112.0,
-  "dur": 2.05,
+  "dur": 1.83,
   "weak": [
    "words"
   ],
@@ -6875,6 +7205,60 @@
     "squeal": false,
     "miss": 0.0,
     "seed": 2
+   },
+   {
+    "wer": 0.25,
+    "heard": "comms you like made it look easy.",
+    "mos": 4.06,
+    "sig": 3.3,
+    "range": 10.4,
+    "f0": 132.0,
+    "rate": 4.11,
+    "dur": 1.95,
+    "p95": 186.0,
+    "voiced": 0.74,
+    "wer_strict": 0.25,
+    "lift": 2.8,
+    "peak": 8.8,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 3
+   },
+   {
+    "wer": 0.25,
+    "heard": "The comments you like made it look easy.",
+    "mos": 3.96,
+    "sig": 3.52,
+    "range": 10.1,
+    "f0": 123.0,
+    "rate": 4.3,
+    "dur": 1.86,
+    "p95": 180.0,
+    "voiced": 0.88,
+    "wer_strict": 0.25,
+    "lift": 1.6,
+    "peak": 8.2,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 4
+   },
+   {
+    "wer": 0.125,
+    "heard": "Tom as you like, made it look easy.",
+    "mos": 4.01,
+    "sig": 3.44,
+    "range": 10.6,
+    "f0": 121.0,
+    "rate": 4.37,
+    "dur": 1.83,
+    "p95": 158.0,
+    "voiced": 0.7,
+    "wer_strict": 0.125,
+    "lift": 1.3,
+    "peak": 6.0,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 5
    }
   ]
  },
@@ -6961,12 +7345,10 @@
    -2,
    4
   ],
-  "seed": 1,
+  "seed": 5,
   "resting_f0": 210.0,
-  "dur": 0.95,
-  "weak": [
-   "words"
-  ],
+  "dur": 0.83,
+  "weak": [],
   "takes": [
    {
     "wer": 0.333,
@@ -7021,6 +7403,78 @@
     "squeal": false,
     "miss": 0.0,
     "seed": 3
+   },
+   {
+    "wer": 0.333,
+    "heard": "1-0 then",
+    "mos": 3.21,
+    "sig": 3.13,
+    "range": 6.6,
+    "f0": 207.0,
+    "rate": 3.27,
+    "dur": 0.92,
+    "p95": 237.0,
+    "voiced": 1.01,
+    "wer_strict": 0.333,
+    "lift": -0.2,
+    "peak": 2.1,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 4
+   },
+   {
+    "wer": 0.0,
+    "heard": "one-nil then",
+    "mos": 3.07,
+    "sig": 3.34,
+    "range": 5.3,
+    "f0": 211.0,
+    "rate": 3.62,
+    "dur": 0.83,
+    "p95": 222.0,
+    "voiced": 1.0,
+    "wer_strict": 0.0,
+    "lift": 0.1,
+    "peak": 1.0,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 5
+   },
+   {
+    "wer": 0.333,
+    "heard": "one nail then.",
+    "mos": 3.6,
+    "sig": 3.27,
+    "range": 4.6,
+    "f0": 180.0,
+    "rate": 2.82,
+    "dur": 1.06,
+    "p95": 226.0,
+    "voiced": 0.99,
+    "wer_strict": 0.333,
+    "lift": -2.7,
+    "peak": 1.3,
+    "squeal": false,
+    "miss": 0.7,
+    "seed": 6
+   },
+   {
+    "wer": 0.333,
+    "heard": "1 nail then.",
+    "mos": 3.24,
+    "sig": 3.13,
+    "range": 6.4,
+    "f0": 187.0,
+    "rate": 3.02,
+    "dur": 0.99,
+    "p95": 237.0,
+    "voiced": 1.0,
+    "wer_strict": 0.333,
+    "lift": -2.0,
+    "peak": 2.1,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 7
    }
   ]
  },
@@ -7395,9 +7849,9 @@
    -2,
    4
   ],
-  "seed": 2,
+  "seed": 3,
   "resting_f0": 131.0,
-  "dur": 2.41,
+  "dur": 2.73,
   "weak": [
    "words"
   ],
@@ -7437,6 +7891,60 @@
     "squeal": false,
     "miss": 0.3,
     "seed": 2
+   },
+   {
+    "wer": 0.143,
+    "heard": "The keep has been brilliant, but not this time.",
+    "mos": 4.11,
+    "sig": 3.57,
+    "range": 12.1,
+    "f0": 130.0,
+    "rate": 2.93,
+    "dur": 2.73,
+    "p95": 181.0,
+    "voiced": 0.7,
+    "wer_strict": 0.25,
+    "lift": -0.1,
+    "peak": 5.6,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 3
+   },
+   {
+    "wer": 0.143,
+    "heard": "The keep has been brilliant, but not this time.",
+    "mos": 3.91,
+    "sig": 3.6,
+    "range": 11.0,
+    "f0": 133.0,
+    "rate": 3.26,
+    "dur": 2.45,
+    "p95": 166.0,
+    "voiced": 0.81,
+    "wer_strict": 0.25,
+    "lift": 0.3,
+    "peak": 4.1,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 4
+   },
+   {
+    "wer": 0.143,
+    "heard": "The keep has been brilliant, but not this time.",
+    "mos": 4.09,
+    "sig": 3.49,
+    "range": 11.8,
+    "f0": 126.0,
+    "rate": 2.94,
+    "dur": 2.72,
+    "p95": 173.0,
+    "voiced": 0.86,
+    "wer_strict": 0.25,
+    "lift": -0.7,
+    "peak": 4.8,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 5
    }
   ]
  },
@@ -7695,7 +8203,7 @@
  "cc-pro-s2": {
   "who": "pro",
   "kind": "co",
-  "spoken": "He kept them in it, until now.",
+  "spoken": "He kept them in the game, until now.",
   "exaggeration": 0.4,
   "temp": 0.75,
   "heat": 0.15,
@@ -7703,48 +8211,28 @@
    -2,
    4
   ],
-  "seed": 2,
+  "seed": 6,
   "resting_f0": 131.0,
-  "dur": 1.89,
-  "weak": [
-   "words"
-  ],
+  "dur": 2.2,
+  "weak": [],
   "takes": [
    {
-    "wer": 0.429,
-    "heard": "He kept the minute until now.",
-    "mos": 4.05,
-    "sig": 3.67,
-    "range": 11.5,
-    "f0": 133.0,
-    "rate": 3.84,
-    "dur": 1.82,
-    "p95": 175.0,
-    "voiced": 0.75,
-    "wer_strict": 0.429,
-    "lift": 0.3,
-    "peak": 5.0,
+    "wer": 0.0,
+    "heard": "He kept them in the game until now.",
+    "mos": 4.03,
+    "sig": 3.71,
+    "range": 10.2,
+    "f0": 112.0,
+    "rate": 3.64,
+    "dur": 2.2,
+    "p95": 186.0,
+    "voiced": 0.95,
+    "wer_strict": 0.0,
+    "lift": -2.7,
+    "peak": 6.1,
     "squeal": false,
-    "miss": 0.0,
-    "seed": 1
-   },
-   {
-    "wer": 0.429,
-    "heard": "He kept the minute, until now.",
-    "mos": 4.15,
-    "sig": 3.66,
-    "range": 11.9,
-    "f0": 143.0,
-    "rate": 3.71,
-    "dur": 1.89,
-    "p95": 189.0,
-    "voiced": 0.83,
-    "wer_strict": 0.429,
-    "lift": 1.5,
-    "peak": 6.3,
-    "squeal": false,
-    "miss": 0.0,
-    "seed": 2
+    "miss": 0.7,
+    "seed": 6
    }
   ]
  },
@@ -7942,12 +8430,10 @@
   "seed": 2,
   "resting_f0": 126.0,
   "dur": 2.01,
-  "weak": [
-   "words"
-  ],
+  "weak": [],
   "takes": [
    {
-    "wer": 0.5,
+    "wer": 0.0,
     "heard": "That's the winner, gotta be.",
     "mos": 3.17,
     "sig": 2.94,
@@ -7965,7 +8451,7 @@
     "seed": 1
    },
    {
-    "wer": 0.5,
+    "wer": 0.0,
     "heard": "That's the winner, gotta be.",
     "mos": 3.38,
     "sig": 3.55,
@@ -7983,7 +8469,7 @@
     "seed": 2
    },
    {
-    "wer": 0.5,
+    "wer": 0.0,
     "heard": "That's the winner gotta be.",
     "mos": 3.15,
     "sig": 3.27,
@@ -8266,7 +8752,7 @@
     "wer_strict": 0.0,
     "lift": -99.0,
     "peak": -99.0,
-    "squeal": false,
+    "squeal": true,
     "miss": 10.0,
     "seed": 2
    },
@@ -8519,12 +9005,10 @@
    -2,
    4
   ],
-  "seed": 3,
+  "seed": 4,
   "resting_f0": 210.0,
-  "dur": 2.14,
-  "weak": [
-   "words"
-  ],
+  "dur": 2.4,
+  "weak": [],
   "takes": [
    {
     "wer": 0.25,
@@ -8579,6 +9063,24 @@
     "squeal": false,
     "miss": 0.0,
     "seed": 3
+   },
+   {
+    "wer": 0.0,
+    "heard": "a goal back, small comfort.",
+    "mos": 3.83,
+    "sig": 3.64,
+    "range": 7.1,
+    "f0": 210.0,
+    "rate": 2.08,
+    "dur": 2.4,
+    "p95": 268.0,
+    "voiced": 0.6,
+    "wer_strict": 0.0,
+    "lift": 0.0,
+    "peak": 4.2,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 4
    }
   ]
  },
@@ -9464,7 +9966,7 @@
     "wer_strict": 0.2,
     "lift": 0.1,
     "peak": -99.0,
-    "squeal": false,
+    "squeal": true,
     "miss": 8.9,
     "seed": 1
    },
@@ -9499,15 +10001,13 @@
    8,
    14
   ],
-  "seed": 3,
+  "seed": 4,
   "resting_f0": 187.0,
-  "dur": 3.48,
-  "weak": [
-   "words"
-  ],
+  "dur": 2.44,
+  "weak": [],
   "takes": [
    {
-    "wer": 0.167,
+    "wer": 0.0,
     "heard": "at the death hope returns their level.",
     "mos": 3.52,
     "sig": 3.55,
@@ -9525,7 +10025,7 @@
     "seed": 1
    },
    {
-    "wer": 0.167,
+    "wer": 0.0,
     "heard": "At the death hope returns their level.",
     "mos": 3.59,
     "sig": 3.73,
@@ -9559,6 +10059,78 @@
     "squeal": false,
     "miss": 0.0,
     "seed": 3
+   },
+   {
+    "wer": 0.0,
+    "heard": "at the death hope returns their level.",
+    "mos": 3.35,
+    "sig": 3.67,
+    "range": 7.8,
+    "f0": 370.0,
+    "rate": 3.28,
+    "dur": 2.44,
+    "p95": 422.0,
+    "voiced": 0.5,
+    "wer_strict": 0.25,
+    "lift": 11.8,
+    "peak": 14.1,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 4
+   },
+   {
+    "wer": 0.0,
+    "heard": "at the death hope returns their level",
+    "mos": 3.39,
+    "sig": 3.51,
+    "range": 10.9,
+    "f0": 349.0,
+    "rate": 2.93,
+    "dur": 2.73,
+    "p95": 413.0,
+    "voiced": 0.49,
+    "wer_strict": 0.25,
+    "lift": 10.8,
+    "peak": 13.7,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 5
+   },
+   {
+    "wer": 0.0,
+    "heard": "at the death hope returns their level.",
+    "mos": 3.35,
+    "sig": 3.52,
+    "range": 7.3,
+    "f0": 349.0,
+    "rate": 2.64,
+    "dur": 3.03,
+    "p95": 402.0,
+    "voiced": 0.54,
+    "wer_strict": 0.25,
+    "lift": 10.8,
+    "peak": 13.2,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 6
+   },
+   {
+    "wer": 0.0,
+    "heard": "at the death hope returns their level.",
+    "mos": 3.23,
+    "sig": 3.56,
+    "range": 9.6,
+    "f0": 318.0,
+    "rate": 2.47,
+    "dur": 3.24,
+    "p95": 372.0,
+    "voiced": 0.59,
+    "wer_strict": 0.25,
+    "lift": 9.2,
+    "peak": 11.9,
+    "squeal": false,
+    "miss": 0.0,
+    "seed": 7
    }
   ]
  },
@@ -9609,12 +10181,10 @@
    11,
    18
   ],
-  "seed": 2,
+  "seed": 4,
   "resting_f0": 126.0,
-  "dur": 2.01,
-  "weak": [
-   "words"
-  ],
+  "dur": 1.92,
+  "weak": [],
   "takes": [
    {
     "wer": 0.5,
@@ -9630,12 +10200,12 @@
     "wer_strict": 0.75,
     "lift": -99.0,
     "peak": -99.0,
-    "squeal": false,
+    "squeal": true,
     "miss": 10.0,
     "seed": 1
    },
    {
-    "wer": 0.5,
+    "wer": 0.25,
     "heard": "Light equalizer, get in!",
     "mos": 3.64,
     "sig": 3.53,
@@ -9653,7 +10223,7 @@
     "seed": 2
    },
    {
-    "wer": 0.25,
+    "wer": 0.0,
     "heard": "Late equalizer, get in!",
     "mos": 3.35,
     "sig": 3.35,
@@ -9666,9 +10236,81 @@
     "wer_strict": 0.25,
     "lift": -99.0,
     "peak": -99.0,
-    "squeal": false,
+    "squeal": true,
     "miss": 10.0,
     "seed": 3
+   },
+   {
+    "wer": 0.0,
+    "heard": "Late equalizer, get in.",
+    "mos": 3.41,
+    "sig": 3.27,
+    "range": 20.5,
+    "f0": 223.0,
+    "rate": 2.09,
+    "dur": 1.92,
+    "p95": 311.0,
+    "voiced": 0.28,
+    "wer_strict": 0.25,
+    "lift": 9.9,
+    "peak": 15.6,
+    "squeal": false,
+    "miss": 1.1,
+    "seed": 4
+   },
+   {
+    "wer": 0.25,
+    "heard": "Then equalizer, get in!",
+    "mos": 2.92,
+    "sig": 3.46,
+    "range": 0.0,
+    "f0": 0,
+    "rate": 2.44,
+    "dur": 1.64,
+    "p95": 0,
+    "voiced": 0.0,
+    "wer_strict": 0.5,
+    "lift": -99.0,
+    "peak": -99.0,
+    "squeal": true,
+    "miss": 10.0,
+    "seed": 5
+   },
+   {
+    "wer": 0.5,
+    "heard": "Lady equalizer, turn in.",
+    "mos": 3.68,
+    "sig": 3.54,
+    "range": 22.2,
+    "f0": 182.0,
+    "rate": 2.26,
+    "dur": 1.77,
+    "p95": 375.0,
+    "voiced": 0.58,
+    "wer_strict": 0.75,
+    "lift": 6.4,
+    "peak": 18.9,
+    "squeal": false,
+    "miss": 4.6,
+    "seed": 6
+   },
+   {
+    "wer": 0.0,
+    "heard": "Late equalizer, get in.",
+    "mos": 3.13,
+    "sig": 3.26,
+    "range": 9.7,
+    "f0": 232.0,
+    "rate": 2.42,
+    "dur": 1.65,
+    "p95": 339.0,
+    "voiced": 0.43,
+    "wer_strict": 0.25,
+    "lift": 10.6,
+    "peak": 17.1,
+    "squeal": false,
+    "miss": 0.4,
+    "seed": 7
    }
   ]
  },

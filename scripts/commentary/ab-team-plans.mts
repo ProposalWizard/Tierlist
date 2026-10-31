@@ -6,7 +6,8 @@ import { readFileSync } from "node:fs";
 import { trackFromStored, type GoalTrack, type ClipMeta } from "../../lib/star/goalClip/track";
 import { makeEdit } from "../../lib/star/goalClip/edit";
 import { planAudio, finishOf } from "../../lib/star/goalClip/audio";
-import { TEAM_IDS, teamFor, matchKeyOf, type TeamId } from "../../lib/star/goalClip/commentators";
+import { TEAM_IDS, teamFor, teamBank, matchKeyOf, type TeamId } from "../../lib/star/goalClip/commentators";
+import { CALLS } from "../../lib/star/goalClip/commentary";
 
 const load = (f: string) => trackFromStored(JSON.parse(readFileSync(new URL(`../../tests/star/fixtures/goalClips/${f}`, import.meta.url), "utf8"))) as GoalTrack;
 const GOALS: { name: string; file: string; meta: Partial<ClipMeta> }[] = [
@@ -28,9 +29,15 @@ const out: Record<string, unknown> = {};
 for (const g of GOALS) {
   const tr = load(g.file);
   for (const team of [...TEAM_IDS, "v2" as const]) {
-    const meta = { ...tr.meta, ...g.meta, ...(team === "v2" ? {} : matchFor(team)), id: `ab-${g.name}` };
-    const e = makeEdit([{ ...tr, meta }], "broadcast", "new", 0);
-    const p = planAudio(e, team === "v2" ? "v2" : "teams");
+    // The screamer: a goal whose call is one of the long-range lines (the
+    // game picks one 2 times in 3), so the page plays the screamer call.
+    const longIds = new Set((team === "v2" ? CALLS.long_range : teamBank(team).calls.long_range).map(l => l.id));
+    let meta = { ...tr.meta, ...g.meta, ...(team === "v2" ? {} : matchFor(team)), id: `ab-${g.name}` };
+    let p = planAudio(makeEdit([{ ...tr, meta }], "broadcast", "new", 0), team === "v2" ? "v2" : "teams");
+    for (let i = 0; g.name === "screamer" && i < 50 && !p.cues.some(c => longIds.has(c.sound)); i++) {
+      meta = { ...meta, id: `ab-${g.name}-${i}` };
+      p = planAudio(makeEdit([{ ...tr, meta }], "broadcast", "new", 0), team === "v2" ? "v2" : "teams");
+    }
     if (team !== "v2" && p.team !== team) throw new Error(`wanted ${team}, got ${p.team}`);
     out[`${team}/${g.name}`] = { ...p, finish: finishOf({ ...tr, meta }) };
   }

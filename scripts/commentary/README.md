@@ -23,8 +23,8 @@ v1 lines re-read. Voices and licences: `public/sfx/teams/LICENSE.txt`.
 
 | Team | Lead | Co | Picked for |
 |------|------|----|-----------|
-| Matchday | The Anchor (classic, measured; bm_george) | The Old Pro (bm_daniel) | TV accounts / any match |
-| Big Night | The Poet (lyrical; bf_emma) | The Analyst (bf_lily) | TV accounts / any match |
+| Matchday | The Anchor (classic, measured; bm_george) | The Analyst (bf_lily) | TV accounts / any match |
+| Big Night | The Poet (lyrical; bf_emma) | The Old Pro (bm_daniel) | TV accounts / any match |
 | Late Show | The Deadpan (dry; bf_isabella) | The Old Pro | TV accounts / any match |
 | Fan TV | The Live Wire (excitable; bm_fable) | The Mate (am_puck) | non-official accounts / any match |
 

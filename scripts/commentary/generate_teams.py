@@ -107,14 +107,16 @@ _SMALL = {"is", "are", "has", "have", "a", "the", "and", "oh", "s", "re", "ve", 
 
 # Same word, other spelling (the recogniser writes American English) or a
 # word that sounds exactly the same.
-_ALIAS = {"practice": "practise", "sores": "soars", "defense": "defence", "equalizer": "equaliser",
-          "his": "he", "at": "had"}
+_ALIAS = {"practice": "practise", "practiced": "practised", "sores": "soars", "defense": "defence",
+          "equalizer": "equaliser", "his": "he", "at": "had", "their": "they", "there": "they", "pix": "picks",
+          "unsavable": "unsaveable", "gotta": "got to", "brush": "brushstroke", "stroke": ""}
 
 
 def loose(s):
     s = re.sub(r"'(s|re|ve|ll|d)\b", " ", s.lower().replace("’", "'"))
+    s = re.sub(r"[^a-z0-9 ]+", " ", s)
     s = " ".join(_ALIAS.get(w, w) for w in s.split())
-    return " ".join(w for w in re.sub(r"[^a-z0-9 ]+", " ", s).split() if w not in _SMALL)
+    return " ".join(w for w in s.split() if w not in _SMALL)
 
 
 def word_miss(text, heard):
@@ -132,7 +134,8 @@ def judge(sc, base, window, text):
     sc["wer"] = word_miss(text, sc["heard"])
     sc["lift"] = round(semis(sc["f0"], base), 1) if sc["f0"] else -99.0
     sc["peak"] = round(semis(sc.get("p95", 0), base), 1) if sc.get("p95") else -99.0
-    sc["squeal"] = bool(sc["peak"] > CAP)
+    # No pitch found at all (a hoarse shout) cannot be checked: treated like a squeal.
+    sc["squeal"] = bool(sc["peak"] > CAP or sc["peak"] == -99.0)
     lo, hi = window
     sc["miss"] = round(max(0.0, lo - sc["lift"], sc["lift"] - hi), 1) if sc["f0"] else 10.0
     return sc
@@ -172,6 +175,7 @@ def rejudge(models):
         takes = []
         for t in r["takes"]:
             t["wer"] = word_miss(r["spoken"], t["heard"])
+            t["squeal"] = bool(t["peak"] > CAP or t["peak"] == -99.0)
             takes.append({"seed": t["seed"], "text": r["spoken"], "score": t})
         best = pick(takes)
         if best["seed"] != r["seed"]:
@@ -257,7 +261,11 @@ def main():
         t0 = time.time()
         takes = []
         seed0 = 1
-        for old in (report.get(lid, {}).get("takes", []) if only else []):
+        # Old takes count only when they said the same words.
+        same = report.get(lid, {}).get("spoken") == text
+        if lid in report and not same:
+            seed0 = max(t["seed"] for t in report[lid]["takes"]) + 1  # never overwrite an old take's file
+        for old in (report.get(lid, {}).get("takes", []) if only and same else []):
             f = os.path.join(take_dir, f"{lid}-{old['seed']}.wav")
             if os.path.exists(f):
                 takes.append({"seed": old["seed"], "text": text, "wav": sf.read(f, dtype="float32")[0],

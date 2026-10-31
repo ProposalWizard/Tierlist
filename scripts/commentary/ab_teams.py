@@ -136,8 +136,8 @@ def main():
     open(os.path.join(out, "index.html"), "w").write(page(data))
 
 
-TEAMS = [("matchday", "Matchday", "The Anchor", "The Old Pro", "anchor", "pro"),
-         ("bignight", "Big Night", "The Poet", "The Analyst", "poet", "analyst"),
+TEAMS = [("matchday", "Matchday", "The Anchor", "The Analyst", "anchor", "analyst"),
+         ("bignight", "Big Night", "The Poet", "The Old Pro", "poet", "pro"),
          ("lateshow", "Late Show", "The Deadpan", "The Old Pro", "deadpan", "pro"),
          ("fantv", "Fan TV", "The Live Wire", "The Mate", "wire", "mate")]
 NAMES = {"anchor": "The Anchor", "poet": "The Poet", "deadpan": "The Deadpan", "wire": "The Live Wire",
@@ -199,7 +199,7 @@ td.hi {{ color:var(--warn); font-weight:700; }} code {{ font-size:12px; }}
 </style></head><body><main>
 <header><h1>Commentator teams: A/B</h1><p class="muted">Leo, 31 Oct 2026. Four commentary teams, each with its own voices and its own lines, behind Settings → Updates → Leo's update → “Different commentators”. Every clip below is the game's real sound plan for that goal, mixed the way the goal video mixes it (crowd, kick, net, roar, the call, the replay).</p></header>
 <div class="first"><b>Listen to this first:</b> the <b>Screamer from distance</b> row, left to right (Matchday, Big Night, Late Show, Fan TV, then today's voice). It shows the four styles best in one go. Then the <b>Late winner</b> row: the biggest calls, where a squeal would show. Headphones help.</div>
-<div class="first"><b>The truth:</b> these were made and checked by a script that cannot hear. Each line was generated up to 3 times; Whisper had to hear the words, a pitch cap rejected squeals, and DNSMOS scored cleanness. The numbers are below. Whether the voices sound human is for your ears.</div>
+<div class="first"><b>The truth:</b> these were made and checked by a script that cannot hear. Each line was generated 1 to 4 times (stopping at the first take that passed; doubtful lines up to 7); Whisper had to hear the words, a pitch cap rejected squeals, and DNSMOS scored cleanness. The numbers are below. Whether the voices sound human is for your ears.</div>
 {''.join(rows)}
 <section><h2>Each voice: its 5 best lines</h2><div class="voices">{''.join(best)}</div></section>
 {meas}
