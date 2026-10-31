@@ -81,14 +81,14 @@ for (const job of jobs) {
     writeFileSync(join(tmp, `${String(f).padStart(5, "0")}.jpg`), Buffer.from(url.split(",")[1], "base64"));
   }
   const mp4 = join(outDir, `${job.name}.mp4`);
-  execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-framerate", String(info.fps), "-i", join(tmp, "%05d.jpg"), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "26", mp4]);
+  execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-framerate", String(info.fps), "-i", join(tmp, "%05d.jpg"), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "31", "-preset", "slow", mp4]);
   const tall = info.h > info.w;
   const cellW = tall ? 150 : 256;
   const cols = tall ? 10 : 6;
   const rows = Math.ceil((frames / info.fps) * 4 / cols);
   execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-framerate", String(info.fps), "-i", join(tmp, "%05d.jpg"),
     "-vf", `fps=4,scale=${cellW}:-2,drawtext=text='%{pts\\:flt}':x=3:y=3:fontsize=12:fontcolor=yellow:box=1:boxcolor=black@0.6,tile=${cols}x${rows}:padding=2:color=black`,
-    "-frames:v", "1", "-q:v", "5", join(outDir, `${job.name}-sheet.jpg`)]);
+    "-frames:v", "1", "-q:v", "9", join(outDir, `${job.name}-sheet.jpg`)]);
   rmSync(tmp, { recursive: true, force: true });
   console.log(`${job.name}: ${info.duration.toFixed(2)} s, ${info.shots} shots, ${info.w}x${info.h}`);
 }

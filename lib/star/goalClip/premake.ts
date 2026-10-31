@@ -28,9 +28,12 @@ import { leoUpdateOn } from "../leoUpdate";
 /** The one name a goal video is kept under (memory and the phone). A smooth
  *  video (Leo's update "smoothGoals", goalClip/smooth.ts) has its own name, so
  *  it is never mixed up with the stiff one; off, the name is as it always was. */
-export function goalVideoKey(style: ClipStyle, variant: number, moves: ClipMoves, clipIds: string[], synth: SynthGoal[] | undefined, handle: string | undefined, smooth = false): string {
+export function goalVideoKey(style: ClipStyle, variant: number, moves: ClipMoves, clipIds: string[], synth: SynthGoal[] | undefined, handle: string | undefined, smooth = false, better = false, captions?: string[]): string {
   const synthKey = (synth ?? []).map(g => g.seed).join(",");
-  return `${style}|${variant}|${moves}|${clipIds.join(",")}|${synthKey}|${handle ?? ""}${smooth ? "|smooth" : ""}`;
+  // Better videos (Leo's switch part "betterVideos") have their own name, and
+  // so does each set of captions; off, the name is as it always was.
+  const betterKey = better ? `|better2${captions?.length ? `|${captions.join("/")}` : ""}` : "";
+  return `${style}|${variant}|${moves}|${clipIds.join(",")}|${synthKey}|${handle ?? ""}${smooth ? "|smooth" : ""}${betterKey}`;
 }
 
 /** Recorded goals and made ones together, in the order they were scored (as GoalVideo does).
@@ -62,15 +65,16 @@ export async function premakeFeedVideos(posts: StoredPost[]): Promise<void> {
     .slice(0, 3);
   const moves = animationsLook();
   const smooth = leoUpdateOn("smoothGoals");
+  const better = leoUpdateOn("betterVideos");
   for (const { p, g } of wanted) {
     try {
-      const style = g.style ?? clipStyleFor(p.author);
+      const style = g.style ?? clipStyleFor({ ...p.author, persona: p.persona }, better);
       const variant = g.variant ?? clipVariantFor(p.author);
       const tracks = await tracksFor(g.clips, g.synth, smooth);
       if (!tracks.length) continue;
-      const edit = makeEdit(tracks, style, moves, variant);
+      const edit = makeEdit(tracks, style, moves, variant, better ? { better } : undefined);
       const credit = { handle: p.author.handle, name: p.author.name };
-      const key = goalVideoKey(style, variant, moves, g.clips, g.synth, credit.handle, smooth);
+      const key = goalVideoKey(style, variant, moves, g.clips, g.synth, credit.handle, smooth, better);
       const audio = await mixAudio(planAudio(edit)).catch(() => null);
       await makeVideo(key, edit, { credit, audio });
     } catch { /* the feed makes it when it opens, as before */ }

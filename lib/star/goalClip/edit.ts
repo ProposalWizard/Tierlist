@@ -15,8 +15,12 @@
  */
 import { trackDuration, type GoalTrack } from "./track";
 import type { ClipAngle } from "./cameras";
+import { makeBetterEdit, type EditOptions } from "./editBetter";
+export type { EditOptions } from "./editBetter";
 
-export type ClipStyle = "broadcast" | "reverse" | "fan" | "tiktok";
+export type ClipStyle = "broadcast" | "reverse" | "fan" | "tiktok"
+  /** Better goal videos only (switch part "betterVideos"): every goal, quick cuts, a stats card. */
+  | "highlights";
 
 export interface Shot {
   /** Which recording (index into Edit.tracks). */
@@ -30,6 +34,31 @@ export interface Shot {
   replay: boolean;
   /** A big caption over this shot (the TikTok cut). */
   caption?: string;
+  /** Better videos only: a still held this long (seconds) at `from` (a freeze
+   *  frame, or the picture behind an end card). Absent: plays from → to. */
+  hold?: number;
+  /** Better videos only: what is laid over the picture (betterRender.ts). */
+  fx?: ShotFx;
+}
+
+/**
+ * The effects on a shot of a better video (Leo's switch part "betterVideos").
+ * Times marked "clip" are recording seconds; the rest are seconds into the
+ * shot as it plays. All pure numbers, the same every time.
+ */
+export interface ShotFx {
+  /** A digital zoom about the ball: `from` → `to` over the first `over` s of the shot. */
+  zoom?: { from: number; to: number; over: number };
+  /** A white flash at this clip time. */
+  flashAt?: number;
+  /** A white flash as the shot starts (a flash cut). */
+  flashCut?: boolean;
+  /** The picture shakes from this clip time (the goal), dying away. */
+  shakeAt?: number;
+  /** A small label in the corner of a replay ("REVERSE ANGLE"). */
+  label?: string;
+  /** A full-picture card over a held still. */
+  card?: "name" | "stats";
 }
 
 /**
@@ -41,6 +70,11 @@ export type ClipMoves = "new" | "old";
 
 export interface Edit {
   style: ClipStyle;
+  /** Better videos (switch part "betterVideos"): drawn by betterRender.ts.
+   *  Absent with the part off, so an old edit is the same object as before. */
+  better?: true;
+  /** Better videos: the colour of the captions and cards. */
+  accent?: string;
   /** Which of the poster's cuts this is (an account always cuts its own way). */
   variant: number;
   moves: ClipMoves;
@@ -59,14 +93,14 @@ export const EDIT_FPS = 30;
 /** Slow motion speed for a replay. */
 export const REPLAY_RATE = 0.45;
 
-function replayWindow(t: GoalTrack): { from: number; to: number } {
+export function replayWindow(t: GoalTrack): { from: number; to: number } {
   const dur = trackDuration(t);
   const from = Math.max(0, Math.min(t.strikeT - 0.8, t.goalT - 1.3));
   return { from, to: Math.min(dur, t.goalT + 0.7) };
 }
 
 /** A tighter window for a second replay: just the strike and the finish. */
-function closeWindow(t: GoalTrack): { from: number; to: number } {
+export function closeWindow(t: GoalTrack): { from: number; to: number } {
   const dur = trackDuration(t);
   return { from: Math.max(0, Math.min(t.strikeT - 0.35, t.goalT - 0.8)), to: Math.min(dur, t.goalT + 0.45) };
 }
@@ -102,7 +136,10 @@ const replay = (track: number, angle: ClipAngle, w: { from: number; to: number }
  *  - fan: the phone in the stand, as it happened;
  *  - tiktok: tall, slows right down for the strike, big captions, then once more.
  */
-export function makeEdit(tracks: GoalTrack[], style: ClipStyle, moves: ClipMoves = "old", variant = 0): Edit {
+export function makeEdit(tracks: GoalTrack[], style: ClipStyle, moves: ClipMoves = "old", variant = 0, opts?: EditOptions): Edit {
+  if (opts?.better) return makeBetterEdit(tracks, style, moves, variant, opts);
+  // A "highlights" cut asked for with the part off: the pages' cut, as before.
+  if (style === "highlights") style = "reverse";
   const size = style === "fan" || style === "tiktok" ? TALL : WIDE;
   const shots: Shot[] = [];
   const v = Math.abs(Math.floor(variant));
@@ -159,6 +196,7 @@ const TIKTOK_OPEN = ["WAIT FOR IT", "WATCH THIS", "NO WAY HE TRIES THIS", "KEEP 
 const TIKTOK_HIT = ["UNREAL", "HE DID THAT", "COLD", "ABSOLUTE SCENES", "DISGUSTING FINISH", "SIT DOWN KEEPER"];
 
 export function shotLength(s: Shot): number {
+  if (s.hold !== undefined) return Math.max(0, s.hold);
   return Math.max(0, (s.to - s.from) / s.rate);
 }
 
@@ -187,7 +225,7 @@ export function momentAt(e: Edit, outT: number): EditMoment {
     const len = shotLength(s);
     if (outT < acc + len || i === e.shots.length - 1) {
       const into = Math.max(0, Math.min(len, outT - acc));
-      return { shot: i, t: s.from + into * s.rate, intoShot: into };
+      return { shot: i, t: s.hold !== undefined ? s.from : s.from + into * s.rate, intoShot: into };
     }
     acc += len;
   }
@@ -207,7 +245,7 @@ export function posterMoment(e: Edit): EditMoment {
 /** A file name a phone will keep: "Goal-Saka-63-ARS-v-CHE.mp4". */
 /** The camera, in a saved file's name, so the TV and the fan's video of the
  *  same goal are two files, not one file saved over the other. */
-const STYLE_IN_NAME: Record<ClipStyle, string> = { broadcast: "TV", reverse: "Highlights", fan: "Fan-cam", tiktok: "Edit" };
+const STYLE_IN_NAME: Record<ClipStyle, string> = { broadcast: "TV", reverse: "Highlights", fan: "Fan-cam", tiktok: "Edit", highlights: "Reel" };
 
 export function clipFileName(tracks: GoalTrack | GoalTrack[], ext: string, style?: ClipStyle): string {
   const clean = (s: string) => s.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "");
