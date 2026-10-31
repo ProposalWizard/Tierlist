@@ -36,6 +36,12 @@ const shortSeason = (startYear: number, season: number): string => seasonLabelOf
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsOf } from "@/lib/star/kits";
 import GoalClipViewer from "./GoalClipViewer";
+import dynamic from "next/dynamic";
+import { FavouriteStar, useFavouritesOn } from "./FavouriteGoalStar";
+import { useFavouriteGoals } from "@/lib/star/favouriteGoalsStore";
+
+/** The favourites reel is the season video's screen (loaded only when played). */
+const SeasonReel = dynamic(() => import("./SeasonReel"), { ssr: false });
 import { ClubCard, useClubTheme, rgba } from "./ui";
 import { CardTitle } from "./screenKit";
 
@@ -209,9 +215,19 @@ function GoalThumb({ goal, here }: { goal: CareerGoal; here: boolean }) {
 
 // ── A row ────────────────────────────────────────────────────────────────────
 
-function GoalRow({ goal, startYear, here, rank, onOpen }: {
+function GoalRow({ goal, startYear, here, rank, onOpen, fav = false }: {
   goal: CareerGoal; startYear: number; here: boolean; rank?: number; onOpen: () => void;
+  /** Leo's update part "seasonEnd": a ⭐ at the end of the row. */
+  fav?: boolean;
 }) {
+  if (fav) {
+    return (
+      <div className="flex items-center" style={{ background: "rgba(255,255,255,.035)" }}>
+        <div className="min-w-0 flex-1"><GoalRow goal={goal} startYear={startYear} here={here} rank={rank} onOpen={onOpen} /></div>
+        <FavouriteStar goalId={goal.id} />
+      </div>
+    );
+  }
   const tags = goalTags(goal);
   return (
     <button onClick={onOpen} className="kib-press flex w-full items-center gap-2.5 px-2 py-1.5 text-left" style={{ background: "rgba(255,255,255,.035)" }} data-goal-row={goal.id}>
@@ -302,6 +318,7 @@ export function GoalSheet({ goal, startYear, here, onClose }: { goal: CareerGoal
             <div className="truncate text-[16px] font-black text-white">{goalHeadline(goal)}</div>
             <div className="truncate text-[11px] font-bold text-white/65">{goal.competition} · {longSeason(startYear, goal.season)} · {resultWords(goal.score)}</div>
           </div>
+          <FavouriteStar goalId={goal.id} className="ml-auto" />
         </div>
         {here && goal.clipId
           ? (
@@ -318,7 +335,7 @@ export function GoalSheet({ goal, startYear, here, onClose }: { goal: CareerGoal
 
 // ── The gallery ──────────────────────────────────────────────────────────────
 
-type Filter = "all" | "best" | "video" | `comp:${string}`;
+type Filter = "all" | "best" | "fav" | "video" | `comp:${string}`;
 
 export default function CareerGoalsGallery({ career, goals: given }: {
   career: CareerState;
@@ -332,6 +349,11 @@ export default function CareerGoalsGallery({ career, goals: given }: {
   const [filter, setFilter] = useState<Filter>("all");
   const [open, setOpen] = useState<CareerGoal | null>(null);
   const [shown, setShown] = useState(PAGE);
+  // ⭐ favourites (Leo's update part "seasonEnd").
+  const favOn = useFavouritesOn();
+  const favStore = useFavouriteGoals();
+  const [favReel, setFavReel] = useState(false);
+  const favCount = favOn ? goals.filter(g => favStore.favs.has(g.id)).length : 0;
 
   const comps = useMemo(() => {
     const n = new Map<string, number>();
@@ -344,12 +366,13 @@ export default function CareerGoalsGallery({ career, goals: given }: {
 
   const list = useMemo(() => {
     if (filter === "best") return bestGoals(goals, 10);
+    if (filter === "fav") return goals.filter(g => favStore.favs.has(g.id)).reverse();
     let l = goals;
     if (filter === "video") l = l.filter(g => g.clipId && here?.has(g.clipId));
     else if (filter.startsWith("comp:")) l = l.filter(g => g.competition === filter.slice(5));
     // Newest first: the log is in the order they were scored.
     return [...l].reverse();
-  }, [goals, filter, here]);
+  }, [goals, filter, here, favStore.favs]);
 
   // More rows when the end of the list comes near.
   const end = useRef<HTMLDivElement>(null);
@@ -377,6 +400,7 @@ export default function CareerGoalsGallery({ career, goals: given }: {
   const chips: { id: Filter; label: string }[] = [
     { id: "all", label: `All ${goals.length}` },
     { id: "best", label: "Best 10" },
+    ...(favOn ? [{ id: "fav" as Filter, label: `★ Favourites ${favCount}` }] : []),
     ...(videos > 0 ? [{ id: "video" as Filter, label: `▶ Videos ${videos}` }] : []),
     ...comps.map(c => ({ id: `comp:${c}` as Filter, label: c })),
   ];
@@ -384,7 +408,7 @@ export default function CareerGoalsGallery({ career, goals: given }: {
   // Grouped by season (the Best 10 is one ranked list).
   const visible = list.slice(0, shown);
   const groups: { season: number; goals: CareerGoal[] }[] = [];
-  if (filter !== "best") {
+  if (filter !== "best" && filter !== "fav") {
     for (const g of visible) {
       const last = groups[groups.length - 1];
       if (last && last.season === g.season) last.goals.push(g);
@@ -412,11 +436,34 @@ export default function CareerGoalsGallery({ career, goals: given }: {
         })}
       </div>
 
-      {filter === "best" ? (
+      {filter === "fav" && favOn ? (
+        <ClubCard glow={glow} className="p-2" data-goals-favourites>
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <CardTitle>Your favourites · kept for ever</CardTitle>
+            {list.length > 0 && (
+              <button
+                onClick={() => setFavReel(true)}
+                className="kib-press shrink-0 px-2.5 py-1.5 text-[11px] font-black uppercase tracking-wide text-gray-950"
+                style={{ borderRadius: 3, background: "linear-gradient(180deg, #fde047, #f59e0b)" }}
+                data-goals-fav-reel
+              >
+                ▶ Play reel
+              </button>
+            )}
+          </div>
+          {list.length === 0 ? (
+            <div className="py-5 text-center text-[12px] font-bold text-white/65">Tap ☆ on any goal to keep it here. Its video is never deleted from this phone.</div>
+          ) : (
+            <div className="space-y-1">
+              {list.map(g => <GoalRow key={g.id} goal={g} startYear={startYear} here={isHere(g)} onOpen={() => setOpen(g)} fav />)}
+            </div>
+          )}
+        </ClubCard>
+      ) : filter === "best" ? (
         <ClubCard glow={glow} className="p-2">
           <CardTitle className="mb-1.5">Best 10 · these go into the Hall of Fame</CardTitle>
           <div className="space-y-1">
-            {list.map((g, k) => <GoalRow key={g.id} goal={g} startYear={startYear} here={isHere(g)} rank={k + 1} onOpen={() => setOpen(g)} />)}
+            {list.map((g, k) => <GoalRow key={g.id} goal={g} startYear={startYear} here={isHere(g)} rank={k + 1} onOpen={() => setOpen(g)} fav={favOn} />)}
           </div>
         </ClubCard>
       ) : list.length === 0 ? (
@@ -430,7 +477,7 @@ export default function CareerGoalsGallery({ career, goals: given }: {
                 <span className="text-[10px] font-black uppercase tracking-wider text-white/55">{perSeason.get(gr.season) ?? gr.goals.length} goals · {short(gr.goals[0].club)}</span>
               </div>
               <div className="space-y-1">
-                {gr.goals.map(g => <GoalRow key={g.id} goal={g} startYear={startYear} here={isHere(g)} onOpen={() => setOpen(g)} />)}
+                {gr.goals.map(g => <GoalRow key={g.id} goal={g} startYear={startYear} here={isHere(g)} onOpen={() => setOpen(g)} fav={favOn} />)}
               </div>
             </ClubCard>
           ))}
@@ -443,6 +490,11 @@ export default function CareerGoalsGallery({ career, goals: given }: {
       </div>
 
       {open && <GoalSheet goal={open} startYear={startYear} here={isHere(open)} onClose={() => setOpen(null)} />}
+      {favReel && favOn && onTop(
+        <div className="fixed inset-0 z-[90]" data-goals-fav-reel-open>
+          <SeasonReel career={career} better mode="favourites" onDone={() => setFavReel(false)} />
+        </div>,
+      )}
     </div>
   );
 }

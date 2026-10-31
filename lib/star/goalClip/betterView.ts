@@ -11,6 +11,7 @@ import { project } from "../firstPersonView";
 import { rigFor, smoothBall } from "./cameras";
 import { frameAt, type GoalTrack } from "./track";
 import type { Edit, EditMoment, Shot } from "./edit";
+import { flatAnchor } from "./render2d";
 
 export interface View {
   /** Zoom (1 = none) about the anchor (ax, ay), then moved by (dx, dy), pixels. */
@@ -67,7 +68,8 @@ export function viewAt(edit: Edit, m: EditMoment): View {
   let k = zoomOf(shot, m.intoShot);
   const sh = shakeOf(shot, m.t, edit.w, `${track.meta.id}|${edit.variant}`);
   if (k === 1 && !sh.x && !sh.y) return { k: 1, ax: 0, ay: 0, dx: 0, dy: 0 };
-  const a = anchorOf(track, shot, m.t, edit.w, edit.h);
+  // 2D goal videos ("videos2d"): the ball's place on the top-down picture.
+  const a = edit.flat ? flatAnchor(track, shot, m.t, edit.w, edit.h) : anchorOf(track, shot, m.t, edit.w, edit.h);
   // A shaking picture is made just big enough that its edges never show.
   if (sh.x || sh.y) {
     const room = Math.min(a.x, edit.w - a.x, a.y, edit.h - a.y);

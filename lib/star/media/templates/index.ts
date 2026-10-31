@@ -10,7 +10,8 @@ import { CASINO_TEMPLATES } from "./casino";
 import { RETIREMENT_TEMPLATES } from "./retirements";
 import { INTERNATIONAL_TEMPLATES } from "./international";
 import { TWITTER_BY_PERSONA, TWITTER_TEMPLATES } from "./twitter";
-import { footballTwitterOn } from "../updateFlags";
+import { footballTwitterOn, coldEditsOn } from "../updateFlags";
+import { COLD_BY_PERSONA_LINES } from "./coldEdits";
 
 /**
  * A scorer's name against a chant's, ignoring accents, hyphens and case, so
@@ -101,6 +102,9 @@ export interface Template {
   /** Used instead of `body` when the angle chose to lead with the running story. */
   threadBody?: string;
   graphic?: GraphicKind;
+  /** Cold edits only (part "coldEdits", templates/coldEdits.ts): the kind of
+   *  edit the words describe, so the video under them is that one. */
+  videoStyle?: "cold" | "aura" | "rewind" | "statCard" | "montage" | "angles";
   hashtag?: boolean;
   /**
    * Football Twitter (templates/twitter.ts): only an account with this
@@ -209,7 +213,10 @@ export function choosePersonaTemplate(
   rng: () => number,
   usedThisCycle: Set<string> = new Set(),
 ): Template | null {
-  return chooseFrom(TWITTER_BY_PERSONA.get(persona) ?? [], event, undefined, memory, rng, false, usedThisCycle);
+  const own = TWITTER_BY_PERSONA.get(persona) ?? [];
+  // Cold edits (part "coldEdits"): the account's lines about its edits join its own. Off: as before.
+  const pool = coldEditsOn() ? [...own, ...(COLD_BY_PERSONA_LINES.get(persona) ?? [])] : own;
+  return chooseFrom(pool, event, undefined, memory, rng, false, usedThisCycle);
 }
 
 function chooseFrom(

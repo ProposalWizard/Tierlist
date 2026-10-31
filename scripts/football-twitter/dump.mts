@@ -31,7 +31,7 @@ function show(p: StoredPost, i: number): string {
   if (p.sound) lines.push(`   ♫ ${p.sound}  (TikTok)`);
   if (p.quote) lines.push(`   ┌ quoting ${p.quote.name} ${p.quote.handle}${p.quote.graphic ? " [its video plays here]" : ""}: ${p.quote.text.replace(/\n/g, " / ")}`);
   lines.push(`   💬${k(m.replies)} 🔁${k(m.reposts)} ❤️${k(m.likes)}${m.views !== undefined ? ` 👁${k(m.views)} ❝${k(m.quotes ?? 0)}` : ""}`);
-  for (const r of p.thread ?? []) lines.push(`     ↳ ${r.name} ${r.handle}: ${r.text}  ❤️${k(r.likes)}`);
+  for (const r of p.thread ?? []) lines.push(`     ${r.to ? `   ↳ (to ${r.to}) ` : "↳ "}${r.name} ${r.handle}${r.side ? ` [${r.side}]` : ""}: ${r.text}  ❤️${k(r.likes)}${r.creatorLiked ? " · liked by creator" : ""}`);
   return lines.join("\n");
 }
 

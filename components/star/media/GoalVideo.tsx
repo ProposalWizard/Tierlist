@@ -7,13 +7,16 @@ import type { ClipCredit } from "@/lib/star/goalClip/render";
 import { saveVideo, videoSupported, type EncodedClip } from "@/lib/star/goalClip/encode";
 import { makeVideo, keptVideo, posterFor, workerReady, videosOnPage, startLive, warmLive } from "@/lib/star/goalClip/makeVideo";
 import { goalVideoKey } from "@/lib/star/goalClip/premake";
+import { isColdStyle } from "@/lib/star/goalClip/editCold";
 import { useAnimationsLook } from "@/lib/star/animLook";
-import { useLeoUpdate } from "@/lib/star/leoUpdate";
+import { useLeoUpdate, useGoalVideos2d } from "@/lib/star/leoUpdate";
+import { withFlat } from "@/lib/star/goalClip/render2d";
 import { smoothRecorded } from "@/lib/star/goalClip/smooth";
 import { synthTrack, type SynthGoal } from "@/lib/star/goalClip/synth";
 import { planAudio, mixAudio } from "@/lib/star/goalClip/audio";
 import { useClipSound, setClipSoundOn } from "@/lib/star/goalClip/sound";
 import { audioContext } from "@/lib/star/audioOut";
+import { FavouriteForClips } from "../FavouriteGoalStar";
 
 /**
  * A REAL GOAL VIDEO IN A POST (Leo, 7 Oct 2026: "it makes it look like theres
@@ -237,7 +240,9 @@ export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0,
   // Leo's update "betterVideos": more cameras, TikTok edits, fan phones, reels (goalClip/editBetter.ts). Off = as before.
   const better = useLeoUpdate("betterVideos");
   const capKey = (captions ?? []).join("/");
-  const key = goalVideoKey(style, variant, moves, clipIds, synth, credit?.handle, smooth, better, captions);
+  // Leo's update "videos2d" with 2D picked: the same video drawn from above (goalClip/render2d.ts). Off = as before.
+  const flat = useGoalVideos2d();
+  const key = goalVideoKey(style, variant, moves, clipIds, synth, credit?.handle, smooth, better, captions, flat);
 
   useEffect(() => {
     let live = true;
@@ -253,9 +258,10 @@ export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clipIds.join(","), synthKey]);
 
-  const edit = useMemo(() => (tracks && tracks.length ? makeEdit(smooth ? smoothRecorded(tracks) : tracks, style, moves, variant, better ? { better, captions } : undefined) : null),
+  // A cold edit's style (switch part "coldEdits", editCold.ts) is only given out with that part on.
+  const edit = useMemo(() => (tracks && tracks.length ? withFlat(makeEdit(smooth ? smoothRecorded(tracks) : tracks, style, moves, variant, better || isColdStyle(style) ? { better, captions } : undefined), flat) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tracks, style, moves, variant, smooth, better, capKey]);
+    [tracks, style, moves, variant, smooth, better, capKey, flat]);
 
   // Can this browser make the video at all? If not, the post is its plain
   // picture (`fallback`): no play button that cannot play.
@@ -684,6 +690,7 @@ export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0,
           </svg>
           Save video
         </button>
+        <FavouriteForClips clipIds={clipIds} />
         {status === "unsupported" && <span className="text-amber-200">This browser can&apos;t make videos.</span>}
         {status === "failed" && <span className="text-amber-200">The video could not be made.</span>}
         {note && status !== "unsupported" && status !== "failed" && <span className="text-emerald-300">{note}</span>}

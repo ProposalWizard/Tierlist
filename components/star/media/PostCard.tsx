@@ -69,24 +69,64 @@ function Quote({ q }: { q: QuotedPost }) {
   );
 }
 
-/** The top replies, under the post (Football Twitter). */
+/**
+ * The top replies, under the post (Football Twitter). Round 4 (Leo, 31 Oct
+ * 2026): a reply that answers another reply (an argument between a fan and
+ * a rival) sits one step in, under "Replying to @…", like the real app.
+ */
 function Replies({ thread }: { thread: PostReply[] }) {
   return (
-    <div className="mt-2 space-y-2 border-l-2 border-white/10 pl-3">
+    <div className="mt-2 space-y-2 border-l-2 border-white/10 pl-3" data-replies>
       {thread.map((r, i) => (
-        <div key={i} className="flex gap-2">
-          <Avatar initials={r.initials} tint={r.tint} tint2={r.tint2} glyph={r.glyph} size={22} />
+        <div key={i} className={`flex gap-2 ${r.to ? "ml-5" : ""}`} {...(r.to ? { "data-reply-to": r.to } : {})}>
+          <Avatar initials={r.initials} tint={r.tint} tint2={r.tint2} glyph={r.glyph} size={r.to ? 18 : 22} />
           <div className="min-w-0 flex-1 text-[13px] leading-[1.3]">
             <span className="flex items-center gap-1">
               <span className="truncate font-bold text-white">{r.name}</span>
               {r.verified && <Tick tick={r.tick} size={12} />}
               <span className="min-w-0 truncate text-white/55">{r.handle}</span>
             </span>
+            {r.to && <span className="block text-[12px] text-white/45">Replying to <span className="text-[#1d9bf0]">{r.to}</span></span>}
             <p className="break-words text-white/90">{r.text}</p>
           </div>
           <span className="shrink-0 self-start text-[12px] text-white/55">♥ {count(r.likes)}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+/**
+ * A TikTok post's comment section (round 4): usernames, not names; the
+ * heart and its count down the right; "Liked by creator"; a reply to a
+ * comment sits under it, one step in, as "Reply to @…".
+ */
+function TikTokComments({ thread, total }: { thread: PostReply[]; total: number }) {
+  return (
+    <div className="mt-2 rounded-xl bg-white/[0.04] px-2.5 py-2" data-tiktok-comments>
+      <div className="mb-1.5 text-center text-[12px] font-semibold text-white/70">{count(Math.max(total, thread.length))} comments</div>
+      <div className="space-y-2.5">
+        {thread.map((r, i) => (
+          <div key={i} className={`flex gap-2 ${r.to ? "ml-8" : ""}`} {...(r.to ? { "data-reply-to": r.to } : {})}>
+            <Avatar initials={r.initials} tint={r.tint} tint2={r.tint2} glyph={r.glyph} size={r.to ? 20 : 26} />
+            <div className="min-w-0 flex-1 text-[13px] leading-[1.3]">
+              <span className="block truncate text-[12px] font-semibold text-white/55">{r.handle.replace(/^@/, "")}</span>
+              <p className="break-words text-white/90">
+                {r.to && <span className="text-white/55">Reply to <span className="font-semibold text-white/70">{r.to.replace(/^@/, "")}</span>: </span>}
+                {r.text}
+              </p>
+              <span className="mt-0.5 flex items-center gap-3 text-[11px] text-white/45">
+                <span>Reply</span>
+                {r.creatorLiked && <span className="font-semibold text-[#fe2c55]">♥ Liked by creator</span>}
+              </span>
+            </div>
+            <span className="flex shrink-0 flex-col items-center self-start text-[11px] text-white/55">
+              <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden><path fill="none" stroke="currentColor" strokeWidth="2" d="M12 21s-7.5-4.6-9.6-9A5.4 5.4 0 0112 5.6 5.4 5.4 0 0121.6 12c-2.1 4.4-9.6 9-9.6 9z" /></svg>
+              {count(r.likes)}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -238,7 +278,9 @@ export default function PostCard({ post, now, onToggleLike, onVote }: {
           <svg {...ICON} aria-hidden><path d="M12 3v13M7 8l5-5 5 5M5 14v5a2 2 0 002 2h10a2 2 0 002-2v-5" /></svg>
         </footer>
         )}
-        {!!post.thread?.length && <Replies thread={post.thread} />}
+        {!!post.thread?.length && (tiktok
+          ? <TikTokComments thread={post.thread} total={post.metrics.replies} />
+          : <Replies thread={post.thread} />)}
       </div>
     </article>
   );

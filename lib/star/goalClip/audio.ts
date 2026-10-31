@@ -113,6 +113,8 @@ export interface AudioPlan {
   voice?: CommentarySet;
   /** "teams" only: which commentary team (commentators.ts) speaks. */
   team?: TeamId;
+  /** Cold edits only (switch part "coldEdits"): the edit's beat, under everything. */
+  music?: { url: string; at: number; offset: number; gain: number };
 }
 
 /** Crowd murmur levels. */
@@ -150,6 +152,8 @@ export function planAudio(edit: Edit, voice: CommentarySet = commentarySet(), po
   const cues: Cue[] = [];
   const bed: BedPoint[] = [];
   const fan = edit.style === "fan";
+  // A cold edit (switch part "coldEdits") is set to music: no commentator, the pitch under the beat.
+  const edited = !!edit.music;
   let acc = 0;
   let goalNo = 0;
   // One starting line for the whole video, then the next one per goal, so a
@@ -207,7 +211,7 @@ export function planAudio(edit: Edit, voice: CommentarySet = commentarySet(), po
       if (goalIn) {
         bed.push({ at: out(tr.goalT), gain: BED_GOAL });
         cues.push({ at: Math.max(acc, out(tr.goalT) - 0.05), sound: "crowd-cheer-stadium", gain: fan ? 1 : 0.85, rate: 1 });
-        if (!fan) {
+        if (!fan && !edited) {
           // The call, then (if there is room before the next goal) what it means.
           // A big late moment gets a late call; every other goal as before.
           const late = lateOf(tr);
@@ -240,7 +244,7 @@ export function planAudio(edit: Edit, voice: CommentarySet = commentarySet(), po
       // The replay: the crowd drops back; the commentator talks over it.
       bed.push({ at: acc, gain: BED_REPLAY });
       bed.push({ at: acc + len, gain: BED_REPLAY });
-      if (!fan && edit.style !== "tiktok") {
+      if (!fan && !edited && edit.style !== "tiktok") {
         // A reel: a line about the game first, if there is room.
         const reel = edit.tracks.length > 1;
         const lines = [
@@ -268,6 +272,16 @@ export function planAudio(edit: Edit, voice: CommentarySet = commentarySet(), po
   });
   cues.sort((a, b) => a.at - b.at);
   bed.sort((a, b) => a.at - b.at);
+  if (edited && edit.music) {
+    // Set to music: the kicks and the net quieter, the crowd well back.
+    const m = edit.music;
+    return {
+      duration: acc,
+      cues: cues.filter(c => !isComm(c.sound)).map(c => ({ ...c, gain: c.gain * (c.sound === "crowd-cheer-stadium" ? 0.35 : 0.55) })),
+      bed: bed.map(b => ({ ...b, gain: b.gain * 0.3 })),
+      music: { url: m.url, at: m.at, offset: m.offset, gain: m.gain },
+    };
+  }
   if (voice === "teams") return { duration: acc, cues, bed, voice, team };
   return voice === "v2" ? { duration: acc, cues, bed, voice } : { duration: acc, cues, bed };
 }
@@ -427,6 +441,29 @@ export async function mixAudio(plan: AudioPlan): Promise<AudioBuffer | null> {
     g.gain.value = c.gain;
     src.connect(g); g.connect(isComm(c.sound) ? lowCut : pitchBus);
     src.start(Math.max(0, c.at));
+  }
+
+  // A cold edit's beat (switch part "coldEdits"): from its offset, so its drop
+  // lands on the video's drop; faded out over the last half second.
+  if (plan.music) {
+    const m = plan.music;
+    let hit = bytes.get(m.url);
+    if (!hit) {
+      hit = fetch(m.url).then(r => (r.ok ? r.arrayBuffer() : null)).catch(() => null);
+      bytes.set(m.url, hit);
+    }
+    const data = await hit;
+    const buf = data ? await decode(ctx, data) : null;
+    if (buf) {
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(m.gain, 0);
+      g.gain.setValueAtTime(m.gain, Math.max(0, plan.duration - 0.5));
+      g.gain.linearRampToValueAtTime(0, plan.duration);
+      src.connect(g); g.connect(master);
+      src.start(Math.max(0, m.at), Math.max(0, m.offset));
+    }
   }
 
   try {

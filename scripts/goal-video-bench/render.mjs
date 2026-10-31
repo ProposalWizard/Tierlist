@@ -81,7 +81,13 @@ for (const job of jobs) {
     writeFileSync(join(tmp, `${String(f).padStart(5, "0")}.jpg`), Buffer.from(url.split(",")[1], "base64"));
   }
   const mp4 = join(outDir, `${job.name}.mp4`);
-  execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-framerate", String(info.fps), "-i", join(tmp, "%05d.jpg"), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "31", "-preset", "slow", mp4]);
+  // A cold edit's beat (its music only; the game also mixes the kicks and the crowd under it).
+  const music = info.music ? join(root, "public", info.music.url) : null;
+  const audioIn = music && existsSync(music)
+    ? ["-ss", String(info.music.offset), "-i", music, "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "128k",
+      "-af", `adelay=${Math.round(info.music.at * 1000)}:all=1,afade=t=out:st=${Math.max(0, info.duration - 0.5).toFixed(2)}:d=0.5`, "-t", info.duration.toFixed(3)]
+    : [];
+  execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-framerate", String(info.fps), "-i", join(tmp, "%05d.jpg"), ...audioIn, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "31", "-preset", "slow", mp4]);
   const tall = info.h > info.w;
   const cellW = tall ? 150 : 256;
   const cols = tall ? 10 : 6;

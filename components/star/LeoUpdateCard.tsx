@@ -5,7 +5,7 @@
  * exactly as before. Per device.
  */
 import { useEffect, useState } from "react";
-import { LEO_FEATURES, keeperLookChoice, leoUpdateOn, setKeeperLookChoice, setLeoFeature, setLeoUpdate, type LeoFeature } from "@/lib/star/leoUpdate";
+import { LEO_FEATURES, GOAL_VIDEO_LOOKS, goalVideoLookChoice, keeperLookChoice, leoUpdateOn, setGoalVideoLookChoice, setKeeperLookChoice, setLeoFeature, setLeoUpdate, type LeoFeature } from "@/lib/star/leoUpdate";
 import { KEEPER_LOOKS } from "@/lib/star/keeperShow";
 import LiveChancesSettings from "./LiveChancesSettings";
 import { SetCard, SetHead, SetNote, SetToggle } from "./settingsKit";
@@ -44,6 +44,14 @@ export default function LeoUpdateCard({ glow }: { glow: string }) {
                 {KEEPER_LOOKS.map((l) => (
                   <button key={l.id} type="button" onClick={() => setKeeperLookChoice(l.id)} title={l.line}
                     className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${keeperLookChoice() === l.id ? "bg-white text-black" : "bg-white/10 text-white"}`}>{l.label}</button>
+                ))}
+              </div>
+            )}
+            {f.id === "videos2d" && partOn("videos2d") && (
+              <div className="mb-2 flex flex-wrap gap-1.5 pl-1" data-goal-video-look>
+                {GOAL_VIDEO_LOOKS.map((l) => (
+                  <button key={l.id} type="button" onClick={() => setGoalVideoLookChoice(l.id)} title={l.line} data-goal-video-look-pick={l.id}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${goalVideoLookChoice() === l.id ? "bg-white text-black" : "bg-white/10 text-white"}`}>{l.label}</button>
                 ))}
               </div>
             )}
