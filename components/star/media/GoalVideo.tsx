@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
 import { getClips } from "@/lib/star/goalClip/store";
 import { makeEdit, editDuration, clipFileName, type ClipStyle } from "@/lib/star/goalClip/edit";
@@ -183,6 +183,39 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
   const audible = soundOn && !blocked;
   // Near the screen (start making it) and on it (play it).
   const wrapRef = useRef<HTMLDivElement>(null);
+  // FULL SCREEN (Leo, 31 Oct 2026: "add fullscreen button to videos, obvs").
+  // The frame moves into a black cover over the whole page (works everywhere,
+  // iPhone included); where the browser allows it, the page goes truly full
+  // screen too. Esc, the cross, or leaving full screen closes it.
+  const [full, setFull] = useState(false);
+  const fullRef = useRef<HTMLDivElement>(null);
+  // The feed's posts are drawn with content-visibility, which traps a fixed
+  // cover inside the post (seen on a phone without page full screen). So
+  // while full, the cover itself is lifted to the end of <body>, and put
+  // back before React touches it again. Moved, not re-made: the live
+  // player's canvas keeps playing.
+  useLayoutEffect(() => {
+    const el = fullRef.current;
+    if (!full || !el) return;
+    const home = el.parentNode;
+    const next = el.nextSibling;
+    document.body.appendChild(el);
+    return () => { if (home && home.isConnected) home.insertBefore(el, next && next.parentNode === home ? next : null); else el.remove(); };
+  }, [full]);
+  useEffect(() => {
+    if (!full) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setFull(false); };
+    const onFs = () => { if (!document.fullscreenElement) setFull(false); };
+    window.addEventListener("keydown", onKey);
+    document.addEventListener("fullscreenchange", onFs);
+    const el = fullRef.current;
+    if (el && el.requestFullscreen && !document.fullscreenElement) el.requestFullscreen().catch(() => { /* the cover is enough */ });
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("fullscreenchange", onFs);
+      if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    };
+  }, [full]);
   const [near, setNear] = useState(false);
   const [onView, setOnView] = useState(false);
   // Tapped: show how far it has got, and play it the moment it is made.
@@ -511,9 +544,14 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
 
   return (
     <div ref={wrapRef} className={tall ? "w-[64%] max-w-[260px]" : "w-full"} data-goal-video data-clip-style={style} data-goal-video-status={status}>
+      {/* A placeholder keeps the post's height while the frame is full screen. */}
+      {full && <div className="rounded-xl bg-black" style={{ aspectRatio: `${edit.w} / ${edit.h}` }} />}
+      <div ref={fullRef} className={full ? "fixed inset-0 z-[300] flex items-center justify-center bg-black" : "contents"} data-goal-video-full={full ? "on" : "off"}>
       <div
-        className="relative overflow-hidden rounded-xl border border-white/15 bg-black"
-        style={{ aspectRatio: `${edit.w} / ${edit.h}` }}
+        className={full ? "relative overflow-hidden bg-black" : "relative overflow-hidden rounded-xl border border-white/15 bg-black"}
+        style={full
+          ? { aspectRatio: `${edit.w} / ${edit.h}`, width: `min(100vw, calc(100dvh * ${edit.w} / ${edit.h}))` }
+          : { aspectRatio: `${edit.w} / ${edit.h}` }}
       >
         {status === "ready" && url ? (
           <video
@@ -587,6 +625,20 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
           </>
         )}
       </div>
+      {full && (
+        <div className="absolute right-3 top-3 flex items-center gap-2" style={{ top: "max(12px, env(safe-area-inset-top))" }}>
+          {status === "ready" && clip && (clip.hasAudio || clip.audio) && (
+            <button onClick={toggleSound} className="grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white" aria-label={audible ? "Mute" : "Sound on"}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
+                {audible ? <><path d="M16 9a4 4 0 0 1 0 6" /><path d="M18.5 6.5a7.5 7.5 0 0 1 0 11" /></> : <><path d="m16.5 9.5 5 5" /><path d="m21.5 9.5-5 5" /></>}
+              </svg>
+            </button>
+          )}
+          <button onClick={() => setFull(false)} className="grid h-10 w-10 place-items-center rounded-full bg-white/15 text-[18px] font-black text-white" aria-label="Close full screen" data-goal-video-full-close>✕</button>
+        </div>
+      )}
+      </div>
       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] font-bold text-white/80">
         {status === "ready" && clip && (clip.hasAudio || clip.audio) && (
           <button
@@ -606,6 +658,17 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
             </svg>
           </button>
         )}
+        <button
+          onClick={() => { setFull(true); if (status === "ready") setWanted(true); else if (!wanted) void start(); }}
+          className="relative grid h-7 w-7 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+          aria-label="Full screen"
+          data-goal-video-fullscreen
+        >
+          <span aria-hidden className="absolute -inset-1.5" />
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M4 9V4h5" /><path d="M20 9V4h-5" /><path d="M4 15v5h5" /><path d="M20 15v5h-5" />
+          </svg>
+        </button>
         <button onClick={save} className="flex items-center gap-1 whitespace-nowrap hover:text-white" data-goal-video-save>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" />
