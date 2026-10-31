@@ -8,10 +8,41 @@ There are two sets of recordings of the same lines:
 |-----|-------|---------|------------|
 | v1, the first voice | `public/sfx/cl-*.mp3`, `cc-*.mp3` | `generate.py` (Kokoro) | always, unless the switch below is on |
 | v2, the new voice | `public/sfx/v2/cl-*.mp3`, `cc-*.mp3` | `generate_v2.py` (Chatterbox) | Settings → Updates → Leo's update → "New commentary voice" |
+| teams, four commentary teams | `public/sfx/teams/cl-<who>-*.mp3`, `cc-<who>-*.mp3` | `generate_teams.py` (Chatterbox) | Leo's update → "Different commentators" (wins over "New commentary voice") |
 
 The switch is read in `lib/star/goalClip/commentaryVoice.ts`. Off, on the
-server and in tests: v1, exactly as before. A line replaced on the Sound Board
-plays its replacement in both sets.
+server and in tests: v1, exactly as before (`tests/star/commentators.mts`
+checks 870 sound plans against a snapshot taken before the teams existed).
+A line replaced on the Sound Board plays its replacement in every set.
+
+## The commentator teams (31 Oct 2026)
+
+Lines and who says them: `lib/star/goalClip/commentators.ts`. Each
+commentator has his or her own lines (30 each; cut from 37 per lead to fit the time), not the
+v1 lines re-read. Voices and licences: `public/sfx/teams/LICENSE.txt`.
+
+| Team | Lead | Co | Picked for |
+|------|------|----|-----------|
+| Matchday | The Anchor (classic, measured; bm_george) | The Analyst (bf_lily) | TV accounts / any match |
+| Big Night | The Poet (lyrical; bf_emma) | The Old Pro (bm_daniel) | TV accounts / any match |
+| Late Show | The Deadpan (dry; bf_isabella) | The Old Pro | TV accounts / any match |
+| Fan TV | The Live Wire (excitable; bm_fable) | The Mate (am_puck) | non-official accounts / any match |
+
+`teamFor(matchKey, poster?)`: same match, same team. `planAudio(edit, set,
+poster?)` and `playLateGoalCall(kind, seed, matchKey?)` take the optional
+inputs; without them the team comes from the match (or the seed).
+
+```
+nice -n 10 python3 scripts/commentary/generate_teams.py /home/user/models            # every line not made yet
+python3 scripts/commentary/generate_teams.py /home/user/models cl-poet-g1             # remake one (adds takes)
+python3 scripts/commentary/ab_teams.py docs/handoffs/2026-10-31-leo/commentators      # the A/B page's audio
+```
+
+Takes per line: up to 3 (leads) / 2 (co), stopping at the first that passes.
+Each take's scores are in `teams-takes.json`: `wer` (words missed, little
+words like "and"/"is" ignored), `wer_strict`, `mos`/`sig` (DNSMOS), `lift`
+(median pitch rise over the calm voice, semitones), `peak` (top 5 % rise;
+over 20 = squeal, rejected), `weak` (why the chosen take is still doubtful).
 
 ## The v2 voice: what it is
 

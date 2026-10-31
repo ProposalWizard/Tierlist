@@ -1,0 +1,158 @@
+{
+ "commentators": {
+  "anchor": {
+   "lines": 30,
+   "pitch_hz": 176.0,
+   "resting_hz": 131.0,
+   "call_lift": 5.5,
+   "words_per_s": 3.04,
+   "all_words": 1.0,
+   "mos": 3.63,
+   "weak": [
+    "cl-anchor-h2",
+    "cl-anchor-late2",
+    "cl-anchor-lr2",
+    "cl-anchor-r1",
+    "cl-anchor-s-co"
+   ]
+  },
+  "poet": {
+   "lines": 30,
+   "pitch_hz": 235.5,
+   "resting_hz": 187.0,
+   "call_lift": 5.05,
+   "words_per_s": 3.26,
+   "all_words": 1.0,
+   "mos": 3.72,
+   "weak": [
+    "cl-poet-late1",
+    "cl-poet-late2"
+   ]
+  },
+  "deadpan": {
+   "lines": 30,
+   "pitch_hz": 203.0,
+   "resting_hz": 210.0,
+   "call_lift": -0.5,
+   "words_per_s": 2.75,
+   "all_words": 1.0,
+   "mos": 3.71,
+   "weak": []
+  },
+  "wire": {
+   "lines": 30,
+   "pitch_hz": 296.0,
+   "resting_hz": 126.0,
+   "call_lift": 15.1,
+   "words_per_s": 2.67,
+   "all_words": 0.93,
+   "mos": 3.46,
+   "weak": [
+    "cl-wire-k1",
+    "cl-wire-p2",
+    "cl-wire-r1"
+   ]
+  },
+  "pro": {
+   "lines": 30,
+   "pitch_hz": 119.0,
+   "resting_hz": 131.0,
+   "call_lift": null,
+   "words_per_s": 3.26,
+   "all_words": 0.93,
+   "mos": 3.99,
+   "weak": [
+    "cc-pro-p1",
+    "cc-pro-s1"
+   ]
+  },
+  "analyst": {
+   "lines": 30,
+   "pitch_hz": 200.5,
+   "resting_hz": 178.0,
+   "call_lift": null,
+   "words_per_s": 3.18,
+   "all_words": 1.0,
+   "mos": 3.88,
+   "weak": []
+  },
+  "mate": {
+   "lines": 30,
+   "pitch_hz": 124.0,
+   "resting_hz": 112.0,
+   "call_lift": null,
+   "words_per_s": 3.83,
+   "all_words": 0.93,
+   "mos": 3.92,
+   "weak": [
+    "cc-mate-h1",
+    "cc-mate-o1"
+   ]
+  }
+ },
+ "similar": {
+  "anchor": {
+   "anchor": 1.0,
+   "poet": 0.43,
+   "deadpan": 0.436,
+   "wire": 0.552,
+   "pro": 0.844,
+   "analyst": 0.525,
+   "mate": 0.581
+  },
+  "poet": {
+   "anchor": 0.43,
+   "poet": 1.0,
+   "deadpan": 0.687,
+   "wire": 0.608,
+   "pro": 0.527,
+   "analyst": 0.795,
+   "mate": 0.573
+  },
+  "deadpan": {
+   "anchor": 0.436,
+   "poet": 0.687,
+   "deadpan": 1.0,
+   "wire": 0.558,
+   "pro": 0.412,
+   "analyst": 0.669,
+   "mate": 0.55
+  },
+  "wire": {
+   "anchor": 0.552,
+   "poet": 0.608,
+   "deadpan": 0.558,
+   "wire": 1.0,
+   "pro": 0.493,
+   "analyst": 0.553,
+   "mate": 0.781
+  },
+  "pro": {
+   "anchor": 0.844,
+   "poet": 0.527,
+   "deadpan": 0.412,
+   "wire": 0.493,
+   "pro": 1.0,
+   "analyst": 0.558,
+   "mate": 0.555
+  },
+  "analyst": {
+   "anchor": 0.525,
+   "poet": 0.795,
+   "deadpan": 0.669,
+   "wire": 0.553,
+   "pro": 0.558,
+   "analyst": 1.0,
+   "mate": 0.542
+  },
+  "mate": {
+   "anchor": 0.581,
+   "poet": 0.573,
+   "deadpan": 0.55,
+   "wire": 0.781,
+   "pro": 0.555,
+   "analyst": 0.542,
+   "mate": 1.0
+  }
+ }
+}

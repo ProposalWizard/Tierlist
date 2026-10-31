@@ -23,9 +23,13 @@ function show(p: StoredPost, i: number): string {
   ];
   if (p.graphic) {
     const g = p.graphic as { type: string; question?: string; options?: string[]; votes?: number[] };
-    lines.push(`   [${g.type}${g.question ? `: ${g.question} — ${g.options?.map((o, j) => `${o} ${g.votes?.[j]}%`).join(" / ")}` : ""}]`);
+    const sum = Math.max(1, (g.votes ?? []).reduce((x, y) => x + y, 0));
+    const vid = g as { clips?: string[]; synth?: unknown[]; standIn?: unknown[] };
+    const goals = g.type === "goalVideo" ? ` ${vid.clips?.length ?? 0} recorded + ${vid.synth?.length ?? 0} made${vid.standIn?.length ? `, ${vid.standIn.length} stand-in` : ""}` : "";
+    lines.push(`   [${g.type}${goals}${g.question ? `: ${g.question} — ${g.options?.map((o, j) => `${o} ${Math.round(((g.votes?.[j] ?? 0) / sum) * 100)}%`).join(" / ")}` : ""}]`);
   }
-  if (p.quote) lines.push(`   ┌ quoting ${p.quote.name} ${p.quote.handle}${p.quote.video ? " ▶video" : ""}: ${p.quote.text.replace(/\n/g, " / ")}`);
+  if (p.sound) lines.push(`   ♫ ${p.sound}  (TikTok)`);
+  if (p.quote) lines.push(`   ┌ quoting ${p.quote.name} ${p.quote.handle}${p.quote.graphic ? " [its video plays here]" : ""}: ${p.quote.text.replace(/\n/g, " / ")}`);
   lines.push(`   💬${k(m.replies)} 🔁${k(m.reposts)} ❤️${k(m.likes)}${m.views !== undefined ? ` 👁${k(m.views)} ❝${k(m.quotes ?? 0)}` : ""}`);
   for (const r of p.thread ?? []) lines.push(`     ↳ ${r.name} ${r.handle}: ${r.text}  ❤️${k(r.likes)}`);
   return lines.join("\n");

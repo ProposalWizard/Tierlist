@@ -317,6 +317,14 @@ export interface StoryMemory {
   saidRecently: string[];
   /** Every event id ever fired, with a count. Drives rarity weighting. */
   seen: Record<string, number>;
+  /**
+   * Football Twitter (switch part "footballTwitter"): every line used lately
+   * across the whole career, keyed "account|template" (or "reply|line",
+   * "quote|line"), with the career week it was used (season×64 + week).
+   * A line is not used again by that account inside FT_REPEAT_WEEKS.
+   * Absent with the switch off, so an old save and the off feed are unchanged.
+   */
+  ftSaid?: Record<string, number>;
 }
 
 // ── Accounts ────────────────────────────────────────────────────────────────
@@ -420,8 +428,10 @@ export interface QuotedPost {
   tint2?: string;
   glyph?: AvatarGlyph;
   text: string;
-  /** The quoted post had a video (shown as a small play tile). */
+  /** The quoted post had a video. */
   video?: boolean;
+  /** Football Twitter v2: the quoted post's video itself, playable inside the quote. */
+  graphic?: GraphicSpec;
 }
 
 /** One reply under a post (Football Twitter). Stored rendered. */
@@ -507,6 +517,13 @@ export type GraphicSpec =
        *  author's own style and cut (clipStyle.ts), exactly as before. */
       style?: "broadcast" | "reverse" | "fan" | "tiktok";
       variant?: number;
+      /** Football Twitter: one made goal per recorded clip, in the same order,
+       *  played instead when this phone does not have that recording (a save
+       *  opened on another device). So a video post always has a video. */
+      standIn?: SynthGoal[];
+      /** Football Twitter v2: a TikTok post's own caption lines [hook, reaction],
+       *  burnt into the edit (goalClip/editBetter.ts) so the video says what the post says. */
+      captions?: string[];
     }
   /**
    * GOAL OF THE MONTH (Leo, 22 Oct 2026, option B): your best goals of the
@@ -717,6 +734,8 @@ export interface StoredPost {
   aboutYou?: boolean;
   /** Football Twitter: which invented account type wrote it (feed variety). */
   persona?: string;
+  /** Football Twitter v2: a TikTok post's sound line ("original sound – kai edits"). */
+  sound?: string;
   eventId: string;
   tags: Tag[];
   /**

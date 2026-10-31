@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
-import { getClips } from "@/lib/star/goalClip/store";
+import { recordedOrStandIn } from "@/lib/star/media/standIn";
 import { makeEdit, editDuration, clipFileName, type ClipStyle } from "@/lib/star/goalClip/edit";
 import type { ClipCredit } from "@/lib/star/goalClip/render";
 import { saveVideo, videoSupported, type EncodedClip } from "@/lib/star/goalClip/encode";
@@ -142,6 +142,8 @@ export interface GoalVideoProps {
   clipIds: string[];
   /** Goals from a match you did not play: made on the phone (goalClip/synth.ts). */
   synth?: SynthGoal[];
+  /** Football Twitter: a made goal for each recording, played when this phone lacks it (lib/star/media/standIn.ts). */
+  standIn?: SynthGoal[];
   style: ClipStyle;
   /** Which of the poster's cuts (edit.ts makeEdit). */
   variant?: number;
@@ -162,11 +164,13 @@ export interface GoalVideoProps {
   fill?: boolean;
   /** Leo's 24 Oct update "goalVideoNow": play a goal at once, live, while its file is made. */
   live?: boolean;
+  /** Better goal videos ("betterVideos"): the post's own TikTok caption lines [hook, reaction, replay]. */
+  captions?: string[];
 }
 
 type Status = "idle" | "making" | "ready" | "unsupported" | "failed";
 
-export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, title, badge, fallback, autoStart = false, priority = 0, fill = false, live = false }: GoalVideoProps) {
+export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0, credit, title, badge, fallback, autoStart = false, priority = 0, fill = false, live = false, captions }: GoalVideoProps) {
   const [played, setPlayed] = useState(0);
   const [tracks, setTracks] = useState<GoalTrack[] | null>(null);
   const [status, setStatus] = useState<Status>("idle");
@@ -230,7 +234,10 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
   // The same name premake.ts uses, so a video made at full time is found here.
   // Leo's update "smoothGoals": a real goal eased like the made-up ones (goalClip/smooth.ts). Off = as before.
   const smooth = useLeoUpdate("smoothGoals");
-  const key = goalVideoKey(style, variant, moves, clipIds, synth, credit?.handle, smooth);
+  // Leo's update "betterVideos": more cameras, TikTok edits, fan phones, reels (goalClip/editBetter.ts). Off = as before.
+  const better = useLeoUpdate("betterVideos");
+  const capKey = (captions ?? []).join("/");
+  const key = goalVideoKey(style, variant, moves, clipIds, synth, credit?.handle, smooth, better, captions);
 
   useEffect(() => {
     let live = true;
@@ -241,12 +248,14 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
     }
     // Recorded goals and made ones together, in the order they were scored.
     const merge = (rec: GoalTrack[]) => [...rec, ...madeTracks].sort((a, b) => a.meta.minute - b.meta.minute);
-    getClips(clipIds).then(t => { if (live) setTracks(merge(t)); }).catch(() => { if (live) setTracks(merge([])); });
+    recordedOrStandIn(clipIds, standIn).then(t => { if (live) setTracks(merge(t)); }).catch(() => { if (live) setTracks(merge([])); });
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clipIds.join(","), synthKey]);
 
-  const edit = useMemo(() => (tracks && tracks.length ? makeEdit(smooth ? smoothRecorded(tracks) : tracks, style, moves, variant) : null), [tracks, style, moves, variant, smooth]);
+  const edit = useMemo(() => (tracks && tracks.length ? makeEdit(smooth ? smoothRecorded(tracks) : tracks, style, moves, variant, better ? { better, captions } : undefined) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tracks, style, moves, variant, smooth, better, capKey]);
 
   // Can this browser make the video at all? If not, the post is its plain
   // picture (`fallback`): no play button that cannot play.
@@ -294,7 +303,7 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
         setUrl(entry.url);
         setStatus("ready");
         // A file without its own sound plays the mix alongside it.
-        if (!v.hasAudio) void mixAudio(planAudio(edit)).then(a => { entry.clip.audio = a; }).catch(() => { /* silent */ });
+        if (!v.hasAudio) void mixAudio(planAudio(edit, undefined, credit)).then(a => { entry.clip.audio = a; }).catch(() => { /* silent */ });
       }
       setKeptChecked(true);
     });
@@ -316,7 +325,7 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
       if (!job) {
         const e = edit;
         // Made in the worker when the phone allows (makeVideo.ts); kept once made.
-        const make = () => mixAudio(planAudio(e))
+        const make = () => mixAudio(planAudio(e, undefined, credit))
           .catch(() => null)
           .then(audio => makeVideo(key, e, { credit, onProgress: setProgress, audio }));
         // A tap skips the queue; a post merely near the screen waits its turn.
@@ -379,7 +388,7 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
       if (!current()) return;
       setLiveState("playing");
       // Its sound, from the same second (mixed on the page, played alongside).
-      void mixAudio(planAudio(e)).then(buf => {
+      void mixAudio(planAudio(e, undefined, credit)).then(buf => {
         const c = audioContext();
         if (!buf || !c || !current() || !liveStop.current) return;
         if (c.state === "suspended") c.resume().catch(() => { /* needs a tap */ });
