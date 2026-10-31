@@ -902,6 +902,8 @@ function renderPersona(
     : template.graphic === "goalVideo" && event.subject.kind === "you" && record
       ? yourGoalsVideo(record, youName, `${record.you.shortName.toUpperCase()} | ${account.name.toUpperCase()}`)
     : template.graphic ? buildGraphic(template.graphic, event, record, career, memory, prng) : undefined;
+  // Cold edits (part "coldEdits"): a line about a cold / aura / rewind… edit shows that edit.
+  if (template.videoStyle && graphic && graphic.type === "goalVideo") graphic.style = template.videoStyle;
   const sound = account.platform === "tiktok" && graphicPlays(graphic) ? soundFor(account.persona, prng) : undefined;
   // A TikTok video carries its caption: the post's own first line as the hook,
   // the account's catchphrase as the reaction (both burnt into the edit).

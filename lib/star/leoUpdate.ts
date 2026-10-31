@@ -38,6 +38,7 @@ export const LEO_FEATURES = [
   { id: "commentaryVoice", label: "New commentary voice", line: "A new, more natural commentator for goal videos and late goals: builds with the goal, calmer co-commentator, TV mic sound." },
   { id: "footballTwitter", label: "Football Twitter feed", line: "50+ made-up accounts (TikTok edits and POV pages, insider, ratio page, scores app…), 900 lines that do not repeat for weeks, TikTok videos, replies and quotes, a ranked feed. No post talks about a video it does not show." },
   { id: "betterVideos", label: "Better goal videos", line: "TV replays from 2-3 cameras (reverse angle, super slow-mo, behind the goal), TikTok edits (speed ramp, freeze, zoom punch, flash, captions, name card), fan phone videos from 3 seats, highlights reels with a full-time card. Each account cuts its own way." },
+  { id: "coldEdits", label: "Cold edits", line: "Edit pages post real edits set to their own beats: cold edits (black and white, kit colour kept, shake and flash on the beat), aura edits, rewinds, stat cards, every-goal montages and every-angle edits, with words to match (\"cold.\", \"aura farming\", 🥶)." },
   { id: "commentators", label: "Different commentators", line: "Four commentary teams with their own voices and lines (classic, poetic, dry, fan TV). Each match gets one; official accounts use the TV teams, other accounts Fan TV." },
   { id: "bugFixes", label: "Bug fixes (21)", line: "Refresh comes back where you were, labels, tour once, no sack after promotion, talks back button, signing manager name…" },
 ] as const;

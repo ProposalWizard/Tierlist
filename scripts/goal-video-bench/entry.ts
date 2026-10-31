@@ -25,7 +25,9 @@ w.benchSetup = async (job: { stored?: unknown[]; synth?: SynthGoal[]; style: Cli
   canvas = document.createElement("canvas");
   canvas.width = current!.w; canvas.height = current!.h;
   document.body.appendChild(canvas);
-  return { w: current!.w, h: current!.h, duration: editDuration(current!), fps: current!.fps, shots: current!.shots.length };
+  // A cold edit's beat (switch part "coldEdits"): render.mjs lays it under the video.
+  const music = current!.music ? { url: current!.music.url, at: current!.music.at, offset: current!.music.offset } : undefined;
+  return { w: current!.w, h: current!.h, duration: editDuration(current!), fps: current!.fps, shots: current!.shots.length, music };
 };
 
 w.benchFrame = (t: number) => {
