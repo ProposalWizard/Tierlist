@@ -33,7 +33,7 @@ export const TWITTER_TEMPLATES: Template[] = [
   // ── The transfer insider ──────────────────────────────────────────────
   ...bank("insider", "insider", [
     { events: ["transfer-done"], requires: ["player", "to", "feeText"], weight: 4,
-      body: "🔴 {player} to {to}, {catch}\n\nFee {feeText} including add-ons. Medical completed, contract signed. Club statement soon." },
+      body: "🔴 {player} to {to}. {catch}\n\nFee {feeText} including add-ons. Medical completed, contract signed. Club statement soon." },
     { events: ["transfer-done"], requires: ["player", "to"], weight: 3,
       body: "{player} has said yes to {to}. Verbal agreement in place, documents being prepared. Next step: medical. 🤝" },
     { events: ["unveiling"], requires: ["player", "to"], weight: 2,

@@ -771,7 +771,7 @@ function renderPersona(
   const persona = personaById(account.persona!);
   const text = personaSpeak(raw, account.voice, persona?.emoji ?? [], prng);
   const graphic = template.graphic === "poll" && template.poll
-    ? personaPoll(template.poll, facts, account.voice, prng)
+    ? personaPoll(template.poll, facts, account.voice, prng, account.followers)
     : template.graphic ? buildGraphic(template.graphic, event, record, career, memory, prng) : undefined;
   const importance = event.importance ?? event.baseImportance;
   const season = record?.season ?? career.season;

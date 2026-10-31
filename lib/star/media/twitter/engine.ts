@@ -96,11 +96,13 @@ export function personaSpeak(text: string, voice: VoiceProfile, emoji: string[],
 }
 
 /** A poll card for a persona line: question and options resolved, shares made up. */
-export function personaPoll(poll: { q: string; options: string[] }, facts: Facts, voice: VoiceProfile, rng: () => number): GraphicSpec | undefined {
+export function personaPoll(poll: { q: string; options: string[] }, facts: Facts, voice: VoiceProfile, rng: () => number, followers = 100_000): GraphicSpec | undefined {
   const question = resolve(poll.q, facts, voice, rng);
   const options = poll.options.map(o => resolve(o, facts, voice, rng));
   if (/[{}]/.test(question) || options.some(o => !o || /[{}]/.test(o)) || new Set(options).size < options.length) return undefined;
-  return { type: "poll", question, options, votes: shares(rng, options.length) };
+  // Votes: about half a per cent of followers vote (a big page gets tens of thousands).
+  const total = Math.max(40, Math.round(followers * (0.003 + rng() * 0.006)));
+  return { type: "poll", question, options, votes: shares(rng, options.length).map(p => Math.round((p / 100) * total)) };
 }
 
 // ── Engagement ────────────────────────────────────────────────────────────

@@ -69,7 +69,7 @@ check(all.some(p => p.quote), "no quote-posts");
 check(all.some(p => p.quote?.video), "no quote of a goal video");
 check(all.some(p => p.persona && p.graphic?.type === "poll"), "no persona poll");
 const polls = all.filter(p => p.graphic?.type === "poll" && p.persona).map(p => p.graphic as { votes: number[] });
-check(polls.every(g => g.votes.reduce((a, b) => a + b, 0) === 100), "a persona poll's shares don't add up to 100");
+check(polls.every(g => g.votes.every(v => v >= 0) && g.votes.reduce((a, b) => a + b, 0) >= 40), "a persona poll with no votes");
 
 // Numbers: views ≫ likes ≫ reposts ≥ quotes on every new post.
 const ft = all.filter(p => p.metrics.views !== undefined);

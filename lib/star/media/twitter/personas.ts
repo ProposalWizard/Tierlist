@@ -48,6 +48,8 @@ export interface Persona {
   share?: number;
   /** "yours": a supporter of your club. "rival": a supporter of your derby rival. */
   side?: "yours" | "rival";
+  /** "yours": mostly about your club (others' games only now and then). */
+  focus?: "yours";
   /** Its catchphrases ({catch} in its lines). */
   catchphrases: string[];
 }
@@ -126,7 +128,7 @@ export const PERSONAS: Persona[] = [
     id: "ranter", label: "Shouty fan-channel ranter", handle: "@BigDaveUnleashed", name: "Big Dave Unleashed", archetype: "pundit", platform: "youtube",
     followers: 1_200_000, tick: "blue", glyph: "mic", tint: "#dc2626", tint2: "#fde047",
     voice: V({ register: "raw", caps: 0.7, emoji: 0.4, exclaim: 0.6 }), emoji: ["😤", "🤬", "📺", "🔴"],
-    interests: { drama: 1, shame: 1, manager: 1, derby: 0.9, title: 0.8, opinion: 1, goal: 0.5 }, rate: 1.4,
+    interests: { drama: 1, shame: 1, manager: 1, derby: 0.9, title: 0.8, opinion: 1, goal: 0.5 }, rate: 1.4, focus: "yours",
     catchphrases: ["I'M NOT HAVING IT", "WAKE UP", "BOTTLE JOB", "STREAM IS LIVE NOW", "absolute SHAMBLES"],
   },
   {
@@ -391,5 +393,9 @@ export function personaAppetite(a: MediaAccount, e: FootballEvent, yourClub: str
   if (p.mood === "hater") k *= aboutYourClub && isBadNews(e) ? 2.2 : isBadNews(e) ? 0.9 : aboutYourClub ? 0.25 : 0.4;
   if (p.mood === "hype") k *= isGoodNews(e) ? (aboutYou ? 2 : 1.2) : 0.15;
   if (aboutYou) k *= 1.3;
+  if (p.focus === "yours" && !aboutYourClub) k *= 0.15;
+  // The wider league is everyone's, but a page does not dunk on the same
+  // kind of afternoon every single week.
+  if (!aboutYourClub && (p.mood === "hater" || p.archetype === "meme")) k *= 0.5;
   return k;
 }
