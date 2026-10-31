@@ -2596,7 +2596,7 @@ export const ADMIN_GUIDES = {
       {
         group: "👤 Accounts",
         items: [
-          ["Search / Kind / + New account", "Find an account or make one."],
+          ["Search / Kind / + New account", "Find an account or make one. Kind → \"Football Twitter (made-up accounts)\" lists the 30+ invented accounts (insider, fan channel, ratio page, scores app…). They only exist while Leo's update part \"Football Twitter feed\" is on, on this device."],
           ["Tap an account", "Change its name, handle, followers, app, letters, drawing, colours, blue tick, and How often it posts (Mute = never, ×2 = twice as often)."],
           ["Save account / Back to the game's own / Delete account", "Save it; undo all its changes; or delete one made here (its old posts stay)."],
         ],

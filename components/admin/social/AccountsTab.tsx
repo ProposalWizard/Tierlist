@@ -18,11 +18,11 @@ const KIND_WORDS: Record<Archetype, string> = {
 export default function AccountsTab() {
   const { rows, media } = useStudio();
   const [q, setQ] = useState("");
-  const [kind, setKind] = useState<Archetype | "">("");
+  const [kind, setKind] = useState<Archetype | "" | "persona">("");
   const [open, setOpen] = useState<string | null>(null);
   const [making, setMaking] = useState(false);
   const shown = useMemo(() => rows.filter(r =>
-    (!kind || r.account.archetype === kind)
+    (!kind || (kind === "persona" ? !!r.account.persona && r.account.archetype !== "club" : r.account.archetype === kind))
     && (!q || `${r.account.name} ${r.account.handle} ${r.key}`.toLowerCase().includes(q.toLowerCase()))), [rows, q, kind]);
   const changed = Object.keys(media.studio?.accountOverrides ?? {}).length;
 
@@ -30,7 +30,7 @@ export default function AccountsTab() {
     <div className="ss-col">
       <div className="ss-grid3">
         <Field label="Search"><Text value={q} onChange={setQ} placeholder="name or @handle" /></Field>
-        <Field label="Kind"><Select value={kind} onChange={setKind} options={[{ value: "", label: "Every kind" }, ...ARCHETYPES.map(a => ({ value: a, label: KIND_WORDS[a] }))]} /></Field>
+        <Field label="Kind"><Select value={kind} onChange={setKind} options={[{ value: "", label: "Every kind" }, { value: "persona", label: "Football Twitter (made-up accounts)" }, ...ARCHETYPES.map(a => ({ value: a, label: KIND_WORDS[a] }))]} /></Field>
         <Field label=" "><Btn main onClick={() => { setMaking(true); setOpen(null); }}>+ New account</Btn></Field>
       </div>
       <div className="ss-sub">{rows.length} accounts · {changed} changed · {(media.studio?.customAccounts ?? []).length} made here. Changes show on every post at once (old ones too) and are used for every new post the game makes.</div>
@@ -46,6 +46,7 @@ export default function AccountsTab() {
                   {r.account.verified && <span title="Blue tick">✔️</span>}
                   <span className="ss-sub">{r.account.handle}</span>
                   <span className="ss-chip">{KIND_WORDS[r.account.archetype]}</span>
+                  {r.account.personaLabel && r.account.archetype !== "club" && <span className="ss-chip" data-tone="green">{r.account.personaLabel}</span>}
                   {r.custom && <span className="ss-chip" data-tone="green">made here</span>}
                   {media.studio?.accountOverrides?.[r.key] && <span className="ss-chip" data-tone="amber">changed</span>}
                   {r.account.weight === 0 && <span className="ss-chip" data-tone="red">muted</span>}
