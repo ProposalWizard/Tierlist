@@ -27,13 +27,319 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.131",
+      "title": "Leo's patch notes: TikTok feed, goal edits, commentators",
+      "author": "Leo",
+      "publishedAt": "2026-10-31T18:46:21Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/UCvKX1mFKX74nbAaJUQF8j",
+      "summary": "The Social feed grows to 52 made-up accounts and 899 lines, adds TikTok posts and quote posts that play the video, and no post ever talks about a video it does not show. Goal videos are now cut five ways (TV replays, highlights, TikTok edits, fan phone videos, reverse angles). Four commentary teams with their own voices and lines. All behind Leo's update switch (off by default).",
+      "stats": [
+        {
+          "value": "52",
+          "label": "made-up accounts (was 33)"
+        },
+        {
+          "value": "899",
+          "label": "post lines (was 272)"
+        },
+        {
+          "value": "0",
+          "label": "posts about a video you can't watch (of ~8,000)"
+        },
+        {
+          "value": "4",
+          "label": "commentary teams, 7 voices, 210 lines"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Turn on the parts",
+              "detail": "Settings → Updates → Leo's update → Football Twitter feed, Better goal videos, Different commentators (and Feed speed)"
+            },
+            {
+              "title": "TikTok and quote videos",
+              "detail": "Phone → Social after a goal: tap a TikTok post and a quote post; both play the goal"
+            },
+            {
+              "title": "Commentators",
+              "detail": "Watch goal videos from two or three different matches with sound on; club accounts use TV voices, fan accounts Fan TV"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "19 more made-up accounts, 627 more lines",
+              "detail": "TikTok edit pages, POV pages, more insiders, ratio and meme pages, scores apps and fan channels. Invented lookalikes only: no real person, voice or brand copied. A line never repeats within 6 career weeks."
+            },
+            {
+              "title": "TikTok posts",
+              "detail": "Tall videos with the caption burnt in, the \"♫ original sound\" line and TikTok-style likes, comments and shares."
+            },
+            {
+              "title": "No fake video posts",
+              "detail": "Problem: posts said \"watch this\" with no video. Fix: every post that talks about a video carries one you can play; a goal from a match you did not record gets a made-up stand-in from the same goal. Checked on ~8,000 posts: 0 broken."
+            },
+            {
+              "title": "Better goal edits",
+              "detail": "Five ways to cut a goal: TV broadcast (2-3 cameras, reverse angle, super slow-mo), highlights reel with a full-time card, TikTok edit (speed ramp, freeze, zoom punch, flash, captions, name card), fan phone video from 3 seats, and reverse angle. Each account cuts its own way."
+            },
+            {
+              "title": "Four commentary teams",
+              "detail": "Matchday (classic), Big Night (poetic), Late Show (dry) and Fan TV (fast and shouty), 7 original voices, 30 lines each. The same match always gets the same team. The 5 worst lines of the 30 Oct voice were remade."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Poll shares add up to 100%",
+              "detail": "They sometimes came to 99% or 101%."
+            },
+            {
+              "title": "Wrong words",
+              "detail": "No \"AXED\" for a new manager, no replies from the losing side's fans cheering, no \"shaking\" after a low rating."
+            },
+            {
+              "title": "Videos made ahead",
+              "detail": "Videos made in the background now have the same captions as the feed, so they are not made twice."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Narrow phones",
+              "detail": "The word \"views\" can be cut off on a very narrow phone."
+            },
+            {
+              "title": "A few weak lines",
+              "detail": "About 13 of the 210 commentary lines are flat or slightly misheard (listed on the A/B page). Fan videos are short (about 3.5 s)."
+            },
+            {
+              "title": "Not heard by a person yet",
+              "detail": "The voices were checked by measurement only. Recommend a playtest with sound on."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.130",
+      "title": "Leo's patch notes: Football Twitter feed and full screen videos",
+      "author": "Leo",
+      "publishedAt": "2026-10-31T04:18:25Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/Ws8HSyrQXW9bLfj4fdEVbU",
+      "summary": "The Social feed now reads like football Twitter: 33 made-up account types (transfer insider, TV breaking news, scores app, fan TV ranter, hater page, memes, xG nerd, ITK, agent, kids, and more), 272 new lines, replies, quote posts, polls, view counts and a ranked feed where big moments go viral. Goal videos get a full screen button. Both behind Leo's update switch (off by default).",
+      "stats": [
+        {
+          "value": "33",
+          "label": "new made-up account types"
+        },
+        {
+          "value": "272",
+          "label": "new post lines (+90 replies)"
+        },
+        {
+          "value": "0",
+          "label": "real people or brands copied"
+        },
+        {
+          "value": "⛶",
+          "label": "full screen on every goal video"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Football Twitter feed",
+              "detail": "Settings → Updates → Leo's update → Football Twitter feed; then Phone → Social after a match"
+            },
+            {
+              "title": "Full screen",
+              "detail": "Phone → Social → any goal video → the square button next to Save video"
+            },
+            {
+              "title": "New accounts in the studio",
+              "detail": "/admin/social → Accounts → Kind: Football Twitter"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "33 made-up football Twitter accounts",
+              "detail": "Problem: the feed felt thin and samey. Fix: invented lookalike accounts, each with its own name, followers, tick, voice and catchphrases: a transfer insider (\"SEALED AND STAMPED ✍️🔒\"), a TV breaking-news desk, a scores app, a fan TV ranter, a hater/ratio page, meme, ball-knowledge quiz, xG, ITK, agent, edits, kids', away-days and rival-fan accounts, and more. No real person or brand is named; five old accounts with near-real names were renamed when the switch is on."
+            },
+            {
+              "title": "How football Twitter talks",
+              "detail": "272 new lines about your real career (goals, hat-tricks, late winners, bad games, results, transfers, sackings, awards), plus memes: tag yourself, \"me after X scores\", ratio + L, polls with vote shares, rate his game, build your XI. Club accounts sometimes post as a cheeky admin."
+            },
+            {
+              "title": "Replies, quote posts, views",
+              "detail": "The biggest posts get reply threads; journalists quote-post; every post shows views, likes, reposts and quotes in realistic ratios."
+            },
+            {
+              "title": "A real algorithm",
+              "detail": "Big accounts reach more; some posts go viral; hot takes get ratioed; haters pile on after your bad games and hype pages after good ones; your own news ranks near the top; never three posts in a row from the same kind of account."
+            },
+            {
+              "title": "Full screen goal videos",
+              "detail": "A button next to Save video. Fills the screen on phone and PC, keeps playing, with sound and close buttons. Checked on a phone-size screen, a PC-size screen and an iPhone-style screen."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Some lines repeat across weeks",
+              "detail": "Each account has 3-12 lines, so a few (like the defence 🚪 joke) come back."
+            },
+            {
+              "title": "Edit pages without their video",
+              "detail": "When the video limit drops a video, an edits account's words can show without it."
+            },
+            {
+              "title": "Older bugs now easier to see",
+              "detail": "The \"Who's to blame?\" poll's shares don't add up, and old tabloid lines treat a new manager as sacked."
+            },
+            {
+              "title": "Full screen: landscape video in a portrait phone",
+              "detail": "The video is full width but not huge; turn the phone sideways for bigger."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.129",
+      "title": "Leo's patch notes: Social feed, new voice, smooth goals",
+      "author": "Leo",
+      "publishedAt": "2026-10-31T01:23:19Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/Fdzu2CSuNewdamVJckvuby",
+      "summary": "Four parts of Leo's update, each with its own switch (Settings → Updates → Leo's update, off by default). The switch now follows your account, so the fast feed is instant on PC too. A new commentary voice that rises for goals. A Social Studio admin page with full control of the feed. Real goals replayed smoothly instead of move-stop-move.",
+      "stats": [
+        {
+          "value": "0.05 s",
+          "label": "goal video starts on PC (was ~5 s)"
+        },
+        {
+          "value": "92",
+          "label": "commentary lines re-recorded"
+        },
+        {
+          "value": "81% → 27%",
+          "label": "players standing still in a real goal"
+        },
+        {
+          "value": "6",
+          "label": "Social Studio tabs"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "PC loading",
+              "detail": "Turn Leo's update on once; open Phone → Social on a PC; tap a goal video"
+            },
+            {
+              "title": "New commentary voice",
+              "detail": "Settings → Updates → Leo's update → New commentary voice; score a goal, then a late winner"
+            },
+            {
+              "title": "Social Studio",
+              "detail": "Admin → /admin/social"
+            },
+            {
+              "title": "Smooth goal videos",
+              "detail": "Settings → Updates → Leo's update → Smooth goal videos; watch your goal in the feed"
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Instant feed on PC",
+              "detail": "Problem: on PC the feed and goal videos took seconds. Why: the update switch was saved on each device, so it was still off on the PC. Fix: the switch now saves with your career and follows your account. Measured on desktop Chrome: feed opens in 0.05 s, video starts 0.04-0.07 s after the tap (was about 5 s)."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "New commentary voice",
+              "detail": "All 92 lines re-recorded with an original broadcast-style voice (no real person copied). Goal calls now rise much more (about +10 to +17 semitones, was +4.5) and big moments are held longer; the co-commentator stays calm. Old voice is untouched when the switch is off."
+            },
+            {
+              "title": "Social Studio (/admin/social)",
+              "detail": "Feed, Compose, Accounts, Ideas, Video and Settings tabs: pin, hide and edit posts, write your own, make graphics, tune each account's style and how often it posts, pick each goal video's style. With nothing set, the feed is exactly as before."
+            },
+            {
+              "title": "Smooth goal videos",
+              "detail": "Real goals no longer move one man, stop, then the next. Frozen stretches go from 0.53 s to 0, the sharpest jerk drops from about 50 to 12, and players standing still drop from 53-81% to 9-27%."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Voice: a few lines to listen to",
+              "detail": "The late-winner call may squeak; \"Through on goal\" and three others were doubted by the word checker. Each can be redone on its own."
+            },
+            {
+              "title": "Smooth goals: not everywhere yet",
+              "detail": "The goals gallery and season reel still show the old stiff version; runs can still surge a little."
+            },
+            {
+              "title": "Social Studio wording",
+              "detail": "One template reads \"in-manager\"."
+            },
+            {
+              "title": "Browsers",
+              "detail": "PC timing measured in Chrome only; Safari and Firefox not tested."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.126",
       "title": "Leo's patch notes: Live chances (test)",
       "author": "Leo",
       "publishedAt": "2026-10-30T12:00:00Z",
-      "updatedAt": null,
+      "updatedAt": "2026-10-31T13:55:08Z",
+      "updateNote": "Changed: the kick part is now the game's normal kick screen (not a small strip). Let go as the pass reaches you (that sets early, clean or late), then tap where on the ball on the normal \"Strike it?\" screen. Checked: test page and a career match, 5 of 5 right. Page edited.",
       "artifactUrl": null,
-      "summary": "The last pass keeps coming to you: time your strike as it arrives. Early stabs it low, clean is a full shot, late gets under it; miss it or let it run past and the chance is gone. The ball's pace carries into your shot. 98% of open-play chances go live; set pieces, headers and volleys stay as they are. Own switch in Settings → Updates (off by default) and a test page with dials. Works in 2D and 3D.",
+      "summary": "The last pass keeps coming to you: time your strike as it arrives. Let go as it reaches you, then (kick screen, on by default) the normal kick screen opens: tap where on the ball to curl, chip or drive it. Early stabs it low, clean is a full shot, late gets under it; miss it or let it run past and the chance is gone. The ball's pace carries into your shot. 98% of open-play chances go live; set pieces, headers and volleys stay as they are. Own switch in Settings → Updates (off by default) and a test page with dials. Works in 2D and 3D.",
       "stats": [
         {
           "value": "98%",
@@ -70,6 +376,18 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
               "detail": "A ball rolling across you bends your shot its way (about 9° at 60% power, less when you strike harder)."
             },
             {
+              "title": "The normal kick screen (curve, chip, height)",
+              "detail": "Its own switch, on by default. Let go as the pass reaches you (that sets early, clean or late), then the game's normal kick screen opens: tap where on the ball, sides curl, bottom chips, top drives. Out of reach: fresh air. Off: letting go is the kick."
+            },
+            {
+              "title": "Sliders in the game's Settings",
+              "detail": "Settings → Match (admins) and Settings → Updates: the switch, the kick screen switch and all 7 sliders, saved on your phone."
+            },
+            {
+              "title": "Test page: no static replays",
+              "detail": "After a chance it starts a new one, or (your pick) the same one again from its build-up, live."
+            },
+            {
               "title": "2D and 3D",
               "detail": "Works in both views. In 3D a press on the ring grabs the aim. A press on the ring is never an order to a nearby team-mate."
             },
@@ -92,6 +410,18 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
               "detail": "A team-mate only in the build-up leaves at the hand-over, about a second before his pass arrives."
             }
           ]
+        }
+      ],
+      "updates": [
+        {
+          "at": "2026-10-30T21:11:13Z",
+          "where": "Title, Text, Page",
+          "note": "Added: the strike screen (on by default; its own switch): letting go locks your aim, then you tap a small ball as the pass reaches you, so curve, chip and height are back; when you tap is the timing. The switch, strike screen and all sliders are now in the game's Settings (Match, and Updates). Test page: after a chance it starts a new one (or the same one live), never the static copy. Checked in a career match: 7 of 7 taps read right. Page edited."
+        },
+        {
+          "at": "2026-10-31T13:55:08Z",
+          "where": "Text, Page",
+          "note": "Changed: the kick part is now the game's normal kick screen (not a small strip). Let go as the pass reaches you (that sets early, clean or late), then tap where on the ball on the normal \"Strike it?\" screen. Checked: test page and a career match, 5 of 5 right. Page edited."
         }
       ]
     },

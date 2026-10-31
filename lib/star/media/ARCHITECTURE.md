@@ -749,3 +749,46 @@ Everything else in this document is as built. The volley of small things — one
 defender rather than two, the club account's coverage gaps, "both of them" as a
 bare noun phrase — came out of reading 135 generated posts and fixing what read
 wrong, which is the only way any of it was ever going to be found.
+
+## 17. Football Twitter (Leo, 31 Oct 2026, switch part "footballTwitter")
+
+Off by default; off = byte for byte the feed above (tests/star/footballTwitter.mts
+holds fingerprints taken before it existed). On:
+
+- **Cast** (`twitter/personas.ts`): 33 invented account types join `buildRoster`
+  as ordinary accounts with a `persona` (insider, TV desk, scores app, ratio page,
+  quiz page, fan channel, kid, xG nerd, odds, agent…). Club accounts get gold
+  ticks and a cheeky-admin persona a third of the time. Five old near-real names
+  are renamed (ids kept, so their wording is unchanged).
+- **Lines** (`templates/twitter.ts`): each persona's own bank, outside `ALL`;
+  `choosePersonaTemplate` uses the same filters. `twitter/engine.ts derivedFacts`
+  adds slots like {clubS} {xgUs} {oddsNow} {catch}.
+- **Selection** (`select.ts`): `personaAppetite` (haters after your bad days,
+  hype after good ones, focus on your club), budget ×1.5.
+- **After a cycle** (`feed.ts footballTwitterPass`): replies under the top posts,
+  then quote-posts (journalist, hype, ratio). Every post gets views/quotes from
+  `engagement` (reach shrinks with size, log-normal viral roll, real ratios).
+- **Reading** (`feedFor`): `rankFeed` orders by engagement, freshness, you, with
+  never three in a row from one kind of account. Research: docs/handoffs/2026-10-31-leo/football-twitter/RESEARCH.md.
+
+### 17.1 Football Twitter v2 (Leo, 31 Oct 2026, same switch part)
+
+- **Video rule** (`twitter/videoWords.ts`): a post whose words point at a video
+  ("edit", "clip", "watch", "POV", "highlights", 🎥…) is only kept with a playable
+  goal video (its own or the quoted post's). `feed.ts renderFt` re-picks the line,
+  `ftTidy` drops what is left; a league video stripped from the post-match screen
+  takes its post with it. Recorded clips carry `standIn` made goals
+  (`graphics.ts standInsFor`, `media/standIn.ts`), so another phone still plays them.
+- **Cast**: 52 accounts, 899 lines (`templates/twitterMore.ts`), every account at
+  least 15, the big ones 25+. TikTok pages post tall edits with a sound line and
+  their caption burnt in (`captions`, goalClip/editBetter.ts); one per cycle
+  (`FT_VIDEOS_PER_CYCLE`), outside the match's 1-2 video cap.
+- **No repeats**: `memory.ftSaid` keeps every line, reply and quote used, by
+  account, for `FT_REPEAT_WEEKS` (6) career weeks.
+- **Balance** (`select.ts ftBalance`): your club x1.35, rival x1.8, top three x1.5,
+  another club's thrashing x0.35; quiet accounts get a turn; an account with no
+  line for the event takes no place.
+- **Old bugs**: banter replies laugh at the side that lost ({loserS}); poll shares
+  add to 100 (`evenPoll`); sacking lines never run for a manager arriving;
+  "im actually shaking. what a player" never after a rating under 6.5.
+- Test: tests/star/feedVideoRule.mts (two seasons x three seeds).

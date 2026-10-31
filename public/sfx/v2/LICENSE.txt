@@ -1,0 +1,16 @@
+The cl-*.mp3 (lead commentator) and cc-*.mp3 (co-commentator) files in this
+folder are the NEW goal-video commentary voice (Leo's update switch, "New
+commentary voice"). Made offline on 30 Oct 2026 by
+scripts/commentary/generate_v2.py from the lines in
+lib/star/goalClip/commentary.ts.
+
+- Speech model: Chatterbox, Resemble AI (https://github.com/resemble-ai/chatterbox),
+  MIT licence; ONNX export onnx-community/chatterbox-ONNX (MIT).
+- Voice: an original voice. The reference recordings were made with Kokoro's
+  bundled voices bm_lewis (lead) and bm_daniel (co-commentator)
+  (https://github.com/hexgrad/kokoro, Apache-2.0). No real person's voice was
+  recorded, cloned or imitated.
+- Commentary-box processing: scripts/commentary/broadcast.py (our own code).
+
+Any line can be replaced on the Sound Board (/admin/sound-board); a
+replacement plays in both voice sets.

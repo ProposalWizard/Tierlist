@@ -58,38 +58,69 @@ export const LIVE_LIMITS: Record<keyof LiveDials, [number, number]> = {
   arriveS: [0.6, 3.5], slowMin: [0.15, 1], reachEarly: [0.4, 2], reachLate: [0.3, 2], sweet: [0.1, 0.9], rollDecel: [0.5, 4], nearSlow: [0.2, 1],
 };
 
-function readOn(): boolean {
+/** What this phone has saved: the switch, the strike screen, the dials (Settings → Updates → Live chances). */
+interface Saved { on: boolean; strike: boolean; dials: Partial<LiveDials> }
+function readSaved(): Saved {
+  const none: Saved = { on: false, strike: true, dials: {} };
   try {
-    if (typeof window === "undefined") return false;
+    if (typeof window === "undefined") return none;
     const raw = window.localStorage.getItem(LIVE_KEY);
-    return !!raw && (JSON.parse(raw) as { on?: boolean }).on === true;
-  } catch { return false; }
+    if (!raw) return none;
+    const s = JSON.parse(raw) as Partial<Saved>;
+    return { on: s.on === true, strike: s.strike !== false, dials: s.dials && typeof s.dials === "object" ? s.dials : {} };
+  } catch { return none; }
+}
+function writeSaved(s: Saved) {
+  try { window.localStorage.setItem(LIVE_KEY, JSON.stringify(s)); } catch { /* private mode: stays off */ }
+  try { window.dispatchEvent(new Event(EVENT)); } catch { /* no window */ }
 }
 /**
  * The test page's own setting (app/star-live-chances-dev): on for that page
- * only, with its dials. Kept in memory, never saved: the real game always
- * plays the defaults, and leaving the page clears it.
+ * only, with its strike screen and dials. Kept in memory, never saved;
+ * leaving the page clears it and the game plays this phone's own settings.
  */
-let testOverride: { on: boolean; dials: Partial<LiveDials> } | null = null;
-export function setLiveTest(o: { on: boolean; dials: Partial<LiveDials> } | null) { testOverride = o; }
-/** Live chances on? The test page's own setting, else this device's switch. Off by default; always off on the server. */
-export function liveChancesOn(): boolean { return testOverride ? testOverride.on : readOn(); }
-export function setLiveChances(on: boolean) {
-  try { window.localStorage.setItem(LIVE_KEY, JSON.stringify({ on })); } catch { /* private mode: stays off */ }
-  try { window.dispatchEvent(new Event(EVENT)); } catch { /* no window */ }
-}
+let testOverride: { on: boolean; strike: boolean; dials: Partial<LiveDials> } | null = null;
+export function setLiveTest(o: { on: boolean; strike: boolean; dials: Partial<LiveDials> } | null) { testOverride = o; }
+/** Live chances on? The test page's own setting, else this phone's switch. Off by default; always off on the server. */
+export function liveChancesOn(): boolean { return testOverride ? testOverride.on : readSaved().on; }
+export function setLiveChances(on: boolean) { writeSaved({ ...readSaved(), on }); }
+/**
+ * THE KICK SCREEN (Leo, 30-31 Oct 2026: "a toggle for whether or not there's
+ * still the kick part of the move after you aim and let go … what about
+ * curve? chips? height?" … "i meant normal kick screen"). On (the default):
+ * letting go is the moment you meet the pass (it sets early / clean / late
+ * and stops the pass there), then the game's normal kick screen opens and
+ * your tap on it is where on the ball (curve, chip, height). Out of reach
+ * when you let go: fresh air, no kick screen. Off: letting go is the kick.
+ */
+export function liveStrikeScreenOn(): boolean { return testOverride ? testOverride.strike : readSaved().strike; }
+export function setLiveStrikeScreen(strike: boolean) { writeSaved({ ...readSaved(), strike }); }
 export const LIVE_EVENT = EVENT;
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
-/** The dials: the defaults in the game, the test page's (each inside its guardrail) on it. */
+/** The dials, each inside its guardrail: the test page's on it, else this phone's (Settings), else the defaults. */
 export function liveDials(): LiveDials {
   const out = { ...LIVE_DEFAULTS };
-  const d = testOverride?.dials ?? {};
+  const d = testOverride ? testOverride.dials : readSaved().dials;
   for (const k of Object.keys(LIVE_DEFAULTS) as (keyof LiveDials)[]) {
     const v = d[k];
     if (typeof v === "number" && Number.isFinite(v)) out[k] = clamp(v, LIVE_LIMITS[k][0], LIVE_LIMITS[k][1]);
   }
   return out;
 }
+/** Save one dial on this phone (Settings), or all back to the defaults (null). */
+export function setLiveDial(k: keyof LiveDials, v: number) { const s = readSaved(); writeSaved({ ...s, dials: { ...s.dials, [k]: clamp(v, LIVE_LIMITS[k][0], LIVE_LIMITS[k][1]) } }); }
+export function resetLiveDials() { writeSaved({ ...readSaved(), dials: {} }); }
+
+/** The dials as a player reads them (the Settings card and the test page share this list). */
+export const LIVE_DIAL_INFO: { k: keyof LiveDials; name: string; unit: string; step: number; help: string }[] = [
+  { k: "arriveS", name: "Time for the pass to reach you", unit: "s", step: 0.1, help: "Real seconds from the hand-over to the ball at your feet. Longer = more time to aim." },
+  { k: "slowMin", name: "Slowest slow motion", unit: "×", step: 0.05, help: "How slow the pass may run to give you that time. 1 = never slowed." },
+  { k: "nearSlow", name: "Extra slow motion near you", unit: "×", step: 0.05, help: "On top of the rest, while the ball is close to you. 1 = none." },
+  { k: "sweet", name: "Sweet zone", unit: "m", step: 0.05, help: "Either side of the ring: a clean strike." },
+  { k: "reachEarly", name: "Reach (early)", unit: "m", step: 0.05, help: "How far before the ring you can still stab at it." },
+  { k: "reachLate", name: "Reach (late)", unit: "m", step: 0.05, help: "How far past the ring you can still get a foot to it." },
+  { k: "rollDecel", name: "Roll slows by", unit: "m/s²", step: 0.1, help: "How fast a missed ball slows as it rolls on." },
+];
 
 // ── Which chances ──
 
@@ -255,7 +286,7 @@ export type SwingRead =
  * Read the swing: the ball at `b` moving at `speed`, your aim `aimDir` at
  * `power` (0..1). `r` is a seeded draw in [0, 1) for which way a stab skews.
  */
-export function readSwing(plan: LivePlan, b: Vec2, speed: number, aimDir: Vec2, power: number, r: number, dials: LiveDials = LIVE_DEFAULTS): SwingRead {
+export function readSwing(plan: LivePlan, b: Vec2, speed: number, aimDir: Vec2, power: number, r: number, dials: LiveDials = LIVE_DEFAULTS, tap?: { cx: number; cy: number }): SwingRead {
   const along = alongOf(plan, b);
   const lat = -(b.x - plan.spot.x) * plan.u.y + (b.y - plan.spot.y) * plan.u.x;
   if (along < -dials.reachEarly || Math.abs(lat) > 1) return { hit: false, why: "early", along };
@@ -265,8 +296,12 @@ export function readSwing(plan: LivePlan, b: Vec2, speed: number, aimDir: Vec2, 
   const timing: SwingTiming = early > 0 ? "early" : late > 0 ? "late" : "sweet";
   const off = Math.max(early, late);
   // Where the foot meets it: a stab finds the top of the ball, a late one gets under it.
-  const cy = timing === "early" ? -0.15 - 0.75 * early : timing === "late" ? -0.1 + 0.95 * late : -0.1;
-  const cx = clamp(lat * 0.5, -0.5, 0.5);
+  // With the kick screen (`tap`): where you tapped, moved by the timing (a stab
+  // rides up the ball, a late one slides under it) and by where the ball is beside you.
+  const cy = tap
+    ? clamp(tap.cy - 0.6 * early + 0.7 * late, -1, 1)
+    : timing === "early" ? -0.15 - 0.75 * early : timing === "late" ? -0.1 + 0.95 * late : -0.1;
+  const cx = tap ? clamp(tap.cx + lat * 0.5, -1, 1) : clamp(lat * 0.5, -0.5, 0.5);
   const am = Math.hypot(aimDir.x, aimDir.y) || 1;
   let ax = aimDir.x / am, ay = aimDir.y / am;
   // A stab skews off the toe one way or the other; a late one is dragged along the ball's line.

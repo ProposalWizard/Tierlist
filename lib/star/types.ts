@@ -1738,6 +1738,11 @@ export interface CareerState {
    */
   media?: import("./media/types").MediaState;
   /**
+   * Leo's update switch, kept with the career so it follows the account across
+   * devices (lib/star/leoUpdate.ts). Absent on every save that never set it.
+   */
+  leoUpdate?: import("./leoUpdate").LeoUpdateSetting;
+  /**
    * A tester save: someone used a Settings → Developer tools cheat (money,
    * skills, skip ahead, switch club…) on this career. Set once, never
    * cleared (lib/star/godMode.ts). Optional: absent means a clean save.
