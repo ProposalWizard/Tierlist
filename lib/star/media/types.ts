@@ -394,6 +394,48 @@ export interface MediaAccount {
    * and absent means exactly as before (select.ts multiplies only when set).
    */
   weight?: number;
+  /**
+   * Football Twitter (Leo's switch part "footballTwitter",
+   * lib/star/media/twitter/): the invented account type this is, which picks
+   * its own phrase bank (templates/twitter.ts). Absent on every account the
+   * game built before, and absent means exactly as before.
+   */
+  persona?: string;
+  /** The persona in plain words, for the admin page. */
+  personaLabel?: string;
+  /** Chance it writes from its persona bank; the rest from its archetype's. Absent = always. */
+  personaShare?: number;
+  /** Tick colour: blue (paid), gold (an organisation), grey (an official body). */
+  tick?: "blue" | "gold" | "grey";
+}
+
+/** A post quoted inside another (Football Twitter). Stored rendered. */
+export interface QuotedPost {
+  handle: string;
+  name: string;
+  verified: boolean;
+  tick?: "blue" | "gold" | "grey";
+  initials: string;
+  tint: string;
+  tint2?: string;
+  glyph?: AvatarGlyph;
+  text: string;
+  /** The quoted post had a video (shown as a small play tile). */
+  video?: boolean;
+}
+
+/** One reply under a post (Football Twitter). Stored rendered. */
+export interface PostReply {
+  handle: string;
+  name: string;
+  verified: boolean;
+  tick?: "blue" | "gold" | "grey";
+  initials: string;
+  tint: string;
+  tint2?: string;
+  glyph?: AvatarGlyph;
+  text: string;
+  likes: number;
 }
 
 // ── Narration ───────────────────────────────────────────────────────────────
@@ -660,10 +702,21 @@ export interface StoredPost {
      */
     tint2?: string;
     glyph?: AvatarGlyph;
+    /** Football Twitter: gold/grey tick. Absent = the blue tick as before. */
+    tick?: "blue" | "gold" | "grey";
   };
   text: string;
   graphic?: GraphicSpec;
-  metrics: { likes: number; reposts: number; replies: number };
+  /** `views` and `quotes` only on posts made with Football Twitter on. */
+  metrics: { likes: number; reposts: number; replies: number; views?: number; quotes?: number };
+  /** Football Twitter: the post this one quotes. */
+  quote?: QuotedPost;
+  /** Football Twitter: the top replies under it. */
+  thread?: PostReply[];
+  /** Football Twitter: about your own player (ranked higher in the feed). */
+  aboutYou?: boolean;
+  /** Football Twitter: which invented account type wrote it (feed variety). */
+  persona?: string;
   eventId: string;
   tags: Tag[];
   /**

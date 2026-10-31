@@ -9,6 +9,8 @@ import { CHEEKY_TEMPLATES } from "./cheeky";
 import { CASINO_TEMPLATES } from "./casino";
 import { RETIREMENT_TEMPLATES } from "./retirements";
 import { INTERNATIONAL_TEMPLATES } from "./international";
+import { TWITTER_BY_PERSONA, TWITTER_TEMPLATES } from "./twitter";
+import { footballTwitterOn } from "../updateFlags";
 
 /**
  * A scorer's name against a chant's, ignoring accents, hyphens and case, so
@@ -100,6 +102,14 @@ export interface Template {
   threadBody?: string;
   graphic?: GraphicKind;
   hashtag?: boolean;
+  /**
+   * Football Twitter (templates/twitter.ts): only an account with this
+   * persona writes it. Never set on a line in ALL, so with the switch off
+   * nothing here changes which line any account picks.
+   */
+  persona?: string;
+  /** Football Twitter: a poll with these words (slots allowed), when `graphic` is "poll". */
+  poll?: { q: string; options: string[] };
 }
 
 const ALL: Template[] = [
@@ -121,9 +131,10 @@ for (const t of ALL) {
   BY_ARCHETYPE.set(t.archetype, list);
 }
 
-/** Every line the game can write — for the Social Studio's template picker (/admin/social). */
+/** Every line the game can write — for the Social Studio's template picker (/admin/social).
+ *  With Football Twitter on, its invented accounts' lines too. */
 export function allTemplates(): readonly Template[] {
-  return ALL;
+  return footballTwitterOn() ? [...ALL, ...TWITTER_TEMPLATES] : ALL;
 }
 
 export function templateCount(): number {
@@ -183,13 +194,39 @@ export function chooseTemplate(
    */
   usedThisCycle: Set<string> = new Set(),
 ): Template | null {
-  const pool = BY_ARCHETYPE.get(archetype) ?? [];
+  return chooseFrom(BY_ARCHETYPE.get(archetype) ?? [], event, frame, memory, rng, wantThread, usedThisCycle);
+}
+
+/**
+ * A Football Twitter account's own line (templates/twitter.ts), or null when
+ * its bank has nothing for this event. Same filters and tiers as
+ * chooseTemplate; frames are not asked (each bank is one voice already).
+ */
+export function choosePersonaTemplate(
+  event: FootballEvent,
+  persona: string,
+  memory: StoryMemory,
+  rng: () => number,
+  usedThisCycle: Set<string> = new Set(),
+): Template | null {
+  return chooseFrom(TWITTER_BY_PERSONA.get(persona) ?? [], event, undefined, memory, rng, false, usedThisCycle);
+}
+
+function chooseFrom(
+  pool: readonly Template[],
+  event: FootballEvent,
+  frame: Frame | undefined,
+  memory: StoryMemory,
+  rng: () => number,
+  wantThread: boolean,
+  usedThisCycle: Set<string>,
+): Template | null {
 
   const usable = pool.filter(t =>
     has(event, t.requires)
     && slotsFilled(event, wantThread && t.threadBody ? t.threadBody : t.body)
     && !(t.excludes ?? []).some(k => event.facts[k] !== undefined)
-    && (!t.frames || t.frames.includes(frame))
+    && (!t.frames || frame === undefined || t.frames.includes(frame))
     && (!wantThread || !!t.threadBody || t.id.endsWith("-generic"))
     && (t.club === undefined || event.facts.club === t.club)
     && (t.score === undefined || event.facts.score === t.score)

@@ -17,6 +17,8 @@ import { loadCareerFromStoredForm, peekDeviceSaves, saveCareer, saveStarPhase, A
 import { accountRows } from "@/lib/star/media/studioTools";
 import { buildRoster, selfAccount } from "@/lib/star/media/accounts";
 import { studioRoster } from "@/lib/star/media/studio";
+import { setMediaUpdate } from "@/lib/star/media/updateFlags";
+import { leoUpdateOn } from "@/lib/star/leoUpdate";
 import MediaFeed from "@/components/star/MediaFeed";
 import { BroadcastPage, Btn, Panel, Pill } from "@/components/admin/broadcast/BroadcastPage";
 import { Ctx, download, pickFile, type StudioCtx } from "./kit";
@@ -71,6 +73,8 @@ export default function SocialStudio() {
   }, []);
 
   useEffect(() => {
+    // Football Twitter's accounts and lines follow Leo's switch on this device, as in the game.
+    setMediaUpdate({ footballTwitter: leoUpdateOn("footballTwitter") });
     refreshSaves();
     try { const t = localStorage.getItem(TAB_KEY) as Tab | null; if (t && TABS.some(x => x[0] === t)) setTab(t); } catch { /* ignore */ }
     const mq = window.matchMedia("(max-width: 1180px)");
