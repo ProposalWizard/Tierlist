@@ -27,6 +27,123 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.132",
+      "title": "Leo's patch notes: 2D videos, cold edits, replies, season reel",
+      "author": "Leo",
+      "publishedAt": "2026-10-31T22:00:12Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/76w9m8sdxQq8TAGbTQfopm",
+      "summary": "Goal videos can be seen in 2D from above. Six new edit types (cold, aura, rewind, stat card, montage, angles) with original beats. Replies now fit the post they sit under (mismatches 20.7% → 0.1%), with arguments and TikTok comment sections. The season video plays every goal, lets you tap to skip, and you can star your favourite goals. All behind Leo's update switch (off by default).",
+      "stats": [
+        {
+          "value": "6",
+          "label": "new edit types with original beats"
+        },
+        {
+          "value": "0.1%",
+          "label": "replies that don't fit (was 20.7%)"
+        },
+        {
+          "value": "712",
+          "label": "reply lines (was ~190)"
+        },
+        {
+          "value": "0",
+          "label": "lost clips in the test season (was 8 of 21)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Turn on the parts",
+              "detail": "Settings → Updates → Leo's update → 2D goal videos (pick 2D), Cold edits, Better end of season (with Football Twitter feed and Feed speed)"
+            },
+            {
+              "title": "Cold edits and replies",
+              "detail": "Phone → Social after a scoring match: the edits page and POV pages post cold edits with music; open a few posts' replies"
+            },
+            {
+              "title": "Season video",
+              "detail": "End of season: tap right/left to skip goals, ☆ to save a favourite; then Stats → Goals → ★ Favourites → Play reel"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "2D goal videos",
+              "detail": "The same recordings seen from above like the 2D match: flat striped pitch, ball trail, net ripple. Every cut, caption and commentary stays. A 3D (TV) or 2D (from above) choice; works in the feed, the season video and the new edits."
+            },
+            {
+              "title": "Cold edits",
+              "detail": "Black and white with the scorer's shirt colour kept, grain, cinema bars, the strike frozen and ringed, shake and flash on every beat, the goal on the drop. Captions like \"cold.\", \"silence.\"."
+            },
+            {
+              "title": "Five more edit types",
+              "detail": "Aura (slow, glowing), rewind (wound back on tape then replayed), stat card (distance and shot speed measured from the goal), montage (up to 8 goals, a counter), angles (the same goal from 4 cameras). Each account posts its own kinds."
+            },
+            {
+              "title": "Original music",
+              "detail": "Four new beat loops (phonk-style, ambient, lo-fi, funk), made here, no copied songs. Every cut lands on a beat."
+            },
+            {
+              "title": "Replies that make sense",
+              "detail": "Problem: a praise post got \"that's a violation\" replies (replies were picked by who posted, not what was said). Fix: each post has a tone and each reply only fits some tones; fans back their club, rivals banter, neutrals joke. 712 reply lines, back-and-forth arguments, TikTok comment sections with \"Liked by creator\"."
+            },
+            {
+              "title": "Favourite goals",
+              "detail": "☆ on any goal in the season video, Stats → Goals and your goal videos. Kept in your save (all devices), never deleted from the phone, a Favourites tab and a favourites reel."
+            },
+            {
+              "title": "Better season video",
+              "detail": "Tap right for the next goal, left to go back, hold to pause, a bar per goal. Title card, milestone cards (first goal, hat-trick, 50th goal…), Goal of the Season (your pick, else the fans' vote), end card."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Lost clips in the season video",
+              "detail": "Goals with no recording on this phone showed a drawn card, late recordings reshuffled the reel, and some goals played twice. Now every goal plays once, in order; a goal with no recording gets a made-up stand-in from its own facts."
+            },
+            {
+              "title": "Wrong quotes",
+              "detail": "Transfer quotes no longer quote contract signings; praise quotes no longer quote a scoreline."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Stand-ins",
+              "detail": "A stand-in goal is made-up movement, not the real goal (the real one stays on the phone that recorded it)."
+            },
+            {
+              "title": "Edits are 8-14 s",
+              "detail": "Real edits are often 4-6 s; ours need the build-up. Cold edits may be common in the feed; tell me if it feels samey."
+            },
+            {
+              "title": "A few posts read wrong",
+              "detail": "e.g. your old club posting your unveiling. Left because the switch-off feed must not change."
+            },
+            {
+              "title": "Not played in a real career yet",
+              "detail": "Checked with tests and stills. Recommend a playtest on a phone with sound on."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.131",
       "title": "Leo's patch notes: TikTok feed, goal edits, commentators",
       "author": "Leo",
