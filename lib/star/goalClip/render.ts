@@ -43,6 +43,9 @@ import { drawBetterFrame } from "./betterRender";
 export interface ClipCredit {
   handle?: string;
   name?: string;
+  /** The account's kind and app: picks the commentary team ("Different commentators"). */
+  archetype?: string;
+  platform?: string;
 }
 
 // ── What the recording says each man is doing ───────────────────────────────

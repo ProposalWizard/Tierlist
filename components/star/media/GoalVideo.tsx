@@ -303,7 +303,7 @@ export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0,
         setUrl(entry.url);
         setStatus("ready");
         // A file without its own sound plays the mix alongside it.
-        if (!v.hasAudio) void mixAudio(planAudio(edit)).then(a => { entry.clip.audio = a; }).catch(() => { /* silent */ });
+        if (!v.hasAudio) void mixAudio(planAudio(edit, undefined, credit)).then(a => { entry.clip.audio = a; }).catch(() => { /* silent */ });
       }
       setKeptChecked(true);
     });
@@ -325,7 +325,7 @@ export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0,
       if (!job) {
         const e = edit;
         // Made in the worker when the phone allows (makeVideo.ts); kept once made.
-        const make = () => mixAudio(planAudio(e))
+        const make = () => mixAudio(planAudio(e, undefined, credit))
           .catch(() => null)
           .then(audio => makeVideo(key, e, { credit, onProgress: setProgress, audio }));
         // A tap skips the queue; a post merely near the screen waits its turn.
@@ -388,7 +388,7 @@ export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0,
       if (!current()) return;
       setLiveState("playing");
       // Its sound, from the same second (mixed on the page, played alongside).
-      void mixAudio(planAudio(e)).then(buf => {
+      void mixAudio(planAudio(e, undefined, credit)).then(buf => {
         const c = audioContext();
         if (!buf || !c || !current() || !liveStop.current) return;
         if (c.state === "suspended") c.resume().catch(() => { /* needs a tap */ });

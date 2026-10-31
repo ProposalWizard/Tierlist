@@ -42,7 +42,7 @@ export default function Graphic({ spec, author }: { spec: GraphicSpec; author?: 
         priority={spec.priority ? 2 : spec.clips.length > 0 ? 1 : 0}
         style={spec.style ?? clipStyleFor(author, better)}
         variant={spec.variant ?? clipVariantFor(author)}
-        credit={author ? { handle: author.handle, name: author.name } : undefined}
+        credit={author ? { handle: author.handle, name: author.name, archetype: author.archetype, platform: author.platform } : undefined}
         title={spec.title}
         badge={(spec.clips.length || spec.synth?.length || 0) > 1 ? "HIGHLIGHTS" : "GOAL"}
         fallback={null}
@@ -354,7 +354,7 @@ function Thumbnail({ s, author }: { s: Extract<GraphicSpec, { type: "thumbnail" 
       priority={(s.clips?.length ?? 0) > 0 ? 1 : 0}
       style={clipStyleFor(author, better)}
       variant={clipVariantFor(author)}
-      credit={author ? { handle: author.handle, name: author.name } : undefined}
+      credit={author ? { handle: author.handle, name: author.name, archetype: author.archetype, platform: author.platform } : undefined}
       title={s.title}
       badge={s.badge}
       fallback={still}
