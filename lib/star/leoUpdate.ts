@@ -40,6 +40,7 @@ export const LEO_FEATURES = [
   { id: "betterVideos", label: "Better goal videos", line: "TV replays from 2-3 cameras (reverse angle, super slow-mo, behind the goal), TikTok edits (speed ramp, freeze, zoom punch, flash, captions, name card), fan phone videos from 3 seats, highlights reels with a full-time card. Each account cuts its own way." },
   { id: "commentators", label: "Different commentators", line: "Four commentary teams with their own voices and lines (classic, poetic, dry, fan TV). Each match gets one; official accounts use the TV teams, other accounts Fan TV." },
   { id: "videos2d", label: "2D goal videos", line: "Goal videos seen from above, like the 2D match: figures on a flat pitch, a ball trail, the net rippling. Same cuts, captions and commentary. Pick 3D or 2D below." },
+  { id: "seasonEnd", label: "Better end of season", line: "Season video: every goal plays (a made stand-in when this phone has no recording), tap right or left to skip a goal, ⭐ your favourite goals (kept for ever, a Favourites tab and reel), milestone cards and your Goal of the Season." },
   { id: "bugFixes", label: "Bug fixes (21)", line: "Refresh comes back where you were, labels, tour once, no sack after promotion, talks back button, signing manager name…" },
 ] as const;
 export type LeoFeature = (typeof LEO_FEATURES)[number]["id"];

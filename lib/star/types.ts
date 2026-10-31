@@ -1613,6 +1613,12 @@ export interface CareerState {
   /** The last season whose reel ("Your season") was made or skipped. Until
    *  then that season's recordings are kept from the newest-80 prune. */
   reelDoneSeason?: number;
+  /** Your favourite goals (Leo, 31 Oct 2026: "u should be able to save which
+   *  goals u want, like ur favourite ones"): CareerGoal ids, oldest pick
+   *  first (lib/star/favouriteGoals.ts). In the save so they follow you to
+   *  every device; their recordings are never pruned on this one. Absent:
+   *  none yet. Leo's update part "seasonEnd" only. */
+  favouriteGoals?: string[];
   /**
    * Up to 3 goals deliberately kept from `recentGoals` — a real choice, not
    * everything you've ever scored. Decoupled from `recentGoals`'s own churn
