@@ -35,6 +35,7 @@ export default function Graphic({ spec, author }: { spec: GraphicSpec; author?: 
       <GoalVideo
         clipIds={spec.clips}
         synth={spec.synth}
+        standIn={spec.standIn}
         priority={spec.priority ? 2 : spec.clips.length > 0 ? 1 : 0}
         style={spec.style ?? clipStyleFor(author)}
         variant={spec.variant ?? clipVariantFor(author)}

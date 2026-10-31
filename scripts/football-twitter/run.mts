@@ -7,7 +7,7 @@
  *   npx tsx scripts/football-twitter/dump.mts [on|off] [matches] > out.txt
  */
 import { createHash } from "node:crypto";
-import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
+import { makeInitialCareer, creditMatchResult, advanceSeason } from "../../lib/star/careerFlow";
 import { generateForMatch, generateForLeagueWeek, generateForCareer, feedFor, mediaOf } from "../../lib/star/media/feed";
 import { mulberry32 } from "../../lib/star/season";
 import type { CareerState, GoalEvent, MatchStats, StarPlayer } from "../../lib/star/types";
@@ -62,6 +62,59 @@ export function seededRun(n = 14, seed = 4242): CareerState {
     c = after;
     if (m === Math.floor(n / 2)) {
       c = { ...c, media: generateForCareer(c, { kind: "award", award: "Player of the Month", detail: "September", won: true }, "potm-test") };
+    }
+  }
+  return c;
+}
+
+/**
+ * Several whole seasons (every fixture, then advanceSeason), with about half
+ * of your goals "recorded" (a clipId, as the real match gives) so both kinds
+ * of goal video are made. For the video-rule test and the long dumps.
+ */
+export function seasonsRun(seasons = 2, seed = 4242, onStep?: (c: CareerState) => void): CareerState {
+  let c = makeInitialCareer(PLAYER, CLUBS);
+  let m = 0;
+  for (let s = 0; s < seasons; s++) {
+    for (let guard = 0; guard < 80; guard++) {
+      const fixture = c.fixtures.find(f => !f.played && f.week === c.week) ?? c.fixtures.find(f => !f.played);
+      if (!fixture) break;
+      const rng = mulberry32(seed + m * 31);
+      const roll = rng();
+      const us = roll < 0.12 ? 0 : roll < 0.45 ? 1 : roll < 0.75 ? 2 : roll < 0.92 ? 3 : 5;
+      const them = Math.floor(rng() * (roll < 0.12 ? 5 : 3));
+      const events: GoalEvent[] = [];
+      for (let i = 0; i < us; i++) {
+        const mine = rng() < 0.45;
+        events.push({
+          minute: Math.min(90, 6 + i * 17 + Math.floor(rng() * 16)),
+          scorer: mine ? "Test Striker" : "Danny Reeves", isUserGoal: mine,
+          how: HOWS[Math.floor(rng() * HOWS.length)], distance: 8 + Math.floor(rng() * 24),
+          ...(mine && rng() < 0.5 ? { clipId: `rec-${s}-${m}-${i}` } : {}),
+        });
+      }
+      const goals = events.filter(e => e.isUserGoal).length;
+      const rating = Math.round(Math.max(4.6, Math.min(9.8, 5.6 + goals * 0.9 + (us - them) * 0.2 + rng() * 1.2)) * 10) / 10;
+      const stats: MatchStats = {
+        chances: 4, goals, assists: rng() < 0.2 ? 1 : 0, passes: 25, rating, starMan: rating >= 8,
+        bossChange: 1, teamChange: 1, fansChange: 1, wage: 1, goalBonus: goals, sponsorPay: 0, totalCash: 2,
+        homeScore: us, awayScore: them, goalEvents: events, minutes: rng() < 0.1 ? 60 : 90,
+      };
+      const before = c;
+      const { career: after } = creditMatchResult(c, fixture, stats);
+      after.media = generateForMatch(before, after, fixture, stats);
+      const rest = (after.results ?? []).filter(r => r.week === fixture.week && r.home !== PLAYER.club && r.away !== PLAYER.club);
+      if (rest.length) after.media = generateForLeagueWeek({ ...after }, rest);
+      c = after;
+      m++;
+      onStep?.(c);
+      if (m % 9 === 4) { c = { ...c, media: generateForCareer(c, { kind: "award", award: "Player of the Month", detail: "the month", won: true }, `potm-${m}`) }; onStep?.(c); }
+      if (m % 23 === 11) { c = { ...c, media: generateForCareer(c, { kind: "manager-out", name: "Graham Pell", incoming: "Luis Moreda", reason: "results" }, `mgr-${m}`) }; onStep?.(c); }
+    }
+    if (s < seasons - 1) {
+      const media = c.media;
+      c = advanceSeason(c, false).career;
+      c = { ...c, media: c.media ?? media };
     }
   }
   return c;

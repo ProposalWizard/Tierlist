@@ -20,6 +20,7 @@ import type { CareerState } from "../../types";
 import { initialsOf, pick, resolve, rngFor, shortClub } from "../grammar";
 import { sortLeague } from "../../season";
 import { personaById, isBadNews, isGoodNews } from "./personas";
+import { hasPlayableVideo, impliesVideo } from "./videoWords";
 
 // ── Slots ─────────────────────────────────────────────────────────────────
 
@@ -68,7 +69,50 @@ export function derivedFacts(e: FootballEvent, a: MediaAccount, career: CareerSt
     const at = sortLeague(career.league).findIndex(t => t.name === club);
     if (at >= 0) f.tablePos = ordinal(at + 1);
   }
+  // v2 slots (templates/twitterMore.ts).
+  if (typeof f.us === "number" && typeof f.them === "number" && f.us !== f.them && f.clubS && f.oppS) {
+    f.winnerS = f.us > f.them ? f.clubS : f.oppS;
+    f.loserS = f.us > f.them ? f.oppS : f.clubS;
+  }
+  const goals = typeof f.seasonTotal === "number" ? f.seasonTotal : 0;
+  const price = Math.min(14, 5 + goals * 0.15 + rng() * 2);
+  f.price = price.toFixed(1);
+  f.priceNew = (price + 0.1).toFixed(1);
+  f.priceDown = (price - 0.1).toFixed(1);
+  f.ticket = `£${38 + Math.floor(rng() * 70)}`;
+  f.refName = pick(REFEREES, rng);
+  f.cards = (3 + rng() * 2.6).toFixed(1);
+  f.yrs = 3 + Math.floor(rng() * 40);
+  f.rate10 = pick(["8", "8.5", "9", "9.5", "10"], rng);
+  f.pct = 55 + Math.floor(rng() * 45);
+  f.transfersIn = `${20 + Math.floor(rng() * 400)}K`;
   return f;
+}
+
+/** Invented referees for the ref-watch page (no real official). */
+const REFEREES = ["Gareth Pennock", "Simon Treadwell", "Mark Dalloway", "Lee Ashcombe", "Paul Wrenfield", "Darren Kibble", "Craig Haldane", "Neil Upshaw"];
+
+/** A TikTok post's sound line, picked from its account's sounds. */
+export function soundFor(personaId: string | undefined, rng: () => number): string | undefined {
+  const p = personaId ? personaById(personaId) : undefined;
+  return p?.sounds?.length ? pick(p.sounds, rng) : undefined;
+}
+
+/**
+ * Poll shares that add up to exactly 100 (the old meme poll's "Who's to
+ * blame?" showed 34% + 21% + 44% = 99%). Votes are made whole multiples of
+ * one per cent of the total, so the card's rounded percentages are exact.
+ */
+export function evenPoll(votes: number[]): number[] {
+  const total = votes.reduce((a, b) => a + b, 0);
+  if (total <= 0 || votes.length < 2) return votes;
+  const pct = votes.map(x => Math.floor((x / total) * 100));
+  const rem = votes.map((x, i) => (x / total) * 100 - pct[i]);
+  let left = 100 - pct.reduce((a, b) => a + b, 0);
+  const order = rem.map((r, i) => [r, i] as const).sort((a, b) => b[0] - a[0]);
+  for (let k = 0; left > 0; k = (k + 1) % order.length, left--) pct[order[k][1]]++;
+  const unit = Math.max(1, Math.round(total / 100));
+  return pct.map(p => p * unit);
 }
 
 // ── Voice ─────────────────────────────────────────────────────────────────
@@ -101,8 +145,8 @@ export function personaPoll(poll: { q: string; options: string[] }, facts: Facts
   const options = poll.options.map(o => resolve(o, facts, voice, rng));
   if (/[{}]/.test(question) || options.some(o => !o || /[{}]/.test(o)) || new Set(options).size < options.length) return undefined;
   // Votes: about half a per cent of followers vote (a big page gets tens of thousands).
-  const total = Math.max(40, Math.round(followers * (0.003 + rng() * 0.006)));
-  return { type: "poll", question, options, votes: shares(rng, options.length).map(p => Math.round((p / 100) * total)) };
+  const total = Math.max(100, Math.round(followers * (0.003 + rng() * 0.006)));
+  return { type: "poll", question, options, votes: evenPoll(shares(rng, options.length).map(p => Math.round((p / 100) * total))) };
 }
 
 // ── Engagement ────────────────────────────────────────────────────────────
@@ -177,31 +221,61 @@ const REPLY_GUYS: ReplyGuy[] = [
   { handle: "@ProperFootballPaul", name: "Proper Football Paul", tint: "#78350f", tint2: "#fde68a", followers: 1_500 },
 ];
 
-/** Reply lines by what the post is about. Slots as the persona lines. */
+/**
+ * Reply lines by what the post is about. Slots as the persona lines, plus
+ * {loserS}/{winnerS} (worked out here, so a banter reply always laughs at
+ * the side that lost: Leo saw "someone check on Arsenal fans" under a meme
+ * about Arsenal WINNING). "…Video" moods are only used under a post that
+ * shows a playable video (Leo's rule: no words about a video you can't watch).
+ */
 const REPLIES: Record<string, string[]> = {
   goodYou: [
     "{short} is HIM and i'm tired of pretending he isn't",
     "the way {short} just does this every week 😭",
     "{short} owners eating good tonight 🍽️",
-    "who's telling {oppS} defenders they're still looking for him",
     "remember when people said {short} was a project 😂",
-    "this is the {short} slander quote tweet graveyard 🪦",
+    "this is the {short} slander graveyard 🪦",
     "sign him to a 10 year contract right now",
     "ball knowledge confirmed. been saying {short} since day one",
-    "i need this as my wallpaper",
-    "not even his best goal this season tbf",
     "{short} for the Ballon d'Or. i'm serious",
-    "the first touch before it 🤌",
     "we don't deserve {short}",
-    "{oppS} will be seeing that in their sleep",
+    "{oppS} will be seeing him in their sleep",
     "my dad said he'd never make it. dad?",
     "how is this guy not starting for his country",
-    "commentator lost his mind and so did i",
     "put some respect on his name",
     "every week. every single week",
     "he's the reason i renewed my season ticket",
-    "the composure 😮‍💨",
     "{short} slander will not be tolerated on this app",
+    "the composure at his age is not normal",
+    "18 years old. EIGHTEEN 😭",
+    "his agent's phone must be melting",
+    "tell me a better young player. i'll wait",
+    "name a more reliable player. you can't",
+    "not even surprised anymore, he's just that guy",
+    "{short} szn never ends",
+    "proper footballer. no notes",
+    "the {clubS} academy should be getting a statue",
+    "he plays like he's been doing this for 15 years",
+    "mark my words: captain within two seasons",
+  ],
+  goodYouVideo: [
+    "the first touch before it 🤌",
+    "commentator lost his mind and so did i",
+    "i've watched this 40 times",
+    "the keeper didn't even move 😭",
+    "turn the sound up for this one",
+    "that angle makes it even better",
+    "the slow-mo at the end 😮‍💨",
+    "who's editing these, they deserve a raise",
+    "on loop. every day. forever",
+    "the defender's face 😭😭",
+    "the way the net moved 🤌",
+    "i need this as my phone background",
+    "{oppS} fans are not watching this one 😂",
+    "rate it 10 and move on",
+    "not even his best one this season tbf",
+    "goal of the season. don't argue",
+    "watch his head before he shoots. scanning 🧠",
   ],
   badYou: [
     "{short} owes me points 😤",
@@ -219,6 +293,13 @@ const REPLIES: Record<string, string[]> = {
     "he looked tired. play him less",
     "honestly the whole team was poor, not just him",
     "back to the drawing board",
+    "the service to him was awful tbf",
+    "18 years old and people want him perfect every week",
+    "even Messi had bad games lads",
+    "touch was off all day, it happens",
+    "he'll score two next week and you'll all be back",
+    "manager needs to protect him more",
+    "not his day. move on",
   ],
   goodClub: [
     "{clubS} are BACK 🔥",
@@ -232,6 +313,14 @@ const REPLIES: Record<string, string[]> = {
     "three points is three points",
     "we go again",
     "this is the team i fell in love with",
+    "{oppS} were never in it",
+    "the subs changed it",
+    "i'm not getting excited. (i'm very excited)",
+    "{clubS} are building something here",
+    "the away fans were brilliant again",
+    "if we keep this up we're going up the table quick",
+    "best we've played all season",
+    "the manager deserves credit for that",
   ],
   badClub: [
     "{clubS} fans real quiet today 🤫",
@@ -247,6 +336,13 @@ const REPLIES: Record<string, string[]> = {
     "same mistakes every week",
     "board need to wake up",
     "can't even be angry anymore, just tired",
+    "the defending was a joke",
+    "no plan b. never is",
+    "we miss our best players and fall apart",
+    "january can't come soon enough",
+    "{oppS} wanted it more. simple",
+    "the set pieces are killing us",
+    "honestly just glad it's over",
   ],
   contract: [
     "best news i've had all week",
@@ -255,6 +351,10 @@ const REPLIES: Record<string, string[]> = {
     "release clause better be massive",
     "now win us something {short}",
     "W",
+    "loyalty. love to see it",
+    "the rest of the league in shambles",
+    "deserves every penny",
+    "best piece of business all year",
   ],
   manager: [
     "about time",
@@ -264,48 +364,75 @@ const REPLIES: Record<string, string[]> = {
     "{clubS} going through managers like socks",
     "give the next one time this time please",
     "the dressing room won this one",
+    "never liked the appointment from day one",
+    "sad way for it to end tbf",
+    "the players should be looking at themselves",
+  ],
+  managerIn: [
+    "give him time. please",
+    "decent appointment this",
+    "not who i wanted but let's see",
+    "first job: sort the defence out",
+    "welcome to the madhouse, gaffer",
+    "let's give him a fair go",
+    "interesting one. could work",
+    "he'll need a january window",
   ],
   transfer: [
-    "here comes the 'what does this mean for {short}' thread",
     "fee is mad but he's worth it",
     "{to} fans about to be insufferable",
-    "medical? he's 19 he's fine 😂",
     "good business for everyone involved",
     "source?",
     "the agent is getting a new car out of this 😂",
     "{from} fans in shambles",
     "the shirt sales are about to go mad",
+    "{to} have got a player",
+    "sad to see him go tbh",
+    "what a signing",
   ],
   hotTake: [
     "ratio",
     "worst take i've read all week",
     "this is bait and i'm biting: no",
-    "you watched the highlights didn't you",
+    "you watched one game didn't you",
     "agree but for different reasons",
     "deleted?",
     "who's telling him",
     "screenshot this, we're coming back to it in May",
+    "the confidence of a man who's never been right",
+    "bait. reported. blocked",
+    "you're not even wrong, just annoying",
+    "say it again, i dare you",
   ],
   banter: [
     "😭😭😭",
-    "not the {clubS} fans in the replies 💀",
+    "not the {loserS} fans in the replies 💀",
     "violation",
     "the disrespect is crazy 😭",
     "admin woke up and chose violence",
     "LMAOOO",
     "bro is NOT stopping 😭",
     "i'm crying at the replies",
-    "someone check on {clubS} fans",
+    "someone check on {loserS} fans",
     "this account has no chill",
     "the caption 💀",
-    "they're not going to like this one",
+    "{loserS} fans are not going to like this one",
+    "{winnerS} fans tagging every {loserS} fan they know 😂",
+    "screenshotted and sent to the group chat",
+    "the accuracy 😭",
+    "i felt this one",
+    "{loserS} fans pretending they didn't see this",
+    "brutal. accurate. brutal",
   ],
   score: [
     "what a game",
     "{homeS} never make it easy",
-    "the ref was the best player on the pitch",
     "great game for a neutral 🍿",
     "{awayS} fans where are you",
+    "didn't see that coming",
+    "the league is mad this year",
+    "fair result tbh",
+    "that's a big three points",
   ],
   generic: [
     "big if true",
@@ -314,18 +441,23 @@ const REPLIES: Record<string, string[]> = {
     "W",
     "this sport man",
     "football is back",
+    "can't wait for the weekend",
+    "following for more of this",
+    "you love to see it",
+    "absolute scenes",
   ],
 };
 
-function replyMood(post: StoredPost, e: FootballEvent): keyof typeof REPLIES {
+function replyMood(post: StoredPost, e: FootballEvent, video: boolean): keyof typeof REPLIES {
   // Meme pages and rival fans are laughing at somebody: their replies laugh along.
   if ((post.persona && BANTER.has(post.persona)) || post.author.archetype === "meme" || post.author.archetype === "rivalFan") return "banter";
   if (post.persona && HOT.has(post.persona)) return "hotTake";
   if (e.tags.includes("contract")) return "contract";
+  if (e.id === "manager-in") return "managerIn";
   if (e.tags.includes("manager")) return "manager";
   if (e.tags.includes("transfer")) return "transfer";
   const aboutYou = e.subject.kind === "you";
-  if (aboutYou) return isBadNews(e) ? "badYou" : isGoodNews(e) ? "goodYou" : "generic";
+  if (aboutYou) return isBadNews(e) ? "badYou" : isGoodNews(e) ? (video ? "goodYouVideo" : "goodYou") : "generic";
   if (isBadNews(e)) return "badClub";
   if (isGoodNews(e)) return "goodClub";
   if (e.facts.homeClub) return "score";
@@ -340,14 +472,38 @@ function filled(line: string, facts: Facts): boolean {
   return true;
 }
 
+/** The winning and losing side's short names, when the post is about a result. */
+function sides(facts: Facts, e: FootballEvent): Facts {
+  const f: Facts = { ...facts };
+  const club = typeof f.club === "string" ? shortClub(f.club) : undefined;
+  const opp = typeof f.opponent === "string" ? shortClub(f.opponent) : undefined;
+  if (club) f.clubS ??= club;
+  if (opp) f.oppS ??= opp;
+  if (club && opp && typeof f.us === "number" && typeof f.them === "number" && f.us !== f.them) {
+    f.winnerS = f.us > f.them ? club : opp;
+    f.loserS = f.us > f.them ? opp : club;
+  } else if (club && (isBadNews(e) || isGoodNews(e)) && !(typeof f.us === "number" && f.us === f.them)) {
+    // No score (a career moment, a run): the club had the bad or the good day.
+    if (isBadNews(e)) { f.loserS = club; if (opp) f.winnerS = opp; }
+    else { f.winnerS = club; if (opp) f.loserS = opp; }
+  } else {
+    delete f.winnerS; delete f.loserS;
+  }
+  return f;
+}
+
 /** Up to three replies under a post, liked in falling order. */
 export function replyThread(
   post: StoredPost, e: FootballEvent, facts: Facts, voice: VoiceProfile, rng: () => number,
   /** Lines already used under this cycle's other posts: never the same reply twice. */
   cycleUsed: Set<string> = new Set(),
+  /** Lines used under any post in the last few weeks (feed.ts FT_REPEAT_WEEKS), kept out too. */
+  recent: Set<string> = new Set(),
 ): PostReply[] {
-  const mood = replyMood(post, e);
-  const lines = REPLIES[mood].filter(l => filled(l, facts) && !cycleUsed.has(l));
+  const video = hasPlayableVideo(post);
+  const mood = replyMood(post, e, video);
+  const f = sides(facts, e);
+  const lines = REPLIES[mood].filter(l => filled(l, f) && !cycleUsed.has(l) && !recent.has(l) && (video || !impliesVideo(l)));
   const n = Math.min(lines.length, post.metrics.replies >= 40 ? 3 : post.metrics.replies >= 8 ? 2 : post.metrics.replies >= 1 ? 1 : 0);
   const out: PostReply[] = [];
   const usedLines = new Set<number>(), usedGuys = new Set<number>();
@@ -359,7 +515,7 @@ export function replyThread(
     if (usedLines.has(li) || usedGuys.has(gi)) break;
     usedLines.add(li); usedGuys.add(gi); cycleUsed.add(lines[li]);
     const g = REPLY_GUYS[gi];
-    let text = resolve(lines[li], facts, voice, rng).trim();
+    let text = resolve(lines[li], f, voice, rng).trim();
     if (rng() < 0.6) text = text.toLowerCase();
     out.push({ handle: g.handle, name: g.name, verified: rng() < 0.15, initials: initialsOf(g.name), tint: g.tint, tint2: g.tint2, glyph: "grin", text, likes });
     likes = Math.max(0, Math.round(likes * (0.25 + rng() * 0.4)));
@@ -370,31 +526,38 @@ export function replyThread(
 // ── Quote posts ───────────────────────────────────────────────────────────
 
 const QUOTES: Record<string, Record<string, string[]>> = {
-  hype: { goodYou: ["{short} is HIM 😭", "this is the {short} appreciation post", "levels 🥶 {short} different breed"] },
-  quiz: { goodYou: ["ball knowledge check: who called {short} first? 🧠👇", "be honest, did you know {short} before this season? 👇"] },
-  edits: { goodYou: ["edit incoming 🎧", "this needs a slow-mo edit and i'm doing it"] },
-  meme: { goodYou: ["{oppS} defenders after this: 🧍", "absolute cinema 🎬"], badClub: ["{clubS} fans opening the app today 🧍", "this is fine 🔥🐶"] },
-  ratio: { badClub: ["imagine posting this after that 😭", "{clubS} admin really pressed send 💀", "ratio + {score} + the disrespect 😭"], badYou: ["'generational' 😭", "who's telling {short}? 💀"] },
+  hype: { goodYou: ["{short} is HIM 😭", "this is the {short} appreciation post", "levels 🥶 {short} different breed", "say it with me: {short} is HIM", "{short} doing {short} things again 👑", "the rest of the league is playing for second best young player 😮‍💨"] },
+  quiz: { goodYou: ["ball knowledge check: who called {short} first? 🧠👇", "be honest, did you know {short} before this season? 👇", "rate {short}'s season so far out of 10 👇", "one word for {short} right now 👇"] },
+  edits: { goodYouVideo: ["edit incoming 🎧", "this needs a slow-mo edit and i'm doing it", "saving this clip for the end-of-season edit 📈", "the edit writes itself 🥶"] },
+  pov: { goodYouVideo: ["pov: you watched this live 😭", "pov: you're the defender in this video 🫨", "pov: this is on loop in your head all week 🔁"] },
+  ranker: { goodYouVideo: ["rate this goal 1-10 👇", "top 3 of the season? rate it 👇", "where does this rank? 👇"] },
+  commentBot: { goodYou: ["the replies under this are undefeated 💬", "top comment on this is going to be framed 💬"], badClub: ["the comment section under this is a war zone 💬", "{loserS} fans in the comments right now: 🫠"] },
+  meme: { goodYou: ["{oppS} defenders after this: 🧍", "absolute cinema 🎬", "{short} woke up and chose violence"], badClub: ["{loserS} fans opening the app today 🧍", "this is fine 🔥🐶", "{loserS} fans reading this: 🫠"] },
+  ratio: { badClub: ["imagine posting this after that 😭", "{loserS} admin really pressed send 💀", "ratio + the disrespect 😭", "{loserS} you have to log off 😭"], badYou: ["'generational' 😭", "who's telling {short}? 💀", "{short} stans are quiet today 🤫"] },
   journalist: {
-    goodYou: ["Worth saying: this is no fluke. The underlying work has been there for weeks.", "Told you in August."],
-    badClub: ["For what it's worth, this has been coming. Nobody inside {clubS} is surprised.", "Understand this result has caused real concern at board level."],
-    transfer: ["Understand this was agreed earlier than reported.", "Fair fee. Strong business for both clubs."],
+    goodYou: ["Worth saying: this is no fluke. The underlying work has been there for weeks.", "Told you in August.", "The most important thing here is how calm he looks doing it."],
+    badClub: ["For what it's worth, this has been coming. Nobody inside {clubS} is surprised.", "Understand this result has caused real concern at board level.", "This is the third warning sign this season. The board know it."],
+    transfer: ["Understand this was agreed earlier than reported.", "Fair fee. Strong business for both clubs.", "The key detail is the add-ons. They are achievable."],
   },
-  takes: { goodYou: ["Unpopular opinion: still overrated.", "Calm down. One good game."], badClub: ["Unpopular opinion: they deserve this."] },
-  rivalBanter: { badClub: ["😂😂😂😂", "same old {clubS} 🤡"], badYou: ["rent free 😂"] },
+  takes: { goodYou: ["Unpopular opinion: still overrated.", "Calm down. One good game.", "Hot take: the goal was the keeper's fault."], badClub: ["Unpopular opinion: they deserve this.", "Hot take: this is the real {loserS}."] },
+  rivalBanter: { badClub: ["😂😂😂😂", "same old {loserS} 🤡", "framing this 😂"], badYou: ["rent free 😂", "where's the hype now 😂"] },
+  tier2: { transfer: ["Correct. Agreement was reached this week. More to follow.", "Can confirm. Personal terms done some time ago."] },
+  rumourMill: { transfer: ["🗞️ as we reported days ago (per reports) 👀", "🗞️ big if true. we said it first-ish 👀"] },
 };
 
 /**
  * One to three posts quoting the cycle's biggest posts: the hype or quiz
- * page quote-posts your goal (the play tile shows its video), the ratio page
- * and your rival's fans quote your club's bad day, the journalist adds a
- * line to the news.
+ * page quote-posts your goal (its video plays inside the quote),
+ * the ratio page and your rival's fans quote your club's bad day, the
+ * journalist adds a line to the news.
  */
 export function quotePosts(
   posts: { post: StoredPost; event: FootballEvent; facts: Facts }[],
   accounts: MediaAccount[],
   cycleId: string,
   yourClub: string,
+  /** Quote lines used lately (kept out); new ones are added to it. */
+  recent: Set<string> = new Set(),
 ): StoredPost[] {
   const rng = rngFor("quotes", cycleId);
   const byPersona = new Map(accounts.filter(a => a.persona).map(a => [a.persona!, a]));
@@ -411,13 +574,16 @@ export function quotePosts(
     const authors = who.map(p => byPersona.get(p)).filter((a): a is MediaAccount => !!a && a.handle !== target.post.author.handle);
     if (!authors.length) return;
     const a = pick(authors, rng);
-    const lines = (QUOTES[a.persona!]?.[mood] ?? []).filter(l => filled(l, target.facts));
+    const f = sides(target.facts, target.event);
+    const video = hasPlayableVideo(target.post);
+    // A quote that talks about a video only quotes a post that has one (and carries it).
+    const lines = (QUOTES[a.persona!]?.[mood] ?? []).filter(l => filled(l, f) && !recent.has(`${a.persona}|${l}`) && (video || !impliesVideo(l)));
     if (!lines.length) return;
     quoted.add(target.post.id);
     const p = personaById(a.persona!);
-    const text = personaSpeak(resolve(pick(lines, rng), target.facts, a.voice, rng), a.voice, p?.emoji ?? [], rng);
-    const g = target.post.graphic as { type?: string; clips?: unknown[]; synth?: unknown[] } | undefined;
-    const video = !!g && (g.type === "goalVideo" || g.type === "thumbnail") && ((g.clips?.length ?? 0) + (g.synth?.length ?? 0)) > 0;
+    const line = pick(lines, rng);
+    recent.add(`${a.persona}|${line}`);
+    const text = personaSpeak(resolve(line, f, a.voice, rng), a.voice, p?.emoji ?? [], rng);
     const t = target.post.author;
     const importance = Math.min(95, 40 + Math.log10(1 + (target.post.metrics.views ?? 0)) * 8);
     out.push({
@@ -436,18 +602,20 @@ export function quotePosts(
         handle: t.handle, name: t.name, verified: t.verified, ...(t.tick ? { tick: t.tick } : {}),
         initials: t.initials, tint: t.tint, tint2: t.tint2, glyph: t.glyph,
         text: target.post.text, ...(video ? { video: true } : {}),
+        ...(video ? { graphic: target.post.graphic } : {}),
       },
       ...(target.post.aboutYou ? { aboutYou: true } : {}),
       persona: a.persona,
+      // A TikTok page quoting a goal is a stitch: the video, its caption, its sound.
+      ...(a.platform === "tiktok" && video ? { sound: soundFor(a.persona, rng) } : {}),
     });
   };
   const aboutYourClub = (e: FootballEvent) => e.facts.club === yourClub;
-  const hasVid = (p: StoredPost) => { const g = p.graphic as { type?: string } | undefined; return g?.type === "goalVideo" || g?.type === "thumbnail"; };
-  if (rng() < 0.7) tryQuote(["edits", "hype"], "goodYou", x => x.event.subject.kind === "you" && x.event.tags.includes("goal") && hasVid(x.post));
-  tryQuote(["hype", "quiz", "meme"], "goodYou", x => x.event.subject.kind === "you" && isGoodNews(x.event) && x.event.tags.includes("goal"), true);
-  if (rng() < 0.75) tryQuote(["ratio", "rivalBanter", "meme"], "badClub", x => aboutYourClub(x.event) && isBadNews(x.event) && x.event.subject.kind !== "you");
+  if (rng() < 0.7) tryQuote(["edits", "pov", "ranker"], "goodYouVideo", x => x.event.subject.kind === "you" && x.event.tags.includes("goal") && hasPlayableVideo(x.post));
+  tryQuote(["hype", "quiz", "meme", "commentBot"], "goodYou", x => x.event.subject.kind === "you" && isGoodNews(x.event) && x.event.tags.includes("goal"), true);
+  if (rng() < 0.75) tryQuote(["ratio", "rivalBanter", "meme", "commentBot"], "badClub", x => aboutYourClub(x.event) && isBadNews(x.event) && x.event.subject.kind !== "you");
   if (rng() < 0.6) tryQuote(["ratio", "rivalBanter"], "badYou", x => x.event.subject.kind === "you" && isBadNews(x.event));
-  if (rng() < 0.5) tryQuote(["journalist"], "transfer", x => x.event.tags.includes("transfer"), true);
+  if (rng() < 0.5) tryQuote(["journalist", "tier2", "rumourMill"], "transfer", x => x.event.tags.includes("transfer"), true);
   if (rng() < 0.4) tryQuote(["journalist", "takes"], "goodYou", x => x.event.subject.kind === "you" && isGoodNews(x.event), true);
   if (rng() < 0.4) tryQuote(["journalist"], "badClub", x => aboutYourClub(x.event) && isBadNews(x.event), true);
   return out;

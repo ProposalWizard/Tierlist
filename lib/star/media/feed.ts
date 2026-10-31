@@ -17,10 +17,10 @@ import { formatMoney } from "../money";
 import { headlineEvent, scoreCareerEvents, scoreMatchEvents } from "./importance";
 import { absorbEvents, absorbMatch, coolThreads, emptyMemory, markSaid } from "./memory";
 import { buildRoster, selfAccount, nationalTeamAccount } from "./accounts";
-import { selectPairings, type Pairing } from "./select";
+import { selectPairings, type FtContext, type Pairing } from "./select";
 import { chooseAngle } from "./narrate";
 import { chooseTemplate } from "./templates";
-import { buildGraphic, matchReel } from "./graphics";
+import { buildGraphic, matchReel, standInsFor, yourGoalsVideo } from "./graphics";
 import type { SynthGoal } from "../goalClip/synth";
 import { metricsFor, resolve, rngFor, speak, surname } from "./grammar";
 import { clockAt, timeFor, visible, FEED_HORIZON, FIRST_WAVE } from "./schedule";
@@ -28,7 +28,10 @@ import { buildTrends } from "./trending";
 import { goalOfMonthAfterMatch } from "./goalOfMonth";
 import { footballTwitterOn, goalOfMonthOn, yourGoalVideoOn } from "./updateFlags";
 import { choosePersonaTemplate } from "./templates";
-import { derivedFacts, engagement, personaPoll, personaSpeak, quotePosts, rankFeed, replyThread } from "./twitter/engine";
+import { derivedFacts, engagement, evenPoll, personaPoll, personaSpeak, quotePosts, rankFeed, replyThread, soundFor } from "./twitter/engine";
+import { breaksVideoRule, graphicPlays, impliesVideo } from "./twitter/videoWords";
+import { primaryRivalOf } from "../rivalries";
+import { sortLeague } from "../season";
 import { personaById } from "./twitter/personas";
 import { studioCap, studioEvents, studioPosts, studioRoster, studioShown, studioTrends, studioVolume } from "./studio";
 export { voteGoalOfMonth, applyGoalOfMonthBoost } from "./goalOfMonth";
@@ -447,15 +450,17 @@ function commit(
     const seenCycleIds = withSeen(state, cycleId);
     if (scope === "league") return { ...state, memory, lastLeagueCycleId: cycleId, seenCycleIds };
     // Nothing to say about it, but a match with goals still gets its videos.
-    const extra = record ? studioPosts(highlightPosts(career, record, world(), cycleId, cycleClock), st) : [];
+    let extra = record ? studioPosts(highlightPosts(career, record, world(), cycleId, cycleClock), st) : [];
     capVideos(extra, cycleId);
+    if (footballTwitterOn()) extra = extra.filter(p => !breaksVideoRule(p));
     const posts = extra.length ? [...state.posts, ...extra].sort((a, b) => a.at - b.at).slice(-cap) : state.posts;
     return { ...state, posts, memory, lastCycleId: cycleId, lastCycleClock: cycleClock, seenCycleIds, ...matchCycle };
   }
 
   const accounts = world()
     .filter(a => !onlyArchetypes || onlyArchetypes.has(a.archetype));
-  const pairings = selectPairings(events, accounts, cycleId, career.player.club, studioVolume(st))
+  const pairings = selectPairings(events, accounts, cycleId, career.player.club, studioVolume(st),
+    footballTwitterOn() ? ftContext(career, freshSaid(memory.ftSaid, ftWeek(cycleClock))) : undefined)
     .slice(0, maxPosts ?? Number.POSITIVE_INFINITY);
 
   const posts: StoredPost[] = [];
@@ -479,19 +484,26 @@ function commit(
   // Football Twitter: what each post was about, for its replies and quotes.
   const ft = footballTwitterOn();
   const ftMade: { post: StoredPost; event: FootballEvent; facts: Facts; voice: MediaAccount["voice"] }[] = [];
+  // Football Twitter v2: lines used lately across the whole career, and one
+  // TikTok / clips page video per cycle (the rest write a line with no video).
+  const ftNow = ftWeek(cycleClock);
+  const ftSaid: Record<string, number> = ft ? freshSaid(memory.ftSaid, ftNow) : {};
+  let ftVideos = 0;
 
   // Indexed rather than `.entries()` — this project's TypeScript target does
   // not down-level iterate an array iterator.
   for (let slot = 0; slot < pairings.length; slot++) {
     const p = pairings[slot];
-    const made = render(p, career, record, memory, cycleId, usedThisCycle, slot);
+    const made = ft
+      ? renderFt(p, career, record, memory, cycleId, usedThisCycle, slot, ftSaid, ftVideos >= FT_VIDEOS_PER_CYCLE)
+      : render(p, career, record, memory, cycleId, usedThisCycle, slot);
     if (!made) continue;
+    if (ft && made.post.persona && graphicPlays(made.post.graphic)) ftVideos++;
     if (recentText.has(made.post.text)) continue;
     let gType = (made.post.graphic as { type?: string } | undefined)?.type;
     // Football Twitter: a second video of the same goal keeps its words, not its video.
     if (ft && gType === "goalVideo" && made.post.persona && graphicKinds.has(`goalVideo|${made.post.eventId ?? ""}`)) {
-      made.post = { ...made.post, graphic: undefined };
-      gType = undefined;
+      continue; // v2: a video post without its video is not posted at all (Leo's rule)
     }
     if (gType) {
       const isPoll = gType === "poll" || gType === "gotmPoll";
@@ -505,12 +517,17 @@ function commit(
     usedThisCycle.add(made.templateId);
     posts.push(...studioPosts([{ ...made.post, scope }], st));
     used.push(made.templateId);
+    if (ft) ftSaid[`${p.account.id}|${made.templateId}`] = ftNow;
     if (ft) ftMade.push({ post: posts[posts.length - 1], event: p.event, facts: made.facts, voice: p.account.voice });
   }
 
   if (scope === "club" && record) posts.push(...studioPosts(highlightPosts(career, record, accounts, cycleId, cycleClock), st));
-  capVideos(posts, cycleId);
-  if (ft) footballTwitterPass(posts, ftMade, accounts, cycleId, career.player.club, scope);
+  // Football Twitter: a TikTok / clips page's own video is not one of the match's 1-2 (it is the post).
+  capVideos(posts, cycleId, ft ? (q => !!q.persona) : undefined);
+  if (ft) {
+    footballTwitterPass(posts, ftMade, accounts, cycleId, career.player.club, scope, ftSaid, ftNow);
+    ftTidy(posts);
+  }
 
   const trends = buildTrends(events, posts, cycleId, fameOf(career));
   const all = [...state.posts, ...posts]
@@ -519,7 +536,7 @@ function commit(
 
   return {
     posts: all,
-    memory: markSaid(memory, used),
+    memory: ft ? { ...markSaid(memory, used), ftSaid } : markSaid(memory, used),
     trends: trends.length ? trends : state.trends,
     seenCycleIds: withSeen(state, cycleId),
     // Kept through the league's and the career's own cycles; set by a match.
@@ -548,8 +565,8 @@ const hasVideo = (p: StoredPost) => {
   return !!g && (g.type === "goalVideo" || (g.type === "thumbnail" && ((g.clips?.length ?? 0) + (g.synth?.length ?? 0)) > 0));
 };
 
-function capVideos(posts: StoredPost[], cycleId: string): void {
-  const vids = posts.filter(hasVideo);
+function capVideos(posts: StoredPost[], cycleId: string, exempt?: (p: StoredPost) => boolean): void {
+  const vids = posts.filter(p => hasVideo(p) && !exempt?.(p));
   if (!vids.length) return;
   const rng = rngFor("videos", cycleId);
   // 1 or 2, at random (Leo, 16 Oct 2026: "we wanted to make it random"):
@@ -569,7 +586,7 @@ function capVideos(posts: StoredPost[], cycleId: string): void {
   for (const p of Array.from(keep).reverse()) if (keep.size > max) keep.delete(p);
   while (keep.size < max && rest.length) keep.add(rest.splice(Math.floor(rng() * rest.length), 1)[0]);
   for (let i = 0; i < posts.length; i++) {
-    if (hasVideo(posts[i]) && !keep.has(posts[i])) posts[i] = { ...posts[i], graphic: undefined };
+    if (hasVideo(posts[i]) && !keep.has(posts[i]) && !exempt?.(posts[i])) posts[i] = { ...posts[i], graphic: undefined };
   }
 }
 
@@ -606,7 +623,9 @@ function highlightPosts(
         initials: acc.avatar.initials, tint: acc.avatar.tint, tint2: acc.avatar.tint2, glyph: acc.avatar.glyph,
       },
       text,
-      graphic: { type: "goalVideo", title, clips: reel.clips, ...(reel.synth.length ? { synth: reel.synth } : {}), priority: true },
+      graphic: { type: "goalVideo", title, clips: reel.clips, ...(reel.synth.length ? { synth: reel.synth } : {}), priority: true,
+        // Football Twitter: a made goal stands in for any recording this phone lacks.
+        ...(footballTwitterOn() && reel.clips.length && standInsFor(r, reel.clips).length ? { standIn: standInsFor(r, reel.clips) } : {}) },
       metrics: metricsFor(acc.followers, 80, rng),
       ...(footballTwitterOn() ? {
         metrics: engagement(acc, 80, { aboutYou: key === "your-highlights", video: true }, rngFor("eng", cycleId, key, acc.id)),
@@ -641,6 +660,111 @@ function highlightPosts(
   return out;
 }
 
+type Made = { post: StoredPost; templateId: string; facts: Facts; wantsVideo?: boolean };
+
+// ── Football Twitter v2 (switch part "footballTwitter") ─────────────────────
+
+/** A line is not used again by the same account for this many weeks (memory.ftSaid). */
+export const FT_REPEAT_WEEKS = 6;
+/** TikTok / clips pages' own videos per cycle (on top of the match's highlights). */
+export const FT_VIDEOS_PER_CYCLE = 1;
+
+/** The career week of a feed clock (season×64 + week). */
+function ftWeek(clock: number): number {
+  // ×64, not ×52: a season's calendar runs past week 52 (cup weeks), and its
+  // last weeks must not read as the next season's first.
+  return Math.floor(clock / 1_000_000) * 64 + Math.floor((clock % 1_000_000) / 10_000);
+}
+
+/** Lines used in the last FT_REPEAT_WEEKS weeks (older ones forgotten, so the save stays small). */
+function freshSaid(said: Record<string, number> | undefined, now: number): Record<string, number> {
+  const out: Record<string, number> = {};
+  // Cycles are not always stamped in order (the league's week, a career moment), so
+  // "lately" is counted back from the newest week seen, not from this cycle.
+  const top = Math.max(now, ...Object.values(said ?? {}));
+  for (const [k, w] of Object.entries(said ?? {})) if (top - w < FT_REPEAT_WEEKS) out[k] = w;
+  return out;
+}
+
+/** Who the feed should care about beyond your club: your rival and the top of the table. */
+function ftContext(career: CareerState, said: Record<string, number>): FtContext {
+  const leaders = sortLeague(career.league).slice(0, 3).map(t => t.name);
+  const recent: Record<string, number> = {};
+  for (const k of Object.keys(said)) {
+    const at = k.indexOf("|");
+    if (at > 0 && !k.startsWith("reply|") && !k.startsWith("quote|")) recent[k.slice(0, at)] = (recent[k.slice(0, at)] ?? 0) + 1;
+  }
+  return { rival: primaryRivalOf(career.player.club) ?? undefined, leaders, recent };
+}
+
+/**
+ * Old lines that read wrong with Football Twitter on (Leo's list):
+ *  - the tabloid/pundit/insider/meme manager lines all say he was SACKED
+ *    ("AXED!"), so they never run for a manager arriving;
+ *  - "im actually shaking. what a player" after a 4.9 rating.
+ */
+const SACKED_ONLY = new Set(["tb-manager", "in-manager", "pu-manager", "bs-manager", "meme-manager"]);
+const PRAISE_NEEDS_RATING = new Set(["fan-goal-2"]);
+function ftBlocked(templateId: string, e: FootballEvent): boolean {
+  if (SACKED_ONLY.has(templateId) && e.id === "manager-in") return true;
+  if (PRAISE_NEEDS_RATING.has(templateId)) {
+    const r = Number(e.facts.rating);
+    if (Number.isFinite(r) && r < 6.5) return true;
+  }
+  return false;
+}
+
+/**
+ * Render with Football Twitter's rules: never a line this account used in
+ * the last FT_REPEAT_WEEKS weeks, never a blocked line, and never a post
+ * that talks about a video (or was written to carry one) without a playable
+ * video. A rejected line is set aside and the next best one tried.
+ */
+function renderFt(
+  p: Pairing, career: CareerState, record: MatchRecord | null, memory: StoryMemory, cycleId: string,
+  usedThisCycle: Set<string>, slot: number, said: Record<string, number>, noMoreVideos: boolean,
+): Made | null {
+  const avoid = new Set(usedThisCycle);
+  const prefix = `${p.account.id}|`;
+  for (const k of Object.keys(said)) if (k.startsWith(prefix)) avoid.add(k.slice(prefix.length));
+  for (let tries = 0; tries < 8; tries++) {
+    const made = render(p, career, record, memory, cycleId, avoid, slot);
+    if (!made) return null;
+    const plays = graphicPlays(made.post.graphic);
+    const bad = ftBlocked(made.templateId, p.event)
+      || (made.wantsVideo && !plays)
+      || (!plays && impliesVideo(made.post.text))
+      || (noMoreVideos && plays && !!made.post.persona);
+    if (!bad) {
+      const g = made.post.graphic;
+      if (g && g.type === "poll") made.post = { ...made.post, graphic: { ...g, votes: evenPoll(g.votes) } };
+      // Every recorded goal gets a made stand-in (a phone without the recording still plays it).
+      if (g && g.type === "goalVideo" && g.clips.length && !g.standIn && record) {
+        const standIn = standInsFor(record, g.clips);
+        if (standIn.length) made.post = { ...made.post, graphic: { ...g, standIn } };
+      }
+      return made;
+    }
+    if (avoid.has(made.templateId)) return null;
+    avoid.add(made.templateId);
+  }
+  return null;
+}
+
+/** After a cycle: anything that still talks about a video it does not show goes. */
+function ftTidy(posts: StoredPost[]): void {
+  for (let i = posts.length - 1; i >= 0; i--) {
+    const p = posts[i];
+    if (breaksVideoRule(p)) {
+      // A reply that mentions the video under a post that lost it: drop the reply, keep the post.
+      const thread = p.thread?.filter(r => !impliesVideo(r.text));
+      const fixed = { ...p, ...(thread ? { thread } : {}) };
+      if (breaksVideoRule(fixed)) posts.splice(i, 1);
+      else posts[i] = fixed;
+    }
+  }
+}
+
 function render(
   p: Pairing,
   career: CareerState,
@@ -652,7 +776,7 @@ function render(
    *  unique — see the id below. Deliberately not fed to `rngFor`, which would
    *  reshuffle every generated post in the game. */
   slot: number,
-): { post: StoredPost; templateId: string; facts: Facts } | null {
+): Made | null {
   const { event, account } = p;
   const rng = rngFor("post", cycleId, event.id, account.id);
   const angle = chooseAngle(event, account, memory, cycleId);
@@ -698,6 +822,7 @@ function render(
   return {
     templateId: template.id,
     facts,
+    wantsVideo: template.graphic === "goalVideo" || template.graphic === "thumbnail",
     post: {
       // ── Why the slot is in the key ──
       //
@@ -760,7 +885,7 @@ function ftFields(account: MediaAccount, event: FootballEvent, importance: numbe
 function renderPersona(
   p: Pairing, career: CareerState, record: MatchRecord | null, memory: StoryMemory, cycleId: string,
   usedThisCycle: Set<string>, slot: number, prng: () => number,
-): { post: StoredPost; templateId: string; facts: Facts } | null {
+): Made | null {
   const { event, account } = p;
   const facts = derivedFacts(event, account, career, prng);
   const withFacts: FootballEvent = { ...event, facts };
@@ -770,15 +895,21 @@ function renderPersona(
   if (!raw.trim() || /\{|\}/.test(raw)) return null;
   const persona = personaById(account.persona!);
   const text = personaSpeak(raw, account.voice, persona?.emoji ?? [], prng);
+  const youName = `${career.player.firstName} ${career.player.lastName}`;
   const graphic = template.graphic === "poll" && template.poll
     ? personaPoll(template.poll, facts, account.voice, prng, account.followers)
+    // v2: a TikTok / clips page's video of YOUR goal: recorded where seen, made where not.
+    : template.graphic === "goalVideo" && event.subject.kind === "you" && record
+      ? yourGoalsVideo(record, youName, `${record.you.shortName.toUpperCase()} | ${account.name.toUpperCase()}`)
     : template.graphic ? buildGraphic(template.graphic, event, record, career, memory, prng) : undefined;
+  const sound = account.platform === "tiktok" && graphicPlays(graphic) ? soundFor(account.persona, prng) : undefined;
   const importance = event.importance ?? event.baseImportance;
   const season = record?.season ?? career.season;
   const week = record?.week ?? career.week;
   return {
     templateId: template.id,
     facts,
+    wantsVideo: template.graphic === "goalVideo",
     post: {
       id: `${cycleId}:${event.id}:${account.id}:${slot}`,
       at: timeFor(season, week, event.window, prng()),
@@ -794,6 +925,7 @@ function renderPersona(
       eventId: event.id,
       tags: event.tags,
       ...ftFields(account, event, importance, !!graphic && graphic.type === "goalVideo", rngFor("eng", cycleId, event.id, account.id, slot)),
+      ...(sound ? { sound } : {}),
     },
   };
 }
@@ -809,23 +941,31 @@ function footballTwitterPass(
   cycleId: string,
   yourClub: string,
   scope: "club" | "league",
+  /** Lines used lately (feed.ts ftSaid), read and added to. */
+  said: Record<string, number>,
+  now: number,
 ): void {
   const byId = new Map(made.map(m => [m.post.id, m]));
+  const recentReplies = new Set(Object.keys(said).filter(k => k.startsWith("reply|")).map(k => k.slice(6)));
+  const recentQuotes = new Set(Object.keys(said).filter(k => k.startsWith("quote|")).map(k => k.slice(6)));
   // Replies: the three most-liked posts of the cycle, and about half of the posts about you.
   const top = new Set([...posts].sort((a, b) => b.metrics.likes - a.metrics.likes).slice(0, 3).map(p => p.id));
   const usedReplies = new Set<string>();
   for (let i = 0; i < posts.length; i++) {
     const m = byId.get(posts[i].id);
     if (!m || !(top.has(posts[i].id) || (posts[i].aboutYou && rngFor("thread", posts[i].id)() < 0.5))) continue;
-    const thread = replyThread(posts[i], m.event, m.facts, m.voice, rngFor("replies", posts[i].id), usedReplies);
+    const thread = replyThread(posts[i], m.event, m.facts, m.voice, rngFor("replies", posts[i].id), usedReplies, recentReplies);
     if (thread.length) posts[i] = { ...posts[i], thread };
   }
+  usedReplies.forEach(l => { said[`reply|${l}`] = now; });
   const quotable = made.map(m => ({ ...m, post: posts.find(p => p.id === m.post.id) ?? m.post }));
   // Your goals' video (highlightPosts) can be quoted too, as your goal.
   const goal = made.find(m => m.event.subject.kind === "you" && m.event.tags.includes("goal"));
   const yours = posts.find(p => p.eventId === "your-highlights" && p.graphic);
   if (goal && yours) quotable.push({ ...goal, post: yours });
-  for (const q of quotePosts(quotable, accounts, cycleId, yourClub)) posts.push({ ...q, scope });
+  const before = new Set(recentQuotes);
+  for (const q of quotePosts(quotable, accounts, cycleId, yourClub, recentQuotes)) posts.push({ ...q, scope });
+  recentQuotes.forEach(l => { if (!before.has(l)) said[`quote|${l}`] = now; });
 }
 
 // ── Reading ─────────────────────────────────────────────────────────────────
@@ -886,7 +1026,9 @@ export function feedFor(
     .filter(p => p.at >= state.lastCycleClock || p.at <= since + FIRST_WAVE)
     // Other matches' goal videos stay on the England tab of the Feed, never on
     // the post-match screen (Leo, 16 Oct 2026): this screen is your match's.
-    .map(p => (p.scope === "league" && hasVideo(p) ? { ...p, graphic: undefined } : p));
+    .map(p => (p.scope === "league" && hasVideo(p) ? { ...p, graphic: undefined } : p))
+    // Football Twitter: …and a post whose words were about that video is not shown here at all.
+    .filter(p => !footballTwitterOn() || !breaksVideoRule(p));
   return { posts: studioShown(pinHighlights(footballTwitterOn() ? rankFeed(shown, now) : shown, state.lastMatchCycleId ?? state.lastCycleId), state.studio), trends: studioTrends(state.trends, state.studio), now };
 }
 

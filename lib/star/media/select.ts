@@ -3,6 +3,7 @@ import { footballTwitterOn, labelFixesOn } from "./updateFlags";
 import { personaAppetite } from "./twitter/personas";
 import { rngFor, shuffle } from "./grammar";
 import { PLAYER_GOAL_CHANTS } from "./chants";
+import { TWITTER_BY_PERSONA } from "./templates/twitter";
 
 /**
  * WHO REACTS
@@ -44,17 +45,28 @@ export function selectPairings(
   yourClub: string,
   /** Social Studio (studio.ts studioVolume): more or fewer posts. Absent = as before. */
   volume?: number,
+  /** Football Twitter v2 (feed.ts ftContext): your rival and the top three. Absent = as before. */
+  ftCtx?: FtContext,
 ): Pairing[] {
   const scored: Pairing[] = [];
 
   for (const e of events) {
     const importance = e.importance ?? e.baseImportance;
+    const balance = ftCtx ? ftBalance(e, yourClub, ftCtx) : 1;
     for (const a of accounts) {
       let s = interest(a, e) * allegiance(a, e, yourClub) * reach(a, importance) * ownCompetition(a, e);
       // An account's studio weight (types.ts MediaAccount.weight); unset on every game account.
       if (a.weight !== undefined) s *= a.weight;
       // Football Twitter: haters after your bad days, hype after good ones (twitter/personas.ts).
       if (a.persona) s *= personaAppetite(a, e, yourClub);
+      s *= balance;
+      // v2: an invented account with nothing to say about this kind of event
+      // does not take a place in the cycle; and the quiet accounts get a turn
+      // (an account that posted a lot lately is less keen).
+      if (ftCtx) {
+        if (a.persona && a.personaShare === undefined && !personaHasLine(a.persona, e)) continue;
+        s /= 1 + 0.45 * (ftCtx.recent?.[a.id] ?? 0);
+      }
       if (s <= 0) continue;
       const rng = rngFor("sel", cycleId, e.id, a.id);
       scored.push({ event: e, account: a, score: s * importance * (0.75 + rng() * 0.5) });
@@ -125,6 +137,40 @@ export function selectPairings(
   }
 
   return out;
+}
+
+/**
+ * FOOTBALL TWITTER v2: WHAT THE FEED IS ABOUT (Leo, 31 Oct 2026: other
+ * clubs' heavy defeats were taking over the feed). A 5-0 elsewhere scores
+ * high on importance alone, so it beat your own 1-0 every week. With the
+ * switch on: your club's news first, then your rival and the title race,
+ * and an ordinary thrashing between two other clubs much less often.
+ */
+export interface FtContext {
+  rival?: string;
+  leaders: string[];
+  /** Posts each account made in the last few weeks (feed.ts memory.ftSaid). */
+  recent?: Record<string, number>;
+}
+
+/** Does this invented account have any line for this kind of event? (templates/twitter.ts) */
+export function personaHasLine(persona: string, e: FootballEvent): boolean {
+  return (TWITTER_BY_PERSONA.get(persona) ?? []).some(t =>
+    (t.subject === undefined || t.subject === e.subject.kind)
+    && (t.events ? t.events.includes(e.id) : !!t.tags?.some(tag => e.tags.includes(tag))));
+}
+
+export function ftBalance(e: FootballEvent, yourClub: string, ft: FtContext): number {
+  const club = e.facts.club as string | undefined;
+  const opp = e.facts.opponent as string | undefined;
+  if (e.subject.kind === "you" || club === yourClub) return 1.35;
+  const involves = (c?: string) => !!c && (club === c || opp === c);
+  let k = 1;
+  if (e.id === "hammered" || e.id === "rout" || e.id === "embarrassed") k *= 0.35;
+  else if (e.id === "loss" || e.id === "win" || e.id === "draw") k *= 0.8;
+  if (involves(ft.rival)) k *= 1.8;
+  if (ft.leaders.some(l => involves(l)) || e.tags.includes("title")) k *= 1.5;
+  return k;
 }
 
 /**
