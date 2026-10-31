@@ -36,7 +36,7 @@ export const LEO_FEATURES = [
   { id: "weather", label: "Weather and pitch", line: "Wind bends the ball, rain skids it, a poor dry pitch kills it; shown before kick-off and in the match." },
   { id: "keeperCatch", label: "Keeper catches and dives", line: "He dives in time, the ball goes into his gloves and moves with him, he lands and gets up. Pick a look below." },
   { id: "commentaryVoice", label: "New commentary voice", line: "A new, more natural commentator for goal videos and late goals: builds with the goal, calmer co-commentator, TV mic sound." },
-  { id: "footballTwitter", label: "Football Twitter feed", line: "30+ new made-up accounts (insider, fan channel, ratio page, scores app, quiz page, meme page…), their own words, views and replies, and a feed ranked like the real app." },
+  { id: "footballTwitter", label: "Football Twitter feed", line: "50+ made-up accounts (TikTok edits and POV pages, insider, ratio page, scores app…), 900 lines that do not repeat for weeks, TikTok videos, replies and quotes, a ranked feed. No post talks about a video it does not show." },
   { id: "betterVideos", label: "Better goal videos", line: "TV replays from 2-3 cameras (reverse angle, super slow-mo, behind the goal), TikTok edits (speed ramp, freeze, zoom punch, flash, captions, name card), fan phone videos from 3 seats, highlights reels with a full-time card. Each account cuts its own way." },
   { id: "bugFixes", label: "Bug fixes (21)", line: "Refresh comes back where you were, labels, tour once, no sack after promotion, talks back button, signing manager name…" },
 ] as const;

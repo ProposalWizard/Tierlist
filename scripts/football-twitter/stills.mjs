@@ -49,6 +49,29 @@ for (let i = 0; i < COUNT; i++) {
   await pg.waitForTimeout(900);
   if (atEnd) break;
 }
+// Close-ups (feed v2): TikTok posts (sound line, TikTok counts) and quotes that carry their video.
+// The feed only keeps posts near the screen, so walk it again from the top.
+await pg.evaluate(() => document.querySelector("[data-feed-scroll]").scrollTo({ top: 0 }));
+await pg.waitForTimeout(900);
+const shot = { tiktok: new Set(), "quote-video": new Set() };
+for (let step = 0; step < 60; step++) {
+  for (const [sel, name] of [["article[data-tiktok]", "tiktok"], ["article:has([data-quote-video])", "quote-video"]]) {
+    const els = pg.locator(sel);
+    for (let i = 0; i < await els.count(); i++) {
+      const el = els.nth(i);
+      const key = (await el.innerText().catch(() => "")).slice(0, 80);
+      if (!key || shot[name].has(key) || shot[name].size >= 3) continue;
+      shot[name].add(key);
+      await el.scrollIntoViewIfNeeded().catch(() => {});
+      await pg.waitForTimeout(1500);
+      await el.screenshot({ path: path.join(outDir, `${name}-${shot[name].size}.jpg`), type: "jpeg", quality: 82 }).catch(e => console.log(`${name}: ${e.message}`));
+    }
+  }
+  const atEnd = await pg.evaluate(() => { const b = document.querySelector("[data-feed-scroll]"); b.scrollBy({ top: 500 }); return b.scrollTop + b.clientHeight >= b.scrollHeight - 4; });
+  await pg.waitForTimeout(500);
+  if (atEnd) break;
+}
+console.log(`close-ups: ${shot.tiktok.size} TikTok, ${shot["quote-video"].size} quote-video`);
 const uniq = [...new Set(texts)];
 const bad = uniq.filter(t => /undefined|NaN|\{|\}/.test(t));
 console.log(`${uniq.length} posts seen; ${bad.length} with holes`, bad.slice(0, 3));

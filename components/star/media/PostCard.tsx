@@ -116,7 +116,7 @@ function TikTokCounts({ post, liked, onLike }: { post: StoredPost; liked: boolea
     <span className="flex items-center gap-1.5" aria-label={label}>{icon}<span className="tabular-nums font-semibold text-white/80">{count(n)}</span></span>
   );
   return (
-    <footer className="mt-2 flex items-center gap-5 pr-1 text-[13px] text-white/60" data-tiktok-counts>
+    <footer className="mt-2 flex items-center gap-4 pr-1 text-[13px] text-white/60" data-tiktok-counts>
       <button type="button" onClick={onLike} disabled={!onLike} className="flex items-center gap-1.5 disabled:cursor-default" aria-pressed={liked} aria-label={liked ? "Unlike" : "Like"}>
         <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden><path fill={liked ? "#fe2c55" : "#fff"} d="M12 21s-7.5-4.6-9.6-9A5.4 5.4 0 0112 5.6 5.4 5.4 0 0121.6 12c-2.1 4.4-9.6 9-9.6 9z" /></svg>
         <span className="tabular-nums font-semibold text-white/80">{count(m.likes + (liked ? 1 : 0))}</span>
@@ -124,7 +124,7 @@ function TikTokCounts({ post, liked, onLike }: { post: StoredPost; liked: boolea
       {item(<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden><path fill="#fff" d="M12 3C6.5 3 2 6.9 2 11.7c0 2.6 1.3 4.9 3.4 6.5L5 22l4.3-2.2c.9.2 1.8.3 2.7.3 5.5 0 10-3.9 10-8.7S17.5 3 12 3z" /></svg>, m.replies, "Comments")}
       {item(<svg width="16" height="18" viewBox="0 0 20 24" aria-hidden><path fill="#fff" d="M3 2h14a1 1 0 011 1v19l-8-5-8 5V3a1 1 0 011-1z" /></svg>, m.reposts, "Saves")}
       {item(<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden><path fill="#fff" d="M14 4l8 7.5-8 7.5v-4.5C8 14.5 5 16.5 2 20c1-6 4-10.5 12-11.5z" /></svg>, m.quotes ?? Math.round(m.reposts / 3), "Shares")}
-      {m.views !== undefined && <span className="ml-auto tabular-nums text-white/50">{count(m.views)} views</span>}
+      {m.views !== undefined && <span className="ml-auto whitespace-nowrap tabular-nums text-white/50">{count(m.views)} views</span>}
     </footer>
   );
 }
