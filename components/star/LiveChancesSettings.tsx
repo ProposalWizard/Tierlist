@@ -1,7 +1,7 @@
 "use client";
 /**
  * Live chances, as a player sets them (lib/star/liveChance.ts): the switch
- * (off by default), the strike screen, and the sliders. Saved on this phone.
+ * (off by default), the kick screen, and the sliders. Saved on this phone.
  * Shown in Settings → Match (admins) and Settings → Updates (Leo's card).
  * The test page /star-live-chances-dev has its own copies, never saved.
  */
@@ -24,8 +24,8 @@ export default function LiveChancesSettings({ last = true }: { last?: boolean })
       <p className="-mt-1 mb-1 pl-1 text-[10.5px] font-semibold leading-snug text-white/70">Its own switch, off by default. On: the last pass keeps coming to you; time your strike as it arrives (early stabs it, late gets under it, miss it and the chance is gone). Set pieces, headers and volleys stay as they are.</p>
       {on && (
         <div data-live-settings>
-          <SetToggle label={liveStrikeScreenOn() ? "Strike screen: On (tap the ball = the kick)" : "Strike screen: Off (letting go = the kick)"} on={liveStrikeScreenOn()} onClick={() => setLiveStrikeScreen(!liveStrikeScreenOn())} />
-          <p className="-mt-1 mb-2 pl-1 text-[10.5px] font-semibold leading-snug text-white/70">On: letting go locks your aim, then tap the small ball as the pass reaches you: sides curl, bottom chips, top drives. Off: letting go is the kick.</p>
+          <SetToggle label={liveStrikeScreenOn() ? "Kick screen: On (then tap where on the ball)" : "Kick screen: Off (letting go = the kick)"} on={liveStrikeScreenOn()} onClick={() => setLiveStrikeScreen(!liveStrikeScreenOn())} />
+          <p className="-mt-1 mb-2 pl-1 text-[10.5px] font-semibold leading-snug text-white/70">On: letting go is the moment you meet it (that sets early, clean or late), then the normal kick screen opens: tap where on the ball, sides curl, bottom chips, top drives. Off: letting go is the kick.</p>
           {LIVE_DIAL_INFO.map((d) => {
             const v = liveDials()[d.k];
             return (

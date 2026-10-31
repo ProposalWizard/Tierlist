@@ -101,8 +101,8 @@ export default function LiveChancesDev() {
         <Pill on={!buildUps} onClick={() => setBuildUps(false)}>No build-up (a made-up pass)</Pill>
       </div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }} data-live-strike>
-        <Pill on={strike} onClick={() => setStrike(true)}>Strike screen: On (tap the ball = the kick)</Pill>
-        <Pill on={!strike} onClick={() => setStrike(false)}>Strike screen: Off (letting go = the kick)</Pill>
+        <Pill on={strike} onClick={() => setStrike(true)}>Kick screen: On (then tap where on the ball)</Pill>
+        <Pill on={!strike} onClick={() => setStrike(false)}>Kick screen: Off (letting go = the kick)</Pill>
         <span style={{ width: 10 }} />
         <Pill on={after === "new"} onClick={() => setAfter("new")}>After a chance: a new one</Pill>
         <Pill on={after === "again"} onClick={() => setAfter("again")}>After a chance: the same one, live</Pill>
@@ -140,7 +140,7 @@ export default function LiveChancesDev() {
           <Panel title="How it plays" note="The ring on the grass is where you meet the pass: white = not yet, yellow = in reach, green = sweet.">
             <ol style={{ fontSize: 12, margin: "0 0 0 18px", padding: 0, lineHeight: 1.5 }}>
               <li>The build-up plays. Before the last pass reaches you, the chance is yours and the clock slows.</li>
-              <li>Drag from the ring to aim, as always. Strike screen On: letting go locks your aim and a small ball opens at the bottom; your tap on it is the kick (sides curl, bottom chips, top drives), so tap as the ball reaches the ring. Off: letting go is the kick.</li>
+              <li>Drag from the ring to aim, as always. Let go as the ball reaches the ring: that moment is early, clean or late. Kick screen On: then the normal kick screen opens; tap where on the ball (sides curl, bottom chips, top drives). Off: letting go is the kick.</li>
               <li>Ring green: a clean strike. Early: you stab the top of it (low, weaker, skews). Late: you get under it (it rises, weaker).</li>
               <li>Out of reach: fresh air. Never swing: it runs past you. Either way the chance is gone.</li>
               <li>The ball&apos;s own pace carries into the shot.</li>

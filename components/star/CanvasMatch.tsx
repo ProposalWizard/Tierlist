@@ -1521,9 +1521,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * spots; `done` once you swung (or it got away), after which the ball, if it
    * was missed, rolls on at real speed while the result shows.
    */
-  const liveRef = useRef<{ sc: Scenario; plan: LivePlan; dials: LiveDials; lead: LeadIn | null; ents: LeadEntity[]; ends: Vec2[]; runKeys: Set<string>; cam: { at(t: number, chance: Viewport): Viewport } | null; T: number; done: "" | "hit" | "miss"; rolled: number; armed?: { dir: Vec2; power: number } } | null>(null);
-  /** Live chances, strike screen on: your aim is locked and the small strike ball is up (the tap is the kick). */
-  const [liveTap, setLiveTap] = useState(false);
+  const liveRef = useRef<{ sc: Scenario; plan: LivePlan; dials: LiveDials; lead: LeadIn | null; ents: LeadEntity[]; ends: Vec2[]; runKeys: Set<string>; cam: { at(t: number, chance: Viewport): Viewport } | null; T: number; done: "" | "hit" | "miss"; rolled: number; armed?: { dir: Vec2; power: number; ball: Vec2 & { z: number }; speed: number } } | null>(null);
   /** The last live swing, for the dev probe (__live) and the test page. */
   const lastSwingRef = useRef<(ReturnType<typeof readSwing> & { T: number; ball: Vec2; speed: number }) | null>(null);
   // B10: when a header or volley chance became yours (for the ball hanging /
@@ -6636,6 +6634,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (lv.done === "hit") return;
     if (lv.done === "miss") { lv.T += dt; return; }
     if (phaseRef.current !== "aim" && phaseRef.current !== "contact") { lv.done = "miss"; return; }
+    // The kick screen is up: the moment you let go is held until you tap.
+    if (lv.armed) return;
     {
       const l0 = lv.lead;
       lv.T += dt * liveRate(lv.plan, liveBallAt(lv.plan, lv.T, l0 ? (t) => l0.ballAt(t) : null, lv.dials.rollDecel), lv.dials);
@@ -6672,7 +6672,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const lv = liveRef.current;
     if (!lv || lv.done) return;
     lv.done = "miss";
-    setLiveTap(false);
     if (!swung) { try { window.dispatchEvent(new CustomEvent("kib-live-swing", { detail: { hit: false, why: "past" } })); } catch { /* no window */ } }
     aimCommitRef.current = null;
     presserRef.current = null;
@@ -6695,42 +6694,41 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const liveSwing = (dir: { x: number; y: number }, power: number): boolean => {
     const lv = liveRef.current, sc = scenarioRef.current;
     if (!lv || lv.sc !== sc || lv.done) return false;
-    // The strike screen: letting go locks your aim; the tap on the small ball is the kick (liveTapStrike).
+    // The kick screen (Leo, 31 Oct 2026: "the normal kick screen, the second part of
+    // the aiming and kicking"): letting go is the moment you meet it. The pass stops
+    // there; out of reach is fresh air at once; in reach, the game's own kick screen
+    // opens and your tap on it (curve, chip, height) is struck from that moment (liveTapStrike).
     if (liveStrikeScreenOn()) {
-      lv.armed = { dir: { ...dir }, power };
+      const b = liveBallNow(sc);
+      if (!b) return false;
+      const speed = liveSpeedAt(lv.plan, lv.T, lv.dials.rollDecel);
+      const a = alongOf(lv.plan, b);
+      if (a < -lv.dials.reachEarly || a > lv.dials.reachLate) return liveStrike(dir, power);
+      lv.armed = { dir: { ...dir }, power, ball: { ...b }, speed };
       setAim({ dir, power });
       setPowerStrike(false);
-      setLiveTap(true);
       setPhase("contact");
       return true;
     }
     return liveStrike(dir, power);
   };
-  /** Live chances: is the ring in the lower part of the pitch on screen (so the strike strip goes at the top)? */
-  const liveSpotLow = (): boolean => {
-    const lv = liveRef.current;
-    if (!lv) return false;
-    const b = canvasBox(), q = pitchToClient(lv.plan.spot);
-    return b.height > 0 && (q.y - b.top) / b.height > 0.55;
-  };
   /**
-   * The strike screen's tap on a live chance: where you tapped (curve, chip,
-   * height) and when (the ball's place now) make the strike. Out of reach:
-   * fresh air. True: it handled the tap.
+   * The kick screen's tap on a live chance: where you tapped (curve, chip,
+   * height), struck from the moment you let go (where the ball was then).
+   * True: it handled the tap.
    */
   const liveTapStrike = (tapped: { cx: number; cy: number }): boolean => {
     const lv = liveRef.current, sc = scenarioRef.current;
     if (!lv || lv.sc !== sc || lv.done || !lv.armed) return false;
-    setLiveTap(false);
-    return liveStrike(lv.armed.dir, lv.armed.power, tapped);
+    return liveStrike(lv.armed.dir, lv.armed.power, tapped, lv.armed);
   };
   /** Strike the live ball now, with your aim (and the strike screen's tap, when it is on). */
-  const liveStrike = (dir: { x: number; y: number }, power: number, tap?: { cx: number; cy: number }): boolean => {
+  const liveStrike = (dir: { x: number; y: number }, power: number, tap?: { cx: number; cy: number }, at?: { ball: Vec2 & { z: number }; speed: number }): boolean => {
     const lv = liveRef.current, sc = scenarioRef.current;
     if (!lv || lv.sc !== sc || lv.done) return false;
-    const b = liveBallNow(sc);
+    const b = at ? at.ball : liveBallNow(sc);
     if (!b) return false;
-    const speed = liveSpeedAt(lv.plan, lv.T, lv.dials.rollDecel);
+    const speed = at ? at.speed : liveSpeedAt(lv.plan, lv.T, lv.dials.rollDecel);
     const r = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x3c6ef372)) ^ 0x11fe) >>> 0)();
     const read = readSwing(lv.plan, b, speed, dir, power, r, lv.dials, tap);
     lastSwingRef.current = { ...read, T: lv.T, ball: { ...b }, speed };
@@ -6752,13 +6750,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const startLiveMadeUp = () => {
     const sc = scenarioRef.current;
     liveRef.current = null;
-    setLiveTap(false);
     if (!liveChancesOn() || !liveKindOK(sc.kind) || autoKickOf(sc) || leadRef.current) return;
     const dials = liveDials();
     const plan = planMadeUp(madeUpPasser(sc.ball, sc.teammates), sc.ball, dials);
     if (!plan) return;
     liveRef.current = { sc, plan, dials, lead: null, ents: [], ends: [], runKeys: new Set(), cam: null, T: 0, done: "", rolled: 0 };
-    setLiveTap(false);
   };
   /**
    * A BUILD-UP THAT ENDS IN A CALLED OFFSIDE (Full highlights rebuild: On,
@@ -10871,7 +10867,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             // back in 3D, iOS Safari could draw or hit-test its near half
             // through the strike screen (Harry, 5 Oct 2026: only the bottom
             // of the ball took a tap). It keeps drawing; nothing else changes.
-            phase === "contact" ? (liveTap ? " pointer-events-none" : " invisible pointer-events-none") : ""}`}
+            phase === "contact" ? " invisible pointer-events-none" : ""}`}
         />
 
         {/* Leo's update, "weather": light rain and the wind arrow, only when the
@@ -11104,7 +11100,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
               : phase === "aim" ? "Drag back from the ball to aim and control your power, then let go" : "Tap the part of the ball you want to kick"}
           </div>
         )}
-        {firstUse && !liveTap && (
+        {firstUse && (
           <div data-first-use-coach={firstUse.key} className={`pointer-events-none absolute z-40 left-3 right-14 ${firstUse.key === "volley" ? "bottom-[64px]" : "top-[12%]"} rounded-xl px-3 py-2 text-center text-[13px] font-black leading-snug text-white`}
             style={{ background: "rgba(5,8,15,.82)", boxShadow: "inset 0 0 0 2px #fde047, 0 8px 20px -8px rgba(0,0,0,.9)" }}>
             {firstUse.text}
@@ -11133,7 +11129,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
               } else handleContact(c);
             }}
             aimFromTap={isAirKind(scenarioRef.current.kind) && airTapOn()}
-            motion={liveTap ? "still" : strikeMotion(scenarioRef.current.kind, seedRef.current)}
+            motion={strikeMotion(scenarioRef.current.kind, seedRef.current)}
             technique={skills.technique}
             aerial={airAerialNow()}
             // A header: how high the cross reaches you, so the screen can say your jump (aerial.ts headerJump).
@@ -11141,8 +11137,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             timeLimitS={contactTimerS ?? undefined}
             onTimeout={contactTimerS ? handleScuff : undefined}
             hold={held}
-            compact={liveTap}
-            compactTop={liveTap && liveSpotLow()}
           />
         )}
 
