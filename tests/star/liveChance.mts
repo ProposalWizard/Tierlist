@@ -49,6 +49,15 @@ ok(hard.hit && bent.hit && hard.bentDeg < bent.bentDeg, "a harder strike is bent
 ok(!liveKindOK("penalty") && !liveKindOK("free_kick") && !liveKindOK("corner") && !liveKindOK("header") && !liveKindOK("volley"), "set pieces and aerials are never live");
 ok(liveKindOK("one_on_one") && liveKindOK("through_ball") && liveKindOK("cutback"), "open-play ground chances are live");
 ok(liveChancesOn() === false, "off by default (no window)");
+// The strike screen's tap: where you tap sets curve and height; the timing moves it.
+const tapAt = (along: number, tap: { cx: number; cy: number }) => readSwing(plan, { x: spot.x, y: spot.y + (-plan.u.y) * -along }, 10, aim, 0.8, 0.3, LIVE_DEFAULTS, tap);
+const chip = tapAt(0, { cx: 0, cy: 0.9 }), curl = tapAt(0, { cx: -0.7, cy: 0 });
+ok(chip.hit && chip.contact.cy === 0.9, "clean tap at the bottom: a chip (contact kept)");
+ok(curl.hit && curl.contact.cx === -0.7, "clean tap on the side: curl (contact kept)");
+const lateChip = tapAt(0.7, { cx: 0, cy: 0.5 }), earlyTop = tapAt(-0.8, { cx: 0, cy: 0 });
+ok(lateChip.hit && lateChip.contact.cy > 0.5, "late tap: further under the ball");
+ok(earlyTop.hit && earlyTop.contact.cy < 0, "early tap: rides up the ball");
+ok(!tapAt(-1.5, { cx: 0, cy: 0 }).hit, "tap far too early: fresh air");
 // Extra slow motion near you, none far away.
 ok(liveRate(plan, { x: spot.x, y: spot.y + 8 }) === plan.slow, "far away: the plan's slow motion only");
 ok(Math.abs(liveRate(plan, spot) - plan.slow * LIVE_DEFAULTS.nearSlow) < 1e-9, "at the spot: the extra slow motion");

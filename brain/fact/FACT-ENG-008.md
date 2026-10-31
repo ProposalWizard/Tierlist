@@ -3,9 +3,10 @@ id: FACT-ENG-008
 type: fact
 client: eng
 tags: [team, engine]
-status: live
+status: superseded
+superseded_by: FACT-ENG-009
 date: 2026-10-30
-source: "lib/star/liveChance.ts (header); patch-notes/pages/0.126/index.html"
+source: "lib/star/liveChance.ts:1-30"
 summary: Live chances (Leo, 30 Oct 2026): own switch kib-live-chances, off by default; the last pass keeps coming and letting go of the drag is the swing.
 ---
 Settings → Updates (admins) → "Live chances", its own switch, OFF by default (localStorage `kib-live-chances`). Off = the old path untouched.

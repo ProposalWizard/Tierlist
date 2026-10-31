@@ -935,6 +935,8 @@ export const ADMIN_GUIDES = {
       { group: "Switches", items: [
         ["Live: On / Off", "On: the pass keeps coming and you time the swing. Off: the game as now (the ball waits at your feet)."],
         ["With build-up / No build-up", "With: the chance's real build-up plays first. No: a made-up pass from the nearest team-mate."],
+        ["Strike screen: On / Off", "On: letting go locks your aim, then tap the small ball as the pass reaches you (sides curl, bottom chips, top drives). Off: letting go is the kick."],
+        ["After a chance: a new one / the same one, live", "What plays when a chance ends: the next chance, or this one again from its build-up. Never a still copy."],
         ["Every kind / a kind", "Which chances to play. Penalties, free kicks, corners, headers and volleys are never live."],
       ] },
       { group: "Play it", items: [
@@ -952,7 +954,7 @@ export const ADMIN_GUIDES = {
       ] },
     ],
     saving: ["Nothing. The switch and dials live on this page only and reset when you leave."],
-    inGame: ["Only when Settings → Updates → \"Live chances\" is on, on that phone (off by default). It uses the game's numbers, never this page's dials."],
+    inGame: ["Only when \"Live chances\" is on, on that phone (off by default): Settings → Match (admins) or Settings → Updates. The game uses that phone's own sliders there, never this page's dials."],
     dev: "app/star-live-chances-dev/page.tsx · lib/star/liveChance.ts (plan, ball, swing read; setLiveTest) · components/star/CanvasMatch.tsx (stepLive, liveSwing, liveMiss, startLiveMadeUp) · tests/star/liveChance.mts · scripts/film/live/livecheck.mjs",
   },
   "/star-weather-dev": {

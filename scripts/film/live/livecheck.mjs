@@ -27,6 +27,11 @@ await pg.goto(`http://localhost:${PORT}/star-live-chances-dev`, { waitUntil: "do
 await pg.waitForSelector("[data-live-switch]", { timeout: 120000 });
 if (flag("nobuild")) await pg.getByText("No build-up (a made-up pass)").click();
 if (flag("off")) await pg.getByText("Live: Off (the game as now)").click();
+// --nostrike: letting go is the kick. Default: the strike screen (lock the aim, then tap the small ball).
+const STRIKE = !flag("nostrike");
+if (!STRIKE) await pg.getByText("Strike screen: Off (letting go = the kick)").click();
+// --tap cx,cy: where on the small ball to tap (-1..1; cy +1 = the bottom, a chip)
+const TAP = (arg("tap", "0,0")).split(",").map(Number);
 await pg.waitForTimeout(1500);
 const sleep = (ms) => pg.waitForTimeout(ms);
 // In 3D the spot is pressed where the 3D camera draws it (engineView's dev projector).
@@ -65,12 +70,22 @@ for (let i = 0; i < N; i++) {
     if (AT !== "none" && !swung) {
       // Grab on the spot early, pull back toward our own goal (down the screen), let go at the chosen moment.
       if (!pg.__held && flag("probe")) console.log("at spot:", await pg.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); if (!e) return "none"; const ch = []; let q = e; for (let i = 0; i < 5 && q; i++) { ch.push(`${q.tagName}.${String(q.className).slice(0, 40)}[${q.getAttribute("style")?.slice(0, 80) ?? ""}]`); q = q.parentElement; } return ch.join(" < "); }, [L.spotPx.x, L.spotPx.y]), JSON.stringify(L.spotPx));
-      if (!pg.__held) { await pg.mouse.move(L.spotPx.x, L.spotPx.y); await pg.mouse.down(); await pg.mouse.move(L.spotPx.x + 6, L.spotPx.y + 40, { steps: 4 }); await pg.mouse.move(L.spotPx.x + 8, L.spotPx.y + 95, { steps: 6 }); pg.__held = true; }
-      if (L.along >= Number(AT)) { await pg.mouse.up(); pg.__held = false; swung = true; await sleep(80); if (SHOTS) await pg.screenshot({ path: `${SHOTS}/c${i}-c-strike.png` }); }
+      if (!pg.__held && !pg.__locked) { await pg.mouse.move(L.spotPx.x, L.spotPx.y); await pg.mouse.down(); await pg.mouse.move(L.spotPx.x + 6, L.spotPx.y + 40, { steps: 4 }); await pg.mouse.move(L.spotPx.x + 8, L.spotPx.y + 95, { steps: 6 }); pg.__held = true; }
+      if (STRIKE && pg.__held && !pg.__locked) { await pg.mouse.up(); pg.__held = false; pg.__locked = true; await sleep(60); pg.__bb = await pg.locator("[data-contact-compact] div.cursor-pointer").first().boundingBox().catch(() => null); if (SHOTS) await pg.screenshot({ path: `${SHOTS}/c${i}-b2-locked.png` }); }
+      if (L.along >= Number(AT)) {
+        if (STRIKE) {
+          const bb = pg.__bb;
+          if (bb) await pg.mouse.click(bb.x + bb.width / 2 * (1 + TAP[0] * 0.8), bb.y + bb.height / 2 * (1 + TAP[1] * 0.8));
+          else console.log("no strike ball on screen");
+          pg.__locked = false;
+        } else { await pg.mouse.up(); pg.__held = false; }
+        swung = true; await sleep(80); if (SHOTS) await pg.screenshot({ path: `${SHOTS}/c${i}-c-strike.png` });
+      }
     }
     await sleep(16);
   }
   if (pg.__held) { await pg.mouse.up(); pg.__held = false; }
+  pg.__locked = false;
   await sleep(2600);
   if (SHOTS) await pg.screenshot({ path: `${SHOTS}/c${i}-d-after.png` });
   const verdict = await pg.locator("[data-live-verdict]").innerText();

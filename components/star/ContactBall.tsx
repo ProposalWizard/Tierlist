@@ -87,6 +87,12 @@ interface Props {
    *  ball — the up/down lines fade out toward the sides, where a strike is a
    *  low curler. Absent: exactly the old screen. */
   field?: boolean;
+  /** Live chances (lib/star/liveChance.ts): a small strike ball along the
+   *  bottom, the pitch still showing above it, so you can see the pass coming
+   *  and tap as it reaches you. Absent: exactly the old screen. */
+  compact?: boolean;
+  /** With `compact`: the strip along the top instead (the ring is low on the screen). */
+  compactTop?: boolean;
 }
 
 /** How long "TOO SLOW" shows before the scuffed kick is taken. */
@@ -100,7 +106,7 @@ const AIR_VERDICT_MS = 300;
 export const STRIKE_ZONE_R = 1.18;
 
 // Phase 2 — pick where on the ball to strike.
-export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, aerial, ballZ, hold = false, grades = false, knuckles = false, field = false, aimFromTap = false }: Props) {
+export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, aerial, ballZ, hold = false, grades = false, knuckles = false, field = false, aimFromTap = false, compact = false, compactTop = false }: Props) {
   const ballRef = useRef<HTMLDivElement>(null);
   const moverRef = useRef<HTMLDivElement>(null);
   const shadowRef = useRef<HTMLDivElement>(null);
@@ -236,6 +242,8 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
       const g = gradeContact({ cx, cy }, power, knuckles, field);
       if (g.label) setGraded({ label: g.label, good: g.grade === "clean" || g.grade === "knuckle" || g.label === "CURLER" });
     }
+    // Live chances (compact): the ball is still rolling, so the tap IS the kick, at once.
+    if (compact) { onContact({ cx, cy }); return; }
     // A graded strike holds a beat longer so the verdict can be read.
     setTimeout(() => onContact(air ? { cx, cy, lift } : { cx, cy }), air ? AIR_VERDICT_MS : grades ? 420 : 200);
   };
@@ -255,10 +263,12 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
 
   return (
     <div
-      className="absolute inset-0 z-30 flex flex-col overflow-hidden"
+      className={compact ? `absolute inset-x-0 ${compactTop ? "top-0" : "bottom-0"} z-30 flex flex-col overflow-hidden` : "absolute inset-0 z-30 flex flex-col overflow-hidden"}
+      data-contact-compact={compact ? "" : undefined}
       onPointerDown={handleTap}
       style={{
-        background: "linear-gradient(to bottom, #4a71b8 0%, #a8c4e8 100%)",
+        ...(compact ? { height: "30%" } : {}),
+        background: compact ? `linear-gradient(to ${compactTop ? "top" : "bottom"}, rgba(5,8,15,0) 0%, rgba(5,8,15,0.45) 45%, rgba(5,8,15,0.6) 100%)` : "linear-gradient(to bottom, #4a71b8 0%, #a8c4e8 100%)",
         touchAction: "none",
         // Its own flat layer, lifted in front: the match canvas under it is
         // tipped back in 3D, and iOS Safari can otherwise draw or hit-test
@@ -273,8 +283,13 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
         `}</style>
       )}
       {/* Grass strip */}
+      {compact && (
+        <div className="relative z-40 pt-1 pl-3 text-left pointer-events-none text-[12px] font-black uppercase tracking-wide text-white" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}>
+          Tap the ball as it reaches you
+        </div>
+      )}
       <div
-        className="absolute bottom-0 left-0 right-0"
+        className={compact ? "hidden" : "absolute bottom-0 left-0 right-0"}
         style={{ height: "24%", background: "linear-gradient(to bottom, #16a34a, #15803d)" }}
       />
 
@@ -283,7 +298,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
           reconsider his run-up halfway through it. */}
 
       {/* Header */}
-      <div className="relative z-40 pt-3 px-3 text-center pointer-events-none">
+      <div className={compact ? "hidden" : "relative z-40 pt-3 px-3 text-center pointer-events-none"}>
         <div
           className="text-white/90 font-black text-[13px] tracking-wide uppercase leading-none"
           style={{ textShadow: "0 2px 4px rgba(0,0,0,0.8)" }}
@@ -411,7 +426,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
       {/* The ball — sitting ON the grass. It used to float in the middle of the
           sky with the turf a long way below it, which reads as a ball in the
           air, and this screen is you standing over a ball at your feet. */}
-      <div ref={areaRef} className="relative z-30 flex-1 flex items-end justify-center pb-[10%]">
+      <div ref={areaRef} className={compact ? "relative z-30 flex-1 flex items-center justify-start pl-[8%] pb-[2%]" : "relative z-30 flex-1 flex items-end justify-center pb-[10%]"}>
         {/* A ball in the air (header/volley): its shadow on the grass below it. */}
         {(motion === "float" || motion === "bounce") && <div
           ref={shadowRef}
@@ -425,11 +440,11 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
             background: "radial-gradient(ellipse, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 72%)",
           }}
         />}
-        <div ref={moverRef} className="flex w-full items-end justify-center" style={{ willChange: motion === "still" ? undefined : "transform" }}>
+        <div ref={moverRef} className={compact ? "flex w-full items-center justify-start" : "flex w-full items-end justify-center"} style={{ willChange: motion === "still" ? undefined : "transform" }}>
         <div
           ref={ballRef}
           className="relative cursor-pointer"
-          style={{ width: motion === "still" ? "56%" : "40%", aspectRatio: "1 / 1", touchAction: "none" }}
+          style={{ width: compact ? "24%" : motion === "still" ? "56%" : "40%", aspectRatio: "1 / 1", touchAction: "none" }}
         >
           {/* A grounding shadow — without it the ball reads as pasted onto the
               grass rather than resting on it. */}

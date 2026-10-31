@@ -19,25 +19,23 @@ import type { LeadIn } from "@/lib/star/leadIn";
 import { fhrBuildUpFor, fhrWantsBuildUp } from "@/lib/star/fhr/buildUp";
 import { servedChances, type ServedChance } from "@/lib/star/fhr/servedChances";
 import { setVisitSalt } from "@/lib/star/chanceMaker";
-import { LIVE_DEFAULTS, LIVE_LIMITS, liveKindOK, setLiveTest, type LiveDials } from "@/lib/star/liveChance";
+import { LIVE_DEFAULTS, LIVE_DIAL_INFO, LIVE_LIMITS, liveKindOK, setLiveTest, type LiveDials } from "@/lib/star/liveChance";
 
 const copy = (sc: Scenario): Scenario => JSON.parse(JSON.stringify(sc));
 const KIND = (k: string) => k.replace(/_/g, " ");
 type Swing = { hit: boolean; why?: string; timing?: string; along?: number; power?: number; bentDeg?: number; contact?: { cx: number; cy: number } };
 
-const DIALS: { k: keyof LiveDials; name: string; unit: string; step: number; help: string }[] = [
-  { k: "arriveS", name: "Time for the pass to reach you", unit: "s", step: 0.1, help: "Real seconds from the hand-over to the ball at your feet. Longer = more time to aim." },
-  { k: "slowMin", name: "Slowest slow motion", unit: "×", step: 0.05, help: "How slow the pass may run to give you that time. 1 = never slowed." },
-  { k: "nearSlow", name: "Extra slow motion near you", unit: "×", step: 0.05, help: "On top of the rest, while the ball is close to you. 1 = none." },
-  { k: "sweet", name: "Sweet zone", unit: "m", step: 0.05, help: "Either side of the spot: a clean strike." },
-  { k: "reachEarly", name: "Reach (early)", unit: "m", step: 0.05, help: "How far before the spot you can still stab at it." },
-  { k: "reachLate", name: "Reach (late)", unit: "m", step: 0.05, help: "How far past the spot you can still get a foot to it." },
-  { k: "rollDecel", name: "Roll slows by", unit: "m/s²", step: 0.1, help: "How fast a missed ball slows as it rolls on." },
-];
+const DIALS = LIVE_DIAL_INFO;
+/** Where on the ball it was struck, in words. */
+const struck = (c?: { cx: number; cy: number }) => !c ? "?"
+  : [c.cy > 0.4 ? "under it (chip)" : c.cy < -0.4 ? "top (driven)" : "middle", Math.abs(c.cx) > 0.35 ? "side (curl)" : ""].filter(Boolean).join(", ");
 
 export default function LiveChancesDev() {
   const [on, setOn] = useState(true);
   const [buildUps, setBuildUps] = useState(true);
+  const [strike, setStrike] = useState(true);
+  // After a chance: a new one, or the same one again from its build-up (never the static picture).
+  const [after, setAfter] = useState<"new" | "again">("new");
   const [dials, setDials] = useState<LiveDials>({ ...LIVE_DEFAULTS });
   const [pool, setPool] = useState<ServedChance[]>([]);
   const [kind, setKind] = useState<string>("all");
@@ -49,7 +47,7 @@ export default function LiveChancesDev() {
   const [log, setLog] = useState<{ kind: string; swing: Swing | null; outcome: string }[]>([]);
 
   // This page's own switch and dials (in memory; cleared when you leave).
-  useEffect(() => { setLiveTest({ on, dials }); }, [on, dials]);
+  useEffect(() => { setLiveTest({ on, strike, dials }); }, [on, strike, dials]);
   useEffect(() => () => setLiveTest(null), []);
   useEffect(() => {
     setVisitSalt(0);
@@ -69,9 +67,28 @@ export default function LiveChancesDev() {
 
   const next = () => { setSwing(null); setAt((a) => a + 1); };
   const again = () => { setSwing(null); setRun((r) => r + 1); };
+  // The match serves the same picture again after a chance (one-picture screens do); here it
+  // never plays that static copy: the moment it is served a second time, the next one starts
+  // (a new chance, or this one again from its build-up, live).
+  // Counted per match on screen (its key), so a fresh match always starts at its first serve.
+  const mountKey = `${kind}-${at}-${run}-${buildUps}-${on}`;
+  const keyRef = useRef(mountKey); keyRef.current = mountKey;
+  // Which match on screen has finished its chance (its key): the next picture it opens is the copy.
+  const resolvedKey = useRef("");
+  const afterRef = useRef(after); afterRef.current = after;
+  const onServed = useCallback(() => {
+    if (resolvedKey.current !== keyRef.current) return;
+    resolvedKey.current = "";
+    setSwing(null);
+    if (afterRef.current === "again") setRun((r) => r + 1); else setAt((a) => a + 1);
+  }, [setSwing]);
+  useEffect(() => {
+    window.addEventListener("kib-picture-opened", onServed);
+    return () => window.removeEventListener("kib-picture-opened", onServed);
+  }, [onServed]);
   const verdict = (s: Swing | null) => !s ? "No swing yet"
     : !s.hit ? (s.why === "past" ? "Let it run past: chance gone" : s.why === "early" ? "Too early: fresh air" : "Too late: fresh air")
-    : `${s.timing === "sweet" ? "Clean" : s.timing === "early" ? "Early (stabbed)" : "Late (got under it)"} · ${(s.along ?? 0) >= 0 ? "+" : ""}${(s.along ?? 0).toFixed(2)} m from the spot · power ${Math.round((s.power ?? 0) * 100)} · pace bent it ${(s.bentDeg ?? 0).toFixed(1)}°`;
+    : `${s.timing === "sweet" ? "Clean" : s.timing === "early" ? "Early (stabbed)" : "Late (got under it)"} · ${(s.along ?? 0) >= 0 ? "+" : ""}${(s.along ?? 0).toFixed(2)} m from the spot · ${struck(s.contact)} · power ${Math.round((s.power ?? 0) * 100)} · pace bent it ${(s.bentDeg ?? 0).toFixed(1)}°`;
 
   return (
     <BroadcastPage title="Live chances" sub="Test area: the pass keeps coming, you time the strike. On this page only; the game is unchanged unless you turn it on in Settings → Updates." width={1100}>
@@ -82,6 +99,13 @@ export default function LiveChancesDev() {
         <span style={{ width: 10 }} />
         <Pill on={buildUps} onClick={() => setBuildUps(true)}>With build-up</Pill>
         <Pill on={!buildUps} onClick={() => setBuildUps(false)}>No build-up (a made-up pass)</Pill>
+      </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }} data-live-strike>
+        <Pill on={strike} onClick={() => setStrike(true)}>Strike screen: On (tap the ball = the kick)</Pill>
+        <Pill on={!strike} onClick={() => setStrike(false)}>Strike screen: Off (letting go = the kick)</Pill>
+        <span style={{ width: 10 }} />
+        <Pill on={after === "new"} onClick={() => setAfter("new")}>After a chance: a new one</Pill>
+        <Pill on={after === "again"} onClick={() => setAfter("again")}>After a chance: the same one, live</Pill>
       </div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }} data-live-kinds>
         <Pill on={kind === "all"} onClick={() => { setKind("all"); setAt(0); }}>Every kind</Pill>
@@ -103,6 +127,7 @@ export default function LiveChancesDev() {
             <EnginePlay key={`${kind}-${at}-${run}-${buildUps}-${on}`} seed={11} openOn={openOn} leadIn={buildUps ? leadIn : undefined}
               onChanceResolved={(r) => {
                 const sw = swingRef.current;
+                resolvedKey.current = keyRef.current;
                 setLog((l) => [{ kind: r.kind, swing: sw, outcome: r.outcome }, ...l].slice(0, 12));
                 // Read by scripts/film/live/livecheck.mjs.
                 const w = window as unknown as { __liveOutcomes?: unknown[] };
@@ -115,7 +140,7 @@ export default function LiveChancesDev() {
           <Panel title="How it plays" note="The ring on the grass is where you meet the pass: white = not yet, yellow = in reach, green = sweet.">
             <ol style={{ fontSize: 12, margin: "0 0 0 18px", padding: 0, lineHeight: 1.5 }}>
               <li>The build-up plays. Before the last pass reaches you, the chance is yours and the clock slows.</li>
-              <li>Drag from the ring to aim, as always. Letting go is the swing.</li>
+              <li>Drag from the ring to aim, as always. Strike screen On: letting go locks your aim and a small ball opens at the bottom; your tap on it is the kick (sides curl, bottom chips, top drives), so tap as the ball reaches the ring. Off: letting go is the kick.</li>
               <li>Ring green: a clean strike. Early: you stab the top of it (low, weaker, skews). Late: you get under it (it rises, weaker).</li>
               <li>Out of reach: fresh air. Never swing: it runs past you. Either way the chance is gone.</li>
               <li>The ball&apos;s own pace carries into the shot.</li>
