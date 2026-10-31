@@ -72,14 +72,21 @@ class Quality:
         sig = np.poly1d([-0.08397278, 1.22083953, 0.0052439])(sig)
         return p808, float(sig)
 
-    def score(self, x, sr, text):
+    def score(self, x, sr, text, fmax=500):
+        """fmax: the highest pitch looked for. 500 Hz (the v2 voice) can hide a
+        squeal; generate_teams.py uses 900 and also reads `p95` (the pitch
+        of the top 5 % of the voiced moments), which is where a squeal shows."""
         x16 = librosa.resample(np.asarray(x, dtype=np.float32), orig_sr=sr, target_sr=16000)
         hyp = self.heard(x16)
         mos, sig = self.dnsmos(x16)
-        f0, vf, _ = librosa.pyin(x16, fmin=60, fmax=500, sr=16000)
+        f0, vf, _ = librosa.pyin(x16, fmin=60, fmax=fmax, sr=16000)
         f0 = f0[~np.isnan(f0)]
         rng = float(12 * np.log2(np.percentile(f0, 90) / np.percentile(f0, 10))) if len(f0) > 5 else 0.0
         dur = len(x16) / 16000
-        return {"wer": round(wer(text, hyp), 3), "heard": hyp, "mos": round(mos, 2), "sig": round(sig, 2),
-                "range": round(rng, 1), "f0": round(float(np.median(f0)), 0) if len(f0) else 0,
-                "rate": round(len(_words(text)) / max(0.3, dur), 2), "dur": round(dur, 2)}
+        out = {"wer": round(wer(text, hyp), 3), "heard": hyp, "mos": round(mos, 2), "sig": round(sig, 2),
+               "range": round(rng, 1), "f0": round(float(np.median(f0)), 0) if len(f0) else 0,
+               "rate": round(len(_words(text)) / max(0.3, dur), 2), "dur": round(dur, 2)}
+        if fmax != 500:
+            out["p95"] = round(float(np.percentile(f0, 95)), 0) if len(f0) > 5 else 0
+            out["voiced"] = round(len(f0) / max(1, len(x16) / 512), 2)
+        return out

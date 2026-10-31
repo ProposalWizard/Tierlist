@@ -62,7 +62,18 @@ SPOKEN = {
     "cl-late-1": "Late, late... he's won it!",
     "cl-s-op2": "First blood!",
     "cc-g7": "I'd have scored that. In my dreams, anyway.",
+    # Remade 31 Oct 2026: the recogniser kept hearing other words.
+    "cl-g6": "It's in! Absolutely brilliant!",                       # was heard "and it goes"
+    "cl-o1": "He's through on goal... keeps his cool... and slots it home!",  # was "Drowan goal"
+    "cl-f3": "The keeper is rooted to the spot! Free kick, goal!",  # was "keepers left"
+    "cl-s-lv2": "They are level now! Game on!",                     # was "their level came on"
 }
+
+# A line's own delivery, over STYLE (31 Oct 2026: cl-late-1 rose 23.5
+# semitones, a squeal; a calmer take, and SQUEAL_CAP below, keep it down).
+OVERRIDE = {"cl-late-1": {"exaggeration": 1.05}}
+# No take whose median pitch rises more than this above his calm voice.
+SQUEAL_CAP = 20.0
 
 
 def kind_of(line_id):
@@ -142,7 +153,8 @@ def pick(takes, base, window):
     def key(t):
         s = t["score"]
         slow = max(0.0, s["dur"] / max(1, len(t["text"].split())) - 0.6)  # long gaps / mumbling
-        return 8 * s["wer"] + 0.4 * miss(lift_of(s, base), window) - (s["mos"] + 0.3 * s["sig"]) + 2 * slow
+        squeal = 6 if lift_of(s, base) > SQUEAL_CAP else 0
+        return 8 * s["wer"] + 0.4 * miss(lift_of(s, base), window) - (s["mos"] + 0.3 * s["sig"]) + 2 * slow + squeal
     return min(takes, key=key)
 
 
@@ -176,12 +188,14 @@ def main():
         if not only and lid in report and os.path.exists(os.path.join(out_dir, lid + ".mp3")):
             continue  # already made (run again with ids to remake one)
         kind = kind_of(lid)
-        st = STYLE[kind]
+        st = {**STYLE[kind], **OVERRIDE.get(lid, {})}
         text = SPOKEN.get(lid, ln["text"])
         takes = []
         t0 = time.time()
         who = "co" if kind == "co" else "lead"
-        for old in (report.get(lid, {}).get("takes", []) if only else []):
+        # Old takes are reused only when they said the same words the same way.
+        same = report.get(lid, {}).get("spoken") == text and report.get(lid, {}).get("exaggeration") == st["exaggeration"]
+        for old in (report.get(lid, {}).get("takes", []) if only and same else []):
             f = os.path.join(take_dir, f"{lid}-{old['seed']}.wav")
             if os.path.exists(f) and old["seed"] < seed0:
                 sc = {k: v for k, v in old.items() if k != "seed"}

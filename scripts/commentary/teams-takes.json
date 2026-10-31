@@ -1,0 +1,78 @@
+{
+ "_resting": {
+  "anchor": 131.0,
+  "poet": 187.0
+ },
+ "cl-anchor-g1": {
+  "who": "anchor",
+  "kind": "call",
+  "spoken": "And he's scored! A fine finish.",
+  "exaggeration": 1.05,
+  "temp": 0.8,
+  "heat": 0.6,
+  "lift": [
+   7,
+   14
+  ],
+  "seed": 1,
+  "resting_f0": 131.0,
+  "dur": 2.51,
+  "weak": [],
+  "takes": [
+   {
+    "wer": 0.0,
+    "heard": "and he's scored a fine finish.",
+    "mos": 3.47,
+    "sig": 3.39,
+    "range": 11.0,
+    "f0": 178.0,
+    "rate": 2.79,
+    "dur": 2.51,
+    "p95": 273.0,
+    "voiced": 0.61,
+    "wer_strict": 0.0,
+    "lift": 5.3,
+    "peak": 12.7,
+    "squeal": false,
+    "miss": 1.7,
+    "seed": 1
+   }
+  ]
+ },
+ "cl-poet-g1": {
+  "who": "poet",
+  "kind": "call",
+  "spoken": "Oh, and it sings into the net!",
+  "exaggeration": 0.9,
+  "temp": 0.75,
+  "heat": 0.5,
+  "lift": [
+   5,
+   12
+  ],
+  "seed": 1,
+  "resting_f0": 187.0,
+  "dur": 1.94,
+  "weak": [],
+  "takes": [
+   {
+    "wer": 0.0,
+    "heard": "Oh, and it sings into the net.",
+    "mos": 3.74,
+    "sig": 3.5,
+    "range": 8.1,
+    "f0": 235.0,
+    "rate": 3.6,
+    "dur": 1.94,
+    "p95": 302.0,
+    "voiced": 0.71,
+    "wer_strict": 0.0,
+    "lift": 4.0,
+    "peak": 8.3,
+    "squeal": false,
+    "miss": 1.0,
+    "seed": 1
+   }
+  ]
+ }
+}
