@@ -935,7 +935,7 @@ export const ADMIN_GUIDES = {
       { group: "Switches", items: [
         ["Live: On / Off", "On: the pass keeps coming and you time the swing. Off: the game as now (the ball waits at your feet)."],
         ["With build-up / No build-up", "With: the chance's real build-up plays first. No: a made-up pass from the nearest team-mate."],
-        ["Strike screen: On / Off", "On: letting go locks your aim, then tap the small ball as the pass reaches you (sides curl, bottom chips, top drives). Off: letting go is the kick."],
+        ["Kick screen: On / Off", "On: letting go is the moment you meet the pass, then the normal kick screen opens: tap where on the ball (sides curl, bottom chips, top drives). Off: letting go is the kick."],
         ["After a chance: a new one / the same one, live", "What plays when a chance ends: the next chance, or this one again from its build-up. Never a still copy."],
         ["Every kind / a kind", "Which chances to play. Penalties, free kicks, corners, headers and volleys are never live."],
       ] },

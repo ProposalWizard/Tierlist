@@ -227,10 +227,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "title": "Leo's patch notes: Live chances (test)",
       "author": "Leo",
       "publishedAt": "2026-10-30T12:00:00Z",
-      "updatedAt": "2026-10-30T21:11:13Z",
-      "updateNote": "Added: the strike screen (on by default; its own switch): letting go locks your aim, then you tap a small ball as the pass reaches you, so curve, chip and height are back; when you tap is the timing. The switch, strike screen and all sliders are now in the game's Settings (Match, and Updates). Test page: after a chance it starts a new one (or the same one live), never the static copy. Checked in a career match: 7 of 7 taps read right. Page edited.",
+      "updatedAt": "2026-10-31T13:55:08Z",
+      "updateNote": "Changed: the kick part is now the game's normal kick screen (not a small strip). Let go as the pass reaches you (that sets early, clean or late), then tap where on the ball on the normal \"Strike it?\" screen. Checked: test page and a career match, 5 of 5 right. Page edited.",
       "artifactUrl": null,
-      "summary": "The last pass keeps coming to you: time your strike as it arrives. With the strike screen (on by default) you lock your aim, then tap a small ball as it reaches you: where you tap curls, chips or drives it. Early stabs it low, clean is a full shot, late gets under it; miss it or let it run past and the chance is gone. The ball's pace carries into your shot. 98% of open-play chances go live; set pieces, headers and volleys stay as they are. Own switch in Settings → Updates (off by default) and a test page with dials. Works in 2D and 3D.",
+      "summary": "The last pass keeps coming to you: time your strike as it arrives. Let go as it reaches you, then (kick screen, on by default) the normal kick screen opens: tap where on the ball to curl, chip or drive it. Early stabs it low, clean is a full shot, late gets under it; miss it or let it run past and the chance is gone. The ball's pace carries into your shot. 98% of open-play chances go live; set pieces, headers and volleys stay as they are. Own switch in Settings → Updates (off by default) and a test page with dials. Works in 2D and 3D.",
       "stats": [
         {
           "value": "98%",
@@ -267,12 +267,12 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
               "detail": "A ball rolling across you bends your shot its way (about 9° at 60% power, less when you strike harder)."
             },
             {
-              "title": "Strike screen (curve, chip, height)",
-              "detail": "Its own switch, on by default. Letting go locks your aim; a small ball opens along the bottom (or top) with the pitch still showing. Tap it as the pass reaches you: sides curl, bottom chips, top drives. When you tap is the timing. Off: letting go is the kick."
+              "title": "The normal kick screen (curve, chip, height)",
+              "detail": "Its own switch, on by default. Let go as the pass reaches you (that sets early, clean or late), then the game's normal kick screen opens: tap where on the ball, sides curl, bottom chips, top drives. Out of reach: fresh air. Off: letting go is the kick."
             },
             {
               "title": "Sliders in the game's Settings",
-              "detail": "Settings → Match (admins) and Settings → Updates: the switch, the strike screen and all 7 sliders, saved on your phone."
+              "detail": "Settings → Match (admins) and Settings → Updates: the switch, the kick screen switch and all 7 sliders, saved on your phone."
             },
             {
               "title": "Test page: no static replays",
@@ -308,6 +308,11 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "at": "2026-10-30T21:11:13Z",
           "where": "Title, Text, Page",
           "note": "Added: the strike screen (on by default; its own switch): letting go locks your aim, then you tap a small ball as the pass reaches you, so curve, chip and height are back; when you tap is the timing. The switch, strike screen and all sliders are now in the game's Settings (Match, and Updates). Test page: after a chance it starts a new one (or the same one live), never the static copy. Checked in a career match: 7 of 7 taps read right. Page edited."
+        },
+        {
+          "at": "2026-10-31T13:55:08Z",
+          "where": "Text, Page",
+          "note": "Changed: the kick part is now the game's normal kick screen (not a small strip). Let go as the pass reaches you (that sets early, clean or late), then tap where on the ball on the normal \"Strike it?\" screen. Checked: test page and a career match, 5 of 5 right. Page edited."
         }
       ]
     },

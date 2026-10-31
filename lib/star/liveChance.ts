@@ -85,12 +85,13 @@ export function setLiveTest(o: { on: boolean; strike: boolean; dials: Partial<Li
 export function liveChancesOn(): boolean { return testOverride ? testOverride.on : readSaved().on; }
 export function setLiveChances(on: boolean) { writeSaved({ ...readSaved(), on }); }
 /**
- * THE STRIKE SCREEN (Leo, 30 Oct 2026: "a toggle for whether or not there's
+ * THE KICK SCREEN (Leo, 30-31 Oct 2026: "a toggle for whether or not there's
  * still the kick part of the move after you aim and let go … what about
- * curve? chips? height?"). On (the default): letting go locks your aim, a
- * small strike ball opens along the bottom with the pitch still showing, and
- * your TAP is the kick: where you tap is curve / chip / height as ever, when
- * you tap is the timing. Off: letting go of the drag is the kick.
+ * curve? chips? height?" … "i meant normal kick screen"). On (the default):
+ * letting go is the moment you meet the pass (it sets early / clean / late
+ * and stops the pass there), then the game's normal kick screen opens and
+ * your tap on it is where on the ball (curve, chip, height). Out of reach
+ * when you let go: fresh air, no kick screen. Off: letting go is the kick.
  */
 export function liveStrikeScreenOn(): boolean { return testOverride ? testOverride.strike : readSaved().strike; }
 export function setLiveStrikeScreen(strike: boolean) { writeSaved({ ...readSaved(), strike }); }
@@ -295,7 +296,7 @@ export function readSwing(plan: LivePlan, b: Vec2, speed: number, aimDir: Vec2, 
   const timing: SwingTiming = early > 0 ? "early" : late > 0 ? "late" : "sweet";
   const off = Math.max(early, late);
   // Where the foot meets it: a stab finds the top of the ball, a late one gets under it.
-  // With the strike screen (`tap`): where you tapped, moved by the timing (a stab
+  // With the kick screen (`tap`): where you tapped, moved by the timing (a stab
   // rides up the ball, a late one slides under it) and by where the ball is beside you.
   const cy = tap
     ? clamp(tap.cy - 0.6 * early + 0.7 * late, -1, 1)
