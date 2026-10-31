@@ -164,11 +164,13 @@ export interface GoalVideoProps {
   fill?: boolean;
   /** Leo's 24 Oct update "goalVideoNow": play a goal at once, live, while its file is made. */
   live?: boolean;
+  /** Better goal videos ("betterVideos"): the post's own TikTok caption lines [hook, reaction, replay]. */
+  captions?: string[];
 }
 
 type Status = "idle" | "making" | "ready" | "unsupported" | "failed";
 
-export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0, credit, title, badge, fallback, autoStart = false, priority = 0, fill = false, live = false }: GoalVideoProps) {
+export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0, credit, title, badge, fallback, autoStart = false, priority = 0, fill = false, live = false, captions }: GoalVideoProps) {
   const [played, setPlayed] = useState(0);
   const [tracks, setTracks] = useState<GoalTrack[] | null>(null);
   const [status, setStatus] = useState<Status>("idle");
@@ -232,7 +234,10 @@ export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0,
   // The same name premake.ts uses, so a video made at full time is found here.
   // Leo's update "smoothGoals": a real goal eased like the made-up ones (goalClip/smooth.ts). Off = as before.
   const smooth = useLeoUpdate("smoothGoals");
-  const key = goalVideoKey(style, variant, moves, clipIds, synth, credit?.handle, smooth);
+  // Leo's update "betterVideos": more cameras, TikTok edits, fan phones, reels (goalClip/editBetter.ts). Off = as before.
+  const better = useLeoUpdate("betterVideos");
+  const capKey = (captions ?? []).join("/");
+  const key = goalVideoKey(style, variant, moves, clipIds, synth, credit?.handle, smooth, better, captions);
 
   useEffect(() => {
     let live = true;
@@ -248,7 +253,9 @@ export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clipIds.join(","), synthKey]);
 
-  const edit = useMemo(() => (tracks && tracks.length ? makeEdit(smooth ? smoothRecorded(tracks) : tracks, style, moves, variant) : null), [tracks, style, moves, variant, smooth]);
+  const edit = useMemo(() => (tracks && tracks.length ? makeEdit(smooth ? smoothRecorded(tracks) : tracks, style, moves, variant, better ? { better, captions } : undefined) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tracks, style, moves, variant, smooth, better, capKey]);
 
   // Can this browser make the video at all? If not, the post is its plain
   // picture (`fallback`): no play button that cannot play.

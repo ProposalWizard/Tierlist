@@ -903,6 +903,13 @@ function renderPersona(
       ? yourGoalsVideo(record, youName, `${record.you.shortName.toUpperCase()} | ${account.name.toUpperCase()}`)
     : template.graphic ? buildGraphic(template.graphic, event, record, career, memory, prng) : undefined;
   const sound = account.platform === "tiktok" && graphicPlays(graphic) ? soundFor(account.persona, prng) : undefined;
+  // A TikTok video carries its caption: the post's own first line as the hook,
+  // the account's catchphrase as the reaction (both burnt into the edit).
+  if (sound && graphic && graphic.type === "goalVideo") {
+    const hook = raw.split("\n")[0].replace(/#[A-Za-z0-9_]+/g, "").replace(/\s+/g, " ").trim();
+    const reaction = typeof facts.catch === "string" && facts.catch !== hook ? facts.catch : undefined;
+    if (hook) graphic.captions = reaction ? [hook, reaction] : [hook];
+  }
   const importance = event.importance ?? event.baseImportance;
   const season = record?.season ?? career.season;
   const week = record?.week ?? career.week;

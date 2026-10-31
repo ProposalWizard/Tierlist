@@ -521,6 +521,9 @@ export type GraphicSpec =
        *  played instead when this phone does not have that recording (a save
        *  opened on another device). So a video post always has a video. */
       standIn?: SynthGoal[];
+      /** Football Twitter v2: a TikTok post's own caption lines [hook, reaction],
+       *  burnt into the edit (goalClip/editBetter.ts) so the video says what the post says. */
+      captions?: string[];
     }
   /**
    * GOAL OF THE MONTH (Leo, 22 Oct 2026, option B): your best goals of the

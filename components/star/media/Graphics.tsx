@@ -29,6 +29,8 @@ export { clipStyleFor, clipVariantFor } from "@/lib/star/media/clipStyle";
 import { clipStyleFor, clipVariantFor } from "@/lib/star/media/clipStyle";
 
 export default function Graphic({ spec, author }: { spec: GraphicSpec; author?: PostAuthor }) {
+  // Leo's update "betterVideos": accounts map to the better styles (clipStyle.ts). Off = as before.
+  const better = useLeoNow("betterVideos");
   if (spec.type === "thumbnail") return <Thumbnail s={spec} author={author} />;
   if (spec.type === "goalVideo") {
     return (
@@ -36,8 +38,9 @@ export default function Graphic({ spec, author }: { spec: GraphicSpec; author?: 
         clipIds={spec.clips}
         synth={spec.synth}
         standIn={spec.standIn}
+        captions={spec.captions}
         priority={spec.priority ? 2 : spec.clips.length > 0 ? 1 : 0}
-        style={spec.style ?? clipStyleFor(author)}
+        style={spec.style ?? clipStyleFor(author, better)}
         variant={spec.variant ?? clipVariantFor(author)}
         credit={author ? { handle: author.handle, name: author.name } : undefined}
         title={spec.title}
@@ -328,6 +331,7 @@ function Poll({ s }: { s: Extract<GraphicSpec, { type: "poll" }> }) {
  * simulated match — nothing: the post is its words (Leo, 16 Oct 2026).
  */
 function Thumbnail({ s, author }: { s: Extract<GraphicSpec, { type: "thumbnail" }>; author?: PostAuthor }) {
+  const better = useLeoNow("betterVideos");
   const still = (
     <div className="relative overflow-hidden rounded-xl border border-white/15 bg-gradient-to-br from-gray-700 to-gray-900" data-thumbnail-still>
       <div className="flex h-24 items-end p-3">
@@ -348,7 +352,7 @@ function Thumbnail({ s, author }: { s: Extract<GraphicSpec, { type: "thumbnail" 
       clipIds={s.clips ?? []}
       synth={s.synth}
       priority={(s.clips?.length ?? 0) > 0 ? 1 : 0}
-      style={clipStyleFor(author)}
+      style={clipStyleFor(author, better)}
       variant={clipVariantFor(author)}
       credit={author ? { handle: author.handle, name: author.name } : undefined}
       title={s.title}

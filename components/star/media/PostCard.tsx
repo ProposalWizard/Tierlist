@@ -199,7 +199,7 @@ export default function PostCard({ post, now, onToggleLike, onVote }: {
           </div>
         ) : post.graphic && !(post.graphic.type === "thumbnail" && !post.graphic.clips?.length && !post.graphic.synth?.length) && (
           <div className="mt-2.5 overflow-hidden rounded-2xl">
-            <Graphic spec={post.graphic} author={post.author} />
+            <Graphic spec={post.graphic} author={{ ...post.author, persona: post.persona }} />
           </div>
         )}
 
