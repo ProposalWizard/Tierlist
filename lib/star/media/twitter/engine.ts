@@ -17,10 +17,12 @@ import type {
   Facts, FootballEvent, GraphicSpec, MediaAccount, PostReply, StoredPost, VoiceProfile,
 } from "../types";
 import type { CareerState } from "../../types";
-import { initialsOf, pick, resolve, rngFor, shortClub } from "../grammar";
+import { pick, resolve, rngFor, shortClub } from "../grammar";
 import { sortLeague } from "../../season";
 import { personaById, isBadNews, isGoodNews } from "./personas";
 import { hasPlayableVideo, impliesVideo } from "./videoWords";
+import { repliesFor } from "./replies";
+import { postTone, type Tone } from "./tone";
 
 // ── Slots ─────────────────────────────────────────────────────────────────
 
@@ -157,8 +159,6 @@ function gauss(rng: () => number): number {
 }
 
 const HOT = new Set(["takes", "ranter", "ratio", "expro", "itk", "rivalBanter"]);
-/** Pages whose replies are people laughing along, not arguing. */
-const BANTER = new Set(["ratio", "meme", "rivalBanter"]);
 
 /**
  * How a post does. Reach is a share of followers that shrinks as an account
@@ -203,266 +203,9 @@ export function engagement(
 
 // ── Replies ───────────────────────────────────────────────────────────────
 
-interface ReplyGuy { handle: string; name: string; tint: string; tint2: string; followers: number }
-
-/** The reply guys: small invented accounts that only ever turn up in replies. */
-const REPLY_GUYS: ReplyGuy[] = [
-  { handle: "@SundayLeagueLegend", name: "Sunday League Legend", tint: "#16a34a", tint2: "#bbf7d0", followers: 3_100 },
-  { handle: "@xG_is_a_myth", name: "xG is a myth", tint: "#0ea5e9", tint2: "#1e3a8a", followers: 1_900 },
-  { handle: "@ballwatcher_99", name: "ballwatcher", tint: "#f59e0b", tint2: "#7c2d12", followers: 820 },
-  { handle: "@terrace_poet", name: "the terrace poet", tint: "#a855f7", tint2: "#fbcfe8", followers: 4_400 },
-  { handle: "@MumsTheGaffer", name: "Mum's The Gaffer", tint: "#ec4899", tint2: "#fde68a", followers: 2_600 },
-  { handle: "@fpl_dreamer", name: "fpl dreamer", tint: "#22c55e", tint2: "#064e3b", followers: 1_200 },
-  { handle: "@OneTouchTom", name: "Tom | one touch", tint: "#ef4444", tint2: "#fecaca", followers: 650 },
-  { handle: "@TopBinsTara", name: "Tara | top bins", tint: "#14b8a6", tint2: "#ccfbf1", followers: 5_800 },
-  { handle: "@moaning_since88", name: "moaning since 88", tint: "#64748b", tint2: "#e2e8f0", followers: 900 },
-  { handle: "@HalfTimeOranges", name: "Half Time Oranges", tint: "#fb923c", tint2: "#fff7ed", followers: 2_200 },
-  { handle: "@nutmeg_nadia", name: "Nadia 🧦", tint: "#6366f1", tint2: "#e0e7ff", followers: 3_700 },
-  { handle: "@ProperFootballPaul", name: "Proper Football Paul", tint: "#78350f", tint2: "#fde68a", followers: 1_500 },
-];
-
-/**
- * Reply lines by what the post is about. Slots as the persona lines, plus
- * {loserS}/{winnerS} (worked out here, so a banter reply always laughs at
- * the side that lost: Leo saw "someone check on Arsenal fans" under a meme
- * about Arsenal WINNING). "…Video" moods are only used under a post that
- * shows a playable video (Leo's rule: no words about a video you can't watch).
- */
-const REPLIES: Record<string, string[]> = {
-  goodYou: [
-    "{short} is HIM and i'm tired of pretending he isn't",
-    "the way {short} just does this every week 😭",
-    "{short} owners eating good tonight 🍽️",
-    "remember when people said {short} was a project 😂",
-    "this is the {short} slander graveyard 🪦",
-    "sign him to a 10 year contract right now",
-    "ball knowledge confirmed. been saying {short} since day one",
-    "{short} for the Ballon d'Or. i'm serious",
-    "we don't deserve {short}",
-    "{oppS} will be seeing him in their sleep",
-    "my dad said he'd never make it. dad?",
-    "how is this guy not starting for his country",
-    "put some respect on his name",
-    "every week. every single week",
-    "he's the reason i renewed my season ticket",
-    "{short} slander will not be tolerated on this app",
-    "the composure at his age is not normal",
-    "18 years old. EIGHTEEN 😭",
-    "his agent's phone must be melting",
-    "tell me a better young player. i'll wait",
-    "name a more reliable player. you can't",
-    "not even surprised anymore, he's just that guy",
-    "{short} szn never ends",
-    "proper footballer. no notes",
-    "the {clubS} academy should be getting a statue",
-    "he plays like he's been doing this for 15 years",
-    "mark my words: captain within two seasons",
-  ],
-  goodYouVideo: [
-    "the first touch before it 🤌",
-    "commentator lost his mind and so did i",
-    "i've watched this 40 times",
-    "the keeper didn't even move 😭",
-    "turn the sound up for this one",
-    "that angle makes it even better",
-    "the slow-mo at the end 😮‍💨",
-    "who's editing these, they deserve a raise",
-    "on loop. every day. forever",
-    "the defender's face 😭😭",
-    "the way the net moved 🤌",
-    "i need this as my phone background",
-    "{oppS} fans are not watching this one 😂",
-    "rate it 10 and move on",
-    "not even his best one this season tbf",
-    "goal of the season. don't argue",
-    "watch his head before he shoots. scanning 🧠",
-  ],
-  badYou: [
-    "{short} owes me points 😤",
-    "one bad game and the timeline turns. relax",
-    "he'll be back next week, always is",
-    "{short} fraud watch was always a little early",
-    "who's telling him? 😭",
-    "this aged badly",
-    "deleted? 👀",
-    "the hate is wild, he's young",
-    "rent free 😂",
-    "bench him. just for a week",
-    "everyone has off days, calm down",
-    "this is why you don't hype players up",
-    "he looked tired. play him less",
-    "honestly the whole team was poor, not just him",
-    "back to the drawing board",
-    "the service to him was awful tbf",
-    "18 years old and people want him perfect every week",
-    "even Messi had bad games lads",
-    "touch was off all day, it happens",
-    "he'll score two next week and you'll all be back",
-    "manager needs to protect him more",
-    "not his day. move on",
-  ],
-  goodClub: [
-    "{clubS} are BACK 🔥",
-    "i said it in august and got laughed at",
-    "the rest of the league should be scared",
-    "and people wanted the manager out 😂",
-    "this team is different this year",
-    "great result but let's not get carried away",
-    "proper performance that",
-    "the midfield ran the game",
-    "three points is three points",
-    "we go again",
-    "this is the team i fell in love with",
-    "{oppS} were never in it",
-    "the subs changed it",
-    "i'm not getting excited. (i'm very excited)",
-    "{clubS} are building something here",
-    "the away fans were brilliant again",
-    "if we keep this up we're going up the table quick",
-    "best we've played all season",
-    "the manager deserves credit for that",
-  ],
-  badClub: [
-    "{clubS} fans real quiet today 🤫",
-    "not even surprised anymore",
-    "the manager has to go. simple",
-    "some of them should not be wearing the shirt",
-    "hold this L 🫵",
-    "this is the third time this season",
-    "i want a refund on my season ticket",
-    "fraud watch 🚨",
-    "embarrassing. absolutely embarrassing",
-    "where was the effort?",
-    "same mistakes every week",
-    "board need to wake up",
-    "can't even be angry anymore, just tired",
-    "the defending was a joke",
-    "no plan b. never is",
-    "we miss our best players and fall apart",
-    "january can't come soon enough",
-    "{oppS} wanted it more. simple",
-    "the set pieces are killing us",
-    "honestly just glad it's over",
-  ],
-  contract: [
-    "best news i've had all week",
-    "lock him up forever 🔒",
-    "{short} staying. the agent can rest now",
-    "release clause better be massive",
-    "now win us something {short}",
-    "W",
-    "loyalty. love to see it",
-    "the rest of the league in shambles",
-    "deserves every penny",
-    "best piece of business all year",
-  ],
-  manager: [
-    "about time",
-    "they've got this wrong. again",
-    "board out next",
-    "who's the replacement then?",
-    "{clubS} going through managers like socks",
-    "give the next one time this time please",
-    "the dressing room won this one",
-    "never liked the appointment from day one",
-    "sad way for it to end tbf",
-    "the players should be looking at themselves",
-  ],
-  managerIn: [
-    "give him time. please",
-    "decent appointment this",
-    "not who i wanted but let's see",
-    "first job: sort the defence out",
-    "welcome to the madhouse, gaffer",
-    "let's give him a fair go",
-    "interesting one. could work",
-    "he'll need a january window",
-  ],
-  transfer: [
-    "fee is mad but he's worth it",
-    "{to} fans about to be insufferable",
-    "good business for everyone involved",
-    "source?",
-    "the agent is getting a new car out of this 😂",
-    "{from} fans in shambles",
-    "the shirt sales are about to go mad",
-    "{to} have got a player",
-    "sad to see him go tbh",
-    "what a signing",
-  ],
-  hotTake: [
-    "ratio",
-    "worst take i've read all week",
-    "this is bait and i'm biting: no",
-    "you watched one game didn't you",
-    "agree but for different reasons",
-    "deleted?",
-    "who's telling him",
-    "screenshot this, we're coming back to it in May",
-    "the confidence of a man who's never been right",
-    "bait. reported. blocked",
-    "you're not even wrong, just annoying",
-    "say it again, i dare you",
-  ],
-  banter: [
-    "😭😭😭",
-    "not the {loserS} fans in the replies 💀",
-    "violation",
-    "the disrespect is crazy 😭",
-    "admin woke up and chose violence",
-    "LMAOOO",
-    "bro is NOT stopping 😭",
-    "i'm crying at the replies",
-    "someone check on {loserS} fans",
-    "this account has no chill",
-    "the caption 💀",
-    "{loserS} fans are not going to like this one",
-    "{winnerS} fans tagging every {loserS} fan they know 😂",
-    "screenshotted and sent to the group chat",
-    "the accuracy 😭",
-    "i felt this one",
-    "{loserS} fans pretending they didn't see this",
-    "brutal. accurate. brutal",
-  ],
-  score: [
-    "what a game",
-    "{homeS} never make it easy",
-    "great game for a neutral 🍿",
-    "{awayS} fans where are you",
-    "didn't see that coming",
-    "the league is mad this year",
-    "fair result tbh",
-    "that's a big three points",
-  ],
-  generic: [
-    "big if true",
-    "the timeline is in shambles",
-    "need more of this",
-    "W",
-    "this sport man",
-    "football is back",
-    "can't wait for the weekend",
-    "following for more of this",
-    "you love to see it",
-    "absolute scenes",
-  ],
-};
-
-function replyMood(post: StoredPost, e: FootballEvent, video: boolean): keyof typeof REPLIES {
-  // Meme pages and rival fans are laughing at somebody: their replies laugh along.
-  if ((post.persona && BANTER.has(post.persona)) || post.author.archetype === "meme" || post.author.archetype === "rivalFan") return "banter";
-  if (post.persona && HOT.has(post.persona)) return "hotTake";
-  if (e.tags.includes("contract")) return "contract";
-  if (e.id === "manager-in") return "managerIn";
-  if (e.tags.includes("manager")) return "manager";
-  if (e.tags.includes("transfer")) return "transfer";
-  const aboutYou = e.subject.kind === "you";
-  if (aboutYou) return isBadNews(e) ? "badYou" : isGoodNews(e) ? (video ? "goodYouVideo" : "goodYou") : "generic";
-  if (isBadNews(e)) return "badClub";
-  if (isGoodNews(e)) return "goodClub";
-  if (e.facts.homeClub) return "score";
-  return "generic";
-}
+// The reply guys, the reply lines and how a thread is built now live in
+// replies.ts / replyLines.ts / tone.ts (round 4: replies agree with what the
+// post is about and with who is replying).
 
 function filled(line: string, facts: Facts): boolean {
   for (const m of Array.from(line.matchAll(/\{([^}|]+)/g))) {
@@ -492,35 +235,15 @@ function sides(facts: Facts, e: FootballEvent): Facts {
   return f;
 }
 
-/** Up to three replies under a post, liked in falling order. */
+/** The replies under a post (replies.ts): by its tone, its sides and its platform. */
 export function replyThread(
-  post: StoredPost, e: FootballEvent, facts: Facts, voice: VoiceProfile, rng: () => number,
+  post: StoredPost, _e: FootballEvent, facts: Facts, voice: VoiceProfile, rng: () => number,
   /** Lines already used under this cycle's other posts: never the same reply twice. */
   cycleUsed: Set<string> = new Set(),
   /** Lines used under any post in the last few weeks (feed.ts FT_REPEAT_WEEKS), kept out too. */
   recent: Set<string> = new Set(),
 ): PostReply[] {
-  const video = hasPlayableVideo(post);
-  const mood = replyMood(post, e, video);
-  const f = sides(facts, e);
-  const lines = REPLIES[mood].filter(l => filled(l, f) && !cycleUsed.has(l) && !recent.has(l) && (video || !impliesVideo(l)));
-  const n = Math.min(lines.length, post.metrics.replies >= 40 ? 3 : post.metrics.replies >= 8 ? 2 : post.metrics.replies >= 1 ? 1 : 0);
-  const out: PostReply[] = [];
-  const usedLines = new Set<number>(), usedGuys = new Set<number>();
-  let likes = Math.max(1, Math.round(post.metrics.likes * (0.04 + rng() * 0.12)));
-  for (let i = 0; i < n; i++) {
-    let li = Math.floor(rng() * lines.length), gi = Math.floor(rng() * REPLY_GUYS.length);
-    for (let t = 0; t < 8 && usedLines.has(li); t++) li = Math.floor(rng() * lines.length);
-    for (let t = 0; t < 8 && usedGuys.has(gi); t++) gi = Math.floor(rng() * REPLY_GUYS.length);
-    if (usedLines.has(li) || usedGuys.has(gi)) break;
-    usedLines.add(li); usedGuys.add(gi); cycleUsed.add(lines[li]);
-    const g = REPLY_GUYS[gi];
-    let text = resolve(lines[li], f, voice, rng).trim();
-    if (rng() < 0.6) text = text.toLowerCase();
-    out.push({ handle: g.handle, name: g.name, verified: rng() < 0.15, initials: initialsOf(g.name), tint: g.tint, tint2: g.tint2, glyph: "grin", text, likes });
-    likes = Math.max(0, Math.round(likes * (0.25 + rng() * 0.4)));
-  }
-  return out;
+  return repliesFor(post, facts, voice, rng, { cycleUsed, recent });
 }
 
 // ── Quote posts ───────────────────────────────────────────────────────────
@@ -546,6 +269,20 @@ const QUOTES: Record<string, Record<string, string[]>> = {
 };
 
 /**
+ * What a quote line may quote (round 4: a quote agrees with the post it
+ * quotes): by the quoted post's tone (tone.ts). Before, the "transfer"
+ * lines also quoted a new contract ("Fair fee. Strong business for both
+ * clubs.") because a contract is tagged "transfer" too.
+ */
+const QUOTE_TARGETS: Record<string, Tone[]> = {
+  goodYouVideo: ["goal", "skill"],
+  goodYou: ["goal", "skill", "praise", "award"],
+  badClub: ["clubLoss", "mock", "relegation"],
+  badYou: ["badGame", "mock"],
+  transfer: ["transfer", "rumour"],
+};
+
+/**
  * One to three posts quoting the cycle's biggest posts: the hype or quiz
  * page quote-posts your goal (its video plays inside the quote),
  * the ratio page and your rival's fans quote your club's bad day, the
@@ -558,6 +295,8 @@ export function quotePosts(
   yourClub: string,
   /** Quote lines used lately (kept out); new ones are added to it. */
   recent: Set<string> = new Set(),
+  /** Round 4: give each quote its own replies (reply lines used this cycle / lately). */
+  replies?: { cycleUsed: Set<string>; recent: Set<string> },
 ): StoredPost[] {
   const rng = rngFor("quotes", cycleId);
   const byPersona = new Map(accounts.filter(a => a.persona).map(a => [a.persona!, a]));
@@ -567,9 +306,12 @@ export function quotePosts(
   // Who quotes whom: the journalist quotes news, not banter; the edits page
   // quotes a video; the hype pages quote the club, the news or a video.
   const NEWSY = new Set(["club", "league", "competition", "insider", "aggregator", "broadsheet", "tabloid", "stats"]);
-  const tryQuote = (who: string[], mood: string, test: (x: { post: StoredPost; event: FootballEvent }) => boolean, newsOnly = false) => {
+  const tryQuote = (who: string[], mood: string, test: (x: { post: StoredPost; event: FootballEvent; facts?: Facts }) => boolean, newsOnly = false) => {
     const target = ranked.find(x => !quoted.has(x.post.id) && !x.post.quote && test(x)
-      && (!newsOnly || NEWSY.has(x.post.author.archetype)));
+      && (!newsOnly || NEWSY.has(x.post.author.archetype))
+      && (!replies || !QUOTE_TARGETS[mood] || QUOTE_TARGETS[mood].includes(postTone(x.post)))
+      // A quote about you quotes a post that names you (not the week's scoreline).
+      && (!replies || !mood.includes("You") || typeof x.facts?.short !== "string" || x.post.text.toLowerCase().includes(String(x.facts.short).toLowerCase())));
     if (!target) return;
     const authors = who.map(p => byPersona.get(p)).filter((a): a is MediaAccount => !!a && a.handle !== target.post.author.handle);
     if (!authors.length) return;
@@ -577,7 +319,9 @@ export function quotePosts(
     const f = sides(target.facts, target.event);
     const video = hasPlayableVideo(target.post);
     // A quote that talks about a video only quotes a post that has one (and carries it).
-    const lines = (QUOTES[a.persona!]?.[mood] ?? []).filter(l => filled(l, f) && !recent.has(`${a.persona}|${l}`) && (video || !impliesVideo(l)));
+    const lines = (QUOTES[a.persona!]?.[mood] ?? []).filter(l => filled(l, f) && !recent.has(`${a.persona}|${l}`) && (video || !impliesVideo(l))
+      // A line about "the goal" only quotes a goal.
+      && (!replies || !/\bgoal\b/i.test(l) || target.event.tags.includes("goal")));
     if (!lines.length) return;
     quoted.add(target.post.id);
     const p = personaById(a.persona!);
@@ -586,7 +330,7 @@ export function quotePosts(
     const text = personaSpeak(resolve(line, f, a.voice, rng), a.voice, p?.emoji ?? [], rng);
     const t = target.post.author;
     const importance = Math.min(95, 40 + Math.log10(1 + (target.post.metrics.views ?? 0)) * 8);
-    out.push({
+    const made: StoredPost = {
       id: `${cycleId}:quote:${a.id}:${out.length}`,
       at: target.post.at + 6 + Math.floor(rng() * 60),
       author: {
@@ -608,7 +352,12 @@ export function quotePosts(
       persona: a.persona,
       // A TikTok page quoting a goal is a stitch: the video, its caption, its sound.
       ...(a.platform === "tiktok" && video ? { sound: soundFor(a.persona, rng) } : {}),
-    });
+    };
+    if (replies) {
+      const thread = repliesFor(made, target.facts, a.voice, rngFor("quote-replies", made.id), replies);
+      if (thread.length) made.thread = thread;
+    }
+    out.push(made);
   };
   const aboutYourClub = (e: FootballEvent) => e.facts.club === yourClub;
   if (rng() < 0.7) tryQuote(["edits", "pov", "ranker"], "goodYouVideo", x => x.event.subject.kind === "you" && x.event.tags.includes("goal") && hasPlayableVideo(x.post));
