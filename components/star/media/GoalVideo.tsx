@@ -14,6 +14,7 @@ import { synthTrack, type SynthGoal } from "@/lib/star/goalClip/synth";
 import { planAudio, mixAudio } from "@/lib/star/goalClip/audio";
 import { useClipSound, setClipSoundOn } from "@/lib/star/goalClip/sound";
 import { audioContext } from "@/lib/star/audioOut";
+import { FavouriteForClips } from "../FavouriteGoalStar";
 
 /**
  * A REAL GOAL VIDEO IN A POST (Leo, 7 Oct 2026: "it makes it look like theres
@@ -684,6 +685,7 @@ export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0,
           </svg>
           Save video
         </button>
+        <FavouriteForClips clipIds={clipIds} />
         {status === "unsupported" && <span className="text-amber-200">This browser can&apos;t make videos.</span>}
         {status === "failed" && <span className="text-amber-200">The video could not be made.</span>}
         {note && status !== "unsupported" && status !== "failed" && <span className="text-emerald-300">{note}</span>}

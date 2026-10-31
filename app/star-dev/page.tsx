@@ -1,5 +1,7 @@
 "use client";
 import { protectedClipIds } from "@/lib/star/goalLog";
+import { favouriteClipIds, toggleFavourite } from "@/lib/star/favouriteGoals";
+import { publishFavourites, unpublishFavourites } from "@/lib/star/favouriteGoalsStore";
 import { leoUpdateOn, useLeoUpdate, leoUpdateLocal, adoptLeoUpdate, LEO_UPDATE_EVENT } from "@/lib/star/leoUpdate";
 import { preloadScene } from "@/lib/star/three3d/perf";
 import { useUiLook, useUiVersionOrNull } from "@/lib/star/uiLook";
@@ -1305,6 +1307,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // never one a saved replay points at.
   const careerForClipsRef = useRef<CareerState | null>(null);
   careerForClipsRef.current = career;
+  // ⭐ favourite goals (Leo's update part "seasonEnd"): every ⭐ button reads
+  // and changes them through lib/star/favouriteGoalsStore.ts.
+  const seasonEndOn = useLeoUpdate("seasonEnd");
+  useEffect(() => {
+    if (!seasonEndOn || !career) { unpublishFavourites(); return; }
+    publishFavourites(career.goalLog ?? [], career.favouriteGoals ?? [], (id) => setCareer(c => (c ? toggleFavourite(c, id) : c)));
+  }, [seasonEndOn, career?.goalLog, career?.favouriteGoals]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => unpublishFavourites(), []);
   // Leo's update switch follows the account (lib/star/leoUpdate.ts): the save
   // carries it between devices, and the newest change wins.
   const careerLeoAt = career?.leoUpdate?.at ?? -1;
@@ -1349,6 +1359,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // A season's goals until its reel is made, and the career's best 10 (goalLog.ts).
       // Leo's 24 Oct update only: off, the prune is exactly as before.
       if (leoUpdateOn("seasonReel") || leoUpdateOn("goalsGallery")) for (const id of protectedClipIds(c)) keep.add(id);
+      // Your ⭐ favourites are never pruned (Leo's update part "seasonEnd").
+      if (leoUpdateOn("seasonEnd")) for (const id of favouriteClipIds(c)) keep.add(id);
       return pruneClips(keep);
     });
   }, []);
@@ -4693,7 +4705,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   if (phase === "season-reel") {
-    return <SeasonReel career={career} onDone={handleReelDone} />;
+    return <SeasonReel career={career} onDone={handleReelDone} better={leoUpdateOn("seasonEnd")} />;
   }
   if (phase === "ballon-dor") {
     return <BallonDorNight career={career} onContinue={handleBallonDorContinue} />;
