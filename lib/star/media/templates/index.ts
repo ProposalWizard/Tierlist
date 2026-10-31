@@ -121,6 +121,11 @@ for (const t of ALL) {
   BY_ARCHETYPE.set(t.archetype, list);
 }
 
+/** Every line the game can write — for the Social Studio's template picker (/admin/social). */
+export function allTemplates(): readonly Template[] {
+  return ALL;
+}
+
 export function templateCount(): number {
   return ALL.length;
 }

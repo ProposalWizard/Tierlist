@@ -132,6 +132,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-goal-clips-dev", "Goal videos", "Record a goal and turn it into a video with sound", "rbd", "career", "Leo", "live", "browser", "team"),
   P("/star-season-reel-dev", "Your season video", "The end-of-season reel of every goal, on a made-up season", "rbd", "career", "Leo", "live", "none", "team"),
   P("/star-dev/media-lab", "Media lab", "Media-feed graphics bench", "rbd", "career", "Harry", "live", "none", "team"),
+  P("/admin/social", "Social Studio", "Run the in-game social media: edit every post, write new ones, accounts, ideas, goal videos", "rbd", "career", "Leo", "live", "browser", "team"),
   P("/star-training-dev", "Training levels", "Play any training game at any level", "rbd", "career", "Mikey", "live", "none", "team"),
   P("/star-gallery-dev", "Scenario gallery", "Every chance as a picture; save, commit", "rbd", "chances", "Harry", "live", "repo", "admin"),
   P("/star-highlights-dev", "Infinite Highlights", "Flick through chances and fix a bad one on the spot", "rbd", "chances", "Harry", "live", "repo", "admin"),

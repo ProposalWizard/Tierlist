@@ -41,13 +41,17 @@ export function selectPairings(
   accounts: MediaAccount[],
   cycleId: string,
   yourClub: string,
+  /** Social Studio (studio.ts studioVolume): more or fewer posts. Absent = as before. */
+  volume?: number,
 ): Pairing[] {
   const scored: Pairing[] = [];
 
   for (const e of events) {
     const importance = e.importance ?? e.baseImportance;
     for (const a of accounts) {
-      const s = interest(a, e) * allegiance(a, e, yourClub) * reach(a, importance) * ownCompetition(a, e);
+      let s = interest(a, e) * allegiance(a, e, yourClub) * reach(a, importance) * ownCompetition(a, e);
+      // An account's studio weight (types.ts MediaAccount.weight); unset on every game account.
+      if (a.weight !== undefined) s *= a.weight;
       if (s <= 0) continue;
       const rng = rngFor("sel", cycleId, e.id, a.id);
       scored.push({ event: e, account: a, score: s * importance * (0.75 + rng() * 0.5) });
@@ -57,7 +61,7 @@ export function selectPairings(
   scored.sort((a, b) => b.score - a.score);
 
   const top = Math.max(...events.map(e => e.importance ?? e.baseImportance), 0);
-  const budget = budgetFor(top);
+  const budget = volume === undefined ? budgetFor(top) : Math.max(1, Math.round(budgetFor(top) * volume));
   const perAccount = new Map<string, number>();
   const perEvent = new Map<string, number>();
   const out: Pairing[] = [];
@@ -66,7 +70,7 @@ export function selectPairings(
     if (out.length >= budget) break;
     const a = perAccount.get(p.account.id) ?? 0;
     const e = perEvent.get(p.event.id) ?? 0;
-    if (a >= MAX_PER_ACCOUNT || e >= MAX_PER_EVENT) continue;
+    if (a >= MAX_PER_ACCOUNT || e >= (volume === undefined ? MAX_PER_EVENT : Math.max(1, Math.round(MAX_PER_EVENT * volume)))) continue;
     perAccount.set(p.account.id, a + 1);
     perEvent.set(p.event.id, e + 1);
     out.push(p);
