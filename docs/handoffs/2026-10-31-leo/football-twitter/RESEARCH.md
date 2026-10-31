@@ -94,6 +94,7 @@ The Data Room, Neil Bramwell), and the one old insider line that ended
 ## The feed order ("For you")
 
 Score = engagement on a log scale (likes, reposts, replies, quotes) × 1.6 if
-about you × 1.15 if your club's news, divided by age (about half its pull
-after half a day). Then variety: never three in a row from one kind of
-account. Your match's highlights still go in places 3–6 (Leo's earlier rule).
+about you × 1.15 if your club's news, divided by age counted from the newest
+post shown (a fifth of its pull after a day, a fortieth after a week). Then
+variety: never three in a row from one kind of account. Your match's
+highlights still go in places 3–6 (Leo's earlier rule).

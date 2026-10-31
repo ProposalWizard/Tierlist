@@ -318,7 +318,8 @@ const REPLIES: Record<string, string[]> = {
 };
 
 function replyMood(post: StoredPost, e: FootballEvent): keyof typeof REPLIES {
-  if (post.persona && BANTER.has(post.persona)) return "banter";
+  // Meme pages and rival fans are laughing at somebody: their replies laugh along.
+  if ((post.persona && BANTER.has(post.persona)) || post.author.archetype === "meme" || post.author.archetype === "rivalFan") return "banter";
   if (post.persona && HOT.has(post.persona)) return "hotTake";
   if (e.tags.includes("contract")) return "contract";
   if (e.tags.includes("manager")) return "manager";
@@ -340,9 +341,13 @@ function filled(line: string, facts: Facts): boolean {
 }
 
 /** Up to three replies under a post, liked in falling order. */
-export function replyThread(post: StoredPost, e: FootballEvent, facts: Facts, voice: VoiceProfile, rng: () => number): PostReply[] {
+export function replyThread(
+  post: StoredPost, e: FootballEvent, facts: Facts, voice: VoiceProfile, rng: () => number,
+  /** Lines already used under this cycle's other posts: never the same reply twice. */
+  cycleUsed: Set<string> = new Set(),
+): PostReply[] {
   const mood = replyMood(post, e);
-  const lines = REPLIES[mood].filter(l => filled(l, facts));
+  const lines = REPLIES[mood].filter(l => filled(l, facts) && !cycleUsed.has(l));
   const n = Math.min(lines.length, post.metrics.replies >= 40 ? 3 : post.metrics.replies >= 8 ? 2 : post.metrics.replies >= 1 ? 1 : 0);
   const out: PostReply[] = [];
   const usedLines = new Set<number>(), usedGuys = new Set<number>();
@@ -352,7 +357,7 @@ export function replyThread(post: StoredPost, e: FootballEvent, facts: Facts, vo
     for (let t = 0; t < 8 && usedLines.has(li); t++) li = Math.floor(rng() * lines.length);
     for (let t = 0; t < 8 && usedGuys.has(gi); t++) gi = Math.floor(rng() * REPLY_GUYS.length);
     if (usedLines.has(li) || usedGuys.has(gi)) break;
-    usedLines.add(li); usedGuys.add(gi);
+    usedLines.add(li); usedGuys.add(gi); cycleUsed.add(lines[li]);
     const g = REPLY_GUYS[gi];
     let text = resolve(lines[li], facts, voice, rng).trim();
     if (rng() < 0.6) text = text.toLowerCase();
@@ -462,15 +467,24 @@ const kindOf = (p: StoredPost) => p.persona ?? p.author.archetype;
 /**
  * The ranked feed. Score = how much it was engaged with (on a log scale, so
  * a 2M-view post beats a 2K one without burying everything), boosted when it
- * is about you, divided by its age (half its pull after about half a day).
+ * is about you, divided by its age (about a fifth of its pull after a day,
+ * a fortieth after a week), counted from the newest post.
  * Then variety: never three in a row from the same kind of account.
  */
 export function rankFeed(posts: StoredPost[], now: number): StoredPost[] {
+  // Age is counted from the newest post shown, not from the career clock:
+  // the career has already moved on a week by the time the feed is read,
+  // which made every post look old and let a week-old viral post win.
+  // Per tab (your club's news, the rest of the league): the league's weekly
+  // pass is stamped later than your match, and must not make it look old.
+  const newestOf = (scope: string) => posts.reduce((m, p) => ((p.scope ?? "club") === scope ? Math.max(m, p.at) : m), 0);
+  const refs: Record<string, number> = { club: newestOf("club") || now, league: newestOf("league") || now };
+  const refFor = (p: StoredPost) => Math.min(now, refs[p.scope ?? "club"] ?? now);
   const score = (p: StoredPost) => {
     const m = p.metrics;
     const eng = Math.log(1 + m.likes) + 0.6 * Math.log(1 + m.reposts) + 0.35 * Math.log(1 + m.replies) + 0.3 * Math.log(1 + (m.quotes ?? 0));
     const boost = (p.aboutYou ? 1.6 : 1) * (p.scope === "club" ? 1.15 : 1) * (p.graphic ? 1.08 : 1) * (p.quote ? 1.05 : 1);
-    return (eng + 1) * boost / Math.pow(1 + hoursBetween(p.at, now) / 12, 0.9);
+    return (eng + 1) * boost / Math.pow(1 + hoursBetween(p.at, refFor(p)) / 12, 1.4);
   };
   const pool = posts.map(p => ({ p, s: score(p) })).sort((a, b) => b.s - a.s || b.p.at - a.p.at);
   const out: StoredPost[] = [];

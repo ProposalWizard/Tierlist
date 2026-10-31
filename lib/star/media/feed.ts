@@ -813,10 +813,11 @@ function footballTwitterPass(
   const byId = new Map(made.map(m => [m.post.id, m]));
   // Replies: the three most-liked posts of the cycle, and about half of the posts about you.
   const top = new Set([...posts].sort((a, b) => b.metrics.likes - a.metrics.likes).slice(0, 3).map(p => p.id));
+  const usedReplies = new Set<string>();
   for (let i = 0; i < posts.length; i++) {
     const m = byId.get(posts[i].id);
     if (!m || !(top.has(posts[i].id) || (posts[i].aboutYou && rngFor("thread", posts[i].id)() < 0.5))) continue;
-    const thread = replyThread(posts[i], m.event, m.facts, m.voice, rngFor("replies", posts[i].id));
+    const thread = replyThread(posts[i], m.event, m.facts, m.voice, rngFor("replies", posts[i].id), usedReplies);
     if (thread.length) posts[i] = { ...posts[i], thread };
   }
   const quotable = made.map(m => ({ ...m, post: posts.find(p => p.id === m.post.id) ?? m.post }));

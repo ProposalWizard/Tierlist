@@ -749,3 +749,24 @@ Everything else in this document is as built. The volley of small things — one
 defender rather than two, the club account's coverage gaps, "both of them" as a
 bare noun phrase — came out of reading 135 generated posts and fixing what read
 wrong, which is the only way any of it was ever going to be found.
+
+## 17. Football Twitter (Leo, 31 Oct 2026, switch part "footballTwitter")
+
+Off by default; off = byte for byte the feed above (tests/star/footballTwitter.mts
+holds fingerprints taken before it existed). On:
+
+- **Cast** (`twitter/personas.ts`): 33 invented account types join `buildRoster`
+  as ordinary accounts with a `persona` (insider, TV desk, scores app, ratio page,
+  quiz page, fan channel, kid, xG nerd, odds, agent…). Club accounts get gold
+  ticks and a cheeky-admin persona a third of the time. Five old near-real names
+  are renamed (ids kept, so their wording is unchanged).
+- **Lines** (`templates/twitter.ts`): each persona's own bank, outside `ALL`;
+  `choosePersonaTemplate` uses the same filters. `twitter/engine.ts derivedFacts`
+  adds slots like {clubS} {xgUs} {oddsNow} {catch}.
+- **Selection** (`select.ts`): `personaAppetite` (haters after your bad days,
+  hype after good ones, focus on your club), budget ×1.5.
+- **After a cycle** (`feed.ts footballTwitterPass`): replies under the top posts,
+  then quote-posts (journalist, hype, ratio). Every post gets views/quotes from
+  `engagement` (reach shrinks with size, log-normal viral roll, real ratios).
+- **Reading** (`feedFor`): `rankFeed` orders by engagement, freshness, you, with
+  never three in a row from one kind of account. Research: docs/handoffs/2026-10-31-leo/football-twitter/RESEARCH.md.
