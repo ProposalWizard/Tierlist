@@ -60,7 +60,7 @@ STYLE = {
     "anchor":  {"call": S(1.05, (7, 14), 0.6), "score": S(0.7, (3, 9), 0.4), "late": S(1.2, (9, 16), 0.75)},
     "poet":    {"call": S(0.9, (5, 12), 0.5, 0.75), "score": S(0.55, (2, 8), 0.35, 0.75), "late": S(1.0, (8, 14), 0.65, 0.75)},
     "deadpan": {"call": S(0.4, (-2, 5), 0.2, 0.7), "score": S(0.35, (-2, 4), 0.15, 0.7), "late": S(0.5, (-1, 6), 0.25, 0.7)},
-    "wire":    {"call": S(1.3, (10, 17), 0.9), "score": S(1.1, (8, 15), 0.8), "late": S(1.4, (11, 18), 1.0)},
+    "wire":    {"call": S(1.1, (10, 17), 0.9), "score": S(0.95, (8, 15), 0.8), "late": S(1.2, (11, 18), 1.0)},
     "pro":     {"co": S(0.4, (-2, 4), 0.15, 0.75)},
     "analyst": {"co": S(0.5, (-2, 5), 0.15, 0.75)},
     "mate":    {"co": S(0.6, (-1, 6), 0.2, 0.8)},
@@ -105,8 +105,15 @@ from quality import wer as strict_wer  # noqa: E402
 _SMALL = {"is", "are", "has", "have", "a", "the", "and", "oh", "s", "re", "ve", "ll", "d", "that"}
 
 
+# Same word, other spelling (the recogniser writes American English) or a
+# word that sounds exactly the same.
+_ALIAS = {"practice": "practise", "sores": "soars", "defense": "defence", "equalizer": "equaliser",
+          "his": "he", "at": "had"}
+
+
 def loose(s):
     s = re.sub(r"'(s|re|ve|ll|d)\b", " ", s.lower().replace("’", "'"))
+    s = " ".join(_ALIAS.get(w, w) for w in s.split())
     return " ".join(w for w in re.sub(r"[^a-z0-9 ]+", " ", s).split() if w not in _SMALL)
 
 
@@ -145,13 +152,64 @@ def pick(takes):
     return min(calm or pool, key=cost)
 
 
+def weak_of(bs):
+    return [w for w, bad in (("words", bs["wer"] > 0), ("squeal", bs["squeal"]), ("lift", bs["miss"] > 3),
+                             ("noisy", bs["mos"] < 3.0)) if bad]
+
+
+def rejudge(models):
+    """--rejudge: score every kept take's words again with today's loose()
+    (no new takes), choose again, and rewrite the mp3s whose choice changed."""
+    report_path = os.path.join(HERE, "teams-takes.json")
+    report = json.load(open(report_path))
+    lines = {l["id"]: l for l in json.loads(subprocess.check_output(["npx", "tsx", "scripts/commentary/dump-team-lines.mts"], cwd=ROOT))}
+    take_dir = os.path.join(models, "work", "teams", "takes")
+    for lid, r in report.items():
+        if lid.startswith("_"):
+            continue
+        if lid not in lines:
+            continue
+        takes = []
+        for t in r["takes"]:
+            t["wer"] = word_miss(r["spoken"], t["heard"])
+            takes.append({"seed": t["seed"], "text": r["spoken"], "score": t})
+        best = pick(takes)
+        if best["seed"] != r["seed"]:
+            w = sf.read(os.path.join(take_dir, f"{lid}-{best['seed']}.wav"), dtype="float32")[0]
+            y = broadcast(w, SR, r["heat"])
+            write_mp3(os.path.join(ROOT, "public", "sfx", "teams", lid + ".mp3"), y, SR)
+            r["seed"], r["dur"] = best["seed"], round(len(y) / SR, 2)
+            print("re-chose", lid, best["seed"], flush=True)
+        r["weak"] = weak_of(best["score"])
+    json.dump(report, open(report_path, "w"), indent=1, default=float)
+    write_durations(report)
+
+
+def write_durations(report):
+    out_dir = os.path.join(ROOT, "public", "sfx", "teams")
+    files = set(os.listdir(out_dir))
+    durs = {k: v["dur"] for k, v in report.items() if not k.startswith("_") and k + ".mp3" in files}
+    with open(os.path.join(ROOT, "lib/star/goalClip/commentaryDurationsTeams.ts"), "w") as f:
+        f.write("// Made by scripts/commentary/generate_teams.py. Seconds each commentator-team line lasts\n")
+        f.write("// (public/sfx/teams/<id>.mp3). Read through commentaryVoice.ts.\n")
+        f.write("export const COMMENTARY_SECONDS_TEAMS: Record<string, number> = {\n")
+        for kk in sorted(durs):
+            f.write(f'  "{kk}": {durs[kk]},\n')
+        f.write("};\n")
+
+
 def main():
     args = sys.argv[1:]
     models = args.pop(0)
+    if "--rejudge" in args:
+        return rejudge(models)
     takes_n = 3
     who_only = None
     if "--takes" in args:
         i = args.index("--takes"); takes_n = int(args[i + 1]); del args[i:i + 2]
+    calmer = "--calmer" in args
+    if calmer:
+        args.remove("--calmer")
     if "--who" in args:
         i = args.index("--who"); who_only = args[i + 1]; del args[i:i + 2]
     only = set(args)
@@ -191,7 +249,9 @@ def main():
         if not only and lid in report and os.path.exists(os.path.join(out_dir, lid + ".mp3")):
             continue
         kind = kind_of(lid, who)
-        st = STYLE[who][kind]
+        st = dict(STYLE[who][kind])
+        if calmer:  # a remake of a line that squealed: a little less emotion
+            st["exaggeration"] = round(st["exaggeration"] * 0.85, 2)
         text = SPOKEN.get(lid, ln["text"])
         v = voice(who)
         t0 = time.time()
@@ -215,8 +275,7 @@ def main():
         y = broadcast(best["wav"], SR, st["heat"])
         write_mp3(os.path.join(out_dir, lid + ".mp3"), y, SR)
         bs = best["score"]
-        weak = [w for w, bad in (("words", bs["wer"] > 0), ("squeal", bs["squeal"]), ("lift", bs["miss"] > 3),
-                                 ("noisy", bs["mos"] < 3.0)) if bad]
+        weak = weak_of(bs)
         report[lid] = {"who": who, "kind": kind, "spoken": text, **st, "seed": best["seed"], "resting_f0": base[who],
                        "dur": round(len(y) / SR, 2), "weak": weak,
                        "takes": [{k: v2 for k, v2 in t["score"].items()} | {"seed": t["seed"]} for t in takes]}
@@ -224,15 +283,7 @@ def main():
         print(lid, kind, f"{time.time() - t0:.0f}s", len(takes), "takes", weak or "ok",
               {k: bs[k] for k in ("wer", "heard", "mos", "lift", "peak")}, f"[{(time.time() - t_all) / 60:.0f} min]", flush=True)
 
-    out_dir_files = set(os.listdir(out_dir))
-    durs = {k: v["dur"] for k, v in report.items() if not k.startswith("_") and k + ".mp3" in out_dir_files}
-    with open(os.path.join(ROOT, "lib/star/goalClip/commentaryDurationsTeams.ts"), "w") as f:
-        f.write("// Made by scripts/commentary/generate_teams.py. Seconds each commentator-team line lasts\n")
-        f.write("// (public/sfx/teams/<id>.mp3). Read through commentaryVoice.ts.\n")
-        f.write("export const COMMENTARY_SECONDS_TEAMS: Record<string, number> = {\n")
-        for kk in sorted(durs):
-            f.write(f'  "{kk}": {durs[kk]},\n')
-        f.write("};\n")
+    write_durations(report)
 
 
 if __name__ == "__main__":

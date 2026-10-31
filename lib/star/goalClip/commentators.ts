@@ -78,11 +78,9 @@ const ANCHOR: LeadBank = {
       A("g2", "It's there! Struck with real authority."),
       A("g3", "He scores! And the stadium rises."),
       A("g4", "Into the net it goes! Well taken."),
-      A("g5", "That's a goal, and a very good one."),
-      A("g6", "He finds the net! Composed, and clinical."),
     ],
     header: [A("h1", "A firm header, and it's in!"), A("h2", "He meets it with his head! Goal!")],
-    volley: [A("v1", "Struck on the volley! And it's in!"), A("v2", "A clean volley, straight into the net!")],
+    volley: [A("v1", "Struck on the volley! And it's in!")],
     long_range: [
       A("lr1", "From long range! What a strike that is!"),
       A("lr2", "He tries his luck from distance, and scores!"),
@@ -91,8 +89,8 @@ const ANCHOR: LeadBank = {
     penalty: [A("p1", "Penalty, converted. Calmly done."), A("p2", "The keeper goes one way, the ball the other. Goal.")],
     free_kick: [A("f1", "A superb free kick! Over the wall, and in!"), A("f2", "Right into the corner from the free kick!")],
     tight_angle: [A("ta1", "From the tightest of angles! Remarkable!")],
-    one_on_one: [A("o1", "Clean through, and he finishes well!"), A("o2", "Alone against the keeper, and he wins the duel.")],
-    rebound: [A("r1", "Saved, but he follows up! Goal!"), A("r2", "A scramble, and it's bundled in!")],
+    one_on_one: [A("o1", "Clean through, and he finishes well!")],
+    rebound: [A("r1", "Saved, but he follows up! Goal!")],
     chip: [A("c1", "He lifts it over the keeper! Lovely touch.")],
     curl: [A("cu1", "Curled, beautifully, into the far corner!")],
     cutback: [A("cb1", "Pulled back, and side-footed home!")],
@@ -110,9 +108,8 @@ const ANCHOR: LeadBank = {
     winner: [
       A("late1", "In the final minutes, he's won it!"),
       A("late2", "At the very end, the winning goal!"),
-      A("late3", "Surely that's the winner! Right at the end!"),
     ],
-    level: [A("late4", "Level, right at the death!"), A("late5", "A late equaliser! They're not beaten yet!")],
+    level: [A("late4", "Level, right at the death!")],
   },
 };
 
@@ -124,11 +121,9 @@ const POET: LeadBank = {
       P("g2", "It rises like a hymn, and it's in!"),
       P("g3", "The net ripples, and the night is his!"),
       P("g4", "Oh, that is poetry, in a pair of boots!"),
-      P("g5", "Written in the stars, and now in the net!"),
-      P("g6", "And the whole stadium breathes out, as one!"),
     ],
     header: [P("h1", "He climbs into the sky, and heads it home!"), P("h2", "Up he soars, like a gull on the wind, and it's in!")],
-    volley: [P("v1", "He meets it in mid air! Oh, the beauty of it!"), P("v2", "A volley, as sweet as a summer morning!")],
+    volley: [P("v1", "He meets it in mid air! Oh, the beauty of it!")],
     long_range: [
       P("lr1", "From so far away, and it flies like an arrow!"),
       P("lr2", "Oh, it travels, and travels, and it's in!"),
@@ -137,8 +132,8 @@ const POET: LeadBank = {
     penalty: [P("p1", "From the spot, as calm as still water."), P("p2", "The keeper guesses, and the ball whispers past him.")],
     free_kick: [P("f1", "Over the wall, like a falling leaf, and in!"), P("f2", "Oh, he has painted that one into the corner!")],
     tight_angle: [P("ta1", "There was no door, so he made one!")],
-    one_on_one: [P("o1", "Alone with his thoughts, and he's done it!"), P("o2", "The keeper waits, and he slips it past, so softly.")],
-    rebound: [P("r1", "Saved, but fate gives him a second chance!"), P("r2", "Out of the chaos, a goal!")],
+    one_on_one: [P("o1", "Alone with his thoughts, and he's done it!")],
+    rebound: [P("r1", "Saved, but fate gives him a second chance!")],
     chip: [P("c1", "Oh, he floats it like a feather over the keeper!")],
     curl: [P("cu1", "It bends like a rainbow into the far corner!")],
     cutback: [P("cb1", "Rolled back, and stroked home like a brushstroke!")],
@@ -156,9 +151,8 @@ const POET: LeadBank = {
     winner: [
       P("late1", "At the very last breath, he's won it!"),
       P("late2", "In the final heartbeat, the winner!"),
-      P("late3", "Out of nowhere, the dream comes true!"),
     ],
-    level: [P("late4", "At the death, hope returns! They're level!"), P("late5", "They refused to fall! Level, at the end!")],
+    level: [P("late4", "At the death, hope returns! They're level!")],
   },
 };
 
@@ -170,11 +164,9 @@ const DEADPAN: LeadBank = {
       D("g2", "In it goes. No fuss."),
       D("g3", "Well. That's in."),
       D("g4", "Goal. The keeper won't enjoy the replay."),
-      D("g5", "That'll do nicely."),
-      D("g6", "He scores. Someone check on the defence."),
     ],
     header: [D("h1", "A header. Quite a good one, actually."), D("h2", "Nodded in. Nobody bothered to jump with him.")],
-    volley: [D("v1", "Volleyed in. Show off."), D("v2", "First time, and in. Tidy.")],
+    volley: [D("v1", "Volleyed in. Show off.")],
     long_range: [
       D("lr1", "From there. Well, why not."),
       D("lr2", "That was a long way out. It's in all the same."),
@@ -183,8 +175,8 @@ const DEADPAN: LeadBank = {
     penalty: [D("p1", "Penalty. Scored. As planned."), D("p2", "The keeper went one way. The ball didn't.")],
     free_kick: [D("f1", "Over the wall, and in. The wall looks embarrassed."), D("f2", "A free kick, put away rather neatly.")],
     tight_angle: [D("ta1", "From that angle. Geometry is overrated.")],
-    one_on_one: [D("o1", "Through, alone, and finished. Simple, really."), D("o2", "One on one. He made it look easy.")],
-    rebound: [D("r1", "Saved. Then not saved. Goal."), D("r2", "Scrambled in. It won't win prizes. Still counts.")],
+    one_on_one: [D("o1", "Through, alone, and finished. Simple, really.")],
+    rebound: [D("r1", "Saved. Then not saved. Goal.")],
     chip: [D("c1", "Chipped. The keeper may need a moment.")],
     curl: [D("cu1", "Curled in. Very nice. Very nice indeed.")],
     cutback: [D("cb1", "Cut back, swept in. Textbook.")],
@@ -202,9 +194,8 @@ const DEADPAN: LeadBank = {
     winner: [
       D("late1", "Oh. He's won it. At the death."),
       D("late2", "Well. That's the game, I'd say."),
-      D("late3", "Last minute. Winner. Remarkable, actually."),
     ],
-    level: [D("late4", "Level, at the very end. How annoying for them."), D("late5", "A late equaliser. Nobody saw that coming.")],
+    level: [D("late4", "Level, at the very end. How annoying for them.")],
   },
 };
 
@@ -216,11 +207,9 @@ const WIRE: LeadBank = {
       W("g2", "Get in! Get in! What a goal!"),
       W("g3", "Oh my days! That is in!"),
       W("g4", "Are you serious? What a finish!"),
-      W("g5", "Yes! Yes! Yes! Goal!"),
-      W("g6", "Oh, he's done it! I'm losing my voice here!"),
     ],
     header: [W("h1", "Header! Goal! Unreal!"), W("h2", "What a leap! He's nodded it in!")],
-    volley: [W("v1", "Volley! Oh my word, what a hit!"), W("v2", "First time! Smashed it! Goal!")],
+    volley: [W("v1", "Volley! Oh my word, what a hit!")],
     long_range: [
       W("lr1", "From there? Are you kidding me?"),
       W("lr2", "Absolute rocket! Top corner!"),
@@ -229,8 +218,8 @@ const WIRE: LeadBank = {
     penalty: [W("p1", "Penalty scored! Ice cold!"), W("p2", "Keeper's gone the wrong way! Easy!")],
     free_kick: [W("f1", "Free kick! Over the wall! Get in!"), W("f2", "He's whipped it in! What a free kick!")],
     tight_angle: [W("ta1", "No angle! No problem! Goal!")],
-    one_on_one: [W("o1", "He's through! He's through! Goal!"), W("o2", "One on one, and he's buried it!")],
-    rebound: [W("r1", "Saved! Rebound! Goal! Chaos!"), W("r2", "Scrappy! Don't care! Goal!")],
+    one_on_one: [W("o1", "He's through! He's through! Goal!")],
+    rebound: [W("r1", "Saved! Rebound! Goal! Chaos!")],
     chip: [W("c1", "He's chipped him! The cheek of it!")],
     curl: [W("cu1", "Bent it in! Oh, that's filthy!")],
     cutback: [W("cb1", "Cut it back! Smashed home!")],
@@ -248,9 +237,8 @@ const WIRE: LeadBank = {
     winner: [
       W("late1", "Last minute! Last minute! He's won it!"),
       W("late2", "I can't breathe! He's won it at the death!"),
-      W("late3", "Are you joking? Right at the end! Winner!"),
     ],
-    level: [W("late4", "Late equaliser! Get in!"), W("late5", "At the death! Level! Unreal!")],
+    level: [W("late4", "Late equaliser! Get in!")],
   },
 };
 

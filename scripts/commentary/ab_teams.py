@@ -129,7 +129,82 @@ def main():
     texts = {**{l: lines[l]["text"] for l in lines}}
     v2 = {l["id"]: l["text"] for l in json.loads(subprocess.check_output(["npx", "tsx", "scripts/commentary/dump-lines.mts"], cwd=ROOT))}
     data["text"] = {**v2, **texts}
-    json.dump(data, open(os.path.join(out, "data.json"), "w"), indent=1)
+    vp = os.path.join(HERE, "teams-voices.json")
+    data["voices"] = json.load(open(vp)) if os.path.exists(vp) else None
+    data["weak"] = {k: {"why": v["weak"], "text": texts.get(k, ""), "heard": next(t for t in v["takes"] if t["seed"] == v["seed"])["heard"]}
+                    for k, v in report.items() if not k.startswith("_") and v.get("weak")}
+    open(os.path.join(out, "index.html"), "w").write(page(data))
+
+
+TEAMS = [("matchday", "Matchday", "The Anchor", "The Old Pro", "anchor", "pro"),
+         ("bignight", "Big Night", "The Poet", "The Analyst", "poet", "analyst"),
+         ("lateshow", "Late Show", "The Deadpan", "The Old Pro", "deadpan", "pro"),
+         ("fantv", "Fan TV", "The Live Wire", "The Mate", "wire", "mate")]
+NAMES = {"anchor": "The Anchor", "poet": "The Poet", "deadpan": "The Deadpan", "wire": "The Live Wire",
+         "pro": "The Old Pro", "analyst": "The Analyst", "mate": "The Mate"}
+SOUNDS = {"anchor": "deep older British man, measured", "poet": "British woman, slower, lyrical",
+          "deadpan": "British woman, level and dry", "wire": "younger British man, fast and loud",
+          "pro": "slow calm British man, ex-player", "analyst": "crisp British woman, tactics",
+          "mate": "relaxed American-accented man, jokey"}
+GOALS = [("screamer", "Screamer from distance"), ("late", "Late winner (90')"), ("normal", "Normal goal (opener)")]
+
+
+def page(d):
+    import html
+    e = html.escape
+    def said(ids):
+        return "".join(f"<li>{e(d['text'].get(i, i))}</li>" for i in ids)
+    rows = []
+    for g, gname in GOALS:
+        cells = []
+        for tid, tname, lead, co, _, _ in TEAMS + [("v2", "Today (v2 voice)", "one lead", "one co", "", "")]:
+            x = d["goals"][f"{tid}/{g}"]
+            cells.append(f"<div class='cell'><div class='who'>{e(tname)}</div><audio controls preload='none' src='{x['file']}'></audio>"
+                         f"<ol>{said(x['lines'])}</ol></div>")
+        rows.append(f"<section><h2>{e(gname)}</h2><div class='grid'>{''.join(cells)}</div></section>")
+    best = []
+    for who, lines in d["best"].items():
+        items = "".join(f"<li><audio controls preload='none' src='{l['file']}'></audio><span>{e(l['text'])}</span></li>" for l in lines)
+        best.append(f"<div class='voice'><h3>{e(NAMES[who])}</h3><p class='muted'>{e(SOUNDS[who])}</p><ul>{items}</ul></div>")
+    meas = ""
+    if d.get("voices"):
+        c, s = d["voices"]["commentators"], d["voices"]["similar"]
+        whos = list(c)
+        lift = {w: ("" if c[w]["call_lift"] is None else f"{c[w]['call_lift']:+.1f}") for w in whos}
+        trs = "".join(f"<tr><th>{e(NAMES[w])}</th><td>{c[w]['pitch_hz']:.0f}</td><td>{lift[w]}</td>"
+                      f"<td>{c[w]['words_per_s']}</td><td>{round(100 * c[w]['all_words'])}%</td><td>{c[w]['mos']}</td><td>{len(c[w]['weak'])}</td></tr>" for w in whos)
+        sim = "".join(f"<tr><th>{e(NAMES[a])}</th>" + "".join(f"<td class='{'hi' if a != b and s[a][b] > 0.8 else ''}'>{s[a][b]:.2f}</td>" for b in whos) + "</tr>" for a in whos)
+        meas = (f"<section><h2>What the measurements say</h2><div class='scroll'><table><tr><th></th><th>Pitch (Hz)</th><th>Goal-call rise (semitones)</th><th>Words / s</th><th>Every word heard</th><th>Clean (DNSMOS, 1-5)</th><th>Weak lines</th></tr>{trs}</table></div>"
+                f"<p class='muted'>How alike two voices are (speaker fingerprint, 1.00 = the same voice; above 0.80 is marked).</p>"
+                f"<div class='scroll'><table><tr><th></th>{''.join(f'<th>{e(NAMES[w])}</th>' for w in whos)}</tr>{sim}</table></div></section>")
+    weak = "".join(f"<li><code>{e(k)}</code> {e(v['text'])} <span class='muted'>({', '.join(v['why'])}; heard: “{e(v['heard'])}”)</span></li>" for k, v in sorted(d["weak"].items()))
+    return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commentator Teams A/B</title>
+<style>
+:root {{ --bg:#f6f7f4; --fg:#1b2420; --muted:#5d6a63; --line:#d5dbd6; --card:#ffffff; --accent:#1f7a4d; --warn:#9a5b00; }}
+@media (prefers-color-scheme: dark) {{ :root {{ --bg:#111714; --fg:#e4ebe6; --muted:#9aa9a0; --line:#2b3530; --card:#18201c; --accent:#5fd39a; --warn:#f0b35a; color-scheme: dark; }} }}
+body {{ background:var(--bg); color:var(--fg); font:15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; margin:0; padding:24px max(16px, env(safe-area-inset-left)); }}
+main {{ max-width:1100px; margin:0 auto; display:grid; gap:28px; }}
+h1 {{ font-size:28px; margin:0; }} h2 {{ font-size:19px; margin:0 0 10px; }} h3 {{ margin:0; font-size:16px; }}
+.muted {{ color:var(--muted); }} .first {{ border-left:4px solid var(--accent); padding:10px 14px; background:var(--card); }}
+.grid {{ display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px; }}
+.cell, .voice {{ background:var(--card); border:1px solid var(--line); border-radius:8px; padding:10px; min-width:0; }}
+.who {{ font-weight:600; margin-bottom:6px; }} audio {{ width:100%; height:36px; }}
+ol, ul {{ margin:6px 0 0; padding-left:18px; font-size:13px; color:var(--muted); }}
+.voices {{ display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px; }}
+.voice ul {{ list-style:none; padding:0; display:grid; gap:6px; }} .voice li span {{ color:var(--fg); }}
+.scroll {{ overflow-x:auto; }} table {{ border-collapse:collapse; font-variant-numeric:tabular-nums; font-size:13px; }}
+th, td {{ border-bottom:1px solid var(--line); padding:4px 8px; text-align:right; }} th:first-child {{ text-align:left; }}
+td.hi {{ color:var(--warn); font-weight:700; }} code {{ font-size:12px; }}
+</style></head><body><main>
+<header><h1>Commentator teams: A/B</h1><p class="muted">Leo, 31 Oct 2026. Four commentary teams, each with its own voices and its own lines, behind Settings → Updates → Leo's update → “Different commentators”. Every clip below is the game's real sound plan for that goal, mixed the way the goal video mixes it (crowd, kick, net, roar, the call, the replay).</p></header>
+<div class="first"><b>Listen to this first:</b> the <b>Screamer from distance</b> row, left to right (Matchday, Big Night, Late Show, Fan TV, then today's voice). It shows the four styles best in one go. Then the <b>Late winner</b> row: the biggest calls, where a squeal would show. Headphones help.</div>
+<div class="first"><b>The truth:</b> these were made and checked by a script that cannot hear. Each line was generated up to 3 times; Whisper had to hear the words, a pitch cap rejected squeals, and DNSMOS scored cleanness. The numbers are below. Whether the voices sound human is for your ears.</div>
+{''.join(rows)}
+<section><h2>Each voice: its 5 best lines</h2><div class="voices">{''.join(best)}</div></section>
+{meas}
+<section><h2>Lines the checks still doubt</h2><ul>{weak or '<li>None.</li>'}</ul></section>
+</main></body></html>"""
 
 
 def write_mp3_rate(path, x):

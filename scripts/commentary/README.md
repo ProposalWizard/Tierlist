@@ -18,7 +18,7 @@ A line replaced on the Sound Board plays its replacement in every set.
 ## The commentator teams (31 Oct 2026)
 
 Lines and who says them: `lib/star/goalClip/commentators.ts`. Each
-commentator has his or her own lines (leads 37, co-commentators 30), not the
+commentator has his or her own lines (30 each; cut from 37 per lead to fit the time), not the
 v1 lines re-read. Voices and licences: `public/sfx/teams/LICENSE.txt`.
 
 | Team | Lead | Co | Picked for |
