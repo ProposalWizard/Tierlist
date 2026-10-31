@@ -38,6 +38,7 @@ import {
 } from "./scene";
 import { momentAt, type ClipMoves, type Edit, type EditMoment } from "./edit";
 import { drawBetterFrame } from "./betterRender";
+import { drawFlatScene } from "./render2d";
 
 /** Who posted the video, for the watermark. */
 export interface ClipCredit {
@@ -50,7 +51,8 @@ export interface ClipCredit {
 
 // ── What the recording says each man is doing ───────────────────────────────
 
-interface Prep {
+/** What the recording says each man is doing (shared with the 2D look, render2d.ts). */
+export interface Prep {
   /** Metres each man has run by each frame (his run cycle keeps step with it). */
   ran: Float32Array;
   nb: number;
@@ -78,7 +80,7 @@ export function keeperDives(track: GoalTrack): Prep["dives"] {
   return prepOf(track).dives;
 }
 
-function prepOf(track: GoalTrack): Prep {
+export function prepOf(track: GoalTrack): Prep {
   const hit = preps.get(track);
   if (hit) return hit;
   const nb = track.bodies.length;
@@ -164,7 +166,7 @@ function prepOf(track: GoalTrack): Prep {
   return p;
 }
 
-function ranAt(p: Prep, track: GoalTrack, i: number, t: number): number {
+export function ranAt(p: Prep, track: GoalTrack, i: number, t: number): number {
   const pos = Math.max(0, Math.min(track.n - 1, t * track.fps));
   const f0 = Math.floor(pos), f1 = Math.min(track.n - 1, f0 + 1), k = pos - f0;
   return p.ran[f0 * p.nb + i] * (1 - k) + p.ran[f1 * p.nb + i] * k;
@@ -736,7 +738,9 @@ export function drawEditFrame(ctx: CanvasRenderingContext2D, edit: Edit, outT: n
     ctx.fillRect(0, 0, W, H);
     return;
   }
-  drawScene(ctx, W, H, track, shot.angle, m.t, edit.moves);
+  // 2D goal videos (switch part "videos2d"): the same recording from above.
+  if (edit.flat) drawFlatScene(ctx, W, H, track, shot.angle, m.t, edit.moves);
+  else drawScene(ctx, W, H, track, shot.angle, m.t, edit.moves);
   const kit = kitsOf(track.meta.youAreHome ? track.meta.home : track.meta.away).home;
   if (edit.style === "broadcast") {
     if (!shot.replay) {

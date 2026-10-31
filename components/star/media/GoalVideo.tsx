@@ -8,7 +8,8 @@ import { saveVideo, videoSupported, type EncodedClip } from "@/lib/star/goalClip
 import { makeVideo, keptVideo, posterFor, workerReady, videosOnPage, startLive, warmLive } from "@/lib/star/goalClip/makeVideo";
 import { goalVideoKey } from "@/lib/star/goalClip/premake";
 import { useAnimationsLook } from "@/lib/star/animLook";
-import { useLeoUpdate } from "@/lib/star/leoUpdate";
+import { useLeoUpdate, useGoalVideos2d } from "@/lib/star/leoUpdate";
+import { withFlat } from "@/lib/star/goalClip/render2d";
 import { smoothRecorded } from "@/lib/star/goalClip/smooth";
 import { synthTrack, type SynthGoal } from "@/lib/star/goalClip/synth";
 import { planAudio, mixAudio } from "@/lib/star/goalClip/audio";
@@ -237,7 +238,9 @@ export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0,
   // Leo's update "betterVideos": more cameras, TikTok edits, fan phones, reels (goalClip/editBetter.ts). Off = as before.
   const better = useLeoUpdate("betterVideos");
   const capKey = (captions ?? []).join("/");
-  const key = goalVideoKey(style, variant, moves, clipIds, synth, credit?.handle, smooth, better, captions);
+  // Leo's update "videos2d" with 2D picked: the same video drawn from above (goalClip/render2d.ts). Off = as before.
+  const flat = useGoalVideos2d();
+  const key = goalVideoKey(style, variant, moves, clipIds, synth, credit?.handle, smooth, better, captions, flat);
 
   useEffect(() => {
     let live = true;
@@ -253,9 +256,9 @@ export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clipIds.join(","), synthKey]);
 
-  const edit = useMemo(() => (tracks && tracks.length ? makeEdit(smooth ? smoothRecorded(tracks) : tracks, style, moves, variant, better ? { better, captions } : undefined) : null),
+  const edit = useMemo(() => (tracks && tracks.length ? withFlat(makeEdit(smooth ? smoothRecorded(tracks) : tracks, style, moves, variant, better ? { better, captions } : undefined), flat) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tracks, style, moves, variant, smooth, better, capKey]);
+    [tracks, style, moves, variant, smooth, better, capKey, flat]);
 
   // Can this browser make the video at all? If not, the post is its plain
   // picture (`fallback`): no play button that cannot play.

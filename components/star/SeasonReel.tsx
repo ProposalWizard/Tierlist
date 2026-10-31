@@ -14,6 +14,7 @@ import { useClipSound, setClipSoundOn } from "@/lib/star/goalClip/sound";
 import { audioContext } from "@/lib/star/audioOut";
 import { holdMusic } from "@/lib/star/gameMusic";
 import { useAnimationsLook } from "@/lib/star/animLook";
+import { useGoalVideos2d } from "@/lib/star/leoUpdate";
 import { displayName } from "@/lib/star/playerIdentity";
 import { drawnBadgeUrl } from "./ClubBadge";
 import { pitchFont } from "./ui/pitchFont";
@@ -87,6 +88,7 @@ type SaveState =
 
 export default function SeasonReel({ career, onDone }: { career: CareerState; onDone: () => void }) {
   const moves = useAnimationsLook();
+  const flat = useGoalVideos2d();
   const soundOn = useClipSound();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [tracks, setTracks] = useState<Map<string, GoalTrack> | null>(null);
@@ -152,9 +154,11 @@ export default function SeasonReel({ career, onDone }: { career: CareerState; on
   const assets: ReelAssets = useMemo(() => ({
     tracks: tracks ?? new Map(),
     moves,
+    // Leo's update "videos2d" with 2D picked: goals from above, like the feed's videos.
+    ...(flat ? { flat: true } : {}),
     display: pitchFont.style.fontFamily,
     badge,
-  }), [tracks, moves, badge]);
+  }), [tracks, moves, badge, flat]);
 
   // The soundtrack, mixed in the background (the reel starts without waiting).
   const audioJob = useRef<Promise<AudioBuffer | null> | null>(null);

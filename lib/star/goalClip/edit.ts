@@ -73,6 +73,9 @@ export interface Edit {
   /** Better videos (switch part "betterVideos"): drawn by betterRender.ts.
    *  Absent with the part off, so an old edit is the same object as before. */
   better?: true;
+  /** 2D goal videos (switch part "videos2d"): the picture is drawn top-down
+   *  (render2d.ts) under the same cut and graphics. Absent with the part off. */
+  flat?: true;
   /** Better videos: the colour of the captions and cards. */
   accent?: string;
   /** Which of the poster's cuts this is (an account always cuts its own way). */

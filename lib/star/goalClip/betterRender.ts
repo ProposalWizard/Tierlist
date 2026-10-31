@@ -21,6 +21,7 @@ import { shortClub } from "../media/grammar";
 import { momentAt, shotLength, type Edit, type EditMoment, type Shot } from "./edit";
 import type { GoalTrack } from "./track";
 import { viewAt } from "./betterView";
+import { drawFlatScene } from "./render2d";
 import {
   drawScene, drawScoreBug, drawWipe, drawPhoneLook, drawCaption, drawTag, roundRect, teamCode, FONT,
   type ClipCredit,
@@ -54,7 +55,8 @@ export function drawBetterFrame(ctx: CanvasRenderingContext2D, edit: Edit, outT:
     ctx.scale(v.k, v.k);
     ctx.translate(-v.ax, -v.ay);
   }
-  drawScene(ctx, W, H, track, shot.angle, m.t, edit.moves);
+  if (edit.flat) drawFlatScene(ctx, W, H, track, shot.angle, m.t, edit.moves);   // 2D goal videos ("videos2d")
+  else drawScene(ctx, W, H, track, shot.angle, m.t, edit.moves);
   ctx.restore();
 
   const fx = shot.fx ?? {};

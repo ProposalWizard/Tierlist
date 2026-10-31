@@ -7,6 +7,7 @@ import { trackFromStored, type GoalTrack } from "@/lib/star/goalClip/track";
 import { synthTrack, type SynthGoal } from "@/lib/star/goalClip/synth";
 import { makeEdit, editDuration, type ClipStyle } from "@/lib/star/goalClip/edit";
 import { drawEditFrame, prepareClipSprites } from "@/lib/star/goalClip/render";
+import { withFlat } from "@/lib/star/goalClip/render2d";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const w = window as any;
@@ -21,6 +22,8 @@ w.benchSetup = async (job: { stored?: unknown[]; synth?: SynthGoal[]; style: Cli
   tracks.sort((a, b) => a.meta.minute - b.meta.minute);
   await prepareClipSprites("new");
   current = (makeEdit as any)(tracks, job.style, "new", job.variant, job.opts);
+  // opts.flat: the 2D look (switch part "videos2d").
+  current = withFlat(current!, !!job.opts?.flat);
   credit = job.handle ? { handle: job.handle } : undefined;
   canvas = document.createElement("canvas");
   canvas.width = current!.w; canvas.height = current!.h;

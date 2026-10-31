@@ -16,6 +16,7 @@ import { shortClub } from "../media/grammar";
 import { CX, POST_L, POST_R, PITCH_W, BOX_L, BOX_R, BOX_DEPTH, SIX_L, SIX_R, SIX_DEPTH, PEN_SPOT_Y, ARC_R } from "../pitch";
 import type { CareerGoal } from "../goalLog";
 import { drawScene } from "./render";
+import { drawFlatScene } from "./render2d";
 import type { ClipMoves } from "./edit";
 import type { ClipAngle } from "./cameras";
 import type { GoalTrack } from "./track";
@@ -25,6 +26,9 @@ export interface ReelAssets {
   /** Recordings by clip id (only the ones on this phone). */
   tracks: Map<string, GoalTrack>;
   moves: ClipMoves;
+  /** 2D goal videos (Leo's part "videos2d" with 2D picked): goals drawn from above
+   *  (render2d.ts). Absent: as before. */
+  flat?: boolean;
   /** The display face (a tall condensed font), e.g. Anton's family name. */
   display?: string;
   /** The club badge, drawn when loaded. */
@@ -346,7 +350,8 @@ function quickCaption(ctx: CanvasRenderingContext2D, W: number, H: number, g: Ca
  * cameras.ts is untouched (the goal videos frame exactly as before).
  */
 const LIFT: Partial<Record<ClipAngle, number>> = { tv: 0.26 };
-function reelScene(ctx: CanvasRenderingContext2D, W: number, H: number, tr: GoalTrack, angle: ClipAngle, t: number, moves: ClipMoves): void {
+function reelScene(ctx: CanvasRenderingContext2D, W: number, H: number, tr: GoalTrack, angle: ClipAngle, t: number, moves: ClipMoves, flat?: boolean): void {
+  if (flat) { drawFlatScene(ctx, W, H, tr, angle, t, moves); return; }
   const k = LIFT[angle] ?? 0;
   if (!k) { drawScene(ctx, W, H, tr, angle, t, moves); return; }
   ctx.save();
@@ -374,10 +379,10 @@ function drawGoalShot(ctx: CanvasRenderingContext2D, W: number, H: number, seg: 
     const z = 1 + 0.045 * (1 - hit) * (1 - hit);
     ctx.save();
     ctx.translate(W / 2, H / 2); ctx.scale(z, z); ctx.translate(-W / 2, -H / 2);
-    reelScene(ctx, W, H, tr, at.shot.angle, at.t, a.moves);
+    reelScene(ctx, W, H, tr, at.shot.angle, at.t, a.moves, a.flat);
     ctx.restore();
   } else {
-    reelScene(ctx, W, H, tr, at.shot.angle, at.t, a.moves);
+    reelScene(ctx, W, H, tr, at.shot.angle, at.t, a.moves, a.flat);
   }
   if (hit >= 0) flash(ctx, W, H, hit / 0.5, 0.42);
   const s = W / 360;
