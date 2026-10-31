@@ -446,6 +446,14 @@ export interface PostReply {
   glyph?: AvatarGlyph;
   text: string;
   likes: number;
+  /** Round 4 (Leo, 31 Oct 2026): the tone of the line (twitter/tone.ts), so a test can check it fits its post. */
+  tone?: string;
+  /** Round 4: who is replying: a fan of the post's club, a rival, or a neutral. */
+  side?: "fan" | "rival" | "neutral";
+  /** Round 4: the handle this reply answers (an argument, or TikTok's "replying to @…"). */
+  to?: string;
+  /** Round 4, TikTok: the creator liked this comment. */
+  creatorLiked?: boolean;
 }
 
 // ── Narration ───────────────────────────────────────────────────────────────

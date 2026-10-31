@@ -964,14 +964,15 @@ function footballTwitterPass(
     const thread = replyThread(posts[i], m.event, m.facts, m.voice, rngFor("replies", posts[i].id), usedReplies, recentReplies);
     if (thread.length) posts[i] = { ...posts[i], thread };
   }
-  usedReplies.forEach(l => { said[`reply|${l}`] = now; });
   const quotable = made.map(m => ({ ...m, post: posts.find(p => p.id === m.post.id) ?? m.post }));
   // Your goals' video (highlightPosts) can be quoted too, as your goal.
   const goal = made.find(m => m.event.subject.kind === "you" && m.event.tags.includes("goal"));
   const yours = posts.find(p => p.eventId === "your-highlights" && p.graphic);
   if (goal && yours) quotable.push({ ...goal, post: yours });
   const before = new Set(recentQuotes);
-  for (const q of quotePosts(quotable, accounts, cycleId, yourClub, recentQuotes)) posts.push({ ...q, scope });
+  // Quotes get their own replies too (round 4), from the same "not twice" lists.
+  for (const q of quotePosts(quotable, accounts, cycleId, yourClub, recentQuotes, { cycleUsed: usedReplies, recent: recentReplies })) posts.push({ ...q, scope });
+  usedReplies.forEach(l => { said[`reply|${l}`] = now; });
   recentQuotes.forEach(l => { if (!before.has(l)) said[`quote|${l}`] = now; });
 }
 
