@@ -1,4 +1,5 @@
 [
+  {"version":"0.130","title":"Leo's patch notes: Football Twitter feed and full screen videos","publishedAt":"2026-10-31T04:18:25Z","author":"Leo"},
   {"version":"0.129","title":"Leo's patch notes: Social feed, new voice, smooth goals","publishedAt":"2026-10-31T01:23:19Z","author":"Leo"},
   {"version":"0.126","title":"Leo's patch notes: Live chances (test)","publishedAt":"2026-10-30T12:00:00Z","updatedAt":"2026-10-30T21:11:13Z","updateNote":"Added: the strike screen (on by default; its own switch): letting go locks your aim, then you tap a small ball as the pass reaches you, so curve, chip and height are back; when you tap is the timing. The switch, strike screen and all sliders are now in the game's Settings (Match, and Updates). Test page: after a chance it starts a new one (or the same one live), never the static copy. Checked in a career match: 7 of 7 taps read right. Page edited.","author":"Leo"},
   {"version":"0.125","title":"Leo's patch notes: Overnight sanity sweep","publishedAt":"2026-10-29T14:00:00Z","author":"Leo"},
