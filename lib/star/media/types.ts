@@ -515,7 +515,9 @@ export type GraphicSpec =
       priority?: boolean;
       /** Social Studio (/admin/social): the cut chosen by hand. Absent: the
        *  author's own style and cut (clipStyle.ts), exactly as before. */
-      style?: "broadcast" | "reverse" | "fan" | "tiktok";
+      style?: "broadcast" | "reverse" | "fan" | "tiktok"
+        /** Cold edits (part "coldEdits"): the edit a cold line's words describe (templates/coldEdits.ts). */
+        | "cold" | "aura" | "rewind" | "statCard" | "montage" | "angles";
       variant?: number;
       /** Football Twitter: one made goal per recorded clip, in the same order,
        *  played instead when this phone does not have that recording (a save

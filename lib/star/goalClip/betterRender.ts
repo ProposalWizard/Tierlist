@@ -22,6 +22,7 @@ import { momentAt, shotLength, type Edit, type EditMoment, type Shot } from "./e
 import type { GoalTrack } from "./track";
 import { viewAt } from "./betterView";
 import { drawFlatScene } from "./render2d";
+import { drawColdFrame } from "./coldRender";
 import {
   drawScene, drawScoreBug, drawWipe, drawPhoneLook, drawCaption, drawTag, roundRect, teamCode, FONT,
   type ClipCredit,
@@ -39,6 +40,8 @@ function handleOf(credit?: ClipCredit): string {
 }
 
 export function drawBetterFrame(ctx: CanvasRenderingContext2D, edit: Edit, outT: number, credit?: ClipCredit, moment?: EditMoment): void {
+  // Cold edits (switch part "coldEdits"): graded, beat-cut, their own dressing.
+  if (edit.look) { drawColdFrame(ctx, edit, outT, credit, moment); return; }
   const W = edit.w, H = edit.h;
   const m = moment ?? momentAt(edit, outT);
   const shot = edit.shots[m.shot];

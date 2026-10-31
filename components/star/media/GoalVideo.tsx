@@ -7,6 +7,7 @@ import type { ClipCredit } from "@/lib/star/goalClip/render";
 import { saveVideo, videoSupported, type EncodedClip } from "@/lib/star/goalClip/encode";
 import { makeVideo, keptVideo, posterFor, workerReady, videosOnPage, startLive, warmLive } from "@/lib/star/goalClip/makeVideo";
 import { goalVideoKey } from "@/lib/star/goalClip/premake";
+import { isColdStyle } from "@/lib/star/goalClip/editCold";
 import { useAnimationsLook } from "@/lib/star/animLook";
 import { useLeoUpdate, useGoalVideos2d } from "@/lib/star/leoUpdate";
 import { withFlat } from "@/lib/star/goalClip/render2d";
@@ -257,7 +258,8 @@ export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clipIds.join(","), synthKey]);
 
-  const edit = useMemo(() => (tracks && tracks.length ? withFlat(makeEdit(smooth ? smoothRecorded(tracks) : tracks, style, moves, variant, better ? { better, captions } : undefined), flat) : null),
+  // A cold edit's style (switch part "coldEdits", editCold.ts) is only given out with that part on.
+  const edit = useMemo(() => (tracks && tracks.length ? withFlat(makeEdit(smooth ? smoothRecorded(tracks) : tracks, style, moves, variant, better || isColdStyle(style) ? { better, captions } : undefined), flat) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [tracks, style, moves, variant, smooth, better, capKey, flat]);
 
