@@ -10,6 +10,7 @@ import type * as THREE from "three";
 import type { Person3D } from "./people3d";
 import type { ClipInfo } from "./three3d/footballAnims";
 import { HOME_BALL_REST } from "./homeIdle";
+import { makeRealBall } from "./three3d/realBall";
 
 type Three = typeof import("three");
 type V3 = [number, number, number];
@@ -44,15 +45,9 @@ export function makeHomeSet(T: Three, scene: THREE.Scene) {
   const ballShadow = new T.Mesh(new T.PlaneGeometry(0.3, 0.3), blob);
   ballShadow.rotation.x = -Math.PI / 2; ballShadow.position.y = 0.004; ballShadow.renderOrder = -1;
   const ball = new T.Group();
-  const bm = new T.MeshStandardMaterial({ color: "#fbfbf8", roughness: 0.45 });
-  const pm = new T.MeshStandardMaterial({ color: "#1d1f24", roughness: 0.5 });
-  ball.add(new T.Mesh(new T.SphereGeometry(0.11, 20, 14), bm));
-  for (const [a, b] of [[0, 0], [1.2, 0.9], [2.4, -0.7], [3.6, 1.1], [4.8, -0.2], [0.6, -1.3]]) {
-    const m = new T.Mesh(new T.CircleGeometry(0.038, 5), pm);
-    const v = new T.Vector3(Math.cos(a) * Math.cos(b), Math.sin(b), Math.sin(a) * Math.cos(b));
-    m.position.copy(v.clone().multiplyScalar(0.1105)); m.lookAt(v.multiplyScalar(2));
-    ball.add(m);
-  }
+  // the real ball: 12 black pentagons, 20 white hexagons (three3d/realBall.ts)
+  const realBall = makeRealBall(T, 0.11);
+  ball.add(realBall);
   scene.add(shadow, ballShadow, ball);
   const hp = new T.Vector3();
   return {
@@ -72,8 +67,8 @@ export function makeHomeSet(T: Three, scene: THREE.Scene) {
     },
     dispose() {
       scene.remove(shadow, ballShadow, ball);
-      shadow.geometry.dispose(); ballShadow.geometry.dispose(); blob.dispose(); tex.dispose(); bm.dispose(); pm.dispose();
-      ball.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) m.geometry.dispose(); });
+      shadow.geometry.dispose(); ballShadow.geometry.dispose(); blob.dispose(); tex.dispose();
+      realBall.dispose();
     },
   };
 }
