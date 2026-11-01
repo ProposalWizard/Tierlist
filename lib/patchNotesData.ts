@@ -27,6 +27,72 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.133",
+      "title": "Leo's patch notes: Live chances, take a touch",
+      "author": "Leo",
+      "publishedAt": "2026-11-01T01:21:09Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "On a live chance you can take ONE touch: a quick flick from the ball the way you want it to go (longer = heavier), timed like a strike. You run onto it and finish as usual. In one-on-ones the keeper now rushes you: take it round him and he goes down and scrambles back; push it at him and he smothers it. Works on any live chance to open up a better angle. Inside Live chances (still off by default).",
+      "stats": [
+        {
+          "value": "1",
+          "label": "touch per chance"
+        },
+        {
+          "value": "22%",
+          "label": "smothered, a touch round him"
+        },
+        {
+          "value": "91%",
+          "label": "smothered, straight at him"
+        },
+        {
+          "value": "2.5 s",
+          "label": "to shoot once it's at your feet"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Quick flick = take a touch",
+              "detail": "From the ring, under a quarter of a second, the way you want it to go; a longer flick is a heavier touch. A slow drag back is still the aim. One per chance. A tip on your first 5 live chances."
+            },
+            {
+              "title": "Timed like a strike",
+              "detail": "Clean on the ring. Early or late: heavier and up to 16 degrees off line. Out of reach: you miss it."
+            },
+            {
+              "title": "The keeper rushes in one-on-ones",
+              "detail": "He comes at you as the pass arrives. Round him: he dives where it was going, stays down a beat, scrambles back. At him: he smothers it (SAVED)."
+            },
+            {
+              "title": "Run onto it and finish",
+              "detail": "You chase it, the ring moves with you, then aim, let go and the kick screen as usual. Shoot within about 2.5 s or you're CLOSED DOWN. The camera glides with you."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known / next",
+          "items": [
+            {
+              "title": "Defenders don't chase your touch",
+              "detail": "Only the keeper reacts for now."
+            },
+            {
+              "title": "3D not checked for the touch",
+              "detail": "Same code path; not played in 3D yet."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+    {
       "version": "0.132",
       "title": "Leo's patch notes: 2D videos, cold edits, replies, season reel",
       "author": "Leo",

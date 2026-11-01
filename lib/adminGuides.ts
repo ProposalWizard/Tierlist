@@ -949,6 +949,7 @@ export const ADMIN_GUIDES = {
         ["↺ Again", "The same chance again."],
         ["The ring on the grass", "Where you meet the pass. White: not yet. Yellow: in reach. Green: sweet."],
         ["Drag, then let go", "Aim from the ring. Letting go is the swing."],
+        ["Quick flick from the ring", "Your one touch per chance, the way you flick (longer = heavier). Run onto it and finish. In a one-on-one the keeper rushes you: round him and he is beaten, at him and he smothers it."],
       ] },
       { group: "Dials", items: [
         ["Time for the pass to reach you", "Real seconds from the hand-over to the ball at your feet."],
