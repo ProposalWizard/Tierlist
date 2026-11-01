@@ -99,6 +99,7 @@ RUL-ENG-004 | Never add to KNOWN_COPIES, raise CEILING, touch the canary or remo
 RUL-ENG-005 | The real match (app/star-dev/page.tsx) is the only screen that mounts CanvasMatch directly. | engine
 RUL-ENG-006 | Shared mechanics, not a shared picture: a mode keeps the real ball and picks what is on the pitch with scene. | engine
 RUL-ENG-007 | The match engine may change; the engine-warn hook warns Claude and never stops to ask the person (Mikey, 25 Oct 2026). | engine,team,rule
+RUL-ENG-008 | Every gameplay change must reach every test page, training and the trial the same day; only a marked, named difficulty may differ (trial/training free-kick keeper). | ui,rule,engine
 RUL-KIB-001 | Voice: short, cheeky, football-mad, numbers first ("9.8% to 47.6%"). | client-kib
 RUL-KIB-002 | Real game footage only, or marked "ILLUSTRATION" on screen. | client-kib
 RUL-KIB-003 | No real club badges or player photos in ads unless we have the right to use them. | client-kib

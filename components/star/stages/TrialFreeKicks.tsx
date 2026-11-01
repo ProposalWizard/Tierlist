@@ -1,4 +1,5 @@
 "use client";
+import { markDrillFreeKick } from "@/lib/star/kindRules";
 import { useCallback } from "react";
 import {
   buildScenario, initDefenders, clamp, VIEW_ASPECT,
@@ -132,7 +133,8 @@ export function buildFreeKickScenario(
   // After the defenders, never before — see the note at the top of the file.
   initDefenders(sc, rng);
   sc.viewport = freeKickView(setup.ball);
-  return sc;
+  // The trial's easier keeper, on purpose (Leo, 5 Oct + 1 Nov 2026): kindRules/freeKick.ts FREE_KICK_DRILL.
+  return markDrillFreeKick(sc);
 }
 
 export interface TrialFreeKicksProps {

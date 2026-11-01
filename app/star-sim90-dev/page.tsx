@@ -25,6 +25,7 @@
  * remembered per device). Real squad names come from /api/star/league-squads
  * when it answers; made-up names otherwise.
  */
+import { makeChance } from "@/lib/star/chanceMaker";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BroadcastPage, Panel, PanelGrid, Pill, Label, Note } from "@/components/admin/broadcast/BroadcastPage";
 import "./full-match.css";
@@ -38,7 +39,7 @@ import { kitsFor, kitLabelOnDark } from "@/lib/star/kits";
 import { oldMatchFlow } from "@/lib/star/gameplayVersion";
 import EnginePlay from "@/components/star/EnginePlay";
 import Match3DLayer from "@/components/star/Match3DLayer";
-import { buildScenario, SCENARIO_KINDS, type ScenarioKind, type Scenario } from "@/lib/star/canvasEngine";
+import { SCENARIO_KINDS, type ScenarioKind, type Scenario } from "@/lib/star/canvasEngine";
 import { withoutSwitchedOff } from "@/lib/star/switchedOffKinds";
 import { mulberry32 } from "@/lib/star/season";
 import { fetchLeagueSquads } from "@/lib/star/leagueSquads";
@@ -209,8 +210,13 @@ export default function FullMatchPage() {
     if (!stopped) return undefined;
     const kind = kindOf(stopped.chance.kinds);
     const s = (seed ^ (stopped.minute * 7919)) >>> 0;
-    return (): Scenario => buildScenario(kind, mulberry32(s), setup.awayStrength);
-  }, [stopped, seed, setup.awayStrength]);
+    // The real match's chance maker (drawings, plan, kind rules: a free kick gets the match's keeper),
+    // not a bare picture (Leo, 1 Nov 2026: test pages play like the real game).
+    return (): Scenario => {
+      const r = mulberry32(s);
+      return makeChance({ source: { from: "kind", kind }, rng: r, strength: { keeper: setup.awayStrength, team: setup.homeStrength, vision: 55 }, memory: null }).sc;
+    };
+  }, [stopped, seed, setup.awayStrength, setup.homeStrength]);
   // Your result goes into the unseen match; the match carries on from it.
   const carryOn = () => {
     if (sim && sim.waiting) { resolveSim90Chance(sim, scoredRef.current ? "goal" : "missed"); bump(); }
