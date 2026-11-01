@@ -27,6 +27,64 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.134",
+      "title": "Leo's patch notes: Live chances, everyone moves and your stats decide",
+      "author": "Leo",
+      "publishedAt": "2026-11-01T06:07:23Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "In live chances the defenders now close you down and chase your touch (one can win it: TACKLED), and team-mates keep making their runs. Your stats set the skill: technique the clean zone, early reach and first touch; pace the late reach and your run; vision the time and slow motion; power the strike. The sliders moved to the test page with 'your stats' sliders and presets. Inside Live chances (still off by default).",
+      "stats": [
+        {
+          "value": "4",
+          "label": "stats in play"
+        },
+        {
+          "value": "0.22 → 0.50 m",
+          "label": "clean zone, 40 → 95 technique"
+        },
+        {
+          "value": "1.3 → 2.3 s",
+          "label": "time, 40 → 95 vision"
+        },
+        {
+          "value": "2",
+          "label": "defenders race your touch"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Everyone moves",
+              "detail": "Nearest defender closes you down, the rest drop goal-side; after your touch the nearest two race for it (TACKLED if first). Team-mates carry on their runs."
+            },
+            {
+              "title": "Your stats decide",
+              "detail": "Technique: clean zone, early reach, first touch. Pace: late reach, run. Vision: time and slow motion. Power: the strike. Tired legs count."
+            },
+            {
+              "title": "Test page: your stats",
+              "detail": "Technique, Pace, Vision, Power sliders, presets 45/70/92, what they give you, and By hand dials. Game Settings keep the two switches and a link."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known / next",
+          "items": [
+            {
+              "title": "3D not checked for the touch",
+              "detail": "Same code; not played in 3D yet."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+    {
       "version": "0.133",
       "title": "Leo's patch notes: Live chances, take a touch",
       "author": "Leo",

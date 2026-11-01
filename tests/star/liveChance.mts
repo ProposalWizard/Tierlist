@@ -2,7 +2,7 @@
  * Live chances (lib/star/liveChance.ts): the plan, the ball and the swing read.
  * Run: npx tsx tests/star/liveChance.mts
  */
-import { TOUCH, isTouchFlick, touchWeight, readTouch, planAfterTouch, keeperVsTouch, keeperRushes, rushTarget, runnerAt, liveRate, planFromLead, planMadeUp, liveBallAt, alongOf, readSwing, runPast, liveKindOK, LIVE_DEFAULTS, liveChancesOn, type LeadPath } from "../../lib/star/liveChance";
+import { liveDialsFor, touchErrorScale, defenderTarget, nearestTo, DEF, liveDials, TOUCH, isTouchFlick, touchWeight, readTouch, planAfterTouch, keeperVsTouch, keeperRushes, rushTarget, runnerAt, liveRate, planFromLead, planMadeUp, liveBallAt, alongOf, readSwing, runPast, liveKindOK, LIVE_DEFAULTS, liveChancesOn, type LeadPath } from "../../lib/star/liveChance";
 let fails = 0;
 const ok = (c: boolean, m: string) => { if (!c) { fails++; console.log("FAIL", m); } else console.log("ok  ", m); };
 
@@ -91,5 +91,22 @@ ok(!readTouch(plan, { x: spot.x, y: spot.y + 1.6 }, 8, flickFL, 0.4, 0.3).ok, "f
 ok(keeperRushes("one_on_one", { x: 34, y: 2 }, { x: 34, y: 16 }) && !keeperRushes("long_range", { x: 34, y: 2 }, { x: 34, y: 25 }), "the keeper rushes in a one-on-one, not on a long shot");
 const rt = rushTarget({ x: 34, y: 14 }, { x: 34, y: 0 });
 ok(rt.y < 14 && rt.y > 12, "he rushes to just in front of where the ball meets you");
+// ── Stats decide the skill ──
+const weak = liveDialsFor({ pace: 42, power: 42, technique: 42, vision: 42 }), star = liveDialsFor({ pace: 94, power: 94, technique: 94, vision: 94 });
+ok(star.sweet > weak.sweet * 1.8, `technique widens the clean zone (${weak.sweet.toFixed(2)} → ${star.sweet.toFixed(2)} m)`);
+ok(star.reachLate > weak.reachLate && star.reachEarly > weak.reachEarly, "pace and technique give more reach");
+ok(star.arriveS > weak.arriveS && star.nearSlow < weak.nearSlow, "vision gives more time and slow motion");
+ok(touchErrorScale(94) < touchErrorScale(42), "a better first touch with technique");
+ok(liveDials({ pace: 94, power: 94, technique: 94, vision: 94 }).sweet === star.sweet, "the game's dials come from the stats");
+// A mistimed touch from a poor first touch is wider than from a good one.
+const poorT = readTouch(plan, { x: spot.x, y: spot.y + 0.8 }, 8, { x: -0.7, y: -0.7 }, 0.4, 0.3, LIVE_DEFAULTS, touchErrorScale(42));
+const goodT = readTouch(plan, { x: spot.x, y: spot.y + 0.8 }, 8, { x: -0.7, y: -0.7 }, 0.4, 0.3, LIVE_DEFAULTS, touchErrorScale(94));
+ok(poorT.ok && goodT.ok && poorT.v0 > goodT.v0, "a poor first touch runs heavier");
+// ── Everyone moves ──
+const press = defenderTarget({ x: 40, y: 10 }, { x: 34, y: 16 }, { x: 34, y: 0 }, true);
+ok(Math.abs(Math.hypot(press.x - 34, press.y - 16) - DEF.pressGap) < 1e-6, "the presser stops just short of the ball");
+const cover = defenderTarget({ x: 40, y: 10 }, { x: 34, y: 16 }, { x: 34, y: 0 }, false);
+ok(cover.y < 16 && Math.abs(cover.x - 34) < 0.01, "a cover man goes goal-side of the ball");
+ok(nearestTo([{ x: 0, y: 0 }, { x: 30, y: 15 }], { x: 34, y: 16 }).i === 1, "the nearest defender presses");
 if (fails) { console.log(`${fails} failed`); process.exit(1); }
 console.log("all passed");

@@ -78,7 +78,7 @@ import {
 } from "@/lib/star/matchSound";
 import { isBigMoment, headingIn, BIG_SLOW_RATE } from "@/lib/star/bigMoment";
 import { keeperLookChoice, leoUpdateOn } from "@/lib/star/leoUpdate";
-import { liveChancesOn, liveStrikeScreenOn, liveDials, liveKindOK, liveRate, TOUCH, keeperRushes, rushTarget, stepToward, keeperRushV, keeperReactS, isTouchFlick, touchWeight, readTouch, planAfterTouch, keeperVsTouch, runnerAt, touchLine, touchHintWanted, touchHintSeen, type KeeperVsTouch, planFromLead, planMadeUp, madeUpPasser, liveBallAt, liveSpeedAt, alongOf, runPast, stoppedShort, readSwing, swingLine, type LivePlan, type LiveDials } from "@/lib/star/liveChance";
+import { liveChancesOn, liveStrikeScreenOn, liveDials, liveKindOK, liveRate, TOUCH, keeperRushes, rushTarget, stepToward, keeperRushV, keeperReactS, isTouchFlick, touchWeight, readTouch, planAfterTouch, keeperVsTouch, runnerAt, touchLine, touchHintWanted, touchHintSeen, liveTestStats, touchErrorScale, DEF, defenderTarget, nearestTo, type KeeperVsTouch, type LiveSkills, planFromLead, planMadeUp, madeUpPasser, liveBallAt, liveSpeedAt, alongOf, runPast, stoppedShort, readSwing, swingLine, type LivePlan, type LiveDials } from "@/lib/star/liveChance";
 import { clipFor, keeperHoldMs, keeperShowFrame, keeperSlowRate, pickMove, predictLine, startFor, KEEPER_REACH_M, type KeeperEnding, type KeeperShow } from "@/lib/star/keeperShow";
 import { playLateGoalCall, preloadLateGoalCalls } from "@/lib/star/lateCommentary";
 import { finaliseMatch, liveRating, regressForMinutes, fairRating } from "@/lib/star/matchStats";
@@ -1527,7 +1527,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     /** Your one touch: where you run from and to, how fast, and what the keeper does about it. */
     touch?: { start: Vec2; meet: Vec2; runV: number; kp: KeeperVsTouch | null; kStart: Vec2; side: number; held: number };
     /** The keeper got to your touch first: the ball is his. */
-    smothered?: boolean } | null>(null);
+    smothered?: boolean;
+    /** Team-mates carrying on with their runs (from the build-up's last moment), and how long they have been free (s). */
+    mates?: { o: Vec2; v: Vec2 }[]; freeT?: number;
+    /** A defender who gets to your touch first: which one, when, where. */
+    defWin?: { i: number; t: number; at: Vec2 } | null } | null>(null);
   /** When the aim drag started (ms) and from where on the glass: a quick flick is a touch (liveTouch). */
   const dragT0Ref = useRef(0);
   /** The live chance's hint pill ("drag back = aim · flick = touch"), on a player's first few. */
@@ -6543,7 +6547,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     });
     leadRef.current = { lead, t: 0, ents, ends, ball: { x: sc.ball.x, y: sc.ball.y }, z: 0, mates0, defs0, cam: leadInCamera(lead, ents.map((e) => e.key)), endAt, endKeeper,
       // Live chances: the last pass is still coming when the chance becomes yours (liveChance.ts).
-      live: liveChancesOn() && liveKindOK(sc.kind) && !lead.offside && !autoKickOf(sc) ? planFromLead(lead, sc.ball, liveDials()) : null };
+      live: liveChancesOn() && liveKindOK(sc.kind) && !lead.offside && !autoKickOf(sc) ? planFromLead(lead, sc.ball, liveDials(liveSkillsNow())) : null };
     leadPlayedRef.current = true;
     setLeadInOn(true);
     applyLeadIn();
@@ -6594,8 +6598,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     setLeadInOn(false);
     // Live chances: the pass is still on its way and the men still running (stepLive).
     if (L.live) {
-      liveRef.current = { sc, plan: L.live, dials: liveDials(), lead: L.lead, ents: L.ents.slice(0, L.ends.length), ends: L.ends, runKeys: new Set(L.lead.runOnS && L.lead.runOnS > 0 ? L.lead.runOnKeys ?? [] : []), cam: L.cam, T: L.t, done: "", rolled: 0, rush: liveRushFor(sc, L.live) };
+      liveRef.current = { sc, plan: L.live, dials: liveDials(liveSkillsNow()), lead: L.lead, ents: L.ents.slice(0, L.ends.length), ends: L.ends, runKeys: new Set(L.lead.runOnS && L.lead.runOnS > 0 ? L.lead.runOnKeys ?? [] : []), cam: L.cam, T: L.t, done: "", rolled: 0, rush: liveRushFor(sc, L.live) };
       showLiveHint();
+      liveRef.current.mates = liveMateRuns(L.lead, L.ents);
       stepLive(0);
     }
     try { L.lead.onTick?.(L.lead.durS, true); } catch { /* an observer never breaks the match */ }
@@ -6661,6 +6666,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       lv.ents.forEach((e, i) => {
         // A rushing keeper runs by his own rule (below), not the build-up's.
         if (e.key === "keeper" && lv.rush) return;
+        // Past the build-up's end everyone but you and the keeper moves by the chance's own rules (stepLiveMen).
+        if (T >= lead.durS && e.key !== "you" && e.key !== "keeper" && !(lv.runKeys.has(e.key) && T < runEnd)) return;
         const p = T < lead.durS || (lv.runKeys.has(e.key) && T < runEnd) ? lead.posAt(e.key, Math.min(T, runEnd)) : null;
         e.set(p ?? lv.ends[i]);
       });
@@ -6692,6 +6699,49 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
     if (runPast(lv.plan, b, lv.dials) || stoppedShort(lv.plan, T, b, lv.dials)) liveMiss(false);
   };
+  /** Your stats for a live chance, tired legs taken off (the test page's pretend player there). */
+  const liveSkillsNow = (): LiveSkills => {
+    const t = liveTestStats();
+    if (t) return t;
+    const tired = tiredSkills();
+    const cut = 1 - fatigueCut(liveEnergyAt(matchMinuteRef.current));
+    const c = careerRef.current?.skills;
+    return { power: tired.power, technique: tired.technique, pace: (c?.pace ?? 60) * cut, vision: c?.vision ?? 60 };
+  };
+  /** Team-mates' runs at the build-up's end (the way and the pace they were going). */
+  const liveMateRuns = (lead: LeadIn, ents: LeadEntity[]): { o: Vec2; v: Vec2 }[] => {
+    const out: { o: Vec2; v: Vec2 }[] = [];
+    const sc = scenarioRef.current;
+    const objFor = (key: string): Vec2 | null => key === "run" ? sc.runner?.pos ?? null
+      : key.startsWith("sec") ? sc.secondaryRunners[Number(key.slice(3))]?.pos ?? null
+      : key.startsWith("mate") ? sc.teammates[Number(key.slice(4))] ?? null
+      : key === "follower" ? sc.follower : null;
+    for (const e of ents) {
+      if (e.side !== "mate") continue;
+      const o = objFor(e.key);
+      const a = lead.posAt(e.key, lead.durS - 0.15), b = lead.posAt(e.key, lead.durS);
+      if (!o || !a || !b) continue;
+      out.push({ o, v: { x: (b.x - a.x) / 0.15, y: (b.y - a.y) / 0.15 } });
+    }
+    return out;
+  };
+  /** A defender won your touch, or got to you on the ball: the chance is gone. */
+  const liveTackled = () => {
+    const lv = liveRef.current;
+    if (!lv || lv.done) return;
+    lv.done = "miss";
+    setLiveHint(false);
+    aimCommitRef.current = null;
+    presserRef.current = null;
+    draggingRef.current = false;
+    dragRef.current = null;
+    thumbOriginRef.current = null;
+    setAim(null);
+    try { window.dispatchEvent(new CustomEvent("kib-live-swing", { detail: { hit: false, why: "tackled", touch: !!lv.touch } })); } catch { /* no window */ }
+    resolveOutcome("tackled");
+    showAction("TACKLED");
+    pushLine(lv.touch ? "A defender gets back and nicks it off him before he can get there." : "He's closed down and robbed before he can get it under control.");
+  };
   /** The keeper rushing at you on a live chance (a one-on-one), or null. */
   const liveRushFor = (sc: Scenario, plan: LivePlan): { target: Vec2; v: number; react: number } | null => {
     if (!keeperRushes(sc.kind, sc.keeper, plan.spot)) return null;
@@ -6706,6 +6756,31 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const stepLiveMen = (lv: NonNullable<typeof liveRef.current>, dtL: number) => {
     const sc = lv.sc, k = sc.keeper;
     const tc = lv.touch;
+    // Everyone else is free once the build-up has played out (or after your touch).
+    const free = !!tc || !lv.lead || lv.T >= lv.lead.durS;
+    if (free) {
+      lv.freeT = (lv.freeT ?? 0) + dtL;
+      // Team-mates carry on with their runs, easing off.
+      const ease = Math.max(0, 1 - lv.freeT / DEF.mateEaseS) * DEF.mateCarry;
+      for (const m of lv.mates ?? []) { m.o.x += m.v.x * ease * dtL; m.o.y += m.v.y * ease * dtL; }
+      // Defenders: close down and cover (before your touch); the chasers go for the ball after it.
+      const goal = { x: CX, y: 0 };
+      const ballNow = liveBallAt(lv.plan, lv.T, null);
+      const meet = tc ? ballNow : lv.plan.spot;
+      const near = nearestTo(sc.defenders, meet);
+      sc.defenders.forEach((d, i) => {
+        if (Math.hypot(d.x - meet.x, d.y - meet.y) > DEF.near) return;
+        const v = DEF.v * (d.speed || 1);
+        let to: Vec2;
+        if (tc) to = lv.defWin && lv.defWin.i === i ? lv.defWin.at : (i === near.i ? ballNow : defenderTarget(d, meet, goal, false));
+        else to = defenderTarget(d, meet, goal, i === near.i);
+        if (tc && lv.T < DEF.reactS) return;
+        const p = stepToward(d, to, v, dtL); d.x = p.x; d.y = p.y;
+      });
+      if (tc && lv.defWin && lv.T >= lv.defWin.t) { liveTackled(); return; }
+      // On the ball after your touch: a defender who gets to it takes it off you.
+      if (tc && lv.T > lv.plan.t1 && near.i >= 0 && near.d < 0.85) { liveTackled(); return; }
+    }
     if (!tc) {
       if (lv.rush && lv.T > (lv.plan.handT ?? 0)) { const p = stepToward(k, lv.rush.target, lv.rush.v, dtL); k.x = p.x; k.y = p.y; }
       return;
@@ -6791,14 +6866,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (!ball) return false;
     const speed = liveSpeedAt(lv.plan, lv.T, lv.dials.rollDecel);
     const r = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x51ed270b)) ^ 0x70c4) >>> 0)();
-    const read = readTouch(lv.plan, ball, speed, { x: b.x - a.x, y: b.y - a.y }, touchWeight(swipe), r, lv.dials);
+    const read = readTouch(lv.plan, ball, speed, { x: b.x - a.x, y: b.y - a.y }, touchWeight(swipe), r, lv.dials, touchErrorScale(liveSkillsNow().technique));
     try { window.dispatchEvent(new CustomEvent("kib-live-swing", { detail: { ...read, hit: read.ok, touch: true } })); } catch { /* no window */ }
     if (!read.ok) {
       liveMiss(true, read.why === "early");
       pushLine(touchLine(read, playerLabel(), false));
       return true;
     }
-    const runV = careerRef.current ? touchChaseSpeed(careerRef.current.skills.pace) : 6.8;
+    const runV = touchChaseSpeed(liveSkillsNow().pace);
     const start = { x: sc.player.x, y: sc.player.y };
     const { plan, meet } = planAfterTouch(read, start, runV, lv.dials);
     const k = { x: sc.keeper.x, y: sc.keeper.y };
@@ -6817,6 +6892,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     baseViewportRef.current = { ...viewportRef.current };
     figShrinkBaseRef.current = figShrinkRef.current;
     lv.touch = { start, meet, runV, kp, kStart: k, side, held: 0 };
+    // The nearest two defenders go for it too: the first to get there before you (and before the keeper) wins it.
+    lv.defWin = null;
+    {
+      const byDist = sc.defenders.map((d, i) => ({ d, i, dist: Math.hypot(d.x - read.from.x, d.y - read.from.y) }))
+        .filter((x) => x.dist < DEF.near).sort((p, q) => p.dist - q.dist).slice(0, 2);
+      for (const { d, i } of byDist) {
+        const w = keeperVsTouch(d, DEF.v * (d.speed || 1), DEF.reactS, plan, plan.t1, DEF.reachM);
+        if (w.smother && (!lv.defWin || w.t < lv.defWin.t) && !(kp && kp.smother && kp.t <= w.t)) lv.defWin = { i, t: w.t, at: w.at };
+      }
+    }
     setLiveHint(false);
     // You aim from the new ring.
     sc.ball.x = plan.spot.x; sc.ball.y = plan.spot.y;
@@ -6923,7 +7008,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const sc = scenarioRef.current;
     liveRef.current = null;
     if (!liveChancesOn() || !liveKindOK(sc.kind) || autoKickOf(sc) || leadRef.current) return;
-    const dials = liveDials();
+    const dials = liveDials(liveSkillsNow());
     const plan = planMadeUp(madeUpPasser(sc.ball, sc.teammates), sc.ball, dials);
     if (!plan) return;
     liveRef.current = { sc, plan, dials, lead: null, ents: [], ends: [], runKeys: new Set(), cam: null, T: 0, done: "", rolled: 0, rush: liveRushFor(sc, plan) };
