@@ -1,0 +1,36 @@
+"use client";
+/**
+ * Live chances, as a player sets them (lib/star/liveChance.ts): the switch
+ * (off by default) and the kick screen. Saved on this phone. The timing
+ * comes from the player's stats (liveDialsFor); the test page has the sliders.
+ * Shown in Settings → Match (admins) and Settings → Updates (Leo's card).
+ * The test page /star-live-chances-dev has its own copies, never saved.
+ */
+import { useEffect, useState } from "react";
+import { LIVE_EVENT, liveChancesOn, liveStrikeScreenOn, setLiveChances, setLiveStrikeScreen } from "@/lib/star/liveChance";
+import { SetToggle } from "./settingsKit";
+
+export default function LiveChancesSettings({ last = true }: { last?: boolean }) {
+  const [, bump] = useState(0);
+  useEffect(() => {
+    const r = () => bump((n) => n + 1);
+    window.addEventListener(LIVE_EVENT, r);
+    window.addEventListener("storage", r);
+    return () => { window.removeEventListener(LIVE_EVENT, r); window.removeEventListener("storage", r); };
+  }, []);
+  const on = liveChancesOn();
+  return (
+    <div data-live-chances>
+      <SetToggle label={on ? "Live chances: On (test)" : "Live chances: Off"} on={on} onClick={() => setLiveChances(!on)} last={last && !on} />
+      <p className="-mt-1 mb-1 pl-1 text-[10.5px] font-semibold leading-snug text-white/70">Its own switch, off by default. On: the last pass keeps coming to you; time your strike as it arrives (early stabs it, late gets under it, miss it and the chance is gone). Set pieces, headers and volleys stay as they are.</p>
+      {on && (
+        <div data-live-settings>
+          <SetToggle label={liveStrikeScreenOn() ? "Kick screen: On (then tap where on the ball)" : "Kick screen: Off (letting go = the kick)"} on={liveStrikeScreenOn()} onClick={() => setLiveStrikeScreen(!liveStrikeScreenOn())} />
+          <p className="-mt-1 mb-2 pl-1 text-[10.5px] font-semibold leading-snug text-white/70">On: letting go is the moment you meet it (that sets early, clean or late), then the normal kick screen opens: tap where on the ball, sides curl, bottom chips, top drives. Off: letting go is the kick.</p>
+          <p className="mb-1 pl-1 text-[10.5px] font-semibold leading-snug text-white/60">How much time you get and how big the clean zone is come from your stats: technique, pace and vision (the test page has sliders to try them).</p>
+          <a href="/star-live-chances-dev" className="mb-1 ml-1 inline-block rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-bold text-white">Open the Live chances test page →</a>
+        </div>
+      )}
+    </div>
+  );
+}

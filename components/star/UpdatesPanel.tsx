@@ -33,7 +33,7 @@ const has = (id: string): id is LookRowId => id in LOOK_ROWS;
 
 /** Newest first. A row id not in LOOK_ROWS yet is skipped, so a half-merged round can't crash Settings. */
 const ALL_UPDATES: Update[] = [
-  // (Mikey's new pop-ups: a pack since 21 Oct 2026, Settings → Pop-up pack — not a New | Old update.)
+  // (Mikey's pop-ups: the only pop-ups since 27 Oct 2026, no setting — Brain FACT-UI-017.)
   {
     id: "r16", title: "Keepers, hitboxes & jumping", date: "14 Oct 2026",
     sub: "Henry finishes, top corners, chips over heads, physical jumps",

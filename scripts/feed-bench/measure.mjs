@@ -22,7 +22,11 @@ const seed = JSON.parse(readFileSync(val("--seed", "/tmp/feed-seed.json"), "utf8
 if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" });
-const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+// --desktop: a PC window (1440×900, mouse, no phone settings).
+const DESKTOP = argv.includes("--desktop");
+const ctx = await browser.newContext(DESKTOP
+  ? { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 }
+  : { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 const pg = await ctx.newPage();
 const errors = [];
 pg.on("pageerror", e => errors.push(e.message));
@@ -62,6 +66,7 @@ await pg.evaluate(async ({ career, clips, player, leo }) => {
 await pg.reload({ waitUntil: "networkidle", timeout: 180000 });
 await pg.waitForTimeout(4000);
 // Warm the feed's code once (dev server compiles on first use), then leave it.
+await noCookies();
 const phoneBtn = pg.locator('[data-tour="nav-phone"]').first();
 await phoneBtn.click(); await pg.waitForTimeout(3000);
 await pg.locator("button").filter({ hasText: /Social\s*$/ }).first().click().catch(() => {}); await pg.waitForTimeout(8000);
@@ -78,7 +83,12 @@ let cdp = await ctx.newCDPSession(pg);
 async function socialButton() {
   return pg.locator("button").filter({ hasText: /Social\s*$/ }).first();
 }
+async function noCookies() {
+  const b = pg.locator("button").filter({ hasText: /^\s*No thanks\s*$/ }).first();
+  if (await b.isVisible().catch(() => false)) { await b.click().catch(() => {}); await pg.waitForTimeout(400); }
+}
 async function openFeed(label) {
+  await noCookies();
   await pg.waitForSelector('[data-tour="nav-phone"]', { timeout: 120000 });
   // The phone first (not timed), at full speed; then the Social app, timed.
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
@@ -198,7 +208,7 @@ cdp = await ctx.newCDPSession(pg);
 const reload = await openFeed("open-3-reload");
 
 const f = v => v === null || v === undefined ? "—" : `${Math.round(v)} ms`;
-console.log(`${PLAYER ? "player view" : "admin view (team)"} · update ${LEO ? "on" : "off"} · CPU ${RATE}× · 390×844 · posts in seed ${seed.career.media.posts.length}`);
+console.log(`${DESKTOP ? "DESKTOP 1440×900 · " : ""}${PLAYER ? "player view" : "admin view (team)"} · update ${LEO ? "on" : "off"} · CPU ${RATE}× · ${DESKTOP ? "1440×900" : "390×844"} · posts in seed ${seed.career.media.posts.length}`);
 console.log(`open (first)     painted ${f(first.painted)} · posts drawn ${domPosts} · longest task while opening ${first.openLongest} ms · still ${f(first.still)} · first video ready ${f(first.video)}`);
 console.log(`long tasks 10 s after open: ${first.lt10s.length} (longest ${Math.max(0, ...first.lt10s)} ms, >100ms: ${first.lt10s.filter(x => x > 100).length})`);
 console.log(`scroll           ${JSON.stringify(scroll)}`);

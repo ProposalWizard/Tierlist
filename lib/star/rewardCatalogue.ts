@@ -23,6 +23,7 @@
 import { PENALTY_RUNUPS, FREE_KICK_RUNUPS, DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP } from "./runupStyles";
 import { ACCESSORIES, type AccessorySlot } from "./store/catalogue";
 import type { Live3D } from "./starPassRewards";
+import { spinFor, stillFor } from "./starPassArt";
 
 export type RewardCategory =
   | "penalty-runup" | "freekick-runup" | "celebration" | "wearable" | "boots" | "ball" | "vehicle"
@@ -67,6 +68,8 @@ export interface RewardArt {
   sceneAspect?: number;
   /** Live 3D you can spin. */
   live?: Live3D;
+  /** The 3D model you spin in the Star Pass's tap-to-preview (lib/star/starPassArt.ts). */
+  spin?: Live3D;
   /** No art yet: one emoji and a colour for its tile. */
   icon?: string;
   color?: string;
@@ -183,11 +186,19 @@ const FROM_GAME: CatalogueItem[] = [
   })),
 ];
 
+/** Blender art (28 Oct 2026): the road's still and the preview's 3D model,
+ *  wherever they have been made (lib/star/starPassArt.ts). */
+const withArt = (c: CatalogueItem): CatalogueItem => {
+  const still = stillFor(c.id);
+  const spin = spinFor(c.id);
+  return still || spin ? { ...c, art: { ...c.art, ...still, ...(spin ? { spin } : null) } } : c;
+};
+
 export const BUILT_IN_CATALOGUE: CatalogueItem[] = [
   ...PASS_DESIGNS.map((c) => ({ ...c, builtIn: true })),
   ...PASS_NEW.map((c) => ({ ...c, builtIn: true })),
   ...FROM_GAME,
-];
+].map(withArt);
 
 /**
  * The layout every save starts with, before anything is set on the admin

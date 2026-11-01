@@ -9,7 +9,8 @@ const [base, seedFile, rateArg, shotPath] = process.argv.slice(2);
 const RATE = Number(rateArg || 1);
 const seed = JSON.parse(readFileSync(seedFile, "utf8"));
 const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" });
-const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+const DESKTOP = process.argv.includes("--desktop");
+const ctx = await b.newContext(DESKTOP ? { viewport: { width: 1440, height: 900 } } : { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 const pg = await ctx.newPage();
 const errors = [];
 pg.on("pageerror", e => errors.push(e.message));
@@ -19,6 +20,7 @@ pg.on("console", m => { if (/\[live\]|\[mk\]/.test(m.text())) console.log("  [p]
 await pg.goto(`${base}/star-dev`, { waitUntil: "domcontentloaded", timeout: 180000 });
 await pg.evaluate(async ({ career, clips }) => {
   localStorage.clear(); localStorage.setItem("kib-admin-mode", "off");
+  localStorage.setItem("kib-update-leo-2026-10-24", JSON.stringify({ on: true, off: [] }));
   localStorage.setItem("star-career-v2::anon", JSON.stringify(career));
   localStorage.setItem("star-career-phase-v1::anon", JSON.stringify({ phase: "dashboard" }));
   for (const n of ["star-goal-clips", "star-goal-videos"]) await new Promise(res => { const d = indexedDB.deleteDatabase(n); d.onsuccess = d.onerror = d.onblocked = () => res(); });
@@ -30,6 +32,7 @@ await pg.waitForSelector('[data-tour="nav-phone"]', { timeout: 120000 });
 await pg.waitForTimeout(1500);
 const cdp = await ctx.newCDPSession(pg);
 await cdp.send("Emulation.setCPUThrottlingRate", { rate: RATE });
+{ const nt = pg.locator("button").filter({ hasText: /^\s*No thanks\s*$/ }).first(); if (await nt.isVisible().catch(() => false)) await nt.click(); }
 await pg.locator('[data-tour="nav-phone"]').first().click(); await pg.waitForTimeout(1200);
 await pg.locator("button").filter({ hasText: /Social\s*$/ }).first().click();
 await pg.waitForSelector("[data-goal-video]", { timeout: 60000 });

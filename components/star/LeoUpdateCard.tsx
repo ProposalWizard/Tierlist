@@ -5,13 +5,15 @@
  * exactly as before. Per device.
  */
 import { useEffect, useState } from "react";
-import { LEO_FEATURES, keeperLookChoice, leoUpdateOn, setKeeperLookChoice, setLeoFeature, setLeoUpdate, type LeoFeature } from "@/lib/star/leoUpdate";
+import { LEO_FEATURES, GOAL_VIDEO_LOOKS, goalVideoLookChoice, keeperLookChoice, leoUpdateOn, setGoalVideoLookChoice, setKeeperLookChoice, setLeoFeature, setLeoUpdate, type LeoFeature } from "@/lib/star/leoUpdate";
 import { KEEPER_LOOKS } from "@/lib/star/keeperShow";
+import LiveChancesSettings from "./LiveChancesSettings";
 import { SetCard, SetHead, SetNote, SetToggle } from "./settingsKit";
 
 const TEST_PAGES: [string, string][] = [
   ["/star-real-goals-dev", "Real Goals (paths, bangers, daily goal)"],
   ["/star-shootout-dev", "Shootout keeper that reads you"],
+  ["/star-live-chances-dev", "Live chances"],
   ["/star-weather-dev", "Weather and pitch"],
   ["/star-season-reel-dev", "Season video"],
   ["/star-awards-night-dev", "Awards night"],
@@ -45,9 +47,18 @@ export default function LeoUpdateCard({ glow }: { glow: string }) {
                 ))}
               </div>
             )}
+            {f.id === "videos2d" && partOn("videos2d") && (
+              <div className="mb-2 flex flex-wrap gap-1.5 pl-1" data-goal-video-look>
+                {GOAL_VIDEO_LOOKS.map((l) => (
+                  <button key={l.id} type="button" onClick={() => setGoalVideoLookChoice(l.id)} title={l.line} data-goal-video-look-pick={l.id}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${goalVideoLookChoice() === l.id ? "bg-white text-black" : "bg-white/10 text-white"}`}>{l.label}</button>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
+      <div className="mt-3"><LiveChancesSettings /></div>
       <SetNote dim className="mt-2 text-[11px]">Test pages (no switch needed; they never touch your career):</SetNote>
       <div className="mt-1 flex flex-wrap gap-1.5">
         {TEST_PAGES.map(([href, label]) => (

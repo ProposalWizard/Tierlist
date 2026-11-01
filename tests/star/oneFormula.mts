@@ -28,6 +28,8 @@ import { rulerInputs } from "../../lib/star/fhr/ruler";
 import { mulberry32 } from "../../lib/star/season";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { canTakeCorners } from "../../lib/star/cornerReach";
+import { storyCornersOpen } from "../../lib/star/setPieces";
+import { mechanicOpen, aerialIntroGame } from "../../lib/star/mechanics";
 import { matchTeamStrength } from "../../lib/star/matchday";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import type { StarPlayer, Fixture } from "../../lib/star/types";
@@ -100,6 +102,13 @@ console.log("\n== 1. every tool builds its inputs the one way");
     lateSub: undefined,
     fergie: { from: 90, to: 94 },
   };
+  // 25 Oct 2026 the real match added two more by hand for a new career (the
+  // story order): a team-mate's corners before Technique and Vision 70, and the
+  // moves still shut. Both now come from careerMatchSpec.
+  if (car.unlocks?.story) {
+    if (!storyCornersOpen(car)) handWritten.canTakeCorners = false;
+    handWritten.mechanics = { air: mechanicOpen(car, "aerial"), airIntro: aerialIntroGame(car), dribble: mechanicOpen(car, "dribble") };
+  }
   ok(sameInputs(built, handWritten), "a career match: the builder gives exactly the inputs the real match built by hand");
   ok(opponentMatchStrength(78, true) === 75 && opponentMatchStrength(78, false) === 82 && opponentMatchStrength(98, false) === 99,
     "the opposition's home/away strength rule: 78 → 75 at yours, 82 at theirs, never past 99");

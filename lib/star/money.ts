@@ -116,6 +116,25 @@ export function formatMoneyPrecise(n: number): string {
   return `${negative ? "-" : ""}${Math.round(value)}`;
 }
 
+/**
+ * What you have in the bank, for the money chips: one decimal, rounded DOWN, so
+ * ★1,999,930 reads "1.9m" and ★1,620,460 "1.6m" (formatMoney showed both as
+ * "1m": spending ★70 looked like losing half your money; overnight sweep, 29 Oct
+ * 2026). Never shows more than you have.
+ */
+export function formatWallet(n: number): string {
+  const negative = n < 0;
+  const value = Math.abs(n);
+  for (const u of [{ div: 1_000_000_000, suffix: "b" }, { div: 1_000_000, suffix: "m" }, { div: 1_000, suffix: "k" }]) {
+    if (value >= u.div) {
+      let str = (Math.floor((value / u.div) * 10) / 10).toFixed(1);
+      if (str.endsWith(".0")) str = str.slice(0, -2);
+      return `${negative ? "-" : ""}${str}${u.suffix}`;
+    }
+  }
+  return `${negative ? "-" : ""}${Math.floor(value)}`;
+}
+
 export function formatMoney(n: number): string {
   const negative = n < 0;
   const value = Math.round(Math.abs(n));

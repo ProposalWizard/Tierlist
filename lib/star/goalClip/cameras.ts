@@ -22,7 +22,9 @@ import { CX, HALF_LEN, PITCH_W } from "../pitch";
 import { frameAt, trackDuration, type GoalTrack } from "./track";
 import type { StandId } from "./scene";
 
-export type ClipAngle = "tv" | "net" | "fan" | "high" | "side" | "tight" | "match";
+export type ClipAngle = "tv" | "net" | "fan" | "high" | "side" | "tight" | "match"
+  // Better goal videos (Leo's switch part "betterVideos"): only cut to by makeEdit with that part on.
+  | "reverse" | "strike" | "follow" | "spider" | "fanSide" | "fanHigh";
 
 export interface Rig {
   cam: FpCamera;
@@ -156,6 +158,7 @@ export function rigFor(track: GoalTrack, angle: ClipAngle, t: number, W: number,
       skip: ["near"],
     };
   }
+  if (angle === "reverse" || angle === "strike" || angle === "follow" || angle === "spider" || angle === "fanSide" || angle === "fanHigh") return betterRig(track, angle, t, W, H);
   // A fan in the end stand by the corner, filming on a phone.
   const id = track.meta.id;
   const pos = { x: PITCH_W - 13, y: -12, eye: 8.5 };
@@ -175,4 +178,121 @@ export function rigFor(track: GoalTrack, angle: ClipAngle, t: number, W: number,
     roll: 0.012 * wobble(id, t, 6) + 0.05 * jolt * Math.sin(t * 7.3 + 2),
     skip: ["end"],
   };
+}
+
+// ── Better goal videos (Leo's switch part "betterVideos", 31 Oct 2026) ──────
+// New camera positions, cut to only by the better edits. The cameras above are
+// unchanged. Same rules: a function of the recording and the clip time only.
+
+/** Where the scorer is (or the ball, if the recording has no scorer). */
+function scorerAt(track: GoalTrack, t: number): Pt {
+  const si = track.bodies.findIndex(b => b.id === track.meta.scorerBody);
+  const fr = frameAt(track, Math.max(0, Math.min(trackDuration(track), t)));
+  const b = si >= 0 ? fr.bodies[si] : fr.ball;
+  return { x: b.x, y: b.y, z: 0.9 };
+}
+
+/** A phone held up in the stand: drift, a jolt and a jump when it goes in,
+ *  a pinch in on the strike. */
+function handheld(track: GoalTrack, pos: { x: number; y: number; eye: number }, target: Pt, t: number, W: number, H: number, focal: number, skip: StandId[], k0: number): Rig {
+  const id = track.meta.id;
+  const l = look(pos, target);
+  const since = t - track.goalT;
+  const jolt = since > 0 ? Math.exp(-since * 1.2) : 0;
+  const yaw = 0.008 * wobble(id, t, k0) + 0.035 * jolt * Math.sin(t * 12.3);
+  const tilt = 0.007 * wobble(id, t, k0 + 3) + 0.03 * jolt * Math.sin(t * 8.9 + 1);
+  const fwd = { x: l.forward.x * Math.cos(yaw) - l.forward.y * Math.sin(yaw), y: l.forward.x * Math.sin(yaw) + l.forward.y * Math.cos(yaw) };
+  return {
+    cam: { x: pos.x, y: pos.y, eye: pos.eye, W, H, focal, horizon: H * 0.5, forward: fwd, pitch: l.pitch + tilt },
+    roll: 0.016 * wobble(id, t, k0 + 6) + 0.06 * jolt * Math.sin(t * 7.1 + 2),
+    skip,
+  };
+}
+
+function betterRig(track: GoalTrack, angle: "reverse" | "strike" | "follow" | "spider" | "fanSide" | "fanHigh", t: number, W: number, H: number): Rig {
+  const goal: Pt = { x: CX, y: 1.5, z: 1.0 };
+  const shotAt = frameAt(track, Math.max(0, track.strikeT)).ball;
+  if (angle === "reverse") {
+    // The reverse angle: the main camera's twin on the other touchline (the
+    // picture is the TV's flipped left to right), a little tighter.
+    const pos = { x: PITCH_W + 26, y: 19, eye: 14 };
+    const ball = smoothBall(track, t, -0.45, 0.35);
+    const toGoal = Math.hypot(ball.x - goal.x, ball.y - goal.y);
+    const target = mix({ ...ball, z: Math.min(ball.z, 2) * 0.5 + 0.4 }, goal, Math.max(0.2, Math.min(0.45, 0.45 - toGoal / 80)));
+    const l = look(pos, target);
+    const span = Math.max(20, Math.min(40, toGoal * 0.85 + 15));
+    return {
+      cam: { x: pos.x, y: pos.y, eye: pos.eye, W, H, focal: (Math.max(W, H * 0.9) * l.dist) / span, horizon: H * 0.5, forward: l.forward, pitch: l.pitch },
+      roll: 0,
+      skip: ["far"],
+    };
+  }
+  if (angle === "strike") {
+    // The super slow-mo camera: low on the side of the man who strikes it,
+    // tight on him and the ball, widening to follow the ball to the goal.
+    const toGoal = { x: CX - shotAt.x, y: 0 - shotAt.y };
+    const n = Math.max(1, Math.hypot(toGoal.x, toGoal.y));
+    const dir = { x: toGoal.x / n, y: toGoal.y / n };
+    // To the side of the shot nearer the main stand (x small), a little behind.
+    let side = { x: -dir.y, y: dir.x };
+    if (side.x > 0) side = { x: -side.x, y: -side.y };
+    const pos = { x: shotAt.x + side.x * 16 - dir.x * 4, y: Math.max(4, shotAt.y + side.y * 16 - dir.y * 4), eye: 6.5 };
+    const ball = smoothBall(track, t, -0.12, 0.12, 8);
+    const scorer = scorerAt(track, t);
+    const before = t < track.strikeT;
+    const target = before ? mix({ ...ball, z: Math.min(ball.z, 2) * 0.6 + 0.3 }, scorer, 0.4) : { ...ball, z: Math.min(ball.z, 2.2) * 0.6 + 0.3 };
+    const l = look(pos, target);
+    const flew = Math.hypot(ball.x - shotAt.x, ball.y - shotAt.y);
+    // Before the strike: wide enough for the man and the ball wherever he is.
+    const gap = before ? Math.hypot(ball.x - scorer.x, ball.y - scorer.y) : 0;
+    const span = Math.max(10, Math.min(26, 10 + flew * 0.8 + gap * 1.2));
+    return {
+      cam: { x: pos.x, y: pos.y, eye: pos.eye, W, H, focal: (Math.max(W, H * 0.9) * l.dist) / span, horizon: H * 0.5, forward: l.forward, pitch: l.pitch },
+      roll: 0,
+      skip: ["near"],
+    };
+  }
+  if (angle === "follow") {
+    // A tall picture that follows the ball (an editor's vertical crop of the
+    // TV pictures): the main camera, framed on the ball with the goal near.
+    const pos = { x: -26, y: 19, eye: 14 };
+    const ball = smoothBall(track, t, -0.35, 0.3);
+    const toGoal = Math.hypot(ball.x - goal.x, ball.y - goal.y);
+    const target = mix({ ...ball, z: Math.min(ball.z, 2) * 0.5 + 0.4 }, goal, Math.max(0.05, Math.min(0.25, 0.25 - toGoal / 120)));
+    const l = look(pos, target);
+    const span = Math.max(13, Math.min(22, toGoal * 0.35 + 11));
+    return {
+      cam: { x: pos.x, y: pos.y, eye: pos.eye, W, H, focal: (W * l.dist) / span, horizon: H * 0.5, forward: l.forward, pitch: l.pitch },
+      roll: 0,
+      skip: ["near"],
+    };
+  }
+  if (angle === "spider") {
+    // The spider-cam, flown: high behind the man who scored, looking down the
+    // line of the shot, far enough back that the ball at his feet and the
+    // goal are both in the picture.
+    const ball = smoothBall(track, t, -0.35, 0.3);
+    const back = { x: shotAt.x + (shotAt.x - CX) * 0.3, y: shotAt.y + 19 };
+    const pos = { x: back.x, y: Math.max(22, back.y), eye: 17 };
+    const target = mix({ ...ball, z: Math.min(ball.z, 2) * 0.5 + 0.3 }, { x: CX, y: 2, z: 1 }, 0.35);
+    const l = look(pos, target);
+    const span = Math.max(24, Math.min(40, Math.hypot(pos.x - CX, pos.y) * 0.8));
+    return {
+      cam: { x: pos.x, y: pos.y, eye: pos.eye, W, H, focal: (Math.max(W, H * 0.9) * l.dist) / span, horizon: H * 0.5, forward: l.forward, pitch: l.pitch },
+      roll: 0,
+      skip: ["near"],
+    };
+  }
+  if (angle === "fanSide") {
+    // A phone low in the side stand near the corner flag.
+    const pos = { x: -9, y: 15, eye: 5.5 };
+    const ball = smoothBall(track, t, -0.45, 0.1);
+    const target = mix({ ...ball, z: Math.min(ball.z, 2) * 0.5 + 0.5 }, goal, 0.38);
+    return handheld(track, pos, target, t, W, H, W * 1.55, ["near"], 9);
+  }
+  // A phone high in the upper tier behind the goal, off to one side.
+  const pos = { x: CX - 9, y: -26, eye: 19 };
+  const ball = smoothBall(track, t, -0.45, 0.1);
+  const target = mix({ ...ball, z: Math.min(ball.z, 2) * 0.4 + 0.3 }, goal, 0.3);
+  return handheld(track, pos, target, t, W, H, W * 2.4, ["end"], 13);
 }

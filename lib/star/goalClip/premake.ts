@@ -14,7 +14,7 @@
  * both.
  */
 import type { StoredPost } from "../media/types";
-import { clipStyleFor, clipVariantFor } from "../media/clipStyle";
+import { clipStyleFor, clipVariantFor, coldPostKey } from "../media/clipStyle";
 import { animationsLook } from "../animLook";
 import { getClips } from "./store";
 import { synthTrack, type SynthGoal } from "./synth";
@@ -22,17 +22,35 @@ import { makeEdit, type ClipStyle, type ClipMoves } from "./edit";
 import { planAudio, mixAudio } from "./audio";
 import { makeVideo, workerReady, videosOnPage } from "./makeVideo";
 import type { GoalTrack } from "./track";
+import { smoothRecorded } from "./smooth";
+import { leoUpdateOn, goalVideos2d } from "../leoUpdate";
+import { withFlat } from "./render2d";
+import { commentarySet } from "./commentaryVoice";
+import { isColdStyle, COLD_EDIT_VERSION } from "./editCold";
 
-/** The one name a goal video is kept under (memory and the phone). */
-export function goalVideoKey(style: ClipStyle, variant: number, moves: ClipMoves, clipIds: string[], synth: SynthGoal[] | undefined, handle: string | undefined): string {
+/** The one name a goal video is kept under (memory and the phone). A smooth
+ *  video (Leo's update "smoothGoals", goalClip/smooth.ts) has its own name, so
+ *  it is never mixed up with the stiff one; off, the name is as it always was. */
+export function goalVideoKey(style: ClipStyle, variant: number, moves: ClipMoves, clipIds: string[], synth: SynthGoal[] | undefined, handle: string | undefined, smooth = false, better = false, captions?: string[], flat = false): string {
   const synthKey = (synth ?? []).map(g => g.seed).join(",");
-  return `${style}|${variant}|${moves}|${clipIds.join(",")}|${synthKey}|${handle ?? ""}`;
+  // Better videos (Leo's switch part "betterVideos") have their own name, and
+  // so does each set of captions; off, the name is as it always was.
+  const betterKey = better ? `|better2${captions?.length ? `|${captions.join("/")}` : ""}` : "";
+  // "Different commentators": the sound is in the file, so its own name too.
+  const voiceKey = commentarySet() === "teams" ? "|teams" : "";
+  // 2D goal videos (part "videos2d"): another picture, so its own name; off, as before.
+  // Cold edits (switch part "coldEdits"): their own version mark. Only a cold
+  // style gets it, and only that part ever gives one out.
+  const coldKey = isColdStyle(style) ? `|${COLD_EDIT_VERSION}` : "";
+  return `${style}|${variant}|${moves}|${clipIds.join(",")}|${synthKey}|${handle ?? ""}${smooth ? "|smooth" : ""}${betterKey}${voiceKey}${coldKey}${flat ? "|2d" : ""}`;
 }
 
-/** Recorded goals and made ones together, in the order they were scored (as GoalVideo does). */
-export async function tracksFor(clipIds: string[], synth: SynthGoal[] | undefined): Promise<GoalTrack[]> {
+/** Recorded goals and made ones together, in the order they were scored (as GoalVideo does).
+ *  `smooth`: the recordings eased (goalClip/smooth.ts); made goals are smooth already. */
+export async function tracksFor(clipIds: string[], synth: SynthGoal[] | undefined, smooth = false): Promise<GoalTrack[]> {
   const made = (synth ?? []).map(synthTrack).filter((t): t is GoalTrack => !!t);
-  const rec = clipIds.length ? await getClips(clipIds).catch(() => [] as GoalTrack[]) : [];
+  const got = clipIds.length ? await getClips(clipIds).catch(() => [] as GoalTrack[]) : [];
+  const rec = smooth ? smoothRecorded(got) : got;
   return [...rec, ...made].sort((a, b) => a.meta.minute - b.meta.minute);
 }
 
@@ -55,16 +73,21 @@ export async function premakeFeedVideos(posts: StoredPost[]): Promise<void> {
     .sort((a, b) => b.rank - a.rank)
     .slice(0, 3);
   const moves = animationsLook();
+  const smooth = leoUpdateOn("smoothGoals");
+  const better = leoUpdateOn("betterVideos");
+  const flat = goalVideos2d();
+  const cold = leoUpdateOn("coldEdits");
   for (const { p, g } of wanted) {
     try {
-      const style = clipStyleFor(p.author);
-      const variant = clipVariantFor(p.author);
-      const tracks = await tracksFor(g.clips, g.synth);
+      const style = g.style ?? clipStyleFor({ ...p.author, persona: p.persona }, better, cold, coldPostKey(g.clips, g.synth));
+      const variant = g.variant ?? clipVariantFor(p.author);
+      const tracks = await tracksFor(g.clips, g.synth, smooth);
       if (!tracks.length) continue;
-      const edit = makeEdit(tracks, style, moves, variant);
-      const credit = { handle: p.author.handle, name: p.author.name };
-      const key = goalVideoKey(style, variant, moves, g.clips, g.synth, credit.handle);
-      const audio = await mixAudio(planAudio(edit)).catch(() => null);
+      const captions = g.captions;
+      const edit = withFlat(makeEdit(tracks, style, moves, variant, better || isColdStyle(style) ? { better, captions } : undefined), flat);
+      const credit = { handle: p.author.handle, name: p.author.name, archetype: p.author.archetype, platform: p.author.platform };
+      const key = goalVideoKey(style, variant, moves, g.clips, g.synth, credit.handle, smooth, better, captions, flat);
+      const audio = await mixAudio(planAudio(edit, undefined, credit)).catch(() => null);
       await makeVideo(key, edit, { credit, audio });
     } catch { /* the feed makes it when it opens, as before */ }
   }

@@ -81,7 +81,9 @@ function run(mode: ChancesMode, matches: number): Served[] {
           seed: (mi * 1000 + i * 17 + 1) >>> 0,
           us: "Arsenal", them: "Chelsea", themStrength: inputs.oppStrength,
         }) as BuildUp | null;
-        const bu = lead ? { kind: lead.kind, keys: lead.ballKeys.map((k) => ({ x: k.p.x, y: k.p.y })) } : null;
+        // The ball's path at 8 even times: every build-up has ballAt (leadIn.ts),
+        // the generated one (Full highlights rebuild, live by default) included.
+        const bu = lead ? { kind: lead.kind ?? "fhr", keys: Array.from({ length: 8 }, (_, j) => { const p = lead.ballAt((lead.durS * j) / 7); return { x: p.x, y: p.y }; }) } : null;
         out.push({ match: mi, kind: sc.kind, sourceId: made.sourceId, pic, bu });
         i++;
       }

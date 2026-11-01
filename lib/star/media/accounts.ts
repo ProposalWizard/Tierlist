@@ -4,7 +4,9 @@ import { primaryRivalOf } from "../rivalries";
 import { sortLeague } from "../season";
 import type { Archetype, AvatarGlyph, MediaAccount, Platform, Tag, VoiceProfile } from "./types";
 import { kitsOf } from "../kits";
-import { hashSeed, initialsOf, rngFor, surname } from "./grammar";
+import { hashSeed, initialsOf, rngFor, shortClub, surname } from "./grammar";
+import { footballTwitterOn } from "./updateFlags";
+import { CLUB_ADMIN, RENAMED, personaAccounts } from "./twitter/personas";
 import { divisionOf, leagueNameFor, inLowerLeagueTrophy, type CareerDivision } from "../calendar";
 
 /**
@@ -108,6 +110,12 @@ const NATIONAL: Seed[] = [
   { handle: "@pitchside.edits", name: "pitchside edits", archetype: "meme", platform: "tiktok", verified: false, followers: 2_700_000 },
   { handle: "@footyloops", name: "footy loops", archetype: "meme", platform: "tiktok", verified: false, followers: 860_000 },
 ];
+
+/** An archetype's voice and interests — for an account made in the Social
+ *  Studio (lib/star/media/studio.ts), so it writes like the rest of its kind. */
+export function accountKit(archetype: Archetype): { voice: VoiceProfile; interests: Partial<Record<Tag, number>> } {
+  return { voice: VOICES[archetype], interests: INTERESTS[archetype] };
+}
 
 const FAN_HANDLES = [
   "terrace_tom", "northbank_nia", "ninetyminutes", "matchday_mo", "stand_side",
@@ -418,7 +426,23 @@ export function buildRoster(career: CareerState): MediaAccount[] {
   // every other event, which is the legally uncomplicated part (commentary
   // and opinion, not impersonation).
 
+  // Football Twitter (Leo's switch part "footballTwitter"): the invented
+  // accounts join the cast, clubs get the cheeky admin's lines and a gold
+  // tick, and five old names too close to real people get invented ones.
+  // Off: none of this runs and the cast is exactly as before.
+  if (footballTwitterOn()) return withFootballTwitter(out, me, rival ?? undefined);
   return out;
+}
+
+function withFootballTwitter(out: MediaAccount[], me: string, rival: string | undefined): MediaAccount[] {
+  const cast = out.map((a): MediaAccount => {
+    const renamed = RENAMED[a.handle];
+    if (renamed) return { ...a, handle: renamed.handle, name: renamed.name, avatar: { ...a.avatar, initials: initialsOf(renamed.name) } };
+    if (a.archetype === "club") return { ...a, tick: "gold", persona: CLUB_ADMIN.id, personaLabel: CLUB_ADMIN.label, personaShare: CLUB_ADMIN.share };
+    if (a.archetype === "league" || a.archetype === "competition") return { ...a, tick: "gold" };
+    return a;
+  });
+  return [...cast, ...personaAccounts(me, rival, shortClub)];
 }
 
 /**

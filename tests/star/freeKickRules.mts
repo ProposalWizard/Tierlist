@@ -336,10 +336,23 @@ function convert(sk: { power: number; technique: number }, N: number, ks = 62) {
   const N = 100;
   const ordinary = convert({ power: 50, technique: 50 }, N);
   const specialist = convert({ power: 85, technique: 85 }, N);
-  check(ordinary >= 0.01 && ordinary <= 0.12, `an ordinary taker (P50/T50) scores a few (${(ordinary * 100).toFixed(0)}%; target 4-7%)`);
+  // Leo, 1 Nov 2026: a perfect top-corner free kick must go in (FREE_KICK.corner). A sensible
+  // taker who aims for the corners now finds it a few more times: 10% → about 16% here (keeper 62).
+  check(ordinary >= 0.01 && ordinary <= 0.18, `an ordinary taker (P50/T50) scores a few (${(ordinary * 100).toFixed(0)}%; target under 18%)`);
   check(specialist >= 0.06 && specialist <= 0.26, `a specialist (P85/T85) scores about one in eight (${(specialist * 100).toFixed(0)}%; target ~12%)`);
   check(specialist > ordinary, `the specialist beats the ordinary taker (${(specialist * 100).toFixed(0)}% vs ${(ordinary * 100).toFixed(0)}%)`);
   console.log(`  conversion, ${N} kicks each: ordinary ${(ordinary * 100).toFixed(0)}%, specialist ${(specialist * 100).toFixed(0)}%`);
+}
+
+// ── 7. The very top corner beats even a top keeper (Leo, 1 Nov 2026) ─────
+// A ball heading right into the top corner (cornerness 1) against a 92-rated keeper:
+// measured in full by scripts/fk/cornerFk.mts (11% before, about 80% after).
+{
+  const { cornerness, FREE_KICK: F } = await import("../../lib/star/kindRules/freeKick");
+  check(F.corner === true && F.cornerCut > 0.5 && F.cornerShortM > 0.5, "the top-corner rule is on");
+  const into = { pos: { x: POST_R - 0.3, y: 6 }, vel: { x: 0, y: -18 }, z: 2.55, vz: -0.2 } as unknown as Ball;
+  const middle = { pos: { x: CX, y: 6 }, vel: { x: 0, y: -18 }, z: 1.0, vz: 0 } as unknown as Ball;
+  check(cornerness(into) > 0.9 && cornerness(middle) === 0, `cornerness: the very corner ${cornerness(into).toFixed(2)}, the middle ${cornerness(middle).toFixed(2)}`);
 }
 
 if (problems.length) {
