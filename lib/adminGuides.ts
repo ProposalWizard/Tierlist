@@ -951,7 +951,12 @@ export const ADMIN_GUIDES = {
         ["Drag, then let go", "Aim from the ring. Letting go is the swing."],
         ["Quick flick from the ring", "Your one touch per chance, the way you flick (longer = heavier). Run onto it and finish. In a one-on-one the keeper rushes you: round him and he is beaten, at him and he smothers it."],
       ] },
-      { group: "Dials", items: [
+      { group: "Your stats", items: [
+        ["Technique / Pace / Vision / Power sliders", "Pretend to be any player. Technique: the clean zone, early reach, how clean your touch is. Pace: late reach and your run after a touch. Vision: how much time and slow motion you get. Power: the strike."],
+        ["A young player (45) / Good (70) / World class (92)", "All four stats at once."],
+        ["From the stats / By hand", "From the stats is how the game plays. By hand opens the dials below, over the stats."],
+      ] },
+      { group: "Dials (By hand only)", items: [
         ["Time for the pass to reach you", "Real seconds from the hand-over to the ball at your feet."],
         ["Slowest slow motion", "How slow the pass may run to give you that time."],
         ["Sweet zone / Reach (early) / Reach (late)", "The metres either side of the spot for a clean strike, and how far you can still reach it."],
@@ -960,7 +965,7 @@ export const ADMIN_GUIDES = {
       ] },
     ],
     saving: ["Nothing. The switch and dials live on this page only and reset when you leave."],
-    inGame: ["Only when \"Live chances\" is on, on that phone (off by default): Settings → Match (admins) or Settings → Updates. The game uses that phone's own sliders there, never this page's dials."],
+    inGame: ["Only when \"Live chances\" is on, on that phone (off by default): Settings → Match (admins) or Settings → Updates. In the game the timing comes from your real stats (tired legs count), never this page's sliders."],
     dev: "app/star-live-chances-dev/page.tsx · lib/star/liveChance.ts (plan, ball, swing read; setLiveTest) · components/star/CanvasMatch.tsx (stepLive, liveSwing, liveMiss, startLiveMadeUp) · tests/star/liveChance.mts · scripts/film/live/livecheck.mjs",
   },
   "/star-weather-dev": {

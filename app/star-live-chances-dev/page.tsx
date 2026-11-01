@@ -19,7 +19,9 @@ import type { LeadIn } from "@/lib/star/leadIn";
 import { fhrBuildUpFor, fhrWantsBuildUp } from "@/lib/star/fhr/buildUp";
 import { servedChances, type ServedChance } from "@/lib/star/fhr/servedChances";
 import { setVisitSalt } from "@/lib/star/chanceMaker";
-import { LIVE_DEFAULTS, LIVE_DIAL_INFO, LIVE_LIMITS, liveKindOK, setLiveTest, type LiveDials } from "@/lib/star/liveChance";
+import { LIVE_DEFAULTS, LIVE_DIAL_INFO, LIVE_LIMITS, liveKindOK, setLiveTest, liveDialsFor, touchErrorScale, type LiveDials, type LiveSkills } from "@/lib/star/liveChance";
+import { loadPlaySettings, sanitizePlaySettings } from "@/lib/star/playArea";
+import { touchChaseSpeed } from "@/lib/star/canvasEngine";
 
 const copy = (sc: Scenario): Scenario => JSON.parse(JSON.stringify(sc));
 const KIND = (k: string) => k.replace(/_/g, " ");
@@ -37,6 +39,12 @@ export default function LiveChancesDev() {
   // After a chance: a new one, or the same one again from its build-up (never the static picture).
   const [after, setAfter] = useState<"new" | "again">("new");
   const [dials, setDials] = useState<LiveDials>({ ...LIVE_DEFAULTS });
+  // A pretend player: the stats decide the timing (liveDialsFor), and power/technique the strike too.
+  const [stats, setStats] = useState<LiveSkills>({ pace: 60, power: 60, technique: 60, vision: 60 });
+  // By hand: the dials below, over the stats.
+  const [manual, setManual] = useState(false);
+  const fromStats = useMemo(() => liveDialsFor(stats), [stats]);
+  const playSettings = useMemo(() => sanitizePlaySettings({ ...loadPlaySettings(), power: stats.power, technique: stats.technique }), [stats.power, stats.technique]);
   const [pool, setPool] = useState<ServedChance[]>([]);
   const [kind, setKind] = useState<string>("all");
   const [at, setAt] = useState(0);
@@ -47,7 +55,7 @@ export default function LiveChancesDev() {
   const [log, setLog] = useState<{ kind: string; swing: Swing | null; outcome: string }[]>([]);
 
   // This page's own switch and dials (in memory; cleared when you leave).
-  useEffect(() => { setLiveTest({ on, strike, dials }); }, [on, strike, dials]);
+  useEffect(() => { setLiveTest({ on, strike, dials, stats, manual }); }, [on, strike, dials, stats, manual]);
   useEffect(() => () => setLiveTest(null), []);
   useEffect(() => {
     setVisitSalt(0);
@@ -87,6 +95,7 @@ export default function LiveChancesDev() {
     return () => window.removeEventListener("kib-picture-opened", onServed);
   }, [onServed]);
   const verdict = (s: Swing | null): string => !s ? "No swing yet"
+    : s.why === "tackled" ? (s.touch ? "Touch: a defender got to it first" : "Tackled before you could play it")
     : s.touch ? (s.why === "smothered" ? "Touch: the keeper smothered it"
       : !s.hit ? `Touch: ${s.why === "early" ? "too early" : "too late"}, missed it`
       : `Touch: ${s.timing === "sweet" ? "clean" : s.timing === "early" ? "early (heavy)" : "late (heavy)"} · ${(s.v0 ?? 0).toFixed(1)} m/s off your foot`)
@@ -127,7 +136,7 @@ export default function LiveChancesDev() {
           {chance && (
             // In 2D or 3D as this phone's Settings have the match (the career's 3D layer).
             <Match3DLayer key={`3d-${kind}-${at}-${run}-${buildUps}-${on}`}>
-            <EnginePlay key={`${kind}-${at}-${run}-${buildUps}-${on}`} seed={11} openOn={openOn} leadIn={buildUps ? leadIn : undefined}
+            <EnginePlay key={`${kind}-${at}-${run}-${buildUps}-${on}`} seed={11} openOn={openOn} leadIn={buildUps ? leadIn : undefined} settings={playSettings}
               onChanceResolved={(r) => {
                 const sw = swingRef.current;
                 resolvedKey.current = keyRef.current;
@@ -148,19 +157,39 @@ export default function LiveChancesDev() {
               <li>Or take ONE touch: a quick flick from the ring, the way you want the ball to go (a longer flick = a heavier touch). You run onto it and finish as usual; you have about 2.5 s once it is at your feet. In a one-on-one the keeper rushes at you: take it round him and he goes down; push it at him and he smothers it.</li>
               <li>Out of reach: fresh air. Never swing: it runs past you. Either way the chance is gone.</li>
               <li>The ball&apos;s own pace carries into the shot.</li>
+              <li>Everyone moves: defenders close you down and cover, and after your touch the nearest ones chase it (one can win it: TACKLED); team-mates carry on with their runs.</li>
+              <li>Your stats set how hard it is: see &ldquo;Your stats&rdquo;.</li>
             </ol>
           </Panel>
-          <Panel title="Dials (this page only)">
-            {DIALS.map((d) => (
+          <Panel title="Your stats (this page only)" note="The game reads your real stats (tired legs count). Here, pretend to be any player.">
+            {(["technique", "pace", "vision", "power"] as const).map((k) => (
+              <div key={k} style={{ marginBottom: 8 }} data-live-stat={k}>
+                <Label>{k[0].toUpperCase() + k.slice(1)}: {stats[k]}</Label>
+                <input type="range" min={30} max={99} step={1} value={stats[k]} onChange={(e) => setStats((o) => ({ ...o, [k]: Number(e.target.value) }))} style={{ width: "100%" }} />
+              </div>
+            ))}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+              <Btn onClick={() => setStats({ pace: 45, power: 45, technique: 45, vision: 45 })}>A young player (45)</Btn>
+              <Btn onClick={() => setStats({ pace: 70, power: 70, technique: 70, vision: 70 })}>Good (70)</Btn>
+              <Btn onClick={() => setStats({ pace: 92, power: 92, technique: 92, vision: 92 })}>World class (92)</Btn>
+            </div>
+            <Note>What these stats give you{manual ? " (switched off: by hand below)" : ""}: clean zone {fromStats.sweet.toFixed(2)} m · reach early {fromStats.reachEarly.toFixed(2)} m, late {fromStats.reachLate.toFixed(2)} m · time for the pass {fromStats.arriveS.toFixed(1)} s · slow motion near you ×{fromStats.nearSlow.toFixed(2)} · touch error ×{touchErrorScale(stats.technique).toFixed(2)} · run after a touch {touchChaseSpeed(stats.pace).toFixed(1)} m/s. Technique sets the clean zone, early reach and how clean your touch is; pace the late reach and your run; vision the time and slow motion; power the strike.</Note>
+          </Panel>
+          <Panel title="Fine-tune by hand (this page only)">
+            <div style={{ display: "flex", gap: 6, marginBottom: 8 }} data-live-manual>
+              <Pill on={!manual} onClick={() => setManual(false)}>From the stats (as the game)</Pill>
+              <Pill on={manual} onClick={() => { if (!manual) setDials({ ...fromStats }); setManual(true); }}>By hand</Pill>
+            </div>
+            {manual && DIALS.map((d) => (
               <div key={d.k} style={{ marginBottom: 8 }} data-live-dial={d.k}>
-                <Label>{d.name}: {dials[d.k].toFixed(2)} {d.unit}{dials[d.k] === LIVE_DEFAULTS[d.k] ? " (game)" : ""}</Label>
+                <Label>{d.name}: {dials[d.k].toFixed(2)} {d.unit}</Label>
                 <input type="range" min={LIVE_LIMITS[d.k][0]} max={LIVE_LIMITS[d.k][1]} step={d.step} value={dials[d.k]}
                   onChange={(e) => setDials((o) => ({ ...o, [d.k]: Number(e.target.value) }))} style={{ width: "100%" }} />
                 <Note>{d.help}</Note>
               </div>
             ))}
-            <Btn onClick={() => setDials({ ...LIVE_DEFAULTS })}>Reset to the game&apos;s</Btn>
-            <Note>A dial change takes effect on the next chance.</Note>
+            {manual && <Btn onClick={() => setDials({ ...fromStats })}>Back to the stats&apos; numbers</Btn>}
+            <Note>A change takes effect on the next chance.</Note>
           </Panel>
           <Panel title="Your last chances">
             {log.length === 0 ? <Note>None yet.</Note> : (

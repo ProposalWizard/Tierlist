@@ -79,8 +79,12 @@ function writeSaved(s: Saved) {
  * only, with its strike screen and dials. Kept in memory, never saved;
  * leaving the page clears it and the game plays this phone's own settings.
  */
-let testOverride: { on: boolean; strike: boolean; dials: Partial<LiveDials> } | null = null;
-export function setLiveTest(o: { on: boolean; strike: boolean; dials: Partial<LiveDials> } | null) { testOverride = o; }
+/** The test page's own setting. `stats`: pretend to be a player with these; `manual`: its dials by hand, over the stats. */
+export interface LiveTest { on: boolean; strike: boolean; dials: Partial<LiveDials>; stats?: LiveSkills; manual?: boolean }
+let testOverride: LiveTest | null = null;
+export function setLiveTest(o: LiveTest | null) { testOverride = o; }
+/** The test page's pretend player, if it set one (the match reads it instead of the career's). */
+export function liveTestStats(): LiveSkills | null { return testOverride?.stats ?? null; }
 /** Live chances on? The test page's own setting, else this phone's switch. Off by default; always off on the server. */
 export function liveChancesOn(): boolean { return testOverride ? testOverride.on : readSaved().on; }
 export function setLiveChances(on: boolean) { writeSaved({ ...readSaved(), on }); }
@@ -97,10 +101,16 @@ export function liveStrikeScreenOn(): boolean { return testOverride ? testOverri
 export function setLiveStrikeScreen(strike: boolean) { writeSaved({ ...readSaved(), strike }); }
 export const LIVE_EVENT = EVENT;
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
-/** The dials, each inside its guardrail: the test page's on it, else this phone's (Settings), else the defaults. */
-export function liveDials(): LiveDials {
-  const out = { ...LIVE_DEFAULTS };
-  const d = testOverride ? testOverride.dials : readSaved().dials;
+/**
+ * The dials for a chance. In the game: from the player's stats (liveDialsFor;
+ * Leo, 1 Nov 2026: "anything skill related should be related to levels").
+ * On the test page: its pretend player's stats, or its dials by hand.
+ */
+export function liveDials(skills?: LiveSkills | null): LiveDials {
+  const st = testOverride?.stats ?? skills ?? null;
+  const out = st ? liveDialsFor(st) : { ...LIVE_DEFAULTS };
+  if (!(testOverride && testOverride.manual)) return out;
+  const d = testOverride.dials;
   for (const k of Object.keys(LIVE_DEFAULTS) as (keyof LiveDials)[]) {
     const v = d[k];
     if (typeof v === "number" && Number.isFinite(v)) out[k] = clamp(v, LIVE_LIMITS[k][0], LIVE_LIMITS[k][1]);
@@ -110,6 +120,33 @@ export function liveDials(): LiveDials {
 /** Save one dial on this phone (Settings), or all back to the defaults (null). */
 export function setLiveDial(k: keyof LiveDials, v: number) { const s = readSaved(); writeSaved({ ...s, dials: { ...s.dials, [k]: clamp(v, LIVE_LIMITS[k][0], LIVE_LIMITS[k][1]) } }); }
 export function resetLiveDials() { writeSaved({ ...readSaved(), dials: {} }); }
+
+// ── Skill from the player's stats (Leo, 1 Nov 2026) ──
+
+/** The stats a live chance reads (0..100 each; tired legs already taken off by the match). */
+export interface LiveSkills { pace: number; power: number; technique: number; vision: number }
+const share = (v: number) => clamp((Number.isFinite(v) ? v : 55) - 40, 0, 55) / 55;
+/**
+ * What each stat does (40 = the floor, 95 = the top):
+ *  - Technique: the clean zone (0.22 → 0.50 m) and how early you can still get a foot to it (0.8 → 1.3 m).
+ *  - Pace: how late you can still reach it (0.6 → 1.1 m); also your run after a touch (the match's own touchChaseSpeed).
+ *  - Vision: how much time the pass gives you (1.3 → 2.3 s) and the slow motion near you (×0.72 → ×0.40).
+ *  - Power: your strike, as everywhere (the match's own launch).
+ */
+export function liveDialsFor(st: LiveSkills): LiveDials {
+  const t = share(st.technique), p = share(st.pace), v = share(st.vision);
+  return {
+    ...LIVE_DEFAULTS,
+    sweet: lerpN(0.22, 0.5, t),
+    reachEarly: lerpN(0.8, 1.3, t),
+    reachLate: lerpN(0.6, 1.1, p),
+    arriveS: lerpN(1.3, 2.3, v),
+    nearSlow: lerpN(0.72, 0.4, v),
+  };
+}
+function lerpN(a: number, b: number, t: number) { return a + (b - a) * t; }
+/** How badly a mistimed touch comes off (technique): ×1.35 at 40 → ×0.6 at 95. */
+export function touchErrorScale(technique: number): number { return lerpN(1.35, 0.6, share(technique)); }
 
 /** The dials as a player reads them (the Settings card and the test page share this list). */
 export const LIVE_DIAL_INFO: { k: keyof LiveDials; name: string; unit: string; step: number; help: string }[] = [
@@ -416,7 +453,7 @@ export type TouchRead =
  * `flick` (pitch direction) with weight 0..1. `r` a seeded draw for which way
  * a mistimed touch runs off.
  */
-export function readTouch(plan: LivePlan, b: Vec2, speed: number, flick: Vec2, weight: number, r: number, dials: LiveDials = LIVE_DEFAULTS): TouchRead {
+export function readTouch(plan: LivePlan, b: Vec2, speed: number, flick: Vec2, weight: number, r: number, dials: LiveDials = LIVE_DEFAULTS, errScale = 1): TouchRead {
   const along = alongOf(plan, b);
   if (along < -dials.reachEarly) return { ok: false, why: "early", along };
   if (along > dials.reachLate) return { ok: false, why: "late", along };
@@ -427,11 +464,13 @@ export function readTouch(plan: LivePlan, b: Vec2, speed: number, flick: Vec2, w
   const fm = Math.hypot(flick.x, flick.y) || 1;
   let fx = flick.x / fm, fy = flick.y / fm;
   // Mistimed, it comes off the foot wider and heavier.
-  if (off > 0) {
-    const a = (r < 0.5 ? -1 : 1) * 16 * off * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a);
+  // Technique (errScale): a poor first touch is wider and heavier; even a clean one strays a little.
+  const stray = (r < 0.5 ? -1 : 1) * (16 * off + 3 * Math.max(0, errScale - 0.6)) * errScale;
+  if (stray !== 0) {
+    const a = stray * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a);
     [fx, fy] = [fx * c - fy * sn, fx * sn + fy * c];
   }
-  const v = (TOUCH.vSoft + (TOUCH.vHeavy - TOUCH.vSoft) * clamp(weight, 0, 1)) * (1 + 0.35 * off);
+  const v = (TOUCH.vSoft + (TOUCH.vHeavy - TOUCH.vSoft) * clamp(weight, 0, 1)) * (1 + 0.35 * off * errScale);
   // A little of the ball's own pace carries through a first touch.
   const vx = fx * v + plan.u.x * speed * 0.18, vy = fy * v + plan.u.y * speed * 0.18;
   const vm = Math.hypot(vx, vy) || 1;
@@ -480,10 +519,10 @@ export type KeeperVsTouch =
  * `v`; if he gets within his reach of it before you get there (`tYou`), he
  * smothers it. If not he lunges where it was going and is beaten.
  */
-export function keeperVsTouch(k: Vec2, v: number, react: number, plan: LivePlan, tYou: number): KeeperVsTouch {
+export function keeperVsTouch(k: Vec2, v: number, react: number, plan: LivePlan, tYou: number, reach = TOUCH.reachM): KeeperVsTouch {
   for (let t = 0; t <= tYou - 0.04; t += 0.02) {
     const b = liveBallAt(plan, t, null);
-    const can = v * Math.max(0, t - react) + TOUCH.reachM;
+    const can = v * Math.max(0, t - react) + reach;
     if (dist(k, b) <= can) return { smother: true, t, at: { x: b.x, y: b.y } };
   }
   // Beaten: he dives at where the ball was a beat after the touch, as far as he gets.
@@ -506,5 +545,46 @@ export function touchHintWanted(): boolean {
 }
 export function touchHintSeen() {
   try { window.localStorage.setItem(HINT_KEY, String(Number(window.localStorage.getItem(HINT_KEY) ?? "0") + 1)); } catch { /* private mode */ }
+}
+
+// ── Everyone moves (Leo, 1 Nov 2026: "moving everything") ──
+//
+// Defenders: each one near the play heads for the goal side of where the
+// ball meets you (between it and goal), the nearest one closing you down
+// to just short of it; after your touch the nearest one or two chase it and
+// can win it before you get there (TACKLED). Team-mates keep running the way
+// they were going, easing off.
+
+export const DEF = {
+  /** Their running speed (m/s), × the defender's own speed. */
+  v: 5.6,
+  /** Only men within this of the play react (m). */
+  near: 16,
+  /** The presser stops this far short of the ball (m), until your touch. */
+  pressGap: 1.4,
+  /** After your touch: their reaction (s) and reach for the ball (m). */
+  reactS: 0.3,
+  reachM: 0.9,
+  /** Team-mates carry on at this share of their pace, easing to a stop over this long (s). */
+  mateCarry: 0.85,
+  mateEaseS: 1.6,
+};
+/** Where a defender heads while the pass comes: the presser to the ball, the rest to the goal side of it. */
+export function defenderTarget(d: Vec2, spot: Vec2, goal: Vec2, presser: boolean): Vec2 {
+  const gx = goal.x - spot.x, gy = goal.y - spot.y, gd = Math.hypot(gx, gy) || 1;
+  if (presser) {
+    const dx = spot.x - d.x, dy = spot.y - d.y, dd = Math.hypot(dx, dy) || 1;
+    const k = Math.max(0, dd - DEF.pressGap);
+    return { x: d.x + (dx / dd) * k, y: d.y + (dy / dd) * k };
+  }
+  // A cover man drifts onto the line from the ball to goal, as far from the ball as he already is (at most 6 m).
+  const along = Math.min(6, Math.max(2, Math.hypot(d.x - spot.x, d.y - spot.y) * 0.6));
+  return { x: spot.x + (gx / gd) * along, y: spot.y + (gy / gd) * along };
+}
+/** The defender nearest a point, and his distance (index -1: none). */
+export function nearestTo(men: Vec2[], p: Vec2): { i: number; d: number } {
+  let i = -1, best = Infinity;
+  men.forEach((m, k) => { const d = Math.hypot(m.x - p.x, m.y - p.y); if (d < best) { best = d; i = k; } });
+  return { i, d: best };
 }
 
