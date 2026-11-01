@@ -26,6 +26,7 @@ FACT-ENG-007 | One match for every tool: careerMatchSpec carries a new career's 
 FACT-ENG-008 | [SUPERSEDED] Live chances (Leo, 30 Oct 2026): own switch kib-live-chances, off by default; the last pass keeps coming and letting go of the drag is the swing. | team,engine
 FACT-ENG-009 | [SUPERSEDED] Live chances (Leo, 30 Oct 2026): own switch kib-live-chances, off by default; with the strike screen (on by default) letting go locks the aim and the tap on a small ball is the kick. | team,engine
 FACT-ENG-010 | Live chances (Leo, 31 Oct 2026): own switch kib-live-chances, off by default; with the kick screen (on by default) letting go sets the timing, then the game's normal kick screen picks where on the ball. | team,engine
+FACT-ENG-011 | Live chances first touch (Leo, 1 Nov 2026): a quick flick from the ring is ONE touch; the keeper rushes in one-on-ones and either smothers it or is beaten. | team,engine
 FACT-KIB-001 | Knowitball as a client: three mates building the best football game ever; client code KIB. | client-kib
 FACT-KIB-002 | Audience: football fans 16 to 30 on TikTok, Reels and Shorts (Harry to confirm). | client-kib
 FACT-KIB-003 | Video format: 1080×1920 (9:16), 30 fps, H.264, AAC stereo; v01 ran 44.7 s at -13.4 LUFS. | client-kib
