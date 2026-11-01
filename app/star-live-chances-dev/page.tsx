@@ -23,7 +23,7 @@ import { LIVE_DEFAULTS, LIVE_DIAL_INFO, LIVE_LIMITS, liveKindOK, setLiveTest, ty
 
 const copy = (sc: Scenario): Scenario => JSON.parse(JSON.stringify(sc));
 const KIND = (k: string) => k.replace(/_/g, " ");
-type Swing = { hit: boolean; why?: string; timing?: string; along?: number; power?: number; bentDeg?: number; contact?: { cx: number; cy: number } };
+type Swing = { hit: boolean; why?: string; timing?: string; along?: number; power?: number; bentDeg?: number; contact?: { cx: number; cy: number }; touch?: boolean; v0?: number };
 
 const DIALS = LIVE_DIAL_INFO;
 /** Where on the ball it was struck, in words. */
@@ -86,7 +86,10 @@ export default function LiveChancesDev() {
     window.addEventListener("kib-picture-opened", onServed);
     return () => window.removeEventListener("kib-picture-opened", onServed);
   }, [onServed]);
-  const verdict = (s: Swing | null) => !s ? "No swing yet"
+  const verdict = (s: Swing | null): string => !s ? "No swing yet"
+    : s.touch ? (s.why === "smothered" ? "Touch: the keeper smothered it"
+      : !s.hit ? `Touch: ${s.why === "early" ? "too early" : "too late"}, missed it`
+      : `Touch: ${s.timing === "sweet" ? "clean" : s.timing === "early" ? "early (heavy)" : "late (heavy)"} · ${(s.v0 ?? 0).toFixed(1)} m/s off your foot`)
     : !s.hit ? (s.why === "past" ? "Let it run past: chance gone" : s.why === "early" ? "Too early: fresh air" : "Too late: fresh air")
     : `${s.timing === "sweet" ? "Clean" : s.timing === "early" ? "Early (stabbed)" : "Late (got under it)"} · ${(s.along ?? 0) >= 0 ? "+" : ""}${(s.along ?? 0).toFixed(2)} m from the spot · ${struck(s.contact)} · power ${Math.round((s.power ?? 0) * 100)} · pace bent it ${(s.bentDeg ?? 0).toFixed(1)}°`;
 
@@ -142,6 +145,7 @@ export default function LiveChancesDev() {
               <li>The build-up plays. Before the last pass reaches you, the chance is yours and the clock slows.</li>
               <li>Drag from the ring to aim, as always. Let go as the ball reaches the ring: that moment is early, clean or late. Kick screen On: then the normal kick screen opens; tap where on the ball (sides curl, bottom chips, top drives). Off: letting go is the kick.</li>
               <li>Ring green: a clean strike. Early: you stab the top of it (low, weaker, skews). Late: you get under it (it rises, weaker).</li>
+              <li>Or take ONE touch: a quick flick from the ring, the way you want the ball to go (a longer flick = a heavier touch). You run onto it and finish as usual; you have about 2.5 s once it is at your feet. In a one-on-one the keeper rushes at you: take it round him and he goes down; push it at him and he smothers it.</li>
               <li>Out of reach: fresh air. Never swing: it runs past you. Either way the chance is gone.</li>
               <li>The ball&apos;s own pace carries into the shot.</li>
             </ol>

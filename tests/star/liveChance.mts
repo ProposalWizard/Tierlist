@@ -2,7 +2,7 @@
  * Live chances (lib/star/liveChance.ts): the plan, the ball and the swing read.
  * Run: npx tsx tests/star/liveChance.mts
  */
-import { liveRate, planFromLead, planMadeUp, liveBallAt, alongOf, readSwing, runPast, liveKindOK, LIVE_DEFAULTS, liveChancesOn, type LeadPath } from "../../lib/star/liveChance";
+import { TOUCH, isTouchFlick, touchWeight, readTouch, planAfterTouch, keeperVsTouch, keeperRushes, rushTarget, runnerAt, liveRate, planFromLead, planMadeUp, liveBallAt, alongOf, readSwing, runPast, liveKindOK, LIVE_DEFAULTS, liveChancesOn, type LeadPath } from "../../lib/star/liveChance";
 let fails = 0;
 const ok = (c: boolean, m: string) => { if (!c) { fails++; console.log("FAIL", m); } else console.log("ok  ", m); };
 
@@ -62,5 +62,34 @@ ok(!tapAt(-1.5, { cx: 0, cy: 0 }).hit, "tap far too early: fresh air");
 ok(liveRate(plan, { x: spot.x, y: spot.y + 8 }) === plan.slow, "far away: the plan's slow motion only");
 ok(Math.abs(liveRate(plan, spot) - plan.slow * LIVE_DEFAULTS.nearSlow) < 1e-9, "at the spot: the extra slow motion");
 ok(liveRate(plan, { x: spot.x, y: spot.y - 3 }) === plan.slow, "gone past: back to the plan's");
+// ── The first touch ──
+ok(isTouchFlick(150, 0.1) && !isTouchFlick(400, 0.1) && !isTouchFlick(150, 0.02), "a flick is quick and long enough; a slow drag or a tiny one is not");
+ok(touchWeight(TOUCH.minSwipe) === 0 && touchWeight(TOUCH.fullSwipe) === 1, "swipe length sets the weight 0..1");
+// One-on-one: the pass comes straight up the pitch to the spot; you touch it forward-left.
+const flickFL = { x: -0.7, y: -0.7 };
+const tClean = readTouch(plan, spot, 8, flickFL, 0.4, 0.3);
+ok(tClean.ok && tClean.timing === "sweet", "a touch on the ring: clean");
+if (tClean.ok) {
+  const ang = Math.acos(Math.max(-1, Math.min(1, (tClean.dir.x * -0.7071 + tClean.dir.y * -0.7071)))) * 180 / Math.PI;
+  ok(ang < 12, `clean: it goes where you flicked (${ang.toFixed(1)}° off, the pass's own pace a little)`);
+  ok(tClean.v0 > TOUCH.vSoft && tClean.v0 < TOUCH.vHeavy, `clean: a medium touch (${tClean.v0.toFixed(1)} m/s)`);
+  const after = planAfterTouch(tClean, { x: spot.x + 0.5, y: spot.y + 0.4 }, 6.8);
+  const travel = Math.hypot(after.plan.spot.x - spot.x, after.plan.spot.y - spot.y);
+  ok(travel > 2 && travel < 9, `you catch it up ${travel.toFixed(1)} m on, ${after.plan.t1.toFixed(2)} s after the touch`);
+  ok(Math.hypot(after.meet.x - after.plan.spot.x, after.meet.y - after.plan.spot.y) <= TOUCH.meetGap + 1e-6, "you meet it just behind the ball");
+  const you1 = runnerAt({ x: spot.x + 0.5, y: spot.y + 0.4 }, after.meet, 6.8, after.plan.t1);
+  ok(Math.hypot(you1.x - after.meet.x, you1.y - after.meet.y) < 0.05, "you are there as it arrives");
+  // A keeper right in front of the ball smothers it; one off to the side and committed is beaten.
+  const kIn = keeperVsTouch({ x: spot.x - 1.5, y: spot.y - 1.8 }, 6, 0.25, after.plan, after.plan.t1);
+  ok(kIn.smother, "keeper standing where you push it: he smothers it");
+  const kOut = keeperVsTouch({ x: spot.x + 3.5, y: spot.y - 2.5 }, 6, 0.25, after.plan, after.plan.t1);
+  ok(!kOut.smother, "keeper on the other side, coming at you: you go round him");
+}
+const tEarly = readTouch(plan, { x: spot.x, y: spot.y + 0.8 }, 8, flickFL, 0.4, 0.3);
+ok(tEarly.ok && tEarly.timing === "early" && tClean.ok && tEarly.v0 > tClean.v0, "early touch: heavier");
+ok(!readTouch(plan, { x: spot.x, y: spot.y + 1.6 }, 8, flickFL, 0.4, 0.3).ok, "far too early: misses it");
+ok(keeperRushes("one_on_one", { x: 34, y: 2 }, { x: 34, y: 16 }) && !keeperRushes("long_range", { x: 34, y: 2 }, { x: 34, y: 25 }), "the keeper rushes in a one-on-one, not on a long shot");
+const rt = rushTarget({ x: 34, y: 14 }, { x: 34, y: 0 });
+ok(rt.y < 14 && rt.y > 12, "he rushes to just in front of where the ball meets you");
 if (fails) { console.log(`${fails} failed`); process.exit(1); }
 console.log("all passed");

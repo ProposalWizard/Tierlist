@@ -156,6 +156,8 @@ export interface LivePlan {
   carry: boolean;
   /** A made-up pass (no build-up to read): from here, starting at lead 0. */
   from?: Vec2;
+  /** After your touch: the ball rolls from `from` along `u`, v0 m/s, slowing by decel m/s² (the whole way, before and after the spot). */
+  roll?: { v0: number; decel: number };
 }
 
 const dist = (a: Vec2, b: Vec2) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -226,6 +228,10 @@ export function rollPast(v1: number, decel: number, dt: number): number {
 
 /** The ball at lead time T (pitch metres). Before t1: the build-up's own ball (or the made-up pass); after: rolling on. */
 export function liveBallAt(plan: LivePlan, T: number, leadBallAt: ((t: number) => { x: number; y: number; z: number }) | null, decel = LIVE_DEFAULTS.rollDecel): Vec2 & { z: number } {
+  if (plan.roll && plan.from) {
+    const d = rollPast(plan.roll.v0, plan.roll.decel, T);
+    return { x: plan.from.x + plan.u.x * d, y: plan.from.y + plan.u.y * d, z: 0 };
+  }
   if (T <= plan.t1) {
     if (plan.from) {
       const f = clamp(T / plan.t1, 0, 1), g = passEase(f);
@@ -238,6 +244,7 @@ export function liveBallAt(plan: LivePlan, T: number, leadBallAt: ((t: number) =
 }
 /** The ball's speed (m/s) at lead time T. */
 export function liveSpeedAt(plan: LivePlan, T: number, decel = LIVE_DEFAULTS.rollDecel): number {
+  if (plan.roll) return Math.max(0, plan.roll.v0 - plan.roll.decel * T);
   if (T <= plan.t1) {
     if (plan.carry) return plan.v1;
     const f = clamp((T - plan.t0) / Math.max(1e-6, plan.t1 - plan.t0), 0, 1);
@@ -328,3 +335,176 @@ export function swingLine(s: SwingRead, name: string): string {
   if (s.timing === "sweet") return Math.abs(s.along) < 0.15 ? `${name} meets it perfectly in his stride…` : `${name} hits it on the run…`;
   return s.timing === "early" ? `${name} stabs at it before it's there…` : `${name} lets it run too far and gets under it…`;
 }
+
+// ── The first touch (Leo, 31 Oct 2026) ──
+//
+// "you get played through one on one with the goalie and he's running towards
+// you and just as the ball ends up at your feet you do a little swipe like a bit
+// forwards and to the left on the ball to take it round the keeper and slot it
+// into the open goal." ONE touch per chance.
+//
+//  - A quick flick from the ball (under TOUCH.maxMs, at least TOUCH.minSwipe of
+//    the screen) is a touch in the flick's direction; its length is the weight.
+//    A slower drag back is still the aim.
+//  - Timed like a strike (readTouch): clean in the sweet zone; early or late it
+//    runs heavier and off line; out of reach you miss it.
+//  - The touched ball rolls on and you run onto it (planAfterTouch): a new ring
+//    where you catch it, and the finish is the usual live strike.
+//  - In a one-on-one the keeper rushes at you as the pass comes (keeperRushes);
+//    at the touch he goes for the ball (keeperVsTouch): if he gets there before
+//    you, he smothers it; if not, he is beaten, on the ground, slow to get back.
+
+export const TOUCH = {
+  /** A flick is quicker than this (ms) … */
+  maxMs: 240,
+  /** … and at least this long (share of the pitch's height on the screen). */
+  minSwipe: 0.045,
+  /** Swipe length for the heaviest touch (share of the pitch's height). */
+  fullSwipe: 0.3,
+  /** The ball off your foot (m/s): the softest touch and the heaviest. */
+  vSoft: 3.6,
+  vHeavy: 10.5,
+  /** A touched ball slows on the grass (m/s²). */
+  decel: 2.6,
+  /** You set off after it this long after the touch (s), at your running speed. */
+  setOffS: 0.12,
+  /** You meet it this far behind the ball (m). */
+  meetGap: 0.45,
+  /** The keeper: how fast he rushes (m/s, by rating 0..1), how long he takes to react to a touch (s), how far he can reach for it (m). */
+  rushV: [4.4, 6.0] as [number, number],
+  reactS: [0.32, 0.2] as [number, number],
+  reachM: 1.25,
+  /** Beaten, he is on the ground this long (s), then walks back at this pace (m/s). */
+  downS: 0.9,
+  recoverV: 2.6,
+  /** Once you have caught it up you carry it at your feet; shoot within this (real s) or you are closed down. */
+  holdS: 2.5,
+};
+
+/** Which chances the keeper rushes in (he is through on goal against you). */
+const RUSH_KINDS = new Set(["one_on_one", "through_ball"]);
+export function keeperRushes(kind: string, keeper: Vec2, spot: Vec2): boolean {
+  return RUSH_KINDS.has(kind) && dist(keeper, spot) < 24;
+}
+/** Where a rushing keeper heads: just in front of where the ball meets you, on your side of goal. */
+export function rushTarget(spot: Vec2, goal: Vec2): Vec2 {
+  const dx = goal.x - spot.x, dy = goal.y - spot.y, d = Math.hypot(dx, dy) || 1;
+  const k = Math.min(1.5, d * 0.5);
+  return { x: spot.x + (dx / d) * k, y: spot.y + (dy / d) * k };
+}
+/** Move a man toward a point at up to `v` m/s for `dt` s. */
+export function stepToward(p: Vec2, to: Vec2, v: number, dt: number): Vec2 {
+  const dx = to.x - p.x, dy = to.y - p.y, d = Math.hypot(dx, dy);
+  const s = Math.min(d, v * dt);
+  return d > 1e-6 ? { x: p.x + (dx / d) * s, y: p.y + (dy / d) * s } : { ...p };
+}
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+export function keeperRushV(share: number): number { return lerp(TOUCH.rushV[0], TOUCH.rushV[1], clamp(share, 0, 1)); }
+export function keeperReactS(share: number): number { return lerp(TOUCH.reactS[0], TOUCH.reactS[1], clamp(share, 0, 1)); }
+
+/** Is this release a touch? Quick and long enough (screen fractions of the pitch's height). */
+export function isTouchFlick(ms: number, swipe: number): boolean { return ms <= TOUCH.maxMs && swipe >= TOUCH.minSwipe; }
+/** The touch's weight 0..1 from the swipe's length. */
+export function touchWeight(swipe: number): number { return clamp((swipe - TOUCH.minSwipe) / (TOUCH.fullSwipe - TOUCH.minSwipe), 0, 1); }
+
+export type TouchRead =
+  | { ok: false; why: "early" | "late"; along: number }
+  | { ok: true; timing: SwingTiming; along: number; off: number; from: Vec2; dir: Vec2; v0: number };
+
+/**
+ * Read a touch: the ball at `b` moving at `speed` along the plan, your flick
+ * `flick` (pitch direction) with weight 0..1. `r` a seeded draw for which way
+ * a mistimed touch runs off.
+ */
+export function readTouch(plan: LivePlan, b: Vec2, speed: number, flick: Vec2, weight: number, r: number, dials: LiveDials = LIVE_DEFAULTS): TouchRead {
+  const along = alongOf(plan, b);
+  if (along < -dials.reachEarly) return { ok: false, why: "early", along };
+  if (along > dials.reachLate) return { ok: false, why: "late", along };
+  const early = clamp((-along - dials.sweet) / Math.max(0.05, dials.reachEarly - dials.sweet), 0, 1);
+  const late = clamp((along - dials.sweet) / Math.max(0.05, dials.reachLate - dials.sweet), 0, 1);
+  const timing: SwingTiming = early > 0 ? "early" : late > 0 ? "late" : "sweet";
+  const off = Math.max(early, late);
+  const fm = Math.hypot(flick.x, flick.y) || 1;
+  let fx = flick.x / fm, fy = flick.y / fm;
+  // Mistimed, it comes off the foot wider and heavier.
+  if (off > 0) {
+    const a = (r < 0.5 ? -1 : 1) * 16 * off * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a);
+    [fx, fy] = [fx * c - fy * sn, fx * sn + fy * c];
+  }
+  const v = (TOUCH.vSoft + (TOUCH.vHeavy - TOUCH.vSoft) * clamp(weight, 0, 1)) * (1 + 0.35 * off);
+  // A little of the ball's own pace carries through a first touch.
+  const vx = fx * v + plan.u.x * speed * 0.18, vy = fy * v + plan.u.y * speed * 0.18;
+  const vm = Math.hypot(vx, vy) || 1;
+  return { ok: true, timing, along, off, from: { x: b.x, y: b.y }, dir: { x: vx / vm, y: vy / vm }, v0: vm };
+}
+
+/** Where you are (s after the touch) as you run onto it, from `start` to `meet` at `runV`. */
+export function runnerAt(start: Vec2, meet: Vec2, runV: number, t: number): Vec2 {
+  const d = dist(start, meet);
+  const go = Math.min(d, runV * Math.max(0, t - TOUCH.setOffS));
+  return d > 1e-6 ? { x: start.x + (meet.x - start.x) * go / d, y: start.y + (meet.y - start.y) * go / d } : { ...meet };
+}
+
+/**
+ * After the touch: the ball rolls from `read.from`; you run from `you` at
+ * `runV`. The new spot is where you catch it up (the ball's place then), and
+ * the plan is a rolling one (liveBallAt's `roll`). Returns the plan and where
+ * you stand to meet it.
+ */
+export function planAfterTouch(read: Extract<TouchRead, { ok: true }>, you: Vec2, runV: number, dials: LiveDials = LIVE_DEFAULTS): { plan: LivePlan; meet: Vec2 } {
+  const { from, dir, v0 } = read;
+  const ballAt = (t: number) => { const d = rollPast(v0, TOUCH.decel, t); return { x: from.x + dir.x * d, y: from.y + dir.y * d }; };
+  const tStop = v0 / TOUCH.decel;
+  let tc = tStop;
+  for (let t = 0.2; t <= tStop + 3; t += 0.02) {
+    const ball = ballAt(Math.min(t, tStop));
+    const need = Math.max(0, dist(you, ball) - TOUCH.meetGap);
+    if (runV * Math.max(0, t - TOUCH.setOffS) >= need) { tc = t; break; }
+  }
+  const spot = ballAt(Math.min(tc, tStop));
+  const dd = Math.hypot(spot.x - you.x, spot.y - you.y) || 1;
+  const meet = { x: spot.x - (spot.x - you.x) / dd * TOUCH.meetGap, y: spot.y - (spot.y - you.y) / dd * TOUCH.meetGap };
+  const t1 = Math.max(0.25, tc);
+  const slow = clamp(t1 / Math.max(0.6, dials.arriveS * 0.75), Math.max(0.45, dials.slowMin), 1);
+  return {
+    plan: { handT: 0, t0: 0, t1, carry: false, spot, u: { ...dir }, v1: Math.max(0, v0 - TOUCH.decel * t1), slow, from: { ...from }, roll: { v0, decel: TOUCH.decel } },
+    meet,
+  };
+}
+
+export type KeeperVsTouch =
+  | { smother: true; t: number; at: Vec2 }
+  | { smother: false; lunge: Vec2 };
+/**
+ * The keeper at `k` goes for your touched ball: after reacting he runs at it at
+ * `v`; if he gets within his reach of it before you get there (`tYou`), he
+ * smothers it. If not he lunges where it was going and is beaten.
+ */
+export function keeperVsTouch(k: Vec2, v: number, react: number, plan: LivePlan, tYou: number): KeeperVsTouch {
+  for (let t = 0; t <= tYou - 0.04; t += 0.02) {
+    const b = liveBallAt(plan, t, null);
+    const can = v * Math.max(0, t - react) + TOUCH.reachM;
+    if (dist(k, b) <= can) return { smother: true, t, at: { x: b.x, y: b.y } };
+  }
+  // Beaten: he dives at where the ball was a beat after the touch, as far as he gets.
+  const aim = liveBallAt(plan, Math.min(tYou, react + 0.15), null);
+  return { smother: false, lunge: stepToward(k, aim, 2.2, 1) };
+}
+
+/** The feed line for a touch. */
+export function touchLine(t: TouchRead, name: string, roundKeeper: boolean): string {
+  if (!t.ok) return t.why === "early" ? `${name} goes to take a touch and it isn't there yet!` : `${name} goes to take a touch and it's gone past him!`;
+  if (t.timing !== "sweet") return `${name} takes a heavy touch…`;
+  return roundKeeper ? `${name} takes it round the keeper…` : `${name} takes a touch into his stride…`;
+}
+
+/** The "drag back = aim · flick = touch" hint: shown on a player's first few live chances (per phone). */
+const HINT_KEY = "kib-live-touch-hint";
+export const TOUCH_HINT_TIMES = 5;
+export function touchHintWanted(): boolean {
+  try { return Number(window.localStorage.getItem(HINT_KEY) ?? "0") < TOUCH_HINT_TIMES; } catch { return false; }
+}
+export function touchHintSeen() {
+  try { window.localStorage.setItem(HINT_KEY, String(Number(window.localStorage.getItem(HINT_KEY) ?? "0") + 1)); } catch { /* private mode */ }
+}
+
