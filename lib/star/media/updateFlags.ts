@@ -21,14 +21,15 @@ import { leoUpdateOn } from "@/lib/star/leoUpdate";
 // yourGoalVideo starts OFF with no browser: the tests check the 16 Oct rule.
 // footballTwitter starts OFF with no browser too: every older media test sees
 // the feed exactly as before (tests/star/footballTwitter.mts turns it on).
-type Flags = { labelFixes: boolean; goalOfMonth: boolean; yourGoalVideo: boolean; footballTwitter: boolean };
+// coldEdits (optional, so older code that sets the flags still type-checks) starts OFF with no browser too.
+type Flags = { labelFixes: boolean; goalOfMonth: boolean; yourGoalVideo: boolean; footballTwitter: boolean; coldEdits?: boolean };
 // Kept on globalThis, so a second copy of this file (a test runner can load it
 // twice) still reads the same flags.
 const G = globalThis as { __kibMediaFlags?: Flags };
 if (!G.__kibMediaFlags) {
   G.__kibMediaFlags = typeof window === "undefined"
     ? { labelFixes: true, goalOfMonth: true, yourGoalVideo: false, footballTwitter: false }
-    : { labelFixes: leoUpdateOn("bugFixes"), goalOfMonth: leoUpdateOn("goalOfMonth"), yourGoalVideo: leoUpdateOn("goalVideoNow"), footballTwitter: leoUpdateOn("footballTwitter") };
+    : { labelFixes: leoUpdateOn("bugFixes"), goalOfMonth: leoUpdateOn("goalOfMonth"), yourGoalVideo: leoUpdateOn("goalVideoNow"), footballTwitter: leoUpdateOn("footballTwitter"), coldEdits: leoUpdateOn("coldEdits") };
 }
 const flags = (): Flags => G.__kibMediaFlags!;
 
@@ -40,3 +41,6 @@ export const yourGoalVideoOn = (): boolean => flags().yourGoalVideo;
  *  lines, views/quotes/replies and the ranked feed (lib/star/media/twitter/).
  *  `=== true`: a flags object set before this part existed reads as off. */
 export const footballTwitterOn = (): boolean => flags().footballTwitter === true;
+/** Cold edits (part "coldEdits"): the edit pages' own lines about their edits
+ *  ("cold.", "aura farming", 🥶), templates/coldEdits.ts. Needs Football Twitter. */
+export const coldEditsOn = (): boolean => flags().coldEdits === true;

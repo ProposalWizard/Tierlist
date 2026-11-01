@@ -52,6 +52,8 @@ export interface Persona {
   focus?: "yours";
   /** Its catchphrases ({catch} in its lines). */
   catchphrases: string[];
+  /** A TikTok account's sounds, shown under its video ("♫ …"). */
+  sounds?: string[];
 }
 
 const V = (p: Partial<VoiceProfile>): VoiceProfile => ({
@@ -76,9 +78,9 @@ export const PERSONAS: Persona[] = [
   {
     id: "breaking", label: "TV sports channel (breaking news desk)", handle: "@SportsDeskTV", name: "SportsDesk", archetype: "aggregator",
     followers: 8_900_000, tick: "gold", glyph: "megaphone", tint: "#b91c1c", tint2: "#1e3a8a",
-    voice: V({ register: "neutral", caps: 0.1, emoji: 0.1, punctuation: "clean" }), emoji: ["🚨", "⚽️", "📺"],
+    voice: V({ register: "neutral", caps: 0.1, emoji: 0.1, punctuation: "clean" }), emoji: ["🚨", "⚽️"],
     interests: { transfer: 0.9, manager: 1, trophy: 1, title: 1, relegation: 0.9, drama: 0.8, goal: 0.6, record: 0.8, award: 0.8, table: 0.5 }, rate: 1.3,
-    catchphrases: ["BREAKING", "🚨 BREAKING", "Watch it live"],
+    catchphrases: ["BREAKING", "🚨 BREAKING", "More to follow"],
   },
   {
     id: "scores", label: "Live-scores app (score cards)", handle: "@ScoreBuzzApp", name: "ScoreBuzz", archetype: "aggregator",
@@ -127,9 +129,9 @@ export const PERSONAS: Persona[] = [
   {
     id: "ranter", label: "Shouty fan-channel ranter", handle: "@BigDaveUnleashed", name: "Big Dave Unleashed", archetype: "pundit", platform: "youtube",
     followers: 1_200_000, tick: "blue", glyph: "mic", tint: "#dc2626", tint2: "#fde047",
-    voice: V({ register: "raw", caps: 0.7, emoji: 0.4, exclaim: 0.6 }), emoji: ["😤", "🤬", "📺", "🔴"],
+    voice: V({ register: "raw", caps: 0.7, emoji: 0.4, exclaim: 0.6 }), emoji: ["😤", "🤬", "🔴", "🗣️"],
     interests: { drama: 1, shame: 1, manager: 1, derby: 0.9, title: 0.8, opinion: 1, goal: 0.5 }, rate: 1.4, focus: "yours",
-    catchphrases: ["I'M NOT HAVING IT", "WAKE UP", "BOTTLE JOB", "STREAM IS LIVE NOW", "absolute SHAMBLES"],
+    catchphrases: ["I'M NOT HAVING IT", "WAKE UP", "BOTTLE JOB", "absolute SHAMBLES", "I SAID IT FIRST"],
   },
   {
     id: "ratio", label: "Hater / ratio banter page", handle: "@RatioFC_", name: "Ratio FC", archetype: "meme",
@@ -164,21 +166,22 @@ export const PERSONAS: Persona[] = [
     followers: 640_000, glyph: "play", tint: "#ec4899", tint2: "#22d3ee",
     voice: V({ register: "casual", lowercase: 0.9, emoji: 0.9 }), emoji: ["🎧", "🔥", "🥶", "📈"],
     interests: { goal: 1, record: 0.7, trophy: 0.7, award: 0.6 }, rate: 1.1, mood: "hype",
-    catchphrases: ["edit took 6 hours", "sound on 🎧", "aura", "the slow-mo on this"],
+    catchphrases: ["he's different 🥶", "aura", "no way he did this 😭", "i could watch this all day"],
+    sounds: ["original sound – kai edits", "phonk drift (slowed) – nightdrive", "violin build – edit audio", "crowd chant remix (sped up) – kai edits"],
   },
   {
     id: "clips", label: "Goal clips account", handle: "@ClippedFC", name: "Clipped FC", archetype: "aggregator", platform: "x",
     followers: 2_100_000, tick: "blue", glyph: "play", tint: "#0891b2", tint2: "#164e63",
     voice: V({ caps: 0.2, emoji: 0.5 }), emoji: ["🎥", "🤯", "🚀"],
     interests: { goal: 1, drama: 0.8, derby: 0.6 }, rate: 1.2,
-    catchphrases: ["WHAT A GOAL", "the finish 🤯", "watch this"],
+    catchphrases: ["WHAT A GOAL", "the finish 🤯", "unreal"],
   },
   {
     id: "fanTV", label: "Your club's fan channel", handle: "@{CLUB}FanTV", name: "{CLUB} Fan TV", archetype: "fan", platform: "youtube",
     followers: 420_000, tick: "blue", glyph: "mic", tint: "#be123c", tint2: "#fda4af",
-    voice: V({ register: "raw", caps: 0.6, emoji: 0.5, exclaim: 0.5 }), emoji: ["📺", "😤", "🔥", "🙌"],
+    voice: V({ register: "raw", caps: 0.6, emoji: 0.5, exclaim: 0.5 }), emoji: ["📣", "😤", "🔥", "🙌"],
     interests: { goal: 1, drama: 1, derby: 1, shame: 1, manager: 1, transfer: 0.8, table: 0.8, title: 0.9 }, rate: 1.3, side: "yours",
-    catchphrases: ["LIVE after the game", "full reaction LIVE now", "we go again"],
+    catchphrases: ["we go again", "the fans have spoken", "up the lads"],
   },
   {
     id: "womenFan", label: "Woman fan / away days", handle: "@AwayEndAnna", name: "Anna | Away End", archetype: "fan",
@@ -269,7 +272,7 @@ export const PERSONAS: Persona[] = [
   {
     id: "ref", label: "Referee / VAR moaning account", handle: "@VARWatchUK", name: "VAR Watch", archetype: "aggregator",
     followers: 260_000, tick: "blue", glyph: "flag", tint: "#facc15", tint2: "#111827",
-    voice: V({ register: "casual", emoji: 0.5 }), emoji: ["🟨", "📺", "🧐", "🟥"],
+    voice: V({ register: "casual", emoji: 0.5 }), emoji: ["🟨", "🧐", "🟥"],
     interests: { drama: 1, derby: 0.8, shame: 0.6 }, rate: 0.8,
     catchphrases: ["Check complete.", "Clear and obvious?", "Lines drawn by a toddler"],
   },
@@ -300,6 +303,150 @@ export const PERSONAS: Persona[] = [
     voice: V({ register: "neutral", emoji: 0.4, punctuation: "clean" }), emoji: ["📉", "📈", "💰"],
     interests: { title: 1, relegation: 1, transfer: 0.9, manager: 1, award: 0.9, goal: 0.6, table: 0.7 }, rate: 0.9,
     catchphrases: ["Odds slashed", "Price check", "18+ | Play it safe"],
+  },
+
+  // ══ v2 (Leo, 31 Oct 2026: "MORE FOOTBALL TWITTER AND TIKTOKS") ══════════
+  // ── TikTok ─────────────────────────────────────────────────────────────
+  {
+    id: "pov", label: "TikTok 'POV' page", handle: "@pov.matchday", name: "pov: matchday", archetype: "meme", platform: "tiktok",
+    followers: 1_900_000, tick: "blue", glyph: "play", tint: "#0f172a", tint2: "#f43f5e",
+    voice: V({ register: "casual", lowercase: 0.95, caps: 0, emoji: 0.8, punctuation: "none" }), emoji: ["😭", "🥶", "😮‍💨", "🫨"],
+    interests: { goal: 1, drama: 0.8, derby: 0.7, record: 0.6, trophy: 0.6 }, rate: 1.3, mood: "hype",
+    catchphrases: ["the replay value is insane", "he's different 🥶", "i could watch this all day"],
+    sounds: ["original sound – pov: matchday", "stadium goes silent (slowed) – crowdcore", "heartbeat build – matchday audio", "the commentator scream – pov sounds"],
+  },
+  {
+    id: "ranker", label: "TikTok goal ranker ('rate this goal 1-10')", handle: "@goals.ranked", name: "Goals Ranked 🔢", archetype: "meme", platform: "tiktok",
+    followers: 870_000, tick: "blue", glyph: "grid", tint: "#7c3aed", tint2: "#fde047",
+    voice: V({ register: "casual", lowercase: 0.8, caps: 0.1, emoji: 0.7, punctuation: "loose" }), emoji: ["🔢", "🤔", "🔥", "📈"],
+    interests: { goal: 1, record: 0.8, award: 0.6 }, rate: 1.1, mood: "hype",
+    catchphrases: ["comment your rating 👇", "be honest", "top 3 of the season?"],
+    sounds: ["original sound – Goals Ranked", "ranking beat (sped up) – rankcore", "tick tock countdown – ranked audio"],
+  },
+  {
+    id: "streamer", label: "Reaction streamer (tweets after his stream)", handle: "@RicoReacts", name: "Rico 🎮⚽", archetype: "fan",
+    followers: 940_000, tick: "blue", glyph: "mic", tint: "#9333ea", tint2: "#22d3ee",
+    voice: V({ register: "raw", lowercase: 0.5, caps: 0.5, emoji: 0.8, exclaim: 0.5, punctuation: "loose" }), emoji: ["😭", "🗣️", "💀", "🔥"],
+    interests: { goal: 1, drama: 1, derby: 0.8, shame: 0.7, trophy: 0.8 }, rate: 1.1,
+    catchphrases: ["chat was NOT ready", "my neighbours hate me", "i'm not okay"],
+  },
+  // ── Numbers and lists ─────────────────────────────────────────────────
+  {
+    id: "rater", label: "'Rating every player' account", handle: "@RatingsAfterFT", name: "Ratings After FT", archetype: "stats",
+    followers: 210_000, tick: "blue", glyph: "grid", tint: "#0369a1", tint2: "#bae6fd",
+    voice: V({ register: "casual", emoji: 0.3, punctuation: "clean" }), emoji: ["📝", "⭐"],
+    interests: { goal: 0.9, form: 0.9, stat: 0.9, shame: 0.7, table: 0.6 }, rate: 1, focus: "yours",
+    catchphrases: ["agree or disagree?", "harsh but fair", "come at me"],
+  },
+  {
+    id: "priceBot", label: "Fantasy price-change bot", handle: "@FantasyPriceBot", name: "Price Change Bot 🤖", archetype: "stats",
+    followers: 330_000, tick: "blue", glyph: "chart", tint: "#15803d", tint2: "#86efac",
+    voice: V({ register: "neutral", caps: 0, emoji: 0.2, punctuation: "clean" }), emoji: ["📈", "📉", "🤖"],
+    interests: { goal: 0.9, form: 1, streak: 0.8, shame: 0.5, assist: 0.7 }, rate: 0.9,
+    catchphrases: ["Transfers in overnight", "Target reached", "Next rise: tonight"],
+  },
+  {
+    id: "history", label: "'This day in history' page", handle: "@FootyThisDay", name: "Football This Day", archetype: "stats",
+    followers: 540_000, tick: "blue", glyph: "flag", tint: "#92400e", tint2: "#fde68a",
+    voice: V({ register: "neutral", emoji: 0.4, punctuation: "clean" }), emoji: ["🗓️", "📜", "🕰️"],
+    interests: { record: 1, milestone: 1, trophy: 0.9, derby: 0.7, goal: 0.4 }, rate: 0.7,
+    catchphrases: ["Then and now.", "History made.", "One for the books."],
+  },
+  // ── Talk ──────────────────────────────────────────────────────────────
+  {
+    id: "commsQuotes", label: "Commentator-quotes page", handle: "@CommsBoxCalls", name: "Comms Box Calls 🎙️", archetype: "meme",
+    followers: 680_000, tick: "blue", glyph: "mic", tint: "#1f2937", tint2: "#fbbf24",
+    voice: V({ register: "casual", caps: 0.2, emoji: 0.3, punctuation: "loose" }), emoji: ["🎙️", "🗣️"],
+    interests: { goal: 1, drama: 1, derby: 0.9, trophy: 0.9, record: 0.6 }, rate: 1,
+    catchphrases: ["the call of the season?", "goosebumps", "commentary of the year"],
+  },
+  {
+    id: "exproPundit", label: "Ex-player turned TV pundit (catchphrases)", handle: "@TelVanceTalks", name: "Tel Vance", archetype: "pundit",
+    followers: 1_050_000, tick: "blue", glyph: "mic", tint: "#7f1d1d", tint2: "#fecaca",
+    voice: V({ register: "casual", caps: 0.15, emoji: 0.1, punctuation: "clean" }), emoji: ["👏"],
+    interests: { opinion: 1, goal: 0.8, form: 0.8, manager: 0.8, title: 0.8, shame: 0.7 }, rate: 1,
+    catchphrases: ["You can't coach that.", "Proper centre-forward play, that.", "Ask the questions, lads.", "Different level, that."],
+  },
+  {
+    id: "commentBot", label: "'Comment section' account (quotes the replies)", handle: "@TheCommentsFC", name: "The Comments Section", archetype: "meme",
+    followers: 760_000, tick: "blue", glyph: "quote", tint: "#334155", tint2: "#f472b6",
+    voice: V({ register: "casual", lowercase: 0.4, emoji: 0.6 }), emoji: ["💬", "😭", "💀"],
+    interests: { drama: 1, shame: 0.9, goal: 0.8, derby: 0.8, manager: 0.7 }, rate: 1,
+    catchphrases: ["the comments never miss", "top comment:", "the replies are undefeated"],
+  },
+  // ── Matchday ──────────────────────────────────────────────────────────
+  {
+    id: "matchday", label: "'Football is back' hype page", handle: "@MatchdayFeeling", name: "Matchday Feeling", archetype: "meme",
+    followers: 1_400_000, tick: "blue", glyph: "ball", tint: "#16a34a", tint2: "#fef08a",
+    voice: V({ register: "casual", caps: 0.3, emoji: 0.8, exclaim: 0.3 }), emoji: ["⚽️", "🙌", "🔥", "🏟️"],
+    interests: { derby: 1, drama: 0.9, title: 0.9, cup: 0.9, europe: 0.8, goal: 0.6, trophy: 0.8 }, rate: 1,
+    catchphrases: ["football is BACK", "this is why we love it", "nothing like it"],
+  },
+  {
+    id: "kitLeaks", label: "Kit-leaks page", handle: "@KitDropLeaks", name: "Kit Drop Leaks 👕", archetype: "aggregator",
+    followers: 290_000, tick: "blue", glyph: "shirt", tint: "#be185d", tint2: "#fbcfe8",
+    voice: V({ register: "casual", emoji: 0.6 }), emoji: ["👕", "👀", "🔥"],
+    interests: { trophy: 0.6, title: 0.5, transfer: 0.7, goal: 0.3, table: 0.4, derby: 0.4 }, rate: 0.6,
+    catchphrases: ["leaked 👀", "thoughts?", "rate it /10"],
+  },
+  {
+    id: "atmosphere", label: "Stadium / atmosphere page", handle: "@TerraceNoiseUK", name: "Terrace Noise", archetype: "fan",
+    followers: 310_000, tick: "blue", glyph: "drum", tint: "#b45309", tint2: "#fed7aa",
+    voice: V({ register: "casual", caps: 0.3, emoji: 0.6 }), emoji: ["🏟️", "🔊", "🥁", "🧣"],
+    interests: { derby: 1, drama: 0.9, cup: 0.8, europe: 0.8, goal: 0.6, trophy: 0.9 }, rate: 0.9,
+    catchphrases: ["the noise 🔊", "limbs everywhere", "proper atmosphere"],
+  },
+  {
+    id: "sundayLeague", label: "Sunday-league comparisons page", handle: "@SundayLeagueTruths", name: "Sunday League Truths", archetype: "meme",
+    followers: 1_100_000, tick: "blue", glyph: "flag", tint: "#4d7c0f", tint2: "#d9f99d",
+    voice: V({ register: "casual", lowercase: 0.6, emoji: 0.7 }), emoji: ["🍺", "😭", "🥴", "⚽️"],
+    interests: { goal: 0.9, shame: 0.9, drama: 0.8, keeper: 0.6 }, rate: 1.1,
+    catchphrases: ["every sunday league team has one", "10am kick off energy", "hungover and still better"],
+  },
+  // ── Officials and money ──────────────────────────────────────────────
+  {
+    id: "refWatch", label: "Referee-watch page", handle: "@RefWatchDaily", name: "Ref Watch", archetype: "aggregator",
+    followers: 175_000, tick: "blue", glyph: "flag", tint: "#000000", tint2: "#facc15",
+    voice: V({ register: "neutral", emoji: 0.5, punctuation: "clean" }), emoji: ["🟨", "🟥", "🧑‍⚖️"],
+    interests: { derby: 1, drama: 0.9, shame: 0.5, title: 0.5 }, rate: 0.8,
+    catchphrases: ["Cards per game:", "Tough one to referee.", "Not his finest afternoon."],
+  },
+  {
+    id: "ticketMoan", label: "Ticket-price moaner", handle: "@PricedOutFan", name: "Priced Out 🎟️", archetype: "fan",
+    followers: 48_000, glyph: "scarf", tint: "#475569", tint2: "#fca5a5",
+    voice: V({ register: "casual", lowercase: 0.5, emoji: 0.4, punctuation: "loose" }), emoji: ["🎟️", "💸", "🙃"],
+    interests: { shame: 0.9, drama: 0.8, derby: 0.7, table: 0.6, trophy: 0.5, goal: 0.4 }, rate: 0.8, side: "yours",
+    catchphrases: ["football without fans is nothing", "£4.50 for a cold pie", "and they wonder why"],
+  },
+  // ── Transfers, by how reliable ───────────────────────────────────────
+  {
+    id: "tier2", label: "Reliable tier-2 transfer journalist", handle: "@AlexHartleyNews", name: "Alex Hartley", archetype: "insider",
+    followers: 520_000, tick: "blue", glyph: "scoop", tint: "#1e293b", tint2: "#7dd3fc",
+    voice: V({ register: "formal", caps: 0, emoji: 0, punctuation: "clean" }), emoji: [],
+    interests: { transfer: 1, contract: 1, manager: 1, rumour: 0.7, form: 0.3 }, rate: 1,
+    catchphrases: ["Story confirmed.", "More to follow.", "Talks ongoing."],
+  },
+  {
+    id: "rumourMill", label: "Tier-4 rumour aggregator", handle: "@RumourMillDaily", name: "Rumour Mill Daily", archetype: "aggregator",
+    followers: 880_000, tick: "blue", glyph: "megaphone", tint: "#ca8a04", tint2: "#1c1917",
+    voice: V({ register: "casual", caps: 0.4, emoji: 0.7 }), emoji: ["🗞️", "👀", "💰", "❓"],
+    interests: { transfer: 1, rumour: 1, contract: 0.8, goal: 0.6, manager: 0.8, award: 0.5, form: 0.6 }, rate: 1.2,
+    catchphrases: ["(per reports)", "according to a paper abroad", "make of it what you will"],
+  },
+  // ── Fans abroad (English words, foreign flavour) ─────────────────────
+  {
+    id: "spainFan", label: "Spanish-football fan account", handle: "@TikiTakaTomas", name: "Tomás | Tiki-Taka 🇪🇸", archetype: "fan",
+    followers: 96_000, tick: "blue", glyph: "ball", tint: "#dc2626", tint2: "#facc15",
+    voice: V({ register: "casual", caps: 0.2, emoji: 0.7, punctuation: "loose" }), emoji: ["🇪🇸", "🔥", "👌"],
+    interests: { goal: 1, record: 0.7, transfer: 0.8, award: 0.8, europe: 1 }, rate: 0.9,
+    catchphrases: ["qué golazo", "vamos", "olé olé", "un crack"],
+  },
+  {
+    id: "italyFan", label: "Italian-football fan account", handle: "@CalcioCuore", name: "Calcio Cuore 🇮🇹", archetype: "fan",
+    followers: 120_000, tick: "blue", glyph: "ball", tint: "#15803d", tint2: "#ef4444",
+    voice: V({ register: "casual", caps: 0.2, emoji: 0.6, punctuation: "loose" }), emoji: ["🇮🇹", "🤌", "🔥"],
+    interests: { goal: 0.9, keeper: 0.8, opinion: 0.7, europe: 1, transfer: 0.7, award: 0.7, shame: 0.4 }, rate: 0.9,
+    catchphrases: ["mamma mia", "che giocatore", "forza", "bellissimo"],
   },
 ];
 

@@ -58,7 +58,9 @@ export function reelCrowdPlan(plan: ReelPlan, tracks: Map<string, GoalTrack>): A
   }
   cues.sort((a, b) => a.at - b.at);
   bed.sort((a, b) => a.at - b.at);
-  return voice === "v2" ? { duration: plan.duration, cues, bed, voice } : { duration: plan.duration, cues, bed };
+  // "teams": each goal's own team was picked inside planAudio; the files are
+  // found by line id, so the mix only needs to know the set.
+  return voice !== "v1" ? { duration: plan.duration, cues, bed, voice } : { duration: plan.duration, cues, bed };
 }
 
 /** The timings reel.ts needs, read off a recording. */

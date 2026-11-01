@@ -16,6 +16,7 @@ import { shortClub } from "../media/grammar";
 import { CX, POST_L, POST_R, PITCH_W, BOX_L, BOX_R, BOX_DEPTH, SIX_L, SIX_R, SIX_DEPTH, PEN_SPOT_Y, ARC_R } from "../pitch";
 import type { CareerGoal } from "../goalLog";
 import { drawScene } from "./render";
+import { drawFlatScene } from "./render2d";
 import type { ClipMoves } from "./edit";
 import type { ClipAngle } from "./cameras";
 import type { GoalTrack } from "./track";
@@ -25,6 +26,9 @@ export interface ReelAssets {
   /** Recordings by clip id (only the ones on this phone). */
   tracks: Map<string, GoalTrack>;
   moves: ClipMoves;
+  /** 2D goal videos (Leo's part "videos2d" with 2D picked): goals drawn from above
+   *  (render2d.ts). Absent: as before. */
+  flat?: boolean;
   /** The display face (a tall condensed font), e.g. Anton's family name. */
   display?: string;
   /** The club badge, drawn when loaded. */
@@ -151,7 +155,7 @@ function drawTitle(ctx: CanvasRenderingContext2D, W: number, H: number, plan: Re
   ctx.globalAlpha = clamp01((into - 0.6) / 0.35);
   ctx.fillStyle = GOLD;
   ctx.font = `900 ${14 * s}px ${BODY}`;
-  spaced(ctx, "YOUR SEASON", W / 2, H * 0.515 + rise(0.6), 4 * s);
+  spaced(ctx, plan.better?.heading ?? "YOUR SEASON", W / 2, H * 0.515 + rise(0.6), 4 * s);
   ctx.globalAlpha = clamp01((into - 0.8) / 0.35);
   ctx.fillStyle = "#ffffff";
   ctx.font = `${86 * s}px ${display(a)}`;
@@ -171,7 +175,12 @@ function drawTitle(ctx: CanvasRenderingContext2D, W: number, H: number, plan: Re
     ctx.globalAlpha = clamp01((into - 1.7) / 0.3);
     ctx.font = `800 ${13 * s}px ${BODY}`;
     ctx.fillStyle = "rgba(255,255,255,0.6)";
-    spaced(ctx, n === 0 ? "THE SEASON" : n === 1 ? "1 GOAL" : `${n} GOALS`, W / 2, H * 0.86, 3 * s);
+    const goalsWord = n === 0 ? "THE SEASON" : n === 1 ? "1 GOAL" : `${n} GOALS`;
+    // The better end of season: goals and assists on the title (favourites: how many).
+    const line = !plan.better ? goalsWord
+      : plan.better.mode === "favourites" ? (n === 1 ? "1 FAVOURITE" : `${n} FAVOURITES`)
+      : `${goalsWord}${plan.stats.assists > 0 ? ` · ${plan.stats.assists} ASSIST${plan.stats.assists === 1 ? "" : "S"}` : ""}`;
+    spaced(ctx, line, W / 2, H * 0.86, 3 * s);
     ctx.globalAlpha = 1;
   }
   watermark(ctx, W, H);
@@ -346,7 +355,8 @@ function quickCaption(ctx: CanvasRenderingContext2D, W: number, H: number, g: Ca
  * cameras.ts is untouched (the goal videos frame exactly as before).
  */
 const LIFT: Partial<Record<ClipAngle, number>> = { tv: 0.26 };
-function reelScene(ctx: CanvasRenderingContext2D, W: number, H: number, tr: GoalTrack, angle: ClipAngle, t: number, moves: ClipMoves): void {
+function reelScene(ctx: CanvasRenderingContext2D, W: number, H: number, tr: GoalTrack, angle: ClipAngle, t: number, moves: ClipMoves, flat?: boolean): void {
+  if (flat) { drawFlatScene(ctx, W, H, tr, angle, t, moves); return; }
   const k = LIFT[angle] ?? 0;
   if (!k) { drawScene(ctx, W, H, tr, angle, t, moves); return; }
   ctx.save();
@@ -374,10 +384,10 @@ function drawGoalShot(ctx: CanvasRenderingContext2D, W: number, H: number, seg: 
     const z = 1 + 0.045 * (1 - hit) * (1 - hit);
     ctx.save();
     ctx.translate(W / 2, H / 2); ctx.scale(z, z); ctx.translate(-W / 2, -H / 2);
-    reelScene(ctx, W, H, tr, at.shot.angle, at.t, a.moves);
+    reelScene(ctx, W, H, tr, at.shot.angle, at.t, a.moves, a.flat);
     ctx.restore();
   } else {
-    reelScene(ctx, W, H, tr, at.shot.angle, at.t, a.moves);
+    reelScene(ctx, W, H, tr, at.shot.angle, at.t, a.moves, a.flat);
   }
   if (hit >= 0) flash(ctx, W, H, hit / 0.5, 0.42);
   const s = W / 360;
@@ -569,7 +579,7 @@ export function howWords(g: CareerGoal): string {
 
 // ── The goal of the season, its intro ──────────────────────────────────────
 
-function drawBestIntro(ctx: CanvasRenderingContext2D, W: number, H: number, seg: Extract<ReelSeg, { kind: "bestIntro" }>, into: number, a: ReelAssets): void {
+function drawBestIntro(ctx: CanvasRenderingContext2D, W: number, H: number, seg: Extract<ReelSeg, { kind: "bestIntro" }>, into: number, a: ReelAssets, plan?: ReelPlan): void {
   const s = W / 360;
   ctx.fillStyle = "#050505";
   ctx.fillRect(0, 0, W, H);
@@ -607,7 +617,54 @@ function drawBestIntro(ctx: CanvasRenderingContext2D, W: number, H: number, seg:
   ctx.font = `700 ${15 * s}px ${BODY}`;
   ctx.fillStyle = "rgba(255,255,255,0.8)";
   ctx.fillText(goalCaption(seg.goal, shortClub), W / 2, H * 0.46 + 70 * s, W * 0.9);
+  const why = plan?.better?.bestWhy;
+  if (why) {
+    ctx.globalAlpha = clamp01((into - 0.7) / 0.3);
+    ctx.font = `900 ${12 * s}px ${BODY}`;
+    ctx.fillStyle = GOLD;
+    spaced(ctx, why === "pick" ? "★ YOUR PICK" : why === "votes" ? "THE FANS' VOTE" : "THE PICK OF THE SEASON", W / 2, H * 0.46 + 98 * s, 3 * s);
+  }
   ctx.globalAlpha = 1;
+}
+
+// ── A milestone chapter card (the better end of season) ────────────────────
+
+function drawChapter(ctx: CanvasRenderingContext2D, W: number, H: number, seg: Extract<ReelSeg, { kind: "chapter" }>, into: number, a: ReelAssets, plan: ReelPlan): void {
+  const s = W / 360;
+  const c = colours(plan.club);
+  cardBg(ctx, W, H, c.shirt, 0.45);
+  const k = easeOut(into / 0.35);
+  const out = clamp01((into - (seg.dur - 0.22)) / 0.22);
+  // A bar of the club's colour sweeping in behind the words.
+  ctx.save();
+  ctx.globalAlpha = 0.9 * (1 - out);
+  ctx.fillStyle = c.shirt;
+  const bw = W * 1.2 * k;
+  ctx.translate(W / 2, H * 0.47);
+  ctx.rotate(-0.07);
+  ctx.fillRect(-bw / 2, -46 * s, bw, 92 * s);
+  ctx.fillStyle = c.trim;
+  ctx.fillRect(-bw / 2, 46 * s, bw, 5 * s);
+  ctx.restore();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  ctx.globalAlpha = clamp01(into / 0.2) * (1 - out);
+  ctx.fillStyle = GOLD;
+  ctx.font = `900 ${12 * s}px ${BODY}`;
+  spaced(ctx, `GOAL ${seg.n}`, W / 2, H * 0.47 - 62 * s, 4 * s);
+  ctx.save();
+  ctx.translate(W / 2, H * 0.47 + 18 * s);
+  const sc = 1.25 - 0.25 * k;
+  ctx.scale(sc, sc);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `${54 * s}px ${display(a)}`;
+  ctx.fillText(seg.title, 0, 0, (W * 0.9) / sc);
+  ctx.restore();
+  ctx.font = `700 ${15 * s}px ${BODY}`;
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.fillText(seg.sub, W / 2, H * 0.47 + 84 * s, W * 0.88);
+  ctx.globalAlpha = 1;
+  watermark(ctx, W, H);
 }
 
 // ── The end card ───────────────────────────────────────────────────────────
@@ -644,14 +701,14 @@ function drawEnd(ctx: CanvasRenderingContext2D, W: number, H: number, plan: Reel
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = GOLD;
   ctx.font = `900 ${13 * s}px ${BODY}`;
-  spaced(ctx, `${plan.seasonLabel} · ${shortClub(plan.club).toUpperCase()}`, W / 2, 128 * s, 3 * s);
+  spaced(ctx, `${plan.better?.mode === "favourites" ? "CAREER" : plan.seasonLabel} · ${shortClub(plan.club).toUpperCase()}`, W / 2, 128 * s, 3 * s);
   ctx.fillStyle = "#ffffff";
   ctx.font = `${40 * s}px ${display(a)}`;
-  ctx.fillText("YOUR SEASON", W / 2, 170 * s, W * 0.9);
+  ctx.fillText(plan.better?.mode === "favourites" ? "MY FAVOURITES" : "YOUR SEASON", W / 2, 170 * s, W * 0.9);
 
   const st = plan.stats;
   const count = (v: number, d: number) => v * easeOut((into - d) / 1.1);
-  const tiles: [string, string][] = [
+  const tiles: [string, string][] = plan.better?.tiles ?? [
     ["GOALS", String(Math.round(count(st.goals, 0.2)))],
     ["ASSISTS", String(Math.round(count(st.assists, 0.35)))],
     ["AVG RATING", st.avgRating > 0 ? count(st.avgRating, 0.5).toFixed(1) : "–"],
@@ -713,10 +770,24 @@ function drawEnd(ctx: CanvasRenderingContext2D, W: number, H: number, plan: Reel
   ctx.textAlign = "center";
   ctx.font = `800 ${18 * s}px ${BODY}`;
   ctx.fillStyle = "#ffffff";
-  ctx.fillText(endLine(plan), W / 2, Math.max(y + 16 * s, H * 0.8), W * 0.9);
+  ctx.fillText(plan.better?.mode === "favourites" ? "The ones you will never forget." : endLine(plan), W / 2, Math.max(y + 16 * s, H * 0.8), W * 0.9);
   ctx.font = `600 ${14 * s}px ${BODY}`;
   ctx.fillStyle = "rgba(255,255,255,0.65)";
   ctx.fillText(plan.player, W / 2, Math.max(y + 42 * s, H * 0.8 + 26 * s), W * 0.9);
+  // The better end of season: the goal of the season and the favourites, one gold line.
+  const b = plan.better;
+  if (b && b.mode === "season") {
+    const best = plan.segs.find((x) => x.kind === "best");
+    const bits = [
+      ...(best && best.kind === "best" ? [`GOAL OF THE SEASON ${best.goal.minute}' v ${shortClub(best.goal.opponent).toUpperCase()}`] : []),
+      ...(b.favCount > 0 ? [`★ ${b.favCount}`] : []),
+    ];
+    if (bits.length) {
+      ctx.font = `900 ${11 * s}px ${BODY}`;
+      ctx.fillStyle = GOLD;
+      ctx.fillText(bits.join("  ·  "), W / 2, Math.max(y + 66 * s, H * 0.8 + 50 * s), W * 0.92);
+    }
+  }
   ctx.globalAlpha = 1;
   watermark(ctx, W, H);
 }
@@ -736,7 +807,8 @@ export function drawReelFrame(ctx: CanvasRenderingContext2D, W: number, H: numbe
     case "best":
       if (!drawGoalShot(ctx, W, H, seg, into, a, plan)) drawGoalCard(ctx, W, H, seg, into, a, plan);
       break;
-    case "bestIntro": drawBestIntro(ctx, W, H, seg, into, a); break;
+    case "bestIntro": drawBestIntro(ctx, W, H, seg, into, a, plan.better ? plan : undefined); break;
+    case "chapter": drawChapter(ctx, W, H, seg, into, a, plan); break;
     case "end": drawEnd(ctx, W, H, plan, into, a); break;
   }
   // A quick fade from black at the very start, and to black at the very end.

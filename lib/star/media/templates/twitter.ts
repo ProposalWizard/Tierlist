@@ -1,5 +1,6 @@
 import type { Archetype } from "../types";
 import type { Template } from "./index";
+import { MORE_TWITTER } from "./twitterMore";
 
 /**
  * FOOTBALL TWITTER: EVERY INVENTED ACCOUNT'S OWN LINES (Leo, 31 Oct 2026,
@@ -182,7 +183,7 @@ export const TWITTER_TEMPLATES: Template[] = [
   // ── The shouting fan channel ──────────────────────────────────────────
   ...bank("ranter", "pundit", [
     { events: ["loss", "hammered", "collapse", "embarrassed"], requires: ["clubS", "us", "them"], weight: 4,
-      body: "{clubS} {us}-{them}. I'M NOT HAVING IT. That is NOT good enough. STREAM IS LIVE NOW 📺" },
+      body: "{clubS} {us}-{them}. I'M NOT HAVING IT. That is NOT good enough. NOT. GOOD. ENOUGH. 😤" },
     { events: ["collapse", "lost-top"], requires: ["clubS"], weight: 3,
       body: "BOTTLE JOB. {clubS|caps} HAVE BOTTLED IT AGAIN. I said it. I SAID IT." },
     { events: ["manager-sacked"], requires: ["manager"], weight: 3,
@@ -190,7 +191,7 @@ export const TWITTER_TEMPLATES: Template[] = [
     { events: ["win", "rout"], requires: ["clubS", "us", "them"], weight: 3,
       body: "{clubS} {us}-{them}!! WHAT A PERFORMANCE. I TOLD YOU. I TOLD ALL OF YOU." },
     { tags: ["goal"], subject: "you", requires: ["short"], weight: 3,
-      body: "{short|caps}. {short|caps}. {short|caps}. THAT is a FOOTBALLER. 📺" },
+      body: "{short|caps}. {short|caps}. {short|caps}. THAT is a FOOTBALLER. 🔥" },
     { events: ["derby-win"], requires: ["clubS"], weight: 3,
       body: "WHAT a derby. {clubS|caps} own this fixture now. OWN IT." },
     { events: ["hooked"], subject: "you", requires: ["short", "manager"], weight: 3,
@@ -198,7 +199,7 @@ export const TWITTER_TEMPLATES: Template[] = [
     { events: ["anonymous", "poor-showing"], subject: "you", requires: ["short"], weight: 3,
       body: "{short} was a PASSENGER today. A PASSENGER. Wake UP, lad." },
     { events: ["title-race"], requires: ["clubS"], weight: 2,
-      body: "Can {clubS} win the league?? FULL BREAKDOWN on the channel NOW. Don't @ me." },
+      body: "Can {clubS} win the league?? YES. Don't @ me." },
   ]),
 
   // ── The ratio / hater page ────────────────────────────────────────────
@@ -274,7 +275,7 @@ export const TWITTER_TEMPLATES: Template[] = [
     { tags: ["goal"], subject: "you", requires: ["short", "oppS"], weight: 4, graphic: "goalVideo", body: "{short} vs {oppS} 🎧 sound on" },
     { tags: ["goal"], subject: "you", requires: ["short"], weight: 3, graphic: "goalVideo", body: "edit took 6 hours. worth it. {short} 🥶 #fyp" },
     { tags: ["goal"], subject: "you", requires: ["short"], weight: 3, graphic: "goalVideo", body: "the slow-mo on this {short} finish 😮‍💨 #football" },
-    { tags: ["goal"], subject: "you", requires: ["short"], weight: 2, body: "{short} aura edit dropping tonight 📈 who wants it" },
+    { tags: ["goal"], subject: "you", requires: ["short"], weight: 2, body: "{short} aura szn 📈 who's next" },
   ]),
 
   // ── The goal-clips account (video posts) ──────────────────────────────
@@ -287,13 +288,13 @@ export const TWITTER_TEMPLATES: Template[] = [
 
   // ── Your club's fan channel ───────────────────────────────────────────
   ...bank("fanTV", "fan", [
-    { events: ["win", "rout"], requires: ["clubS", "oppS", "us", "them"], weight: 4, body: "{clubS} {us}-{them} {oppS}!!! FULL REACTION LIVE NOW 📺🔥" },
-    { events: ["loss", "hammered"], requires: ["clubS", "oppS", "us", "them"], weight: 4, body: "{clubS} {us}-{them} {oppS}. FANS ARE FUMING. LIVE REACTION NOW 😤" },
-    { events: ["draw"], requires: ["score"], weight: 3, body: "{score} draw. Is that good enough?? Have YOUR say LIVE 📺" },
-    { tags: ["goal"], subject: "you", requires: ["short"], weight: 3, body: "{short|caps}!!!! WHAT A PLAYER. Fans react LIVE 📺" },
-    { events: ["manager-sacked"], requires: ["manager"], weight: 3, body: "{manager} GONE!! Was it the right call?? Fans have their say LIVE 📺" },
-    { events: ["derby-win"], requires: ["clubS", "oppS", "us", "them"], weight: 4, body: "DERBY DAY DELIGHT!! {clubS} {us}-{them} {oppS}. The fans are going MENTAL 📺" },
-    { events: ["derby-loss"], requires: ["clubS", "oppS"], weight: 4, body: "Losing to {oppS}. The fans are DEVASTATED. Watch the reaction 📺" },
+    { events: ["win", "rout"], requires: ["clubS", "oppS", "us", "them"], weight: 4, body: "{clubS} {us}-{them} {oppS}!!! WHAT A DAY 🔥" },
+    { events: ["loss", "hammered"], requires: ["clubS", "oppS", "us", "them"], weight: 4, body: "{clubS} {us}-{them} {oppS}. FANS ARE FUMING 😤" },
+    { events: ["draw"], requires: ["score"], weight: 3, body: "{score} draw. Is that good enough?? Have YOUR say 👇" },
+    { tags: ["goal"], subject: "you", requires: ["short"], weight: 3, body: "{short|caps}!!!! WHAT A PLAYER 🔥" },
+    { events: ["manager-sacked"], requires: ["manager"], weight: 3, body: "{manager} GONE!! Was it the right call?? 👇" },
+    { events: ["derby-win"], requires: ["clubS", "oppS", "us", "them"], weight: 4, body: "DERBY DAY DELIGHT!! {clubS} {us}-{them} {oppS}. The fans are going MENTAL 🔥" },
+    { events: ["derby-loss"], requires: ["clubS", "oppS"], weight: 4, body: "Losing to {oppS}. The fans are DEVASTATED 😤" },
   ]),
 
   // ── The away-days fan ─────────────────────────────────────────────────
@@ -309,9 +310,9 @@ export const TWITTER_TEMPLATES: Template[] = [
 
   // ── The woman analyst fan ─────────────────────────────────────────────
   ...bank("readsGame", "pundit", [
-    { tags: ["goal"], subject: "you", requires: ["short"], weight: 3, body: "{short}'s movement before the goal is the bit nobody's clipping. Watch it back. He's on the defender's blind side for two full seconds." },
+    { tags: ["goal"], subject: "you", requires: ["short"], weight: 3, body: "{short}'s movement before the goal is the bit nobody's talking about. He's on the defender's blind side for two full seconds." },
     { events: ["masterclass", "star-man"], subject: "you", requires: ["short", "rating"], weight: 3, body: "{short} today: always open, always scanning, always one touch ahead. That's a {rating} and honestly it was underrated." },
-    { events: ["loss", "hammered"], requires: ["clubS"], weight: 3, body: "Everyone will talk about the scoreline. The real {clubS} problem was the gap between midfield and defence. Watch it back." },
+    { events: ["loss", "hammered"], requires: ["clubS"], weight: 3, body: "Everyone will talk about the scoreline. The real {clubS} problem was the gap between midfield and defence." },
     { events: ["manager-sacked"], requires: ["manager"], weight: 2, body: "{manager} didn't fail on tactics. He failed on recruitment he didn't control. I said what I said." },
     { events: ["in-form", "red-hot"], subject: "you", requires: ["short"], weight: 3, body: "Nobody's talking about this: {short}'s runs off the ball are way up. The goals are a consequence, not a fluke." },
   ]),
@@ -402,7 +403,7 @@ export const TWITTER_TEMPLATES: Template[] = [
 
   // ── The tactics thread account ────────────────────────────────────────
   ...bank("tactics", "pundit", [
-    { tags: ["goal"], subject: "you", requires: ["short", "oppS"], weight: 3, body: "🧵 Thread: how {short} kept finding space against {oppS}. Watch the movement here. 1/7" },
+    { tags: ["goal"], subject: "you", requires: ["short", "oppS"], weight: 3, body: "🧵 Thread: how {short} kept finding space against {oppS}. It is all in the movement. 1/7" },
     { events: ["loss", "hammered"], requires: ["clubS", "score"], weight: 3, body: "🧵 What went wrong for {clubS} in the {score}. Short version: the press was broken from minute one. 1/5" },
     { events: ["win", "rout"], requires: ["clubS", "score"], weight: 3, body: "{clubS} built through the half-spaces all game. The {score} was coming. Half-spaces, people. 📐" },
   ]),
@@ -421,9 +422,9 @@ export const TWITTER_TEMPLATES: Template[] = [
   ...bank("ref", "aggregator", [
     { events: ["derby-win", "derby-draw", "derby-loss"], requires: ["homeS", "awayS"], weight: 3, body: "Check complete ✅ {homeS} {hs}-{as} {awayS}. Not one fan on either side agrees with a single decision. 🟨" },
     { events: ["penalty-scored"], weight: 3, body: "Penalty given. Clear and obvious? You decide 🧐" },
-    { events: ["late-winner"], requires: ["minute"], weight: 3, body: "{minute}' winner, and the VAR check took four minutes. Four. 📺" },
+    { events: ["late-winner"], requires: ["minute"], weight: 3, body: "{minute}' winner, and the VAR check took four minutes. Four. 🧐" },
     { events: ["collapse", "comeback"], requires: ["homeS", "awayS"], weight: 2, body: "Some VAR calls in {homeS} v {awayS} today. Lines drawn by a toddler. 🧐" },
-    { events: ["hammered"], requires: ["homeS", "awayS"], weight: 2, body: "{homeS} {hs}-{as} {awayS}. Nothing VAR could do about that one 📺" },
+    { events: ["hammered"], requires: ["homeS", "awayS"], weight: 2, body: "{homeS} {hs}-{as} {awayS}. Nothing VAR could do about that one 🧐" },
   ]),
 
   // ── The podcast ───────────────────────────────────────────────────────
@@ -435,10 +436,10 @@ export const TWITTER_TEMPLATES: Template[] = [
 
   // ── The nostalgia page ────────────────────────────────────────────────
   ...bank("nostalgia", "meme", [
-    { events: ["debut", "club-debut"], subject: "you", requires: ["player"], weight: 3, body: "Where were you when {player} made his debut? 📼 This will be a 'where were you' moment one day." },
-    { events: ["first-career-goal"], requires: ["player"], weight: 4, body: "Save this. {player}'s first ever goal. This will age well 📼" },
+    { events: ["debut", "club-debut"], subject: "you", requires: ["player"], weight: 3, body: "Where were you when {player} made his debut? This will be a 'where were you' moment one day. 🕰️" },
+    { events: ["first-career-goal"], requires: ["player"], weight: 4, body: "Save this tweet. {player}'s first ever goal. This will age well 🕰️" },
     { events: ["goal-milestone"], requires: ["total"], weight: 3, body: "{total} goals. Feels like yesterday he was scoring his first. Simpler times 🥲" },
-    { events: ["hat-trick"], subject: "you", requires: ["short"], weight: 2, body: "First of many? Screenshot this {short} hat-trick for the documentary 📼" },
+    { events: ["hat-trick"], subject: "you", requires: ["short"], weight: 2, body: "First of many? Screenshot this tweet about {short}'s hat-trick 🕰️" },
   ]),
 
   // ── The wonderkid scout ───────────────────────────────────────────────
@@ -480,10 +481,10 @@ export const TWITTER_TEMPLATES: Template[] = [
     { events: ["win", "rout"], subject: "club", requires: ["clubS", "short"], weight: 1, body: "{clubS} with {short} in the side just hits different 🔥" },
   ], "b"),
   ...bank("fanTV", "fan", [
-    { tags: ["goal"], subject: "you", requires: ["short", "oppS"], weight: 3, body: "{short} AGAIN v {oppS}!! The fans are LOSING IT 📺🔥" },
-    { tags: ["goal"], subject: "you", requires: ["short"], weight: 3, body: "Is {short} the best player at the club right now?? HAVE YOUR SAY LIVE 📺" },
-    { tags: ["goal"], subject: "you", requires: ["short", "seasonTotal"], weight: 2, body: "{seasonTotal} goals for {short} this season!! Fans react LIVE 🙌" },
-    { events: ["late-winner"], subject: "you", requires: ["short", "minute"], weight: 4, body: "{minute}' WINNER!!! {short|caps}!!! The fans are in BITS 📺😭" },
+    { tags: ["goal"], subject: "you", requires: ["short", "oppS"], weight: 3, body: "{short} AGAIN v {oppS}!! The fans are LOSING IT 🔥" },
+    { tags: ["goal"], subject: "you", requires: ["short"], weight: 3, body: "Is {short} the best player at the club right now?? HAVE YOUR SAY 👇" },
+    { tags: ["goal"], subject: "you", requires: ["short", "seasonTotal"], weight: 2, body: "{seasonTotal} goals for {short} this season!! 🙌" },
+    { events: ["late-winner"], subject: "you", requires: ["short", "minute"], weight: 4, body: "{minute}' WINNER!!! {short|caps}!!! The fans are in BITS 😭" },
   ], "b"),
   ...bank("kidFan", "fan", [
     { tags: ["goal"], subject: "you", requires: ["short"], weight: 3, body: "{short} scored!!!! i did his celebration in the garden 😁" },
@@ -519,9 +520,9 @@ export const TWITTER_TEMPLATES: Template[] = [
     { events: ["upset", "cup-shock"], requires: ["homeS", "awayS"], weight: 3, body: "FT | {homeS} {hs}-{as} {awayS}\n\n😱 Upset." },
   ], "b"),
   ...bank("ranter", "pundit", [
-    { events: ["draw"], requires: ["clubS", "score"], weight: 2, body: "{clubS} {score}. A DRAW. Is that the AMBITION?? Stream is LIVE 📺" },
+    { events: ["draw"], requires: ["clubS", "score"], weight: 2, body: "{clubS} {score}. A DRAW. Is that the AMBITION?? 😤" },
     { tags: ["goal"], subject: "you", requires: ["short", "clubS"], weight: 2, body: "If {clubS} sell {short} I'm cancelling EVERYTHING. EVERYTHING. 😤" },
-    { events: ["upset"], requires: ["clubS"], weight: 2, body: "{clubS|caps}. HOW?? HOW HAVE THEY DONE THAT?? I'm live in five. 😤" },
+    { events: ["upset"], requires: ["clubS"], weight: 2, body: "{clubS|caps}. HOW?? HOW HAVE THEY DONE THAT?? 😤" },
   ], "b"),
   ...bank("xg", "stats", [
     { events: ["rout", "hammered"], requires: ["homeS", "awayS", "xgUs", "xgThem"], weight: 2, body: "{homeS} {hs}-{as} {awayS}\n\nxG says it should have been closer ({xgUs} – {xgThem}). Football doesn't care." },
@@ -553,6 +554,9 @@ export const TWITTER_TEMPLATES: Template[] = [
   ...bank("journalist", "broadsheet", [
     { events: ["win", "rout"], subject: "club", requires: ["clubS", "short"], weight: 1, body: "{clubS} look a different side when {short} is involved early. That is not a coincidence." },
   ], "b"),
+
+  // ══ v2: more lines and the new accounts (twitterMore.ts) ══
+  ...MORE_TWITTER,
 ];
 
 /** Lines by persona id. */

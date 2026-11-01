@@ -28,12 +28,12 @@ import { sfxUrl } from "../sfx";
 import type { GoalTrack } from "./track";
 import { frameAt } from "./track";
 import {
-  pickCall, pickLine, pickReplayLine, SCORE_LINES, REEL_LINES, REPLAY_LINES, allCommentaryLines,
-  LATE_CALLS, LATE_REPLAY_LINES,
-  type FinishTag, type ScoreTag, type LateKind,
+  pickCall, pickLine, pickReplayLine, allCommentaryLines, DEFAULT_BANK,
+  type FinishTag, type ScoreTag, type LateKind, type CommentaryBank,
 } from "./commentary";
 import { COMMENTARY_SECONDS } from "./commentaryDurations";
 import { commentarySet, commentaryTable, commentaryUrl, type CommentarySet } from "./commentaryVoice";
+import { teamBank, teamFor, matchKeyOf, type CommentaryPoster, type TeamId } from "./commentators";
 
 /** The effects a goal video may use (the commentary lines are the rest). */
 export const EFFECT_SOUNDS = ["kick-hard", "kick-soft", "goal-net", "keeper-save", "crowd-cheer-stadium"] as const;
@@ -42,7 +42,8 @@ export const CLIP_SOUNDS: string[] = [...EFFECT_SOUNDS, ...allCommentaryLines().
 export type ClipSound = string;
 
 /** The shortest co-commentator line in a set of recordings, seconds. */
-const minReplayLine = (table: Record<string, number>) => Math.min(...Object.values(REPLAY_LINES).flat().map(l => table[l.id] ?? 2.5));
+const minReplayLine = (table: Record<string, number>, bank: CommentaryBank = DEFAULT_BANK) =>
+  Math.min(...Object.values(bank.replayLines).flat().map(l => table[l.id] ?? 2.5));
 const MIN_REPLAY_LINE = minReplayLine(COMMENTARY_SECONDS);
 const isComm = (s: string) => s.startsWith("cl-") || s.startsWith("cc-");
 /** Seconds a line lasts in a set ("v1" unless Leo's new voice is on: commentaryVoice.ts). */
@@ -110,6 +111,10 @@ export interface AudioPlan {
   /** "v2": the commentary plays from the new voice's files (Leo's switch,
    *  commentaryVoice.ts). Absent = the first recordings, as before. */
   voice?: CommentarySet;
+  /** "teams" only: which commentary team (commentators.ts) speaks. */
+  team?: TeamId;
+  /** Cold edits only (switch part "coldEdits"): the edit's beat, under everything. */
+  music?: { url: string; at: number; offset: number; gain: number };
 }
 
 /** Crowd murmur levels. */
@@ -132,13 +137,23 @@ function hash(s: string): number {
 /**
  * The sound plan for an edit. The same goal always gets the same lines (picked
  * from its id), so a video sounds the same every time it is made.
+ *
+ * `poster` (optional): the account posting the video. Read only with the
+ * "Different commentators" part on ("teams"): an official TV account gets a
+ * TV team, any other account the Fan TV team (commentators.ts teamFor).
+ * Absent: the team is chosen by the match alone.
  */
-export function planAudio(edit: Edit, voice: CommentarySet = commentarySet()): AudioPlan {
+export function planAudio(edit: Edit, voice: CommentarySet = commentarySet(), poster?: CommentaryPoster): AudioPlan {
   const secs = secsIn(commentaryTable(voice));
-  const minReplay = voice === "v2" ? minReplayLine(commentaryTable(voice)) : MIN_REPLAY_LINE;
+  // Which lines: one team's own (the "teams" set), else the game's one team.
+  const team: TeamId | undefined = voice === "teams" ? teamFor(matchKeyOf(edit.tracks[0]?.meta ?? {}), poster) : undefined;
+  const bank = team ? teamBank(team) : DEFAULT_BANK;
+  const minReplay = voice !== "v1" ? minReplayLine(commentaryTable(voice), bank) : MIN_REPLAY_LINE;
   const cues: Cue[] = [];
   const bed: BedPoint[] = [];
   const fan = edit.style === "fan";
+  // A cold edit (switch part "coldEdits") is set to music: no commentator, the pitch under the beat.
+  const edited = !!edit.music;
   let acc = 0;
   let goalNo = 0;
   // One starting line for the whole video, then the next one per goal, so a
@@ -196,13 +211,13 @@ export function planAudio(edit: Edit, voice: CommentarySet = commentarySet()): A
       if (goalIn) {
         bed.push({ at: out(tr.goalT), gain: BED_GOAL });
         cues.push({ at: Math.max(acc, out(tr.goalT) - 0.05), sound: "crowd-cheer-stadium", gain: fan ? 1 : 0.85, rate: 1 });
-        if (!fan) {
+        if (!fan && !edited) {
           // The call, then (if there is room before the next goal) what it means.
           // A big late moment gets a late call; every other goal as before.
           const late = lateOf(tr);
           const call = late
-            ? pickLine(LATE_CALLS[late], `${id}:${base}:${goalNo}:late`, used)
-            : pickCall(finishOf(tr), `${id}:${base}:${goalNo}`, used);
+            ? pickLine(bank.lateCalls[late], `${id}:${base}:${goalNo}:late`, used)
+            : pickCall(finishOf(tr), `${id}:${base}:${goalNo}`, used, bank);
           used.push(call.id);
           const at = Math.max(out(tr.goalT) + COMMENTARY_DELAY, voiceFree);
           cues.push({ at, sound: call.id, gain: 1, rate: 1 });
@@ -214,7 +229,7 @@ export function planAudio(edit: Edit, voice: CommentarySet = commentarySet()): A
           const keep = replayAfter && edit.style !== "tiktok" ? minReplay + 0.4 : 0;
           // A late call already says what it means: no second line.
           if (tag !== "none" && !late) {
-            const say = pickLine(SCORE_LINES[tag], `${id}:score`, used);
+            const say = pickLine(bank.scoreLines[tag], `${id}:score`, used);
             if (voiceFree + secs(say.id) + keep < Math.min(nextGoal, total) - 0.2) {
               cues.push({ at: voiceFree, sound: say.id, gain: 1, rate: 1 });
               used.push(say.id);
@@ -229,21 +244,21 @@ export function planAudio(edit: Edit, voice: CommentarySet = commentarySet()): A
       // The replay: the crowd drops back; the commentator talks over it.
       bed.push({ at: acc, gain: BED_REPLAY });
       bed.push({ at: acc + len, gain: BED_REPLAY });
-      if (!fan && edit.style !== "tiktok") {
+      if (!fan && !edited && edit.style !== "tiktok") {
         // A reel: a line about the game first, if there is room.
         const reel = edit.tracks.length > 1;
         const lines = [
-          ...(reel ? [pickLine(REEL_LINES, `${id}:reel`, used)] : []),
+          ...(reel ? [pickLine(bank.reelLines, `${id}:reel`, used)] : []),
           lateOf(tr)
-            ? pickLine(LATE_REPLAY_LINES, `${id}:replay`, used)
-            : pickReplayLine(finishOf(tr), savesOf(tr), `${id}:replay`, used),
+            ? pickLine(bank.lateReplayLines, `${id}:replay`, used)
+            : pickReplayLine(finishOf(tr), savesOf(tr), `${id}:replay`, used, bank),
         ];
         for (let line of lines) {
           const at = Math.max(acc + 0.35, voiceFree);
           if (at + secs(line.id) > total + 0.1) {
             // Too long for the time left: the longest line that still fits.
             const room = total + 0.1 - at;
-            const fits = Object.values(REPLAY_LINES).flat().filter(l => !used.includes(l.id) && secs(l.id) <= room);
+            const fits = Object.values(bank.replayLines).flat().filter(l => !used.includes(l.id) && secs(l.id) <= room);
             if (!fits.length) continue;
             line = pickLine(fits, `${id}:fit`);
           }
@@ -257,6 +272,17 @@ export function planAudio(edit: Edit, voice: CommentarySet = commentarySet()): A
   });
   cues.sort((a, b) => a.at - b.at);
   bed.sort((a, b) => a.at - b.at);
+  if (edited && edit.music) {
+    // Set to music: the kicks and the net quieter, the crowd well back.
+    const m = edit.music;
+    return {
+      duration: acc,
+      cues: cues.filter(c => !isComm(c.sound)).map(c => ({ ...c, gain: c.gain * (c.sound === "crowd-cheer-stadium" ? 0.35 : 0.55) })),
+      bed: bed.map(b => ({ ...b, gain: b.gain * 0.3 })),
+      music: { url: m.url, at: m.at, offset: m.offset, gain: m.gain },
+    };
+  }
+  if (voice === "teams") return { duration: acc, cues, bed, voice, team };
   return voice === "v2" ? { duration: acc, cues, bed, voice } : { duration: acc, cues, bed };
 }
 
@@ -342,7 +368,7 @@ export async function mixAudio(plan: AudioPlan): Promise<AudioBuffer | null> {
     ctx = new OAC(MIX_CHANNELS, Math.ceil(plan.duration * MIX_RATE), MIX_RATE);
   } catch { return null; }
 
-  const voice: CommentarySet = plan.voice === "v2" ? "v2" : "v1";
+  const voice: CommentarySet = plan.voice === "v2" || plan.voice === "teams" ? plan.voice : "v1";
   const secs = secsIn(commentaryTable(voice));
   const names = Array.from(new Set(plan.cues.map(c => c.sound)));
   const decoded = new Map<ClipSound, AudioBuffer>();
@@ -378,12 +404,13 @@ export async function mixAudio(plan: AudioPlan): Promise<AudioBuffer | null> {
   // (scripts/commentary/broadcast.py): only a gentle low cut on top.
   const lowCut = ctx.createBiquadFilter();
   lowCut.type = "highpass";
-  lowCut.frequency.value = voice === "v2" ? 90 : 140;
+  // (The commentator teams' files carry it too.)
+  lowCut.frequency.value = voice !== "v1" ? 90 : 140;
   const presence = ctx.createBiquadFilter();
   presence.type = "peaking";
   presence.frequency.value = 3200;
   presence.Q.value = 0.9;
-  presence.gain.value = voice === "v2" ? 0 : 3;
+  presence.gain.value = voice !== "v1" ? 0 : 3;
   const boxGain = ctx.createGain();
   boxGain.gain.value = 1.2;
   lowCut.connect(presence); presence.connect(boxGain); boxGain.connect(master);
@@ -414,6 +441,29 @@ export async function mixAudio(plan: AudioPlan): Promise<AudioBuffer | null> {
     g.gain.value = c.gain;
     src.connect(g); g.connect(isComm(c.sound) ? lowCut : pitchBus);
     src.start(Math.max(0, c.at));
+  }
+
+  // A cold edit's beat (switch part "coldEdits"): from its offset, so its drop
+  // lands on the video's drop; faded out over the last half second.
+  if (plan.music) {
+    const m = plan.music;
+    let hit = bytes.get(m.url);
+    if (!hit) {
+      hit = fetch(m.url).then(r => (r.ok ? r.arrayBuffer() : null)).catch(() => null);
+      bytes.set(m.url, hit);
+    }
+    const data = await hit;
+    const buf = data ? await decode(ctx, data) : null;
+    if (buf) {
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(m.gain, 0);
+      g.gain.setValueAtTime(m.gain, Math.max(0, plan.duration - 0.5));
+      g.gain.linearRampToValueAtTime(0, plan.duration);
+      src.connect(g); g.connect(master);
+      src.start(Math.max(0, m.at), Math.max(0, m.offset));
+    }
   }
 
   try {

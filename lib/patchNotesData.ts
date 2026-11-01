@@ -27,6 +27,232 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.132",
+      "title": "Leo's patch notes: 2D videos, cold edits, replies, season reel",
+      "author": "Leo",
+      "publishedAt": "2026-10-31T22:00:12Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/76w9m8sdxQq8TAGbTQfopm",
+      "summary": "Goal videos can be seen in 2D from above. Six new edit types (cold, aura, rewind, stat card, montage, angles) with original beats. Replies now fit the post they sit under (mismatches 20.7% → 0.1%), with arguments and TikTok comment sections. The season video plays every goal, lets you tap to skip, and you can star your favourite goals. All behind Leo's update switch (off by default).",
+      "stats": [
+        {
+          "value": "6",
+          "label": "new edit types with original beats"
+        },
+        {
+          "value": "0.1%",
+          "label": "replies that don't fit (was 20.7%)"
+        },
+        {
+          "value": "712",
+          "label": "reply lines (was ~190)"
+        },
+        {
+          "value": "0",
+          "label": "lost clips in the test season (was 8 of 21)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Turn on the parts",
+              "detail": "Settings → Updates → Leo's update → 2D goal videos (pick 2D), Cold edits, Better end of season (with Football Twitter feed and Feed speed)"
+            },
+            {
+              "title": "Cold edits and replies",
+              "detail": "Phone → Social after a scoring match: the edits page and POV pages post cold edits with music; open a few posts' replies"
+            },
+            {
+              "title": "Season video",
+              "detail": "End of season: tap right/left to skip goals, ☆ to save a favourite; then Stats → Goals → ★ Favourites → Play reel"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "2D goal videos",
+              "detail": "The same recordings seen from above like the 2D match: flat striped pitch, ball trail, net ripple. Every cut, caption and commentary stays. A 3D (TV) or 2D (from above) choice; works in the feed, the season video and the new edits."
+            },
+            {
+              "title": "Cold edits",
+              "detail": "Black and white with the scorer's shirt colour kept, grain, cinema bars, the strike frozen and ringed, shake and flash on every beat, the goal on the drop. Captions like \"cold.\", \"silence.\"."
+            },
+            {
+              "title": "Five more edit types",
+              "detail": "Aura (slow, glowing), rewind (wound back on tape then replayed), stat card (distance and shot speed measured from the goal), montage (up to 8 goals, a counter), angles (the same goal from 4 cameras). Each account posts its own kinds."
+            },
+            {
+              "title": "Original music",
+              "detail": "Four new beat loops (phonk-style, ambient, lo-fi, funk), made here, no copied songs. Every cut lands on a beat."
+            },
+            {
+              "title": "Replies that make sense",
+              "detail": "Problem: a praise post got \"that's a violation\" replies (replies were picked by who posted, not what was said). Fix: each post has a tone and each reply only fits some tones; fans back their club, rivals banter, neutrals joke. 712 reply lines, back-and-forth arguments, TikTok comment sections with \"Liked by creator\"."
+            },
+            {
+              "title": "Favourite goals",
+              "detail": "☆ on any goal in the season video, Stats → Goals and your goal videos. Kept in your save (all devices), never deleted from the phone, a Favourites tab and a favourites reel."
+            },
+            {
+              "title": "Better season video",
+              "detail": "Tap right for the next goal, left to go back, hold to pause, a bar per goal. Title card, milestone cards (first goal, hat-trick, 50th goal…), Goal of the Season (your pick, else the fans' vote), end card."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Lost clips in the season video",
+              "detail": "Goals with no recording on this phone showed a drawn card, late recordings reshuffled the reel, and some goals played twice. Now every goal plays once, in order; a goal with no recording gets a made-up stand-in from its own facts."
+            },
+            {
+              "title": "Wrong quotes",
+              "detail": "Transfer quotes no longer quote contract signings; praise quotes no longer quote a scoreline."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Stand-ins",
+              "detail": "A stand-in goal is made-up movement, not the real goal (the real one stays on the phone that recorded it)."
+            },
+            {
+              "title": "Edits are 8-14 s",
+              "detail": "Real edits are often 4-6 s; ours need the build-up. Cold edits may be common in the feed; tell me if it feels samey."
+            },
+            {
+              "title": "A few posts read wrong",
+              "detail": "e.g. your old club posting your unveiling. Left because the switch-off feed must not change."
+            },
+            {
+              "title": "Not played in a real career yet",
+              "detail": "Checked with tests and stills. Recommend a playtest on a phone with sound on."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.131",
+      "title": "Leo's patch notes: TikTok feed, goal edits, commentators",
+      "author": "Leo",
+      "publishedAt": "2026-10-31T18:46:21Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/UCvKX1mFKX74nbAaJUQF8j",
+      "summary": "The Social feed grows to 52 made-up accounts and 899 lines, adds TikTok posts and quote posts that play the video, and no post ever talks about a video it does not show. Goal videos are now cut five ways (TV replays, highlights, TikTok edits, fan phone videos, reverse angles). Four commentary teams with their own voices and lines. All behind Leo's update switch (off by default).",
+      "stats": [
+        {
+          "value": "52",
+          "label": "made-up accounts (was 33)"
+        },
+        {
+          "value": "899",
+          "label": "post lines (was 272)"
+        },
+        {
+          "value": "0",
+          "label": "posts about a video you can't watch (of ~8,000)"
+        },
+        {
+          "value": "4",
+          "label": "commentary teams, 7 voices, 210 lines"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Turn on the parts",
+              "detail": "Settings → Updates → Leo's update → Football Twitter feed, Better goal videos, Different commentators (and Feed speed)"
+            },
+            {
+              "title": "TikTok and quote videos",
+              "detail": "Phone → Social after a goal: tap a TikTok post and a quote post; both play the goal"
+            },
+            {
+              "title": "Commentators",
+              "detail": "Watch goal videos from two or three different matches with sound on; club accounts use TV voices, fan accounts Fan TV"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "19 more made-up accounts, 627 more lines",
+              "detail": "TikTok edit pages, POV pages, more insiders, ratio and meme pages, scores apps and fan channels. Invented lookalikes only: no real person, voice or brand copied. A line never repeats within 6 career weeks."
+            },
+            {
+              "title": "TikTok posts",
+              "detail": "Tall videos with the caption burnt in, the \"♫ original sound\" line and TikTok-style likes, comments and shares."
+            },
+            {
+              "title": "No fake video posts",
+              "detail": "Problem: posts said \"watch this\" with no video. Fix: every post that talks about a video carries one you can play; a goal from a match you did not record gets a made-up stand-in from the same goal. Checked on ~8,000 posts: 0 broken."
+            },
+            {
+              "title": "Better goal edits",
+              "detail": "Five ways to cut a goal: TV broadcast (2-3 cameras, reverse angle, super slow-mo), highlights reel with a full-time card, TikTok edit (speed ramp, freeze, zoom punch, flash, captions, name card), fan phone video from 3 seats, and reverse angle. Each account cuts its own way."
+            },
+            {
+              "title": "Four commentary teams",
+              "detail": "Matchday (classic), Big Night (poetic), Late Show (dry) and Fan TV (fast and shouty), 7 original voices, 30 lines each. The same match always gets the same team. The 5 worst lines of the 30 Oct voice were remade."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Poll shares add up to 100%",
+              "detail": "They sometimes came to 99% or 101%."
+            },
+            {
+              "title": "Wrong words",
+              "detail": "No \"AXED\" for a new manager, no replies from the losing side's fans cheering, no \"shaking\" after a low rating."
+            },
+            {
+              "title": "Videos made ahead",
+              "detail": "Videos made in the background now have the same captions as the feed, so they are not made twice."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Narrow phones",
+              "detail": "The word \"views\" can be cut off on a very narrow phone."
+            },
+            {
+              "title": "A few weak lines",
+              "detail": "About 13 of the 210 commentary lines are flat or slightly misheard (listed on the A/B page). Fan videos are short (about 3.5 s)."
+            },
+            {
+              "title": "Not heard by a person yet",
+              "detail": "The voices were checked by measurement only. Recommend a playtest with sound on."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.130",
       "title": "Leo's patch notes: Football Twitter feed and full screen videos",
       "author": "Leo",
