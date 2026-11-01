@@ -41,6 +41,23 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 1 Nov 2026 — Glass stadium is a new UI option and the default (Harry)
+- **"Go for glass stadium as a new UI option (make it default)."** Settings →
+  Screens → **UI look: Glass | Pitch**, default Glass (`lib/star/uiSkin.ts`,
+  `components/star/ui/glassLook.css`, root class `.star-skin-glass`). Glass:
+  the blurred day stadium behind every career screen, dark-frost glass cards
+  and buttons, white type, frosted top and bottom bars, a glowing green PLAY.
+- **For the Glass look only**, this overrides the 1 Oct "green pitch, lighter
+  rather than dark" ruling and the "no rounded / no drop shadow / square
+  bars" rulings (P73, P85, P87, P106, P107). The Pitch skin keeps all of them.
+- **"Do this for any page also that has the old ui (sponsors/achievements)."**
+  Every `<Screen>` page (Sponsors, Achievements, Trophy Cabinet, Fame,
+  Contract talks, Investments …) takes the same glass; club-colour glows are
+  neutral glass in this look (they turned Settings dark red).
+- The frost is dark (deep blue-slate), never white-on-white: white text must
+  read over the bright sky.
+- Prototype: `docs/stills/full-ui/L3-*.png`; built: `docs/stills/glass-built/`.
+
 ### 25 Oct 2026 — headers and volleys: no arrow, straight to the ball (Harry)
 - **"When I said get rid of the arrow animation, what I literally meant was
   skip straight to the ball-hitting animation that we had with the headers,

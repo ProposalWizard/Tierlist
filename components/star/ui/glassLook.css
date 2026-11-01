@@ -31,24 +31,42 @@
   --sk-g400: 120 140 170; --sk-g500: 84 104 134; --sk-g600: 58 76 104; --sk-g700: 40 56 82; --sk-g800: 28 42 66; --sk-g900: 18 30 52; --sk-g950: 10 20 38;
 }
 
-/* 1. The stadium behind everything. A fixed layer under the shell, blurred,
-   so it never scrolls and costs one paint. */
-.star-skin-glass .sk-shell,
-.star-skin-glass .bg-\[\#05070d\],
-.star-skin-glass .bg-\[\#05080f\] {
-  background: var(--sk-page) !important;
+/* 1. The stadium behind everything. Glass takes over the pitch look's
+   STADIUM BACKDROP (pitchLook.css): the whole page is the blurred day stadium,
+   brighter than the Pitch skin's dark edges, and the phone column is see-
+   through (no green, no half-height photo of its own). Same selectors as that
+   block, one class stronger, so the Pitch skin is untouched. */
+/* Never a calm (shop, store, casino) page: they keep their own charcoal. */
+.star-look-pitch.star-skin-glass .sk-shell:not([data-sk-tone="calm"] .sk-shell),
+.star-look-pitch.star-skin-glass :is(.bg-\[\#05070d\], .bg-\[\#05080f\]):not([data-sk-tone="calm"], [data-sk-tone="calm"] *) {
+  background: #1d3a5c !important;
   isolation: isolate;
 }
-.star-skin-glass .sk-shell::before,
-.star-skin-glass .bg-\[\#05070d\]::before,
-.star-skin-glass .bg-\[\#05080f\]::before {
-  content: "";
-  position: fixed;
-  inset: -40px;
-  z-index: -1;
-  pointer-events: none;
-  background: var(--sk-glass-photo) center 30% / cover no-repeat, #1d3a5c;
-  filter: blur(12px) brightness(.8) saturate(1.15);
+.star-look-pitch.star-skin-glass .sk-shell:not([data-sk-tone="calm"] .sk-shell) { position: relative; }
+/* z-index -1 inside the isolated root: above its floor, under all its content. */
+.star-look-pitch.star-skin-glass .sk-shell:not([data-sk-tone="calm"] .sk-shell)::before,
+.star-look-pitch.star-skin-glass :is(.bg-\[\#05070d\], .bg-\[\#05080f\]):not([data-sk-tone="calm"], [data-sk-tone="calm"] *)::before {
+  content: ""; position: fixed; inset: -40px; z-index: -1; pointer-events: none;
+  background: var(--sk-page), var(--sk-glass-photo) center 30% / cover no-repeat;
+  filter: blur(12px) brightness(.85) saturate(1.15);
+}
+.star-look-pitch.star-skin-glass .sk-shell:not([data-sk-tone="calm"] .sk-shell) > .max-w-md,
+.star-look-pitch.star-skin-glass .sk-stadium-screen {
+  background: var(--sk-page);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .16), 0 0 50px 6px rgba(0, 0, 0, .35);
+  /* Glass panels here too (the backdrop block sets green ones on the column). */
+  --sk-card: linear-gradient(180deg, rgba(14, 30, 52, .62), rgba(10, 22, 40, .70));
+  --sk-chalk: rgba(255, 255, 255, .34);
+  --sk-lift: 0 8px 22px -10px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .22);
+  --sk-flat-alpha: .62;
+  --sk-edge: rgba(255, 255, 255, .32);
+}
+.star-look-pitch.star-skin-glass .sk-stadium-screen { background: transparent; }
+.star-look-pitch.star-skin-glass .sk-shell:not([data-sk-tone="calm"] .sk-shell) > .max-w-md::before,
+.star-look-pitch.star-skin-glass .sk-stadium-screen::before { display: none; }
+.star-look-pitch.star-skin-glass .sk-stadium-screen [data-sk-header] > .min-w-0 {
+  background: rgba(10, 22, 40, .58);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2);
 }
 /* A calm (shop) panel keeps its own charcoal floor over the photo. */
 .star-skin-glass [data-sk-tone="calm"][data-scroll-root] { background: var(--sk-page) !important; }
@@ -118,3 +136,45 @@
 /* 7. Switches: a glass track, a glowing green knob when on. */
 .star-skin-glass [role="switch"] { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3); }
 .star-skin-glass [role="switch"][aria-checked="true"] > span[aria-hidden] { background: #22e36b !important; box-shadow: 0 0 12px rgba(34, 227, 107, .7) !important; }
+
+/* 8. EVERY SCREEN THAT STILL HAD ITS OWN NIGHT LOOK (Harry, 1 Nov 2026: "do
+   this for any page also that has the old ui (sponsors/achievements)").
+   Every <Screen> (ui/Screen.tsx: Sponsors, Achievements, Trophy Cabinet,
+   Fame, Records, Contract, the Boardroom, the Rule Book …) roots on
+   bg-[#05070d], so rule 1 already puts the stadium behind it. Here: hide its
+   night-sky Backdrop (the club-coloured glow that turned Settings dark red),
+   and turn the kit's cards, rows, tabs and inputs into the same neutral glass. */
+.star-skin-glass :is(.bg-\[\#05070d\], .bg-\[\#05080f\]):not([data-sk-tone="calm"], [data-sk-tone="calm"] *) > [aria-hidden].fixed { display: none; }
+.star-skin-glass .kit-card {
+  background: var(--sk-card) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  backdrop-filter: blur(14px) saturate(1.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 0 0 1px rgba(255, 255, 255, .2), 0 8px 22px -10px rgba(0, 0, 0, .55) !important;
+}
+.star-skin-glass .kit-row { background: rgba(255, 255, 255, .07) !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1) !important; }
+.star-skin-glass .kit-tabs { background: rgba(10, 22, 40, .6) !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16) !important; }
+.star-skin-glass .kit-tab { color: rgba(255, 255, 255, .72); }
+.star-skin-glass .kit-tab-on { background: rgba(255, 255, 255, .2) !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .34), inset 0 -2px 0 #22e36b !important; }
+.star-skin-glass .kit-input { background: rgba(6, 14, 28, .7) !important; }
+.star-skin-glass .kit-btn-glass { background: rgba(255, 255, 255, .16) !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3), 0 6px 14px -10px rgba(0, 0, 0, .7) !important; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+/* The screen title and its kicker on every Screen, not only stadium ones. */
+.star-skin-glass [data-sk-header] > .min-w-0 {
+  justify-self: center; padding: 2px 12px 4px; border-radius: 10px;
+  background: rgba(10, 22, 40, .58); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2);
+}
+.star-skin-glass [data-sk-kicker] { text-shadow: 0 1px 2px rgba(0, 0, 0, .8); }
+
+/* 9. Club-glow cards (ui/ClubCard.tsx, Settings' SetCard): neutral glass, no
+   club-colour wash (Arsenal's red turned the Settings card dark red). */
+.star-skin-glass [data-club-card] {
+  background: var(--sk-card) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  backdrop-filter: blur(14px) saturate(1.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 0 0 1px rgba(255, 255, 255, .2), 0 8px 22px -10px rgba(0, 0, 0, .55) !important;
+}
+/* 10. The empty trophy shelves: light glass, not black holes. */
+.star-skin-glass .sk-shelf {
+  background: rgba(255, 255, 255, .08) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16), inset 0 -3px 0 rgba(255, 255, 255, .14) !important;
+  border-radius: 10px;
+}
