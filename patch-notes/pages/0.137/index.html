@@ -1,0 +1,310 @@
+<title>Glass, Ball, Quick Check</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: one phone-width column; numbered points, each an idea + a picture; numbers in one closed toggle. */
+  :root{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --pillink:#fff;--r:12px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+      --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+      --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+      --pillink:#06170e;color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --pillink:#06170e;color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 70px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--green);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 22px}
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:38px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix{color:var(--green)} .fix i{background:var(--green)}
+  .add{color:var(--blue)} .add i{background:var(--blue)}
+  .chg{color:var(--violet)} .chg i{background:var(--violet)}
+  .bug{color:var(--amber)} .bug i{background:var(--amber)}
+  .nxt{color:var(--ink3)} .nxt i{background:var(--ink3)}
+  .idea{font-size:16px;font-weight:700;margin:0 0 10px;color:var(--ink)}
+  .pwf{display:grid;gap:8px;margin:0 0 12px}
+  .pwf div{min-width:0}
+  .pwf b{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+  .pwf span{color:var(--ink2);font-size:14.5px}
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:14px}
+  .tw svg{display:block;width:100%;height:auto}
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin:12px 0 2px}
+  .shots figure{margin:0}
+  .shots3{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:12px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-grn{background:rgba(61,220,132,.15);color:var(--green)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .seen{font-size:12px;color:var(--ink3);margin-top:8px}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+  @media (prefers-reduced-motion: reduce){summary::before{transition:none}}
+</style>
+<div class="wrap">
+<header>
+  <span class="ver">v0.137 · 1 NOV · HARRY</span>
+  <h1>Glass stadium UI, a real football, a quicker test check</h1>
+  <p class="sub">Made by Harry · 1 Nov 2026 · all live on the site</p>
+</header>
+
+<h2 class="nxt"><i></i>CHECK THESE</h2>
+<ul class="ck">
+  <li><label><input type="checkbox" data-k="glass"><span><span class="q">The new Glass look on every career screen</span><span class="a">Open any career → Home, Stats, League, Phone, Sponsors, Settings</span></span></label></li>
+  <li><label><input type="checkbox" data-k="row"><span><span class="q">The new "UI look: Glass | Pitch" row</span><span class="a">Settings → Screens, under "UI: New | Old"</span></span></label></li>
+  <li><label><input type="checkbox" data-k="ball"><span><span class="q">The real football</span><span class="a">Title screen, Home, training ground, 3D play scenes</span></span></label></li>
+  <li><label><input type="checkbox" data-k="oneball"><span><span class="q">Only one ball at your player's feet</span><span class="a">Title screen</span></span></label></li>
+  <li><label><input type="checkbox" data-k="pitch"><span><span class="q">Stadium behind the Pitch look</span><span class="a">Settings → Screens → UI look: Pitch, then Stats on a phone and a computer</span></span></label></li>
+  <li><label><input type="checkbox" data-k="check"><span><span class="q">Pushes go live in about 10 minutes</span><span class="a">Nothing to tap: the next push to the site</span></span></label></li>
+</ul>
+
+<h2 class="add"><i></i>1 · GLASS STADIUM IS THE NEW LOOK</h2>
+<p class="idea">Every career screen now sits in a blurred stadium on a sunny day, with frosted-glass cards on top.</p>
+<div class="shots">
+  <figure><img src="img/glass-before-sponsors.jpg" alt="Sponsors screen before: flat green"><figcaption><b>Before:</b> Sponsors on flat green.</figcaption></figure>
+  <figure><img src="img/glass-after-sponsors.jpg" alt="Sponsors screen after: glass cards over a blurred stadium"><figcaption><b>After:</b> the stadium shows through the cards. Look at the glowing PLAY.</figcaption></figure>
+</div>
+<div class="pwf" style="margin-top:14px">
+  <div><b>Problem</b><span>Each screen had its own flat colour. The career did not feel like one game.</span></div>
+  <div><b>Why</b><span>The screens were built one by one, with no shared look.</span></div>
+  <div><b>Fix</b><span>One look for all of them. Harry chose Glass stadium from three full designs.</span></div>
+</div>
+<div class="tw">
+<svg viewBox="0 0 560 210" font-family="-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-label="The four layers of the Glass look">
+  <g stroke="var(--line)" stroke-width="1.5">
+    <rect x="10" y="10" width="300" height="40" rx="10" fill="rgba(111,184,255,.18)"/>
+    <rect x="30" y="60" width="300" height="40" rx="10" fill="rgba(255,255,255,.12)"/>
+    <rect x="50" y="110" width="300" height="40" rx="10" fill="var(--card2)"/>
+    <rect x="70" y="160" width="300" height="40" rx="10" fill="rgba(61,220,132,.2)" stroke="var(--green)"/>
+  </g>
+  <g font-size="14" font-weight="700" fill="var(--ink)">
+    <text x="24" y="35">1 · Blurred day stadium</text>
+    <text x="44" y="85">2 · Frosted glass cards and bars</text>
+    <text x="64" y="135">3 · White text</text>
+    <text x="84" y="185" fill="var(--green)">4 · Glowing green PLAY</text>
+  </g>
+  <g font-size="12" fill="var(--ink2)">
+    <text x="390" y="35">behind every screen</text>
+    <text x="390" y="85">top bar, bottom bar, buttons</text>
+    <text x="390" y="135">easy to read on glass</text>
+    <text x="390" y="185">the one bright button</text>
+  </g>
+</svg></div>
+<p class="seen">Drawing: the look, back to front.</p>
+
+<p class="idea" style="margin-top:22px">You can still pick the old look in Settings.</p>
+<div class="tw">
+<svg viewBox="0 0 560 150" font-family="-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-label="Settings rows: UI New or Old, then UI look Glass or Pitch">
+  <text x="10" y="22" font-size="12" font-weight="800" fill="var(--ink3)" letter-spacing="1.5">SETTINGS → SCREENS</text>
+  <rect x="10" y="34" width="540" height="48" rx="10" fill="var(--card2)" stroke="var(--line)"/>
+  <text x="26" y="64" font-size="15" font-weight="700" fill="var(--ink)">UI</text>
+  <rect x="330" y="44" width="100" height="28" rx="8" fill="var(--green)"/><text x="380" y="63" text-anchor="middle" font-size="13" font-weight="800" fill="var(--pillink)">New</text>
+  <rect x="436" y="44" width="100" height="28" rx="8" fill="none" stroke="var(--line)"/><text x="486" y="63" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink2)">Old</text>
+  <rect x="10" y="92" width="540" height="48" rx="10" fill="var(--card2)" stroke="var(--line)"/>
+  <text x="26" y="122" font-size="15" font-weight="700" fill="var(--ink)">UI look</text>
+  <text x="96" y="122" font-size="12" fill="var(--ink3)">new row</text>
+  <rect x="330" y="102" width="100" height="28" rx="8" fill="var(--green)"/><text x="380" y="121" text-anchor="middle" font-size="13" font-weight="800" fill="var(--pillink)">Glass</text>
+  <rect x="436" y="102" width="100" height="28" rx="8" fill="none" stroke="var(--line)"/><text x="486" y="121" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink2)">Pitch</text>
+</svg></div>
+<p class="seen">Drawing. Green = what you get if you have never picked. Pitch is the green look from before (point 3).</p>
+
+<div class="shots">
+  <figure><img src="img/glass-phone-home.jpg" alt="Home in the Glass look"><figcaption>Home. The player still stands in the night stadium (known issue).</figcaption></figure>
+  <figure><img src="img/glass-phone-stats.jpg" alt="Stats in the Glass look"><figcaption>Stats: the cards, the season row and the cabinet are all glass.</figcaption></figure>
+</div>
+<details><summary>More pictures (9)</summary>
+  <div class="shots">
+    <figure><img src="img/glass-before-achievements.jpg" alt="Achievements before" loading="lazy"><figcaption>Achievements, before.</figcaption></figure>
+    <figure><img src="img/glass-after-achievements.jpg" alt="Achievements after" loading="lazy"><figcaption>Achievements, after.</figcaption></figure>
+    <figure><img src="img/glass-after-records.jpg" alt="Records" loading="lazy"><figcaption>Records.</figcaption></figure>
+    <figure><img src="img/glass-after-contract.jpg" alt="Contract" loading="lazy"><figcaption>Contract.</figcaption></figure>
+    <figure><img src="img/glass-phone-settings.jpg" alt="Settings" loading="lazy"><figcaption>Settings: no longer dark red.</figcaption></figure>
+    <figure><img src="img/glass-phone-league.jpg" alt="League" loading="lazy"><figcaption>League. The banner stays club red (known issue).</figcaption></figure>
+    <figure><img src="img/glass-phone-phone.jpg" alt="Phone" loading="lazy"><figcaption>Phone. The drawn phone keeps a red wallpaper (known issue).</figcaption></figure>
+  </div>
+  <figure><img src="img/glass-desktop-stats.jpg" alt="Stats on a computer" loading="lazy"><figcaption>Stats on a computer.</figcaption></figure>
+  <figure><img src="img/options-home.jpg" alt="The three designs Harry chose from" loading="lazy"><figcaption>The choice: today, Clean pitch, Matchday broadcast, Glass stadium (right).</figcaption></figure>
+</details>
+<details><summary>Which screens have it, and which do not</summary>
+  <p><b>Glass:</b> Home, Stats (Records, Achievements, Contract), League, Phone, Sponsors, Trophy Cabinet, Fame, Settings, Contract talks, Investments.</p>
+  <p><b>Not on purpose:</b> Shop, Store and Casino (they keep charcoal), Training and drills (the pitch, by the team's ruling), the match, the Old UI.</p>
+  <p><b>Not yet:</b> the Transfer Hub (it only opens in the summer), and moments with their own art: Ballon d'Or night, Farewell, Deadline Day, the relationship games.</p>
+  <p><b>Fixed from the preview:</b> Settings no longer turns dark red; empty trophy shelves are light glass.</p>
+</details>
+
+<h2 class="fix"><i></i>2 · A REAL FOOTBALL</h2>
+<p class="idea">The 3D ball now looks like a real football, and the title screen shows one ball, not two.</p>
+<figure><img src="img/ball-closeup.jpg" alt="The new ball from three sides"><figcaption>The new ball from three sides. Look for the black five-sided patches and the thin seams.</figcaption></figure>
+<div class="pwf" style="margin-top:14px">
+  <div><b>Problem</b><span>The 3D ball was a plain white sphere with 6 black dots. It looked fake. The title screen also showed TWO balls at your feet.</span></div>
+  <div><b>Why</b><span>The ball was a quick stand-in. On the title screen, a flat ball picture sat under the 3D player, and the 3D player has his own ball.</span></div>
+  <div><b>Fix</b><span>One real ball everywhere in 3D: 12 black and 20 white patches with thin seams, the same pattern as a real match ball. The flat ball hides when the 3D player shows.</span></div>
+</div>
+<div class="tw">
+<svg viewBox="0 0 560 170" font-family="-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-label="Before: a white ball with six dots. After: a ball with black and white patches">
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs>
+  <circle cx="120" cy="75" r="55" fill="#fff" stroke="#999" stroke-width="1.5"/>
+  <g fill="#111"><circle cx="120" cy="75" r="8"/><circle cx="90" cy="50" r="7"/><circle cx="150" cy="50" r="7"/><circle cx="85" cy="100" r="7"/><circle cx="155" cy="100" r="7"/><circle cx="120" cy="118" r="6"/></g>
+  <text x="120" y="158" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink2)">Before: 6 dots</text>
+  <path d="M200 75H350" stroke="var(--ink3)" stroke-width="2" marker-end="url(#ar)"/>
+  <circle cx="440" cy="75" r="55" fill="#fff" stroke="#999" stroke-width="1.5"/>
+  <polygon points="440,57 457,69 451,89 429,89 423,69" fill="#111"/>
+  <g stroke="#555" stroke-width="1.2" fill="none"><path d="M440 57V24M457 69L489 58M451 89L470 118M429 89L410 118M423 69L391 58"/></g>
+  <polygon points="398,40 412,30 425,42 418,52 405,50" fill="#111"/>
+  <polygon points="482,40 468,30 455,42 462,52 475,50" fill="#111"/>
+  <polygon points="392,95 398,110 412,118 405,100" fill="#111"/>
+  <polygon points="488,95 482,110 468,118 475,100" fill="#111"/>
+  <text x="440" y="158" text-anchor="middle" font-size="13" font-weight="700" fill="var(--green)">After: 12 black, 20 white</text>
+</svg></div>
+<p class="seen">Drawing, not to scale. The real ball is the picture above.</p>
+<div class="shots">
+  <figure><img src="img/ball-title.jpg" alt="Title screen with one ball"><figcaption>Title screen: one ball at the feet.</figcaption></figure>
+  <figure><img src="img/ball-home.jpg" alt="Home with the new ball"><figcaption>Home: the new ball.</figcaption></figure>
+</div>
+<p class="seen">Seen on the title screen and Home. Not seen yet in training or cut scenes. Not changed: the 2D match and the frozen "Old" cut-scene look.</p>
+
+<h2 class="chg"><i></i>3 · A STADIUM BEHIND THE PITCH LOOK TOO</h2>
+<p class="idea">If you pick Pitch, you now see a blurred stadium too, not only green stripes.</p>
+<div class="shots">
+  <figure><img src="img/pitch-phone-stats.jpg" alt="Stats on a phone, Pitch look"><figcaption>Phone: stadium at the top, fading into green.</figcaption></figure>
+  <figure><img src="img/pitch-phone-settings.jpg" alt="Settings on a phone, Pitch look"><figcaption>Settings: the club name sits on a dark band.</figcaption></figure>
+</div>
+<figure><img src="img/pitch-desktop-stats.jpg" alt="Stats on a computer, Pitch look" loading="lazy"><figcaption>Computer: the stadium fills the edges either side of the page.</figcaption></figure>
+<div class="pwf" style="margin-top:14px">
+  <div><b>Problem</b><span>The Pitch look was the same green stripes everywhere. On a computer the wide edges were empty green.</span></div>
+  <div><b>Fix</b><span>Stadium at the edges on a computer, and in the top half on a phone. Cards are more solid with a light edge and a soft shadow. Small labels get a dark shadow, so you can read them.</span></div>
+</div>
+<p class="seen">You only see this if you pick Pitch. Glass is the default.</p>
+
+<h2 class="chg"><i></i>4 · NEW RULE: A WHOLE LOOK CAN BE A SETTING</h2>
+<p class="idea">A look for the whole game may be a choice in Settings. Gameplay and single features still get no New | Old row.</p>
+<div class="tw">
+<svg viewBox="0 0 560 160" font-family="-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-label="A whole-game look gets a Settings row; gameplay or one feature does not">
+  <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs>
+  <rect x="10" y="55" width="150" height="50" rx="12" fill="var(--card2)" stroke="var(--line)"/>
+  <text x="85" y="85" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">A new look</text>
+  <rect x="250" y="10" width="300" height="56" rx="12" fill="rgba(61,220,132,.12)" stroke="var(--green)"/>
+  <text x="400" y="34" text-anchor="middle" font-size="14" font-weight="700" fill="var(--green)">For the whole game (a skin)</text>
+  <text x="400" y="54" text-anchor="middle" font-size="12" fill="var(--ink2)">may be a Settings choice</text>
+  <rect x="250" y="94" width="300" height="56" rx="12" fill="rgba(255,107,107,.1)" stroke="var(--red)"/>
+  <text x="400" y="118" text-anchor="middle" font-size="14" font-weight="700" fill="var(--red)">Gameplay, or one feature</text>
+  <text x="400" y="138" text-anchor="middle" font-size="12" fill="var(--ink2)">decide it, no New | Old row</text>
+  <g stroke="var(--ink3)" stroke-width="1.8" fill="none" marker-end="url(#ar2)"><path d="M160 72Q205 38 248 38"/><path d="M160 88Q205 122 248 122"/></g>
+</svg></div>
+<p class="seen">Brain note RUL-UI-007. It changes the old "decide, don't toggle" rule (RUL-UI-001) only for whole looks.</p>
+
+<h2 class="fix"><i></i>5 · THE TEST CHECK: ABOUT 10 MINUTES, NOT 30 TO 40</h2>
+<p class="idea">A small push to the site now runs a quick check, not every test the game has.</p>
+<div class="pwf">
+  <div><b>Problem</b><span>Every push to the site waited for all 463 test files (16 minutes) plus the build: 30 to 40 minutes in all. And 5 of those tests fail anyway.</span></div>
+  <div><b>Why</b><span>The 5 that fail (build-ups, fhr, five-a-side, long-range rules, real goals) also fail on the site WITHOUT this round's changes. They were broken before. So the long wait did not protect anything new.</span></div>
+  <div><b>Fix</b><span>Harry chose a quicker check for small pushes: a quick check that the code fits together, the safety guards, only the tests linked to the files that changed, then the build.</span></div>
+</div>
+<div class="tw">
+<svg viewBox="0 0 560 196" font-family="-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-label="Before: about 35 minutes. Now: about 10 minutes">
+  <text x="10" y="20" font-size="12" font-weight="800" fill="var(--ink3)" letter-spacing="1.5">BEFORE</text>
+  <rect x="10" y="30" width="216" height="34" rx="6" fill="var(--line)"/>
+  <rect x="228" y="30" width="244" height="34" rx="6" fill="var(--line)" opacity=".6"/>
+  <text x="118" y="52" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">all 463 tests · 16 min</text>
+  <text x="350" y="52" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">build + wait</text>
+  <text x="478" y="52" font-size="13" font-weight="800" fill="var(--ink2)">30–40 min</text>
+  <text x="10" y="100" font-size="12" font-weight="800" fill="var(--green)" letter-spacing="1.5">NOW</text>
+  <rect x="10" y="110" width="13" height="34" rx="4" fill="var(--green)"/>
+  <rect x="25" y="110" width="27" height="34" rx="4" fill="var(--green)" opacity=".75"/>
+  <rect x="54" y="110" width="94" height="34" rx="4" fill="var(--green)" opacity=".55"/>
+  <text x="158" y="132" font-size="13" font-weight="800" fill="var(--green)">about 10 min</text>
+  <g font-size="14" fill="var(--ink2)">
+    <text x="10" y="166">1 · quick check that the code fits together, about 1 min</text>
+    <text x="10" y="186">2 · guards + linked tests · 3 · build, 5 to 10 min</text>
+  </g>
+</svg></div>
+<p class="seen">Drawn to scale: 40 minutes = the full width. Measured on this round's pushes.</p>
+<ul class="n" style="margin-top:8px">
+  <li><div class="hd">For the Glass push: 7 linked tests ran <span class="pill p-grn">passes</span></div><div class="dt">One (the test that counts the Settings rows) failed: it did not know the new "UI look" row. The row was added to its list. It now passes with 17 rows, and also passes on the site's older version.</div></li>
+  <li><div class="hd">The full 463 still matter</div><div class="dt">Suggestion: run all of them once a day, and before big pushes.</div></li>
+</ul>
+
+<h2 class="bug"><i></i>KNOWN ISSUES</h2>
+<ul class="n">
+  <li><div class="hd">Home keeps its night stadium behind the player</div><div class="dt">Every other screen has the day stadium. Harry to decide.</div></li>
+  <li><div class="hd">Energy-can cards on Home are cut off at the bottom</div><div class="dt">This was already so before Glass.</div></li>
+  <li><div class="hd">The Phone screen's drawn phone keeps a red club wallpaper</div></li>
+  <li><div class="hd">The League banner stays club red</div></li>
+  <li><div class="hd">Settings switch rows have hard-edged boxes</div><div class="dt">They do not look like glass yet.</div></li>
+  <li><div class="hd">Pictures use invented club data <span class="pill p-amb">not seen with real data</span></div><div class="dt">The test setup had no key to the real database, so team sheets show made-up players.</div></li>
+  <li><div class="hd">5 tests were already broken <span class="pill p-red">untouched</span></div><div class="dt">build-ups, fhr, five-a-side, long-range rules, real goals. They fail on the site with or without this round.</div></li>
+  <li><div class="hd">The ball is not seen yet in training or cut scenes</div></li>
+  <li><div class="hd">The quick check is not a Brain note yet</div><div class="dt">The push rule (PRO-TEAM-001) still says "run every test". It needs a new note.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>NEXT</h2>
+<ul class="n">
+  <li><div class="hd">Harry: day stadium on Home, yes or no <span class="pill p-amb">yes / no</span></div><div class="dt">Home would match every other screen.</div></li>
+  <li><div class="hd">Fix the energy-can cards on Home</div></li>
+  <li><div class="hd">Playtest Glass with real club data</div></li>
+  <li><div class="hd">Write the quick check as a Brain note, and run all 463 tests once a day <span class="pill p-amb">yes / no</span></div></li>
+</ul>
+
+<details><summary>The numbers, if you want them</summary>
+  <p><b>Ball:</b> 12 black pentagons, 20 white hexagons, drawn in one go (one draw call), so it costs no more than the old ball.</p>
+  <p><b>Full test run:</b> 463 files, 16 minutes. 458 pass, 5 fail. The same 5 fail on the site before this round.</p>
+  <p><b>Quick check:</b> quick check that the code fits together about 1 minute; guards; linked tests (7 for the Glass push); build 5 to 10 minutes. About 10 minutes in all, against 30 to 40 before.</p>
+  <p><b>Settings rows test:</b> now expects 17 rows.</p>
+  <p><b>Designs looked at:</b> 3 full looks (Clean pitch, Matchday broadcast, Glass stadium), each on Home, Stats and Settings.</p>
+  <p><b>Pictures:</b> phones at 390 × 844, computer at 1440 × 900.</p>
+</details>
+
+<footer>Harry · site 0.137 · 1 Nov 2026 · live on the site</footer>
+</div>
+<script>
+(function(){
+  var K="kib-pn-0.137-checks", s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||"{}")||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll(".ck input");
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute("data-k"); if(s[id]) b.checked=true;
+    b.addEventListener("change",function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+})();
+</script>
