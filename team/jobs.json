@@ -38,5 +38,93 @@
     "prompt": "Set my Claude connector permissions (Harry, 24 Oct 2026). Do this once, in this chat:\n1. git fetch origin Harry && git checkout origin/Harry -- scripts/connectors   (the page maker and Harry's rules; don't commit these files to my branch).\n2. List every connector tool loaded in THIS chat (my own claude.ai connectors), grouped by connector. Write them to scripts/connectors/tools-leo.json in the same shape as scripts/connectors/tools.json (connector name -> space-separated tool names). Check each connector's count against what's really loaded; no guessed tools.\n3. Run: python3 scripts/connectors/permissions-page.py <your scratchpad>/perm-leo.html scripts/connectors/tools-leo.json \"Leo's Connector Permissions\"\n4. Publish that page as an artifact and give me the link.\nThe rules (same as Harry's): look-only tools = Always allow; anything that changes, sends, spends or publishes = Needs approval; anything that wipes data in bulk, takes the site down or can't be undone (pause/restore/create project, bucket/page/database deletes) = Never.\nDon't change any setting yourself: I set them in claude.ai -> Settings -> Connectors -> each connector -> Tool permissions. The quick way per connector: Read-only group = Always allow (one tap), Write/delete group stays Needs approval, then tap Never on the red rows.\nHarry's own page, for reference: https://claude.ai/artifact/FF8yu78LBivtWiCCvouM8N",
     "from": "Harry",
     "added": "2026-10-24T04:10:00Z"
+  },
+  {
+    "id": "progress-2026-10-22",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-10-22T18:54:00Z",
+    "title": "Progress 22 Oct: 10 PRs merged. Aerial in matches, header heights, player card, sim piece 4, players size B, Marketing Studio, highlights fix. Patch notes 0.106h, 0.118, 0.107h.",
+    "prompt": "Daily progress update, 21 Oct 19:54 to 22 Oct 19:54 (UK). 10 pull requests merged to main: 6 builds, 3 patch notes, 1 sync.\n\nHarry (6 builds):\n- #755 Aerial & Acrobatics now counts in real matches (headers and volleys read Aerial, not Technique).\n- #756 Header heights 1.5 to 2.6 m (was always 1.85 m), jumping from Aerial, header feel (beat, freeze, punch, own sound).\n- #757 FIFA-style player card at the top of Stats (bronze, silver, gold, special; live +N flash; save image).\n- #758 Sim piece 4: one shared match-inputs builder. Even-match possession 44.5% to 49.8%, corners level.\n- #760 Players back to size B (they were too big): about 22 px on a phone, was about 28.\n- #761 Marketing Studio and uploads: direct-to-R2 uploads (500 MB a file), the editing Studio, Send to Marketing on the recorder.\n- #763 Highlights fix: chances restored, real moments about 1 in 10 (was 1 in 7), build-ups about 3 s (was 4.9 s).\n\nLeo:\n- #762 Patch note 0.118: the plan for tonight, 15 parts across 7 chats (a plan, nothing live yet).\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.106h Aerial in real matches, header heights, the player card, fairer matches (#759).\n- 0.118 Leo’s plan for tonight (#762): https://claude.ai/artifact/RERQk9D5BLaDv14ebha8qf\n- 0.107h Players back to size B, the Marketing Studio and uploads, fewer dropped highlights (#764).\n\nMikey: nothing merged to main in this window."
+  },
+  {
+    "id": "progress-2026-10-23",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-10-23T18:54:00Z",
+    "title": "Progress 23 Oct: Mikey master plan 1-5 (bottom bar, Stats, League, Phone, clock), Harry 3D skin and card, men size B. Patch notes 0.119, 0.108h, 0.120.",
+    "prompt": "Daily progress update, 22 Oct 19:54 to 23 Oct 19:54 (UK). 4 pull requests merged to main, plus Mikey’s master plan pushed straight to main.\n\nMikey (master plan steps 1 to 5, straight to main):\n- Step 1: one bottom bar on every screen (League, Training, Home, Phone, Play); a cleaner Home.\n- Step 2: Stats page with the whole player card on the left and four tabs: Stats, Records, Achievements, Contract.\n- Step 3: League is one page for every competition (Table, Results, Goals, Assists, History), plus International.\n- Step 4: the Phone holds Relationships, Squad, Fixtures & results and real messages (scout report, sponsor offers).\n- Step 5: the phone clock shows the real day (it ran weeks ahead with cup and European games).\n- New Brain rule RUL-UI-006: no scroll boxes inside a screen unless Mikey asks.\n\nHarry (3 PRs):\n- #774 3D men: one even skin colour that matches the picked tone.\n- #775 Headers, volleys and the Head & Volley drill: men back to size B.\n- #776 Your 3D man on the player card, with patch note 0.108h.\n\nLeo:\n- #778 Patch note 0.119: tonight’s build on branch Leo (celebrations, fast feed, bicycle kicks, Real Goals, season end, 17 bugs). Not live yet.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.120 Mikey v0.21, master plan steps 1 to 5: https://claude.ai/artifact/J1GDXrx1SSHrLTroCa3C2K\n- 0.108h Your 3D man on the player card, even 3D skin, players back to normal size (#776).\n- 0.119 Leo’s tonight build (#778): https://claude.ai/artifact/PQvHUgssX7CAdad2jitPjA"
+  },
+  {
+    "id": "progress-2026-10-24",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-10-24T18:53:00Z",
+    "title": "Progress 24 Oct: Mikey first hour as a story (features unlock after games, training day, first boots). Patch note 0.119 updated (findings, not to-dos).",
+    "prompt": "Daily progress update, 23 Oct 19:54 to 24 Oct 19:54 (UK). 1 pull request merged to main, plus Mikey’s first-hour work pushed straight to main.\n\nMikey (first hour as a story, straight to main):\n- A new career opens with Home, League and Play only. Each feature is brought in by a person after a game: the gaffer opens Training, the physio and a team-mate give a can and a cracked phone, the chairman opens the Shop.\n- Training day: two drills, Power and Technique.\n- Full rest before game 2; the agent leads you to the first sponsor offer; set pieces come with your first goal.\n- Nothing pops up over the Star Pass; no more ‘Saturday’ or ‘tomorrow’ on the wrong days.\n- A team-mate gives you his old boots before your first game (Power +5, Technique +5, 5 games left).\n- Connector permissions: Harry’s page tools, plus Mikey’s tool list and Vercel rules.\n\nLeo:\n- #784 Patch note 0.119 updated: the 6 to-dos given to Harry and everyone are now listed as findings only.\n\nHarry: nothing merged to main in this window.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.119 Leo’s tonight build, updated 24 Oct (#784): https://claude.ai/artifact/PQvHUgssX7CAdad2jitPjA\n- No new patch note for Mikey’s first-hour work yet."
+  },
+  {
+    "id": "progress-2026-10-25",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-10-25T19:54:00Z",
+    "title": "Progress 25 Oct: Leo build live behind a switch, Harry Team room and headers, Mikey new-career moves. Patch notes 0.119, 0.121, 0.109h-0.112h.",
+    "prompt": "Daily progress update, 24 Oct 19:54 to 25 Oct 19:54 (UK). 8 pull requests merged to main, plus Mikey’s first-hour work pushed straight to main.\n\nLeo:\n- #785 Leo’s 24 Oct update on the live site behind a switch (off by default): celebrations, big moments, bicycle kicks, fast feed, goal videos, season end, 17 bug fixes.\n- #787 Bicycle kick taken out (Harry is building it); keeper no longer stuck mid-screen in celebrations.\n\nHarry:\n- #790 Headers with no arrow, a Slack-style Team room, guest accounts (off), one login check, sizes, skin, smoother build-ups.\n\nMikey (straight to main):\n- Playtest fixes: training trimmed, the first match guided, phone tidy, first-hour tour fixes.\n- New careers: first contract fixed at 35 stars a week in National League North or South; free kicks at 60, corners at 70.\n- A chance in every half on Medium or High energy (empty halves 20 of 600 to 0); the shop shows 5 items a screen.\n- New careers open their moves one at a time, each with a guide (headers and volleys after game 3, steering at Pace 60).\n- One size for the men on every camera was tried, then reverted.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.121 Leo’s overnight build results, 7 parts for you to pick (#789, #792): https://claude.ai/artifact/4aeZs72kiGCS7r4xMgBg2A\n- 0.119 Leo’s build now on the live site behind a switch (#786): https://claude.ai/artifact/PQvHUgssX7CAdad2jitPjA\n- 0.109h Game fixes from the 0.108h comments; 0.110h Supabase and Cloudflare; 0.111h Team Room, the Slack-style plan; 0.112h Marketing Studio plan (#788, #791).\n- No new patch note for Mikey’s first-hour work yet."
+  },
+  {
+    "id": "progress-2026-10-26",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-10-26T19:53:00Z",
+    "title": "Progress 26 Oct: Mikey Star Pass road and one size for the men, Harry aerial moves, Leo 7 parts behind a switch. Patch notes 0.121, 0.122.",
+    "prompt": "Daily progress update, 25 Oct 19:54 to 26 Oct 19:54 (UK). 9 pull requests merged to main, plus Mikey’s size fix pushed straight to main.\nNote: patch notes were renumbered on 26 Oct (#800). Leo’s 0.107 to 0.110 are now 0.118 to 0.121, and Mikey’s 0.109 is now 0.120. The earlier updates use the new numbers.\n\nMikey:\n- #801 Star Pass: a 50-level road, 16 new rewards, 4 new celebrations, the Golden Run-up, The Leaf free kick and Signature Boots.\n- Men, keeper and ball are one size in metres on every camera (1.63 m, 22% of the goal’s width), agreed with Harry.\n- Settings: the everyday tools run without a permission prompt.\n\nHarry:\n- #793 Build-ups land on the chance’s own frame.\n- #794 Aerial contact moves for headers and volleys; header framing 25 m; room under the ball for long-range shots.\n- #795 A test page for the 8 aerial moves (/star-aerials-dev).\n\nLeo:\n- #798 The 7 overnight parts on the site behind Leo’s switch (off for everyone).\n- #800 Every patch note tidied and made the same: who, when, every update and a readable title (new rule RUL-TEAM-028).\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.122 Every patch note tidied and made the same (#800).\n- 0.121 Celebrations, smooth feed and weather, updated 3 times (#796, #797, #799): https://claude.ai/artifact/4aeZs72kiGCS7r4xMgBg2A\n- No new patch note for Harry’s aerial moves, Mikey’s Star Pass or the size fix yet."
+  },
+  {
+    "id": "progress-2026-10-27",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-10-27T19:54:00Z",
+    "title": "Progress 27 Oct: Leo keeper catches and dives (behind a switch), Mikey power curve and smarter chances, deploy fixed. Patch notes 0.123, 0.124.",
+    "prompt": "Daily progress update, 26 Oct 19:54 to 27 Oct 19:54 (UK). 9 pull requests merged to main, plus Mikey’s batch pushed straight to main.\n\nLeo:\n- #810 Keeper catches and dives, behind Leo’s switch (off by default).\n- #805 Fixed the failed deploy: Leo’s patch-note clips re-compressed (29.1 MB to 15.5 MB).\n- #802, #804, #806, #807, #809 Patch note 0.123 written and updated: keeper clips, three looks to pick, a real catch and a diving catch in all three looks.\n\nHarry:\n- #808 Harry’s patch-note clips and stills squeezed smaller (squeeze-media.sh).\n\nMikey (straight to main):\n- Power curve: Power 40 is clearly weaker (66 km/h, was 79); the top stays 32.76 m/s at 100. Play Area has a panel to type the speeds.\n- The byline cross’s short option never lays it off; lay-offs reach you 32 of 33 again.\n- Offside build-ups try another style before dropping one (about 1 in 300, was 6 in 300).\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.124 Mikey v0.22: first hour story, power and smarter chances: https://claude.ai/artifact/PYipsSX5z6VbYPQqUoXKm2\n- 0.123 Leo: keeper catches, dives and the ball (#802 to #810)."
+  },
+  {
+    "id": "progress-2026-10-28",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-10-28T19:54:00Z",
+    "title": "Progress 28 Oct: Leo keeper fixes and the deploy memory fix, Mikey cookie consent and Star Pass art. Patch note 0.123 updated.",
+    "prompt": "Daily progress update, 27 Oct 19:54 to 28 Oct 19:54 (UK). 7 pull requests merged to main, plus Mikey’s work pushed straight to main.\n\nLeo:\n- #811 The next build gets 6 GB of memory (fixes the failed deploy of #810); #812 Brain note FACT-TEAM-001 (a build needs about 6.5 GB).\n- #813, #816, #817 Keeper fixes from Leo’s playtest: every caught ball ends in his hands, no ball frozen in the air, the side-on keeper faces the camera, net bulge off, celebrations listed in Animations.\n- #814 Brain rule RUL-TEAM-029: Leo’s reply shape.\n\nHarry:\n- #815 Older patch notes squeezed smaller (82.7 MB to 73.8 MB).\n\nMikey (straight to main):\n- Cookie consent: Google Analytics and PostHog load only after Accept (UK PECR), before the Road to Ballon d’Or release. Brain FACT-DAT-007.\n- Star Pass: Blender art for every box reward, even sizes, tap a reward to spin its 3D model; the Home league dropdown opens as one box.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.123 Leo: keeper catches, dives and the ball, updated 28 Oct (#817).\n- No new patch note for Mikey’s cookie consent or Star Pass art yet."
+  },
+  {
+    "id": "progress-2026-10-29",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-10-29T19:54:00Z",
+    "title": "Progress 29 Oct: Leo overnight sanity sweep, 20 fixes from 5 playtesters; 5 items need a decision. Patch note 0.125.",
+    "prompt": "Daily progress update, 28 Oct 19:54 to 29 Oct 19:54 (UK). 1 pull request merged to main.\n\nLeo:\n- #818 Overnight sanity sweep: 5 testers played the whole game (75 findings), 20 fixed and checked on screen. Money chips read 1.9m not 1m; celebrations in Store > Animations; a can’t-afford line; SAVED/POST on your own shots; the goal scoreboard moved off the goal; pop-ups no longer sit over the commentary; small text fixes.\n- Listed for a decision: store previews (Harry), shop pictures, stacked men, wide cuts, added-time goals.\n\nHarry and Mikey: nothing merged to main in this window.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.125 Leo: overnight sanity sweep (#818)."
+  },
+  {
+    "id": "progress-2026-10-30",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-10-30T19:54:00Z",
+    "title": "Progress 30 Oct: Leo live chances behind a test switch (time your strike as the pass arrives). Patch note 0.126.",
+    "prompt": "Daily progress update, 29 Oct 19:54 to 30 Oct 19:54 (UK). 1 pull request merged to main.\n\nLeo:\n- #819 Live chances, behind a test switch (Settings → Updates, off by default). The last pass keeps coming to you and you time your strike as it arrives: early stabs it low, clean is a full shot, late gets under it. The ball’s pace carries into your shot. 98% of open-play chances go live; set pieces, headers and volleys stay as they are. Works in 2D and 3D, with a test page with dials.\n\nHarry and Mikey: nothing merged to main in this window.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.126 Leo: live chances (test) (#819)."
+  },
+  {
+    "id": "progress-2026-10-31",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-10-31T19:54:00Z",
+    "title": "Progress 31 Oct: Leo social feeds (Twitter, TikTok), goal edits, four commentary teams, live chances update. Patch notes 0.126, 0.129-0.131.",
+    "prompt": "Daily progress update, 30 Oct 19:54 to 31 Oct 19:54 (UK). 5 pull requests merged to main, all Leo’s, all behind Leo’s update switch (off by default).\n\nLeo:\n- #820, #823 Live chances (test): a strike screen, sliders in Settings, and the kick part is now the normal kick screen.\n- #821 Social feed on PC, a new commentary voice, the Social Studio, smooth goal videos.\n- #822 A football Twitter feed and full-screen goal videos.\n- #824 TikTok feed: 52 made-up accounts and 899 lines; goal videos cut five ways (TV replays, highlights, TikTok edits, fan phone videos, reverse angles); four commentary teams with their own voices and lines.\n\nHarry and Mikey: nothing merged to main in this window.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.131 TikTok feed, goal edits, commentators (#824): https://claude.ai/artifact/UCvKX1mFKX74nbAaJUQF8j\n- 0.130 Football Twitter feed and full-screen videos (#822): https://claude.ai/artifact/Ws8HSyrQXW9bLfj4fdEVbU\n- 0.129 Social feed, new voice, smooth goals (#821): https://claude.ai/artifact/Fdzu2CSuNewdamVJckvuby\n- 0.126 Live chances (test), updated twice (#820, #823)."
+  },
+  {
+    "id": "progress-2026-11-01",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-11-01T19:54:00Z",
+    "title": "Progress 1 Nov: Leo live chances (touch, stats), top-corner free kicks, test pages fixed, feed edits; Harry real football. Patch notes 0.132-0.136.",
+    "prompt": "Daily progress update, 31 Oct 19:54 to 1 Nov 19:54 (UK). 5 pull requests merged to main, plus Harry’s real football pushed straight to main.\n\nLeo:\n- #825 2D goal videos, six new edit types (cold, aura, rewind, stat card, montage, angles), replies that fit their post (mismatches 20.7% to 0.1%), a better season video. Behind Leo’s switch.\n- #826 Live chances: take ONE touch (a quick flick); the keeper rushes you in one-on-ones.\n- #827 Live chances: defenders close you down, team-mates keep running, your stats set the skill.\n- #828 Free kicks: the very top corner now goes in about 4 times in 5 (11% to 79% against a 92 keeper). In every match.\n- #829 Test pages, training and the trial checked against the real match and fixed to play like it.\n\nHarry (straight to main):\n- A real football: 12 black pentagons and 20 white hexagons, on Home, the 3D training ground, 3D play and cut scenes; one ball on the title screen (was two).\n\nMikey: nothing merged to main in this window.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.136 Test pages play like the real game (#829).\n- 0.135 Free kicks, the top corner goes in (#828).\n- 0.134 Live chances, everyone moves and your stats decide (#827).\n- 0.133 Live chances, take a touch (#826).\n- 0.132 2D videos, cold edits, replies, season reel (#825): https://claude.ai/artifact/76w9m8sdxQq8TAGbTQfopm\n- No patch note for Harry’s real football yet."
   }
 ]
