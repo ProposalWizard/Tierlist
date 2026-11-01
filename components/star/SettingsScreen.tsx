@@ -235,7 +235,7 @@ export default function SettingsScreen({
   );
 
   return (
-    <Screen glow={glow} className="max-w-md px-3 pb-10 pt-3">
+    <Screen glow={glow} stadium className="max-w-md px-3 pb-10 pt-3">
       {hud && <div className="sticky top-0 z-30 -mx-3 -mt-3 mb-2">{hud}</div>}
       <ScreenHeader
         title="Settings"
