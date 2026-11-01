@@ -27,6 +27,60 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.135",
+      "title": "Leo's patch notes: Free kicks, the top corner goes in",
+      "author": "Leo",
+      "publishedAt": "2026-11-01T12:21:21Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "A perfect free kick into the very top corner was saved almost every time. Now it goes in about 4 times in 5 against any keeper (11% → 79% against a 92-rated keeper, measured). Dipping late over his wall, the keeper falls short of a ball into the very corner and reaches less of it. Other free kicks are only a little easier (ordinary taker 10% → 16%). In every match.",
+      "stats": [
+        {
+          "value": "11% → 79%",
+          "label": "perfect top corner vs a 92 keeper"
+        },
+        {
+          "value": "10% → 16%",
+          "label": "an ordinary taker"
+        },
+        {
+          "value": "0",
+          "label": "change to low and middle shots"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "The very top corner beats the keeper",
+              "detail": "A ball into the very top corner (within ~0.35 m of the post, ~1.9 m high, fading out to 1.2 m in and 1.35 m high): he falls short of it and reaches less of it. 79% go in against 80, 92 and 95-rated keepers."
+            },
+            {
+              "title": "Why it was saved",
+              "detail": "At 17-19 m/s a top keeper reacted in 0.08 s once it passed his wall, got across, and his 2.7 m reach still covered the corner; the top-corner bonus was off for match free kicks."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known / next",
+          "items": [
+            {
+              "title": "Not played by hand yet",
+              "detail": "Measured through the real engine and the match's own free-kick setup."
+            },
+            {
+              "title": "Slower keeper / worse start: not done",
+              "detail": "Both made ordinary free kicks far too easy (up to 36%) without helping the corner more."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+    {
       "version": "0.134",
       "title": "Leo's patch notes: Live chances, everyone moves and your stats decide",
       "author": "Leo",
