@@ -134,10 +134,22 @@ export function cornerness(ball: Ball, P: { cornerEdge: [number, number]; corner
   return e * h;
 }
 
-/** Every free kick setupFreeKick has set up (the match's own). Anything else is a drill's. */
+/** Every free kick setupFreeKick has set up (the match's own). */
 const ruled = new WeakSet<Scenario>();
-/** Was this free kick set up by the match's own rules (rather than a drill's own picture)? */
+/** Was this free kick set up by the match's own rules? */
 export function isMatchFreeKick(sc: Scenario): boolean { return ruled.has(sc); }
+/**
+ * THE TRIAL'S AND TRAINING'S FREE KICKS, MARKED (Leo, 1 Nov 2026: test pages
+ * must play like the real game; the trial and training keep their easier
+ * keeper on purpose). Only a picture marked here gets FREE_KICK_DRILL; every
+ * other free kick, a test page's own picture included, gets the match's
+ * keeper and rules. (Before: anything not set up by the match was a drill,
+ * so Real shots, Real goals/moments, sim90, goal clips and the gallery's
+ * base cells played the easier keeper without the 1 Nov top-corner rule.)
+ */
+const drills = new WeakSet<Scenario>();
+export function markDrillFreeKick(sc: Scenario): Scenario { drills.add(sc); return sc; }
+export function isDrillFreeKick(sc: Scenario): boolean { return drills.has(sc) && !ruled.has(sc); }
 
 /** Wall size for how far off centre the kick is (degrees off the goal's axis). */
 export function wallSizeFor(angleDeg: number, draw: number): number {
@@ -279,7 +291,7 @@ export const freeKickRules: KindRule = {
     // Decided here and saved with the decision, so a replay (which plays a
     // copy of the picture) keeps the same keeper.
     // Settings → Gameplay → Keepers: Old = the drill keeper is the match keeper again.
-    const drill = !isMatchFreeKick(sc) && !oldKeepers();
+    const drill = isDrillFreeKick(sc) && !oldKeepers();
     return {
       kind: "free_kick",
       data: {

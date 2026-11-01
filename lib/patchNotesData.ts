@@ -27,6 +27,64 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.136",
+      "title": "Leo's patch notes: Test pages play like the real game",
+      "author": "Leo",
+      "publishedAt": "2026-11-01T15:55:33Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Audited every test page, training and the trial against the real match. Fixed: free kicks on six test screens had the old easier keeper (now the match keeper with the top-corner fix); test screens struck free kicks with skill 40 (now every stat follows the Play Area); weather and build-ups now match a career; sim90 serves real chances. The trial and training keep their easier free-kick keeper (your pick), now marked. A new test stops drift. To test the free kick fix: Infinite Highlights, only Free kick.",
+      "stats": [
+        {
+          "value": "4",
+          "label": "drifts fixed"
+        },
+        {
+          "value": "6",
+          "label": "test screens with the old FK keeper"
+        },
+        {
+          "value": "40 → dial",
+          "label": "free-kick skill on test screens"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Free kicks: match keeper on every test page",
+              "detail": "Real shots/goals/moments, sim90, goal clips, gallery cells had the trial's keeper. Only the trial's and training's (marked) keep it."
+            },
+            {
+              "title": "Test screens' stats",
+              "detail": "Pace, vision, free kicks and aerial follow the Play Area dials (were 40)."
+            },
+            {
+              "title": "Weather and build-ups",
+              "detail": "Same as a career match (weather update; build-ups with the rebuild switch off)."
+            },
+            {
+              "title": "sim90",
+              "detail": "Uses the match's chance maker, not bare pictures."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known / next",
+          "items": [
+            {
+              "title": "Penalty pictures on test pages",
+              "detail": "Men on the box edge don't slide (looks only)."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+    {
       "version": "0.135",
       "title": "Leo's patch notes: Free kicks, the top corner goes in",
       "author": "Leo",
