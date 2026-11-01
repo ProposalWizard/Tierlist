@@ -21,7 +21,13 @@ export type PostAuthor = Pick<StoredPost["author"], "handle" | "name" | "archety
  * Football Twitter personas pick their own (BETTER_BY_PERSONA). Off: exactly
  * as before.
  */
-export function clipStyleFor(author?: PostAuthor, better = false): ClipStyle {
+export function clipStyleFor(author?: PostAuthor, better = false, cold = false, postKey = ""): ClipStyle {
+  // Cold edits (Leo's switch part "coldEdits", read at the call site): edit
+  // pages, POV and meme pages, numbers pages post the new edits. Off: never.
+  if (cold && author) {
+    const c = coldClipStyleFor(author, postKey);
+    if (c) return c;
+  }
   if (better && author) return betterClipStyleFor(author);
   if (!author) return "broadcast";
   if (author.platform === "tiktok") return "tiktok";
@@ -68,6 +74,50 @@ export function betterClipStyleFor(author: PostAuthor): ClipStyle {
     case "aggregator": case "stats": return "highlights";
     default: return "reverse";
   }
+}
+
+/**
+ * Cold edits (switch part "coldEdits", goalClip/editCold.ts): which accounts
+ * post them. An edit page has several kinds and posts a different one per
+ * goal (picked from the post's goals, `postKey`), so the feed never shows the
+ * same kind twice in a row from one page. A montage of one goal is the angles
+ * edit; a cold or angles edit of several goals is the montage.
+ */
+export const COLD_BY_PERSONA: Record<string, ClipStyle[]> = {
+  // Edit pages: every kind.
+  edits: ["cold", "aura", "angles", "rewind", "cold", "montage"],
+  hype: ["aura", "cold", "aura"],
+  pov: ["cold", "aura", "angles"],
+  matchday: ["cold", "angles", "montage"],
+  commentBot: ["cold", "rewind"],
+  // Meme pages: the rewind ("wait… run it back").
+  meme: ["rewind", "cold"], ratio: ["rewind"], nostalgia: ["rewind"], sundayLeague: ["rewind"],
+  // Numbers pages: the stat card.
+  ranker: ["statCard", "cold"], xg: ["statCard"], facts: ["statCard"], rater: ["statCard"], quiz: ["statCard"],
+  wonderkid: ["statCard", "montage"],
+  // Clip pages: every angle, every goal.
+  clips: ["angles", "montage"],
+  // Young fans and streamers make aura edits.
+  kidFan: ["aura"], streamer: ["cold", "aura"],
+};
+
+/** A post's goals as one string: picks which cold edit a page posts of them. */
+export function coldPostKey(clips: readonly string[] = [], synth: readonly { seed: string }[] = []): string {
+  return `${clips.join(",")}|${synth.map(g => g.seed).join(",")}`;
+}
+
+/** The cold edit an account posts, or undefined (it posts what it did before). */
+export function coldClipStyleFor(author: PostAuthor, postKey = ""): ClipStyle | undefined {
+  const list = author.persona ? COLD_BY_PERSONA[author.persona]
+    : author.platform === "tiktok" || /edit|loops|tok/i.test(author.handle) ? ["cold", "aura", "angles", "montage", "rewind"] as ClipStyle[]
+    : author.archetype === "meme" ? ["rewind", "cold"] as ClipStyle[]
+    : author.archetype === "stats" ? ["statCard"] as ClipStyle[]
+    : undefined;
+  if (!list?.length) return undefined;
+  let h = 2166136261;
+  const key = `${author.handle}|${postKey}`;
+  for (let i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return list[(h >>> 0) % list.length];
 }
 
 /** Which of its cuts an account uses: fixed per account, so each one has a

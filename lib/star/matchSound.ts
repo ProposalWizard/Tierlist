@@ -144,6 +144,13 @@ export function playKick() {
   noiseBurst(0.08, 0.22, 1800, 0.7, "bandpass");
 }
 
+/** A first touch (live chances): softer and shorter than a kick, the inside of the boot on the ball. */
+export function playTouch() {
+  if (!may("kick")) return;
+  tone(150, 0.07, "sine", 0.3, 90);
+  noiseBurst(0.05, 0.1, 1500, 0.8, "bandpass");
+}
+
 // PLUG-IN (optional asset): net ripple/rustle, ~0.35s, /public/star/sfx/net.mp3
 export function playNet() {
   if (!may("net")) return;

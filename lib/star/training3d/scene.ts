@@ -15,6 +15,7 @@
  * line). The goal mouth is at Z = 0, the D at Z ≈ 18.
  */
 import { installAssetVersions } from "../three3d/assetUrl";
+import { makeRealBall } from "../three3d/realBall";
 import { toonYou, toonHeadFor } from "../style3d/toon/bodies";
 import { CX, GOAL_H, GOAL_W, PEN_SPOT_Y } from "../pitch";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D, type FacePic, type PlayerModel } from "../people3d";
@@ -216,21 +217,12 @@ export async function createTrainingScene(container: HTMLElement, data: Training
   for (let i = 0; i < 6; i++) cone(-11 + i * 1.6, 22);
   for (let i = 0; i < 5; i++) cone(13, 8 + i * 2.2);
   cone(-2.2, CROSSBAR_SPOT.y + 0.6); cone(2.2, CROSSBAR_SPOT.y + 0.6);
-  const ballMat = new THREE.MeshStandardMaterial({ color: "#fbfbf8", roughness: 0.45 });
-  const patchMat = new THREE.MeshStandardMaterial({ color: "#1d1f24", roughness: 0.5 });
+  // the real ball: 12 black pentagons, 20 white hexagons (three3d/realBall.ts)
   const makeBall = () => {
     const g = new THREE.Group();
-    const s = new THREE.Mesh(new THREE.SphereGeometry(0.11, 20, 14), ballMat);
+    const s = makeRealBall(THREE, 0.11, { segments: 24 });
     s.castShadow = true;
     g.add(s);
-    // a few dark panels, so the ball reads as a football and its spin shows
-    for (const [a, b] of [[0, 0], [1.2, 0.9], [2.4, -0.7], [3.6, 1.1], [4.8, -0.2], [0.6, -1.3]]) {
-      const p = new THREE.Mesh(new THREE.CircleGeometry(0.038, 5), patchMat);
-      const v = new THREE.Vector3(Math.cos(a) * Math.cos(b), Math.sin(b), Math.sin(a) * Math.cos(b));
-      p.position.copy(v.multiplyScalar(0.1105));
-      p.lookAt(v.clone().multiplyScalar(2));
-      g.add(p);
-    }
     return g;
   };
   for (const [x, z] of [[-3.2, 19.4], [-3.5, 19.9], [-2.9, 20.1], [-3.8, 19.3]]) { const b = makeBall(); b.position.set(x, 0.11, z); root.add(b); }

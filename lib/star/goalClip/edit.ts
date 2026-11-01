@@ -16,11 +16,14 @@
 import { trackDuration, type GoalTrack } from "./track";
 import type { ClipAngle } from "./cameras";
 import { makeBetterEdit, type EditOptions } from "./editBetter";
+import { makeColdEdit, isColdStyle, type EditLook, type EditMusicCue, type BeatHit } from "./editCold";
 export type { EditOptions } from "./editBetter";
 
 export type ClipStyle = "broadcast" | "reverse" | "fan" | "tiktok"
   /** Better goal videos only (switch part "betterVideos"): every goal, quick cuts, a stats card. */
-  | "highlights";
+  | "highlights"
+  /** Cold edits only (switch part "coldEdits", editCold.ts): beat-cut edit-page videos. */
+  | "cold" | "aura" | "rewind" | "statCard" | "montage" | "angles";
 
 export interface Shot {
   /** Which recording (index into Edit.tracks). */
@@ -39,6 +42,8 @@ export interface Shot {
   hold?: number;
   /** Better videos only: what is laid over the picture (betterRender.ts). */
   fx?: ShotFx;
+  /** Cold edits only: the shot plays backwards, from `to` down to `from`. */
+  rewind?: true;
 }
 
 /**
@@ -59,6 +64,27 @@ export interface ShotFx {
   label?: string;
   /** A full-picture card over a held still. */
   card?: "name" | "stats";
+  /** Cold edits only (editCold.ts, drawn by coldRender.ts). */
+  cold?: ColdFx;
+}
+
+/** What a cold edit lays over one shot. All data, so any renderer can draw it. */
+export interface ColdFx {
+  /** Dim the picture round the scorer and ring him (a freeze-frame call-out). */
+  spotlight?: true;
+  /** A small tag in the top bar: "◀◀ REWIND", "CAM 2", "0.5x". */
+  tag?: string;
+  /** "3/7": which goal of a montage. */
+  counter?: string;
+  /** The tape look (scan lines, tracking band) on a rewind. */
+  vhs?: true;
+  /** A card over the held picture: the stat card, the end title, the montage's opening title. */
+  card?: "stat" | "end" | "title";
+  /** The stat card's rows, revealed one a beat: [label, value]. */
+  rows?: [string, string][];
+  /** Title words on a "title"/"end" card. */
+  title?: string;
+  sub?: string;
 }
 
 /**
@@ -73,6 +99,9 @@ export interface Edit {
   /** Better videos (switch part "betterVideos"): drawn by betterRender.ts.
    *  Absent with the part off, so an old edit is the same object as before. */
   better?: true;
+  /** 2D goal videos (switch part "videos2d"): the picture is drawn top-down
+   *  (render2d.ts) under the same cut and graphics. Absent with the part off. */
+  flat?: true;
   /** Better videos: the colour of the captions and cards. */
   accent?: string;
   /** Which of the poster's cuts this is (an account always cuts its own way). */
@@ -83,6 +112,11 @@ export interface Edit {
   fps: number;
   tracks: GoalTrack[];
   shots: Shot[];
+  /** Cold edits only (switch part "coldEdits"): the picture's grade, the music
+   *  and the hits on its beats. Absent on every other edit. */
+  look?: EditLook;
+  music?: EditMusicCue;
+  hits?: BeatHit[];
 }
 
 /** Output sizes. Even numbers (the video encoders need them). */
@@ -137,6 +171,8 @@ const replay = (track: number, angle: ClipAngle, w: { from: number; to: number }
  *  - tiktok: tall, slows right down for the strike, big captions, then once more.
  */
 export function makeEdit(tracks: GoalTrack[], style: ClipStyle, moves: ClipMoves = "old", variant = 0, opts?: EditOptions): Edit {
+  // Cold edits: only ever asked for with the switch part "coldEdits" on (clipStyle.ts).
+  if (isColdStyle(style)) return makeColdEdit(tracks, style, moves, variant, opts);
   if (opts?.better) return makeBetterEdit(tracks, style, moves, variant, opts);
   // A "highlights" cut asked for with the part off: the pages' cut, as before.
   if (style === "highlights") style = "reverse";
@@ -225,7 +261,7 @@ export function momentAt(e: Edit, outT: number): EditMoment {
     const len = shotLength(s);
     if (outT < acc + len || i === e.shots.length - 1) {
       const into = Math.max(0, Math.min(len, outT - acc));
-      return { shot: i, t: s.hold !== undefined ? s.from : s.from + into * s.rate, intoShot: into };
+      return { shot: i, t: s.hold !== undefined ? s.from : s.rewind ? s.to - into * s.rate : s.from + into * s.rate, intoShot: into };
     }
     acc += len;
   }
@@ -245,7 +281,8 @@ export function posterMoment(e: Edit): EditMoment {
 /** A file name a phone will keep: "Goal-Saka-63-ARS-v-CHE.mp4". */
 /** The camera, in a saved file's name, so the TV and the fan's video of the
  *  same goal are two files, not one file saved over the other. */
-const STYLE_IN_NAME: Record<ClipStyle, string> = { broadcast: "TV", reverse: "Highlights", fan: "Fan-cam", tiktok: "Edit", highlights: "Reel" };
+const STYLE_IN_NAME: Record<ClipStyle, string> = { broadcast: "TV", reverse: "Highlights", fan: "Fan-cam", tiktok: "Edit", highlights: "Reel",
+  cold: "Cold-edit", aura: "Aura-edit", rewind: "Rewind", statCard: "Stat-card", montage: "Montage", angles: "Angles" };
 
 export function clipFileName(tracks: GoalTrack | GoalTrack[], ext: string, style?: ClipStyle): string {
   const clean = (s: string) => s.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "");

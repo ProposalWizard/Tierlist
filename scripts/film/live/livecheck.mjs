@@ -32,6 +32,8 @@ const STRIKE = !flag("nostrike");
 if (!STRIKE) await pg.getByText("Kick screen: Off (letting go = the kick)").click();
 // --tap cx,cy: where on the kick screen's ball to tap (-1..1; cy +1 = the bottom, a chip)
 const TAP = (arg("tap", "0,0")).split(",").map(Number);
+// --preset "World class (92)" | "A young player (45)" | "Good (70)": the test page's pretend player
+if (arg("preset", "")) await pg.getByText(arg("preset", ""), { exact: false }).first().click();
 await pg.waitForTimeout(1500);
 const sleep = (ms) => pg.waitForTimeout(ms);
 // In 3D the spot is pressed where the 3D camera draws it (engineView's dev projector).

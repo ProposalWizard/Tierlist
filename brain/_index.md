@@ -26,6 +26,9 @@ FACT-ENG-007 | One match for every tool: careerMatchSpec carries a new career's 
 FACT-ENG-008 | [SUPERSEDED] Live chances (Leo, 30 Oct 2026): own switch kib-live-chances, off by default; the last pass keeps coming and letting go of the drag is the swing. | team,engine
 FACT-ENG-009 | [SUPERSEDED] Live chances (Leo, 30 Oct 2026): own switch kib-live-chances, off by default; with the strike screen (on by default) letting go locks the aim and the tap on a small ball is the kick. | team,engine
 FACT-ENG-010 | Live chances (Leo, 31 Oct 2026): own switch kib-live-chances, off by default; with the kick screen (on by default) letting go sets the timing, then the game's normal kick screen picks where on the ball. | team,engine
+FACT-ENG-011 | Live chances first touch (Leo, 1 Nov 2026): a quick flick from the ring is ONE touch; the keeper rushes in one-on-ones and either smothers it or is beaten. | team,engine
+FACT-ENG-012 | Live chances: the player's stats set the skill (technique, pace, vision, power; liveDialsFor), and everyone moves (defenders close down/cover/chase the touch, team-mates carry on their runs). | team,engine
+FACT-ENG-013 | Match free kicks: a ball into the very top corner beats the keeper about 4 in 5 (FREE_KICK.corner, cornerness); was 11% against a 92 keeper. | engine
 FACT-KIB-001 | Knowitball as a client: three mates building the best football game ever; client code KIB. | client-kib
 FACT-KIB-002 | Audience: football fans 16 to 30 on TikTok, Reels and Shorts (Harry to confirm). | client-kib
 FACT-KIB-003 | Video format: 1080×1920 (9:16), 30 fps, H.264, AAC stereo; v01 ran 44.7 s at -13.4 LUFS. | client-kib
@@ -96,6 +99,7 @@ RUL-ENG-004 | Never add to KNOWN_COPIES, raise CEILING, touch the canary or remo
 RUL-ENG-005 | The real match (app/star-dev/page.tsx) is the only screen that mounts CanvasMatch directly. | engine
 RUL-ENG-006 | Shared mechanics, not a shared picture: a mode keeps the real ball and picks what is on the pitch with scene. | engine
 RUL-ENG-007 | The match engine may change; the engine-warn hook warns Claude and never stops to ask the person (Mikey, 25 Oct 2026). | engine,team,rule
+RUL-ENG-008 | Every gameplay change must reach every test page, training and the trial the same day; only a marked, named difficulty may differ (trial/training free-kick keeper). | ui,rule,engine
 RUL-KIB-001 | Voice: short, cheeky, football-mad, numbers first ("9.8% to 47.6%"). | client-kib
 RUL-KIB-002 | Real game footage only, or marked "ILLUSTRATION" on screen. | client-kib
 RUL-KIB-003 | No real club badges or player photos in ads unless we have the right to use them. | client-kib

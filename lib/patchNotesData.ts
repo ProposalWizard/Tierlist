@@ -27,6 +27,359 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.136",
+      "title": "Leo's patch notes: Test pages play like the real game",
+      "author": "Leo",
+      "publishedAt": "2026-11-01T15:55:33Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Audited every test page, training and the trial against the real match. Fixed: free kicks on six test screens had the old easier keeper (now the match keeper with the top-corner fix); test screens struck free kicks with skill 40 (now every stat follows the Play Area); weather and build-ups now match a career; sim90 serves real chances. The trial and training keep their easier free-kick keeper (your pick), now marked. A new test stops drift. To test the free kick fix: Infinite Highlights, only Free kick.",
+      "stats": [
+        {
+          "value": "4",
+          "label": "drifts fixed"
+        },
+        {
+          "value": "6",
+          "label": "test screens with the old FK keeper"
+        },
+        {
+          "value": "40 → dial",
+          "label": "free-kick skill on test screens"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Free kicks: match keeper on every test page",
+              "detail": "Real shots/goals/moments, sim90, goal clips, gallery cells had the trial's keeper. Only the trial's and training's (marked) keep it."
+            },
+            {
+              "title": "Test screens' stats",
+              "detail": "Pace, vision, free kicks and aerial follow the Play Area dials (were 40)."
+            },
+            {
+              "title": "Weather and build-ups",
+              "detail": "Same as a career match (weather update; build-ups with the rebuild switch off)."
+            },
+            {
+              "title": "sim90",
+              "detail": "Uses the match's chance maker, not bare pictures."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known / next",
+          "items": [
+            {
+              "title": "Penalty pictures on test pages",
+              "detail": "Men on the box edge don't slide (looks only)."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+    {
+      "version": "0.135",
+      "title": "Leo's patch notes: Free kicks, the top corner goes in",
+      "author": "Leo",
+      "publishedAt": "2026-11-01T12:21:21Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "A perfect free kick into the very top corner was saved almost every time. Now it goes in about 4 times in 5 against any keeper (11% → 79% against a 92-rated keeper, measured). Dipping late over his wall, the keeper falls short of a ball into the very corner and reaches less of it. Other free kicks are only a little easier (ordinary taker 10% → 16%). In every match.",
+      "stats": [
+        {
+          "value": "11% → 79%",
+          "label": "perfect top corner vs a 92 keeper"
+        },
+        {
+          "value": "10% → 16%",
+          "label": "an ordinary taker"
+        },
+        {
+          "value": "0",
+          "label": "change to low and middle shots"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "The very top corner beats the keeper",
+              "detail": "A ball into the very top corner (within ~0.35 m of the post, ~1.9 m high, fading out to 1.2 m in and 1.35 m high): he falls short of it and reaches less of it. 79% go in against 80, 92 and 95-rated keepers."
+            },
+            {
+              "title": "Why it was saved",
+              "detail": "At 17-19 m/s a top keeper reacted in 0.08 s once it passed his wall, got across, and his 2.7 m reach still covered the corner; the top-corner bonus was off for match free kicks."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known / next",
+          "items": [
+            {
+              "title": "Not played by hand yet",
+              "detail": "Measured through the real engine and the match's own free-kick setup."
+            },
+            {
+              "title": "Slower keeper / worse start: not done",
+              "detail": "Both made ordinary free kicks far too easy (up to 36%) without helping the corner more."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+    {
+      "version": "0.134",
+      "title": "Leo's patch notes: Live chances, everyone moves and your stats decide",
+      "author": "Leo",
+      "publishedAt": "2026-11-01T06:07:23Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "In live chances the defenders now close you down and chase your touch (one can win it: TACKLED), and team-mates keep making their runs. Your stats set the skill: technique the clean zone, early reach and first touch; pace the late reach and your run; vision the time and slow motion; power the strike. The sliders moved to the test page with 'your stats' sliders and presets. Inside Live chances (still off by default).",
+      "stats": [
+        {
+          "value": "4",
+          "label": "stats in play"
+        },
+        {
+          "value": "0.22 → 0.50 m",
+          "label": "clean zone, 40 → 95 technique"
+        },
+        {
+          "value": "1.3 → 2.3 s",
+          "label": "time, 40 → 95 vision"
+        },
+        {
+          "value": "2",
+          "label": "defenders race your touch"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Everyone moves",
+              "detail": "Nearest defender closes you down, the rest drop goal-side; after your touch the nearest two race for it (TACKLED if first). Team-mates carry on their runs."
+            },
+            {
+              "title": "Your stats decide",
+              "detail": "Technique: clean zone, early reach, first touch. Pace: late reach, run. Vision: time and slow motion. Power: the strike. Tired legs count."
+            },
+            {
+              "title": "Test page: your stats",
+              "detail": "Technique, Pace, Vision, Power sliders, presets 45/70/92, what they give you, and By hand dials. Game Settings keep the two switches and a link."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known / next",
+          "items": [
+            {
+              "title": "3D not checked for the touch",
+              "detail": "Same code; not played in 3D yet."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+    {
+      "version": "0.133",
+      "title": "Leo's patch notes: Live chances, take a touch",
+      "author": "Leo",
+      "publishedAt": "2026-11-01T01:21:09Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "On a live chance you can take ONE touch: a quick flick from the ball the way you want it to go (longer = heavier), timed like a strike. You run onto it and finish as usual. In one-on-ones the keeper now rushes you: take it round him and he goes down and scrambles back; push it at him and he smothers it. Works on any live chance to open up a better angle. Inside Live chances (still off by default).",
+      "stats": [
+        {
+          "value": "1",
+          "label": "touch per chance"
+        },
+        {
+          "value": "22%",
+          "label": "smothered, a touch round him"
+        },
+        {
+          "value": "91%",
+          "label": "smothered, straight at him"
+        },
+        {
+          "value": "2.5 s",
+          "label": "to shoot once it's at your feet"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Quick flick = take a touch",
+              "detail": "From the ring, under a quarter of a second, the way you want it to go; a longer flick is a heavier touch. A slow drag back is still the aim. One per chance. A tip on your first 5 live chances."
+            },
+            {
+              "title": "Timed like a strike",
+              "detail": "Clean on the ring. Early or late: heavier and up to 16 degrees off line. Out of reach: you miss it."
+            },
+            {
+              "title": "The keeper rushes in one-on-ones",
+              "detail": "He comes at you as the pass arrives. Round him: he dives where it was going, stays down a beat, scrambles back. At him: he smothers it (SAVED)."
+            },
+            {
+              "title": "Run onto it and finish",
+              "detail": "You chase it, the ring moves with you, then aim, let go and the kick screen as usual. Shoot within about 2.5 s or you're CLOSED DOWN. The camera glides with you."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known / next",
+          "items": [
+            {
+              "title": "Defenders don't chase your touch",
+              "detail": "Only the keeper reacts for now."
+            },
+            {
+              "title": "3D not checked for the touch",
+              "detail": "Same code path; not played in 3D yet."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+    {
+      "version": "0.132",
+      "title": "Leo's patch notes: 2D videos, cold edits, replies, season reel",
+      "author": "Leo",
+      "publishedAt": "2026-10-31T22:00:12Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/76w9m8sdxQq8TAGbTQfopm",
+      "summary": "Goal videos can be seen in 2D from above. Six new edit types (cold, aura, rewind, stat card, montage, angles) with original beats. Replies now fit the post they sit under (mismatches 20.7% → 0.1%), with arguments and TikTok comment sections. The season video plays every goal, lets you tap to skip, and you can star your favourite goals. All behind Leo's update switch (off by default).",
+      "stats": [
+        {
+          "value": "6",
+          "label": "new edit types with original beats"
+        },
+        {
+          "value": "0.1%",
+          "label": "replies that don't fit (was 20.7%)"
+        },
+        {
+          "value": "712",
+          "label": "reply lines (was ~190)"
+        },
+        {
+          "value": "0",
+          "label": "lost clips in the test season (was 8 of 21)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Turn on the parts",
+              "detail": "Settings → Updates → Leo's update → 2D goal videos (pick 2D), Cold edits, Better end of season (with Football Twitter feed and Feed speed)"
+            },
+            {
+              "title": "Cold edits and replies",
+              "detail": "Phone → Social after a scoring match: the edits page and POV pages post cold edits with music; open a few posts' replies"
+            },
+            {
+              "title": "Season video",
+              "detail": "End of season: tap right/left to skip goals, ☆ to save a favourite; then Stats → Goals → ★ Favourites → Play reel"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "2D goal videos",
+              "detail": "The same recordings seen from above like the 2D match: flat striped pitch, ball trail, net ripple. Every cut, caption and commentary stays. A 3D (TV) or 2D (from above) choice; works in the feed, the season video and the new edits."
+            },
+            {
+              "title": "Cold edits",
+              "detail": "Black and white with the scorer's shirt colour kept, grain, cinema bars, the strike frozen and ringed, shake and flash on every beat, the goal on the drop. Captions like \"cold.\", \"silence.\"."
+            },
+            {
+              "title": "Five more edit types",
+              "detail": "Aura (slow, glowing), rewind (wound back on tape then replayed), stat card (distance and shot speed measured from the goal), montage (up to 8 goals, a counter), angles (the same goal from 4 cameras). Each account posts its own kinds."
+            },
+            {
+              "title": "Original music",
+              "detail": "Four new beat loops (phonk-style, ambient, lo-fi, funk), made here, no copied songs. Every cut lands on a beat."
+            },
+            {
+              "title": "Replies that make sense",
+              "detail": "Problem: a praise post got \"that's a violation\" replies (replies were picked by who posted, not what was said). Fix: each post has a tone and each reply only fits some tones; fans back their club, rivals banter, neutrals joke. 712 reply lines, back-and-forth arguments, TikTok comment sections with \"Liked by creator\"."
+            },
+            {
+              "title": "Favourite goals",
+              "detail": "☆ on any goal in the season video, Stats → Goals and your goal videos. Kept in your save (all devices), never deleted from the phone, a Favourites tab and a favourites reel."
+            },
+            {
+              "title": "Better season video",
+              "detail": "Tap right for the next goal, left to go back, hold to pause, a bar per goal. Title card, milestone cards (first goal, hat-trick, 50th goal…), Goal of the Season (your pick, else the fans' vote), end card."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Lost clips in the season video",
+              "detail": "Goals with no recording on this phone showed a drawn card, late recordings reshuffled the reel, and some goals played twice. Now every goal plays once, in order; a goal with no recording gets a made-up stand-in from its own facts."
+            },
+            {
+              "title": "Wrong quotes",
+              "detail": "Transfer quotes no longer quote contract signings; praise quotes no longer quote a scoreline."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Stand-ins",
+              "detail": "A stand-in goal is made-up movement, not the real goal (the real one stays on the phone that recorded it)."
+            },
+            {
+              "title": "Edits are 8-14 s",
+              "detail": "Real edits are often 4-6 s; ours need the build-up. Cold edits may be common in the feed; tell me if it feels samey."
+            },
+            {
+              "title": "A few posts read wrong",
+              "detail": "e.g. your old club posting your unveiling. Left because the switch-off feed must not change."
+            },
+            {
+              "title": "Not played in a real career yet",
+              "detail": "Checked with tests and stills. Recommend a playtest on a phone with sound on."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.131",
       "title": "Leo's patch notes: TikTok feed, goal edits, commentators",
       "author": "Leo",

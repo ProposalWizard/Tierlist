@@ -452,6 +452,7 @@ export const ADMIN_GUIDES = {
       { group: "The goals", items: [
         ["All / Best 10 / ▶ Videos / a competition", "Which goals to list. All is grouped by season, newest first. Best 10 is the ten that go into the Hall of Fame."],
         ["A goal", "Plays its video when this browser has it (pick the camera on top), else shows its facts card. ✕ closes it."],
+        ["☆ on a goal / ★ Favourites (Leo's \"Better end of season\" part on)", "☆ keeps a goal as a favourite (★). The ★ Favourites tab lists them, with ▶ Play reel: a video of just your favourites. On this page the favourites are kept on the page only; in the game they go into the career save and their videos are never deleted from the phone."],
         ["▶ on a picture", "This goal's video is on this phone."],
       ] },
     ],
@@ -505,14 +506,18 @@ export const ADMIN_GUIDES = {
       { group: "1 · The season", items: [
         ["Club", "Whose colours and badge the video uses."],
         ["Goals: 20 / 8 / 1 / No goals", "How many goals the made-up season has. No goals shows the title and the end card only."],
-        ["Recordings on this phone: Every goal / Some / No recordings", "Which goals have a recording. A goal with none (played on another phone, or simulated) shows as a drawn card with a mini pitch instead of video."],
+        ["Recordings on this phone: Every goal / Some / No recordings", "Which goals have a recording. A goal with none (played on another phone, or simulated) shows as a drawn card with a mini pitch instead of video (Better end of season On: a made stand-in video of that goal)."],
+        ["Lost clips", "The season Leo saw: some goals say they were recorded but the recording is on another phone, some were never recorded, and one goal is in the list twice. Off: drawn cards and a goal twice. On: every goal once, each with a video."],
         ["Trophies won: None / 1 / 3", "The trophies on the end card."],
       ] },
       { group: "2 · Watch it", items: [
+        ["Better end of season: On / Off (as before)", "On = Leo's update part \"Better end of season\": every goal plays, tap to skip, ☆ favourites, milestone cards, Goal of the Season picked from your ☆ then the fans' votes. Off = the reel exactly as before."],
         ["▶ Play the reel", "Opens the reel full screen, exactly as the player sees it."],
+        ["▶ Play my favourites", "Shows once you have tapped ☆ on a goal in the reel: the reel of your favourite goals only. The favourites are kept on this page only, never in a save."],
       ] },
       { group: "The reel", items: [
-        ["Tap the video", "Pause or play. At the end, plays it again."],
+        ["Tap the video", "Pause or play. At the end, plays it again. Better end of season On: tap the right two thirds for the next goal, the left third to go back (to the start of this goal, or the goal before); hold to pause; ← → keys on a computer, Space pauses. The bars at the top are one per goal."],
+        ["☆ Save (right side, Better On)", "Keeps the goal on screen as a favourite (★ Saved). Tap again to take it off. In the game this goes into the career save."],
         ["Skip (top right)", "Leaves at once. Reads Continue once the reel has finished. Back here on this page."],
         ["Speaker", "Sound on or off: the crowd, the commentator over the goal of the season, and a music bed. The same switch as every goal video, remembered on this device."],
         ["Save video", "Makes the video file on this phone (a count while it does), then opens the share menu (Save Video on an iPhone) or downloads it. If the phone asks, tap Save now."],
@@ -944,8 +949,14 @@ export const ADMIN_GUIDES = {
         ["↺ Again", "The same chance again."],
         ["The ring on the grass", "Where you meet the pass. White: not yet. Yellow: in reach. Green: sweet."],
         ["Drag, then let go", "Aim from the ring. Letting go is the swing."],
+        ["Quick flick from the ring", "Your one touch per chance, the way you flick (longer = heavier). Run onto it and finish. In a one-on-one the keeper rushes you: round him and he is beaten, at him and he smothers it."],
       ] },
-      { group: "Dials", items: [
+      { group: "Your stats", items: [
+        ["Technique / Pace / Vision / Power sliders", "Pretend to be any player. Technique: the clean zone, early reach, how clean your touch is. Pace: late reach and your run after a touch. Vision: how much time and slow motion you get. Power: the strike."],
+        ["A young player (45) / Good (70) / World class (92)", "All four stats at once."],
+        ["From the stats / By hand", "From the stats is how the game plays. By hand opens the dials below, over the stats."],
+      ] },
+      { group: "Dials (By hand only)", items: [
         ["Time for the pass to reach you", "Real seconds from the hand-over to the ball at your feet."],
         ["Slowest slow motion", "How slow the pass may run to give you that time."],
         ["Sweet zone / Reach (early) / Reach (late)", "The metres either side of the spot for a clean strike, and how far you can still reach it."],
@@ -954,7 +965,7 @@ export const ADMIN_GUIDES = {
       ] },
     ],
     saving: ["Nothing. The switch and dials live on this page only and reset when you leave."],
-    inGame: ["Only when \"Live chances\" is on, on that phone (off by default): Settings → Match (admins) or Settings → Updates. The game uses that phone's own sliders there, never this page's dials."],
+    inGame: ["Only when \"Live chances\" is on, on that phone (off by default): Settings → Match (admins) or Settings → Updates. In the game the timing comes from your real stats (tired legs count), never this page's sliders."],
     dev: "app/star-live-chances-dev/page.tsx · lib/star/liveChance.ts (plan, ball, swing read; setLiveTest) · components/star/CanvasMatch.tsx (stepLive, liveSwing, liveMiss, startLiveMadeUp) · tests/star/liveChance.mts · scripts/film/live/livecheck.mjs",
   },
   "/star-weather-dev": {
