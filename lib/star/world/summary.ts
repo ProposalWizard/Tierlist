@@ -87,6 +87,7 @@ export function summariseWorld(
     } catch { /* scorers are extra */ }
   }
   for (const e of world?.europe ?? []) {
+    if (career.euroState?.competition === e.competition) continue; // yours is kept above
     tables.push({ name: e.competition, rows: euroRows(e.table) });
     scorers.push({ name: e.competition, goals: topOf(career, e.scorers, 0).map(strip), assists: topOf(career, e.scorers, 1).map(strip) });
   }
@@ -119,6 +120,7 @@ export function summariseWorld(
     if (career.euroState.bracket) brackets.push({ competition: career.euroState.competition, bracket: career.euroState.bracket });
   }
   for (const e of world?.europe ?? []) {
+    if (career.euroState?.competition === e.competition) continue;
     euroFinal(e.competition, e.bracket, e.winner);
     if (e.bracket) brackets.push({ competition: e.competition, bracket: e.bracket });
   }
