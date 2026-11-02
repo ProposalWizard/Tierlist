@@ -391,8 +391,9 @@ function EuroView({ career, world, competition, glow, you }: { career: CareerSta
   const w = world.europe.find(e => e.competition === competition);
   const table = mine ? sortEuro(mine.table ?? mine.liveTable) : w ? sortEuro(w.table) : [];
   const rows: LeagueTeam[] = table.map(r => ({ name: r.name, strength: 0, played: r.played, won: r.won, drawn: r.drawn, lost: r.lost, goalsFor: r.goalsFor, goalsAgainst: r.goalsAgainst, points: r.points }));
-  const bracket = mine?.bracket ?? w?.bracket;
-  const winner = mine?.winner ?? w?.winner;
+  // Your own competition is only ever read from your campaign, never the world's.
+  const bracket = mine ? mine.bracket : w?.bracket;
+  const winner = mine ? mine.winner : w?.winner;
   const own = useMemo(() => (mine ? ownEuroScorers(career, mine) : null), [career, mine]);
   const goals = own ? own.goals : w ? topOf(career, w.scorers, 0) : [];
   const assists = own ? own.assists : w ? topOf(career, w.scorers, 1) : [];
@@ -681,7 +682,8 @@ function LastSeason({ career, summary, onNow, onClose }: { career: CareerState; 
   const trophies = useMemo(() => trophiesOf(career, summary), [career, summary]);
   const you = career.thisSeasonClub ?? career.player.club;
   const groups: string[] = [];
-  for (const t of trophies) if (!groups.includes(TROPHY_GROUP[t.kind])) groups.push(TROPHY_GROUP[t.kind]);
+  const groupOf = (t: Trophy) => (t.competition === "Super Cup" ? "Europe" : TROPHY_GROUP[t.kind]);
+  for (const t of trophies) if (!groups.includes(groupOf(t))) groups.push(groupOf(t));
 
   if (open) {
     return (
@@ -711,7 +713,7 @@ function LastSeason({ career, summary, onNow, onClose }: { career: CareerState; 
       {groups.map(g => (
         <div key={g} className="space-y-1.5">
           <CardTitle className="px-1 pt-1" tone="text-amber-300">{g}</CardTitle>
-          {trophies.filter(t => TROPHY_GROUP[t.kind] === g).map(t => {
+          {trophies.filter(t => groupOf(t) === g).map(t => {
             const tone = TROPHY_TONE[t.kind];
             const mine = t.club === you;
             return (
