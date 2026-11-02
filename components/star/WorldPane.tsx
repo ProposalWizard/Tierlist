@@ -10,6 +10,7 @@ import { worldRoundResults } from "@/lib/star/world/leagues";
 import { compHistoryFor } from "@/lib/star/world/history";
 import { intlCompetitions, intlCompView, intlCompScorers, fullRanking } from "@/lib/star/intl/compView";
 import { cupScorers } from "@/lib/star/world/cupScorers";
+import { ownEuroScorers } from "@/lib/star/world/ownEuroScorers";
 import { intlOf, worldOf as intlWorldOf } from "@/lib/star/intl/career";
 import { seasonQualifiers } from "@/lib/star/qualification";
 import type { CompKind } from "@/lib/star/intl/world";
@@ -385,21 +386,24 @@ function History({ career, comp, glow, you }: { career: CareerState; comp: strin
 // ── Europe ──────────────────────────────────────────────────────────────────
 
 function EuroView({ career, world, competition, glow, you }: { career: CareerState; world: WorldState; competition: "Champions League" | "Europa League"; glow: string; you: string }) {
-  const [tab, setTab] = useState<"table" | "knockout" | "goals" | "history">("table");
+  const [tab, setTab] = useState<"table" | "knockout" | "goals" | "assists" | "history">("table");
   const mine = career.euroState?.competition === competition ? career.euroState : null;
   const w = world.europe.find(e => e.competition === competition);
   const table = mine ? sortEuro(mine.table ?? mine.liveTable) : w ? sortEuro(w.table) : [];
   const rows: LeagueTeam[] = table.map(r => ({ name: r.name, strength: 0, played: r.played, won: r.won, drawn: r.drawn, lost: r.lost, goalsFor: r.goalsFor, goalsAgainst: r.goalsAgainst, points: r.points }));
   const bracket = mine?.bracket ?? w?.bracket;
   const winner = mine?.winner ?? w?.winner;
-  const goals = w ? topOf(career, w.scorers, 0) : [];
+  const own = useMemo(() => (mine ? ownEuroScorers(career, mine) : null), [career, mine]);
+  const goals = own ? own.goals : w ? topOf(career, w.scorers, 0) : [];
+  const assists = own ? own.assists : w ? topOf(career, w.scorers, 1) : [];
   return (
     <div className="space-y-2">
       {winner && <WinnerBar club={winner} glow={glow} />}
-      <SegTabs value={tab} onChange={setTab} tabs={[["table", "League"], ["knockout", "Knockout"], ["goals", "Goals"], ["history", "History"]] as const} />
+      <SegTabs value={tab} onChange={setTab} tabs={[["table", "League"], ["knockout", "Knockout"], ["goals", "Goals"], ["assists", "Assists"], ["history", "History"]] as const} />
       {tab === "table" && (rows.length ? <Table rows={rows} glow={glow} you={you} zone={(p) => (p <= 8 ? "#10b981" : p <= 24 ? "#3b82f6" : "#ef4444")} /> : <Empty text="Not started yet." />)}
       {tab === "knockout" && (bracket ? <EuroKnockout bracket={bracket} glow={glow} you={you} /> : <Empty text="The knockout starts after the league phase." />)}
-      {tab === "goals" && (mine ? <Empty text="Scorers are kept for the competitions you're not in." /> : <Scorers rows={goals} glow={glow} label="goals" />)}
+      {tab === "goals" && <Scorers rows={goals} glow={glow} label="goals" />}
+      {tab === "assists" && <Scorers rows={assists} glow={glow} label="assists" />}
       {tab === "history" && <History career={career} comp={competition} glow={glow} you={you} />}
     </div>
   );

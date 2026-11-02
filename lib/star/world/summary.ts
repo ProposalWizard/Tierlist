@@ -7,6 +7,7 @@ import type { ScorerCounts, WorldState, WorldSummary } from "./types";
 import type { CupState } from "../cups";
 import { koAggregate, type EuroBracket } from "../euroBracket";
 import { cupScorers } from "./cupScorers";
+import { ownEuroScorers } from "./ownEuroScorers";
 
 /**
  * Names for the world's scorer counts, and last season kept whole after the
@@ -80,6 +81,10 @@ export function summariseWorld(
   }
   if (career.euroState) {
     tables.push({ name: career.euroState.competition, rows: euroRows(career.euroState.table ?? career.euroState.liveTable) });
+    try {
+      const own = ownEuroScorers(career, career.euroState);
+      scorers.push({ name: career.euroState.competition, goals: own.goals.map(strip), assists: own.assists.map(strip) });
+    } catch { /* scorers are extra */ }
   }
   for (const e of world?.europe ?? []) {
     tables.push({ name: e.competition, rows: euroRows(e.table) });
