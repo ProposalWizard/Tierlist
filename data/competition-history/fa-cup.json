@@ -1,0 +1,1871 @@
+{
+ "competition": "FA Cup",
+ "slug": "fa-cup",
+ "kind": "cup",
+ "lineage_note": "The Football Association Challenge Cup, played since 1871-72. Not held 1915-16 to 1918-19 and 1939-40 to 1944-45. Finals were replayed after a draw until 1999; penalties since. Top scorer = most goals in the competition proper (First Round to the final; qualifying rounds not counted), as listed in each season's Wikipedia table (sourced to worldfootball.net / BBC Sport).",
+ "history_from": "1871-72",
+ "history_to": "2025-26",
+ "field_from": {
+  "runner_up": "1871-72",
+  "final_score": "1871-72",
+  "top_scorer": "2009-10",
+  "top_assister": null,
+  "player_of_season": "1994-95"
+ },
+ "player_of_season_award": "FA Cup final man of the match / Player of the Match (as recorded in each final's match report: press, broadcaster or the FA's sponsored award), 1995 final on.",
+ "sources": [
+  "https://en.wikipedia.org/wiki/List_of_FA_Cup_finals",
+  "https://www.rsssf.org/tablese/engcuphist.html",
+  "https://en.wikipedia.org/wiki/2025%E2%80%9326_FA_Cup",
+  "https://en.wikipedia.org/wiki/2026_FA_Cup_final"
+ ],
+ "seasons": [
+  {
+   "season": "1871-72",
+   "status": "played",
+   "winner": "Wanderers",
+   "runner_up": "Royal Engineers",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1872-73",
+   "status": "played",
+   "winner": "Wanderers",
+   "runner_up": "Oxford University",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1873-74",
+   "status": "played",
+   "winner": "Oxford University",
+   "runner_up": "Royal Engineers",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1874-75",
+   "status": "played",
+   "winner": "Royal Engineers",
+   "runner_up": "Old Etonians",
+   "final_score": "1-1 (a.e.t.), replay 2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final replayed after a draw."
+  },
+  {
+   "season": "1875-76",
+   "status": "played",
+   "winner": "Wanderers",
+   "runner_up": "Old Etonians",
+   "final_score": "1-1, replay 3-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final replayed after a draw."
+  },
+  {
+   "season": "1876-77",
+   "status": "played",
+   "winner": "Wanderers",
+   "runner_up": "Oxford University",
+   "final_score": "2-1 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1877-78",
+   "status": "played",
+   "winner": "Wanderers",
+   "runner_up": "Royal Engineers",
+   "final_score": "3-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1878-79",
+   "status": "played",
+   "winner": "Old Etonians",
+   "runner_up": "Clapham Rovers",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1879-80",
+   "status": "played",
+   "winner": "Clapham Rovers",
+   "runner_up": "Oxford University",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1880-81",
+   "status": "played",
+   "winner": "Old Carthusians",
+   "runner_up": "Old Etonians",
+   "final_score": "3-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1881-82",
+   "status": "played",
+   "winner": "Old Etonians",
+   "runner_up": "Blackburn Rovers",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1882-83",
+   "status": "played",
+   "winner": "Blackburn Olympic",
+   "runner_up": "Old Etonians",
+   "final_score": "2-1 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1883-84",
+   "status": "played",
+   "winner": "Blackburn Rovers",
+   "runner_up": "Queen's Park",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1884-85",
+   "status": "played",
+   "winner": "Blackburn Rovers",
+   "runner_up": "Queen's Park",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1885-86",
+   "status": "played",
+   "winner": "Blackburn Rovers",
+   "runner_up": "West Bromwich Albion",
+   "final_score": "0-0, replay 2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final replayed after a draw."
+  },
+  {
+   "season": "1886-87",
+   "status": "played",
+   "winner": "Aston Villa",
+   "runner_up": "West Bromwich Albion",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1887-88",
+   "status": "played",
+   "winner": "West Bromwich Albion",
+   "runner_up": "Preston North End",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1888-89",
+   "status": "played",
+   "winner": "Preston North End",
+   "runner_up": "Wolverhampton Wanderers",
+   "final_score": "3-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1889-90",
+   "status": "played",
+   "winner": "Blackburn Rovers",
+   "runner_up": "The Wednesday",
+   "final_score": "6-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1890-91",
+   "status": "played",
+   "winner": "Blackburn Rovers",
+   "runner_up": "Notts County",
+   "final_score": "3-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1891-92",
+   "status": "played",
+   "winner": "West Bromwich Albion",
+   "runner_up": "Aston Villa",
+   "final_score": "3-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1892-93",
+   "status": "played",
+   "winner": "Wolverhampton Wanderers",
+   "runner_up": "Everton",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1893-94",
+   "status": "played",
+   "winner": "Notts County",
+   "runner_up": "Bolton Wanderers",
+   "final_score": "4-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1894-95",
+   "status": "played",
+   "winner": "Aston Villa",
+   "runner_up": "West Bromwich Albion",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1895-96",
+   "status": "played",
+   "winner": "The Wednesday",
+   "runner_up": "Wolverhampton Wanderers",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1896-97",
+   "status": "played",
+   "winner": "Aston Villa",
+   "runner_up": "Everton",
+   "final_score": "3-2",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1897-98",
+   "status": "played",
+   "winner": "Nottingham Forest",
+   "runner_up": "Derby County",
+   "final_score": "3-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1898-99",
+   "status": "played",
+   "winner": "Sheffield United",
+   "runner_up": "Derby County",
+   "final_score": "4-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1899-00",
+   "status": "played",
+   "winner": "Bury",
+   "runner_up": "Southampton",
+   "final_score": "4-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1900-01",
+   "status": "played",
+   "winner": "Tottenham Hotspur",
+   "runner_up": "Sheffield United",
+   "final_score": "2-2, replay 3-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final replayed after a draw."
+  },
+  {
+   "season": "1901-02",
+   "status": "played",
+   "winner": "Sheffield United",
+   "runner_up": "Southampton",
+   "final_score": "1-1, replay 2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final replayed after a draw."
+  },
+  {
+   "season": "1902-03",
+   "status": "played",
+   "winner": "Bury",
+   "runner_up": "Derby County",
+   "final_score": "6-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1903-04",
+   "status": "played",
+   "winner": "Manchester City",
+   "runner_up": "Bolton Wanderers",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1904-05",
+   "status": "played",
+   "winner": "Aston Villa",
+   "runner_up": "Newcastle United",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1905-06",
+   "status": "played",
+   "winner": "Everton",
+   "runner_up": "Newcastle United",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1906-07",
+   "status": "played",
+   "winner": "The Wednesday",
+   "runner_up": "Everton",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1907-08",
+   "status": "played",
+   "winner": "Wolverhampton Wanderers",
+   "runner_up": "Newcastle United",
+   "final_score": "3-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1908-09",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Bristol City",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1909-10",
+   "status": "played",
+   "winner": "Newcastle United",
+   "runner_up": "Barnsley",
+   "final_score": "1-1, replay 2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final replayed after a draw."
+  },
+  {
+   "season": "1910-11",
+   "status": "played",
+   "winner": "Bradford City",
+   "runner_up": "Newcastle United",
+   "final_score": "0-0, replay 1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final replayed after a draw."
+  },
+  {
+   "season": "1911-12",
+   "status": "played",
+   "winner": "Barnsley",
+   "runner_up": "West Bromwich Albion",
+   "final_score": "0-0, replay 1-0 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final replayed after a draw."
+  },
+  {
+   "season": "1912-13",
+   "status": "played",
+   "winner": "Aston Villa",
+   "runner_up": "Sunderland",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1913-14",
+   "status": "played",
+   "winner": "Burnley",
+   "runner_up": "Liverpool",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1914-15",
+   "status": "played",
+   "winner": "Sheffield United",
+   "runner_up": "Chelsea",
+   "final_score": "3-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1915-16",
+   "status": "not_held",
+   "winner": null,
+   "runner_up": null,
+   "final_score": null,
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Not held: First World War."
+  },
+  {
+   "season": "1916-17",
+   "status": "not_held",
+   "winner": null,
+   "runner_up": null,
+   "final_score": null,
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Not held: First World War."
+  },
+  {
+   "season": "1917-18",
+   "status": "not_held",
+   "winner": null,
+   "runner_up": null,
+   "final_score": null,
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Not held: First World War."
+  },
+  {
+   "season": "1918-19",
+   "status": "not_held",
+   "winner": null,
+   "runner_up": null,
+   "final_score": null,
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Not held: First World War."
+  },
+  {
+   "season": "1919-20",
+   "status": "played",
+   "winner": "Aston Villa",
+   "runner_up": "Huddersfield Town",
+   "final_score": "1-0 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1920-21",
+   "status": "played",
+   "winner": "Tottenham Hotspur",
+   "runner_up": "Wolverhampton Wanderers",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1921-22",
+   "status": "played",
+   "winner": "Huddersfield Town",
+   "runner_up": "Preston North End",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1922-23",
+   "status": "played",
+   "winner": "Bolton Wanderers",
+   "runner_up": "West Ham United",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1923-24",
+   "status": "played",
+   "winner": "Newcastle United",
+   "runner_up": "Aston Villa",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1924-25",
+   "status": "played",
+   "winner": "Sheffield United",
+   "runner_up": "Cardiff City",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1925-26",
+   "status": "played",
+   "winner": "Bolton Wanderers",
+   "runner_up": "Manchester City",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1926-27",
+   "status": "played",
+   "winner": "Cardiff City",
+   "runner_up": "Arsenal",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1927-28",
+   "status": "played",
+   "winner": "Blackburn Rovers",
+   "runner_up": "Huddersfield Town",
+   "final_score": "3-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1928-29",
+   "status": "played",
+   "winner": "Bolton Wanderers",
+   "runner_up": "Portsmouth",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1929-30",
+   "status": "played",
+   "winner": "Arsenal",
+   "runner_up": "Huddersfield Town",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1930-31",
+   "status": "played",
+   "winner": "West Bromwich Albion",
+   "runner_up": "Birmingham",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1931-32",
+   "status": "played",
+   "winner": "Newcastle United",
+   "runner_up": "Arsenal",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1932-33",
+   "status": "played",
+   "winner": "Everton",
+   "runner_up": "Manchester City",
+   "final_score": "3-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1933-34",
+   "status": "played",
+   "winner": "Manchester City",
+   "runner_up": "Portsmouth",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1934-35",
+   "status": "played",
+   "winner": "Sheffield Wednesday",
+   "runner_up": "West Bromwich Albion",
+   "final_score": "4-2",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1935-36",
+   "status": "played",
+   "winner": "Arsenal",
+   "runner_up": "Sheffield United",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1936-37",
+   "status": "played",
+   "winner": "Sunderland",
+   "runner_up": "Preston North End",
+   "final_score": "3-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1937-38",
+   "status": "played",
+   "winner": "Preston North End",
+   "runner_up": "Huddersfield Town",
+   "final_score": "1-0 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1938-39",
+   "status": "played",
+   "winner": "Portsmouth",
+   "runner_up": "Wolverhampton Wanderers",
+   "final_score": "4-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1939-40",
+   "status": "not_held",
+   "winner": null,
+   "runner_up": null,
+   "final_score": null,
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Not held: Second World War (1939-40 was abandoned in the qualifying rounds)."
+  },
+  {
+   "season": "1940-41",
+   "status": "not_held",
+   "winner": null,
+   "runner_up": null,
+   "final_score": null,
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Not held: Second World War."
+  },
+  {
+   "season": "1941-42",
+   "status": "not_held",
+   "winner": null,
+   "runner_up": null,
+   "final_score": null,
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Not held: Second World War."
+  },
+  {
+   "season": "1942-43",
+   "status": "not_held",
+   "winner": null,
+   "runner_up": null,
+   "final_score": null,
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Not held: Second World War."
+  },
+  {
+   "season": "1943-44",
+   "status": "not_held",
+   "winner": null,
+   "runner_up": null,
+   "final_score": null,
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Not held: Second World War."
+  },
+  {
+   "season": "1944-45",
+   "status": "not_held",
+   "winner": null,
+   "runner_up": null,
+   "final_score": null,
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Not held: Second World War."
+  },
+  {
+   "season": "1945-46",
+   "status": "played",
+   "winner": "Derby County",
+   "runner_up": "Charlton Athletic",
+   "final_score": "4-1 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1946-47",
+   "status": "played",
+   "winner": "Charlton Athletic",
+   "runner_up": "Burnley",
+   "final_score": "1-0 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1947-48",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Blackpool",
+   "final_score": "4-2",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1948-49",
+   "status": "played",
+   "winner": "Wolverhampton Wanderers",
+   "runner_up": "Leicester City",
+   "final_score": "3-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1949-50",
+   "status": "played",
+   "winner": "Arsenal",
+   "runner_up": "Liverpool",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1950-51",
+   "status": "played",
+   "winner": "Newcastle United",
+   "runner_up": "Blackpool",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1951-52",
+   "status": "played",
+   "winner": "Newcastle United",
+   "runner_up": "Arsenal",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1952-53",
+   "status": "played",
+   "winner": "Blackpool",
+   "runner_up": "Bolton Wanderers",
+   "final_score": "4-3",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1953-54",
+   "status": "played",
+   "winner": "West Bromwich Albion",
+   "runner_up": "Preston North End",
+   "final_score": "3-2",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1954-55",
+   "status": "played",
+   "winner": "Newcastle United",
+   "runner_up": "Manchester City",
+   "final_score": "3-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1955-56",
+   "status": "played",
+   "winner": "Manchester City",
+   "runner_up": "Birmingham City",
+   "final_score": "3-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1956-57",
+   "status": "played",
+   "winner": "Aston Villa",
+   "runner_up": "Manchester United",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1957-58",
+   "status": "played",
+   "winner": "Bolton Wanderers",
+   "runner_up": "Manchester United",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1958-59",
+   "status": "played",
+   "winner": "Nottingham Forest",
+   "runner_up": "Luton Town",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1959-60",
+   "status": "played",
+   "winner": "Wolverhampton Wanderers",
+   "runner_up": "Blackburn Rovers",
+   "final_score": "3-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1960-61",
+   "status": "played",
+   "winner": "Tottenham Hotspur",
+   "runner_up": "Leicester City",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1961-62",
+   "status": "played",
+   "winner": "Tottenham Hotspur",
+   "runner_up": "Burnley",
+   "final_score": "3-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1962-63",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Leicester City",
+   "final_score": "3-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1963-64",
+   "status": "played",
+   "winner": "West Ham United",
+   "runner_up": "Preston North End",
+   "final_score": "3-2",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1964-65",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Leeds United",
+   "final_score": "2-1 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1965-66",
+   "status": "played",
+   "winner": "Everton",
+   "runner_up": "Sheffield Wednesday",
+   "final_score": "3-2",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1966-67",
+   "status": "played",
+   "winner": "Tottenham Hotspur",
+   "runner_up": "Chelsea",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1967-68",
+   "status": "played",
+   "winner": "West Bromwich Albion",
+   "runner_up": "Everton",
+   "final_score": "1-0 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1968-69",
+   "status": "played",
+   "winner": "Manchester City",
+   "runner_up": "Leicester City",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1969-70",
+   "status": "played",
+   "winner": "Chelsea",
+   "runner_up": "Leeds United",
+   "final_score": "2-2 (a.e.t.), replay 2-1 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final replayed after a draw."
+  },
+  {
+   "season": "1970-71",
+   "status": "played",
+   "winner": "Arsenal",
+   "runner_up": "Liverpool",
+   "final_score": "2-1 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1971-72",
+   "status": "played",
+   "winner": "Leeds United",
+   "runner_up": "Arsenal",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1972-73",
+   "status": "played",
+   "winner": "Sunderland",
+   "runner_up": "Leeds United",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1973-74",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Newcastle United",
+   "final_score": "3-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1974-75",
+   "status": "played",
+   "winner": "West Ham United",
+   "runner_up": "Fulham",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1975-76",
+   "status": "played",
+   "winner": "Southampton",
+   "runner_up": "Manchester United",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1976-77",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Liverpool",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1977-78",
+   "status": "played",
+   "winner": "Ipswich Town",
+   "runner_up": "Arsenal",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1978-79",
+   "status": "played",
+   "winner": "Arsenal",
+   "runner_up": "Manchester United",
+   "final_score": "3-2",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1979-80",
+   "status": "played",
+   "winner": "West Ham United",
+   "runner_up": "Arsenal",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1980-81",
+   "status": "played",
+   "winner": "Tottenham Hotspur",
+   "runner_up": "Manchester City",
+   "final_score": "1-1 (a.e.t.), replay 3-2",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final replayed after a draw."
+  },
+  {
+   "season": "1981-82",
+   "status": "played",
+   "winner": "Tottenham Hotspur",
+   "runner_up": "Queens Park Rangers",
+   "final_score": "1-1 (a.e.t.), replay 1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final replayed after a draw."
+  },
+  {
+   "season": "1982-83",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Brighton & Hove Albion",
+   "final_score": "2-2 (a.e.t.), replay 4-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final replayed after a draw."
+  },
+  {
+   "season": "1983-84",
+   "status": "played",
+   "winner": "Everton",
+   "runner_up": "Watford",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1984-85",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Everton",
+   "final_score": "1-0 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1985-86",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Everton",
+   "final_score": "3-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1986-87",
+   "status": "played",
+   "winner": "Coventry City",
+   "runner_up": "Tottenham Hotspur",
+   "final_score": "3-2 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1987-88",
+   "status": "played",
+   "winner": "Wimbledon",
+   "runner_up": "Liverpool",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1988-89",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Everton",
+   "final_score": "3-2 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1989-90",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Crystal Palace",
+   "final_score": "3-3 (a.e.t.), replay 1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final replayed after a draw."
+  },
+  {
+   "season": "1990-91",
+   "status": "played",
+   "winner": "Tottenham Hotspur",
+   "runner_up": "Nottingham Forest",
+   "final_score": "2-1 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1991-92",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Sunderland",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1992-93",
+   "status": "played",
+   "winner": "Arsenal",
+   "runner_up": "Sheffield Wednesday",
+   "final_score": "1-1 (a.e.t.), replay 2-1 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final replayed after a draw."
+  },
+  {
+   "season": "1993-94",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Chelsea",
+   "final_score": "4-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1994-95",
+   "status": "played",
+   "winner": "Everton",
+   "runner_up": "Manchester United",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Dave Watson",
+    "team": "Everton"
+   }
+  },
+  {
+   "season": "1995-96",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Liverpool",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Roy Keane",
+    "team": "Manchester United"
+   }
+  },
+  {
+   "season": "1996-97",
+   "status": "played",
+   "winner": "Chelsea",
+   "runner_up": "Middlesbrough",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Roberto Di Matteo",
+    "team": "Chelsea"
+   }
+  },
+  {
+   "season": "1997-98",
+   "status": "played",
+   "winner": "Arsenal",
+   "runner_up": "Newcastle United",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Ray Parlour",
+    "team": "Arsenal"
+   }
+  },
+  {
+   "season": "1998-99",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Newcastle United",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Teddy Sheringham",
+    "team": "Manchester United"
+   }
+  },
+  {
+   "season": "1999-00",
+   "status": "played",
+   "winner": "Chelsea",
+   "runner_up": "Aston Villa",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Dennis Wise",
+    "team": "Chelsea"
+   }
+  },
+  {
+   "season": "2000-01",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Arsenal",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Michael Owen",
+    "team": "Liverpool"
+   }
+  },
+  {
+   "season": "2001-02",
+   "status": "played",
+   "winner": "Arsenal",
+   "runner_up": "Chelsea",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Freddie Ljungberg",
+    "team": "Arsenal"
+   }
+  },
+  {
+   "season": "2002-03",
+   "status": "played",
+   "winner": "Arsenal",
+   "runner_up": "Southampton",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Thierry Henry",
+    "team": "Arsenal"
+   }
+  },
+  {
+   "season": "2003-04",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Millwall",
+   "final_score": "3-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Ruud van Nistelrooy",
+    "team": "Manchester United"
+   }
+  },
+  {
+   "season": "2004-05",
+   "status": "played",
+   "winner": "Arsenal",
+   "runner_up": "Manchester United",
+   "final_score": "0-0 (5-4 pens)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Wayne Rooney",
+    "team": "Manchester United"
+   },
+   "notes": "Won on penalties after extra time."
+  },
+  {
+   "season": "2005-06",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "West Ham United",
+   "final_score": "3-3 (3-1 pens)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Steven Gerrard",
+    "team": "Liverpool"
+   },
+   "notes": "Won on penalties after extra time."
+  },
+  {
+   "season": "2006-07",
+   "status": "played",
+   "winner": "Chelsea",
+   "runner_up": "Manchester United",
+   "final_score": "1-0 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Frank Lampard",
+    "team": "Chelsea"
+   }
+  },
+  {
+   "season": "2007-08",
+   "status": "played",
+   "winner": "Portsmouth",
+   "runner_up": "Cardiff City",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Nwankwo Kanu",
+    "team": "Portsmouth"
+   }
+  },
+  {
+   "season": "2008-09",
+   "status": "played",
+   "winner": "Chelsea",
+   "runner_up": "Everton",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Ashley Cole",
+    "team": "Chelsea"
+   }
+  },
+  {
+   "season": "2009-10",
+   "status": "played",
+   "winner": "Chelsea",
+   "runner_up": "Portsmouth",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "John Carew",
+     "team": "Aston Villa",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Didier Drogba",
+    "team": "Chelsea"
+   }
+  },
+  {
+   "season": "2010-11",
+   "status": "played",
+   "winner": "Manchester City",
+   "runner_up": "Stoke City",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Mathieu Manset",
+     "team": "Hereford United",
+     "goals": 6
+    },
+    {
+     "name": "Scott McGleish",
+     "team": "Leyton Orient",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Mario Balotelli",
+    "team": "Manchester City"
+   }
+  },
+  {
+   "season": "2011-12",
+   "status": "played",
+   "winner": "Chelsea",
+   "runner_up": "Liverpool",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Jermaine Beckford",
+     "team": "Leicester City",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Juan Mata",
+    "team": "Chelsea"
+   }
+  },
+  {
+   "season": "2012-13",
+   "status": "played",
+   "winner": "Wigan Athletic",
+   "runner_up": "Manchester City",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Danny Hylton",
+     "team": "Aldershot Town",
+     "goals": 8
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Callum McManaman",
+    "team": "Wigan Athletic"
+   }
+  },
+  {
+   "season": "2013-14",
+   "status": "played",
+   "winner": "Arsenal",
+   "runner_up": "Hull City",
+   "final_score": "3-2 (a.e.t.)",
+   "top_scorer": [
+    {
+     "name": "Britt Assombalonga",
+     "team": "Peterborough United",
+     "goals": 5
+    },
+    {
+     "name": "Sam Clucas",
+     "team": "Mansfield Town",
+     "goals": 5
+    },
+    {
+     "name": "Joe Garner",
+     "team": "Preston North End",
+     "goals": 5
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Aaron Ramsey",
+    "team": "Arsenal"
+   }
+  },
+  {
+   "season": "2014-15",
+   "status": "played",
+   "winner": "Arsenal",
+   "runner_up": "Aston Villa",
+   "final_score": "4-0",
+   "top_scorer": [
+    {
+     "name": "Saido Berahino",
+     "team": "West Bromwich Albion",
+     "goals": 5
+    },
+    {
+     "name": "Paul Gallagher",
+     "team": "Preston North End",
+     "goals": 5
+    },
+    {
+     "name": "Jon Stead",
+     "team": "Bradford City",
+     "goals": 5
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Santi Cazorla",
+    "team": "Arsenal"
+   }
+  },
+  {
+   "season": "2015-16",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Crystal Palace",
+   "final_score": "2-1 (a.e.t.)",
+   "top_scorer": [
+    {
+     "name": "Matěj Vydra",
+     "team": "Reading",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Wayne Rooney",
+    "team": "Manchester United"
+   }
+  },
+  {
+   "season": "2016-17",
+   "status": "played",
+   "winner": "Arsenal",
+   "runner_up": "Chelsea",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Adam Morgan",
+     "team": "Curzon Ashton",
+     "goals": 6
+    },
+    {
+     "name": "Son Heung-min",
+     "team": "Tottenham Hotspur",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Alexis Sánchez",
+    "team": "Arsenal"
+   }
+  },
+  {
+   "season": "2017-18",
+   "status": "played",
+   "winner": "Chelsea",
+   "runner_up": "Manchester United",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Will Grigg",
+     "team": "Wigan Athletic",
+     "goals": 7
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Antonio Rüdiger",
+    "team": "Chelsea"
+   }
+  },
+  {
+   "season": "2018-19",
+   "status": "played",
+   "winner": "Manchester City",
+   "runner_up": "Watford",
+   "final_score": "6-0",
+   "top_scorer": [
+    {
+     "name": "Padraig Amond",
+     "team": "Newport County",
+     "goals": 5
+    },
+    {
+     "name": "Gabriel Jesus",
+     "team": "Manchester City",
+     "goals": 5
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Kevin De Bruyne",
+    "team": "Manchester City"
+   }
+  },
+  {
+   "season": "2019-20",
+   "status": "played",
+   "winner": "Arsenal",
+   "runner_up": "Chelsea",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "James Ball",
+     "team": "Solihull Moors",
+     "goals": 5
+    },
+    {
+     "name": "Harry McKirdy",
+     "team": "Carlisle United",
+     "goals": 5
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Pierre-Emerick Aubameyang",
+    "team": "Arsenal"
+   },
+   "notes": "Final played 1 August 2020 (COVID-19 delay)."
+  },
+  {
+   "season": "2020-21",
+   "status": "played",
+   "winner": "Leicester City",
+   "runner_up": "Chelsea",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Tammy Abraham",
+     "team": "Chelsea",
+     "goals": 4
+    },
+    {
+     "name": "Kelechi Iheanacho",
+     "team": "Leicester City",
+     "goals": 4
+    },
+    {
+     "name": "Gary Madine",
+     "team": "Blackpool",
+     "goals": 4
+    },
+    {
+     "name": "Alfie May",
+     "team": "Cheltenham Town",
+     "goals": 4
+    },
+    {
+     "name": "Tom Nichols",
+     "team": "Crawley Town",
+     "goals": 4
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Youri Tielemans",
+    "team": "Leicester City"
+   }
+  },
+  {
+   "season": "2021-22",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Chelsea",
+   "final_score": "0-0 (6-5 pens)",
+   "top_scorer": [
+    {
+     "name": "Riyad Mahrez",
+     "team": "Manchester City",
+     "goals": 4
+    },
+    {
+     "name": "Jayden Stockley",
+     "team": "Charlton Athletic",
+     "goals": 4
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Luis Díaz",
+    "team": "Liverpool"
+   },
+   "notes": "Won on penalties after extra time. Top scorer counts the competition proper only; Adam Boyes (Marske United) won the FA Golden Ball with 11 goals counting the qualifying rounds."
+  },
+  {
+   "season": "2022-23",
+   "status": "played",
+   "winner": "Manchester City",
+   "runner_up": "Manchester United",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Paul Mullin",
+     "team": "Wrexham",
+     "goals": 8
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "İlkay Gündoğan",
+    "team": "Manchester City"
+   },
+   "notes": "Top scorer counts the competition proper only; Mullin won the FA Golden Ball with 9 goals counting the qualifying rounds."
+  },
+  {
+   "season": "2023-24",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Manchester City",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Ellis Simms",
+     "team": "Coventry City",
+     "goals": 6
+    },
+    {
+     "name": "Sammie Szmodics",
+     "team": "Blackburn Rovers",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Kobbie Mainoo",
+    "team": "Manchester United"
+   }
+  },
+  {
+   "season": "2024-25",
+   "status": "played",
+   "winner": "Crystal Palace",
+   "runner_up": "Manchester City",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Josh Magennis",
+     "team": "Exeter City",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Daniel Muñoz",
+    "team": "Crystal Palace"
+   }
+  },
+  {
+   "season": "2025-26",
+   "status": "played",
+   "winner": "Manchester City",
+   "runner_up": "Chelsea",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Tyrese Shade",
+     "team": "Burton Albion",
+     "goals": 5
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Antoine Semenyo",
+    "team": "Manchester City"
+   }
+  }
+ ]
+}

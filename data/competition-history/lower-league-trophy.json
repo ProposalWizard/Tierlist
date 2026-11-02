@@ -1,0 +1,582 @@
+{
+ "competition": "Lower League Trophy",
+ "slug": "lower-league-trophy",
+ "kind": "cup",
+ "lineage_note": "The EFL Trophy (Football League Trophy), cup for the third and fourth tiers, first played 1983-84 as the Associate Members' Cup; sponsor names in name_then. Under-21 academy sides of top clubs entered from 2016-17. Season label = the season the final ended. Top scorer from the infobox of each season's Wikipedia article.",
+ "history_from": "1983-84",
+ "history_to": "2025-26",
+ "field_from": {
+  "runner_up": "1983-84",
+  "final_score": "1983-84",
+  "top_scorer": "2016-17",
+  "top_assister": null,
+  "player_of_season": null
+ },
+ "player_of_season_award": null,
+ "sources": [
+  "https://en.wikipedia.org/wiki/List_of_EFL_Trophy_finals",
+  "https://www.rsssf.org/tablese/engassmembcuphist.html",
+  "https://en.wikipedia.org/wiki/EFL_Trophy"
+ ],
+ "seasons": [
+  {
+   "season": "1983-84",
+   "name_then": "Associate Members' Cup",
+   "status": "played",
+   "winner": "Bournemouth",
+   "runner_up": "Hull City",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final played at Boothferry Park, Hull."
+  },
+  {
+   "season": "1984-85",
+   "name_then": "Freight Rover Trophy",
+   "status": "played",
+   "winner": "Wigan Athletic",
+   "runner_up": "Brentford",
+   "final_score": "3-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1985-86",
+   "name_then": "Freight Rover Trophy",
+   "status": "played",
+   "winner": "Bristol City",
+   "runner_up": "Bolton Wanderers",
+   "final_score": "3-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1986-87",
+   "name_then": "Freight Rover Trophy",
+   "status": "played",
+   "winner": "Mansfield Town",
+   "runner_up": "Bristol City",
+   "final_score": "1-1 (5-4 pens)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Won on penalties after extra time."
+  },
+  {
+   "season": "1987-88",
+   "name_then": "Sherpa Van Trophy",
+   "status": "played",
+   "winner": "Wolverhampton Wanderers",
+   "runner_up": "Burnley",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1988-89",
+   "name_then": "Sherpa Van Trophy",
+   "status": "played",
+   "winner": "Bolton Wanderers",
+   "runner_up": "Torquay United",
+   "final_score": "4-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1989-90",
+   "name_then": "Leyland DAF Cup",
+   "status": "played",
+   "winner": "Tranmere Rovers",
+   "runner_up": "Bristol Rovers",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1990-91",
+   "name_then": "Leyland DAF Cup",
+   "status": "played",
+   "winner": "Birmingham City",
+   "runner_up": "Tranmere Rovers",
+   "final_score": "3-2",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1991-92",
+   "name_then": "Leyland DAF Cup",
+   "status": "played",
+   "winner": "Stoke City",
+   "runner_up": "Stockport County",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1992-93",
+   "name_then": "Autoglass Trophy",
+   "status": "played",
+   "winner": "Port Vale",
+   "runner_up": "Stockport County",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1993-94",
+   "name_then": "Autoglass Trophy",
+   "status": "played",
+   "winner": "Swansea City",
+   "runner_up": "Huddersfield Town",
+   "final_score": "1-1 (3-1 pens)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Won on penalties after extra time."
+  },
+  {
+   "season": "1994-95",
+   "name_then": "Auto Windscreens Shield",
+   "status": "played",
+   "winner": "Birmingham City",
+   "runner_up": "Carlisle United",
+   "final_score": "1-0 (a.e.t., golden goal)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1995-96",
+   "name_then": "Auto Windscreens Shield",
+   "status": "played",
+   "winner": "Rotherham United",
+   "runner_up": "Shrewsbury Town",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1996-97",
+   "name_then": "Auto Windscreens Shield",
+   "status": "played",
+   "winner": "Carlisle United",
+   "runner_up": "Colchester United",
+   "final_score": "0-0 (4-3 pens)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Won on penalties after extra time."
+  },
+  {
+   "season": "1997-98",
+   "name_then": "Auto Windscreens Shield",
+   "status": "played",
+   "winner": "Grimsby Town",
+   "runner_up": "Bournemouth",
+   "final_score": "2-1 (a.e.t., golden goal)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1998-99",
+   "name_then": "Auto Windscreens Shield",
+   "status": "played",
+   "winner": "Wigan Athletic",
+   "runner_up": "Millwall",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1999-00",
+   "name_then": "Auto Windscreens Shield",
+   "status": "played",
+   "winner": "Stoke City",
+   "runner_up": "Bristol City",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2000-01",
+   "name_then": "LDV Vans Trophy",
+   "status": "played",
+   "winner": "Port Vale",
+   "runner_up": "Brentford",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2001-02",
+   "name_then": "LDV Vans Trophy",
+   "status": "played",
+   "winner": "Blackpool",
+   "runner_up": "Cambridge United",
+   "final_score": "4-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2002-03",
+   "name_then": "LDV Vans Trophy",
+   "status": "played",
+   "winner": "Bristol City",
+   "runner_up": "Carlisle United",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2003-04",
+   "name_then": "LDV Vans Trophy",
+   "status": "played",
+   "winner": "Blackpool",
+   "runner_up": "Southend United",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2004-05",
+   "name_then": "LDV Vans Trophy",
+   "status": "played",
+   "winner": "Wrexham",
+   "runner_up": "Southend United",
+   "final_score": "2-0 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2005-06",
+   "name_then": "LDV Vans Trophy",
+   "status": "played",
+   "winner": "Swansea City",
+   "runner_up": "Carlisle United",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2006-07",
+   "name_then": "LDV Vans Trophy",
+   "status": "played",
+   "winner": "Doncaster Rovers",
+   "runner_up": "Bristol Rovers",
+   "final_score": "3-2 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2007-08",
+   "name_then": "Johnstone's Paint Trophy",
+   "status": "played",
+   "winner": "Milton Keynes Dons",
+   "runner_up": "Grimsby Town",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2008-09",
+   "name_then": "Johnstone's Paint Trophy",
+   "status": "played",
+   "winner": "Luton Town",
+   "runner_up": "Scunthorpe United",
+   "final_score": "3-2 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2009-10",
+   "name_then": "Johnstone's Paint Trophy",
+   "status": "played",
+   "winner": "Southampton",
+   "runner_up": "Carlisle United",
+   "final_score": "4-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2010-11",
+   "name_then": "Johnstone's Paint Trophy",
+   "status": "played",
+   "winner": "Carlisle United",
+   "runner_up": "Brentford",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2011-12",
+   "name_then": "Johnstone's Paint Trophy",
+   "status": "played",
+   "winner": "Chesterfield",
+   "runner_up": "Swindon Town",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2012-13",
+   "name_then": "Johnstone's Paint Trophy",
+   "status": "played",
+   "winner": "Crewe Alexandra",
+   "runner_up": "Southend United",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2013-14",
+   "name_then": "Johnstone's Paint Trophy",
+   "status": "played",
+   "winner": "Peterborough United",
+   "runner_up": "Chesterfield",
+   "final_score": "3-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2014-15",
+   "name_then": "Johnstone's Paint Trophy",
+   "status": "played",
+   "winner": "Bristol City",
+   "runner_up": "Walsall",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2015-16",
+   "name_then": "Johnstone's Paint Trophy",
+   "status": "played",
+   "winner": "Barnsley",
+   "runner_up": "Oxford United",
+   "final_score": "3-2",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2016-17",
+   "name_then": "Checkatrade Trophy",
+   "status": "played",
+   "winner": "Coventry City",
+   "runner_up": "Oxford United",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Amadou Bakayoko",
+     "team": "Walsall",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2017-18",
+   "name_then": "Checkatrade Trophy",
+   "status": "played",
+   "winner": "Lincoln City",
+   "runner_up": "Shrewsbury Town",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Callum Hudson-Odoi",
+     "team": "Chelsea U21",
+     "goals": 4
+    },
+    {
+     "name": "Kenji Gorré",
+     "team": "Swansea City U21",
+     "goals": 4
+    },
+    {
+     "name": "Jack Payne",
+     "team": "Bradford City",
+     "goals": 4
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2018-19",
+   "name_then": "Checkatrade Trophy",
+   "status": "played",
+   "winner": "Portsmouth",
+   "runner_up": "Sunderland",
+   "final_score": "2-2 (5-4 pens)",
+   "top_scorer": [
+    {
+     "name": "Dom Telford",
+     "team": "Bury",
+     "goals": 7
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Won on penalties after extra time."
+  },
+  {
+   "season": "2019-20",
+   "name_then": "Leasing.com Trophy",
+   "status": "played",
+   "winner": "Salford City",
+   "runner_up": "Portsmouth",
+   "final_score": "0-0 (4-2 pens)",
+   "top_scorer": [
+    {
+     "name": "Tristan Abrahams",
+     "team": "Newport County",
+     "goals": 5
+    },
+    {
+     "name": "Kevin van Veen",
+     "team": "Scunthorpe United",
+     "goals": 5
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Won on penalties after extra time. Final delayed from April 2020 to 13 March 2021 (COVID-19)."
+  },
+  {
+   "season": "2020-21",
+   "name_then": "Papa John's Trophy",
+   "status": "played",
+   "winner": "Sunderland",
+   "runner_up": "Tranmere Rovers",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Harvey Saunders",
+     "team": "Fleetwood Town",
+     "goals": 5
+    },
+    {
+     "name": "Charlie Wyke",
+     "team": "Sunderland",
+     "goals": 5
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2021-22",
+   "name_then": "Papa John's Trophy",
+   "status": "played",
+   "winner": "Rotherham United",
+   "runner_up": "Sutton United",
+   "final_score": "4-2 (a.e.t.)",
+   "top_scorer": [
+    {
+     "name": "Cameron Archer",
+     "team": "Aston Villa U21",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2022-23",
+   "name_then": "Papa John's Trophy",
+   "status": "played",
+   "winner": "Bolton Wanderers",
+   "runner_up": "Plymouth Argyle",
+   "final_score": "4-0",
+   "top_scorer": [
+    {
+     "name": "Tom Cannon",
+     "team": "Everton U21",
+     "goals": 5
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2023-24",
+   "name_then": "Bristol Street Motors Trophy",
+   "status": "played",
+   "winner": "Peterborough United",
+   "runner_up": "Wycombe Wanderers",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Tyler Smith",
+     "team": "Bradford City",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2024-25",
+   "name_then": "Vertu Trophy",
+   "status": "played",
+   "winner": "Peterborough United",
+   "runner_up": "Birmingham City",
+   "final_score": "2-0",
+   "top_scorer": [
+    {
+     "name": "Aaron Collins",
+     "team": "Bolton Wanderers",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "2025-26",
+   "name_then": "Vertu Trophy",
+   "status": "played",
+   "winner": "Luton Town",
+   "runner_up": "Stockport County",
+   "final_score": "3-1",
+   "top_scorer": [
+    {
+     "name": "Billy Sharp",
+     "team": "Doncaster Rovers",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  }
+ ]
+}
