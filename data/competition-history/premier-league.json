@@ -1,0 +1,2716 @@
+{
+  "competition": "Premier League",
+  "slug": "premier-league",
+  "kind": "league",
+  "lineage_note": "Top tier of English football. 1888-89 to 1891-92 = Football League (single division); 1892-93 to 1991-92 = Football League First Division; 1992-93 on = Premier League.",
+  "history_from": "1888-89",
+  "history_to": "2025-26",
+  "field_from": {
+    "runner_up": "1888-89",
+    "final_score": null,
+    "top_scorer": "1888-89",
+    "top_assister": "1992-93",
+    "player_of_season": "1947-48"
+  },
+  "player_of_season_award": "FWA Footballer of the Year (Football Writers' Association), 1947-48 to 2025-26 - one award for the whole run; it is England-wide but every winner except Dave Mackay (shared 1968-69) played in the top tier.",
+  "sources": [
+    "https://en.wikipedia.org/wiki/List_of_English_football_champions",
+    "https://en.wikipedia.org/wiki/List_of_English_football_first_tier_top_scorers",
+    "https://www.rsssf.org/tablese/engtops.html",
+    "http://www.footballsite.co.uk/Statistics/Seasons/ (Division 1 season pages, 1892-93 to 1991-92)",
+    "https://en.wikipedia.org/wiki/Premier_League_Golden_Boot",
+    "https://en.wikipedia.org/wiki/Premier_League_Playmaker_of_the_Season (Premier League official assist leaders, 1992-93 on)",
+    "https://en.wikipedia.org/wiki/FWA_Footballer_of_the_Year",
+    "Wikipedia season articles 1889-90, 1895-96, 1905-06, 1937-38 Football League (disputed top-scorer counts)"
+  ],
+  "seasons": [
+    {
+      "season": "1888-89",
+      "name_then": "Football League",
+      "status": "played",
+      "winner": "Preston North End",
+      "runner_up": "Aston Villa",
+      "top_scorer": [
+        {
+          "name": "John Goodall",
+          "team": "Preston North End",
+          "goals": 21
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Preston North End unbeaten and also won the FA Cup (the first Double)."
+    },
+    {
+      "season": "1889-90",
+      "name_then": "Football League",
+      "status": "played",
+      "winner": "Preston North End",
+      "runner_up": "Everton",
+      "top_scorer": [
+        {
+          "name": "Jimmy Ross",
+          "team": "Preston North End",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Top scorer goals disputed: RSSSF and the Wikipedia season article give Jimmy Ross 24; the Wikipedia top-scorers list gives 22. 24 used (two sources)."
+    },
+    {
+      "season": "1890-91",
+      "name_then": "Football League",
+      "status": "played",
+      "winner": "Everton",
+      "runner_up": "Preston North End",
+      "top_scorer": [
+        {
+          "name": "Jack Southworth",
+          "team": "Blackburn Rovers",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1891-92",
+      "name_then": "Football League",
+      "status": "played",
+      "winner": "Sunderland",
+      "runner_up": "Preston North End",
+      "top_scorer": [
+        {
+          "name": "John Campbell",
+          "team": "Sunderland",
+          "goals": 32
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1892-93",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Sunderland",
+      "runner_up": "Preston North End",
+      "top_scorer": [
+        {
+          "name": "John Campbell",
+          "team": "Sunderland",
+          "goals": 31
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1893-94",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Aston Villa",
+      "runner_up": "Sunderland",
+      "top_scorer": [
+        {
+          "name": "Jack Southworth",
+          "team": "Everton",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1894-95",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Sunderland",
+      "runner_up": "Everton",
+      "top_scorer": [
+        {
+          "name": "John Campbell",
+          "team": "Sunderland",
+          "goals": 22
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1895-96",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Aston Villa",
+      "runner_up": "Derby County",
+      "top_scorer": [
+        {
+          "name": "Steve Bloomer",
+          "team": "Derby County",
+          "goals": 20
+        },
+        {
+          "name": "John Campbell",
+          "team": "Aston Villa",
+          "goals": 20
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Top scorers: Wikipedia list and RSSSF give 20 each for Bloomer and Campbell (other sources give 22 or 24); 20 used."
+    },
+    {
+      "season": "1896-97",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Aston Villa",
+      "runner_up": "Sheffield United",
+      "top_scorer": [
+        {
+          "name": "Steve Bloomer",
+          "team": "Derby County",
+          "goals": 22
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1897-98",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Sheffield United",
+      "runner_up": "Sunderland",
+      "top_scorer": [
+        {
+          "name": "Fred Wheldon",
+          "team": "Aston Villa",
+          "goals": 21
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1898-99",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Aston Villa",
+      "runner_up": "Liverpool",
+      "top_scorer": [
+        {
+          "name": "Steve Bloomer",
+          "team": "Derby County",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1899-00",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Aston Villa",
+      "runner_up": "Sheffield United",
+      "top_scorer": [
+        {
+          "name": "Billy Garraty",
+          "team": "Aston Villa",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1900-01",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Sunderland",
+      "top_scorer": [
+        {
+          "name": "Steve Bloomer",
+          "team": "Derby County",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1901-02",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Sunderland",
+      "runner_up": "Everton",
+      "top_scorer": [
+        {
+          "name": "Jimmy Settle",
+          "team": "Everton",
+          "goals": 18
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1902-03",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "The Wednesday",
+      "runner_up": "Aston Villa",
+      "top_scorer": [
+        {
+          "name": "Sam Raybould",
+          "team": "Liverpool",
+          "goals": 31
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1903-04",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "The Wednesday",
+      "runner_up": "Manchester City",
+      "top_scorer": [
+        {
+          "name": "Steve Bloomer",
+          "team": "Derby County",
+          "goals": 20
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1904-05",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Newcastle United",
+      "runner_up": "Everton",
+      "top_scorer": [
+        {
+          "name": "Arthur Brown",
+          "team": "Sheffield United",
+          "goals": 22
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1905-06",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Preston North End",
+      "top_scorer": [
+        {
+          "name": "Walter White",
+          "team": "Bolton Wanderers",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Top scorer: RSSSF, footballsite and the Wikipedia season article give Walter White (Bolton) 26; the Wikipedia top-scorers list credits Albert Shepherd (Bolton). White used."
+    },
+    {
+      "season": "1906-07",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Newcastle United",
+      "runner_up": "Bristol City",
+      "top_scorer": [
+        {
+          "name": "Alex Young",
+          "team": "Everton",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1907-08",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Aston Villa",
+      "top_scorer": [
+        {
+          "name": "Enoch West",
+          "team": "Nottingham Forest",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1908-09",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Newcastle United",
+      "runner_up": "Everton",
+      "top_scorer": [
+        {
+          "name": "Bert Freeman",
+          "team": "Everton",
+          "goals": 38
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1909-10",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Aston Villa",
+      "runner_up": "Liverpool",
+      "top_scorer": [
+        {
+          "name": "Jack Parkinson",
+          "team": "Liverpool",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1910-11",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Aston Villa",
+      "top_scorer": [
+        {
+          "name": "Albert Shepherd",
+          "team": "Newcastle United",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1911-12",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Blackburn Rovers",
+      "runner_up": "Everton",
+      "top_scorer": [
+        {
+          "name": "Harry Hampton",
+          "team": "Aston Villa",
+          "goals": 25
+        },
+        {
+          "name": "George Holley",
+          "team": "Sunderland",
+          "goals": 25
+        },
+        {
+          "name": "David McLean",
+          "team": "The Wednesday",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1912-13",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Sunderland",
+      "runner_up": "Aston Villa",
+      "top_scorer": [
+        {
+          "name": "David McLean",
+          "team": "The Wednesday",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1913-14",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Blackburn Rovers",
+      "runner_up": "Aston Villa",
+      "top_scorer": [
+        {
+          "name": "George Elliott",
+          "team": "Middlesbrough",
+          "goals": 32
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1914-15",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Everton",
+      "runner_up": "Oldham Athletic",
+      "top_scorer": [
+        {
+          "name": "Bobby Parker",
+          "team": "Everton",
+          "goals": 35
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1915-16",
+      "name_then": "First Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: First World War."
+    },
+    {
+      "season": "1916-17",
+      "name_then": "First Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: First World War."
+    },
+    {
+      "season": "1917-18",
+      "name_then": "First Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: First World War."
+    },
+    {
+      "season": "1918-19",
+      "name_then": "First Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: First World War."
+    },
+    {
+      "season": "1919-20",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "West Bromwich Albion",
+      "runner_up": "Burnley",
+      "top_scorer": [
+        {
+          "name": "Fred Morris",
+          "team": "West Bromwich Albion",
+          "goals": 37
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1920-21",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Burnley",
+      "runner_up": "Manchester City",
+      "top_scorer": [
+        {
+          "name": "Joe Smith",
+          "team": "Bolton Wanderers",
+          "goals": 38
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1921-22",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Tottenham Hotspur",
+      "top_scorer": [
+        {
+          "name": "Andrew Wilson",
+          "team": "Middlesbrough",
+          "goals": 31
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1922-23",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Sunderland",
+      "top_scorer": [
+        {
+          "name": "Charlie Buchan",
+          "team": "Sunderland",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1923-24",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Huddersfield Town",
+      "runner_up": "Cardiff City",
+      "top_scorer": [
+        {
+          "name": "Wilf Chadwick",
+          "team": "Everton",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1924-25",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Huddersfield Town",
+      "runner_up": "West Bromwich Albion",
+      "top_scorer": [
+        {
+          "name": "Frank Roberts",
+          "team": "Manchester City",
+          "goals": 31
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1925-26",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Huddersfield Town",
+      "runner_up": "Arsenal",
+      "top_scorer": [
+        {
+          "name": "Ted Harper",
+          "team": "Blackburn Rovers",
+          "goals": 43
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1926-27",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Newcastle United",
+      "runner_up": "Huddersfield Town",
+      "top_scorer": [
+        {
+          "name": "Jimmy Trotter",
+          "team": "The Wednesday",
+          "goals": 37
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1927-28",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Everton",
+      "runner_up": "Huddersfield Town",
+      "top_scorer": [
+        {
+          "name": "Dixie Dean",
+          "team": "Everton",
+          "goals": 60
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1928-29",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "The Wednesday",
+      "runner_up": "Leicester City",
+      "top_scorer": [
+        {
+          "name": "Dave Halliday",
+          "team": "Sunderland",
+          "goals": 43
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1929-30",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Sheffield Wednesday",
+      "runner_up": "Derby County",
+      "top_scorer": [
+        {
+          "name": "Vic Watson",
+          "team": "West Ham United",
+          "goals": 41
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1930-31",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Arsenal",
+      "runner_up": "Aston Villa",
+      "top_scorer": [
+        {
+          "name": "Tom Waring",
+          "team": "Aston Villa",
+          "goals": 49
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1931-32",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Everton",
+      "runner_up": "Arsenal",
+      "top_scorer": [
+        {
+          "name": "Dixie Dean",
+          "team": "Everton",
+          "goals": 44
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1932-33",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Arsenal",
+      "runner_up": "Aston Villa",
+      "top_scorer": [
+        {
+          "name": "Jack Bowers",
+          "team": "Derby County",
+          "goals": 35
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1933-34",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Arsenal",
+      "runner_up": "Huddersfield Town",
+      "top_scorer": [
+        {
+          "name": "Jack Bowers",
+          "team": "Derby County",
+          "goals": 34
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1934-35",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Arsenal",
+      "runner_up": "Sunderland",
+      "top_scorer": [
+        {
+          "name": "Ted Drake",
+          "team": "Arsenal",
+          "goals": 42
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1935-36",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Sunderland",
+      "runner_up": "Derby County",
+      "top_scorer": [
+        {
+          "name": "W. G. Richardson",
+          "team": "West Bromwich Albion",
+          "goals": 39
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1936-37",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Manchester City",
+      "runner_up": "Charlton Athletic",
+      "top_scorer": [
+        {
+          "name": "Freddie Steele",
+          "team": "Stoke City",
+          "goals": 33
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1937-38",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Arsenal",
+      "runner_up": "Wolverhampton Wanderers",
+      "top_scorer": [
+        {
+          "name": "Tommy Lawton",
+          "team": "Everton",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Top scorer goals disputed (28/34/38 across sources); 28 used (footballsite + Wikipedia season article)."
+    },
+    {
+      "season": "1938-39",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Everton",
+      "runner_up": "Wolverhampton Wanderers",
+      "top_scorer": [
+        {
+          "name": "Tommy Lawton",
+          "team": "Everton",
+          "goals": 35
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1939-40",
+      "name_then": "First Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: Second World War (1939-40 abandoned after three matches)."
+    },
+    {
+      "season": "1940-41",
+      "name_then": "First Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: Second World War."
+    },
+    {
+      "season": "1941-42",
+      "name_then": "First Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: Second World War."
+    },
+    {
+      "season": "1942-43",
+      "name_then": "First Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: Second World War."
+    },
+    {
+      "season": "1943-44",
+      "name_then": "First Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: Second World War."
+    },
+    {
+      "season": "1944-45",
+      "name_then": "First Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: Second World War."
+    },
+    {
+      "season": "1945-46",
+      "name_then": "First Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: Second World War."
+    },
+    {
+      "season": "1946-47",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "Dennis Westcott",
+          "team": "Wolverhampton Wanderers",
+          "goals": 37
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1947-48",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Arsenal",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "Ronnie Rooke",
+          "team": "Arsenal",
+          "goals": 33
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Stanley Matthews",
+        "team": "Blackpool"
+      }
+    },
+    {
+      "season": "1948-49",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Portsmouth",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "Willie Moir",
+          "team": "Bolton Wanderers",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Johnny Carey",
+        "team": "Manchester United"
+      }
+    },
+    {
+      "season": "1949-50",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Portsmouth",
+      "runner_up": "Wolverhampton Wanderers",
+      "top_scorer": [
+        {
+          "name": "Dickie Davis",
+          "team": "Sunderland",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Joe Mercer",
+        "team": "Arsenal"
+      }
+    },
+    {
+      "season": "1950-51",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Tottenham Hotspur",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "Stan Mortensen",
+          "team": "Blackpool",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Harry Johnston",
+        "team": "Blackpool"
+      }
+    },
+    {
+      "season": "1951-52",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Tottenham Hotspur",
+      "top_scorer": [
+        {
+          "name": "George Robledo",
+          "team": "Newcastle United",
+          "goals": 33
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Billy Wright",
+        "team": "Wolverhampton Wanderers"
+      }
+    },
+    {
+      "season": "1952-53",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Arsenal",
+      "runner_up": "Preston North End",
+      "top_scorer": [
+        {
+          "name": "Charlie Wayman",
+          "team": "Preston North End",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Nat Lofthouse",
+        "team": "Bolton Wanderers"
+      }
+    },
+    {
+      "season": "1953-54",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Wolverhampton Wanderers",
+      "runner_up": "West Bromwich Albion",
+      "top_scorer": [
+        {
+          "name": "Jimmy Glazzard",
+          "team": "Huddersfield Town",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Tom Finney",
+        "team": "Preston North End"
+      }
+    },
+    {
+      "season": "1954-55",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Chelsea",
+      "runner_up": "Wolverhampton Wanderers",
+      "top_scorer": [
+        {
+          "name": "Ronnie Allen",
+          "team": "West Bromwich Albion",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Don Revie",
+        "team": "Manchester City"
+      }
+    },
+    {
+      "season": "1955-56",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Blackpool",
+      "top_scorer": [
+        {
+          "name": "Nat Lofthouse",
+          "team": "Bolton Wanderers",
+          "goals": 33
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Bert Trautmann",
+        "team": "Manchester City"
+      }
+    },
+    {
+      "season": "1956-57",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Tottenham Hotspur",
+      "top_scorer": [
+        {
+          "name": "John Charles",
+          "team": "Leeds United",
+          "goals": 38
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Tom Finney",
+        "team": "Preston North End"
+      }
+    },
+    {
+      "season": "1957-58",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Wolverhampton Wanderers",
+      "runner_up": "Preston North End",
+      "top_scorer": [
+        {
+          "name": "Bobby Smith",
+          "team": "Tottenham Hotspur",
+          "goals": 36
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Danny Blanchflower",
+        "team": "Tottenham Hotspur"
+      }
+    },
+    {
+      "season": "1958-59",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Wolverhampton Wanderers",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "Jimmy Greaves",
+          "team": "Chelsea",
+          "goals": 33
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Syd Owen",
+        "team": "Luton Town"
+      }
+    },
+    {
+      "season": "1959-60",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Burnley",
+      "runner_up": "Wolverhampton Wanderers",
+      "top_scorer": [
+        {
+          "name": "Dennis Viollet",
+          "team": "Manchester United",
+          "goals": 32
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Bill Slater",
+        "team": "Wolverhampton Wanderers"
+      }
+    },
+    {
+      "season": "1960-61",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Tottenham Hotspur",
+      "runner_up": "Sheffield Wednesday",
+      "top_scorer": [
+        {
+          "name": "Jimmy Greaves",
+          "team": "Chelsea",
+          "goals": 41
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Danny Blanchflower",
+        "team": "Tottenham Hotspur"
+      }
+    },
+    {
+      "season": "1961-62",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Ipswich Town",
+      "runner_up": "Burnley",
+      "top_scorer": [
+        {
+          "name": "Ray Crawford",
+          "team": "Ipswich Town",
+          "goals": 33
+        },
+        {
+          "name": "Derek Kevan",
+          "team": "West Bromwich Albion",
+          "goals": 33
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Jimmy Adamson",
+        "team": "Burnley"
+      }
+    },
+    {
+      "season": "1962-63",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Everton",
+      "runner_up": "Tottenham Hotspur",
+      "top_scorer": [
+        {
+          "name": "Jimmy Greaves",
+          "team": "Tottenham Hotspur",
+          "goals": 37
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Stanley Matthews",
+        "team": "Stoke City"
+      }
+    },
+    {
+      "season": "1963-64",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "Jimmy Greaves",
+          "team": "Tottenham Hotspur",
+          "goals": 35
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Bobby Moore",
+        "team": "West Ham United"
+      }
+    },
+    {
+      "season": "1964-65",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Leeds United",
+      "top_scorer": [
+        {
+          "name": "Jimmy Greaves",
+          "team": "Tottenham Hotspur",
+          "goals": 29
+        },
+        {
+          "name": "Andy McEvoy",
+          "team": "Blackburn Rovers",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Bobby Collins",
+        "team": "Leeds United"
+      }
+    },
+    {
+      "season": "1965-66",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Leeds United",
+      "top_scorer": [
+        {
+          "name": "Roger Hunt",
+          "team": "Liverpool",
+          "goals": 29
+        },
+        {
+          "name": "Willie Irvine",
+          "team": "Burnley",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Bobby Charlton",
+        "team": "Manchester United"
+      }
+    },
+    {
+      "season": "1966-67",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Nottingham Forest",
+      "top_scorer": [
+        {
+          "name": "Ron Davies",
+          "team": "Southampton",
+          "goals": 37
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Jack Charlton",
+        "team": "Leeds United"
+      }
+    },
+    {
+      "season": "1967-68",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Manchester City",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "George Best",
+          "team": "Manchester United",
+          "goals": 28
+        },
+        {
+          "name": "Ron Davies",
+          "team": "Southampton",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "George Best",
+        "team": "Manchester United"
+      }
+    },
+    {
+      "season": "1968-69",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Leeds United",
+      "runner_up": "Liverpool",
+      "top_scorer": [
+        {
+          "name": "Jimmy Greaves",
+          "team": "Tottenham Hotspur",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Tony Book",
+        "team": "Manchester City"
+      },
+      "notes": "FWA award shared: Tony Book (Manchester City) and Dave Mackay (Derby County, then Second Division)."
+    },
+    {
+      "season": "1969-70",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Everton",
+      "runner_up": "Leeds United",
+      "top_scorer": [
+        {
+          "name": "Jeff Astle",
+          "team": "West Bromwich Albion",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Billy Bremner",
+        "team": "Leeds United"
+      }
+    },
+    {
+      "season": "1970-71",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Arsenal",
+      "runner_up": "Leeds United",
+      "top_scorer": [
+        {
+          "name": "Tony Brown",
+          "team": "West Bromwich Albion",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Frank McLintock",
+        "team": "Arsenal"
+      }
+    },
+    {
+      "season": "1971-72",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Derby County",
+      "runner_up": "Leeds United",
+      "top_scorer": [
+        {
+          "name": "Francis Lee",
+          "team": "Manchester City",
+          "goals": 33
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Gordon Banks",
+        "team": "Stoke City"
+      }
+    },
+    {
+      "season": "1972-73",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Arsenal",
+      "top_scorer": [
+        {
+          "name": "Pop Robson",
+          "team": "West Ham United",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Pat Jennings",
+        "team": "Tottenham Hotspur"
+      }
+    },
+    {
+      "season": "1973-74",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Leeds United",
+      "runner_up": "Liverpool",
+      "top_scorer": [
+        {
+          "name": "Mick Channon",
+          "team": "Southampton",
+          "goals": 21
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ian Callaghan",
+        "team": "Liverpool"
+      }
+    },
+    {
+      "season": "1974-75",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Derby County",
+      "runner_up": "Liverpool",
+      "top_scorer": [
+        {
+          "name": "Malcolm Macdonald",
+          "team": "Newcastle United",
+          "goals": 21
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Alan Mullery",
+        "team": "Fulham"
+      }
+    },
+    {
+      "season": "1975-76",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Queens Park Rangers",
+      "top_scorer": [
+        {
+          "name": "Ted MacDougall",
+          "team": "Norwich City",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Kevin Keegan",
+        "team": "Liverpool"
+      }
+    },
+    {
+      "season": "1976-77",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Manchester City",
+      "top_scorer": [
+        {
+          "name": "Andy Gray",
+          "team": "Aston Villa",
+          "goals": 25
+        },
+        {
+          "name": "Malcolm Macdonald",
+          "team": "Arsenal",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Emlyn Hughes",
+        "team": "Liverpool"
+      }
+    },
+    {
+      "season": "1977-78",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Nottingham Forest",
+      "runner_up": "Liverpool",
+      "top_scorer": [
+        {
+          "name": "Bob Latchford",
+          "team": "Everton",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Kenny Burns",
+        "team": "Nottingham Forest"
+      }
+    },
+    {
+      "season": "1978-79",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Nottingham Forest",
+      "top_scorer": [
+        {
+          "name": "Frank Worthington",
+          "team": "Bolton Wanderers",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Kenny Dalglish",
+        "team": "Liverpool"
+      }
+    },
+    {
+      "season": "1979-80",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "Phil Boyer",
+          "team": "Southampton",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Terry McDermott",
+        "team": "Liverpool"
+      }
+    },
+    {
+      "season": "1980-81",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Aston Villa",
+      "runner_up": "Ipswich Town",
+      "top_scorer": [
+        {
+          "name": "Steve Archibald",
+          "team": "Tottenham Hotspur",
+          "goals": 20
+        },
+        {
+          "name": "Peter Withe",
+          "team": "Aston Villa",
+          "goals": 20
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Frans Thijssen",
+        "team": "Ipswich Town"
+      }
+    },
+    {
+      "season": "1981-82",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Ipswich Town",
+      "top_scorer": [
+        {
+          "name": "Kevin Keegan",
+          "team": "Southampton",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Steve Perryman",
+        "team": "Tottenham Hotspur"
+      }
+    },
+    {
+      "season": "1982-83",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Watford",
+      "top_scorer": [
+        {
+          "name": "Luther Blissett",
+          "team": "Watford",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Kenny Dalglish",
+        "team": "Liverpool"
+      }
+    },
+    {
+      "season": "1983-84",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Southampton",
+      "top_scorer": [
+        {
+          "name": "Ian Rush",
+          "team": "Liverpool",
+          "goals": 32
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ian Rush",
+        "team": "Liverpool"
+      }
+    },
+    {
+      "season": "1984-85",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Everton",
+      "runner_up": "Liverpool",
+      "top_scorer": [
+        {
+          "name": "Kerry Dixon",
+          "team": "Chelsea",
+          "goals": 24
+        },
+        {
+          "name": "Gary Lineker",
+          "team": "Leicester City",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Neville Southall",
+        "team": "Everton"
+      }
+    },
+    {
+      "season": "1985-86",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Everton",
+      "top_scorer": [
+        {
+          "name": "Gary Lineker",
+          "team": "Everton",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Gary Lineker",
+        "team": "Everton"
+      }
+    },
+    {
+      "season": "1986-87",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Everton",
+      "runner_up": "Liverpool",
+      "top_scorer": [
+        {
+          "name": "Clive Allen",
+          "team": "Tottenham Hotspur",
+          "goals": 33
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Clive Allen",
+        "team": "Tottenham Hotspur"
+      }
+    },
+    {
+      "season": "1987-88",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "John Aldridge",
+          "team": "Liverpool",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "John Barnes",
+        "team": "Liverpool"
+      }
+    },
+    {
+      "season": "1988-89",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Arsenal",
+      "runner_up": "Liverpool",
+      "top_scorer": [
+        {
+          "name": "Alan Smith",
+          "team": "Arsenal",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Steve Nicol",
+        "team": "Liverpool"
+      }
+    },
+    {
+      "season": "1989-90",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Aston Villa",
+      "top_scorer": [
+        {
+          "name": "Gary Lineker",
+          "team": "Tottenham Hotspur",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "John Barnes",
+        "team": "Liverpool"
+      }
+    },
+    {
+      "season": "1990-91",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Arsenal",
+      "runner_up": "Liverpool",
+      "top_scorer": [
+        {
+          "name": "Alan Smith",
+          "team": "Arsenal",
+          "goals": 22
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Gordon Strachan",
+        "team": "Leeds United"
+      }
+    },
+    {
+      "season": "1991-92",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Leeds United",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "Ian Wright",
+          "team": "Crystal Palace / Arsenal",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Gary Lineker",
+        "team": "Tottenham Hotspur"
+      },
+      "notes": "Ian Wright: 5 goals for Crystal Palace, 24 for Arsenal."
+    },
+    {
+      "season": "1992-93",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Aston Villa",
+      "top_scorer": [
+        {
+          "name": "Teddy Sheringham",
+          "team": "Nottingham Forest / Tottenham Hotspur",
+          "goals": 22
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Eric Cantona",
+          "team": "Leeds United / Manchester United",
+          "assists": 16
+        }
+      ],
+      "player_of_season": {
+        "name": "Chris Waddle",
+        "team": "Sheffield Wednesday"
+      },
+      "notes": "Teddy Sheringham: 1 goal for Nottingham Forest, 21 for Tottenham Hotspur. Eric Cantona: assists for Leeds United and Manchester United combined (16)."
+    },
+    {
+      "season": "1993-94",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Blackburn Rovers",
+      "top_scorer": [
+        {
+          "name": "Andy Cole",
+          "team": "Newcastle United",
+          "goals": 34
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Andy Cole",
+          "team": "Newcastle United",
+          "assists": 13
+        },
+        {
+          "name": "Eric Cantona",
+          "team": "Manchester United",
+          "assists": 13
+        }
+      ],
+      "player_of_season": {
+        "name": "Alan Shearer",
+        "team": "Blackburn Rovers"
+      }
+    },
+    {
+      "season": "1994-95",
+      "status": "played",
+      "winner": "Blackburn Rovers",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "Alan Shearer",
+          "team": "Blackburn Rovers",
+          "goals": 34
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Matt Le Tissier",
+          "team": "Southampton",
+          "assists": 15
+        }
+      ],
+      "player_of_season": {
+        "name": "Jürgen Klinsmann",
+        "team": "Tottenham Hotspur"
+      }
+    },
+    {
+      "season": "1995-96",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Newcastle United",
+      "top_scorer": [
+        {
+          "name": "Alan Shearer",
+          "team": "Blackburn Rovers",
+          "goals": 31
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Steve McManaman",
+          "team": "Liverpool",
+          "assists": 15
+        }
+      ],
+      "player_of_season": {
+        "name": "Eric Cantona",
+        "team": "Manchester United"
+      }
+    },
+    {
+      "season": "1996-97",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Newcastle United",
+      "top_scorer": [
+        {
+          "name": "Alan Shearer",
+          "team": "Newcastle United",
+          "goals": 25
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Eric Cantona",
+          "team": "Manchester United",
+          "assists": 12
+        }
+      ],
+      "player_of_season": {
+        "name": "Gianfranco Zola",
+        "team": "Chelsea"
+      }
+    },
+    {
+      "season": "1997-98",
+      "status": "played",
+      "winner": "Arsenal",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "Dion Dublin",
+          "team": "Coventry City",
+          "goals": 18
+        },
+        {
+          "name": "Michael Owen",
+          "team": "Liverpool",
+          "goals": 18
+        },
+        {
+          "name": "Chris Sutton",
+          "team": "Blackburn Rovers",
+          "goals": 18
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "David Beckham",
+          "team": "Manchester United",
+          "assists": 13
+        }
+      ],
+      "player_of_season": {
+        "name": "Dennis Bergkamp",
+        "team": "Arsenal"
+      }
+    },
+    {
+      "season": "1998-99",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Arsenal",
+      "top_scorer": [
+        {
+          "name": "Jimmy Floyd Hasselbaink",
+          "team": "Leeds United",
+          "goals": 18
+        },
+        {
+          "name": "Michael Owen",
+          "team": "Liverpool",
+          "goals": 18
+        },
+        {
+          "name": "Dwight Yorke",
+          "team": "Manchester United",
+          "goals": 18
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Dennis Bergkamp",
+          "team": "Arsenal",
+          "assists": 13
+        },
+        {
+          "name": "Jimmy Floyd Hasselbaink",
+          "team": "Leeds United",
+          "assists": 13
+        }
+      ],
+      "player_of_season": {
+        "name": "David Ginola",
+        "team": "Tottenham Hotspur"
+      }
+    },
+    {
+      "season": "1999-00",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Arsenal",
+      "top_scorer": [
+        {
+          "name": "Kevin Phillips",
+          "team": "Sunderland",
+          "goals": 30
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "David Beckham",
+          "team": "Manchester United",
+          "assists": 15
+        },
+        {
+          "name": "Nolberto Solano",
+          "team": "Newcastle United",
+          "assists": 15
+        }
+      ],
+      "player_of_season": {
+        "name": "Roy Keane",
+        "team": "Manchester United"
+      }
+    },
+    {
+      "season": "2000-01",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Arsenal",
+      "top_scorer": [
+        {
+          "name": "Jimmy Floyd Hasselbaink",
+          "team": "Chelsea",
+          "goals": 23
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "David Beckham",
+          "team": "Manchester United",
+          "assists": 12
+        }
+      ],
+      "player_of_season": {
+        "name": "Teddy Sheringham",
+        "team": "Manchester United"
+      }
+    },
+    {
+      "season": "2001-02",
+      "status": "played",
+      "winner": "Arsenal",
+      "runner_up": "Liverpool",
+      "top_scorer": [
+        {
+          "name": "Thierry Henry",
+          "team": "Arsenal",
+          "goals": 24
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Robert Pires",
+          "team": "Arsenal",
+          "assists": 15
+        }
+      ],
+      "player_of_season": {
+        "name": "Robert Pires",
+        "team": "Arsenal"
+      }
+    },
+    {
+      "season": "2002-03",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Arsenal",
+      "top_scorer": [
+        {
+          "name": "Ruud van Nistelrooy",
+          "team": "Manchester United",
+          "goals": 25
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Thierry Henry",
+          "team": "Arsenal",
+          "assists": 20
+        }
+      ],
+      "player_of_season": {
+        "name": "Thierry Henry",
+        "team": "Arsenal"
+      }
+    },
+    {
+      "season": "2003-04",
+      "status": "played",
+      "winner": "Arsenal",
+      "runner_up": "Chelsea",
+      "top_scorer": [
+        {
+          "name": "Thierry Henry",
+          "team": "Arsenal",
+          "goals": 30
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Muzzy Izzet",
+          "team": "Leicester City",
+          "assists": 14
+        }
+      ],
+      "player_of_season": {
+        "name": "Thierry Henry",
+        "team": "Arsenal"
+      }
+    },
+    {
+      "season": "2004-05",
+      "status": "played",
+      "winner": "Chelsea",
+      "runner_up": "Arsenal",
+      "top_scorer": [
+        {
+          "name": "Thierry Henry",
+          "team": "Arsenal",
+          "goals": 25
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Frank Lampard",
+          "team": "Chelsea",
+          "assists": 18
+        }
+      ],
+      "player_of_season": {
+        "name": "Frank Lampard",
+        "team": "Chelsea"
+      }
+    },
+    {
+      "season": "2005-06",
+      "status": "played",
+      "winner": "Chelsea",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "Thierry Henry",
+          "team": "Arsenal",
+          "goals": 27
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Didier Drogba",
+          "team": "Chelsea",
+          "assists": 11
+        }
+      ],
+      "player_of_season": {
+        "name": "Thierry Henry",
+        "team": "Arsenal"
+      }
+    },
+    {
+      "season": "2006-07",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Chelsea",
+      "top_scorer": [
+        {
+          "name": "Didier Drogba",
+          "team": "Chelsea",
+          "goals": 20
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Cesc Fàbregas",
+          "team": "Arsenal",
+          "assists": 11
+        },
+        {
+          "name": "Wayne Rooney",
+          "team": "Manchester United",
+          "assists": 11
+        }
+      ],
+      "player_of_season": {
+        "name": "Cristiano Ronaldo",
+        "team": "Manchester United"
+      }
+    },
+    {
+      "season": "2007-08",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Chelsea",
+      "top_scorer": [
+        {
+          "name": "Cristiano Ronaldo",
+          "team": "Manchester United",
+          "goals": 31
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Cesc Fàbregas",
+          "team": "Arsenal",
+          "assists": 17
+        }
+      ],
+      "player_of_season": {
+        "name": "Cristiano Ronaldo",
+        "team": "Manchester United"
+      }
+    },
+    {
+      "season": "2008-09",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Liverpool",
+      "top_scorer": [
+        {
+          "name": "Nicolas Anelka",
+          "team": "Chelsea",
+          "goals": 19
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Frank Lampard",
+          "team": "Chelsea",
+          "assists": 10
+        },
+        {
+          "name": "Robin van Persie",
+          "team": "Arsenal",
+          "assists": 10
+        }
+      ],
+      "player_of_season": {
+        "name": "Steven Gerrard",
+        "team": "Liverpool"
+      }
+    },
+    {
+      "season": "2009-10",
+      "status": "played",
+      "winner": "Chelsea",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "Didier Drogba",
+          "team": "Chelsea",
+          "goals": 29
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Frank Lampard",
+          "team": "Chelsea",
+          "assists": 16
+        }
+      ],
+      "player_of_season": {
+        "name": "Wayne Rooney",
+        "team": "Manchester United"
+      }
+    },
+    {
+      "season": "2010-11",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Chelsea",
+      "top_scorer": [
+        {
+          "name": "Dimitar Berbatov",
+          "team": "Manchester United",
+          "goals": 20
+        },
+        {
+          "name": "Carlos Tevez",
+          "team": "Manchester City",
+          "goals": 20
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Nani",
+          "team": "Manchester United",
+          "assists": 14
+        }
+      ],
+      "player_of_season": {
+        "name": "Scott Parker",
+        "team": "West Ham United"
+      }
+    },
+    {
+      "season": "2011-12",
+      "status": "played",
+      "winner": "Manchester City",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "Robin van Persie",
+          "team": "Arsenal",
+          "goals": 30
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "David Silva",
+          "team": "Manchester City",
+          "assists": 15
+        }
+      ],
+      "player_of_season": {
+        "name": "Robin van Persie",
+        "team": "Arsenal"
+      }
+    },
+    {
+      "season": "2012-13",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Manchester City",
+      "top_scorer": [
+        {
+          "name": "Robin van Persie",
+          "team": "Manchester United",
+          "goals": 26
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Juan Mata",
+          "team": "Chelsea",
+          "assists": 12
+        }
+      ],
+      "player_of_season": {
+        "name": "Gareth Bale",
+        "team": "Tottenham Hotspur"
+      }
+    },
+    {
+      "season": "2013-14",
+      "status": "played",
+      "winner": "Manchester City",
+      "runner_up": "Liverpool",
+      "top_scorer": [
+        {
+          "name": "Luis Suárez",
+          "team": "Liverpool",
+          "goals": 31
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Luis Suárez",
+          "team": "Liverpool",
+          "assists": 13
+        },
+        {
+          "name": "Steven Gerrard",
+          "team": "Liverpool",
+          "assists": 13
+        }
+      ],
+      "player_of_season": {
+        "name": "Luis Suárez",
+        "team": "Liverpool"
+      }
+    },
+    {
+      "season": "2014-15",
+      "status": "played",
+      "winner": "Chelsea",
+      "runner_up": "Manchester City",
+      "top_scorer": [
+        {
+          "name": "Sergio Agüero",
+          "team": "Manchester City",
+          "goals": 26
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Cesc Fàbregas",
+          "team": "Chelsea",
+          "assists": 19
+        }
+      ],
+      "player_of_season": {
+        "name": "Eden Hazard",
+        "team": "Chelsea"
+      }
+    },
+    {
+      "season": "2015-16",
+      "status": "played",
+      "winner": "Leicester City",
+      "runner_up": "Arsenal",
+      "top_scorer": [
+        {
+          "name": "Harry Kane",
+          "team": "Tottenham Hotspur",
+          "goals": 25
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Mesut Özil",
+          "team": "Arsenal",
+          "assists": 19
+        }
+      ],
+      "player_of_season": {
+        "name": "Jamie Vardy",
+        "team": "Leicester City"
+      }
+    },
+    {
+      "season": "2016-17",
+      "status": "played",
+      "winner": "Chelsea",
+      "runner_up": "Tottenham Hotspur",
+      "top_scorer": [
+        {
+          "name": "Harry Kane",
+          "team": "Tottenham Hotspur",
+          "goals": 29
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Kevin De Bruyne",
+          "team": "Manchester City",
+          "assists": 18
+        }
+      ],
+      "player_of_season": {
+        "name": "N'Golo Kanté",
+        "team": "Chelsea"
+      }
+    },
+    {
+      "season": "2017-18",
+      "status": "played",
+      "winner": "Manchester City",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "Mohamed Salah",
+          "team": "Liverpool",
+          "goals": 32
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Kevin De Bruyne",
+          "team": "Manchester City",
+          "assists": 16
+        }
+      ],
+      "player_of_season": {
+        "name": "Mohamed Salah",
+        "team": "Liverpool"
+      }
+    },
+    {
+      "season": "2018-19",
+      "status": "played",
+      "winner": "Manchester City",
+      "runner_up": "Liverpool",
+      "top_scorer": [
+        {
+          "name": "Pierre-Emerick Aubameyang",
+          "team": "Arsenal",
+          "goals": 22
+        },
+        {
+          "name": "Sadio Mané",
+          "team": "Liverpool",
+          "goals": 22
+        },
+        {
+          "name": "Mohamed Salah",
+          "team": "Liverpool",
+          "goals": 22
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Eden Hazard",
+          "team": "Chelsea",
+          "assists": 15
+        }
+      ],
+      "player_of_season": {
+        "name": "Raheem Sterling",
+        "team": "Manchester City"
+      }
+    },
+    {
+      "season": "2019-20",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Manchester City",
+      "top_scorer": [
+        {
+          "name": "Jamie Vardy",
+          "team": "Leicester City",
+          "goals": 23
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Kevin De Bruyne",
+          "team": "Manchester City",
+          "assists": 20
+        }
+      ],
+      "player_of_season": {
+        "name": "Jordan Henderson",
+        "team": "Liverpool"
+      }
+    },
+    {
+      "season": "2020-21",
+      "status": "played",
+      "winner": "Manchester City",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "Harry Kane",
+          "team": "Tottenham Hotspur",
+          "goals": 23
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Harry Kane",
+          "team": "Tottenham Hotspur",
+          "assists": 14
+        }
+      ],
+      "player_of_season": {
+        "name": "Rúben Dias",
+        "team": "Manchester City"
+      }
+    },
+    {
+      "season": "2021-22",
+      "status": "played",
+      "winner": "Manchester City",
+      "runner_up": "Liverpool",
+      "top_scorer": [
+        {
+          "name": "Mohamed Salah",
+          "team": "Liverpool",
+          "goals": 23
+        },
+        {
+          "name": "Son Heung-min",
+          "team": "Tottenham Hotspur",
+          "goals": 23
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Mohamed Salah",
+          "team": "Liverpool",
+          "assists": 13
+        }
+      ],
+      "player_of_season": {
+        "name": "Mohamed Salah",
+        "team": "Liverpool"
+      }
+    },
+    {
+      "season": "2022-23",
+      "status": "played",
+      "winner": "Manchester City",
+      "runner_up": "Arsenal",
+      "top_scorer": [
+        {
+          "name": "Erling Haaland",
+          "team": "Manchester City",
+          "goals": 36
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Kevin De Bruyne",
+          "team": "Manchester City",
+          "assists": 16
+        }
+      ],
+      "player_of_season": {
+        "name": "Erling Haaland",
+        "team": "Manchester City"
+      }
+    },
+    {
+      "season": "2023-24",
+      "status": "played",
+      "winner": "Manchester City",
+      "runner_up": "Arsenal",
+      "top_scorer": [
+        {
+          "name": "Erling Haaland",
+          "team": "Manchester City",
+          "goals": 27
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Ollie Watkins",
+          "team": "Aston Villa",
+          "assists": 13
+        }
+      ],
+      "player_of_season": {
+        "name": "Phil Foden",
+        "team": "Manchester City"
+      }
+    },
+    {
+      "season": "2024-25",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Arsenal",
+      "top_scorer": [
+        {
+          "name": "Mohamed Salah",
+          "team": "Liverpool",
+          "goals": 29
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Mohamed Salah",
+          "team": "Liverpool",
+          "assists": 18
+        }
+      ],
+      "player_of_season": {
+        "name": "Mohamed Salah",
+        "team": "Liverpool"
+      }
+    },
+    {
+      "season": "2025-26",
+      "status": "played",
+      "winner": "Arsenal",
+      "runner_up": "Manchester City",
+      "top_scorer": [
+        {
+          "name": "Erling Haaland",
+          "team": "Manchester City",
+          "goals": 27
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Bruno Fernandes",
+          "team": "Manchester United",
+          "assists": 21
+        }
+      ],
+      "player_of_season": {
+        "name": "Bruno Fernandes",
+        "team": "Manchester United"
+      }
+    }
+  ]
+}

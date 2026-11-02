@@ -1,0 +1,2096 @@
+{
+  "competition": "Championship",
+  "slug": "championship",
+  "kind": "league",
+  "lineage_note": "Second tier of English football. 1892-93 to 1991-92 = Football League Second Division; 1992-93 to 2003-04 = Football League First Division; 2004-05 on = Football League Championship / EFL Championship. Winner and runner-up are 1st and 2nd in the table (not play-off winners).",
+  "history_from": "1892-93",
+  "history_to": "2025-26",
+  "field_from": {
+    "runner_up": "1892-93",
+    "final_score": null,
+    "top_scorer": "1908-09",
+    "top_assister": null,
+    "player_of_season": "2005-06"
+  },
+  "player_of_season_award": "Championship Player of the Year/Season at the Football League (EFL) Awards, first given for 2005-06.",
+  "sources": [
+    "https://en.wikipedia.org/wiki/List_of_winners_of_the_EFL_Championship_and_predecessors",
+    "https://en.wikipedia.org/wiki/EFL_Championship",
+    "http://www.footballsite.co.uk/Statistics/Seasons/ (Division 2 pages 1892-93 to 1991-92, Division 1 pages 1992-93 to 2003-04)",
+    "https://www.rsssf.org/tablese/engtops.html",
+    "https://en.wikipedia.org/wiki/EFL_Awards",
+    "Wikipedia season articles 1907-08, 1910-11, 1913-14, 1925-26, 1957-58, 1987-88, 1990-91, 1991-92 Football League and 1997-98 Football League First Division (disputed top scorers)"
+  ],
+  "seasons": [
+    {
+      "season": "1892-93",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Small Heath",
+      "runner_up": "Sheffield United",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1893-94",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Small Heath",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1894-95",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Bury",
+      "runner_up": "Notts County",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1895-96",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Manchester City",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1896-97",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Notts County",
+      "runner_up": "Newton Heath",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1897-98",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Burnley",
+      "runner_up": "Newcastle United",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1898-99",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Manchester City",
+      "runner_up": "Glossop North End",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1899-00",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "The Wednesday",
+      "runner_up": "Bolton Wanderers",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1900-01",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Grimsby Town",
+      "runner_up": "Small Heath",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1901-02",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "West Bromwich Albion",
+      "runner_up": "Middlesbrough",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1902-03",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Manchester City",
+      "runner_up": "Small Heath",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1903-04",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Preston North End",
+      "runner_up": "Woolwich Arsenal",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1904-05",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Bolton Wanderers",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1905-06",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Bristol City",
+      "runner_up": "Manchester United",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1906-07",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Nottingham Forest",
+      "runner_up": "Chelsea",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1907-08",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Bradford City",
+      "runner_up": "Leicester Fosse",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Top scorer not given: sources disagree on Jackie Smith (Hull City)'s total (27, 30, 31, 32), so the top-scorer run starts in 1908-09."
+    },
+    {
+      "season": "1908-09",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Bolton Wanderers",
+      "runner_up": "Tottenham Hotspur",
+      "top_scorer": [
+        {
+          "name": "Alf Bentley",
+          "team": "Derby County",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1909-10",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Manchester City",
+      "runner_up": "Oldham Athletic",
+      "top_scorer": [
+        {
+          "name": "Jackie Smith",
+          "team": "Hull City",
+          "goals": 32
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1910-11",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "West Bromwich Albion",
+      "runner_up": "Bolton Wanderers",
+      "top_scorer": [
+        {
+          "name": "Bob Whittingham",
+          "team": "Chelsea",
+          "goals": 31
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "RSSSF and the Wikipedia season article give 31; footballsite gives 30."
+    },
+    {
+      "season": "1911-12",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Derby County",
+      "runner_up": "Chelsea",
+      "top_scorer": [
+        {
+          "name": "Bert Freeman",
+          "team": "Burnley",
+          "goals": 32
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1912-13",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Preston North End",
+      "runner_up": "Burnley",
+      "top_scorer": [
+        {
+          "name": "Bert Freeman",
+          "team": "Burnley",
+          "goals": 31
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1913-14",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Notts County",
+      "runner_up": "Bradford Park Avenue",
+      "top_scorer": [
+        {
+          "name": "Sammy Stevens",
+          "team": "Hull City",
+          "goals": 28
+        },
+        {
+          "name": "Jack Peart",
+          "team": "Notts County",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "RSSSF and the Wikipedia season article give a tie; footballsite lists Peart only."
+    },
+    {
+      "season": "1914-15",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Derby County",
+      "runner_up": "Preston North End",
+      "top_scorer": [
+        {
+          "name": "Joe Lane",
+          "team": "Blackpool",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1915-16",
+      "name_then": "Second Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: First World War."
+    },
+    {
+      "season": "1916-17",
+      "name_then": "Second Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: First World War."
+    },
+    {
+      "season": "1917-18",
+      "name_then": "Second Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: First World War."
+    },
+    {
+      "season": "1918-19",
+      "name_then": "Second Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: First World War."
+    },
+    {
+      "season": "1919-20",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Tottenham Hotspur",
+      "runner_up": "Huddersfield Town",
+      "top_scorer": [
+        {
+          "name": "Sam Taylor",
+          "team": "Huddersfield Town",
+          "goals": 35
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1920-21",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Birmingham",
+      "runner_up": "Cardiff City",
+      "top_scorer": [
+        {
+          "name": "Syd Puddefoot",
+          "team": "West Ham United",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1921-22",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Nottingham Forest",
+      "runner_up": "Stoke",
+      "top_scorer": [
+        {
+          "name": "Jimmy Broad",
+          "team": "Stoke",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1922-23",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Notts County",
+      "runner_up": "West Ham United",
+      "top_scorer": [
+        {
+          "name": "Harry Bedford",
+          "team": "Blackpool",
+          "goals": 32
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1923-24",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Leeds United",
+      "runner_up": "Bury",
+      "top_scorer": [
+        {
+          "name": "Harry Bedford",
+          "team": "Blackpool",
+          "goals": 34
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1924-25",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Leicester City",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "Arthur Chandler",
+          "team": "Leicester City",
+          "goals": 33
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1925-26",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "The Wednesday",
+      "runner_up": "Derby County",
+      "top_scorer": [
+        {
+          "name": "Jimmy Trotter",
+          "team": "The Wednesday",
+          "goals": 37
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "RSSSF and the Wikipedia season article give Jimmy Trotter 37; footballsite lists Bob Turnbull (29). Trotter used."
+    },
+    {
+      "season": "1926-27",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Middlesbrough",
+      "runner_up": "Portsmouth",
+      "top_scorer": [
+        {
+          "name": "George Camsell",
+          "team": "Middlesbrough",
+          "goals": 59
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1927-28",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Manchester City",
+      "runner_up": "Leeds United",
+      "top_scorer": [
+        {
+          "name": "Jimmy Cookson",
+          "team": "West Bromwich Albion",
+          "goals": 38
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1928-29",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Middlesbrough",
+      "runner_up": "Grimsby Town",
+      "top_scorer": [
+        {
+          "name": "Jimmy Hampson",
+          "team": "Blackpool",
+          "goals": 40
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1929-30",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Blackpool",
+      "runner_up": "Chelsea",
+      "top_scorer": [
+        {
+          "name": "Jimmy Hampson",
+          "team": "Blackpool",
+          "goals": 45
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1930-31",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Everton",
+      "runner_up": "West Bromwich Albion",
+      "top_scorer": [
+        {
+          "name": "Dixie Dean",
+          "team": "Everton",
+          "goals": 39
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1931-32",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Wolverhampton Wanderers",
+      "runner_up": "Leeds United",
+      "top_scorer": [
+        {
+          "name": "Cyril Pearce",
+          "team": "Swansea Town",
+          "goals": 35
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1932-33",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Stoke City",
+      "runner_up": "Tottenham Hotspur",
+      "top_scorer": [
+        {
+          "name": "Ted Harper",
+          "team": "Preston North End",
+          "goals": 37
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1933-34",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Grimsby Town",
+      "runner_up": "Preston North End",
+      "top_scorer": [
+        {
+          "name": "Pat Glover",
+          "team": "Grimsby Town",
+          "goals": 42
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1934-35",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Brentford",
+      "runner_up": "Bolton Wanderers",
+      "top_scorer": [
+        {
+          "name": "Jack Milsom",
+          "team": "Bolton Wanderers",
+          "goals": 31
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1935-36",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Charlton Athletic",
+      "top_scorer": [
+        {
+          "name": "Jock Dodds",
+          "team": "Sheffield United",
+          "goals": 34
+        },
+        {
+          "name": "Bob Finan",
+          "team": "Blackpool",
+          "goals": 34
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1936-37",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Leicester City",
+      "runner_up": "Blackpool",
+      "top_scorer": [
+        {
+          "name": "Jack Bowers",
+          "team": "Leicester City",
+          "goals": 33
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1937-38",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Aston Villa",
+      "runner_up": "Manchester United",
+      "top_scorer": [
+        {
+          "name": "George Henson",
+          "team": "Bradford Park Avenue",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1938-39",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Blackburn Rovers",
+      "runner_up": "Sheffield United",
+      "top_scorer": [
+        {
+          "name": "Hugh Billington",
+          "team": "Luton Town",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1939-40",
+      "name_then": "Second Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: Second World War (1939-40 abandoned after three matches)."
+    },
+    {
+      "season": "1940-41",
+      "name_then": "Second Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: Second World War."
+    },
+    {
+      "season": "1941-42",
+      "name_then": "Second Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: Second World War."
+    },
+    {
+      "season": "1942-43",
+      "name_then": "Second Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: Second World War."
+    },
+    {
+      "season": "1943-44",
+      "name_then": "Second Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: Second World War."
+    },
+    {
+      "season": "1944-45",
+      "name_then": "Second Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: Second World War."
+    },
+    {
+      "season": "1945-46",
+      "name_then": "Second Division",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "League suspended: Second World War."
+    },
+    {
+      "season": "1946-47",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Manchester City",
+      "runner_up": "Burnley",
+      "top_scorer": [
+        {
+          "name": "Charlie Wayman",
+          "team": "Newcastle United",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1947-48",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Birmingham City",
+      "runner_up": "Newcastle United",
+      "top_scorer": [
+        {
+          "name": "Eddie Quigley",
+          "team": "Sheffield Wednesday",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1948-49",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Fulham",
+      "runner_up": "West Bromwich Albion",
+      "top_scorer": [
+        {
+          "name": "Charlie Wayman",
+          "team": "Southampton",
+          "goals": 32
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1949-50",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Tottenham Hotspur",
+      "runner_up": "Sheffield Wednesday",
+      "top_scorer": [
+        {
+          "name": "Tommy Briggs",
+          "team": "Grimsby Town",
+          "goals": 35
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1950-51",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Preston North End",
+      "runner_up": "Manchester City",
+      "top_scorer": [
+        {
+          "name": "Cecil McCormack",
+          "team": "Barnsley",
+          "goals": 33
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Top scorer club: footballsite gives Barnsley, RSSSF prints Burnley (Cecil McCormack played for Barnsley); Barnsley used."
+    },
+    {
+      "season": "1951-52",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Sheffield Wednesday",
+      "runner_up": "Cardiff City",
+      "top_scorer": [
+        {
+          "name": "Derek Dooley",
+          "team": "Sheffield Wednesday",
+          "goals": 46
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1952-53",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Sheffield United",
+      "runner_up": "Huddersfield Town",
+      "top_scorer": [
+        {
+          "name": "Arthur Rowley",
+          "team": "Leicester City",
+          "goals": 39
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1953-54",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Leicester City",
+      "runner_up": "Everton",
+      "top_scorer": [
+        {
+          "name": "John Charles",
+          "team": "Leeds United",
+          "goals": 42
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1954-55",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Birmingham City",
+      "runner_up": "Luton Town",
+      "top_scorer": [
+        {
+          "name": "Tommy Briggs",
+          "team": "Blackburn Rovers",
+          "goals": 33
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1955-56",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Sheffield Wednesday",
+      "runner_up": "Leeds United",
+      "top_scorer": [
+        {
+          "name": "Willie Gardiner",
+          "team": "Leicester City",
+          "goals": 34
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1956-57",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Leicester City",
+      "runner_up": "Nottingham Forest",
+      "top_scorer": [
+        {
+          "name": "Arthur Rowley",
+          "team": "Leicester City",
+          "goals": 44
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1957-58",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "West Ham United",
+      "runner_up": "Blackburn Rovers",
+      "top_scorer": [
+        {
+          "name": "Tommy Johnston",
+          "team": "Leyton Orient / Blackburn Rovers",
+          "goals": 43
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Tommy Johnston scored for Leyton Orient and Blackburn Rovers (43 in total); footballsite instead lists Brian Clough (40)."
+    },
+    {
+      "season": "1958-59",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Sheffield Wednesday",
+      "runner_up": "Fulham",
+      "top_scorer": [
+        {
+          "name": "Brian Clough",
+          "team": "Middlesbrough",
+          "goals": 42
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1959-60",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Aston Villa",
+      "runner_up": "Cardiff City",
+      "top_scorer": [
+        {
+          "name": "Brian Clough",
+          "team": "Middlesbrough",
+          "goals": 39
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1960-61",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Ipswich Town",
+      "runner_up": "Sheffield United",
+      "top_scorer": [
+        {
+          "name": "Ray Crawford",
+          "team": "Ipswich Town",
+          "goals": 39
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1961-62",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Leyton Orient",
+      "top_scorer": [
+        {
+          "name": "Roger Hunt",
+          "team": "Liverpool",
+          "goals": 41
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1962-63",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Stoke City",
+      "runner_up": "Chelsea",
+      "top_scorer": [
+        {
+          "name": "Bobby Tambling",
+          "team": "Chelsea",
+          "goals": 35
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1963-64",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Leeds United",
+      "runner_up": "Sunderland",
+      "top_scorer": [
+        {
+          "name": "Ron Saunders",
+          "team": "Portsmouth",
+          "goals": 33
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1964-65",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Newcastle United",
+      "runner_up": "Northampton Town",
+      "top_scorer": [
+        {
+          "name": "George O'Brien",
+          "team": "Southampton",
+          "goals": 34
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1965-66",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Manchester City",
+      "runner_up": "Southampton",
+      "top_scorer": [
+        {
+          "name": "Martin Chivers",
+          "team": "Southampton",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1966-67",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Coventry City",
+      "runner_up": "Wolverhampton Wanderers",
+      "top_scorer": [
+        {
+          "name": "Bobby Gould",
+          "team": "Coventry City",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1967-68",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Ipswich Town",
+      "runner_up": "Queens Park Rangers",
+      "top_scorer": [
+        {
+          "name": "John Hickton",
+          "team": "Middlesbrough",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1968-69",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Derby County",
+      "runner_up": "Crystal Palace",
+      "top_scorer": [
+        {
+          "name": "John Toshack",
+          "team": "Cardiff City",
+          "goals": 22
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1969-70",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Huddersfield Town",
+      "runner_up": "Blackpool",
+      "top_scorer": [
+        {
+          "name": "John Hickton",
+          "team": "Middlesbrough",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1970-71",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Leicester City",
+      "runner_up": "Sheffield United",
+      "top_scorer": [
+        {
+          "name": "John Hickton",
+          "team": "Middlesbrough",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1971-72",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Norwich City",
+      "runner_up": "Birmingham City",
+      "top_scorer": [
+        {
+          "name": "Bob Latchford",
+          "team": "Birmingham City",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1972-73",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Burnley",
+      "runner_up": "Queens Park Rangers",
+      "top_scorer": [
+        {
+          "name": "Don Givens",
+          "team": "Queens Park Rangers",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1973-74",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Middlesbrough",
+      "runner_up": "Luton Town",
+      "top_scorer": [
+        {
+          "name": "Duncan McKenzie",
+          "team": "Nottingham Forest",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1974-75",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Aston Villa",
+      "top_scorer": [
+        {
+          "name": "Brian Little",
+          "team": "Aston Villa",
+          "goals": 20
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1975-76",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Sunderland",
+      "runner_up": "Bristol City",
+      "top_scorer": [
+        {
+          "name": "Derek Hales",
+          "team": "Charlton Athletic",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1976-77",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Wolverhampton Wanderers",
+      "runner_up": "Chelsea",
+      "top_scorer": [
+        {
+          "name": "Mickey Walsh",
+          "team": "Blackpool",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1977-78",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Bolton Wanderers",
+      "runner_up": "Southampton",
+      "top_scorer": [
+        {
+          "name": "Bob Hatton",
+          "team": "Blackpool",
+          "goals": 22
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1978-79",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Crystal Palace",
+      "runner_up": "Brighton & Hove Albion",
+      "top_scorer": [
+        {
+          "name": "Pop Robson",
+          "team": "West Ham United",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1979-80",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Leicester City",
+      "runner_up": "Sunderland",
+      "top_scorer": [
+        {
+          "name": "Clive Allen",
+          "team": "Queens Park Rangers",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1980-81",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "West Ham United",
+      "runner_up": "Notts County",
+      "top_scorer": [
+        {
+          "name": "David Cross",
+          "team": "West Ham United",
+          "goals": 22
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1981-82",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Luton Town",
+      "runner_up": "Watford",
+      "top_scorer": [
+        {
+          "name": "Ronnie Moore",
+          "team": "Rotherham United",
+          "goals": 22
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1982-83",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Queens Park Rangers",
+      "runner_up": "Wolverhampton Wanderers",
+      "top_scorer": [
+        {
+          "name": "Gary Lineker",
+          "team": "Leicester City",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1983-84",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Chelsea",
+      "runner_up": "Sheffield Wednesday",
+      "top_scorer": [
+        {
+          "name": "Kerry Dixon",
+          "team": "Chelsea",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1984-85",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Oxford United",
+      "runner_up": "Birmingham City",
+      "top_scorer": [
+        {
+          "name": "John Aldridge",
+          "team": "Oxford United",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1985-86",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Norwich City",
+      "runner_up": "Charlton Athletic",
+      "top_scorer": [
+        {
+          "name": "Kevin Drinkell",
+          "team": "Norwich City",
+          "goals": 22
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1986-87",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Derby County",
+      "runner_up": "Portsmouth",
+      "top_scorer": [
+        {
+          "name": "Mick Quinn",
+          "team": "Portsmouth",
+          "goals": 22
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1987-88",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Millwall",
+      "runner_up": "Aston Villa",
+      "top_scorer": [
+        {
+          "name": "David Currie",
+          "team": "Barnsley",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "RSSSF and the Wikipedia season article give David Currie 28; footballsite lists Mark Bright (25). Currie used."
+    },
+    {
+      "season": "1988-89",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Chelsea",
+      "runner_up": "Manchester City",
+      "top_scorer": [
+        {
+          "name": "Keith Edwards",
+          "team": "Hull City",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1989-90",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Leeds United",
+      "runner_up": "Sheffield United",
+      "top_scorer": [
+        {
+          "name": "Mick Quinn",
+          "team": "Newcastle United",
+          "goals": 32
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1990-91",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Oldham Athletic",
+      "runner_up": "West Ham United",
+      "top_scorer": [
+        {
+          "name": "Teddy Sheringham",
+          "team": "Millwall",
+          "goals": 38
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "RSSSF and the Wikipedia season article give 38; footballsite gives 33. 38 used."
+    },
+    {
+      "season": "1991-92",
+      "name_then": "Second Division",
+      "status": "played",
+      "winner": "Ipswich Town",
+      "runner_up": "Middlesbrough",
+      "top_scorer": [
+        {
+          "name": "Duncan Shearer",
+          "team": "Swindon Town / Blackburn Rovers",
+          "goals": 23
+        },
+        {
+          "name": "David Speedie",
+          "team": "Blackburn Rovers",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "RSSSF and the Wikipedia season article give a tie on 23; Shearer moved from Swindon to Blackburn in March 1992."
+    },
+    {
+      "season": "1992-93",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Newcastle United",
+      "runner_up": "West Ham United",
+      "top_scorer": [
+        {
+          "name": "Guy Whittingham",
+          "team": "Portsmouth",
+          "goals": 42
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1993-94",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Crystal Palace",
+      "runner_up": "Nottingham Forest",
+      "top_scorer": [
+        {
+          "name": "John McGinlay",
+          "team": "Bolton Wanderers",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1994-95",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Middlesbrough",
+      "runner_up": "Reading",
+      "top_scorer": [
+        {
+          "name": "John Aldridge",
+          "team": "Tranmere Rovers",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1995-96",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Sunderland",
+      "runner_up": "Derby County",
+      "top_scorer": [
+        {
+          "name": "John Aldridge",
+          "team": "Tranmere Rovers",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1996-97",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Bolton Wanderers",
+      "runner_up": "Barnsley",
+      "top_scorer": [
+        {
+          "name": "John McGinlay",
+          "team": "Bolton Wanderers",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1997-98",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Nottingham Forest",
+      "runner_up": "Middlesbrough",
+      "top_scorer": [
+        {
+          "name": "Kevin Phillips",
+          "team": "Sunderland",
+          "goals": 29
+        },
+        {
+          "name": "Pierre van Hooijdonk",
+          "team": "Nottingham Forest",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1998-99",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Sunderland",
+      "runner_up": "Bradford City",
+      "top_scorer": [
+        {
+          "name": "Lee Hughes",
+          "team": "West Bromwich Albion",
+          "goals": 31
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1999-00",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Charlton Athletic",
+      "runner_up": "Manchester City",
+      "top_scorer": [
+        {
+          "name": "Andy Hunt",
+          "team": "Charlton Athletic",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2000-01",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Fulham",
+      "runner_up": "Blackburn Rovers",
+      "top_scorer": [
+        {
+          "name": "Louis Saha",
+          "team": "Fulham",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2001-02",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Manchester City",
+      "runner_up": "West Bromwich Albion",
+      "top_scorer": [
+        {
+          "name": "Shaun Goater",
+          "team": "Manchester City",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2002-03",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Portsmouth",
+      "runner_up": "Leicester City",
+      "top_scorer": [
+        {
+          "name": "Svetoslav Todorov",
+          "team": "Portsmouth",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2003-04",
+      "name_then": "First Division",
+      "status": "played",
+      "winner": "Norwich City",
+      "runner_up": "West Bromwich Albion",
+      "top_scorer": [
+        {
+          "name": "Andrew Johnson",
+          "team": "Crystal Palace",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2004-05",
+      "status": "played",
+      "winner": "Sunderland",
+      "runner_up": "Wigan Athletic",
+      "top_scorer": [
+        {
+          "name": "Nathan Ellington",
+          "team": "Wigan Athletic",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2005-06",
+      "status": "played",
+      "winner": "Reading",
+      "runner_up": "Sheffield United",
+      "top_scorer": [
+        {
+          "name": "Marlon King",
+          "team": "Watford",
+          "goals": 21
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Phil Jagielka",
+        "team": "Sheffield United"
+      }
+    },
+    {
+      "season": "2006-07",
+      "status": "played",
+      "winner": "Sunderland",
+      "runner_up": "Birmingham City",
+      "top_scorer": [
+        {
+          "name": "Jamie Cureton",
+          "team": "Colchester United",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Jason Koumas",
+        "team": "West Bromwich Albion"
+      }
+    },
+    {
+      "season": "2007-08",
+      "status": "played",
+      "winner": "West Bromwich Albion",
+      "runner_up": "Stoke City",
+      "top_scorer": [
+        {
+          "name": "Sylvan Ebanks-Blake",
+          "team": "Plymouth Argyle / Wolverhampton Wanderers",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Kevin Phillips",
+        "team": "West Bromwich Albion"
+      },
+      "notes": "Sylvan Ebanks-Blake scored for Plymouth Argyle and Wolverhampton Wanderers."
+    },
+    {
+      "season": "2008-09",
+      "status": "played",
+      "winner": "Wolverhampton Wanderers",
+      "runner_up": "Birmingham City",
+      "top_scorer": [
+        {
+          "name": "Sylvan Ebanks-Blake",
+          "team": "Wolverhampton Wanderers",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Sylvan Ebanks-Blake",
+        "team": "Wolverhampton Wanderers"
+      }
+    },
+    {
+      "season": "2009-10",
+      "status": "played",
+      "winner": "Newcastle United",
+      "runner_up": "West Bromwich Albion",
+      "top_scorer": [
+        {
+          "name": "Peter Whittingham",
+          "team": "Cardiff City",
+          "goals": 20
+        },
+        {
+          "name": "Nicky Maynard",
+          "team": "Bristol City",
+          "goals": 20
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Kevin Nolan",
+        "team": "Newcastle United"
+      }
+    },
+    {
+      "season": "2010-11",
+      "status": "played",
+      "winner": "Queens Park Rangers",
+      "runner_up": "Norwich City",
+      "top_scorer": [
+        {
+          "name": "Danny Graham",
+          "team": "Watford",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Adel Taarabt",
+        "team": "Queens Park Rangers"
+      }
+    },
+    {
+      "season": "2011-12",
+      "status": "played",
+      "winner": "Reading",
+      "runner_up": "Southampton",
+      "top_scorer": [
+        {
+          "name": "Rickie Lambert",
+          "team": "Southampton",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Rickie Lambert",
+        "team": "Southampton"
+      }
+    },
+    {
+      "season": "2012-13",
+      "status": "played",
+      "winner": "Cardiff City",
+      "runner_up": "Hull City",
+      "top_scorer": [
+        {
+          "name": "Glenn Murray",
+          "team": "Crystal Palace",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Matěj Vydra",
+        "team": "Watford"
+      }
+    },
+    {
+      "season": "2013-14",
+      "status": "played",
+      "winner": "Leicester City",
+      "runner_up": "Burnley",
+      "top_scorer": [
+        {
+          "name": "Ross McCormack",
+          "team": "Leeds United",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Danny Ings",
+        "team": "Burnley"
+      }
+    },
+    {
+      "season": "2014-15",
+      "status": "played",
+      "winner": "Bournemouth",
+      "runner_up": "Watford",
+      "top_scorer": [
+        {
+          "name": "Daryl Murphy",
+          "team": "Ipswich Town",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Patrick Bamford",
+        "team": "Middlesbrough"
+      }
+    },
+    {
+      "season": "2015-16",
+      "status": "played",
+      "winner": "Burnley",
+      "runner_up": "Middlesbrough",
+      "top_scorer": [
+        {
+          "name": "Andre Gray",
+          "team": "Brentford / Burnley",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Andre Gray",
+        "team": "Burnley"
+      },
+      "notes": "Andre Gray scored for Brentford and Burnley."
+    },
+    {
+      "season": "2016-17",
+      "status": "played",
+      "winner": "Newcastle United",
+      "runner_up": "Brighton & Hove Albion",
+      "top_scorer": [
+        {
+          "name": "Chris Wood",
+          "team": "Leeds United",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Anthony Knockaert",
+        "team": "Brighton & Hove Albion"
+      }
+    },
+    {
+      "season": "2017-18",
+      "status": "played",
+      "winner": "Wolverhampton Wanderers",
+      "runner_up": "Cardiff City",
+      "top_scorer": [
+        {
+          "name": "Matěj Vydra",
+          "team": "Derby County",
+          "goals": 21
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ryan Sessegnon",
+        "team": "Fulham"
+      }
+    },
+    {
+      "season": "2018-19",
+      "status": "played",
+      "winner": "Norwich City",
+      "runner_up": "Sheffield United",
+      "top_scorer": [
+        {
+          "name": "Teemu Pukki",
+          "team": "Norwich City",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Teemu Pukki",
+        "team": "Norwich City"
+      }
+    },
+    {
+      "season": "2019-20",
+      "status": "played",
+      "winner": "Leeds United",
+      "runner_up": "West Bromwich Albion",
+      "top_scorer": [
+        {
+          "name": "Aleksandar Mitrović",
+          "team": "Fulham",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ollie Watkins",
+        "team": "Brentford"
+      }
+    },
+    {
+      "season": "2020-21",
+      "status": "played",
+      "winner": "Norwich City",
+      "runner_up": "Watford",
+      "top_scorer": [
+        {
+          "name": "Ivan Toney",
+          "team": "Brentford",
+          "goals": 31
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Emiliano Buendía",
+        "team": "Norwich City"
+      }
+    },
+    {
+      "season": "2021-22",
+      "status": "played",
+      "winner": "Fulham",
+      "runner_up": "Bournemouth",
+      "top_scorer": [
+        {
+          "name": "Aleksandar Mitrović",
+          "team": "Fulham",
+          "goals": 43
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Aleksandar Mitrović",
+        "team": "Fulham"
+      }
+    },
+    {
+      "season": "2022-23",
+      "status": "played",
+      "winner": "Burnley",
+      "runner_up": "Sheffield United",
+      "top_scorer": [
+        {
+          "name": "Chuba Akpom",
+          "team": "Middlesbrough",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Chuba Akpom",
+        "team": "Middlesbrough"
+      }
+    },
+    {
+      "season": "2023-24",
+      "status": "played",
+      "winner": "Leicester City",
+      "runner_up": "Ipswich Town",
+      "top_scorer": [
+        {
+          "name": "Sammie Szmodics",
+          "team": "Blackburn Rovers",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Crysencio Summerville",
+        "team": "Leeds United"
+      }
+    },
+    {
+      "season": "2024-25",
+      "status": "played",
+      "winner": "Leeds United",
+      "runner_up": "Burnley",
+      "top_scorer": [
+        {
+          "name": "Joël Piroe",
+          "team": "Leeds United",
+          "goals": 19
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Gustavo Hamer",
+        "team": "Sheffield United"
+      }
+    },
+    {
+      "season": "2025-26",
+      "status": "played",
+      "winner": "Coventry City",
+      "runner_up": "Ipswich Town",
+      "top_scorer": [
+        {
+          "name": "Žan Vipotnik",
+          "team": "Swansea City",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Hayden Hackney",
+        "team": "Middlesbrough"
+      }
+    }
+  ]
+}
