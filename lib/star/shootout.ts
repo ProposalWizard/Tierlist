@@ -226,12 +226,23 @@ export function penaltyConversionChance(skill?: number): number {
  * per-side conversion inputs (a club's strength, or an averaged squad
  * quality) since no individual taker order matters when nobody's watching.
  */
+/** A side's chance of scoring each kick in a simulated shoot-out, from its
+ *  team rating: about 70% for a 60-rated side, 79% for a 90-rated one. */
+export function teamShootoutChance(rating?: number): number {
+  const r = rating ?? 70;
+  return Math.max(0.65, Math.min(0.82, 0.70 + (r - 60) * 0.003));
+}
+
 export function simulateShootout(
   homeSkill: number, awaySkill: number, rng: () => number, rosterSize = 11,
 ): { home: number; away: number; state: PenaltyShootoutState } {
   let state = createShootout();
-  const homeChance = penaltyConversionChance(homeSkill);
-  const awayChance = penaltyConversionChance(awaySkill);
+  // Every caller passes a TEAM rating (60-95), not a taker's penalty skill.
+  // Read through penaltyConversionChance, a top side scored 95% of its kicks
+  // and 39% of shoot-outs went past 10-10 (one reached 100). Real shoot-outs
+  // score about three in four (Mikey, 2 Nov 2026: a 16-17 shoot-out).
+  const homeChance = teamShootoutChance(homeSkill);
+  const awayChance = teamShootoutChance(awaySkill);
   // Bounded guard against a pathological infinite sudden death (both sides
   // converting or missing in lockstep forever) — vanishingly unlikely with a
   // real conversion chance, but a pure function must still terminate.

@@ -258,18 +258,29 @@ function Results({ results, glow, you, title }: { results: LeagueResult[]; glow:
   );
 }
 
-function Scorers({ rows, glow, label }: { rows: ScorerRow[]; glow: string; label: string }) {
-  if (!rows.length) return <Empty text="No named players here yet." />;
+function Scorers({ rows, glow, label, you }: {
+  rows: ScorerRow[]; glow: string; label: string;
+  /** You, when you are outside the list: shown under it with your place. */
+  you?: { row: ScorerRow; rank: number } | null;
+}) {
+  if (!rows.length && !you) return <Empty text="No named players here yet." />;
+  const line = (r: ScorerRow, rank: number, mine: boolean) => (
+    <div key={r.id} className={`grid grid-cols-[26px_1fr_auto] items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] font-bold text-white ${mine ? "" : "bg-white/[0.04]"}`} style={mine ? youRowStyle(glow) : undefined}>
+      <span className="text-center font-black">{rank}</span>
+      <span className="flex min-w-0 items-center gap-1.5">{r.club && <ClubBadge club={r.club} size={15} />}<span className="truncate">{r.player}</span></span>
+      <span className="font-black tabular-nums">{r.n} <span className="text-[9px] text-white/70">{label}</span></span>
+    </div>
+  );
   return (
     <ClubCard glow={glow} className="p-1.5">
       <div className="space-y-1">
-        {rows.map((r, i) => (
-          <div key={r.id} className="grid grid-cols-[22px_1fr_auto] items-center gap-2 rounded-lg bg-white/[0.04] px-2 py-1.5 text-[12px] font-bold text-white">
-            <span className="text-center font-black">{i + 1}</span>
-            <span className="flex min-w-0 items-center gap-1.5">{r.club && <ClubBadge club={r.club} size={15} />}<span className="truncate">{r.player}</span></span>
-            <span className="font-black tabular-nums">{r.n} <span className="text-[9px] text-white/70">{label}</span></span>
-          </div>
-        ))}
+        {rows.map((r, i) => line(r, i + 1, false))}
+        {you && (
+          <>
+            <div className="text-center text-[11px] font-black leading-none text-white/60">⋯</div>
+            {line(you.row, you.rank, true)}
+          </>
+        )}
       </div>
     </ClubCard>
   );
@@ -394,17 +405,22 @@ function EuroView({ career, world, competition, glow, you }: { career: CareerSta
   // Your own competition is only ever read from your campaign, never the world's.
   const bracket = mine ? mine.bracket : w?.bracket;
   const winner = mine ? mine.winner : w?.winner;
-  const own = useMemo(() => (mine ? ownEuroScorers(career, mine) : null), [career, mine]);
-  const goals = own ? own.goals : w ? topOf(career, w.scorers, 0) : [];
-  const assists = own ? own.assists : w ? topOf(career, w.scorers, 1) : [];
+  const own = useMemo(() => (mine ? ownEuroScorers(career, mine, 10000) : null), [career, mine]);
+  const goals = own ? own.goals.slice(0, 10) : w ? topOf(career, w.scorers, 0) : [];
+  const assists = own ? own.assists.slice(0, 10) : w ? topOf(career, w.scorers, 1) : [];
+  // You, if you scored (or assisted) but are outside the top ten.
+  const youBelow = (all: ScorerRow[] | undefined) => {
+    const i = (all ?? []).findIndex(r => r.club === you && r.player === career.player.lastName);
+    return i >= 10 ? { row: all![i], rank: i + 1 } : null;
+  };
   return (
     <div className="space-y-2">
       {winner && <WinnerBar club={winner} glow={glow} />}
-      <SegTabs value={tab} onChange={setTab} tabs={[["table", "League"], ["knockout", "Knockout"], ["goals", "Goals"], ["assists", "Assists"], ["history", "History"]] as const} />
+      <SegTabs value={tab} onChange={setTab} tabs={[["table", "League"], ["knockout", "KO"], ["goals", "Goals"], ["assists", "Assists"], ["history", "History"]] as const} />
       {tab === "table" && (rows.length ? <Table rows={rows} glow={glow} you={you} zone={(p) => (p <= 8 ? "#10b981" : p <= 24 ? "#3b82f6" : "#ef4444")} /> : <Empty text="Not started yet." />)}
       {tab === "knockout" && (bracket ? <EuroKnockout bracket={bracket} glow={glow} you={you} /> : <Empty text="The knockout starts after the league phase." />)}
-      {tab === "goals" && <Scorers rows={goals} glow={glow} label="goals" />}
-      {tab === "assists" && <Scorers rows={assists} glow={glow} label="assists" />}
+      {tab === "goals" && <Scorers rows={goals} glow={glow} label="goals" you={youBelow(own?.goals)} />}
+      {tab === "assists" && <Scorers rows={assists} glow={glow} label="assists" you={youBelow(own?.assists)} />}
       {tab === "history" && <History career={career} comp={competition} glow={glow} you={you} />}
     </div>
   );
