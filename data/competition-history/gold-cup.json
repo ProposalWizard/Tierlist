@@ -1,0 +1,421 @@
+{
+  "competition": "CONCACAF Gold Cup",
+  "slug": "gold-cup",
+  "kind": "tournament",
+  "lineage_note": "Starts in 1991, when CONCACAF relaunched its championship as the Gold Cup; CONCACAF numbers 1991 as the 1st Gold Cup. The earlier CONCACAF Championship (1963-1989) is left out on purpose: it was a different format (round robins with no finals; 1977-1989 it was the World Cup qualifying final round, and 1985 and 1989 had no host), and its top scorer is unknown for 1971, so it cannot be filled continuously. RSSSF also treats the Gold Cup as a successor competition, listed separately.",
+  "history_from": "1991",
+  "history_to": "2025",
+  "field_from": {
+    "runner_up": "1991",
+    "final_score": "1991",
+    "top_scorer": "1991",
+    "top_assister": null,
+    "player_of_season": "1991"
+  },
+  "player_of_season_award": "Gold Cup Best Player / Golden Ball (MVP), every edition from 1991",
+  "sources": [
+    "https://en.wikipedia.org/wiki/CONCACAF_Gold_Cup",
+    "https://en.wikipedia.org/wiki/CONCACAF_Gold_Cup_records_and_statistics",
+    "https://www.rsssf.org/tablesg/goldcupall.html",
+    "https://www.rsssf.org/tables/05gc-scor.html"
+  ],
+  "seasons": [
+    {
+      "season": "1991",
+      "status": "played",
+      "winner": "United States",
+      "runner_up": "Honduras",
+      "final_score": "0-0 (a.e.t.) (4-3 pens)",
+      "top_scorer": [
+        {
+          "name": "Benjamín Galindo",
+          "team": "Mexico",
+          "goals": 4
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Tony Meola",
+        "team": "United States"
+      }
+    },
+    {
+      "season": "1993",
+      "status": "played",
+      "winner": "Mexico",
+      "runner_up": "United States",
+      "final_score": "4-0",
+      "top_scorer": [
+        {
+          "name": "Luis Roberto Alves (Zague)",
+          "team": "Mexico",
+          "goals": 11
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ramón Ramírez",
+        "team": "Mexico"
+      }
+    },
+    {
+      "season": "1996",
+      "status": "played",
+      "winner": "Mexico",
+      "runner_up": "Brazil",
+      "final_score": "2-0",
+      "top_scorer": [
+        {
+          "name": "Eric Wynalda",
+          "team": "United States",
+          "goals": 4
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Raúl Lara",
+        "team": "Mexico"
+      },
+      "notes": "Brazil were an invited guest and sent their under-23 side."
+    },
+    {
+      "season": "1998",
+      "status": "played",
+      "winner": "Mexico",
+      "runner_up": "United States",
+      "final_score": "1-0",
+      "top_scorer": [
+        {
+          "name": "Luis Hernández",
+          "team": "Mexico",
+          "goals": 4
+        },
+        {
+          "name": "Paulo Wanchope",
+          "team": "Costa Rica",
+          "goals": 4
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Kasey Keller",
+        "team": "United States"
+      }
+    },
+    {
+      "season": "2000",
+      "status": "played",
+      "winner": "Canada",
+      "runner_up": "Colombia",
+      "final_score": "2-0",
+      "top_scorer": [
+        {
+          "name": "Carlo Corazzin",
+          "team": "Canada",
+          "goals": 4
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Craig Forrest",
+        "team": "Canada"
+      },
+      "notes": "Colombia were an invited guest."
+    },
+    {
+      "season": "2002",
+      "status": "played",
+      "winner": "United States",
+      "runner_up": "Costa Rica",
+      "final_score": "2-0",
+      "top_scorer": [
+        {
+          "name": "Brian McBride",
+          "team": "United States",
+          "goals": 4
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Brian McBride",
+        "team": "United States"
+      }
+    },
+    {
+      "season": "2003",
+      "status": "played",
+      "winner": "Mexico",
+      "runner_up": "Brazil",
+      "final_score": "1-0 (a.e.t., golden goal)",
+      "top_scorer": [
+        {
+          "name": "Walter Centeno",
+          "team": "Costa Rica",
+          "goals": 4
+        },
+        {
+          "name": "Landon Donovan",
+          "team": "United States",
+          "goals": 4
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Jesús Arellano",
+        "team": "Mexico"
+      },
+      "notes": "Brazil were an invited guest (under-23 side)."
+    },
+    {
+      "season": "2005",
+      "status": "played",
+      "winner": "United States",
+      "runner_up": "Panama",
+      "final_score": "0-0 (a.e.t.) (3-1 pens)",
+      "top_scorer": [
+        {
+          "name": "Carlos Ruiz",
+          "team": "Guatemala",
+          "goals": 3
+        },
+        {
+          "name": "Wilmer Velásquez",
+          "team": "Honduras",
+          "goals": 3
+        },
+        {
+          "name": "Luis Tejada",
+          "team": "Panama",
+          "goals": 3
+        },
+        {
+          "name": "Landon Donovan",
+          "team": "United States",
+          "goals": 3
+        },
+        {
+          "name": "DaMarcus Beasley",
+          "team": "United States",
+          "goals": 3
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Luis Tejada",
+        "team": "Panama"
+      },
+      "notes": "Five players tied on 3 goals (RSSSF's 2005 scorer page lists all five; its all-time summary lists three)."
+    },
+    {
+      "season": "2007",
+      "status": "played",
+      "winner": "United States",
+      "runner_up": "Mexico",
+      "final_score": "2-1",
+      "top_scorer": [
+        {
+          "name": "Carlos Pavón",
+          "team": "Honduras",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Julian de Guzman",
+        "team": "Canada"
+      }
+    },
+    {
+      "season": "2009",
+      "status": "played",
+      "winner": "Mexico",
+      "runner_up": "United States",
+      "final_score": "5-0",
+      "top_scorer": [
+        {
+          "name": "Miguel Sabah",
+          "team": "Mexico",
+          "goals": 4
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Giovani dos Santos",
+        "team": "Mexico"
+      }
+    },
+    {
+      "season": "2011",
+      "status": "played",
+      "winner": "Mexico",
+      "runner_up": "United States",
+      "final_score": "4-2",
+      "top_scorer": [
+        {
+          "name": "Javier Hernández",
+          "team": "Mexico",
+          "goals": 7
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Javier Hernández",
+        "team": "Mexico"
+      }
+    },
+    {
+      "season": "2013",
+      "status": "played",
+      "winner": "United States",
+      "runner_up": "Panama",
+      "final_score": "1-0",
+      "top_scorer": [
+        {
+          "name": "Gabriel Torres",
+          "team": "Panama",
+          "goals": 5
+        },
+        {
+          "name": "Landon Donovan",
+          "team": "United States",
+          "goals": 5
+        },
+        {
+          "name": "Chris Wondolowski",
+          "team": "United States",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Landon Donovan",
+        "team": "United States"
+      }
+    },
+    {
+      "season": "2015",
+      "status": "played",
+      "winner": "Mexico",
+      "runner_up": "Jamaica",
+      "final_score": "3-1",
+      "top_scorer": [
+        {
+          "name": "Clint Dempsey",
+          "team": "United States",
+          "goals": 7
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Andrés Guardado",
+        "team": "Mexico"
+      }
+    },
+    {
+      "season": "2017",
+      "status": "played",
+      "winner": "United States",
+      "runner_up": "Jamaica",
+      "final_score": "2-1",
+      "top_scorer": [
+        {
+          "name": "Alphonso Davies",
+          "team": "Canada",
+          "goals": 3
+        },
+        {
+          "name": "Kévin Parsemain",
+          "team": "Martinique",
+          "goals": 3
+        },
+        {
+          "name": "Jordan Morris",
+          "team": "United States",
+          "goals": 3
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Michael Bradley",
+        "team": "United States"
+      }
+    },
+    {
+      "season": "2019",
+      "status": "played",
+      "winner": "Mexico",
+      "runner_up": "United States",
+      "final_score": "1-0",
+      "top_scorer": [
+        {
+          "name": "Jonathan David",
+          "team": "Canada",
+          "goals": 6
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Raúl Jiménez",
+        "team": "Mexico"
+      }
+    },
+    {
+      "season": "2021",
+      "status": "played",
+      "winner": "United States",
+      "runner_up": "Mexico",
+      "final_score": "1-0 (a.e.t.)",
+      "top_scorer": [
+        {
+          "name": "Almoez Ali",
+          "team": "Qatar",
+          "goals": 4
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Héctor Herrera",
+        "team": "Mexico"
+      },
+      "notes": "Qatar were an invited guest."
+    },
+    {
+      "season": "2023",
+      "status": "played",
+      "winner": "Mexico",
+      "runner_up": "Panama",
+      "final_score": "1-0",
+      "top_scorer": [
+        {
+          "name": "Jesús Ferreira",
+          "team": "United States",
+          "goals": 7
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Adalberto Carrasquilla",
+        "team": "Panama"
+      }
+    },
+    {
+      "season": "2025",
+      "status": "played",
+      "winner": "Mexico",
+      "runner_up": "United States",
+      "final_score": "2-1",
+      "top_scorer": [
+        {
+          "name": "Ismael Díaz",
+          "team": "Panama",
+          "goals": 6
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Edson Álvarez",
+        "team": "Mexico"
+      }
+    }
+  ]
+}

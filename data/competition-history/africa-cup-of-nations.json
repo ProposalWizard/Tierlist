@@ -1,0 +1,838 @@
+{
+  "competition": "Africa Cup of Nations",
+  "slug": "africa-cup-of-nations",
+  "kind": "tournament",
+  "lineage_note": "CAF's men's national-team championship since 1957 (African Cup of Nations, now Africa Cup of Nations). Seasons are labelled by the edition's official name; from 2013 the edition moved to odd years, and the 2021, 2023 and 2025 editions were each played in the following calendar year (RSSSF labels those 2022, 2024, 2026). 1959 and 1976 had no final (round robin).",
+  "history_from": "1957",
+  "history_to": "2025",
+  "field_from": {
+    "runner_up": "1957",
+    "final_score": "1957",
+    "top_scorer": "1957",
+    "top_assister": null,
+    "player_of_season": "1957"
+  },
+  "player_of_season_award": "CAF Africa Cup of Nations Best Player award (as listed by CAF for every edition from 1957)",
+  "sources": [
+    "https://en.wikipedia.org/wiki/List_of_Africa_Cup_of_Nations_finals",
+    "https://en.wikipedia.org/wiki/Africa_Cup_of_Nations_records_and_statistics",
+    "https://en.wikipedia.org/wiki/Africa_Cup_of_Nations_awards",
+    "https://www.rsssf.org/tablesa/afrchamp.html",
+    "https://www.rsssf.org/tablesa/afrtops.html",
+    "https://www.cafonline.com/afcon2025/news/all-you-need-to-know-about-the-totalenergies-caf-africa-cup-of-nations-morocco-2025/",
+    "https://allafrica.com/stories/202603180605.html",
+    "https://www.aljazeera.com/sports/2026/10/19/decision-on-senegals-afcon-final-appeal-to-be-made-by-end-of-november"
+  ],
+  "seasons": [
+    {
+      "season": "1957",
+      "status": "played",
+      "winner": "Egypt",
+      "runner_up": "Ethiopia",
+      "final_score": "4-0",
+      "top_scorer": [
+        {
+          "name": "Ad-Diba",
+          "team": "Egypt",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ad-Diba",
+        "team": "Egypt"
+      },
+      "notes": "Three teams; Egypt beat Sudan in the semi-final and Ethiopia in the final in Khartoum."
+    },
+    {
+      "season": "1959",
+      "status": "played",
+      "winner": "United Arab Republic",
+      "runner_up": "Sudan",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Mahmoud El-Gohary",
+          "team": "United Arab Republic",
+          "goals": 3
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ad-Diba",
+        "team": "United Arab Republic"
+      },
+      "notes": "No final: three-team round robin in Cairo. Deciding last match: United Arab Republic 2-1 Sudan. Egypt played as the United Arab Republic."
+    },
+    {
+      "season": "1962",
+      "status": "played",
+      "winner": "Ethiopia",
+      "runner_up": "United Arab Republic",
+      "final_score": "4-2 (a.e.t.)",
+      "top_scorer": [
+        {
+          "name": "Mengistu Worku",
+          "team": "Ethiopia",
+          "goals": 3
+        },
+        {
+          "name": "Badawi Abdel Fattah",
+          "team": "United Arab Republic",
+          "goals": 3
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Mengistu Worku",
+        "team": "Ethiopia"
+      }
+    },
+    {
+      "season": "1963",
+      "status": "played",
+      "winner": "Ghana",
+      "runner_up": "Sudan",
+      "final_score": "3-0",
+      "top_scorer": [
+        {
+          "name": "Hassan El-Shazly",
+          "team": "United Arab Republic",
+          "goals": 6
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Hassan El-Shazly",
+        "team": "United Arab Republic"
+      }
+    },
+    {
+      "season": "1965",
+      "status": "played",
+      "winner": "Ghana",
+      "runner_up": "Tunisia",
+      "final_score": "3-2 (a.e.t.)",
+      "top_scorer": [
+        {
+          "name": "Ben Acheampong",
+          "team": "Ghana",
+          "goals": 3
+        },
+        {
+          "name": "Osei Kofi",
+          "team": "Ghana",
+          "goals": 3
+        },
+        {
+          "name": "Eustache Manglé",
+          "team": "Ivory Coast",
+          "goals": 3
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Osei Kofi",
+        "team": "Ghana"
+      }
+    },
+    {
+      "season": "1968",
+      "status": "played",
+      "winner": "Congo-Kinshasa",
+      "runner_up": "Ghana",
+      "final_score": "1-0",
+      "top_scorer": [
+        {
+          "name": "Laurent Pokou",
+          "team": "Ivory Coast",
+          "goals": 6
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Kazadi Mwamba",
+        "team": "Congo-Kinshasa"
+      },
+      "notes": "Winner is today's DR Congo."
+    },
+    {
+      "season": "1970",
+      "status": "played",
+      "winner": "Sudan",
+      "runner_up": "Ghana",
+      "final_score": "1-0",
+      "top_scorer": [
+        {
+          "name": "Laurent Pokou",
+          "team": "Ivory Coast",
+          "goals": 8
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Laurent Pokou",
+        "team": "Ivory Coast"
+      }
+    },
+    {
+      "season": "1972",
+      "status": "played",
+      "winner": "Congo",
+      "runner_up": "Mali",
+      "final_score": "3-2",
+      "top_scorer": [
+        {
+          "name": "Salif Keïta",
+          "team": "Mali",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "François M'Pelé",
+        "team": "Congo"
+      },
+      "notes": "Winner is Congo-Brazzaville."
+    },
+    {
+      "season": "1974",
+      "status": "played",
+      "winner": "Zaire",
+      "runner_up": "Zambia",
+      "final_score": "2-0 (replay; first match 2-2 a.e.t.)",
+      "top_scorer": [
+        {
+          "name": "Ndaye Mulamba",
+          "team": "Zaire",
+          "goals": 9
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ndaye Mulamba",
+        "team": "Zaire"
+      },
+      "notes": "Final drawn 2-2 after extra time; Zaire won the replay 2-0 two days later in Cairo."
+    },
+    {
+      "season": "1976",
+      "status": "played",
+      "winner": "Morocco",
+      "runner_up": "Guinea",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Mamadou Aliou Keïta (N'Jo Léa)",
+          "team": "Guinea",
+          "goals": 4
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ahmed Faras",
+        "team": "Morocco"
+      },
+      "notes": "No final: four-team final round robin in Addis Ababa. Deciding last match: Morocco 1-1 Guinea (enough for Morocco to finish first)."
+    },
+    {
+      "season": "1978",
+      "status": "played",
+      "winner": "Ghana",
+      "runner_up": "Uganda",
+      "final_score": "2-0",
+      "top_scorer": [
+        {
+          "name": "Phillip Omondi",
+          "team": "Uganda",
+          "goals": 3
+        },
+        {
+          "name": "Opoku Afriyie",
+          "team": "Ghana",
+          "goals": 3
+        },
+        {
+          "name": "Segun Odegbami",
+          "team": "Nigeria",
+          "goals": 3
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Karim Abdul Razak",
+        "team": "Ghana"
+      }
+    },
+    {
+      "season": "1980",
+      "status": "played",
+      "winner": "Nigeria",
+      "runner_up": "Algeria",
+      "final_score": "3-0",
+      "top_scorer": [
+        {
+          "name": "Khalid Labied",
+          "team": "Morocco",
+          "goals": 3
+        },
+        {
+          "name": "Segun Odegbami",
+          "team": "Nigeria",
+          "goals": 3
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Christian Chukwu",
+        "team": "Nigeria"
+      }
+    },
+    {
+      "season": "1982",
+      "status": "played",
+      "winner": "Ghana",
+      "runner_up": "Libya",
+      "final_score": "1-1 (a.e.t.) (7-6 pens)",
+      "top_scorer": [
+        {
+          "name": "George Alhassan",
+          "team": "Ghana",
+          "goals": 4
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Fawzi Al-Issawi",
+        "team": "Libya"
+      }
+    },
+    {
+      "season": "1984",
+      "status": "played",
+      "winner": "Cameroon",
+      "runner_up": "Nigeria",
+      "final_score": "3-1",
+      "top_scorer": [
+        {
+          "name": "Taher Abouzaid",
+          "team": "Egypt",
+          "goals": 4
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Théophile Abega",
+        "team": "Cameroon"
+      }
+    },
+    {
+      "season": "1986",
+      "status": "played",
+      "winner": "Egypt",
+      "runner_up": "Cameroon",
+      "final_score": "0-0 (a.e.t.) (5-4 pens)",
+      "top_scorer": [
+        {
+          "name": "Roger Milla",
+          "team": "Cameroon",
+          "goals": 4
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Roger Milla",
+        "team": "Cameroon"
+      }
+    },
+    {
+      "season": "1988",
+      "status": "played",
+      "winner": "Cameroon",
+      "runner_up": "Nigeria",
+      "final_score": "1-0",
+      "top_scorer": [
+        {
+          "name": "Lakhdar Belloumi",
+          "team": "Algeria",
+          "goals": 2
+        },
+        {
+          "name": "Roger Milla",
+          "team": "Cameroon",
+          "goals": 2
+        },
+        {
+          "name": "Abdoulaye Traoré",
+          "team": "Ivory Coast",
+          "goals": 2
+        },
+        {
+          "name": "Gamal Abdelhamid",
+          "team": "Egypt",
+          "goals": 2
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Roger Milla",
+        "team": "Cameroon"
+      }
+    },
+    {
+      "season": "1990",
+      "status": "played",
+      "winner": "Algeria",
+      "runner_up": "Nigeria",
+      "final_score": "1-0",
+      "top_scorer": [
+        {
+          "name": "Djamel Menad",
+          "team": "Algeria",
+          "goals": 4
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Rabah Madjer",
+        "team": "Algeria"
+      }
+    },
+    {
+      "season": "1992",
+      "status": "played",
+      "winner": "Ivory Coast",
+      "runner_up": "Ghana",
+      "final_score": "0-0 (a.e.t.) (11-10 pens)",
+      "top_scorer": [
+        {
+          "name": "Rashidi Yekini",
+          "team": "Nigeria",
+          "goals": 4
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Abedi Pele",
+        "team": "Ghana"
+      }
+    },
+    {
+      "season": "1994",
+      "status": "played",
+      "winner": "Nigeria",
+      "runner_up": "Zambia",
+      "final_score": "2-1",
+      "top_scorer": [
+        {
+          "name": "Rashidi Yekini",
+          "team": "Nigeria",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Rashidi Yekini",
+        "team": "Nigeria"
+      }
+    },
+    {
+      "season": "1996",
+      "status": "played",
+      "winner": "South Africa",
+      "runner_up": "Tunisia",
+      "final_score": "2-0",
+      "top_scorer": [
+        {
+          "name": "Kalusha Bwalya",
+          "team": "Zambia",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Kalusha Bwalya",
+        "team": "Zambia"
+      }
+    },
+    {
+      "season": "1998",
+      "status": "played",
+      "winner": "Egypt",
+      "runner_up": "South Africa",
+      "final_score": "2-0",
+      "top_scorer": [
+        {
+          "name": "Hossam Hassan",
+          "team": "Egypt",
+          "goals": 7
+        },
+        {
+          "name": "Benni McCarthy",
+          "team": "South Africa",
+          "goals": 7
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Benni McCarthy",
+        "team": "South Africa"
+      }
+    },
+    {
+      "season": "2000",
+      "status": "played",
+      "winner": "Cameroon",
+      "runner_up": "Nigeria",
+      "final_score": "2-2 (a.e.t.) (4-3 pens)",
+      "top_scorer": [
+        {
+          "name": "Shaun Bartlett",
+          "team": "South Africa",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Lauren",
+        "team": "Cameroon"
+      }
+    },
+    {
+      "season": "2002",
+      "status": "played",
+      "winner": "Cameroon",
+      "runner_up": "Senegal",
+      "final_score": "0-0 (a.e.t.) (3-2 pens)",
+      "top_scorer": [
+        {
+          "name": "Patrick Mboma",
+          "team": "Cameroon",
+          "goals": 3
+        },
+        {
+          "name": "Salomon Olembé",
+          "team": "Cameroon",
+          "goals": 3
+        },
+        {
+          "name": "Julius Aghahowa",
+          "team": "Nigeria",
+          "goals": 3
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Rigobert Song",
+        "team": "Cameroon"
+      }
+    },
+    {
+      "season": "2004",
+      "status": "played",
+      "winner": "Tunisia",
+      "runner_up": "Morocco",
+      "final_score": "2-1",
+      "top_scorer": [
+        {
+          "name": "Patrick Mboma",
+          "team": "Cameroon",
+          "goals": 4
+        },
+        {
+          "name": "Frédéric Kanouté",
+          "team": "Mali",
+          "goals": 4
+        },
+        {
+          "name": "Youssef Mokhtari",
+          "team": "Morocco",
+          "goals": 4
+        },
+        {
+          "name": "Jay-Jay Okocha",
+          "team": "Nigeria",
+          "goals": 4
+        },
+        {
+          "name": "Francileudo Santos",
+          "team": "Tunisia",
+          "goals": 4
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Jay-Jay Okocha",
+        "team": "Nigeria"
+      }
+    },
+    {
+      "season": "2006",
+      "status": "played",
+      "winner": "Egypt",
+      "runner_up": "Ivory Coast",
+      "final_score": "0-0 (a.e.t.) (4-2 pens)",
+      "top_scorer": [
+        {
+          "name": "Samuel Eto'o",
+          "team": "Cameroon",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ahmed Hassan",
+        "team": "Egypt"
+      }
+    },
+    {
+      "season": "2008",
+      "status": "played",
+      "winner": "Egypt",
+      "runner_up": "Cameroon",
+      "final_score": "1-0",
+      "top_scorer": [
+        {
+          "name": "Samuel Eto'o",
+          "team": "Cameroon",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Hosny Abd Rabo",
+        "team": "Egypt"
+      }
+    },
+    {
+      "season": "2010",
+      "status": "played",
+      "winner": "Egypt",
+      "runner_up": "Ghana",
+      "final_score": "1-0",
+      "top_scorer": [
+        {
+          "name": "Mohamed Nagy (Gedo)",
+          "team": "Egypt",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ahmed Hassan",
+        "team": "Egypt"
+      }
+    },
+    {
+      "season": "2012",
+      "status": "played",
+      "winner": "Zambia",
+      "runner_up": "Ivory Coast",
+      "final_score": "0-0 (a.e.t.) (8-7 pens)",
+      "top_scorer": [
+        {
+          "name": "Manucho",
+          "team": "Angola",
+          "goals": 3
+        },
+        {
+          "name": "Didier Drogba",
+          "team": "Ivory Coast",
+          "goals": 3
+        },
+        {
+          "name": "Pierre-Emerick Aubameyang",
+          "team": "Gabon",
+          "goals": 3
+        },
+        {
+          "name": "Cheick Diabaté",
+          "team": "Mali",
+          "goals": 3
+        },
+        {
+          "name": "Houssine Kharja",
+          "team": "Morocco",
+          "goals": 3
+        },
+        {
+          "name": "Christopher Katongo",
+          "team": "Zambia",
+          "goals": 3
+        },
+        {
+          "name": "Emmanuel Mayuka",
+          "team": "Zambia",
+          "goals": 3
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Christopher Katongo",
+        "team": "Zambia"
+      },
+      "notes": "Seven players tied on 3 goals (RSSSF and Wikipedia list Manucho; CAF's own 2025 list omits him)."
+    },
+    {
+      "season": "2013",
+      "status": "played",
+      "winner": "Nigeria",
+      "runner_up": "Burkina Faso",
+      "final_score": "1-0",
+      "top_scorer": [
+        {
+          "name": "Mubarak Wakaso",
+          "team": "Ghana",
+          "goals": 4
+        },
+        {
+          "name": "Emmanuel Emenike",
+          "team": "Nigeria",
+          "goals": 4
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Jonathan Pitroipa",
+        "team": "Burkina Faso"
+      }
+    },
+    {
+      "season": "2015",
+      "status": "played",
+      "winner": "Ivory Coast",
+      "runner_up": "Ghana",
+      "final_score": "0-0 (a.e.t.) (9-8 pens)",
+      "top_scorer": [
+        {
+          "name": "Thievy Bifouma",
+          "team": "Congo",
+          "goals": 3
+        },
+        {
+          "name": "Dieumerci Mbokani",
+          "team": "DR Congo",
+          "goals": 3
+        },
+        {
+          "name": "Javier Balboa",
+          "team": "Equatorial Guinea",
+          "goals": 3
+        },
+        {
+          "name": "André Ayew",
+          "team": "Ghana",
+          "goals": 3
+        },
+        {
+          "name": "Ahmed Akaïchi",
+          "team": "Tunisia",
+          "goals": 3
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Christian Atsu",
+        "team": "Ghana"
+      }
+    },
+    {
+      "season": "2017",
+      "status": "played",
+      "winner": "Cameroon",
+      "runner_up": "Egypt",
+      "final_score": "2-1",
+      "top_scorer": [
+        {
+          "name": "Junior Kabananga",
+          "team": "DR Congo",
+          "goals": 3
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Christian Bassogog",
+        "team": "Cameroon"
+      }
+    },
+    {
+      "season": "2019",
+      "status": "played",
+      "winner": "Algeria",
+      "runner_up": "Senegal",
+      "final_score": "1-0",
+      "top_scorer": [
+        {
+          "name": "Odion Ighalo",
+          "team": "Nigeria",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ismaël Bennacer",
+        "team": "Algeria"
+      }
+    },
+    {
+      "season": "2021",
+      "status": "played",
+      "winner": "Senegal",
+      "runner_up": "Egypt",
+      "final_score": "0-0 (a.e.t.) (4-2 pens)",
+      "top_scorer": [
+        {
+          "name": "Vincent Aboubakar",
+          "team": "Cameroon",
+          "goals": 8
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Sadio Mané",
+        "team": "Senegal"
+      },
+      "notes": "Edition named 2021, played January-February 2022 in Cameroon (final 6 Feb 2022)."
+    },
+    {
+      "season": "2023",
+      "status": "played",
+      "winner": "Ivory Coast",
+      "runner_up": "Nigeria",
+      "final_score": "2-1",
+      "top_scorer": [
+        {
+          "name": "Emilio Nsue",
+          "team": "Equatorial Guinea",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "William Troost-Ekong",
+        "team": "Nigeria"
+      },
+      "notes": "Edition named 2023, played January-February 2024 in Ivory Coast (final 11 Feb 2024)."
+    },
+    {
+      "season": "2025",
+      "status": "played",
+      "winner": "Morocco",
+      "runner_up": "Senegal",
+      "final_score": "3-0 (awarded)",
+      "top_scorer": [
+        {
+          "name": "Brahim Díaz",
+          "team": "Morocco",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Sadio Mané",
+        "team": "Senegal"
+      },
+      "notes": "Edition named 2025, played December 2025-January 2026 in Morocco (final 18 Jan 2026, Rabat). The final ended Senegal 1-0 Morocco after extra time, but on 17 March 2026 the CAF Appeal Board ruled Senegal had forfeited it (players left the pitch in protest at a late penalty) and awarded it 3-0 to Morocco. Senegal appealed to CAS; hearing 8 Oct 2026, award expected end of November 2026. Check and update this row once CAS rules."
+    }
+  ]
+}
