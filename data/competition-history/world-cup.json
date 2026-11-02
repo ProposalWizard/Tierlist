@@ -1,0 +1,527 @@
+{
+  "competition": "FIFA World Cup",
+  "slug": "world-cup",
+  "kind": "tournament",
+  "lineage_note": "FIFA World Cup finals tournament, every four years since 1930. Season label = year of the final. 1942 and 1946 were not held (Second World War). 1950 had a final round-robin instead of a final. Fields: top_scorer = finals-tournament top scorer(s) (Golden Boot), all players tied on the most goals listed. top_assister starts at 2022: FIFA never published one consistent official assist record for older tournaments; Wikipedia's per-tournament assist list back to 1930 is a reconstruction and the 2018 entry is a 16-way tie that could not be verified, so the run starts at 2022.",
+  "history_from": "1930",
+  "history_to": "2026",
+  "field_from": {
+    "runner_up": "1930",
+    "final_score": "1930",
+    "top_scorer": "1930",
+    "top_assister": "2022",
+    "player_of_season": "1982"
+  },
+  "player_of_season_award": "FIFA World Cup Golden Ball (from 1982)",
+  "sources": [
+    "https://en.wikipedia.org/wiki/List_of_FIFA_World_Cup_finals",
+    "https://www.rsssf.org/tablesw/worldcup.html",
+    "https://en.wikipedia.org/wiki/FIFA_World_Cup_awards",
+    "https://en.wikipedia.org/wiki/FIFA_World_Cup_top_goalscorers",
+    "https://en.wikipedia.org/wiki/FIFA_World_Cup_records_and_statistics",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_final",
+    "https://www.thescore.com/worldcup/news/3550006",
+    "https://www.guinnessworldrecords.com/world-records/786438-most-assists-by-a-football-soccer-player-at-a-fifa-world-cup-tournament"
+  ],
+  "seasons": [
+    {
+      "season": "1930",
+      "status": "played",
+      "winner": "Uruguay",
+      "runner_up": "Argentina",
+      "final_score": "4-2",
+      "top_scorer": [
+        {
+          "name": "Guillermo Stábile",
+          "team": "Argentina",
+          "goals": 8
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1934",
+      "status": "played",
+      "winner": "Italy",
+      "runner_up": "Czechoslovakia",
+      "final_score": "2-1 (a.e.t.)",
+      "top_scorer": [
+        {
+          "name": "Oldřich Nejedlý",
+          "team": "Czechoslovakia",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "FIFA credited Nejedlý with 4 goals until a November 2006 revision to 5."
+    },
+    {
+      "season": "1938",
+      "status": "played",
+      "winner": "Italy",
+      "runner_up": "Hungary",
+      "final_score": "4-2",
+      "top_scorer": [
+        {
+          "name": "Leônidas",
+          "team": "Brazil",
+          "goals": 7
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "FIFA credited Leônidas with 8 goals until a November 2006 revision to 7."
+    },
+    {
+      "season": "1942",
+      "status": "not_held",
+      "notes": "Not held: Second World War."
+    },
+    {
+      "season": "1946",
+      "status": "not_held",
+      "notes": "Not held: Second World War."
+    },
+    {
+      "season": "1950",
+      "status": "played",
+      "winner": "Uruguay",
+      "runner_up": "Brazil",
+      "final_score": "2-1",
+      "top_scorer": [
+        {
+          "name": "Ademir",
+          "team": "Brazil",
+          "goals": 9
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "No final: the title was decided by a four-team final round (round robin). The score given is the deciding last match, Uruguay 2-1 Brazil (the 'Maracanazo'), which FIFA treats as the de facto final. Ademir's total was long disputed (some sources give 8)."
+    },
+    {
+      "season": "1954",
+      "status": "played",
+      "winner": "West Germany",
+      "runner_up": "Hungary",
+      "final_score": "3-2",
+      "top_scorer": [
+        {
+          "name": "Sándor Kocsis",
+          "team": "Hungary",
+          "goals": 11
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1958",
+      "status": "played",
+      "winner": "Brazil",
+      "runner_up": "Sweden",
+      "final_score": "5-2",
+      "top_scorer": [
+        {
+          "name": "Just Fontaine",
+          "team": "France",
+          "goals": 13
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1962",
+      "status": "played",
+      "winner": "Brazil",
+      "runner_up": "Czechoslovakia",
+      "final_score": "3-1",
+      "top_scorer": [
+        {
+          "name": "Garrincha",
+          "team": "Brazil",
+          "goals": 4
+        },
+        {
+          "name": "Vavá",
+          "team": "Brazil",
+          "goals": 4
+        },
+        {
+          "name": "Leonel Sánchez",
+          "team": "Chile",
+          "goals": 4
+        },
+        {
+          "name": "Flórián Albert",
+          "team": "Hungary",
+          "goals": 4
+        },
+        {
+          "name": "Valentin Ivanov",
+          "team": "Soviet Union",
+          "goals": 4
+        },
+        {
+          "name": "Dražan Jerković",
+          "team": "Yugoslavia",
+          "goals": 4
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Six players tied on 4 goals."
+    },
+    {
+      "season": "1966",
+      "status": "played",
+      "winner": "England",
+      "runner_up": "West Germany",
+      "final_score": "4-2 (a.e.t.)",
+      "top_scorer": [
+        {
+          "name": "Eusébio",
+          "team": "Portugal",
+          "goals": 9
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1970",
+      "status": "played",
+      "winner": "Brazil",
+      "runner_up": "Italy",
+      "final_score": "4-1",
+      "top_scorer": [
+        {
+          "name": "Gerd Müller",
+          "team": "West Germany",
+          "goals": 10
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1974",
+      "status": "played",
+      "winner": "West Germany",
+      "runner_up": "Netherlands",
+      "final_score": "2-1",
+      "top_scorer": [
+        {
+          "name": "Grzegorz Lato",
+          "team": "Poland",
+          "goals": 7
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1978",
+      "status": "played",
+      "winner": "Argentina",
+      "runner_up": "Netherlands",
+      "final_score": "3-1 (a.e.t.)",
+      "top_scorer": [
+        {
+          "name": "Mario Kempes",
+          "team": "Argentina",
+          "goals": 6
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1982",
+      "status": "played",
+      "winner": "Italy",
+      "runner_up": "West Germany",
+      "final_score": "3-1",
+      "top_scorer": [
+        {
+          "name": "Paolo Rossi",
+          "team": "Italy",
+          "goals": 6
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Paolo Rossi",
+        "team": "Italy"
+      }
+    },
+    {
+      "season": "1986",
+      "status": "played",
+      "winner": "Argentina",
+      "runner_up": "West Germany",
+      "final_score": "3-2",
+      "top_scorer": [
+        {
+          "name": "Gary Lineker",
+          "team": "England",
+          "goals": 6
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Diego Maradona",
+        "team": "Argentina"
+      }
+    },
+    {
+      "season": "1990",
+      "status": "played",
+      "winner": "West Germany",
+      "runner_up": "Argentina",
+      "final_score": "1-0",
+      "top_scorer": [
+        {
+          "name": "Salvatore Schillaci",
+          "team": "Italy",
+          "goals": 6
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Salvatore Schillaci",
+        "team": "Italy"
+      }
+    },
+    {
+      "season": "1994",
+      "status": "played",
+      "winner": "Brazil",
+      "runner_up": "Italy",
+      "final_score": "0-0 (a.e.t.) (3-2 pens)",
+      "top_scorer": [
+        {
+          "name": "Oleg Salenko",
+          "team": "Russia",
+          "goals": 6
+        },
+        {
+          "name": "Hristo Stoichkov",
+          "team": "Bulgaria",
+          "goals": 6
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Romário",
+        "team": "Brazil"
+      },
+      "notes": "Golden Boot shared by Salenko and Stoichkov."
+    },
+    {
+      "season": "1998",
+      "status": "played",
+      "winner": "France",
+      "runner_up": "Brazil",
+      "final_score": "3-0",
+      "top_scorer": [
+        {
+          "name": "Davor Šuker",
+          "team": "Croatia",
+          "goals": 6
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ronaldo",
+        "team": "Brazil"
+      }
+    },
+    {
+      "season": "2002",
+      "status": "played",
+      "winner": "Brazil",
+      "runner_up": "Germany",
+      "final_score": "2-0",
+      "top_scorer": [
+        {
+          "name": "Ronaldo",
+          "team": "Brazil",
+          "goals": 8
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Oliver Kahn",
+        "team": "Germany"
+      }
+    },
+    {
+      "season": "2006",
+      "status": "played",
+      "winner": "Italy",
+      "runner_up": "France",
+      "final_score": "1-1 (a.e.t.) (5-3 pens)",
+      "top_scorer": [
+        {
+          "name": "Miroslav Klose",
+          "team": "Germany",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Zinedine Zidane",
+        "team": "France"
+      }
+    },
+    {
+      "season": "2010",
+      "status": "played",
+      "winner": "Spain",
+      "runner_up": "Netherlands",
+      "final_score": "1-0 (a.e.t.)",
+      "top_scorer": [
+        {
+          "name": "Thomas Müller",
+          "team": "Germany",
+          "goals": 5
+        },
+        {
+          "name": "David Villa",
+          "team": "Spain",
+          "goals": 5
+        },
+        {
+          "name": "Wesley Sneijder",
+          "team": "Netherlands",
+          "goals": 5
+        },
+        {
+          "name": "Diego Forlán",
+          "team": "Uruguay",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Diego Forlán",
+        "team": "Uruguay"
+      },
+      "notes": "Four players tied on 5 goals; Thomas Müller won the Golden Boot on the assists tie-breaker."
+    },
+    {
+      "season": "2014",
+      "status": "played",
+      "winner": "Germany",
+      "runner_up": "Argentina",
+      "final_score": "1-0 (a.e.t.)",
+      "top_scorer": [
+        {
+          "name": "James Rodríguez",
+          "team": "Colombia",
+          "goals": 6
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Lionel Messi",
+        "team": "Argentina"
+      }
+    },
+    {
+      "season": "2018",
+      "status": "played",
+      "winner": "France",
+      "runner_up": "Croatia",
+      "final_score": "4-2",
+      "top_scorer": [
+        {
+          "name": "Harry Kane",
+          "team": "England",
+          "goals": 6
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Luka Modrić",
+        "team": "Croatia"
+      }
+    },
+    {
+      "season": "2022",
+      "status": "played",
+      "winner": "Argentina",
+      "runner_up": "France",
+      "final_score": "3-3 (a.e.t.) (4-2 pens)",
+      "top_scorer": [
+        {
+          "name": "Kylian Mbappé",
+          "team": "France",
+          "goals": 8
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Lionel Messi",
+          "team": "Argentina",
+          "assists": 3
+        },
+        {
+          "name": "Antoine Griezmann",
+          "team": "France",
+          "assists": 3
+        },
+        {
+          "name": "Harry Kane",
+          "team": "England",
+          "assists": 3
+        },
+        {
+          "name": "Bruno Fernandes",
+          "team": "Portugal",
+          "assists": 3
+        },
+        {
+          "name": "Ivan Perišić",
+          "team": "Croatia",
+          "assists": 3
+        }
+      ],
+      "player_of_season": {
+        "name": "Lionel Messi",
+        "team": "Argentina"
+      },
+      "notes": "Assists: five players tied on 3 per FIFA/Wikipedia; some stat sites (Opta-based) also credit Vinícius Júnior with 3."
+    },
+    {
+      "season": "2026",
+      "status": "played",
+      "winner": "Spain",
+      "runner_up": "Argentina",
+      "final_score": "1-0 (a.e.t.)",
+      "top_scorer": [
+        {
+          "name": "Kylian Mbappé",
+          "team": "France",
+          "goals": 10
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Michael Olise",
+          "team": "France",
+          "assists": 7
+        }
+      ],
+      "player_of_season": {
+        "name": "Rodri",
+        "team": "Spain"
+      },
+      "notes": "Final 19 July 2026, MetLife Stadium, New Jersey; Ferran Torres scored in the 106th minute. Olise's 7 assists broke Pelé's single-tournament record (6, 1970). Mbappé first player to win the Golden Boot twice."
+    }
+  ]
+}
