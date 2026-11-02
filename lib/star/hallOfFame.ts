@@ -109,6 +109,8 @@ const WORLD_FIELDS = [
   "competitionBets", "betNews", "sponsorNews", "fameNews", "storeLog",
   "potm", "lastSeasonAwardStats", "incumbents", "recommendations",
   "outgoingMates",
+  // Last season in full (tables, cup rounds, knockouts: ~70 KB since 2 Nov 2026).
+  "lastWorld",
 ] as const;
 
 /** The finished career without the world it was played in. */
