@@ -9,17 +9,20 @@
     "runner_up": "1892-93",
     "final_score": null,
     "top_scorer": "1908-09",
-    "top_assister": null,
+    "top_assister": "2014-15",
     "player_of_season": "2005-06"
   },
   "player_of_season_award": "Championship Player of the Year/Season at the Football League (EFL) Awards, first given for 2005-06.",
+  "top_assister_source": "Opta data as published by FotMob (data.fotmob.com league stats, 2016-17 on); 2014-15 and 2015-16 from ESPN's EFL Championship stats (same Opta feed: FotMob and ESPN agree on the leader and total in 8 of the 9 seasons both cover). 2013-14 not found on either, so the run starts 2014-15. League games only; ties listed.",
   "sources": [
     "https://en.wikipedia.org/wiki/List_of_winners_of_the_EFL_Championship_and_predecessors",
     "https://en.wikipedia.org/wiki/EFL_Championship",
     "http://www.footballsite.co.uk/Statistics/Seasons/ (Division 2 pages 1892-93 to 1991-92, Division 1 pages 1992-93 to 2003-04)",
     "https://www.rsssf.org/tablese/engtops.html",
     "https://en.wikipedia.org/wiki/EFL_Awards",
-    "Wikipedia season articles 1907-08, 1910-11, 1913-14, 1925-26, 1957-58, 1987-88, 1990-91, 1991-92 Football League and 1997-98 Football League First Division (disputed top scorers)"
+    "Wikipedia season articles 1907-08, 1910-11, 1913-14, 1925-26, 1957-58, 1987-88, 1990-91, 1991-92 Football League and 1997-98 Football League First Division (disputed top scorers)",
+    "https://www.fotmob.com/leagues/48/stats/championship",
+    "https://site.web.api.espn.com/apis/site/v2/sports/soccer/eng.2/statistics?season=2015"
   ],
   "seasons": [
     {
@@ -1887,7 +1890,13 @@
           "goals": 27
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Matt Ritchie",
+          "team": "AFC Bournemouth",
+          "assists": 17
+        }
+      ],
       "player_of_season": {
         "name": "Patrick Bamford",
         "team": "Middlesbrough"
@@ -1905,7 +1914,18 @@
           "goals": 25
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Jóhann Berg Gudmundsson",
+          "team": "Charlton Athletic",
+          "assists": 11
+        },
+        {
+          "name": "Alan Judge",
+          "team": "Brentford",
+          "assists": 11
+        }
+      ],
       "player_of_season": {
         "name": "Andre Gray",
         "team": "Burnley"
@@ -1924,7 +1944,13 @@
           "goals": 27
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Conor Hourihane",
+          "team": "Aston Villa",
+          "assists": 14
+        }
+      ],
       "player_of_season": {
         "name": "Anthony Knockaert",
         "team": "Brighton & Hove Albion"
@@ -1942,7 +1968,18 @@
           "goals": 21
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Barry Douglas",
+          "team": "Wolverhampton Wanderers",
+          "assists": 14
+        },
+        {
+          "name": "Robert Snodgrass",
+          "team": "Aston Villa",
+          "assists": 14
+        }
+      ],
       "player_of_season": {
         "name": "Ryan Sessegnon",
         "team": "Fulham"
@@ -1960,7 +1997,13 @@
           "goals": 29
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Saïd Benrahma",
+          "team": "Brentford",
+          "assists": 14
+        }
+      ],
       "player_of_season": {
         "name": "Teemu Pukki",
         "team": "Norwich City"
@@ -1978,7 +2021,13 @@
           "goals": 26
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Matheus Pereira",
+          "team": "West Bromwich Albion",
+          "assists": 16
+        }
+      ],
       "player_of_season": {
         "name": "Ollie Watkins",
         "team": "Brentford"
@@ -1996,7 +2045,13 @@
           "goals": 31
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Emiliano Buendía",
+          "team": "Norwich City",
+          "assists": 16
+        }
+      ],
       "player_of_season": {
         "name": "Emiliano Buendía",
         "team": "Norwich City"
@@ -2014,7 +2069,13 @@
           "goals": 43
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Harry Wilson",
+          "team": "Fulham",
+          "assists": 19
+        }
+      ],
       "player_of_season": {
         "name": "Aleksandar Mitrović",
         "team": "Fulham"
@@ -2032,7 +2093,18 @@
           "goals": 28
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Ryan Giles",
+          "team": "Middlesbrough",
+          "assists": 11
+        },
+        {
+          "name": "Jack Clarke",
+          "team": "Sunderland",
+          "assists": 11
+        }
+      ],
       "player_of_season": {
         "name": "Chuba Akpom",
         "team": "Middlesbrough"
@@ -2050,7 +2122,13 @@
           "goals": 27
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Leif Davis",
+          "team": "Ipswich Town",
+          "assists": 18
+        }
+      ],
       "player_of_season": {
         "name": "Crysencio Summerville",
         "team": "Leeds United"
@@ -2068,7 +2146,18 @@
           "goals": 19
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Josh Murphy",
+          "team": "Portsmouth",
+          "assists": 14
+        },
+        {
+          "name": "Tom Fellows",
+          "team": "West Bromwich Albion",
+          "assists": 14
+        }
+      ],
       "player_of_season": {
         "name": "Gustavo Hamer",
         "team": "Sheffield United"
@@ -2086,7 +2175,13 @@
           "goals": 23
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Gustavo Hamer",
+          "team": "Sheffield United",
+          "assists": 12
+        }
+      ],
       "player_of_season": {
         "name": "Hayden Hackney",
         "team": "Middlesbrough"

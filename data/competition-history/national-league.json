@@ -9,16 +9,19 @@
     "runner_up": "1979-80",
     "final_score": null,
     "top_scorer": "1983-84",
-    "top_assister": null,
+    "top_assister": "2024-25",
     "player_of_season": "2021-22"
   },
   "player_of_season_award": "National League Player of the Season (National League's own end-of-season awards); continuous run found only from 2021-22",
+  "top_assister_source": "ESPN's English National League stats (site.web.api.espn.com, eng.5). 2024-25 cross-checked with National League press (Ollie Pearce's 10 assists 'bettered only by Gateshead's Regan Booty'); 2025-26 cross-checked with FotMob's player page for Zak Brunt (14 assists). ESPN's tables before 2024-25 carry no assists and FotMob's National League assist tables are incomplete, so the run starts 2024-25.",
   "sources": [
     "https://www.fchd.info/lghist/nat.htm",
     "https://en.wikipedia.org/wiki/National_League_(English_football)",
     "Wikipedia season pages: 'YYYY-YY Alliance Premier League' / 'YYYY-YY Football Conference' / 'YYYY-YY National League'",
     "https://chesterfield-fc.co.uk/club-news/vanarama-national-league-end-of-season-awards-announced",
-    "https://www.nonleagueinsider.com/news/the-top-goalscorers-in-a-single-national-league-season/"
+    "https://www.nonleagueinsider.com/news/the-top-goalscorers-in-a-single-national-league-season/",
+    "https://site.web.api.espn.com/apis/site/v2/sports/soccer/eng.5/statistics?season=2025",
+    "https://www.fotmob.com/players/1187146/zak-brunt"
   ],
   "seasons": [
     {
@@ -835,7 +838,13 @@
           "goals": 31
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Regan Booty",
+          "team": "Gateshead",
+          "assists": 11
+        }
+      ],
       "player_of_season": {
         "name": "Ollie Pearce",
         "team": "York City"
@@ -855,7 +864,13 @@
           "goals": 34
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Zak Brunt",
+          "team": "Boreham Wood",
+          "assists": 14
+        }
+      ],
       "player_of_season": {
         "name": "Ollie Pearce",
         "team": "York City"

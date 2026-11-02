@@ -13,6 +13,7 @@
     "player_of_season": "2022-23"
   },
   "player_of_season_award": "National League South Player of the Season (National League's own end-of-season awards); continuous run found only from 2022-23",
+  "top_assister_source": "None found: FotMob's National North & South section has no assist tables, ESPN does not cover the division, and no league or press table of assist leaders was found for any season (including 2025-26). Left null.",
   "sources": [
     "https://en.wikipedia.org/wiki/National_League_South",
     "https://www.fchd.info/lghist/nat.htm",

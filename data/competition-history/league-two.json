@@ -9,17 +9,20 @@
     "runner_up": "1958-59",
     "final_score": null,
     "top_scorer": "1958-59",
-    "top_assister": null,
+    "top_assister": "2019-20",
     "player_of_season": "2005-06"
   },
   "player_of_season_award": "Football League Awards / EFL Awards League Two Player of the Year (Player of the Season from 2016-17); first awarded March 2006 for 2005-06",
+  "top_assister_source": "Opta data as published by FotMob (data.fotmob.com league stats, 2019-20 on; FotMob has no assist tables before that). Cross-checked with ESPN's League Two stats for 2022-23 to 2025-26 (same leaders; ESPN gives Moxon and Watt 16 not 15 in 2022-23). 2018-19 not found, so the run starts 2019-20. Ties listed.",
   "sources": [
     "https://en.wikipedia.org/wiki/List_of_winners_of_the_EFL_League_Two_and_predecessors",
     "https://en.wikipedia.org/wiki/EFL_League_Two",
     "Wikipedia 'YYYY-YY Football League' season pages (1958-59 to 2003-04) and 'YYYY-YY Football League Two / EFL League Two' pages (2004-05 on)",
     "https://www.rsssf.org/tablese/engtops.html",
     "https://www.fchd.info/lghist/efl.htm",
-    "https://en.wikipedia.org/wiki/EFL_Awards"
+    "https://en.wikipedia.org/wiki/EFL_Awards",
+    "https://www.fotmob.com/leagues/109/stats/league-two",
+    "https://site.web.api.espn.com/apis/site/v2/sports/soccer/eng.4/statistics?season=2025"
   ],
   "seasons": [
     {
@@ -1203,7 +1206,18 @@
           "goals": 25
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Charlie Kirk",
+          "team": "Crewe Alexandra",
+          "assists": 14
+        },
+        {
+          "name": "Randell Williams",
+          "team": "Exeter City",
+          "assists": 14
+        }
+      ],
       "player_of_season": {
         "name": "Eoin Doyle",
         "team": "Swindon Town"
@@ -1223,7 +1237,13 @@
           "goals": 32
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Callum Guy",
+          "team": "Carlisle United",
+          "assists": 14
+        }
+      ],
       "player_of_season": {
         "name": "Paul Mullin",
         "team": "Cambridge United"
@@ -1242,7 +1262,18 @@
           "goals": 25
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Mitchell Pinnock",
+          "team": "Northampton Town",
+          "assists": 13
+        },
+        {
+          "name": "Kane Wilson",
+          "team": "Forest Green Rovers",
+          "assists": 13
+        }
+      ],
       "player_of_season": {
         "name": "Kane Wilson",
         "team": "Forest Green Rovers"
@@ -1262,7 +1293,18 @@
           "goals": 28
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Elliot Watt",
+          "team": "Salford City",
+          "assists": 15
+        },
+        {
+          "name": "Owen Moxon",
+          "team": "Carlisle United",
+          "assists": 15
+        }
+      ],
       "player_of_season": {
         "name": "Sam Hoskins",
         "team": "Northampton Town"
@@ -1281,7 +1323,13 @@
           "goals": 28
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Jodi Jones",
+          "team": "Notts County",
+          "assists": 24
+        }
+      ],
       "player_of_season": {
         "name": "Jodi Jones",
         "team": "Notts County"
@@ -1301,7 +1349,18 @@
           "goals": 25
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Luke Molyneux",
+          "team": "Doncaster Rovers",
+          "assists": 12
+        },
+        {
+          "name": "Denver Hume",
+          "team": "Grimsby Town",
+          "assists": 12
+        }
+      ],
       "player_of_season": {
         "name": "Michael Cheek",
         "team": "Bromley"
@@ -1321,7 +1380,18 @@
           "goals": 22
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Tommi O'Reilly",
+          "team": "Crewe Alexandra",
+          "assists": 11
+        },
+        {
+          "name": "Liam Mandeville",
+          "team": "Chesterfield",
+          "assists": 11
+        }
+      ],
       "player_of_season": {
         "name": "Aaron Drinan",
         "team": "Swindon Town"
