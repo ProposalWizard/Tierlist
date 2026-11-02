@@ -2,7 +2,7 @@
  "competition": "Champions League",
  "slug": "champions-league",
  "kind": "cup",
- "lineage_note": "Europe's top club cup. 1955-56 to 1991-92 = European Champion Clubs' Cup (European Cup); 1992-93 on = UEFA Champions League (same competition, same trophy, same records). Top scorer uses UEFA's convention: goals in the main competition only (from 1992-93 the group/league phase to the final; qualifying and play-off rounds excluded; before 1992 every round counts). Top scorer values are kept only where two independent sources agree (Wikipedia's season list, RSSSF, UEFA's own statistics database); 1964-65 has three different answers (José Torres 11 / Torres and Eusébio 9 / Torres and Eusébio 6), so the continuous run starts 1965-66. Top assister = UEFA's official assist count (main competition only), which UEFA's statistics database holds without a break from 2001-02; nothing official exists before that. Penalty-shoot-out finals were all 1-1/0-0/3-3 after extra time. 1973-74 needed a replay. Club names are the common English names used by UEFA/Wikipedia lists (e.g. Inter Milan, Bayern Munich, Red Star Belgrade).",
+ "lineage_note": "Europe's top club cup. 1955-56 to 1991-92 = European Champion Clubs' Cup (European Cup); 1992-93 on = UEFA Champions League (same competition, same trophy, same records). Top scorer uses UEFA's convention: goals in the main competition only (from 1992-93 the group/league phase to the final; qualifying and play-off rounds excluded; before 1992 every round counts). Top scorer values are kept only where two independent sources agree (Wikipedia's season list, RSSSF, UEFA's own statistics database); 1964-65 has three different answers (José Torres 11 / Torres and Eusébio 9 / Torres and Eusébio 6), so the continuous run starts 1965-66. Top assister = UEFA's official assist count (main competition only), which UEFA's statistics database holds without a break from 2001-02; nothing official exists before that (Opta figures quoted by The Analyst reach back to 1992-93 but disagree with UEFA's count and are not published as a full season-by-season list, so they are not used). Penalty-shoot-out finals were all 1-1/0-0/3-3 after extra time. 1973-74 needed a replay. Club names are the common English names used by UEFA/Wikipedia lists (e.g. Inter Milan, Bayern Munich, Red Star Belgrade).",
  "history_from": "1955-56",
  "history_to": "2025-26",
  "field_from": {
@@ -10,9 +10,9 @@
   "final_score": "1955-56",
   "top_scorer": "1965-66",
   "top_assister": "2001-02",
-  "player_of_season": "2021-22"
+  "player_of_season": "1998-99"
  },
- "player_of_season_award": "UEFA Champions League Player of the Season (introduced 2021-22, voted by group/league-phase coaches and 55 ESM journalists). Earlier UEFA awards (UEFA Club Footballer of the Year 1998-2010, UEFA Best Player in Europe 2011-, positional awards 2017-21) are not Champions-League-only or have no continuous run to the present, so they are not used.",
+ "player_of_season_award": "UEFA Club Footballer of the Year 1998-99–2009-10 (UEFA Club Football Awards, voted by the Champions League coaches for the Champions League season); UEFA's official Player of the Match in the Champions League final 2010-11–2020-21 (no Champions-League-only season award existed then: UEFA Best Player in Europe covered all club and national-team football); UEFA Champions League Player of the Season 2021-22 on (voted by league-phase coaches and 55 ESM journalists). 1997-98 is left out: that year's Club Footballer award went to Ronaldo for Inter's UEFA Cup season, not the Champions League.",
  "sources": [
   "https://en.wikipedia.org/wiki/List_of_European_Cup_and_UEFA_Champions_League_finals",
   "https://www.rsssf.org/ec/ec1stats.html",
@@ -20,7 +20,11 @@
   "https://www.rsssf.org/ec/ec1tops.html",
   "https://compstats.uefa.com/v1/player-ranking?competitionId=1 (UEFA statistics: goals, assists)",
   "https://en.wikipedia.org/wiki/UEFA_Champions_League#Awards",
-  "https://en.wikipedia.org/wiki/2025%E2%80%9326_UEFA_Champions_League"
+  "https://en.wikipedia.org/wiki/2025%E2%80%9326_UEFA_Champions_League",
+  "https://www.uefa.com/news-media/news/0250-0c50f41f3c36-73a920d50345-1000--uefa-club-football-awards/ (UEFA Club Footballer of the Year roll of honour)",
+  "https://en.wikipedia.org/wiki/UEFA_Club_Footballer_of_the_Year",
+  "https://editorial.uefa.com/resources/0282-18407a7a3056-fed61d05639b-1000/ucl_202223_finals_md13.pdf (UEFA Champions League Statistics Handbook 2022/23, Finals: Player of the match 2001-2023)",
+  "https://en.wikipedia.org/wiki/2011_UEFA_Champions_League_final (and each final's article to 2021: man of the match)"
  ],
  "seasons": [
   {
@@ -808,7 +812,10 @@
     }
    ],
    "top_assister": null,
-   "player_of_season": null
+   "player_of_season": {
+    "name": "David Beckham",
+    "team": "Manchester United"
+   }
   },
   {
    "season": "1999-00",
@@ -834,7 +841,10 @@
     }
    ],
    "top_assister": null,
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Fernando Redondo",
+    "team": "Real Madrid"
+   }
   },
   {
    "season": "2000-01",
@@ -850,7 +860,10 @@
     }
    ],
    "top_assister": null,
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Stefan Effenberg",
+    "team": "Bayern Munich"
+   }
   },
   {
    "season": "2001-02",
@@ -887,7 +900,10 @@
      "assists": 5
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Zinedine Zidane",
+    "team": "Real Madrid"
+   }
   },
   {
    "season": "2002-03",
@@ -919,7 +935,10 @@
      "assists": 5
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Gianluigi Buffon",
+    "team": "Juventus"
+   }
   },
   {
    "season": "2003-04",
@@ -946,7 +965,10 @@
      "assists": 6
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Deco",
+    "team": "Porto"
+   }
   },
   {
    "season": "2004-05",
@@ -988,7 +1010,10 @@
      "assists": 5
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Steven Gerrard",
+    "team": "Liverpool"
+   }
   },
   {
    "season": "2005-06",
@@ -1025,7 +1050,10 @@
      "assists": 4
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Ronaldinho",
+    "team": "Barcelona"
+   }
   },
   {
    "season": "2006-07",
@@ -1047,7 +1075,10 @@
      "assists": 7
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Kaká",
+    "team": "Milan"
+   }
   },
   {
    "season": "2007-08",
@@ -1069,7 +1100,10 @@
      "assists": 6
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Cristiano Ronaldo",
+    "team": "Manchester United"
+   }
   },
   {
    "season": "2008-09",
@@ -1091,7 +1125,10 @@
      "assists": 7
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Lionel Messi",
+    "team": "Barcelona"
+   }
   },
   {
    "season": "2009-10",
@@ -1113,7 +1150,10 @@
      "assists": 6
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Diego Milito",
+    "team": "Inter Milan"
+   }
   },
   {
    "season": "2010-11",
@@ -1135,7 +1175,10 @@
      "assists": 6
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Lionel Messi",
+    "team": "Barcelona"
+   }
   },
   {
    "season": "2011-12",
@@ -1177,7 +1220,10 @@
      "assists": 5
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Didier Drogba",
+    "team": "Chelsea"
+   }
   },
   {
    "season": "2012-13",
@@ -1199,7 +1245,10 @@
      "assists": 7
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Arjen Robben",
+    "team": "Bayern Munich"
+   }
   },
   {
    "season": "2013-14",
@@ -1221,7 +1270,10 @@
      "assists": 8
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Ángel Di María",
+    "team": "Real Madrid"
+   }
   },
   {
    "season": "2014-15",
@@ -1253,7 +1305,10 @@
      "assists": 6
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Andrés Iniesta",
+    "team": "Barcelona"
+   }
   },
   {
    "season": "2015-16",
@@ -1285,7 +1340,10 @@
      "assists": 5
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Sergio Ramos",
+    "team": "Real Madrid"
+   }
   },
   {
    "season": "2016-17",
@@ -1307,7 +1365,10 @@
      "assists": 8
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Cristiano Ronaldo",
+    "team": "Real Madrid"
+   }
   },
   {
    "season": "2017-18",
@@ -1329,7 +1390,10 @@
      "assists": 9
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Gareth Bale",
+    "team": "Real Madrid"
+   }
   },
   {
    "season": "2018-19",
@@ -1366,7 +1430,10 @@
      "assists": 5
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Virgil van Dijk",
+    "team": "Liverpool"
+   }
   },
   {
    "season": "2019-20",
@@ -1393,7 +1460,10 @@
      "assists": 6
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "Kingsley Coman",
+    "team": "Bayern Munich"
+   }
   },
   {
    "season": "2020-21",
@@ -1415,7 +1485,10 @@
      "assists": 6
     }
    ],
-   "player_of_season": null
+   "player_of_season": {
+    "name": "N'Golo Kanté",
+    "team": "Chelsea"
+   }
   },
   {
    "season": "2021-22",
