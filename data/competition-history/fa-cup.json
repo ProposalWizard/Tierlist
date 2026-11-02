@@ -2,14 +2,14 @@
  "competition": "FA Cup",
  "slug": "fa-cup",
  "kind": "cup",
- "lineage_note": "The Football Association Challenge Cup, played since 1871-72. Not held 1915-16 to 1918-19 and 1939-40 to 1944-45. Finals were replayed after a draw until 1999; penalties since. Top scorer = most goals in the competition proper (First Round to the final; qualifying rounds not counted), as listed in each season's Wikipedia table (sourced to worldfootball.net / BBC Sport / ESPN; 2007-08 from the infobox and ESPN FC). Same proper-rounds rule throughout; before 2004-05 Wikipedia gives only infobox names that sometimes include qualifying-round goals, so they are left out. Top assister = most assists in the competition proper, FotMob (Opta) data, 2016-17 on.",
+ "lineage_note": "The Football Association Challenge Cup, played since 1871-72. Not held 1915-16 to 1918-19 and 1939-40 to 1944-45. Finals were replayed after a draw until 1999; penalties since. Top scorer = most goals in the competition proper (First Round to the final; qualifying rounds not counted), as listed in each season's Wikipedia table (sourced to worldfootball.net / BBC Sport / ESPN; 2007-08 from the infobox and ESPN FC). Same proper-rounds rule throughout; before 2004-05 Wikipedia gives only infobox names that sometimes include qualifying-round goals, so they are left out. Top assister = most assists in the competition proper: FBref 2014-15 and 2015-16, FotMob (Opta) data 2016-17 on.",
  "history_from": "1871-72",
  "history_to": "2025-26",
  "field_from": {
   "runner_up": "1871-72",
   "final_score": "1871-72",
   "top_scorer": "2004-05",
-  "top_assister": "2016-17",
+  "top_assister": "2014-15",
   "player_of_season": "1994-95"
  },
  "player_of_season_award": "FA Cup final man of the match / Player of the Match (as recorded in each final's match report: press, broadcaster or the FA's sponsored award), 1995 final on.",
@@ -22,7 +22,7 @@
   "https://www.espn.com/soccer/stats/_/league/ENG.FA"
  ],
  "top_scorer_source": "Wikipedia season pages' Top scorers tables (worldfootball.net for 2004-05 to 2015-16, BBC Sport after; 2007-08 Craig Mackail-Smith 7 from the infobox, cited to ESPN FC). 2016-17 to 2025-26 match FotMob exactly.",
- "top_assister_source": "FotMob (Opta) season stats, data.fotmob.com/stats/132/season/<id>/goal_assist.json. Cross-checked with ESPN for 2019-20, 2022-23, 2023-24 and 2025-26 (same leaders and counts). Team = club he played for in the competition that season.",
+ "top_assister_source": "2014-15 and 2015-16: FBref FA Cup season pages (proper rounds). 2016-17 on: FotMob (Opta) season stats, cross-checked with ESPN for 2019-20, 2022-23, 2023-24 and 2025-26; FBref gives Eriksen 5 not 6 in 2016-17. FBref has no FA Cup tables before 2014-15 and ESPN's are near empty, so the run starts 2014-15.",
  "seasons": [
   {
    "season": "1871-72",
@@ -1658,7 +1658,13 @@
      "goals": 5
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Saido Berahino",
+     "team": "West Bromwich Albion",
+     "assists": 4
+    }
+   ],
    "player_of_season": {
     "name": "Santi Cazorla",
     "team": "Arsenal"
@@ -1677,7 +1683,13 @@
      "goals": 6
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Marvin Sordell",
+     "team": "Colchester United",
+     "assists": 4
+    }
+   ],
    "player_of_season": {
     "name": "Wayne Rooney",
     "team": "Manchester United"

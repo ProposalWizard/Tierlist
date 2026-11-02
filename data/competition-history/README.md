@@ -14,16 +14,16 @@ Tournaments only have rows for editions that were held (1942 and 1946 World Cups
 | Africa Cup of Nations | 1957 → 2025 | 35 | 1957 | 1957 | 2017 | 1957 | `africa-cup-of-nations.json` |
 | AFC Asian Cup | 1956 → 2023 | 18 | 1956 | 1956 | 2019 | 1984 | `asian-cup.json` |
 | Champions League | 1955-56 → 2025-26 | 71 | 1955-56 | 1965-66 | 2001-02 | 1998-99 | `champions-league.json` |
-| Championship | 1892-93 → 2025-26 | 123 | 1892-93 | 1908-09 | 2014-15 | 2005-06 | `championship.json` |
+| Championship | 1892-93 → 2025-26 | 123 | 1892-93 | 1908-09 | 2003-04 | 2005-06 | `championship.json` |
 | Community Shield | 1908 → 2026 | 104 | 1908 | — | — | — | `community-shield.json` |
 | CONCACAF Nations League | 2019-20 → 2024-25 | 4 | 2019-20 | 2019-20 | 2023-24 | 2019-20 | `concacaf-nations-league.json` |
 | Europa League | 1971-72 → 2025-26 | 55 | 1971-72 | 1971-72 | 2001-02 | 2009-10 | `europa-league.json` |
 | UEFA European Championship | 1960 → 2024 | 17 | 1960 | 1960 | 1972 | 1996 | `european-championship.json` |
-| FA Cup | 1871-72 → 2025-26 | 145 | 1871-72 | 2004-05 | 2016-17 | 1994-95 | `fa-cup.json` |
+| FA Cup | 1871-72 → 2025-26 | 145 | 1871-72 | 2004-05 | 2014-15 | 1994-95 | `fa-cup.json` |
 | CONCACAF Gold Cup | 1991 → 2025 | 18 | 1991 | 1991 | 2013 | 1991 | `gold-cup.json` |
-| League Cup | 1960-61 → 2025-26 | 66 | 1960-61 | 1988-89 | 2021-22 | 1989-90 | `league-cup.json` |
-| League One | 1958-59 → 2025-26 | 68 | 1958-59 | 1958-59 | 2019-20 | 2005-06 | `league-one.json` |
-| League Two | 1958-59 → 2025-26 | 68 | 1958-59 | 1958-59 | 2019-20 | 2005-06 | `league-two.json` |
+| League Cup | 1960-61 → 2025-26 | 66 | 1960-61 | 1988-89 | 2014-15 | 1989-90 | `league-cup.json` |
+| League One | 1958-59 → 2025-26 | 68 | 1958-59 | 1958-59 | 2006-07 | 2005-06 | `league-one.json` |
+| League Two | 1958-59 → 2025-26 | 68 | 1958-59 | 1958-59 | 2006-07 | 2005-06 | `league-two.json` |
 | Lower League Trophy | 1983-84 → 2025-26 | 43 | 1983-84 | 2010-11 | 2024-25 | 2025-26 | `lower-league-trophy.json` |
 | National League North | 2004-05 → 2025-26 | 22 | 2004-05 | 2014-15 | — | 2022-23 | `national-league-north.json` |
 | National League South | 2004-05 → 2025-26 | 22 | 2004-05 | 2014-15 | — | 2022-23 | `national-league-south.json` |

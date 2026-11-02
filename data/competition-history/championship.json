@@ -9,11 +9,11 @@
     "runner_up": "1892-93",
     "final_score": null,
     "top_scorer": "1908-09",
-    "top_assister": "2014-15",
+    "top_assister": "2003-04",
     "player_of_season": "2005-06"
   },
   "player_of_season_award": "Championship Player of the Year/Season at the Football League (EFL) Awards, first given for 2005-06.",
-  "top_assister_source": "Opta data as published by FotMob (data.fotmob.com league stats, 2016-17 on); 2014-15 and 2015-16 from ESPN's EFL Championship stats (same Opta feed: FotMob and ESPN agree on the leader and total in 8 of the 9 seasons both cover). 2013-14 not found on either, so the run starts 2014-15. League games only; ties listed.",
+  "top_assister_source": "2003-04 to 2012-13: ESPN's EFL Championship stats (site.web.api.espn.com statistics feed; ESPN counts include play-off games). 2013-14: FBref season page (Most Assists). 2014-15 and 2015-16: ESPN. 2016-17 on: FotMob (Opta). Checked where two sources overlap: 2008-09 Kightly 19 and 2012-13 Ince 14 match FBref; FBref has Burke and Snodgrass on 15 in 2011-12 where ESPN has Burke 17. Before 2003-04 ESPN's table has no assist numbers.",
   "sources": [
     "https://en.wikipedia.org/wiki/List_of_winners_of_the_EFL_Championship_and_predecessors",
     "https://en.wikipedia.org/wiki/EFL_Championship",
@@ -1692,7 +1692,13 @@
           "goals": 27
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Darren Huckerby",
+          "team": "Norwich City",
+          "assists": 13
+        }
+      ],
       "player_of_season": null
     },
     {
@@ -1707,7 +1713,33 @@
           "goals": 24
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Darren Bent",
+          "team": "Ipswich Town",
+          "assists": 12
+        },
+        {
+          "name": "Kenny Lunt",
+          "team": "Crewe Alexandra",
+          "assists": 12
+        },
+        {
+          "name": "Jason Roberts",
+          "team": "Wigan Athletic",
+          "assists": 12
+        },
+        {
+          "name": "Iñigo Idiakez",
+          "team": "Derby County",
+          "assists": 12
+        },
+        {
+          "name": "Matthew Etherington",
+          "team": "West Ham United",
+          "assists": 12
+        }
+      ],
       "player_of_season": null
     },
     {
@@ -1722,7 +1754,13 @@
           "goals": 21
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Glen Little",
+          "team": "Reading",
+          "assists": 14
+        }
+      ],
       "player_of_season": {
         "name": "Phil Jagielka",
         "team": "Sheffield United"
@@ -1740,7 +1778,13 @@
           "goals": 23
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Gary McSheffrey",
+          "team": "Birmingham City",
+          "assists": 18
+        }
+      ],
       "player_of_season": {
         "name": "Jason Koumas",
         "team": "West Bromwich Albion"
@@ -1758,7 +1802,13 @@
           "goals": 23
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Liam Lawrence",
+          "team": "Stoke City",
+          "assists": 15
+        }
+      ],
       "player_of_season": {
         "name": "Kevin Phillips",
         "team": "West Bromwich Albion"
@@ -1777,7 +1827,13 @@
           "goals": 25
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Michael Kightly",
+          "team": "Wolverhampton Wanderers",
+          "assists": 19
+        }
+      ],
       "player_of_season": {
         "name": "Sylvan Ebanks-Blake",
         "team": "Wolverhampton Wanderers"
@@ -1800,7 +1856,13 @@
           "goals": 20
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Graham Dorrans",
+          "team": "West Bromwich Albion",
+          "assists": 19
+        }
+      ],
       "player_of_season": {
         "name": "Kevin Nolan",
         "team": "Newcastle United"
@@ -1818,7 +1880,13 @@
           "goals": 24
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Adel Taarabt",
+          "team": "Queens Park Rangers",
+          "assists": 16
+        }
+      ],
       "player_of_season": {
         "name": "Adel Taarabt",
         "team": "Queens Park Rangers"
@@ -1836,7 +1904,13 @@
           "goals": 27
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Chris Burke",
+          "team": "Birmingham City",
+          "assists": 17
+        }
+      ],
       "player_of_season": {
         "name": "Rickie Lambert",
         "team": "Southampton"
@@ -1854,7 +1928,13 @@
           "goals": 30
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Tom Ince",
+          "team": "Blackpool",
+          "assists": 14
+        }
+      ],
       "player_of_season": {
         "name": "Matěj Vydra",
         "team": "Watford"
@@ -1872,7 +1952,13 @@
           "goals": 28
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Craig Conway",
+          "team": "Brighton & Hove Albion",
+          "assists": 14
+        }
+      ],
       "player_of_season": {
         "name": "Danny Ings",
         "team": "Burnley"

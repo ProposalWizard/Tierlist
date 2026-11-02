@@ -9,11 +9,11 @@
     "runner_up": "1958-59",
     "final_score": null,
     "top_scorer": "1958-59",
-    "top_assister": "2019-20",
+    "top_assister": "2006-07",
     "player_of_season": "2005-06"
   },
   "player_of_season_award": "Football League Awards / EFL Awards League Two Player of the Year (Player of the Season from 2016-17); first awarded March 2006 for 2005-06",
-  "top_assister_source": "Opta data as published by FotMob (data.fotmob.com league stats, 2019-20 on; FotMob has no assist tables before that). Cross-checked with ESPN's League Two stats for 2022-23 to 2025-26 (same leaders; ESPN gives Moxon and Watt 16 not 15 in 2022-23). 2018-19 not found, so the run starts 2019-20. Ties listed.",
+  "top_assister_source": "2006-07 to 2013-14, 2015-16, 2016-17: ESPN's League Two stats (statistics feed; counts include play-off games). 2014-15, 2017-18, 2018-19: FBref season pages (ESPN's table is empty for those). 2012-13 and 2013-14 also match FBref (Hurst 15 both years). 2019-20 on: FotMob (Opta). Before 2006-07 ESPN's table has no assist numbers.",
   "sources": [
     "https://en.wikipedia.org/wiki/List_of_winners_of_the_EFL_League_Two_and_predecessors",
     "https://en.wikipedia.org/wiki/EFL_League_Two",
@@ -915,7 +915,28 @@
           "goals": 21
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Ben Davies",
+          "team": "Shrewsbury Town",
+          "assists": 9
+        },
+        {
+          "name": "Derek Asamoah",
+          "team": "Shrewsbury Town",
+          "assists": 9
+        },
+        {
+          "name": "Matthew Hamshaw",
+          "team": "Mansfield Town",
+          "assists": 9
+        },
+        {
+          "name": "Ritchie Humphreys",
+          "team": "Hartlepool United",
+          "assists": 9
+        }
+      ],
       "player_of_season": {
         "name": "Izale McLeod",
         "team": "Milton Keynes Dons"
@@ -936,7 +957,13 @@
           "goals": 29
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Garry Thompson",
+          "team": "Morecambe",
+          "assists": 13
+        }
+      ],
       "player_of_season": {
         "name": "Keith Andrews",
         "team": "Milton Keynes Dons"
@@ -967,7 +994,13 @@
           "goals": 20
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Sam Saunders",
+          "team": "Dagenham & Redbridge",
+          "assists": 13
+        }
+      ],
       "player_of_season": {
         "name": "Grant Holt",
         "team": "Shrewsbury Town"
@@ -988,7 +1021,13 @@
           "goals": 30
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Danny Green",
+          "team": "Dagenham & Redbridge",
+          "assists": 15
+        }
+      ],
       "player_of_season": {
         "name": "Craig Dawson",
         "team": "Rochdale"
@@ -1008,7 +1047,13 @@
           "goals": 28
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Ryan Hall",
+          "team": "Southend United",
+          "assists": 16
+        }
+      ],
       "player_of_season": {
         "name": "Ryan Lowe",
         "team": "Bury"
@@ -1044,7 +1089,13 @@
           "goals": 18
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Ryan Hall",
+          "team": "Southend United",
+          "assists": 19
+        }
+      ],
       "player_of_season": {
         "name": "Matt Ritchie",
         "team": "Swindon Town"
@@ -1064,7 +1115,13 @@
           "goals": 31
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Kevan Hurst",
+          "team": "Southend United",
+          "assists": 15
+        }
+      ],
       "player_of_season": {
         "name": "Tom Pope",
         "team": "Port Vale"
@@ -1084,7 +1141,13 @@
           "goals": 23
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Kevan Hurst",
+          "team": "Southend United",
+          "assists": 15
+        }
+      ],
       "player_of_season": {
         "name": "Gary Roberts",
         "team": "Chesterfield"
@@ -1104,7 +1167,13 @@
           "goals": 21
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Stuart Beavon",
+          "team": "Burton Albion",
+          "assists": 11
+        }
+      ],
       "player_of_season": {
         "name": "Danny Mayor",
         "team": "Bury"
@@ -1124,7 +1193,13 @@
           "goals": 27
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Jamie Devitt",
+          "team": "Morecambe",
+          "assists": 15
+        }
+      ],
       "player_of_season": {
         "name": "Kemar Roofe",
         "team": "Oxford United"
@@ -1148,7 +1223,13 @@
           "goals": 26
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Sean McConville",
+          "team": "Accrington Stanley",
+          "assists": 17
+        }
+      ],
       "player_of_season": {
         "name": "John Marquis",
         "team": "Doncaster Rovers"
@@ -1168,7 +1249,18 @@
           "goals": 25
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Matthew Taylor",
+          "team": "Swindon Town",
+          "assists": 12
+        },
+        {
+          "name": "Adebayo Akinfenwa",
+          "team": "Wycombe Wanderers",
+          "assists": 12
+        }
+      ],
       "player_of_season": {
         "name": "Billy Kee",
         "team": "Accrington Stanley"
@@ -1187,7 +1279,13 @@
           "goals": 29
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Nicky Adams",
+          "team": "Bury",
+          "assists": 14
+        }
+      ],
       "player_of_season": {
         "name": "James Norwood",
         "team": "Tranmere Rovers"

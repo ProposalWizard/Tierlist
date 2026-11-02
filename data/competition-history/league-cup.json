@@ -2,14 +2,14 @@
  "competition": "League Cup",
  "slug": "league-cup",
  "kind": "cup",
- "lineage_note": "Football League Cup from 1960-61, now the EFL Cup (sponsor names in name_then). Two-legged finals 1961-1966, single match at Wembley from 1967; replays until 1997, penalties since. Season label = the season the final ended (final played in the spring of the second year). Top scorer = most goals across all rounds, from each season's Wikipedia table. 1988-89 to 2018-19 top scorers come from each season's Wikipedia infobox (cited there to worldfootball.net / ESPN); 1987-88 has no top scorer on any source reached, so the run starts 1988-89. Top assister = most assists across all rounds, FotMob (Opta), 2021-22 on (FotMob's 2020-21 data covers only a few matches).",
+ "lineage_note": "Football League Cup from 1960-61, now the EFL Cup (sponsor names in name_then). Two-legged finals 1961-1966, single match at Wembley from 1967; replays until 1997, penalties since. Season label = the season the final ended (final played in the spring of the second year). Top scorer = most goals across all rounds, from each season's Wikipedia table. 1988-89 to 2018-19 top scorers come from each season's Wikipedia infobox (cited there to worldfootball.net / ESPN); 1987-88 has no top scorer on any source reached, so the run starts 1988-89. Top assister = most assists across all rounds: FBref 2014-15 to 2020-21, FotMob (Opta) 2021-22 on (FotMob's 2020-21 data covers only a few matches).",
  "history_from": "1960-61",
  "history_to": "2025-26",
  "field_from": {
   "runner_up": "1960-61",
   "final_score": "1960-61",
   "top_scorer": "1988-89",
-  "top_assister": "2021-22",
+  "top_assister": "2014-15",
   "player_of_season": "1989-90"
  },
  "player_of_season_award": "Alan Hardaker Trophy (man of the match in the League Cup final), awarded every year since the 1990 final.",
@@ -22,7 +22,7 @@
   "https://www.espn.com/soccer/stats/_/league/ENG.LEAGUE_CUP"
  ],
  "top_scorer_source": "Wikipedia season pages (infobox 'top goal scorer', 1988-89 to 2018-19; tables 2019-20 on). 2021-22 to 2025-26 match FotMob; 2022-23 to 2025-26 also match ESPN.",
- "top_assister_source": "FotMob (Opta) season stats, data.fotmob.com/stats/133/season/<id>/goal_assist.json. Cross-checked with ESPN for 2021-22, 2022-23, 2023-24 and 2025-26 (same leaders and counts). Team = club he played for in the competition that season.",
+ "top_assister_source": "2014-15 to 2020-21: FBref League Cup season pages (2014-15 tie may include more players on 2: FBref's summary lists Marshall and Fàbregas then '...'). 2021-22 on: FotMob (Opta), cross-checked with ESPN for 2021-22, 2022-23, 2023-24 and 2025-26. FBref has no League Cup tables before 2014-15, so the run starts 2014-15.",
  "seasons": [
   {
    "season": "1960-61",
@@ -947,7 +947,18 @@
      "goals": 6
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Mark Marshall",
+     "team": "Port Vale",
+     "assists": 2
+    },
+    {
+     "name": "Cesc Fàbregas",
+     "team": "Chelsea",
+     "assists": 2
+    }
+   ],
    "player_of_season": {
     "name": "John Terry",
     "team": "Chelsea"
@@ -967,7 +978,18 @@
      "goals": 5
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Florian Thauvin",
+     "team": "Newcastle United",
+     "assists": 3
+    },
+    {
+     "name": "David McGoldrick",
+     "team": "Ipswich Town",
+     "assists": 3
+    }
+   ],
    "player_of_season": {
     "name": "Vincent Kompany",
     "team": "Manchester City"
@@ -993,7 +1015,23 @@
      "goals": 4
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Ander Herrera",
+     "team": "Manchester United",
+     "assists": 3
+    },
+    {
+     "name": "Tjaronn Chery",
+     "team": "Queens Park Rangers",
+     "assists": 3
+    },
+    {
+     "name": "Henrikh Mkhitaryan",
+     "team": "Manchester United",
+     "assists": 3
+    }
+   ],
    "player_of_season": {
     "name": "Zlatan Ibrahimović",
     "team": "Manchester United"
@@ -1023,7 +1061,18 @@
      "goals": 4
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "James Maddison",
+     "team": "Norwich City",
+     "assists": 3
+    },
+    {
+     "name": "Cesc Fàbregas",
+     "team": "Chelsea",
+     "assists": 3
+    }
+   ],
    "player_of_season": {
     "name": "Vincent Kompany",
     "team": "Manchester City"
@@ -1043,7 +1092,18 @@
      "goals": 5
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Emiliano Buendía",
+     "team": "Norwich City",
+     "assists": 4
+    },
+    {
+     "name": "Robert Snodgrass",
+     "team": "West Ham United",
+     "assists": 4
+    }
+   ],
    "player_of_season": {
     "name": "Bernardo Silva",
     "team": "Manchester City"
@@ -1064,7 +1124,13 @@
      "goals": 5
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Henri Lansbury",
+     "team": "Aston Villa",
+     "assists": 5
+    }
+   ],
    "player_of_season": {
     "name": "Phil Foden",
     "team": "Manchester City"
@@ -1089,7 +1155,18 @@
      "goals": 4
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Andriy Yarmolenko",
+     "team": "West Ham United",
+     "assists": 3
+    },
+    {
+     "name": "Jorge Grant",
+     "team": "Lincoln City",
+     "assists": 3
+    }
+   ],
    "player_of_season": {
     "name": "Riyad Mahrez",
     "team": "Manchester City"
