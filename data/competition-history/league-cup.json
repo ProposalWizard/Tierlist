@@ -2,14 +2,14 @@
  "competition": "League Cup",
  "slug": "league-cup",
  "kind": "cup",
- "lineage_note": "Football League Cup from 1960-61, now the EFL Cup (sponsor names in name_then). Two-legged finals 1961-1966, single match at Wembley from 1967; replays until 1997, penalties since. Season label = the season the final ended (final played in the spring of the second year). Top scorer = most goals across all rounds, from each season's Wikipedia table.",
+ "lineage_note": "Football League Cup from 1960-61, now the EFL Cup (sponsor names in name_then). Two-legged finals 1961-1966, single match at Wembley from 1967; replays until 1997, penalties since. Season label = the season the final ended (final played in the spring of the second year). Top scorer = most goals across all rounds, from each season's Wikipedia table. 1988-89 to 2018-19 top scorers come from each season's Wikipedia infobox (cited there to worldfootball.net / ESPN); 1987-88 has no top scorer on any source reached, so the run starts 1988-89. Top assister = most assists across all rounds, FotMob (Opta), 2021-22 on (FotMob's 2020-21 data covers only a few matches).",
  "history_from": "1960-61",
  "history_to": "2025-26",
  "field_from": {
   "runner_up": "1960-61",
   "final_score": "1960-61",
-  "top_scorer": "2019-20",
-  "top_assister": null,
+  "top_scorer": "1988-89",
+  "top_assister": "2021-22",
   "player_of_season": "1989-90"
  },
  "player_of_season_award": "Alan Hardaker Trophy (man of the match in the League Cup final), awarded every year since the 1990 final.",
@@ -17,8 +17,12 @@
   "https://en.wikipedia.org/wiki/List_of_EFL_Cup_finals",
   "https://www.rsssf.org/tablese/engleagcuphist.html",
   "https://en.wikipedia.org/wiki/Alan_Hardaker_Trophy",
-  "https://en.wikipedia.org/wiki/EFL_Cup"
+  "https://en.wikipedia.org/wiki/EFL_Cup",
+  "https://www.fotmob.com/leagues/133/stats/efl-cup",
+  "https://www.espn.com/soccer/stats/_/league/ENG.LEAGUE_CUP"
  ],
+ "top_scorer_source": "Wikipedia season pages (infobox 'top goal scorer', 1988-89 to 2018-19; tables 2019-20 on). 2021-22 to 2025-26 match FotMob; 2022-23 to 2025-26 also match ESPN.",
+ "top_assister_source": "FotMob (Opta) season stats, data.fotmob.com/stats/133/season/<id>/goal_assist.json. Cross-checked with ESPN for 2021-22, 2022-23, 2023-24 and 2025-26 (same leaders and counts). Team = club he played for in the competition that season.",
  "seasons": [
   {
    "season": "1960-61",
@@ -345,7 +349,13 @@
    "winner": "Nottingham Forest",
    "runner_up": "Luton Town",
    "final_score": "3-1",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Nigel Clough",
+     "team": "Nottingham Forest",
+     "goals": 7
+    }
+   ],
    "top_assister": null,
    "player_of_season": null
   },
@@ -356,7 +366,13 @@
    "winner": "Nottingham Forest",
    "runner_up": "Oldham Athletic",
    "final_score": "1-0",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Andy Ritchie",
+     "team": "Oldham Athletic",
+     "goals": 10
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Des Walker",
@@ -370,7 +386,28 @@
    "winner": "Sheffield Wednesday",
    "runner_up": "Manchester United",
    "final_score": "1-0",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Paul Gascoigne",
+     "team": "Tottenham Hotspur",
+     "goals": 6
+    },
+    {
+     "name": "Mark Hughes",
+     "team": "Manchester United",
+     "goals": 6
+    },
+    {
+     "name": "Lee Sharpe",
+     "team": "Manchester United",
+     "goals": 6
+    },
+    {
+     "name": "Alan Shearer",
+     "team": "Southampton",
+     "goals": 6
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Nigel Pearson",
@@ -384,7 +421,13 @@
    "winner": "Manchester United",
    "runner_up": "Nottingham Forest",
    "final_score": "1-0",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "John Aldridge",
+     "team": "Tranmere Rovers",
+     "goals": 8
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Brian McClair",
@@ -398,7 +441,23 @@
    "winner": "Arsenal",
    "runner_up": "Sheffield Wednesday",
    "final_score": "2-1",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Chris Kiwomya",
+     "team": "Ipswich Town",
+     "goals": 6
+    },
+    {
+     "name": "Mark Bright",
+     "team": "Sheffield Wednesday",
+     "goals": 6
+    },
+    {
+     "name": "Alan Shearer",
+     "team": "Blackburn Rovers",
+     "goals": 6
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Paul Merson",
@@ -412,7 +471,13 @@
    "winner": "Aston Villa",
    "runner_up": "Manchester United",
    "final_score": "3-1",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "John Aldridge",
+     "team": "Tranmere Rovers",
+     "goals": 7
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Kevin Richardson",
@@ -426,7 +491,13 @@
    "winner": "Liverpool",
    "runner_up": "Bolton Wanderers",
    "final_score": "2-1",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Jan Åge Fjørtoft",
+     "team": "Swindon Town",
+     "goals": 9
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Steve McManaman",
@@ -440,7 +511,13 @@
    "winner": "Aston Villa",
    "runner_up": "Leeds United",
    "final_score": "3-0",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Ian Wright",
+     "team": "Arsenal",
+     "goals": 7
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Andy Townsend",
@@ -454,7 +531,13 @@
    "winner": "Leicester City",
    "runner_up": "Middlesbrough",
    "final_score": "1-1 (a.e.t.), replay 1-0 (a.e.t.)",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Fabrizio Ravanelli",
+     "team": "Middlesbrough",
+     "goals": 9
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Steve Walsh",
@@ -469,7 +552,18 @@
    "winner": "Chelsea",
    "runner_up": "Middlesbrough",
    "final_score": "2-0 (a.e.t.)",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "John Hartson",
+     "team": "West Ham United",
+     "goals": 6
+    },
+    {
+     "name": "Joey Beauchamp",
+     "team": "Oxford United",
+     "goals": 6
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Dennis Wise",
@@ -483,7 +577,13 @@
    "winner": "Tottenham Hotspur",
    "runner_up": "Leicester City",
    "final_score": "1-0",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Gianluca Vialli",
+     "team": "Chelsea",
+     "goals": 6
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Allan Nielsen",
@@ -497,7 +597,13 @@
    "winner": "Leicester City",
    "runner_up": "Tranmere Rovers",
    "final_score": "2-1",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "David Kelly",
+     "team": "Tranmere Rovers",
+     "goals": 8
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Matt Elliott",
@@ -511,7 +617,13 @@
    "winner": "Liverpool",
    "runner_up": "Birmingham City",
    "final_score": "1-1 (5-4 pens)",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Robbie Fowler",
+     "team": "Liverpool",
+     "goals": 6
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Robbie Fowler",
@@ -526,7 +638,13 @@
    "winner": "Blackburn Rovers",
    "runner_up": "Tottenham Hotspur",
    "final_score": "2-1",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Matt Jansen",
+     "team": "Blackburn Rovers",
+     "goals": 6
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Brad Friedel",
@@ -540,7 +658,18 @@
    "winner": "Liverpool",
    "runner_up": "Manchester United",
    "final_score": "2-0",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Nathan Ellington",
+     "team": "Wigan Athletic",
+     "goals": 5
+    },
+    {
+     "name": "Gary McSheffrey",
+     "team": "Coventry City",
+     "goals": 5
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Jerzy Dudek",
@@ -554,7 +683,13 @@
    "winner": "Middlesbrough",
    "runner_up": "Bolton Wanderers",
    "final_score": "2-1",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Juan Pablo Ángel",
+     "team": "Aston Villa",
+     "goals": 7
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Boudewijn Zenden",
@@ -568,7 +703,13 @@
    "winner": "Chelsea",
    "runner_up": "Liverpool",
    "final_score": "3-2 (a.e.t.)",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Jermain Defoe",
+     "team": "Tottenham Hotspur",
+     "goals": 5
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "John Terry",
@@ -582,7 +723,13 @@
    "winner": "Manchester United",
    "runner_up": "Wigan Athletic",
    "final_score": "4-0",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Louis Saha",
+     "team": "Manchester United",
+     "goals": 6
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Wayne Rooney",
@@ -596,7 +743,18 @@
    "winner": "Chelsea",
    "runner_up": "Arsenal",
    "final_score": "2-1",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Jermaine Easter",
+     "team": "Wycombe Wanderers",
+     "goals": 6
+    },
+    {
+     "name": "Júlio Baptista",
+     "team": "Arsenal",
+     "goals": 6
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Didier Drogba",
@@ -610,7 +768,23 @@
    "winner": "Tottenham Hotspur",
    "runner_up": "Chelsea",
    "final_score": "2-1 (a.e.t.)",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Eduardo",
+     "team": "Arsenal",
+     "goals": 4
+    },
+    {
+     "name": "Frank Lampard",
+     "team": "Chelsea",
+     "goals": 4
+    },
+    {
+     "name": "Michael Mifsud",
+     "team": "Coventry City",
+     "goals": 4
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Jonathan Woodgate",
@@ -624,7 +798,23 @@
    "winner": "Manchester United",
    "runner_up": "Tottenham Hotspur",
    "final_score": "0-0 (4-1 pens)",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Nathan Ellington",
+     "team": "Watford",
+     "goals": 6
+    },
+    {
+     "name": "Roman Pavlyuchenko",
+     "team": "Tottenham Hotspur",
+     "goals": 6
+    },
+    {
+     "name": "Carlos Tevez",
+     "team": "Manchester United",
+     "goals": 6
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Ben Foster",
@@ -639,7 +829,13 @@
    "winner": "Manchester United",
    "runner_up": "Aston Villa",
    "final_score": "2-1",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Carlos Tevez",
+     "team": "Manchester City",
+     "goals": 6
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Antonio Valencia",
@@ -653,7 +849,18 @@
    "winner": "Birmingham City",
    "runner_up": "Arsenal",
    "final_score": "2-1",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Carlton Cole",
+     "team": "West Ham United",
+     "goals": 4
+    },
+    {
+     "name": "Scott Sinclair",
+     "team": "Swansea City",
+     "goals": 4
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Ben Foster",
@@ -667,7 +874,13 @@
    "winner": "Liverpool",
    "runner_up": "Cardiff City",
    "final_score": "2-2 (3-2 pens)",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Jay Rodriguez",
+     "team": "Burnley",
+     "goals": 5
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Stewart Downing",
@@ -682,7 +895,13 @@
    "winner": "Swansea City",
    "runner_up": "Bradford City",
    "final_score": "5-0",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Theo Walcott",
+     "team": "Arsenal",
+     "goals": 5
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Nathan Dyer",
@@ -696,7 +915,18 @@
    "winner": "Manchester City",
    "runner_up": "Sunderland",
    "final_score": "3-1",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Edin Džeko",
+     "team": "Manchester City",
+     "goals": 6
+    },
+    {
+     "name": "Álvaro Negredo",
+     "team": "Manchester City",
+     "goals": 6
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Samir Nasri",
@@ -710,7 +940,13 @@
    "winner": "Chelsea",
    "runner_up": "Tottenham Hotspur",
    "final_score": "2-0",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Benik Afobe",
+     "team": "Milton Keynes Dons",
+     "goals": 6
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "John Terry",
@@ -724,7 +960,13 @@
    "winner": "Manchester City",
    "runner_up": "Liverpool",
    "final_score": "1-1 (3-1 pens)",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Kevin De Bruyne",
+     "team": "Manchester City",
+     "goals": 5
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Vincent Kompany",
@@ -739,7 +981,18 @@
    "winner": "Manchester United",
    "runner_up": "Southampton",
    "final_score": "3-2",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Zlatan Ibrahimović",
+     "team": "Manchester United",
+     "goals": 4
+    },
+    {
+     "name": "Daniel Sturridge",
+     "team": "Liverpool",
+     "goals": 4
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Zlatan Ibrahimović",
@@ -753,7 +1006,23 @@
    "winner": "Manchester City",
    "runner_up": "Arsenal",
    "final_score": "3-0",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Josh Murphy",
+     "team": "Cardiff City",
+     "goals": 4
+    },
+    {
+     "name": "Samuel Sáiz",
+     "team": "Leeds United",
+     "goals": 4
+    },
+    {
+     "name": "Islam Slimani",
+     "team": "Leicester City",
+     "goals": 4
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Vincent Kompany",
@@ -767,7 +1036,13 @@
    "winner": "Manchester City",
    "runner_up": "Chelsea",
    "final_score": "0-0 (4-3 pens)",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Gabriel Jesus",
+     "team": "Manchester City",
+     "goals": 5
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Bernardo Silva",
@@ -839,7 +1114,13 @@
      "goals": 5
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Nicolas Pépé",
+     "team": "Arsenal",
+     "assists": 4
+    }
+   ],
    "player_of_season": {
     "name": "Virgil van Dijk",
     "team": "Liverpool"
@@ -860,7 +1141,18 @@
      "goals": 6
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Kieran Lee",
+     "team": "Bolton Wanderers",
+     "assists": 3
+    },
+    {
+     "name": "Fisayo Dele-Bashiru",
+     "team": "Sheffield Wednesday",
+     "assists": 3
+    }
+   ],
    "player_of_season": {
     "name": "Casemiro",
     "team": "Manchester United"
@@ -880,7 +1172,48 @@
      "goals": 5
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Andrew Moran",
+     "team": "Blackburn Rovers",
+     "assists": 3
+    },
+    {
+     "name": "Pablo Sarabia",
+     "team": "Wolverhampton Wanderers",
+     "assists": 3
+    },
+    {
+     "name": "Daniel Barlaser",
+     "team": "Middlesbrough",
+     "assists": 3
+    },
+    {
+     "name": "Anass Zaroury",
+     "team": "Burnley",
+     "assists": 3
+    },
+    {
+     "name": "Marcus Harness",
+     "team": "Ipswich Town",
+     "assists": 3
+    },
+    {
+     "name": "Darwin Núñez",
+     "team": "Liverpool",
+     "assists": 3
+    },
+    {
+     "name": "Jarell Quansah",
+     "team": "Liverpool",
+     "assists": 3
+    },
+    {
+     "name": "Trent Alexander-Arnold",
+     "team": "Liverpool",
+     "assists": 3
+    }
+   ],
    "player_of_season": {
     "name": "Virgil van Dijk",
     "team": "Liverpool"
@@ -900,7 +1233,33 @@
      "goals": 5
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Andrew Moran",
+     "team": "Stoke City",
+     "assists": 3
+    },
+    {
+     "name": "Rob Apter",
+     "team": "Blackpool",
+     "assists": 3
+    },
+    {
+     "name": "Dejan Kulusevski",
+     "team": "Tottenham Hotspur",
+     "assists": 3
+    },
+    {
+     "name": "Eberechi Eze",
+     "team": "Crystal Palace",
+     "assists": 3
+    },
+    {
+     "name": "Alejandro Garnacho",
+     "team": "Manchester United",
+     "assists": 3
+    }
+   ],
    "player_of_season": {
     "name": "Dan Burn",
     "team": "Newcastle United"
@@ -920,7 +1279,13 @@
      "goals": 5
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Tom Watson",
+     "team": "Brighton & Hove Albion",
+     "assists": 3
+    }
+   ],
    "player_of_season": {
     "name": "Nico O'Reilly",
     "team": "Manchester City"

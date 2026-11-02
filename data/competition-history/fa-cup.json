@@ -2,14 +2,14 @@
  "competition": "FA Cup",
  "slug": "fa-cup",
  "kind": "cup",
- "lineage_note": "The Football Association Challenge Cup, played since 1871-72. Not held 1915-16 to 1918-19 and 1939-40 to 1944-45. Finals were replayed after a draw until 1999; penalties since. Top scorer = most goals in the competition proper (First Round to the final; qualifying rounds not counted), as listed in each season's Wikipedia table (sourced to worldfootball.net / BBC Sport).",
+ "lineage_note": "The Football Association Challenge Cup, played since 1871-72. Not held 1915-16 to 1918-19 and 1939-40 to 1944-45. Finals were replayed after a draw until 1999; penalties since. Top scorer = most goals in the competition proper (First Round to the final; qualifying rounds not counted), as listed in each season's Wikipedia table (sourced to worldfootball.net / BBC Sport / ESPN; 2007-08 from the infobox and ESPN FC). Same proper-rounds rule throughout; before 2004-05 Wikipedia gives only infobox names that sometimes include qualifying-round goals, so they are left out. Top assister = most assists in the competition proper, FotMob (Opta) data, 2016-17 on.",
  "history_from": "1871-72",
  "history_to": "2025-26",
  "field_from": {
   "runner_up": "1871-72",
   "final_score": "1871-72",
-  "top_scorer": "2009-10",
-  "top_assister": null,
+  "top_scorer": "2004-05",
+  "top_assister": "2016-17",
   "player_of_season": "1994-95"
  },
  "player_of_season_award": "FA Cup final man of the match / Player of the Match (as recorded in each final's match report: press, broadcaster or the FA's sponsored award), 1995 final on.",
@@ -17,8 +17,12 @@
   "https://en.wikipedia.org/wiki/List_of_FA_Cup_finals",
   "https://www.rsssf.org/tablese/engcuphist.html",
   "https://en.wikipedia.org/wiki/2025%E2%80%9326_FA_Cup",
-  "https://en.wikipedia.org/wiki/2026_FA_Cup_final"
+  "https://en.wikipedia.org/wiki/2026_FA_Cup_final",
+  "https://www.fotmob.com/leagues/132/stats/fa-cup",
+  "https://www.espn.com/soccer/stats/_/league/ENG.FA"
  ],
+ "top_scorer_source": "Wikipedia season pages' Top scorers tables (worldfootball.net for 2004-05 to 2015-16, BBC Sport after; 2007-08 Craig Mackail-Smith 7 from the infobox, cited to ESPN FC). 2016-17 to 2025-26 match FotMob exactly.",
+ "top_assister_source": "FotMob (Opta) season stats, data.fotmob.com/stats/132/season/<id>/goal_assist.json. Cross-checked with ESPN for 2019-20, 2022-23, 2023-24 and 2025-26 (same leaders and counts). Team = club he played for in the competition that season.",
  "seasons": [
   {
    "season": "1871-72",
@@ -1410,7 +1414,23 @@
    "winner": "Arsenal",
    "runner_up": "Manchester United",
    "final_score": "0-0 (5-4 pens)",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Cristiano Ronaldo",
+     "team": "Manchester United",
+     "goals": 4
+    },
+    {
+     "name": "Peter Crouch",
+     "team": "Southampton",
+     "goals": 4
+    },
+    {
+     "name": "Jermain Defoe",
+     "team": "Tottenham Hotspur",
+     "goals": 4
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Wayne Rooney",
@@ -1424,7 +1444,18 @@
    "winner": "Liverpool",
    "runner_up": "West Ham United",
    "final_score": "3-3 (3-1 pens)",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Yakubu",
+     "team": "Middlesbrough",
+     "goals": 4
+    },
+    {
+     "name": "Steven Gerrard",
+     "team": "Liverpool",
+     "goals": 4
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Steven Gerrard",
@@ -1438,7 +1469,13 @@
    "winner": "Chelsea",
    "runner_up": "Manchester United",
    "final_score": "1-0 (a.e.t.)",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Frank Lampard",
+     "team": "Chelsea",
+     "goals": 6
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Frank Lampard",
@@ -1451,7 +1488,13 @@
    "winner": "Portsmouth",
    "runner_up": "Cardiff City",
    "final_score": "1-0",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Craig Mackail-Smith",
+     "team": "Peterborough United",
+     "goals": 7
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Nwankwo Kanu",
@@ -1464,7 +1507,18 @@
    "winner": "Chelsea",
    "runner_up": "Everton",
    "final_score": "2-1",
-   "top_scorer": null,
+   "top_scorer": [
+    {
+     "name": "Nicolas Anelka",
+     "team": "Chelsea",
+     "goals": 4
+    },
+    {
+     "name": "Robin van Persie",
+     "team": "Arsenal",
+     "goals": 4
+    }
+   ],
    "top_assister": null,
    "player_of_season": {
     "name": "Ashley Cole",
@@ -1647,7 +1701,13 @@
      "goals": 6
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Christian Eriksen",
+     "team": "Tottenham Hotspur",
+     "assists": 6
+    }
+   ],
    "player_of_season": {
     "name": "Alexis Sánchez",
     "team": "Arsenal"
@@ -1666,7 +1726,13 @@
      "goals": 7
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Marcus Maddison",
+     "team": "Peterborough United",
+     "assists": 5
+    }
+   ],
    "player_of_season": {
     "name": "Antonio Rüdiger",
     "team": "Chelsea"
@@ -1690,7 +1756,18 @@
      "goals": 5
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "İlkay Gündoğan",
+     "team": "Manchester City",
+     "assists": 4
+    },
+    {
+     "name": "Kevin De Bruyne",
+     "team": "Manchester City",
+     "assists": 4
+    }
+   ],
    "player_of_season": {
     "name": "Kevin De Bruyne",
     "team": "Manchester City"
@@ -1714,7 +1791,23 @@
      "goals": 5
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Chiedozie Ogbene",
+     "team": "Rotherham United",
+     "assists": 4
+    },
+    {
+     "name": "Hallam Hope",
+     "team": "Carlisle United",
+     "assists": 4
+    },
+    {
+     "name": "Nicky Adams",
+     "team": "Northampton Town",
+     "assists": 4
+    }
+   ],
    "player_of_season": {
     "name": "Pierre-Emerick Aubameyang",
     "team": "Arsenal"
@@ -1754,7 +1847,13 @@
      "goals": 4
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Son Heung-min",
+     "team": "Tottenham Hotspur",
+     "assists": 4
+    }
+   ],
    "player_of_season": {
     "name": "Youri Tielemans",
     "team": "Leicester City"
@@ -1778,7 +1877,13 @@
      "goals": 4
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Nathanael Ogbeta",
+     "team": "Shrewsbury Town",
+     "assists": 4
+    }
+   ],
    "player_of_season": {
     "name": "Luis Díaz",
     "team": "Liverpool"
@@ -1798,7 +1903,18 @@
      "goals": 8
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Kevin De Bruyne",
+     "team": "Manchester City",
+     "assists": 4
+    },
+    {
+     "name": "Sam Dalby",
+     "team": "Wrexham",
+     "assists": 4
+    }
+   ],
    "player_of_season": {
     "name": "İlkay Gündoğan",
     "team": "Manchester City"
@@ -1823,7 +1939,13 @@
      "goals": 6
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Kevin De Bruyne",
+     "team": "Manchester City",
+     "assists": 5
+    }
+   ],
    "player_of_season": {
     "name": "Kobbie Mainoo",
     "team": "Manchester United"
@@ -1842,7 +1964,33 @@
      "goals": 6
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Jack Grealish",
+     "team": "Manchester City",
+     "assists": 3
+    },
+    {
+     "name": "Charlie Savage",
+     "team": "Reading",
+     "assists": 3
+    },
+    {
+     "name": "Corey Whitely",
+     "team": "Bromley",
+     "assists": 3
+    },
+    {
+     "name": "Harry Smith",
+     "team": "Swindon Town",
+     "assists": 3
+    },
+    {
+     "name": "Sonny Perkins",
+     "team": "Leyton Orient",
+     "assists": 3
+    }
+   ],
    "player_of_season": {
     "name": "Daniel Muñoz",
     "team": "Crystal Palace"
@@ -1861,7 +2009,13 @@
      "goals": 5
     }
    ],
-   "top_assister": null,
+   "top_assister": [
+    {
+     "name": "Anis Ben Slimane",
+     "team": "Norwich City",
+     "assists": 4
+    }
+   ],
    "player_of_season": {
     "name": "Antoine Semenyo",
     "team": "Manchester City"
