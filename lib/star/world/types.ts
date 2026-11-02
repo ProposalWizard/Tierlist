@@ -78,4 +78,9 @@ export interface WorldSummary {
   playOffs: { division: CareerDivision; result: PlayOffResult }[];
   /** Every cup's final (and both shields): who played, the score, who won. */
   finals?: { competition: string; home: string; away: string; hs?: number; as?: number; pens?: { home: number; away: number }; winner?: string }[];
+  /** Every round of the FA Cup and League Cup, for tapping a cup on the
+   *  season review (Mikey, 2 Nov 2026). Missing on older saves. */
+  cups?: { competition: string; winner?: string; rounds: CupState["rounds"] }[];
+  /** The Champions and Europa League knockout rounds. Missing on older saves. */
+  brackets?: { competition: string; bracket: EuroBracket }[];
 }

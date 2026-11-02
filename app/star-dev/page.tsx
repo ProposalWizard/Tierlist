@@ -2085,11 +2085,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // rollOverSeason so the season-awards screen can land here too, once the
   // player is done looking at what the season handed out.
   const continueAfterRollover = useCallback((next: CareerState) => {
-    if (next.ladderNews && next.contract.seasonsRemaining > 0) {
-      setActiveNav(null);
-      setPhase("ladder");
-      return;
-    }
+    // The "divisions have changed" page (LadderScreen) is skipped (Mikey,
+    // 2 Nov 2026): the season review's trophy list shows every final table.
     if (next.contract.seasonsRemaining <= 0) {
       setPhase("contract-renewal");
     } else {
