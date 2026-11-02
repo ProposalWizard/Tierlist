@@ -1,0 +1,866 @@
+{
+  "competition": "National League",
+  "slug": "national-league",
+  "kind": "league",
+  "lineage_note": "English fifth tier. 1979-80 to 1985-86 = Alliance Premier League; 1986-87 to 2003-04 = Football Conference; 2004-05 to 2006-07 = Conference National; 2007-08 to 2014-15 = Conference Premier; 2015-16 on = National League.",
+  "history_from": "1979-80",
+  "history_to": "2025-26",
+  "field_from": {
+    "runner_up": "1979-80",
+    "final_score": null,
+    "top_scorer": "1983-84",
+    "top_assister": null,
+    "player_of_season": "2021-22"
+  },
+  "player_of_season_award": "National League Player of the Season (National League's own end-of-season awards); continuous run found only from 2021-22",
+  "sources": [
+    "https://www.fchd.info/lghist/nat.htm",
+    "https://en.wikipedia.org/wiki/National_League_(English_football)",
+    "Wikipedia season pages: 'YYYY-YY Alliance Premier League' / 'YYYY-YY Football Conference' / 'YYYY-YY National League'",
+    "https://chesterfield-fc.co.uk/club-news/vanarama-national-league-end-of-season-awards-announced",
+    "https://www.nonleagueinsider.com/news/the-top-goalscorers-in-a-single-national-league-season/"
+  ],
+  "seasons": [
+    {
+      "season": "1979-80",
+      "name_then": "Alliance Premier League",
+      "status": "played",
+      "winner": "Altrincham",
+      "runner_up": "Weymouth",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1980-81",
+      "name_then": "Alliance Premier League",
+      "status": "played",
+      "winner": "Altrincham",
+      "runner_up": "Kettering Town",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1981-82",
+      "name_then": "Alliance Premier League",
+      "status": "played",
+      "winner": "Runcorn",
+      "runner_up": "Enfield",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1982-83",
+      "name_then": "Alliance Premier League",
+      "status": "played",
+      "winner": "Enfield",
+      "runner_up": "Maidstone United",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1983-84",
+      "name_then": "Alliance Premier League",
+      "status": "played",
+      "winner": "Maidstone United",
+      "runner_up": "Nuneaton Borough",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Paul Culpin",
+          "team": "Nuneaton Borough",
+          "goals": 41
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two points for a home win, three for an away win (1983-84 to 1985-86)."
+    },
+    {
+      "season": "1984-85",
+      "name_then": "Alliance Premier League",
+      "status": "played",
+      "winner": "Wealdstone",
+      "runner_up": "Nuneaton Borough",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Paul Culpin",
+          "team": "Nuneaton Borough",
+          "goals": 36
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two points for a home win, three for an away win (1983-84 to 1985-86)."
+    },
+    {
+      "season": "1985-86",
+      "name_then": "Alliance Premier League",
+      "status": "played",
+      "winner": "Enfield",
+      "runner_up": "Frickley Athletic",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Kim Casey",
+          "team": "Kidderminster Harriers",
+          "goals": 36
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two points for a home win, three for an away win (1983-84 to 1985-86)."
+    },
+    {
+      "season": "1986-87",
+      "name_then": "Football Conference",
+      "status": "played",
+      "winner": "Scarborough",
+      "runner_up": "Barnet",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Kim Casey",
+          "team": "Kidderminster Harriers",
+          "goals": 38
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1987-88",
+      "name_then": "Football Conference",
+      "status": "played",
+      "winner": "Lincoln City",
+      "runner_up": "Barnet",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Steve Norris",
+          "team": "Telford United",
+          "goals": 24
+        },
+        {
+          "name": "Phil Derbyshire",
+          "team": "Stafford Rangers",
+          "goals": 24
+        },
+        {
+          "name": "Paul Davies",
+          "team": "Kidderminster Harriers",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1988-89",
+      "name_then": "Football Conference",
+      "status": "played",
+      "winner": "Maidstone United",
+      "runner_up": "Kettering Town",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Steve Butler",
+          "team": "Maidstone United",
+          "goals": 26
+        },
+        {
+          "name": "Mark Gall",
+          "team": "Maidstone United",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Newport County were expelled from the Football Conference on 27 February 1989, with their record (P29 W4 D7 L18 GF31 GA62 Pts19) being expunged."
+    },
+    {
+      "season": "1989-90",
+      "name_then": "Football Conference",
+      "status": "played",
+      "winner": "Darlington",
+      "runner_up": "Barnet",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Robbie Cooke",
+          "team": "Kettering Town",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1990-91",
+      "name_then": "Football Conference",
+      "status": "played",
+      "winner": "Barnet",
+      "runner_up": "Colchester United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Gary Bull",
+          "team": "Barnet",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1991-92",
+      "name_then": "Football Conference",
+      "status": "played",
+      "winner": "Colchester United",
+      "runner_up": "Wycombe Wanderers",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Paul Cavell",
+          "team": "Redbridge Forest",
+          "goals": 29
+        },
+        {
+          "name": "Terry Robbins",
+          "team": "Welling United",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Colchester United and Wycombe Wanderers level on 94 points; Colchester champions on goal difference."
+    },
+    {
+      "season": "1992-93",
+      "name_then": "Football Conference",
+      "status": "played",
+      "winner": "Wycombe Wanderers",
+      "runner_up": "Bromsgrove Rovers",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "David Leworthy",
+          "team": "Farnborough Town",
+          "goals": 32
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Dagenham & Redbridge 1."
+    },
+    {
+      "season": "1993-94",
+      "name_then": "Football Conference",
+      "status": "played",
+      "winner": "Kidderminster Harriers",
+      "runner_up": "Kettering Town",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Paul Dobson",
+          "team": "Gateshead",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Kidderminster Harriers were champions but denied promotion to the Football League (ground criteria). Points deducted: Merthyr Tydfil 2."
+    },
+    {
+      "season": "1994-95",
+      "name_then": "Football Conference",
+      "status": "played",
+      "winner": "Macclesfield Town",
+      "runner_up": "Woking",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Paul Dobson",
+          "team": "Gateshead",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Yeovil Town 1."
+    },
+    {
+      "season": "1995-96",
+      "name_then": "Football Conference",
+      "status": "played",
+      "winner": "Stevenage Borough",
+      "runner_up": "Woking",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Barry Hayles",
+          "team": "Stevenage Borough",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1996-97",
+      "name_then": "Football Conference",
+      "status": "played",
+      "winner": "Macclesfield Town",
+      "runner_up": "Kidderminster Harriers",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Lee Hughes",
+          "team": "Kidderminster Harriers",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1997-98",
+      "name_then": "Football Conference",
+      "status": "played",
+      "winner": "Halifax Town",
+      "runner_up": "Cheltenham Town",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Geoff Horsfield",
+          "team": "Halifax Town",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1998-99",
+      "name_then": "Football Conference",
+      "status": "played",
+      "winner": "Cheltenham Town",
+      "runner_up": "Kettering Town",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Carl Alford",
+          "team": "Stevenage Borough",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1999-00",
+      "name_then": "Football Conference",
+      "status": "played",
+      "winner": "Kidderminster Harriers",
+      "runner_up": "Rushden & Diamonds",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Justin Jackson",
+          "team": "Morecambe",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2000-01",
+      "name_then": "Football Conference",
+      "status": "played",
+      "winner": "Rushden & Diamonds",
+      "runner_up": "Yeovil Town",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Duane Darby",
+          "team": "Rushden & Diamonds",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2001-02",
+      "name_then": "Football Conference",
+      "status": "played",
+      "winner": "Boston United",
+      "runner_up": "Dagenham & Redbridge",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Daryl Clare",
+          "team": "Boston United",
+          "goals": 24
+        },
+        {
+          "name": "Mark Stein",
+          "team": "Dagenham & Redbridge",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Boston United and Dagenham & Redbridge level on 84 points; Boston champions on goal difference. Points deducted: Scarborough 1."
+    },
+    {
+      "season": "2002-03",
+      "name_then": "Football Conference",
+      "status": "played",
+      "winner": "Yeovil Town",
+      "runner_up": "Morecambe",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Paul Barnes",
+          "team": "Doncaster Rovers",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2003-04",
+      "name_then": "Football Conference",
+      "status": "played",
+      "winner": "Chester City",
+      "runner_up": "Hereford United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Daryl Clare",
+          "team": "Chester City",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Burton Albion 1."
+    },
+    {
+      "season": "2004-05",
+      "name_then": "Conference National",
+      "status": "played",
+      "winner": "Barnet",
+      "runner_up": "Hereford United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Giuliano Grazioli",
+          "team": "Barnet",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Tamworth 3, Northwich Victoria 10."
+    },
+    {
+      "season": "2005-06",
+      "name_then": "Conference National",
+      "status": "played",
+      "winner": "Accrington Stanley",
+      "runner_up": "Hereford United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Andy Bishop",
+          "team": "York City",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Altrincham 18."
+    },
+    {
+      "season": "2006-07",
+      "name_then": "Conference National",
+      "status": "played",
+      "winner": "Dagenham & Redbridge",
+      "runner_up": "Oxford United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Paul Benson",
+          "team": "Dagenham & Redbridge",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Crawley Town 10."
+    },
+    {
+      "season": "2007-08",
+      "name_then": "Conference Premier",
+      "status": "played",
+      "winner": "Aldershot Town",
+      "runner_up": "Cambridge United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Stuart Fleetwood",
+          "team": "Forest Green Rovers",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Crawley Town 6, Halifax Town 10. Halifax Town were deducted 10 points for entering administration and later resigned from the Conference due to financial problems. These resulted in the folding of the club, but it was soon reformed with name F.C. Halifax Town, and was able to play competitive football in Northern Premier League Division One North, on Level 8 of the English football league system."
+    },
+    {
+      "season": "2008-09",
+      "name_then": "Conference Premier",
+      "status": "played",
+      "winner": "Burton Albion",
+      "runner_up": "Cambridge United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Andy Mangan",
+          "team": "Forest Green Rovers",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Oxford United 5, Crawley Town 1, Mansfield Town 4."
+    },
+    {
+      "season": "2009-10",
+      "name_then": "Conference Premier",
+      "status": "played",
+      "winner": "Stevenage Borough",
+      "runner_up": "Luton Town",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Richard Brodie",
+          "team": "York City",
+          "goals": 26
+        },
+        {
+          "name": "Matt Tubbs",
+          "team": "Salisbury City",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Salisbury City 10, Gateshead 1, Grays Athletic 2. Chester City were deducted 25 points for entering administration and insolvency, and were later expelled on 26 February 2010, with their record (P28 W5 D7 L16 GF23 GA42 Pts−3) being expunged on 8 March 2010. They were initially expelled to the North West Counties League, but on appeal were admitted to the Northern Premier League Division One North as Chester F.C. Joint top scorers per the season page's ESPN-sourced table (its infobox names Brodie only)."
+    },
+    {
+      "season": "2010-11",
+      "name_then": "Conference Premier",
+      "status": "played",
+      "winner": "Crawley Town",
+      "runner_up": "AFC Wimbledon",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Matt Tubbs",
+          "team": "Crawley Town",
+          "goals": 37
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Kidderminster Harriers 5, Rushden & Diamonds 5, Kettering Town 2, Histon 5. Rushden & Diamonds were docked five points for submitting misleading financial information and subsequently expelled from the Football Conference on 11 June 2011."
+    },
+    {
+      "season": "2011-12",
+      "name_then": "Conference Premier",
+      "status": "played",
+      "winner": "Fleetwood Town",
+      "runner_up": "Wrexham",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Jamie Vardy",
+          "team": "Fleetwood Town",
+          "goals": 31
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Darlington 10, Kettering Town 3. Kettering Town were deducted three points for failing to pay football creditors. At the end of the season they resigned from the Football Conference, dropping down two divisions."
+    },
+    {
+      "season": "2012-13",
+      "name_then": "Conference Premier",
+      "status": "played",
+      "winner": "Mansfield Town",
+      "runner_up": "Kidderminster Harriers",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Matt Green",
+          "team": "Mansfield Town",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2013-14",
+      "name_then": "Conference Premier",
+      "status": "played",
+      "winner": "Luton Town",
+      "runner_up": "Cambridge United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Andre Gray",
+          "team": "Luton Town",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Alfreton Town 3, Aldershot Town 10. On 10 June 2014, Hereford United were expelled from the Conference due to financial irregularities. They were later accepted into the Southern League. Because of this, Chester were reprieved from relegation. On 13 June 2014, Salisbury City were demoted to the Conference South due to financial irregularities. Because of this, Dartford were reprieved from relegation. Salisbury were subsequently expelled from the Football Conference altogether on 4 July 2014, after which they went into liquidation."
+    },
+    {
+      "season": "2014-15",
+      "name_then": "Conference Premier",
+      "status": "played",
+      "winner": "Barnet",
+      "runner_up": "Bristol Rovers",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "John Akinde",
+          "team": "Barnet",
+          "goals": 31
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2015-16",
+      "status": "played",
+      "winner": "Cheltenham Town",
+      "runner_up": "Forest Green Rovers",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Pádraig Amond",
+          "team": "Grimsby Town",
+          "goals": 30
+        },
+        {
+          "name": "Dan Holman",
+          "team": "Cheltenham Town",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2016-17",
+      "status": "played",
+      "winner": "Lincoln City",
+      "runner_up": "Tranmere Rovers",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Ricky Miller",
+          "team": "Dover Athletic",
+          "goals": 40
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2017-18",
+      "status": "played",
+      "winner": "Macclesfield Town",
+      "runner_up": "Tranmere Rovers",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Andy Cook",
+          "team": "Tranmere Rovers",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2018-19",
+      "status": "played",
+      "winner": "Leyton Orient",
+      "runner_up": "Solihull Moors",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Danny Rowe",
+          "team": "AFC Fylde",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Braintree Town 3, Gateshead 9."
+    },
+    {
+      "season": "2019-20",
+      "status": "played",
+      "winner": "Barrow",
+      "runner_up": "Harrogate Town",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Scott Quigley",
+          "team": "Barrow",
+          "goals": 20
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Season curtailed by COVID-19 in March 2020; final table decided on points per game."
+    },
+    {
+      "season": "2020-21",
+      "status": "played",
+      "winner": "Sutton United",
+      "runner_up": "Torquay United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Michael Cheek",
+          "team": "Bromley",
+          "goals": 21
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Dover Athletic refused to play matches due to a lack of promised funding starting with their fixture on 30 January 2021. On 26 March 2021, it was announced the club would play no part in the rest of the season and all results would be expunged. Macclesfield were deducted 17 points for entering into an insolvency event the previous season, before being expelled from the league on 29 September 2020. At the time of their expulsion before the 2020–21 National League Season, they had played no matches."
+    },
+    {
+      "season": "2021-22",
+      "status": "played",
+      "winner": "Stockport County",
+      "runner_up": "Wrexham",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Paul Mullin",
+          "team": "Wrexham",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Paul Mullin",
+        "team": "Wrexham"
+      },
+      "notes": "Points deducted: Dover Athletic 12."
+    },
+    {
+      "season": "2022-23",
+      "status": "played",
+      "winner": "Wrexham",
+      "runner_up": "Notts County",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Macaulay Langstaff",
+          "team": "Notts County",
+          "goals": 42
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Macaulay Langstaff",
+        "team": "Notts County"
+      },
+      "notes": "Points deducted: Gateshead 1."
+    },
+    {
+      "season": "2023-24",
+      "status": "played",
+      "winner": "Chesterfield",
+      "runner_up": "Barnet",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Paul McCallum",
+          "team": "Eastleigh",
+          "goals": 31
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Chris Conn-Clarke",
+        "team": "Altrincham"
+      },
+      "notes": "Points deducted: Southend United 10."
+    },
+    {
+      "season": "2024-25",
+      "status": "played",
+      "winner": "Barnet",
+      "runner_up": "York City",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Ollie Pearce",
+          "team": "York City",
+          "goals": 31
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ollie Pearce",
+        "team": "York City"
+      },
+      "notes": "Season page table gives 31 (infobox 30); 31 also reported by DAZN."
+    },
+    {
+      "season": "2025-26",
+      "status": "played",
+      "winner": "York City",
+      "runner_up": "Rochdale",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Ollie Pearce",
+          "team": "York City",
+          "goals": 34
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ollie Pearce",
+        "team": "York City"
+      },
+      "notes": "Season page table and York City season page give 34 (infobox 31)."
+    }
+  ]
+}

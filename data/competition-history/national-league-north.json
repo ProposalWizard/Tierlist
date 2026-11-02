@@ -1,0 +1,348 @@
+{
+  "competition": "National League North",
+  "slug": "national-league-north",
+  "kind": "league",
+  "lineage_note": "English sixth tier (northern half), level with the other regional division. 2004-05 to 2014-15 = Conference North; 2015-16 on = National League North. 2020-21 declared null and void (no champion).",
+  "history_from": "2004-05",
+  "history_to": "2025-26",
+  "field_from": {
+    "runner_up": "2004-05",
+    "final_score": null,
+    "top_scorer": "2014-15",
+    "top_assister": null,
+    "player_of_season": "2022-23"
+  },
+  "player_of_season_award": "National League North Player of the Season (National League's own end-of-season awards); continuous run found only from 2022-23",
+  "sources": [
+    "https://en.wikipedia.org/wiki/National_League_North",
+    "https://www.fchd.info/lghist/nat.htm",
+    "Wikipedia 'YYYY-YY Football Conference' (Conference North section) and 'YYYY-YY National League' pages"
+  ],
+  "seasons": [
+    {
+      "season": "2004-05",
+      "name_then": "Conference North",
+      "status": "played",
+      "winner": "Southport",
+      "runner_up": "Nuneaton Borough",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Redditch United 3, Worksop Town 10."
+    },
+    {
+      "season": "2005-06",
+      "name_then": "Conference North",
+      "status": "played",
+      "winner": "Northwich Victoria",
+      "runner_up": "Stafford Rangers",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Leigh RMI 1."
+    },
+    {
+      "season": "2006-07",
+      "name_then": "Conference North",
+      "status": "played",
+      "winner": "Droylsden",
+      "runner_up": "Kettering Town",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Scarborough 10, Lancaster City 10."
+    },
+    {
+      "season": "2007-08",
+      "name_then": "Conference North",
+      "status": "played",
+      "winner": "Kettering Town",
+      "runner_up": "AFC Telford United",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2008-09",
+      "name_then": "Conference North",
+      "status": "played",
+      "winner": "Tamworth",
+      "runner_up": "Gateshead",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2009-10",
+      "name_then": "Conference North",
+      "status": "played",
+      "winner": "Southport",
+      "runner_up": "Fleetwood Town",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Northwich Victoria 10. Northwich Victoria were originally expelled from the Football Conference for going into administration, but they successfully appealed, and were allowed to play in the Conference North starting with a 10 point deduction. Farsley Celtic resigned on 8 March 2010 and their record (P30 W14 D2 L14 GF48 GA55 Pts34) was expunged on 12 March 2010. Prior to this Farsley were in administration and, like Northwich Victoria, had been allowed to play in the Conference North starting with a 10 point deduction."
+    },
+    {
+      "season": "2010-11",
+      "name_then": "Conference North",
+      "status": "played",
+      "winner": "Alfreton Town",
+      "runner_up": "AFC Telford United",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Redditch United 5. Ilkeston Town received a compulsory winding-up order on 8 September 2010, and the club was expelled from the league on 15 September. On 16 September, their record (PL7 W1 D3 L3 GF7 GA13 Pts7) was expunged. A new club Ilkeston was placed in the Northern Premier League Division One South."
+    },
+    {
+      "season": "2011-12",
+      "name_then": "Conference North",
+      "status": "played",
+      "winner": "Hyde",
+      "runner_up": "Guiseley",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Nuneaton Town 6."
+    },
+    {
+      "season": "2012-13",
+      "name_then": "Conference North",
+      "status": "played",
+      "winner": "Chester",
+      "runner_up": "Guiseley",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Solihull Moors 4, Workington 4, Hinckley United 6."
+    },
+    {
+      "season": "2013-14",
+      "name_then": "Conference North",
+      "status": "played",
+      "winner": "AFC Telford United",
+      "runner_up": "North Ferriby United",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Harrogate Town 3, Oxford City 3."
+    },
+    {
+      "season": "2014-15",
+      "name_then": "Conference North",
+      "status": "played",
+      "winner": "Barrow",
+      "runner_up": "AFC Fylde",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Omar Bogle",
+          "team": "Solihull Moors",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2015-16",
+      "status": "played",
+      "winner": "Solihull Moors",
+      "runner_up": "North Ferriby United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Dayle Southwell",
+          "team": "Boston United",
+          "goals": 24
+        },
+        {
+          "name": "Danny Rowe",
+          "team": "AFC Fylde",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2016-17",
+      "status": "played",
+      "winner": "AFC Fylde",
+      "runner_up": "Kidderminster Harriers",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Danny Rowe",
+          "team": "AFC Fylde",
+          "goals": 47
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2017-18",
+      "status": "played",
+      "winner": "Salford City",
+      "runner_up": "Harrogate Town",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Jason Gilchrist",
+          "team": "Southport",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2018-19",
+      "status": "played",
+      "winner": "Stockport County",
+      "runner_up": "Chorley",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Glen Taylor",
+          "team": "Spennymoor Town",
+          "goals": 21
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2019-20",
+      "status": "played",
+      "winner": "King's Lynn Town",
+      "runner_up": "York City",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Adam Marriott",
+          "team": "King's Lynn Town",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Season curtailed by COVID-19 in March 2020; final table decided on points per game: King's Lynn Town (64 pts from 32 games) above York City (66 from 34)."
+    },
+    {
+      "season": "2020-21",
+      "status": "played",
+      "winner": null,
+      "runner_up": null,
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Season curtailed by COVID-19 and declared null and void (February 2021); results expunged, no champion, no promotion or relegation. Recorded as 'played' with no winner, runner-up or top scorer; this is not a gap."
+    },
+    {
+      "season": "2021-22",
+      "status": "played",
+      "winner": "Gateshead",
+      "runner_up": "Brackley Town",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Macaulay Langstaff",
+          "team": "Gateshead",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2022-23",
+      "status": "played",
+      "winner": "AFC Fylde",
+      "runner_up": "King's Lynn Town",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Nick Haughton",
+          "team": "AFC Fylde",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Nick Haughton",
+        "team": "AFC Fylde"
+      }
+    },
+    {
+      "season": "2023-24",
+      "status": "played",
+      "winner": "Tamworth",
+      "runner_up": "Scunthorpe United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Paul Blackett",
+          "team": "South Shields",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Paul Blackett",
+        "team": "South Shields"
+      },
+      "notes": "Season page table gives 30 (infobox 29)."
+    },
+    {
+      "season": "2024-25",
+      "status": "played",
+      "winner": "Brackley Town",
+      "runner_up": "Scunthorpe United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Ashley Hemmings",
+          "team": "Kidderminster Harriers",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ashley Hemmings",
+        "team": "Kidderminster Harriers"
+      }
+    },
+    {
+      "season": "2025-26",
+      "status": "played",
+      "winner": "AFC Fylde",
+      "runner_up": "South Shields",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Paul Blackett",
+          "team": "South Shields",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Danny Ormerod",
+        "team": "AFC Fylde"
+      }
+    }
+  ]
+}

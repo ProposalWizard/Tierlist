@@ -1,0 +1,356 @@
+{
+  "competition": "National League South",
+  "slug": "national-league-south",
+  "kind": "league",
+  "lineage_note": "English sixth tier (southern half), level with the other regional division. 2004-05 to 2014-15 = Conference South; 2015-16 on = National League South. 2020-21 declared null and void (no champion).",
+  "history_from": "2004-05",
+  "history_to": "2025-26",
+  "field_from": {
+    "runner_up": "2004-05",
+    "final_score": null,
+    "top_scorer": "2014-15",
+    "top_assister": null,
+    "player_of_season": "2022-23"
+  },
+  "player_of_season_award": "National League South Player of the Season (National League's own end-of-season awards); continuous run found only from 2022-23",
+  "sources": [
+    "https://en.wikipedia.org/wiki/National_League_South",
+    "https://www.fchd.info/lghist/nat.htm",
+    "Wikipedia 'YYYY-YY Football Conference' (Conference South section) and 'YYYY-YY National League' pages",
+    "https://www.havantandwaterloovillefc.co.uk/?p=7503",
+    "https://www.pressreader.com/uk/the-non-league-football-paper/20200419/281968904822739"
+  ],
+  "seasons": [
+    {
+      "season": "2004-05",
+      "name_then": "Conference South",
+      "status": "played",
+      "winner": "Grays Athletic",
+      "runner_up": "Cambridge City",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Redbridge 3, Margate 10, Hornchurch 10."
+    },
+    {
+      "season": "2005-06",
+      "name_then": "Conference South",
+      "status": "played",
+      "winner": "Weymouth",
+      "runner_up": "St Albans City",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Weymouth 4, Havant & Waterlooville 3, Cambridge City 3, Maidenhead United 2."
+    },
+    {
+      "season": "2006-07",
+      "name_then": "Conference South",
+      "status": "played",
+      "winner": "Histon",
+      "runner_up": "Salisbury City",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Farnborough Town 10."
+    },
+    {
+      "season": "2007-08",
+      "name_then": "Conference South",
+      "status": "played",
+      "winner": "Lewes",
+      "runner_up": "Eastbourne Borough",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2008-09",
+      "name_then": "Conference South",
+      "status": "played",
+      "winner": "AFC Wimbledon",
+      "runner_up": "Hampton & Richmond Borough",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Bognor Regis Town 7."
+    },
+    {
+      "season": "2009-10",
+      "name_then": "Conference South",
+      "status": "played",
+      "winner": "Newport County",
+      "runner_up": "Dover Athletic",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2010-11",
+      "name_then": "Conference South",
+      "status": "played",
+      "winner": "Braintree Town",
+      "runner_up": "Farnborough",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Welling United 5, St Albans City 10."
+    },
+    {
+      "season": "2011-12",
+      "name_then": "Conference South",
+      "status": "played",
+      "winner": "Woking",
+      "runner_up": "Dartford",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Farnborough 5."
+    },
+    {
+      "season": "2012-13",
+      "name_then": "Conference South",
+      "status": "played",
+      "winner": "Welling United",
+      "runner_up": "Salisbury City",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Salisbury City 1, Farnborough 14, Truro City 10."
+    },
+    {
+      "season": "2013-14",
+      "name_then": "Conference South",
+      "status": "played",
+      "winner": "Eastleigh",
+      "runner_up": "Sutton United",
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2014-15",
+      "name_then": "Conference South",
+      "status": "played",
+      "winner": "Bromley",
+      "runner_up": "Boreham Wood",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Justin Bennett",
+          "team": "Gosport Borough",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2015-16",
+      "status": "played",
+      "winner": "Sutton United",
+      "runner_up": "Ebbsfleet United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Elliott Buchanan",
+          "team": "Bishop's Stortford",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2016-17",
+      "status": "played",
+      "winner": "Maidenhead United",
+      "runner_up": "Ebbsfleet United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Dave Tarpey",
+          "team": "Maidenhead United",
+          "goals": 44
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2017-18",
+      "status": "played",
+      "winner": "Havant & Waterlooville",
+      "runner_up": "Dartford",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Sam Higgins",
+          "team": "East Thurrock United",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2018-19",
+      "status": "played",
+      "winner": "Torquay United",
+      "runner_up": "Woking",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Jamie Reid",
+          "team": "Torquay United",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Concord Rangers 3."
+    },
+    {
+      "season": "2019-20",
+      "status": "played",
+      "winner": "Wealdstone",
+      "runner_up": "Havant & Waterlooville",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Darren McQueen",
+          "team": "Dartford",
+          "goals": 17
+        },
+        {
+          "name": "Jonah Ayunga",
+          "team": "Havant & Waterlooville",
+          "goals": 17
+        },
+        {
+          "name": "Joe Iaciofano",
+          "team": "St Albans City",
+          "goals": 17
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Season curtailed by COVID-19 in March 2020; final table decided on points per game. Three joint Golden Boot winners on 17 league goals (National League and club reports; no Wikipedia table for this season)."
+    },
+    {
+      "season": "2020-21",
+      "status": "played",
+      "winner": null,
+      "runner_up": null,
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Season curtailed by COVID-19 and declared null and void (February 2021); results expunged, no champion, no promotion or relegation. Recorded as 'played' with no winner, runner-up or top scorer; this is not a gap."
+    },
+    {
+      "season": "2021-22",
+      "status": "played",
+      "winner": "Maidstone United",
+      "runner_up": "Dorking Wanderers",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Alfie Rutherford",
+          "team": "Dorking Wanderers",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2022-23",
+      "status": "played",
+      "winner": "Ebbsfleet United",
+      "runner_up": "Dartford",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Dominic Poleon",
+          "team": "Ebbsfleet United",
+          "goals": 36
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Dominic Poleon",
+        "team": "Ebbsfleet United"
+      },
+      "notes": "Points deducted: Welling United 1."
+    },
+    {
+      "season": "2023-24",
+      "status": "played",
+      "winner": "Yeovil Town",
+      "runner_up": "Chelmsford City",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Ollie Pearce",
+          "team": "Worthing",
+          "goals": 40
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ollie Pearce",
+        "team": "Worthing"
+      },
+      "notes": "Points deducted: Torquay United 11."
+    },
+    {
+      "season": "2024-25",
+      "status": "played",
+      "winner": "Truro City",
+      "runner_up": "Torquay United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Tyler Harvey",
+          "team": "Truro City",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Tyler Harvey",
+        "team": "Truro City"
+      }
+    },
+    {
+      "season": "2025-26",
+      "status": "played",
+      "winner": "Worthing",
+      "runner_up": "Hornchurch",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Brad Dolaghan",
+          "team": "Worthing",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ángelo Balanta",
+        "team": "Hornchurch"
+      }
+    }
+  ]
+}

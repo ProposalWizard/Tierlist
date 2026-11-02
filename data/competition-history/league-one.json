@@ -1,0 +1,1294 @@
+{
+  "competition": "League One",
+  "slug": "league-one",
+  "kind": "league",
+  "lineage_note": "English third tier. 1958-59 to 1991-92 = Football League Third Division (first unified season; 1921-1958 the tier was split into Third Division North and South, two champions a season, so not included); 1992-93 to 2003-04 = Football League Second Division; 2004-05 on = League One (Football League One, EFL League One from 2016-17).",
+  "history_from": "1958-59",
+  "history_to": "2025-26",
+  "field_from": {
+    "runner_up": "1958-59",
+    "final_score": null,
+    "top_scorer": "1958-59",
+    "top_assister": null,
+    "player_of_season": "2005-06"
+  },
+  "player_of_season_award": "Football League Awards / EFL Awards League One Player of the Year (Player of the Season from 2016-17); first awarded March 2006 for 2005-06",
+  "sources": [
+    "https://en.wikipedia.org/wiki/List_of_winners_of_the_EFL_League_One_and_predecessors",
+    "https://en.wikipedia.org/wiki/EFL_League_One",
+    "Wikipedia 'YYYY-YY Football League' season pages (1958-59 to 2003-04) and 'YYYY-YY Football League One / EFL League One' pages (2004-05 on)",
+    "https://www.rsssf.org/tablese/engtops.html",
+    "https://www.fchd.info/lghist/efl.htm",
+    "https://en.wikipedia.org/wiki/EFL_Awards"
+  ],
+  "seasons": [
+    {
+      "season": "1958-59",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Plymouth Argyle",
+      "runner_up": "Hull City",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Jim Towers",
+          "team": "Brentford",
+          "goals": 32
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1959-60",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Southampton",
+      "runner_up": "Norwich City",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Derek Reeves",
+          "team": "Southampton",
+          "goals": 39
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1960-61",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Bury",
+      "runner_up": "Walsall",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Tony Richards",
+          "team": "Walsall",
+          "goals": 36
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1961-62",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Portsmouth",
+      "runner_up": "Grimsby Town",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Cliff Holton",
+          "team": "Watford / Northampton Town",
+          "goals": 37
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1962-63",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Northampton Town",
+      "runner_up": "Swindon Town",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "George Hudson",
+          "team": "Peterborough United / Coventry City",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Top-scorer club differs by source: Wikipedia season page says Peterborough United, RSSSF says Coventry City (he moved during 1962-63); goals agree (30)."
+    },
+    {
+      "season": "1963-64",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Coventry City",
+      "runner_up": "Crystal Palace",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Alfie Biggs",
+          "team": "Bristol Rovers",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1964-65",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Carlisle United",
+      "runner_up": "Bristol City",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Ken Wagstaff",
+          "team": "Mansfield Town / Hull City",
+          "goals": 35
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1965-66",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Hull City",
+      "runner_up": "Millwall",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Les Allen",
+          "team": "Queens Park Rangers",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1966-67",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Queens Park Rangers",
+      "runner_up": "Middlesbrough",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Rodney Marsh",
+          "team": "Queens Park Rangers",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1967-68",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Oxford United",
+      "runner_up": "Bury",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Don Rogers",
+          "team": "Swindon Town",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Peterborough United 19."
+    },
+    {
+      "season": "1968-69",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Watford",
+      "runner_up": "Swindon Town",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Don Rogers",
+          "team": "Swindon Town",
+          "goals": 22
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1969-70",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Orient",
+      "runner_up": "Luton Town",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "George Jones",
+          "team": "Bury",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1970-71",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Preston North End",
+      "runner_up": "Fulham",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Gerry Ingram",
+          "team": "Preston North End",
+          "goals": 22
+        },
+        {
+          "name": "Dudley Roberts",
+          "team": "Mansfield Town",
+          "goals": 22
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1971-72",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Aston Villa",
+      "runner_up": "Brighton & Hove Albion",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Ted MacDougall",
+          "team": "Bournemouth & Boscombe Athletic",
+          "goals": 35
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1972-73",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Bolton Wanderers",
+      "runner_up": "Notts County",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Arthur Horsfield",
+          "team": "Charlton Athletic",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1973-74",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Oldham Athletic",
+      "runner_up": "Bristol Rovers",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Billy Jennings",
+          "team": "Watford",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1974-75",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Blackburn Rovers",
+      "runner_up": "Plymouth Argyle",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Dixie McNeil",
+          "team": "Hereford United",
+          "goals": 31
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1975-76",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Hereford United",
+      "runner_up": "Cardiff City",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Dixie McNeil",
+          "team": "Hereford United",
+          "goals": 35
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1976-77",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Mansfield Town",
+      "runner_up": "Brighton & Hove Albion",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Peter Ward",
+          "team": "Brighton & Hove Albion",
+          "goals": 32
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1977-78",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Wrexham",
+      "runner_up": "Cambridge United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Alex Bruce",
+          "team": "Preston North End",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1978-79",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Shrewsbury Town",
+      "runner_up": "Watford",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Ross Jenkins",
+          "team": "Watford",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1979-80",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Grimsby Town",
+      "runner_up": "Blackburn Rovers",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Terry Curran",
+          "team": "Sheffield Wednesday",
+          "goals": 22
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1980-81",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Rotherham United",
+      "runner_up": "Barnsley",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Tony Kellow",
+          "team": "Exeter City",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1981-82",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Burnley",
+      "runner_up": "Carlisle United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Gordon Davies",
+          "team": "Fulham",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Bristol Rovers 2."
+    },
+    {
+      "season": "1982-83",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Portsmouth",
+      "runner_up": "Cardiff City",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Kerry Dixon",
+          "team": "Reading",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1983-84",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Oxford United",
+      "runner_up": "Wimbledon",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Keith Edwards",
+          "team": "Sheffield United",
+          "goals": 33
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1984-85",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Bradford City",
+      "runner_up": "Millwall",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Tommy Tynan",
+          "team": "Plymouth Argyle",
+          "goals": 31
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1985-86",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Reading",
+      "runner_up": "Plymouth Argyle",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Trevor Senior",
+          "team": "Reading",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1986-87",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "AFC Bournemouth",
+      "runner_up": "Middlesbrough",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Andy Jones",
+          "team": "Port Vale",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1987-88",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Sunderland",
+      "runner_up": "Brighton & Hove Albion",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "David Crown",
+          "team": "Southend United",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1988-89",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Wolverhampton Wanderers",
+      "runner_up": "Sheffield United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Steve Bull",
+          "team": "Wolverhampton Wanderers",
+          "goals": 37
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1989-90",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Bristol Rovers",
+      "runner_up": "Bristol City",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Bob Taylor",
+          "team": "Bristol City",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1990-91",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Cambridge United",
+      "runner_up": "Southend United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Brett Angell",
+          "team": "Southend United",
+          "goals": 26
+        },
+        {
+          "name": "Tony Philliskirk",
+          "team": "Bolton Wanderers",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1991-92",
+      "name_then": "Football League Third Division",
+      "status": "played",
+      "winner": "Brentford",
+      "runner_up": "Birmingham City",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Dean Holdsworth",
+          "team": "Brentford",
+          "goals": 24
+        },
+        {
+          "name": "Iwan Roberts",
+          "team": "Huddersfield Town",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1992-93",
+      "name_then": "Football League Second Division",
+      "status": "played",
+      "winner": "Stoke City",
+      "runner_up": "Bolton Wanderers",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Bob Taylor",
+          "team": "West Bromwich Albion",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1993-94",
+      "name_then": "Football League Second Division",
+      "status": "played",
+      "winner": "Reading",
+      "runner_up": "Port Vale",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Jimmy Quinn",
+          "team": "Reading",
+          "goals": 35
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1994-95",
+      "name_then": "Football League Second Division",
+      "status": "played",
+      "winner": "Birmingham City",
+      "runner_up": "Brentford",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Gary Bennett",
+          "team": "Wrexham",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1995-96",
+      "name_then": "Football League Second Division",
+      "status": "played",
+      "winner": "Swindon Town",
+      "runner_up": "Oxford United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Marcus Stewart",
+          "team": "Bristol Rovers",
+          "goals": 21
+        },
+        {
+          "name": "Gary Martindale",
+          "team": "Peterborough United / Notts County",
+          "goals": 21
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1996-97",
+      "name_then": "Football League Second Division",
+      "status": "played",
+      "winner": "Bury",
+      "runner_up": "Stockport County",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Tony Thorpe",
+          "team": "Luton Town",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1997-98",
+      "name_then": "Football League Second Division",
+      "status": "played",
+      "winner": "Watford",
+      "runner_up": "Bristol City",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Barry Hayles",
+          "team": "Bristol Rovers",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1998-99",
+      "name_then": "Football League Second Division",
+      "status": "played",
+      "winner": "Fulham",
+      "runner_up": "Walsall",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Jamie Cureton",
+          "team": "Bristol Rovers",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1999-00",
+      "name_then": "Football League Second Division",
+      "status": "played",
+      "winner": "Preston North End",
+      "runner_up": "Burnley",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Andy Payton",
+          "team": "Burnley",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2000-01",
+      "name_then": "Football League Second Division",
+      "status": "played",
+      "winner": "Millwall",
+      "runner_up": "Rotherham United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Neil Harris",
+          "team": "Millwall",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2001-02",
+      "name_then": "Football League Second Division",
+      "status": "played",
+      "winner": "Brighton & Hove Albion",
+      "runner_up": "Reading",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Bobby Zamora",
+          "team": "Brighton & Hove Albion",
+          "goals": 28
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2002-03",
+      "name_then": "Football League Second Division",
+      "status": "played",
+      "winner": "Wigan Athletic",
+      "runner_up": "Crewe Alexandra",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Robert Earnshaw",
+          "team": "Cardiff City",
+          "goals": 31
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2003-04",
+      "name_then": "Football League Second Division",
+      "status": "played",
+      "winner": "Plymouth Argyle",
+      "runner_up": "Queens Park Rangers",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Leon Knight",
+          "team": "Brighton & Hove Albion",
+          "goals": 25
+        },
+        {
+          "name": "Stephen McPhee",
+          "team": "Port Vale",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2004-05",
+      "name_then": "Football League One",
+      "status": "played",
+      "winner": "Luton Town",
+      "runner_up": "Hull City",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Stuart Elliott",
+          "team": "Hull City",
+          "goals": 27
+        },
+        {
+          "name": "Dean Windass",
+          "team": "Bradford City",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Points deducted: Wrexham 10."
+    },
+    {
+      "season": "2005-06",
+      "name_then": "Football League One",
+      "status": "played",
+      "winner": "Southend United",
+      "runner_up": "Colchester United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Freddy Eastwood",
+          "team": "Southend United",
+          "goals": 23
+        },
+        {
+          "name": "Billy Sharp",
+          "team": "Scunthorpe United",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Lee Trundle",
+        "team": "Swansea City"
+      }
+    },
+    {
+      "season": "2006-07",
+      "name_then": "Football League One",
+      "status": "played",
+      "winner": "Scunthorpe United",
+      "runner_up": "Bristol City",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Billy Sharp",
+          "team": "Scunthorpe United",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Billy Sharp",
+        "team": "Scunthorpe United"
+      },
+      "notes": "Points deducted: Rotherham United 10."
+    },
+    {
+      "season": "2007-08",
+      "name_then": "Football League One",
+      "status": "played",
+      "winner": "Swansea City",
+      "runner_up": "Nottingham Forest",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Jason Scotland",
+          "team": "Swansea City",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Jermaine Beckford",
+        "team": "Leeds United"
+      },
+      "notes": "Points deducted: Leeds United 15, AFC Bournemouth 10, Luton Town 10."
+    },
+    {
+      "season": "2008-09",
+      "name_then": "Football League One",
+      "status": "played",
+      "winner": "Leicester City",
+      "runner_up": "Peterborough United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Simon Cox",
+          "team": "Swindon Town",
+          "goals": 29
+        },
+        {
+          "name": "Rickie Lambert",
+          "team": "Bristol Rovers",
+          "goals": 29
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Matt Fryatt",
+        "team": "Leicester City"
+      },
+      "notes": "Points deducted: Stockport County 10."
+    },
+    {
+      "season": "2009-10",
+      "name_then": "Football League One",
+      "status": "played",
+      "winner": "Norwich City",
+      "runner_up": "Leeds United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Rickie Lambert",
+          "team": "Southampton",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Jermaine Beckford",
+        "team": "Leeds United"
+      },
+      "notes": "Points deducted: Southampton 10, Hartlepool United 3."
+    },
+    {
+      "season": "2010-11",
+      "name_then": "Football League One",
+      "status": "played",
+      "winner": "Brighton & Hove Albion",
+      "runner_up": "Southampton",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Craig Mackail-Smith",
+          "team": "Peterborough United",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Craig Mackail-Smith",
+        "team": "Peterborough United"
+      },
+      "notes": "Points deducted: Plymouth Argyle 10."
+    },
+    {
+      "season": "2011-12",
+      "name_then": "Football League One",
+      "status": "played",
+      "winner": "Charlton Athletic",
+      "runner_up": "Sheffield Wednesday",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Jordan Rhodes",
+          "team": "Huddersfield Town",
+          "goals": 36
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Jordan Rhodes",
+        "team": "Huddersfield Town"
+      }
+    },
+    {
+      "season": "2012-13",
+      "name_then": "Football League One",
+      "status": "played",
+      "winner": "Doncaster Rovers",
+      "runner_up": "AFC Bournemouth",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Paddy Madden",
+          "team": "Carlisle United / Yeovil Town",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Matt Ritchie",
+        "team": "AFC Bournemouth"
+      },
+      "notes": "Madden's 23 includes 1 goal for Carlisle United before joining Yeovil Town (EFL main page lists 22 for Yeovil only)."
+    },
+    {
+      "season": "2013-14",
+      "name_then": "Football League One",
+      "status": "played",
+      "winner": "Wolverhampton Wanderers",
+      "runner_up": "Brentford",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Sam Baldock",
+          "team": "Bristol City",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Adam Forshaw",
+        "team": "Brentford"
+      }
+    },
+    {
+      "season": "2014-15",
+      "name_then": "Football League One",
+      "status": "played",
+      "winner": "Bristol City",
+      "runner_up": "Milton Keynes Dons",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Joe Garner",
+          "team": "Preston North End",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Joe Garner",
+        "team": "Preston North End"
+      },
+      "notes": "Sources differ: League One season page and infobox give Garner 25 league goals; the League One article's table and Preston's season page give 26."
+    },
+    {
+      "season": "2015-16",
+      "name_then": "Football League One",
+      "status": "played",
+      "winner": "Wigan Athletic",
+      "runner_up": "Burton Albion",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Will Grigg",
+          "team": "Wigan Athletic",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Bradley Dack",
+        "team": "Gillingham"
+      },
+      "notes": "Points deducted: Bury 3."
+    },
+    {
+      "season": "2016-17",
+      "status": "played",
+      "winner": "Sheffield United",
+      "runner_up": "Bolton Wanderers",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Billy Sharp",
+          "team": "Sheffield United",
+          "goals": 30
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Billy Sharp",
+        "team": "Sheffield United"
+      }
+    },
+    {
+      "season": "2017-18",
+      "status": "played",
+      "winner": "Wigan Athletic",
+      "runner_up": "Blackburn Rovers",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Jack Marriott",
+          "team": "Peterborough United",
+          "goals": 27
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Bradley Dack",
+        "team": "Blackburn Rovers"
+      }
+    },
+    {
+      "season": "2018-19",
+      "status": "played",
+      "winner": "Luton Town",
+      "runner_up": "Barnsley",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "James Collins",
+          "team": "Luton Town",
+          "goals": 25
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "James Collins",
+        "team": "Luton Town"
+      }
+    },
+    {
+      "season": "2019-20",
+      "status": "played",
+      "winner": "Coventry City",
+      "runner_up": "Rotherham United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Ivan Toney",
+          "team": "Peterborough United",
+          "goals": 24
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ivan Toney",
+        "team": "Peterborough United"
+      },
+      "notes": "Season curtailed by COVID-19 in March 2020; final table decided on points per game. Bury were expelled from the EFL in August 2019 without playing a game. Points deducted: Bolton Wanderers 12, Bury 12. Bury deducted 12 points for entering into an insolvency event, before later being expelled from the EFL on 27 August 2019. At the time of their expulsion, they had played no matches."
+    },
+    {
+      "season": "2020-21",
+      "status": "played",
+      "winner": "Hull City",
+      "runner_up": "Peterborough United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Jonson Clarke-Harris",
+          "team": "Peterborough United",
+          "goals": 31
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Jonson Clarke-Harris",
+        "team": "Peterborough United"
+      }
+    },
+    {
+      "season": "2021-22",
+      "status": "played",
+      "winner": "Wigan Athletic",
+      "runner_up": "Rotherham United",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Will Keane",
+          "team": "Wigan Athletic",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Scott Twine",
+        "team": "Milton Keynes Dons"
+      }
+    },
+    {
+      "season": "2022-23",
+      "status": "played",
+      "winner": "Plymouth Argyle",
+      "runner_up": "Ipswich Town",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Conor Chaplin",
+          "team": "Ipswich Town",
+          "goals": 26
+        },
+        {
+          "name": "Jonson Clarke-Harris",
+          "team": "Peterborough United",
+          "goals": 26
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Aaron Collins",
+        "team": "Bristol Rovers"
+      }
+    },
+    {
+      "season": "2023-24",
+      "status": "played",
+      "winner": "Portsmouth",
+      "runner_up": "Derby County",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Alfie May",
+          "team": "Charlton Athletic",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Harrison Burrows",
+        "team": "Peterborough United"
+      },
+      "notes": "Points deducted: Wigan Athletic 8, Reading 6."
+    },
+    {
+      "season": "2024-25",
+      "status": "played",
+      "winner": "Birmingham City",
+      "runner_up": "Wrexham",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Charlie Kelman",
+          "team": "Leyton Orient",
+          "goals": 21
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Richard Kone",
+        "team": "Wycombe Wanderers"
+      }
+    },
+    {
+      "season": "2025-26",
+      "status": "played",
+      "winner": "Lincoln City",
+      "runner_up": "Cardiff City",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Dom Ballard",
+          "team": "Leyton Orient",
+          "goals": 23
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Dom Ballard",
+        "team": "Leyton Orient"
+      }
+    }
+  ]
+}
