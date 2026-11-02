@@ -5,9 +5,11 @@ import { publishFavourites, unpublishFavourites } from "@/lib/star/favouriteGoal
 import { leoUpdateOn, useLeoUpdate, leoUpdateLocal, adoptLeoUpdate, LEO_UPDATE_EVENT } from "@/lib/star/leoUpdate";
 import { preloadScene } from "@/lib/star/three3d/perf";
 import { useUiLook, useUiVersionOrNull } from "@/lib/star/uiLook";
+import { useUiSkin } from "@/lib/star/uiSkin";
 import { pitchFont } from "@/components/star/ui/pitchFont";
 import "@/components/star/ui/pitchLook.css";
 import "@/components/star/ui/flat.css";
+import "@/components/star/ui/glassLook.css";
 import { freshItem, isWornOut } from "@/lib/star/fame";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { setToonYou, yourToonBody, yourToonHead } from "@/lib/star/style3d/toon/bodies";
@@ -430,11 +432,13 @@ function NewUiStarDevPage() {
   // green and chalk-lined (lib/star/uiLook.ts, pitchLook.css). Always on here —
   // the Old UI is a different page (see StarDevPage at the bottom).
   const look = useUiLook();
+  // Harry, 1 Nov 2026: the Glass skin (default) sits on top of the pitch look (lib/star/uiSkin.ts, glassLook.css).
+  const skin = useUiSkin();
   // No text highlighting while you drag and tap (Mikey, 28 Sep 2026: on PC
   // "the dragging feature does also do the same thing as highlighting
   // words"). Typing in a box still works — inputs keep their own selection.
   return (
-    <div className={`select-none [&_input]:select-text [&_textarea]:select-text star-root ${pitchFont.variable} ${look === "pitch" ? "star-look-pitch" : ""}`}>
+    <div className={`select-none [&_input]:select-text [&_textarea]:select-text star-root ${pitchFont.variable} ${look === "pitch" ? "star-look-pitch" : ""}${look === "pitch" && skin === "glass" ? " star-skin-glass" : ""}`}>
       <StarDevInner immersive={immersive} />
     </div>
   );

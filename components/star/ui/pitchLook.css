@@ -505,3 +505,69 @@
 .star-look-pitch .bg-black\/40 { background-color: rgba(var(--sk-tint-rgb), .38); }
 .star-look-pitch .bg-black\/45 { background-color: rgba(var(--sk-tint-rgb), .42); }
 .star-look-pitch .bg-black\/50 { background-color: rgba(var(--sk-tint-rgb), .46); }
+
+/* STADIUM BACKDROP (Harry, 1 Nov 2026, live share V6L7BU: picked B for the
+   desktop edges and 3 "Stadium top" for the phone, then "the text and boxes
+   need to be clearer for sure"). Pictures: docs/stills/stats-bg/B-*.png,
+   docs/stills/phone-bg/3-*.png, built: docs/stills/stadium-bg-built/.
+   - Desktop: outside the phone-width column is the title stadium, blurred
+     and darkened, so the edges stop looking like the same pitch.
+   - Inside the column (all a phone sees): the blurred day stadium fills the
+     top half and fades into the same green stripes (the 1 Oct "green,
+     lighter" ruling still holds below it).
+   - Over it, panels are more solid, with a light edge and a soft shadow, and
+     small headings/labels carry a dark shadow, so text stays readable.
+   Reaches: the dashboard pages (DashboardShell: Stats, Home's side pages,
+   League, Phone) and any Screen given `stadium` (Settings). Never the calm
+   tone (shop, store, casino paint their own floor), the Old UI, or a canvas. */
+.star-look-pitch .sk-shell:not([data-sk-tone="calm"] .sk-shell) {
+  position: relative;
+  background: #0b1a12 !important;
+}
+.star-look-pitch .sk-shell:not([data-sk-tone="calm"] .sk-shell)::before {
+  content: ""; position: fixed; inset: -40px; z-index: 0; pointer-events: none;
+  background: url(/home/title-stadium-day.webp) center 40% / cover no-repeat;
+  filter: blur(12px) brightness(.55) saturate(1.1);
+}
+.star-look-pitch .sk-shell:not([data-sk-tone="calm"] .sk-shell) > .max-w-md,
+.star-look-pitch .sk-stadium-screen {
+  position: relative; z-index: 1; isolation: isolate;
+  background: var(--sk-page);
+}
+.star-look-pitch .sk-shell:not([data-sk-tone="calm"] .sk-shell) > .max-w-md {
+  box-shadow: 0 0 0 1px rgba(255,255,255,.18), 0 0 60px 10px rgba(0,0,0,.55);
+}
+.star-look-pitch .sk-shell:not([data-sk-tone="calm"] .sk-shell) > .max-w-md::before,
+.star-look-pitch .sk-stadium-screen::before {
+  content: ""; position: absolute; left: -20px; right: -20px; top: 0; height: 58vh; z-index: -1; pointer-events: none;
+  background: url(/home/title-stadium-day.webp) center 30% / cover no-repeat;
+  filter: blur(5px) brightness(.82) saturate(1.05);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+}
+.star-look-pitch .sk-stadium-screen::before { position: fixed; left: 0; right: 0; }
+/* The Screen's own night backdrop would hide the stadium: let the page show. */
+.star-look-pitch .sk-stadium-screen > [aria-hidden].fixed { display: none; }
+
+/* Clearer text and boxes over the stadium. */
+.star-look-pitch .sk-shell:not([data-sk-tone="calm"] .sk-shell) > .max-w-md,
+.star-look-pitch .sk-stadium-screen {
+  --sk-card: linear-gradient(180deg, rgba(6,52,26,.84), rgba(6,46,23,.76));
+  --sk-chalk: rgba(255,255,255,.42);
+  --sk-lift: 0 8px 18px -10px rgba(0,0,0,.75), 0 2px 5px rgba(0,0,0,.35);
+  --sk-flat-alpha: .72;
+  --sk-edge: rgba(255,255,255,.30);
+}
+/* Only light text gets the dark shadow (dark text on the light top bar, the
+   gold buttons or the player card would smudge), never clipped-gradient text. */
+.star-look-pitch .sk-shell:not([data-sk-tone="calm"] .sk-shell) > .max-w-md :is(.uppercase, [class*="tracking-"]):is([class*="text-white"], [class*="text-amber-"], [class*="text-yellow-"], [class*="text-emerald-"], [class*="text-green-"], [class*="text-lime-"], [class*="text-sky-"], [data-sk-kicker]):not(.text-transparent, .sk-top *, [data-player-card] *),
+.star-look-pitch .sk-stadium-screen :is(.uppercase, [class*="tracking-"]):is([class*="text-white"], [class*="text-amber-"], [class*="text-yellow-"], [class*="text-emerald-"], [class*="text-green-"], [class*="text-lime-"], [class*="text-sky-"], [data-sk-kicker]):not(.text-transparent, .sk-top *, [data-player-card] *) {
+  text-shadow: 0 1px 2px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.55);
+}
+/* The screen title (white gradient text) and its kicker sit on a dark band
+   so they read over the bright sky. */
+.star-look-pitch .sk-stadium-screen [data-sk-header] > .min-w-0 {
+  justify-self: center; padding: 2px 12px 4px; border-radius: 10px;
+  background: rgba(4,30,16,.62); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14);
+}
+.star-look-pitch .sk-stadium-screen [data-sk-kicker] { filter: brightness(1.35) saturate(1.1); }

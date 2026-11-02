@@ -216,11 +216,20 @@ function World3dGroup() {
   );
 }
 
-/** Screens: Old UI or New UI. */
+/** Screens: Old UI or New UI, and the New UI's look (Glass or Pitch). */
 function ScreensGroup() {
   const look = useLook();
-  return <LookRow id="ui" look={look} tabs={NEW_OLD} note="Old: the game as it was before v0.23, kept as a backup. Same save." />;
+  return (
+    <>
+      <LookRow id="ui" look={look} tabs={NEW_OLD} note="Old: the game as it was before v0.23, kept as a backup. Same save." />
+      {look.ui === "new" && (
+        <LookRow id="skin" look={look} tabs={UI_SKINS} note="Glass: the stadium behind every screen, frosted cards. Pitch: the green stripes. Same screens, same save." />
+      )}
+    </>
+  );
 }
+
+const UI_SKINS = [["glass", "Glass"], ["pitch", "Pitch"]] as const;
 
 export interface ExtraGroup {
   id: string;

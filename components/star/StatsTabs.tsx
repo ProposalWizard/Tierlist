@@ -235,7 +235,7 @@ function EmptyShelf() {
   return (
     <div className="grid grid-cols-4 gap-1.5">
       {[0, 1, 2, 3].map((k) => (
-        <div key={k} className="h-[66px]" style={{ background: "rgba(0,0,0,.5)", boxShadow: "inset 0 -3px 0 rgba(120,72,24,.5), inset 0 0 0 1px rgba(255,255,255,.05)" }} />
+        <div key={k} className="sk-shelf h-[66px]" style={{ background: "rgba(0,0,0,.5)", boxShadow: "inset 0 -3px 0 rgba(120,72,24,.5), inset 0 0 0 1px rgba(255,255,255,.05)" }} />
       ))}
     </div>
   );

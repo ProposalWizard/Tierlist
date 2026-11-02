@@ -27,6 +27,191 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.137",
+      "title": "Harry's patch notes: Glass UI, real football, quicker test check",
+      "author": "Harry",
+      "publishedAt": "2026-11-01T21:43:09Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/XzJ588o9s1tsQWGd3kAcwR",
+      "summary": "Glass stadium is the new look: a blurred day stadium behind every career screen, frosted-glass cards and bars, white text, a glowing green PLAY. Settings → Screens → UI look: Glass | Pitch (Glass for anyone who has not picked). The 3D ball is now a real football (12 black, 20 white patches) and the title screen shows one ball, not two. The Pitch look gets a blurred stadium too. New rule RUL-UI-007: a whole-game look may be a Settings choice. Small pushes to the site now run a quick check (about 10 minutes, not 30 to 40); the 5 tests that fail were already broken before this round.",
+      "stats": [
+        {
+          "value": "1",
+          "label": "look for every career screen"
+        },
+        {
+          "value": "12 + 20",
+          "label": "black and white patches on the ball"
+        },
+        {
+          "value": "30–40 → 10",
+          "label": "minutes for a small push"
+        },
+        {
+          "value": "5",
+          "label": "tests already broken, untouched"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The new Glass look on every career screen",
+              "detail": "Open any career → Home, Stats, League, Phone, Sponsors, Settings."
+            },
+            {
+              "title": "The new \"UI look: Glass | Pitch\" row",
+              "detail": "Settings → Screens, under \"UI: New | Old\"."
+            },
+            {
+              "title": "The real football",
+              "detail": "Title screen, Home, training ground, 3D play scenes."
+            },
+            {
+              "title": "Only one ball at your player's feet",
+              "detail": "Title screen."
+            },
+            {
+              "title": "Stadium behind the Pitch look",
+              "detail": "Settings → Screens → UI look: Pitch, then Stats on a phone and a computer."
+            },
+            {
+              "title": "Pushes go live in about 10 minutes",
+              "detail": "Nothing to tap: the next push to the site."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Glass stadium is the new default look",
+              "detail": "Blurred day stadium, frosted-glass cards and bars, white text, glowing green PLAY. On Home, Stats (Records, Achievements, Contract), League, Phone, Sponsors, Trophy Cabinet, Fame, Settings, Contract talks, Investments. Chosen from 3 full designs (Clean pitch, Matchday broadcast, Glass stadium).",
+              "more": {
+                "summary": "Which screens do not have it",
+                "points": [
+                  "On purpose: Shop, Store and Casino (charcoal), Training and drills (the pitch, team ruling), the match, the Old UI.",
+                  "Not yet: Transfer Hub (only opens in summer), Ballon d'Or night, Farewell, Deadline Day, the relationship games.",
+                  "Fixed from the preview: Settings no longer turns dark red; empty trophy shelves are light glass."
+                ]
+              }
+            },
+            {
+              "title": "Settings → Screens → UI look: Glass | Pitch",
+              "detail": "Under \"UI: New | Old\". Anyone who has not picked gets Glass."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "The 3D ball looked fake. Now it is a real football.",
+              "detail": "Was a white sphere with 6 black dots. Now 12 black and 20 white patches with thin seams, everywhere in 3D: title, Home, training ground, 3D play scenes, cut scenes. The 2D match and the frozen Old cut-scene look are unchanged."
+            },
+            {
+              "title": "Two balls at your feet on the title screen. Now one.",
+              "detail": "The flat ball picture hides when the 3D player shows."
+            },
+            {
+              "title": "A small push took 30 to 40 minutes. Now about 10.",
+              "detail": "Before: all 463 test files (16 min) plus the build. Now: a quick check that the code fits together (about 1 min), the guards, only the tests linked to the changed files, then the build. The 5 tests that fail (build-ups, fhr, five-a-side, long-range rules, real goals) also fail on the site without this round.",
+              "more": {
+                "summary": "The Glass push",
+                "points": [
+                  "7 linked tests ran. One (it counts the Settings rows) did not know the new UI look row; the row was added to its list and it passes with 17 rows, also on the older site.",
+                  "The full 463 still matter: suggestion, run them once a day and before big pushes."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "The Pitch look gets a stadium too",
+              "detail": "Computer: blurred stadium on the outer edges. Phone: stadium in the top half fading into green; more solid cards with a light edge and soft shadow; small labels get a dark shadow; the club name on Settings sits on a dark band. Only seen if you pick Pitch."
+            },
+            {
+              "title": "New rule RUL-UI-007: a whole-game look may be a Settings choice",
+              "detail": "Changes RUL-UI-001 (decide, don't toggle) only for whole looks. Gameplay and single features still get no New | Old row."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Home keeps its night stadium behind the player",
+              "detail": "Every other screen has the day stadium. Harry to decide."
+            },
+            {
+              "title": "Energy-can cards on Home are cut off at the bottom",
+              "detail": "Already so before Glass."
+            },
+            {
+              "title": "The Phone screen's drawn phone keeps a red club wallpaper"
+            },
+            {
+              "title": "The League banner stays club red"
+            },
+            {
+              "title": "Settings switch rows have hard-edged boxes"
+            },
+            {
+              "title": "Pictures use invented club data",
+              "detail": "No key to the real database in the test setup.",
+              "pill": {
+                "text": "not seen with real data",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "5 tests were already broken",
+              "detail": "build-ups, fhr, five-a-side, long-range rules, real goals.",
+              "pill": {
+                "text": "untouched",
+                "tone": "red"
+              }
+            },
+            {
+              "title": "The ball is not seen yet in training or cut scenes"
+            },
+            {
+              "title": "The quick check is not a Brain note yet",
+              "detail": "The push rule PRO-TEAM-001 still says run every test."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Harry: day stadium on Home, yes or no"
+            },
+            {
+              "title": "Fix the energy-can cards on Home"
+            },
+            {
+              "title": "Playtest Glass with real club data"
+            },
+            {
+              "title": "Write the quick check as a Brain note; run all 463 tests once a day"
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+    {
       "version": "0.136",
       "title": "Leo's patch notes: Test pages play like the real game",
       "author": "Leo",
