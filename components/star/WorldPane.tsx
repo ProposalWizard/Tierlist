@@ -5,7 +5,6 @@ import { ALL_DIVISIONS, divisionOf, leagueNameFor, type CareerDivision } from "@
 import { sortLeague, buildSeasonFixtures } from "@/lib/star/season";
 import { sortEuro } from "@/lib/star/euro";
 import type { CupState } from "@/lib/star/cups";
-import { koAggregate, type EuroBracket } from "@/lib/star/euroBracket";
 import { worldOf, finishWorld, WORLD_LIVE } from "@/lib/star/world";
 import { worldRoundResults } from "@/lib/star/world/leagues";
 import { compHistoryFor } from "@/lib/star/world/history";
@@ -21,6 +20,7 @@ import NationFlag from "./NationFlag";
 import IntlWorldPanel from "./IntlWorldPanel";
 import { NationTable, MatchRow, nationGlow } from "./IntlKit";
 import ClubBadge from "./ClubBadge";
+import { EuroKnockout, CupKnockout } from "./KnockoutTree";
 import { ClubCard, rgba, useClubTheme } from "./ui";
 import { SegTabs, CardTitle, youRowStyle } from "./screenKit";
 
@@ -398,36 +398,9 @@ function EuroView({ career, world, competition, glow, you }: { career: CareerSta
       {winner && <WinnerBar club={winner} glow={glow} />}
       <SegTabs value={tab} onChange={setTab} tabs={[["table", "League"], ["knockout", "Knockout"], ["goals", "Goals"], ["history", "History"]] as const} />
       {tab === "table" && (rows.length ? <Table rows={rows} glow={glow} you={you} zone={(p) => (p <= 8 ? "#10b981" : p <= 24 ? "#3b82f6" : "#ef4444")} /> : <Empty text="Not started yet." />)}
-      {tab === "knockout" && (bracket ? <Bracket bracket={bracket} glow={glow} you={you} /> : <Empty text="The knockout starts after the league phase." />)}
+      {tab === "knockout" && (bracket ? <EuroKnockout bracket={bracket} glow={glow} you={you} /> : <Empty text="The knockout starts after the league phase." />)}
       {tab === "goals" && (mine ? <Empty text="Scorers are kept for the competitions you're not in." /> : <Scorers rows={goals} glow={glow} label="goals" />)}
       {tab === "history" && <History career={career} comp={competition} glow={glow} you={you} />}
-    </div>
-  );
-}
-
-function Bracket({ bracket, glow, you }: { bracket: EuroBracket; glow: string; you: string }) {
-  const rounds = bracket.rounds.filter(r => r.ties.some(t => t.a && t.b));
-  return (
-    <div className="space-y-2">
-      {[...rounds].reverse().map(r => (
-        <ClubCard key={r.name} glow={glow} className="p-1.5">
-          <CardTitle className="px-1 pb-1" tone="text-amber-300">{r.name}</CardTitle>
-          <div className="space-y-1">
-            {r.ties.filter(t => t.a && t.b).map((t, i) => {
-              const agg = koAggregate(t);
-              const yours = t.a === you || t.b === you;
-              return (
-                <div key={i} className={`grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 rounded-lg px-1.5 py-1.5 text-[11px] font-bold text-white ${yours ? "" : "bg-white/[0.04]"}`} style={yours ? youRowStyle(glow) : undefined}>
-                  <span className={`truncate text-right ${t.winner === t.a ? "font-black" : "text-white/80"}`}>{shortClub(t.a!)}</span>
-                  <span className="rounded-md bg-black/45 px-1.5 py-0.5 font-black tabular-nums">{agg ? `${agg.a}-${agg.b}` : "v"}</span>
-                  <span className={`truncate ${t.winner === t.b ? "font-black" : "text-white/80"}`}>{shortClub(t.b!)}</span>
-                  {t.pens && <span className="col-span-3 text-center text-[9.5px] font-bold text-amber-300">{t.pens.a}-{t.pens.b} on penalties</span>}
-                </div>
-              );
-            })}
-          </div>
-        </ClubCard>
-      ))}
     </div>
   );
 }
@@ -439,57 +412,29 @@ function CupView({ career, name, cup, glow, you }: { career: CareerState; name: 
   const sc = useMemo(() => cup ? cupScorers(career, name, cup.rounds.flatMap(r => r.ties.map(t => ({ round: r.name, home: t.home, away: t.away, hs: t.hs, as: t.as })))) : { goals: [], assists: [] }, [career, name, cup]);
   return (
     <div className="space-y-2">
+      {cup?.winner && <WinnerBar club={cup.winner} glow={glow} />}
       <SegTabs value={tab} onChange={setTab} tabs={[["rounds", "Rounds"], ["goals", "Goals"], ["assists", "Assists"], ["history", "History"]] as const} />
       {tab === "history" ? <History career={career} comp={name} glow={glow} you={you} />
         : !cup ? <Empty text="This cup isn't being played this season." />
         : tab === "goals" ? <Scorers rows={sc.goals} glow={glow} label="goals" />
         : tab === "assists" ? <Scorers rows={sc.assists} glow={glow} label="assists" />
-        : <CupRounds cup={cup} glow={glow} you={you} />}
+        : <CupKnockout cup={cup} glow={glow} you={you} extra={<StillToJoin cup={cup} glow={glow} you={you} />} />}
     </div>
   );
 }
 
-function CupRounds({ cup, glow, you }: { cup: CupState; glow: string; you: string }) {
+function StillToJoin({ cup, glow, you }: { cup: CupState; glow: string; you: string }) {
+  if (!Object.keys(cup.entries ?? {}).length) return null;
   return (
-    <div className="space-y-2">
-      {cup.winner && <WinnerBar club={cup.winner} glow={glow} />}
-      {Object.keys(cup.entries ?? {}).length > 0 && (
-        <ClubCard glow={glow} className="p-2">
-          <CardTitle className="px-1 pb-1" tone="text-amber-300">Still to join</CardTitle>
-          {Object.entries(cup.entries ?? {}).map(([round, clubs]) => (
-            <div key={round} className="flex justify-between px-1 py-0.5 text-[11px] font-bold text-white">
-              <span>{round}</span>
-              <span className="tabular-nums">{clubs.includes(you) ? `${clubs.length} clubs · you join here` : `${clubs.length} clubs`}</span>
-            </div>
-          ))}
-        </ClubCard>
-      )}
-      {[...cup.rounds].reverse().map(r => (
-        <ClubCard key={r.name} glow={glow} className="p-1.5">
-          <CardTitle className="px-1 pb-1" tone="text-amber-300">{r.name}</CardTitle>
-          <div className="space-y-1">
-            {r.ties.map(t => {
-              const yours = t.home === you || t.away === you;
-              const done = t.hs !== undefined;
-              return (
-                <div key={`${t.home}-${t.away}`} className={`grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 rounded-lg px-1.5 py-1.5 text-[11px] font-bold text-white ${yours ? "" : "bg-white/[0.04]"}`} style={yours ? youRowStyle(glow) : undefined}>
-                  <span className="truncate text-right">{shortClub(t.home)}</span>
-                  <span className="rounded-md bg-black/45 px-1.5 py-0.5 font-black tabular-nums">{done ? `${t.hs}-${t.as}` : "v"}</span>
-                  <span className="truncate">{shortClub(t.away)}</span>
-                  {t.pens && <span className="col-span-3 text-center text-[9.5px] font-bold text-amber-300">{t.pens.home}-{t.pens.away} on penalties</span>}
-                </div>
-              );
-            })}
-          </div>
-          {r.byes && r.byes.length > 0 && (
-            <p className="px-1 pt-1.5 text-[10.5px] font-bold leading-snug text-white">
-              <span className="text-amber-300">Through on a bye ({r.byes.length}): </span>
-              {r.byes.map(shortClub).join(" · ")}
-            </p>
-          )}
-        </ClubCard>
+    <ClubCard glow={glow} className="p-2">
+      <CardTitle className="px-1 pb-1" tone="text-amber-300">Still to join</CardTitle>
+      {Object.entries(cup.entries ?? {}).map(([round, clubs]) => (
+        <div key={round} className="flex justify-between px-1 py-0.5 text-[11px] font-bold text-white">
+          <span>{round}</span>
+          <span className="tabular-nums">{clubs.includes(you) ? `${clubs.length} clubs · you join here` : `${clubs.length} clubs`}</span>
+        </div>
       ))}
-    </div>
+    </ClubCard>
   );
 }
 
@@ -831,9 +776,9 @@ function TrophyDetail({ career, summary, trophy, glow, you }: { career: CareerSt
               : [[ZONE.up, "Promoted"], [ZONE.down, "Relegated"]]} />
         </>
       ) : <Empty text="No table kept for this one." />)}
-      {tab === "knockout" && (bracket ? <Bracket bracket={bracket} glow={glow} you={you} />
+      {tab === "knockout" && (bracket ? <EuroKnockout bracket={bracket} glow={glow} you={you} />
         : final ? <FinalCard final={final} glow={glow} /> : <Empty text="No knockout kept for this season." />)}
-      {tab === "rounds" && (cup ? <CupRounds cup={{ competition: name, rounds: cup.rounds } as unknown as CupState} glow={glow} you={you} />
+      {tab === "rounds" && (cup ? <CupKnockout cup={{ competition: name, rounds: cup.rounds } as unknown as CupState} glow={glow} you={you} review />
         : final ? <FinalCard final={final} glow={glow} /> : <Empty text="No rounds kept for this season." />)}
       {tab === "final" && (final ? <FinalCard final={final} glow={glow} /> : <Empty text="No final kept for this one." />)}
       {tab === "goals" && <Scorers rows={asRows(sc?.goals ?? [])} glow={glow} label="goals" />}
