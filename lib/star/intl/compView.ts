@@ -8,7 +8,7 @@
  */
 import type { CareerState } from "../types";
 import { worldOf, intlOf, type GroupView, type MatchView } from "./career";
-import type { CompKind, WorldMatch } from "./world";
+import type { CompKind, Final, WorldMatch } from "./world";
 import { played, table } from "./engine";
 import { intlSeason } from "./scorers";
 
@@ -31,7 +31,7 @@ export interface IntlCompView {
   rounds: IntlRound[];
   /** The round to open on: the latest one played, else the first. */
   openAt: number;
-  history: { year: number; winner: string; runnerUp: string; score: string }[];
+  history: { year: number; winner: string; runnerUp: string; score: string; final: Final }[];
   /** Your nation is in this edition. */
   yours: boolean;
 }
@@ -100,7 +100,7 @@ export function intlCompView(career: CareerState, comp: CompKind): IntlCompView 
   const history = w.finals.filter((f) => f.comp === comp).map((f) => {
     const winHome = f.home === f.winner;
     return {
-      year: f.year, winner: f.winner, runnerUp: f.runnerUp,
+      year: f.year, winner: f.winner, runnerUp: f.runnerUp, final: f,
       score: `${winHome ? f.hs : f.as}-${winHome ? f.as : f.hs}${f.et ? " aet" : ""}${f.pens ? ` (${Math.max(f.pens.hs, f.pens.as)}-${Math.min(f.pens.hs, f.pens.as)} pens)` : ""}`,
     };
   }).reverse();

@@ -65,6 +65,7 @@ import { resolveLadder, seasonLadder, membershipOf, estimateClubStrength, type L
 import { englishTopFlightTable } from "./englishTopFlight";
 import { worldAfterMatch, finishWorld, ratedTeams } from "./world";
 import { summariseWorld } from "./world/summary";
+import { newEditionLeaders } from "./intl/editionLeaders";
 import { withSeasonHistory } from "./world/history";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids, moveSquadsWithLadder } from "./leagueSquads";
@@ -1885,6 +1886,8 @@ export function advanceSeason(
     world: undefined,
     lastWorld,
     compHistory: withSeasonHistory(career.compHistory, lastWorld),
+    // Each international tournament's leaders, before its goals stop being named.
+    intlHistory: (() => { try { const add = newEditionLeaders(career); return add.length ? [...(career.intlHistory ?? []), ...add] : career.intlHistory; } catch { return career.intlHistory; } })(),
     lastTopFlight,
     fixtures: buildFixtures(clubs, career.player.club),
     league: buildLeague(clubs, career.player.club),

@@ -1403,6 +1403,9 @@ export interface CareerState {
    *  (League → History, Mikey 22 Oct 2026). Added at each rollover from
    *  lastWorld; absent on older saves (lib/star/world/history.ts). */
   compHistory?: import("./world/history").CompHistoryRow[];
+  /** Each international tournament's top scorer, top assister and player of
+   *  the tournament, kept at each rollover (intl/editionLeaders.ts). */
+  intlHistory?: import("./intl/editionLeaders").IntlEditionLeaders[];
   /** Last season's final Premier League table, best first (names) — who
    *  England sends to Europe this season (euro.ts seasonField). */
   lastTopFlight?: string[];

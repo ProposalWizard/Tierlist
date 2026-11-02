@@ -68,6 +68,14 @@ export interface WorldState {
   shields: ShieldResult[];
 }
 
+/** One competition's season leaders, for its History tab. */
+export interface CompLeaders {
+  competition: string;
+  scorers: { player: string; club: string; n: number }[];
+  assisters: { player: string; club: string; n: number }[];
+  best?: { player: string; club: string };
+}
+
 /** One finished competition, kept after the rollover for "last season". */
 export interface WorldSummary {
   season: number;
@@ -76,6 +84,13 @@ export interface WorldSummary {
   scorers: { name: string; goals: { player: string; club: string; n: number }[]; assists: { player: string; club: string; n: number }[] }[];
   winners: { competition: string; club: string }[];
   playOffs: { division: CareerDivision; result: PlayOffResult }[];
+  /**
+   * Each competition's leaders for League → History (Mikey, 2 Nov 2026): the
+   * top scorer(s) and assister(s), ties kept, and a player of the season.
+   * Leagues and Europe: most goals + assists (your own league: the Season
+   * Awards' own winners). Cups: the best player in the final.
+   */
+  leaders?: CompLeaders[];
   /** Every cup's final (and both shields): who played, the score, who won. */
   finals?: { competition: string; home: string; away: string; hs?: number; as?: number; pens?: { home: number; away: number }; winner?: string }[];
 }
