@@ -2,17 +2,18 @@
   "competition": "UEFA Nations League",
   "slug": "nations-league",
   "kind": "tournament",
-  "lineage_note": "UEFA Nations League, one edition every two years since 2018-19: league phase (Leagues A-D) in autumn, then a four-team Finals the next June (2020-21 Finals in October 2021). Season label = edition label (e.g. \"2018-19\"), not the year of the final. 2026-27 is in progress (not included). Fields: top_scorer = whole edition, all leagues A-D (plus quarter-finals/Finals), as UEFA and Wikipedia list it; qualifying-style league goals count. top_assister null: no per-edition whole-competition assist leader was found in a verifiable source.",
+  "lineage_note": "UEFA Nations League, one edition every two years since 2018-19: league phase (Leagues A-D) in autumn, then a four-team Finals the next June (2020-21 Finals in October 2021). Season label = edition label (e.g. \"2018-19\"), not the year of the final. 2026-27 is in progress (not included). Fields: top_scorer = whole edition, all leagues A-D (plus quarter-finals/Finals), as UEFA and Wikipedia list it; qualifying-style league goals count. top_assister = whole edition, all leagues A-D plus Finals, from UEFA's own stats (compstats.uefa.com player ranking, the data behind UEFA.com's stats pages). ESPN's counts differ by one here and there (e.g. 2024-25 Kimmich 6, Mendes 5; UEFA says Mendes' 6 was 'bettered by no one').",
   "history_from": "2018-19",
   "history_to": "2024-25",
   "field_from": {
     "runner_up": "2018-19",
     "final_score": "2018-19",
     "top_scorer": "2018-19",
-    "top_assister": null,
+    "top_assister": "2018-19",
     "player_of_season": "2018-19"
   },
   "player_of_season_award": "UEFA Nations League Player of the Finals (from 2019)",
+  "top_assister_source": "UEFA official stats (UEFA.com / compstats.uefa.com), every edition; cross-checked against ESPN.",
   "sources": [
     "https://en.wikipedia.org/wiki/UEFA_Nations_League",
     "https://en.wikipedia.org/wiki/2018%E2%80%9319_UEFA_Nations_League",
@@ -20,7 +21,10 @@
     "https://en.wikipedia.org/wiki/2022%E2%80%9323_UEFA_Nations_League",
     "https://en.wikipedia.org/wiki/2024%E2%80%9325_UEFA_Nations_League",
     "https://www.uefa.com/uefanationsleague/news/026e-1372acedf4a0-4cf2bf8d3c1b-1000--uefa-nations-league-roll-of-honour/",
-    "https://www.uefa.com/uefanationsleague/history/2021/"
+    "https://www.uefa.com/uefanationsleague/history/2021/",
+    "https://www.uefa.com/uefanationsleague/statistics/players/",
+    "https://www.uefa.com/uefanationsleague/news/029a-1df453c49ada-5d8aff31f9c2-1000/",
+    "https://www.espn.com/soccer/stats/_/league/UEFA.NATIONS"
   ],
   "seasons": [
     {
@@ -36,7 +40,13 @@
           "goals": 6
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Marco Asensio",
+          "team": "Spain",
+          "assists": 5
+        }
+      ],
       "player_of_season": {
         "name": "Bernardo Silva",
         "team": "Portugal"
@@ -66,7 +76,18 @@
           "goals": 6
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Tigran Barseghyan",
+          "team": "Armenia",
+          "assists": 4
+        },
+        {
+          "name": "Kevin De Bruyne",
+          "team": "Belgium",
+          "assists": 4
+        }
+      ],
       "player_of_season": {
         "name": "Sergio Busquets",
         "team": "Spain"
@@ -91,7 +112,18 @@
           "goals": 6
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Nicușor Bancu",
+          "team": "Romania",
+          "assists": 4
+        },
+        {
+          "name": "Dušan Tadić",
+          "team": "Serbia",
+          "assists": 4
+        }
+      ],
       "player_of_season": {
         "name": "Rodri",
         "team": "Spain"
@@ -111,7 +143,18 @@
           "goals": 9
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Joshua Kimmich",
+          "team": "Germany",
+          "assists": 6
+        },
+        {
+          "name": "Nuno Mendes",
+          "team": "Portugal",
+          "assists": 6
+        }
+      ],
       "player_of_season": {
         "name": "Nuno Mendes",
         "team": "Portugal"

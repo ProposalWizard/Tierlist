@@ -2,22 +2,25 @@
   "competition": "CONCACAF Gold Cup",
   "slug": "gold-cup",
   "kind": "tournament",
-  "lineage_note": "Starts in 1991, when CONCACAF relaunched its championship as the Gold Cup; CONCACAF numbers 1991 as the 1st Gold Cup. The earlier CONCACAF Championship (1963-1989) is left out on purpose: it was a different format (round robins with no finals; 1977-1989 it was the World Cup qualifying final round, and 1985 and 1989 had no host), and its top scorer is unknown for 1971, so it cannot be filled continuously. RSSSF also treats the Gold Cup as a successor competition, listed separately.",
+  "lineage_note": "Starts in 1991, when CONCACAF relaunched its championship as the Gold Cup; CONCACAF numbers 1991 as the 1st Gold Cup. The earlier CONCACAF Championship (1963-1989) is left out on purpose: it was a different format (round robins with no finals; 1977-1989 it was the World Cup qualifying final round, and 1985 and 1989 had no host), and its top scorer is unknown for 1971, so it cannot be filled continuously. RSSSF also treats the Gold Cup as a successor competition, listed separately. top_assister from 2013: Assists from ESPN's match data (Opta-fed goal/assist events), summed over every finals match; ESPN has no assist data for 2011 and earlier. 2021 counts the finals tournament (not the preliminary round).",
   "history_from": "1991",
   "history_to": "2025",
   "field_from": {
     "runner_up": "1991",
     "final_score": "1991",
     "top_scorer": "1991",
-    "top_assister": null,
+    "top_assister": "2013",
     "player_of_season": "1991"
   },
   "player_of_season_award": "Gold Cup Best Player / Golden Ball (MVP), every edition from 1991",
+  "top_assister_source": "ESPN match data (Opta), every edition 2013-2025; 2025 cross-checked with Goal.com and Columbus Crew reports (Arfsten 3).",
   "sources": [
     "https://en.wikipedia.org/wiki/CONCACAF_Gold_Cup",
     "https://en.wikipedia.org/wiki/CONCACAF_Gold_Cup_records_and_statistics",
     "https://www.rsssf.org/tablesg/goldcupall.html",
-    "https://www.rsssf.org/tables/05gc-scor.html"
+    "https://www.rsssf.org/tables/05gc-scor.html",
+    "https://www.espn.com/soccer/stats/_/league/CONCACAF.GOLD",
+    "https://www.goal.com/en-gh/lists/watch-max-arfsten-pushes-usmnt-wondergoal-costa-rica-gold-cup-quarterfinals/bltb4f150d608b3db9c"
   ],
   "seasons": [
     {
@@ -286,7 +289,13 @@
           "goals": 5
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Landon Donovan",
+          "team": "United States",
+          "assists": 7
+        }
+      ],
       "player_of_season": {
         "name": "Landon Donovan",
         "team": "United States"
@@ -305,7 +314,13 @@
           "goals": 7
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Michael Bradley",
+          "team": "United States",
+          "assists": 3
+        }
+      ],
       "player_of_season": {
         "name": "Andrés Guardado",
         "team": "Mexico"
@@ -334,7 +349,23 @@
           "goals": 3
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Johan Audel",
+          "team": "Martinique",
+          "assists": 3
+        },
+        {
+          "name": "Elías Hernández",
+          "team": "Mexico",
+          "assists": 3
+        },
+        {
+          "name": "Clint Dempsey",
+          "team": "United States",
+          "assists": 3
+        }
+      ],
       "player_of_season": {
         "name": "Michael Bradley",
         "team": "United States"
@@ -353,7 +384,13 @@
           "goals": 6
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Christian Pulisic",
+          "team": "United States",
+          "assists": 3
+        }
+      ],
       "player_of_season": {
         "name": "Raúl Jiménez",
         "team": "Mexico"
@@ -372,7 +409,23 @@
           "goals": 4
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Akram Afif",
+          "team": "Qatar",
+          "assists": 3
+        },
+        {
+          "name": "Pedro Miguel",
+          "team": "Qatar",
+          "assists": 3
+        },
+        {
+          "name": "Édgar Bárcenas",
+          "team": "Panama",
+          "assists": 3
+        }
+      ],
       "player_of_season": {
         "name": "Héctor Herrera",
         "team": "Mexico"
@@ -392,7 +445,23 @@
           "goals": 7
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Éric Davis",
+          "team": "Panama",
+          "assists": 3
+        },
+        {
+          "name": "Joel Campbell",
+          "team": "Costa Rica",
+          "assists": 3
+        },
+        {
+          "name": "Jordan Leborgne",
+          "team": "Guadeloupe",
+          "assists": 3
+        }
+      ],
       "player_of_season": {
         "name": "Adalberto Carrasquilla",
         "team": "Panama"
@@ -411,7 +480,13 @@
           "goals": 6
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Max Arfsten",
+          "team": "United States",
+          "assists": 3
+        }
+      ],
       "player_of_season": {
         "name": "Edson Álvarez",
         "team": "Mexico"

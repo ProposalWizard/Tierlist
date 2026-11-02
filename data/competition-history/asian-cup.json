@@ -2,23 +2,26 @@
   "competition": "AFC Asian Cup",
   "slug": "asian-cup",
   "kind": "tournament",
-  "lineage_note": "AFC's men's national-team championship since 1956. 1956-1968 were decided by a final round robin with no final; finals from 1972. Every four years, shifted to 2007 to avoid the Euros/Olympics. The 2023 edition was played in early 2024 and keeps its edition name.",
+  "lineage_note": "AFC's men's national-team championship since 1956. 1956-1968 were decided by a final round robin with no final; finals from 1972. Every four years, shifted to 2007 to avoid the Euros/Olympics. The 2023 edition was played in early 2024 and keeps its edition name. top_assister from 2019: Assists from ESPN's match data (Opta-fed goal/assist events), summed over every finals match; ESPN has no assist data for 2015 or earlier and no reliable full 2015 table was found.",
   "history_from": "1956",
   "history_to": "2023",
   "field_from": {
     "runner_up": "1956",
     "final_score": "1972",
     "top_scorer": "1956",
-    "top_assister": null,
+    "top_assister": "2019",
     "player_of_season": "1984"
   },
   "player_of_season_award": "AFC Asian Cup Most Valuable Player (continuous from 1984; also given in 1972 and 1976 but not 1980, so those are dropped)",
+  "top_assister_source": "ESPN match data (Opta), 2019 and 2023; 2023 cross-checked with ESPN's team of the tournament ('equal leader in assists with three') and Qatar Tribune; Afif's 10 in 2019 is the widely reported Asian Cup record.",
   "sources": [
     "https://en.wikipedia.org/wiki/List_of_AFC_Asian_Cup_finals",
     "https://en.wikipedia.org/wiki/AFC_Asian_Cup",
     "https://en.wikipedia.org/wiki/AFC_Asian_Cup_awards",
     "https://www.rsssf.org/tablesa/asiachamp.html",
-    "https://www.rsssf.org/tables/2023as-scor.html"
+    "https://www.rsssf.org/tables/2023as-scor.html",
+    "https://www.espn.com/soccer/stats/_/league/AFC.ASIAN.CUP",
+    "https://global.espn.com/football/story/_/id/39480199/asian-cup-team-tournament"
   ],
   "seasons": [
     {
@@ -378,7 +381,13 @@
           "goals": 9
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Akram Afif",
+          "team": "Qatar",
+          "assists": 10
+        }
+      ],
       "player_of_season": {
         "name": "Almoez Ali",
         "team": "Qatar"
@@ -397,7 +406,23 @@
           "goals": 8
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Akram Afif",
+          "team": "Qatar",
+          "assists": 3
+        },
+        {
+          "name": "Sardar Azmoun",
+          "team": "Iran",
+          "assists": 3
+        },
+        {
+          "name": "Ali Jasim",
+          "team": "Iraq",
+          "assists": 3
+        }
+      ],
       "player_of_season": {
         "name": "Akram Afif",
         "team": "Qatar"

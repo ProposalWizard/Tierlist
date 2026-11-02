@@ -2,17 +2,18 @@
   "competition": "Africa Cup of Nations",
   "slug": "africa-cup-of-nations",
   "kind": "tournament",
-  "lineage_note": "CAF's men's national-team championship since 1957 (African Cup of Nations, now Africa Cup of Nations). Seasons are labelled by the edition's official name; from 2013 the edition moved to odd years, and the 2021, 2023 and 2025 editions were each played in the following calendar year (RSSSF labels those 2022, 2024, 2026). 1959 and 1976 had no final (round robin).",
+  "lineage_note": "CAF's men's national-team championship since 1957 (African Cup of Nations, now Africa Cup of Nations). Seasons are labelled by the edition's official name; from 2013 the edition moved to odd years, and the 2021, 2023 and 2025 editions were each played in the following calendar year (RSSSF labels those 2022, 2024, 2026). 1959 and 1976 had no final (round robin). top_assister from 2017: Assists from ESPN's match data (Opta-fed goal/assist events), summed over every finals match; ESPN has no assist data for 2015 and earlier, and no other full assist table was found, so the run starts at 2017.",
   "history_from": "1957",
   "history_to": "2025",
   "field_from": {
     "runner_up": "1957",
     "final_score": "1957",
     "top_scorer": "1957",
-    "top_assister": null,
+    "top_assister": "2017",
     "player_of_season": "1957"
   },
   "player_of_season_award": "CAF Africa Cup of Nations Best Player award (as listed by CAF for every edition from 1957)",
+  "top_assister_source": "ESPN match data (Opta), every edition 2017-2025; 2025 cross-checked with foot-africa.com and CAF best-XI reports (Lookman 4, Mané 3).",
   "sources": [
     "https://en.wikipedia.org/wiki/List_of_Africa_Cup_of_Nations_finals",
     "https://en.wikipedia.org/wiki/Africa_Cup_of_Nations_records_and_statistics",
@@ -21,7 +22,9 @@
     "https://www.rsssf.org/tablesa/afrtops.html",
     "https://www.cafonline.com/afcon2025/news/all-you-need-to-know-about-the-totalenergies-caf-africa-cup-of-nations-morocco-2025/",
     "https://allafrica.com/stories/202603180605.html",
-    "https://www.aljazeera.com/sports/2026/10/19/decision-on-senegals-afcon-final-appeal-to-be-made-by-end-of-november"
+    "https://www.aljazeera.com/sports/2026/10/19/decision-on-senegals-afcon-final-appeal-to-be-made-by-end-of-november",
+    "https://www.espn.com/soccer/stats/_/league/CAF.NATIONS",
+    "https://foot-africa.com/en/news/can-2025-the-assists-leaderboard-ahead-of-the-final-1043765/"
   ],
   "seasons": [
     {
@@ -749,7 +752,38 @@
           "goals": 3
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Benjamin Moukandjo",
+          "team": "Cameroon",
+          "assists": 2
+        },
+        {
+          "name": "Mohamed Salah",
+          "team": "Egypt",
+          "assists": 2
+        },
+        {
+          "name": "Chancel Mbemba",
+          "team": "DR Congo",
+          "assists": 2
+        },
+        {
+          "name": "Floyd Ayité",
+          "team": "Togo",
+          "assists": 2
+        },
+        {
+          "name": "Fayçal Fajr",
+          "team": "Morocco",
+          "assists": 2
+        },
+        {
+          "name": "Keita Baldé",
+          "team": "Senegal",
+          "assists": 2
+        }
+      ],
       "player_of_season": {
         "name": "Christian Bassogog",
         "team": "Cameroon"
@@ -768,7 +802,18 @@
           "goals": 5
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Ismaël Bennacer",
+          "team": "Algeria",
+          "assists": 3
+        },
+        {
+          "name": "Franck Kessié",
+          "team": "Ivory Coast",
+          "assists": 3
+        }
+      ],
       "player_of_season": {
         "name": "Ismaël Bennacer",
         "team": "Algeria"
@@ -787,7 +832,23 @@
           "goals": 8
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Issa Kaboré",
+          "team": "Burkina Faso",
+          "assists": 3
+        },
+        {
+          "name": "Collins Fai",
+          "team": "Cameroon",
+          "assists": 3
+        },
+        {
+          "name": "Martin Hongla",
+          "team": "Cameroon",
+          "assists": 3
+        }
+      ],
       "player_of_season": {
         "name": "Sadio Mané",
         "team": "Senegal"
@@ -807,7 +868,28 @@
           "goals": 5
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Fredy",
+          "team": "Angola",
+          "assists": 3
+        },
+        {
+          "name": "José Machín",
+          "team": "Equatorial Guinea",
+          "assists": 3
+        },
+        {
+          "name": "Sadio Mané",
+          "team": "Senegal",
+          "assists": 3
+        },
+        {
+          "name": "Georges-Kévin Nkoudou",
+          "team": "Cameroon",
+          "assists": 3
+        }
+      ],
       "player_of_season": {
         "name": "William Troost-Ekong",
         "team": "Nigeria"
@@ -827,7 +909,13 @@
           "goals": 5
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Ademola Lookman",
+          "team": "Nigeria",
+          "assists": 4
+        }
+      ],
       "player_of_season": {
         "name": "Sadio Mané",
         "team": "Senegal"

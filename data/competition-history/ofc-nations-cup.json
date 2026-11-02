@@ -2,7 +2,7 @@
   "competition": "OFC Men's Nations Cup",
   "slug": "ofc-nations-cup",
   "kind": "tournament",
-  "lineage_note": "Oceania's men's national-team championship: Oceania Cup (1973, 1980), not held 1981-1995, then OFC Nations Cup (1996-2016), renamed OFC Men's Nations Cup (2024). Years with no edition are not gaps. 2020 was scheduled and cancelled. Australia left for the AFC in 2006.",
+  "lineage_note": "Oceania's men's national-team championship: Oceania Cup (1973, 1980), not held 1981-1995, then OFC Nations Cup (1996-2016), renamed OFC Men's Nations Cup (2024). Years with no edition are not gaps. 2020 was scheduled and cancelled. Australia left for the AFC in 2006. top_assister null: no assist table for any edition (incl. 2024) was found on OFC, Wikipedia, ESPN or news round-ups; ESPN does not cover the tournament. player_of_season stays from 2012: OFC gave no best-player award before 2012.",
   "history_from": "1973",
   "history_to": "2024",
   "field_from": {
@@ -13,6 +13,7 @@
     "player_of_season": "2012"
   },
   "player_of_season_award": "OFC Nations Cup Golden Ball (best player), from 2012",
+  "top_assister_source": null,
   "sources": [
     "https://en.wikipedia.org/wiki/OFC_Men%27s_Nations_Cup",
     "https://en.wikipedia.org/wiki/OFC_Men%27s_Nations_Cup_awards",

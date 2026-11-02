@@ -2,17 +2,18 @@
   "competition": "FIFA World Cup",
   "slug": "world-cup",
   "kind": "tournament",
-  "lineage_note": "FIFA World Cup finals tournament, every four years since 1930. Season label = year of the final. 1942 and 1946 were not held (Second World War). 1950 had a final round-robin instead of a final. Fields: top_scorer = finals-tournament top scorer(s) (Golden Boot), all players tied on the most goals listed. top_assister starts at 2022: FIFA never published one consistent official assist record for older tournaments; Wikipedia's per-tournament assist list back to 1930 is a reconstruction and the 2018 entry is a 16-way tie that could not be verified, so the run starts at 2022.",
+  "lineage_note": "FIFA World Cup finals tournament, every four years since 1930. Season label = year of the final. 1942 and 1946 were not held (Second World War). 1950 had a final round-robin instead of a final. Fields: top_scorer = finals-tournament top scorer(s) (Golden Boot), all players tied on the most goals listed. top_assister starts at 1966: Opta has per-tournament assist data back to the 1966 finals (Opta Analyst), tabled per edition in Wikipedia's FIFA World Cup records and statistics. Its 1930-1962 figures are Wikipedia's own retrospective reconstruction (Opta treats pre-1966 assists as non-existent), so they are left out. 2022 matches FIFA's official count; 2018's 16-way tie on 2 checked against a second list.",
   "history_from": "1930",
   "history_to": "2026",
   "field_from": {
     "runner_up": "1930",
     "final_score": "1930",
     "top_scorer": "1930",
-    "top_assister": "2022",
+    "top_assister": "1966",
     "player_of_season": "1982"
   },
   "player_of_season_award": "FIFA World Cup Golden Ball (from 1982)",
+  "top_assister_source": "Opta (Opta Analyst World Cup assist data from 1966), as tabled per edition in Wikipedia 'FIFA World Cup records and statistics'; 2022 also equals FIFA's official count, 2026 FIFA/Opta.",
   "sources": [
     "https://en.wikipedia.org/wiki/List_of_FIFA_World_Cup_finals",
     "https://www.rsssf.org/tablesw/worldcup.html",
@@ -21,7 +22,9 @@
     "https://en.wikipedia.org/wiki/FIFA_World_Cup_records_and_statistics",
     "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_final",
     "https://www.thescore.com/worldcup/news/3550006",
-    "https://www.guinnessworldrecords.com/world-records/786438-most-assists-by-a-football-soccer-player-at-a-fifa-world-cup-tournament"
+    "https://www.guinnessworldrecords.com/world-records/786438-most-assists-by-a-football-soccer-player-at-a-fifa-world-cup-tournament",
+    "https://theanalyst.com/articles/world-cup-most-assists",
+    "https://www.tournamentfootball.co.uk/en-gb/fantasy-football-world-cup/2018/statistics"
   ],
   "seasons": [
     {
@@ -188,7 +191,13 @@
           "goals": 9
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Siegfried Held",
+          "team": "West Germany",
+          "assists": 4
+        }
+      ],
       "player_of_season": null
     },
     {
@@ -204,7 +213,13 @@
           "goals": 10
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Pelé",
+          "team": "Brazil",
+          "assists": 6
+        }
+      ],
       "player_of_season": null
     },
     {
@@ -220,7 +235,13 @@
           "goals": 7
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Robert Gadocha",
+          "team": "Poland",
+          "assists": 5
+        }
+      ],
       "player_of_season": null
     },
     {
@@ -236,7 +257,23 @@
           "goals": 6
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Daniel Bertoni",
+          "team": "Argentina",
+          "assists": 3
+        },
+        {
+          "name": "Rob Rensenbrink",
+          "team": "Netherlands",
+          "assists": 3
+        },
+        {
+          "name": "René van de Kerkhof",
+          "team": "Netherlands",
+          "assists": 3
+        }
+      ],
       "player_of_season": null
     },
     {
@@ -252,7 +289,13 @@
           "goals": 6
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Pierre Littbarski",
+          "team": "West Germany",
+          "assists": 5
+        }
+      ],
       "player_of_season": {
         "name": "Paolo Rossi",
         "team": "Italy"
@@ -271,11 +314,18 @@
           "goals": 6
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Diego Maradona",
+          "team": "Argentina",
+          "assists": 5
+        }
+      ],
       "player_of_season": {
         "name": "Diego Maradona",
         "team": "Argentina"
-      }
+      },
+      "notes": "Assists: Maradona 5 as Wikipedia shows from Opta data (its sort key says 4; most sources give 5)."
     },
     {
       "season": "1990",
@@ -290,7 +340,23 @@
           "goals": 6
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Giuseppe Giannini",
+          "team": "Italy",
+          "assists": 3
+        },
+        {
+          "name": "Ľubomír Moravčík",
+          "team": "Czechoslovakia",
+          "assists": 3
+        },
+        {
+          "name": "Jozef Chovanec",
+          "team": "Czechoslovakia",
+          "assists": 3
+        }
+      ],
       "player_of_season": {
         "name": "Salvatore Schillaci",
         "team": "Italy"
@@ -314,7 +380,13 @@
           "goals": 6
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Thomas Häßler",
+          "team": "Germany",
+          "assists": 5
+        }
+      ],
       "player_of_season": {
         "name": "Romário",
         "team": "Brazil"
@@ -334,7 +406,43 @@
           "goals": 6
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Juan Sebastián Verón",
+          "team": "Argentina",
+          "assists": 3
+        },
+        {
+          "name": "Wim Jonk",
+          "team": "Netherlands",
+          "assists": 3
+        },
+        {
+          "name": "Brian Laudrup",
+          "team": "Denmark",
+          "assists": 3
+        },
+        {
+          "name": "Tahar El Khalej",
+          "team": "Morocco",
+          "assists": 3
+        },
+        {
+          "name": "Dennis Bergkamp",
+          "team": "Netherlands",
+          "assists": 3
+        },
+        {
+          "name": "Ronaldo",
+          "team": "Brazil",
+          "assists": 3
+        },
+        {
+          "name": "Youri Djorkaeff",
+          "team": "France",
+          "assists": 3
+        }
+      ],
       "player_of_season": {
         "name": "Ronaldo",
         "team": "Brazil"
@@ -353,7 +461,13 @@
           "goals": 8
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Michael Ballack",
+          "team": "Germany",
+          "assists": 4
+        }
+      ],
       "player_of_season": {
         "name": "Oliver Kahn",
         "team": "Germany"
@@ -372,7 +486,18 @@
           "goals": 5
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Francesco Totti",
+          "team": "Italy",
+          "assists": 4
+        },
+        {
+          "name": "Juan Román Riquelme",
+          "team": "Argentina",
+          "assists": 4
+        }
+      ],
       "player_of_season": {
         "name": "Zinedine Zidane",
         "team": "France"
@@ -406,7 +531,33 @@
           "goals": 5
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Thomas Müller",
+          "team": "Germany",
+          "assists": 3
+        },
+        {
+          "name": "Bastian Schweinsteiger",
+          "team": "Germany",
+          "assists": 3
+        },
+        {
+          "name": "Mesut Özil",
+          "team": "Germany",
+          "assists": 3
+        },
+        {
+          "name": "Kaká",
+          "team": "Brazil",
+          "assists": 3
+        },
+        {
+          "name": "Dirk Kuyt",
+          "team": "Netherlands",
+          "assists": 3
+        }
+      ],
       "player_of_season": {
         "name": "Diego Forlán",
         "team": "Uruguay"
@@ -426,7 +577,13 @@
           "goals": 6
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Juan Cuadrado",
+          "team": "Colombia",
+          "assists": 4
+        }
+      ],
       "player_of_season": {
         "name": "Lionel Messi",
         "team": "Argentina"
@@ -445,11 +602,93 @@
           "goals": 6
         }
       ],
-      "top_assister": null,
+      "top_assister": [
+        {
+          "name": "Eden Hazard",
+          "team": "Belgium",
+          "assists": 2
+        },
+        {
+          "name": "Kevin De Bruyne",
+          "team": "Belgium",
+          "assists": 2
+        },
+        {
+          "name": "Thomas Meunier",
+          "team": "Belgium",
+          "assists": 2
+        },
+        {
+          "name": "Youri Tielemans",
+          "team": "Belgium",
+          "assists": 2
+        },
+        {
+          "name": "Lionel Messi",
+          "team": "Argentina",
+          "assists": 2
+        },
+        {
+          "name": "Éver Banega",
+          "team": "Argentina",
+          "assists": 2
+        },
+        {
+          "name": "Philippe Coutinho",
+          "team": "Brazil",
+          "assists": 2
+        },
+        {
+          "name": "Antoine Griezmann",
+          "team": "France",
+          "assists": 2
+        },
+        {
+          "name": "Lucas Hernandez",
+          "team": "France",
+          "assists": 2
+        },
+        {
+          "name": "Aleksandr Golovin",
+          "team": "Russia",
+          "assists": 2
+        },
+        {
+          "name": "Artem Dzyuba",
+          "team": "Russia",
+          "assists": 2
+        },
+        {
+          "name": "Juan Fernando Quintero",
+          "team": "Colombia",
+          "assists": 2
+        },
+        {
+          "name": "James Rodríguez",
+          "team": "Colombia",
+          "assists": 2
+        },
+        {
+          "name": "Wahbi Khazri",
+          "team": "Tunisia",
+          "assists": 2
+        },
+        {
+          "name": "Viktor Claesson",
+          "team": "Sweden",
+          "assists": 2
+        },
+        {
+          "name": "Carlos Sánchez",
+          "team": "Uruguay",
+          "assists": 2
+        }
+      ],
       "player_of_season": {
         "name": "Luka Modrić",
         "team": "Croatia"
-      }
+      },
+      "notes": "Assists: sixteen players tied on 2 (Opta count; the same 16 listed by tournamentfootball.co.uk and NBC Sports)."
     },
     {
       "season": "2022",
