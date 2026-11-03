@@ -1,0 +1,336 @@
+{
+  "id": "pr-strikers-and-you",
+  "series": "Power ranking",
+  "title": "Striker power ranking... and you",
+  "sources": [
+    "https://www.nbcsports.com/soccer/news/premier-league-2026-27-scoring-leaders-the-race-for-the-golden-boot-begins",
+    "https://www.soccernews.com/english-premier-league/golden-boot/",
+    "https://www.uefa.com/uefachampionsleague/news/02a9-218f8e669a0a-debba167a199-1000--champions-league-top-scorer-ermedin-demirovic-serhou-guir/",
+    "https://foot-africa.com/en/news/champions-league-the-top-scorers-standings-after-matchday-3-1395029/",
+    "https://bulinews.com/revealed-full-men-ballon-top-10-rankings",
+    "https://blueprint.ng/?p=856976",
+    "https://yen.com.gh/sports/football/314521-ballon-d-2026-official-top-10-rankings-harry-kane-beats-mbappe-yamal/",
+    "https://www.soccernews.com/kane-scoops-first-ballon-dor-after-pipping-yamal-mbappe/407033/",
+    "https://www.thescore.com/news/3566852",
+    "https://english.ahram.org.eg/News/572936.aspx"
+  ],
+  "checked": "PL goals (NBC 2 Nov; Soccernews top five): Isak 6, Joao Pedro 5, Jackson 5, Calvert-Lewin 4. UCL: Kane, Haaland, Guirassy 4, Mbappe 3 (UEFA, Foot Africa). Lautaro's late winner v England in the WC semi (theScore, Ahram). Mbappe 2nd, Kane 1st in Ballon d'Or 2026 (Bulinews, Blueprint). Number one is 'you', a joke, said as one.",
+  "clubs": {
+    "avl": {
+      "name": "Aston Villa",
+      "short": "AVL",
+      "c1": "#670e36",
+      "c2": "#95bfe5",
+      "pattern": "sides"
+    },
+    "bay": {
+      "name": "Bayern Munich",
+      "short": "FCB",
+      "c1": "#dc052d",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "bvb": {
+      "name": "Borussia Dortmund",
+      "short": "BVB",
+      "c1": "#fde100",
+      "c2": "#000000",
+      "pattern": "plain"
+    },
+    "che": {
+      "name": "Chelsea",
+      "short": "CHE",
+      "c1": "#034694",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "inter": {
+      "name": "Inter",
+      "short": "INT",
+      "c1": "#0068a8",
+      "c2": "#000000",
+      "pattern": "stripes"
+    },
+    "kib": {
+      "name": "Road to Ballon d'Or",
+      "short": "KIB",
+      "c1": "#1f8f4e",
+      "c2": "#ffffff",
+      "pattern": "halves"
+    },
+    "lee": {
+      "name": "Leeds United",
+      "short": "LEE",
+      "c1": "#ffffff",
+      "c2": "#1d428a",
+      "pattern": "plain"
+    },
+    "liv": {
+      "name": "Liverpool",
+      "short": "LIV",
+      "c1": "#c8102e",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "mci": {
+      "name": "Manchester City",
+      "short": "MCI",
+      "c1": "#6cabdd",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "rma": {
+      "name": "Real Madrid",
+      "short": "RMA",
+      "c1": "#ffffff",
+      "c2": "#febe10",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "haaland": {
+      "name": "Erling Haaland",
+      "skin": "pink",
+      "hair": [
+        "slick",
+        "#e3cf8f"
+      ],
+      "beard": "none",
+      "kit": "mci"
+    },
+    "kane": {
+      "name": "Harry Kane",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#6b4a2e"
+      ],
+      "beard": "stubble",
+      "kit": "bay"
+    },
+    "you": {
+      "name": "You",
+      "skin": "olive",
+      "hair": [
+        "quiff",
+        "#2b1d14"
+      ],
+      "beard": "none",
+      "kit": "kib"
+    }
+  },
+  "lines": [
+    {
+      "text": "The ten best strikers in the world right now. And number one might surprise you.",
+      "scene": {
+        "type": "title",
+        "heading": "STRIKER RANKING",
+        "sub": "Power ranking · November 2026",
+        "pill": "WAIT FOR NO. 1",
+        "person": "you"
+      }
+    },
+    {
+      "text": "Ten, Dominic Calvert-Lewin, four goals for Leeds. Nine, Nicolas Jackson, five for Villa. Eight, João Pedro, five for Chelsea.",
+      "scene": {
+        "type": "list",
+        "title": "Striker ranking",
+        "rows": [
+          {
+            "pos": 10,
+            "name": "Dominic Calvert-Lewin",
+            "value": "4 PL goals",
+            "club": "lee",
+            "hl": true
+          },
+          {
+            "pos": 9,
+            "name": "Nicolas Jackson",
+            "value": "5 PL goals",
+            "club": "avl",
+            "hl": true
+          },
+          {
+            "pos": 8,
+            "name": "João Pedro",
+            "value": "5 PL goals",
+            "club": "che",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Seven, Serhou Guirassy, four in the Champions League. Six, Alexander Isak, six for Liverpool.",
+      "scene": {
+        "type": "list",
+        "title": "Striker ranking",
+        "rows": [
+          {
+            "pos": 10,
+            "name": "Dominic Calvert-Lewin",
+            "value": "4 PL goals",
+            "club": "lee"
+          },
+          {
+            "pos": 9,
+            "name": "Nicolas Jackson",
+            "value": "5 PL goals",
+            "club": "avl"
+          },
+          {
+            "pos": 8,
+            "name": "João Pedro",
+            "value": "5 PL goals",
+            "club": "che"
+          },
+          {
+            "pos": 7,
+            "name": "Serhou Guirassy",
+            "value": "4 UCL goals",
+            "club": "bvb",
+            "hl": true
+          },
+          {
+            "pos": 6,
+            "name": "Alexander Isak",
+            "value": "6 PL goals",
+            "club": "liv",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Five, Lautaro Martínez, who knocked England out of the World Cup. Four, Kylian Mbappé, Ballon d'Or runner-up.",
+      "scene": {
+        "type": "list",
+        "title": "Striker ranking",
+        "rows": [
+          {
+            "pos": 10,
+            "name": "Dominic Calvert-Lewin",
+            "value": "4 PL goals",
+            "club": "lee"
+          },
+          {
+            "pos": 9,
+            "name": "Nicolas Jackson",
+            "value": "5 PL goals",
+            "club": "avl"
+          },
+          {
+            "pos": 8,
+            "name": "João Pedro",
+            "value": "5 PL goals",
+            "club": "che"
+          },
+          {
+            "pos": 7,
+            "name": "Serhou Guirassy",
+            "value": "4 UCL goals",
+            "club": "bvb"
+          },
+          {
+            "pos": 6,
+            "name": "Alexander Isak",
+            "value": "6 PL goals",
+            "club": "liv"
+          },
+          {
+            "pos": 5,
+            "name": "Lautaro Martínez",
+            "value": "WC semi winner",
+            "club": "inter",
+            "hl": true
+          },
+          {
+            "pos": 4,
+            "name": "Kylian Mbappé",
+            "value": "2nd in BdO",
+            "club": "rma",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Number three. Harry Kane, the Ballon d'Or holder, with four Champions League goals.",
+      "scene": {
+        "type": "person",
+        "person": "kane",
+        "label": "NUMBER 3",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Number two. Erling Haaland, top of the Premier League scoring chart and four in Europe.",
+      "scene": {
+        "type": "person",
+        "person": "haaland",
+        "label": "NUMBER 2",
+        "mood": "worried"
+      }
+    },
+    {
+      "text": "Wait. Haaland is only second? So who on earth is number one?",
+      "scene": {
+        "type": "versus",
+        "title": "Who beats these two?",
+        "left": {
+          "person": "haaland",
+          "label": "Haaland",
+          "value": "No. 2"
+        },
+        "right": {
+          "person": "kane",
+          "label": "Kane",
+          "value": "No. 3"
+        }
+      }
+    },
+    {
+      "text": "Number one. You.",
+      "scene": {
+        "type": "person",
+        "person": "you",
+        "label": "NUMBER 1",
+        "mood": "shocked",
+        "stamp": "NUMBER 1"
+      }
+    },
+    {
+      "text": "Yes, we made that up. But in Road to Ballon d'Or, you start as a nobody and score your way to the top.",
+      "scene": {
+        "type": "stats",
+        "title": "Your career",
+        "items": [
+          {
+            "n": "0",
+            "l": "goals today"
+          },
+          {
+            "n": "1",
+            "l": "Ballon d'Or to chase"
+          }
+        ],
+        "person": "you"
+      }
+    },
+    {
+      "text": "Could your striker get past Haaland? Only one way to find out.",
+      "scene": {
+        "type": "stamp",
+        "text": "YOUR TURN",
+        "person": "you",
+        "color": "yellow"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

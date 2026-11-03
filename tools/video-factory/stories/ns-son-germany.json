@@ -1,0 +1,217 @@
+{
+  "id": "ns-son-germany",
+  "series": "What if the countries were swapped?",
+  "title": "What if Son was German?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/Son_Heung-min",
+    "https://www.sortiraparis.com/en/what-to-do-in-paris/sport-wellness/articles/349129-world-cup-2026-all-results-and-the-final-score",
+    "https://en.wikipedia.org/wiki/Germany_national_football_team",
+    "https://en.wikipedia.org/wiki/List_of_FIFA_Confederations_Cup_finals",
+    "https://www.11v11.com/teams/germany/tab/honours/"
+  ],
+  "checked": "Son: Hamburg academy from 2008/09, Bundesliga debut 2010, Korea debut 30 Dec 2010 v Syria, lost the 2015 Asian Cup final 2-1 aet to Australia, scored in Korea's 2-0 win over Germany at the 2018 World Cup, no senior trophy; 2026 World Cup: Korea did not get out of the group (Son Wikipedia + Sortiraparis). Germany since Dec 2010: World Cup 2014 and Confederations Cup 2017 (Germany Wikipedia + Confed finals list + 11v11). Asian Games 2018 gold left out (under-23 event). Alternate world clearly imagined.",
+  "clubs": {
+    "kor": {
+      "name": "South Korea",
+      "short": "KOR",
+      "c1": "#d2202f",
+      "c2": "#1b2a5c",
+      "pattern": "plain"
+    },
+    "ger": {
+      "name": "Germany",
+      "short": "GER",
+      "c1": "#ffffff",
+      "c2": "#000000",
+      "pattern": "plain"
+    },
+    "aus": {
+      "name": "Australia",
+      "short": "AUS",
+      "c1": "#ffcd00",
+      "c2": "#00843d",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "son": {
+      "name": "Son Heung-min",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#14110f"
+      ],
+      "beard": "none",
+      "kit": "kor"
+    },
+    "songer": {
+      "name": "Son Heung-min",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#14110f"
+      ],
+      "beard": "none",
+      "kit": "ger"
+    }
+  },
+  "lines": [
+    {
+      "text": "Son Heung-min learned his football in Germany. So what if he'd been born German?",
+      "scene": {
+        "type": "title",
+        "heading": "SON HEUNG-MIN",
+        "sub": "South Korea · since 2010",
+        "pill": "WHAT IF HE WAS GERMAN?",
+        "person": "son"
+      }
+    },
+    {
+      "text": "Real world first. He joined Hamburg's academy as a teenager and made his Bundesliga debut in twenty ten.",
+      "scene": {
+        "type": "person",
+        "person": "son",
+        "label": "Hamburg academy, then the Bundesliga",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "His Korea debut came that December. Since then: one Asian Cup final.",
+      "scene": {
+        "type": "score",
+        "home": "aus",
+        "away": "kor",
+        "hs": 2,
+        "as": 1,
+        "date": "31 January 2015",
+        "comp": "Asian Cup final",
+        "note": "after extra time"
+      }
+    },
+    {
+      "text": "Son scored a stoppage-time equaliser, but Australia won it in extra time.",
+      "scene": {
+        "type": "stamp",
+        "text": "SO CLOSE",
+        "person": "son",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Now look at Germany in exactly the same years.",
+      "scene": {
+        "type": "timeline",
+        "items": [
+          {
+            "year": "2014",
+            "label": "World Cup: WON"
+          },
+          {
+            "year": "2017",
+            "label": "Confed Cup: WON"
+          },
+          {
+            "year": "2018",
+            "label": "World Cup: out in groups"
+          },
+          {
+            "year": "2022",
+            "label": "World Cup: out in groups"
+          }
+        ]
+      }
+    },
+    {
+      "text": "A World Cup in Brazil, and the Confederations Cup three years later.",
+      "scene": {
+        "type": "trophies",
+        "items": [
+          {
+            "kind": "worldcup",
+            "label": "World Cup 2014"
+          },
+          {
+            "kind": "cup",
+            "label": "Confed Cup 2017"
+          }
+        ]
+      }
+    },
+    {
+      "text": "But here's the crazy part. At the twenty eighteen World Cup, Korea beat Germany two-nil.",
+      "scene": {
+        "type": "score",
+        "home": "kor",
+        "away": "ger",
+        "hs": 2,
+        "as": 0,
+        "date": "27 June 2018",
+        "comp": "World Cup group stage"
+      }
+    },
+    {
+      "text": "And the man who scored the second goal? Son Heung-min.",
+      "scene": {
+        "type": "text",
+        "heading": "KAZAN, 2018",
+        "body": "Son scores in the 97th minute. Germany, the reigning world champions, go out in the group stage.",
+        "stamp": "GERMANY OUT"
+      }
+    },
+    {
+      "text": "So in this alternate world, Son wears the German shirt instead.",
+      "scene": {
+        "type": "person",
+        "person": "songer",
+        "label": "ALTERNATE WORLD",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Two trophies instead of none, including a World Cup.",
+      "scene": {
+        "type": "whatif",
+        "title": "Son's senior trophies",
+        "real": {
+          "label": "Korea (real)",
+          "value": "0"
+        },
+        "alt": {
+          "label": "Germany (imagined)",
+          "value": "2"
+        }
+      }
+    },
+    {
+      "text": "And in this imagined world, nobody knocks Germany out in Kazan.",
+      "scene": {
+        "type": "quote",
+        "person": "songer",
+        "text": "I know how to beat that Korea team."
+      }
+    },
+    {
+      "text": "Korea's captain, or a German world champion? Which Son would you rather be? Comment below.",
+      "scene": {
+        "type": "versus",
+        "title": "Same player, different passport",
+        "left": {
+          "person": "son",
+          "label": "Korea",
+          "value": "0"
+        },
+        "right": {
+          "person": "songer",
+          "label": "Germany",
+          "value": "2"
+        }
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

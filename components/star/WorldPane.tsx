@@ -1,7 +1,7 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CareerState, LeagueTeam, LeagueResult } from "@/lib/star/types";
-import { ALL_DIVISIONS, divisionOf, leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
+import { ALL_DIVISIONS, divisionOf, leagueNameFor, seasonStartYear, type CareerDivision } from "@/lib/star/calendar";
 import { sortLeague, buildSeasonFixtures } from "@/lib/star/season";
 import { sortEuro } from "@/lib/star/euro";
 import type { CupState } from "@/lib/star/cups";
@@ -9,6 +9,8 @@ import { koAggregate, type EuroBracket } from "@/lib/star/euroBracket";
 import { worldOf, finishWorld, WORLD_LIVE } from "@/lib/star/world";
 import { worldRoundResults } from "@/lib/star/world/leagues";
 import { compHistoryFor } from "@/lib/star/world/history";
+import { loadRealHistory, joinHistory, careerFirstYear, type HistoryLine } from "@/lib/star/world/realHistory";
+import { leadersFor } from "@/lib/star/intl/editionLeaders";
 import { intlCompetitions, intlCompView, intlCompScorers, fullRanking } from "@/lib/star/intl/compView";
 import { cupScorers } from "@/lib/star/world/cupScorers";
 import { intlOf } from "@/lib/star/intl/career";
@@ -353,24 +355,76 @@ function LeagueRounds({ career, own, lg, glow, you }: { career: CareerState; own
   );
 }
 
-/** Every season's winner and runner-up (Mikey 24:44). */
+/** Every season's winner and runner-up (Mikey 24:44), with its top scorer,
+ *  top assister and player of the season, and the real history before your
+ *  career underneath (Mikey, 2 Nov 2026). */
 function History({ career, comp, glow, you }: { career: CareerState; comp: string; glow: string; you: string }) {
   const rows = useMemo(() => compHistoryFor(career, comp), [career, comp]);
-  if (!rows.length) return <Empty text="No seasons finished yet. The winner and runner-up go here at the end of each season." />;
+  const real = useRealHistory(comp);
+  const lines = useMemo(() => {
+    const mine: HistoryLine[] = rows.map(r => {
+      const y = seasonStartYear(career.player.startYear, r.season);
+      return {
+        label: `${y}-${String((y + 1) % 100).padStart(2, "0")}`, year: y, real: false, season: r.season,
+        winner: r.winner, runnerUp: r.runnerUp, score: r.score, scorers: r.scorers, assisters: r.assisters, best: r.best,
+      };
+    });
+    return joinHistory(mine, real ?? [], careerFirstYear(career.player.startYear));
+  }, [rows, real, career.player.startYear]);
+  if (!lines.length) return <Empty text={real === null ? "Loading the history…" : "No seasons finished yet. The winner and runner-up go here at the end of each season."} />;
+  return <HistoryList lines={lines} glow={glow} comp={comp} mine={(n) => n === you} badge={(club, size) => <ClubBadge club={club} size={size} />} name={shortClub} />;
+}
+
+/** A competition's real history, once its file has loaded (null while loading). */
+function useRealHistory(comp: string): HistoryLine[] | null {
+  const [got, setGot] = useState<{ comp: string; lines: HistoryLine[] } | null>(null);
+  useEffect(() => {
+    let live = true;
+    loadRealHistory(comp).then(lines => { if (live) setGot({ comp, lines }); });
+    return () => { live = false; };
+  }, [comp]);
+  return got && got.comp === comp ? got.lines : null;
+}
+
+/** "Mbappé 10" / "Olise, Kane 3": the leader(s) and the number. */
+function leaderText(xs: { name: string; n: number }[]): string {
+  return `${xs.map(x => x.name).join(", ")} ${xs[0].n}`;
+}
+
+/** One list of seasons, newest first: yours, then the real ones (each marked REAL). */
+function HistoryList({ lines, glow, comp, mine, badge, name }: {
+  lines: HistoryLine[]; glow: string; comp: string;
+  mine: (club: string) => boolean;
+  badge: (club: string, size: number) => React.ReactNode;
+  name: (club: string) => string;
+}) {
   return (
     <ClubCard glow={glow} className="p-1.5" data-history={comp}>
       <div className="space-y-1">
-        {rows.map(r => {
-          const y = career.player.startYear + r.season - 1;
-          const mine = r.winner === you || r.runnerUp === you;
+        {lines.map(r => {
+          const lit = !r.real && !!r.winner && (mine(r.winner) || (!!r.runnerUp && mine(r.runnerUp)));
+          const extra = !r.notHeld && (r.scorers?.length || r.assisters?.length || r.best);
           return (
-            <div key={r.season} className={`rounded-lg px-2 py-1.5 text-[11.5px] font-bold text-white ${mine ? "" : "bg-white/[0.04]"}`} style={mine ? youRowStyle(glow) : undefined}>
-              <div className="text-[9.5px] font-black uppercase tracking-wider text-amber-300">{String(y).slice(2)}/{String(y + 1).slice(2)}{r.score ? ` · final ${r.score}` : ""}</div>
-              <div className="mt-0.5 flex items-center gap-1.5">
-                <span>🏆</span><ClubBadge club={r.winner} size={16} />
-                <span className="min-w-0 flex-1 truncate font-black">{shortClub(r.winner)}</span>
-                {r.runnerUp && <span className="flex min-w-0 items-center gap-1 text-white/75"><span className="text-[9px] uppercase">2nd</span><ClubBadge club={r.runnerUp} size={14} /><span className="max-w-[7rem] truncate">{shortClub(r.runnerUp)}</span></span>}
+            <div key={`${r.real ? "r" : "c"}${r.label}`} data-history-row={r.label} data-real={r.real ? "1" : "0"}
+              className={`rounded-lg px-2 py-1.5 text-[11.5px] font-bold text-white ${lit ? "" : "bg-white/[0.04]"}`} style={lit ? youRowStyle(glow) : undefined}>
+              <div className="flex items-center gap-1.5 text-[9.5px] font-black uppercase tracking-wider text-amber-300">
+                <span>{r.label}{r.score ? ` · final ${r.score}` : ""}</span>
+                {r.real && <span className="rounded bg-white/10 px-1 text-[8px] tracking-widest text-white/60">Real</span>}
               </div>
+              {r.notHeld ? <div className="mt-0.5 text-white/55">Not played</div> : r.winner && (
+                <div className="mt-0.5 flex items-center gap-1.5">
+                  <span>🏆</span>{badge(r.winner, 16)}
+                  <span className="min-w-0 flex-1 truncate font-black">{name(r.winner)}</span>
+                  {r.runnerUp && <span className="flex min-w-0 items-center gap-1 text-white/75"><span className="text-[9px] uppercase">2nd</span>{badge(r.runnerUp, 14)}<span className="max-w-[7rem] truncate">{name(r.runnerUp)}</span></span>}
+                </div>
+              )}
+              {extra && (
+                <div className="mt-1 flex flex-wrap gap-x-2.5 gap-y-0.5 text-[10.5px] font-semibold text-white/75">
+                  {!!r.scorers?.length && <span data-leader="goals">⚽ {leaderText(r.scorers)}</span>}
+                  {!!r.assisters?.length && <span data-leader="assists">🅰️ {leaderText(r.assisters)}</span>}
+                  {r.best && <span data-leader="best">⭐ {r.best.name}</span>}
+                </div>
+              )}
             </div>
           );
         })}
@@ -569,25 +623,28 @@ function IntlCompPane({ career, comp, nation }: { career: CareerState; comp: Com
           </ClubCard>
         </div>
       )}
-      {tab === "history" && (v.history.length ? (
-        <ClubCard glow={glow} className="p-1.5">
-          <div className="space-y-1">
-            {v.history.map((f, i) => (
-              <div key={i} className="rounded-lg bg-white/[0.04] px-2 py-1.5 text-[11.5px] font-bold text-white" style={f.winner === nation || f.runnerUp === nation ? youRowStyle(glow) : undefined}>
-                <div className="text-[9.5px] font-black uppercase tracking-wider text-amber-300">{f.year} · final {f.score}</div>
-                <div className="mt-0.5 flex items-center gap-1.5">
-                  <span>🏆</span><NationFlag nation={f.winner} width={18} rounded={2} />
-                  <span className="min-w-0 flex-1 truncate font-black">{f.winner}</span>
-                  <span className="text-[9px] uppercase text-white/75">2nd</span><NationFlag nation={f.runnerUp} width={16} rounded={2} />
-                  <span className="max-w-[7rem] truncate text-white/75">{f.runnerUp}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </ClubCard>
-      ) : <Empty text="No final played yet. Each one is added here once it is played." />)}
+      {tab === "history" && <IntlHistory career={career} comp={comp} v={v} nation={nation} glow={glow} />}
     </div>
   );
+}
+
+/** A tournament's finals in your career, then its real history (Mikey, 2 Nov 2026). */
+function IntlHistory({ career, comp, v, nation, glow }: { career: CareerState; comp: CompKind; v: NonNullable<ReturnType<typeof intlCompView>>; nation: string | null; glow: string }) {
+  const real = useRealHistory(comp);
+  const lines = useMemo(() => {
+    const mine: HistoryLine[] = v.history.map(f => {
+      let l: ReturnType<typeof leadersFor> = null;
+      try { l = leadersFor(career, f.final); } catch { /* names unknown */ }
+      return {
+        label: String(f.year), year: f.year, real: false, winner: f.winner, runnerUp: f.runnerUp, score: f.score,
+        ...(l?.scorers.length ? { scorers: l.scorers } : {}), ...(l?.assisters.length ? { assisters: l.assisters } : {}), ...(l?.best ? { best: l.best } : {}),
+      };
+    });
+    // A tournament played the summer your career starts is real history (the 2026 World Cup).
+    return joinHistory(mine, real ?? [], careerFirstYear(career.player.startYear) + 1);
+  }, [v.history, real, career]);
+  if (!lines.length) return <Empty text={real === null ? "Loading the history…" : "No final played yet. Each one is added here once it is played."} />;
+  return <HistoryList lines={lines} glow={glow} comp={comp} mine={(n) => n === nation} badge={(c, size) => <NationFlag nation={c} width={size + 2} rounded={2} />} name={(c) => c} />;
 }
 
 /** International scorers: a flag instead of a club badge; your nation lit. */

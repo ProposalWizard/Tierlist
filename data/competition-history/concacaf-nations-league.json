@@ -1,0 +1,172 @@
+{
+  "competition": "CONCACAF Nations League",
+  "slug": "concacaf-nations-league",
+  "kind": "tournament",
+  "lineage_note": "Started 2019-20 (finals 2021). Seasons labelled by edition; the final is played the following calendar year. Winner, runner-up and final are League A's Nations League Finals. There was no 2025-26 edition (the 5th edition is 2026-27), so 2024-25 is the latest finished. top_assister from 2023-24: whole edition, Leagues A-C plus quarter-finals and Finals, assists from espn's match data (opta-fed goal/assist events), summed over every finals match; for 2019-20 and 2022-23 ESPN logged assists for League A only (about 60 of 80 multi-goal B/C matches have none), so no whole-edition leader can be named.",
+  "history_from": "2019-20",
+  "history_to": "2024-25",
+  "field_from": {
+    "runner_up": "2019-20",
+    "final_score": "2019-20",
+    "top_scorer": "2019-20",
+    "top_assister": "2023-24",
+    "player_of_season": "2019-20"
+  },
+  "player_of_season_award": "CONCACAF Nations League Best Player award (every edition)",
+  "top_assister_source": "ESPN match data (Opta), 2023-24 and 2024-25 (about 105 matches each; the few matches with no assist logged were checked and their goals were unassisted). No second full table found.",
+  "sources": [
+    "https://en.wikipedia.org/wiki/CONCACAF_Nations_League",
+    "https://en.wikipedia.org/wiki/2023%E2%80%9324_CONCACAF_Nations_League",
+    "https://en.wikipedia.org/wiki/2024%E2%80%9325_CONCACAF_Nations_League",
+    "https://www.rsssf.org/tables/2020concanl.html",
+    "https://www.rsssf.org/tables/2023concanl.html",
+    "https://www.rsssf.org/tables/2024concanl.html",
+    "https://www.rsssf.org/tables/2025concanl.html",
+    "https://www.concacaf.com/news/reyna-turner-glasgow-earn-concacaf-nations-league-honors",
+    "https://www.espn.com/soccer/stats/_/league/CONCACAF.NATIONS.LEAGUE"
+  ],
+  "seasons": [
+    {
+      "season": "2019-20",
+      "status": "played",
+      "winner": "United States",
+      "runner_up": "Mexico",
+      "final_score": "3-2 (a.e.t.)",
+      "top_scorer": [
+        {
+          "name": "Gleofilo Vlijter",
+          "team": "Suriname",
+          "goals": 10
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Weston McKennie",
+        "team": "United States"
+      },
+      "notes": "Finals played June 2021 (delayed by COVID-19). Top scorer = most goals across Leagues A-C (Vlijter, League B; also CONCACAF's official top-scorer award)."
+    },
+    {
+      "season": "2022-23",
+      "status": "played",
+      "winner": "United States",
+      "runner_up": "Canada",
+      "final_score": "2-0",
+      "top_scorer": [
+        {
+          "name": "Gerwin Lake",
+          "team": "Sint Maarten",
+          "goals": 8
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Christian Pulisic",
+        "team": "United States"
+      },
+      "notes": "Finals played June 2023. Top scorer = most goals across Leagues A-C (Lake, League C; also the official award)."
+    },
+    {
+      "season": "2023-24",
+      "status": "played",
+      "winner": "United States",
+      "runner_up": "Mexico",
+      "final_score": "2-0",
+      "top_scorer": [
+        {
+          "name": "Axel Raga",
+          "team": "Saint Martin",
+          "goals": 8
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Tyler Forbes",
+          "team": "British Virgin Islands",
+          "assists": 4
+        },
+        {
+          "name": "Cornelius Stewart",
+          "team": "Saint Vincent and the Grenadines",
+          "assists": 4
+        },
+        {
+          "name": "Liam Gordon",
+          "team": "Guyana",
+          "assists": 4
+        }
+      ],
+      "player_of_season": {
+        "name": "Gio Reyna",
+        "team": "United States"
+      },
+      "notes": "Finals played March 2024. Top scorer = most goals across Leagues A-C (Raga, League C, 8). CONCACAF's official Top Scorer Award used a weighted points system and went to Omari Glasgow (Guyana, 7 goals in League B)."
+    },
+    {
+      "season": "2024-25",
+      "status": "played",
+      "winner": "Mexico",
+      "runner_up": "Panama",
+      "final_score": "2-1",
+      "top_scorer": [
+        {
+          "name": "Dorny Romero",
+          "team": "Dominican Republic",
+          "goals": 10
+        }
+      ],
+      "top_assister": [
+        {
+          "name": "Fafà Picault",
+          "team": "Haiti",
+          "assists": 3
+        },
+        {
+          "name": "Dany Jean",
+          "team": "Haiti",
+          "assists": 3
+        },
+        {
+          "name": "Louicius Deedson",
+          "team": "Haiti",
+          "assists": 3
+        },
+        {
+          "name": "Christopher Attys",
+          "team": "Haiti",
+          "assists": 3
+        },
+        {
+          "name": "Troy Jules",
+          "team": "Dominica",
+          "assists": 3
+        },
+        {
+          "name": "Cornelius Stewart",
+          "team": "Saint Vincent and the Grenadines",
+          "assists": 3
+        },
+        {
+          "name": "Jearl Margaritha",
+          "team": "Curaçao",
+          "assists": 3
+        },
+        {
+          "name": "Junior Firpo",
+          "team": "Dominican Republic",
+          "assists": 3
+        },
+        {
+          "name": "Heinz Mörschel",
+          "team": "Dominican Republic",
+          "assists": 3
+        }
+      ],
+      "player_of_season": {
+        "name": "Raúl Jiménez",
+        "team": "Mexico"
+      },
+      "notes": "Finals played March 2025. Top scorer = most goals across Leagues A-C (Romero, League B; also the official award). Jiménez led League A with 5."
+    }
+  ]
+}

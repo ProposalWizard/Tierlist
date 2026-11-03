@@ -1,0 +1,353 @@
+{
+ "id": "city-pep-2016",
+ "series": "What if Man City…?",
+ "title": "What if Pep never came to City?",
+ "sources": [
+  "https://www.premierleague.com/en/news/60169",
+  "https://www.espnfc.us/manchester-city/story/2798485/guardiola-confirmed-as-pellegrini-successor-at-man-city",
+  "https://www.unitedinfocus.com/news/sir-alex-ferguson-expresses-regret-over-2012-pep-guardiola-meeting-in-new-book/",
+  "https://www.foxnews.com/sports/sir-alex-ferguson-reveals-pursuit-of-pep-guardiola-as-united-successor.amp",
+  "https://www.pressreader.com/malaysia/new-straits-times/20171211/282119226882868",
+  "https://www.soccerladuma.co.za/international/english-premier-league/chelsea-wanted-pep-guardiola-as-boss-before-jose-mourinho-20150414",
+  "https://bleacherreport.com/articles/1116441-chelsea-owner-ambramovic-to-offer-guardiola-40m-deal-to-leave-barcelona",
+  "https://www.aljazeera.com/sports/2026/6/29/enzo-maresca-appointed-man-city-manager-to-succeed-pep-guardiola",
+  "https://www.dailysabah.com/sports/football/man-city-confirm-guardiolas-exit-after-10-year-reign-20-trophies/amp",
+  "https://www.beinsports.com/en-us/soccer/premier-league/articles/all-of-pep-guardiola-s-titles-with-manchester-city-the-era-that-changed-club-history-2026-05-22",
+  "https://en.wikipedia.org/wiki/List_of_English_football_champions",
+  "https://rsssf.org/tablese/eng2021.html"
+ ],
+ "checked": "City announced Pep on 1 Feb 2016, talks began 2012 (PL, ESPN); Ferguson dinner in New York, Dec 2012, Moyes chosen, Pep's accent remark (Fox, United in Focus, NST); Abramovich chased Pep repeatedly (Soccer Laduma, Bleacher Report); 10 seasons, 6 PL titles, 20 trophies, 2023 treble, left summer 2026, Maresca appointed 29 June 2026 (Al Jazeera, Daily Sabah, beIN); runners-up and points 2018-2024 (Wikipedia champions list, RSSF, ESPN tables). United-hire-Pep scenario imagined.",
+ "clubs": {
+  "mci": {
+   "name": "Manchester City",
+   "short": "MCI",
+   "c1": "#6cabdd",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "mun": {
+   "name": "Manchester United",
+   "short": "MUN",
+   "c1": "#da291c",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "che": {
+   "name": "Chelsea",
+   "short": "CHE",
+   "c1": "#034694",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "bay": {
+   "name": "Bayern Munich",
+   "short": "FCB",
+   "c1": "#dc052d",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes"
+  },
+  "liv": {
+   "name": "Liverpool",
+   "short": "LIV",
+   "c1": "#c8102e",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "ars": {
+   "name": "Arsenal",
+   "short": "ARS",
+   "c1": "#ef0107",
+   "c2": "#ffffff",
+   "pattern": "sides"
+  }
+ },
+ "people": {
+  "pep": {
+   "name": "Pep Guardiola",
+   "skin": "light",
+   "hair": [
+    "bald",
+    "#5a5a5a"
+   ],
+   "beard": "stubble",
+   "beardCol": "#6b6b6b",
+   "kit": "suit",
+   "club": "mci"
+  },
+  "ferguson": {
+   "name": "Sir Alex Ferguson",
+   "skin": "pink",
+   "hair": [
+    "tidy",
+    "#e6e6e6"
+   ],
+   "beard": "none",
+   "kit": "suit",
+   "club": "mun"
+  },
+  "mourinho": {
+   "name": "José Mourinho",
+   "skin": "olive",
+   "hair": [
+    "side",
+    "#9a9a9a"
+   ],
+   "beard": "none",
+   "kit": "suit",
+   "club": "mun"
+  },
+  "maresca": {
+   "name": "Enzo Maresca",
+   "skin": "olive",
+   "hair": [
+    "side",
+    "#2a1d14"
+   ],
+   "beard": "short",
+   "beardCol": "#2a1d14",
+   "kit": "suit",
+   "club": "mci"
+  }
+ },
+ "lines": [
+  {
+   "text": "Pep Guardiola could have been Manchester United's manager. Think about that.",
+   "scene": {
+    "type": "title",
+    "heading": "PEP GUARDIOLA",
+    "sub": "MAN CITY · 2016 TO 2026",
+    "pill": "WHAT IF?",
+    "person": "pep"
+   }
+  },
+  {
+   "text": "Twenty twelve. Pep leaves Barcelona and takes a year off in New York.",
+   "scene": {
+    "type": "person",
+    "person": "pep",
+    "label": "NEW YORK, 2012",
+    "mood": "flat"
+   }
+  },
+  {
+   "text": "Sir Alex Ferguson takes him out to dinner there. Fergie wanted Pep as his successor.",
+   "scene": {
+    "type": "versus",
+    "title": "NEW YORK DINNER",
+    "left": {
+     "person": "ferguson",
+     "label": "Ferguson",
+     "value": "Retiring soon"
+    },
+    "right": {
+     "person": "pep",
+     "label": "Guardiola",
+     "value": "On a break"
+    }
+   }
+  },
+  {
+   "text": "Pep later joked he couldn't fully understand Fergie's Scottish accent.",
+   "scene": {
+    "type": "text",
+    "heading": "LOST IN TRANSLATION",
+    "body": "Guardiola later said he may have missed the United job partly because he couldn't fully follow Ferguson's accent."
+   }
+  },
+  {
+   "text": "United went for David Moyes. Chelsea's Roman Abramovich tried for Pep again and again. City had been talking to him since twenty twelve.",
+   "scene": {
+    "type": "list",
+    "title": "WHO WANTED PEP",
+    "rows": [
+     {
+      "name": "Man United",
+      "value": "Ferguson's pick",
+      "club": "mun"
+     },
+     {
+      "name": "Chelsea",
+      "value": "chased him for years",
+      "club": "che"
+     },
+     {
+      "name": "Bayern",
+      "value": "got him in 2013",
+      "club": "bay"
+     },
+     {
+      "name": "Man City",
+      "value": "got him in 2016",
+      "club": "mci",
+      "hl": true
+     }
+    ]
+   }
+  },
+  {
+   "text": "He went to Bayern Munich, and in February twenty sixteen, City announced him.",
+   "scene": {
+    "type": "timeline",
+    "items": [
+     {
+      "year": "2012",
+      "label": "Leaves Barcelona"
+     },
+     {
+      "year": "2013",
+      "label": "Bayern Munich"
+     },
+     {
+      "year": "2016",
+      "label": "Man City"
+     },
+     {
+      "year": "2026",
+      "label": "Leaves City"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Ten seasons. Six Premier League titles. Twenty trophies, including the treble in twenty twenty-three.",
+   "scene": {
+    "type": "stats",
+    "title": "PEP AT CITY",
+    "items": [
+     {
+      "n": "10",
+      "l": "seasons"
+     },
+     {
+      "n": "6",
+      "l": "Premier League titles"
+     },
+     {
+      "n": "20",
+      "l": "trophies"
+     }
+    ],
+    "person": "pep"
+   }
+  },
+  {
+   "text": "Now the alternate world. In twenty sixteen, United take Fergie's advice and hire Pep, not José Mourinho.",
+   "scene": {
+    "type": "whatif",
+    "title": "SUMMER 2016",
+    "real": {
+     "label": "Real world",
+     "value": "Pep to City"
+    },
+    "alt": {
+     "label": "Alternate world",
+     "value": "Pep to United"
+    }
+   }
+  },
+  {
+   "text": "No hundred-point season at City. No treble in sky blue.",
+   "scene": {
+    "type": "stamp",
+    "text": "CANCELLED",
+    "color": "red",
+    "person": "pep"
+   }
+  },
+  {
+   "text": "Those six titles? In the real world, the runners-up were United, Liverpool and Arsenal.",
+   "scene": {
+    "type": "list",
+    "title": "PEP'S TITLES · RUNNER-UP",
+    "rows": [
+     {
+      "name": "2018 · Man United",
+      "value": "81 pts",
+      "club": "mun"
+     },
+     {
+      "name": "2019 · Liverpool",
+      "value": "97 pts",
+      "club": "liv",
+      "hl": true
+     },
+     {
+      "name": "2021 · Man United",
+      "value": "74 pts",
+      "club": "mun"
+     },
+     {
+      "name": "2022 · Liverpool",
+      "value": "92 pts",
+      "club": "liv",
+      "hl": true
+     },
+     {
+      "name": "2023 · Arsenal",
+      "value": "84 pts",
+      "club": "ars"
+     },
+     {
+      "name": "2024 · Arsenal",
+      "value": "89 pts",
+      "club": "ars"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Liverpool lost the twenty nineteen title with ninety-seven points. Twenty twenty-two with ninety-two. Both by a single point.",
+   "scene": {
+    "type": "versus",
+    "title": "BY ONE POINT",
+    "left": {
+     "person": "pep",
+     "label": "City 2019",
+     "value": "98"
+    },
+    "right": {
+     "person": "pep",
+     "label": "Liverpool 2019",
+     "value": "97"
+    }
+   }
+  },
+  {
+   "text": "In this world, those could be Liverpool titles. And United's long wait for a league title? Maybe it never happens.",
+   "scene": {
+    "type": "whatif",
+    "title": "2016 TO 2026",
+    "real": {
+     "label": "Real world",
+     "value": "City 6 titles"
+    },
+    "alt": {
+     "label": "Alternate world",
+     "value": "Shared out?"
+    }
+   }
+  },
+  {
+   "text": "In real life, Pep left City this summer, and Enzo Maresca took over.",
+   "scene": {
+    "type": "person",
+    "person": "maresca",
+    "label": "CITY BOSS, 2026",
+    "mood": "flat"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
+}
