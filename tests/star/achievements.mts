@@ -127,8 +127,9 @@ const travelled: CareerState = {
   const at = (money: number) => checkNewAchievements({ ...c, money });
   check(!at(500).includes("rich") && !at(500).includes("loaded"), "★500 no longer unlocks Comfortable Living or Wealthy");
   check(at(10_000).includes("rich") && !at(10_000).includes("loaded"), "★10,000 unlocks Comfortable Living only");
-  check(at(100_000).includes("loaded") && !at(100_000).includes("millionaire"), "★100,000 unlocks Wealthy");
-  check(at(1_000_000).includes("millionaire") && at(10_000_000).includes("rich-list"), "★1M and ★10M unlock Millionaire and Rich List");
+  // Wealthy (★100k) and Rich List (★10m) were cut on 3 Nov 2026.
+  check(!at(100_000).includes("millionaire"), "★100,000 is not yet a Millionaire");
+  check(at(1_000_000).includes("millionaire"), "★1M unlocks Millionaire");
 }
 
 // ── One match through feats.ts ──
