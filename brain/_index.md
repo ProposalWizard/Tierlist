@@ -15,13 +15,21 @@ FACT-DAT-003 | star_casino.sql: DO NOT RUN; the casino stays on the phone with C
 FACT-DAT-004 | Every other listed migration (draft, sofifa, security, star tables) is RUN, no action needed; full rows are in SESSION_LOG.md. | data
 FACT-DAT-005 | star_xp_config and star_tuning_notes were run live on 23 Oct 2026 (Claude via the Supabase connector, Harry's yes); update_login_streak now only updates the signed-in player. | data
 FACT-DAT-006 | The Supabase connector works in cloud Claude chats since 23 Oct 2026 (project cagkgfketucousksgtbk); CLAUDE.md's "Pending Setup" line saying cloud connectors fail is out of date for Supabase. | process,data
-FACT-DAT-007 | Every History tab shows your career's seasons, then the real history before them (data/competition-history, loaded only when the tab opens), each season with winner, runner-up, final score, top scorer, top assister and player of the season. | career,rule,data
+FACT-DAT-007 | Analytics (Google Analytics and PostHog) load only after Accept in the cookie box; No thanks loads neither, and /legal#cookies lets a player choose again. | 
+FACT-DAT-008 | Every History tab shows your career's seasons, then the real history before them (data/competition-history, loaded only when the tab opens), each season with winner, runner-up, final score, top scorer, top assister and player of the season. | career,rule,data
 FACT-ENG-001 | The guard also fails on a direct CanvasMatch mount, a grown KNOWN_COPIES list, a new canvas animation loop or a blind canary. | engine
 FACT-ENG-002 | Trial penalties, free kicks, training strike drills and the gauntlet mount EngineFeature; a difference is a named dial. | engine
 FACT-ENG-003 | Still copies, to port next: five-a-side only; the /star-match-dev fork was deleted (18 Oct 2026). | admin,engine
 FACT-ENG-004 | [SUPERSEDED] The engine-warn hook also asks, as SOMETHING MAY DRIFT, on CanvasMatch, EnginePlay, hiddenMatch and the other play-screen files. | engine
 FACT-ENG-005 | The engine-warn hook warns (no Allow prompt) on canvasEngine and on the play-screen drift files; its old ask() is kept to switch back. | engine
 FACT-ENG-006 | Men, keeper and ball are one size in metres on every camera (a man 1.63 m, 22% of the goal's width, Mikey's 4-0 build-up picture); cameras unchanged. Locked by tests/star/figureScale.mts. | team,engine
+FACT-ENG-007 | One match for every tool: careerMatchSpec carries a new career's corner rule and moves, and hiddenMatch stepInvolved (a minute plus any owed chance) is the one step the real match, the radar and sim90 use. | career
+FACT-ENG-008 | [SUPERSEDED] Live chances (Leo, 30 Oct 2026): own switch kib-live-chances, off by default; the last pass keeps coming and letting go of the drag is the swing. | team,engine
+FACT-ENG-009 | [SUPERSEDED] Live chances (Leo, 30 Oct 2026): own switch kib-live-chances, off by default; with the strike screen (on by default) letting go locks the aim and the tap on a small ball is the kick. | team,engine
+FACT-ENG-010 | Live chances (Leo, 31 Oct 2026): own switch kib-live-chances, off by default; with the kick screen (on by default) letting go sets the timing, then the game's normal kick screen picks where on the ball. | team,engine
+FACT-ENG-011 | Live chances first touch (Leo, 1 Nov 2026): a quick flick from the ring is ONE touch; the keeper rushes in one-on-ones and either smothers it or is beaten. | team,engine
+FACT-ENG-012 | Live chances: the player's stats set the skill (technique, pace, vision, power; liveDialsFor), and everyone moves (defenders close down/cover/chase the touch, team-mates carry on their runs). | team,engine
+FACT-ENG-013 | Match free kicks: a ball into the very top corner beats the keeper about 4 in 5 (FREE_KICK.corner, cornerness); was 11% against a 92 keeper. | engine
 FACT-KIB-001 | Knowitball as a client: three mates building the best football game ever; client code KIB. | client-kib
 FACT-KIB-002 | Audience: football fans 16 to 30 on TikTok, Reels and Shorts (Harry to confirm). | client-kib
 FACT-KIB-003 | Video format: 1080×1920 (9:16), 30 fps, H.264, AAC stereo; v01 ran 44.7 s at -13.4 LUFS. | client-kib
@@ -32,6 +40,7 @@ FACT-KIB-007 | Learning from v01: v0.2 and v0.3 had no screenshots in the repo, 
 FACT-KIB-008 | Learning from v01: render frames in chunks of 250, one page per chunk; one long session crashed the page. | client-kib
 FACT-KIB-009 | The one list of video ideas and the reference TikToks they came from (link, @account, what it is, style, what we made) is docs/marketing/video-ideas.md; add new references and ideas there. | client-kib
 FACT-KIB-010 | Base voice for Knowitball videos is voice E: Chatterbox TTS's own built-in voice, finished with humanise.sh (mic-in-a-room). Mikey, 3 Nov 2026; replaces Kokoro bm_george and the George clone. | team,process,client-kib
+FACT-TEAM-001 | next build needs about 6.5 GB; package.json gives it 6 GB of heap (node --max-old-space-size=6144). A Vercel deploy that fails with no other clue may be out of memory again: build locally with no NODE_OPTIONS to check. | deploy,team
 FACT-UI-001 | Settings keeps only real player preferences (sound, full screen, 3D quality, faces, names) and the Settings UI Old/New row. | three-d,ui
 FACT-UI-002 | Decided, no toggle: to see or bring back an old option, read the files at ebe02ad; old stored values are ignored. | ui
 FACT-UI-003 | Chances: the team's drawn chances only, everywhere; the New chance library and the Generator were DELETED. | team,ui
@@ -48,6 +57,7 @@ FACT-UI-013 | Rows that stay: full screen, sound, 3D quality, skip the line-up, 
 FACT-UI-014 | Cut scenes: people and camera New, no row; the Version picker went; the rows left live in lib/star/lookRows.ts. | ui
 FACT-UI-015 | Faces: photo faces OFF for everyone, every head is the drawn one (PHOTO_FACES); face editors hidden until the photo revamp. | ui
 FACT-UI-016 | A new career opens its match moves one at a time (headers and volleys after game 3, steer at Pace 60, sprint at Pace 65, dribble after game 4); power shot, knuckleball, skill moves and one-twos wait for an update. | career,ui
+FACT-UI-017 | Mikey's Broadcast pop-ups (scoreboard for a goal, TV caption for the rest) are the only match pop-ups; no setting, the Classic and Arcade words are gone. | team,ui
 PRO-3D-001 | Any 3D, animation, mocap, model or cut-scene work: merge main first, then read docs/3D_HANDBOOK.md. | three-d,deploy
 PRO-DAT-001 | Run a pending migration in the Supabase SQL Editor before touching the related features. | data
 PRO-DAT-002 | Bug report? Use the supabase-bug-hunt skill: read the report and the player's save, compare normal saves, reproduce, fix the code. | data
@@ -92,6 +102,7 @@ RUL-ENG-004 | Never add to KNOWN_COPIES, raise CEILING, touch the canary or remo
 RUL-ENG-005 | The real match (app/star-dev/page.tsx) is the only screen that mounts CanvasMatch directly. | engine
 RUL-ENG-006 | Shared mechanics, not a shared picture: a mode keeps the real ball and picks what is on the pitch with scene. | engine
 RUL-ENG-007 | The match engine may change; the engine-warn hook warns Claude and never stops to ask the person (Mikey, 25 Oct 2026). | engine,team,rule
+RUL-ENG-008 | Every gameplay change must reach every test page, training and the trial the same day; only a marked, named difficulty may differ (trial/training free-kick keeper). | ui,rule,engine
 RUL-KIB-001 | Voice: short, cheeky, football-mad, numbers first ("9.8% to 47.6%"). | client-kib
 RUL-KIB-002 | Real game footage only, or marked "ILLUSTRATION" on screen. | client-kib
 RUL-KIB-003 | No real club badges or player photos in ads unless we have the right to use them. | client-kib
@@ -124,9 +135,11 @@ RUL-TEAM-025 | Feedback on a patch note is answered on that same patch note page
 RUL-TEAM-026 | Big tasks: do every step that needs no approval first; leave anything that may ask Mikey to tap Allow (artifact publish, connector call) until the end. | team
 RUL-TEAM-027 | When Mikey asks to measure, report or discuss something, report back and do not change the game; build only what he asks to be built. | team
 RUL-TEAM-028 | "Every patch note: author, real date and time, every update with time and where, its own number (no base shared with anyone's, search all branches), a menu name saying what it is about, and the one standard page; checked by rules.mjs." | team,process
-RUL-UI-001 | Decide, don't toggle: a new look or gameplay change is built as THE game, with no new New/Old row in Settings. | ui
+RUL-TEAM-029 | Leo's chats: start with a plan as progress bars (steps, time each, % done), update them and the admin board often; end every task with yes/no lines (works? patch notes made/updated? live on admin page? merged into the game?), then at most 5 lines; ask for every approval together at the start or end. | admin,team,process,deploy
+RUL-UI-001 | [SUPERSEDED] Decide, don't toggle: a new look or gameplay change is built as THE game, with no new New/Old row in Settings. | ui
 RUL-UI-002 | Unfinished work lives on a test page (a /star-*-dev page), not behind a switch in the real game. | ui,admin
 RUL-UI-003 | Existing switches stay until someone decides each one; never delete one unasked. | rule,ui
 RUL-UI-004 | "Preview" (game version) is used only when someone asks for it in those words; otherwise a change goes straight into the game. | rule,ui
 RUL-UI-005 | Harry's changes go straight into the game when he says push: no new New/Old row, no Preview entry. | deploy,ui
 RUL-UI-006 | "No scroll wheel inside a screen: just show it and you scroll down; never add a scroll wheel unless Mikey specifically says." | team,rule,ui
+RUL-UI-007 | Decide, don't toggle, EXCEPT skins: a whole-UI skin (e.g. Glass stadium) may be a Settings choice; gameplay and single-feature looks still get no New/Old row. | ui

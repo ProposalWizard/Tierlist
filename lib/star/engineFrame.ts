@@ -125,6 +125,13 @@ export interface EngineFrame {
   cam: EngineFrameCamera;
   /** The ball as drawn (null: none on the pitch this frame). */
   ball: { x: number; y: number; z: number; vx: number; vy: number; vz: number; live: boolean; inNet: boolean } | null;
+  /**
+   * The keeper has caught it and Leo's "Keeper catches and dives" is on: a 3D view
+   * puts the ball between the keeper's hands instead of where the match left it
+   * (the match parks a caught ball 0.55 m up at his spot, which read as a ball
+   * frozen in the air while he dived elsewhere; Leo, 28 Oct 2026).
+   */
+  keeperHolds?: boolean;
   /** Where a ball in the air will first land (the 2D's cross on the grass). */
   landing: Vec2 | null;
   keeper: EngineFrameKeeper | null;
@@ -133,6 +140,12 @@ export interface EngineFrame {
   aim: { from: Vec2; to: Vec2; power: number } | null;
   /** The ring under the man on the ball (new view): where it is. */
   ring: Vec2 | null;
+  /**
+   * Live chances (lib/star/liveChance.ts): the spot you aim from while the pass
+   * is still rolling in (the ball as drawn is not there yet). A press there
+   * grabs the aim, as a press on the ball does. Absent: the ball is the grab.
+   */
+  grabAt?: Vec2 | null;
   /** Whose goal it was while the result is up. */
   goalSide: "us" | "them" | null;
   /** The goal is part of this picture (a keeper may stand in it). */

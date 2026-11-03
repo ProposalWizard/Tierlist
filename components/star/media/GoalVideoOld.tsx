@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
-import { getClips } from "@/lib/star/goalClip/store";
+import { recordedOrStandIn } from "@/lib/star/media/standIn";
 import { makeEdit, editDuration, posterMoment, clipFileName, type ClipStyle } from "@/lib/star/goalClip/edit";
 import { drawEditFrame, prepareClipSprites, type ClipCredit } from "@/lib/star/goalClip/render";
 import { encodeEdit, saveVideo, videoSupported, type EncodedClip } from "@/lib/star/goalClip/encode";
@@ -142,6 +142,8 @@ interface GoalVideoProps {
   clipIds: string[];
   /** Goals from a match you did not play: made on the phone (goalClip/synth.ts). */
   synth?: SynthGoal[];
+  /** Football Twitter: a made goal for each recording, played when this phone lacks it (lib/star/media/standIn.ts). */
+  standIn?: SynthGoal[];
   style: ClipStyle;
   /** Which of the poster's cuts (edit.ts makeEdit). */
   variant?: number;
@@ -164,7 +166,7 @@ interface GoalVideoProps {
 
 type Status = "idle" | "making" | "ready" | "unsupported" | "failed";
 
-export default function GoalVideoOld({ clipIds, synth, style, variant = 0, credit, title, badge, fallback, autoStart = false, priority = 0, fill = false }: GoalVideoProps) {
+export default function GoalVideoOld({ clipIds, synth, standIn, style, variant = 0, credit, title, badge, fallback, autoStart = false, priority = 0, fill = false }: GoalVideoProps) {
   const [played, setPlayed] = useState(0);
   const [tracks, setTracks] = useState<GoalTrack[] | null>(null);
   const [status, setStatus] = useState<Status>("idle");
@@ -203,7 +205,7 @@ export default function GoalVideoOld({ clipIds, synth, style, variant = 0, credi
     }
     // Recorded goals and made ones together, in the order they were scored.
     const merge = (rec: GoalTrack[]) => [...rec, ...madeTracks].sort((a, b) => a.meta.minute - b.meta.minute);
-    getClips(clipIds).then(t => { if (live) setTracks(merge(t)); }).catch(() => { if (live) setTracks(merge([])); });
+    recordedOrStandIn(clipIds, standIn).then(t => { if (live) setTracks(merge(t)); }).catch(() => { if (live) setTracks(merge([])); });
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clipIds.join(","), synthKey]);

@@ -347,6 +347,19 @@ export default function StoreView(p: StoreViewProps) {
                   </div>
                 </div>
               ))}
+              {/* Goal celebrations live with the other moves (Leo, 28 Oct 2026: "i cant find
+                  celebration animations in shop/store"; they were filed under Accessories). */}
+              <div className="mb-5">
+                <SectionNote left="Goal celebrations" right="After every goal you score" />
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  {ACCESSORIES.filter((a) => a.slot === "celebration" && shown(a)).map((a, i) => (
+                    <RiseIn key={a.id} index={i} step={50}>
+                      <ItemCard item={a} state={state} ctx={ctx} dateKey={dateKey} onOpen={setOpenId}
+                        equipped={inUse(a, state)} equippedWear={equippedWear} />
+                    </RiseIn>
+                  ))}
+                </div>
+              </div>
             </>
           )}
 
@@ -367,7 +380,7 @@ export default function StoreView(p: StoreViewProps) {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {ACCESSORIES.filter(shown).map((a, i) => (
+                {ACCESSORIES.filter((a) => a.slot !== "celebration" && shown(a)).map((a, i) => (
                   <RiseIn key={a.id} index={i} step={50}>
                     <ItemCard item={a} state={state} ctx={ctx} dateKey={dateKey} onOpen={setOpenId}
                       equipped={inUse(a, state)} equippedWear={equippedWear} />
@@ -699,7 +712,7 @@ function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote,
           {percentOff > 0 && <span className="rounded-md bg-rose-500 px-1.5 py-0.5 text-[11px] font-black text-white">−{percentOff}% today</span>}
         </div>
         <div className="mt-0.5 text-[13px] font-semibold text-slate-400">{desc}</div>
-        {item.kind === "accessory" && accessoriesNote && (
+        {item.kind === "accessory" && item.slot !== "celebration" && accessoriesNote && (
           <div className="mt-1 text-[11px] font-bold text-sky-300">{accessoriesNote}</div>
         )}
         {bootLine && <div className="mt-1 text-[12px] font-black text-emerald-300">{bootLine}</div>}
@@ -712,6 +725,7 @@ function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote,
             <>
               <div className="grid grid-cols-2 gap-2">
                 <PressButton variant="gold" size="none" onClick={() => onBuy(item.id, "stars")} disabled={state.stars < price.stars}
+                  style={state.stars < price.stars ? { opacity: 0.35, filter: "grayscale(0.6)" } : undefined}
                   className="relative overflow-hidden rounded-2xl py-3 text-[15px] font-black text-slate-900 disabled:opacity-35">
                   {state.stars >= price.stars && <Shine loop every={3.5} />}
                   <Stars v={price.stars} className="[&>span]:text-slate-900" />
@@ -723,6 +737,11 @@ function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote,
                   {percentOff > 0 && <div className="text-[10px] font-bold line-through opacity-60">{n(full.coins)}</div>}
                 </PressButton>
               </div>
+              {state.stars < price.stars && state.coins < price.coins && (
+                <div className="rounded-xl bg-rose-500/15 px-3 py-2 text-center text-[12px] font-black text-rose-200">
+                  Not enough yet: you need ★{n(price.stars - state.stars)} more, or {n(price.coins - state.coins)} more Coins
+                </div>
+              )}
               <div className="text-center text-[11px] font-semibold text-slate-500">
                 About {price.weeks < 1 ? price.weeks.toFixed(1) : Math.round(price.weeks * 10) / 10} week{price.weeks === 1 ? "" : "s"} of your wages either way
               </div>

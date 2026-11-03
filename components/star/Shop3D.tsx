@@ -21,7 +21,7 @@ import { shopDisplays, type DisplayId, type ShopPrices } from "@/lib/star/shop3d
 import { look3dStyle } from "@/lib/star/look3dStyle";
 import type { ShopController, KitColours } from "@/lib/star/shop3d/scene";
 import { CLUB_KITS, kitsOf } from "@/lib/star/kits";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, formatWallet } from "@/lib/star/money";
 import { baseIdOf, kibCanPrice, KIB_CANS } from "@/lib/star/shopData";
 import { hasBootDeal, bootPrice } from "@/lib/star/sponsorDeals";
 import { SHOP_TIERS } from "@/lib/star/economy";
@@ -284,7 +284,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
           3D Shop <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.08em", color: "#111", background: GOLD, borderRadius: 999, padding: "2px 6px" }}>BETA</span>
         </div>
         <div style={{ flex: 1 }} />
-        {career && <div style={{ ...pill, color: "#fde047", fontWeight: 900 }}>★{formatMoney(career.money)}</div>}
+        {career && <div style={{ ...pill, color: "#fde047", fontWeight: 900 }}>★{formatWallet(career.money)}</div>}
         {dev && (
           <button onClick={() => setClub((c) => (c + 1) % DEV_CLUBS.length)} style={{ ...pill, pointerEvents: "auto", cursor: "pointer", gap: 6 }}>
             <span style={{ width: 12, height: 12, borderRadius: 3, background: kit.shirt, border: `2px solid ${kit.trim}` }} />

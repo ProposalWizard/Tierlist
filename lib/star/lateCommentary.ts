@@ -15,9 +15,11 @@
  * server or in a test it does nothing.
  */
 import { audioContext } from "./audioOut";
-import { sfxOn, sfxUrl } from "./sfx";
+import { sfxOn } from "./sfx";
 import { isMatchSoundMuted } from "./matchSound";
 import { LATE_CALLS, pickLine, lateKindOf, type LateKind } from "./goalClip/commentary";
+import { commentarySet, commentaryUrl, type CommentarySet } from "./goalClip/commentaryVoice";
+import { teamBank, teamFor, TEAM_IDS } from "./goalClip/commentators";
 
 export { lateKindOf };
 export type { LateKind };
@@ -25,52 +27,73 @@ export type { LateKind };
 /** Every late lead line's id (the files are public/sfx/<id>.mp3). */
 export const LATE_GOAL_LINES: string[] = Object.values(LATE_CALLS).flat().map(l => l.id);
 
+/**
+ * "Different commentators" (Leo's switch, commentaryVoice.ts "teams"): the
+ * team's own late calls. `matchKey` = commentators.ts matchKeyOf(the match):
+ * passed, the live call comes from the same team as that match's goal
+ * videos; absent, the team is picked from the seed.
+ */
+function teamLateCalls(kind: LateKind, seed: number, matchKey?: string) {
+  const bank = teamBank(teamFor(matchKey ?? `live:${seed}`));
+  return bank.lateCalls[kind] ?? bank.lateCalls.winner;
+}
+
 /** How loud the call plays over the match (0-1). */
 const GAIN = 0.95;
 /** A call that is not loaded within this long after the goal is dropped: a late call late is worse than none. */
 const MAX_WAIT_MS = 1500;
 
+/** By file address: the first recordings and Leo's new voice (commentaryVoice.ts) are kept apart. */
 const buffers = new Map<string, AudioBuffer | null | Promise<AudioBuffer | null>>();
 
 function load(id: string): Promise<AudioBuffer | null> {
-  const have = buffers.get(id);
+  const url = commentaryUrl(id, commentarySet());
+  const have = buffers.get(url);
   if (have !== undefined) return have instanceof Promise ? have : Promise.resolve(have);
   const c = audioContext();
   if (!c || typeof fetch === "undefined") return Promise.resolve(null);
-  const job = fetch(sfxUrl(id))
+  const job = fetch(url)
     .then(r => (r.ok ? r.arrayBuffer() : Promise.reject(new Error("no file"))))
     .then(data => new Promise<AudioBuffer>((res, rej) => {
       // The callback form: old iOS Safari has no promise-returning decodeAudioData.
       const p = c.decodeAudioData(data, res, rej);
       if (p && typeof (p as Promise<AudioBuffer>).then === "function") (p as Promise<AudioBuffer>).then(res, rej);
     }))
-    .then(b => { buffers.set(id, b); return b; })
-    .catch(() => { buffers.set(id, null); return null; });
-  buffers.set(id, job);
+    .then(b => { buffers.set(url, b); return b; })
+    .catch(() => { buffers.set(url, null); return null; });
+  buffers.set(url, job);
   return job;
 }
 
 /** Fetch the late calls ahead of time (e.g. at 80 minutes), so the call lands on the goal. Never throws. */
-export function preloadLateGoalCalls(): void {
+export function preloadLateGoalCalls(matchKey?: string): void {
   try {
     if (typeof window === "undefined" || !audioContext()) return;
+    if (commentarySet() === "teams") {
+      // That match's team (5 short files), or every team's when the match is not known.
+      const teams = matchKey ? [teamFor(matchKey)] : TEAM_IDS;
+      teams.forEach(t => Object.values(teamBank(t).lateCalls).flat().forEach(l => { void load(l.id); }));
+      return;
+    }
     LATE_GOAL_LINES.forEach(id => { void load(id); });
   } catch { /* no audio here */ }
 }
 
-/** The line a late goal gets: the same seed always the same line. */
-export function lateGoalLine(kind: LateKind, seed: number): string {
+/** The line a late goal gets: the same seed always the same line. `set`
+ *  "teams": a commentator team's own late call (see teamLateCalls). */
+export function lateGoalLine(kind: LateKind, seed: number, set: CommentarySet = "v1", matchKey?: string): string {
+  if (set === "teams") return pickLine(teamLateCalls(kind, seed, matchKey), `live:${seed}`).id;
   return pickLine(LATE_CALLS[kind] ?? LATE_CALLS.winner, `live:${seed}`).id;
 }
 
 /** Play the commentator's late call for this goal. Never throws. */
-export function playLateGoalCall(kind: LateKind, seed: number): void {
+export function playLateGoalCall(kind: LateKind, seed: number, matchKey?: string): void {
   try {
     if (typeof window === "undefined") return;
     if (!sfxOn() || isMatchSoundMuted()) return;
     const c = audioContext();
     if (!c) return;
-    const id = lateGoalLine(kind, seed);
+    const id = lateGoalLine(kind, seed, commentarySet(), matchKey);
     const t0 = Date.now();
     void load(id).then(b => {
       try {

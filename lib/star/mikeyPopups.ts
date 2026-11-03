@@ -1,54 +1,15 @@
 /**
- * MIKEY'S NEW POP-UPS — Settings → "Mikey's new pop-ups: New | Old" (Mikey,
- * 20 Oct 2026). Asked for by name as a toggle: "This should not affect the
- * current version. Instead, it should be a toggle called Mikey's new pop-ups."
+ * MIKEY'S POP-UPS (Mikey, 20 Oct 2026). The words that pop up when an action
+ * finishes (GOAL, PASS, OFFSIDE…) are drawn as TV graphics
+ * (components/star/MikeyPopup.tsx): a goal is a scoreboard at the top whose
+ * score rolls over, with the scorer and the assist; everything else is a short
+ * caption strip.
  *
- * New: the words that pop up when an action finishes (GOAL, PASS, OFFSIDE…)
- * are drawn as TV graphics (components/star/MikeyPopup.tsx): a goal is a
- * scoreboard at the top whose score rolls over, with the scorer and the
- * assist; everything else is a short caption strip. Old (the default): the
- * pop-ups exactly as they were. One phone at a time; saves are never touched.
+ * The only pop-ups since 27 Oct 2026 (Mikey: "There is no toggle, there's no
+ * setting for it … that is the new base version of the pop-ups"). The Settings
+ * row "Pop-up pack: Classic | Broadcast" and the Classic words are gone; an old
+ * phone's stored "star-mikey-popups" value is ignored (Brain FACT-UI-017).
  */
-import { useSyncExternalStore } from "react";
-
-export type MikeyPopupsLook = "new" | "old";
-export const MIKEY_POPUPS_KEY = "star-mikey-popups";
-export const MIKEY_POPUPS_DEFAULT: MikeyPopupsLook = "old";
-let stored: MikeyPopupsLook | undefined;
-const listeners = new Set<() => void>();
-
-function read(): MikeyPopupsLook {
-  try {
-    const v = typeof localStorage !== "undefined" ? localStorage.getItem(MIKEY_POPUPS_KEY) : null;
-    return v === "new" || v === "old" ? v : MIKEY_POPUPS_DEFAULT;
-  } catch {
-    return MIKEY_POPUPS_DEFAULT;
-  }
-}
-
-if (typeof window !== "undefined") {
-  window.addEventListener("storage", (e) => {
-    if (e.key === MIKEY_POPUPS_KEY) { stored = undefined; listeners.forEach((f) => f()); }
-  });
-}
-
-export function mikeyPopupsLook(): MikeyPopupsLook {
-  if (stored === undefined) stored = read();
-  return stored;
-}
-
-export function setMikeyPopupsLook(v: MikeyPopupsLook): void {
-  try { localStorage.setItem(MIKEY_POPUPS_KEY, v); } catch { /* in-memory still changes */ }
-  stored = v;
-  listeners.forEach((f) => f());
-}
-
-export function useMikeyPopupsLook(): MikeyPopupsLook {
-  return useSyncExternalStore(
-    (f) => { listeners.add(f); return () => { listeners.delete(f); }; },
-    mikeyPopupsLook, () => MIKEY_POPUPS_DEFAULT,
-  );
-}
 
 /** What kind of moment a word is: picks the strip's colour and its icon. */
 export type PopupTone = "good" | "bad" | "save" | "ref" | "plain" | "goal";

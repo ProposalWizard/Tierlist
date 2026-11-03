@@ -1759,52 +1759,64 @@ export function advanceUntilInvolved(
   fullTime: number,
 ): { events: HiddenMatchEvent[]; request: ScenarioRequest | null; fullTime: boolean } {
   const events: HiddenMatchEvent[] = [];
+  while (state.minute < fullTime) {
+    const step = stepInvolved(state, inputs, rng, fullTime);
+    events.push(...step.events);
+    if (step.request) return { events, request: step.request, fullTime: false };
+  }
+  return { events, request: null, fullTime: true };
+}
+
+/**
+ * One minute of a match you are playing in: the minute itself (`tick`), then
+ * any chance you are owed. The real match's loop (advanceUntilInvolved) and the
+ * radar (matchRadar.ts stepRadar, and so sim90) both step with this, so a
+ * preview plays the same match the real one does (tests/star/oneFormula.mts).
+ */
+export function stepInvolved(
+  state: HiddenMatchState,
+  inputs: HiddenMatchInputs,
+  rng: () => number,
+  fullTime: number,
+): { events: HiddenMatchEvent[]; request: ScenarioRequest | null } {
   /** A chance is yours: count it towards this half's guarantee. */
   const counted = (request: ScenarioRequest) => {
     const h = halfOf(state.minute);
     if (h !== null) { const hc = state.halfChances ?? [0, 0]; hc[h] += 1; state.halfChances = hc; }
     return gateMechanics(state, inputs, request);
   };
-  while (state.minute < fullTime) {
-    const step = tick(state, inputs, rng);
-    events.push(...step.events);
-    if (step.request) return { events, request: counted(step.request), fullTime: false };
-    // At least one chance in each half of normal time on Medium or High
-    // energy (Mikey, 25 Oct 2026: "you should be guaranteed minimum one
-    // chance per half … that doesn't count for extra time"). The last minute
-    // of a half with none yet: the ball comes to you. Never on Low, never in
-    // extra time, and not in the farewell match (every chance is yours there).
-    const h = halfOf(state.minute);
-    const mode = modeAt(inputs, state.minute) ?? "medium";
-    if (h !== null && mode !== "low" && !inputs.farewell
-      && (state.halfChances ?? [0, 0])[h] === 0 && state.minute >= HALF_GUARANTEE_AT[h] && fullTime > state.minute) {
-      const request = halfGuaranteeChance(state, rng);
-      const t = state.radarTrace?.get(state.minute);
-      if (t) Object.assign(t, { yours: true, possession: state.possession, zone: state.zone });
-      return { events, request: counted(request), fullTime: false };
-    }
-    // Game 4 of a new career: its header and volley come for certain, by
-    // 60' and 80' (lib/star/mechanics.ts). Normal time only.
-    if (inputs.mechanics?.air && inputs.mechanics.airIntro && h !== null) {
-      const served = state.airServed ?? {};
-      const due = !served.header ? AIR_INTRO_BY[0] : !served.volley ? AIR_INTRO_BY[1] : Infinity;
-      if (state.minute >= due && fullTime > state.minute) {
-        const request = halfGuaranteeChance(state, rng);
-        const t = state.radarTrace?.get(state.minute);
-        if (t) Object.assign(t, { yours: true, possession: state.possession, zone: state.zone });
-        return { events, request: counted(request), fullTime: false };
-      }
-    }
-    // Item 24: a late sub's guaranteed chances arrive before the whistle.
-    const owed = inputs.lateSub?.owed ?? 0;
-    if (owed > 0 && fullTime - state.minute < owed * LATE_SUB_FORCE_GAP) {
-      const request = lateSubChance(state, rng);
-      const t = state.radarTrace?.get(state.minute);
-      if (t) Object.assign(t, { yours: true, possession: state.possession, zone: state.zone });
-      return { events, request: counted(request), fullTime: false };
-    }
+  const owedChance = (request: ScenarioRequest) => {
+    const t = state.radarTrace?.get(state.minute);
+    if (t) Object.assign(t, { yours: true, possession: state.possession, zone: state.zone });
+    return counted(request);
+  };
+  const step = tick(state, inputs, rng);
+  const events = step.events;
+  if (step.request) return { events, request: counted(step.request) };
+  // At least one chance in each half of normal time on Medium or High
+  // energy (Mikey, 25 Oct 2026: "you should be guaranteed minimum one
+  // chance per half … that doesn't count for extra time"). The last minute
+  // of a half with none yet: the ball comes to you. Never on Low, never in
+  // extra time, and not in the farewell match (every chance is yours there).
+  const h = halfOf(state.minute);
+  const mode = modeAt(inputs, state.minute) ?? "medium";
+  if (h !== null && mode !== "low" && !inputs.farewell
+    && (state.halfChances ?? [0, 0])[h] === 0 && state.minute >= HALF_GUARANTEE_AT[h] && fullTime > state.minute) {
+    return { events, request: owedChance(halfGuaranteeChance(state, rng)) };
   }
-  return { events, request: null, fullTime: true };
+  // Game 4 of a new career: its header and volley come for certain, by
+  // 60' and 80' (lib/star/mechanics.ts). Normal time only.
+  if (inputs.mechanics?.air && inputs.mechanics.airIntro && h !== null) {
+    const served = state.airServed ?? {};
+    const due = !served.header ? AIR_INTRO_BY[0] : !served.volley ? AIR_INTRO_BY[1] : Infinity;
+    if (state.minute >= due && fullTime > state.minute) return { events, request: owedChance(halfGuaranteeChance(state, rng)) };
+  }
+  // Item 24: a late sub's guaranteed chances arrive before the whistle.
+  const owed = inputs.lateSub?.owed ?? 0;
+  if (owed > 0 && fullTime - state.minute < owed * LATE_SUB_FORCE_GAP) {
+    return { events, request: owedChance(lateSubChance(state, rng)) };
+  }
+  return { events, request: null };
 }
 
 /** Which half of normal time a minute is in (0 or 1), or null for extra time. */

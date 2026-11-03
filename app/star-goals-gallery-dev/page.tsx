@@ -21,6 +21,8 @@ import { synthTrack, type SynthKind } from "@/lib/star/goalClip/synth";
 import { mulberry32 } from "@/lib/star/season";
 import type { CareerGoal } from "@/lib/star/goalLog";
 import type { CareerState } from "@/lib/star/types";
+import { publishFavourites, unpublishFavourites } from "@/lib/star/favouriteGoalsStore";
+import { toggleFavouriteIn } from "@/lib/star/favouriteGoals";
 
 const OPPONENTS = ["Arsenal", "Chelsea", "Liverpool", "Manchester City", "Tottenham Hotspur", "Newcastle United", "Aston Villa", "Brighton & Hove Albion", "West Ham United", "Everton", "Fulham", "Brentford", "Crystal Palace", "Wolverhampton Wanderers", "Nottingham Forest", "Bournemouth"];
 const CUPS = ["FA Cup", "League Cup", "Champions League"];
@@ -108,6 +110,14 @@ export default function GoalsGalleryDevPage() {
     return { ...base, goalLog: fakeGoals(base.player.club, n, seasons, mode === "600" ? 6 : 1) };
   }, [base, mode]);
 
+  // ⭐ favourites, kept on this page only (shown with Leo's "Better end of season" part on).
+  const [favs, setFavs] = useState<string[]>([]);
+  const shownCareer = useMemo(() => ({ ...career, favouriteGoals: favs }), [career, favs]);
+  useEffect(() => {
+    publishFavourites(career.goalLog ?? [], favs, (id) => setFavs((f) => toggleFavouriteIn(f, id)));
+  }, [career.goalLog, favs]);
+  useEffect(() => () => unpublishFavourites(), []);
+
   // The recordings go in before the gallery reads which are on this phone.
   useEffect(() => {
     let live = true;
@@ -127,7 +137,7 @@ export default function GoalsGalleryDevPage() {
         </div>
       </Panel>
       <div className="mx-auto mt-3 w-full min-w-0 max-w-[420px] overflow-hidden rounded-xl p-2" style={{ background: "#05080f" }} data-gallery-phone>
-        {ready !== null && <CareerGoalsGallery key={mode} career={career} />}
+        {ready !== null && <CareerGoalsGallery key={mode} career={shownCareer} />}
       </div>
       {hall && <BestGoalsSheet career={slimCareer(career)} onClose={() => setHall(false)} />}
       <PageGuide page="/star-goals-gallery-dev" />

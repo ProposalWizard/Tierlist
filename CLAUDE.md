@@ -163,11 +163,10 @@ request, scouts watching, agents, loans, promises, moves abroad.
 
 ## Mikey's new pop-ups (Mikey, 20 Oct 2026)
 
-Settings → Match → "Pop-up pack: Classic | Broadcast" since 21 Oct 2026 (Harry:
-"add them as a texture pack"; `lib/star/popupPack.ts`, same stored value, default
-Classic = the old pop-ups). Broadcast = `components/star/MikeyPopup.tsx`: a goal is a
-scoreboard at the top whose score rolls over, with scorer and assist; every
-other `showAction` word is a TV caption. Classic = the pop-ups exactly as before.
+The only pop-ups since 27 Oct 2026, no setting (FACT-UI-017; the Classic and
+Arcade words and the "Pop-up pack" row are gone). `components/star/MikeyPopup.tsx`:
+a goal is a scoreboard at the top whose score rolls over, with scorer and assist;
+every other `showAction` word is a TV caption.
 Career soak for any season/cup/ladder change: `npx tsx scripts/soak/careerSoak.mts 20`.
 
 ## Game music (Mikey, 21 Oct 2026)
@@ -470,6 +469,7 @@ screen. Find the ball before aiming.
 Moved to the Brain on 21 Oct 2026: 62 notes. Open a code with `brain/*/<code>.md`; the old text is frozen in `docs/brain-sources/working-rules-2026-10-21.md`.
 - RUL-ALL-002: Neither Harry nor Mikey writes code: english only, no coder words
 - RUL-TEAM-003: Progress updates every 5 minutes on every task, with % and…
+- RUL-TEAM-029: Leo's chats: plan as bars with times, yes/no block at the end (works, patch notes, live, merged), then 5 lines max; approvals asked together
 - RUL-TEAM-004: No forced new chats: after about 3 hours of chat, add…
 - RUL-TEAM-009: Build slowly and correctly: deep plan first, then build one piece…
 - RUL-TEAM-007: Jobs for the team go in team/jobs.json and arrive by push,…

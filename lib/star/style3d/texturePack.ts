@@ -50,7 +50,7 @@ const VALUES: readonly TexturePack[] = TEXTURE_PACKS;
 /** One line under each pack's name in the dropdown (Harry, 14 Oct 2026). */
 export const TEXTURE_PACK_LINES: Record<TexturePack, string> = {
   real: "Today's look: real grass, sun and shadows.",
-  arcade: "Today's look, with big arcade banners and arcade sounds.",
+  arcade: "Today's look, with arcade sounds.",
   light: "Half way to Bright. Dirt and shadows kept.",
   cartoon: "Flat colours, like the players.",
   bright: "Light green grass, no big shadows.",
@@ -75,7 +75,7 @@ export const TEXTURE_PACK_PREVIEW: Partial<Record<TexturePack, string>> = Object
 /**
  * ARCADE (Harry, 14 Oct 2026: "instead of a toggle for the noises/look make it
  * a texture pack again"). The default pitch look (Realism's world), plus the
- * "Arcade pop" action banners (components/star/ArcadeBanner.tsx) and the Arcade
+ * "Arcade pop" action banners (components/star/ArcadeBanner.tsx; not shown since 27 Oct 2026, Mikey's pop-ups are the only ones, FACT-UI-017) and the Arcade
  * sound set (scripts/sfx/arcade.py). Every other pack keeps the old banners and
  * the old sounds, exactly as before. A pack that does not say gets "old".
  */

@@ -1,11 +1,11 @@
 ---
 id: FACT-DAT-007
 type: fact
-client: dat
-tags: [career, rule, data]
+client: data
+tags: []
 status: live
-date: 2026-11-02
-source: "data/competition-history/README.md:1-10"
-summary: Every History tab shows your career's seasons, then the real history before them (data/competition-history, loaded only when the tab opens), each season with winner, runner-up, final score, top scorer, top assister and player of the season.
+date: 2026-10-27
+source: "lib/cookieConsent.ts:1-12"
+summary: Analytics (Google Analytics and PostHog) load only after Accept in the cookie box; No thanks loads neither, and /legal#cookies lets a player choose again.
 ---
-Career seasons: leagues and Europe take most goals + assists as player of the season (your own league uses the Season Awards' winners); cups take the best player in the final; tournaments keep their leaders at each rollover (`career.intlHistory`, lib/star/intl/editionLeaders.ts). Real rows from your first season's year on are dropped, so nothing overlaps. Copa América has no real file yet. Code: lib/star/world/realHistory.ts, history.ts, summary.ts; test tests/star/historyLeaders.mts.
+Mikey, 27 Oct 2026, before the Road to Ballon d'Or release (UK PECR). Until then GA loaded on every page for everyone, and PostHog never ran: NEXT_PUBLIC_POSTHOG_KEY was not set on Vercel (0 events in 30 days). Set the key on Vercel only once the cookie box is on main, or the next deploy tracks without consent. Checked in a phone-size browser: 0 tracking requests before a choice or after No thanks; Google and PostHog load after Accept.

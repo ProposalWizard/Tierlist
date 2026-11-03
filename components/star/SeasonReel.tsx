@@ -14,8 +14,16 @@ import { useClipSound, setClipSoundOn } from "@/lib/star/goalClip/sound";
 import { audioContext } from "@/lib/star/audioOut";
 import { holdMusic } from "@/lib/star/gameMusic";
 import { useAnimationsLook } from "@/lib/star/animLook";
+import { useGoalVideos2d } from "@/lib/star/leoUpdate";
 import { displayName } from "@/lib/star/playerIdentity";
 import { drawnBadgeUrl } from "./ClubBadge";
+import { synthTrack } from "@/lib/star/goalClip/synth";
+import {
+  betterReelGoals, needsStandIn, nextStopAt, planSeasonEndFor, prevStopAt, reelStops, standInFor, standInKey,
+  stopIndexAt, withStandIns, type ReelStop,
+} from "@/lib/star/goalClip/seasonEnd";
+import { toggleFavouriteGoal, useFavouriteGoals } from "@/lib/star/favouriteGoalsStore";
+import { shortClub } from "@/lib/star/media/grammar";
 import { pitchFont } from "./ui/pitchFont";
 
 /**
@@ -43,6 +51,9 @@ const VIEW_W = 540;
 const VIEW_H = 960;
 /** Never wait longer than this for the recordings before starting. */
 const LOAD_CAP_MS = 2500;
+/** The better end of season waits a little longer (a goal not read in time
+ *  gets a stand-in, and a late answer never replaces the plan). */
+const BETTER_LOAD_CAP_MS = 6000;
 
 /** The sound is restarted in step when it is this far from the picture
  *  (was 0.2 s; a roar 0.2 s late is easy to hear). */
@@ -85,8 +96,16 @@ type SaveState =
   | { kind: "done"; how: "shared" | "downloaded" }
   | { kind: "failed"; why: string };
 
-export default function SeasonReel({ career, onDone }: { career: CareerState; onDone: () => void }) {
+export default function SeasonReel({ career, onDone, better = false, mode = "season" }: {
+  career: CareerState; onDone: () => void;
+  /** Leo's update part "seasonEnd" (read at the call site): every goal plays
+   *  (stand-ins), tap to skip, ⭐ favourites, chapters. Off: as before. */
+  better?: boolean;
+  /** "favourites": a reel of your ⭐ goals (Stats → Goals). Better only. */
+  mode?: "season" | "favourites";
+}) {
   const moves = useAnimationsLook();
+  const flat = useGoalVideos2d();
   const soundOn = useClipSound();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [tracks, setTracks] = useState<Map<string, GoalTrack> | null>(null);
@@ -100,10 +119,17 @@ export default function SeasonReel({ career, onDone }: { career: CareerState; on
 
   const player = displayName(career.player);
   const club = career.thisSeasonClub ?? career.player.club;
-  const goalIds = useMemo(
-    () => seasonGoals(career).map((g) => g.clipId).filter((x): x is string => !!x),
+  // The better end of season: the goals, each once, fixed when the reel opens
+  // (a ⭐ tap mid-reel never reshuffles it).
+  const reelGoals = useMemo(
+    () => (better ? betterReelGoals(career, mode) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [career.season, (career.goalLog ?? []).length],
+    [better, mode, career.season],
+  );
+  const goalIds = useMemo(
+    () => (reelGoals ?? seasonGoals(career)).map((g) => g.clipId).filter((x): x is string => !!x),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [reelGoals, career.season, (career.goalLog ?? []).length],
   );
 
   // The game's own music stops while the reel has its own.
@@ -115,12 +141,13 @@ export default function SeasonReel({ career, onDone }: { career: CareerState; on
   // The recordings on this phone (never wait for ever).
   useEffect(() => {
     let live = true;
-    const cap = setTimeout(() => { if (live) setTracks((t) => t ?? new Map()); }, LOAD_CAP_MS);
+    const cap = setTimeout(() => { if (live) setTracks((t) => t ?? new Map()); }, better ? BETTER_LOAD_CAP_MS : LOAD_CAP_MS);
     getClips(goalIds)
-      .then((list) => { if (live) setTracks(new Map(list.map((t) => [t.meta.id, t]))); })
-      .catch(() => { if (live) setTracks(new Map()); });
+      // Better: the first answer wins (a late read must not swap the plan mid-play).
+      .then((list) => { if (live) setTracks((t) => (better && t ? t : new Map(list.map((x) => [x.meta.id, x])))); })
+      .catch(() => { if (live) setTracks((t) => (better && t ? t : new Map())); });
     return () => { live = false; clearTimeout(cap); };
-  }, [goalIds]);
+  }, [goalIds, better]);
 
   // The tall display face and the badge.
   useEffect(() => {
@@ -137,36 +164,67 @@ export default function SeasonReel({ career, onDone }: { career: CareerState; on
     return () => { live = false; };
   }, [club]);
 
-  const timings = useMemo(() => {
+  const recTimings = useMemo(() => {
     const out: Record<string, ClipTiming> = {};
     tracks?.forEach((t, id) => { out[id] = timingOf(t); });
     return out;
   }, [tracks]);
 
-  const plan: ReelPlan | null = useMemo(
-    () => (tracks ? planReelFor(career, timings, player) : null),
+  // The better end of season: every goal without a usable recording here gets
+  // a stand-in made from its own facts, and the plan is made once.
+  const betterReel = useMemo(() => {
+    if (!better || !tracks || !reelGoals) return null;
+    const all = new Map(tracks);
+    const tm: Record<string, ClipTiming> = { ...recTimings };
+    const made = new Set<string>();
+    for (const g of reelGoals) {
+      if (!needsStandIn(g, recTimings)) continue;
+      try {
+        const tr = synthTrack(standInFor(g, player, career.player.lastName || player));
+        if (!tr) continue;
+        tr.meta.isYou = true;
+        const key = standInKey(g);
+        all.set(key, tr);
+        tm[key] = timingOf(tr);
+        made.add(key);
+      } catch { /* the drawn card stays */ }
+    }
+    const favs = new Set(career.favouriteGoals ?? []);
+    const p = planSeasonEndFor(career, mode, withStandIns(reelGoals, recTimings, made), tm, player, favs, shortClub);
+    return { tracks: all, timings: tm, plan: p };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tracks, timings, player, career.season],
+  }, [better, tracks, reelGoals, recTimings, player, mode]);
+
+  const timings = betterReel ? betterReel.timings : recTimings;
+  const reelTracks = betterReel ? betterReel.tracks : tracks;
+
+  const plainPlan: ReelPlan | null = useMemo(
+    () => (tracks && !better ? planReelFor(career, timings, player) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tracks, timings, player, career.season, better],
   );
+  const plan: ReelPlan | null = better ? betterReel?.plan ?? null : plainPlan;
 
   const assets: ReelAssets = useMemo(() => ({
-    tracks: tracks ?? new Map(),
+    tracks: reelTracks ?? new Map(),
     moves,
+    // Leo's update "videos2d" with 2D picked: goals from above, like the feed's videos.
+    ...(flat ? { flat: true } : {}),
     display: pitchFont.style.fontFamily,
     badge,
-  }), [tracks, moves, badge]);
+  }), [reelTracks, moves, badge, flat]);
 
   // The soundtrack, mixed in the background (the reel starts without waiting).
   const audioJob = useRef<Promise<AudioBuffer | null> | null>(null);
   const [audioBuf, setAudioBuf] = useState<AudioBuffer | null>(null);
   useEffect(() => {
-    if (!plan || !tracks) return;
+    if (!plan || !reelTracks) return;
     let live = true;
-    const job = mixReelAudio(plan, tracks, timings).catch(() => null);
+    const job = mixReelAudio(plan, reelTracks, timings).catch(() => null);
     audioJob.current = job;
     job.then((b) => { if (live) setAudioBuf(b); });
     return () => { live = false; };
-  }, [plan, tracks, timings]);
+  }, [plan, reelTracks, timings]);
 
   // ── The clock ────────────────────────────────────────────────────────────
   const clock = useRef({ base: 0, startedAt: 0, running: false });
@@ -184,6 +242,8 @@ export default function SeasonReel({ career, onDone }: { career: CareerState; on
   const voice = useRef<{ src: AudioBufferSourceNode; gain: GainNode; at: number; ctxAt: number } | null>(null);
   /** performance.now() when the sound first drifted past RESYNC_S, or 0. */
   const driftSince = useRef(0);
+  /** A tap-to-skip just cut the sound: the next start fades in (no click). */
+  const fadeInNext = useRef(false);
   const stopVoice = (fade = 0) => {
     const v = voice.current;
     voice.current = null;
@@ -224,9 +284,10 @@ export default function SeasonReel({ career, onDone }: { career: CareerState; on
     const gain = c.createGain();
     src.connect(gain);
     gain.connect(c.destination);
-    if (fade) {
+    if (fade || fadeInNext.current) {
       gain.gain.setValueAtTime(0, c.currentTime);
-      gain.gain.linearRampToValueAtTime(1, c.currentTime + fade);
+      gain.gain.linearRampToValueAtTime(1, c.currentTime + (fade || XFADE_S * 2));
+      fadeInNext.current = false;
     }
     // What is queued now is heard `lead` seconds from now, when the picture
     // is `lead` further on: start the sound that much further in.
@@ -276,12 +337,98 @@ export default function SeasonReel({ career, onDone }: { career: CareerState; on
       }
       paintReelOn(canvasRef.current, VIEW_W, VIEW_H, plan, Math.min(t, plan.duration - 0.001), assets);
       if (progressRef.current) progressRef.current.style.width = `${plan.duration > 0 ? Math.min(100, (t / plan.duration) * 100) : 0}%`;
+      if (better) paintStops(t);
       syncVoice();
       if (clock.current.running) raf = requestAnimationFrame(draw);
     };
     draw();
     return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, assets, paused, ended, seekTick, syncVoice, timeNow]);
+
+  // ── Tap to skip (the better end of season) ────────────────────────────────
+  const stops: ReelStop[] = useMemo(() => (better && plan ? reelStops(plan) : []), [better, plan]);
+  const barRef = useRef<HTMLDivElement>(null);
+  const [stopNow, setStopNow] = useState(0);
+  const stopNowRef = useRef(0);
+  function paintStops(t: number) {
+    const i = stopIndexAt(stops, t);
+    const kids = barRef.current?.children;
+    if (kids) {
+      for (let k = 0; k < kids.length; k++) {
+        const fill = kids[k].firstElementChild as HTMLElement | null;
+        if (!fill) continue;
+        const st = stops[k];
+        const f = k < i ? 1 : k > i || !st ? 0 : Math.max(0, Math.min(1, (t - st.at) / Math.max(0.01, st.end - st.at)));
+        fill.style.width = `${f * 100}%`;
+      }
+    }
+    if (i !== stopNowRef.current) { stopNowRef.current = i; setStopNow(i); }
+  }
+  const jump = useCallback((to: number) => {
+    if (!plan) return;
+    stopVoice(XFADE_S);
+    fadeInNext.current = true;
+    clock.current = { base: Math.max(0, Math.min(plan.duration - 0.001, to)), startedAt: now(), running: true };
+    setPaused(false);
+    setEnded(false);
+    setSeekTick((k) => k + 1);
+  }, [plan]);
+  const goNext = useCallback(() => {
+    if (!plan) return;
+    const to = nextStopAt(stops, timeNow());
+    if (to === null) {
+      // Past the end card: hold it, as when it plays out.
+      stopVoice(XFADE_S);
+      clock.current = { base: plan.duration - 0.7, startedAt: 0, running: false };
+      setEnded(true);
+      setSeekTick((k) => k + 1);
+      return;
+    }
+    jump(to);
+  }, [plan, stops, jump, timeNow]);
+  const goPrev = useCallback(() => {
+    if (!plan || !stops.length) return;
+    jump(prevStopAt(stops, ended ? plan.duration : timeNow()));
+  }, [plan, stops, jump, ended, timeNow]);
+  useEffect(() => {
+    if (!better) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") { e.preventDefault(); goNext(); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); goPrev(); }
+      else if (e.key === " " || e.key === "k") {
+        e.preventDefault();
+        audioContext()?.resume().catch(() => { /* still blocked */ });
+        if (clock.current.running) pause(); else if (ended) start(0); else start();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [better, goNext, goPrev, pause, start, ended]);
+  // A tap: left third back, the rest forward; held down = paused while held.
+  const hold = useRef<{ timer: ReturnType<typeof setTimeout> | null; held: boolean } | null>(null);
+  const [holding, setHolding] = useState(false);
+  const onTapDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    audioContext()?.resume().catch(() => { /* still blocked */ });
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* old browser */ }
+    const h = { timer: null as ReturnType<typeof setTimeout> | null, held: false };
+    h.timer = setTimeout(() => { if (clock.current.running) { h.held = true; setHolding(true); pause(); } }, 280);
+    hold.current = h;
+  };
+  const onTapUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    const h = hold.current;
+    hold.current = null;
+    if (h?.timer) clearTimeout(h.timer);
+    if (h?.held) { setHolding(false); start(); return; }
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = r.width > 0 ? (e.clientX - r.left) / r.width : 0.5;
+    if (x < 1 / 3) goPrev();
+    else if (ended) start(0);
+    else goNext();
+  };
+  const favs = useFavouriteGoals();
+  const stopGoal = stops[stopNow]?.goalId;
+  const isFav = !!stopGoal && favs.favs.has(stopGoal);
 
   // Away from the tab: pause.
   useEffect(() => {
@@ -297,11 +444,12 @@ export default function SeasonReel({ career, onDone }: { career: CareerState; on
     w.__seasonReel = {
       duration: plan.duration,
       segs: plan.segs.map((s) => ({ kind: s.kind, at: s.at, dur: s.dur, video: "shots" in s ? s.shots.length > 0 : false, quick: s.kind === "goal" && !!s.quick })),
+      ...(better ? { stops: () => stops, next: () => goNext(), prev: () => goPrev(), now: () => timeNow() } : {}),
       seek: (t: number, hold = true) => { clock.current = { base: t, startedAt: now(), running: !hold }; setPaused(hold); setEnded(false); setSeekTick((k) => k + 1); },
       audioReady: () => !!audioBuf,
       // For measuring the mix (the test page): the soundtrack, and its crowd or music alone.
       audio: () => audioBuf,
-      stem: (only: "crowd" | "music") => (tracks ? mixReelAudio(plan, tracks, timings, only) : Promise.resolve(null)),
+      stem: (only: "crowd" | "music") => (reelTracks ? mixReelAudio(plan, reelTracks, timings, only) : Promise.resolve(null)),
       // For measuring sync: the picture's second and the second being heard.
       sync: () => {
         const c = audioContext();
@@ -310,7 +458,8 @@ export default function SeasonReel({ career, onDone }: { career: CareerState; on
       },
     };
     return () => { delete w.__seasonReel; };
-  }, [plan, audioBuf, tracks, timings, timeNow]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan, audioBuf, reelTracks, timings, timeNow, stops]);
 
   const tapVideo = () => {
     audioContext()?.resume().catch(() => { /* still blocked */ });
@@ -382,7 +531,46 @@ export default function SeasonReel({ career, onDone }: { career: CareerState; on
             className="block h-full w-full cursor-pointer bg-[#0b1020]"
             aria-label={paused ? "Play" : "Pause"}
           />
-          {paused && !ended && plan && (
+          {better && plan && (
+            <div
+              className="absolute inset-0 cursor-pointer select-none"
+              style={{ touchAction: "manipulation" }}
+              onPointerDown={onTapDown}
+              onPointerUp={onTapUp}
+              onPointerCancel={() => { const h = hold.current; hold.current = null; if (h?.timer) clearTimeout(h.timer); if (h?.held) { setHolding(false); start(); } }}
+              onContextMenu={(e) => e.preventDefault()}
+              data-reel-tap
+            />
+          )}
+          {better && plan && stops.length > 0 && (
+            <div ref={barRef} className="pointer-events-none absolute inset-x-2 top-1.5 flex gap-[2px]" data-reel-stops={stops.length}>
+              {stops.map((st, i) => (
+                <div key={i} className="h-[3px] min-w-0 flex-1 overflow-hidden rounded-full bg-white/30" data-reel-stop={st.kind}>
+                  <div className="h-full bg-white" style={{ width: "0%" }} />
+                </div>
+              ))}
+            </div>
+          )}
+          {better && plan && stopGoal && favs.ready && (
+            <button
+              onClick={() => toggleFavouriteGoal(stopGoal)}
+              className="absolute bottom-[132px] right-3 flex flex-col items-center gap-0.5 active:scale-95"
+              aria-label={isFav ? "Remove from favourites" : "Save as a favourite"}
+              aria-pressed={isFav}
+              data-reel-fav={isFav ? "on" : "off"}
+            >
+              <span className={`grid h-12 w-12 place-items-center rounded-full text-[26px] leading-none ring-1 backdrop-blur-sm ${isFav ? "bg-amber-400 text-gray-950 ring-amber-200" : "bg-black/55 text-white ring-white/40"}`}>
+                {isFav ? "★" : "☆"}
+              </span>
+              <span className="rounded-full bg-black/55 px-1.5 text-[10px] font-black uppercase tracking-wider text-white">{isFav ? "Saved" : "Save"}</span>
+            </button>
+          )}
+          {better && plan && stopNow === 0 && !paused && !ended && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-14 flex justify-between px-4 text-[11px] font-black uppercase tracking-wider text-white/70" data-reel-hint>
+              <span>‹ Tap: back</span><span>Tap: next goal ›</span>
+            </div>
+          )}
+          {paused && !ended && plan && !holding && (
             <button onClick={tapVideo} className="absolute inset-0 grid place-items-center" aria-label="Play" data-reel-resume>
               <span className="grid h-16 w-16 place-items-center rounded-full bg-black/55 ring-2 ring-white/80">
                 <span className="ml-1 h-0 w-0 border-y-[11px] border-l-[17px] border-y-transparent border-l-white" />
@@ -410,10 +598,12 @@ export default function SeasonReel({ career, onDone }: { career: CareerState; on
             {ended ? "Continue" : "Skip"}
           </button>
           </div>
-          {/* How far through. */}
+          {/* How far through (the better reel has its bar per goal at the top). */}
+          {!better && (
           <div className="absolute inset-x-0 bottom-0 h-[3px] bg-white/20">
             <div ref={progressRef} className="h-full bg-white" style={{ width: "0%" }} />
           </div>
+          )}
         </div>
       </div>
 

@@ -30,6 +30,7 @@ import { fhrBuildUpFor, fhrWantsBuildUp, fhrStyleFor, fhrStyleWeights, FHR_STYLE
 import { fhrFoulBuildUpFor, fhrWantsFoul } from "./foulBuildUp";
 import { realMomentLeadIn, lastSecondsOf } from "./realMomentHighlights";
 import { CX } from "../pitch";
+import { careerBuildUp } from "../leadInGen";
 
 // ─────────────────────────────────────────────────────────────────────────
 //  B20: SNAPPY BUILD-UPS (A1) and FEWER OF THEM (A2)
@@ -270,7 +271,9 @@ export function openingAsFresh(sc: Scenario, m: LeadMoment): LeadMoment {
  */
 export function testAreaBuildUp(adjust: () => FhrAdjust) {
   return (sc: Scenario, moment?: LeadMoment): LeadIn | null => {
-    if (!fhrOn() || !moment) return null;
+    // Off: exactly the career's builder (it still builds the New chances' build-ups), so a test area matches the game.
+    if (!fhrOn()) return careerBuildUp(sc, moment);
+    if (!moment) return null;
     const m = moment.opening ? openingAsFresh(sc, moment) : moment;
     if (!moment.opening) {
       const real = realMomentLeadIn(sc, m);

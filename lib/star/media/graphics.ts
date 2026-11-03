@@ -109,6 +109,47 @@ export function matchReel(r: MatchRecord, which: "all" | "yours", you?: string):
   return { clips, synth };
 }
 
+/**
+ * FOOTBALL TWITTER: one made goal for each recorded clip in `clips`, in the
+ * same order (GoalVideo plays it when this phone does not have that
+ * recording, e.g. a save opened on another device). Built from the match's
+ * own goals, exactly as matchReel builds the goals nobody recorded.
+ */
+export function standInsFor(r: MatchRecord, clips: string[]): SynthGoal[] {
+  const home = r.home ? r.club : r.opponent;
+  const away = r.home ? r.opponent : r.club;
+  const last = (n: string) => n.trim().split(/\s+/).pop() || n;
+  const out: SynthGoal[] = [];
+  for (const id of clips) {
+    const g = r.goals.find(x => x.clipId === id);
+    if (!g) return [];
+    const sa = g.scoreAfter;
+    out.push({
+      home, away, scorer: g.scorer, scorerShort: last(g.scorer), scorerHome: r.home, minute: g.minute,
+      ...(sa ? { scoreAfter: (r.home ? [sa.us, sa.them] : [sa.them, sa.us]) as [number, number] } : {}),
+      seed: `${r.season}.${r.week}u${g.minute}${last(g.scorer)}`,
+    });
+  }
+  return out;
+}
+
+/**
+ * FOOTBALL TWITTER: a TikTok / clips page's video of YOUR goals in this
+ * match (recorded where seen, made where not), so its post always has a
+ * goal to play. Undefined when the match had none of your goals.
+ */
+export function yourGoalsVideo(r: MatchRecord, youName: string, title: string): GraphicSpec | undefined {
+  const scored: MatchRecord = { ...r, goals: r.goals.filter(g => g.isUser) };
+  const reel = matchReel(scored, "yours", youName);
+  if (!reel.clips.length && !reel.synth.length) return undefined;
+  const standIn = reel.clips.length ? standInsFor(r, reel.clips) : [];
+  return {
+    type: "goalVideo", title, clips: reel.clips,
+    ...(reel.synth.length ? { synth: reel.synth } : {}),
+    ...(standIn.length ? { standIn } : {}),
+  };
+}
+
 export function buildGraphic(
   kind: GraphicKind,
   e: FootballEvent,

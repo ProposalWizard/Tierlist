@@ -59,7 +59,7 @@ import { pickBarCorner, type BarCorner, type Box as BarBox } from "@/lib/star/ba
 import { panToKeep, followStep, widenToHold, easeCam, BACK_EASE_S } from "@/lib/star/runCamera";
 import { takeEnergySpent, setLegsEnergy, barCap, moveKeyOf, keysScreenDir, noKeys, KEY_PUSH, type MoveKeys } from "@/lib/star/legs";
 import { afterPassStickOn } from "@/lib/star/afterPass";
-import { mechanicOpen, aerialIntroGame, mechanicDef, type Mechanic } from "@/lib/star/mechanics";
+import { mechanicOpen, mechanicDef, type Mechanic } from "@/lib/star/mechanics";
 import { dealDribble, dribbleLevelFor, newDribbleDeal, type DribbleDeal } from "@/lib/star/dribbleDeal";
 import { ruleBookFor } from "@/lib/star/ruleBook";
 import { deflectBlock } from "@/lib/star/deflection";
@@ -72,12 +72,14 @@ import {
   commentaryBuildup, commentaryStrike, commentaryReceived, commentaryReceiverShot, commentaryResult,
 } from "@/lib/star/matchCommentary";
 import {
-  primeMatchSound, setMatchSoundMuted, playKick, playNet, playPost, playSave, playWhistle, playCrowdSwell,
+  primeMatchSound, setMatchSoundMuted, playKick, playTouch, playNet, playPost, playSave, playWhistle, playCrowdSwell,
   playStrike, playThud, playClang, playGlove, playGoalSting, playHeader,
   playCrowdRise, startHeartbeat, playBigRoar,
 } from "@/lib/star/matchSound";
 import { isBigMoment, headingIn, BIG_SLOW_RATE } from "@/lib/star/bigMoment";
-import { leoUpdateOn } from "@/lib/star/leoUpdate";
+import { keeperLookChoice, leoUpdateOn } from "@/lib/star/leoUpdate";
+import { liveChancesOn, liveStrikeScreenOn, liveDials, liveKindOK, liveRate, TOUCH, keeperRushes, rushTarget, stepToward, keeperRushV, keeperReactS, isTouchFlick, touchWeight, readTouch, planAfterTouch, keeperVsTouch, runnerAt, touchLine, touchHintWanted, touchHintSeen, liveTestStats, touchErrorScale, DEF, defenderTarget, nearestTo, type KeeperVsTouch, type LiveSkills, planFromLead, planMadeUp, madeUpPasser, liveBallAt, liveSpeedAt, alongOf, runPast, stoppedShort, readSwing, swingLine, type LivePlan, type LiveDials } from "@/lib/star/liveChance";
+import { clipFor, keeperHoldMs, keeperShowFrame, keeperSlowRate, pickMove, predictLine, startFor, KEEPER_REACH_M, type KeeperEnding, type KeeperShow } from "@/lib/star/keeperShow";
 import { playLateGoalCall, preloadLateGoalCalls } from "@/lib/star/lateCommentary";
 import { finaliseMatch, liveRating, regressForMinutes, fairRating } from "@/lib/star/matchStats";
 import { goalZone, passGrade, missKind } from "@/lib/star/chanceRating";
@@ -95,6 +97,8 @@ import { GOAL_LINES, ASSIST_LINES } from "@/lib/star/commentaryExtra";
  *  The pull is measured from where the thumb lands, so starting further out
  *  does not add power. */
 const BALL_GRAB_FRACTION = 0.18;
+/** The goal net bulging round the ball: off for now (Leo, 28 Oct 2026). */
+const NET_BULGE_ON = false;
 
 /** A completed pass: how long the ball takes to roll the last bit into the
  *  receiver's feet, and how far in front of his middle it stops. */
@@ -162,11 +166,10 @@ import { crossDrawT, syntheticCross, headerBeat, headerLiftPx, headerBallLiftK, 
 import { airTapOn, airTapAim, airTapStrike, AIR_TAP_OPEN_S, AIR_TAP_OPEN_NO_LEAD_S, type AirKind } from "@/lib/star/airTap";
 import { aerialMovesOn, forcedAerialMove, pickAerialMove, aerialFacing, aerialRise, aerialFollow, aerialStrikeTint, liftToMeet, AERIAL_SPECS, CONTACT_SHOW_S, type AerialMove } from "@/lib/star/aerialMoves";
 import { spritePoints, type SpritePoint } from "@/lib/star/sprites";
-import { useFitWidth } from "./useFitWidth";
-import ArcadeBanner, { useArcadeBanner, type BannerSide } from "./ArcadeBanner";
-import { bannerStyle, soundSet } from "@/lib/star/style3d/texturePack";
+import { type BannerSide } from "./ArcadeBanner";
+import { soundSet } from "@/lib/star/style3d/texturePack";
 import MikeyPopup, { useMikeyPopup, type PopupGoal } from "./MikeyPopup";
-import { mikeyPopupsLook, popupName, useMikeyPopupsLook } from "@/lib/star/mikeyPopups";
+import { popupName } from "@/lib/star/mikeyPopups";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, assistFor, noteMatePlays, probeMatePlays, type CreditDelta, type MatePlay } from "@/lib/star/credit";
 import { kitsFor, keeperKit, type MatchKits } from "@/lib/star/kits";
@@ -249,7 +252,7 @@ import LiveScorePop from "./LiveScorePop";
 import LiveScoresPanel from "./LiveScoresPanel";
 import FigureSkinToggle from "./FigureSkinToggle";
 import type { MatchSpriteHint } from "@/lib/star/matchFigure";
-import { spriteKickStrikeT, keeperDiveClip, spriteClipReady, spriteClipFps, spriteClipFrames, warmSpriteKits, type SpriteClip } from "@/lib/star/sprites";
+import { spriteKickStrikeT, keeperDiveClip, keeperBallPoint, keeperBallRadius, spriteClipTiming, spriteClipReady, spriteClipFps, spriteClipFrames, warmSpriteKits, type SpriteClip } from "@/lib/star/sprites";
 import { outfieldSpriteClip, keeperDiveClipNew, keeperStandingClip, keeperGetUpT, sideOfDive } from "@/lib/star/sprite3dAnim";
 import { POST_L, POST_R, GOAL_H as VFX_GOAL_H } from "@/lib/star/pitch";
 import { cameraTilt, tiltFor, tiltCss, screenToCanvas, canvasToScreen, type Tilt } from "@/lib/star/cameraTilt";
@@ -821,8 +824,8 @@ function countedRng(seed: number, counter: { current: number }): () => number {
 /** useLayoutEffect in the browser, useEffect on the server (no warning). */
 const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
-/** How long the old "PASS" / "GOAL" banner stays up, and when BACK TO YOU follows a PASS (ms).
- *  The Arcade pack's PASS is up 0.7 s (ArcadeBanner.tsx), so its BACK TO YOU pops fresh. */
+/** When BACK TO YOU follows a PASS (ms, less 100): the PASS caption is up 0.8 s
+ *  (mikeyPopups.ts popupMs), so BACK TO YOU pops fresh. */
 const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
@@ -1510,7 +1513,32 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** See the `leadIn` prop: the builder, and the lead-in while it plays. */
   const leadInPropRef = useRef(leadIn);
   leadInPropRef.current = leadIn;
-  const leadRef = useRef<{ lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[]; ball: Vec2; z: number; mates0: number; defs0: number; cam: { at(t: number, chance: Viewport): Viewport; lockAt(t: number, chance: Viewport): number }; endAt: Record<string, Vec2>; endKeeper: Vec2 | null } | null>(null);
+  const leadRef = useRef<{ lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[]; ball: Vec2; z: number; mates0: number; defs0: number; cam: { at(t: number, chance: Viewport): Viewport; lockAt(t: number, chance: Viewport): number }; endAt: Record<string, Vec2>; endKeeper: Vec2 | null; live?: LivePlan | null } | null>(null);
+  /**
+   * LIVE CHANCES (lib/star/liveChance.ts, Leo 29 Oct 2026; Settings → Updates,
+   * off by default): the last pass still coming to you while you aim. `T` is the
+   * build-up's clock; `ents`/`ends` the build-up's men, still running to their
+   * spots; `done` once you swung (or it got away), after which the ball, if it
+   * was missed, rolls on at real speed while the result shows.
+   */
+  const liveRef = useRef<{ sc: Scenario; plan: LivePlan; dials: LiveDials; lead: LeadIn | null; ents: LeadEntity[]; ends: Vec2[]; runKeys: Set<string>; cam: { at(t: number, chance: Viewport): Viewport } | null; T: number; done: "" | "hit" | "miss"; rolled: number; armed?: { dir: Vec2; power: number; ball: Vec2 & { z: number }; speed: number };
+    /** The keeper rushing at you (a one-on-one): where to and how fast. */
+    rush?: { target: Vec2; v: number; react: number } | null;
+    /** Your one touch: where you run from and to, how fast, and what the keeper does about it. */
+    touch?: { start: Vec2; meet: Vec2; runV: number; kp: KeeperVsTouch | null; kStart: Vec2; side: number; held: number };
+    /** The keeper got to your touch first: the ball is his. */
+    smothered?: boolean;
+    /** Team-mates carrying on with their runs (from the build-up's last moment), and how long they have been free (s). */
+    mates?: { o: Vec2; v: Vec2 }[]; freeT?: number;
+    /** A defender who gets to your touch first: which one, when, where. */
+    defWin?: { i: number; t: number; at: Vec2 } | null } | null>(null);
+  /** When the aim drag started (ms) and from where on the glass: a quick flick is a touch (liveTouch). */
+  const dragT0Ref = useRef(0);
+  /** The live chance's hint pill ("drag back = aim · flick = touch"), on a player's first few. */
+  const [liveHint, setLiveHint] = useState(false);
+  const showLiveHint = () => { if (touchHintWanted()) { touchHintSeen(); setLiveHint(true); } };
+  /** The last live swing, for the dev probe (__live) and the test page. */
+  const lastSwingRef = useRef<(ReturnType<typeof readSwing> & { T: number; ball: Vec2; speed: number }) | null>(null);
   // B10: when a header or volley chance became yours (for the ball hanging /
   // bouncing while you aim — lib/star/airDrawings.ts airWaitZ). Drawing only.
   const airT0Ref = useRef<{ sc: Scenario; t0: number } | null>(null);
@@ -1878,20 +1906,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       addedTime: ADDED,
       fullTime: MATCH_DURATION,
     };
-    const inputs = matchInputsFor(car
+    return matchInputsFor(car
       // Your CLUB's strength (Chelsea 83), not the team relationship (60 on
       // day one) — see matchTeamStrength (lib/star/matchday.ts, item 0).
       ? careerMatchSpec(car, fixture, { ...live, teamFallback: teamRef.current, playstyle: playstyleRef.current })
       : { ...live, teamStrength: teamRef.current, home: fixture?.home, skills: { power: 55, technique: 55, vision: 55 }, context: { playstyle: playstyleRef.current } });
-    // A new career's corners wait for Technique and Vision 70 (setPieces.ts,
-    // Mikey 25 Oct 2026): until then a team-mate takes them.
-    const withCorners = dutiesRef.current?.corners === false ? { ...inputs, canTakeCorners: false } : inputs;
-    // A new career's headers, volleys and runs with the ball (mechanics.ts):
-    // none before they open, and game 4 brings one header and one volley.
-    const cc = careerRef.current;
-    return cc?.unlocks?.story
-      ? { ...withCorners, mechanics: { air: mechanicOpen(cc, "aerial"), airIntro: aerialIntroGame(cc), dribble: mechanicOpen(cc, "dribble") } }
-      : withCorners;
+    // A new career's corners (Technique and Vision 70) and its moves (headers,
+    // volleys, the run with the ball) come from careerMatchSpec, so "Sim this
+    // match" plays them the same way (lib/star/matchInputs.ts).
   };
 
   // Translate what the physics produced into what the match needs to know.
@@ -1927,6 +1949,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // call site's `st.possession` check), which this rare fallback path — a
   // whole skipped batch producing no events at all — otherwise had no way
   // to say.
+  // No line here may depend on the score ("fans restless" read at 5-0 up; sweep, 29 Oct 2026).
   const SIM_COMMENTARY_USER = [
     "{club} share the ball around patiently in midfield.",
     "{club}'s defence holds firm under pressure.",
@@ -1937,11 +1960,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     "{club}'s keeper comes out to claim a hopeful cross.",
     "A long ball forward for {club} finds nobody — easily dealt with.",
     "Neat footwork from {club} in the middle of the park creates some space.",
-    "{club}'s fans are starting to get restless.",
     "A crunching challenge from {club} draws a free kick — nothing comes of it.",
     "The tempo drops as {club} look to regroup.",
     "A lovely piece of skill from {club} on the touchline, but the final ball lets them down.",
-    "Chances have been at a premium for {club} here.",
   ];
   const SIM_COMMENTARY_OPP = [
     "They share the ball around patiently in midfield.",
@@ -1953,11 +1974,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     "Their keeper comes out to claim a hopeful cross.",
     "A long ball forward for them finds nobody — easily dealt with.",
     "Neat footwork from them in the middle of the park creates some space.",
-    "Their fans are starting to get restless.",
     "A crunching challenge from them draws a free kick — nothing comes of it.",
     "The tempo drops as they look to regroup.",
     "A lovely piece of skill from them on the touchline, but the final ball lets them down.",
-    "Chances have been at a premium for them here.",
   ];
 
   // --- Sound: muted by default until primed by the first user gesture ---
@@ -2637,6 +2656,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const tiltGeomRef = useRef<Tilt | null>(null);
   /** When the 3D keeper's dive clip started (seconds), or null. */
   const keeperDiveStartRef = useRef<number | null>(null);
+  /** Keeper catches and dives (Leo's "keeperCatch" switch, lib/star/keeperShow.ts): this chance's
+   *  planned move, the picture's own clock (slows with the broadcast look), where his held ball is
+   *  drawn, and his dust puff. Picture only. */
+  const keeperShowRef = useRef<(KeeperShow & { sc: Scenario; from: { x: number; y: number }; dir: "R" | "L"; to: { x: number; y: number } | null }) | null>(null);
+  const showClockRef = useRef(0);
+  const keeperHeldBallRef = useRef<{ px: number; by: number; gy: number; r: number } | null>(null);
+  /** Where the keeper was drawn this frame (screen px, boots) and his height: the dev probe below reads it. */
+  const keeperDrawnRef = useRef<{ x: number; y: number; h: number } | null>(null);
+  /** Where the loose ball was drawn this frame (screen px): the dev probe reads it. */
+  const freeBallPxRef = useRef<{ x: number; y: number; z: number; inNet: boolean } | null>(null);
+  /** The last place the held ball was drawn in his gloves (the safety net's spot). */
+  const keeperLastHeldRef = useRef<{ px: number; by: number; gy: number; r: number; sc: Scenario } | null>(null);
   /** Where the 3D keeper landed (canvas px), held while he lies there. */
   // Where he landed is kept as a spot on the PITCH (x, y in metres) plus his sideways lean in
   // keeper radii (offR), never as screen pixels: the celebration camera follows you after a
@@ -2660,27 +2691,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const c = celebRef.current;
     return c ? celebAt(c.plan, performance.now() / 1000 - c.t0) : null;
   };
-  // Action banner ("PASS" / "GOAL") and how long it stays up. The texture pack
-  // picks the style (texturePack.ts bannerStyle): the Arcade pack plays
-  // "Arcade pop" (ArcadeBanner.tsx, its own clock); every other pack keeps the
-  // old banner exactly as it was.
-  const arcade = useArcadeBanner();
-  const [actionBanner, setActionBanner] = useState<string | null>(null);
-  const actionBannerTextRef = useRef<HTMLDivElement>(null);
-  const offsideBannerTextRef = useRef<HTMLDivElement>(null);
-  const bannerTimerRef = useRef<number | null>(null);
-  // Mikey's new pop-ups (Settings, default Old): TV graphics instead
-  // (MikeyPopup.tsx). Old leaves everything below exactly as it was.
+  // The words that pop up when an action finishes (GOAL, PASS, OFFSIDE…) are
+  // Mikey's Broadcast pop-ups (MikeyPopup.tsx): a scoreboard for a goal, a TV
+  // caption for the rest. The only pop-ups since 27 Oct 2026 (Mikey: "no
+  // toggle … the new base version"); the Classic and Arcade words are gone.
   const mikey = useMikeyPopup();
-  const mikeyLook = useMikeyPopupsLook();
   const showAction = useCallback((text: string) => {
     if (sceneRef.current?.banners === false) return;
-    if (mikeyPopupsLook() === "new") { showMikeyPopup(text); return; }
-    if (bannerStyle() === "arcade") { arcade.show(text, bannerSideNow()); return; }
-    setActionBanner(text);
-    if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
-    bannerTimerRef.current = window.setTimeout(() => setActionBanner(null), ACTION_BANNER_MS);
-  }, [arcade.show]); // eslint-disable-line react-hooks/exhaustive-deps
+    showMikeyPopup(text);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Cosmetic FX state (never touches physics) ---
   const reducedMotionRef = useRef(false);
@@ -5124,6 +5143,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // to the pitch, so he faces straight out of his goal.
         const f = facingRef.current;
         const kFacing = f === "right" ? Math.PI : f === "left" ? 0 : Math.PI / 2;
+        // On his feet he faces the camera, whichever way it looks (Leo, 28 Oct 2026: side
+        // on, "he seems to not be able to look right ... have him face the camera
+        // direction"). A dive still goes along his goal line (kFacing).
+        const kStandFacing = Math.PI / 2;
         // Only a real save is a dive. His patrol lean used to trigger the dive
         // clip too, so he flopped about while shuffling across his line.
         // A ball going well wide of the goal is not a save to dive for: the
@@ -5132,7 +5155,65 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // ball rolling out (playtest film, 3 Oct 2026). Drawing only.
         const bl = ballRef.current;
         const wideOfGoal = !!bl && kk.saves === 0 && Math.abs(bl.pos.x - (POST_L + POST_R) / 2) > (POST_R - POST_L) / 2 + 2.5;
-        if (lunge > 0.04 && sign !== 0 && wideOfGoal && keeperLandRef.current?.sc !== sc) {
+        // Keeper catches and dives (Leo's "keeperCatch" switch): his planned move, timed so
+        // his gloves reach the ball as it arrives; the ball sits in them from a catch on.
+        keeperSyncCatch(); // the catch frame itself can be drawn before the frame tick has passed it on
+        const ks = keeperShowRef.current;
+        const ksF = ks && ks.sc === sc && keeperShowOn() ? keeperShowFrame(ks, showClockRef.current, ks.dir, keeperTiming) : null;
+        if (ks && ksF) {
+          const kit = { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt };
+          const speed = ks.look === "arcade" ? 1.25 : 1;
+          const diveClip = /^k(CatchDive|CatchLow|ParryDive|GetUp)/.test(ksF.clip);
+          const kFace = diveClip ? kFacing : kStandFacing;
+          keeperSprite = { char: "keeper", clip: ksF.clip as SpriteClip, t: ksF.t * speed, facing: kFace, kit, centre: 0 };
+          feelLiftPx = 0;
+          const sprH = kr * FIGURE_HEIGHT_R * SPRITE_HEIGHT_K;
+          const fromPx = toPx(ks.from.x, ks.from.y);
+          // Where his boots go so the gloves meet the ball: worked out once, from the
+          // contact frame's glove point and the ball's planned arrival.
+          if (!ks.to) {
+            const main = clipFor(ks.plan.move, null, ks.dir);
+            const T = keeperTiming(main);
+            const cT = T ? (T.contactFrame ?? Math.round(T.frames * 0.4)) / T.fps : 0;
+            const gp = keeperBallPoint(main as SpriteClip, cT, /^k(CatchDive|CatchLow|ParryDive)/.test(main) ? kFacing : kStandFacing, sprH);
+            const at = toPx(ks.plan.x, ks.from.y);
+            const ballY = at.py - Math.max(0, ks.plan.z) * heightScale * at.scale;
+            const br = BALL_PX * at.scale;
+            ks.to = gp ? { x: at.px - (gp.x + gp.nx * br) - fromPx.px, y: ballY - (gp.y + gp.ny * br) - fromPx.py } : { x: at.px - fromPx.px, y: 0 };
+            // A standing catch moves him at most a step; a dive the whole way.
+            if (ks.plan.move === "chest" || ks.plan.move === "feet") ks.to = { x: Math.max(-KR * 1.2, Math.min(KR * 1.2, ks.to.x)), y: Math.max(-KR * 0.6, Math.min(KR * 0.6, ks.to.y)) };
+            if (ks.look === "arcade" && ks.plan.side) ks.to = { x: ks.to.x * 1.08, y: ks.to.y };
+          }
+          const e = ksF.travel < 1 ? 1 - (1 - ksF.travel) * (1 - ksF.travel) : 1;
+          keeperDrawAt = { x: fromPx.px + ks.to.x * e, y: fromPx.py + ks.to.y * e };
+          // After a dive the get-up starts where his body landed: the dive clip carries
+          // him across in the frame, its anchor stays at the take-off (landM, metres).
+          if (ksF.afterDive) {
+            const lm = keeperTiming(clipFor(ks.plan.move, ks.ending, ks.dir))?.landM;
+            if (lm) {
+              const sgn = ks.plan.side || 1;
+              const p0 = toPx(ks.from.x, ks.from.y), p1 = toPx(ks.from.x + sgn * lm[0], ks.from.y - lm[1]);
+              keeperDrawAt = { x: keeperDrawAt.x + (p1.px - p0.px), y: keeperDrawAt.y + (p1.py - p0.py) };
+            }
+          }
+          // Where the held ball is drawn this frame (drawBall reads it).
+          if (ksF.ballInHands) {
+            // The clips record the glove point from their contact frame on; a frame just
+            // before it (the ball lands in his gloves a beat early) uses the contact frame's.
+            const cTk = (() => { const T = keeperTiming(ksF.clip); return T?.contactFrame != null ? T.contactFrame / T.fps : 0; })();
+            const gp = keeperBallPoint(ksF.clip as SpriteClip, ksF.t * speed, kFace, sprH)
+              ?? keeperBallPoint(ksF.clip as SpriteClip, Math.max(ksF.t * speed, cTk), kFace, sprH);
+            const br = keeperBallRadius(ksF.clip as SpriteClip, sprH) ?? BALL_PX * kScale;
+            keeperHeldBallRef.current = gp
+              ? { px: keeperDrawAt.x + gp.x + gp.nx * br, by: keeperDrawAt.y + gp.y + gp.ny * br, gy: keeperDrawAt.y + gp.g, r: br }
+              : null;
+          } else keeperHeldBallRef.current = null;
+          // His landing: a puff off the grass (bigger in the broadcast and arcade looks).
+          if (ksF.landedFor >= 0 && ksF.landedFor < 0.55) {
+            const big = ks.look === "natural" ? 0.7 : ks.look === "arcade" ? 1.35 : 1;
+            drawLandingPuff(ctx, keeperDrawAt.x, keeperDrawAt.y, KR * big, ksF.landedFor / 0.55);
+          }
+        } else if (lunge > 0.04 && sign !== 0 && wideOfGoal && keeperLandRef.current?.sc !== sc) {
           const a = toPx(kk.x, kk.y), b = toPx(kk.x + sign, kk.y);
           keeperDiveStartRef.current = null;
           keeperSprite = { char: "keeper", clip: "jog", t: kk.idleT, facing: Math.atan2(b.py - a.py, b.px - a.px), kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
@@ -5173,12 +5254,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           keeperDiveStartRef.current = null;
           keeperLandRef.current = null;
           // The ready bounce at 60% speed (about 2 frames a second).
-          keeperSprite = { char: "keeper", clip: "ready", t: kk.idleT * 0.6, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
+          keeperSprite = { char: "keeper", clip: "ready", t: kk.idleT * 0.6, facing: keeperShowOn() ? kStandFacing : kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
           // Animations: New — a ball taken standing: held to his chest, or spilled.
           const sc3 = kAnim && ka ? keeperStandingClip(ka.save) : null;
           if (sc3 && ka && spriteClipReady("keeper", sc3)) keeperSprite = { ...keeperSprite, clip: sc3, t: now - ka.start };
         }
       }
+      keeperDrawnRef.current = { x: keeperDrawAt ? keeperDrawAt.x : cx + KR * weight * (1 - lunge), y: keeperDrawAt ? keeperDrawAt.y : py, h: kr * FIGURE_HEIGHT_R * SPRITE_HEIGHT_K };
       drawMatchFigure(ctx, nv ? "new" : "classic",
         keeperDrawAt ? keeperDrawAt.x : cx + KR * weight * (1 - lunge), keeperDrawAt ? keeperDrawAt.y : py, kr, {
         sprite: keeperSprite,
@@ -5222,12 +5304,46 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         },
       });
 
+      // Keeper catches: the ball he is holding, in front of him. Drawn here, straight
+      // after his figure and only here, so it is never drawn twice or a frame late.
+      {
+        const showOn = keeperShowOn();
+        const held = showOn && keeperShowRef.current?.sc === sc ? keeperHeldBallRef.current : null;
+        const hasIt = showOn && keeperCatchNow();
+        const kd = keeperDrawnRef.current;
+        let drawnAt: { px: number; by: number; gy: number; r: number } | null = null;
+        if (held) {
+          drawnAt = held;
+          if (hasIt) keeperLastHeldRef.current = { ...held, sc };
+        } else if (hasIt && kd) {
+          // Safety net: no glove point this frame (a drawing still loading): where it was
+          // last in his gloves, else at his chest. Never left in the air.
+          const last = keeperLastHeldRef.current;
+          drawnAt = last && last.sc === sc ? last : { px: kd.x, by: kd.y - kd.h * 0.45, gy: kd.y, r: BALL_PX * kScale };
+        }
+        if (drawnAt) drawBall(0, 0, 0, drawnAt);
+        // Development only (compiled out of the live site): where the ball and the keeper
+        // are drawn, read every frame by scripts/film/keeper/catchcheck.mjs.
+        if (offlineDevPlayEnabled() && typeof window !== "undefined") {
+          (window as unknown as { __kDbg?: unknown }).__kDbg = {
+            caught: keeperCatchNow(), holds: !!held && hasIt, net: !held && hasIt, show: !!keeperShowRef.current && keeperShowRef.current.sc === sc,
+            ending: keeperShowRef.current?.ending ?? null, move: keeperShowRef.current?.plan.move ?? null,
+            ball: drawnAt ? { x: drawnAt.px, y: drawnAt.by } : null, keeper: kd, kind: sc.kind, t: performance.now(),
+            free: freeBallPxRef.current, phase: phaseRef.current,
+            saves: (ballRef.current?.actionLog ?? []).filter((a) => a.kind === "save" && a.actor === "keeper" && a.save).map((a) => a.save).join(","),
+          };
+        }
+      }
+
       // The contact flash at the ball the moment he touches it (the glow
       // Keeper.flash has always marked and nothing ever drew). New only.
       if (kAnim && kAnim.flash > 0 && ka?.at) {
+        // Keeper catches: the flash is at his gloves, where the ball now is (not at
+        // the spot it met him, which read as a ball stopped in the air beside him).
+        const inHands = keeperShowOn() && keeperShowRef.current?.sc === sc && keeperCatchNow() ? keeperHeldBallRef.current : null;
         const f = toPx(ka.at.x, ka.at.y);
         const fy = f.py - Math.max(0, ka.at.z) * heightScale * f.scale;
-        drawContactFlash(ctx, f.px, fy, KR * kAnim.flashSize, kAnim.flash);
+        drawContactFlash(ctx, inHands ? inHands.px : f.px, inHands ? inHands.by : fy, KR * kAnim.flashSize, kAnim.flash);
       }
 
       ctx.restore();
@@ -5344,10 +5460,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     //   3. the ball itself grows as it rises toward the camera.
     // The old version had the first of these and almost none of the other two,
     // which is why a chip and a driven shot looked much the same.
-    const drawBall = (x: number, y: number, z: number) => {
-      const { px, py, scale } = toPx(x, y);
-      const bScale = BALL_PX * scale;
-      const h = Math.max(0, z);
+    const drawBall = (x: number, y: number, z: number, held?: { px: number; by: number; gy: number; r: number }) => {
+      // Keeper catches: the ball in his gloves, at the screen point his clip baked
+      // (keeperBallPoint), its shadow on the grass under it, sized to his gloves.
+      const tp = toPx(x, y);
+      const px = held ? held.px : tp.px, py = held ? held.gy : tp.py, scale = held ? 1 : tp.scale;
+      const bScale = held ? held.r : BALL_PX * scale;
+      const h = held ? 0 : Math.max(0, z);
 
       // Ground shadow — stays ON the pitch, directly under the ball.
       const shadowShrink = 1 / (1 + h * 0.16);
@@ -5359,7 +5478,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       }
 
       // The ball, lifted off the shadow and grown a little with height.
-      const by = py - h * heightScale * scale;
+      const by = held ? held.by : py - h * heightScale * scale;
       // Harry, 13 Oct 2026: "actually the ball rising up in the air": it grows clearly as it climbs (was +5.5%
       // a metre, now +9%, up to +72% at 8 m), and leaves faint puffs of air behind it while it is up.
       const br = bScale * (1 + Math.min(h, 8) * 0.09);
@@ -5500,8 +5619,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ctx.restore();
       }
     }
-    const ballAt = headerBallAt ?? (ball ? { x: ball.pos.x, y: ball.pos.y, z: ball.z }
+    // Live chances: the pass still coming to you (or, missed, rolling on).
+    const liveAt = !ball && !leadRef.current ? liveBallNow(sc) : null;
+    const ballAt0 = headerBallAt ?? (ball ? { x: ball.pos.x, y: ball.pos.y, z: ball.z }
+      : liveAt ? { x: liveAt.x, y: liveAt.y, z: liveAt.z }
       : onTheSpot ? (crossAt ?? { x: sc.ball.x, y: sc.ball.y, z: leadRef.current?.z ?? airZ }) : null);
+    const ballAt = keeperDeadBall(sc, ball, ballAt0);
     shownBallRef.current = ball && ballAt ? { x: ballAt.x, y: ballAt.y, z: ballAt.z } : null;
     // The old flow (?airmoves=old): the last pitch frame before its ball screen
     // opened (the screen draws no ball under it), the drawn ball's centre
@@ -5514,14 +5637,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const headPx = { x: yP.px, y: yP.py - HEAD_AT * sh };
       oldAirProbeRef.current = { sc, flow: "old", gapPx: +Math.hypot(ballPx.x - headPx.x, ballPx.y - headPx.y).toFixed(1), ballPx, headPx, figPx: +sh.toFixed(1), zM: +ballAt.z.toFixed(2) };
     }
-    if (ballAt) {
+    // Keeper catches: once the match says he has it, the ball is drawn with him (just
+    // after his figure, in drawKeeper), never here at the spot where the match parks it.
+    const keeperHasIt = keeperShowOn() && keeperCatchNow();
+    freeBallPxRef.current = ballAt && !keeperHasIt ? (() => { const q = toPx(ballAt.x, ballAt.y); return { x: +q.px.toFixed(1), y: +(q.py - Math.max(0, ballAt.z) * heightScale * q.scale).toFixed(1), z: +ballAt.z.toFixed(2), inNet: !!ballRef.current?.inNet }; })() : null;
+    if (ballAt && !keeperHasIt) {
       const drawIt = () => drawBall(ballAt.x, ballAt.y, ballAt.z);
       if (figureQueue) figureQueue.push({ py: toPx(ballAt.x, ballAt.y).py, draw: drawIt });
       else drawIt();
     }
     // Match feel: New — the back of the net bulges round a goal and ripples
     // out (under the ball, over the goal's mesh).
-    if (feelOn && feelSt.net && feelBall && feelBall.inNet) {
+    // Off for now (Leo, 28 Oct 2026: "turn off the net effect thing around the ball
+    // for a goal for now, it looks bad"). NET_BULGE_ON = true brings it back.
+    if (NET_BULGE_ON && feelOn && feelSt.net && feelBall && feelBall.inNet) {
       const t = feelT - feelSt.net.at;
       const env = t < 0 ? 0 : t < 0.1 ? Math.sin((Math.PI / 2) * (t / 0.1))
         : (0.55 + 0.45 * Math.cos((t - 0.1) * 16) * Math.exp(-(t - 0.1) * 5)) * Math.max(0, 1 - Math.max(0, t - 1.2) / 0.8);
@@ -5812,6 +5941,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // — reported as redundant with the arrow's own length, which already
       // is the power readout.
     };
+    // Live chances: the spot where you meet the pass, green while it is in your sweet zone.
+    {
+      const lv = liveRef.current;
+      if (lv && lv.sc === sc && !lv.done && (phaseRef.current === "aim" || phaseRef.current === "contact") && !leadRef.current) {
+        const bNow = liveBallNow(sc);
+        const al = bNow ? alongOf(lv.plan, bNow) : -99;
+        const sweet = Math.abs(al) <= lv.dials.sweet, reach = al >= -lv.dials.reachEarly && al <= lv.dials.reachLate;
+        const g = toPx(lv.plan.spot.x, lv.plan.spot.y);
+        ctx.save();
+        ctx.lineWidth = Math.max(2, BALL_PX * g.scale * 0.35);
+        ctx.strokeStyle = sweet ? "rgba(74,222,128,0.95)" : reach ? "rgba(250,204,21,0.9)" : "rgba(255,255,255,0.55)";
+        ctx.beginPath();
+        ctx.ellipse(g.px, g.py, BALL_PX * g.scale * 2.2, BALL_PX * g.scale * 1.3, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+        // Your aim, locked while you wait to tap (the strike screen).
+        if (lv.armed) drawAimArrow(lv.armed.dir.x, lv.armed.dir.y, lv.armed.power);
+      }
+    }
     if (phaseRef.current === "aim" && draggingRef.current && dragRef.current) {
       const d = dragRef.current;
       drawAimArrow(sc.ball.x - d.x, sc.ball.y - d.y, powerFromDrag(d, sc.ball));
@@ -5901,10 +6049,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           vx: lb?.vel.x ?? 0, vy: lb?.vel.y ?? 0, vz: lb?.vz ?? 0, live: !!lb, inNet: !!lb?.inNet,
         } : null,
         landing: lb && phaseRef.current === "flight" && !lb.inNet && lb.z > 0.15 && lb.landAt ? { ...lb.landAt } : null,
+        keeperHolds: leoUpdateOn("keeperCatch") && keeperCatchNow(),
         keeper: rec.keeper,
         figures: rec.figures,
         aim: rec.aim,
-        ring: nv && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || youShown || ringOnBall)
+        grabAt: liveRef.current && liveRef.current.sc === sc && !liveRef.current.done && phaseRef.current === "aim" && !leadRef.current
+          ? { x: liveRef.current.plan.spot.x, y: liveRef.current.plan.spot.y } : null,
+        // Live chances: the ring marks where you meet the pass (liveChance.ts).
+        ring: liveRef.current && liveRef.current.sc === sc && !liveRef.current.done && (phaseRef.current === "aim" || phaseRef.current === "contact") && !leadRef.current
+          ? { x: liveRef.current.plan.spot.x, y: liveRef.current.plan.spot.y }
+          : nv && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || youShown || ringOnBall)
           ? (ringOnBall ? { x: sc.ball.x, y: sc.ball.y } : { x: tx, y: ty }) : null,
         goalSide: phaseRef.current === "result" ? goalSideRef.current : null,
         celebrating: phaseRef.current === "result" && !!celebRef.current,
@@ -6353,6 +6507,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     try { lead = build(sc, moment ?? opening); } catch (e) { console.error("Lead-in could not be built (the chance plays as normal)", e); }
     if (!lead || !(lead.durS > 0)) return;
     runOnRef.current = null;
+    liveRef.current = null;
     leadJoinersRef.current = new Set();
     const ents = leadInEntities(sc);
     const ends = ents.map((e) => e.get());
@@ -6390,7 +6545,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const sid = e.key === "keeper" ? null : e.key === "run" ? "run0" : e.key.startsWith("sec") ? `run${Number(e.key.slice(3)) + 1}` : e.key;
       if (sid) endAt[sid] = { ...ends[i] }; else endKeeper = { ...ends[i] };
     });
-    leadRef.current = { lead, t: 0, ents, ends, ball: { x: sc.ball.x, y: sc.ball.y }, z: 0, mates0, defs0, cam: leadInCamera(lead, ents.map((e) => e.key)), endAt, endKeeper };
+    leadRef.current = { lead, t: 0, ents, ends, ball: { x: sc.ball.x, y: sc.ball.y }, z: 0, mates0, defs0, cam: leadInCamera(lead, ents.map((e) => e.key)), endAt, endKeeper,
+      // Live chances: the last pass is still coming when the chance becomes yours (liveChance.ts).
+      live: liveChancesOn() && liveKindOK(sc.kind) && !lead.offside && !autoKickOf(sc) ? planFromLead(lead, sc.ball, liveDials(liveSkillsNow())) : null };
     leadPlayedRef.current = true;
     setLeadInOn(true);
     applyLeadIn();
@@ -6408,7 +6565,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Its line over the picture, when it asks (a state change only when the line changes).
     const cap = L.lead.captionShown && L.t < L.lead.durS ? L.lead.captionAt?.(L.t) ?? null : null;
     if (cap !== leadCapRef.current) { leadCapRef.current = cap; setLeadCap(cap); }
-    if (L.t < L.lead.durS) {
+    if (L.t < (L.live ? L.live.handT : L.lead.durS)) {
       applyLeadIn();
       try { L.lead.onTick?.(L.t, false); } catch { /* an observer never breaks the match */ }
       return;
@@ -6436,9 +6593,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     viewportRef.current = baseViewportRef.current;
     figShrinkRef.current = figShrinkBaseRef.current;
     leadRef.current = null;
-    runOnRef.current = runEnts.length ? { lead: L.lead, t: 0, ents: runEnts, ends: runEnds } : null;
+    runOnRef.current = runEnts.length && !L.live ? { lead: L.lead, t: 0, ents: runEnts, ends: runEnds } : null;
     airTapLeadRef.current = sc;
     setLeadInOn(false);
+    // Live chances: the pass is still on its way and the men still running (stepLive).
+    if (L.live) {
+      liveRef.current = { sc, plan: L.live, dials: liveDials(liveSkillsNow()), lead: L.lead, ents: L.ents.slice(0, L.ends.length), ends: L.ends, runKeys: new Set(L.lead.runOnS && L.lead.runOnS > 0 ? L.lead.runOnKeys ?? [] : []), cam: L.cam, T: L.t, done: "", rolled: 0, rush: liveRushFor(sc, L.live) };
+      showLiveHint();
+      liveRef.current.mates = liveMateRuns(L.lead, L.ents);
+      stepLive(0);
+    }
     try { L.lead.onTick?.(L.lead.durS, true); } catch { /* an observer never breaks the match */ }
   };
   /** Is this man under the captain's orders, or the man pressing you (they move by their own rules)? */
@@ -6472,6 +6636,384 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * engine itself is unchanged.
    */
   const handOverRunOn = () => { runOnRef.current = null; };
+  /**
+   * LIVE CHANCES, each frame (lib/star/liveChance.ts). While you aim: the
+   * build-up's clock runs on (slowed, plan.slow), its men run on to their
+   * spots, its camera lands, and the pass rolls toward the spot. Let it run
+   * past you (or stop short) and the chance is gone. Once missed, it rolls on
+   * at real speed while the result shows. Nothing here touches the engine:
+   * the ball you strike is launched by handleContact as ever.
+   */
+  const stepLive = (dt: number) => {
+    const lv = liveRef.current;
+    if (!lv) return;
+    if (lv.sc !== scenarioRef.current) { liveRef.current = null; return; }
+    if (lv.done === "hit") return;
+    if (lv.done === "miss") { lv.T += dt; return; }
+    if (phaseRef.current !== "aim" && phaseRef.current !== "contact") { lv.done = "miss"; return; }
+    // The kick screen is up: the moment you let go is held until you tap.
+    if (lv.armed) return;
+    if (lv.smothered) return;
+    let dtL = 0;
+    {
+      const l0 = lv.lead;
+      dtL = dt * liveRate(lv.plan, liveBallAt(lv.plan, lv.T, l0 ? (t) => l0.ballAt(t) : null, lv.dials.rollDecel), lv.dials);
+      lv.T += dtL;
+    }
+    const T = lv.T, lead = lv.lead;
+    if (lead) {
+      const runEnd = lead.durS + (lead.runOnS ?? 0);
+      lv.ents.forEach((e, i) => {
+        // A rushing keeper runs by his own rule (below), not the build-up's.
+        if (e.key === "keeper" && lv.rush) return;
+        // Past the build-up's end everyone but you and the keeper moves by the chance's own rules (stepLiveMen).
+        if (T >= lead.durS && e.key !== "you" && e.key !== "keeper" && !(lv.runKeys.has(e.key) && T < runEnd)) return;
+        const p = T < lead.durS || (lv.runKeys.has(e.key) && T < runEnd) ? lead.posAt(e.key, Math.min(T, runEnd)) : null;
+        e.set(p ?? lv.ends[i]);
+      });
+      if (lv.cam && T < lead.durS) { viewportRef.current = lv.cam.at(T, baseViewportRef.current); leadFigSize(); }
+      else if (lv.cam) { viewportRef.current = baseViewportRef.current; figShrinkRef.current = figShrinkBaseRef.current; lv.cam = null; }
+    }
+    const b = liveBallAt(lv.plan, T, lead ? (t) => lead.ballAt(t) : null, lv.dials.rollDecel);
+    stepLiveMen(lv, dtL);
+    if (lv.smothered) return;
+    // Caught up after your touch: it's at your feet and you carry it, the ring with you,
+    // until you shoot, or you take too long and they close you down.
+    if (lv.touch && T > lv.plan.t1) {
+      const u = lv.plan.u;
+      lv.sc.player.x = b.x - u.x * TOUCH.meetGap; lv.sc.player.y = b.y - u.y * TOUCH.meetGap;
+      lv.plan.spot = { x: b.x, y: b.y };
+      lv.sc.ball.x = b.x; lv.sc.ball.y = b.y;
+      lv.touch.held += dt;
+      if (lv.touch.held > TOUCH.holdS) { liveMiss(false, false, "closed"); return; }
+    }
+    // Development only (compiled out of the live site): read by scripts/film/live/livecheck.mjs.
+    if (offlineDevPlayEnabled() && typeof window !== "undefined") {
+      (window as unknown as { __live?: unknown }).__live = {
+        kind: lv.sc.kind, T, plan: lv.plan, ball: b, along: alongOf(lv.plan, b), speed: liveSpeedAt(lv.plan, T, lv.dials.rollDecel),
+        spotPx: pitchToClient(lv.plan.spot), ballPx: pitchToClient(b), made: !lead, last: lastSwingRef.current,
+        touched: !!lv.touch, rush: !!lv.rush, keeper: { x: lv.sc.keeper.x, y: lv.sc.keeper.y, dive: lv.sc.keeper.dive }, you: { x: lv.sc.player.x, y: lv.sc.player.y },
+        kp: lv.touch?.kp ?? null, youPx: pitchToClient(lv.sc.player),
+        px: (x: number, y: number) => pitchToClient({ x, y }),
+      };
+    }
+    if (runPast(lv.plan, b, lv.dials) || stoppedShort(lv.plan, T, b, lv.dials)) liveMiss(false);
+  };
+  /** Your stats for a live chance, tired legs taken off (the test page's pretend player there). */
+  const liveSkillsNow = (): LiveSkills => {
+    const t = liveTestStats();
+    if (t) return t;
+    const tired = tiredSkills();
+    const cut = 1 - fatigueCut(liveEnergyAt(matchMinuteRef.current));
+    const c = careerRef.current?.skills;
+    return { power: tired.power, technique: tired.technique, pace: (c?.pace ?? 60) * cut, vision: c?.vision ?? 60 };
+  };
+  /** Team-mates' runs at the build-up's end (the way and the pace they were going). */
+  const liveMateRuns = (lead: LeadIn, ents: LeadEntity[]): { o: Vec2; v: Vec2 }[] => {
+    const out: { o: Vec2; v: Vec2 }[] = [];
+    const sc = scenarioRef.current;
+    const objFor = (key: string): Vec2 | null => key === "run" ? sc.runner?.pos ?? null
+      : key.startsWith("sec") ? sc.secondaryRunners[Number(key.slice(3))]?.pos ?? null
+      : key.startsWith("mate") ? sc.teammates[Number(key.slice(4))] ?? null
+      : key === "follower" ? sc.follower : null;
+    for (const e of ents) {
+      if (e.side !== "mate") continue;
+      const o = objFor(e.key);
+      const a = lead.posAt(e.key, lead.durS - 0.15), b = lead.posAt(e.key, lead.durS);
+      if (!o || !a || !b) continue;
+      out.push({ o, v: { x: (b.x - a.x) / 0.15, y: (b.y - a.y) / 0.15 } });
+    }
+    return out;
+  };
+  /** A defender won your touch, or got to you on the ball: the chance is gone. */
+  const liveTackled = () => {
+    const lv = liveRef.current;
+    if (!lv || lv.done) return;
+    lv.done = "miss";
+    setLiveHint(false);
+    aimCommitRef.current = null;
+    presserRef.current = null;
+    draggingRef.current = false;
+    dragRef.current = null;
+    thumbOriginRef.current = null;
+    setAim(null);
+    try { window.dispatchEvent(new CustomEvent("kib-live-swing", { detail: { hit: false, why: "tackled", touch: !!lv.touch } })); } catch { /* no window */ }
+    resolveOutcome("tackled");
+    showAction("TACKLED");
+    pushLine(lv.touch ? "A defender gets back and nicks it off him before he can get there." : "He's closed down and robbed before he can get it under control.");
+  };
+  /** The keeper rushing at you on a live chance (a one-on-one), or null. */
+  const liveRushFor = (sc: Scenario, plan: LivePlan): { target: Vec2; v: number; react: number } | null => {
+    if (!keeperRushes(sc.kind, sc.keeper, plan.spot)) return null;
+    const share = Math.max(0, Math.min(1, ((sc.keeperStrength ?? strengthRef.current ?? 62) - 40) / 55));
+    return { target: rushTarget(plan.spot, { x: CX, y: 0 }), v: keeperRushV(share), react: keeperReactS(share) };
+  };
+  /**
+   * The men a live chance moves itself, each frame (dtL: the chance's own clock):
+   * the keeper rushing at you; after your touch, you running onto it and the
+   * keeper going for it (he smothers it, or he is beaten: down, then back).
+   */
+  const stepLiveMen = (lv: NonNullable<typeof liveRef.current>, dtL: number) => {
+    const sc = lv.sc, k = sc.keeper;
+    const tc = lv.touch;
+    // Everyone else is free once the build-up has played out (or after your touch).
+    const free = !!tc || !lv.lead || lv.T >= lv.lead.durS;
+    if (free) {
+      lv.freeT = (lv.freeT ?? 0) + dtL;
+      // Team-mates carry on with their runs, easing off.
+      const ease = Math.max(0, 1 - lv.freeT / DEF.mateEaseS) * DEF.mateCarry;
+      for (const m of lv.mates ?? []) { m.o.x += m.v.x * ease * dtL; m.o.y += m.v.y * ease * dtL; }
+      // Defenders: close down and cover (before your touch); the chasers go for the ball after it.
+      const goal = { x: CX, y: 0 };
+      const ballNow = liveBallAt(lv.plan, lv.T, null);
+      const meet = tc ? ballNow : lv.plan.spot;
+      const near = nearestTo(sc.defenders, meet);
+      sc.defenders.forEach((d, i) => {
+        if (Math.hypot(d.x - meet.x, d.y - meet.y) > DEF.near) return;
+        const v = DEF.v * (d.speed || 1);
+        let to: Vec2;
+        if (tc) to = lv.defWin && lv.defWin.i === i ? lv.defWin.at : (i === near.i ? ballNow : defenderTarget(d, meet, goal, false));
+        else to = defenderTarget(d, meet, goal, i === near.i);
+        if (tc && lv.T < DEF.reactS) return;
+        const p = stepToward(d, to, v, dtL); d.x = p.x; d.y = p.y;
+      });
+      if (tc && lv.defWin && lv.T >= lv.defWin.t) { liveTackled(); return; }
+      // On the ball after your touch: a defender who gets to it takes it off you.
+      if (tc && lv.T > lv.plan.t1 && near.i >= 0 && near.d < 0.85) { liveTackled(); return; }
+    }
+    if (!tc) {
+      if (lv.rush && lv.T > (lv.plan.handT ?? 0)) { const p = stepToward(k, lv.rush.target, lv.rush.v, dtL); k.x = p.x; k.y = p.y; }
+      return;
+    }
+    const T = lv.T;
+    const you = runnerAt(tc.start, tc.meet, tc.runV, T);
+    sc.player.x = you.x; sc.player.y = you.y;
+    liveFollowCam(lv);
+    const kp = tc.kp;
+    if (!kp) return;
+    const react = lv.rush?.react ?? TOUCH.reactS[0];
+    if (kp.smother) {
+      if (T > react) { const p = stepToward(k, kp.at, (lv.rush?.v ?? TOUCH.rushV[0]) * 1.15, dtL); k.x = p.x; k.y = p.y; }
+      if (T >= kp.t) liveSmother();
+      return;
+    }
+    // Beaten: he goes down at it, stays down a beat, then gets up and runs back to his line.
+    if (T < react) return;
+    if (T < react + TOUCH.downS) {
+      const p = stepToward(k, kp.lunge, 7, dtL); k.x = p.x; k.y = p.y;
+      // The match's own low dive, played out to the full and held: he is on the ground.
+      k.dive = tc.side * 1.5;
+      k.saveKind = "low"; k.saveDir = tc.side; k.saveLunge = Math.min(1, Math.max(0.05, (T - react) / 0.22));
+    } else {
+      k.dive = 0;
+      if (k.saveKind === "low") { k.saveKind = null; k.saveLunge = 0; k.saveDir = 0; }
+      const back = { x: CX + (k.x - CX) * 0.3, y: 0.8 };
+      const p = stepToward(k, back, TOUCH.recoverV, dtL); k.x = p.x; k.y = p.y;
+    }
+  };
+  /**
+   * After your touch the camera glides (never cuts) to keep you, the ball and
+   * the ring inside the picture, the frame's size unchanged.
+   */
+  const liveFollowCam = (lv: NonNullable<typeof liveRef.current>) => {
+    const v = viewportRef.current, w = v.x2 - v.x1, h = v.y2 - v.y1;
+    const ball = liveBallAt(lv.plan, lv.T, null);
+    const pts = [lv.sc.player, ball, lv.plan.spot];
+    const m = 0.16;
+    let dx = 0, dy = 0;
+    const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
+    const lo = (a: number[]) => Math.min(...a), hi = (a: number[]) => Math.max(...a);
+    if (lo(xs) < v.x1 + w * m) dx = lo(xs) - (v.x1 + w * m); else if (hi(xs) > v.x2 - w * m) dx = hi(xs) - (v.x2 - w * m);
+    if (lo(ys) < v.y1 + h * m) dy = lo(ys) - (v.y1 + h * m); else if (hi(ys) > v.y2 - h * m) dy = hi(ys) - (v.y2 - h * m);
+    if (Math.abs(dx) + Math.abs(dy) < 0.01) return;
+    const e = 0.06;
+    // The chance's own frame moves (the frame loop puts the camera back on it every frame).
+    const nv = { ...v, x1: v.x1 + dx * e, x2: v.x2 + dx * e, y1: v.y1 + dy * e, y2: v.y2 + dy * e };
+    baseViewportRef.current = nv;
+    viewportRef.current = nv;
+  };
+  /** The keeper got to your touch first: it's in his hands, the chance is gone. */
+  const liveSmother = () => {
+    const lv = liveRef.current;
+    if (!lv || lv.done || lv.smothered) return;
+    lv.smothered = true;
+    lv.done = "miss";
+    // Down on the ball at your feet.
+    { const k = lv.sc.keeper; k.dive = 0; k.saveKind = "low"; k.saveDir = lv.sc.player.x >= k.x ? 1 : -1; k.saveLunge = 0.6; }
+    aimCommitRef.current = null;
+    presserRef.current = null;
+    draggingRef.current = false;
+    dragRef.current = null;
+    thumbOriginRef.current = null;
+    setAim(null);
+    try { window.dispatchEvent(new CustomEvent("kib-live-swing", { detail: { hit: false, why: "smothered", touch: true } })); } catch { /* no window */ }
+    resolveOutcome("caught");
+    showAction("SAVED");
+    playSave();
+    pushLine("The keeper is out quickly and smothers it at his feet.");
+  };
+  /**
+   * YOUR ONE TOUCH (Leo, 31 Oct 2026): a quick flick from the ball, from
+   * `a` to `b` on the pitch, `swipe` long (share of the pitch's height).
+   * Read like a strike (in reach? clean, early, late); then the ball rolls
+   * from your foot, you run onto it (a new ring where you catch it) and the
+   * keeper goes for it. One per chance.
+   */
+  const liveTouch = (a: Vec2, b: Vec2, swipe: number): boolean => {
+    const lv = liveRef.current, sc = scenarioRef.current;
+    if (!lv || lv.sc !== sc || lv.done || lv.armed || lv.touch) return false;
+    const ball = liveBallNow(sc);
+    if (!ball) return false;
+    const speed = liveSpeedAt(lv.plan, lv.T, lv.dials.rollDecel);
+    const r = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x51ed270b)) ^ 0x70c4) >>> 0)();
+    const read = readTouch(lv.plan, ball, speed, { x: b.x - a.x, y: b.y - a.y }, touchWeight(swipe), r, lv.dials, touchErrorScale(liveSkillsNow().technique));
+    try { window.dispatchEvent(new CustomEvent("kib-live-swing", { detail: { ...read, hit: read.ok, touch: true } })); } catch { /* no window */ }
+    if (!read.ok) {
+      liveMiss(true, read.why === "early");
+      pushLine(touchLine(read, playerLabel(), false));
+      return true;
+    }
+    const runV = touchChaseSpeed(liveSkillsNow().pace);
+    const start = { x: sc.player.x, y: sc.player.y };
+    const { plan, meet } = planAfterTouch(read, start, runV, lv.dials);
+    const k = { x: sc.keeper.x, y: sc.keeper.y };
+    // The keeper goes for it when he is coming for you, or near enough to (12 m).
+    const goes = !!lv.rush || Math.hypot(k.x - read.from.x, k.y - read.from.y) < 12;
+    const kp = goes ? keeperVsTouch(k, (lv.rush?.v ?? TOUCH.rushV[0]) * 1.15, lv.rush?.react ?? TOUCH.reactS[0], plan, plan.t1) : null;
+    // Which way he goes down: toward the side the ball went (screen-free: pitch x).
+    const side = !kp || kp.smother ? 0 : (kp.lunge.x >= k.x ? 1 : -1);
+    // From here the chance is the touched ball: its own clock, no build-up, everyone else where they are.
+    lv.plan = plan;
+    lv.T = 0;
+    lv.lead = null;
+    lv.ents = [];
+    lv.cam = null;
+    // The camera stays exactly where it is (the build-up's camera may still be landing): no cut.
+    baseViewportRef.current = { ...viewportRef.current };
+    figShrinkBaseRef.current = figShrinkRef.current;
+    lv.touch = { start, meet, runV, kp, kStart: k, side, held: 0 };
+    // The nearest two defenders go for it too: the first to get there before you (and before the keeper) wins it.
+    lv.defWin = null;
+    {
+      const byDist = sc.defenders.map((d, i) => ({ d, i, dist: Math.hypot(d.x - read.from.x, d.y - read.from.y) }))
+        .filter((x) => x.dist < DEF.near).sort((p, q) => p.dist - q.dist).slice(0, 2);
+      for (const { d, i } of byDist) {
+        const w = keeperVsTouch(d, DEF.v * (d.speed || 1), DEF.reactS, plan, plan.t1, DEF.reachM);
+        if (w.smother && (!lv.defWin || w.t < lv.defWin.t) && !(kp && kp.smother && kp.t <= w.t)) lv.defWin = { i, t: w.t, at: w.at };
+      }
+    }
+    setLiveHint(false);
+    // You aim from the new ring.
+    sc.ball.x = plan.spot.x; sc.ball.y = plan.spot.y;
+    aimCommitRef.current = null;
+    pushLine(touchLine(read, playerLabel(), !!kp && !kp.smother && !!lv.rush));
+    playTouch();
+    kickPoseRef.current = KICK_POSE_S * 0.55;
+    if (read.timing !== "sweet" && read.off > 0.35) showAction("HEAVY TOUCH");
+    return true;
+  };
+  /** Where the live ball is right now (null: no live ball to draw). */
+  const liveBallNow = (sc: Scenario): (Vec2 & { z: number }) | null => {
+    const lv = liveRef.current;
+    if (!lv || lv.sc !== sc || lv.done === "hit") return null;
+    if (lv.smothered) return { x: sc.keeper.x, y: sc.keeper.y + 0.25, z: 0.35 };
+    const lead = lv.lead;
+    return liveBallAt(lv.plan, lv.T, lead ? (t) => lead.ballAt(t) : null, lv.dials.rollDecel);
+  };
+  /** The live ball got away: swung at fresh air (`swung`) or let run past. The chance is gone. */
+  const liveMiss = (swung: boolean, early?: boolean, why?: "closed") => {
+    const lv = liveRef.current;
+    if (!lv || lv.done) return;
+    lv.done = "miss";
+    setLiveHint(false);
+    if (!swung) { try { window.dispatchEvent(new CustomEvent("kib-live-swing", { detail: { hit: false, why: "past" } })); } catch { /* no window */ } }
+    aimCommitRef.current = null;
+    presserRef.current = null;
+    draggingRef.current = false;
+    dragRef.current = null;
+    thumbOriginRef.current = null;
+    setAim(null);
+    resolveOutcome("tackled");
+    showAction(why === "closed" ? "CLOSED DOWN" : swung ? "FRESH AIR" : "MISSED IT");
+    if (why === "closed") { pushLine("He takes too long on the ball and they close him down."); return; }
+    pushLine(swung
+      ? (early ? `${playerLabel()} swings too early — fresh air!` : `${playerLabel()} swings too late — it's gone past him.`)
+      : "He waits for it, and it runs straight past him. Chance gone.");
+  };
+  /**
+   * The swing on a live chance: your aim and power, read against where the
+   * ball is now (liveChance.ts readSwing). In reach: the ball is put where it
+   * is and struck through the real handleContact, with the contact the timing
+   * gives. Out of reach: fresh air.
+   */
+  const liveSwing = (dir: { x: number; y: number }, power: number): boolean => {
+    const lv = liveRef.current, sc = scenarioRef.current;
+    if (!lv || lv.sc !== sc || lv.done) return false;
+    // The kick screen (Leo, 31 Oct 2026: "the normal kick screen, the second part of
+    // the aiming and kicking"): letting go is the moment you meet it. The pass stops
+    // there; out of reach is fresh air at once; in reach, the game's own kick screen
+    // opens and your tap on it (curve, chip, height) is struck from that moment (liveTapStrike).
+    if (liveStrikeScreenOn()) {
+      const b = liveBallNow(sc);
+      if (!b) return false;
+      const speed = liveSpeedAt(lv.plan, lv.T, lv.dials.rollDecel);
+      const a = alongOf(lv.plan, b);
+      if (a < -lv.dials.reachEarly || a > lv.dials.reachLate) return liveStrike(dir, power);
+      lv.armed = { dir: { ...dir }, power, ball: { ...b }, speed };
+      setAim({ dir, power });
+      setPowerStrike(false);
+      setPhase("contact");
+      return true;
+    }
+    return liveStrike(dir, power);
+  };
+  /**
+   * The kick screen's tap on a live chance: where you tapped (curve, chip,
+   * height), struck from the moment you let go (where the ball was then).
+   * True: it handled the tap.
+   */
+  const liveTapStrike = (tapped: { cx: number; cy: number }): boolean => {
+    const lv = liveRef.current, sc = scenarioRef.current;
+    if (!lv || lv.sc !== sc || lv.done || !lv.armed) return false;
+    return liveStrike(lv.armed.dir, lv.armed.power, tapped, lv.armed);
+  };
+  /** Strike the live ball now, with your aim (and the strike screen's tap, when it is on). */
+  const liveStrike = (dir: { x: number; y: number }, power: number, tap?: { cx: number; cy: number }, at?: { ball: Vec2 & { z: number }; speed: number }): boolean => {
+    const lv = liveRef.current, sc = scenarioRef.current;
+    if (!lv || lv.sc !== sc || lv.done) return false;
+    const b = at ? at.ball : liveBallNow(sc);
+    if (!b) return false;
+    const speed = at ? at.speed : liveSpeedAt(lv.plan, lv.T, lv.dials.rollDecel);
+    const r = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x3c6ef372)) ^ 0x11fe) >>> 0)();
+    const read = readSwing(lv.plan, b, speed, dir, power, r, lv.dials, tap);
+    lastSwingRef.current = { ...read, T: lv.T, ball: { ...b }, speed };
+    try { window.dispatchEvent(new CustomEvent("kib-live-swing", { detail: lastSwingRef.current })); } catch { /* no window */ }
+    if (!read.hit) { liveMiss(true, read.why === "early"); return true; }
+    lv.done = "hit";
+    setLiveHint(false);
+    // The men stop where they are (from the strike the engine moves everyone).
+    sc.ball.x = b.x; sc.ball.y = b.y;
+    // (After a touch the chance's frame has followed you; it stays there.)
+    viewportRef.current = baseViewportRef.current;
+    figShrinkRef.current = figShrinkBaseRef.current;
+    pushLine(swingLine(read, playerLabel()));
+    if (read.timing !== "sweet") showAction(read.timing === "early" ? "EARLY" : "LATE");
+    setAim({ dir: read.dir, power: read.power });
+    setPowerStrike(false);
+    handleContact({ cx: read.contact.cx, cy: read.contact.cy, aim: { dir: read.dir, power: read.power } });
+    return true;
+  };
+  /** A chance with no build-up, live chances on: a made-up pass from the nearest team-mate. */
+  const startLiveMadeUp = () => {
+    const sc = scenarioRef.current;
+    liveRef.current = null;
+    if (!liveChancesOn() || !liveKindOK(sc.kind) || autoKickOf(sc) || leadRef.current) return;
+    const dials = liveDials(liveSkillsNow());
+    const plan = planMadeUp(madeUpPasser(sc.ball, sc.teammates), sc.ball, dials);
+    if (!plan) return;
+    liveRef.current = { sc, plan, dials, lead: null, ents: [], ends: [], runKeys: new Set(), cam: null, T: 0, done: "", rolled: 0, rush: liveRushFor(sc, plan) };
+    showLiveHint();
+  };
   /**
    * A BUILD-UP THAT ENDS IN A CALLED OFFSIDE (Full highlights rebuild: On,
    * lib/star/fhr/buildUp.ts; Harry, 20 Oct 2026: "Offsides can happen but
@@ -6553,7 +7095,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const skipLeadIn = () => {
     const L = leadRef.current;
     if (!L) return;
-    L.t = L.lead.durS;
+    L.t = L.live ? Math.max(L.t, L.live.handT) : L.lead.durS;
     stepLeadIn(0);
   };
 
@@ -6574,11 +7116,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // Big moments: the last half-second of your shot that is going in, slowed.
       // The new ball steps in fixed 1/180 s steps, so the flight is step for step the same.
       if (bigSlowNow()) dt *= BIG_SLOW_RATE;
+      // Keeper catches, broadcast look: a short slow-motion as the ball reaches him (same fixed steps).
+      if (keeperShowRef.current && keeperShowRef.current.sc === scenarioRef.current) dt *= keeperSlowRate(keeperShowRef.current, ballRef.current?.clock ?? 0, showClockRef.current);
 
       // Match feel: New (lib/star/matchFeel.ts) — the picture holds at the
       // contact (the wind-up, then the hit-stop). Nothing is stepped while it
       // holds: the flight starts, step for step the same, when it lets go.
       if (feelTick(dt)) { render(); rafRef.current = requestAnimationFrame(loop); return; }
+      showClockRef.current += dt;
+      keeperShowTick();
 
       // Top-down dribble (Dribble style: Top-down): the duel's own sim, stepped
       // here in the match's one loop — no loop of its own.
@@ -6624,8 +7170,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (phaseRef.current === "aim" && !leadTriedRef.current && leadInPropRef.current && openOnRef.current) {
         leadTriedRef.current = true;
         startLeadIn();
+        if (!leadRef.current) startLiveMadeUp();
       }
-      if (phaseRef.current === "aim" && !leadRef.current) {
+      // (A live chance's keeper who is rushing you, or going for your touch, moves by its own rule: stepLiveMen.)
+      const lvK = liveRef.current;
+      const liveKeeper = !!lvK && lvK.sc === scenarioRef.current && !lvK.done && (!!lvK.rush || !!lvK.touch?.kp);
+      if (phaseRef.current === "aim" && !leadRef.current && !liveKeeper) {
         stepKeeper(scenarioRef.current, dt);
         // …with the keeper brain he also gets set while you aim: a walk from
         // where he was put toward his spot for this ball. No-op when it's off.
@@ -6948,6 +7498,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
               if (onGoalClipRef.current) goalRecRef.current?.event(a.kind, a.actor, { mode: a.mode, save: a.save }, Math.max(0, (bl.clock ?? 0) - a.t));
               // Match feel: New — the ball into the keeper's gloves.
               if (a.kind === "save" && a.actor === "keeper" && a.save && a.save !== "beaten" && a.at && matchFeelOn()) feelGlove(a.at, a.save);
+              if (a.kind === "save" && a.actor === "keeper" && a.save) keeperShowContact(a.save, Math.max(0, (bl.clock ?? 0) - a.t));
               // The lab (vfxOverride): the same moments, the picked pictures.
               if (vfxRef.current && a.at) {
                 const at = a.at, bv = bl.vel;
@@ -7178,6 +7729,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         else runOnRef.current = null; // the chance ended some other way: they stop where they are
       }
       if (leadRef.current) stepLeadIn(replayDt);
+      if (liveRef.current) stepLive(dt);
       recordGoalFrame(dt);
       render();
       rafRef.current = requestAnimationFrame(loop);
@@ -7245,6 +7797,165 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     bigRef.current = null;
     if (b) { try { b.stop(); } catch { /* sound never breaks the match */ } }
   };
+  /**
+   * KEEPER CATCHES AND DIVES (Leo, 26 Oct 2026; lib/star/keeperShow.ts). Picture only.
+   * While a ball is flying at goal, plan his move once: when and where it reaches his
+   * line, which move, and when to start it so his gloves arrive with the ball.
+   */
+  const keeperShowOn = (): boolean => newViewRef.current && matchPlayersLook() === "3d" && leoUpdateOn("keeperCatch");
+  const keeperTiming = (clip: string) => spriteClipTiming("keeper", clip as SpriteClip);
+  const keeperShowTick = () => {
+    const sc = scenarioRef.current;
+    const ks = keeperShowRef.current;
+    if (ks && ks.sc !== sc) keeperShowRef.current = null;
+    if (!keeperShowOn()) return;
+    spriteClipReady("keeper", "kCatchDiveR"); // fetches the keeper-catch drawings the first time
+    // The match says he has the ball: whatever the picture was doing, it goes into
+    // his gloves. Checked every frame, not only when the save is reported: a catch
+    // ends the chance in the same step, a cross he claims was never planned, and a
+    // smother comes after a palm (Leo's playtest, 28 Oct: "ball just stayed frozen
+    // in the air ... nowhere even near goalie").
+    if (keeperSyncCatch()) return;
+    // Until his move starts, re-time it every frame from the ball as it is now:
+    // the first guess ignores air drag, so on a long shot it had him down and
+    // waiting for the ball (seen, Broadcast take, 27 Oct).
+    const cur = keeperShowRef.current;
+    if (cur && (cur.ending || showClockRef.current >= cur.start)) return;
+    if (phaseRef.current !== "flight" || !sc || sceneRef.current?.keeper === false) return;
+    const b = ballRef.current;
+    if (!b || b.inNet || sc.keeper.done) return;
+    const k = cur ? { x: cur.from.x, y: cur.from.y } : sc.keeper;
+    const hit = predictLine({ x: b.pos.x, y: b.pos.y, z: b.z, vx: b.vel.x, vy: b.vel.y, vz: b.vz ?? 0 }, k.y, b.clock ?? 0);
+    if (!hit || Math.abs(hit.x - k.x) > KEEPER_REACH_M + 1.5 || hit.z > 3) return;
+    const { move, side } = pickMove(hit.x - k.x, hit.z);
+    const f = facingRef.current;
+    const kFacing = f === "right" ? Math.PI : f === "left" ? 0 : Math.PI / 2;
+    const a = toPx(k.x, k.y), c = toPx(k.x + (side || 1), k.y);
+    const dir: "R" | "L" = a && c ? (keeperDiveClip(kFacing, c.px - a.px, c.py - a.py) === "diveR" ? "R" : "L") : "R";
+    const plan = { tLine: hit.tLine, x: hit.x, z: hit.z, side, move };
+    const T = keeperTiming(clipFor(move, null, dir));
+    if (!T) return; // clips not loaded yet: the old drawing this time
+    keeperShowRef.current = {
+      plan, sc, dir, from: { x: k.x, y: k.y }, to: null,
+      start: startFor(plan, T, showClockRef.current, b.clock ?? 0),
+      ending: null, contactAt: null, look: keeperLookChoice(),
+    };
+  };
+  /** If the match says he has caught it, make his picture agree (true when it does). Run by the frame tick and again by the draw, whichever comes first. */
+  const keeperSyncCatch = (): boolean => {
+    if (!keeperShowOn() || !keeperCatchNow()) return false;
+    const k2 = keeperShowRef.current && keeperShowRef.current.sc === scenarioRef.current ? keeperShowRef.current : null;
+    if (!k2) keeperShowGather();
+    else if (!k2.ending) keeperShowContact("catch", 0);
+    else if (k2.ending !== "catch") keeperShowCatchLate(k2);
+    return true;
+  };
+  /**
+   * A save that ends the chance without a catch ("turned behind" for a corner, a
+   * push the match calls dead) leaves the ball where it met him, still, often in
+   * the air: Leo, 28 Oct, "he dives and the ball freezes in the air and he continues
+   * his dive". With keeper catches on, the picture carries it on: off his gloves,
+   * away from goal and behind the line, gone in about a second. Picture only.
+   */
+  const deadBallRef = useRef<{ sc: Scenario; at: { x: number; y: number; z: number }; t0: number; vx: number; vy: number; vz: number } | null>(null);
+  /** The ball as last drawn by the match, and its speed then (pitch m/s by the picture's clock). */
+  const ballTrackRef = useRef<{ sc: Scenario; x: number; y: number; z: number; t: number; vx: number; vy: number; vz: number } | null>(null);
+  const keeperDeadBall = (sc: Scenario, bl: Ball | null, at: { x: number; y: number; z: number } | null) => {
+    const d0 = deadBallRef.current;
+    if (d0 && d0.sc !== sc) deadBallRef.current = null;
+    const now = showClockRef.current;
+    // Follow the match's ball while it moves, so we know where it was going.
+    const tr = ballTrackRef.current;
+    const moved = !!at && (!tr || tr.sc !== sc || Math.hypot(at.x - tr.x, at.y - tr.y, at.z - tr.z) > 1e-4);
+    if (at && moved) {
+      const dt = tr && tr.sc === sc ? now - tr.t : 0;
+      ballTrackRef.current = dt > 1e-3 && tr
+        ? { sc, x: at.x, y: at.y, z: at.z, t: now, vx: (at.x - tr.x) / dt, vy: (at.y - tr.y) / dt, vz: (at.z - tr.z) / dt }
+        : { sc, x: at.x, y: at.y, z: at.z, t: now, vx: tr?.sc === sc ? tr.vx : 0, vy: tr?.sc === sc ? tr.vy : 0, vz: tr?.sc === sc ? tr.vz : 0 };
+    }
+    if (!at || !bl || !keeperShowOn() || phaseRef.current !== "result" || bl.inNet || keeperCatchNow()) return at;
+    // development only: the catch checker turns this off to show the bug it fixes
+    if (offlineDevPlayEnabled() && typeof window !== "undefined" && window.localStorage?.getItem("kib-dev-deadball-off") === "1") return at;
+    if (moved) return at;
+    // Play has stopped with the ball still. If he was the last to touch it, he has it:
+    // it goes into his hands (Leo, 28 Oct: "it is continuing to sit in between two
+    // hands"). Never flown away.
+    const saves = (bl.actionLog ?? []).filter((a) => a.kind === "save" && a.actor === "keeper" && a.save);
+    const last = saves[saves.length - 1];
+    if (last && last.save !== "beaten") { deadHeldRef.current = sc; return at; }
+    // A miss that stopped in mid-air (off the pitch, wide): it carries on its own way and is gone.
+    let d = deadBallRef.current;
+    if (!d) {
+      const t2 = ballTrackRef.current;
+      if (at.z < 0.15 || !t2 || Math.hypot(t2.vx, t2.vy) < 2) return at;
+      d = { sc, at: { ...at }, t0: now, vx: t2.vx, vy: t2.vy, vz: t2.vz };
+      deadBallRef.current = d;
+    }
+    const t = now - d.t0;
+    if (t > 1.2) return null; // out of play
+    const z = d.at.z + d.vz * t - 4.9 * t * t;
+    return { x: d.at.x + d.vx * t, y: d.at.y + d.vy * t, z: Math.max(0, z) };
+  };
+  /** Play stopped with the ball still after his touch: the picture treats it as his (in his hands). */
+  const deadHeldRef = useRef<Scenario | null>(null);
+  /** The match's own record says the keeper has caught the ball (a shot, a claimed cross, a smother). */
+  const keeperCatchNow = (): boolean =>
+    (!!scenarioRef.current && deadHeldRef.current === scenarioRef.current)
+    || !!ballRef.current?.actionLog?.some((a) => a.kind === "save" && a.actor === "keeper" && a.save === "catch");
+  /** A catch with no move planned for it: he gathers it where he stands (chest or feet by its height). */
+  const keeperShowGather = (at?: { from: { x: number; y: number }; to: { x: number; y: number } }) => {
+    const sc = scenarioRef.current;
+    if (!sc) return;
+    const c = ballRef.current?.actionLog?.find((a) => a.kind === "save" && a.actor === "keeper" && a.save === "catch");
+    const z = c?.at?.z ?? 0.5;
+    const move = z > 0.7 ? "chest" as const : "feet" as const;
+    const T = keeperTiming(move === "chest" ? "kCatchChest" : "kCatchFeet");
+    if (!T) return; // drawings still loading: the safety net in the draw keeps the ball on him
+    const cT = (T.contactFrame ?? 0) / T.fps;
+    keeperShowRef.current = {
+      plan: { tLine: ballRef.current?.clock ?? 0, x: sc.keeper.x, z, side: 0, move },
+      sc, dir: "R", from: at?.from ?? { x: sc.keeper.x, y: sc.keeper.y }, to: at?.to ?? { x: 0, y: 0 },
+      start: showClockRef.current - cT, ending: "catch", contactAt: showClockRef.current, look: keeperLookChoice(),
+    };
+  };
+  /** A catch after he had palmed it (a smother): still down from his dive, it goes into his hands and he gets up with it; already up, he gathers it where he is. */
+  const keeperShowCatchLate = (ks: NonNullable<typeof keeperShowRef.current>) => {
+    const f = keeperShowFrame(ks, showClockRef.current, ks.dir, keeperTiming);
+    const dive = ks.plan.move === "diveHigh" || ks.plan.move === "diveLow";
+    if (dive && f && !f.afterDive) { ks.ending = "catch"; return; }
+    const d = keeperDrawnRef.current;
+    const p0 = toPx(ks.from.x, ks.from.y);
+    keeperShowGather(d && p0 ? { from: ks.from, to: { x: d.x - p0.px, y: d.y - p0.py } } : undefined);
+  };
+  /** After a save with keeper catches on, hold long enough to see him get up (else the old 1.8 s). */
+  const keeperResultHoldMs = (): number => {
+    const ks = keeperShowRef.current;
+    if (!ks || ks.sc !== scenarioRef.current || !keeperShowOn()) return 1800;
+    // A catch ends the chance in the same step as the save, before the frame
+    // loop has passed it on: read it off the ball now, or the hold was the old
+    // 1.8 s and the match cut away while he lay on the floor (seen, 27 Oct).
+    if (!ks.ending) {
+      const save = ballRef.current?.actionLog?.find((a) => a.kind === "save" && a.actor === "keeper" && a.save);
+      if (save?.save) keeperShowContact(save.save, 0);
+    }
+    return keeperHoldMs(ks);
+  };
+  /** The engine's save, as the keeper's ending (the ball reached him). */
+  const keeperShowContact = (save: string, agoS: number) => {
+    const ks = keeperShowRef.current;
+    if (!ks || ks.sc !== scenarioRef.current || ks.ending) return;
+    const ending: KeeperEnding = save === "catch" ? "catch" : save === "beaten" ? "beaten" : save === "fumble" ? "fumble" : "parry";
+    ks.ending = ending;
+    ks.contactAt = showClockRef.current - Math.max(0, agoS);
+    // The ball got there before his gloves did (it came quicker than its flight
+    // promised): his move jumps on to its contact frame, so the catch is in his hands.
+    if (ending === "catch") {
+      const T = keeperTiming(clipFor(ks.plan.move, "catch", ks.dir));
+      const cT = T ? (T.contactFrame ?? Math.round(T.frames * 0.4)) / T.fps : 0;
+      if (showClockRef.current - ks.start < cT) ks.start = showClockRef.current - cT;
+    }
+  };
+
   /** Slow motion: a big moment's shot of yours that is about to go in (the last half-second). */
   const bigSlowNow = (): boolean => {
     if (!bigRef.current || phaseRef.current !== "flight") return false;
@@ -7527,14 +8238,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // what happened, like every other ending.
       showAction(res === "wide" ? "WIDE" : res === "over" ? "OVER" : res === "short" ? "NOBODY THERE" : "OUT OF PLAY");
     } else if (res === "post") {
+      // Your shot's ending says what happened like every other (sweep, 29 Oct 2026:
+      // a saved penalty ended in 3 s of silence).
+      showAction("POST");
       nudge(0.28, 0.25);
       playPost();
       playCrowdSwell("groan");
     } else if (res === "saved") {
+      showAction("SAVED");
       nudge(0.18, 0.14);
       playSave();
       playCrowdSwell("groan");
     } else if (res === "caught") {
+      showAction("SAVED");
       nudge(0.18, 0.14);
       playSave();
     }
@@ -7896,7 +8612,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // In career/match mode, enter simulation phase. In sandbox, go directly.
     if (matchModeRef.current) {
       if (celebRef.current) handOverCelebration(() => startSimulation());
-      else handOver(() => startSimulation(), 1800);
+      else handOver(() => startSimulation(), keeperResultHoldMs());
     } else {
       // Sandbox mode: after 6 chances, show post-match
       if (attemptsRef.current >= 6) {
@@ -7915,7 +8631,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         };
         handOver(() => { setFinalStats(stats); setPhase("postmatch"); }, 1800);
       } else {
-        handOver(() => loadScenario(false), 1800);
+        handOver(() => loadScenario(false), keeperResultHoldMs());
       }
     }
   };
@@ -8928,6 +9644,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       flashRef.current.t = 0;
       feelRef.current.fx = []; feelRef.current.net = null; feelRef.current.struck = null; vfxFxRef.current = [];
       setPhase("aim");
+      // Live chances with no build-up on this screen: a made-up pass to you (liveChance.ts).
+      // (With a build-up, the frame loop starts it and asks then.)
+      if (!leadInPropRef.current) startLiveMadeUp(); else liveRef.current = null;
+      // Told to the page (the Live chances test page starts a new chance instead of this copy).
+      try { window.dispatchEvent(new Event("kib-picture-opened")); } catch { /* no window */ }
       playWhistle();
       scheduleAutoKick();
       return;
@@ -9275,6 +9996,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         stakes: stakesOf(fixture),
       });
     }
+    // Live chances with no build-up to read: a made-up pass to you (liveChance.ts).
+    // (A one-picture screen's build-up starts on its first frame: that path asks there.)
+    if (!leadRef.current && !(leadInPropRef.current && openOnRef.current && !leadTriedRef.current) && !isTouchContinuation && !chain && !carry) startLiveMadeUp();
+    else if (!leadRef.current) liveRef.current = null;
     playWhistle();
   };
 
@@ -9568,7 +10293,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // scenario doesn't accept orders (`acceptsCaptainOrders`), so this
     // changes nothing about when captaincy applies — only the PRIORITY
     // between "pick a man" and "grab the ball" once it does.
-    const r = captainPickAt(p);
+    // Live chances: a press right on the spot you meet the pass is the aim, never a team-mate.
+    const lvNow = liveRef.current;
+    const onLiveSpot = !!lvNow && lvNow.sc === scenarioRef.current && !lvNow.done && Math.hypot(p.x - b.x, p.y - b.y) < 1.5;
+    const r = onLiveSpot ? null : captainPickAt(p);
     if (r) {
       captainDragRef.current = { target: r, from: p, to: p };
       try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
@@ -9591,7 +10319,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // closer to a team-mate than to the ball never starts an aim-drag now,
     // even when it missed every hit-circle — better a missed order than an
     // accidental, badly-aimed kick.
-    if (ballD >= nearestCaptainCandidateDist(p)) return;
+    if (!onLiveSpot && ballD >= nearestCaptainCandidateDist(p)) return;
     // The grab zone round the ball: BALL_GRAB_FRACTION of the framed height
     // (28% let a drag start from a third of the screen away — Mikey, 28 Sep
     // 2026: "you're supposed to be able to start dragging only from the
@@ -9605,6 +10333,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return;
     }
     draggingRef.current = true;
+    dragT0Ref.current = performance.now();
     // v0.15 item 21: measured from where the thumb landed, so the pull starts
     // at nothing wherever on the ball's grab zone it lands.
     thumbOriginRef.current = p;
@@ -9793,6 +10522,22 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (!d) return;
     const b = scenarioRef.current.ball;
     const power = powerFromDrag(d, b);
+    // Live chances: a quick flick from the ball is your one touch (liveTouch), in the
+    // flick's direction. One per chance: a second flick does nothing.
+    {
+      // (thumbOriginRef is already cleared above: the flick runs from the ring, where the thumb went down.)
+      const lvT = liveRef.current, oc = thumbOriginClientRef.current, o0 = { x: b.x, y: b.y };
+      if (lvT && lvT.sc === scenarioRef.current && !lvT.done && oc) {
+        const H = canvasBox().height || 1;
+        const swipe = Math.hypot(e.clientX - oc.x, e.clientY - oc.y) / H;
+        if (offlineDevPlayEnabled()) (window as unknown as { __flick?: unknown }).__flick = { ms: performance.now() - dragT0Ref.current, swipe };
+        if (isTouchFlick(performance.now() - dragT0Ref.current, swipe)) {
+          aimCommitRef.current = null;
+          if (!lvT.touch) liveTouch(o0, pitchFromPointer(e.clientX, e.clientY), swipe);
+          return;
+        }
+      }
+    }
     // v0.15 item 22: once committed there is no taking it back —
     // letting go without a kick, even back on the ball, loses the chance.
     if (aimCommitRef.current !== null && (screenPull(d, b) < MIN_PULL || power < 0.02)) {
@@ -9812,6 +10557,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // directly. Any pull past the absolute pixel floor above now counts.
     if (power < 0.02) return;
     const dir = { x: b.x - d.x, y: b.y - d.y };
+    // Live chances: letting go IS the swing, read against where the ball is now.
+    if (liveSwing(dir, power)) return;
     // A penalty or a direct free kick: you jog to the ball first, and the
     // strike screen opens when you get there (lib/star/penaltyRunup.ts).
     if (hasRunup(scenarioRef.current.kind)) {
@@ -9885,6 +10632,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     over?: { dir: { x: number; y: number }; power: number; skills?: KickSkills },
     extras?: ShotExtras,
   ) => {
+    // Live chances, strike screen: the tap is read against where the pass is now (liveTapStrike).
+    if (!over && !tapped.aim && liveTapStrike(tapped)) return;
     // A header or volley with no arrow (airTap.ts) brings its aim from the tap.
     let a = over ? { dir: over.dir, power: over.power } : tapped.aim ?? aim;
     if (!a) return;
@@ -10233,17 +10982,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     textShadow: "-1px -1px 1.5px #000, 1px -1px 1.5px #000, -1px 1px 1.5px #000, 1px 1px 1.5px #000",
   };
 
-  // The big banner words fit the pitch they are on: on the phone's Kickabout
-  // pitch (~226 px) a 48 px "DEFLECTED" ran off both edges. Only ever shrinks —
-  // a word that already fits keeps its size (useFitWidth.ts).
-  useFitWidth(actionBannerTextRef, actionBanner);
-  // The Arcade banner never carries over onto a new screen: half time, full
-  // time (both a `pause`), the scores sheet, the end of the match. It fades out
-  // fast instead (ArcadeBanner.tsx cut). A cut to the commentary is not one.
+  // A pop-up never carries over onto a new screen: half time, full time (both
+  // a `pause`), the scores sheet, the end of the match. It fades out fast
+  // instead (MikeyPopup.tsx cut). A cut to the commentary is not one.
   useEffect(() => {
-    if (pause || scoresOpen || phase === "postmatch" || phase === "shootout") { arcade.cut(); mikey.cut(); }
-  }, [pause, scoresOpen, phase, arcade.item?.id, mikey.item?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  useFitWidth(offsideBannerTextRef, phase === "result" && outcome === "offside");
+    // The cut to the commentary too (sweep, 29 Oct 2026): "SAVED" / "INTERCEPTED" sat over the feed's lines.
+    if (pause || scoresOpen || phase === "postmatch" || phase === "shootout" || phase === "feed") mikey.cut();
+  }, [pause, scoresOpen, phase, mikey.item?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── The sandbox's live commentary and the situation hint ──
   // Classic: two rows under the pitch. New view: the pitch fills the phone,
@@ -10633,6 +11378,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
               : phase === "aim" ? "Drag back from the ball to aim and control your power, then let go" : "Tap the part of the ball you want to kick"}
           </div>
         )}
+        {liveHint && phase === "aim" && !leadInOn && (
+          <div data-live-hint className="pointer-events-none absolute bottom-[18%] left-1/2 z-40 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1.5 text-[12px] font-black text-white"
+            style={{ background: "rgba(5,8,15,.78)", boxShadow: "inset 0 0 0 1.5px rgba(253,224,71,.85)" }}>
+            Drag back = aim · Quick flick = take a touch
+          </div>
+        )}
         {firstUse && (
           <div data-first-use-coach={firstUse.key} className={`pointer-events-none absolute z-40 left-3 right-14 ${firstUse.key === "volley" ? "bottom-[64px]" : "top-[12%]"} rounded-xl px-3 py-2 text-center text-[13px] font-black leading-snug text-white`}
             style={{ background: "rgba(5,8,15,.82)", boxShadow: "inset 0 0 0 2px #fde047, 0 8px 20px -8px rgba(0,0,0,.9)" }}>
@@ -10700,38 +11451,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           />
         )}
 
-        {/* Action banner — Arcade pop (ArcadeBanner.tsx). Over the commentary
-            too, so a cut away never cuts it short. */}
-        <ArcadeBanner item={arcade.item} follow={bannerSideNow} />
-        {/* Mikey's new pop-ups (Settings, default Old): MikeyPopup.tsx. */}
+        {/* The pop-ups (MikeyPopup.tsx): over the commentary too, so a cut away
+            never cuts one short. An offside is its caption; there is no other banner. */}
         <MikeyPopup item={mikey.item} follow={() => (bannerSideNow() === "bottom" ? "bottom" : "top")} />
-
-        {/* The old action banner (every pack but Arcade): the moment an action
-            completes. "PASS" when a team-mate brings your ball under control,
-            "GOAL" when it goes in. Sits high so it never covers the strike itself. */}
-        {actionBanner && (
-          <div className="absolute inset-x-0 top-[18%] flex items-center justify-center pointer-events-none z-20">
-            <div
-              ref={actionBannerTextRef}
-              className={`kib-pop text-5xl font-black italic tracking-wider drop-shadow-[0_3px_10px_rgba(0,0,0,0.95)] ${
-                actionBanner === "GOAL" ? "text-emerald-300" : "text-cyan-200"
-              }`}
-            >
-              {actionBanner}
-            </div>
-          </div>
-        )}
-
-        {/* Outcome. Deliberately NOT announced for anything the pitch already
-            shows you — the ball in the net, off the post, wide, in the keeper's
-            hands. The only banner is the referee's call, which has no visual. */}
-        {phase === "result" && outcome === "offside" && scene?.banners !== false && mikeyLook !== "new" && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div ref={offsideBannerTextRef} className="kib-pop text-4xl font-black tracking-wider drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] px-6 py-3 rounded-xl text-yellow-200 bg-gray-950/70 ring-1 ring-yellow-400/50">
-              OFFSIDE
-            </div>
-          </div>
-        )}
 
         {/* ── The match itself ──
             Not an overlay over the pitch: the commentary IS the match, and the
@@ -10852,3 +11574,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   );
 }
 
+/** Keeper catches: a puff off the grass where he lands (t 0..1 over about half a second). Picture only. */
+function drawLandingPuff(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, t: number) {
+  const a = Math.max(0, 1 - t);
+  ctx.save();
+  for (let i = 0; i < 6; i++) {
+    const ang = Math.PI * (0.08 + (i / 5) * 0.84);
+    const d = r * (0.5 + t * 1.3);
+    ctx.globalAlpha = 0.32 * a;
+    ctx.fillStyle = "#e9e3cf";
+    ctx.beginPath();
+    ctx.ellipse(x + Math.cos(ang) * d * (i % 2 ? 1 : -1), y - Math.sin(ang) * d * 0.35, r * (0.22 + t * 0.25), r * (0.12 + t * 0.12), 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}

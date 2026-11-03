@@ -9,7 +9,7 @@
  */
 import { startRadar, stepRadar, resolveHighlight, radarOver, playRadarMatch, radarSummary, attackLabel } from "../../lib/star/matchRadar";
 import { readFileSync } from "node:fs";
-import { newMatch, tick, resolveScenario, benchConversion, type HiddenMatchInputs } from "../../lib/star/hiddenMatch";
+import { newMatch, stepInvolved, resolveScenario, benchConversion, type HiddenMatchInputs } from "../../lib/star/hiddenMatch";
 import { mulberry32 } from "../../lib/star/season";
 import { injuryRiskFor } from "../../lib/star/careerFlow";
 
@@ -31,19 +31,20 @@ console.log("\n== it is the real match, not a copy");
   const N = 200;
   for (let seed = 1; seed <= N; seed++) {
     const radar = playRadarMatch(seed, inputs);
-    // The same thing, written straight against hiddenMatch.ts.
+    // The same thing, written straight against hiddenMatch.ts: the real
+    // match's own minute (stepInvolved: tick plus any chance you are owed).
     const rng = mulberry32(seed);
     const st = newMatch(rng);
     const scores: string[] = [];
     while (st.minute < 90) {
-      const { request } = tick(st, inputs, rng);
+      const { request } = stepInvolved(st, inputs, rng, 90);
       if (request) resolveScenario(st, rng() < benchConversion(request.zone) ? "goal" : "saved");
       scores.push(`${st.userScore}-${st.oppScore}`);
     }
     const radarScores = radar.frames.slice(1).map((f) => `${f.userScore}-${f.oppScore}`);
     if (JSON.stringify(scores) === JSON.stringify(radarScores)) same++;
   }
-  ok(same === N, `${same}/${N} matches: the radar's score, minute by minute, equals a direct tick loop`);
+  ok(same === N, `${same}/${N} matches: the radar's score, minute by minute, equals the real match's own minute loop`);
 }
 
 console.log("\n== a highlight stops the clock until it is played out");

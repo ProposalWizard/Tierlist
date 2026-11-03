@@ -33,6 +33,8 @@
  *     → `FATIGUE_RESET_MINUTES`: fresh legs every 90, like a new match.
  */
 
+import { leoUpdateOn } from "./leoUpdate";
+import { matchConditions } from "./matchWeather";
 import { makeInitialCareer } from "./careerFlow";
 import { clubsForDivision } from "./scoutOffers";
 import { DEFAULT_RULE_BOOK } from "./ruleBook";
@@ -116,7 +118,16 @@ export function buildTestCareer(s: PlaySettings, seed: number): { career: Career
   const base = makeInitialCareer(player, [...clubs], s.division);
   const career: CareerState = {
     ...base,
-    skills: { ...base.skills, power: s.power, technique: s.technique },
+    // Every stat the match reads, not only power and technique (Leo, 1 Nov 2026: test
+    // screens must play like the real game). Before, pace, vision, free kicks and
+    // aerial stayed at a new career's 40, so a test screen's free kicks were struck
+    // with free-kick 40 whatever the technique dial said. Technique also sets
+    // vision and free kicks; power sets pace; aerial is the two together.
+    skills: {
+      ...base.skills, power: s.power, technique: s.technique,
+      pace: s.power, vision: s.technique, freeKick: s.technique,
+      aerial: Math.round((s.power + s.technique) / 2),
+    },
     ruleBook: {
       ...(base.ruleBook ?? {}),
       FA: { ...DEFAULT_RULE_BOOK, matchLengthMinutes: s.matchMinutes },
@@ -182,7 +193,8 @@ export async function withRealSquads(career: CareerState): Promise<CareerState> 
  *  Weather dial says clear. */
 export function testConditions(s: PlaySettings, career: CareerState, fixture: Fixture): Conditions | undefined {
   if (s.weather === "clear") return undefined;
-  return conditionsFor(career.season, fixture.week, career.homeCity);
+  // The same weather the real match uses (app/star-dev/page.tsx): Leo's weather update when it is on.
+  return leoUpdateOn("weather") ? matchConditions(career, fixture) : conditionsFor(career.season, fixture.week, career.homeCity);
 }
 
 /** The weather's name on screen — a test screen should say when the wind is

@@ -59,6 +59,12 @@ export const STORY_FREE_KICK_SKILL = 60;
 /** ...and its corners need them at this. */
 export const STORY_CORNER_SKILL = 70;
 
+/** A new career's corners: a team-mate takes them until Technique and Vision
+ *  both reach STORY_CORNER_SKILL (Mikey, 25 Oct 2026). Any other career: yours. */
+export function storyCornersOpen(career: Pick<CareerState, "unlocks" | "skills">): boolean {
+  return !career.unlocks?.story || ((career.skills?.technique ?? 0) >= STORY_CORNER_SKILL && (career.skills?.vision ?? 0) >= STORY_CORNER_SKILL);
+}
+
 export function setPieceDuties(
   career: CareerState, status: Selection = career.status, opts: { penaltyStarWeight?: number } = {},
 ): SetPieceDuties {
@@ -80,7 +86,7 @@ export function setPieceDuties(
   return {
     freeKicks: onThePitch && fksEarned && eff >= freeKickNeeded,
     penalties: onThePitch && pensEarned && penaltyStanding >= penaltyNeeded,
-    corners: !story || ((career.skills?.technique ?? 0) >= STORY_CORNER_SKILL && (career.skills?.vision ?? 0) >= STORY_CORNER_SKILL),
+    corners: storyCornersOpen(career),
     freeKickNeeded,
     penaltyNeeded,
     penaltyStanding,

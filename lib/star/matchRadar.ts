@@ -20,7 +20,7 @@
  * game already uses for a chance that came to you while you were on the bench.
  */
 import {
-  newMatch, tick, resolveScenario, benchConversion, CHANCE_LINES,
+  newMatch, stepInvolved, resolveScenario, benchConversion, CHANCE_LINES,
   type HiddenMatchInputs, type HiddenMatchState, type HiddenMatchEvent,
   type ScenarioRequest, type Side, type Zone, type Lane, type RadarTick,
 } from "./hiddenMatch";
@@ -125,7 +125,8 @@ export const radarOver = (m: RadarMatch) => m.pending === null && m.state.minute
  */
 export function stepRadar(m: RadarMatch): RadarFrame | null {
   if (m.pending || m.state.minute >= m.fullTime) return null;
-  const { events, request } = tick(m.state, m.inputs, m.rng);
+  // The same minute the real match plays, owed chances included (stepInvolved).
+  const { events, request } = stepInvolved(m.state, m.inputs, m.rng, m.fullTime);
   const out = events.map(classify);
   let highlight: RadarHighlight | undefined;
   if (request) {

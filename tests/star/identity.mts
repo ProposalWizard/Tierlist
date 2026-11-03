@@ -396,6 +396,9 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
     // Harry, 1 Oct 2026 (P26): new careers start manager/team-mates/fans 50,
     // happiness 45; and a new career carries the unlock chain (unlocks.ts).
     for (const k of ["relationships", "happiness", "unlocks"]) delete rest[k];
+    // Mikey's playtest (24 Oct 2026): a new career starts with no KIB cans
+    // (was 2 basic); the physio's can and the club shop bring the first ones.
+    delete rest.kibCans;
     // The world season (Mikey, 19 Oct 2026): a cup opponent's strength is
     // now its real rating (world/clubRating.ts), and season 1 has a Community
     // Shield and Super Cup (Arsenal v Man City, PSG v Aston Villa), so those

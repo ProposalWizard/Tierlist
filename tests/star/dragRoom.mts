@@ -25,6 +25,10 @@ for (const zoom of ["z2", "off"] as const) {
     const before = framingFaults(sc, sc.viewport, HW, tilt).length;
     const cam = frameForNewView(sc, HW, false, tilt);
     if ((sc.facing ?? "up") !== "up") continue;
+    // A picture with no goal (build-up, midfield pass) keeps its screen as the
+    // play area (matchView.mts), so it is not slid: measured 27 Oct 2026, its
+    // ball sits within a drag of a side on 28 of 320 build-ups, 10 of 320 passes.
+    if (!goalInView(kind)) continue;
     n++;
     const m = DRAG_ROOM_SHARE * (cam.x2 - cam.x1);
     if (sc.ball.x < cam.x1 + m - 1e-6 || sc.ball.x > cam.x2 - m + 1e-6) { close++; byKind[kind] = (byKind[kind] ?? 0) + 1; }

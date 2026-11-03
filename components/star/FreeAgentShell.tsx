@@ -3,7 +3,7 @@ import { happinessOf } from "@/lib/star/relationships";
 import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { actionsLeft } from "@/lib/star/week";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, formatWallet } from "@/lib/star/money";
 import {
   spendOn, endFreeAgentWeek, grantTrial, trialDue, WEEKS_BETWEEN_TRIALS,
   GARDEN_GYM_CAP, FREE_AGENT_WEEKLY_PAY, type LeisureAction,
@@ -76,7 +76,7 @@ export default function FreeAgentShell({
       </div>
 
       <div className="mt-3 flex gap-2 text-center">
-        <Stat label="In the bank" value={formatMoney(career.money)} />
+        <Stat label="In the bank" value={formatWallet(career.money)} />
         <Stat label="This week" value={`${left} left`} />
         <Stat label="Happiness" value={`${happinessOf(career)}`} />
       </div>

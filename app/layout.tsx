@@ -5,14 +5,13 @@
  */
 
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import localFont from "next/font/local";
 import "./globals.css";
 import GlobalNav from "@/components/GlobalNav";
 import SiteFooter from "@/components/SiteFooter";
 import { PostHogProvider } from "@/components/PostHogProvider";
+import CookieConsent from "@/components/CookieConsent";
 
-const GA_ID = "G-ZEGDB8YDZZ";
 
 /**
  * CINZEL, SELF-HOSTED.
@@ -86,16 +85,14 @@ export default function RootLayout({
       <head>
         <link rel="dns-prefetch" href="https://cagkgfketucousksgtbk.supabase.co" />
         <link rel="preconnect" href="https://cagkgfketucousksgtbk.supabase.co" crossOrigin="anonymous" />
-        <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
-        <Script id="ga-init" strategy="afterInteractive">
-          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');`}
-        </Script>
+        {/* Google Analytics loads only after a yes to cookies (components/CookieConsent.tsx). */}
       </head>
       <body className={`font-sans bg-gray-950 text-gray-100 min-h-screen flex flex-col overflow-x-hidden`}>
         <PostHogProvider>
           <GlobalNav />
           <div className="flex-1">{children}</div>
           <SiteFooter />
+          <CookieConsent />
         </PostHogProvider>
       </body>
     </html>

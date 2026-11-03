@@ -13,8 +13,9 @@ import type { FullscreenSupport } from "./ImmersiveToggle";
 import { SegTabs } from "./screenKit";
 import { SetCard, SetNote, SetSection, SetToggle } from "./settingsKit";
 import Quality3dRow from "./Quality3dRow";
-import PopupPackRow from "./PopupPackRow";
 import FhrSwitchRow from "./FhrSwitchRow";
+import LiveChancesSettings from "./LiveChancesSettings";
+import { useIsAdmin } from "@/lib/useIsAdmin";
 import DataCredits, { DATA_CREDIT_SOURCES } from "./DataCredits";
 
 /**
@@ -173,6 +174,7 @@ function PrefRow({ label, children, note }: { label: string; children: React.Rea
 
 /** Match: the v0.15 test box, 2D or 3D, names above heads. */
 function MatchGroup() {
+  const isAdmin = useIsAdmin();
   const look = useLook();
   const view3d = useMatchView3d();
   const [faceStyle, setFaceStyle] = useState<FaceStyle>(loadFaceStyle);
@@ -188,12 +190,12 @@ function MatchGroup() {
       <LookRow id="keepers" look={look} tabs={NEW_OLD} note={gp("keepers")} />
       {/* Leo, 14 Oct 2026 (round 16): default New. Also in Settings → Updates. */}
       <LookRow id="keeperFinish" look={look} tabs={NEW_OLD} note={gp("keeperFinish")} />
-      {/* Mikey's pop-ups as a pack (Harry, 21 Oct 2026: "add them as a texture pack"): Classic | Broadcast. */}
-      <PopupPackRow />
       <PrefRow label="Match view 3D" note="On: your match drawn in 3D, in a full stadium. The football is the same; only the picture changes.">
         <SegTabs className="w-[150px] shrink-0" value={view3d} onChange={(v) => setMatchView3d(v)} tabs={[["on", "On"], ["off", "Off"]] as const} />
       </PrefRow>
-      <SetToggle label="Player names" on={faceStyle.namesEnabled} onClick={flipNames} last />
+      <SetToggle label="Player names" on={faceStyle.namesEnabled} onClick={flipNames} last={!isAdmin} />
+      {/* Live chances (Leo, 30 Oct 2026): admins, while it is being tried. Also in Settings → Updates. */}
+      {isAdmin && <LiveChancesSettings />}
     </>
   );
 }
@@ -214,11 +216,20 @@ function World3dGroup() {
   );
 }
 
-/** Screens: Old UI or New UI. */
+/** Screens: Old UI or New UI, and the New UI's look (Glass or Pitch). */
 function ScreensGroup() {
   const look = useLook();
-  return <LookRow id="ui" look={look} tabs={NEW_OLD} note="Old: the game as it was before v0.23, kept as a backup. Same save." />;
+  return (
+    <>
+      <LookRow id="ui" look={look} tabs={NEW_OLD} note="Old: the game as it was before v0.23, kept as a backup. Same save." />
+      {look.ui === "new" && (
+        <LookRow id="skin" look={look} tabs={UI_SKINS} note="Glass: the stadium behind every screen, frosted cards. Pitch: the green stripes. Same screens, same save." />
+      )}
+    </>
+  );
 }
+
+const UI_SKINS = [["glass", "Glass"], ["pitch", "Pitch"]] as const;
 
 export interface ExtraGroup {
   id: string;
