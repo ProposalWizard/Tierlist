@@ -1,0 +1,318 @@
+{
+  "id": "re-ballondor-2027",
+  "series": "Three rules to the top",
+  "title": "Three rules to the 2027 Ballon d'Or",
+  "sources": [
+    "https://bulinews.com/revealed-full-men-ballon-top-10-rankings",
+    "https://blueprint.ng/?p=856976",
+    "https://yen.com.gh/sports/football/314521-ballon-d-2026-official-top-10-rankings-harry-kane-beats-mbappe-yamal/",
+    "https://www.soccernews.com/kane-scoops-first-ballon-dor-after-pipping-yamal-mbappe/407033/",
+    "https://www.uefa.com/uefachampionsleague/news/02a9-218f8e669a0a-debba167a199-1000--champions-league-top-scorer-ermedin-demirovic-serhou-guir/",
+    "https://foot-africa.com/en/news/champions-league-the-top-scorers-standings-after-matchday-3-1395029/",
+    "https://www.nbcsports.com/soccer/news/premier-league-2026-27-scoring-leaders-the-race-for-the-golden-boot-begins",
+    "https://www.soccernews.com/english-premier-league/golden-boot/",
+    "https://buenosairesherald.com/sports/lionel-messi-renews-contract-with-inter-miami-to-stay-on-until-2028",
+    "https://batimes.com.ar/news/sports/lionel-messi-signs-new-inter-miami-contract-extending-stay-through-2028.phtml",
+    "https://en.wikipedia.org/wiki/Ballon_d%27Or",
+    "data/ballondor/rankings.json (ballondor.com year rankings, in this repo)"
+  ],
+  "checked": "2026 top 10 order (Bulinews, Blueprint, Yen); UCL scorers after matchday 3 (UEFA + Foot Africa: Kane and Haaland on 4, Mbappé on 3, no one above 4); Haaland top PL scorer (NBC 2 Nov, Soccernews 3 Nov); Messi at Inter Miami to 2028 (BA Herald, BA Times); Haaland 2nd in 2023 (ballondor.com data, Wikipedia).",
+  "clubs": {
+    "bar": {
+      "name": "Barcelona",
+      "short": "BAR",
+      "c1": "#a50044",
+      "c2": "#004d98",
+      "pattern": "stripes"
+    },
+    "bay": {
+      "name": "Bayern Munich",
+      "short": "FCB",
+      "c1": "#dc052d",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "mci": {
+      "name": "Manchester City",
+      "short": "MCI",
+      "c1": "#6cabdd",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "mia": {
+      "name": "Inter Miami",
+      "short": "MIA",
+      "c1": "#f7b5cd",
+      "c2": "#231f20",
+      "pattern": "plain"
+    },
+    "psg": {
+      "name": "Paris Saint-Germain",
+      "short": "PSG",
+      "c1": "#004170",
+      "c2": "#da291c",
+      "pattern": "centre"
+    },
+    "rma": {
+      "name": "Real Madrid",
+      "short": "RMA",
+      "c1": "#ffffff",
+      "c2": "#febe10",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "haaland": {
+      "name": "Erling Haaland",
+      "skin": "pink",
+      "hair": [
+        "slick",
+        "#e3cf8f"
+      ],
+      "beard": "none",
+      "kit": "mci"
+    },
+    "kane": {
+      "name": "Harry Kane",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#6b4a2e"
+      ],
+      "beard": "stubble",
+      "kit": "bay"
+    },
+    "mbappe": {
+      "name": "Kylian Mbappé",
+      "skin": "brown",
+      "hair": [
+        "buzz",
+        "#1a1a1a"
+      ],
+      "beard": "none",
+      "kit": "rma"
+    },
+    "messi": {
+      "name": "Lionel Messi",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#4a3222"
+      ],
+      "beard": "full",
+      "kit": "mia"
+    },
+    "yamal": {
+      "name": "Lamine Yamal",
+      "skin": "brown",
+      "hair": [
+        "curlytop",
+        "#151515"
+      ],
+      "beard": "none",
+      "kit": "bar"
+    }
+  },
+  "lines": [
+    {
+      "text": "Ten of the best players on the planet. Three rules. Only one name survives for the twenty twenty-seven Ballon d'Or.",
+      "scene": {
+        "type": "title",
+        "heading": "THREE RULES",
+        "sub": "Ballon d'Or 2027 · early November",
+        "pill": "ONE NAME LEFT",
+        "person": "kane"
+      }
+    },
+    {
+      "text": "We start with the real top ten from last month. Harry Kane won it in London, ahead of Mbappé and Yamal.",
+      "scene": {
+        "type": "podium",
+        "year": "2026",
+        "title": "Ballon d'Or 2026",
+        "places": [
+          {
+            "person": "kane"
+          },
+          {
+            "person": "mbappe"
+          },
+          {
+            "person": "yamal"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Then Rodri, Messi, Kvaratskhelia, Dembélé, Haaland, Olise and Fabián Ruiz.",
+      "scene": {
+        "type": "list",
+        "title": "2026: places 4 to 10",
+        "rows": [
+          {
+            "name": "4. Rodri",
+            "value": "Man City",
+            "club": "mci"
+          },
+          {
+            "name": "5. Lionel Messi",
+            "value": "Inter Miami",
+            "club": "mia"
+          },
+          {
+            "name": "6. Kvaratskhelia",
+            "value": "PSG",
+            "club": "psg"
+          },
+          {
+            "name": "7. Ousmane Dembélé",
+            "value": "PSG",
+            "club": "psg"
+          },
+          {
+            "name": "8. Erling Haaland",
+            "value": "Man City",
+            "club": "mci"
+          },
+          {
+            "name": "9. Michael Olise",
+            "value": "Bayern",
+            "club": "bay"
+          },
+          {
+            "name": "10. Fabián Ruiz",
+            "value": "PSG",
+            "club": "psg"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Rule one. You have to play your club football in Europe.",
+      "scene": {
+        "type": "text",
+        "heading": "RULE 1",
+        "body": "Must play club football in Europe this season."
+      }
+    },
+    {
+      "text": "Messi has signed on at Inter Miami until twenty twenty-eight. Thanks for everything, Leo.",
+      "scene": {
+        "type": "stamp",
+        "text": "OUT",
+        "person": "messi",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Rule two. Four or more Champions League goals this season, after three matchdays.",
+      "scene": {
+        "type": "text",
+        "heading": "RULE 2",
+        "body": "Four or more Champions League goals in 2026-27, after matchday three."
+      }
+    },
+    {
+      "text": "Only two of our nine have that. Kane and Haaland, four each. Mbappé is stuck on three.",
+      "scene": {
+        "type": "list",
+        "title": "UCL goals after matchday 3",
+        "rows": [
+          {
+            "name": "Harry Kane",
+            "value": "4",
+            "club": "bay",
+            "hl": true
+          },
+          {
+            "name": "Erling Haaland",
+            "value": "4",
+            "club": "mci",
+            "hl": true
+          },
+          {
+            "name": "Kylian Mbappé",
+            "value": "3",
+            "club": "rma"
+          }
+        ]
+      }
+    },
+    {
+      "text": "So Mbappé, Yamal, Rodri, Dembélé and the rest are all gone.",
+      "scene": {
+        "type": "stamp",
+        "text": "KNOCKED OUT",
+        "person": "mbappe",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Rule three. You can't have won it before. Hungry players only.",
+      "scene": {
+        "type": "text",
+        "heading": "RULE 3",
+        "body": "Must never have won the Ballon d'Or."
+      }
+    },
+    {
+      "text": "Kane got his golden ball last month. Sorry, Harry.",
+      "scene": {
+        "type": "stamp",
+        "text": "ALREADY WON",
+        "person": "kane",
+        "color": "yellow"
+      }
+    },
+    {
+      "text": "That leaves Erling Haaland. Second in twenty twenty-three, and top of the Premier League scoring chart right now.",
+      "scene": {
+        "type": "person",
+        "person": "haaland",
+        "label": "THE LAST NAME LEFT",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Four Champions League goals in only two games, because he sat out matchday three.",
+      "scene": {
+        "type": "stats",
+        "title": "Haaland in the UCL",
+        "items": [
+          {
+            "n": "4",
+            "l": "goals"
+          },
+          {
+            "n": "2",
+            "l": "games"
+          }
+        ],
+        "person": "haaland"
+      }
+    },
+    {
+      "text": "The rules say Haaland. Do you agree, or would you pick Kane again?",
+      "scene": {
+        "type": "versus",
+        "title": "Who's your pick?",
+        "left": {
+          "person": "haaland",
+          "label": "Haaland",
+          "value": "Rules pick"
+        },
+        "right": {
+          "person": "kane",
+          "label": "Kane",
+          "value": "Holder"
+        }
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}
