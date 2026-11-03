@@ -104,11 +104,12 @@ function count(n, k) { const m = String(n).match(/^([^0-9]*)([0-9][0-9,.]*)(.*)$
 // ════════ scene types ════════
 const S = {};
 S.title = (g, t, dur, s) => {
-  const p = personSpec(s.person); stadium(g, { seed: 3, crowd: p && teamOf(p.raw) ? [club(teamOf(p.raw)).c1, club(teamOf(p.raw)).c2, "#2b2b2b", "#ffffff"] : undefined });
+  const p = personSpec(s.person); const cid = s.club || (p ? teamOf(p.raw) : "");
+  stadium(g, { seed: 3, crowd: cid ? [club(cid).c1, club(cid).c2, "#2b2b2b", "#ffffff"] : undefined });
   if (s.person) person(g, s.person, 540, CY + CH * 0.66 + (1 - ez(t * 2)) * 60, 250, { noDisc: true, mouth: "grin" });
   T(g, String(s.heading || "").toUpperCase(), 40, CY + 110, 100, { align: "left", stroke: 10, maxW: 820 });
   if (s.sub) T(g, s.sub, 44, CY + 162, 40, { align: "left", stroke: 7, font: "Oswald", weight: 700, maxW: 800 });
-  if (p && teamOf(p.raw)) crest(g, teamOf(p.raw), 960, CY + 110, 78);
+  if (cid) crest(g, cid, 960, CY + 110, 78);
   if (s.pill && t > 0.5) { const q = pop((t - 0.5) * 2.5); g.save(); g.translate(540, CY + CH * 0.4); g.scale(q, q); g.font = "700 46px Oswald"; const w = Math.min(1000, g.measureText(s.pill).width + 60); panel(g, -w / 2, -42, w, 76, "#101010", 38); g.strokeStyle = "#fff"; g.lineWidth = 3; g.beginPath(); g.roundRect(-w / 2, -42, w, 76, 38); g.stroke(); T(g, s.pill, 0, 14, 46, { font: "Oswald", weight: 700, maxW: w - 40 }); g.restore(); }
 };
 S.person = (g, t, dur, s) => {

@@ -42,7 +42,7 @@ him, red-box captions, music, and the Knowitball call-to-action at the end.
 ## Scene types (pick one per line)
 | type | fields | shows |
 |---|---|---|
-| `title` | heading, sub, pill, person | the hook card: big name, sub line, a pill, the person |
+| `title` | heading, sub, pill, person, club? (crest + crowd; default the person's kit or club) | the hook card: big name, sub line, a pill, the person |
 | `person` | person, label?, mood? (happy, flat, worried, shocked), stamp? | one person, big |
 | `versus` | left {person, label, value}, right {…}, title? | two people side by side with a number each |
 | `stats` | title, items [{n, l}] (2 to 4), person? | big numbers counting up |
