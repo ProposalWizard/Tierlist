@@ -488,12 +488,12 @@ function ShieldCard({ glow, home, away, hs, as, pens, winner }: { glow: string; 
   return (
     <ClubCard glow={glow} className="p-3">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-white">
-        <div className="flex flex-col items-center gap-1 text-center text-[12px] font-bold"><ClubBadge club={home} size={40} /><span>{home}</span></div>
+        <div className="flex flex-col items-center gap-1 text-center text-[12px] font-bold"><ClubBadge club={home} size={40} /><span>{shortClub(home)}</span></div>
         <div className="rounded-lg bg-black/45 px-3 py-1 text-[20px] font-black tabular-nums">{hs !== undefined ? `${hs}-${as}` : "v"}</div>
-        <div className="flex flex-col items-center gap-1 text-center text-[12px] font-bold"><ClubBadge club={away} size={40} /><span>{away}</span></div>
+        <div className="flex flex-col items-center gap-1 text-center text-[12px] font-bold"><ClubBadge club={away} size={40} /><span>{shortClub(away)}</span></div>
       </div>
       {pens && <div className="mt-2 text-center text-[11px] font-bold text-amber-300">{pens.home}-{pens.away} on penalties</div>}
-      {winner && <div className="mt-1 text-center text-[12px] font-black text-white">🏆 {winner}</div>}
+      {winner && <div className="mt-1 text-center text-[12px] font-black text-white">🏆 {shortClub(winner)}</div>}
     </ClubCard>
   );
 }
@@ -503,7 +503,7 @@ function WinnerBar({ club, glow }: { club: string; glow: string }) {
     <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: rgba("#fbbf24", 0.22), boxShadow: `inset 0 0 0 1px ${rgba("#fbbf24", 0.7)}, 0 0 14px -4px ${rgba(glow, 0.8)}` }}>
       <span className="text-lg">🏆</span>
       <ClubBadge club={club} size={22} />
-      <span className="text-[13px] font-black text-white">{club}</span>
+      <span className="text-[13px] font-black text-white">{shortClub(club)}</span>
       <span className="ml-auto text-[10px] font-black uppercase tracking-wider text-amber-200">Winners</span>
     </div>
   );
