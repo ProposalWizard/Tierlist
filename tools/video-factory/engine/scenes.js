@@ -44,6 +44,8 @@ function room(g, wall = "#3a3f52", floor = "#5b4636") { g.fillStyle = wall; g.fi
 
 // ── clubs, people, objects ──
 const D = () => window.STORY;
+// a suited person (kit "suit") has no kit club; an optional "club" gives their badge and colours
+function teamOf(raw) { return raw.kit === "suit" ? (raw.club || "") : raw.kit; }
 function club(id) { return (D().clubs || {})[id] || { name: id || "", short: (id || "?").slice(0, 3).toUpperCase(), c1: "#555555", c2: "#ffffff", pattern: "plain" }; }
 function crest(g, id, x, y, r) {
   const c = club(id); g.save(); g.translate(x, y);
@@ -102,21 +104,21 @@ function count(n, k) { const m = String(n).match(/^([^0-9]*)([0-9][0-9,.]*)(.*)$
 // ════════ scene types ════════
 const S = {};
 S.title = (g, t, dur, s) => {
-  const p = personSpec(s.person); stadium(g, { seed: 3, crowd: p && p.raw.kit !== "suit" ? [club(p.raw.kit).c1, club(p.raw.kit).c2, "#2b2b2b", "#ffffff"] : undefined });
+  const p = personSpec(s.person); stadium(g, { seed: 3, crowd: p && teamOf(p.raw) ? [club(teamOf(p.raw)).c1, club(teamOf(p.raw)).c2, "#2b2b2b", "#ffffff"] : undefined });
   if (s.person) person(g, s.person, 540, CY + CH * 0.66 + (1 - ez(t * 2)) * 60, 250, { noDisc: true, mouth: "grin" });
   T(g, String(s.heading || "").toUpperCase(), 40, CY + 110, 100, { align: "left", stroke: 10, maxW: 820 });
   if (s.sub) T(g, s.sub, 44, CY + 162, 40, { align: "left", stroke: 7, font: "Oswald", weight: 700, maxW: 800 });
-  if (p && p.raw.kit !== "suit") crest(g, p.raw.kit, 960, CY + 110, 78);
+  if (p && teamOf(p.raw)) crest(g, teamOf(p.raw), 960, CY + 110, 78);
   if (s.pill && t > 0.5) { const q = pop((t - 0.5) * 2.5); g.save(); g.translate(540, CY + CH * 0.4); g.scale(q, q); g.font = "700 46px Oswald"; const w = Math.min(1000, g.measureText(s.pill).width + 60); panel(g, -w / 2, -42, w, 76, "#101010", 38); g.strokeStyle = "#fff"; g.lineWidth = 3; g.beginPath(); g.roundRect(-w / 2, -42, w, 76, 38); g.stroke(); T(g, s.pill, 0, 14, 46, { font: "Oswald", weight: 700, maxW: w - 40 }); g.restore(); }
 };
 S.person = (g, t, dur, s) => {
-  const p = personSpec(s.person); stadium(g, { seed: 7, night: s.mood === "worried", crowd: p && p.raw.kit !== "suit" ? [club(p.raw.kit).c1, club(p.raw.kit).c2, "#2b2b2b"] : undefined });
+  const p = personSpec(s.person); stadium(g, { seed: 7, night: s.mood === "worried", crowd: p && teamOf(p.raw) ? [club(teamOf(p.raw)).c1, club(teamOf(p.raw)).c2, "#2b2b2b"] : undefined });
   person(g, s.person, 540, CY + CH * 0.62 + (1 - ez(t * 2.5)) * 50, 260, { noDisc: true, mood: s.mood || "happy" });
   if (s.label) nameTag(g, s.label, 540, CY + 110, "#d2122e", 52, ez(t * 3));
 };
 S.versus = (g, t, dur, s) => {
   const L = s.left || {}, R = s.right || {}; const lp = personSpec(L.person), rp = personSpec(R.person);
-  const lc = lp && lp.raw.kit !== "suit" ? club(lp.raw.kit).c1 : "#1d4fa3", rc = rp && rp.raw.kit !== "suit" ? club(rp.raw.kit).c1 : "#b3122e";
+  const lc = lp && teamOf(lp.raw) ? club(teamOf(lp.raw)).c1 : "#1d4fa3", rc = rp && teamOf(rp.raw) ? club(teamOf(rp.raw)).c1 : "#b3122e";
   g.fillStyle = shadeC(lc, 0.55); g.fillRect(0, CY, W / 2, CH); g.fillStyle = shadeC(rc, 0.55); g.fillRect(W / 2, CY, W / 2, CH);
   g.fillStyle = "rgba(0,0,0,.25)"; g.beginPath(); g.moveTo(W / 2 - 30, CY); g.lineTo(W / 2 + 30, CY); g.lineTo(W / 2 - 30, CY + CH); g.lineTo(W / 2 - 90, CY + CH); g.fill();
   heading(g, s.title, CY + 80, 58);

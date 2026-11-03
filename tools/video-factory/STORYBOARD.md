@@ -33,7 +33,7 @@ him, red-box captions, music, and the Knowitball call-to-action at the end.
 ## People and clubs
 - `people`: everyone drawn. `skin`: light | pink | olive | tan | brown | dark | deep.
   `hair`: [style, colour]; styles: buzz, crop, side, tidy, quiff, slick, messy, curlytop, bigcurl, locs, bald.
-  `beard`: none | stubble | goatee | short | full (+ optional `beardCol`). `kit`: a club id, or `suit` for officials.
+  `beard`: none | stubble | goatee | short | full (+ optional `beardCol`). `kit`: a club id, or `suit` for officials and managers (add `club` for their badge and colours).
   Draw people as they looked at the time of the story.
 - `clubs`: `c1` shirt colour, `c2` second colour, `pattern`: plain | stripes | centre | halves | sash | hoops | sides.
   `short`: 2 to 5 letters shown on the drawn crest (we never use real crests).

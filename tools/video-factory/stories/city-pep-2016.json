@@ -78,7 +78,8 @@
    ],
    "beard": "stubble",
    "beardCol": "#6b6b6b",
-   "kit": "suit"
+   "kit": "suit",
+   "club": "mci"
   },
   "ferguson": {
    "name": "Sir Alex Ferguson",
@@ -88,7 +89,8 @@
     "#e6e6e6"
    ],
    "beard": "none",
-   "kit": "suit"
+   "kit": "suit",
+   "club": "mun"
   },
   "mourinho": {
    "name": "José Mourinho",
@@ -98,7 +100,8 @@
     "#9a9a9a"
    ],
    "beard": "none",
-   "kit": "suit"
+   "kit": "suit",
+   "club": "mun"
   },
   "maresca": {
    "name": "Enzo Maresca",
@@ -109,7 +112,8 @@
    ],
    "beard": "short",
    "beardCol": "#2a1d14",
-   "kit": "suit"
+   "kit": "suit",
+   "club": "mci"
   }
  },
  "lines": [

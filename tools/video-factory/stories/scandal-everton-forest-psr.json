@@ -65,7 +65,8 @@
       ],
       "beard": "stubble",
       "beardCol": "#b07040",
-      "kit": "suit"
+      "kit": "suit",
+      "club": "eve"
     },
     "nuno": {
       "name": "Nuno Espírito Santo",
@@ -76,7 +77,8 @@
       ],
       "beard": "full",
       "beardCol": "#1e1612",
-      "kit": "suit"
+      "kit": "suit",
+      "club": "nfo"
     }
   },
   "lines": [
