@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import type { CareerState } from "@/lib/star/types";
 import { ACHIEVEMENTS, ACHIEVEMENT_GROUPS, type Achievement, type AchievementTier } from "@/lib/star/achievements";
 import { formatMoney } from "@/lib/star/money";
+import { achievementXp } from "@/lib/star/xpConfig";
 
 /**
  * THE TROPHY WALL (Mikey, 3 Nov 2026: design A with "Nearly there"). Every
@@ -27,6 +28,8 @@ const GOLD_TEXT: React.CSSProperties = {
 };
 
 type Filter = "all" | "done" | "todo" | "near";
+/** How far along counts as "nearly there". */
+const NEAR = 0.5;
 
 const shortMoney = (v: number) => (v >= 1_000_000 ? `★${+(v / 1_000_000).toFixed(1)}m` : v >= 1_000 ? `★${Math.floor(v / 1_000)}k` : `★${formatMoney(v)}`);
 const progressOf = (a: Achievement, c: CareerState): [number, number] | null => {
@@ -53,6 +56,19 @@ function Medal({ a, size, done }: { a: Achievement; size: number; done: boolean 
     }}>
       <span style={{ fontSize: size * 0.44 }}>{a.icon}</span>
     </div>
+  );
+}
+
+/** The gold medal for an achievement found by its label (the pop-ups only
+ *  know the label). Anything not on the list — a first step — gets null. */
+export function AchievementMedal({ label, size = 56 }: { label: string; size?: number }) {
+  const a = ACHIEVEMENTS.find(x => x.label === label);
+  if (!a) return null;
+  return (
+    <span className="inline-flex flex-col items-center">
+      <Medal a={a} size={size} done />
+      <span className="mt-1 text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: TIER[a.tier].ink }}>{TIER[a.tier].label}</span>
+    </span>
   );
 }
 
@@ -92,14 +108,15 @@ export default function AchievementWall({ career, top }: { career: CareerState; 
   const near = useMemo(() => ACHIEVEMENTS
     .filter(a => !done.has(a.id))
     .map(a => ({ a, p: progressOf(a, career) }))
-    .filter((x): x is { a: Achievement; p: [number, number] } => !!x.p && x.p[0] > 0 && x.p[0] < x.p[1])
+    // "Nearly there" means at least half-way (one rule for the strip and the filter).
+    .filter((x): x is { a: Achievement; p: [number, number] } => !!x.p && x.p[0] < x.p[1] && x.p[0] / x.p[1] >= NEAR)
     .sort((x, y) => y.p[0] / y.p[1] - x.p[0] / x.p[1]), [career, done]);
-  const nearIds = new Set(near.slice(0, 8).map(x => x.a.id));
+  const nearIds = new Set(near.map(x => x.a.id));
   const shown = (a: Achievement) =>
     filter === "all" || (filter === "done" ? done.has(a.id) : filter === "todo" ? !done.has(a.id) : nearIds.has(a.id));
 
   return (
-    <div data-achievement-list>
+    <div data-achievement-list className="pb-12">
       {top}
       {/* The ring and the four tiers. */}
       <div className="flex items-center gap-4 rounded-[18px] p-4" style={{ background: "linear-gradient(135deg,rgba(253,224,71,.22),rgba(245,158,11,.08) 60%,rgba(0,0,0,.2))", boxShadow: "inset 0 0 0 1.5px rgba(253,224,71,.55)" }}>
@@ -221,7 +238,8 @@ function DetailSheet({ a, career, done, onClose }: { a: Achievement; career: Car
             <div className="mt-2 text-[11.5px] text-white/75">{fmt(a, p[1] - p[0])} to go</div>
           </div>
         )}
-        <div className="mt-4 text-[11px] font-extrabold text-white/60">One of {ofTier} {t.label} achievements</div>
+        <div className="mt-4 text-[13px] font-black text-amber-200">{done ? "Earned" : "Worth"} +{achievementXp(a.id).toLocaleString("en-GB")} XP</div>
+        <div className="mt-1 text-[11px] font-extrabold text-white/60">One of {ofTier} {t.label} achievements</div>
         <button type="button" onClick={onClose} className="kib-press mt-4 rounded-full bg-white/10 px-5 py-2 text-[13px] font-black text-white">Close</button>
       </div>
     </div>

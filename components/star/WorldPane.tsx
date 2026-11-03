@@ -46,7 +46,7 @@ import { SegTabs, CardTitle, youRowStyle } from "./screenKit";
 type Comp =
   | { key: string; kind: "league"; label: string; division: CareerDivision }
   | { key: string; kind: "euro"; label: string; competition: "Champions League" | "Europa League" }
-  | { key: string; kind: "cup"; label: string; competition: "FA Cup" | "League Cup" }
+  | { key: string; kind: "cup"; label: string; competition: "FA Cup" | "League Cup" | "Lower League Trophy" }
   | { key: string; kind: "shield"; label: string; competition: "Community Shield" | "Super Cup" }
   | { key: string; kind: "intl"; label: string; comp: CompKind }
   | { key: string; kind: "nation"; label: string }
@@ -56,6 +56,7 @@ const COMPS: Comp[] = [
   ...ALL_DIVISIONS.map(d => ({ key: d, kind: "league" as const, label: leagueNameFor(d), division: d })),
   { key: "fa", kind: "cup", label: "FA Cup", competition: "FA Cup" },
   { key: "lc", kind: "cup", label: "League Cup", competition: "League Cup" },
+  { key: "llt", kind: "cup", label: "Lower League Trophy", competition: "Lower League Trophy" },
   { key: "ucl", kind: "euro", label: "Champions League", competition: "Champions League" },
   { key: "uel", kind: "euro", label: "Europa League", competition: "Europa League" },
   { key: "cs", kind: "shield", label: "Community Shield", competition: "Community Shield" },
@@ -63,7 +64,7 @@ const COMPS: Comp[] = [
 ];
 const GROUPS: { title: string; keys: string[] }[] = [
   { title: "England", keys: ALL_DIVISIONS },
-  { title: "Cups", keys: ["fa", "lc", "cs", "sc"] },
+  { title: "Cups", keys: ["fa", "lc", "llt", "cs", "sc"] },
   { title: "Europe", keys: ["ucl", "uel"] },
 ];
 
@@ -118,8 +119,10 @@ function NowPane({ career, final, onLast }: { career: CareerState; final: boolea
       ...comps.map(c => ({ key: `intl:${c}`, kind: "intl" as const, label: c, comp: c })),
     ];
   }, [career, nation]);
-  const all = [...COMPS, ...intl];
-  const groups = [...GROUPS, ...(intl.length ? [{ title: "International", keys: intl.map(c => c.key) }] : [])];
+  // The Lower League Trophy only for a season your club is in it.
+  const inTrophy = (career.cupState ?? []).some(c => c.competition === "Lower League Trophy");
+  const all = [...COMPS.filter(c => c.key !== "llt" || inTrophy), ...intl];
+  const groups = [...GROUPS.map(g => ({ ...g, keys: g.keys.filter(k => all.some(c => c.key === k)) })), ...(intl.length ? [{ title: "International", keys: intl.map(c => c.key) }] : [])];
   const comp = all.find(c => c.key === key) ?? all[0];
   const you = career.player.club;
 
@@ -144,16 +147,16 @@ function NowPane({ career, final, onLast }: { career: CareerState; final: boolea
 
       {comp.kind === "league" && <LeagueView career={career} world={world} division={comp.division} glow={glow} you={you} />}
       {comp.kind === "euro" && <EuroView career={career} world={world} competition={comp.competition} glow={glow} you={you} />}
-      {comp.kind === "cup" && <CupView career={career} name={comp.competition} cup={comp.competition === "FA Cup"
-        ? (career.cupState ?? []).find(c => c.competition === "FA Cup")
-        : (career.cupState ?? []).find(c => c.competition === "League Cup") ?? world.leagueCup} glow={glow} you={you} />}
+      {comp.kind === "cup" && <CupView career={career} name={comp.competition} cup={comp.competition === "League Cup"
+        ? (career.cupState ?? []).find(c => c.competition === "League Cup") ?? world.leagueCup
+        : (career.cupState ?? []).find(c => c.competition === comp.competition)} glow={glow} you={you} />}
       {comp.kind === "shield" && <ShieldView career={career} world={world} competition={comp.competition} glow={glow} />}
       {comp.kind === "nation" && <IntlWorldPanel career={career} />}
       {comp.kind === "ranking" && <RankingView career={career} nation={nation} />}
       {comp.kind === "intl" && <IntlCompPane key={comp.comp} career={career} comp={comp.comp} nation={nation} />}
 
       {choosing && (
-        <div className="fixed inset-0 z-[80] overflow-y-auto bg-gray-950/95 px-4 pb-8 pt-4" data-world-chooser>
+        <div className="fixed inset-0 z-[80] overflow-y-auto bg-[#07110c] px-4 pb-8 pt-4" data-world-chooser>
           <div className="mx-auto max-w-md">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-[18px] font-black text-white">Every league and cup</span>
@@ -649,7 +652,7 @@ function finalZone(division: CareerDivision, rows: LeagueTeam[], summary: WorldS
       return pos > n - l.down ? ZONE.down : null;
     };
   }
-  const playOffWinner = summary.playOffs.find(p => p.division === division)?.result.promoted;
+  const playOffWinner = summary.playOffWinners?.[division] ?? summary.playOffs.find(p => p.division === division)?.result.promoted;
   return (pos, n) => {
     const club = rows[pos - 1]?.name;
     if (pos <= l.up || (club && club === playOffWinner)) return ZONE.up;

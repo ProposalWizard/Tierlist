@@ -81,6 +81,9 @@ export interface WorldSummary {
   /** Every round of the FA Cup and League Cup, for tapping a cup on the
    *  season review (Mikey, 2 Nov 2026). Missing on older saves. */
   cups?: { competition: string; winner?: string; rounds: CupState["rounds"] }[];
+  /** Who won each division's play-offs, your own included when you played
+   *  them (then `playOffs` has no entry for it). Missing on older saves. */
+  playOffWinners?: Partial<Record<CareerDivision, string>>;
   /** The Champions and Europa League knockout rounds. Missing on older saves. */
   brackets?: { competition: string; bracket: EuroBracket }[];
 }

@@ -224,7 +224,7 @@ export function CupKnockout({ cup, glow, you, review = false, extra }: {
   return (
     <div className="space-y-2" data-cup-knockout>
       <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
-        {[...early.map(r => [r.name, chip(r.name)] as const), ["tree", "Last 8"] as const].map(([k, l]) => (
+        {[...early.map(r => [r.name, chip(r.name)] as const), ["tree", "Quarter-finals"] as const].map(([k, l]) => (
           <button key={k} type="button" onClick={() => setPick(k)} data-cup-chip={k}
             className="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-black"
             style={pick === k ? { background: "#fde047", color: "#111" } : { background: "rgba(255,255,255,.1)", color: "#fff" }}>{l}</button>

@@ -533,7 +533,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // (Mikey, 6 Oct 2026). Only achievements pop up here.
     const records = earned.filter(e => e.kind === "record");
     if (records.length) setCareer(c => (c ? { ...c, seasonRecords: addSeasonRecords(c.seasonRecords, records) } : c));
-    const fresh = earned.filter(e => e.kind === "achievement" && !lastMatchAchRef.current.includes(e.id.slice(4)));
+    // Skip any the big card already showed (shownAchRef): one pop-up per achievement.
+    const fresh = earned.filter(e => e.kind === "achievement" && !lastMatchAchRef.current.includes(e.id.slice(4)) && !shownAchRef.current.has(e.id.slice(4)));
     // Your legend lives on (lib/star/hallRecords.ts): a record from one of
     // your own retired careers, broken — checked when something that can
     // break one has just happened (a match, a trophy, an award), so a record
@@ -619,6 +620,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
   // Achievements earned away from a match (a purchase, training, a choice):
   // their pop-ups, with the star rating bar filling (Mikey, 13 Oct 2026).
+  // Achievements the big card (offMatchAch) has shown: the small banner skips them.
+  const shownAchRef = useRef<Set<string>>(new Set());
   const [offMatchAch, setOffMatchAch] = useState<{ items: { label: string; description: string }[]; star?: { from: StarStep; to: StarStep } } | null>(null);
   // Achievements and records earned, waiting to pop up on Home (P36; lib/star/earnPops.ts).
   const [earnPops, setEarnPops] = useState<EarnPop[]>([]);
@@ -1560,6 +1563,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // Pop the achievement toast for ids the reducers already appended to state.
   const toastAchievements = (ids: string[]) => {
     if (ids.length > 0) {
+      for (const id of ids) shownAchRef.current.add(id);
       setUnlockedAchievements(ids);
       setOffMatchAch({ items: achievementCards(ids) });
       setTimeout(() => setUnlockedAchievements([]), 3000);
@@ -1585,6 +1589,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const unlocked = { ...career, achievements: [...career.achievements, ...ids] };
     const next = withStars({ ...unlocked, starRating: computeStarRating(unlocked) });
     const after = starStatus(next);
+    for (const id of ids) shownAchRef.current.add(id);
     setCareer(next);
     setOffMatchAch({
       items: achievementCards(ids),

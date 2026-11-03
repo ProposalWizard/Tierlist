@@ -93,6 +93,10 @@ export function summariseWorld(
   }
   const playOffs: WorldSummary["playOffs"] = [...(ladder?.worldPlayOffs ?? [])];
   if (ladder?.playOffs) playOffs.push({ division: yours as CareerDivision, result: ladder.playOffs });
+  const playOffWinners: NonNullable<WorldSummary["playOffWinners"]> = {};
+  for (const p of playOffs) playOffWinners[p.division] = p.result.promoted;
+  // Your own play-off, played for real: its winner is on the career, not the ladder.
+  if (career.playOffState?.promoted) playOffWinners[yours as CareerDivision] = career.playOffState.promoted;
   const finals: NonNullable<WorldSummary["finals"]> = [];
   const cupRounds: NonNullable<WorldSummary["cups"]> = [];
   for (const cup of [...cups, ...(world?.leagueCup ? [world.leagueCup] : [])]) {
@@ -132,5 +136,5 @@ export function summariseWorld(
       finals.push({ competition: f.competition, home, away, hs: f.homeScore, as: f.awayScore, winner: won ? career.player.club : f.opponent });
     }
   }
-  return { season: career.season, tables, scorers, winners, playOffs, finals, cups: cupRounds, brackets };
+  return { season: career.season, tables, scorers, winners, playOffs, finals, cups: cupRounds, brackets, playOffWinners };
 }

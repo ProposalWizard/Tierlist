@@ -8,6 +8,8 @@
  * tutorial itself is pointers now (PointerTour.tsx), not cards.
  */
 import { useEffect, useRef, useState } from "react";
+import { AchievementMedal } from "./AchievementWall";
+import { ACHIEVEMENTS } from "@/lib/star/achievements";
 import type { CareerState } from "@/lib/star/types";
 import { sfx } from "@/lib/star/sfx";
 import { APP_STORE, LOCK_HINT, FEATURE_INFO, stepsFor, phoneStepLine, phoneShortfall, appInstalled, hasSeen, isOpen, nextStep, stepDone, type Feature, type StepId } from "@/lib/star/unlocks";
@@ -16,6 +18,8 @@ import type { BeatText } from "@/lib/star/story";
 import { Burst, PressButton } from "./ui";
 import StylePicture from "./StylePicture";
 import { ffTimeout } from "./ui/fastForward";
+/** Achievement names, to give each pop-up its own gold medal. */
+const ACH_LABELS = new Set(ACHIEVEMENTS.map(a => a.label));
 
 const GOLD = ["#fde047", "#fbbf24", "#ffffff"];
 
@@ -112,7 +116,7 @@ function AchievementToast({ label, unlocked, record, onClose }: { label: string;
       <button type="button" onClick={onClose} data-ach-toast
         className="kit-rise pointer-events-auto flex w-full max-w-[360px] items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-white"
         style={{ background: "linear-gradient(180deg, rgba(31,41,55,.97), rgba(11,18,32,.97))", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.55), 0 12px 30px -10px rgba(0,0,0,.9)" }}>
-        <span className="text-[28px] leading-none" style={{ filter: "drop-shadow(0 0 10px rgba(251,191,36,.8))" }}>{record ? "🏆" : "⭐"}</span>
+        {!record && ACH_LABELS.has(label) ? <AchievementMedal label={label} size={40} /> : <span className="text-[28px] leading-none" style={{ filter: "drop-shadow(0 0 10px rgba(251,191,36,.8))" }}>{record ? "🏆" : "⭐"}</span>}
         <span className="min-w-0">
           <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">{record ? "Record broken" : "Achievement unlocked"}</span>
           <span className="block truncate text-[15px] font-black leading-tight">{label}</span>
@@ -265,12 +269,15 @@ export function AchievementToasts({ items, onDone, hold = 2400, delay = 0, star 
   }, [k]);
   if (k < 0 || !a) return null;
   return (
-    <div className="fixed inset-x-0 top-24 z-[95] flex justify-center px-6" onClick={() => setK((n) => n + 1)} role="status" aria-live="polite">
+    // Low on the screen: at the top it covered the post-match score (playtest, 3 Nov 2026).
+    <div className="fixed inset-x-0 bottom-[104px] z-[95] flex justify-center px-6" onClick={() => setK((n) => n + 1)} role="status" aria-live="polite">
       <AchStyles />
       <div key={k} className="kit-slam relative w-full max-w-[320px] overflow-hidden rounded-2xl px-4 pb-3 pt-2.5 text-center text-white" style={{ background: "linear-gradient(180deg, #3b2a06, #0b1220)", boxShadow: "inset 0 0 0 2px rgba(251,191,36,.85), 0 0 30px rgba(251,191,36,.35), 0 18px 40px -10px rgba(0,0,0,.9)" }}>
         <Burst trigger={k + 1} colors={GOLD} count={20} round />
         <div className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-300">Achievement{items.length > 1 ? ` ${k + 1} of ${items.length}` : ""}</div>
-        <div className="kib-ach-star mt-1 text-[40px] leading-none" style={{ filter: "drop-shadow(0 0 14px rgba(251,191,36,.8))" }}>⭐</div>
+        {ACH_LABELS.has(a.label)
+          ? <div className="kib-ach-star mt-2 flex justify-center"><AchievementMedal label={a.label} size={64} /></div>
+          : <div className="kib-ach-star mt-1 text-[40px] leading-none" style={{ filter: "drop-shadow(0 0 14px rgba(251,191,36,.8))" }}>⭐</div>}
         <div className="mt-1 text-[18px] font-black leading-tight">{a.label}</div>
         <div className="text-[12px] font-bold text-white/85">{a.description}</div>
         {star && k === 0 && <AchievementStarBar from={star.from} to={star.to} />}
@@ -320,8 +327,8 @@ export function UnlockChallenges({ career, onGo }: { career: CareerState; onGo: 
   return (
     <div className="mb-3 overflow-hidden rounded-2xl ring-1 ring-amber-300/30" style={{ background: "linear-gradient(180deg, rgba(251,191,36,.12), rgba(0,0,0,.25))" }}>
       <div className="flex items-center justify-between px-3 pt-2.5">
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Your first steps</span>
-        <span className="text-[10px] font-black tabular-nums text-white/75">{STEPS.filter((s) => stepDone(career, s.id)).length} / {STEPS.length}</span>
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">{STEPS.length ? "Your first steps" : "Coming up"}</span>
+        {STEPS.length > 0 && <span className="text-[10px] font-black tabular-nums text-white/75">{STEPS.filter((s) => stepDone(career, s.id)).length} / {STEPS.length}</span>}
       </div>
       {STEPS.map((s, i) => {
         const got = stepDone(career, s.id);
