@@ -124,19 +124,22 @@
         "title": "PL power ranking",
         "rows": [
           {
-            "name": "10. Bryan Mbeumo",
+            "pos": 10,
+            "name": "Bryan Mbeumo",
             "value": "4 goals",
             "club": "mun",
             "hl": true
           },
           {
-            "name": "9. Rayan Cherki",
+            "pos": 9,
+            "name": "Rayan Cherki",
             "value": "4 goals",
             "club": "mci",
             "hl": true
           },
           {
-            "name": "8. Morgan Rogers",
+            "pos": 8,
+            "name": "Morgan Rogers",
             "value": "5 goals",
             "club": "che",
             "hl": true
@@ -151,28 +154,33 @@
         "title": "PL power ranking",
         "rows": [
           {
-            "name": "10. Bryan Mbeumo",
+            "pos": 10,
+            "name": "Bryan Mbeumo",
             "value": "4 goals",
             "club": "mun"
           },
           {
-            "name": "9. Rayan Cherki",
+            "pos": 9,
+            "name": "Rayan Cherki",
             "value": "4 goals",
             "club": "mci"
           },
           {
-            "name": "8. Morgan Rogers",
+            "pos": 8,
+            "name": "Morgan Rogers",
             "value": "5 goals",
             "club": "che"
           },
           {
-            "name": "7. Marcus Tavernier",
+            "pos": 7,
+            "name": "Marcus Tavernier",
             "value": "5 goals",
             "club": "bou",
             "hl": true
           },
           {
-            "name": "6. Bukayo Saka",
+            "pos": 6,
+            "name": "Bukayo Saka",
             "value": "3 · 1st",
             "club": "ars",
             "hl": true
@@ -187,38 +195,45 @@
         "title": "PL power ranking",
         "rows": [
           {
-            "name": "10. Bryan Mbeumo",
+            "pos": 10,
+            "name": "Bryan Mbeumo",
             "value": "4 goals",
             "club": "mun"
           },
           {
-            "name": "9. Rayan Cherki",
+            "pos": 9,
+            "name": "Rayan Cherki",
             "value": "4 goals",
             "club": "mci"
           },
           {
-            "name": "8. Morgan Rogers",
+            "pos": 8,
+            "name": "Morgan Rogers",
             "value": "5 goals",
             "club": "che"
           },
           {
-            "name": "7. Marcus Tavernier",
+            "pos": 7,
+            "name": "Marcus Tavernier",
             "value": "5 goals",
             "club": "bou"
           },
           {
-            "name": "6. Bukayo Saka",
+            "pos": 6,
+            "name": "Bukayo Saka",
             "value": "3 · 1st",
             "club": "ars"
           },
           {
-            "name": "5. Charalampos Kostoulas",
+            "pos": 5,
+            "name": "Charalampos Kostoulas",
             "value": "3 · 3rd",
             "club": "bha",
             "hl": true
           },
           {
-            "name": "4. Pascal Groß",
+            "pos": 4,
+            "name": "Pascal Groß",
             "value": "Sep POTM",
             "club": "bha",
             "hl": true

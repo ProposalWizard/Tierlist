@@ -119,19 +119,22 @@
         "title": "Top speed, km/h",
         "rows": [
           {
-            "name": "10. Erling Haaland",
+            "pos": 10,
+            "name": "Erling Haaland",
             "value": "36.20",
             "club": "mci",
             "hl": true
           },
           {
-            "name": "9. Anthony Gordon",
+            "pos": 9,
+            "name": "Anthony Gordon",
             "value": "36.26",
             "club": "new",
             "hl": true
           },
           {
-            "name": "8. William Osula",
+            "pos": 8,
+            "name": "William Osula",
             "value": "36.29",
             "club": "new",
             "hl": true
@@ -146,28 +149,33 @@
         "title": "Top speed, km/h",
         "rows": [
           {
-            "name": "10. Erling Haaland",
+            "pos": 10,
+            "name": "Erling Haaland",
             "value": "36.20",
             "club": "mci"
           },
           {
-            "name": "9. Anthony Gordon",
+            "pos": 9,
+            "name": "Anthony Gordon",
             "value": "36.26",
             "club": "new"
           },
           {
-            "name": "8. William Osula",
+            "pos": 8,
+            "name": "William Osula",
             "value": "36.29",
             "club": "new"
           },
           {
-            "name": "7. Pedro Neto",
+            "pos": 7,
+            "name": "Pedro Neto",
             "value": "36.32",
             "club": "che",
             "hl": true
           },
           {
-            "name": "6. Bryan Mbeumo",
+            "pos": 6,
+            "name": "Bryan Mbeumo",
             "value": "36.34",
             "club": "mun",
             "hl": true
@@ -182,38 +190,45 @@
         "title": "Top speed, km/h",
         "rows": [
           {
-            "name": "10. Erling Haaland",
+            "pos": 10,
+            "name": "Erling Haaland",
             "value": "36.20",
             "club": "mci"
           },
           {
-            "name": "9. Anthony Gordon",
+            "pos": 9,
+            "name": "Anthony Gordon",
             "value": "36.26",
             "club": "new"
           },
           {
-            "name": "8. William Osula",
+            "pos": 8,
+            "name": "William Osula",
             "value": "36.29",
             "club": "new"
           },
           {
-            "name": "7. Pedro Neto",
+            "pos": 7,
+            "name": "Pedro Neto",
             "value": "36.32",
             "club": "che"
           },
           {
-            "name": "6. Bryan Mbeumo",
+            "pos": 6,
+            "name": "Bryan Mbeumo",
             "value": "36.34",
             "club": "mun"
           },
           {
-            "name": "5. Anthony Elanga",
+            "pos": 5,
+            "name": "Anthony Elanga",
             "value": "36.35",
             "club": "new",
             "hl": true
           },
           {
-            "name": "4. Destiny Udogie",
+            "pos": 4,
+            "name": "Destiny Udogie",
             "value": "36.42",
             "club": "tot",
             "hl": true

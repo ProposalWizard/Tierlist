@@ -179,41 +179,48 @@
         "title": "Table after 9 games",
         "rows": [
           {
-            "name": "1. Arsenal",
+            "pos": 1,
+            "name": "Arsenal",
             "value": "24",
             "club": "ars",
             "hl": true
           },
           {
-            "name": "2. Man City",
+            "pos": 2,
+            "name": "Man City",
             "value": "21",
             "club": "mci",
             "hl": true
           },
           {
-            "name": "3. Brighton",
+            "pos": 3,
+            "name": "Brighton",
             "value": "19",
             "club": "bha",
             "hl": true
           },
           {
-            "name": "4. Chelsea",
+            "pos": 4,
+            "name": "Chelsea",
             "value": "16",
             "club": "che",
             "hl": true
           },
           {
-            "name": "5. Liverpool",
+            "pos": 5,
+            "name": "Liverpool",
             "value": "15",
             "club": "liv"
           },
           {
-            "name": "8. Bournemouth",
+            "pos": 8,
+            "name": "Bournemouth",
             "value": "12",
             "club": "bou"
           },
           {
-            "name": "17. Man United",
+            "pos": 17,
+            "name": "Man United",
             "value": "7",
             "club": "mun"
           }

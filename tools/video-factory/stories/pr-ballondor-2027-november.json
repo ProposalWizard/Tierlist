@@ -126,19 +126,22 @@
         "title": "Power ranking",
         "rows": [
           {
-            "name": "10. Phil Foden",
+            "pos": 10,
+            "name": "Phil Foden",
             "value": "UCL hat-trick",
             "club": "mci",
             "hl": true
           },
           {
-            "name": "9. João Pedro",
+            "pos": 9,
+            "name": "João Pedro",
             "value": "5 PL goals",
             "club": "che",
             "hl": true
           },
           {
-            "name": "8. Serhou Guirassy",
+            "pos": 8,
+            "name": "Serhou Guirassy",
             "value": "4 UCL goals",
             "club": "bvb",
             "hl": true
@@ -153,28 +156,33 @@
         "title": "Power ranking",
         "rows": [
           {
-            "name": "10. Phil Foden",
+            "pos": 10,
+            "name": "Phil Foden",
             "value": "UCL hat-trick",
             "club": "mci"
           },
           {
-            "name": "9. João Pedro",
+            "pos": 9,
+            "name": "João Pedro",
             "value": "5 PL goals",
             "club": "che"
           },
           {
-            "name": "8. Serhou Guirassy",
+            "pos": 8,
+            "name": "Serhou Guirassy",
             "value": "4 UCL goals",
             "club": "bvb"
           },
           {
-            "name": "7. Rodri",
+            "pos": 7,
+            "name": "Rodri",
             "value": "WC Golden Ball",
             "club": "mci",
             "hl": true
           },
           {
-            "name": "6. Alexander Isak",
+            "pos": 6,
+            "name": "Alexander Isak",
             "value": "6 PL goals",
             "club": "liv",
             "hl": true
@@ -189,38 +197,45 @@
         "title": "Power ranking",
         "rows": [
           {
-            "name": "10. Phil Foden",
+            "pos": 10,
+            "name": "Phil Foden",
             "value": "UCL hat-trick",
             "club": "mci"
           },
           {
-            "name": "9. João Pedro",
+            "pos": 9,
+            "name": "João Pedro",
             "value": "5 PL goals",
             "club": "che"
           },
           {
-            "name": "8. Serhou Guirassy",
+            "pos": 8,
+            "name": "Serhou Guirassy",
             "value": "4 UCL goals",
             "club": "bvb"
           },
           {
-            "name": "7. Rodri",
+            "pos": 7,
+            "name": "Rodri",
             "value": "WC Golden Ball",
             "club": "mci"
           },
           {
-            "name": "6. Alexander Isak",
+            "pos": 6,
+            "name": "Alexander Isak",
             "value": "6 PL goals",
             "club": "liv"
           },
           {
-            "name": "5. Ferran Torres",
+            "pos": 5,
+            "name": "Ferran Torres",
             "value": "WC final winner",
             "club": "bar",
             "hl": true
           },
           {
-            "name": "4. Kylian Mbappé",
+            "pos": 4,
+            "name": "Kylian Mbappé",
             "value": "2nd in 2026",
             "club": "rma",
             "hl": true

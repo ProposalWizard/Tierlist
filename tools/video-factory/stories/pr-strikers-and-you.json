@@ -137,19 +137,22 @@
         "title": "Striker ranking",
         "rows": [
           {
-            "name": "10. Dominic Calvert-Lewin",
+            "pos": 10,
+            "name": "Dominic Calvert-Lewin",
             "value": "4 PL goals",
             "club": "lee",
             "hl": true
           },
           {
-            "name": "9. Nicolas Jackson",
+            "pos": 9,
+            "name": "Nicolas Jackson",
             "value": "5 PL goals",
             "club": "avl",
             "hl": true
           },
           {
-            "name": "8. João Pedro",
+            "pos": 8,
+            "name": "João Pedro",
             "value": "5 PL goals",
             "club": "che",
             "hl": true
@@ -164,28 +167,33 @@
         "title": "Striker ranking",
         "rows": [
           {
-            "name": "10. Dominic Calvert-Lewin",
+            "pos": 10,
+            "name": "Dominic Calvert-Lewin",
             "value": "4 PL goals",
             "club": "lee"
           },
           {
-            "name": "9. Nicolas Jackson",
+            "pos": 9,
+            "name": "Nicolas Jackson",
             "value": "5 PL goals",
             "club": "avl"
           },
           {
-            "name": "8. João Pedro",
+            "pos": 8,
+            "name": "João Pedro",
             "value": "5 PL goals",
             "club": "che"
           },
           {
-            "name": "7. Serhou Guirassy",
+            "pos": 7,
+            "name": "Serhou Guirassy",
             "value": "4 UCL goals",
             "club": "bvb",
             "hl": true
           },
           {
-            "name": "6. Alexander Isak",
+            "pos": 6,
+            "name": "Alexander Isak",
             "value": "6 PL goals",
             "club": "liv",
             "hl": true
@@ -200,38 +208,45 @@
         "title": "Striker ranking",
         "rows": [
           {
-            "name": "10. Dominic Calvert-Lewin",
+            "pos": 10,
+            "name": "Dominic Calvert-Lewin",
             "value": "4 PL goals",
             "club": "lee"
           },
           {
-            "name": "9. Nicolas Jackson",
+            "pos": 9,
+            "name": "Nicolas Jackson",
             "value": "5 PL goals",
             "club": "avl"
           },
           {
-            "name": "8. João Pedro",
+            "pos": 8,
+            "name": "João Pedro",
             "value": "5 PL goals",
             "club": "che"
           },
           {
-            "name": "7. Serhou Guirassy",
+            "pos": 7,
+            "name": "Serhou Guirassy",
             "value": "4 UCL goals",
             "club": "bvb"
           },
           {
-            "name": "6. Alexander Isak",
+            "pos": 6,
+            "name": "Alexander Isak",
             "value": "6 PL goals",
             "club": "liv"
           },
           {
-            "name": "5. Lautaro Martínez",
+            "pos": 5,
+            "name": "Lautaro Martínez",
             "value": "WC semi winner",
             "club": "inter",
             "hl": true
           },
           {
-            "name": "4. Kylian Mbappé",
+            "pos": 4,
+            "name": "Kylian Mbappé",
             "value": "2nd in BdO",
             "club": "rma",
             "hl": true

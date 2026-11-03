@@ -150,37 +150,44 @@
         "title": "2026: places 4 to 10",
         "rows": [
           {
-            "name": "4. Rodri",
+            "pos": 4,
+            "name": "Rodri",
             "value": "Man City",
             "club": "mci"
           },
           {
-            "name": "5. Lionel Messi",
+            "pos": 5,
+            "name": "Lionel Messi",
             "value": "Inter Miami",
             "club": "mia"
           },
           {
-            "name": "6. Kvaratskhelia",
+            "pos": 6,
+            "name": "Kvaratskhelia",
             "value": "PSG",
             "club": "psg"
           },
           {
-            "name": "7. Ousmane Dembélé",
+            "pos": 7,
+            "name": "Ousmane Dembélé",
             "value": "PSG",
             "club": "psg"
           },
           {
-            "name": "8. Erling Haaland",
+            "pos": 8,
+            "name": "Erling Haaland",
             "value": "Man City",
             "club": "mci"
           },
           {
-            "name": "9. Michael Olise",
+            "pos": 9,
+            "name": "Michael Olise",
             "value": "Bayern",
             "club": "bay"
           },
           {
-            "name": "10. Fabián Ruiz",
+            "pos": 10,
+            "name": "Fabián Ruiz",
             "value": "PSG",
             "club": "psg"
           }

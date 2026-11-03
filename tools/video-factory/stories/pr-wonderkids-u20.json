@@ -144,19 +144,22 @@
         "title": "U20 power ranking",
         "rows": [
           {
-            "name": "10. Lennart Karl",
+            "pos": 10,
+            "name": "Lennart Karl",
             "value": "Bayern",
             "club": "bay",
             "hl": true
           },
           {
-            "name": "9. Rodrigo Mora",
+            "pos": 9,
+            "name": "Rodrigo Mora",
             "value": "Roma",
             "club": "rom",
             "hl": true
           },
           {
-            "name": "8. Franco Mastantuono",
+            "pos": 8,
+            "name": "Franco Mastantuono",
             "value": "Fiorentina",
             "club": "fio",
             "hl": true
@@ -171,28 +174,33 @@
         "title": "U20 power ranking",
         "rows": [
           {
-            "name": "10. Lennart Karl",
+            "pos": 10,
+            "name": "Lennart Karl",
             "value": "Bayern",
             "club": "bay"
           },
           {
-            "name": "9. Rodrigo Mora",
+            "pos": 9,
+            "name": "Rodrigo Mora",
             "value": "Roma",
             "club": "rom"
           },
           {
-            "name": "8. Franco Mastantuono",
+            "pos": 8,
+            "name": "Franco Mastantuono",
             "value": "Fiorentina",
             "club": "fio"
           },
           {
-            "name": "7. Junior Kroupi",
+            "pos": 7,
+            "name": "Junior Kroupi",
             "value": "Bournemouth",
             "club": "bou",
             "hl": true
           },
           {
-            "name": "6. Ayyoub Bouaddi",
+            "pos": 6,
+            "name": "Ayyoub Bouaddi",
             "value": "Man City",
             "club": "mci",
             "hl": true
@@ -207,38 +215,45 @@
         "title": "U20 power ranking",
         "rows": [
           {
-            "name": "10. Lennart Karl",
+            "pos": 10,
+            "name": "Lennart Karl",
             "value": "Bayern",
             "club": "bay"
           },
           {
-            "name": "9. Rodrigo Mora",
+            "pos": 9,
+            "name": "Rodrigo Mora",
             "value": "Roma",
             "club": "rom"
           },
           {
-            "name": "8. Franco Mastantuono",
+            "pos": 8,
+            "name": "Franco Mastantuono",
             "value": "Fiorentina",
             "club": "fio"
           },
           {
-            "name": "7. Junior Kroupi",
+            "pos": 7,
+            "name": "Junior Kroupi",
             "value": "Bournemouth",
             "club": "bou"
           },
           {
-            "name": "6. Ayyoub Bouaddi",
+            "pos": 6,
+            "name": "Ayyoub Bouaddi",
             "value": "Man City",
             "club": "mci"
           },
           {
-            "name": "5. Luka Vušković",
+            "pos": 5,
+            "name": "Luka Vušković",
             "value": "Brighton",
             "club": "bha",
             "hl": true
           },
           {
-            "name": "4. Estêvão",
+            "pos": 4,
+            "name": "Estêvão",
             "value": "Chelsea",
             "club": "che",
             "hl": true
