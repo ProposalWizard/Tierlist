@@ -1,0 +1,41 @@
+{
+  "id": "ss-rooney-v-kane",
+  "series": "Best season ever, settled",
+  "title": "Rooney 2009-10 v Kane 2017-18: England's best number nine season?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/2009%E2%80%9310_Manchester_United_F.C._season",
+    "https://en.wikipedia.org/wiki/2017%E2%80%9318_Tottenham_Hotspur_F.C._season",
+    "https://en.wikipedia.org/wiki/Harry_Kane",
+    "data/competition-history/premier-league.json (champions, top scorers, FWA winners)",
+    "data/competition-history/league-cup.json (2009-10 final)"
+  ],
+  "checked": "Rooney 26 league / 34 all comps, injured against Bayern, United second on 85 to Chelsea's 86, League Cup 2-1 v Villa, out to Bayern in the quarter-final (Wikipedia season page); FWA award, Drogba top scorer on 29 and the League Cup final (local files). Kane 30 league / 41 all comps, Spurs third on 77 with no trophy (Wikipedia season page); 39 Premier League goals in calendar 2017 beating Shearer's 36, 56 in all competitions in 2017 (Kane article); Salah top scorer on 32 (local file). Kane's totals have one source each beyond the season page; the calendar-year record has the Kane article.",
+  "clubs": {
+    "manutd": { "name": "Manchester United", "short": "MUN", "c1": "#da291c", "c2": "#ffffff", "pattern": "plain" },
+    "spurs": { "name": "Tottenham Hotspur", "short": "TOT", "c1": "#ffffff", "c2": "#132257", "pattern": "plain" },
+    "villa": { "name": "Aston Villa", "short": "AVL", "c1": "#670e36", "c2": "#95bfe5", "pattern": "sides" },
+    "chelsea": { "name": "Chelsea", "short": "CHE", "c1": "#034694", "c2": "#ffffff", "pattern": "plain" },
+    "liverpool": { "name": "Liverpool", "short": "LIV", "c1": "#c8102e", "c2": "#ffffff", "pattern": "plain" }
+  },
+  "people": {
+    "rooney": { "name": "Wayne Rooney", "skin": "pink", "hair": ["buzz", "#6b4a2e"], "beard": "none", "kit": "manutd" },
+    "kane": { "name": "Harry Kane", "skin": "light", "hair": ["side", "#8a6a48"], "beard": "none", "kit": "spurs" },
+    "drogba": { "name": "Didier Drogba", "skin": "dark", "hair": ["buzz", "#111111"], "beard": "stubble", "kit": "chelsea" },
+    "salah": { "name": "Mohamed Salah", "skin": "tan", "hair": ["bigcurl", "#1a120c"], "beard": "full", "beardCol": "#1a120c", "kit": "liverpool" }
+  },
+  "lines": [
+    { "text": "England's two greatest goalscorers. Their best seasons. Only one ends with a medal.", "scene": { "type": "title", "heading": "ROONEY v KANE", "sub": "2009-10 v 2017-18", "pill": "SETTLED", "person": "rooney" } },
+    { "text": "Wayne Rooney, twenty oh nine, ten. Ronaldo has just left for Madrid. Rooney becomes the main man.", "scene": { "type": "person", "person": "rooney", "label": "Man United · 2009-10", "mood": "happy" } },
+    { "text": "Twenty-six league goals, thirty-four in all. Football Writers' Player of the Year.", "scene": { "type": "stats", "title": "ROONEY 2009-10", "person": "rooney", "items": [ { "n": "26", "l": "league goals" }, { "n": "34", "l": "all competitions" } ] } },
+    { "text": "Harry Kane, twenty seventeen, eighteen. Spurs at Wembley.", "scene": { "type": "person", "person": "kane", "label": "Spurs · 2017-18", "mood": "happy" } },
+    { "text": "Thirty league goals, forty-one in all. And in twenty seventeen he broke Shearer's record: thirty-nine Premier League goals in a calendar year.", "scene": { "type": "stats", "title": "KANE 2017-18", "person": "kane", "items": [ { "n": "30", "l": "league goals" }, { "n": "41", "l": "all competitions" }, { "n": "39", "l": "PL goals in 2017" } ] } },
+    { "text": "Numbers? Kane, clearly.", "scene": { "type": "versus", "title": "ALL COMPETITIONS", "left": { "person": "rooney", "label": "Rooney 09-10", "value": "34" }, "right": { "person": "kane", "label": "Kane 17-18", "value": "41" } } },
+    { "text": "Trophies? Rooney won the League Cup. Kane won nothing.", "scene": { "type": "score", "home": "manutd", "away": "villa", "hs": 2, "as": 1, "date": "28 Feb 2010", "comp": "League Cup final" } },
+    { "text": "And Rooney's United missed the title by one point. Kane's Spurs finished third.", "scene": { "type": "list", "title": "WHERE THEY FINISHED", "rows": [ { "name": "Chelsea 2009-10", "value": "86 pts", "club": "chelsea" }, { "name": "Man United 2009-10", "value": "85 pts", "club": "manutd", "hl": true }, { "name": "Spurs 2017-18 (3rd)", "value": "77 pts", "club": "spurs", "hl": true } ] } },
+    { "text": "Now the twist. Neither of them won the Golden Boot.", "scene": { "type": "stamp", "text": "NO GOLDEN BOOT", "color": "red" } },
+    { "text": "Drogba beat Rooney with twenty-nine. Salah beat Kane with thirty-two.", "scene": { "type": "list", "title": "WHO BEAT THEM", "rows": [ { "name": "Drogba 2009-10", "value": "29", "club": "chelsea", "hl": true }, { "name": "Rooney 2009-10", "value": "26", "club": "manutd" }, { "name": "Salah 2017-18", "value": "32", "club": "liverpool", "hl": true }, { "name": "Kane 2017-18", "value": "30", "club": "spurs" } ] } },
+    { "text": "Rooney's what-if: he got injured against Bayern in the spring, and United lost to Chelsea without him.", "scene": { "type": "whatif", "title": "IN THIS ALTERNATE WORLD", "real": { "label": "Rooney injured", "value": "United 2nd by a point" }, "alt": { "label": "Imagined fit Rooney", "value": "Title race goes on" } } },
+    { "text": "Kane scored more. Rooney came closer to winning it all, and got a medal. Settled: Rooney.", "scene": { "type": "stamp", "text": "ROONEY", "person": "rooney", "color": "white" } },
+    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+  ]
+}

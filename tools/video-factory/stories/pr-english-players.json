@@ -1,0 +1,357 @@
+{
+  "id": "pr-english-players",
+  "series": "Power ranking",
+  "title": "Power ranking: the best English players right now",
+  "sources": [
+    "https://www.nbcsports.com/soccer/news/premier-league-2026-27-scoring-leaders-the-race-for-the-golden-boot-begins",
+    "https://www.soccernews.com/english-premier-league/golden-boot/",
+    "https://www.nbcsports.com/soccer/news/premier-league-table-for-2026-27-season",
+    "https://caughtoffside.com/2026/10/20/premier-league-club-relaxed-manager-future-man-united",
+    "https://www.uefa.com/uefachampionsleague/news/02a9-218f8e669a0a-debba167a199-1000--champions-league-top-scorer-ermedin-demirovic-serhou-guir/",
+    "https://foot-africa.com/en/news/champions-league-the-top-scorers-standings-after-matchday-3-1395029/",
+    "https://blueprint.ng/?p=856829",
+    "https://www.thescore.com/news/3566852",
+    "https://english.ahram.org.eg/News/572936.aspx",
+    "https://bulinews.com/revealed-full-men-ballon-top-10-rankings",
+    "https://blueprint.ng/?p=856976",
+    "https://yen.com.gh/sports/football/314521-ballon-d-2026-official-top-10-rankings-harry-kane-beats-mbappe-yamal/",
+    "https://www.soccernews.com/kane-scoops-first-ballon-dor-after-pipping-yamal-mbappe/407033/"
+  ],
+  "checked": "PL goals (NBC 2 Nov, Soccernews top five): Rogers 5, Tavernier 5, Calvert-Lewin 4, Hinshelwood 3, Palmer 3, Saka 3. Foden UCL hat-trick on MD3 (UEFA). Gordon scored in the WC semi v Argentina (theScore, Ahram). Bellingham 11th in Ballon d'Or (Blueprint, Bulinews). Kane Ballon d'Or + 4 UCL goals (Bulinews, Soccernews, UEFA, Foot Africa).",
+  "clubs": {
+    "ars": {
+      "name": "Arsenal",
+      "short": "ARS",
+      "c1": "#ef0107",
+      "c2": "#ffffff",
+      "pattern": "sides"
+    },
+    "bha": {
+      "name": "Brighton",
+      "short": "BHA",
+      "c1": "#0057b8",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    },
+    "bou": {
+      "name": "Bournemouth",
+      "short": "BOU",
+      "c1": "#da291c",
+      "c2": "#000000",
+      "pattern": "stripes"
+    },
+    "che": {
+      "name": "Chelsea",
+      "short": "CHE",
+      "c1": "#034694",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "eng": {
+      "name": "England",
+      "short": "ENG",
+      "c1": "#ffffff",
+      "c2": "#cf081f",
+      "pattern": "plain"
+    },
+    "lee": {
+      "name": "Leeds United",
+      "short": "LEE",
+      "c1": "#ffffff",
+      "c2": "#1d428a",
+      "pattern": "plain"
+    },
+    "mci": {
+      "name": "Manchester City",
+      "short": "MCI",
+      "c1": "#6cabdd",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "new": {
+      "name": "Newcastle United",
+      "short": "NEW",
+      "c1": "#241f20",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    },
+    "rma": {
+      "name": "Real Madrid",
+      "short": "RMA",
+      "c1": "#ffffff",
+      "c2": "#febe10",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "kane_eng": {
+      "name": "Harry Kane",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#6b4a2e"
+      ],
+      "beard": "stubble",
+      "kit": "eng"
+    },
+    "rogers": {
+      "name": "Morgan Rogers",
+      "skin": "brown",
+      "hair": [
+        "curlytop",
+        "#111111"
+      ],
+      "beard": "none",
+      "kit": "che"
+    },
+    "saka": {
+      "name": "Bukayo Saka",
+      "skin": "dark",
+      "hair": [
+        "buzz",
+        "#111111"
+      ],
+      "beard": "none",
+      "kit": "ars"
+    },
+    "tavernier": {
+      "name": "Marcus Tavernier",
+      "skin": "brown",
+      "hair": [
+        "crop",
+        "#111111"
+      ],
+      "beard": "short",
+      "kit": "bou"
+    }
+  },
+  "lines": [
+    {
+      "text": "Who is the best English footballer on the planet right now? Ten names, real form only.",
+      "scene": {
+        "type": "title",
+        "heading": "BEST ENGLISH PLAYERS",
+        "sub": "Power ranking · November 2026",
+        "pill": "REAL FORM ONLY",
+        "person": "kane_eng"
+      }
+    },
+    {
+      "text": "Ten, Jack Hinshelwood, three goals for Brighton. Nine, Cole Palmer, three for Chelsea. Eight, Dominic Calvert-Lewin, four for Leeds.",
+      "scene": {
+        "type": "list",
+        "title": "England power ranking",
+        "rows": [
+          {
+            "name": "10. Jack Hinshelwood",
+            "value": "3 goals",
+            "club": "bha",
+            "hl": true
+          },
+          {
+            "name": "9. Cole Palmer",
+            "value": "3 goals",
+            "club": "che",
+            "hl": true
+          },
+          {
+            "name": "8. Dominic Calvert-Lewin",
+            "value": "4 goals",
+            "club": "lee",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Seven, Jude Bellingham, eleventh in the Ballon d'Or. Six, Bukayo Saka, three goals for the league leaders.",
+      "scene": {
+        "type": "list",
+        "title": "England power ranking",
+        "rows": [
+          {
+            "name": "10. Jack Hinshelwood",
+            "value": "3 goals",
+            "club": "bha"
+          },
+          {
+            "name": "9. Cole Palmer",
+            "value": "3 goals",
+            "club": "che"
+          },
+          {
+            "name": "8. Dominic Calvert-Lewin",
+            "value": "4 goals",
+            "club": "lee"
+          },
+          {
+            "name": "7. Jude Bellingham",
+            "value": "11th BdO",
+            "club": "rma",
+            "hl": true
+          },
+          {
+            "name": "6. Bukayo Saka",
+            "value": "3 · 1st",
+            "club": "ars",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Five, Anthony Gordon, who scored in the World Cup semi-final. Four, Phil Foden, a Champions League hat-trick.",
+      "scene": {
+        "type": "list",
+        "title": "England power ranking",
+        "rows": [
+          {
+            "name": "10. Jack Hinshelwood",
+            "value": "3 goals",
+            "club": "bha"
+          },
+          {
+            "name": "9. Cole Palmer",
+            "value": "3 goals",
+            "club": "che"
+          },
+          {
+            "name": "8. Dominic Calvert-Lewin",
+            "value": "4 goals",
+            "club": "lee"
+          },
+          {
+            "name": "7. Jude Bellingham",
+            "value": "11th BdO",
+            "club": "rma"
+          },
+          {
+            "name": "6. Bukayo Saka",
+            "value": "3 · 1st",
+            "club": "ars"
+          },
+          {
+            "name": "5. Anthony Gordon",
+            "value": "WC semi goal",
+            "club": "new",
+            "hl": true
+          },
+          {
+            "name": "4. Phil Foden",
+            "value": "UCL hat-trick",
+            "club": "mci",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Number three. Marcus Tavernier.",
+      "scene": {
+        "type": "person",
+        "person": "tavernier",
+        "label": "NUMBER 3",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Five league goals for Bournemouth. Level with Rogers and João Pedro, and only Haaland and Isak have more.",
+      "scene": {
+        "type": "stats",
+        "title": "Tavernier, 2026-27",
+        "items": [
+          {
+            "n": "5",
+            "l": "PL goals"
+          },
+          {
+            "n": "Top 5",
+            "l": "Golden Boot race"
+          }
+        ],
+        "person": "tavernier"
+      }
+    },
+    {
+      "text": "Number two. Morgan Rogers.",
+      "scene": {
+        "type": "person",
+        "person": "rogers",
+        "label": "NUMBER 2",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Five league goals for Chelsea, the joint-best of any Englishman in the Premier League.",
+      "scene": {
+        "type": "list",
+        "title": "English PL scorers",
+        "rows": [
+          {
+            "name": "Morgan Rogers",
+            "value": "5",
+            "club": "che",
+            "hl": true
+          },
+          {
+            "name": "Marcus Tavernier",
+            "value": "5",
+            "club": "bou",
+            "hl": true
+          },
+          {
+            "name": "Dominic Calvert-Lewin",
+            "value": "4",
+            "club": "lee"
+          },
+          {
+            "name": "Saka · Palmer · Hinshelwood",
+            "value": "3"
+          }
+        ]
+      }
+    },
+    {
+      "text": "And number one. Harry Kane. Of course it is.",
+      "scene": {
+        "type": "person",
+        "person": "kane_eng",
+        "label": "NUMBER 1",
+        "mood": "happy",
+        "stamp": "NUMBER 1"
+      }
+    },
+    {
+      "text": "The first Englishman to win the Ballon d'Or since Michael Owen, and four Champions League goals already.",
+      "scene": {
+        "type": "trophies",
+        "items": [
+          {
+            "kind": "ballon",
+            "label": "Ballon d'Or 2026"
+          },
+          {
+            "kind": "boot",
+            "label": "Gerd Müller Trophy"
+          }
+        ],
+        "person": "kane_eng"
+      }
+    },
+    {
+      "text": "Who is missing? Tell us your England top three.",
+      "scene": {
+        "type": "stamp",
+        "text": "YOUR TOP 3?",
+        "person": "saka",
+        "color": "white"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}
