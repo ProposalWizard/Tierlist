@@ -182,7 +182,7 @@ S.quote = (g, t, dur, s) => {
   room(g, "#7b2a2a", "#5b4636");
   person(g, s.person, 330, CY + 560, 220, { noDisc: true, talk: 0.5 + 0.5 * Math.sin(t * 18) });
   const b = ez((t - 0.25) * 3); if (b <= 0) return;
-  const lines = wrapLines(g, `"${s.text}"`, 560, 42); const h = lines.length * 54 + 44; const x = 570, y = CY + 60;
+  const lines = wrapLines(g, `"${s.text}"`, 470, 42); const h = lines.length * 54 + 44; const x = 570, y = CY + 60;
   g.save(); g.globalAlpha = b; panel(g, x - 20, y, 520, h, "#fff", 30); g.fillStyle = "#fff"; g.beginPath(); g.moveTo(x + 10, y + h - 2); g.lineTo(x - 40, y + h + 60); g.lineTo(x + 60, y + h - 2); g.fill();
   lines.forEach((l, i) => T(g, l, x + 240, y + 64 + i * 54, 42, { color: "#111", font: "Oswald", weight: 700 })); g.restore();
 };
