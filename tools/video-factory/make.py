@@ -26,7 +26,9 @@ def toks(s):
     s = s.lower().replace("-", " ").replace("’", "'")
     return [w for w in re.sub(r"[^a-z0-9' ]", " ", s).split() if w]
 def sim(a, b):
-    A = [w for w in toks(a) if not w.isdigit() and w not in NUM]; B = [w for w in toks(b) if not w.isdigit() and w not in NUM]
+    # names (capitalised words in the script) are skipped: the transcriber spells them its own way
+    names = {w.lower().strip(".,?!'\"") for w in a.split()[1:] if w[:1].isupper()}
+    A = [w for w in toks(a) if not w.isdigit() and w not in NUM and w not in names]; B = [w for w in toks(b) if not w.isdigit() and w not in NUM and w not in names]
     return difflib.SequenceMatcher(None, A, B).ratio()
 
 _whisper = None
