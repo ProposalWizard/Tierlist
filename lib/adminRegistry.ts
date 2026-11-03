@@ -41,7 +41,7 @@ export interface AdminPage {
  * `home` is where the game's tab opens; `play` is the game as players see it.
  */
 export const GAMES = [
-  { key: "rbd", name: "Road to Ballon d'Or", short: "Ballon d'Or", home: "/admin/star", play: "/star-dev" },
+  { key: "rbd", name: "Road to Ballon d'Or", short: "Ballon d'Or", home: "/admin/star", play: "/road-to-ballon-dor" },
   { key: "web", name: "Website games", short: "Website", home: "/admin/star/game/web", play: "/" },
   { key: "studio", name: "Studio", short: "Studio", home: "/admin/star/game/studio", play: null },
   // Marketing & Production (Harry, 21 Oct 2026: "its own whole tab"; decision 1 in

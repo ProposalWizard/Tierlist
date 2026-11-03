@@ -17,6 +17,7 @@ import { utmFrom, cleanPlayerName, NAME_MAX, type Campaign } from "@/lib/campaig
 import { leagueNameFor } from "@/lib/star/calendar";
 import { startGuest, track } from "@/lib/guest/start";
 import { setPendingCampaign } from "@/lib/guest/campaignCareer";
+import { GAME_PATH } from "@/lib/star/gamePath";
 
 export function CampaignLandingView({ campaign: c, busy, error, onPlay }: {
   campaign: Campaign;
@@ -127,7 +128,7 @@ export function CampaignLandingView({ campaign: c, busy, error, onPlay }: {
           </button>
           <p className="mt-3 text-center text-xs font-bold text-white/50">{c.footnote}</p>
           <p className="mt-4 text-center text-xs font-bold text-white/40">
-            Already play? <a href="/auth?next=/star-dev" className="underline">Sign in</a>
+            Already play? <a href={`/auth?next=${GAME_PATH}`} className="underline">Sign in</a>
           </p>
         </div>
       </main>
@@ -155,7 +156,7 @@ export default function CampaignLanding({ campaign }: { campaign: Campaign }) {
     const r = await startGuest({ campaign: campaign.slug, utm, landing: `/play/${campaign.slug}` });
     if (!r.ok) { setBusy(false); setError(r.message); return; }
     setPendingCampaign(campaign.slug, name);
-    window.location.assign(`/star-dev?from=${encodeURIComponent(campaign.slug)}`);
+    window.location.assign(`${GAME_PATH}?from=${encodeURIComponent(campaign.slug)}`);
   };
 
   return <CampaignLandingView campaign={campaign} busy={busy} error={error} onPlay={play} />;

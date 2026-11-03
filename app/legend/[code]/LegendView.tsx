@@ -14,6 +14,7 @@ import CareerOverview from "@/components/star/CareerOverview";
 import { CompareFlow } from "@/components/star/LegendShare";
 import { fetchLegend, legendProblem, spacedCode, type FetchedLegend } from "@/lib/star/legendShare";
 import { HALL_KEY, sanitizeHallBook, type HallEntry } from "@/lib/star/hallOfFame";
+import { GAME_PATH } from "@/lib/star/gamePath";
 
 /** Every Hall of Fame on this device, merged (a device can hold more than one account's). */
 function hallsOnThisDevice(): HallEntry[] {
@@ -61,7 +62,7 @@ export default function LegendView({ code }: { code: string }) {
       <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-[#05080f] px-6 text-center text-white" data-legend-missing>
         <div className="text-[40px]">🏟️</div>
         <div className="text-[15px] font-bold">{legendProblem(got.why)}</div>
-        <Link href="/star-dev" className="kib-press px-5 py-3 text-[13px] font-black uppercase tracking-wide text-gray-950" style={{ background: "#fbbf24", borderRadius: 2 }}>Play the game</Link>
+        <Link href={GAME_PATH} className="kib-press px-5 py-3 text-[13px] font-black uppercase tracking-wide text-gray-950" style={{ background: "#fbbf24", borderRadius: 2 }}>Play the game</Link>
       </div>,
     );
   }
@@ -79,7 +80,7 @@ export default function LegendView({ code }: { code: string }) {
         share={{}}
         actions={[
           { icon: "⚖️", label: "Compare", onClick: () => { setComparing(true); window.scrollTo({ top: 0 }); }, primary: true },
-          { icon: "▶", label: "Play", onClick: () => { window.location.href = "/star-dev"; } },
+          { icon: "▶", label: "Play", onClick: () => { window.location.href = GAME_PATH; } },
         ]}
       />
     </div>,

@@ -1,13 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { GAME_PATH } from "@/lib/star/gamePath";
 
 const LIVE_GAMES = [
   { name: "Draft", href: "/draft" },
   { name: "Tic Tac Toe", href: "/tic-tac-toe" },
   { name: "Ten-A-Ball", href: "/tenable" },
   { name: "Rankings", href: "/tierlists" },
-  { name: "Road to Ballon d'Or", href: "/star-dev", beta: true },
+  { name: "Road to Ballon d'Or", href: GAME_PATH, beta: true },
 ];
 
 /** Same amber pill used everywhere else a live-but-unfinished game is marked

@@ -3,7 +3,7 @@
   "short_name": "Knowitball",
   "description": "Road to the Ballon d'Or — the Knowitball career game.",
   "id": "/star-dev",
-  "start_url": "/star-dev",
+  "start_url": "/road-to-ballon-dor",
   "scope": "/",
   "display": "standalone",
   "display_override": ["fullscreen", "standalone"],

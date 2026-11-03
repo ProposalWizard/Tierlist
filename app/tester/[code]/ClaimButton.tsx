@@ -2,6 +2,7 @@
 /** The "Become a tester" button on a tester link (app/tester/[code]/page.tsx). */
 import { useState } from "react";
 import Link from "next/link";
+import { GAME_PATH } from "@/lib/star/gamePath";
 
 const SAY: Record<string, string> = {
   joined: "Done — you're a tester. Open the career and look in Settings → Developer tab.",
@@ -48,7 +49,7 @@ export default function ClaimButton({ code }: { code: string }) {
       <p className={ok ? "text-emerald-300" : "text-red-300"}>{SAY[state] ?? SAY["not-ready"]}</p>
       {ok && (
         // A full page load, so the career page asks again who you are.
-        <button onClick={() => window.location.assign("/star-dev")} className="mt-3 inline-block rounded-xl bg-white/10 px-5 py-2.5 text-sm font-black text-white">Open the career</button>
+        <button onClick={() => window.location.assign(GAME_PATH)} className="mt-3 inline-block rounded-xl bg-white/10 px-5 py-2.5 text-sm font-black text-white">Open the career</button>
       )}
       {state === "signed-out" && (
         <Link href={`/auth?next=${encodeURIComponent(`/tester/${code}`)}`} className="mt-3 inline-block rounded-xl bg-white/10 px-5 py-2.5 text-sm font-black text-white">Sign in</Link>

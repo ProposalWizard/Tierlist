@@ -26,6 +26,7 @@ import type { Utm } from "@/lib/campaigns";
 import { guestAccountsOn, isGuestUser } from "./config";
 import { captchaToken } from "./captcha";
 import { rememberGuestForMove } from "./moveSaves";
+import { GAME_PATH } from "@/lib/star/gamePath";
 
 export type GuestStartResult =
   | { ok: true; userId: string; isGuest: boolean; created: boolean }
@@ -89,7 +90,7 @@ function callbackUrl(next: string, extra = ""): string {
  * "Save your career — sign in with Google". Leaves the page for Google;
  * returns only when it could not start.
  */
-export async function upgradeGuestWithGoogle(next = "/star-dev", where = "prompt"): Promise<{ ok: false; message: string } | void> {
+export async function upgradeGuestWithGoogle(next = GAME_PATH, where = "prompt"): Promise<{ ok: false; message: string } | void> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || !isGuestUser(user)) return { ok: false, message: "You're not playing as a guest." };
@@ -111,7 +112,7 @@ export async function upgradeGuestWithGoogle(next = "/star-dev", where = "prompt
  * The Google account already has a Knowitball account: sign in to THAT one and
  * bring this guest's careers into its empty save slots.
  */
-export async function signInToExistingAccount(next = "/star-dev"): Promise<void> {
+export async function signInToExistingAccount(next = GAME_PATH): Promise<void> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (user && isGuestUser(user)) rememberGuestForMove(user.id);

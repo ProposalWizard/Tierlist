@@ -214,6 +214,7 @@ import { WatchedScreen } from "@/components/star/IntlKit";
 import CallUpScreen from "@/components/star/CallUpScreen";
 import { tournamentDue, openTournament, applyTournament } from "@/lib/star/tournament";
 import TournamentScreen from "@/components/star/TournamentScreen";
+import { GAME_PATH } from "@/lib/star/gamePath";
 
 // ── Screens that download only when first opened (speed job D, 9 Oct 2026;
 // lib/star/lazyScreen.ts). Home, the title screen and the match stay in the
@@ -3673,7 +3674,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           )}
           {guestAccountsOn() && <div className="mb-3"><GuestPlayButton /></div>}
           <a
-            href="/auth?next=/star-dev"
+            href={`/auth?next=${GAME_PATH}`}
             className={guestAccountsOn()
               ? "inline-block w-full rounded-xl border border-white/20 px-5 py-3 text-sm font-black text-white active:scale-95"
               : "inline-block w-full rounded-xl bg-emerald-500 px-5 py-3 text-sm font-black text-emerald-950 active:scale-95"}
