@@ -99,7 +99,7 @@ function stamp(g, s, x, y, t, rot = -0.14, col = "#d2122e", size = 96) {
 const COL = { red: "#ff3b4e", yellow: "#ffd84a", white: "#ffffff" };
 function heading(g, s, y = CY + 92, size = 70, color = "#fff") { if (s) T(g, String(s).toUpperCase(), W / 2, y, size, { color, stroke: 8, maxW: 1000 }); }
 function reveal(i, n, dur, start = 0.15, end = 0.75) { return dur * (start + (end - start) * (n <= 1 ? 0 : i / (n - 1))); }
-function count(n, k) { const m = String(n).match(/^([^0-9]*)([0-9][0-9,.]*)(.*)$/); if (!m) return String(n); const v = parseFloat(m[2].replace(/,/g, "")); const dec = (m[2].split(".")[1] || "").length; return m[1] + (v * k).toFixed(dec) + m[3]; }
+function count(n, k) { const m = String(n).match(/^([^0-9]*)([0-9][0-9,.]*)(.*)$/); if (!m) return String(n); const v = parseFloat(m[2].replace(/,/g, "")); const dec = (m[2].split(".")[1] || "").length; const x = v * k; const txt = m[2].includes(",") ? x.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec }) : x.toFixed(dec); return m[1] + txt + m[3]; }
 
 // ════════ scene types ════════
 const S = {};
