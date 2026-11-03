@@ -135,9 +135,9 @@ S.stats = (g, t, dur, s) => {
   if (hasP) person(g, s.person, 190, CY + 470, 170, { mood: "happy", bgTop: "#2b3a66", bgBot: "#141d38" });
   items.forEach((it, i) => {
     const at = reveal(i, items.length, dur, 0.1, 0.55); const k = cl((t - at) / 0.8); if (k <= 0) return;
-    const cols = items.length > 2 && !hasP ? 2 : 1; const rows = Math.ceil(items.length / cols);
+    const cols = items.length > 2 ? 2 : 1; const rows = Math.ceil(items.length / cols);
     const cx = x0 + wA * ((i % cols) + 0.5) / cols, cy = CY + 230 + (Math.floor(i / cols) + 0.5) * (CH - 260) / rows;
-    T(g, count(it.n, ez(k)), cx, cy + 20, items.length > 2 ? 130 : 170, { color: i % 2 ? "#ffd84a" : "#ffffff", maxW: wA / cols - 30 });
+    T(g, count(it.n, ez(k)), cx, cy + 20, items.length > 2 ? (hasP ? 110 : 130) : 170, { color: i % 2 ? "#ffd84a" : "#ffffff", maxW: wA / cols - 30 });
     T(g, String(it.l || "").toUpperCase(), cx, cy + 75, 40, { color: "#cfd8ef", font: "Oswald", weight: 700, maxW: wA / cols - 30, alpha: ez(k * 2) });
   });
 };
