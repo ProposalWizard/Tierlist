@@ -1,0 +1,40 @@
+{
+  "id": "ns-lewandowski-italy",
+  "series": "What if the countries were swapped?",
+  "title": "What if Lewandowski was Italian?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/Robert_Lewandowski",
+    "https://en.wikipedia.org/wiki/Italy_national_football_team",
+    "https://www.sportinglife.com/football/news/england-heartbreak-as-italy-win-on-pens/193098",
+    "https://www.omanobserver.om/article/1103733/sports/football/italy-win-euro-2020-final-on-penalties-to-wreck-england-party",
+    "https://www.nst.com.my/amp/sports/football/2026/03/1404560/italy-stay-world-cup-hunt-wales-ireland-suffer-penalty-heartbreak",
+    "https://www.malaymail.com/news/sports/2026/03/27/italy-set-to-face-bosnia-in-world-cup-play-off-after-beating-northern-ireland-2-0/214059",
+    "https://www.nbcboston.com/news/sports/soccer/uefa-fifa-world-cup-playoff-finals/3923137/",
+    "https://www.inter.it/en/news/world-cup-playoffs-italy-northern-ireland-zielinski-goal-poland-calhanoglu"
+  ],
+  "checked": "Lewandowski has played for Poland since 2008 and is their record scorer, still active in Oct 2026 (Wikipedia). Italy won Euro 2020 on penalties v England (Sporting Life + Oman Observer) and missed the 2018, 2022 and 2026 World Cups (Italy Wikipedia + NBC + Malay Mail). March 2026 play-off finals: Italy lost to Bosnia on penalties, Poland lost 3-2 to Sweden (NBC + NST + Inter.it). Alternate world clearly imagined.",
+  "clubs": {
+    "pol": { "name": "Poland", "short": "POL", "c1": "#ffffff", "c2": "#dc143c", "pattern": "plain" },
+    "ita": { "name": "Italy", "short": "ITA", "c1": "#0b56a4", "c2": "#ffffff", "pattern": "plain" },
+    "eng": { "name": "England", "short": "ENG", "c1": "#ffffff", "c2": "#1d2c5e", "pattern": "plain" }
+  },
+  "people": {
+    "lewy": { "name": "Robert Lewandowski", "skin": "light", "hair": ["side", "#7a5a3a"], "beard": "stubble", "beardCol": "#7a5a3a", "kit": "pol" },
+    "lewyita": { "name": "Robert Lewandowski", "skin": "light", "hair": ["side", "#7a5a3a"], "beard": "stubble", "beardCol": "#7a5a3a", "kit": "ita" }
+  },
+  "lines": [
+    { "text": "What if Robert Lewandowski had been born in Italy instead of Poland?", "scene": { "type": "title", "heading": "ROBERT LEWANDOWSKI", "sub": "Poland · since 2008", "pill": "WHAT IF HE WAS ITALIAN?", "person": "lewy" } },
+    { "text": "Real world first. Lewandowski has played for Poland since twenty oh-eight, and he's their record scorer.", "scene": { "type": "person", "person": "lewy", "label": "Poland's record scorer", "mood": "happy" } },
+    { "text": "Four Euros, two World Cups. Trophies? None.", "scene": { "type": "stamp", "text": "NO TROPHIES", "person": "lewy", "color": "red" } },
+    { "text": "And this March, Poland lost their World Cup play-off final to Sweden, three-two.", "scene": { "type": "text", "heading": "MARCH 2026", "body": "Play-off final: Sweden 3, Poland 2. Poland miss the World Cup in North America." } },
+    { "text": "Now look at Italy in exactly the same years.", "scene": { "type": "timeline", "items": [ { "year": "2012", "label": "Euro final: lost" }, { "year": "2018", "label": "No World Cup" }, { "year": "2021", "label": "Euro 2020: WON" }, { "year": "2022", "label": "No World Cup" }, { "year": "2026", "label": "No World Cup" } ] } },
+    { "text": "They won Euro twenty twenty, beating England on penalties at Wembley.", "scene": { "type": "score", "home": "ita", "away": "eng", "hs": 1, "as": 1, "date": "11 July 2021", "comp": "Euro 2020 final", "note": "Italy win on penalties" } },
+    { "text": "But then they missed three World Cups in a row.", "scene": { "type": "list", "title": "Italy at the World Cup", "rows": [ { "name": "2018 Russia", "value": "Didn't qualify", "club": "ita", "hl": true }, { "name": "2022 Qatar", "value": "Didn't qualify", "club": "ita", "hl": true }, { "name": "2026 North America", "value": "Didn't qualify", "club": "ita", "hl": true } ] } },
+    { "text": "The latest? A play-off final this March, lost to Bosnia on penalties.", "scene": { "type": "stats", "title": "Italy since Lewy's debut", "items": [ { "n": "1", "l": "trophy" }, { "n": "3", "l": "World Cups missed" } ] } },
+    { "text": "So in this alternate world, Lewandowski is Italy's number nine.", "scene": { "type": "person", "person": "lewyita", "label": "ALTERNATE WORLD", "mood": "happy" } },
+    { "text": "He picks up a Euro winner's medal, one more than he has now.", "scene": { "type": "whatif", "title": "Lewandowski's senior trophies", "real": { "label": "Poland (real)", "value": "0" }, "alt": { "label": "Italy (imagined)", "value": "1" } } },
+    { "text": "And with the striker Italy were missing, maybe those World Cup misses never happen.", "scene": { "type": "quote", "person": "lewyita", "text": "Three World Cups missed? Not with me up front." } },
+    { "text": "Would Italian Lewandowski be a world champion? Tell me in the comments.", "scene": { "type": "versus", "title": "Same striker, different passport", "left": { "person": "lewy", "label": "Poland", "value": "0" }, "right": { "person": "lewyita", "label": "Italy", "value": "1+" } } },
+    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+  ]
+}

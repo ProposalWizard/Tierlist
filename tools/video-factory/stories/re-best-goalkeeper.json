@@ -1,0 +1,300 @@
+{
+  "id": "re-best-goalkeeper",
+  "series": "Three rules to the top",
+  "title": "Three rules to the best goalkeeper in the world",
+  "sources": [
+    "https://www.si.com/soccer/yashin-trophy-list-winners-most-wins-all-time",
+    "https://www.topendsports.com/sport/soccer/awards/yashin-trophy.htm",
+    "https://www.moroccoworldnews.com/2026/10/343937/unai-simon-wins-2026-yashin-trophy-moroccos-bounou-finishes-eighth/",
+    "https://www.beinsports.com/en-us/soccer/articles/live-ballon-d-or-2026-winners-and-all-awards-2026-10-26",
+    "https://www.foxsports.com/stories/soccer/spain-goalkeeper-unai-simon-wins-golden-glove-after-historic-world-cup",
+    "https://worldcupranking.com/blog/unai-simon-golden-glove-world-cup-2026/",
+    "https://santamariatimes.com/ap/sports/ferran-torres-scores-in-extra-time-as-spain-beats-argentina-1-0-to-win-the/article_a8e21e5c-8c25-54ce-b065-7ebb7225d56f.html",
+    "https://www.nbcmiami.com/world-cup/spain-argentina-final-messi-yamal-score/3835882/?amp=1"
+  ],
+  "checked": "Yashin winners 2019 Alisson, 2021 Donnarumma, 2022 Courtois, 2023-24 Martinez, 2025 Donnarumma (SI, TopEndSports), 2026 Simon (Morocco World News, beIN); WC final Spain 1-0 Argentina aet, Torres 106' (AP via Santa Maria Times, NBC); Simon Golden Glove, seven clean sheets, one goal conceded (Fox Sports, worldcupranking). Martinez also won the 2022 World Cup (Wikipedia).",
+  "clubs": {
+    "arg": {
+      "name": "Argentina",
+      "short": "ARG",
+      "c1": "#75aadb",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    },
+    "ars": {
+      "name": "Arsenal",
+      "short": "ARS",
+      "c1": "#ef0107",
+      "c2": "#ffffff",
+      "pattern": "sides"
+    },
+    "ath": {
+      "name": "Athletic Club",
+      "short": "ATH",
+      "c1": "#ee2523",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    },
+    "esp": {
+      "name": "Spain",
+      "short": "ESP",
+      "c1": "#c60b1e",
+      "c2": "#ffc400",
+      "pattern": "plain"
+    },
+    "liv": {
+      "name": "Liverpool",
+      "short": "LIV",
+      "c1": "#c8102e",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "mci": {
+      "name": "Manchester City",
+      "short": "MCI",
+      "c1": "#6cabdd",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "rma": {
+      "name": "Real Madrid",
+      "short": "RMA",
+      "c1": "#ffffff",
+      "c2": "#febe10",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "martinez": {
+      "name": "Emiliano Martínez",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#2b1d14"
+      ],
+      "beard": "short",
+      "kit": "arg"
+    },
+    "raya": {
+      "name": "David Raya",
+      "skin": "light",
+      "hair": [
+        "slick",
+        "#2b1d14"
+      ],
+      "beard": "short",
+      "kit": "ars"
+    },
+    "simon": {
+      "name": "Unai Simón",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#2b1d14"
+      ],
+      "beard": "short",
+      "kit": "ath"
+    }
+  },
+  "lines": [
+    {
+      "text": "Ten of the best goalkeepers alive. Three rules. One pair of gloves left.",
+      "scene": {
+        "type": "title",
+        "heading": "BEST GOALKEEPER",
+        "sub": "November 2026",
+        "pill": "THREE RULES",
+        "person": "simon"
+      }
+    },
+    {
+      "text": "Simón, Raya, Donnarumma, Courtois, Alisson, Martínez, Oblak, Maignan, Joan García and Kobel.",
+      "scene": {
+        "type": "list",
+        "title": "Our ten keepers",
+        "rows": [
+          {
+            "name": "Unai Simón",
+            "value": "Athletic",
+            "club": "ath"
+          },
+          {
+            "name": "David Raya",
+            "value": "Arsenal",
+            "club": "ars"
+          },
+          {
+            "name": "Gianluigi Donnarumma",
+            "value": "Man City",
+            "club": "mci"
+          },
+          {
+            "name": "Thibaut Courtois",
+            "value": "Real Madrid",
+            "club": "rma"
+          },
+          {
+            "name": "Alisson",
+            "value": "Liverpool",
+            "club": "liv"
+          },
+          {
+            "name": "Emiliano Martínez",
+            "value": "Argentina",
+            "club": "arg"
+          },
+          {
+            "name": "Oblak · Maignan",
+            "value": "+2"
+          },
+          {
+            "name": "Joan García · Kobel",
+            "value": "+2"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Rule one. You must have won the Yashin Trophy, the Ballon d'Or for keepers.",
+      "scene": {
+        "type": "text",
+        "heading": "RULE 1",
+        "body": "Must have won the Yashin Trophy at least once."
+      }
+    },
+    {
+      "text": "Raya has three Golden Gloves in a row, but no Yashin. He's out, with Oblak, Maignan, García and Kobel.",
+      "scene": {
+        "type": "stamp",
+        "text": "NO YASHIN",
+        "person": "raya",
+        "color": "yellow"
+      }
+    },
+    {
+      "text": "Five left. Alisson, Donnarumma, Courtois, Martínez and Simón.",
+      "scene": {
+        "type": "timeline",
+        "items": [
+          {
+            "year": "2019",
+            "label": "Alisson"
+          },
+          {
+            "year": "2021",
+            "label": "Donnarumma"
+          },
+          {
+            "year": "2022",
+            "label": "Courtois"
+          },
+          {
+            "year": "23-24",
+            "label": "Martínez"
+          },
+          {
+            "year": "2025",
+            "label": "Donnarumma"
+          },
+          {
+            "year": "2026",
+            "label": "Simón"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Rule two. You must have won a World Cup.",
+      "scene": {
+        "type": "text",
+        "heading": "RULE 2",
+        "body": "Must have won the World Cup."
+      }
+    },
+    {
+      "text": "Only two have. Martínez in twenty twenty-two, and Simón this summer.",
+      "scene": {
+        "type": "versus",
+        "title": "World Cup winners",
+        "left": {
+          "person": "martinez",
+          "label": "Martínez",
+          "value": "2022"
+        },
+        "right": {
+          "person": "simon",
+          "label": "Simón",
+          "value": "2026"
+        }
+      }
+    },
+    {
+      "text": "Rule three. Head to head. Who won the last World Cup final?",
+      "scene": {
+        "type": "text",
+        "heading": "RULE 3",
+        "body": "Winner of the last World Cup final between them goes through."
+      }
+    },
+    {
+      "text": "July, New Jersey. Spain one, Argentina nil, after extra time. Ferran Torres in the hundred and sixth minute.",
+      "scene": {
+        "type": "score",
+        "home": "esp",
+        "away": "arg",
+        "hs": 1,
+        "as": 0,
+        "date": "19 July 2026",
+        "comp": "World Cup final",
+        "note": "After extra time. Torres 106'."
+      }
+    },
+    {
+      "text": "So Martínez goes, and Unai Simón is the last man standing.",
+      "scene": {
+        "type": "stamp",
+        "text": "OUT",
+        "person": "martinez",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Seven World Cup clean sheets, the Golden Glove, and last month, the Yashin Trophy.",
+      "scene": {
+        "type": "stats",
+        "title": "Unai Simón, 2026",
+        "items": [
+          {
+            "n": "7",
+            "l": "WC clean sheets"
+          },
+          {
+            "n": "1",
+            "l": "goal conceded"
+          },
+          {
+            "n": "1",
+            "l": "Yashin Trophy"
+          }
+        ],
+        "person": "simon"
+      }
+    },
+    {
+      "text": "Agree? Or is Raya robbed again?",
+      "scene": {
+        "type": "person",
+        "person": "simon",
+        "label": "THE LAST NAME LEFT",
+        "mood": "happy",
+        "stamp": "WINNER"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

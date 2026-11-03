@@ -1,0 +1,39 @@
+{
+  "id": "ns-ronaldo-germany",
+  "series": "What if the countries were swapped?",
+  "title": "What if Ronaldo was German?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/Cristiano_Ronaldo",
+    "https://en.wikipedia.org/wiki/Portugal_national_football_team",
+    "https://www.uefa.com/uefanationsleague/history/",
+    "https://en.wikipedia.org/wiki/Germany_national_football_team",
+    "https://en.wikipedia.org/wiki/List_of_FIFA_Confederations_Cup_finals",
+    "https://www.sortiraparis.com/en/what-to-do-in-paris/sport-wellness/articles/349129-world-cup-2026-all-results-and-the-final-score"
+  ],
+  "checked": "Ronaldo's Portugal debut 2003 aged 18; record men's international scorer and most capped; Portugal won Euro 2016 and the Nations League 2019 and 2025 (Ronaldo + Portugal Wikipedia pages + UEFA Nations League history). Germany since 2003: World Cup 2014, Confederations Cup 2017 (1-0 v Chile), Euro 2008 runners-up, group exits at the 2018 and 2022 World Cups (Germany Wikipedia + Confed finals list). 2026: Germany out in the last 32 on penalties to Paraguay; Portugal out to Spain in the last 16 (Sortiraparis + Portugal Wikipedia). Exact cap/goal totals left out (only one source). Alternate world clearly imagined.",
+  "clubs": {
+    "por": { "name": "Portugal", "short": "POR", "c1": "#c8102e", "c2": "#046a38", "pattern": "plain" },
+    "ger": { "name": "Germany", "short": "GER", "c1": "#ffffff", "c2": "#000000", "pattern": "plain" },
+    "arg": { "name": "Argentina", "short": "ARG", "c1": "#75aadb", "c2": "#ffffff", "pattern": "stripes" }
+  },
+  "people": {
+    "ronaldo": { "name": "Cristiano Ronaldo", "skin": "tan", "hair": ["quiff", "#1b1410"], "beard": "none", "kit": "por" },
+    "ronaldoyoung": { "name": "Cristiano Ronaldo", "skin": "tan", "hair": ["curlytop", "#1b1410"], "beard": "none", "kit": "por" },
+    "ronaldoger": { "name": "Cristiano Ronaldo", "skin": "tan", "hair": ["quiff", "#1b1410"], "beard": "none", "kit": "ger" }
+  },
+  "lines": [
+    { "text": "What if Cristiano Ronaldo had been born in Germany? Here's the twist nobody expects.", "scene": { "type": "title", "heading": "CRISTIANO RONALDO", "sub": "Portugal · since 2003", "pill": "WHAT IF HE WAS GERMAN?", "person": "ronaldo" } },
+    { "text": "Real world first. Ronaldo made his Portugal debut in twenty oh-three, aged eighteen.", "scene": { "type": "person", "person": "ronaldoyoung", "label": "Debut aged 18", "mood": "happy" } },
+    { "text": "Since then he's become the top scorer in men's international football. Ever.", "scene": { "type": "stamp", "text": "ALL-TIME RECORD", "person": "ronaldo", "color": "yellow" } },
+    { "text": "And the trophies? Euro twenty sixteen, then the Nations League in twenty nineteen and twenty twenty-five.", "scene": { "type": "trophies", "items": [ { "kind": "euro", "label": "Euro 2016" }, { "kind": "cup", "label": "Nations League 2019" }, { "kind": "cup", "label": "Nations League 2025" } ], "person": "ronaldo" } },
+    { "text": "Now look at Germany in exactly the same years.", "scene": { "type": "timeline", "items": [ { "year": "2008", "label": "Euro final: lost" }, { "year": "2014", "label": "World Cup: WON" }, { "year": "2017", "label": "Confed Cup: WON" }, { "year": "2018", "label": "World Cup: out in groups" }, { "year": "2022", "label": "World Cup: out in groups" } ] } },
+    { "text": "The World Cup in twenty fourteen, beating Argentina in the final.", "scene": { "type": "score", "home": "ger", "away": "arg", "hs": 1, "as": 0, "date": "13 July 2014", "comp": "World Cup final", "note": "after extra time" } },
+    { "text": "And the Confederations Cup in twenty seventeen. That's two.", "scene": { "type": "list", "title": "Senior trophies since 2003", "rows": [ { "name": "Portugal", "value": "3", "club": "por", "hl": true }, { "name": "Germany", "value": "2", "club": "ger" } ] } },
+    { "text": "So the twist: Portugal won more than Germany while Ronaldo was playing.", "scene": { "type": "whatif", "title": "Trophies in Ronaldo's years", "real": { "label": "Portugal (real)", "value": "3" }, "alt": { "label": "Germany (real)", "value": "2" } } },
+    { "text": "Now, in this alternate world, Ronaldo joins that twenty fourteen German team.", "scene": { "type": "person", "person": "ronaldoger", "label": "ALTERNATE WORLD", "mood": "happy" } },
+    { "text": "In this imagined world he finally gets the one thing missing: a World Cup.", "scene": { "type": "quote", "person": "ronaldoger", "text": "Siuuu, in Rio." } },
+    { "text": "But he might lose Euro twenty sixteen, the night Portugal became champions of Europe.", "scene": { "type": "text", "heading": "THE TRADE-OFF", "body": "Germany: a World Cup, but two group-stage exits since. Portugal: a Euro and two Nations Leagues." } },
+    { "text": "So which Ronaldo wins more? German Ronaldo or the real one? Tell me in the comments.", "scene": { "type": "versus", "title": "Same Ronaldo, different passport", "left": { "person": "ronaldo", "label": "Portugal", "value": "3" }, "right": { "person": "ronaldoger", "label": "Germany", "value": "2+" } } },
+    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+  ]
+}

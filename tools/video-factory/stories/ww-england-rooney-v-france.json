@@ -1,0 +1,274 @@
+{
+  "id": "ww-england-rooney-v-france",
+  "series": "Who would win?",
+  "title": "England with Euro 2004 Rooney v France: who would win?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/England_national_football_team",
+    "https://en.wikipedia.org/wiki/France_national_football_team",
+    "https://en.wikipedia.org/wiki/UEFA_Euro_2004",
+    "https://en.wikipedia.org/wiki/Wayne_Rooney",
+    "https://www.comuniate.com/en/noticias/38524/confirmed-lineups-real-madrid-vs-sevilla-matchday-9",
+    "https://foot-africa.com/en/news/manchester-city-psg-official-lineups-announced-1386995/",
+    "https://www.oddschecker.com/insight/football/cng102-20261024-arsenal-vs-everton-confirmed-lineups",
+    "https://khelnow.com/football/newcastle-united-vs-liverpool-lineups-premier-league-202608"
+  ],
+  "checked": "World Cup 2026 third-place match England 6-4 France, 18 July, Saka hat-trick (England page + France page results). England squad: Sep/Oct 2026 Nations League squad (Wikipedia), each player checked at his club in a 2026/27 XI (Oddschecker, Foot Africa, Khel Now, Comuniate); Rice and Konsa were injured for that camp but started the 6-4. France squad: Sep/Oct 2026 call-up (Wikipedia); Mbappe was not in that squad but is captain and is starting for Real Madrid (Comuniate). Rooney Euro 2004: 4 goals, aged 18, Team of the Tournament (Rooney page + Euro 2004 page: 3-0 Switzerland, 4-2 Croatia). Zidane's two stoppage-time goals in France 2-1 England, Euro 2004 (Euro 2004 page). France's new coach left out (single source). Match imagined.",
+  "clubs": {
+    "eng": {
+      "name": "England",
+      "short": "ENG",
+      "c1": "#ffffff",
+      "c2": "#1d2d5f",
+      "pattern": "plain"
+    },
+    "fra": {
+      "name": "France",
+      "short": "FRA",
+      "c1": "#1f2a5c",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "rooney": {
+      "name": "Wayne Rooney (2004)",
+      "skin": "pink",
+      "hair": [
+        "buzz",
+        "#6b4a2b"
+      ],
+      "beard": "none",
+      "kit": "eng"
+    },
+    "kane": {
+      "name": "Harry Kane",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#6b4a2b"
+      ],
+      "beard": "stubble",
+      "kit": "eng"
+    },
+    "saka": {
+      "name": "Bukayo Saka",
+      "skin": "brown",
+      "hair": [
+        "crop",
+        "#1a1a1a"
+      ],
+      "beard": "none",
+      "kit": "eng"
+    },
+    "mbappe": {
+      "name": "Kylian Mbappé",
+      "skin": "brown",
+      "hair": [
+        "buzz",
+        "#111111"
+      ],
+      "beard": "none",
+      "kit": "fra"
+    }
+  },
+  "lines": [
+    {
+      "text": "Who would win: England with eighteen-year-old Wayne Rooney from Euro twenty oh-four, or France?",
+      "scene": {
+        "type": "title",
+        "heading": "ENGLAND + ROONEY v FRANCE",
+        "sub": "An imagined match · a prediction",
+        "pill": "WHO WOULD WIN?",
+        "person": "rooney"
+      }
+    },
+    {
+      "text": "These two met at the World Cup this summer. England won six-four in the third-place match, with a Saka hat-trick.",
+      "scene": {
+        "type": "score",
+        "home": "eng",
+        "away": "fra",
+        "hs": 6,
+        "as": 4,
+        "date": "18 Jul 2026",
+        "comp": "World Cup · third place",
+        "note": "Saka hat-trick"
+      }
+    },
+    {
+      "text": "Rooney at Euro twenty oh-four: eighteen years old, four goals, Team of the Tournament.",
+      "scene": {
+        "type": "stats",
+        "title": "ROONEY · EURO 2004",
+        "items": [
+          {
+            "n": "18",
+            "l": "years old"
+          },
+          {
+            "n": "4",
+            "l": "goals"
+          },
+          {
+            "n": "1",
+            "l": "Team of the Tournament"
+          }
+        ],
+        "person": "rooney"
+      }
+    },
+    {
+      "text": "England today, with Rooney in the number ten role behind Harry Kane.",
+      "scene": {
+        "type": "list",
+        "title": "ENGLAND XI",
+        "rows": [
+          {
+            "name": "Jordan Pickford",
+            "value": "GK"
+          },
+          {
+            "name": "Alexander-Arnold · Konsa · Guéhi · Hall",
+            "value": "DEF"
+          },
+          {
+            "name": "Rice · Anderson",
+            "value": "MID"
+          },
+          {
+            "name": "Saka · Bellingham",
+            "value": "AM"
+          },
+          {
+            "name": "Wayne Rooney (2004)",
+            "value": "10",
+            "hl": true
+          },
+          {
+            "name": "Harry Kane",
+            "value": "ST"
+          }
+        ]
+      }
+    },
+    {
+      "text": "France: Maignan, Koundé, Camavinga, Olise, Dembélé, and captain Mbappé.",
+      "scene": {
+        "type": "list",
+        "title": "FRANCE XI",
+        "rows": [
+          {
+            "name": "Mike Maignan",
+            "value": "GK"
+          },
+          {
+            "name": "Koundé · Yoro · Lacroix · Truffert",
+            "value": "DEF"
+          },
+          {
+            "name": "Camavinga · Koné · Cherki",
+            "value": "MID"
+          },
+          {
+            "name": "Olise · Mbappé · Dembélé",
+            "value": "ATT",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "And Rooney remembers twenty oh-four. France won that group game two-one, with two Zidane goals in stoppage time.",
+      "scene": {
+        "type": "text",
+        "heading": "EURO 2004 FLASHBACK",
+        "body": "France 2-1 England, group stage. England led 1-0. Zinedine Zidane scored twice in stoppage time."
+      }
+    },
+    {
+      "text": "Twenty minutes. Mbappé, too quick for everyone. Nil-one.",
+      "scene": {
+        "type": "score",
+        "home": "eng",
+        "away": "fra",
+        "hs": 0,
+        "as": 1,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Mbappé 20'"
+      }
+    },
+    {
+      "text": "Then the kid takes over. Rooney runs at Koundé and smashes it near post. One-all. Then again from the edge. Two-one.",
+      "scene": {
+        "type": "score",
+        "home": "eng",
+        "away": "fra",
+        "hs": 2,
+        "as": 1,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Rooney 34', 51'",
+        "stamp": "WAZZA"
+      }
+    },
+    {
+      "text": "Olise levels with a curler. Two-all.",
+      "scene": {
+        "type": "versus",
+        "title": "THE KIDS",
+        "left": {
+          "person": "rooney",
+          "label": "Rooney",
+          "value": "2 goals"
+        },
+        "right": {
+          "person": "mbappe",
+          "label": "Mbappé",
+          "value": "1 goal"
+        }
+      }
+    },
+    {
+      "text": "Eighty-ninth minute. Rooney to Kane. Kane doesn't miss. Three-two England.",
+      "scene": {
+        "type": "score",
+        "home": "eng",
+        "away": "fra",
+        "hs": 3,
+        "as": 2,
+        "date": "Full time · prediction",
+        "comp": "Imagined match",
+        "note": "Rooney 2, Kane · Mbappé, Olise"
+      }
+    },
+    {
+      "text": "Man of the match: Rooney, then Kane, then Mbappé.",
+      "scene": {
+        "type": "podium",
+        "year": "Imagined",
+        "title": "MAN OF THE MATCH",
+        "places": [
+          {
+            "person": "rooney",
+            "club": "eng"
+          },
+          {
+            "person": "kane",
+            "club": "eng"
+          },
+          {
+            "person": "mbappe",
+            "club": "fra"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

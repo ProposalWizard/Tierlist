@@ -1,0 +1,599 @@
+{
+ "competition": "UEFA European Championship",
+ "slug": "european-championship",
+ "kind": "tournament",
+ "lineage_note": "UEFA European Championship finals tournament, every four years since 1960 (European Nations' Cup in 1960 and 1964). Rows are editions, not years. Season label = year of the final, so Euro 2020 (played 2021) is \"2021\". Fields: top_scorer = finals-tournament goals only (qualifying excluded), all tied players listed. top_assister from UEFA's own per-tournament assist list (finals only); UEFA lists no player with 2+ assists for 1960 or 1968, so the continuous run starts in 1972 (1964 Igor Chislenko 2 dropped as scattered).",
+ "history_from": "1960",
+ "history_to": "2024",
+ "field_from": {
+  "runner_up": "1960",
+  "final_score": "1960",
+  "top_scorer": "1960",
+  "top_assister": "1972",
+  "player_of_season": "1996"
+ },
+ "player_of_season_award": "UEFA European Championship Player of the Tournament (from 1996)",
+ "sources": [
+  "https://en.wikipedia.org/wiki/List_of_UEFA_European_Championship_finals",
+  "https://en.wikipedia.org/wiki/UEFA_European_Championship_awards",
+  "https://en.wikipedia.org/wiki/UEFA_European_Championship_records_and_statistics",
+  "https://www.uefa.com/uefaeuro/history/news/025e-0f9c881c7fb4-c8a45ab1df98-1000--euro-final-tournament-assists-all-you-need-to-know/",
+  "https://en.wikipedia.org/wiki/UEFA_Euro_2020_statistics",
+  "https://en.wikipedia.org/wiki/UEFA_Euro_2024_statistics"
+ ],
+ "seasons": [
+  {
+   "season": "1960",
+   "name_then": "European Nations' Cup",
+   "status": "played",
+   "winner": "Soviet Union",
+   "runner_up": "Yugoslavia",
+   "final_score": "2-1 (a.e.t.)",
+   "top_scorer": [
+    {
+     "name": "Milan Galić",
+     "team": "Yugoslavia",
+     "goals": 2
+    },
+    {
+     "name": "François Heutte",
+     "team": "France",
+     "goals": 2
+    },
+    {
+     "name": "Valentin Ivanov",
+     "team": "Soviet Union",
+     "goals": 2
+    },
+    {
+     "name": "Dražan Jerković",
+     "team": "Yugoslavia",
+     "goals": 2
+    },
+    {
+     "name": "Viktor Ponedelnik",
+     "team": "Soviet Union",
+     "goals": 2
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Four-team finals tournament; top scorer counts the finals tournament only."
+  },
+  {
+   "season": "1964",
+   "name_then": "European Nations' Cup",
+   "status": "played",
+   "winner": "Spain",
+   "runner_up": "Soviet Union",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Ferenc Bene",
+     "team": "Hungary",
+     "goals": 2
+    },
+    {
+     "name": "Dezső Novák",
+     "team": "Hungary",
+     "goals": 2
+    },
+    {
+     "name": "Chus Pereda",
+     "team": "Spain",
+     "goals": 2
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Four-team finals tournament; top scorer counts the finals tournament only."
+  },
+  {
+   "season": "1968",
+   "status": "played",
+   "winner": "Italy",
+   "runner_up": "Yugoslavia",
+   "final_score": "2-0",
+   "top_scorer": [
+    {
+     "name": "Dragan Džajić",
+     "team": "Yugoslavia",
+     "goals": 2
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final drawn 1-1 (a.e.t.); Italy won the replay 2-0 two days later (score shown is the replay). Four-team finals tournament."
+  },
+  {
+   "season": "1972",
+   "status": "played",
+   "winner": "West Germany",
+   "runner_up": "Soviet Union",
+   "final_score": "3-0",
+   "top_scorer": [
+    {
+     "name": "Gerd Müller",
+     "team": "West Germany",
+     "goals": 4
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Günter Netzer",
+     "team": "West Germany",
+     "assists": 2
+    }
+   ],
+   "player_of_season": null,
+   "notes": "Four-team finals tournament."
+  },
+  {
+   "season": "1976",
+   "status": "played",
+   "winner": "Czechoslovakia",
+   "runner_up": "West Germany",
+   "final_score": "2-2 (a.e.t.) (5-3 pens)",
+   "top_scorer": [
+    {
+     "name": "Dieter Müller",
+     "team": "West Germany",
+     "goals": 4
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Rainer Bonhof",
+     "team": "West Germany",
+     "assists": 3
+    }
+   ],
+   "player_of_season": null,
+   "notes": "Four-team finals tournament."
+  },
+  {
+   "season": "1980",
+   "status": "played",
+   "winner": "West Germany",
+   "runner_up": "Belgium",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Klaus Allofs",
+     "team": "West Germany",
+     "goals": 3
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Antonín Panenka",
+     "team": "Czechoslovakia",
+     "assists": 2
+    },
+    {
+     "name": "Hansi Müller",
+     "team": "West Germany",
+     "assists": 2
+    },
+    {
+     "name": "Bernd Schuster",
+     "team": "West Germany",
+     "assists": 2
+    }
+   ],
+   "player_of_season": null
+  },
+  {
+   "season": "1984",
+   "status": "played",
+   "winner": "France",
+   "runner_up": "Spain",
+   "final_score": "2-0",
+   "top_scorer": [
+    {
+     "name": "Michel Platini",
+     "team": "France",
+     "goals": 9
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Jean Tigana",
+     "team": "France",
+     "assists": 3
+    }
+   ],
+   "player_of_season": null
+  },
+  {
+   "season": "1988",
+   "status": "played",
+   "winner": "Netherlands",
+   "runner_up": "Soviet Union",
+   "final_score": "2-0",
+   "top_scorer": [
+    {
+     "name": "Marco van Basten",
+     "team": "Netherlands",
+     "goals": 5
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Ihor Belanov",
+     "team": "Soviet Union",
+     "assists": 3
+    }
+   ],
+   "player_of_season": null
+  },
+  {
+   "season": "1992",
+   "status": "played",
+   "winner": "Denmark",
+   "runner_up": "Germany",
+   "final_score": "2-0",
+   "top_scorer": [
+    {
+     "name": "Dennis Bergkamp",
+     "team": "Netherlands",
+     "goals": 3
+    },
+    {
+     "name": "Tomas Brolin",
+     "team": "Sweden",
+     "goals": 3
+    },
+    {
+     "name": "Henrik Larsen",
+     "team": "Denmark",
+     "goals": 3
+    },
+    {
+     "name": "Karl-Heinz Riedle",
+     "team": "Germany",
+     "goals": 3
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Brian Laudrup",
+     "team": "Denmark",
+     "assists": 2
+    },
+    {
+     "name": "Flemming Povlsen",
+     "team": "Denmark",
+     "assists": 2
+    },
+    {
+     "name": "Frank Rijkaard",
+     "team": "Netherlands",
+     "assists": 2
+    },
+    {
+     "name": "Ronald Koeman",
+     "team": "Netherlands",
+     "assists": 2
+    },
+    {
+     "name": "Martin Dahlin",
+     "team": "Sweden",
+     "assists": 2
+    },
+    {
+     "name": "Anders Limpar",
+     "team": "Sweden",
+     "assists": 2
+    },
+    {
+     "name": "Klas Ingesson",
+     "team": "Sweden",
+     "assists": 2
+    }
+   ],
+   "player_of_season": null
+  },
+  {
+   "season": "1996",
+   "status": "played",
+   "winner": "Germany",
+   "runner_up": "Czech Republic",
+   "final_score": "2-1 (a.e.t.)",
+   "top_scorer": [
+    {
+     "name": "Alan Shearer",
+     "team": "England",
+     "goals": 5
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Youri Djorkaeff",
+     "team": "France",
+     "assists": 3
+    },
+    {
+     "name": "Karel Poborský",
+     "team": "Czech Republic",
+     "assists": 3
+    }
+   ],
+   "player_of_season": {
+    "name": "Matthias Sammer",
+    "team": "Germany"
+   },
+   "notes": "Won by a golden goal (Oliver Bierhoff) in extra time."
+  },
+  {
+   "season": "2000",
+   "status": "played",
+   "winner": "France",
+   "runner_up": "Italy",
+   "final_score": "2-1 (a.e.t.)",
+   "top_scorer": [
+    {
+     "name": "Patrick Kluivert",
+     "team": "Netherlands",
+     "goals": 5
+    },
+    {
+     "name": "Savo Milošević",
+     "team": "Yugoslavia",
+     "goals": 5
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Ljubinko Drulović",
+     "team": "Yugoslavia",
+     "assists": 4
+    }
+   ],
+   "player_of_season": {
+    "name": "Zinedine Zidane",
+    "team": "France"
+   },
+   "notes": "Won by a golden goal (David Trezeguet) in extra time."
+  },
+  {
+   "season": "2004",
+   "status": "played",
+   "winner": "Greece",
+   "runner_up": "Portugal",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Milan Baroš",
+     "team": "Czech Republic",
+     "goals": 5
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Karel Poborský",
+     "team": "Czech Republic",
+     "assists": 4
+    }
+   ],
+   "player_of_season": {
+    "name": "Theodoros Zagorakis",
+    "team": "Greece"
+   }
+  },
+  {
+   "season": "2008",
+   "status": "played",
+   "winner": "Spain",
+   "runner_up": "Germany",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "David Villa",
+     "team": "Spain",
+     "goals": 4
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Hamit Altıntop",
+     "team": "Turkey",
+     "assists": 3
+    },
+    {
+     "name": "Wesley Sneijder",
+     "team": "Netherlands",
+     "assists": 3
+    },
+    {
+     "name": "Cesc Fàbregas",
+     "team": "Spain",
+     "assists": 3
+    }
+   ],
+   "player_of_season": {
+    "name": "Xavi",
+    "team": "Spain"
+   }
+  },
+  {
+   "season": "2012",
+   "status": "played",
+   "winner": "Spain",
+   "runner_up": "Italy",
+   "final_score": "4-0",
+   "top_scorer": [
+    {
+     "name": "Fernando Torres",
+     "team": "Spain",
+     "goals": 3
+    },
+    {
+     "name": "Mario Gómez",
+     "team": "Germany",
+     "goals": 3
+    },
+    {
+     "name": "Alan Dzagoev",
+     "team": "Russia",
+     "goals": 3
+    },
+    {
+     "name": "Mario Mandžukić",
+     "team": "Croatia",
+     "goals": 3
+    },
+    {
+     "name": "Mario Balotelli",
+     "team": "Italy",
+     "goals": 3
+    },
+    {
+     "name": "Cristiano Ronaldo",
+     "team": "Portugal",
+     "goals": 3
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Steven Gerrard",
+     "team": "England",
+     "assists": 3
+    },
+    {
+     "name": "Andrey Arshavin",
+     "team": "Russia",
+     "assists": 3
+    },
+    {
+     "name": "Mesut Özil",
+     "team": "Germany",
+     "assists": 3
+    },
+    {
+     "name": "David Silva",
+     "team": "Spain",
+     "assists": 3
+    }
+   ],
+   "player_of_season": {
+    "name": "Andrés Iniesta",
+    "team": "Spain"
+   },
+   "notes": "Six players on 3 goals; Fernando Torres won the Golden Boot on the assists/minutes tie-breaker."
+  },
+  {
+   "season": "2016",
+   "status": "played",
+   "winner": "Portugal",
+   "runner_up": "France",
+   "final_score": "1-0 (a.e.t.)",
+   "top_scorer": [
+    {
+     "name": "Antoine Griezmann",
+     "team": "France",
+     "goals": 6
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Eden Hazard",
+     "team": "Belgium",
+     "assists": 4
+    },
+    {
+     "name": "Aaron Ramsey",
+     "team": "Wales",
+     "assists": 4
+    }
+   ],
+   "player_of_season": {
+    "name": "Antoine Griezmann",
+    "team": "France"
+   }
+  },
+  {
+   "season": "2020",
+   "name_then": "UEFA Euro 2020",
+   "status": "played",
+   "winner": "Italy",
+   "runner_up": "England",
+   "final_score": "1-1 (a.e.t.) (3-2 pens)",
+   "top_scorer": [
+    {
+     "name": "Cristiano Ronaldo",
+     "team": "Portugal",
+     "goals": 5
+    },
+    {
+     "name": "Patrik Schick",
+     "team": "Czech Republic",
+     "goals": 5
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Steven Zuber",
+     "team": "Switzerland",
+     "assists": 4
+    }
+   ],
+   "player_of_season": {
+    "name": "Gianluigi Donnarumma",
+    "team": "Italy"
+   },
+   "notes": "Edition named Euro 2020, played June-July 2021 (COVID-19 postponement); final 11 July 2021. Ronaldo won the Golden Boot on the assists tie-breaker. Edition \"Euro 2020\", played June-July 2021 (delayed by COVID-19); final 11 July 2021."
+  },
+  {
+   "season": "2024",
+   "status": "played",
+   "winner": "Spain",
+   "runner_up": "England",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Cody Gakpo",
+     "team": "Netherlands",
+     "goals": 3
+    },
+    {
+     "name": "Harry Kane",
+     "team": "England",
+     "goals": 3
+    },
+    {
+     "name": "Georges Mikautadze",
+     "team": "Georgia",
+     "goals": 3
+    },
+    {
+     "name": "Jamal Musiala",
+     "team": "Germany",
+     "goals": 3
+    },
+    {
+     "name": "Dani Olmo",
+     "team": "Spain",
+     "goals": 3
+    },
+    {
+     "name": "Ivan Schranz",
+     "team": "Slovakia",
+     "goals": 3
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Lamine Yamal",
+     "team": "Spain",
+     "assists": 4
+    }
+   ],
+   "player_of_season": {
+    "name": "Rodri",
+    "team": "Spain"
+   },
+   "notes": "Six players tied on 3 goals; UEFA shared the top-scorer award."
+  }
+ ]
+}

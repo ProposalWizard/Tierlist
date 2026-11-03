@@ -1,0 +1,365 @@
+{
+  "id": "pr-wonderkids-u20",
+  "series": "Power ranking",
+  "title": "Power ranking: the best wonderkids under 20",
+  "sources": [
+    "https://africasoccer.com/?p=630513",
+    "https://www.realmadrid.com/es-ES/noticias/futbol/primer-equipo/actualidad/diomande-endrick-finalistas-al-golden-boy",
+    "https://www.psg.fr/en/content/warren-zaire-emery-finalist-for-golden-boy-2026-golden-boy-2026-psg-award-2026-2027",
+    "https://emisorasunidas.com/deportes/2026/10/05/tuttosport-revela-a-los-25-finalistas-del-golden-boy-2026/",
+    "https://www.nbcsports.com/soccer/news/premier-league-2026-27-scoring-leaders-the-race-for-the-golden-boot-begins",
+    "https://www.soccernews.com/english-premier-league/golden-boot/",
+    "https://www.nbcsports.com/soccer/news/premier-league-table-for-2026-27-season",
+    "https://caughtoffside.com/2026/10/20/premier-league-club-relaxed-manager-future-man-united",
+    "https://santamariatimes.com/ap/sports/ferran-torres-scores-in-extra-time-as-spain-beats-argentina-1-0-to-win-the/article_a8e21e5c-8c25-54ce-b065-7ebb7225d56f.html",
+    "https://www.nbcmiami.com/world-cup/spain-argentina-final-messi-yamal-score/3835882/?amp=1",
+    "https://amp.foxsports.com/stories/soccer/2026-fifa-world-cup-every-individual-award-winner",
+    "https://blog.wego.com/who-won-the-fifa-world-cup/",
+    "https://m.allfootballapp.com/news/La-Liga/Kick-Off-Harry-Kane-wins-2026-Ballon-dOr-Yamal-wins-Kopa-Trophy-three-times-in-a-row/5736216",
+    "https://www.beinsports.com/en-us/soccer/articles/live-ballon-d-or-2026-winners-and-all-awards-2026-10-26",
+    "https://bulinews.com/revealed-full-men-ballon-top-10-rankings",
+    "https://blueprint.ng/?p=856976",
+    "https://yen.com.gh/sports/football/314521-ballon-d-2026-official-top-10-rankings-harry-kane-beats-mbappe-yamal/",
+    "https://www.soccernews.com/kane-scoops-first-ballon-dor-after-pipping-yamal-mbappe/407033/",
+    "https://www.beinsports.com/en-us/soccer/bundesliga/articles/bayern-youngster-karl-will-not-rush-return-for-2026-27-season-2026-07-01",
+    "https://en.wikipedia.org/wiki/Lamine_Yamal",
+    "https://en.wikipedia.org/wiki/Pau_Cubars%C3%AD"
+  ],
+  "checked": "Everyone born after 3 Nov 2006 (Wikipedia dates of birth). All ten are 2026 Golden Boy finalists or Yamal (Africa Soccer list; Real Madrid, PSG pages). Karl youngest finalist, injured for the World Cup, back with a league goal (Africa Soccer, beIN, The Analyst). Kostoulas 3 PL goals, Vuskovic 1 (NBC). Cubarsi World Cup winner and Best Young Player (Fox, Wego). Yamal 3rd in Ballon d'Or, Kopa x3 (Bulinews, All Football, beIN).",
+  "clubs": {
+    "bar": {
+      "name": "Barcelona",
+      "short": "BAR",
+      "c1": "#a50044",
+      "c2": "#004d98",
+      "pattern": "stripes"
+    },
+    "bay": {
+      "name": "Bayern Munich",
+      "short": "FCB",
+      "c1": "#dc052d",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "bha": {
+      "name": "Brighton",
+      "short": "BHA",
+      "c1": "#0057b8",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    },
+    "bou": {
+      "name": "Bournemouth",
+      "short": "BOU",
+      "c1": "#da291c",
+      "c2": "#000000",
+      "pattern": "stripes"
+    },
+    "che": {
+      "name": "Chelsea",
+      "short": "CHE",
+      "c1": "#034694",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "fio": {
+      "name": "Fiorentina",
+      "short": "FIO",
+      "c1": "#592c82",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "mci": {
+      "name": "Manchester City",
+      "short": "MCI",
+      "c1": "#6cabdd",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "rom": {
+      "name": "Roma",
+      "short": "ROM",
+      "c1": "#8e1f2f",
+      "c2": "#f0bc42",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "cubarsi": {
+      "name": "Pau Cubarsí",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#2b1d14"
+      ],
+      "beard": "none",
+      "kit": "bar"
+    },
+    "estevao": {
+      "name": "Estêvão",
+      "skin": "tan",
+      "hair": [
+        "curlytop",
+        "#111111"
+      ],
+      "beard": "none",
+      "kit": "che"
+    },
+    "kostoulas": {
+      "name": "Charalampos Kostoulas",
+      "skin": "light",
+      "hair": [
+        "messy",
+        "#2b1d14"
+      ],
+      "beard": "none",
+      "kit": "bha"
+    },
+    "yamal": {
+      "name": "Lamine Yamal",
+      "skin": "brown",
+      "hair": [
+        "curlytop",
+        "#151515"
+      ],
+      "beard": "none",
+      "kit": "bar"
+    }
+  },
+  "lines": [
+    {
+      "text": "The best footballers in the world who are still teenagers. Under twenty, ranked on what they're actually doing.",
+      "scene": {
+        "type": "title",
+        "heading": "WONDERKIDS U20",
+        "sub": "Power ranking · November 2026",
+        "pill": "REAL FORM ONLY",
+        "person": "yamal"
+      }
+    },
+    {
+      "text": "Ten, Lennart Karl, the youngest Golden Boy finalist. Nine, Rodrigo Mora. Eight, Franco Mastantuono. Both finalists too.",
+      "scene": {
+        "type": "list",
+        "title": "U20 power ranking",
+        "rows": [
+          {
+            "pos": 10,
+            "name": "Lennart Karl",
+            "value": "Bayern",
+            "club": "bay",
+            "hl": true
+          },
+          {
+            "pos": 9,
+            "name": "Rodrigo Mora",
+            "value": "Roma",
+            "club": "rom",
+            "hl": true
+          },
+          {
+            "pos": 8,
+            "name": "Franco Mastantuono",
+            "value": "Fiorentina",
+            "club": "fio",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Seven, Junior Kroupi of Bournemouth. Six, Ayyoub Bouaddi, in midfield for a City side second in the league.",
+      "scene": {
+        "type": "list",
+        "title": "U20 power ranking",
+        "rows": [
+          {
+            "pos": 10,
+            "name": "Lennart Karl",
+            "value": "Bayern",
+            "club": "bay"
+          },
+          {
+            "pos": 9,
+            "name": "Rodrigo Mora",
+            "value": "Roma",
+            "club": "rom"
+          },
+          {
+            "pos": 8,
+            "name": "Franco Mastantuono",
+            "value": "Fiorentina",
+            "club": "fio"
+          },
+          {
+            "pos": 7,
+            "name": "Junior Kroupi",
+            "value": "Bournemouth",
+            "club": "bou",
+            "hl": true
+          },
+          {
+            "pos": 6,
+            "name": "Ayyoub Bouaddi",
+            "value": "Man City",
+            "club": "mci",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Five, Luka Vušković, scoring from defence for Brighton. Four, Chelsea's Estêvão.",
+      "scene": {
+        "type": "list",
+        "title": "U20 power ranking",
+        "rows": [
+          {
+            "pos": 10,
+            "name": "Lennart Karl",
+            "value": "Bayern",
+            "club": "bay"
+          },
+          {
+            "pos": 9,
+            "name": "Rodrigo Mora",
+            "value": "Roma",
+            "club": "rom"
+          },
+          {
+            "pos": 8,
+            "name": "Franco Mastantuono",
+            "value": "Fiorentina",
+            "club": "fio"
+          },
+          {
+            "pos": 7,
+            "name": "Junior Kroupi",
+            "value": "Bournemouth",
+            "club": "bou"
+          },
+          {
+            "pos": 6,
+            "name": "Ayyoub Bouaddi",
+            "value": "Man City",
+            "club": "mci"
+          },
+          {
+            "pos": 5,
+            "name": "Luka Vušković",
+            "value": "Brighton",
+            "club": "bha",
+            "hl": true
+          },
+          {
+            "pos": 4,
+            "name": "Estêvão",
+            "value": "Chelsea",
+            "club": "che",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Number three. Charalampos Kostoulas.",
+      "scene": {
+        "type": "person",
+        "person": "kostoulas",
+        "label": "NUMBER 3",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Three Premier League goals for a Brighton team sitting third.",
+      "scene": {
+        "type": "stats",
+        "title": "Kostoulas, 2026-27",
+        "items": [
+          {
+            "n": "3",
+            "l": "PL goals"
+          },
+          {
+            "n": "3rd",
+            "l": "Brighton in the table"
+          }
+        ],
+        "person": "kostoulas"
+      }
+    },
+    {
+      "text": "Number two. Pau Cubarsí.",
+      "scene": {
+        "type": "person",
+        "person": "cubarsi",
+        "label": "NUMBER 2",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "A World Cup winner as a teenager, and the tournament's Best Young Player.",
+      "scene": {
+        "type": "trophies",
+        "items": [
+          {
+            "kind": "worldcup",
+            "label": "World Cup 2026"
+          },
+          {
+            "kind": "cup",
+            "label": "Best Young Player"
+          }
+        ],
+        "person": "cubarsi"
+      }
+    },
+    {
+      "text": "And number one. Obviously. Lamine Yamal.",
+      "scene": {
+        "type": "person",
+        "person": "yamal",
+        "label": "NUMBER 1",
+        "mood": "happy",
+        "stamp": "NUMBER 1"
+      }
+    },
+    {
+      "text": "World champion, third in the Ballon d'Or, and three Kopa Trophies in a row. He's nineteen.",
+      "scene": {
+        "type": "stats",
+        "title": "Yamal at 19",
+        "items": [
+          {
+            "n": "3rd",
+            "l": "Ballon d'Or"
+          },
+          {
+            "n": "3",
+            "l": "Kopa Trophies"
+          },
+          {
+            "n": "1",
+            "l": "World Cup"
+          }
+        ],
+        "person": "yamal"
+      }
+    },
+    {
+      "text": "Who is the next one? Tell us who we missed.",
+      "scene": {
+        "type": "stamp",
+        "text": "WHO'S NEXT?",
+        "person": "estevao",
+        "color": "white"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

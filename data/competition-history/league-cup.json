@@ -1,0 +1,1372 @@
+{
+ "competition": "League Cup",
+ "slug": "league-cup",
+ "kind": "cup",
+ "lineage_note": "Football League Cup from 1960-61, now the EFL Cup (sponsor names in name_then). Two-legged finals 1961-1966, single match at Wembley from 1967; replays until 1997, penalties since. Season label = the season the final ended (final played in the spring of the second year). Top scorer = most goals across all rounds, from each season's Wikipedia table. 1988-89 to 2018-19 top scorers come from each season's Wikipedia infobox (cited there to worldfootball.net / ESPN); 1987-88 has no top scorer on any source reached, so the run starts 1988-89. Top assister = most assists across all rounds: FBref 2014-15 to 2020-21, FotMob (Opta) 2021-22 on (FotMob's 2020-21 data covers only a few matches).",
+ "history_from": "1960-61",
+ "history_to": "2025-26",
+ "field_from": {
+  "runner_up": "1960-61",
+  "final_score": "1960-61",
+  "top_scorer": "1988-89",
+  "top_assister": "2014-15",
+  "player_of_season": "1989-90"
+ },
+ "player_of_season_award": "Alan Hardaker Trophy (man of the match in the League Cup final), awarded every year since the 1990 final.",
+ "sources": [
+  "https://en.wikipedia.org/wiki/List_of_EFL_Cup_finals",
+  "https://www.rsssf.org/tablese/engleagcuphist.html",
+  "https://en.wikipedia.org/wiki/Alan_Hardaker_Trophy",
+  "https://en.wikipedia.org/wiki/EFL_Cup",
+  "https://www.fotmob.com/leagues/133/stats/efl-cup",
+  "https://www.espn.com/soccer/stats/_/league/ENG.LEAGUE_CUP"
+ ],
+ "top_scorer_source": "Wikipedia season pages (infobox 'top goal scorer', 1988-89 to 2018-19; tables 2019-20 on). 2021-22 to 2025-26 match FotMob; 2022-23 to 2025-26 also match ESPN.",
+ "top_assister_source": "2014-15 to 2020-21: FBref League Cup season pages (2014-15 tie may include more players on 2: FBref's summary lists Marshall and Fàbregas then '...'). 2021-22 on: FotMob (Opta), cross-checked with ESPN for 2021-22, 2022-23, 2023-24 and 2025-26. FBref has no League Cup tables before 2014-15, so the run starts 2014-15.",
+ "seasons": [
+  {
+   "season": "1960-61",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Aston Villa",
+   "runner_up": "Rotherham United",
+   "final_score": "0-2, 3-0 (a.e.t.); 3-2 on aggregate",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Two-legged final (winner's score first in each leg)."
+  },
+  {
+   "season": "1961-62",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Norwich City",
+   "runner_up": "Rochdale",
+   "final_score": "3-0, 1-0; 4-0 on aggregate",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Two-legged final (winner's score first in each leg)."
+  },
+  {
+   "season": "1962-63",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Birmingham City",
+   "runner_up": "Aston Villa",
+   "final_score": "3-1, 0-0; 3-1 on aggregate",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Two-legged final (winner's score first in each leg)."
+  },
+  {
+   "season": "1963-64",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Leicester City",
+   "runner_up": "Stoke City",
+   "final_score": "1-1, 3-2; 4-3 on aggregate",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Two-legged final (winner's score first in each leg)."
+  },
+  {
+   "season": "1964-65",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Chelsea",
+   "runner_up": "Leicester City",
+   "final_score": "3-2, 0-0; 3-2 on aggregate",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Two-legged final (winner's score first in each leg)."
+  },
+  {
+   "season": "1965-66",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "West Bromwich Albion",
+   "runner_up": "West Ham United",
+   "final_score": "1-2, 4-1; 5-3 on aggregate",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Two-legged final (winner's score first in each leg)."
+  },
+  {
+   "season": "1966-67",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Queens Park Rangers",
+   "runner_up": "West Bromwich Albion",
+   "final_score": "3-2",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1967-68",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Leeds United",
+   "runner_up": "Arsenal",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1968-69",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Swindon Town",
+   "runner_up": "Arsenal",
+   "final_score": "3-1 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1969-70",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Manchester City",
+   "runner_up": "West Bromwich Albion",
+   "final_score": "2-1 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1970-71",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Tottenham Hotspur",
+   "runner_up": "Aston Villa",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1971-72",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Stoke City",
+   "runner_up": "Chelsea",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1972-73",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Tottenham Hotspur",
+   "runner_up": "Norwich City",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1973-74",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Wolverhampton Wanderers",
+   "runner_up": "Manchester City",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1974-75",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Aston Villa",
+   "runner_up": "Norwich City",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1975-76",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Manchester City",
+   "runner_up": "Newcastle United",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1976-77",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Aston Villa",
+   "runner_up": "Everton",
+   "final_score": "0-0, replay 1-1 (a.e.t.), replay 3-2 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final replayed after a draw (two replays)."
+  },
+  {
+   "season": "1977-78",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Nottingham Forest",
+   "runner_up": "Liverpool",
+   "final_score": "0-0 (a.e.t.), replay 1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final replayed after a draw."
+  },
+  {
+   "season": "1978-79",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Nottingham Forest",
+   "runner_up": "Southampton",
+   "final_score": "3-2",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1979-80",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Wolverhampton Wanderers",
+   "runner_up": "Nottingham Forest",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1980-81",
+   "name_then": "Football League Cup",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "West Ham United",
+   "final_score": "1-1 (a.e.t.), replay 2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final replayed after a draw."
+  },
+  {
+   "season": "1981-82",
+   "name_then": "Milk Cup",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Tottenham Hotspur",
+   "final_score": "3-1 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1982-83",
+   "name_then": "Milk Cup",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Manchester United",
+   "final_score": "2-1 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1983-84",
+   "name_then": "Milk Cup",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Everton",
+   "final_score": "0-0 (a.e.t.), replay 1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "Final replayed after a draw."
+  },
+  {
+   "season": "1984-85",
+   "name_then": "Milk Cup",
+   "status": "played",
+   "winner": "Norwich City",
+   "runner_up": "Sunderland",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1985-86",
+   "name_then": "Milk Cup",
+   "status": "played",
+   "winner": "Oxford United",
+   "runner_up": "Queens Park Rangers",
+   "final_score": "3-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1986-87",
+   "name_then": "Littlewoods Challenge Cup",
+   "status": "played",
+   "winner": "Arsenal",
+   "runner_up": "Liverpool",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1987-88",
+   "name_then": "Littlewoods Challenge Cup",
+   "status": "played",
+   "winner": "Luton Town",
+   "runner_up": "Arsenal",
+   "final_score": "3-2",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1988-89",
+   "name_then": "Littlewoods Challenge Cup",
+   "status": "played",
+   "winner": "Nottingham Forest",
+   "runner_up": "Luton Town",
+   "final_score": "3-1",
+   "top_scorer": [
+    {
+     "name": "Nigel Clough",
+     "team": "Nottingham Forest",
+     "goals": 7
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1989-90",
+   "name_then": "Littlewoods Challenge Cup",
+   "status": "played",
+   "winner": "Nottingham Forest",
+   "runner_up": "Oldham Athletic",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Andy Ritchie",
+     "team": "Oldham Athletic",
+     "goals": 10
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Des Walker",
+    "team": "Nottingham Forest"
+   }
+  },
+  {
+   "season": "1990-91",
+   "name_then": "Rumbelows Cup",
+   "status": "played",
+   "winner": "Sheffield Wednesday",
+   "runner_up": "Manchester United",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Paul Gascoigne",
+     "team": "Tottenham Hotspur",
+     "goals": 6
+    },
+    {
+     "name": "Mark Hughes",
+     "team": "Manchester United",
+     "goals": 6
+    },
+    {
+     "name": "Lee Sharpe",
+     "team": "Manchester United",
+     "goals": 6
+    },
+    {
+     "name": "Alan Shearer",
+     "team": "Southampton",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Nigel Pearson",
+    "team": "Sheffield Wednesday"
+   }
+  },
+  {
+   "season": "1991-92",
+   "name_then": "Rumbelows Cup",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Nottingham Forest",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "John Aldridge",
+     "team": "Tranmere Rovers",
+     "goals": 8
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Brian McClair",
+    "team": "Manchester United"
+   }
+  },
+  {
+   "season": "1992-93",
+   "name_then": "Coca-Cola Cup",
+   "status": "played",
+   "winner": "Arsenal",
+   "runner_up": "Sheffield Wednesday",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Chris Kiwomya",
+     "team": "Ipswich Town",
+     "goals": 6
+    },
+    {
+     "name": "Mark Bright",
+     "team": "Sheffield Wednesday",
+     "goals": 6
+    },
+    {
+     "name": "Alan Shearer",
+     "team": "Blackburn Rovers",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Paul Merson",
+    "team": "Arsenal"
+   }
+  },
+  {
+   "season": "1993-94",
+   "name_then": "Coca-Cola Cup",
+   "status": "played",
+   "winner": "Aston Villa",
+   "runner_up": "Manchester United",
+   "final_score": "3-1",
+   "top_scorer": [
+    {
+     "name": "John Aldridge",
+     "team": "Tranmere Rovers",
+     "goals": 7
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Kevin Richardson",
+    "team": "Aston Villa"
+   }
+  },
+  {
+   "season": "1994-95",
+   "name_then": "Coca-Cola Cup",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Bolton Wanderers",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Jan Åge Fjørtoft",
+     "team": "Swindon Town",
+     "goals": 9
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Steve McManaman",
+    "team": "Liverpool"
+   }
+  },
+  {
+   "season": "1995-96",
+   "name_then": "Coca-Cola Cup",
+   "status": "played",
+   "winner": "Aston Villa",
+   "runner_up": "Leeds United",
+   "final_score": "3-0",
+   "top_scorer": [
+    {
+     "name": "Ian Wright",
+     "team": "Arsenal",
+     "goals": 7
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Andy Townsend",
+    "team": "Aston Villa"
+   }
+  },
+  {
+   "season": "1996-97",
+   "name_then": "Coca-Cola Cup",
+   "status": "played",
+   "winner": "Leicester City",
+   "runner_up": "Middlesbrough",
+   "final_score": "1-1 (a.e.t.), replay 1-0 (a.e.t.)",
+   "top_scorer": [
+    {
+     "name": "Fabrizio Ravanelli",
+     "team": "Middlesbrough",
+     "goals": 9
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Steve Walsh",
+    "team": "Leicester City"
+   },
+   "notes": "Final replayed after a draw."
+  },
+  {
+   "season": "1997-98",
+   "name_then": "Coca-Cola Cup",
+   "status": "played",
+   "winner": "Chelsea",
+   "runner_up": "Middlesbrough",
+   "final_score": "2-0 (a.e.t.)",
+   "top_scorer": [
+    {
+     "name": "John Hartson",
+     "team": "West Ham United",
+     "goals": 6
+    },
+    {
+     "name": "Joey Beauchamp",
+     "team": "Oxford United",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Dennis Wise",
+    "team": "Chelsea"
+   }
+  },
+  {
+   "season": "1998-99",
+   "name_then": "Worthington Cup",
+   "status": "played",
+   "winner": "Tottenham Hotspur",
+   "runner_up": "Leicester City",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Gianluca Vialli",
+     "team": "Chelsea",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Allan Nielsen",
+    "team": "Tottenham Hotspur"
+   }
+  },
+  {
+   "season": "1999-00",
+   "name_then": "Worthington Cup",
+   "status": "played",
+   "winner": "Leicester City",
+   "runner_up": "Tranmere Rovers",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "David Kelly",
+     "team": "Tranmere Rovers",
+     "goals": 8
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Matt Elliott",
+    "team": "Leicester City"
+   }
+  },
+  {
+   "season": "2000-01",
+   "name_then": "Worthington Cup",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Birmingham City",
+   "final_score": "1-1 (5-4 pens)",
+   "top_scorer": [
+    {
+     "name": "Robbie Fowler",
+     "team": "Liverpool",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Robbie Fowler",
+    "team": "Liverpool"
+   },
+   "notes": "Won on penalties after extra time."
+  },
+  {
+   "season": "2001-02",
+   "name_then": "Worthington Cup",
+   "status": "played",
+   "winner": "Blackburn Rovers",
+   "runner_up": "Tottenham Hotspur",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Matt Jansen",
+     "team": "Blackburn Rovers",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Brad Friedel",
+    "team": "Blackburn Rovers"
+   }
+  },
+  {
+   "season": "2002-03",
+   "name_then": "Worthington Cup",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Manchester United",
+   "final_score": "2-0",
+   "top_scorer": [
+    {
+     "name": "Nathan Ellington",
+     "team": "Wigan Athletic",
+     "goals": 5
+    },
+    {
+     "name": "Gary McSheffrey",
+     "team": "Coventry City",
+     "goals": 5
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Jerzy Dudek",
+    "team": "Liverpool"
+   }
+  },
+  {
+   "season": "2003-04",
+   "name_then": "Carling Cup",
+   "status": "played",
+   "winner": "Middlesbrough",
+   "runner_up": "Bolton Wanderers",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Juan Pablo Ángel",
+     "team": "Aston Villa",
+     "goals": 7
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Boudewijn Zenden",
+    "team": "Middlesbrough"
+   }
+  },
+  {
+   "season": "2004-05",
+   "name_then": "Carling Cup",
+   "status": "played",
+   "winner": "Chelsea",
+   "runner_up": "Liverpool",
+   "final_score": "3-2 (a.e.t.)",
+   "top_scorer": [
+    {
+     "name": "Jermain Defoe",
+     "team": "Tottenham Hotspur",
+     "goals": 5
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "John Terry",
+    "team": "Chelsea"
+   }
+  },
+  {
+   "season": "2005-06",
+   "name_then": "Carling Cup",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Wigan Athletic",
+   "final_score": "4-0",
+   "top_scorer": [
+    {
+     "name": "Louis Saha",
+     "team": "Manchester United",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Wayne Rooney",
+    "team": "Manchester United"
+   }
+  },
+  {
+   "season": "2006-07",
+   "name_then": "Carling Cup",
+   "status": "played",
+   "winner": "Chelsea",
+   "runner_up": "Arsenal",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Jermaine Easter",
+     "team": "Wycombe Wanderers",
+     "goals": 6
+    },
+    {
+     "name": "Júlio Baptista",
+     "team": "Arsenal",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Didier Drogba",
+    "team": "Chelsea"
+   }
+  },
+  {
+   "season": "2007-08",
+   "name_then": "Carling Cup",
+   "status": "played",
+   "winner": "Tottenham Hotspur",
+   "runner_up": "Chelsea",
+   "final_score": "2-1 (a.e.t.)",
+   "top_scorer": [
+    {
+     "name": "Eduardo",
+     "team": "Arsenal",
+     "goals": 4
+    },
+    {
+     "name": "Frank Lampard",
+     "team": "Chelsea",
+     "goals": 4
+    },
+    {
+     "name": "Michael Mifsud",
+     "team": "Coventry City",
+     "goals": 4
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Jonathan Woodgate",
+    "team": "Tottenham Hotspur"
+   }
+  },
+  {
+   "season": "2008-09",
+   "name_then": "Carling Cup",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Tottenham Hotspur",
+   "final_score": "0-0 (4-1 pens)",
+   "top_scorer": [
+    {
+     "name": "Nathan Ellington",
+     "team": "Watford",
+     "goals": 6
+    },
+    {
+     "name": "Roman Pavlyuchenko",
+     "team": "Tottenham Hotspur",
+     "goals": 6
+    },
+    {
+     "name": "Carlos Tevez",
+     "team": "Manchester United",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Ben Foster",
+    "team": "Manchester United"
+   },
+   "notes": "Won on penalties after extra time."
+  },
+  {
+   "season": "2009-10",
+   "name_then": "Carling Cup",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Aston Villa",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Carlos Tevez",
+     "team": "Manchester City",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Antonio Valencia",
+    "team": "Manchester United"
+   }
+  },
+  {
+   "season": "2010-11",
+   "name_then": "Carling Cup",
+   "status": "played",
+   "winner": "Birmingham City",
+   "runner_up": "Arsenal",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Carlton Cole",
+     "team": "West Ham United",
+     "goals": 4
+    },
+    {
+     "name": "Scott Sinclair",
+     "team": "Swansea City",
+     "goals": 4
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Ben Foster",
+    "team": "Birmingham City"
+   }
+  },
+  {
+   "season": "2011-12",
+   "name_then": "Carling Cup",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Cardiff City",
+   "final_score": "2-2 (3-2 pens)",
+   "top_scorer": [
+    {
+     "name": "Jay Rodriguez",
+     "team": "Burnley",
+     "goals": 5
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Stewart Downing",
+    "team": "Liverpool"
+   },
+   "notes": "Won on penalties after extra time."
+  },
+  {
+   "season": "2012-13",
+   "name_then": "Capital One Cup",
+   "status": "played",
+   "winner": "Swansea City",
+   "runner_up": "Bradford City",
+   "final_score": "5-0",
+   "top_scorer": [
+    {
+     "name": "Theo Walcott",
+     "team": "Arsenal",
+     "goals": 5
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Nathan Dyer",
+    "team": "Swansea City"
+   }
+  },
+  {
+   "season": "2013-14",
+   "name_then": "Capital One Cup",
+   "status": "played",
+   "winner": "Manchester City",
+   "runner_up": "Sunderland",
+   "final_score": "3-1",
+   "top_scorer": [
+    {
+     "name": "Edin Džeko",
+     "team": "Manchester City",
+     "goals": 6
+    },
+    {
+     "name": "Álvaro Negredo",
+     "team": "Manchester City",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Samir Nasri",
+    "team": "Manchester City"
+   }
+  },
+  {
+   "season": "2014-15",
+   "name_then": "Capital One Cup",
+   "status": "played",
+   "winner": "Chelsea",
+   "runner_up": "Tottenham Hotspur",
+   "final_score": "2-0",
+   "top_scorer": [
+    {
+     "name": "Benik Afobe",
+     "team": "Milton Keynes Dons",
+     "goals": 6
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Mark Marshall",
+     "team": "Port Vale",
+     "assists": 2
+    },
+    {
+     "name": "Cesc Fàbregas",
+     "team": "Chelsea",
+     "assists": 2
+    }
+   ],
+   "player_of_season": {
+    "name": "John Terry",
+    "team": "Chelsea"
+   }
+  },
+  {
+   "season": "2015-16",
+   "name_then": "Capital One Cup",
+   "status": "played",
+   "winner": "Manchester City",
+   "runner_up": "Liverpool",
+   "final_score": "1-1 (3-1 pens)",
+   "top_scorer": [
+    {
+     "name": "Kevin De Bruyne",
+     "team": "Manchester City",
+     "goals": 5
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Florian Thauvin",
+     "team": "Newcastle United",
+     "assists": 3
+    },
+    {
+     "name": "David McGoldrick",
+     "team": "Ipswich Town",
+     "assists": 3
+    }
+   ],
+   "player_of_season": {
+    "name": "Vincent Kompany",
+    "team": "Manchester City"
+   },
+   "notes": "Won on penalties after extra time."
+  },
+  {
+   "season": "2016-17",
+   "name_then": "EFL Cup",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Southampton",
+   "final_score": "3-2",
+   "top_scorer": [
+    {
+     "name": "Zlatan Ibrahimović",
+     "team": "Manchester United",
+     "goals": 4
+    },
+    {
+     "name": "Daniel Sturridge",
+     "team": "Liverpool",
+     "goals": 4
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Ander Herrera",
+     "team": "Manchester United",
+     "assists": 3
+    },
+    {
+     "name": "Tjaronn Chery",
+     "team": "Queens Park Rangers",
+     "assists": 3
+    },
+    {
+     "name": "Henrikh Mkhitaryan",
+     "team": "Manchester United",
+     "assists": 3
+    }
+   ],
+   "player_of_season": {
+    "name": "Zlatan Ibrahimović",
+    "team": "Manchester United"
+   }
+  },
+  {
+   "season": "2017-18",
+   "name_then": "Carabao Cup",
+   "status": "played",
+   "winner": "Manchester City",
+   "runner_up": "Arsenal",
+   "final_score": "3-0",
+   "top_scorer": [
+    {
+     "name": "Josh Murphy",
+     "team": "Cardiff City",
+     "goals": 4
+    },
+    {
+     "name": "Samuel Sáiz",
+     "team": "Leeds United",
+     "goals": 4
+    },
+    {
+     "name": "Islam Slimani",
+     "team": "Leicester City",
+     "goals": 4
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "James Maddison",
+     "team": "Norwich City",
+     "assists": 3
+    },
+    {
+     "name": "Cesc Fàbregas",
+     "team": "Chelsea",
+     "assists": 3
+    }
+   ],
+   "player_of_season": {
+    "name": "Vincent Kompany",
+    "team": "Manchester City"
+   }
+  },
+  {
+   "season": "2018-19",
+   "name_then": "Carabao Cup",
+   "status": "played",
+   "winner": "Manchester City",
+   "runner_up": "Chelsea",
+   "final_score": "0-0 (4-3 pens)",
+   "top_scorer": [
+    {
+     "name": "Gabriel Jesus",
+     "team": "Manchester City",
+     "goals": 5
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Emiliano Buendía",
+     "team": "Norwich City",
+     "assists": 4
+    },
+    {
+     "name": "Robert Snodgrass",
+     "team": "West Ham United",
+     "assists": 4
+    }
+   ],
+   "player_of_season": {
+    "name": "Bernardo Silva",
+    "team": "Manchester City"
+   },
+   "notes": "Won on penalties after extra time."
+  },
+  {
+   "season": "2019-20",
+   "name_then": "Carabao Cup",
+   "status": "played",
+   "winner": "Manchester City",
+   "runner_up": "Aston Villa",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Liam Boyce",
+     "team": "Burton Albion",
+     "goals": 5
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Henri Lansbury",
+     "team": "Aston Villa",
+     "assists": 5
+    }
+   ],
+   "player_of_season": {
+    "name": "Phil Foden",
+    "team": "Manchester City"
+   }
+  },
+  {
+   "season": "2020-21",
+   "name_then": "Carabao Cup",
+   "status": "played",
+   "winner": "Manchester City",
+   "runner_up": "Tottenham Hotspur",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Tristan Abrahams",
+     "team": "Newport County",
+     "goals": 4
+    },
+    {
+     "name": "Sébastien Haller",
+     "team": "West Ham United",
+     "goals": 4
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Andriy Yarmolenko",
+     "team": "West Ham United",
+     "assists": 3
+    },
+    {
+     "name": "Jorge Grant",
+     "team": "Lincoln City",
+     "assists": 3
+    }
+   ],
+   "player_of_season": {
+    "name": "Riyad Mahrez",
+    "team": "Manchester City"
+   }
+  },
+  {
+   "season": "2021-22",
+   "name_then": "Carabao Cup",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Chelsea",
+   "final_score": "0-0 (11-10 pens)",
+   "top_scorer": [
+    {
+     "name": "Marcus Forss",
+     "team": "Brentford",
+     "goals": 5
+    },
+    {
+     "name": "Eddie Nketiah",
+     "team": "Arsenal",
+     "goals": 5
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Nicolas Pépé",
+     "team": "Arsenal",
+     "assists": 4
+    }
+   ],
+   "player_of_season": {
+    "name": "Virgil van Dijk",
+    "team": "Liverpool"
+   },
+   "notes": "Won on penalties after extra time."
+  },
+  {
+   "season": "2022-23",
+   "name_then": "Carabao Cup",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Newcastle United",
+   "final_score": "2-0",
+   "top_scorer": [
+    {
+     "name": "Marcus Rashford",
+     "team": "Manchester United",
+     "goals": 6
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Kieran Lee",
+     "team": "Bolton Wanderers",
+     "assists": 3
+    },
+    {
+     "name": "Fisayo Dele-Bashiru",
+     "team": "Sheffield Wednesday",
+     "assists": 3
+    }
+   ],
+   "player_of_season": {
+    "name": "Casemiro",
+    "team": "Manchester United"
+   }
+  },
+  {
+   "season": "2023-24",
+   "name_then": "Carabao Cup",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Chelsea",
+   "final_score": "1-0 (a.e.t.)",
+   "top_scorer": [
+    {
+     "name": "Morgan Rogers",
+     "team": "Middlesbrough",
+     "goals": 5
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Andrew Moran",
+     "team": "Blackburn Rovers",
+     "assists": 3
+    },
+    {
+     "name": "Pablo Sarabia",
+     "team": "Wolverhampton Wanderers",
+     "assists": 3
+    },
+    {
+     "name": "Daniel Barlaser",
+     "team": "Middlesbrough",
+     "assists": 3
+    },
+    {
+     "name": "Anass Zaroury",
+     "team": "Burnley",
+     "assists": 3
+    },
+    {
+     "name": "Marcus Harness",
+     "team": "Ipswich Town",
+     "assists": 3
+    },
+    {
+     "name": "Darwin Núñez",
+     "team": "Liverpool",
+     "assists": 3
+    },
+    {
+     "name": "Jarell Quansah",
+     "team": "Liverpool",
+     "assists": 3
+    },
+    {
+     "name": "Trent Alexander-Arnold",
+     "team": "Liverpool",
+     "assists": 3
+    }
+   ],
+   "player_of_season": {
+    "name": "Virgil van Dijk",
+    "team": "Liverpool"
+   }
+  },
+  {
+   "season": "2024-25",
+   "name_then": "Carabao Cup",
+   "status": "played",
+   "winner": "Newcastle United",
+   "runner_up": "Liverpool",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Cody Gakpo",
+     "team": "Liverpool",
+     "goals": 5
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Andrew Moran",
+     "team": "Stoke City",
+     "assists": 3
+    },
+    {
+     "name": "Rob Apter",
+     "team": "Blackpool",
+     "assists": 3
+    },
+    {
+     "name": "Dejan Kulusevski",
+     "team": "Tottenham Hotspur",
+     "assists": 3
+    },
+    {
+     "name": "Eberechi Eze",
+     "team": "Crystal Palace",
+     "assists": 3
+    },
+    {
+     "name": "Alejandro Garnacho",
+     "team": "Manchester United",
+     "assists": 3
+    }
+   ],
+   "player_of_season": {
+    "name": "Dan Burn",
+    "team": "Newcastle United"
+   }
+  },
+  {
+   "season": "2025-26",
+   "name_then": "Carabao Cup",
+   "status": "played",
+   "winner": "Manchester City",
+   "runner_up": "Arsenal",
+   "final_score": "2-0",
+   "top_scorer": [
+    {
+     "name": "Diego Gómez",
+     "team": "Brighton & Hove Albion",
+     "goals": 5
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Tom Watson",
+     "team": "Brighton & Hove Albion",
+     "assists": 3
+    }
+   ],
+   "player_of_season": {
+    "name": "Nico O'Reilly",
+    "team": "Manchester City"
+   }
+  }
+ ]
+}

@@ -1,0 +1,1644 @@
+{
+ "competition": "Champions League",
+ "slug": "champions-league",
+ "kind": "cup",
+ "lineage_note": "Europe's top club cup. 1955-56 to 1991-92 = European Champion Clubs' Cup (European Cup); 1992-93 on = UEFA Champions League (same competition, same trophy, same records). Top scorer uses UEFA's convention: goals in the main competition only (from 1992-93 the group/league phase to the final; qualifying and play-off rounds excluded; before 1992 every round counts). Top scorer values are kept only where two independent sources agree (Wikipedia's season list, RSSSF, UEFA's own statistics database); 1964-65 has three different answers (José Torres 11 / Torres and Eusébio 9 / Torres and Eusébio 6), so the continuous run starts 1965-66. Top assister = UEFA's official assist count (main competition only), which UEFA's statistics database holds without a break from 2001-02; nothing official exists before that (Opta figures quoted by The Analyst reach back to 1992-93 but disagree with UEFA's count and are not published as a full season-by-season list, so they are not used). Penalty-shoot-out finals were all 1-1/0-0/3-3 after extra time. 1973-74 needed a replay. Club names are the common English names used by UEFA/Wikipedia lists (e.g. Inter Milan, Bayern Munich, Red Star Belgrade).",
+ "history_from": "1955-56",
+ "history_to": "2025-26",
+ "field_from": {
+  "runner_up": "1955-56",
+  "final_score": "1955-56",
+  "top_scorer": "1965-66",
+  "top_assister": "2001-02",
+  "player_of_season": "1998-99"
+ },
+ "player_of_season_award": "UEFA Club Footballer of the Year 1998-99–2009-10 (UEFA Club Football Awards, voted by the Champions League coaches for the Champions League season); UEFA's official Player of the Match in the Champions League final 2010-11–2020-21 (no Champions-League-only season award existed then: UEFA Best Player in Europe covered all club and national-team football); UEFA Champions League Player of the Season 2021-22 on (voted by league-phase coaches and 55 ESM journalists). 1997-98 is left out: that year's Club Footballer award went to Ronaldo for Inter's UEFA Cup season, not the Champions League.",
+ "sources": [
+  "https://en.wikipedia.org/wiki/List_of_European_Cup_and_UEFA_Champions_League_finals",
+  "https://www.rsssf.org/ec/ec1stats.html",
+  "https://en.wikipedia.org/wiki/List_of_UEFA_Champions_League_top_scorers",
+  "https://www.rsssf.org/ec/ec1tops.html",
+  "https://compstats.uefa.com/v1/player-ranking?competitionId=1 (UEFA statistics: goals, assists)",
+  "https://en.wikipedia.org/wiki/UEFA_Champions_League#Awards",
+  "https://en.wikipedia.org/wiki/2025%E2%80%9326_UEFA_Champions_League",
+  "https://www.uefa.com/news-media/news/0250-0c50f41f3c36-73a920d50345-1000--uefa-club-football-awards/ (UEFA Club Footballer of the Year roll of honour)",
+  "https://en.wikipedia.org/wiki/UEFA_Club_Footballer_of_the_Year",
+  "https://editorial.uefa.com/resources/0282-18407a7a3056-fed61d05639b-1000/ucl_202223_finals_md13.pdf (UEFA Champions League Statistics Handbook 2022/23, Finals: Player of the match 2001-2023)",
+  "https://en.wikipedia.org/wiki/2011_UEFA_Champions_League_final (and each final's article to 2021: man of the match)"
+ ],
+ "seasons": [
+  {
+   "season": "1955-56",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Real Madrid",
+   "runner_up": "Reims",
+   "final_score": "4-3",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1956-57",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Real Madrid",
+   "runner_up": "Fiorentina",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1957-58",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Real Madrid",
+   "runner_up": "Milan",
+   "final_score": "3-2 (a.e.t.)",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1958-59",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Real Madrid",
+   "runner_up": "Reims",
+   "final_score": "2-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1959-60",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Real Madrid",
+   "runner_up": "Eintracht Frankfurt",
+   "final_score": "7-3",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1960-61",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Benfica",
+   "runner_up": "Barcelona",
+   "final_score": "3-2",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1961-62",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Benfica",
+   "runner_up": "Real Madrid",
+   "final_score": "5-3",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1962-63",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Milan",
+   "runner_up": "Benfica",
+   "final_score": "2-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1963-64",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Inter Milan",
+   "runner_up": "Real Madrid",
+   "final_score": "3-1",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1964-65",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Inter Milan",
+   "runner_up": "Benfica",
+   "final_score": "1-0",
+   "top_scorer": null,
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1965-66",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Real Madrid",
+   "runner_up": "Partizan",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Flórián Albert",
+     "team": "Ferencváros",
+     "goals": 7
+    },
+    {
+     "name": "Eusébio",
+     "team": "Benfica",
+     "goals": 7
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1966-67",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Celtic",
+   "runner_up": "Inter Milan",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Jürgen Piepenburg",
+     "team": "Vorwärts Berlin",
+     "goals": 6
+    },
+    {
+     "name": "Paul Van Himst",
+     "team": "Anderlecht",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1967-68",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Benfica",
+   "final_score": "4-1 (a.e.t.)",
+   "top_scorer": [
+    {
+     "name": "Eusébio",
+     "team": "Benfica",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1968-69",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Milan",
+   "runner_up": "Ajax",
+   "final_score": "4-1",
+   "top_scorer": [
+    {
+     "name": "Denis Law",
+     "team": "Manchester United",
+     "goals": 9
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1969-70",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Feyenoord",
+   "runner_up": "Celtic",
+   "final_score": "2-1 (a.e.t.)",
+   "top_scorer": [
+    {
+     "name": "Mick Jones",
+     "team": "Leeds United",
+     "goals": 8
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1970-71",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Ajax",
+   "runner_up": "Panathinaikos",
+   "final_score": "2-0",
+   "top_scorer": [
+    {
+     "name": "Antonis Antoniadis",
+     "team": "Panathinaikos",
+     "goals": 10
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1971-72",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Ajax",
+   "runner_up": "Inter Milan",
+   "final_score": "2-0",
+   "top_scorer": [
+    {
+     "name": "Johan Cruyff",
+     "team": "Ajax",
+     "goals": 5
+    },
+    {
+     "name": "Antal Dunai",
+     "team": "Újpest",
+     "goals": 5
+    },
+    {
+     "name": "Lou Macari",
+     "team": "Celtic",
+     "goals": 5
+    },
+    {
+     "name": "Silvester Takač",
+     "team": "Standard Liège",
+     "goals": 5
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1972-73",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Ajax",
+   "runner_up": "Juventus",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Gerd Müller",
+     "team": "Bayern Munich",
+     "goals": 11
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1973-74",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Bayern Munich",
+   "runner_up": "Atlético Madrid",
+   "final_score": "4-0 (replay)",
+   "top_scorer": [
+    {
+     "name": "Gerd Müller",
+     "team": "Bayern Munich",
+     "goals": 8
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null,
+   "notes": "First match 1-1 (a.e.t.) in Brussels on 15 May 1974; Bayern won the replay 4-0 two days later."
+  },
+  {
+   "season": "1974-75",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Bayern Munich",
+   "runner_up": "Leeds United",
+   "final_score": "2-0",
+   "top_scorer": [
+    {
+     "name": "Gerd Müller",
+     "team": "Bayern Munich",
+     "goals": 5
+    },
+    {
+     "name": "Eduard Markarov",
+     "team": "Ararat Yerevan",
+     "goals": 5
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1975-76",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Bayern Munich",
+   "runner_up": "Saint-Étienne",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Jupp Heynckes",
+     "team": "Borussia Mönchengladbach",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1976-77",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Borussia Mönchengladbach",
+   "final_score": "3-1",
+   "top_scorer": [
+    {
+     "name": "Gerd Müller",
+     "team": "Bayern Munich",
+     "goals": 5
+    },
+    {
+     "name": "Franco Cucinotta",
+     "team": "Zürich",
+     "goals": 5
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1977-78",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Club Brugge",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Allan Simonsen",
+     "team": "Borussia Mönchengladbach",
+     "goals": 5
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1978-79",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Nottingham Forest",
+   "runner_up": "Malmö FF",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Claudio Sulser",
+     "team": "Grasshopper",
+     "goals": 11
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1979-80",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Nottingham Forest",
+   "runner_up": "Hamburger SV",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Søren Lerby",
+     "team": "Ajax",
+     "goals": 10
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1980-81",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Real Madrid",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Terry McDermott",
+     "team": "Liverpool",
+     "goals": 6
+    },
+    {
+     "name": "Graeme Souness",
+     "team": "Liverpool",
+     "goals": 6
+    },
+    {
+     "name": "Karl-Heinz Rummenigge",
+     "team": "Bayern Munich",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1981-82",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Aston Villa",
+   "runner_up": "Bayern Munich",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Dieter Hoeneß",
+     "team": "Bayern Munich",
+     "goals": 7
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1982-83",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Hamburger SV",
+   "runner_up": "Juventus",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Paolo Rossi",
+     "team": "Juventus",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1983-84",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Roma",
+   "final_score": "1-1 (4-2 pens)",
+   "top_scorer": [
+    {
+     "name": "Viktor Sokol",
+     "team": "Dinamo Minsk",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1984-85",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Juventus",
+   "runner_up": "Liverpool",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Torbjörn Nilsson",
+     "team": "IFK Göteborg",
+     "goals": 7
+    },
+    {
+     "name": "Michel Platini",
+     "team": "Juventus",
+     "goals": 7
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1985-86",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Steaua București",
+   "runner_up": "Barcelona",
+   "final_score": "0-0 (2-0 pens)",
+   "top_scorer": [
+    {
+     "name": "Torbjörn Nilsson",
+     "team": "IFK Göteborg",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1986-87",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Porto",
+   "runner_up": "Bayern Munich",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Borislav Cvetković",
+     "team": "Red Star Belgrade",
+     "goals": 7
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1987-88",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "PSV Eindhoven",
+   "runner_up": "Benfica",
+   "final_score": "0-0 (6-5 pens)",
+   "top_scorer": [
+    {
+     "name": "Gheorghe Hagi",
+     "team": "Steaua București",
+     "goals": 4
+    },
+    {
+     "name": "Petar Novák",
+     "team": "Sparta Prague",
+     "goals": 4
+    },
+    {
+     "name": "René van der Gijp",
+     "team": "Neuchâtel Xamax",
+     "goals": 4
+    },
+    {
+     "name": "Rabah Madjer",
+     "team": "Porto",
+     "goals": 4
+    },
+    {
+     "name": "Ally McCoist",
+     "team": "Rangers",
+     "goals": 4
+    },
+    {
+     "name": "Míchel",
+     "team": "Real Madrid",
+     "goals": 4
+    },
+    {
+     "name": "Rui Águas",
+     "team": "Benfica",
+     "goals": 4
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1988-89",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Milan",
+   "runner_up": "Steaua București",
+   "final_score": "4-0",
+   "top_scorer": [
+    {
+     "name": "Marco van Basten",
+     "team": "Milan",
+     "goals": 10
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1989-90",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Milan",
+   "runner_up": "Benfica",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Romário",
+     "team": "PSV Eindhoven",
+     "goals": 6
+    },
+    {
+     "name": "Jean-Pierre Papin",
+     "team": "Marseille",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1990-91",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Red Star Belgrade",
+   "runner_up": "Marseille",
+   "final_score": "0-0 (5-3 pens)",
+   "top_scorer": [
+    {
+     "name": "Peter Pacult",
+     "team": "Tirol Innsbruck",
+     "goals": 6
+    },
+    {
+     "name": "Jean-Pierre Papin",
+     "team": "Marseille",
+     "goals": 6
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1991-92",
+   "name_then": "European Cup",
+   "status": "played",
+   "winner": "Barcelona",
+   "runner_up": "Sampdoria",
+   "final_score": "1-0 (a.e.t.)",
+   "top_scorer": [
+    {
+     "name": "Sergei Yuran",
+     "team": "Benfica",
+     "goals": 7
+    },
+    {
+     "name": "Jean-Pierre Papin",
+     "team": "Marseille",
+     "goals": 7
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1992-93",
+   "status": "played",
+   "winner": "Marseille",
+   "runner_up": "Milan",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Romário",
+     "team": "PSV Eindhoven",
+     "goals": 7
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1993-94",
+   "status": "played",
+   "winner": "Milan",
+   "runner_up": "Barcelona",
+   "final_score": "4-0",
+   "top_scorer": [
+    {
+     "name": "Ronald Koeman",
+     "team": "Barcelona",
+     "goals": 8
+    },
+    {
+     "name": "Wynton Rufer",
+     "team": "Werder Bremen",
+     "goals": 8
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1994-95",
+   "status": "played",
+   "winner": "Ajax",
+   "runner_up": "Milan",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "George Weah",
+     "team": "Paris Saint-Germain",
+     "goals": 7
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1995-96",
+   "status": "played",
+   "winner": "Juventus",
+   "runner_up": "Ajax",
+   "final_score": "1-1 (4-2 pens)",
+   "top_scorer": [
+    {
+     "name": "Jari Litmanen",
+     "team": "Ajax",
+     "goals": 9
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1996-97",
+   "status": "played",
+   "winner": "Borussia Dortmund",
+   "runner_up": "Juventus",
+   "final_score": "3-1",
+   "top_scorer": [
+    {
+     "name": "Milinko Pantić",
+     "team": "Atlético Madrid",
+     "goals": 5
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1997-98",
+   "status": "played",
+   "winner": "Real Madrid",
+   "runner_up": "Juventus",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Alessandro Del Piero",
+     "team": "Juventus",
+     "goals": 10
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": null
+  },
+  {
+   "season": "1998-99",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Bayern Munich",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Andriy Shevchenko",
+     "team": "Dynamo Kyiv",
+     "goals": 8
+    },
+    {
+     "name": "Dwight Yorke",
+     "team": "Manchester United",
+     "goals": 8
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "David Beckham",
+    "team": "Manchester United"
+   }
+  },
+  {
+   "season": "1999-00",
+   "status": "played",
+   "winner": "Real Madrid",
+   "runner_up": "Valencia",
+   "final_score": "3-0",
+   "top_scorer": [
+    {
+     "name": "Mário Jardel",
+     "team": "Porto",
+     "goals": 10
+    },
+    {
+     "name": "Rivaldo",
+     "team": "Barcelona",
+     "goals": 10
+    },
+    {
+     "name": "Raúl",
+     "team": "Real Madrid",
+     "goals": 10
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Fernando Redondo",
+    "team": "Real Madrid"
+   }
+  },
+  {
+   "season": "2000-01",
+   "status": "played",
+   "winner": "Bayern Munich",
+   "runner_up": "Valencia",
+   "final_score": "1-1 (5-4 pens)",
+   "top_scorer": [
+    {
+     "name": "Raúl",
+     "team": "Real Madrid",
+     "goals": 7
+    }
+   ],
+   "top_assister": null,
+   "player_of_season": {
+    "name": "Stefan Effenberg",
+    "team": "Bayern Munich"
+   }
+  },
+  {
+   "season": "2001-02",
+   "status": "played",
+   "winner": "Real Madrid",
+   "runner_up": "Bayer Leverkusen",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Ruud van Nistelrooy",
+     "team": "Manchester United",
+     "goals": 10
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Juan Sebastián Verón",
+     "team": "Manchester United",
+     "assists": 5
+    },
+    {
+     "name": "Ruud van Nistelrooy",
+     "team": "Manchester United",
+     "assists": 5
+    },
+    {
+     "name": "Hasan Salihamidžić",
+     "team": "Bayern Munich",
+     "assists": 5
+    },
+    {
+     "name": "Bernd Schneider",
+     "team": "Bayer Leverkusen",
+     "assists": 5
+    }
+   ],
+   "player_of_season": {
+    "name": "Zinedine Zidane",
+    "team": "Real Madrid"
+   }
+  },
+  {
+   "season": "2002-03",
+   "status": "played",
+   "winner": "Milan",
+   "runner_up": "Juventus",
+   "final_score": "0-0 (3-2 pens)",
+   "top_scorer": [
+    {
+     "name": "Ruud van Nistelrooy",
+     "team": "Manchester United",
+     "goals": 12
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Pablo Aimar",
+     "team": "Valencia",
+     "assists": 5
+    },
+    {
+     "name": "Raúl",
+     "team": "Real Madrid",
+     "assists": 5
+    },
+    {
+     "name": "Rui Costa",
+     "team": "Milan",
+     "assists": 5
+    }
+   ],
+   "player_of_season": {
+    "name": "Gianluigi Buffon",
+    "team": "Juventus"
+   }
+  },
+  {
+   "season": "2003-04",
+   "status": "played",
+   "winner": "Porto",
+   "runner_up": "Monaco",
+   "final_score": "3-0",
+   "top_scorer": [
+    {
+     "name": "Fernando Morientes",
+     "team": "Monaco",
+     "goals": 9
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Jérôme Rothen",
+     "team": "Monaco",
+     "assists": 6
+    },
+    {
+     "name": "Deco",
+     "team": "Porto",
+     "assists": 6
+    }
+   ],
+   "player_of_season": {
+    "name": "Deco",
+    "team": "Porto"
+   }
+  },
+  {
+   "season": "2004-05",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Milan",
+   "final_score": "3-3 (3-2 pens)",
+   "top_scorer": [
+    {
+     "name": "Ruud van Nistelrooy",
+     "team": "Manchester United",
+     "goals": 8
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Kaká",
+     "team": "Milan",
+     "assists": 5
+    },
+    {
+     "name": "Sidney Govou",
+     "team": "Lyon",
+     "assists": 5
+    },
+    {
+     "name": "Luís Figo",
+     "team": "Real Madrid",
+     "assists": 5
+    },
+    {
+     "name": "Sylvain Wiltord",
+     "team": "Lyon",
+     "assists": 5
+    },
+    {
+     "name": "Damien Duff",
+     "team": "Chelsea",
+     "assists": 5
+    }
+   ],
+   "player_of_season": {
+    "name": "Steven Gerrard",
+    "team": "Liverpool"
+   }
+  },
+  {
+   "season": "2005-06",
+   "status": "played",
+   "winner": "Barcelona",
+   "runner_up": "Arsenal",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Andriy Shevchenko",
+     "team": "Milan",
+     "goals": 9
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Ronaldinho",
+     "team": "Barcelona",
+     "assists": 4
+    },
+    {
+     "name": "Steven Pienaar",
+     "team": "Ajax",
+     "assists": 4
+    },
+    {
+     "name": "Samuel Eto'o",
+     "team": "Barcelona",
+     "assists": 4
+    },
+    {
+     "name": "Johan Micoud",
+     "team": "Werder Bremen",
+     "assists": 4
+    }
+   ],
+   "player_of_season": {
+    "name": "Ronaldinho",
+    "team": "Barcelona"
+   }
+  },
+  {
+   "season": "2006-07",
+   "status": "played",
+   "winner": "Milan",
+   "runner_up": "Liverpool",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Kaká",
+     "team": "Milan",
+     "goals": 10
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Ryan Giggs",
+     "team": "Manchester United",
+     "assists": 7
+    }
+   ],
+   "player_of_season": {
+    "name": "Kaká",
+    "team": "Milan"
+   }
+  },
+  {
+   "season": "2007-08",
+   "status": "played",
+   "winner": "Manchester United",
+   "runner_up": "Chelsea",
+   "final_score": "1-1 (6-5 pens)",
+   "top_scorer": [
+    {
+     "name": "Cristiano Ronaldo",
+     "team": "Manchester United",
+     "goals": 8
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Alex de Souza",
+     "team": "Fenerbahçe",
+     "assists": 6
+    }
+   ],
+   "player_of_season": {
+    "name": "Cristiano Ronaldo",
+    "team": "Manchester United"
+   }
+  },
+  {
+   "season": "2008-09",
+   "status": "played",
+   "winner": "Barcelona",
+   "runner_up": "Manchester United",
+   "final_score": "2-0",
+   "top_scorer": [
+    {
+     "name": "Lionel Messi",
+     "team": "Barcelona",
+     "goals": 9
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Xavi",
+     "team": "Barcelona",
+     "assists": 7
+    }
+   ],
+   "player_of_season": {
+    "name": "Lionel Messi",
+    "team": "Barcelona"
+   }
+  },
+  {
+   "season": "2009-10",
+   "status": "played",
+   "winner": "Inter Milan",
+   "runner_up": "Bayern Munich",
+   "final_score": "2-0",
+   "top_scorer": [
+    {
+     "name": "Lionel Messi",
+     "team": "Barcelona",
+     "goals": 8
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Wesley Sneijder",
+     "team": "Inter Milan",
+     "assists": 6
+    }
+   ],
+   "player_of_season": {
+    "name": "Diego Milito",
+    "team": "Inter Milan"
+   }
+  },
+  {
+   "season": "2010-11",
+   "status": "played",
+   "winner": "Barcelona",
+   "runner_up": "Manchester United",
+   "final_score": "3-1",
+   "top_scorer": [
+    {
+     "name": "Lionel Messi",
+     "team": "Barcelona",
+     "goals": 12
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Mesut Özil",
+     "team": "Real Madrid",
+     "assists": 6
+    }
+   ],
+   "player_of_season": {
+    "name": "Lionel Messi",
+    "team": "Barcelona"
+   }
+  },
+  {
+   "season": "2011-12",
+   "status": "played",
+   "winner": "Chelsea",
+   "runner_up": "Bayern Munich",
+   "final_score": "1-1 (4-3 pens)",
+   "top_scorer": [
+    {
+     "name": "Lionel Messi",
+     "team": "Barcelona",
+     "goals": 14
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Lionel Messi",
+     "team": "Barcelona",
+     "assists": 5
+    },
+    {
+     "name": "Franck Ribéry",
+     "team": "Bayern Munich",
+     "assists": 5
+    },
+    {
+     "name": "Karim Benzema",
+     "team": "Real Madrid",
+     "assists": 5
+    },
+    {
+     "name": "Kaká",
+     "team": "Real Madrid",
+     "assists": 5
+    },
+    {
+     "name": "Nicolás Gaitán",
+     "team": "Benfica",
+     "assists": 5
+    }
+   ],
+   "player_of_season": {
+    "name": "Didier Drogba",
+    "team": "Chelsea"
+   }
+  },
+  {
+   "season": "2012-13",
+   "status": "played",
+   "winner": "Bayern Munich",
+   "runner_up": "Borussia Dortmund",
+   "final_score": "2-1",
+   "top_scorer": [
+    {
+     "name": "Cristiano Ronaldo",
+     "team": "Real Madrid",
+     "goals": 12
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Zlatan Ibrahimović",
+     "team": "Paris Saint-Germain",
+     "assists": 7
+    }
+   ],
+   "player_of_season": {
+    "name": "Arjen Robben",
+    "team": "Bayern Munich"
+   }
+  },
+  {
+   "season": "2013-14",
+   "status": "played",
+   "winner": "Real Madrid",
+   "runner_up": "Atlético Madrid",
+   "final_score": "4-1 (a.e.t.)",
+   "top_scorer": [
+    {
+     "name": "Cristiano Ronaldo",
+     "team": "Real Madrid",
+     "goals": 17
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Wayne Rooney",
+     "team": "Manchester United",
+     "assists": 8
+    }
+   ],
+   "player_of_season": {
+    "name": "Ángel Di María",
+    "team": "Real Madrid"
+   }
+  },
+  {
+   "season": "2014-15",
+   "status": "played",
+   "winner": "Barcelona",
+   "runner_up": "Juventus",
+   "final_score": "3-1",
+   "top_scorer": [
+    {
+     "name": "Neymar",
+     "team": "Barcelona",
+     "goals": 10
+    },
+    {
+     "name": "Cristiano Ronaldo",
+     "team": "Real Madrid",
+     "goals": 10
+    },
+    {
+     "name": "Lionel Messi",
+     "team": "Barcelona",
+     "goals": 10
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Lionel Messi",
+     "team": "Barcelona",
+     "assists": 6
+    }
+   ],
+   "player_of_season": {
+    "name": "Andrés Iniesta",
+    "team": "Barcelona"
+   }
+  },
+  {
+   "season": "2015-16",
+   "status": "played",
+   "winner": "Real Madrid",
+   "runner_up": "Atlético Madrid",
+   "final_score": "1-1 (5-3 pens)",
+   "top_scorer": [
+    {
+     "name": "Cristiano Ronaldo",
+     "team": "Real Madrid",
+     "goals": 16
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Kingsley Coman",
+     "team": "Bayern Munich",
+     "assists": 5
+    },
+    {
+     "name": "Neymar",
+     "team": "Barcelona",
+     "assists": 5
+    },
+    {
+     "name": "Alexis Sánchez",
+     "team": "Arsenal",
+     "assists": 5
+    }
+   ],
+   "player_of_season": {
+    "name": "Sergio Ramos",
+    "team": "Real Madrid"
+   }
+  },
+  {
+   "season": "2016-17",
+   "status": "played",
+   "winner": "Real Madrid",
+   "runner_up": "Juventus",
+   "final_score": "4-1",
+   "top_scorer": [
+    {
+     "name": "Cristiano Ronaldo",
+     "team": "Real Madrid",
+     "goals": 12
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Neymar",
+     "team": "Barcelona",
+     "assists": 8
+    }
+   ],
+   "player_of_season": {
+    "name": "Cristiano Ronaldo",
+    "team": "Real Madrid"
+   }
+  },
+  {
+   "season": "2017-18",
+   "status": "played",
+   "winner": "Real Madrid",
+   "runner_up": "Liverpool",
+   "final_score": "3-1",
+   "top_scorer": [
+    {
+     "name": "Cristiano Ronaldo",
+     "team": "Real Madrid",
+     "goals": 15
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "James Milner",
+     "team": "Liverpool",
+     "assists": 9
+    }
+   ],
+   "player_of_season": {
+    "name": "Gareth Bale",
+    "team": "Real Madrid"
+   }
+  },
+  {
+   "season": "2018-19",
+   "status": "played",
+   "winner": "Liverpool",
+   "runner_up": "Tottenham Hotspur",
+   "final_score": "2-0",
+   "top_scorer": [
+    {
+     "name": "Lionel Messi",
+     "team": "Barcelona",
+     "goals": 12
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Leroy Sané",
+     "team": "Manchester City",
+     "assists": 5
+    },
+    {
+     "name": "Jordi Alba",
+     "team": "Barcelona",
+     "assists": 5
+    },
+    {
+     "name": "Dušan Tadić",
+     "team": "Ajax",
+     "assists": 5
+    },
+    {
+     "name": "Luis Suárez",
+     "team": "Barcelona",
+     "assists": 5
+    }
+   ],
+   "player_of_season": {
+    "name": "Virgil van Dijk",
+    "team": "Liverpool"
+   }
+  },
+  {
+   "season": "2019-20",
+   "status": "played",
+   "winner": "Bayern Munich",
+   "runner_up": "Paris Saint-Germain",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Robert Lewandowski",
+     "team": "Bayern Munich",
+     "goals": 15
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Robert Lewandowski",
+     "team": "Bayern Munich",
+     "assists": 6
+    },
+    {
+     "name": "Ángel Di María",
+     "team": "Paris Saint-Germain",
+     "assists": 6
+    }
+   ],
+   "player_of_season": {
+    "name": "Kingsley Coman",
+    "team": "Bayern Munich"
+   }
+  },
+  {
+   "season": "2020-21",
+   "status": "played",
+   "winner": "Chelsea",
+   "runner_up": "Manchester City",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Erling Haaland",
+     "team": "Borussia Dortmund",
+     "goals": 10
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Juan Cuadrado",
+     "team": "Juventus",
+     "assists": 6
+    }
+   ],
+   "player_of_season": {
+    "name": "N'Golo Kanté",
+    "team": "Chelsea"
+   }
+  },
+  {
+   "season": "2021-22",
+   "status": "played",
+   "winner": "Real Madrid",
+   "runner_up": "Liverpool",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Karim Benzema",
+     "team": "Real Madrid",
+     "goals": 15
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Bruno Fernandes",
+     "team": "Manchester United",
+     "assists": 7
+    }
+   ],
+   "player_of_season": {
+    "name": "Karim Benzema",
+    "team": "Real Madrid"
+   }
+  },
+  {
+   "season": "2022-23",
+   "status": "played",
+   "winner": "Manchester City",
+   "runner_up": "Inter Milan",
+   "final_score": "1-0",
+   "top_scorer": [
+    {
+     "name": "Erling Haaland",
+     "team": "Manchester City",
+     "goals": 12
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Kevin De Bruyne",
+     "team": "Manchester City",
+     "assists": 7
+    }
+   ],
+   "player_of_season": {
+    "name": "Rodri",
+    "team": "Manchester City"
+   }
+  },
+  {
+   "season": "2023-24",
+   "status": "played",
+   "winner": "Real Madrid",
+   "runner_up": "Borussia Dortmund",
+   "final_score": "2-0",
+   "top_scorer": [
+    {
+     "name": "Harry Kane",
+     "team": "Bayern Munich",
+     "goals": 8
+    },
+    {
+     "name": "Kylian Mbappé",
+     "team": "Paris Saint-Germain",
+     "goals": 8
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Jude Bellingham",
+     "team": "Real Madrid",
+     "assists": 5
+    },
+    {
+     "name": "Vinícius Júnior",
+     "team": "Real Madrid",
+     "assists": 5
+    },
+    {
+     "name": "Marcel Sabitzer",
+     "team": "Borussia Dortmund",
+     "assists": 5
+    }
+   ],
+   "player_of_season": {
+    "name": "Vinícius Júnior",
+    "team": "Real Madrid"
+   }
+  },
+  {
+   "season": "2024-25",
+   "status": "played",
+   "winner": "Paris Saint-Germain",
+   "runner_up": "Inter Milan",
+   "final_score": "5-0",
+   "top_scorer": [
+    {
+     "name": "Serhou Guirassy",
+     "team": "Borussia Dortmund",
+     "goals": 13
+    },
+    {
+     "name": "Raphinha",
+     "team": "Barcelona",
+     "goals": 13
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Raphinha",
+     "team": "Barcelona",
+     "assists": 9
+    }
+   ],
+   "player_of_season": {
+    "name": "Ousmane Dembélé",
+    "team": "Paris Saint-Germain"
+   }
+  },
+  {
+   "season": "2025-26",
+   "status": "played",
+   "winner": "Paris Saint-Germain",
+   "runner_up": "Arsenal",
+   "final_score": "1-1 (4-3 pens)",
+   "top_scorer": [
+    {
+     "name": "Kylian Mbappé",
+     "team": "Real Madrid",
+     "goals": 15
+    }
+   ],
+   "top_assister": [
+    {
+     "name": "Michael Olise",
+     "team": "Bayern Munich",
+     "assists": 8
+    },
+    {
+     "name": "Vinícius Júnior",
+     "team": "Real Madrid",
+     "assists": 8
+    }
+   ],
+   "player_of_season": {
+    "name": "Khvicha Kvaratskhelia",
+    "team": "Paris Saint-Germain"
+   }
+  }
+ ]
+}

@@ -1,0 +1,37 @@
+{
+  "id": "ss-lampard-v-bruno",
+  "series": "Best season ever, settled",
+  "title": "Lampard 2009-10 v Bruno 2025-26: the best midfield season?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/2009%E2%80%9310_Chelsea_F.C._season",
+    "https://en.wikipedia.org/wiki/2025%E2%80%9326_Manchester_United_F.C._season",
+    "data/competition-history/premier-league.json (champions, runners-up, top assisters, FWA winners)",
+    "data/competition-history/league-cup.json"
+  ],
+  "checked": "Lampard: 22 league goals counted from the season page's match records (4 to 21 Nov, 18 from 29 Nov on), 16 assists top of the league (local file); Chelsea 103 league goals record, 86 points one ahead of United, 8-0 v Wigan on the final day, 1-0 FA Cup final win v Portsmouth with Lampard missing a penalty (Wikipedia season page; title and runner-up also local). Bruno: 9 league goals, 21 assists breaking the record of 20 held by Henry 2002-03 and De Bruyne 2019-20 (Wikipedia says he broke the record; local file has 21 and the old 20s), FWA award (both), United 3rd on 71 points, out of the League Cup on penalties at Grimsby and the FA Cup v Brighton (Wikipedia season page).",
+  "clubs": {
+    "chelsea": { "name": "Chelsea", "short": "CHE", "c1": "#034694", "c2": "#ffffff", "pattern": "plain" },
+    "manutd": { "name": "Manchester United", "short": "MUN", "c1": "#da291c", "c2": "#ffffff", "pattern": "plain" },
+    "portsmouth": { "name": "Portsmouth", "short": "POR", "c1": "#001489", "c2": "#ffffff", "pattern": "plain" },
+    "grimsby": { "name": "Grimsby Town", "short": "GRI", "c1": "#111111", "c2": "#ffffff", "pattern": "stripes" }
+  },
+  "people": {
+    "lampard": { "name": "Frank Lampard", "skin": "light", "hair": ["crop", "#6b4a2e"], "beard": "none", "kit": "chelsea" },
+    "bruno": { "name": "Bruno Fernandes", "skin": "olive", "hair": ["tidy", "#2a1d14"], "beard": "short", "kit": "manutd" }
+  },
+  "lines": [
+    { "text": "One midfielder scored twenty-two. The other broke the assist record. Lampard or Bruno?", "scene": { "type": "title", "heading": "LAMPARD v BRUNO", "sub": "2009-10 v 2025-26", "pill": "SETTLED", "person": "lampard" } },
+    { "text": "Frank Lampard, twenty oh nine, ten. A midfielder scoring like a striker.", "scene": { "type": "person", "person": "lampard", "label": "Chelsea · 2009-10", "mood": "happy" } },
+    { "text": "Twenty-two league goals. Sixteen assists, the most in the league.", "scene": { "type": "stats", "title": "LAMPARD 2009-10", "person": "lampard", "items": [ { "n": "22", "l": "league goals" }, { "n": "16", "l": "assists" }, { "n": "103", "l": "Chelsea league goals" } ] } },
+    { "text": "Bruno Fernandes, last season. Nine goals, and twenty-one assists.", "scene": { "type": "person", "person": "bruno", "label": "Man United · 2025-26", "mood": "happy" } },
+    { "text": "That broke the record of twenty, shared by Thierry Henry and Kevin De Bruyne.", "scene": { "type": "list", "title": "MOST ASSISTS, ONE PL SEASON", "rows": [ { "name": "Bruno Fernandes (2025-26)", "value": "21", "club": "manutd", "hl": true }, { "name": "Thierry Henry (2002-03)", "value": "20" }, { "name": "Kevin De Bruyne (2019-20)", "value": "20" } ], "stamp": "RECORD" } },
+    { "text": "Goals plus assists: Lampard thirty-eight, Bruno thirty.", "scene": { "type": "versus", "title": "GOAL INVOLVEMENTS", "left": { "person": "lampard", "label": "Lampard 09-10", "value": "38" }, "right": { "person": "bruno", "label": "Bruno 25-26", "value": "30" } } },
+    { "text": "Trophies. Lampard won the league and the FA Cup. Chelsea scored a record hundred and three.", "scene": { "type": "trophies", "person": "lampard", "items": [ { "kind": "league", "label": "Premier League" }, { "kind": "cup", "label": "FA Cup" } ] } },
+    { "text": "Bruno won the Football Writers' award. United finished third, and went out of the League Cup to Grimsby.", "scene": { "type": "score", "home": "grimsby", "away": "manutd", "hs": 2, "as": 2, "date": "27 Aug 2025", "comp": "League Cup", "note": "Grimsby win 12-11 on penalties", "stamp": "OUCH" } },
+    { "text": "And here's the twist. The club Lampard beat to the title by one point? Manchester United.", "scene": { "type": "list", "title": "PREMIER LEAGUE 2009-10", "rows": [ { "name": "Chelsea", "value": "86", "club": "chelsea", "hl": true }, { "name": "Manchester United", "value": "85", "club": "manutd" }, { "name": "Gap", "value": "1 pt" } ], "stamp": "TWIST" } },
+    { "text": "Bruno's club, sixteen years earlier, beaten by Lampard's goals.", "scene": { "type": "timeline", "items": [ { "year": "2010", "label": "Chelsea pip United by a point" }, { "year": "2026", "label": "Bruno breaks the assist record" } ] } },
+    { "text": "Even Lampard's bad moment ended well. He missed a penalty in the cup final, and Chelsea still won one-nil.", "scene": { "type": "score", "home": "chelsea", "away": "portsmouth", "hs": 1, "as": 0, "date": "2010", "comp": "FA Cup final", "note": "Lampard missed a penalty" } },
+    { "text": "Bruno has the record. Lampard has the better season. Settled.", "scene": { "type": "stamp", "text": "LAMPARD", "person": "lampard", "color": "white" } },
+    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+  ]
+}

@@ -1,0 +1,247 @@
+{
+  "id": "am-manchester-derby",
+  "series": "Age-match",
+  "title": "Mainoo on derby day v Rooney, Ronaldo and Foden at the same age",
+  "sources": [
+    "https://www.oddschecker.com/insight/football/20260913-manchester-united-vs-manchester-city-confirmed-lineups",
+    "https://k24.digital/sports/epl/manchester-derby-carrick-maresca-name-starting-xis-for-highly-anticipated-old-trafford-duel/amp",
+    "https://en.wikipedia.org/wiki/2026%E2%80%9327_Manchester_United_F.C._season",
+    "https://en.wikipedia.org/wiki/Kobbie_Mainoo",
+    "https://en.wikipedia.org/wiki/Wayne_Rooney",
+    "https://en.wikipedia.org/wiki/Cristiano_Ronaldo",
+    "https://en.wikipedia.org/wiki/Phil_Foden"
+  ],
+  "checked": "Derby 13 Sep 2026 at Old Trafford; Mainoo (born 19 Apr 2005) was the youngest starter in either XI (Oddschecker + K24 line-ups; Dorgu b. 2004, Anderson b. 2002) = 21 years 147 days. Same age: Ronaldo 2 Jul 2006 (summer, exact): 18 PL goals in 95 PL games; Rooney 20 Mar 2007: 42 PL goals before 2006-07 began (lower bound, so 'more than forty'); Foden 22 Oct 2021: 15 PL goals before 2021-22 plus 1 on 3 Oct 2021 = 16. Mainoo: 4 PL goals in about 82 PL games including the derby (career tables on each player's Wikipedia page, one source each). Mainoo's FA Cup final winner v City 2024 (Wikipedia). League assists for these eras could not be confirmed, so goals and games are used.",
+  "clubs": {
+    "mun": {
+      "name": "Manchester United",
+      "short": "MUN",
+      "c1": "#da291c",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "mci": {
+      "name": "Manchester City",
+      "short": "MCI",
+      "c1": "#6cabdd",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "eve": {
+      "name": "Everton",
+      "short": "EFC",
+      "c1": "#003399",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "mainoo": {
+      "name": "Kobbie Mainoo",
+      "skin": "dark",
+      "hair": [
+        "crop",
+        "#14110f"
+      ],
+      "beard": "none",
+      "kit": "mun"
+    },
+    "rooney": {
+      "name": "Wayne Rooney",
+      "skin": "pink",
+      "hair": [
+        "buzz",
+        "#6b4a2e"
+      ],
+      "beard": "none",
+      "kit": "mun"
+    },
+    "ronaldo": {
+      "name": "Cristiano Ronaldo",
+      "skin": "tan",
+      "hair": [
+        "slick",
+        "#2a1d14"
+      ],
+      "beard": "none",
+      "kit": "mun"
+    },
+    "foden": {
+      "name": "Phil Foden",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#c9a46a"
+      ],
+      "beard": "none",
+      "kit": "mci"
+    }
+  },
+  "lines": [
+    {
+      "text": "The youngest man to start September's Manchester derby was Kobbie Mainoo. Twenty-one years and one hundred and forty-seven days old.",
+      "scene": {
+        "type": "title",
+        "heading": "KOBBIE MAINOO",
+        "sub": "Derby day · 13 Sep 2026",
+        "pill": "AGE-MATCH",
+        "person": "mainoo"
+      }
+    },
+    {
+      "text": "So what had the derby legends done at exactly the same age?",
+      "scene": {
+        "type": "person",
+        "person": "mainoo",
+        "label": "21 years, 147 days",
+        "mood": "flat"
+      }
+    },
+    {
+      "text": "Cristiano Ronaldo at that age: summer twenty oh-six. Eighteen Premier League goals in ninety-five games.",
+      "scene": {
+        "type": "stats",
+        "title": "Ronaldo at 21y 147d",
+        "items": [
+          {
+            "n": "18",
+            "l": "PL goals"
+          },
+          {
+            "n": "95",
+            "l": "PL games"
+          }
+        ],
+        "person": "ronaldo"
+      }
+    },
+    {
+      "text": "Wayne Rooney at that age, March twenty oh-seven, already had more than forty Premier League goals.",
+      "scene": {
+        "type": "person",
+        "person": "rooney",
+        "label": "40+ PL goals by 21y 147d",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Phil Foden, October twenty twenty-one: sixteen Premier League goals, and three title medals.",
+      "scene": {
+        "type": "trophies",
+        "items": [
+          {
+            "kind": "league",
+            "label": "PL 2017-18"
+          },
+          {
+            "kind": "league",
+            "label": "PL 2018-19"
+          },
+          {
+            "kind": "league",
+            "label": "PL 2020-21"
+          }
+        ],
+        "person": "foden"
+      }
+    },
+    {
+      "text": "And Mainoo? Four Premier League goals in around eighty-two games.",
+      "scene": {
+        "type": "list",
+        "title": "Premier League goals at 21y 147d",
+        "rows": [
+          {
+            "name": "Wayne Rooney",
+            "value": "40+",
+            "club": "mun"
+          },
+          {
+            "name": "Cristiano Ronaldo",
+            "value": "18",
+            "club": "mun"
+          },
+          {
+            "name": "Phil Foden",
+            "value": "16",
+            "club": "mci"
+          },
+          {
+            "name": "Kobbie Mainoo",
+            "value": "4",
+            "club": "mun",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Last place. But that's not the whole story.",
+      "scene": {
+        "type": "stamp",
+        "text": "NOT SO FAST",
+        "person": "mainoo",
+        "color": "yellow"
+      }
+    },
+    {
+      "text": "Rooney, Ronaldo and Foden were attackers. Mainoo sits in midfield, where goals are a bonus.",
+      "scene": {
+        "type": "text",
+        "heading": "DIFFERENT JOB",
+        "body": "Rooney and Ronaldo played up front or out wide. Foden plays in the attacking line. Mainoo is a deeper central midfielder."
+      }
+    },
+    {
+      "text": "Now match the games. Ronaldo needed ninety-five Premier League games for eighteen goals. About one every five.",
+      "scene": {
+        "type": "whatif",
+        "title": "One goal every…",
+        "real": {
+          "label": "Ronaldo, by 21y 147d",
+          "value": "5 games"
+        },
+        "alt": {
+          "label": "Mainoo, by 21y 147d",
+          "value": "20 games"
+        }
+      }
+    },
+    {
+      "text": "But in the biggest derby of all, Mainoo delivered. He scored the winner against City in the twenty twenty-four FA Cup final.",
+      "scene": {
+        "type": "score",
+        "home": "mci",
+        "away": "mun",
+        "hs": 1,
+        "as": 2,
+        "date": "25 May 2024",
+        "comp": "FA Cup final",
+        "note": "Mainoo scores the winner"
+      }
+    },
+    {
+      "text": "So who was the best twenty-one-year-old in derby history? Tell me in the comments.",
+      "scene": {
+        "type": "versus",
+        "title": "The best at 21?",
+        "left": {
+          "person": "mainoo",
+          "label": "Mainoo",
+          "value": "4"
+        },
+        "right": {
+          "person": "rooney",
+          "label": "Rooney",
+          "value": "40+"
+        }
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

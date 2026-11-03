@@ -16,6 +16,7 @@ FACT-DAT-004 | Every other listed migration (draft, sofifa, security, star table
 FACT-DAT-005 | star_xp_config and star_tuning_notes were run live on 23 Oct 2026 (Claude via the Supabase connector, Harry's yes); update_login_streak now only updates the signed-in player. | data
 FACT-DAT-006 | The Supabase connector works in cloud Claude chats since 23 Oct 2026 (project cagkgfketucousksgtbk); CLAUDE.md's "Pending Setup" line saying cloud connectors fail is out of date for Supabase. | process,data
 FACT-DAT-007 | Analytics (Google Analytics and PostHog) load only after Accept in the cookie box; No thanks loads neither, and /legal#cookies lets a player choose again. | 
+FACT-DAT-008 | Every History tab shows your career's seasons, then the real history before them (data/competition-history, loaded only when the tab opens), each season with winner, runner-up, final score, top scorer, top assister and player of the season. | career,rule,data
 FACT-ENG-001 | The guard also fails on a direct CanvasMatch mount, a grown KNOWN_COPIES list, a new canvas animation loop or a blind canary. | engine
 FACT-ENG-002 | Trial penalties, free kicks, training strike drills and the gauntlet mount EngineFeature; a difference is a named dial. | engine
 FACT-ENG-003 | Still copies, to port next: five-a-side only; the /star-match-dev fork was deleted (18 Oct 2026). | admin,engine
@@ -34,9 +35,11 @@ FACT-KIB-002 | Audience: football fans 16 to 30 on TikTok, Reels and Shorts (Har
 FACT-KIB-003 | Video format: 1080×1920 (9:16), 30 fps, H.264, AAC stereo; v01 ran 44.7 s at -13.4 LUFS. | client-kib
 FACT-KIB-004 | Safe area: captions and cards stay inside x 64–950 and y 150–1536. | client-kib
 FACT-KIB-005 | End card: KNOWITBALL, the versions so far, a green knowitball.co.uk pill and "FOLLOW FOR v0.4". | client-kib
-FACT-KIB-006 | Voice-over: Kokoro v1.0 offline, voice bm_george, speed 1.2, en-gb; the same setup as the game's commentary. | media,client-kib
+FACT-KIB-006 | [SUPERSEDED] Voice-over: Kokoro v1.0 offline, voice bm_george, speed 1.2, en-gb; the same setup as the game's commentary. | media,client-kib
 FACT-KIB-007 | Learning from v01: v0.2 and v0.3 had no screenshots in the repo, so their beats had to be drawn diagrams. | client-kib
 FACT-KIB-008 | Learning from v01: render frames in chunks of 250, one page per chunk; one long session crashed the page. | client-kib
+FACT-KIB-009 | The one list of video ideas and the reference TikToks they came from (link, @account, what it is, style, what we made) is docs/marketing/video-ideas.md; add new references and ideas there. | client-kib
+FACT-KIB-010 | Base voice for Knowitball videos is voice E: Chatterbox TTS's own built-in voice, finished with humanise.sh (mic-in-a-room). Mikey, 3 Nov 2026; replaces Kokoro bm_george and the George clone. | team,process,client-kib
 FACT-TEAM-001 | next build needs about 6.5 GB; package.json gives it 6 GB of heap (node --max-old-space-size=6144). A Vercel deploy that fails with no other clue may be out of memory again: build locally with no NODE_OPTIONS to check. | deploy,team
 FACT-UI-001 | Settings keeps only real player preferences (sound, full screen, 3D quality, faces, names) and the Settings UI Old/New row. | three-d,ui
 FACT-UI-002 | Decided, no toggle: to see or bring back an old option, read the files at ebe02ad; old stored values are ignored. | ui

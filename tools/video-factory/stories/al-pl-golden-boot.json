@@ -1,0 +1,55 @@
+{
+  "id": "al-pl-golden-boot",
+  "series": "Everyone, by age",
+  "title": "Every Premier League Golden Boot winner, by age",
+  "sources": [
+    "data/competition-history/premier-league.json (top scorers 1992-93 to 2025-26)",
+    "https://en.wikipedia.org/wiki/Premier_League_Golden_Boot",
+    "https://guinnessworldrecords.com/world-records/624874-oldest-winner-of-the-english-premier-league-epl-golden-boot",
+    "https://www.squawka.com/en/?p=1107847",
+    "https://www.lfchistory.net/players/391",
+    "https://www.liverpoolfc.com/news/mohamed-salah-wins-2024-25-premier-league-golden-boot",
+    "https://www.premierleague.com/news/4314803",
+    "https://www.premierleague.com/en/news/4591856/haaland-wins-202526-premier-league-golden-boot-award",
+    "https://timesofoman.com/article/172225-erling-haaland-wins-3rd-premier-league-golden-boot-in-four-seasons",
+    "https://www.britannica.com/facts/Didier-Drogba"
+  ],
+  "checked": "Winners and goal totals from the local history file and Wikipedia; Vardy oldest at 33 (Guinness, Squawka); Owen's shared 1997-98 boot (LFC History, Wikipedia); Salah's fourth boot equalling Henry (Liverpool FC, Premier League); Haaland's third in 2025-26 with 27 (Premier League, Times of Oman). Ages are worked out as age at the end of each winning season from dates of birth (Drogba 11 Mar 1978 per Britannica and Wikipedia; Salah June 1992 per two sources that differ by ten days, 32 either way).",
+  "clubs": {
+    "liverpool": { "name": "Liverpool", "short": "LIV", "c1": "#c8102e", "c2": "#ffffff", "pattern": "plain" },
+    "leicester": { "name": "Leicester City", "short": "LEI", "c1": "#003090", "c2": "#fdbe11", "pattern": "plain" },
+    "chelsea": { "name": "Chelsea", "short": "CHE", "c1": "#034694", "c2": "#ffffff", "pattern": "plain" },
+    "mancity": { "name": "Manchester City", "short": "MCI", "c1": "#6cabdd", "c2": "#ffffff", "pattern": "plain" },
+    "manutd": { "name": "Manchester United", "short": "MUN", "c1": "#da291c", "c2": "#ffffff", "pattern": "plain" },
+    "arsenal": { "name": "Arsenal", "short": "ARS", "c1": "#ef0107", "c2": "#ffffff", "pattern": "sides" },
+    "spurs": { "name": "Tottenham Hotspur", "short": "TOT", "c1": "#ffffff", "c2": "#132257", "pattern": "plain" },
+    "newcastle": { "name": "Newcastle United", "short": "NEW", "c1": "#111111", "c2": "#ffffff", "pattern": "stripes" },
+    "blackburn": { "name": "Blackburn Rovers", "short": "BLA", "c1": "#009ee0", "c2": "#ffffff", "pattern": "halves" },
+    "coventry": { "name": "Coventry City", "short": "COV", "c1": "#59cbe8", "c2": "#ffffff", "pattern": "plain" },
+    "sunderland": { "name": "Sunderland", "short": "SUN", "c1": "#eb172b", "c2": "#ffffff", "pattern": "stripes" },
+    "leeds": { "name": "Leeds United", "short": "LEE", "c1": "#ffffff", "c2": "#1d428a", "pattern": "plain" }
+  },
+  "people": {
+    "owen": { "name": "Michael Owen", "skin": "light", "hair": ["crop", "#2a1d14"], "beard": "none", "kit": "liverpool" },
+    "vardy": { "name": "Jamie Vardy", "skin": "light", "hair": ["quiff", "#6b4a2e"], "beard": "stubble", "kit": "leicester" },
+    "salah": { "name": "Mohamed Salah", "skin": "tan", "hair": ["bigcurl", "#1a120c"], "beard": "full", "beardCol": "#1a120c", "kit": "liverpool" },
+    "drogba": { "name": "Didier Drogba", "skin": "dark", "hair": ["buzz", "#111111"], "beard": "stubble", "kit": "chelsea" },
+    "haaland": { "name": "Erling Haaland", "skin": "light", "hair": ["slick", "#e2c27a"], "beard": "none", "kit": "mancity" }
+  },
+  "lines": [
+    { "text": "One Golden Boot winner was still a teenager. Another was thirty-three. Here's every Premier League top scorer, by age.", "scene": { "type": "title", "heading": "THE GOLDEN BOOT, BY AGE", "sub": "Premier League · 1993 to 2026", "pill": "YOUNGEST TO OLDEST", "person": "owen" } },
+    { "text": "Michael Owen. Eighteen years old, joint top scorer in nineteen ninety-eight. Then he did it again at nineteen.", "scene": { "type": "person", "person": "owen", "label": "18 · 1997-98", "mood": "happy", "stamp": "YOUNGEST" } },
+    { "text": "Twenty-two and twenty-three: Andy Cole, Harry Kane, Cristiano Ronaldo, and Haaland's thirty-six goal debut.", "scene": { "type": "list", "title": "AGED 22 TO 23", "rows": [ { "name": "Andy Cole (1993-94)", "value": "22", "club": "newcastle" }, { "name": "Harry Kane (2015-16)", "value": "22", "club": "spurs" }, { "name": "Erling Haaland (2022-23)", "value": "22", "club": "mancity", "hl": true }, { "name": "Cristiano Ronaldo (2007-08)", "value": "23", "club": "manutd" }, { "name": "Harry Kane (2016-17)", "value": "23", "club": "spurs" }, { "name": "Erling Haaland (2023-24)", "value": "23", "club": "mancity" } ] } },
+    { "text": "Twenty-four to twenty-six is Shearer's three in a row, a young Henry, and Salah's thirty-two goal season.", "scene": { "type": "list", "title": "AGED 24 TO 26", "rows": [ { "name": "Alan Shearer (1994-95)", "value": "24", "club": "blackburn" }, { "name": "Thierry Henry (2001-02)", "value": "24", "club": "arsenal" }, { "name": "Mohamed Salah (2017-18)", "value": "25", "club": "liverpool", "hl": true }, { "name": "Erling Haaland (2025-26)", "value": "25", "club": "mancity" }, { "name": "Kevin Phillips (1999-00)", "value": "26", "club": "sunderland" }, { "name": "Ruud van Nistelrooy (2002-03)", "value": "26", "club": "manutd" }, { "name": "Sergio Aguero (2014-15)", "value": "26", "club": "mancity" } ] } },
+    { "text": "Twenty-seven and twenty-eight: Sheringham, Suarez, Tevez, Henry's last two, and Robin van Persie.", "scene": { "type": "list", "title": "AGED 27 TO 28", "rows": [ { "name": "Teddy Sheringham (1992-93)", "value": "27", "club": "spurs" }, { "name": "Dwight Yorke (1998-99)", "value": "27", "club": "manutd" }, { "name": "Luis Suarez (2013-14)", "value": "27", "club": "liverpool", "hl": true }, { "name": "Carlos Tevez (2010-11)", "value": "27", "club": "mancity" }, { "name": "Harry Kane (2020-21)", "value": "27", "club": "spurs" }, { "name": "Thierry Henry (2005-06)", "value": "28", "club": "arsenal" }, { "name": "Robin van Persie (2011-12)", "value": "28", "club": "arsenal" } ] } },
+    { "text": "Twenty-nine and thirty: Dion Dublin, Hasselbaink, Son, and Anelka and Berbatov past thirty.", "scene": { "type": "list", "title": "AGED 29 TO 30", "rows": [ { "name": "Dion Dublin (1997-98)", "value": "29", "club": "coventry" }, { "name": "Jimmy Floyd Hasselbaink (2000-01)", "value": "29", "club": "chelsea" }, { "name": "Robin van Persie (2012-13)", "value": "29", "club": "manutd" }, { "name": "Salah and Son (2021-22)", "value": "29", "club": "liverpool" }, { "name": "Nicolas Anelka (2008-09)", "value": "30", "club": "chelsea" }, { "name": "Dimitar Berbatov (2010-11)", "value": "30", "club": "manutd" } ] } },
+    { "text": "Then the veterans. Didier Drogba, twenty-nine goals, at thirty-two.", "scene": { "type": "person", "person": "drogba", "label": "32 · 2009-10", "mood": "happy" } },
+    { "text": "But here's the twist. Salah's fourth Golden Boot came at thirty-two too, and he was nearly a year older than Drogba.", "scene": { "type": "versus", "title": "THE OLD BOYS", "left": { "person": "drogba", "label": "Drogba 2010", "value": "32y 1m" }, "right": { "person": "salah", "label": "Salah 2025", "value": "32y 11m" } } },
+    { "text": "That fourth boot equalled Thierry Henry's record.", "scene": { "type": "stats", "title": "MOST GOLDEN BOOTS", "items": [ { "n": "4", "l": "Thierry Henry" }, { "n": "4", "l": "Mohamed Salah" }, { "n": "3", "l": "Shearer, Kane, Haaland" } ] } },
+    { "text": "And the oldest of all? Jamie Vardy. Twenty-three goals in twenty twenty, at thirty-three.", "scene": { "type": "person", "person": "vardy", "label": "33 · 2019-20", "mood": "happy", "stamp": "OLDEST" } },
+    { "text": "Eight years after his non-league days, he outscored the whole Premier League.", "scene": { "type": "timeline", "items": [ { "year": "2012", "label": "Joins Leicester from Fleetwood" }, { "year": "2016", "label": "Champions" }, { "year": "2020", "label": "Golden Boot at 33" } ] } },
+    { "text": "Last season Haaland made it three in four years, at just twenty-five.", "scene": { "type": "person", "person": "haaland", "label": "25 · 2025-26", "mood": "happy" } },
+    { "text": "So from eighteen to thirty-three, there's no wrong age to be the best finisher in England.", "scene": { "type": "timeline", "items": [ { "year": "18", "label": "Owen" }, { "year": "22", "label": "Cole, Kane, Haaland" }, { "year": "25", "label": "Salah, Haaland" }, { "year": "32", "label": "Drogba, Salah" }, { "year": "33", "label": "Vardy" } ] } },
+    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+  ]
+}

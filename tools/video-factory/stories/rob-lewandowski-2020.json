@@ -1,0 +1,305 @@
+{
+  "id": "rob-lewandowski-2020",
+  "series": "Ballon d'Or robberies",
+  "title": "Lewandowski: robbed by a cancellation, then by Messi",
+  "sources": [
+    "https://www.bundesliga.com/en/bundesliga/news/lewandowski-named-germany-s-footballer-of-the-year-2020-flick-best-coach-12663",
+    "https://www.soccerladuma.co.za/international/messi-ronaldo-neymar-mbappe-watch/robert-lewandowski-first-to-win-treble-end-up-as-top-goalscorers-in-all-competitions-20200824",
+    "https://www.fotmob.com/it/news/yjdqsjlchmho1u038cqiexzjf/champions-league-winner-and-top-scorer-lewandowski-never-stop-dreaming",
+    "https://amp.foxsports.com/stories/soccer/2020-ballon-dor-award-cancelled",
+    "https://www.goal.com/en-my/news/why-is-the-ballon-dor-cancelled-for-2020-and-who-could-have-won-it/18ltdw02hyjp119bo7qwoxpu4",
+    "https://www.fotmob.com/fi/news/1o1v1tk5e8p051o1xj7c3kc3q1/cancelled-ballon-d'or-'not-very-fair'-on-lewandowski-says-bayern-chief",
+    "https://businessworld.in/article/lewandowski-might-have-won-rummenigge-not-happy-over-ballon-dor-cancellation-302239",
+    "https://bundesliga.com/en/bundesliga/news/robert-lewandowski-i-deserved-to-win-ballon-d-or-bayern-munich-messi-ronaldo-12642",
+    "https://guardian.ng/?p=1208909",
+    "https://www.cbssports.com/soccer/news/bayern-munich-superstar-robert-lewandowski-breaks-gerd-mullers-goal-record-in-bundesliga",
+    "https://gulfnews.com/sport/football/bundesliga-robert-lewandowski-topples-gerd-muellers-goal-record-1.79389966",
+    "https://www.topendsports.com/sport/soccer/awards/ballondor-2021.htm",
+    "https://www.tntsports.co.uk/football/ballon-d-or-2021-lionel-messi-wins-historic-seventh-award-ahead-of-robert-lewandowski-and-jorginho_sto8648942/story.shtml",
+    "https://www.si.com/soccer/2021/11/29/lionel-messi-robert-lewandowski-ballon-dor-speech",
+    "https://english.stadiumastro.com/football/ballon-dor-messi-wants-see-lewandowski-rewarded-2020-exploits-205494",
+    "https://www.tntsports.co.uk/football/ballon-d-or/2021/ballon-d-or-2021-bayern-munich-striker-robert-lewandowski-wins-goalscorer-of-the-year-award_sto8649415/story.shtml",
+    "https://www.tbsnews.net/node/336712"
+  ],
+  "checked": "2019-20: 55 goals (34 Bundesliga, 6 DFB-Pokal, 15 UCL), treble, top scorer in Bundesliga and UCL (Bundesliga.com, SoccerLaduma, FotMob); 2020 award cancelled by France Football, first time ever (Fox, Goal); Rummenigge called it unfair (FotMob, BusinessWorld); 'I deserved to win' (Bundesliga.com, Guardian NG); 41 Bundesliga goals 2020-21 beat Muller's 40 (CBS, Gulf News); 2021 Messi 613, Lewandowski 580, Jorginho 460 (Topend, TNT); Messi 'you deserve your Ballon d'Or' (SI, Stadium Astro); first Striker of the Year award (TNT/Eurosport, TBS).",
+  "clubs": {
+    "bay": {
+      "name": "Bayern Munich",
+      "short": "FCB",
+      "c1": "#dc052d",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "arg": {
+      "name": "Argentina",
+      "short": "ARG",
+      "c1": "#75aadb",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    },
+    "che": {
+      "name": "Chelsea",
+      "short": "CHE",
+      "c1": "#034694",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "lewa": {
+      "name": "Robert Lewandowski",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#5a3e2b"
+      ],
+      "beard": "stubble",
+      "beardCol": "#5a3e2b",
+      "kit": "bay"
+    },
+    "messi": {
+      "name": "Lionel Messi",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#4a3222"
+      ],
+      "beard": "full",
+      "beardCol": "#4a3222",
+      "kit": "arg"
+    },
+    "jorginho": {
+      "name": "Jorginho",
+      "skin": "olive",
+      "hair": [
+        "crop",
+        "#2b2118"
+      ],
+      "beard": "short",
+      "beardCol": "#2b2118",
+      "kit": "che"
+    },
+    "muller": {
+      "name": "Gerd Müller",
+      "skin": "light",
+      "hair": [
+        "messy",
+        "#2b2118"
+      ],
+      "beard": "none",
+      "kit": "bay"
+    }
+  },
+  "lines": [
+    {
+      "text": "Robert Lewandowski won everything in twenty twenty. Then they cancelled the award.",
+      "scene": {
+        "type": "title",
+        "heading": "ROBERT LEWANDOWSKI",
+        "sub": "Bayern Munich · 2019/20",
+        "pill": "ROBBED TWICE?",
+        "person": "lewa"
+      }
+    },
+    {
+      "text": "Fifty-five goals in all competitions. Thirty-four in the league, six in the cup, fifteen in the Champions League.",
+      "scene": {
+        "type": "stats",
+        "title": "2019/20",
+        "items": [
+          {
+            "n": "55",
+            "l": "goals, all comps"
+          },
+          {
+            "n": "34",
+            "l": "Bundesliga"
+          },
+          {
+            "n": "6",
+            "l": "German Cup"
+          },
+          {
+            "n": "15",
+            "l": "Champions League"
+          }
+        ],
+        "person": "lewa"
+      }
+    },
+    {
+      "text": "Bayern won the treble, and he was top scorer in the Bundesliga and in Europe.",
+      "scene": {
+        "type": "trophies",
+        "items": [
+          {
+            "kind": "league",
+            "label": "Bundesliga"
+          },
+          {
+            "kind": "cup",
+            "label": "German Cup"
+          },
+          {
+            "kind": "bigears",
+            "label": "Champions League"
+          }
+        ],
+        "person": "lewa"
+      }
+    },
+    {
+      "text": "But France Football had already decided. No Ballon d'Or in twenty twenty. The first time it was ever cancelled.",
+      "scene": {
+        "type": "stamp",
+        "text": "CANCELLED",
+        "person": "lewa",
+        "color": "red"
+      }
+    },
+    {
+      "text": "The reason? No fair conditions, after a season broken up by Covid.",
+      "scene": {
+        "type": "text",
+        "heading": "BALLON D'OR 2020",
+        "body": "France Football cancels the award for the first time in its history, saying the season did not give fair conditions to judge it."
+      }
+    },
+    {
+      "text": "Bayern's boss Karl-Heinz Rummenigge said it wasn't fair on his striker.",
+      "scene": {
+        "type": "person",
+        "person": "lewa",
+        "label": "Bayern: 'not fair'",
+        "mood": "flat"
+      }
+    },
+    {
+      "text": "Lewandowski said it straight.",
+      "scene": {
+        "type": "quote",
+        "person": "lewa",
+        "text": "I deserved to win the Ballon d'Or."
+      }
+    },
+    {
+      "text": "So he went again. Forty-one Bundesliga goals, breaking Gerd Müller's record of forty from nineteen seventy-two.",
+      "scene": {
+        "type": "versus",
+        "title": "Most Bundesliga goals in a season",
+        "left": {
+          "person": "lewa",
+          "label": "Lewandowski 2020/21",
+          "value": "41"
+        },
+        "right": {
+          "person": "muller",
+          "label": "Müller 1971/72",
+          "value": "40"
+        }
+      }
+    },
+    {
+      "text": "Twenty twenty-one. Surely this was his year.",
+      "scene": {
+        "type": "person",
+        "person": "lewa",
+        "mood": "happy",
+        "stamp": "HIS YEAR?"
+      }
+    },
+    {
+      "text": "Messi six hundred and thirteen points. Lewandowski five hundred and eighty. Second.",
+      "scene": {
+        "type": "podium",
+        "year": "2021",
+        "title": "Ballon d'Or",
+        "places": [
+          {
+            "person": "messi",
+            "club": "arg"
+          },
+          {
+            "person": "lewa",
+            "club": "bay"
+          },
+          {
+            "person": "jorginho",
+            "club": "che"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Thirty-three points short.",
+      "scene": {
+        "type": "versus",
+        "left": {
+          "person": "messi",
+          "label": "Messi",
+          "value": "613"
+        },
+        "right": {
+          "person": "lewa",
+          "label": "Lewandowski",
+          "value": "580"
+        },
+        "title": "2021 Ballon d'Or"
+      }
+    },
+    {
+      "text": "Then Messi turned to him on stage and said this.",
+      "scene": {
+        "type": "quote",
+        "person": "messi",
+        "text": "Robert, you deserve your Ballon d'Or."
+      }
+    },
+    {
+      "text": "What he got instead was a brand new prize. Striker of the Year. The first one ever.",
+      "scene": {
+        "type": "trophies",
+        "items": [
+          {
+            "kind": "boot",
+            "label": "Striker of the Year 2021"
+          }
+        ],
+        "person": "lewa"
+      }
+    },
+    {
+      "text": "Two seasons at the top of the world. Zero Ballon d'Ors.",
+      "scene": {
+        "type": "stats",
+        "title": "Lewandowski's Ballon d'Ors",
+        "items": [
+          {
+            "n": "2",
+            "l": "monster seasons"
+          },
+          {
+            "n": "0",
+            "l": "Ballon d'Ors"
+          }
+        ],
+        "person": "lewa"
+      }
+    },
+    {
+      "text": "Robbery, or just the worst luck in football? Tell me in the comments.",
+      "scene": {
+        "type": "stamp",
+        "text": "ROBBED",
+        "person": "lewa",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

@@ -1,0 +1,304 @@
+{
+  "id": "rob-koeman-1988",
+  "series": "Ballon d'Or robberies",
+  "title": "Koeman 1988: the defender who won everything",
+  "sources": [
+    "https://en.wikipedia.org/wiki/Ronald_Koeman",
+    "https://www.statscrew.com/worldfootball/stats/p-koemaron002",
+    "https://en.wikipedia.org/wiki/1988_European_Cup_final",
+    "https://rsssf.org/ec/ec198788.html",
+    "https://www.uefa.com/uefachampionsleague/news/0252-0cda61cd72d9-e1f121defd12-1000--1987-88-psv-prosper-from-oranje-boom/",
+    "https://offsiderulepodcast.com/2015/09/17/throwback-thursday-psv-create-history-in-stuttgart021/",
+    "https://www.uefa.com/uefaeuro/history/news/0253-0d7d771a1c9f-9c1d694ff12c-1000--van-basten-leaves-it-late-to-stun-west-germany/",
+    "https://rsssf.org/tables/88e.html",
+    "https://www.uefa.com/uefaeuro/history/news/0253-0d7d771ae77b-33dd16358404-1000--euro-1988-team-of-the-tournament/",
+    "https://en.wikipedia.org/wiki/1988_Ballon_d%27Or",
+    "https://rsssf.org/miscellaneous/europa-poy88.html"
+  ],
+  "checked": "21 Eredivisie goals 1987-88 (Wikipedia, Statscrew); PSV treble, final 0-0 aet, won 6-5 on pens, Koeman took and scored PSV's first kick, Van Breukelen saved Veloso (Wikipedia final page, RSSSF, UEFA, Offside Rule); PSV won no European game after round two, through QF and SF on away goals (UEFA, RSSSF results); Euro 88 semi: Koeman pen 74' equaliser, Van Basten winner, 2-1 (UEFA, RSSSF); final 2-0 USSR, Koeman in team of tournament (Wikipedia, UEFA); 1988 vote: Van Basten 129, Gullit 88, Rijkaard 45, Mykhaylychenko 41, Koeman 5th on 39 (Wikipedia, RSSSF).",
+  "clubs": {
+    "psv": {
+      "name": "PSV",
+      "short": "PSV",
+      "c1": "#e1001a",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    },
+    "ben": {
+      "name": "Benfica",
+      "short": "SLB",
+      "c1": "#e2001a",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "ned": {
+      "name": "Netherlands",
+      "short": "NED",
+      "c1": "#f36c21",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "frg": {
+      "name": "West Germany",
+      "short": "FRG",
+      "c1": "#ffffff",
+      "c2": "#000000",
+      "pattern": "plain"
+    },
+    "mil": {
+      "name": "AC Milan",
+      "short": "MIL",
+      "c1": "#d10a11",
+      "c2": "#000000",
+      "pattern": "stripes"
+    }
+  },
+  "people": {
+    "koeman": {
+      "name": "Ronald Koeman",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#e2c27a"
+      ],
+      "beard": "none",
+      "kit": "psv"
+    },
+    "vanbasten": {
+      "name": "Marco van Basten",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#9c7748"
+      ],
+      "beard": "none",
+      "kit": "mil"
+    },
+    "gullit": {
+      "name": "Ruud Gullit",
+      "skin": "dark",
+      "hair": [
+        "locs",
+        "#1a1410"
+      ],
+      "beard": "short",
+      "beardCol": "#1a1410",
+      "kit": "mil"
+    },
+    "rijkaard": {
+      "name": "Frank Rijkaard",
+      "skin": "brown",
+      "hair": [
+        "curlytop",
+        "#1a1410"
+      ],
+      "beard": "none",
+      "kit": "mil"
+    }
+  },
+  "lines": [
+    {
+      "text": "A centre-back scored twenty-one league goals, won the treble AND the Euros. He finished fifth.",
+      "scene": {
+        "type": "title",
+        "heading": "RONALD KOEMAN",
+        "sub": "PSV · 1987/88",
+        "pill": "BALLON D'OR ROBBERY?",
+        "person": "koeman"
+      }
+    },
+    {
+      "text": "Nineteen eighty-seven, eighty-eight. Ronald Koeman plays at the back for PSV.",
+      "scene": {
+        "type": "person",
+        "person": "koeman",
+        "label": "Centre-back",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Free kicks, penalties, long-range shots. Twenty-one goals in the Dutch league alone.",
+      "scene": {
+        "type": "stats",
+        "title": "Koeman, Eredivisie 1987/88",
+        "items": [
+          {
+            "n": "21",
+            "l": "league goals"
+          },
+          {
+            "n": "3",
+            "l": "trophies"
+          }
+        ],
+        "person": "koeman"
+      }
+    },
+    {
+      "text": "PSV win the league, the Dutch Cup, and the European Cup. The treble.",
+      "scene": {
+        "type": "trophies",
+        "items": [
+          {
+            "kind": "league",
+            "label": "Eredivisie"
+          },
+          {
+            "kind": "cup",
+            "label": "KNVB Cup"
+          },
+          {
+            "kind": "bigears",
+            "label": "European Cup"
+          }
+        ],
+        "person": "koeman"
+      }
+    },
+    {
+      "text": "The final in Stuttgart against Benfica. Nil-nil after extra time. A clean sheet.",
+      "scene": {
+        "type": "score",
+        "home": "psv",
+        "away": "ben",
+        "hs": 0,
+        "as": 0,
+        "date": "25 May 1988",
+        "comp": "European Cup final",
+        "note": "after extra time"
+      }
+    },
+    {
+      "text": "Penalties. Who steps up first for PSV? Koeman. Scores. PSV win it six-five.",
+      "scene": {
+        "type": "stamp",
+        "text": "SCORED",
+        "person": "koeman",
+        "color": "white"
+      }
+    },
+    {
+      "text": "Weeks later, Euro eighty-eight. Semi-final, Hamburg, against the hosts West Germany.",
+      "scene": {
+        "type": "score",
+        "home": "frg",
+        "away": "ned",
+        "hs": 1,
+        "as": 2,
+        "date": "21 June 1988",
+        "comp": "Euro 88 semi-final",
+        "note": "Koeman pen 74'"
+      }
+    },
+    {
+      "text": "One-nil down. Koeman equalises from the spot. Van Basten wins it late.",
+      "scene": {
+        "type": "person",
+        "person": "koeman",
+        "label": "The equaliser",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Holland beat the Soviet Union two-nil in the final. Koeman makes the team of the tournament.",
+      "scene": {
+        "type": "trophies",
+        "items": [
+          {
+            "kind": "euro",
+            "label": "Euro 88"
+          }
+        ],
+        "person": "koeman"
+      }
+    },
+    {
+      "text": "So, the Ballon d'Or. Van Basten, Gullit, Rijkaard. All three from Milan.",
+      "scene": {
+        "type": "podium",
+        "year": "1988",
+        "title": "Ballon d'Or",
+        "places": [
+          {
+            "person": "vanbasten",
+            "club": "mil"
+          },
+          {
+            "person": "gullit",
+            "club": "mil"
+          },
+          {
+            "person": "rijkaard",
+            "club": "mil"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Koeman? Fifth. Thirty-nine points to Van Basten's one hundred and twenty-nine.",
+      "scene": {
+        "type": "versus",
+        "title": "1988 Ballon d'Or points",
+        "left": {
+          "person": "vanbasten",
+          "label": "Van Basten, 1st",
+          "value": "129"
+        },
+        "right": {
+          "person": "koeman",
+          "label": "Koeman, 5th",
+          "value": "39"
+        }
+      }
+    },
+    {
+      "text": "Even behind Dynamo Kyiv's Oleksiy Mykhaylychenko.",
+      "scene": {
+        "type": "list",
+        "title": "1988 Ballon d'Or",
+        "rows": [
+          {
+            "name": "Van Basten",
+            "value": "129",
+            "club": "mil"
+          },
+          {
+            "name": "Gullit",
+            "value": "88",
+            "club": "mil"
+          },
+          {
+            "name": "Rijkaard",
+            "value": "45",
+            "club": "mil"
+          },
+          {
+            "name": "Mykhaylychenko",
+            "value": "41"
+          },
+          {
+            "name": "Koeman",
+            "value": "39",
+            "club": "psv",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "A treble and the Euros, from centre-back. Robbed? Tell me in the comments.",
+      "scene": {
+        "type": "stamp",
+        "text": "ROBBED?",
+        "person": "koeman",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

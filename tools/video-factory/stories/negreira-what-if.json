@@ -1,0 +1,229 @@
+{
+  "id": "negreira-what-if",
+  "series": "The Negreira case",
+  "title": "What if the Negreira-era titles went to the runner-up?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/List_of_Spanish_football_champions",
+    "https://www.topendsports.com/sport/soccer/list-league-la-liga.htm",
+    "https://en.wikipedia.org/wiki/Negreira_case",
+    "https://bdnews24.com/sport/rkh4dygb2t"
+  ],
+  "checked": "Real totals (Real Madrid 36, Barcelona 29, Atlético 11 after 2025-26) on Wikipedia + TopEndSports; the 9 Barça titles 2001-2018 and runners-up from Wikipedia's champions list. Alternate numbers are simple arithmetic, labelled as imagination. Messi/Ronaldo title counts derived from the same table and their well-known club spells (Messi Barça 2004-2021, Ronaldo Madrid 2009-2018).",
+  "clubs": {
+    "bar": {
+      "name": "Barcelona",
+      "short": "FCB",
+      "c1": "#a50044",
+      "c2": "#004d98",
+      "pattern": "stripes"
+    },
+    "rma": {
+      "name": "Real Madrid",
+      "short": "RMA",
+      "c1": "#ffffff",
+      "c2": "#febe10",
+      "pattern": "plain"
+    },
+    "atm": {
+      "name": "Atlético Madrid",
+      "short": "ATM",
+      "c1": "#cb3524",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    }
+  },
+  "people": {
+    "messi": {
+      "name": "Lionel Messi",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#5a3a22"
+      ],
+      "beard": "none",
+      "kit": "bar"
+    },
+    "ronaldo": {
+      "name": "Cristiano Ronaldo",
+      "skin": "tan",
+      "hair": [
+        "slick",
+        "#1e1612"
+      ],
+      "beard": "none",
+      "kit": "rma"
+    }
+  },
+  "lines": [
+    {
+      "text": "Imagine a different world, where every Barcelona league title from the Negreira years went to the team in second.",
+      "scene": {
+        "type": "title",
+        "heading": "WHAT IF…",
+        "sub": "An imagined alternate world",
+        "pill": "PURE IMAGINATION"
+      }
+    },
+    {
+      "text": "To be clear: this never happened. No court has taken a title away, and Barcelona deny any wrongdoing.",
+      "scene": {
+        "type": "text",
+        "heading": "This is not real",
+        "body": "An alternate world for fun. No ruling has found any result was affected. Every title still stands."
+      }
+    },
+    {
+      "text": "Between two thousand and one and twenty eighteen, Barça won nine leagues. Real Madrid were second in eight.",
+      "scene": {
+        "type": "stats",
+        "title": "The real world",
+        "items": [
+          {
+            "n": "9",
+            "l": "Barça titles"
+          },
+          {
+            "n": "8",
+            "l": "Madrid second"
+          },
+          {
+            "n": "1",
+            "l": "Atlético second"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Real world today: Real Madrid thirty-six titles, Barcelona twenty-nine.",
+      "scene": {
+        "type": "versus",
+        "title": "La Liga titles",
+        "left": {
+          "person": "ronaldo",
+          "label": "Real Madrid",
+          "value": "36"
+        },
+        "right": {
+          "person": "messi",
+          "label": "Barcelona",
+          "value": "29"
+        }
+      }
+    },
+    {
+      "text": "In our alternate world, Madrid pick up eight more. That's forty-four.",
+      "scene": {
+        "type": "whatif",
+        "title": "Real Madrid's titles",
+        "real": {
+          "label": "Real Madrid",
+          "value": "36"
+        },
+        "alt": {
+          "label": "Real Madrid",
+          "value": "44"
+        }
+      }
+    },
+    {
+      "text": "Barcelona drop to twenty. The gap goes from seven to twenty-four.",
+      "scene": {
+        "type": "whatif",
+        "title": "Barcelona's titles",
+        "real": {
+          "label": "Barcelona",
+          "value": "29"
+        },
+        "alt": {
+          "label": "Barcelona",
+          "value": "20"
+        }
+      }
+    },
+    {
+      "text": "Atlético get twenty eighteen, and go from eleven titles to twelve.",
+      "scene": {
+        "type": "whatif",
+        "title": "Atlético's titles",
+        "real": {
+          "label": "Atlético Madrid",
+          "value": "11"
+        },
+        "alt": {
+          "label": "Atlético Madrid",
+          "value": "12"
+        }
+      }
+    },
+    {
+      "text": "Now the fun part. Cristiano Ronaldo won two leagues in nine years at Madrid.",
+      "scene": {
+        "type": "person",
+        "person": "ronaldo",
+        "label": "2 LEAGUES AT MADRID",
+        "mood": "flat"
+      }
+    },
+    {
+      "text": "In this world? Seven.",
+      "scene": {
+        "type": "whatif",
+        "title": "Ronaldo's La Liga titles",
+        "real": {
+          "label": "Ronaldo at Madrid",
+          "value": "2"
+        },
+        "alt": {
+          "label": "Ronaldo at Madrid",
+          "value": "7"
+        }
+      }
+    },
+    {
+      "text": "And Lionel Messi, ten La Liga titles in real life, would have just one: twenty nineteen.",
+      "scene": {
+        "type": "whatif",
+        "title": "Messi's La Liga titles",
+        "real": {
+          "label": "Messi",
+          "value": "10"
+        },
+        "alt": {
+          "label": "Messi",
+          "value": "1"
+        }
+      }
+    },
+    {
+      "text": "A totally different history of Spanish football.",
+      "scene": {
+        "type": "trophies",
+        "title": "Alternate champions",
+        "items": [
+          {
+            "kind": "league",
+            "label": "Madrid ×8"
+          },
+          {
+            "kind": "league",
+            "label": "Atlético ×1"
+          }
+        ]
+      }
+    },
+    {
+      "text": "But that world is made up. Back in this one, every title stands, there's no verdict, and the case is still open.",
+      "scene": {
+        "type": "stamp",
+        "text": "IMAGINED",
+        "color": "white"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

@@ -1,0 +1,280 @@
+{
+  "id": "rob-ribery-2013",
+  "series": "Ballon d'Or robberies",
+  "title": "Ribéry 2013: the deadline that moved",
+  "sources": [
+    "https://www.tntsports.co.uk/football/ballon-d-or/2021/ballon-dor-2013-when-franck-ribery-felt-robbed-as-cristiano-ronaldo-won-award-after-vote-controversy_sto9182668/story.shtml",
+    "https://www.goal.com/en-ca/lists/messi-ronaldo-not-better-former-bayern-star-ballon-d-or-forever-injustice-missing-out-on-prestigious-prize/blt61106d3556a41a43",
+    "https://www.foxnews.com/sports/ronaldos-hat-trick-boosts-his-ballon-dor-chances-over-messi-after-voting-extended.amp",
+    "https://www.foxnews.com/sports/cristiano-ronaldo-named-worlds-best-soccer-player-of-2013",
+    "https://www.uefa.com/uefachampionsleague/news/newsid=2043748.html",
+    "https://img.fifa.com/image/upload/gva3xc0mvstzaotijqum.pdf",
+    "https://www.nbcsports.com/soccer/news/cristiano-ronaldo-wins-2013-ballon-dor-crowned-worlds-best-player",
+    "https://www.afrik-foot.com/ballon-d-or-le-classement-complet",
+    "https://www.uefa.com/uefachampionsleague/news/newsid=1947490.html",
+    "https://www.ft.lk/Sports/ribery-and-robben-combine-to-give-bayern-victory/23-153136",
+    "https://www.beinsports.com/en-us/soccer/articles/franck-ribery-rants-at-injustice-of-cristiano"
+  ],
+  "checked": "Bayern treble 2012-13 and UEFA Best Player in Europe 2013 (Eurosport/TNT, Goal); Ribery set up Robben's 89th-minute winner v Dortmund 2-1 at Wembley (UEFA, FT.lk); deadline moved from 15 to 29 Nov, first extension ever, FIFA cited too few votes (Goal, Eurosport/TNT, Fox); Ronaldo hat-trick in 3-2 win in Sweden 19 Nov (Fox, UEFA); voters allowed to change picks (Fox); FIFA said the win owed nothing to the extension (Fox); result 27.99/24.72/23.36%, 1365/1205/1127 pts (FIFA PDF, NBC, Afrik-foot); Ribery called it an injustice (beIN, Goal). No claim of rigging stated as fact.",
+  "clubs": {
+    "bay": {
+      "name": "Bayern Munich",
+      "short": "FCB",
+      "c1": "#dc052d",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "bvb": {
+      "name": "Borussia Dortmund",
+      "short": "BVB",
+      "c1": "#fde100",
+      "c2": "#000000",
+      "pattern": "plain"
+    },
+    "por": {
+      "name": "Portugal",
+      "short": "POR",
+      "c1": "#c8102e",
+      "c2": "#046a38",
+      "pattern": "plain"
+    },
+    "swe": {
+      "name": "Sweden",
+      "short": "SWE",
+      "c1": "#fecc00",
+      "c2": "#006aa7",
+      "pattern": "plain"
+    },
+    "rma": {
+      "name": "Real Madrid",
+      "short": "RMA",
+      "c1": "#ffffff",
+      "c2": "#d4af37",
+      "pattern": "plain"
+    },
+    "bar": {
+      "name": "Barcelona",
+      "short": "BAR",
+      "c1": "#a50044",
+      "c2": "#004d98",
+      "pattern": "stripes"
+    }
+  },
+  "people": {
+    "ribery": {
+      "name": "Franck Ribéry",
+      "skin": "light",
+      "hair": [
+        "buzz",
+        "#3a2a1e"
+      ],
+      "beard": "stubble",
+      "beardCol": "#3a2a1e",
+      "kit": "bay"
+    },
+    "ronaldo": {
+      "name": "Cristiano Ronaldo",
+      "skin": "tan",
+      "hair": [
+        "slick",
+        "#1e140d"
+      ],
+      "beard": "none",
+      "kit": "rma"
+    },
+    "messi": {
+      "name": "Lionel Messi",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#4a3222"
+      ],
+      "beard": "stubble",
+      "beardCol": "#4a3222",
+      "kit": "bar"
+    }
+  },
+  "lines": [
+    {
+      "text": "Franck Ribéry won the treble. Then FIFA moved the deadline.",
+      "scene": {
+        "type": "title",
+        "heading": "FRANCK RIBÉRY",
+        "sub": "Bayern Munich · 2013",
+        "pill": "ROBBED BY A DEADLINE?",
+        "person": "ribery"
+      }
+    },
+    {
+      "text": "Twenty thirteen. Bayern win the Bundesliga, the German Cup and the Champions League.",
+      "scene": {
+        "type": "trophies",
+        "items": [
+          {
+            "kind": "league",
+            "label": "Bundesliga"
+          },
+          {
+            "kind": "cup",
+            "label": "DFB-Pokal"
+          },
+          {
+            "kind": "bigears",
+            "label": "Champions League"
+          }
+        ],
+        "person": "ribery"
+      }
+    },
+    {
+      "text": "Wembley, the final against Dortmund. Eighty-ninth minute. Ribéry's flick sets up Robben. Two-one.",
+      "scene": {
+        "type": "score",
+        "home": "bay",
+        "away": "bvb",
+        "hs": 2,
+        "as": 1,
+        "date": "25 May 2013",
+        "comp": "Champions League final",
+        "note": "Robben 89', Ribéry assist"
+      }
+    },
+    {
+      "text": "UEFA names him the best player in Europe. He's the favourite.",
+      "scene": {
+        "type": "person",
+        "person": "ribery",
+        "label": "UEFA Best Player in Europe",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Voting is meant to close on the fifteenth of November.",
+      "scene": {
+        "type": "text",
+        "heading": "BALLON D'OR 2013",
+        "body": "Votes from national team coaches, captains and journalists are due by 15 November."
+      }
+    },
+    {
+      "text": "Then FIFA extends it two weeks, to the twenty-ninth. The first time ever. Their reason? Not enough votes in.",
+      "scene": {
+        "type": "timeline",
+        "items": [
+          {
+            "year": "15 Nov",
+            "label": "Original deadline"
+          },
+          {
+            "year": "19 Nov",
+            "label": "Sweden v Portugal"
+          },
+          {
+            "year": "29 Nov",
+            "label": "New deadline"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Voters could even change their picks.",
+      "scene": {
+        "type": "stamp",
+        "text": "EXTENDED",
+        "person": "ribery",
+        "color": "yellow"
+      }
+    },
+    {
+      "text": "In between, a World Cup play-off in Stockholm. Cristiano Ronaldo scores a hat-trick. Portugal win three-two.",
+      "scene": {
+        "type": "score",
+        "home": "swe",
+        "away": "por",
+        "hs": 2,
+        "as": 3,
+        "date": "19 November 2013",
+        "comp": "World Cup play-off",
+        "note": "Ronaldo hat-trick"
+      }
+    },
+    {
+      "text": "January. Ronaldo wins with twenty-eight percent. Messi second. Ribéry third.",
+      "scene": {
+        "type": "podium",
+        "year": "2013",
+        "title": "FIFA Ballon d'Or",
+        "places": [
+          {
+            "person": "ronaldo",
+            "club": "rma"
+          },
+          {
+            "person": "messi",
+            "club": "bar"
+          },
+          {
+            "person": "ribery",
+            "club": "bay"
+          }
+        ]
+      }
+    },
+    {
+      "text": "The points? Ronaldo thirteen sixty-five. Ribéry eleven twenty-seven.",
+      "scene": {
+        "type": "versus",
+        "title": "2013 Ballon d'Or points",
+        "left": {
+          "person": "ronaldo",
+          "label": "Ronaldo, 1st",
+          "value": "1365"
+        },
+        "right": {
+          "person": "ribery",
+          "label": "Ribéry, 3rd",
+          "value": "1127"
+        }
+      }
+    },
+    {
+      "text": "FIFA said Ronaldo's win owed nothing to the extension. Ribéry called it an injustice.",
+      "scene": {
+        "type": "person",
+        "person": "ribery",
+        "label": "Ribéry: 'an injustice'",
+        "mood": "flat"
+      }
+    },
+    {
+      "text": "Would the old deadline have changed it? Nobody can know.",
+      "scene": {
+        "type": "whatif",
+        "title": "The deadline",
+        "real": {
+          "label": "Extended to 29 Nov",
+          "value": "Ronaldo wins"
+        },
+        "alt": {
+          "label": "Closed on 15 Nov",
+          "value": "Nobody knows"
+        }
+      }
+    },
+    {
+      "text": "A treble winner, third. Robbed? Tell me in the comments.",
+      "scene": {
+        "type": "stamp",
+        "text": "ROBBED?",
+        "person": "ribery",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

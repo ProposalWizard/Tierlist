@@ -1,0 +1,275 @@
+{
+  "id": "ww-bayern-you-v-spurs-kane",
+  "series": "Who would win?",
+  "title": "Spurs with Kane back v Bayern with YOU: who would win?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/Harry_Kane",
+    "https://en.wikipedia.org/wiki/England_national_football_team",
+    "https://english.ratopati.com/story/79236",
+    "https://www.tottenhamhotspur.com/news/1090959/confirmed-line-ups-spurs-vs-aston-villa",
+    "https://www.tottenhamhotspur.com/news/1089725/confirmed-line-ups-spurs-vs-everton",
+    "https://www.beinsports.com/en-us/soccer/premier-league/articles/tottenham-sign-tonali-for-club-record-100m-fee-2026-07-06",
+    "https://www.soccernews.com/tottenham-sign-tonali-for-club-record-100m-fee/401437/",
+    "https://www.bundesliga.com/en/bundesliga/news/how-will-bayern-line-up-26-27-kane-olise-neuer-brown-saibari-38081",
+    "https://ligainsider.de/fc-bayern-muenchen/1/aufstellung-des-fc-bayern-muenchen-413692/"
+  ],
+  "checked": "Kane plays for Bayern in 2026/27 (Wikipedia Kane page + England Sep 2026 squad list + Ratopati Sep 2026 Bundesliga goal), so Kane-at-Spurs is framed as an alternate world; Kane is Spurs' record scorer with 280 goals and 100+ Bundesliga goals (Kane page, 102 in 102 as of Oct 2026; Ratopati had his 99th in Sep 2026); Spurs XI from official confirmed XIs v Everton 12 Sep and Villa 19 Sep 2026; Tonali club-record ~£100m (beIN + SoccerNews); Bayern XI from Bundesliga.com 2026/27 line-up piece + Ligainsider XI. 'You' is the fictional game player. Match imagined.",
+  "clubs": {
+    "tot": {
+      "name": "Tottenham Hotspur",
+      "short": "TOT",
+      "c1": "#ffffff",
+      "c2": "#132257",
+      "pattern": "plain"
+    },
+    "bay": {
+      "name": "Bayern Munich",
+      "short": "FCB",
+      "c1": "#dc052d",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "kane": {
+      "name": "Harry Kane",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#6b4a2b"
+      ],
+      "beard": "stubble",
+      "kit": "tot"
+    },
+    "you": {
+      "name": "You",
+      "skin": "tan",
+      "hair": [
+        "quiff",
+        "#3a2a1a"
+      ],
+      "beard": "none",
+      "kit": "bay"
+    },
+    "olise": {
+      "name": "Michael Olise",
+      "skin": "brown",
+      "hair": [
+        "curlytop",
+        "#111111"
+      ],
+      "beard": "none",
+      "kit": "bay"
+    },
+    "tonali": {
+      "name": "Sandro Tonali",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#2a1a10"
+      ],
+      "beard": "stubble",
+      "kit": "tot"
+    }
+  },
+  "lines": [
+    {
+      "text": "Who would win: Spurs with Harry Kane back home, or Bayern Munich with you up front?",
+      "scene": {
+        "type": "title",
+        "heading": "SPURS + KANE v BAYERN + YOU",
+        "sub": "An imagined match · a prediction",
+        "pill": "WHO WOULD WIN?",
+        "person": "kane"
+      }
+    },
+    {
+      "text": "Quick fact check: Kane still plays for Bayern this season. So in this alternate world, he swaps sides, and you take his number nine.",
+      "scene": {
+        "type": "whatif",
+        "title": "THE SWAP",
+        "real": {
+          "label": "Real world",
+          "value": "Kane at Bayern"
+        },
+        "alt": {
+          "label": "This world",
+          "value": "Kane at Spurs, you at Bayern"
+        }
+      }
+    },
+    {
+      "text": "Kane is Spurs' all-time top scorer with two hundred and eighty goals. In Germany he's passed a hundred league goals.",
+      "scene": {
+        "type": "stats",
+        "title": "HARRY KANE",
+        "items": [
+          {
+            "n": "280",
+            "l": "Spurs goals"
+          },
+          {
+            "n": "100+",
+            "l": "Bundesliga goals"
+          }
+        ],
+        "person": "kane"
+      }
+    },
+    {
+      "text": "Spurs broke their transfer record for Sandro Tonali this summer, a reported hundred million pounds.",
+      "scene": {
+        "type": "person",
+        "person": "tonali",
+        "label": "CLUB-RECORD SIGNING",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "So Spurs line up with Robertson, Tonali, Marmoush, and Kane back through the middle.",
+      "scene": {
+        "type": "list",
+        "title": "SPURS XI",
+        "rows": [
+          {
+            "name": "Antonín Kinský",
+            "value": "GK"
+          },
+          {
+            "name": "Porro · van Hecke · van de Ven · Robertson",
+            "value": "DEF"
+          },
+          {
+            "name": "Tonali · Bentancur · Fernandes",
+            "value": "MID"
+          },
+          {
+            "name": "Savinho · Marmoush",
+            "value": "WING"
+          },
+          {
+            "name": "Harry Kane",
+            "value": "ST",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Bayern: Neuer, Kimmich, Musiala, Olise, Díaz, and you.",
+      "scene": {
+        "type": "list",
+        "title": "BAYERN XI",
+        "rows": [
+          {
+            "name": "Manuel Neuer",
+            "value": "GK"
+          },
+          {
+            "name": "Laimer · Upamecano · Tah · Brown",
+            "value": "DEF"
+          },
+          {
+            "name": "Kimmich · Pavlović",
+            "value": "MID"
+          },
+          {
+            "name": "Olise · Musiala · Díaz",
+            "value": "AM"
+          },
+          {
+            "name": "YOU",
+            "value": "ST",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Twelve minutes. Kane, from the edge, low into the corner. One-nil Spurs.",
+      "scene": {
+        "type": "score",
+        "home": "tot",
+        "away": "bay",
+        "hs": 1,
+        "as": 0,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Kane 12'",
+        "stamp": "HE'S BACK"
+      }
+    },
+    {
+      "text": "Your answer: Olise whips it in, you get across Van de Ven. One-all.",
+      "scene": {
+        "type": "score",
+        "home": "tot",
+        "away": "bay",
+        "hs": 1,
+        "as": 1,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "YOU 31'"
+      }
+    },
+    {
+      "text": "Kane penalty, two-one. Then you turn Robertson and finish. Two-all.",
+      "scene": {
+        "type": "versus",
+        "title": "OLD NINE v NEW NINE",
+        "left": {
+          "person": "kane",
+          "label": "Kane",
+          "value": "2 goals"
+        },
+        "right": {
+          "person": "you",
+          "label": "You",
+          "value": "2 goals"
+        }
+      }
+    },
+    {
+      "text": "Eighty-eighth minute. Musiala slips you in. You chip Kinský. Three-two Bayern.",
+      "scene": {
+        "type": "score",
+        "home": "tot",
+        "away": "bay",
+        "hs": 2,
+        "as": 3,
+        "date": "Full time · prediction",
+        "comp": "Imagined match",
+        "note": "You 3 · Kane 2",
+        "stamp": "HAT-TRICK"
+      }
+    },
+    {
+      "text": "Man of the match: you. Kane second, Olise third.",
+      "scene": {
+        "type": "podium",
+        "year": "Imagined",
+        "title": "MAN OF THE MATCH",
+        "places": [
+          {
+            "person": "you",
+            "club": "bay"
+          },
+          {
+            "person": "kane",
+            "club": "tot"
+          },
+          {
+            "person": "olise",
+            "club": "bay"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

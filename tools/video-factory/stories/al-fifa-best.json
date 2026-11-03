@@ -1,0 +1,39 @@
+{
+  "id": "al-fifa-best",
+  "series": "Everyone, by age",
+  "title": "Every FIFA Best Men's Player winner, by age",
+  "sources": [
+    "https://en.wikipedia.org/wiki/The_Best_FIFA_Men%27s_Player",
+    "data/ballondor/players.json (dates of birth for Ronaldo, Messi, Modric and Dembele, from ballondor.com)",
+    "data/ballondor/rankings.json (same-year Ballon d'Or podiums, from ballondor.com)"
+  ],
+  "checked": "Winners, runners-up and thirds 2016-2025 from the Wikipedia award page; ages are each winner's age at the end of the award year, from ballondor.com dates of birth (Ronaldo, Messi, Modric, Dembele) and well-known dates for Lewandowski (21 Aug 1988) and Vinicius (12 July 2000), which could not be double-checked (search limit reached). No 2026 award was listed when checked.",
+  "clubs": {
+    "realmadrid": { "name": "Real Madrid", "short": "RMA", "c1": "#ffffff", "c2": "#febe10", "pattern": "plain" },
+    "barca": { "name": "Barcelona", "short": "BAR", "c1": "#a50044", "c2": "#004d98", "pattern": "stripes" },
+    "bayern": { "name": "Bayern Munich", "short": "FCB", "c1": "#dc052d", "c2": "#ffffff", "pattern": "plain" },
+    "psg": { "name": "Paris Saint-Germain", "short": "PSG", "c1": "#004170", "c2": "#da291c", "pattern": "centre" },
+    "miami": { "name": "Inter Miami", "short": "MIA", "c1": "#f7b5cd", "c2": "#231f20", "pattern": "plain" }
+  },
+  "people": {
+    "vini": { "name": "Vinicius Junior", "skin": "dark", "hair": ["curlytop", "#111111"], "beard": "none", "kit": "realmadrid" },
+    "messi": { "name": "Lionel Messi", "skin": "light", "hair": ["side", "#3b2a1c"], "beard": "full", "beardCol": "#3b2a1c", "kit": "miami" },
+    "lewa": { "name": "Robert Lewandowski", "skin": "light", "hair": ["side", "#4a3424"], "beard": "stubble", "kit": "bayern" },
+    "ronaldo": { "name": "Cristiano Ronaldo", "skin": "olive", "hair": ["quiff", "#1e1610"], "beard": "none", "kit": "realmadrid" },
+    "dembele": { "name": "Ousmane Dembele", "skin": "dark", "hair": ["crop", "#111111"], "beard": "short", "kit": "psg" }
+  },
+  "lines": [
+    { "text": "FIFA's Best Men's Player award. Ten editions, six winners. And it really doesn't like young players.", "scene": { "type": "title", "heading": "FIFA THE BEST, BY AGE", "sub": "Every winner · 2016 to 2025", "pill": "YOUNGEST TO OLDEST", "person": "vini" } },
+    { "text": "The youngest winner is Vinicius Junior, twenty twenty-four. He was twenty-four.", "scene": { "type": "person", "person": "vini", "label": "24 · 2024", "mood": "happy", "stamp": "YOUNGEST" } },
+    { "text": "Then a big gap to Ousmane Dembele, last year, at twenty-eight.", "scene": { "type": "person", "person": "dembele", "label": "28 · 2025", "mood": "happy" } },
+    { "text": "Everyone else was over thirty. Cristiano Ronaldo won the first two, at thirty-one and thirty-two.", "scene": { "type": "list", "title": "AGED 31 TO 32", "rows": [ { "name": "Cristiano Ronaldo (2016)", "value": "31", "club": "realmadrid" }, { "name": "Cristiano Ronaldo (2017)", "value": "32", "club": "realmadrid" }, { "name": "Lionel Messi (2019)", "value": "32", "club": "barca" }, { "name": "Robert Lewandowski (2020)", "value": "32", "club": "bayern" } ] } },
+    { "text": "Lewandowski won it again at thirty-three. So did Luka Modric.", "scene": { "type": "list", "title": "AGED 33 TO 35", "rows": [ { "name": "Luka Modric (2018)", "value": "33", "club": "realmadrid" }, { "name": "Robert Lewandowski (2021)", "value": "33", "club": "bayern", "hl": true }, { "name": "Lionel Messi (2022)", "value": "35", "club": "psg" } ] } },
+    { "text": "Messi won it at thirty-five, after the World Cup in Qatar.", "scene": { "type": "person", "person": "messi", "label": "35 · 2022", "mood": "happy" } },
+    { "text": "And the oldest? Messi again. Thirty-six, twenty twenty-three, by then playing in Miami.", "scene": { "type": "person", "person": "messi", "label": "36 · 2023", "mood": "happy", "stamp": "OLDEST" } },
+    { "text": "So eight of the ten awards went to players aged thirty-one or older.", "scene": { "type": "stats", "title": "THE TEN AWARDS", "items": [ { "n": "8", "l": "won by players 31+" }, { "n": "2", "l": "won by players under 30" }, { "n": "3", "l": "won by Messi" } ] } },
+    { "text": "Lined up in order, it goes twenty-four, twenty-eight, then thirty-one all the way to thirty-six.", "scene": { "type": "timeline", "items": [ { "year": "24", "label": "Vinicius" }, { "year": "28", "label": "Dembele" }, { "year": "31", "label": "Ronaldo" }, { "year": "33", "label": "Modric, Lewandowski" }, { "year": "36", "label": "Messi" } ] } },
+    { "text": "Lewandowski's twenty twenty win came in the year the Ballon d'Or wasn't held.", "scene": { "type": "whatif", "title": "2020", "real": { "label": "FIFA The Best", "value": "Lewandowski" }, "alt": { "label": "Ballon d'Or", "value": "Not held" } } },
+    { "text": "And last year, the runner-up was Lamine Yamal, eighteen. The youngest winner might be very close.", "scene": { "type": "list", "title": "THE BEST 2025", "rows": [ { "name": "Ousmane Dembele", "value": "1st", "club": "psg", "hl": true }, { "name": "Lamine Yamal", "value": "2nd", "club": "barca" }, { "name": "Kylian Mbappe", "value": "3rd", "club": "realmadrid" } ] } },
+    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+  ]
+}
