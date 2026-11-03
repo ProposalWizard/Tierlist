@@ -134,5 +134,13 @@
     "added": "2026-11-02T19:54:00Z",
     "title": "Progress 2 Nov: Harry Glass stadium UI is the new default look (Settings to switch back to Pitch). Patch note 0.137.",
     "prompt": "Daily progress update, 1 Nov 19:54 to 2 Nov 19:54 (UK). No pull requests merged; Harry pushed straight to main.\n\nHarry (straight to main):\n- Glass stadium, a new UI look and now the default: a blurred day stadium behind every career screen, frosted-glass cards and bars, a glowing green PLAY. Settings → Screens → UI look: Glass | Pitch. Shop, Store, Casino, the Old UI and the match are untouched.\n- A quicker test check, and the game-versions test expects the new UI look row.\n\nLeo and Mikey: nothing merged to main in this window.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.137 Harry: Glass UI, real football, quicker test check: https://claude.ai/artifact/XzJ588o9s1tsQWGd3kAcwR"
+  },
+  {
+    "id": "progress-2026-11-03",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-11-03T19:54:00Z",
+    "title": "Progress 3 Nov: Mikey real competition history leaders and a video factory (88 shorts). No new patch note.",
+    "prompt": "Daily progress update, 2 Nov 19:54 to 3 Nov 19:54 (UK). 1 pull request merged to main.\n\nMikey:\n- #830 History tabs show the top scorer, top assister and player of the season: your career’s seasons first, then the real history before them. Brain note FACT-DAT-008.\n- #830 A video factory (tools/video-factory/) that turns a storyboard into a 1080x1920 short with voiceover, narrator, captions and music; 88 storyboards included; MP4s now play on iPhone Safari. Marketing ideas library in docs/marketing/video-ideas.md.\n\nHarry and Leo: nothing merged to main in this window.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- No new patch note in this window. The latest is 0.137 (Harry: Glass UI, real football): https://claude.ai/artifact/XzJ588o9s1tsQWGd3kAcwR"
   }
 ]
