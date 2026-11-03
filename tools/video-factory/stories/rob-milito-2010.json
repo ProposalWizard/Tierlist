@@ -1,0 +1,297 @@
+{
+  "id": "rob-milito-2010",
+  "series": "Ballon d'Or robberies",
+  "title": "Milito 2010: three finals, zero votes",
+  "sources": [
+    "https://en.wikipedia.org/wiki/2010_Coppa_Italia_final",
+    "https://www.inter.it/en/news/2020/05/05/10-memorable-moments-from-the-coppa-italia-final-2010-inter-roma.html",
+    "https://www.inter.it/en/news/2020/05/08/all-of-militos-goals-inter-2009-2010-season.html",
+    "https://en.wikipedia.org/wiki/Diego_Milito",
+    "https://www.90min.com/posts/diego-milito-the-best-striker-in-the-world-in-2010-inter-s-biggest-of-big-game-players-01e8yemvxtpw",
+    "https://www.eurosport.com/football/champions-league/2009-2010/inter-win-champions-league_sto2333150/story.shtml",
+    "https://www.inter.it/en/news/2020/05/22/10-unforgettable-moments-from-inter-2-0-bayern.html",
+    "https://www.si.com/soccer/2010/10/27/milito",
+    "https://www.maltatoday.com.mt/sports/football/6993/inter-president-not-happy-with-ballon-d-or-selection",
+    "https://www.planetfootball.com/inter/most-scandalous-snub-ballon-dor-history-diego-milito-2010",
+    "https://en.wikipedia.org/wiki/2010_FIFA_Ballon_d%27Or",
+    "https://www.topendsports.com/sport/soccer/awards/ballondor-2010.htm"
+  ],
+  "checked": "30 goals all comps, 22 in Serie A (Inter.it, Wikipedia); only goal of Coppa final 1-0 v Roma (Wikipedia, Inter.it); second-half winner at Siena for the title (90min, Inter.it); both goals 2-0 v Bayern in Madrid, 22 May 2010 (Eurosport, Inter.it); left off 23-man FIFA Ballon d'Or shortlist, Moratti stunned (SI, MaltaToday, Planet Football); 4 Inter players on list, Sneijder 4th, Barca top 3 (Wikipedia, Topend).",
+  "clubs": {
+    "int": {
+      "name": "Inter",
+      "short": "INT",
+      "c1": "#0a4ea2",
+      "c2": "#000000",
+      "pattern": "stripes"
+    },
+    "rom": {
+      "name": "Roma",
+      "short": "ROM",
+      "c1": "#8e1f2f",
+      "c2": "#f0bc42",
+      "pattern": "plain"
+    },
+    "sie": {
+      "name": "Siena",
+      "short": "SIE",
+      "c1": "#000000",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    },
+    "bay": {
+      "name": "Bayern Munich",
+      "short": "FCB",
+      "c1": "#dc052d",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "bar": {
+      "name": "Barcelona",
+      "short": "BAR",
+      "c1": "#a50044",
+      "c2": "#004d98",
+      "pattern": "stripes"
+    }
+  },
+  "people": {
+    "milito": {
+      "name": "Diego Milito",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#2b1d14"
+      ],
+      "beard": "stubble",
+      "beardCol": "#2b1d14",
+      "kit": "int"
+    },
+    "messi": {
+      "name": "Lionel Messi",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#4a3222"
+      ],
+      "beard": "none",
+      "kit": "bar"
+    },
+    "iniesta": {
+      "name": "Andrés Iniesta",
+      "skin": "light",
+      "hair": [
+        "buzz",
+        "#4a3526"
+      ],
+      "beard": "none",
+      "kit": "bar"
+    },
+    "xavi": {
+      "name": "Xavi",
+      "skin": "light",
+      "hair": [
+        "tidy",
+        "#2b1d14"
+      ],
+      "beard": "none",
+      "kit": "bar"
+    }
+  },
+  "lines": [
+    {
+      "text": "He scored in three finals in seventeen days and won the treble. The Ballon d'Or didn't even list him.",
+      "scene": {
+        "type": "title",
+        "heading": "DIEGO MILITO",
+        "sub": "Inter · 2009/10",
+        "pill": "THE BIGGEST SNUB?",
+        "person": "milito"
+      }
+    },
+    {
+      "text": "Diego Milito, Inter's striker under José Mourinho. Thirty goals that season, twenty-two in Serie A.",
+      "scene": {
+        "type": "stats",
+        "title": "Milito 2009/10",
+        "items": [
+          {
+            "n": "30",
+            "l": "goals, all comps"
+          },
+          {
+            "n": "22",
+            "l": "Serie A"
+          }
+        ],
+        "person": "milito"
+      }
+    },
+    {
+      "text": "Final number one. The Coppa Italia against Roma. One goal in the whole game. His.",
+      "scene": {
+        "type": "score",
+        "home": "int",
+        "away": "rom",
+        "hs": 1,
+        "as": 0,
+        "date": "5 May 2010",
+        "comp": "Coppa Italia final",
+        "note": "Milito"
+      }
+    },
+    {
+      "text": "Final number two. Last day of Serie A, away at Siena. The title on the line.",
+      "scene": {
+        "type": "text",
+        "heading": "SERIE A, FINAL DAY",
+        "body": "A win at Siena makes Inter champions. It is goalless at half-time."
+      }
+    },
+    {
+      "text": "Second half. Milito scores. One-nil. Inter are champions of Italy.",
+      "scene": {
+        "type": "score",
+        "home": "sie",
+        "away": "int",
+        "hs": 0,
+        "as": 1,
+        "date": "May 2010",
+        "comp": "Serie A",
+        "note": "Milito"
+      }
+    },
+    {
+      "text": "Final number three. Madrid. The Champions League final against Bayern.",
+      "scene": {
+        "type": "person",
+        "person": "milito",
+        "label": "Santiago Bernabéu",
+        "mood": "flat"
+      }
+    },
+    {
+      "text": "First half, Milito. Second half, Milito again. Two-nil. Inter's first European Cup in forty-five years.",
+      "scene": {
+        "type": "score",
+        "home": "int",
+        "away": "bay",
+        "hs": 2,
+        "as": 0,
+        "date": "22 May 2010",
+        "comp": "Champions League final",
+        "note": "Milito 35', 70'"
+      }
+    },
+    {
+      "text": "League, cup, Champions League. The treble. Italy's first ever.",
+      "scene": {
+        "type": "trophies",
+        "items": [
+          {
+            "kind": "league",
+            "label": "Serie A"
+          },
+          {
+            "kind": "cup",
+            "label": "Coppa Italia"
+          },
+          {
+            "kind": "bigears",
+            "label": "Champions League"
+          }
+        ],
+        "person": "milito"
+      }
+    },
+    {
+      "text": "October. FIFA names twenty-three players for the Ballon d'Or. Four from Inter.",
+      "scene": {
+        "type": "list",
+        "title": "Inter on the 2010 list",
+        "rows": [
+          {
+            "name": "Wesley Sneijder",
+            "value": "4th",
+            "club": "int"
+          },
+          {
+            "name": "Samuel Eto'o",
+            "value": "12th",
+            "club": "int"
+          },
+          {
+            "name": "Maicon",
+            "value": "17th",
+            "club": "int"
+          },
+          {
+            "name": "Júlio César",
+            "value": "19th",
+            "club": "int"
+          },
+          {
+            "name": "Diego Milito",
+            "value": "not listed",
+            "club": "int",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Diego Milito? Not one of the twenty-three.",
+      "scene": {
+        "type": "stamp",
+        "text": "NOT NOMINATED",
+        "person": "milito",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Inter's president Massimo Moratti said he was stunned.",
+      "scene": {
+        "type": "person",
+        "person": "milito",
+        "label": "Moratti: stunned",
+        "mood": "shocked"
+      }
+    },
+    {
+      "text": "The podium in January? Messi, Iniesta, Xavi. All Barcelona.",
+      "scene": {
+        "type": "podium",
+        "year": "2010",
+        "title": "FIFA Ballon d'Or",
+        "places": [
+          {
+            "person": "messi",
+            "club": "bar"
+          },
+          {
+            "person": "iniesta",
+            "club": "bar"
+          },
+          {
+            "person": "xavi",
+            "club": "bar"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Three finals, four goals, three trophies. Not even a nomination. Robbery? Comments.",
+      "scene": {
+        "type": "stamp",
+        "text": "ROBBED",
+        "person": "milito",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

@@ -1,0 +1,285 @@
+{
+  "id": "scandal-juventus-2023",
+  "series": "Football's biggest scandals",
+  "title": "Juventus 2023: the plusvalenza points deduction",
+  "sources": [
+    "https://en.wikipedia.org/wiki/2022%E2%80%9323_Serie_A",
+    "https://www.insideworldfootball.com/2023/05/23/juventus-hit-new-10-point-penalty-pushing-european-club-qualification-slots/",
+    "https://espndeportes.espn.com/futbol/italia/nota/_/id/12088581/juventus-sancion-quita-10-puntos-serie-a-caso-plusvalias",
+    "https://www.goal.com/en-ca/news/why-uefa-booted-juventus-out-2023-24-europa-conference-league/blt73f64580f3410aa1",
+    "https://tsn.ca/juventus-banned-from-uefa-conference-league-over-capital-gains-case-1.1989589",
+    "https://www.aljazeera.com/sports/2023/5/30/italy-juventus-fined-avoid-further-points-deduction-plea-bargain",
+    "https://www.cbssports.com/soccer/news/juventus-avoid-further-point-deduction-in-second-sporting-trial-on-salary-maneuvers-case"
+  ],
+  "checked": "-15 (Jan 2023), points restored for re-examination (Apr), -10 on 22 May 2023: Wikipedia + InsideWorldFootball + ESPN; final table (Juve 62, 7th; Inter 72) Wikipedia; UEFA exclusion from 2023-24 Conference League with Fiorentina taking the place: Goal + TSN (fine amount differs between sources, so left out); €718,000 salary plea deal: Al Jazeera + CBS. '72 points, level with Inter' is arithmetic.",
+  "clubs": {
+    "juv": {
+      "name": "Juventus",
+      "short": "JUV",
+      "c1": "#ffffff",
+      "c2": "#000000",
+      "pattern": "stripes"
+    },
+    "nap": {
+      "name": "Napoli",
+      "short": "NAP",
+      "c1": "#12a0d7",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "laz": {
+      "name": "Lazio",
+      "short": "LAZ",
+      "c1": "#87d8f7",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "inter": {
+      "name": "Inter",
+      "short": "INT",
+      "c1": "#0068a8",
+      "c2": "#000000",
+      "pattern": "stripes"
+    },
+    "mil": {
+      "name": "Milan",
+      "short": "MIL",
+      "c1": "#d0021b",
+      "c2": "#000000",
+      "pattern": "stripes"
+    },
+    "ata": {
+      "name": "Atalanta",
+      "short": "ATA",
+      "c1": "#1e71b8",
+      "c2": "#000000",
+      "pattern": "stripes"
+    },
+    "rom": {
+      "name": "Roma",
+      "short": "ROM",
+      "c1": "#8e1f2f",
+      "c2": "#f0bc42",
+      "pattern": "plain"
+    },
+    "fio": {
+      "name": "Fiorentina",
+      "short": "FIO",
+      "c1": "#5b2a86",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "allegri": {
+      "name": "Massimiliano Allegri",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#5a5a5a"
+      ],
+      "beard": "stubble",
+      "kit": "suit"
+    },
+    "vlahovic": {
+      "name": "Dušan Vlahović",
+      "skin": "light",
+      "hair": [
+        "tidy",
+        "#2a1e16"
+      ],
+      "beard": "stubble",
+      "kit": "juv"
+    }
+  },
+  "lines": [
+    {
+      "text": "In twenty twenty-three, Juventus earned a top-four place on the pitch, and lost it in a courtroom.",
+      "scene": {
+        "type": "title",
+        "heading": "PLUSVALENZA",
+        "sub": "Juventus · 2022-23",
+        "pill": "FOOTBALL'S BIGGEST SCANDALS",
+        "person": "allegri"
+      }
+    },
+    {
+      "text": "The case was about capital gains on player transfers, around sixty million euros of them, booked in the accounts.",
+      "scene": {
+        "type": "text",
+        "heading": "Plusvalenza",
+        "body": "Italian for capital gain. The case: transfer gains booked in Juventus's accounts, about €60m, judged false by Italian football's courts."
+      }
+    },
+    {
+      "text": "January: the Italian federation docks Juve fifteen points.",
+      "scene": {
+        "type": "stats",
+        "title": "January 2023",
+        "items": [
+          {
+            "n": "-15",
+            "l": "points"
+          }
+        ],
+        "person": "allegri"
+      }
+    },
+    {
+      "text": "April: Italy's top sports court sends it back for a rethink. The points come back.",
+      "scene": {
+        "type": "person",
+        "person": "vlahovic",
+        "label": "POINTS RESTORED… FOR NOW",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Twenty-second of May: the new verdict. Minus ten.",
+      "scene": {
+        "type": "stamp",
+        "text": "-10 POINTS",
+        "color": "red",
+        "person": "allegri"
+      }
+    },
+    {
+      "text": "Final table: Juventus sixty-two points, seventh.",
+      "scene": {
+        "type": "list",
+        "title": "Serie A 2022-23",
+        "rows": [
+          {
+            "name": "Napoli",
+            "value": "90",
+            "club": "nap"
+          },
+          {
+            "name": "Lazio",
+            "value": "74",
+            "club": "laz"
+          },
+          {
+            "name": "Inter",
+            "value": "72",
+            "club": "inter"
+          },
+          {
+            "name": "Milan",
+            "value": "70",
+            "club": "mil"
+          },
+          {
+            "name": "Atalanta",
+            "value": "64",
+            "club": "ata"
+          },
+          {
+            "name": "Roma",
+            "value": "63",
+            "club": "rom"
+          },
+          {
+            "name": "Juventus",
+            "value": "62",
+            "club": "juv",
+            "hl": true
+          },
+          {
+            "name": "Fiorentina",
+            "value": "56",
+            "club": "fio"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Without the deduction? Seventy-two, level with Inter in the top four.",
+      "scene": {
+        "type": "whatif",
+        "title": "Without the deduction",
+        "real": {
+          "label": "Juventus, 7th",
+          "value": "62"
+        },
+        "alt": {
+          "label": "Top four",
+          "value": "72"
+        }
+      }
+    },
+    {
+      "text": "Seventh still meant the Conference League. Then UEFA stepped in.",
+      "scene": {
+        "type": "timeline",
+        "title": "2023",
+        "items": [
+          {
+            "year": "Jan",
+            "label": "-15 points"
+          },
+          {
+            "year": "Apr",
+            "label": "Points back"
+          },
+          {
+            "year": "May",
+            "label": "-10 points"
+          },
+          {
+            "year": "Jul",
+            "label": "Out of Europe"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Juve agreed a deal with UEFA over its financial rules: a fine, and no European football for a season.",
+      "scene": {
+        "type": "stamp",
+        "text": "OUT OF EUROPE",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Eighth-placed Fiorentina took their Conference League spot.",
+      "scene": {
+        "type": "text",
+        "heading": "Lucky Fiorentina",
+        "body": "Eighth in Serie A, Fiorentina took Juventus's place in the 2023-24 Conference League."
+      }
+    },
+    {
+      "text": "A second case, over players' wages in the Covid years, ended in a plea deal: seven hundred and eighteen thousand euros, and no extra points.",
+      "scene": {
+        "type": "stats",
+        "title": "The wages case",
+        "items": [
+          {
+            "n": "€718,000",
+            "l": "fine"
+          },
+          {
+            "n": "0",
+            "l": "extra points lost"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Two cases. Ten points, a top-four finish and a whole season of Europe gone.",
+      "scene": {
+        "type": "person",
+        "person": "allegri",
+        "label": "JUVENTUS 2022-23",
+        "mood": "worried"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

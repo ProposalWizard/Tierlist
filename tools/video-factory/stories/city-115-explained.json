@@ -1,0 +1,234 @@
+{
+ "id": "city-115-explained",
+ "series": "What if Man City…?",
+ "title": "Man City's 115 charges, explained",
+ "sources": [
+  "https://www.nbcnews.com/sports/soccer/man-city-guilty-almost-115-financial-charges-premier-league-says-rcna600523",
+  "https://www.mishcon.com/news/manchester-city-independent-commission-publishes-decision-on-premier-league-charges",
+  "https://www.premierleague.com/en/news/4729207/premier-league-statement-manchester-city-fc-appeal-decision-of-independent-commission-02-october-2026",
+  "https://dragonfootball.co.uk/football-finance/man-city-115-charges/",
+  "https://www.skysports.com/football/news/13593377/man-city-premier-league-charges-appeal-process-punishment-hearing-and-what-happens-now-after-guilty-verdict",
+  "https://www.aljazeera.com/sports/2026/10/14/manchester-city-appeal-over-charges-to-be-heard-by-january-says-regulator",
+  "https://global.espn.com/football/story/_/id/41279820/man-city-vs-premier-league-115-charges-whats-stake",
+  "https://www.lbc.co.uk/news/sport/what-114-charges-manchester-city/",
+  "https://www.sportsmole.co.uk/football/man-city/feature/man-city-found-guilty-how-could-they-be-punished_605796.html",
+  "https://www.espn.com/soccer/story/_/id/50083711/man-city-financial-breaches-appeal-guilty-verdict-premier-league"
+ ],
+ "checked": "Status checked 3 Nov 2026: commission ruling published 29 Sep 2026 (all financial charges proven, most cooperation charges proven; widely reported as 114 of 115); City deny wrongdoing and lodged an appeal on 1 Oct 2026; no sanction set; appeal hearing expected around January 2027. Charge groups 54/14/5/7/35 (ESPN, LBC); £900m+ and Masters quote (NBC, Mishcon); 42-day hearing in 2024 (Mishcon); no CAS route, High Court possible (Sky); appeal by January (Al Jazeera). Sanctions listed as possible only.",
+ "clubs": {
+  "mci": {
+   "name": "Manchester City",
+   "short": "MCI",
+   "c1": "#6cabdd",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  }
+ },
+ "people": {
+  "khaldoon": {
+   "name": "Khaldoon Al Mubarak",
+   "skin": "tan",
+   "hair": [
+    "crop",
+    "#1a1a1a"
+   ],
+   "beard": "short",
+   "beardCol": "#2a2a2a",
+   "kit": "suit"
+  },
+  "masters": {
+   "name": "Richard Masters",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#8a8a8a"
+   ],
+   "beard": "none",
+   "kit": "suit"
+  }
+ },
+ "lines": [
+  {
+   "text": "One hundred and fifteen charges. And this autumn, Manchester City finally got a verdict.",
+   "scene": {
+    "type": "title",
+    "heading": "THE 115 CHARGES",
+    "sub": "MAN CITY v PREMIER LEAGUE",
+    "pill": "EXPLAINED",
+    "person": "khaldoon"
+   }
+  },
+  {
+   "text": "In twenty twenty-three, the Premier League charged City over nine seasons, two thousand nine to twenty eighteen.",
+   "scene": {
+    "type": "text",
+    "heading": "FEBRUARY 2023",
+    "body": "The Premier League charges Manchester City with 115 breaches of its rules, covering 2009-10 to 2017-18, plus the investigation itself."
+   }
+  },
+  {
+   "text": "Fifty-four on accounts. Fourteen on player and manager pay. Twelve on spending rules. Thirty-five for not cooperating.",
+   "scene": {
+    "type": "stats",
+    "title": "THE 115",
+    "items": [
+     {
+      "n": "54",
+      "l": "accurate financial info"
+     },
+     {
+      "n": "14",
+      "l": "player & manager pay"
+     },
+     {
+      "n": "12",
+      "l": "UEFA + PL spending rules"
+     },
+     {
+      "n": "35",
+      "l": "not cooperating"
+     }
+    ]
+   }
+  },
+  {
+   "text": "The hearing ran forty-two days in twenty twenty-four. Then, nearly two years of silence.",
+   "scene": {
+    "type": "timeline",
+    "items": [
+     {
+      "year": "2018",
+      "label": "Investigation opens"
+     },
+     {
+      "year": "2023",
+      "label": "115 charges"
+     },
+     {
+      "year": "2024",
+      "label": "42-day hearing"
+     },
+     {
+      "year": "2026",
+      "label": "Verdict"
+     }
+    ]
+   }
+  },
+  {
+   "text": "On the twenty-ninth of September, the commission ruled.",
+   "scene": {
+    "type": "text",
+    "heading": "29 SEPTEMBER 2026",
+    "body": "Commission: every financial charge proven, plus most of the charges for failing to cooperate. Reports put it at 114 of 115."
+   }
+  },
+  {
+   "text": "Every financial charge proven, plus most cooperation charges. Reports say one hundred and fourteen of one hundred and fifteen.",
+   "scene": {
+    "type": "stamp",
+    "text": "PROVEN",
+    "color": "red"
+   }
+  },
+  {
+   "text": "The finding: commercial deals that inflated City's income and cut its costs, by over nine hundred million pounds.",
+   "scene": {
+    "type": "stats",
+    "title": "WHAT THE COMMISSION FOUND",
+    "items": [
+     {
+      "n": "£900m+",
+      "l": "income inflated / costs cut"
+     },
+     {
+      "n": "9",
+      "l": "seasons, 2009 to 2018"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Premier League boss Richard Masters said the club systematically broke the rules for nearly a decade.",
+   "scene": {
+    "type": "quote",
+    "person": "masters",
+    "text": "The club systematically broke Premier League rules for nearly a decade."
+   }
+  },
+  {
+   "text": "City say they are innocent, and they lodged an appeal on the first of October.",
+   "scene": {
+    "type": "person",
+    "person": "khaldoon",
+    "label": "CITY: \"WE ARE INNOCENT\"",
+    "mood": "flat",
+    "stamp": "APPEALED"
+   }
+  },
+  {
+   "text": "So right now, there is no punishment. That comes at a separate hearing, with no date set.",
+   "scene": {
+    "type": "stamp",
+    "text": "NO SANCTION YET",
+    "color": "yellow"
+   }
+  },
+  {
+   "text": "The appeal goes to three new independent judges, with a hearing expected around January.",
+   "scene": {
+    "type": "text",
+    "heading": "WHAT HAPPENS NEXT",
+    "body": "Appeal Board of three, picked by the chair of the league's Judicial Panel. Hearing expected by January 2027. No Court of Arbitration for Sport this time."
+   }
+  },
+  {
+   "text": "Possible punishments? Fines, a points deduction, even relegation or expulsion. None of it is decided.",
+   "scene": {
+    "type": "list",
+    "title": "POSSIBLE (NOT DECIDED)",
+    "rows": [
+     {
+      "name": "Fine",
+      "value": "possible"
+     },
+     {
+      "name": "Points deduction",
+      "value": "possible"
+     },
+     {
+      "name": "Relegation-size deduction",
+      "value": "possible",
+      "hl": true
+     },
+     {
+      "name": "Expulsion",
+      "value": "possible",
+      "hl": true
+     }
+    ]
+   }
+  },
+  {
+   "text": "So this series asks: what if City never had the money in question? Everything after this is imagined.",
+   "scene": {
+    "type": "whatif",
+    "title": "THIS SERIES",
+    "real": {
+     "label": "Real world",
+     "value": "8 PL titles since 2012"
+    },
+    "alt": {
+     "label": "Alternate world",
+     "value": "?"
+    }
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
+}

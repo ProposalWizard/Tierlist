@@ -140,6 +140,12 @@ export interface EngineFrame {
   aim: { from: Vec2; to: Vec2; power: number } | null;
   /** The ring under the man on the ball (new view): where it is. */
   ring: Vec2 | null;
+  /**
+   * Live chances (lib/star/liveChance.ts): the spot you aim from while the pass
+   * is still rolling in (the ball as drawn is not there yet). A press there
+   * grabs the aim, as a press on the ball does. Absent: the ball is the grab.
+   */
+  grabAt?: Vec2 | null;
   /** Whose goal it was while the result is up. */
   goalSide: "us" | "them" | null;
   /** The goal is part of this picture (a keeper may stand in it). */

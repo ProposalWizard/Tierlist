@@ -1,4 +1,5 @@
 "use client";
+import { markDrillFreeKick } from "@/lib/star/kindRules";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Skills } from "@/lib/star/types";
 import { starsForTry } from "@/lib/star/trainingLevels";
@@ -535,7 +536,8 @@ function StrikeDrill({
     setupRef.current = setup;
     prevRef.current = null;
     crossedRef.current = null;
-    return setup.scenario;
+    // Training's free kicks keep their easier keeper, on purpose (kindRules/freeKick.ts FREE_KICK_DRILL).
+    return kind === "freeKick" ? markDrillFreeKick(setup.scenario) : setup.scenario;
   }, [kind, row]);
 
   // The HUD line and the cones for this rep — the same seeded build the

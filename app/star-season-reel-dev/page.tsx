@@ -10,7 +10,7 @@
  * on this device only. Switches for a season with no recordings on this
  * phone and a season with no goals.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
 import { BroadcastPage, Panel, Btn, Pill, Label, Note } from "@/components/admin/broadcast/BroadcastPage";
 import SeasonReel from "@/components/star/SeasonReel";
@@ -21,8 +21,10 @@ import { putClip } from "@/lib/star/goalClip/store";
 import { planReelFor } from "@/lib/star/goalClip/reel";
 import type { CareerGoal } from "@/lib/star/goalLog";
 import type { CareerState, StarPlayer } from "@/lib/star/types";
+import { publishFavourites, unpublishFavourites } from "@/lib/star/favouriteGoalsStore";
+import { toggleFavouriteIn } from "@/lib/star/favouriteGoals";
 
-type Clips = "all" | "some" | "none";
+type Clips = "all" | "some" | "none" | "lost";
 const CLUBS = ["Arsenal", "Liverpool", "Newcastle United", "Aston Villa", "Brighton & Hove Albion"];
 const COMPS = ["Premier League", "Premier League", "Premier League", "FA Cup", "Champions League", "League Cup"];
 const HOWS: { how?: string; kind: SynthKind; distance: number; finish?: "chip" | "curl" }[] = [
@@ -47,19 +49,25 @@ function fakeSeason(club: string, n: number, clips: Clips, trophies: number): { 
   let made = 0;
   for (let i = 0; i < n; i++) {
     const h = HOWS[(i * 7 + 3) % HOWS.length];
-    const opponent = opps[(i * 5) % opps.length];
-    const home = i % 2 === 0;
+    // Goals 6-8 are one match: a hat-trick (the better reel's chapter card).
+    const m = n >= 8 && i >= 5 && i <= 7 ? 5 : i;
+    const opponent = opps[(m * 5) % opps.length];
+    const home = m % 2 === 0;
     const minute = 6 + ((i * 37) % 86);
     const us = 1 + (i % 3), them = i % 2;
     const competition = COMPS[i % COMPS.length];
     const g: CareerGoal = {
-      id: `1:${i + 1}:league:${opponent}:${minute}:0`,
-      season: 1, week: i + 1, minute, opponent, club, home, competition,
+      id: `1:${m + 1}:league:${opponent}:${minute}:${i - m}`,
+      season: 1, week: m + 1, minute, opponent, club, home, competition,
       score: `${us}-${them}`, how: h.how, distance: h.distance + (i % 4),
       ...(h.finish ? { finish: h.finish } : {}),
       ...(MATES[i % MATES.length] ? { assist: MATES[i % MATES.length] } : {}),
     };
-    const want = clips === "all" || (clips === "some" && i % 3 !== 1);
+    const want = clips === "all" || ((clips === "some" || clips === "lost") && i % 3 !== 1);
+    // "Lost": as Leo saw it. Some goals say they were recorded but the
+    // recording is not on this phone, some were never recorded, and one goal
+    // was logged twice.
+    if (clips === "lost" && i % 3 === 1 && i % 2 === 0) g.clipId = `clip-on-another-phone-${i}`;
     if (want) {
       const tr = synthTrack({
         home: home ? club : opponent, away: home ? opponent : club,
@@ -75,6 +83,7 @@ function fakeSeason(club: string, n: number, clips: Clips, trophies: number): { 
       }
     }
     goals.push(g);
+    if (clips === "lost" && i === 1) goals.push({ ...g });
   }
   const wonList = ["Premier League", "FA Cup", "Champions League"].slice(0, trophies);
   const career: CareerState = {
@@ -94,13 +103,23 @@ export default function SeasonReelDevPage() {
   const [trophies, setTrophies] = useState(1);
   const [playing, setPlaying] = useState(false);
   const [round, setRound] = useState(0);
+  const [better, setBetter] = useState(true);
+  const [favMode, setFavMode] = useState(false);
+  const [favs, setFavs] = useState<string[]>([]);
 
   const season = useMemo(() => fakeSeason(club, goals, clips, trophies), [club, goals, clips, trophies]);
   // The plan as the screen will make it (with every recording made here).
   const plan = useMemo(() => planReelFor(season.career, {}, "Leo Vale"), [season]);
+  // ⭐ favourites on this page only (the game keeps them in the save).
+  const career = useMemo(() => ({ ...season.career, favouriteGoals: favs }), [season, favs]);
+  useEffect(() => {
+    publishFavourites(season.career.goalLog ?? [], favs, (id) => setFavs((f) => toggleFavouriteIn(f, id)));
+  }, [season, favs]);
+  useEffect(() => () => unpublishFavourites(), []);
+  useEffect(() => { setFavs([]); }, [season]);
 
   if (playing) {
-    return <SeasonReel key={round} career={season.career} onDone={() => setPlaying(false)} />;
+    return <SeasonReel key={round} career={career} better={better} mode={favMode ? "favourites" : "season"} onDone={() => setPlaying(false)} />;
   }
 
   return (
@@ -119,6 +138,7 @@ export default function SeasonReelDevPage() {
           <Pill on={clips === "all"} onClick={() => setClips("all")}>Every goal</Pill>
           <Pill on={clips === "some"} onClick={() => setClips("some")}>Some</Pill>
           <Pill on={clips === "none"} onClick={() => setClips("none")}>No recordings</Pill>
+          <Pill on={clips === "lost"} onClick={() => setClips("lost")}>Lost clips</Pill>
         </div>
         <Label>Trophies won</Label>
         <div className="mb-3 flex flex-wrap gap-1.5">
@@ -127,7 +147,16 @@ export default function SeasonReelDevPage() {
         <Note>{goals} goals · {season.tracks} with a recording · about {Math.round(plan.duration)} s long (a little shorter or longer once the recordings are read).</Note>
       </Panel>
       <Panel title="2 · Watch it">
-        <Btn main onClick={() => { setRound((r) => r + 1); setPlaying(true); }}>▶ Play the reel</Btn>
+        <Label>Better end of season (Leo&apos;s part &quot;seasonEnd&quot;)</Label>
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          <Pill on={better} onClick={() => setBetter(true)}>On</Pill>
+          <Pill on={!better} onClick={() => setBetter(false)}>Off (as before)</Pill>
+        </div>
+        <Note>★ favourites: {favs.length} (tap ☆ in the reel).</Note>
+        <Btn main onClick={() => { setFavMode(false); setRound((r) => r + 1); setPlaying(true); }}>▶ Play the reel</Btn>
+        {better && favs.length > 0 && (
+          <Btn onClick={() => { setFavMode(true); setRound((r) => r + 1); setPlaying(true); }}>▶ Play my favourites</Btn>
+        )}
       </Panel>
       <PageGuide page="/star-season-reel-dev" />
     </BroadcastPage>

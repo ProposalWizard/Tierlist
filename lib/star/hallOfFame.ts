@@ -120,6 +120,7 @@ export function slimCareer(career: CareerState): CareerState {
   // Every league's winners each season (League → History): a live-career
   // screen, about 1.3 KB a season, never read by the Hall's overview.
   delete out.compHistory;
+  delete out.intlHistory;
   // Each season's best team-mates are kept for the farewell match, which is
   // played before a career goes in: about 15 KB over 20 seasons, not kept.
   if (Array.isArray(career.seasonHistory) && career.seasonHistory.some(r => r.mates)) {

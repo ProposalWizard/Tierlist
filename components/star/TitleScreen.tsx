@@ -31,6 +31,7 @@ import { hasClub } from "@/lib/star/calendar";
 import { starLevel } from "@/lib/star/starPoints";
 import PlayerAvatar, { useAvatarStyle } from "./PlayerAvatar";
 import HomePlayer from "./HomePlayer";
+import { usePlayerStyleLook } from "@/lib/star/style3d/toon/look";
 import { useHomeLook } from "@/lib/star/homeLook";
 import ClubBadge from "./ClubBadge";
 import { homeSkyFor, type HomeSky } from "@/lib/star/kickoff";
@@ -90,6 +91,7 @@ export default function TitleScreen(p: TitleScreenProps) {
   const look = useAvatarStyle();
   // Settings → Look → "Home screen: New | Old" covers the title too.
   const homeLookNew = useHomeLook() === "new";
+  const playerStyle = usePlayerStyleLook();
   const [sheet, setSheet] = useState<null | "load" | "full" | "credits">(null);
 
   // Parallax: the stadium drifts against the pointer, the player a little
@@ -192,7 +194,9 @@ export default function TitleScreen(p: TitleScreenProps) {
             </div>
           </div>
         </div>
-        <TitleBall className={`kit-rise absolute ${plateFailed ? "bottom-[3.5%] left-[26%]" : "bottom-[15.5%] left-[28%]"}`} size={plateFailed ? 68 : 54} style={{ animationDelay: "700ms" }} />
+        {/* The 3D player (Player style: New) brings his own ball; a second
+            drawn ball beside it read as two balls (Harry, 1 Nov 2026). */}
+        {!(homeLookNew && playerStyle === "new") && <TitleBall className={`kit-rise absolute ${plateFailed ? "bottom-[3.5%] left-[26%]" : "bottom-[15.5%] left-[28%]"}`} size={plateFailed ? 68 : 54} style={{ animationDelay: "700ms" }} />}
 
         {/* The menu: slanted like a boot's tongue, 16 px in from the right
             edge (it used to run into the edge with no gutter). */}

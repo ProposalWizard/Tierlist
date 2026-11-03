@@ -1,0 +1,280 @@
+{
+  "id": "scandal-everton-forest-psr",
+  "series": "Football's biggest scandals",
+  "title": "Everton and Forest: the PSR points deductions",
+  "sources": [
+    "https://en.wikipedia.org/wiki/2023%E2%80%9324_Premier_League",
+    "https://www.skysports.com/football/news/11095/13075486/everton-10-point-deduction-reduced-to-six-following-appeal-verdict",
+    "https://www.irishtimes.com/sport/soccer/2024/02/26/evertons-10-point-deduction-for-breaching-financial-rules-reduced-to-six/",
+    "https://www.timeslive.co.za/sport/soccer/2024-04-08-relegation-battlers-everton-docked-more-points-for-breach-of-financial-rules/",
+    "https://www.cityam.com/?p=2168851",
+    "https://www.football365.com/news/chelsea-transfer-ban-punished-breaking-premier-league-rules"
+  ],
+  "checked": "Everton -10 (17 Nov 2023) cut to -6 (26 Feb 2024), -2 more (8 Apr 2024); Forest -4 (18 Mar 2024), appeal rejected: Wikipedia + Sky/Irish Times/TimesLive/City AM. Final table 15th-20th from Wikipedia. £105m three-year loss limit: Football365 + general reporting. Without-deduction positions are arithmetic (Everton 48 = level with Brighton and Bournemouth; Forest 36 still 17th).",
+  "clubs": {
+    "eve": {
+      "name": "Everton",
+      "short": "EVE",
+      "c1": "#003399",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "nfo": {
+      "name": "Nottingham Forest",
+      "short": "NFO",
+      "c1": "#dd0000",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "bre": {
+      "name": "Brentford",
+      "short": "BRE",
+      "c1": "#e30613",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    },
+    "lut": {
+      "name": "Luton Town",
+      "short": "LUT",
+      "c1": "#f78f1e",
+      "c2": "#002d62",
+      "pattern": "plain"
+    },
+    "bur": {
+      "name": "Burnley",
+      "short": "BUR",
+      "c1": "#6c1d45",
+      "c2": "#99d6ea",
+      "pattern": "plain"
+    },
+    "shu": {
+      "name": "Sheffield United",
+      "short": "SHU",
+      "c1": "#ee2737",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    }
+  },
+  "people": {
+    "dyche": {
+      "name": "Sean Dyche",
+      "skin": "light",
+      "hair": [
+        "bald",
+        "#b07040"
+      ],
+      "beard": "stubble",
+      "beardCol": "#b07040",
+      "kit": "suit",
+      "club": "eve"
+    },
+    "nuno": {
+      "name": "Nuno Espírito Santo",
+      "skin": "olive",
+      "hair": [
+        "slick",
+        "#1e1612"
+      ],
+      "beard": "full",
+      "beardCol": "#1e1612",
+      "kit": "suit",
+      "club": "nfo"
+    }
+  },
+  "lines": [
+    {
+      "text": "In twenty twenty-four, two Premier League clubs lost points, not on the pitch, but on their spreadsheets.",
+      "scene": {
+        "type": "title",
+        "heading": "EVERTON & FOREST",
+        "sub": "Premier League · 2023-24",
+        "pill": "FOOTBALL'S BIGGEST SCANDALS",
+        "person": "dyche"
+      }
+    },
+    {
+      "text": "The rule is Profit and Sustainability. Lose more than a hundred and five million pounds over three years, and you're in trouble.",
+      "scene": {
+        "type": "stats",
+        "title": "PSR",
+        "items": [
+          {
+            "n": "£105m",
+            "l": "max loss"
+          },
+          {
+            "n": "3",
+            "l": "years"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Everton went over. November twenty twenty-three: ten points gone in one go.",
+      "scene": {
+        "type": "person",
+        "person": "dyche",
+        "label": "EVERTON: -10",
+        "mood": "shocked"
+      }
+    },
+    {
+      "text": "On appeal, it was cut to six. Then in April, a second breach. Two more.",
+      "scene": {
+        "type": "timeline",
+        "title": "Everton's season",
+        "items": [
+          {
+            "year": "Nov",
+            "label": "-10 points"
+          },
+          {
+            "year": "Feb",
+            "label": "Cut to -6"
+          },
+          {
+            "year": "Apr",
+            "label": "-2 more"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Nottingham Forest were hit in March. Four points, and their appeal failed.",
+      "scene": {
+        "type": "person",
+        "person": "nuno",
+        "label": "FOREST: -4",
+        "mood": "worried",
+        "stamp": "-4"
+      }
+    },
+    {
+      "text": "Total damage: Everton eight points, Forest four.",
+      "scene": {
+        "type": "versus",
+        "title": "Points deducted",
+        "left": {
+          "person": "dyche",
+          "label": "Everton",
+          "value": "-8"
+        },
+        "right": {
+          "person": "nuno",
+          "label": "Forest",
+          "value": "-4"
+        }
+      }
+    },
+    {
+      "text": "Here's how the bottom of the table finished.",
+      "scene": {
+        "type": "list",
+        "title": "Premier League 2023-24",
+        "rows": [
+          {
+            "name": "15 Everton",
+            "value": "40",
+            "club": "eve",
+            "hl": true
+          },
+          {
+            "name": "16 Brentford",
+            "value": "39",
+            "club": "bre"
+          },
+          {
+            "name": "17 Nottingham Forest",
+            "value": "32",
+            "club": "nfo",
+            "hl": true
+          },
+          {
+            "name": "18 Luton Town",
+            "value": "26",
+            "club": "lut"
+          },
+          {
+            "name": "19 Burnley",
+            "value": "24",
+            "club": "bur"
+          },
+          {
+            "name": "20 Sheffield United",
+            "value": "16",
+            "club": "shu"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Both stayed up. Forest finished six points clear of Luton in eighteenth.",
+      "scene": {
+        "type": "stamp",
+        "text": "SURVIVED",
+        "color": "yellow"
+      }
+    },
+    {
+      "text": "Without the deductions, Everton would have had forty-eight points, level with Brighton and Bournemouth.",
+      "scene": {
+        "type": "whatif",
+        "title": "Everton without -8",
+        "real": {
+          "label": "Everton, 15th",
+          "value": "40"
+        },
+        "alt": {
+          "label": "Everton",
+          "value": "48"
+        }
+      }
+    },
+    {
+      "text": "Forest would have had thirty-six. Still seventeenth.",
+      "scene": {
+        "type": "whatif",
+        "title": "Forest without -4",
+        "real": {
+          "label": "Forest, 17th",
+          "value": "32"
+        },
+        "alt": {
+          "label": "Forest, 17th",
+          "value": "36"
+        }
+      }
+    },
+    {
+      "text": "So the table moved, but the three relegated clubs stayed exactly the same.",
+      "scene": {
+        "type": "text",
+        "heading": "What changed",
+        "body": "Luton, Burnley and Sheffield United went down either way. The deductions decided how close it got, not who fell."
+      }
+    },
+    {
+      "text": "Two clubs, twelve points, and a warning to everyone else in the league.",
+      "scene": {
+        "type": "trophies",
+        "title": "Premier League 2023-24",
+        "items": [
+          {
+            "kind": "league",
+            "label": "Everton -8"
+          },
+          {
+            "kind": "league",
+            "label": "Forest -4"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

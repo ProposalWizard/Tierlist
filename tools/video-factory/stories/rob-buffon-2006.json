@@ -1,0 +1,49 @@
+{
+  "id": "rob-buffon-2006",
+  "series": "Ballon d'Or robberies",
+  "title": "Buffon 2006: two goals conceded, still second",
+  "sources": [
+    "https://www.fifa.com/news/italy-conquer-the-world-as-germany-wins-friends",
+    "https://www.ghanamma.com/2022/07/21/2006-worldcup-winners-he-conceded-only-two-goals-in-the-entire-tournament/",
+    "https://www.liquisearch.com/gianluigi_buffon/international_career",
+    "https://www.sportskeeda.com/football/50-greatest-players-in-world-cup-history-27-gianluigi-buffon",
+    "https://www2.ljworld.com/news/2006/jul/10/crazy_finale_fitting/",
+    "https://en.wikipedia.org/wiki/2006_Ballon_d%27Or",
+    "https://www.topendsports.com/sport/soccer/awards/ballondor-2006.htm",
+    "https://archive.thedailystar.net/2006/11/29/d61129041546.htm",
+    "https://www.filgoal.com/articles/174328",
+    "https://www.si.com/soccer/who-was-the-last-defender-to-win-ballon-dor",
+    "https://www.pastemagazine.com/soccer/why-a-goalkeeper-will-never-win-another-ballon-dor/",
+    "https://en.wikipedia.org/wiki/Lev_Yashin",
+    "https://foot-africa.com/en/news/ballon-dor-lev-yashin-the-only-goalkeeper-to-have-won-the-trophy-863643/"
+  ],
+  "checked": "Buffon conceded 2 at WC 2006, a Zaccardo own goal v USA and Zidane's penalty in the final (FIFA, Ghanamma, Sportskeeda); Yashin Award (Liquisearch, Sportskeeda); final 1-1, Italy 5-3 on pens (FIFA, LJWorld); Juventus relegated to Serie B and stripped of two titles in Calciopoli, Cannavaro left for Real Madrid, Buffon stayed (Wikipedia 2006 Ballon d'Or, filgoal); vote Cannavaro 173, Buffon 124, Henry 121 (Topend, Daily Star), 49-point gap (Paste); Yashin 1963 the only keeper winner (Wikipedia, Foot Africa). Calciopoli is stated only as the sanction on record against the club; no individual is accused.",
+  "clubs": {
+    "ita": { "name": "Italy", "short": "ITA", "c1": "#1f5fbf", "c2": "#ffffff", "pattern": "plain" },
+    "fra": { "name": "France", "short": "FRA", "c1": "#1d2a6b", "c2": "#ffffff", "pattern": "plain" },
+    "juv": { "name": "Juventus", "short": "JUV", "c1": "#111111", "c2": "#ffffff", "pattern": "stripes" },
+    "rma": { "name": "Real Madrid", "short": "RMA", "c1": "#ffffff", "c2": "#d4af37", "pattern": "plain" },
+    "ars": { "name": "Arsenal", "short": "ARS", "c1": "#ef0107", "c2": "#ffffff", "pattern": "sides" }
+  },
+  "people": {
+    "buffon": { "name": "Gianluigi Buffon", "skin": "olive", "hair": ["tidy", "#3a2a1c"], "beard": "stubble", "beardCol": "#3a2a1c", "kit": "ita" },
+    "cannavaro": { "name": "Fabio Cannavaro", "skin": "olive", "hair": ["buzz", "#1f1712"], "beard": "none", "kit": "ita" },
+    "henry": { "name": "Thierry Henry", "skin": "brown", "hair": ["bald", "#1a1a1a"], "beard": "none", "kit": "ars" }
+  },
+  "lines": [
+    { "text": "Two goals. That's all Gianluigi Buffon let in at the whole twenty-oh-six World Cup.", "scene": { "type": "title", "heading": "GIANLUIGI BUFFON", "sub": "Italy · World Cup 2006", "pill": "THE WALL WAS ROBBED", "person": "buffon" } },
+    { "text": "And look how they went in. One own goal. One penalty.", "scene": { "type": "stats", "title": "Goals Buffon conceded", "items": [ { "n": "2", "l": "in seven games" }, { "n": "1", "l": "own goal" }, { "n": "1", "l": "penalty" } ], "person": "buffon" } },
+    { "text": "The own goal was his own teammate's, against the USA. The penalty was Zidane's, in the final.", "scene": { "type": "text", "heading": "HOW BUFFON WAS BEATEN", "body": "Against the USA: an own goal by Italy's Cristian Zaccardo. In the final: a Zinedine Zidane penalty. No opponent scored past him from open play." } },
+    { "text": "One-all in Berlin. Then penalties. Italy won five-three.", "scene": { "type": "score", "home": "ita", "away": "fra", "hs": 1, "as": 1, "date": "9 July 2006", "comp": "World Cup final", "note": "Italy won 5-3 on penalties" } },
+    { "text": "World champions. And Buffon took the Yashin Award as the tournament's best keeper.", "scene": { "type": "trophies", "items": [ { "kind": "worldcup", "label": "World Cup 2006" }, { "kind": "cup", "label": "Yashin Award" } ], "person": "buffon" } },
+    { "text": "Back home, chaos. Juventus were relegated to Serie B in the Calciopoli scandal and stripped of two titles.", "scene": { "type": "stamp", "text": "SERIE B", "color": "yellow" } },
+    { "text": "The captain, Cannavaro, left for Real Madrid. Buffon stayed with Juventus, in the second division.", "scene": { "type": "versus", "title": "Summer 2006", "left": { "person": "cannavaro", "label": "Cannavaro", "value": "Real Madrid" }, "right": { "person": "buffon", "label": "Buffon", "value": "Serie B" } } },
+    { "text": "Then came the Ballon d'Or.", "scene": { "type": "podium", "year": "2006", "title": "Ballon d'Or", "places": [ { "person": "cannavaro", "club": "rma" }, { "person": "buffon", "club": "juv" }, { "person": "henry", "club": "ars" } ] } },
+    { "text": "Cannavaro one hundred and seventy-three. Buffon one hundred and twenty-four. Forty-nine points.", "scene": { "type": "versus", "title": "2006 Ballon d'Or", "left": { "person": "cannavaro", "label": "Cannavaro", "value": "173" }, "right": { "person": "buffon", "label": "Buffon", "value": "124" } } },
+    { "text": "To be fair, Cannavaro was immense that summer. But the wall behind him barely gave anything away.", "scene": { "type": "person", "person": "cannavaro", "label": "Italy captain", "mood": "happy" } },
+    { "text": "Only one goalkeeper has ever won the Ballon d'Or. Lev Yashin, in nineteen sixty-three.", "scene": { "type": "timeline", "items": [ { "year": "1963", "label": "Yashin wins it" }, { "year": "2006", "label": "Buffon 2nd" }, { "year": "Today", "label": "Still only Yashin" } ] } },
+    { "text": "Buffon never got closer. Twenty-oh-six was his shot.", "scene": { "type": "person", "person": "buffon", "mood": "flat", "label": "Never won it" } },
+    { "text": "A keeper who let in two goals all tournament, and it still wasn't enough.", "scene": { "type": "stamp", "text": "ROBBED", "person": "buffon", "color": "red" } },
+    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+  ]
+}

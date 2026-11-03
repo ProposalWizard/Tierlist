@@ -74,6 +74,22 @@ export const FREE_KICK = {
    *  for the match's own free kicks: measured, it doubled an ordinary taker's
    *  rate (9 % → 19 %, real PL 3.9 %). On for a drill's own (FREE_KICK_DRILL). */
   topCorner: false,
+  /**
+   * THE TOP CORNER (Leo, 1 Nov 2026: "a full power top corner free kick
+   * should be almost unsaveable … it's currently saved every time"). Measured
+   * before: a 99/99 taker's kicks into the very top corner beat a 92-rated
+   * keeper 11% of the time (scripts/fk/cornerFk.mts). A ball heading into
+   * the very corner of the goal (within cornerEdge of a post, above
+   * cornerZ) is the hardest he faces: dipping late over his wall, he falls
+   * short of where it is going (cornerShortM) and reaches less of it
+   * (cornerCut), in full right in the corner and fading out toward the middle
+   * and down the post. Ordinary kicks are untouched.
+   */
+  corner: true,
+  cornerEdge: [0.35, 1.2] as [number, number],   // metres inside the post: full → none
+  cornerZ: [1.9, 1.35] as [number, number],      // metres high at the line: full → none
+  cornerShortM: 1.0,   // he falls this far short of where it is going (in full right in the corner)
+  cornerCut: 0.8,      // …and reaches this much less of it
 };
 
 /**
@@ -94,12 +110,46 @@ export const FREE_KICK_DRILL = {
   readLagS: 0.15,
   sightedPast: 1.5,
   topCorner: true,
+  corner: false,
+  cornerEdge: [0.25, 1.0] as [number, number],
+  cornerZ: [1.95, 1.45] as [number, number],
+  cornerShortM: 0,
+  cornerCut: 0,
 };
 
-/** Every free kick setupFreeKick has set up (the match's own). Anything else is a drill's. */
+/**
+ * How "top corner" a ball is, 0..1, from where it will cross the goal line
+ * (a straight-line read of its path now, gravity in): 1 right in the corner,
+ * 0 in the middle, low, or outside the posts.
+ */
+export function cornerness(ball: Ball, P: { cornerEdge: [number, number]; cornerZ: [number, number] } = FREE_KICK): number {
+  if (!(ball.vel.y < -0.5) || ball.pos.y <= 0) return 0;
+  const t = ball.pos.y / -ball.vel.y;
+  const x = ball.pos.x + ball.vel.x * t;
+  const z = ball.z + ball.vz * t - 4.9 * t * t;
+  if (x <= POST_L || x >= POST_R || z >= 2.44 || z <= 0) return 0;
+  const edge = Math.min(x - POST_L, POST_R - x);
+  const e = clamp((P.cornerEdge[1] - edge) / (P.cornerEdge[1] - P.cornerEdge[0]), 0, 1);
+  const h = clamp((z - P.cornerZ[1]) / (P.cornerZ[0] - P.cornerZ[1]), 0, 1);
+  return e * h;
+}
+
+/** Every free kick setupFreeKick has set up (the match's own). */
 const ruled = new WeakSet<Scenario>();
-/** Was this free kick set up by the match's own rules (rather than a drill's own picture)? */
+/** Was this free kick set up by the match's own rules? */
 export function isMatchFreeKick(sc: Scenario): boolean { return ruled.has(sc); }
+/**
+ * THE TRIAL'S AND TRAINING'S FREE KICKS, MARKED (Leo, 1 Nov 2026: test pages
+ * must play like the real game; the trial and training keep their easier
+ * keeper on purpose). Only a picture marked here gets FREE_KICK_DRILL; every
+ * other free kick, a test page's own picture included, gets the match's
+ * keeper and rules. (Before: anything not set up by the match was a drill,
+ * so Real shots, Real goals/moments, sim90, goal clips and the gallery's
+ * base cells played the easier keeper without the 1 Nov top-corner rule.)
+ */
+const drills = new WeakSet<Scenario>();
+export function markDrillFreeKick(sc: Scenario): Scenario { drills.add(sc); return sc; }
+export function isDrillFreeKick(sc: Scenario): boolean { return drills.has(sc) && !ruled.has(sc); }
 
 /** Wall size for how far off centre the kick is (degrees off the goal's axis). */
 export function wallSizeFor(angleDeg: number, draw: number): number {
@@ -241,7 +291,7 @@ export const freeKickRules: KindRule = {
     // Decided here and saved with the decision, so a replay (which plays a
     // copy of the picture) keeps the same keeper.
     // Settings → Gameplay → Keepers: Old = the drill keeper is the match keeper again.
-    const drill = !isMatchFreeKick(sc) && !oldKeepers();
+    const drill = isDrillFreeKick(sc) && !oldKeepers();
     return {
       kind: "free_kick",
       data: {
@@ -300,7 +350,9 @@ export const freeKickRules: KindRule = {
     const drill = d.data.drill === true;
     const P = drill ? FREE_KICK_DRILL : FREE_KICK;
     {
-      const f = P.topCorner ? topCornerReach(sc, ball, st.fromX) : 1;
+      const f0 = P.topCorner ? topCornerReach(sc, ball, st.fromX) : 1;
+      // The top corner (P.corner): less of it within his reach, read off its path now.
+      const f = P.corner ? f0 * (1 - P.cornerCut * cornerness(ball, P)) : f0;
       sc.keeperReach = f < 1 ? (st.baseReach ?? 1) * f : st.baseReach;
     }
     st.trail.push({ t: st.t, x: ball.pos.x, y: ball.pos.y, vx: ball.vel.x, vy: ball.vel.y });
@@ -318,7 +370,10 @@ export const freeKickRules: KindRule = {
     while (st.trail.length > 2 && st.trail[1].t <= seen) st.trail.shift();
     if (s.vy >= -0.5) return;
     const xAt = s.x + s.vx * ((s.y - k.y) / -s.vy);
-    k.targetX = clamp(xAt, POST_L - 0.8, POST_R + 0.8);
+    // Into the top corner he falls short of it (P.cornerShortM, by how "corner" it is now).
+    const short = P.corner ? P.cornerShortM * cornerness(ball, P) : 0;
+    const aimX = xAt - Math.sign(xAt - k.x) * Math.min(short, Math.abs(xAt - k.x));
+    k.targetX = clamp(aimX, POST_L - 0.8, POST_R + 0.8);
     // A set keeper goes across the way he does for anything he has seen: the
     // engine's own scramble (dive speed, lean and all) when FREE_KICK.dive,
     // else the slower shuffle.

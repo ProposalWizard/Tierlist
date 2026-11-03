@@ -59,7 +59,25 @@ export type ReelSeg =
   | { kind: "bestIntro"; at: number; dur: number; goal: CareerGoal; n: number }
   /** The goal of the season again: live, then slow. A card when no recording. */
   | { kind: "best"; at: number; dur: number; goal: CareerGoal; n: number; shots: ReelShot[] }
-  | { kind: "end"; at: number; dur: number };
+  | { kind: "end"; at: number; dur: number }
+  /** A milestone card before a goal ("FIRST GOAL", "HAT-TRICK", "50TH CAREER
+   *  GOAL"). Only in the better end of season (seasonEnd.ts). */
+  | { kind: "chapter"; at: number; dur: number; goal: CareerGoal; n: number; title: string; sub: string };
+
+/** The better end of season's extras on a plan (seasonEnd.ts). Absent on the
+ *  plain plan, which draws exactly as before. */
+export interface ReelBetter {
+  mode: "season" | "favourites";
+  /** Small gold words over the big title ("YOUR SEASON", "MY FAVOURITE"). */
+  heading: string;
+  /** Why the goal of the season is the one: your ⭐, the fans' votes, or the
+   *  game's own pick. */
+  bestWhy?: "pick" | "votes" | "best";
+  /** How many goals in it are favourites. */
+  favCount: number;
+  /** The end card's four tiles, when not goals/assists/rating/apps. */
+  tiles?: [string, string][];
+}
 
 export interface ReelStats {
   goals: number;
@@ -82,6 +100,8 @@ export interface ReelPlan {
   stats: ReelStats;
   /** The goal of the season (its id), or null with no goals. */
   bestId: string | null;
+  /** The better end of season (Leo's update part "seasonEnd"). */
+  better?: ReelBetter;
 }
 
 // ── Timings ────────────────────────────────────────────────────────────────

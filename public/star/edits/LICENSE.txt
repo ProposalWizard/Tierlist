@@ -1,0 +1,12 @@
+Knowitball edit beats (public/star/edits/*.mp3)
+
+ice-140.mp3, drift-150.mp3, halo-80.mp3, tape-96.mp3 are original loops made
+for Knowitball's in-game goal "edits" (switch part "coldEdits",
+lib/star/goalClip/editCold.ts). Every sound in them is synthesised from sine
+waves, noise and envelopes by tools/edit-music/make_loops.py (numpy only).
+No samples, no recordings, no third-party loops, no copied songs or melodies.
+Styles are only described in genre terms (phonk-style half-time, funk-style
+groove, ambient pads, lo-fi boom-bap); every note and pattern is new.
+
+Made by the Knowitball team, 31 Oct 2026. Rebuild:
+  python3 tools/edit-music/make_loops.py public/star/edits

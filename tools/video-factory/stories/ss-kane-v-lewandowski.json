@@ -1,0 +1,274 @@
+{
+  "id": "ss-kane-v-lewandowski",
+  "series": "Best season ever, settled",
+  "title": "Kane 2025-26 v Lewandowski 2019-20: Bayern's best number nine season?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/2019%E2%80%9320_FC_Bayern_Munich_season",
+    "https://fcbayern.com/en/news/2026/10/harry-kane-impressive-numbers-behind-record-breaking-season",
+    "https://www.bundesliga.com/en/bundesliga/news/harry-kane-2025-26-numbers-england-bauern-munich-goals-records-messi-38301",
+    "https://www.sofascore.com/news/harry-kanes-2025-26-season-73-goals-and-a-ballon-dor",
+    "https://www.beinsports.com/en-au/football/dfb-pokal/articles/kane-hat-trick-seals-domestic-double-for-bayern-2026-05-23",
+    "https://www.arabnews.com/node/2612059/sport",
+    "https://citizen.digital/article/psg-knock-out-bayern-to-set-up-champions-league-final-with-arsenal-n382214",
+    "https://english.ahram.org.eg/News/567469.aspx",
+    "https://www.espn.com/soccer/story/_/id/50236983/harry-kane-2026-ballon-dor-kylian-mbappe-lamine-yamal",
+    "data/competition-history/champions-league.json (2019-20 final and top scorer)",
+    "data/ballondor/rankings.json (no 2020 award)"
+  ],
+  "checked": "Lewandowski 34 Bundesliga / 55 all comps, the treble, 1-0 final v PSG, 8-2 v Barcelona (Wikipedia season page); 15 Champions League goals and the final (local file); no Ballon d'Or in 2020 (ballondor.com data). Kane 61 for Bayern / 73 with England in 65 games, 36 Bundesliga goals, only Lewandowski (41) and Muller scored more in a Bundesliga season (FC Bayern, Bundesliga.com, Sofascore); Supercup, title and cup final hat-trick (Arab News, beIN, Times of Oman); out to PSG 6-5 on aggregate (Citizen, Ahram); Ballon d'Or 2026 (ESPN, England Football).",
+  "clubs": {
+    "bayern": {
+      "name": "Bayern Munich",
+      "short": "FCB",
+      "c1": "#dc052d",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "psg": {
+      "name": "Paris Saint-Germain",
+      "short": "PSG",
+      "c1": "#004170",
+      "c2": "#da291c",
+      "pattern": "centre"
+    },
+    "barca": {
+      "name": "Barcelona",
+      "short": "BAR",
+      "c1": "#a50044",
+      "c2": "#004d98",
+      "pattern": "stripes"
+    }
+  },
+  "people": {
+    "kane": {
+      "name": "Harry Kane",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#8a6a48"
+      ],
+      "beard": "stubble",
+      "kit": "bayern"
+    },
+    "lewa": {
+      "name": "Robert Lewandowski",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#4a3424"
+      ],
+      "beard": "stubble",
+      "kit": "bayern"
+    }
+  },
+  "lines": [
+    {
+      "text": "Same shirt, same club, same number nine. Kane's seventy-three goals, or Lewandowski's treble?",
+      "scene": {
+        "type": "title",
+        "heading": "KANE v LEWANDOWSKI",
+        "sub": "Bayern · 2025-26 v 2019-20",
+        "pill": "SETTLED",
+        "person": "lewa"
+      }
+    },
+    {
+      "text": "Robert Lewandowski, twenty nineteen, twenty. Fifty-five goals in all competitions.",
+      "scene": {
+        "type": "stats",
+        "title": "LEWANDOWSKI 2019-20",
+        "person": "lewa",
+        "items": [
+          {
+            "n": "55",
+            "l": "goals, all comps"
+          },
+          {
+            "n": "34",
+            "l": "Bundesliga goals"
+          },
+          {
+            "n": "15",
+            "l": "Champions League goals"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Bayern won everything. League, cup, and the Champions League. Including an eight-two against Barcelona.",
+      "scene": {
+        "type": "score",
+        "home": "barca",
+        "away": "bayern",
+        "hs": 2,
+        "as": 8,
+        "date": "14 Aug 2020",
+        "comp": "Champions League quarter-final",
+        "stamp": "EIGHT"
+      }
+    },
+    {
+      "text": "Harry Kane, last season. Sixty-one goals for Bayern, seventy-three counting England.",
+      "scene": {
+        "type": "stats",
+        "title": "KANE 2025-26",
+        "person": "kane",
+        "items": [
+          {
+            "n": "61",
+            "l": "goals for Bayern"
+          },
+          {
+            "n": "73",
+            "l": "with England"
+          },
+          {
+            "n": "36",
+            "l": "Bundesliga goals"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Club goals only? Kane wins by six.",
+      "scene": {
+        "type": "versus",
+        "title": "BAYERN GOALS, ALL COMPETITIONS",
+        "left": {
+          "person": "lewa",
+          "label": "Lewandowski 19-20",
+          "value": "55"
+        },
+        "right": {
+          "person": "kane",
+          "label": "Kane 25-26",
+          "value": "61"
+        }
+      }
+    },
+    {
+      "text": "Lewandowski's trophies: the treble.",
+      "scene": {
+        "type": "trophies",
+        "person": "lewa",
+        "items": [
+          {
+            "kind": "league",
+            "label": "Bundesliga"
+          },
+          {
+            "kind": "cup",
+            "label": "German Cup"
+          },
+          {
+            "kind": "bigears",
+            "label": "Champions League"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Kane's: the Supercup, the league, and a hat-trick in the cup final.",
+      "scene": {
+        "type": "trophies",
+        "person": "kane",
+        "items": [
+          {
+            "kind": "cup",
+            "label": "German Supercup"
+          },
+          {
+            "kind": "league",
+            "label": "Bundesliga"
+          },
+          {
+            "kind": "cup",
+            "label": "German Cup"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Now the twist. Both seasons were decided by the same club. PSG.",
+      "scene": {
+        "type": "text",
+        "heading": "THE TWIST",
+        "body": "Lewandowski's Bayern beat PSG in the 2020 final. Kane's Bayern were knocked out by PSG in the 2026 semi-final.",
+        "stamp": "PSG"
+      }
+    },
+    {
+      "text": "Twenty twenty: Bayern one, PSG nil. Champions of Europe.",
+      "scene": {
+        "type": "score",
+        "home": "psg",
+        "away": "bayern",
+        "hs": 0,
+        "as": 1,
+        "date": "23 Aug 2020",
+        "comp": "Champions League final"
+      }
+    },
+    {
+      "text": "Twenty twenty-six: PSG win six-five on aggregate. Kane scores in stoppage time. Too late.",
+      "scene": {
+        "type": "score",
+        "home": "bayern",
+        "away": "psg",
+        "hs": 1,
+        "as": 1,
+        "date": "6 May 2026",
+        "comp": "Champions League semi-final",
+        "note": "PSG through 6-5 on aggregate",
+        "stamp": "OUT"
+      }
+    },
+    {
+      "text": "But there's one prize Lewandowski never got for that season. There was no Ballon d'Or in twenty twenty.",
+      "scene": {
+        "type": "whatif",
+        "title": "THE MISSING BALLON D'OR",
+        "real": {
+          "label": "Lewandowski 2020",
+          "value": "No award held"
+        },
+        "alt": {
+          "label": "Kane 2026",
+          "value": "Ballon d'Or"
+        }
+      }
+    },
+    {
+      "text": "And Lewandowski kept the Bundesliga record too. Forty-one goals, a year later. Kane got to thirty-six.",
+      "scene": {
+        "type": "versus",
+        "title": "BUNDESLIGA SEASON RECORD",
+        "left": {
+          "person": "lewa",
+          "label": "Lewandowski 20-21",
+          "value": "41"
+        },
+        "right": {
+          "person": "kane",
+          "label": "Kane 25-26",
+          "value": "36"
+        }
+      }
+    },
+    {
+      "text": "Kane has the goals and the golden ball. Lewandowski has Europe. The treble wins it. Lewandowski.",
+      "scene": {
+        "type": "stamp",
+        "text": "LEWANDOWSKI",
+        "person": "lewa",
+        "color": "white"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

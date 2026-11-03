@@ -1,0 +1,277 @@
+{
+  "id": "ww-barca2009-v-barca2015",
+  "series": "Who would win?",
+  "title": "Barcelona 2009 v Barcelona 2015: who would win?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/2009_UEFA_Champions_League_final",
+    "https://www.uefa.com/uefachampionsleague/history/seasons/2009/",
+    "https://en.wikipedia.org/wiki/2015_UEFA_Champions_League_final",
+    "https://www.uefa.com/uefachampionsleague/history/seasons/2015/"
+  ],
+  "checked": "2009 final XI, 2-0 v Man United in Rome, Eto'o 10' and Messi (Wikipedia; UEFA history page confirms 2-0); 2015 final XI, 3-1 v Juventus in Berlin, Rakitic 4', Suarez 68', Neymar 90+7' (Wikipedia; UEFA 2015 page listed, not fetched); Messi born 24 Jun 1987 so 21 in May 2009 and 27 in June 2015. Messi, Iniesta, Busquets and Pique started both finals. Match imagined.",
+  "clubs": {
+    "b09": {
+      "name": "Barcelona 2009",
+      "short": "B09",
+      "c1": "#a50044",
+      "c2": "#004d98",
+      "pattern": "stripes"
+    },
+    "b15": {
+      "name": "Barcelona 2015",
+      "short": "B15",
+      "c1": "#a50044",
+      "c2": "#004d98",
+      "pattern": "stripes"
+    }
+  },
+  "people": {
+    "messi09": {
+      "name": "Lionel Messi (2009)",
+      "skin": "light",
+      "hair": [
+        "messy",
+        "#5a3a1f"
+      ],
+      "beard": "none",
+      "kit": "b09"
+    },
+    "messi15": {
+      "name": "Lionel Messi (2015)",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#5a3a1f"
+      ],
+      "beard": "stubble",
+      "kit": "b15"
+    },
+    "etoo": {
+      "name": "Samuel Eto'o",
+      "skin": "dark",
+      "hair": [
+        "buzz",
+        "#111111"
+      ],
+      "beard": "none",
+      "kit": "b09"
+    },
+    "neymar": {
+      "name": "Neymar",
+      "skin": "tan",
+      "hair": [
+        "quiff",
+        "#3a2a1a"
+      ],
+      "beard": "none",
+      "kit": "b15"
+    },
+    "xavi": {
+      "name": "Xavi",
+      "skin": "light",
+      "hair": [
+        "tidy",
+        "#2a1a10"
+      ],
+      "beard": "stubble",
+      "kit": "b09"
+    }
+  },
+  "lines": [
+    {
+      "text": "Who would win: Barcelona twenty oh-nine, or Barcelona twenty fifteen?",
+      "scene": {
+        "type": "title",
+        "heading": "BARÇA 2009 v BARÇA 2015",
+        "sub": "An imagined match · a prediction",
+        "pill": "WHO WOULD WIN?",
+        "person": "messi09"
+      }
+    },
+    {
+      "text": "Both teams won the Champions League final. Rome, two-nil against United. Berlin, three-one against Juventus.",
+      "scene": {
+        "type": "timeline",
+        "items": [
+          {
+            "year": "2009",
+            "label": "Rome: 2-0 v Man United"
+          },
+          {
+            "year": "2015",
+            "label": "Berlin: 3-1 v Juventus"
+          },
+          {
+            "year": "Now",
+            "label": "Who would win?"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Twenty oh-nine: Puyol, Xavi, Iniesta, and a front three of Messi, Eto'o and Henry.",
+      "scene": {
+        "type": "list",
+        "title": "BARÇA 2009 · ROME XI",
+        "rows": [
+          {
+            "name": "Víctor Valdés",
+            "value": "GK"
+          },
+          {
+            "name": "Puyol · Touré · Piqué · Sylvinho",
+            "value": "DEF"
+          },
+          {
+            "name": "Busquets · Xavi · Iniesta",
+            "value": "MID"
+          },
+          {
+            "name": "Messi · Eto'o · Henry",
+            "value": "ATT",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Twenty fifteen: Alves, Rakitić, and the famous M S N.",
+      "scene": {
+        "type": "list",
+        "title": "BARÇA 2015 · BERLIN XI",
+        "rows": [
+          {
+            "name": "Marc-André ter Stegen",
+            "value": "GK"
+          },
+          {
+            "name": "Alves · Piqué · Mascherano · Alba",
+            "value": "DEF"
+          },
+          {
+            "name": "Rakitić · Busquets · Iniesta",
+            "value": "MID"
+          },
+          {
+            "name": "Messi · Suárez · Neymar",
+            "value": "ATT",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "The twist: Messi, Iniesta, Busquets and Piqué started both finals. So here, they play against themselves.",
+      "scene": {
+        "type": "whatif",
+        "title": "WHO PLAYS WHO",
+        "real": {
+          "label": "2009",
+          "value": "Messi, aged 21"
+        },
+        "alt": {
+          "label": "2015",
+          "value": "Messi, aged 27"
+        }
+      }
+    },
+    {
+      "text": "Young Messi against older Messi. Twenty-one against twenty-seven.",
+      "scene": {
+        "type": "versus",
+        "title": "MESSI v MESSI",
+        "left": {
+          "person": "messi09",
+          "label": "Messi 2009",
+          "value": "21"
+        },
+        "right": {
+          "person": "messi15",
+          "label": "Messi 2015",
+          "value": "27"
+        }
+      }
+    },
+    {
+      "text": "Ten minutes, just like Rome. Eto'o, near post. One-nil twenty oh-nine.",
+      "scene": {
+        "type": "score",
+        "home": "b09",
+        "away": "b15",
+        "hs": 1,
+        "as": 0,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Eto'o 10'"
+      }
+    },
+    {
+      "text": "M S N wake up. Neymar to Suárez. One-all. Then young Messi skips past old Messi. Two-one.",
+      "scene": {
+        "type": "score",
+        "home": "b09",
+        "away": "b15",
+        "hs": 2,
+        "as": 1,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Suárez 31' · Messi (2009) 44'"
+      }
+    },
+    {
+      "text": "Rakitić from the edge, like Berlin. Two-all.",
+      "scene": {
+        "type": "score",
+        "home": "b09",
+        "away": "b15",
+        "hs": 2,
+        "as": 2,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Rakitić 63'"
+      }
+    },
+    {
+      "text": "Deep in stoppage time, Neymar again, just like Berlin. Twenty fifteen win it, three-two.",
+      "scene": {
+        "type": "score",
+        "home": "b09",
+        "away": "b15",
+        "hs": 2,
+        "as": 3,
+        "date": "Full time · prediction",
+        "comp": "Imagined match",
+        "note": "Neymar 90+7'",
+        "stamp": "LIKE BERLIN"
+      }
+    },
+    {
+      "text": "Man of the match: Neymar. Then young Messi, then Xavi, who ran the whole thing.",
+      "scene": {
+        "type": "podium",
+        "year": "Imagined",
+        "title": "MAN OF THE MATCH",
+        "places": [
+          {
+            "person": "neymar",
+            "club": "b15"
+          },
+          {
+            "person": "messi09",
+            "club": "b09"
+          },
+          {
+            "person": "xavi",
+            "club": "b09"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

@@ -12,6 +12,7 @@
  * Pitch metres → three: X = x − CX, Y = z (up), Z = y (out from the goal line).
  */
 import { installAssetVersions } from "../three3d/assetUrl";
+import { makeRealBall } from "../three3d/realBall";
 import { CX, GOAL_H, GOAL_W, PEN_SPOT_Y, HALF_LEN } from "./constants";
 import type { World } from "./world";
 import type { P3, Act3 } from "./player";
@@ -234,15 +235,9 @@ export async function createPlay3DScene(
   }
 
   // ── The ball ──
-  const ballMat = new THREE.MeshStandardMaterial({ color: "#fbfbf8", roughness: 0.45 });
-  const patchMat = new THREE.MeshStandardMaterial({ color: "#1d1f24", roughness: 0.5 });
+  // the real ball: 12 black pentagons, 20 white hexagons (three3d/realBall.ts)
   const ball = new THREE.Group();
-  { const s = new THREE.Mesh(new THREE.SphereGeometry(0.11, 20, 14), ballMat); s.castShadow = true; ball.add(s); }
-  for (const [a, b] of [[0, 0], [1.2, 0.9], [2.4, -0.7], [3.6, 1.1], [4.8, -0.2], [0.6, -1.3]]) {
-    const p = new THREE.Mesh(new THREE.CircleGeometry(0.038, 5), patchMat);
-    const v = new THREE.Vector3(Math.cos(a) * Math.cos(b), Math.sin(b), Math.sin(a) * Math.cos(b));
-    p.position.copy(v.multiplyScalar(0.1105)); p.lookAt(v.clone().multiplyScalar(2)); ball.add(p);
-  }
+  { const s = makeRealBall(THREE, 0.11); s.castShadow = true; ball.add(s); }
   root.add(ball);
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.16, 20), new THREE.MeshBasicMaterial({ color: "#000000", transparent: true, opacity: 0.32, depthWrite: false }));
   shadow.rotation.x = -Math.PI / 2;

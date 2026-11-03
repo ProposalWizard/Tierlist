@@ -33,6 +33,7 @@ import { Governor, governedPixelRatio } from "../three3d/governor";
 import { installShadowCache } from "../three3d/shadowCache";
 import { cullSkinned } from "../three3d/cullPeople";
 import { withMeshopt } from "../three3d/meshopt";
+import { makeRealBall } from "../three3d/realBall";
 import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, setToonBuild, setPeople3dOutlineRes, type Person3D, type PersonLook } from "../people3d";
 import { people3dLook } from "../look3d";
 import { matchPlayerStyle, matchPlayersStyleLook } from "./toon/matchLook";
@@ -61,7 +62,7 @@ import { camZoom, setCamZoom, camHeightTest, zoomCamera, lerpCamera } from "./ca
 /** Open play: the default 3D framing sits this much closer than the whole scenario (zoom 0 vs 1). */
 /** Open play's default = the 2D's own frame of the same chance, exactly (Harry, 12 Oct 2026: a 0.85 zoom-in cut the taker off on tight angles and cutbacks). */
 const OPEN_DEFAULT_K = 1;
-import { solveMatch2D, groundUnder, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, usesKindCam, solveKindCam, wideFromSide, ORBIT, clampOrbit, limitOrbit, orbitMaxFor, orbitCamera, centreShare, frameTurned, solveTurnFit, easeFit, type TurnFit, showsGoal, grabsBall, overheadClipAlong, overStand, TILT, clampTilt, tiltCamera, type Match2DCamera } from "./match2dCam";
+import { solveMatch2D, groundUnder, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, usesKindCam, solveKindCam, wideFromSide, ORBIT, clampOrbit, limitOrbit, orbitMaxFor, orbitCamera, centreShare, frameTurned, solveTurnFit, easeFit, type TurnFit, showsGoal, grabsBall, BALL_GRAB, overheadClipAlong, overStand, TILT, clampTilt, tiltCamera, type Match2DCamera } from "./match2dCam";
 import { shotTarget, stanceFor, approachSFor, runClipTime, runBlend } from "./setPiece3d";
 import { hasRunup } from "../penaltyRunup";
 
@@ -395,14 +396,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const ball = new THREE.Group();
   const handA = new THREE.Vector3(), handB = new THREE.Vector3();
   {
-    const s = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 24, 16), new THREE.MeshStandardMaterial({ color: "#fbfbf8", roughness: 0.45 }));
+    // the real ball: 12 black pentagons, 20 white hexagons (three3d/realBall.ts)
+    const s = makeRealBall(THREE, BALL_R);
     s.castShadow = prof.shadows; ball.add(s);
-    const patch = new THREE.MeshStandardMaterial({ color: "#1d1f24", roughness: 0.5 });
-    for (const [a, b] of [[0, 0], [1.2, 0.9], [2.4, -0.7], [3.6, 1.1], [4.8, -0.2], [0.6, -1.3]]) {
-      const p = new THREE.Mesh(new THREE.CircleGeometry(0.038, 5), patch);
-      const v = new THREE.Vector3(Math.cos(a) * Math.cos(b), Math.sin(b), Math.sin(a) * Math.cos(b));
-      p.position.copy(v.multiplyScalar(0.1105)); p.lookAt(v.clone().multiplyScalar(2)); ball.add(p);
-    }
   }
   root.add(ball);
   const ballShadow = new THREE.Mesh(new THREE.CircleGeometry(0.16, 24), new THREE.MeshBasicMaterial({ color: "#000000", transparent: true, opacity: 0.32, depthWrite: false }));
@@ -1701,7 +1697,12 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const f = lastFrame;
     touch.id = e.pointerId; touch.ev0 = e; touch.start3 = { x: e.clientX, y: e.clientY }; touch.start2 = at; touch.g0 = g;
     // a team-mate first (as the 2D game does: he takes priority over the ball)
-    const mate = f?.phase === "aim" ? mateOnGlass(e.clientX, e.clientY) : null;
+    // Live chances: a press right on the spot you meet the pass is the aim, never a team-mate.
+    const onLiveSpot = !!f?.grabAt && f.phase === "aim" && (() => {
+      const r = container.getBoundingClientRect(), v = tmpV.set(f.grabAt.x - CX, 0, f.grabAt.y).project(camera);
+      return Math.hypot(e.clientX - (r.left + (v.x + 1) / 2 * r.width), e.clientY - (r.top + (1 - v.y) / 2 * r.height)) <= BALL_GRAB.px;
+    })();
+    const mate = f?.phase === "aim" && !onLiveSpot ? mateOnGlass(e.clientX, e.clientY) : null;
     const m2 = mate && to2dClient(mate);
     touch.mate = !!m2;
     if (m2 && mate) {
@@ -1727,6 +1728,17 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (touch.shot && f?.ball) {
       const b2 = to2dClient(f.ball);
       if (b2) { touch.start2 = b2; touch.g0 = { x: f.ball.x, y: f.ball.y }; }
+    }
+    // Live chances: the aim is grabbed at the spot you meet the pass (f.grabAt), not
+    // where the rolling ball is drawn. Off (no grabAt): nothing changes.
+    if (f?.grabAt && f.phase === "aim") {
+      const ga = f.grabAt, a2 = to2dClient(ga);
+      const r = container.getBoundingClientRect();
+      const v = tmpV.set(ga.x - CX, 0, ga.y).project(camera);
+      const onGlass = { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+      const in2d = !!a2 && Math.hypot(at.x - a2.x, at.y - a2.y) <= 0.2 * f.cam.H;
+      touch.shot = !!a2 && grabsBall(Math.hypot(e.clientX - onGlass.x, e.clientY - onGlass.y), in2d, Math.hypot(g.x - ga.x, g.y - ga.y));
+      if (touch.shot && a2) { touch.start2 = a2; touch.g0 = { x: ga.x, y: ga.y }; }
     }
     touch.last = performance.now();
     // THE CAMERA SWIPE: a press on open grass while aiming is held back from the 2D game until it shows
@@ -1815,7 +1827,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   // drag, which the 2D game ignores (no kick; a team-mate pressed first gets his tap, an order).
   const pinch = { pts: new Map<number, { x: number; y: number }>(), d0: 0, z0: 0, on: false };
   // dev/test: what the touch handling holds right now (scripts/star-sandbox/switch3d.mjs)
-  (window as unknown as { __cam3dInput?: () => unknown }).__cam3dInput = () => ({ visible, orbit: orbit.target, tilt: orbit.tiltTarget, zoom: camZoom(), pinchOn: pinch.on, pinchPts: pinch.pts.size, touchId: touch.id, pend: touch.pend, shot: touch.shot });
+  (window as unknown as { __cam3dInput?: () => unknown }).__cam3dInput = () => ({ visible, orbit: orbit.target, tilt: orbit.tiltTarget, zoom: camZoom(), pinchOn: pinch.on, pinchPts: pinch.pts.size, touchId: touch.id, pend: touch.pend, shot: touch.shot, mate: touch.mate, phase: lastFrame?.phase ?? null, grabAt: lastFrame?.grabAt ?? null });
   const pinchDist = () => { const a = Array.from(pinch.pts.values()); return a.length < 2 ? 0 : Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); };
   const onPinchDown = (e: PointerEvent) => {
     if (!visible || e.pointerType !== "touch") return;

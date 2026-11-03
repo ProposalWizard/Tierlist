@@ -1,0 +1,225 @@
+{
+  "id": "ct-haaland-stoke",
+  "series": "Cold, rainy night in Stoke",
+  "title": "Could Haaland do it on a cold, rainy night in Stoke?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/Stoke_City_F.C.",
+    "https://en.wikipedia.org/wiki/2018%E2%80%9319_Stoke_City_F.C._season",
+    "https://en.wikipedia.org/wiki/Erling_Haaland",
+    "https://en.wikipedia.org/wiki/2023%E2%80%9324_Luton_Town_F.C._season",
+    "https://en.wikipedia.org/wiki/2026%E2%80%9327_Premier_League"
+  ],
+  "checked": "Stoke relegated from the PL in 2018 and in the Championship in 2026/27; bet365 Stadium (Stoke club page + 2018/19 season page). Haaland joined City in 2022, so he has never played a PL game at Stoke. No official stat for rain or cold exists, so we say so and use comparable games instead: five goals in a 6-2 FA Cup fifth-round win at Kenilworth Road, 27 Feb 2024 (Haaland page + Luton season page; the Haaland page dates it 24 Feb, so only the month is said); 36 PL goals in 2022/23, a PL record; 121 PL goals for City as of Oct 2026 (Haaland page); 9 PL goals in 2026/27 and top scorer (Wikipedia PL table, 2 Nov 2026). Weather at that Luton game not checked, so not claimed.",
+  "clubs": {
+    "mci": {
+      "name": "Manchester City",
+      "short": "MCI",
+      "c1": "#6cabdd",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "sto": {
+      "name": "Stoke City",
+      "short": "STK",
+      "c1": "#e03a3e",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    },
+    "lut": {
+      "name": "Luton Town",
+      "short": "LUT",
+      "c1": "#f78f1e",
+      "c2": "#002d62",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "haaland": {
+      "name": "Erling Haaland",
+      "skin": "light",
+      "hair": [
+        "slick",
+        "#e8d08a"
+      ],
+      "beard": "none",
+      "kit": "mci"
+    }
+  },
+  "lines": [
+    {
+      "text": "Could Erling Haaland do it on a cold, rainy night in Stoke?",
+      "scene": {
+        "type": "title",
+        "heading": "ERLING HAALAND",
+        "sub": "The ultimate test",
+        "pill": "COLD, RAINY NIGHT IN STOKE",
+        "person": "haaland"
+      }
+    },
+    {
+      "text": "First problem. Stoke went down from the Premier League in twenty eighteen. This season they're in the Championship.",
+      "scene": {
+        "type": "text",
+        "heading": "STOKE CITY",
+        "body": "Relegated from the Premier League in 2018. In the Championship in 2026/27. Home: the bet365 Stadium."
+      }
+    },
+    {
+      "text": "Haaland joined City in twenty twenty-two. So he has never played a league game at Stoke.",
+      "scene": {
+        "type": "person",
+        "person": "haaland",
+        "label": "LEAGUE GAMES AT STOKE",
+        "mood": "flat",
+        "stamp": "ZERO"
+      }
+    },
+    {
+      "text": "And nobody keeps an official stat for rain. So we went looking for the closest thing.",
+      "scene": {
+        "type": "whatif",
+        "title": "THE TEST",
+        "real": {
+          "label": "Real record",
+          "value": "No games at Stoke"
+        },
+        "alt": {
+          "label": "Closest thing",
+          "value": "Small, tight away grounds"
+        }
+      }
+    },
+    {
+      "text": "February twenty twenty-four. FA Cup. Kenilworth Road, Luton. Tight, old, loud.",
+      "scene": {
+        "type": "score",
+        "home": "lut",
+        "away": "mci",
+        "hs": 2,
+        "as": 6,
+        "date": "Feb 2024",
+        "comp": "FA Cup · fifth round",
+        "note": "Haaland 5 goals"
+      }
+    },
+    {
+      "text": "Haaland scored five. The first five-goal FA Cup game since George Best in nineteen seventy.",
+      "scene": {
+        "type": "stats",
+        "title": "AT KENILWORTH ROAD",
+        "items": [
+          {
+            "n": "5",
+            "l": "goals"
+          },
+          {
+            "n": "1970",
+            "l": "last done (George Best)"
+          }
+        ],
+        "person": "haaland"
+      }
+    },
+    {
+      "text": "His first Premier League season? Thirty-six league goals. Still the record.",
+      "scene": {
+        "type": "stats",
+        "title": "2022/23",
+        "items": [
+          {
+            "n": "36",
+            "l": "league goals"
+          },
+          {
+            "n": "35",
+            "l": "games"
+          }
+        ],
+        "person": "haaland"
+      }
+    },
+    {
+      "text": "He's at a hundred and twenty-one league goals for City now.",
+      "scene": {
+        "type": "stats",
+        "title": "HAALAND FOR CITY",
+        "items": [
+          {
+            "n": "121",
+            "l": "league goals"
+          },
+          {
+            "n": "6ft 5",
+            "l": "tall"
+          }
+        ]
+      }
+    },
+    {
+      "text": "And this season he's top of the scoring chart again, with nine.",
+      "scene": {
+        "type": "list",
+        "title": "PL TOP SCORERS 2026/27",
+        "rows": [
+          {
+            "name": "Erling Haaland",
+            "value": "9",
+            "club": "mci",
+            "hl": true
+          },
+          {
+            "name": "Alexander Isak",
+            "value": "6"
+          },
+          {
+            "name": "Nicolas Jackson",
+            "value": "5"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Picture it. Stoke back up, Tuesday night, sideways rain, the ball skidding off the turf.",
+      "scene": {
+        "type": "whatif",
+        "title": "IN THIS ALTERNATE WORLD",
+        "real": {
+          "label": "Real world",
+          "value": "Stoke in the Championship"
+        },
+        "alt": {
+          "label": "Imagined",
+          "value": "Stoke v City, sideways rain"
+        }
+      }
+    },
+    {
+      "text": "Our prediction? He gets one chance in the six-yard box, and he puts it away.",
+      "scene": {
+        "type": "score",
+        "home": "sto",
+        "away": "mci",
+        "hs": 0,
+        "as": 1,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Haaland"
+      }
+    },
+    {
+      "text": "The verdict: on the evidence, yes. He'd do it on a cold, rainy night in Stoke.",
+      "scene": {
+        "type": "stamp",
+        "text": "HE'D DO IT",
+        "person": "haaland",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

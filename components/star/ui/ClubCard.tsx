@@ -24,7 +24,7 @@ export default function ClubCard({ glow, strength = 0.28, duel, className = "", 
   const look = duel ? duelStyle(duel[0], duel[1]) : cardStyle(glow ?? "#2F6F4E", strength);
   const round = /\brounded(-|\b)/.test(className) ? "" : "rounded-2xl ";
   return (
-    <div className={`${round}${className}`} style={{ ...look, ...style }} {...rest}>
+    <div data-club-card className={`${round}${className}`} style={{ ...look, ...style }} {...rest}>
       {children}
     </div>
   );

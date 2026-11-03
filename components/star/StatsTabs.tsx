@@ -34,10 +34,12 @@ import { AchievementList } from "./SecondaryScreens";
 import { ArcChart, CabinetGrid, Heading, SeasonList } from "./CareerOverview";
 import CareerGoalsGallery from "./CareerGoalsGallery";
 import { useLeoUpdate } from "@/lib/star/leoUpdate";
+import { seasonStartYear } from "@/lib/star/calendar";
 
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 const seasonLabel = (c: CareerState, s: number) => {
-  const y = c.player.startYear + s - 1;
+  // The same season years as Stats and Goals (calendar.ts seasonStartYear): this read one year ahead.
+  const y = seasonStartYear(c.player.startYear, s);
   return `${String(y).slice(2)}/${String(y + 1).slice(2)}`;
 };
 
@@ -233,7 +235,7 @@ function EmptyShelf() {
   return (
     <div className="grid grid-cols-4 gap-1.5">
       {[0, 1, 2, 3].map((k) => (
-        <div key={k} className="h-[66px]" style={{ background: "rgba(0,0,0,.5)", boxShadow: "inset 0 -3px 0 rgba(120,72,24,.5), inset 0 0 0 1px rgba(255,255,255,.05)" }} />
+        <div key={k} className="sk-shelf h-[66px]" style={{ background: "rgba(0,0,0,.5)", boxShadow: "inset 0 -3px 0 rgba(120,72,24,.5), inset 0 0 0 1px rgba(255,255,255,.05)" }} />
       ))}
     </div>
   );

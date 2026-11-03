@@ -1,0 +1,275 @@
+{
+  "id": "ss-modric-v-iniesta",
+  "series": "Best season ever, settled",
+  "title": "Modric 2018 v Iniesta 2010: the best midfield year?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/2010_FIFA_World_Cup_final",
+    "https://en.wikipedia.org/wiki/2018_Ballon_d%27Or",
+    "https://www.ballondor.com (2010 and 2018 rankings and articles; saved in data/ballondor/)",
+    "data/competition-history/world-cup.json (2010 and 2018 finals, Golden Ball winners)",
+    "data/competition-history/champions-league.json (2017-18 final)"
+  ],
+  "checked": "Iniesta's 116th-minute winner, man of the match, 11 July 2010, Johannesburg (Wikipedia final page; 1-0 after extra time also in the local World Cup file); 2010 Ballon d'Or podium Messi, Iniesta, Xavi (ballondor.com). Modric: Real Madrid 3-1 Liverpool, France 4-2 Croatia, Golden Ball (local files), Ballon d'Or 2018 with 753 points to Ronaldo's 476, ending the Messi-Ronaldo decade (Wikipedia + ballondor.com). Iniesta's club season numbers left out (not confirmed).",
+  "clubs": {
+    "esp": {
+      "name": "Spain",
+      "short": "ESP",
+      "c1": "#c60b1e",
+      "c2": "#ffc400",
+      "pattern": "plain"
+    },
+    "ned": {
+      "name": "Netherlands",
+      "short": "NED",
+      "c1": "#f36c21",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "cro": {
+      "name": "Croatia",
+      "short": "CRO",
+      "c1": "#ff0000",
+      "c2": "#ffffff",
+      "pattern": "hoops"
+    },
+    "fra": {
+      "name": "France",
+      "short": "FRA",
+      "c1": "#1f3b8c",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "barca": {
+      "name": "Barcelona",
+      "short": "BAR",
+      "c1": "#a50044",
+      "c2": "#004d98",
+      "pattern": "stripes"
+    },
+    "realmadrid": {
+      "name": "Real Madrid",
+      "short": "RMA",
+      "c1": "#ffffff",
+      "c2": "#febe10",
+      "pattern": "plain"
+    },
+    "liverpool": {
+      "name": "Liverpool",
+      "short": "LIV",
+      "c1": "#c8102e",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "juve": {
+      "name": "Juventus",
+      "short": "JUV",
+      "c1": "#ffffff",
+      "c2": "#111111",
+      "pattern": "stripes"
+    },
+    "atleti": {
+      "name": "Atletico Madrid",
+      "short": "ATM",
+      "c1": "#cb3524",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    }
+  },
+  "people": {
+    "iniesta": {
+      "name": "Andres Iniesta",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#4a3424"
+      ],
+      "beard": "none",
+      "kit": "esp"
+    },
+    "modric": {
+      "name": "Luka Modric",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#c9b48a"
+      ],
+      "beard": "stubble",
+      "kit": "cro"
+    }
+  },
+  "lines": [
+    {
+      "text": "One scored the goal that won a World Cup. The other lost a World Cup final. Guess who won the Ballon d'Or.",
+      "scene": {
+        "type": "title",
+        "heading": "MODRIC v INIESTA",
+        "sub": "2018 v 2010",
+        "pill": "SETTLED",
+        "person": "iniesta"
+      }
+    },
+    {
+      "text": "Andres Iniesta, twenty ten. Johannesburg. The World Cup final goes to extra time.",
+      "scene": {
+        "type": "person",
+        "person": "iniesta",
+        "label": "Spain · 2010",
+        "mood": "worried"
+      }
+    },
+    {
+      "text": "Hundred and sixteenth minute. Iniesta scores. Spain are world champions for the first time.",
+      "scene": {
+        "type": "score",
+        "home": "ned",
+        "away": "esp",
+        "hs": 0,
+        "as": 1,
+        "date": "11 July 2010",
+        "comp": "World Cup final",
+        "note": "Iniesta 116'",
+        "stamp": "WINNER"
+      }
+    },
+    {
+      "text": "Man of the match in the final. One of the biggest moments a midfielder has ever had.",
+      "scene": {
+        "type": "trophies",
+        "person": "iniesta",
+        "items": [
+          {
+            "kind": "worldcup",
+            "label": "World Cup 2010"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Luka Modric, twenty eighteen. First, the Champions League with Real Madrid.",
+      "scene": {
+        "type": "score",
+        "home": "realmadrid",
+        "away": "liverpool",
+        "hs": 3,
+        "as": 1,
+        "date": "26 May 2018",
+        "comp": "Champions League final"
+      }
+    },
+    {
+      "text": "Then he drags Croatia all the way to the World Cup final.",
+      "scene": {
+        "type": "person",
+        "person": "modric",
+        "label": "Croatia · 2018",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "They lose four-two to France. But Modric wins the Golden Ball as the best player at the tournament.",
+      "scene": {
+        "type": "score",
+        "home": "fra",
+        "away": "cro",
+        "hs": 4,
+        "as": 2,
+        "date": "15 July 2018",
+        "comp": "World Cup final",
+        "note": "Modric wins the Golden Ball"
+      }
+    },
+    {
+      "text": "So on trophies, Iniesta has the World Cup. Modric has the Champions League.",
+      "scene": {
+        "type": "versus",
+        "title": "THE BIG ONE",
+        "left": {
+          "person": "iniesta",
+          "label": "Iniesta 2010",
+          "value": "World Cup"
+        },
+        "right": {
+          "person": "modric",
+          "label": "Modric 2018",
+          "value": "Champions League"
+        }
+      }
+    },
+    {
+      "text": "Now the twist. The man who lost the final won the Ballon d'Or. The man who won it didn't.",
+      "scene": {
+        "type": "text",
+        "heading": "THE TWIST",
+        "body": "Modric lost the 2018 World Cup final and won the Ballon d'Or. Iniesta scored the 2010 winner and came second.",
+        "stamp": "TWIST"
+      }
+    },
+    {
+      "text": "Twenty ten. Messi first, Iniesta second, Xavi third. Three Barcelona players.",
+      "scene": {
+        "type": "podium",
+        "year": "2010",
+        "title": "BALLON D'OR",
+        "places": [
+          {
+            "name": "Lionel Messi",
+            "club": "barca"
+          },
+          {
+            "person": "iniesta",
+            "club": "barca"
+          },
+          {
+            "name": "Xavi",
+            "club": "barca"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Twenty eighteen. Modric first, ending ten years of Messi and Ronaldo.",
+      "scene": {
+        "type": "podium",
+        "year": "2018",
+        "title": "BALLON D'OR",
+        "places": [
+          {
+            "person": "modric",
+            "club": "realmadrid"
+          },
+          {
+            "name": "Cristiano Ronaldo",
+            "club": "juve"
+          },
+          {
+            "name": "Antoine Griezmann",
+            "club": "atleti"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Modric had the better year on paper. Iniesta had the better moment. For one season, Modric. For one night, Iniesta.",
+      "scene": {
+        "type": "versus",
+        "title": "THE VERDICT",
+        "left": {
+          "person": "iniesta",
+          "label": "Best moment",
+          "value": "WIN"
+        },
+        "right": {
+          "person": "modric",
+          "label": "Best year",
+          "value": "WIN"
+        }
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

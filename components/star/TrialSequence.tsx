@@ -281,7 +281,7 @@ export default function TrialSequence({
           event.flavour ? "text-white/60" : "text-amber-300"
         }`}
       >
-        {event.flavour ? "Trial day" : "That's not ideal"} · {event.label}
+        {event.flavour ? "Trial day" : "Heads up"} · {event.label}
       </div>
       <p className="mt-1 text-[11px] font-bold leading-snug text-white/85">{event.blurb}</p>
     </div>

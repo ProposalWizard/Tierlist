@@ -93,7 +93,8 @@ function playsWithFor(skill: TrainingSkill, level: number, row: AnyLevel): Plays
 function Stars({ n }: { n: number }) {
   return (
     <span className="tr-stars" aria-label={`${n} of 3 stars`}>
-      {[0, 1, 2].map(k => <span key={k} data-on={k < n ? "true" : undefined}>★</span>)}
+      {/* Unlit stars are hollow: a failed level read as three earned stars (sweep, 29 Oct 2026). */}
+      {[0, 1, 2].map(k => <span key={k} data-on={k < n ? "true" : undefined}>{k < n ? "★" : "☆"}</span>)}
     </span>
   );
 }

@@ -34,7 +34,7 @@ import { SCENARIO_KINDS, type Scenario } from "@/lib/star/canvasEngine";
 import { withoutSwitchedOff } from "@/lib/star/switchedOffKinds";
 import { nextHighlight, newSimMemory, buildSimScenario, pictureKey } from "@/lib/star/gallerySim";
 import { mulberry32 } from "@/lib/star/season";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, formatWallet } from "@/lib/star/money";
 import { SOCIAL_SEEN, MSGS_SEEN, readLS, writeLS, buildMessages, msgKey, socialUnread, type Msg } from "@/lib/star/phoneUnread";
 import { brandsOf } from "@/lib/star/sponsorDeals";
 import PhoneFrame from "./PhoneFrame";
@@ -60,7 +60,7 @@ const APPS: App[] = [
   // here (master plan step 4, Mikey 22 Oct 2026).
   { id: "relations", label: "Relationships", icon: "❤️", bg: ["#fb7185", "#be123c"] },
   { id: "squad", label: "Squad", icon: "👥", bg: ["#fcd34d", "#d97706"] },
-  { id: "fixtures", label: "Fixtures", title: "Fixtures & results", icon: "📅", bg: ["#38bdf8", "#0369a1"] },
+  { id: "fixtures", label: "Fixtures", title: "Fixtures & results", icon: "🏟️" /* 📅 draws a fixed "JUL 17" on phones */, bg: ["#38bdf8", "#0369a1"] },
   { id: "messages", label: "Messages", icon: "💌", bg: ["#f472b6", "#e11d48"] },
   { id: "shop-kib", label: "Shop", icon: "🛍️", bg: ["#fb923c", "#ea580c"] },
   { id: "store", label: "Store", icon: "🛒", bg: ["#fcd34d", "#7c3aed"] },
@@ -286,7 +286,7 @@ function Grid({ career, glow, badges, onOpen, onClose, installed, isNew }: {
       {next ? <NextMatchWidget career={career} next={next} /> : (
         <ClubCard glow={glow} className="rounded-[20px] px-3 py-2">
           <div className="text-[9px] font-black uppercase tracking-[0.18em] text-amber-200">Season complete</div>
-          <div className="text-[11px] font-bold text-white/75">★ {formatMoney(career.money)} in the bank</div>
+          <div className="text-[11px] font-bold text-white/75">★ {formatWallet(career.money)} in the bank</div>
         </ClubCard>
       )}
       <div className="mt-3 grid grid-cols-4 gap-x-2 gap-y-2.5">
@@ -424,8 +424,15 @@ function fixtureLabel(f: CareerState["fixtures"][number]): { top: string; sub?: 
   if (!f.competition || f.kind === "league") return { top: `MW${f.week}` };
   const c = f.competition;
   const top = /Champions/.test(c) ? "UCL" : /Europa/.test(c) ? "UEL" : /Conference/.test(c) ? "UECL"
-    : c === "FA Cup" ? "FA Cup" : c === "League Cup" ? "Lg Cup" : c.replace(/ (Cup|Shield)$/, "").slice(0, 8);
-  const sub = [f.round?.replace("League phase", "League").replace("Round of ", "R").replace("Matchday ", "MD"), f.leg ? `L${f.leg}` : ""].filter(Boolean).join(" ");
+    : c === "FA Cup" ? "FA Cup" : c === "League Cup" ? "Lg Cup" : /Trophy/.test(c) ? "Trophy" : c.replace(/ (Cup|Shield)$/, "").slice(0, 8);
+  // Short enough for the 50 px column ("Third Qua…" was cut; sweep, 29 Oct 2026).
+  const ORD: Record<string, string> = { First: "1", Second: "2", Third: "3", Fourth: "4", Fifth: "5", Sixth: "6" };
+  const round = f.round
+    ?.replace("League phase", "League").replace("Round of ", "R").replace("Matchday ", "MD")
+    .replace(/^(First|Second|Third|Fourth|Fifth|Sixth) Qualifying( Round)?$/, (_m, o: string) => `Q${ORD[o]}`)
+    .replace(/^(First|Second|Third|Fourth|Fifth|Sixth) Round$/, (_m, o: string) => `R${ORD[o]}`)
+    .replace(/^Quarter-?[Ff]inals?$/, "QF").replace(/^Semi-?[Ff]inals?$/, "SF");
+  const sub = [round, f.leg ? `L${f.leg}` : ""].filter(Boolean).join(" ");
   return { top, sub: sub || undefined };
 }
 

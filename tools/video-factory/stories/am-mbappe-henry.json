@@ -1,0 +1,38 @@
+{
+  "id": "am-mbappe-henry",
+  "series": "Age-match",
+  "title": "Mbappé v Henry at exactly the same age",
+  "sources": [
+    "https://www.uefa.com/uefachampionsleague/news/02a8-2176fa83582b-d99f0b27f405-1000--2026-27-uefa-champions-league-all-the-league-phase-fixtures/",
+    "https://foot-africa.com/en/news/champions-league-2026-27-real-madrids-complete-league-phase-schedule-1333831/",
+    "https://en.wikipedia.org/wiki/Kylian_Mbapp%C3%A9",
+    "https://en.wikipedia.org/wiki/Thierry_Henry",
+    "https://www.sortiraparis.com/en/what-to-do-in-paris/sport-wellness/articles/349129-world-cup-2026-all-results-and-the-final-score"
+  ],
+  "checked": "Real Madrid at AEK Athens, 4 Nov 2026 (UEFA + Foot Africa). Mbappé born 20 Dec 1998 = 27 years 319 days. Henry born 17 Aug 1977 reached that age on 2 Jul 2005, in the summer, so his totals are exact: Monaco 105 games 20 goals, Juventus 16/3, Arsenal 205/137 = 326 league games, 160 league goals. Mbappé senior league games to 1 Nov 2026: Monaco 41/16, PSG 205/175, Real Madrid 76/68 = 322 games, 259 goals (reserve team left out). Both from Wikipedia career tables (one source each). Henry's Arsenal record 175 league goals (Wikipedia). Mbappé's 2026 World Cup Golden Boot (Wikipedia + Sortiraparis). Minutes not confirmable, so the twist uses games.",
+  "clubs": {
+    "rma": { "name": "Real Madrid", "short": "RMA", "c1": "#ffffff", "c2": "#febe10", "pattern": "plain" },
+    "ars": { "name": "Arsenal", "short": "ARS", "c1": "#ef0107", "c2": "#ffffff", "pattern": "sides" },
+    "psg": { "name": "Paris Saint-Germain", "short": "PSG", "c1": "#004170", "c2": "#da291c", "pattern": "centre" },
+    "mon": { "name": "Monaco", "short": "ASM", "c1": "#e2001a", "c2": "#ffffff", "pattern": "halves" },
+    "juv": { "name": "Juventus", "short": "JUV", "c1": "#ffffff", "c2": "#000000", "pattern": "stripes" }
+  },
+  "people": {
+    "mbappe": { "name": "Kylian Mbappé", "skin": "brown", "hair": ["buzz", "#1b1410"], "beard": "none", "kit": "rma" },
+    "henry": { "name": "Thierry Henry", "skin": "dark", "hair": ["bald", "#14110f"], "beard": "none", "kit": "ars" }
+  },
+  "lines": [
+    { "text": "On the fourth of November, when Real Madrid play in Athens, Kylian Mbappé is twenty-seven years and three hundred and nineteen days old.", "scene": { "type": "title", "heading": "KYLIAN MBAPPÉ", "sub": "AEK Athens v Real Madrid · 4 Nov 2026", "pill": "AGE-MATCH", "person": "mbappe" } },
+    { "text": "France's greatest striker before him? Thierry Henry. So where was Henry at exactly that age?", "scene": { "type": "person", "person": "henry", "label": "27 years, 319 days: July 2005", "mood": "happy" } },
+    { "text": "July twenty oh-five. Two Golden Boots in a row at Arsenal, an Invincibles season behind him.", "scene": { "type": "timeline", "items": [ { "year": "1994", "label": "Debut at Monaco" }, { "year": "1999", "label": "Juventus, then Arsenal" }, { "year": "2004", "label": "The Invincibles" }, { "year": "2005", "label": "Same age as Mbappé now" } ] } },
+    { "text": "His league goals at that age: one hundred and sixty, for Monaco, Juventus and Arsenal.", "scene": { "type": "list", "title": "Henry's league goals by July 2005", "rows": [ { "name": "Monaco", "value": "20", "club": "mon" }, { "name": "Juventus", "value": "3", "club": "juv" }, { "name": "Arsenal", "value": "137", "club": "ars", "hl": true } ] } },
+    { "text": "Mbappé at the same age? Two hundred and fifty-nine.", "scene": { "type": "versus", "title": "League goals at 27y 319d", "left": { "person": "mbappe", "label": "Mbappé", "value": "259" }, "right": { "person": "henry", "label": "Henry", "value": "160" } } },
+    { "text": "That's ninety-nine more league goals than the man who holds Arsenal's scoring record.", "scene": { "type": "stamp", "text": "+99", "person": "mbappe", "color": "yellow" } },
+    { "text": "Now the twist. Maybe Mbappé just played more? Let's match the games.", "scene": { "type": "text", "heading": "MATCH THE GAMES", "body": "League games at the same age. Mbappé: 322. Henry: 326." } },
+    { "text": "Henry had actually played four more league games. Almost exactly the same.", "scene": { "type": "stats", "title": "League games at 27y 319d", "items": [ { "n": "322", "l": "Mbappé" }, { "n": "326", "l": "Henry" } ] } },
+    { "text": "So in the same number of games, Mbappé scored ninety-nine more goals.", "scene": { "type": "whatif", "title": "Same games, different goals", "real": { "label": "Henry, 326 games", "value": "160" }, "alt": { "label": "Mbappé, 322 games", "value": "259" } } },
+    { "text": "Henry started out on the wing at Monaco and Juventus. Mbappé was scoring from day one.", "scene": { "type": "trophies", "items": [ { "kind": "boot", "label": "Henry: Golden Boots" }, { "kind": "boot", "label": "Mbappé: World Cup Golden Boot 2026" } ] } },
+    { "text": "Is Mbappé already better than Henry? Tell me in the comments.", "scene": { "type": "quote", "person": "henry", "text": "Ninety-nine more? Fine. But I had the Invincibles." } },
+    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+  ]
+}

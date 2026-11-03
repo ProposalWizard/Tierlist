@@ -1403,6 +1403,9 @@ export interface CareerState {
    *  (League → History, Mikey 22 Oct 2026). Added at each rollover from
    *  lastWorld; absent on older saves (lib/star/world/history.ts). */
   compHistory?: import("./world/history").CompHistoryRow[];
+  /** Each international tournament's top scorer, top assister and player of
+   *  the tournament, kept at each rollover (intl/editionLeaders.ts). */
+  intlHistory?: import("./intl/editionLeaders").IntlEditionLeaders[];
   /** Last season's final Premier League table, best first (names) — who
    *  England sends to Europe this season (euro.ts seasonField). */
   lastTopFlight?: string[];
@@ -1613,6 +1616,12 @@ export interface CareerState {
   /** The last season whose reel ("Your season") was made or skipped. Until
    *  then that season's recordings are kept from the newest-80 prune. */
   reelDoneSeason?: number;
+  /** Your favourite goals (Leo, 31 Oct 2026: "u should be able to save which
+   *  goals u want, like ur favourite ones"): CareerGoal ids, oldest pick
+   *  first (lib/star/favouriteGoals.ts). In the save so they follow you to
+   *  every device; their recordings are never pruned on this one. Absent:
+   *  none yet. Leo's update part "seasonEnd" only. */
+  favouriteGoals?: string[];
   /**
    * Up to 3 goals deliberately kept from `recentGoals` — a real choice, not
    * everything you've ever scored. Decoupled from `recentGoals`'s own churn
@@ -1737,6 +1746,11 @@ export interface CareerState {
    * from the next match onwards.
    */
   media?: import("./media/types").MediaState;
+  /**
+   * Leo's update switch, kept with the career so it follows the account across
+   * devices (lib/star/leoUpdate.ts). Absent on every save that never set it.
+   */
+  leoUpdate?: import("./leoUpdate").LeoUpdateSetting;
   /**
    * A tester save: someone used a Settings → Developer tools cheat (money,
    * skills, skip ahead, switch club…) on this career. Set once, never

@@ -1,0 +1,318 @@
+{
+  "id": "scandal-calciopoli-2006",
+  "series": "Football's biggest scandals",
+  "title": "Calciopoli: champions to Serie B, then world champions",
+  "sources": [
+    "https://en.wikipedia.org/wiki/Calciopoli",
+    "https://sport.sky.it/calcio/2015/03/23/calciopoli_scheda_tappe_giustizia_sportiva",
+    "https://www.si.com/soccer/2018/12/13/italian-supreme-court-rejects-juventus-appeal-have-inter-stripped-200506-scudetto",
+    "https://www.total-italianfootball.com/news/458015280646/calciopoli-scandal-explained-why-were-juventus-relegated-to-serie-b",
+    "https://en.wikipedia.org/wiki/2006_FIFA_World_Cup_final",
+    "https://www.juventus.com/en/news/articles/juventus-world-cup-winners",
+    "https://www.11v11.com/competitions/fifa-world-cup/2006/squads/italy/"
+  ],
+  "checked": "Titles stripped (2004-05 unassigned, 2005-06 to Inter) on Wikipedia + SI + Sky; penalty 30 -> 17 (Sky, appeal 25 Jul 2006) -> 9 (Wikipedia, 26 Oct 2006); Milan -8 for 2006-07 (Sky); Moggi lifetime ban (Wikipedia + Sky CONI 2012); final 9 Jul 2006 1-1, 5-3 pens (Wikipedia + search reports); five Juve players (Juventus.com + 11v11).",
+  "clubs": {
+    "juv": {
+      "name": "Juventus",
+      "short": "JUV",
+      "c1": "#ffffff",
+      "c2": "#000000",
+      "pattern": "stripes"
+    },
+    "inter": {
+      "name": "Inter",
+      "short": "INT",
+      "c1": "#0068a8",
+      "c2": "#000000",
+      "pattern": "stripes"
+    },
+    "ita": {
+      "name": "Italy",
+      "short": "ITA",
+      "c1": "#1f4fa8",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "fra": {
+      "name": "France",
+      "short": "FRA",
+      "c1": "#1a2a6c",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "mil": {
+      "name": "Milan",
+      "short": "MIL",
+      "c1": "#d0021b",
+      "c2": "#000000",
+      "pattern": "stripes"
+    },
+    "fio": {
+      "name": "Fiorentina",
+      "short": "FIO",
+      "c1": "#5b2a86",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "laz": {
+      "name": "Lazio",
+      "short": "LAZ",
+      "c1": "#87d8f7",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "moggi": {
+      "name": "Luciano Moggi",
+      "skin": "light",
+      "hair": [
+        "bald",
+        "#cfcfcf"
+      ],
+      "beard": "none",
+      "kit": "suit"
+    },
+    "cannavaro": {
+      "name": "Fabio Cannavaro",
+      "skin": "olive",
+      "hair": [
+        "buzz",
+        "#1e1612"
+      ],
+      "beard": "none",
+      "kit": "ita"
+    },
+    "buffon": {
+      "name": "Gianluigi Buffon",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#3a2a1a"
+      ],
+      "beard": "stubble",
+      "kit": "ita"
+    }
+  },
+  "lines": [
+    {
+      "text": "In twenty oh six, Juventus went from champions of Italy to Serie B. And that same summer, Italy won the World Cup.",
+      "scene": {
+        "type": "title",
+        "heading": "CALCIOPOLI",
+        "sub": "Italy · 2006",
+        "pill": "FOOTBALL'S BIGGEST SCANDALS",
+        "person": "moggi"
+      }
+    },
+    {
+      "text": "Calciopoli: an investigation into club bosses and their links to the people who picked referees.",
+      "scene": {
+        "type": "text",
+        "heading": "Calciopoli",
+        "body": "Italy's 2006 scandal: clubs were found to have tried to influence referee appointments. Several Serie A clubs were punished."
+      }
+    },
+    {
+      "text": "At the centre was Juventus general manager Luciano Moggi.",
+      "scene": {
+        "type": "person",
+        "person": "moggi",
+        "label": "LUCIANO MOGGI · JUVENTUS",
+        "mood": "worried"
+      }
+    },
+    {
+      "text": "The punishment was brutal. Juve lost their twenty oh five and twenty oh six titles.",
+      "scene": {
+        "type": "trophies",
+        "title": "Titles taken",
+        "items": [
+          {
+            "kind": "league",
+            "label": "2004-05"
+          },
+          {
+            "kind": "league",
+            "label": "2005-06"
+          }
+        ],
+        "stamp": "STRIPPED"
+      }
+    },
+    {
+      "text": "The twenty oh five title was never given to anyone. Inter were handed twenty oh six.",
+      "scene": {
+        "type": "list",
+        "title": "Serie A titles",
+        "rows": [
+          {
+            "name": "2004-05",
+            "value": "NOT AWARDED"
+          },
+          {
+            "name": "2005-06",
+            "value": "INTER",
+            "club": "inter",
+            "hl": true
+          },
+          {
+            "name": "Juventus",
+            "value": "LAST",
+            "club": "juv"
+          }
+        ]
+      }
+    },
+    {
+      "text": "And Juventus were sent down to Serie B.",
+      "scene": {
+        "type": "stamp",
+        "text": "RELEGATED",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Their points penalty started at thirty, was cut to seventeen, and finally to nine.",
+      "scene": {
+        "type": "timeline",
+        "title": "Juve's points penalty",
+        "items": [
+          {
+            "year": "-30",
+            "label": "July 2006"
+          },
+          {
+            "year": "-17",
+            "label": "Appeal, July"
+          },
+          {
+            "year": "-9",
+            "label": "October 2006"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Milan, Fiorentina and Lazio were docked points too, but stayed in Serie A.",
+      "scene": {
+        "type": "list",
+        "title": "Also punished",
+        "rows": [
+          {
+            "name": "Juventus",
+            "value": "Serie B",
+            "club": "juv",
+            "hl": true
+          },
+          {
+            "name": "Milan",
+            "value": "-8 pts",
+            "club": "mil"
+          },
+          {
+            "name": "Fiorentina",
+            "value": "pts off",
+            "club": "fio"
+          },
+          {
+            "name": "Lazio",
+            "value": "pts off",
+            "club": "laz"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Moggi was later banned from football for life.",
+      "scene": {
+        "type": "person",
+        "person": "moggi",
+        "label": "BANNED FOR LIFE",
+        "mood": "flat",
+        "stamp": "BANNED"
+      }
+    },
+    {
+      "text": "Here's the twist. While all this blew up, Italy were at the World Cup in Germany.",
+      "scene": {
+        "type": "person",
+        "person": "cannavaro",
+        "label": "ITALY CAPTAIN",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Five Juventus players were in that squad.",
+      "scene": {
+        "type": "list",
+        "title": "Juve's World Cup five",
+        "rows": [
+          {
+            "name": "Gianluigi Buffon",
+            "value": "GK",
+            "club": "juv"
+          },
+          {
+            "name": "Fabio Cannavaro",
+            "value": "DF",
+            "club": "juv"
+          },
+          {
+            "name": "Gianluca Zambrotta",
+            "value": "DF",
+            "club": "juv"
+          },
+          {
+            "name": "Mauro Camoranesi",
+            "value": "MF",
+            "club": "juv"
+          },
+          {
+            "name": "Alessandro Del Piero",
+            "value": "FW",
+            "club": "juv"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Ninth of July, Berlin. One-one with France, then five-three on penalties. Italy are world champions.",
+      "scene": {
+        "type": "score",
+        "home": "ita",
+        "away": "fra",
+        "hs": 1,
+        "as": 1,
+        "date": "9 July 2006",
+        "comp": "World Cup final",
+        "note": "Italy win 5-3 on penalties"
+      }
+    },
+    {
+      "text": "Juventus went down, then came straight back up, winning Serie B at the first attempt.",
+      "scene": {
+        "type": "trophies",
+        "title": "Straight back",
+        "items": [
+          {
+            "kind": "league",
+            "label": "Serie B 2006-07"
+          },
+          {
+            "kind": "worldcup",
+            "label": "World Cup 2006"
+          }
+        ],
+        "person": "buffon"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}
