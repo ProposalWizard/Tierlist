@@ -135,7 +135,7 @@ def main():
     out /= max(1, np.abs(out).max() / 0.95)
     sf.write(os.path.join(work, "mix.wav"), np.stack([out, out], 1), SR)
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-framerate", str(FPS), "-i", os.path.join(frames, "f%05d.jpg"), "-i", os.path.join(work, "mix.wav"),
-                    "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "22", "-preset", "medium", "-c:a", "aac", "-b:a", "160k", "-shortest", final], check=True)
+                    "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "22", "-preset", "medium", "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", "-shortest", final], check=True)
     shutil.rmtree(frames, ignore_errors=True)
     json.dump({"id": vid, "seconds": round(total, 2), "voice_match": {i: round(best[i][0], 2) for i in best}}, open(os.path.join(work, "result.json"), "w"))
     log("done", final, f"{total:.1f}s")
