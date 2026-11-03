@@ -1,0 +1,55 @@
+{
+  "id": "al-ballondor-and-you",
+  "series": "Everyone, by age",
+  "title": "Every Ballon d'Or winner, by age",
+  "sources": [
+    "https://www.ballondor.com (winners page, year rankings, player pages; saved in data/ballondor/)",
+    "https://www.guinnessworldrecords.com/world-records/788751-oldest-winner-of-footballs-soccers-ballon-dor-award",
+    "https://www.90min.com/youngest-ballon-d-or-winners-ever",
+    "https://www.planetfootball.com/lists-and-rankings/youngest-ballon-dor-winners-lionel-messi-michael-owen",
+    "https://www.90min.com/posts/oldest-ballon-dor-winners-of-all-time",
+    "https://www.espn.com/soccer/story/_/id/50236983/harry-kane-2026-ballon-dor-kylian-mbappe-lamine-yamal",
+    "https://www.englandfootball.com/articles/2026/Oct/26/england-ballon-d-or-2026-winners-20262610",
+    "https://www.npr.org/2026/10/27/nx-s1-6019097/harry-kane-alexia-putellas-ballon-dor"
+  ],
+  "checked": "Ages = age by the end of the award year, from ballondor.com birth dates (data/ballondor/players.json); youngest (Ronaldo 21, 1997) and oldest (Matthews 41, 1956) checked against Guinness, 90min and Planet Football; ballondor.com notes Owen 22y4d, Messi 22y160d, Best 22y212d and three winners at 33 (Di Stefano, Cannavaro, Modric); Kane's 2026 win (26 Oct, London) checked against ESPN, England Football and NPR; counts per age (eleven at 28, nine at 26) computed from the full list.",
+  "clubs": {
+    "inter": { "name": "Inter", "short": "INT", "c1": "#1a3fa0", "c2": "#111111", "pattern": "stripes" },
+    "blackpool": { "name": "Blackpool", "short": "BLA", "c1": "#f57d20", "c2": "#ffffff", "pattern": "plain" },
+    "manutd": { "name": "Manchester United", "short": "MUN", "c1": "#da291c", "c2": "#ffffff", "pattern": "plain" },
+    "arg": { "name": "Argentina", "short": "ARG", "c1": "#75aadb", "c2": "#ffffff", "pattern": "stripes" },
+    "bayern": { "name": "Bayern Munich", "short": "FCB", "c1": "#dc052d", "c2": "#ffffff", "pattern": "plain" },
+    "realmadrid": { "name": "Real Madrid", "short": "RMA", "c1": "#ffffff", "c2": "#febe10", "pattern": "plain" },
+    "barca": { "name": "Barcelona", "short": "BAR", "c1": "#a50044", "c2": "#004d98", "pattern": "stripes" },
+    "milan": { "name": "AC Milan", "short": "MIL", "c1": "#fb090b", "c2": "#111111", "pattern": "stripes" },
+    "juve": { "name": "Juventus", "short": "JUV", "c1": "#ffffff", "c2": "#111111", "pattern": "stripes" },
+    "psg": { "name": "Paris Saint-Germain", "short": "PSG", "c1": "#004170", "c2": "#da291c", "pattern": "centre" },
+    "mancity": { "name": "Manchester City", "short": "MCI", "c1": "#6cabdd", "c2": "#ffffff", "pattern": "plain" },
+    "liverpool": { "name": "Liverpool", "short": "LIV", "c1": "#c8102e", "c2": "#ffffff", "pattern": "plain" }
+  },
+  "people": {
+    "r9": { "name": "Ronaldo", "skin": "brown", "hair": ["buzz", "#1a1410"], "beard": "none", "kit": "inter" },
+    "matthews": { "name": "Stanley Matthews", "skin": "light", "hair": ["slick", "#4a3a2a"], "beard": "none", "kit": "blackpool" },
+    "best": { "name": "George Best", "skin": "light", "hair": ["messy", "#1e1610"], "beard": "none", "kit": "manutd" },
+    "owen": { "name": "Michael Owen", "skin": "light", "hair": ["crop", "#2a1d14"], "beard": "none", "kit": "liverpool" },
+    "messi": { "name": "Lionel Messi", "skin": "light", "hair": ["side", "#3b2a1c"], "beard": "full", "beardCol": "#3b2a1c", "kit": "arg" },
+    "modric": { "name": "Luka Modric", "skin": "light", "hair": ["side", "#c9b48a"], "beard": "stubble", "kit": "realmadrid" },
+    "kane": { "name": "Harry Kane", "skin": "light", "hair": ["side", "#8a6a48"], "beard": "stubble", "kit": "bayern" }
+  },
+  "lines": [
+    { "text": "The youngest Ballon d'Or winner was twenty-one. The oldest was forty-one. This is every winner, by age.", "scene": { "type": "title", "heading": "EVERY WINNER, BY AGE", "sub": "Ballon d'Or · 1956 to 2026", "pill": "HOW OLD WERE THEY?", "person": "r9" } },
+    { "text": "Twenty-one. Ronaldo, the Brazilian, in nineteen ninety-seven. Nobody has ever won it younger.", "scene": { "type": "person", "person": "r9", "label": "21 · 1997", "mood": "happy", "stamp": "YOUNGEST EVER" } },
+    { "text": "Twenty-two is a tiny club. George Best, Michael Owen, and a baby-faced Lionel Messi.", "scene": { "type": "list", "title": "WON IT AT 21 OR 22", "rows": [ { "name": "Ronaldo (1997)", "value": "21", "club": "inter", "hl": true }, { "name": "George Best (1968)", "value": "22", "club": "manutd" }, { "name": "Michael Owen (2001)", "value": "22", "club": "liverpool" }, { "name": "Lionel Messi (2009)", "value": "22", "club": "barca" } ] } },
+    { "text": "Twenty-three to twenty-five: Eusebio, Cruyff, Van Basten, Kaka, Ronaldinho. Players in their first real peak.", "scene": { "type": "list", "title": "AGED 23 TO 25", "rows": [ { "name": "Eusebio (1965)", "value": "23" }, { "name": "Cristiano Ronaldo (2008)", "value": "23", "club": "manutd" }, { "name": "Johan Cruyff (1971)", "value": "24" }, { "name": "Marco van Basten (1988)", "value": "24", "club": "milan" }, { "name": "Ronaldinho (2005)", "value": "25", "club": "barca" }, { "name": "Kaka (2007)", "value": "25", "club": "milan" } ] } },
+    { "text": "Twenty-six gave us Zidane, Roberto Baggio and Paolo Rossi. Nine winners at that age.", "scene": { "type": "list", "title": "AGED 26", "rows": [ { "name": "Gianni Rivera (1969)", "value": "26", "club": "milan" }, { "name": "Paolo Rossi (1982)", "value": "26", "club": "juve" }, { "name": "Roberto Baggio (1993)", "value": "26", "club": "juve" }, { "name": "Zinedine Zidane (1998)", "value": "26", "club": "juve", "hl": true }, { "name": "Ronaldo (2002)", "value": "26", "club": "realmadrid" } ] } },
+    { "text": "But the sweet spot is twenty-eight. Eleven winners, more than any other age.", "scene": { "type": "stats", "title": "THE SWEET SPOT", "items": [ { "n": "28", "l": "most common winning age" }, { "n": "11", "l": "winners at 28" }, { "n": "9", "l": "winners at 26" } ] } },
+    { "text": "Platini, Figo, Shevchenko, Rodri, and last year's winner, Ousmane Dembele. All twenty-eight.", "scene": { "type": "list", "title": "AGED 28", "rows": [ { "name": "Michel Platini (1983)", "value": "28", "club": "juve" }, { "name": "Luis Figo (2000)", "value": "28", "club": "realmadrid" }, { "name": "Andriy Shevchenko (2004)", "value": "28", "club": "milan" }, { "name": "Cristiano Ronaldo (2013)", "value": "28", "club": "realmadrid" }, { "name": "Rodri (2024)", "value": "28", "club": "mancity" }, { "name": "Ousmane Dembele (2025)", "value": "28", "club": "psg", "hl": true } ] } },
+    { "text": "Then it gets rare. Thirty-three: Di Stefano, Cannavaro, Modric.", "scene": { "type": "person", "person": "modric", "label": "33 · 2018", "mood": "happy" } },
+    { "text": "And now Harry Kane, crowned in London last month, at thirty-three as well.", "scene": { "type": "person", "person": "kane", "label": "33 · 2026", "mood": "happy", "stamp": "NEW WINNER" } },
+    { "text": "Benzema won it at thirty-five. Messi won his eighth at thirty-six.", "scene": { "type": "list", "title": "THE OLDEST", "rows": [ { "name": "Lev Yashin (1963)", "value": "34" }, { "name": "Lionel Messi (2021)", "value": "34", "club": "psg" }, { "name": "Karim Benzema (2022)", "value": "35", "club": "realmadrid" }, { "name": "Lionel Messi (2023)", "value": "36", "club": "arg", "hl": true } ] } },
+    { "text": "But nobody touches the very first winner. Stanley Matthews, nineteen fifty-six. Forty-one years old.", "scene": { "type": "person", "person": "matthews", "label": "41 · 1956", "mood": "happy", "stamp": "OLDEST EVER" } },
+    { "text": "So the window runs from twenty-one to forty-one. Twenty years.", "scene": { "type": "timeline", "items": [ { "year": "21", "label": "Ronaldo" }, { "year": "22", "label": "Best, Owen, Messi" }, { "year": "28", "label": "Eleven winners" }, { "year": "33", "label": "Kane" }, { "year": "41", "label": "Matthews" } ] } },
+    { "text": "Now the only question left is yours. At what age would you win it?", "scene": { "type": "text", "heading": "YOUR TURN", "body": "Build a player from scratch in Road to Ballon d'Or and find out the age you'd win it." } },
+    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+  ]
+}

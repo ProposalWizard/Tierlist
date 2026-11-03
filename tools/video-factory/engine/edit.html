@@ -1,0 +1,61 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Anton;src:url(../assets/Anton.ttf)}@font-face{font-family:Oswald;src:url(../assets/Oswald-Bold.woff2);font-weight:700}@font-face{font-family:Oswald;src:url(../assets/Oswald-Bold.woff2);font-weight:400}
+body{margin:0;background:#000}</style></head><body><canvas id="c" width="1080" height="1920"></canvas>
+<script src="avatars.js"></script>
+<script src="scenes.js"></script>
+<script src="timeline.js"></script>
+<script>
+// One video: narrator (voice E look) talking at the bottom, a scene card per line,
+// red-box captions, end card. timeline.js (written by build.py) sets window.STORY and window.TL.
+const FPS = 30;
+const cv = document.getElementById("c"), g = cv.getContext("2d");
+
+function narrator(t, f) {
+  const amp = TL.env[f] || 0;
+  const bob = Math.sin(t * 2.1) * 6 + amp * 6;
+  const blink = (t % 3.7) < 0.12;
+  const look = Math.sin(t * 0.7) * 0.35;
+  window.drawAvatar(g, 540, 1395 + bob, 380, PLAYERS.narr, KITS.crew, { noDisc: true, talk: t > TL.end ? null : Math.min(1, amp * 1.6), mouth: "smile", blink, look });
+}
+
+function captions(t) {
+  const c = TL.chunks.find((k) => t >= k.t0 && t < k.t1); if (!c) return;
+  const size = 82; g.save(); g.font = `${size}px Anton`; g.textBaseline = "alphabetic";
+  const words = c.words.map((w) => w.w); const sp = 22;
+  const widths = words.map((w) => g.measureText(w).width); const total = widths.reduce((a, b) => a + b, 0) + sp * (words.length - 1);
+  const sc = Math.min(1, 1000 / total); g.translate(540, 1105); g.scale(sc, sc);
+  let x = -total / 2; g.globalAlpha = SC.ez((t - c.t0) * 8);
+  c.words.forEach((w, i) => {
+    const on = t >= w.t0 && t < (c.words[i + 1]?.t0 ?? c.t1);
+    if (on) { g.fillStyle = "#e8263f"; g.beginPath(); g.roundRect(x - 10, -size * 0.86, widths[i] + 20, size * 1.02, 12); g.fill(); }
+    g.lineJoin = "round"; g.lineWidth = 12; g.strokeStyle = "#000"; g.strokeText(words[i], x, 0);
+    g.fillStyle = "#fff"; g.fillText(words[i], x, 0); x += widths[i] + sp;
+  });
+  g.restore();
+}
+
+window.TOTAL = Math.ceil(TL.total * FPS);
+window.SEGS = TL.scenes.length;
+window.ready = (async () => { await document.fonts.load("40px Anton"); await document.fonts.load("700 40px Oswald"); await document.fonts.load("40px 'Noto Color Emoji'"); })();
+window.errorsSeen = [];
+
+window.draw = async (f) => {
+  const t = f / FPS;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.filter = "none";
+  g.fillStyle = "#000"; g.fillRect(0, 0, 1080, 1920);
+  if (t >= TL.endCard) { SCENES.end(g, t - TL.endCard); return cv.toDataURL("image/jpeg", 0.9); }
+  const s = TL.scenes.find((x) => t >= x.t0 && t < x.t1) || TL.scenes[TL.scenes.length - 1];
+  if (s) {
+    const lt = t - s.t0, dur = s.t1 - s.t0; const k = SC.pop(lt * 5);
+    g.save(); g.beginPath(); g.rect(0, SC.CY, 1080, SC.CH); g.clip();
+    g.translate(540, SC.CY + SC.CH / 2); const sc = 0.94 + 0.06 * k; g.scale(sc, sc); g.translate(-540, -(SC.CY + SC.CH / 2));
+    try { (SCENES[s.scene.type] || SCENES.text)(g, lt, dur, s.scene); } catch (e) { window.errorsSeen.push(s.scene.type + ": " + e.message); }
+    if (s.scene.stamp && s.scene.type !== "stamp") SC.stamp(g, String(s.scene.stamp).toUpperCase(), 540, SC.CY + 230, lt - dur * 0.45, -0.12, SC.COL[s.scene.stampColor] || SC.COL.red, 100);
+    g.restore();
+    if (lt < 0.1) { g.fillStyle = `rgba(255,255,255,${0.5 * (1 - lt / 0.1)})`; g.fillRect(0, SC.CY, 1080, SC.CH); }
+  }
+  narrator(t, f);
+  captions(t);
+  return cv.toDataURL("image/jpeg", 0.9);
+};
+</script></body></html>

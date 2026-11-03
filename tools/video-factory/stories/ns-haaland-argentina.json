@@ -1,0 +1,257 @@
+{
+  "id": "ns-haaland-argentina",
+  "series": "What if the countries were swapped?",
+  "title": "What if Haaland was Argentinian?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/List_of_international_goals_scored_by_Erling_Haaland",
+    "https://www.limerickleader.ie/news/sport/1627392/erling-haaland-becomes-norways-record-goalscorer.html",
+    "https://www.emirates247.com/sports/england-shuts-down-haaland-as-norways-world-cup-run-ends/3553",
+    "https://www.deccanchronicle.com/sports/fifa-wc-2026-haaland-bids-emotional-goodbye-to-usa-after-norways-qf-exit-1970532",
+    "https://www.sortiraparis.com/en/what-to-do-in-paris/sport-wellness/articles/349129-world-cup-2026-all-results-and-the-final-score",
+    "https://www.khaleejtimes.com/sports/fifa-world-cup/spain-celebrate-glory-argentina-heartbreak-unrest?amp=1",
+    "https://www.beinsports.com/en-us/soccer/articles/lionel-messi-s-titles-with-the-argentina-national-team-2026-10-06",
+    "https://copaamerica.com/en/news/copa-america-2021-argentina-champions-after-28-years",
+    "https://www.uefa.com/finalissima/news/0273-14b9ca5ef678-b78dc74dcc88-1000/",
+    "https://www.arabnews.pk/sport/haaland-the-relentless-force-behind-norways-world-cup-dream-2622943",
+    "https://foot-africa.com/en/news/erling-haaland-scores-16-goals-to-send-norway-to-2026-world-cup-full-uefa-top-scorers-list-965153/",
+    "https://prod.beinsports.com/en-us/soccer/fifa-world-cup-2026/articles/erling-haaland-s-historic-scoring-streak-ends-against-england-at-world-cup-2026-2026-07-12"
+  ],
+  "checked": "Haaland debut 5 Sep 2019 v Malta, Norway record scorer, 16 goals in 8 qualifying wins (Arab News + Foot Africa); scored in every 2026 WC game until the QF (AP via Emirates247 + beIN); 2026 WC: Norway beat Brazil, lost QF 2-1 aet to England (Emirates247/AP + Deccan Chronicle + Sortiraparis); Argentina titles 2021 Copa, 2022 Finalissima, 2022 WC, 2024 Copa (beIN + Copa America + UEFA); 2026 final Spain 1-0 Argentina aet (Sortiraparis + Khaleej Times). Alternate world is clearly imagined.",
+  "clubs": {
+    "nor": {
+      "name": "Norway",
+      "short": "NOR",
+      "c1": "#ba0c2f",
+      "c2": "#00205b",
+      "pattern": "plain"
+    },
+    "arg": {
+      "name": "Argentina",
+      "short": "ARG",
+      "c1": "#75aadb",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    },
+    "eng": {
+      "name": "England",
+      "short": "ENG",
+      "c1": "#ffffff",
+      "c2": "#1d2c5e",
+      "pattern": "plain"
+    },
+    "esp": {
+      "name": "Spain",
+      "short": "ESP",
+      "c1": "#c60b1e",
+      "c2": "#ffc400",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "haaland": {
+      "name": "Erling Haaland",
+      "skin": "light",
+      "hair": [
+        "slick",
+        "#e3c77f"
+      ],
+      "beard": "none",
+      "kit": "nor"
+    },
+    "haalandarg": {
+      "name": "Erling Haaland",
+      "skin": "light",
+      "hair": [
+        "slick",
+        "#e3c77f"
+      ],
+      "beard": "none",
+      "kit": "arg"
+    }
+  },
+  "lines": [
+    {
+      "text": "What if Erling Haaland had been born in Argentina instead of Norway?",
+      "scene": {
+        "type": "title",
+        "heading": "ERLING HAALAND",
+        "sub": "Norway · since 2019",
+        "pill": "WHAT IF HE WAS ARGENTINIAN?",
+        "person": "haaland"
+      }
+    },
+    {
+      "text": "Real world first. Haaland made his Norway debut in September twenty nineteen.",
+      "scene": {
+        "type": "person",
+        "person": "haaland",
+        "label": "Debut: 5 September 2019",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "He is Norway's all-time top scorer, and he hit sixteen goals in qualifying alone.",
+      "scene": {
+        "type": "stats",
+        "title": "Haaland, World Cup qualifying",
+        "items": [
+          {
+            "n": "16",
+            "l": "goals"
+          },
+          {
+            "n": "8",
+            "l": "wins from 8 for Norway"
+          }
+        ],
+        "person": "haaland"
+      }
+    },
+    {
+      "text": "But his first major tournament only came this summer, at the twenty twenty-six World Cup.",
+      "scene": {
+        "type": "text",
+        "heading": "FIRST TOURNAMENT",
+        "body": "Norway's first World Cup since 1998. Haaland scored in every game until the quarter-final."
+      }
+    },
+    {
+      "text": "Norway knocked out Brazil, then lost to England after extra time.",
+      "scene": {
+        "type": "score",
+        "home": "nor",
+        "away": "eng",
+        "hs": 1,
+        "as": 2,
+        "date": "11 July 2026",
+        "comp": "World Cup quarter-final",
+        "note": "after extra time"
+      }
+    },
+    {
+      "text": "Trophies with Norway so far? Zero.",
+      "scene": {
+        "type": "stamp",
+        "text": "ZERO TROPHIES",
+        "person": "haaland",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Now look at Argentina in exactly the same years.",
+      "scene": {
+        "type": "timeline",
+        "items": [
+          {
+            "year": "2021",
+            "label": "Copa América"
+          },
+          {
+            "year": "2022",
+            "label": "Finalissima"
+          },
+          {
+            "year": "2022",
+            "label": "World Cup"
+          },
+          {
+            "year": "2024",
+            "label": "Copa América"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Copa América, Finalissima, World Cup, then the Copa América again.",
+      "scene": {
+        "type": "trophies",
+        "items": [
+          {
+            "kind": "cup",
+            "label": "Copa América 2021"
+          },
+          {
+            "kind": "cup",
+            "label": "Finalissima 2022"
+          },
+          {
+            "kind": "worldcup",
+            "label": "World Cup 2022"
+          },
+          {
+            "kind": "cup",
+            "label": "Copa América 2024"
+          }
+        ]
+      }
+    },
+    {
+      "text": "And this summer they reached the World Cup final again, losing one-nil to Spain after extra time.",
+      "scene": {
+        "type": "score",
+        "home": "esp",
+        "away": "arg",
+        "hs": 1,
+        "as": 0,
+        "date": "19 July 2026",
+        "comp": "World Cup final",
+        "note": "after extra time"
+      }
+    },
+    {
+      "text": "So in this alternate world, Haaland leads the line for Argentina.",
+      "scene": {
+        "type": "person",
+        "person": "haalandarg",
+        "label": "ALTERNATE WORLD",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "That's four trophies instead of none, and that's before we even touch the final.",
+      "scene": {
+        "type": "whatif",
+        "title": "Haaland's international trophies",
+        "real": {
+          "label": "Norway (real)",
+          "value": "0"
+        },
+        "alt": {
+          "label": "Argentina (imagined)",
+          "value": "4+"
+        }
+      }
+    },
+    {
+      "text": "Could his goals have won Argentina that final too? We will never know.",
+      "scene": {
+        "type": "quote",
+        "person": "haalandarg",
+        "text": "Give me the ball in the final."
+      }
+    },
+    {
+      "text": "Would Haaland have been a world champion? Tell me in the comments.",
+      "scene": {
+        "type": "versus",
+        "title": "Same player, different passport",
+        "left": {
+          "person": "haaland",
+          "label": "Norway",
+          "value": "0"
+        },
+        "right": {
+          "person": "haalandarg",
+          "label": "Argentina",
+          "value": "4"
+        }
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

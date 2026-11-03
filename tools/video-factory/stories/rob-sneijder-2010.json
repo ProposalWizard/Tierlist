@@ -1,0 +1,308 @@
+{
+  "id": "rob-sneijder-2010",
+  "series": "Ballon d'Or robberies",
+  "title": "Sneijder 2010: one goal from everything",
+  "sources": [
+    "https://www.eurosport.com/football/champions-league/2009-2010/inter-win-champions-league_sto2333150/story.shtml",
+    "https://www.inter.it/en/news/2020/05/22/10-unforgettable-moments-from-inter-2-0-bayern.html",
+    "https://www.90min.com/posts/remembering-the-brilliant-wesley-sneijder-treble-winning-season",
+    "https://www.planetfootball.com/nostalgia/a-tribute-to-wesley-sneijder-jose-mourinhos-orchestrator-at-inter-milan",
+    "https://inside.fifa.com/es/tournaments/mens/worldcup/2010south-africa/news/worldcupathome--los-oranje-sorprenden-selecao-3069392",
+    "https://worldfootballindex.com/2018/04/wesley-sneijder-goal-netherlands-v-brazil-2010-world-cup/",
+    "https://www.fourfourtwo.com/news/sneijder-still-haunted-2010-final-defeat",
+    "https://www.odt.co.nz/sport/football/football-spain-celebrates-1-0-win-over-netherlands",
+    "https://www.goal.com/en-za/news/world-cup-2010-germanys-thomas-mueller-wins-golden-boot-ahead-of-/bltfd547e46c9b6f090",
+    "https://www.sbs.com.au/news/article/mueller-claims-golden-boot/odqhjuogs",
+    "https://sanews.gov.za/node/9908",
+    "https://en.wikipedia.org/wiki/2010_FIFA_Ballon_d%27Or",
+    "https://www.topendsports.com/sport/soccer/awards/ballondor-2010.htm"
+  ],
+  "checked": "Inter treble, Sneijder set up Milito's first in the final (Eurosport, Inter.it, 90min); WC: 2 v Brazil in QF 2-1, goal v Uruguay in SF 3-2 (FIFA, World Football Index); final lost 1-0 to Spain, Iniesta in extra time (FourFourTwo, ODT); 5 goals, joint top with Muller, Villa, Forlan, Muller Golden Boot on assists (Goal, SBS); Forlan Golden Ball, Sneijder second in that vote (SA News, Goal); FIFA Ballon d'Or 2010: Messi 22.65, Iniesta 17.36, Xavi 16.48, Sneijder 4th 14.48 (Wikipedia, Topend).",
+  "clubs": {
+    "int": {
+      "name": "Inter",
+      "short": "INT",
+      "c1": "#0a4ea2",
+      "c2": "#000000",
+      "pattern": "stripes"
+    },
+    "bay": {
+      "name": "Bayern Munich",
+      "short": "FCB",
+      "c1": "#dc052d",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "ned": {
+      "name": "Netherlands",
+      "short": "NED",
+      "c1": "#f36c21",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "bra": {
+      "name": "Brazil",
+      "short": "BRA",
+      "c1": "#ffdf00",
+      "c2": "#009c3b",
+      "pattern": "plain"
+    },
+    "esp": {
+      "name": "Spain",
+      "short": "ESP",
+      "c1": "#c60b1e",
+      "c2": "#ffc400",
+      "pattern": "plain"
+    },
+    "bar": {
+      "name": "Barcelona",
+      "short": "BAR",
+      "c1": "#a50044",
+      "c2": "#004d98",
+      "pattern": "stripes"
+    }
+  },
+  "people": {
+    "sneijder": {
+      "name": "Wesley Sneijder",
+      "skin": "light",
+      "hair": [
+        "buzz",
+        "#9a7a4a"
+      ],
+      "beard": "none",
+      "kit": "ned"
+    },
+    "messi": {
+      "name": "Lionel Messi",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#4a3222"
+      ],
+      "beard": "none",
+      "kit": "bar"
+    },
+    "iniesta": {
+      "name": "Andrés Iniesta",
+      "skin": "light",
+      "hair": [
+        "buzz",
+        "#4a3526"
+      ],
+      "beard": "none",
+      "kit": "esp"
+    },
+    "xavi": {
+      "name": "Xavi",
+      "skin": "light",
+      "hair": [
+        "tidy",
+        "#2b1d14"
+      ],
+      "beard": "none",
+      "kit": "esp"
+    }
+  },
+  "lines": [
+    {
+      "text": "Treble winner. World Cup finalist. Joint top scorer. And he finished fourth.",
+      "scene": {
+        "type": "title",
+        "heading": "WESLEY SNEIJDER",
+        "sub": "Inter & Netherlands · 2010",
+        "pill": "ROBBED?",
+        "person": "sneijder"
+      }
+    },
+    {
+      "text": "Twenty ten. Wesley Sneijder is the brain of José Mourinho's Inter.",
+      "scene": {
+        "type": "person",
+        "person": "sneijder",
+        "label": "Inter's number ten",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Champions League final against Bayern. His pass sets up Milito for the first goal. Two-nil.",
+      "scene": {
+        "type": "score",
+        "home": "int",
+        "away": "bay",
+        "hs": 2,
+        "as": 0,
+        "date": "22 May 2010",
+        "comp": "Champions League final",
+        "note": "Sneijder assist"
+      }
+    },
+    {
+      "text": "Serie A, Coppa Italia, Champions League. The treble.",
+      "scene": {
+        "type": "trophies",
+        "items": [
+          {
+            "kind": "league",
+            "label": "Serie A"
+          },
+          {
+            "kind": "cup",
+            "label": "Coppa Italia"
+          },
+          {
+            "kind": "bigears",
+            "label": "Champions League"
+          }
+        ],
+        "person": "sneijder"
+      }
+    },
+    {
+      "text": "Then the World Cup in South Africa. Quarter-final against Brazil. One-nil down.",
+      "scene": {
+        "type": "text",
+        "heading": "WORLD CUP QUARTER-FINAL",
+        "body": "Netherlands v Brazil, Port Elizabeth. Brazil lead one-nil at half-time."
+      }
+    },
+    {
+      "text": "Sneijder scores twice. Holland win two-one.",
+      "scene": {
+        "type": "score",
+        "home": "ned",
+        "away": "bra",
+        "hs": 2,
+        "as": 1,
+        "date": "2 July 2010",
+        "comp": "World Cup quarter-final",
+        "note": "Sneijder x2"
+      }
+    },
+    {
+      "text": "Semi-final against Uruguay, he scores again. Five goals at the tournament.",
+      "scene": {
+        "type": "stats",
+        "title": "Sneijder, World Cup 2010",
+        "items": [
+          {
+            "n": "5",
+            "l": "goals"
+          },
+          {
+            "n": "2",
+            "l": "v Brazil"
+          },
+          {
+            "n": "1",
+            "l": "v Uruguay"
+          }
+        ],
+        "person": "sneijder"
+      }
+    },
+    {
+      "text": "Joint top scorer with Müller, Villa and Forlán. Second in the vote for best player.",
+      "scene": {
+        "type": "list",
+        "title": "World Cup 2010 top scorers",
+        "rows": [
+          {
+            "name": "Thomas Müller",
+            "value": "5"
+          },
+          {
+            "name": "David Villa",
+            "value": "5"
+          },
+          {
+            "name": "Wesley Sneijder",
+            "value": "5",
+            "club": "ned",
+            "hl": true
+          },
+          {
+            "name": "Diego Forlán",
+            "value": "5"
+          }
+        ]
+      }
+    },
+    {
+      "text": "The final. Spain. Extra time. Iniesta scores. One-nil. So close to everything.",
+      "scene": {
+        "type": "score",
+        "home": "ned",
+        "away": "esp",
+        "hs": 0,
+        "as": 1,
+        "date": "11 July 2010",
+        "comp": "World Cup final",
+        "note": "Iniesta, extra time"
+      }
+    },
+    {
+      "text": "The Ballon d'Or podium? Messi, Iniesta, Xavi.",
+      "scene": {
+        "type": "podium",
+        "year": "2010",
+        "title": "FIFA Ballon d'Or",
+        "places": [
+          {
+            "person": "messi",
+            "club": "bar"
+          },
+          {
+            "person": "iniesta",
+            "club": "esp"
+          },
+          {
+            "person": "xavi",
+            "club": "esp"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Sneijder fourth, with fourteen point five percent. Messi won it with twenty-two point six five.",
+      "scene": {
+        "type": "versus",
+        "title": "2010 vote share",
+        "left": {
+          "person": "messi",
+          "label": "Messi, 1st",
+          "value": "22.65%"
+        },
+        "right": {
+          "person": "sneijder",
+          "label": "Sneijder, 4th",
+          "value": "14.48%"
+        }
+      }
+    },
+    {
+      "text": "Not even on the podium.",
+      "scene": {
+        "type": "stamp",
+        "text": "FOURTH",
+        "person": "sneijder",
+        "color": "red"
+      }
+    },
+    {
+      "text": "A treble, a World Cup final, five goals. Robbery? Drop it in the comments.",
+      "scene": {
+        "type": "stamp",
+        "text": "ROBBED",
+        "person": "sneijder",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}
