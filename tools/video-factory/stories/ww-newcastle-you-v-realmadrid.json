@@ -1,0 +1,266 @@
+{
+  "id": "ww-newcastle-you-v-realmadrid",
+  "series": "Who would win?",
+  "title": "Newcastle with YOU v Real Madrid: who would win?",
+  "sources": [
+    "https://www.skysports.com/football/news/11678/13568428/newcastle-united-appoint-matthias-jaissle-as-head-coach-following-eddie-howes-departure-from-st-james-park",
+    "https://www.itv.com/news/tyne-tees/2026-08-05/newcastle-united-confirm-appointment-of-matthias-jaissle-as-new-head-coach",
+    "https://khelnow.com/football/newcastle-united-vs-liverpool-lineups-premier-league-202608",
+    "https://www.newcastleunited.com/en/news/confimed-line-up-opening-day-debuts-for-hornicek-dedic-and-steur-against-liverpool",
+    "https://www.comuniate.com/en/noticias/38524/confirmed-lineups-real-madrid-vs-sevilla-matchday-9",
+    "https://www.extra.ec/noticia/deportes/barcelona-vs-real-madrid-hora-ver-alineaciones-clasico-2026-165775.html",
+    "https://depor.com/en/us-live/who-won-barcelona-vs-real-madrid-el-clasico-2026-final-score-result-and-goals-nnda-nnrt-noticia/?outputType=amp",
+    "https://en.wikipedia.org/wiki/2026%E2%80%9327_La_Liga"
+  ],
+  "checked": "Jaissle replaced Howe, appointed 5 Aug 2026 (Sky Sports + ITV); Newcastle XI = 23 Aug opener XI (Khel Now + club's own confirmed line-up page: Hornicek, Dedic, Steur debuts); Real XI from 18 Oct Sevilla XI (Comuniate) + Clasico projected XI (Extra); Real won the Clasico 2-1 on 25 Oct with two Mbappe goals incl. 88' winner (Depor; Wikipedia table shows Barca's only defeat). 'You' is the fictional game player. Match imagined.",
+  "clubs": {
+    "new": {
+      "name": "Newcastle United",
+      "short": "NEW",
+      "c1": "#241f20",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    },
+    "rma": {
+      "name": "Real Madrid",
+      "short": "RMA",
+      "c1": "#ffffff",
+      "c2": "#febe10",
+      "pattern": "plain"
+    },
+    "bar": {
+      "name": "Barcelona",
+      "short": "BAR",
+      "c1": "#a50044",
+      "c2": "#004d98",
+      "pattern": "stripes"
+    }
+  },
+  "people": {
+    "you": {
+      "name": "You",
+      "skin": "tan",
+      "hair": [
+        "quiff",
+        "#3a2a1a"
+      ],
+      "beard": "none",
+      "kit": "new"
+    },
+    "jaissle": {
+      "name": "Matthias Jaissle",
+      "skin": "light",
+      "hair": [
+        "tidy",
+        "#6b4a2b"
+      ],
+      "beard": "stubble",
+      "kit": "suit"
+    },
+    "mbappe": {
+      "name": "Kylian Mbappé",
+      "skin": "brown",
+      "hair": [
+        "buzz",
+        "#111111"
+      ],
+      "beard": "none",
+      "kit": "rma"
+    },
+    "bellingham": {
+      "name": "Jude Bellingham",
+      "skin": "brown",
+      "hair": [
+        "crop",
+        "#111111"
+      ],
+      "beard": "none",
+      "kit": "rma"
+    }
+  },
+  "lines": [
+    {
+      "text": "Who would win: Newcastle with you up front, or Real Madrid?",
+      "scene": {
+        "type": "title",
+        "heading": "NEWCASTLE + YOU v REAL MADRID",
+        "sub": "An imagined match · a prediction",
+        "pill": "WHO WOULD WIN?",
+        "person": "you"
+      }
+    },
+    {
+      "text": "Newcastle have a new head coach this season. Matthias Jaissle replaced Eddie Howe in August.",
+      "scene": {
+        "type": "person",
+        "person": "jaissle",
+        "label": "NEWCASTLE HEAD COACH",
+        "mood": "flat"
+      }
+    },
+    {
+      "text": "Jaissle's side from opening day, with one change. Osula sits down, and you start.",
+      "scene": {
+        "type": "list",
+        "title": "NEWCASTLE XI",
+        "rows": [
+          {
+            "name": "Lukáš Horníček",
+            "value": "GK"
+          },
+          {
+            "name": "Dedić · Thiaw · Botman · Hall",
+            "value": "DEF"
+          },
+          {
+            "name": "Steur · Miley",
+            "value": "MID"
+          },
+          {
+            "name": "Elanga · Barnes",
+            "value": "WING"
+          },
+          {
+            "name": "Yoane Wissa",
+            "value": "ST"
+          },
+          {
+            "name": "YOU",
+            "value": "ST",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Real Madrid: Courtois, Konaté, Bellingham, and Mbappé.",
+      "scene": {
+        "type": "list",
+        "title": "REAL MADRID XI",
+        "rows": [
+          {
+            "name": "Thibaut Courtois",
+            "value": "GK"
+          },
+          {
+            "name": "Valverde · Konaté · Huijsen · Cucurella",
+            "value": "DEF"
+          },
+          {
+            "name": "Tchouaméni · Camavinga · Bellingham",
+            "value": "MID"
+          },
+          {
+            "name": "Güler · Mbappé · Diomande",
+            "value": "ATT",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "And Mbappé is in form. Two goals at the Camp Nou on the twenty-fifth of October, including an eighty-eighth-minute winner.",
+      "scene": {
+        "type": "score",
+        "home": "bar",
+        "away": "rma",
+        "hs": 1,
+        "as": 2,
+        "date": "25 Oct 2026",
+        "comp": "La Liga · El Clásico",
+        "note": "Mbappé 41', 88'"
+      }
+    },
+    {
+      "text": "Saint James' Park, under the lights. A full house, and you, straight from the sixth tier.",
+      "scene": {
+        "type": "person",
+        "person": "you",
+        "label": "YOU · ROAD TO BALLON D'OR",
+        "mood": "shocked"
+      }
+    },
+    {
+      "text": "Nineteen minutes. Mbappé, of course. Nil-one.",
+      "scene": {
+        "type": "score",
+        "home": "new",
+        "away": "rma",
+        "hs": 0,
+        "as": 1,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Mbappé 19'"
+      }
+    },
+    {
+      "text": "Hall crosses, you attack the near post. One-all! The roof comes off.",
+      "scene": {
+        "type": "score",
+        "home": "new",
+        "away": "rma",
+        "hs": 1,
+        "as": 1,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "YOU 38'",
+        "stamp": "GOAL!"
+      }
+    },
+    {
+      "text": "Bellingham drives through, one-two. Then you nod in an Elanga cross. Two-all!",
+      "scene": {
+        "type": "score",
+        "home": "new",
+        "away": "rma",
+        "hs": 2,
+        "as": 2,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Bellingham 57' · YOU 74'"
+      }
+    },
+    {
+      "text": "But ninety minutes, Mbappé again. Late winners are his thing. Two-three.",
+      "scene": {
+        "type": "score",
+        "home": "new",
+        "away": "rma",
+        "hs": 2,
+        "as": 3,
+        "date": "Full time · prediction",
+        "comp": "Imagined match",
+        "note": "You 2 · Mbappé 2, Bellingham",
+        "stamp": "HEARTBREAK"
+      }
+    },
+    {
+      "text": "Man of the match: Mbappé. But you're second, and Madrid asked for your number.",
+      "scene": {
+        "type": "podium",
+        "year": "Imagined",
+        "title": "MAN OF THE MATCH",
+        "places": [
+          {
+            "person": "mbappe",
+            "club": "rma"
+          },
+          {
+            "person": "you",
+            "club": "new"
+          },
+          {
+            "person": "bellingham",
+            "club": "rma"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}
