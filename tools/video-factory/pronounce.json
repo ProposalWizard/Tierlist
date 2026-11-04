@@ -24,7 +24,7 @@
   "Iniesta": "Inyestah",
   "Agüero": "Ahgwairoh",
   "Aguero": "Ahgwairoh",
-  "Kompany": "Kompuhnee",
+  "Kompany": "Kompannee",
   "Kylian Mbappé": "Keeleean Embapay",
   "Mbappé": "Embapay",
   "Mbappe": "Embapay",
@@ -44,7 +44,7 @@
   "Koundé": "Koonday",
   "Cubarsí": "Koobarsee",
   "Raphinha": "Hahfeenyah",
-  "Džeko": "Jehko",
+  "Džeko": "Jecko",
   "Gyökeres": "Yurkeresh",
   "Piqué": "Peekay",
   "Puyol": "Pooyoll",
@@ -80,7 +80,8 @@
   "Kostoulas": "Kosstoolass",
   "Viduka": "Vidooka",
   "Balotelli": "Balotelly",
-  "Arteta": "Artetta"
+  "Arteta": "Artetta",
+  "Dzeko": "Jecko"
  },
  "_ipa": {
   "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -100,7 +101,7 @@
   "Modrić": "hr [mǒːdritɕ] (Wikipedia)",
   "Iniesta": "es [iˈnjesta] (Wikipedia)",
   "Agüero": "es [aˈɣweɾo]",
-  "Kompany": "fr [kɔ̃pani] (Wikipedia); English broadcast 'KOM-puh-nee'",
+  "Kompany": "Belgian/English kom-PAN-ee; 'Kompuhnee' was heard as 'Campuni', 'Kompannee' as 'Campani' (city-2012-title)",
   "Mbappé": "fr [mbape]",
   "Vinícius": "pt-BR [viˈnisjus] (Wikipedia)",
   "Tchouaméni": "fr [tʃwameni] (Wikipedia)",
@@ -114,7 +115,7 @@
   "Dembélé": "fr [dɛmbele] (Wikipedia)",
   "Koundé": "fr [kunde] (Wikipedia)",
   "Raphinha": "pt [ʁɐˈfiɲɐ] (Wikipedia)",
-  "Džeko": "bs [dʒêːko] (Wikipedia)",
+  "Džeko": "Bosnian [dʒêko]; 'Jehko' was heard as 'Jekyll', 'Jecko' as 'Jeko' (city-2012-title)",
   "Gyökeres": "sv [ˈjø̂ːkɛrɛs] (Wikipedia)",
   "Piqué": "ca [piˈke] (Wikipedia)",
   "Puyol": "es [puˈʝol] (Wikipedia)",
@@ -141,6 +142,7 @@
   "Van Dijk": "nl [vɑn ˈdɛik] (Wikipedia); English broadcast 'van DYKE'",
   "De Bruyne": "nl [də ˈbrœynə] (Wikipedia)",
   "Balotelli": "Italian [baloˈtɛlli]; transcribed back as Balotelli (city-2012-title, city-aguero-2011)",
-  "Arteta": "Spanish [arˈteta]; transcribed back as Arteta (city-2012-title)"
+  "Arteta": "Spanish [arˈteta]; transcribed back as Arteta (city-2012-title)",
+  "Dzeko": "as Džeko"
  }
 }
