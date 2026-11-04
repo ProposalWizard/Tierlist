@@ -1,45 +1,465 @@
 {
   "id": "am-arsenal-nld",
   "series": "Age-match",
-  "title": "Dowman at the North London derby v Henry and Fàbregas at the same age",
+  "title": "Dowman before the North London derby v Fàbregas and Henry at the same age",
+  "v2": true,
   "sources": [
-    "https://en.wikipedia.org/wiki/2026%E2%80%9327_Arsenal_F.C._season",
-    "https://en.wikipedia.org/wiki/2026%E2%80%9327_Tottenham_Hotspur_F.C._season",
-    "https://en.wikipedia.org/wiki/Max_Dowman",
     "https://www.premierleague.com/en/news/4613476/dowman-becomes-premier-leagues-youngest-ever-goalscorer",
-    "https://www.skysports.com/football/news/12309/13518620/arsenal-2-0-everton-max-dowman-becomes-youngest-premier-league-scorer-to-send-gunners-10-points-clear",
+    "https://www.si.com/soccer/max-dowman-breaks-huge-all-time-premier-league-record-arsenal-everton",
+    "https://en.wikipedia.org/wiki/Max_Dowman",
+    "https://www.sportsmole.co.uk/football/arsenal/feature/every-record-dowman-has-broken-as-arsenal-wonderkid-matches-rooney-feat_605265.html",
     "https://wtop.com/news/2026/05/arsenals-max-dowman-becomes-youngest-player-to-start-a-premier-league-game-at-16-years-144-days/",
-    "https://www.sofascore.com/hi/news/arsenal-win-premier-league-2025-26-with-one-game-left",
-    "https://www.ofm.co.za/article/soccer/341790/gunners-win-first-premiership-title-in-22-years",
+    "https://global.espn.com/football/story/_/id/48824782/arsenal-max-dowman-16-becomes-youngest-premier-league-title-winner",
+    "https://en.wikipedia.org/wiki/2025%E2%80%9326_Premier_League",
+    "https://hayters.com/tottenham-2026-27-premier-league-fixtures-in-full/",
+    "https://thfcdb.com/matches/2025-26/arsenal-fc-22-february-2026-home/",
+    "https://www.sportsmole.co.uk/football/arsenal/north-london-derby/news/four-midable-the-unique-arsenal-record-saliba-set-in-tottenham-trouncing_592543.html",
+    "https://en.wikipedia.org/wiki/Cesc_F%C3%A0bregas",
     "https://www.arsenal.com/node/23851",
-    "https://thefootballfaithful.com/youngest-players-in-arsenal-history/",
-    "https://en.wikipedia.org/wiki/Thierry_Henry",
-    "https://www.90min.com/posts/thierry-henry-remembering-the-premier-league-s-greatest-export-s-first-year-as-a-professional"
+    "https://www.sportsmole.co.uk/football/arsenal/on-this-day/feature/otd-fabregas-breaks-arsenal-scoring-record_191181.html",
+    "https://en.wikipedia.org/wiki/Thierry_Henry"
   ],
-  "checked": "Tottenham v Arsenal 6 Dec 2026 (both clubs' 2026-27 season pages). Dowman born 31 Dec 2009 = 16 years 340 days that day. Youngest PL scorer 16y73d v Everton 14 Mar 2026 (Premier League + Sky + Wikipedia); youngest PL starter 16y144d, 24 May 2026 (AP via WTOP + Wikipedia); Arsenal 2025-26 champions (Sofascore + OFM); 8 league games, 1 league goal to 27 Oct 2026 (Wikipedia, so 'at least'). Fàbregas at the same age (8 Apr 2004): debut 28 Oct 2003 aged 16y177d, youngest scorer 16y212d v Wolves, no league games yet (Arsenal.com + Football Faithful). Henry at the same age (23 Jul 1994): no first-team games; debut 31 Aug 1994 v Nice at 17 (Wikipedia + 90min); 1994-95: 8 league games, 3 goals (Wikipedia only). Minutes not confirmable, so the twist uses games.",
+  "checked": "Spurs v Arsenal provisionally Sat 5 Dec 2026 at Tottenham Hotspur Stadium (Hayters + On Tour fixture lists; TV may move it, so the script says 'in December'). Dowman born 31 Dec 2009 = 16y 339d on 5 Dec (arithmetic). Youngest Champions League player 15y 308d at Slavia Prague, 4 Nov 2025 (Wikipedia + Sports Mole). Youngest PL scorer 16y 73d, Arsenal 2-0 Everton, Emirates, 14 Mar 2026, 90+7 on the break into an empty net, beating James Vaughan's 16y 270d (premierleague.com + SI). Youngest PL starter 16y 144d at Crystal Palace, 24 May 2026 (WTOP/AP + Wikipedia). Arsenal 2025-26 champions on 85 points, City 78 (Wikipedia + ground.news); Dowman youngest PL title winner (ESPN + Wikipedia). Spurs 1-4 Arsenal, 22 Feb 2026, and Arsenal 4-1 Spurs, 23 Nov 2025 (thfcdb + Sports Mole + Sky). Fàbregas (born 4 May 1987) at the same age = 7 Apr 2004: debut v Rotherham 28 Oct 2003 at 16y 177d; first goal v Wolves 2 Dec 2003, 5-1, tapping in Wiltord's cross near the end, 16y 212d; no league games in 2003-04 (Arsenal.com + Sports Mole + Wikipedia). Henry (born 17 Aug 1977) at the same age = 22 Jul 1994: no first-team games; Monaco debut 31 Aug 1994 v Nice, aged 17 (Wikipedia + 90min). Henry 228 Arsenal goals, club record; Ian Wright 185 second (Wikipedia + Arsenal.com). Dowman's exact appearance count is one-source, so it is left out. The Everton goal was a long solo run into an empty net, which the game cannot film, so the gameplay recreates Fàbregas's tap-in instead (Wiltord's cross; side of the cross not sourced, so it comes from the seed).",
   "clubs": {
-    "ars": { "name": "Arsenal", "short": "ARS", "c1": "#ef0107", "c2": "#ffffff", "pattern": "sides" },
-    "tot": { "name": "Tottenham Hotspur", "short": "TOT", "c1": "#ffffff", "c2": "#132257", "pattern": "plain" },
-    "mon": { "name": "Monaco", "short": "ASM", "c1": "#e2001a", "c2": "#ffffff", "pattern": "halves" },
-    "eve": { "name": "Everton", "short": "EFC", "c1": "#003399", "c2": "#ffffff", "pattern": "plain" }
+    "ars": {
+      "name": "Arsenal",
+      "short": "ARS",
+      "c1": "#ef0107",
+      "c2": "#ffffff",
+      "pattern": "sides"
+    },
+    "tot": {
+      "name": "Tottenham Hotspur",
+      "short": "TOT",
+      "c1": "#ffffff",
+      "c2": "#132257",
+      "pattern": "plain"
+    },
+    "eve": {
+      "name": "Everton",
+      "short": "EVE",
+      "c1": "#003399",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "mci": {
+      "name": "Manchester City",
+      "short": "MCI",
+      "c1": "#6cabdd",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "mun": {
+      "name": "Manchester United",
+      "short": "MUN",
+      "c1": "#da291c",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "wol": {
+      "name": "Wolverhampton Wanderers",
+      "short": "WOL",
+      "c1": "#fdb913",
+      "c2": "#231f20",
+      "pattern": "plain"
+    },
+    "mon": {
+      "name": "Monaco",
+      "short": "ASM",
+      "c1": "#e2001a",
+      "c2": "#ffffff",
+      "pattern": "halves",
+      "badge": "AS Monaco"
+    }
   },
   "people": {
-    "dowman": { "name": "Max Dowman", "skin": "light", "hair": ["messy", "#5a3a22"], "beard": "none", "kit": "ars" },
-    "henry": { "name": "Thierry Henry", "skin": "dark", "hair": ["buzz", "#14110f"], "beard": "none", "kit": "mon" },
-    "cesc": { "name": "Cesc Fàbregas", "skin": "light", "hair": ["messy", "#3a2a1c"], "beard": "none", "kit": "ars" }
+    "dowman": {
+      "name": "Max Dowman",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#4a3424"
+      ],
+      "beard": "none",
+      "kit": "ars"
+    },
+    "cesc": {
+      "name": "Cesc Fàbregas",
+      "skin": "light",
+      "hair": [
+        "tidy",
+        "#2a1d15"
+      ],
+      "beard": "none",
+      "kit": "ars"
+    },
+    "henry": {
+      "name": "Thierry Henry",
+      "skin": "brown",
+      "hair": [
+        "buzz",
+        "#1a1a1a"
+      ],
+      "beard": "none",
+      "kit": "mon"
+    },
+    "henryars": {
+      "name": "Thierry Henry",
+      "skin": "brown",
+      "hair": [
+        "bald",
+        "#1a1a1a"
+      ],
+      "beard": "none",
+      "kit": "ars"
+    }
   },
   "lines": [
-    { "text": "When Arsenal go to Tottenham on the sixth of December, Max Dowman will be sixteen years and three hundred and forty days old.", "scene": { "type": "title", "heading": "MAX DOWMAN", "sub": "Tottenham v Arsenal · 6 Dec 2026", "pill": "AGE-MATCH", "person": "dowman" } },
-    { "text": "He's already the youngest scorer in Premier League history. Sixteen years and seventy-three days, against Everton.", "scene": { "type": "score", "home": "ars", "away": "eve", "hs": 2, "as": 0, "date": "14 March 2026", "comp": "Premier League", "note": "Dowman: youngest PL scorer ever" } },
-    { "text": "Then the youngest player to start a Premier League game. And a title winner, as Arsenal won the league.", "scene": { "type": "trophies", "items": [ { "kind": "league", "label": "Premier League 2025-26" } ], "person": "dowman" } },
-    { "text": "So what had Arsenal's legends done at exactly the same age?", "scene": { "type": "person", "person": "dowman", "label": "16 years, 340 days", "mood": "happy" } },
-    { "text": "Cesc Fàbregas, April twenty oh-four. He'd become Arsenal's youngest ever player and scorer, but in the League Cup.", "scene": { "type": "timeline", "items": [ { "year": "Oct 2003", "label": "Debut v Rotherham, 16y 177d" }, { "year": "Dec 2003", "label": "Goal v Wolves, 16y 212d" }, { "year": "Apr 2004", "label": "Same age as Dowman now" } ] } },
-    { "text": "Premier League games at that age? Zero.", "scene": { "type": "stamp", "text": "ZERO", "person": "cesc", "color": "white" } },
-    { "text": "Thierry Henry, July nineteen ninety-four. He hadn't even made his debut for Monaco. That came a month later, at seventeen.", "scene": { "type": "person", "person": "henry", "label": "Monaco youth player, summer 1994", "mood": "flat" } },
-    { "text": "So at this age, Dowman has played at least eight league games. Henry and Fàbregas, none.", "scene": { "type": "list", "title": "League games at 16y 340d", "rows": [ { "name": "Max Dowman", "value": "8+", "club": "ars", "hl": true }, { "name": "Cesc Fàbregas", "value": "0", "club": "ars" }, { "name": "Thierry Henry", "value": "0", "club": "mon" } ] } },
-    { "text": "Now the twist. Match the games. In Henry's first eight league games, he scored three times. Dowman has one.", "scene": { "type": "whatif", "title": "After 8 league games", "real": { "label": "Henry (1994-95)", "value": "3 goals" }, "alt": { "label": "Dowman", "value": "1 goal" } } },
-    { "text": "And Henry went on to score one hundred and seventy-five league goals for Arsenal. A club record.", "scene": { "type": "stats", "title": "Henry for Arsenal", "items": [ { "n": "175", "l": "league goals" }, { "n": "228", "l": "goals in all" } ], "person": "henry" } },
-    { "text": "So does Dowman become the next Henry, the next Cesc, or something bigger? Tell me in the comments.", "scene": { "type": "versus", "title": "Who had more at 16?", "left": { "person": "dowman", "label": "Dowman", "value": "8+ games" }, "right": { "person": "cesc", "label": "Fàbregas", "value": "0 PL" } } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    {
+      "text": "Arsenal go to Tottenham in December with a sixteen-year-old who has already broken half the record book.",
+      "say": "Arsenal go to Tottnum in December, with a sixteen year old who has already broken half the record book.",
+      "scene": {
+        "type": "title",
+        "heading": "MAX DOWMAN",
+        "sub": "Arsenal · 16 years old",
+        "pill": "AGE-MATCH",
+        "person": "dowman",
+        "club": "ars"
+      }
+    },
+    {
+      "text": "At fifteen, Max Dowman became the youngest player in Champions League history.",
+      "say": "At fifteen, Max Dowmun became the youngest player in Champions League history.",
+      "scene": {
+        "type": "news",
+        "section": "Champions League",
+        "headline": "Dowman, 15, makes Champions League history",
+        "standfirst": "The Arsenal teenager comes on at Slavia Prague aged 15 years and 308 days, the youngest player the competition has ever seen.",
+        "date": "4 November 2025",
+        "byline": "Knowitball recap",
+        "person": "dowman",
+        "club": "ars",
+        "nav": [
+          "Football",
+          "Champions League",
+          "Arsenal"
+        ]
+      }
+    },
+    {
+      "text": "Then Everton. Ninety-seventh minute, their keeper up for a corner. Dowman runs half the pitch and rolls it into an empty net.",
+      "say": "Then Everton. Ninety seventh minute, their keeper up for a corner. Dowmun runs half the pitch, and rolls it into an empty net.",
+      "scene": {
+        "type": "score",
+        "home": "ars",
+        "away": "eve",
+        "hs": 2,
+        "as": 0,
+        "date": "14 March 2026 · Emirates Stadium",
+        "comp": "Premier League",
+        "note": "Dowman 90+7 · the youngest scorer in Premier League history"
+      }
+    },
+    {
+      "text": "Sixteen years and seventy-three days. The old record lasted twenty years. He beat it by six months.",
+      "say": "Sixteen years and seventy three days. The old record lasted twenty years. He beat it by six months.",
+      "scene": {
+        "type": "compare",
+        "kicker": "Youngest Premier League scorers",
+        "title": "The record",
+        "left": {
+          "person": "dowman",
+          "name": "Dowman",
+          "sub": "Arsenal · 2026"
+        },
+        "right": {
+          "club": "eve",
+          "name": "James Vaughan",
+          "sub": "Everton · 2005"
+        },
+        "rows": [
+          {
+            "label": "Days after 16th birthday",
+            "l": 73,
+            "r": 270,
+            "lower": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "And in May, Arsenal were champions, seven points clear. Dowman, the youngest title winner ever.",
+      "say": "And in May, Arsenal were champions, seven points clear. Dowmun, the youngest title winner ever.",
+      "scene": {
+        "type": "table",
+        "season": "Final table 2025/26",
+        "title": "Premier League",
+        "cols": [
+          "P",
+          "Pts"
+        ],
+        "rows": [
+          {
+            "pos": 1,
+            "club": "ars",
+            "p": 38,
+            "pts": 85,
+            "hl": true
+          },
+          {
+            "pos": 2,
+            "club": "mci",
+            "p": 38,
+            "pts": 78
+          },
+          {
+            "pos": 3,
+            "club": "mun",
+            "p": 38,
+            "pts": 71
+          }
+        ],
+        "zones": [
+          {
+            "kind": "champ",
+            "rows": [
+              1,
+              1
+            ]
+          },
+          {
+            "kind": "ucl",
+            "rows": [
+              2,
+              3
+            ]
+          }
+        ],
+        "gap": {
+          "from": 1,
+          "to": 2,
+          "label": "7 pts",
+          "at": 0.45
+        }
+      }
+    },
+    {
+      "text": "So what had Arsenal's two greatest number tens done at exactly the same age?",
+      "say": "So what had Arsenal's legends done, at exactly the same age?",
+      "scene": {
+        "type": "versus",
+        "title": "Same age: 16 years, 339 days",
+        "left": {
+          "person": "cesc",
+          "label": "Fàbregas",
+          "value": "2004",
+          "sub": "April"
+        },
+        "right": {
+          "person": "henry",
+          "label": "Henry",
+          "value": "1994",
+          "sub": "July"
+        }
+      }
+    },
+    {
+      "text": "Cesc Fàbregas, April two thousand and four. Already Arsenal's youngest ever player, at sixteen.",
+      "say": "Sesk Fabbregass, April, two thousand and four. Already Arsenal's youngest ever player, at sixteen.",
+      "scene": {
+        "type": "timeline",
+        "kicker": "Cesc Fàbregas",
+        "title": "The first year",
+        "items": [
+          {
+            "year": "Sep 2003",
+            "label": "Arrives from Barcelona, aged 16",
+            "club": "ars"
+          },
+          {
+            "year": "Oct 2003",
+            "label": "Debut v Rotherham · 16y 177d",
+            "hl": true
+          },
+          {
+            "year": "Dec 2003",
+            "label": "First goal v Wolves · 16y 212d"
+          },
+          {
+            "year": "Apr 2004",
+            "label": "Same age as Dowman now"
+          }
+        ]
+      }
+    },
+    {
+      "text": "His first goal: League Cup, Wolves. Wiltord crosses, and the sixteen-year-old taps it in.",
+      "say": "His first goal. League Cup, Wolves. Weeltor crosses, and the sixteen year old taps it in.",
+      "scene": {
+        "type": "gameclip",
+        "caption": "CESC'S FIRST GOAL",
+        "popup": {
+          "home": "ars",
+          "away": "wol",
+          "homeName": "Arsenal",
+          "awayName": "Wolves",
+          "hs0": 4,
+          "as0": 1,
+          "hs": 5,
+          "as": 1,
+          "scorer": "Fàbregas",
+          "assist": "Wiltord"
+        },
+        "_clip": "cesc-wolves",
+        "parts": [
+          [
+            "work/footage/cesc-wolves/tv",
+            15,
+            38
+          ],
+          [
+            "work/footage/cesc-wolves/high",
+            38,
+            91
+          ],
+          [
+            "work/footage/cesc-wolves/tight",
+            17,
+            77
+          ]
+        ],
+        "goalAt": 1.2
+      }
+    },
+    {
+      "text": "But Premier League games by this age? Zero.",
+      "scene": {
+        "type": "stamp",
+        "text": "ZERO",
+        "sub": "Fàbregas · Premier League games at 16y 339d",
+        "person": "cesc",
+        "color": "white"
+      }
+    },
+    {
+      "text": "Thierry Henry, July nineteen ninety-four. He hadn't played a single game for Monaco. His debut came a month later.",
+      "say": "Teeairee Onree, July, nineteen ninety four. He hadn't played a single game for Monakoh. His debut came a month later.",
+      "scene": {
+        "type": "person",
+        "person": "henry",
+        "label": "Monaco · no first-team games yet",
+        "mood": "flat"
+      }
+    },
+    {
+      "text": "Line all three up by age, and Dowman is miles ahead of both.",
+      "say": "Line all three up by age, and Dowmun is miles ahead of both.",
+      "scene": {
+        "type": "timeline",
+        "kicker": "Age at each first",
+        "title": "Who got there first",
+        "items": [
+          {
+            "year": "15y 235d",
+            "label": "Dowman · Premier League debut",
+            "club": "ars",
+            "hl": true
+          },
+          {
+            "year": "15y 308d",
+            "label": "Dowman · Champions League debut",
+            "hl": true
+          },
+          {
+            "year": "16y 73d",
+            "label": "Dowman · first Premier League goal",
+            "hl": true
+          },
+          {
+            "year": "16y 177d",
+            "label": "Fàbregas · Arsenal debut"
+          },
+          {
+            "year": "17y 14d",
+            "label": "Henry · Monaco debut",
+            "club": "mon"
+          }
+        ]
+      }
+    },
+    {
+      "text": "But a slow start meant nothing. Henry ended up with two hundred and twenty-eight Arsenal goals, still the club record.",
+      "say": "But a slow start meant nothing. Onree ended up with two hundred and twenty eight Arsenal goals. Still the club record.",
+      "scene": {
+        "type": "bars",
+        "kicker": "All competitions",
+        "title": "Arsenal's all-time top scorers",
+        "items": [
+          {
+            "label": "Thierry Henry",
+            "value": 228,
+            "person": "henryars",
+            "hl": true
+          },
+          {
+            "label": "Ian Wright",
+            "value": 185,
+            "club": "ars"
+          }
+        ],
+        "note": "Dowman: just getting started"
+      }
+    },
+    {
+      "text": "And Tottenham? Arsenal put four past them twice last season.",
+      "say": "And Tottnum? Arsenal put four past them, twice, last season.",
+      "scene": {
+        "type": "score",
+        "home": "tot",
+        "away": "ars",
+        "hs": 1,
+        "as": 4,
+        "date": "22 February 2026 · Tottenham Hotspur Stadium",
+        "comp": "Premier League",
+        "note": "After a 4-1 at the Emirates in November"
+      }
+    },
+    {
+      "text": "So Dowman is ahead of Fàbregas and Henry. What he doesn't have yet is a derby goal.",
+      "say": "So Dowmun is ahead of Fabbregass and Onree. What he doesn't have yet, is a derby goal.",
+      "scene": {
+        "type": "stamp",
+        "text": "AHEAD OF SCHEDULE",
+        "sub": "Dowman at 16 years, 339 days",
+        "person": "dowman",
+        "color": "green"
+      }
+    },
+    {
+      "text": "Next Henry, next Cesc, or something bigger? Tell me in the comments.",
+      "say": "Next Onree, next Sesk, or something bigger? Tell me in the comments.",
+      "scene": {
+        "type": "versus",
+        "title": "Who does he become?",
+        "left": {
+          "person": "dowman",
+          "label": "Dowman",
+          "value": "16",
+          "sub": "years old"
+        },
+        "right": {
+          "person": "henryars",
+          "label": "Henry",
+          "value": "228",
+          "sub": "Arsenal goals"
+        }
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or.",
+      "scene": {
+        "type": "cta"
+      }
+    }
   ]
 }

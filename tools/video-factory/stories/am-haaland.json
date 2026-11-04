@@ -2,15 +2,22 @@
   "id": "am-haaland",
   "series": "Age-match",
   "title": "Haaland in Leipzig v Messi, Ronaldo and Lewandowski at the same age",
+  "v2": true,
   "sources": [
-    "https://www.mancity.com/news/mens/champions-league-2026-27-league-phase-fixtures-confirmed-63923595",
-    "https://www.uefa.com/uefachampionsleague/news/02a8-2174c9e9019d-f909a77bd77a-1000--champions-league-league-phase-fixtures-by-team/",
+    "https://en.wikipedia.org/wiki/2026%E2%80%9327_UEFA_Champions_League_league_phase",
+    "https://www.mancity.com/fixtures",
     "https://en.wikipedia.org/wiki/Erling_Haaland",
-    "https://en.wikipedia.org/wiki/Lionel_Messi",
+    "https://en.wikipedia.org/wiki/2026%E2%80%9327_Manchester_City_F.C._season",
+    "https://www.soccernews.com/english-premier-league/golden-boot/",
     "https://en.wikipedia.org/wiki/Cristiano_Ronaldo",
-    "https://en.wikipedia.org/wiki/Robert_Lewandowski"
+    "https://en.wikipedia.org/wiki/Lionel_Messi",
+    "https://en.wikipedia.org/wiki/Robert_Lewandowski",
+    "https://www.foxsports.com/articles/soccer/haalands-spectacular-goal-earns-city-21-win-over-dortmund",
+    "https://live.mancity.com/news/mens/erling-haaland-says-dortmund-strike-one-of-his-best-ever-goals-63798865",
+    "https://www.sportsmole.co.uk/football/man-city/title-race/news/haaland-breaks-premier-league-record-for-most-goals-in-a-season_512969.html",
+    "https://uk.sports.yahoo.com/news/erling-haaland-sets-premier-league-210240896.html"
   ],
-  "checked": "City's next Champions League game: RB Leipzig away, Wed 4 Nov 2026 (Man City + UEFA). Haaland born 21 Jul 2000 = 26 years 106 days. Top-flight league totals from each player's Wikipedia career table (one source each): Haaland to 24 Oct 2026 = Molde 39/14, Salzburg 16/17, Dortmund 67/62, City 140/121 = 214 goals in 262 games (second-tier Bryne and reserve teams left out). Same age: Ronaldo 22 May 2011, the day after La Liga ended = 153 in 284 (exact); Messi 8 Oct 2013 = 215 in 246 before 2013-14 began (lower bound, shown 215+); Lewandowski 5 Dec 2014 = 106 in 189 top-flight (Ekstraklasa + Bundesliga) before 2014-15 (lower bound). Minutes not confirmable, so the twist uses games.",
+  "checked": "RB Leipzig v Man City, Champions League league phase, 4 Nov 2026 (Wikipedia league-phase page + Man City fixtures). Haaland born 21 Jul 2000 = 26y 106d that day. Top-flight league totals from each Wikipedia career table, cross-checked against the well-known season totals up to 2024-25: Haaland Molde 14, Salzburg 17, Dortmund 62, City 121 = 214 in 262 (2026-27: 9 league goals per Wikipedia, 8 per Soccernews, so 214 is the Wikipedia total as of early November; 213 if Soccernews is right). Same age: Ronaldo 22 May 2011 = 153 in 284 (40 La Liga goals in 2010-11); Messi 8 Oct 2013 = 215 in 246 before 2013-14 began (so '215+'); Lewandowski 5 Dec 2014 = 106 in 189 before 2014-15 began ('106+'). Cumulative goals by age at season end from the same tables. Dortmund 14 Sep 2022: City 2-1, Stones 80, Haaland 84 from Cancelo's cross, the 'kung fu' volley (Fox + Man City). West Ham 3 May 2023: City 3-0, Haaland's 35th league goal broke the 34-goal record of Shearer and Cole, Grealish through ball, chipped over Fabiański (Sports Mole + Yahoo); 36 by season's end and the treble (well known, Wikipedia). Goals per 100 games are simple division. Messi's later total is left out.",
   "clubs": {
     "mci": {
       "name": "Manchester City",
@@ -26,12 +33,19 @@
       "c2": "#dd0741",
       "pattern": "plain"
     },
-    "bar": {
-      "name": "Barcelona",
-      "short": "FCB",
-      "c1": "#a50044",
-      "c2": "#004d98",
-      "pattern": "stripes"
+    "bvb": {
+      "name": "Borussia Dortmund",
+      "short": "BVB",
+      "c1": "#fde100",
+      "c2": "#111111",
+      "pattern": "plain"
+    },
+    "whu": {
+      "name": "West Ham United",
+      "short": "WHU",
+      "c1": "#7a263a",
+      "c2": "#1bb1e7",
+      "pattern": "sides"
     },
     "rma": {
       "name": "Real Madrid",
@@ -40,12 +54,20 @@
       "c2": "#febe10",
       "pattern": "plain"
     },
-    "bvb": {
-      "name": "Borussia Dortmund",
-      "short": "BVB",
-      "c1": "#fde100",
-      "c2": "#000000",
-      "pattern": "plain"
+    "fcb": {
+      "name": "Barcelona",
+      "short": "FCB",
+      "c1": "#a50044",
+      "c2": "#004d98",
+      "pattern": "stripes"
+    },
+    "bay": {
+      "name": "Bayern Munich",
+      "short": "FCB",
+      "c1": "#dc052d",
+      "c2": "#ffffff",
+      "pattern": "plain",
+      "badge": "FC Bayern München"
     }
   },
   "people": {
@@ -54,60 +76,184 @@
       "skin": "light",
       "hair": [
         "slick",
-        "#e3c77f"
+        "#d9b46a"
       ],
       "beard": "none",
       "kit": "mci"
-    },
-    "messi": {
-      "name": "Lionel Messi",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#4a3220"
-      ],
-      "beard": "stubble",
-      "beardCol": "#4a3220",
-      "kit": "bar"
     },
     "ronaldo": {
       "name": "Cristiano Ronaldo",
       "skin": "tan",
       "hair": [
         "slick",
-        "#1b1410"
+        "#1d1512"
       ],
       "beard": "none",
       "kit": "rma"
     },
-    "lewy": {
+    "messi": {
+      "name": "Lionel Messi",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#3a2618"
+      ],
+      "beard": "stubble",
+      "beardCol": "#3a2618",
+      "kit": "fcb"
+    },
+    "lewa": {
       "name": "Robert Lewandowski",
       "skin": "light",
       "hair": [
         "side",
-        "#7a5a3a"
+        "#3a2a1c"
       ],
       "beard": "stubble",
-      "beardCol": "#7a5a3a",
-      "kit": "bvb"
+      "beardCol": "#3a2a1c",
+      "kit": "bay"
     }
   },
   "lines": [
     {
-      "text": "When Manchester City go to Leipzig on the fourth of November, Erling Haaland will be twenty-six years and one hundred and six days old.",
+      "text": "In Leipzig, Erling Haaland is twenty-six years and one hundred and six days old. So, how does he compare with the greatest scorers ever, at exactly that age?",
+      "say": "In Lypezig, Erling Hawland is twenty six years, and one hundred and six days old. So, how does he compare with the greatest scorers ever, at exactly that age?",
       "scene": {
         "type": "title",
         "heading": "ERLING HAALAND",
-        "sub": "RB Leipzig v Man City · 4 Nov 2026",
+        "sub": "26 years, 106 days old",
         "pill": "AGE-MATCH",
+        "person": "haaland",
+        "club": "mci"
+      }
+    },
+    {
+      "text": "Start with the goals that made him famous. Against his old club Dortmund, Cancelo crosses, and Haaland kung-fu kicks it in.",
+      "say": "Start with the goals that made him famous. Against his old club, Dortmoond, Kansellu crosses, and Hawland kung fu kicks it in.",
+      "scene": {
+        "type": "gameclip",
+        "caption": "THE KUNG-FU KICK",
+        "popup": {
+          "home": "mci",
+          "away": "bvb",
+          "homeName": "Man City",
+          "awayName": "Dortmund",
+          "hs0": 1,
+          "as0": 1,
+          "hs": 2,
+          "as": 1,
+          "scorer": "Haaland",
+          "assist": "Cancelo"
+        },
+        "_clip": "haaland-dortmund",
+        "parts": [
+          [
+            "work/footage/haaland-dortmund/tv",
+            15,
+            56
+          ],
+          [
+            "work/footage/haaland-dortmund/high",
+            21,
+            81
+          ],
+          [
+            "work/footage/haaland-dortmund/tight",
+            17,
+            77
+          ]
+        ],
+        "goalAt": 2.03
+      }
+    },
+    {
+      "text": "Eighty-fourth minute, the winner. That was his first autumn in England.",
+      "say": "Eighty fourth minute, the winner. That was his first autumn in England.",
+      "scene": {
+        "type": "score",
+        "home": "mci",
+        "away": "bvb",
+        "hs": 2,
+        "as": 1,
+        "date": "14 September 2022 · Etihad Stadium",
+        "comp": "Champions League",
+        "note": "Stones 80 · Haaland 84"
+      }
+    },
+    {
+      "text": "By May, Grealish played him through against West Ham, and the chip broke the Premier League record.",
+      "say": "By May, Greelish played him through against West Ham, and the chip broke the Premier League record.",
+      "scene": {
+        "type": "gameclip",
+        "caption": "GOAL 35: THE RECORD",
+        "popup": {
+          "home": "mci",
+          "away": "whu",
+          "homeName": "Man City",
+          "awayName": "West Ham",
+          "hs0": 1,
+          "as0": 0,
+          "hs": 2,
+          "as": 0,
+          "scorer": "Haaland",
+          "assist": "Grealish"
+        },
+        "_clip": "haaland-westham",
+        "parts": [
+          [
+            "work/footage/haaland-westham/tv",
+            0,
+            84
+          ],
+          [
+            "work/footage/haaland-westham/high",
+            84,
+            142
+          ],
+          [
+            "work/footage/haaland-westham/tight",
+            17,
+            77
+          ]
+        ],
+        "goalAt": 3.4
+      }
+    },
+    {
+      "text": "Thirty-six league goals in one season, and the treble.",
+      "say": "Thirty six league goals in one season. And the treble.",
+      "scene": {
+        "type": "trophies",
+        "kicker": "2022/23",
+        "title": "Season one",
+        "items": [
+          {
+            "kind": "league",
+            "label": "Premier League"
+          },
+          {
+            "kind": "cup",
+            "label": "FA Cup"
+          },
+          {
+            "kind": "bigears",
+            "label": "Champions League"
+          },
+          {
+            "kind": "boot",
+            "label": "36 goals"
+          }
+        ],
         "person": "haaland"
       }
     },
     {
-      "text": "His top-flight league goals by late October: two hundred and fourteen.",
+      "text": "Today, he has two hundred and fourteen top-flight league goals, in four countries.",
+      "say": "Today, he has two hundred and fourteen top flight league goals, in four countries.",
       "scene": {
         "type": "stats",
-        "title": "Haaland, top-flight league (to 24 Oct)",
+        "kicker": "Erling Haaland",
+        "title": "Top-flight league career",
         "items": [
           {
             "n": "214",
@@ -116,144 +262,226 @@
           {
             "n": "262",
             "l": "games"
+          },
+          {
+            "n": "4",
+            "l": "leagues"
           }
         ],
         "person": "haaland"
       }
     },
     {
-      "text": "Cristiano Ronaldo at exactly that age? May twenty eleven, the day after his forty-goal La Liga season ended.",
-      "scene": {
-        "type": "person",
-        "person": "ronaldo",
-        "label": "26 years, 106 days: 22 May 2011",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "His total: one hundred and fifty-three league goals. Haaland's ahead.",
+      "text": "Cristiano Ronaldo hit this exact age the day after his forty-goal La Liga season. His total: one hundred and fifty-three.",
+      "say": "Cristiano Ronaldo hit this exact age, the day after his forty goal La Liga season. His total: one hundred and fifty three.",
       "scene": {
         "type": "versus",
-        "title": "League goals at 26y 106d",
+        "title": "At 26 years, 106 days",
         "left": {
           "person": "haaland",
           "label": "Haaland",
-          "value": "214"
+          "value": "214",
+          "sub": "Nov 2026",
+          "win": true
         },
         "right": {
           "person": "ronaldo",
           "label": "Ronaldo",
-          "value": "153"
+          "value": "153",
+          "sub": "May 2011"
         }
       }
     },
     {
-      "text": "Robert Lewandowski at that age had just joined Bayern. About one hundred and six top-flight goals.",
+      "text": "Robert Lewandowski had just joined Bayern. At least one hundred and six.",
+      "say": "Robert Lehvandoffskee had just joined Byern. At least one hundred and six.",
       "scene": {
-        "type": "person",
-        "person": "lewy",
-        "label": "106+ league goals at 26y 106d",
-        "mood": "flat"
+        "type": "versus",
+        "title": "At 26 years, 106 days",
+        "left": {
+          "person": "haaland",
+          "label": "Haaland",
+          "value": "214",
+          "sub": "Nov 2026",
+          "win": true
+        },
+        "right": {
+          "person": "lewa",
+          "label": "Lewandowski",
+          "value": "106+",
+          "sub": "Dec 2014"
+        }
       }
     },
     {
-      "text": "And Lionel Messi? By October twenty thirteen, more than two hundred and fifteen La Liga goals.",
+      "text": "And Lionel Messi? At least two hundred and fifteen.",
       "scene": {
-        "type": "list",
-        "title": "League goals at 26 years 106 days",
-        "rows": [
+        "type": "versus",
+        "title": "At 26 years, 106 days",
+        "left": {
+          "person": "haaland",
+          "label": "Haaland",
+          "value": "214",
+          "sub": "Nov 2026"
+        },
+        "right": {
+          "person": "messi",
+          "label": "Messi",
+          "value": "215+",
+          "sub": "Oct 2013",
+          "win": true
+        }
+      }
+    },
+    {
+      "text": "Put them on one graph, and it's a two-horse race. Ronaldo started slowly. Haaland and Messi took off.",
+      "say": "Put them on one graph, and it's a two horse race. Ronaldo started slowly. Hawland and Messi took off.",
+      "scene": {
+        "type": "line",
+        "kicker": "Top-flight league goals by age",
+        "title": "The race",
+        "y": {
+          "min": 0,
+          "max": 240,
+          "label": "goals"
+        },
+        "x": [
+          "19",
+          "20",
+          "21",
+          "22",
+          "23",
+          "24",
+          "25",
+          "26"
+        ],
+        "series": [
           {
-            "name": "Lionel Messi",
-            "value": "215+",
-            "club": "bar",
-            "hl": true
-          },
-          {
-            "name": "Erling Haaland",
-            "value": "214",
+            "name": "Haaland",
             "club": "mci",
-            "hl": true
+            "values": [
+              44,
+              71,
+              93,
+              129,
+              156,
+              178,
+              205,
+              214
+            ]
           },
           {
-            "name": "Cristiano Ronaldo",
-            "value": "153",
-            "club": "rma"
+            "name": "Messi",
+            "club": "fcb",
+            "values": [
+              21,
+              31,
+              54,
+              88,
+              119,
+              169,
+              215,
+              215
+            ]
           },
           {
-            "name": "Robert Lewandowski",
-            "value": "106+",
-            "club": "bvb"
+            "name": "Ronaldo",
+            "club": "rma",
+            "values": [
+              7,
+              12,
+              21,
+              38,
+              69,
+              87,
+              113,
+              153
+            ]
           }
         ]
       }
     },
     {
-      "text": "So by this age, only Messi was ahead of Haaland.",
+      "text": "Match the games, and Messi still edges it. Eighty-seven goals every hundred games. Haaland, eighty-two.",
+      "say": "Match the games, and Messi still edges it. Eighty seven goals, every hundred games. Hawland, eighty two.",
+      "scene": {
+        "type": "bars",
+        "kicker": "Top-flight league, at 26 years 106 days",
+        "title": "Goals per 100 games",
+        "items": [
+          {
+            "label": "Lionel Messi",
+            "value": 87,
+            "person": "messi"
+          },
+          {
+            "label": "Erling Haaland",
+            "value": 82,
+            "person": "haaland",
+            "hl": true
+          },
+          {
+            "label": "Robert Lewandowski",
+            "value": 56,
+            "person": "lewa"
+          },
+          {
+            "label": "Cristiano Ronaldo",
+            "value": 54,
+            "person": "ronaldo"
+          }
+        ],
+        "max": 100
+      }
+    },
+    {
+      "text": "So at this age, only one man in history was ahead of him. And only just.",
       "scene": {
         "type": "stamp",
-        "text": "ONLY MESSI",
+        "text": "ONE GOAL BEHIND",
+        "sub": "Haaland 214 · Messi 215+",
         "person": "haaland",
         "color": "yellow"
       }
     },
     {
-      "text": "Now match the games. Haaland scores about eight goals every ten league games.",
+      "text": "Can Haaland catch Messi? Tell me in the comments.",
+      "say": "Can Hawland catch Messi? Tell me in the comments.",
       "scene": {
-        "type": "whatif",
-        "title": "League goals per 10 games",
-        "real": {
-          "label": "Haaland",
-          "value": "8.2"
+        "type": "compare",
+        "title": "At 26 years, 106 days",
+        "left": {
+          "person": "haaland",
+          "name": "Haaland",
+          "sub": "Man City"
         },
-        "alt": {
-          "label": "Messi (by 2013)",
-          "value": "8.7"
-        }
-      }
-    },
-    {
-      "text": "Messi, by twenty thirteen: almost nine every ten. Ronaldo and Lewandowski: between five and six.",
-      "scene": {
-        "type": "stats",
-        "title": "Goals per 10 league games",
-        "items": [
+        "right": {
+          "person": "messi",
+          "name": "Messi",
+          "sub": "Barcelona"
+        },
+        "rows": [
           {
-            "n": "8.7",
-            "l": "Messi"
+            "label": "League goals",
+            "l": 214,
+            "r": 215
           },
           {
-            "n": "8.2",
-            "l": "Haaland"
+            "label": "League games",
+            "l": 262,
+            "r": 246,
+            "lower": true
           },
           {
-            "n": "5.4",
-            "l": "Ronaldo"
-          },
-          {
-            "n": "5.6",
-            "l": "Lewandowski"
+            "label": "Countries",
+            "l": 4,
+            "r": 1
           }
         ]
       }
     },
     {
-      "text": "Ronaldo and Lewandowski peaked later, and both kept scoring into their thirties.",
-      "scene": {
-        "type": "text",
-        "heading": "LATE BLOOMERS",
-        "body": "Ronaldo's 40-goal season came at 26. Lewandowski's best Bundesliga years came at Bayern, after this age."
-      }
-    },
-    {
-      "text": "So can Haaland catch Messi's pace? Tell me in the comments.",
-      "scene": {
-        "type": "quote",
-        "person": "haaland",
-        "text": "Two hundred and fourteen. And counting."
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "text": "Follow for more, and play Road to Ballon d'Or.",
       "scene": {
         "type": "cta"
       }

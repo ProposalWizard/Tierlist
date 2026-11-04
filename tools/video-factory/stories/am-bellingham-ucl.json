@@ -2,16 +2,21 @@
   "id": "am-bellingham-ucl",
   "series": "Age-match",
   "title": "Bellingham in Athens v Zidane, Gerrard and Lampard at the same age",
+  "v2": true,
   "sources": [
-    "https://www.uefa.com/uefachampionsleague/news/02a8-2176fa83582b-d99f0b27f405-1000--2026-27-uefa-champions-league-all-the-league-phase-fixtures/",
-    "https://foot-africa.com/en/news/champions-league-2026-27-real-madrids-complete-league-phase-schedule-1333831/",
-    "https://sportsdigest.in/real-madrid-champions-league-2026-27-schedule/203768/",
+    "https://www.bundesliga.com/en/champions-league/matchday/2026-2027/4/aek-athen-fc-vs-real-madrid-club-de-futbol/table",
+    "https://www.squawka.com/us/?p=82957",
     "https://en.wikipedia.org/wiki/Jude_Bellingham",
+    "https://www.fourfourtwo.com/news/jude-bellingham-emulates-cristiano-ronaldo-with-winner-for-real-madrid-after-barcelona-are-controversially-denied-el-clasico-goal",
+    "https://www.football-espana.net/2023/10/28/jude-bellingham-brilliance-sees-real-madrid-pick-up-clasico-victory-against-barcelona/amp",
+    "https://thenationalnews.com/sport/football/2023/10/28/late-jude-bellingham-double-earns-real-madrid-clasico-win-at-barcelona",
+    "https://en.wikipedia.org/wiki/2024_UEFA_Champions_League_final",
     "https://en.wikipedia.org/wiki/Zinedine_Zidane",
     "https://en.wikipedia.org/wiki/Steven_Gerrard",
-    "https://en.wikipedia.org/wiki/Frank_Lampard"
+    "https://en.wikipedia.org/wiki/Frank_Lampard",
+    "https://www.statmuse.com/fc/player/steven-gerrard"
   ],
-  "checked": "Real Madrid's next Champions League game: AEK Athens away, Wed 4 Nov 2026 (UEFA + Foot Africa + Sportsdigest). Bellingham born 29 Jun 2003 = 23 years 128 days that day; 231 league games, 54 league goals to 1 Nov 2026; 2024 Champions League winner (Wikipedia). Same age, from each legend's Wikipedia career table: Zidane 29 Oct 1995: 28 league goals in 167 games before 1995-96; Gerrard 5 Oct 2003: 16 PL goals in 136 games before 2003-04; Lampard 26 Oct 2001: 24 PL goals in 148 PL games before 2001-02. Those three dates fall early in a season, so their totals are 'by the start of that season' and shown with a plus. Zidane's 2002, Gerrard's 2005 and Lampard's 2012 Champions League wins are well known. Assists and minutes not confirmable for the 1990s, so goals and games are used. Career tables have one source each.",
+  "checked": "AEK Athens v Real Madrid, Champions League league phase, 4 Nov 2026 (Bundesliga.com fixture page + Squawka). Bellingham born 29 Jun 2003 = 23y 128d that day. League record to 1 Nov 2026: Birmingham 41/4, Dortmund 92/12, Real Madrid 98/38 = 231 games, 54 goals (Wikipedia; the seasons to 2024-25 match the well-known totals, including 19 La Liga goals in 2023-24). First Clásico, 28 Oct 2023 at Montjuïc: Gündoğan 6, Bellingham 68 from about 30 yards into the top corner, Bellingham's winner in stoppage time, Barça 1-2 Real (FourFourTwo + Football España + The National). 2023-24 La Liga and Champions League (final 1 Jun 2024 v Dortmund, 2-0) at 20 (Wikipedia + well known). Same age: Zidane 29 Oct 1995 = 28 league goals in 167 games before 1995-96 (Cannes + Bordeaux, Wikipedia); Gerrard 5 Oct 2003 = 16 in 136 before 2003-04 (StatMuse + Wikipedia); Lampard 26 Oct 2001 = 24 in 148 before 2001-02, his first months at Chelsea (Premier League Hall of Fame + Wikipedia). These three fall early in a season, so they show a plus. Goals by age = cumulative league goals after the season that ended the summer each turned that age, from the same tables. First Champions League wins: Zidane 15 May 2002 (29), Gerrard 25 May 2005 (24, five days short of 25), Lampard 19 May 2012 (33), Bellingham 1 Jun 2024 (20); ages by arithmetic from birth dates. Goals per 100 games = simple division. The Clásico equaliser is recreated as a long-range goal; the assist is not sourced, so the pop-up shows none.",
   "clubs": {
     "rma": {
       "name": "Real Madrid",
@@ -20,32 +25,47 @@
       "c2": "#febe10",
       "pattern": "plain"
     },
+    "aek": {
+      "name": "AEK Athens",
+      "short": "AEK",
+      "c1": "#f5d10a",
+      "c2": "#111111",
+      "pattern": "plain"
+    },
+    "fcb": {
+      "name": "Barcelona",
+      "short": "FCB",
+      "c1": "#a50044",
+      "c2": "#004d98",
+      "pattern": "stripes"
+    },
+    "bvb": {
+      "name": "Borussia Dortmund",
+      "short": "BVB",
+      "c1": "#fde100",
+      "c2": "#111111",
+      "pattern": "plain"
+    },
     "bor": {
       "name": "Bordeaux",
       "short": "FCGB",
-      "c1": "#0a1e3f",
+      "c1": "#1b2a4a",
       "c2": "#ffffff",
-      "pattern": "plain"
+      "pattern": "plain",
+      "badge": "FC Girondins de Bordeaux"
     },
     "liv": {
       "name": "Liverpool",
-      "short": "LFC",
+      "short": "LIV",
       "c1": "#c8102e",
       "c2": "#ffffff",
       "pattern": "plain"
     },
     "che": {
       "name": "Chelsea",
-      "short": "CFC",
+      "short": "CHE",
       "c1": "#034694",
       "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "aek": {
-      "name": "AEK Athens",
-      "short": "AEK",
-      "c1": "#f2c500",
-      "c2": "#000000",
       "pattern": "plain"
     }
   },
@@ -55,17 +75,16 @@
       "skin": "brown",
       "hair": [
         "crop",
-        "#14110f"
+        "#1a120e"
       ],
-      "beard": "stubble",
-      "beardCol": "#14110f",
+      "beard": "none",
       "kit": "rma"
     },
     "zidane": {
       "name": "Zinedine Zidane",
       "skin": "olive",
       "hair": [
-        "crop",
+        "side",
         "#3a2a1c"
       ],
       "beard": "none",
@@ -73,20 +92,20 @@
     },
     "gerrard": {
       "name": "Steven Gerrard",
-      "skin": "pink",
+      "skin": "light",
       "hair": [
         "crop",
-        "#8a6a45"
+        "#6b4a2a"
       ],
       "beard": "none",
       "kit": "liv"
     },
     "lampard": {
       "name": "Frank Lampard",
-      "skin": "light",
+      "skin": "pink",
       "hair": [
-        "side",
-        "#5a3a22"
+        "crop",
+        "#5b3a22"
       ],
       "beard": "none",
       "kit": "che"
@@ -94,169 +113,377 @@
   },
   "lines": [
     {
-      "text": "On the fourth of November in Athens, Jude Bellingham is twenty-three years and one hundred and twenty-eight days old.",
+      "text": "In Athens on the fourth of November, Jude Bellingham is twenty-three years and one hundred and twenty-eight days old.",
+      "say": "In Athens, on the fourth of November, Jude Bellingum is twenty three years, and one hundred and twenty eight days old.",
       "scene": {
         "type": "title",
         "heading": "JUDE BELLINGHAM",
-        "sub": "AEK Athens v Real Madrid · 4 Nov 2026",
+        "sub": "23 years, 128 days old",
         "pill": "AGE-MATCH",
-        "person": "jude"
-      }
-    },
-    {
-      "text": "So let's line him up against the great goal-scoring midfielders at exactly the same age.",
-      "scene": {
-        "type": "person",
         "person": "jude",
-        "label": "23 years, 128 days",
-        "mood": "happy"
+        "club": "rma"
       }
     },
     {
-      "text": "Bellingham so far: fifty-four league goals in two hundred and thirty-one league games.",
+      "text": "He was twenty when he played his first Clásico. One-nil down at Montjuïc, he did this from thirty yards.",
+      "say": "He was twenty, when he played his first Clasico. One nil down at Moonjooeek, he did this, from thirty yards.",
       "scene": {
-        "type": "stats",
-        "title": "Bellingham, all league games",
+        "type": "gameclip",
+        "caption": "30 YARDS, TOP CORNER",
+        "popup": {
+          "home": "fcb",
+          "away": "rma",
+          "homeName": "Barcelona",
+          "awayName": "Real Madrid",
+          "hs0": 1,
+          "as0": 0,
+          "hs": 1,
+          "as": 1,
+          "scorer": "Bellingham"
+        },
+        "_clip": "jude-clasico",
+        "parts": [
+          [
+            "work/footage/jude-clasico/tv",
+            11,
+            53
+          ],
+          [
+            "work/footage/jude-clasico/high",
+            53,
+            126
+          ],
+          [
+            "work/footage/jude-clasico/tight",
+            17,
+            77
+          ]
+        ],
+        "goalAt": 2.5
+      }
+    },
+    {
+      "text": "Then, in stoppage time, the winner. Two goals in his first Clásico.",
+      "say": "Then, in stoppage time, the winner. Two goals, in his first Clasico.",
+      "scene": {
+        "type": "score",
+        "home": "fcb",
+        "away": "rma",
+        "hs": 1,
+        "as": 2,
+        "date": "28 October 2023 · Montjuïc",
+        "comp": "La Liga",
+        "note": "Gündoğan 6 · Bellingham 68, 90+2"
+      }
+    },
+    {
+      "text": "That season: nineteen league goals, La Liga, and the Champions League. He was still twenty.",
+      "say": "That season: nineteen league goals, La Liga, and the Champions League. He was still twenty.",
+      "scene": {
+        "type": "trophies",
+        "kicker": "2023/24, aged 20",
+        "title": "Season one in Madrid",
         "items": [
           {
-            "n": "54",
-            "l": "league goals"
+            "kind": "league",
+            "label": "La Liga"
           },
           {
-            "n": "231",
-            "l": "league games"
+            "kind": "bigears",
+            "label": "Champions League"
           }
         ],
         "person": "jude"
       }
     },
     {
-      "text": "Zidane at that age was still at Bordeaux. Twenty-eight league goals, plus a few that autumn.",
+      "text": "Today, he has fifty-four league goals in two hundred and thirty-one games.",
+      "say": "Today, he has fifty four league goals, in two hundred and thirty one games.",
       "scene": {
-        "type": "person",
-        "person": "zidane",
-        "label": "Bordeaux, October 1995",
-        "mood": "flat"
+        "type": "stats",
+        "kicker": "Jude Bellingham",
+        "title": "League career so far",
+        "items": [
+          {
+            "n": "54",
+            "l": "goals"
+          },
+          {
+            "n": "231",
+            "l": "games"
+          },
+          {
+            "n": "3",
+            "l": "clubs"
+          }
+        ],
+        "person": "jude"
       }
     },
     {
-      "text": "Steven Gerrard at that age: sixteen Premier League goals. Frank Lampard: twenty-four.",
+      "text": "So line him up with the great goal-scoring midfielders, at exactly the same age.",
       "scene": {
         "type": "versus",
         "title": "Same age: 23 years, 128 days",
         "left": {
+          "person": "jude",
+          "label": "Bellingham",
+          "value": "2026"
+        },
+        "right": {
+          "person": "zidane",
+          "label": "Zidane",
+          "value": "1995"
+        }
+      }
+    },
+    {
+      "text": "Zinedine Zidane, October ninety-five, at Bordeaux: twenty-eight league goals.",
+      "say": "Zeenedeen Zeedan, October ninety five, at Bordoh: twenty eight league goals.",
+      "scene": {
+        "type": "person",
+        "person": "zidane",
+        "label": "Bordeaux · 28 league goals",
+        "mood": "flat"
+      }
+    },
+    {
+      "text": "Steven Gerrard, October two thousand and three: sixteen. Frank Lampard, just signed by Chelsea: twenty-four.",
+      "say": "Steven Jerrard, October, two thousand and three: sixteen. Frank Lampard, just signed by Chelsea: twenty four.",
+      "scene": {
+        "type": "versus",
+        "title": "At 23 years, 128 days",
+        "left": {
           "person": "gerrard",
           "label": "Gerrard",
-          "value": "16+"
+          "value": "16",
+          "sub": "Oct 2003"
         },
         "right": {
           "person": "lampard",
           "label": "Lampard",
-          "value": "24+"
+          "value": "24",
+          "sub": "Oct 2001",
+          "win": true
         }
       }
     },
     {
-      "text": "Put them together and Bellingham is miles clear.",
+      "text": "Put them on a graph by age, and Bellingham pulls away the moment he reaches Madrid.",
+      "say": "Put them on a graph by age, and Bellingum pulls away, the moment he reaches Madrid.",
       "scene": {
-        "type": "list",
-        "title": "League goals at 23y 128d",
-        "rows": [
+        "type": "line",
+        "kicker": "League goals by age",
+        "title": "Who scored sooner",
+        "y": {
+          "min": 0,
+          "max": 60,
+          "label": "goals"
+        },
+        "x": [
+          "17",
+          "18",
+          "19",
+          "20",
+          "21",
+          "22",
+          "23"
+        ],
+        "series": [
           {
-            "name": "Jude Bellingham",
-            "value": "54",
+            "name": "Bellingham",
+            "club": "rma",
+            "values": [
+              4,
+              5,
+              8,
+              16,
+              35,
+              44,
+              54
+            ]
+          },
+          {
+            "name": "Zidane",
+            "club": "bor",
+            "values": [
+              0,
+              0,
+              1,
+              6,
+              16,
+              22,
+              28
+            ]
+          },
+          {
+            "name": "Gerrard",
+            "club": "liv",
+            "values": [
+              0,
+              0,
+              0,
+              1,
+              8,
+              11,
+              16
+            ]
+          }
+        ],
+        "notes": [
+          {
+            "i": 4,
+            "text": "Madrid: 19 goals",
+            "series": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "Fifty-four. Nearly double Zidane. More than three times Gerrard.",
+      "say": "Fifty four. Nearly double Zeedan. More than three times Jerrard.",
+      "scene": {
+        "type": "bars",
+        "kicker": "At 23 years, 128 days",
+        "title": "League goals",
+        "items": [
+          {
+            "label": "Jude Bellingham",
+            "value": 54,
+            "person": "jude",
+            "hl": true
+          },
+          {
+            "label": "Zinedine Zidane",
+            "value": 28,
+            "person": "zidane"
+          },
+          {
+            "label": "Frank Lampard",
+            "value": 24,
+            "person": "lampard"
+          },
+          {
+            "label": "Steven Gerrard",
+            "value": 16,
+            "person": "gerrard"
+          }
+        ]
+      }
+    },
+    {
+      "text": "He's played more games, so match them. Per hundred league games, he still wins.",
+      "say": "He's played more games, so match them. Per hundred league games, he still wins.",
+      "scene": {
+        "type": "bars",
+        "kicker": "At 23 years, 128 days",
+        "title": "League goals per 100 games",
+        "items": [
+          {
+            "label": "Jude Bellingham",
+            "value": 23,
+            "person": "jude",
+            "hl": true
+          },
+          {
+            "label": "Zinedine Zidane",
+            "value": 17,
+            "person": "zidane"
+          },
+          {
+            "label": "Frank Lampard",
+            "value": 16,
+            "person": "lampard"
+          },
+          {
+            "label": "Steven Gerrard",
+            "value": 12,
+            "person": "gerrard"
+          }
+        ],
+        "max": 30
+      }
+    },
+    {
+      "text": "And the big one. Gerrard waited for Istanbul at twenty-four. Zidane, twenty-nine. Lampard, thirty-three.",
+      "say": "And the big one. Jerrard waited for Istanbul, at twenty four. Zeedan, twenty nine. Lampard, thirty three.",
+      "scene": {
+        "type": "timeline",
+        "kicker": "Age at first Champions League win",
+        "title": "The big one",
+        "items": [
+          {
+            "year": "20",
+            "label": "Bellingham · Wembley 2024",
             "club": "rma",
             "hl": true
           },
           {
-            "name": "Zinedine Zidane",
-            "value": "28+",
-            "club": "bor"
-          },
-          {
-            "name": "Frank Lampard",
-            "value": "24+",
-            "club": "che"
-          },
-          {
-            "name": "Steven Gerrard",
-            "value": "16+",
+            "year": "24",
+            "label": "Gerrard · Istanbul 2005",
             "club": "liv"
+          },
+          {
+            "year": "29",
+            "label": "Zidane · Glasgow 2002",
+            "club": "rma"
+          },
+          {
+            "year": "33",
+            "label": "Lampard · Munich 2012",
+            "club": "che"
           }
         ]
       }
     },
     {
-      "text": "But he's also played more. So match the games.",
+      "text": "So at this age, Bellingham is ahead of all three. On goals, on rate, and on the biggest trophy.",
+      "say": "So at this age, Bellingum is ahead of all three. On goals, on rate, and on the biggest trophy.",
       "scene": {
         "type": "stamp",
-        "text": "MATCH THE GAMES",
+        "text": "AHEAD OF ALL THREE",
+        "sub": "Bellingham at 23 years, 128 days",
         "person": "jude",
-        "color": "yellow"
+        "color": "green"
       }
     },
     {
-      "text": "Per game, Bellingham scores roughly once every four league games. Zidane and Lampard, once every six. Gerrard, once every eight or nine.",
+      "text": "But can he finish like Zidane did? Tell me in the comments.",
+      "say": "But can he finish like Zeedan did? Tell me in the comments.",
       "scene": {
-        "type": "whatif",
-        "title": "League games per goal",
-        "real": {
-          "label": "Bellingham",
-          "value": "about 4"
+        "type": "compare",
+        "title": "At 23 years, 128 days",
+        "left": {
+          "person": "jude",
+          "name": "Bellingham",
+          "sub": "Real Madrid"
         },
-        "alt": {
-          "label": "Gerrard",
-          "value": "about 8.5"
-        }
-      }
-    },
-    {
-      "text": "And the trophy that matters here? Bellingham won the Champions League before he turned twenty-one.",
-      "scene": {
-        "type": "trophies",
-        "items": [
+        "right": {
+          "person": "zidane",
+          "name": "Zidane",
+          "sub": "Bordeaux"
+        },
+        "rows": [
           {
-            "kind": "bigears",
-            "label": "Champions League 2024"
-          }
-        ],
-        "person": "jude"
-      }
-    },
-    {
-      "text": "Gerrard had to wait until Istanbul, two thousand five. Zidane until twenty oh-two. Lampard until twenty twelve.",
-      "scene": {
-        "type": "timeline",
-        "items": [
-          {
-            "year": "2002",
-            "label": "Zidane wins it, aged 29"
+            "label": "League goals",
+            "l": 54,
+            "r": 28
           },
           {
-            "year": "2005",
-            "label": "Gerrard wins it, aged 24"
+            "label": "League games",
+            "l": 231,
+            "r": 167
           },
           {
-            "year": "2012",
-            "label": "Lampard wins it, aged 33"
-          },
-          {
-            "year": "2024",
-            "label": "Bellingham wins it, aged 20"
+            "label": "Champions Leagues",
+            "l": 1,
+            "r": 0
           }
         ]
       }
     },
     {
-      "text": "So is Bellingham already ahead of all three? Tell me in the comments.",
-      "scene": {
-        "type": "quote",
-        "person": "jude",
-        "text": "Hey Jude? I'm only twenty-three."
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "text": "Follow for more, and play Road to Ballon d'Or.",
       "scene": {
         "type": "cta"
       }
