@@ -11,7 +11,7 @@
   "Sesko": "Sheshko",
   "Mbeumo": "Embuhmo",
   "Szoboszlai": "Sohbossloy",
-  "Kvaratskhelia": "Kvahratskelleeuh",
+  "Kvaratskhelia": "Kvaratskeleea",
   "Gvardiol": "Gvardeeol",
   "Ødegaard": "Urdehgore",
   "Odegaard": "Urdehgore",
@@ -43,7 +43,7 @@
   "Kanté": "Kontay",
   "Koundé": "Koonday",
   "Cubarsí": "Koobarsee",
-  "Raphinha": "Hahfeenyah",
+  "Raphinha": "Hafeenya",
   "Džeko": "Jehko",
   "Gyökeres": "Yurkeresh",
   "Piqué": "Peekay",
@@ -88,7 +88,9 @@
   "Bouaddi": "Bwahdee",
   "Vušković": "Vooshkovitch",
   "Isak": "Eesahk",
-  "Groß": "Gross"
+  "Groß": "Gross",
+  "Rodri": "Rodree",
+  "Ruiz": "Rweeth"
  },
  "_ipa": {
   "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -98,7 +100,7 @@
   "Šeško": "sl [ˈʃɛːʃkɔ] (Wikipedia)",
   "Mbeumo": "French/Cameroonian [mbəmo]; heard 'Embumo' (re-pl-player-of-season)",
   "Szoboszlai": "hu [ˈsoboslɒi], Wikipedia respell SO-bo-sloy",
-  "Kvaratskhelia": "ka [kʼʷaraˈtsʰχelia] (Wikipedia)",
+  "Kvaratskhelia": "Georgian [kʰʋaɾat͡sʰxelia]; heard 'Kvaratskalir/Kvartzkalia' (re-top10, pr-ballondor-2027-november). The old 'Kvahratskelleeuh' came out 'Kavarzgelyor'.",
   "Gvardiol": "hr [ɡʋârdioːl] (Wikipedia)",
   "Ødegaard": "no [ˈø̀ːdəˌɡoːɾ] (Wikipedia)",
   "Negreira": "es [neˈɣɾejɾa]",
@@ -121,7 +123,7 @@
   "Olise": "en /ɒˈliseɪ/, Wikipedia respell o-LEE-say",
   "Dembélé": "fr [dɛmbele] (Wikipedia)",
   "Koundé": "fr [kunde] (Wikipedia)",
-  "Raphinha": "pt [ʁɐˈfiɲɐ] (Wikipedia)",
+  "Raphinha": "Brazilian Portuguese [ʁaˈfĩɲɐ]; heard 'Haphina' (pr-ballondor-2027-november)",
   "Džeko": "bs [dʒêːko] (Wikipedia)",
   "Gyökeres": "sv [ˈjø̂ːkɛrɛs] (Wikipedia)",
   "Piqué": "ca [piˈke] (Wikipedia)",
@@ -157,6 +159,8 @@
   "Bouaddi": "French/Moroccan [bwadi]; heard 'Bua Di/Biwadi' (re-golden-boy)",
   "Vušković": "Croatian [ʋûʃkoʋitɕ]; heard 'Voskovic' (re-golden-boy)",
   "Isak": "Swedish [ˈiːsak]; heard 'Isak' (re-pl-player-of-season)",
-  "Groß": "German [ɡʁoːs]; heard 'Gross' (re-pl-player-of-season)"
+  "Groß": "German [ɡʁoːs]; heard 'Gross' (re-pl-player-of-season)",
+  "Rodri": "Spanish [ˈroðɾi]; heard 'Rodri' (pr-ballondor-2027-november). 'Roddree' once came out 'Rogerie'.",
+  "Ruiz": "Spanish (Spain) [rwiθ]; heard 'Wreath' (re-top10)"
  }
 }
