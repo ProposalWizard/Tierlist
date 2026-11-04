@@ -83,7 +83,15 @@
   "McNeil": "Macneel",
   "Agnelli": "Anyellee",
   "Empoli": "Empolee",
-  "Fiorentina": "Feeorenteena"
+  "Fiorentina": "Feeorenteena",
+  "Bernard Tapie": "Bernar Tahpee",
+  "Tapie": "Tahpee",
+  "Marseille": "Marsay",
+  "Glassmann": "Glassman",
+  "Burruchaga": "Booroochahga",
+  "Eydelie": "Aydelee",
+  "Abedi Pelé": "Abedee Pelay",
+  "Basile Boli": "Bazeel Bolee"
  },
  "_ipa": {
   "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -147,6 +155,13 @@
   "McNeil": "mak-NEEL (BBC); transcribed as McNeil through voice D (batch 8)",
   "Agnelli": "Italian [aɲˈɲɛlli] (Wikipedia); heard as Aniele through voice D (batch 8)",
   "Empoli": "Italian [ˈempoli]; heard as Empoli (batch 8)",
-  "Fiorentina": "Italian [fjorenˈtiːna]; heard as Fioratina (batch 8)"
+  "Fiorentina": "Italian [fjorenˈtiːna]; heard as Fioratina (batch 8)",
+  "Tapie": "French [tapi]; heard as Tappi through voice D (batch 8)",
+  "Marseille": "English mar-SAY; heard as Marseille/Marcy (batch 8)",
+  "Glassmann": "heard as Glassman (batch 8)",
+  "Burruchaga": "Spanish [buruˈtʃaɣa]; heard as Boruchaga (batch 8)",
+  "Eydelie": "French [ɛdəli]; heard as Eidley (batch 8)",
+  "Abedi Pelé": "heard as Abadi Pele (batch 8)",
+  "Basile Boli": "French [bazil bɔli]; heard as Basile Boli (batch 8)"
  }
 }
