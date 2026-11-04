@@ -1,0 +1,34 @@
+{
+  "_about": "Lamine Yamal's equaliser, Spain 2-1 France, Euro 2024 semi-final, Munich, 9 July 2024, 21st minute: a curling left-foot shot from outside the box that went in off the far post past Maignan. Yamal was 16, the youngest scorer in Euros history; Olmo won it (NBC Sports, The Local/AFP, ESPN match page). Kits: Spain red shirts, dark blue shorts; France dark blue shirts - taken from match photos, no text source names the strips. Pass and defenders are stand-ins.",
+  "teams": {
+    "home": { "name": "Spain", "short": "Spain", "kit": { "shirt": "#C60B1E", "shorts": "#1B2A5A", "socks": "#C60B1E" }, "keeperKit": { "shirt": "#2E8B57", "shorts": "#2E8B57", "socks": "#2E8B57" }, "popupTrim": "#FFC400" },
+    "away": { "name": "France", "short": "France", "kit": { "shirt": "#1D2C5C", "shorts": "#FFFFFF", "socks": "#C8102E" }, "keeperKit": { "shirt": "#E6C619", "shorts": "#111111", "socks": "#E6C619" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "yamal":    { "name": "Lamine Yamal", "skin": "#7a4e33", "hair": "#0d0a09", "popupName": "Yamal" },
+    "olmo":     { "name": "Dani Olmo", "skin": "#e8b994", "hair": "#2a1d15" },
+    "morata":   { "name": "Alvaro Morata", "skin": "#e8b994", "hair": "#2a1d15" },
+    "rabiot":   { "name": "Adrien Rabiot", "skin": "#f0c3a0", "hair": "#3b2a1e" },
+    "theo":     { "name": "Theo Hernandez", "skin": "#e8b994", "hair": "#2a1d15" },
+    "upamecano":{ "name": "Dayot Upamecano", "skin": "#3e2618", "hair": "#0d0a09" },
+    "maignan":  { "name": "Mike Maignan", "skin": "#4a2e1e", "hair": "#0d0a09" }
+  },
+  "clips": [
+    {
+      "id": "yamal-2024",
+      "kind": "long_range",
+      "attacking": "home",
+      "scorer": "yamal", "assister": "morata",
+      "defenders": ["rabiot", "theo", "upamecano"],
+      "keeper": "maignan",
+      "teammates": ["olmo"],
+      "minute": 21, "minuteLabel": "21",
+      "scoreBefore": [0, 1], "scoreAfter": [1, 1],
+      "night": true,
+      "celebration": "arms_out",
+      "cameras": ["tv", "high", "tight", "fan"],
+      "recreate": { "scorerSpot": [7, 22], "finish": "curl", "height": "high", "goalSide": "left" },
+      "seed": "yamal-2024-a"
+    }
+  ]
+}

@@ -2,17 +2,24 @@
   "id": "re-golden-boy",
   "series": "Three rules to the top",
   "title": "Three rules to the 2026 Golden Boy",
+  "v2": true,
   "sources": [
     "https://africasoccer.com/?p=630513",
+    "https://emisorasunidas.com/deportes/2026/10/05/tuttosport-revela-a-los-25-finalistas-del-golden-boy-2026/",
     "https://www.realmadrid.com/es-ES/noticias/futbol/primer-equipo/actualidad/diomande-endrick-finalistas-al-golden-boy",
     "https://www.psg.fr/en/content/warren-zaire-emery-finalist-for-golden-boy-2026-golden-boy-2026-psg-award-2026-2027",
-    "https://emisorasunidas.com/deportes/2026/10/05/tuttosport-revela-a-los-25-finalistas-del-golden-boy-2026/",
+    "https://www.flashscore.pl/wiadomosci/golden-boy-2026-wkracza-w-decydujaca-faze-znamy-finalistow-prestizowego-plebiscytu/C6db4lCd/",
+    "https://sport.ua/news/912965-obyavleny-25-nominantov-na-nagradu-golden-boy-polniy-spisok-kandidatov",
+    "https://en.wikipedia.org/wiki/Golden_Boy_(award)",
     "https://www.nbcsports.com/soccer/news/premier-league-table-for-2026-27-season",
-    "https://caughtoffside.com/2026/10/20/premier-league-club-relaxed-manager-future-man-united",
+    "https://www.toffeeweb.com/season/26-27/premtable.php",
     "https://www.nbcsports.com/soccer/news/premier-league-2026-27-scoring-leaders-the-race-for-the-golden-boot-begins",
-    "https://www.soccernews.com/english-premier-league/golden-boot/"
+    "https://www.sportsmole.co.uk/football/brighton-and-hove-albion/result/on-your-bike-kostoulas-scores-wonderful-overhead-kick-to-rescue-a-point-for-brighton_590226.html",
+    "https://www.wsls.com/news/2026/01/19/kostoulass-late-overhead-kick-rescues-point-for-brighton-in-1-1-draw-with-bournemouth/",
+    "https://www.goal.com/en-gb/lists/charalampos-kostoulas-olympiacos-babistuta-transfer-attention/blt6e6570558b0a8845",
+    "https://www.excelsior.com.mx/deportes/pau-cubarsi-y-endrick-lideran-25-nominados-golden-boy-2026"
   ],
-  "checked": "25 Golden Boy finalists, 5 Oct 2026 (Africa Soccer full list; Real Madrid, PSG and Emisoras Unidas confirm names); clubs and table after 9 games (NBC, CaughtOffside); PL goals (NBC 2 Nov: Kostoulas 3, Vuskovic 1, Rayan 1; Estevao, Bouaddi, Hato, Lewis-Skelly not on the scorers list). Winner not yet announced on 3 Nov: the rules are a game, not a prediction.",
+  "checked": "25 finalists named by Tuttosport on 5 Oct 2026, eight in the Premier League (Africa Soccer full list; Emisoras Unidas, Real Madrid and PSG confirm names). Yamal (2024) and Doué (2025) not eligible as past winners (Flashscore, Sport.ua). Past winners Rooney 2004, Messi 2005, Haaland 2020, Bellingham 2023, Yamal 2024 (Wikipedia Golden Boy; Doué 2025 from Flashscore and Sport.ua). Winner not announced on 4 Nov; jury of journalists (Sport.ua, Wikipedia). Table after 9 games: Arsenal 24, City 21, Brighton 19, Chelsea 16, Liverpool 15, Brentford 14, Everton 13, Bournemouth 12 (NBC and Toffeeweb agree). PL goals to 2 Nov: Kostoulas 3, Vuskovic 1, Rayan 1; Kroupi, Estevao, Hato, Bouaddi, Lewis-Skelly not on the scorers list (NBC scoring list). Kostoulas came from Olympiacos and scored a late overhead kick v Bournemouth in Jan 2026 (Goal, Sports Mole, AP via WSLS). No game clip: his famous goal is an overhead kick, which the game footage cannot do. No 'you' anywhere; the rules are a game, not a prediction. Cubarsí heads the list (Emisoras Unidas, Excelsior).",
   "clubs": {
     "ars": {
       "name": "Arsenal",
@@ -21,25 +28,18 @@
       "c2": "#ffffff",
       "pattern": "sides"
     },
-    "bar": {
-      "name": "Barcelona",
-      "short": "BAR",
-      "c1": "#a50044",
-      "c2": "#004d98",
-      "pattern": "stripes"
+    "mci": {
+      "name": "Manchester City",
+      "short": "MCI",
+      "c1": "#6cabdd",
+      "c2": "#ffffff",
+      "pattern": "plain"
     },
     "bha": {
-      "name": "Brighton",
+      "name": "Brighton & Hove Albion",
       "short": "BHA",
       "c1": "#0057b8",
       "c2": "#ffffff",
-      "pattern": "stripes"
-    },
-    "bou": {
-      "name": "Bournemouth",
-      "short": "BOU",
-      "c1": "#da291c",
-      "c2": "#000000",
       "pattern": "stripes"
     },
     "che": {
@@ -49,11 +49,47 @@
       "c2": "#ffffff",
       "pattern": "plain"
     },
-    "mci": {
-      "name": "Manchester City",
-      "short": "MCI",
-      "c1": "#6cabdd",
+    "liv": {
+      "name": "Liverpool",
+      "short": "LIV",
+      "c1": "#c8102e",
       "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "bre": {
+      "name": "Brentford",
+      "short": "BRE",
+      "c1": "#e30613",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    },
+    "eve": {
+      "name": "Everton",
+      "short": "EVE",
+      "c1": "#003399",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "bou": {
+      "name": "AFC Bournemouth",
+      "short": "BOU",
+      "c1": "#da291c",
+      "c2": "#111111",
+      "pattern": "stripes"
+    },
+    "bar": {
+      "name": "Barcelona",
+      "short": "BAR",
+      "c1": "#a50044",
+      "c2": "#004d98",
+      "pattern": "stripes",
+      "badge": "FC Barcelona"
+    },
+    "rma": {
+      "name": "Real Madrid",
+      "short": "RMA",
+      "c1": "#ffffff",
+      "c2": "#febe10",
       "pattern": "plain"
     },
     "psg": {
@@ -62,25 +98,69 @@
       "c1": "#004170",
       "c2": "#da291c",
       "pattern": "centre"
+    },
+    "mun": {
+      "name": "Manchester United",
+      "short": "MUN",
+      "c1": "#da291c",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "bvb": {
+      "name": "Borussia Dortmund",
+      "short": "BVB",
+      "c1": "#fde100",
+      "c2": "#111111",
+      "pattern": "plain"
     }
   },
   "people": {
-    "bouaddi": {
-      "name": "Ayyoub Bouaddi",
-      "skin": "tan",
+    "kostoulas": {
+      "name": "Charalampos Kostoulas",
+      "skin": "olive",
       "hair": [
-        "curlytop",
-        "#111111"
+        "crop",
+        "#1a1410"
       ],
       "beard": "none",
-      "kit": "mci"
+      "kit": "bha"
+    },
+    "vuskovic": {
+      "name": "Luka Vušković",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#2a1d15"
+      ],
+      "beard": "none",
+      "kit": "bha"
     },
     "cubarsi": {
       "name": "Pau Cubarsí",
       "skin": "light",
       "hair": [
         "side",
-        "#2b1d14"
+        "#2a1d15"
+      ],
+      "beard": "none",
+      "kit": "bar"
+    },
+    "rayan": {
+      "name": "Rayan",
+      "skin": "brown",
+      "hair": [
+        "curlytop",
+        "#1a1410"
+      ],
+      "beard": "none",
+      "kit": "bou"
+    },
+    "messi": {
+      "name": "Lionel Messi",
+      "skin": "light",
+      "hair": [
+        "messy",
+        "#3b2a1e"
       ],
       "beard": "none",
       "kit": "bar"
@@ -90,223 +170,389 @@
       "skin": "tan",
       "hair": [
         "curlytop",
-        "#111111"
+        "#1a1410"
       ],
       "beard": "none",
       "kit": "che"
-    },
-    "kostoulas": {
-      "name": "Charalampos Kostoulas",
-      "skin": "light",
-      "hair": [
-        "messy",
-        "#2b1d14"
-      ],
-      "beard": "none",
-      "kit": "bha"
     }
   },
   "lines": [
     {
-      "text": "Twenty-five kids are up for the Golden Boy. We picked ten and let three rules choose.",
+      "text": "Rooney won it. Messi won it. Haaland, Bellingham and Yamal won it. Now it's someone else's turn.",
+      "say": "Rooney won it. Messi won it. Hohland, Bellingham and Yamal won it. Now it's someone else's turn.",
       "scene": {
         "type": "title",
         "heading": "GOLDEN BOY 2026",
-        "sub": "25 finalists · named 5 October",
+        "sub": "Under-21s",
         "pill": "THREE RULES",
-        "person": "kostoulas"
+        "person": "kostoulas",
+        "club": "bha"
       }
     },
     {
-      "text": "Cubarsí, Zaïre-Emery, and eight who play in England.",
+      "text": "The Golden Boy goes to Europe's best player under twenty-one. It has found a few legends.",
+      "say": "The Golden Boy goes to Europe's best player under twenty one. It has found a few legends.",
       "scene": {
-        "type": "list",
-        "title": "Our ten finalists",
-        "rows": [
+        "type": "timeline",
+        "kicker": "Golden Boy winners",
+        "title": "Picked before they were stars",
+        "items": [
           {
-            "name": "Pau Cubarsí",
-            "value": "Barcelona",
+            "year": "2004",
+            "label": "Wayne Rooney",
+            "club": "mun"
+          },
+          {
+            "year": "2005",
+            "label": "Lionel Messi",
             "club": "bar"
           },
           {
-            "name": "Warren Zaïre-Emery",
-            "value": "PSG",
+            "year": "2020",
+            "label": "Erling Haaland",
+            "club": "bvb"
+          },
+          {
+            "year": "2023",
+            "label": "Jude Bellingham",
+            "club": "rma"
+          },
+          {
+            "year": "2024",
+            "label": "Lamine Yamal",
+            "club": "bar",
+            "hl": true
+          },
+          {
+            "year": "2025",
+            "label": "Désiré Doué",
             "club": "psg"
-          },
-          {
-            "name": "Estêvão · Jorrel Hato",
-            "value": "Chelsea",
-            "club": "che"
-          },
-          {
-            "name": "Ayyoub Bouaddi",
-            "value": "Man City",
-            "club": "mci"
-          },
-          {
-            "name": "Myles Lewis-Skelly",
-            "value": "Arsenal",
-            "club": "ars"
-          },
-          {
-            "name": "Vušković · Kostoulas",
-            "value": "Brighton",
-            "club": "bha"
-          },
-          {
-            "name": "Rayan · Junior Kroupi",
-            "value": "Bournemouth",
-            "club": "bou"
           }
         ]
       }
     },
     {
-      "text": "Rule one. You have to play in the Premier League.",
+      "text": "This year, twenty-five finalists. Cubarsí, Endrick, Zaïre-Emery, and eight kids in the Premier League.",
+      "say": "This year, twenty five finalists. Koobarsee, Endrick, Zaeer Emree, and eight kids in the Premier League.",
       "scene": {
-        "type": "text",
-        "heading": "RULE 1",
-        "body": "Must play in the Premier League this season."
+        "type": "news",
+        "section": "Golden Boy",
+        "headline": "Tuttosport names the 25 Golden Boy finalists",
+        "standfirst": "Barcelona lead the way with three. Eight of the 25 play in the Premier League. The winner is picked by a jury of journalists.",
+        "date": "5 October 2026",
+        "byline": "Knowitball recap",
+        "person": "cubarsi",
+        "club": "bar",
+        "nav": [
+          "Football",
+          "Golden Boy",
+          "La Liga",
+          "Premier League"
+        ]
       }
     },
     {
-      "text": "Cubarsí plays in Barcelona and Zaïre-Emery plays in Paris. Huge talents, but both gone.",
+      "text": "Rule one. He has to play in the Premier League. Cubarsí, Endrick and Zaïre-Emery are gone. Seventeen out.",
+      "say": "Rule one. He has to play in the Premier League. Koobarsee, Endrick and Zaeer Emree are gone. Seventeen out.",
       "scene": {
         "type": "stamp",
-        "text": "OUT",
+        "text": "17 GONE",
+        "sub": "Rule one · Premier League players only",
         "person": "cubarsi",
         "color": "red"
       }
     },
     {
-      "text": "Rule two. Your club must be in the top four right now.",
-      "scene": {
-        "type": "text",
-        "heading": "RULE 2",
-        "body": "His club must be in the top four after nine games."
-      }
-    },
-    {
-      "text": "Bournemouth are eighth. So Rayan and Junior Kroupi drop out.",
+      "text": "Eight left. Bouaddi, Estêvão, Hato, Lewis-Skelly, Vušković, Kostoulas, Rayan and Kroupi.",
+      "say": "Eight left. Bwahdee, Estayvown, Hahto, Lewis Skelly, Vooshkovitch, Kosstoolass, Hayan and Kroopee.",
       "scene": {
         "type": "list",
-        "title": "Table after 9 games",
+        "kicker": "Rule one survivors",
+        "title": "The Premier League eight",
         "rows": [
           {
-            "pos": 1,
-            "name": "Arsenal",
-            "value": "24",
-            "club": "ars",
-            "hl": true
+            "name": "Ayyoub Bouaddi",
+            "value": "MCI",
+            "club": "mci"
           },
           {
-            "pos": 2,
-            "name": "Man City",
-            "value": "21",
-            "club": "mci",
-            "hl": true
+            "name": "Estêvão",
+            "value": "CHE",
+            "club": "che"
           },
           {
-            "pos": 3,
-            "name": "Brighton",
-            "value": "19",
-            "club": "bha",
-            "hl": true
+            "name": "Jorrel Hato",
+            "value": "CHE",
+            "club": "che"
           },
           {
-            "pos": 4,
-            "name": "Chelsea",
-            "value": "16",
-            "club": "che",
-            "hl": true
+            "name": "Myles Lewis-Skelly",
+            "value": "ARS",
+            "club": "ars"
           },
           {
-            "pos": 8,
-            "name": "Bournemouth",
-            "value": "12",
+            "name": "Luka Vušković",
+            "value": "BHA",
+            "club": "bha"
+          },
+          {
+            "name": "Charalampos Kostoulas",
+            "value": "BHA",
+            "club": "bha"
+          },
+          {
+            "name": "Rayan",
+            "value": "BOU",
+            "club": "bou"
+          },
+          {
+            "name": "Eli Junior Kroupi",
+            "value": "BOU",
             "club": "bou"
           }
         ]
       }
     },
     {
-      "text": "Six left. Estêvão, Hato, Bouaddi, Lewis-Skelly, Vušković and Kostoulas.",
+      "text": "Rule two. His club must be in the top four right now.",
       "scene": {
-        "type": "versus",
-        "title": "Still in",
-        "left": {
-          "person": "estevao",
-          "label": "Estêvão",
-          "value": "Chelsea"
-        },
-        "right": {
-          "person": "bouaddi",
-          "label": "Bouaddi",
-          "value": "Man City"
+        "type": "stamp",
+        "text": "RULE TWO",
+        "sub": "His club is in the top four right now",
+        "person": "estevao",
+        "color": "yellow"
+      }
+    },
+    {
+      "text": "Arsenal, City, Brighton and Chelsea are in. Bournemouth are eighth, so Rayan and Kroupi drop out.",
+      "say": "Arsenal, City, Brighton and Chelsea are in. Bournemouth are eighth, so Hayan and Kroopee drop out.",
+      "scene": {
+        "type": "table",
+        "title": "Premier League",
+        "season": "After 9 games · 2026/27",
+        "rows": [
+          {
+            "pos": 1,
+            "club": "ars",
+            "p": 9,
+            "w": 8,
+            "d": 0,
+            "l": 1,
+            "gd": 9,
+            "pts": 24,
+            "hl": true
+          },
+          {
+            "pos": 2,
+            "club": "mci",
+            "p": 9,
+            "w": 7,
+            "d": 0,
+            "l": 2,
+            "gd": 10,
+            "pts": 21,
+            "hl": true
+          },
+          {
+            "pos": 3,
+            "club": "bha",
+            "p": 9,
+            "w": 6,
+            "d": 1,
+            "l": 2,
+            "gd": 17,
+            "pts": 19,
+            "hl": true,
+            "name": "Brighton"
+          },
+          {
+            "pos": 4,
+            "club": "che",
+            "p": 9,
+            "w": 5,
+            "d": 1,
+            "l": 3,
+            "gd": 4,
+            "pts": 16,
+            "hl": true
+          },
+          {
+            "pos": 5,
+            "club": "liv",
+            "p": 9,
+            "w": 4,
+            "d": 3,
+            "l": 2,
+            "gd": 2,
+            "pts": 15
+          },
+          {
+            "pos": 6,
+            "club": "bre",
+            "p": 9,
+            "w": 3,
+            "d": 5,
+            "l": 1,
+            "gd": 7,
+            "pts": 14
+          },
+          {
+            "pos": 7,
+            "club": "eve",
+            "p": 9,
+            "w": 3,
+            "d": 4,
+            "l": 2,
+            "gd": 0,
+            "pts": 13
+          },
+          {
+            "pos": 8,
+            "club": "bou",
+            "p": 9,
+            "w": 3,
+            "d": 3,
+            "l": 3,
+            "gd": 1,
+            "pts": 12,
+            "name": "Bournemouth"
+          }
+        ],
+        "zones": [
+          {
+            "kind": "ucl",
+            "rows": [
+              1,
+              4
+            ],
+            "label": "Top four"
+          }
+        ],
+        "gap": {
+          "from": 4,
+          "to": 8,
+          "label": "4 pts",
+          "at": 0.5
         }
       }
     },
     {
       "text": "Rule three. The most Premier League goals this season wins.",
       "scene": {
-        "type": "text",
-        "heading": "RULE 3",
-        "body": "Most Premier League goals in 2026-27 goes through."
+        "type": "stamp",
+        "text": "RULE THREE",
+        "sub": "Most Premier League goals this season",
+        "person": "vuskovic",
+        "color": "white"
       }
     },
     {
-      "text": "Vušković has one. And Brighton's Greek striker, Charalampos Kostoulas, has three.",
+      "text": "Bouaddi, Estêvão, Hato and Lewis-Skelly haven't scored yet. Vušković has one. And Kostoulas has three.",
+      "say": "Bwahdee, Estayvown, Hahto and Lewis Skelly haven't scored yet. Vooshkovitch has one. And Kosstoolass has three.",
       "scene": {
-        "type": "list",
-        "title": "PL goals so far",
-        "rows": [
+        "type": "bars",
+        "kicker": "Rule three",
+        "title": "League goals this season",
+        "unit": "",
+        "max": 4,
+        "items": [
           {
-            "name": "Charalampos Kostoulas",
-            "value": "3",
+            "label": "Kostoulas",
+            "value": 3,
             "club": "bha",
             "hl": true
           },
           {
-            "name": "Luka Vušković",
-            "value": "1",
+            "label": "Vušković",
+            "value": 1,
             "club": "bha"
           },
           {
-            "name": "The other four",
-            "value": "0"
-          }
-        ]
-      }
-    },
-    {
-      "text": "So the rules crown Kostoulas. Three league goals for the team in third.",
-      "scene": {
-        "type": "person",
-        "person": "kostoulas",
-        "label": "THE LAST NAME LEFT",
-        "mood": "happy",
-        "stamp": "WINNER"
-      }
-    },
-    {
-      "text": "The real winner is picked by fifty journalists. Who do you think gets it?",
-      "scene": {
-        "type": "stats",
-        "title": "The real vote",
-        "items": [
-          {
-            "n": "25",
-            "l": "finalists"
+            "label": "Estêvão",
+            "value": 0,
+            "club": "che"
           },
           {
-            "n": "50",
-            "l": "journalists vote"
+            "label": "Hato",
+            "value": 0,
+            "club": "che"
+          },
+          {
+            "label": "Lewis-Skelly",
+            "value": 0,
+            "club": "ars"
+          },
+          {
+            "label": "Bouaddi",
+            "value": 0,
+            "club": "mci"
           }
         ]
       }
     },
     {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "text": "Brighton found him at Olympiacos. Last January, he rescued a point against Bournemouth with an overhead kick in stoppage time.",
+      "say": "Brighton found him at Olimpeeakos. Last January, he rescued a point against Bournemouth with an overhead kick in stoppage time.",
+      "scene": {
+        "type": "news",
+        "section": "Premier League",
+        "headline": "Kostoulas overhead kick rescues Brighton",
+        "standfirst": "The Greek striker's stoppage-time bicycle kick earns a 1-1 draw with Bournemouth at the Amex.",
+        "date": "19 January 2026",
+        "byline": "Knowitball recap",
+        "person": "kostoulas",
+        "club": "bha",
+        "nav": [
+          "Football",
+          "Premier League",
+          "Brighton",
+          "Bournemouth"
+        ]
+      }
+    },
+    {
+      "text": "So the rules crown Charalampos Kostoulas. Three goals, for the team in third.",
+      "say": "So the rules crown Hahrahlahmbos Kosstoolass. Three goals, for the team in third.",
+      "scene": {
+        "type": "stats",
+        "kicker": "The rules pick",
+        "title": "Charalampos Kostoulas",
+        "items": [
+          {
+            "n": "3",
+            "l": "league goals"
+          },
+          {
+            "n": "3rd",
+            "l": "Brighton in the table"
+          }
+        ],
+        "person": "kostoulas"
+      }
+    },
+    {
+      "text": "The real winner is picked by a jury of journalists, any day now. Cubarsí heads the list. Would the rules get it right?",
+      "say": "The real winner is picked by a jury of journalists, any day now. Koobarsee heads the list. Would the rules get it right?",
+      "scene": {
+        "type": "versus",
+        "title": "The rules v the jury",
+        "left": {
+          "person": "kostoulas",
+          "label": "Kostoulas",
+          "value": "RULES",
+          "sub": "Brighton",
+          "win": true
+        },
+        "right": {
+          "person": "cubarsi",
+          "label": "Cubarsí",
+          "value": "JURY?",
+          "sub": "Barcelona"
+        }
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or.",
       "scene": {
         "type": "cta"
       }
