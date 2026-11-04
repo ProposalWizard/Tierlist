@@ -1,0 +1,26 @@
+{
+  "_about": "A skied miss: a Manchester United full-back through on goal, side-on to the keeper, blazes it over the bar into the stand. No pop-up (no goal).",
+  "teams": {
+    "home": { "name": "Manchester United", "kit": { "shirt": "#DA291C", "shorts": "#FFFFFF", "socks": "#DA291C" }, "keeperKit": { "shirt": "#2BB673", "shorts": "#0B3D2A", "socks": "#2BB673" } },
+    "away": { "name": "Roma", "kit": { "shirt": "#EFE9DC", "shorts": "#EFE9DC", "socks": "#EFE9DC" }, "keeperKit": { "shirt": "#2BB673", "shorts": "#0B3D2A", "socks": "#2BB673" } }
+  },
+  "people": {
+    "dalot":   { "name": "Diogo Dalot", "skin": "#d9a57e", "hair": "#1d1512" },
+    "bruno":   { "name": "Bruno Fernandes", "skin": "#d39e78", "hair": "#2a1d15" },
+    "mancini": { "name": "Gianluca Mancini", "skin": "#f2c9a8", "hair": "#2a1d15" },
+    "ndicka":  { "name": "Evan Ndicka", "skin": "#5e3a24", "hair": "#0d0a09" },
+    "keeper":  { "name": "Pierluigi Gollini", "skin": "#f1c7a4", "hair": "#151010" }
+  },
+  "clips": [
+    {
+      "id": "dalot-skies",
+      "kind": "miss",
+      "attacking": "home",
+      "scorer": "dalot", "assister": "bruno", "defenders": ["mancini", "ndicka"], "keeper": "keeper",
+      "minute": 93, "scoreBefore": [0, 4],
+      "cameras": ["tv", "high", "fan"],
+      "recreate": { "base": "one_on_one", "outcome": "over" },
+      "seed": "miss-a"
+    }
+  ]
+}

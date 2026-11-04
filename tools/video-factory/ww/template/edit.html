@@ -1,0 +1,494 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>@font-face{font-family:Anton;src:url(anton.ttf)}html,body{margin:0;background:#000}</style></head>
+<body><canvas id="c" width="720" height="1280"></canvas>
+<script src="avatars.js"></script>
+<script>
+// "Who would win?" template (tools/video-factory/ww). The approved Man United v Roma v4 look, driven by data:
+// window.MATCH (the match.json, paths made absolute) and window.TL (the timeline: segments, voice captions),
+// both injected by render.mjs before this page runs. Never edit this file for one video: change the json.
+const FPS = 30, W = 720, H = 1280, CX = 340; // CX: middle of the safe area
+const cv = document.getElementById("c"), g = cv.getContext("2d");
+const GOLD = "#ffd23f", RED = "#e0262f", GREEN = "#16d466", NAVY = "#0b1022";
+const ease = t => { t = Math.max(0, Math.min(1, t)); return 1 - Math.pow(1 - t, 3); };
+const smooth = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+const back = t => { t = Math.max(0, Math.min(1, t)); const c = 1.7; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+const lerp = (a, b, k) => a + (b - a) * k;
+const M = window.MATCH, TL = window.TL;
+const HOME = M.home, AWAY = M.away, SIDES = { home: HOME, away: AWAY };
+const P = window.PLAYERS;
+for (const [id, p] of Object.entries(M.players)) P[id] = { ...p };
+P.you = window.END_CARD_FACE;
+
+// ---------- running order (from the timeline build.py made) ----------
+const SEGS = TL.segs.map(s => ({ ...s }));
+let acc = 0; for (const s of SEGS) { s.t0 = acc; acc += s.dur; }
+window.TOTAL = Math.round(acc * FPS); window.SEGS = SEGS.map(s => [s.id, +s.t0.toFixed(2)]);
+const segOf = id => SEGS.find(s => s.id === id);
+const segDur = id => segOf(id).dur;
+
+// ---------- helpers ----------
+function text(s, x, y, size, fill, { italic = false, stroke = 10, align = "center", glow = 0, base = "alphabetic" } = {}) {
+  g.font = `${italic ? "italic " : ""}${size}px Anton`; g.letterSpacing = `${Math.round(size * 0.02)}px`; g.textAlign = align; g.textBaseline = base; g.lineJoin = "round";
+  if (stroke) { g.lineWidth = stroke; g.strokeStyle = "#000"; g.strokeText(s, x, y); }
+  if (glow) { g.shadowColor = fill; g.shadowBlur = glow; }
+  g.fillStyle = fill; g.fillText(s, x, y); g.shadowBlur = 0; g.textBaseline = "alphabetic";
+}
+function fitText(s, x, y, size, max, fill, o = {}) { g.font = `${size}px Anton`; g.letterSpacing = `${Math.round(size * 0.02)}px`; const w = g.measureText(s).width; text(s, x, y, w > max ? size * max / w : size, fill, o); }
+// A label in a rounded box, centred on (x, y) both ways.
+function pill(x, y, label, bg, fg = "#fff", size = 26, padX = 22) {
+  g.font = `${size}px Anton`; g.letterSpacing = `${Math.round(size * 0.02)}px`; const w = g.measureText(label).width + padX * 2, h = size * 1.55;
+  g.fillStyle = bg; g.beginPath(); g.roundRect(x - w / 2, y - h / 2, w, h, h / 2); g.fill();
+  text(label, x, y + size * 0.04, size, fg, { stroke: 0, base: "middle" }); return w;
+}
+function stars(t, a = 1) {
+  const bg = g.createRadialGradient(W / 2, H * 0.45, 40, W / 2, H * 0.45, H * 0.8); bg.addColorStop(0, "#1a2140"); bg.addColorStop(1, "#05070f");
+  g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  let s = 7; const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  for (let i = 0; i < 140; i++) { const x = r() * W, y = r() * H, k = 0.4 + 0.6 * Math.abs(Math.sin(t * (0.5 + r()) + i)); g.fillStyle = `rgba(255,255,255,${0.55 * k * a})`; g.fillRect(x, y, r() < 0.15 ? 2 : 1, r() < 0.15 ? 2 : 1); }
+}
+// The club's crest: its real badge (club_logos) when the json gives one, else the drawn shield.
+const IMG = {};
+function shield(x, y, s, side) {
+  const club = SIDES[side];
+  if (club.badge && IMG[club.badge]) { const im = IMG[club.badge], k = Math.min(s * 1.08 / im.width, s * 1.16 / im.height); g.drawImage(im, x - im.width * k / 2, y - im.height * k / 2 + s * 0.04, im.width * k, im.height * k); return; }
+  const c = club.crest;
+  g.save(); g.translate(x, y); g.scale(s / 100, s / 100);
+  const path = () => { g.beginPath(); g.moveTo(-46, -50); g.lineTo(46, -50); g.lineTo(46, 4); g.quadraticCurveTo(44, 40, 0, 58); g.quadraticCurveTo(-44, 40, -46, 4); g.closePath(); };
+  path(); g.fillStyle = c.c; g.fill(); g.save(); g.scale(0.86, 0.86); path(); g.fillStyle = c.a; g.fill(); g.beginPath(); g.rect(-50, -18, 100, 12); g.fillStyle = c.b; g.fill(); g.restore();
+  text(c.t, 0, 30, c.ts, c.tc, { stroke: 6 });
+  g.restore();
+}
+// Flags: [kind, colours]. v = vertical bands, h = horizontal bands, cross = St George style, nordic, or an image path in club.flagImg.
+const FLAGS = { eng: ["cross", "#fff", "#ce1124"], ita: ["v", "#009246", "#ffffff", "#ce2b37"], fra: ["v", "#002395", "#ffffff", "#ed2939"], irl: ["v", "#169b62", "#ffffff", "#ff883e"],
+  bel: ["v", "#000000", "#fdda24", "#ef3340"], ger: ["h", "#000000", "#dd0000", "#ffce00"], ned: ["h", "#ae1c28", "#ffffff", "#21468b"], esp: ["h121", "#aa151b", "#f1bf00", "#aa151b"],
+  aut: ["h", "#ed2939", "#ffffff", "#ed2939"], por: ["v25", "#006600", "#ff0000"], sco: ["saltire", "#005eb8", "#ffffff"], wal: ["h", "#ffffff", "#00b140"], ukr: ["h", "#0057b7", "#ffd700"],
+  arg: ["h", "#74acdf", "#ffffff", "#74acdf"], col: ["h121r", "#fcd116", "#003893", "#ce1126"], rus: ["h", "#ffffff", "#0039a6", "#d52b1e"], den: ["nordic", "#c8102e", "#ffffff"], swe: ["nordic", "#006aa7", "#fecc00"],
+  nor: ["nordic", "#ba0c2f", "#ffffff"], tur: ["h", "#e30a17", "#e30a17"], gre: ["h", "#0d5eaf", "#ffffff", "#0d5eaf", "#ffffff", "#0d5eaf"], sui: ["h", "#d52b1e", "#d52b1e"], bra: ["h", "#009c3b", "#009c3b"] };
+function flag(x, y, w, nation) {
+  const h = w * 0.62; g.save(); g.translate(x - w / 2, y - h / 2);
+  const f = FLAGS[nation] || ["h", "#888", "#bbb"], [kind, ...c] = f;
+  if (IMG[nation]) g.drawImage(IMG[nation], 0, 0, w, h);
+  else if (kind === "cross") { g.fillStyle = c[0]; g.fillRect(0, 0, w, h); g.fillStyle = c[1]; g.fillRect(w * 0.42, 0, w * 0.16, h); g.fillRect(0, h * 0.37, w, h * 0.26); }
+  else if (kind === "nordic") { g.fillStyle = c[0]; g.fillRect(0, 0, w, h); g.fillStyle = c[1]; g.fillRect(w * 0.3, 0, w * 0.14, h); g.fillRect(0, h * 0.42, w, h * 0.16); }
+  else if (kind === "saltire") { g.fillStyle = c[0]; g.fillRect(0, 0, w, h); g.strokeStyle = c[1]; g.lineWidth = h * 0.18; g.beginPath(); g.moveTo(0, 0); g.lineTo(w, h); g.moveTo(w, 0); g.lineTo(0, h); g.stroke(); }
+  else if (kind === "v") c.forEach((col, i) => { g.fillStyle = col; g.fillRect(i * w / c.length, 0, w / c.length + 0.5, h); });
+  else if (kind === "v25") { g.fillStyle = c[0]; g.fillRect(0, 0, w * 0.4, h); g.fillStyle = c[1]; g.fillRect(w * 0.4, 0, w * 0.6, h); }
+  else if (kind === "h121") { g.fillStyle = c[0]; g.fillRect(0, 0, w, h); g.fillStyle = c[1]; g.fillRect(0, h * 0.25, w, h * 0.5); }
+  else if (kind === "h121r") { g.fillStyle = c[0]; g.fillRect(0, 0, w, h * 0.5); g.fillStyle = c[1]; g.fillRect(0, h * 0.5, w, h * 0.25); g.fillStyle = c[2]; g.fillRect(0, h * 0.75, w, h * 0.25); }
+  else c.forEach((col, i) => { g.fillStyle = col; g.fillRect(0, i * h / c.length, w, h / c.length + 0.5); });
+  g.strokeStyle = "rgba(255,255,255,.7)"; g.lineWidth = 2; g.strokeRect(0, 0, w, h); g.restore();
+}
+function rays(cx, cy, t, col = "rgba(255,255,255,.07)") { g.save(); g.translate(cx, cy); g.rotate(t * 0.15); for (let i = 0; i < 14; i++) { g.rotate(Math.PI / 7); g.fillStyle = i % 2 ? col : "rgba(0,0,0,0)"; g.beginPath(); g.moveTo(0, 0); g.lineTo(-70, -1000); g.lineTo(70, -1000); g.closePath(); g.fill(); } g.restore(); }
+const sideOf = id => (HOME.grid.includes(id) || id === HOME.manager || (HOME.extra || []).includes(id) || id === "you") ? "home" : "away";
+const kitOf = id => id === "you" ? window.END_CARD_KIT : SIDES[sideOf(id)].kit;
+// Faces ringed in their club's colour; the end-card face gold.
+function av(id, x, y, r, opts = {}) { if (!(r > 0.5)) return; drawAvatar(g, x, y, r, P[id], kitOf(id), { ring: id === "you" ? GOLD : SIDES[sideOf(id)].colors.ring, ...opts }); }
+
+// ---------- 1. WHO WOULD WIN? ----------
+const GR = 42, HG = HOME.grid, AG = AWAY.grid;
+function gridPos(id) {
+  const side = sideOf(id), list = side === "home" ? HG : AG, i = list.indexOf(id), cx = side === "home" ? 172 : 508;
+  if (id === HOME.manager || id === AWAY.manager) return [cx + 66, 290 + 5 * 126];
+  if (i === 10) return [cx - 66, 290 + 5 * 126];
+  return [cx + (i % 2 ? 66 : -66), 290 + Math.floor(i / 2) * 126];
+}
+function sceneGrid(t) {
+  stars(t);
+  const k = ease(t / 0.4); g.globalAlpha = k; text(M.title, CX, 150, 76, GOLD, { stroke: 12 });
+  pill(172, 222, HOME.name, HOME.colors.pillBg, HOME.colors.pillFg, 26); pill(508, 222, AWAY.name, AWAY.colors.pillBg, AWAY.colors.pillFg, 26); g.globalAlpha = 1;
+  const pop = (id, at) => { const p = back((t - at) / 0.3); if (p <= 0) return; const [x, y] = gridPos(id); av(id, x, y, GR * p); if (p > 0.6) text(P[id].name, x, y + GR + 26, 19, "#fff", { stroke: 5 }); };
+  HG.forEach((id, i) => pop(id, 0.3 + i * 0.1)); AG.forEach((id, i) => pop(id, 0.35 + i * 0.1));
+  if (HOME.manager) pop(HOME.manager, 1.65); if (AWAY.manager) pop(AWAY.manager, 1.7);
+}
+// ---------- 2. the circle (players only) ----------
+const RING = [...HG, ...AG];
+function ringPos(id, T) { const i = RING.indexOf(id), a = (i / RING.length) * Math.PI * 2 + T * 0.6; return [CX + Math.cos(a) * 250, 700 + Math.sin(a) * 140]; }
+function sceneTitle(t) {
+  stars(t + 3);
+  const k = smooth(t / 0.9);
+  for (const id of RING) { const [x0, y0] = gridPos(id), [x1, y1] = ringPos(id, t); av(id, lerp(x0, x1, k), lerp(y0, y1, k), lerp(GR, 34, k)); }
+  for (const id of [HOME.manager, AWAY.manager].filter(Boolean)) { const [x, y] = gridPos(id); const a = 1 - smooth(t / 0.4); if (a > 0) { g.globalAlpha = a; av(id, x, y, GR); g.globalAlpha = 1; } }
+  const q = ease((t - 0.2) / 0.4); g.globalAlpha = q;
+  fitText(M.competition.title[0], CX, 190, 64, 640, "#fff", { stroke: 10 }); fitText(M.competition.title[1] || "", CX, 270, 60, 620, GOLD, { stroke: 10 });
+  fitText(M.competition.tagline, CX, 330, 34, 620, "#fff", { stroke: 6 }); g.globalAlpha = 1;
+}
+// ---------- 3/5. team sheets, the faces flying in ----------
+const SH = { top: 236, ph: 740, x: 40, w: 600 };
+// Formation slots, as [x, y] fractions of the pitch (0,0 top-left; the keeper at the bottom). 4-2-3-1 and 3-4-2-1 are v4's.
+const SHAPES = {
+  "4-2-3-1": { GK: [0.5, 0.9], RB: [0.84, 0.72], CB1: [0.62, 0.76], CB2: [0.38, 0.76], LB: [0.16, 0.72], CM1: [0.64, 0.56], CM2: [0.36, 0.56], RW: [0.84, 0.34], CAM: [0.5, 0.4], LW: [0.16, 0.34], ST: [0.5, 0.17] },
+  "3-4-2-1": { GK: [0.5, 0.9], RCB: [0.76, 0.73], CCB: [0.5, 0.7], LCB: [0.24, 0.73], RWB: [0.88, 0.5], CM1: [0.64, 0.56], CM2: [0.36, 0.56], LWB: [0.12, 0.5], RAM: [0.68, 0.3], LAM: [0.32, 0.3], ST: [0.5, 0.17] },
+  "4-3-3": { GK: [0.5, 0.9], RB: [0.84, 0.72], CB1: [0.62, 0.76], CB2: [0.38, 0.76], LB: [0.16, 0.72], CM1: [0.74, 0.5], CM: [0.5, 0.56], CM2: [0.26, 0.5], RW: [0.82, 0.24], ST: [0.5, 0.17], LW: [0.18, 0.24] },
+  "4-4-2": { GK: [0.5, 0.9], RB: [0.84, 0.72], CB1: [0.62, 0.76], CB2: [0.38, 0.76], LB: [0.16, 0.72], RM: [0.86, 0.46], CM1: [0.62, 0.52], CM2: [0.38, 0.52], LM: [0.14, 0.46], ST1: [0.66, 0.2], ST2: [0.34, 0.2] },
+  "3-5-2": { GK: [0.5, 0.9], RCB: [0.76, 0.73], CCB: [0.5, 0.7], LCB: [0.24, 0.73], RWB: [0.88, 0.46], CM1: [0.7, 0.42], DM: [0.5, 0.54], CM2: [0.3, 0.42], LWB: [0.12, 0.46], ST1: [0.66, 0.18], ST2: [0.34, 0.18] },
+  "4-1-2-1-2": { GK: [0.5, 0.9], RB: [0.84, 0.72], CB1: [0.62, 0.76], CB2: [0.38, 0.76], LB: [0.16, 0.72], DM: [0.5, 0.6], CM1: [0.76, 0.48], CM2: [0.24, 0.48], CAM: [0.5, 0.36], ST1: [0.68, 0.17], ST2: [0.32, 0.17] },
+};
+SHAPES["4-3-3"].RCM = SHAPES["4-3-3"].CM1; SHAPES["4-3-3"].LCM = SHAPES["4-3-3"].CM2; SHAPES["4-1-2-1-2"].CDM = SHAPES["4-1-2-1-2"].DM; SHAPES["3-5-2"].CDM = SHAPES["3-5-2"].DM;
+function slotPos(id) {
+  const club = SIDES[sideOf(id)], s = club.slots[id];
+  const [fx, fy] = Array.isArray(s) ? s : (SHAPES[club.formation] || {})[s] || [0.5, 0.5];
+  return [SH.x + fx * SH.w, SH.top + fy * SH.ph];
+}
+function pitch(x, y, w, h, a = 1) {
+  g.globalAlpha = a; for (let i = 0; i < 10; i++) { g.fillStyle = i % 2 ? "#1f7a3a" : "#238843"; g.fillRect(x, y + i * h / 10, w, h / 10 + 1); }
+  g.strokeStyle = "rgba(255,255,255,.55)"; g.lineWidth = 3; g.strokeRect(x + 10, y + 10, w - 20, h - 20);
+  g.beginPath(); g.moveTo(x + 10, y + 10); g.arc(x + w / 2, y + 10, 70, 0, Math.PI); g.stroke();
+  g.strokeRect(x + w / 2 - 130, y + h - 130, 260, 120); g.strokeRect(x + w / 2 - 60, y + h - 60, 120, 50); g.globalAlpha = 1;
+}
+function header(side, a) {
+  const club = SIDES[side], c = club.colors;
+  g.globalAlpha = a; g.fillStyle = c.headerBg; g.fillRect(0, 120, W, 100);
+  (c.headerStripes || []).forEach((col, i) => { g.fillStyle = col; g.fillRect(0, 212 + i * 4, W, 4); });
+  shield(84, 170, 68, side); fitText(club.full, 380, 186, 58, 480, c.headerFg, { stroke: 0 });
+  text(club.sheetLabel, 380, 210, 20, c.headerSub, { stroke: 0 }); g.globalAlpha = 1;
+}
+function sceneSheetH(t) {
+  stars(t, 0.5); const k = smooth(t / 0.9);
+  pitch(SH.x, SH.top, SH.w, SH.ph, k); header("home", k);
+  const T = segDur("title");
+  for (const id of AG) { const [x0, y0] = ringPos(id, T); const a = 1 - smooth(t / 0.6); if (a <= 0) continue; g.globalAlpha = a; av(id, lerp(x0, CX, k), lerp(y0, 1300, k), 34 * (1 - 0.5 * k)); g.globalAlpha = 1; }
+  for (const id of HG) {
+    const [x0, y0] = ringPos(id, T), [x1, y1] = slotPos(id); const x = lerp(x0, x1, k), y = lerp(y0, y1, k), r = lerp(34, 50, k);
+    av(id, x, y, r); if (k > 0.8) text(P[id].name, x, y + 76, 22, "#fff", { stroke: 5 });
+  }
+}
+// ---------- 4. the atoms: the away eleven, spaced out, orbiting (their first name in the middle) ----------
+function atomPos(id, t) { const i = AG.indexOf(id); if (i === 0) return [CX, 660]; const ring = i <= 4 ? 0 : 1, n = ring ? 6 : 4, j = ring ? i - 5 : i - 1, R = ring ? 250 : 140;
+  const a = (j / n) * Math.PI * 2 + t * (ring ? -0.5 : 0.8); return [CX + Math.cos(a) * R, 660 + Math.sin(a) * R * 0.75]; }
+function sceneAtoms(t) {
+  stars(t + 12); const k = smooth(t / 0.7);
+  g.strokeStyle = "rgba(255,255,255,.12)"; g.lineWidth = 2; g.beginPath(); g.ellipse(CX, 660, 140, 105, 0, 0, 7); g.stroke(); g.beginPath(); g.ellipse(CX, 660, 250, 187, 0, 0, 7); g.stroke();
+  for (const id of AG) { const [x, y] = atomPos(id, t); const p = back((t - AG.indexOf(id) * 0.04) / 0.35); av(id, lerp(CX, x, k), lerp(1300, y, k), (id === AG[0] ? 46 : 36) * p); }
+  const q = ease((t - 0.3) / 0.3); g.globalAlpha = q; fitText(M.atomsLine, CX, 240, 54, 640, "#fff", { stroke: 10 }); g.globalAlpha = 1;
+}
+function sceneSheetA(t) {
+  stars(t, 0.5); const k = smooth(t / 0.9);
+  pitch(SH.x, SH.top, SH.w, SH.ph, k); header("away", k);
+  const T0 = segDur("atoms");
+  for (const id of AG) { const [x0, y0] = atomPos(id, T0), [x1, y1] = slotPos(id); const x = lerp(x0, x1, k), y = lerp(y0, y1, k);
+    av(id, x, y, lerp(id === AG[0] ? 46 : 36, 50, k)); if (k > 0.8) text(P[id].name, x, y + 76, 22, "#fff", { stroke: 5 }); }
+}
+// ---------- 6. versus ----------
+function sceneVersus(t) {
+  const k = ease(t / 0.35);
+  g.fillStyle = HOME.colors.versusBg; g.beginPath(); g.moveTo(0, 0); g.lineTo(W * 0.62 * k, 0); g.lineTo(W * 0.38 * k, H); g.lineTo(0, H); g.fill();
+  g.fillStyle = AWAY.colors.versusBg; g.beginPath(); g.moveTo(W, 0); g.lineTo(W - W * 0.38 * k, 0); g.lineTo(W - W * 0.62 * k, H); g.lineTo(W, H); g.fill();
+  rays(W / 2, -60, t, "rgba(255,255,255,.06)");
+  pill(CX, 150, M.competition.versus, RED, "#fff", 28);
+  const side = (sd, x, y, at) => {
+    const club = SIDES[sd], [n1, n2] = club.versus;
+    const p = back((t - at) / 0.4); if (p <= 0) return; g.save(); g.translate(x, y); g.scale(p, p);
+    g.fillStyle = "rgba(0,0,0,.35)"; g.beginPath(); g.arc(0, 0, 110, 0, 7); g.fill(); shield(0, 0, 150, sd); g.restore(); if (p < 0.7) return;
+    flag(x, y + 160, 64, club.nation); fitText(n1, x, y + 250, 58, 330, "#fff", { stroke: 10 }); if (n2) fitText(n2, x, y + 304, 58, 330, "#fff", { stroke: 10 }); fitText(club.versusInfo, x, y + 346, 26, 330, GOLD, { stroke: 6 });
+  };
+  side("home", 190, 380, 0.25);
+  side("away", 500, 740, 0.6);
+  const v = back((t - 1.0) / 0.3); if (v > 0) { g.save(); g.translate(CX, 630); g.scale(v, v); text("VS", 0, 30, 110, GOLD, { stroke: 14, italic: true }); g.restore(); }
+}
+// ---------- 7. the globe ----------
+const tex = new Image(); tex.src = "earth/earth.jpg"; let texData = null, TW = 0, TH = 0;
+function texReady() { if (texData || !tex.complete) return; const c = document.createElement("canvas"); c.width = TW = tex.width; c.height = TH = tex.height; const x = c.getContext("2d"); x.drawImage(tex, 0, 0); texData = x.getImageData(0, 0, TW, TH).data; }
+const D = Math.PI / 180, gl = document.createElement("canvas"); gl.width = W; gl.height = H; const glx = gl.getContext("2d");
+function globe(lat0, lon0, R, gcx, gcy) {
+  texReady(); const im = glx.createImageData(W, H), o = im.data; const sl = Math.sin(lat0 * D), cl = Math.cos(lat0 * D);
+  const y0 = Math.max(0, Math.floor(gcy - R)), y1 = Math.min(H, Math.ceil(gcy + R)), x0 = Math.max(0, Math.floor(gcx - R)), x1 = Math.min(W, Math.ceil(gcx + R));
+  for (let py = y0; py < y1; py++) for (let px = x0; px < x1; px++) {
+    const x = (px - gcx) / R, y = -(py - gcy) / R, rr = x * x + y * y; if (rr > 1) continue;
+    const z = Math.sqrt(1 - rr); const lat = Math.asin(y * cl + z * sl); const lon = lon0 * D + Math.atan2(x, z * cl - y * sl);
+    let u = ((lon / D + 180) / 360) % 1; if (u < 0) u += 1; const v = (90 - lat / D) / 180;
+    const ti = ((Math.min(TH - 1, Math.floor(v * TH)) * TW) + Math.floor(u * TW)) * 4; const sh = 0.55 + 0.45 * z; const i = (py * W + px) * 4;
+    o[i] = texData[ti] * sh; o[i + 1] = texData[ti + 1] * sh; o[i + 2] = texData[ti + 2] * sh; o[i + 3] = 255;
+  }
+  glx.putImageData(im, 0, 0); g.drawImage(gl, 0, 0);
+  const at = g.createRadialGradient(gcx, gcy, R * 0.96, gcx, gcy, R * 1.12); at.addColorStop(0, "rgba(90,150,255,.55)"); at.addColorStop(1, "rgba(90,150,255,0)");
+  g.fillStyle = at; g.beginPath(); g.arc(gcx, gcy, R * 1.12, 0, 7); g.arc(gcx, gcy, R * 0.96, 0, 7, true); g.fill();
+}
+function proj(lat, lon, lat0, lon0, R, gcx, gcy, lift = 0) {
+  const sl = Math.sin(lat0 * D), cl = Math.cos(lat0 * D), la = lat * D, dl = (lon - lon0) * D;
+  const x = Math.cos(la) * Math.sin(dl), y = cl * Math.sin(la) - sl * Math.cos(la) * Math.cos(dl), z = sl * Math.sin(la) + cl * Math.cos(la) * Math.cos(dl);
+  const m = 1 + lift; return [gcx + x * R * m, gcy - y * R * m, z];
+}
+const HLL = [HOME.city.lat, HOME.city.lon], ALL = [AWAY.city.lat, AWAY.city.lon], VLL = [M.venue.lat, M.venue.lon];
+const near = (a, b) => Math.abs(a[0] - b[0]) < 0.3 && Math.abs(a[1] - b[1]) < 0.3;
+const SAME_CITY = near(HLL, ALL); // e.g. one club in two eras
+function arc(a, b, k, cam) {
+  const toV = ([la, lo]) => [Math.cos(la * D) * Math.cos(lo * D), Math.cos(la * D) * Math.sin(lo * D), Math.sin(la * D)];
+  const va = toV(a), vb = toV(b), om = Math.acos(Math.min(1, va[0] * vb[0] + va[1] * vb[1] + va[2] * vb[2])); if (om < 1e-4) return;
+  g.strokeStyle = GOLD; g.lineWidth = 4; g.shadowColor = GOLD; g.shadowBlur = 12; g.beginPath();
+  for (let i = 0; i <= 60 * k; i++) { const f = i / 60; const s1 = Math.sin((1 - f) * om) / Math.sin(om), s2 = Math.sin(f * om) / Math.sin(om);
+    const v = va.map((x, j) => s1 * x + s2 * vb[j]); const lat = Math.asin(v[2]) / D, lon = Math.atan2(v[1], v[0]) / D;
+    const [x, y] = proj(lat, lon, ...cam, Math.sin(f * Math.PI) * 0.06); i ? g.lineTo(x, y) : g.moveTo(x, y); }
+  g.stroke(); g.shadowBlur = 0;
+}
+function pin(ll, cam, label, sub, side, k, dir) {
+  const [x, y, z] = proj(ll[0], ll[1], ...cam); if (z < 0 || k <= 0) return;
+  g.fillStyle = RED; g.beginPath(); g.arc(x, y, 7, 0, 7); g.fill(); g.strokeStyle = "#fff"; g.lineWidth = 2; g.stroke();
+  const p = back(k); const bx = x + dir * 70, by = y - 90;
+  g.strokeStyle = "rgba(255,255,255,.8)"; g.lineWidth = 2; g.beginPath(); g.moveTo(x, y); g.lineTo(bx, by + 40); g.stroke();
+  g.save(); g.translate(bx, by); g.scale(p, p); g.fillStyle = "rgba(10,14,30,.75)"; g.beginPath(); g.arc(0, 0, 52, 0, 7); g.fill(); if (side) shield(0, 0, 70, side); else { g.fillStyle = GOLD; g.beginPath(); g.arc(0, 0, 16, 0, 7); g.fill(); } g.restore();
+  if (k > 0.6) { g.fillStyle = "rgba(10,14,30,.8)"; g.font = "28px Anton"; const w = Math.max(g.measureText(label).width, 120) + 24; g.beginPath(); g.roundRect(bx - w / 2, by + 60, w, 62, 8); g.fill(); text(label, bx, by + 92, 28, "#fff", { stroke: 0 }); text(sub, bx, by + 114, 16, GOLD, { stroke: 0 }); }
+}
+async function sceneGlobe(t) {
+  stars(t + 9);
+  const z1 = smooth((t - 0.2) / 2.0), z2 = smooth((t - 4.0) / 2.0), st = M.globe.start;
+  const lat0 = lerp(st[0], VLL[0], z2), lon0 = lerp(st[1], VLL[1], z2), R = 330 + 520 * z1 + 2600 * Math.pow(z2, 2.2), cam = [lat0, lon0, R, CX, 700];
+  globe(lat0, lon0, R, CX, 700);
+  const hd = M.globe.homeSide, ad = -hd;
+  if (t < 4.2) {
+    pin(HLL, cam, HOME.city.label, HOME.city.sub, "home", (t - 0.6) / 0.4, hd);
+    if (!SAME_CITY) pin(ALL, cam, AWAY.city.label, AWAY.city.sub, "away", (t - 1.0) / 0.4, ad);
+    if (M.globe.neutral) pin(VLL, cam, M.venue.cityLabel, M.venue.citySub, null, (t - 1.4) / 0.4, M.globe.venueSide);
+  }
+  if (t > 2.4) { const k = smooth((t - 2.4) / 1.2); if (!near(ALL, VLL)) arc(ALL, VLL, k, cam); if (!near(HLL, VLL)) arc(HLL, VLL, k, cam); }
+  if (t > 3.4 && t < 5.6) { const [x, y, z] = proj(...VLL, ...cam); if (z > 0) {
+    const pr = 10 + 6 * Math.sin(t * 8); g.strokeStyle = GOLD; g.lineWidth = 3; g.beginPath(); g.arc(x, y, pr + 10, 0, 7); g.stroke(); g.fillStyle = GOLD; g.beginPath(); g.arc(x, y, 9, 0, 7); g.fill();
+    const k = ease((t - 3.5) / 0.4) * (1 - ease((t - 5.2) / 0.3)); g.globalAlpha = k; g.fillStyle = "rgba(10,14,30,.85)"; g.beginPath(); g.roundRect(CX - 250, 960, 500, 120, 14); g.fill();
+    fitText(M.venue.name, CX, 1010, 40, 470, "#fff", { stroke: 0 }); fitText(M.venue.place, CX, 1054, 28, 470, GOLD, { stroke: 0 }); g.globalAlpha = 1; } }
+  // dive in, and the ground becomes the pitch: the match (blurred) fades up through the map
+  if (t > 5.4) { const k = smooth((t - 5.4) / 1.0); g.globalAlpha = k; await calmPlay(0, 1.35 - 0.2 * k); g.globalAlpha = 1; }
+}
+// ---------- footage ----------
+const fc = new Map();
+function load(src) { if (!fc.has(src)) fc.set(src, new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; })); return fc.get(src); }
+const pad = n => String(n).padStart(5, "0");
+const FR = M.footageRoot;
+function clipFrame(foot, idx) {
+  let n = Math.max(0, idx);
+  for (const [dir, a, b, ext] of foot.parts) { const len = b - a; if (n < len) return load(`${FR}/${dir}/${pad(a + n)}.${ext || "jpg"}`); n -= len; }
+  const [dir, , b, ext] = foot.parts[foot.parts.length - 1]; return load(`${FR}/${dir}/${pad(b)}.${ext || "jpg"}`);
+}
+function calmFrame(tt) {
+  const c = M.calm; if (!c) return Promise.resolve(null);
+  const n = c.frames - 1; let i = Math.max(0, Math.floor(tt * 30)); if (i > n) { const m = i % (2 * n); i = m <= n ? n - m : m - n; } // ping-pong past the end
+  return load(`${FR}/${c.dir}/${pad(i)}.${c.ext || "jpg"}`);
+}
+// The calm open play behind the panel: moving, blurred, nothing happening.
+async function calmPlay(tt, zoom = 1) {
+  const f = await calmFrame(tt); if (!f) { pitch(0, 0, W, H); return; }
+  const sw = f.width / zoom, sh = f.height / zoom; g.filter = "blur(7px) brightness(.6)"; g.drawImage(f, (f.width - sw) / 2, (f.height - sh) / 2, sw, sh, 0, 0, W, H); g.filter = "none";
+}
+// ---------- 8. preview ----------
+async function sceneRatings(t) {
+  const RT = M.ratings;
+  await calmPlay(t, 1.15 - 0.15 * smooth(t / 1.5));
+  const k = ease(t / 0.35); g.save(); g.globalAlpha = k; g.translate(0, (1 - k) * 40);
+  g.fillStyle = "rgba(8,11,24,.88)"; g.beginPath(); g.roundRect(30, 140, 620, 720, 22); g.fill();
+  g.strokeStyle = "rgba(255,255,255,.1)"; g.lineWidth = 2; g.beginPath(); g.moveTo(340, 160); g.lineTo(340, 290); g.stroke();
+  shield(185, 200, 58, "home"); fitText(HOME.name, 185, 272, 34, 280, HOME.colors.accent, { stroke: 0 });
+  shield(495, 200, 58, "away"); fitText(AWAY.name, 495, 272, 34, 280, AWAY.colors.accent, { stroke: 0 });
+  pill(340, 318, RT.label, GOLD, "#111", 22);
+  g.restore();
+  RT.rows.forEach(([lab, a, b], i) => {
+    const at = 0.45 + i * 0.55, p = ease((t - at) / 0.5); if (p <= 0) return; const y = 378 + i * 86;
+    text(lab, 340, y, 30, "#fff", { stroke: 0 });
+    const bar = (x0, dir, v, col) => { const w = 190 * Math.max(0, Math.min(1, (v - 70) / 25)) * p; g.fillStyle = "rgba(255,255,255,.12)"; g.beginPath(); g.roundRect(dir > 0 ? x0 : x0 - 190, y + 18, 190, 16, 8); g.fill(); g.fillStyle = col; g.beginPath(); g.roundRect(dir > 0 ? x0 : x0 - w, y + 18, w, 16, 8); g.fill(); };
+    bar(310, -1, a, HOME.colors.bar); bar(370, 1, b, AWAY.colors.bar);
+    text(String(Math.round(a * p)), 52, y + 34, 40, a > b ? GOLD : "#fff", { stroke: 0, align: "left" }); text(String(Math.round(b * p)), 628, y + 34, 40, b > a ? GOLD : "#fff", { stroke: 0, align: "right" });
+  });
+  const p = ease((t - 2.3) / 0.4); if (p > 0 && RT.starMen) { g.globalAlpha = p; const y = 722, sh = RT.starMen.home, sa = RT.starMen.away;
+    text(RT.starLabel, 340, y - 80, 30, GOLD, { stroke: 0 });
+    av(sh.id, 120, y, 48); fitText(sh.label, 120, y + 80, 28, 200, "#fff", { stroke: 0 }); text(String(sh.rating), 225, y + 22, 58, sh.rating >= sa.rating ? GOLD : "#fff", { stroke: 0 });
+    av(sa.id, 560, y, 48); fitText(sa.label, 560, y + 80, 28, 200, "#fff", { stroke: 0 }); text(String(sa.rating), 455, y + 22, 58, sa.rating >= sh.rating ? GOLD : "#fff", { stroke: 0 });
+    g.globalAlpha = 1; }
+  if (t > 3.2 && RT.verdict) { const q = back((t - 3.2) / 0.3); g.save(); g.translate(340, 950); g.scale(q, q); fitText(RT.verdict, 0, 0, 50, 640, "#fff", { stroke: 10 }); g.restore(); }
+}
+async function sceneKickoff(t) { await calmPlay(t + 4.4, 1); const q = back(t / 0.25); g.save(); g.translate(CX, 640); g.scale(q, q); text(M.kickoffText, 0, 0, 140, RED, { stroke: 16, italic: true }); g.restore(); }
+// ---------- match footage with the real goal pop-up ----------
+async function footSeg(ev, t) {
+  if (!ev.footage) { pitch(0, 0, W, H); text("(NO FOOTAGE)", CX, 640, 40, "#fff"); return; }
+  const n = Math.round(t * FPS), last = ev.footage.parts.reduce((a, [, x, y]) => a + y - x, 0);
+  const f = await clipFrame(ev.footage, n);
+  if (!f) { pitch(0, 0, W, H); return; }
+  const hold = Math.max(0, n - last) / FPS, z = 1 + Math.min(0.12, hold * 0.04); // a held last frame creeps in, never a dead freeze
+  const sw = f.width / z, shh = sw * H / W; g.drawImage(f, (f.width - sw) / 2, Math.max(0, (f.height - shh) / 2), sw, shh, 0, 0, W, H);
+}
+function drawnPopup(ev, t) { // no captured pop-up: a drawn scoreboard in the same place, the same look
+  const a = ease(t / 0.25) * (1 - ease((t - 2.3) / 0.25)); if (a <= 0) return; const [hs, as] = ev.scoreAfter;
+  g.save(); g.globalAlpha = a; g.translate(0, (1 - ease(t / 0.25)) * -40);
+  g.fillStyle = "#ffc21a"; g.beginPath(); g.moveTo(300, 52); g.lineTo(420, 52); g.lineTo(412, 86); g.lineTo(308, 86); g.closePath(); g.fill(); text(ev.popupWord, 360, 80, 22, "#111", { stroke: 0 });
+  g.fillStyle = "#0d1326"; g.fillRect(30, 86, 660, 68); g.fillStyle = "#ffc21a"; g.fillRect(30, 86, 660, 4);
+  g.fillStyle = HOME.colors.ring; g.fillRect(30, 90, 10, 64); g.fillStyle = AWAY.colors.ring; g.fillRect(680, 90, 10, 64);
+  g.fillStyle = "#eef0f4"; g.fillRect(298, 90, 124, 64); text(`${hs} – ${as}`, 360, 136, 40, "#111", { stroke: 0 });
+  fitText(HOME.name, 60, 134, 30, 220, "#fff", { stroke: 0, align: "left" }); g.textAlign = "right"; fitText(AWAY.name, 662, 134, 30, 220, "#fff", { stroke: 0, align: "right" });
+  g.fillStyle = "#0a0e1c"; g.fillRect(68, 154, 584, 54); g.fillStyle = "#ffc21a"; g.fillRect(68, 206, 584, 4);
+  const line = [["GOAL", P[ev.scorer]?.name || ""], ...(ev.assist ? [["ASSIST", P[ev.assist]?.name || ""]] : [])];
+  g.font = "18px Anton"; const lw = s => (g.font = "18px Anton", g.measureText(s).width), bw = s => (g.font = "26px Anton", g.measureText(s).width);
+  const tot = line.reduce((s, [k, v]) => s + lw(k) + 10 + bw(v) + 24, -24); let x = 360 - tot / 2;
+  for (const [k, v] of line) { text(k, x, 190, 18, "#ffc21a", { stroke: 0, align: "left" }); x += lw(k) + 10; text(v, x, 192, 26, "#fff", { stroke: 0, align: "left" }); x += bw(v) + 24; }
+  g.restore();
+}
+async function popUp(ev, t) {
+  if (!ev.popup) return drawnPopup(ev, t);
+  const HOLD_AT = 24, HOLD = 30; let i = Math.round(t * FPS); i = i < HOLD_AT ? i : i < HOLD_AT + HOLD ? HOLD_AT : i - HOLD; if (i > 45) return;
+  const f = await load(`${FR}/${ev.popup}/${pad(Math.max(0, i))}.png`); if (f) g.drawImage(f, 0, 0, W, f.height * W / f.width);
+}
+async function sceneGoal(t, ev) {
+  await footSeg(ev, t); const at = ev.goalAt;
+  if (t >= at) await popUp(ev, t - at);
+  if (t >= at + 0.25) { const q = back((t - at - 0.25) / 0.25); g.save(); g.translate(CX, 1000); g.scale(q, q); fitText(ev.caption, 0, 0, 92, 600, ev.captionColor, { stroke: 14, italic: true }); g.restore(); }
+  if (t >= at && t - at < 0.1) { g.fillStyle = "rgba(255,255,255,.45)"; g.fillRect(0, 0, W, H); }
+}
+// A miss: no goal, no pop-up, no flash: the caption comes in as the ball goes wide or over.
+async function sceneMiss(t, ev) {
+  await footSeg(ev, t); const at = ev.goalAt;
+  if (t >= at + 0.1) { const q = back((t - at - 0.1) / 0.25); g.save(); g.translate(CX, 1000); g.scale(q, q); fitText(ev.caption, 0, 0, 92, 600, ev.captionColor, { stroke: 14, italic: true }); g.restore(); }
+}
+function sceneLate(t, ev) { g.fillStyle = "#05070f"; g.fillRect(0, 0, W, H); const q = back(t / 0.25); g.save(); g.translate(CX, 640); g.scale(q, q); text(ev.lateCard, 0, 0, 170, "#fff", { stroke: 0, glow: 30 }); g.restore(); text(`${ev.scoreBefore[0]} - ${ev.scoreBefore[1]}`, CX, 760, 60, GOLD, { stroke: 0 }); }
+// ---------- full figures: a body in kit (or a suit), arms, and the avatar's head ----------
+const SKINS = { light: "#f3cfb3", pink: "#f0c2a6", olive: "#d9a57e", tan: "#c58b62", brown: "#93603e", dark: "#6a412a", deep: "#4f3020" };
+function figure(id, x, y, s, { reach = 0, arms = "down", alpha = 1 } = {}) {
+  // a chunky cartoon body under the avatar's head and shoulders; arms drawn last so hands always show
+  const p = P[id], kit = kitOf(id), k = p.gk ? kit.gk : kit, cloth = p.suit ? p.suit.jacket : k.shirt, skin = SKINS[p.skin];
+  const shorts = p.suit ? p.suit.jacket : kit.shorts, socks = p.suit ? "#15171c" : kit.socks;
+  g.save(); g.globalAlpha = alpha; g.translate(x, y); g.scale(s, s);
+  g.fillStyle = socks; g.fillRect(-40, 330, 30, 120); g.fillRect(10, 330, 30, 120);
+  g.fillStyle = "#111"; g.beginPath(); g.ellipse(-25, 452, 22, 10, 0, 0, 7); g.ellipse(25, 452, 22, 10, 0, 0, 7); g.fill();
+  g.fillStyle = shorts; g.beginPath(); g.roundRect(-58, 240, 116, p.suit ? 150 : 100, 12); g.fill();
+  const body = () => { g.beginPath(); g.moveTo(-104, 128); g.quadraticCurveTo(-100, 210, -62, 262); g.lineTo(62, 262); g.quadraticCurveTo(100, 210, 104, 128); g.closePath(); };
+  g.fillStyle = cloth; body(); g.fill();
+  if (!p.suit && !p.gk && kit.pattern) { g.save(); body(); g.clip(); const pc = kit.patternCol || kit.trim; // the pattern is part of the shirt
+    if (kit.pattern === "band") { g.fillStyle = kit.band[0]; g.fillRect(-110, 150, 220, 14); g.fillStyle = kit.band[1]; g.fillRect(-110, 164, 220, 14); }
+    else if (kit.pattern === "hoops") { g.fillStyle = pc; for (let yy = 140; yy < 262; yy += 36) g.fillRect(-110, yy, 220, 18); }
+    else if (kit.pattern === "stripes") { g.fillStyle = pc; for (let xx = -98; xx < 110; xx += 40) g.fillRect(xx, 120, 20, 150); }
+    else if (kit.pattern === "halves") { g.fillStyle = pc; g.fillRect(0, 120, 110, 150); }
+    else if (kit.pattern === "sash") { g.fillStyle = pc; g.beginPath(); g.moveTo(-104, 128); g.lineTo(-70, 128); g.lineTo(80, 262); g.lineTo(40, 262); g.closePath(); g.fill(); }
+    else if (kit.pattern === "sides") { g.fillStyle = pc; g.fillRect(-104, 128, 18, 140); g.fillRect(86, 128, 18, 140); }
+    g.restore(); }
+  if (p.suit) { g.fillStyle = "#f4f4f4"; g.beginPath(); g.moveTo(-22, 128); g.lineTo(22, 128); g.lineTo(0, 210); g.closePath(); g.fill(); g.fillStyle = p.suit.tie; g.fillRect(-6, 130, 12, 70); }
+  else { g.fillStyle = kit.number; g.font = "58px Anton"; g.letterSpacing = "0px"; g.textAlign = "center"; g.textBaseline = "alphabetic"; g.fillText(String(p.num || ""), 0, 248); }
+  g.restore();
+  g.save(); g.globalAlpha = alpha; drawAvatar(g, x, y + 22 * s, 104 * s, p, kit, { noDisc: true }); g.restore();
+  g.save(); g.globalAlpha = alpha; g.translate(x, y); g.scale(s, s);
+  const arm = (side, tx, ty) => { g.strokeStyle = cloth; g.lineWidth = 32; g.lineCap = "round"; g.beginPath(); g.moveTo(side * 96, 140); g.quadraticCurveTo(side * 112, (140 + ty) / 2, tx, ty); g.stroke();
+    g.fillStyle = skin; g.beginPath(); g.arc(tx, ty, 17, 0, 7); g.fill(); };
+  if (arms === "up") { arm(-1, -46, -150); arm(1, 46, -150); }
+  else if (arms === "shake") { arm(-reach, -reach * 112, 260); arm(reach, reach * 100, 236); }
+  else { arm(-1, -112, 262); arm(1, 112, 262); }
+  g.restore();
+}
+function confetti(t, cols, n = 90) { let s = 3; const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  for (let i = 0; i < n; i++) { const x0 = r() * W, sp = 120 + r() * 160, ph = r() * 7, c = cols[i % cols.length]; const y = ((r() * H + t * sp) % (H + 40)) - 20, x = x0 + Math.sin(t * 2 + ph) * 18;
+    g.save(); g.translate(x, y); g.rotate(t * 3 + ph); g.fillStyle = c; g.fillRect(-6, -3, 12, 6); g.restore(); } }
+// ---------- full time: the winners celebrate ----------
+function sceneResult(t) {
+  const FT = M.fullTime, club = SIDES[FT.side];
+  stars(t + 20); rays(CX, 560, t, "rgba(255,210,63,.09)");
+  // the team-mates behind, arms up, then the front man
+  const spots = [[150, 600], [530, 600], [60, 640], [620, 640], [250, 560], [430, 560]];
+  const a = ease(t / 0.4);
+  FT.mates.slice(0, 6).forEach((id, i) => { const [x, y] = spots[i]; const bounce = Math.abs(Math.sin(t * 6 + x)) * 10 * smooth((t - 1.6) / 0.3); figure(id, x, y - bounce, 0.62, { arms: t > 1.6 ? "up" : "down", alpha: a }); });
+  g.fillStyle = "rgba(5,7,15,.22)"; g.fillRect(0, 520, W, 700);
+  // the front man: his arms go up with the whistle's cheer
+  const lift = smooth((t - 0.6) / 1.0);
+  const bounce = Math.abs(Math.sin(t * 5)) * 12 * smooth((t - 1.6) / 0.3);
+  figure(FT.front, CX, 640 - bounce, 0.95, { arms: lift > 0.55 ? "up" : "down" });
+  if (lift >= 1) confetti(t - 1.6, club.colors.confetti);
+  if (t > 1.6 && t < 1.75) { g.fillStyle = "rgba(255,255,255,.35)"; g.fillRect(0, 0, W, H); }
+  const q = ease((t - 0.2) / 0.4); g.globalAlpha = q;
+  pill(CX, 150, FT.pill, "#fff", "#111", 30);
+  fitText(FT.line, CX, 240, 58, 620, "#fff", { stroke: 10 }); g.globalAlpha = 1;
+  if (t > 1.6 && FT.sub) { const p = back((t - 1.6) / 0.3); g.save(); g.translate(CX, 302); g.scale(p, p); fitText(FT.sub, 0, 0, 50, 620, GOLD, { stroke: 9 }); g.restore(); }
+}
+// ---------- player of the match: podiums rise, third, then second, then the winner ----------
+function medal(x, y, s, shine, ribbon) { // a gold star medal on a ribbon (player of the match)
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.fillStyle = ribbon[0]; g.beginPath(); g.moveTo(-40, -150); g.lineTo(-8, -150); g.lineTo(-2, -60); g.lineTo(-22, -60); g.closePath(); g.fill();
+  g.fillStyle = ribbon[1]; g.beginPath(); g.moveTo(40, -150); g.lineTo(8, -150); g.lineTo(2, -60); g.lineTo(22, -60); g.closePath(); g.fill();
+  const gold = (x0, x1) => { const gr = g.createLinearGradient(x0, 0, x1, 0); gr.addColorStop(0, "#7a5410"); gr.addColorStop(0.35, "#f6d36b"); gr.addColorStop(0.55, "#fff2b8"); gr.addColorStop(0.8, "#c9921f"); gr.addColorStop(1, "#6b4a0e"); return gr; };
+  const rb = 62, cy = -10;
+  g.fillStyle = gold(-rb, rb); g.beginPath(); g.arc(0, cy, rb, 0, 7); g.fill();
+  g.strokeStyle = "rgba(90,60,10,.7)"; g.lineWidth = 4; g.beginPath(); g.arc(0, cy, rb - 8, 0, 7); g.stroke();
+  g.fillStyle = "#fff6cf"; g.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 18 : 40, a = -Math.PI / 2 + i * Math.PI / 5; g.lineTo(Math.cos(a) * r, cy + Math.sin(a) * r); } g.closePath(); g.fill();
+  g.save(); g.beginPath(); g.arc(0, cy, rb, 0, 7); g.clip();
+  const sx = ((shine * 0.6) % 1.6 - 0.3) * 160 - 80; const sh = g.createLinearGradient(sx - 30, cy - rb, sx + 30, cy + rb); sh.addColorStop(0, "rgba(255,255,255,0)"); sh.addColorStop(0.5, "rgba(255,255,240,.55)"); sh.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = sh; g.fillRect(-rb, cy - rb, rb * 2, rb * 2); g.restore();
+  g.restore();
+}
+function podium(x, top, w, label, col) {
+  const gr = g.createLinearGradient(x - w / 2, 0, x + w / 2, 0); gr.addColorStop(0, "#151a28"); gr.addColorStop(0.5, "#2a3146"); gr.addColorStop(1, "#151a28");
+  g.fillStyle = gr; g.fillRect(x - w / 2, top, w, H - top); g.fillStyle = col; g.fillRect(x - w / 2, top, w, 8);
+  text(label, x, top + 70, 54, col, { stroke: 0 });
+}
+function scenePotm(t) {
+  const PM = M.potm, [p1, p2, p3] = PM.top3;
+  const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, "#0b0a12"); bg.addColorStop(1, "#1a1408"); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  for (const [x, a] of [[130, 0.08], [340, 0.14], [550, 0.08]]) { const sp = g.createLinearGradient(x, 0, x, H); sp.addColorStop(0, `rgba(255,230,160,${a * 2})`); sp.addColorStop(1, "rgba(255,230,160,0)"); g.fillStyle = sp; g.beginPath(); g.moveTo(x - 30, 0); g.lineTo(x + 30, 0); g.lineTo(x + 120, H); g.lineTo(x - 120, H); g.fill(); }
+  const base = 1010, r3 = 50 * smooth((t - 0.6) / 0.5), r2 = 110 * smooth((t - 1.4) / 0.5), r1 = 190 * smooth((t - 2.2) / 0.6);
+  const fs = 0.62, fig = (id, x, top, opts) => figure(id, x, top - 455 * fs, fs, opts);
+  fig(p2, 130, base - r2); fig(p3, 550, base - r3);
+  const lift = t > 3.4; fig(p1, 340, base - r1, { arms: lift ? "up" : "down" });
+  podium(130, base - r2, 190, "2", "#c9ced8"); podium(550, base - r3, 190, "3", "#c98a4f"); podium(340, base - r1, 210, "1", GOLD);
+  if (t > 2.8) { const k = smooth((t - 2.8) / 0.7); const handY = base - r1 - 455 * fs - 150 * fs; const ty = lerp(-200, handY - 40 * fs, k); medal(340, ty, fs, t, PM.ribbon);
+    if (k > 0.95) { for (let i = 0; i < 16; i++) { const a2 = i / 16 * Math.PI * 2 + t, d = 90 + 30 * Math.sin(t * 3 + i); g.fillStyle = `rgba(255,240,180,${0.5 + 0.5 * Math.sin(t * 6 + i)})`; g.beginPath(); g.arc(340 + Math.cos(a2) * d, ty - 14 + Math.sin(a2) * d, 3, 0, 7); g.fill(); } } }
+  const q = ease((t - 0.2) / 0.4); g.globalAlpha = q; fitText(PM.title, CX, 150, 70, 620, GOLD, { stroke: 12 }); g.globalAlpha = 1;
+  if (t > 3.6) { const p = back((t - 3.6) / 0.3); g.save(); g.translate(CX, 236); g.scale(p, p); fitText(PM.name, 0, 0, 64, 640, "#fff", { stroke: 10 }); g.restore(); }
+  if (t > 3.9 && PM.subtitle) { const p = back((t - 3.9) / 0.3); g.save(); g.translate(CX, 296); g.scale(p, p); fitText(PM.subtitle, 0, 0, 40, 640, GOLD, { stroke: 8 }); g.restore(); }
+  if (t > 2.8) { g.globalAlpha = ease((t - 2.8) / 0.4); fitText(P[p2].name, 130, base - r2 + 130, 28, 180, "#fff", { stroke: 0 }); fitText(P[p3].name, 550, base - r3 + 130, 28, 180, "#fff", { stroke: 0 }); fitText(P[p1].name, 340, base - r1 + 130, 30, 200, GOLD, { stroke: 0 }); g.globalAlpha = 1; }
+}
+// ---------- end card: fixed, the approved United v Roma end card ----------
+function sceneEnd(t) {
+  stars(t); rays(CX, 380, t, "rgba(255,210,63,.08)"); av("you", CX, 380, 120);
+  const k = ease((t - 0.2) / 0.4); g.globalAlpha = k;
+  text("YOUR STRIKER. YOUR STORY.", CX, 590, 44, "#fff", { stroke: 8 });
+  text("KNOWITBALL", CX, 700, 110, "#fff", { stroke: 14, italic: true }); text("ROAD TO BALLON D'OR", CX, 770, 52, GOLD, { stroke: 10, italic: true });
+  g.fillStyle = GREEN; g.beginPath(); g.roundRect(CX - 210, 820, 420, 74, 37); g.fill(); text("KNOWITBALL.CO.UK", CX, 859, 46, "#05080f", { stroke: 0, base: "middle" });
+  if (t > 1.0) text("FOLLOW FOR THE NEXT ONE", CX, 980, 40, "#fff", { stroke: 8 });
+  if (t > 1.0) text("LINK IN BIO", CX, 1045, 40, "#fff", { stroke: 8 });
+  g.globalAlpha = 1;
+}
+// ---------- voiceover captions: the factory's red-box current word, in a lower band that dodges each scene's own text ----------
+// [baseline y, max width, size] in this 720x1280 canvas (the 1250-1500 band at 1080x1920 is 833-1000 here). POTM: above the title, the podium names fill the band.
+const CAP_AT = { grid: [1040], homeSheet: [1040], awaySheet: [1040], ratings: [1040], versus: [228], globe: [228], fulltime: [420], potm: [78, 620, 44], end: [205] };
+function capPlace(s, t) {
+  if (s.type === "goal" || s.type === "miss") { const ev = s.ev; if (t >= ev.goalAt - 0.1) return null; } // goal moments: the big caption and pop-up own the screen
+  const [y, maxW, size] = CAP_AT[s.type] || [950]; return { y, maxW: maxW || 640, size: size || 55 };
+}
+function captions(time) {
+  const c = (TL.caps || []).find(k => time >= k.t0 && time < k.t1); if (!c) return;
+  let s = SEGS[0]; for (const x of SEGS) if (time >= x.t0) s = x; const pl = capPlace(s, time - s.t0); if (!pl) return;
+  const size = pl.size, sp = Math.round(size * 0.27); g.save(); g.font = `${size}px Anton`; g.letterSpacing = "0px"; g.textAlign = "left"; g.textBaseline = "alphabetic";
+  const words = c.words.map(w => w.w), widths = words.map(w => g.measureText(w).width), total = widths.reduce((a, b) => a + b, 0) + sp * (words.length - 1);
+  const sc = Math.min(1, pl.maxW / total); g.translate(CX, pl.y); g.scale(sc, sc);
+  let x = -total / 2; g.globalAlpha = ease((time - c.t0) * 8);
+  c.words.forEach((w, i) => {
+    const on = time >= w.t0 && time < (c.words[i + 1]?.t0 ?? c.t1);
+    if (on) { g.fillStyle = "#e8263f"; g.beginPath(); g.roundRect(x - 7, -size * 0.86, widths[i] + 14, size * 1.02, 8); g.fill(); }
+    g.lineJoin = "round"; g.lineWidth = 8; g.strokeStyle = "#000"; g.strokeText(words[i], x, 0);
+    g.fillStyle = "#fff"; g.fillText(words[i], x, 0); x += widths[i] + sp;
+  });
+  g.restore();
+}
+
+window.draw = async function (f) {
+  const time = f / FPS; let s = SEGS[0]; for (const x of SEGS) if (time >= x.t0) s = x; const t = time - s.t0;
+  g.globalAlpha = 1; g.filter = "none"; g.fillStyle = NAVY; g.fillRect(0, 0, W, H);
+  switch (s.type) {
+    case "grid": sceneGrid(t); break;
+    case "title": sceneTitle(t); break;
+    case "homeSheet": sceneSheetH(t); break;
+    case "atoms": sceneAtoms(t); break;
+    case "awaySheet": sceneSheetA(t); break;
+    case "versus": sceneVersus(t); break;
+    case "globe": await sceneGlobe(t); break;
+    case "ratings": await sceneRatings(t); break;
+    case "kickoff": await sceneKickoff(t); break;
+    case "goal": await sceneGoal(t, s.ev); break;
+    case "miss": await sceneMiss(t, s.ev); break;
+    case "late": sceneLate(t, s.ev); break;
+    case "fulltime": sceneResult(t); break;
+    case "potm": scenePotm(t); break;
+    case "end": sceneEnd(t); break;
+  }
+  const cut = !["homeSheet", "atoms", "awaySheet", "ratings", "title"].includes(s.type);
+  if (cut && t < 2 / FPS && s.t0 > 0) { g.fillStyle = "rgba(255,255,255,.15)"; g.fillRect(0, 0, W, H); }
+  captions(time);
+  return cv.toDataURL("image/jpeg", 0.9);
+};
+// Images to have before the first frame: badges, flags, photos.
+const want = [];
+for (const c of [HOME, AWAY]) { if (c.badge) want.push(c.badge); if (c.flagImg) want.push([c.nation, c.flagImg]); }
+for (const p of Object.values(P)) if (p.photo) want.push(["photo", p]);
+const loads = want.map(w => new Promise(res => { const i = new Image(); i.onload = () => { if (typeof w === "string") IMG[w] = i; else if (w[0] === "photo") w[1].photoImg = i; else IMG[w[0]] = i; res(); }; i.onerror = () => { console.warn("missing image", w); res(); };
+  i.src = typeof w === "string" ? w : w[0] === "photo" ? w[1].photo : w[1]; }));
+window.ready = Promise.all([document.fonts.load("92px Anton"), document.fonts.load("italic 92px Anton"), new Promise(r => tex.complete ? r() : (tex.onload = r)), ...loads]).then(() => true);
+</script></body></html>

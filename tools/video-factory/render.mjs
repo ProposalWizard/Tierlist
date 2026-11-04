@@ -1,4 +1,5 @@
-// node render.mjs <workdir> <firstFrame> <lastFrame>  -> <workdir>/eframes/fNNNNN.jpg
+// node render.mjs <workdir> <firstFrame> <lastFrame>   -> <workdir>/eframes/fNNNNN.jpg
+// node render.mjs <workdir> --frames 12,90,300          -> just those frames (contact sheets)
 import { chromium } from "playwright";
 import fs from "fs";
 const [dir, a, b] = process.argv.slice(2);
@@ -9,7 +10,8 @@ const errs = []; p.on("pageerror", (e) => errs.push(String(e)));
 await p.goto("file://" + dir + "/edit.html"); await p.evaluate(() => window.ready);
 const total = await p.evaluate(() => window.TOTAL);
 const out = dir + "/eframes"; fs.mkdirSync(out, { recursive: true });
-for (let f = +a; f <= Math.min(+b, total - 1); f++) {
+const list = a === "--frames" ? b.split(",").map(Number) : Array.from({ length: Math.max(0, Math.min(+b, total - 1) - +a + 1) }, (_, i) => +a + i);
+for (const f of list) {
   const u = await p.evaluate((n) => window.draw(n), f);
   fs.writeFileSync(`${out}/f${String(f).padStart(5, "0")}.jpg`, Buffer.from(u.split(",")[1], "base64"));
 }

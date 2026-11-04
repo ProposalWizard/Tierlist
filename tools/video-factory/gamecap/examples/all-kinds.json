@@ -1,0 +1,394 @@
+{
+  "_about": "Every clip kind once, generic teams: a smoke test of the kit (node capture.mjs examples/all-kinds.json out/all-kinds).",
+  "teams": {
+    "home": {
+      "name": "Blues",
+      "short": "Blues",
+      "kit": {
+        "shirt": "#1E4FA8",
+        "shorts": "#FFFFFF",
+        "socks": "#1E4FA8"
+      }
+    },
+    "away": {
+      "name": "Reds",
+      "short": "Reds",
+      "kit": {
+        "shirt": "#C8102E",
+        "shorts": "#C8102E",
+        "socks": "#FFFFFF"
+      }
+    }
+  },
+  "people": {
+    "nine": {
+      "name": "Alex Striker",
+      "skin": "#8d5a3b",
+      "hair": "#141010"
+    },
+    "ten": {
+      "name": "Sam Playmaker",
+      "skin": "#f1c7a4",
+      "hair": "#9a7248"
+    },
+    "d1": {
+      "name": "Defender One"
+    },
+    "d2": {
+      "name": "Defender Two"
+    },
+    "d3": {
+      "name": "Defender Three"
+    },
+    "d4": {
+      "name": "Defender Four"
+    },
+    "gk": {
+      "name": "Keeper"
+    }
+  },
+  "clips": [
+    {
+      "id": "header-corner",
+      "kind": "header",
+      "attacking": "home",
+      "scorer": "nine",
+      "assister": "ten",
+      "defenders": [
+        "d1",
+        "d2",
+        "d3",
+        "d4"
+      ],
+      "keeper": "gk",
+      "minute": 10,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {
+        "delivery": "corner",
+        "side": "left"
+      },
+      "seed": "all-header-corner",
+      "popup": false
+    },
+    {
+      "id": "header-cross",
+      "kind": "header",
+      "attacking": "home",
+      "scorer": "nine",
+      "assister": "ten",
+      "defenders": [
+        "d1",
+        "d2",
+        "d3",
+        "d4"
+      ],
+      "keeper": "gk",
+      "minute": 16,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {
+        "delivery": "cross",
+        "side": "right"
+      },
+      "seed": "all-header-cross",
+      "popup": false
+    },
+    {
+      "id": "tap-in",
+      "kind": "tap_in",
+      "attacking": "home",
+      "scorer": "nine",
+      "assister": "ten",
+      "defenders": [
+        "d1",
+        "d2",
+        "d3"
+      ],
+      "keeper": "gk",
+      "minute": 22,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {},
+      "seed": "all-tap-in",
+      "popup": false
+    },
+    {
+      "id": "long-range",
+      "kind": "long_range",
+      "attacking": "home",
+      "scorer": "nine",
+      "assister": "ten",
+      "defenders": [
+        "d1",
+        "d2",
+        "d3"
+      ],
+      "keeper": "gk",
+      "minute": 28,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {},
+      "seed": "all-long-range",
+      "popup": false
+    },
+    {
+      "id": "one-on-one",
+      "kind": "one_on_one",
+      "attacking": "home",
+      "scorer": "nine",
+      "assister": "ten",
+      "defenders": [
+        "d1",
+        "d2",
+        "d3"
+      ],
+      "keeper": "gk",
+      "minute": 34,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {},
+      "seed": "all-one-on-one",
+      "popup": false
+    },
+    {
+      "id": "volley",
+      "kind": "volley",
+      "attacking": "home",
+      "scorer": "nine",
+      "assister": "ten",
+      "defenders": [
+        "d1",
+        "d2",
+        "d3"
+      ],
+      "keeper": "gk",
+      "minute": 40,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {},
+      "seed": "all-volley",
+      "popup": false
+    },
+    {
+      "id": "penalty",
+      "kind": "penalty",
+      "attacking": "home",
+      "scorer": "nine",
+      "assister": "ten",
+      "defenders": [
+        "d1",
+        "d2",
+        "d3"
+      ],
+      "keeper": "gk",
+      "minute": 46,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {},
+      "seed": "all-penalty",
+      "popup": false
+    },
+    {
+      "id": "free-kick",
+      "kind": "free_kick",
+      "attacking": "home",
+      "scorer": "nine",
+      "assister": "ten",
+      "defenders": [
+        "d1",
+        "d2",
+        "d3",
+        "d4"
+      ],
+      "keeper": "gk",
+      "minute": 52,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {},
+      "seed": "all-free-kick",
+      "popup": false
+    },
+    {
+      "id": "miss-over",
+      "kind": "miss",
+      "attacking": "home",
+      "scorer": "nine",
+      "assister": "ten",
+      "defenders": [
+        "d1",
+        "d2",
+        "d3"
+      ],
+      "keeper": "gk",
+      "minute": 58,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {},
+      "seed": "all-miss-over",
+      "popup": false
+    },
+    {
+      "id": "miss-wide",
+      "kind": "miss",
+      "attacking": "home",
+      "scorer": "nine",
+      "assister": "ten",
+      "defenders": [
+        "d1",
+        "d2",
+        "d3"
+      ],
+      "keeper": "gk",
+      "minute": 64,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {
+        "outcome": "wide",
+        "base": "long_range"
+      },
+      "seed": "all-miss-wide",
+      "popup": false
+    },
+    {
+      "id": "save-parry",
+      "kind": "save",
+      "attacking": "home",
+      "scorer": "nine",
+      "assister": "ten",
+      "defenders": [
+        "d1",
+        "d2",
+        "d3"
+      ],
+      "keeper": "gk",
+      "minute": 70,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {},
+      "seed": "all-save-parry",
+      "popup": false
+    },
+    {
+      "id": "save-catch",
+      "kind": "save",
+      "attacking": "home",
+      "scorer": "nine",
+      "assister": "ten",
+      "defenders": [
+        "d1",
+        "d2",
+        "d3"
+      ],
+      "keeper": "gk",
+      "minute": 76,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {
+        "save": "catch",
+        "base": "long_range"
+      },
+      "seed": "all-save-catch",
+      "popup": false
+    },
+    {
+      "id": "post",
+      "kind": "one_on_one",
+      "attacking": "home",
+      "scorer": "nine",
+      "assister": "ten",
+      "defenders": [
+        "d1",
+        "d2",
+        "d3"
+      ],
+      "keeper": "gk",
+      "minute": 82,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {
+        "outcome": "post"
+      },
+      "seed": "all-post",
+      "popup": false
+    }
+  ]
+}

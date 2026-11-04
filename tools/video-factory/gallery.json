@@ -1,0 +1,45 @@
+{
+  "id": "scene-gallery",
+  "series": "Scene gallery",
+  "title": "One of every scene type",
+  "clubs": {
+    "ars": { "name": "Arsenal", "short": "ARS", "c1": "#ef0107", "c2": "#ffffff", "pattern": "sides" },
+    "juv": { "name": "Juventus", "short": "JUV", "c1": "#111111", "c2": "#ffffff", "pattern": "stripes" },
+    "mil": { "name": "AC Milan", "short": "MIL", "c1": "#fb090b", "c2": "#111111", "pattern": "stripes" },
+    "mun": { "name": "Manchester United", "short": "MUN", "c1": "#da291c", "c2": "#ffffff", "pattern": "plain" },
+    "new": { "name": "Newcastle United", "short": "NEW", "c1": "#111111", "c2": "#ffffff", "pattern": "stripes" },
+    "che": { "name": "Chelsea", "short": "CHE", "c1": "#034694", "c2": "#ffffff", "pattern": "plain" },
+    "liv": { "name": "Liverpool", "short": "LIV", "c1": "#c8102e", "c2": "#ffffff", "pattern": "plain" },
+    "rom": { "name": "Roma", "short": "ROM", "c1": "#8e1b2b", "c2": "#f4b223", "pattern": "plain" },
+    "xxx": { "name": "Drawn Crest FC", "short": "DCF", "c1": "#1d4fa3", "c2": "#ffd84a", "pattern": "hoops", "badge": false }
+  },
+  "people": {
+    "henry": { "name": "Thierry Henry", "skin": "brown", "hair": ["bald", "#1a1a1a"], "beard": "none", "kit": "ars" },
+    "nedved": { "name": "Pavel Nedvěd", "skin": "light", "hair": ["messy", "#e3c77f"], "beard": "none", "kit": "juv" },
+    "maldini": { "name": "Paolo Maldini", "skin": "olive", "hair": ["side", "#2b2118"], "beard": "none", "kit": "mil" },
+    "vnistelrooy": { "name": "Ruud van Nistelrooy", "skin": "light", "hair": ["crop", "#3a281c"], "beard": "none", "kit": "mun" }
+  },
+  "lines": [
+    { "text": "Title.", "scene": { "type": "title", "heading": "THIERRY HENRY", "sub": "Arsenal · 2002/03", "pill": "ROBBED IN 2003?", "person": "henry" } },
+    { "text": "Person.", "scene": { "type": "person", "person": "nedved", "label": "Serie A champion", "mood": "happy" } },
+    { "text": "Versus.", "scene": { "type": "versus", "title": "2003 Ballon d'Or", "left": { "person": "nedved", "label": "Nedvěd", "value": "190", "win": true }, "right": { "person": "henry", "label": "Henry", "value": "128" } } },
+    { "text": "Stats.", "scene": { "type": "stats", "title": "Premier League 2002/03", "items": [ { "n": "24", "l": "goals" }, { "n": "20", "l": "assists" }, { "n": "37", "l": "games" }, { "n": "2", "l": "awards" } ], "person": "henry" } },
+    { "text": "Score.", "scene": { "type": "score", "home": "juv", "away": "mil", "hs": 0, "as": 0, "date": "28 May 2003", "comp": "Champions League final", "note": "Milan won 3-2 on penalties at Old Trafford" } },
+    { "text": "Trophies.", "scene": { "type": "trophies", "title": "Every trophy", "items": [ { "kind": "league", "label": "League" }, { "kind": "cup", "label": "FA Cup" }, { "kind": "bigears", "label": "Champions League" }, { "kind": "worldcup", "label": "World Cup" }, { "kind": "ballon", "label": "Ballon d'Or" }, { "kind": "boot", "label": "Golden Boot" } ] } },
+    { "text": "List.", "scene": { "type": "list", "title": "Ballon d'Or 2004", "rows": [ { "name": "Andriy Shevchenko", "value": "175", "club": "mil" }, { "name": "Deco", "value": "139", "club": "xxx" }, { "name": "Ronaldinho", "value": "133", "club": "xxx" }, { "name": "Thierry Henry", "value": "80", "club": "ars", "hl": true } ] } },
+    { "text": "Text.", "scene": { "type": "text", "heading": "The other side", "body": "Nedvěd won Serie A and carried Juventus to a Champions League final. Some writers argue the Henry robbery is a football myth." } },
+    { "text": "Quote.", "scene": { "type": "quote", "person": "henry", "text": "I was second. That's football." } },
+    { "text": "Timeline.", "scene": { "type": "timeline", "title": "Henry's road", "items": [ { "year": "1999", "label": "Joins Arsenal from Juventus", "club": "ars" }, { "year": "2002", "label": "Double winners" }, { "year": "2003", "label": "Second in the Ballon d'Or", "hl": true }, { "year": "2004", "label": "The Invincibles" } ] } },
+    { "text": "Podium.", "scene": { "type": "podium", "year": "2003", "places": [ { "person": "nedved", "club": "juv", "points": 190 }, { "person": "henry", "club": "ars", "points": 128 }, { "person": "maldini", "club": "mil", "points": 123 } ] } },
+    { "text": "Stamp.", "scene": { "type": "stamp", "text": "ROBBED", "person": "henry", "color": "red" } },
+    { "text": "What if.", "scene": { "type": "whatif", "title": "What if Nedvěd played the final?", "real": { "label": "Juve lose the final on penalties", "value": "0-0" }, "alt": { "label": "Nedvěd lifts the cup and wins it by a mile", "value": "1-0" } } },
+    { "text": "News.", "scene": { "type": "news", "section": "Ballon d'Or", "headline": "Nedvěd beats Henry to the Ballon d'Or", "standfirst": "The Juventus midfielder finishes 62 points clear of the Arsenal striker, with Maldini third.", "date": "22 December 2003", "byline": "Knowitball archive", "person": "nedved" } },
+    { "text": "Table.", "scene": { "type": "table", "season": "2002/03", "title": "Premier League", "rows": [ { "pos": 1, "club": "mun", "p": 38, "w": 25, "d": 8, "l": 5, "gd": 40, "pts": 83 }, { "pos": 2, "club": "ars", "p": 38, "w": 23, "d": 9, "l": 6, "gd": 43, "pts": 78, "hl": true }, { "pos": 3, "club": "new", "p": 38, "w": 21, "d": 6, "l": 11, "gd": 15, "pts": 69 }, { "pos": 4, "club": "che", "p": 38, "w": 19, "d": 10, "l": 9, "gd": 30, "pts": 67 }, { "pos": 5, "club": "liv", "p": 38, "w": 18, "d": 10, "l": 10, "gd": 20, "pts": 64 } ], "zones": [ { "kind": "champ", "rows": [1, 1] }, { "kind": "ucl", "rows": [2, 4] }, { "kind": "uel", "rows": [5, 5] } ], "gap": { "from": 1, "to": 2, "label": "5 pts" } } },
+    { "text": "Bars.", "scene": { "type": "bars", "title": "Premier League assists 2002/03", "items": [ { "label": "Thierry Henry", "value": 20, "person": "henry", "hl": true }, { "label": "Ruud van Nistelrooy", "value": 6, "person": "vnistelrooy" }, { "label": "Drawn Crest FC", "value": 12, "club": "xxx" } ] } },
+    { "text": "Line.", "scene": { "type": "line", "title": "Henry's league goals", "y": { "label": "goals" }, "x": ["99/00", "00/01", "01/02", "02/03", "03/04", "04/05"], "series": [ { "name": "Henry", "club": "ars", "values": [17, 17, 24, 24, 30, 25] } ], "notes": [ { "i": 4, "text": "Invincibles" } ] } },
+    { "text": "Compare.", "scene": { "type": "compare", "title": "2002/03 head to head", "left": { "person": "henry", "name": "Henry" }, "right": { "person": "vnistelrooy", "name": "Van Nistelrooy" }, "rows": [ { "label": "League goals", "l": 24, "r": 25 }, { "label": "League assists", "l": 20, "r": 6 }, { "label": "Awards", "l": 2, "r": 0 } ] } },
+    { "text": "Badge.", "scene": { "type": "badge", "club": "ars", "kicker": "The club", "sub": "Highbury, North London" } },
+    { "text": "Gameclip.", "scene": { "type": "gameclip", "parts": [["/tmp/claude-0/-home-user/f9db4640-b55f-52a1-be6c-75264610aefd/scratchpad/wwroma/footage/goal-r1/tv", 20, 50], ["/tmp/claude-0/-home-user/f9db4640-b55f-52a1-be6c-75264610aefd/scratchpad/wwroma/footage/goal-r1/high", 50, 135]], "goalAt": 1.6, "popup": { "home": "mun", "away": "rom", "homeName": "Man United", "hs0": 0, "as0": 0, "hs": 0, "as": 1, "scorer": "Malen", "assist": "Wesley" }, "caption": "Malen strikes first" } },
+    { "text": "Follow for more, and play Road to Ballon d'Or.", "scene": { "type": "cta" } }
+  ]
+}

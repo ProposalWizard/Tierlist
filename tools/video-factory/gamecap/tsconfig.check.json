@@ -1,0 +1,1 @@
+{ "extends": "../../../tsconfig.json", "compilerOptions": { "noEmit": true, "incremental": false }, "include": ["template/*.ts", "template/*.tsx", "../../../next-env.d.ts"] }
