@@ -1,344 +1,429 @@
 {
-  "id": "pr-fastest-players",
-  "series": "Power ranking",
-  "title": "Power ranking: the fastest players in the Premier League",
-  "sources": [
-    "https://www.premierleague.com/en/news/4599224/who-are-the-fastest-premier-league-players-this-season",
-    "https://www.si.com/soccer/fastest-players-premier-league",
-    "https://www.premierleague.com/en/news/4573557/the-fastest-premier-league-players-ever-include-micky-van-de-ven-kyle-walker-mohamed-salah-adama-traore"
-  ],
-  "checked": "Top speeds from official Premier League tracking for the whole 2025-26 season (premierleague.com, 27 May 2026); SI's list agrees on Martinelli 36.74 and Mbeumo 36.34. All-time record Van de Ven 37.38 (premierleague.com). This season's provisional list (to 28 Sep) was only in one source, so it is not used. Haaland is 10th as the next-fastest name after the nine in the official top ten.",
-  "clubs": {
-    "ars": {
-      "name": "Arsenal",
-      "short": "ARS",
-      "c1": "#ef0107",
-      "c2": "#ffffff",
-      "pattern": "sides"
-    },
-    "che": {
-      "name": "Chelsea",
-      "short": "CHE",
-      "c1": "#034694",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "mci": {
-      "name": "Manchester City",
-      "short": "MCI",
-      "c1": "#6cabdd",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "mun": {
-      "name": "Manchester United",
-      "short": "MUN",
-      "c1": "#da291c",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "new": {
-      "name": "Newcastle United",
-      "short": "NEW",
-      "c1": "#241f20",
-      "c2": "#ffffff",
-      "pattern": "stripes"
-    },
-    "tot": {
-      "name": "Tottenham",
-      "short": "TOT",
-      "c1": "#ffffff",
-      "c2": "#132257",
-      "pattern": "plain"
-    },
-    "wol": {
-      "name": "Wolves",
-      "short": "WOL",
-      "c1": "#fdb913",
-      "c2": "#231f20",
-      "pattern": "plain"
-    }
+ "id": "pr-fastest-players",
+ "series": "Power rankings",
+ "title": "Power ranking: the fastest players in the Premier League",
+ "v2": true,
+ "sources": [
+  "https://www.premierleague.com/en/news/4673057/who-ran-fastest-and-furthest-in-202526-premier-league",
+  "https://www.thinkfootballideas.co.uk/post/fastest-premier-league-players-2025-26",
+  "https://www.premierleague.com/en/news/4406647/fastest-players-of-202526-so-far-tchatchoua-leads-the-pack",
+  "https://www.premierleague.com/en/news/4573557/where-does-adama-traore-rank-among-the-fastest-premier-league-players-ever",
+  "https://www.planetfootball.com/premier-league/fastest-players-premier-league-history-list"
+ ],
+ "checked": "2025-26 top speeds, official Premier League tracking, whole season (premierleague.com season review; ThinkFootballIdeas copies the same table): Tchatchoua 37.30 v Everton 30 Aug 2025 and 36.97 v Palace, Martinelli 36.74, Spence 36.62, Udogie 36.41/36.42, Elanga 36.35, Mbeumo 36.34, Neto 36.32, Osula 36.29, Gordon 36.26, Haaland 36.20 (his best; the next different name after the nine). Newcastle three in the top ten. Tracking history since 2020-21: Van de Ven 37.38 v Brentford (Jan 2024), Walker 37.31 v Everton (May 2023), Tchatchoua 37.30 third (premierleague.com all-time list, Planet Football agrees on Van de Ven and Walker). This season's (2026-27) list has only one source so far, so it is not used. No gameplay: no goal moment fits a sprint.",
+ "clubs": {
+  "mci": {
+   "name": "Manchester City",
+   "short": "MCI",
+   "c1": "#6cabdd",
+   "c2": "#ffffff",
+   "pattern": "plain"
   },
-  "people": {
-    "martinelli": {
-      "name": "Gabriel Martinelli",
-      "skin": "olive",
-      "hair": [
-        "curlytop",
-        "#2b1d14"
-      ],
-      "beard": "none",
-      "kit": "ars"
-    },
-    "spence": {
-      "name": "Djed Spence",
-      "skin": "brown",
-      "hair": [
-        "buzz",
-        "#111111"
-      ],
-      "beard": "none",
-      "kit": "tot"
-    },
-    "tchatchoua": {
-      "name": "Jackson Tchatchoua",
-      "skin": "deep",
-      "hair": [
-        "buzz",
-        "#111111"
-      ],
-      "beard": "none",
-      "kit": "wol"
-    },
-    "vandeven": {
-      "name": "Micky van de Ven",
-      "skin": "light",
-      "hair": [
-        "slick",
-        "#d9b26a"
-      ],
-      "beard": "none",
-      "kit": "tot"
-    }
+  "new": {
+   "name": "Newcastle United",
+   "short": "NEW",
+   "c1": "#111111",
+   "c2": "#ffffff",
+   "pattern": "stripes"
   },
-  "lines": [
-    {
-      "text": "Forget game ratings. These are the fastest players in the Premier League, measured by real tracking data.",
-      "scene": {
-        "type": "title",
-        "heading": "FASTEST PLAYERS",
-        "sub": "Real top speeds · whole of last season",
-        "pill": "KM PER HOUR",
-        "person": "tchatchoua"
-      }
+  "che": {
+   "name": "Chelsea",
+   "short": "CHE",
+   "c1": "#034694",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "mun": {
+   "name": "Manchester United",
+   "short": "MUN",
+   "c1": "#da291c",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "tot": {
+   "name": "Tottenham Hotspur",
+   "short": "TOT",
+   "c1": "#ffffff",
+   "c2": "#132257",
+   "pattern": "plain"
+  },
+  "ars": {
+   "name": "Arsenal",
+   "short": "ARS",
+   "c1": "#ef0107",
+   "c2": "#ffffff",
+   "pattern": "sides"
+  },
+  "wol": {
+   "name": "Wolves",
+   "short": "WOL",
+   "c1": "#fdb913",
+   "c2": "#231f20",
+   "pattern": "plain",
+   "badge": "Wolverhampton Wanderers"
+  },
+  "eve": {
+   "name": "Everton",
+   "short": "EVE",
+   "c1": "#003399",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  }
+ },
+ "people": {
+  "tchatchoua": {
+   "name": "Jackson Tchatchoua",
+   "skin": "dark",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "none",
+   "kit": "wol"
+  },
+  "martinelli": {
+   "name": "Gabriel Martinelli",
+   "skin": "olive",
+   "hair": [
+    "curlytop",
+    "#1a1a1a"
+   ],
+   "beard": "none",
+   "kit": "ars"
+  },
+  "spence": {
+   "name": "Djed Spence",
+   "skin": "brown",
+   "hair": [
+    "crop",
+    "#111111"
+   ],
+   "beard": "none",
+   "kit": "tot"
+  },
+  "walker": {
+   "name": "Kyle Walker",
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "stubble",
+   "beardCol": "#111111",
+   "kit": "mci"
+  },
+  "vandeven": {
+   "name": "Micky van de Ven",
+   "skin": "light",
+   "hair": [
+    "tidy",
+    "#8a6a48"
+   ],
+   "beard": "none",
+   "kit": "tot"
+  }
+ },
+ "lines": [
+  {
+   "text": "The fastest man in the Premier League last season missed second place in history by one hundredth of a kilometre an hour.",
+   "scene": {
+    "type": "title",
+    "heading": "THE FASTEST 10",
+    "sub": "Premier League",
+    "pill": "REAL TRACKING DATA",
+    "person": "tchatchoua"
+   }
+  },
+  {
+   "text": "Ten, Erling Haaland, thirty-six point two. Nine, Anthony Gordon. Eight, his Newcastle team-mate William Osula.",
+   "say": "Ten, Erling Hohland, thirty-six point two. Nine, Anthony Gordon. Eight, his Newcastle team-mate, William Osoola.",
+   "scene": {
+    "type": "list",
+    "kicker": "Fastest in 2025/26",
+    "title": "Top speed, km/h",
+    "rows": [
+     {
+      "pos": 10,
+      "name": "Haaland",
+      "value": "36.20",
+      "hl": true,
+      "club": "mci"
+     },
+     {
+      "pos": 9,
+      "name": "Gordon",
+      "value": "36.26",
+      "hl": true,
+      "club": "new"
+     },
+     {
+      "pos": 8,
+      "name": "Osula",
+      "value": "36.29",
+      "hl": true,
+      "club": "new"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Seven, Pedro Neto. Six, Bryan Mbeumo. Five, Anthony Elanga, the third Newcastle man in the ten.",
+   "say": "Seven, Pedro Netto. Six, Bryan Emburrmo. Five, Anthony Elanga, the third Newcastle man in the ten.",
+   "scene": {
+    "type": "list",
+    "kicker": "Fastest in 2025/26",
+    "title": "Top speed, km/h",
+    "rows": [
+     {
+      "pos": 10,
+      "name": "Haaland",
+      "club": "mci"
+     },
+     {
+      "pos": 9,
+      "name": "Gordon",
+      "club": "new"
+     },
+     {
+      "pos": 8,
+      "name": "Osula",
+      "club": "new"
+     },
+     {
+      "pos": 7,
+      "name": "Neto",
+      "value": "36.32",
+      "hl": true,
+      "club": "che"
+     },
+     {
+      "pos": 6,
+      "name": "Mbeumo",
+      "value": "36.34",
+      "hl": true,
+      "club": "mun"
+     },
+     {
+      "pos": 5,
+      "name": "Elanga",
+      "value": "36.35",
+      "hl": true,
+      "club": "new"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Four, Spurs full-back Destiny Udogie, thirty-six point four.",
+   "say": "Four, Spurs full-back, Destiny Oodojee, thirty-six point four.",
+   "scene": {
+    "type": "list",
+    "kicker": "Fastest in 2025/26",
+    "title": "Top speed, km/h",
+    "rows": [
+     {
+      "pos": 10,
+      "name": "Haaland",
+      "club": "mci"
+     },
+     {
+      "pos": 9,
+      "name": "Gordon",
+      "club": "new"
+     },
+     {
+      "pos": 8,
+      "name": "Osula",
+      "club": "new"
+     },
+     {
+      "pos": 7,
+      "name": "Neto",
+      "club": "che"
+     },
+     {
+      "pos": 6,
+      "name": "Mbeumo",
+      "club": "mun"
+     },
+     {
+      "pos": 5,
+      "name": "Elanga",
+      "club": "new"
+     },
+     {
+      "pos": 4,
+      "name": "Udogie",
+      "value": "36.41",
+      "hl": true,
+      "club": "tot"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Number three. Djed Spence, thirty-six point six two.",
+   "say": "Number three. Jed Spence, thirty-six point six two.",
+   "scene": {
+    "type": "person",
+    "person": "spence",
+    "label": "Number 3 · 36.62 km/h",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "Number two. Gabriel Martinelli, thirty-six point seven four, against Newcastle.",
+   "say": "Number two. Gabriel Martinellee, thirty-six point seven four, against Newcastle.",
+   "scene": {
+    "type": "person",
+    "person": "martinelli",
+    "label": "Number 2 · 36.74 km/h",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "And number one, by a mile. Jackson Tchatchoua of Wolves.",
+   "say": "And number one, by a mile. Jackson Chachooah, of Wolves.",
+   "scene": {
+    "type": "title",
+    "heading": "JACKSON TCHATCHOUA",
+    "sub": "Wolves · 2025/26",
+    "pill": "NUMBER ONE",
+    "person": "tchatchoua"
+   }
+  },
+  {
+   "text": "Thirty-seven point three, against Everton. Half a kilometre an hour clear.",
+   "scene": {
+    "type": "bars",
+    "kicker": "Top speed, 2025/26",
+    "title": "The fastest ten",
+    "unit": "km/h",
+    "max": 37.5,
+    "items": [
+     {
+      "label": "Tchatchoua",
+      "value": 37.3,
+      "club": "wol",
+      "hl": true
+     },
+     {
+      "label": "Martinelli",
+      "value": 36.74,
+      "club": "ars"
+     },
+     {
+      "label": "Spence",
+      "value": 36.62,
+      "club": "tot"
+     },
+     {
+      "label": "Udogie",
+      "value": 36.41,
+      "club": "tot"
+     },
+     {
+      "label": "Elanga",
+      "value": 36.35,
+      "club": "new"
+     },
+     {
+      "label": "Mbeumo",
+      "value": 36.34,
+      "club": "mun"
+     },
+     {
+      "label": "Neto",
+      "value": 36.32,
+      "club": "che"
+     },
+     {
+      "label": "Osula",
+      "value": 36.29,
+      "club": "new"
+     }
+    ]
+   }
+  },
+  {
+   "text": "But since the league's tracking began in 2020, that run is only the third fastest.",
+   "scene": {
+    "type": "list",
+    "kicker": "Since 2020/21",
+    "title": "Fastest ever, km/h",
+    "rows": [
+     {
+      "pos": 1,
+      "name": "Van de Ven",
+      "value": "37.38",
+      "club": "tot"
+     },
+     {
+      "pos": 2,
+      "name": "Walker",
+      "value": "37.31",
+      "club": "mci"
+     },
+     {
+      "pos": 3,
+      "name": "Tchatchoua",
+      "value": "37.30",
+      "club": "wol",
+      "hl": true
+     }
+    ]
+   }
+  },
+  {
+   "text": "Kyle Walker ran thirty-seven point three one, also against Everton. One hundredth faster.",
+   "scene": {
+    "type": "versus",
+    "title": "One hundredth",
+    "left": {
+     "person": "walker",
+     "label": "Walker · 2023",
+     "value": "37.31",
+     "sub": "v Everton",
+     "win": true
     },
-    {
-      "text": "Ten, Erling Haaland, thirty-six point two. Nine, Anthony Gordon. Eight, his Newcastle team-mate William Osula.",
-      "scene": {
-        "type": "list",
-        "title": "Top speed, km/h",
-        "rows": [
-          {
-            "pos": 10,
-            "name": "Erling Haaland",
-            "value": "36.20",
-            "club": "mci",
-            "hl": true
-          },
-          {
-            "pos": 9,
-            "name": "Anthony Gordon",
-            "value": "36.26",
-            "club": "new",
-            "hl": true
-          },
-          {
-            "pos": 8,
-            "name": "William Osula",
-            "value": "36.29",
-            "club": "new",
-            "hl": true
-          }
-        ]
-      }
-    },
-    {
-      "text": "Seven, Pedro Neto. Six, Bryan Mbeumo, thirty-six point three four.",
-      "scene": {
-        "type": "list",
-        "title": "Top speed, km/h",
-        "rows": [
-          {
-            "pos": 10,
-            "name": "Erling Haaland",
-            "value": "36.20",
-            "club": "mci"
-          },
-          {
-            "pos": 9,
-            "name": "Anthony Gordon",
-            "value": "36.26",
-            "club": "new"
-          },
-          {
-            "pos": 8,
-            "name": "William Osula",
-            "value": "36.29",
-            "club": "new"
-          },
-          {
-            "pos": 7,
-            "name": "Pedro Neto",
-            "value": "36.32",
-            "club": "che",
-            "hl": true
-          },
-          {
-            "pos": 6,
-            "name": "Bryan Mbeumo",
-            "value": "36.34",
-            "club": "mun",
-            "hl": true
-          }
-        ]
-      }
-    },
-    {
-      "text": "Five, Anthony Elanga, the third Newcastle man on the list. Four, Spurs full-back Destiny Udogie.",
-      "scene": {
-        "type": "list",
-        "title": "Top speed, km/h",
-        "rows": [
-          {
-            "pos": 10,
-            "name": "Erling Haaland",
-            "value": "36.20",
-            "club": "mci"
-          },
-          {
-            "pos": 9,
-            "name": "Anthony Gordon",
-            "value": "36.26",
-            "club": "new"
-          },
-          {
-            "pos": 8,
-            "name": "William Osula",
-            "value": "36.29",
-            "club": "new"
-          },
-          {
-            "pos": 7,
-            "name": "Pedro Neto",
-            "value": "36.32",
-            "club": "che"
-          },
-          {
-            "pos": 6,
-            "name": "Bryan Mbeumo",
-            "value": "36.34",
-            "club": "mun"
-          },
-          {
-            "pos": 5,
-            "name": "Anthony Elanga",
-            "value": "36.35",
-            "club": "new",
-            "hl": true
-          },
-          {
-            "pos": 4,
-            "name": "Destiny Udogie",
-            "value": "36.42",
-            "club": "tot",
-            "hl": true
-          }
-        ]
-      }
-    },
-    {
-      "text": "Number three. Djed Spence, thirty-six point six two.",
-      "scene": {
-        "type": "person",
-        "person": "spence",
-        "label": "NUMBER 3 · 36.62",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "Number two. Gabriel Martinelli, thirty-six point seven four, against Newcastle.",
-      "scene": {
-        "type": "person",
-        "person": "martinelli",
-        "label": "NUMBER 2 · 36.74",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "And number one, by a mile. Jackson Tchatchoua.",
-      "scene": {
-        "type": "person",
-        "person": "tchatchoua",
-        "label": "NUMBER 1",
-        "mood": "shocked",
-        "stamp": "37.30"
-      }
-    },
-    {
-      "text": "Thirty-seven point three kilometres an hour, against Everton. Only two runs in Premier League history have been faster.",
-      "scene": {
-        "type": "stats",
-        "title": "Tchatchoua",
-        "items": [
-          {
-            "n": "37.30",
-            "l": "km/h v Everton"
-          },
-          {
-            "n": "36.97",
-            "l": "km/h v Palace"
-          }
-        ],
-        "person": "tchatchoua"
-      }
-    },
-    {
-      "text": "He was so fast he is also the number two run of the season.",
-      "scene": {
-        "type": "list",
-        "title": "Fastest runs of 2025-26",
-        "rows": [
-          {
-            "name": "Jackson Tchatchoua",
-            "value": "37.30",
-            "club": "wol",
-            "hl": true
-          },
-          {
-            "name": "Jackson Tchatchoua",
-            "value": "36.97",
-            "club": "wol",
-            "hl": true
-          },
-          {
-            "name": "Gabriel Martinelli",
-            "value": "36.74",
-            "club": "ars"
-          }
-        ]
-      }
-    },
-    {
-      "text": "The all-time record still belongs to Micky van de Ven. Thirty-seven point three eight.",
-      "scene": {
-        "type": "versus",
-        "title": "The record",
-        "left": {
-          "person": "vandeven",
-          "label": "Van de Ven",
-          "value": "37.38"
-        },
-        "right": {
-          "person": "tchatchoua",
-          "label": "Tchatchoua",
-          "value": "37.30"
-        }
-      }
-    },
-    {
-      "text": "Who is the fastest player you have ever seen?",
-      "scene": {
-        "type": "stamp",
-        "text": "TOO QUICK",
-        "person": "martinelli",
-        "color": "yellow"
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
+    "right": {
+     "person": "tchatchoua",
+     "label": "Tchatchoua · 2025",
+     "value": "37.30",
+     "sub": "v Everton"
     }
-  ]
+   }
+  },
+  {
+   "text": "And the record still belongs to Micky van de Ven. Thirty-seven point three eight, against Brentford.",
+   "say": "And the record still belongs to Micky van de Ven. Thirty-seven point three eight, against Brentford.",
+   "scene": {
+    "type": "stats",
+    "kicker": "The Premier League record",
+    "title": "Micky van de Ven",
+    "items": [
+     {
+      "n": "37.38",
+      "l": "km/h v Brentford, 2024"
+     }
+    ],
+    "person": "vandeven"
+   }
+  },
+  {
+   "text": "Who is the fastest player you have ever seen?",
+   "scene": {
+    "type": "stamp",
+    "text": "FASTEST EVER?",
+    "sub": "Tell us in the comments",
+    "color": "yellow"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }

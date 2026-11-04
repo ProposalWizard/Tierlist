@@ -1,0 +1,24 @@
+{
+  "_about": "Lautaro Martinez's winner, England 1-2 Argentina, World Cup semi-final, Atlanta, 15 July 2026, 90+2. Substitute Martinez headed in Lionel Messi's cross (Sky Sports report; minute 90+2 from ESPN and FIFA). England all white, Argentina in their navy away kit (Modern Ghana, Blueprint). The wing Messi crossed from and the keeper kit colours are assumed.",
+  "teams": {
+    "home": { "name": "England", "kit": { "shirt": "#FFFFFF", "shorts": "#FFFFFF", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#00003E" },
+    "away": { "name": "Argentina", "kit": { "shirt": "#1B2A4A", "shorts": "#1B2A4A", "socks": "#1B2A4A" }, "keeperKit": { "shirt": "#2BB673", "shorts": "#0B3D2A", "socks": "#2BB673" }, "popupTrim": "#75AADB" }
+  },
+  "people": {
+    "lautaro": { "name": "Lautaro Martinez", "skin": "#c08a64", "hair": "#16100c", "popupName": "Martinez" },
+    "messi":   { "name": "Lionel Messi", "skin": "#e2b48e", "hair": "#4a3020" },
+    "alvarez": { "name": "Julian Alvarez", "skin": "#e0b08a", "hair": "#2a1d15" },
+    "stones":  { "name": "John Stones", "skin": "#f0c8a8", "hair": "#4a3324" },
+    "guehi":   { "name": "Marc Guehi", "skin": "#4a2e1e", "hair": "#0d0a09" },
+    "konsa":   { "name": "Ezri Konsa", "skin": "#5a3826", "hair": "#0d0a09" },
+    "pickford":{ "name": "Jordan Pickford", "skin": "#f2c8a6", "hair": "#8a6a48" }
+  },
+  "clips": [{
+    "id": "lautaro-header", "kind": "header", "attacking": "away",
+    "scorer": "lautaro", "assister": "messi", "defenders": ["stones", "guehi", "konsa"], "keeper": "pickford", "teammates": ["alvarez"],
+    "minute": 92, "minuteLabel": "90+2", "scoreBefore": [1, 1], "scoreAfter": [1, 2], "night": true, "celebration": "knee_slide",
+    "cameras": ["tv", "high", "tight"],
+    "recreate": { "delivery": "cross", "side": "right", "swing": "in", "finish": "header", "height": "mid" },
+    "seed": "lautaro-2026-a", "popup": false
+  }]
+}

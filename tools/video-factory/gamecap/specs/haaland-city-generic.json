@@ -1,0 +1,17 @@
+{
+  "_about": "A generic Haaland one-on-one finish for Manchester City (sky blue, white shorts) against a plain navy side. Not a real goal: used only as 'goals keep coming' footage, with no named opponent or score.",
+  "teams": {
+    "home": { "name": "Manchester City", "short": "Man City", "kit": { "shirt": "#6CABDD", "shorts": "#FFFFFF", "socks": "#6CABDD" }, "keeperKit": { "shirt": "#1F2A44", "shorts": "#1F2A44", "socks": "#1F2A44" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Rovers", "short": "Rovers", "kit": { "shirt": "#1B2A4A", "shorts": "#1B2A4A", "socks": "#1B2A4A" }, "keeperKit": { "shirt": "#2BB673", "shorts": "#0B3D2A", "socks": "#2BB673" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "haaland": { "name": "Erling Haaland", "skin": "#f3d2b8", "hair": "#e2c58a" },
+    "mate":    { "name": "City midfielder", "skin": "#e8b994", "hair": "#2a1d15" }
+  },
+  "clips": [{
+    "id": "haaland-1v1", "kind": "one_on_one", "attacking": "home",
+    "scorer": "haaland", "assister": "mate", "minute": 60, "scoreBefore": [1, 0], "scoreAfter": [2, 0], "celebration": "statue",
+    "cameras": ["tv", "high", "tight"], "recreate": { "delivery": "through", "finish": "ground", "goalSide": "far" },
+    "seed": "haaland-generic-a", "popup": false
+  }]
+}
