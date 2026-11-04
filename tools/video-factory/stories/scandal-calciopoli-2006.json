@@ -531,8 +531,8 @@
    }
   },
   {
-   "text": "Juventus bounced straight back from Serie B. Moggi was banned from football for life.",
-   "say": "Yooventus bounced straight back from Seree B. Moji was banned from football for life.",
+   "text": "Juventus bounced straight back from Serie B. And Moggi? Banned from football for life.",
+   "say": "Yooventus bounced straight back, from Seree B. And Moji? Banned from football, for life.",
    "scene": {
     "type": "trophies",
     "kicker": "2006/07",
