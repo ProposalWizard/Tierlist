@@ -1,0 +1,657 @@
+{
+ "id": "ww-chelsea-2012-v-chelsea-2021",
+ "about": "Who would win? Chelsea 2012 (Munich) v Chelsea 2021 (Porto), an imagined match at Stamford Bridge, 2-1 to 2012. Ratings: FIFA 12 and FIFA 21 (sofifa_players). XIs and goals: Wikipedia 2012 and 2021 UEFA Champions League final pages + UEFA reports. Di Matteo interim after Villas-Boas was sacked 4 Mar 2012 (UEFA, Al Jazeera); Tuchel hired 26 Jan 2021 after Lampard was sacked 25 Jan (Al Jazeera, FourFourTwo). Summer 2020 signings under Lampard: Werner, Havertz, Chilwell, Mendy, Thiago Silva (Planet Football, Sports Mole). Kits: 2012 home royal blue, white socks; 2020-21 away Arctic Blue (FourFourTwo, Goal).",
+ "title": "WHO WOULD WIN?",
+ "footageRoot": "../footage/ww-chelsea-2012-v-chelsea-2021",
+ "calm": {
+  "dir": "calm/high"
+ },
+ "music": "09-last-attack.mp3",
+ "competition": {
+  "title": [
+   "TWO EUROPEAN CHAMPIONS",
+   "MUNICH 12 v PORTO 21 · STAMFORD BRIDGE"
+  ],
+  "tagline": "22 PLAYERS · 1 WINNER",
+  "versus": "CHAMPIONS v CHAMPIONS · DREAM MATCH",
+  "short": "DREAM MATCH · STAMFORD BRIDGE"
+ },
+ "venue": {
+  "name": "STAMFORD BRIDGE",
+  "place": "LONDON · ENGLAND",
+  "lat": 51.4817,
+  "lon": -0.191
+ },
+ "home": {
+  "name": "CHELSEA 2012",
+  "full": "CHELSEA 2012 · MUNICH",
+  "versus": [
+   "CHELSEA",
+   "2012"
+  ],
+  "nation": "eng",
+  "versusInfo": "MUNICH · CAPTAIN LAMPARD",
+  "city": {
+   "label": "LONDON",
+   "sub": "ENGLAND",
+   "lat": 51.4817,
+   "lon": -0.191
+  },
+  "formation": "4-2-3-1",
+  "kitLabel": "HOME KIT",
+  "badge": "../badges/chelsea.png",
+  "kit": {
+   "shirt": "#034694",
+   "trim": "#ffffff",
+   "collar": "#ffffff",
+   "shorts": "#034694",
+   "socks": "#ffffff",
+   "number": "#ffffff",
+   "gk": {
+    "shirt": "#1a1a1a",
+    "trim": "#8a8a8a",
+    "collar": "#8a8a8a"
+   }
+  },
+  "grid": [
+   "drogba",
+   "mata",
+   "lampard",
+   "cole",
+   "luiz",
+   "cahill",
+   "mikel",
+   "kalou",
+   "bosingwa",
+   "bertrand",
+   "cech"
+  ],
+  "slots": {
+   "cech": "GK",
+   "bosingwa": "RB",
+   "luiz": "CB1",
+   "cahill": "CB2",
+   "cole": "LB",
+   "mikel": "CM1",
+   "lampard": "CM2",
+   "kalou": "RW",
+   "mata": "CAM",
+   "bertrand": "LW",
+   "drogba": "ST"
+  },
+  "manager": "dimatteo"
+ },
+ "away": {
+  "name": "CHELSEA 2021",
+  "full": "CHELSEA 2021 · PORTO",
+  "versus": [
+   "CHELSEA",
+   "2021"
+  ],
+  "nation": "eng",
+  "versusInfo": "PORTO · TUCHEL'S FIRST SEASON",
+  "city": {
+   "label": "LONDON",
+   "sub": "ENGLAND",
+   "lat": 51.4817,
+   "lon": -0.191
+  },
+  "formation": "3-4-2-1",
+  "kitLabel": "AWAY KIT",
+  "badge": "../badges/chelsea.png",
+  "kit": {
+   "shirt": "#9cc3e6",
+   "trim": "#0b1f4f",
+   "collar": "#0b1f4f",
+   "shorts": "#9cc3e6",
+   "socks": "#9cc3e6",
+   "number": "#0b1f4f",
+   "gk": {
+    "shirt": "#2bb673",
+    "trim": "#0b3d2a",
+    "collar": "#0b3d2a"
+   }
+  },
+  "colors": {
+   "ring": "#6fa8dc",
+   "pillBg": "#9cc3e6",
+   "pillFg": "#0b1f4f",
+   "headerBg": "#9cc3e6",
+   "headerFg": "#0b1f4f",
+   "headerSub": "#0b1f4f",
+   "versusBg": "#1d3d5c",
+   "accent": "#bfe0ff",
+   "bar": "#9cc3e6",
+   "confetti": [
+    "#9cc3e6",
+    "#0b1f4f",
+    "#ffffff",
+    "#ffd23f"
+   ],
+   "ribbon": [
+    "#0b1f4f",
+    "#9cc3e6"
+   ]
+  },
+  "grid": [
+   "kante",
+   "havertz",
+   "werner",
+   "silva",
+   "mount",
+   "azpi",
+   "jorginho",
+   "rudiger",
+   "chilwell",
+   "james",
+   "mendy"
+  ],
+  "slots": {
+   "mendy": "GK",
+   "azpi": "RCB",
+   "silva": "CCB",
+   "rudiger": "LCB",
+   "james": "RWB",
+   "kante": "CM1",
+   "jorginho": "CM2",
+   "chilwell": "LWB",
+   "mount": "RAM",
+   "havertz": "LAM",
+   "werner": "ST"
+  },
+  "manager": "tuchel"
+ },
+ "players": {
+  "cech": {
+   "name": "ČECH",
+   "full": "Petr Čech",
+   "num": 1,
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#5b3a22"
+   ],
+   "beard": "none",
+   "gk": true
+  },
+  "bosingwa": {
+   "name": "BOSINGWA",
+   "full": "José Bosingwa",
+   "num": 17,
+   "skin": "dark",
+   "hair": [
+    "bald",
+    "#000"
+   ],
+   "beard": "goatee"
+  },
+  "luiz": {
+   "name": "LUIZ",
+   "full": "David Luiz",
+   "num": 4,
+   "skin": "tan",
+   "hair": [
+    "bigcurl",
+    "#2a1d15"
+   ],
+   "beard": "short"
+  },
+  "cahill": {
+   "name": "CAHILL",
+   "full": "Gary Cahill",
+   "num": 24,
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#4a3220"
+   ],
+   "beard": "none"
+  },
+  "cole": {
+   "name": "A. COLE",
+   "full": "Ashley Cole",
+   "num": 3,
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "mikel": {
+   "name": "MIKEL",
+   "full": "John Obi Mikel",
+   "num": 12,
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "lampard": {
+   "name": "LAMPARD",
+   "full": "Frank Lampard",
+   "num": 8,
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#5b3a22"
+   ],
+   "beard": "none"
+  },
+  "kalou": {
+   "name": "KALOU",
+   "full": "Salomon Kalou",
+   "num": 21,
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "mata": {
+   "name": "MATA",
+   "full": "Juan Mata",
+   "num": 10,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#2a1d15"
+   ],
+   "beard": "stubble"
+  },
+  "bertrand": {
+   "name": "BERTRAND",
+   "full": "Ryan Bertrand",
+   "num": 34,
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "drogba": {
+   "name": "DROGBA",
+   "full": "Didier Drogba",
+   "num": 11,
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "goatee"
+  },
+  "mendy": {
+   "name": "MENDY",
+   "full": "Édouard Mendy",
+   "num": 16,
+   "skin": "deep",
+   "hair": [
+    "bald",
+    "#000"
+   ],
+   "beard": "short",
+   "gk": true
+  },
+  "azpi": {
+   "name": "AZPILICUETA",
+   "full": "César Azpilicueta",
+   "num": 28,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#2a1d15"
+   ],
+   "beard": "short"
+  },
+  "silva": {
+   "name": "T. SILVA",
+   "full": "Thiago Silva",
+   "num": 6,
+   "skin": "tan",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "stubble"
+  },
+  "rudiger": {
+   "name": "RÜDIGER",
+   "full": "Antonio Rüdiger",
+   "num": 2,
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "short"
+  },
+  "james": {
+   "name": "JAMES",
+   "full": "Reece James",
+   "num": 24,
+   "skin": "brown",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "kante": {
+   "name": "KANTÉ",
+   "full": "N'Golo Kanté",
+   "num": 7,
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "jorginho": {
+   "name": "JORGINHO",
+   "full": "Jorginho",
+   "num": 5,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#2a1d15"
+   ],
+   "beard": "stubble"
+  },
+  "chilwell": {
+   "name": "CHILWELL",
+   "full": "Ben Chilwell",
+   "num": 21,
+   "skin": "pink",
+   "hair": [
+    "quiff",
+    "#5b3a22"
+   ],
+   "beard": "none"
+  },
+  "mount": {
+   "name": "MOUNT",
+   "full": "Mason Mount",
+   "num": 19,
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#3a2a1e"
+   ],
+   "beard": "none"
+  },
+  "havertz": {
+   "name": "HAVERTZ",
+   "full": "Kai Havertz",
+   "num": 29,
+   "skin": "pink",
+   "hair": [
+    "messy",
+    "#6b4a2e"
+   ],
+   "beard": "none"
+  },
+  "werner": {
+   "name": "WERNER",
+   "full": "Timo Werner",
+   "num": 11,
+   "skin": "pink",
+   "hair": [
+    "side",
+    "#3a2a1e"
+   ],
+   "beard": "stubble"
+  },
+  "dimatteo": {
+   "name": "DI MATTEO",
+   "full": "Roberto Di Matteo",
+   "skin": "light",
+   "hair": [
+    "bald",
+    "#000"
+   ],
+   "beard": "none",
+   "suit": {
+    "jacket": "#1c1d24",
+    "tie": "#034694"
+   }
+  },
+  "tuchel": {
+   "name": "TUCHEL",
+   "full": "Thomas Tuchel",
+   "skin": "light",
+   "hair": [
+    "buzz",
+    "#8a7a68"
+   ],
+   "beard": "stubble",
+   "suit": {
+    "jacket": "#1f2533",
+    "tie": "#9cc3e6"
+   }
+  }
+ },
+ "ratings": {
+  "label": "FIFA 12 v FIFA 21",
+  "rows": [
+   [
+    "ATTACK",
+    84,
+    83
+   ],
+   [
+    "MIDFIELD",
+    78,
+    83
+   ],
+   [
+    "DEFENCE",
+    81,
+    83
+   ]
+  ],
+  "starMen": {
+   "home": {
+    "id": "drogba",
+    "rating": 86
+   },
+   "away": {
+    "id": "kante",
+    "rating": 88
+   }
+  },
+  "verdict": "TOO CLOSE TO CALL"
+ },
+ "events": [
+  {
+   "id": "goal1",
+   "type": "goal",
+   "minute": "23'",
+   "scorer": "drogba",
+   "assist": "mata",
+   "footage": {
+    "parts": [
+     [
+      "c1-drogba/tv",
+      18,
+      56
+     ],
+     [
+      "c1-drogba/high",
+      19,
+      86
+     ]
+    ],
+    "goalAt": 1.8667
+   },
+   "caption": "DROGBA, JUST LIKE MUNICH",
+   "popup": "c1-drogba/popup"
+  },
+  {
+   "id": "goal2",
+   "type": "goal",
+   "minute": "42'",
+   "scorer": "havertz",
+   "assist": "mount",
+   "footage": {
+    "parts": [
+     [
+      "c2-havertz/tv",
+      44,
+      82
+     ],
+     [
+      "c2-havertz/high",
+      82,
+      153
+     ]
+    ],
+    "goalAt": 2.0
+   },
+   "caption": "HAVERTZ, JUST LIKE PORTO",
+   "popup": "c2-havertz/popup"
+  },
+  {
+   "id": "goal3",
+   "type": "goal",
+   "minute": "64'",
+   "scorer": "lampard",
+   "assist": "mata",
+   "footage": {
+    "parts": [
+     [
+      "c3-lampard/tv",
+      13,
+      51
+     ],
+     [
+      "c3-lampard/high",
+      51,
+      132
+     ]
+    ],
+    "goalAt": 2.3333
+   },
+   "caption": "LAMPARD FROM THE EDGE!",
+   "captionColor": "#ffd23f",
+   "popup": "c3-lampard/popup"
+  },
+  {
+   "id": "miss",
+   "type": "miss",
+   "minute": "90+3'",
+   "scorer": "werner",
+   "assist": "james",
+   "footage": {
+    "parts": [
+     [
+      "c4-werner-miss/tv",
+      44,
+      82
+     ],
+     [
+      "c4-werner-miss/fan",
+      82,
+      154
+     ]
+    ],
+    "goalAt": 2.0333
+   },
+   "caption": "WERNER SKIES IT!",
+   "lateCard": "90+3'",
+   "shotAt": 1.5667
+  }
+ ],
+ "potm": {
+  "top3": [
+   "lampard",
+   "drogba",
+   "havertz"
+  ],
+  "name": "FRANK LAMPARD",
+  "subtitle": "THE CAPTAIN'S REVENGE"
+ },
+ "vo": [
+  {
+   "seg": "grid",
+   "offset": 0.3,
+   "text": "Chelsea against Chelsea. Munich, twenty twelve, or Porto, twenty twenty-one?"
+  },
+  {
+   "seg": "homeSheet",
+   "offset": 0.2,
+   "text": "In twenty twelve, Chelsea sacked Villas-Boas in March. Caretaker Di Matteo won them the Champions League.",
+   "say": "In twenty twelve, Chelsea sacked Veelash Boash in March. Caretaker Dee Mattayo won them the Champions League."
+  },
+  {
+   "seg": "awaySheet",
+   "offset": 0.1,
+   "text": "In twenty twenty-one, they sacked Frank Lampard in January. Tuchel won it in May.",
+   "say": "In twenty twenty-one, they sacked Frank Lampard in January. Tookel won it in May."
+  },
+  {
+   "seg": "versus",
+   "offset": 0.3,
+   "text": "And the twist? Lampard signed Havertz, Werner, Chilwell and Mendy. Then someone else won with them.",
+   "say": "And the twist? Lampard signed Havverts, Verner, Chilwell and Mendy. Then someone else won with them."
+  },
+  {
+   "seg": "globe",
+   "offset": 0.5,
+   "text": "So tonight at Stamford Bridge, Captain Lampard faces the team he built."
+  },
+  {
+   "seg": "ratings",
+   "offset": 0.3,
+   "text": "FIFA twelve has Drogba at eighty-six. FIFA twenty-one has Kanté at eighty-eight. Too close to call.",
+   "say": "FIFA twelve has Drogba at eighty-six. FIFA twenty-one has Kontay at eighty-eight. Too close to call."
+  },
+  {
+   "seg": "goal1",
+   "offset": 0.1,
+   "spill": true,
+   "text": "Twenty-three minutes. Mata's corner, Drogba at the near post. Munich all over again.",
+   "say": "Twenty-three minutes. Mahta's corner, Drogba at the near post. Munich all over again."
+  },
+  {
+   "seg": "goal2",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Then Porto. Mount slides it through, Havertz rounds Čech.",
+   "say": "Then Porto. Mount slides it through, Havverts rounds Chek."
+  },
+  {
+   "seg": "goal3",
+   "offset": 0.2,
+   "spill": true,
+   "text": "And who else? Lampard, from the edge. Two-one."
+  },
+  {
+   "seg": "late",
+   "offset": 0.0,
+   "spill": true,
+   "text": "Ninety-third minute. Werner, one on one, for the draw...",
+   "say": "Ninety-third minute. Verner, one on one, for the draw..."
+  },
+  {
+   "seg": "fulltime",
+   "offset": 0.6,
+   "text": "Over the bar! Twenty twelve hold on, two-one."
+  },
+  {
+   "seg": "potm",
+   "offset": 0.8,
+   "text": "Player of the match? Frank Lampard. The captain's revenge."
+  },
+  {
+   "seg": "end",
+   "offset": 0.3,
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "say": "Follow for more, and play Road to Ballon Dor."
+  }
+ ]
+}

@@ -1,0 +1,708 @@
+{
+ "id": "ww-barca2009-v-barca2015",
+ "about": "Who would win? Barcelona 08/09 v Barcelona 14/15, an imagined match at the Camp Nou (2015 win 3-2). Ratings: FIFA 09 and FIFA 15 (sofifa_players). XIs: the 2009 final (Rome, 27 May 2009) and the 2015 final (Berlin, 6 June 2015), Wikipedia final pages + UEFA reports. Goal 1 and 3 recreate Rome (Eto'o near post from Iniesta; Messi's header from Xavi's cross). MSN 122 goals 2014/15 (58+39+25: FC Barcelona.com, Sportskeeda); Messi/Eto'o/Henry 100 goals 2008/09 (38+36+26: FourFourTwo, These Football Times). Kits: 08/09 home halves (Wikipedia 2009 final: 'red-and-blue halved shirts'), 14/15 away orange (ShirtSociety, Soccerbible).",
+ "title": "WHO WOULD WIN?",
+ "footageRoot": "../footage/ww-barca2009-v-barca2015",
+ "calm": {
+  "dir": "calm/high"
+ },
+ "music": "09-last-attack.mp3",
+ "competition": {
+  "title": [
+   "ONE CLUB · TWO TREBLES",
+   "2009 v 2015 · CAMP NOU"
+  ],
+  "tagline": "22 PLAYERS · 1 WINNER",
+  "versus": "TREBLE v TREBLE · DREAM MATCH",
+  "short": "DREAM MATCH · CAMP NOU"
+ },
+ "venue": {
+  "name": "CAMP NOU",
+  "place": "BARCELONA · SPAIN",
+  "lat": 41.3809,
+  "lon": 2.1228
+ },
+ "home": {
+  "name": "BARÇA 08/09",
+  "full": "FC BARCELONA 08/09",
+  "versus": [
+   "BARÇA",
+   "2009"
+  ],
+  "nation": "esp",
+  "versusInfo": "GUARDIOLA'S FIRST SEASON · TREBLE",
+  "city": {
+   "label": "BARCELONA",
+   "sub": "SPAIN",
+   "lat": 41.3809,
+   "lon": 2.1228
+  },
+  "formation": "4-3-3",
+  "kitLabel": "HOME KIT",
+  "badge": "../badges/fcbarcelona.png",
+  "kit": {
+   "shirt": "#a50044",
+   "trim": "#ffd23f",
+   "collar": "#0b1f4f",
+   "pattern": "halves",
+   "patternCol": "#004d98",
+   "shorts": "#0b1f4f",
+   "socks": "#004d98",
+   "number": "#ffd23f",
+   "gk": {
+    "shirt": "#2bb673",
+    "trim": "#0b3d2a",
+    "collar": "#0b3d2a"
+   }
+  },
+  "colors": {
+   "ring": "#a50044",
+   "headerStripes": [
+    "#004d98",
+    "#a50044"
+   ],
+   "versusBg": "#4a0a24",
+   "accent": "#ff5c8a",
+   "confetti": [
+    "#a50044",
+    "#004d98",
+    "#ffd23f",
+    "#ffffff"
+   ],
+   "ribbon": [
+    "#a50044",
+    "#004d98"
+   ]
+  },
+  "grid": [
+   "messi09",
+   "puyol",
+   "xavi09",
+   "etoo",
+   "iniesta09",
+   "henry09",
+   "toure09",
+   "sylvinho",
+   "pique09",
+   "busquets09",
+   "valdes"
+  ],
+  "slots": {
+   "valdes": "GK",
+   "puyol": "RB",
+   "toure09": "CB1",
+   "pique09": "CB2",
+   "sylvinho": "LB",
+   "xavi09": "CM1",
+   "busquets09": "CM",
+   "iniesta09": "CM2",
+   "messi09": "RW",
+   "etoo": "ST",
+   "henry09": "LW"
+  },
+  "manager": "guardiola"
+ },
+ "away": {
+  "name": "BARÇA 14/15",
+  "full": "FC BARCELONA 14/15",
+  "versus": [
+   "BARÇA",
+   "2015"
+  ],
+  "nation": "esp",
+  "versusInfo": "LUIS ENRIQUE'S FIRST SEASON · TREBLE",
+  "city": {
+   "label": "BARCELONA",
+   "sub": "SPAIN",
+   "lat": 41.3809,
+   "lon": 2.1228
+  },
+  "formation": "4-3-3",
+  "kitLabel": "AWAY KIT",
+  "badge": "../badges/fcbarcelona.png",
+  "kit": {
+   "shirt": "#f36b21",
+   "trim": "#7a1530",
+   "collar": "#7a1530",
+   "shorts": "#f36b21",
+   "socks": "#f36b21",
+   "number": "#7a1530",
+   "gk": {
+    "shirt": "#e8e04a",
+    "trim": "#1a1a1a",
+    "collar": "#1a1a1a"
+   }
+  },
+  "colors": {
+   "ring": "#f36b21",
+   "versusBg": "#6b2a08",
+   "accent": "#ffb07a",
+   "confetti": [
+    "#f36b21",
+    "#7a1530",
+    "#ffffff",
+    "#ffd23f"
+   ],
+   "ribbon": [
+    "#f36b21",
+    "#7a1530"
+   ]
+  },
+  "grid": [
+   "messi15",
+   "suarez",
+   "iniesta15",
+   "neymar",
+   "busquets15",
+   "pique15",
+   "alves15",
+   "mascherano",
+   "rakitic",
+   "alba",
+   "terstegen"
+  ],
+  "slots": {
+   "terstegen": "GK",
+   "alves15": "RB",
+   "pique15": "CB1",
+   "mascherano": "CB2",
+   "alba": "LB",
+   "rakitic": "CM1",
+   "busquets15": "CM",
+   "iniesta15": "CM2",
+   "messi15": "RW",
+   "suarez": "ST",
+   "neymar": "LW"
+  },
+  "manager": "luisenrique"
+ },
+ "players": {
+  "valdes": {
+   "name": "VALDÉS",
+   "full": "Víctor Valdés",
+   "num": 1,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "stubble",
+   "gk": true
+  },
+  "puyol": {
+   "name": "PUYOL",
+   "full": "Carles Puyol",
+   "num": 5,
+   "skin": "light",
+   "hair": [
+    "bigcurl",
+    "#4a3220"
+   ],
+   "beard": "stubble"
+  },
+  "toure09": {
+   "name": "Y. TOURÉ",
+   "full": "Yaya Touré",
+   "num": 24,
+   "skin": "deep",
+   "hair": [
+    "bald",
+    "#000"
+   ],
+   "beard": "none"
+  },
+  "pique09": {
+   "name": "PIQUÉ",
+   "full": "Gerard Piqué",
+   "num": 3,
+   "skin": "pink",
+   "hair": [
+    "side",
+    "#3a2a1e"
+   ],
+   "beard": "none"
+  },
+  "sylvinho": {
+   "name": "SYLVINHO",
+   "full": "Sylvinho",
+   "num": 16,
+   "skin": "tan",
+   "hair": [
+    "bald",
+    "#000"
+   ],
+   "beard": "none"
+  },
+  "busquets09": {
+   "name": "BUSQUETS",
+   "full": "Sergio Busquets",
+   "num": 28,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "none"
+  },
+  "xavi09": {
+   "name": "XAVI",
+   "full": "Xavi",
+   "num": 6,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "stubble"
+  },
+  "iniesta09": {
+   "name": "INIESTA",
+   "full": "Andrés Iniesta",
+   "num": 8,
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#3b2a1e"
+   ],
+   "beard": "none"
+  },
+  "messi09": {
+   "name": "MESSI",
+   "full": "Lionel Messi",
+   "num": 10,
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#2a1d15"
+   ],
+   "beard": "none"
+  },
+  "etoo": {
+   "name": "ETO'O",
+   "full": "Samuel Eto'o",
+   "num": 9,
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "henry09": {
+   "name": "HENRY",
+   "full": "Thierry Henry",
+   "num": 14,
+   "skin": "brown",
+   "hair": [
+    "bald",
+    "#000"
+   ],
+   "beard": "none"
+  },
+  "terstegen": {
+   "name": "TER STEGEN",
+   "full": "Marc-André ter Stegen",
+   "num": 1,
+   "skin": "pink",
+   "hair": [
+    "side",
+    "#a07850"
+   ],
+   "beard": "none",
+   "gk": true
+  },
+  "alves15": {
+   "name": "ALVES",
+   "full": "Dani Alves",
+   "num": 22,
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#d8c48a"
+   ],
+   "beard": "stubble"
+  },
+  "pique15": {
+   "name": "PIQUÉ",
+   "full": "Gerard Piqué",
+   "num": 3,
+   "skin": "pink",
+   "hair": [
+    "side",
+    "#3a2a1e"
+   ],
+   "beard": "stubble"
+  },
+  "mascherano": {
+   "name": "MASCHERANO",
+   "full": "Javier Mascherano",
+   "num": 14,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "stubble"
+  },
+  "alba": {
+   "name": "ALBA",
+   "full": "Jordi Alba",
+   "num": 18,
+   "skin": "olive",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "stubble"
+  },
+  "rakitic": {
+   "name": "RAKITIĆ",
+   "full": "Ivan Rakitić",
+   "num": 4,
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#5a3f28"
+   ],
+   "beard": "short"
+  },
+  "busquets15": {
+   "name": "BUSQUETS",
+   "full": "Sergio Busquets",
+   "num": 5,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "short"
+  },
+  "iniesta15": {
+   "name": "INIESTA",
+   "full": "Andrés Iniesta",
+   "num": 8,
+   "skin": "pink",
+   "hair": [
+    "buzz",
+    "#3b2a1e"
+   ],
+   "beard": "stubble"
+  },
+  "messi15": {
+   "name": "MESSI",
+   "full": "Lionel Messi",
+   "num": 10,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#2a1d15"
+   ],
+   "beard": "stubble"
+  },
+  "suarez": {
+   "name": "SUÁREZ",
+   "full": "Luis Suárez",
+   "num": 9,
+   "skin": "tan",
+   "hair": [
+    "side",
+    "#1d1512"
+   ],
+   "beard": "stubble"
+  },
+  "neymar": {
+   "name": "NEYMAR",
+   "full": "Neymar",
+   "num": 11,
+   "skin": "tan",
+   "hair": [
+    "quiff",
+    "#3a2a1e"
+   ],
+   "beard": "stubble"
+  },
+  "guardiola": {
+   "name": "GUARDIOLA",
+   "full": "Pep Guardiola",
+   "skin": "light",
+   "hair": [
+    "buzz",
+    "#2a1d15"
+   ],
+   "beard": "stubble",
+   "suit": {
+    "jacket": "#1c1d24",
+    "tie": "#a50044"
+   }
+  },
+  "luisenrique": {
+   "name": "LUIS ENRIQUE",
+   "full": "Luis Enrique",
+   "skin": "light",
+   "hair": [
+    "buzz",
+    "#6b5440"
+   ],
+   "beard": "stubble",
+   "suit": {
+    "jacket": "#1f2533",
+    "tie": "#004d98"
+   }
+  }
+ },
+ "ratings": {
+  "label": "FIFA 09 v FIFA 15",
+  "rows": [
+   [
+    "ATTACK",
+    87,
+    89
+   ],
+   [
+    "MIDFIELD",
+    78,
+    86
+   ],
+   [
+    "DEFENCE",
+    82,
+    83
+   ]
+  ],
+  "starMen": {
+   "home": {
+    "id": "messi09",
+    "rating": 90,
+    "label": "MESSI 09"
+   },
+   "away": {
+    "id": "messi15",
+    "rating": 93,
+    "label": "MESSI 15"
+   }
+  },
+  "verdict": "2015 ARE FAVOURITES"
+ },
+ "events": [
+  {
+   "id": "goal1",
+   "type": "goal",
+   "minute": "10'",
+   "scorer": "etoo",
+   "assist": "iniesta09",
+   "footage": {
+    "parts": [
+     [
+      "b1-etoo/tv",
+      44,
+      82
+     ],
+     [
+      "b1-etoo/high",
+      82,
+      153
+     ]
+    ],
+    "goalAt": 2.0
+   },
+   "popup": "b1-etoo/popup",
+   "caption": "ETO'O, JUST LIKE ROME"
+  },
+  {
+   "id": "goal2",
+   "type": "goal",
+   "minute": "27'",
+   "scorer": "suarez",
+   "assist": "neymar",
+   "footage": {
+    "parts": [
+     [
+      "b2-suarez/tv",
+      0,
+      36
+     ],
+     [
+      "b2-suarez/high",
+      36,
+      101
+     ]
+    ],
+    "goalAt": 1.7333
+   },
+   "popup": "b2-suarez/popup",
+   "caption": "M S N WAKE UP"
+  },
+  {
+   "id": "goal3",
+   "type": "goal",
+   "minute": "58'",
+   "scorer": "messi09",
+   "assist": "xavi09",
+   "footage": {
+    "parts": [
+     [
+      "b3-messi-header/tv",
+      10,
+      48
+     ],
+     [
+      "b3-messi-header/high",
+      19,
+      89
+     ]
+    ],
+    "goalAt": 1.9667
+   },
+   "popup": "b3-messi-header/popup",
+   "caption": "YOUNG MESSI HEADS IT IN"
+  },
+  {
+   "id": "goal4",
+   "type": "goal",
+   "minute": "71'",
+   "scorer": "messi15",
+   "assist": "iniesta15",
+   "footage": {
+    "parts": [
+     [
+      "b4-messi15/tv",
+      13,
+      51
+     ],
+     [
+      "b4-messi15/high",
+      51,
+      131
+     ]
+    ],
+    "goalAt": 2.3
+   },
+   "popup": "b4-messi15/popup",
+   "caption": "OLD MESSI: TOP CORNER",
+   "captionColor": "#ffd23f"
+  },
+  {
+   "id": "goal5",
+   "type": "goal",
+   "minute": "90+4'",
+   "scorer": "neymar",
+   "assist": "messi15",
+   "footage": {
+    "parts": [
+     [
+      "b5-neymar/tv",
+      44,
+      82
+     ],
+     [
+      "b5-neymar/high",
+      82,
+      154
+     ]
+    ],
+    "goalAt": 2.0333
+   },
+   "popup": "b5-neymar/popup",
+   "caption": "NEYMAR WINS IT!",
+   "captionColor": "#ffd23f",
+   "lateCard": "90+4'"
+  }
+ ],
+ "potm": {
+  "top3": [
+   "messi15",
+   "neymar",
+   "messi09"
+  ],
+  "name": "LIONEL MESSI 2015",
+  "subtitle": "ONLY MESSI BEATS MESSI"
+ },
+ "vo": [
+  {
+   "seg": "grid",
+   "offset": 0.3,
+   "text": "Barcelona against... Barcelona. Twenty oh-nine, or twenty fifteen?",
+   "say": "Barsah against... Barsah. Two thousand and nine, or two thousand and fifteen?"
+  },
+  {
+   "seg": "homeSheet",
+   "offset": 0.2,
+   "text": "Guardiola's first season. Messi, Eto'o and Henry scored a hundred goals between them, and won the treble.",
+   "say": "Gwardeeohlah's first season. Messi, Ehtohoh and Onree scored a hundred goals between them, and won the treble."
+  },
+  {
+   "seg": "awaySheet",
+   "offset": 0.1,
+   "text": "Luis Enrique's first season? M S N. A hundred and twenty-two goals. Another treble.",
+   "say": "Looeess Enreekay's first season? M, S, N. A hundred and twenty-two goals. Another treble."
+  },
+  {
+   "seg": "versus",
+   "offset": 0.3,
+   "text": "And four men started both finals: Messi, Iniesta, Busquets and Piqué.",
+   "say": "And four men started both finals: Messi, Inyestah, Booskets and Peekay."
+  },
+  {
+   "seg": "globe",
+   "offset": 0.5,
+   "text": "So tonight at the Camp Nou, they play against themselves. Messi at twenty-one, against Messi at twenty-seven."
+  },
+  {
+   "seg": "ratings",
+   "offset": 0.3,
+   "text": "In FIFA oh-nine, Busquets was rated sixty. Six years later? Eighty-five.",
+   "say": "In FIFA oh nine, Booskets was rated sixty. Six years later? Eighty-five."
+  },
+  {
+   "seg": "goal1",
+   "offset": 0.1,
+   "spill": true,
+   "text": "Ten minutes, just like Rome. Iniesta finds Eto'o, near post.",
+   "say": "Ten minutes, just like Rome. Inyestah finds Ehtohoh, near post."
+  },
+  {
+   "seg": "goal2",
+   "offset": 0.2,
+   "spill": true,
+   "text": "M S N wake up. Neymar squares it, Suárez taps in.",
+   "say": "M, S, N wake up. Naymar squares it, Swahrez taps in."
+  },
+  {
+   "seg": "goal3",
+   "offset": 0.1,
+   "spill": true,
+   "text": "Then Xavi crosses, and young Messi heads it in. Rome all over again.",
+   "say": "Then Shahvee crosses, and young Messi heads it in. Rome all over again."
+  },
+  {
+   "seg": "goal4",
+   "offset": 0.2,
+   "spill": true,
+   "text": "But old Messi has learned a few things. Top corner. Two-all."
+  },
+  {
+   "seg": "late",
+   "offset": 0.0,
+   "spill": true,
+   "text": "Ninety-fourth minute. Messi slips in Neymar...",
+   "say": "Ninety-fourth minute. Messi slips in Naymar..."
+  },
+  {
+   "seg": "fulltime",
+   "offset": 0.6,
+   "text": "Three-two, twenty fifteen. M S N beat the hundred-goal trio.",
+   "say": "Three-two, twenty fifteen. M, S, N beat the hundred-goal trio."
+  },
+  {
+   "seg": "potm",
+   "offset": 0.8,
+   "text": "Player of the match? Lionel Messi. Only Messi beats Messi."
+  },
+  {
+   "seg": "end",
+   "offset": 0.3,
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "say": "Follow for more, and play Road to Ballon Dor."
+  }
+ ]
+}

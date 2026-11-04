@@ -1,0 +1,50 @@
+{
+  "_about": "Who would win? Tottenham 2026/27 with Harry Kane brought home v Bayern 2026/27 without him. A what-if: Kane is still a Bayern player (bundesliga.com 31 Oct 2026 match report; NBC 26 Oct 2026). Imagined match at the Tottenham Hotspur Stadium, 3-2 Spurs, Kane hat-trick. Kits: Spurs home white, navy shorts, white socks; Bayern home red, red shorts, white socks (footballshirtculture + Nike/adidas listings). Keeper kits assumed.",
+  "teams": {
+    "home": { "name": "Tottenham Hotspur", "short": "Spurs", "kit": { "shirt": "#F4F5F7", "shorts": "#132257", "socks": "#F4F5F7" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#132257" },
+    "away": { "name": "FC Bayern München", "short": "Bayern", "kit": { "shirt": "#DC052D", "shorts": "#DC052D", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#2BB673", "shorts": "#0B3D2A", "socks": "#2BB673" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "kane":      { "name": "Harry Kane", "skin": "#f0c3a0", "hair": "#8a6a48", "popupName": "Kane" },
+    "kudus":     { "name": "Mohammed Kudus", "skin": "#3e2618", "hair": "#0d0a09", "popupName": "Kudus" },
+    "robertson": { "name": "Andy Robertson", "skin": "#f2c4a6", "hair": "#5b3a22", "popupName": "Robertson" },
+    "tonali":    { "name": "Sandro Tonali", "skin": "#eac09c", "hair": "#2a1d15", "popupName": "Tonali" },
+    "marmoush":  { "name": "Omar Marmoush", "skin": "#c79670", "hair": "#1d1512" },
+    "tel":       { "name": "Mathys Tel", "skin": "#4a2e1e", "hair": "#0d0a09" },
+    "vdv":       { "name": "Micky van de Ven", "skin": "#f2c4a6", "hair": "#8a6a48" },
+    "vanhecke":  { "name": "Jan Paul van Hecke", "skin": "#7a4e33", "hair": "#0d0a09" },
+    "kinsky":    { "name": "Antonin Kinsky", "skin": "#f2c4a6", "hair": "#6b4a2e" },
+    "gnabry":    { "name": "Serge Gnabry", "skin": "#7a4e33", "hair": "#0d0a09", "popupName": "Gnabry" },
+    "olise":     { "name": "Michael Olise", "skin": "#5e3a24", "hair": "#0d0a09", "popupName": "Olise" },
+    "musiala":   { "name": "Jamal Musiala", "skin": "#7a4e33", "hair": "#0d0a09", "popupName": "Musiala" },
+    "kimmich":   { "name": "Joshua Kimmich", "skin": "#f2c4a6", "hair": "#8a6a48", "popupName": "Kimmich" },
+    "upamecano": { "name": "Dayot Upamecano", "skin": "#3e2618", "hair": "#0d0a09" },
+    "kim":       { "name": "Kim Min-jae", "skin": "#e8c09a", "hair": "#1d1512" },
+    "davies":    { "name": "Alphonso Davies", "skin": "#3e2618", "hair": "#0d0a09" },
+    "laimer":    { "name": "Konrad Laimer", "skin": "#f2c4a6", "hair": "#4a3220" },
+    "pavlovic":  { "name": "Aleksandar Pavlovic", "skin": "#f2c4a6", "hair": "#3a2a1e" },
+    "urbig":     { "name": "Jonas Urbig", "skin": "#f2c4a6", "hair": "#6b4a2e" }
+  },
+  "clips": [
+    { "id": "s1-gnabry", "kind": "one_on_one", "attacking": "away", "scorer": "gnabry", "assister": "musiala",
+      "defenders": ["vanhecke", "vdv"], "keeper": "kinsky", "teammates": ["olise"],
+      "minute": 9, "scoreBefore": [0, 0], "night": true, "celebration": "arms_out", "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "through", "finish": "ground", "goalSide": "near" }, "seed": "gnabry-a" },
+    { "id": "s2-kane-low", "kind": "long_range", "attacking": "home", "scorer": "kane", "assister": "kudus",
+      "defenders": ["kimmich", "pavlovic", "upamecano"], "keeper": "urbig", "teammates": ["marmoush", "tel"],
+      "minute": 24, "scoreBefore": [0, 1], "night": true, "celebration": "fist_pump", "cameras": ["tv", "high", "tight"],
+      "recreate": { "scorerSpot": [2, 20], "finish": "ground", "goalSide": "left", "height": "low" }, "seed": "kane-low-a" },
+    { "id": "s3-olise", "kind": "long_range", "attacking": "away", "scorer": "olise", "assister": "kimmich",
+      "defenders": ["tonali", "robertson", "vdv"], "keeper": "kinsky", "teammates": ["gnabry", "musiala"],
+      "minute": 51, "scoreBefore": [1, 1], "night": true, "celebration": "jump", "cameras": ["tv", "high", "tight"],
+      "recreate": { "scorerSpot": [9, 19], "finish": "curl", "goalSide": "far", "height": "high" }, "seed": "olise-curl-a" },
+    { "id": "s4-kane-pen", "kind": "penalty", "attacking": "home", "scorer": "kane",
+      "keeper": "urbig", "minute": 68, "scoreBefore": [1, 2], "night": true, "celebration": "roar", "cameras": ["tv", "high", "tight"],
+      "seed": "kane-pen-a" },
+    { "id": "s5-kane-header", "kind": "header", "attacking": "home", "scorer": "kane", "assister": "robertson",
+      "defenders": ["upamecano", "kim", "kimmich", "laimer"], "keeper": "urbig", "teammates": ["vdv", "vanhecke", "kudus"],
+      "minute": 90, "minuteLabel": "90+1", "scoreBefore": [2, 2], "night": true, "celebration": "knee_slide", "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "cross", "side": "left", "swing": "in", "scorerStart": [1, 17], "scorerSpot": [0.5, 8], "finish": "header", "goalSide": "far", "height": "mid" },
+      "seed": "kane-header-a" }
+  ]
+}

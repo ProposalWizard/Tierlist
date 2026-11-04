@@ -1,0 +1,46 @@
+{
+  "_about": "Who would win? Chelsea 2012 (Munich final XI, home royal blue, white socks) v Chelsea 2021 (Porto final XI, in the 2020-21 Arctic Blue away kit). Imagined match, 2-1 to 2012. Clip 1 recreates Drogba's Munich header (Mata corner from the right... near post). Clip 2 recreates Havertz in Porto (Mount's through ball, rounds the keeper, empty net). Sources: Wikipedia 2012 and 2021 UEFA Champions League final pages; UEFA match reports. Away kit: FourFourTwo + Goal (Arctic Blue).",
+  "teams": {
+    "home": { "name": "Chelsea", "short": "Chelsea 12", "kit": { "shirt": "#034694", "shorts": "#034694", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#1A1A1A", "shorts": "#1A1A1A", "socks": "#1A1A1A" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Chelsea", "short": "Chelsea 21", "kit": { "shirt": "#9CC3E6", "shorts": "#9CC3E6", "socks": "#9CC3E6" }, "keeperKit": { "shirt": "#2BB673", "shorts": "#0B3D2A", "socks": "#2BB673" }, "popupTrim": "#0B1F4F" }
+  },
+  "people": {
+    "drogba":   { "name": "Didier Drogba", "skin": "#3e2618", "hair": "#0d0a09", "popupName": "Drogba" },
+    "mata":     { "name": "Juan Mata", "skin": "#e8b994", "hair": "#2a1d15", "popupName": "Mata" },
+    "lampard":  { "name": "Frank Lampard", "skin": "#f0c3a0", "hair": "#5b3a22", "popupName": "Lampard" },
+    "kalou":    { "name": "Salomon Kalou", "skin": "#3e2618", "hair": "#0d0a09" },
+    "cahill":   { "name": "Gary Cahill", "skin": "#f2c4a6", "hair": "#4a3220" },
+    "luiz":     { "name": "David Luiz", "skin": "#d9a57e", "hair": "#2a1d15" },
+    "cech":     { "name": "Petr Cech", "skin": "#f0c3a0", "hair": "#5b3a22" },
+    "mendy":    { "name": "Edouard Mendy", "skin": "#3e2618", "hair": "#0d0a09" },
+    "azpi":     { "name": "Cesar Azpilicueta", "skin": "#e8b994", "hair": "#2a1d15" },
+    "silva":    { "name": "Thiago Silva", "skin": "#c79670", "hair": "#2a1d15" },
+    "rudiger":  { "name": "Antonio Rudiger", "skin": "#3e2618", "hair": "#0d0a09" },
+    "kante":    { "name": "N'Golo Kante", "skin": "#3e2618", "hair": "#0d0a09" },
+    "jorginho": { "name": "Jorginho", "skin": "#e8b994", "hair": "#2a1d15" },
+    "mount":    { "name": "Mason Mount", "skin": "#f0c3a0", "hair": "#3a2a1e", "popupName": "Mount" },
+    "havertz":  { "name": "Kai Havertz", "skin": "#f2c4a6", "hair": "#6b4a2e", "popupName": "Havertz" },
+    "werner":   { "name": "Timo Werner", "skin": "#f2c4a6", "hair": "#3a2a1e", "popupName": "Werner" },
+    "james":    { "name": "Reece James", "skin": "#7a4e33", "hair": "#0d0a09" }
+  },
+  "clips": [
+    { "id": "c1-drogba", "kind": "header", "attacking": "home", "scorer": "drogba", "assister": "mata",
+      "defenders": ["silva", "azpi", "rudiger", "kante"], "keeper": "mendy", "teammates": ["cahill", "luiz", "lampard"],
+      "minute": 23, "scoreBefore": [0, 0], "night": true, "celebration": "roar", "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "corner", "side": "right", "swing": "in", "scorerStart": [4, 13], "scorerSpot": [2.5, 5.5], "finish": "header", "goalSide": "near", "height": "mid" },
+      "seed": "drogba-munich-a" },
+    { "id": "c2-havertz", "kind": "one_on_one", "attacking": "away", "scorer": "havertz", "assister": "mount",
+      "defenders": ["cahill", "luiz"], "keeper": "cech", "teammates": ["werner"],
+      "minute": 42, "scoreBefore": [1, 0], "night": true, "celebration": "knee_slide", "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "through", "passerStart": [3, 38], "scorerStart": [-4, 30], "finish": "ground", "goalSide": "centre" },
+      "seed": "havertz-porto-a" },
+    { "id": "c3-lampard", "kind": "long_range", "attacking": "home", "scorer": "lampard", "assister": "mata",
+      "defenders": ["kante", "jorginho", "silva"], "keeper": "mendy", "teammates": ["drogba", "kalou"],
+      "minute": 64, "scoreBefore": [1, 1], "night": true, "celebration": "fist_pump", "cameras": ["tv", "high", "tight"],
+      "recreate": { "scorerSpot": [-3, 23], "finish": "ground", "goalSide": "left", "height": "low" }, "seed": "lampard-edge-a" },
+    { "id": "c4-werner-miss", "kind": "miss", "attacking": "away", "scorer": "werner", "assister": "james",
+      "defenders": ["cahill", "luiz"], "keeper": "cech", "teammates": ["havertz", "mount"],
+      "minute": 90, "minuteLabel": "90+3", "scoreBefore": [2, 1], "night": true, "cameras": ["tv", "high", "fan"],
+      "recreate": { "base": "one_on_one", "outcome": "over" }, "seed": "werner-over-a", "popup": false }
+  ]
+}

@@ -84,7 +84,7 @@ Everything not marked *required* has a default. See `examples/utd-v-roma-v4.json
   "city": { "label": "MANCHESTER", "sub": "ENGLAND", "lat": 53.463, "lon": -2.291 },   // the globe pin   (required)
   "formation": "4-2-3-1", "kitLabel": "HOME KIT",   // header line "HOME KIT · 4-2-3-1" (sheetLabel overrides)
   "kit": { "shirt": "#d81e2c", "trim": "#ffffff", "collar": "#111111", "shorts": "#ffffff", "socks": "#d81e2c", "number": "#ffffff",
-           "pattern": "band", "band": ["#f4b223", "#a6192e"],   // patterns: band | stripes | hoops | halves | sash | sides (patternCol, else trim)
+           "pattern": "band", "band": ["#f4b223", "#a6192e"],   // patterns: band | stripes | hoops | halves | sash | sides | centre (patternCol, else trim; centre takes centreEdge for thin edges, e.g. PSG)
            "gk": { "shirt": "#e8e04a", "trim": "#1a1a1a", "collar": "#1a1a1a" } },    // shirt required
   "badge": "badges/man-united.png",     // a real badge (club_logos) replaces the drawn shield everywhere
   "crest": { "a": "#d81e2c", "b": "#ffffff", "c": "#111", "t": "MU", "tc": "#fff", "ts": 40 },   // the drawn shield (default from the kit and initials)

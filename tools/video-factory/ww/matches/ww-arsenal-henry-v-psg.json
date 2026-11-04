@@ -1,0 +1,694 @@
+{
+ "id": "ww-arsenal-henry-v-psg",
+ "about": "Who would win? Arsenal 2026/27 with Thierry Henry 2003/04 up front (in for Havertz) v PSG 2026/27. Imagined match at the Emirates, 3-2 Arsenal. Ratings: FC 27 (sofifa_players); Henry 2003/04 has no database (FIFA 04 is not covered), so 92 is our prediction (said in the video). XIs: Arsenal at Bayern 21 Oct 2026 (Fox Sports box score + Footy Headlines numbers); PSG v Barcelona 20 Oct 2026 (Heavy.com + Yahoo; numbers Wikipedia + Footy Headlines). Facts: 2026 UCL final PSG 1-1 Arsenal, PSG won 4-3 on pens, Gabriel skied Arsenal's fifth kick (Sky Sports, Euronews); Arsenal top on 24 pts 2 Nov (NBC, OneFootball); PSG back-to-back champions (Bleacher Report, theScore); Dembele 2025 Ballon d'Or (Wikipedia, SI); Henry 30 league goals 03/04 (SI, Wikipedia 2003-04 Arsenal season).",
+ "title": "WHO WOULD WIN?",
+ "footageRoot": "../footage/ww-arsenal-henry-v-psg",
+ "calm": {
+  "dir": "calm/high"
+ },
+ "music": "09-last-attack.mp3",
+ "competition": {
+  "title": [
+   "CHAMPIONS LEAGUE REMATCH",
+   "ARSENAL + HENRY · EMIRATES"
+  ],
+  "tagline": "22 PLAYERS · 1 WINNER",
+  "versus": "THE BUDAPEST REMATCH",
+  "short": "DREAM MATCH · EMIRATES"
+ },
+ "venue": {
+  "name": "EMIRATES STADIUM",
+  "place": "LONDON · ENGLAND",
+  "lat": 51.5549,
+  "lon": -0.1084
+ },
+ "home": {
+  "name": "ARSENAL",
+  "full": "ARSENAL + HENRY 03/04",
+  "versus": [
+   "ARSENAL",
+   "+ HENRY"
+  ],
+  "nation": "eng",
+  "founded": 1886,
+  "city": {
+   "label": "LONDON",
+   "sub": "ENGLAND",
+   "lat": 51.5549,
+   "lon": -0.1084
+  },
+  "formation": "4-3-3",
+  "kitLabel": "HOME KIT",
+  "badge": "../badges/arsenal.png",
+  "kit": {
+   "shirt": "#ef0107",
+   "trim": "#ffffff",
+   "collar": "#ffffff",
+   "shorts": "#ffffff",
+   "socks": "#ef0107",
+   "number": "#ffffff",
+   "gk": {
+    "shirt": "#e8e04a",
+    "trim": "#1a1a1a",
+    "collar": "#1a1a1a"
+   }
+  },
+  "grid": [
+   "henry",
+   "gabriel",
+   "rice",
+   "saka",
+   "odegaard",
+   "guimaraes",
+   "eze",
+   "timber",
+   "konsa",
+   "calafiori",
+   "raya"
+  ],
+  "slots": {
+   "raya": "GK",
+   "timber": "RB",
+   "konsa": "CB1",
+   "gabriel": "CB2",
+   "calafiori": "LB",
+   "rice": "CM1",
+   "guimaraes": "CM",
+   "odegaard": "CM2",
+   "saka": "RW",
+   "henry": "ST",
+   "eze": "LW"
+  },
+  "manager": "arteta"
+ },
+ "away": {
+  "name": "PSG",
+  "full": "PARIS SAINT-GERMAIN",
+  "versus": [
+   "PARIS",
+   "SAINT-GERMAIN"
+  ],
+  "nation": "fra",
+  "founded": 1970,
+  "city": {
+   "label": "PARIS",
+   "sub": "FRANCE",
+   "lat": 48.8414,
+   "lon": 2.253
+  },
+  "formation": "4-3-3",
+  "kitLabel": "HOME KIT",
+  "badge": "../badges/parissaintgermain.png",
+  "kit": {
+   "shirt": "#1b3f8f",
+   "trim": "#ffffff",
+   "collar": "#da291c",
+   "pattern": "centre",
+   "patternCol": "#da291c",
+   "centreEdge": "#ffffff",
+   "shorts": "#1b3f8f",
+   "socks": "#0e1e45",
+   "number": "#ffffff",
+   "gk": {
+    "shirt": "#2bb673",
+    "trim": "#0b3d2a",
+    "collar": "#0b3d2a"
+   }
+  },
+  "colors": {
+   "ring": "#da291c",
+   "headerStripes": [
+    "#da291c",
+    "#ffffff"
+   ],
+   "versusBg": "#0e1e45",
+   "accent": "#ff6b6b",
+   "bar": "#3d6fd1",
+   "confetti": [
+    "#1b3f8f",
+    "#da291c",
+    "#ffffff",
+    "#ffd23f"
+   ],
+   "ribbon": [
+    "#1b3f8f",
+    "#da291c"
+   ]
+  },
+  "grid": [
+   "dembele",
+   "vitinha",
+   "hakimi",
+   "kvara",
+   "neves",
+   "mendes",
+   "pacho",
+   "marquinhos",
+   "doue",
+   "ruiz",
+   "safonov"
+  ],
+  "slots": {
+   "safonov": "GK",
+   "hakimi": "RB",
+   "marquinhos": "CB1",
+   "pacho": "CB2",
+   "mendes": "LB",
+   "neves": "CM1",
+   "vitinha": "CM",
+   "ruiz": "CM2",
+   "doue": "RW",
+   "dembele": "ST",
+   "kvara": "LW"
+  },
+  "manager": "enrique"
+ },
+ "players": {
+  "raya": {
+   "name": "RAYA",
+   "full": "David Raya",
+   "num": 1,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "short",
+   "gk": true
+  },
+  "timber": {
+   "name": "TIMBER",
+   "full": "Jurriën Timber",
+   "num": 12,
+   "skin": "dark",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "konsa": {
+   "name": "KONSA",
+   "full": "Ezri Konsa",
+   "num": 15,
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "short"
+  },
+  "gabriel": {
+   "name": "GABRIEL",
+   "full": "Gabriel Magalhães",
+   "num": 6,
+   "skin": "tan",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "short"
+  },
+  "calafiori": {
+   "name": "CALAFIORI",
+   "full": "Riccardo Calafiori",
+   "num": 33,
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#2a1d15"
+   ],
+   "beard": "short"
+  },
+  "rice": {
+   "name": "RICE",
+   "full": "Declan Rice",
+   "num": 41,
+   "skin": "pink",
+   "hair": [
+    "tidy",
+    "#6b4a2b"
+   ],
+   "beard": "none"
+  },
+  "guimaraes": {
+   "name": "GUIMARÃES",
+   "full": "Bruno Guimarães",
+   "num": 39,
+   "skin": "tan",
+   "hair": [
+    "curlytop",
+    "#1d1512"
+   ],
+   "beard": "stubble"
+  },
+  "odegaard": {
+   "name": "ØDEGAARD",
+   "full": "Martin Ødegaard",
+   "num": 8,
+   "skin": "pink",
+   "hair": [
+    "side",
+    "#a07850"
+   ],
+   "beard": "stubble"
+  },
+  "saka": {
+   "name": "SAKA",
+   "full": "Bukayo Saka",
+   "num": 7,
+   "skin": "dark",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "henry": {
+   "name": "HENRY",
+   "full": "Thierry Henry",
+   "num": 14,
+   "skin": "brown",
+   "hair": [
+    "bald",
+    "#000"
+   ],
+   "beard": "none"
+  },
+  "eze": {
+   "name": "EZE",
+   "full": "Eberechi Eze",
+   "num": 10,
+   "skin": "deep",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "short"
+  },
+  "safonov": {
+   "name": "SAFONOV",
+   "full": "Matvey Safonov",
+   "num": 39,
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#6b4a2e"
+   ],
+   "beard": "none",
+   "gk": true
+  },
+  "hakimi": {
+   "name": "HAKIMI",
+   "full": "Achraf Hakimi",
+   "num": 2,
+   "skin": "tan",
+   "hair": [
+    "curlytop",
+    "#1d1512"
+   ],
+   "beard": "short"
+  },
+  "marquinhos": {
+   "name": "MARQUINHOS",
+   "full": "Marquinhos",
+   "num": 5,
+   "skin": "tan",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "short"
+  },
+  "pacho": {
+   "name": "PACHO",
+   "full": "Willian Pacho",
+   "num": 51,
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "short"
+  },
+  "mendes": {
+   "name": "N. MENDES",
+   "full": "Nuno Mendes",
+   "num": 25,
+   "skin": "dark",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "neves": {
+   "name": "J. NEVES",
+   "full": "João Neves",
+   "num": 87,
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#3a2a1e"
+   ],
+   "beard": "none"
+  },
+  "vitinha": {
+   "name": "VITINHA",
+   "full": "Vitinha",
+   "num": 17,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "stubble"
+  },
+  "ruiz": {
+   "name": "F. RUIZ",
+   "full": "Fabián Ruiz",
+   "num": 8,
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#1d1512"
+   ],
+   "beard": "full"
+  },
+  "doue": {
+   "name": "DOUÉ",
+   "full": "Désiré Doué",
+   "num": 14,
+   "skin": "deep",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "dembele": {
+   "name": "DEMBÉLÉ",
+   "full": "Ousmane Dembélé",
+   "num": 10,
+   "skin": "deep",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "short"
+  },
+  "kvara": {
+   "name": "KVARA",
+   "full": "Khvicha Kvaratskhelia",
+   "num": 7,
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#4a3220"
+   ],
+   "beard": "stubble"
+  },
+  "arteta": {
+   "name": "ARTETA",
+   "full": "Mikel Arteta",
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#1d1512"
+   ],
+   "beard": "stubble",
+   "suit": {
+    "jacket": "#1c1d24",
+    "tie": "#ef0107"
+   }
+  },
+  "enrique": {
+   "name": "LUIS ENRIQUE",
+   "full": "Luis Enrique",
+   "skin": "light",
+   "hair": [
+    "buzz",
+    "#6b5440"
+   ],
+   "beard": "stubble",
+   "suit": {
+    "jacket": "#1f2533",
+    "tie": "#1b3f8f"
+   }
+  }
+ },
+ "ratings": {
+  "label": "FC 27 · HENRY PREDICTED",
+  "rows": [
+   [
+    "ATTACK",
+    88,
+    88
+   ],
+   [
+    "MIDFIELD",
+    87,
+    88
+   ],
+   [
+    "DEFENCE",
+    85,
+    88
+   ]
+  ],
+  "starMen": {
+   "home": {
+    "id": "henry",
+    "rating": 92
+   },
+   "away": {
+    "id": "dembele",
+    "rating": 90
+   }
+  },
+  "verdict": "PSG ARE FAVOURITES"
+ },
+ "events": [
+  {
+   "id": "goal1",
+   "type": "goal",
+   "minute": "12'",
+   "scorer": "henry",
+   "footage": {
+    "parts": [
+     [
+      "a1-henry-curl/tv",
+      13,
+      51
+     ],
+     [
+      "a1-henry-curl/high",
+      51,
+      130
+     ]
+    ],
+    "goalAt": 2.2667
+   },
+   "caption": "VINTAGE HENRY",
+   "assist": "odegaard",
+   "popup": "a1-henry-curl/popup"
+  },
+  {
+   "id": "goal2",
+   "type": "goal",
+   "minute": "31'",
+   "scorer": "dembele",
+   "footage": {
+    "parts": [
+     [
+      "a2-dembele-pen/tv",
+      0,
+      19
+     ],
+     [
+      "a2-dembele-pen/high",
+      19,
+      91
+     ]
+    ],
+    "goalAt": 1.4
+   },
+   "caption": "DEMBÉLÉ, JUST LIKE BUDAPEST",
+   "popup": "a2-dembele-pen/popup"
+  },
+  {
+   "id": "goal3",
+   "type": "goal",
+   "minute": "55'",
+   "scorer": "henry",
+   "footage": {
+    "parts": [
+     [
+      "a3-henry-run/tv",
+      44,
+      82
+     ],
+     [
+      "a3-henry-run/high",
+      82,
+      154
+     ]
+    ],
+    "goalAt": 2.0333
+   },
+   "caption": "HENRY AGAIN!",
+   "captionColor": "#ffd23f",
+   "assist": "saka",
+   "popup": "a3-henry-run/popup"
+  },
+  {
+   "id": "goal4",
+   "type": "goal",
+   "minute": "73'",
+   "scorer": "kvara",
+   "footage": {
+    "parts": [
+     [
+      "a4-kvara/tv",
+      13,
+      51
+     ],
+     [
+      "a4-kvara/high",
+      51,
+      131
+     ]
+    ],
+    "goalAt": 2.3
+   },
+   "caption": "KVARA LEVELS IT",
+   "assist": "vitinha",
+   "popup": "a4-kvara/popup"
+  },
+  {
+   "id": "goal5",
+   "type": "goal",
+   "minute": "90+2'",
+   "scorer": "gabriel",
+   "footage": {
+    "parts": [
+     [
+      "a5-gabriel/tv",
+      21,
+      59
+     ],
+     [
+      "a5-gabriel/high",
+      19,
+      86
+     ]
+    ],
+    "goalAt": 1.8667
+   },
+   "caption": "GABRIEL WINS IT!",
+   "captionColor": "#ffd23f",
+   "lateCard": "90+2'",
+   "assist": "rice",
+   "popup": "a5-gabriel/popup"
+  }
+ ],
+ "potm": {
+  "top3": [
+   "henry",
+   "gabriel",
+   "dembele"
+  ],
+  "name": "THIERRY HENRY",
+  "subtitle": "TWO GOALS · STILL THE KING"
+ },
+ "vo": [
+  {
+   "seg": "grid",
+   "offset": 0.3,
+   "text": "Arsenal against PSG. But this Arsenal has Thierry Henry up front. The two thousand and four version.",
+   "say": "Arsenal against P S G. But this Arsenal has Tyerree Onree up front. The two thousand and four version."
+  },
+  {
+   "seg": "homeSheet",
+   "offset": 0.2,
+   "text": "Arteta's side are top of the league. Henry takes Havertz's place.",
+   "say": "Artetta's side are top of the league. Onree takes Havverts's place."
+  },
+  {
+   "seg": "awaySheet",
+   "offset": 0.1,
+   "text": "PSG: champions of Europe two years running, with Dembélé up front.",
+   "say": "P S G: champions of Europe two years running, with Dembehlay up front."
+  },
+  {
+   "seg": "versus",
+   "offset": 0.3,
+   "text": "And this one is personal. In May, PSG beat Arsenal on penalties in Budapest. Gabriel skied the last kick.",
+   "say": "And this one is personal. In May, P S G beat Arsenal on penalties in Budapest. Gabreeyel skied the last kick."
+  },
+  {
+   "seg": "globe",
+   "offset": 0.5,
+   "text": "Now it's the Emirates, and Arsenal want revenge."
+  },
+  {
+   "seg": "ratings",
+   "offset": 0.3,
+   "text": "No FIFA game covers Henry's Invincibles season, so we predict ninety-two. He scored thirty league goals that year.",
+   "say": "No FIFA game covers Onree's Invincibles season, so we predict ninety-two. He scored thirty league goals that year."
+  },
+  {
+   "seg": "goal1",
+   "offset": 0.1,
+   "spill": true,
+   "text": "Twelve minutes. Henry drifts left, cuts inside, and curls it into the far corner.",
+   "say": "Twelve minutes. Onree drifts left, cuts inside, and curls it into the far corner."
+  },
+  {
+   "seg": "goal2",
+   "offset": 0.2,
+   "spill": true,
+   "text": "PSG answer from the spot. Dembélé, just like Budapest.",
+   "say": "P S G answer from the spot. Dembehlay, just like Budapest."
+  },
+  {
+   "seg": "goal3",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Then Saka slips him in. Henry, one on one. Two-one.",
+   "say": "Then Sahkah slips him in. Onree, one on one. Two-one."
+  },
+  {
+   "seg": "goal4",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Kvaratskhelia bends one in. Two-all.",
+   "say": "Kvaratskelia bends one in. Two-all."
+  },
+  {
+   "seg": "late",
+   "offset": 0.0,
+   "spill": true,
+   "text": "Ninety-second minute. Rice's corner...",
+   "say": "Ninety-second minute. Rice's corner..."
+  },
+  {
+   "seg": "fulltime",
+   "offset": 0.6,
+   "text": "Gabriel! Three-two Arsenal. The man who missed in Budapest wins it.",
+   "say": "Gabreeyel! Three-two Arsenal. The man who missed in Budapest wins it."
+  },
+  {
+   "seg": "potm",
+   "offset": 0.8,
+   "text": "Player of the match? Thierry Henry. Some things never change.",
+   "say": "Player of the match? Tyerree Onree. Some things never change."
+  },
+  {
+   "seg": "end",
+   "offset": 0.3,
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "say": "Follow for more, and play Road to Ballon Dor."
+  }
+ ]
+}

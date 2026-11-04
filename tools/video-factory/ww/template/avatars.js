@@ -36,6 +36,7 @@ window.drawAvatar = function (g, cx, cy, r, p, kit, opts = {}) {
   if (k.pattern === "sides") { g.fillStyle = pc; g.fillRect(-96, 70, 12, 40); g.fillRect(84, 70, 12, 40); }
   if (k.pattern === "hoops") { g.fillStyle = pc; g.fillRect(-100, 58, 200, 9); g.fillRect(-100, 76, 200, 9); g.fillRect(-100, 94, 200, 9); }
   if (k.pattern === "stripes") { g.fillStyle = pc; for (let x = -88; x < 100; x += 32) g.fillRect(x, 36, 14, 80); }
+  if (k.pattern === "centre") { g.fillStyle = pc; g.fillRect(-18, 36, 36, 80); if (k.centreEdge) { g.fillStyle = k.centreEdge; g.fillRect(-22, 36, 4, 80); g.fillRect(18, 36, 4, 80); } }
   if (k.pattern === "halves") { g.fillStyle = pc; g.fillRect(0, 36, 100, 80); }
   if (k.pattern === "band") { g.fillStyle = k.band[0]; g.fillRect(-100, 66, 200, 11); g.fillStyle = k.band[1]; g.fillRect(-100, 77, 200, 11); }
   if (k.pattern === "sash") { g.fillStyle = pc; g.beginPath(); g.moveTo(-70, 48); g.lineTo(-50, 44); g.lineTo(60, 110); g.lineTo(36, 110); g.closePath(); g.fill(); }

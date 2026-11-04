@@ -1,0 +1,50 @@
+{
+  "_about": "Who would win? Arsenal 2026/27 with Thierry Henry 2003/04 up front v PSG 2026/27, an imagined match at the Emirates, 3-2 Arsenal. Kits: Arsenal 26/27 home red, white shorts, red socks (footballshirtculture + SI; the white sleeves cannot be shown on the sprite); PSG 26/27 home royal blue (centre stripe not possible on the sprite), blue shorts. Keeper kits are assumed. Clip 2 echoes Dembele's penalty in the 2026 final (Sky Sports, Euronews). Clip 5: Gabriel, who skied the last kick of the Budapest shootout, heads in Rice's corner.",
+  "teams": {
+    "home": { "name": "Arsenal", "kit": { "shirt": "#EF0107", "shorts": "#FFFFFF", "socks": "#EF0107" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Paris Saint-Germain", "short": "PSG", "kit": { "shirt": "#1B3F8F", "shorts": "#1B3F8F", "socks": "#0E1E45" }, "keeperKit": { "shirt": "#2BB673", "shorts": "#0B3D2A", "socks": "#2BB673" }, "popupTrim": "#DA291C" }
+  },
+  "people": {
+    "henry":    { "name": "Thierry Henry", "skin": "#6e4630", "hair": "#1a120e", "popupName": "Henry" },
+    "odegaard": { "name": "Martin Odegaard", "skin": "#f2c4a6", "hair": "#b08a5a", "popupName": "Ødegaard" },
+    "saka":     { "name": "Bukayo Saka", "skin": "#5e3a24", "hair": "#0d0a09", "popupName": "Saka" },
+    "rice":     { "name": "Declan Rice", "skin": "#f0c3a0", "hair": "#6b4a2b", "popupName": "Rice" },
+    "gabriel":  { "name": "Gabriel", "skin": "#b07a52", "hair": "#1d1512", "popupName": "Gabriel" },
+    "eze":      { "name": "Eberechi Eze", "skin": "#4a2e1e", "hair": "#0d0a09" },
+    "konsa":    { "name": "Ezri Konsa", "skin": "#4a2e1e", "hair": "#0d0a09" },
+    "timber":   { "name": "Jurrien Timber", "skin": "#5e3a24", "hair": "#0d0a09" },
+    "raya":     { "name": "David Raya", "skin": "#e8b994", "hair": "#2a1d15" },
+    "dembele":  { "name": "Ousmane Dembele", "skin": "#3e2618", "hair": "#0d0a09", "popupName": "Dembélé" },
+    "kvara":    { "name": "Khvicha Kvaratskhelia", "skin": "#f0c3a0", "hair": "#4a3220", "popupName": "Kvaratskhelia" },
+    "vitinha":  { "name": "Vitinha", "skin": "#e8b994", "hair": "#2a1d15", "popupName": "Vitinha" },
+    "hakimi":   { "name": "Achraf Hakimi", "skin": "#b07a52", "hair": "#1d1512" },
+    "marquinhos": { "name": "Marquinhos", "skin": "#c79670", "hair": "#1d1512" },
+    "pacho":    { "name": "Willian Pacho", "skin": "#3e2618", "hair": "#0d0a09" },
+    "mendes":   { "name": "Nuno Mendes", "skin": "#4a2e1e", "hair": "#0d0a09" },
+    "neves":    { "name": "Joao Neves", "skin": "#eac09c", "hair": "#3a2a1e" },
+    "doue":     { "name": "Desire Doue", "skin": "#4a2e1e", "hair": "#0d0a09" },
+    "safonov":  { "name": "Matvey Safonov", "skin": "#f2c4a6", "hair": "#6b4a2e" }
+  },
+  "clips": [
+    { "id": "a1-henry-curl", "kind": "long_range", "attacking": "home", "scorer": "henry", "assister": "odegaard",
+      "defenders": ["hakimi", "marquinhos", "pacho"], "keeper": "safonov", "teammates": ["saka", "eze"],
+      "minute": 12, "scoreBefore": [0, 0], "night": true, "celebration": "statue", "cameras": ["tv", "high", "tight"],
+      "recreate": { "scorerSpot": [-9, 18], "finish": "curl", "goalSide": "far", "height": "mid" }, "seed": "henry-curl-a" },
+    { "id": "a2-dembele-pen", "kind": "penalty", "attacking": "away", "scorer": "dembele",
+      "keeper": "raya", "minute": 31, "scoreBefore": [1, 0], "night": true, "celebration": "arms_out", "cameras": ["tv", "high", "tight"],
+      "seed": "dembele-pen-a" },
+    { "id": "a3-henry-run", "kind": "one_on_one", "attacking": "home", "scorer": "henry", "assister": "saka",
+      "defenders": ["marquinhos", "pacho"], "keeper": "safonov", "teammates": ["odegaard"],
+      "minute": 55, "scoreBefore": [1, 1], "night": true, "celebration": "knee_slide", "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "through", "finish": "ground", "goalSide": "far" }, "seed": "henry-run-a" },
+    { "id": "a4-kvara", "kind": "long_range", "attacking": "away", "scorer": "kvara", "assister": "vitinha",
+      "defenders": ["rice", "timber", "konsa"], "keeper": "raya", "teammates": ["dembele", "doue"],
+      "minute": 73, "scoreBefore": [2, 1], "night": true, "celebration": "fist_pump", "cameras": ["tv", "high", "tight"],
+      "recreate": { "scorerSpot": [-8, 20], "finish": "curl", "goalSide": "far", "height": "high" }, "seed": "kvara-curl-a" },
+    { "id": "a5-gabriel", "kind": "header", "attacking": "home", "scorer": "gabriel", "assister": "rice",
+      "defenders": ["marquinhos", "pacho", "hakimi", "neves"], "keeper": "safonov", "teammates": ["konsa", "henry", "saka"],
+      "minute": 90, "minuteLabel": "90+2", "scoreBefore": [2, 2], "night": true, "celebration": "roar", "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "corner", "side": "right", "swing": "in", "scorerStart": [-3, 15], "scorerSpot": [0, 6.5], "finish": "header", "goalSide": "far", "height": "mid" },
+      "seed": "gabriel-corner-a" }
+  ]
+}

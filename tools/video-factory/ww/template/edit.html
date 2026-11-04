@@ -352,6 +352,7 @@ function figure(id, x, y, s, { reach = 0, arms = "down", alpha = 1 } = {}) {
     else if (kit.pattern === "stripes") { g.fillStyle = pc; for (let xx = -98; xx < 110; xx += 40) g.fillRect(xx, 120, 20, 150); }
     else if (kit.pattern === "halves") { g.fillStyle = pc; g.fillRect(0, 120, 110, 150); }
     else if (kit.pattern === "sash") { g.fillStyle = pc; g.beginPath(); g.moveTo(-104, 128); g.lineTo(-70, 128); g.lineTo(80, 262); g.lineTo(40, 262); g.closePath(); g.fill(); }
+    else if (kit.pattern === "centre") { g.fillStyle = pc; g.fillRect(-30, 120, 60, 150); if (kit.centreEdge) { g.fillStyle = kit.centreEdge; g.fillRect(-36, 120, 6, 150); g.fillRect(30, 120, 6, 150); } }
     else if (kit.pattern === "sides") { g.fillStyle = pc; g.fillRect(-104, 128, 18, 140); g.fillRect(86, 128, 18, 140); }
     g.restore(); }
   if (p.suit) { g.fillStyle = "#f4f4f4"; g.beginPath(); g.moveTo(-22, 128); g.lineTo(22, 128); g.lineTo(0, 210); g.closePath(); g.fill(); g.fillStyle = p.suit.tie; g.fillRect(-6, 130, 12, 70); }
