@@ -1,0 +1,32 @@
+{
+  "_about": "Diego Milito's two goals, Bayern Munich 0-2 Internazionale, Champions League final, Santiago Bernabeu, Madrid, Sat 22 May 2010, 20:45. Goal 1 (35'): Julio Cesar's long kick, Milito flicked it down to Wesley Sneijder, Sneijder slid it back to him and he scored past Hans-Jorg Butt (Wikipedia 2010 final, Inter.it '10 unforgettable moments'). The flick is not possible here, so it is filmed as Sneijder's pass through and Milito's finish. Goal 2 (70'): Samuel Eto'o's pass down the left, Milito cut inside Daniel Van Buyten and slotted into the far corner (Wikipedia, Eurosport, Inter.it). Kits: Inter home stripes with white socks, Bayern all red (museumofjerseys.com 'Internazionale 2010'). The figures have one shirt colour, so Inter's blue-and-black stripes are shown as Inter blue. Keeper colours assumed.",
+  "teams": {
+    "home": { "name": "Internazionale", "short": "Inter", "kit": { "shirt": "#1f4fb0", "shorts": "#111111", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#2a2a2a", "shorts": "#2a2a2a", "socks": "#2a2a2a" }, "popupTrim": "#111111" },
+    "away": { "name": "Bayern Munich", "short": "Bayern", "kit": { "shirt": "#DC052D", "shorts": "#DC052D", "socks": "#DC052D" }, "keeperKit": { "shirt": "#3aa655", "shorts": "#1b1b1b", "socks": "#3aa655" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "milito": { "name": "Diego Milito", "skin": "#e2b48e", "hair": "#2a1d15" },
+    "sneijder": { "name": "Wesley Sneijder", "skin": "#efc4a2", "hair": "#3a2a1e" },
+    "etoo": { "name": "Samuel Eto'o", "skin": "#4a2e1e", "hair": "#0d0a09", "popupName": "Eto'o" },
+    "pandev": { "name": "Goran Pandev", "skin": "#e6b48f", "hair": "#2a1d15" },
+    "vanbuyten": { "name": "Daniel Van Buyten", "skin": "#efc4a2", "hair": "#2a1d15" },
+    "demichelis": { "name": "Martin Demichelis", "skin": "#e2b48e", "hair": "#3a2a1e" },
+    "lahm": { "name": "Philipp Lahm", "skin": "#efc4a2", "hair": "#4a3426" },
+    "badstuber": { "name": "Holger Badstuber", "skin": "#f2c8a6", "hair": "#8a6a48" },
+    "butt": { "name": "Hans-Jorg Butt", "skin": "#efc4a2", "hair": "#6b5440" }
+  },
+  "clips": [
+    { "id": "milito-1", "kind": "one_on_one", "attacking": "home", "scorer": "milito", "assister": "sneijder", "teammates": ["etoo"],
+      "defenders": ["demichelis", "vanbuyten", "badstuber"], "keeper": "butt",
+      "minute": 35, "scoreBefore": [0, 0], "scoreAfter": [1, 0], "night": true, "celebration": "arms_out",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "through", "passerStart": [-2, 26], "passFrom": [-2, 24], "scorerStart": [3, 22], "scorerSpot": [1, 12], "finish": "right", "goalSide": "right", "height": "low" },
+      "seed": "milito-1-a" },
+    { "id": "milito-2", "kind": "one_on_one", "attacking": "home", "scorer": "milito", "assister": "etoo", "teammates": ["pandev", "sneijder"],
+      "defenders": ["vanbuyten", "demichelis", "lahm"], "keeper": "butt",
+      "minute": 70, "scoreBefore": [1, 0], "scoreAfter": [2, 0], "night": true, "celebration": "knee_slide",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "through", "side": "left", "passerStart": [-16, 30], "passFrom": [-15, 28], "scorerStart": [-10, 22], "scorerSpot": [-5, 11], "finish": "right", "goalSide": "far", "height": "low" },
+      "seed": "milito-2-a" }
+  ]
+}
