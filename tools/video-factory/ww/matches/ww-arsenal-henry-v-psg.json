@@ -641,8 +641,8 @@
   {
    "seg": "homeSheet",
    "offset": 0.2,
-   "text": "Arteta's side are top of the league. Henry takes Havertz's place.",
-   "say": "Artetta's side are top of the league. Onree takes Havverts's place."
+   "text": "Arteta's side are top of the league. Henry takes the place of Havertz.",
+   "say": "Artetta's side are top of the league. Onree takes the place of Havverts."
   },
   {
    "seg": "awaySheet",
@@ -685,8 +685,8 @@
    "seg": "goal3",
    "offset": 0.2,
    "spill": true,
-   "text": "Saka slips him in. Henry again!",
-   "say": "Sahkah slips him in. Onree again!"
+   "text": "Saka plays him in. Henry again!",
+   "say": "Sahkah plays him in. Onree again!"
   },
   {
    "seg": "goal4",
