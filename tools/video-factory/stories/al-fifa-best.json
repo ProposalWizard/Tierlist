@@ -1,39 +1,464 @@
 {
-  "id": "al-fifa-best",
-  "series": "Everyone, by age",
-  "title": "Every FIFA Best Men's Player winner, by age",
-  "sources": [
-    "https://en.wikipedia.org/wiki/The_Best_FIFA_Men%27s_Player",
-    "data/ballondor/players.json (dates of birth for Ronaldo, Messi, Modric and Dembele, from ballondor.com)",
-    "data/ballondor/rankings.json (same-year Ballon d'Or podiums, from ballondor.com)"
-  ],
-  "checked": "Winners, runners-up and thirds 2016-2025 from the Wikipedia award page; ages are each winner's age at the end of the award year, from ballondor.com dates of birth (Ronaldo, Messi, Modric, Dembele) and well-known dates for Lewandowski (21 Aug 1988) and Vinicius (12 July 2000), which could not be double-checked (search limit reached). No 2026 award was listed when checked.",
-  "clubs": {
-    "realmadrid": { "name": "Real Madrid", "short": "RMA", "c1": "#ffffff", "c2": "#febe10", "pattern": "plain" },
-    "barca": { "name": "Barcelona", "short": "BAR", "c1": "#a50044", "c2": "#004d98", "pattern": "stripes" },
-    "bayern": { "name": "Bayern Munich", "short": "FCB", "c1": "#dc052d", "c2": "#ffffff", "pattern": "plain" },
-    "psg": { "name": "Paris Saint-Germain", "short": "PSG", "c1": "#004170", "c2": "#da291c", "pattern": "centre" },
-    "miami": { "name": "Inter Miami", "short": "MIA", "c1": "#f7b5cd", "c2": "#231f20", "pattern": "plain" }
+ "id": "al-fifa-best",
+ "series": "Everyone, by age",
+ "title": "Every FIFA Best Men's Player winner, by age",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/The_Best_FIFA_Men%27s_Player",
+  "data/ballondor/players.json (dates of birth for Ronaldo, Messi, Modric, Dembele, from ballondor.com)",
+  "https://global.espn.com/football/story/_/id/39319752/the-best-fifa-awards-how-lionel-messi-beat-erling-haaland-tiebreaker",
+  "https://www.cbssports.com/soccer/news/how-lionel-messi-beat-erling-haaland-to-win-fifas-best-votes-from-argentina-norway-france-were-decisive",
+  "https://www.theweek.in/news/sports/2024/01/16/explained-why-messi-won-the-best-fifa-mens-player-award-despite-being-tied-with-haaland.html",
+  "https://www.90min.com/vinicius-junior-named-the-best-fifa-mens-player-award-2024",
+  "https://www.goal.com/en/lists/redemption-vinicius-jr-real-madrid-the-best-fifa-men-s-player-2024-losing-ballon-d-or-rodri/bltea4d0a5cb48dc9a0",
+  "https://www.si.com/soccer/ousmane-dembele-beats-lamine-yamal-2025-best-fifa-men-player",
+  "https://global.espn.com/football/story/_/id/47324158/best-fifa-men-player-ousmane-dembele-lamine-yamal-kylian-mbappe",
+  "https://en.wikipedia.org/wiki/2022_FIFA_World_Cup_final"
+ ],
+ "checked": "Winners 2016-2025 and the 2025 top three (Dembele, Yamal, Mbappe) from Wikipedia, SI and ESPN. Ages at the award (end of year): Ronaldo 31, 32 (born Feb 1985); Modric 33 (Sep 1985); Messi 32, 35, 36 (June 1987); Lewandowski 32, 33 (Aug 1988); Vinicius 24 (July 2000); Dembele 28 (May 1997); Haaland 23 in Jan 2024 (July 2000); Yamal 18 in Dec 2025 (July 2007). 2023: Messi and Haaland level on 48 points, Messi won on the most first places from national team captains (ESPN, CBS, The Week). 2024: Vinicius beat Rodri, who had won the Ballon d'Or on 28 Oct (90min, Goal); FIFA ceremony 17 Dec = seven weeks. 2020 Ballon d'Or not held (ballondor.com rankings, Wikipedia). Messi scored twice in the 2022 final, the first a 23rd-minute penalty (Wikipedia, FIFA). Croatia reached the 2018 final.",
+ "clubs": {
+  "realmadrid": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#febe10",
+   "pattern": "plain"
   },
-  "people": {
-    "vini": { "name": "Vinicius Junior", "skin": "dark", "hair": ["curlytop", "#111111"], "beard": "none", "kit": "realmadrid" },
-    "messi": { "name": "Lionel Messi", "skin": "light", "hair": ["side", "#3b2a1c"], "beard": "full", "beardCol": "#3b2a1c", "kit": "miami" },
-    "lewa": { "name": "Robert Lewandowski", "skin": "light", "hair": ["side", "#4a3424"], "beard": "stubble", "kit": "bayern" },
-    "ronaldo": { "name": "Cristiano Ronaldo", "skin": "olive", "hair": ["quiff", "#1e1610"], "beard": "none", "kit": "realmadrid" },
-    "dembele": { "name": "Ousmane Dembele", "skin": "dark", "hair": ["crop", "#111111"], "beard": "short", "kit": "psg" }
+  "barca": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "badge": "FC Barcelona"
   },
-  "lines": [
-    { "text": "FIFA's Best Men's Player award. Ten editions, six winners. And it really doesn't like young players.", "scene": { "type": "title", "heading": "FIFA THE BEST, BY AGE", "sub": "Every winner · 2016 to 2025", "pill": "YOUNGEST TO OLDEST", "person": "vini" } },
-    { "text": "The youngest winner is Vinicius Junior, twenty twenty-four. He was twenty-four.", "scene": { "type": "person", "person": "vini", "label": "24 · 2024", "mood": "happy", "stamp": "YOUNGEST" } },
-    { "text": "Then a big gap to Ousmane Dembele, last year, at twenty-eight.", "scene": { "type": "person", "person": "dembele", "label": "28 · 2025", "mood": "happy" } },
-    { "text": "Everyone else was over thirty. Cristiano Ronaldo won the first two, at thirty-one and thirty-two.", "scene": { "type": "list", "title": "AGED 31 TO 32", "rows": [ { "name": "Cristiano Ronaldo (2016)", "value": "31", "club": "realmadrid" }, { "name": "Cristiano Ronaldo (2017)", "value": "32", "club": "realmadrid" }, { "name": "Lionel Messi (2019)", "value": "32", "club": "barca" }, { "name": "Robert Lewandowski (2020)", "value": "32", "club": "bayern" } ] } },
-    { "text": "Lewandowski won it again at thirty-three. So did Luka Modric.", "scene": { "type": "list", "title": "AGED 33 TO 35", "rows": [ { "name": "Luka Modric (2018)", "value": "33", "club": "realmadrid" }, { "name": "Robert Lewandowski (2021)", "value": "33", "club": "bayern", "hl": true }, { "name": "Lionel Messi (2022)", "value": "35", "club": "psg" } ] } },
-    { "text": "Messi won it at thirty-five, after the World Cup in Qatar.", "scene": { "type": "person", "person": "messi", "label": "35 · 2022", "mood": "happy" } },
-    { "text": "And the oldest? Messi again. Thirty-six, twenty twenty-three, by then playing in Miami.", "scene": { "type": "person", "person": "messi", "label": "36 · 2023", "mood": "happy", "stamp": "OLDEST" } },
-    { "text": "So eight of the ten awards went to players aged thirty-one or older.", "scene": { "type": "stats", "title": "THE TEN AWARDS", "items": [ { "n": "8", "l": "won by players 31+" }, { "n": "2", "l": "won by players under 30" }, { "n": "3", "l": "won by Messi" } ] } },
-    { "text": "Lined up in order, it goes twenty-four, twenty-eight, then thirty-one all the way to thirty-six.", "scene": { "type": "timeline", "items": [ { "year": "24", "label": "Vinicius" }, { "year": "28", "label": "Dembele" }, { "year": "31", "label": "Ronaldo" }, { "year": "33", "label": "Modric, Lewandowski" }, { "year": "36", "label": "Messi" } ] } },
-    { "text": "Lewandowski's twenty twenty win came in the year the Ballon d'Or wasn't held.", "scene": { "type": "whatif", "title": "2020", "real": { "label": "FIFA The Best", "value": "Lewandowski" }, "alt": { "label": "Ballon d'Or", "value": "Not held" } } },
-    { "text": "And last year, the runner-up was Lamine Yamal, eighteen. The youngest winner might be very close.", "scene": { "type": "list", "title": "THE BEST 2025", "rows": [ { "name": "Ousmane Dembele", "value": "1st", "club": "psg", "hl": true }, { "name": "Lamine Yamal", "value": "2nd", "club": "barca" }, { "name": "Kylian Mbappe", "value": "3rd", "club": "realmadrid" } ] } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
-  ]
+  "bayern": {
+   "name": "Bayern Munich",
+   "short": "FCB",
+   "c1": "#dc052d",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "psg": {
+   "name": "Paris Saint-Germain",
+   "short": "PSG",
+   "c1": "#004170",
+   "c2": "#da291c",
+   "pattern": "centre"
+  },
+  "miami": {
+   "name": "Inter Miami",
+   "short": "MIA",
+   "c1": "#f7b5cd",
+   "c2": "#231f20",
+   "pattern": "plain"
+  },
+  "mancity": {
+   "name": "Manchester City",
+   "short": "MCI",
+   "c1": "#6cabdd",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "cro": {
+   "name": "Croatia",
+   "short": "CRO",
+   "c1": "#ffffff",
+   "c2": "#e41e26",
+   "pattern": "plain",
+   "badge": false
+  },
+  "arg": {
+   "name": "Argentina",
+   "short": "ARG",
+   "c1": "#75aadb",
+   "c2": "#ffffff",
+   "pattern": "stripes",
+   "badge": false
+  },
+  "fra": {
+   "name": "France",
+   "short": "FRA",
+   "c1": "#1c2a55",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": false
+  }
+ },
+ "people": {
+  "messi": {
+   "name": "Lionel Messi",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#3b2a1c"
+   ],
+   "beard": "full",
+   "beardCol": "#3b2a1c",
+   "kit": "miami"
+  },
+  "ronaldo": {
+   "name": "Cristiano Ronaldo",
+   "skin": "olive",
+   "hair": [
+    "quiff",
+    "#1e1610"
+   ],
+   "beard": "none",
+   "kit": "realmadrid"
+  },
+  "modric": {
+   "name": "Luka Modrić",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#c9b48a"
+   ],
+   "beard": "stubble",
+   "kit": "realmadrid"
+  },
+  "haaland": {
+   "name": "Erling Haaland",
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#e2c27a"
+   ],
+   "beard": "none",
+   "kit": "mancity"
+  },
+  "vini": {
+   "name": "Vinícius Júnior",
+   "skin": "dark",
+   "hair": [
+    "curlytop",
+    "#111111"
+   ],
+   "beard": "none",
+   "kit": "realmadrid"
+  },
+  "dembele": {
+   "name": "Ousmane Dembélé",
+   "skin": "dark",
+   "hair": [
+    "crop",
+    "#111111"
+   ],
+   "beard": "short",
+   "beardCol": "#111111",
+   "kit": "psg"
+  },
+  "yamal": {
+   "name": "Lamine Yamal",
+   "skin": "brown",
+   "hair": [
+    "curlytop",
+    "#1a120c"
+   ],
+   "beard": "none",
+   "kit": "barca"
+  }
+ },
+ "lines": [
+  {
+   "text": "FIFA's vote for the world's best player once ended in a dead heat. One man was thirty-six. The other was twenty-three.",
+   "say": "Feefa's vote for the world's best player once ended in a dead heat. One man was thirty-six. The other was twenty-three.",
+   "scene": {
+    "type": "title",
+    "heading": "FIFA THE BEST, BY AGE",
+    "sub": "Every men's winner · 2016 to 2025",
+    "pill": "36 v 23",
+    "person": "messi"
+   }
+  },
+  {
+   "text": "The award began in twenty sixteen. Cristiano Ronaldo won the first two, at thirty-one and thirty-two.",
+   "say": "The award began in twenty sixteen. Kristeeahnoh Ronaldo won the first two, at thirty-one and thirty-two.",
+   "scene": {
+    "type": "stats",
+    "kicker": "The Best FIFA Men's Player",
+    "title": "Ronaldo goes first",
+    "items": [
+     {
+      "n": "31",
+      "l": "age in 2016"
+     },
+     {
+      "n": "32",
+      "l": "age in 2017"
+     }
+    ],
+    "person": "ronaldo"
+   }
+  },
+  {
+   "text": "Then Luka Modrić, at thirty-three, after taking Croatia to a World Cup final.",
+   "say": "Then Looka Modritch, at thirty-three, after taking Kroayshuh to a World Cup final.",
+   "scene": {
+    "type": "person",
+    "person": "modric",
+    "label": "33 · 2018",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "Lewandowski won it twice, at thirty-two and thirty-three. In twenty twenty, there wasn't even a Ballon d'Or.",
+   "say": "Lehvandoffskee won it twice, at thirty-two and thirty-three. In twenty twenty, there wasn't even a Balon Dor.",
+   "scene": {
+    "type": "whatif",
+    "title": "2020",
+    "real": {
+     "label": "FIFA The Best",
+     "value": "Lewandowski, 32"
+    },
+    "alt": {
+     "label": "Ballon d'Or",
+     "value": "Not held"
+    }
+   }
+  },
+  {
+   "text": "Messi won it at thirty-five, after the World Cup in Qatar. He scored twice in the final.",
+   "say": "Messee won it at thirty-five, after the World Cup in Kattar. He scored twice in the final.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/9bae3924-ae9f-50f4-acfe-89d8061f4ee2/scratchpad/cap/messi-2022-final-pen/messi-pen/high",
+      0,
+      75
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/9bae3924-ae9f-50f4-acfe-89d8061f4ee2/scratchpad/cap/messi-2022-final-pen/messi-pen/tight",
+      28,
+      130
+     ]
+    ],
+    "goalAt": 1.37,
+    "popup": {
+     "home": "arg",
+     "away": "fra",
+     "homeName": "Argentina",
+     "awayName": "France",
+     "hs0": 0,
+     "as0": 0,
+     "hs": 1,
+     "as": 0,
+     "scorer": "Messi"
+    },
+    "caption": "Messi from the spot · 2022 final"
+   }
+  },
+  {
+   "text": "Twenty twenty-three. Messi was thirty-six, playing in Miami. Haaland was twenty-three, with a treble and fifty-two goals.",
+   "say": "Twenty twenty-three. Messee was thirty-six, playing in Miami. Hohland was twenty-three, with a treble and fifty-two goals.",
+   "scene": {
+    "type": "compare",
+    "kicker": "The Best 2023",
+    "title": "Thirteen years apart",
+    "left": {
+     "person": "messi",
+     "name": "Messi",
+     "sub": "Inter Miami"
+    },
+    "right": {
+     "person": "haaland",
+     "name": "Haaland",
+     "sub": "Man City"
+    },
+    "rows": [
+     {
+      "label": "Age",
+      "l": 36,
+      "r": 23,
+      "lower": true
+     },
+     {
+      "label": "Points in the vote",
+      "l": 48,
+      "r": 48
+     }
+    ]
+   }
+  },
+  {
+   "text": "The votes came in. Forty-eight points each. A dead heat.",
+   "say": "The votes came in. Forty-eight points each. A dead heat.",
+   "scene": {
+    "type": "stats",
+    "kicker": "The Best 2023",
+    "title": "Level on points",
+    "items": [
+     {
+      "n": "48",
+      "l": "Lionel Messi"
+     },
+     {
+      "n": "48",
+      "l": "Erling Haaland"
+     }
+    ],
+    "stamp": "DEAD HEAT"
+   }
+  },
+  {
+   "text": "The tie-break was the national team captains. More of them put Messi first. He won it for a third time.",
+   "say": "The tie-break was the national team captains. More of them put Messee first. He won it for a third time.",
+   "scene": {
+    "type": "news",
+    "section": "The Best",
+    "headline": "Messi beats Haaland on a tie-break",
+    "standfirst": "Level on 48 points, Messi takes FIFA's award with more first-place votes from national team captains.",
+    "date": "January 2024",
+    "byline": "Knowitball recap",
+    "person": "messi",
+    "club": "miami",
+    "nav": [
+     "Football",
+     "FIFA",
+     "The Best",
+     "Awards"
+    ]
+   }
+  },
+  {
+   "text": "Twenty twenty-four. Vinícius Júnior lost the Ballon d'Or to Rodri. Seven weeks later, FIFA crowned him, at twenty-four.",
+   "say": "Twenty twenty-four. Vineeseeus Zhooneeor lost the Balon Dor to Rodree. Seven weeks later, Feefa crowned him, at twenty-four.",
+   "scene": {
+    "type": "person",
+    "person": "vini",
+    "label": "24 · 2024",
+    "mood": "happy",
+    "stamp": "YOUNGEST WINNER"
+   }
+  },
+  {
+   "text": "Last December, Ousmane Dembélé made it a Paris double, at twenty-eight.",
+   "say": "Last December, Oosmahn Dembehlay made it a Paree double, at twenty-eight.",
+   "scene": {
+    "type": "trophies",
+    "kicker": "Ousmane Dembélé · age 28",
+    "title": "The 2025 double",
+    "items": [
+     {
+      "kind": "ballon",
+      "label": "Ballon d'Or 2025"
+     },
+     {
+      "kind": "award",
+      "label": "The Best 2025"
+     }
+    ],
+    "person": "dembele"
+   }
+  },
+  {
+   "text": "Line them all up, and eight of the ten winners were thirty-one or older.",
+   "say": "Line them all up, and eight of the ten winners were thirty-one or older.",
+   "scene": {
+    "type": "line",
+    "kicker": "Winner's age, award by award",
+    "title": "The Best gets old",
+    "y": {
+     "min": 20,
+     "max": 38,
+     "label": "age"
+    },
+    "x": [
+     "16",
+     "17",
+     "18",
+     "19",
+     "20",
+     "21",
+     "22",
+     "23",
+     "24",
+     "25"
+    ],
+    "series": [
+     {
+      "name": "Winner's age",
+      "color": "#f2c14e",
+      "values": [
+       31,
+       32,
+       33,
+       32,
+       32,
+       33,
+       35,
+       36,
+       24,
+       28
+      ]
+     }
+    ],
+    "notes": [
+     {
+      "i": 7,
+      "text": "Messi 36"
+     },
+     {
+      "i": 8,
+      "text": "Vinícius 24"
+     }
+    ]
+   }
+  },
+  {
+   "text": "But look who came second last year. Lamine Yamal. Eighteen years old.",
+   "say": "But look who came second last year. Lahmeen Yahmahl. Eighteen years old.",
+   "scene": {
+    "type": "list",
+    "kicker": "The Best 2025",
+    "title": "The top three",
+    "rows": [
+     {
+      "name": "Ousmane Dembélé",
+      "value": "28",
+      "club": "psg",
+      "pos": 1
+     },
+     {
+      "name": "Lamine Yamal",
+      "value": "18",
+      "club": "barca",
+      "pos": 2,
+      "hl": true
+     },
+     {
+      "name": "Kylian Mbappé",
+      "value": "26",
+      "club": "realmadrid",
+      "pos": 3
+     }
+    ]
+   }
+  },
+  {
+   "text": "The youngest winner is still twenty-four. Yamal could beat that by years.",
+   "say": "The youngest winner is still twenty-four. Yahmahl could beat that by years.",
+   "scene": {
+    "type": "versus",
+    "title": "The record to beat",
+    "left": {
+     "person": "vini",
+     "label": "Youngest winner",
+     "value": "24"
+    },
+    "right": {
+     "person": "yamal",
+     "label": "2025 runner-up",
+     "value": "18"
+    }
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }

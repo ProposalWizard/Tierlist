@@ -1,0 +1,32 @@
+{
+  "_about": "Ferran Torres's winner, Spain 1-0 Argentina (after extra time), 2026 World Cup final, MetLife Stadium, 19 July 2026, 106th minute. Pedro Porro crossed, Nico Williams headed it on, Ferran Torres finished past Emiliano Martinez. Sources: Wikipedia '2026 FIFA World Cup final' ('scored from a Nico Williams header'), worldcupranking.com goal report (Porro cross, Williams flick), Reuters caption via Times of Israel. The knock-down is filmed as a lofted ball from Williams met first time (the closest move gamecap has). Kits: Spain red/navy; Argentina home stripes shown as one shirt colour (sky blue), white shorts (2026 home kit per Wikipedia kit box). Keeper colours assumed. Used in al-world-cup-captains.",
+  "teams": {
+    "home": { "name": "Spain", "short": "ESP", "kit": { "shirt": "#D71726", "shorts": "#001551", "socks": "#001553" }, "keeperKit": { "shirt": "#2BB673", "shorts": "#2BB673", "socks": "#2BB673" }, "popupTrim": "#FFC400" },
+    "away": { "name": "Argentina", "short": "ARG", "kit": { "shirt": "#8EC5EC", "shorts": "#FFFFFF", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#E8C21A", "shorts": "#E8C21A", "socks": "#E8C21A" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "ferran": { "name": "Ferran Torres", "skin": "#e8c09a", "hair": "#2a1d14", "popupName": "Ferran Torres" },
+    "nico": { "name": "Nico Williams", "skin": "#4a2e1e", "hair": "#111111", "popupName": "Nico Williams" },
+    "porro": { "name": "Pedro Porro", "skin": "#e3b28e", "hair": "#2a1d14" },
+    "emi": { "name": "Emiliano Martinez", "skin": "#e3b28e", "hair": "#2a1d14" },
+    "romero": { "name": "Cristian Romero", "skin": "#d9a57e", "hair": "#111111" },
+    "otamendi": { "name": "Nicolas Otamendi", "skin": "#e3b28e", "hair": "#2a1d14" },
+    "tagliafico": { "name": "Nicolas Tagliafico", "skin": "#e8c09a", "hair": "#3a2a1c" }
+  },
+  "clips": [{
+    "id": "ferran-winner",
+    "kind": "volley",
+    "attacking": "home",
+    "scorer": "ferran", "assister": "nico",
+    "defenders": ["romero", "otamendi", "tagliafico"],
+    "keeper": "emi",
+    "teammates": ["porro"],
+    "minute": 106,
+    "scoreBefore": [0, 0], "scoreAfter": [1, 0],
+    "night": true,
+    "celebration": "knee_slide",
+    "cameras": ["tv", "high", "tight"],
+    "recreate": { "side": "right", "scorerSpot": [-1, 9], "finish": "volley", "height": "low" },
+    "seed": "ferran-2026-a"
+  }]
+}

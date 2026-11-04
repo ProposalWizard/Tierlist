@@ -1,0 +1,31 @@
+{
+  "_about": "Lionel Messi's penalty, Argentina 1-0 France, 2022 World Cup final, Lusail, 18 Dec 2022, 23rd minute. Di Maria was fouled by Dembele; Messi sent Lloris the wrong way, low into the corner. Sources: FIFA match report, BBC/ESPN reports of the final. Kits: Argentina home (white and sky-blue stripes; the sprite can show one shirt colour, so sky blue), black shorts; France navy home. Keeper kit colours assumed. Used in al-fifa-best.",
+  "teams": {
+    "home": { "name": "Argentina", "short": "ARG", "kit": { "shirt": "#8EC5EC", "shorts": "#111111", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#3B3B3B", "shorts": "#3B3B3B", "socks": "#3B3B3B" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "France", "short": "FRA", "kit": { "shirt": "#1C2A55", "shorts": "#1C2A55", "socks": "#1C2A55" }, "keeperKit": { "shirt": "#E8C21A", "shorts": "#E8C21A", "socks": "#E8C21A" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "messi": { "name": "Lionel Messi", "skin": "#e3b28e", "hair": "#3b2a1c", "popupName": "Messi" },
+    "dimaria": { "name": "Angel Di Maria", "skin": "#d9a57e", "hair": "#2a1d14" },
+    "lloris": { "name": "Hugo Lloris", "skin": "#e8bc96", "hair": "#2a1d14" },
+    "varane": { "name": "Raphael Varane", "skin": "#8a5a3c", "hair": "#111111" },
+    "upamecano": { "name": "Dayot Upamecano", "skin": "#4a2e1e", "hair": "#111111" },
+    "dembele": { "name": "Ousmane Dembele", "skin": "#4a2e1e", "hair": "#111111" }
+  },
+  "clips": [{
+    "id": "messi-pen",
+    "kind": "penalty",
+    "attacking": "home",
+    "scorer": "messi",
+    "defenders": ["varane", "upamecano", "dembele"],
+    "keeper": "lloris",
+    "teammates": ["dimaria"],
+    "minute": 23,
+    "scoreBefore": [0, 0], "scoreAfter": [1, 0],
+    "night": true,
+    "celebration": "arms_out",
+    "cameras": ["tv", "high", "tight"],
+    "recreate": { "height": "low", "finish": "ground" },
+    "seed": "messi-2022-pen-a"
+  }]
+}

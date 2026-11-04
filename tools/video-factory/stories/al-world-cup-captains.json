@@ -1,53 +1,422 @@
 {
-  "id": "al-world-cup-captains",
-  "series": "Everyone, by age",
-  "title": "Every World Cup-winning captain, by age",
-  "sources": [
-    "data/competition-history/world-cup.json (winners and finals 1930 to 2026)",
-    "https://www.guinnessworldrecords.com/world-records/784722-youngest-captain-to-win-the-football-soccer-fifa-world-cup",
-    "https://www.fifa.com/news/menotti-s-marvels-of-78-in-stats-2920704",
-    "https://www.elgrafico.com.ar/articulo/1157/101516/todos-los-capitanes-que-levantaron-la-copa-del-mundo",
-    "https://Wikipedia.com/wiki/Dino_Zoff",
-    "https://www.perfil.com/noticias/deportes/el-brazalete-del-campeon-la-evolucion-del-liderazgo-en-la-copa-del-mundo-a35.phtml",
-    "https://www.timesofisrael.com/liveblog_entry/trump-and-fifa-soccer-chief-present-world-cup-trophy-to-spains-victorious-captain/",
-    "https://www.foxsports.com/stories/soccer/spain-world-cup-2026-argentina-rodri-yamal-celebrations-postgame-trophy-ceremony",
-    "https://www.npr.org/2026/07/19/nx-s1-5899071/2026-world-cup-fifa-argentina-spain-final-championship"
-  ],
-  "checked": "Captains list from El Grafico and Perfil; Passarella youngest at 25y31d (Guinness, FIFA); Zoff oldest at 40y4m13d (Wikipedia, Perfil); Rodri lifted the 2026 trophy after Spain 1-0 Argentina (Times of Israel, Fox Sports, NPR). Other ages worked out from each captain's date of birth to the date of the final.",
-  "clubs": {
-    "arg": { "name": "Argentina", "short": "ARG", "c1": "#75aadb", "c2": "#ffffff", "pattern": "stripes" },
-    "eng": { "name": "England", "short": "ENG", "c1": "#ffffff", "c2": "#1d2c5e", "pattern": "plain" },
-    "ita": { "name": "Italy", "short": "ITA", "c1": "#0a4fa6", "c2": "#ffffff", "pattern": "plain" },
-    "esp": { "name": "Spain", "short": "ESP", "c1": "#c60b1e", "c2": "#ffc400", "pattern": "plain" },
-    "bra": { "name": "Brazil", "short": "BRA", "c1": "#ffdf00", "c2": "#009c3b", "pattern": "plain" },
-    "ger": { "name": "Germany", "short": "GER", "c1": "#ffffff", "c2": "#111111", "pattern": "plain" },
-    "fra": { "name": "France", "short": "FRA", "c1": "#1f3b8c", "c2": "#ffffff", "pattern": "plain" },
-    "uru": { "name": "Uruguay", "short": "URU", "c1": "#5cbfeb", "c2": "#111111", "pattern": "plain" }
+ "id": "al-world-cup-captains",
+ "series": "Everyone, by age",
+ "title": "Every World Cup-winning captain, by age",
+ "v2": true,
+ "sources": [
+  "data/competition-history/world-cup.json (winners and finals 1930 to 2026)",
+  "https://www.elgrafico.com.ar/articulo/1157/101516/todos-los-capitanes-que-levantaron-la-copa-del-mundo",
+  "https://www.perfil.com/noticias/deportes/el-brazalete-del-campeon-la-evolucion-del-liderazgo-en-la-copa-del-mundo-a35.phtml",
+  "https://www.guinnessworldrecords.com/world-records/784722-youngest-captain-to-win-the-football-soccer-fifa-world-cup",
+  "https://www.fifa.com/news/menotti-s-marvels-of-78-in-stats-2920704",
+  "https://en.wikipedia.org/wiki/Dino_Zoff",
+  "https://en.wikipedia.org/wiki/1930_FIFA_World_Cup_final",
+  "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_final",
+  "https://www.timesofisrael.com/liveblog_entry/trump-and-fifa-soccer-chief-present-world-cup-trophy-to-spains-victorious-captain/",
+  "https://www.timesargus.com/sports/pro_national_sports/ferran-torres-scores-in-extra-time-as-spain-beats-argentina-1-0-to-win-the/article_29a3398f-a183-5dcd-9a80-d38048d82866.html",
+  "https://worldcupranking.com/blog/ferran-torres-world-cup-2026-final-goal/"
+ ],
+ "checked": "Captains list from El Grafico and Perfil. Ages from each captain's date of birth to the final: Nasazzi 29, Combi 31, Meazza 27, Varela 32, F. Walter 33, Bellini 28, Mauro Ramos 31, Moore 25, Carlos Alberto 25, Beckenbauer 28, Passarella 25, Zoff 40, Maradona 25, Matthaus 29, Dunga 30, Deschamps 29, Cafu 32, Cannavaro 32, Casillas 29, Lahm 30, Lloris 31, Messi 35, Rodri 30. Groups: 25 = 4, 27-29 = 7, 30-32 = 9, 33-35 = 2, 40 = 1; median 30. Passarella youngest at 25y31d (Guinness, FIFA); Zoff oldest at 40y4m13d and the oldest World Cup winner (Wikipedia, Perfil). 1930: Uruguay 4-2 Argentina, Montevideo, 30 July (Wikipedia). Maradona 1986: 5 goals, 5 assists (FIFA, Wikipedia). Argentina lost the 2014 final to Germany and went out in the 2018 last 16 to France. 2026: Spain 1-0 Argentina after extra time, MetLife Stadium, 19 July, Ferran Torres 106th minute from a Nico Williams header (Wikipedia final page, Times Argus/AP, worldcupranking); Rodri lifted it as captain (Wikipedia caption, Times of Israel). Rodri born 22 June 1996, so 30. Rodri won the 2024 Ballon d'Or and tore his ACL in Sept 2024.",
+ "clubs": {
+  "arg": {
+   "name": "Argentina",
+   "short": "ARG",
+   "c1": "#75aadb",
+   "c2": "#ffffff",
+   "pattern": "stripes",
+   "badge": false
   },
-  "people": {
-    "passarella": { "name": "Daniel Passarella", "skin": "light", "hair": ["messy", "#2a1d14"], "beard": "none", "kit": "arg" },
-    "moore": { "name": "Bobby Moore", "skin": "light", "hair": ["tidy", "#d4b26a"], "beard": "none", "kit": "eng" },
-    "maradona": { "name": "Diego Maradona", "skin": "tan", "hair": ["bigcurl", "#1a120c"], "beard": "none", "kit": "arg" },
-    "zoff": { "name": "Dino Zoff", "skin": "light", "hair": ["side", "#3a2a1c"], "beard": "none", "kit": "ita" },
-    "messi": { "name": "Lionel Messi", "skin": "light", "hair": ["side", "#3b2a1c"], "beard": "full", "beardCol": "#3b2a1c", "kit": "arg" },
-    "rodri": { "name": "Rodri", "skin": "light", "hair": ["tidy", "#2a1d14"], "beard": "short", "kit": "esp" },
-    "cafu": { "name": "Cafu", "skin": "brown", "hair": ["bald", "#111111"], "beard": "none", "kit": "bra" },
-    "cannavaro": { "name": "Fabio Cannavaro", "skin": "olive", "hair": ["crop", "#1e1610"], "beard": "none", "kit": "ita" }
+  "uru": {
+   "name": "Uruguay",
+   "short": "URU",
+   "c1": "#5cbfeb",
+   "c2": "#111111",
+   "pattern": "plain",
+   "badge": false
   },
-  "lines": [
-    { "text": "Twenty-three men have lifted the World Cup as captain. One was twenty-five. One was forty.", "scene": { "type": "title", "heading": "WORLD CUP CAPTAINS", "sub": "Every winning captain · 1930 to 2026", "pill": "BY AGE", "person": "zoff" } },
-    { "text": "The youngest? Daniel Passarella, Argentina, nineteen seventy-eight. Twenty-five years and thirty-one days.", "scene": { "type": "person", "person": "passarella", "label": "25 · 1978", "mood": "happy", "stamp": "YOUNGEST" } },
-    { "text": "Three more did it at twenty-five. Bobby Moore, Carlos Alberto, and Diego Maradona.", "scene": { "type": "list", "title": "AGED 25", "rows": [ { "name": "Daniel Passarella (1978)", "value": "25", "club": "arg", "hl": true }, { "name": "Bobby Moore (1966)", "value": "25", "club": "eng" }, { "name": "Carlos Alberto (1970)", "value": "25", "club": "bra" }, { "name": "Diego Maradona (1986)", "value": "25", "club": "arg" } ] } },
-    { "text": "Then twenty-seven to twenty-nine: Meazza, Beckenbauer, Matthaus, Deschamps and Iker Casillas.", "scene": { "type": "list", "title": "AGED 27 TO 29", "rows": [ { "name": "Giuseppe Meazza (1938)", "value": "27", "club": "ita" }, { "name": "Bellini (1958)", "value": "28", "club": "bra" }, { "name": "Franz Beckenbauer (1974)", "value": "28", "club": "ger" }, { "name": "Jose Nasazzi (1930)", "value": "29", "club": "uru" }, { "name": "Lothar Matthaus (1990)", "value": "29", "club": "ger" }, { "name": "Didier Deschamps (1998)", "value": "29", "club": "fra" }, { "name": "Iker Casillas (2010)", "value": "29", "club": "esp" } ] } },
-    { "text": "Thirty and thirty-one: Dunga, Philipp Lahm, Hugo Lloris, and this summer's captain, Rodri.", "scene": { "type": "list", "title": "AGED 30 TO 31", "rows": [ { "name": "Dunga (1994)", "value": "30", "club": "bra" }, { "name": "Philipp Lahm (2014)", "value": "30", "club": "ger" }, { "name": "Rodri (2026)", "value": "30", "club": "esp", "hl": true }, { "name": "Gianpiero Combi (1934)", "value": "31", "club": "ita" }, { "name": "Mauro Ramos (1962)", "value": "31", "club": "bra" }, { "name": "Hugo Lloris (2018)", "value": "31", "club": "fra" } ] } },
-    { "text": "Rodri lifted it in New Jersey, after Spain beat Argentina one-nil in extra time.", "scene": { "type": "score", "home": "esp", "away": "arg", "hs": 1, "as": 0, "date": "19 July 2026", "comp": "World Cup final", "note": "after extra time" } },
-    { "text": "Thirty-two is the hard-man age. Obdulio Varela, Cafu, Fabio Cannavaro.", "scene": { "type": "list", "title": "AGED 32 TO 33", "rows": [ { "name": "Obdulio Varela (1950)", "value": "32", "club": "uru" }, { "name": "Cafu (2002)", "value": "32", "club": "bra" }, { "name": "Fabio Cannavaro (2006)", "value": "32", "club": "ita" }, { "name": "Fritz Walter (1954)", "value": "33", "club": "ger" } ] } },
-    { "text": "Cannavaro lifted it in Berlin and won the Ballon d'Or that same year.", "scene": { "type": "trophies", "person": "cannavaro", "items": [ { "kind": "worldcup", "label": "World Cup 2006" }, { "kind": "ballon", "label": "Ballon d'Or 2006" } ] } },
-    { "text": "Then a big jump. Lionel Messi, finally, at thirty-five.", "scene": { "type": "person", "person": "messi", "label": "35 · 2022", "mood": "happy" } },
-    { "text": "And still not the oldest. That's Dino Zoff. Italy's goalkeeper, nineteen eighty-two, forty years old.", "scene": { "type": "person", "person": "zoff", "label": "40 · 1982", "mood": "happy", "stamp": "OLDEST" } },
-    { "text": "Fifteen years separate the youngest from the oldest.", "scene": { "type": "versus", "title": "THE GAP", "left": { "person": "passarella", "label": "Passarella 1978", "value": "25" }, "right": { "person": "zoff", "label": "Zoff 1982", "value": "40" } } },
-    { "text": "And Zoff did it just four years after Passarella.", "scene": { "type": "timeline", "items": [ { "year": "1978", "label": "Passarella, 25" }, { "year": "1982", "label": "Zoff, 40" }, { "year": "2022", "label": "Messi, 35" }, { "year": "2026", "label": "Rodri, 30" } ] } },
-    { "text": "So which one is the greatest captain? Tell me in the comments.", "scene": { "type": "stats", "title": "WINNING CAPTAINS", "items": [ { "n": "23", "l": "captains" }, { "n": "25", "l": "youngest" }, { "n": "40", "l": "oldest" } ] } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
-  ]
+  "eng": {
+   "name": "England",
+   "short": "ENG",
+   "c1": "#ffffff",
+   "c2": "#1d2c5e",
+   "pattern": "plain",
+   "badge": false
+  },
+  "bra": {
+   "name": "Brazil",
+   "short": "BRA",
+   "c1": "#ffdf00",
+   "c2": "#009c3b",
+   "pattern": "plain",
+   "badge": false
+  },
+  "ita": {
+   "name": "Italy",
+   "short": "ITA",
+   "c1": "#0a4fa6",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": false
+  },
+  "esp": {
+   "name": "Spain",
+   "short": "ESP",
+   "c1": "#d71726",
+   "c2": "#001f5b",
+   "pattern": "plain",
+   "badge": false
+  },
+  "ger": {
+   "name": "Germany",
+   "short": "GER",
+   "c1": "#ffffff",
+   "c2": "#111111",
+   "pattern": "plain",
+   "badge": false
+  }
+ },
+ "people": {
+  "zoff": {
+   "name": "Dino Zoff",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#6a5a4a"
+   ],
+   "beard": "none",
+   "kit": "ita"
+  },
+  "nasazzi": {
+   "name": "José Nasazzi",
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#1e1610"
+   ],
+   "beard": "none",
+   "kit": "uru"
+  },
+  "passarella": {
+   "name": "Daniel Passarella",
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#2a1d14"
+   ],
+   "beard": "none",
+   "kit": "arg"
+  },
+  "maradona": {
+   "name": "Diego Maradona",
+   "skin": "tan",
+   "hair": [
+    "bigcurl",
+    "#1a120c"
+   ],
+   "beard": "none",
+   "kit": "arg"
+  },
+  "messi": {
+   "name": "Lionel Messi",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#3b2a1c"
+   ],
+   "beard": "full",
+   "beardCol": "#3b2a1c",
+   "kit": "arg"
+  },
+  "rodri": {
+   "name": "Rodri",
+   "skin": "light",
+   "hair": [
+    "tidy",
+    "#2a1d14"
+   ],
+   "beard": "short",
+   "beardCol": "#2a1d14",
+   "kit": "esp"
+  }
+ },
+ "lines": [
+  {
+   "text": "Twenty-three men have lifted the World Cup as captain. The youngest was twenty-five. The oldest was forty.",
+   "say": "Twenty-three men have lifted the World Cup as captain. The youngest was twenty-five. The oldest was forty.",
+   "scene": {
+    "type": "title",
+    "heading": "WORLD CUP CAPTAINS",
+    "sub": "Every winning captain · 1930 to 2026",
+    "pill": "25 TO 40",
+    "person": "zoff"
+   }
+  },
+  {
+   "text": "Nineteen thirty, Montevideo. Uruguay's José Nasazzi lifts the first one, at twenty-nine.",
+   "say": "Nineteen thirty, Montehveedayoh. Yooragwhy's Hosay Nasahtsee lifts the first one, at twenty-nine.",
+   "scene": {
+    "type": "news",
+    "section": "World Cup",
+    "headline": "Uruguay are the first world champions",
+    "standfirst": "Captain José Nasazzi, 29, lifts the trophy after a 4-2 win over Argentina in Montevideo.",
+    "date": "30 July 1930",
+    "byline": "Knowitball archive",
+    "person": "nasazzi",
+    "club": "uru",
+    "nav": [
+     "Football",
+     "World Cup",
+     "1930",
+     "Uruguay"
+    ]
+   }
+  },
+  {
+   "text": "Since then, most winning captains have been between twenty-seven and thirty-two.",
+   "say": "Since then, most winning captains have been between twenty-seven and thirty-two.",
+   "scene": {
+    "type": "bars",
+    "kicker": "23 captains · 1930 to 2026",
+    "title": "Winning captains by age",
+    "items": [
+     {
+      "label": "25",
+      "value": 4
+     },
+     {
+      "label": "27 to 29",
+      "value": 7
+     },
+     {
+      "label": "30 to 32",
+      "value": 9,
+      "hl": true
+     },
+     {
+      "label": "33 to 35",
+      "value": 2
+     },
+     {
+      "label": "40",
+      "value": 1
+     }
+    ],
+    "unit": "captains"
+   }
+  },
+  {
+   "text": "But four did it at twenty-five. Bobby Moore, Carlos Alberto, Daniel Passarella, and Diego Maradona.",
+   "say": "But four did it at twenty-five. Bobby Moore, Karlos Albairtoh, Daneeel Pahsahrellah, and Deeaygoh Maradonah.",
+   "scene": {
+    "type": "list",
+    "kicker": "The youngest captains",
+    "title": "Lifted it at 25",
+    "rows": [
+     {
+      "name": "Bobby Moore (1966)",
+      "value": "25",
+      "club": "eng"
+     },
+     {
+      "name": "Carlos Alberto (1970)",
+      "value": "25",
+      "club": "bra"
+     },
+     {
+      "name": "Daniel Passarella (1978)",
+      "value": "25",
+      "club": "arg",
+      "hl": true
+     },
+     {
+      "name": "Diego Maradona (1986)",
+      "value": "25",
+      "club": "arg"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Maradona in eighty-six wasn't just the captain. He scored five and set up five more.",
+   "say": "Maradonah in eighty-six wasn't just the captain. He scored five and set up five more.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Diego Maradona · Mexico 1986",
+    "title": "Captain, at 25",
+    "items": [
+     {
+      "n": "5",
+      "l": "goals"
+     },
+     {
+      "n": "5",
+      "l": "assists"
+     },
+     {
+      "n": "25",
+      "l": "years old"
+     }
+    ],
+    "person": "maradona"
+   }
+  },
+  {
+   "text": "The youngest of all was Passarella, in nineteen seventy-eight. Twenty-five years and thirty-one days.",
+   "say": "The youngest of all was Pahsahrellah, in nineteen seventy-eight. Twenty-five years and thirty-one days.",
+   "scene": {
+    "type": "person",
+    "person": "passarella",
+    "label": "25y 31d · 1978",
+    "mood": "happy",
+    "stamp": "YOUNGEST"
+   }
+  },
+  {
+   "text": "Four years later, Italy's goalkeeper Dino Zoff lifted it at forty.",
+   "say": "Four years later, Italy's goalkeeper Deenoh Zoff lifted it at forty.",
+   "scene": {
+    "type": "person",
+    "person": "zoff",
+    "label": "40 · 1982",
+    "mood": "happy",
+    "stamp": "OLDEST"
+   }
+  },
+  {
+   "text": "Forty years, four months and thirteen days. He's still the oldest man ever to win a World Cup.",
+   "say": "Forty years, four months and thirteen days. He's still the oldest man ever to win a World Cup.",
+   "scene": {
+    "type": "versus",
+    "title": "Four years apart",
+    "left": {
+     "person": "passarella",
+     "label": "Passarella · 1978",
+     "value": "25"
+    },
+    "right": {
+     "person": "zoff",
+     "label": "Zoff · 1982",
+     "value": "40",
+     "win": true
+    }
+   }
+  },
+  {
+   "text": "Then Messi. Beaten in the final as captain in twenty fourteen. Eight years later, in Qatar, he finally lifted it, at thirty-five.",
+   "say": "Then Messee. Beaten in the final as captain in twenty fourteen. Eight years later, in Kattar, he finally lifted it, at thirty-five.",
+   "scene": {
+    "type": "timeline",
+    "kicker": "Lionel Messi",
+    "title": "The captain's long road",
+    "items": [
+     {
+      "year": "2014",
+      "label": "Loses the final to Germany"
+     },
+     {
+      "year": "2018",
+      "label": "Out in the last 16 to France"
+     },
+     {
+      "year": "2022",
+      "label": "World champion at 35",
+      "hl": true
+     }
+    ]
+   }
+  },
+  {
+   "text": "And this summer, in New Jersey, it was Spain against Argentina. Nil-nil after ninety minutes.",
+   "say": "And this summer, in New Jersey, it was Spain against Argentina. Nil-nil after ninety minutes.",
+   "scene": {
+    "type": "score",
+    "home": "esp",
+    "away": "arg",
+    "hs": 1,
+    "as": 0,
+    "date": "19 July 2026 · MetLife Stadium",
+    "comp": "World Cup final",
+    "ft": "AFTER EXTRA TIME",
+    "note": "Ferran Torres, 106th minute"
+   }
+  },
+  {
+   "text": "Hundred and sixth minute. Nico Williams heads it on, and Ferran Torres wins the World Cup.",
+   "say": "Hundred and sixth minute. Neekoh Williams heads it on, and Fehran Torress wins the World Cup.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/9bae3924-ae9f-50f4-acfe-89d8061f4ee2/scratchpad/cap/ferran-2026-final/ferran-winner/tv",
+      20,
+      60
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/9bae3924-ae9f-50f4-acfe-89d8061f4ee2/scratchpad/cap/ferran-2026-final/ferran-winner/high",
+      25,
+      95
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/9bae3924-ae9f-50f4-acfe-89d8061f4ee2/scratchpad/cap/ferran-2026-final/ferran-winner/tight",
+      30,
+      130
+     ]
+    ],
+    "goalAt": 1.73,
+    "popup": {
+     "home": "esp",
+     "away": "arg",
+     "homeName": "Spain",
+     "awayName": "Argentina",
+     "hs0": 0,
+     "as0": 0,
+     "hs": 1,
+     "as": 0,
+     "scorer": "Ferran Torres",
+     "assist": "Nico Williams"
+    },
+    "caption": "106' · Spain win the World Cup"
+   }
+  },
+  {
+   "text": "Rodri lifted it, at thirty. Two years after the Ballon d'Or, and the knee injury that wrecked his next season.",
+   "say": "Rodree lifted it, at thirty. Two years after the Balon Dor, and the knee injury that wrecked his next season.",
+   "scene": {
+    "type": "person",
+    "person": "rodri",
+    "label": "30 · 2026",
+    "mood": "happy",
+    "stamp": "CHAMPION"
+   }
+  },
+  {
+   "text": "And the middle age of all twenty-three winning captains? Thirty. Exactly Rodri's.",
+   "say": "And the middle age of all twenty-three winning captains? Thirty. Exactly Rodree's.",
+   "scene": {
+    "type": "stats",
+    "kicker": "23 winning captains",
+    "title": "Youngest, middle, oldest",
+    "items": [
+     {
+      "n": "25",
+      "l": "Passarella"
+     },
+     {
+      "n": "30",
+      "l": "the middle age"
+     },
+     {
+      "n": "40",
+      "l": "Zoff"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }
