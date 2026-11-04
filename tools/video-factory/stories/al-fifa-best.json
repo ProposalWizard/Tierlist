@@ -203,8 +203,8 @@
    }
   },
   {
-   "text": "Lewandowski won it twice, at thirty-two and thirty-three. In twenty twenty, there wasn't even a Ballon d'Or.",
-   "say": "Lehvandoffskee won it twice, at thirty-two and thirty-three. In twenty twenty, there wasn't even a Balon Dor.",
+   "text": "Lewandowski won it twice, at thirty-two and thirty-three. In twenty twenty, there was no Ballon d'Or at all.",
+   "say": "Lehvandoffskee won it twice, at thirty-two and thirty-three. In twenty twenty, there was no Balon Dor at all.",
    "scene": {
     "type": "whatif",
     "title": "2020",

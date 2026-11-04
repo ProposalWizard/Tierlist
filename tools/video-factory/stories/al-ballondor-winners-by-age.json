@@ -379,8 +379,8 @@
    }
   },
   {
-   "text": "In the twenty-twenties, it jumped to thirty-two. Messi at thirty-four and thirty-six. Benzema at thirty-five.",
-   "say": "In the twenty-twenties, it jumped to thirty-two. Messee at thirty-four and thirty-six. Benzemmah at thirty-five.",
+   "text": "In the twenty-twenties, it jumped to thirty-two. Messi at thirty-six, Benzema at thirty-five.",
+   "say": "In the twenty-twenties, it jumped to thirty-two. Messee at thirty-six, Benzemmah at thirty-five.",
    "scene": {
     "type": "list",
     "kicker": "Average age: 32",
@@ -451,39 +451,8 @@
    }
   },
   {
-   "text": "England's last two winners. Owen at twenty-two, Kane at thirty-three. Twenty-five years apart.",
-   "say": "England's last two winners. Owen at twenty-two, Kane at thirty-three. Twenty-five years apart.",
-   "scene": {
-    "type": "compare",
-    "title": "England's last two winners",
-    "left": {
-     "person": "owen",
-     "name": "Owen",
-     "sub": "Liverpool · 2001"
-    },
-    "right": {
-     "person": "kane",
-     "name": "Kane",
-     "sub": "Bayern · 2026"
-    },
-    "rows": [
-     {
-      "label": "Age when he won",
-      "l": 22,
-      "r": 33,
-      "lower": true
-     },
-     {
-      "label": "Year",
-      "l": 2001,
-      "r": 2026
-     }
-    ]
-   }
-  },
-  {
-   "text": "Thirty-three puts Kane with Di Stéfano, Cannavaro and Modrić. Only five times has it gone to someone older.",
-   "say": "Thirty-three puts Kane with Dee Steffanoh, Kannahvaroh and Modritch. Only five times has it gone to someone older.",
+   "text": "Thirty-three puts Kane alongside Di Stéfano, Cannavaro and Modrić.",
+   "say": "Thirty-three puts Kane alongside Dee Steffanoh, Kannahvaroh and Modritch.",
    "scene": {
     "type": "list",
     "kicker": "Ballon d'Or",

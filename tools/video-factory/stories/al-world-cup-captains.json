@@ -271,19 +271,8 @@
    }
   },
   {
-   "text": "Four years later, Italy's goalkeeper Dino Zoff lifted it at forty.",
-   "say": "Four years later, Italy's goalkeeper Deenoh Zoff lifted it at forty.",
-   "scene": {
-    "type": "person",
-    "person": "zoff",
-    "label": "40 · 1982",
-    "mood": "happy",
-    "stamp": "OLDEST"
-   }
-  },
-  {
-   "text": "Forty years, four months and thirteen days. He's still the oldest man ever to win a World Cup.",
-   "say": "Forty years, four months and thirteen days. He's still the oldest man ever to win a World Cup.",
+   "text": "Four years later, Italy's goalkeeper Dino Zoff lifted it at forty. Still the oldest man ever to win a World Cup.",
+   "say": "Four years later, Italy's goalkeeper Deenoh Zoff lifted it at forty. Still the oldest man ever to win a World Cup.",
    "scene": {
     "type": "versus",
     "title": "Four years apart",
@@ -297,12 +286,13 @@
      "label": "Zoff · 1982",
      "value": "40",
      "win": true
-    }
+    },
+    "stamp": "OLDEST"
    }
   },
   {
-   "text": "Then Messi. Beaten in the final as captain in twenty fourteen. Eight years later, in Qatar, he finally lifted it, at thirty-five.",
-   "say": "Then Messee. Beaten in the final as captain in twenty fourteen. Eight years later, in Kattar, he finally lifted it, at thirty-five.",
+   "text": "Then Messi. Beaten in the twenty fourteen final, he finally lifted it in Qatar at thirty-five.",
+   "say": "Then Messee. Beaten in the twenty fourteen final, he finally lifted it in Kattar at thirty-five.",
    "scene": {
     "type": "timeline",
     "kicker": "Lionel Messi",
@@ -325,8 +315,8 @@
    }
   },
   {
-   "text": "And this summer, in New Jersey, it was Spain against Argentina. Nil-nil after ninety minutes.",
-   "say": "And this summer, in New Jersey, it was Spain against Argentina. Nil-nil after ninety minutes.",
+   "text": "And this summer, in New Jersey, Spain met Argentina in the final.",
+   "say": "And this summer, in New Jersey, Spain met Argentina in the final.",
    "scene": {
     "type": "score",
     "home": "esp",
@@ -378,8 +368,8 @@
    }
   },
   {
-   "text": "Rodri lifted it, at thirty. Two years after the Ballon d'Or, and the knee injury that wrecked his next season.",
-   "say": "Rodree lifted it, at thirty. Two years after the Balon Dor, and the knee injury that wrecked his next season.",
+   "text": "Rodri lifted it, aged thirty. Just two years after his Ballon d'Or, and a serious knee injury.",
+   "say": "Rodree lifted it, aged thirty. Just two years after his Balon Dor, and a serious knee injury.",
    "scene": {
     "type": "person",
     "person": "rodri",
