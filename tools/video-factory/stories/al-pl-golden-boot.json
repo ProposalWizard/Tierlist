@@ -158,7 +158,7 @@
    "scene": {
     "type": "title",
     "heading": "THE GOLDEN BOOT, BY AGE",
-    "sub": "Premier League · 1993 to 2026",
+    "sub": "1993–2026",
     "pill": "18 TO 33",
     "person": "vardy"
    }
@@ -438,11 +438,11 @@
    "text": "And Vardy got there the long way round.",
    "say": "And Vardy got there the long way round.",
    "scene": {
-    "type": "stamp",
-    "text": "NON-LEAGUE TO GOLDEN BOOT",
-    "sub": "Jamie Vardy · 33",
+    "type": "person",
     "person": "vardy",
-    "color": "white"
+    "label": "Non-league to Golden Boot",
+    "mood": "happy",
+    "stamp": "THE LONG WAY"
    }
   },
   {

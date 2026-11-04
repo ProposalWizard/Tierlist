@@ -1,78 +1,398 @@
 {
-  "id": "al-golden-boy",
-  "series": "Everyone, by age",
-  "title": "Every Golden Boy winner, by age",
-  "v2": true,
-  "sources": [
-    "https://en.wikipedia.org/wiki/Golden_Boy_(award)",
-    "https://www.futbolupdate.com/?p=8575",
-    "https://www.flashscore.dk/news/soccer-ligue-1-desire-doue-crowned-golden-boy-for-2025-taking-the-mantle-from-lamine-yamal/lE0gLhKs",
-    "https://www.thestar.com.my/news/world/2025/11/05/psg039s-desire-doue-wins-2025-golden-boy-award",
-    "https://www.skysports.com/football/news/11095/13175207/euro-2024-spain-2-1-france-lamine-yamals-wonder-goal-helps-luis-de-la-fuentes-side-reach-final",
-    "https://nbcsports.com/soccer/news/lamine-yamal-goal-vs-france-spanish-16-year-old-scores-near-perfect-equalizer-at-euro-2024",
-    "https://www.uefa.com/uefachampionsleague/match/2042198--paris-vs-inter/",
-    "https://en.wikipedia.org/wiki/2025_UEFA_Champions_League_final"
-  ],
-  "checked": "All 23 winners 2003-2025 with age at the award from Wikipedia's table; the youngest-winner record line (Van der Vaart 20y304d, Rooney 19y50d, Messi 18y173d, Gavi 18y77d, Yamal 17y137d) from the same table and its text; Yamal's 17y137d also in futbolupdate's table and matches his birth date (13 July 2007, award 27 Nov 2024). Count by age: 17 = 1, 18 = 4, 19 = 6, 20 = 12. Four of the five youngest from Barcelona (Yamal, Gavi, Messi, Pedri; Mbappe Monaco). Doue 2025 winner at 20 (Flashscore, The Star). Yamal the Euros' youngest scorer at 16 v France, Munich, 9 July 2024, Spain 2-1 (Sky Sports, NBC); Spain won Euro 2024 before his Golden Boy. Doue scored twice in PSG 5-0 Inter, 31 May 2025 (UEFA, Wikipedia). No 2026 winner yet (announced in November), so left out.",
-  "clubs": {
-    "ajax": { "name": "Ajax", "short": "AJA", "c1": "#ffffff", "c2": "#d2122e", "pattern": "centre" },
-    "barca": { "name": "Barcelona", "short": "BAR", "c1": "#a50044", "c2": "#004d98", "pattern": "stripes", "badge": "FC Barcelona" },
-    "manutd": { "name": "Manchester United", "short": "MUN", "c1": "#da291c", "c2": "#ffffff", "pattern": "plain" },
-    "arsenal": { "name": "Arsenal", "short": "ARS", "c1": "#ef0107", "c2": "#ffffff", "pattern": "sides" },
-    "atleti": { "name": "Atletico Madrid", "short": "ATM", "c1": "#cb3524", "c2": "#ffffff", "pattern": "stripes" },
-    "dortmund": { "name": "Borussia Dortmund", "short": "BVB", "c1": "#fde100", "c2": "#111111", "pattern": "plain" },
-    "monaco": { "name": "Monaco", "short": "MON", "c1": "#e51b22", "c2": "#ffffff", "pattern": "halves", "badge": "AS Monaco" },
-    "psg": { "name": "Paris Saint-Germain", "short": "PSG", "c1": "#004170", "c2": "#da291c", "pattern": "centre" },
-    "mancity": { "name": "Manchester City", "short": "MCI", "c1": "#6cabdd", "c2": "#ffffff", "pattern": "plain" },
-    "realmadrid": { "name": "Real Madrid", "short": "RMA", "c1": "#ffffff", "c2": "#febe10", "pattern": "plain" },
-    "inter": { "name": "Inter", "short": "INT", "c1": "#1a3fa0", "c2": "#111111", "pattern": "stripes", "badge": "Inter Milan" },
-    "esp": { "name": "Spain", "short": "ESP", "c1": "#d71726", "c2": "#001f5b", "pattern": "plain", "badge": false }
+ "id": "al-golden-boy",
+ "series": "Everyone, by age",
+ "title": "Every Golden Boy winner, by age",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/Golden_Boy_(award)",
+  "https://www.futbolupdate.com/?p=8575",
+  "https://www.flashscore.dk/news/soccer-ligue-1-desire-doue-crowned-golden-boy-for-2025-taking-the-mantle-from-lamine-yamal/lE0gLhKs",
+  "https://www.thestar.com.my/news/world/2025/11/05/psg039s-desire-doue-wins-2025-golden-boy-award",
+  "https://www.skysports.com/football/news/11095/13175207/euro-2024-spain-2-1-france-lamine-yamals-wonder-goal-helps-luis-de-la-fuentes-side-reach-final",
+  "https://nbcsports.com/soccer/news/lamine-yamal-goal-vs-france-spanish-16-year-old-scores-near-perfect-equalizer-at-euro-2024",
+  "https://www.uefa.com/uefachampionsleague/match/2042198--paris-vs-inter/",
+  "https://en.wikipedia.org/wiki/2025_UEFA_Champions_League_final"
+ ],
+ "checked": "All 23 winners 2003-2025 with age at the award from Wikipedia's table; the youngest-winner record line (Van der Vaart 20y304d, Rooney 19y50d, Messi 18y173d, Gavi 18y77d, Yamal 17y137d) from the same table and its text; Yamal's 17y137d also in futbolupdate's table and matches his birth date (13 July 2007, award 27 Nov 2024). Count by age: 17 = 1, 18 = 4, 19 = 6, 20 = 12. Four of the five youngest from Barcelona (Yamal, Gavi, Messi, Pedri; Mbappe Monaco). Doue 2025 winner at 20 (Flashscore, The Star). Yamal the Euros' youngest scorer at 16 v France, Munich, 9 July 2024, Spain 2-1 (Sky Sports, NBC); Spain won Euro 2024 before his Golden Boy. Doue scored twice in PSG 5-0 Inter, 31 May 2025 (UEFA, Wikipedia). No 2026 winner yet (announced in November), so left out.",
+ "clubs": {
+  "ajax": {
+   "name": "Ajax",
+   "short": "AJA",
+   "c1": "#ffffff",
+   "c2": "#d2122e",
+   "pattern": "centre"
   },
-  "people": {
-    "yamal": { "name": "Lamine Yamal", "skin": "brown", "hair": ["curlytop", "#1a120c"], "beard": "none", "kit": "barca" },
-    "yamalesp": { "name": "Lamine Yamal", "skin": "brown", "hair": ["curlytop", "#1a120c"], "beard": "none", "kit": "esp" },
-    "vdv": { "name": "Rafael van der Vaart", "skin": "light", "hair": ["side", "#d4b26a"], "beard": "none", "kit": "ajax" },
-    "messi": { "name": "Lionel Messi", "skin": "light", "hair": ["messy", "#3b2a1c"], "beard": "none", "kit": "barca" },
-    "gavi": { "name": "Gavi", "skin": "olive", "hair": ["crop", "#1e1610"], "beard": "none", "kit": "barca" },
-    "doue": { "name": "Désiré Doué", "skin": "dark", "hair": ["crop", "#111111"], "beard": "none", "kit": "psg" }
+  "barca": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "badge": "FC Barcelona"
   },
-  "lines": [
-    { "text": "The Golden Boy goes to Europe's best player under twenty-one. And the winners keep getting younger.",
-      "say": "The Golden Boy goes to Europe's best player under twenty-one. And the winners keep getting younger.",
-      "scene": { "type": "title", "heading": "GOLDEN BOY, BY AGE", "sub": "Every winner · 2003 to 2025", "pill": "UNDER 21", "person": "yamal" } },
-    { "text": "It began in twenty oh three, with Rafael van der Vaart of Ajax. Twenty years and three hundred and four days.",
-      "say": "It began in twenty oh three, with Rahfahel fan der Vart of Eyeax. Twenty years and three hundred and four days.",
-      "scene": { "type": "person", "person": "vdv", "label": "20y 304d · 2003", "mood": "happy" } },
-    { "text": "Twenty-two winners later, he's still the oldest. Most winners are twenty, and nobody since has been older.",
-      "say": "Twenty-two winners later, he's still the oldest. Most winners are twenty, and nobody since has been older.",
-      "scene": { "type": "bars", "kicker": "23 Golden Boys · 2003 to 2025", "title": "Winners by age", "items": [ { "label": "Age 17", "value": 1 }, { "label": "Age 18", "value": 4 }, { "label": "Age 19", "value": 6 }, { "label": "Age 20", "value": 12, "hl": true } ], "unit": "winners" } },
-    { "text": "Then the record for the youngest started to fall. Rooney at nineteen. Then an eighteen-year-old from Barcelona: Lionel Messi.",
-      "say": "Then the record for the youngest started to fall. Rooney at nineteen. Then an eighteen-year-old from Barcelona: Leeonel Messee.",
-      "scene": { "type": "timeline", "kicker": "Golden Boy", "title": "The youngest winner, record by record", "items": [ { "year": "2003", "label": "Van der Vaart · 20y 304d", "club": "ajax" }, { "year": "2004", "label": "Rooney · 19y 50d", "club": "manutd" }, { "year": "2005", "label": "Messi · 18y 173d", "club": "barca", "hl": true } ] } },
-    { "text": "Messi's record lasted seventeen years. Then came another kid from the Barcelona academy, Gavi.",
-      "say": "Messee's record lasted seventeen years. Then came another kid from the Barcelona academy, Gahvee.",
-      "scene": { "type": "person", "person": "gavi", "label": "18y 77d · 2022", "mood": "happy", "stamp": "NEW RECORD" } },
-    { "text": "Two summers later, Lamine Yamal was sixteen. In a Euros semi-final against France, he scored a screamer.",
-      "say": "Two summers later, Lahmeen Yahmahl was sixteen. In a Yooros semifinal against France, he scored a screamer.",
-      "scene": { "type": "news", "section": "Euro 2024", "headline": "Yamal, 16, becomes the Euros' youngest scorer", "standfirst": "His long-range equaliser in Munich turns the semi-final, and Spain beat France 2-1 to reach the final.", "date": "9 July 2024", "byline": "Knowitball recap", "person": "yamalesp", "club": "esp", "nav": ["Football", "Euro 2024", "Spain", "France"] } },
-    { "text": "Spain won the Euros. And that November, Yamal took the Golden Boy at seventeen.",
-      "say": "Spain won the Yooros. And that November, Yahmahl took the Golden Boy at seventeen.",
-      "scene": { "type": "person", "person": "yamal", "label": "17y 137d · 2024", "mood": "happy", "stamp": "YOUNGEST EVER" } },
-    { "text": "Four of the five youngest winners came from Barcelona. The other was Mbappé.",
-      "say": "Four of the five youngest winners came from Barcelona. The other was Embapay.",
-      "scene": { "type": "list", "kicker": "Golden Boy", "title": "The five youngest", "rows": [ { "name": "Lamine Yamal (2024)", "value": "17y 137d", "club": "barca", "hl": true }, { "name": "Gavi (2022)", "value": "18y 77d", "club": "barca" }, { "name": "Lionel Messi (2005)", "value": "18y 173d", "club": "barca" }, { "name": "Kylian Mbappé (2017)", "value": "18y 307d", "club": "monaco" }, { "name": "Pedri (2021)", "value": "18y 362d", "club": "barca" } ] } },
-    { "text": "Pedri missed being nineteen by three days.",
-      "say": "Pedree missed being nineteen by three days.",
-      "scene": { "type": "stamp", "text": "3 DAYS", "sub": "Pedri · 18 years, 362 days · 2021", "color": "yellow" } },
-    { "text": "And the winners don't fade. Messi, Mbappé, Haaland and Bellingham all became world stars.",
-      "say": "And the winners don't fade. Messee, Embapay, Hohland and Bellingham all became world stars.",
-      "scene": { "type": "list", "kicker": "What happened next", "title": "A pretty good crystal ball", "rows": [ { "name": "Lionel Messi (2005)", "value": "8 Ballon d'Ors", "club": "barca" }, { "name": "Kylian Mbappé (2017)", "value": "World Cup 2018", "club": "monaco" }, { "name": "Erling Haaland (2020)", "value": "3 Golden Boots", "club": "dortmund" }, { "name": "Jude Bellingham (2023)", "value": "Real Madrid", "club": "realmadrid" } ] } },
-    { "text": "Last year's winner, Désiré Doué, was twenty. He'd scored twice in a Champions League final.",
-      "say": "Last year's winner, Dehzeeray Dooay, was twenty. He'd scored twice in a Champions League final.",
-      "scene": { "type": "score", "home": "psg", "away": "inter", "hs": 5, "as": 0, "date": "31 May 2025 · Munich", "comp": "Champions League final", "note": "Doué scores twice at 19" } },
-    { "text": "So the record is seventeen years, a hundred and thirty-seven days. Can anyone go younger?",
-      "say": "So the record is seventeen years, a hundred and thirty-seven days. Can anyone go younger?",
-      "scene": { "type": "stamp", "text": "17y 137d", "sub": "The record to beat · Lamine Yamal", "person": "yamal", "color": "white" } },
-    { "text": "Follow for more, and play Road to Ballon d'Or.", "scene": { "type": "cta" } }
-  ]
+  "manutd": {
+   "name": "Manchester United",
+   "short": "MUN",
+   "c1": "#da291c",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "arsenal": {
+   "name": "Arsenal",
+   "short": "ARS",
+   "c1": "#ef0107",
+   "c2": "#ffffff",
+   "pattern": "sides"
+  },
+  "atleti": {
+   "name": "Atletico Madrid",
+   "short": "ATM",
+   "c1": "#cb3524",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "dortmund": {
+   "name": "Borussia Dortmund",
+   "short": "BVB",
+   "c1": "#fde100",
+   "c2": "#111111",
+   "pattern": "plain"
+  },
+  "monaco": {
+   "name": "Monaco",
+   "short": "MON",
+   "c1": "#e51b22",
+   "c2": "#ffffff",
+   "pattern": "halves",
+   "badge": "AS Monaco"
+  },
+  "psg": {
+   "name": "Paris Saint-Germain",
+   "short": "PSG",
+   "c1": "#004170",
+   "c2": "#da291c",
+   "pattern": "centre"
+  },
+  "mancity": {
+   "name": "Manchester City",
+   "short": "MCI",
+   "c1": "#6cabdd",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "realmadrid": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#febe10",
+   "pattern": "plain"
+  },
+  "inter": {
+   "name": "Inter",
+   "short": "INT",
+   "c1": "#1a3fa0",
+   "c2": "#111111",
+   "pattern": "stripes",
+   "badge": "Inter Milan"
+  },
+  "esp": {
+   "name": "Spain",
+   "short": "ESP",
+   "c1": "#d71726",
+   "c2": "#001f5b",
+   "pattern": "plain",
+   "badge": false
+  }
+ },
+ "people": {
+  "yamal": {
+   "name": "Lamine Yamal",
+   "skin": "brown",
+   "hair": [
+    "curlytop",
+    "#1a120c"
+   ],
+   "beard": "none",
+   "kit": "barca"
+  },
+  "yamalesp": {
+   "name": "Lamine Yamal",
+   "skin": "brown",
+   "hair": [
+    "curlytop",
+    "#1a120c"
+   ],
+   "beard": "none",
+   "kit": "esp"
+  },
+  "vdv": {
+   "name": "Rafael van der Vaart",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#d4b26a"
+   ],
+   "beard": "none",
+   "kit": "ajax"
+  },
+  "messi": {
+   "name": "Lionel Messi",
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#3b2a1c"
+   ],
+   "beard": "none",
+   "kit": "barca"
+  },
+  "gavi": {
+   "name": "Gavi",
+   "skin": "olive",
+   "hair": [
+    "crop",
+    "#1e1610"
+   ],
+   "beard": "none",
+   "kit": "barca"
+  },
+  "doue": {
+   "name": "Désiré Doué",
+   "skin": "dark",
+   "hair": [
+    "crop",
+    "#111111"
+   ],
+   "beard": "none",
+   "kit": "psg"
+  }
+ },
+ "lines": [
+  {
+   "text": "The Golden Boy goes to Europe's best player under twenty-one. And the winners keep getting younger.",
+   "say": "The Golden Boy goes to Europe's best player under twenty-one. And the winners keep getting younger.",
+   "scene": {
+    "type": "title",
+    "heading": "GOLDEN BOY, BY AGE",
+    "sub": "2003–2025",
+    "pill": "UNDER 21",
+    "person": "yamal"
+   }
+  },
+  {
+   "text": "It began in twenty oh three, with Rafael van der Vaart of Ajax. Twenty years and three hundred and four days.",
+   "say": "It began in twenty oh three, with Rahfahel fan der Vart of Eyeax. Twenty years and three hundred and four days.",
+   "scene": {
+    "type": "person",
+    "person": "vdv",
+    "label": "20y 304d · 2003",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "Twenty-two winners later, he's still the oldest. Most winners are twenty, and nobody since has been older.",
+   "say": "Twenty-two winners later, he's still the oldest. Most winners are twenty, and nobody since has been older.",
+   "scene": {
+    "type": "bars",
+    "kicker": "23 Golden Boys · 2003 to 2025",
+    "title": "Winners by age",
+    "items": [
+     {
+      "label": "Age 17",
+      "value": 1
+     },
+     {
+      "label": "Age 18",
+      "value": 4
+     },
+     {
+      "label": "Age 19",
+      "value": 6
+     },
+     {
+      "label": "Age 20",
+      "value": 12,
+      "hl": true
+     }
+    ]
+   }
+  },
+  {
+   "text": "Then the record for the youngest started to fall. Rooney at nineteen. Then an eighteen-year-old from Barcelona: Lionel Messi.",
+   "say": "Then the record for the youngest started to fall. Rooney at nineteen. Then an eighteen-year-old from Barcelona: Leeonel Messee.",
+   "scene": {
+    "type": "timeline",
+    "kicker": "Golden Boy",
+    "title": "The youngest winner, record by record",
+    "items": [
+     {
+      "year": "2003",
+      "label": "Van der Vaart · 20y 304d",
+      "club": "ajax"
+     },
+     {
+      "year": "2004",
+      "label": "Rooney · 19y 50d",
+      "club": "manutd"
+     },
+     {
+      "year": "2005",
+      "label": "Messi · 18y 173d",
+      "club": "barca",
+      "hl": true
+     }
+    ]
+   }
+  },
+  {
+   "text": "Messi's record lasted seventeen years. Then came another kid from the Barcelona academy, Gavi.",
+   "say": "Messee's record lasted seventeen years. Then came another kid from the Barcelona academy, Gahvee.",
+   "scene": {
+    "type": "person",
+    "person": "gavi",
+    "label": "18y 77d · 2022",
+    "mood": "happy",
+    "stamp": "NEW RECORD"
+   }
+  },
+  {
+   "text": "Two summers later, Lamine Yamal was sixteen. In a Euros semi-final against France, he scored a screamer.",
+   "say": "Two summers later, Lahmeen Yahmahl was sixteen. In a Yooros semifinal against France, he scored a screamer.",
+   "scene": {
+    "type": "news",
+    "section": "Euro 2024",
+    "headline": "Yamal, 16, becomes the Euros' youngest scorer",
+    "standfirst": "His long-range equaliser in Munich turns the semi-final, and Spain beat France 2-1 to reach the final.",
+    "date": "9 July 2024",
+    "byline": "Knowitball recap",
+    "person": "yamalesp",
+    "club": "esp",
+    "nav": [
+     "Football",
+     "Euro 2024",
+     "Spain",
+     "France"
+    ]
+   }
+  },
+  {
+   "text": "Spain won the Euros. And that November, Yamal took the Golden Boy at seventeen.",
+   "say": "Spain won the Yooros. And that November, Yahmahl took the Golden Boy at seventeen.",
+   "scene": {
+    "type": "person",
+    "person": "yamal",
+    "label": "17y 137d · 2024",
+    "mood": "happy",
+    "stamp": "YOUNGEST EVER"
+   }
+  },
+  {
+   "text": "Four of the five youngest winners came from Barcelona. The other was Mbappé.",
+   "say": "Four of the five youngest winners came from Barcelona. The other was Embapay.",
+   "scene": {
+    "type": "list",
+    "kicker": "Golden Boy",
+    "title": "The five youngest",
+    "rows": [
+     {
+      "name": "Yamal",
+      "value": "17y 137d",
+      "club": "barca",
+      "hl": true
+     },
+     {
+      "name": "Gavi",
+      "value": "18y 77d",
+      "club": "barca"
+     },
+     {
+      "name": "Messi",
+      "value": "18y 173d",
+      "club": "barca"
+     },
+     {
+      "name": "Mbappé",
+      "value": "18y 307d",
+      "club": "monaco"
+     },
+     {
+      "name": "Pedri",
+      "value": "18y 362d",
+      "club": "barca"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Pedri missed being nineteen by three days.",
+   "say": "Pedree missed being nineteen by three days.",
+   "scene": {
+    "type": "stamp",
+    "text": "3 DAYS",
+    "sub": "Pedri · 18 years, 362 days · 2021",
+    "color": "yellow"
+   }
+  },
+  {
+   "text": "And the winners don't fade. Messi, Mbappé, Haaland and Bellingham all became world stars.",
+   "say": "And the winners don't fade. Messee, Embapay, Hohland and Bellingham all became world stars.",
+   "scene": {
+    "type": "list",
+    "kicker": "What happened next",
+    "title": "A pretty good crystal ball",
+    "rows": [
+     {
+      "name": "Messi",
+      "value": "8 Ballon d'Ors",
+      "club": "barca"
+     },
+     {
+      "name": "Mbappé",
+      "value": "World Cup",
+      "club": "monaco"
+     },
+     {
+      "name": "Haaland",
+      "value": "3 Golden Boots",
+      "club": "dortmund"
+     },
+     {
+      "name": "Bellingham",
+      "value": "Madrid",
+      "club": "realmadrid"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Last year's winner, Désiré Doué, was twenty. He'd scored twice in a Champions League final.",
+   "say": "Last year's winner, Dehzeeray Dooay, was twenty. He'd scored twice in a Champions League final.",
+   "scene": {
+    "type": "score",
+    "home": "psg",
+    "away": "inter",
+    "hs": 5,
+    "as": 0,
+    "date": "31 May 2025 · Munich",
+    "comp": "Champions League final",
+    "note": "Doué scores twice at 19"
+   }
+  },
+  {
+   "text": "So the record is seventeen years, a hundred and thirty-seven days. Can anyone go younger?",
+   "say": "So the record is seventeen years, a hundred and thirty-seven days. Can anyone go younger?",
+   "scene": {
+    "type": "person",
+    "person": "yamal",
+    "label": "17y 137d · the record",
+    "mood": "happy",
+    "stamp": "BEAT THAT"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }

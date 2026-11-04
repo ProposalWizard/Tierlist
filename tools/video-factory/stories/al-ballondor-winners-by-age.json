@@ -1,84 +1,534 @@
 {
-  "id": "al-ballondor-winners-by-age",
-  "series": "Everyone, by age",
-  "title": "Every Ballon d'Or winner, by age",
-  "v2": true,
-  "sources": [
-    "https://www.ballondor.com (winners page, year rankings, player pages; saved in data/ballondor/)",
-    "https://en.wikipedia.org/wiki/Ballon_d%27Or",
-    "https://www.guinnessworldrecords.com/world-records/788751-oldest-winner-of-footballs-soccers-ballon-dor-award",
-    "https://www.90min.com/youngest-ballon-d-or-winners-ever",
-    "https://www.planetfootball.com/lists-and-rankings/youngest-ballon-dor-winners-lionel-messi-michael-owen",
-    "https://www.radiox.co.uk/news/uk-world/harry-kane-ends-englands-25-year-wait-for-bal/",
-    "https://www.nbcsportsboston.com/soccer/harry-kane-ballon-dor-2026/809431/",
-    "https://www.drishtiias.com/state-pcs-current-affairs/harry-kane-wins-mens-ballon-dor-2026",
-    "https://www.fanatik.com.tr/en/harry-kane-wins-the-2026-ballon-dor-2642422"
-  ],
-  "checked": "Winners 1956-2025 from ballondor.com rankings (data/ballondor/rankings.json); age = award year minus birth year, birth years from ballondor.com player pages, plus Di Stefano 1926, Kopa 1931, Sivori 1935, Best 1946, Muller 1945, Matthaus 1961 (Wikipedia). 70 awards (no 2020 award). Youngest Ronaldo 21 (1997) and oldest Matthews 41 (1956): Guinness, 90min, Planet Football. Eleven winners at 28 (Keegan 79, Platini 83, Papin 91, Van Basten 92, Stoichkov 94, Figo 00, Shevchenko 04, C. Ronaldo 13, Messi 15, Rodri 24, Dembele 25). Messi's eight wins at 22, 23, 24, 25, 28, 32, 34, 36. Average age by decade computed from the list: 1960s 26.6, 70s 26.3, 80s 26.4, 90s 27.1, 2000s 26.3, 2010s 28.5, 2020s 32.3 (with Kane). Kane won on 26 Oct 2026 in London, first ceremony outside Paris, first Englishman since Owen 2001 (Radio X, NBC Sports, Drishti, Fanatik); Kane born 28 July 1993, so 33. Five wins went to older men: Yashin 34, Messi 34, Benzema 35, Messi 36, Matthews 41.",
-  "clubs": {
-    "blackpool": { "name": "Blackpool", "short": "BLA", "c1": "#f57d20", "c2": "#ffffff", "pattern": "plain" },
-    "inter": { "name": "Inter", "short": "INT", "c1": "#1a3fa0", "c2": "#111111", "pattern": "stripes", "badge": "Inter Milan" },
-    "barca": { "name": "Barcelona", "short": "BAR", "c1": "#a50044", "c2": "#004d98", "pattern": "stripes", "badge": "FC Barcelona" },
-    "juve": { "name": "Juventus", "short": "JUV", "c1": "#ffffff", "c2": "#111111", "pattern": "stripes" },
-    "realmadrid": { "name": "Real Madrid", "short": "RMA", "c1": "#ffffff", "c2": "#febe10", "pattern": "plain" },
-    "milan": { "name": "AC Milan", "short": "MIL", "c1": "#fb090b", "c2": "#111111", "pattern": "stripes" },
-    "mancity": { "name": "Manchester City", "short": "MCI", "c1": "#6cabdd", "c2": "#ffffff", "pattern": "plain" },
-    "psg": { "name": "Paris Saint-Germain", "short": "PSG", "c1": "#004170", "c2": "#da291c", "pattern": "centre" },
-    "liverpool": { "name": "Liverpool", "short": "LIV", "c1": "#c8102e", "c2": "#ffffff", "pattern": "plain" },
-    "bayern": { "name": "Bayern Munich", "short": "FCB", "c1": "#dc052d", "c2": "#ffffff", "pattern": "plain" },
-    "dynamo": { "name": "Dynamo Moscow", "short": "DYN", "c1": "#1d4fa3", "c2": "#ffffff", "pattern": "plain", "badge": false },
-    "miami": { "name": "Inter Miami", "short": "MIA", "c1": "#f7b5cd", "c2": "#231f20", "pattern": "plain" }
+ "id": "al-ballondor-winners-by-age",
+ "series": "Everyone, by age",
+ "title": "Every Ballon d'Or winner, by age",
+ "v2": true,
+ "sources": [
+  "https://www.ballondor.com (winners page, year rankings, player pages; saved in data/ballondor/)",
+  "https://en.wikipedia.org/wiki/Ballon_d%27Or",
+  "https://www.guinnessworldrecords.com/world-records/788751-oldest-winner-of-footballs-soccers-ballon-dor-award",
+  "https://www.90min.com/youngest-ballon-d-or-winners-ever",
+  "https://www.planetfootball.com/lists-and-rankings/youngest-ballon-dor-winners-lionel-messi-michael-owen",
+  "https://www.radiox.co.uk/news/uk-world/harry-kane-ends-englands-25-year-wait-for-bal/",
+  "https://www.nbcsportsboston.com/soccer/harry-kane-ballon-dor-2026/809431/",
+  "https://www.drishtiias.com/state-pcs-current-affairs/harry-kane-wins-mens-ballon-dor-2026",
+  "https://www.fanatik.com.tr/en/harry-kane-wins-the-2026-ballon-dor-2642422"
+ ],
+ "checked": "Winners 1956-2025 from ballondor.com rankings (data/ballondor/rankings.json); age = award year minus birth year, birth years from ballondor.com player pages, plus Di Stefano 1926, Kopa 1931, Sivori 1935, Best 1946, Muller 1945, Matthaus 1961 (Wikipedia). 70 awards (no 2020 award). Youngest Ronaldo 21 (1997) and oldest Matthews 41 (1956): Guinness, 90min, Planet Football. Eleven winners at 28 (Keegan 79, Platini 83, Papin 91, Van Basten 92, Stoichkov 94, Figo 00, Shevchenko 04, C. Ronaldo 13, Messi 15, Rodri 24, Dembele 25). Messi's eight wins at 22, 23, 24, 25, 28, 32, 34, 36. Average age by decade computed from the list: 1960s 26.6, 70s 26.3, 80s 26.4, 90s 27.1, 2000s 26.3, 2010s 28.5, 2020s 32.3 (with Kane). Kane won on 26 Oct 2026 in London, first ceremony outside Paris, first Englishman since Owen 2001 (Radio X, NBC Sports, Drishti, Fanatik); Kane born 28 July 1993, so 33. Five wins went to older men: Yashin 34, Messi 34, Benzema 35, Messi 36, Matthews 41.",
+ "clubs": {
+  "blackpool": {
+   "name": "Blackpool",
+   "short": "BLA",
+   "c1": "#f57d20",
+   "c2": "#ffffff",
+   "pattern": "plain"
   },
-  "people": {
-    "matthews": { "name": "Stanley Matthews", "skin": "light", "hair": ["slick", "#9a9088"], "beard": "none", "kit": "blackpool" },
-    "r9": { "name": "Ronaldo", "skin": "brown", "hair": ["buzz", "#1a1410"], "beard": "none", "kit": "inter" },
-    "messi": { "name": "Lionel Messi", "skin": "light", "hair": ["messy", "#3b2a1c"], "beard": "none", "kit": "barca" },
-    "owen": { "name": "Michael Owen", "skin": "light", "hair": ["crop", "#2a1d14"], "beard": "none", "kit": "liverpool" },
-    "kane": { "name": "Harry Kane", "skin": "light", "hair": ["side", "#8a6a48"], "beard": "stubble", "kit": "bayern" }
+  "inter": {
+   "name": "Inter",
+   "short": "INT",
+   "c1": "#1a3fa0",
+   "c2": "#111111",
+   "pattern": "stripes",
+   "badge": "Inter Milan"
   },
-  "lines": [
-    { "text": "The first Ballon d'Or went to a man of forty-one. Seventy years later, the winners are getting older again.",
-      "say": "The first Balon Dor went to a man of forty-one. Seventy years later, the winners are getting older again.",
-      "scene": { "type": "title", "heading": "EVERY WINNER, BY AGE", "sub": "Ballon d'Or · 1956 to 2026", "pill": "21 TO 41", "person": "matthews" } },
-    { "text": "Nineteen fifty-six. Stanley Matthews of Blackpool wins the very first one.",
-      "say": "Nineteen fifty-six. Stanley Matthews of Blackpool wins the very first one.",
-      "scene": { "type": "news", "section": "Ballon d'Or", "headline": "Matthews, 41, is Europe's first Ballon d'Or winner", "standfirst": "The Blackpool winger tops the first vote for the best player in Europe, ahead of Real Madrid's Alfredo Di Stéfano.", "date": "1956", "byline": "Knowitball archive", "person": "matthews", "club": "blackpool", "nav": ["Football", "Ballon d'Or", "1956", "Blackpool"] } },
-    { "text": "Nobody has won it older since. Most winners are well over ten years younger.",
-      "say": "Nobody has won it older since. Most winners are well over ten years younger.",
-      "scene": { "type": "bars", "kicker": "70 Ballon d'Ors · 1956 to 2026", "title": "Winners by age", "items": [ { "label": "21 to 23", "value": 8 }, { "label": "24 to 25", "value": 13 }, { "label": "26 to 27", "value": 15 }, { "label": "28 to 29", "value": 17, "hl": true }, { "label": "30 to 32", "value": 8 }, { "label": "33 to 36", "value": 8 }, { "label": "41", "value": 1 } ], "unit": "winners" } },
-    { "text": "The sweet spot is twenty-eight. Eleven winners, from Platini to Rodri and Dembélé.",
-      "say": "The sweet spot is twenty-eight. Eleven winners, from Plateenee to Rodree and Dembehlay.",
-      "scene": { "type": "list", "kicker": "The most common age", "title": "Won it at 28", "rows": [ { "name": "Michel Platini (1983)", "value": "28", "club": "juve" }, { "name": "Luis Figo (2000)", "value": "28", "club": "realmadrid" }, { "name": "Andriy Shevchenko (2004)", "value": "28", "club": "milan" }, { "name": "Cristiano Ronaldo (2013)", "value": "28", "club": "realmadrid" }, { "name": "Rodri (2024)", "value": "28", "club": "mancity" }, { "name": "Ousmane Dembélé (2025)", "value": "28", "club": "psg", "hl": true } ] } },
-    { "text": "The youngest ever? Ronaldo, the Brazilian. Twenty-one, in nineteen ninety-seven.",
-      "say": "The youngest ever? Ronaldo, the Brazilian. Twenty-one, in nineteen ninety-seven.",
-      "scene": { "type": "person", "person": "r9", "label": "21 · 1997", "mood": "happy", "stamp": "YOUNGEST EVER" } },
-    { "text": "Then a kid from Rosario. Lionel Messi won his first at twenty-two.",
-      "say": "Then a kid from Rohsahreeoh. Leeonel Messee won his first at twenty-two.",
-      "scene": { "type": "person", "person": "messi", "label": "22 · 2009", "mood": "happy" } },
-    { "text": "And he never stopped. Messi won it at eight different ages, from twenty-two to thirty-six.",
-      "say": "And he never stopped. Messee won it at eight different ages, from twenty-two to thirty-six.",
-      "scene": { "type": "timeline", "kicker": "Lionel Messi", "title": "Eight Ballon d'Ors, eight ages", "items": [ { "year": "2009", "label": "22: the first", "club": "barca" }, { "year": "2012", "label": "25: four in a row", "club": "barca" }, { "year": "2015", "label": "28", "club": "barca" }, { "year": "2019", "label": "32", "club": "barca" }, { "year": "2021", "label": "34", "club": "psg" }, { "year": "2023", "label": "36: the eighth", "club": "miami", "hl": true } ] } },
-    { "text": "Now look at the average age. For fifty years, it sat around twenty-six.",
-      "say": "Now look at the average age. For fifty years, it sat around twenty-six.",
-      "scene": { "type": "line", "kicker": "Average age of the winner", "title": "Decade by decade", "y": { "min": 20, "max": 36, "label": "age" }, "x": ["60s", "70s", "80s", "90s", "00s", "10s", "20s"], "series": [ { "name": "Average age", "color": "#f2c14e", "values": [26.6, 26.3, 26.4, 27.1, 26.3, 28.5, 32.3] } ], "notes": [ { "i": 6, "text": "32.3" } ] } },
-    { "text": "In the twenty-twenties, it jumped to thirty-two. Messi at thirty-four and thirty-six. Benzema at thirty-five.",
-      "say": "In the twenty-twenties, it jumped to thirty-two. Messee at thirty-four and thirty-six. Benzemmah at thirty-five.",
-      "scene": { "type": "list", "kicker": "Average age: 32", "title": "The 2020s", "rows": [ { "name": "Lionel Messi (2021)", "value": "34", "club": "psg" }, { "name": "Karim Benzema (2022)", "value": "35", "club": "realmadrid" }, { "name": "Lionel Messi (2023)", "value": "36", "club": "miami", "hl": true }, { "name": "Rodri (2024)", "value": "28", "club": "mancity" }, { "name": "Ousmane Dembélé (2025)", "value": "28", "club": "psg" }, { "name": "Harry Kane (2026)", "value": "33", "club": "bayern" } ] } },
-    { "text": "England waited a long time. Their last winner was Michael Owen in two thousand and one. He was twenty-two.",
-      "say": "England waited a long time. Their last winner was Michael Owen in two thousand and one. He was twenty-two.",
-      "scene": { "type": "person", "person": "owen", "label": "22 · 2001", "mood": "happy" } },
-    { "text": "Then last month, in London. Harry Kane finally won it, at thirty-three.",
-      "say": "Then last month, in London. Harry Kane finally won it, at thirty-three.",
-      "scene": { "type": "news", "section": "Ballon d'Or", "headline": "Kane ends England's 25-year wait", "standfirst": "The Bayern Munich striker wins the Ballon d'Or at 33, at the first ceremony ever held in London.", "date": "26 October 2026", "byline": "Knowitball recap", "person": "kane", "club": "bayern", "nav": ["Football", "Ballon d'Or", "England", "Bayern"] } },
-    { "text": "England's last two winners. Owen at twenty-two, Kane at thirty-three. Twenty-five years apart.",
-      "say": "England's last two winners. Owen at twenty-two, Kane at thirty-three. Twenty-five years apart.",
-      "scene": { "type": "compare", "title": "England's last two winners", "left": { "person": "owen", "name": "Owen", "sub": "Liverpool · 2001" }, "right": { "person": "kane", "name": "Kane", "sub": "Bayern · 2026" }, "rows": [ { "label": "Age when he won", "l": 22, "r": 33, "lower": true }, { "label": "Year", "l": 2001, "r": 2026 } ] } },
-    { "text": "Thirty-three puts Kane with Di Stéfano, Cannavaro and Modrić. Only five times has it gone to someone older.",
-      "say": "Thirty-three puts Kane with Dee Steffanoh, Kannahvaroh and Modritch. Only five times has it gone to someone older.",
-      "scene": { "type": "list", "kicker": "Ballon d'Or", "title": "Won it at 33", "rows": [ { "name": "Alfredo Di Stéfano (1959)", "value": "33", "club": "realmadrid" }, { "name": "Fabio Cannavaro (2006)", "value": "33", "club": "realmadrid" }, { "name": "Luka Modrić (2018)", "value": "33", "club": "realmadrid" }, { "name": "Harry Kane (2026)", "value": "33", "club": "bayern", "hl": true } ] } },
-    { "text": "And Matthews? Seventy years on, forty-one is still the record. Nobody has even come close.",
-      "say": "And Matthews? Seventy years on, forty-one is still the record. Nobody has even come close.",
-      "scene": { "type": "stamp", "text": "STILL THE RECORD", "sub": "Stanley Matthews · 41 · 1956", "person": "matthews", "color": "yellow" } },
-    { "text": "Follow for more, and play Road to Ballon d'Or.", "scene": { "type": "cta" } }
-  ]
+  "barca": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "badge": "FC Barcelona"
+  },
+  "juve": {
+   "name": "Juventus",
+   "short": "JUV",
+   "c1": "#ffffff",
+   "c2": "#111111",
+   "pattern": "stripes"
+  },
+  "realmadrid": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#febe10",
+   "pattern": "plain"
+  },
+  "milan": {
+   "name": "AC Milan",
+   "short": "MIL",
+   "c1": "#fb090b",
+   "c2": "#111111",
+   "pattern": "stripes"
+  },
+  "mancity": {
+   "name": "Manchester City",
+   "short": "MCI",
+   "c1": "#6cabdd",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "psg": {
+   "name": "Paris Saint-Germain",
+   "short": "PSG",
+   "c1": "#004170",
+   "c2": "#da291c",
+   "pattern": "centre"
+  },
+  "liverpool": {
+   "name": "Liverpool",
+   "short": "LIV",
+   "c1": "#c8102e",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "bayern": {
+   "name": "Bayern Munich",
+   "short": "FCB",
+   "c1": "#dc052d",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": "FC Bayern München"
+  },
+  "dynamo": {
+   "name": "Dynamo Moscow",
+   "short": "DYN",
+   "c1": "#1d4fa3",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": false
+  },
+  "miami": {
+   "name": "Inter Miami",
+   "short": "MIA",
+   "c1": "#f7b5cd",
+   "c2": "#231f20",
+   "pattern": "plain"
+  }
+ },
+ "people": {
+  "matthews": {
+   "name": "Stanley Matthews",
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#9a9088"
+   ],
+   "beard": "none",
+   "kit": "blackpool"
+  },
+  "r9": {
+   "name": "Ronaldo",
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#1a1410"
+   ],
+   "beard": "none",
+   "kit": "inter"
+  },
+  "messi": {
+   "name": "Lionel Messi",
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#3b2a1c"
+   ],
+   "beard": "none",
+   "kit": "barca"
+  },
+  "owen": {
+   "name": "Michael Owen",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2a1d14"
+   ],
+   "beard": "none",
+   "kit": "liverpool"
+  },
+  "kane": {
+   "name": "Harry Kane",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#8a6a48"
+   ],
+   "beard": "stubble",
+   "kit": "bayern"
+  }
+ },
+ "lines": [
+  {
+   "text": "The first Ballon d'Or went to a man of forty-one. Seventy years later, the winners are getting older again.",
+   "say": "The first Balon Dor went to a man of forty-one. Seventy years later, the winners are getting older again.",
+   "scene": {
+    "type": "title",
+    "heading": "EVERY WINNER, BY AGE",
+    "sub": "1956–2026",
+    "pill": "21 TO 41",
+    "person": "matthews"
+   }
+  },
+  {
+   "text": "Nineteen fifty-six. Stanley Matthews of Blackpool wins the very first one.",
+   "say": "Nineteen fifty-six. Stanley Matthews of Blackpool wins the very first one.",
+   "scene": {
+    "type": "news",
+    "section": "Ballon d'Or",
+    "headline": "Matthews, 41, is Europe's first Ballon d'Or winner",
+    "standfirst": "The Blackpool winger tops the first vote for the best player in Europe, ahead of Real Madrid's Alfredo Di Stéfano.",
+    "date": "1956",
+    "byline": "Knowitball archive",
+    "person": "matthews",
+    "club": "blackpool",
+    "nav": [
+     "Football",
+     "Ballon d'Or",
+     "1956",
+     "Blackpool"
+    ]
+   }
+  },
+  {
+   "text": "Nobody has won it older since. Most winners are well over ten years younger.",
+   "say": "Nobody has won it older since. Most winners are well over ten years younger.",
+   "scene": {
+    "type": "bars",
+    "kicker": "70 Ballon d'Ors · 1956 to 2026",
+    "title": "Winners by age",
+    "items": [
+     {
+      "label": "21 to 23",
+      "value": 8
+     },
+     {
+      "label": "24 to 25",
+      "value": 13
+     },
+     {
+      "label": "26 to 27",
+      "value": 15
+     },
+     {
+      "label": "28 to 29",
+      "value": 17,
+      "hl": true
+     },
+     {
+      "label": "30 to 32",
+      "value": 8
+     },
+     {
+      "label": "33 to 36",
+      "value": 8
+     },
+     {
+      "label": "41",
+      "value": 1
+     }
+    ]
+   }
+  },
+  {
+   "text": "The sweet spot is twenty-eight. Eleven winners, from Platini to Rodri and Dembélé.",
+   "say": "The sweet spot is twenty-eight. Eleven winners, from Plateenee to Rodree and Dembehlay.",
+   "scene": {
+    "type": "list",
+    "kicker": "The most common age",
+    "title": "Won it at 28",
+    "rows": [
+     {
+      "name": "Michel Platini (1983)",
+      "value": "28",
+      "club": "juve"
+     },
+     {
+      "name": "Luis Figo (2000)",
+      "value": "28",
+      "club": "realmadrid"
+     },
+     {
+      "name": "Andriy Shevchenko (2004)",
+      "value": "28",
+      "club": "milan"
+     },
+     {
+      "name": "Cristiano Ronaldo (2013)",
+      "value": "28",
+      "club": "realmadrid"
+     },
+     {
+      "name": "Rodri (2024)",
+      "value": "28",
+      "club": "mancity"
+     },
+     {
+      "name": "Ousmane Dembélé (2025)",
+      "value": "28",
+      "club": "psg",
+      "hl": true
+     }
+    ]
+   }
+  },
+  {
+   "text": "The youngest ever? Ronaldo, the Brazilian. Twenty-one, in nineteen ninety-seven.",
+   "say": "The youngest ever? Ronaldo, the Brazilian. Twenty-one, in nineteen ninety-seven.",
+   "scene": {
+    "type": "person",
+    "person": "r9",
+    "label": "21 · 1997",
+    "mood": "happy",
+    "stamp": "YOUNGEST EVER"
+   }
+  },
+  {
+   "text": "Then a kid from Rosario. Lionel Messi won his first at twenty-two.",
+   "say": "Then a kid from Rohsahreeoh. Leeonel Messee won his first at twenty-two.",
+   "scene": {
+    "type": "person",
+    "person": "messi",
+    "label": "22 · 2009",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "And he never stopped. Messi won it at eight different ages, from twenty-two to thirty-six.",
+   "say": "And he never stopped. Messee won it at eight different ages, from twenty-two to thirty-six.",
+   "scene": {
+    "type": "timeline",
+    "kicker": "Lionel Messi",
+    "title": "Eight Ballon d'Ors, eight ages",
+    "items": [
+     {
+      "year": "2009",
+      "label": "22: the first",
+      "club": "barca"
+     },
+     {
+      "year": "2012",
+      "label": "25: four in a row",
+      "club": "barca"
+     },
+     {
+      "year": "2015",
+      "label": "28",
+      "club": "barca"
+     },
+     {
+      "year": "2019",
+      "label": "32",
+      "club": "barca"
+     },
+     {
+      "year": "2021",
+      "label": "34",
+      "club": "psg"
+     },
+     {
+      "year": "2023",
+      "label": "36: the eighth",
+      "club": "miami",
+      "hl": true
+     }
+    ]
+   }
+  },
+  {
+   "text": "Now look at the average age. For fifty years, it sat around twenty-six.",
+   "say": "Now look at the average age. For fifty years, it sat around twenty-six.",
+   "scene": {
+    "type": "line",
+    "kicker": "Average age of the winner",
+    "title": "Decade by decade",
+    "y": {
+     "min": 20,
+     "max": 36,
+     "label": "age"
+    },
+    "x": [
+     "60s",
+     "70s",
+     "80s",
+     "90s",
+     "00s",
+     "10s",
+     "20s"
+    ],
+    "series": [
+     {
+      "name": "Average age",
+      "color": "#f2c14e",
+      "values": [
+       26.6,
+       26.3,
+       26.4,
+       27.1,
+       26.3,
+       28.5,
+       32.3
+      ]
+     }
+    ],
+    "notes": [
+     {
+      "i": 6,
+      "text": "32.3"
+     }
+    ]
+   }
+  },
+  {
+   "text": "In the twenty-twenties, it jumped to thirty-two. Messi at thirty-four and thirty-six. Benzema at thirty-five.",
+   "say": "In the twenty-twenties, it jumped to thirty-two. Messee at thirty-four and thirty-six. Benzemmah at thirty-five.",
+   "scene": {
+    "type": "list",
+    "kicker": "Average age: 32",
+    "title": "The 2020s",
+    "rows": [
+     {
+      "name": "Lionel Messi (2021)",
+      "value": "34",
+      "club": "psg"
+     },
+     {
+      "name": "Karim Benzema (2022)",
+      "value": "35",
+      "club": "realmadrid"
+     },
+     {
+      "name": "Lionel Messi (2023)",
+      "value": "36",
+      "club": "miami",
+      "hl": true
+     },
+     {
+      "name": "Rodri (2024)",
+      "value": "28",
+      "club": "mancity"
+     },
+     {
+      "name": "Ousmane Dembélé (2025)",
+      "value": "28",
+      "club": "psg"
+     },
+     {
+      "name": "Harry Kane (2026)",
+      "value": "33",
+      "club": "bayern"
+     }
+    ]
+   }
+  },
+  {
+   "text": "England waited a long time. Their last winner was Michael Owen in two thousand and one. He was twenty-two.",
+   "say": "England waited a long time. Their last winner was Michael Owen in two thousand and one. He was twenty-two.",
+   "scene": {
+    "type": "person",
+    "person": "owen",
+    "label": "22 · 2001",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "Then last month, in London. Harry Kane finally won it, at thirty-three.",
+   "say": "Then last month, in London. Harry Kane finally won it, at thirty-three.",
+   "scene": {
+    "type": "news",
+    "section": "Ballon d'Or",
+    "headline": "Kane ends England's 25-year wait",
+    "standfirst": "The Bayern Munich striker wins the Ballon d'Or at 33, at the first ceremony ever held in London.",
+    "date": "26 October 2026",
+    "byline": "Knowitball recap",
+    "person": "kane",
+    "club": "bayern",
+    "nav": [
+     "Football",
+     "Ballon d'Or",
+     "England",
+     "Bayern"
+    ]
+   }
+  },
+  {
+   "text": "England's last two winners. Owen at twenty-two, Kane at thirty-three. Twenty-five years apart.",
+   "say": "England's last two winners. Owen at twenty-two, Kane at thirty-three. Twenty-five years apart.",
+   "scene": {
+    "type": "compare",
+    "title": "England's last two winners",
+    "left": {
+     "person": "owen",
+     "name": "Owen",
+     "sub": "Liverpool · 2001"
+    },
+    "right": {
+     "person": "kane",
+     "name": "Kane",
+     "sub": "Bayern · 2026"
+    },
+    "rows": [
+     {
+      "label": "Age when he won",
+      "l": 22,
+      "r": 33,
+      "lower": true
+     },
+     {
+      "label": "Year",
+      "l": 2001,
+      "r": 2026
+     }
+    ]
+   }
+  },
+  {
+   "text": "Thirty-three puts Kane with Di Stéfano, Cannavaro and Modrić. Only five times has it gone to someone older.",
+   "say": "Thirty-three puts Kane with Dee Steffanoh, Kannahvaroh and Modritch. Only five times has it gone to someone older.",
+   "scene": {
+    "type": "list",
+    "kicker": "Ballon d'Or",
+    "title": "Won it at 33",
+    "rows": [
+     {
+      "name": "Alfredo Di Stéfano (1959)",
+      "value": "33",
+      "club": "realmadrid"
+     },
+     {
+      "name": "Fabio Cannavaro (2006)",
+      "value": "33",
+      "club": "realmadrid"
+     },
+     {
+      "name": "Luka Modrić (2018)",
+      "value": "33",
+      "club": "realmadrid"
+     },
+     {
+      "name": "Harry Kane (2026)",
+      "value": "33",
+      "club": "bayern",
+      "hl": true
+     }
+    ]
+   }
+  },
+  {
+   "text": "And Matthews? Seventy years on, forty-one is still the record. Nobody has even come close.",
+   "say": "And Matthews? Seventy years on, forty-one is still the record. Nobody has even come close.",
+   "scene": {
+    "type": "person",
+    "person": "matthews",
+    "label": "41 · 1956",
+    "mood": "happy",
+    "stamp": "STILL THE RECORD"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }

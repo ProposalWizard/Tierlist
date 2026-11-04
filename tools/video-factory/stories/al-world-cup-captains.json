@@ -146,7 +146,7 @@
    "scene": {
     "type": "title",
     "heading": "WORLD CUP CAPTAINS",
-    "sub": "Every winning captain · 1930 to 2026",
+    "sub": "1930–2026",
     "pill": "25 TO 40",
     "person": "zoff"
    }
@@ -200,8 +200,7 @@
       "label": "40",
       "value": 1
      }
-    ],
-    "unit": "captains"
+    ]
    }
   },
   {

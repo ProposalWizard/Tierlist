@@ -37,7 +37,8 @@
    "short": "FCB",
    "c1": "#dc052d",
    "c2": "#ffffff",
-   "pattern": "plain"
+   "pattern": "plain",
+   "badge": "FC Bayern München"
   },
   "psg": {
    "name": "Paris Saint-Germain",
@@ -166,7 +167,7 @@
    "scene": {
     "type": "title",
     "heading": "FIFA THE BEST, BY AGE",
-    "sub": "Every men's winner · 2016 to 2025",
+    "sub": "2016–2025",
     "pill": "36 v 23",
     "person": "messi"
    }
@@ -297,8 +298,7 @@
       "n": "48",
       "l": "Erling Haaland"
      }
-    ],
-    "stamp": "DEAD HEAT"
+    ]
    }
   },
   {
@@ -398,10 +398,6 @@
      {
       "i": 7,
       "text": "Messi 36"
-     },
-     {
-      "i": 8,
-      "text": "Vinícius 24"
      }
     ]
    }
