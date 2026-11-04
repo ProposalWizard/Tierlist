@@ -293,8 +293,8 @@
    }
   },
   {
-   "text": "The final. Spain. Extra time. Iniesta, a hundred and sixteen minutes. One-nil.",
-   "say": "The final. Spain. Extra time. Inyesta. A hundred and sixteen minutes. One nil.",
+   "text": "The final. Spain. Extra time. Then Iniesta scores, a hundred and sixteen minutes in. One-nil.",
+   "say": "The final. Spain. Extra time. Then Inyestah scores, a hundred and sixteen minutes in. One nil.",
    "scene": {
     "type": "score",
     "home": "ned",
