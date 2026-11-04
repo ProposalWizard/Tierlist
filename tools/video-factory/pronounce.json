@@ -43,11 +43,11 @@
     "Kanté": "Kontay",
     "Koundé": "Koonday",
     "Cubarsí": "Koobarsee",
-    "Raphinha": "Hahfeenyah",
+    "Raphinha": "Rafeenya",
     "Džeko": "Jehko",
     "Gyökeres": "Yurkeresh",
     "Piqué": "Peekay",
-    "Puyol": "Pooyoll",
+    "Puyol": "Pooyol",
     "Rakitić": "Rakititch",
     "Eto'o": "Ehtohoh",
     "Müller": "Mewler",
@@ -96,7 +96,10 @@
     "Cesc": "Sesk",
     "Fàbregas": "Fabbregass",
     "Tottenham": "Tottnum",
-    "Monaco": "Monakoh"
+    "Monaco": "Monakoh",
+    "Pau": "Pow",
+    "Carles": "Karlus",
+    "Zaragoza": "Tharagotha"
   },
   "_ipa": {
     "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -129,11 +132,11 @@
     "Olise": "en /ɒˈliseɪ/, Wikipedia respell o-LEE-say",
     "Dembélé": "fr [dɛmbele] (Wikipedia)",
     "Koundé": "fr [kunde] (Wikipedia)",
-    "Raphinha": "pt [ʁɐˈfiɲɐ] (Wikipedia)",
+    "Raphinha": "pt-BR [ʁaˈfiɲɐ]; transcribed back as Rafina",
     "Džeko": "bs [dʒêːko] (Wikipedia)",
     "Gyökeres": "sv [ˈjø̂ːkɛrɛs] (Wikipedia)",
-    "Piqué": "ca [piˈke] (Wikipedia)",
-    "Puyol": "es [puˈʝol] (Wikipedia)",
+    "Piqué": "ca [piˈke]; transcribed back as Piquet",
+    "Puyol": "ca [puˈjɔɫ]; transcribed back as Puyol",
     "Rakitić": "hr [rǎkititɕ] (Wikipedia)",
     "Eto'o": "fr [eto] (Wikipedia)",
     "Müller": "de [ˈmʏlɐ] (Wikipedia)",
@@ -172,6 +175,10 @@
     "Cesc": "ca [ˈsɛsk]; transcribed back as Sesk",
     "Fàbregas": "ca [ˈfaβɾəɣəs], English 'FAB-reh-gas'; transcribed back as Fabregas",
     "Tottenham": "English 'TOT-num'; transcribed back as Tottenham",
-    "Monaco": "English 'MON-a-ko'; transcribed back as Monaco"
+    "Monaco": "English 'MON-a-ko'; transcribed back as Monaco",
+    "Cubarsí": "ca [kuβəɾˈsi]; transcribed back as Cubarsi; at the start of a sentence put 'Pow' before it (alone it was once heard as 'COB-RC'), 4 Nov 2026",
+    "Pau": "ca [ˈpaw], rhymes with cow; transcribed back as Pau",
+    "Carles": "ca [ˈkaɾɫəs]; transcribed back as Carlos (close)",
+    "Zaragoza": "es [θaɾaˈɣoθa]; transcribed back as Theragotha"
   }
 }
