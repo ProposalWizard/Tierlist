@@ -282,7 +282,7 @@
   },
   {
    "text": "Number three. Brighton's Greek teenager, Kostoulas.",
-   "say": "Number three. Brighton's Greek teenager, Kosstoolass.",
+   "say": "Number three. Brighton's Greek teenager, Kostoolas.",
    "scene": {
     "type": "person",
     "person": "kostoulas",
@@ -366,8 +366,8 @@
    }
   },
   {
-   "text": "Number two. Pau Cubarsí.",
-   "say": "Number two. Pow Koobarsee.",
+   "text": "Number two. Pau Cubarsí, of Barcelona.",
+   "say": "Number two. Pow Koobarsee, of Barcelona.",
    "scene": {
     "type": "person",
     "person": "cubarsi",
@@ -435,7 +435,7 @@
   },
   {
    "text": "Against Rayo Vallecano, he became the youngest player to score fifty goals for Barcelona. Messi was twenty-one.",
-   "say": "Against Rayo Vayekano, he became the youngest player to score fifty goals for Barsah. Messi was twenty-one.",
+   "say": "Against Rahyo Vayekano, he became the youngest player to score fifty goals for Barsah. Messi was twenty-one.",
    "scene": {
     "type": "news",
     "section": "La Liga",
