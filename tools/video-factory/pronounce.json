@@ -96,7 +96,14 @@
   "Wouters": "Vowters",
   "Rijkaard": "Rykard",
   "Kyiv": "Keev",
-  "Mykhaylychenko": "Mikhaileechenko"
+  "Mykhaylychenko": "Mikhaileechenko",
+  "Sané": "Sahnay",
+  "Gerd Müller": "Gaird Mewler",
+  "Jorginho": "Zhorjeenyo",
+  "Di María": "Dee Mareeah",
+  "De Paul": "Deh Powl",
+  "Maracanã": "Marakahnah",
+  "Copa del Rey": "Kopa del Ray"
  },
  "_ipa": {
   "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -173,6 +180,13 @@
   "Wouters": "nl [ˈʋʌutərs]; heard as 'Vouters' (rob-koeman-1988)",
   "Rijkaard": "nl [ˈrɛikaːrt], English broadcast 'RYE-kard'; heard as 'Recard' (rob-koeman-1988)",
   "Kyiv": "uk [ˈkɪjiu̯], English 'KEEV'; heard as 'Keeves' before 's (rob-koeman-1988)",
-  "Mykhaylychenko": "uk [mɪxɐjˈlɪtʃenko]; heard as 'Mikhilichenko' (rob-koeman-1988)"
+  "Mykhaylychenko": "uk [mɪxɐjˈlɪtʃenko]; heard as 'Mikhilichenko' (rob-koeman-1988)",
+  "Sané": "de/fr [saˈneː]; heard as 'Sanne' (rob-lewandowski-2020)",
+  "Gerd Müller": "de [ɡɛʁt ˈmʏlɐ]; heard as 'Gerd Mueller' (rob-lewandowski-2020)",
+  "Jorginho": "pt-BR [ʒoʁˈʒĩɲu]; heard as 'Zorginho' (rob-messi-2021)",
+  "Di María": "es [di maˈɾi.a]; heard as 'De Maria' (rob-messi-2021)",
+  "De Paul": "es [de ˈpawl]; heard as 'De Powell' (rob-messi-2021)",
+  "Maracanã": "pt-BR [maɾakɐˈnɐ̃]; heard as 'Maracana' (rob-messi-2021)",
+  "Copa del Rey": "es [ˈkopa ðel ˈrej]; heard as 'Copa del Rey' (rob-messi-2021)"
  }
 }
