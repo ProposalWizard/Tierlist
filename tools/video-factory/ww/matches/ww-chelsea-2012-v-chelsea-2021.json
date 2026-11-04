@@ -614,28 +614,28 @@
    "seg": "goal1",
    "offset": 0.1,
    "spill": true,
-   "text": "Twenty-three minutes. Mata's corner, Drogba at the near post. Munich all over again.",
-   "say": "Twenty-three minutes. Mahta's corner, Drogba at the near post. Munich all over again."
+   "text": "Mata's corner. Drogba, near post. Munich again.",
+   "say": "Mahta's corner. Drogba, near post. Munich again."
   },
   {
    "seg": "goal2",
    "offset": 0.2,
    "spill": true,
-   "text": "Then Porto. Mount slides it through, Havertz rounds Čech.",
-   "say": "Then Porto. Mount slides it through, Havverts rounds Chek."
+   "text": "Mount slides it through. Havertz. One-all.",
+   "say": "Mount slides it through. Havverts. One-all."
   },
   {
    "seg": "goal3",
    "offset": 0.2,
    "spill": true,
-   "text": "And who else? Lampard, from the edge. Two-one."
+   "text": "And who else? Lampard, from the edge!"
   },
   {
    "seg": "late",
    "offset": 0.0,
    "spill": true,
-   "text": "Ninety-third minute. Werner, one on one, for the draw...",
-   "say": "Ninety-third minute. Verner, one on one, for the draw..."
+   "text": "Ninety-third minute. Werner, one on one...",
+   "say": "Ninety-third minute. Verner, one on one..."
   },
   {
    "seg": "fulltime",

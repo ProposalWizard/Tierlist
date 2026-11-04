@@ -703,35 +703,34 @@
    "seg": "goal1",
    "offset": 0.1,
    "spill": true,
-   "text": "Seventeen minutes. Rooney, from outside the box. Fearless."
+   "text": "Rooney, from outside the box. Fearless."
   },
   {
    "seg": "goal2",
    "offset": 0.2,
    "spill": true,
-   "text": "Mbappé, too quick for everyone. One-all.",
-   "say": "Embapay, too quick for everyone. One-all."
+   "text": "Mbappé, too quick. One-all.",
+   "say": "Embapay, too quick. One-all."
   },
   {
    "seg": "goal3",
    "offset": 0.2,
    "spill": true,
-   "text": "Then the kid sets up Saka. Two-one.",
-   "say": "Then the kid sets up Sahkah. Two-one."
+   "text": "The kid sets up Saka. Two-one.",
+   "say": "The kid sets up Sahkah. Two-one."
   },
   {
    "seg": "goal4",
    "offset": 0.2,
    "spill": true,
-   "text": "Olise cuts inside and curls it, top corner. Two-all.",
-   "say": "Ohleez cuts inside and curls it, top corner. Two-all."
+   "text": "Olise curls it in. Two-all.",
+   "say": "Ohleez curls it in. Two-all."
   },
   {
    "seg": "late",
    "offset": 0.0,
    "spill": true,
-   "text": "Stoppage time again. Rooney crosses...",
-   "say": "Stoppage time again. Rooney crosses..."
+   "text": "Stoppage time. Rooney crosses..."
   },
   {
    "seg": "fulltime",

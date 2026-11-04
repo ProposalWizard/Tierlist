@@ -676,21 +676,21 @@
    "seg": "goal2",
    "offset": 0.2,
    "spill": true,
-   "text": "But Kane doesn't need long. Kudus finds him. Low into the corner.",
-   "say": "But Kane doesn't need long. Koodoos finds him. Low into the corner."
+   "text": "Kudus finds Kane. Low, into the corner.",
+   "say": "Koodoos finds Kane. Low, into the corner."
   },
   {
    "seg": "goal3",
    "offset": 0.2,
    "spill": true,
-   "text": "Olise curls one in. One-two Bayern.",
-   "say": "Ohleez curls one in. One-two Bayern."
+   "text": "Olise curls one in. One-two.",
+   "say": "Ohleez curls one in. One-two."
   },
   {
    "seg": "goal4",
    "offset": 0.2,
    "spill": true,
-   "text": "Penalty. Kane against his own team-mates. Two-all."
+   "text": "Penalty. Kane. Two-all."
   },
   {
    "seg": "late",

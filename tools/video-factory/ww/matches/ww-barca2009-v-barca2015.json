@@ -657,35 +657,35 @@
    "seg": "goal1",
    "offset": 0.1,
    "spill": true,
-   "text": "Ten minutes, just like Rome. Iniesta finds Eto'o, near post.",
-   "say": "Ten minutes, just like Rome. Inyestah finds Ehtohoh, near post."
+   "text": "Ten minutes. Eto'o, just like Rome.",
+   "say": "Ten minutes. Ehtohoh, just like Rome."
   },
   {
    "seg": "goal2",
    "offset": 0.2,
    "spill": true,
-   "text": "M S N wake up. Neymar squares it, Suárez taps in.",
-   "say": "M, S, N wake up. Naymar squares it, Swahrez taps in."
+   "text": "Neymar squares it. Suárez. One-all.",
+   "say": "Naymar squares it. Swahrez. One-all."
   },
   {
    "seg": "goal3",
    "offset": 0.1,
    "spill": true,
-   "text": "Then Xavi crosses, and young Messi heads it in. Rome all over again.",
-   "say": "Then Shahvee crosses, and young Messi heads it in. Rome all over again."
+   "text": "Xavi crosses... young Messi heads it in!",
+   "say": "Shahvee crosses... young Messi heads it in!"
   },
   {
    "seg": "goal4",
    "offset": 0.2,
    "spill": true,
-   "text": "But old Messi has learned a few things. Top corner. Two-all."
+   "text": "Old Messi. Top corner. Two-all."
   },
   {
    "seg": "late",
    "offset": 0.0,
    "spill": true,
-   "text": "Ninety-fourth minute. Messi slips in Neymar...",
-   "say": "Ninety-fourth minute. Messi slips in Naymar..."
+   "text": "Ninety-fourth minute. Messi, to Neymar...",
+   "say": "Ninety-fourth minute. Messi, to Naymar..."
   },
   {
    "seg": "fulltime",

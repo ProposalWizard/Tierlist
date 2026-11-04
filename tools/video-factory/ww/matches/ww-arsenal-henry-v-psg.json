@@ -671,36 +671,35 @@
    "seg": "goal1",
    "offset": 0.1,
    "spill": true,
-   "text": "Twelve minutes. Henry drifts left, cuts inside, and curls it into the far corner.",
-   "say": "Twelve minutes. Onree drifts left, cuts inside, and curls it into the far corner."
+   "text": "Twelve minutes. Henry cuts in. Far corner.",
+   "say": "Twelve minutes. Onree cuts in. Far corner."
   },
   {
    "seg": "goal2",
    "offset": 0.2,
    "spill": true,
-   "text": "PSG answer from the spot. Dembélé, just like Budapest.",
-   "say": "P S G answer from the spot. Dembehlay, just like Budapest."
+   "text": "Dembélé from the spot. Just like Budapest.",
+   "say": "Dembehlay from the spot. Just like Budapest."
   },
   {
    "seg": "goal3",
    "offset": 0.2,
    "spill": true,
-   "text": "Then Saka slips him in. Henry, one on one. Two-one.",
-   "say": "Then Sahkah slips him in. Onree, one on one. Two-one."
+   "text": "Saka slips him in. Henry again!",
+   "say": "Sahkah slips him in. Onree again!"
   },
   {
    "seg": "goal4",
    "offset": 0.2,
    "spill": true,
-   "text": "Kvaratskhelia bends one in. Two-all.",
-   "say": "Kvaratskelia bends one in. Two-all."
+   "text": "Kvaratskhelia curls it in. Two-all.",
+   "say": "Kvaratskelia curls it in. Two-all."
   },
   {
    "seg": "late",
    "offset": 0.0,
    "spill": true,
-   "text": "Ninety-second minute. Rice's corner...",
-   "say": "Ninety-second minute. Rice's corner..."
+   "text": "Ninety-second minute. Rice's corner..."
   },
   {
    "seg": "fulltime",
