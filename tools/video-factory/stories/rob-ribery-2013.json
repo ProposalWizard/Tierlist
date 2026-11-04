@@ -1,280 +1,402 @@
 {
-  "id": "rob-ribery-2013",
-  "series": "Ballon d'Or robberies",
-  "title": "Ribéry 2013: the deadline that moved",
-  "sources": [
-    "https://www.tntsports.co.uk/football/ballon-d-or/2021/ballon-dor-2013-when-franck-ribery-felt-robbed-as-cristiano-ronaldo-won-award-after-vote-controversy_sto9182668/story.shtml",
-    "https://www.goal.com/en-ca/lists/messi-ronaldo-not-better-former-bayern-star-ballon-d-or-forever-injustice-missing-out-on-prestigious-prize/blt61106d3556a41a43",
-    "https://www.foxnews.com/sports/ronaldos-hat-trick-boosts-his-ballon-dor-chances-over-messi-after-voting-extended.amp",
-    "https://www.foxnews.com/sports/cristiano-ronaldo-named-worlds-best-soccer-player-of-2013",
-    "https://www.uefa.com/uefachampionsleague/news/newsid=2043748.html",
-    "https://img.fifa.com/image/upload/gva3xc0mvstzaotijqum.pdf",
-    "https://www.nbcsports.com/soccer/news/cristiano-ronaldo-wins-2013-ballon-dor-crowned-worlds-best-player",
-    "https://www.afrik-foot.com/ballon-d-or-le-classement-complet",
-    "https://www.uefa.com/uefachampionsleague/news/newsid=1947490.html",
-    "https://www.ft.lk/Sports/ribery-and-robben-combine-to-give-bayern-victory/23-153136",
-    "https://www.beinsports.com/en-us/soccer/articles/franck-ribery-rants-at-injustice-of-cristiano"
-  ],
-  "checked": "Bayern treble 2012-13 and UEFA Best Player in Europe 2013 (Eurosport/TNT, Goal); Ribery set up Robben's 89th-minute winner v Dortmund 2-1 at Wembley (UEFA, FT.lk); deadline moved from 15 to 29 Nov, first extension ever, FIFA cited too few votes (Goal, Eurosport/TNT, Fox); Ronaldo hat-trick in 3-2 win in Sweden 19 Nov (Fox, UEFA); voters allowed to change picks (Fox); FIFA said the win owed nothing to the extension (Fox); result 27.99/24.72/23.36%, 1365/1205/1127 pts (FIFA PDF, NBC, Afrik-foot); Ribery called it an injustice (beIN, Goal). No claim of rigging stated as fact.",
-  "clubs": {
-    "bay": {
-      "name": "Bayern Munich",
-      "short": "FCB",
-      "c1": "#dc052d",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "bvb": {
-      "name": "Borussia Dortmund",
-      "short": "BVB",
-      "c1": "#fde100",
-      "c2": "#000000",
-      "pattern": "plain"
-    },
-    "por": {
-      "name": "Portugal",
-      "short": "POR",
-      "c1": "#c8102e",
-      "c2": "#046a38",
-      "pattern": "plain"
-    },
-    "swe": {
-      "name": "Sweden",
-      "short": "SWE",
-      "c1": "#fecc00",
-      "c2": "#006aa7",
-      "pattern": "plain"
-    },
-    "rma": {
-      "name": "Real Madrid",
-      "short": "RMA",
-      "c1": "#ffffff",
-      "c2": "#d4af37",
-      "pattern": "plain"
-    },
-    "bar": {
-      "name": "Barcelona",
-      "short": "BAR",
-      "c1": "#a50044",
-      "c2": "#004d98",
-      "pattern": "stripes"
-    }
+ "id": "rob-ribery-2013",
+ "series": "Ballon d'Or robberies",
+ "title": "Ribéry 2013: the deadline that moved",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/2013_FIFA_Ballon_d%27Or",
+  "https://www.tntsports.co.uk/football/ballon-d-or/2021/ballon-dor-2013-when-franck-ribery-felt-robbed-as-cristiano-ronaldo-won-award-after-vote-controversy_sto9182668/story.shtml",
+  "https://www.goal.com/en-ca/lists/messi-ronaldo-not-better-former-bayern-star-ballon-d-or-forever-injustice-missing-out-on-prestigious-prize/blt61106d3556a41a43",
+  "https://www.foxnews.com/sports/ronaldos-hat-trick-boosts-his-ballon-dor-chances-over-messi-after-voting-extended.amp",
+  "https://www.foxnews.com/sports/cristiano-ronaldo-named-worlds-best-soccer-player-of-2013",
+  "https://en.wikipedia.org/wiki/2013_UEFA_Champions_League_final",
+  "https://www.ft.lk/Sports/ribery-and-robben-combine-to-give-bayern-victory/23-153136",
+  "https://www.uefa.com/uefachampionsleague/news/newsid=1947490.html",
+  "https://www.nbcsports.com/soccer/news/cristiano-ronaldo-wins-2013-ballon-dor-crowned-worlds-best-player",
+  "https://www.afrik-foot.com/ballon-d-or-le-classement-complet",
+  "https://www.beinsports.com/en-us/soccer/articles/franck-ribery-rants-at-injustice-of-cristiano",
+  "https://www.footyheadlines.com/2013/05/fc-bayern-munchen-2013-cl-final-wembley.html"
+ ],
+ "checked": "Bayern 2012-13 treble (Wikipedia final page, TNT). Final 25 May 2013 Wembley, Dortmund 1-2 Bayern, Mandzukic 60, Gundogan pen 68, Robben 89 from Ribery's back-heel, low left foot from about eight yards past Weidenfeller (Wikipedia, FT.lk). UEFA Best Player in Europe 2013 (UEFA, TNT); 'widely tipped to win' (TNT, Goal). Deadline 15 Nov moved to 29 Nov, announced 20 Nov, first extension ever, FIFA said too few voters had replied (Wikipedia, TNT, Fox). Sweden 2-3 Portugal in Stockholm 19 Nov, Ronaldo hat-trick, Ibrahimovic two (Fox, TNT). Result 27.99/24.72/23.36%, 1365/1205/1127 points, ceremony 13 Jan 2014 (Wikipedia, NBC, Afrik-foot). FIFA said the extension did not decide it (Fox); Ribery called it an injustice (beIN, Goal). 'Voters could change their picks' dropped: only one source. Robben goal recreated with gamecap (specs/ribery-2013.json).",
+ "clubs": {
+  "bay": {
+   "name": "Bayern Munich",
+   "short": "FCB",
+   "c1": "#dc052d",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": "FC Bayern München"
   },
-  "people": {
-    "ribery": {
-      "name": "Franck Ribéry",
-      "skin": "light",
-      "hair": [
-        "buzz",
-        "#3a2a1e"
-      ],
-      "beard": "stubble",
-      "beardCol": "#3a2a1e",
-      "kit": "bay"
-    },
-    "ronaldo": {
-      "name": "Cristiano Ronaldo",
-      "skin": "tan",
-      "hair": [
-        "slick",
-        "#1e140d"
-      ],
-      "beard": "none",
-      "kit": "rma"
-    },
-    "messi": {
-      "name": "Lionel Messi",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#4a3222"
-      ],
-      "beard": "stubble",
-      "beardCol": "#4a3222",
-      "kit": "bar"
-    }
+  "dor": {
+   "name": "Borussia Dortmund",
+   "short": "BVB",
+   "c1": "#fde100",
+   "c2": "#111111",
+   "pattern": "plain"
   },
-  "lines": [
-    {
-      "text": "Franck Ribéry won the treble. Then FIFA moved the deadline.",
-      "scene": {
-        "type": "title",
-        "heading": "FRANCK RIBÉRY",
-        "sub": "Bayern Munich · 2013",
-        "pill": "ROBBED BY A DEADLINE?",
-        "person": "ribery"
-      }
+  "rma": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#febe10",
+   "pattern": "plain"
+  },
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "badge": "FC Barcelona"
+  },
+  "swe": {
+   "name": "Sweden",
+   "short": "SWE",
+   "c1": "#fecc00",
+   "c2": "#006aa7",
+   "pattern": "plain",
+   "badge": false
+  },
+  "pot": {
+   "name": "Portugal",
+   "short": "POR",
+   "c1": "#c8102e",
+   "c2": "#046a38",
+   "pattern": "plain",
+   "badge": false
+  }
+ },
+ "people": {
+  "ribery": {
+   "name": "Franck Ribéry",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "stubble",
+   "kit": "bay"
+  },
+  "robben": {
+   "name": "Arjen Robben",
+   "skin": "light",
+   "hair": [
+    "bald",
+    "#e3c9b0"
+   ],
+   "beard": "none",
+   "kit": "bay"
+  },
+  "ronaldo": {
+   "name": "Cristiano Ronaldo",
+   "skin": "tan",
+   "hair": [
+    "slick",
+    "#1a1410"
+   ],
+   "beard": "none",
+   "kit": "rma"
+  },
+  "messi": {
+   "name": "Lionel Messi",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#4a3222"
+   ],
+   "beard": "stubble",
+   "kit": "bar"
+  }
+ },
+ "lines": [
+  {
+   "text": "Franck Ribéry won the treble. Then FIFA moved the goalposts.",
+   "say": "Frank Reebairee won the treble. Then Feefa moved the goalposts.",
+   "scene": {
+    "type": "title",
+    "heading": "FRANCK RIBÉRY",
+    "sub": "Bayern Munich · 2012/13",
+    "pill": "ROBBED IN 2013?",
+    "person": "ribery",
+    "club": "bay"
+   }
+  },
+  {
+   "text": "In 2012-13, Bayern swept the lot: the Bundesliga, the German Cup and the Champions League.",
+   "say": "In twenty twelve, thirteen, Byern swept the lot: the Boondesleega, the German Cup, and the Champions League.",
+   "scene": {
+    "type": "trophies",
+    "kicker": "Bayern Munich · 2012/13",
+    "title": "The treble",
+    "items": [
+     {
+      "kind": "league",
+      "label": "Bundesliga"
+     },
+     {
+      "kind": "cup",
+      "label": "DFB-Pokal"
+     },
+     {
+      "kind": "bigears",
+      "label": "Champions League"
+     }
+    ],
+    "person": "ribery"
+   }
+  },
+  {
+   "text": "Wembley. The final against Dortmund. One-all, and a minute to go.",
+   "say": "Wembley. The final, against Dortmoond. One all, and a minute to go.",
+   "scene": {
+    "type": "score",
+    "home": "dor",
+    "away": "bay",
+    "hs": 1,
+    "as": 1,
+    "date": "25 May 2013 · Wembley",
+    "comp": "Champions League final",
+    "ft": "89 MINUTES",
+    "note": "Mandžukić 60' · Gündoğan pen 68'"
+   }
+  },
+  {
+   "text": "Ribéry back-heels it. Robben is through. Two-one, Bayern.",
+   "say": "Reebairee back heels it. Robben is through. Two one, Byern.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/fd872f54-b4c6-5b21-8671-bb1395ddd1b0/scratchpad/cap/ribery-2013/robben-wembley/tv",
+      0,
+      40
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/fd872f54-b4c6-5b21-8671-bb1395ddd1b0/scratchpad/cap/ribery-2013/robben-wembley/high",
+      40,
+      170
+     ]
+    ],
+    "goalAt": 2.37,
+    "popup": {
+     "home": "dor",
+     "away": "bay",
+     "homeName": "Dortmund",
+     "awayName": "Bayern",
+     "hs0": 1,
+     "as0": 1,
+     "hs": 1,
+     "as": 2,
+     "scorer": "Robben",
+     "assist": "Ribéry"
     },
-    {
-      "text": "Twenty thirteen. Bayern win the Bundesliga, the German Cup and the Champions League.",
-      "scene": {
-        "type": "trophies",
-        "items": [
-          {
-            "kind": "league",
-            "label": "Bundesliga"
-          },
-          {
-            "kind": "cup",
-            "label": "DFB-Pokal"
-          },
-          {
-            "kind": "bigears",
-            "label": "Champions League"
-          }
-        ],
-        "person": "ribery"
-      }
+    "caption": "Robben, 89 minutes"
+   }
+  },
+  {
+   "text": "UEFA named Ribéry the best player in Europe. He was the clear favourite for the Ballon d'Or.",
+   "say": "Yooayfa named Reebairee the best player in Europe. He was the clear favourite for the Balon Dor.",
+   "scene": {
+    "type": "trophies",
+    "kicker": "August 2013",
+    "title": "Best player in Europe",
+    "items": [
+     {
+      "kind": "award",
+      "label": "UEFA Best Player in Europe"
+     },
+     {
+      "kind": "ballon",
+      "label": "Ballon d'Or favourite"
+     }
+    ],
+    "person": "ribery"
+   }
+  },
+  {
+   "text": "Voting was meant to close on the fifteenth of November.",
+   "scene": {
+    "type": "timeline",
+    "kicker": "Ballon d'Or 2013",
+    "title": "The voting window",
+    "items": [
+     {
+      "year": "15 Nov",
+      "label": "Voting closes",
+      "hl": true
+     },
+     {
+      "year": "19 Nov",
+      "label": "Sweden v Portugal, Stockholm"
+     },
+     {
+      "year": "29 Nov",
+      "label": "New deadline"
+     },
+     {
+      "year": "13 Jan",
+      "label": "Ceremony, Zürich"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Then FIFA extended it by two weeks. The first time ever. The reason? Not enough votes in.",
+   "say": "Then Feefa extended it by two weeks. The first time ever. The reason? Not enough votes in.",
+   "scene": {
+    "type": "news",
+    "section": "Ballon d'Or",
+    "headline": "FIFA extends Ballon d'Or voting",
+    "standfirst": "The deadline moves from 15 to 29 November, the first extension in the award's history. FIFA says too few voters have replied.",
+    "date": "20 November 2013",
+    "byline": "Knowitball recap",
+    "person": "ribery",
+    "club": "bay",
+    "nav": [
+     "Football",
+     "Ballon d'Or",
+     "FIFA",
+     "Bayern"
+    ]
+   }
+  },
+  {
+   "text": "And in those two weeks, a World Cup play-off in Stockholm. Ronaldo against Zlatan.",
+   "say": "And in those two weeks, a World Cup play-off in Stockholm. Ronaldo, against Zlatan.",
+   "scene": {
+    "type": "versus",
+    "title": "World Cup play-off · 19 November",
+    "left": {
+     "club": "swe",
+     "label": "Sweden",
+     "value": "Zlatan"
     },
-    {
-      "text": "Wembley, the final against Dortmund. Eighty-ninth minute. Ribéry's flick sets up Robben. Two-one.",
-      "scene": {
-        "type": "score",
-        "home": "bay",
-        "away": "bvb",
-        "hs": 2,
-        "as": 1,
-        "date": "25 May 2013",
-        "comp": "Champions League final",
-        "note": "Robben 89', Ribéry assist"
-      }
-    },
-    {
-      "text": "UEFA names him the best player in Europe. He's the favourite.",
-      "scene": {
-        "type": "person",
-        "person": "ribery",
-        "label": "UEFA Best Player in Europe",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "Voting is meant to close on the fifteenth of November.",
-      "scene": {
-        "type": "text",
-        "heading": "BALLON D'OR 2013",
-        "body": "Votes from national team coaches, captains and journalists are due by 15 November."
-      }
-    },
-    {
-      "text": "Then FIFA extends it two weeks, to the twenty-ninth. The first time ever. Their reason? Not enough votes in.",
-      "scene": {
-        "type": "timeline",
-        "items": [
-          {
-            "year": "15 Nov",
-            "label": "Original deadline"
-          },
-          {
-            "year": "19 Nov",
-            "label": "Sweden v Portugal"
-          },
-          {
-            "year": "29 Nov",
-            "label": "New deadline"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Voters could even change their picks.",
-      "scene": {
-        "type": "stamp",
-        "text": "EXTENDED",
-        "person": "ribery",
-        "color": "yellow"
-      }
-    },
-    {
-      "text": "In between, a World Cup play-off in Stockholm. Cristiano Ronaldo scores a hat-trick. Portugal win three-two.",
-      "scene": {
-        "type": "score",
-        "home": "swe",
-        "away": "por",
-        "hs": 2,
-        "as": 3,
-        "date": "19 November 2013",
-        "comp": "World Cup play-off",
-        "note": "Ronaldo hat-trick"
-      }
-    },
-    {
-      "text": "January. Ronaldo wins with twenty-eight percent. Messi second. Ribéry third.",
-      "scene": {
-        "type": "podium",
-        "year": "2013",
-        "title": "FIFA Ballon d'Or",
-        "places": [
-          {
-            "person": "ronaldo",
-            "club": "rma"
-          },
-          {
-            "person": "messi",
-            "club": "bar"
-          },
-          {
-            "person": "ribery",
-            "club": "bay"
-          }
-        ]
-      }
-    },
-    {
-      "text": "The points? Ronaldo thirteen sixty-five. Ribéry eleven twenty-seven.",
-      "scene": {
-        "type": "versus",
-        "title": "2013 Ballon d'Or points",
-        "left": {
-          "person": "ronaldo",
-          "label": "Ronaldo, 1st",
-          "value": "1365"
-        },
-        "right": {
-          "person": "ribery",
-          "label": "Ribéry, 3rd",
-          "value": "1127"
-        }
-      }
-    },
-    {
-      "text": "FIFA said Ronaldo's win owed nothing to the extension. Ribéry called it an injustice.",
-      "scene": {
-        "type": "person",
-        "person": "ribery",
-        "label": "Ribéry: 'an injustice'",
-        "mood": "flat"
-      }
-    },
-    {
-      "text": "Would the old deadline have changed it? Nobody can know.",
-      "scene": {
-        "type": "whatif",
-        "title": "The deadline",
-        "real": {
-          "label": "Extended to 29 Nov",
-          "value": "Ronaldo wins"
-        },
-        "alt": {
-          "label": "Closed on 15 Nov",
-          "value": "Nobody knows"
-        }
-      }
-    },
-    {
-      "text": "A treble winner, third. Robbed? Tell me in the comments.",
-      "scene": {
-        "type": "stamp",
-        "text": "ROBBED?",
-        "person": "ribery",
-        "color": "red"
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
+    "right": {
+     "person": "ronaldo",
+     "label": "Portugal",
+     "value": "Ronaldo"
     }
-  ]
+   }
+  },
+  {
+   "text": "Zlatan scores twice. Ronaldo scores three. Portugal win three-two and go to Brazil.",
+   "scene": {
+    "type": "score",
+    "home": "swe",
+    "away": "pot",
+    "hs": 2,
+    "as": 3,
+    "date": "19 November 2013 · Stockholm",
+    "comp": "World Cup play-off",
+    "note": "Ronaldo hat-trick · Portugal through 4-2 on aggregate"
+   }
+  },
+  {
+   "text": "January. Ronaldo wins it. Messi second. Ribéry third.",
+   "say": "January. Ronaldo wins it. Messi second. Reebairee third.",
+   "scene": {
+    "type": "podium",
+    "year": "2013",
+    "title": "The vote",
+    "places": [
+     {
+      "person": "ronaldo",
+      "club": "rma",
+      "points": 1365
+     },
+     {
+      "person": "messi",
+      "club": "bar",
+      "points": 1205
+     },
+     {
+      "person": "ribery",
+      "club": "bay",
+      "points": 1127
+     }
+    ]
+   }
+  },
+  {
+   "text": "Twenty-eight percent against twenty-three. The treble winner, five points behind.",
+   "say": "Twenty eight percent, against twenty three. The treble winner, five points behind.",
+   "scene": {
+    "type": "bars",
+    "kicker": "Ballon d'Or 2013",
+    "title": "Share of the vote",
+    "unit": "%",
+    "max": 30,
+    "items": [
+     {
+      "label": "Ronaldo",
+      "value": 27.99,
+      "person": "ronaldo"
+     },
+     {
+      "label": "Messi",
+      "value": 24.72,
+      "person": "messi"
+     },
+     {
+      "label": "Ribéry",
+      "value": 23.36,
+      "person": "ribery",
+      "hl": true
+     }
+    ]
+   }
+  },
+  {
+   "text": "FIFA said the extension changed nothing. Ribéry called it an injustice.",
+   "say": "Feefa said the extension changed nothing. Reebairee called it an injustice.",
+   "scene": {
+    "type": "news",
+    "section": "Ballon d'Or",
+    "headline": "Ribéry hits out after finishing third",
+    "standfirst": "The Bayern winger calls the result an injustice. FIFA says the extra fortnight had nothing to do with Ronaldo's win.",
+    "date": "January 2014",
+    "byline": "Knowitball recap",
+    "person": "ribery",
+    "club": "bay",
+    "mastColor": "#1b1f2b",
+    "nav": [
+     "Football",
+     "Ballon d'Or",
+     "Bundesliga",
+     "Analysis"
+    ]
+   }
+  },
+  {
+   "text": "Would the old deadline have changed it? Nobody can know.",
+   "scene": {
+    "type": "whatif",
+    "title": "The deadline that moved",
+    "real": {
+     "label": "29 Nov deadline",
+     "value": "Ronaldo"
+    },
+    "alt": {
+     "label": "15 Nov deadline",
+     "value": "?"
+    }
+   }
+  },
+  {
+   "text": "A treble, the best player in Europe, and third. Robbed?",
+   "scene": {
+    "type": "stamp",
+    "text": "ROBBED",
+    "sub": "Ribéry · Ballon d'Or 2013",
+    "person": "ribery",
+    "color": "red"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }

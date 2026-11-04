@@ -1,0 +1,34 @@
+{
+  "_about": "Arjen Robben's 89th-minute winner, Borussia Dortmund 1-2 Bayern Munich, Champions League final, Wembley, 25 May 2013. Franck Ribery's back-heel sent Robben through between the centre-backs; he ran on and poked a low left-foot shot past the onrushing Roman Weidenfeller from about eight yards. Sources: Wikipedia 2013 UCL final (back-heel, low left foot, eight yards, onrushing Weidenfeller), FT.lk/UEFA match reports (Ribery set up Robben). Kits: Bayern all red (Footy Headlines: special all-red final kit); Dortmund yellow shirts, black shorts (club's home kit; socks assumed yellow). Keeper kits assumed. Scoreline order follows the official listing, Dortmund first.",
+  "teams": {
+    "home": { "name": "Borussia Dortmund", "short": "Dortmund", "kit": { "shirt": "#FDE100", "shorts": "#111111", "socks": "#FDE100" }, "keeperKit": { "shirt": "#2E7D32", "shorts": "#1B1B1B", "socks": "#2E7D32" }, "popupTrim": "#111111" },
+    "away": { "name": "Bayern Munich", "short": "Bayern", "kit": { "shirt": "#DC052D", "shorts": "#DC052D", "socks": "#DC052D" }, "keeperKit": { "shirt": "#1F2A44", "shorts": "#1F2A44", "socks": "#1F2A44" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "robben":      { "name": "Arjen Robben", "skin": "#efc4a3", "hair": "#e3c9b0" },
+    "ribery":      { "name": "Franck Ribery", "skin": "#e9b893", "hair": "#2a1d15" },
+    "mandzukic":   { "name": "Mario Mandzukic", "skin": "#f0c3a0", "hair": "#2a1d15" },
+    "muller":      { "name": "Thomas Muller", "skin": "#f2c9a8", "hair": "#5b3a22" },
+    "hummels":     { "name": "Mats Hummels", "skin": "#f1c7a4", "hair": "#3b2a1e" },
+    "subotic":     { "name": "Neven Subotic", "skin": "#f0c3a0", "hair": "#2a1d15" },
+    "schmelzer":   { "name": "Marcel Schmelzer", "skin": "#f1c7a4", "hair": "#5b3a22" },
+    "weidenfeller":{ "name": "Roman Weidenfeller", "skin": "#eec29e", "hair": "#3b2a1e" }
+  },
+  "clips": [
+    {
+      "id": "robben-wembley",
+      "kind": "one_on_one",
+      "attacking": "away",
+      "scorer": "robben", "assister": "ribery",
+      "defenders": ["hummels", "subotic", "schmelzer"],
+      "keeper": "weidenfeller",
+      "teammates": ["mandzukic", "muller"],
+      "minute": 89, "scoreBefore": [1, 1], "scoreAfter": [1, 2],
+      "night": true,
+      "celebration": "arms_out",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "through", "passerStart": [-4, 22], "passFrom": [-3, 20], "scorerStart": [-6, 21], "scorerSpot": [-1.5, 7.5], "finish": "ground", "height": "low" },
+      "seed": "robben-2013-a"
+    }
+  ]
+}

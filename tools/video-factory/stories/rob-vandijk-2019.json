@@ -1,272 +1,468 @@
 {
-  "id": "rob-vandijk-2019",
-  "series": "Ballon d'Or robberies",
-  "title": "Van Dijk 2019: beaten by seven points",
-  "sources": [
-    "https://www.premierleague.com/news/1174067",
-    "https://www.liverpoolfc.com/news/first-team/348120-van-dijk-salah-dalglish-rush-pfa-award-stats",
-    "https://www.planetfootball.com/quick-reads/nine-stats-that-show-why-liverpools-van-dijk-was-in-the-fifpro-world-xl",
-    "https://www.si.com/soccer/2019/07/13/lucas-moura-questions-famous-virgil-van-dijks-stat-he-opens-about-champions-league-final",
-    "https://nbcsports.com/soccer/news/final-premier-league-standings-of-the-2018-19-season",
-    "https://www.planetfootball.com/quick-reads/seven-records-set-by-manchester-city-and-liverpool-in-the-2018-19-season",
-    "https://en.wikipedia.org/wiki/2019_UEFA_Champions_League_final",
-    "https://www.fifa.com/news/liverpool-sink-spurs-for-sixth-european-crown",
-    "https://www.laliga.com/en-GB/news/messi-wins-his-sixth-european-golden-boot",
-    "https://www.fcbarcelona.com/en/football/first-team/news/1453566/6",
-    "https://www.maxifoot.fr/football/article-42099.htm",
-    "https://www.topendsports.com/sport/soccer/awards/ballondor-2019.htm",
-    "https://uk.sports.yahoo.com/news/ballon-d-2019-result-lionel-112600172.html",
-    "https://uk.sports.yahoo.com/news/ballon-d-2019-result-sadio-103200050.html",
-    "https://www.si.com/soccer/who-was-the-last-defender-to-win-ballon-dor"
-  ],
-  "checked": "Nobody dribbled past him in the 2018-19 PL (Premier League, Liverpool FC; Lucas Moura questioned it per SI); PFA and first defender to win UEFA Men's Player of the Year (Liverpool FC, Planet Football); Liverpool 97 pts, City 98 (NBC, Planet Football); Spurs 0-2 Liverpool, Madrid, 1 June 2019; Liverpool 4-0 Barcelona at Anfield in the semi (Wikipedia, FIFA, Liverpool FC); Messi 36 La Liga goals, sixth Golden Shoe (LaLiga, FC Barcelona); vote Messi 686, Van Dijk 679, Ronaldo 476, Messi's narrowest win (Maxifoot, Topend, Yahoo); reports that African ballots put Mane second (Yahoo, and a second Yahoo piece), worded as 'reports said'; Cannavaro 2006 the last defender winner (SI).",
-  "clubs": {
-    "liv": {
-      "name": "Liverpool",
-      "short": "LIV",
-      "c1": "#c8102e",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "tot": {
-      "name": "Tottenham",
-      "short": "TOT",
-      "c1": "#ffffff",
-      "c2": "#132257",
-      "pattern": "plain"
-    },
-    "bar": {
-      "name": "Barcelona",
-      "short": "BAR",
-      "c1": "#a50044",
-      "c2": "#004d98",
-      "pattern": "stripes"
-    },
-    "juv": {
-      "name": "Juventus",
-      "short": "JUV",
-      "c1": "#111111",
-      "c2": "#ffffff",
-      "pattern": "stripes"
-    },
-    "mci": {
-      "name": "Manchester City",
-      "short": "MCI",
-      "c1": "#6cabdd",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    }
+ "id": "rob-vandijk-2019",
+ "series": "Ballon d'Or robberies",
+ "title": "Van Dijk 2019: beaten by seven points",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/2019_Ballon_d%27Or",
+  "https://www.topendsports.com/sport/soccer/awards/ballondor-2019.htm",
+  "https://www.maxifoot.fr/football/article-42099.htm",
+  "https://www.premierleague.com/news/1174067",
+  "https://www.liverpoolfc.com/news/first-team/348120-van-dijk-salah-dalglish-rush-pfa-award-stats",
+  "https://www.planetfootball.com/quick-reads/nine-stats-that-show-why-liverpools-van-dijk-was-in-the-fifpro-world-xl",
+  "https://nbcsports.com/soccer/news/final-premier-league-standings-of-the-2018-19-season",
+  "https://www.planetfootball.com/quick-reads/seven-records-set-by-manchester-city-and-liverpool-in-the-2018-19-season",
+  "https://www.skysports.com/football/news/11945/11984568/liverpool-4-0-barcelona-stunning-reds",
+  "https://www.liverpoolfc.com/news/first-team/454462-corner-taken-quickly-origi-voted-liverpool-s-greatest-ever-goal",
+  "https://en.wikipedia.org/wiki/2019_UEFA_Champions_League_final",
+  "https://www.fifa.com/news/liverpool-sink-spurs-for-sixth-european-crown",
+  "https://www.laliga.com/en-GB/news/messi-wins-his-sixth-european-golden-boot",
+  "https://www.fcbarcelona.com/en/football/first-team/news/1453566/6",
+  "https://uk.sports.yahoo.com/news/ballon-d-2019-result-lionel-112600172.html",
+  "https://uk.sports.yahoo.com/news/ballon-d-2019-result-sadio-103200050.html",
+  "https://www.si.com/soccer/who-was-the-last-defender-to-win-ballon-dor"
+ ],
+ "checked": "Nobody dribbled past him in the 2018-19 PL (Premier League, Liverpool FC). Final table City 98 (32-2-4, GD 72), Liverpool 97 (30-7-1, GD 67), Chelsea 72 (21-9-8, GD 24), Spurs 71 (23-2-13, GD 28) (NBC, Planet Football). Barcelona 3-0 first leg, Liverpool 4-0 at Anfield 7 May 2019, Origi 7 and 79, Wijnaldum 54 and 56, the fourth from Alexander-Arnold's quick corner (Sky, Liverpool FC, Wikipedia). Final 1 June 2019 Madrid, Tottenham 0-2 Liverpool, Salah penalty 2', Origi 87' (Wikipedia, FIFA). PFA Players' Player and first defender to win UEFA Men's Player of the Year (Liverpool FC, Planet Football). Messi 36 La Liga goals, sixth Golden Shoe, Liga title (LaLiga, FC Barcelona). Vote Messi 686, Van Dijk 679, Ronaldo 476, Mane 347, Salah 178, 2 Dec 2019 Paris, Messi's narrowest win (Wikipedia, Maxifoot, Topend). Reports that some African ballots put Mane ahead (two Yahoo pieces), worded as 'reports said'. Defender winners Beckenbauer 1972 and 1976, Sammer 1996, Cannavaro 2006 (SI, Wikipedia). Salah's penalty recreated with gamecap (specs/vandijk-2019.json).",
+ "clubs": {
+  "liv": {
+   "name": "Liverpool",
+   "short": "LIV",
+   "c1": "#c8102e",
+   "c2": "#ffffff",
+   "pattern": "plain"
   },
-  "people": {
-    "vvd": {
-      "name": "Virgil van Dijk",
-      "skin": "brown",
-      "hair": [
-        "quiff",
-        "#1a1a1a"
-      ],
-      "beard": "short",
-      "beardCol": "#1a1a1a",
-      "kit": "liv"
-    },
-    "messi": {
-      "name": "Lionel Messi",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#4a3222"
-      ],
-      "beard": "full",
-      "beardCol": "#4a3222",
-      "kit": "bar"
-    },
-    "ronaldo": {
-      "name": "Cristiano Ronaldo",
-      "skin": "tan",
-      "hair": [
-        "slick",
-        "#1f1712"
-      ],
-      "beard": "none",
-      "kit": "juv"
-    }
+  "mci": {
+   "name": "Manchester City",
+   "short": "MCI",
+   "c1": "#6cabdd",
+   "c2": "#ffffff",
+   "pattern": "plain"
   },
-  "lines": [
-    {
-      "text": "Seven points. That's how close a defender came to the Ballon d'Or in twenty nineteen.",
-      "scene": {
-        "type": "title",
-        "heading": "VIRGIL VAN DIJK",
-        "sub": "Liverpool · 2018/19",
-        "pill": "SEVEN POINTS",
-        "person": "vvd"
-      }
-    },
-    {
-      "text": "In the whole Premier League season, not one player dribbled past him. Not one.",
-      "scene": {
-        "type": "stats",
-        "title": "Premier League 2018/19",
-        "items": [
-          {
-            "n": "0",
-            "l": "times dribbled past"
-          }
-        ],
-        "person": "vvd"
-      }
-    },
-    {
-      "text": "Liverpool got ninety-seven points, and still lost the league by one.",
-      "scene": {
-        "type": "list",
-        "title": "Premier League 2018/19",
-        "rows": [
-          {
-            "name": "Man City",
-            "value": "98",
-            "club": "mci"
-          },
-          {
-            "name": "Liverpool",
-            "value": "97",
-            "club": "liv",
-            "hl": true
-          }
-        ]
-      }
-    },
-    {
-      "text": "But in the Champions League semi, they put four past Messi's Barcelona at Anfield.",
-      "scene": {
-        "type": "person",
-        "person": "vvd",
-        "label": "Liverpool 4-0 Barcelona, semi-final",
-        "mood": "happy",
-        "stamp": "4-0"
-      }
-    },
-    {
-      "text": "Then Madrid. Two-nil against Spurs. Champions of Europe.",
-      "scene": {
-        "type": "score",
-        "home": "tot",
-        "away": "liv",
-        "hs": 0,
-        "as": 2,
-        "date": "1 June 2019",
-        "comp": "Champions League final"
-      }
-    },
-    {
-      "text": "PFA Player of the Year. And the first defender ever to win UEFA's Men's Player of the Year.",
-      "scene": {
-        "type": "trophies",
-        "items": [
-          {
-            "kind": "bigears",
-            "label": "Champions League"
-          },
-          {
-            "kind": "cup",
-            "label": "PFA Player of the Year"
-          },
-          {
-            "kind": "euro",
-            "label": "UEFA Men's Player of the Year"
-          }
-        ],
-        "person": "vvd"
-      }
-    },
-    {
-      "text": "Messi had thirty-six league goals, a sixth Golden Shoe and the Spanish title.",
-      "scene": {
-        "type": "stats",
-        "title": "Messi 2018/19",
-        "items": [
-          {
-            "n": "36",
-            "l": "La Liga goals"
-          },
-          {
-            "n": "6",
-            "l": "Golden Shoes"
-          }
-        ],
-        "person": "messi"
-      }
-    },
-    {
-      "text": "The vote? Messi first. Van Dijk second. Ronaldo miles back.",
-      "scene": {
-        "type": "podium",
-        "year": "2019",
-        "title": "Ballon d'Or",
-        "places": [
-          {
-            "person": "messi",
-            "club": "bar"
-          },
-          {
-            "person": "vvd",
-            "club": "liv"
-          },
-          {
-            "person": "ronaldo",
-            "club": "juv"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Six hundred and eighty-six against six hundred and seventy-nine. The tightest of Messi's six wins.",
-      "scene": {
-        "type": "versus",
-        "title": "2019 Ballon d'Or",
-        "left": {
-          "person": "messi",
-          "label": "Messi",
-          "value": "686"
-        },
-        "right": {
-          "person": "vvd",
-          "label": "Van Dijk",
-          "value": "679"
-        }
-      }
-    },
-    {
-      "text": "Reports said African voters ranked his own teammate Sadio Mané second, behind Messi.",
-      "scene": {
-        "type": "text",
-        "heading": "WHERE THE POINTS WENT",
-        "body": "Reports after the vote said many African ballots put Liverpool's Sadio Mané second behind Messi, ahead of Van Dijk."
-      }
-    },
-    {
-      "text": "No defender has won it since Cannavaro in twenty-oh-six.",
-      "scene": {
-        "type": "person",
-        "person": "vvd",
-        "mood": "flat",
-        "label": "Last defender winner: 2006"
-      }
-    },
-    {
-      "text": "Unbeatable for a whole season, and beaten by seven points.",
-      "scene": {
-        "type": "stamp",
-        "text": "ROBBED",
-        "person": "vvd",
-        "color": "red"
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
+  "che": {
+   "name": "Chelsea",
+   "short": "CHE",
+   "c1": "#034694",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "tot": {
+   "name": "Tottenham Hotspur",
+   "short": "TOT",
+   "c1": "#ffffff",
+   "c2": "#132257",
+   "pattern": "plain"
+  },
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "badge": "FC Barcelona"
+  },
+  "juv": {
+   "name": "Juventus",
+   "short": "JUV",
+   "c1": "#111111",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "rma": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#febe10",
+   "pattern": "plain"
+  },
+  "bay": {
+   "name": "Bayern Munich",
+   "short": "FCB",
+   "c1": "#dc052d",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": "FC Bayern München"
+  }
+ },
+ "people": {
+  "vvd": {
+   "name": "Virgil van Dijk",
+   "skin": "brown",
+   "hair": [
+    "crop",
+    "#1a1a1a"
+   ],
+   "beard": "short",
+   "beardCol": "#1a1a1a",
+   "kit": "liv"
+  },
+  "messi": {
+   "name": "Lionel Messi",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#4a3222"
+   ],
+   "beard": "full",
+   "beardCol": "#4a3222",
+   "kit": "bar"
+  },
+  "ronaldo": {
+   "name": "Cristiano Ronaldo",
+   "skin": "tan",
+   "hair": [
+    "slick",
+    "#1a1410"
+   ],
+   "beard": "none",
+   "kit": "juv"
+  },
+  "mane": {
+   "name": "Sadio Mané",
+   "skin": "dark",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "stubble",
+   "kit": "liv"
+  }
+ },
+ "lines": [
+  {
+   "text": "Seven points. That's how close a defender came to the Ballon d'Or in 2019.",
+   "say": "Seven points. That's how close a defender came to the Balon Dor in twenty nineteen.",
+   "scene": {
+    "type": "title",
+    "heading": "VIRGIL VAN DIJK",
+    "sub": "Liverpool · 2018/19",
+    "pill": "ROBBED IN 2019?",
+    "person": "vvd",
+    "club": "liv"
+   }
+  },
+  {
+   "text": "In the whole Premier League season, not one player dribbled past him. Not one.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Premier League 2018/19",
+    "title": "The wall",
+    "items": [
+     {
+      "n": "0",
+      "l": "times dribbled past"
+     }
+    ],
+    "person": "vvd"
+   }
+  },
+  {
+   "text": "Liverpool got ninety-seven points, and still lost the league by one.",
+   "scene": {
+    "type": "table",
+    "season": "Final table 2018/19",
+    "title": "Premier League",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "mci",
+      "p": 38,
+      "w": 32,
+      "d": 2,
+      "l": 4,
+      "gd": 72,
+      "pts": 98
+     },
+     {
+      "pos": 2,
+      "club": "liv",
+      "p": 38,
+      "w": 30,
+      "d": 7,
+      "l": 1,
+      "gd": 67,
+      "pts": 97,
+      "hl": true
+     },
+     {
+      "pos": 3,
+      "club": "che",
+      "p": 38,
+      "w": 21,
+      "d": 9,
+      "l": 8,
+      "gd": 24,
+      "pts": 72
+     },
+     {
+      "pos": 4,
+      "club": "tot",
+      "p": 38,
+      "w": 23,
+      "d": 2,
+      "l": 13,
+      "gd": 28,
+      "pts": 71
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
+     }
+    ],
+    "gap": {
+     "from": 1,
+     "to": 2,
+     "label": "1 pt",
+     "at": 0.45
     }
-  ]
+   }
+  },
+  {
+   "text": "In Europe, they were three-nil down to Messi's Barcelona. Then Anfield. Four-nil.",
+   "say": "In Europe, they were three nil down to Messi's Barcelona. Then Anfield. Four nil.",
+   "scene": {
+    "type": "score",
+    "home": "liv",
+    "away": "bar",
+    "hs": 4,
+    "as": 0,
+    "date": "7 May 2019 · Anfield",
+    "comp": "Champions League semi-final",
+    "note": "Origi's quick corner goal · Liverpool through 4-3 on aggregate"
+   }
+  },
+  {
+   "text": "The final in Madrid. Inside two minutes, a penalty. Salah scores.",
+   "say": "The final, in Madrid. Inside two minutes, a penalty. Sahlah scores.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/fd872f54-b4c6-5b21-8671-bb1395ddd1b0/scratchpad/cap/vandijk-2019/salah-penalty/high",
+      0,
+      120
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/fd872f54-b4c6-5b21-8671-bb1395ddd1b0/scratchpad/cap/vandijk-2019/salah-penalty/tight",
+      20,
+      110
+     ]
+    ],
+    "goalAt": 1.37,
+    "popup": {
+     "home": "tot",
+     "away": "liv",
+     "homeName": "Spurs",
+     "awayName": "Liverpool",
+     "hs0": 0,
+     "as0": 0,
+     "hs": 0,
+     "as": 1,
+     "scorer": "Salah"
+    },
+    "caption": "Salah, 2 minutes"
+   }
+  },
+  {
+   "text": "Origi adds a second. Two-nil. Champions of Europe.",
+   "say": "Oreejee adds a second. Two nil. Champions of Europe.",
+   "scene": {
+    "type": "score",
+    "home": "tot",
+    "away": "liv",
+    "hs": 0,
+    "as": 2,
+    "date": "1 June 2019 · Madrid",
+    "comp": "Champions League final",
+    "note": "Salah pen 2' · Origi 87'"
+   }
+  },
+  {
+   "text": "PFA Player of the Year. And the first defender ever to win UEFA's Men's Player of the Year.",
+   "say": "P F A Player of the Year. And the first defender ever to win Yooayfa's Men's Player of the Year.",
+   "scene": {
+    "type": "trophies",
+    "kicker": "Virgil van Dijk · 2019",
+    "title": "The awards",
+    "items": [
+     {
+      "kind": "bigears",
+      "label": "Champions League"
+     },
+     {
+      "kind": "award",
+      "label": "PFA Players' Player of the Year"
+     },
+     {
+      "kind": "award",
+      "label": "UEFA Men's Player of the Year"
+     }
+    ],
+    "person": "vvd"
+   }
+  },
+  {
+   "text": "But Messi had thirty-six league goals, a sixth Golden Shoe and the Spanish title.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Lionel Messi · 2018/19",
+    "title": "The other case",
+    "items": [
+     {
+      "n": "36",
+      "l": "La Liga goals"
+     },
+     {
+      "n": "6th",
+      "l": "Golden Shoe"
+     },
+     {
+      "n": "1",
+      "l": "Liga title"
+     }
+    ],
+    "person": "messi"
+   }
+  },
+  {
+   "text": "December, Paris. Messi first. Van Dijk second. Ronaldo miles back.",
+   "say": "December, Paris. Messi first. Van Dyke second. Ronaldo, miles back.",
+   "scene": {
+    "type": "podium",
+    "year": "2019",
+    "title": "The vote",
+    "places": [
+     {
+      "person": "messi",
+      "club": "bar",
+      "points": 686
+     },
+     {
+      "person": "vvd",
+      "club": "liv",
+      "points": 679
+     },
+     {
+      "person": "ronaldo",
+      "club": "juv",
+      "points": 476
+     }
+    ]
+   }
+  },
+  {
+   "text": "Six eighty-six against six seventy-nine. The tightest of all Messi's wins.",
+   "say": "Six eighty six, against six seventy nine. The tightest of all Messi's wins.",
+   "scene": {
+    "type": "bars",
+    "kicker": "Ballon d'Or 2019",
+    "title": "Points",
+    "max": 700,
+    "items": [
+     {
+      "label": "Messi",
+      "value": 686,
+      "person": "messi"
+     },
+     {
+      "label": "Van Dijk",
+      "value": 679,
+      "person": "vvd",
+      "hl": true
+     },
+     {
+      "label": "Ronaldo",
+      "value": 476,
+      "person": "ronaldo"
+     },
+     {
+      "label": "Mané",
+      "value": 347,
+      "person": "mane"
+     }
+    ]
+   }
+  },
+  {
+   "text": "And reports said some voters put his own team-mate, Sadio Mané, above him.",
+   "say": "And reports said some voters put his own team-mate, Sadeeo Mahnay, above him.",
+   "scene": {
+    "type": "news",
+    "section": "Ballon d'Or",
+    "headline": "How did Van Dijk lose by seven?",
+    "standfirst": "Reports said several voters ranked his Liverpool team-mate Sadio Mané ahead of him. Mané finished fourth.",
+    "date": "December 2019",
+    "byline": "Knowitball recap",
+    "person": "mane",
+    "club": "liv",
+    "mastColor": "#1b1f2b",
+    "nav": [
+     "Football",
+     "Ballon d'Or",
+     "Liverpool",
+     "Analysis"
+    ]
+   }
+  },
+  {
+   "text": "No defender has won it since Cannavaro, in 2006.",
+   "say": "No defender has won it since Kannahvaroh, in twenty oh six.",
+   "scene": {
+    "type": "timeline",
+    "kicker": "Defenders and the Ballon d'Or",
+    "title": "The last back-line winners",
+    "items": [
+     {
+      "year": "1972",
+      "label": "Beckenbauer"
+     },
+     {
+      "year": "1976",
+      "label": "Beckenbauer"
+     },
+     {
+      "year": "1996",
+      "label": "Sammer"
+     },
+     {
+      "year": "2006",
+      "label": "Cannavaro"
+     },
+     {
+      "year": "2019",
+      "label": "Van Dijk, second by 7",
+      "club": "liv",
+      "hl": true
+     }
+    ]
+   }
+  },
+  {
+   "text": "Unbeatable for a whole season, and beaten by seven points.",
+   "scene": {
+    "type": "stamp",
+    "text": "ROBBED",
+    "sub": "Van Dijk · Ballon d'Or 2019",
+    "person": "vvd",
+    "color": "red"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }

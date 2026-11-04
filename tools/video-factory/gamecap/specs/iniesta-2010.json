@@ -1,0 +1,33 @@
+{
+  "_about": "Andres Iniesta's winner, Netherlands 0-1 Spain (after extra time), World Cup final, Soccer City, Johannesburg, 11 July 2010, 116th minute. Cesc Fabregas, a substitute, slipped a short pass to his right; Iniesta hit a right-foot half-volley from about eight yards past Maarten Stekelenburg. Sources: Wikipedia 2010 World Cup final, UEFA 'Iniesta earns Spain World Cup crown', UPI and Sky Sports match reports. Kits: Spain in their dark blue change kit, Netherlands orange (shorts and socks assumed). Keeper kits assumed.",
+  "teams": {
+    "home": { "name": "Netherlands", "kit": { "shirt": "#F36C21", "shorts": "#F36C21", "socks": "#F36C21" }, "keeperKit": { "shirt": "#1B1B1B", "shorts": "#1B1B1B", "socks": "#1B1B1B" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Spain", "kit": { "shirt": "#14213D", "shorts": "#14213D", "socks": "#14213D" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#C60B1E" }
+  },
+  "people": {
+    "iniesta":     { "name": "Andres Iniesta", "skin": "#f0c3a0", "hair": "#c9b8a0" },
+    "fabregas":    { "name": "Cesc Fabregas", "skin": "#e8b994", "hair": "#2a1d15" },
+    "torres":      { "name": "Fernando Torres", "skin": "#f1c7a4", "hair": "#d8b07a" },
+    "heitinga":    { "name": "John Heitinga", "skin": "#e8b994", "hair": "#2a1d15" },
+    "mathijsen":   { "name": "Joris Mathijsen", "skin": "#f1c7a4", "hair": "#c9a27e" },
+    "vanderwiel":  { "name": "Gregory van der Wiel", "skin": "#7a4e33", "hair": "#0d0a09" },
+    "stekelenburg":{ "name": "Maarten Stekelenburg", "skin": "#f2c9a8", "hair": "#5b3a22" }
+  },
+  "clips": [
+    {
+      "id": "iniesta-116",
+      "kind": "one_on_one",
+      "attacking": "away",
+      "scorer": "iniesta", "assister": "fabregas",
+      "defenders": ["mathijsen", "vanderwiel"],
+      "keeper": "stekelenburg",
+      "teammates": ["torres"],
+      "minute": 116, "scoreBefore": [0, 0], "scoreAfter": [0, 1],
+      "night": true,
+      "celebration": "own_name",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "through", "passerStart": [-2, 20], "passFrom": [-1, 15], "scorerStart": [4, 16], "scorerSpot": [4.5, 8], "finish": "volley", "goalSide": "far", "height": "mid" },
+      "seed": "iniesta-2010-a"
+    }
+  ]
+}
