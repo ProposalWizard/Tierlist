@@ -169,8 +169,8 @@
    }
   },
   {
-   "text": "He kept going. Bayern beat Barcelona eight-two.",
-   "say": "He kept going. Byern beat Barcelona eight two.",
+   "text": "He kept going. Bayern Munich beat Barcelona eight-two.",
+   "say": "He kept going. Byern Munich beat Barcelona, eight two.",
    "scene": {
     "type": "score",
     "home": "bar",
