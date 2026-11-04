@@ -86,7 +86,10 @@
   "Salah": "Sahlah",
   "Mané": "Mahnay",
   "Lamine": "Lameen",
-  "Ferran": "Feran"
+  "Ferran": "Feran",
+  "Neuer": "Noyer",
+  "Heung-min": "Hungmin",
+  "Son Heung-min": "Sohn Hungmin"
  },
  "_ipa": {
   "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -153,6 +156,9 @@
   "Salah": "ar [sˤɑˈlɑːħ], English broadcast 'SAH-lah'; heard back as 'Salah', batch v2-12",
   "Mané": "wo/fr [mane]; heard back as 'Mane', batch v2-12",
   "Lamine": "es/ar [laˈmine]; heard back as 'Lamine', batch v2-12",
-  "Ferran": "ca [fəˈran]; heard back as 'Ferran', batch v2-12"
+  "Ferran": "ca [fəˈran]; heard back as 'Ferran', batch v2-12",
+  "Neuer": "de [ˈnɔʏɐ]; heard back as 'Neuer', batch v2-12",
+  "Heung-min": "ko [hɯŋmin]; heard back as 'Hongmin', close, batch v2-12",
+  "Son Heung-min": "ko [son hɯŋmin]; 'Sohn' heard back as 'Sohn'/'sewn' (Korean vowel), 'Sonn' came out as 'Sun', batch v2-12"
  }
 }
