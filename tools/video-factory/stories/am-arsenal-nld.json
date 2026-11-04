@@ -19,7 +19,7 @@
     "https://www.sportsmole.co.uk/football/arsenal/on-this-day/feature/otd-fabregas-breaks-arsenal-scoring-record_191181.html",
     "https://en.wikipedia.org/wiki/Thierry_Henry"
   ],
-  "checked": "Spurs v Arsenal provisionally Sat 5 Dec 2026 at Tottenham Hotspur Stadium (Hayters + On Tour fixture lists; TV may move it, so the script says 'in December'). Dowman born 31 Dec 2009 = 16y 339d on 5 Dec (arithmetic). Youngest Champions League player 15y 308d at Slavia Prague, 4 Nov 2025 (Wikipedia + Sports Mole). Youngest PL scorer 16y 73d, Arsenal 2-0 Everton, Emirates, 14 Mar 2026, 90+7 on the break into an empty net, beating James Vaughan's 16y 270d (premierleague.com + SI). Youngest PL starter 16y 144d at Crystal Palace, 24 May 2026 (WTOP/AP + Wikipedia). Arsenal 2025-26 champions on 85 points, City 78 (Wikipedia + ground.news); Dowman youngest PL title winner (ESPN + Wikipedia). Spurs 1-4 Arsenal, 22 Feb 2026, and Arsenal 4-1 Spurs, 23 Nov 2025 (thfcdb + Sports Mole + Sky). Fàbregas (born 4 May 1987) at the same age = 7 Apr 2004: debut v Rotherham 28 Oct 2003 at 16y 177d; first goal v Wolves 2 Dec 2003, 5-1, tapping in Wiltord's cross near the end, 16y 212d; no league games in 2003-04 (Arsenal.com + Sports Mole + Wikipedia). Henry (born 17 Aug 1977) at the same age = 22 Jul 1994: no first-team games; Monaco debut 31 Aug 1994 v Nice, aged 17 (Wikipedia + 90min). Henry 228 Arsenal goals, club record; Ian Wright 185 second (Wikipedia + Arsenal.com). Dowman's exact appearance count is one-source, so it is left out. The Everton goal was a long solo run into an empty net, which the game cannot film, so the gameplay recreates Fàbregas's tap-in instead (Wiltord's cross; side of the cross not sourced, so it comes from the seed).",
+  "checked": "Spurs v Arsenal provisionally Sat 5 Dec 2026 at Tottenham Hotspur Stadium (Hayters + On Tour fixture lists; TV may move it, so the script says 'in December'). Dowman born 31 Dec 2009 = 16y 339d on 5 Dec (arithmetic). Youngest Champions League player 15y 308d at Slavia Prague, 4 Nov 2025 (Wikipedia + Sports Mole). Youngest PL scorer 16y 73d, Arsenal 2-0 Everton, Emirates, 14 Mar 2026, 90+7 on the break into an empty net, beating James Vaughan's 16y 270d (premierleague.com + SI). Youngest PL starter 16y 144d at Crystal Palace, 24 May 2026 (WTOP/AP + Wikipedia). Arsenal 2025-26 champions on 85 points, City 78 (Wikipedia + ground.news); Dowman youngest PL title winner (ESPN + Wikipedia). Fàbregas (born 4 May 1987) at the same age = 7 Apr 2004: debut v Rotherham 28 Oct 2003 at 16y 177d; first goal v Wolves 2 Dec 2003, 5-1, tapping in Wiltord's cross near the end, 16y 212d; no league games in 2003-04 (Arsenal.com + Sports Mole + Wikipedia). Henry (born 17 Aug 1977) at the same age = 22 Jul 1994: no first-team games; Monaco debut 31 Aug 1994 v Nice, aged 17 (Wikipedia + 90min). Henry 228 Arsenal goals, club record; Ian Wright 185 second (Wikipedia + Arsenal.com). Dowman's exact appearance count is one-source, so it is left out. The Everton goal was a long solo run into an empty net, which the game cannot film, so the gameplay recreates Fàbregas's tap-in instead (Wiltord's cross; side of the cross not sourced, so it comes from the seed).",
   "clubs": {
     "ars": {
       "name": "Arsenal",
@@ -129,7 +129,7 @@
     },
     {
       "text": "At fifteen, Max Dowman became the youngest player in Champions League history.",
-      "say": "At fifteen, Max Dowmun became the youngest player in Champions League history.",
+      "say": "At fifteen, Max Dowman became the youngest player in Champions League history.",
       "scene": {
         "type": "news",
         "section": "Champions League",
@@ -147,8 +147,8 @@
       }
     },
     {
-      "text": "Then Everton. Ninety-seventh minute, their keeper up for a corner. Dowman runs half the pitch and rolls it into an empty net.",
-      "say": "Then Everton. Ninety seventh minute, their keeper up for a corner. Dowmun runs half the pitch, and rolls it into an empty net.",
+      "text": "Then Everton. Ninety-seventh minute, their keeper up for a corner. Dowman runs half the pitch into an empty net.",
+      "say": "Then Everton. Ninety seventh minute, their keeper up for a corner. Dowman runs half the pitch, into an empty net.",
       "scene": {
         "type": "score",
         "home": "ars",
@@ -161,8 +161,8 @@
       }
     },
     {
-      "text": "Sixteen years and seventy-three days. The old record lasted twenty years. He beat it by six months.",
-      "say": "Sixteen years and seventy three days. The old record lasted twenty years. He beat it by six months.",
+      "text": "Sixteen years and seventy-three days. He smashed the old record by six months.",
+      "say": "Sixteen years and seventy three days. He smashed the old record by six months.",
       "scene": {
         "type": "compare",
         "kicker": "Youngest Premier League scorers",
@@ -189,7 +189,7 @@
     },
     {
       "text": "And in May, Arsenal were champions, seven points clear. Dowman, the youngest title winner ever.",
-      "say": "And in May, Arsenal were champions, seven points clear. Dowmun, the youngest title winner ever.",
+      "say": "And in May, Arsenal were champions, seven points clear. Dowman, the youngest title winner ever.",
       "scene": {
         "type": "table",
         "season": "Final table 2025/26",
@@ -264,8 +264,8 @@
       }
     },
     {
-      "text": "Cesc Fàbregas, April two thousand and four. Already Arsenal's youngest ever player, at sixteen.",
-      "say": "Sesk Fabbregass, April, two thousand and four. Already Arsenal's youngest ever player, at sixteen.",
+      "text": "Cesc Fàbregas, April two thousand and four: already Arsenal's youngest ever player.",
+      "say": "Sesk Fabbregass, April, two thousand and four. Already Arsenal's youngest ever player.",
       "scene": {
         "type": "timeline",
         "kicker": "Cesc Fàbregas",
@@ -294,7 +294,7 @@
     },
     {
       "text": "His first goal: League Cup, Wolves. Wiltord crosses, and the sixteen-year-old taps it in.",
-      "say": "His first goal. League Cup, Wolves. Weeltor crosses, and the sixteen year old taps it in.",
+      "say": "His first goal. League Cup, Wolves. Wiltor crosses, and the sixteen year old taps it in.",
       "scene": {
         "type": "gameclip",
         "caption": "CESC'S FIRST GOAL",
@@ -342,8 +342,8 @@
       }
     },
     {
-      "text": "Thierry Henry, July nineteen ninety-four. He hadn't played a single game for Monaco. His debut came a month later.",
-      "say": "Teeairee Onree, July, nineteen ninety four. He hadn't played a single game for Monakoh. His debut came a month later.",
+      "text": "Thierry Henry, July ninety-four. Not one game for Monaco yet.",
+      "say": "Teeairee Onree, July, ninety four. Not one game for Monakoh yet.",
       "scene": {
         "type": "person",
         "person": "henry",
@@ -353,7 +353,7 @@
     },
     {
       "text": "Line all three up by age, and Dowman is miles ahead of both.",
-      "say": "Line all three up by age, and Dowmun is miles ahead of both.",
+      "say": "Line all three up by age, and Dowman is miles ahead of both.",
       "scene": {
         "type": "timeline",
         "kicker": "Age at each first",
@@ -388,8 +388,8 @@
       }
     },
     {
-      "text": "But a slow start meant nothing. Henry ended up with two hundred and twenty-eight Arsenal goals, still the club record.",
-      "say": "But a slow start meant nothing. Onree ended up with two hundred and twenty eight Arsenal goals. Still the club record.",
+      "text": "But Henry still finished with two hundred and twenty-eight Arsenal goals. The club record.",
+      "say": "But Onree still finished with two hundred and twenty eight Arsenal goals. The club record.",
       "scene": {
         "type": "bars",
         "kicker": "All competitions",
@@ -411,22 +411,8 @@
       }
     },
     {
-      "text": "And Tottenham? Arsenal put four past them twice last season.",
-      "say": "And Tottnum? Arsenal put four past them, twice, last season.",
-      "scene": {
-        "type": "score",
-        "home": "tot",
-        "away": "ars",
-        "hs": 1,
-        "as": 4,
-        "date": "22 February 2026 · Tottenham Hotspur Stadium",
-        "comp": "Premier League",
-        "note": "After a 4-1 at the Emirates in November"
-      }
-    },
-    {
-      "text": "So Dowman is ahead of Fàbregas and Henry. What he doesn't have yet is a derby goal.",
-      "say": "So Dowmun is ahead of Fabbregass and Onree. What he doesn't have yet, is a derby goal.",
+      "text": "So Dowman is already ahead of Fàbregas and Henry. Next, at Tottenham, the one thing he's missing: a derby goal.",
+      "say": "So Dowman is already ahead of Fabbregass and Onree. Next, at Tottnum, the one thing he's missing. A derby goal.",
       "scene": {
         "type": "stamp",
         "text": "AHEAD OF SCHEDULE",
