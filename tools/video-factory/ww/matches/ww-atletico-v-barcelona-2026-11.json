@@ -1,0 +1,728 @@
+{
+ "id": "ww-atletico-v-barcelona-2026-11",
+ "about": "Who would win? v2: the biggest real fixture from 4 Nov 2026: Atlético Madrid v Barcelona, LaLiga matchday 12, Metropolitano, Sun 8 Nov 2026, 2nd (28 pts) v 1st (30 pts). Predicted XIs from the 3 Nov Champions League line-ups and previews (Yahoo, thefalse9, Sports Mole, starting11). Ratings: our FC 27 database. Match is our prediction (3-2), imagined goals filmed with gamecap (gamecap/specs/ww-atletico-v-barcelona-2026-11.json). Facts checked against two sources each: table (OneFootball, thefalse9, Sports Mole), Barça injuries (Yahoo, starting11, BarcaTimes), 2025/26 CL quarter-final 3-2 agg (theScore, The Star), Atlético 9W 1D 1L in the league (Wikipedia season page, Sports Mole).",
+ "title": "WHO WOULD WIN?",
+ "footageRoot": "footage/ww-atletico-v-barcelona-2026-11",
+ "calm": {
+  "dir": "calm/high"
+ },
+ "music": "09-last-attack.mp3",
+ "competition": {
+  "title": [
+   "LALIGA 26/27",
+   "MATCHDAY 12 · METROPOLITANO"
+  ],
+  "tagline": "1ST v 2ND · 1 WINNER",
+  "versus": "LALIGA · SUN 8 NOV 2026",
+  "short": "LALIGA · MATCHDAY 12"
+ },
+ "venue": {
+  "name": "METROPOLITANO",
+  "place": "MADRID · SPAIN",
+  "lat": 40.4362,
+  "lon": -3.5995
+ },
+ "home": {
+  "name": "ATLÉTICO",
+  "full": "ATLÉTICO MADRID",
+  "versus": [
+   "ATLÉTICO",
+   "MADRID"
+  ],
+  "nation": "esp",
+  "founded": 1903,
+  "city": {
+   "label": "MADRID",
+   "sub": "SPAIN",
+   "lat": 40.4362,
+   "lon": -3.5995
+  },
+  "formation": "4-4-2",
+  "kit": {
+   "shirt": "#cb3524",
+   "trim": "#1b2a5c",
+   "collar": "#1b2a5c",
+   "pattern": "stripes",
+   "patternCol": "#ffffff",
+   "shorts": "#1b2a5c",
+   "socks": "#cb3524",
+   "number": "#1b2a5c",
+   "gk": {
+    "shirt": "#c6e03a",
+    "trim": "#1a1a1a",
+    "collar": "#1a1a1a"
+   }
+  },
+  "crest": {
+   "a": "#cb3524",
+   "b": "#ffffff",
+   "c": "#1b2a5c",
+   "t": "ATM",
+   "tc": "#ffffff",
+   "ts": 30
+  },
+  "colors": {
+   "ring": "#cb3524",
+   "pillBg": "#cb3524",
+   "pillFg": "#fff",
+   "headerBg": "#cb3524",
+   "headerFg": "#fff",
+   "headerStripes": [
+    "#ffffff",
+    "#1b2a5c"
+   ],
+   "versusBg": "#6e1a12",
+   "accent": "#ff7a6b",
+   "bar": "#cb3524",
+   "confetti": [
+    "#cb3524",
+    "#ffffff",
+    "#1b2a5c",
+    "#ffd23f"
+   ],
+   "ribbon": [
+    "#cb3524",
+    "#ffffff"
+   ]
+  },
+  "grid": [
+   "alvarez",
+   "grimaldo",
+   "llorente",
+   "sorloth",
+   "hancko",
+   "barrios",
+   "romero",
+   "gsimeone",
+   "baena",
+   "pubill",
+   "oblak"
+  ],
+  "slots": {
+   "oblak": "GK",
+   "pubill": "RB",
+   "romero": "CB1",
+   "hancko": "CB2",
+   "grimaldo": "LB",
+   "gsimeone": "RM",
+   "llorente": "CM1",
+   "barrios": "CM2",
+   "baena": "LM",
+   "alvarez": "ST1",
+   "sorloth": "ST2"
+  },
+  "manager": "simeone"
+ },
+ "away": {
+  "name": "BARÇA",
+  "full": "FC BARCELONA",
+  "versus": [
+   "FC",
+   "BARCELONA"
+  ],
+  "nation": "esp",
+  "founded": 1899,
+  "city": {
+   "label": "BARCELONA",
+   "sub": "SPAIN",
+   "lat": 41.3809,
+   "lon": 2.1228
+  },
+  "formation": "4-2-3-1",
+  "kit": {
+   "shirt": "#24163a",
+   "trim": "#c9a54b",
+   "collar": "#c9a54b",
+   "shorts": "#4b2a7b",
+   "socks": "#4b2a7b",
+   "number": "#c9a54b",
+   "gk": {
+    "shirt": "#1fa39a",
+    "trim": "#0e4d49",
+    "collar": "#0e4d49"
+   }
+  },
+  "crest": {
+   "a": "#a50044",
+   "b": "#004d98",
+   "c": "#edbb00",
+   "t": "FCB",
+   "tc": "#edbb00",
+   "ts": 30
+  },
+  "colors": {
+   "ring": "#c9a54b",
+   "pillBg": "#24163a",
+   "pillFg": "#c9a54b",
+   "headerBg": "#24163a",
+   "headerFg": "#c9a54b",
+   "headerSub": "rgba(255,255,255,.85)",
+   "versusBg": "#2a1846",
+   "accent": "#e8c66a",
+   "bar": "#a50044",
+   "confetti": [
+    "#a50044",
+    "#004d98",
+    "#edbb00",
+    "#24163a"
+   ],
+   "ribbon": [
+    "#a50044",
+    "#004d98"
+   ]
+  },
+  "grid": [
+   "pedri",
+   "rodri",
+   "yamal",
+   "raphinha",
+   "dejong",
+   "cancelo",
+   "fermin",
+   "cubarsi",
+   "gordon",
+   "gmartin",
+   "joangarcia"
+  ],
+  "slots": {
+   "joangarcia": "GK",
+   "cancelo": "RB",
+   "cubarsi": "CB1",
+   "dejong": "CB2",
+   "gmartin": "LB",
+   "rodri": "CM1",
+   "pedri": "CM2",
+   "yamal": "RW",
+   "fermin": "CAM",
+   "gordon": "LW",
+   "raphinha": "ST"
+  },
+  "manager": "flick"
+ },
+ "players": {
+  "oblak": {
+   "name": "OBLAK",
+   "full": "Jan Oblak",
+   "num": 13,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#6b4a2e"
+   ],
+   "beard": "stubble",
+   "gk": true
+  },
+  "pubill": {
+   "name": "PUBILL",
+   "full": "Marc Pubill",
+   "num": 18,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#2b1d14"
+   ],
+   "beard": "stubble"
+  },
+  "romero": {
+   "name": "ROMERO",
+   "full": "Cristian Romero",
+   "num": 21,
+   "skin": "olive",
+   "hair": [
+    "side",
+    "#1e1611"
+   ],
+   "beard": "short"
+  },
+  "hancko": {
+   "name": "HANCKO",
+   "full": "David Hancko",
+   "num": 17,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#7a5a3a"
+   ],
+   "beard": "short"
+  },
+  "grimaldo": {
+   "name": "GRIMALDO",
+   "full": "Alejandro Grimaldo",
+   "num": 22,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2e2018"
+   ],
+   "beard": "short"
+  },
+  "gsimeone": {
+   "name": "G. SIMEONE",
+   "full": "Giuliano Simeone",
+   "num": 20,
+   "skin": "olive",
+   "hair": [
+    "quiff",
+    "#1e1611"
+   ],
+   "beard": "stubble"
+  },
+  "llorente": {
+   "name": "LLORENTE",
+   "full": "Marcos Llorente",
+   "num": 14,
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#2b1d14"
+   ],
+   "beard": "stubble"
+  },
+  "barrios": {
+   "name": "BARRIOS",
+   "full": "Pablo Barrios",
+   "num": 8,
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#3a2a1e"
+   ],
+   "beard": "none"
+  },
+  "baena": {
+   "name": "BAENA",
+   "full": "Álex Baena",
+   "num": 10,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2b1d14"
+   ],
+   "beard": "stubble"
+  },
+  "alvarez": {
+   "name": "ÁLVAREZ",
+   "full": "Julián Álvarez",
+   "num": 19,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#3a2a1e"
+   ],
+   "beard": "none"
+  },
+  "sorloth": {
+   "name": "SØRLOTH",
+   "full": "Alexander Sørloth",
+   "num": 9,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#c9a66b"
+   ],
+   "beard": "stubble"
+  },
+  "simeone": {
+   "name": "SIMEONE",
+   "full": "Diego Simeone",
+   "skin": "olive",
+   "hair": [
+    "slick",
+    "#141010"
+   ],
+   "beard": "none",
+   "suit": {
+    "jacket": "#111111",
+    "tie": "#111111"
+   }
+  },
+  "joangarcia": {
+   "name": "JOAN GARCÍA",
+   "full": "Joan García",
+   "num": 1,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#4a3324"
+   ],
+   "beard": "stubble",
+   "gk": true
+  },
+  "cancelo": {
+   "name": "CANCELO",
+   "full": "João Cancelo",
+   "num": 2,
+   "skin": "olive",
+   "hair": [
+    "side",
+    "#1e1611"
+   ],
+   "beard": "short"
+  },
+  "cubarsi": {
+   "name": "CUBARSÍ",
+   "full": "Pau Cubarsí",
+   "num": 5,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#3a2a1e"
+   ],
+   "beard": "none"
+  },
+  "dejong": {
+   "name": "DE JONG",
+   "full": "Frenkie de Jong",
+   "num": 21,
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#4a3324"
+   ],
+   "beard": "short"
+  },
+  "gmartin": {
+   "name": "G. MARTÍN",
+   "full": "Gerard Martín",
+   "num": 18,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#2b1d14"
+   ],
+   "beard": "stubble"
+  },
+  "rodri": {
+   "name": "RODRI",
+   "full": "Rodri",
+   "num": 16,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#5a3e2b"
+   ],
+   "beard": "short"
+  },
+  "pedri": {
+   "name": "PEDRI",
+   "full": "Pedri",
+   "num": 8,
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#2b1d14"
+   ],
+   "beard": "none"
+  },
+  "yamal": {
+   "name": "YAMAL",
+   "full": "Lamine Yamal",
+   "num": 10,
+   "skin": "tan",
+   "hair": [
+    "curlytop",
+    "#121010"
+   ],
+   "beard": "none"
+  },
+  "fermin": {
+   "name": "FERMÍN",
+   "full": "Fermín López",
+   "num": 7,
+   "skin": "olive",
+   "hair": [
+    "slick",
+    "#2b1d14"
+   ],
+   "beard": "stubble"
+  },
+  "gordon": {
+   "name": "GORDON",
+   "full": "Anthony Gordon",
+   "num": 17,
+   "skin": "light",
+   "hair": [
+    "quiff",
+    "#6b4a2e"
+   ],
+   "beard": "none"
+  },
+  "raphinha": {
+   "name": "RAPHINHA",
+   "full": "Raphinha",
+   "num": 11,
+   "skin": "tan",
+   "hair": [
+    "crop",
+    "#1e1611"
+   ],
+   "beard": "stubble"
+  },
+  "flick": {
+   "name": "FLICK",
+   "full": "Hansi Flick",
+   "skin": "light",
+   "hair": [
+    "bald",
+    "#c8c8c8"
+   ],
+   "beard": "none",
+   "suit": {
+    "jacket": "#1c1d24",
+    "tie": "#24163a"
+   }
+  }
+ },
+ "ratings": {
+  "rows": [
+   [
+    "ATTACK",
+    83,
+    86
+   ],
+   [
+    "MIDFIELD",
+    84,
+    90
+   ],
+   [
+    "DEFENCE",
+    84,
+    84
+   ]
+  ],
+  "starMen": {
+   "home": {
+    "id": "alvarez",
+    "rating": 86
+   },
+   "away": {
+    "id": "pedri",
+    "rating": 90
+   }
+  },
+  "verdict": "BARÇA ARE FAVOURITES"
+ },
+ "events": [
+  {
+   "id": "g1",
+   "type": "goal",
+   "minute": "14'",
+   "scorer": "raphinha",
+   "assist": "pedri",
+   "caption": "RAPHINHA CHIPS OBLAK",
+   "footage": {
+    "parts": [
+     [
+      "g1-raphinha/tv",
+      1,
+      81
+     ],
+     [
+      "g1-raphinha/high",
+      82,
+      181
+     ]
+    ],
+    "goalAt": 3.416
+   },
+   "popup": "popup/g1-raphinha"
+  },
+  {
+   "id": "g2",
+   "type": "goal",
+   "minute": "33'",
+   "scorer": "grimaldo",
+   "assist": "baena",
+   "caption": "GRIMALDO FREE KICK!",
+   "footage": {
+    "parts": [
+     [
+      "g2-grimaldo/tv",
+      0,
+      18
+     ],
+     [
+      "g2-grimaldo/high",
+      19,
+      120
+     ]
+    ],
+    "goalAt": 1.8
+   },
+   "popup": "popup/g2-grimaldo"
+  },
+  {
+   "id": "g3",
+   "type": "goal",
+   "minute": "58'",
+   "scorer": "yamal",
+   "assist": "fermin",
+   "caption": "YAMAL TOP CORNER",
+   "footage": {
+    "parts": [
+     [
+      "g3-yamal/tv",
+      13,
+      50
+     ],
+     [
+      "g3-yamal/high",
+      51,
+      149
+     ]
+    ],
+    "goalAt": 2.35
+   },
+   "popup": "popup/g3-yamal"
+  },
+  {
+   "id": "g4",
+   "type": "goal",
+   "minute": "71'",
+   "scorer": "alvarez",
+   "assist": "gsimeone",
+   "caption": "ÁLVAREZ LEVELS IT",
+   "footage": {
+    "parts": [
+     [
+      "g4-alvarez/tv",
+      2,
+      35
+     ],
+     [
+      "g4-alvarez/high",
+      36,
+      117
+     ]
+    ],
+    "goalAt": 1.633
+   },
+   "popup": "popup/g4-alvarez"
+  },
+  {
+   "id": "g5",
+   "type": "goal",
+   "minute": "88'",
+   "scorer": "sorloth",
+   "assist": "baena",
+   "caption": "SØRLOTH WINS IT!",
+   "captionColor": "#ffd23f",
+   "footage": {
+    "parts": [
+     [
+      "g5-sorloth/tv",
+      16,
+      57
+     ],
+     [
+      "g5-sorloth/high",
+      19,
+      115
+     ]
+    ],
+    "goalAt": 1.983
+   },
+   "popup": "popup/g5-sorloth"
+  }
+ ],
+ "potm": {
+  "top3": [
+   "grimaldo",
+   "alvarez",
+   "yamal"
+  ],
+  "name": "ALEJANDRO GRIMALDO",
+  "subtitle": "GOAL AND TWO ASSISTS"
+ },
+ "vo": [
+  {
+   "seg": "grid",
+   "offset": 0.3,
+   "text": "First against second. Two points apart. One night in Madrid."
+  },
+  {
+   "seg": "homeSheet",
+   "offset": 0.3,
+   "text": "Simeone's Atlético: nine league wins from eleven, and Julián Álvarez up front.",
+   "say": "Seemayohnay's Atleteeko: nine league wins from eleven, and Hoolyahn Alvarez up front."
+  },
+  {
+   "seg": "awaySheet",
+   "offset": 0.2,
+   "text": "Barça sit top, but their defence is held together with tape.",
+   "say": "Barsah sit top, but their defence is held together with tape."
+  },
+  {
+   "seg": "versus",
+   "offset": 0.2,
+   "text": "Koundé, Christensen and Eric García are injured. Frenkie de Jong is playing centre back.",
+   "say": "Koonday, Christensen and Erik Garseeah are injured. Frenkee duh Yong is playing centre back."
+  },
+  {
+   "seg": "globe",
+   "offset": 0.4,
+   "text": "And last April, Atlético knocked Barça out of the Champions League. Barça have not forgotten.",
+   "say": "And last April, Atleteeko knocked Barsah out of the Champions League. Barsah have not forgotten."
+  },
+  {
+   "seg": "ratings",
+   "offset": 0.3,
+   "text": "On paper, Barça's midfield is miles better. Pedri is rated ninety. Here's our prediction.",
+   "say": "On paper, Barsah's midfield is miles better. Pedree is rated ninety. Here's our prediction."
+  },
+  {
+   "seg": "g1",
+   "offset": 0.1,
+   "spill": true,
+   "text": "Fourteen minutes. Pedri slides Raphinha through, and he chips Oblak.",
+   "say": "Fourteen minutes. Pedree slides Hahfeenyah through, and he chips Obblack."
+  },
+  {
+   "seg": "g2",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Grimaldo bends a free kick over the wall. One all.",
+   "say": "Greemaldoh bends a free kick over the wall. One all."
+  },
+  {
+   "seg": "g3",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Then Lamine Yamal curls one into the top corner.",
+   "say": "Then Lahmeen Yahmal curls one into the top corner."
+  },
+  {
+   "seg": "g4",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Giuliano Simeone cuts it back. Álvarez taps in. Two all.",
+   "say": "Joolyahnoh Seemayohnay cuts it back. Alvarez taps in. Two all."
+  },
+  {
+   "seg": "g5",
+   "offset": 0.1,
+   "spill": true,
+   "text": "Eighty-eight minutes. Baena's corner. Sørloth rises highest.",
+   "say": "Eighty-eight minutes. Bahaynah's corner. Surlot rises highest."
+  },
+  {
+   "seg": "fulltime",
+   "offset": 0.5,
+   "text": "Three-two Atlético, and they go top of LaLiga.",
+   "say": "Three-two Atleteeko, and they go top of La Leega."
+  },
+  {
+   "seg": "potm",
+   "offset": 0.8,
+   "text": "Player of the match: Grimaldo. Who do you think wins on Sunday?",
+   "say": "Player of the match: Greemaldoh. Who do you think wins on Sunday?"
+  },
+  {
+   "seg": "end",
+   "offset": 0.3,
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "say": "Follow for more, and play Road to Ballon Dor."
+  }
+ ]
+}
