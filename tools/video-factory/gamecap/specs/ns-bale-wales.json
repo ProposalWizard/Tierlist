@@ -1,0 +1,105 @@
+{
+  "_about": "ns-bale-brazil, real goal: Bale's free kick, Wales 2-1 Slovakia, Euro 2016 group game, Nouveau Stade de Bordeaux, 11 June 2016, 10th minute, about 30 yards, keeper Matus Kozacik (Reuters, UEFA, Shropshire Star). Wales wore red, Slovakia white. Keeper kits assumed. Kit trim simplified (one shirt colour).",
+  "teams": {
+    "home": {
+      "name": "Wales",
+      "short": "WAL",
+      "kit": {
+        "shirt": "#D30A11",
+        "shorts": "#D30A11",
+        "socks": "#D30A11"
+      },
+      "keeperKit": {
+        "shirt": "#2BB673",
+        "shorts": "#0B3D2A",
+        "socks": "#2BB673"
+      },
+      "popupTrim": "#FFFFFF"
+    },
+    "away": {
+      "name": "Slovakia",
+      "short": "SVK",
+      "kit": {
+        "shirt": "#F4F4F4",
+        "shorts": "#F4F4F4",
+        "socks": "#F4F4F4"
+      },
+      "keeperKit": {
+        "shirt": "#E8E04A",
+        "shorts": "#1A1A1A",
+        "socks": "#E8E04A"
+      },
+      "popupTrim": "#0B4EA2"
+    }
+  },
+  "people": {
+    "bale": {
+      "name": "Gareth Bale",
+      "skin": "#efc19c",
+      "hair": "#4a3020"
+    },
+    "ramsey": {
+      "name": "Aaron Ramsey",
+      "skin": "#f0c6a6",
+      "hair": "#c9a76a"
+    },
+    "skrtel": {
+      "name": "Martin Skrtel",
+      "skin": "#f0c6a6",
+      "hair": "#f0c6a6"
+    },
+    "hamsik": {
+      "name": "Marek Hamsik",
+      "skin": "#f0c6a6",
+      "hair": "#2a1d15"
+    },
+    "kucka": {
+      "name": "Juraj Kucka",
+      "skin": "#f0c6a6",
+      "hair": "#3a2a1e"
+    },
+    "durica": {
+      "name": "Jan Durica",
+      "skin": "#f0c6a6",
+      "hair": "#3a2a1e"
+    },
+    "kozacik": {
+      "name": "Matus Kozacik",
+      "skin": "#f0c6a6",
+      "hair": "#2a1d15"
+    }
+  },
+  "clips": [
+    {
+      "id": "bale-slovakia-fk",
+      "kind": "free_kick",
+      "attacking": "home",
+      "scorer": "bale",
+      "defenders": [
+        "skrtel",
+        "hamsik",
+        "kucka",
+        "durica"
+      ],
+      "keeper": "kozacik",
+      "teammates": [],
+      "minute": 10,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "scoreAfter": [
+        1,
+        0
+      ],
+      "night": false,
+      "celebration": "roar",
+      "cameras": [
+        "tv",
+        "high",
+        "fan"
+      ],
+      "seed": "bale-svk-b"
+    }
+  ]
+}

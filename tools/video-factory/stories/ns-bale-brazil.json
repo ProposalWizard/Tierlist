@@ -2,39 +2,85 @@
   "id": "ns-bale-brazil",
   "series": "What if the countries were swapped?",
   "title": "What if Bale was Brazilian?",
+  "v2": true,
   "sources": [
-    "https://www.library.wales/discover-learn/education/learning-resources/owain-fon-williams-artist-and-footballer/gareth-bale",
-    "https://amp.cnn.com/cnn/2023/01/09/football/gareth-bale-retirement-spt-intl",
-    "https://www.skysports.com/football/news/11095/12783201/gareth-bale-former-wales-tottenham-and-real-madrid-forward-retires-from-football-aged-33",
-    "https://en.wikipedia.org/wiki/List_of_FIFA_Confederations_Cup_finals",
-    "https://www.90min.com/posts/copa-america-all-previous-winners-in-the-tournament-s-history",
-    "https://www.topendsports.com/events/soccer/copa-america/winners.htm",
-    "https://en.wikipedia.org/wiki/Copa_Am%C3%A9rica_records_and_statistics",
-    "https://morungexpress.com/wales-thump-russia-top-group-and-move-last-sixteen",
-    "https://www.shropshirestar.com/sport/wales-amazing-journey-at-euro-2016-6561603"
+    "https://en.wikipedia.org/wiki/Gareth_Bale",
+    "https://www.library.wales/discover-learn/digital-exhibitions/sport/gareth-bale",
+    "https://www.skysports.com/football/news/12010/12784157/gareth-bale-retires-wales-and-real-madrid-forward-calls-time-on-career-at-the-age-of-33",
+    "https://en.wikipedia.org/wiki/UEFA_Euro_2016_Group_B",
+    "https://www.uefa.com/uefaeuro/history/seasons/2016/",
+    "https://www.reuters.com/article/uk-soccer-euro-wal-svk-idUKKCN0YX0OJ",
+    "https://en.wikipedia.org/wiki/Brazil_national_football_team",
+    "https://www.90min.com/posts/brazil-trophies-titles-won",
+    "https://en.wikipedia.org/wiki/2013_FIFA_Confederations_Cup_final",
+    "https://en.wikipedia.org/wiki/Brazil_v_Germany_(2014_FIFA_World_Cup)",
+    "https://www.theguardian.com/football/2014/jul/08/brazil-germany-world-cup-semi-final-match-report"
   ],
-  "checked": "Bale debut 27 May 2006 aged 16, 111 caps and 41 goals (both Wales records), last game v England 29 Nov 2022, retired 9 Jan 2023 (National Library of Wales + CNN + Sky); Brazil won Copa América 2007 and 2019 (90min + Topend + Wikipedia) and the Confederations Cup 2009 and 2013 (Wikipedia finals list + 90min). Wales reached the Euro 2016 semi-final. Alternate world is clearly imagined. Bale scored in all three Euro 2016 group games (Reuters + Shropshire Star). Confed 2013 final Brazil 3-0 Spain at the Maracanã (Wikipedia finals list + 90min).",
+  "checked": "Bale debut 27 May 2006 aged 16, then Wales's youngest player; 111 caps, 41 goals, both Wales records; retired Jan 2023 (Wikipedia, National Library of Wales, Sky). Wales's first tournament since 1958 (Wikipedia, UEFA). Bale scored v Slovakia (free kick, 10'), England and Russia; Group B final table Wales 6, England 5, Slovakia 4, Russia 1 (Wikipedia Group B, UEFA, Reuters). Semi: Portugal 2-0 Wales, Lyon, 6 July 2016 (Wikipedia, UEFA). Brazil 2006-2022: Copa America 2007 and 2019, Confederations Cup 2009 and 2013 (Wikipedia, 90min); 2013 final Brazil 3-0 Spain at the Maracana, 30 June 2013 (Wikipedia, 90min). 2014 semi Brazil 1-7 Germany, Belo Horizonte, 8 July, no Neymar (injured) or Thiago Silva (suspended) (Wikipedia, Guardian). The Bale-for-Brazil goal is an imagined alternate world and is labelled so. Gameplay: gamecap specs ns-bale-wales (real free kick) and ns-bale-brazil (alternate).",
   "clubs": {
     "wal": {
       "name": "Wales",
       "short": "WAL",
-      "c1": "#c8102e",
+      "c1": "#d30a11",
       "c2": "#ffffff",
-      "pattern": "plain"
+      "pattern": "plain",
+      "badge": false
     },
     "bra": {
       "name": "Brazil",
       "short": "BRA",
-      "c1": "#ffdf00",
-      "c2": "#009c3b",
-      "pattern": "plain"
+      "c1": "#fedd00",
+      "c2": "#0b9a3c",
+      "pattern": "plain",
+      "badge": false
+    },
+    "svk": {
+      "name": "Slovakia",
+      "short": "SVK",
+      "c1": "#ffffff",
+      "c2": "#0b4ea2",
+      "pattern": "plain",
+      "badge": false
+    },
+    "eng": {
+      "name": "England",
+      "short": "ENG",
+      "c1": "#ffffff",
+      "c2": "#1b2a4a",
+      "pattern": "plain",
+      "badge": false
+    },
+    "rus": {
+      "name": "Russia",
+      "short": "RUS",
+      "c1": "#c8102e",
+      "c2": "#ffffff",
+      "pattern": "plain",
+      "badge": false
+    },
+    "por": {
+      "name": "Portugal",
+      "short": "POR",
+      "c1": "#c8102e",
+      "c2": "#006600",
+      "pattern": "plain",
+      "badge": false
     },
     "esp": {
       "name": "Spain",
       "short": "ESP",
       "c1": "#c60b1e",
       "c2": "#ffc400",
-      "pattern": "plain"
+      "pattern": "plain",
+      "badge": false
+    },
+    "ger": {
+      "name": "Germany",
+      "short": "GER",
+      "c1": "#ffffff",
+      "c2": "#111111",
+      "pattern": "plain",
+      "badge": false
     }
   },
   "people": {
@@ -43,20 +89,10 @@
       "skin": "light",
       "hair": [
         "slick",
-        "#5a3a22"
+        "#4a3020"
       ],
       "beard": "short",
-      "beardCol": "#5a3a22",
-      "kit": "wal"
-    },
-    "baleyoung": {
-      "name": "Gareth Bale",
-      "skin": "light",
-      "hair": [
-        "crop",
-        "#6b4a2e"
-      ],
-      "beard": "none",
+      "beardCol": "#4a3020",
       "kit": "wal"
     },
     "balebra": {
@@ -64,38 +100,193 @@
       "skin": "light",
       "hair": [
         "slick",
-        "#5a3a22"
+        "#4a3020"
       ],
       "beard": "short",
-      "beardCol": "#5a3a22",
+      "beardCol": "#4a3020",
       "kit": "bra"
     }
   },
   "lines": [
     {
-      "text": "What if Gareth Bale had been born in Brazil instead of Wales?",
+      "text": "Gareth Bale won nothing with Wales. So what if he'd been born in Brazil?",
+      "say": "Gareth Bail won nothing with Wales. So what if he'd been born in Brazil?",
       "scene": {
         "type": "title",
         "heading": "GARETH BALE",
         "sub": "Wales · 2006 to 2022",
         "pill": "WHAT IF HE WAS BRAZILIAN?",
+        "person": "bale",
+        "club": "wal"
+      }
+    },
+    {
+      "text": "Real world first. May 2006: a sixteen-year-old becomes Wales's youngest ever player.",
+      "say": "Real world first. May, two thousand six: a sixteen-year-old becomes Wales's youngest ever player.",
+      "scene": {
+        "type": "news",
+        "section": "Wales",
+        "headline": "Bale, 16, becomes Wales's youngest ever player",
+        "standfirst": "The Southampton teenager makes his debut against Trinidad and Tobago in Graz.",
+        "date": "27 May 2006",
+        "byline": "Knowitball recap",
+        "club": "wal",
+        "person": "bale",
+        "nav": [
+          "Football",
+          "Wales",
+          "Internationals"
+        ]
+      }
+    },
+    {
+      "text": "Ten years later, he takes Wales to their first tournament since 1958.",
+      "say": "Ten years later, he takes Wales to their first tournament since nineteen fifty-eight.",
+      "scene": {
+        "type": "stats",
+        "kicker": "Euro 2016",
+        "title": "The wait is over",
+        "items": [
+          {
+            "n": "58",
+            "l": "years without a tournament"
+          },
+          {
+            "n": "3",
+            "l": "Bale goals in 3 group games"
+          }
+        ],
         "person": "bale"
       }
     },
     {
-      "text": "Real world first. Bale made his Wales debut in May two thousand six, aged just sixteen.",
+      "text": "First game, Slovakia. Ten minutes in, a free kick from thirty yards. Bale curls it in.",
+      "say": "First game, Slovahkia. Ten minutes in, a free kick from thirty yards. Bail curls it in.",
       "scene": {
-        "type": "person",
-        "person": "baleyoung",
-        "label": "Debut aged 16",
-        "mood": "happy"
+        "type": "gameclip",
+        "parts": [
+          [
+            "work/footage/ns-bale-wales/bale-slovakia-fk/fan",
+            0,
+            130
+          ]
+        ],
+        "caption": "BALE FROM 30 YARDS",
+        "popup": {
+          "home": "wal",
+          "away": "svk",
+          "hs0": 0,
+          "as0": 0,
+          "hs": 1,
+          "as": 0,
+          "scorer": "Bale"
+        },
+        "goalAt": 1.8
       }
     },
     {
-      "text": "He played until the World Cup in Qatar: one hundred and eleven caps, forty-one goals. Both Wales records.",
+      "text": "He scored in every group game, and Wales finished top, above England.",
+      "scene": {
+        "type": "table",
+        "season": "Euro 2016 · Group B",
+        "title": "Final table",
+        "rows": [
+          {
+            "pos": 1,
+            "club": "wal",
+            "p": 3,
+            "w": 2,
+            "d": 0,
+            "l": 1,
+            "gd": 3,
+            "pts": 6,
+            "hl": true
+          },
+          {
+            "pos": 2,
+            "club": "eng",
+            "p": 3,
+            "w": 1,
+            "d": 2,
+            "l": 0,
+            "gd": 1,
+            "pts": 5
+          },
+          {
+            "pos": 3,
+            "club": "svk",
+            "p": 3,
+            "w": 1,
+            "d": 1,
+            "l": 1,
+            "gd": 0,
+            "pts": 4
+          },
+          {
+            "pos": 4,
+            "club": "rus",
+            "p": 3,
+            "w": 0,
+            "d": 1,
+            "l": 2,
+            "gd": -4,
+            "pts": 1
+          }
+        ],
+        "zones": [
+          {
+            "kind": "up",
+            "rows": [
+              1,
+              2
+            ],
+            "label": "Last 16"
+          },
+          {
+            "kind": "po",
+            "rows": [
+              3,
+              3
+            ],
+            "label": "Best third"
+          },
+          {
+            "kind": "down",
+            "rows": [
+              4,
+              4
+            ],
+            "label": "Out"
+          }
+        ],
+        "gap": {
+          "from": 1,
+          "to": 2,
+          "label": "1 pt",
+          "at": 0.45
+        }
+      }
+    },
+    {
+      "text": "All the way to the semi-finals, where Ronaldo's Portugal finally stopped them.",
+      "say": "All the way to the semi-finals, where Ronaldo's Portugal finally stopped them.",
+      "scene": {
+        "type": "score",
+        "home": "por",
+        "away": "wal",
+        "hs": 2,
+        "as": 0,
+        "date": "6 July 2016 · Lyon",
+        "comp": "Euro 2016 semi-final",
+        "note": "Wales's best tournament ever ends one game from the final"
+      }
+    },
+    {
+      "text": "A hundred and eleven caps. Forty-one goals. Both records. Trophies: zero.",
       "scene": {
         "type": "stats",
-        "title": "Bale for Wales",
+        "kicker": "Gareth Bale · Wales",
+        "title": "Sixteen years",
         "items": [
           {
             "n": "111",
@@ -104,67 +295,43 @@
           {
             "n": "41",
             "l": "goals"
+          },
+          {
+            "n": "0",
+            "l": "trophies"
           }
         ],
         "person": "bale"
       }
     },
     {
-      "text": "His best tournament? Euro twenty sixteen, all the way to the semi-finals.",
+      "text": "Now the alternate world. Same years, but Bale wears the yellow shirt.",
+      "say": "Now the alternate world. Same years, but Bail wears the yellow shirt.",
       "scene": {
-        "type": "text",
-        "heading": "EURO 2016",
-        "body": "Wales reach their first major semi-final. Bale scores in all three group games."
+        "type": "person",
+        "person": "balebra",
+        "label": "Alternate world · Brazil",
+        "mood": "happy"
       }
     },
     {
-      "text": "But in sixteen years, Wales won nothing.",
-      "scene": {
-        "type": "stamp",
-        "text": "NO TROPHIES",
-        "person": "bale",
-        "color": "red"
-      }
-    },
-    {
-      "text": "Now look at Brazil in exactly the same years.",
-      "scene": {
-        "type": "timeline",
-        "items": [
-          {
-            "year": "2007",
-            "label": "Copa América"
-          },
-          {
-            "year": "2009",
-            "label": "Confederations Cup"
-          },
-          {
-            "year": "2013",
-            "label": "Confederations Cup"
-          },
-          {
-            "year": "2019",
-            "label": "Copa América"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Two Copa Américas and two Confederations Cups.",
+      "text": "Brazil in those years: two Copa Américas and two Confederations Cups.",
+      "say": "Brazil in those years: two Copa Americas, and two Confederations Cups.",
       "scene": {
         "type": "trophies",
+        "kicker": "Brazil · 2006 to 2022",
+        "title": "Four senior trophies",
         "items": [
           {
             "kind": "cup",
             "label": "Copa América 2007"
           },
           {
-            "kind": "cup",
+            "kind": "goldcup",
             "label": "Confed Cup 2009"
           },
           {
-            "kind": "cup",
+            "kind": "goldcup",
             "label": "Confed Cup 2013"
           },
           {
@@ -175,68 +342,117 @@
       }
     },
     {
-      "text": "The twenty thirteen one? Brazil beat world champions Spain three-nil in the final at the Maracanã.",
+      "text": "The 2013 final? Three-nil against world champions Spain, at the Maracanã.",
+      "say": "The twenty thirteen final? Three-nil against world champions Spain, at the Marakana.",
       "scene": {
         "type": "score",
         "home": "bra",
         "away": "esp",
         "hs": 3,
         "as": 0,
-        "date": "30 June 2013",
-        "comp": "Confederations Cup final"
+        "date": "30 June 2013 · Maracanã",
+        "comp": "Confederations Cup final",
+        "note": "Fred 2, Neymar"
       }
     },
     {
-      "text": "So in this alternate world, Bale wears the yellow shirt.",
+      "text": "But the big one went wrong. A home World Cup semi, without Neymar or Thiago Silva.",
+      "say": "But the big one went wrong. A home World Cup semi, without Naymar or Teeyahgo Silva.",
       "scene": {
-        "type": "person",
-        "person": "balebra",
-        "label": "ALTERNATE WORLD",
-        "mood": "happy"
+        "type": "news",
+        "section": "World Cup 2014",
+        "headline": "Brazil face Germany without Neymar and Thiago Silva",
+        "standfirst": "Neymar is out with a broken bone in his back. The captain is suspended. Belo Horizonte waits.",
+        "date": "8 July 2014",
+        "byline": "Knowitball recap",
+        "club": "bra",
+        "mastColor": "#0b4f2a",
+        "nav": [
+          "Football",
+          "World Cup",
+          "Brazil",
+          "Germany"
+        ]
       }
     },
     {
-      "text": "That's four senior trophies instead of zero, just by changing the passport.",
+      "text": "Germany won seven-one.",
+      "scene": {
+        "type": "score",
+        "home": "bra",
+        "away": "ger",
+        "hs": 1,
+        "as": 7,
+        "date": "8 July 2014 · Belo Horizonte",
+        "comp": "World Cup semi-final",
+        "note": "Five German goals in the first 29 minutes"
+      }
+    },
+    {
+      "text": "In our world, it's one-all late on. Bale picks it up thirty yards out, and lets fly.",
+      "say": "In our world, it's one-all late on. Bail picks it up thirty yards out, and lets fly.",
+      "scene": {
+        "type": "gameclip",
+        "parts": [
+          [
+            "work/footage/ns-bale-brazil/bale-brazil-longshot/high",
+            30,
+            150
+          ]
+        ],
+        "caption": "ALTERNATE WORLD",
+        "captionColor": "#ffd23f",
+        "popup": {
+          "home": "bra",
+          "away": "ger",
+          "hs0": 1,
+          "as0": 1,
+          "hs": 2,
+          "as": 1,
+          "scorer": "Bale"
+        },
+        "goalAt": 1.87
+      }
+    },
+    {
+      "text": "Real Bale: zero trophies. Brazilian Bale: four, and maybe a World Cup.",
+      "say": "Real Bail: zero trophies. Brazilian Bail: four, and maybe a World Cup.",
       "scene": {
         "type": "whatif",
-        "title": "Bale's international trophies",
+        "title": "Same years, different passport",
         "real": {
-          "label": "Wales (real)",
-          "value": "0"
+          "label": "Wales",
+          "value": "0 trophies"
         },
         "alt": {
-          "label": "Brazil (imagined)",
-          "value": "4"
+          "label": "Brazil",
+          "value": "4 trophies"
         }
       }
     },
     {
-      "text": "And maybe a Bale-shaped answer to Germany at the twenty fourteen World Cup.",
-      "scene": {
-        "type": "quote",
-        "person": "balebra",
-        "text": "Seven-one? Not on my watch."
-      }
-    },
-    {
-      "text": "Wales hero, or Brazil legend? Which version wins more? Tell me in the comments.",
+      "text": "Wales hero, or Brazil legend? Which Bale would you take?",
+      "say": "Wales hero, or Brazil legend? Which Bail would you take?",
       "scene": {
         "type": "versus",
-        "title": "Same player, different passport",
+        "title": "Which Bale?",
         "left": {
           "person": "bale",
-          "label": "Wales",
-          "value": "0"
+          "label": "Wales hero",
+          "value": "0",
+          "sub": "trophies"
         },
         "right": {
           "person": "balebra",
-          "label": "Brazil",
-          "value": "4"
+          "label": "Brazil legend",
+          "value": "4",
+          "sub": "trophies",
+          "win": true
         }
       }
     },
     {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "text": "Follow for more, and play Road to Ballon d'Or.",
       "scene": {
         "type": "cta"
       }

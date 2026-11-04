@@ -1,0 +1,30 @@
+{
+  "_about": "ns-kane-france (ALTERNATE WORLD, imagined): Kane for France heads the winner against Argentina in the 2022 World Cup final, Lusail, 18 December 2022 (real final: 3-3 aet, Argentina won 4-2 on penalties). France wore navy blue. Argentina's stripes cannot be drawn by the sprite mask: sky blue shirt, black shorts. Griezmann crosses. Keeper kits assumed.",
+  "teams": {
+    "home": { "name": "France", "short": "FRA", "kit": { "shirt": "#1B2A55", "shorts": "#1B2A55", "socks": "#1B2A55" }, "keeperKit": { "shirt": "#2E2E2E", "shorts": "#2E2E2E", "socks": "#2E2E2E" }, "popupTrim": "#E1000F" },
+    "away": { "name": "Argentina", "short": "ARG", "kit": { "shirt": "#75AADB", "shorts": "#111111", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "kane":       { "name": "Harry Kane", "skin": "#f2c9a8", "hair": "#6b4a2e" },
+    "griezmann":  { "name": "Antoine Griezmann", "skin": "#efc4a3", "hair": "#8a6a48" },
+    "mbappe":     { "name": "Kylian Mbappe", "skin": "#7a4e33", "hair": "#0d0a09" },
+    "otamendi":   { "name": "Nicolas Otamendi", "skin": "#e2b08a", "hair": "#1d1512" },
+    "romero":     { "name": "Cristian Romero", "skin": "#e2b08a", "hair": "#1d1512" },
+    "molina":     { "name": "Nahuel Molina", "skin": "#e2b08a", "hair": "#1d1512" },
+    "martinez":   { "name": "Emiliano Martinez", "skin": "#e2b08a", "hair": "#1d1512" }
+  },
+  "clips": [
+    {
+      "id": "kane-final-2022",
+      "kind": "header", "attacking": "home",
+      "scorer": "kane", "assister": "griezmann",
+      "defenders": ["otamendi", "romero", "molina"], "keeper": "martinez",
+      "teammates": ["mbappe"],
+      "minute": 119, "scoreBefore": [3, 3], "scoreAfter": [4, 3],
+      "night": true, "celebration": "roar",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "cross", "side": "right", "swing": "in", "scorerSpot": [0.5, 8], "finish": "header", "height": "mid" },
+      "seed": "kane-fra-a"
+    }
+  ]
+}

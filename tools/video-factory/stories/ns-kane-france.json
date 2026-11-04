@@ -2,41 +2,55 @@
   "id": "ns-kane-france",
   "series": "What if the countries were swapped?",
   "title": "What if Harry Kane was French?",
+  "v2": true,
   "sources": [
-    "https://ny1.com/nyc/all-boroughs/ap-top-news/2026/10/06/harry-kane-scores-on-record-tying-125th-appearance-for-england",
-    "https://www.newcastleherald.com.au/story/9363984/kane-able-to-double-up-in-record-tying-game-for-england/",
-    "https://www.englandfootball.com/articles/2026/Jul/19/england-men-world-cup-2026-records-20262007",
-    "https://en.wikipedia.org/wiki/France_national_football_team",
-    "https://www.11v11.com/teams/france/tab/honours/",
-    "https://www.cbssports.com/soccer/news/how-nations-league-triumph-can-get-france-back-on-track-to-defend-world-cup-title-in-qatar",
-    "https://www.uefa.com/european-qualifiers/news/027b-169a7e398f21-87e26fc718e2-1000--france-at-the-2022-world-cup-results-squad-scorers",
-    "https://www.sortiraparis.com/en/what-to-do-in-paris/sport-wellness/articles/349129-world-cup-2026-all-results-and-the-final-score",
-    "https://www.sportinglife.com/football/news/england-heartbreak-as-italy-win-on-pens/193098",
-    "https://www.omanobserver.om/article/1103733/sports/football/italy-win-euro-2020-final-on-penalties-to-wreck-england-party",
-    "https://www.aljazeera.com/amp/sports/2024/7/12/uefa-euro-2024-spain-vs-england-preview-five-best-final-matches-in-history"
+    "https://www.news4jax.com/sports/2026/10/06/harry-kane-scores-on-record-tying-125th-appearance-for-england/",
+    "https://bundesliga.com/en/bundesliga/news/harry-kane-matches-england-all-time-caps-record-39443",
+    "https://en.wikipedia.org/wiki/Harry_Kane",
+    "https://www.englandfootball.com/articles/2024/Sep/09/Celebrating-Harry-Kane-100-caps-in-stats",
+    "https://en.wikipedia.org/wiki/England_v_France_(2022_FIFA_World_Cup)",
+    "https://www.bbc.co.uk/sport/football/63851839",
+    "https://worldcupranking.com/blog/world-cup-2026-match-102-england-vs-argentina/",
+    "https://unn.ua/en/news/argentinas-national-team-defeated-england-and-advanced-to-the-final-of-the-2026-world-cup",
+    "https://en.wikipedia.org/wiki/2018_FIFA_World_Cup_final",
+    "https://www.11v11.com/teams/france/tab/matches/",
+    "https://en.wikipedia.org/wiki/2021_UEFA_Nations_League_Finals",
+    "https://en.wikipedia.org/wiki/2022_FIFA_World_Cup_final",
+    "https://www.uefa.com/uefaeuro/history/seasons/2016/"
   ],
-  "checked": "Kane first played for England in 2015; 125th cap (equalling Shilton) with 91 goals v Czechia, 6 Oct 2026 (AP via NY1 + Newcastle Herald). France since 2015: Euro 2016 final lost to Portugal, 2018 World Cup won 4-2 v Croatia, 2021 Nations League won 2-1 v Spain, 2022 World Cup final lost on penalties (Wikipedia + 11v11 + CBS + UEFA). England lost the Euro 2020 and Euro 2024 finals (well documented; England FA records page). France lost the 2026 WC semi to Spain (Sortiraparis). Alternate world clearly imagined.",
+  "checked": "Kane: 91 England goals (record), 125th cap v Czechia 6 Oct 2026 equals Shilton (AP via News4Jax, Bundesliga.com); debut March 2015 (Wikipedia, England Football). Heartbreaks: 2018 WC semi (Croatia), Euro 2020 final lost on penalties to Italy, Euro 2024 final lost 2-1 to Spain, 2026 WC semi lost 2-1 to Argentina (Wikipedia, worldcupranking, UNN). 2022 QF England 1-2 France, Al Bayt, 10 Dec 2022; Kane scored one penalty and put the second over the bar at 84' (Wikipedia, BBC). France since 2015: Euro 2016 final lost to Portugal, 2018 WC won 4-2 v Croatia in Moscow, 2021 Nations League won, 2022 WC final 3-3 lost 4-2 on penalties (Wikipedia, 11v11, UEFA). The Kane-for-France goal is an imagined alternate world and is labelled so. England 6-4 France third-place score left out (one source only). Gameplay: gamecap specs ns-kane-england (real miss) and ns-kane-france (alternate).",
   "clubs": {
     "eng": {
       "name": "England",
       "short": "ENG",
       "c1": "#ffffff",
-      "c2": "#1d2c5e",
-      "pattern": "plain"
+      "c2": "#1b2a4a",
+      "pattern": "plain",
+      "badge": false
     },
     "fra": {
       "name": "France",
       "short": "FRA",
-      "c1": "#21304d",
-      "c2": "#ffffff",
-      "pattern": "plain"
+      "c1": "#1b2a55",
+      "c2": "#e1000f",
+      "pattern": "plain",
+      "badge": false
     },
     "cro": {
       "name": "Croatia",
       "short": "CRO",
       "c1": "#ffffff",
-      "c2": "#e30a17",
-      "pattern": "hoops"
+      "c2": "#e30613",
+      "pattern": "halves",
+      "badge": false
+    },
+    "arg": {
+      "name": "Argentina",
+      "short": "ARG",
+      "c1": "#75aadb",
+      "c2": "#ffffff",
+      "pattern": "stripes",
+      "badge": false
     }
   },
   "people": {
@@ -45,10 +59,10 @@
       "skin": "light",
       "hair": [
         "side",
-        "#8a6a45"
+        "#6b4a2e"
       ],
       "beard": "stubble",
-      "beardCol": "#8a6a45",
+      "beardCol": "#6b4a2e",
       "kit": "eng"
     },
     "kanefra": {
@@ -56,29 +70,32 @@
       "skin": "light",
       "hair": [
         "side",
-        "#8a6a45"
+        "#6b4a2e"
       ],
       "beard": "stubble",
-      "beardCol": "#8a6a45",
+      "beardCol": "#6b4a2e",
       "kit": "fra"
     }
   },
   "lines": [
     {
-      "text": "What if Harry Kane had been born in France instead of England?",
+      "text": "Ninety-one goals for England, and not one trophy. What if Harry Kane had been French?",
       "scene": {
         "type": "title",
         "heading": "HARRY KANE",
         "sub": "England · since 2015",
         "pill": "WHAT IF HE WAS FRENCH?",
-        "person": "kane"
+        "person": "kane",
+        "club": "eng"
       }
     },
     {
-      "text": "Real world first. Kane is England's record scorer, with ninety-one goals.",
+      "text": "Real world first. Kane is England's record scorer, and in October he equalled Shilton's caps record.",
+      "say": "Real world first. Kane is England's record scorer, and in October he equalled Shilton's caps record.",
       "scene": {
         "type": "stats",
-        "title": "Kane for England (6 Oct 2026)",
+        "kicker": "Harry Kane · England",
+        "title": "The record man",
         "items": [
           {
             "n": "91",
@@ -86,70 +103,99 @@
           },
           {
             "n": "125",
-            "l": "caps, level with Shilton"
+            "l": "caps"
           }
         ],
         "person": "kane"
       }
     },
     {
-      "text": "But the trophies? Two Euro finals, two defeats.",
+      "text": "But the big nights keep ending the same way. Semi-final, final, final, semi-final.",
       "scene": {
         "type": "timeline",
+        "kicker": "England with Kane",
+        "title": "So close, every time",
         "items": [
           {
             "year": "2018",
-            "label": "World Cup semi-final"
+            "label": "World Cup semi · Croatia"
           },
           {
             "year": "2021",
-            "label": "Euro 2020 final: lost"
+            "label": "Euro final · Italy, penalties"
           },
           {
             "year": "2024",
-            "label": "Euro 2024 final: lost"
+            "label": "Euro final · Spain 2-1"
           },
           {
             "year": "2026",
-            "label": "World Cup semi-final"
+            "label": "World Cup semi · Argentina 2-1",
+            "hl": true
           }
         ]
       }
     },
     {
-      "text": "Eleven years for England, and still no trophy.",
+      "text": "And the worst of all: Qatar, 2022. Two-one down to France. A penalty to level it, and Kane puts it over the bar.",
+      "say": "And the worst of all: Qatar, twenty twenty-two. Two-one down to France. A penalty to level it, and Kane puts it over the bar.",
       "scene": {
-        "type": "stamp",
-        "text": "NO TROPHY YET",
-        "person": "kane",
-        "color": "red"
+        "type": "gameclip",
+        "parts": [
+          [
+            "work/footage/ns-kane-england/kane-pen-miss-2022/high",
+            0,
+            100
+          ]
+        ],
+        "caption": "OVER THE BAR",
+        "captionColor": "#ff3b4e",
+        "goalAt": 1.37
       }
     },
     {
-      "text": "Now look at France in exactly the same years.",
+      "text": "England went out. France went on.",
+      "scene": {
+        "type": "score",
+        "home": "eng",
+        "away": "fra",
+        "hs": 1,
+        "as": 2,
+        "date": "10 December 2022 · Al Bayt",
+        "comp": "World Cup quarter-final",
+        "note": "Kane scored one penalty and missed the second"
+      }
+    },
+    {
+      "text": "Now the alternate world. Same years, but Kane wears the blue of France.",
       "scene": {
         "type": "person",
         "person": "kanefra",
-        "label": "Same years, other side of the Channel",
-        "mood": "flat"
+        "label": "Alternate world · France",
+        "mood": "happy"
       }
     },
     {
-      "text": "They won the World Cup in twenty eighteen, beating Croatia four-two in Moscow.",
+      "text": "In 2018, France win the World Cup, four-two against Croatia in Moscow.",
+      "say": "In twenty eighteen, France win the World Cup, four-two against Croatia in Moscow.",
       "scene": {
         "type": "score",
         "home": "fra",
         "away": "cro",
         "hs": 4,
         "as": 2,
-        "date": "15 July 2018",
-        "comp": "World Cup final"
+        "date": "15 July 2018 · Luzhniki, Moscow",
+        "comp": "World Cup final",
+        "note": "Champions of the world for the second time"
       }
     },
     {
-      "text": "Then the Nations League in twenty twenty-one.",
+      "text": "Then the Nations League in 2021. That's two trophies Kane never got.",
+      "say": "Then the Nations League in twenty twenty-one. That's two trophies Kane never got.",
       "scene": {
         "type": "trophies",
+        "kicker": "France · 2015 to 2026",
+        "title": "Two trophies",
         "items": [
           {
             "kind": "worldcup",
@@ -163,86 +209,83 @@
       }
     },
     {
-      "text": "Plus two more finals: Euro twenty sixteen and the World Cup in Qatar.",
+      "text": "And in Qatar's final, France drew three-three with Argentina, and lost on penalties.",
       "scene": {
-        "type": "list",
-        "title": "France since Kane's debut",
-        "rows": [
-          {
-            "name": "World Cup 2018",
-            "value": "WON",
-            "club": "fra",
-            "hl": true
-          },
-          {
-            "name": "Nations League 2021",
-            "value": "WON",
-            "club": "fra",
-            "hl": true
-          },
-          {
-            "name": "Euro 2016",
-            "value": "Final",
-            "club": "fra"
-          },
-          {
-            "name": "World Cup 2022",
-            "value": "Final",
-            "club": "fra"
-          }
-        ]
+        "type": "score",
+        "home": "arg",
+        "away": "fra",
+        "hs": 3,
+        "as": 3,
+        "date": "18 December 2022 · Lusail",
+        "comp": "World Cup final",
+        "ft": "AFTER EXTRA TIME",
+        "note": "Mbappé hat-trick · Argentina win 4-2 on penalties"
       }
     },
     {
-      "text": "And in Qatar it was France who knocked England out, in the quarter-finals.",
+      "text": "In our world, it's the last minute of extra time. Griezmann crosses, and Kane heads the winner.",
+      "say": "In our world, it's the last minute of extra time. Greezman crosses, and Kane heads the winner.",
       "scene": {
-        "type": "text",
-        "heading": "QATAR 2022",
-        "body": "Quarter-final: England 1, France 2. France go on to the final."
+        "type": "gameclip",
+        "parts": [
+          [
+            "work/footage/ns-kane-france/kane-final-2022/tv",
+            5,
+            125
+          ]
+        ],
+        "caption": "ALTERNATE WORLD",
+        "captionColor": "#ffd23f",
+        "popup": {
+          "home": "fra",
+          "away": "arg",
+          "hs0": 3,
+          "as0": 3,
+          "hs": 4,
+          "as": 3,
+          "scorer": "Kane",
+          "assist": "Griezmann"
+        },
+        "goalAt": 2.03
       }
     },
     {
-      "text": "So in this alternate world, Kane is France's number nine.",
+      "text": "Real Kane: zero trophies. French Kane: two, maybe three. And no penalty in Qatar to miss.",
       "scene": {
         "type": "whatif",
-        "title": "Kane's international trophies",
+        "title": "Same years, different passport",
         "real": {
-          "label": "England (real)",
-          "value": "0"
+          "label": "England",
+          "value": "0 trophies"
         },
         "alt": {
-          "label": "France (imagined)",
-          "value": "2"
+          "label": "France",
+          "value": "3 trophies?"
         }
       }
     },
     {
-      "text": "A World Cup winner's medal, a Nations League, and maybe Qatar ends differently too.",
-      "scene": {
-        "type": "quote",
-        "person": "kanefra",
-        "text": "Finally. A trophy."
-      }
-    },
-    {
-      "text": "Would Kane swap his England goals for a World Cup? Tell me in the comments.",
+      "text": "Would you swap ninety-one England goals for a World Cup? Tell us in the comments.",
       "scene": {
         "type": "versus",
-        "title": "Same striker, different passport",
+        "title": "Which Kane?",
         "left": {
           "person": "kane",
           "label": "England",
-          "value": "0"
+          "value": "0",
+          "sub": "trophies"
         },
         "right": {
           "person": "kanefra",
           "label": "France",
-          "value": "2"
+          "value": "3",
+          "sub": "trophies?",
+          "win": true
         }
       }
     },
     {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "text": "Follow for more, and play Road to Ballon d'Or.",
       "scene": {
         "type": "cta"
       }

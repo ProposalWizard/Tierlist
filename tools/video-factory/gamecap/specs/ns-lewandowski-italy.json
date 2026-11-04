@@ -1,0 +1,47 @@
+{
+  "_about": "ns-lewandowski-italy. Clip 1 (real): Aleksandar Trajkovski's long-range shot, Italy 0-1 North Macedonia, World Cup play-off semi-final, Renzo Barbera, Palermo, 24 March 2022, 90+2', a right-footed strike from outside the box that crept inside the post past Donnarumma (FIGC, Sports Mole, RTE). Clip 2 (ALTERNATE WORLD, imagined): Lewandowski for Italy heads in against North Macedonia earlier in the same game. Italy wore blue. North Macedonia's colours assumed red; keeper kits assumed.",
+  "teams": {
+    "home": { "name": "Italy", "short": "ITA", "kit": { "shirt": "#1F5FBF", "shorts": "#FFFFFF", "socks": "#1F5FBF" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "North Macedonia", "short": "MKD", "kit": { "shirt": "#D20000", "shorts": "#D20000", "socks": "#D20000" }, "keeperKit": { "shirt": "#2BB673", "shorts": "#0B3D2A", "socks": "#2BB673" }, "popupTrim": "#FFE600" }
+  },
+  "people": {
+    "lewandowski": { "name": "Robert Lewandowski", "skin": "#f0c6a6", "hair": "#4a3324" },
+    "berardi":     { "name": "Domenico Berardi", "skin": "#e8b994", "hair": "#1d1512" },
+    "insigne":     { "name": "Lorenzo Insigne", "skin": "#e8b994", "hair": "#1d1512" },
+    "barella":     { "name": "Nicolo Barella", "skin": "#e8b994", "hair": "#1d1512" },
+    "jorginho":    { "name": "Jorginho", "skin": "#e2b08a", "hair": "#1d1512" },
+    "bonucci":     { "name": "Leonardo Bonucci", "skin": "#e8b994", "hair": "#2a1d15" },
+    "mancini":     { "name": "Gianluca Mancini", "skin": "#f2c9a8", "hair": "#2a1d15" },
+    "donnarumma":  { "name": "Gianluigi Donnarumma", "skin": "#e8b994", "hair": "#1d1512" },
+    "trajkovski":  { "name": "Aleksandar Trajkovski", "skin": "#efc4a3", "hair": "#1d1512" },
+    "elmas":       { "name": "Eljif Elmas", "skin": "#e2b08a", "hair": "#1d1512" },
+    "velkovski":   { "name": "Darko Velkovski", "skin": "#efc4a3", "hair": "#2a1d15" },
+    "musliu":      { "name": "Visar Musliu", "skin": "#efc4a3", "hair": "#2a1d15" },
+    "dimitrievski":{ "name": "Stole Dimitrievski", "skin": "#efc4a3", "hair": "#2a1d15" }
+  },
+  "clips": [
+    {
+      "id": "trajkovski-2022",
+      "kind": "long_range", "attacking": "away",
+      "scorer": "trajkovski", "assister": "elmas",
+      "defenders": ["jorginho", "bonucci", "mancini"], "keeper": "donnarumma",
+      "minute": 92, "minuteLabel": "90+2", "scoreBefore": [0, 0], "scoreAfter": [0, 1],
+      "night": true, "celebration": "knee_slide", "popupTheirs": false,
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "scorerSpot": [2, 25], "finish": "ground", "goalSide": "left", "height": "low" },
+      "seed": "traj-a"
+    },
+    {
+      "id": "lewy-italy-header",
+      "kind": "header", "attacking": "home",
+      "scorer": "lewandowski", "assister": "berardi",
+      "defenders": ["velkovski", "musliu", "elmas"], "keeper": "dimitrievski",
+      "teammates": ["insigne", "barella"],
+      "minute": 70, "scoreBefore": [0, 0], "scoreAfter": [1, 0],
+      "night": true, "celebration": "arms_out",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "cross", "side": "right", "swing": "in", "scorerSpot": [-0.5, 7], "finish": "header", "height": "mid" },
+      "seed": "lewy-ita-a"
+    }
+  ]
+}

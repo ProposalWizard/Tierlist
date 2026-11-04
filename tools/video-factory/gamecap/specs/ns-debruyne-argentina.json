@@ -1,0 +1,32 @@
+{
+  "_about": "ns-debruyne-argentina (ALTERNATE WORLD, imagined): De Bruyne in Argentina's dark-blue away shirt scores in the 2014 World Cup final against Germany at the Maracana (real final: Germany 1-0 aet, Gotze 113'). Argentina wore their dark blue change kit, Germany white (FIFA, Wikipedia). Messi plays the pass. Keeper kits assumed.",
+  "teams": {
+    "home": { "name": "Argentina", "short": "ARG", "kit": { "shirt": "#1C2A56", "shorts": "#1C2A56", "socks": "#1C2A56" }, "keeperKit": { "shirt": "#2BB673", "shorts": "#0B3D2A", "socks": "#2BB673" }, "popupTrim": "#75AADB" },
+    "away": { "name": "Germany", "short": "GER", "kit": { "shirt": "#F4F4F4", "shorts": "#F4F4F4", "socks": "#F4F4F4" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#111111" }
+  },
+  "people": {
+    "kdb":      { "name": "Kevin De Bruyne", "skin": "#f3c9a8", "hair": "#b5651d", "popupName": "De Bruyne" },
+    "messi":    { "name": "Lionel Messi", "skin": "#e8b994", "hair": "#3a2516" },
+    "higuain":  { "name": "Gonzalo Higuain", "skin": "#e2b08a", "hair": "#1d1512" },
+    "lavezzi":  { "name": "Ezequiel Lavezzi", "skin": "#d9a57e", "hair": "#1d1512" },
+    "hummels":  { "name": "Mats Hummels", "skin": "#efc4a3", "hair": "#4a3324" },
+    "boateng":  { "name": "Jerome Boateng", "skin": "#6b4430", "hair": "#0d0a09" },
+    "lahm":     { "name": "Philipp Lahm", "skin": "#f0c6a6", "hair": "#5b4030" },
+    "schweini": { "name": "Bastian Schweinsteiger", "skin": "#f0c6a6", "hair": "#8a6a48" },
+    "neuer":    { "name": "Manuel Neuer", "skin": "#f2c9a8", "hair": "#b08a5a" }
+  },
+  "clips": [
+    {
+      "id": "kdb-final-2014",
+      "kind": "long_range", "attacking": "home",
+      "scorer": "kdb", "assister": "messi",
+      "defenders": ["schweini", "hummels", "boateng", "lahm"], "keeper": "neuer",
+      "teammates": ["higuain", "lavezzi"],
+      "minute": 108, "scoreBefore": [0, 0], "scoreAfter": [1, 0],
+      "night": true, "celebration": "knee_slide",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "scorerSpot": [4, 22], "finish": "ground", "goalSide": "left", "height": "low" },
+      "seed": "kdb-arg-a"
+    }
+  ]
+}
