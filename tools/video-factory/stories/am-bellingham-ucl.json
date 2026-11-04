@@ -118,7 +118,7 @@
       "scene": {
         "type": "title",
         "heading": "JUDE BELLINGHAM",
-        "sub": "23 years, 128 days old",
+        "sub": "23 years, 128 days",
         "pill": "AGE-MATCH",
         "person": "jude",
         "club": "rma"
@@ -126,7 +126,7 @@
     },
     {
       "text": "He was twenty when he played his first Clásico. One-nil down at Montjuïc, he did this from thirty yards.",
-      "say": "He was twenty, when he played his first Clasico. One nil down at Moonjooeek, he did this, from thirty yards.",
+      "say": "He was twenty, when he played his first Klasseeko. One nil down at Moonjooeek, he did this, from thirty yards.",
       "scene": {
         "type": "gameclip",
         "caption": "30 YARDS, TOP CORNER",
@@ -164,7 +164,7 @@
     },
     {
       "text": "Then, in stoppage time, the winner. Two goals in his first Clásico.",
-      "say": "Then, in stoppage time, the winner. Two goals, in his first Clasico.",
+      "say": "Then, in stoppage time, the winner. Two goals, in his first Klasseeko.",
       "scene": {
         "type": "score",
         "home": "fcb",
@@ -191,30 +191,6 @@
           {
             "kind": "bigears",
             "label": "Champions League"
-          }
-        ],
-        "person": "jude"
-      }
-    },
-    {
-      "text": "Today, he has fifty-four league goals in two hundred and thirty-one games.",
-      "say": "Today, he has fifty four league goals, in two hundred and thirty one games.",
-      "scene": {
-        "type": "stats",
-        "kicker": "Jude Bellingham",
-        "title": "League career so far",
-        "items": [
-          {
-            "n": "54",
-            "l": "goals"
-          },
-          {
-            "n": "231",
-            "l": "games"
-          },
-          {
-            "n": "3",
-            "l": "clubs"
           }
         ],
         "person": "jude"
