@@ -1,0 +1,31 @@
+{
+  "_about": "ns-haaland-argentina, real goal: Haaland's header, Norway 2-1 Brazil, 2026 World Cup round of 16, MetLife Stadium, 5 July 2026, 79th minute. Schjelderup's looping cross from the left; Haaland rose above Gabriel Magalhaes and headed down past Alisson (AP, Reuters via NST, beIN). Kits assumed: Norway red/white/blue, Brazil yellow/blue. Keeper kits assumed.",
+  "teams": {
+    "home": { "name": "Norway", "short": "NOR", "kit": { "shirt": "#C8102E", "shorts": "#FFFFFF", "socks": "#00205B" }, "keeperKit": { "shirt": "#2BB673", "shorts": "#0B3D2A", "socks": "#2BB673" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Brazil", "short": "BRA", "kit": { "shirt": "#FEDD00", "shorts": "#0B3FA8", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#2E2E2E", "shorts": "#2E2E2E", "socks": "#2E2E2E" }, "popupTrim": "#0B9A3C" }
+  },
+  "people": {
+    "haaland":     { "name": "Erling Haaland", "skin": "#f2c9a8", "hair": "#d8b878" },
+    "schjelderup": { "name": "Andreas Schjelderup", "skin": "#f2c9a8", "hair": "#8a6a48" },
+    "odegaard":    { "name": "Martin Odegaard", "skin": "#f0c6a6", "hair": "#4a3324" },
+    "sorloth":     { "name": "Alexander Sorloth", "skin": "#f0c6a6", "hair": "#4a3324" },
+    "gabriel":     { "name": "Gabriel Magalhaes", "skin": "#8a5a3c", "hair": "#120d0a" },
+    "marquinhos":  { "name": "Marquinhos", "skin": "#d39e78", "hair": "#120d0a" },
+    "casemiro":    { "name": "Casemiro", "skin": "#c98e66", "hair": "#120d0a" },
+    "alisson":     { "name": "Alisson", "skin": "#efc4a3", "hair": "#3a2a1e" }
+  },
+  "clips": [
+    {
+      "id": "haaland-brazil-header",
+      "kind": "header", "attacking": "home",
+      "scorer": "haaland", "assister": "schjelderup",
+      "defenders": ["gabriel", "marquinhos", "casemiro"], "keeper": "alisson",
+      "teammates": ["sorloth", "odegaard"],
+      "minute": 79, "scoreBefore": [0, 0], "scoreAfter": [1, 0],
+      "night": true, "celebration": "statue",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "cross", "side": "left", "swing": "in", "scorerSpot": [0, 7.5], "finish": "header", "height": "low" },
+      "seed": "haaland-bra-a"
+    }
+  ]
+}

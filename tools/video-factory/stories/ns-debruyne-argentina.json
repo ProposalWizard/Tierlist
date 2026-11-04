@@ -2,38 +2,420 @@
   "id": "ns-debruyne-argentina",
   "series": "What if the countries were swapped?",
   "title": "What if De Bruyne was Argentinian?",
+  "v2": true,
   "sources": [
     "https://en.wikipedia.org/wiki/Kevin_De_Bruyne",
-    "https://www.sortiraparis.com/en/what-to-do-in-paris/sport-wellness/articles/349129-world-cup-2026-all-results-and-the-final-score",
-    "https://www.beinsports.com/en-us/soccer/fifa-world-cup-2026/articles/will-kevin-de-bruyne-start-for-belgium-against-spain-in-the-2026-fifa-world-cup-quarterfinals-2026-07-10",
-    "https://www.beinsports.com/en-us/soccer/articles/lionel-messi-s-titles-with-the-argentina-national-team-2026-10-06",
-    "https://copaamerica.com/en/news/copa-america-2021-argentina-champions-after-28-years",
-    "https://www.uefa.com/finalissima/news/0273-14b9ca5ef678-b78dc74dcc88-1000/",
-    "https://www.khaleejtimes.com/sports/fifa-world-cup/spain-celebrate-glory-argentina-heartbreak-unrest?amp=1"
+    "https://www.rbfa.be/en/news/kevin-de-bruyne",
+    "https://en.wikipedia.org/wiki/Argentina_v_Belgium_(2014_FIFA_World_Cup)",
+    "https://www.theguardian.com/football/2014/jul/05/argentina-belgium-world-cup-quarter-final-match-report",
+    "https://en.wikipedia.org/wiki/2018_FIFA_World_Cup_Group_G",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/2018russia",
+    "https://en.wikipedia.org/wiki/2018_FIFA_World_Cup_knockout_stage",
+    "https://www.tribuneindia.com/news/sports/fifa-world-cup-2026-de-bruyne-beyond-proud-of-team-despite-belgiums-quarter-final-loss-to-spain/",
+    "https://www.football-espana.net/2026/07/10/spain-belgium-world-cup-2026-quarterfinal",
+    "https://en.wikipedia.org/wiki/Argentina_national_football_team",
+    "https://www.uefa.com/news-media/news/0274-1530b1b4ce21-6e2c8d75cde4-1000--argentina-3-0-italy-finalissima-report/",
+    "https://en.wikipedia.org/wiki/2014_FIFA_World_Cup_final",
+    "https://www.theguardian.com/football/2014/jul/13/germany-argentina-world-cup-final-match-report"
   ],
-  "checked": "De Bruyne's Belgium debut 11 Aug 2010 v Finland; Belgium third at the 2018 World Cup (2-0 v England); in the 2026 squad, Belgium lost the QF 2-1 to Spain (Wikipedia + Sortiraparis + beIN preview). Argentina since 2010: Copa América 2021, Finalissima 2022, World Cup 2022, Copa América 2024 (beIN + Copa America + UEFA); 2026 final lost 1-0 aet to Spain (Sortiraparis + Khaleej Times). Alternate world clearly imagined.",
+  "checked": "De Bruyne's Belgium debut 11 Aug 2010 v Finland, aged 19, at Genk (Wikipedia, RBFA). 2014 QF Argentina 1-0 Belgium, Higuain, Brasilia, 5 July (Wikipedia, Guardian). 2018 Group G: Belgium 3 wins, 9-2; England 6; Tunisia 3; Panama 0 (Wikipedia, FIFA). 2018 QF Brazil 1-2 Belgium in Kazan with a De Bruyne goal; SF France 1-0 Belgium; Belgium third, their best finish (Wikipedia knockout stage, FIFA). Later exits: Euro 2020 QF Italy 2-1, 2022 group, Euro 2024 R16 France 1-0, 2026 QF Spain 2-1 in Los Angeles (Wikipedia, Tribune India, Football Espana). Argentina since 2010: Copa America 2021, Finalissima 2022 (3-0 Italy), World Cup 2022, Copa America 2024 (Wikipedia, UEFA). 2014 final Germany 1-0 Argentina aet, Gotze 113', Maracana, 13 July (Wikipedia, Guardian). Argentina wore dark blue in that final. The De Bruyne-for-Argentina goal is an imagined alternate world and is labelled so. Gameplay: gamecap spec ns-debruyne-argentina.",
   "clubs": {
-    "bel": { "name": "Belgium", "short": "BEL", "c1": "#c8102e", "c2": "#000000", "pattern": "plain" },
-    "arg": { "name": "Argentina", "short": "ARG", "c1": "#75aadb", "c2": "#ffffff", "pattern": "stripes" },
-    "esp": { "name": "Spain", "short": "ESP", "c1": "#c60b1e", "c2": "#ffc400", "pattern": "plain" }
+    "bel": {
+      "name": "Belgium",
+      "short": "BEL",
+      "c1": "#e30613",
+      "c2": "#111111",
+      "pattern": "plain",
+      "badge": false
+    },
+    "arg": {
+      "name": "Argentina",
+      "short": "ARG",
+      "c1": "#75aadb",
+      "c2": "#ffffff",
+      "pattern": "stripes",
+      "badge": false
+    },
+    "eng": {
+      "name": "England",
+      "short": "ENG",
+      "c1": "#ffffff",
+      "c2": "#1b2a4a",
+      "pattern": "plain",
+      "badge": false
+    },
+    "tun": {
+      "name": "Tunisia",
+      "short": "TUN",
+      "c1": "#e70013",
+      "c2": "#ffffff",
+      "pattern": "plain",
+      "badge": false
+    },
+    "pan": {
+      "name": "Panama",
+      "short": "PAN",
+      "c1": "#d21034",
+      "c2": "#005293",
+      "pattern": "plain",
+      "badge": false
+    },
+    "bra": {
+      "name": "Brazil",
+      "short": "BRA",
+      "c1": "#fedd00",
+      "c2": "#0b9a3c",
+      "pattern": "plain",
+      "badge": false
+    },
+    "fra": {
+      "name": "France",
+      "short": "FRA",
+      "c1": "#1b2a55",
+      "c2": "#e1000f",
+      "pattern": "plain",
+      "badge": false
+    },
+    "ger": {
+      "name": "Germany",
+      "short": "GER",
+      "c1": "#ffffff",
+      "c2": "#111111",
+      "pattern": "plain",
+      "badge": false
+    }
   },
   "people": {
-    "kdb": { "name": "Kevin De Bruyne", "skin": "pink", "hair": ["crop", "#d9a066"], "beard": "stubble", "beardCol": "#c98a55", "kit": "bel" },
-    "kdbarg": { "name": "Kevin De Bruyne", "skin": "pink", "hair": ["crop", "#d9a066"], "beard": "stubble", "beardCol": "#c98a55", "kit": "arg" },
-    "messi": { "name": "Lionel Messi", "skin": "light", "hair": ["side", "#4a3220"], "beard": "full", "beardCol": "#4a3220", "kit": "arg" }
+    "kdb": {
+      "name": "Kevin De Bruyne",
+      "skin": "pink",
+      "hair": [
+        "side",
+        "#c0702a"
+      ],
+      "beard": "stubble",
+      "beardCol": "#b5651d",
+      "kit": "bel"
+    },
+    "kdbarg": {
+      "name": "Kevin De Bruyne",
+      "skin": "pink",
+      "hair": [
+        "side",
+        "#c0702a"
+      ],
+      "beard": "stubble",
+      "beardCol": "#b5651d",
+      "kit": "arg"
+    }
   },
   "lines": [
-    { "text": "What if Kevin De Bruyne had been born in Argentina, passing to Messi every game?", "scene": { "type": "title", "heading": "KEVIN DE BRUYNE", "sub": "Belgium · since 2010", "pill": "WHAT IF HE WAS ARGENTINIAN?", "person": "kdb" } },
-    { "text": "Real world first. De Bruyne made his Belgium debut in August twenty ten.", "scene": { "type": "person", "person": "kdb", "label": "Debut v Finland, 2010", "mood": "flat" } },
-    { "text": "He was the brain of Belgium's golden generation. Their best? Third at the twenty eighteen World Cup.", "scene": { "type": "stats", "title": "Belgium with De Bruyne", "items": [ { "n": "3rd", "l": "World Cup 2018" }, { "n": "0", "l": "trophies" } ], "person": "kdb" } },
-    { "text": "This summer, Spain beat Belgium two-one in the World Cup quarter-finals.", "scene": { "type": "score", "home": "esp", "away": "bel", "hs": 2, "as": 1, "date": "10 July 2026", "comp": "World Cup quarter-final" } },
-    { "text": "Sixteen years, and not a single trophy.", "scene": { "type": "stamp", "text": "GOLDEN GENERATION, NO GOLD", "person": "kdb", "color": "red" } },
-    { "text": "Now look at Argentina in exactly the same years.", "scene": { "type": "timeline", "items": [ { "year": "2021", "label": "Copa América" }, { "year": "2022", "label": "Finalissima" }, { "year": "2022", "label": "World Cup" }, { "year": "2024", "label": "Copa América" } ] } },
-    { "text": "Two Copa Américas, a Finalissima and a World Cup.", "scene": { "type": "trophies", "items": [ { "kind": "cup", "label": "Copa América 2021" }, { "kind": "cup", "label": "Finalissima 2022" }, { "kind": "worldcup", "label": "World Cup 2022" }, { "kind": "cup", "label": "Copa América 2024" } ] } },
-    { "text": "So in this alternate world, De Bruyne plays behind Messi.", "scene": { "type": "versus", "title": "The dream midfield (imagined)", "left": { "person": "kdbarg", "label": "The passer", "value": "KDB" }, "right": { "person": "messi", "label": "The finisher", "value": "MESSI" } } },
-    { "text": "Four trophies instead of none. And a World Cup winner's medal.", "scene": { "type": "whatif", "title": "De Bruyne's senior trophies", "real": { "label": "Belgium (real)", "value": "0" }, "alt": { "label": "Argentina (imagined)", "value": "4" } } },
-    { "text": "Then this summer's final, lost one-nil to Spain after extra time. Does a De Bruyne pass change that?", "scene": { "type": "quote", "person": "kdbarg", "text": "One through ball. That's all I needed." } },
-    { "text": "Belgian legend, or Argentine world champion? Which version do you pick? Comment below.", "scene": { "type": "person", "person": "kdbarg", "label": "ALTERNATE WORLD", "mood": "happy" } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    {
+      "text": "In 2014, Argentina knocked De Bruyne out of the World Cup. What if he'd been on their side?",
+      "say": "In twenty fourteen, Argentina knocked Deh Broynuh out of the World Cup. What if he'd been on their side?",
+      "scene": {
+        "type": "title",
+        "heading": "KEVIN DE BRUYNE",
+        "sub": "Belgium · since 2010",
+        "pill": "WHAT IF HE WAS ARGENTINIAN?",
+        "person": "kdb",
+        "club": "bel"
+      }
+    },
+    {
+      "text": "Real world first. August 2010: a nineteen-year-old from Genk makes his Belgium debut.",
+      "say": "Real world first. August, twenty ten: a nineteen-year-old from Genk makes his Belgium debut.",
+      "scene": {
+        "type": "news",
+        "section": "Belgium",
+        "headline": "Genk teenager De Bruyne makes his Belgium debut",
+        "standfirst": "The nineteen-year-old midfielder plays his first international, against Finland.",
+        "date": "11 August 2010",
+        "byline": "Knowitball recap",
+        "club": "bel",
+        "person": "kdb",
+        "nav": [
+          "Football",
+          "Belgium",
+          "Internationals"
+        ]
+      }
+    },
+    {
+      "text": "Four years later, his first World Cup. Higuaín scores, and Argentina knock Belgium out.",
+      "say": "Four years later, his first World Cup. Eegwyeen scores, and Argentina knock Belgium out.",
+      "scene": {
+        "type": "score",
+        "home": "arg",
+        "away": "bel",
+        "hs": 1,
+        "as": 0,
+        "date": "5 July 2014 · Brasília",
+        "comp": "World Cup quarter-final",
+        "note": "Higuaín, eighth minute"
+      }
+    },
+    {
+      "text": "In 2018, the golden generation wins every group game.",
+      "say": "In twenty eighteen, the golden generation wins every group game.",
+      "scene": {
+        "type": "table",
+        "season": "World Cup 2018 · Group G",
+        "title": "Final table",
+        "rows": [
+          {
+            "pos": 1,
+            "club": "bel",
+            "p": 3,
+            "w": 3,
+            "d": 0,
+            "l": 0,
+            "gd": 7,
+            "pts": 9,
+            "hl": true
+          },
+          {
+            "pos": 2,
+            "club": "eng",
+            "p": 3,
+            "w": 2,
+            "d": 0,
+            "l": 1,
+            "gd": 5,
+            "pts": 6
+          },
+          {
+            "pos": 3,
+            "club": "tun",
+            "p": 3,
+            "w": 1,
+            "d": 0,
+            "l": 2,
+            "gd": -3,
+            "pts": 3
+          },
+          {
+            "pos": 4,
+            "club": "pan",
+            "p": 3,
+            "w": 0,
+            "d": 0,
+            "l": 3,
+            "gd": -9,
+            "pts": 0
+          }
+        ],
+        "zones": [
+          {
+            "kind": "up",
+            "rows": [
+              1,
+              2
+            ],
+            "label": "Last 16"
+          },
+          {
+            "kind": "down",
+            "rows": [
+              3,
+              4
+            ],
+            "label": "Out"
+          }
+        ],
+        "gap": {
+          "from": 1,
+          "to": 2,
+          "label": "3 pts",
+          "at": 0.45
+        }
+      }
+    },
+    {
+      "text": "Then De Bruyne scores a rocket, and Belgium knock out Brazil.",
+      "say": "Then Deh Broynuh scores a rocket, and Belgium knock out Brazil.",
+      "scene": {
+        "type": "score",
+        "home": "bra",
+        "away": "bel",
+        "hs": 1,
+        "as": 2,
+        "date": "6 July 2018 · Kazan",
+        "comp": "World Cup quarter-final",
+        "note": "De Bruyne's long shot makes it 2-0"
+      }
+    },
+    {
+      "text": "But France win the semi-final, one-nil. Third place is the best Belgium ever get.",
+      "scene": {
+        "type": "score",
+        "home": "fra",
+        "away": "bel",
+        "hs": 1,
+        "as": 0,
+        "date": "10 July 2018 · St Petersburg",
+        "comp": "World Cup semi-final",
+        "note": "Umtiti header · Belgium finish third"
+      }
+    },
+    {
+      "text": "After that? Out to Italy, out in the group, out to France, and this summer, out to Spain.",
+      "scene": {
+        "type": "timeline",
+        "kicker": "Belgium with De Bruyne",
+        "title": "Every exit since",
+        "items": [
+          {
+            "year": "2021",
+            "label": "Euro QF · Italy 2-1"
+          },
+          {
+            "year": "2022",
+            "label": "World Cup · out in the group"
+          },
+          {
+            "year": "2024",
+            "label": "Euro last 16 · France 1-0"
+          },
+          {
+            "year": "2026",
+            "label": "World Cup QF · Spain 2-1",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Sixteen years with Belgium. Trophies: none.",
+      "scene": {
+        "type": "stamp",
+        "text": "0 TROPHIES",
+        "sub": "Belgium · 2010 to 2026",
+        "person": "kdb",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Now the alternate world. Same years, but De Bruyne wears sky blue and white.",
+      "say": "Now the alternate world. Same years, but Deh Broynuh wears sky blue and white.",
+      "scene": {
+        "type": "person",
+        "person": "kdbarg",
+        "label": "Alternate world · Argentina",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Argentina in those years: two Copa Américas, a Finalissima and a World Cup.",
+      "say": "Argentina in those years: two Copa Americas, a Feenaleesima, and a World Cup.",
+      "scene": {
+        "type": "trophies",
+        "kicker": "Argentina · 2010 to 2026",
+        "title": "Four trophies",
+        "items": [
+          {
+            "kind": "cup",
+            "label": "Copa América 2021"
+          },
+          {
+            "kind": "goldcup",
+            "label": "Finalissima 2022"
+          },
+          {
+            "kind": "worldcup",
+            "label": "World Cup 2022"
+          },
+          {
+            "kind": "cup",
+            "label": "Copa América 2024"
+          }
+        ]
+      }
+    },
+    {
+      "text": "But they lost the big one in 2014. Germany, the Maracanã, Götze in extra time.",
+      "say": "But they lost the big one in twenty fourteen. Germany, the Marakana, Gertsuh in extra time.",
+      "scene": {
+        "type": "score",
+        "home": "ger",
+        "away": "arg",
+        "hs": 1,
+        "as": 0,
+        "date": "13 July 2014 · Maracanã",
+        "comp": "World Cup final",
+        "ft": "AFTER EXTRA TIME",
+        "note": "Götze, 113th minute"
+      }
+    },
+    {
+      "text": "In our world, Messi finds De Bruyne on the edge of the box, and he doesn't miss.",
+      "say": "In our world, Messi finds Deh Broynuh on the edge of the box, and he doesn't miss.",
+      "scene": {
+        "type": "gameclip",
+        "parts": [
+          [
+            "work/footage/ns-debruyne-argentina/kdb-final-2014/high",
+            20,
+            150
+          ]
+        ],
+        "caption": "ALTERNATE WORLD",
+        "captionColor": "#ffd23f",
+        "popup": {
+          "home": "arg",
+          "away": "ger",
+          "hs0": 0,
+          "as0": 0,
+          "hs": 1,
+          "as": 0,
+          "scorer": "De Bruyne",
+          "assist": "Messi"
+        },
+        "goalAt": 2.03
+      }
+    },
+    {
+      "text": "Real De Bruyne: no trophies. Argentine De Bruyne: four, and two World Cups.",
+      "say": "Real Deh Broynuh: no trophies. Argentine Deh Broynuh: four, and two World Cups.",
+      "scene": {
+        "type": "whatif",
+        "title": "Same years, different passport",
+        "real": {
+          "label": "Belgium",
+          "value": "0 trophies"
+        },
+        "alt": {
+          "label": "Argentina",
+          "value": "5 trophies?"
+        }
+      }
+    },
+    {
+      "text": "Belgian legend, or Argentine world champion? Which De Bruyne would you pick?",
+      "say": "Belgian legend, or Argentine world champion? Which Deh Broynuh would you pick?",
+      "scene": {
+        "type": "versus",
+        "title": "Which De Bruyne?",
+        "left": {
+          "person": "kdb",
+          "label": "Belgium",
+          "value": "0",
+          "sub": "trophies"
+        },
+        "right": {
+          "person": "kdbarg",
+          "label": "Argentina",
+          "value": "5",
+          "sub": "trophies?",
+          "win": true
+        }
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or.",
+      "scene": {
+        "type": "cta"
+      }
+    }
   ]
 }
