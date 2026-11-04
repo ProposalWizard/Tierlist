@@ -206,7 +206,19 @@
      "scorer": "Henry"
     },
     "caption": "Level",
-    "parts": []
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/henry-leicester-2004/henry-pen/tv",
+      0,
+      27
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/henry-leicester-2004/henry-pen/high",
+      27,
+      119
+     ]
+    ],
+    "goalAt": 1.37
    }
   },
   {

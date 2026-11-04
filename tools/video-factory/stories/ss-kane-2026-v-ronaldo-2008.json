@@ -235,7 +235,19 @@
      "assist": "Brown"
     },
     "caption": "Moscow",
-    "parts": []
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/ronaldo-moscow-2008/ronaldo-header/tv",
+      13,
+      61
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/ronaldo-moscow-2008/ronaldo-header/high",
+      27,
+      118
+     ]
+    ],
+    "goalAt": 2.03
    }
   },
   {
@@ -307,7 +319,19 @@
      "assist": "Díaz"
     },
     "caption": "Hat-trick",
-    "parts": []
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/kane-pokal-2026/kane-hattrick/tv",
+      42,
+      90
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/kane-pokal-2026/kane-hattrick/high",
+      90,
+      181
+     ]
+    ],
+    "goalAt": 2.03
    }
   },
   {

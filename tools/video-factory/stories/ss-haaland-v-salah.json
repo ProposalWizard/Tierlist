@@ -200,7 +200,19 @@
      "scorer": "Salah"
     },
     "caption": "Puskas winner",
-    "parts": []
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/salah-everton-2017/salah-curler/tv",
+      11,
+      59
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/salah-everton-2017/salah-curler/high",
+      59,
+      158
+     ]
+    ],
+    "goalAt": 2.3
    }
   },
   {

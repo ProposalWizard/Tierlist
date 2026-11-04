@@ -144,7 +144,19 @@
      "scorer": "Lewandowski"
     },
     "caption": "Four in 14 minutes",
-    "parts": []
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/lewandowski-redstar-2019/lewa-redstar/tv",
+      0,
+      44
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/lewandowski-redstar-2019/lewa-redstar/high",
+      44,
+      131
+     ]
+    ],
+    "goalAt": 1.77
    }
   },
   {
@@ -283,7 +295,19 @@
      "assist": "Díaz"
     },
     "caption": "Cup final hat-trick",
-    "parts": []
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/kane-pokal-2026/kane-hattrick/tv",
+      42,
+      90
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/kane-pokal-2026/kane-hattrick/high",
+      90,
+      181
+     ]
+    ],
+    "goalAt": 2.03
    }
   },
   {

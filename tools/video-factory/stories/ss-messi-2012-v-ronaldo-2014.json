@@ -202,7 +202,19 @@
      "assist": "Iniesta"
     },
     "caption": "Goal 86",
-    "parts": []
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/messi-betis-2012/messi-86/tv",
+      11,
+      59
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/messi-betis-2012/messi-86/high",
+      59,
+      158
+     ]
+    ],
+    "goalAt": 2.3
    }
   },
   {
@@ -305,7 +317,19 @@
      "scorer": "Ronaldo"
     },
     "caption": "La Décima",
-    "parts": []
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/ronaldo-lisbon-2014/ronaldo-pen/tv",
+      0,
+      27
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/ronaldo-lisbon-2014/ronaldo-pen/high",
+      27,
+      119
+     ]
+    ],
+    "goalAt": 1.37
    }
   },
   {

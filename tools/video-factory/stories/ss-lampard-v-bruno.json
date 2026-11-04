@@ -171,7 +171,19 @@
      "scorer": "Lampard"
     },
     "caption": "Four against Villa",
-    "parts": []
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/lampard-villa-2010/lampard-strike/tv",
+      11,
+      59
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/lampard-villa-2010/lampard-strike/high",
+      59,
+      164
+     ]
+    ],
+    "goalAt": 2.5
    }
   },
   {
@@ -344,7 +356,19 @@
      "assist": "Fernandes"
     },
     "caption": "Twenty-one",
-    "parts": []
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/bruno-brighton-2026/bruno-corner/tv",
+      1,
+      67
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/bruno-brighton-2026/bruno-corner/high",
+      27,
+      115
+     ]
+    ],
+    "goalAt": 2.53
    }
   },
   {
