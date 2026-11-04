@@ -1,65 +1,50 @@
 {
   "id": "pr-ballondor-2027-november",
-  "series": "Power ranking",
+  "series": "Power rankings",
   "title": "Ballon d'Or 2027 power ranking: November",
+  "v2": true,
   "sources": [
-    "https://www.uefa.com/uefachampionsleague/news/02a9-218f8e669a0a-debba167a199-1000--champions-league-top-scorer-ermedin-demirovic-serhou-guir/",
+    "https://www.goal.com/en/originals/ballon-dor-2027-power-rankings/blt3857c7aa817c72a7",
+    "https://www.livescore.com/en/news/football/more/2027-ballon-dor-power-rankings-yamal-raphinha-mbappe-in-three-way-tussle-planet-football/",
+    "https://www.90min.de/ballon-dor-2027-die-ersten-favoriten-im-grossen-ranking",
+    "https://www.aljazeera.com/sports/2026/10/21/kvaratskhelia-dembele-and-marquinhos-out-injured-after-psgs-win",
+    "https://www.radiox.co.uk/news/sport/khvicha-kvaratskhelia-psg-forward-set-for-sur/",
+    "https://www.uefa.com/uefachampionsleague/news/02a9-218f8e669a0a-debba167a199-1000--champions-league-top-scorer-harry-kane-erling-haaland-part/",
     "https://foot-africa.com/en/news/champions-league-the-top-scorers-standings-after-matchday-3-1395029/",
     "https://www.nbcsports.com/soccer/news/premier-league-2026-27-scoring-leaders-the-race-for-the-golden-boot-begins",
     "https://www.soccernews.com/english-premier-league/golden-boot/",
-    "https://www.nbcsports.com/soccer/news/premier-league-table-for-2026-27-season",
-    "https://caughtoffside.com/2026/10/20/premier-league-club-relaxed-manager-future-man-united",
-    "https://santamariatimes.com/ap/sports/ferran-torres-scores-in-extra-time-as-spain-beats-argentina-1-0-to-win-the/article_a8e21e5c-8c25-54ce-b065-7ebb7225d56f.html",
+    "https://bulinews.com/revealed-full-men-ballon-top-10-rankings",
+    "https://yen.com.gh/sports/football/314521-ballon-d-2026-official-top-10-rankings-harry-kane-beats-mbappe-yamal/",
+    "https://www.beinsports.com/en-us/soccer/articles-video/lamine-yamal-wins-third-kopa-trophy-at-2026-ballon-d-or-awards-2026-10-26",
     "https://www.nbcmiami.com/world-cup/spain-argentina-final-messi-yamal-score/3835882/?amp=1",
     "https://amp.foxsports.com/stories/soccer/2026-fifa-world-cup-every-individual-award-winner",
     "https://blog.wego.com/who-won-the-fifa-world-cup/",
-    "https://m.allfootballapp.com/news/La-Liga/Kick-Off-Harry-Kane-wins-2026-Ballon-dOr-Yamal-wins-Kopa-Trophy-three-times-in-a-row/5736216",
-    "https://www.beinsports.com/en-us/soccer/articles/live-ballon-d-or-2026-winners-and-all-awards-2026-10-26",
-    "https://bulinews.com/revealed-full-men-ballon-top-10-rankings",
-    "https://blueprint.ng/?p=856976",
-    "https://yen.com.gh/sports/football/314521-ballon-d-2026-official-top-10-rankings-harry-kane-beats-mbappe-yamal/",
-    "https://www.soccernews.com/kane-scoops-first-ballon-dor-after-pipping-yamal-mbappe/407033/",
-    "https://www.chelseafc.com/en/news/article/joao-pedro-wins-premier-league-award",
-    "https://www.si.com/soccer/premier-league-player-manager-of-the-month-august-2026-winners-revealed",
-    "https://www.si.com/soccer/premier-league-player-manager-month-september-2026-winners-revealed",
-    "https://foot-africa.com/en/news/premier-league-september-player-of-the-month-revealed-official-1373621/"
+    "data/ballondor/rankings.json (ballondor.com year rankings, in this repo)"
   ],
-  "checked": "Ranked on real 2026-27 form plus 2026 honours, never game ratings. UCL: Kane, Haaland, Guirassy 4; Mbappe 3; hat-tricks for Foden (MD3) and Ferran Torres; Yamal leads assists (UEFA, Foot Africa). PL goals and table (NBC, Soccernews). WC final Torres 106' (AP, NBC); Rodri Golden Ball (Fox, Wego). Kopa x3 for Yamal (All Football, beIN). Ballon d'Or 2026 order (Bulinews, Blueprint).",
+  "checked": "Ranked on research only, never game ratings: three expert power rankings averaged (Goal 28 Oct 2026, 90min.de 27 Oct 2026, Planet Football early season), 10 points for 1st down to 1 for 10th, ties to the player on more lists. Totals: Raphinha 28, Yamal 27, Mbappé 25, Kane 16, Haaland 13 (3 lists), Olise 13 (2), Doué 12, Vitinha 7, Rodri 5, Bellingham 4 (2 lists). Kvaratskhelia (5) left out: ruptured ACL in PSG's 4-2 win over Barcelona, 20 Oct (Al Jazeera, Radio X). Raphinha thriving as a centre-forward and top of two lists (Goal, Planet Football, 90min). Yamal: World Cup winner (NBC, AP), 3rd in the 2026 Ballon d'Or, third Kopa in a row (Bulinews, Yen, beIN). Mbappé 2nd in 2026, never won (Bulinews, Yen, ballondor.com). Kane and Haaland 4 Champions League goals each after matchday 3 (UEFA, Foot Africa); Haaland top Premier League scorer (NBC, Soccernews). Olise 9th in 2026 (Bulinews, Yen). Doué won the Champions League with PSG in 2025 and 2026 (Goal, 90min). Vitinha 3rd in 2025 (ballondor.com data). Rodri World Cup 2026 Golden Ball (Fox, Wego). Bellingham back to his best (90min, Planet Football). Rodri drawn in Spain colours: sources disagree on his club. No game clip: no goal this season is described closely enough to recreate. No 'you' anywhere.",
   "clubs": {
     "bar": {
       "name": "Barcelona",
       "short": "BAR",
       "c1": "#a50044",
       "c2": "#004d98",
-      "pattern": "stripes"
+      "pattern": "stripes",
+      "badge": "FC Barcelona"
+    },
+    "rma": {
+      "name": "Real Madrid",
+      "short": "RMA",
+      "c1": "#ffffff",
+      "c2": "#febe10",
+      "pattern": "plain"
     },
     "bay": {
       "name": "Bayern Munich",
       "short": "FCB",
       "c1": "#dc052d",
       "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "bvb": {
-      "name": "Borussia Dortmund",
-      "short": "BVB",
-      "c1": "#fde100",
-      "c2": "#000000",
-      "pattern": "plain"
-    },
-    "che": {
-      "name": "Chelsea",
-      "short": "CHE",
-      "c1": "#034694",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "liv": {
-      "name": "Liverpool",
-      "short": "LIV",
-      "c1": "#c8102e",
-      "c2": "#ffffff",
-      "pattern": "plain"
+      "pattern": "plain",
+      "badge": "FC Bayern München"
     },
     "mci": {
       "name": "Manchester City",
@@ -68,277 +53,427 @@
       "c2": "#ffffff",
       "pattern": "plain"
     },
-    "rma": {
-      "name": "Real Madrid",
-      "short": "RMA",
-      "c1": "#ffffff",
-      "c2": "#febe10",
-      "pattern": "plain"
+    "psg": {
+      "name": "Paris Saint-Germain",
+      "short": "PSG",
+      "c1": "#004170",
+      "c2": "#da291c",
+      "pattern": "centre"
+    },
+    "esp": {
+      "name": "Spain",
+      "short": "ESP",
+      "c1": "#c60b1e",
+      "c2": "#ffc400",
+      "pattern": "plain",
+      "badge": false
     }
   },
   "people": {
-    "haaland": {
-      "name": "Erling Haaland",
-      "skin": "pink",
+    "raphinha": {
+      "name": "Raphinha",
+      "skin": "tan",
       "hair": [
         "slick",
-        "#e3cf8f"
-      ],
-      "beard": "none",
-      "kit": "mci"
-    },
-    "kane": {
-      "name": "Harry Kane",
-      "skin": "light",
-      "hair": [
-        "crop",
-        "#6b4a2e"
+        "#1a1410"
       ],
       "beard": "stubble",
-      "kit": "bay"
+      "beardCol": "#1a1410",
+      "kit": "bar"
     },
     "yamal": {
       "name": "Lamine Yamal",
       "skin": "brown",
       "hair": [
         "curlytop",
-        "#151515"
+        "#0d0a09"
       ],
       "beard": "none",
       "kit": "bar"
+    },
+    "mbappe": {
+      "name": "Kylian Mbappé",
+      "skin": "brown",
+      "hair": [
+        "buzz",
+        "#0d0a09"
+      ],
+      "beard": "none",
+      "kit": "rma"
+    },
+    "kane": {
+      "name": "Harry Kane",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#6b4a2e"
+      ],
+      "beard": "stubble",
+      "beardCol": "#6b4a2e",
+      "kit": "bay"
+    },
+    "haaland": {
+      "name": "Erling Haaland",
+      "skin": "light",
+      "hair": [
+        "slick",
+        "#e3c77f"
+      ],
+      "beard": "none",
+      "kit": "mci"
+    },
+    "olise": {
+      "name": "Michael Olise",
+      "skin": "brown",
+      "hair": [
+        "crop",
+        "#0d0a09"
+      ],
+      "beard": "none",
+      "kit": "bay"
+    },
+    "doue": {
+      "name": "Désiré Doué",
+      "skin": "dark",
+      "hair": [
+        "crop",
+        "#0d0a09"
+      ],
+      "beard": "none",
+      "kit": "psg"
+    },
+    "kvara": {
+      "name": "Khvicha Kvaratskhelia",
+      "skin": "light",
+      "hair": [
+        "messy",
+        "#2a1d15"
+      ],
+      "beard": "stubble",
+      "beardCol": "#2a1d15",
+      "kit": "psg"
     }
   },
   "lines": [
     {
-      "text": "The twenty twenty-seven Ballon d'Or race has already started. Here is the top ten right now, on real form, not video game ratings.",
+      "text": "Kane has barely put the Ballon d'Or down, and the 2027 race has already started. Here is the top ten right now.",
+      "say": "Kane has barely put the Ballon d'Or down, and the twenty twenty seven race has already started. Here is the top ten right now.",
       "scene": {
         "type": "title",
         "heading": "BALLON D'OR 2027",
-        "sub": "Power ranking · November",
-        "pill": "REAL FORM ONLY",
+        "sub": "Power ranking",
+        "pill": "NOVEMBER",
+        "person": "raphinha",
+        "club": "bar"
+      }
+    },
+    {
+      "text": "No video game ratings. We added up three expert rankings, from Goal, 90min and Planet Football.",
+      "say": "No video game ratings. We added up three expert rankings, from Goal, ninety min, and Planet Football.",
+      "scene": {
+        "type": "timeline",
+        "kicker": "How we ranked it",
+        "title": "Three expert lists, added up",
+        "items": [
+          {
+            "year": "GOAL",
+            "label": "28 Oct · Yamal first",
+            "club": "bar"
+          },
+          {
+            "year": "90MIN",
+            "label": "27 Oct · Raphinha first",
+            "club": "bar"
+          },
+          {
+            "year": "PF",
+            "label": "Planet Football · Raphinha first",
+            "club": "bar"
+          },
+          {
+            "year": "PTS",
+            "label": "10 for 1st, down to 1 for 10th",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "One name had to go. Kvaratskhelia tore a cruciate ligament against Barcelona. His season is in doubt.",
+      "say": "One name had to go. Kvaratskeleea tore a cruciate ligament against Barcelona. His season is in doubt.",
+      "scene": {
+        "type": "news",
+        "section": "Champions League",
+        "headline": "Kvaratskhelia ruptures ACL in PSG win",
+        "standfirst": "The Georgian is hurt in the 4-2 victory over Barcelona and needs surgery. Dembélé and Marquinhos are injured too.",
+        "date": "20 October 2026",
+        "byline": "Knowitball recap",
+        "person": "kvara",
+        "club": "psg",
+        "nav": [
+          "Football",
+          "Champions League",
+          "PSG",
+          "Injuries"
+        ]
+      }
+    },
+    {
+      "text": "Ten, Jude Bellingham, back to his best. Nine, Rodri, the World Cup's Golden Ball. Eight, Vitinha, third in twenty twenty-five.",
+      "say": "Ten, Jude Bellingham, back to his best. Nine, Rodree, the World Cup's Golden Ball. Eight, Veeteenya, third in twenty twenty five.",
+      "scene": {
+        "type": "list",
+        "kicker": "Ballon d'Or 2027 · November",
+        "title": "Ten to eight",
+        "rows": [
+          {
+            "pos": 10,
+            "name": "Jude Bellingham",
+            "value": "4 pts",
+            "club": "rma"
+          },
+          {
+            "pos": 9,
+            "name": "Rodri",
+            "value": "5 pts",
+            "club": "esp"
+          },
+          {
+            "pos": 8,
+            "name": "Vitinha",
+            "value": "7 pts",
+            "club": "psg"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Seven, Désiré Doué, with two Champions Leagues in a row. Six, Michael Olise, ninth last month.",
+      "say": "Seven, Dezeeray Dooay, with two Champions Leagues in a row. Six, Michael Ohleesay, ninth last month.",
+      "scene": {
+        "type": "list",
+        "kicker": "Ballon d'Or 2027 · November",
+        "title": "Ten to six",
+        "rows": [
+          {
+            "pos": 10,
+            "name": "Jude Bellingham",
+            "value": "4 pts",
+            "club": "rma"
+          },
+          {
+            "pos": 9,
+            "name": "Rodri",
+            "value": "5 pts",
+            "club": "esp"
+          },
+          {
+            "pos": 8,
+            "name": "Vitinha",
+            "value": "7 pts",
+            "club": "psg"
+          },
+          {
+            "pos": 7,
+            "name": "Désiré Doué",
+            "value": "12 pts",
+            "club": "psg",
+            "hl": true
+          },
+          {
+            "pos": 6,
+            "name": "Michael Olise",
+            "value": "13 pts",
+            "club": "bay",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Five, Erling Haaland. Top scorer in the Premier League again, and four Champions League goals.",
+      "say": "Five, Erling Hohland. Top scorer in the Premier League again, and four Champions League goals.",
+      "scene": {
+        "type": "stats",
+        "kicker": "Number five",
+        "title": "Erling Haaland",
+        "items": [
+          {
+            "n": "1st",
+            "l": "Premier League scorers"
+          },
+          {
+            "n": "4",
+            "l": "Champions League goals"
+          }
+        ],
         "person": "haaland"
       }
     },
     {
-      "text": "Ten, Phil Foden, with a Champions League hat-trick. Nine, João Pedro, five league goals. Eight, Serhou Guirassy, four in Europe.",
-      "scene": {
-        "type": "list",
-        "title": "Power ranking",
-        "rows": [
-          {
-            "pos": 10,
-            "name": "Phil Foden",
-            "value": "UCL hat-trick",
-            "club": "mci",
-            "hl": true
-          },
-          {
-            "pos": 9,
-            "name": "João Pedro",
-            "value": "5 PL goals",
-            "club": "che",
-            "hl": true
-          },
-          {
-            "pos": 8,
-            "name": "Serhou Guirassy",
-            "value": "4 UCL goals",
-            "club": "bvb",
-            "hl": true
-          }
-        ]
-      }
-    },
-    {
-      "text": "Seven, Rodri, the World Cup's Golden Ball. Six, Alexander Isak, six league goals for Liverpool.",
-      "scene": {
-        "type": "list",
-        "title": "Power ranking",
-        "rows": [
-          {
-            "pos": 10,
-            "name": "Phil Foden",
-            "value": "UCL hat-trick",
-            "club": "mci"
-          },
-          {
-            "pos": 9,
-            "name": "João Pedro",
-            "value": "5 PL goals",
-            "club": "che"
-          },
-          {
-            "pos": 8,
-            "name": "Serhou Guirassy",
-            "value": "4 UCL goals",
-            "club": "bvb"
-          },
-          {
-            "pos": 7,
-            "name": "Rodri",
-            "value": "WC Golden Ball",
-            "club": "mci",
-            "hl": true
-          },
-          {
-            "pos": 6,
-            "name": "Alexander Isak",
-            "value": "6 PL goals",
-            "club": "liv",
-            "hl": true
-          }
-        ]
-      }
-    },
-    {
-      "text": "Five, Ferran Torres, who won the World Cup final and has a Champions League hat-trick. Four, Kylian Mbappé, runner-up last month.",
-      "scene": {
-        "type": "list",
-        "title": "Power ranking",
-        "rows": [
-          {
-            "pos": 10,
-            "name": "Phil Foden",
-            "value": "UCL hat-trick",
-            "club": "mci"
-          },
-          {
-            "pos": 9,
-            "name": "João Pedro",
-            "value": "5 PL goals",
-            "club": "che"
-          },
-          {
-            "pos": 8,
-            "name": "Serhou Guirassy",
-            "value": "4 UCL goals",
-            "club": "bvb"
-          },
-          {
-            "pos": 7,
-            "name": "Rodri",
-            "value": "WC Golden Ball",
-            "club": "mci"
-          },
-          {
-            "pos": 6,
-            "name": "Alexander Isak",
-            "value": "6 PL goals",
-            "club": "liv"
-          },
-          {
-            "pos": 5,
-            "name": "Ferran Torres",
-            "value": "WC final winner",
-            "club": "bar",
-            "hl": true
-          },
-          {
-            "pos": 4,
-            "name": "Kylian Mbappé",
-            "value": "2nd in 2026",
-            "club": "rma",
-            "hl": true
-          }
-        ]
-      }
-    },
-    {
-      "text": "Number three. Lamine Yamal.",
-      "scene": {
-        "type": "person",
-        "person": "yamal",
-        "label": "NUMBER 3",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "Third in the Ballon d'Or at nineteen, a third Kopa Trophy in a row, and the Champions League's top assist maker so far.",
-      "scene": {
-        "type": "trophies",
-        "items": [
-          {
-            "kind": "worldcup",
-            "label": "World Cup"
-          },
-          {
-            "kind": "ballon",
-            "label": "Kopa x3"
-          }
-        ],
-        "person": "yamal"
-      }
-    },
-    {
-      "text": "Number two. The man holding the trophy, Harry Kane.",
-      "scene": {
-        "type": "person",
-        "person": "kane",
-        "label": "NUMBER 2",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "Four Champions League goals already, and last season's Gerd Müller Trophy for the most goals.",
+      "text": "Four, the holder. Harry Kane, also on four in Europe, and chasing two in a row.",
       "scene": {
         "type": "stats",
-        "title": "Kane, 2026-27",
+        "kicker": "Number four",
+        "title": "Harry Kane",
         "items": [
           {
-            "n": "4",
-            "l": "UCL goals"
+            "n": "2026",
+            "l": "Ballon d'Or winner"
           },
           {
-            "n": "1",
-            "l": "Ballon d'Or"
+            "n": "4",
+            "l": "Champions League goals"
           }
         ],
         "person": "kane"
       }
     },
     {
-      "text": "And number one. Erling Haaland.",
+      "text": "Now it gets tight. The top three are split by three points.",
       "scene": {
-        "type": "person",
-        "person": "haaland",
-        "label": "NUMBER 1",
-        "mood": "happy",
-        "stamp": "NUMBER 1"
-      }
-    },
-    {
-      "text": "Top of the Premier League scoring chart, and four Champions League goals in just two games.",
-      "scene": {
-        "type": "stats",
-        "title": "Haaland, 2026-27",
+        "type": "bars",
+        "kicker": "Points from three expert lists",
+        "title": "The top four",
+        "unit": "pts",
+        "max": 30,
         "items": [
           {
-            "n": "4",
-            "l": "UCL goals"
+            "label": "Raphinha",
+            "value": 28,
+            "person": "raphinha",
+            "hl": true
           },
           {
-            "n": "2",
-            "l": "UCL games"
+            "label": "Lamine Yamal",
+            "value": 27,
+            "person": "yamal"
           },
           {
-            "n": "1st",
-            "l": "PL scorers"
+            "label": "Kylian Mbappé",
+            "value": 25,
+            "person": "mbappe"
+          },
+          {
+            "label": "Harry Kane",
+            "value": 16,
+            "person": "kane"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Three, Kylian Mbappé. Second last month, and still waiting for his first.",
+      "say": "Three, Kilian Embapay. Second last month, and still waiting for his first.",
+      "scene": {
+        "type": "stats",
+        "kicker": "Number three",
+        "title": "Kylian Mbappé",
+        "items": [
+          {
+            "n": "2nd",
+            "l": "Ballon d'Or 2026"
+          },
+          {
+            "n": "0",
+            "l": "Ballon d'Ors won"
           }
         ],
-        "person": "haaland"
+        "person": "mbappe"
       }
     },
     {
-      "text": "Too early to call? Who is missing from this list?",
+      "text": "Two, Lamine Yamal. A World Cup winner, third in the vote, and a third Kopa Trophy in a row. At nineteen.",
+      "say": "Two, Lameen Yamal. A World Cup winner, third in the vote, and a third Kopa Trophy in a row. At nineteen.",
       "scene": {
-        "type": "stamp",
-        "text": "TOO EARLY?",
-        "person": "yamal",
-        "color": "white"
+        "type": "trophies",
+        "kicker": "Number two",
+        "title": "Lamine Yamal",
+        "items": [
+          {
+            "kind": "worldcup",
+            "label": "World Cup 2026"
+          },
+          {
+            "kind": "ballon",
+            "label": "3rd in 2026"
+          },
+          {
+            "kind": "award",
+            "label": "Kopa Trophy",
+            "count": 3
+          }
+        ],
+        "person": "yamal"
       }
     },
     {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "text": "And number one. Raphinha.",
+      "say": "And number one. Hafeenya.",
+      "scene": {
+        "type": "person",
+        "person": "raphinha",
+        "label": "Number one",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Barcelona moved him to centre-forward, and he is flying. Two of the three lists have him top.",
+      "scene": {
+        "type": "compare",
+        "title": "Raphinha v Yamal",
+        "left": {
+          "person": "raphinha",
+          "name": "Raphinha",
+          "sub": "Barcelona"
+        },
+        "right": {
+          "person": "yamal",
+          "name": "Yamal",
+          "sub": "Barcelona"
+        },
+        "rows": [
+          {
+            "label": "Points",
+            "l": 28,
+            "r": 27
+          },
+          {
+            "label": "Lists topped",
+            "l": 2,
+            "r": 1
+          },
+          {
+            "label": "Lowest place",
+            "l": 3,
+            "r": 3,
+            "lower": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "One point between Barcelona team-mates. Who finishes the season top?",
+      "scene": {
+        "type": "versus",
+        "title": "One point in it",
+        "left": {
+          "person": "raphinha",
+          "label": "Raphinha",
+          "value": "28",
+          "sub": "Barcelona",
+          "win": true
+        },
+        "right": {
+          "person": "yamal",
+          "label": "Yamal",
+          "value": "27",
+          "sub": "Barcelona"
+        }
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or.",
       "scene": {
         "type": "cta"
       }

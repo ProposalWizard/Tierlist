@@ -2,44 +2,119 @@
   "id": "re-england-captain",
   "series": "Three rules to the top",
   "title": "Three rules to England's greatest captain",
+  "v2": true,
   "sources": [
     "https://en.wikipedia.org/wiki/List_of_England_national_football_team_captains",
     "https://www.englandfootballonline.com/TeamCapt/Captains.html",
+    "https://en.wikipedia.org/wiki/1966_FIFA_World_Cup_final",
+    "https://africa.espn.com/football/story/_/id/37482041/geoff-hurst-hat-trick-england-beat-west-germany-win-world-cup",
+    "https://www.sportsmole.co.uk/football/england/feature/1966-world-cup-final-the-story-of-the-game_401327.html",
     "https://en.wikipedia.org/wiki/UEFA_Euro_1996",
+    "https://www.fourfourtwo.com/features/euro-96-complete-history-england-germany-semi-final-penalty-shootout-alan-shearer-gareth-southgate",
+    "https://www.90min.com/posts/england-euro-96-semi-final-defeat-germany",
+    "https://en.wikipedia.org/wiki/UEFA_Euro_2020_final",
+    "https://en.wikipedia.org/wiki/UEFA_Euro_2024_final",
+    "https://www.sportinglife.com/football/news/england-1-2-argentina-lionel-messi-late-show-breaks-three-lions-hearts/233244",
     "https://www.thescore.com/news/3566852",
-    "https://www.malaymail.com/amp/news/sports/2026/07/16/kane-gutted-after-england-crash-out-of-world-cup/227775",
-    "https://bulinews.com/revealed-full-men-ballon-top-10-rankings",
-    "https://blueprint.ng/?p=856976",
-    "https://yen.com.gh/sports/football/314521-ballon-d-2026-official-top-10-rankings-harry-kane-beats-mbappe-yamal/",
-    "https://www.soccernews.com/kane-scoops-first-ballon-dor-after-pipping-yamal-mbappe/407033/",
-    "https://en.wikipedia.org/wiki/Ballon_d%27Or",
+    "https://www.radiox.co.uk/news/uk-world/harry-kane-ends-englands-25-year-wait-for-bal/",
+    "https://www.fanatik.com.tr/en/harry-kane-wins-the-2026-ballon-dor-2642422",
     "data/ballondor/rankings.json (ballondor.com year rankings, in this repo)"
   ],
-  "checked": "Semi-finals as captain: Moore 1966 WC and Euro 1968, Adams Euro 96, Kane 2018 WC, Euro 2020 and 2024 finals, 2026 WC semi lost 2-1 to Argentina (Wikipedia captains list, englandfootballonline, theScore, Malay Mail). No semi as captain for Wright, Robson (injured 1990), Shearer, Beckham, Gerrard, Terry, Rooney. Moore 2nd in 1970 Ballon d'Or (ballondor.com data); Kane won 2026 (Bulinews, Soccernews).",
+  "checked": "Captains and tournaments: Wright, Robson, Beckham, Gerrard and Rooney never led England out in a tournament semi (Wikipedia captains list, englandfootballonline; Robson was injured before the 1990 semi). Semis as captain: Moore 1966 WC and Euro 1968; Adams Euro 96; Kane 2018 WC, Euro 2020, Euro 2024, 2026 WC. Euro 96 semi: Shearer header from a corner in the 3rd minute, Kuntz equalised, 1-1 after extra time, Southgate's penalty saved, Germany won 6-5 (UEFA, FourFourTwo, 90min). 1966 final: Moore's long pass, Hurst left foot into the top corner, 4-2 after extra time (ESPN, Sports Mole, Wikipedia). Kane finals: Euro 2020 lost to Italy on penalties, Euro 2024 lost 2-1 to Spain in Berlin (Wikipedia both finals). 2026 WC semi lost 2-1 to Argentina (Sporting Life, theScore). Moore 4th in 1966 and 2nd in 1970 behind Gerd Müller, Riva 3rd (ballondor.com data). Kane won the 2026 Ballon d'Or in October, first Englishman since Owen in 2001 (Radio X, Fanatik, ballondor.com data for 2001). No 'you' anywhere.",
   "clubs": {
     "eng": {
       "name": "England",
       "short": "ENG",
       "c1": "#ffffff",
       "c2": "#cf081f",
-      "pattern": "plain"
+      "pattern": "plain",
+      "badge": false
+    },
+    "engg": {
+      "name": "England",
+      "short": "ENG",
+      "c1": "#5a6170",
+      "c2": "#ffffff",
+      "pattern": "plain",
+      "badge": false
     },
     "ger": {
       "name": "Germany",
       "short": "GER",
       "c1": "#ffffff",
-      "c2": "#000000",
-      "pattern": "plain"
+      "c2": "#111111",
+      "pattern": "plain",
+      "badge": false
+    },
+    "wger": {
+      "name": "West Germany",
+      "short": "FRG",
+      "c1": "#ffffff",
+      "c2": "#111111",
+      "pattern": "plain",
+      "badge": false
     },
     "ita": {
       "name": "Italy",
       "short": "ITA",
       "c1": "#0064aa",
       "c2": "#ffffff",
+      "pattern": "plain",
+      "badge": false
+    },
+    "esp": {
+      "name": "Spain",
+      "short": "ESP",
+      "c1": "#c60b1e",
+      "c2": "#ffc400",
+      "pattern": "plain",
+      "badge": false
+    },
+    "bay": {
+      "name": "Bayern Munich",
+      "short": "FCB",
+      "c1": "#dc052d",
+      "c2": "#ffffff",
+      "pattern": "plain",
+      "badge": "FC Bayern München"
+    },
+    "whu": {
+      "name": "West Ham United",
+      "short": "WHU",
+      "c1": "#7a263a",
+      "c2": "#1bb1e7",
       "pattern": "plain"
+    },
+    "cag": {
+      "name": "Cagliari",
+      "short": "CAG",
+      "c1": "#c8102e",
+      "c2": "#0c2340",
+      "pattern": "halves"
     }
   },
   "people": {
+    "moore": {
+      "name": "Bobby Moore",
+      "skin": "light",
+      "hair": [
+        "tidy",
+        "#d8b46a"
+      ],
+      "beard": "none",
+      "kit": "eng"
+    },
+    "kane": {
+      "name": "Harry Kane",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#6b4a2e"
+      ],
+      "beard": "stubble",
+      "beardCol": "#6b4a2e",
+      "kit": "eng"
+    },
     "adams": {
       "name": "Tony Adams",
       "skin": "pink",
@@ -48,54 +123,56 @@
         "#3b2a1e"
       ],
       "beard": "none",
-      "kit": "eng"
+      "kit": "engg"
     },
-    "kane_eng": {
-      "name": "Harry Kane",
+    "muller": {
+      "name": "Gerd Müller",
       "skin": "light",
       "hair": [
-        "crop",
-        "#6b4a2e"
-      ],
-      "beard": "stubble",
-      "kit": "eng"
-    },
-    "moore": {
-      "name": "Bobby Moore",
-      "skin": "pink",
-      "hair": [
-        "side",
-        "#d9b26a"
+        "messy",
+        "#2a1d15"
       ],
       "beard": "none",
-      "kit": "eng"
+      "kit": "bay"
+    },
+    "riva": {
+      "name": "Luigi Riva",
+      "skin": "olive",
+      "hair": [
+        "side",
+        "#1a1410"
+      ],
+      "beard": "none",
+      "kit": "cag"
     }
   },
   "lines": [
     {
-      "text": "Who is England's greatest ever captain? Ten skippers. Three rules. One armband left.",
+      "text": "Eight men. One armband. Three rules to find England's greatest ever captain.",
       "scene": {
         "type": "title",
-        "heading": "ENGLAND CAPTAIN",
-        "sub": "The greatest of all time",
-        "pill": "THREE RULES",
-        "person": "moore"
+        "heading": "GREATEST CAPTAIN",
+        "sub": "England",
+        "pill": "WHO SURVIVES?",
+        "person": "kane",
+        "club": "eng"
       }
     },
     {
-      "text": "Moore, Wright, Robson, Adams, Shearer, Beckham, Gerrard, Terry, Rooney and Kane.",
+      "text": "Wright, Moore, Robson, Adams, Beckham, Gerrard, Rooney and Kane.",
       "scene": {
         "type": "list",
-        "title": "Our ten captains",
+        "kicker": "The contenders",
+        "title": "England captains",
         "rows": [
-          {
-            "name": "Bobby Moore",
-            "value": "1960s-70s",
-            "club": "eng"
-          },
           {
             "name": "Billy Wright",
             "value": "1950s",
+            "club": "eng"
+          },
+          {
+            "name": "Bobby Moore",
+            "value": "1960s",
             "club": "eng"
           },
           {
@@ -109,13 +186,13 @@
             "club": "eng"
           },
           {
-            "name": "Shearer · Beckham",
+            "name": "David Beckham",
             "value": "2000s",
             "club": "eng"
           },
           {
-            "name": "Gerrard · Terry",
-            "value": "2000s-10s",
+            "name": "Steven Gerrard",
+            "value": "2010s",
             "club": "eng"
           },
           {
@@ -125,150 +202,305 @@
           },
           {
             "name": "Harry Kane",
-            "value": "2018-now",
-            "club": "eng"
+            "value": "2020s",
+            "club": "eng",
+            "hl": true
           }
         ]
       }
     },
     {
-      "text": "Rule one. You must have led England out in a tournament semi-final.",
+      "text": "Rule one. He must have led England out in a tournament semi-final.",
       "scene": {
-        "type": "text",
-        "heading": "RULE 1",
-        "body": "Must have captained England in a World Cup or Euros semi-final."
+        "type": "stamp",
+        "text": "RULE ONE",
+        "sub": "Led England out in a tournament semi-final",
+        "person": "kane",
+        "color": "white"
       }
     },
     {
-      "text": "Wright, Robson, Shearer, Beckham, Gerrard, Terry and Rooney never did. Seven gone.",
+      "text": "Wright, Robson, Beckham, Gerrard and Rooney never did. Five gone, just like that.",
+      "scene": {
+        "type": "list",
+        "kicker": "Rule one",
+        "title": "Never led England in a semi",
+        "rows": [
+          {
+            "name": "Billy Wright",
+            "value": "OUT",
+            "club": "eng"
+          },
+          {
+            "name": "Bryan Robson",
+            "value": "OUT",
+            "club": "eng"
+          },
+          {
+            "name": "David Beckham",
+            "value": "OUT",
+            "club": "eng"
+          },
+          {
+            "name": "Steven Gerrard",
+            "value": "OUT",
+            "club": "eng"
+          },
+          {
+            "name": "Wayne Rooney",
+            "value": "OUT",
+            "club": "eng"
+          }
+        ],
+        "stamp": "FIVE GONE"
+      }
+    },
+    {
+      "text": "Three survive. Moore in sixty-six, Adams at Euro ninety-six, and Kane, four times.",
+      "say": "Three survive. Moore in sixty six, Adams at Euro ninety six, and Kane, four times.",
+      "scene": {
+        "type": "timeline",
+        "kicker": "Semi-finals as captain",
+        "title": "Who led England that far",
+        "items": [
+          {
+            "year": "1966",
+            "label": "Moore · World Cup",
+            "club": "eng"
+          },
+          {
+            "year": "1996",
+            "label": "Adams · Euro 96",
+            "club": "eng"
+          },
+          {
+            "year": "2018",
+            "label": "Kane · World Cup",
+            "club": "eng",
+            "hl": true
+          },
+          {
+            "year": "2021",
+            "label": "Kane · Euro 2020",
+            "club": "eng",
+            "hl": true
+          },
+          {
+            "year": "2024",
+            "label": "Kane · Euro 2024",
+            "club": "eng",
+            "hl": true
+          },
+          {
+            "year": "2026",
+            "label": "Kane · World Cup",
+            "club": "eng",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Euro ninety-six. Wembley. Germany. Three minutes in, Shearer heads England in front.",
+      "say": "Euro ninety six. Wembley. Germany. Three minutes in, Shearer heads England in front.",
+      "scene": {
+        "type": "gameclip",
+        "parts": [
+          [
+            "work/gamecap/re-england-captain-96/shearer-1996/tv",
+            15,
+            62
+          ],
+          [
+            "work/gamecap/re-england-captain-96/shearer-1996/high",
+            20,
+            110
+          ]
+        ],
+        "popup": {
+          "home": "engg",
+          "away": "ger",
+          "homeName": "England",
+          "awayName": "Germany",
+          "hs0": 0,
+          "as0": 0,
+          "hs": 1,
+          "as": 0,
+          "scorer": "Shearer"
+        },
+        "caption": "3 MINUTES IN",
+        "captionColor": "#ffffff",
+        "goalAt": 2.17
+      }
+    },
+    {
+      "text": "Then Kuntz equalised. Penalties. Southgate's was saved, and Germany won six-five.",
+      "say": "Then Koonts equalised. Penalties. Southgate's was saved, and Germany won six five.",
+      "scene": {
+        "type": "score",
+        "home": "engg",
+        "away": "ger",
+        "hs": 1,
+        "as": 1,
+        "date": "26 June 1996 · Wembley",
+        "comp": "Euro 96 semi-final",
+        "ft": "AFTER EXTRA TIME",
+        "note": "Germany win 6-5 on penalties"
+      }
+    },
+    {
+      "text": "Rule two. He must have captained England in a major final. Adams never got there. Out.",
       "scene": {
         "type": "stamp",
-        "text": "NO SEMI",
+        "text": "RULE TWO",
+        "sub": "Captain in a major final · Adams is out",
+        "person": "adams",
         "color": "yellow"
       }
     },
     {
-      "text": "Three left. Moore, Adams at Euro ninety-six, and Kane, who has done it four times.",
+      "text": "Moore did. Extra time in sixty-six, and his long pass sends Hurst clear. Four-two. World champions.",
+      "say": "Moore did. Extra time in sixty six, and his long pass sends Hurst clear. Four two. World champions.",
       "scene": {
-        "type": "timeline",
-        "items": [
+        "type": "gameclip",
+        "parts": [
+          [
+            "work/gamecap/re-england-captain/hurst-1966/tv",
+            11,
+            60
+          ],
+          [
+            "work/gamecap/re-england-captain/hurst-1966/high",
+            60,
+            150
+          ]
+        ],
+        "popup": {
+          "home": "eng",
+          "away": "wger",
+          "homeName": "England",
+          "awayName": "W. Germany",
+          "hs0": 3,
+          "as0": 2,
+          "hs": 4,
+          "as": 2,
+          "scorer": "Hurst",
+          "assist": "Moore"
+        },
+        "caption": "WORLD CHAMPIONS",
+        "captionColor": "#ffd84a",
+        "goalAt": 3.1
+      }
+    },
+    {
+      "text": "Kane has led England in two finals. Italy on penalties, then Spain in Berlin. Two finals, two defeats.",
+      "scene": {
+        "type": "compare",
+        "title": "Captain on the big days",
+        "left": {
+          "person": "moore",
+          "name": "Moore",
+          "sub": "1966 to 1973"
+        },
+        "right": {
+          "person": "kane",
+          "name": "Kane",
+          "sub": "2018 to now"
+        },
+        "rows": [
           {
-            "year": "1966",
-            "label": "Moore"
+            "label": "Semi-finals",
+            "l": 2,
+            "r": 4
           },
           {
-            "year": "1996",
-            "label": "Adams"
+            "label": "Finals",
+            "l": 1,
+            "r": 2
           },
           {
-            "year": "2018",
-            "label": "Kane"
-          },
-          {
-            "year": "2021",
-            "label": "Kane"
-          },
-          {
-            "year": "2024",
-            "label": "Kane"
-          },
-          {
-            "year": "2026",
-            "label": "Kane"
+            "label": "Finals won",
+            "l": 1,
+            "r": 0
           }
         ]
       }
     },
     {
-      "text": "Rule two. You must have captained England in a major final.",
-      "scene": {
-        "type": "text",
-        "heading": "RULE 2",
-        "body": "Must have captained England in a World Cup or Euros final."
-      }
-    },
-    {
-      "text": "Adams lost that semi on penalties to Germany. He's out.",
+      "text": "Rule three. He must have won the Ballon d'Or.",
       "scene": {
         "type": "stamp",
-        "text": "OUT",
-        "person": "adams",
-        "color": "red"
+        "text": "RULE THREE",
+        "sub": "He must have won the Ballon d'Or",
+        "person": "moore",
+        "color": "yellow"
       }
     },
     {
-      "text": "Moore in nineteen sixty-six. Kane in two Euros finals.",
-      "scene": {
-        "type": "versus",
-        "title": "Finals as captain",
-        "left": {
-          "person": "moore",
-          "label": "Moore",
-          "value": "1"
-        },
-        "right": {
-          "person": "kane_eng",
-          "label": "Kane",
-          "value": "2"
-        }
-      }
-    },
-    {
-      "text": "Rule three. You must have won the Ballon d'Or.",
-      "scene": {
-        "type": "text",
-        "heading": "RULE 3",
-        "body": "Must have won the Ballon d'Or."
-      }
-    },
-    {
-      "text": "Moore came so close. Second in nineteen seventy, behind Gerd Müller.",
+      "text": "Moore came so close. Fourth in sixty-six, then second in nineteen seventy, behind Gerd Müller.",
+      "say": "Moore came so close. Fourth in sixty six, then second in nineteen seventy, behind Gaird Mewler.",
       "scene": {
         "type": "podium",
         "year": "1970",
-        "title": "Ballon d'Or 1970",
+        "title": "Ballon d'Or",
         "places": [
           {
-            "name": "Gerd Müller",
-            "club": "ger"
+            "person": "muller",
+            "club": "bay"
           },
           {
-            "person": "moore"
+            "person": "moore",
+            "club": "whu"
           },
           {
-            "name": "Luigi Riva",
-            "club": "ita"
+            "person": "riva",
+            "club": "cag"
           }
         ]
       }
     },
     {
-      "text": "Kane won it last month. So the rules hand the armband to Harry Kane.",
+      "text": "Then October twenty twenty-six. Kane won it. The first English winner since Michael Owen.",
+      "say": "Then October, twenty twenty six. Kane won it. The first English winner since Michael Owen.",
       "scene": {
-        "type": "person",
-        "person": "kane_eng",
-        "label": "THE LAST NAME LEFT",
-        "mood": "happy",
-        "stamp": "WINNER"
+        "type": "news",
+        "section": "Ballon d'Or",
+        "headline": "Kane ends England's 25-year Ballon d'Or wait",
+        "standfirst": "The Bayern and England striker beats Mbappé and Yamal to football's biggest individual prize, the first English winner since Michael Owen in 2001.",
+        "date": "October 2026",
+        "byline": "Knowitball recap",
+        "person": "kane",
+        "club": "bay",
+        "nav": [
+          "Football",
+          "Ballon d'Or",
+          "England",
+          "Bundesliga"
+        ]
       }
     },
     {
-      "text": "But Moore lifted the World Cup. Who's your greatest captain?",
+      "text": "So the rules hand the armband to Harry Kane. But only Moore has the medal that matters most.",
       "scene": {
-        "type": "whatif",
-        "title": "The big debate",
-        "real": {
-          "label": "Moore's World Cups",
-          "value": "1"
+        "type": "versus",
+        "title": "The rules v the medal",
+        "left": {
+          "person": "kane",
+          "label": "Kane",
+          "value": "2026",
+          "sub": "Ballon d'Or",
+          "win": true
         },
-        "alt": {
-          "label": "Kane's Ballon d'Ors",
-          "value": "1"
+        "right": {
+          "person": "moore",
+          "label": "Moore",
+          "value": "1966",
+          "sub": "World Cup"
         }
       }
     },
     {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "text": "Follow for more, and play Road to Ballon d'Or.",
       "scene": {
         "type": "cta"
       }
