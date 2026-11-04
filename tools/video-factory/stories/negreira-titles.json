@@ -1,286 +1,562 @@
 {
-  "id": "negreira-titles",
-  "series": "The Negreira case",
-  "title": "The nine titles fans ask about",
-  "sources": [
-    "https://en.wikipedia.org/wiki/List_of_Spanish_football_champions",
-    "https://www.topendsports.com/sport/soccer/list-league-la-liga.htm",
-    "https://en.wikipedia.org/wiki/Negreira_case",
-    "https://catalannews.com/society-science/item/barca-bribery-charges-dropped-in-negreira-case-barcelona-court-says",
-    "https://bdnews24.com/sport/rkh4dygb2t",
-    "https://africasoccer.com/?p=627678",
-    "https://www.dhakatribune.com/sport/football/306336/laporta-barca-never-bought-referees"
-  ],
-  "checked": "Every champion, runner-up and points total 2001-2018 matched between Wikipedia's list of Spanish champions and TopEndSports' winners list (winners); points from Wikipedia. Payment years 2001-2018 from Wikipedia + bdnews24. Framed as a question; no court has linked any result to the payments.",
-  "clubs": {
-    "bar": {
-      "name": "Barcelona",
-      "short": "FCB",
-      "c1": "#a50044",
-      "c2": "#004d98",
-      "pattern": "stripes"
-    },
-    "rma": {
-      "name": "Real Madrid",
-      "short": "RMA",
-      "c1": "#ffffff",
-      "c2": "#febe10",
-      "pattern": "plain"
-    },
-    "atm": {
-      "name": "Atlético Madrid",
-      "short": "ATM",
-      "c1": "#cb3524",
-      "c2": "#ffffff",
-      "pattern": "stripes"
-    }
+ "id": "negreira-titles",
+ "series": "The Negreira case",
+ "title": "The nine titles fans ask about",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/List_of_Spanish_football_champions",
+  "https://www.topendsports.com/sport/soccer/list-league-la-liga.htm",
+  "https://en.wikipedia.org/wiki/2009%E2%80%9310_La_Liga",
+  "https://en.wikipedia.org/wiki/2015%E2%80%9316_La_Liga",
+  "https://en.wikipedia.org/wiki/Negreira_case",
+  "https://www.aljazeera.com/sports/2026/10/3/what-is-fc-barcelonas-negreira-case-and-what-are-the-charges",
+  "https://www.goal.com/en-in/news/real-madrid-and-barcelona-s-dispute-continues-a-new-surprise-ignites-the-negreira-case/bltcf36cdd420530f84"
+ ],
+ "checked": "The nine Barça titles 2004-05, 05-06, 08-09, 09-10, 10-11, 12-13, 14-15, 15-16, 17-18 and runners-up from Wikipedia's champions list and TopEndSports' winners list. Points (84-80, 82-70, 87-78, 99-96, 96-92, 100-85, 94-92, 91-90, 93-79) from Wikipedia's champions table, the 2009-10 and 2015-16 tables from their Wikipedia season pages (full W/D/L/GD); margins arithmetic. Payments 2001-2018 (Al Jazeera, Wikipedia). Real Madrid asking for the nine titles to be stripped is a Spanish media report, quoted as such (Al Jazeera 3 Oct 2026). No court has linked a match or title to the payments (Al Jazeera, Goal, Wikipedia). Ronaldo joined Madrid in 2009 (well known; Wikipedia). No gameplay: no title-deciding goal in these seasons could be recreated like for like with confidence (kit patterns, unknown build-ups).",
+ "clubs": {
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "badge": "FC Barcelona"
   },
-  "people": {
-    "laporta": {
-      "name": "Joan Laporta",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#8a8a8a"
-      ],
-      "beard": "none",
-      "kit": "bar"
-    },
-    "negreira": {
-      "name": "José María Enríquez Negreira",
-      "skin": "light",
-      "hair": [
-        "bald",
-        "#d9d9d9"
-      ],
-      "beard": "none",
-      "kit": "suit"
-    }
+  "rma": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#febe10",
+   "pattern": "plain"
   },
-  "lines": [
-    {
-      "text": "Nine league titles. That's how many Barcelona won in the years they were paying Negreira's companies.",
-      "scene": {
-        "type": "title",
-        "heading": "THE NINE TITLES",
-        "sub": "La Liga · 2001 to 2018",
-        "pill": "THE QUESTION FANS ASK"
-      }
-    },
-    {
-      "text": "The payments to the referees' vice-president ran from two thousand and one to twenty eighteen.",
-      "scene": {
-        "type": "timeline",
-        "title": "The payment years",
-        "items": [
-          {
-            "year": "2001",
-            "label": "Payments begin"
-          },
-          {
-            "year": "2018",
-            "label": "Payments end"
-          },
-          {
-            "year": "2023",
-            "label": "Case opens"
-          },
-          {
-            "year": "2026",
-            "label": "No verdict"
-          }
-        ]
-      }
-    },
-    {
-      "text": "So fans keep asking one question. Who finished second in those seasons?",
-      "scene": {
-        "type": "person",
-        "person": "negreira",
-        "label": "THE QUESTION",
-        "mood": "flat"
-      }
-    },
-    {
-      "text": "Twenty oh five and twenty oh six: Barça champions, Real Madrid second both times.",
-      "scene": {
-        "type": "list",
-        "title": "Barça v runner-up",
-        "rows": [
-          {
-            "name": "2004-05 · Real Madrid 2nd",
-            "value": "84 v 80",
-            "club": "rma"
-          },
-          {
-            "name": "2005-06 · Real Madrid 2nd",
-            "value": "82 v 70",
-            "club": "rma"
-          },
-          {
-            "name": "2008-09 · Real Madrid 2nd",
-            "value": "87 v 78",
-            "club": "rma"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Then the Guardiola years. Twenty oh nine, twenty ten, twenty eleven. Madrid second every time.",
-      "scene": {
-        "type": "trophies",
-        "title": "Three in a row",
-        "items": [
-          {
-            "kind": "league",
-            "label": "2008-09"
-          },
-          {
-            "kind": "league",
-            "label": "2009-10"
-          },
-          {
-            "kind": "league",
-            "label": "2010-11"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Twenty ten was the closest: ninety-nine points to ninety-six.",
-      "scene": {
-        "type": "stats",
-        "title": "2009-10",
-        "items": [
-          {
-            "n": "99",
-            "l": "Barcelona"
-          },
-          {
-            "n": "96",
-            "l": "Real Madrid"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Twenty thirteen, Barça hit a hundred points. Madrid fifteen behind.",
-      "scene": {
-        "type": "stats",
-        "title": "2012-13",
-        "items": [
-          {
-            "n": "100",
-            "l": "Barcelona"
-          },
-          {
-            "n": "85",
-            "l": "Real Madrid"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Twenty fifteen and twenty sixteen were razor thin. Two points, then one.",
-      "scene": {
-        "type": "list",
-        "title": "The tight ones",
-        "rows": [
-          {
-            "name": "2014-15 · Barcelona",
-            "value": "94",
-            "club": "bar",
-            "hl": true
-          },
-          {
-            "name": "2014-15 · Real Madrid",
-            "value": "92",
-            "club": "rma"
-          },
-          {
-            "name": "2015-16 · Barcelona",
-            "value": "91",
-            "club": "bar",
-            "hl": true
-          },
-          {
-            "name": "2015-16 · Real Madrid",
-            "value": "90",
-            "club": "rma"
-          }
-        ]
-      }
-    },
-    {
-      "text": "And twenty eighteen, the last payment year? Atlético were second, fourteen points back.",
-      "scene": {
-        "type": "stats",
-        "title": "2017-18",
-        "items": [
-          {
-            "n": "93",
-            "l": "Barcelona"
-          },
-          {
-            "n": "79",
-            "l": "Atlético Madrid"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Add it up. Real Madrid were runners-up in eight of the nine.",
-      "scene": {
-        "type": "list",
-        "title": "Runner-up count",
-        "rows": [
-          {
-            "name": "Real Madrid",
-            "value": "8",
-            "club": "rma",
-            "hl": true
-          },
-          {
-            "name": "Atlético Madrid",
-            "value": "1",
-            "club": "atm"
-          },
-          {
-            "name": "Anyone else",
-            "value": "0"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Now the important bit. No court has said any game or any title was affected by the payments.",
-      "scene": {
-        "type": "stamp",
-        "text": "NOT PROVEN",
-        "color": "white"
-      }
-    },
-    {
-      "text": "Barcelona deny everything.",
-      "scene": {
-        "type": "quote",
-        "person": "laporta",
-        "text": "Barcelona has never bought referees."
-      }
-    },
-    {
-      "text": "So it's a question, not a verdict. All nine titles still stand, and the case is still open.",
-      "scene": {
-        "type": "text",
-        "heading": "Where it stands",
-        "body": "No trial, no verdict. LaLiga says sporting sanctions are time-barred. UEFA's 2023 file is still open."
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
+  "atm": {
+   "name": "Atlético Madrid",
+   "short": "ATM",
+   "c1": "#cb3524",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "val": {
+   "name": "Valencia",
+   "short": "VAL",
+   "c1": "#ffffff",
+   "c2": "#111111",
+   "pattern": "plain"
+  },
+  "sev": {
+   "name": "Sevilla",
+   "short": "SEV",
+   "c1": "#ffffff",
+   "c2": "#d4021d",
+   "pattern": "plain"
+  },
+  "mll": {
+   "name": "Mallorca",
+   "short": "MLL",
+   "c1": "#d4021d",
+   "c2": "#111111",
+   "pattern": "plain"
+  },
+  "vil": {
+   "name": "Villarreal",
+   "short": "VIL",
+   "c1": "#ffe667",
+   "c2": "#005187",
+   "pattern": "plain"
+  },
+  "ath": {
+   "name": "Athletic Bilbao",
+   "short": "ATH",
+   "c1": "#ee2523",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  }
+ },
+ "people": {
+  "guardiola": {
+   "name": "Pep Guardiola",
+   "skin": "light",
+   "hair": [
+    "buzz",
+    "#5a4a3a"
+   ],
+   "beard": "none",
+   "kit": "suit",
+   "club": "bar"
+  },
+  "ronaldo": {
+   "name": "Cristiano Ronaldo",
+   "skin": "tan",
+   "hair": [
+    "slick",
+    "#1a1410"
+   ],
+   "beard": "none",
+   "kit": "rma"
+  },
+  "messi": {
+   "name": "Lionel Messi",
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#3a281c"
+   ],
+   "beard": "none",
+   "kit": "bar"
+  }
+ },
+ "lines": [
+  {
+   "text": "Nine league titles. That's how many Barcelona won while they were paying the referees' number two.",
+   "scene": {
+    "type": "title",
+    "heading": "NINE TITLES",
+    "sub": "Barcelona · 2005 to 2018",
+    "pill": "THE QUESTION FANS ASK",
+    "person": "messi"
+   }
+  },
+  {
+   "text": "The payments ran from 2001 to 2018. The trophies started arriving in 2005.",
+   "say": "The payments ran from two thousand and one, to twenty eighteen. The trophies started arriving in two thousand and five.",
+   "scene": {
+    "type": "timeline",
+    "kicker": "Payments and titles",
+    "title": "Seventeen years",
+    "items": [
+     {
+      "year": "2001",
+      "label": "First payment to Negreira's firm"
+     },
+     {
+      "year": "2005",
+      "label": "Title 1 of the nine",
+      "club": "bar",
+      "hl": true
+     },
+     {
+      "year": "2009",
+      "label": "Guardiola's first title",
+      "club": "bar"
+     },
+     {
+      "year": "2013",
+      "label": "A 100-point season",
+      "club": "bar"
+     },
+     {
+      "year": "2018",
+      "label": "Last payment, ninth title",
+      "club": "bar",
+      "hl": true
+     }
+    ]
+   }
+  },
+  {
+   "text": "First, Ronaldinho's Barça. Two titles in a row, with Real Madrid second both times.",
+   "say": "First, Ronaldeenyo's Barsah. Two titles in a row, with Rayal Madrid second both times.",
+   "scene": {
+    "type": "list",
+    "kicker": "2004/05 and 2005/06",
+    "title": "Champions, then runners-up",
+    "rows": [
+     {
+      "name": "2004/05 · Barcelona",
+      "value": "84",
+      "club": "bar",
+      "hl": true
+     },
+     {
+      "name": "2004/05 · Real Madrid",
+      "value": "80",
+      "club": "rma"
+     },
+     {
+      "name": "2005/06 · Barcelona",
+      "value": "82",
+      "club": "bar",
+      "hl": true
+     },
+     {
+      "name": "2005/06 · Real Madrid",
+      "value": "70",
+      "club": "rma"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Then Guardiola arrived. Three titles in a row, and Madrid second every single time.",
+   "say": "Then Gwardeeohlah arrived. Three titles in a row, and Madrid second every single time.",
+   "scene": {
+    "type": "trophies",
+    "kicker": "The Guardiola years",
+    "title": "Three in a row",
+    "items": [
+     {
+      "kind": "league",
+      "label": "2008/09"
+     },
+     {
+      "kind": "league",
+      "label": "2009/10"
+     },
+     {
+      "kind": "league",
+      "label": "2010/11"
+     }
+    ],
+    "person": "guardiola"
+   }
+  },
+  {
+   "text": "2010 was a monster. Barça ninety-nine, Madrid ninety-six. Ronaldo's first season, and he lost by three.",
+   "say": "Twenty ten was a monster. Barsah ninety-nine, Madrid ninety-six. Ronaldo's first season, and he lost by three.",
+   "scene": {
+    "type": "table",
+    "title": "La Liga",
+    "season": "Final table 2009/10",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "bar",
+      "p": 38,
+      "w": 31,
+      "d": 6,
+      "l": 1,
+      "gd": 74,
+      "pts": 99,
+      "hl": true
+     },
+     {
+      "pos": 2,
+      "club": "rma",
+      "p": 38,
+      "w": 31,
+      "d": 3,
+      "l": 4,
+      "gd": 67,
+      "pts": 96,
+      "hl": true
+     },
+     {
+      "pos": 3,
+      "club": "val",
+      "p": 38,
+      "w": 21,
+      "d": 8,
+      "l": 9,
+      "gd": 19,
+      "pts": 71
+     },
+     {
+      "pos": 4,
+      "club": "sev",
+      "p": 38,
+      "w": 19,
+      "d": 6,
+      "l": 13,
+      "gd": 16,
+      "pts": 63
+     },
+     {
+      "pos": 5,
+      "club": "mll",
+      "p": 38,
+      "w": 18,
+      "d": 8,
+      "l": 12,
+      "gd": 15,
+      "pts": 62
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
+     },
+     {
+      "kind": "uel",
+      "rows": [
+       5,
+       5
+      ],
+      "label": "Europa League"
+     }
+    ],
+    "gap": {
+     "from": 1,
+     "to": 2,
+     "label": "3 pts",
+     "at": 0.45
     }
-  ]
+   }
+  },
+  {
+   "text": "In 2013, Barça hit a hundred points. Madrid were fifteen behind.",
+   "say": "In twenty thirteen, Barsah hit a hundred points. Madrid were fifteen behind.",
+   "scene": {
+    "type": "compare",
+    "title": "La Liga 2012/13",
+    "left": {
+     "club": "bar",
+     "name": "Barcelona",
+     "sub": "Champions"
+    },
+    "right": {
+     "club": "rma",
+     "name": "Real Madrid",
+     "sub": "Runners-up"
+    },
+    "rows": [
+     {
+      "label": "Points",
+      "l": 100,
+      "r": 85
+     }
+    ]
+   }
+  },
+  {
+   "text": "But 2016 was the tightest of all. Ninety-one, ninety, eighty-eight. Three teams, three points.",
+   "say": "But twenty sixteen was the tightest of all. Ninety-one, ninety, eighty-eight. Three teams, three points.",
+   "scene": {
+    "type": "table",
+    "title": "La Liga",
+    "season": "Final table 2015/16",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "bar",
+      "p": 38,
+      "w": 29,
+      "d": 4,
+      "l": 5,
+      "gd": 83,
+      "pts": 91,
+      "hl": true
+     },
+     {
+      "pos": 2,
+      "club": "rma",
+      "p": 38,
+      "w": 28,
+      "d": 6,
+      "l": 4,
+      "gd": 76,
+      "pts": 90,
+      "hl": true
+     },
+     {
+      "pos": 3,
+      "club": "atm",
+      "p": 38,
+      "w": 28,
+      "d": 4,
+      "l": 6,
+      "gd": 45,
+      "pts": 88
+     },
+     {
+      "pos": 4,
+      "club": "vil",
+      "p": 38,
+      "w": 18,
+      "d": 10,
+      "l": 10,
+      "gd": 9,
+      "pts": 64
+     },
+     {
+      "pos": 5,
+      "club": "ath",
+      "p": 38,
+      "w": 18,
+      "d": 8,
+      "l": 12,
+      "gd": 13,
+      "pts": 62
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
+     },
+     {
+      "kind": "uel",
+      "rows": [
+       5,
+       5
+      ],
+      "label": "Europa League"
+     }
+    ],
+    "gap": {
+     "from": 1,
+     "to": 2,
+     "label": "1 pt",
+     "at": 0.45
+    }
+   }
+  },
+  {
+   "text": "And 2018, the last year of payments? Champions again, fourteen points clear of Atlético.",
+   "say": "And twenty eighteen, the last year of payments? Champions again, fourteen points clear of Atleteeko.",
+   "scene": {
+    "type": "stats",
+    "kicker": "La Liga 2017/18",
+    "title": "The ninth title",
+    "items": [
+     {
+      "n": "93",
+      "l": "Barcelona points"
+     },
+     {
+      "n": "79",
+      "l": "Atlético points"
+     },
+     {
+      "n": "14",
+      "l": "points clear"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Line up all nine. Some were runaways. Some came down to one point.",
+   "scene": {
+    "type": "line",
+    "kicker": "Barcelona's nine titles",
+    "title": "Winning margin in points",
+    "y": {
+     "min": 0,
+     "max": 16,
+     "label": "points"
+    },
+    "x": [
+     "04/05",
+     "05/06",
+     "08/09",
+     "09/10",
+     "10/11",
+     "12/13",
+     "14/15",
+     "15/16",
+     "17/18"
+    ],
+    "series": [
+     {
+      "name": "Margin",
+      "club": "bar",
+      "values": [
+       4,
+       12,
+       9,
+       3,
+       4,
+       15,
+       2,
+       1,
+       14
+      ]
+     }
+    ],
+    "notes": [
+     {
+      "i": 7,
+      "text": "1 point"
+     },
+     {
+      "i": 5,
+      "text": "15 points"
+     }
+    ]
+   }
+  },
+  {
+   "text": "And who finished second? Real Madrid, in eight of the nine.",
+   "say": "And who finished second? Rayal Madrid, in eight of the nine.",
+   "scene": {
+    "type": "versus",
+    "title": "The nine runners-up",
+    "left": {
+     "club": "rma",
+     "label": "Real Madrid",
+     "value": "8",
+     "win": true
+    },
+    "right": {
+     "club": "atm",
+     "label": "Atlético",
+     "value": "1"
+    }
+   }
+  },
+  {
+   "text": "Spanish media say Madrid have now asked for all nine titles to be taken away.",
+   "say": "Spanish media say Madrid have now asked for all nine titles to be taken away.",
+   "scene": {
+    "type": "news",
+    "section": "La Liga",
+    "headline": "Real Madrid want nine titles stripped, reports say",
+    "standfirst": "Spanish media say Madrid want every league title Barcelona won from 2001 to 2018. Barcelona deny wrongdoing.",
+    "date": "October 2026",
+    "byline": "Knowitball recap",
+    "club": "rma",
+    "nav": [
+     "Football",
+     "La Liga",
+     "Real Madrid",
+     "Barcelona"
+    ]
+   }
+  },
+  {
+   "text": "Now the important bit. No court has linked one game, or one title, to those payments.",
+   "scene": {
+    "type": "stamp",
+    "text": "NO LINK PROVEN",
+    "sub": "No verdict on any match or title",
+    "color": "white"
+   }
+  },
+  {
+   "text": "So it's a question, not a verdict. All nine titles still stand, and the case is still open.",
+   "scene": {
+    "type": "stamp",
+    "text": "STILL STANDING",
+    "sub": "9 titles · no verdict · case open",
+    "person": "messi",
+    "color": "green"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }

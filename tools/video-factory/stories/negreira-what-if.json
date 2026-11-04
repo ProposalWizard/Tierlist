@@ -1,229 +1,318 @@
 {
-  "id": "negreira-what-if",
-  "series": "The Negreira case",
-  "title": "What if the Negreira-era titles went to the runner-up?",
-  "sources": [
-    "https://en.wikipedia.org/wiki/List_of_Spanish_football_champions",
-    "https://www.topendsports.com/sport/soccer/list-league-la-liga.htm",
-    "https://en.wikipedia.org/wiki/Negreira_case",
-    "https://bdnews24.com/sport/rkh4dygb2t"
-  ],
-  "checked": "Real totals (Real Madrid 36, Barcelona 29, Atlético 11 after 2025-26) on Wikipedia + TopEndSports; the 9 Barça titles 2001-2018 and runners-up from Wikipedia's champions list. Alternate numbers are simple arithmetic, labelled as imagination. Messi/Ronaldo title counts derived from the same table and their well-known club spells (Messi Barça 2004-2021, Ronaldo Madrid 2009-2018).",
-  "clubs": {
-    "bar": {
-      "name": "Barcelona",
-      "short": "FCB",
-      "c1": "#a50044",
-      "c2": "#004d98",
-      "pattern": "stripes"
-    },
-    "rma": {
-      "name": "Real Madrid",
-      "short": "RMA",
-      "c1": "#ffffff",
-      "c2": "#febe10",
-      "pattern": "plain"
-    },
-    "atm": {
-      "name": "Atlético Madrid",
-      "short": "ATM",
-      "c1": "#cb3524",
-      "c2": "#ffffff",
-      "pattern": "stripes"
-    }
+ "id": "negreira-what-if",
+ "series": "The Negreira case",
+ "title": "What if the Negreira-era titles went to the runner-up?",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/List_of_Spanish_football_champions",
+  "https://www.topendsports.com/sport/soccer/list-league-la-liga.htm",
+  "https://en.wikipedia.org/wiki/Negreira_case",
+  "https://www.aljazeera.com/sports/2026/10/3/what-is-fc-barcelonas-negreira-case-and-what-are-the-charges",
+  "https://en.wikipedia.org/wiki/Lionel_Messi",
+  "https://en.wikipedia.org/wiki/Cristiano_Ronaldo"
+ ],
+ "checked": "Real totals after 2025-26: Real Madrid 36, Barcelona 29, Atlético 11 (Wikipedia champions list; TopEndSports winners list). The nine Barça titles 2004-05 to 2017-18 and their runners-up (Madrid eight times, Atlético 2017-18) from the same two lists. Cumulative counts by year computed from Wikipedia's season-by-season champions table. Messi's ten La Liga titles = the nine plus 2018-19 (Wikipedia Messi, champions list); Ronaldo at Madrid 2009-2018 won 2011-12 and 2016-17 (Wikipedia Ronaldo, champions list); Guardiola's three titles 2008-09 to 2010-11. Everything 'alternate' is simple arithmetic, labelled as imagination; payments 2001-2018 and 'no court has removed a title' from Al Jazeera 3 Oct 2026 and Wikipedia. Barça won 1997-98 and 1998-99, then not again until the nine; so with the nine removed the next is 2018-19 (Wikipedia champions list).",
+ "clubs": {
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "badge": "FC Barcelona"
   },
-  "people": {
-    "messi": {
-      "name": "Lionel Messi",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#5a3a22"
-      ],
-      "beard": "none",
-      "kit": "bar"
-    },
-    "ronaldo": {
-      "name": "Cristiano Ronaldo",
-      "skin": "tan",
-      "hair": [
-        "slick",
-        "#1e1612"
-      ],
-      "beard": "none",
-      "kit": "rma"
-    }
+  "rma": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#febe10",
+   "pattern": "plain"
   },
-  "lines": [
-    {
-      "text": "Imagine a different world, where every Barcelona league title from the Negreira years went to the team in second.",
-      "scene": {
-        "type": "title",
-        "heading": "WHAT IF…",
-        "sub": "An imagined alternate world",
-        "pill": "PURE IMAGINATION"
-      }
+  "atm": {
+   "name": "Atlético Madrid",
+   "short": "ATM",
+   "c1": "#cb3524",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  }
+ },
+ "people": {
+  "ronaldo": {
+   "name": "Cristiano Ronaldo",
+   "skin": "tan",
+   "hair": [
+    "slick",
+    "#1a1410"
+   ],
+   "beard": "none",
+   "kit": "rma"
+  },
+  "messi": {
+   "name": "Lionel Messi",
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#3a281c"
+   ],
+   "beard": "stubble",
+   "kit": "bar"
+  },
+  "guardiola": {
+   "name": "Pep Guardiola",
+   "skin": "light",
+   "hair": [
+    "buzz",
+    "#5a4a3a"
+   ],
+   "beard": "none",
+   "kit": "suit",
+   "club": "bar"
+  }
+ },
+ "lines": [
+  {
+   "text": "Imagine a different world. Every league Barcelona won in the Negreira years goes to the team that finished second.",
+   "say": "Imagine a different world. Every league Barcelona won in the Negrayra years goes to the team that finished second.",
+   "scene": {
+    "type": "title",
+    "heading": "WHAT IF?",
+    "sub": "La Liga · 2001 to 2018",
+    "pill": "THE ALTERNATE WORLD",
+    "person": "messi"
+   }
+  },
+  {
+   "text": "Just to be clear: this never happened. No court has taken a title away, and Barcelona deny any wrongdoing.",
+   "scene": {
+    "type": "stamp",
+    "text": "IMAGINATION",
+    "sub": "No title removed · no verdict · Barça deny it",
+    "color": "white"
+   }
+  },
+  {
+   "text": "Between 2001 and 2018, Barça won nine leagues. Real Madrid were second in eight of them. Atlético in the other.",
+   "say": "Between two thousand and one and twenty eighteen, Barsah won nine leagues. Rayal Madrid were second in eight of them. Atleteeko in the other.",
+   "scene": {
+    "type": "versus",
+    "title": "Who would get the nine",
+    "left": {
+     "club": "rma",
+     "label": "Real Madrid",
+     "value": "8",
+     "win": true
     },
-    {
-      "text": "To be clear: this never happened. No court has taken a title away, and Barcelona deny any wrongdoing.",
-      "scene": {
-        "type": "text",
-        "heading": "This is not real",
-        "body": "An alternate world for fun. No ruling has found any result was affected. Every title still stands."
-      }
-    },
-    {
-      "text": "Between two thousand and one and twenty eighteen, Barça won nine leagues. Real Madrid were second in eight.",
-      "scene": {
-        "type": "stats",
-        "title": "The real world",
-        "items": [
-          {
-            "n": "9",
-            "l": "Barça titles"
-          },
-          {
-            "n": "8",
-            "l": "Madrid second"
-          },
-          {
-            "n": "1",
-            "l": "Atlético second"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Real world today: Real Madrid thirty-six titles, Barcelona twenty-nine.",
-      "scene": {
-        "type": "versus",
-        "title": "La Liga titles",
-        "left": {
-          "person": "ronaldo",
-          "label": "Real Madrid",
-          "value": "36"
-        },
-        "right": {
-          "person": "messi",
-          "label": "Barcelona",
-          "value": "29"
-        }
-      }
-    },
-    {
-      "text": "In our alternate world, Madrid pick up eight more. That's forty-four.",
-      "scene": {
-        "type": "whatif",
-        "title": "Real Madrid's titles",
-        "real": {
-          "label": "Real Madrid",
-          "value": "36"
-        },
-        "alt": {
-          "label": "Real Madrid",
-          "value": "44"
-        }
-      }
-    },
-    {
-      "text": "Barcelona drop to twenty. The gap goes from seven to twenty-four.",
-      "scene": {
-        "type": "whatif",
-        "title": "Barcelona's titles",
-        "real": {
-          "label": "Barcelona",
-          "value": "29"
-        },
-        "alt": {
-          "label": "Barcelona",
-          "value": "20"
-        }
-      }
-    },
-    {
-      "text": "Atlético get twenty eighteen, and go from eleven titles to twelve.",
-      "scene": {
-        "type": "whatif",
-        "title": "Atlético's titles",
-        "real": {
-          "label": "Atlético Madrid",
-          "value": "11"
-        },
-        "alt": {
-          "label": "Atlético Madrid",
-          "value": "12"
-        }
-      }
-    },
-    {
-      "text": "Now the fun part. Cristiano Ronaldo won two leagues in nine years at Madrid.",
-      "scene": {
-        "type": "person",
-        "person": "ronaldo",
-        "label": "2 LEAGUES AT MADRID",
-        "mood": "flat"
-      }
-    },
-    {
-      "text": "In this world? Seven.",
-      "scene": {
-        "type": "whatif",
-        "title": "Ronaldo's La Liga titles",
-        "real": {
-          "label": "Ronaldo at Madrid",
-          "value": "2"
-        },
-        "alt": {
-          "label": "Ronaldo at Madrid",
-          "value": "7"
-        }
-      }
-    },
-    {
-      "text": "And Lionel Messi, ten La Liga titles in real life, would have just one: twenty nineteen.",
-      "scene": {
-        "type": "whatif",
-        "title": "Messi's La Liga titles",
-        "real": {
-          "label": "Messi",
-          "value": "10"
-        },
-        "alt": {
-          "label": "Messi",
-          "value": "1"
-        }
-      }
-    },
-    {
-      "text": "A totally different history of Spanish football.",
-      "scene": {
-        "type": "trophies",
-        "title": "Alternate champions",
-        "items": [
-          {
-            "kind": "league",
-            "label": "Madrid ×8"
-          },
-          {
-            "kind": "league",
-            "label": "Atlético ×1"
-          }
-        ]
-      }
-    },
-    {
-      "text": "But that world is made up. Back in this one, every title stands, there's no verdict, and the case is still open.",
-      "scene": {
-        "type": "stamp",
-        "text": "IMAGINED",
-        "color": "white"
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
+    "right": {
+     "club": "atm",
+     "label": "Atlético",
+     "value": "1"
     }
-  ]
+   }
+  },
+  {
+   "text": "Real life today: Real Madrid thirty-six titles, Barcelona twenty-nine. A gap of seven.",
+   "say": "Real life today: Rayal Madrid thirty-six titles, Barcelona twenty-nine. A gap of seven.",
+   "scene": {
+    "type": "versus",
+    "title": "Spanish titles, real life",
+    "left": {
+     "club": "rma",
+     "label": "Real Madrid",
+     "value": "36",
+     "win": true
+    },
+    "right": {
+     "club": "bar",
+     "label": "Barcelona",
+     "value": "29"
+    }
+   }
+  },
+  {
+   "text": "In our world, Madrid jump to forty-four. Barça crash to twenty. The gap? Twenty-four.",
+   "say": "In our world, Madrid jump to forty-four. Barsah crash to twenty. The gap? Twenty-four.",
+   "scene": {
+    "type": "line",
+    "kicker": "The alternate world",
+    "title": "League titles over time",
+    "y": {
+     "min": 10,
+     "max": 46,
+     "label": "titles"
+    },
+    "x": [
+     "2001",
+     "2005",
+     "2009",
+     "2013",
+     "2018",
+     "2026"
+    ],
+    "series": [
+     {
+      "name": "Real Madrid (what if)",
+      "club": "rma",
+      "values": [
+       28,
+       30,
+       34,
+       38,
+       41,
+       44
+      ]
+     },
+     {
+      "name": "Barcelona (what if)",
+      "club": "bar",
+      "values": [
+       16,
+       16,
+       16,
+       16,
+       16,
+       20
+      ]
+     }
+    ],
+    "notes": [
+     {
+      "i": 5,
+      "text": "44 v 20",
+      "series": 0
+     }
+    ]
+   }
+  },
+  {
+   "text": "Barcelona go twenty years without a league title, from 1999 all the way to 2019.",
+   "scene": {
+    "type": "whatif",
+    "title": "Barcelona's drought",
+    "real": {
+     "label": "Real life: league titles 2001 to 2018",
+     "value": "9"
+    },
+    "alt": {
+     "label": "What if: no title from 1999 to 2019",
+     "value": "20 yrs"
+    }
+   },
+   "say": "Barcelona go twenty years without a league title, from nineteen ninety-nine, all the way to twenty nineteen."
+  },
+  {
+   "text": "And Atlético get twenty eighteen, taking them from eleven titles to twelve.",
+   "say": "And Atleteeko get twenty eighteen, taking them from eleven titles to twelve.",
+   "scene": {
+    "type": "whatif",
+    "title": "Atlético's bonus",
+    "real": {
+     "label": "Atlético titles today",
+     "value": "11"
+    },
+    "alt": {
+     "label": "With 2017/18 added",
+     "value": "12"
+    }
+   }
+  },
+  {
+   "text": "Now the fun part. Guardiola's Barça, the team that changed football, would have zero league titles.",
+   "say": "Now the fun part. Gwardeeohlah's Barsah, the team that changed football, would have zero league titles.",
+   "scene": {
+    "type": "whatif",
+    "title": "Pep's Barcelona",
+    "real": {
+     "label": "League titles, 2008 to 2011",
+     "value": "3"
+    },
+    "alt": {
+     "label": "In the alternate world",
+     "value": "0"
+    }
+   }
+  },
+  {
+   "text": "Cristiano Ronaldo won two leagues in nine years at Madrid. In this world? Seven.",
+   "say": "Cristeeahno Ronaldo won two leagues in nine years at Madrid. In this world? Seven.",
+   "scene": {
+    "type": "person",
+    "person": "ronaldo",
+    "label": "2 titles → 7 titles",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "And Lionel Messi, ten La Liga titles in real life, would have just one. Twenty nineteen.",
+   "say": "And Leeonel Messi, ten La Leega titles in real life, would have just one. Twenty nineteen.",
+   "scene": {
+    "type": "compare",
+    "title": "Real life v what if",
+    "left": {
+     "person": "messi",
+     "name": "Messi",
+     "sub": "Barcelona"
+    },
+    "right": {
+     "person": "ronaldo",
+     "name": "Ronaldo",
+     "sub": "Real Madrid"
+    },
+    "rows": [
+     {
+      "label": "Real-life La Liga titles",
+      "l": 10,
+      "r": 2
+     },
+     {
+      "label": "What-if La Liga titles",
+      "l": 1,
+      "r": 7
+     }
+    ]
+   }
+  },
+  {
+   "text": "A totally different history of Spanish football, and a very different Messi versus Ronaldo argument.",
+   "say": "A totally different history of Spanish football, and a very different Messi versus Ronaldo argument.",
+   "scene": {
+    "type": "bars",
+    "kicker": "The alternate world",
+    "title": "All-time Spanish titles",
+    "items": [
+     {
+      "label": "Real Madrid",
+      "value": 44,
+      "club": "rma",
+      "hl": true
+     },
+     {
+      "label": "Barcelona",
+      "value": 20,
+      "club": "bar"
+     },
+     {
+      "label": "Atlético Madrid",
+      "value": 12,
+      "club": "atm"
+     }
+    ],
+    "note": "Imagination only"
+   }
+  },
+  {
+   "text": "But that world is made up. Back in this one, every title stands, there's no verdict, and the case is still open.",
+   "scene": {
+    "type": "stamp",
+    "text": "MADE UP",
+    "sub": "Every title stands · case still open",
+    "color": "red"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }

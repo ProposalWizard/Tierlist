@@ -1,252 +1,333 @@
 {
-  "id": "negreira-explained",
-  "series": "The Negreira case",
-  "title": "The Negreira case, explained simply",
-  "sources": [
-    "https://en.wikipedia.org/wiki/Negreira_case",
-    "https://catalannews.com/society-science/item/barca-bribery-charges-dropped-in-negreira-case-barcelona-court-says",
-    "https://bdnews24.com/sport/rkh4dygb2t",
-    "https://africasoccer.com/?p=627678",
-    "https://www.football-espana.net/2026/02/01/barcelona-victory-negreira-case-real-madrid",
-    "https://www.vilaweb.cat/noticies/nou-informe-forense-negreira-no-pot-ser-jutjat/",
-    "https://www.elespanol.com/deportes/futbol/20260520/nuevo-informe-forense-concluye-salud-negreira-empeorado-no-puede-juzgado/1003744253834_0.html",
-    "https://www.vozpopuli.com/deportes/tebas-confirma-habra-castigo-barca-estas-sanciones-prescriben-tres-anos.html",
-    "https://www.ultimahora.es/deportes/futbol/2023/02/16/1883733/javie-tebas-descarta-sanciones-deportivas-contra-barcelona.html",
-    "https://www.dhakatribune.com/sport/football/306336/laporta-barca-never-bought-referees",
-    "https://www.fotmob.com/sv/news/1htv2f4ssqb5g1dzxh18d28gon-negreira-case-barcelona-never-bought-referees-insists-laporta",
-    "https://www.eldebate.com/deportes/futbol/20250709/real-madrid-pide-prorrogue-otros-seis-meses-instruccion-caso-negreira_315527.html"
-  ],
-  "checked": "Payment years 2001-2018 and ~€7m+ (reports range €7.3m-€8.4m) on Wikipedia + bdnews24; 2023 charges and May 2024 bribery dismissal on Wikipedia + Catalan News; LaLiga 3-year time bar on Vozpópuli + Ultima Hora; UEFA 1 Oct 2026 document review on bdnews24 + AfricaSoccer; May 2026 forensic report on VilaWeb + El Español; Laporta quote on Dhaka Tribune + FotMob. No court verdict exists as of 3 Nov 2026.",
-  "clubs": {
-    "bar": {
-      "name": "Barcelona",
-      "short": "FCB",
-      "c1": "#a50044",
-      "c2": "#004d98",
-      "pattern": "stripes"
-    },
-    "rma": {
-      "name": "Real Madrid",
-      "short": "RMA",
-      "c1": "#ffffff",
-      "c2": "#febe10",
-      "pattern": "plain"
-    },
-    "atm": {
-      "name": "Atlético Madrid",
-      "short": "ATM",
-      "c1": "#cb3524",
-      "c2": "#ffffff",
-      "pattern": "stripes"
-    }
+ "id": "negreira-explained",
+ "series": "The Negreira case",
+ "title": "The Negreira case, explained",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/Negreira_case",
+  "https://www.aljazeera.com/sports/2026/10/3/what-is-fc-barcelonas-negreira-case-and-what-are-the-charges",
+  "https://www.goal.com/en-in/news/real-madrid-and-barcelona-s-dispute-continues-a-new-surprise-ignites-the-negreira-case/bltcf36cdd420530f84",
+  "https://www.cbssports.com/soccer/news/barcelona-under-fire-over-payments-to-referee-prosecutors-file-corruption-charges-against-ex-barca-presidents",
+  "https://global.espn.com/football/story/_/id/38510081/barcelona-probed-suspected-bribery-ref-case-report",
+  "https://catalannews.com/society-science/item/barca-bribery-charges-dropped-in-negreira-case-barcelona-court-says",
+  "https://global.espn.com/football/story/_/id/37636398/barcelona-face-sanctions-payments-ex-vp-referees-laliga-chief",
+  "https://www.vozpopuli.com/deportes/tebas-confirma-habra-castigo-barca-estas-sanciones-prescriben-tres-anos.html",
+  "https://sports.yahoo.com/articles/negreira-cant-stand-trial-alzheimers-191700214.html",
+  "https://m.elbotola.com/en/article/2026-03-06-11-15-615.html",
+  "https://www.dhakatribune.com/sport/football/306336/laporta-barca-never-bought-referees"
+ ],
+ "checked": "Story broke 15 Feb 2023 (Cadena SER; Wikipedia). Negreira CTA vice-president 1993-2018 (Al Jazeera 3 Oct 2026, Goal 2 Oct 2026; Wikipedia says 1994, so the video only says 'until 2018'). More than EUR 7.3m 2001-2018 to his firms (prosecutors via Al Jazeera, CBS). Club says reports on referees (Al Jazeera, Wikipedia). March 2023 charges: club, Rosell, Bartomeu, Negreira, son; sports corruption, unfair administration, false records (Al Jazeera, Wikipedia, CBS). Real Madrid joined 12 Mar 2023 (Wikipedia, Al Jazeera). Tebas 16 Feb 2023: sporting sanctions time-barred after three years (ESPN, Vozpopuli). Bribery added 28 Sep 2023 (Wikipedia, ESPN); dropped by Barcelona court 24 May 2024, not a public official (Wikipedia, Catalan News). UEFA: confirmed 1 Oct 2026 it is assessing Real Madrid's dossier, about 50,000 pages (Al Jazeera, Goal). Forensic report May 2026: Negreira lacks capacity to follow the proceedings (Yahoo/El Mundo/La Vanguardia, Tribuna). Laporta quote 'Barcelona has never bought referees' (Wikipedia, Dhaka Tribune). No court has ruled any match was fixed; no trial date; titles untouched as of 4 Nov 2026.",
+ "clubs": {
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "badge": "FC Barcelona"
   },
-  "people": {
-    "negreira": {
-      "name": "José María Enríquez Negreira",
-      "skin": "light",
-      "hair": [
-        "bald",
-        "#d9d9d9"
-      ],
-      "beard": "none",
-      "kit": "suit"
-    },
-    "laporta": {
-      "name": "Joan Laporta",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#8a8a8a"
-      ],
-      "beard": "none",
-      "kit": "bar"
-    },
-    "rosell": {
+  "rma": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#febe10",
+   "pattern": "plain"
+  },
+  "rfef": {
+   "name": "Spanish FA",
+   "short": "RFEF",
+   "c1": "#c60b1e",
+   "c2": "#ffc400",
+   "pattern": "plain",
+   "badge": false
+  },
+  "uefa": {
+   "name": "UEFA",
+   "short": "UEFA",
+   "c1": "#0b1f5c",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": false
+  }
+ },
+ "people": {
+  "negreira": {
+   "name": "José María Enríquez Negreira",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#cfcac2"
+   ],
+   "beard": "none",
+   "kit": "suit",
+   "club": "rfef"
+  },
+  "laporta": {
+   "name": "Joan Laporta",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#8a8580"
+   ],
+   "beard": "none",
+   "kit": "suit",
+   "club": "bar"
+  },
+  "tebas": {
+   "name": "Javier Tebas",
+   "skin": "light",
+   "hair": [
+    "bald",
+    "#e7c3a3"
+   ],
+   "beard": "none",
+   "kit": "suit"
+  }
+ },
+ "lines": [
+  {
+   "text": "February 2023. A radio scoop about Barcelona and the referees blows up Spanish football.",
+   "say": "February twenty twenty-three. A radio scoop about Barcelona and the referees blows up Spanish football.",
+   "scene": {
+    "type": "title",
+    "heading": "THE NEGREIRA CASE",
+    "sub": "2001 to 2018",
+    "pill": "WHAT'S PROVEN?",
+    "person": "negreira"
+   }
+  },
+  {
+   "text": "For years, Barça had been paying a company owned by the number two of Spain's referees.",
+   "say": "For years, Barsah had been paying a company owned by the number two of Spain's referees.",
+   "scene": {
+    "type": "news",
+    "section": "La Liga",
+    "headline": "Barcelona paid firm of referees' vice-president",
+    "standfirst": "The money went to a firm owned by the number two of Spanish refereeing. The club says it bought reports.",
+    "date": "15 February 2023",
+    "byline": "Knowitball recap",
+    "club": "bar",
+    "person": "negreira",
+    "nav": [
+     "Football",
+     "La Liga",
+     "Barcelona",
+     "Referees"
+    ]
+   }
+  },
+  {
+   "text": "His name: José María Enríquez Negreira, vice-president of the referees' committee until 2018.",
+   "say": "His name: Hosay Mareeah Enreeketh Negrayra. Vice-president of the referees' committee, until twenty eighteen.",
+   "scene": {
+    "type": "person",
+    "person": "negreira",
+    "label": "Referees' committee vice-president",
+    "mood": "flat"
+   }
+  },
+  {
+   "text": "From 2001 to 2018, prosecutors say his firms got more than seven point three million euros.",
+   "say": "From two thousand and one to twenty eighteen, prosecutors say his firms got more than seven point three million euros.",
+   "scene": {
+    "type": "stats",
+    "kicker": "What prosecutors say",
+    "title": "Paid by Barcelona",
+    "items": [
+     {
+      "n": "€7.3m+",
+      "l": "to his companies"
+     },
+     {
+      "n": "17",
+      "l": "years of payments"
+     },
+     {
+      "n": "2001",
+      "l": "first payment"
+     },
+     {
+      "n": "2018",
+      "l": "last payment"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Barcelona's answer: it was paying for reports on referees. Nothing more.",
+   "say": "Barcelona's answer: it was paying for reports on referees. Nothing more.",
+   "scene": {
+    "type": "text",
+    "heading": "Barcelona's explanation",
+    "body": "The club says the money paid for technical reports on referees. It denies ever trying to influence a match."
+   }
+  },
+  {
+   "text": "LaLiga's boss said it was too late anyway. Sporting punishments expire after three years.",
+   "say": "La Leega's boss said it was too late anyway. Sporting punishments expire after three years.",
+   "scene": {
+    "type": "news",
+    "section": "LaLiga",
+    "headline": "Too late to punish Barça, says LaLiga chief",
+    "standfirst": "Javier Tebas says sporting sanctions lapse three years after the events. No points lost, no relegation.",
+    "date": "16 February 2023",
+    "byline": "Knowitball recap",
+    "person": "tebas",
+    "mastColor": "#1b1f2b",
+    "nav": [
+     "Football",
+     "La Liga",
+     "Barcelona",
+     "Tebas"
+    ]
+   }
+  },
+  {
+   "text": "In March, prosecutors charged the club, two ex-presidents, Negreira and his son.",
+   "say": "In March, prosecutors charged the club, two ex-presidents, Negrayra, and his son.",
+   "scene": {
+    "type": "list",
+    "kicker": "March 2023",
+    "title": "Charged with sports corruption",
+    "rows": [
+     {
+      "name": "FC Barcelona",
+      "value": "Club",
+      "club": "bar",
+      "hl": true
+     },
+     {
       "name": "Sandro Rosell",
-      "skin": "light",
-      "hair": [
-        "bald",
-        "#7a6a5a"
-      ],
-      "beard": "none",
-      "kit": "suit"
-    },
-    "bartomeu": {
-      "name": "Josep Maria Bartomeu",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#a0a0a0"
-      ],
-      "beard": "none",
-      "kit": "suit"
-    },
-    "tebas": {
-      "name": "Javier Tebas",
-      "skin": "light",
-      "hair": [
-        "crop",
-        "#5a5a5a"
-      ],
-      "beard": "none",
-      "kit": "suit"
-    }
+      "value": "2010-14",
+      "club": "bar"
+     },
+     {
+      "name": "Josep Bartomeu",
+      "value": "2014-20",
+      "club": "bar"
+     },
+     {
+      "name": "Negreira",
+      "value": "Official",
+      "club": "rfef"
+     },
+     {
+      "name": "Javier Enríquez",
+      "value": "Son",
+      "club": "rfef"
+     }
+    ]
+   }
   },
-  "lines": [
-    {
-      "text": "For seventeen years, Barcelona paid money to the number two of Spain's referees. Here's what's actually on the record.",
-      "scene": {
-        "type": "title",
-        "heading": "THE NEGREIRA CASE",
-        "sub": "Barcelona · 2001 to 2018",
-        "pill": "WHAT WE ACTUALLY KNOW",
-        "person": "negreira"
-      }
-    },
-    {
-      "text": "His name is José María Enríquez Negreira, vice-president of the referees' committee.",
-      "scene": {
-        "type": "person",
-        "person": "negreira",
-        "label": "VICE-PRESIDENT, REFEREES' COMMITTEE",
-        "mood": "flat"
-      }
-    },
-    {
-      "text": "From two thousand and one to twenty eighteen, companies linked to him got around seven million euros from the club.",
-      "scene": {
-        "type": "stats",
-        "title": "The payments",
-        "items": [
-          {
-            "n": "~€7m",
-            "l": "paid to his companies"
-          },
-          {
-            "n": "17",
-            "l": "years"
-          },
-          {
-            "n": "2018",
-            "l": "last payments"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Barcelona's explanation? The money paid for technical reports and advice on referees.",
-      "scene": {
-        "type": "text",
-        "heading": "Barcelona's side",
-        "body": "The club says it paid for technical reports and consulting on refereeing, and denies any wrongdoing."
-      }
-    },
-    {
-      "text": "In twenty twenty-three, prosecutors charged the club, two former presidents, Negreira and his son.",
-      "scene": {
-        "type": "versus",
-        "title": "Charged in 2023",
-        "left": {
-          "person": "rosell",
-          "label": "Sandro Rosell",
-          "value": "EX-PRESIDENT"
-        },
-        "right": {
-          "person": "bartomeu",
-          "label": "Josep Maria Bartomeu",
-          "value": "EX-PRESIDENT"
-        }
-      }
-    },
-    {
-      "text": "A bribery charge was added that autumn. But in May twenty twenty-four, a Barcelona court threw it out.",
-      "scene": {
-        "type": "timeline",
-        "title": "The court case",
-        "items": [
-          {
-            "year": "2023",
-            "label": "Charges filed"
-          },
-          {
-            "year": "Sep 23",
-            "label": "Bribery added"
-          },
-          {
-            "year": "May 24",
-            "label": "Bribery thrown out"
-          },
-          {
-            "year": "2026",
-            "label": "Still no verdict"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Why? The referees' committee isn't a public body, so Negreira wasn't a public official.",
-      "scene": {
-        "type": "stamp",
-        "text": "BRIBERY DROPPED",
-        "color": "white",
-        "person": "negreira"
-      }
-    },
-    {
-      "text": "The sports corruption case carries on. No court has ruled that any match was fixed.",
-      "scene": {
-        "type": "text",
-        "heading": "What no court has said",
-        "body": "No ruling has found that any referee was paid to change a result. The case is still being investigated."
-      }
-    },
-    {
-      "text": "LaLiga says it can't touch the table anyway: sporting offences in Spain expire after three years.",
-      "scene": {
-        "type": "person",
-        "person": "tebas",
-        "label": "LALIGA: TOO LATE TO SANCTION",
-        "mood": "flat"
-      }
-    },
-    {
-      "text": "UEFA opened its own file in twenty twenty-three. In October, it confirmed it's reviewing a big pile of documents sent by Real Madrid.",
-      "scene": {
-        "type": "text",
-        "heading": "UEFA",
-        "body": "Investigation opened March 2023, never closed. On 1 October 2026 UEFA confirmed it is reviewing documents from Real Madrid. No new proceedings announced."
-      }
-    },
-    {
-      "text": "And in May, a forensic report said Negreira's dementia is now too advanced for him to stand trial.",
-      "scene": {
-        "type": "person",
-        "person": "negreira",
-        "label": "FORENSIC REPORT, MAY 2026",
-        "mood": "worried"
-      }
-    },
-    {
-      "text": "Barcelona's president is clear.",
-      "scene": {
-        "type": "quote",
-        "person": "laporta",
-        "text": "Barcelona has never bought referees."
-      }
-    },
-    {
-      "text": "So in November twenty twenty-six: no trial, no verdict, no titles taken. The case is still open.",
-      "scene": {
-        "type": "stamp",
-        "text": "STILL OPEN",
-        "color": "yellow"
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
-    }
-  ]
+  {
+   "text": "Real Madrid joined the case. Then a bribery charge was added, and Laporta was named too.",
+   "say": "Rayal Madrid joined the case. Then a bribery charge was added, and Laporrtah was named too.",
+   "scene": {
+    "type": "timeline",
+    "kicker": "How it grew",
+    "title": "2023: the case snowballs",
+    "items": [
+     {
+      "year": "Feb",
+      "label": "Payments revealed"
+     },
+     {
+      "year": "Mar",
+      "label": "Club and ex-presidents charged",
+      "club": "bar"
+     },
+     {
+      "year": "Mar",
+      "label": "Real Madrid join the case",
+      "club": "rma"
+     },
+     {
+      "year": "Sep",
+      "label": "Bribery charge added",
+      "hl": true
+     },
+     {
+      "year": "Oct",
+      "label": "Laporta named in the case",
+      "club": "bar"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Then the twist. In May 2024, a court threw the bribery charge out. Negreira wasn't a public official.",
+   "say": "Then the twist. In May twenty twenty-four, a court threw the bribery charge out. Negrayra wasn't a public official.",
+   "scene": {
+    "type": "stamp",
+    "text": "BRIBERY DROPPED",
+    "sub": "Not a public official · 24 May 2024",
+    "color": "yellow"
+   }
+  },
+  {
+   "text": "And in October, UEFA confirmed it's reading a fifty thousand page dossier sent by Real Madrid.",
+   "say": "And in October, Yooayfa confirmed it's reading a fifty thousand page dossier, sent by Rayal Madrid.",
+   "scene": {
+    "type": "news",
+    "section": "Europe",
+    "headline": "UEFA studies Real Madrid's Negreira dossier",
+    "standfirst": "Its ethics and disciplinary inspectors will assess about 50,000 pages. The review is still open.",
+    "date": "1 October 2026",
+    "byline": "Knowitball recap",
+    "club": "rma",
+    "nav": [
+     "Football",
+     "UEFA",
+     "Barcelona",
+     "Real Madrid"
+    ]
+   }
+  },
+  {
+   "text": "But the man at the centre may never face a trial. Doctors say his dementia has got worse.",
+   "say": "But the man at the centre may never face a trial. Doctors say his dementia has got worse.",
+   "scene": {
+    "type": "news",
+    "section": "Courts",
+    "headline": "Negreira unfit to follow his own case",
+    "standfirst": "A forensic report says the former official can no longer understand the proceedings.",
+    "date": "May 2026",
+    "byline": "Knowitball recap",
+    "person": "negreira",
+    "mastColor": "#1b1f2b",
+    "nav": [
+     "Football",
+     "La Liga",
+     "Courts",
+     "Negreira"
+    ]
+   }
+  },
+  {
+   "text": "Laporta's line never changes.",
+   "say": "Laporrtah's line never changes.",
+   "scene": {
+    "type": "quote",
+    "person": "laporta",
+    "text": "Barcelona has never bought referees."
+   }
+  },
+  {
+   "text": "So, November 2026: no trial, no verdict, and every title still stands. The case is still open.",
+   "say": "So, November twenty twenty-six. No trial, no verdict, and every title still stands. The case is still open.",
+   "scene": {
+    "type": "stamp",
+    "text": "STILL OPEN",
+    "sub": "No verdict · as of November 2026",
+    "person": "negreira",
+    "color": "white"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }

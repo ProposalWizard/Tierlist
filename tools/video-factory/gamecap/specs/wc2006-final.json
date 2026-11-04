@@ -1,0 +1,52 @@
+{
+  "_about": "2006 World Cup final, Italy 1-1 France (5-3 pens), Olympiastadion Berlin, 9 July 2006, 20:00 kick-off. 19': Andrea Pirlo corner, Marco Materazzi outjumps Patrick Vieira and heads past Fabien Barthez (Wikipedia 2006 FIFA World Cup final; FIFA/BBC match reports). Corner side not given by sources: set from the right, swing in. Shoot-out: Fabio Grosso scored the fifth, winning penalty; placement not given in sources, so the clip shows only a scored penalty. Kits: Italy home blue, France all white (Reuters/OneIndia 6 Jul 2006 'Italy in blue, all white again for France'); Italy shorts white assumed from the Puma 2006 home kit; Barthez's keeper kit colour assumed.",
+  "teams": {
+    "home": { "name": "France", "short": "FRA", "kit": { "shirt": "#F4F4F4", "shorts": "#F4F4F4", "socks": "#F4F4F4" }, "keeperKit": { "shirt": "#3A3F4A", "shorts": "#3A3F4A", "socks": "#3A3F4A" }, "popupTrim": "#1F3F8F" },
+    "away": { "name": "Italy", "short": "ITA", "kit": { "shirt": "#1F5FBF", "shorts": "#FFFFFF", "socks": "#1F5FBF" }, "keeperKit": { "shirt": "#222222", "shorts": "#222222", "socks": "#222222" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "materazzi": { "name": "Marco Materazzi", "skin": "#e6b892", "hair": "#2a1d15", "popupName": "Materazzi" },
+    "pirlo":     { "name": "Andrea Pirlo", "skin": "#e8bc98", "hair": "#2a1d15", "popupName": "Pirlo" },
+    "toni":      { "name": "Luca Toni", "skin": "#e8bc98", "hair": "#3a281c" },
+    "cannavaro": { "name": "Fabio Cannavaro", "skin": "#d9a57e", "hair": "#1a1410" },
+    "grosso":    { "name": "Fabio Grosso", "skin": "#e8bc98", "hair": "#2a1d15", "popupName": "Grosso" },
+    "vieira":    { "name": "Patrick Vieira", "skin": "#3e2618", "hair": "#0d0a09" },
+    "thuram":    { "name": "Lilian Thuram", "skin": "#3a2316", "hair": "#2a1a10" },
+    "gallas":    { "name": "William Gallas", "skin": "#4a2e1e", "hair": "#0d0a09" },
+    "zidane":    { "name": "Zinedine Zidane", "skin": "#d9ad88", "hair": "#cfa27f" },
+    "barthez":   { "name": "Fabien Barthez", "skin": "#efc4a0", "hair": "#e9bf9c" }
+  },
+  "clips": [
+    {
+      "id": "materazzi-header",
+      "kind": "header",
+      "attacking": "away",
+      "scorer": "materazzi", "assister": "pirlo",
+      "defenders": ["vieira", "thuram", "gallas", "zidane"],
+      "keeper": "barthez",
+      "teammates": ["toni", "cannavaro"],
+      "minute": 19,
+      "scoreBefore": [1, 0], "scoreAfter": [1, 1],
+      "night": false,
+      "celebration": "roar",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "corner", "side": "right", "swing": "in", "scorerStart": [-1, 15], "scorerSpot": [0, 7], "finish": "header", "height": "mid" },
+      "seed": "materazzi-2006-a"
+    },
+    {
+      "id": "grosso-penalty",
+      "kind": "penalty",
+      "attacking": "away",
+      "scorer": "grosso",
+      "defenders": [],
+      "keeper": "barthez",
+      "minute": 120, "minuteLabel": "PENS",
+      "scoreBefore": [1, 1], "scoreAfter": [1, 1],
+      "night": false,
+      "celebration": "knee_slide",
+      "cameras": ["tv", "high", "tight", "fan"],
+      "seed": "grosso-2006-a",
+      "popup": false
+    }
+  ]
+}
