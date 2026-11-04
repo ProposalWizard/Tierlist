@@ -1,0 +1,110 @@
+{
+ "_about": "Liverpool 5-1 Tottenham, Anfield, 27 April 2025, the day Liverpool won the title. 63rd minute: on a fast break Szoboszlai finds Salah, who scores left-footed from the centre of the box into the right corner for 4-1 (ESPN, Sports Mole). Kits from Tottenham's own preview: Liverpool all red, keeper all black; Spurs light blue away kit, keeper yellow.",
+ "teams": {
+  "home": {
+   "name": "Liverpool",
+   "kit": {
+    "shirt": "#C8102E",
+    "shorts": "#C8102E",
+    "socks": "#C8102E"
+   },
+   "keeperKit": {
+    "shirt": "#151515",
+    "shorts": "#151515",
+    "socks": "#151515"
+   },
+   "popupTrim": "#FFFFFF"
+  },
+  "away": {
+   "name": "Tottenham Hotspur",
+   "kit": {
+    "shirt": "#9CC9EA",
+    "shorts": "#9CC9EA",
+    "socks": "#9CC9EA"
+   },
+   "keeperKit": {
+    "shirt": "#E8E04A",
+    "shorts": "#E8E04A",
+    "socks": "#E8E04A"
+   },
+   "popupTrim": "#132257",
+   "short": "Spurs"
+  }
+ },
+ "people": {
+  "salah": {
+   "name": "Mohamed Salah",
+   "skin": "#b07a52",
+   "hair": "#1a120c"
+  },
+  "szoboszlai": {
+   "name": "Dominik Szoboszlai",
+   "skin": "#f4d0b4",
+   "hair": "#d9b97a"
+  },
+  "d1": {
+   "name": "Spurs defender"
+  },
+  "d2": {
+   "name": "Spurs defender"
+  },
+  "vicario": {
+   "name": "Guglielmo Vicario",
+   "skin": "#e8bd98",
+   "hair": "#2a1d15"
+  }
+ },
+ "clips": [
+  {
+   "id": "salah-63",
+   "kind": "one_on_one",
+   "attacking": "home",
+   "scorer": "salah",
+   "assister": "szoboszlai",
+   "defenders": [
+    "d1",
+    "d2"
+   ],
+   "keeper": "vicario",
+   "minute": 63,
+   "scoreBefore": [
+    3,
+    1
+   ],
+   "scoreAfter": [
+    4,
+    1
+   ],
+   "night": false,
+   "celebration": "arms_out",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "delivery": "through",
+    "passerStart": [
+     -4,
+     34
+    ],
+    "passFrom": [
+     -3,
+     26
+    ],
+    "scorerStart": [
+     3,
+     30
+    ],
+    "scorerSpot": [
+     0,
+     11
+    ],
+    "finish": "left",
+    "goalSide": "right",
+    "height": "low"
+   },
+   "seed": "salah-2025-c"
+  }
+ ]
+}

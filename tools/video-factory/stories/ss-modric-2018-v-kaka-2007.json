@@ -1,276 +1,555 @@
 {
-  "id": "ss-modric-2018-v-kaka-2007",
-  "series": "Best season ever, settled",
-  "title": "Modric 2018 v Kaka 2007: the two who broke the Messi-Ronaldo era",
-  "sources": [
-    "https://en.wikipedia.org/wiki/2007_Ballon_d%27Or",
-    "https://en.wikipedia.org/wiki/2018_Ballon_d%27Or",
-    "https://www.ballondor.com (2007 and 2018 rankings and articles; saved in data/ballondor/)",
-    "data/competition-history/champions-league.json (2006-07 and 2017-18 finals and top scorers)",
-    "data/competition-history/world-cup.json (2018 final and Golden Ball)"
-  ],
-  "checked": "Points 444/277/255 (2007) and 753/476/414 (2018) from Wikipedia, podium order matches ballondor.com; Kaka top scorer of the 2006-07 Champions League with ten and Milan 2-1 Liverpool (ballondor.com notes + local Champions League file); Real Madrid 3-1 Liverpool 2018 and Modric's World Cup final loss 4-2 to France and Golden Ball (local files + ballondor.com + Wikipedia); 'last winner before the Messi-Ronaldo decade' and 'first other winner since Kaka' (Wikipedia both pages). Ages from ballondor.com dates of birth.",
-  "clubs": {
-    "milan": {
-      "name": "AC Milan",
-      "short": "MIL",
-      "c1": "#fb090b",
-      "c2": "#111111",
-      "pattern": "stripes"
-    },
-    "realmadrid": {
-      "name": "Real Madrid",
-      "short": "RMA",
-      "c1": "#ffffff",
-      "c2": "#febe10",
-      "pattern": "plain"
-    },
-    "liverpool": {
-      "name": "Liverpool",
-      "short": "LIV",
-      "c1": "#c8102e",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "cro": {
-      "name": "Croatia",
-      "short": "CRO",
-      "c1": "#ff0000",
-      "c2": "#ffffff",
-      "pattern": "hoops"
-    },
-    "fra": {
-      "name": "France",
-      "short": "FRA",
-      "c1": "#1f3b8c",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "manutd": {
-      "name": "Manchester United",
-      "short": "MUN",
-      "c1": "#da291c",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "juve": {
-      "name": "Juventus",
-      "short": "JUV",
-      "c1": "#ffffff",
-      "c2": "#111111",
-      "pattern": "stripes"
-    }
+ "id": "ss-modric-2018-v-kaka-2007",
+ "series": "Best season ever, settled",
+ "v2": true,
+ "title": "Kaká 2007 v Modrić 2018: the two who broke the Messi-Ronaldo era",
+ "sources": [
+  "https://en.wikipedia.org/wiki/2007_Ballon_d%27Or",
+  "https://en.wikipedia.org/wiki/2018_Ballon_d%27Or",
+  "https://www.ballondor.com",
+  "https://en.wikipedia.org/wiki/2005_UEFA_Champions_League_final",
+  "https://en.wikipedia.org/wiki/2006%E2%80%9307_Serie_A",
+  "https://en.wikipedia.org/wiki/2006%E2%80%9307_UEFA_Champions_League",
+  "https://www.uefa.com/uefachampionsleague/news/01c1-0e6e4fdfea71-0f4bd386351f-1000--kaka-redeems-the-rossoneri",
+  "https://www.sportsmole.co.uk/football/ac-milan/on-this-day/feature/otd-milan-exact-cl-revenge-over-liverpool_156461.html",
+  "https://www.rte.ie/sport/soccer/2007/0523/218187-acmilan/",
+  "https://en.wikipedia.org/wiki/2018_UEFA_Champions_League_final",
+  "https://en.wikipedia.org/wiki/2018_FIFA_World_Cup_knockout_stage",
+  "https://www.sportsmole.co.uk/football/croatia/world-cup/news/luka-modric-croatia-must-stay-focused_328909.html",
+  "https://n1info.hr/english/news/a311675-Croatia-goes-through-to-final-16-after-beating-Argentina-3-0"
+ ],
+ "checked": "Ballon d'Or points 2007 Kaka 444, Ronaldo 277, Messi 255; 2018 Modric 753, Ronaldo 476, Griezmann 414 (Wikipedia both years, ballondor.com order). Istanbul 2005: Milan 3-0 up, 3-3, Liverpool win on penalties (Wikipedia final, UEFA). Milan -8 points for Calciopoli, 4th on 61, Inter 97 (Wikipedia Serie A 2006-07, Wikipedia Calciopoli). Kaka top scorer of the 2006-07 Champions League with 10 (Wikipedia season, UEFA). Semi: Man United 3-2 Milan with Kaka scoring twice, Milan 3-0 in the second leg (Wikipedia season, UEFA). Final 2-1 in Athens, Kaka's pass for Inzaghi's 82nd-minute 2-0 (UEFA, Sports Mole, RTE). Real Madrid 3-1 Liverpool in Kyiv, third title in a row (Wikipedia, UEFA). Modric's long-range goal v Argentina, 3-0, about 80 minutes (Sports Mole, N1, The Quint). Croatia: Denmark 1-1 pens, Russia 2-2 pens, England 2-1 aet, France 4-2 (Wikipedia knockout stage, FIFA). Golden Ball (FIFA, Wikipedia). Modric 32 during 2017-18 (born 9 Sep 1985). Gameplay: Inzaghi's goal and Modric's curler recreated with gamecap (specs kaka-2007, modric-2018).",
+ "clubs": {
+  "mil": {
+   "name": "AC Milan",
+   "short": "MIL",
+   "c1": "#fb090b",
+   "c2": "#111111",
+   "pattern": "stripes"
   },
-  "people": {
-    "kaka": {
-      "name": "Kaka",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#3a2a1c"
-      ],
-      "beard": "none",
-      "kit": "milan"
-    },
-    "modric": {
-      "name": "Luka Modric",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#c9b48a"
-      ],
-      "beard": "stubble",
-      "kit": "realmadrid"
-    }
+  "liv": {
+   "name": "Liverpool",
+   "short": "LIV",
+   "c1": "#c8102e",
+   "c2": "#ffffff",
+   "pattern": "plain"
   },
-  "lines": [
-    {
-      "text": "For ten years, only Messi and Ronaldo won the Ballon d'Or. These are the two men on either side of that wall.",
-      "scene": {
-        "type": "title",
-        "heading": "MODRIC 2018 v KAKA 2007",
-        "sub": "Before and after the decade",
-        "pill": "SETTLED",
-        "person": "kaka"
-      }
-    },
-    {
-      "text": "Kaka, twenty oh seven. Twenty-five, AC Milan, unstoppable on the counter.",
-      "scene": {
-        "type": "person",
-        "person": "kaka",
-        "label": "AC Milan · 2007",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "Top scorer in the Champions League with ten goals, from midfield.",
-      "scene": {
-        "type": "stats",
-        "title": "KAKA 2006-07",
-        "person": "kaka",
-        "items": [
-          {
-            "n": "10",
-            "l": "Champions League goals"
-          },
-          {
-            "n": "1st",
-            "l": "in the scoring chart"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Luka Modric, twenty eighteen. Thirty-three, Real Madrid, the man who ran every game.",
-      "scene": {
-        "type": "person",
-        "person": "modric",
-        "label": "Real Madrid · 2018",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "He doesn't score many. His numbers are the trophies, and the finals.",
-      "scene": {
-        "type": "trophies",
-        "person": "modric",
-        "items": [
-          {
-            "kind": "bigears",
-            "label": "Champions League 2018"
-          },
-          {
-            "kind": "ballon",
-            "label": "World Cup Golden Ball"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Kaka's trophy cabinet that year: the Champions League, and the Ballon d'Or.",
-      "scene": {
-        "type": "trophies",
-        "person": "kaka",
-        "items": [
-          {
-            "kind": "bigears",
-            "label": "Champions League 2007"
-          },
-          {
-            "kind": "ballon",
-            "label": "Ballon d'Or 2007"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Now here's the twist. Both men won the Champions League final against the same club. Liverpool.",
-      "scene": {
-        "type": "text",
-        "heading": "THE TWIST",
-        "body": "Milan beat Liverpool in Athens in 2007. Real Madrid beat Liverpool in Kyiv in 2018. Same victims, eleven years apart."
-      }
-    },
-    {
-      "text": "Milan two, Liverpool one.",
-      "scene": {
-        "type": "score",
-        "home": "milan",
-        "away": "liverpool",
-        "hs": 2,
-        "as": 1,
-        "date": "23 May 2007",
-        "comp": "Champions League final"
-      }
-    },
-    {
-      "text": "Real Madrid three, Liverpool one.",
-      "scene": {
-        "type": "score",
-        "home": "realmadrid",
-        "away": "liverpool",
-        "hs": 3,
-        "as": 1,
-        "date": "26 May 2018",
-        "comp": "Champions League final"
-      }
-    },
-    {
-      "text": "And the man who came second both times? Cristiano Ronaldo.",
-      "scene": {
-        "type": "list",
-        "title": "RONALDO, SECOND BOTH TIMES",
-        "rows": [
-          {
-            "name": "2007: Kaka",
-            "value": "444",
-            "club": "milan",
-            "hl": true
-          },
-          {
-            "name": "2007: Ronaldo",
-            "value": "277",
-            "club": "manutd"
-          },
-          {
-            "name": "2018: Modric",
-            "value": "753",
-            "club": "realmadrid",
-            "hl": true
-          },
-          {
-            "name": "2018: Ronaldo",
-            "value": "476",
-            "club": "juve"
-          }
-        ]
-      }
-    },
-    {
-      "text": "But Modric's summer pushes him ahead. He dragged Croatia to a World Cup final. They lost four-two to France.",
-      "scene": {
-        "type": "score",
-        "home": "fra",
-        "away": "cro",
-        "hs": 4,
-        "as": 2,
-        "date": "15 July 2018",
-        "comp": "World Cup final",
-        "note": "Modric wins the Golden Ball"
-      }
-    },
-    {
-      "text": "The vote? Modric won by two hundred and seventy-seven points. Kaka by one hundred and sixty-seven.",
-      "scene": {
-        "type": "versus",
-        "title": "WINNING MARGIN",
-        "left": {
-          "person": "kaka",
-          "label": "Kaka 2007",
-          "value": "167"
-        },
-        "right": {
-          "person": "modric",
-          "label": "Modric 2018",
-          "value": "277"
-        }
-      }
-    },
-    {
-      "text": "Kaka has the goals. Modric has the bigger year. Settled: Modric.",
-      "scene": {
-        "type": "stamp",
-        "text": "MODRIC",
-        "person": "modric",
-        "color": "white"
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
+  "mun": {
+   "name": "Manchester United",
+   "short": "MUN",
+   "c1": "#da291c",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "rma": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#c9a227",
+   "pattern": "plain"
+  },
+  "juv": {
+   "name": "Juventus",
+   "short": "JUV",
+   "c1": "#111111",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "atm": {
+   "name": "Atlético Madrid",
+   "short": "ATM",
+   "c1": "#cb3524",
+   "c2": "#ffffff",
+   "pattern": "stripes",
+   "badge": "Atletico Madrid"
+  },
+  "int": {
+   "name": "Inter",
+   "short": "INT",
+   "c1": "#0068a8",
+   "c2": "#111111",
+   "pattern": "stripes",
+   "badge": "Inter Milan"
+  },
+  "rom": {
+   "name": "Roma",
+   "short": "ROM",
+   "c1": "#8e1f2f",
+   "c2": "#f0bc42",
+   "pattern": "plain",
+   "badge": "AS Roma"
+  },
+  "laz": {
+   "name": "Lazio",
+   "short": "LAZ",
+   "c1": "#87d8f7",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "cro": {
+   "name": "Croatia",
+   "short": "CRO",
+   "c1": "#e1251b",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "arg": {
+   "name": "Argentina",
+   "short": "ARG",
+   "c1": "#75aadb",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "fra": {
+   "name": "France",
+   "short": "FRA",
+   "c1": "#1e3a8a",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "eng": {
+   "name": "England",
+   "short": "ENG",
+   "c1": "#ffffff",
+   "c2": "#1e3a8a",
+   "pattern": "plain"
+  },
+  "den": {
+   "name": "Denmark",
+   "short": "DEN",
+   "c1": "#c8102e",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "rus": {
+   "name": "Russia",
+   "short": "RUS",
+   "c1": "#ffffff",
+   "c2": "#c8102e",
+   "pattern": "plain"
+  },
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "badge": "FC Barcelona"
+  }
+ },
+ "people": {
+  "kaka": {
+   "name": "Kaká",
+   "skin": "olive",
+   "hair": [
+    "side",
+    "#2b2118"
+   ],
+   "beard": "none",
+   "kit": "mil"
+  },
+  "modric": {
+   "name": "Luka Modrić",
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#a8824e"
+   ],
+   "beard": "none",
+   "kit": "rma"
+  },
+  "ronaldo07": {
+   "name": "Cristiano Ronaldo",
+   "skin": "tan",
+   "hair": [
+    "slick",
+    "#1a120c"
+   ],
+   "beard": "none",
+   "kit": "mun"
+  },
+  "ronaldo18": {
+   "name": "Cristiano Ronaldo",
+   "skin": "tan",
+   "hair": [
+    "slick",
+    "#1a120c"
+   ],
+   "beard": "none",
+   "kit": "juv"
+  },
+  "messi07": {
+   "name": "Lionel Messi",
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#4a3424"
+   ],
+   "beard": "none",
+   "kit": "bar"
+  },
+  "griezmann": {
+   "name": "Antoine Griezmann",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#c9a27e"
+   ],
+   "beard": "stubble",
+   "kit": "atm"
+  }
+ },
+ "lines": [
+  {
+   "text": "For ten years, only Messi and Ronaldo won the Ballon d'Or. Two men stand either side of that wall.",
+   "scene": {
+    "type": "title",
+    "heading": "KAKÁ v MODRIĆ",
+    "sub": "2007 v 2018",
+    "pill": "BEST SEASON EVER?",
+    "person": "kaka",
+    "club": "mil"
+   },
+   "say": "For ten years, only Messi and Ronaldo won the Balon Dor. Two men stand either side of that wall."
+  },
+  {
+   "text": "Kaká's story starts with a scar. In 2005, Milan led Liverpool three-nil in a Champions League final, and lost.",
+   "scene": {
+    "type": "news",
+    "section": "Champions League final",
+    "headline": "Milan throw away three-goal lead in Istanbul",
+    "standfirst": "Three up at half-time, Milan are pegged back to 3-3 and Liverpool win the final on penalties.",
+    "date": "25 May 2005",
+    "byline": "Knowitball recap",
+    "club": "liv",
+    "person": "kaka",
+    "nav": [
+     "Football",
+     "Champions League",
+     "Milan",
+     "Liverpool"
+    ]
+   },
+   "say": "Kahkah's story starts with a scar. In twenty oh five, Milan led Liverpool three nil in a Champions League final, and lost."
+  },
+  {
+   "text": "Then a scandal. Milan start 2006-07 on minus eight points, and finish thirty-six behind Inter.",
+   "scene": {
+    "type": "table",
+    "season": "Serie A 2006/07",
+    "title": "Final table",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "int",
+      "p": 38,
+      "w": 30,
+      "d": 7,
+      "l": 1,
+      "gd": 46,
+      "pts": 97
+     },
+     {
+      "pos": 2,
+      "club": "rom",
+      "p": 38,
+      "w": 22,
+      "d": 9,
+      "l": 7,
+      "gd": 40,
+      "pts": 75
+     },
+     {
+      "pos": 3,
+      "club": "laz",
+      "p": 38,
+      "w": 18,
+      "d": 11,
+      "l": 9,
+      "gd": 26,
+      "pts": 62
+     },
+     {
+      "pos": 4,
+      "club": "mil",
+      "p": 38,
+      "w": 19,
+      "d": 12,
+      "l": 7,
+      "gd": 21,
+      "pts": 61,
+      "hl": true
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
+     }
+    ],
+    "gap": {
+     "from": 1,
+     "to": 4,
+     "label": "36 pts",
+     "at": 0.45
     }
-  ]
+   },
+   "say": "Then a scandal. Milan start twenty oh six, oh seven on minus eight points, and finish thirty six behind Inter."
+  },
+  {
+   "text": "So Kaká carries them in Europe. Ten goals from midfield. Top scorer in the whole competition.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Champions League 2006/07",
+    "title": "Kaká carries Milan",
+    "items": [
+     {
+      "n": "10",
+      "l": "goals"
+     },
+     {
+      "n": "1st",
+      "l": "top scorer"
+     }
+    ],
+    "person": "kaka"
+   },
+   "say": "So Kahkah carries them in Europe. Ten goals from midfield. Top scorer in the whole competition."
+  },
+  {
+   "text": "Then Athens, and Liverpool again. Kaká slips Inzaghi through. Two-nil.",
+   "scene": {
+    "type": "gameclip",
+    "popup": {
+     "home": "mil",
+     "away": "liv",
+     "homeName": "Milan",
+     "hs0": 1,
+     "as0": 0,
+     "hs": 2,
+     "as": 0,
+     "scorer": "Inzaghi",
+     "assist": "Kaká"
+    },
+    "caption": "Revenge",
+    "parts": [
+     [
+      "work/gc/kaka-2007/inzaghi-82/tv",
+      24,
+      82
+     ],
+     [
+      "work/gc/kaka-2007/inzaghi-82/high",
+      82,
+      123
+     ],
+     [
+      "work/gc/kaka-2007/inzaghi-82/tight",
+      15,
+      75
+     ]
+    ],
+    "goalAt": 2.567
+   },
+   "say": "Then Athens, and Liverpool again. Kahkah slips Intsahgee through. Two nil."
+  },
+  {
+   "text": "Revenge, the Champions League, and the Ballon d'Or. Four hundred and forty-four points.",
+   "scene": {
+    "type": "podium",
+    "year": "2007",
+    "title": "Ballon d'Or",
+    "places": [
+     {
+      "person": "kaka",
+      "club": "mil",
+      "points": 444
+     },
+     {
+      "person": "ronaldo07",
+      "club": "mun",
+      "points": 277
+     },
+     {
+      "person": "messi07",
+      "club": "bar",
+      "points": 255
+     }
+    ]
+   },
+   "say": "Revenge, the Champions League, and the Balon Dor. Four hundred and forty-four points."
+  },
+  {
+   "text": "Eleven years later, Modrić's Real Madrid beat Liverpool in Kyiv. A third Champions League in a row.",
+   "scene": {
+    "type": "score",
+    "home": "rma",
+    "away": "liv",
+    "hs": 3,
+    "as": 1,
+    "date": "26 May 2018 · Kyiv",
+    "comp": "Champions League final",
+    "note": "Real Madrid's third European Cup in a row"
+   },
+   "say": "Eleven years later, Modritch's Rayal Madrid beat Liverpool in Keev. A third Champions League in a row."
+  },
+  {
+   "text": "Then the World Cup. Against Argentina, he curls one in from outside the box.",
+   "scene": {
+    "type": "gameclip",
+    "popup": {
+     "home": "arg",
+     "away": "cro",
+     "hs0": 0,
+     "as0": 1,
+     "hs": 0,
+     "as": 2,
+     "scorer": "Modrić"
+    },
+    "caption": "Modrić!",
+    "parts": [
+     [
+      "work/gc/modric-2018/modric-curl/tv",
+      0,
+      51
+     ],
+     [
+      "work/gc/modric-2018/modric-curl/high",
+      51,
+      106
+     ],
+     [
+      "work/gc/modric-2018/modric-curl/tight",
+      15,
+      75
+     ]
+    ],
+    "goalAt": 2.8
+   },
+   "say": "Then the World Cup. Against Argentina, he curls one in from outside the box."
+  },
+  {
+   "text": "Then extra time against Denmark. Extra time against Russia. Extra time against England.",
+   "scene": {
+    "type": "timeline",
+    "kicker": "Croatia · World Cup 2018",
+    "title": "Three extra times",
+    "items": [
+     {
+      "year": "Last 16",
+      "label": "Denmark 1-1 · won on pens",
+      "club": "den"
+     },
+     {
+      "year": "Quarter",
+      "label": "Russia 2-2 · won on pens",
+      "club": "rus"
+     },
+     {
+      "year": "Semi",
+      "label": "England 1-2 · after extra time",
+      "club": "eng"
+     },
+     {
+      "year": "Final",
+      "label": "France 4-2 Croatia",
+      "club": "fra",
+      "hl": true
+     }
+    ]
+   },
+   "say": "Then extra time against Denmark. Extra time against Russia. Extra time against England."
+  },
+  {
+   "text": "Croatia lose the final four-two. Modrić still wins the Golden Ball, and the Ballon d'Or.",
+   "scene": {
+    "type": "trophies",
+    "kicker": "Luka Modrić · 2018",
+    "title": "The bigger year",
+    "items": [
+     {
+      "kind": "bigears",
+      "label": "Champions League"
+     },
+     {
+      "kind": "award",
+      "label": "World Cup Golden Ball"
+     },
+     {
+      "kind": "ballon",
+      "label": "Ballon d'Or"
+     }
+    ],
+    "person": "modric"
+   },
+   "say": "Croaysha lose the final four-two. Modritch still wins the Golden Ball, and the Balon Dor."
+  },
+  {
+   "text": "Kaká won by a hundred and sixty-seven points. Modrić, by two hundred and seventy-seven.",
+   "scene": {
+    "type": "compare",
+    "title": "Head to head",
+    "left": {
+     "person": "kaka",
+     "name": "Kaká",
+     "sub": "2007"
+    },
+    "right": {
+     "person": "modric",
+     "name": "Modrić",
+     "sub": "2018"
+    },
+    "rows": [
+     {
+      "label": "Ballon d'Or points",
+      "l": 444,
+      "r": 753
+     },
+     {
+      "label": "Winning margin",
+      "l": 167,
+      "r": 277
+     },
+     {
+      "label": "Finals played",
+      "l": 1,
+      "r": 2
+     },
+     {
+      "label": "Champions League",
+      "l": 1,
+      "r": 1
+     }
+    ]
+   },
+   "say": "Kahkah won by a hundred and sixty-seven points. Modritch, by two hundred and seventy-seven."
+  },
+  {
+   "text": "Kaká had the goals and the revenge. Modrić had the bigger year. Settled: Modrić.",
+   "scene": {
+    "type": "stamp",
+    "text": "MODRIĆ",
+    "sub": "Best season ever, settled",
+    "person": "modric",
+    "color": "green"
+   },
+   "say": "Kahkah had the goals and the revenge. Modritch had the bigger year. Settled: Modritch."
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }
