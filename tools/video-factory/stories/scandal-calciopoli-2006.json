@@ -155,8 +155,8 @@
    }
   },
   {
-   "text": "On the pitch, Juve won the 2005-06 league with ninety-one points, three clear of Milan.",
-   "say": "On the pitch, Yoovay won the twenty oh five, oh six league with ninety-one points, three clear of Milan.",
+   "text": "On the pitch, Juventus won the 2005-06 league with ninety-one points, three clear of Milan.",
+   "say": "On the pitch, Yooventus won the twenty oh five, oh six league with ninety-one points, three clear of Milan.",
    "scene": {
     "type": "table",
     "title": "Serie A",
@@ -257,8 +257,8 @@
    }
   },
   {
-   "text": "Then police phone taps came out. Juve's boss Luciano Moggi, on the line to the men who picked the referees.",
-   "say": "Then police phone taps came out. Yoovay's boss, Loochahno Moji, on the line to the men who picked the referees.",
+   "text": "Then police phone taps came out. Juventus boss Luciano Moggi, on the line to the men who picked the referees.",
+   "say": "Then police phone taps came out. Yooventus boss, Loochahno Moji, on the line to the men who picked the referees.",
    "scene": {
     "type": "news",
     "section": "Serie A",
@@ -277,15 +277,6 @@
    }
   },
   {
-   "text": "Moggi quit, days after the title party. His words: they killed my soul.",
-   "say": "Moji quit, days after the title party. His words: they killed my soul.",
-   "scene": {
-    "type": "quote",
-    "person": "moggi",
-    "text": "They killed my soul."
-   }
-  },
-  {
    "text": "July. The verdict. Juventus were relegated, and stripped of two titles.",
    "say": "July. The verdict. Yooventus were relegated, and stripped of two titles.",
    "scene": {
@@ -297,8 +288,8 @@
    }
   },
   {
-   "text": "The 2005 title went to nobody. The 2006 one was handed to Inter, who'd finished fifteen points behind.",
-   "say": "The twenty oh five title went to nobody. The twenty oh six one was handed to Inter, who'd finished fifteen points behind.",
+   "text": "The 2005 title went to nobody. The 2006 one went to Inter, fifteen points behind.",
+   "say": "The twenty oh five title went to nobody. The twenty oh six one went to Inter Milan, fifteen points behind.",
    "scene": {
     "type": "table",
     "title": "Serie A",
@@ -412,40 +403,8 @@
    }
   },
   {
-   "text": "Milan, Fiorentina, Lazio and Reggina lost points too, but stayed up.",
-   "say": "Milan, Feeorenteena, Latseeoh and Rejeena lost points too, but stayed up.",
-   "scene": {
-    "type": "bars",
-    "kicker": "Serie A 2006/07 penalties",
-    "title": "Points docked",
-    "items": [
-     {
-      "label": "Fiorentina",
-      "value": 15,
-      "club": "fio"
-     },
-     {
-      "label": "Reggina",
-      "value": 11,
-      "club": "reg"
-     },
-     {
-      "label": "AC Milan",
-      "value": 8,
-      "club": "mil"
-     },
-     {
-      "label": "Lazio",
-      "value": 3,
-      "club": "laz"
-     }
-    ],
-    "unit": " pts"
-   }
-  },
-  {
-   "text": "The twist? Italy were at the World Cup in Germany, with five Juve players.",
-   "say": "The twist? Italy were at the World Cup in Germany, with five Yoovay players.",
+   "text": "The twist? Italy were at the World Cup in Germany, with five Juventus players.",
+   "say": "The twist? Italy were at the World Cup in Germany, with five Yooventus players.",
    "scene": {
     "type": "list",
     "kicker": "Italy's World Cup squad",
@@ -552,8 +511,8 @@
    }
   },
   {
-   "text": "Cannavaro lifted the trophy, then left for Real Madrid, and won the Ballon d'Or.",
-   "say": "Kannahvaroh lifted the trophy, then left for Rayal Madrid, and won the Ballon d'Or.",
+   "text": "Cannavaro lifted the trophy, and later that year won the Ballon d'Or.",
+   "say": "Kannahvaroh lifted the trophy, and later that year won the Ballon d'Or.",
    "scene": {
     "type": "trophies",
     "kicker": "Fabio Cannavaro · 2006",
@@ -572,8 +531,8 @@
    }
   },
   {
-   "text": "Buffon and Del Piero stayed. Juve won Serie B at the first attempt. Moggi was banned from football for life.",
-   "say": "Boofon and Del Pyairo stayed. Yoovay won Seree B at the first attempt. Moji was banned from football for life.",
+   "text": "Juventus bounced straight back from Serie B. Moggi was banned from football for life.",
+   "say": "Yooventus bounced straight back from Seree B. Moji was banned from football for life.",
    "scene": {
     "type": "trophies",
     "kicker": "2006/07",
