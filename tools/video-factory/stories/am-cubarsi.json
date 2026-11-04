@@ -270,8 +270,8 @@
       }
     },
     {
-      "text": "Now Spain's great centre-backs at the same age. Carles Puyol, February ninety-eight.",
-      "say": "Now, Spain's great centre backs, at the same age. Karlus Pooyol. February, ninety eight.",
+      "text": "Now Spain's great centre-backs at the same age, starting with Carles Puyol in February ninety-eight.",
+      "say": "Now, Spain's great centre backs at the same age, starting with Karlus Pooyol, in February ninety eight.",
       "scene": {
         "type": "versus",
         "title": "Same age: 19 years, 320 days",
@@ -382,7 +382,7 @@
     },
     {
       "text": "So where does Cubarsí end up? Better than all three? Tell me in the comments.",
-      "say": "So where does Koobarsee end up? Better than all three? Tell me in the comments.",
+      "say": "So where does Pow Koobarsee end up? Better than all three? Tell me in the comments.",
       "scene": {
         "type": "compare",
         "title": "At 19 years, 320 days",
