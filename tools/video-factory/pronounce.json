@@ -92,7 +92,10 @@
   "Son Heung-min": "Sohn Hungmin",
   "Lionel": "Leeonel",
   "Lautaro": "Lowtarro",
-  "Martínez": "Marteenes"
+  "Martínez": "Marteenes",
+  "Éder": "Ayder",
+  "Götze": "Gurtser",
+  "Paraguay": "Parragwhy"
  },
  "_ipa": {
   "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -165,6 +168,9 @@
   "Son Heung-min": "ko [son hɯŋmin]; 'Sohn' heard back as 'Sohn'/'sewn' (Korean vowel), 'Sonn' came out as 'Sun', batch v2-12",
   "Lionel": "es [ljoˈnel], English broadcast 'LEE-oh-nel'; heard back as 'Lionel', batch v2-12",
   "Lautaro": "es [lawˈtaɾo]; 'Lowtahro' came out as 'Lottaro'/'Lotharole', 'Lowtarro' heard back as 'Lautaro', batch v2-12",
-  "Martínez": "es [maɾˈtineθ]; 'Marteenez' came out as 'Marcini's', 'Marteenes' heard back as 'Martinez', batch v2-12"
+  "Martínez": "es [maɾˈtineθ]; 'Marteenez' came out as 'Marcini's', 'Marteenes' heard back as 'Martinez', batch v2-12",
+  "Éder": "pt [ˈɛdɛɾ]; heard back as 'Aider', batch v2-12",
+  "Götze": "de [ˈɡœtsə]; 'Gertsa' came out as 'Gertseve', 'Gurtser' heard back as 'Gertzer', batch v2-12",
+  "Paraguay": "English 'PARR-uh-gwy'; heard back as 'Paraguay', batch v2-12"
  }
 }
