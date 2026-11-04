@@ -1,41 +1,535 @@
 {
-  "id": "ss-rooney-v-kane",
-  "series": "Best season ever, settled",
-  "title": "Rooney 2009-10 v Kane 2017-18: England's best number nine season?",
-  "sources": [
-    "https://en.wikipedia.org/wiki/2009%E2%80%9310_Manchester_United_F.C._season",
-    "https://en.wikipedia.org/wiki/2017%E2%80%9318_Tottenham_Hotspur_F.C._season",
-    "https://en.wikipedia.org/wiki/Harry_Kane",
-    "data/competition-history/premier-league.json (champions, top scorers, FWA winners)",
-    "data/competition-history/league-cup.json (2009-10 final)"
-  ],
-  "checked": "Rooney 26 league / 34 all comps, injured against Bayern, United second on 85 to Chelsea's 86, League Cup 2-1 v Villa, out to Bayern in the quarter-final (Wikipedia season page); FWA award, Drogba top scorer on 29 and the League Cup final (local files). Kane 30 league / 41 all comps, Spurs third on 77 with no trophy (Wikipedia season page); 39 Premier League goals in calendar 2017 beating Shearer's 36, 56 in all competitions in 2017 (Kane article); Salah top scorer on 32 (local file). Kane's totals have one source each beyond the season page; the calendar-year record has the Kane article.",
-  "clubs": {
-    "manutd": { "name": "Manchester United", "short": "MUN", "c1": "#da291c", "c2": "#ffffff", "pattern": "plain" },
-    "spurs": { "name": "Tottenham Hotspur", "short": "TOT", "c1": "#ffffff", "c2": "#132257", "pattern": "plain" },
-    "villa": { "name": "Aston Villa", "short": "AVL", "c1": "#670e36", "c2": "#95bfe5", "pattern": "sides" },
-    "chelsea": { "name": "Chelsea", "short": "CHE", "c1": "#034694", "c2": "#ffffff", "pattern": "plain" },
-    "liverpool": { "name": "Liverpool", "short": "LIV", "c1": "#c8102e", "c2": "#ffffff", "pattern": "plain" }
+ "id": "ss-rooney-v-kane",
+ "series": "Best season ever, settled",
+ "v2": true,
+ "title": "Rooney 2009-10 v Kane 2017-18: England's best number nine season?",
+ "sources": [
+  "https://en.wikipedia.org/wiki/2009%E2%80%9310_Manchester_United_F.C._season",
+  "https://en.wikipedia.org/wiki/2009%E2%80%9310_Premier_League",
+  "https://www.aljazeera.com/sports/2010/1/31/super-nani-spanks-arsenal",
+  "https://www.foxsports.com/stories/soccer/london-joy-for-red-hot-red-devils",
+  "https://en.wikipedia.org/wiki/2010_Football_League_Cup_final",
+  "https://en.wikipedia.org/wiki/2017%E2%80%9318_Tottenham_Hotspur_F.C._season",
+  "https://en.wikipedia.org/wiki/2017%E2%80%9318_Premier_League",
+  "https://www.tottenhamhotspur.com/news/1050929/i-hope-2018-is-even-better-harry-kane",
+  "https://www.goal.com/en/news/harry-kane-goal-breaks-premier-league-scoring-record/1a0lf72bjyx9u140uavz6zi3nr",
+  "https://www.fourfourtwo.com/news/tottenham-5-southampton-2-records-tumble-inspirational-hat-trick-hero-kane",
+  "https://www.bbc.co.uk/sport/football/43715839",
+  "https://en.wikipedia.org/wiki/Harry_Kane"
+ ],
+ "checked": "Ronaldo sold to Real Madrid summer 2009 (Wikipedia United season, Wikipedia Ronaldo). Arsenal 1-3 United 31 Jan 2010, Rooney's 37th-minute counter-attack goal from Nani's return after a 70-metre run (Al Jazeera, Fox Sports; the BBC names Park). Rooney 26 league / 34 all comps, PFA and FWA awards 2010 (Wikipedia season, Wikipedia Rooney). League Cup final 28 Feb 2010, United 2-1 Villa, Rooney's headed winner (Wikipedia final). Bayern 2-1 United 30 Mar 2010, Rooney scored early and hurt his ankle at the end; United 1-2 Chelsea 3 Apr 2010 without him (Wikipedia season, BBC). Final table Chelsea 86, United 85 (Wikipedia). Drogba 29, Rooney 26 (Wikipedia). Kane: Spurs at Wembley 2017-18; 26 Dec 2017 hat-trick v Southampton, first goal a header from Eriksen's cross, 39 PL goals in 2017 beating Shearer's 36 (Tottenham FC, Goal.com, FourFourTwo). 30 league / 41 all comps; Eriksen's goal at Stoke given to Kane on appeal (BBC, Wikipedia Kane). Salah 32 Golden Boot; table City 100, United 81, Spurs 77 (Wikipedia). Gameplay: Rooney's counter and Kane's header recreated with gamecap (specs rooney-2010, kane-2017; United's black away kit is assumed).",
+ "clubs": {
+  "mun": {
+   "name": "Manchester United",
+   "short": "MUN",
+   "c1": "#da291c",
+   "c2": "#ffffff",
+   "pattern": "plain"
   },
-  "people": {
-    "rooney": { "name": "Wayne Rooney", "skin": "pink", "hair": ["buzz", "#6b4a2e"], "beard": "none", "kit": "manutd" },
-    "kane": { "name": "Harry Kane", "skin": "light", "hair": ["side", "#8a6a48"], "beard": "none", "kit": "spurs" },
-    "drogba": { "name": "Didier Drogba", "skin": "dark", "hair": ["buzz", "#111111"], "beard": "stubble", "kit": "chelsea" },
-    "salah": { "name": "Mohamed Salah", "skin": "tan", "hair": ["bigcurl", "#1a120c"], "beard": "full", "beardCol": "#1a120c", "kit": "liverpool" }
+  "tot": {
+   "name": "Tottenham Hotspur",
+   "short": "TOT",
+   "c1": "#ffffff",
+   "c2": "#132257",
+   "pattern": "plain"
   },
-  "lines": [
-    { "text": "England's two greatest goalscorers. Their best seasons. Only one ends with a medal.", "scene": { "type": "title", "heading": "ROONEY v KANE", "sub": "2009-10 v 2017-18", "pill": "SETTLED", "person": "rooney" } },
-    { "text": "Wayne Rooney, twenty oh nine, ten. Twenty-four years old, and on fire.", "scene": { "type": "person", "person": "rooney", "label": "Man United · 2009-10", "mood": "happy" } },
-    { "text": "Twenty-six league goals, thirty-four in all. Football Writers' Player of the Year.", "scene": { "type": "stats", "title": "ROONEY 2009-10", "person": "rooney", "items": [ { "n": "26", "l": "league goals" }, { "n": "34", "l": "all competitions" } ] } },
-    { "text": "Harry Kane, twenty seventeen, eighteen. Spurs at Wembley.", "scene": { "type": "person", "person": "kane", "label": "Spurs · 2017-18", "mood": "happy" } },
-    { "text": "Thirty league goals, forty-one in all. And in twenty seventeen he broke Shearer's record: thirty-nine Premier League goals in a calendar year.", "scene": { "type": "stats", "title": "KANE 2017-18", "person": "kane", "items": [ { "n": "30", "l": "league goals" }, { "n": "41", "l": "all competitions" }, { "n": "39", "l": "PL goals in 2017" } ] } },
-    { "text": "Numbers? Kane, clearly.", "scene": { "type": "versus", "title": "ALL COMPETITIONS", "left": { "person": "rooney", "label": "Rooney 09-10", "value": "34" }, "right": { "person": "kane", "label": "Kane 17-18", "value": "41" } } },
-    { "text": "Trophies? Rooney won the League Cup. Kane won nothing.", "scene": { "type": "score", "home": "manutd", "away": "villa", "hs": 2, "as": 1, "date": "2010", "comp": "League Cup final" } },
-    { "text": "And Rooney's United missed the title by one point. Kane's Spurs finished third.", "scene": { "type": "list", "title": "WHERE THEY FINISHED", "rows": [ { "name": "Chelsea 2009-10", "value": "86 pts", "club": "chelsea" }, { "name": "Man United 2009-10", "value": "85 pts", "club": "manutd", "hl": true }, { "name": "Spurs 2017-18 (3rd)", "value": "77 pts", "club": "spurs", "hl": true } ] } },
-    { "text": "Now the twist. Neither of them won the Golden Boot.", "scene": { "type": "stamp", "text": "NO GOLDEN BOOT", "color": "red" } },
-    { "text": "Drogba beat Rooney with twenty-nine. Salah beat Kane with thirty-two.", "scene": { "type": "list", "title": "WHO BEAT THEM", "rows": [ { "name": "Drogba 2009-10", "value": "29", "club": "chelsea", "hl": true }, { "name": "Rooney 2009-10", "value": "26", "club": "manutd" }, { "name": "Salah 2017-18", "value": "32", "club": "liverpool", "hl": true }, { "name": "Kane 2017-18", "value": "30", "club": "spurs" } ] } },
-    { "text": "Rooney's what-if: he got injured against Bayern in the spring, and United lost to Chelsea without him.", "scene": { "type": "whatif", "title": "IN THIS ALTERNATE WORLD", "real": { "label": "Rooney injured", "value": "United 2nd by a point" }, "alt": { "label": "Imagined fit Rooney", "value": "Title race goes on" } } },
-    { "text": "Kane scored more. Rooney came closer to winning it all, and got a medal. Settled: Rooney.", "scene": { "type": "stamp", "text": "ROONEY", "person": "rooney", "color": "white" } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
-  ]
+  "ars": {
+   "name": "Arsenal",
+   "short": "ARS",
+   "c1": "#ef0107",
+   "c2": "#ffffff",
+   "pattern": "sides"
+  },
+  "che": {
+   "name": "Chelsea",
+   "short": "CHE",
+   "c1": "#034694",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "mci": {
+   "name": "Manchester City",
+   "short": "MCI",
+   "c1": "#6cabdd",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "bay": {
+   "name": "Bayern Munich",
+   "short": "BAY",
+   "c1": "#dc052d",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "avl": {
+   "name": "Aston Villa",
+   "short": "AVL",
+   "c1": "#670e36",
+   "c2": "#95bfe5",
+   "pattern": "plain"
+  },
+  "liv": {
+   "name": "Liverpool",
+   "short": "LIV",
+   "c1": "#c8102e",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "sou": {
+   "name": "Southampton",
+   "short": "SOU",
+   "c1": "#d71920",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "sto": {
+   "name": "Stoke City",
+   "short": "STK",
+   "c1": "#e03a3e",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  }
+ },
+ "people": {
+  "rooney": {
+   "name": "Wayne Rooney",
+   "skin": "pink",
+   "hair": [
+    "buzz",
+    "#6b4a2e"
+   ],
+   "beard": "none",
+   "kit": "mun"
+  },
+  "kane": {
+   "name": "Harry Kane",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#8a6a48"
+   ],
+   "beard": "none",
+   "kit": "tot"
+  },
+  "drogba": {
+   "name": "Didier Drogba",
+   "skin": "dark",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "stubble",
+   "kit": "che"
+  },
+  "salah": {
+   "name": "Mohamed Salah",
+   "skin": "tan",
+   "hair": [
+    "bigcurl",
+    "#1a120c"
+   ],
+   "beard": "full",
+   "beardCol": "#1a120c",
+   "kit": "liv"
+  }
+ },
+ "lines": [
+  {
+   "text": "England's two greatest goalscorers. Their best seasons. One got a medal. One got a record.",
+   "scene": {
+    "type": "title",
+    "heading": "ROONEY v KANE",
+    "sub": "2009/10 v 2017/18",
+    "pill": "BEST SEASON EVER?",
+    "person": "rooney",
+    "club": "mun"
+   },
+   "say": "England's two greatest goalscorers. Their best seasons. One got a medal. One got a record."
+  },
+  {
+   "text": "Summer 2009. Ronaldo leaves for Real Madrid, and Wayne Rooney becomes United's main man.",
+   "scene": {
+    "type": "person",
+    "person": "rooney",
+    "label": "Manchester United · 2009/10",
+    "mood": "happy"
+   },
+   "say": "Summer, twenty oh nine. Ronaldo leaves for Rayal Madrid, and Wayne Rooney becomes United's main man."
+  },
+  {
+   "text": "At Arsenal, he starts a counter in his own half, sprints seventy metres, and finishes it.",
+   "scene": {
+    "type": "gameclip",
+    "popup": {
+     "home": "ars",
+     "away": "mun",
+     "awayName": "Man United",
+     "hs0": 0,
+     "as0": 1,
+     "hs": 0,
+     "as": 2,
+     "scorer": "Rooney",
+     "assist": "Nani"
+    },
+    "caption": "Seventy metres",
+    "parts": [
+     [
+      "work/gc/rooney-2010/rooney-counter/tv",
+      24,
+      82
+     ],
+     [
+      "work/gc/rooney-2010/rooney-counter/high",
+      82,
+      125
+     ],
+     [
+      "work/gc/rooney-2010/rooney-counter/tight",
+      15,
+      75
+     ]
+    ],
+    "goalAt": 2.633
+   },
+   "say": "At Arsenal, he starts a counter in his own half, sprints seventy metres, and finishes it."
+  },
+  {
+   "text": "Twenty-six league goals, thirty-four in all. Both Player of the Year awards.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Wayne Rooney · 2009/10",
+    "title": "United's main man",
+    "items": [
+     {
+      "n": "26",
+      "l": "league goals"
+     },
+     {
+      "n": "34",
+      "l": "all competitions"
+     },
+     {
+      "n": "2",
+      "l": "player of the year awards"
+     }
+    ],
+    "person": "rooney"
+   },
+   "say": "Twenty-six league goals, thirty-four in all. Both Player of the Year awards."
+  },
+  {
+   "text": "In February, he heads the winner in the League Cup final.",
+   "scene": {
+    "type": "score",
+    "home": "mun",
+    "away": "avl",
+    "hs": 2,
+    "as": 1,
+    "date": "28 February 2010 · Wembley",
+    "comp": "League Cup final",
+    "note": "Rooney heads the winner"
+   },
+   "say": "In February, he heads the winner in the League Cup final."
+  },
+  {
+   "text": "Then Munich. He scores early, and wrecks his ankle in the last minute.",
+   "scene": {
+    "type": "score",
+    "home": "bay",
+    "away": "mun",
+    "hs": 2,
+    "as": 1,
+    "date": "30 March 2010 · Munich",
+    "comp": "Champions League quarter-final",
+    "note": "Rooney scores, then limps off injured"
+   },
+   "say": "Then Munich. He scores early, and wrecks his ankle in the last minute."
+  },
+  {
+   "text": "Without him, United lose to Chelsea at Old Trafford. And the league, by one point.",
+   "scene": {
+    "type": "table",
+    "season": "Premier League 2009/10",
+    "title": "Final table",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "che",
+      "p": 38,
+      "w": 27,
+      "d": 5,
+      "l": 6,
+      "gd": 71,
+      "pts": 86
+     },
+     {
+      "pos": 2,
+      "club": "mun",
+      "p": 38,
+      "w": 27,
+      "d": 4,
+      "l": 7,
+      "gd": 58,
+      "pts": 85,
+      "hl": true
+     },
+     {
+      "pos": 3,
+      "club": "ars",
+      "p": 38,
+      "w": 23,
+      "d": 6,
+      "l": 9,
+      "gd": 42,
+      "pts": 75
+     },
+     {
+      "pos": 4,
+      "club": "tot",
+      "p": 38,
+      "w": 21,
+      "d": 7,
+      "l": 10,
+      "gd": 26,
+      "pts": 70
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
+     }
+    ],
+    "gap": {
+     "from": 1,
+     "to": 2,
+     "label": "1 pt",
+     "at": 0.45
+    }
+   },
+   "say": "Without him, United lose to Chelsea at Old Trafford. And the league, by one point."
+  },
+  {
+   "text": "2017-18. Harry Kane on Boxing Day. A header from Eriksen's cross, the first of a hat-trick.",
+   "scene": {
+    "type": "gameclip",
+    "popup": {
+     "home": "tot",
+     "away": "sou",
+     "homeName": "Spurs",
+     "hs0": 0,
+     "as0": 0,
+     "hs": 1,
+     "as": 0,
+     "scorer": "Kane",
+     "assist": "Eriksen"
+    },
+    "caption": "Boxing Day",
+    "parts": [
+     [
+      "work/gc/kane-2017/kane-header/tv",
+      0,
+      51
+     ],
+     [
+      "work/gc/kane-2017/kane-header/high",
+      23,
+      66
+     ],
+     [
+      "work/gc/kane-2017/kane-header/tv",
+      94,
+      144
+     ]
+    ],
+    "goalAt": 2.133
+   },
+   "say": "Twenty seventeen, eighteen. Harry Kane on Boxing Day. A header from Erikson's cross, the first of a hat-trick."
+  },
+  {
+   "text": "Thirty-nine Premier League goals in one calendar year. Shearer's record, gone.",
+   "scene": {
+    "type": "news",
+    "section": "Premier League",
+    "headline": "Kane breaks Shearer's record",
+    "standfirst": "A hat-trick against Southampton takes him to 39 Premier League goals in 2017, three more than Shearer's 36.",
+    "date": "26 December 2017",
+    "byline": "Knowitball recap",
+    "club": "tot",
+    "person": "kane",
+    "nav": [
+     "Football",
+     "Premier League",
+     "Spurs"
+    ]
+   },
+   "say": "Thirty-nine Premier League goals in one calendar year. Sheerer's record, gone."
+  },
+  {
+   "text": "Thirty league goals, forty-one in all. He even appealed to get one of Eriksen's goals. And won.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Harry Kane · 2017/18",
+    "title": "The record breaker",
+    "items": [
+     {
+      "n": "30",
+      "l": "league goals"
+     },
+     {
+      "n": "41",
+      "l": "all competitions"
+     },
+     {
+      "n": "39",
+      "l": "PL goals in 2017"
+     }
+    ],
+    "person": "kane"
+   },
+   "say": "Thirty league goals, forty-one in all. He even appealed to get one of Erikson's goals. And won."
+  },
+  {
+   "text": "And Spurs finished third, twenty-three points behind City. No trophy.",
+   "scene": {
+    "type": "table",
+    "season": "Premier League 2017/18",
+    "title": "Final table",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "mci",
+      "p": 38,
+      "w": 32,
+      "d": 4,
+      "l": 2,
+      "gd": 79,
+      "pts": 100
+     },
+     {
+      "pos": 2,
+      "club": "mun",
+      "p": 38,
+      "w": 25,
+      "d": 6,
+      "l": 7,
+      "gd": 40,
+      "pts": 81
+     },
+     {
+      "pos": 3,
+      "club": "tot",
+      "p": 38,
+      "w": 23,
+      "d": 8,
+      "l": 7,
+      "gd": 38,
+      "pts": 77,
+      "hl": true
+     },
+     {
+      "pos": 4,
+      "club": "liv",
+      "p": 38,
+      "w": 21,
+      "d": 12,
+      "l": 5,
+      "gd": 46,
+      "pts": 75
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
+     }
+    ],
+    "gap": {
+     "from": 1,
+     "to": 3,
+     "label": "23 pts",
+     "at": 0.45
+    }
+   },
+   "say": "And Spurs finished third, twenty-three points behind City. No trophy."
+  },
+  {
+   "text": "Kane wins on goals. Rooney wins on medals, and came one ankle away from more.",
+   "scene": {
+    "type": "compare",
+    "title": "Head to head",
+    "left": {
+     "person": "rooney",
+     "name": "Rooney",
+     "sub": "2009/10"
+    },
+    "right": {
+     "person": "kane",
+     "name": "Kane",
+     "sub": "2017/18"
+    },
+    "rows": [
+     {
+      "label": "League goals",
+      "l": 26,
+      "r": 30
+     },
+     {
+      "label": "All goals",
+      "l": 34,
+      "r": 41
+     },
+     {
+      "label": "League finish",
+      "l": "2nd",
+      "r": "3rd",
+      "lower": true
+     },
+     {
+      "label": "Trophies",
+      "l": 1,
+      "r": 0
+     }
+    ]
+   },
+   "say": "Kane wins on goals. Rooney wins on medals, and came one ankle away from more."
+  },
+  {
+   "text": "Kane scored more. Rooney came closer to everything. Settled: Rooney.",
+   "scene": {
+    "type": "stamp",
+    "text": "ROONEY",
+    "sub": "Best season ever, settled",
+    "person": "rooney",
+    "color": "green"
+   },
+   "say": "Kane scored more. Rooney came closer to everything. Settled: Rooney."
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }
