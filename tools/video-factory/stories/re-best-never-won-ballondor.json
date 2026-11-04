@@ -2,15 +2,121 @@
   "id": "re-best-never-won-ballondor",
   "series": "Three rules to the top",
   "title": "Three rules to the best player never to win the Ballon d'Or",
+  "v2": true,
   "sources": [
-    "https://en.wikipedia.org/wiki/Ballon_d%27Or",
     "data/ballondor/rankings.json (ballondor.com year rankings, in this repo)",
-    "https://en.wikipedia.org/wiki/2010_FIFA_World_Cup_final",
+    "https://en.wikipedia.org/wiki/Ballon_d%27Or",
+    "https://en.wikipedia.org/wiki/2010_FIFA_Ballon_d%27Or",
+    "https://www.fcbarcelona.com/en/football/first-team/news/1924303/10",
+    "https://new.topendsports.com/sport/soccer/awards/ballondor-2010.htm",
     "https://en.wikipedia.org/wiki/List_of_FIFA_World_Cup_finals",
-    "https://en.wikipedia.org/wiki/Andr%C3%A9s_Iniesta"
+    "https://en.wikipedia.org/wiki/1994_FIFA_World_Cup_final",
+    "https://en.wikipedia.org/wiki/2010_FIFA_World_Cup_final",
+    "https://mg.co.za/2010-06-14-humble-henry-learns-to-live-on-fringes-for-now/",
+    "https://www.capitalfm.co.ke/sports/2010/06/26/i-felt-lonelyhenry/",
+    "https://en.wikipedia.org/wiki/Daniel_Jarque",
+    "https://www.timeslive.co.za/sport/soccer/2010-07-12-iniesta-in-world-cup-tribute-to-dead-compatriot/",
+    "https://www.historicalkits.co.uk/international/tournaments/fifa_world_cup_2010/knock-out-stages.html",
+    "https://www.footballkitarchive.com/spain-2010-world-cup-final-kit"
   ],
-  "checked": "Ballon d'Or podiums from ballondor.com year rankings (repo data) and Wikipedia: Henry 2nd 2003, Buffon 2nd 2006, Iniesta 2nd 2010, Xavi 3rd 2009-11, Neuer 3rd 2014, Lewandowski 2nd 2021, Haaland 2nd 2023, De Bruyne 3rd 2022, Maldini 3rd 1994/2003. World Cup wins: Henry 1998, Buffon 2006, Xavi/Iniesta 2010, Neuer 2014. Iniesta scored the 116th-minute winner in the 2010 final (Wikipedia).",
+  "checked": "Best Ballon d'Or finishes from ballondor.com rankings (repo) + Wikipedia: Henry 2nd 2003, Buffon 2nd 2006, Iniesta 2nd 2010, Xavi 3rd 2009/10/11, Neuer 3rd 2014, Maldini best 3rd. 2010 FIFA Ballon d'Or shares Messi 22.65, Iniesta 17.36, Xavi 16.48 (Wikipedia, FC Barcelona, TopEndSports). World Cup winners Henry 1998, Buffon 2006, Xavi+Iniesta 2010, Neuer 2014; Maldini lost the 1994 final on penalties, Baggio missed the last kick (Wikipedia finals list, 1994 final). Henry did not play the 1998 final (Mail & Guardian, Capital FM). Iniesta 116', Fabregas pass, right side of the box, one touch, right-foot half-volley into the left corner (Wikipedia 2010 final). Undershirt 'Dani Jarque siempre con nosotros', booked for removing his shirt; Jarque died in August 2009 (Wikipedia Jarque, TimesLive). Kits: Spain all navy, Netherlands all orange (historicalkits, footballkitarchive). No one of the ten has won the Ballon d'Or up to 2026 (Kane won 2026).",
   "clubs": {
+    "fra": {
+      "name": "France",
+      "short": "FRA",
+      "c1": "#21304d",
+      "c2": "#ffffff",
+      "pattern": "plain",
+      "badge": false
+    },
+    "esp": {
+      "name": "Spain",
+      "short": "ESP",
+      "c1": "#c60b1e",
+      "c2": "#ffc400",
+      "pattern": "plain",
+      "badge": false
+    },
+    "esn": {
+      "name": "Spain",
+      "short": "ESP",
+      "c1": "#1b2a4a",
+      "c2": "#c60b1e",
+      "pattern": "plain",
+      "badge": false
+    },
+    "ita": {
+      "name": "Italy",
+      "short": "ITA",
+      "c1": "#0064aa",
+      "c2": "#ffffff",
+      "pattern": "plain",
+      "badge": false
+    },
+    "ger": {
+      "name": "Germany",
+      "short": "GER",
+      "c1": "#ffffff",
+      "c2": "#111111",
+      "pattern": "plain",
+      "badge": false
+    },
+    "pol": {
+      "name": "Poland",
+      "short": "POL",
+      "c1": "#ffffff",
+      "c2": "#dc143c",
+      "pattern": "plain",
+      "badge": false
+    },
+    "bel": {
+      "name": "Belgium",
+      "short": "BEL",
+      "c1": "#e30613",
+      "c2": "#111111",
+      "pattern": "plain",
+      "badge": false
+    },
+    "egy": {
+      "name": "Egypt",
+      "short": "EGY",
+      "c1": "#ce1126",
+      "c2": "#ffffff",
+      "pattern": "plain",
+      "badge": false
+    },
+    "nor": {
+      "name": "Norway",
+      "short": "NOR",
+      "c1": "#ba0c2f",
+      "c2": "#00205b",
+      "pattern": "plain",
+      "badge": false
+    },
+    "ned": {
+      "name": "Netherlands",
+      "short": "NED",
+      "c1": "#f36c21",
+      "c2": "#ffffff",
+      "pattern": "plain",
+      "badge": false
+    },
+    "bra": {
+      "name": "Brazil",
+      "short": "BRA",
+      "c1": "#ffdf00",
+      "c2": "#009c3b",
+      "pattern": "plain",
+      "badge": false
+    },
+    "arg": {
+      "name": "Argentina",
+      "short": "ARG",
+      "c1": "#75aadb",
+      "c2": "#ffffff",
+      "pattern": "stripes",
+      "badge": false
+    },
     "ars": {
       "name": "Arsenal",
       "short": "ARS",
@@ -18,280 +124,429 @@
       "c2": "#ffffff",
       "pattern": "sides"
     },
+    "juv": {
+      "name": "Juventus",
+      "short": "JUV",
+      "c1": "#111111",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    },
     "bar": {
       "name": "Barcelona",
       "short": "BAR",
       "c1": "#a50044",
       "c2": "#004d98",
+      "pattern": "stripes",
+      "badge": "FC Barcelona"
+    },
+    "mil": {
+      "name": "AC Milan",
+      "short": "MIL",
+      "c1": "#fb090b",
+      "c2": "#111111",
       "pattern": "stripes"
     },
-    "esp": {
-      "name": "Spain",
-      "short": "ESP",
-      "c1": "#c60b1e",
-      "c2": "#ffc400",
-      "pattern": "plain"
-    },
-    "fra": {
-      "name": "France",
-      "short": "FRA",
-      "c1": "#21304d",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "ger": {
-      "name": "Germany",
-      "short": "GER",
-      "c1": "#ffffff",
-      "c2": "#000000",
-      "pattern": "plain"
-    },
-    "ita": {
-      "name": "Italy",
-      "short": "ITA",
-      "c1": "#0064aa",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "juv": {
-      "name": "Juventus",
-      "short": "JUV",
-      "c1": "#ffffff",
-      "c2": "#000000",
-      "pattern": "stripes"
-    },
-    "mci": {
-      "name": "Manchester City",
-      "short": "MCI",
-      "c1": "#6cabdd",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "ned": {
-      "name": "Netherlands",
-      "short": "NED",
-      "c1": "#f36c21",
+    "bay": {
+      "name": "Bayern Munich",
+      "short": "FCB",
+      "c1": "#dc052d",
       "c2": "#ffffff",
       "pattern": "plain"
     }
   },
   "people": {
-    "haaland": {
-      "name": "Erling Haaland",
-      "skin": "pink",
-      "hair": [
-        "slick",
-        "#e3cf8f"
-      ],
-      "beard": "none",
-      "kit": "mci"
-    },
-    "henry": {
-      "name": "Thierry Henry",
-      "skin": "dark",
-      "hair": [
-        "bald",
-        "#111111"
-      ],
-      "beard": "none",
-      "kit": "ars"
-    },
     "iniesta": {
       "name": "Andrés Iniesta",
-      "skin": "pink",
+      "skin": "light",
       "hair": [
-        "bald",
-        "#5a4030"
+        "crop",
+        "#6b4a32"
+      ],
+      "beard": "none",
+      "kit": "esn"
+    },
+    "iniestab": {
+      "name": "Andrés Iniesta",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#6b4a32"
       ],
       "beard": "none",
       "kit": "bar"
     },
     "xavi": {
       "name": "Xavi",
-      "skin": "light",
+      "skin": "olive",
       "hair": [
         "crop",
         "#2b1d14"
       ],
       "beard": "stubble",
       "kit": "bar"
+    },
+    "henry": {
+      "name": "Thierry Henry",
+      "skin": "brown",
+      "hair": [
+        "bald",
+        "#1a1a1a"
+      ],
+      "beard": "none",
+      "kit": "fra"
+    },
+    "maldini": {
+      "name": "Paolo Maldini",
+      "skin": "olive",
+      "hair": [
+        "side",
+        "#2b2118"
+      ],
+      "beard": "none",
+      "kit": "ita"
+    },
+    "messi": {
+      "name": "Lionel Messi",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#4a3222"
+      ],
+      "beard": "none",
+      "kit": "bar"
     }
   },
   "lines": [
     {
-      "text": "Who is the best player never to win the Ballon d'Or? Ten legends. Three rules. One name.",
+      "text": "Ten legends. Zero Ballon d'Ors. Three rules, and only one name survives.",
       "scene": {
         "type": "title",
         "heading": "NEVER WON IT",
-        "sub": "The best without a Ballon d'Or",
+        "sub": "The best player without a Ballon d'Or",
         "pill": "THREE RULES",
-        "person": "iniesta"
+        "person": "iniestab"
       }
     },
     {
-      "text": "Henry, Iniesta, Xavi, Maldini, Buffon, Neuer, Lewandowski, De Bruyne, Salah and Haaland.",
+      "text": "Henry, Maldini, Buffon, Xavi and Iniesta.",
+      "say": "Onree, Maldeenee, Booffon, Shahvee, and Inyestah.",
       "scene": {
         "type": "list",
-        "title": "Our ten",
+        "kicker": "The ten · part one",
+        "title": "Never won the Ballon d'Or",
         "rows": [
           {
-            "name": "Thierry Henry",
-            "value": "FRA",
+            "name": "Henry",
+            "value": "France",
             "club": "fra"
           },
           {
-            "name": "Andrés Iniesta",
-            "value": "ESP",
-            "club": "esp"
+            "name": "Maldini",
+            "value": "Italy",
+            "club": "ita"
+          },
+          {
+            "name": "Buffon",
+            "value": "Italy",
+            "club": "ita"
           },
           {
             "name": "Xavi",
-            "value": "ESP",
+            "value": "Spain",
             "club": "esp"
           },
           {
-            "name": "Paolo Maldini",
-            "value": "ITA",
-            "club": "ita"
-          },
+            "name": "Iniesta",
+            "value": "Spain",
+            "club": "esp"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Neuer, Lewandowski, De Bruyne, Salah and Haaland.",
+      "say": "Noyer, Lehvandoffskee, Debroynuh, Sahlah, and Hohland.",
+      "scene": {
+        "type": "list",
+        "kicker": "The ten · part two",
+        "title": "Never won the Ballon d'Or",
+        "rows": [
           {
-            "name": "Gianluigi Buffon",
-            "value": "ITA",
-            "club": "ita"
-          },
-          {
-            "name": "Manuel Neuer",
-            "value": "GER",
+            "name": "Neuer",
+            "value": "Germany",
             "club": "ger"
           },
           {
-            "name": "Lewandowski · De Bruyne",
-            "value": "+2"
+            "name": "Lewandowski",
+            "value": "Poland",
+            "club": "pol"
           },
           {
-            "name": "Salah · Haaland",
-            "value": "+2"
+            "name": "De Bruyne",
+            "value": "Belgium",
+            "club": "bel"
+          },
+          {
+            "name": "Mo Salah",
+            "value": "Egypt",
+            "club": "egy"
+          },
+          {
+            "name": "Haaland",
+            "value": "Norway",
+            "club": "nor"
           }
         ]
       }
     },
     {
-      "text": "Rule one. You must have won a World Cup.",
+      "text": "Rule one. You must be a world champion.",
       "scene": {
-        "type": "text",
-        "heading": "RULE 1",
-        "body": "Must have won the World Cup."
+        "type": "trophies",
+        "kicker": "Rule 1",
+        "title": "World Cup winners only",
+        "items": [
+          {
+            "kind": "worldcup",
+            "label": "1998 · Henry"
+          },
+          {
+            "kind": "worldcup",
+            "label": "2006 · Buffon"
+          },
+          {
+            "kind": "worldcup",
+            "label": "2010 · Xavi, Iniesta"
+          },
+          {
+            "kind": "worldcup",
+            "label": "2014 · Neuer"
+          }
+        ]
       }
     },
     {
-      "text": "Maldini, Lewandowski, De Bruyne, Salah and Haaland never have. Five gone.",
+      "text": "Maldini lost the 1994 final on penalties. Baggio blazed the last one over the bar.",
+      "say": "Maldeenee lost the nineteen ninety-four final on penalties. Bajjo blazed the last one over the bar.",
+      "scene": {
+        "type": "score",
+        "home": "bra",
+        "away": "ita",
+        "hs": 0,
+        "as": 0,
+        "date": "17 July 1994 · Pasadena",
+        "comp": "World Cup final",
+        "ft": "AFTER EXTRA TIME",
+        "note": "Brazil win 3-2 on penalties"
+      }
+    },
+    {
+      "text": "Lewandowski, De Bruyne, Salah and Haaland never even got there. Five gone.",
+      "say": "Lehvandoffskee, Debroynuh, Sahlah, and Hohland never even got there. Five gone.",
       "scene": {
         "type": "stamp",
         "text": "NO WORLD CUP",
-        "person": "haaland",
-        "color": "yellow"
-      }
-    },
-    {
-      "text": "Henry, Buffon, Xavi, Iniesta and Neuer. All world champions.",
-      "scene": {
-        "type": "timeline",
-        "items": [
-          {
-            "year": "1998",
-            "label": "Henry"
-          },
-          {
-            "year": "2006",
-            "label": "Buffon"
-          },
-          {
-            "year": "2010",
-            "label": "Xavi + Iniesta"
-          },
-          {
-            "year": "2014",
-            "label": "Neuer"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Rule two. You must have finished second in the Ballon d'Or. So close it hurts.",
-      "scene": {
-        "type": "text",
-        "heading": "RULE 2",
-        "body": "Must have finished second in a Ballon d'Or vote."
-      }
-    },
-    {
-      "text": "Xavi came third three times. Neuer came third once. Never second. Both out.",
-      "scene": {
-        "type": "stamp",
-        "text": "ONLY THIRD",
-        "person": "xavi",
+        "sub": "Maldini, Lewandowski, De Bruyne, Salah, Haaland",
+        "person": "maldini",
         "color": "red"
       }
     },
     {
-      "text": "Henry was second in two thousand three. Buffon in two thousand six. Iniesta in twenty ten.",
+      "text": "Rule two. You must have finished second. So close it hurts.",
       "scene": {
         "type": "list",
-        "title": "Runners-up",
+        "kicker": "Rule 2",
+        "title": "Best Ballon d'Or finish",
         "rows": [
           {
-            "name": "Thierry Henry",
-            "value": "2003",
+            "name": "Henry",
+            "value": "2nd '03",
             "club": "ars",
             "hl": true
           },
           {
-            "name": "Gianluigi Buffon",
-            "value": "2006",
+            "name": "Buffon",
+            "value": "2nd '06",
             "club": "juv",
             "hl": true
           },
           {
-            "name": "Andrés Iniesta",
-            "value": "2010",
+            "name": "Iniesta",
+            "value": "2nd '10",
             "club": "bar",
             "hl": true
+          },
+          {
+            "name": "Xavi",
+            "value": "3rd x3",
+            "club": "bar"
+          },
+          {
+            "name": "Neuer",
+            "value": "3rd '14",
+            "club": "bay"
           }
         ]
+      }
+    },
+    {
+      "text": "Xavi came third three years in a row. Neuer, third in 2014. Both out.",
+      "say": "Shahvee came third three years in a row. Noyer, third in twenty fourteen. Both out.",
+      "scene": {
+        "type": "stamp",
+        "text": "ONLY THIRD",
+        "sub": "Xavi 2009, 2010, 2011 · Neuer 2014",
+        "person": "xavi",
+        "color": "yellow"
+      }
+    },
+    {
+      "text": "And in 2010, Iniesta lost it to his own team-mate. Messi got 22 percent of the vote. Iniesta 17.",
+      "say": "And in twenty ten, Inyestah lost it to his own team-mate. Messee got twenty-two percent of the vote. Inyestah, seventeen.",
+      "scene": {
+        "type": "bars",
+        "kicker": "FIFA Ballon d'Or 2010",
+        "title": "Three Barcelona players on the podium",
+        "unit": "%",
+        "max": 25,
+        "items": [
+          {
+            "label": "Lionel Messi",
+            "value": 22.65,
+            "person": "messi"
+          },
+          {
+            "label": "Andrés Iniesta",
+            "value": 17.36,
+            "person": "iniestab",
+            "hl": true
+          },
+          {
+            "label": "Xavi",
+            "value": 16.48,
+            "person": "xavi"
+          }
+        ],
+        "note": "Share of the vote"
       }
     },
     {
       "text": "Rule three. You must have scored in a World Cup final.",
       "scene": {
-        "type": "text",
-        "heading": "RULE 3",
-        "body": "Must have scored in a World Cup final."
+        "type": "compare",
+        "title": "Rule 3: score in the final",
+        "left": {
+          "person": "henry",
+          "name": "Henry",
+          "sub": "France"
+        },
+        "right": {
+          "person": "iniesta",
+          "name": "Iniesta",
+          "sub": "Spain"
+        },
+        "rows": [
+          {
+            "label": "World Cup finals played",
+            "l": 1,
+            "r": 1
+          },
+          {
+            "label": "World Cups won",
+            "l": 1,
+            "r": 1
+          },
+          {
+            "label": "Goals in finals",
+            "l": 0,
+            "r": 1,
+            "better": "r"
+          }
+        ]
       }
     },
     {
-      "text": "Buffon is a keeper. Henry didn't score in the nineteen ninety-eight final.",
+      "text": "Buffon is a keeper. Henry never got on the pitch in 1998, and didn't score in 2006.",
+      "say": "Booffon is a keeper. Onree never got on the pitch in ninety-eight, and didn't score in two thousand six.",
       "scene": {
         "type": "stamp",
         "text": "OUT",
+        "sub": "No goal in a World Cup final",
         "person": "henry",
         "color": "red"
       }
     },
     {
-      "text": "Iniesta did. Hundred and sixteenth minute, Johannesburg, the goal that won Spain the World Cup.",
+      "text": "Iniesta did. Johannesburg, 2010. The hundred and sixteenth minute.",
+      "say": "Inyestah did. Johannesburg, twenty ten. The hundred and sixteenth minute.",
       "scene": {
         "type": "score",
         "home": "ned",
-        "away": "esp",
+        "away": "esn",
         "hs": 0,
         "as": 1,
-        "date": "11 July 2010",
+        "date": "11 July 2010 · Johannesburg",
         "comp": "World Cup final",
-        "note": "After extra time. Iniesta 116'."
+        "ft": "AFTER EXTRA TIME",
+        "note": "Iniesta 116'"
       }
     },
     {
-      "text": "Andrés Iniesta. The best player never to win the Ballon d'Or. Agree?",
+      "text": "Fàbregas finds him on the right. One touch. Half-volley. World champions.",
+      "say": "Fabbregass finds him on the right. One touch. Half volley. World champions.",
+      "scene": {
+        "type": "gameclip",
+        "parts": [
+          [
+            "work/footage/iniesta-2010/iniesta-winner/tv",
+            30,
+            92
+          ],
+          [
+            "work/footage/iniesta-2010/iniesta-winner/high",
+            92,
+            200
+          ]
+        ],
+        "goalAt": 2.47,
+        "popup": {
+          "home": "ned",
+          "away": "esn",
+          "homeName": "Netherlands",
+          "awayName": "Spain",
+          "hs0": 0,
+          "as0": 0,
+          "hs": 0,
+          "as": 1,
+          "scorer": "Iniesta",
+          "assist": "Fàbregas"
+        },
+        "caption": "INIESTA 116'"
+      }
+    },
+    {
+      "text": "Then he pulled off his shirt. Underneath, a message for his friend Dani Jarque, who died the summer before.",
+      "say": "Then he pulled off his shirt. Underneath, a message for his friend Dahnee Harkay, who died the summer before.",
+      "scene": {
+        "type": "news",
+        "section": "World Cup final",
+        "headline": "\"Dani Jarque, siempre con nosotros\"",
+        "standfirst": "Iniesta dedicates the goal that wins Spain the World Cup to the Espanyol captain who died in August 2009. He is booked for the celebration.",
+        "date": "11 July 2010",
+        "byline": "Knowitball recap",
+        "person": "iniesta",
+        "club": "esp",
+        "nav": [
+          "Football",
+          "World Cup",
+          "Spain",
+          "Final"
+        ]
+      }
+    },
+    {
+      "text": "Andrés Iniesta. No Ballon d'Or, just the goal that won a World Cup. Agree?",
+      "say": "Andress Inyestah. No Ballon d'Or, just the goal that won a World Cup. Agree?",
       "scene": {
         "type": "person",
         "person": "iniesta",
@@ -301,7 +556,7 @@
       }
     },
     {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "text": "Follow for more, and play Road to Ballon d'Or.",
       "scene": {
         "type": "cta"
       }

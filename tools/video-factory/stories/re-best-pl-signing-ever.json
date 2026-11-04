@@ -2,16 +2,35 @@
   "id": "re-best-pl-signing-ever",
   "series": "Three rules to the top",
   "title": "Three rules to the best Premier League signing ever",
+  "v2": true,
   "sources": [
+    "https://en.wikipedia.org/wiki/List_of_English_football_champions",
     "https://en.wikipedia.org/wiki/Premier_League_Player_of_the_Season",
-    "https://www.skysports.com/football/player/111487/ngolo-kant",
+    "https://en.wikipedia.org/wiki/2015%E2%80%9316_Premier_League",
+    "https://www.bbc.co.uk/sport/football/36208423",
+    "https://www.skysports.com/football/news/11712/10266844/leicesters-ngolo-kante-the-signing-of-the-season-after-stellar-campaign-dnp",
     "https://global.espn.com/football/soccer-transfers/story/2546487/leicester-sign-ngolo-kante-from-caen-but-aranguiz-not-keen",
-    "https://en.wikipedia.org/wiki/N%27Golo_Kant%C3%A9",
-    "https://en.wikipedia.org/wiki/Erling_Haaland",
-    "https://en.wikipedia.org/wiki/List_of_English_football_champions"
+    "https://www.premierleague.com/news/64814",
+    "https://www.fourfourtwo.com/features/stats-zone-premier-league-central-midfielder-season-201516-ngolo-kante",
+    "https://www.fourfourtwo.com/news/kante-claims-premier-league-player-season-prize",
+    "https://www.thepfa.com/news/2017/4/23/ngolo-kante-wins-pfa-players-player-of-the-year",
+    "https://amp.sport360.com/article/football/english-premier-league/233262/chelseas-kante-and-five-players-who-have-won-successive-titles-with-different-clubs",
+    "https://www.newsletter.co.uk/sport/football/the-lucky-charms-players-who-have-won-successive-titles-with-different-clubs-1129405",
+    "https://www.sportsmole.co.uk/football/chelsea/result/jose-mourinho-thrashed-on-chelsea-return_283882.html",
+    "https://www.premierleague.com/news/127374",
+    "https://en.wikipedia.org/wiki/Eric_Cantona",
+    "https://en.wikipedia.org/wiki/Didier_Drogba",
+    "https://en.wikipedia.org/wiki/Erling_Haaland"
   ],
-  "checked": "First-season titles: Cantona (joined Nov 1992, won 1992-93), Drogba 2004-05, Kante 2015-16 Leicester, Haaland 2022-23; Henry, Ronaldo, De Bruyne, Salah, Van Dijk, Rodri did not (List of English champions, Wikipedia). PL Player of the Season (award since 1994-95): Kante 2016-17, Haaland 2022-23 (Wikipedia). Kante fee about 5.6m pounds (Sky Sports, ESPN/Leicester Mercury); Haaland about 51m (Wikipedia).",
+  "checked": "First-season league titles: Cantona (joined Nov 1992, champion 1992-93), Drogba 2004-05, Kante 2015-16, Haaland 2022-23; Henry, Ronaldo, De Bruyne, Salah, Van Dijk, Rodri waited (Wikipedia champions list). PL Player of the Season since 1994-95: Kante 2016-17, Haaland 2022-23; never Cantona or Drogba (Wikipedia, FourFourTwo). 2015-16 table Leicester 81, Arsenal 71, Spurs 70, City 66, United 66 (Wikipedia 2015-16 PL); 5000-1 at the start (BBC). Fees: Cantona about 1.2m, Drogba about 24m, Kante about 5.6m (Sky, ESPN), Haaland about 51m (Wikipedia). Kante 175 tackles 2015-16, 31 more than anyone (premierleague.com, FourFourTwo). PFA and FWA 2017 (PFA, FourFourTwo). First player since Cantona to win back-to-back English titles with different clubs; goalkeeper Schwarzer also did, hence 'outfield' (Sport360, Newsletter). Kante's goal in Chelsea 4-0 United, 23 Oct 2016, 70': ran onto Pedro's flick, low finish past De Gea (Sports Mole, premierleague.com). United's kit that day not found: home red assumed (no clash with blue).",
   "clubs": {
+    "mun": {
+      "name": "Manchester United",
+      "short": "MUN",
+      "c1": "#da291c",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
     "ars": {
       "name": "Arsenal",
       "short": "ARS",
@@ -40,15 +59,42 @@
       "c2": "#ffffff",
       "pattern": "plain"
     },
-    "mun": {
-      "name": "Manchester United",
-      "short": "MUN",
-      "c1": "#da291c",
+    "liv": {
+      "name": "Liverpool",
+      "short": "LIV",
+      "c1": "#c8102e",
       "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "tot": {
+      "name": "Tottenham Hotspur",
+      "short": "TOT",
+      "c1": "#ffffff",
+      "c2": "#132257",
       "pattern": "plain"
     }
   },
   "people": {
+    "kante": {
+      "name": "N'Golo Kanté",
+      "skin": "deep",
+      "hair": [
+        "buzz",
+        "#111111"
+      ],
+      "beard": "none",
+      "kit": "lei"
+    },
+    "kantec": {
+      "name": "N'Golo Kanté",
+      "skin": "deep",
+      "hair": [
+        "buzz",
+        "#111111"
+      ],
+      "beard": "none",
+      "kit": "che"
+    },
     "cantona": {
       "name": "Eric Cantona",
       "skin": "light",
@@ -81,41 +127,33 @@
     },
     "henry": {
       "name": "Thierry Henry",
-      "skin": "dark",
+      "skin": "brown",
       "hair": [
         "bald",
-        "#111111"
+        "#1a1a1a"
       ],
       "beard": "none",
       "kit": "ars"
-    },
-    "kante": {
-      "name": "N'Golo Kanté",
-      "skin": "deep",
-      "hair": [
-        "buzz",
-        "#111111"
-      ],
-      "beard": "none",
-      "kit": "lei"
     }
   },
   "lines": [
     {
-      "text": "The best Premier League signing of all time. Ten legends. Three rules. One name.",
+      "text": "One signing won the league with two different clubs in two years. Ten legends. Three rules. One name.",
       "scene": {
         "type": "title",
         "heading": "BEST SIGNING EVER",
-        "sub": "Premier League · 1992 to now",
+        "sub": "Since 1992",
         "pill": "THREE RULES",
         "person": "kante"
       }
     },
     {
-      "text": "Cantona, Henry, Ronaldo, Drogba, Kanté, De Bruyne, Salah, Van Dijk, Rodri and Haaland.",
+      "text": "Cantona, Henry, Ronaldo, Drogba, Kanté.",
+      "say": "Kantohna, Onree, Ronaldo, Drogbah, Kontay.",
       "scene": {
         "type": "list",
-        "title": "Our ten",
+        "kicker": "The ten · part one",
+        "title": "Signed in the Premier League era",
         "rows": [
           {
             "name": "Eric Cantona",
@@ -128,6 +166,11 @@
             "club": "ars"
           },
           {
+            "name": "Cristiano Ronaldo",
+            "value": "2003",
+            "club": "mun"
+          },
+          {
             "name": "Didier Drogba",
             "value": "2004",
             "club": "che"
@@ -136,19 +179,37 @@
             "name": "N'Golo Kanté",
             "value": "2015",
             "club": "lei"
+          }
+        ]
+      }
+    },
+    {
+      "text": "De Bruyne, Salah, Van Dijk, Rodri, Haaland.",
+      "say": "Debroynuh, Sahlah, Vandike, Rodree, Hohland.",
+      "scene": {
+        "type": "list",
+        "kicker": "The ten · part two",
+        "title": "Signed in the Premier League era",
+        "rows": [
+          {
+            "name": "Kevin De Bruyne",
+            "value": "2015",
+            "club": "mci"
           },
           {
-            "name": "De Bruyne · Rodri",
-            "value": "MCI"
+            "name": "Mohamed Salah",
+            "value": "2017",
+            "club": "liv"
           },
           {
-            "name": "Salah · Van Dijk",
-            "value": "LIV"
+            "name": "Virgil van Dijk",
+            "value": "2018",
+            "club": "liv"
           },
           {
-            "name": "Cristiano Ronaldo",
-            "value": "2003",
-            "club": "mun"
+            "name": "Rodri",
+            "value": "2019",
+            "club": "mci"
           },
           {
             "name": "Erling Haaland",
@@ -159,90 +220,308 @@
       }
     },
     {
-      "text": "Rule one. You must win the league in your very first season.",
-      "scene": {
-        "type": "text",
-        "heading": "RULE 1",
-        "body": "Must win the Premier League in his first season at the club."
-      }
-    },
-    {
-      "text": "Henry, Ronaldo, De Bruyne, Salah, Van Dijk and Rodri all had to wait. Six gone.",
-      "scene": {
-        "type": "stamp",
-        "text": "HAD TO WAIT",
-        "person": "henry",
-        "color": "yellow"
-      }
-    },
-    {
-      "text": "Four left. Cantona, Drogba, Kanté and Haaland. Instant champions.",
+      "text": "Rule one. Win the league in your very first season.",
       "scene": {
         "type": "timeline",
+        "kicker": "Rule 1",
+        "title": "Champions in year one",
         "items": [
           {
             "year": "1993",
-            "label": "Cantona"
+            "label": "Cantona · Man United",
+            "club": "mun"
           },
           {
             "year": "2005",
-            "label": "Drogba"
+            "label": "Drogba · Chelsea",
+            "club": "che"
           },
           {
             "year": "2016",
-            "label": "Kanté"
+            "label": "Kanté · Leicester",
+            "club": "lei",
+            "hl": true
           },
           {
             "year": "2023",
-            "label": "Haaland"
+            "label": "Haaland · Man City",
+            "club": "mci"
           }
         ]
       }
     },
     {
-      "text": "Rule two. You must have won the Premier League Player of the Season award.",
-      "scene": {
-        "type": "text",
-        "heading": "RULE 2",
-        "body": "Must have won the official Premier League Player of the Season award."
-      }
-    },
-    {
-      "text": "Kanté won it in twenty seventeen. Haaland in twenty twenty-three. Cantona and Drogba never did.",
+      "text": "Henry, Ronaldo, De Bruyne, Salah, Van Dijk and Rodri all had to wait. Six gone.",
+      "say": "Onree, Ronaldo, Debroynuh, Sahlah, Vandike and Rodree all had to wait. Six gone.",
       "scene": {
         "type": "stamp",
-        "text": "OUT",
-        "person": "drogba",
-        "color": "red"
+        "text": "HAD TO WAIT",
+        "sub": "Henry, Ronaldo, De Bruyne, Salah, Van Dijk, Rodri",
+        "person": "henry",
+        "color": "yellow"
       }
     },
     {
-      "text": "Rule three. Cheapest wins. You must have cost under ten million pounds.",
+      "text": "And Kanté's first season? Leicester, five thousand to one at the start, champions by ten points.",
+      "say": "And Kontay's first season? Lester, five thousand to one at the start, champions by ten points.",
       "scene": {
-        "type": "text",
-        "heading": "RULE 3",
-        "body": "Must have cost his club less than ten million pounds."
-      }
-    },
-    {
-      "text": "Haaland cost City around fifty-one million. Kanté cost Leicester about five point six.",
-      "scene": {
-        "type": "versus",
-        "title": "The fee",
-        "left": {
-          "person": "kante",
-          "label": "Kanté",
-          "value": "£5.6m"
-        },
-        "right": {
-          "person": "haaland",
-          "label": "Haaland",
-          "value": "£51m"
+        "type": "table",
+        "season": "Final table 2015/16",
+        "title": "Premier League",
+        "rows": [
+          {
+            "pos": 1,
+            "club": "lei",
+            "p": 38,
+            "w": 23,
+            "d": 12,
+            "l": 3,
+            "gd": 32,
+            "pts": 81,
+            "hl": true
+          },
+          {
+            "pos": 2,
+            "club": "ars",
+            "p": 38,
+            "w": 20,
+            "d": 11,
+            "l": 7,
+            "gd": 29,
+            "pts": 71
+          },
+          {
+            "pos": 3,
+            "club": "tot",
+            "p": 38,
+            "w": 19,
+            "d": 13,
+            "l": 6,
+            "gd": 34,
+            "pts": 70
+          },
+          {
+            "pos": 4,
+            "club": "mci",
+            "p": 38,
+            "w": 19,
+            "d": 9,
+            "l": 10,
+            "gd": 30,
+            "pts": 66
+          },
+          {
+            "pos": 5,
+            "club": "mun",
+            "p": 38,
+            "w": 19,
+            "d": 9,
+            "l": 10,
+            "gd": 14,
+            "pts": 66
+          }
+        ],
+        "zones": [
+          {
+            "kind": "champ",
+            "rows": [
+              1,
+              1
+            ]
+          },
+          {
+            "kind": "ucl",
+            "rows": [
+              2,
+              4
+            ]
+          },
+          {
+            "kind": "uel",
+            "rows": [
+              5,
+              5
+            ]
+          }
+        ],
+        "gap": {
+          "from": 1,
+          "to": 2,
+          "label": "10 pts",
+          "at": 0.45
         }
       }
     },
     {
-      "text": "So it's N'Golo Kanté. Signed from Caen, and champion in his first year.",
+      "text": "Rule two. You must have won the Premier League Player of the Season.",
+      "scene": {
+        "type": "trophies",
+        "kicker": "Rule 2",
+        "title": "Player of the Season",
+        "items": [
+          {
+            "kind": "award",
+            "label": "Kanté · 2016/17"
+          },
+          {
+            "kind": "award",
+            "label": "Haaland · 2022/23"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Drogba never won it. And Cantona? The award didn't even exist until 1995. Sorry, Eric.",
+      "say": "Drogbah never won it. And Kantohna? The award didn't even exist until nineteen ninety-five. Sorry, Eric.",
+      "scene": {
+        "type": "stamp",
+        "text": "OUT",
+        "sub": "Cantona and Drogba: no Player of the Season",
+        "person": "cantona",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Rule three. The cheapest one wins.",
+      "scene": {
+        "type": "bars",
+        "kicker": "Rule 3",
+        "title": "What they cost (£m)",
+        "items": [
+          {
+            "label": "Erling Haaland",
+            "value": 51,
+            "person": "haaland"
+          },
+          {
+            "label": "N'Golo Kanté",
+            "value": 5.6,
+            "person": "kante",
+            "hl": true
+          }
+        ],
+        "note": "Fees as reported, rounded"
+      }
+    },
+    {
+      "text": "Haaland cost City fifty-one million. Kanté cost Leicester five point six, from Caen.",
+      "say": "Hohland cost City fifty-one million. Kontay cost Lester five point six, from Kon.",
+      "scene": {
+        "type": "compare",
+        "title": "The last two",
+        "left": {
+          "person": "kante",
+          "name": "Kanté",
+          "sub": "Leicester"
+        },
+        "right": {
+          "person": "haaland",
+          "name": "Haaland",
+          "sub": "Man City"
+        },
+        "rows": [
+          {
+            "label": "Fee (£m)",
+            "l": 5.6,
+            "r": 51,
+            "lower": true
+          },
+          {
+            "label": "Title in year one",
+            "l": 1,
+            "r": 1
+          },
+          {
+            "label": "Player of the Season",
+            "l": 1,
+            "r": 1
+          }
+        ]
+      }
+    },
+    {
+      "text": "That first season, he made a hundred and seventy-five tackles. Thirty-one more than anyone else.",
+      "scene": {
+        "type": "stats",
+        "kicker": "N'Golo Kanté · 2015/16",
+        "title": "Everywhere at once",
+        "items": [
+          {
+            "n": "175",
+            "l": "league tackles"
+          },
+          {
+            "n": "+31",
+            "l": "ahead of anyone"
+          },
+          {
+            "n": "£5.6m",
+            "l": "fee from Caen"
+          }
+        ],
+        "person": "kante"
+      }
+    },
+    {
+      "text": "Then Chelsea signed him, and he did it all again. He even scored against Man United.",
+      "say": "Then Chelsea signed him, and he did it all again. He even scored against Man United.",
+      "scene": {
+        "type": "gameclip",
+        "parts": [
+          [
+            "work/footage/kante-2016/kante-united/tv",
+            30,
+            92
+          ],
+          [
+            "work/footage/kante-2016/kante-united/high",
+            92,
+            175
+          ]
+        ],
+        "goalAt": 2.43,
+        "popup": {
+          "home": "che",
+          "away": "mun",
+          "homeName": "Chelsea",
+          "awayName": "Man United",
+          "hs0": 3,
+          "as0": 0,
+          "hs": 4,
+          "as": 0,
+          "scorer": "Kanté",
+          "assist": "Pedro"
+        },
+        "caption": "CHELSEA 4-0"
+      }
+    },
+    {
+      "text": "Back-to-back titles with two clubs. The first outfield player since Cantona to do it.",
+      "say": "Back to back titles with two clubs. The first outfield player since Kantohna to do it.",
+      "scene": {
+        "type": "trophies",
+        "kicker": "N'Golo Kanté",
+        "title": "Two years, two clubs, two titles",
+        "items": [
+          {
+            "kind": "league",
+            "label": "2016 · Leicester"
+          },
+          {
+            "kind": "league",
+            "label": "2017 · Chelsea"
+          },
+          {
+            "kind": "award",
+            "label": "PFA Player of the Year 2017"
+          }
+        ],
+        "person": "kantec"
+      }
+    },
+    {
+      "text": "N'Golo Kanté. The best Premier League signing ever. Agree, or is it Cantona?",
+      "say": "Engolo Kontay. The best Premier League signing ever. Agree, or is it Kantohna?",
       "scene": {
         "type": "person",
         "person": "kante",
@@ -252,33 +531,7 @@
       }
     },
     {
-      "text": "Then he moved to Chelsea and won the league again, straight away.",
-      "scene": {
-        "type": "trophies",
-        "items": [
-          {
-            "kind": "league",
-            "label": "2016 Leicester"
-          },
-          {
-            "kind": "league",
-            "label": "2017 Chelsea"
-          }
-        ],
-        "person": "kante"
-      }
-    },
-    {
-      "text": "Best signing ever, or does Cantona have a case?",
-      "scene": {
-        "type": "person",
-        "person": "cantona",
-        "label": "THE KING OF 1993",
-        "mood": "flat"
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "text": "Follow for more, and play Road to Ballon d'Or.",
       "scene": {
         "type": "cta"
       }

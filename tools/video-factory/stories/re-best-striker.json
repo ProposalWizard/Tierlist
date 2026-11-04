@@ -2,45 +2,91 @@
   "id": "re-best-striker",
   "series": "Three rules to the top",
   "title": "Three rules to the best striker in the world",
+  "v2": true,
   "sources": [
     "https://www.uefa.com/uefachampionsleague/news/02a9-218f8e669a0a-debba167a199-1000--champions-league-top-scorer-ermedin-demirovic-serhou-guir/",
     "https://foot-africa.com/en/news/champions-league-the-top-scorers-standings-after-matchday-3-1395029/",
     "https://en.wikipedia.org/wiki/European_Golden_Shoe",
-    "https://www.uefa.com/uefachampionsleague/news/02a9-218f8e669a0a-debba167a199-1000--champions-league-top-scorer-harry-kane-erling-haaland-part/",
-    "https://www.nbcsports.com/soccer/news/premier-league-2026-27-scoring-leaders-the-race-for-the-golden-boot-begins",
-    "https://www.soccernews.com/english-premier-league/golden-boot/",
-    "https://www.thescore.com/news/3566852",
-    "https://english.ahram.org.eg/News/572936.aspx"
+    "https://bundesliga.com/en/bundesliga/news/harry-kane-wins-golden-shoe-2025-26-bayern-munich-england-37552",
+    "https://bulinews.com/harry-kane-crowned-2025/26-european-golden-shoe-winner",
+    "https://santamariatimes.com/ap/sports/haaland-wins-golden-boot-in-premier-league-for-3rd-time-in-4-seasons/article_e84911e0-54be-5304-a72b-a2456520ecd4.html",
+    "https://fcbayern.com/en/news/2026/05/harry-kane-crowned-bundesliga-top-scorer-for-third-year-running",
+    "https://bulinews.com/revealed-full-men-ballon-top-10-rankings",
+    "https://foot-africa.com/en/news/the-complete-2026-ballon-dor-standings-1400198/"
   ],
-  "checked": "UCL scorers after matchday 3 (UEFA + Foot Africa: Kane, Haaland, Guirassy among the six on 4; Mbappe on 3); Haaland's 4 in 2 games (UEFA: sat out MD3); Golden Shoe winners Haaland 2022-23, Kane 2023-24 (Wikipedia European Golden Shoe); Isak 6 PL goals (NBC, Soccernews); Lautaro winner v England in WC semi (theScore, Ahram).",
+  "checked": "UCL scorers after matchday 3: Kane, Haaland, Guirassy among the six on four, nobody higher; Mbappe on three (UEFA, Foot Africa). Golden Shoe: Haaland 2022-23, Kane 2023-24, Mbappe 2024-25, Kane 2025-26 (Wikipedia, Bundesliga.com, Bulinews). 2025-26 race: Kane 36 league goals (72 pts), Haaland 27 (54), Mbappe 25 (50) (Bundesliga.com, Bulinews; Haaland's 27 also AP Golden Boot report). Kane Bundesliga top scorer three seasons running (FC Bayern, Bundesliga.com) and 2026 Ballon d'Or winner (Bulinews, Foot Africa). Players listed by nation only. The game clip is a generic Kane finish, not a real goal.",
   "clubs": {
+    "nor": {
+      "name": "Norway",
+      "short": "NOR",
+      "c1": "#ba0c2f",
+      "c2": "#00205b",
+      "pattern": "plain",
+      "badge": false
+    },
+    "eng": {
+      "name": "England",
+      "short": "ENG",
+      "c1": "#ffffff",
+      "c2": "#1d2b5c",
+      "pattern": "plain",
+      "badge": false
+    },
+    "fra": {
+      "name": "France",
+      "short": "FRA",
+      "c1": "#21304d",
+      "c2": "#ffffff",
+      "pattern": "plain",
+      "badge": false
+    },
+    "swe": {
+      "name": "Sweden",
+      "short": "SWE",
+      "c1": "#fecc02",
+      "c2": "#006aa7",
+      "pattern": "plain",
+      "badge": false
+    },
+    "gui": {
+      "name": "Guinea",
+      "short": "GUI",
+      "c1": "#ce1126",
+      "c2": "#fcd116",
+      "pattern": "plain",
+      "badge": false
+    },
+    "arg": {
+      "name": "Argentina",
+      "short": "ARG",
+      "c1": "#75aadb",
+      "c2": "#ffffff",
+      "pattern": "stripes",
+      "badge": false
+    },
+    "nga": {
+      "name": "Nigeria",
+      "short": "NGA",
+      "c1": "#008751",
+      "c2": "#ffffff",
+      "pattern": "plain",
+      "badge": false
+    },
+    "bra": {
+      "name": "Brazil",
+      "short": "BRA",
+      "c1": "#ffdf00",
+      "c2": "#009c3b",
+      "pattern": "plain",
+      "badge": false
+    },
     "bay": {
       "name": "Bayern Munich",
       "short": "FCB",
       "c1": "#dc052d",
       "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "bvb": {
-      "name": "Borussia Dortmund",
-      "short": "BVB",
-      "c1": "#fde100",
-      "c2": "#000000",
-      "pattern": "plain"
-    },
-    "inter": {
-      "name": "Inter",
-      "short": "INT",
-      "c1": "#0068a8",
-      "c2": "#000000",
-      "pattern": "stripes"
-    },
-    "liv": {
-      "name": "Liverpool",
-      "short": "LIV",
-      "c1": "#c8102e",
-      "c2": "#ffffff",
-      "pattern": "plain"
+      "pattern": "plain",
+      "badge": "FC Bayern München"
     },
     "mci": {
       "name": "Manchester City",
@@ -58,15 +104,15 @@
     }
   },
   "people": {
-    "guirassy": {
-      "name": "Serhou Guirassy",
-      "skin": "dark",
+    "kane": {
+      "name": "Harry Kane",
+      "skin": "light",
       "hair": [
-        "buzz",
-        "#111111"
+        "crop",
+        "#6b4a2e"
       ],
-      "beard": "short",
-      "kit": "bvb"
+      "beard": "stubble",
+      "kit": "bay"
     },
     "haaland": {
       "name": "Erling Haaland",
@@ -78,197 +124,334 @@
       "beard": "none",
       "kit": "mci"
     },
-    "kane": {
-      "name": "Harry Kane",
-      "skin": "light",
+    "mbappe": {
+      "name": "Kylian Mbappé",
+      "skin": "brown",
       "hair": [
-        "crop",
-        "#6b4a2e"
+        "buzz",
+        "#1a1a1a"
       ],
-      "beard": "stubble",
-      "kit": "bay"
+      "beard": "none",
+      "kit": "rma"
     },
-    "lautaro": {
-      "name": "Lautaro Martínez",
-      "skin": "tan",
+    "guirassy": {
+      "name": "Serhou Guirassy",
+      "skin": "dark",
       "hair": [
-        "crop",
+        "buzz",
         "#111111"
       ],
       "beard": "short",
-      "kit": "inter"
+      "kit": "gui"
     }
   },
   "lines": [
     {
-      "text": "Who is the best striker in the world right now? Ten nines. Three rules. One left.",
+      "text": "Who is the best striker in the world right now? Ten number nines. Three rules. One left standing.",
       "scene": {
         "type": "title",
         "heading": "BEST STRIKER",
-        "sub": "Right now · November 2026",
+        "sub": "November 2026",
         "pill": "THREE RULES",
-        "person": "haaland"
+        "person": "kane"
       }
     },
     {
-      "text": "Haaland, Kane, Mbappé, Isak, Guirassy, Lautaro, Gyökeres, Osimhen, Lewandowski and João Pedro.",
+      "text": "Haaland, Kane, Mbappé, Isak, Guirassy.",
+      "say": "Hohland, Kane, Embapay, Eesak, Geerahsee.",
       "scene": {
         "type": "list",
+        "kicker": "The ten · part one",
         "title": "Our ten nines",
         "rows": [
           {
-            "name": "Erling Haaland",
-            "value": "MCI",
-            "club": "mci"
+            "name": "Haaland",
+            "value": "Norway",
+            "club": "nor"
           },
           {
-            "name": "Harry Kane",
-            "value": "BAY",
-            "club": "bay"
+            "name": "Kane",
+            "value": "England",
+            "club": "eng"
           },
           {
-            "name": "Kylian Mbappé",
-            "value": "RMA",
-            "club": "rma"
+            "name": "Mbappé",
+            "value": "France",
+            "club": "fra"
           },
           {
-            "name": "Alexander Isak",
-            "value": "LIV",
-            "club": "liv"
+            "name": "Isak",
+            "value": "Sweden",
+            "club": "swe"
           },
           {
-            "name": "Serhou Guirassy",
-            "value": "BVB",
-            "club": "bvb"
-          },
-          {
-            "name": "Lautaro Martínez",
-            "value": "INT",
-            "club": "inter"
-          },
-          {
-            "name": "Gyökeres · Osimhen",
-            "value": "+2"
-          },
-          {
-            "name": "Lewandowski · João Pedro",
-            "value": "+2"
+            "name": "Guirassy",
+            "value": "Guinea",
+            "club": "gui"
           }
         ]
       }
     },
     {
-      "text": "Rule one. Four or more Champions League goals this season.",
+      "text": "Lautaro, Gyökeres, Osimhen, Julián Álvarez, João Pedro.",
+      "say": "Lowtahro, Yurkeresh, Oseemhen, Hooleean Alvarez, Zhwow Pedro.",
       "scene": {
-        "type": "text",
-        "heading": "RULE 1",
-        "body": "Four or more Champions League goals after three matchdays."
+        "type": "list",
+        "kicker": "The ten · part two",
+        "title": "Our ten nines",
+        "rows": [
+          {
+            "name": "Lautaro",
+            "value": "Argentina",
+            "club": "arg"
+          },
+          {
+            "name": "Gyökeres",
+            "value": "Sweden",
+            "club": "swe"
+          },
+          {
+            "name": "Osimhen",
+            "value": "Nigeria",
+            "club": "nga"
+          },
+          {
+            "name": "Julián Álvarez",
+            "value": "Argentina",
+            "club": "arg"
+          },
+          {
+            "name": "João Pedro",
+            "value": "Brazil",
+            "club": "bra"
+          }
+        ]
       }
     },
     {
-      "text": "Mbappé has three. Lautaro, the man who knocked England out of the World Cup, isn't on the list either.",
+      "text": "Rule one. Four Champions League goals or more this season, after three matchdays.",
+      "scene": {
+        "type": "bars",
+        "kicker": "Rule 1 · after matchday 3",
+        "title": "Champions League goals",
+        "max": 5,
+        "items": [
+          {
+            "label": "Harry Kane",
+            "value": 4,
+            "person": "kane",
+            "hl": true
+          },
+          {
+            "label": "Erling Haaland",
+            "value": 4,
+            "person": "haaland",
+            "hl": true
+          },
+          {
+            "label": "Serhou Guirassy",
+            "value": 4,
+            "person": "guirassy",
+            "hl": true
+          },
+          {
+            "label": "Kylian Mbappé",
+            "value": 3,
+            "person": "mbappe"
+          }
+        ],
+        "note": "The other six of our ten: three or fewer"
+      }
+    },
+    {
+      "text": "Kane and Haaland, as you'd expect. And the surprise package: Serhou Guirassy, level on four.",
+      "say": "Kane and Hohland, as you'd expect. And the surprise package: Sehroo Geerahsee, level on four.",
+      "scene": {
+        "type": "compare",
+        "title": "Guirassy in, Mbappé out",
+        "left": {
+          "person": "guirassy",
+          "name": "Guirassy",
+          "sub": "Guinea"
+        },
+        "right": {
+          "person": "mbappe",
+          "name": "Mbappé",
+          "sub": "France"
+        },
+        "rows": [
+          {
+            "label": "UCL goals after matchday 3",
+            "l": 4,
+            "r": 3
+          },
+          {
+            "label": "Through to rule 2",
+            "l": 1,
+            "r": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "Mbappé is stuck on three. Isak, Lautaro, Gyökeres and the rest are even further back. Seven gone.",
+      "say": "Embapay is stuck on three. Eesak, Lowtahro, Yurkeresh and the rest are even further back. Seven gone.",
       "scene": {
         "type": "stamp",
         "text": "OUT",
-        "person": "lautaro",
+        "sub": "Seven of our ten · under four goals",
+        "person": "mbappe",
         "color": "red"
       }
     },
     {
-      "text": "Three survive. Kane, Haaland and Dortmund's Serhou Guirassy, four goals each.",
+      "text": "Rule two. You must have won Europe's Golden Shoe, for the most league goals on the continent.",
       "scene": {
-        "type": "list",
-        "title": "UCL goals",
-        "rows": [
+        "type": "timeline",
+        "kicker": "Rule 2",
+        "title": "European Golden Shoe",
+        "items": [
           {
-            "name": "Harry Kane",
-            "value": "4",
+            "year": "22/23",
+            "label": "Erling Haaland",
+            "club": "mci"
+          },
+          {
+            "year": "23/24",
+            "label": "Harry Kane",
+            "club": "bay"
+          },
+          {
+            "year": "24/25",
+            "label": "Kylian Mbappé",
+            "club": "rma"
+          },
+          {
+            "year": "25/26",
+            "label": "Harry Kane",
             "club": "bay",
             "hl": true
-          },
-          {
-            "name": "Erling Haaland",
-            "value": "4",
-            "club": "mci",
-            "hl": true
-          },
-          {
-            "name": "Serhou Guirassy",
-            "value": "4",
-            "club": "bvb",
-            "hl": true
-          },
-          {
-            "name": "Kylian Mbappé",
-            "value": "3",
-            "club": "rma"
           }
         ]
       }
     },
     {
-      "text": "Rule two. You must have won Europe's Golden Shoe at least once.",
-      "scene": {
-        "type": "text",
-        "heading": "RULE 2",
-        "body": "Must have won the European Golden Shoe."
-      }
-    },
-    {
-      "text": "Haaland won it in twenty twenty-three. Kane the year after. Guirassy never has.",
+      "text": "Guirassy has never won it. Out. And now it's the two giants.",
+      "say": "Geerahsee has never won it. Out. And now it's the two giants.",
       "scene": {
         "type": "stamp",
         "text": "NO GOLDEN SHOE",
+        "sub": "Serhou Guirassy",
         "person": "guirassy",
         "color": "yellow"
       }
     },
     {
-      "text": "Rule three. Our channel, our rules. You have to be leading the Premier League scoring chart.",
+      "text": "Rule three. Head to head. Who won last season's Golden Shoe race?",
       "scene": {
-        "type": "text",
-        "heading": "RULE 3",
-        "body": "Must be top of the Premier League scoring chart right now."
+        "type": "bars",
+        "kicker": "Rule 3",
+        "title": "League goals 2025/26",
+        "items": [
+          {
+            "label": "Harry Kane",
+            "value": 36,
+            "person": "kane",
+            "hl": true
+          },
+          {
+            "label": "Erling Haaland",
+            "value": 27,
+            "person": "haaland"
+          },
+          {
+            "label": "Kylian Mbappé",
+            "value": 25,
+            "person": "mbappe"
+          }
+        ],
+        "note": "The Golden Shoe race"
       }
     },
     {
-      "text": "Kane scores his goals in Germany. Haaland is top in England, ahead of Isak on six.",
+      "text": "Kane, thirty-six league goals. Haaland, twenty-seven. Not even close.",
+      "say": "Kane, thirty-six league goals. Hohland, twenty-seven. Not even close.",
       "scene": {
-        "type": "versus",
-        "title": "Top of the PL chart",
+        "type": "compare",
+        "title": "The last two",
         "left": {
-          "person": "haaland",
-          "label": "Haaland",
-          "value": "TOP"
+          "person": "kane",
+          "name": "Kane",
+          "sub": "Bayern Munich"
         },
         "right": {
-          "person": "kane",
-          "label": "Kane",
-          "value": "Bundesliga"
-        }
+          "person": "haaland",
+          "name": "Haaland",
+          "sub": "Man City"
+        },
+        "rows": [
+          {
+            "label": "League goals 2025/26",
+            "l": 36,
+            "r": 27
+          },
+          {
+            "label": "Golden Shoes",
+            "l": 2,
+            "r": 1
+          },
+          {
+            "label": "Ballon d'Or",
+            "l": 1,
+            "r": 0
+          }
+        ]
       }
     },
     {
-      "text": "The rules pick Erling Haaland. Four Champions League goals in just two games, too.",
+      "text": "Sorry, Erling.",
+      "say": "Sorry, Erling.",
+      "scene": {
+        "type": "stamp",
+        "text": "OUT",
+        "sub": "Second in the Golden Shoe race",
+        "person": "haaland",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Harry Kane. Top scorer in Germany three years running, and the man holding the Ballon d'Or.",
+      "scene": {
+        "type": "gameclip",
+        "parts": [
+          [
+            "work/footage/kane-generic-2026/kane-finish/tv",
+            20,
+            59
+          ],
+          [
+            "work/footage/kane-generic-2026/kane-finish/high",
+            59,
+            140
+          ]
+        ],
+        "goalAt": 2.23,
+        "caption": "36 LEAGUE GOALS"
+      }
+    },
+    {
+      "text": "The best striker in the world. Agree, or is it still Haaland?",
+      "say": "The best striker in the world. Agree, or is it still Hohland?",
       "scene": {
         "type": "person",
-        "person": "haaland",
+        "person": "kane",
         "label": "THE LAST NAME LEFT",
         "mood": "happy",
         "stamp": "WINNER"
       }
     },
     {
-      "text": "Kane fans, we hear you. Who is your number nine?",
-      "scene": {
-        "type": "stamp",
-        "text": "YOUR CALL",
-        "person": "kane",
-        "color": "white"
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "text": "Follow for more, and play Road to Ballon d'Or.",
       "scene": {
         "type": "cta"
       }
