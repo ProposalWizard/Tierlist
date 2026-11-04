@@ -1,0 +1,354 @@
+{
+  "_about": "Imagined Man United 1998/99 3-2 Man City 2022/23 at Old Trafford (Who would win? ww-utd-1999-v-city-2023). Echoes: Gündoğan's 12-second FA Cup final volley from Haaland's flick (3 Jun 2023), Rodri's Istanbul finish from Bernardo's cut-back (10 Jun 2023), Beckham's corners in stoppage time at Camp Nou (26 May 1999).",
+  "teams": {
+    "home": {
+      "name": "Manchester United",
+      "short": "Man United",
+      "kit": {
+        "shirt": "#DA020E",
+        "shorts": "#FFFFFF",
+        "socks": "#111111"
+      },
+      "keeperKit": {
+        "shirt": "#2E7D32",
+        "shorts": "#1B1B1B",
+        "socks": "#2E7D32"
+      },
+      "popupTrim": "#FFFFFF"
+    },
+    "away": {
+      "name": "Manchester City",
+      "short": "Man City",
+      "kit": {
+        "shirt": "#98C5E9",
+        "shorts": "#FFFFFF",
+        "socks": "#98C5E9"
+      },
+      "keeperKit": {
+        "shirt": "#1F1F1F",
+        "shorts": "#1F1F1F",
+        "socks": "#1F1F1F"
+      },
+      "popupTrim": "#7A1F2B"
+    }
+  },
+  "people": {
+    "schmeichel": {
+      "name": "Peter Schmeichel",
+      "skin": "#F4C2A8",
+      "hair": "#C9B48A"
+    },
+    "gneville": {
+      "name": "Gary Neville",
+      "skin": "#F1C9A5",
+      "hair": "#3B2A1E",
+      "popupName": "G. Neville"
+    },
+    "stam": {
+      "name": "Jaap Stam",
+      "skin": "#F1C9A5",
+      "hair": "#E6BE9A"
+    },
+    "johnsen": {
+      "name": "Ronny Johnsen",
+      "skin": "#F1C9A5",
+      "hair": "#4A3424"
+    },
+    "irwin": {
+      "name": "Denis Irwin",
+      "skin": "#F1C9A5",
+      "hair": "#3B2A1E"
+    },
+    "beckham": {
+      "name": "David Beckham",
+      "skin": "#F1C9A5",
+      "hair": "#D8B46A"
+    },
+    "keane": {
+      "name": "Roy Keane",
+      "skin": "#F1C9A5",
+      "hair": "#4A3424"
+    },
+    "scholes": {
+      "name": "Paul Scholes",
+      "skin": "#F4C2A8",
+      "hair": "#B5652E"
+    },
+    "giggs": {
+      "name": "Ryan Giggs",
+      "skin": "#D9A877",
+      "hair": "#2B1D14"
+    },
+    "yorke": {
+      "name": "Dwight Yorke",
+      "skin": "#6B4429",
+      "hair": "#111111"
+    },
+    "cole": {
+      "name": "Andy Cole",
+      "skin": "#6B4429",
+      "hair": "#6B4429"
+    },
+    "ederson": {
+      "name": "Ederson",
+      "skin": "#C68E5A",
+      "hair": "#2A1D14"
+    },
+    "akanji": {
+      "name": "Manuel Akanji",
+      "skin": "#9C6A43",
+      "hair": "#111111"
+    },
+    "dias": {
+      "name": "Rúben Dias",
+      "skin": "#D9A877",
+      "hair": "#1E1611"
+    },
+    "ake": {
+      "name": "Nathan Aké",
+      "skin": "#9C6A43",
+      "hair": "#111111"
+    },
+    "stones": {
+      "name": "John Stones",
+      "skin": "#F1C9A5",
+      "hair": "#3B2A1E"
+    },
+    "rodri": {
+      "name": "Rodri",
+      "skin": "#F1C9A5",
+      "hair": "#4A3424"
+    },
+    "bernardo": {
+      "name": "Bernardo Silva",
+      "skin": "#D9A877",
+      "hair": "#2B1D14",
+      "popupName": "Bernardo"
+    },
+    "grealish": {
+      "name": "Jack Grealish",
+      "skin": "#F1C9A5",
+      "hair": "#3B2A1E"
+    },
+    "debruyne": {
+      "name": "Kevin De Bruyne",
+      "skin": "#F4C2A8",
+      "hair": "#C06A2F",
+      "popupName": "De Bruyne"
+    },
+    "gundogan": {
+      "name": "İlkay Gündoğan",
+      "skin": "#D9A877",
+      "hair": "#2B1D14",
+      "popupName": "Gündoğan"
+    },
+    "haaland": {
+      "name": "Erling Haaland",
+      "skin": "#F1C9A5",
+      "hair": "#D9C08A"
+    }
+  },
+  "popupPosition": "top",
+  "clips": [
+    {
+      "id": "g1-gundogan",
+      "kind": "volley",
+      "attacking": "away",
+      "scorer": "gundogan",
+      "assister": "haaland",
+      "defenders": [
+        "keane",
+        "stam",
+        "johnsen"
+      ],
+      "keeper": "schmeichel",
+      "teammates": [
+        "debruyne"
+      ],
+      "minute": 1,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "scoreAfter": [
+        0,
+        1
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {
+        "scorerSpot": [
+          -1,
+          21
+        ],
+        "finish": "volley",
+        "height": "mid"
+      },
+      "seed": "gundo-a",
+      "night": true
+    },
+    {
+      "id": "g2-beckham",
+      "kind": "free_kick",
+      "attacking": "home",
+      "scorer": "beckham",
+      "assister": "giggs",
+      "defenders": [
+        "rodri",
+        "stones",
+        "gundogan",
+        "bernardo",
+        "dias"
+      ],
+      "keeper": "ederson",
+      "minute": 29,
+      "scoreBefore": [
+        0,
+        1
+      ],
+      "scoreAfter": [
+        1,
+        1
+      ],
+      "celebration": "arms_out",
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {
+        "scorerSpot": [
+          4,
+          24
+        ]
+      },
+      "seed": "becks-a",
+      "night": true
+    },
+    {
+      "id": "g3-rodri",
+      "kind": "long_range",
+      "attacking": "away",
+      "scorer": "rodri",
+      "assister": "bernardo",
+      "defenders": [
+        "keane",
+        "scholes",
+        "stam"
+      ],
+      "keeper": "schmeichel",
+      "teammates": [
+        "haaland"
+      ],
+      "minute": 63,
+      "scoreBefore": [
+        1,
+        1
+      ],
+      "scoreAfter": [
+        1,
+        2
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {
+        "finish": "ground",
+        "height": "low",
+        "goalSide": "far",
+        "scorerSpot": [
+          2,
+          17
+        ],
+        "passFrom": [
+          14,
+          10
+        ]
+      },
+      "seed": "rodri-a",
+      "night": true
+    },
+    {
+      "id": "g4-yorke",
+      "kind": "header",
+      "attacking": "home",
+      "scorer": "yorke",
+      "assister": "beckham",
+      "defenders": [
+        "dias",
+        "akanji",
+        "ake",
+        "stones",
+        "rodri"
+      ],
+      "keeper": "ederson",
+      "teammates": [
+        "stam",
+        "cole",
+        "giggs"
+      ],
+      "minute": 91,
+      "minuteLabel": "90+1",
+      "scoreBefore": [
+        1,
+        2
+      ],
+      "scoreAfter": [
+        2,
+        2
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {
+        "delivery": "corner",
+        "side": "left",
+        "swing": "in",
+        "finish": "header",
+        "goalSide": "near",
+        "height": "mid"
+      },
+      "seed": "yorke-a",
+      "night": true
+    },
+    {
+      "id": "g5-cole",
+      "kind": "tap_in",
+      "attacking": "home",
+      "scorer": "cole",
+      "assister": "beckham",
+      "defenders": [
+        "dias",
+        "akanji",
+        "ake"
+      ],
+      "keeper": "ederson",
+      "teammates": [
+        "yorke"
+      ],
+      "minute": 93,
+      "minuteLabel": "90+3",
+      "scoreBefore": [
+        2,
+        2
+      ],
+      "scoreAfter": [
+        3,
+        2
+      ],
+      "celebration": "knee_slide",
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {
+        "side": "right"
+      },
+      "seed": "cole-a",
+      "night": true
+    }
+  ]
+}

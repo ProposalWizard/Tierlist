@@ -1,0 +1,333 @@
+{
+  "_about": "Imagined Arsenal 2003/04 3-2 Man City 2017/18 at Highbury (Who would win? ww-invincibles-v-centurions). Each goal echoes a real one: De Bruyne's 22-yard winner at Stamford Bridge (30 Sep 2017), Henry from Gilberto's pass v Liverpool (9 Apr 2004), Vieira through from Bergkamp's pass v Leicester (15 May 2004). Arsenal's white sleeves cannot be drawn (one shirt colour): plain red.",
+  "teams": {
+    "home": {
+      "name": "Arsenal",
+      "kit": {
+        "shirt": "#C8102E",
+        "shorts": "#FFFFFF",
+        "socks": "#FFFFFF"
+      },
+      "keeperKit": {
+        "shirt": "#1F2A44",
+        "shorts": "#1F2A44",
+        "socks": "#1F2A44"
+      },
+      "popupTrim": "#FFFFFF"
+    },
+    "away": {
+      "name": "Manchester City",
+      "short": "Man City",
+      "kit": {
+        "shirt": "#98C5E9",
+        "shorts": "#FFFFFF",
+        "socks": "#98C5E9"
+      },
+      "keeperKit": {
+        "shirt": "#2D2D2D",
+        "shorts": "#2D2D2D",
+        "socks": "#2D2D2D"
+      },
+      "popupTrim": "#FFFFFF"
+    }
+  },
+  "people": {
+    "lehmann": {
+      "name": "Jens Lehmann",
+      "skin": "#F1C9A5",
+      "hair": "#9A7A4E"
+    },
+    "lauren": {
+      "name": "Lauren",
+      "skin": "#6B4429",
+      "hair": "#1A1A1A"
+    },
+    "toure": {
+      "name": "Kolo Touré",
+      "skin": "#4A2C1B",
+      "hair": "#111111"
+    },
+    "campbell": {
+      "name": "Sol Campbell",
+      "skin": "#6B4429",
+      "hair": "#111111"
+    },
+    "cole": {
+      "name": "Ashley Cole",
+      "skin": "#9C6A43",
+      "hair": "#1A1A1A"
+    },
+    "ljungberg": {
+      "name": "Freddie Ljungberg",
+      "skin": "#F1C9A5",
+      "hair": "#4A3424"
+    },
+    "gilberto": {
+      "name": "Gilberto Silva",
+      "skin": "#9C6A43",
+      "hair": "#1A1A1A",
+      "popupName": "Gilberto"
+    },
+    "vieira": {
+      "name": "Patrick Vieira",
+      "skin": "#4A2C1B",
+      "hair": "#4A2C1B"
+    },
+    "pires": {
+      "name": "Robert Pires",
+      "skin": "#D9A877",
+      "hair": "#2B1D14"
+    },
+    "bergkamp": {
+      "name": "Dennis Bergkamp",
+      "skin": "#F1C9A5",
+      "hair": "#A07C4A"
+    },
+    "henry": {
+      "name": "Thierry Henry",
+      "skin": "#6B4429",
+      "hair": "#6B4429"
+    },
+    "ederson": {
+      "name": "Ederson",
+      "skin": "#C68E5A",
+      "hair": "#2A1D14"
+    },
+    "walker": {
+      "name": "Kyle Walker",
+      "skin": "#9C6A43",
+      "hair": "#1A1A1A"
+    },
+    "kompany": {
+      "name": "Vincent Kompany",
+      "skin": "#6B4429",
+      "hair": "#1A1A1A"
+    },
+    "otamendi": {
+      "name": "Nicolás Otamendi",
+      "skin": "#D9A877",
+      "hair": "#1E1611"
+    },
+    "delph": {
+      "name": "Fabian Delph",
+      "skin": "#F1C9A5",
+      "hair": "#3B2A1E"
+    },
+    "debruyne": {
+      "name": "Kevin De Bruyne",
+      "skin": "#F4C2A8",
+      "hair": "#C06A2F",
+      "popupName": "De Bruyne"
+    },
+    "fernandinho": {
+      "name": "Fernandinho",
+      "skin": "#9C6A43",
+      "hair": "#1A1A1A"
+    },
+    "dsilva": {
+      "name": "David Silva",
+      "skin": "#D9A877",
+      "hair": "#1E1611"
+    },
+    "sterling": {
+      "name": "Raheem Sterling",
+      "skin": "#6B4429",
+      "hair": "#111111"
+    },
+    "aguero": {
+      "name": "Sergio Agüero",
+      "skin": "#D9A877",
+      "hair": "#2A1D14"
+    },
+    "sane": {
+      "name": "Leroy Sané",
+      "skin": "#9C6A43",
+      "hair": "#111111"
+    }
+  },
+  "popupPosition": "top",
+  "clips": [
+    {
+      "id": "g1-debruyne",
+      "kind": "long_range",
+      "attacking": "away",
+      "scorer": "debruyne",
+      "assister": "aguero",
+      "defenders": [
+        "vieira",
+        "gilberto",
+        "campbell"
+      ],
+      "keeper": "lehmann",
+      "teammates": [
+        "sterling"
+      ],
+      "minute": 14,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "scoreAfter": [
+        0,
+        1
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {
+        "finish": "ground",
+        "height": "low",
+        "goalSide": "left",
+        "scorerSpot": [
+          -2,
+          21
+        ]
+      },
+      "seed": "kdb-a",
+      "night": true
+    },
+    {
+      "id": "g2-henry",
+      "kind": "one_on_one",
+      "attacking": "home",
+      "scorer": "henry",
+      "assister": "gilberto",
+      "defenders": [
+        "kompany",
+        "otamendi",
+        "fernandinho"
+      ],
+      "keeper": "ederson",
+      "minute": 33,
+      "scoreBefore": [
+        0,
+        1
+      ],
+      "scoreAfter": [
+        1,
+        1
+      ],
+      "celebration": "statue",
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {
+        "delivery": "through",
+        "finish": "ground",
+        "scorerStart": [
+          -12,
+          32
+        ]
+      },
+      "seed": "henry-a",
+      "night": true
+    },
+    {
+      "id": "g3-aguero",
+      "kind": "tap_in",
+      "attacking": "away",
+      "scorer": "aguero",
+      "assister": "sane",
+      "defenders": [
+        "campbell",
+        "toure",
+        "lauren"
+      ],
+      "keeper": "lehmann",
+      "teammates": [
+        "sterling"
+      ],
+      "minute": 52,
+      "scoreBefore": [
+        1,
+        1
+      ],
+      "scoreAfter": [
+        1,
+        2
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {
+        "side": "left"
+      },
+      "seed": "agu-a",
+      "night": true
+    },
+    {
+      "id": "g4-vieira",
+      "kind": "one_on_one",
+      "attacking": "home",
+      "scorer": "vieira",
+      "assister": "bergkamp",
+      "defenders": [
+        "kompany",
+        "otamendi",
+        "walker"
+      ],
+      "keeper": "ederson",
+      "minute": 67,
+      "scoreBefore": [
+        1,
+        2
+      ],
+      "scoreAfter": [
+        2,
+        2
+      ],
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {
+        "delivery": "through",
+        "finish": "ground",
+        "scorerStart": [
+          2,
+          30
+        ]
+      },
+      "seed": "vieira-a",
+      "night": true
+    },
+    {
+      "id": "g5-pires",
+      "kind": "tap_in",
+      "attacking": "home",
+      "scorer": "pires",
+      "assister": "henry",
+      "defenders": [
+        "kompany",
+        "otamendi",
+        "walker"
+      ],
+      "keeper": "ederson",
+      "teammates": [
+        "bergkamp"
+      ],
+      "minute": 87,
+      "scoreBefore": [
+        2,
+        2
+      ],
+      "scoreAfter": [
+        3,
+        2
+      ],
+      "celebration": "knee_slide",
+      "cameras": [
+        "tv",
+        "high"
+      ],
+      "recreate": {
+        "side": "left"
+      },
+      "seed": "pires-a",
+      "night": true
+    }
+  ]
+}
