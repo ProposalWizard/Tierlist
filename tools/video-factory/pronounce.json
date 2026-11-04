@@ -82,7 +82,10 @@
   "Higuaín": "Eegwyeen",
   "Götze": "Gertsuh",
   "Finalissima": "Feenaleesima",
-  "Maracanã": "Marakana"
+  "Maracanã": "Marakana",
+  "Griezmann": "Greezman",
+  "Schjelderup": "Shellerup",
+  "Ferran": "Fehran"
  },
  "_ipa": {
   "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -111,7 +114,7 @@
   "Juventus": "it [juˈvɛntus]",
   "Real Madrid": "es [reˈal maˈðɾið] (Wikipedia)",
   "Xavi": "ca [ˈʃaβi] (Wikipedia)",
-  "Haaland": "no [ˈhòːlɑn]",
+  "Haaland": "no [ˈhoːlɑn] (Wikipedia); heard 'Holland' in ns-haaland-argentina",
   "Olise": "en /ɒˈliseɪ/, Wikipedia respell o-LEE-say",
   "Dembélé": "fr [dɛmbele] (Wikipedia)",
   "Koundé": "fr [kunde] (Wikipedia)",
@@ -145,6 +148,9 @@
   "Higuaín": "es [iˈɣwain] (Wikipedia); heard 'Iguin' in ns-debruyne-argentina",
   "Götze": "de [ˈɡœtsə] (Wikipedia); heard 'Gertsoo'",
   "Finalissima": "it/es [finaˈlissima]; heard 'fina laissima'",
-  "Maracanã": "pt [maɾakɐˈnɐ̃] (Wikipedia); heard 'Maricana'"
+  "Maracanã": "pt [maɾakɐˈnɐ̃] (Wikipedia); heard 'Maricana'",
+  "Griezmann": "fr [ɡʁi.ɛzman]; English broadcast GREEZ-man; heard 'Griezmann' in ns-kane-france",
+  "Schjelderup": "no [ˈʂɛ̂lːərʉp]; heard 'Schellerup' in ns-haaland-argentina",
+  "Ferran": "ca [fəˈran]; heard 'Ferran' in ns-haaland-argentina"
  }
 }
