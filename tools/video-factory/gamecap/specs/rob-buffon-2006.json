@@ -1,0 +1,31 @@
+{
+  "_about": "Italy 1-1 France, World Cup final, Olympiastadion, Berlin, Sun 9 July 2006, evening. Zidane's 7th-minute penalty, a chip that hit the underside of the bar and bounced over the line (Wikipedia 2006 final, LJWorld/AP); the bar is not possible here, so it is filmed as a penalty with Buffon going the wrong way. Buffon's 104th-minute save: Willy Sagnol's cross from the right, Zidane's header tipped over the bar by Buffon (Wikipedia 2006 final, 90min 'Buffon's best moments'). Kits: Italy all blue (Switch image project blog; assumed white shorts are NOT used); France in white (assumed, no source found naming the final strip). Buffon's gold top on the 2006 run (Football Shirt Collective, one source only).",
+  "teams": {
+    "home": { "name": "Italy", "kit": { "shirt": "#1f5bb5", "shorts": "#1f5bb5", "socks": "#1f5bb5" }, "keeperKit": { "shirt": "#d9b23a", "shorts": "#1b1b1b", "socks": "#d9b23a" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "France", "kit": { "shirt": "#FFFFFF", "shorts": "#FFFFFF", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#2a2a2a", "shorts": "#2a2a2a", "socks": "#2a2a2a" }, "popupTrim": "#1d3c8f" }
+  },
+  "people": {
+    "buffon": { "name": "Gianluigi Buffon", "skin": "#e8b994", "hair": "#2a1d15" },
+    "cannavaro": { "name": "Fabio Cannavaro", "skin": "#d9a57e", "hair": "#1d1512" },
+    "materazzi": { "name": "Marco Materazzi", "skin": "#e6b48f", "hair": "#1d1512" },
+    "zambrotta": { "name": "Gianluca Zambrotta", "skin": "#e6b48f", "hair": "#2a1d15" },
+    "grosso": { "name": "Fabio Grosso", "skin": "#e6b48f", "hair": "#2a1d15" },
+    "zidane": { "name": "Zinedine Zidane", "skin": "#d9a57e", "hair": "#cfa07e" },
+    "sagnol": { "name": "Willy Sagnol", "skin": "#f0c3a0", "hair": "#6b5440" },
+    "henry": { "name": "Thierry Henry", "skin": "#6e4630", "hair": "#1a120e" },
+    "malouda": { "name": "Florent Malouda", "skin": "#5e3a24", "hair": "#0d0a09" }
+  },
+  "clips": [
+    { "id": "zidane-pen", "kind": "penalty", "attacking": "away", "scorer": "zidane", "keeper": "buffon", "defenders": ["materazzi", "cannavaro"], "teammates": ["henry", "malouda"],
+      "minute": 7, "scoreBefore": [0, 0], "scoreAfter": [0, 1], "night": true,
+      "cameras": ["tv", "high", { "angle": "fan", "from": "shot-1", "to": "goal+2", "name": "fan" }],
+      "recreate": { "goalSide": "centre", "height": "mid" },
+      "seed": "zidane-pen-a" },
+    { "id": "buffon-save", "kind": "save", "attacking": "away", "scorer": "zidane", "assister": "sagnol", "keeper": "buffon",
+      "defenders": ["materazzi", "cannavaro", "zambrotta", "grosso"], "teammates": ["henry", "malouda"],
+      "minute": 104, "scoreBefore": [1, 1], "night": true,
+      "cameras": ["tv", "high", { "angle": "fan", "from": "shot-1.5", "to": "save+2", "name": "fan" }],
+      "recreate": { "base": "header", "delivery": "cross", "side": "right", "swing": "in", "scorerStart": [-1, 15], "scorerSpot": [0, 9], "finish": "header", "height": "high", "save": "parry", "goalSide": "far" },
+      "seed": "buffon-save-a" }
+  ]
+}

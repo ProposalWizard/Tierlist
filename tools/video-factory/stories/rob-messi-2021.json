@@ -1,309 +1,531 @@
 {
-  "id": "rob-messi-2021",
-  "series": "Ballon d'Or robberies",
-  "title": "Messi 2021: deserved or not?",
-  "sources": [
-    "https://www.fcbarcelona.com/en/news/2188872/leo-messi-60-games-and-46-goals-in-202021-season",
-    "https://www.football-espana.net/2021/05/23/lionel-messi-clinches-an-eighth-pichichi-trophy-in-2020-21",
-    "https://www.goal.com/en/news/eight-pichichi-trophies-id-rather-win-la-liga-says-messi/rp5rfmzvuhjo1isjpp3uevgso",
-    "https://www.si.com/soccer/2021/06/14/lionel-messi-scores-free-kick-chile-copa-america",
-    "https://www.aljazeera.com/sports/2021/6/15/messis-argentina-held-to-a-draw-at-copa-america-opener",
-    "https://english.ahram.org.eg/News/416212.aspx",
-    "https://copaamerica.com/en/news/group-a-winners-argentina-secure-a-comprehensive-win-against-bolivia",
-    "https://copaamerica.com/en/news/argentina-beat-ecuador-and-will-meet-colombia-in-the-semi-final",
-    "https://gulfnews.com/sport/football/messi-stars-as-argentina-set-up-colombia-copa-semi-final-1.80422325",
-    "https://copaamerica.com/en/news/messi-o-melhor-jogador-da-conmebol-copa-america-2021",
-    "https://www.foxsports.com/articles/soccer/messi-dominates-copa-america-group-stage-with-argentina",
-    "https://www.cbssports.com/soccer/news/lionel-messi-finally-scores-his-first-ligue-1-goal-as-psg-overcome-keylor-navas-red-card-in-win-over-nantes",
-    "https://www.ligue1.com/Articles/NEWS/2021/11/21/messi-delighted-with-first-ligue-1-goal-mbappe-neymar",
-    "https://gulfnews.com/sport/football/bundesliga-robert-lewandowski-topples-gerd-muellers-goal-record-1.79389966",
-    "https://www.tntsports.co.uk/football/bundesliga/2020-2021/robert-lewandowski-breaks-gerd-mullers-49-year-record-with-41st-bundesliga-goal-of-season_sto8331331/story.shtml",
-    "https://en.wikipedia.org/wiki/Jorginho_(footballer,_born_December_1991)",
-    "https://www.tntsports.co.uk/football/ballon-d-or/2021/modric-sneijder-cannavaro.-how-does-jorginho-compare-to-major-tournament-ballon-dor-candidates-of-th_sto8633219/story.shtml",
-    "https://www.topendsports.com/sport/soccer/awards/ballondor-2021.htm",
-    "https://www.tntsports.co.uk/football/ballon-dor-2021-lionel-messi-wins-historic-seventh-award-ahead-of-robert-lewandowski-and-jorginho_sto8648942/story.shtml"
-  ],
-  "checked": "Barca 2020-21: 30 Liga goals, Pichichi, Copa del Rey (FCB, Football Espana, Goal); Copa America: free kick v Chile (SI, Al Jazeera), 2 v Bolivia incl pen (Ahram, CONMEBOL), free kick + 2 assists v Ecuador QF (CONMEBOL, Gulf News), 4 goals 5 assists, shared best player with Neymar (CONMEBOL, Fox); first Ligue 1 goal 20 Nov 2021 v Nantes after 3 UCL goals (CBS, Ligue1.com); Lewandowski 41 beats Muller 40 (Gulf News, TNT); Jorginho UCL + Euro, UEFA player of year (Wikipedia, TNT); 613/580/460 (Topend, TNT). Framed as debate, no claim of wrongdoing.",
-  "clubs": {
-    "arg": {
-      "name": "Argentina",
-      "short": "ARG",
-      "c1": "#75aadb",
-      "c2": "#ffffff",
-      "pattern": "stripes"
-    },
-    "bar": {
-      "name": "Barcelona",
-      "short": "BAR",
-      "c1": "#a50044",
-      "c2": "#004d98",
-      "pattern": "stripes"
-    },
-    "psg": {
-      "name": "Paris Saint-Germain",
-      "short": "PSG",
-      "c1": "#004170",
-      "c2": "#da291c",
-      "pattern": "centre"
-    },
-    "bay": {
-      "name": "Bayern Munich",
-      "short": "FCB",
-      "c1": "#dc052d",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "che": {
-      "name": "Chelsea",
-      "short": "CHE",
-      "c1": "#034694",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "chi": {
-      "name": "Chile",
-      "short": "CHI",
-      "c1": "#d52b1e",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "bol": {
-      "name": "Bolivia",
-      "short": "BOL",
-      "c1": "#007a33",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "ecu": {
-      "name": "Ecuador",
-      "short": "ECU",
-      "c1": "#ffd100",
-      "c2": "#034ea2",
-      "pattern": "plain"
-    }
+ "id": "rob-messi-2021",
+ "series": "Ballon d'Or robberies",
+ "title": "Messi 2021: deserved, or the robbery of Lewandowski and Jorginho?",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/2020%E2%80%9321_La_Liga",
+  "https://www.fcbarcelona.com/en/news/2109283/messi-wins-his-eighth-pichichi",
+  "https://www.footballespana.net/",
+  "https://www.aljazeera.com/sports/2021/6/15/messis-argentina-held-to-a-draw-at-copa-america-opener",
+  "https://batimes.com.ar/news/sports/argentina-held-1-1-by-chile-in-copa-america-opener-despite-piece-of-messi-magic.phtml",
+  "https://english.ahram.org.eg/News/416212.aspx",
+  "https://www.soccernews.com/bolivia-1-4-argentina-magical-messi-as-la-albiceleste-captain-makes-history/324385/",
+  "https://www.fotmob.com/news/1s6yqp2wjb2ix10wsetlgdxv4o/argentina-3-0-ecuador-messi-the-architect-as-la-albiceleste-reaches-semi-finals",
+  "https://copaamerica.com/en/news/argentina-beat-brazil-at-the-maracana-to-win-the-conmebol-copa-america",
+  "https://www.planetfootball.com/videos/watch-argentinas-angel-di-maria-scores-delightful-chip-over-ederson-in-copa-americafinal",
+  "https://www.vavel.com/en/international-football/2021/07/11/1077795-argentina-1-0-brazil-argentina-end-28-year-run-to-win-the-2021-copa-america.html",
+  "https://www.cbssports.com/soccer/news/argentina-vs-brazil-copa-america-final-2021-score-messi-wins-first-title-di-maria-nets-winner/live",
+  "https://www.ligue1.com/",
+  "https://www.tntsports.co.uk/football/bundesliga/2020-2021/robert-lewandowski-breaks-gerd-mullers-49-year-record-with-41st-bundesliga-goal-of-season_sto8331331/story.shtml",
+  "https://en.wikipedia.org/wiki/Jorginho_(footballer,_born_1991)",
+  "https://www.topendsports.com/sport/soccer/awards/ballondor-2021.htm"
+ ],
+ "checked": "Barca 2020-21: Messi 30 Liga goals, Pichichi, Copa del Rey; Liga table Atletico 86, Real 84, Barcelona 79 (Wikipedia La Liga 2020-21, FC Barcelona, Goal). Copa America 2021: free kick v Chile, 14 June, Rio, 33', 1-1 (Al Jazeera, BA Times); 2 v Bolivia, one a penalty, 28 June, Cuiaba, 4-1 (Ahram/Reuters, SoccerNews); free kick and 2 assists v Ecuador QF, 3-0, 3 July (FotMob, AOL/Reuters); 4 goals 5 assists, best player shared with Neymar (CONMEBOL, Fox). Final 10 July 2021, Maracana, 1-0 Brazil, Di Maria chip over Ederson from De Paul's long pass, 22', Argentina's first title in 28 years (CONMEBOL, Planet Football, Vavel, CBS). First Ligue 1 goal 20 Nov 2021 v Nantes; ceremony 29 Nov 2021 (CBS, Ligue1.com, Topend). Lewandowski 41 beats Muller's 40 (TNT, Gulf News). Jorginho: Champions League with Chelsea, Euro 2020 with Italy, UEFA Men's Player of the Year (Wikipedia, TNT). Vote 613/580/460 (Topend, TNT). Framed as a debate, no claim of wrongdoing. Gameplay: the Chile free kick and Di Maria's chip, gamecap specs/rob-messi-2021*.json; Argentina's stripes show as one sky blue on the figures.",
+ "clubs": {
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "badge": "FC Barcelona"
   },
-  "people": {
-    "messi": {
-      "name": "Lionel Messi",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#4a3222"
-      ],
-      "beard": "full",
-      "beardCol": "#4a3222",
-      "kit": "arg"
-    },
-    "lewa": {
-      "name": "Robert Lewandowski",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#5a3e2b"
-      ],
-      "beard": "stubble",
-      "beardCol": "#5a3e2b",
-      "kit": "bay"
-    },
-    "jorginho": {
-      "name": "Jorginho",
-      "skin": "olive",
-      "hair": [
-        "crop",
-        "#2b2118"
-      ],
-      "beard": "short",
-      "beardCol": "#2b2118",
-      "kit": "che"
-    }
+  "atm": {
+   "name": "Atlético Madrid",
+   "short": "ATM",
+   "c1": "#cb3524",
+   "c2": "#ffffff",
+   "pattern": "stripes",
+   "badge": "Atlético Madrid"
   },
-  "lines": [
-    {
-      "text": "Messi's seventh Ballon d'Or. Was it deserved? Let's look at the case against.",
-      "scene": {
-        "type": "title",
-        "heading": "LIONEL MESSI",
-        "sub": "Ballon d'Or · 2021",
-        "pill": "DESERVED?",
-        "person": "messi"
-      }
-    },
-    {
-      "text": "At Barcelona, thirty league goals and the Pichichi. But no league title, just the Copa del Rey.",
-      "scene": {
-        "type": "stats",
-        "title": "Barcelona 2020/21",
-        "items": [
-          {
-            "n": "30",
-            "l": "La Liga goals"
-          },
-          {
-            "n": "1",
-            "l": "Copa del Rey"
-          },
-          {
-            "n": "0",
-            "l": "league titles"
-          }
-        ],
-        "person": "messi"
-      }
-    },
-    {
-      "text": "Then the Copa América. Game one, a free kick against Chile.",
-      "scene": {
-        "type": "score",
-        "home": "arg",
-        "away": "chi",
-        "hs": 1,
-        "as": 1,
-        "date": "14 June 2021",
-        "comp": "Copa América, group",
-        "note": "Messi free kick"
-      }
-    },
-    {
-      "text": "Two against Bolivia, one a penalty.",
-      "scene": {
-        "type": "score",
-        "home": "arg",
-        "away": "bol",
-        "hs": 4,
-        "as": 1,
-        "date": "28 June 2021",
-        "comp": "Copa América, group",
-        "note": "Messi x2"
-      }
-    },
-    {
-      "text": "Quarter-final, Ecuador. Two assists and another free kick.",
-      "scene": {
-        "type": "score",
-        "home": "arg",
-        "away": "ecu",
-        "hs": 3,
-        "as": 0,
-        "date": "3 July 2021",
-        "comp": "Copa América, quarter-final",
-        "note": "Messi free kick + 2 assists"
-      }
-    },
-    {
-      "text": "Four goals, five assists, and finally a trophy with Argentina.",
-      "scene": {
-        "type": "trophies",
-        "items": [
-          {
-            "kind": "cup",
-            "label": "Copa América 2021"
-          }
-        ],
-        "person": "messi"
-      }
-    },
-    {
-      "text": "Then PSG. His first league goal didn't come until the twentieth of November.",
-      "scene": {
-        "type": "text",
-        "heading": "MESSI AT PSG, AUTUMN 2021",
-        "body": "Three Champions League goals, against Manchester City and RB Leipzig. First Ligue 1 goal: 20 November, against Nantes."
-      }
-    },
-    {
-      "text": "Now the rivals. Robert Lewandowski. Forty-one Bundesliga goals, breaking Gerd Müller's record.",
-      "scene": {
-        "type": "versus",
-        "title": "Bundesliga goals in a season",
-        "left": {
-          "person": "lewa",
-          "label": "Lewandowski 2020/21",
-          "value": "41"
-        },
-        "right": {
-          "name": "Gerd Müller",
-          "label": "Müller 1971/72",
-          "value": "40"
-        }
-      }
-    },
-    {
-      "text": "And Jorginho. Champions League with Chelsea. Euros with Italy. UEFA's player of the year.",
-      "scene": {
-        "type": "trophies",
-        "items": [
-          {
-            "kind": "bigears",
-            "label": "Champions League"
-          },
-          {
-            "kind": "euro",
-            "label": "Euro 2020"
-          }
-        ],
-        "person": "jorginho"
-      }
-    },
-    {
-      "text": "The result? Messi six hundred and thirteen. Lewandowski five hundred and eighty. Jorginho four hundred and sixty.",
-      "scene": {
-        "type": "podium",
-        "year": "2021",
-        "title": "Ballon d'Or",
-        "places": [
-          {
-            "person": "messi",
-            "club": "psg"
-          },
-          {
-            "person": "lewa",
-            "club": "bay"
-          },
-          {
-            "person": "jorginho",
-            "club": "che"
-          }
-        ]
-      }
-    },
-    {
-      "text": "The case for Messi? He finally won with his country, and dragged Argentina there.",
-      "scene": {
-        "type": "person",
-        "person": "messi",
-        "label": "Copa América champion",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "The case against? Forty-one goals. Or two of the biggest trophies in the game.",
-      "scene": {
-        "type": "whatif",
-        "title": "Who should have won?",
-        "real": {
-          "label": "Real world",
-          "value": "Messi, 613"
-        },
-        "alt": {
-          "label": "The case against",
-          "value": "Lewandowski or Jorginho"
-        }
-      }
-    },
-    {
-      "text": "Deserved, or robbed? You decide.",
-      "scene": {
-        "type": "stamp",
-        "text": "YOU DECIDE",
-        "person": "messi",
-        "color": "yellow"
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
+  "rma": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#febe10",
+   "pattern": "plain"
+  },
+  "sev": {
+   "name": "Sevilla",
+   "short": "SEV",
+   "c1": "#ffffff",
+   "c2": "#d4021d",
+   "pattern": "plain",
+   "badge": "Sevilla FC"
+  },
+  "rso": {
+   "name": "Real Sociedad",
+   "short": "RSO",
+   "c1": "#0067b1",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "arg": {
+   "name": "Argentina",
+   "short": "ARG",
+   "c1": "#75aadb",
+   "c2": "#ffffff",
+   "pattern": "stripes",
+   "badge": false
+  },
+  "chi": {
+   "name": "Chile",
+   "short": "CHI",
+   "c1": "#d52b1e",
+   "c2": "#0039a6",
+   "pattern": "plain",
+   "badge": false
+  },
+  "bra": {
+   "name": "Brazil",
+   "short": "BRA",
+   "c1": "#ffdf00",
+   "c2": "#009c3b",
+   "pattern": "plain",
+   "badge": false
+  },
+  "psg": {
+   "name": "Paris Saint-Germain",
+   "short": "PSG",
+   "c1": "#004170",
+   "c2": "#da291c",
+   "pattern": "centre"
+  },
+  "bay": {
+   "name": "Bayern Munich",
+   "short": "BAY",
+   "c1": "#dc052d",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": "FC Bayern München"
+  },
+  "che": {
+   "name": "Chelsea",
+   "short": "CHE",
+   "c1": "#034694",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  }
+ },
+ "people": {
+  "messi": {
+   "name": "Lionel Messi",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#3a2a1e"
+   ],
+   "beard": "full",
+   "beardCol": "#3a2a1e",
+   "kit": "arg"
+  },
+  "messib": {
+   "name": "Lionel Messi",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#3a2a1e"
+   ],
+   "beard": "full",
+   "beardCol": "#3a2a1e",
+   "kit": "bar"
+  },
+  "messip": {
+   "name": "Lionel Messi",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#3a2a1e"
+   ],
+   "beard": "full",
+   "beardCol": "#3a2a1e",
+   "kit": "psg"
+  },
+  "lewa": {
+   "name": "Robert Lewandowski",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#2a1d15"
+   ],
+   "beard": "stubble",
+   "beardCol": "#2a1d15",
+   "kit": "bay"
+  },
+  "jorginho": {
+   "name": "Jorginho",
+   "skin": "olive",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "stubble",
+   "beardCol": "#2a1d15",
+   "kit": "che"
+  }
+ },
+ "lines": [
+  {
+   "text": "2021. Messi wins his seventh Ballon d'Or. Deserved, or was somebody robbed?",
+   "say": "Twenty twenty one. Messi wins his seventh Balon Dor. Deserved, or was somebody robbed?",
+   "scene": {
+    "type": "title",
+    "heading": "LIONEL MESSI",
+    "sub": "Argentina · 2021",
+    "pill": "DESERVED OR ROBBERY?",
+    "person": "messi",
+    "club": "arg"
+   }
+  },
+  {
+   "text": "At Barcelona, thirty league goals, the Pichichi and the Copa del Rey.",
+   "say": "At Barcelona, thirty league goals, the Peecheechee and the Kopa del Ray.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Barcelona · 2020/21",
+    "title": "His last season at Barça",
+    "items": [
+     {
+      "n": "30",
+      "l": "La Liga goals"
+     },
+     {
+      "n": "1st",
+      "l": "Pichichi, top scorer"
+     },
+     {
+      "n": "1",
+      "l": "Copa del Rey"
+     }
+    ],
+    "person": "messib"
+   }
+  },
+  {
+   "text": "But no title. Barça finished third, seven points behind Atlético.",
+   "say": "But no title. Barsah finished third, seven points behind Atleteeko.",
+   "scene": {
+    "type": "table",
+    "season": "Final table 2020/21",
+    "title": "La Liga",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "atm",
+      "p": 38,
+      "w": 26,
+      "d": 8,
+      "l": 4,
+      "gd": 42,
+      "pts": 86
+     },
+     {
+      "pos": 2,
+      "club": "rma",
+      "p": 38,
+      "w": 25,
+      "d": 9,
+      "l": 4,
+      "gd": 39,
+      "pts": 84
+     },
+     {
+      "pos": 3,
+      "club": "bar",
+      "p": 38,
+      "w": 24,
+      "d": 7,
+      "l": 7,
+      "gd": 47,
+      "pts": 79,
+      "hl": true
+     },
+     {
+      "pos": 4,
+      "club": "sev",
+      "p": 38,
+      "w": 24,
+      "d": 5,
+      "l": 9,
+      "gd": 20,
+      "pts": 77
+     },
+     {
+      "pos": 5,
+      "club": "rso",
+      "p": 38,
+      "w": 17,
+      "d": 11,
+      "l": 10,
+      "gd": 21,
+      "pts": 62
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
+     },
+     {
+      "kind": "uel",
+      "rows": [
+       5,
+       5
+      ],
+      "label": "Europa League"
+     }
+    ],
+    "gap": {
+     "from": 1,
+     "to": 3,
+     "label": "7 pts",
+     "at": 0.45
     }
-  ]
+   }
+  },
+  {
+   "text": "Then the Copa América. Game one, Chile. A free kick into the corner.",
+   "say": "Then the Kopa Amerika. Game one, Chilay. A free kick into the corner.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/cap/messi-2021/messi-fk-chile/high",
+      0,
+      140
+     ]
+    ],
+    "goalAt": 1.83,
+    "popup": {
+     "home": "arg",
+     "away": "chi",
+     "homeName": "ARGENTINA",
+     "awayName": "CHILE",
+     "hs0": 0,
+     "as0": 0,
+     "hs": 1,
+     "as": 0,
+     "scorer": "Messi"
+    },
+    "caption": "MESSI",
+    "captionColor": "#9fd3ff"
+   }
+  },
+  {
+   "text": "Two against Bolivia. A free kick and two assists against Ecuador.",
+   "say": "Two against Boleeveeya. A free kick and two assists against Ekwador.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Copa América 2021",
+    "title": "Messi's tournament",
+    "items": [
+     {
+      "n": "4",
+      "l": "goals"
+     },
+     {
+      "n": "5",
+      "l": "assists"
+     },
+     {
+      "n": "2",
+      "l": "free kicks scored"
+     }
+    ],
+    "person": "messi"
+   }
+  },
+  {
+   "text": "The final, at the Maracanã. De Paul over the top. Di María chips Ederson.",
+   "say": "The final, at the Marakahnah. Deh Powl over the top. Dee Mareeah chips Edderson.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/cap/messi-2021-final/dimaria-chip/tv",
+      20,
+      80
+     ],
+     [
+      "/tmp/claude-0/cap/messi-2021-final/dimaria-chip/high",
+      80,
+      240
+     ]
+    ],
+    "goalAt": 2.8,
+    "popup": {
+     "home": "arg",
+     "away": "bra",
+     "homeName": "ARGENTINA",
+     "awayName": "BRAZIL",
+     "hs0": 0,
+     "as0": 0,
+     "hs": 1,
+     "as": 0,
+     "scorer": "Di María",
+     "assist": "De Paul"
+    },
+    "caption": "DI MARÍA!",
+    "captionColor": "#9fd3ff"
+   }
+  },
+  {
+   "text": "Argentina's first trophy in twenty-eight years. Messi's first with his country.",
+   "say": "Argentina's first trophy in twenty eight years. Messi's first with his country.",
+   "scene": {
+    "type": "trophies",
+    "kicker": "Argentina · July 2021",
+    "title": "Finally",
+    "items": [
+     {
+      "kind": "goldcup",
+      "label": "Copa América"
+     },
+     {
+      "kind": "award",
+      "label": "Best player (shared with Neymar)"
+     }
+    ],
+    "person": "messi"
+   }
+  },
+  {
+   "text": "Then PSG. His first league goal came nine days before the ceremony.",
+   "say": "Then P S G. His first league goal came nine days before the ceremony.",
+   "scene": {
+    "type": "news",
+    "section": "Ligue 1",
+    "headline": "Messi finally scores in Ligue 1",
+    "standfirst": "Three months after arriving from Barcelona, his first league goal for PSG comes against Nantes.",
+    "date": "20 November 2021",
+    "byline": "Knowitball recap",
+    "person": "messip",
+    "club": "psg",
+    "nav": [
+     "Football",
+     "Ligue 1",
+     "PSG",
+     "Messi"
+    ]
+   }
+  },
+  {
+   "text": "The rivals? Lewandowski. Forty-one Bundesliga goals, a new record.",
+   "say": "The rivals? Lehvandoffskee. Forty one Bundesliga goals, a new record.",
+   "scene": {
+    "type": "compare",
+    "title": "League goals 2020/21",
+    "left": {
+     "person": "messib",
+     "name": "Messi",
+     "sub": "Barcelona"
+    },
+    "right": {
+     "person": "lewa",
+     "name": "Lewandowski",
+     "sub": "Bayern"
+    },
+    "rows": [
+     {
+      "label": "League goals",
+      "l": 30,
+      "r": 41
+     },
+     {
+      "label": "League title",
+      "l": 0,
+      "r": 1
+     }
+    ]
+   }
+  },
+  {
+   "text": "And Jorginho. The Champions League, the Euros, and UEFA's player of the year.",
+   "say": "And Zhorjeenyo. The Champions League, the Euros, and Yooayfuh's player of the year.",
+   "scene": {
+    "type": "trophies",
+    "kicker": "Jorginho · 2020/21",
+    "title": "Two of the biggest trophies",
+    "items": [
+     {
+      "kind": "bigears",
+      "label": "Champions League"
+     },
+     {
+      "kind": "euro",
+      "label": "Euro 2020"
+     },
+     {
+      "kind": "award",
+      "label": "UEFA Player of the Year"
+     }
+    ],
+    "person": "jorginho"
+   }
+  },
+  {
+   "text": "The vote? Messi six hundred and thirteen. Lewandowski five hundred and eighty. Jorginho four sixty.",
+   "say": "The vote? Messi six hundred and thirteen. Lehvandoffskee five hundred and eighty. Zhorjeenyo four sixty.",
+   "scene": {
+    "type": "podium",
+    "year": "2021",
+    "title": "The vote",
+    "places": [
+     {
+      "person": "messip",
+      "club": "psg",
+      "points": 613
+     },
+     {
+      "person": "lewa",
+      "club": "bay",
+      "points": 580
+     },
+     {
+      "person": "jorginho",
+      "club": "che",
+      "points": 460
+     }
+    ]
+   }
+  },
+  {
+   "text": "The case for Messi? He finally won with Argentina, and carried them there.",
+   "say": "The case for Messi? He finally won with Argentina, and carried them there.",
+   "scene": {
+    "type": "person",
+    "person": "messi",
+    "label": "The case for",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "The case against? Forty-one goals, or the two biggest trophies. Deserved, or robbed? You decide.",
+   "say": "The case against? Forty one goals, or the two biggest trophies. Deserved, or robbed? You decide.",
+   "scene": {
+    "type": "stamp",
+    "text": "ROBBED?",
+    "sub": "Lewandowski or Jorginho · 2021",
+    "person": "lewa",
+    "color": "yellow"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }

@@ -1,49 +1,400 @@
 {
-  "id": "rob-buffon-2006",
-  "series": "Ballon d'Or robberies",
-  "title": "Buffon 2006: two goals conceded, still second",
-  "sources": [
-    "https://www.fifa.com/news/italy-conquer-the-world-as-germany-wins-friends",
-    "https://www.ghanamma.com/2022/07/21/2006-worldcup-winners-he-conceded-only-two-goals-in-the-entire-tournament/",
-    "https://www.liquisearch.com/gianluigi_buffon/international_career",
-    "https://www.sportskeeda.com/football/50-greatest-players-in-world-cup-history-27-gianluigi-buffon",
-    "https://www2.ljworld.com/news/2006/jul/10/crazy_finale_fitting/",
-    "https://en.wikipedia.org/wiki/2006_Ballon_d%27Or",
-    "https://www.topendsports.com/sport/soccer/awards/ballondor-2006.htm",
-    "https://archive.thedailystar.net/2006/11/29/d61129041546.htm",
-    "https://www.filgoal.com/articles/174328",
-    "https://www.si.com/soccer/who-was-the-last-defender-to-win-ballon-dor",
-    "https://www.pastemagazine.com/soccer/why-a-goalkeeper-will-never-win-another-ballon-dor/",
-    "https://en.wikipedia.org/wiki/Lev_Yashin",
-    "https://foot-africa.com/en/news/ballon-dor-lev-yashin-the-only-goalkeeper-to-have-won-the-trophy-863643/"
-  ],
-  "checked": "Buffon conceded 2 at WC 2006, a Zaccardo own goal v USA and Zidane's penalty in the final (FIFA, Ghanamma, Sportskeeda); Yashin Award (Liquisearch, Sportskeeda); final 1-1, Italy 5-3 on pens (FIFA, LJWorld); Juventus relegated to Serie B and stripped of two titles in Calciopoli, Cannavaro left for Real Madrid, Buffon stayed (Wikipedia 2006 Ballon d'Or, filgoal); vote Cannavaro 173, Buffon 124, Henry 121 (Topend, Daily Star), 49-point gap (Paste); Yashin 1963 the only keeper winner (Wikipedia, Foot Africa). Calciopoli is stated only as the sanction on record against the club; no individual is accused.",
-  "clubs": {
-    "ita": { "name": "Italy", "short": "ITA", "c1": "#1f5fbf", "c2": "#ffffff", "pattern": "plain" },
-    "fra": { "name": "France", "short": "FRA", "c1": "#1d2a6b", "c2": "#ffffff", "pattern": "plain" },
-    "juv": { "name": "Juventus", "short": "JUV", "c1": "#111111", "c2": "#ffffff", "pattern": "stripes" },
-    "rma": { "name": "Real Madrid", "short": "RMA", "c1": "#ffffff", "c2": "#d4af37", "pattern": "plain" },
-    "ars": { "name": "Arsenal", "short": "ARS", "c1": "#ef0107", "c2": "#ffffff", "pattern": "sides" }
+ "id": "rob-buffon-2006",
+ "series": "Ballon d'Or robberies",
+ "title": "Buffon 2006: two goals conceded, still second",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/Gianluigi_Buffon",
+  "https://www.ghanamma.com/2022/07/21/2006-worldcup-winners-he-conceded-only-two-goals-in-the-entire-tournament/",
+  "https://www.liquisearch.com/gianluigi_buffon/international_career",
+  "https://www.oneindia.com/2006/07/10/unbeatable-buffon-bags-lev-yashin-award-1152526801.html",
+  "https://en.wikipedia.org/wiki/2006_FIFA_World_Cup_final",
+  "https://www2.ljworld.com/news/2006/jul/10/crazy_finale_fitting/",
+  "https://www.90min.com/posts/6552145-4-of-the-best-moments-of-gianluigi-buffon-s-career",
+  "https://en.wikipedia.org/wiki/2006_Italian_football_scandal",
+  "https://en.wikipedia.org/wiki/2006_Ballon_d%27Or",
+  "https://www.topendsports.com/sport/soccer/awards/ballondor-2006.htm",
+  "https://en.wikipedia.org/wiki/2006_FIFA_World_Player_of_the_Year",
+  "https://en.wikipedia.org/wiki/Lev_Yashin"
+ ],
+ "checked": "Buffon at WC 2006: 7 games, 5 clean sheets, 2 goals conceded, neither from open play: Zaccardo own goal v USA (1-1, 17 June) and Zidane's penalty in the final (Wikipedia Buffon, Ghanamma, Liquisearch); Yashin Award (Oneindia, Liquisearch). Final 9 July 2006, Berlin: Zidane 7' penalty off the bar, Materazzi 19' header from Pirlo's corner, Buffon tipped Zidane's 104' header from Sagnol's cross over, Italy 5-3 on penalties, all five Italian kicks scored (Wikipedia final, LJWorld/AP, 90min). Calciopoli: Juventus relegated to Serie B and stripped of the 2005 and 2006 titles; Cannavaro left for Real Madrid, Buffon stayed (Wikipedia scandal, Wikipedia 2006 Ballon d'Or). Vote: Cannavaro 173, Buffon 124, Henry 121 (Wikipedia, Topend). Cannavaro also FIFA World Player of the Year 2006 (Wikipedia). Yashin 1963 the only keeper to win it (Wikipedia Yashin, Wikipedia Ballon d'Or). The sanction is stated only as on record against the club; no person is accused. Gameplay: Zidane's penalty (the bar is not possible, so a plain penalty) and Buffon's save, gamecap specs/rob-buffon-2006.json.",
+ "clubs": {
+  "ita": {
+   "name": "Italy",
+   "short": "ITA",
+   "c1": "#1f5bb5",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": false
   },
-  "people": {
-    "buffon": { "name": "Gianluigi Buffon", "skin": "olive", "hair": ["tidy", "#3a2a1c"], "beard": "stubble", "beardCol": "#3a2a1c", "kit": "ita" },
-    "cannavaro": { "name": "Fabio Cannavaro", "skin": "olive", "hair": ["buzz", "#1f1712"], "beard": "none", "kit": "ita" },
-    "henry": { "name": "Thierry Henry", "skin": "brown", "hair": ["bald", "#1a1a1a"], "beard": "none", "kit": "ars" }
+  "fra": {
+   "name": "France",
+   "short": "FRA",
+   "c1": "#1d3c8f",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": false
   },
-  "lines": [
-    { "text": "Two goals. That's all Gianluigi Buffon let in at the whole twenty-oh-six World Cup.", "scene": { "type": "title", "heading": "GIANLUIGI BUFFON", "sub": "Italy · World Cup 2006", "pill": "THE WALL WAS ROBBED", "person": "buffon" } },
-    { "text": "And look how they went in. One own goal. One penalty.", "scene": { "type": "stats", "title": "Goals Buffon conceded", "items": [ { "n": "2", "l": "in seven games" }, { "n": "1", "l": "own goal" }, { "n": "1", "l": "penalty" } ], "person": "buffon" } },
-    { "text": "The own goal was his own teammate's, against the USA. The penalty was Zidane's, in the final.", "scene": { "type": "text", "heading": "HOW BUFFON WAS BEATEN", "body": "Against the USA: an own goal by Italy's Cristian Zaccardo. In the final: a Zinedine Zidane penalty. No opponent scored past him from open play." } },
-    { "text": "One-all in Berlin. Then penalties. Italy won five-three.", "scene": { "type": "score", "home": "ita", "away": "fra", "hs": 1, "as": 1, "date": "9 July 2006", "comp": "World Cup final", "note": "Italy won 5-3 on penalties" } },
-    { "text": "World champions. And Buffon took the Yashin Award as the tournament's best keeper.", "scene": { "type": "trophies", "items": [ { "kind": "worldcup", "label": "World Cup 2006" }, { "kind": "cup", "label": "Yashin Award" } ], "person": "buffon" } },
-    { "text": "Back home, chaos. Juventus were relegated to Serie B in the Calciopoli scandal and stripped of two titles.", "scene": { "type": "stamp", "text": "SERIE B", "color": "yellow" } },
-    { "text": "The captain, Cannavaro, left for Real Madrid. Buffon stayed with Juventus, in the second division.", "scene": { "type": "versus", "title": "Summer 2006", "left": { "person": "cannavaro", "label": "Cannavaro", "value": "Real Madrid" }, "right": { "person": "buffon", "label": "Buffon", "value": "Serie B" } } },
-    { "text": "Then came the Ballon d'Or.", "scene": { "type": "podium", "year": "2006", "title": "Ballon d'Or", "places": [ { "person": "cannavaro", "club": "rma" }, { "person": "buffon", "club": "juv" }, { "person": "henry", "club": "ars" } ] } },
-    { "text": "Cannavaro one hundred and seventy-three. Buffon one hundred and twenty-four. Forty-nine points.", "scene": { "type": "versus", "title": "2006 Ballon d'Or", "left": { "person": "cannavaro", "label": "Cannavaro", "value": "173" }, "right": { "person": "buffon", "label": "Buffon", "value": "124" } } },
-    { "text": "To be fair, Cannavaro was immense that summer. But the wall behind him barely gave anything away.", "scene": { "type": "person", "person": "cannavaro", "label": "Italy captain", "mood": "happy" } },
-    { "text": "Only one goalkeeper has ever won the Ballon d'Or. Lev Yashin, in nineteen sixty-three.", "scene": { "type": "timeline", "items": [ { "year": "1963", "label": "Yashin wins it" }, { "year": "2006", "label": "Buffon 2nd" }, { "year": "Today", "label": "Still only Yashin" } ] } },
-    { "text": "Buffon never got closer. Twenty-oh-six was his shot.", "scene": { "type": "person", "person": "buffon", "mood": "flat", "label": "Never won it" } },
-    { "text": "A keeper who let in two goals all tournament, and it still wasn't enough.", "scene": { "type": "stamp", "text": "ROBBED", "person": "buffon", "color": "red" } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
-  ]
+  "usa": {
+   "name": "USA",
+   "short": "USA",
+   "c1": "#ffffff",
+   "c2": "#b22234",
+   "pattern": "plain",
+   "badge": false
+  },
+  "juv": {
+   "name": "Juventus",
+   "short": "JUV",
+   "c1": "#111111",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "rma": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#febe10",
+   "pattern": "plain"
+  },
+  "ars": {
+   "name": "Arsenal",
+   "short": "ARS",
+   "c1": "#ef0107",
+   "c2": "#ffffff",
+   "pattern": "sides"
+  }
+ },
+ "people": {
+  "buffon": {
+   "name": "Gianluigi Buffon",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#2a1d15"
+   ],
+   "beard": "stubble",
+   "beardCol": "#2a1d15",
+   "kit": "ita"
+  },
+  "buffonj": {
+   "name": "Gianluigi Buffon",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#2a1d15"
+   ],
+   "beard": "stubble",
+   "beardCol": "#2a1d15",
+   "kit": "juv"
+  },
+  "cannavaro": {
+   "name": "Fabio Cannavaro",
+   "skin": "olive",
+   "hair": [
+    "buzz",
+    "#1d1512"
+   ],
+   "beard": "none",
+   "kit": "ita"
+  },
+  "cannavaror": {
+   "name": "Fabio Cannavaro",
+   "skin": "olive",
+   "hair": [
+    "buzz",
+    "#1d1512"
+   ],
+   "beard": "none",
+   "kit": "rma"
+  },
+  "henry": {
+   "name": "Thierry Henry",
+   "skin": "brown",
+   "hair": [
+    "bald",
+    "#1a1a1a"
+   ],
+   "beard": "none",
+   "kit": "ars"
+  },
+  "zidane": {
+   "name": "Zinedine Zidane",
+   "skin": "olive",
+   "hair": [
+    "bald",
+    "#cfa07e"
+   ],
+   "beard": "none",
+   "kit": "fra"
+  }
+ },
+ "lines": [
+  {
+   "text": "Two goals. That's all Gianluigi Buffon let in at the 2006 World Cup. And he still didn't win the Ballon d'Or.",
+   "say": "Two goals. That's all Jahnlooeejee Boofon let in at the two thousand and six World Cup. And he still didn't win the Balon Dor.",
+   "scene": {
+    "type": "title",
+    "heading": "GIANLUIGI BUFFON",
+    "sub": "Italy · 2006",
+    "pill": "ROBBED IN 2006?",
+    "person": "buffon",
+    "club": "ita"
+   }
+  },
+  {
+   "text": "Seven games. Five clean sheets. And not one goal from open play.",
+   "say": "Seven games. Five clean sheets. And not one goal from open play.",
+   "scene": {
+    "type": "stats",
+    "kicker": "World Cup 2006",
+    "title": "The wall",
+    "items": [
+     {
+      "n": "7",
+      "l": "games"
+     },
+     {
+      "n": "5",
+      "l": "clean sheets"
+     },
+     {
+      "n": "2",
+      "l": "goals conceded"
+     },
+     {
+      "n": "0",
+      "l": "from open play"
+     }
+    ],
+    "person": "buffon"
+   }
+  },
+  {
+   "text": "The first was an own goal, by his team-mate Zaccardo, against the USA.",
+   "say": "The first was an own goal, by his team mate Zakkardoh, against the USA.",
+   "scene": {
+    "type": "score",
+    "home": "ita",
+    "away": "usa",
+    "hs": 1,
+    "as": 1,
+    "date": "17 June 2006 · Kaiserslautern",
+    "comp": "World Cup · group stage",
+    "note": "Zaccardo's own goal: the only goal Buffon let in before the final"
+   }
+  },
+  {
+   "text": "The second, Zidane's penalty in the final. A chip, in off the bar.",
+   "say": "The second, Zeedan's penalty in the final. A chip, in off the bar.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/cap/buffon-2006/zidane-pen/tv",
+      5,
+      27
+     ],
+     [
+      "/tmp/claude-0/cap/buffon-2006/zidane-pen/high",
+      27,
+      107
+     ]
+    ],
+    "goalAt": 1.2,
+    "popup": {
+     "home": "ita",
+     "away": "fra",
+     "homeName": "ITALY",
+     "awayName": "FRANCE",
+     "hs0": 0,
+     "as0": 0,
+     "hs": 0,
+     "as": 1,
+     "scorer": "Zidane"
+    },
+    "caption": "ZIDANE",
+    "captionColor": "#ffffff"
+   }
+  },
+  {
+   "text": "Materazzi heads Italy level. Then, extra time.",
+   "say": "Matterattsee heads Italy level. Then, extra time.",
+   "scene": {
+    "type": "score",
+    "home": "ita",
+    "away": "fra",
+    "hs": 1,
+    "as": 1,
+    "date": "9 July 2006 · Berlin",
+    "comp": "World Cup final",
+    "ft": "EXTRA TIME",
+    "note": "Materazzi 19' · a header from Pirlo's corner"
+   }
+  },
+  {
+   "text": "A hundred and four minutes. Zidane's header is going in. Buffon tips it over.",
+   "say": "A hundred and four minutes. Zeedan's header is going in. Boofon tips it over.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/cap/buffon-2006/buffon-save/tv",
+      10,
+      45
+     ],
+     [
+      "/tmp/claude-0/cap/buffon-2006/buffon-save/fan",
+      34,
+      114
+     ]
+    ],
+    "goalAt": 1.87,
+    "caption": "WHAT A SAVE",
+    "captionColor": "#ffd23f"
+   }
+  },
+  {
+   "text": "Penalties. Italy score all five, and win it five-three.",
+   "say": "Penalties. Italy score all five, and win it five three.",
+   "scene": {
+    "type": "score",
+    "home": "ita",
+    "away": "fra",
+    "hs": 1,
+    "as": 1,
+    "date": "9 July 2006 · Berlin",
+    "comp": "World Cup final",
+    "ft": "AFTER EXTRA TIME",
+    "note": "Italy win 5-3 on penalties"
+   }
+  },
+  {
+   "text": "World champions. And Buffon wins the Yashin Award as the best keeper there.",
+   "say": "World champions. And Boofon wins the Yashin Award as the best keeper there.",
+   "scene": {
+    "type": "trophies",
+    "kicker": "Gianluigi Buffon · summer 2006",
+    "title": "World champion",
+    "items": [
+     {
+      "kind": "worldcup",
+      "label": "World Cup"
+     },
+     {
+      "kind": "award",
+      "label": "Yashin Award"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Back home, Juventus are relegated in the Calciopoli scandal, and stripped of two titles.",
+   "say": "Back home, Yooventus are relegated in the Kalchohpohlee scandal, and stripped of two titles.",
+   "scene": {
+    "type": "news",
+    "section": "Serie A",
+    "headline": "Juventus sent down to Serie B",
+    "standfirst": "The champions are relegated and stripped of their 2005 and 2006 titles after the Calciopoli scandal.",
+    "date": "Summer 2006",
+    "byline": "Knowitball recap",
+    "club": "juv",
+    "mastColor": "#1b1f2b",
+    "nav": [
+     "Football",
+     "Serie A",
+     "Juventus",
+     "Calciopoli"
+    ]
+   }
+  },
+  {
+   "text": "Cannavaro leaves for Real Madrid. Buffon stays, in Serie B.",
+   "say": "Kannahvaroh leaves for Rayal Madrid. Boofon stays, in Serie B.",
+   "scene": {
+    "type": "versus",
+    "title": "Summer 2006: which division?",
+    "left": {
+     "person": "cannavaror",
+     "label": "Cannavaro",
+     "value": "1",
+     "sub": "Real Madrid · top flight"
+    },
+    "right": {
+     "person": "buffonj",
+     "label": "Buffon",
+     "value": "2",
+     "sub": "Juventus · Serie B"
+    }
+   }
+  },
+  {
+   "text": "The Ballon d'Or goes to Cannavaro. Buffon is second, forty-nine points behind.",
+   "say": "The Balon Dor goes to Kannahvaroh. Boofon is second, forty nine points behind.",
+   "scene": {
+    "type": "podium",
+    "year": "2006",
+    "title": "The vote",
+    "places": [
+     {
+      "person": "cannavaro",
+      "club": "ita",
+      "points": 173
+     },
+     {
+      "person": "buffon",
+      "club": "ita",
+      "points": 124
+     },
+     {
+      "person": "henry",
+      "club": "ars",
+      "points": 121
+     }
+    ]
+   }
+  },
+  {
+   "text": "Only one keeper has ever won it: Lev Yashin, in 1963. Buffon never got closer.",
+   "say": "Only one keeper has ever won it. Lev Yashin, in nineteen sixty three. Boofon never got closer.",
+   "scene": {
+    "type": "timeline",
+    "kicker": "Goalkeepers and the Ballon d'Or",
+    "title": "One winner, ever",
+    "items": [
+     {
+      "year": "1963",
+      "label": "Lev Yashin wins it",
+      "hl": true
+     },
+     {
+      "year": "2006",
+      "label": "Buffon second, 49 points short",
+      "club": "ita"
+     },
+     {
+      "year": "Since",
+      "label": "No keeper has won it"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Two goals all tournament, and it still wasn't enough. That's the robbery.",
+   "say": "Two goals all tournament, and it still wasn't enough. That's the robbery.",
+   "scene": {
+    "type": "stamp",
+    "text": "ROBBED",
+    "sub": "Buffon · Ballon d'Or 2006",
+    "person": "buffon",
+    "color": "red"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }

@@ -1,0 +1,113 @@
+{
+ "_about": "Argentina 1-0 Brazil, Copa America final, Maracana, Rio de Janeiro, Sat 10 July 2021, 22nd minute: Rodrigo De Paul's long pass skipped past Renan Lodi and Angel Di Maria chipped Ederson (CONMEBOL copaamerica.com, Planet Football, Vavel, CBS). Kits: Argentina home (stripes shown as one sky blue; black shorts), Brazil yellow shirts, blue shorts, white socks. Keepers assumed.",
+ "teams": {
+  "home": {
+   "name": "Argentina",
+   "kit": {
+    "shirt": "#8fc7ec",
+    "shorts": "#111111",
+    "socks": "#FFFFFF"
+   },
+   "keeperKit": {
+    "shirt": "#e0d43a",
+    "shorts": "#1b1b1b",
+    "socks": "#e0d43a"
+   },
+   "popupTrim": "#FFFFFF"
+  },
+  "away": {
+   "name": "Brazil",
+   "kit": {
+    "shirt": "#FFDF00",
+    "shorts": "#1c39bb",
+    "socks": "#FFFFFF"
+   },
+   "keeperKit": {
+    "shirt": "#7a1f8f",
+    "shorts": "#7a1f8f",
+    "socks": "#7a1f8f"
+   },
+   "popupTrim": "#1c39bb"
+  }
+ },
+ "people": {
+  "dimaria": {
+   "name": "Angel Di Maria",
+   "skin": "#e8b994",
+   "hair": "#1d1512",
+   "popupName": "Di María"
+  },
+  "depaul": {
+   "name": "Rodrigo De Paul",
+   "skin": "#e2b48e",
+   "hair": "#2a1d15",
+   "popupName": "De Paul"
+  },
+  "messi": {
+   "name": "Lionel Messi",
+   "skin": "#e8b994",
+   "hair": "#3a2a1e"
+  },
+  "lodi": {
+   "name": "Renan Lodi",
+   "skin": "#d9a57e",
+   "hair": "#1d1512"
+  },
+  "thiagosilva": {
+   "name": "Thiago Silva",
+   "skin": "#c98e66",
+   "hair": "#0d0a09"
+  },
+  "marquinhos": {
+   "name": "Marquinhos",
+   "skin": "#d9a57e",
+   "hair": "#1d1512"
+  },
+  "ederson": {
+   "name": "Ederson",
+   "skin": "#e8b994",
+   "hair": "#d8b27a"
+  }
+ },
+ "clips": [
+  {
+   "id": "dimaria-chip",
+   "kind": "one_on_one",
+   "attacking": "home",
+   "scorer": "dimaria",
+   "assister": "depaul",
+   "teammates": [
+    "messi"
+   ],
+   "defenders": [
+    "lodi",
+    "marquinhos",
+    "thiagosilva"
+   ],
+   "keeper": "ederson",
+   "minute": 22,
+   "scoreBefore": [
+    0,
+    0
+   ],
+   "scoreAfter": [
+    1,
+    0
+   ],
+   "night": true,
+   "celebration": "arms_out",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "delivery": "lofted",
+    "side": "right",
+    "finish": "chip",
+    "goalSide": "far"
+   },
+   "seed": "dimaria-a"
+  }
+ ]
+}

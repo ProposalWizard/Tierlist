@@ -1,0 +1,24 @@
+{
+  "_about": "Two Copa America 2021 moments. (1) Argentina 1-1 Chile, Estadio Nilton Santos, Rio de Janeiro, Mon 14 June 2021: Messi's 33rd-minute free kick from about 25 metres curled past Claudio Bravo's dive into the corner (Al Jazeera, BA Times, Gulf Today/AFP). (2) Argentina 1-0 Brazil, final, Maracana, Sat 10 July 2021, 22nd minute: Rodrigo De Paul's long pass over Renan Lodi, Angel Di Maria chipped Ederson (CONMEBOL copaamerica.com, Planet Football, Vavel). Kits: Argentina home (sky-blue and white stripes, shown as one sky blue because the figures have one shirt colour; black shorts), Chile red/blue/white, Brazil yellow/blue/white. Keepers assumed.",
+  "teams": {
+    "home": { "name": "Argentina", "kit": { "shirt": "#8fc7ec", "shorts": "#111111", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#e0d43a", "shorts": "#1b1b1b", "socks": "#e0d43a" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Chile", "kit": { "shirt": "#D52B1E", "shorts": "#0039A6", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#1b1b1b", "shorts": "#1b1b1b", "socks": "#1b1b1b" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "messi": { "name": "Lionel Messi", "skin": "#e8b994", "hair": "#3a2a1e" },
+    "depaul": { "name": "Rodrigo De Paul", "skin": "#e2b48e", "hair": "#2a1d15" },
+    "lautaro": { "name": "Lautaro Martinez", "skin": "#d9a57e", "hair": "#1d1512" },
+    "bravo": { "name": "Claudio Bravo", "skin": "#d9a57e", "hair": "#1d1512" },
+    "medel": { "name": "Gary Medel", "skin": "#c98e66", "hair": "#0d0a09" },
+    "vidal": { "name": "Arturo Vidal", "skin": "#b57a52", "hair": "#0d0a09" },
+    "aranguiz": { "name": "Charles Aranguiz", "skin": "#c98e66", "hair": "#1d1512" },
+    "isla": { "name": "Mauricio Isla", "skin": "#d9a57e", "hair": "#1d1512" }
+  },
+  "clips": [
+    { "id": "messi-fk-chile", "kind": "free_kick", "attacking": "home", "scorer": "messi", "keeper": "bravo", "teammates": ["lautaro", "depaul"],
+      "defenders": ["medel", "vidal", "aranguiz", "isla"], "minute": 33, "scoreBefore": [0, 0], "scoreAfter": [1, 0], "night": true, "celebration": "fist_pump",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "goalSide": "right", "height": "high", "scorerSpot": [-3, 24] },
+      "seed": "messi-fk-a" }
+  ]
+}
