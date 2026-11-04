@@ -80,7 +80,13 @@
   "Kostoulas": "Kosstoolass",
   "Viduka": "Vidooka",
   "Kuntz": "Koonts",
-  "Gerd": "Gaird"
+  "Gerd": "Gaird",
+  "Charalampos": "Hahrahlahmbos",
+  "Olympiacos": "Olimpeeakos",
+  "Zaïre-Emery": "Zaeer Emree",
+  "Kroupi": "Kroopee",
+  "Bouaddi": "Bwahdee",
+  "Vušković": "Vooshkovitch"
  },
  "_ipa": {
   "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -141,6 +147,12 @@
   "Van Dijk": "nl [vɑn ˈdɛik] (Wikipedia); English broadcast 'van DYKE'",
   "De Bruyne": "nl [də ˈbrœynə] (Wikipedia)",
   "Kuntz": "German [kʊnts]; Wikipedia Stefan Kuntz. Verified by transcript (re-england-captain: heard 'Kunz').",
-  "Gerd": "German [ɡɛʁt]; Wikipedia Gerd Müller. Verified by transcript (re-england-captain: heard 'Gerd Mueller')."
+  "Gerd": "German [ɡɛʁt]; Wikipedia Gerd Müller. Verified by transcript (re-england-captain: heard 'Gerd Mueller').",
+  "Charalampos": "Greek [xaˈralambos]; heard 'Haralambos' (re-golden-boy)",
+  "Olympiacos": "Greek [olimˈbiakos]; heard 'Olympikos' (re-golden-boy)",
+  "Zaïre-Emery": "French [zaiʁ ɛmʁi]; heard 'Zaire Emery' (re-golden-boy)",
+  "Kroupi": "French [kʁupi]; heard 'Krupi/Croupey' (re-golden-boy)",
+  "Bouaddi": "French/Moroccan [bwadi]; heard 'Bua Di/Biwadi' (re-golden-boy)",
+  "Vušković": "Croatian [ʋûʃkoʋitɕ]; heard 'Voskovic' (re-golden-boy)"
  }
 }
