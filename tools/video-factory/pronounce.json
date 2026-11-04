@@ -71,7 +71,7 @@
   "Guardiola": "Gwardeeohlah",
   "Van Basten": "Van Bassten",
   "Van Dijk": "Van Dyke",
-  "De Bruyne": "Deh Broynuh",
+  "De Bruyne": "Duh Broynuh",
   "Valenciennes": "Valonsyen",
   "Pichichi": "Peecheechee",
   "Barça": "Barsah",
@@ -81,7 +81,10 @@
   "Viduka": "Vidooka",
   "Balotelli": "Balotelly",
   "Arteta": "Artetta",
-  "Dzeko": "Jecko"
+  "Dzeko": "Jecko",
+  "Bayern": "Bayern",
+  "Wolfsburg": "Volfsburg",
+  "Napoli": "Nappolee"
  },
  "_ipa": {
   "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -140,9 +143,12 @@
   "Guardiola": "ca [ɡwəɾðiˈɔlə] (Wikipedia)",
   "Van Basten": "nl [vɑm ˈbɑstə(n)] (Wikipedia)",
   "Van Dijk": "nl [vɑn ˈdɛik] (Wikipedia); English broadcast 'van DYKE'",
-  "De Bruyne": "nl [də ˈbrœynə] (Wikipedia)",
+  "De Bruyne": "Dutch [də ˈbrœynə]; 'Deh Broynuh' was heard as 'Deb Reiner', 'Duh Broynuh' as 'Dobroina' (city-debruyne-2015)",
   "Balotelli": "Italian [baloˈtɛlli]; transcribed back as Balotelli (city-2012-title, city-aguero-2011)",
   "Arteta": "Spanish [arˈteta]; transcribed back as Arteta (city-2012-title)",
-  "Dzeko": "as Džeko"
+  "Dzeko": "as Džeko",
+  "Bayern": "said as written: 'Byern' was heard as 'Byron'; plain 'Bayern' heard as Bayern (city-debruyne-2015)",
+  "Wolfsburg": "German [ˈvɔlfsbʊʁk]; heard back as Wolfsburg (city-debruyne-2015)",
+  "Napoli": "Italian [ˈnaːpoli]; heard back as Napoli (city-debruyne-2015)"
  }
 }
