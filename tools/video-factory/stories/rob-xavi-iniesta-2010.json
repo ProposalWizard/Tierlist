@@ -1,299 +1,466 @@
 {
-  "id": "rob-xavi-iniesta-2010",
-  "series": "Ballon d'Or robberies",
-  "title": "Xavi and Iniesta 2010: robbed by their own teammate",
-  "sources": [
-    "https://en.wikipedia.org/wiki/2010_FIFA_Ballon_d%27Or",
-    "https://www.fcbarcelona.com/en/news/1924303/10-years-since-a-unique-ballon-dor-podium",
-    "https://catalannews.com/sports/item/simply-the-best-messi-wins-fifa-ballon-dor-2010",
-    "https://www.maltatoday.com.mt/sports/football/7855/messi-mourinho-marta-and-neid-crowned-as-the-best-for-2010",
-    "https://www.fcbarcelona.com/en/news/1668996/10-years-since-the-99-point-league-campaign",
-    "https://en.wikipedia.org/wiki/2009%E2%80%9310_La_Liga",
-    "https://en.wikipedia.org/wiki/2010_FIFA_World_Cup_final",
-    "https://www.uefa.com/european-qualifiers/news/newsid=1504132.html",
-    "https://www.npr.org/sections/thetwo-way/2010/07/11/128449593/spain-wins-2010-world-cup-final",
-    "https://en.wikipedia.org/wiki/Xavi_(footballer,_born_1980)",
-    "https://thesefootballtimes.co/2019/11/29/a-z-of-the-2000s-xavi/",
-    "https://en.wikipedia.org/wiki/2009%E2%80%9310_FC_Barcelona_season",
-    "https://www.sportskeeda.com/football/ranking-lionel-messi-s-top-5-seasons-ss-tl/2",
-    "https://www.90min.com/posts/lionel-messi-controversial-2010-ballon-dor-win",
-    "https://www.chaseyoursport.com/football/messi-sneijder-2010-ballon-dor/13691"
-  ],
-  "checked": "Vote Messi 22.65%, Iniesta 17.36%, Xavi 16.48%, all three from Barcelona's academy (Wikipedia, FC Barcelona, Catalan News, MaltaToday); Sneijder 4th, 14.48% (90min, Chase Your Sport); Barca 99-point title 2009-10 (FC Barcelona, Wikipedia); Iniesta 116th-minute winner, Spain 1-0 Netherlands (Wikipedia, UEFA, NPR); Xavi most completed passes at WC 2010 (Wikipedia, These Football Times; exact count differs by source so no number used); Messi 47 goals in 2009-10, Pichichi and Golden Shoe (Wikipedia, Sportskeeda); Messi no WC goals, Argentina lost 4-0 to Germany (90min). The vote-split part is framed as an imagined alternate world.",
-  "clubs": {
-    "bar": {
-      "name": "Barcelona",
-      "short": "BAR",
-      "c1": "#a50044",
-      "c2": "#004d98",
-      "pattern": "stripes"
-    },
-    "esp": {
-      "name": "Spain",
-      "short": "ESP",
-      "c1": "#c60b1e",
-      "c2": "#ffc400",
-      "pattern": "plain"
-    },
-    "ned": {
-      "name": "Netherlands",
-      "short": "NED",
-      "c1": "#ff6c00",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "arg": {
-      "name": "Argentina",
-      "short": "ARG",
-      "c1": "#75aadb",
-      "c2": "#ffffff",
-      "pattern": "stripes"
-    },
-    "ger": {
-      "name": "Germany",
-      "short": "GER",
-      "c1": "#ffffff",
-      "c2": "#111111",
-      "pattern": "plain"
-    }
+ "id": "rob-xavi-iniesta-2010",
+ "series": "Ballon d'Or robberies",
+ "title": "Xavi and Iniesta 2010: robbed by their own team-mate",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/2010_FIFA_Ballon_d%27Or",
+  "https://www.fcbarcelona.com/en/news/1924303/10-years-since-a-unique-ballon-dor-podium",
+  "https://catalannews.com/sports/item/simply-the-best-messi-wins-fifa-ballon-dor-2010",
+  "https://www.maltatoday.com.mt/sports/football/7855/messi-mourinho-marta-and-neid-crowned-as-the-best-for-2010",
+  "https://www.fcbarcelona.com/en/news/1668996/10-years-since-the-99-point-league-campaign",
+  "https://en.wikipedia.org/wiki/2009%E2%80%9310_La_Liga",
+  "https://en.wikipedia.org/wiki/2010_FIFA_World_Cup_final",
+  "https://www.uefa.com/european-qualifiers/news/newsid=1504132.html",
+  "https://www.npr.org/sections/thetwo-way/2010/07/11/128449593/spain-wins-2010-world-cup-final",
+  "https://www.upi.com/Sports_News/2010/07/11/WORLD-CUP-Spain-1-Netherlands-0-OT/57331278883055/",
+  "https://en.wikipedia.org/wiki/Xavi_(footballer,_born_1980)",
+  "https://thesefootballtimes.co/2019/11/29/a-z-of-the-2000s-xavi/",
+  "https://en.wikipedia.org/wiki/2009%E2%80%9310_FC_Barcelona_season",
+  "https://www.sportskeeda.com/football/ranking-lionel-messi-s-top-5-seasons-ss-tl/2",
+  "https://www.90min.com/posts/lionel-messi-controversial-2010-ballon-dor-win"
+ ],
+ "checked": "Vote Messi 22.65%, Iniesta 17.36%, Xavi 16.48%, all three from La Masia (Wikipedia, FC Barcelona, Catalan News, MaltaToday). Barca 99 points 2009-10, then a Liga record; table Barca 31-6-1 GD 74, Real 31-3-4 GD 67 96 pts, Valencia 21-8-9 GD 19 71, Sevilla 19-6-13 GD 16 63 (Wikipedia La Liga 2009-10, FC Barcelona). Spain lost 1-0 to Switzerland in the opener, then won every knockout game 1-0 (Wikipedia WC final page, UEFA). Iniesta 116th-minute winner from Fabregas's pass, right foot, past Stekelenburg, Spain 1-0 Netherlands aet (Wikipedia, UEFA, NPR, UPI). Xavi most completed passes at WC 2010 (Wikipedia, These Football Times; counts differ, so no number). Messi 47 goals in 2009-10, Pichichi and Golden Shoe (Wikipedia, Sportskeeda); no WC goals, Argentina lost 4-0 to Germany (90min, Wikipedia). Combined Spanish share 33.84% is simple addition, shown as an imagined world. Iniesta's goal recreated with gamecap (specs/iniesta-2010.json).",
+ "clubs": {
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "badge": "FC Barcelona"
   },
-  "people": {
-    "xavi": {
-      "name": "Xavi",
-      "skin": "light",
-      "hair": [
-        "tidy",
-        "#3a2a1c"
-      ],
-      "beard": "stubble",
-      "beardCol": "#3a2a1c",
-      "kit": "esp"
-    },
-    "iniesta": {
-      "name": "Andrés Iniesta",
-      "skin": "pink",
-      "hair": [
-        "crop",
-        "#5a4030"
-      ],
-      "beard": "none",
-      "kit": "esp"
-    },
-    "messi": {
-      "name": "Lionel Messi",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#4a3222"
-      ],
-      "beard": "none",
-      "kit": "bar"
-    }
+  "rma": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#febe10",
+   "pattern": "plain"
   },
-  "lines": [
-    {
-      "text": "In twenty ten, Xavi and Iniesta won everything, and lost the Ballon d'Or to their own teammate.",
-      "scene": {
-        "type": "title",
-        "heading": "XAVI & INIESTA",
-        "sub": "Barcelona & Spain · 2010",
-        "pill": "ROBBED BY A TEAMMATE?",
-        "person": "iniesta"
-      }
-    },
-    {
-      "text": "First, Barcelona won the league with ninety-nine points. A Spanish record back then.",
-      "scene": {
-        "type": "stats",
-        "title": "La Liga 2009/10",
-        "items": [
-          {
-            "n": "99",
-            "l": "points"
-          },
-          {
-            "n": "1",
-            "l": "league title"
-          }
-        ],
-        "person": "xavi"
-      }
-    },
-    {
-      "text": "Then South Africa. Xavi completed more passes than anyone at the World Cup.",
-      "scene": {
-        "type": "person",
-        "person": "xavi",
-        "label": "Most completed passes, World Cup 2010",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "And Iniesta? The hundred and sixteenth minute of the final.",
-      "scene": {
-        "type": "score",
-        "home": "ned",
-        "away": "esp",
-        "hs": 0,
-        "as": 1,
-        "date": "11 July 2010",
-        "comp": "World Cup final",
-        "note": "Iniesta 116'"
-      }
-    },
-    {
-      "text": "Spain, champions of the world for the first time.",
-      "scene": {
-        "type": "trophies",
-        "items": [
-          {
-            "kind": "worldcup",
-            "label": "World Cup 2010"
-          },
-          {
-            "kind": "league",
-            "label": "La Liga 2009/10"
-          }
-        ],
-        "person": "iniesta"
-      }
-    },
-    {
-      "text": "Messi's summer? Argentina lost four-nil to Germany. He didn't score a single World Cup goal.",
-      "scene": {
-        "type": "score",
-        "home": "arg",
-        "away": "ger",
-        "hs": 0,
-        "as": 4,
-        "date": "3 July 2010",
-        "comp": "World Cup quarter-final"
-      }
-    },
-    {
-      "text": "But his club season was mad. Forty-seven goals, the Pichichi and the Golden Shoe.",
-      "scene": {
-        "type": "stats",
-        "title": "Messi 2009/10",
-        "items": [
-          {
-            "n": "47",
-            "l": "goals, all comps"
-          },
-          {
-            "n": "34",
-            "l": "league goals"
-          }
-        ],
-        "person": "messi"
-      }
-    },
-    {
-      "text": "And when the votes came in, Messi first. Iniesta second. Xavi third.",
-      "scene": {
-        "type": "podium",
-        "year": "2010",
-        "title": "FIFA Ballon d'Or",
-        "places": [
-          {
-            "person": "messi",
-            "club": "bar"
-          },
-          {
-            "person": "iniesta",
-            "club": "esp"
-          },
-          {
-            "person": "xavi",
-            "club": "esp"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Twenty-two point six percent for Messi. Seventeen point four for Iniesta. Sixteen point five for Xavi.",
-      "scene": {
-        "type": "list",
-        "title": "FIFA Ballon d'Or 2010",
-        "rows": [
-          {
-            "name": "Lionel Messi",
-            "value": "22.65%",
-            "club": "bar"
-          },
-          {
-            "name": "Andrés Iniesta",
-            "value": "17.36%",
-            "club": "bar",
-            "hl": true
-          },
-          {
-            "name": "Xavi",
-            "value": "16.48%",
-            "club": "bar",
-            "hl": true
-          },
-          {
-            "name": "Wesley Sneijder",
-            "value": "14.48%"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Did the two Spaniards just split the vote?",
-      "scene": {
-        "type": "versus",
-        "title": "Same team, same vote",
-        "left": {
-          "person": "iniesta",
-          "label": "Iniesta",
-          "value": "17.36%"
-        },
-        "right": {
-          "person": "xavi",
-          "label": "Xavi",
-          "value": "16.48%"
-        }
-      }
-    },
-    {
-      "text": "In this alternate world, those Spanish votes land on one man. Thirty-three point eight percent. Messi is nowhere near.",
-      "scene": {
-        "type": "whatif",
-        "title": "What if they hadn't split it?",
-        "real": {
-          "label": "Messi, real world",
-          "value": "22.65%"
-        },
-        "alt": {
-          "label": "One Spaniard, imagined",
-          "value": "33.84%"
-        }
-      }
-    },
-    {
-      "text": "All three came through Barcelona's academy. One podium, one club, one very awkward dressing room.",
-      "scene": {
-        "type": "text",
-        "heading": "A UNIQUE PODIUM",
-        "body": "Messi, Iniesta and Xavi all came through Barcelona's La Masia academy. Barcelona itself calls it a unique Ballon d'Or podium."
-      }
-    },
-    {
-      "text": "The World Cup heroes stood on the lower steps.",
-      "scene": {
-        "type": "stamp",
-        "text": "ROBBED",
-        "person": "xavi",
-        "color": "red"
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
+  "val": {
+   "name": "Valencia",
+   "short": "VAL",
+   "c1": "#ffffff",
+   "c2": "#111111",
+   "pattern": "plain",
+   "badge": "Valencia CF"
+  },
+  "sev": {
+   "name": "Sevilla",
+   "short": "SEV",
+   "c1": "#ffffff",
+   "c2": "#d4001f",
+   "pattern": "plain",
+   "badge": "Sevilla FC"
+  },
+  "esp": {
+   "name": "Spain",
+   "short": "ESP",
+   "c1": "#c60b1e",
+   "c2": "#ffc400",
+   "pattern": "plain",
+   "badge": false
+  },
+  "ned": {
+   "name": "Netherlands",
+   "short": "NED",
+   "c1": "#f36c21",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": false
+  },
+  "arg": {
+   "name": "Argentina",
+   "short": "ARG",
+   "c1": "#75aadb",
+   "c2": "#ffffff",
+   "pattern": "stripes",
+   "badge": false
+  },
+  "ger": {
+   "name": "Germany",
+   "short": "GER",
+   "c1": "#ffffff",
+   "c2": "#111111",
+   "pattern": "plain",
+   "badge": false
+  }
+ },
+ "people": {
+  "iniesta": {
+   "name": "Andrés Iniesta",
+   "skin": "light",
+   "hair": [
+    "buzz",
+    "#6b5a4a"
+   ],
+   "beard": "none",
+   "kit": "bar"
+  },
+  "iniestaES": {
+   "name": "Andrés Iniesta",
+   "skin": "light",
+   "hair": [
+    "buzz",
+    "#6b5a4a"
+   ],
+   "beard": "none",
+   "kit": "esp"
+  },
+  "xavi": {
+   "name": "Xavi",
+   "skin": "light",
+   "hair": [
+    "tidy",
+    "#2a1d15"
+   ],
+   "beard": "stubble",
+   "kit": "bar"
+  },
+  "xaviES": {
+   "name": "Xavi",
+   "skin": "light",
+   "hair": [
+    "tidy",
+    "#2a1d15"
+   ],
+   "beard": "stubble",
+   "kit": "esp"
+  },
+  "messi": {
+   "name": "Lionel Messi",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#4a3222"
+   ],
+   "beard": "none",
+   "kit": "bar"
+  },
+  "messiAR": {
+   "name": "Lionel Messi",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#4a3222"
+   ],
+   "beard": "none",
+   "kit": "arg"
+  }
+ },
+ "lines": [
+  {
+   "text": "In 2010, Iniesta and Xavi won everything. And lost the Ballon d'Or to their own team-mate.",
+   "say": "In twenty ten, Inyestah and Shahvee won everything. And they lost the Balon Dor, to their own team-mate.",
+   "scene": {
+    "type": "title",
+    "heading": "XAVI & INIESTA",
+    "sub": "Barcelona · Spain · 2010",
+    "pill": "ROBBED IN 2010?",
+    "person": "iniesta",
+    "club": "bar"
+   }
+  },
+  {
+   "text": "First, Barcelona won La Liga with ninety-nine points. A Spanish record back then.",
+   "say": "First, Barcelona won Lah Leega with ninety nine points. A Spanish record back then.",
+   "scene": {
+    "type": "table",
+    "season": "Final table 2009/10",
+    "title": "La Liga",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "bar",
+      "p": 38,
+      "w": 31,
+      "d": 6,
+      "l": 1,
+      "gd": 74,
+      "pts": 99,
+      "hl": true
+     },
+     {
+      "pos": 2,
+      "club": "rma",
+      "p": 38,
+      "w": 31,
+      "d": 3,
+      "l": 4,
+      "gd": 67,
+      "pts": 96
+     },
+     {
+      "pos": 3,
+      "club": "val",
+      "p": 38,
+      "w": 21,
+      "d": 8,
+      "l": 9,
+      "gd": 19,
+      "pts": 71
+     },
+     {
+      "pos": 4,
+      "club": "sev",
+      "p": 38,
+      "w": 19,
+      "d": 6,
+      "l": 13,
+      "gd": 16,
+      "pts": 63
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
+     }
+    ],
+    "gap": {
+     "from": 1,
+     "to": 2,
+     "label": "3 pts",
+     "at": 0.45
     }
-  ]
+   }
+  },
+  {
+   "text": "Then South Africa. Spain lost their first game, to Switzerland.",
+   "scene": {
+    "type": "news",
+    "section": "World Cup 2010",
+    "headline": "Switzerland stun favourites Spain",
+    "standfirst": "The European champions lose their opening game one-nil in Durban. Xavi and Iniesta's World Cup starts with a shock.",
+    "date": "16 June 2010",
+    "byline": "Knowitball recap",
+    "person": "xaviES",
+    "club": "esp",
+    "nav": [
+     "Football",
+     "World Cup",
+     "Spain",
+     "Group H"
+    ]
+   }
+  },
+  {
+   "text": "Then they won every knockout game one-nil. Xavi completed more passes than anyone.",
+   "say": "Then they won every knockout game, one nil. Shahvee completed more passes than anyone.",
+   "scene": {
+    "type": "timeline",
+    "kicker": "Spain · World Cup 2010",
+    "title": "One-nil, one-nil, one-nil",
+    "items": [
+     {
+      "year": "R16",
+      "label": "Portugal 0-1"
+     },
+     {
+      "year": "QF",
+      "label": "Paraguay 0-1"
+     },
+     {
+      "year": "SF",
+      "label": "Germany 0-1"
+     },
+     {
+      "year": "Final",
+      "label": "Netherlands 0-1",
+      "hl": true
+     }
+    ]
+   }
+  },
+  {
+   "text": "The final against Holland. Extra time. Fàbregas finds Iniesta.",
+   "say": "The final, against Holland. Extra time. Fabregass finds Inyestah.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/fd872f54-b4c6-5b21-8671-bb1395ddd1b0/scratchpad/cap/iniesta-2010/iniesta-116/tv",
+      34,
+      90
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/fd872f54-b4c6-5b21-8671-bb1395ddd1b0/scratchpad/cap/iniesta-2010/iniesta-116/high",
+      90,
+      190
+     ]
+    ],
+    "goalAt": 2.23,
+    "popup": {
+     "home": "ned",
+     "away": "esp",
+     "homeName": "Netherlands",
+     "awayName": "Spain",
+     "hs0": 0,
+     "as0": 0,
+     "hs": 0,
+     "as": 1,
+     "scorer": "Iniesta",
+     "assist": "Fàbregas"
+    },
+    "caption": "Iniesta, 116 minutes"
+   }
+  },
+  {
+   "text": "One-nil. Spain, champions of the world for the first time.",
+   "scene": {
+    "type": "score",
+    "home": "ned",
+    "away": "esp",
+    "hs": 0,
+    "as": 1,
+    "date": "11 July 2010 · Johannesburg",
+    "comp": "World Cup final",
+    "ft": "AFTER EXTRA TIME",
+    "note": "Iniesta 116'"
+   }
+  },
+  {
+   "text": "Messi's summer? He didn't score once. Argentina went out four-nil to Germany.",
+   "scene": {
+    "type": "score",
+    "home": "arg",
+    "away": "ger",
+    "hs": 0,
+    "as": 4,
+    "date": "3 July 2010 · Cape Town",
+    "comp": "World Cup quarter-final",
+    "note": "Messi: no goals at the tournament"
+   }
+  },
+  {
+   "text": "But his club season was ridiculous. Forty-seven goals, the Pichichi and the Golden Shoe.",
+   "say": "But his club season was ridiculous. Forty seven goals, the Peecheechee, and the Golden Shoe.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Lionel Messi · 2009/10",
+    "title": "The club season",
+    "items": [
+     {
+      "n": "47",
+      "l": "goals"
+     },
+     {
+      "n": "34",
+      "l": "Liga goals: Pichichi"
+     },
+     {
+      "n": "1",
+      "l": "Golden Shoe"
+     }
+    ],
+    "person": "messi"
+   }
+  },
+  {
+   "text": "January. Messi first. Iniesta second. Xavi third.",
+   "say": "January. Messi, first. Inyestah, second. Shahvee, third.",
+   "scene": {
+    "type": "podium",
+    "year": "2010",
+    "title": "The vote",
+    "places": [
+     {
+      "person": "messi",
+      "club": "bar"
+     },
+     {
+      "person": "iniesta",
+      "club": "bar"
+     },
+     {
+      "person": "xavi",
+      "club": "bar"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Messi, twenty-two point six. Iniesta, seventeen point four. Xavi, sixteen point five.",
+   "say": "Messi, twenty two point six. Inyestah, seventeen point four. Shahvee, sixteen point five.",
+   "scene": {
+    "type": "bars",
+    "kicker": "FIFA Ballon d'Or 2010",
+    "title": "Share of the vote",
+    "unit": "%",
+    "max": 25,
+    "items": [
+     {
+      "label": "Messi",
+      "value": 22.65,
+      "person": "messi"
+     },
+     {
+      "label": "Iniesta",
+      "value": 17.36,
+      "person": "iniesta",
+      "hl": true
+     },
+     {
+      "label": "Xavi",
+      "value": 16.48,
+      "person": "xavi",
+      "hl": true
+     }
+    ]
+   }
+  },
+  {
+   "text": "Did the two Spaniards just split the vote? Put them together and it's thirty-three point eight. Messi is nowhere near.",
+   "say": "Did the two Spaniards just split the vote? Put them together, and it's thirty three point eight. Messi is nowhere near.",
+   "scene": {
+    "type": "whatif",
+    "title": "What if Spain had one candidate?",
+    "real": {
+     "label": "Messi",
+     "value": "22.65%"
+    },
+    "alt": {
+     "label": "Xavi + Iniesta",
+     "value": "33.84%"
+    }
+   }
+  },
+  {
+   "text": "All three came through La Masia, Barcelona's academy. One podium, one very awkward dressing room.",
+   "say": "All three came through Lah Maseeah, Barcelona's academy. One podium, one very awkward dressing room.",
+   "scene": {
+    "type": "badge",
+    "club": "bar",
+    "kicker": "La Masia",
+    "title": "One academy, one podium",
+    "sub": "Messi · Iniesta · Xavi"
+   }
+  },
+  {
+   "text": "The World Cup heroes, on the lower steps.",
+   "scene": {
+    "type": "stamp",
+    "text": "ROBBED",
+    "sub": "Xavi & Iniesta · Ballon d'Or 2010",
+    "person": "iniestaES",
+    "color": "red"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }
