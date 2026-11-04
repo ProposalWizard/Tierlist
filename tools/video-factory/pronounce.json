@@ -9,7 +9,7 @@
   "Soulé": "Soolay",
   "Šeško": "Sheshko",
   "Sesko": "Sheshko",
-  "Mbeumo": "Emburrmo",
+  "Mbeumo": "Embuhmo",
   "Szoboszlai": "Sohbossloy",
   "Kvaratskhelia": "Kvahratskelleeuh",
   "Gvardiol": "Gvardeeol",
@@ -86,7 +86,9 @@
   "Zaïre-Emery": "Zaeer Emree",
   "Kroupi": "Kroopee",
   "Bouaddi": "Bwahdee",
-  "Vušković": "Vooshkovitch"
+  "Vušković": "Vooshkovitch",
+  "Isak": "Eesahk",
+  "Groß": "Gross"
  },
  "_ipa": {
   "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -94,7 +96,7 @@
   "Ballon d'Or": "fr [balɔ̃ dɔʁ]; English broadcast 'BAL-on DOR'",
   "Soulé": "es [suˈle]",
   "Šeško": "sl [ˈʃɛːʃkɔ] (Wikipedia)",
-  "Mbeumo": "fr [mbø.mo] (Wikipedia)",
+  "Mbeumo": "French/Cameroonian [mbəmo]; heard 'Embumo' (re-pl-player-of-season)",
   "Szoboszlai": "hu [ˈsoboslɒi], Wikipedia respell SO-bo-sloy",
   "Kvaratskhelia": "ka [kʼʷaraˈtsʰχelia] (Wikipedia)",
   "Gvardiol": "hr [ɡʋârdioːl] (Wikipedia)",
@@ -153,6 +155,8 @@
   "Zaïre-Emery": "French [zaiʁ ɛmʁi]; heard 'Zaire Emery' (re-golden-boy)",
   "Kroupi": "French [kʁupi]; heard 'Krupi/Croupey' (re-golden-boy)",
   "Bouaddi": "French/Moroccan [bwadi]; heard 'Bua Di/Biwadi' (re-golden-boy)",
-  "Vušković": "Croatian [ʋûʃkoʋitɕ]; heard 'Voskovic' (re-golden-boy)"
+  "Vušković": "Croatian [ʋûʃkoʋitɕ]; heard 'Voskovic' (re-golden-boy)",
+  "Isak": "Swedish [ˈiːsak]; heard 'Isak' (re-pl-player-of-season)",
+  "Groß": "German [ɡʁoːs]; heard 'Gross' (re-pl-player-of-season)"
  }
 }
