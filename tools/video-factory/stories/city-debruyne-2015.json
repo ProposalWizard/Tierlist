@@ -187,7 +187,7 @@
   },
   {
    "text": "Summer 2015. The big clubs come calling. His agent later said Bayern Munich wanted him.",
-   "say": "Summer, twenty fifteen. The big clubs come calling. His agent later said Byern Munich wanted him.",
+   "say": "Summer, twenty fifteen. The big clubs come calling. His agent later said Bayern Munich wanted him.",
    "scene": {
     "type": "news",
     "section": "Transfers",
@@ -208,7 +208,7 @@
   },
   {
    "text": "And Bayern's coach at the time? Pep Guardiola.",
-   "say": "And Byern's coach at the time? Pep Gwardeeohlah.",
+   "say": "And Bayern's coach at the time? Pep Gwardeeohlah.",
    "scene": {
     "type": "stats",
     "kicker": "Bayern Munich · 2013-2016",
@@ -228,7 +228,7 @@
   },
   {
    "text": "But Bayern back off. City pay a club record, around fifty-five million pounds.",
-   "say": "But Byern back off. City pay a club record, around fifty-five million pounds.",
+   "say": "But Bayern back off. City pay a club record, around fifty-five million pounds.",
    "scene": {
     "type": "stats",
     "kicker": "30 August 2015",
@@ -248,7 +248,7 @@
   },
   {
    "text": "Now flip it. Bayern pay up, and De Bruyne plays for Pep in Munich.",
-   "say": "Now flip it. Byern pay up, and Deh Broynuh plays for Pep in Munich.",
+   "say": "Now flip it. Bayern pay up, and Duh Broynuh plays for Pep in Munich.",
    "scene": {
     "type": "whatif",
     "title": "The sliding door",
@@ -369,7 +369,7 @@
   },
   {
    "text": "Bayern let him slip. City built a dynasty around him.",
-   "say": "Byern let him slip. City built a dynasty around him.",
+   "say": "Bayern let him slip. City built a dynasty around him.",
    "scene": {
     "type": "stamp",
     "text": "THE ONE THAT GOT AWAY",
