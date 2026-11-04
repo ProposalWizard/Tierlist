@@ -1,305 +1,369 @@
 {
-  "id": "ss-messi-2012-v-ronaldo-2014",
-  "series": "Best season ever, settled",
-  "title": "Messi 2012 v Ronaldo 2014: the best Ballon d'Or year?",
-  "sources": [
-    "https://en.wikipedia.org/wiki/2012_FIFA_Ballon_d%27Or",
-    "https://en.wikipedia.org/wiki/2014_FIFA_Ballon_d%27Or",
-    "https://en.wikipedia.org/wiki/Lionel_Messi",
-    "https://en.wikipedia.org/wiki/2012%E2%80%9313_FC_Barcelona_season",
-    "https://en.wikipedia.org/wiki/List_of_career_achievements_by_Lionel_Messi",
-    "https://en.wikipedia.org/wiki/2013%E2%80%9314_Real_Madrid_CF_season",
-    "data/competition-history/champions-league.json (2013-14 final and top scorer)",
-    "data/ballondor/rankings.json (2012 and 2014 podiums, from ballondor.com)"
-  ],
-  "checked": "Messi: 91 goals in calendar 2012 (Messi article) and passing Muller's 85 on 9 December with 90 by 16 December (Barcelona 2012-13 season page); 73 goals and a record 50 league goals in 2011-12 (Messi article, career achievements list); Copa del Rey 2012 (Messi article). Ronaldo: 51 goals in 2013-14 with 31 league and a record 17 in the Champions League, the 4-1 extra-time final and the Copa del Rey (Real Madrid season page + local Champions League file). Vote shares 41.60/23.68 and 37.66/15.76 (Wikipedia award pages; podium order matches ballondor.com).",
-  "clubs": {
-    "barca": {
-      "name": "Barcelona",
-      "short": "BAR",
-      "c1": "#a50044",
-      "c2": "#004d98",
-      "pattern": "stripes"
-    },
-    "realmadrid": {
-      "name": "Real Madrid",
-      "short": "RMA",
-      "c1": "#ffffff",
-      "c2": "#febe10",
-      "pattern": "plain"
-    },
-    "atleti": {
-      "name": "Atletico Madrid",
-      "short": "ATM",
-      "c1": "#cb3524",
-      "c2": "#ffffff",
-      "pattern": "stripes"
-    },
-    "bayern": {
-      "name": "Bayern Munich",
-      "short": "FCB",
-      "c1": "#dc052d",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    }
+ "id": "ss-messi-2012-v-ronaldo-2014",
+ "series": "Best season ever, settled",
+ "title": "Messi 2012 v Ronaldo 2014: the best Ballon d'Or year?",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/Lionel_Messi",
+  "https://en.wikipedia.org/wiki/2011%E2%80%9312_La_Liga",
+  "https://en.wikipedia.org/wiki/2012_Copa_del_Rey_final",
+  "https://www.si.com/soccer/2012/12/09/messi-goal-record",
+  "https://guinnessworldrecords.com/news/2012/12/barcelona-star-lionel-messi-sets-new-goalscoring-record-46285",
+  "https://en.wikipedia.org/wiki/2012_FIFA_Ballon_d%27Or",
+  "https://en.wikipedia.org/wiki/2013%E2%80%9314_Real_Madrid_CF_season",
+  "https://en.wikipedia.org/wiki/2014_UEFA_Champions_League_final",
+  "https://en.wikipedia.org/wiki/2014_FIFA_Ballon_d%27Or",
+  "https://en.wikipedia.org/wiki/Cristiano_Ronaldo"
+ ],
+ "checked": "Messi: 73 goals in 2011-12, 50 in La Liga (record); Real won 2011-12 La Liga on 100 points, Barca 91; Copa del Rey 3-0 v Athletic, 25 May 2012, Messi scored; goal 86 at Betis, 9 Dec 2012, a one-two with Iniesta, beating Gerd Muller's 85 from 1972; 91 in the calendar year (Wikipedia, SI, Guinness). Ronaldo: 69 in 2013, 61 in 2014; 2013-14: 51 goals, 31 La Liga, record 17 CL; Lisbon final: Godin, Ramos 90+3, Bale, Marcelo, Ronaldo penalty, 4-1 aet; Real had waited since 2002 (Wikipedia season/final, UEFA). Vote shares 41.60 / 23.68 (2012) and 37.66 / 15.76 (2014) (Wikipedia award pages). Messi's clip is a game recreation of the 86th goal.",
+ "clubs": {
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "badge": "FC Barcelona"
   },
-  "people": {
-    "messi": {
-      "name": "Lionel Messi",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#3b2a1c"
-      ],
-      "beard": "none",
-      "kit": "barca"
-    },
-    "ronaldo": {
-      "name": "Cristiano Ronaldo",
-      "skin": "olive",
-      "hair": [
-        "slick",
-        "#1e1610"
-      ],
-      "beard": "none",
-      "kit": "realmadrid"
-    },
-    "muller": {
-      "name": "Gerd Muller",
-      "skin": "light",
-      "hair": [
-        "messy",
-        "#2a1d14"
-      ],
-      "beard": "none",
-      "kit": "bayern"
-    }
+  "rma": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#febe10",
+   "pattern": "plain"
   },
-  "lines": [
-    {
-      "text": "Ninety-one goals in one year. Or seventeen in one Champions League. Which Ballon d'Or year was better?",
-      "scene": {
-        "type": "title",
-        "heading": "MESSI 2012 v RONALDO 2014",
-        "sub": "Peak against peak",
-        "pill": "SETTLED",
-        "person": "messi"
-      }
+  "atm": {
+   "name": "Atlético Madrid",
+   "short": "ATM",
+   "c1": "#cb3524",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "bet": {
+   "name": "Real Betis",
+   "short": "BET",
+   "c1": "#00954c",
+   "c2": "#ffffff",
+   "pattern": "stripes",
+   "badge": "Real Betis Balompié"
+  },
+  "bay": {
+   "name": "Bayern Munich",
+   "short": "FCB",
+   "c1": "#dc052d",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": "FC Bayern München"
+  }
+ },
+ "people": {
+  "messi": {
+   "name": "Lionel Messi",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#4a3020"
+   ],
+   "beard": "none",
+   "kit": "bar"
+  },
+  "ronaldo14": {
+   "name": "Cristiano Ronaldo",
+   "skin": "olive",
+   "hair": [
+    "side",
+    "#2a1c12"
+   ],
+   "beard": "none",
+   "kit": "rma"
+  }
+ },
+ "lines": [
+  {
+   "text": "Ninety-one goals in one year. Or the Champions League. Which Ballon d'Or year was better?",
+   "scene": {
+    "type": "versus",
+    "title": "The best Ballon d'Or year?",
+    "left": {
+     "person": "messi",
+     "label": "Messi",
+     "value": "2012",
+     "sub": "Barcelona"
     },
-    {
-      "text": "Lionel Messi, twenty twelve. Twenty-five years old and scoring like a video game.",
-      "scene": {
-        "type": "person",
-        "person": "messi",
-        "label": "Barcelona · 2012",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "Seventy-three goals in the twenty-eleven, twelve season. Fifty of them in La Liga, a league record.",
-      "scene": {
-        "type": "stats",
-        "title": "MESSI 2011-12",
-        "person": "messi",
-        "items": [
-          {
-            "n": "73",
-            "l": "goals, all comps"
-          },
-          {
-            "n": "50",
-            "l": "La Liga goals"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Then ninety-one goals in the calendar year. Gerd Muller's record of eighty-five, gone.",
-      "scene": {
-        "type": "versus",
-        "title": "GOALS IN A CALENDAR YEAR",
-        "left": {
-          "person": "muller",
-          "label": "Muller 1972",
-          "value": "85"
-        },
-        "right": {
-          "person": "messi",
-          "label": "Messi 2012",
-          "value": "91"
-        },
-        "stamp": "RECORD"
-      }
-    },
-    {
-      "text": "Cristiano Ronaldo, twenty fourteen. Twenty-nine, and hungry for Europe.",
-      "scene": {
-        "type": "person",
-        "person": "ronaldo",
-        "label": "Real Madrid · 2014",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "Fifty-one goals in the season. Thirty-one in the league. And seventeen in the Champions League, a record.",
-      "scene": {
-        "type": "stats",
-        "title": "RONALDO 2013-14",
-        "person": "ronaldo",
-        "items": [
-          {
-            "n": "51",
-            "l": "goals, all comps"
-          },
-          {
-            "n": "31",
-            "l": "La Liga goals"
-          },
-          {
-            "n": "17",
-            "l": "Champions League goals"
-          }
-        ]
-      }
-    },
-    {
-      "text": "On numbers, Messi wins. Comfortably.",
-      "scene": {
-        "type": "versus",
-        "title": "SEASON GOALS",
-        "left": {
-          "person": "messi",
-          "label": "Messi 11-12",
-          "value": "73"
-        },
-        "right": {
-          "person": "ronaldo",
-          "label": "Ronaldo 13-14",
-          "value": "51"
-        }
-      }
-    },
-    {
-      "text": "But trophies. Messi's Barcelona won the Copa del Rey. Real Madrid took the league.",
-      "scene": {
-        "type": "trophies",
-        "person": "messi",
-        "items": [
-          {
-            "kind": "cup",
-            "label": "Copa del Rey 2012"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Ronaldo won the Copa del Rey too, and La Decima. Real's tenth European Cup.",
-      "scene": {
-        "type": "trophies",
-        "person": "ronaldo",
-        "items": [
-          {
-            "kind": "cup",
-            "label": "Copa del Rey 2014"
-          },
-          {
-            "kind": "bigears",
-            "label": "Champions League"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Four-one after extra time against Atletico. Ronaldo scored in the final.",
-      "scene": {
-        "type": "score",
-        "home": "realmadrid",
-        "away": "atleti",
-        "hs": 4,
-        "as": 1,
-        "date": "24 May 2014",
-        "comp": "Champions League final",
-        "note": "after extra time"
-      }
-    },
-    {
-      "text": "And here's the twist. Each man was the other's runner-up, and both won by a landslide.",
-      "scene": {
-        "type": "list",
-        "title": "THE VOTE",
-        "rows": [
-          {
-            "name": "2012: Messi",
-            "value": "41.6%",
-            "club": "barca",
-            "hl": true
-          },
-          {
-            "name": "2012: Ronaldo",
-            "value": "23.7%",
-            "club": "realmadrid"
-          },
-          {
-            "name": "2014: Ronaldo",
-            "value": "37.7%",
-            "club": "realmadrid",
-            "hl": true
-          },
-          {
-            "name": "2014: Messi",
-            "value": "15.8%",
-            "club": "barca"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Messi won by eighteen points. Ronaldo won by twenty-two.",
-      "scene": {
-        "type": "stats",
-        "title": "WINNING MARGIN",
-        "items": [
-          {
-            "n": "18",
-            "l": "points, Messi 2012"
-          },
-          {
-            "n": "22",
-            "l": "points, Ronaldo 2014"
-          }
-        ]
-      }
-    },
-    {
-      "text": "So, settled. The greatest numbers ever belong to Messi. The better year to win things belongs to Ronaldo.",
-      "scene": {
-        "type": "versus",
-        "title": "THE VERDICT",
-        "left": {
-          "person": "messi",
-          "label": "Numbers",
-          "value": "WIN"
-        },
-        "right": {
-          "person": "ronaldo",
-          "label": "Trophies",
-          "value": "WIN"
-        }
-      }
-    },
-    {
-      "text": "Pick one in the comments.",
-      "scene": {
-        "type": "stamp",
-        "text": "YOUR CALL",
-        "color": "yellow"
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
+    "right": {
+     "person": "ronaldo14",
+     "label": "Ronaldo",
+     "value": "2014",
+     "sub": "Real Madrid"
     }
-  ]
+   }
+  },
+  {
+   "text": "2012. Lionel Messi is twenty-four, and already has three Ballon d'Ors.",
+   "say": "Twenty twelve. Leeonel Messee is twenty-four, and already has three Ballon d'Ors.",
+   "scene": {
+    "type": "title",
+    "heading": "LIONEL MESSI",
+    "sub": "Barcelona · 2012",
+    "pill": "THE RECORD YEAR",
+    "person": "messi",
+    "club": "bar"
+   }
+  },
+  {
+   "text": "In May he ends a season with seventy-three goals. Fifty in La Liga, a record.",
+   "say": "In May he ends a season with seventy-three goals. Fifty in La Leega, a record.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Lionel Messi · 2011/12",
+    "title": "Seventy-three",
+    "items": [
+     {
+      "n": "73",
+      "l": "all competitions"
+     },
+     {
+      "n": "50",
+      "l": "La Liga, a record"
+     }
+    ],
+    "person": "messi"
+   }
+  },
+  {
+   "text": "And still, Real Madrid won the league. With a hundred points.",
+   "say": "And still, Rayal Madrid won the league. With a hundred points.",
+   "scene": {
+    "type": "table",
+    "season": "Final table 2011/12",
+    "title": "La Liga",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "rma",
+      "p": 38,
+      "w": 32,
+      "d": 4,
+      "l": 2,
+      "gd": 89,
+      "pts": 100
+     },
+     {
+      "pos": 2,
+      "club": "bar",
+      "p": 38,
+      "w": 28,
+      "d": 7,
+      "l": 3,
+      "gd": 85,
+      "pts": 91,
+      "hl": true
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       2
+      ]
+     }
+    ],
+    "gap": {
+     "from": 1,
+     "to": 2,
+     "label": "9 pts",
+     "at": 0.45
+    }
+   }
+  },
+  {
+   "text": "December, in Seville. A one-two with Iniesta, and goal number eighty-six.",
+   "say": "December, in Seveeya. A one-two with Inyestah, and goal number eighty-six.",
+   "scene": {
+    "type": "gameclip",
+    "popup": {
+     "home": "bet",
+     "away": "bar",
+     "homeName": "Betis",
+     "awayName": "Barcelona",
+     "hs0": 0,
+     "as0": 1,
+     "hs": 0,
+     "as": 2,
+     "scorer": "Messi",
+     "assist": "Iniesta"
+    },
+    "caption": "Goal 86",
+    "parts": []
+   }
+  },
+  {
+   "text": "Gerd Müller's record, forty years old, is gone. Messi finishes the year on ninety-one.",
+   "say": "Gaird Mewler's record, forty years old, is gone. Messee finishes the year on ninety-one.",
+   "scene": {
+    "type": "bars",
+    "kicker": "One calendar year",
+    "title": "Most goals",
+    "items": [
+     {
+      "label": "Messi 2012",
+      "value": 91,
+      "person": "messi",
+      "hl": true
+     },
+     {
+      "label": "Müller 1972",
+      "value": 85,
+      "club": "bay"
+     },
+     {
+      "label": "Ronaldo 2013",
+      "value": 69,
+      "person": "ronaldo14"
+     },
+     {
+      "label": "Ronaldo 2014",
+      "value": 61,
+      "person": "ronaldo14"
+     }
+    ],
+    "unit": "goals"
+   }
+  },
+  {
+   "text": "2014. Cristiano Ronaldo is twenty-nine. Real Madrid have waited twelve years for a tenth European Cup.",
+   "say": "Twenty fourteen. Kristeeahno Ronaldo is twenty-nine. Rayal Madrid have waited twelve years for a tenth European Cup.",
+   "scene": {
+    "type": "title",
+    "heading": "CRISTIANO RONALDO",
+    "sub": "Real Madrid · 2014",
+    "pill": "LA DÉCIMA",
+    "person": "ronaldo14",
+    "club": "rma"
+   }
+  },
+  {
+   "text": "Seventeen Champions League goals in one season. Nobody had ever scored more.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Cristiano Ronaldo · 2013/14",
+    "title": "A Champions League record",
+    "items": [
+     {
+      "n": "17",
+      "l": "Champions League"
+     },
+     {
+      "n": "31",
+      "l": "La Liga"
+     },
+     {
+      "n": "51",
+      "l": "all competitions"
+     }
+    ],
+    "person": "ronaldo14"
+   }
+  },
+  {
+   "text": "The final in Lisbon. Atlético lead until the ninety-third minute. Then Ramos heads it in.",
+   "say": "The final in Lisbon. Atleteeko lead until the ninety-third minute. Then Rahmoss heads it in.",
+   "scene": {
+    "type": "score",
+    "home": "rma",
+    "away": "atm",
+    "hs": 1,
+    "as": 1,
+    "date": "24 May 2014 · Lisbon",
+    "comp": "Champions League final",
+    "ft": "90+3",
+    "note": "Ramos equalises in stoppage time"
+   }
+  },
+  {
+   "text": "Extra time. Bale, Marcelo, then Ronaldo from the spot. Four-one.",
+   "say": "Extra time. Bayl, Marseloh, then Ronaldo from the spot. Four, one.",
+   "scene": {
+    "type": "gameclip",
+    "popup": {
+     "home": "rma",
+     "away": "atm",
+     "homeName": "Real Madrid",
+     "awayName": "Atlético",
+     "hs0": 3,
+     "as0": 1,
+     "hs": 4,
+     "as": 1,
+     "scorer": "Ronaldo"
+    },
+    "caption": "La Décima",
+    "parts": []
+   }
+  },
+  {
+   "text": "Both won the Ballon d'Or easily. Each time, the runner-up was the other one.",
+   "scene": {
+    "type": "compare",
+    "title": "Two landslides",
+    "left": {
+     "person": "messi",
+     "name": "Messi",
+     "sub": "2012 winner"
+    },
+    "right": {
+     "person": "ronaldo14",
+     "name": "Ronaldo",
+     "sub": "2014 winner"
+    },
+    "rows": [
+     {
+      "label": "Vote share %",
+      "l": 42,
+      "r": 38
+     },
+     {
+      "label": "Runner-up's share %",
+      "l": 24,
+      "r": 16
+     },
+     {
+      "label": "Goals in the year",
+      "l": 91,
+      "r": 61
+     },
+     {
+      "label": "Champions League",
+      "l": 0,
+      "r": 1
+     }
+    ]
+   }
+  },
+  {
+   "text": "Ronaldo had the night. Messi had the year nobody will ever touch. Messi.",
+   "say": "Ronaldo had the night. Messee had the year nobody will ever touch. Messee.",
+   "scene": {
+    "type": "stamp",
+    "text": "MESSI",
+    "sub": "2012 · settled",
+    "person": "messi",
+    "color": "green",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }

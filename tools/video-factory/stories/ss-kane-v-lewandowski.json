@@ -1,274 +1,362 @@
 {
-  "id": "ss-kane-v-lewandowski",
-  "series": "Best season ever, settled",
-  "title": "Kane 2025-26 v Lewandowski 2019-20: Bayern's best number nine season?",
-  "sources": [
-    "https://en.wikipedia.org/wiki/2019%E2%80%9320_FC_Bayern_Munich_season",
-    "https://fcbayern.com/en/news/2026/10/harry-kane-impressive-numbers-behind-record-breaking-season",
-    "https://www.bundesliga.com/en/bundesliga/news/harry-kane-2025-26-numbers-england-bauern-munich-goals-records-messi-38301",
-    "https://www.sofascore.com/news/harry-kanes-2025-26-season-73-goals-and-a-ballon-dor",
-    "https://www.beinsports.com/en-au/football/dfb-pokal/articles/kane-hat-trick-seals-domestic-double-for-bayern-2026-05-23",
-    "https://www.arabnews.com/node/2612059/sport",
-    "https://citizen.digital/article/psg-knock-out-bayern-to-set-up-champions-league-final-with-arsenal-n382214",
-    "https://english.ahram.org.eg/News/567469.aspx",
-    "https://www.espn.com/soccer/story/_/id/50236983/harry-kane-2026-ballon-dor-kylian-mbappe-lamine-yamal",
-    "data/competition-history/champions-league.json (2019-20 final and top scorer)",
-    "data/ballondor/rankings.json (no 2020 award)"
-  ],
-  "checked": "Lewandowski 34 Bundesliga / 55 all comps, the treble, 1-0 final v PSG, 8-2 v Barcelona (Wikipedia season page); 15 Champions League goals and the final (local file); no Ballon d'Or in 2020 (ballondor.com data). Kane 61 for Bayern / 73 with England in 65 games, 36 Bundesliga goals, only Lewandowski (41) and Muller scored more in a Bundesliga season (FC Bayern, Bundesliga.com, Sofascore); Supercup, title and cup final hat-trick (Arab News, beIN, Times of Oman); out to PSG 6-5 on aggregate (Citizen, Ahram); Ballon d'Or 2026 (ESPN, England Football).",
-  "clubs": {
-    "bayern": {
-      "name": "Bayern Munich",
-      "short": "FCB",
-      "c1": "#dc052d",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "psg": {
-      "name": "Paris Saint-Germain",
-      "short": "PSG",
-      "c1": "#004170",
-      "c2": "#da291c",
-      "pattern": "centre"
-    },
-    "barca": {
-      "name": "Barcelona",
-      "short": "BAR",
-      "c1": "#a50044",
-      "c2": "#004d98",
-      "pattern": "stripes"
-    }
+ "id": "ss-kane-v-lewandowski",
+ "series": "Best season ever, settled",
+ "title": "Kane 2025-26 v Lewandowski 2019-20: Bayern's best number nine season?",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/2019%E2%80%9320_FC_Bayern_Munich_season",
+  "https://en.wikipedia.org/wiki/2020_UEFA_Champions_League_final",
+  "https://fcbayern.com/en/news/2019/11/lewandowski-scores-fastest-four-goal-haul-in-champions-league-history",
+  "https://edition.cnn.com/2019/11/26/football/robert-lewandowski-bayern-munich-champions-league-red-star-spt-intl/index.html",
+  "https://en.wikipedia.org/wiki/2020_Ballon_d%27Or",
+  "https://bundesliga.com/en/bundesliga/news/harry-kane-2025-26-numbers-england-bauern-munich-goals-records-messi-38301",
+  "https://app.fcbayern.com/en/news/2026/05/harry-kane-crowned-bundesliga-top-scorer-for-third-year-running",
+  "https://en.wikipedia.org/wiki/2026_DFB-Pokal_final",
+  "https://www.rte.ie/sport/soccer/2026/0506/1571919-psg-thwart-bayern-set-up-final-showdown-with-arsenal/",
+  "https://www.footballtransfers.com/en/transfer-news/uk-premier-league/2026/10/official-harry-kane-wins-2026-ballon-dor"
+ ],
+ "checked": "Lewandowski 2019-20: 34 Bundesliga, 55 all comps, 15 CL; Kovac sacked Nov 2019, Flick in; four goals in 14 min 31 s at Red Star, 26 Nov 2019 (FC Bayern, CNN); 8-2 v Barcelona, 1-0 v PSG (Coman), 11 wins from 11, treble (Wikipedia season + final, UEFA); 2020 Ballon d'Or cancelled (Wikipedia, France Football). Bundesliga season records: Lewandowski 41 (20-21), Muller 40 (71-72). Kane 2025-26: 61 in 51 for Bayern, 36 Bundesliga, 14 CL, 10 Pokal; Supercup, league, Pokal; out to PSG 6-5; Ballon d'Or 2026 (Bundesliga.com, FC Bayern, RTE, FootballTransfers). Red Star clip is a game goal from that night, not one of the four like for like.",
+ "clubs": {
+  "bay": {
+   "name": "Bayern Munich",
+   "short": "FCB",
+   "c1": "#dc052d",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": "FC Bayern München"
   },
-  "people": {
-    "kane": {
-      "name": "Harry Kane",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#8a6a48"
-      ],
-      "beard": "stubble",
-      "kit": "bayern"
-    },
-    "lewa": {
-      "name": "Robert Lewandowski",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#4a3424"
-      ],
-      "beard": "stubble",
-      "kit": "bayern"
-    }
+  "rsb": {
+   "name": "Crvena Zvezda",
+   "short": "CZV",
+   "c1": "#d2122e",
+   "c2": "#ffffff",
+   "pattern": "stripes"
   },
-  "lines": [
-    {
-      "text": "Same shirt, same club, same number nine. Kane's seventy-three goals, or Lewandowski's treble?",
-      "scene": {
-        "type": "title",
-        "heading": "KANE v LEWANDOWSKI",
-        "sub": "Bayern · 2025-26 v 2019-20",
-        "pill": "SETTLED",
-        "person": "lewa"
-      }
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "badge": "FC Barcelona"
+  },
+  "psg": {
+   "name": "Paris Saint-Germain",
+   "short": "PSG",
+   "c1": "#004170",
+   "c2": "#da291c",
+   "pattern": "centre"
+  },
+  "stu": {
+   "name": "VfB Stuttgart",
+   "short": "VFB",
+   "c1": "#ffffff",
+   "c2": "#e32219",
+   "pattern": "plain"
+  },
+  "ein": {
+   "name": "Eintracht Frankfurt",
+   "short": "SGE",
+   "c1": "#111111",
+   "c2": "#e1000f",
+   "pattern": "plain"
+  }
+ },
+ "people": {
+  "kane": {
+   "name": "Harry Kane",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#7a5a3a"
+   ],
+   "beard": "stubble",
+   "beardCol": "#7a5a3a",
+   "kit": "bay"
+  },
+  "lewandowski": {
+   "name": "Robert Lewandowski",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#3a2a1c"
+   ],
+   "beard": "stubble",
+   "beardCol": "#3a2a1c",
+   "kit": "bay"
+  }
+ },
+ "lines": [
+  {
+   "text": "Same club, same shirt, same number nine. Kane's seventy-three goals, or Lewandowski's treble?",
+   "say": "Same club, same shirt, same number nine. Kayn's seventy-three goals, or Lehvandoffskee's treble?",
+   "scene": {
+    "type": "versus",
+    "title": "Bayern's best number nine?",
+    "left": {
+     "person": "lewandowski",
+     "label": "Lewandowski",
+     "value": "2020",
+     "sub": "Bayern · 19/20"
     },
-    {
-      "text": "Robert Lewandowski, twenty nineteen, twenty. Fifty-five goals in all competitions.",
-      "scene": {
-        "type": "stats",
-        "title": "LEWANDOWSKI 2019-20",
-        "person": "lewa",
-        "items": [
-          {
-            "n": "55",
-            "l": "goals, all comps"
-          },
-          {
-            "n": "34",
-            "l": "Bundesliga goals"
-          },
-          {
-            "n": "15",
-            "l": "Champions League goals"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Bayern won everything. League, cup, and the Champions League. Including an eight-two against Barcelona.",
-      "scene": {
-        "type": "score",
-        "home": "barca",
-        "away": "bayern",
-        "hs": 2,
-        "as": 8,
-        "date": "14 Aug 2020",
-        "comp": "Champions League quarter-final",
-        "stamp": "EIGHT"
-      }
-    },
-    {
-      "text": "Harry Kane, last season. Sixty-one goals for Bayern, seventy-three counting England.",
-      "scene": {
-        "type": "stats",
-        "title": "KANE 2025-26",
-        "person": "kane",
-        "items": [
-          {
-            "n": "61",
-            "l": "goals for Bayern"
-          },
-          {
-            "n": "73",
-            "l": "with England"
-          },
-          {
-            "n": "36",
-            "l": "Bundesliga goals"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Club goals only? Kane wins by six.",
-      "scene": {
-        "type": "versus",
-        "title": "BAYERN GOALS, ALL COMPETITIONS",
-        "left": {
-          "person": "lewa",
-          "label": "Lewandowski 19-20",
-          "value": "55"
-        },
-        "right": {
-          "person": "kane",
-          "label": "Kane 25-26",
-          "value": "61"
-        }
-      }
-    },
-    {
-      "text": "Lewandowski's trophies: the treble.",
-      "scene": {
-        "type": "trophies",
-        "person": "lewa",
-        "items": [
-          {
-            "kind": "league",
-            "label": "Bundesliga"
-          },
-          {
-            "kind": "cup",
-            "label": "German Cup"
-          },
-          {
-            "kind": "bigears",
-            "label": "Champions League"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Kane's: the Supercup, the league, and a hat-trick in the cup final.",
-      "scene": {
-        "type": "trophies",
-        "person": "kane",
-        "items": [
-          {
-            "kind": "cup",
-            "label": "German Supercup"
-          },
-          {
-            "kind": "league",
-            "label": "Bundesliga"
-          },
-          {
-            "kind": "cup",
-            "label": "German Cup"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Now the twist. Both seasons were decided by the same club. PSG.",
-      "scene": {
-        "type": "text",
-        "heading": "THE TWIST",
-        "body": "Lewandowski's Bayern beat PSG in the 2020 final. Kane's Bayern were knocked out by PSG in the 2026 semi-final.",
-        "stamp": "PSG"
-      }
-    },
-    {
-      "text": "Twenty twenty: Bayern one, PSG nil. Champions of Europe.",
-      "scene": {
-        "type": "score",
-        "home": "psg",
-        "away": "bayern",
-        "hs": 0,
-        "as": 1,
-        "date": "23 Aug 2020",
-        "comp": "Champions League final"
-      }
-    },
-    {
-      "text": "Twenty twenty-six: PSG win six-five on aggregate. Kane scores in stoppage time. Too late.",
-      "scene": {
-        "type": "score",
-        "home": "bayern",
-        "away": "psg",
-        "hs": 1,
-        "as": 1,
-        "date": "6 May 2026",
-        "comp": "Champions League semi-final",
-        "note": "PSG through 6-5 on aggregate",
-        "stamp": "OUT"
-      }
-    },
-    {
-      "text": "But there's one prize Lewandowski never got for that season. There was no Ballon d'Or in twenty twenty.",
-      "scene": {
-        "type": "whatif",
-        "title": "THE MISSING BALLON D'OR",
-        "real": {
-          "label": "Lewandowski 2020",
-          "value": "No award held"
-        },
-        "alt": {
-          "label": "Kane 2026",
-          "value": "Ballon d'Or"
-        }
-      }
-    },
-    {
-      "text": "And Lewandowski kept the Bundesliga record too. Forty-one goals, a year later. Kane got to thirty-six.",
-      "scene": {
-        "type": "versus",
-        "title": "BUNDESLIGA SEASON RECORD",
-        "left": {
-          "person": "lewa",
-          "label": "Lewandowski 20-21",
-          "value": "41"
-        },
-        "right": {
-          "person": "kane",
-          "label": "Kane 25-26",
-          "value": "36"
-        }
-      }
-    },
-    {
-      "text": "Kane has the goals and the golden ball. Lewandowski has Europe. The treble wins it. Lewandowski.",
-      "scene": {
-        "type": "stamp",
-        "text": "LEWANDOWSKI",
-        "person": "lewa",
-        "color": "white"
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
+    "right": {
+     "person": "kane",
+     "label": "Kane",
+     "value": "2026",
+     "sub": "Bayern · 25/26"
     }
-  ]
+   }
+  },
+  {
+   "text": "November 2019. Bayern lose five-one at Frankfurt and sack their manager. Hansi Flick takes over.",
+   "say": "November twenty nineteen. Byern lose five, one at Frankfurt and sack their manager. Hansee Flick takes over.",
+   "scene": {
+    "type": "news",
+    "section": "Bundesliga",
+    "headline": "Bayern sack Kovac after Frankfurt thrashing",
+    "standfirst": "A 5-1 defeat ends his reign. Assistant Hansi Flick takes charge. Nobody expects what happens next.",
+    "date": "3 November 2019",
+    "byline": "Knowitball recap",
+    "club": "bay",
+    "nav": [
+     "Football",
+     "Bundesliga",
+     "Bayern",
+     "Managers"
+    ],
+    "mastColor": "#1b1f2b"
+   }
+  },
+  {
+   "text": "Weeks later in Belgrade, Robert Lewandowski scores four goals in fourteen minutes. A Champions League record.",
+   "say": "Weeks later in Belgrayd, Robbert Lehvandoffskee scores four goals in fourteen minutes. A Champions League record.",
+   "scene": {
+    "type": "gameclip",
+    "popup": {
+     "home": "rsb",
+     "away": "bay",
+     "homeName": "Red Star",
+     "awayName": "Bayern",
+     "hs0": 0,
+     "as0": 4,
+     "hs": 0,
+     "as": 5,
+     "scorer": "Lewandowski"
+    },
+    "caption": "Four in 14 minutes",
+    "parts": []
+   }
+  },
+  {
+   "text": "Thirty-four league goals. Fifty-five in all. Fifteen in the Champions League.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Robert Lewandowski · 2019/20",
+    "title": "Scoring in every round",
+    "items": [
+     {
+      "n": "34",
+      "l": "Bundesliga"
+     },
+     {
+      "n": "55",
+      "l": "all competitions"
+     },
+     {
+      "n": "15",
+      "l": "Champions League"
+     }
+    ],
+    "person": "lewandowski"
+   }
+  },
+  {
+   "text": "Then Lisbon. Eight-two against Barcelona.",
+   "say": "Then Lisbon. Eight, two against Barcelona.",
+   "scene": {
+    "type": "score",
+    "home": "bar",
+    "away": "bay",
+    "hs": 2,
+    "as": 8,
+    "date": "14 August 2020 · Lisbon",
+    "comp": "Champions League quarter-final",
+    "note": "Bayern's biggest night of all"
+   }
+  },
+  {
+   "text": "And in the final, Coman's header beats PSG. Eleven games, eleven wins. The treble.",
+   "say": "And in the final, Comahn's header beats P S G. Eleven games, eleven wins. The treble.",
+   "scene": {
+    "type": "score",
+    "home": "psg",
+    "away": "bay",
+    "hs": 0,
+    "as": 1,
+    "date": "23 August 2020 · Lisbon",
+    "comp": "Champions League final",
+    "note": "Bayern win all 11 European games"
+   }
+  },
+  {
+   "text": "Then the cruel bit. That year, the Ballon d'Or was cancelled.",
+   "scene": {
+    "type": "stamp",
+    "text": "CANCELLED",
+    "sub": "Ballon d'Or 2020 · no winner",
+    "person": "lewandowski",
+    "color": "red"
+   }
+  },
+  {
+   "text": "Six years later, Harry Kane wears the same shirt. Sixty-one goals for Bayern. Thirty-six in the league.",
+   "say": "Six years later, Harry Kayn wears the same shirt. Sixty-one goals for Byern. Thirty-six in the league.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Harry Kane · 2025/26",
+    "title": "Sixty-one for Bayern",
+    "items": [
+     {
+      "n": "61",
+      "l": "for Bayern"
+     },
+     {
+      "n": "36",
+      "l": "Bundesliga"
+     },
+     {
+      "n": "14",
+      "l": "Champions League"
+     }
+    ],
+    "person": "kane"
+   }
+  },
+  {
+   "text": "But in the Bundesliga, the record is still Lewandowski's. Forty-one, a year after the treble.",
+   "say": "But in the Bundesleega, the record is still Lehvandoffskee's. Forty-one, a year after the treble.",
+   "scene": {
+    "type": "bars",
+    "kicker": "Bundesliga",
+    "title": "Most goals in one season",
+    "items": [
+     {
+      "label": "Lewandowski 20/21",
+      "value": 41,
+      "person": "lewandowski"
+     },
+     {
+      "label": "Müller 71/72",
+      "value": 40,
+      "club": "bay"
+     },
+     {
+      "label": "Kane 25/26",
+      "value": 36,
+      "person": "kane",
+      "hl": true
+     },
+     {
+      "label": "Lewandowski 19/20",
+      "value": 34,
+      "person": "lewandowski"
+     }
+    ],
+    "unit": "goals"
+   }
+  },
+  {
+   "text": "Kane won the league, and the cup with a hat-trick in the final.",
+   "say": "Kayn won the league, and the cup with a hat-trick in the final.",
+   "scene": {
+    "type": "gameclip",
+    "popup": {
+     "home": "bay",
+     "away": "stu",
+     "homeName": "Bayern",
+     "awayName": "Stuttgart",
+     "hs0": 2,
+     "as0": 0,
+     "hs": 3,
+     "as": 0,
+     "scorer": "Kane",
+     "assist": "Díaz"
+    },
+    "caption": "Cup final hat-trick",
+    "parts": []
+   }
+  },
+  {
+   "text": "But PSG again. Bayern went out in the semi, six-five. Kane's last goal came in stoppage time.",
+   "say": "But P S G again. Byern went out in the semi, six, five. Kayn's last goal came in stoppage time.",
+   "scene": {
+    "type": "score",
+    "home": "bay",
+    "away": "psg",
+    "hs": 1,
+    "as": 1,
+    "date": "6 May 2026 · Munich",
+    "comp": "Champions League semi-final",
+    "note": "PSG through 6-5 on aggregate"
+   }
+  },
+  {
+   "text": "Kane has more goals and a Ballon d'Or. Lewandowski has the Champions League.",
+   "say": "Kayn has more goals and a Ballon d'Or. Lehvandoffskee has the Champions League.",
+   "scene": {
+    "type": "compare",
+    "title": "Head to head",
+    "left": {
+     "person": "lewandowski",
+     "name": "Lewandowski",
+     "sub": "2019/20"
+    },
+    "right": {
+     "person": "kane",
+     "name": "Kane",
+     "sub": "2025/26"
+    },
+    "rows": [
+     {
+      "label": "Goals for Bayern",
+      "l": 55,
+      "r": 61
+     },
+     {
+      "label": "Bundesliga goals",
+      "l": 34,
+      "r": 36
+     },
+     {
+      "label": "Champions League goals",
+      "l": 15,
+      "r": 14
+     },
+     {
+      "label": "Champions League",
+      "l": 1,
+      "r": 0
+     }
+    ]
+   }
+  },
+  {
+   "text": "Goals win awards. Trebles win arguments. Lewandowski.",
+   "say": "Goals win awards. Trebles win arguments. Lehvandoffskee.",
+   "scene": {
+    "type": "stamp",
+    "text": "LEWANDOWSKI",
+    "sub": "2019/20 · settled",
+    "person": "lewandowski",
+    "color": "green",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }

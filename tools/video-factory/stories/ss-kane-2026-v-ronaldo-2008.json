@@ -1,301 +1,406 @@
 {
-  "id": "ss-kane-2026-v-ronaldo-2008",
-  "series": "Best season ever, settled",
-  "title": "Kane 2026 v Ronaldo 2008: whose Ballon d'Or season was better?",
-  "sources": [
-    "https://fcbayern.com/en/news/2026/10/harry-kane-impressive-numbers-behind-record-breaking-season",
-    "https://www.bundesliga.com/en/bundesliga/news/harry-kane-2025-26-numbers-england-bauern-munich-goals-records-messi-38301",
-    "https://www.sofascore.com/news/harry-kanes-2025-26-season-73-goals-and-a-ballon-dor",
-    "https://www.beinsports.com/en-au/football/dfb-pokal/articles/kane-hat-trick-seals-domestic-double-for-bayern-2026-05-23",
-    "https://timesofoman.com//article/172179-kanes-hat-trick-seals-bayern-munichs-21st-german-cup-win",
-    "https://www.arabnews.com/node/2612059/sport",
-    "https://citizen.digital/article/psg-knock-out-bayern-to-set-up-champions-league-final-with-arsenal-n382214",
-    "https://english.ahram.org.eg/News/567469.aspx",
-    "https://www.espn.com/soccer/story/_/id/50236983/harry-kane-2026-ballon-dor-kylian-mbappe-lamine-yamal",
-    "https://www.unitedinfocus.com/columnists/the-story-of-ronaldos-42-goal-2007-08-season-at-manchester-united/",
-    "https://www.skysports.com/football/news/4576235/ronaldo-crowned",
-    "https://uefa.com/news-media/news/01ce-0f84de550009-c40194dcbe23-1000--ronaldo-scoops-esm-golden-shoe",
-    "https://www.premierleague.com/en/news/693636",
-    "https://uk.sports.yahoo.com/news/day-2008-manchester-united-beat-050000107.html",
-    "https://www.fourfourtwo.com/news/on-this-day-in-2008-manchester-united-beat-chelsea-to-win-third-european-cup-1589972432000"
-  ],
-  "checked": "Kane: 73 goals in 65 games for Bayern and England, 36 Bundesliga goals, Golden Shoe (FC Bayern, Bundesliga.com, Sofascore); Supercup 2-1 v Stuttgart (Arab News, FC Bayern); Pokal final hat-trick 3-0 v Stuttgart (beIN, Times of Oman); out to PSG 6-5 on aggregate in the semi-final, Kane's stoppage-time goal in the 1-1 second leg (Citizen, Ahram); England third at the World Cup and Ballon d'Or (ESPN, England Football). Ronaldo: 42 goals all competitions, 31 league goals, Golden Shoe (UEFA, Premier League, United in Focus, Sky); headed goal and saved penalty in the Moscow final, United won 6-5 on penalties (Yahoo/PA, FourFourTwo). Champions League goal count for Ronaldo left out (UEFA gives seven and eight).",
-  "clubs": {
-    "bayern": {
-      "name": "Bayern Munich",
-      "short": "FCB",
-      "c1": "#dc052d",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "manutd": {
-      "name": "Manchester United",
-      "short": "MUN",
-      "c1": "#da291c",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "psg": {
-      "name": "Paris Saint-Germain",
-      "short": "PSG",
-      "c1": "#004170",
-      "c2": "#da291c",
-      "pattern": "centre"
-    },
-    "chelsea": {
-      "name": "Chelsea",
-      "short": "CHE",
-      "c1": "#034694",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    }
+ "id": "ss-kane-2026-v-ronaldo-2008",
+ "series": "Best season ever, settled",
+ "title": "Kane 2026 v Ronaldo 2008: whose Ballon d'Or season was better?",
+ "v2": true,
+ "sources": [
+  "https://bundesliga.com/en/bundesliga/news/harry-kane-2025-26-numbers-england-bauern-munich-goals-records-messi-38301",
+  "https://www.beinsports.com/en-us/soccer/dfb-pokal/articles/bayern-munich-3-0-stuttgart-kane-hat-trick-delivers-domestic-double-with-dfb-pokal-success-2026-05-23",
+  "https://en.wikipedia.org/wiki/2026_DFB-Pokal_final",
+  "https://www.rte.ie/sport/soccer/2026/0506/1571919-psg-thwart-bayern-set-up-final-showdown-with-arsenal/",
+  "https://www.cbssports.com/soccer/news/bayern-munich-paris-saint-germain-wednesday-champions-league-semifinal/live/",
+  "https://fcbayern.com/en/news/2026/07/england-fall-to-argentina-in-world-cup-semi-final-despite-taking-the-lead",
+  "https://www.englandfootball.com/articles/2026/Jul/15/harry-kane-reaction-england-argentina-world-cup-20261507",
+  "https://www.footballtransfers.com/en/transfer-news/uk-premier-league/2026/10/official-harry-kane-wins-2026-ballon-dor",
+  "https://www.radiox.co.uk/news/uk-world/harry-kane-ends-englands-25-year-wait-for-bal/",
+  "https://en.wikipedia.org/wiki/2007%E2%80%9308_Manchester_United_F.C._season",
+  "https://en.wikipedia.org/wiki/2008_UEFA_Champions_League_final",
+  "https://en.wikipedia.org/wiki/2008_Ballon_d%27Or"
+ ],
+ "checked": "Kane 2025-26: 61 in 51 for Bayern, 73 in 65 with England, 36 Bundesliga, Golden Shoe (Bundesliga.com, FC Bayern); Pokal final 3-0 v Stuttgart, Kane hat-trick, third from Luis Diaz (Wikipedia final, beIN, theScore); PSG 5-4 in Paris, 1-1 in Munich, Kane goal in stoppage time, out 6-5 (RTE, CBS, beIN); World Cup semi lost 2-1 to Argentina, Lautaro late winner, then 6-4 v France for third (FC Bayern, England Football, ITV); Ballon d'Or 26 Oct 2026 (FootballTransfers, Radio X, NBC). Ronaldo 2007-08: 42 all comps, 31 PL; United 87 v Chelsea 85; Moscow 1-1, Ronaldo header from Brown's cross, saved shootout kick, Terry slipped, Van der Sar saved Anelka, 6-5; Ballon d'Or 446-281-179 (Wikipedia season/final/award, UEFA). Kane's cup-final finish type not known: the clip shows a low finish.",
+ "clubs": {
+  "mun": {
+   "name": "Manchester United",
+   "short": "MUN",
+   "c1": "#da291c",
+   "c2": "#ffffff",
+   "pattern": "plain"
   },
-  "people": {
-    "kane": {
-      "name": "Harry Kane",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#8a6a48"
-      ],
-      "beard": "stubble",
-      "kit": "bayern"
-    },
-    "ronaldo": {
-      "name": "Cristiano Ronaldo",
-      "skin": "olive",
-      "hair": [
-        "slick",
-        "#1e1610"
-      ],
-      "beard": "none",
-      "kit": "manutd"
-    }
+  "che": {
+   "name": "Chelsea",
+   "short": "CHE",
+   "c1": "#034694",
+   "c2": "#ffffff",
+   "pattern": "plain"
   },
-  "lines": [
-    {
-      "text": "Seventy-three goals, or the Champions League? Two Ballon d'Or seasons. Only one can be the best.",
-      "scene": {
-        "type": "title",
-        "heading": "KANE 2026 v RONALDO 2008",
-        "sub": "Two Ballon d'Or seasons",
-        "pill": "SETTLED",
-        "person": "kane"
-      }
+  "ars": {
+   "name": "Arsenal",
+   "short": "ARS",
+   "c1": "#ef0107",
+   "c2": "#ffffff",
+   "pattern": "sides"
+  },
+  "liv": {
+   "name": "Liverpool",
+   "short": "LIV",
+   "c1": "#c8102e",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "bay": {
+   "name": "Bayern Munich",
+   "short": "FCB",
+   "c1": "#dc052d",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": "FC Bayern München"
+  },
+  "stu": {
+   "name": "VfB Stuttgart",
+   "short": "VFB",
+   "c1": "#ffffff",
+   "c2": "#e32219",
+   "pattern": "plain"
+  },
+  "psg": {
+   "name": "Paris Saint-Germain",
+   "short": "PSG",
+   "c1": "#004170",
+   "c2": "#da291c",
+   "pattern": "centre"
+  }
+ },
+ "people": {
+  "kane": {
+   "name": "Harry Kane",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#7a5a3a"
+   ],
+   "beard": "stubble",
+   "beardCol": "#7a5a3a",
+   "kit": "bay"
+  },
+  "ronaldo": {
+   "name": "Cristiano Ronaldo",
+   "skin": "olive",
+   "hair": [
+    "quiff",
+    "#2a1c12"
+   ],
+   "beard": "none",
+   "kit": "mun"
+  }
+ },
+ "lines": [
+  {
+   "text": "Seventy-three goals, or the Champions League? Two Ballon d'Or seasons. Only one is the best.",
+   "scene": {
+    "type": "versus",
+    "title": "Two Ballon d'Or seasons",
+    "left": {
+     "person": "ronaldo",
+     "label": "Ronaldo",
+     "value": "2008",
+     "sub": "Man United · 07/08"
     },
-    {
-      "text": "First, Cristiano Ronaldo. Twenty-three years old, Manchester United, twenty-oh-seven, oh-eight.",
-      "scene": {
-        "type": "person",
-        "person": "ronaldo",
-        "label": "Man United · 2007-08",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "Forty-two goals in all competitions, thirty-one in the league. From the wing.",
-      "scene": {
-        "type": "stats",
-        "title": "RONALDO 2007-08",
-        "person": "ronaldo",
-        "items": [
-          {
-            "n": "42",
-            "l": "goals, all comps"
-          },
-          {
-            "n": "31",
-            "l": "Premier League goals"
-          },
-          {
-            "n": "1",
-            "l": "European Golden Shoe"
-          }
-        ]
-      }
-    },
-    {
-      "text": "In the red corner, Harry Kane, thirty-two, Bayern Munich and England, last season.",
-      "scene": {
-        "type": "person",
-        "person": "kane",
-        "label": "Bayern · 2025-26",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "Seventy-three goals in sixty-five games. Thirty-six in the Bundesliga. Fourteen in the Champions League.",
-      "scene": {
-        "type": "stats",
-        "title": "KANE 2025-26",
-        "person": "kane",
-        "items": [
-          {
-            "n": "73",
-            "l": "goals, club and country"
-          },
-          {
-            "n": "36",
-            "l": "Bundesliga goals"
-          },
-          {
-            "n": "14",
-            "l": "Champions League goals"
-          },
-          {
-            "n": "10",
-            "l": "German Cup goals"
-          }
-        ]
-      }
-    },
-    {
-      "text": "On numbers alone, it's not close. Kane scored thirty-one more.",
-      "scene": {
-        "type": "versus",
-        "title": "GOALS, ALL COMPETITIONS",
-        "left": {
-          "person": "ronaldo",
-          "label": "Ronaldo 07-08",
-          "value": "42"
-        },
-        "right": {
-          "person": "kane",
-          "label": "Kane 25-26",
-          "value": "73"
-        }
-      }
-    },
-    {
-      "text": "Trophies? Kane finally got his. Supercup, Bundesliga, and a hat-trick in the cup final.",
-      "scene": {
-        "type": "trophies",
-        "person": "kane",
-        "items": [
-          {
-            "kind": "cup",
-            "label": "German Supercup"
-          },
-          {
-            "kind": "league",
-            "label": "Bundesliga"
-          },
-          {
-            "kind": "cup",
-            "label": "German Cup"
-          },
-          {
-            "kind": "boot",
-            "label": "Golden Shoe"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Ronaldo? The Premier League, the Golden Shoe, and the big one.",
-      "scene": {
-        "type": "trophies",
-        "person": "ronaldo",
-        "items": [
-          {
-            "kind": "league",
-            "label": "Premier League"
-          },
-          {
-            "kind": "boot",
-            "label": "Golden Shoe"
-          },
-          {
-            "kind": "bigears",
-            "label": "Champions League"
-          }
-        ]
-      }
-    },
-    {
-      "text": "And here's the twist. Both men had one Champions League night that decided everything.",
-      "scene": {
-        "type": "text",
-        "heading": "THE TWIST",
-        "body": "Ronaldo scored in Moscow, then missed in the shootout. Kane scored in stoppage time in Munich. Only one of them went home with the trophy."
-      }
-    },
-    {
-      "text": "Ronaldo's penalty was saved in Moscow. United still won the shootout six-five.",
-      "scene": {
-        "type": "score",
-        "home": "manutd",
-        "away": "chelsea",
-        "hs": 1,
-        "as": 1,
-        "date": "21 May 2008",
-        "comp": "Champions League final",
-        "note": "United win 6-5 on penalties"
-      }
-    },
-    {
-      "text": "Kane scored deep in stoppage time against PSG. Bayern still went out, six-five on aggregate.",
-      "scene": {
-        "type": "score",
-        "home": "bayern",
-        "away": "psg",
-        "hs": 1,
-        "as": 1,
-        "date": "6 May 2026",
-        "comp": "Champions League semi-final",
-        "note": "PSG through 6-5 on aggregate",
-        "stamp": "OUT"
-      }
-    },
-    {
-      "text": "Then Kane's England lost a World Cup semi-final. Bronze, not gold.",
-      "scene": {
-        "type": "stamp",
-        "text": "THIRD PLACE",
-        "person": "kane",
-        "color": "yellow"
-      }
-    },
-    {
-      "text": "So the verdict. Kane wins the numbers. Ronaldo wins the trophy that matters most. Ronaldo, just.",
-      "scene": {
-        "type": "versus",
-        "title": "THE VERDICT",
-        "left": {
-          "person": "ronaldo",
-          "label": "Trophies",
-          "value": "WIN"
-        },
-        "right": {
-          "person": "kane",
-          "label": "Numbers",
-          "value": "WIN"
-        },
-        "stamp": "RONALDO, JUST"
-      }
-    },
-    {
-      "text": "Agree? Tell me who you'd pick.",
-      "scene": {
-        "type": "versus",
-        "title": "YOUR PICK",
-        "left": {
-          "person": "ronaldo",
-          "label": "Ronaldo 2008",
-          "value": "?"
-        },
-        "right": {
-          "person": "kane",
-          "label": "Kane 2026",
-          "value": "?"
-        }
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
+    "right": {
+     "person": "kane",
+     "label": "Kane",
+     "value": "2026",
+     "sub": "Bayern · 25/26"
     }
-  ]
+   }
+  },
+  {
+   "text": "Manchester United, 2007. Cristiano Ronaldo is twenty-two, a winger, and about to explode.",
+   "say": "Manchester United, twenty oh seven. Kristeeahno Ronaldo is twenty-two, a winger, and about to explode.",
+   "scene": {
+    "type": "title",
+    "heading": "CRISTIANO RONALDO",
+    "sub": "Man United · 2007/08",
+    "pill": "THE WINGER WHO SCORED",
+    "person": "ronaldo",
+    "club": "mun"
+   }
+  },
+  {
+   "text": "Forty-two goals in all competitions. Thirty-one in the league. The Golden Shoe.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Cristiano Ronaldo · 2007/08",
+    "title": "From the wing",
+    "items": [
+     {
+      "n": "42",
+      "l": "all competitions"
+     },
+     {
+      "n": "31",
+      "l": "league goals"
+     }
+    ],
+    "person": "ronaldo"
+   }
+  },
+  {
+   "text": "United won the league by two points. From Chelsea.",
+   "scene": {
+    "type": "table",
+    "season": "Final table 2007/08",
+    "title": "Premier League",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "mun",
+      "p": 38,
+      "w": 27,
+      "d": 6,
+      "l": 5,
+      "gd": 58,
+      "pts": 87,
+      "hl": true
+     },
+     {
+      "pos": 2,
+      "club": "che",
+      "p": 38,
+      "w": 25,
+      "d": 10,
+      "l": 3,
+      "gd": 39,
+      "pts": 85,
+      "hl": true
+     },
+     {
+      "pos": 3,
+      "club": "ars",
+      "p": 38,
+      "w": 24,
+      "d": 11,
+      "l": 3,
+      "gd": 43,
+      "pts": 83
+     },
+     {
+      "pos": 4,
+      "club": "liv",
+      "p": 38,
+      "w": 21,
+      "d": 13,
+      "l": 4,
+      "gd": 39,
+      "pts": 76
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
+     }
+    ],
+    "gap": {
+     "from": 1,
+     "to": 2,
+     "label": "2 pts",
+     "at": 0.45
+    }
+   }
+  },
+  {
+   "text": "Then Moscow. Chelsea again, in the Champions League final. Ronaldo heads United in front.",
+   "say": "Then Moskoh. Chelsea again, in the Champions League final. Ronaldo heads United in front.",
+   "scene": {
+    "type": "gameclip",
+    "popup": {
+     "home": "mun",
+     "away": "che",
+     "homeName": "Man United",
+     "hs0": 0,
+     "as0": 0,
+     "hs": 1,
+     "as": 0,
+     "scorer": "Ronaldo",
+     "assist": "Brown"
+    },
+    "caption": "Moscow",
+    "parts": []
+   }
+  },
+  {
+   "text": "Lampard levels. In the shootout, Ronaldo's penalty is saved. Then Terry slips, and United win it.",
+   "say": "Lampard levels. In the shootout, Ronaldo's penalty is saved. Then Terree slips, and United win it.",
+   "scene": {
+    "type": "score",
+    "home": "mun",
+    "away": "che",
+    "hs": 1,
+    "as": 1,
+    "date": "21 May 2008 · Moscow",
+    "comp": "Champions League final",
+    "ft": "AFTER EXTRA TIME",
+    "note": "United win 6-5 on penalties"
+   }
+  },
+  {
+   "text": "Eighteen years later: Harry Kane, thirty-two, Bayern Munich.",
+   "say": "Eighteen years later: Harry Kayn, thirty-two, Byern Munich.",
+   "scene": {
+    "type": "title",
+    "heading": "HARRY KANE",
+    "sub": "Bayern Munich · 2025/26",
+    "pill": "73 GOALS",
+    "person": "kane",
+    "club": "bay"
+   }
+  },
+  {
+   "text": "Sixty-one goals for Bayern. Seventy-three counting England, in sixty-five games.",
+   "say": "Sixty-one goals for Byern. Seventy-three counting England, in sixty-five games.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Harry Kane · 2025/26",
+    "title": "Seventy-three",
+    "items": [
+     {
+      "n": "61",
+      "l": "for Bayern"
+     },
+     {
+      "n": "36",
+      "l": "Bundesliga"
+     },
+     {
+      "n": "73",
+      "l": "with England"
+     }
+    ],
+    "person": "kane"
+   }
+  },
+  {
+   "text": "The league, then a hat-trick in the cup final. Stuttgart beaten three-nil.",
+   "say": "The league, then a hat-trick in the cup final. Shtootgart beaten three, nil.",
+   "scene": {
+    "type": "gameclip",
+    "popup": {
+     "home": "bay",
+     "away": "stu",
+     "homeName": "Bayern",
+     "awayName": "Stuttgart",
+     "hs0": 2,
+     "as0": 0,
+     "hs": 3,
+     "as": 0,
+     "scorer": "Kane",
+     "assist": "Díaz"
+    },
+    "caption": "Hat-trick",
+    "parts": []
+   }
+  },
+  {
+   "text": "But in Europe, PSG. Five-four in Paris. In Munich, Kane scores in stoppage time. Out, six-five.",
+   "say": "But in Europe, P S G. Five, four in Paree. In Munich, Kayn scores in stoppage time. Out, six, five.",
+   "scene": {
+    "type": "score",
+    "home": "bay",
+    "away": "psg",
+    "hs": 1,
+    "as": 1,
+    "date": "6 May 2026 · Munich",
+    "comp": "Champions League semi-final",
+    "note": "PSG through 6-5 on aggregate"
+   }
+  },
+  {
+   "text": "Then the World Cup semi. Argentina win it in stoppage time. England finish third.",
+   "say": "Then the World Cup semi. Argenteena win it in stoppage time. England finish third.",
+   "scene": {
+    "type": "news",
+    "section": "World Cup",
+    "headline": "Late heartbreak in Atlanta",
+    "standfirst": "Argentina's stoppage-time winner ends England's World Cup. Kane's side beat France for third place.",
+    "date": "15 July 2026",
+    "byline": "Knowitball recap",
+    "person": "kane",
+    "nav": [
+     "Football",
+     "World Cup",
+     "England",
+     "Argentina"
+    ],
+    "mastColor": "#1b1f2b"
+   }
+  },
+  {
+   "text": "Both won the Ballon d'Or. Kane wins the numbers. Ronaldo has the big one.",
+   "say": "Both won the Ballon d'Or. Kayn wins the numbers. Ronaldo has the big one.",
+   "scene": {
+    "type": "compare",
+    "title": "Head to head",
+    "left": {
+     "person": "ronaldo",
+     "name": "Ronaldo",
+     "sub": "2007/08"
+    },
+    "right": {
+     "person": "kane",
+     "name": "Kane",
+     "sub": "2025/26"
+    },
+    "rows": [
+     {
+      "label": "Goals",
+      "l": 42,
+      "r": 73
+     },
+     {
+      "label": "League titles",
+      "l": 1,
+      "r": 1
+     },
+     {
+      "label": "Champions League",
+      "l": 1,
+      "r": 0
+     },
+     {
+      "label": "Ballon d'Or",
+      "l": 1,
+      "r": 1
+     }
+    ]
+   }
+  },
+  {
+   "text": "Seventy-three is incredible. But seasons are judged on nights like Moscow. Ronaldo.",
+   "say": "Seventy-three is incredible. But seasons are judged on nights like Moskoh. Ronaldo.",
+   "scene": {
+    "type": "stamp",
+    "text": "RONALDO",
+    "sub": "2007/08 · settled",
+    "person": "ronaldo",
+    "color": "green",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }
