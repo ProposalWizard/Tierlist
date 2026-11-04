@@ -82,7 +82,11 @@
   "Kylian": "Keelyan",
   "Cristiano": "Kristeeahno",
   "Pelé": "Pelay",
-  "Messi": "Messy"
+  "Messi": "Messy",
+  "Salah": "Sahlah",
+  "Mané": "Mahnay",
+  "Lamine": "Lameen",
+  "Ferran": "Feran"
  },
  "_ipa": {
   "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -145,6 +149,10 @@
   "Kylian": "fr [kiljan] (Wikipedia); heard back as 'Kylian', batch v2-12",
   "Cristiano": "pt [kɾiʃˈtjɐnu], English broadcast 'kris-tee-AH-no'; heard back as 'Cristiano', batch v2-12",
   "Pelé": "pt [peˈlɛ]; heard back as 'Pelé', batch v2-12",
-  "Messi": "es [ˈmesi], English broadcast 'MESS-ee'; heard back as 'Messi'/'messy', batch v2-12"
+  "Messi": "es [ˈmesi], English broadcast 'MESS-ee'; heard back as 'Messi'/'messy', batch v2-12",
+  "Salah": "ar [sˤɑˈlɑːħ], English broadcast 'SAH-lah'; heard back as 'Salah', batch v2-12",
+  "Mané": "wo/fr [mane]; heard back as 'Mane', batch v2-12",
+  "Lamine": "es/ar [laˈmine]; heard back as 'Lamine', batch v2-12",
+  "Ferran": "ca [fəˈran]; heard back as 'Ferran', batch v2-12"
  }
 }
