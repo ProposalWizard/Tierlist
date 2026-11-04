@@ -84,7 +84,13 @@
     "Grealish": "Greelish",
     "Dortmund": "Dortmoond",
     "Bayern": "Byern",
-    "Erling Haaland": "Erling Hawland"
+    "Erling Haaland": "Erling Hawland",
+    "Bellingham": "Bellingum",
+    "Clásico": "Klasseeko",
+    "Zinedine": "Zeenedeen",
+    "Montjuïc": "Moonjooeek",
+    "Gerrard": "Jerrard",
+    "Bordeaux": "Bordoh"
   },
   "_ipa": {
     "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -148,6 +154,12 @@
     "Cancelo": "pt [kɐ̃ˈsɛlu]; transcribed back as Kansalu",
     "Grealish": "English 'GREE-lish'; transcribed back as Grealis",
     "Dortmund": "de [ˈdɔʁtmʊnt]; transcribed back as Dortmund",
-    "Bayern": "de [ˈbaɪɐn]; transcribed back as Bayern"
+    "Bayern": "de [ˈbaɪɐn]; transcribed back as Bayern",
+    "Bellingham": "English 'BEL-ing-um'; transcribed back as Bellingham, 4 Nov 2026",
+    "Clásico": "es [ˈklasiko]; 'Clasico' was heard as 'classical', 'Klasseeko' back as clasico",
+    "Zinedine": "fr [zinedin]; transcribed back as Zinedine",
+    "Montjuïc": "ca [munʒuˈik]; transcribed back as Moongjuik",
+    "Gerrard": "English 'JERR-ard'; transcribed back as Gerrard",
+    "Bordeaux": "fr [bɔʁdo]; transcribed back as Bordeaux"
   }
 }
