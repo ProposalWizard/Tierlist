@@ -78,7 +78,9 @@
   "Atlético": "Atleteeko",
   "Marquinhos": "Markeenyos",
   "Kostoulas": "Kosstoolass",
-  "Viduka": "Vidooka"
+  "Viduka": "Vidooka",
+  "Calvert-Lewin": "Calvert Lewin",
+  "McNeil": "Macneel"
  },
  "_ipa": {
   "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -137,6 +139,8 @@
   "Guardiola": "ca [ɡwəɾðiˈɔlə] (Wikipedia)",
   "Van Basten": "nl [vɑm ˈbɑstə(n)] (Wikipedia)",
   "Van Dijk": "nl [vɑn ˈdɛik] (Wikipedia); English broadcast 'van DYKE'",
-  "De Bruyne": "nl [də ˈbrœynə] (Wikipedia)"
+  "De Bruyne": "nl [də ˈbrœynə] (Wikipedia)",
+  "Calvert-Lewin": "English, as said by Sky/BBC commentators; transcribed correctly through voice D (batch 8)",
+  "McNeil": "mak-NEEL (BBC); transcribed as McNeil through voice D (batch 8)"
  }
 }
