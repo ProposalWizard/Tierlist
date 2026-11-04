@@ -229,9 +229,9 @@
         "type": "gameclip",
         "parts": [
           [
-            "work/footage/ns-kane-france/kane-final-2022/high",
-            0,
-            999
+            "work/footage/ns-kane-france/kane-final-2022/tv",
+            5,
+            125
           ]
         ],
         "caption": "ALTERNATE WORLD",
@@ -245,7 +245,8 @@
           "as": 3,
           "scorer": "Kane",
           "assist": "Griezmann"
-        }
+        },
+        "goalAt": 2.03
       }
     },
     {
