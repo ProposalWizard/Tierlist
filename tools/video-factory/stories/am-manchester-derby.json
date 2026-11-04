@@ -201,8 +201,8 @@
    }
   },
   {
-   "text": "And Mainoo? Just four.",
-   "say": "And Maynew? Just four.",
+   "text": "And Mainoo? He had just four.",
+   "say": "And Maynew? He had just four.",
    "scene": {
     "type": "bars",
     "kicker": "At 21 years, 147 days",
@@ -245,8 +245,8 @@
    }
   },
   {
-   "text": "And when it mattered most against City, he delivered. The 2024 FA Cup final. Bruno Fernandes, no-look pass. Mainoo.",
-   "say": "And when it mattered most against City, he delivered. The twenty twenty-four FA Cup final. Brunoh Fernandez, no look pass. Maynew.",
+   "text": "And when it mattered most against City, he delivered. The 2024 FA Cup final. Bruno Fernandes' no-look pass, and Mainoo scores.",
+   "say": "And when it mattered most against City, he delivered. The twenty twenty-four FA Cup final. Brunoh Fernandez with a no look pass, and Maynew scores.",
    "scene": {
     "type": "gameclip",
     "parts": [

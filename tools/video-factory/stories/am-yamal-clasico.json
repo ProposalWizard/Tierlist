@@ -267,10 +267,23 @@
    "text": "Yamal had more than all three of them put together.",
    "say": "Yahmal had more than all three of them put together.",
    "scene": {
-    "type": "stamp",
-    "text": "120 v 98",
-    "sub": "Yamal v Mbappé, Messi and Ronaldo combined",
-    "color": "green"
+    "type": "bars",
+    "kicker": "By their 19th birthday",
+    "title": "Yamal v all three",
+    "items": [
+     {
+      "label": "Lamine Yamal",
+      "value": 120,
+      "person": "yamal",
+      "hl": true
+     },
+     {
+      "label": "Mbappé + Messi + Ronaldo",
+      "value": 98,
+      "club": "rma"
+     }
+    ],
+    "note": "Goals + assists, all competitions"
    }
   },
   {
