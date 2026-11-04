@@ -28,8 +28,8 @@
   "name": "PREM XI",
   "full": "PREMIER LEAGUE XI",
   "versus": [
-   "PREMIER",
-   "LEAGUE XI"
+   "PREM",
+   "XI"
   ],
   "nation": "eng",
   "versusInfo": "ENGLAND · FORM TO 2 NOV",
@@ -131,8 +131,8 @@
   "city": {
    "label": "SPAIN",
    "sub": "LALIGA",
-   "lat": 40.4168,
-   "lon": -3.7038
+   "lat": 41.3809,
+   "lon": 2.1228
   },
   "formation": "4-3-3",
   "kitLabel": "ALL-STAR KIT",
