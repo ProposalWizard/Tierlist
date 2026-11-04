@@ -222,16 +222,16 @@
     "parts": [
      [
       "/tmp/claude-0/foot/qpr/aguero-9320/tv",
-      30,
+      0,
       90
      ],
      [
       "/tmp/claude-0/foot/qpr/aguero-9320/high",
       90,
-      175
+      244
      ]
     ],
-    "goalAt": 2.433,
+    "goalAt": 3.433,
     "popup": {
      "home": "mci",
      "away": "qpr",

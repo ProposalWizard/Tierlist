@@ -327,16 +327,16 @@
     "parts": [
      [
       "/tmp/claude-0/foot/silva/kompany-header/tv",
-      20,
+      0,
       66
      ],
      [
       "/tmp/claude-0/foot/silva/kompany-header/high",
       27,
-      110
+      178
      ]
     ],
-    "goalAt": 1.833,
+    "goalAt": 2.5,
     "popup": {
      "home": "mci",
      "away": "mun",
@@ -361,16 +361,16 @@
     "parts": [
      [
       "/tmp/claude-0/foot/qpr/dzeko-header/tv",
-      20,
+      0,
       66
      ],
      [
       "/tmp/claude-0/foot/qpr/dzeko-header/high",
       27,
-      100
+      103
      ]
     ],
-    "goalAt": 1.867,
+    "goalAt": 2.533,
     "popup": {
      "home": "mci",
      "away": "qpr",
@@ -395,16 +395,16 @@
     "parts": [
      [
       "/tmp/claude-0/foot/qpr/aguero-9320/tv",
-      30,
+      0,
       90
      ],
      [
       "/tmp/claude-0/foot/qpr/aguero-9320/high",
       90,
-      175
+      244
      ]
     ],
-    "goalAt": 2.433,
+    "goalAt": 3.433,
     "popup": {
      "home": "mci",
      "away": "qpr",

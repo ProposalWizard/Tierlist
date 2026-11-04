@@ -394,12 +394,17 @@
     "type": "gameclip",
     "parts": [
      [
+      "/tmp/claude-0/foot/pep/kompany-leicester/tv",
+      0,
+      59
+     ],
+     [
       "/tmp/claude-0/foot/pep/kompany-leicester/high",
-      30,
-      160
+      59,
+      223
      ]
     ],
-    "goalAt": 1.733,
+    "goalAt": 2.733,
     "popup": {
      "home": "mci",
      "away": "lei",

@@ -265,16 +265,16 @@
     "parts": [
      [
       "/tmp/claude-0/foot/haaland/haaland-35/tv",
-      30,
+      0,
       90
      ],
      [
       "/tmp/claude-0/foot/haaland/haaland-35/high",
       90,
-      175
+      243
      ]
     ],
-    "goalAt": 2.4,
+    "goalAt": 3.4,
     "popup": {
      "home": "mci",
      "away": "whu",
@@ -405,21 +405,6 @@
    }
   },
   {
-   "text": "Take thirty-six goals out of City's team. Do they still finish five points clear of Arsenal?",
-   "scene": {
-    "type": "whatif",
-    "title": "The 2023 title race",
-    "real": {
-     "label": "City champions, 5 points clear",
-     "value": "89-84"
-    },
-    "alt": {
-     "label": "Arsenal's first title since 2004?",
-     "value": "?"
-    }
-   }
-  },
-  {
    "text": "And Madrid got Mbappé in the end. Two years later, on a free.",
    "say": "And Madrid got Embapay in the end. Two years later, on a free.",
    "scene": {
@@ -427,26 +412,6 @@
     "person": "mbapperma",
     "label": "Real Madrid · 2024",
     "mood": "happy"
-   }
-  },
-  {
-   "text": "In the real world, Haaland signed a new deal in January 2025. It runs to 2034.",
-   "say": "In the real world, Hohland signed a new deal in January, twenty twenty-five. It runs to twenty thirty-four.",
-   "scene": {
-    "type": "news",
-    "section": "Manchester City",
-    "headline": "Haaland signs City deal until 2034",
-    "standfirst": "The striker commits nine and a half more years to the club.",
-    "date": "January 2025",
-    "byline": "Knowitball recap",
-    "club": "mci",
-    "person": "haaland",
-    "mastColor": "#1c2c5b",
-    "nav": [
-     "Football",
-     "Premier League",
-     "Man City"
-    ]
    }
   },
   {

@@ -24,7 +24,7 @@
   "Iniesta": "Inyestah",
   "Agüero": "Ahgwairoh",
   "Aguero": "Ahgwairoh",
-  "Kompany": "Kompuhnee",
+  "Kompany": "Kompahnee",
   "Kylian Mbappé": "Keeleean Embapay",
   "Mbappé": "Embapay",
   "Mbappe": "Embapay",
@@ -78,7 +78,17 @@
   "Atlético": "Atleteeko",
   "Marquinhos": "Markeenyos",
   "Kostoulas": "Kosstoolass",
-  "Viduka": "Vidooka"
+  "Viduka": "Vidooka",
+  "Kylian": "Keeleean",
+  "Grealish": "Greelish",
+  "Fabiański": "Fabyanskee",
+  "Moyes": "Moyz",
+  "Maresca": "Mareska",
+  "Valencia": "Valensia",
+  "Etihad": "Ettihad",
+  "Leicester": "Lester",
+  "Mago": "Mahgo",
+  "David Villa": "David Veeya"
  },
  "_ipa": {
   "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -98,7 +108,7 @@
   "Modrić": "hr [mǒːdritɕ] (Wikipedia)",
   "Iniesta": "es [iˈnjesta] (Wikipedia)",
   "Agüero": "es [aˈɣweɾo]",
-  "Kompany": "fr [kɔ̃pani] (Wikipedia); English broadcast 'KOM-puh-nee'",
+  "Kompany": "nl/fr [kɔmˈpɑni] (Wikipedia); was Kompuhnee",
   "Mbappé": "fr [mbape]",
   "Vinícius": "pt-BR [viˈnisjus] (Wikipedia)",
   "Tchouaméni": "fr [tʃwameni] (Wikipedia)",
@@ -137,6 +147,16 @@
   "Guardiola": "ca [ɡwəɾðiˈɔlə] (Wikipedia)",
   "Van Basten": "nl [vɑm ˈbɑstə(n)] (Wikipedia)",
   "Van Dijk": "nl [vɑn ˈdɛik] (Wikipedia); English broadcast 'van DYKE'",
-  "De Bruyne": "nl [də ˈbrœynə] (Wikipedia)"
+  "De Bruyne": "nl [də ˈbrœynə] (Wikipedia)",
+  "Kylian": "fr [kiljan]; heard as 'Killian' in city-haaland-2022",
+  "Grealish": "English 'GREE-lish' (broadcast); heard as 'Grealish' in city-haaland-2022",
+  "Fabiański": "pl [faˈbjaj̃skʲi]; heard as 'Fabianski' in city-haaland-2022",
+  "Moyes": "English 'MOYZ' (broadcast)",
+  "Maresca": "it [maˈreska]",
+  "Valencia": "English 'va-LEN-see-a'",
+  "Etihad": "English 'ETTY-had' (broadcast)",
+  "Leicester": "English 'LES-ter'",
+  "Mago": "es [ˈmaɣo]",
+  "David Villa": "es [ˈbiʎa]; full name only, so Aston Villa is untouched"
  }
 }
