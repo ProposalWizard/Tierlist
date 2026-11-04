@@ -135,7 +135,7 @@
    }
   },
   {
-   "text": "No game ratings here. These are real top speeds, from the Premier League's own tracking, across the whole of last season.",
+   "text": "No game ratings. Real top speeds, from the Premier League's own tracking, all of last season.",
    "scene": {
     "type": "text",
     "heading": "How we ranked them",
@@ -144,7 +144,7 @@
   },
   {
    "text": "Ten, Erling Haaland, thirty-six point two. Nine, Anthony Gordon. Eight, his Newcastle team-mate William Osula.",
-   "say": "Ten, Erling Hohland, thirty-six point two. Nine, Anthony Gordon. Eight, his Newcastle team-mate, William Ossoola.",
+   "say": "Ten, Erling Hohland, thirty-six point two. Nine, Anthony Gordon. Eight, his Newcastle team-mate, William Osoola.",
    "scene": {
     "type": "list",
     "kicker": "Fastest in 2025/26",
@@ -176,7 +176,7 @@
   },
   {
    "text": "Seven, Pedro Neto. Six, Bryan Mbeumo. Five, Anthony Elanga, the third Newcastle man in the ten.",
-   "say": "Seven, Pedro Netto. Six, Bryan Emburrmo. Five, Anthony Ehlanga, the third Newcastle man in the ten.",
+   "say": "Seven, Pedro Netto. Six, Bryan Emburrmo. Five, Anthony Elanga, the third Newcastle man in the ten.",
    "scene": {
     "type": "list",
     "kicker": "Fastest in 2025/26",
@@ -301,7 +301,7 @@
    }
   },
   {
-   "text": "Thirty-seven point three, against Everton. More than half a kilometre an hour clear of everyone else.",
+   "text": "Thirty-seven point three, against Everton. Half a kilometre an hour clear.",
    "scene": {
     "type": "bars",
     "kicker": "Top speed, 2025/26",
@@ -349,36 +349,6 @@
       "label": "Osula",
       "value": 36.29,
       "club": "new"
-     }
-    ]
-   }
-  },
-  {
-   "text": "He was so quick, he also ran the second-fastest sprint of the whole season.",
-   "scene": {
-    "type": "list",
-    "kicker": "Every sprint, 2025/26",
-    "title": "Fastest runs, km/h",
-    "rows": [
-     {
-      "pos": 1,
-      "name": "Tchatchoua",
-      "value": "37.30",
-      "club": "wol",
-      "hl": true
-     },
-     {
-      "pos": 2,
-      "name": "Tchatchoua",
-      "value": "36.97",
-      "club": "wol",
-      "hl": true
-     },
-     {
-      "pos": 3,
-      "name": "Martinelli",
-      "value": "36.74",
-      "club": "ars"
      }
     ]
    }
@@ -434,7 +404,7 @@
   },
   {
    "text": "And the record still belongs to Micky van de Ven. Thirty-seven point three eight, against Brentford.",
-   "say": "And the record still belongs to Micky van duh Ven. Thirty-seven point three eight, against Brentford.",
+   "say": "And the record still belongs to Micky van de Ven. Thirty-seven point three eight, against Brentford.",
    "scene": {
     "type": "stats",
     "kicker": "The Premier League record",
