@@ -142,5 +142,13 @@
     "added": "2026-11-03T19:54:00Z",
     "title": "Progress 3 Nov: Mikey real competition history leaders and a video factory (88 shorts). No new patch note.",
     "prompt": "Daily progress update, 2 Nov 19:54 to 3 Nov 19:54 (UK). 1 pull request merged to main.\n\nMikey:\n- #830 History tabs show the top scorer, top assister and player of the season: your career’s seasons first, then the real history before them. Brain note FACT-DAT-008.\n- #830 A video factory (tools/video-factory/) that turns a storyboard into a 1080x1920 short with voiceover, narrator, captions and music; 88 storyboards included; MP4s now play on iPhone Safari. Marketing ideas library in docs/marketing/video-ideas.md.\n\nHarry and Leo: nothing merged to main in this window.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- No new patch note in this window. The latest is 0.137 (Harry: Glass UI, real football): https://claude.ai/artifact/XzJ588o9s1tsQWGd3kAcwR"
+  },
+  {
+    "id": "progress-2026-11-04",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-11-04T19:54:00Z",
+    "title": "Progress 4 Nov: Mikey game address /road-to-ballon-dor, achievements 136 to 67, season review and knockout trees. No new patch note.",
+    "prompt": "Daily progress update, 3 Nov 19:54 to 4 Nov 19:54 (UK). No pull requests merged; Mikey’s branch was merged straight into main (late on 3 Nov).\n\nMikey (now on main):\n- The game has its own address: knowitball.co.uk/road-to-ballon-dor (/star-dev forwards there).\n- Achievements cut from 136 to 67, with a gold trophy wall and a Nearly there list; the XP climb is the same.\n- Season review: one trophy list in a fixed order, tap any trophy for its table, scorers and assists; a knockout tree for the Champions and Europa League and the cups.\n- Top scorers count the knockout games; realistic simulated shoot-outs.\n- Playtest fixes: one gold achievement pop-up, play-off winner in green, the Lower League Trophy in the chooser, ‘1 game’ not ‘1 games’, short club names on shield and winner cards.\n- Saves are lighter: the Hall of Fame copy leaves out last season’s full record (145 KB to 78 KB).\n- Marketing: video ideas list and voice notes (Brain FACT-KIB-009, FACT-KIB-010).\n\nHarry and Leo: nothing merged to main in this window.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- No new patch note in this window. The latest is 0.137 (Harry: Glass UI, real football): https://claude.ai/artifact/XzJ588o9s1tsQWGd3kAcwR"
   }
 ]
