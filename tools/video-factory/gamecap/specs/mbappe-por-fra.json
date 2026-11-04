@@ -1,0 +1,111 @@
+{
+  "_about": "IMAGINED: Mbappé in a Portugal shirt, set up by Ronaldo, scores in the Euro 2024 quarter-final against France in Hamburg (really 0-0, France won on pens). Not a real goal.",
+  "teams": {
+    "home": {
+      "name": "Portugal",
+      "kit": {
+        "shirt": "#C8102E",
+        "shorts": "#046A38",
+        "socks": "#C8102E"
+      },
+      "keeperKit": {
+        "shirt": "#E8E04A",
+        "shorts": "#1A1A1A",
+        "socks": "#E8E04A"
+      },
+      "popupTrim": "#046A38"
+    },
+    "away": {
+      "name": "France",
+      "kit": {
+        "shirt": "#1D3C8F",
+        "shorts": "#FFFFFF",
+        "socks": "#C8102E"
+      },
+      "keeperKit": {
+        "shirt": "#E8E04A",
+        "shorts": "#1A1A1A",
+        "socks": "#E8E04A"
+      },
+      "popupTrim": "#FFFFFF"
+    }
+  },
+  "people": {
+    "mbappe": {
+      "name": "Kylian Mbappé",
+      "skin": "#6e4630",
+      "hair": "#1a120e"
+    },
+    "ronaldo": {
+      "name": "Cristiano Ronaldo",
+      "skin": "#d9a57e",
+      "hair": "#1f1610"
+    },
+    "bruno": {
+      "name": "Bruno Fernandes",
+      "skin": "#e0b08a",
+      "hair": "#2a1d15"
+    },
+    "saliba": {
+      "name": "William Saliba",
+      "skin": "#4a2e1e",
+      "hair": "#0d0a09"
+    },
+    "upamecano": {
+      "name": "Dayot Upamecano",
+      "skin": "#3e2618",
+      "hair": "#0d0a09"
+    },
+    "kante": {
+      "name": "N'Golo Kanté",
+      "skin": "#3e2618",
+      "hair": "#0d0a09"
+    },
+    "maignan": {
+      "name": "Mike Maignan",
+      "skin": "#4a2e1e",
+      "hair": "#0d0a09"
+    }
+  },
+  "clips": [
+    {
+      "id": "mbappe-por",
+      "kind": "one_on_one",
+      "attacking": "home",
+      "scorer": "mbappe",
+      "assister": "ronaldo",
+      "defenders": [
+        "saliba",
+        "upamecano",
+        "kante"
+      ],
+      "keeper": "maignan",
+      "teammates": [
+        "bruno"
+      ],
+      "minute": 88,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "scoreAfter": [
+        1,
+        0
+      ],
+      "night": true,
+      "celebration": "statue",
+      "cameras": [
+        "tv",
+        "high",
+        "tight"
+      ],
+      "recreate": {
+        "delivery": "through",
+        "goalSide": "far",
+        "finish": "ground"
+      },
+      "seed": "mbappe-por-a",
+      "popup": false
+    }
+  ]
+}

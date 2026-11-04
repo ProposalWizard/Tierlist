@@ -2,38 +2,342 @@
   "id": "ns-mbappe-portugal",
   "series": "What if the countries were swapped?",
   "title": "What if Mbappé was Portuguese?",
+  "v2": true,
   "sources": [
-    "https://en.wikipedia.org/wiki/Kylian_Mbapp%C3%A9",
-    "https://www.sortiraparis.com/en/what-to-do-in-paris/sport-wellness/articles/349129-world-cup-2026-all-results-and-the-final-score",
-    "https://en.wikipedia.org/wiki/France_national_football_team",
-    "https://www.11v11.com/teams/france/tab/honours/",
-    "https://www.cbssports.com/soccer/news/how-nations-league-triumph-can-get-france-back-on-track-to-defend-world-cup-title-in-qatar",
-    "https://en.wikipedia.org/wiki/Portugal_national_football_team",
-    "https://www.uefa.com/uefanationsleague/history/"
+    "https://www.espn.com/soccer/story/_/id/49397919/kylian-mbappe-wins-golden-boot-2026-world-cup-lionel-messi-goalless-final",
+    "https://gulfnews.com/amp/story/sport%2Ffootball%2Fworld-cup%2Ffifa-world-cup-2026-mbappe-overtakes-messi-to-become-world-cups-all-time-leading-goalscorer-1.500612874",
+    "https://www.wionews.com/sports/bukayo-saka-s-hat-trick-helps-england-beat-france-6-4-in-fifa-world-cup-2026-third-place-playoff-1784415865980",
+    "https://gulfnews.com/amp/story/sport%2Ffootball%2Fworld-cup%2Fspain-knock-out-france-but-mbappe-remains-in-golden-boot-race-with-messi-where-it-stands-1.500608383",
+    "https://global.espn.com/football/story/_/id/37558309/kylian-mbappe-becomes-youngest-pele-score-world-cup-final",
+    "https://qz.com/1328497/watch-kylian-mbappe-become-the-first-teenager-since-pele-to-score-in-a-world-cup-final",
+    "https://en.wikipedia.org/wiki/2021_UEFA_Nations_League_final",
+    "https://www.uefa.com/uefanationsleague/history/",
+    "https://en.wikipedia.org/wiki/2022_FIFA_World_Cup_final",
+    "https://en.wikipedia.org/wiki/UEFA_Euro_2024_knockout_stage",
+    "https://en.wikipedia.org/wiki/Portugal_national_football_team"
   ],
-  "checked": "Mbappé first called up March 2017; France won the 2018 World Cup and 2021 Nations League, lost the 2022 final (Wikipedia + 11v11 + CBS). 2026 World Cup: Mbappé Golden Boot with ten goals, France lost the semi to Spain (Wikipedia + Sortiraparis). Portugal won the Nations League 2019 and 2025 (UEFA + Wikipedia); France beat Portugal on penalties in the Euro 2024 quarter-final (Portugal Wikipedia; widely reported). Alternate world clearly imagined.",
+  "checked": "2018 final: Mbappé, 19, scored France's fourth (65', Lucas Hernández's pass, 25 yards, right foot) in a 4-2 win over Croatia; first teenager since Pelé to score in a final (ESPN, Quartz). 2021 Nations League final: France 2-1 Spain, Mbappé the winner (Wikipedia, UEFA). 2022 final: 3-3, Mbappé hat-trick, Argentina won on pens (Wikipedia, widely reported). 2026: Golden Boot with 10, first two-time winner, now the World Cup's all-time top scorer; France lost the semi 2-0 to Spain (ESPN, Gulf News, WION). Portugal since Mbappé's debut (March 2017): Nations League 2019 and 2025; Euro 2024 QF 0-0, France won 5-3 on pens in Hamburg; Portugal have never reached a World Cup final (Wikipedia, UEFA). The Portugal-Mbappé goal is clearly imagined. Kits in the game footage are plain.",
   "clubs": {
-    "fra": { "name": "France", "short": "FRA", "c1": "#21304d", "c2": "#ffffff", "pattern": "plain" },
-    "por": { "name": "Portugal", "short": "POR", "c1": "#c8102e", "c2": "#046a38", "pattern": "plain" },
-    "cro": { "name": "Croatia", "short": "CRO", "c1": "#ffffff", "c2": "#e30a17", "pattern": "hoops" }
+    "fra": {
+      "name": "France",
+      "short": "FRA",
+      "c1": "#1d3c8f",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "por": {
+      "name": "Portugal",
+      "short": "POR",
+      "c1": "#c8102e",
+      "c2": "#046a38",
+      "pattern": "plain"
+    },
+    "cro": {
+      "name": "Croatia",
+      "short": "CRO",
+      "c1": "#ffffff",
+      "c2": "#d8202b",
+      "pattern": "plain"
+    },
+    "esp": {
+      "name": "Spain",
+      "short": "ESP",
+      "c1": "#c60b1e",
+      "c2": "#ffc400",
+      "pattern": "plain"
+    },
+    "arg": {
+      "name": "Argentina",
+      "short": "ARG",
+      "c1": "#75aadb",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    }
   },
   "people": {
-    "mbappe": { "name": "Kylian Mbappé", "skin": "brown", "hair": ["buzz", "#1b1410"], "beard": "none", "kit": "fra" },
-    "mbappepor": { "name": "Kylian Mbappé", "skin": "brown", "hair": ["buzz", "#1b1410"], "beard": "none", "kit": "por" }
+    "mbappe": {
+      "name": "Kylian Mbappé",
+      "skin": "brown",
+      "hair": [
+        "buzz",
+        "#1a1a1a"
+      ],
+      "beard": "none",
+      "kit": "fra"
+    },
+    "mbappeyoung": {
+      "name": "Kylian Mbappé",
+      "skin": "brown",
+      "hair": [
+        "buzz",
+        "#1a1a1a"
+      ],
+      "beard": "none",
+      "kit": "fra"
+    },
+    "mbappepor": {
+      "name": "Kylian Mbappé",
+      "skin": "brown",
+      "hair": [
+        "buzz",
+        "#1a1a1a"
+      ],
+      "beard": "none",
+      "kit": "por"
+    }
   },
   "lines": [
-    { "text": "What if Kylian Mbappé had been born in Portugal? Would he have more trophies, or fewer?", "scene": { "type": "title", "heading": "KYLIAN MBAPPÉ", "sub": "France · since 2017", "pill": "WHAT IF HE WAS PORTUGUESE?", "person": "mbappe" } },
-    { "text": "Real world first. Mbappé broke into the France team in twenty seventeen.", "scene": { "type": "person", "person": "mbappe", "label": "First call-up: March 2017", "mood": "happy" } },
-    { "text": "A year later, aged nineteen, he won the World Cup. France beat Croatia four-two.", "scene": { "type": "score", "home": "fra", "away": "cro", "hs": 4, "as": 2, "date": "15 July 2018", "comp": "World Cup final" } },
-    { "text": "Then the Nations League in twenty twenty-one.", "scene": { "type": "trophies", "items": [ { "kind": "worldcup", "label": "World Cup 2018" }, { "kind": "cup", "label": "Nations League 2021" } ], "person": "mbappe" } },
-    { "text": "And this summer, the Golden Boot again, with ten goals. But no trophy.", "scene": { "type": "stats", "title": "Mbappé at the 2026 World Cup", "items": [ { "n": "10", "l": "goals" }, { "n": "1", "l": "Golden Boot" }, { "n": "0", "l": "trophies" } ], "person": "mbappe" } },
-    { "text": "Now look at Portugal in exactly the same years.", "scene": { "type": "timeline", "items": [ { "year": "2019", "label": "Nations League: WON" }, { "year": "2022", "label": "World Cup quarter-final" }, { "year": "2024", "label": "Euro quarter-final" }, { "year": "2025", "label": "Nations League: WON" } ] } },
-    { "text": "Two Nations League titles. Same number of trophies as France.", "scene": { "type": "list", "title": "Senior trophies since 2017", "rows": [ { "name": "France", "value": "2", "club": "fra" }, { "name": "Portugal", "value": "2", "club": "por" } ] } },
-    { "text": "But no World Cup. And at Euro twenty twenty-four, it was France who knocked Portugal out, on penalties.", "scene": { "type": "text", "heading": "EURO 2024", "body": "Quarter-final: France 0, Portugal 0. France win 5-3 on penalties." } },
-    { "text": "So in this alternate world, Mbappé lines up next to Ronaldo.", "scene": { "type": "person", "person": "mbappepor", "label": "ALTERNATE WORLD", "mood": "happy" } },
-    { "text": "On paper, it's two trophies either way. But he swaps a World Cup for a second Nations League.", "scene": { "type": "whatif", "title": "Mbappé's senior trophies", "real": { "label": "France (real)", "value": "2, incl. World Cup" }, "alt": { "label": "Portugal (imagined)", "value": "2, no World Cup" } } },
-    { "text": "Unless, in this imagined world, his goals carry Portugal much further in Russia and Qatar.", "scene": { "type": "quote", "person": "mbappepor", "text": "Give me the ball, Cristiano." } },
-    { "text": "Better deal or worse deal? Tell me in the comments.", "scene": { "type": "versus", "title": "Same player, different passport", "left": { "person": "mbappe", "label": "France", "value": "2" }, "right": { "person": "mbappepor", "label": "Portugal", "value": "2" } } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    {
+      "text": "Kylian Mbappé has scored more World Cup goals than anyone, ever. What if he'd done it for Portugal?",
+      "say": "Keelyan Embapay has scored more World Cup goals than anyone, ever. What if he'd done it for Portugal?",
+      "scene": {
+        "type": "title",
+        "heading": "KYLIAN MBAPPÉ",
+        "sub": "France · since 2017",
+        "pill": "WHAT IF HE WAS PORTUGUESE?",
+        "person": "mbappe"
+      }
+    },
+    {
+      "text": "Real world first. Moscow, 2018. He's nineteen, and he scores in a World Cup final.",
+      "say": "Real world first. Moscow, twenty eighteen. He's nineteen, and he scores in a World Cup final.",
+      "scene": {
+        "type": "gameclip",
+        "popup": {
+          "home": "fra",
+          "away": "cro",
+          "hs0": 3,
+          "as0": 1,
+          "hs": 4,
+          "as": 1,
+          "scorer": "Mbappé",
+          "assist": "Hernández"
+        },
+        "caption": "AGED 19",
+        "parts": [
+          [
+            "work/gamecap/mbappe-fra-cro/mbappe-2018/high",
+            15,
+            135
+          ]
+        ],
+        "goalAt": 2.167
+      }
+    },
+    {
+      "text": "The first teenager to do that since Pelé. France are world champions.",
+      "say": "The first teenager to do that since Pelay. France are world champions.",
+      "scene": {
+        "type": "trophies",
+        "kicker": "Kylian Mbappé · 2018",
+        "title": "World champion at 19",
+        "items": [
+          {
+            "kind": "worldcup",
+            "label": "World Cup 2018"
+          },
+          {
+            "kind": "award",
+            "label": "Best Young Player"
+          }
+        ],
+        "person": "mbappeyoung"
+      }
+    },
+    {
+      "text": "In 2021 he scores the winner in the Nations League final, against Spain.",
+      "say": "In twenty twenty-one, he scores the winner in the Nations League final, against Spain.",
+      "scene": {
+        "type": "score",
+        "home": "esp",
+        "away": "fra",
+        "hs": 1,
+        "as": 2,
+        "date": "10 October 2021 · San Siro",
+        "comp": "Nations League final",
+        "note": "Mbappé scores the winner"
+      }
+    },
+    {
+      "text": "Then Qatar. A hat-trick in the World Cup final, and he still loses, on penalties, to Messi's Argentina.",
+      "say": "Then Qatar. A hat-trick in the World Cup final, and he still loses, on penalties, to Messy's Argentina.",
+      "scene": {
+        "type": "score",
+        "home": "arg",
+        "away": "fra",
+        "hs": 3,
+        "as": 3,
+        "date": "18 December 2022 · Lusail",
+        "comp": "World Cup final",
+        "ft": "AFTER EXTRA TIME",
+        "note": "Argentina win 4-2 on penalties"
+      }
+    },
+    {
+      "text": "This summer: ten goals, a second Golden Boot, and the World Cup scoring record. But Spain knock France out in the semi.",
+      "scene": {
+        "type": "stats",
+        "kicker": "World Cup 2026",
+        "title": "Mbappé's summer",
+        "items": [
+          {
+            "n": "10",
+            "l": "goals"
+          },
+          {
+            "n": "2nd",
+            "l": "Golden Boot"
+          },
+          {
+            "n": "No.1",
+            "l": "World Cup scorer ever"
+          }
+        ],
+        "person": "mbappe"
+      }
+    },
+    {
+      "text": "Now Portugal, in the same years. Two Nations League titles, in 2019 and 2025.",
+      "say": "Now Portugal, in the same years. Two Nations League titles, in twenty nineteen and twenty twenty-five.",
+      "scene": {
+        "type": "trophies",
+        "kicker": "Portugal since 2017",
+        "title": "Two trophies",
+        "items": [
+          {
+            "kind": "cup",
+            "label": "Nations League 2019"
+          },
+          {
+            "kind": "cup",
+            "label": "Nations League 2025"
+          }
+        ]
+      }
+    },
+    {
+      "text": "And at Euro 2024, it was Mbappé's France who knocked Portugal out, on penalties.",
+      "say": "And at Euro twenty twenty-four, it was Embapay's France who knocked Portugal out, on penalties.",
+      "scene": {
+        "type": "score",
+        "home": "por",
+        "away": "fra",
+        "hs": 0,
+        "as": 0,
+        "date": "5 July 2024 · Hamburg",
+        "comp": "Euro 2024 quarter-final",
+        "ft": "AFTER EXTRA TIME",
+        "note": "France win 5-3 on penalties"
+      }
+    },
+    {
+      "text": "So in this alternate world, Mbappé is in red, with Cristiano Ronaldo beside him.",
+      "say": "So in this alternate world, Embapay is in red, with Kristeeahno Ronaldo beside him.",
+      "scene": {
+        "type": "person",
+        "person": "mbappepor",
+        "label": "ALTERNATE WORLD",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "That night in Hamburg, it's nil-nil. In this imagined world, he gets one chance, and he takes it.",
+      "scene": {
+        "type": "gameclip",
+        "popup": {
+          "home": "por",
+          "away": "fra",
+          "hs0": 0,
+          "as0": 0,
+          "hs": 1,
+          "as": 0,
+          "scorer": "Mbappé",
+          "assist": "Ronaldo"
+        },
+        "caption": "ALTERNATE WORLD",
+        "parts": [
+          [
+            "work/gamecap/mbappe-por-fra/mbappe-por/high",
+            40,
+            170
+          ]
+        ],
+        "goalAt": 2.133
+      }
+    },
+    {
+      "text": "On paper it's two trophies either way. But he'd swap a World Cup for a second Nations League.",
+      "scene": {
+        "type": "whatif",
+        "title": "Mbappé's trophies",
+        "real": {
+          "label": "France: World Cup + Nations League",
+          "value": "2"
+        },
+        "alt": {
+          "label": "Portugal: two Nations Leagues",
+          "value": "2"
+        }
+      }
+    },
+    {
+      "text": "France reached two World Cup finals with him. Portugal have never reached one.",
+      "scene": {
+        "type": "compare",
+        "title": "Since Mbappé's debut",
+        "left": {
+          "club": "fra",
+          "name": "France",
+          "sub": "real world"
+        },
+        "right": {
+          "club": "por",
+          "name": "Portugal",
+          "sub": "same years"
+        },
+        "rows": [
+          {
+            "label": "World Cups",
+            "l": 1,
+            "r": 0
+          },
+          {
+            "label": "World Cup finals",
+            "l": 2,
+            "r": 0
+          },
+          {
+            "label": "Nations Leagues",
+            "l": 1,
+            "r": 2
+          }
+        ]
+      }
+    },
+    {
+      "text": "Better deal or worse deal? Tell me in the comments.",
+      "scene": {
+        "type": "versus",
+        "title": "Same striker, different shirt",
+        "left": {
+          "person": "mbappe",
+          "label": "France",
+          "value": "2",
+          "sub": "trophies"
+        },
+        "right": {
+          "person": "mbappepor",
+          "label": "Portugal",
+          "value": "2",
+          "sub": "trophies"
+        }
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or.",
+      "scene": {
+        "type": "cta"
+      }
+    }
   ]
 }
