@@ -333,7 +333,12 @@
      [
       "/tmp/claude-0/foot/silva/kompany-header/high",
       27,
-      178
+      46
+     ],
+     [
+      "/tmp/claude-0/foot/silva/kompany-header/tight",
+      19,
+      151
      ]
     ],
     "goalAt": 2.5,
@@ -388,23 +393,28 @@
    }
   },
   {
-   "text": "Two minutes later, Agüero won the league.",
-   "say": "Two minutes later, Ahgwairoh won the league.",
+   "text": "Two minutes later, Agüero. Ninety-three minutes, twenty seconds. City are champions.",
+   "say": "Two minutes later, Ahgwairoh. Ninety-three minutes, twenty seconds. City are champions.",
    "scene": {
     "type": "gameclip",
     "parts": [
      [
       "/tmp/claude-0/foot/qpr/aguero-9320/tv",
-      0,
+      30,
       90
      ],
      [
       "/tmp/claude-0/foot/qpr/aguero-9320/high",
       90,
-      244
+      113
+     ],
+     [
+      "/tmp/claude-0/foot/qpr/aguero-9320/tight",
+      19,
+      150
      ]
     ],
-    "goalAt": 3.433,
+    "goalAt": 2.433,
     "popup": {
      "home": "mci",
      "away": "qpr",
@@ -417,7 +427,7 @@
      "scorer": "Agüero",
      "assist": "Balotelli"
     },
-    "caption": "93:20",
+    "caption": "CHAMPIONS",
     "captionColor": "#ffd23f"
    }
   },

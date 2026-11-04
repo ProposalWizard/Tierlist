@@ -271,7 +271,12 @@
      [
       "/tmp/claude-0/foot/haaland/haaland-35/high",
       90,
-      243
+      112
+     ],
+     [
+      "/tmp/claude-0/foot/haaland/haaland-35/tight",
+      19,
+      150
      ]
     ],
     "goalAt": 3.4,
