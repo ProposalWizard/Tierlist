@@ -128,16 +128,46 @@
       ],
       "beard": "none",
       "kit": "rma"
+    },
+    "puyolesp": {
+      "name": "Carles Puyol",
+      "skin": "light",
+      "hair": [
+        "bigcurl",
+        "#3a2618"
+      ],
+      "beard": "none",
+      "kit": "esp"
+    },
+    "piqueesp": {
+      "name": "Gerard Piqué",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#3a2618"
+      ],
+      "beard": "none",
+      "kit": "esp"
+    },
+    "ramosesp": {
+      "name": "Sergio Ramos",
+      "skin": "tan",
+      "hair": [
+        "messy",
+        "#2a1d15"
+      ],
+      "beard": "none",
+      "kit": "esp"
     }
   },
   "lines": [
     {
-      "text": "When Barcelona host Manchester City on the eighth of December, Pau Cubarsí will be nineteen years and three hundred and twenty days old. And already a world champion.",
-      "say": "When Barselona host Manchester City on the eighth of December, Pow Koobarsee will be nineteen years, and three hundred and twenty days old. And already a world champion.",
+      "text": "When Barcelona host Manchester City on the eighth of December, Pau Cubarsí will be nineteen years and three hundred and twenty days old.",
+      "say": "When Barselona host Manchester City on the eighth of December, Pow Koobarsee will be nineteen years, and three hundred and twenty days old.",
       "scene": {
         "type": "title",
         "heading": "PAU CUBARSÍ",
-        "sub": "19 years, 320 days old",
+        "sub": "19 years, 320 days",
         "pill": "AGE-MATCH",
         "person": "cubarsi",
         "club": "fcb"
@@ -183,8 +213,8 @@
       }
     },
     {
-      "text": "FIFA named him the best young player of the tournament. The first defender to win it since nineteen eighty-two.",
-      "say": "FIFA named him the best young player of the tournament. The first defender to win it, since nineteen eighty two.",
+      "text": "FIFA named him the best young player of the tournament. The first defender since nineteen eighty-two.",
+      "say": "FIFA named him the best young player of the tournament. The first defender since nineteen eighty two.",
       "scene": {
         "type": "news",
         "section": "World Cup",
@@ -240,8 +270,8 @@
       }
     },
     {
-      "text": "Now Spain's legendary centre-backs, at exactly the same age. Carles Puyol, February ninety-eight.",
-      "say": "Now Spain's legendary centre backs, at exactly the same age. Karlus Pooyol, February, ninety eight.",
+      "text": "Now Spain's great centre-backs at the same age. Carles Puyol, February ninety-eight.",
+      "say": "Now, Spain's great centre backs, at the same age. Karlus Pooyol. February, ninety eight.",
       "scene": {
         "type": "versus",
         "title": "Same age: 19 years, 320 days",
@@ -269,8 +299,8 @@
       }
     },
     {
-      "text": "Gerard Piqué, December two thousand and six. On loan at Zaragoza, from Manchester United.",
-      "say": "Zherar Peekay, December, two thousand and six. On loan at Tharagotha, from Manchester United.",
+      "text": "Gerard Piqué, December two thousand and six: on loan at Zaragoza.",
+      "say": "Zherar Peekay. December, two thousand and six. On loan at Tharagotha.",
       "scene": {
         "type": "person",
         "person": "pique",
@@ -279,8 +309,8 @@
       }
     },
     {
-      "text": "Sergio Ramos, February two thousand and six. Just moved from Sevilla to Real Madrid. Still no trophies.",
-      "say": "Serhyo Ramoss, February, two thousand and six. Just moved from Seveeya, to Real Madrid. Still no trophies.",
+      "text": "Sergio Ramos, February two thousand and six: first season at Real Madrid, no trophies yet.",
+      "say": "Serhyo Ramoss. February, two thousand and six. First season at Real Madrid, no trophies yet.",
       "scene": {
         "type": "person",
         "person": "ramos",
@@ -317,7 +347,7 @@
       }
     },
     {
-      "text": "All four became world champions. But look at the ages.",
+      "text": "All four became world champions. Cubarsí did it thirteen years younger than Puyol.",
       "scene": {
         "type": "bars",
         "kicker": "Age when they won the World Cup",
@@ -332,33 +362,23 @@
           {
             "label": "Gerard Piqué · 2010",
             "value": 23,
-            "person": "pique"
+            "person": "piqueesp"
           },
           {
             "label": "Sergio Ramos · 2010",
             "value": 24,
-            "person": "ramos"
+            "person": "ramosesp"
           },
           {
             "label": "Carles Puyol · 2010",
             "value": 32,
-            "person": "puyol"
+            "person": "puyolesp"
           }
         ],
-        "unit": " yrs",
+        "unit": "yrs",
         "max": 35
-      }
-    },
-    {
-      "text": "Cubarsí got there four years before Piqué, and thirteen years before Puyol.",
-      "say": "Koobarsee got there four years before Peekay, and thirteen years before Pooyol.",
-      "scene": {
-        "type": "stamp",
-        "text": "13 YEARS EARLY",
-        "sub": "Cubarsí v Puyol · world champion",
-        "person": "cubarsiesp",
-        "color": "green"
-      }
+      },
+      "say": "All four became world champions. Koobarsee did it thirteen years younger than Pooyol."
     },
     {
       "text": "So where does Cubarsí end up? Better than all three? Tell me in the comments.",
