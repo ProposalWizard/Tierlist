@@ -112,16 +112,6 @@
    "beardCol": "#6b4a2e",
    "kit": "bay"
   },
-  "saka_eng": {
-   "name": "Bukayo Saka",
-   "skin": "dark",
-   "hair": [
-    "crop",
-    "#111111"
-   ],
-   "beard": "none",
-   "kit": "eng"
-  },
   "rice": {
    "name": "Declan Rice",
    "skin": "light",
@@ -317,17 +307,8 @@
    }
   },
   {
-   "text": "Number two. Bukayo Saka. And this is why.",
-   "say": "Number two. Bookaiyo Sahka. And this is why.",
-   "scene": {
-    "type": "person",
-    "person": "saka_eng",
-    "label": "Number 2",
-    "mood": "happy"
-   }
-  },
-  {
-   "text": "The third-place play-off against France. Four-nil up at half-time, six-four at the end.",
+   "text": "Number two, Bukayo Saka. Third place against France: four-nil up at half-time, six-four at the end.",
+   "say": "Number two, Bookaiyo Sahka. Third place against France: four-nil up at half-time, six-four at the end.",
    "scene": {
     "type": "score",
     "home": "eng",
@@ -383,8 +364,8 @@
    }
   },
   {
-   "text": "Seventy-three goals for club and country last season, and the Gerd Müller Trophy for the world's best striker.",
-   "say": "Seventy-three goals for club and country last season, and the Gerd Mewler Trophy, for the world's best striker.",
+   "text": "Seventy-three goals for club and country last season, and the Gerd Müller Trophy.",
+   "say": "Seventy-three goals for club and country last season, and the Gerd Mewler Trophy.",
    "scene": {
     "type": "stats",
     "kicker": "Harry Kane · 2025/26",
@@ -403,8 +384,8 @@
    }
   },
   {
-   "text": "Then the Ballon d'Or itself, twenty-eight points ahead of Mbappé. Only the fifth Englishman ever to win it.",
-   "say": "Then the Balon Dor itself, twenty-eight points ahead of Embapay. Only the fifth Englishman ever to win it.",
+   "text": "Then the Ballon d'Or, twenty-eight points ahead of Mbappé. The fifth Englishman ever.",
+   "say": "Then the Balon Dor, twenty-eight points ahead of Embapay. The fifth Englishman ever.",
    "scene": {
     "type": "podium",
     "year": "2026",
