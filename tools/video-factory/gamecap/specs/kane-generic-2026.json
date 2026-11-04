@@ -1,0 +1,31 @@
+{
+  "_about": "A generic Harry Kane finish in Bayern Munich's red home kit, for 'Three rules to the best striker in the world'. Not a real goal: no pop-up, neutral opponents in white, the video never says which match it is.",
+  "teams": {
+    "home": { "name": "Bayern Munich", "short": "Bayern", "kit": { "shirt": "#DC052D", "shorts": "#DC052D", "socks": "#DC052D" }, "keeperKit": { "shirt": "#1F1F1F", "shorts": "#1F1F1F", "socks": "#1F1F1F" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Opponents", "kit": { "shirt": "#F2F2F2", "shorts": "#1B1B1B", "socks": "#F2F2F2" }, "keeperKit": { "shirt": "#E8C200", "shorts": "#1B1B1B", "socks": "#E8C200" }, "popupTrim": "#1B1B1B" }
+  },
+  "people": {
+    "kane":  { "name": "Harry Kane", "skin": "#efc3a0", "hair": "#6b4a2e", "popupName": "Kane" },
+    "olise": { "name": "Michael Olise", "skin": "#5e3a24", "hair": "#0d0a09" },
+    "d1": { "name": "Defender One", "skin": "#e0b08a", "hair": "#1d1512" },
+    "d2": { "name": "Defender Two", "skin": "#7a4e33", "hair": "#0d0a09" },
+    "d3": { "name": "Defender Three", "skin": "#f0c3a0", "hair": "#c9a27e" },
+    "gk": { "name": "Keeper", "skin": "#eac09c", "hair": "#2a1d15" }
+  },
+  "popupPosition": "top",
+  "clips": [{
+    "id": "kane-finish",
+    "kind": "long_range",
+    "attacking": "home",
+    "scorer": "kane", "assister": "olise",
+    "defenders": ["d1", "d2", "d3"],
+    "keeper": "gk",
+    "minute": 60,
+    "night": true,
+    "celebration": "fist_pump",
+    "cameras": ["tv", "high", "tight", "fan"],
+    "recreate": { "outcome": "goal" },
+    "popup": false,
+    "seed": "kane-generic-a"
+  }]
+}

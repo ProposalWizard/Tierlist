@@ -1,0 +1,39 @@
+{
+  "_about": "N'Golo Kante's goal, Chelsea 4-0 Manchester United, Stamford Bridge, 23 October 2016, 70th minute: he ran onto Pedro's flick, went past United's defenders and rolled a low shot into the corner past De Gea (Sports Mole as-it-happened, premierleague.com report). gamecap cannot film a dribble past several men, so this is the through ball and the low finish. Kits: Chelsea home blue/blue/white; United's kit that day not found, home red/white/black assumed (no clash). Keeper kits assumed.",
+  "teams": {
+    "home": { "name": "Chelsea", "kit": { "shirt": "#034694", "shorts": "#034694", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#1F1F1F", "shorts": "#1F1F1F", "socks": "#1F1F1F" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Manchester United", "short": "Man United", "kit": { "shirt": "#DA020E", "shorts": "#FFFFFF", "socks": "#111111" }, "keeperKit": { "shirt": "#2E8B57", "shorts": "#1B1B1B", "socks": "#2E8B57" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "kante":    { "name": "N'Golo Kante", "skin": "#3a2416", "hair": "#0d0a09", "popupName": "Kanté" },
+    "pedro":    { "name": "Pedro", "skin": "#e2b48e", "hair": "#1d1512" },
+    "hazard":   { "name": "Eden Hazard", "skin": "#eac09c", "hair": "#2a1d15" },
+    "smalling": { "name": "Chris Smalling", "skin": "#7a4e33", "hair": "#0d0a09" },
+    "bailly":   { "name": "Eric Bailly", "skin": "#3e2618", "hair": "#0d0a09" },
+    "blind":    { "name": "Daley Blind", "skin": "#f0c3a0", "hair": "#c9a27e" },
+    "herrera":  { "name": "Ander Herrera", "skin": "#e8b994", "hair": "#2a1d15" },
+    "degea":    { "name": "David de Gea", "skin": "#eac09c", "hair": "#2a1d15" }
+  },
+  "popupPosition": "top",
+  "clips": [{
+    "id": "kante-united",
+    "kind": "one_on_one",
+    "attacking": "home",
+    "scorer": "kante", "assister": "pedro",
+    "defenders": ["smalling", "bailly", "blind", "herrera"],
+    "keeper": "degea",
+    "teammates": ["hazard"],
+    "minute": 70, "minuteLabel": "70",
+    "scoreBefore": [3, 0], "scoreAfter": [4, 0],
+    "night": false,
+    "celebration": "fist_pump",
+    "cameras": ["tv", "high", "tight", "fan"],
+    "recreate": {
+      "delivery": "through",
+      "passerStart": [3, 28], "passFrom": [2, 25],
+      "scorerStart": [-3, 32], "scorerSpot": [-3, 12],
+      "finish": "ground", "height": "low", "outcome": "goal"
+    },
+    "seed": "kante-2016-a"
+  }]
+}

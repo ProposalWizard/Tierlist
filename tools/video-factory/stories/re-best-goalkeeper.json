@@ -2,22 +2,95 @@
   "id": "re-best-goalkeeper",
   "series": "Three rules to the top",
   "title": "Three rules to the best goalkeeper in the world",
+  "v2": true,
   "sources": [
     "https://www.si.com/soccer/yashin-trophy-list-winners-most-wins-all-time",
     "https://www.topendsports.com/sport/soccer/awards/yashin-trophy.htm",
     "https://www.moroccoworldnews.com/2026/10/343937/unai-simon-wins-2026-yashin-trophy-moroccos-bounou-finishes-eighth/",
-    "https://www.beinsports.com/en-us/soccer/articles/live-ballon-d-or-2026-winners-and-all-awards-2026-10-26",
-    "https://www.foxsports.com/stories/soccer/spain-goalkeeper-unai-simon-wins-golden-glove-after-historic-world-cup",
+    "https://foot-africa.com/en/news/ballon-dor-2026-unai-simon-named-best-goalkeeper-of-the-year-1400009/",
+    "https://foot-africa.com/en/news/premier-league-david-raya-wins-the-golden-glove-for-the-third-consecutive-time-1192565/",
+    "https://prd-sandbox.arsenal.com/news/david-raya-completes-golden-glove-hat-trick-aitsS9X1ZqjV",
+    "https://www.skysports.com/football/news/12098/13564318/2026-world-cup-spain-1-0-argentina-aet-ferran-torres-extra-time-winner-secures-spains-second-title",
+    "https://jamaica-gleaner.com/article/20260719/spain-win-world-cup-beating-argentina-1-0-ferran-torres-goal-extra-time",
+    "https://iol.co.za/2026-07-20-world-cup-2026-final-ferran-torres-seals-historic-world-cup-glory-for-spain-against-10-man-argentina/",
+    "https://amp.foxsports.com/stories/soccer/spain-vs-argentina-best-facts-from-2026-world-cup-final",
+    "https://www.fifpro.org/en/articles/2026/07/players-recognised-with-individual-awards-at-the-2026-world-cup",
+    "https://kirolakeitb.eus/en/football/competitions/other-competitions/2026/07/20/unai-simon-best-goalkeeper-at-the-2026-world-cup/",
     "https://worldcupranking.com/blog/unai-simon-golden-glove-world-cup-2026/",
-    "https://santamariatimes.com/ap/sports/ferran-torres-scores-in-extra-time-as-spain-beats-argentina-1-0-to-win-the/article_a8e21e5c-8c25-54ce-b065-7ebb7225d56f.html",
-    "https://www.nbcmiami.com/world-cup/spain-argentina-final-messi-yamal-score/3835882/?amp=1"
+    "https://bolavip.com/en/world-cup/the-uniforms-argentina-and-spain-are-wearing-today-for-2026-world-cup-final",
+    "https://www.bemparana.com.br/copa-do-mundo-2026/espanha-entra-na-final-de-vermelho-argentina-de-azul-e-branco-e-arbitro-uniforme-especial/",
+    "https://en.wikipedia.org/wiki/2022_FIFA_World_Cup_final"
   ],
-  "checked": "Yashin winners 2019 Alisson, 2021 Donnarumma, 2022 Courtois, 2023-24 Martinez, 2025 Donnarumma (SI, TopEndSports), 2026 Simon (Morocco World News, beIN); WC final Spain 1-0 Argentina aet, Torres 106' (AP via Santa Maria Times, NBC); Simon Golden Glove, seven clean sheets, one goal conceded (Fox Sports, worldcupranking). Martinez also won the 2022 World Cup (Wikipedia).",
+  "checked": "Yashin winners 2019 Alisson, 2021 Donnarumma, 2022 Courtois, 2023 and 2024 Martinez, 2025 Donnarumma (SI, TopEndSports); 2026 Simon, London, 26 Oct (Morocco World News, Foot Africa). Raya: third straight PL Golden Glove 2025-26, 19 clean sheets (Arsenal, Foot Africa, Rotowire). World Cup: Martinez 2022 (Wikipedia), Simon 2026. Final 19 July 2026, MetLife, Spain 1-0 Argentina aet, Torres 106', set up by Nico Williams, half-volley; Enzo Fernandez sent off, Argentina ten men (Sky, Gleaner, IOL, Fox). Simon: seven clean sheets in eight games, one goal conceded, Golden Glove (FIFPRO, Kirolakeitb, worldcupranking). Kits: Spain red/navy/blue, Argentina home stripes/white/white (Bolavip, Bemparana). Ten keepers listed by nation only (club moves in 2026 not checked).",
   "clubs": {
+    "esp": {
+      "name": "Spain",
+      "short": "ESP",
+      "c1": "#c60b1e",
+      "c2": "#ffc400",
+      "pattern": "plain",
+      "badge": false
+    },
     "arg": {
       "name": "Argentina",
       "short": "ARG",
       "c1": "#75aadb",
+      "c2": "#ffffff",
+      "pattern": "stripes",
+      "badge": false
+    },
+    "ita": {
+      "name": "Italy",
+      "short": "ITA",
+      "c1": "#0064aa",
+      "c2": "#ffffff",
+      "pattern": "plain",
+      "badge": false
+    },
+    "bel": {
+      "name": "Belgium",
+      "short": "BEL",
+      "c1": "#e30613",
+      "c2": "#111111",
+      "pattern": "plain",
+      "badge": false
+    },
+    "bra": {
+      "name": "Brazil",
+      "short": "BRA",
+      "c1": "#ffdf00",
+      "c2": "#009c3b",
+      "pattern": "plain",
+      "badge": false
+    },
+    "svn": {
+      "name": "Slovenia",
+      "short": "SVN",
+      "c1": "#ffffff",
+      "c2": "#005da4",
+      "pattern": "plain",
+      "badge": false
+    },
+    "fra": {
+      "name": "France",
+      "short": "FRA",
+      "c1": "#21304d",
+      "c2": "#ffffff",
+      "pattern": "plain",
+      "badge": false
+    },
+    "sui": {
+      "name": "Switzerland",
+      "short": "SUI",
+      "c1": "#d52b1e",
+      "c2": "#ffffff",
+      "pattern": "plain",
+      "badge": false
+    },
+    "ath": {
+      "name": "Athletic Club",
+      "short": "ATH",
+      "c1": "#ee2523",
       "c2": "#ffffff",
       "pattern": "stripes"
     },
@@ -28,52 +101,34 @@
       "c2": "#ffffff",
       "pattern": "sides"
     },
-    "ath": {
-      "name": "Athletic Club",
-      "short": "ATH",
-      "c1": "#ee2523",
-      "c2": "#ffffff",
-      "pattern": "stripes"
-    },
-    "esp": {
-      "name": "Spain",
-      "short": "ESP",
-      "c1": "#c60b1e",
-      "c2": "#ffc400",
-      "pattern": "plain"
-    },
-    "liv": {
-      "name": "Liverpool",
-      "short": "LIV",
-      "c1": "#c8102e",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
     "mci": {
       "name": "Manchester City",
       "short": "MCI",
       "c1": "#6cabdd",
       "c2": "#ffffff",
       "pattern": "plain"
-    },
-    "rma": {
-      "name": "Real Madrid",
-      "short": "RMA",
-      "c1": "#ffffff",
-      "c2": "#febe10",
-      "pattern": "plain"
     }
   },
   "people": {
-    "martinez": {
-      "name": "Emiliano Martínez",
+    "simon": {
+      "name": "Unai Simón",
       "skin": "light",
       "hair": [
         "crop",
         "#2b1d14"
       ],
       "beard": "short",
-      "kit": "arg"
+      "kit": "ath"
+    },
+    "simone": {
+      "name": "Unai Simón",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#2b1d14"
+      ],
+      "beard": "short",
+      "kit": "esp"
     },
     "raya": {
       "name": "David Raya",
@@ -85,20 +140,30 @@
       "beard": "short",
       "kit": "ars"
     },
-    "simon": {
-      "name": "Unai Simón",
+    "martinez": {
+      "name": "Emiliano Martínez",
       "skin": "light",
       "hair": [
         "crop",
         "#2b1d14"
       ],
       "beard": "short",
-      "kit": "ath"
+      "kit": "arg"
+    },
+    "donnarumma": {
+      "name": "Gianluigi Donnarumma",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#1a1a1a"
+      ],
+      "beard": "short",
+      "kit": "ita"
     }
   },
   "lines": [
     {
-      "text": "Ten of the best goalkeepers alive. Three rules. One pair of gloves left.",
+      "text": "Ten of the best goalkeepers alive. Three rules. Only one pair of gloves left at the end.",
       "scene": {
         "type": "title",
         "heading": "BEST GOALKEEPER",
@@ -108,73 +173,83 @@
       }
     },
     {
-      "text": "Simón, Raya, Donnarumma, Courtois, Alisson, Martínez, Oblak, Maignan, Joan García and Kobel.",
+      "text": "Simón, Raya, Donnarumma, Courtois, Alisson.",
+      "say": "Seemon, Rahya, Donnahroomah, Kortwah, Aleesson.",
       "scene": {
         "type": "list",
+        "kicker": "The ten · part one",
         "title": "Our ten keepers",
         "rows": [
           {
-            "name": "Unai Simón",
-            "value": "Athletic",
-            "club": "ath"
+            "name": "Simón",
+            "value": "Spain",
+            "club": "esp"
           },
           {
-            "name": "David Raya",
-            "value": "Arsenal",
-            "club": "ars"
+            "name": "Raya",
+            "value": "Spain",
+            "club": "esp"
           },
           {
-            "name": "Gianluigi Donnarumma",
-            "value": "Man City",
-            "club": "mci"
+            "name": "Donnarumma",
+            "value": "Italy",
+            "club": "ita"
           },
           {
-            "name": "Thibaut Courtois",
-            "value": "Real Madrid",
-            "club": "rma"
+            "name": "Courtois",
+            "value": "Belgium",
+            "club": "bel"
           },
           {
             "name": "Alisson",
-            "value": "Liverpool",
-            "club": "liv"
-          },
-          {
-            "name": "Emiliano Martínez",
-            "value": "Argentina",
-            "club": "arg"
-          },
-          {
-            "name": "Oblak · Maignan",
-            "value": "+2"
-          },
-          {
-            "name": "Joan García · Kobel",
-            "value": "+2"
+            "value": "Brazil",
+            "club": "bra"
           }
         ]
       }
     },
     {
-      "text": "Rule one. You must have won the Yashin Trophy, the Ballon d'Or for keepers.",
+      "text": "Martínez, Oblak, Maignan, Joan García, Kobel.",
+      "say": "Marteenez, Obblak, Menyon, Zhooan Garseeah, Kohbel.",
       "scene": {
-        "type": "text",
-        "heading": "RULE 1",
-        "body": "Must have won the Yashin Trophy at least once."
+        "type": "list",
+        "kicker": "The ten · part two",
+        "title": "Our ten keepers",
+        "rows": [
+          {
+            "name": "Martínez",
+            "value": "Argentina",
+            "club": "arg"
+          },
+          {
+            "name": "Oblak",
+            "value": "Slovenia",
+            "club": "svn"
+          },
+          {
+            "name": "Maignan",
+            "value": "France",
+            "club": "fra"
+          },
+          {
+            "name": "Joan García",
+            "value": "Spain",
+            "club": "esp"
+          },
+          {
+            "name": "Kobel",
+            "value": "Switzerland",
+            "club": "sui"
+          }
+        ]
       }
     },
     {
-      "text": "Raya has three Golden Gloves in a row, but no Yashin. He's out, with Oblak, Maignan, García and Kobel.",
-      "scene": {
-        "type": "stamp",
-        "text": "NO YASHIN",
-        "person": "raya",
-        "color": "yellow"
-      }
-    },
-    {
-      "text": "Five left. Alisson, Donnarumma, Courtois, Martínez and Simón.",
+      "text": "Rule one. You must have won the Yashin Trophy, the Ballon d'Or for goalkeepers.",
       "scene": {
         "type": "timeline",
+        "kicker": "Rule 1",
+        "title": "Yashin Trophy winners",
         "items": [
           {
             "year": "2019",
@@ -189,8 +264,8 @@
             "label": "Courtois"
           },
           {
-            "year": "23-24",
-            "label": "Martínez"
+            "year": "2023-24",
+            "label": "Emiliano Martínez"
           },
           {
             "year": "2025",
@@ -198,90 +273,193 @@
           },
           {
             "year": "2026",
-            "label": "Simón"
+            "label": "Unai Simón",
+            "hl": true
           }
         ]
       }
     },
     {
-      "text": "Rule two. You must have won a World Cup.",
+      "text": "Brutal for David Raya. Three Golden Gloves in a row, nineteen clean sheets last season, and no Yashin.",
+      "say": "Brutal for Daveed Rahya. Three Golden Gloves in a row, nineteen clean sheets last season, and no Yashin.",
       "scene": {
-        "type": "text",
-        "heading": "RULE 2",
-        "body": "Must have won the World Cup."
+        "type": "stats",
+        "kicker": "David Raya · Arsenal",
+        "title": "Still no Yashin",
+        "items": [
+          {
+            "n": "3",
+            "l": "Golden Gloves in a row"
+          },
+          {
+            "n": "19",
+            "l": "clean sheets 2025/26"
+          },
+          {
+            "n": "0",
+            "l": "Yashin Trophies"
+          }
+        ],
+        "person": "raya"
       }
     },
     {
-      "text": "Only two have. Martínez in twenty twenty-two, and Simón this summer.",
+      "text": "He's out. So are Oblak, Maignan, García and Kobel. Five gone.",
+      "say": "He's out. So are Obblak, Menyon, Garseeah and Kohbel. Five gone.",
+      "scene": {
+        "type": "stamp",
+        "text": "NO YASHIN",
+        "sub": "Raya, Oblak, Maignan, García, Kobel",
+        "person": "raya",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Rule two. You must be a world champion.",
+      "scene": {
+        "type": "trophies",
+        "kicker": "Rule 2",
+        "title": "World Cup winners",
+        "items": [
+          {
+            "kind": "worldcup",
+            "label": "2022 · Martínez"
+          },
+          {
+            "kind": "worldcup",
+            "label": "2026 · Simón"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Courtois, Alisson and Donnarumma never have. Three more gone.",
+      "say": "Kortwah, Aleesson and Donnahroomah never have. Three more gone.",
+      "scene": {
+        "type": "stamp",
+        "text": "NO WORLD CUP",
+        "sub": "Courtois, Alisson, Donnarumma",
+        "person": "donnarumma",
+        "color": "yellow"
+      }
+    },
+    {
+      "text": "Rule three. The last two go head to head. And they met in the World Cup final.",
       "scene": {
         "type": "versus",
-        "title": "World Cup winners",
+        "title": "Rule 3: head to head",
         "left": {
           "person": "martinez",
           "label": "Martínez",
-          "value": "2022"
+          "value": "2022",
+          "sub": "World Cup winner"
         },
         "right": {
-          "person": "simon",
+          "person": "simone",
           "label": "Simón",
-          "value": "2026"
+          "value": "2026",
+          "sub": "World Cup winner"
         }
       }
     },
     {
-      "text": "Rule three. Head to head. Who won the last World Cup final?",
-      "scene": {
-        "type": "text",
-        "heading": "RULE 3",
-        "body": "Winner of the last World Cup final between them goes through."
-      }
-    },
-    {
-      "text": "July, New Jersey. Spain one, Argentina nil, after extra time. Ferran Torres in the hundred and sixth minute.",
+      "text": "July, New Jersey. Spain against Argentina, nil-nil after ninety minutes, and Argentina down to ten men.",
+      "say": "July, New Jersey. Spain against Argentina, nil nil after ninety minutes, and Argentina down to ten men.",
       "scene": {
         "type": "score",
         "home": "esp",
         "away": "arg",
         "hs": 1,
         "as": 0,
-        "date": "19 July 2026",
+        "date": "19 July 2026 · New Jersey",
         "comp": "World Cup final",
-        "note": "After extra time. Torres 106'."
+        "ft": "AFTER EXTRA TIME",
+        "note": "Torres 106' · Enzo Fernández sent off"
       }
     },
     {
-      "text": "So Martínez goes, and Unai Simón is the last man standing.",
+      "text": "Hundred and sixth minute. Nico Williams sets it up, and Ferran Torres smashes in the half-volley.",
+      "say": "Hundred and sixth minute. Neeko Williams sets it up, and Fehran Torress smashes in the half volley.",
       "scene": {
-        "type": "stamp",
-        "text": "OUT",
-        "person": "martinez",
-        "color": "red"
+        "type": "gameclip",
+        "parts": [
+          [
+            "work/footage/torres-2026/torres-winner/tv",
+            20,
+            70
+          ],
+          [
+            "work/footage/torres-2026/torres-winner/fan",
+            70,
+            170
+          ]
+        ],
+        "goalAt": 1.73,
+        "popup": {
+          "home": "esp",
+          "away": "arg",
+          "homeName": "Spain",
+          "awayName": "Argentina",
+          "hs0": 0,
+          "as0": 0,
+          "hs": 1,
+          "as": 0,
+          "scorer": "Torres",
+          "assist": "N. Williams"
+        },
+        "caption": "TORRES 106'"
       }
     },
     {
-      "text": "Seven World Cup clean sheets, the Golden Glove, and last month, the Yashin Trophy.",
+      "text": "Martínez is beaten. Simón keeps another clean sheet. One goal conceded in the whole World Cup.",
+      "say": "Marteenez is beaten. Seemon keeps another clean sheet. One goal conceded in the whole World Cup.",
       "scene": {
         "type": "stats",
-        "title": "Unai Simón, 2026",
+        "kicker": "Unai Simón · World Cup 2026",
+        "title": "The Golden Glove",
         "items": [
           {
             "n": "7",
-            "l": "WC clean sheets"
+            "l": "clean sheets"
+          },
+          {
+            "n": "8",
+            "l": "games"
           },
           {
             "n": "1",
             "l": "goal conceded"
-          },
-          {
-            "n": "1",
-            "l": "Yashin Trophy"
           }
         ],
-        "person": "simon"
+        "person": "simone"
       }
     },
     {
-      "text": "Agree? Or is Raya robbed again?",
+      "text": "Then last month, in London, he collected the Yashin Trophy too.",
+      "scene": {
+        "type": "trophies",
+        "kicker": "Unai Simón · 2026",
+        "title": "The full set",
+        "items": [
+          {
+            "kind": "worldcup",
+            "label": "World Cup"
+          },
+          {
+            "kind": "award",
+            "label": "Golden Glove"
+          },
+          {
+            "kind": "ballon",
+            "label": "Yashin Trophy"
+          }
+        ],
+        "person": "simone"
+      }
+    },
+    {
+      "text": "Unai Simón. The best goalkeeper in the world. Or is Raya the one who got robbed?",
+      "say": "Oonai Seemon. The best goalkeeper in the world. Or is Rahya the one who got robbed?",
       "scene": {
         "type": "person",
         "person": "simon",
@@ -291,7 +469,7 @@
       }
     },
     {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "text": "Follow for more, and play Road to Ballon d'Or.",
       "scene": {
         "type": "cta"
       }

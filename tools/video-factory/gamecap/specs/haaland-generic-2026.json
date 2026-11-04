@@ -1,0 +1,31 @@
+{
+  "_about": "A generic Erling Haaland finish in Manchester City's home kit, for 'Three rules to the 2027 Ballon d'Or'. Not a real goal: no pop-up, neutral opponents in white, the video never says which match it is.",
+  "teams": {
+    "home": { "name": "Manchester City", "short": "Man City", "kit": { "shirt": "#6CABDD", "shorts": "#FFFFFF", "socks": "#6CABDD" }, "keeperKit": { "shirt": "#1F2A44", "shorts": "#1F2A44", "socks": "#1F2A44" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Opponents", "kit": { "shirt": "#F2F2F2", "shorts": "#1B1B1B", "socks": "#F2F2F2" }, "keeperKit": { "shirt": "#E8C200", "shorts": "#1B1B1B", "socks": "#E8C200" }, "popupTrim": "#1B1B1B" }
+  },
+  "people": {
+    "haaland": { "name": "Erling Haaland", "skin": "#f2cfb5", "hair": "#e3cf8f", "popupName": "Haaland" },
+    "foden":   { "name": "Phil Foden", "skin": "#f2cfb5", "hair": "#6b4a2e" },
+    "d1": { "name": "Defender One", "skin": "#e0b08a", "hair": "#1d1512" },
+    "d2": { "name": "Defender Two", "skin": "#7a4e33", "hair": "#0d0a09" },
+    "d3": { "name": "Defender Three", "skin": "#f0c3a0", "hair": "#c9a27e" },
+    "gk": { "name": "Keeper", "skin": "#eac09c", "hair": "#2a1d15" }
+  },
+  "popupPosition": "top",
+  "clips": [{
+    "id": "haaland-finish",
+    "kind": "one_on_one",
+    "attacking": "home",
+    "scorer": "haaland", "assister": "foden",
+    "defenders": ["d1", "d2", "d3"],
+    "keeper": "gk",
+    "minute": 30,
+    "night": true,
+    "celebration": "statue",
+    "cameras": ["tv", "high", "tight", "fan"],
+    "recreate": { "delivery": "through", "finish": "ground", "height": "low", "outcome": "goal" },
+    "popup": false,
+    "seed": "haaland-generic-a"
+  }]
+}
