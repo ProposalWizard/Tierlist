@@ -422,32 +422,6 @@
    }
   },
   {
-   "text": "In ten years, Silva won four Premier Leagues, two FA Cups and five League Cups.",
-   "scene": {
-    "type": "trophies",
-    "kicker": "David Silva at City · 2010-2020",
-    "title": "436 games · 77 goals",
-    "items": [
-     {
-      "kind": "league",
-      "label": "Premier League",
-      "count": 4
-     },
-     {
-      "kind": "cup",
-      "label": "FA Cup",
-      "count": 2
-     },
-     {
-      "kind": "cup",
-      "label": "League Cup",
-      "count": 5
-     }
-    ],
-    "person": "silva"
-   }
-  },
-  {
    "text": "Now flip it. Real Madrid move first. Silva plays for José Mourinho, next to Cristiano Ronaldo.",
    "say": "Now flip it. Real Madrid move first. Silva plays for Hozay Moreenyo, next to Kristyahno Ronaldo.",
    "scene": {
@@ -464,28 +438,12 @@
    }
   },
   {
-   "text": "No Silva means no Silva corners. And 2012 was won by goal difference, in the last minute.",
-   "say": "No Silva means no Silva corners. And twenty twelve was won by goal difference, in the last minute.",
-   "scene": {
-    "type": "whatif",
-    "title": "The 2012 title",
-    "real": {
-     "label": "City champions on goal difference",
-     "value": "+8"
-    },
-    "alt": {
-     "label": "United champions again?",
-     "value": "?"
-    }
-   }
-  },
-  {
-   "text": "In the real world, City fans call him El Mago. The magician. He has a statue outside the Etihad.",
-   "say": "In the real world, City fans call him El Mahgo. The magician. He has a statue outside the Ettihad.",
+   "text": "In the real world, he won four league titles and got a statue outside City's stadium. Fans call him El Mago. The magician.",
+   "say": "In the real world, he won four league titles, and got a statue outside City's stadium. Fans call him El Mahgo. The magician.",
    "scene": {
     "type": "person",
     "person": "silva",
-    "label": "El Mago · statue unveiled 2021",
+    "label": "El Mago · 4 Premier League titles",
     "mood": "happy"
    }
   },

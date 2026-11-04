@@ -468,50 +468,8 @@
    }
   },
   {
-   "text": "Look who finished second to Pep's six titles. United twice. Liverpool twice. Arsenal twice.",
-   "scene": {
-    "type": "list",
-    "kicker": "Every Pep title",
-    "title": "Who finished second?",
-    "rows": [
-     {
-      "name": "2018 · Man United",
-      "value": "81 pts",
-      "club": "mun"
-     },
-     {
-      "name": "2019 · Liverpool",
-      "value": "97 pts",
-      "club": "liv",
-      "hl": true
-     },
-     {
-      "name": "2021 · Man United",
-      "value": "74 pts",
-      "club": "mun"
-     },
-     {
-      "name": "2022 · Liverpool",
-      "value": "92 pts",
-      "club": "liv",
-      "hl": true
-     },
-     {
-      "name": "2023 · Arsenal",
-      "value": "84 pts",
-      "club": "ars"
-     },
-     {
-      "name": "2024 · Arsenal",
-      "value": "89 pts",
-      "club": "ars"
-     }
-    ]
-   }
-  },
-  {
-   "text": "Liverpool lost two of them by a single point. Ninety-seven in 2019. Ninety-two in 2022.",
-   "say": "Liverpool lost two of them by a single point. Ninety-seven in twenty nineteen. Ninety-two in twenty twenty-two.",
+   "text": "In that world, Liverpool win two more titles. They lost 2019 and 2022 by a single point.",
+   "say": "In that world, Liverpool win two more titles. They lost twenty nineteen and twenty twenty-two by a single point.",
    "scene": {
     "type": "bars",
     "kicker": "Liverpool v Pep's City",
@@ -542,21 +500,6 @@
      }
     ],
     "max": 100
-   }
-  },
-  {
-   "text": "In that world, those are Liverpool titles. And United have Pep's machine instead.",
-   "scene": {
-    "type": "whatif",
-    "title": "No Pep at City",
-    "real": {
-     "label": "Liverpool titles since 2016: 2020, 2025",
-     "value": "2"
-    },
-    "alt": {
-     "label": "Add 2019 and 2022",
-     "value": "4"
-    }
    }
   },
   {

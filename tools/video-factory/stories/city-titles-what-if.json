@@ -441,41 +441,6 @@
    }
   },
   {
-   "text": "The cups go too. Stoke, Watford, United and Chelsea get FA Cups. Seven League Cups go to seven beaten finalists.",
-   "scene": {
-    "type": "list",
-    "kicker": "Cup finals City won",
-    "title": "The beaten finalists",
-    "rows": [
-     {
-      "name": "FA Cup · Stoke, Watford",
-      "value": "2",
-      "club": "sto"
-     },
-     {
-      "name": "FA Cup · Man United, Chelsea",
-      "value": "2",
-      "club": "mun"
-     },
-     {
-      "name": "League Cup · Arsenal (2018, 2026)",
-      "value": "2",
-      "club": "ars"
-     },
-     {
-      "name": "League Cup · Sunderland, Liverpool",
-      "value": "2",
-      "club": "sun"
-     },
-     {
-      "name": "League Cup · Chelsea, Villa, Spurs",
-      "value": "3",
-      "club": "avl"
-     }
-    ]
-   }
-  },
-  {
    "text": "And the 2023 Champions League? Inter, beaten one-nil in Istanbul.",
    "say": "And the twenty twenty-three Champions League? Inter, beaten one-nil in Istanbul.",
    "scene": {
@@ -553,25 +518,6 @@
     "text": "NOT STRIPPED",
     "sub": "Appeal lodged 1 Oct 2026 · no sanction yet",
     "color": "white"
-   }
-  },
-  {
-   "text": "So which runner-up lost the most? Tell us in the comments.",
-   "scene": {
-    "type": "versus",
-    "title": "Who lost the most?",
-    "left": {
-     "club": "liv",
-     "label": "LIVERPOOL",
-     "value": "4",
-     "sub": "trophies"
-    },
-    "right": {
-     "club": "ars",
-     "label": "ARSENAL",
-     "value": "4",
-     "sub": "trophies"
-    }
    }
   },
   {
