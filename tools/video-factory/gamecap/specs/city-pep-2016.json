@@ -1,0 +1,29 @@
+{
+  "_about": "Kompany's long-range winner, Manchester City 1-0 Leicester, Etihad, Monday 6 May 2019, 70th minute: about 25 yards into the top corner past Kasper Schmeichel, his first City goal from outside the box (premierleague.com, ITV, Sky Sports, mancity.com). 25 yards = about 23 m. Leicester in their royal-blue home shirts is from a search snippet of an lcfc.com article saying they wore the new 2019/20 home kit; not confirmed from a photo. Night game (20:00).",
+  "teams": {
+    "home": { "name": "Manchester City", "kit": { "shirt": "#6CABDD", "shorts": "#FFFFFF", "socks": "#6CABDD" }, "keeperKit": { "shirt": "#1F2A44", "shorts": "#1F2A44", "socks": "#1F2A44" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Leicester City", "short": "Leicester", "kit": { "shirt": "#0C3AA0", "shorts": "#0C3AA0", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#2a2a2a", "shorts": "#2a2a2a", "socks": "#2a2a2a" }, "popupTrim": "#FDBE11" }
+  },
+  "people": {
+    "kompany":    { "name": "Vincent Kompany", "skin": "#5a3826", "hair": "#0d0a09" },
+    "laporte":    { "name": "Aymeric Laporte", "skin": "#e0b08a", "hair": "#2a1d15" },
+    "aguero":     { "name": "Sergio Aguero", "skin": "#d9a57e", "hair": "#1d1512" },
+    "maddison":   { "name": "James Maddison", "skin": "#f0c3a0", "hair": "#4a3324" },
+    "tielemans":  { "name": "Youri Tielemans", "skin": "#f2c4a6", "hair": "#8a6a4a" },
+    "iheanacho":  { "name": "Kelechi Iheanacho", "skin": "#3e2618", "hair": "#0d0a09" },
+    "schmeichel": { "name": "Kasper Schmeichel", "skin": "#f2c4a6", "hair": "#c9a27e" }
+  },
+  "clips": [
+    {
+      "id": "kompany-leicester", "kind": "long_range", "attacking": "home",
+      "scorer": "kompany", "assister": "laporte",
+      "defenders": ["iheanacho", "maddison", "tielemans"], "keeper": "schmeichel",
+      "teammates": ["aguero"],
+      "minute": 70, "scoreBefore": [0, 0], "scoreAfter": [1, 0], "night": true,
+      "celebration": "roar",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "scorerStart": [3, 30], "scorerSpot": [2, 23], "finish": "right", "goalSide": "left", "height": "high", "outcome": "goal" },
+      "seed": "kompany-2019-a"
+    }
+  ]
+}

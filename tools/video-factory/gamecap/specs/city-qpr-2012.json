@@ -1,0 +1,192 @@
+{
+ "_about": "Dzeko's header, Manchester City 2-2 QPR, Etihad, 13 May 2012, 90+2, from David Silva's corner (theScore 'Anatomy of a Classic Goal'; Planet Football; mancity.com On this day). QPR's blue/white hoops cannot be drawn on the sprites (one shirt colour): blue shirt, white shorts, white socks. Corner side not sourced (seed). Paddy Kenny in goal; keeper kit assumed. Afternoon kick-off (15:00), so no floodlights.",
+ "teams": {
+  "home": {
+   "name": "Manchester City",
+   "kit": {
+    "shirt": "#6CABDD",
+    "shorts": "#FFFFFF",
+    "socks": "#6CABDD"
+   },
+   "keeperKit": {
+    "shirt": "#1F2A44",
+    "shorts": "#1F2A44",
+    "socks": "#1F2A44"
+   },
+   "popupTrim": "#FFFFFF"
+  },
+  "away": {
+   "name": "Queens Park Rangers",
+   "short": "QPR",
+   "kit": {
+    "shirt": "#1D5BA4",
+    "shorts": "#FFFFFF",
+    "socks": "#FFFFFF"
+   },
+   "keeperKit": {
+    "shirt": "#2a2a2a",
+    "shorts": "#2a2a2a",
+    "socks": "#2a2a2a"
+   },
+   "popupTrim": "#FFFFFF"
+  }
+ },
+ "people": {
+  "dzeko": {
+   "name": "Edin Dzeko",
+   "skin": "#eac09c",
+   "hair": "#2a1d15",
+   "popupName": "Džeko"
+  },
+  "silva": {
+   "name": "David Silva",
+   "skin": "#e8b994",
+   "hair": "#2a1d15"
+  },
+  "aguero": {
+   "name": "Sergio Aguero",
+   "skin": "#d9a57e",
+   "hair": "#1d1512"
+  },
+  "kompany": {
+   "name": "Vincent Kompany",
+   "skin": "#5a3826",
+   "hair": "#0d0a09"
+  },
+  "lescott": {
+   "name": "Joleon Lescott",
+   "skin": "#f0c3a0",
+   "hair": "#c9a27e"
+  },
+  "onuoha": {
+   "name": "Nedum Onuoha",
+   "skin": "#4a2e1e",
+   "hair": "#0d0a09"
+  },
+  "ferdinand": {
+   "name": "Anton Ferdinand",
+   "skin": "#6a4430",
+   "hair": "#0d0a09"
+  },
+  "taiwo": {
+   "name": "Taye Taiwo",
+   "skin": "#3e2618",
+   "hair": "#0d0a09"
+  },
+  "derry": {
+   "name": "Shaun Derry",
+   "skin": "#f0c3a0",
+   "hair": "#e8c8a8"
+  },
+  "kenny": {
+   "name": "Paddy Kenny",
+   "skin": "#f2c4a6",
+   "hair": "#8a6a4a"
+  },
+  "balotelli": {
+   "name": "Mario Balotelli",
+   "skin": "#3e2618",
+   "hair": "#0d0a09"
+  }
+ },
+ "clips": [
+  {
+   "id": "dzeko-header",
+   "kind": "header",
+   "attacking": "home",
+   "scorer": "dzeko",
+   "assister": "silva",
+   "defenders": [
+    "onuoha",
+    "ferdinand",
+    "taiwo",
+    "derry"
+   ],
+   "keeper": "kenny",
+   "teammates": [
+    "aguero",
+    "kompany",
+    "lescott"
+   ],
+   "minute": 92,
+   "minuteLabel": "90+2",
+   "scoreBefore": [
+    1,
+    2
+   ],
+   "scoreAfter": [
+    2,
+    2
+   ],
+   "night": false,
+   "cameras": [
+    "tv",
+    "high"
+   ],
+   "recreate": {
+    "delivery": "corner",
+    "finish": "header",
+    "height": "mid"
+   },
+   "seed": "dzeko-2012-a"
+  },
+  {
+   "id": "aguero-9320",
+   "kind": "one_on_one",
+   "attacking": "home",
+   "scorer": "aguero",
+   "assister": "balotelli",
+   "defenders": [
+    "onuoha",
+    "taiwo",
+    "ferdinand",
+    "derry"
+   ],
+   "keeper": "kenny",
+   "teammates": [
+    "dzeko"
+   ],
+   "minute": 94,
+   "minuteLabel": "90+4",
+   "scoreBefore": [
+    2,
+    2
+   ],
+   "scoreAfter": [
+    3,
+    2
+   ],
+   "night": false,
+   "celebration": "arms_out",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "delivery": "through",
+    "passerStart": [
+     1,
+     19
+    ],
+    "passFrom": [
+     1.5,
+     17.5
+    ],
+    "scorerStart": [
+     6,
+     21
+    ],
+    "scorerSpot": [
+     7.5,
+     9.5
+    ],
+    "finish": "ground",
+    "goalSide": "near",
+    "height": "low",
+    "outcome": "goal"
+   },
+   "seed": "aguero-9320-a"
+  }
+ ]
+}

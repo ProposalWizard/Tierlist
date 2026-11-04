@@ -1,0 +1,30 @@
+{
+  "_about": "Haaland's 35th Premier League goal of 2022-23, the single-season record: Manchester City 3-0 West Ham, Etihad, Wednesday 3 May 2023, 70th minute. Grealish led the counter and set him up; Haaland dinked it over the onrushing Fabianski (ESPN, Fox Sports/AP, Eurosport live). It made it 2-0 (Ake scored first). West Ham in claret home shirts with white shorts at the Etihad is assumed (no source naming the strip). Night game.",
+  "teams": {
+    "home": { "name": "Manchester City", "kit": { "shirt": "#6CABDD", "shorts": "#FFFFFF", "socks": "#6CABDD" }, "keeperKit": { "shirt": "#F2C21B", "shorts": "#F2C21B", "socks": "#F2C21B" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "West Ham United", "short": "West Ham", "kit": { "shirt": "#7A263A", "shorts": "#FFFFFF", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#1b6b3a", "shorts": "#1b6b3a", "socks": "#1b6b3a" }, "popupTrim": "#1BB1E7" }
+  },
+  "people": {
+    "haaland":   { "name": "Erling Haaland", "skin": "#f2cfb4", "hair": "#e3c27f" },
+    "grealish":  { "name": "Jack Grealish", "skin": "#f0c3a0", "hair": "#4a3324" },
+    "debruyne":  { "name": "Kevin De Bruyne", "skin": "#f2c4a6", "hair": "#d79a4e" },
+    "dias":      { "name": "Ruben Dias", "skin": "#d9a57e", "hair": "#1d1512" },
+    "aguerd":    { "name": "Nayef Aguerd", "skin": "#c08a62", "hair": "#1d1512" },
+    "zouma":     { "name": "Kurt Zouma", "skin": "#3e2618", "hair": "#0d0a09" },
+    "rice":      { "name": "Declan Rice", "skin": "#f0c3a0", "hair": "#4a3324" },
+    "fabianski": { "name": "Lukasz Fabianski", "skin": "#f2c4a6", "hair": "#6b5440" }
+  },
+  "clips": [
+    {
+      "id": "haaland-35", "kind": "one_on_one", "attacking": "home",
+      "scorer": "haaland", "assister": "grealish",
+      "defenders": ["aguerd", "zouma", "rice"], "keeper": "fabianski",
+      "teammates": ["debruyne"],
+      "minute": 70, "scoreBefore": [1, 0], "scoreAfter": [2, 0], "night": true,
+      "celebration": "statue",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "through", "passerStart": [-14, 34], "passFrom": [-10, 27], "scorerStart": [2, 30], "scorerSpot": [0.5, 11], "finish": "chip", "outcome": "goal" },
+      "seed": "haaland-35-a"
+    }
+  ]
+}
