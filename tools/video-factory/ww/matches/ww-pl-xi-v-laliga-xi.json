@@ -647,7 +647,7 @@
    "seg": "grid",
    "offset": 0.3,
    "text": "The best eleven in the Premier League, against the best eleven in La Liga. This season only.",
-   "say": "The best eleven in the Premier League, against the best eleven in La Leega. This season only."
+   "say": "The best eleven in the Premier League, against the best eleven in La Liga. This season only."
   },
   {
    "seg": "homeSheet",
@@ -698,7 +698,7 @@
    "offset": 0.2,
    "spill": true,
    "text": "Bellingham slips Mbappé through. Two-one La Liga.",
-   "say": "Bellingham slips Embapay through. Two-one La Leega."
+   "say": "Bellingham slips Embapay through. Two-one La Liga."
   },
   {
    "seg": "g4",
@@ -718,7 +718,7 @@
    "seg": "fulltime",
    "offset": 0.5,
    "text": "Three-two La Liga. So which league is really better?",
-   "say": "Three-two La Leega. So which league is really better?"
+   "say": "Three-two La Liga. So which league is really better?"
   },
   {
    "seg": "potm",
