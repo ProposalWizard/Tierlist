@@ -2,52 +2,22 @@
  "id": "city-aguero-2011",
  "series": "What if Man City…?",
  "title": "What if Agüero never joined City?",
+ "v2": true,
  "sources": [
-  "https://www.beinsports.com/en-us/soccer/la-liga/articles-video/kun-ag%C3%BCero-reveals-the-deal-that-blocked-his-move-to-real-madrid-2025-05-06",
-  "https://www.fourfourtwo.com/person/i-could-have-replaced-del-piero-at-juventus-but-i-always-wanted-to-play-in-england-michael-owen-was-a-hero-of-mine-sergio-aguero-looks-back-on-the-opportunity-manchester-city-gave-him-as-a-young-striker",
-  "https://thehardtackle.com/2011/sergio-aguero-under-the-microscope/",
-  "https://uk.sports.yahoo.com/news/day-2011-sergio-aguero-joins-050000988.html",
-  "https://www.offalyexpress.ie/national/on-this-day-in-2011-manchester-city-snap-up-sergio-aguero-7078331",
+  "https://en.wikipedia.org/wiki/Sergio_Ag%C3%BCero",
+  "https://www.goal.com/en/news/man-city-almost-signed-lavezzi-over-aguero-as-former/2fal6phfi3qk1ebpc0kl73hky",
+  "https://m.allfootballapp.com/news/All/ON-THIS-DAY-In-2011-Man-City-signed-Sergio-Aguero-from-Atletico-Madrid/2653265",
+  "https://www.goal.com/en/news/aguero-called-stupid-by-atletico-madrid-president-over-transfer/hix1u2yq8ear17ea3794pi268",
   "https://en.wikipedia.org/wiki/2011%E2%80%9312_Premier_League",
   "https://en.wikipedia.org/wiki/Manchester_City_F.C._3%E2%80%932_Queens_Park_Rangers_F.C.",
-  "https://www.aljazeera.com/amp/sports/2012/5/13/man-city-crowned-english-champions",
-  "https://www.sportinglife.com/football/news/sergio-aguero-man-city-legend-announces-retirement/196938",
-  "https://elgrafico.com.ar/articulo/futbol-europeo/51806/los-260-goles-de-ag%C3%BCero-en-manchester-city"
+  "https://www.planetfootball.com/quick-reads/man-city-qpr-2012-premier-league-title-unbelievable-stats-records-balotelli-aguero"
  ],
- "checked": "Juventus deal 'in place' (Agüero to MARCA via beIN; FourFourTwo 'could have replaced Del Piero'); Real Madrid and Chelsea interest (Hard Tackle 2011, AP); fee about £35m (PA On This Day, two outlets; others say £38m, so 'around'); QPR 3-2, 93:20, both 89 pts, City +64 v United +56, United won at Sunderland (Wikipedia x2, Al Jazeera); 260 goals in 390 games (Sporting Life, El Gráfico). The 2-2 result and United's 20th title in 2012 are imagined and framed as such. United's real 20th title came in 2013.",
+ "checked": "Born 2 June 1988 (23 in summer 2011); 74 La Liga goals for Atletico (Wikipedia infobox); asked to leave 23 May 2011 (Wikipedia); signed 28 July 2011, five-year deal, about £35m (Wikipedia, Goal; some say £38m, so 'around'). Marwood quote (Goal, 22 May 2021); Agueroo said in 2012 he would have joined Real Madrid had they bid (Wikipedia). The old 'everything agreed with Juventus' line could not be confirmed: removed. 93:20 facts as city-2012-title. 260 goals, 184 PL goals, 5 PL titles, left 2021 (Wikipedia, mancity.com). What-if: at 2-2 City 87, United 89; Ferguson's real 20th title came in 2013.",
  "clubs": {
   "mci": {
    "name": "Manchester City",
    "short": "MCI",
    "c1": "#6cabdd",
-   "c2": "#ffffff",
-   "pattern": "plain"
-  },
-  "juv": {
-   "name": "Juventus",
-   "short": "JUV",
-   "c1": "#ffffff",
-   "c2": "#000000",
-   "pattern": "stripes"
-  },
-  "atm": {
-   "name": "Atlético Madrid",
-   "short": "ATM",
-   "c1": "#cb3524",
-   "c2": "#ffffff",
-   "pattern": "stripes"
-  },
-  "rma": {
-   "name": "Real Madrid",
-   "short": "RMA",
-   "c1": "#ffffff",
-   "c2": "#febe10",
-   "pattern": "plain"
-  },
-  "che": {
-   "name": "Chelsea",
-   "short": "CHE",
-   "c1": "#034694",
    "c2": "#ffffff",
    "pattern": "plain"
   },
@@ -64,6 +34,27 @@
    "c1": "#1d5ba4",
    "c2": "#ffffff",
    "pattern": "hoops"
+  },
+  "atm": {
+   "name": "Atlético Madrid",
+   "short": "ATM",
+   "c1": "#cb3524",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "rma": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#febe10",
+   "pattern": "plain"
+  },
+  "juv": {
+   "name": "Juventus",
+   "short": "JUV",
+   "c1": "#111111",
+   "c2": "#ffffff",
+   "pattern": "stripes"
   }
  },
  "people": {
@@ -72,252 +63,269 @@
    "skin": "tan",
    "hair": [
     "crop",
-    "#1a1410"
-   ],
-   "beard": "stubble",
-   "kit": "atm"
-  },
-  "aguerojuv": {
-   "name": "Sergio Agüero",
-   "skin": "tan",
-   "hair": [
-    "crop",
-    "#1a1410"
-   ],
-   "beard": "stubble",
-   "kit": "juv"
-  },
-  "aguerocity": {
-   "name": "Sergio Agüero",
-   "skin": "tan",
-   "hair": [
-    "crop",
-    "#1a1410"
-   ],
-   "beard": "stubble",
-   "kit": "mci"
-  },
-  "ferguson": {
-   "name": "Sir Alex Ferguson",
-   "skin": "pink",
-   "hair": [
-    "tidy",
-    "#e6e6e6"
+    "#1d1512"
    ],
    "beard": "none",
-   "kit": "suit"
+   "kit": "atm"
   },
-  "mancini": {
-   "name": "Roberto Mancini",
-   "skin": "olive",
+  "aguero_c": {
+   "name": "Sergio Agüero",
+   "skin": "tan",
    "hair": [
-    "slick",
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "none",
+   "kit": "mci"
+  },
+  "marwood": {
+   "name": "Brian Marwood",
+   "skin": "light",
+   "hair": [
+    "side",
     "#9a9a9a"
    ],
    "beard": "none",
-   "kit": "suit"
+   "kit": "suit",
+   "club": "mci"
+  },
+  "ferguson": {
+   "name": "Alex Ferguson",
+   "skin": "pink",
+   "hair": [
+    "side",
+    "#d8d8d8"
+   ],
+   "beard": "none",
+   "kit": "suit",
+   "club": "mun"
   }
  },
  "lines": [
   {
-   "text": "What if the most famous goal in Premier League history was never scored, because the man who scored it never came?",
+   "text": "What if the man who scored ninety-three twenty never came to City?",
+   "say": "What if the man who scored ninety-three twenty never came to City?",
    "scene": {
     "type": "title",
-    "heading": "SERGIO AGÜERO",
-    "sub": "ATLÉTICO MADRID · 2011",
+    "heading": "AGÜERO",
+    "sub": "Atlético Madrid · 2011",
     "pill": "WHAT IF?",
-    "person": "aguero"
-   }
-  },
-  {
-   "text": "Summer twenty eleven. Kun Agüero is twenty-three, and half of Europe wants him.",
-   "scene": {
-    "type": "person",
     "person": "aguero",
-    "label": "AGE 23",
-    "mood": "happy"
+    "club": "atm"
    }
   },
   {
-   "text": "Real Madrid were interested. Chelsea were interested. But Juventus got closest.",
-   "scene": {
-    "type": "list",
-    "title": "WHO WANTED KUN",
-    "rows": [
-     {
-      "name": "Juventus",
-      "value": "closest",
-      "club": "juv",
-      "hl": true
-     },
-     {
-      "name": "Real Madrid",
-      "value": "interested",
-      "club": "rma"
-     },
-     {
-      "name": "Chelsea",
-      "value": "interested",
-      "club": "che"
-     },
-     {
-      "name": "Man City",
-      "value": "signed him",
-      "club": "mci"
-     }
-    ]
-   }
-  },
-  {
-   "text": "Years later he said it himself: before City, he had everything in place with Juventus.",
-   "scene": {
-    "type": "quote",
-    "person": "aguero",
-    "text": "Before Manchester City, I had everything in place with Juventus."
-   }
-  },
-  {
-   "text": "Then City came in, for a fee of around thirty-five million pounds.",
+   "text": "Summer 2011. Kun Agüero is twenty-three, and one of the deadliest strikers in Spain.",
+   "say": "Summer, twenty eleven. Kun Ahgwairoh is twenty-three, and one of the deadliest strikers in Spain.",
    "scene": {
     "type": "stats",
-    "title": "JULY 2011",
+    "kicker": "Atlético Madrid · 2006-2011",
+    "title": "Kun Agüero",
     "items": [
      {
-      "n": "£35m",
-      "l": "reported fee"
+      "n": "74",
+      "l": "La Liga goals"
      },
      {
       "n": "23",
       "l": "years old"
      }
     ],
-    "person": "aguerocity"
+    "person": "aguero"
    }
   },
   {
-   "text": "So in this alternate world, Kun signs for Juventus instead.",
+   "text": "In May he asks Atlético to let him go, and the giants circle.",
+   "say": "In May he asks Atleteeko to let him go, and the giants circle.",
+   "scene": {
+    "type": "news",
+    "section": "La Liga",
+    "headline": "Agüero asks Atlético to let him leave",
+    "standfirst": "The Argentine striker wants a bigger stage. Europe's biggest clubs are watching.",
+    "date": "23 May 2011",
+    "byline": "Knowitball archive",
+    "person": "aguero",
+    "club": "atm",
+    "nav": [
+     "Football",
+     "La Liga",
+     "Atlético",
+     "Transfers"
+    ]
+   }
+  },
+  {
+   "text": "City's director of football Brian Marwood later said Real Madrid and Juventus were pushing hard.",
+   "scene": {
+    "type": "quote",
+    "person": "marwood",
+    "text": "Real Madrid and Juventus were pushing hard, so we had to get it done quickly."
+   }
+  },
+  {
+   "text": "City moved fast. Around thirty-five million pounds, and he was theirs.",
+   "scene": {
+    "type": "stats",
+    "kicker": "28 July 2011",
+    "title": "Agüero joins City",
+    "items": [
+     {
+      "n": "£35m",
+      "l": "reported fee"
+     },
+     {
+      "n": "5",
+      "l": "year contract"
+     }
+    ],
+    "person": "aguero_c"
+   }
+  },
+  {
+   "text": "Now flip it. Real Madrid or Juventus get there first.",
    "scene": {
     "type": "whatif",
-    "title": "SUMMER 2011",
+    "title": "The sliding door",
     "real": {
-     "label": "Real world",
-     "value": "Man City"
+     "label": "As it happened",
+     "value": "Agüero joins City"
     },
     "alt": {
-     "label": "Alternate world",
-     "value": "Juventus"
+     "label": "What if",
+     "value": "Agüero joins Madrid or Juve"
     }
    }
   },
   {
-   "text": "Now jump to the last day of the season. City are two-one down to ten-man QPR in stoppage time.",
+   "text": "Final day of that season. City and QPR, two-two, ninety-three minutes gone.",
+   "say": "Final day of that season. City and Queens Park Rangers, two two, ninety-three minutes gone.",
    "scene": {
     "type": "score",
     "home": "mci",
     "away": "qpr",
-    "hs": 1,
+    "hs": 2,
     "as": 2,
-    "date": "13 May 2012",
+    "date": "13 May 2012 · Etihad Stadium",
     "comp": "Premier League",
-    "note": "90 mins played"
+    "ft": "93 MINUTES",
+    "note": "United are winning at Sunderland"
    }
   },
   {
-   "text": "Džeko heads the equaliser. Then, at ninety-three minutes twenty, Agüero wins the league.",
+   "text": "In the real world, Balotelli pokes it to Agüero, and he wins the league.",
+   "say": "In the real world, Balotelly pokes it to Ahgwairoh, and he wins the league.",
    "scene": {
-    "type": "score",
-    "home": "mci",
-    "away": "qpr",
-    "hs": 3,
-    "as": 2,
-    "date": "13 May 2012",
-    "comp": "Premier League",
-    "note": "Agüero 93:20",
-    "stamp": "93:20"
-   }
-  },
-  {
-   "text": "But Kun is in Turin. In our alternate world, the game finishes two-two.",
-   "scene": {
-    "type": "whatif",
-    "title": "FINAL DAY",
-    "real": {
-     "label": "Real world",
-     "value": "City 3-2 QPR"
+    "type": "gameclip",
+    "parts": [
+     [
+      "gamecap/out/city-qpr-2012/aguero-9320/high",
+      50,
+      128
+     ],
+     [
+      "gamecap/out/city-qpr-2012/aguero-9320/tight",
+      40,
+      130
+     ]
+    ],
+    "popup": {
+     "home": "mci",
+     "away": "qpr",
+     "homeName": "Man City",
+     "hs0": 2,
+     "as0": 2,
+     "hs": 3,
+     "as": 2,
+     "scorer": "Agüero",
+     "assist": "Balotelli",
+     "awayName": "QPR"
     },
-    "alt": {
-     "label": "Alternate world",
-     "value": "City 2-2 QPR"
-    }
+    "caption": "Agüeroooo",
+    "goalAt": 1.73
    }
   },
   {
-   "text": "United won at Sunderland, so they finish on eighty-nine points. City finish on eighty-seven.",
+   "text": "In our world, there is no Agüero. It ends two-two, and City finish second.",
    "scene": {
     "type": "versus",
-    "title": "ALTERNATE TABLE",
+    "title": "Final table, what if",
     "left": {
-     "person": "ferguson",
+     "club": "mun",
      "label": "Man United",
-     "value": "89"
+     "value": 89,
+     "sub": "points",
+     "win": true
     },
     "right": {
-     "person": "mancini",
+     "club": "mci",
      "label": "Man City",
-     "value": "87"
+     "value": 87,
+     "sub": "points"
     }
    }
   },
   {
-   "text": "Sir Alex Ferguson lifts title number twenty, one year earlier than he really did.",
+   "text": "Sir Alex Ferguson lifts title number twenty, a year early.",
    "scene": {
     "type": "trophies",
+    "kicker": "What if",
+    "title": "United's 20th title, in 2012",
     "items": [
      {
       "kind": "league",
-      "label": "United's 20th (imagined)"
+      "label": "Premier League 2011/12"
      }
     ],
     "person": "ferguson"
    }
   },
   {
-   "text": "And City's first league title since nineteen sixty-eight? Still waiting.",
+   "text": "And City's wait for a first title since 1968 goes on.",
+   "say": "And City's wait for a first title since nineteen sixty-eight goes on.",
    "scene": {
     "type": "stamp",
     "text": "STILL WAITING",
-    "color": "red"
+    "sub": "No league title since 1968",
+    "color": "yellow"
    }
   },
   {
-   "text": "In the real world, Agüero left City in twenty twenty-one with two hundred and sixty goals, the club record.",
+   "text": "Back in the real world, Agüero scored two hundred and sixty goals for City. Nobody has scored more.",
    "scene": {
     "type": "stats",
-    "title": "THE REAL KUN",
+    "kicker": "Manchester City · 2011-2021",
+    "title": "The club's record scorer",
     "items": [
      {
       "n": "260",
-      "l": "City goals"
+      "l": "goals, all competitions"
      },
      {
-      "n": "390",
-      "l": "games"
+      "n": "184",
+      "l": "Premier League goals"
      }
     ],
-    "person": "aguerocity"
+    "person": "aguero_c"
    }
   },
   {
-   "text": "One transfer. One goal. A whole decade could look different.",
+   "text": "Five league titles. One transfer, and a whole decade looks different.",
    "scene": {
-    "type": "person",
-    "person": "aguerojuv",
-    "label": "KUN AT JUVENTUS?",
-    "mood": "flat"
+    "type": "trophies",
+    "kicker": "Agüero at City",
+    "title": "Five-time champion",
+    "items": [
+     {
+      "kind": "league",
+      "label": "Premier League",
+      "count": 5
+     }
+    ],
+    "person": "aguero_c"
    }
   },
   {
-   "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+   "text": "Follow for more, and play Road to Ballon d'Or.",
    "scene": {
     "type": "cta"
    }

@@ -2,20 +2,18 @@
  "id": "city-2012-title",
  "series": "What if Man City…?",
  "title": "93:20: what if United won 2012?",
+ "v2": true,
  "sources": [
   "https://en.wikipedia.org/wiki/2011%E2%80%9312_Premier_League",
   "https://en.wikipedia.org/wiki/Manchester_City_F.C._3%E2%80%932_Queens_Park_Rangers_F.C.",
-  "https://www.aljazeera.com/sports/2012/4/8/citys-title-hopes-fade",
-  "https://uefa.com/news-media/news/0254-0d7dd06a1466-54980d8cbf91-1000--united-go-eight-points-clear-as-city-lose-at-arsenal",
-  "https://amp.foxsports.com/stories/soccer/mancini-no-way-back-from-eight-point-gap",
-  "https://www.aljazeera.com/sports/2012/4/30/kompany-header-sinks-united",
-  "https://www.90min.com/posts/man-city-1-0-man-utd-vincent-kompany-s-captain-fantastic-moment-that-ultimately-won-the-premier-league-title-01e757ny0c8t",
-  "https://www.aljazeera.com/amp/sports/2012/5/13/man-city-crowned-english-champions",
-  "https://www.thescore.com/epl/news/1973418/sms:",
-  "https://www.nbcnews.com/sports/soccer/man-city-guilty-almost-115-financial-charges-premier-league-says-rcna600523",
-  "https://www.mishcon.com/news/manchester-city-independent-commission-publishes-decision-on-premier-league-charges"
+  "https://www.planetfootball.com/quick-reads/man-city-qpr-2012-premier-league-title-unbelievable-stats-records-balotelli-aguero",
+  "https://www.sportsmole.co.uk/man-city/result/result-man-city-3-2-qpr_27215.html",
+  "https://www.11v11.com/matches/arsenal-v-manchester-city-08-april-2012-297833/",
+  "https://www.worldfootball.net/report/premier-league-2011-2012-arsenal-fc-manchester-city/liveticker/",
+  "https://www.skysports.com/football/arsenal-vs-manchester-city/257254",
+  "https://www.thescore.com/epl/news/1973418"
  ],
- "checked": "Arsenal 1-0 City on 8 Apr 2012, United eight clear with six left, Mancini 'not mathematically' (Al Jazeera, UEFA, Fox, Wikipedia); Kompany header 30 Apr, City top on GD (Al Jazeera, 90min); both 86 before final day, Rooney won at Sunderland, Džeko 92nd minute, Agüero 93:20, both 89 pts, +64 v +56, first PL title on GD, City's first league title since 1968 (Wikipedia x2, Al Jazeera, theScore). Alternate ending imagined. Status checked 3 Nov 2026: commission ruling published 29 Sep 2026 (all financial charges proven, most cooperation charges proven; widely reported as 114 of 115); City deny wrongdoing and lodged an appeal on 1 Oct 2026; no sanction set; appeal hearing expected around January 2027.",
+ "checked": "Arsenal 1-0 City 8 Apr 2012, Arteta 87, Balotelli 2nd yellow (worldfootball, 11v11, Eurosport); United 8 clear with 6 left (Wikipedia, Eurosport). Points tables derived from the final table and the known results: United lost at Wigan, beat Villa 4-0, drew 4-4 with Everton (Wikipedia 2011-12: 'dropped points... gap cut to three'); derby 1-0 Kompany header from Silva corner beating Smalling (Sky, AP via gamecap example); level on 86 before the final day, City ahead on GD (Wikipedia). QPR goals Zabaleta 39, Cisse 48, Barton red 55, Mackie 66; Dzeko 90+2 from Silva corner; Aguero 93:20 from Balotelli (Wikipedia match page, Sports Mole, Planet Football). Final table and GD +64/+56 (Wikipedia). First title since 1967-68 (Wikipedia, Planet Football). What-if: at 2-2 City finish on 87.",
  "clubs": {
   "mci": {
    "name": "Manchester City",
@@ -51,6 +49,48 @@
    "c1": "#eb172b",
    "c2": "#ffffff",
    "pattern": "stripes"
+  },
+  "tot": {
+   "name": "Tottenham Hotspur",
+   "short": "TOT",
+   "c1": "#ffffff",
+   "c2": "#132257",
+   "pattern": "plain"
+  },
+  "wig": {
+   "name": "Wigan Athletic",
+   "short": "WIG",
+   "c1": "#1d59af",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "eve": {
+   "name": "Everton",
+   "short": "EVE",
+   "c1": "#003399",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "avl": {
+   "name": "Aston Villa",
+   "short": "AVL",
+   "c1": "#670e36",
+   "c2": "#95bfe5",
+   "pattern": "plain"
+  },
+  "new": {
+   "name": "Newcastle United",
+   "short": "NEW",
+   "c1": "#111111",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "che": {
+   "name": "Chelsea",
+   "short": "CHE",
+   "c1": "#034694",
+   "c2": "#ffffff",
+   "pattern": "plain"
   }
  },
  "people": {
@@ -59,225 +99,455 @@
    "skin": "tan",
    "hair": [
     "crop",
-    "#1a1410"
+    "#1d1512"
    ],
-   "beard": "stubble",
+   "beard": "none",
    "kit": "mci"
-  },
-  "mancini": {
-   "name": "Roberto Mancini",
-   "skin": "olive",
-   "hair": [
-    "slick",
-    "#9a9a9a"
-   ],
-   "beard": "none",
-   "kit": "suit"
-  },
-  "ferguson": {
-   "name": "Sir Alex Ferguson",
-   "skin": "pink",
-   "hair": [
-    "tidy",
-    "#e6e6e6"
-   ],
-   "beard": "none",
-   "kit": "suit"
   },
   "kompany": {
    "name": "Vincent Kompany",
    "skin": "brown",
    "hair": [
     "buzz",
-    "#111111"
-   ],
-   "beard": "short",
-   "beardCol": "#111111",
-   "kit": "mci"
-  },
-  "dzeko": {
-   "name": "Edin Džeko",
-   "skin": "light",
-   "hair": [
-    "crop",
-    "#2a1d14"
+    "#0d0a09"
    ],
    "beard": "stubble",
    "kit": "mci"
+  },
+  "ferguson": {
+   "name": "Alex Ferguson",
+   "skin": "pink",
+   "hair": [
+    "side",
+    "#d8d8d8"
+   ],
+   "beard": "none",
+   "kit": "suit",
+   "club": "mun"
   }
  },
  "lines": [
   {
-   "text": "Ninety-three minutes and twenty seconds. Change one kick, and Manchester United win the twenty twelve title.",
+   "text": "Ninety-three minutes, twenty seconds. The most famous moment in Premier League history.",
    "scene": {
     "type": "title",
     "heading": "93:20",
-    "sub": "MAN CITY v QPR · 13 MAY 2012",
-    "pill": "WHAT IF?",
-    "person": "aguero"
+    "sub": "Manchester City · 2011/12",
+    "pill": "THE TITLE RACE",
+    "person": "aguero",
+    "club": "mci"
    }
   },
   {
-   "text": "Rewind to April. City lose one-nil at Arsenal, and United go eight points clear with six games left.",
+   "text": "April 2012. A late Arteta goal beats City at Arsenal.",
+   "say": "April, twenty twelve. A late Artetta goal beats City at Arsenal.",
    "scene": {
     "type": "score",
     "home": "ars",
     "away": "mci",
     "hs": 1,
     "as": 0,
-    "date": "8 April 2012",
+    "date": "8 April 2012 · Emirates Stadium",
     "comp": "Premier League",
-    "note": "United 8 points clear"
+    "note": "Arteta 87' · Balotelli sent off"
    }
   },
   {
-   "text": "Was the title race over? Roberto Mancini said, not mathematically.",
+   "text": "United are eight points clear, with six games left. Surely it's over.",
    "scene": {
-    "type": "quote",
-    "person": "mancini",
-    "text": "Not mathematically."
-   }
-  },
-  {
-   "text": "Then United slipped up three games in a row, and City won all three.",
-   "scene": {
-    "type": "stats",
-    "title": "THE COLLAPSE",
-    "items": [
+    "type": "compare",
+    "title": "After 8 April 2012",
+    "left": {
+     "club": "mun",
+     "name": "Man United",
+     "sub": "1st"
+    },
+    "right": {
+     "club": "mci",
+     "name": "Man City",
+     "sub": "2nd"
+    },
+    "rows": [
      {
-      "n": "8",
-      "l": "points gap"
+      "label": "Played",
+      "l": 32,
+      "r": 32
      },
      {
-      "n": "3",
-      "l": "points gap, 3 games later"
+      "label": "Points",
+      "l": 79,
+      "r": 71,
+      "better": "l"
+     },
+     {
+      "label": "Games left",
+      "l": 6,
+      "r": 6
      }
     ]
    }
   },
   {
-   "text": "Thirtieth of April, the derby. Kompany heads City top on goal difference.",
+   "text": "Then United crack. Beaten at Wigan. Four-two up against Everton, and they draw four-four.",
    "scene": {
-    "type": "score",
-    "home": "mci",
-    "away": "mun",
-    "hs": 1,
-    "as": 0,
-    "date": "30 April 2012",
-    "comp": "Premier League",
-    "note": "Kompany header"
+    "type": "list",
+    "kicker": "United's April",
+    "title": "The wobble",
+    "rows": [
+     {
+      "name": "Wigan 1-0 Man United",
+      "value": "L",
+      "club": "wig",
+      "hl": true
+     },
+     {
+      "name": "Man United 4-0 Aston Villa",
+      "value": "W",
+      "club": "avl"
+     },
+     {
+      "name": "Man United 4-4 Everton",
+      "value": "D",
+      "club": "eve",
+      "hl": true
+     }
+    ]
    }
   },
   {
-   "text": "Final day. Both teams on eighty-six points. United win at Sunderland. City trail ten-man QPR two-one.",
-   "scene": {
-    "type": "score",
-    "home": "mci",
-    "away": "qpr",
-    "hs": 1,
-    "as": 2,
-    "date": "13 May 2012",
-    "comp": "Premier League",
-    "note": "90 minutes gone"
-   }
-  },
-  {
-   "text": "Džeko heads in at ninety-two. Then Agüero, ninety-three twenty. Champions.",
-   "scene": {
-    "type": "score",
-    "home": "mci",
-    "away": "qpr",
-    "hs": 3,
-    "as": 2,
-    "date": "13 May 2012",
-    "comp": "Premier League",
-    "note": "Džeko 90+2, Agüero 93:20",
-    "stamp": "AGÜEROOO"
-   }
-  },
-  {
-   "text": "Both teams on eighty-nine points. City win it on goal difference, plus sixty-four against plus fifty-six.",
+   "text": "City win all three. The gap is three points, and next up is the derby.",
    "scene": {
     "type": "versus",
-    "title": "FINAL TABLE",
+    "title": "Before the derby",
     "left": {
-     "person": "mancini",
-     "label": "Man City GD",
-     "value": "+64"
+     "club": "mun",
+     "label": "Man United",
+     "value": 83,
+     "sub": "points",
+     "win": true
     },
     "right": {
-     "person": "ferguson",
-     "label": "Man United GD",
-     "value": "+56"
+     "club": "mci",
+     "label": "Man City",
+     "value": 80,
+     "sub": "points"
     }
    }
   },
   {
-   "text": "The first Premier League title ever decided on goal difference.",
+   "text": "Thirtieth of April. Silva's corner, and Kompany beats Smalling to the header. One-nil.",
+   "say": "Thirtieth of April. Silva's corner, and Kompannee beats Smalling to the header. One nil.",
    "scene": {
-    "type": "text",
-    "heading": "A FIRST",
-    "body": "2011-12: City and United both finish on 89 points. City win on goal difference, the first time a Premier League title is settled that way."
-   }
-  },
-  {
-   "text": "Now the alternate world. The shot is saved. Two-two.",
-   "scene": {
-    "type": "whatif",
-    "title": "93:20",
-    "real": {
-     "label": "Real world",
-     "value": "City 3-2 · Champions"
+    "type": "gameclip",
+    "parts": [
+     [
+      "gamecap/out/city-2012/kompany-header/high",
+      5,
+      62
+     ],
+     [
+      "gamecap/out/city-2012/kompany-header/tight",
+      20,
+      95
+     ]
+    ],
+    "goalAt": 1.1,
+    "popup": {
+     "home": "mci",
+     "away": "mun",
+     "homeName": "Man City",
+     "awayName": "Man United",
+     "hs0": 0,
+     "as0": 0,
+     "hs": 1,
+     "as": 0,
+     "scorer": "Kompany",
+     "assist": "Silva"
     },
-    "alt": {
-     "label": "Alternate world",
-     "value": "City 2-2 · Second"
+    "caption": "Kompany rises"
+   }
+  },
+  {
+   "text": "Level on points. City top, on goal difference.",
+   "scene": {
+    "type": "compare",
+    "title": "After the derby",
+    "left": {
+     "club": "mci",
+     "name": "Man City",
+     "sub": "1st"
+    },
+    "right": {
+     "club": "mun",
+     "name": "Man United",
+     "sub": "2nd"
+    },
+    "rows": [
+     {
+      "label": "Points",
+      "l": 83,
+      "r": 83
+     },
+     {
+      "label": "Goal difference",
+      "l": "+61",
+      "r": "+53",
+      "better": "l"
+     },
+     {
+      "label": "Games left",
+      "l": 2,
+      "r": 2
+     }
+    ]
+   }
+  },
+  {
+   "text": "Final day. Both on eighty-six. City only have to beat QPR, a team fighting relegation.",
+   "say": "Final day. Both on eighty-six. City only have to beat Queens Park Rangers, a team fighting relegation.",
+   "scene": {
+    "type": "news",
+    "section": "Premier League",
+    "headline": "Title race goes to the final day",
+    "standfirst": "City and United are level on 86 points. City host QPR; United travel to Sunderland.",
+    "date": "13 May 2012",
+    "byline": "Knowitball archive",
+    "club": "mci",
+    "nav": [
+     "Football",
+     "Premier League",
+     "Man City",
+     "Man United"
+    ]
+   }
+  },
+  {
+   "text": "But after ninety minutes, ten-man QPR lead two-one. Joey Barton has been sent off.",
+   "say": "But after ninety minutes, ten-man Queens Park Rangers lead two one. Joey Barton has been sent off.",
+   "scene": {
+    "type": "score",
+    "home": "mci",
+    "away": "qpr",
+    "hs": 1,
+    "as": 2,
+    "date": "13 May 2012 · Etihad Stadium",
+    "comp": "Premier League",
+    "ft": "90 MINUTES",
+    "note": "Zabaleta 39' · Cissé 48' · Barton sent off 55' · Mackie 66'"
+   }
+  },
+  {
+   "text": "United win at Sunderland. As it stands, the title is going to Old Trafford.",
+   "scene": {
+    "type": "versus",
+    "title": "As it stands · 90 minutes",
+    "left": {
+     "club": "mun",
+     "label": "Man United",
+     "value": 89,
+     "sub": "points",
+     "win": true
+    },
+    "right": {
+     "club": "mci",
+     "label": "Man City",
+     "value": 87,
+     "sub": "points"
     }
    }
   },
   {
-   "text": "United finish two points clear. Sir Alex lifts title number twenty, a year early.",
+   "text": "Ninety-two minutes. Silva's corner, Džeko's header. Two-two.",
+   "say": "Ninety-two minutes. Silva's corner, Jecko's header. Two two.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "gamecap/out/city-qpr-2012/dzeko-header/high",
+      8,
+      100
+     ]
+    ],
+    "goalAt": 0.97,
+    "popup": {
+     "home": "mci",
+     "away": "qpr",
+     "homeName": "Man City",
+     "hs0": 1,
+     "as0": 2,
+     "hs": 2,
+     "as": 2,
+     "scorer": "Džeko",
+     "assist": "Silva",
+     "awayName": "QPR"
+    },
+    "caption": "Still alive"
+   }
+  },
+  {
+   "text": "Then, ninety-three twenty. Balotelli, falling, pokes it back to Agüero. He shoots…",
+   "say": "Then, ninety-three twenty. Balotelly, falling, pokes it back to Ahgwairoh. He shoots.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "gamecap/out/city-qpr-2012/aguero-9320/high",
+      50,
+      128
+     ],
+     [
+      "gamecap/out/city-qpr-2012/aguero-9320/tight",
+      40,
+      130
+     ]
+    ],
+    "popup": {
+     "home": "mci",
+     "away": "qpr",
+     "homeName": "Man City",
+     "hs0": 2,
+     "as0": 2,
+     "hs": 3,
+     "as": 2,
+     "scorer": "Agüero",
+     "assist": "Balotelli",
+     "awayName": "QPR"
+    },
+    "caption": "93:20",
+    "goalAt": 1.73
+   }
+  },
+  {
+   "text": "Eighty-nine points each. City are champions on goal difference, plus sixty-four to plus fifty-six.",
+   "scene": {
+    "type": "table",
+    "season": "Final table 2011/12",
+    "title": "Premier League",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "mci",
+      "p": 38,
+      "w": 28,
+      "d": 5,
+      "l": 5,
+      "gd": 64,
+      "pts": 89,
+      "hl": true
+     },
+     {
+      "pos": 2,
+      "club": "mun",
+      "p": 38,
+      "w": 28,
+      "d": 5,
+      "l": 5,
+      "gd": 56,
+      "pts": 89
+     },
+     {
+      "pos": 3,
+      "club": "ars",
+      "p": 38,
+      "w": 21,
+      "d": 7,
+      "l": 10,
+      "gd": 25,
+      "pts": 70
+     },
+     {
+      "pos": 4,
+      "club": "tot",
+      "p": 38,
+      "w": 20,
+      "d": 9,
+      "l": 9,
+      "gd": 25,
+      "pts": 69
+     },
+     {
+      "pos": 5,
+      "club": "new",
+      "p": 38,
+      "w": 19,
+      "d": 8,
+      "l": 11,
+      "gd": 5,
+      "pts": 65
+     },
+     {
+      "pos": 6,
+      "club": "che",
+      "p": 38,
+      "w": 18,
+      "d": 10,
+      "l": 10,
+      "gd": 19,
+      "pts": 64
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
+     },
+     {
+      "kind": "uel",
+      "rows": [
+       5,
+       5
+      ]
+     }
+    ],
+    "gap": {
+     "from": 1,
+     "to": 2,
+     "label": "+8 GD"
+    }
+   }
+  },
+  {
+   "text": "City's first league title in forty-four years.",
    "scene": {
     "type": "trophies",
+    "kicker": "Manchester City",
+    "title": "First title since 1968",
     "items": [
      {
       "kind": "league",
-      "label": "United's 20th (imagined)"
+      "label": "Premier League 2011/12"
      }
     ],
-    "person": "ferguson"
+    "person": "kompany"
    }
   },
   {
-   "text": "He really did win the league in twenty thirteen, so in this world, that makes twenty-one.",
+   "text": "Change that one kick, and it's two-two. United win the league, two points clear.",
    "scene": {
-    "type": "timeline",
-    "items": [
-     {
-      "year": "2012",
-      "label": "Title 20 (imagined)"
-     },
-     {
-      "year": "2013",
-      "label": "Title 21 (imagined)"
-     },
-     {
-      "year": "1968",
-      "label": "City's last title, still"
-     }
-    ]
+    "type": "whatif",
+    "title": "What if Agüero misses?",
+    "real": {
+     "label": "As it happened",
+     "value": "City champions on GD"
+    },
+    "alt": {
+     "label": "Agüero misses",
+     "value": "United champions by 2 pts"
+    }
    }
   },
   {
-   "text": "Back in the real world, that twenty twelve title still stands. No sanction has been set in the one hundred and fifteen case.",
-   "scene": {
-    "type": "text",
-    "heading": "THE REAL WORLD",
-    "body": "The 2012 title stands. The 115 ruling covers 2009 to 2018, City are appealing, and no sanction has been decided."
-   }
-  },
-  {
-   "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+   "text": "Follow for more, and play Road to Ballon d'Or.",
    "scene": {
     "type": "cta"
    }
