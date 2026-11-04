@@ -53,7 +53,7 @@
         { "pos": 4, "name": "Rodri", "value": "4th", "club": "mci" },
         { "pos": 5, "name": "Lionel Messi", "value": "5th", "club": "mia" } ] } },
     { "text": "Then Kvaratskhelia, Dembélé, Haaland, Olise and Fabián Ruiz.",
-      "say": "Then Kvahratskelleeuh, Dembehlay, Hohland, Ohleesay and Fabbeean Rooeeth.",
+      "say": "Then Kvaratskeleea, Dembehlay, Hohland, Ohleesay and Fabeean Rweeth.",
       "scene": { "type": "list", "kicker": "Ballon d'Or 2026", "title": "Six to ten", "rows": [
         { "pos": 6, "name": "Khvicha Kvaratskhelia", "value": "6th", "club": "psg" },
         { "pos": 7, "name": "Ousmane Dembélé", "value": "7th", "club": "psg" },
@@ -71,7 +71,7 @@
       "say": "Rule two. He has to be under twenty five.",
       "scene": { "type": "stamp", "text": "RULE TWO", "sub": "Under 25 years old", "person": "mbappe", "color": "yellow" } },
     { "text": "Fabián Ruiz is thirty, Mbappé twenty-seven, Haaland twenty-six, Kvaratskhelia twenty-five. All out.",
-      "say": "Fabbeean Rooeeth is thirty, Embapay twenty seven, Hohland twenty six, Kvahratskelleeuh twenty five. All out.",
+      "say": "Fabeean Rweeth is thirty, Embapay twenty seven, Hohland twenty six, Kvaratskeleea twenty five. All out.",
       "scene": { "type": "bars", "kicker": "Rule two", "title": "Age today", "unit": "", "max": 32, "items": [
         { "label": "Fabián Ruiz", "value": 30, "club": "psg" },
         { "label": "Mbappé", "value": 27, "club": "rma" },
