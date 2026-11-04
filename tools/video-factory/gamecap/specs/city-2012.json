@@ -1,0 +1,34 @@
+{
+  "_about": "Three City goals from the 2011-12 title run, for city-2012-title and city-aguero-2011. (1) Kompany's header v United, 30 Apr 2012, 45+1: copied from examples/kompany-2012.json. (2) Dzeko's header v QPR, 13 May 2012, 90+2: David Silva's in-swinging corner (Wikipedia 'Manchester City F.C. 3-2 QPR', Planet Football); the corner's side is not stated, right is assumed. (3) Aguero 93:20 v QPR: Aguero plays it to Balotelli, Balotelli falls under Anton Ferdinand's challenge and pokes it back, Aguero goes past Taye Taiwo and fires low into the near corner past Paddy Kenny (Wikipedia match article, theScore 'Anatomy of a classic goal'). QPR wore their 2011-12 Lotto third kit (Wikipedia infobox file name): red and white squares (worldsoccertalk); the sprite has one shirt colour, so it is drawn plain red with white shorts. Keeper kit colours assumed.",
+  "teams": {
+    "home": { "name": "Manchester City", "kit": { "shirt": "#6CABDD", "shorts": "#FFFFFF", "socks": "#6CABDD" }, "keeperKit": { "shirt": "#1F2A44", "shorts": "#1F2A44", "socks": "#1F2A44" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Manchester United", "kit": { "shirt": "#DA020E", "shorts": "#FFFFFF", "socks": "#111111" }, "keeperKit": { "shirt": "#2E8B57", "shorts": "#1B1B1B", "socks": "#2E8B57" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "kompany":   { "name": "Vincent Kompany", "skin": "#5a3826", "hair": "#0d0a09" },
+    "silva":     { "name": "David Silva", "skin": "#e8b994", "hair": "#2a1d15" },
+    "lescott":   { "name": "Joleon Lescott", "skin": "#f0c3a0", "hair": "#c9a27e" },
+    "toure":     { "name": "Yaya Toure", "skin": "#4a2e1e", "hair": "#0d0a09" },
+    "aguero":    { "name": "Sergio Aguero", "skin": "#d9a57e", "hair": "#1d1512", "popupName": "Agüero" },
+    "smalling":  { "name": "Chris Smalling", "skin": "#7a4e33", "hair": "#0d0a09" },
+    "giggs":     { "name": "Ryan Giggs", "skin": "#e6b48f", "hair": "#2a1d15" },
+    "ferdinand": { "name": "Rio Ferdinand", "skin": "#5e3a24", "hair": "#0d0a09" },
+    "jones":     { "name": "Phil Jones", "skin": "#f2c4a6", "hair": "#5b3a22" },
+    "evra":      { "name": "Patrice Evra", "skin": "#3e2618", "hair": "#0d0a09" },
+    "degea":     { "name": "David de Gea", "skin": "#eac09c", "hair": "#2a1d15" }
+  },
+  "clips": [
+    {
+      "id": "kompany-header",
+      "kind": "header", "attacking": "home",
+      "scorer": "kompany", "assister": "silva",
+      "defenders": ["smalling", "giggs", "ferdinand", "jones", "evra"],
+      "keeper": "degea", "teammates": ["lescott", "toure", "aguero"],
+      "minute": 45, "minuteLabel": "45+1", "scoreBefore": [0, 0], "scoreAfter": [1, 0],
+      "night": true, "celebration": "roar",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "corner", "side": "right", "swing": "in", "scorerStart": [-2, 16.5], "scorerSpot": [0.5, 6.5], "finish": "header", "height": "mid" },
+      "seed": "kompany-2012-a"
+    }
+  ]
+}

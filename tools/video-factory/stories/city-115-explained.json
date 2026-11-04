@@ -2,19 +2,17 @@
  "id": "city-115-explained",
  "series": "What if Man City…?",
  "title": "Man City's 115 charges, explained",
+ "v2": true,
  "sources": [
+  "https://en.wikipedia.org/wiki/Manchester_City_F.C._financial_breaches_scandal",
   "https://www.nbcnews.com/sports/soccer/man-city-guilty-almost-115-financial-charges-premier-league-says-rcna600523",
-  "https://www.mishcon.com/news/manchester-city-independent-commission-publishes-decision-on-premier-league-charges",
-  "https://www.premierleague.com/en/news/4729207/premier-league-statement-manchester-city-fc-appeal-decision-of-independent-commission-02-october-2026",
+  "https://www.nbcsports.com/soccer/news/manchester-city-guilty-of-all-charges-related-to-serious-breaches-of-premier-league-financial-rules",
+  "https://sports.yahoo.com/articles/man-city-appeal-against-verdict-135918421.html",
   "https://dragonfootball.co.uk/football-finance/man-city-115-charges/",
-  "https://www.skysports.com/football/news/13593377/man-city-premier-league-charges-appeal-process-punishment-hearing-and-what-happens-now-after-guilty-verdict",
-  "https://www.aljazeera.com/sports/2026/10/14/manchester-city-appeal-over-charges-to-be-heard-by-january-says-regulator",
-  "https://global.espn.com/football/story/_/id/41279820/man-city-vs-premier-league-115-charges-whats-stake",
-  "https://www.lbc.co.uk/news/sport/what-114-charges-manchester-city/",
-  "https://www.sportsmole.co.uk/football/man-city/feature/man-city-found-guilty-how-could-they-be-punished_605796.html",
-  "https://www.espn.com/soccer/story/_/id/50083711/man-city-financial-breaches-appeal-guilty-verdict-premier-league"
+  "https://english.ahram.org.eg/News/577832.aspx",
+  "https://global.espn.com/football/story/_/id/41282849/hearing-man-city-115-financial-charges-set-begin"
  ],
- "checked": "Status checked 3 Nov 2026: commission ruling published 29 Sep 2026 (all financial charges proven, most cooperation charges proven; widely reported as 114 of 115); City deny wrongdoing and lodged an appeal on 1 Oct 2026; no sanction set; appeal hearing expected around January 2027. Charge groups 54/14/5/7/35 (ESPN, LBC); £900m+ and Masters quote (NBC, Mishcon); 42-day hearing in 2024 (Mishcon); no CAS route, High Court possible (Sky); appeal by January (Al Jazeera). Sanctions listed as possible only.",
+ "checked": "State as of 4 Nov 2026. Charged 6 Feb 2023: 54 financial information, 14 pay, 7 PSR + 5 UEFA FFP, 35 cooperation (Wikipedia, ESPN). Hearing 16 Sep to 6 Dec 2024 (Wikipedia, Flashscore). Verdict confirmed 29 Sep 2026: all financial charges, most cooperation charges; 114 of 115 reported (AP/NBC, Wikipedia, Yahoo). Sham sponsorship, more than £900m (AP, Wikipedia). Masters quote (AP via NBC News, NBC Sports). City 'disappointed and surprised', 'clear material errors... unsafe', appeal lodged 1 Oct (Yahoo, Dragon Football, Ahram). No sanction yet; separate hearing after the appeal; possible fines, points, relegation, expulsion (Wikipedia, AP). No appeal date found: left out. Takeover 2008 and titles 2012/14/18 are general record.",
  "clubs": {
   "mci": {
    "name": "Manchester City",
@@ -22,20 +20,17 @@
    "c1": "#6cabdd",
    "c2": "#ffffff",
    "pattern": "plain"
+  },
+  "pl": {
+   "name": "Premier League",
+   "short": "PL",
+   "c1": "#3d195b",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": false
   }
  },
  "people": {
-  "khaldoon": {
-   "name": "Khaldoon Al Mubarak",
-   "skin": "tan",
-   "hair": [
-    "crop",
-    "#1a1a1a"
-   ],
-   "beard": "short",
-   "beardCol": "#2a2a2a",
-   "kit": "suit"
-  },
   "masters": {
    "name": "Richard Masters",
    "skin": "light",
@@ -44,102 +39,160 @@
     "#8a8a8a"
    ],
    "beard": "none",
-   "kit": "suit"
+   "kit": "suit",
+   "club": "pl"
   }
  },
  "lines": [
   {
-   "text": "One hundred and fifteen charges. And this autumn, Manchester City finally got a verdict.",
+   "text": "One hundred and fifteen charges. Nine seasons. And after nearly three years, a verdict.",
    "scene": {
     "type": "title",
-    "heading": "THE 115 CHARGES",
-    "sub": "MAN CITY v PREMIER LEAGUE",
-    "pill": "EXPLAINED",
-    "person": "khaldoon"
+    "heading": "THE 115",
+    "sub": "Manchester City v the Premier League",
+    "pill": "THE VERDICT",
+    "club": "mci"
    }
   },
   {
-   "text": "In twenty twenty-three, the Premier League charged City over nine seasons, two thousand nine to twenty eighteen.",
+   "text": "February 2023. The Premier League drops a bombshell on its own champions.",
+   "say": "February, twenty twenty-three. The Premier League drops a bombshell on its own champions.",
    "scene": {
-    "type": "text",
-    "heading": "FEBRUARY 2023",
-    "body": "The Premier League charges Manchester City with 115 breaches of its rules, covering 2009-10 to 2017-18, plus the investigation itself."
+    "type": "news",
+    "section": "Premier League",
+    "headline": "Manchester City charged with 115 breaches of financial rules",
+    "standfirst": "The league refers nine seasons, 2009-10 to 2017-18, to an independent commission.",
+    "date": "6 February 2023",
+    "byline": "Knowitball archive",
+    "club": "mci",
+    "nav": [
+     "Football",
+     "Premier League",
+     "Man City",
+     "Finance"
+    ]
    }
   },
   {
    "text": "Fifty-four on accounts. Fourteen on player and manager pay. Twelve on spending rules. Thirty-five for not cooperating.",
    "scene": {
-    "type": "stats",
-    "title": "THE 115",
+    "type": "bars",
+    "kicker": "The 115 charges",
+    "title": "What City were charged with",
     "items": [
      {
-      "n": "54",
-      "l": "accurate financial info"
+      "label": "Accurate financial information",
+      "value": 54,
+      "hl": true
      },
      {
-      "n": "14",
-      "l": "player & manager pay"
+      "label": "Player and manager pay",
+      "value": 14
      },
      {
-      "n": "12",
-      "l": "UEFA + PL spending rules"
+      "label": "Spending rules (PL 7, UEFA 5)",
+      "value": 12
      },
      {
-      "n": "35",
-      "l": "not cooperating"
+      "label": "Not cooperating",
+      "value": 35
      }
-    ]
+    ],
+    "unit": "charges"
    }
   },
   {
-   "text": "The hearing ran forty-two days in twenty twenty-four. Then, nearly two years of silence.",
+   "text": "Those were the years City became a superpower. Bought by Abu Dhabi in 2008, champions three times.",
+   "say": "Those were the years City became a superpower. Bought by Abu Dhabi in two thousand and eight, champions three times.",
    "scene": {
     "type": "timeline",
+    "kicker": "Inside the nine seasons",
+    "title": "The rise of City",
     "items": [
      {
+      "year": "2008",
+      "label": "Abu Dhabi takeover",
+      "club": "mci"
+     },
+     {
+      "year": "2012",
+      "label": "First title in 44 years",
+      "club": "mci",
+      "hl": true
+     },
+     {
+      "year": "2014",
+      "label": "Champions again",
+      "club": "mci",
+      "hl": true
+     },
+     {
       "year": "2018",
-      "label": "Investigation opens"
-     },
-     {
-      "year": "2023",
-      "label": "115 charges"
-     },
-     {
-      "year": "2024",
-      "label": "42-day hearing"
-     },
-     {
-      "year": "2026",
-      "label": "Verdict"
+      "label": "The 100-point champions",
+      "club": "mci",
+      "hl": true
      }
     ]
    }
   },
   {
-   "text": "On the twenty-ninth of September, the commission ruled.",
+   "text": "The hearing ran from September to December 2024. Then silence, for almost two years.",
+   "say": "The hearing ran from September to December, twenty twenty-four. Then silence, for almost two years.",
    "scene": {
-    "type": "text",
-    "heading": "29 SEPTEMBER 2026",
-    "body": "Commission: every financial charge proven, plus most of the charges for failing to cooperate. Reports put it at 114 of 115."
+    "type": "stats",
+    "kicker": "The longest wait",
+    "title": "Behind closed doors",
+    "items": [
+     {
+      "n": "12",
+      "l": "weeks of hearing"
+     },
+     {
+      "n": "21",
+      "l": "months of silence"
+     }
+    ]
    }
   },
   {
-   "text": "Every financial charge proven, plus most cooperation charges. Reports say one hundred and fourteen of one hundred and fifteen.",
+   "text": "Then, on the twenty-ninth of September 2026, it landed.",
+   "say": "Then, on the twenty-ninth of September, twenty twenty-six, it landed.",
+   "scene": {
+    "type": "news",
+    "section": "Breaking",
+    "headline": "Manchester City found guilty of breaking Premier League financial rules",
+    "standfirst": "An independent commission upholds every financial charge across nine seasons, and most of the charges for not cooperating.",
+    "date": "29 September 2026",
+    "byline": "Knowitball",
+    "club": "mci",
+    "mastColor": "#7a0c12",
+    "nav": [
+     "Football",
+     "Premier League",
+     "Man City",
+     "The 115"
+    ]
+   }
+  },
+  {
+   "text": "Every financial charge proven. Reports say one hundred and fourteen of the one hundred and fifteen.",
    "scene": {
     "type": "stamp",
-    "text": "PROVEN",
+    "text": "GUILTY",
+    "sub": "114 of 115 charges, reports say",
     "color": "red"
    }
   },
   {
-   "text": "The finding: commercial deals that inflated City's income and cut its costs, by over nine hundred million pounds.",
+   "text": "The commission found sham sponsorship deals that boosted City's income and cut their costs, by more than nine hundred million pounds.",
    "scene": {
     "type": "stats",
-    "title": "WHAT THE COMMISSION FOUND",
+    "kicker": "What the commission found",
+    "title": "Sham deals worth £900m+",
     "items": [
      {
-      "n": "£900m+",
-      "l": "income inflated / costs cut"
+      "n": "900",
+      "l": "£ million, at least"
      },
      {
       "n": "9",
@@ -149,7 +202,7 @@
    }
   },
   {
-   "text": "Premier League boss Richard Masters said the club systematically broke the rules for nearly a decade.",
+   "text": "League boss Richard Masters: the club systematically broke the rules for nearly a decade.",
    "scene": {
     "type": "quote",
     "person": "masters",
@@ -157,75 +210,90 @@
    }
   },
   {
-   "text": "City say they are innocent, and they lodged an appeal on the first of October.",
+   "text": "City said they were disappointed and surprised, called the ruling unsafe, and appealed.",
    "scene": {
-    "type": "person",
-    "person": "khaldoon",
-    "label": "CITY: \"WE ARE INNOCENT\"",
-    "mood": "flat",
-    "stamp": "APPEALED"
+    "type": "news",
+    "section": "Man City",
+    "headline": "City appeal against 115 verdict",
+    "standfirst": "The club says the ruling has “clear material errors, of law, principle and fact” and insists it is innocent.",
+    "date": "1 October 2026",
+    "byline": "Knowitball",
+    "club": "mci",
+    "mastColor": "#1b2a44",
+    "nav": [
+     "Football",
+     "Premier League",
+     "Man City",
+     "The 115"
+    ]
    }
   },
   {
-   "text": "So right now, there is no punishment. That comes at a separate hearing, with no date set.",
+   "text": "So right now, there is no punishment. The appeal comes first, then a separate hearing on sanctions.",
    "scene": {
-    "type": "stamp",
-    "text": "NO SANCTION YET",
-    "color": "yellow"
-   }
-  },
-  {
-   "text": "The appeal goes to three new independent judges, with a hearing expected around January.",
-   "scene": {
-    "type": "text",
-    "heading": "WHAT HAPPENS NEXT",
-    "body": "Appeal Board of three, picked by the chair of the league's Judicial Panel. Hearing expected by January 2027. No Court of Arbitration for Sport this time."
-   }
-  },
-  {
-   "text": "Possible punishments? Fines, a points deduction, even relegation or expulsion. None of it is decided.",
-   "scene": {
-    "type": "list",
-    "title": "POSSIBLE (NOT DECIDED)",
-    "rows": [
+    "type": "timeline",
+    "kicker": "What happens next",
+    "title": "The road from here",
+    "items": [
      {
-      "name": "Fine",
-      "value": "possible"
-     },
-     {
-      "name": "Points deduction",
-      "value": "possible"
-     },
-     {
-      "name": "Relegation-size deduction",
-      "value": "possible",
+      "year": "Sep 26",
+      "label": "Verdict: guilty",
       "hl": true
      },
      {
-      "name": "Expulsion",
-      "value": "possible",
+      "year": "Oct 26",
+      "label": "City appeal"
+     },
+     {
+      "year": "Next",
+      "label": "Appeal board rules"
+     },
+     {
+      "year": "Then",
+      "label": "Sanctions hearing"
+     }
+    ]
+   }
+  },
+  {
+   "text": "And the punishment could be anything. A fine. A points deduction. Relegation. Even expulsion.",
+   "scene": {
+    "type": "list",
+    "kicker": "Possible sanctions",
+    "title": "Nothing decided yet",
+    "rows": [
+     {
+      "name": "A fine",
+      "value": "?"
+     },
+     {
+      "name": "A points deduction",
+      "value": "?"
+     },
+     {
+      "name": "Relegation",
+      "value": "?",
+      "hl": true
+     },
+     {
+      "name": "Expulsion from the league",
+      "value": "?",
       "hl": true
      }
     ]
    }
   },
   {
-   "text": "So this series asks: what if City never had the money in question? Everything after this is imagined.",
+   "text": "Guilty, but not yet punished. The biggest case in Premier League history isn't over.",
    "scene": {
-    "type": "whatif",
-    "title": "THIS SERIES",
-    "real": {
-     "label": "Real world",
-     "value": "8 PL titles since 2012"
-    },
-    "alt": {
-     "label": "Alternate world",
-     "value": "?"
-    }
+    "type": "stamp",
+    "text": "NOT OVER",
+    "sub": "Appeal pending · no sanction set",
+    "color": "yellow"
    }
   },
   {
-   "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+   "text": "Follow for more, and play Road to Ballon d'Or.",
    "scene": {
     "type": "cta"
    }
