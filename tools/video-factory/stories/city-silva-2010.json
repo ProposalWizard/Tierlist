@@ -2,22 +2,23 @@
  "id": "city-silva-2010",
  "series": "What if Man City…?",
  "title": "What if David Silva went to Real Madrid?",
+ "v2": true,
  "sources": [
   "https://en.wikipedia.org/wiki/David_Silva",
-  "https://www.uefa.com/uefaeuropaleague/news/newsid=1502225.html",
-  "https://www.oldham-chronicle.co.uk/news-features/9/sport-news/43636/city-complete-silva-swoop",
-  "https://www.90min.com/posts/why-david-silva-chose-man-city-instead-of-real-madrid",
-  "https://live.mancity.com/features/davidsilvadecadeofsuccess",
-  "https://abc7ny.com/post/david-villa-i-only-signed-for-barcelona-as-valencia-needed-the-money/1676238/",
-  "https://www.planetfootball.com/quick-reads/an-eye-catching-xi-of-players-sold-by-valencia-since-2010-silva-mata",
+  "https://www.uefa.com/news-media/news/01e9-0e5b56c4fbe2-70b4f8a46fbf-1000--city-seal-silva-deal",
+  "https://en.wikipedia.org/wiki/David_Villa",
+  "https://www.planetfootball.com/quick-reads/david-silva-valencia-man-city-transfer",
   "https://www.goal.com/en-gb/news/25m-tiny-slow-only-left-footed-didnt-know-his-position-hart/10zhr60hhikrd1ii2ttt8oavhl",
   "https://www.football-espana.net/2019/10/01/david-silva-was-tiny-slow-one-footed-joe-hart",
-  "https://www.mancity.com/mancitylegends/silva-david",
-  "https://www.premierleague.com/en/events/hall-of-fame/nominees/david-silva",
-  "https://www.aljazeera.com/sports/2012/4/30/kompany-header-sinks-united",
-  "https://en.wikipedia.org/wiki/Manchester_City_F.C._3%E2%80%932_Queens_Park_Rangers_F.C."
+  "https://en.wikipedia.org/wiki/2011%E2%80%9312_Premier_League",
+  "https://www.skysports.com/football/news/11679/7741264/kompany-takes-city-top",
+  "https://www.thescore.com/epl/news/1973418",
+  "https://www.planetfootball.com/quick-reads/man-city-qpr-2012-premier-league-title-unbelievable-stats-records-balotelli-aguero",
+  "https://www.irishexaminer.com/sport/soccer/arid-40368422.html",
+  "https://www.skysports.com/football/news/12040/12392836/man-city-unveil-vincent-kompany-and-david-silva-statues-ahead-of-arsenal-game",
+  "https://www.mancity.com/news/mens/david-silva-premier-league-hall-of-fame"
  ],
- "checked": "Deal agreed 30 June 2010, fee £24m-£25m / about €30m (UEFA, Oldham Chronicle, AP via El Universo); Valencia's debts forced Villa (€40m to Barcelona) and Silva sales (Villa quote, Planet Football); Barcelona and Real Madrid interest (Silva via 90min/Wikipedia), Chelsea courted him (City's own feature); father against Madrid move as a youngster (2020 documentary quote); Hart 'tiny, slow, one-footed' (Goal, Football España); 436 games, 77 goals, 4 PL, 2 FA Cups, 5 League Cups (mancity.com, PL Hall of Fame); Silva corners for Kompany's derby header and Džeko's QPR equaliser (Al Jazeera, Wikipedia). Real Madrid path is imagined.",
+ "checked": "Spain won the 2010 World Cup with Silva in the squad (Wikipedia x2). Valencia's debts: Villa to Barcelona for €40m, Silva sold too (Wikipedia Villa, Planet Football). Silva: Barcelona and Real Madrid interested (Silva interview via Wikipedia/90min), Chelsea courted him (mancity.com feature). Deal agreed 30 June 2010, about £25m/€30m (UEFA, AP). Hart: '£25 million, tiny, slow, only left footed' on the Kickback podcast (Goal, Football España). Mourinho Madrid coach from 31 May 2010 (Wikipedia). 2011-12 final table: City 89 (28-5-5, +64), United 89 (28-5-5, +56), Arsenal 70 (+25), Spurs 69 (+25) (Wikipedia, PL). Kompany header from Silva's corner, 30 April 2012, 45+1 (Sky, AP). Džeko headed in Silva's corner at 90+2 v QPR, Agüero won it at 93:20 (theScore, Planet Football). 436 games, 77 goals, 4 PL, 2 FA Cups, 5 League Cups (mancity.com, Irish Examiner). Statue unveiled 28 Aug 2021 (Irish Examiner, Sky). Real Madrid path imagined.",
  "clubs": {
   "mci": {
    "name": "Manchester City",
@@ -26,12 +27,20 @@
    "c2": "#ffffff",
    "pattern": "plain"
   },
+  "mun": {
+   "name": "Manchester United",
+   "short": "MUN",
+   "c1": "#da291c",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
   "val": {
    "name": "Valencia",
    "short": "VAL",
    "c1": "#ffffff",
-   "c2": "#000000",
-   "pattern": "plain"
+   "c2": "#111111",
+   "pattern": "plain",
+   "badge": "Valencia CF"
   },
   "rma": {
    "name": "Real Madrid",
@@ -45,7 +54,8 @@
    "short": "BAR",
    "c1": "#a50044",
    "c2": "#004d98",
-   "pattern": "stripes"
+   "pattern": "stripes",
+   "badge": "FC Barcelona"
   },
   "che": {
    "name": "Chelsea",
@@ -59,250 +69,396 @@
    "short": "ESP",
    "c1": "#c60b1e",
    "c2": "#ffc400",
+   "pattern": "plain",
+   "badge": false
+  },
+  "ars": {
+   "name": "Arsenal",
+   "short": "ARS",
+   "c1": "#ef0107",
+   "c2": "#ffffff",
+   "pattern": "sides"
+  },
+  "tot": {
+   "name": "Tottenham Hotspur",
+   "short": "TOT",
+   "c1": "#ffffff",
+   "c2": "#132257",
    "pattern": "plain"
+  },
+  "qpr": {
+   "name": "Queens Park Rangers",
+   "short": "QPR",
+   "c1": "#1d5ba4",
+   "c2": "#ffffff",
+   "pattern": "hoops"
   }
  },
  "people": {
-  "silvaval": {
-   "name": "David Silva",
-   "skin": "olive",
-   "hair": [
-    "side",
-    "#1a1410"
-   ],
-   "beard": "none",
-   "kit": "val"
-  },
   "silva": {
    "name": "David Silva",
-   "skin": "olive",
+   "skin": "light",
    "hair": [
     "side",
-    "#1a1410"
+    "#2a1d15"
    ],
    "beard": "none",
    "kit": "mci"
   },
-  "silvarma": {
+  "silvaval": {
    "name": "David Silva",
-   "skin": "olive",
+   "skin": "light",
    "hair": [
     "side",
-    "#1a1410"
+    "#2a1d15"
+   ],
+   "beard": "none",
+   "kit": "val"
+  },
+  "silvarma": {
+   "name": "David Silva",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#2a1d15"
    ],
    "beard": "none",
    "kit": "rma"
   },
-  "mourinho": {
-   "name": "José Mourinho",
-   "skin": "olive",
+  "kompany": {
+   "name": "Vincent Kompany",
+   "skin": "brown",
    "hair": [
-    "side",
-    "#9a9a9a"
+    "buzz",
+    "#111111"
+   ],
+   "beard": "short",
+   "beardCol": "#111111",
+   "kit": "mci"
+  },
+  "hart": {
+   "name": "Joe Hart",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#5b3a22"
    ],
    "beard": "none",
-   "kit": "suit"
+   "kit": "mci"
   }
  },
  "lines": [
   {
-   "text": "The man who built Manchester City's golden era almost played for someone else.",
+   "text": "The man who built City's golden era almost played for someone else.",
    "scene": {
     "type": "title",
     "heading": "DAVID SILVA",
-    "sub": "VALENCIA · 2010",
+    "sub": "Valencia → ? · Summer 2010",
     "pill": "WHAT IF?",
-    "person": "silvaval"
+    "person": "silvaval",
+    "club": "val"
    }
   },
   {
-   "text": "Summer twenty ten. David Silva has just become a world champion with Spain.",
+   "text": "Summer 2010. David Silva has just won the World Cup with Spain.",
+   "say": "Summer, twenty ten. David Silva has just won the World Cup with Spain.",
    "scene": {
     "type": "trophies",
+    "kicker": "David Silva · Spain",
+    "title": "Champion of the world",
     "items": [
      {
+      "kind": "euro",
+      "label": "Euro 2008"
+     },
+     {
       "kind": "worldcup",
-      "label": "Spain · 2010"
+      "label": "World Cup 2010"
      }
     ],
     "person": "silvaval"
    }
   },
   {
-   "text": "But Valencia are drowning in debt. David Villa goes to Barcelona for forty million euros, and Silva has to go too.",
+   "text": "But Valencia are drowning in debt. David Villa goes to Barcelona for forty million euros. Silva has to go too.",
+   "say": "But Valensia are drowning in debt. David Veeya goes to Barcelona for forty million euros. Silva has to go too.",
    "scene": {
-    "type": "text",
-    "heading": "VALENCIA, 2010",
-    "body": "Big debts. David Villa sold to Barcelona for €40m. David Silva next. Both later said the club needed the money."
+    "type": "news",
+    "section": "La Liga",
+    "headline": "Valencia sell Villa to Barcelona for €40m",
+    "standfirst": "The club's debts mean their best players must go. David Silva is next.",
+    "date": "May 2010",
+    "byline": "Knowitball recap",
+    "club": "val",
+    "person": "silvaval",
+    "mastColor": "#1b1f2b",
+    "nav": [
+     "Football",
+     "La Liga",
+     "Valencia",
+     "Transfers"
+    ]
    }
   },
   {
-   "text": "Silva says Barcelona and Real Madrid were both interested. City's own history says Chelsea courted him too.",
+   "text": "Barcelona and Real Madrid were both interested, Silva says. Chelsea wanted him too.",
    "scene": {
-    "type": "list",
-    "title": "WHO WANTED SILVA",
+    "type": "badge",
+    "clubs": [
+     "bar",
+     "rma",
+     "che"
+    ],
+    "kicker": "Who wanted Silva?",
+    "title": "Three giants circling",
+    "sub": "Summer 2010"
+   }
+  },
+  {
+   "text": "But City moved first. Around twenty-five million pounds, agreed on the thirtieth of June.",
+   "scene": {
+    "type": "news",
+    "section": "Manchester City",
+    "headline": "City seal Silva deal with Valencia",
+    "standfirst": "The Spain playmaker joins for about £25m, days before the World Cup final.",
+    "date": "30 June 2010",
+    "byline": "Knowitball recap",
+    "club": "mci",
+    "person": "silva",
+    "mastColor": "#1c2c5b",
+    "nav": [
+     "Football",
+     "Premier League",
+     "Man City",
+     "Transfers"
+    ]
+   }
+  },
+  {
+   "text": "Joe Hart's first impression? Tiny, slow, and only left-footed.",
+   "scene": {
+    "type": "stamp",
+    "text": "TINY. SLOW.",
+    "sub": "Joe Hart's first impression of Silva",
+    "person": "hart",
+    "color": "yellow"
+   }
+  },
+  {
+   "text": "Then 2012. City and United level on eighty-nine points. City win it on goal difference.",
+   "say": "Then twenty twelve. City and United level on eighty-nine points. City win it on goal difference.",
+   "scene": {
+    "type": "table",
+    "season": "Final table 2011/12",
+    "title": "Premier League",
     "rows": [
      {
-      "name": "Real Madrid",
-      "value": "interested",
-      "club": "rma",
+      "pos": 1,
+      "club": "mci",
+      "p": 38,
+      "w": 28,
+      "d": 5,
+      "l": 5,
+      "gd": 64,
+      "pts": 89,
       "hl": true
      },
      {
-      "name": "Barcelona",
-      "value": "interested",
-      "club": "bar"
+      "pos": 2,
+      "club": "mun",
+      "p": 38,
+      "w": 28,
+      "d": 5,
+      "l": 5,
+      "gd": 56,
+      "pts": 89,
+      "hl": true
      },
      {
-      "name": "Chelsea",
-      "value": "courted him",
-      "club": "che"
+      "pos": 3,
+      "club": "ars",
+      "p": 38,
+      "w": 21,
+      "d": 7,
+      "l": 10,
+      "gd": 25,
+      "pts": 70
      },
      {
-      "name": "Man City",
-      "value": "signed him",
-      "club": "mci"
-     }
-    ]
-   }
-  },
-  {
-   "text": "He even visited Real Madrid as a kid, but his dad said no, he was too young.",
-   "scene": {
-    "type": "quote",
-    "person": "silvaval",
-    "text": "I visited Real Madrid as a young player, but my father was against it."
-   }
-  },
-  {
-   "text": "City paid around twenty-five million pounds. Joe Hart later joked he looked tiny, slow and one-footed.",
-   "scene": {
-    "type": "stats",
-    "title": "JULY 2010",
-    "items": [
-     {
-      "n": "£25m",
-      "l": "reported fee"
-     },
-     {
-      "n": "4",
-      "l": "year contract"
+      "pos": 4,
+      "club": "tot",
+      "p": 38,
+      "w": 20,
+      "d": 9,
+      "l": 9,
+      "gd": 25,
+      "pts": 69
      }
     ],
-    "person": "silva"
-   }
-  },
-  {
-   "text": "Ten years later he left with four Premier League titles, two FA Cups and five League Cups.",
-   "scene": {
-    "type": "trophies",
-    "items": [
+    "zones": [
      {
-      "kind": "league",
-      "label": "4 Premier Leagues"
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
      },
      {
-      "kind": "cup",
-      "label": "2 FA Cups"
-     },
-     {
-      "kind": "cup",
-      "label": "5 League Cups"
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
      }
     ],
-    "person": "silva"
+    "gap": {
+     "from": 1,
+     "to": 2,
+     "label": "GD +8",
+     "at": 0.45
+    }
    }
   },
   {
-   "text": "Four hundred and thirty-six games. Seventy-seven goals.",
+   "text": "Silva's corner. Kompany's header. The derby that turned the title race.",
+   "say": "Silva's corner. Kompahnee's header. The derby that turned the title race.",
    "scene": {
-    "type": "stats",
-    "title": "EL MAGO AT CITY",
-    "items": [
-     {
-      "n": "436",
-      "l": "games"
-     },
-     {
-      "n": "77",
-      "l": "goals"
-     }
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/foot/silva/kompany-header/tv",
+      0,
+      66
+     ],
+     [
+      "/tmp/claude-0/foot/silva/kompany-header/high",
+      27,
+      46
+     ],
+     [
+      "/tmp/claude-0/foot/silva/kompany-header/tight",
+      19,
+      151
+     ]
     ],
-    "person": "silva"
+    "goalAt": 2.5,
+    "popup": {
+     "home": "mci",
+     "away": "mun",
+     "homeName": "Man City",
+     "awayName": "Man United",
+     "hs0": 0,
+     "as0": 0,
+     "hs": 1,
+     "as": 0,
+     "scorer": "Kompany",
+     "assist": "Silva"
+    },
+    "caption": "KOMPANY! CITY GO TOP",
+    "captionColor": "#ffd23f"
    }
   },
   {
-   "text": "Now imagine it differently. In this alternate world, Real Madrid move first.",
+   "text": "Final day, ninety-second minute, losing to QPR. Silva's corner again, and Džeko heads it in.",
+   "say": "Final day, ninety-second minute, losing to Q P R. Silva's corner again, and Jehko heads it in.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/foot/qpr/dzeko-header/tv",
+      0,
+      66
+     ],
+     [
+      "/tmp/claude-0/foot/qpr/dzeko-header/high",
+      27,
+      103
+     ]
+    ],
+    "goalAt": 2.533,
+    "popup": {
+     "home": "mci",
+     "away": "qpr",
+     "homeName": "Man City",
+     "awayName": "QPR",
+     "hs0": 1,
+     "as0": 2,
+     "hs": 2,
+     "as": 2,
+     "scorer": "Džeko",
+     "assist": "Silva"
+    },
+    "caption": "2-2 IN STOPPAGE TIME",
+    "captionColor": "#ffd23f"
+   }
+  },
+  {
+   "text": "Two minutes later, Agüero. Ninety-three minutes, twenty seconds. City are champions.",
+   "say": "Two minutes later, Ahgwairoh. Ninety-three minutes, twenty seconds. City are champions.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/foot/qpr/aguero-9320/tv",
+      30,
+      90
+     ],
+     [
+      "/tmp/claude-0/foot/qpr/aguero-9320/high",
+      90,
+      113
+     ],
+     [
+      "/tmp/claude-0/foot/qpr/aguero-9320/tight",
+      19,
+      150
+     ]
+    ],
+    "goalAt": 2.433,
+    "popup": {
+     "home": "mci",
+     "away": "qpr",
+     "homeName": "Man City",
+     "awayName": "QPR",
+     "hs0": 2,
+     "as0": 2,
+     "hs": 3,
+     "as": 2,
+     "scorer": "Agüero",
+     "assist": "Balotelli"
+    },
+    "caption": "CHAMPIONS",
+    "captionColor": "#ffd23f"
+   }
+  },
+  {
+   "text": "Now flip it. Real Madrid move first. Silva plays for José Mourinho, next to Cristiano Ronaldo.",
+   "say": "Now flip it. Real Madrid move first. Silva plays for Hozay Moreenyo, next to Kristyahno Ronaldo.",
    "scene": {
     "type": "whatif",
-    "title": "SUMMER 2010",
+    "title": "What if Madrid moved first?",
     "real": {
-     "label": "Real world",
-     "value": "Man City"
+     "label": "Silva joins City",
+     "value": "£25m"
     },
     "alt": {
-     "label": "Alternate world",
-     "value": "Real Madrid"
+     "label": "Silva joins Real Madrid",
+     "value": "?"
     }
    }
   },
   {
-   "text": "Silva plays for José Mourinho, in the same team as Cristiano Ronaldo.",
-   "scene": {
-    "type": "versus",
-    "title": "ALTERNATE 2010",
-    "left": {
-     "person": "silvarma",
-     "label": "Silva",
-     "value": "Madrid"
-    },
-    "right": {
-     "person": "mourinho",
-     "label": "Coach",
-     "value": "Mourinho"
-    }
-   }
-  },
-  {
-   "text": "And City? In twenty twelve it was Silva's corner for Kompany's derby header, and Silva's corner for Džeko against QPR.",
-   "scene": {
-    "type": "timeline",
-    "items": [
-     {
-      "year": "30 Apr 2012",
-      "label": "Silva corner, Kompany header"
-     },
-     {
-      "year": "13 May 2012",
-      "label": "Silva corner, Džeko header"
-     },
-     {
-      "year": "13 May 2012",
-      "label": "City champions"
-     }
-    ]
-   }
-  },
-  {
-   "text": "Take away the man who took those corners, and that title race could look completely different.",
-   "scene": {
-    "type": "stamp",
-    "text": "WHAT IF?",
-    "color": "yellow",
-    "person": "silva"
-   }
-  },
-  {
-   "text": "In the real world, City fans just call him El Mago. The magician.",
+   "text": "In the real world, he won four league titles and got a statue outside City's stadium. Fans call him El Mago. The magician.",
+   "say": "In the real world, he won four league titles, and got a statue outside City's stadium. Fans call him El Mahgo. The magician.",
    "scene": {
     "type": "person",
     "person": "silva",
-    "label": "EL MAGO",
+    "label": "El Mago · 4 Premier League titles",
     "mood": "happy"
    }
   },
   {
-   "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+   "text": "Follow for more, and play Road to Ballon d'Or.",
    "scene": {
     "type": "cta"
    }
