@@ -621,20 +621,20 @@
   {
    "seg": "grid",
    "offset": 0.3,
-   "text": "Barcelona against... Barcelona. Twenty oh-nine, or twenty fifteen?",
-   "say": "Barsah against... Barsah. Two thousand and nine, or two thousand and fifteen?"
+   "text": "Barça against Barça. The class of oh-nine, or the class of fifteen?",
+   "say": "Barsah against Barsah. The class of oh nine, or the class of fifteen?"
   },
   {
    "seg": "homeSheet",
    "offset": 0.2,
-   "text": "Guardiola's first season. Messi, Eto'o and Henry scored a hundred goals between them, and won the treble.",
-   "say": "Gwardeeohlah's first season. Messi, Ehtohoh and Onree scored a hundred goals between them, and won the treble."
+   "text": "Guardiola's first season: Messi, Eto'o and Henry scored a hundred goals, and won the treble.",
+   "say": "Gwardeeohlah's first season: Messi, Ehtohoh and Onree scored a hundred goals, and won the treble."
   },
   {
    "seg": "awaySheet",
    "offset": 0.1,
-   "text": "Luis Enrique's first season? M S N. A hundred and twenty-two goals. Another treble.",
-   "say": "Looeess Enreekay's first season? M, S, N. A hundred and twenty-two goals. Another treble."
+   "text": "Luis Enrique's first season? M S N. A hundred and twenty-two goals.",
+   "say": "Looeess Enreekay's first season? M, S, N. A hundred and twenty-two goals."
   },
   {
    "seg": "versus",
@@ -645,13 +645,13 @@
   {
    "seg": "globe",
    "offset": 0.5,
-   "text": "So tonight at the Camp Nou, they play against themselves. Messi at twenty-one, against Messi at twenty-seven."
+   "text": "So at the Camp Nou, they play themselves. Messi at twenty-one, against Messi at twenty-seven."
   },
   {
    "seg": "ratings",
    "offset": 0.3,
-   "text": "In FIFA oh-nine, Busquets was rated sixty. Six years later? Eighty-five.",
-   "say": "In FIFA oh nine, Booskets was rated sixty. Six years later? Eighty-five."
+   "text": "In FIFA oh-nine, Busquets was rated just sixty. By FIFA fifteen? Eighty-five.",
+   "say": "In FIFA oh nine, Booskets was rated just sixty. By FIFA fifteen? Eighty-five."
   },
   {
    "seg": "goal1",

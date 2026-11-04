@@ -40,6 +40,7 @@
   "formation": "4-2-3-1",
   "kitLabel": "HOME KIT",
   "badge": "../badges/tottenhamhotspur.png",
+  "badgeDisc": "#ffffff",
   "kit": {
    "shirt": "#f4f5f7",
    "trim": "#132257",
@@ -88,11 +89,26 @@
    "kinsky"
   ],
   "slots": {
-   "kinsky": "GK",
-   "gray": "RB",
-   "vanhecke": "CB1",
-   "vdv": "CB2",
-   "robertson": "LB",
+   "kinsky": [
+    0.5,
+    0.91
+   ],
+   "gray": [
+    0.88,
+    0.68
+   ],
+   "vanhecke": [
+    0.66,
+    0.75
+   ],
+   "vdv": [
+    0.34,
+    0.75
+   ],
+   "robertson": [
+    0.12,
+    0.68
+   ],
    "tonali": "CM1",
    "fernandes": "CM2",
    "kudus": "RW",
@@ -147,11 +163,26 @@
    "urbig"
   ],
   "slots": {
-   "urbig": "GK",
-   "laimer": "RB",
-   "upamecano": "CB1",
-   "kim": "CB2",
-   "davies": "LB",
+   "urbig": [
+    0.5,
+    0.91
+   ],
+   "laimer": [
+    0.88,
+    0.68
+   ],
+   "upamecano": [
+    0.66,
+    0.75
+   ],
+   "kim": [
+    0.34,
+    0.75
+   ],
+   "davies": [
+    0.12,
+    0.68
+   ],
    "kimmich": "CM1",
    "pavlovic": "CM2",
    "olise": "RW",

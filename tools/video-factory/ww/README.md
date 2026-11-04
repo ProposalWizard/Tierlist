@@ -87,6 +87,7 @@ Everything not marked *required* has a default. See `examples/utd-v-roma-v4.json
            "pattern": "band", "band": ["#f4b223", "#a6192e"],   // patterns: band | stripes | hoops | halves | sash | sides | centre (patternCol, else trim; centre takes centreEdge for thin edges, e.g. PSG)
            "gk": { "shirt": "#e8e04a", "trim": "#1a1a1a", "collar": "#1a1a1a" } },    // shirt required
   "badge": "badges/man-united.png",     // a real badge (club_logos) replaces the drawn shield everywhere
+  "badgeDisc": "#ffffff",               // optional: a disc behind a dark badge (Spurs' navy cockerel) so it reads on dark screens
   "crest": { "a": "#d81e2c", "b": "#ffffff", "c": "#111", "t": "MU", "tc": "#fff", "ts": 40 },   // the drawn shield (default from the kit and initials)
   "flagImg": "flags/xyz.png",           // only for a nation the template cannot draw (it draws eng ita fra esp ger ned por sco wal bel aut irl tur gre sui ukr rus den swe nor arg col bra*)
   "colors": { "ring": "#e0262f", "pillBg": "...", "pillFg": "...", "headerBg": "...", "headerFg": "...", "headerSub": "...", "headerStripes": ["#f4b223", "#a6192e"],

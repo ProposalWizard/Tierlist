@@ -99,11 +99,26 @@
    "pickford"
   ],
   "slots": {
-   "pickford": "GK",
-   "taa": "RB",
-   "quansah": "CB1",
-   "guehi": "CB2",
-   "hall": "LB",
+   "pickford": [
+    0.5,
+    0.91
+   ],
+   "taa": [
+    0.88,
+    0.68
+   ],
+   "quansah": [
+    0.66,
+    0.75
+   ],
+   "guehi": [
+    0.34,
+    0.75
+   ],
+   "hall": [
+    0.12,
+    0.68
+   ],
    "rice": "CM1",
    "anderson": "CM2",
    "saka": "RW",
@@ -180,11 +195,26 @@
    "maignan"
   ],
   "slots": {
-   "maignan": "GK",
-   "kounde": "RB",
-   "upamecano": "CB1",
-   "lacroix": "CB2",
-   "truffert": "LB",
+   "maignan": [
+    0.5,
+    0.91
+   ],
+   "kounde": [
+    0.88,
+    0.68
+   ],
+   "upamecano": [
+    0.66,
+    0.75
+   ],
+   "lacroix": [
+    0.34,
+    0.75
+   ],
+   "truffert": [
+    0.12,
+    0.68
+   ],
    "rabiot": "CM1",
    "kone": "CM",
    "cherki": "CM2",
@@ -208,7 +238,7 @@
    "gk": true
   },
   "taa": {
-   "name": "ALEXANDER-ARNOLD",
+   "name": "TRENT",
    "full": "Trent Alexander-Arnold",
    "num": 2,
    "skin": "tan",

@@ -50,6 +50,7 @@ function stars(t, a = 1) {
 const IMG = {};
 function shield(x, y, s, side) {
   const club = SIDES[side];
+  if (club.badge && IMG[club.badge] && club.badgeDisc) { g.fillStyle = club.badgeDisc; g.beginPath(); g.arc(x, y + s * 0.04, s * 0.66, 0, 7); g.fill(); }
   if (club.badge && IMG[club.badge]) { const im = IMG[club.badge], k = Math.min(s * 1.08 / im.width, s * 1.16 / im.height); g.drawImage(im, x - im.width * k / 2, y - im.height * k / 2 + s * 0.04, im.width * k, im.height * k); return; }
   const c = club.crest;
   g.save(); g.translate(x, y); g.scale(s / 100, s / 100);
