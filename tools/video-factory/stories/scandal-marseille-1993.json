@@ -139,8 +139,8 @@
    }
   },
   {
-   "text": "Bernard Tapie's Marseille ruled France. Four league titles in a row, and a European final coming.",
-   "say": "Bernar Tappee's Marsay ruled France. Four league titles in a row, and a European final coming.",
+   "text": "Bernard Tapie's Marseille had won four French titles in a row.",
+   "say": "Bernar Tahpee's Marsay had won four French titles in a row.",
    "scene": {
     "type": "trophies",
     "kicker": "Olympique de Marseille",
@@ -195,7 +195,7 @@
   },
   {
    "text": "Two Valenciennes players took it: Jorge Burruchaga and Christophe Robert. Jacques Glassmann said no.",
-   "say": "Two Valonsyen players took it: Horhay Booroochahga, and Kreestoff Robair. Jak Glassman said no.",
+   "say": "Two Valonsyen players took it: Horhay Booroochahga, and Kreestoff Robair. Zhak Glassman said no.",
    "scene": {
     "type": "list",
     "kicker": "Valenciennes · the three players",
@@ -391,8 +391,8 @@
    }
   },
   {
-   "text": "Tapie was convicted, and went to prison. And Glassmann, the man who said no, won FIFA's Fair Play award.",
-   "say": "Tappee was convicted, and went to prison. And Glassman, the man who said no, won FIFA's Fair Play award.",
+   "text": "Tapie went to prison. And Glassmann, the man who said no, won FIFA's Fair Play award.",
+   "say": "Tahpee went to prison. And Glassman, the man who said no, won FIFA's Fair Play award.",
    "scene": {
     "type": "trophies",
     "kicker": "1995",
