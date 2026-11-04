@@ -78,7 +78,15 @@
   "Atlético": "Atleteeko",
   "Marquinhos": "Markeenyos",
   "Kostoulas": "Kosstoolass",
-  "Viduka": "Vidooka"
+  "Viduka": "Vidooka",
+  "Busquets": "Booskets",
+  "Valdés": "Valdess",
+  "Sylvinho": "Silveenyo",
+  "Mascherano": "Mascherahnoh",
+  "Suárez": "Swahrez",
+  "Neymar": "Naymar",
+  "Luis Enrique": "Looeess Enreekay",
+  "Alves": "Alvess"
  },
  "_ipa": {
   "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -137,6 +145,14 @@
   "Guardiola": "ca [ɡwəɾðiˈɔlə] (Wikipedia)",
   "Van Basten": "nl [vɑm ˈbɑstə(n)] (Wikipedia)",
   "Van Dijk": "nl [vɑn ˈdɛik] (Wikipedia); English broadcast 'van DYKE'",
-  "De Bruyne": "nl [də ˈbrœynə] (Wikipedia)"
+  "De Bruyne": "nl [də ˈbrœynə] (Wikipedia)",
+  "Busquets": "ca [busˈkɛts] (Wikipedia); voice D take heard as 'Bousquets'/'Buschitz', 4 Nov 2026",
+  "Valdés": "es [balˈdes] (Wikipedia); heard as 'Valdes'",
+  "Sylvinho": "pt [siwˈvĩɲu] (Wikipedia); heard as 'Silvino'",
+  "Mascherano": "es [maskeˈɾano] (Wikipedia); heard as 'Maserano'",
+  "Suárez": "es [ˈswaɾes] (Wikipedia); heard as 'Suarez'",
+  "Neymar": "pt [nejˈmaʁ] (Wikipedia); heard as 'Neymar'",
+  "Luis Enrique": "es [ˈlwis enˈrike] (Wikipedia); heard as 'Luis Enrique'",
+  "Alves": "pt [ˈawvis] (Wikipedia); heard as 'Alvis'"
  }
 }
