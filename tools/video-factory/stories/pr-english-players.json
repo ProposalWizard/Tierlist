@@ -1,372 +1,447 @@
 {
-  "id": "pr-english-players",
-  "series": "Power ranking",
-  "title": "Power ranking: the best English players right now",
-  "sources": [
-    "https://www.nbcsports.com/soccer/news/premier-league-2026-27-scoring-leaders-the-race-for-the-golden-boot-begins",
-    "https://www.soccernews.com/english-premier-league/golden-boot/",
-    "https://www.nbcsports.com/soccer/news/premier-league-table-for-2026-27-season",
-    "https://caughtoffside.com/2026/10/20/premier-league-club-relaxed-manager-future-man-united",
-    "https://www.uefa.com/uefachampionsleague/news/02a9-218f8e669a0a-debba167a199-1000--champions-league-top-scorer-ermedin-demirovic-serhou-guir/",
-    "https://foot-africa.com/en/news/champions-league-the-top-scorers-standings-after-matchday-3-1395029/",
-    "https://blueprint.ng/?p=856829",
-    "https://www.thescore.com/news/3566852",
-    "https://english.ahram.org.eg/News/572936.aspx",
-    "https://bulinews.com/revealed-full-men-ballon-top-10-rankings",
-    "https://blueprint.ng/?p=856976",
-    "https://yen.com.gh/sports/football/314521-ballon-d-2026-official-top-10-rankings-harry-kane-beats-mbappe-yamal/",
-    "https://www.soccernews.com/kane-scoops-first-ballon-dor-after-pipping-yamal-mbappe/407033/"
-  ],
-  "checked": "PL goals (NBC 2 Nov, Soccernews top five): Rogers 5, Tavernier 5, Calvert-Lewin 4, Hinshelwood 3, Palmer 3, Saka 3. Foden UCL hat-trick on MD3 (UEFA). Gordon scored in the WC semi v Argentina (theScore, Ahram). Bellingham 11th in Ballon d'Or (Blueprint, Bulinews). Kane Ballon d'Or + 4 UCL goals (Bulinews, Soccernews, UEFA, Foot Africa).",
-  "clubs": {
-    "ars": {
-      "name": "Arsenal",
-      "short": "ARS",
-      "c1": "#ef0107",
-      "c2": "#ffffff",
-      "pattern": "sides"
-    },
-    "bha": {
-      "name": "Brighton",
-      "short": "BHA",
-      "c1": "#0057b8",
-      "c2": "#ffffff",
-      "pattern": "stripes"
-    },
-    "bou": {
-      "name": "Bournemouth",
-      "short": "BOU",
-      "c1": "#da291c",
-      "c2": "#000000",
-      "pattern": "stripes"
-    },
-    "che": {
-      "name": "Chelsea",
-      "short": "CHE",
-      "c1": "#034694",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "eng": {
-      "name": "England",
-      "short": "ENG",
-      "c1": "#ffffff",
-      "c2": "#cf081f",
-      "pattern": "plain"
-    },
-    "lee": {
-      "name": "Leeds United",
-      "short": "LEE",
-      "c1": "#ffffff",
-      "c2": "#1d428a",
-      "pattern": "plain"
-    },
-    "mci": {
-      "name": "Manchester City",
-      "short": "MCI",
-      "c1": "#6cabdd",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "new": {
-      "name": "Newcastle United",
-      "short": "NEW",
-      "c1": "#241f20",
-      "c2": "#ffffff",
-      "pattern": "stripes"
-    },
-    "rma": {
-      "name": "Real Madrid",
-      "short": "RMA",
-      "c1": "#ffffff",
-      "c2": "#febe10",
-      "pattern": "plain"
-    }
+ "id": "pr-english-players",
+ "series": "Power rankings",
+ "title": "Power ranking: the best English players right now",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/2026_Ballon_d%27Or",
+  "https://sports.yahoo.com/articles/2026-ballon-dor-rankings-full-064500779.html",
+  "https://www.skysports.com/football/news/13562935/world-cup-2026-england-1-2-argentina-three-lions-suffer-semi-final-loss-after-stunning-late-turnaround-by-holders",
+  "https://www.espn.com/soccer/report/_/gameId/760515",
+  "https://www.thescore.com/news/3567778",
+  "https://blog.wego.com/world-cup-third-place-playoff/",
+  "https://www.nbcsports.com/soccer/news/premier-league-goals-leaders-2026-27-season-golden-boot-race-latest-stats-updates",
+  "https://en.wikipedia.org/wiki/2026%E2%80%9327_Premier_League",
+  "https://english.ahram.org.eg/News/580492.aspx",
+  "https://www.sportsmole.co.uk/football/man-city/champions-league/news/phil-foden-joins-exclusive-man-city-list-after-impressive-feat-vs-aek-athens_607338.html"
+ ],
+ "checked": "Kane won the 2026 Ballon d'Or, 1055 points to Mbappe 1027 and Yamal 881; Bellingham 11th, Rice 15th; Kane 73 goals for club and country in 2025-26 and the Gerd Muller Trophy; first English winner since Michael Owen (2001), the fifth ever (Wikipedia 2026 Ballon d'Or, Yahoo). England 1-2 Argentina, 15 July 2026: Gordon 55' from Rogers' cross, Enzo Fernandez 85', Lautaro header 90+2 (Sky, ESPN, FIFA). England 6-4 France, third place, 18 July 2026; 4-0 at half-time; Saka hat-trick, the third a penalty (theScore, Wego, ITV). PL goals to 2 Nov: Rogers 5, Tavernier 5, Calvert-Lewin 4, Palmer 3, Saka 3 (NBC); Arsenal top (Wikipedia). Foden hat-trick, City 5-1 AEK Athens, 20 Oct 2026 (Ahram, Sports Mole). Order is our judgement, never a game rating. The Saka clip is a Knowitball penalty in the right kits; the run-up and corner are the game's.",
+ "clubs": {
+  "che": {
+   "name": "Chelsea",
+   "short": "CHE",
+   "c1": "#034694",
+   "c2": "#ffffff",
+   "pattern": "plain"
   },
-  "people": {
-    "kane_eng": {
-      "name": "Harry Kane",
-      "skin": "light",
-      "hair": [
-        "crop",
-        "#6b4a2e"
-      ],
-      "beard": "stubble",
-      "kit": "eng"
-    },
-    "rogers": {
-      "name": "Morgan Rogers",
-      "skin": "brown",
-      "hair": [
-        "curlytop",
-        "#111111"
-      ],
-      "beard": "none",
-      "kit": "che"
-    },
-    "saka": {
-      "name": "Bukayo Saka",
-      "skin": "dark",
-      "hair": [
-        "buzz",
-        "#111111"
-      ],
-      "beard": "none",
-      "kit": "ars"
-    },
-    "tavernier": {
-      "name": "Marcus Tavernier",
-      "skin": "brown",
-      "hair": [
-        "crop",
-        "#111111"
-      ],
-      "beard": "short",
-      "kit": "bou"
-    }
+  "lee": {
+   "name": "Leeds United",
+   "short": "LEE",
+   "c1": "#ffffff",
+   "c2": "#1d428a",
+   "pattern": "plain"
   },
-  "lines": [
-    {
-      "text": "Who is the best English footballer on the planet right now? Ten names, real form only.",
-      "scene": {
-        "type": "title",
-        "heading": "BEST ENGLISH PLAYERS",
-        "sub": "Power ranking · November 2026",
-        "pill": "REAL FORM ONLY",
-        "person": "kane_eng"
-      }
+  "bou": {
+   "name": "Bournemouth",
+   "short": "BOU",
+   "c1": "#da291c",
+   "c2": "#111111",
+   "pattern": "stripes",
+   "badge": "AFC Bournemouth"
+  },
+  "mci": {
+   "name": "Manchester City",
+   "short": "MCI",
+   "c1": "#6cabdd",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "new": {
+   "name": "Newcastle United",
+   "short": "NEW",
+   "c1": "#111111",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "rma": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#febe10",
+   "pattern": "plain"
+  },
+  "ars": {
+   "name": "Arsenal",
+   "short": "ARS",
+   "c1": "#ef0107",
+   "c2": "#ffffff",
+   "pattern": "sides"
+  },
+  "bay": {
+   "name": "Bayern Munich",
+   "short": "FCB",
+   "c1": "#dc052d",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": "FC Bayern München"
+  },
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "badge": "FC Barcelona"
+  },
+  "eng": {
+   "name": "England",
+   "short": "ENG",
+   "c1": "#ffffff",
+   "c2": "#00003e",
+   "pattern": "plain",
+   "badge": false
+  },
+  "fra": {
+   "name": "France",
+   "short": "FRA",
+   "c1": "#17367f",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": false
+  }
+ },
+ "people": {
+  "kane": {
+   "name": "Harry Kane",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#6b4a2e"
+   ],
+   "beard": "stubble",
+   "beardCol": "#6b4a2e",
+   "kit": "bay"
+  },
+  "saka_eng": {
+   "name": "Bukayo Saka",
+   "skin": "dark",
+   "hair": [
+    "crop",
+    "#111111"
+   ],
+   "beard": "none",
+   "kit": "eng"
+  },
+  "rice": {
+   "name": "Declan Rice",
+   "skin": "light",
+   "hair": [
+    "tidy",
+    "#4a3324"
+   ],
+   "beard": "none",
+   "kit": "ars"
+  },
+  "mbappe": {
+   "name": "Kylian Mbappé",
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "none",
+   "kit": "rma"
+  },
+  "yamal": {
+   "name": "Lamine Yamal",
+   "skin": "tan",
+   "hair": [
+    "curlytop",
+    "#111111"
+   ],
+   "beard": "none",
+   "kit": "bar"
+  }
+ },
+ "lines": [
+  {
+   "text": "Twenty-five years after Michael Owen, an Englishman won the Ballon d'Or again. But who are the best English players right now?",
+   "say": "Twenty-five years after Michael Owen, an Englishman won the Balon Dor again. But who are the best English players, right now?",
+   "scene": {
+    "type": "title",
+    "heading": "ENGLAND TOP 10",
+    "sub": "November 2026",
+    "pill": "REAL FORM ONLY",
+    "person": "kane"
+   }
+  },
+  {
+   "text": "This summer, England were minutes from a World Cup final. Gordon scored, then Argentina struck twice late on.",
+   "scene": {
+    "type": "news",
+    "section": "World Cup 2026",
+    "headline": "Late collapse ends England's World Cup dream",
+    "standfirst": "Anthony Gordon puts England ahead in Atlanta, before Enzo Fernández and a stoppage-time Lautaro Martínez header turn the semi-final.",
+    "date": "15 July 2026",
+    "byline": "Knowitball recap",
+    "club": "eng",
+    "mastColor": "#00003e",
+    "nav": [
+     "Football",
+     "World Cup",
+     "England",
+     "Argentina"
+    ]
+   }
+  },
+  {
+   "text": "Ten, Cole Palmer, three for Chelsea. Nine, Dominic Calvert-Lewin, four for Leeds. Eight, Marcus Tavernier, five for Bournemouth.",
+   "say": "Ten, Cole Palmer, three for Chelsea. Nine, Dominic Calvert Lewin, four for Leeds. Eight, Marcus Tavvernear, five for Bornmuth.",
+   "scene": {
+    "type": "list",
+    "kicker": "England top 10",
+    "title": "The countdown",
+    "rows": [
+     {
+      "pos": 10,
+      "name": "Palmer",
+      "value": "3",
+      "hl": true,
+      "club": "che"
+     },
+     {
+      "pos": 9,
+      "name": "Calvert-Lewin",
+      "value": "4",
+      "hl": true,
+      "club": "lee"
+     },
+     {
+      "pos": 8,
+      "name": "Tavernier",
+      "value": "5",
+      "hl": true,
+      "club": "bou"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Seven, Phil Foden, a Champions League hat-trick against AEK Athens. Six, Anthony Gordon, England's scorer in that semi-final.",
+   "say": "Seven, Phil Fohden, a Champions League hat-trick against Ay ee kay Athens. Six, Anthony Gordon, England's scorer in that semi-final.",
+   "scene": {
+    "type": "list",
+    "kicker": "England top 10",
+    "title": "The countdown",
+    "rows": [
+     {
+      "pos": 10,
+      "name": "Palmer",
+      "club": "che"
+     },
+     {
+      "pos": 9,
+      "name": "Calvert-Lewin",
+      "club": "lee"
+     },
+     {
+      "pos": 8,
+      "name": "Tavernier",
+      "club": "bou"
+     },
+     {
+      "pos": 7,
+      "name": "Foden",
+      "value": "HAT-TRICK",
+      "hl": true,
+      "club": "mci"
+     },
+     {
+      "pos": 6,
+      "name": "Gordon",
+      "value": "WC GOAL",
+      "hl": true,
+      "club": "new"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Five, Morgan Rogers, five league goals for Chelsea. Four, Jude Bellingham, eleventh in the Ballon d'Or.",
+   "say": "Five, Morgan Rogers, five league goals for Chelsea. Four, Jude Bellingham, eleventh in the Balon Dor.",
+   "scene": {
+    "type": "list",
+    "kicker": "England top 10",
+    "title": "The countdown",
+    "rows": [
+     {
+      "pos": 10,
+      "name": "Palmer",
+      "club": "che"
+     },
+     {
+      "pos": 9,
+      "name": "Calvert-Lewin",
+      "club": "lee"
+     },
+     {
+      "pos": 8,
+      "name": "Tavernier",
+      "club": "bou"
+     },
+     {
+      "pos": 7,
+      "name": "Foden",
+      "club": "mci"
+     },
+     {
+      "pos": 6,
+      "name": "Gordon",
+      "club": "new"
+     },
+     {
+      "pos": 5,
+      "name": "Rogers",
+      "value": "5",
+      "hl": true,
+      "club": "che"
+     },
+     {
+      "pos": 4,
+      "name": "Bellingham",
+      "value": "11th",
+      "hl": true,
+      "club": "rma"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Three, Declan Rice. Fifteenth in the Ballon d'Or, and Arsenal are top of the league.",
+   "say": "Three, Declan Rice. Fifteenth in the Balon Dor, and Arsenal are top of the league.",
+   "scene": {
+    "type": "person",
+    "person": "rice",
+    "label": "Number 3 · Arsenal top the league",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "Number two. Bukayo Saka. And this is why.",
+   "say": "Number two. Bookaiyo Sahka. And this is why.",
+   "scene": {
+    "type": "person",
+    "person": "saka_eng",
+    "label": "Number 2",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "The third-place play-off against France. Four-nil up at half-time, six-four at the end.",
+   "scene": {
+    "type": "score",
+    "home": "eng",
+    "away": "fra",
+    "hs": 6,
+    "as": 4,
+    "date": "18 July 2026 · Miami",
+    "comp": "World Cup third-place play-off",
+    "note": "England's best World Cup since 1966"
+   }
+  },
+  {
+   "text": "Saka scored twice before the break, then finished his hat-trick from the spot.",
+   "say": "Sahka scored twice before the break, then finished his hat-trick from the spot.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/b4566875-a565-5aea-96b2-584e6684bafe/scratchpad/gc/saka-france-2026/saka-penalty/tv",
+      0,
+      30
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/b4566875-a565-5aea-96b2-584e6684bafe/scratchpad/gc/saka-france-2026/saka-penalty/high",
+      20,
+      120
+     ]
+    ],
+    "goalAt": 1.7,
+    "popup": {
+     "home": "eng",
+     "away": "fra",
+     "homeName": "England",
+     "awayName": "France",
+     "hs0": 4,
+     "as0": 3,
+     "hs": 5,
+     "as": 3,
+     "scorer": "Saka"
     },
-    {
-      "text": "Ten, Jack Hinshelwood, three goals for Brighton. Nine, Cole Palmer, three for Chelsea. Eight, Dominic Calvert-Lewin, four for Leeds.",
-      "scene": {
-        "type": "list",
-        "title": "England power ranking",
-        "rows": [
-          {
-            "pos": 10,
-            "name": "Jack Hinshelwood",
-            "value": "3 goals",
-            "club": "bha",
-            "hl": true
-          },
-          {
-            "pos": 9,
-            "name": "Cole Palmer",
-            "value": "3 goals",
-            "club": "che",
-            "hl": true
-          },
-          {
-            "pos": 8,
-            "name": "Dominic Calvert-Lewin",
-            "value": "4 goals",
-            "club": "lee",
-            "hl": true
-          }
-        ]
-      }
-    },
-    {
-      "text": "Seven, Jude Bellingham, eleventh in the Ballon d'Or. Six, Bukayo Saka, three goals for the league leaders.",
-      "scene": {
-        "type": "list",
-        "title": "England power ranking",
-        "rows": [
-          {
-            "pos": 10,
-            "name": "Jack Hinshelwood",
-            "value": "3 goals",
-            "club": "bha"
-          },
-          {
-            "pos": 9,
-            "name": "Cole Palmer",
-            "value": "3 goals",
-            "club": "che"
-          },
-          {
-            "pos": 8,
-            "name": "Dominic Calvert-Lewin",
-            "value": "4 goals",
-            "club": "lee"
-          },
-          {
-            "pos": 7,
-            "name": "Jude Bellingham",
-            "value": "11th BdO",
-            "club": "rma",
-            "hl": true
-          },
-          {
-            "pos": 6,
-            "name": "Bukayo Saka",
-            "value": "3 · 1st",
-            "club": "ars",
-            "hl": true
-          }
-        ]
-      }
-    },
-    {
-      "text": "Five, Anthony Gordon, who scored in the World Cup semi-final. Four, Phil Foden, a Champions League hat-trick.",
-      "scene": {
-        "type": "list",
-        "title": "England power ranking",
-        "rows": [
-          {
-            "pos": 10,
-            "name": "Jack Hinshelwood",
-            "value": "3 goals",
-            "club": "bha"
-          },
-          {
-            "pos": 9,
-            "name": "Cole Palmer",
-            "value": "3 goals",
-            "club": "che"
-          },
-          {
-            "pos": 8,
-            "name": "Dominic Calvert-Lewin",
-            "value": "4 goals",
-            "club": "lee"
-          },
-          {
-            "pos": 7,
-            "name": "Jude Bellingham",
-            "value": "11th BdO",
-            "club": "rma"
-          },
-          {
-            "pos": 6,
-            "name": "Bukayo Saka",
-            "value": "3 · 1st",
-            "club": "ars"
-          },
-          {
-            "pos": 5,
-            "name": "Anthony Gordon",
-            "value": "WC semi goal",
-            "club": "new",
-            "hl": true
-          },
-          {
-            "pos": 4,
-            "name": "Phil Foden",
-            "value": "UCL hat-trick",
-            "club": "mci",
-            "hl": true
-          }
-        ]
-      }
-    },
-    {
-      "text": "Number three. Marcus Tavernier.",
-      "scene": {
-        "type": "person",
-        "person": "tavernier",
-        "label": "NUMBER 3",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "Five league goals for Bournemouth. Level with Rogers and João Pedro, and only Haaland and Isak have more.",
-      "scene": {
-        "type": "stats",
-        "title": "Tavernier, 2026-27",
-        "items": [
-          {
-            "n": "5",
-            "l": "PL goals"
-          },
-          {
-            "n": "Top 5",
-            "l": "Golden Boot race"
-          }
-        ],
-        "person": "tavernier"
-      }
-    },
-    {
-      "text": "Number two. Morgan Rogers.",
-      "scene": {
-        "type": "person",
-        "person": "rogers",
-        "label": "NUMBER 2",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "Five league goals for Chelsea, the joint-best of any Englishman in the Premier League.",
-      "scene": {
-        "type": "list",
-        "title": "English PL scorers",
-        "rows": [
-          {
-            "name": "Morgan Rogers",
-            "value": "5",
-            "club": "che",
-            "hl": true
-          },
-          {
-            "name": "Marcus Tavernier",
-            "value": "5",
-            "club": "bou",
-            "hl": true
-          },
-          {
-            "name": "Dominic Calvert-Lewin",
-            "value": "4",
-            "club": "lee"
-          },
-          {
-            "name": "Saka · Palmer · Hinshelwood",
-            "value": "3"
-          }
-        ]
-      }
-    },
-    {
-      "text": "And number one. Harry Kane. Of course it is.",
-      "scene": {
-        "type": "person",
-        "person": "kane_eng",
-        "label": "NUMBER 1",
-        "mood": "happy",
-        "stamp": "NUMBER 1"
-      }
-    },
-    {
-      "text": "The first Englishman to win the Ballon d'Or since Michael Owen, and four Champions League goals already.",
-      "scene": {
-        "type": "trophies",
-        "items": [
-          {
-            "kind": "ballon",
-            "label": "Ballon d'Or 2026"
-          },
-          {
-            "kind": "boot",
-            "label": "Gerd Müller Trophy"
-          }
-        ],
-        "person": "kane_eng"
-      }
-    },
-    {
-      "text": "Who is missing? Tell us your England top three.",
-      "scene": {
-        "type": "stamp",
-        "text": "YOUR TOP 3?",
-        "person": "saka",
-        "color": "white"
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
-    }
-  ]
+    "caption": "HAT-TRICK",
+    "captionColor": "#ffffff"
+   }
+  },
+  {
+   "text": "And number one. Harry Kane.",
+   "scene": {
+    "type": "title",
+    "heading": "HARRY KANE",
+    "sub": "Bayern Munich",
+    "pill": "NUMBER ONE",
+    "person": "kane"
+   }
+  },
+  {
+   "text": "Seventy-three goals for club and country last season, and the Gerd Müller Trophy for the world's best striker.",
+   "say": "Seventy-three goals for club and country last season, and the Gerd Mewler Trophy, for the world's best striker.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Harry Kane · 2025/26",
+    "title": "The best season of his life",
+    "items": [
+     {
+      "n": "73",
+      "l": "goals, club and country"
+     },
+     {
+      "n": "1st",
+      "l": "Gerd Müller Trophy"
+     }
+    ],
+    "person": "kane"
+   }
+  },
+  {
+   "text": "Then the Ballon d'Or itself, twenty-eight points ahead of Mbappé. Only the fifth Englishman ever to win it.",
+   "say": "Then the Balon Dor itself, twenty-eight points ahead of Embapay. Only the fifth Englishman ever to win it.",
+   "scene": {
+    "type": "podium",
+    "year": "2026",
+    "title": "The Ballon d'Or vote",
+    "places": [
+     {
+      "person": "kane",
+      "club": "bay",
+      "points": 1055
+     },
+     {
+      "person": "mbappe",
+      "club": "rma",
+      "points": 1027
+     },
+     {
+      "person": "yamal",
+      "club": "bar",
+      "points": 881
+     }
+    ]
+   }
+  },
+  {
+   "text": "Who did we get wrong? Tell us your England top three.",
+   "scene": {
+    "type": "stamp",
+    "text": "YOUR TOP 3?",
+    "sub": "England · November 2026",
+    "color": "white"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }

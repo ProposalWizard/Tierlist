@@ -1,0 +1,16 @@
+{
+  "_about": "Bukayo Saka's penalty for his hat-trick, England 6-4 France, World Cup third-place play-off, Miami, 18 July 2026. Penalty after Malo Gusto fouled Djed Spence; it made it 5-3 (theScore; Wego/ITV for the hat-trick). Kits: England white home, France blue home with white shorts (both home kits from the nation-kits file; the kits worn on the day are assumed). Keeper Maignan assumed; his kit colour is assumed.",
+  "teams": {
+    "home": { "name": "England", "kit": { "shirt": "#FFFFFF", "shorts": "#FFFFFF", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#00003E" },
+    "away": { "name": "France", "kit": { "shirt": "#17367F", "shorts": "#FFFFFF", "socks": "#C8102E" }, "keeperKit": { "shirt": "#2BB673", "shorts": "#0B3D2A", "socks": "#2BB673" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "saka":    { "name": "Bukayo Saka", "skin": "#4a2c1e", "hair": "#0d0a09" },
+    "maignan": { "name": "Mike Maignan", "skin": "#4a2e1e", "hair": "#0d0a09" }
+  },
+  "clips": [{
+    "id": "saka-penalty", "kind": "penalty", "attacking": "home",
+    "scorer": "saka", "keeper": "maignan", "minute": 70, "scoreBefore": [4, 3], "scoreAfter": [5, 3], "night": true, "celebration": "arms_out",
+    "cameras": ["tv", "high", "tight"], "seed": "saka-2026-a", "popup": false
+  }]
+}

@@ -1,0 +1,478 @@
+{
+ "id": "pr-top-strikers",
+ "series": "Power rankings",
+ "title": "Power ranking: the best strikers in the world right now",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/2026_Ballon_d%27Or",
+  "https://sports.yahoo.com/articles/2026-ballon-dor-rankings-full-064500779.html",
+  "https://www.nbcsports.com/soccer/news/premier-league-goals-leaders-2026-27-season-golden-boot-race-latest-stats-updates",
+  "https://en.wikipedia.org/wiki/2026%E2%80%9327_Premier_League",
+  "https://www.uefa.com/uefachampionsleague/news/02a9-218f8e669a0a-debba167a199-1000--champions-league-top-scorer-ermedin-demirovic-serhou-guir/",
+  "https://foot-africa.com/en/news/champions-league-the-top-scorers-standings-after-matchday-3-1395029/",
+  "https://www.skysports.com/football/news/13562935/world-cup-2026-england-1-2-argentina-three-lions-suffer-semi-final-loss-after-stunning-late-turnaround-by-holders",
+  "https://www.espn.com/soccer/report/_/gameId/760515",
+  "https://www.thescore.com/news/3567778",
+  "https://www.ynetnews.com/sport/article/sj693fkefx",
+  "https://foot-africa.com/en/news/world-cup-2026-kylian-mbappe-achieves-historic-feat-1286992/",
+  "https://worldsoccertalk.com/news/ferran-torres-describes-barcelona-exit-to-join-psg-as-step-forward-in-his-career-ahead-of-ucl-reunion/",
+  "https://santamariatimes.com/ap/sports/ferran-torres-makes-psg-history-with-hat-trick-in-his-champions-league-debut/article_11dc57e9-16ec-577b-b0c5-1f46275463ff.html"
+ ],
+ "checked": "Replaces pr-strikers-and-you: no 'you' (V2_RULES). PL goals to 2 Nov: Haaland 9, Isak 6, Jackson 5, Joao Pedro 5 (NBC, Wikipedia). UCL after matchday 3: Kane, Haaland, Guirassy 4 (Guirassy two doubles), Ferran Torres (now PSG; hat-trick on his PSG Champions League debut, 6-1 v Slovan Bratislava, AP and World Soccer Talk) and Mbappe 3 (UEFA; Foot Africa agrees on Kane and Haaland). Lautaro's 90+2 header from Messi's cross, England 1-2 Argentina, 15 July 2026 (Sky, ESPN, FIFA); England all white, Argentina navy away (Modern Ghana, Blueprint). Mbappe 10 goals and the 2026 Golden Boot, 22 World Cup goals, the all-time record (theScore, ynet, Foot Africa). Ballon d'Or 2026: Kane 1055, Mbappe 1027 (28 points), Dembele 7th, Haaland 8th; Kane 73 goals in 2025-26 and the Gerd Muller Trophy (Wikipedia, Yahoo). Order is our judgement on these numbers, never a game rating.",
+ "clubs": {
+  "avl": {
+   "name": "Aston Villa",
+   "short": "AVL",
+   "c1": "#670e36",
+   "c2": "#95bfe5",
+   "pattern": "plain"
+  },
+  "che": {
+   "name": "Chelsea",
+   "short": "CHE",
+   "c1": "#034694",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "bvb": {
+   "name": "Borussia Dortmund",
+   "short": "BVB",
+   "c1": "#fde100",
+   "c2": "#111111",
+   "pattern": "plain"
+  },
+  "int": {
+   "name": "Inter Milan",
+   "short": "INT",
+   "c1": "#0068a8",
+   "c2": "#111111",
+   "pattern": "stripes"
+  },
+  "liv": {
+   "name": "Liverpool",
+   "short": "LIV",
+   "c1": "#c8102e",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "psg": {
+   "name": "Paris Saint-Germain",
+   "short": "PSG",
+   "c1": "#004170",
+   "c2": "#da291c",
+   "pattern": "centre"
+  },
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "badge": "FC Barcelona"
+  },
+  "rma": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#febe10",
+   "pattern": "plain"
+  },
+  "mci": {
+   "name": "Manchester City",
+   "short": "MCI",
+   "c1": "#6cabdd",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "bay": {
+   "name": "Bayern Munich",
+   "short": "FCB",
+   "c1": "#dc052d",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": "FC Bayern München"
+  },
+  "eng": {
+   "name": "England",
+   "short": "ENG",
+   "c1": "#ffffff",
+   "c2": "#00003e",
+   "pattern": "plain",
+   "badge": false
+  },
+  "arg": {
+   "name": "Argentina",
+   "short": "ARG",
+   "c1": "#75aadb",
+   "c2": "#ffffff",
+   "pattern": "stripes",
+   "badge": false
+  }
+ },
+ "people": {
+  "kane": {
+   "name": "Harry Kane",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#6b4a2e"
+   ],
+   "beard": "stubble",
+   "beardCol": "#6b4a2e",
+   "kit": "bay"
+  },
+  "mbappe": {
+   "name": "Kylian Mbappé",
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "none",
+   "kit": "rma"
+  },
+  "haaland": {
+   "name": "Erling Haaland",
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#e2c58a"
+   ],
+   "beard": "none",
+   "kit": "mci"
+  },
+  "yamal": {
+   "name": "Lamine Yamal",
+   "skin": "tan",
+   "hair": [
+    "curlytop",
+    "#111111"
+   ],
+   "beard": "none",
+   "kit": "bar"
+  }
+ },
+ "lines": [
+  {
+   "text": "The ten best strikers on the planet right now. Number one scored seventy-three goals last season.",
+   "scene": {
+    "type": "title",
+    "heading": "TOP 10 STRIKERS",
+    "sub": "November 2026",
+    "pill": "REAL FORM ONLY",
+    "person": "kane"
+   }
+  },
+  {
+   "text": "Ten, Nicolas Jackson, five Premier League goals for Aston Villa. Nine, João Pedro, five for Chelsea.",
+   "say": "Ten, Nicolas Jackson, five Premier League goals for Aston Villa. Nine, Jwow Pedro, five for Chelsea.",
+   "scene": {
+    "type": "list",
+    "kicker": "Top 10 strikers",
+    "title": "The countdown",
+    "rows": [
+     {
+      "pos": 10,
+      "name": "Jackson",
+      "value": "5",
+      "hl": true,
+      "club": "avl"
+     },
+     {
+      "pos": 9,
+      "name": "João Pedro",
+      "value": "5",
+      "hl": true,
+      "club": "che"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Eight, Serhou Guirassy. Four Champions League goals for Dortmund already.",
+   "say": "Eight, Sairoo Geerassee. Four Champions League goals for Dortmund already.",
+   "scene": {
+    "type": "list",
+    "kicker": "Top 10 strikers",
+    "title": "The countdown",
+    "rows": [
+     {
+      "pos": 10,
+      "name": "Jackson",
+      "club": "avl"
+     },
+     {
+      "pos": 9,
+      "name": "João Pedro",
+      "club": "che"
+     },
+     {
+      "pos": 8,
+      "name": "Guirassy",
+      "value": "4",
+      "hl": true,
+      "club": "bvb"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Seven, Lautaro Martínez. The man who broke England's hearts.",
+   "say": "Seven, Lowtahro Marteeness. The man who broke England's hearts.",
+   "scene": {
+    "type": "list",
+    "kicker": "Top 10 strikers",
+    "title": "The countdown",
+    "rows": [
+     {
+      "pos": 10,
+      "name": "Jackson",
+      "club": "avl"
+     },
+     {
+      "pos": 9,
+      "name": "João Pedro",
+      "club": "che"
+     },
+     {
+      "pos": 8,
+      "name": "Guirassy",
+      "club": "bvb"
+     },
+     {
+      "pos": 7,
+      "name": "Lautaro",
+      "value": "90+2",
+      "hl": true,
+      "club": "int"
+     }
+    ]
+   }
+  },
+  {
+   "text": "World Cup semi-final, ninety-second minute. Messi crosses, and Lautaro heads it in.",
+   "say": "World Cup semi-final, ninety-second minute. Messi crosses, and Lowtahro heads it in.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/b4566875-a565-5aea-96b2-584e6684bafe/scratchpad/gc/lautaro-england-2026/lautaro-header/tv",
+      15,
+      60
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/b4566875-a565-5aea-96b2-584e6684bafe/scratchpad/gc/lautaro-england-2026/lautaro-header/high",
+      20,
+      115
+     ]
+    ],
+    "goalAt": 2.13,
+    "popup": {
+     "home": "eng",
+     "away": "arg",
+     "homeName": "England",
+     "awayName": "Argentina",
+     "hs0": 1,
+     "as0": 1,
+     "hs": 1,
+     "as": 2,
+     "scorer": "Martínez",
+     "assist": "Messi"
+    },
+    "caption": "ENGLAND ARE OUT",
+    "captionColor": "#75aadb"
+   }
+  },
+  {
+   "text": "Six, Alexander Isak, six for Liverpool. Five, Ferran Torres, a hat-trick on his Champions League debut for PSG. Four, Ousmane Dembélé, seventh in the Ballon d'Or.",
+   "say": "Six, Alexander Eesak, six for Liverpool. Five, Ferran Torres, a hat-trick on his Champions League debut for PSG. Four, Oosmahn Dembehlay, seventh in the Balon Dor.",
+   "scene": {
+    "type": "list",
+    "kicker": "Top 10 strikers",
+    "title": "The countdown",
+    "rows": [
+     {
+      "pos": 10,
+      "name": "Jackson",
+      "club": "avl"
+     },
+     {
+      "pos": 9,
+      "name": "João Pedro",
+      "club": "che"
+     },
+     {
+      "pos": 8,
+      "name": "Guirassy",
+      "club": "bvb"
+     },
+     {
+      "pos": 7,
+      "name": "Lautaro",
+      "club": "int"
+     },
+     {
+      "pos": 6,
+      "name": "Isak",
+      "value": "6",
+      "hl": true,
+      "club": "liv"
+     },
+     {
+      "pos": 5,
+      "name": "Ferran",
+      "value": "HAT-TRICK",
+      "hl": true,
+      "club": "psg"
+     },
+     {
+      "pos": 4,
+      "name": "Dembélé",
+      "value": "7th",
+      "hl": true,
+      "club": "psg"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Number three. Kylian Mbappé.",
+   "say": "Number three. Keeleean Embapay.",
+   "scene": {
+    "type": "person",
+    "person": "mbappe",
+    "label": "Number 3",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "Ten goals and the Golden Boot at the World Cup. Twenty-two World Cup goals in all. Nobody in history has more.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Kylian Mbappé · World Cup",
+    "title": "The all-time record",
+    "items": [
+     {
+      "n": "10",
+      "l": "goals at WC 2026"
+     },
+     {
+      "n": "22",
+      "l": "World Cup goals ever"
+     }
+    ],
+    "person": "mbappe"
+   }
+  },
+  {
+   "text": "Number two. Erling Haaland. Nine league goals in nine games, and four more in the Champions League.",
+   "say": "Number two. Erling Hohland. Nine league goals in nine games, and four more in the Champions League.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Number 2 · Erling Haaland",
+    "title": "Right now, every week",
+    "items": [
+     {
+      "n": "9",
+      "l": "Premier League goals"
+     },
+     {
+      "n": "4",
+      "l": "Champions League goals"
+     }
+    ],
+    "person": "haaland"
+   }
+  },
+  {
+   "text": "And number one. Harry Kane.",
+   "scene": {
+    "type": "title",
+    "heading": "HARRY KANE",
+    "sub": "Bayern Munich",
+    "pill": "NUMBER ONE",
+    "person": "kane"
+   }
+  },
+  {
+   "text": "Seventy-three goals for club and country last season. Four already in this Champions League.",
+   "scene": {
+    "type": "bars",
+    "kicker": "Champions League 2026/27",
+    "title": "Top scorers after 3 games",
+    "unit": "goals",
+    "max": 5,
+    "items": [
+     {
+      "label": "Harry Kane",
+      "value": 4,
+      "club": "bay",
+      "hl": true
+     },
+     {
+      "label": "Erling Haaland",
+      "value": 4,
+      "club": "mci"
+     },
+     {
+      "label": "Serhou Guirassy",
+      "value": 4,
+      "club": "bvb"
+     },
+     {
+      "label": "Kylian Mbappé",
+      "value": 3,
+      "club": "rma"
+     },
+     {
+      "label": "Ferran Torres",
+      "value": 3,
+      "club": "psg"
+     }
+    ]
+   }
+  },
+  {
+   "text": "And the Ballon d'Or, twenty-eight points ahead of Mbappé. Haaland was only eighth.",
+   "say": "And the Balon Dor, twenty-eight points ahead of Embapay. Hohland was only eighth.",
+   "scene": {
+    "type": "podium",
+    "year": "2026",
+    "title": "The Ballon d'Or vote",
+    "places": [
+     {
+      "person": "kane",
+      "club": "bay",
+      "points": 1055
+     },
+     {
+      "person": "mbappe",
+      "club": "rma",
+      "points": 1027
+     },
+     {
+      "person": "yamal",
+      "club": "bar",
+      "points": 881
+     }
+    ]
+   }
+  },
+  {
+   "text": "Is Haaland too low? Tell us your number one.",
+   "say": "Is Hohland too low? Tell us your number one.",
+   "scene": {
+    "type": "stamp",
+    "text": "YOUR No.1?",
+    "sub": "Kane, Haaland or Mbappé",
+    "color": "yellow"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
+}

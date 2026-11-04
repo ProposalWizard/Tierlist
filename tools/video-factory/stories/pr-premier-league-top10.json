@@ -1,352 +1,483 @@
 {
-  "id": "pr-premier-league-top10",
-  "series": "Power ranking",
-  "title": "Premier League power ranking: the top 10 players right now",
-  "sources": [
-    "https://www.nbcsports.com/soccer/news/premier-league-2026-27-scoring-leaders-the-race-for-the-golden-boot-begins",
-    "https://www.soccernews.com/english-premier-league/golden-boot/",
-    "https://www.nbcsports.com/soccer/news/premier-league-table-for-2026-27-season",
-    "https://caughtoffside.com/2026/10/20/premier-league-club-relaxed-manager-future-man-united",
-    "https://www.chelseafc.com/en/news/article/joao-pedro-wins-premier-league-award",
-    "https://www.si.com/soccer/premier-league-player-manager-of-the-month-august-2026-winners-revealed",
-    "https://www.si.com/soccer/premier-league-player-manager-month-september-2026-winners-revealed",
-    "https://foot-africa.com/en/news/premier-league-september-player-of-the-month-revealed-official-1373621/"
-  ],
-  "checked": "PL goals to 2 Nov (NBC list; Soccernews top five agrees on Isak 6, Joao Pedro 5, Tavernier 5, Rogers 5; Haaland 8 or 9 so no number spoken); table after 9 games (NBC; Brighton 3rd also CaughtOffside); POTM August Joao Pedro (Chelsea FC, SI), September Gross (SI, Foot Africa). Ranking is our judgement on these numbers.",
-  "clubs": {
-    "ars": {
-      "name": "Arsenal",
-      "short": "ARS",
-      "c1": "#ef0107",
-      "c2": "#ffffff",
-      "pattern": "sides"
-    },
-    "bha": {
-      "name": "Brighton",
-      "short": "BHA",
-      "c1": "#0057b8",
-      "c2": "#ffffff",
-      "pattern": "stripes"
-    },
-    "bou": {
-      "name": "Bournemouth",
-      "short": "BOU",
-      "c1": "#da291c",
-      "c2": "#000000",
-      "pattern": "stripes"
-    },
-    "che": {
-      "name": "Chelsea",
-      "short": "CHE",
-      "c1": "#034694",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "liv": {
-      "name": "Liverpool",
-      "short": "LIV",
-      "c1": "#c8102e",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "mci": {
-      "name": "Manchester City",
-      "short": "MCI",
-      "c1": "#6cabdd",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "mun": {
-      "name": "Manchester United",
-      "short": "MUN",
-      "c1": "#da291c",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    }
+ "id": "pr-premier-league-top10",
+ "series": "Power rankings",
+ "title": "Premier League power ranking: the top 10 players right now",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/2026%E2%80%9327_Premier_League",
+  "https://www.nbcsports.com/soccer/news/premier-league-goals-leaders-2026-27-season-golden-boot-race-latest-stats-updates",
+  "https://www.premierleague.com/en/news/4737300/premier-league-top-scorers-golden-boot-race-2026-27",
+  "https://www.goal.com/en/competition/premier-league/table/2kwbbcootiqqgmrzs6o5inle5",
+  "https://www.givemesport.com/premier-league-best-players-2026-27-statistics-football-soccer/",
+  "https://www.si.com/soccer/august-premier-league-player-manager-month-nominees-2026"
+ ],
+ "checked": "Table after 9 games to 2 Nov 2026 (Wikipedia 2026-27 PL; Goal and other tables agree on Arsenal 24, City 21, Brighton 19, United 17th on 7). Goals (NBC 2 Nov and Wikipedia agree: Haaland 9, Isak 6, Jackson 5; NBC: Joao Pedro, Rogers, Tavernier 5, Mbeumo and Cherki 4, Saka 3). Brighton 24 goals scored, the most (Wikipedia table). POTM August Joao Pedro, September Gross (Wikipedia monthly awards; earlier SI/Chelsea FC/Foot Africa). Gross top of GiveMeSport's stats list. The order is our judgement on these numbers, never a game rating. The Haaland clip is a generic Knowitball finish (not a real goal), so it has no score pop-up.",
+ "clubs": {
+  "ars": {
+   "name": "Arsenal",
+   "short": "ARS",
+   "c1": "#ef0107",
+   "c2": "#ffffff",
+   "pattern": "sides"
   },
-  "people": {
-    "haaland": {
-      "name": "Erling Haaland",
-      "skin": "pink",
-      "hair": [
-        "slick",
-        "#e3cf8f"
-      ],
-      "beard": "none",
-      "kit": "mci"
-    },
-    "isak": {
-      "name": "Alexander Isak",
-      "skin": "brown",
-      "hair": [
-        "crop",
-        "#111111"
-      ],
-      "beard": "stubble",
-      "kit": "liv"
-    },
-    "joaopedro": {
-      "name": "João Pedro",
-      "skin": "tan",
-      "hair": [
-        "crop",
-        "#111111"
-      ],
-      "beard": "none",
-      "kit": "che"
-    },
-    "saka": {
-      "name": "Bukayo Saka",
-      "skin": "dark",
-      "hair": [
-        "buzz",
-        "#111111"
-      ],
-      "beard": "none",
-      "kit": "ars"
-    }
+  "mci": {
+   "name": "Manchester City",
+   "short": "MCI",
+   "c1": "#6cabdd",
+   "c2": "#ffffff",
+   "pattern": "plain"
   },
-  "lines": [
-    {
-      "text": "Nine games into the Premier League season. These are the ten best players right now, on real numbers only.",
-      "scene": {
-        "type": "title",
-        "heading": "PREMIER LEAGUE TOP 10",
-        "sub": "Power ranking · after nine games",
-        "pill": "REAL FORM ONLY",
-        "person": "haaland"
-      }
-    },
-    {
-      "text": "Ten, Bryan Mbeumo, four goals in a struggling United side. Nine, Rayan Cherki, four for City. Eight, Morgan Rogers, five for Chelsea.",
-      "scene": {
-        "type": "list",
-        "title": "PL power ranking",
-        "rows": [
-          {
-            "pos": 10,
-            "name": "Bryan Mbeumo",
-            "value": "4 goals",
-            "club": "mun",
-            "hl": true
-          },
-          {
-            "pos": 9,
-            "name": "Rayan Cherki",
-            "value": "4 goals",
-            "club": "mci",
-            "hl": true
-          },
-          {
-            "pos": 8,
-            "name": "Morgan Rogers",
-            "value": "5 goals",
-            "club": "che",
-            "hl": true
-          }
-        ]
-      }
-    },
-    {
-      "text": "Seven, Marcus Tavernier, five goals for Bournemouth. Six, Bukayo Saka, three goals for the league leaders.",
-      "scene": {
-        "type": "list",
-        "title": "PL power ranking",
-        "rows": [
-          {
-            "pos": 10,
-            "name": "Bryan Mbeumo",
-            "value": "4 goals",
-            "club": "mun"
-          },
-          {
-            "pos": 9,
-            "name": "Rayan Cherki",
-            "value": "4 goals",
-            "club": "mci"
-          },
-          {
-            "pos": 8,
-            "name": "Morgan Rogers",
-            "value": "5 goals",
-            "club": "che"
-          },
-          {
-            "pos": 7,
-            "name": "Marcus Tavernier",
-            "value": "5 goals",
-            "club": "bou",
-            "hl": true
-          },
-          {
-            "pos": 6,
-            "name": "Bukayo Saka",
-            "value": "3 · 1st",
-            "club": "ars",
-            "hl": true
-          }
-        ]
-      }
-    },
-    {
-      "text": "Five, Brighton's Greek teenager Kostoulas. Four, his team-mate Pascal Groß, September's player of the month.",
-      "scene": {
-        "type": "list",
-        "title": "PL power ranking",
-        "rows": [
-          {
-            "pos": 10,
-            "name": "Bryan Mbeumo",
-            "value": "4 goals",
-            "club": "mun"
-          },
-          {
-            "pos": 9,
-            "name": "Rayan Cherki",
-            "value": "4 goals",
-            "club": "mci"
-          },
-          {
-            "pos": 8,
-            "name": "Morgan Rogers",
-            "value": "5 goals",
-            "club": "che"
-          },
-          {
-            "pos": 7,
-            "name": "Marcus Tavernier",
-            "value": "5 goals",
-            "club": "bou"
-          },
-          {
-            "pos": 6,
-            "name": "Bukayo Saka",
-            "value": "3 · 1st",
-            "club": "ars"
-          },
-          {
-            "pos": 5,
-            "name": "Charalampos Kostoulas",
-            "value": "3 · 3rd",
-            "club": "bha",
-            "hl": true
-          },
-          {
-            "pos": 4,
-            "name": "Pascal Groß",
-            "value": "Sep POTM",
-            "club": "bha",
-            "hl": true
-          }
-        ]
-      }
-    },
-    {
-      "text": "Number three. João Pedro.",
-      "scene": {
-        "type": "person",
-        "person": "joaopedro",
-        "label": "NUMBER 3",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "August's player of the month, and five league goals for a Chelsea side in the top four.",
-      "scene": {
-        "type": "stats",
-        "title": "João Pedro",
-        "items": [
-          {
-            "n": "5",
-            "l": "PL goals"
-          },
-          {
-            "n": "1",
-            "l": "POTM award"
-          }
-        ],
-        "person": "joaopedro"
-      }
-    },
-    {
-      "text": "Number two. Alexander Isak.",
-      "scene": {
-        "type": "person",
-        "person": "isak",
-        "label": "NUMBER 2",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "Six league goals, second in the Golden Boot race, even with Liverpool down in fifth.",
-      "scene": {
-        "type": "list",
-        "title": "Golden Boot race",
-        "rows": [
-          {
-            "name": "Erling Haaland",
-            "value": "1st",
-            "club": "mci"
-          },
-          {
-            "name": "Alexander Isak",
-            "value": "6",
-            "club": "liv",
-            "hl": true
-          },
-          {
-            "name": "João Pedro",
-            "value": "5",
-            "club": "che"
-          },
-          {
-            "name": "Tavernier · Rogers",
-            "value": "5"
-          }
-        ]
-      }
-    },
-    {
-      "text": "And number one. Who else? Erling Haaland.",
-      "scene": {
-        "type": "person",
-        "person": "haaland",
-        "label": "NUMBER 1",
-        "mood": "happy",
-        "stamp": "NUMBER 1"
-      }
-    },
-    {
-      "text": "Top of the scoring chart again, for a City team sitting second.",
-      "scene": {
-        "type": "versus",
-        "title": "Points after 9 games",
-        "left": {
-          "person": "haaland",
-          "label": "Man City",
-          "value": "21"
-        },
-        "right": {
-          "person": "saka",
-          "label": "Arsenal",
-          "value": "24"
-        }
-      }
-    },
-    {
-      "text": "Arsenal top the table, but have no one in our top three. Fair?",
-      "scene": {
-        "type": "stamp",
-        "text": "FAIR?",
-        "person": "saka",
-        "color": "white"
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
+  "bha": {
+   "name": "Brighton & Hove Albion",
+   "short": "BHA",
+   "c1": "#0057b8",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "che": {
+   "name": "Chelsea",
+   "short": "CHE",
+   "c1": "#034694",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "liv": {
+   "name": "Liverpool",
+   "short": "LIV",
+   "c1": "#c8102e",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "bre": {
+   "name": "Brentford",
+   "short": "BRE",
+   "c1": "#e30613",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "mun": {
+   "name": "Manchester United",
+   "short": "MUN",
+   "c1": "#da291c",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "bou": {
+   "name": "Bournemouth",
+   "short": "BOU",
+   "c1": "#da291c",
+   "c2": "#111111",
+   "pattern": "stripes",
+   "badge": "AFC Bournemouth"
+  },
+  "avl": {
+   "name": "Aston Villa",
+   "short": "AVL",
+   "c1": "#670e36",
+   "c2": "#95bfe5",
+   "pattern": "plain"
+  }
+ },
+ "people": {
+  "haaland": {
+   "name": "Erling Haaland",
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#e2c58a"
+   ],
+   "beard": "none",
+   "kit": "mci"
+  },
+  "isak": {
+   "name": "Alexander Isak",
+   "skin": "brown",
+   "hair": [
+    "crop",
+    "#1a1a1a"
+   ],
+   "beard": "stubble",
+   "beardCol": "#1a1a1a",
+   "kit": "liv"
+  },
+  "joaopedro": {
+   "name": "João Pedro",
+   "skin": "tan",
+   "hair": [
+    "crop",
+    "#1a1a1a"
+   ],
+   "beard": "none",
+   "kit": "che"
+  }
+ },
+ "lines": [
+  {
+   "text": "Nine games in, one man has nine goals. These are the ten best players in the Premier League right now.",
+   "say": "Nine games in, one man has nine goals. These are the ten best players in the Premier League, right now.",
+   "scene": {
+    "type": "title",
+    "heading": "PREMIER LEAGUE TOP 10",
+    "sub": "After 9 games",
+    "pill": "REAL FORM ONLY",
+    "person": "haaland"
+   }
+  },
+  {
+   "text": "Arsenal are top, three points clear of City. But look at Brighton: twenty-four goals, more than anyone.",
+   "scene": {
+    "type": "table",
+    "title": "Premier League",
+    "season": "After 9 games · 2 Nov 2026",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "ars",
+      "p": 9,
+      "w": 8,
+      "d": 0,
+      "l": 1,
+      "gd": 9,
+      "pts": 24
+     },
+     {
+      "pos": 2,
+      "club": "mci",
+      "p": 9,
+      "w": 7,
+      "d": 0,
+      "l": 2,
+      "gd": 10,
+      "pts": 21
+     },
+     {
+      "pos": 3,
+      "club": "bha",
+      "p": 9,
+      "w": 6,
+      "d": 1,
+      "l": 2,
+      "gd": 17,
+      "pts": 19,
+      "hl": true
+     },
+     {
+      "pos": 4,
+      "club": "che",
+      "p": 9,
+      "w": 5,
+      "d": 1,
+      "l": 3,
+      "gd": 4,
+      "pts": 16
+     },
+     {
+      "pos": 5,
+      "club": "liv",
+      "p": 9,
+      "w": 4,
+      "d": 3,
+      "l": 2,
+      "gd": 2,
+      "pts": 15
+     },
+     {
+      "pos": 6,
+      "club": "bre",
+      "p": 9,
+      "w": 3,
+      "d": 5,
+      "l": 1,
+      "gd": 7,
+      "pts": 14
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
+     },
+     {
+      "kind": "uel",
+      "rows": [
+       5,
+       6
+      ]
+     }
+    ],
+    "gap": {
+     "from": 1,
+     "to": 2,
+     "label": "3 pts",
+     "at": 0.45
     }
-  ]
+   }
+  },
+  {
+   "text": "Ten, Bryan Mbeumo: four goals, in a United side sitting seventeenth. Nine, Rayan Cherki, four for City.",
+   "say": "Ten, Bryan Emburrmo: four goals, in a United side sitting seventeenth. Nine, Rayan Shairkee, four for City.",
+   "scene": {
+    "type": "list",
+    "kicker": "Premier League top 10",
+    "title": "League goals",
+    "rows": [
+     {
+      "pos": 10,
+      "name": "Mbeumo",
+      "value": "4",
+      "hl": true,
+      "club": "mun"
+     },
+     {
+      "pos": 9,
+      "name": "Cherki",
+      "value": "4",
+      "hl": true,
+      "club": "mci"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Eight, Marcus Tavernier, five for Bournemouth. Seven, Bukayo Saka, three goals for the leaders.",
+   "say": "Eight, Marcus Tavvernear, five for Bornmuth. Seven, Bookaiyo Sahka, three goals for the leaders.",
+   "scene": {
+    "type": "list",
+    "kicker": "Premier League top 10",
+    "title": "League goals",
+    "rows": [
+     {
+      "pos": 10,
+      "name": "Mbeumo",
+      "club": "mun"
+     },
+     {
+      "pos": 9,
+      "name": "Cherki",
+      "club": "mci"
+     },
+     {
+      "pos": 8,
+      "name": "Tavernier",
+      "value": "5",
+      "hl": true,
+      "club": "bou"
+     },
+     {
+      "pos": 7,
+      "name": "Saka",
+      "value": "3",
+      "hl": true,
+      "club": "ars"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Six, Morgan Rogers, five for Chelsea. Five, Nicolas Jackson, five for Aston Villa.",
+   "scene": {
+    "type": "list",
+    "kicker": "Premier League top 10",
+    "title": "League goals",
+    "rows": [
+     {
+      "pos": 10,
+      "name": "Mbeumo",
+      "club": "mun"
+     },
+     {
+      "pos": 9,
+      "name": "Cherki",
+      "club": "mci"
+     },
+     {
+      "pos": 8,
+      "name": "Tavernier",
+      "club": "bou"
+     },
+     {
+      "pos": 7,
+      "name": "Saka",
+      "club": "ars"
+     },
+     {
+      "pos": 6,
+      "name": "Rogers",
+      "value": "5",
+      "hl": true,
+      "club": "che"
+     },
+     {
+      "pos": 5,
+      "name": "Jackson",
+      "value": "5",
+      "hl": true,
+      "club": "avl"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Four, Pascal Groß. September's player of the month, and the engine of that Brighton attack.",
+   "say": "Four, Paskal Gross. September's player of the month, and the engine of that Brighton attack.",
+   "scene": {
+    "type": "news",
+    "section": "Premier League",
+    "headline": "Groß named September's Player of the Month",
+    "standfirst": "The Brighton midfielder drives the league's highest-scoring attack, with Brighton third after nine games.",
+    "date": "September 2026",
+    "byline": "Knowitball recap",
+    "club": "bha",
+    "nav": [
+     "Football",
+     "Premier League",
+     "Brighton",
+     "Awards"
+    ]
+   }
+  },
+  {
+   "text": "Number three. João Pedro.",
+   "say": "Number three. Jwow Pedro.",
+   "scene": {
+    "type": "badge",
+    "club": "che",
+    "kicker": "Number 3",
+    "title": "João Pedro",
+    "sub": "Chelsea · forward"
+   }
+  },
+  {
+   "text": "August's player of the month, five league goals, and Chelsea sit fourth.",
+   "scene": {
+    "type": "stats",
+    "kicker": "João Pedro · Chelsea",
+    "title": "The number three",
+    "items": [
+     {
+      "n": "5",
+      "l": "league goals"
+     },
+     {
+      "n": "Aug",
+      "l": "player of the month"
+     },
+     {
+      "n": "4th",
+      "l": "Chelsea in the table"
+     }
+    ],
+    "person": "joaopedro"
+   }
+  },
+  {
+   "text": "Number two. Alexander Isak. Six goals, and the only man close to the top.",
+   "say": "Number two. Alexander Eesak. Six goals, and the only man close to the top.",
+   "scene": {
+    "type": "person",
+    "person": "isak",
+    "label": "Number 2 · 6 league goals",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "And number one. Of course. Erling Haaland.",
+   "say": "And number one. Of course. Erling Hohland.",
+   "scene": {
+    "type": "title",
+    "heading": "ERLING HAALAND",
+    "sub": "Man City",
+    "pill": "NUMBER ONE",
+    "person": "haaland"
+   }
+  },
+  {
+   "text": "Nine league goals in nine games. One a game, again.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/b4566875-a565-5aea-96b2-584e6684bafe/scratchpad/gc/haaland-city-generic/haaland-1v1/tv",
+      60,
+      95
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/b4566875-a565-5aea-96b2-584e6684bafe/scratchpad/gc/haaland-city-generic/haaland-1v1/high",
+      85,
+      190
+     ]
+    ],
+    "goalAt": 1.77,
+    "caption": "NINE IN NINE",
+    "captionColor": "#6cabdd"
+   }
+  },
+  {
+   "text": "That's three more than anyone else in the league.",
+   "scene": {
+    "type": "bars",
+    "kicker": "Premier League 2026/27",
+    "title": "Most league goals",
+    "unit": "goals",
+    "items": [
+     {
+      "label": "Erling Haaland",
+      "value": 9,
+      "club": "mci",
+      "hl": true
+     },
+     {
+      "label": "Alexander Isak",
+      "value": 6,
+      "club": "liv"
+     },
+     {
+      "label": "Nicolas Jackson",
+      "value": 5,
+      "club": "avl"
+     },
+     {
+      "label": "João Pedro",
+      "value": 5,
+      "club": "che"
+     },
+     {
+      "label": "Morgan Rogers",
+      "value": 5,
+      "club": "che"
+     },
+     {
+      "label": "Marcus Tavernier",
+      "value": 5,
+      "club": "bou"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Arsenal top the table, but only one of their players made our ten. Fair, or are we wrong?",
+   "scene": {
+    "type": "stamp",
+    "text": "FAIR?",
+    "sub": "Tell us who we missed",
+    "color": "yellow"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }
