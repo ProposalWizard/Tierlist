@@ -86,8 +86,8 @@
  },
  "lines": [
   {
-   "text": "February 2023. A Spanish radio station drops a bombshell about Barcelona and the referees.",
-   "say": "February twenty twenty-three. A Spanish radio station drops a bombshell, about Barcelona and the referees.",
+   "text": "February 2023. A radio scoop about Barcelona and the referees blows up Spanish football.",
+   "say": "February twenty twenty-three. A radio scoop about Barcelona and the referees blows up Spanish football.",
    "scene": {
     "type": "title",
     "heading": "THE NEGREIRA CASE",
@@ -183,8 +183,8 @@
    }
   },
   {
-   "text": "Then the courts moved in. In March, prosecutors charged the club, two ex-presidents, Negreira and his son.",
-   "say": "Then the courts moved in. In March, prosecutors charged the club, two ex-presidents, Negrayra, and his son.",
+   "text": "In March, prosecutors charged the club, two ex-presidents, Negreira and his son.",
+   "say": "In March, prosecutors charged the club, two ex-presidents, Negrayra, and his son.",
    "scene": {
     "type": "list",
     "kicker": "March 2023",
@@ -255,22 +255,13 @@
    }
   },
   {
-   "text": "Then the twist. In May 2024, a Barcelona court threw the bribery charge out.",
-   "say": "Then the twist. In May twenty twenty-four, a Barcelona court threw the bribery charge out.",
+   "text": "Then the twist. In May 2024, a court threw the bribery charge out. Negreira wasn't a public official.",
+   "say": "Then the twist. In May twenty twenty-four, a court threw the bribery charge out. Negrayra wasn't a public official.",
    "scene": {
     "type": "stamp",
     "text": "BRIBERY DROPPED",
-    "sub": "Barcelona court · 24 May 2024",
+    "sub": "Not a public official · 24 May 2024",
     "color": "yellow"
-   }
-  },
-  {
-   "text": "Why? The referees' committee isn't a public body, so Negreira wasn't a public official.",
-   "say": "Why? The referees' committee isn't a public body, so Negrayra wasn't a public official.",
-   "scene": {
-    "type": "text",
-    "heading": "Why it was dropped",
-    "body": "Bribery in Spanish law needs a public official. The court said a referees' committee official is not one. The sports corruption charges carry on."
    }
   },
   {
@@ -313,8 +304,8 @@
    }
   },
   {
-   "text": "Barcelona's president has one line, and he's stuck to it.",
-   "say": "Barcelona's president has one line, and he's stuck to it.",
+   "text": "Laporta's line never changes.",
+   "say": "Laporrtah's line never changes.",
    "scene": {
     "type": "quote",
     "person": "laporta",
