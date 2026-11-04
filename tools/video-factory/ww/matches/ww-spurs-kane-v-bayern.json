@@ -1,0 +1,689 @@
+{
+ "id": "ww-spurs-kane-v-bayern",
+ "about": "Who would win? Spurs 2026/27 with Harry Kane brought home (in for Solanke) v Bayern 2026/27 without him. A what-if: Kane is still at Bayern (bundesliga.com 31 Oct 2026; NBC 26 Oct 2026). Imagined match at the Tottenham Hotspur Stadium, 3-2 Spurs. Ratings: FC 27 (sofifa_players). XIs: Spurs v Palace 31 Oct 2026 (tottenhamhotspur.com line-ups + squad numbers); Bayern v Dortmund 31 Oct 2026 (fcbayern.com, Oddschecker), with Musiala and Diaz in for the injured Saibari and Gnabry moved up front (our choice). Facts: Kane won the 2026 Ballon d'Or, London, 26 Oct, first English winner since Owen 2001 (NBC Sports, Radio X); Spurs record 280 goals (tottenhamhotspur.com, Goal); Spurs 2-7 Bayern 1 Oct 2019, Gnabry four (thfcdb, FootballCritic).",
+ "title": "WHO WOULD WIN?",
+ "footageRoot": "../footage/ww-spurs-kane-v-bayern",
+ "calm": {
+  "dir": "calm/high"
+ },
+ "music": "09-last-attack.mp3",
+ "competition": {
+  "title": [
+   "WHAT IF KANE CAME HOME?",
+   "SPURS v BAYERN · N17"
+  ],
+  "tagline": "22 PLAYERS · 1 WINNER",
+  "versus": "THE BALLON D'OR WINNER COMES HOME",
+  "short": "DREAM MATCH · TOTTENHAM"
+ },
+ "venue": {
+  "name": "TOTTENHAM HOTSPUR STADIUM",
+  "place": "LONDON · ENGLAND",
+  "lat": 51.6043,
+  "lon": -0.0664
+ },
+ "home": {
+  "name": "SPURS",
+  "full": "TOTTENHAM + KANE",
+  "versus": [
+   "SPURS",
+   "+ KANE"
+  ],
+  "nation": "eng",
+  "founded": 1882,
+  "city": {
+   "label": "LONDON",
+   "sub": "ENGLAND",
+   "lat": 51.6043,
+   "lon": -0.0664
+  },
+  "formation": "4-2-3-1",
+  "kitLabel": "HOME KIT",
+  "badge": "../badges/tottenhamhotspur.png",
+  "kit": {
+   "shirt": "#f4f5f7",
+   "trim": "#132257",
+   "collar": "#132257",
+   "shorts": "#132257",
+   "socks": "#f4f5f7",
+   "number": "#132257",
+   "gk": {
+    "shirt": "#e8e04a",
+    "trim": "#1a1a1a",
+    "collar": "#1a1a1a"
+   }
+  },
+  "colors": {
+   "ring": "#132257",
+   "pillBg": "#f4f5f7",
+   "pillFg": "#132257",
+   "headerBg": "#f4f5f7",
+   "headerFg": "#132257",
+   "headerSub": "#132257",
+   "versusBg": "#0b1640",
+   "accent": "#9fb3ff",
+   "bar": "#e8ecf5",
+   "confetti": [
+    "#132257",
+    "#ffffff",
+    "#ffd23f",
+    "#9fb3ff"
+   ],
+   "ribbon": [
+    "#132257",
+    "#ffffff"
+   ]
+  },
+  "grid": [
+   "kane",
+   "tonali",
+   "marmoush",
+   "vdv",
+   "kudus",
+   "robertson",
+   "vanhecke",
+   "fernandes",
+   "gray",
+   "tel",
+   "kinsky"
+  ],
+  "slots": {
+   "kinsky": "GK",
+   "gray": "RB",
+   "vanhecke": "CB1",
+   "vdv": "CB2",
+   "robertson": "LB",
+   "tonali": "CM1",
+   "fernandes": "CM2",
+   "kudus": "RW",
+   "marmoush": "CAM",
+   "tel": "LW",
+   "kane": "ST"
+  },
+  "manager": "dezerbi"
+ },
+ "away": {
+  "name": "BAYERN",
+  "full": "FC BAYERN MÜNCHEN",
+  "versus": [
+   "BAYERN",
+   "MUNICH"
+  ],
+  "nation": "ger",
+  "founded": 1900,
+  "city": {
+   "label": "MUNICH",
+   "sub": "GERMANY",
+   "lat": 48.2188,
+   "lon": 11.6247
+  },
+  "formation": "4-2-3-1",
+  "kitLabel": "HOME KIT",
+  "badge": "../badges/fcbayernmunchen.png",
+  "kit": {
+   "shirt": "#dc052d",
+   "trim": "#ffffff",
+   "collar": "#ffffff",
+   "shorts": "#dc052d",
+   "socks": "#ffffff",
+   "number": "#ffffff",
+   "gk": {
+    "shirt": "#2bb673",
+    "trim": "#0b3d2a",
+    "collar": "#0b3d2a"
+   }
+  },
+  "grid": [
+   "olise",
+   "kimmich",
+   "musiala",
+   "diaz",
+   "upamecano",
+   "laimer",
+   "gnabry",
+   "davies",
+   "kim",
+   "pavlovic",
+   "urbig"
+  ],
+  "slots": {
+   "urbig": "GK",
+   "laimer": "RB",
+   "upamecano": "CB1",
+   "kim": "CB2",
+   "davies": "LB",
+   "kimmich": "CM1",
+   "pavlovic": "CM2",
+   "olise": "RW",
+   "musiala": "CAM",
+   "diaz": "LW",
+   "gnabry": "ST"
+  },
+  "manager": "kompany"
+ },
+ "players": {
+  "kinsky": {
+   "name": "KINSKÝ",
+   "full": "Antonín Kinský",
+   "num": 31,
+   "skin": "pink",
+   "hair": [
+    "side",
+    "#6b4a2e"
+   ],
+   "beard": "none",
+   "gk": true
+  },
+  "gray": {
+   "name": "GRAY",
+   "full": "Archie Gray",
+   "num": 14,
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#3a2a1e"
+   ],
+   "beard": "none"
+  },
+  "vanhecke": {
+   "name": "VAN HECKE",
+   "full": "Jan Paul van Hecke",
+   "num": 6,
+   "skin": "brown",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "short"
+  },
+  "vdv": {
+   "name": "VAN DE VEN",
+   "full": "Micky van de Ven",
+   "num": 37,
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#8a6a48"
+   ],
+   "beard": "none"
+  },
+  "robertson": {
+   "name": "ROBERTSON",
+   "full": "Andy Robertson",
+   "num": 3,
+   "skin": "pink",
+   "hair": [
+    "side",
+    "#5b3a22"
+   ],
+   "beard": "stubble"
+  },
+  "tonali": {
+   "name": "TONALI",
+   "full": "Sandro Tonali",
+   "num": 16,
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#2a1d15"
+   ],
+   "beard": "stubble"
+  },
+  "fernandes": {
+   "name": "M. FERNANDES",
+   "full": "Mateus Fernandes",
+   "num": 18,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "none"
+  },
+  "kudus": {
+   "name": "KUDUS",
+   "full": "Mohammed Kudus",
+   "num": 20,
+   "skin": "deep",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "stubble"
+  },
+  "marmoush": {
+   "name": "MARMOUSH",
+   "full": "Omar Marmoush",
+   "num": 22,
+   "skin": "tan",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "short"
+  },
+  "tel": {
+   "name": "TEL",
+   "full": "Mathys Tel",
+   "num": 11,
+   "skin": "dark",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "kane": {
+   "name": "KANE",
+   "full": "Harry Kane",
+   "num": 10,
+   "skin": "pink",
+   "hair": [
+    "side",
+    "#8a6a48"
+   ],
+   "beard": "stubble"
+  },
+  "urbig": {
+   "name": "URBIG",
+   "full": "Jonas Urbig",
+   "num": 40,
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#6b4a2e"
+   ],
+   "beard": "none",
+   "gk": true
+  },
+  "laimer": {
+   "name": "LAIMER",
+   "full": "Konrad Laimer",
+   "num": 27,
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#4a3220"
+   ],
+   "beard": "full"
+  },
+  "upamecano": {
+   "name": "UPAMECANO",
+   "full": "Dayot Upamecano",
+   "num": 2,
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "short"
+  },
+  "kim": {
+   "name": "KIM",
+   "full": "Kim Min-jae",
+   "num": 3,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "none"
+  },
+  "davies": {
+   "name": "DAVIES",
+   "full": "Alphonso Davies",
+   "num": 19,
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "kimmich": {
+   "name": "KIMMICH",
+   "full": "Joshua Kimmich",
+   "num": 6,
+   "skin": "pink",
+   "hair": [
+    "side",
+    "#8a6a48"
+   ],
+   "beard": "none"
+  },
+  "pavlovic": {
+   "name": "PAVLOVIĆ",
+   "full": "Aleksandar Pavlović",
+   "num": 45,
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#3a2a1e"
+   ],
+   "beard": "none"
+  },
+  "olise": {
+   "name": "OLISE",
+   "full": "Michael Olise",
+   "num": 17,
+   "skin": "dark",
+   "hair": [
+    "curlytop",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "musiala": {
+   "name": "MUSIALA",
+   "full": "Jamal Musiala",
+   "num": 10,
+   "skin": "brown",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "diaz": {
+   "name": "DÍAZ",
+   "full": "Luis Díaz",
+   "num": 14,
+   "skin": "tan",
+   "hair": [
+    "curlytop",
+    "#1d1512"
+   ],
+   "beard": "stubble"
+  },
+  "gnabry": {
+   "name": "GNABRY",
+   "full": "Serge Gnabry",
+   "num": 7,
+   "skin": "brown",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "stubble"
+  },
+  "dezerbi": {
+   "name": "DE ZERBI",
+   "full": "Roberto De Zerbi",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "full",
+   "suit": {
+    "jacket": "#1c1d24",
+    "tie": "#132257"
+   }
+  },
+  "kompany": {
+   "name": "KOMPANY",
+   "full": "Vincent Kompany",
+   "skin": "brown",
+   "hair": [
+    "bald",
+    "#000"
+   ],
+   "beard": "full",
+   "suit": {
+    "jacket": "#1f2533",
+    "tie": "#dc052d"
+   }
+  }
+ },
+ "ratings": {
+  "label": "FC 27",
+  "rows": [
+   [
+    "ATTACK",
+    83,
+    87
+   ],
+   [
+    "MIDFIELD",
+    82,
+    86
+   ],
+   [
+    "DEFENCE",
+    80,
+    84
+   ]
+  ],
+  "starMen": {
+   "home": {
+    "id": "kane",
+    "rating": 90
+   },
+   "away": {
+    "id": "olise",
+    "rating": 89
+   }
+  },
+  "verdict": "BAYERN ARE FAVOURITES"
+ },
+ "events": [
+  {
+   "id": "goal1",
+   "type": "goal",
+   "minute": "9'",
+   "scorer": "gnabry",
+   "footage": {
+    "parts": [
+     [
+      "s1-gnabry/tv",
+      44,
+      82
+     ],
+     [
+      "s1-gnabry/high",
+      82,
+      153
+     ]
+    ],
+    "goalAt": 2.0
+   },
+   "caption": "GNABRY. NOT AGAIN.",
+   "assist": "musiala",
+   "popup": "s1-gnabry/popup"
+  },
+  {
+   "id": "goal2",
+   "type": "goal",
+   "minute": "24'",
+   "scorer": "kane",
+   "footage": {
+    "parts": [
+     [
+      "s2-kane-low/tv",
+      13,
+      51
+     ],
+     [
+      "s2-kane-low/high",
+      51,
+      130
+     ]
+    ],
+    "goalAt": 2.2667
+   },
+   "caption": "KANE IS HOME",
+   "assist": "kudus",
+   "popup": "s2-kane-low/popup"
+  },
+  {
+   "id": "goal3",
+   "type": "goal",
+   "minute": "51'",
+   "scorer": "olise",
+   "footage": {
+    "parts": [
+     [
+      "s3-olise/tv",
+      13,
+      51
+     ],
+     [
+      "s3-olise/high",
+      51,
+      130
+     ]
+    ],
+    "goalAt": 2.2667
+   },
+   "caption": "OLISE CURLER",
+   "assist": "kimmich",
+   "popup": "s3-olise/popup"
+  },
+  {
+   "id": "goal4",
+   "type": "goal",
+   "minute": "68'",
+   "scorer": "kane",
+   "footage": {
+    "parts": [
+     [
+      "s4-kane-pen/tv",
+      0,
+      19
+     ],
+     [
+      "s4-kane-pen/high",
+      19,
+      91
+     ]
+    ],
+    "goalAt": 1.4
+   },
+   "caption": "KANE FROM THE SPOT",
+   "popup": "s4-kane-pen/popup"
+  },
+  {
+   "id": "goal5",
+   "type": "goal",
+   "minute": "90+1'",
+   "scorer": "kane",
+   "footage": {
+    "parts": [
+     [
+      "s5-kane-header/tv",
+      10,
+      48
+     ],
+     [
+      "s5-kane-header/high",
+      19,
+      88
+     ]
+    ],
+    "goalAt": 1.9333
+   },
+   "caption": "KANE HAT-TRICK!",
+   "captionColor": "#ffd23f",
+   "lateCard": "90+1'",
+   "assist": "robertson",
+   "popup": "s5-kane-header/popup"
+  }
+ ],
+ "potm": {
+  "top3": [
+   "kane",
+   "olise",
+   "kudus"
+  ],
+  "name": "HARRY KANE",
+  "subtitle": "HAT-TRICK · WELCOME HOME"
+ },
+ "vo": [
+  {
+   "seg": "grid",
+   "offset": 0.3,
+   "text": "Spurs against Bayern. What if Harry Kane came home?"
+  },
+  {
+   "seg": "homeSheet",
+   "offset": 0.2,
+   "text": "Kane is Tottenham's all-time top scorer, with two hundred and eighty goals. In this world, he's back.",
+   "say": "Kane is Tottenham's all-time top scorer, with two hundred and eighty goals. In this world, he's back."
+  },
+  {
+   "seg": "awaySheet",
+   "offset": 0.1,
+   "text": "And Bayern have to manage without him.",
+   "say": "And Bayern have to manage without him."
+  },
+  {
+   "seg": "versus",
+   "offset": 0.3,
+   "text": "Just over a week ago in London, Kane won the Ballon d'Or. The first English winner since Michael Owen.",
+   "say": "Just over a week ago in London, Kane won the Ballon Dor. The first English winner since Michael Owen."
+  },
+  {
+   "seg": "globe",
+   "offset": 0.5,
+   "text": "And Spurs remember Bayern. Seven-two at home in twenty nineteen. Gnabry scored four.",
+   "say": "And Spurs remember Bayern. Seven-two at home in twenty nineteen. Guhnahbree scored four."
+  },
+  {
+   "seg": "ratings",
+   "offset": 0.3,
+   "text": "FC twenty-seven rates Kane ninety. Olise and Kimmich, eighty-nine. Bayern are favourites.",
+   "say": "F C twenty-seven rates Kane ninety. Ohleez and Kimmick, eighty-nine. Bayern are favourites."
+  },
+  {
+   "seg": "goal1",
+   "offset": 0.1,
+   "spill": true,
+   "text": "Nine minutes. Gnabry. Not again.",
+   "say": "Nine minutes. Guhnahbree. Not again."
+  },
+  {
+   "seg": "goal2",
+   "offset": 0.2,
+   "spill": true,
+   "text": "But Kane doesn't need long. Kudus finds him. Low into the corner.",
+   "say": "But Kane doesn't need long. Koodoos finds him. Low into the corner."
+  },
+  {
+   "seg": "goal3",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Olise curls one in. One-two Bayern.",
+   "say": "Ohleez curls one in. One-two Bayern."
+  },
+  {
+   "seg": "goal4",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Penalty. Kane against his own team-mates. Two-all."
+  },
+  {
+   "seg": "late",
+   "offset": 0.0,
+   "spill": true,
+   "text": "Ninety-first minute. Robertson crosses...",
+   "say": "Ninety-first minute. Robbertson crosses..."
+  },
+  {
+   "seg": "fulltime",
+   "offset": 0.6,
+   "text": "Kane! A hat-trick. Three-two Spurs. Welcome home."
+  },
+  {
+   "seg": "potm",
+   "offset": 0.8,
+   "text": "Player of the match? Harry Kane. Ballon d'Or winner.",
+   "say": "Player of the match? Harry Kane. Ballon Dor winner."
+  },
+  {
+   "seg": "end",
+   "offset": 0.3,
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "say": "Follow for more, and play Road to Ballon Dor."
+  }
+ ]
+}

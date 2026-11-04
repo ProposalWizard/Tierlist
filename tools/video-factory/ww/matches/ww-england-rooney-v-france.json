@@ -1,0 +1,723 @@
+{
+ "id": "ww-england-rooney-v-france",
+ "about": "Who would win? England today with 18-year-old Wayne Rooney (Euro 2004, in for Bellingham) v France today. Imagined match at Wembley, 3-2 England. Ratings: FC 27 (sofifa_players); Rooney 2004 has no database (FIFA 05 is not covered), so 87 is our prediction (said in the video). XIs: England v Czechia 6 Oct 2026 (Sky Sports, Oddschecker) with Saka and Rice back; France v Turkiye 25 Sep 2026 (Goal, SI), Maignan assumed in goal. Shirt numbers for France are assumed. Facts: England 6-4 France, World Cup third place, 18 Jul 2026, Saka hat-trick (worldcupranking, theScore); Zidane France coach since July 2026 (France24, SI); Rooney 4 goals at Euro 2004 aged 18, Eriksson's Pele line (Sky Sports, Irish Times); France 2-1 England 13 Jun 2004, Zidane free kick 90+1 and penalty 90+3 (Wikipedia Euro 2004 Group B, UEFA).",
+ "title": "WHO WOULD WIN?",
+ "footageRoot": "../footage/ww-england-rooney-v-france",
+ "calm": {
+  "dir": "calm/high"
+ },
+ "music": "09-last-attack.mp3",
+ "competition": {
+  "title": [
+   "ENGLAND + ROONEY 2004",
+   "v FRANCE · WEMBLEY"
+  ],
+  "tagline": "22 PLAYERS · 1 WINNER",
+  "versus": "INTERNATIONAL DREAM MATCH · WEMBLEY",
+  "short": "DREAM MATCH · WEMBLEY"
+ },
+ "venue": {
+  "name": "WEMBLEY STADIUM",
+  "place": "LONDON · ENGLAND",
+  "lat": 51.556,
+  "lon": -0.2796
+ },
+ "home": {
+  "name": "ENGLAND",
+  "full": "ENGLAND + ROONEY 2004",
+  "versus": [
+   "ENGLAND",
+   "+ ROONEY"
+  ],
+  "nation": "eng",
+  "versusInfo": "THIRD AT THE 2026 WORLD CUP",
+  "city": {
+   "label": "LONDON",
+   "sub": "ENGLAND",
+   "lat": 51.556,
+   "lon": -0.2796
+  },
+  "formation": "4-2-3-1",
+  "kitLabel": "HOME KIT",
+  "kit": {
+   "shirt": "#f4f5f7",
+   "trim": "#0b1f4f",
+   "collar": "#0b1f4f",
+   "shorts": "#0b1f4f",
+   "socks": "#f4f5f7",
+   "number": "#0b1f4f",
+   "gk": {
+    "shirt": "#e8e04a",
+    "trim": "#1a1a1a",
+    "collar": "#1a1a1a"
+   }
+  },
+  "crest": {
+   "a": "#ffffff",
+   "b": "#c8102e",
+   "c": "#0b1f4f",
+   "t": "ENG",
+   "tc": "#0b1f4f",
+   "ts": 30
+  },
+  "colors": {
+   "ring": "#c8102e",
+   "pillBg": "#f4f5f7",
+   "pillFg": "#0b1f4f",
+   "headerBg": "#f4f5f7",
+   "headerFg": "#0b1f4f",
+   "headerSub": "#0b1f4f",
+   "headerStripes": [
+    "#c8102e",
+    "#0b1f4f"
+   ],
+   "versusBg": "#0b1f4f",
+   "accent": "#ff6b6b",
+   "bar": "#e8ecf5",
+   "confetti": [
+    "#ffffff",
+    "#c8102e",
+    "#0b1f4f",
+    "#ffd23f"
+   ],
+   "ribbon": [
+    "#c8102e",
+    "#ffffff"
+   ]
+  },
+  "grid": [
+   "kane",
+   "rooney",
+   "rice",
+   "saka",
+   "taa",
+   "guehi",
+   "eze",
+   "anderson",
+   "hall",
+   "quansah",
+   "pickford"
+  ],
+  "slots": {
+   "pickford": "GK",
+   "taa": "RB",
+   "quansah": "CB1",
+   "guehi": "CB2",
+   "hall": "LB",
+   "rice": "CM1",
+   "anderson": "CM2",
+   "saka": "RW",
+   "rooney": "CAM",
+   "eze": "LW",
+   "kane": "ST"
+  },
+  "manager": "tuchel"
+ },
+ "away": {
+  "name": "FRANCE",
+  "full": "FRANCE",
+  "versus": [
+   "FRANCE",
+   ""
+  ],
+  "nation": "fra",
+  "versusInfo": "ZIDANE'S NEW FRANCE",
+  "city": {
+   "label": "PARIS",
+   "sub": "FRANCE",
+   "lat": 48.9245,
+   "lon": 2.3602
+  },
+  "formation": "4-3-3",
+  "kitLabel": "HOME KIT",
+  "kit": {
+   "shirt": "#1f4fb4",
+   "trim": "#c8102e",
+   "collar": "#ffffff",
+   "shorts": "#ffffff",
+   "socks": "#c8102e",
+   "number": "#ffffff",
+   "gk": {
+    "shirt": "#2bb673",
+    "trim": "#0b3d2a",
+    "collar": "#0b3d2a"
+   }
+  },
+  "crest": {
+   "a": "#1f4fb4",
+   "b": "#ffffff",
+   "c": "#c8102e",
+   "t": "FRA",
+   "tc": "#ffffff",
+   "ts": 30
+  },
+  "colors": {
+   "ring": "#1f4fb4",
+   "versusBg": "#0e2560",
+   "accent": "#7fa6ff",
+   "confetti": [
+    "#1f4fb4",
+    "#ffffff",
+    "#c8102e",
+    "#ffd23f"
+   ],
+   "ribbon": [
+    "#1f4fb4",
+    "#c8102e"
+   ]
+  },
+  "grid": [
+   "mbappe",
+   "dembele",
+   "olise",
+   "kounde",
+   "upamecano",
+   "rabiot",
+   "cherki",
+   "lacroix",
+   "kone",
+   "truffert",
+   "maignan"
+  ],
+  "slots": {
+   "maignan": "GK",
+   "kounde": "RB",
+   "upamecano": "CB1",
+   "lacroix": "CB2",
+   "truffert": "LB",
+   "rabiot": "CM1",
+   "kone": "CM",
+   "cherki": "CM2",
+   "olise": "RW",
+   "dembele": "ST",
+   "mbappe": "LW"
+  },
+  "manager": "zidane"
+ },
+ "players": {
+  "pickford": {
+   "name": "PICKFORD",
+   "full": "Jordan Pickford",
+   "num": 1,
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#8a6a48"
+   ],
+   "beard": "short",
+   "gk": true
+  },
+  "taa": {
+   "name": "ALEXANDER-ARNOLD",
+   "full": "Trent Alexander-Arnold",
+   "num": 2,
+   "skin": "tan",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "none"
+  },
+  "quansah": {
+   "name": "QUANSAH",
+   "full": "Jarell Quansah",
+   "num": 5,
+   "skin": "brown",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "guehi": {
+   "name": "GUÉHI",
+   "full": "Marc Guéhi",
+   "num": 6,
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "hall": {
+   "name": "HALL",
+   "full": "Lewis Hall",
+   "num": 3,
+   "skin": "pink",
+   "hair": [
+    "side",
+    "#6b4a2e"
+   ],
+   "beard": "none"
+  },
+  "rice": {
+   "name": "RICE",
+   "full": "Declan Rice",
+   "num": 4,
+   "skin": "pink",
+   "hair": [
+    "tidy",
+    "#6b4a2b"
+   ],
+   "beard": "none"
+  },
+  "anderson": {
+   "name": "ANDERSON",
+   "full": "Elliot Anderson",
+   "num": 8,
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#3a2a1e"
+   ],
+   "beard": "none"
+  },
+  "saka": {
+   "name": "SAKA",
+   "full": "Bukayo Saka",
+   "num": 7,
+   "skin": "dark",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "rooney": {
+   "name": "ROONEY",
+   "full": "Wayne Rooney",
+   "num": 10,
+   "skin": "pink",
+   "hair": [
+    "buzz",
+    "#5b3a22"
+   ],
+   "beard": "none"
+  },
+  "eze": {
+   "name": "EZE",
+   "full": "Eberechi Eze",
+   "num": 21,
+   "skin": "deep",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "short"
+  },
+  "kane": {
+   "name": "KANE",
+   "full": "Harry Kane",
+   "num": 9,
+   "skin": "pink",
+   "hair": [
+    "side",
+    "#8a6a48"
+   ],
+   "beard": "stubble"
+  },
+  "maignan": {
+   "name": "MAIGNAN",
+   "full": "Mike Maignan",
+   "num": 16,
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "short",
+   "gk": true
+  },
+  "kounde": {
+   "name": "KOUNDÉ",
+   "full": "Jules Koundé",
+   "num": 5,
+   "skin": "dark",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "short"
+  },
+  "upamecano": {
+   "name": "UPAMECANO",
+   "full": "Dayot Upamecano",
+   "num": 4,
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "short"
+  },
+  "lacroix": {
+   "name": "LACROIX",
+   "full": "Maxence Lacroix",
+   "num": 21,
+   "skin": "dark",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "truffert": {
+   "name": "TRUFFERT",
+   "full": "Adrien Truffert",
+   "num": 22,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#4a3220"
+   ],
+   "beard": "none"
+  },
+  "rabiot": {
+   "name": "RABIOT",
+   "full": "Adrien Rabiot",
+   "num": 14,
+   "skin": "pink",
+   "hair": [
+    "slick",
+    "#6b4a2e"
+   ],
+   "beard": "short"
+  },
+  "kone": {
+   "name": "KONÉ",
+   "full": "Manu Koné",
+   "num": 6,
+   "skin": "deep",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "cherki": {
+   "name": "CHERKI",
+   "full": "Rayan Cherki",
+   "num": 20,
+   "skin": "tan",
+   "hair": [
+    "curlytop",
+    "#1d1512"
+   ],
+   "beard": "none"
+  },
+  "olise": {
+   "name": "OLISE",
+   "full": "Michael Olise",
+   "num": 11,
+   "skin": "dark",
+   "hair": [
+    "curlytop",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "dembele": {
+   "name": "DEMBÉLÉ",
+   "full": "Ousmane Dembélé",
+   "num": 7,
+   "skin": "deep",
+   "hair": [
+    "crop",
+    "#0d0a09"
+   ],
+   "beard": "short"
+  },
+  "mbappe": {
+   "name": "MBAPPÉ",
+   "full": "Kylian Mbappé",
+   "num": 10,
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "tuchel": {
+   "name": "TUCHEL",
+   "full": "Thomas Tuchel",
+   "skin": "light",
+   "hair": [
+    "buzz",
+    "#8a7a68"
+   ],
+   "beard": "stubble",
+   "suit": {
+    "jacket": "#1c1d24",
+    "tie": "#c8102e"
+   }
+  },
+  "zidane": {
+   "name": "ZIDANE",
+   "full": "Zinedine Zidane",
+   "skin": "light",
+   "hair": [
+    "bald",
+    "#000"
+   ],
+   "beard": "stubble",
+   "suit": {
+    "jacket": "#1f2533",
+    "tie": "#1f4fb4"
+   }
+  }
+ },
+ "ratings": {
+  "label": "FC 27 · ROONEY PREDICTED",
+  "rows": [
+   [
+    "ATTACK",
+    87,
+    90
+   ],
+   [
+    "MIDFIELD",
+    85,
+    83
+   ],
+   [
+    "DEFENCE",
+    82,
+    83
+   ]
+  ],
+  "starMen": {
+   "home": {
+    "id": "rooney",
+    "rating": 87,
+    "label": "ROONEY 04"
+   },
+   "away": {
+    "id": "mbappe",
+    "rating": 91
+   }
+  },
+  "verdict": "FRANCE ARE FAVOURITES"
+ },
+ "events": [
+  {
+   "id": "goal1",
+   "type": "goal",
+   "minute": "17'",
+   "scorer": "rooney",
+   "footage": {
+    "parts": [
+     [
+      "e1-rooney/tv",
+      13,
+      51
+     ],
+     [
+      "e1-rooney/high",
+      51,
+      130
+     ]
+    ],
+    "goalAt": 2.2667
+   },
+   "caption": "ROONEY. EIGHTEEN. FEARLESS.",
+   "assist": "rice",
+   "popup": "e1-rooney/popup"
+  },
+  {
+   "id": "goal2",
+   "type": "goal",
+   "minute": "33'",
+   "scorer": "mbappe",
+   "footage": {
+    "parts": [
+     [
+      "e2-mbappe/tv",
+      44,
+      82
+     ],
+     [
+      "e2-mbappe/high",
+      82,
+      153
+     ]
+    ],
+    "goalAt": 2.0
+   },
+   "caption": "MBAPPÉ, TOO QUICK",
+   "assist": "dembele",
+   "popup": "e2-mbappe/popup"
+  },
+  {
+   "id": "goal3",
+   "type": "goal",
+   "minute": "58'",
+   "scorer": "saka",
+   "footage": {
+    "parts": [
+     [
+      "e3-saka/tv",
+      0,
+      36
+     ],
+     [
+      "e3-saka/high",
+      36,
+      102
+     ]
+    ],
+    "goalAt": 1.7667
+   },
+   "caption": "THE KID SETS UP SAKA",
+   "assist": "rooney",
+   "popup": "e3-saka/popup"
+  },
+  {
+   "id": "goal4",
+   "type": "goal",
+   "minute": "81'",
+   "scorer": "olise",
+   "footage": {
+    "parts": [
+     [
+      "e4-olise/tv",
+      13,
+      51
+     ],
+     [
+      "e4-olise/high",
+      51,
+      130
+     ]
+    ],
+    "goalAt": 2.2667
+   },
+   "caption": "OLISE, TOP CORNER",
+   "assist": "cherki",
+   "popup": "e4-olise/popup"
+  },
+  {
+   "id": "goal5",
+   "type": "goal",
+   "minute": "90+3'",
+   "scorer": "kane",
+   "footage": {
+    "parts": [
+     [
+      "e5-kane/tv",
+      10,
+      48
+     ],
+     [
+      "e5-kane/high",
+      19,
+      88
+     ]
+    ],
+    "goalAt": 1.9333
+   },
+   "caption": "KANE WINS IT!",
+   "captionColor": "#ffd23f",
+   "lateCard": "90+3'",
+   "assist": "rooney",
+   "popup": "e5-kane/popup"
+  }
+ ],
+ "potm": {
+  "top3": [
+   "rooney",
+   "kane",
+   "mbappe"
+  ],
+  "name": "WAYNE ROONEY",
+  "subtitle": "A GOAL AND TWO ASSISTS AT 18"
+ },
+ "vo": [
+  {
+   "seg": "grid",
+   "offset": 0.3,
+   "text": "England against France. But this England has an eighteen-year-old Wayne Rooney."
+  },
+  {
+   "seg": "homeSheet",
+   "offset": 0.2,
+   "text": "Tuchel's side finished third at the World Cup. Rooney takes Bellingham's place, behind Harry Kane.",
+   "say": "Tookel's side finished third at the World Cup. Rooney takes Bellingum's place, behind Harry Kane."
+  },
+  {
+   "seg": "awaySheet",
+   "offset": 0.1,
+   "text": "France have a new manager: Zinedine Zidane.",
+   "say": "France have a new manager: Zeenedeen Zeedan."
+  },
+  {
+   "seg": "versus",
+   "offset": 0.3,
+   "text": "In July, England beat France six-four for third place. Saka scored a hat-trick.",
+   "say": "In July, England beat France six-four for third place. Sahkah scored a hat-trick."
+  },
+  {
+   "seg": "globe",
+   "offset": 0.5,
+   "text": "But Euro twenty oh-four? Rooney scored four goals at eighteen. And France beat England with two Zidane goals in stoppage time.",
+   "say": "But Euro two thousand and four? Rooney scored four goals at eighteen. And France beat England with two Zeedan goals in stoppage time."
+  },
+  {
+   "seg": "ratings",
+   "offset": 0.3,
+   "text": "No FIFA game covers twenty oh-four, so we predict Rooney at eighty-seven. Mbappé is ninety-one.",
+   "say": "No FIFA game covers two thousand and four, so we predict Rooney at eighty-seven. Embapay is ninety-one."
+  },
+  {
+   "seg": "goal1",
+   "offset": 0.1,
+   "spill": true,
+   "text": "Seventeen minutes. Rooney, from outside the box. Fearless."
+  },
+  {
+   "seg": "goal2",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Mbappé, too quick for everyone. One-all.",
+   "say": "Embapay, too quick for everyone. One-all."
+  },
+  {
+   "seg": "goal3",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Then the kid sets up Saka. Two-one.",
+   "say": "Then the kid sets up Sahkah. Two-one."
+  },
+  {
+   "seg": "goal4",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Olise cuts inside and curls it, top corner. Two-all.",
+   "say": "Ohleez cuts inside and curls it, top corner. Two-all."
+  },
+  {
+   "seg": "late",
+   "offset": 0.0,
+   "spill": true,
+   "text": "Stoppage time again. Rooney crosses...",
+   "say": "Stoppage time again. Rooney crosses..."
+  },
+  {
+   "seg": "fulltime",
+   "offset": 0.6,
+   "text": "Kane! Three-two England. This time the stoppage-time winner is English."
+  },
+  {
+   "seg": "potm",
+   "offset": 0.8,
+   "text": "Player of the match? Wayne Rooney. Eighteen, and fearless."
+  },
+  {
+   "seg": "end",
+   "offset": 0.3,
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "say": "Follow for more, and play Road to Ballon Dor."
+  }
+ ]
+}

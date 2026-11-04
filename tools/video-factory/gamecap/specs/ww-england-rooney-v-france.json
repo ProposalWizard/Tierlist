@@ -1,51 +1,332 @@
 {
   "_about": "Who would win? England today with 18-year-old Wayne Rooney (Euro 2004) v France today (Zidane's side). Imagined match at Wembley, 3-2 England. Kits: England 2026 home white (navy shorts assumed), France 2026 home royal blue (goal.com + prodirect), white shorts and red socks UNCONFIRMED (NSS Magazine only). Keeper kits assumed.",
   "teams": {
-    "home": { "name": "England", "kit": { "shirt": "#F4F5F7", "shorts": "#0B1F4F", "socks": "#F4F5F7" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#C8102E" },
-    "away": { "name": "France", "kit": { "shirt": "#1F4FB4", "shorts": "#FFFFFF", "socks": "#C8102E" }, "keeperKit": { "shirt": "#2BB673", "shorts": "#0B3D2A", "socks": "#2BB673" }, "popupTrim": "#C8102E" }
+    "home": {
+      "name": "England",
+      "kit": {
+        "shirt": "#F4F5F7",
+        "shorts": "#0B1F4F",
+        "socks": "#F4F5F7"
+      },
+      "keeperKit": {
+        "shirt": "#E8E04A",
+        "shorts": "#1A1A1A",
+        "socks": "#E8E04A"
+      },
+      "popupTrim": "#C8102E"
+    },
+    "away": {
+      "name": "France",
+      "kit": {
+        "shirt": "#1F4FB4",
+        "shorts": "#FFFFFF",
+        "socks": "#C8102E"
+      },
+      "keeperKit": {
+        "shirt": "#2BB673",
+        "shorts": "#0B3D2A",
+        "socks": "#2BB673"
+      },
+      "popupTrim": "#C8102E"
+    }
   },
   "people": {
-    "rooney":   { "name": "Wayne Rooney", "skin": "#f2c4a6", "hair": "#5b3a22", "popupName": "Rooney" },
-    "kane":     { "name": "Harry Kane", "skin": "#f0c3a0", "hair": "#8a6a48", "popupName": "Kane" },
-    "saka":     { "name": "Bukayo Saka", "skin": "#5e3a24", "hair": "#0d0a09", "popupName": "Saka" },
-    "rice":     { "name": "Declan Rice", "skin": "#f0c3a0", "hair": "#6b4a2b" },
-    "eze":      { "name": "Eberechi Eze", "skin": "#4a2e1e", "hair": "#0d0a09" },
-    "taa":      { "name": "Trent Alexander-Arnold", "skin": "#c79670", "hair": "#1d1512" },
-    "guehi":    { "name": "Marc Guehi", "skin": "#3e2618", "hair": "#0d0a09" },
-    "quansah":  { "name": "Jarell Quansah", "skin": "#7a4e33", "hair": "#0d0a09" },
-    "hall":     { "name": "Lewis Hall", "skin": "#f2c4a6", "hair": "#6b4a2e" },
-    "pickford": { "name": "Jordan Pickford", "skin": "#f2c4a6", "hair": "#8a6a48" },
-    "mbappe":   { "name": "Kylian Mbappe", "skin": "#7a4e33", "hair": "#0d0a09", "popupName": "Mbappé" },
-    "olise":    { "name": "Michael Olise", "skin": "#5e3a24", "hair": "#0d0a09", "popupName": "Olise" },
-    "dembele":  { "name": "Ousmane Dembele", "skin": "#3e2618", "hair": "#0d0a09" },
-    "cherki":   { "name": "Rayan Cherki", "skin": "#c79670", "hair": "#1d1512" },
-    "kounde":   { "name": "Jules Kounde", "skin": "#5e3a24", "hair": "#0d0a09" },
-    "upamecano":{ "name": "Dayot Upamecano", "skin": "#3e2618", "hair": "#0d0a09" },
-    "lacroix":  { "name": "Maxence Lacroix", "skin": "#5e3a24", "hair": "#0d0a09" },
-    "rabiot":   { "name": "Adrien Rabiot", "skin": "#f0c3a0", "hair": "#6b4a2e" },
-    "maignan":  { "name": "Mike Maignan", "skin": "#3e2618", "hair": "#0d0a09" }
+    "rooney": {
+      "name": "Wayne Rooney",
+      "skin": "#f2c4a6",
+      "hair": "#5b3a22",
+      "popupName": "Rooney"
+    },
+    "kane": {
+      "name": "Harry Kane",
+      "skin": "#f0c3a0",
+      "hair": "#8a6a48",
+      "popupName": "Kane"
+    },
+    "saka": {
+      "name": "Bukayo Saka",
+      "skin": "#5e3a24",
+      "hair": "#0d0a09",
+      "popupName": "Saka"
+    },
+    "rice": {
+      "name": "Declan Rice",
+      "skin": "#f0c3a0",
+      "hair": "#6b4a2b"
+    },
+    "eze": {
+      "name": "Eberechi Eze",
+      "skin": "#4a2e1e",
+      "hair": "#0d0a09"
+    },
+    "taa": {
+      "name": "Trent Alexander-Arnold",
+      "skin": "#c79670",
+      "hair": "#1d1512"
+    },
+    "guehi": {
+      "name": "Marc Guehi",
+      "skin": "#3e2618",
+      "hair": "#0d0a09"
+    },
+    "quansah": {
+      "name": "Jarell Quansah",
+      "skin": "#7a4e33",
+      "hair": "#0d0a09"
+    },
+    "hall": {
+      "name": "Lewis Hall",
+      "skin": "#f2c4a6",
+      "hair": "#6b4a2e"
+    },
+    "pickford": {
+      "name": "Jordan Pickford",
+      "skin": "#f2c4a6",
+      "hair": "#8a6a48"
+    },
+    "mbappe": {
+      "name": "Kylian Mbappe",
+      "skin": "#7a4e33",
+      "hair": "#0d0a09",
+      "popupName": "Mbappé"
+    },
+    "olise": {
+      "name": "Michael Olise",
+      "skin": "#5e3a24",
+      "hair": "#0d0a09",
+      "popupName": "Olise"
+    },
+    "dembele": {
+      "name": "Ousmane Dembele",
+      "skin": "#3e2618",
+      "hair": "#0d0a09"
+    },
+    "cherki": {
+      "name": "Rayan Cherki",
+      "skin": "#c79670",
+      "hair": "#1d1512"
+    },
+    "kounde": {
+      "name": "Jules Kounde",
+      "skin": "#5e3a24",
+      "hair": "#0d0a09"
+    },
+    "upamecano": {
+      "name": "Dayot Upamecano",
+      "skin": "#3e2618",
+      "hair": "#0d0a09"
+    },
+    "lacroix": {
+      "name": "Maxence Lacroix",
+      "skin": "#5e3a24",
+      "hair": "#0d0a09"
+    },
+    "rabiot": {
+      "name": "Adrien Rabiot",
+      "skin": "#f0c3a0",
+      "hair": "#6b4a2e"
+    },
+    "maignan": {
+      "name": "Mike Maignan",
+      "skin": "#3e2618",
+      "hair": "#0d0a09"
+    },
+    "anderson": {
+      "name": "Elliot Anderson",
+      "skin": "#f0c3a0",
+      "hair": "#3a2a1e"
+    }
   },
   "clips": [
-    { "id": "e1-rooney", "kind": "long_range", "attacking": "home", "scorer": "rooney", "assister": "rice",
-      "defenders": ["rabiot", "upamecano", "lacroix"], "keeper": "maignan", "teammates": ["kane", "saka"],
-      "minute": 17, "scoreBefore": [0, 0], "night": true, "celebration": "arms_out", "cameras": ["tv", "high", "tight"],
-      "recreate": { "scorerSpot": [-2, 21], "finish": "ground", "goalSide": "right", "height": "low" }, "seed": "rooney-drive-a" },
-    { "id": "e2-mbappe", "kind": "one_on_one", "attacking": "away", "scorer": "mbappe", "assister": "dembele",
-      "defenders": ["quansah", "guehi"], "keeper": "pickford", "teammates": ["olise"],
-      "minute": 33, "scoreBefore": [1, 0], "night": true, "celebration": "statue", "cameras": ["tv", "high", "tight"],
-      "recreate": { "delivery": "through", "finish": "ground", "goalSide": "far" }, "seed": "mbappe-run-a" },
-    { "id": "e3-saka", "kind": "tap_in", "attacking": "home", "scorer": "saka", "assister": "rooney",
-      "defenders": ["kounde", "upamecano", "lacroix"], "keeper": "maignan", "teammates": ["kane"],
-      "minute": 58, "scoreBefore": [1, 1], "night": true, "celebration": "jump", "cameras": ["tv", "high", "tight"],
-      "recreate": { "side": "left" }, "seed": "saka-tap-a" },
-    { "id": "e4-olise-fk", "kind": "free_kick", "attacking": "away", "scorer": "olise",
-      "defenders": ["rice", "kane", "eze", "saka"], "keeper": "pickford", "teammates": ["mbappe"],
-      "minute": 81, "scoreBefore": [2, 1], "night": true, "celebration": "fist_pump", "cameras": ["tv", "high", "tight"],
-      "seed": "olise-fk-a" },
-    { "id": "e5-kane", "kind": "header", "attacking": "home", "scorer": "kane", "assister": "rooney",
-      "defenders": ["upamecano", "lacroix", "kounde"], "keeper": "maignan", "teammates": ["saka", "guehi"],
-      "minute": 90, "minuteLabel": "90+3", "scoreBefore": [2, 2], "night": true, "celebration": "roar", "cameras": ["tv", "high", "tight"],
-      "recreate": { "delivery": "cross", "side": "right", "swing": "in", "scorerStart": [-1, 16], "scorerSpot": [0, 8], "finish": "header", "goalSide": "far", "height": "mid" },
-      "seed": "kane-header-eng-a" }
+    {
+      "id": "e1-rooney",
+      "kind": "long_range",
+      "attacking": "home",
+      "scorer": "rooney",
+      "assister": "rice",
+      "defenders": [
+        "rabiot",
+        "upamecano",
+        "lacroix"
+      ],
+      "keeper": "maignan",
+      "teammates": [
+        "kane",
+        "saka"
+      ],
+      "minute": 17,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "night": true,
+      "celebration": "arms_out",
+      "cameras": [
+        "tv",
+        "high",
+        "tight"
+      ],
+      "recreate": {
+        "scorerSpot": [
+          -2,
+          21
+        ],
+        "finish": "ground",
+        "goalSide": "right",
+        "height": "low"
+      },
+      "seed": "rooney-drive-a"
+    },
+    {
+      "id": "e2-mbappe",
+      "kind": "one_on_one",
+      "attacking": "away",
+      "scorer": "mbappe",
+      "assister": "dembele",
+      "defenders": [
+        "quansah",
+        "guehi"
+      ],
+      "keeper": "pickford",
+      "teammates": [
+        "olise"
+      ],
+      "minute": 33,
+      "scoreBefore": [
+        1,
+        0
+      ],
+      "night": true,
+      "celebration": "statue",
+      "cameras": [
+        "tv",
+        "high",
+        "tight"
+      ],
+      "recreate": {
+        "delivery": "through",
+        "finish": "ground",
+        "goalSide": "far"
+      },
+      "seed": "mbappe-run-a"
+    },
+    {
+      "id": "e3-saka",
+      "kind": "tap_in",
+      "attacking": "home",
+      "scorer": "saka",
+      "assister": "rooney",
+      "defenders": [
+        "kounde",
+        "upamecano",
+        "lacroix"
+      ],
+      "keeper": "maignan",
+      "teammates": [
+        "kane"
+      ],
+      "minute": 58,
+      "scoreBefore": [
+        1,
+        1
+      ],
+      "night": true,
+      "celebration": "jump",
+      "cameras": [
+        "tv",
+        "high",
+        "tight"
+      ],
+      "recreate": {
+        "side": "left"
+      },
+      "seed": "saka-tap-a"
+    },
+    {
+      "id": "e4-olise",
+      "kind": "long_range",
+      "attacking": "away",
+      "scorer": "olise",
+      "defenders": [
+        "rice",
+        "anderson",
+        "hall"
+      ],
+      "keeper": "pickford",
+      "teammates": [
+        "mbappe",
+        "dembele"
+      ],
+      "minute": 81,
+      "scoreBefore": [
+        2,
+        1
+      ],
+      "night": true,
+      "celebration": "fist_pump",
+      "cameras": [
+        "tv",
+        "high",
+        "tight"
+      ],
+      "seed": "olise-eng-a",
+      "assister": "cherki",
+      "recreate": {
+        "scorerSpot": [
+          9,
+          19
+        ],
+        "finish": "curl",
+        "goalSide": "far",
+        "height": "high"
+      }
+    },
+    {
+      "id": "e5-kane",
+      "kind": "header",
+      "attacking": "home",
+      "scorer": "kane",
+      "assister": "rooney",
+      "defenders": [
+        "upamecano",
+        "lacroix",
+        "kounde"
+      ],
+      "keeper": "maignan",
+      "teammates": [
+        "saka",
+        "guehi"
+      ],
+      "minute": 90,
+      "minuteLabel": "90+3",
+      "scoreBefore": [
+        2,
+        2
+      ],
+      "night": true,
+      "celebration": "roar",
+      "cameras": [
+        "tv",
+        "high",
+        "tight"
+      ],
+      "recreate": {
+        "delivery": "cross",
+        "side": "right",
+        "swing": "in",
+        "scorerStart": [
+          -1,
+          16
+        ],
+        "scorerSpot": [
+          0,
+          8
+        ],
+        "finish": "header",
+        "goalSide": "far",
+        "height": "mid"
+      },
+      "seed": "kane-header-eng-a"
+    }
   ]
 }
