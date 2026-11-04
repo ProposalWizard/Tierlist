@@ -87,7 +87,11 @@
   "Coppa Italia": "Koppa Itahleeya",
   "Bayern": "Byern",
   "José Mourinho": "Hozay Moreenyo",
-  "UEFA": "Yooayfuh"
+  "UEFA": "Yooayfuh",
+  "Gianluigi Buffon": "Jahnlooeejee Boofon",
+  "Buffon": "Boofon",
+  "Zaccardo": "Zakkardoh",
+  "Materazzi": "Matterattsee"
  },
  "_ipa": {
   "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -155,6 +159,10 @@
   "Coppa Italia": "it [ˈkɔppa iˈtaːlja]; heard as 'Coppa Italea' (rob-milito-2010)",
   "Bayern": "de [ˈbaɪɐn]; heard as 'Bayern' (rob-milito-2010)",
   "José Mourinho": "pt [ʒuˈzɛ moˈɾiɲu], English broadcast 'ho-ZAY'; heard as 'Jose Mourinho' (rob-milito-2010)",
-  "UEFA": "English 'yoo-AY-fuh'; heard as 'UEFA' (rob-milito-2010)"
+  "UEFA": "English 'yoo-AY-fuh'; heard as 'UEFA' (rob-milito-2010)",
+  "Gianluigi Buffon": "it [dʒanluˈiːdʒi ˈbuffon]; heard as 'Gianluigi Buffon' (rob-buffon-2006)",
+  "Buffon": "it [ˈbuffon]; heard as 'Buffon'/'Bufun' (rob-buffon-2006)",
+  "Zaccardo": "it [dzakˈkardo]; heard as 'Zaccado' (rob-buffon-2006)",
+  "Materazzi": "it [mateˈrattsi]; heard as 'Materazzi' (rob-buffon-2006)"
  }
 }
