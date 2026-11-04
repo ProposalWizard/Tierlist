@@ -1,0 +1,108 @@
+{
+ "_about": "Kane completes his hat-trick in the DFB-Pokal final, Bayern 3-0 Stuttgart, Berlin, 23 May 2026, from Luis Diaz's pass. Finish type not known: a low finish. Bayern red, Stuttgart white.",
+ "teams": {
+  "home": {
+   "name": "FC Bayern München",
+   "short": "Bayern",
+   "kit": {
+    "shirt": "#DC052D",
+    "shorts": "#DC052D",
+    "socks": "#DC052D"
+   },
+   "keeperKit": {
+    "shirt": "#2B2B2B",
+    "shorts": "#2B2B2B",
+    "socks": "#2B2B2B"
+   },
+   "popupTrim": "#FFFFFF"
+  },
+  "away": {
+   "name": "VfB Stuttgart",
+   "short": "Stuttgart",
+   "kit": {
+    "shirt": "#FFFFFF",
+    "shorts": "#FFFFFF",
+    "socks": "#FFFFFF"
+   },
+   "keeperKit": {
+    "shirt": "#2BB673",
+    "shorts": "#0B3D2A",
+    "socks": "#2BB673"
+   },
+   "popupTrim": "#E32219"
+  }
+ },
+ "people": {
+  "kane": {
+   "name": "Harry Kane",
+   "skin": "#efc6a6",
+   "hair": "#7a5a3a"
+  },
+  "diaz": {
+   "name": "Luis Díaz",
+   "skin": "#a87450",
+   "hair": "#120c08"
+  },
+  "d0": {
+   "name": "Player",
+   "skin": "#e8bf9c",
+   "hair": "#3a2a1c"
+  },
+  "d1": {
+   "name": "Player",
+   "skin": "#d9a98a",
+   "hair": "#1a1410"
+  },
+  "d2": {
+   "name": "Player",
+   "skin": "#6b4630",
+   "hair": "#120c08"
+  },
+  "d3": {
+   "name": "Player",
+   "skin": "#f0c9a8",
+   "hair": "#7a5a3a"
+  },
+  "d4": {
+   "name": "Player",
+   "skin": "#c99a76",
+   "hair": "#1a1410"
+  }
+ },
+ "clips": [
+  {
+   "id": "kane-hattrick",
+   "kind": "one_on_one",
+   "attacking": "home",
+   "scorer": "kane",
+   "assister": "diaz",
+   "defenders": [
+    "d0",
+    "d1"
+   ],
+   "keeper": "d3",
+   "minute": 85,
+   "scoreBefore": [
+    2,
+    0
+   ],
+   "scoreAfter": [
+    3,
+    0
+   ],
+   "night": true,
+   "celebration": "arms_out",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "delivery": "through",
+    "finish": "ground",
+    "goalSide": "far"
+   },
+   "seed": "kane-pokal-a"
+  }
+ ]
+}

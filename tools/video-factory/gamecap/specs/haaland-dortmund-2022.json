@@ -1,0 +1,114 @@
+{
+ "_about": "Haaland's flying volley, Man City 2-1 Dortmund, Champions League, 14 Sep 2022, 84 min. Cancelo's cross from the right, outside of the foot. City sky blue, Dortmund yellow and black.",
+ "teams": {
+  "home": {
+   "name": "Manchester City",
+   "kit": {
+    "shirt": "#6CABDD",
+    "shorts": "#FFFFFF",
+    "socks": "#6CABDD"
+   },
+   "keeperKit": {
+    "shirt": "#2B2B2B",
+    "shorts": "#2B2B2B",
+    "socks": "#2B2B2B"
+   },
+   "popupTrim": "#FFFFFF"
+  },
+  "away": {
+   "name": "Borussia Dortmund",
+   "short": "Dortmund",
+   "kit": {
+    "shirt": "#FDE100",
+    "shorts": "#111111",
+    "socks": "#FDE100"
+   },
+   "keeperKit": {
+    "shirt": "#2BB673",
+    "shorts": "#0B3D2A",
+    "socks": "#2BB673"
+   },
+   "popupTrim": "#111111"
+  }
+ },
+ "people": {
+  "haaland": {
+   "name": "Erling Haaland",
+   "skin": "#efc8a8",
+   "hair": "#e2cf9a"
+  },
+  "cancelo": {
+   "name": "João Cancelo",
+   "skin": "#c99a76",
+   "hair": "#1a1410"
+  },
+  "d0": {
+   "name": "Player",
+   "skin": "#e8bf9c",
+   "hair": "#3a2a1c"
+  },
+  "d1": {
+   "name": "Player",
+   "skin": "#d9a98a",
+   "hair": "#1a1410"
+  },
+  "d2": {
+   "name": "Player",
+   "skin": "#6b4630",
+   "hair": "#120c08"
+  },
+  "d3": {
+   "name": "Player",
+   "skin": "#f0c9a8",
+   "hair": "#7a5a3a"
+  },
+  "d4": {
+   "name": "Player",
+   "skin": "#c99a76",
+   "hair": "#1a1410"
+  }
+ },
+ "clips": [
+  {
+   "id": "haaland-volley",
+   "kind": "volley",
+   "attacking": "home",
+   "scorer": "haaland",
+   "assister": "cancelo",
+   "defenders": [
+    "d0",
+    "d1",
+    "d3"
+   ],
+   "keeper": "d4",
+   "teammates": [
+    "d2"
+   ],
+   "minute": 84,
+   "scoreBefore": [
+    1,
+    1
+   ],
+   "scoreAfter": [
+    2,
+    1
+   ],
+   "night": true,
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "side": "right",
+    "scorerSpot": [
+     1.5,
+     6
+    ],
+    "goalSide": "near",
+    "finish": "volley"
+   },
+   "seed": "haaland-bvb-a"
+  }
+ ]
+}

@@ -1,254 +1,559 @@
 {
-  "id": "ss-henry-v-haaland",
-  "series": "Best season ever, settled",
-  "title": "Henry 2003-04 v Haaland 2022-23: the best striker season?",
-  "sources": [
-    "https://en.wikipedia.org/wiki/2003%E2%80%9304_Arsenal_F.C._season",
-    "https://en.wikipedia.org/wiki/2022%E2%80%9323_Manchester_City_F.C._season",
-    "data/competition-history/premier-league.json (champions, runners-up, top scorers, FWA winners)",
-    "data/competition-history/champions-league.json (2022-23 final and top scorer)"
-  ],
-  "checked": "Henry 30 league / 39 in 51 games, Arsenal 26 wins 12 draws 0 defeats, out to Chelsea in the Champions League quarter-final and to Man United in the FA Cup semi-final, PFA and FWA awards (Wikipedia season page; league goals, title and FWA also in the local file). Haaland 36 league / 52 all comps, treble, FWA, 38-game record, 12 Champions League goals, Arsenal second in 2022-23 (Wikipedia season page + local files).",
-  "clubs": {
-    "arsenal": {
-      "name": "Arsenal",
-      "short": "ARS",
-      "c1": "#ef0107",
-      "c2": "#ffffff",
-      "pattern": "sides"
-    },
-    "mancity": {
-      "name": "Manchester City",
-      "short": "MCI",
-      "c1": "#6cabdd",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "chelsea": {
-      "name": "Chelsea",
-      "short": "CHE",
-      "c1": "#034694",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    }
+ "id": "ss-henry-v-haaland",
+ "series": "Best season ever, settled",
+ "title": "Henry 2003-04 v Haaland 2022-23: the best striker season?",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/2003%E2%80%9304_Arsenal_F.C._season",
+  "https://en.wikipedia.org/wiki/2003%E2%80%9304_FA_Premier_League",
+  "https://www.skysports.com/football/news/11670/9954870/thierry-henry-my-greatest-game-arsenal-4-2-liverpool-2004",
+  "https://www.premierleague.com/news/2286181",
+  "https://en.wikipedia.org/wiki/Thierry_Henry",
+  "https://en.wikipedia.org/wiki/2022%E2%80%9323_Manchester_City_F.C._season",
+  "https://en.wikipedia.org/wiki/2022%E2%80%9323_Premier_League"
+ ],
+ "checked": "Henry 2003-04: 30 PL goals, 39 in 51 all comps, Golden Boot, PFA and FWA (Wikipedia Henry + season page). Arsenal 26-12-0, 90 pts, Chelsea 79 (Wikipedia PL 2003-04, premierleague.com). Out of the FA Cup semi to United (3 Apr) and the CL quarter to Chelsea (6 Apr); 9 Apr Liverpool led 2-1 at half-time, Henry hat-trick, 4-2 (Sky Sports, Wikipedia season). Last day 15 May: Leicester led, Henry penalty, Vieira winner, 2-1 (Wikipedia season, premierleague.com). Haaland 2022-23: 36 PL / 52 all comps, treble; City 89 pts (28-5-5), Arsenal 84 (Wikipedia). Clip moves are game recreations.",
+ "clubs": {
+  "ars": {
+   "name": "Arsenal",
+   "short": "ARS",
+   "c1": "#ef0107",
+   "c2": "#ffffff",
+   "pattern": "sides"
   },
-  "people": {
-    "henry": {
-      "name": "Thierry Henry",
-      "skin": "dark",
-      "hair": [
-        "buzz",
-        "#111111"
-      ],
-      "beard": "none",
-      "kit": "arsenal"
-    },
-    "haaland": {
-      "name": "Erling Haaland",
-      "skin": "light",
-      "hair": [
-        "slick",
-        "#e2c27a"
-      ],
-      "beard": "none",
-      "kit": "mancity"
-    }
+  "mci": {
+   "name": "Manchester City",
+   "short": "MCI",
+   "c1": "#6cabdd",
+   "c2": "#ffffff",
+   "pattern": "plain"
   },
-  "lines": [
-    {
-      "text": "One never lost a league game. One scored fifty-two goals. Henry or Haaland, whose season was better?",
-      "scene": {
-        "type": "title",
-        "heading": "HENRY v HAALAND",
-        "sub": "2003-04 v 2022-23",
-        "pill": "SETTLED",
-        "person": "henry"
-      }
+  "che": {
+   "name": "Chelsea",
+   "short": "CHE",
+   "c1": "#034694",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "mun": {
+   "name": "Manchester United",
+   "short": "MUN",
+   "c1": "#da291c",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "liv": {
+   "name": "Liverpool",
+   "short": "LIV",
+   "c1": "#c8102e",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "new": {
+   "name": "Newcastle United",
+   "short": "NEW",
+   "c1": "#111111",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "lei": {
+   "name": "Leicester City",
+   "short": "LEI",
+   "c1": "#0053a0",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "bvb": {
+   "name": "Borussia Dortmund",
+   "short": "BVB",
+   "c1": "#fde100",
+   "c2": "#111111",
+   "pattern": "plain"
+  },
+  "blb": {
+   "name": "Blackburn Rovers",
+   "short": "BLB",
+   "c1": "#009ee0",
+   "c2": "#ffffff",
+   "pattern": "halves"
+  }
+ },
+ "people": {
+  "henry": {
+   "name": "Thierry Henry",
+   "skin": "brown",
+   "hair": [
+    "bald",
+    "#1a1a1a"
+   ],
+   "beard": "none",
+   "kit": "ars"
+  },
+  "haaland": {
+   "name": "Erling Haaland",
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#e2cf9a"
+   ],
+   "beard": "none",
+   "kit": "mci"
+  }
+ },
+ "lines": [
+  {
+   "text": "One never lost a league game. One scored fifty-two goals. Henry or Haaland?",
+   "say": "One never lost a league game. One scored fifty-two goals. Onree or Hohland?",
+   "scene": {
+    "type": "versus",
+    "title": "Best striker season?",
+    "left": {
+     "person": "henry",
+     "label": "Henry",
+     "value": "2004",
+     "sub": "Arsenal · 03/04"
     },
-    {
-      "text": "Thierry Henry, twenty oh three, oh four. The Invincibles.",
-      "scene": {
-        "type": "person",
-        "person": "henry",
-        "label": "Arsenal · 2003-04",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "Thirty league goals. Thirty-nine in all competitions, in fifty-one games.",
-      "scene": {
-        "type": "stats",
-        "title": "HENRY 2003-04",
-        "person": "henry",
-        "items": [
-          {
-            "n": "30",
-            "l": "league goals"
-          },
-          {
-            "n": "39",
-            "l": "all competitions"
-          },
-          {
-            "n": "51",
-            "l": "games"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Twenty-six wins, twelve draws, zero defeats. A whole league season unbeaten.",
-      "scene": {
-        "type": "stats",
-        "title": "ARSENAL 2003-04",
-        "items": [
-          {
-            "n": "26",
-            "l": "won"
-          },
-          {
-            "n": "12",
-            "l": "drawn"
-          },
-          {
-            "n": "0",
-            "l": "lost"
-          }
-        ],
-        "stamp": "UNBEATEN"
-      }
-    },
-    {
-      "text": "Erling Haaland, twenty twenty-two, twenty-three. His first season in England.",
-      "scene": {
-        "type": "person",
-        "person": "haaland",
-        "label": "Man City · 2022-23",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "Thirty-six league goals, a new record. Fifty-two in all competitions.",
-      "scene": {
-        "type": "versus",
-        "title": "LEAGUE GOALS",
-        "left": {
-          "person": "henry",
-          "label": "Henry 03-04",
-          "value": "30"
-        },
-        "right": {
-          "person": "haaland",
-          "label": "Haaland 22-23",
-          "value": "36"
-        }
-      }
-    },
-    {
-      "text": "All competitions, Haaland wins by thirteen.",
-      "scene": {
-        "type": "versus",
-        "title": "ALL COMPETITIONS",
-        "left": {
-          "person": "henry",
-          "label": "Henry 03-04",
-          "value": "39"
-        },
-        "right": {
-          "person": "haaland",
-          "label": "Haaland 22-23",
-          "value": "52"
-        }
-      }
-    },
-    {
-      "text": "Trophies. Henry won the league. Chelsea knocked Arsenal out of Europe, Man United out of the FA Cup.",
-      "scene": {
-        "type": "trophies",
-        "person": "henry",
-        "items": [
-          {
-            "kind": "league",
-            "label": "Premier League, unbeaten"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Haaland won the league, the FA Cup and the Champions League.",
-      "scene": {
-        "type": "trophies",
-        "person": "haaland",
-        "items": [
-          {
-            "kind": "league",
-            "label": "Premier League"
-          },
-          {
-            "kind": "cup",
-            "label": "FA Cup"
-          },
-          {
-            "kind": "bigears",
-            "label": "Champions League"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Both won the Football Writers' award. Both topped the scoring charts.",
-      "scene": {
-        "type": "trophies",
-        "items": [
-          {
-            "kind": "boot",
-            "label": "Henry, top scorer"
-          },
-          {
-            "kind": "boot",
-            "label": "Haaland, top scorer"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Now the twist. The team Haaland beat to the title in twenty twenty-three? Henry's Arsenal.",
-      "scene": {
-        "type": "text",
-        "heading": "PREMIER LEAGUE 2022-23",
-        "body": "Champions: Manchester City. Runners-up: Arsenal, Henry's old club.",
-        "stamp": "TWIST"
-      }
-    },
-    {
-      "text": "Haaland's goals took the title off Henry's old club. Henry's goals made his club unbeatable.",
-      "scene": {
-        "type": "whatif",
-        "title": "TWO KINDS OF GREAT",
-        "real": {
-          "label": "Henry",
-          "value": "0 league defeats"
-        },
-        "alt": {
-          "label": "Haaland",
-          "value": "3 trophies"
-        }
-      }
-    },
-    {
-      "text": "Numbers and trophies both say Haaland. But unbeaten is forever. I'm saying Haaland, just.",
-      "scene": {
-        "type": "stamp",
-        "text": "HAALAND, JUST",
-        "person": "haaland",
-        "color": "white"
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
+    "right": {
+     "person": "haaland",
+     "label": "Haaland",
+     "value": "2023",
+     "sub": "Man City · 22/23"
     }
-  ]
+   }
+  },
+  {
+   "text": "2003. Arsenal had thrown away the title the year before. Thierry Henry wanted it back.",
+   "say": "Twenty oh three. Arsenal had thrown away the title the year before. Teeairee Onree wanted it back.",
+   "scene": {
+    "type": "title",
+    "heading": "THIERRY HENRY",
+    "sub": "Arsenal · 2003/04",
+    "pill": "THE INVINCIBLES",
+    "person": "henry",
+    "club": "ars"
+   }
+  },
+  {
+   "text": "Thirty league goals. Thirty-nine in all, in fifty-one games.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Thierry Henry · 2003/04",
+    "title": "The Golden Boot again",
+    "items": [
+     {
+      "n": "30",
+      "l": "league goals"
+     },
+     {
+      "n": "39",
+      "l": "all competitions"
+     },
+     {
+      "n": "51",
+      "l": "games"
+     }
+    ],
+    "person": "henry"
+   }
+  },
+  {
+   "text": "Then one awful week in April. Out of the FA Cup to United. Out of Europe to Chelsea.",
+   "say": "Then one awful week in April. Out of the FA Cup to United. Out of Europe to Chelsea.",
+   "scene": {
+    "type": "news",
+    "section": "Arsenal",
+    "headline": "Arsenal's dream week turns to dust",
+    "standfirst": "Beaten by United in the FA Cup semi-final, then by Chelsea in the Champions League. Is the season falling apart?",
+    "date": "6 April 2004",
+    "byline": "Knowitball recap",
+    "club": "ars",
+    "person": "henry",
+    "nav": [
+     "Football",
+     "Premier League",
+     "Arsenal",
+     "Europe"
+    ]
+   }
+  },
+  {
+   "text": "Good Friday. Liverpool lead two-one at half-time. Henry scores a hat-trick. Four-two.",
+   "say": "Good Friday. Liverpool lead two, one at half-time. Onree scores a hat-trick. Four, two.",
+   "scene": {
+    "type": "score",
+    "home": "ars",
+    "away": "liv",
+    "hs": 4,
+    "as": 2,
+    "date": "9 April 2004 · Highbury",
+    "comp": "Premier League",
+    "note": "Henry hat-trick, from 1-2 down at half-time"
+   }
+  },
+  {
+   "text": "The last day. Leicester lead at Highbury. Henry's penalty levels it, and Vieira wins it.",
+   "say": "The last day. Lester lead at Highbury. Onree's penalty levels it, and Veeairuh wins it.",
+   "scene": {
+    "type": "gameclip",
+    "popup": {
+     "home": "ars",
+     "away": "lei",
+     "awayName": "Leicester",
+     "hs0": 0,
+     "as0": 1,
+     "hs": 1,
+     "as": 1,
+     "scorer": "Henry"
+    },
+    "caption": "Level",
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/henry-leicester-2004/henry-pen/tv",
+      0,
+      27
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/henry-leicester-2004/henry-pen/high",
+      27,
+      119
+     ]
+    ],
+    "goalAt": 1.37
+   }
+  },
+  {
+   "text": "Twenty-six wins, twelve draws, no defeats. Eleven points clear.",
+   "scene": {
+    "type": "table",
+    "season": "Final table 2003/04",
+    "title": "Premier League",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "ars",
+      "p": 38,
+      "w": 26,
+      "d": 12,
+      "l": 0,
+      "gd": 47,
+      "pts": 90,
+      "hl": true
+     },
+     {
+      "pos": 2,
+      "club": "che",
+      "p": 38,
+      "w": 24,
+      "d": 7,
+      "l": 7,
+      "gd": 37,
+      "pts": 79
+     },
+     {
+      "pos": 3,
+      "club": "mun",
+      "p": 38,
+      "w": 23,
+      "d": 6,
+      "l": 9,
+      "gd": 29,
+      "pts": 75
+     },
+     {
+      "pos": 4,
+      "club": "liv",
+      "p": 38,
+      "w": 16,
+      "d": 12,
+      "l": 10,
+      "gd": 18,
+      "pts": 60
+     },
+     {
+      "pos": 5,
+      "club": "new",
+      "p": 38,
+      "w": 13,
+      "d": 17,
+      "l": 8,
+      "gd": 12,
+      "pts": 56
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
+     },
+     {
+      "kind": "uel",
+      "rows": [
+       5,
+       5
+      ],
+      "label": "UEFA Cup"
+     }
+    ],
+    "gap": {
+     "from": 1,
+     "to": 2,
+     "label": "11 pts",
+     "at": 0.45
+    }
+   }
+  },
+  {
+   "text": "Nineteen years later, City sign a Norwegian from Dortmund. Erling Haaland.",
+   "say": "Nineteen years later, City sign a Norwegian from Dortmoond. Erling Hohland.",
+   "scene": {
+    "type": "title",
+    "heading": "ERLING HAALAND",
+    "sub": "Man City · 2022/23",
+    "pill": "THE MACHINE",
+    "person": "haaland",
+    "club": "mci"
+   }
+  },
+  {
+   "text": "His flying volley against his old club. Fifty-two goals in all.",
+   "say": "His flying volley against his old club. Fifty-two goals in all.",
+   "scene": {
+    "type": "gameclip",
+    "popup": {
+     "home": "mci",
+     "away": "bvb",
+     "homeName": "Man City",
+     "awayName": "Dortmund",
+     "hs0": 1,
+     "as0": 1,
+     "hs": 2,
+     "as": 1,
+     "scorer": "Haaland",
+     "assist": "Cancelo"
+    },
+    "caption": "Fifty-two goals",
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/haaland-dortmund-2022/haaland-volley/tv",
+      14,
+      62
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/haaland-dortmund-2022/haaland-volley/high",
+      27,
+      103
+     ]
+    ],
+    "goalAt": 1.93
+   }
+  },
+  {
+   "text": "Thirty-six in the league. Henry's thirty, beaten by six.",
+   "say": "Thirty-six in the league. Onree's thirty, beaten by six.",
+   "scene": {
+    "type": "bars",
+    "kicker": "38-game Premier League seasons",
+    "title": "League goals",
+    "items": [
+     {
+      "label": "Haaland 22/23",
+      "value": 36,
+      "person": "haaland",
+      "hl": true
+     },
+     {
+      "label": "Henry 03/04",
+      "value": 30,
+      "person": "henry"
+     }
+    ],
+    "unit": "goals"
+   }
+  },
+  {
+   "text": "And the twist: the team Haaland's City chased down was Arsenal. Top for most of the year, beaten by five.",
+   "say": "And the twist: the team Hohland's City chased down was Arsenal. Top for most of the year, beaten by five.",
+   "scene": {
+    "type": "table",
+    "season": "Final table 2022/23",
+    "title": "Premier League",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "mci",
+      "p": 38,
+      "w": 28,
+      "d": 5,
+      "l": 5,
+      "gd": 61,
+      "pts": 89,
+      "hl": true
+     },
+     {
+      "pos": 2,
+      "club": "ars",
+      "p": 38,
+      "w": 26,
+      "d": 6,
+      "l": 6,
+      "gd": 45,
+      "pts": 84,
+      "hl": true
+     },
+     {
+      "pos": 3,
+      "club": "mun",
+      "p": 38,
+      "w": 23,
+      "d": 6,
+      "l": 9,
+      "gd": 15,
+      "pts": 75
+     },
+     {
+      "pos": 4,
+      "club": "new",
+      "p": 38,
+      "w": 19,
+      "d": 14,
+      "l": 5,
+      "gd": 35,
+      "pts": 71
+     },
+     {
+      "pos": 5,
+      "club": "liv",
+      "p": 38,
+      "w": 19,
+      "d": 10,
+      "l": 9,
+      "gd": 28,
+      "pts": 67
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
+     },
+     {
+      "kind": "uel",
+      "rows": [
+       5,
+       5
+      ],
+      "label": "Europa League"
+     }
+    ],
+    "gap": {
+     "from": 1,
+     "to": 2,
+     "label": "5 pts",
+     "at": 0.45
+    }
+   }
+  },
+  {
+   "text": "Then the FA Cup and the Champions League. The treble.",
+   "scene": {
+    "type": "trophies",
+    "kicker": "Erling Haaland · 2022/23",
+    "title": "The treble",
+    "items": [
+     {
+      "kind": "league",
+      "label": "Premier League"
+     },
+     {
+      "kind": "cup",
+      "label": "FA Cup"
+     },
+     {
+      "kind": "bigears",
+      "label": "Champions League"
+     }
+    ],
+    "person": "haaland"
+   }
+  },
+  {
+   "text": "Head to head, Haaland has more goals and more trophies. Henry has zero defeats.",
+   "say": "Head to head, Hohland has more goals and more trophies. Onree has zero defeats.",
+   "scene": {
+    "type": "compare",
+    "title": "Head to head",
+    "left": {
+     "person": "henry",
+     "name": "Henry",
+     "sub": "2003/04"
+    },
+    "right": {
+     "person": "haaland",
+     "name": "Haaland",
+     "sub": "2022/23"
+    },
+    "rows": [
+     {
+      "label": "League goals",
+      "l": 30,
+      "r": 36
+     },
+     {
+      "label": "All competitions",
+      "l": 39,
+      "r": 52
+     },
+     {
+      "label": "Trophies",
+      "l": 1,
+      "r": 3
+     },
+     {
+      "label": "League defeats",
+      "l": 0,
+      "r": 5,
+      "lower": true
+     }
+    ]
+   }
+  },
+  {
+   "text": "Unbeaten is forever. But the numbers and the treble say Haaland. Just.",
+   "say": "Unbeaten is forever. But the numbers and the treble say Hohland. Just.",
+   "scene": {
+    "type": "stamp",
+    "text": "HAALAND",
+    "sub": "Just · settled",
+    "person": "haaland",
+    "color": "green",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }

@@ -1,0 +1,103 @@
+{
+ "_about": "Lampard, Chelsea 7-1 Aston Villa, 27 Mar 2010, the day he scored four. A long-range strike in his style, not one goal like for like. Chelsea blue, Villa claret and blue.",
+ "teams": {
+  "home": {
+   "name": "Chelsea",
+   "kit": {
+    "shirt": "#034694",
+    "shorts": "#034694",
+    "socks": "#FFFFFF"
+   },
+   "keeperKit": {
+    "shirt": "#E8E04A",
+    "shorts": "#1A1A1A",
+    "socks": "#E8E04A"
+   },
+   "popupTrim": "#FFFFFF"
+  },
+  "away": {
+   "name": "Aston Villa",
+   "kit": {
+    "shirt": "#7A003C",
+    "shorts": "#FFFFFF",
+    "socks": "#95BFE5"
+   },
+   "keeperKit": {
+    "shirt": "#2BB673",
+    "shorts": "#0B3D2A",
+    "socks": "#2BB673"
+   },
+   "popupTrim": "#95BFE5"
+  }
+ },
+ "people": {
+  "lampard": {
+   "name": "Frank Lampard",
+   "skin": "#f0c9a8",
+   "hair": "#6b4a2b"
+  },
+  "d0": {
+   "name": "Player",
+   "skin": "#e8bf9c",
+   "hair": "#3a2a1c"
+  },
+  "d1": {
+   "name": "Player",
+   "skin": "#d9a98a",
+   "hair": "#1a1410"
+  },
+  "d2": {
+   "name": "Player",
+   "skin": "#6b4630",
+   "hair": "#120c08"
+  },
+  "d3": {
+   "name": "Player",
+   "skin": "#f0c9a8",
+   "hair": "#7a5a3a"
+  },
+  "d4": {
+   "name": "Player",
+   "skin": "#c99a76",
+   "hair": "#1a1410"
+  }
+ },
+ "clips": [
+  {
+   "id": "lampard-strike",
+   "kind": "long_range",
+   "attacking": "home",
+   "scorer": "lampard",
+   "defenders": [
+    "d0",
+    "d1",
+    "d3"
+   ],
+   "keeper": "d4",
+   "teammates": [
+    "d2"
+   ],
+   "minute": 60,
+   "scoreBefore": [
+    4,
+    1
+   ],
+   "scoreAfter": [
+    5,
+    1
+   ],
+   "night": false,
+   "celebration": "fist_pump",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "finish": "ground",
+    "goalSide": "far"
+   },
+   "seed": "lampard-avl-a"
+  }
+ ]
+}

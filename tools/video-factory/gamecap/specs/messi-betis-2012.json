@@ -1,0 +1,113 @@
+{
+ "_about": "Messi's 86th goal of 2012, Betis 1-2 Barcelona, 9 Dec 2012, about 25 min: a one-two with Iniesta, a low shot into the corner. Betis green (stripes not drawable), Barcelona home colours.",
+ "teams": {
+  "home": {
+   "name": "Real Betis Balompié",
+   "short": "Betis",
+   "kit": {
+    "shirt": "#00954C",
+    "shorts": "#FFFFFF",
+    "socks": "#00954C"
+   },
+   "keeperKit": {
+    "shirt": "#2B2B2B",
+    "shorts": "#2B2B2B",
+    "socks": "#2B2B2B"
+   },
+   "popupTrim": "#FFFFFF"
+  },
+  "away": {
+   "name": "FC Barcelona",
+   "short": "Barcelona",
+   "kit": {
+    "shirt": "#A50044",
+    "shorts": "#004D98",
+    "socks": "#004D98"
+   },
+   "keeperKit": {
+    "shirt": "#E8E04A",
+    "shorts": "#1A1A1A",
+    "socks": "#E8E04A"
+   },
+   "popupTrim": "#EDBB00"
+  }
+ },
+ "people": {
+  "messi": {
+   "name": "Lionel Messi",
+   "skin": "#e9c0a0",
+   "hair": "#4a3020"
+  },
+  "iniesta": {
+   "name": "Andrés Iniesta",
+   "skin": "#f0c9a8",
+   "hair": "#5a3826"
+  },
+  "d0": {
+   "name": "Player",
+   "skin": "#e8bf9c",
+   "hair": "#3a2a1c"
+  },
+  "d1": {
+   "name": "Player",
+   "skin": "#d9a98a",
+   "hair": "#1a1410"
+  },
+  "d2": {
+   "name": "Player",
+   "skin": "#6b4630",
+   "hair": "#120c08"
+  },
+  "d3": {
+   "name": "Player",
+   "skin": "#f0c9a8",
+   "hair": "#7a5a3a"
+  },
+  "d4": {
+   "name": "Player",
+   "skin": "#c99a76",
+   "hair": "#1a1410"
+  }
+ },
+ "clips": [
+  {
+   "id": "messi-86",
+   "kind": "long_range",
+   "attacking": "away",
+   "scorer": "messi",
+   "assister": "iniesta",
+   "defenders": [
+    "d0",
+    "d1",
+    "d3"
+   ],
+   "keeper": "d4",
+   "minute": 25,
+   "scoreBefore": [
+    0,
+    1
+   ],
+   "scoreAfter": [
+    0,
+    2
+   ],
+   "night": true,
+   "celebration": "arms_out",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "scorerSpot": [
+     2,
+     17
+    ],
+    "finish": "ground",
+    "goalSide": "right",
+    "height": "low"
+   },
+   "seed": "messi-betis-a"
+  }
+ ]
+}

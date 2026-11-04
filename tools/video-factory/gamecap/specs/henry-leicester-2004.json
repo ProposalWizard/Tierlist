@@ -1,0 +1,92 @@
+{
+ "_about": "Henry's penalty, Arsenal 2-1 Leicester, 15 May 2004, 47 min, 0-1 to 1-1: the last day of the unbeaten season. Arsenal red and white, Leicester blue.",
+ "teams": {
+  "home": {
+   "name": "Arsenal",
+   "kit": {
+    "shirt": "#EF0107",
+    "shorts": "#FFFFFF",
+    "socks": "#FFFFFF"
+   },
+   "keeperKit": {
+    "shirt": "#E8E04A",
+    "shorts": "#1A1A1A",
+    "socks": "#E8E04A"
+   },
+   "popupTrim": "#FFFFFF"
+  },
+  "away": {
+   "name": "Leicester City",
+   "short": "Leicester",
+   "kit": {
+    "shirt": "#0053A0",
+    "shorts": "#FFFFFF",
+    "socks": "#0053A0"
+   },
+   "keeperKit": {
+    "shirt": "#2BB673",
+    "shorts": "#0B3D2A",
+    "socks": "#2BB673"
+   },
+   "popupTrim": "#FFFFFF"
+  }
+ },
+ "people": {
+  "henry": {
+   "name": "Thierry Henry",
+   "skin": "#6e4630",
+   "hair": "#5a3826"
+  },
+  "d0": {
+   "name": "Player",
+   "skin": "#e8bf9c",
+   "hair": "#3a2a1c"
+  },
+  "d1": {
+   "name": "Player",
+   "skin": "#d9a98a",
+   "hair": "#1a1410"
+  },
+  "d2": {
+   "name": "Player",
+   "skin": "#6b4630",
+   "hair": "#120c08"
+  },
+  "d3": {
+   "name": "Player",
+   "skin": "#f0c9a8",
+   "hair": "#7a5a3a"
+  },
+  "d4": {
+   "name": "Player",
+   "skin": "#c99a76",
+   "hair": "#1a1410"
+  }
+ },
+ "clips": [
+  {
+   "id": "henry-pen",
+   "kind": "penalty",
+   "attacking": "home",
+   "scorer": "henry",
+   "keeper": "d0",
+   "minute": 47,
+   "scoreBefore": [
+    0,
+    1
+   ],
+   "scoreAfter": [
+    1,
+    1
+   ],
+   "night": false,
+   "celebration": "fist_pump",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "seed": "henry-lei-a"
+  }
+ ]
+}

@@ -1,37 +1,524 @@
 {
-  "id": "ss-lampard-v-bruno",
-  "series": "Best season ever, settled",
-  "title": "Lampard 2009-10 v Bruno 2025-26: the best midfield season?",
-  "sources": [
-    "https://en.wikipedia.org/wiki/2009%E2%80%9310_Chelsea_F.C._season",
-    "https://en.wikipedia.org/wiki/2025%E2%80%9326_Manchester_United_F.C._season",
-    "data/competition-history/premier-league.json (champions, runners-up, top assisters, FWA winners)",
-    "data/competition-history/league-cup.json"
-  ],
-  "checked": "Lampard: 22 league goals counted from the season page's match records (4 to 21 Nov, 18 from 29 Nov on), 16 assists top of the league (local file); Chelsea 103 league goals record, 86 points one ahead of United, 8-0 v Wigan on the final day, 1-0 FA Cup final win v Portsmouth with Lampard missing a penalty (Wikipedia season page; title and runner-up also local). Bruno: 9 league goals, 21 assists breaking the record of 20 held by Henry 2002-03 and De Bruyne 2019-20 (Wikipedia says he broke the record; local file has 21 and the old 20s), FWA award (both), United 3rd on 71 points, out of the League Cup on penalties at Grimsby and the FA Cup v Brighton (Wikipedia season page).",
-  "clubs": {
-    "chelsea": { "name": "Chelsea", "short": "CHE", "c1": "#034694", "c2": "#ffffff", "pattern": "plain" },
-    "manutd": { "name": "Manchester United", "short": "MUN", "c1": "#da291c", "c2": "#ffffff", "pattern": "plain" },
-    "portsmouth": { "name": "Portsmouth", "short": "POR", "c1": "#001489", "c2": "#ffffff", "pattern": "plain" },
-    "grimsby": { "name": "Grimsby Town", "short": "GRI", "c1": "#111111", "c2": "#ffffff", "pattern": "stripes" }
+ "id": "ss-lampard-v-bruno",
+ "series": "Best season ever, settled",
+ "title": "Lampard 2009-10 v Bruno 2025-26: the best midfield season?",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/2009%E2%80%9310_Chelsea_F.C._season",
+  "https://en.wikipedia.org/wiki/2009%E2%80%9310_Premier_League",
+  "https://sportsmole.co.uk/football/chelsea/on-this-day/feature/otd-chelsea-hit-eight-past-wigan-to-win-pl-title_154069.html",
+  "https://en.wikipedia.org/wiki/2010_FA_Cup_final",
+  "https://en.wikipedia.org/wiki/Frank_Lampard",
+  "https://www.si.com/soccer/bruno-fernandes-breaks-famous-premier-league-assist-record-final-day",
+  "https://www.premierleague.com/en/news/4670829/all-the-angles-fernandes-record-breaking-21st-assist",
+  "https://www.skysports.com/football/news/11667/13538833/bruno-fernandes-man-utd-captain-breaks-premier-league-assists-record-for-a-single-season",
+  "https://africa.espn.com/football/story/_/id/48711508/manchester-united-captain-bruno-fernandes-wins-fwa-football-year-award",
+  "https://spursodyssey.com/2526/fintable.html",
+  "https://rsssf.org/tablese/eng2026.html",
+  "https://en.wikipedia.org/wiki/2025%E2%80%9326_EFL_Cup"
+ ],
+ "checked": "Lampard 2009-10: 22 PL goals from midfield (Wikipedia Lampard + season page); four in the 7-1 v Villa, 27 Mar 2010; Chelsea 86 v United 85, 103 league goals, 8-0 v Wigan on the last day (Wikipedia, Sports Mole); FA Cup final 1-0 v Portsmouth, Lampard missed a penalty, Drogba free kick (Wikipedia final). Lampard's assist total differs by source (14 to 17): left out. Bruno 2025-26: 9 PL goals, 21 assists, record over Henry and De Bruyne's 20, set on the last day at Brighton with a corner headed in by Dorgu (SI, premierleague.com, Sky); first assist 19 Oct; FWA and PL Player of the Season (ESPN, Telemundo); United 3rd on 71 behind Arsenal 85, City 78 (Spurs Odyssey, RSSSF); League Cup exit to Grimsby on penalties, Aug 2025 (Wikipedia EFL Cup). The Villa clip is a strike in Lampard's style, not one goal like for like.",
+ "clubs": {
+  "che": {
+   "name": "Chelsea",
+   "short": "CHE",
+   "c1": "#034694",
+   "c2": "#ffffff",
+   "pattern": "plain"
   },
-  "people": {
-    "lampard": { "name": "Frank Lampard", "skin": "light", "hair": ["crop", "#6b4a2e"], "beard": "none", "kit": "chelsea" },
-    "bruno": { "name": "Bruno Fernandes", "skin": "olive", "hair": ["tidy", "#2a1d14"], "beard": "short", "kit": "manutd" }
+  "mun": {
+   "name": "Manchester United",
+   "short": "MUN",
+   "c1": "#da291c",
+   "c2": "#ffffff",
+   "pattern": "plain"
   },
-  "lines": [
-    { "text": "One midfielder scored twenty-two. The other broke the assist record. Lampard or Bruno?", "scene": { "type": "title", "heading": "LAMPARD v BRUNO", "sub": "2009-10 v 2025-26", "pill": "SETTLED", "person": "lampard" } },
-    { "text": "Frank Lampard, twenty oh nine, ten. A midfielder scoring like a striker.", "scene": { "type": "person", "person": "lampard", "label": "Chelsea · 2009-10", "mood": "happy" } },
-    { "text": "Twenty-two league goals. Sixteen assists, the most in the league.", "scene": { "type": "stats", "title": "LAMPARD 2009-10", "person": "lampard", "items": [ { "n": "22", "l": "league goals" }, { "n": "16", "l": "assists" }, { "n": "103", "l": "Chelsea league goals" } ] } },
-    { "text": "Bruno Fernandes, last season. Nine goals, and twenty-one assists.", "scene": { "type": "person", "person": "bruno", "label": "Man United · 2025-26", "mood": "happy" } },
-    { "text": "That broke the record of twenty, shared by Thierry Henry and Kevin De Bruyne.", "scene": { "type": "list", "title": "MOST ASSISTS, ONE PL SEASON", "rows": [ { "name": "Bruno Fernandes (2025-26)", "value": "21", "club": "manutd", "hl": true }, { "name": "Thierry Henry (2002-03)", "value": "20" }, { "name": "Kevin De Bruyne (2019-20)", "value": "20" } ], "stamp": "RECORD" } },
-    { "text": "Goals plus assists: Lampard thirty-eight, Bruno thirty.", "scene": { "type": "versus", "title": "GOAL INVOLVEMENTS", "left": { "person": "lampard", "label": "Lampard 09-10", "value": "38" }, "right": { "person": "bruno", "label": "Bruno 25-26", "value": "30" } } },
-    { "text": "Trophies. Lampard won the league and the FA Cup. Chelsea scored a record hundred and three.", "scene": { "type": "trophies", "person": "lampard", "items": [ { "kind": "league", "label": "Premier League" }, { "kind": "cup", "label": "FA Cup" } ] } },
-    { "text": "Bruno won the Football Writers' award. United finished third, and went out of the League Cup to Grimsby.", "scene": { "type": "score", "home": "grimsby", "away": "manutd", "hs": 2, "as": 2, "date": "27 Aug 2025", "comp": "League Cup", "note": "Grimsby win 12-11 on penalties", "stamp": "OUCH" } },
-    { "text": "And here's the twist. The club Lampard beat to the title by one point? Manchester United.", "scene": { "type": "list", "title": "PREMIER LEAGUE 2009-10", "rows": [ { "name": "Chelsea", "value": "86", "club": "chelsea", "hl": true }, { "name": "Manchester United", "value": "85", "club": "manutd" }, { "name": "Gap", "value": "1 pt" } ], "stamp": "TWIST" } },
-    { "text": "Bruno's club, sixteen years earlier, beaten by Lampard's goals.", "scene": { "type": "timeline", "items": [ { "year": "2010", "label": "Chelsea pip United by a point" }, { "year": "2026", "label": "Bruno breaks the assist record" } ] } },
-    { "text": "Even Lampard's bad moment ended well. He missed a penalty in the cup final, and Chelsea still won one-nil.", "scene": { "type": "score", "home": "chelsea", "away": "portsmouth", "hs": 1, "as": 0, "date": "2010", "comp": "FA Cup final", "note": "Lampard missed a penalty" } },
-    { "text": "Bruno has the record. Lampard has the better season. Settled.", "scene": { "type": "stamp", "text": "LAMPARD", "person": "lampard", "color": "white" } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
-  ]
+  "ars": {
+   "name": "Arsenal",
+   "short": "ARS",
+   "c1": "#ef0107",
+   "c2": "#ffffff",
+   "pattern": "sides"
+  },
+  "tot": {
+   "name": "Tottenham Hotspur",
+   "short": "TOT",
+   "c1": "#ffffff",
+   "c2": "#132257",
+   "pattern": "plain"
+  },
+  "mci": {
+   "name": "Manchester City",
+   "short": "MCI",
+   "c1": "#6cabdd",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "avl": {
+   "name": "Aston Villa",
+   "short": "AVL",
+   "c1": "#7a003c",
+   "c2": "#95bfe5",
+   "pattern": "plain"
+  },
+  "wig": {
+   "name": "Wigan Athletic",
+   "short": "WIG",
+   "c1": "#1d59af",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "por": {
+   "name": "Portsmouth",
+   "short": "POR",
+   "c1": "#001489",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "gri": {
+   "name": "Grimsby Town",
+   "short": "GRI",
+   "c1": "#111111",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "bha": {
+   "name": "Brighton & Hove Albion",
+   "short": "BHA",
+   "c1": "#0057b8",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  }
+ },
+ "people": {
+  "lampard": {
+   "name": "Frank Lampard",
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#6b4a2b"
+   ],
+   "beard": "none",
+   "kit": "che"
+  },
+  "bruno": {
+   "name": "Bruno Fernandes",
+   "skin": "olive",
+   "hair": [
+    "crop",
+    "#2a1c12"
+   ],
+   "beard": "stubble",
+   "beardCol": "#2a1c12",
+   "kit": "mun"
+  },
+  "henry": {
+   "name": "Thierry Henry",
+   "skin": "brown",
+   "hair": [
+    "bald",
+    "#1a1a1a"
+   ],
+   "beard": "none",
+   "kit": "ars"
+  }
+ },
+ "lines": [
+  {
+   "text": "One midfielder scored twenty-two league goals. The other broke the assist record. Lampard or Bruno?",
+   "say": "One midfielder scored twenty-two league goals. The other broke the assist record. Lampard or Broono?",
+   "scene": {
+    "type": "versus",
+    "title": "Best midfield season?",
+    "left": {
+     "person": "lampard",
+     "label": "Lampard",
+     "value": "2010",
+     "sub": "Chelsea · 09/10"
+    },
+    "right": {
+     "person": "bruno",
+     "label": "Bruno",
+     "value": "2026",
+     "sub": "Man United · 25/26"
+    }
+   }
+  },
+  {
+   "text": "2009. Carlo Ancelotti arrives at Chelsea. Frank Lampard is thirty-one, and about to score like a striker.",
+   "say": "Twenty oh nine. Karlo Ankelottee arrives at Chelsea. Frank Lampard is thirty-one, and about to score like a striker.",
+   "scene": {
+    "type": "title",
+    "heading": "FRANK LAMPARD",
+    "sub": "Chelsea · 2009/10",
+    "pill": "THE GOALSCORING MIDFIELDER",
+    "person": "lampard",
+    "club": "che"
+   }
+  },
+  {
+   "text": "In March, he scores four in a seven-one win over Villa.",
+   "scene": {
+    "type": "gameclip",
+    "popup": {
+     "home": "che",
+     "away": "avl",
+     "awayName": "Aston Villa",
+     "hs0": 4,
+     "as0": 1,
+     "hs": 5,
+     "as": 1,
+     "scorer": "Lampard"
+    },
+    "caption": "Four against Villa",
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/lampard-villa-2010/lampard-strike/tv",
+      11,
+      59
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/lampard-villa-2010/lampard-strike/high",
+      59,
+      164
+     ]
+    ],
+    "goalAt": 2.5
+   }
+  },
+  {
+   "text": "The title race goes to the last day. Chelsea beat Wigan eight-nil. A hundred and three league goals.",
+   "say": "The title race goes to the last day. Chelsea beat Wiggan eight, nil. A hundred and three league goals.",
+   "scene": {
+    "type": "score",
+    "home": "che",
+    "away": "wig",
+    "hs": 8,
+    "as": 0,
+    "date": "9 May 2010 · Stamford Bridge",
+    "comp": "Premier League",
+    "note": "Champions with a record 103 league goals"
+   }
+  },
+  {
+   "text": "Champions by one point. Over Manchester United.",
+   "scene": {
+    "type": "table",
+    "season": "Final table 2009/10",
+    "title": "Premier League",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "che",
+      "p": 38,
+      "w": 27,
+      "d": 5,
+      "l": 6,
+      "gd": 71,
+      "pts": 86,
+      "hl": true
+     },
+     {
+      "pos": 2,
+      "club": "mun",
+      "p": 38,
+      "w": 27,
+      "d": 4,
+      "l": 7,
+      "gd": 58,
+      "pts": 85,
+      "hl": true
+     },
+     {
+      "pos": 3,
+      "club": "ars",
+      "p": 38,
+      "w": 23,
+      "d": 6,
+      "l": 9,
+      "gd": 42,
+      "pts": 75
+     },
+     {
+      "pos": 4,
+      "club": "tot",
+      "p": 38,
+      "w": 21,
+      "d": 7,
+      "l": 10,
+      "gd": 26,
+      "pts": 70
+     },
+     {
+      "pos": 5,
+      "club": "mci",
+      "p": 38,
+      "w": 18,
+      "d": 13,
+      "l": 7,
+      "gd": 28,
+      "pts": 67
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
+     },
+     {
+      "kind": "uel",
+      "rows": [
+       5,
+       5
+      ],
+      "label": "Europa League"
+     }
+    ],
+    "gap": {
+     "from": 1,
+     "to": 2,
+     "label": "1 pt",
+     "at": 0.45
+    }
+   }
+  },
+  {
+   "text": "A week later, he misses a penalty in the FA Cup final. Drogba's free kick wins it anyway. The double.",
+   "say": "A week later, he misses a penalty in the FA Cup final. Drogbah's free kick wins it anyway. The double.",
+   "scene": {
+    "type": "score",
+    "home": "che",
+    "away": "por",
+    "hs": 1,
+    "as": 0,
+    "date": "15 May 2010 · Wembley",
+    "comp": "FA Cup final",
+    "note": "Lampard misses a penalty; Drogba's free kick wins it"
+   }
+  },
+  {
+   "text": "Sixteen years later, Bruno Fernandes is United's captain. And it starts with Grimsby knocking them out of the League Cup.",
+   "say": "Sixteen years later, Broono Fernandez is United's captain. And it starts with Grimzbee knocking them out of the League Cup.",
+   "scene": {
+    "type": "news",
+    "section": "League Cup",
+    "headline": "Grimsby stun United on penalties",
+    "standfirst": "The League Two side knock Manchester United out after a marathon shootout.",
+    "date": "August 2025",
+    "byline": "Knowitball recap",
+    "club": "gri",
+    "person": "bruno",
+    "nav": [
+     "Football",
+     "League Cup",
+     "Man United",
+     "Shocks"
+    ],
+    "mastColor": "#1b1f2b"
+   }
+  },
+  {
+   "text": "His first league assist doesn't come until October. Then they don't stop.",
+   "scene": {
+    "type": "title",
+    "heading": "BRUNO FERNANDES",
+    "sub": "Man United · 2025/26",
+    "pill": "THE PLAYMAKER",
+    "person": "bruno",
+    "club": "mun"
+   }
+  },
+  {
+   "text": "Last day, at Brighton. His corner, Dorgu's header, in off the bar. Twenty-one.",
+   "say": "Last day, at Brighton. His corner, Dorgoo's header, in off the bar. Twenty-one.",
+   "scene": {
+    "type": "gameclip",
+    "popup": {
+     "home": "bha",
+     "away": "mun",
+     "homeName": "Brighton",
+     "awayName": "Man United",
+     "hs0": 0,
+     "as0": 0,
+     "hs": 0,
+     "as": 1,
+     "scorer": "Dorgu",
+     "assist": "Fernandes"
+    },
+    "caption": "Twenty-one",
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/bruno-brighton-2026/bruno-corner/tv",
+      1,
+      67
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/7d1aef00-651c-581f-b126-ea5e50b8f2ea/scratchpad/footage/bruno-brighton-2026/bruno-corner/high",
+      27,
+      115
+     ]
+    ],
+    "goalAt": 2.53
+   }
+  },
+  {
+   "text": "That beat the record of twenty, held by Thierry Henry and Kevin De Bruyne.",
+   "say": "That beat the record of twenty, held by Teeairee Onree and Kevin Deh Broynuh.",
+   "scene": {
+    "type": "bars",
+    "kicker": "One Premier League season",
+    "title": "Most assists",
+    "items": [
+     {
+      "label": "Fernandes 25/26",
+      "value": 21,
+      "person": "bruno",
+      "hl": true
+     },
+     {
+      "label": "Henry 02/03",
+      "value": 20,
+      "person": "henry"
+     },
+     {
+      "label": "De Bruyne 19/20",
+      "value": 20,
+      "club": "mci"
+     }
+    ],
+    "unit": "assists"
+   }
+  },
+  {
+   "text": "He won both player of the season awards. United finished third.",
+   "scene": {
+    "type": "table",
+    "season": "Final table 2025/26",
+    "title": "Premier League",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "ars",
+      "p": 38,
+      "w": 26,
+      "d": 7,
+      "l": 5,
+      "gd": 44,
+      "pts": 85
+     },
+     {
+      "pos": 2,
+      "club": "mci",
+      "p": 38,
+      "w": 23,
+      "d": 9,
+      "l": 6,
+      "gd": 42,
+      "pts": 78
+     },
+     {
+      "pos": 3,
+      "club": "mun",
+      "p": 38,
+      "w": 20,
+      "d": 11,
+      "l": 7,
+      "gd": 19,
+      "pts": 71,
+      "hl": true
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       3
+      ]
+     }
+    ],
+    "gap": {
+     "from": 1,
+     "to": 3,
+     "label": "14 pts",
+     "at": 0.45
+    }
+   }
+  },
+  {
+   "text": "Bruno has the record and the awards. Lampard has the goals and the medals.",
+   "say": "Broono has the record and the awards. Lampard has the goals and the medals.",
+   "scene": {
+    "type": "compare",
+    "title": "Head to head",
+    "left": {
+     "person": "lampard",
+     "name": "Lampard",
+     "sub": "2009/10"
+    },
+    "right": {
+     "person": "bruno",
+     "name": "Bruno",
+     "sub": "2025/26"
+    },
+    "rows": [
+     {
+      "label": "League goals",
+      "l": 22,
+      "r": 9
+     },
+     {
+      "label": "League finish",
+      "l": 1,
+      "r": 3,
+      "lower": true
+     },
+     {
+      "label": "Trophies",
+      "l": 2,
+      "r": 0
+     },
+     {
+      "label": "Player of the season awards",
+      "l": 0,
+      "r": 2
+     }
+    ]
+   }
+  },
+  {
+   "text": "Records are great. Doubles are better. Lampard.",
+   "scene": {
+    "type": "stamp",
+    "text": "LAMPARD",
+    "sub": "2009/10 · settled",
+    "person": "lampard",
+    "color": "green",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }
