@@ -162,7 +162,7 @@
   },
   {
    "text": "Ribéry back-heels it. Robben is through. Two-one, Bayern.",
-   "say": "Reebairee back heels it. Robben is through. Two one, Byern.",
+   "say": "Reebairee back heels it. Robbun is through. Two, one, Byern.",
    "scene": {
     "type": "gameclip",
     "parts": [
@@ -262,7 +262,7 @@
   },
   {
    "text": "And in those two weeks, a World Cup play-off in Stockholm. Ronaldo against Zlatan.",
-   "say": "And in those two weeks, a World Cup play-off in Stockholm. Ronaldo, against Zlatan.",
+   "say": "And in those two weeks, a World Cup play-off in Stockholm. Ronaldo, against Zlahtan.",
    "scene": {
     "type": "versus",
     "title": "World Cup play-off · 19 November",
@@ -383,14 +383,15 @@
    }
   },
   {
-   "text": "A treble, the best player in Europe, and third. Robbed?",
+   "text": "A treble, the best player in Europe, and no Ballon d'Or. Robbed?",
    "scene": {
     "type": "stamp",
     "text": "ROBBED",
     "sub": "Ribéry · Ballon d'Or 2013",
     "person": "ribery",
     "color": "red"
-   }
+   },
+   "say": "A treble, the best player in Europe, and no Balon Dor. Robbed?"
   },
   {
    "text": "Follow for more, and play Road to Ballon d'Or.",

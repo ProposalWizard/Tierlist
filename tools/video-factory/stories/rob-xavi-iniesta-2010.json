@@ -151,7 +151,7 @@
  "lines": [
   {
    "text": "In 2010, Xavi and Iniesta won everything. And lost the Ballon d'Or to their own team-mate.",
-   "say": "In twenty ten, Shahvee and Inyestah won everything. And lost the Balon Dor, to their own team-mate.",
+   "say": "In twenty ten, Shavee and Inyestah won everything. And lost the Balon Dor, to their own team-mate.",
    "scene": {
     "type": "title",
     "heading": "XAVI & INIESTA",
@@ -368,7 +368,7 @@
   },
   {
    "text": "January. Messi first. Iniesta second. Xavi third.",
-   "say": "January. Messi first. Inyestah second. Shahvee third.",
+   "say": "January. Messi, first. Inyesta, second. Shavee, third.",
    "scene": {
     "type": "podium",
     "year": "2010",
@@ -391,7 +391,7 @@
   },
   {
    "text": "Twenty-two point six for Messi. Seventeen point four for Iniesta. Sixteen point five for Xavi.",
-   "say": "Twenty two point six for Messi. Seventeen point four for Inyestah. Sixteen point five for Shahvee.",
+   "say": "Twenty two point six for Messi. Seventeen point four for Inyesta. Sixteen point five for Shavee.",
    "scene": {
     "type": "bars",
     "kicker": "FIFA Ballon d'Or 2010",

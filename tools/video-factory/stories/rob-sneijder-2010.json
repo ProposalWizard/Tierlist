@@ -219,7 +219,7 @@
   },
   {
    "text": "Sneijder equalises. Then, from Robben's corner, he heads the winner.",
-   "say": "Snyder equalises. Then, from Robben's corner, he heads the winner.",
+   "say": "Snyder equalises. Then, from Robbun's corner, he heads the winner.",
    "scene": {
     "type": "gameclip",
     "parts": [
@@ -294,7 +294,7 @@
   },
   {
    "text": "The final. Spain. Extra time. Iniesta, a hundred and sixteen minutes. One-nil.",
-   "say": "The final. Spain. Extra time. Inyestah, a hundred and sixteen minutes. One nil.",
+   "say": "The final. Spain. Extra time. Inyesta. A hundred and sixteen minutes. One nil.",
    "scene": {
     "type": "score",
     "home": "ned",
