@@ -87,7 +87,6 @@
   "grid": [
    "ronaldo",
    "mbappe",
-   "courtois",
    "bellingham",
    "trent",
    "cucurella",
@@ -95,7 +94,8 @@
    "tchouameni",
    "bernardo",
    "huijsen",
-   "diomande"
+   "diomande",
+   "courtois"
   ],
   "slots": {
    "courtois": "GK",
@@ -173,7 +173,6 @@
   },
   "grid": [
    "haaland",
-   "donnarumma",
    "dias",
    "enzo",
    "gvardiol",
@@ -182,7 +181,8 @@
    "doku",
    "anderson",
    "ndiaye",
-   "khusanov"
+   "khusanov",
+   "donnarumma"
   ],
   "slots": {
    "donnarumma": "GK",

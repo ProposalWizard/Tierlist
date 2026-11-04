@@ -1,0 +1,736 @@
+{
+ "id": "ww-pl-xi-v-laliga-xi",
+ "about": "Who would win? v2: the Premier League's best XI of 2026/27 v La Liga's, picked from the tables and scoring/assist charts to 2 Nov 2026 (Wikipedia league pages, NBC Sports, top-scorers.com, Planet Football). Managers: the leaders' (Arteta, Flick). Ratings: our FC 27 database. Neutral venue: Estádio da Luz, Lisbon. All-star kits and crests are our own. Facts, two sources each: Arsenal top on 24 from 9, 5 conceded (Wikipedia, top-scorers.com); Haaland 9 in 9 (pakera, NBC); Raphinha 15, Mbappé 12, Yamal 10 (Wikipedia, NBC); Rodri to Barcelona Aug 2026 (Irish News, Khaleej Times); Mbappé's Clásico double = 100 Real goals (realmadrid.com, Emisoras Unidas); Spain world champions 19 Jul 2026 (Times Argus, worldcupranking). Match imagined. Footage: gamecap/specs/ww-pl-xi-v-laliga-xi.json.",
+ "title": "WHO WOULD WIN?",
+ "footageRoot": "footage/ww-pl-xi-v-laliga-xi",
+ "calm": {
+  "dir": "calm/high"
+ },
+ "music": "09-last-attack.mp3",
+ "competition": {
+  "title": [
+   "PREMIER LEAGUE v LALIGA",
+   "BEST XI 26/27 · LISBON"
+  ],
+  "tagline": "2 LEAGUES · 1 WINNER",
+  "versus": "BEST XI 26/27 · ESTÁDIO DA LUZ",
+  "short": "BEST XI 26/27"
+ },
+ "venue": {
+  "name": "ESTÁDIO DA LUZ",
+  "place": "LISBON · PORTUGAL",
+  "lat": 38.7527,
+  "lon": -9.1847,
+  "cityLabel": "LISBON",
+  "citySub": "NEUTRAL GROUND"
+ },
+ "home": {
+  "name": "PREM XI",
+  "full": "PREMIER LEAGUE XI",
+  "versus": [
+   "PREMIER",
+   "LEAGUE XI"
+  ],
+  "nation": "eng",
+  "versusInfo": "ENGLAND · FORM TO 2 NOV",
+  "city": {
+   "label": "ENGLAND",
+   "sub": "PREMIER LEAGUE",
+   "lat": 51.5074,
+   "lon": -0.1278
+  },
+  "formation": "4-2-3-1",
+  "kitLabel": "ALL-STAR KIT",
+  "kit": {
+   "shirt": "#3d195b",
+   "trim": "#00ff85",
+   "collar": "#00ff85",
+   "pattern": "band",
+   "band": [
+    "#00ff85",
+    "#ffffff"
+   ],
+   "shorts": "#ffffff",
+   "socks": "#3d195b",
+   "number": "#ffffff",
+   "gk": {
+    "shirt": "#00ff85",
+    "trim": "#111111",
+    "collar": "#111111"
+   }
+  },
+  "crest": {
+   "a": "#3d195b",
+   "b": "#00ff85",
+   "c": "#1d0b2e",
+   "t": "PL",
+   "tc": "#ffffff",
+   "ts": 40
+  },
+  "colors": {
+   "ring": "#00ff85",
+   "pillBg": "#3d195b",
+   "pillFg": "#ffffff",
+   "headerBg": "#3d195b",
+   "headerFg": "#ffffff",
+   "headerStripes": [
+    "#00ff85",
+    "#ffffff"
+   ],
+   "versusBg": "#2a1040",
+   "accent": "#00ff85",
+   "bar": "#3d195b",
+   "confetti": [
+    "#3d195b",
+    "#00ff85",
+    "#ffffff",
+    "#ff2882"
+   ],
+   "ribbon": [
+    "#3d195b",
+    "#00ff85"
+   ]
+  },
+  "grid": [
+   "haaland",
+   "gabriel",
+   "saliba",
+   "rice",
+   "gvardiol",
+   "rogers",
+   "cherki",
+   "timber",
+   "joaopedro",
+   "gross",
+   "raya"
+  ],
+  "slots": {
+   "raya": "GK",
+   "timber": "RB",
+   "saliba": "CB1",
+   "gabriel": "CB2",
+   "gvardiol": "LB",
+   "rice": "CM1",
+   "gross": "CM2",
+   "cherki": "RW",
+   "joaopedro": "CAM",
+   "rogers": "LW",
+   "haaland": "ST"
+  },
+  "manager": "arteta"
+ },
+ "away": {
+  "name": "LALIGA XI",
+  "full": "LALIGA XI",
+  "versus": [
+   "LALIGA",
+   "XI"
+  ],
+  "nation": "esp",
+  "versusInfo": "SPAIN · FORM TO 2 NOV",
+  "city": {
+   "label": "SPAIN",
+   "sub": "LALIGA",
+   "lat": 40.4168,
+   "lon": -3.7038
+  },
+  "formation": "4-3-3",
+  "kitLabel": "ALL-STAR KIT",
+  "kit": {
+   "shirt": "#d3122a",
+   "trim": "#f2c200",
+   "collar": "#f2c200",
+   "pattern": "sides",
+   "patternCol": "#f2c200",
+   "shorts": "#0b1e3f",
+   "socks": "#d3122a",
+   "number": "#ffffff",
+   "gk": {
+    "shirt": "#111111",
+    "trim": "#f2c200",
+    "collar": "#f2c200"
+   }
+  },
+  "crest": {
+   "a": "#d3122a",
+   "b": "#f2c200",
+   "c": "#6e0a16",
+   "t": "LL",
+   "tc": "#ffffff",
+   "ts": 40
+  },
+  "colors": {
+   "ring": "#f2c200",
+   "pillBg": "#d3122a",
+   "pillFg": "#ffffff",
+   "headerBg": "#d3122a",
+   "headerFg": "#ffffff",
+   "headerStripes": [
+    "#f2c200",
+    "#0b1e3f"
+   ],
+   "versusBg": "#6e0a16",
+   "accent": "#ffd23f",
+   "bar": "#d3122a",
+   "confetti": [
+    "#d3122a",
+    "#f2c200",
+    "#ffffff",
+    "#0b1e3f"
+   ],
+   "ribbon": [
+    "#d3122a",
+    "#f2c200"
+   ]
+  },
+  "grid": [
+   "mbappe",
+   "pedri",
+   "yamal",
+   "rodri",
+   "bellingham",
+   "raphinha",
+   "kounde",
+   "cucurella",
+   "cubarsi",
+   "romero",
+   "courtois"
+  ],
+  "slots": {
+   "courtois": "GK",
+   "kounde": "RB",
+   "cubarsi": "CB1",
+   "romero": "CB2",
+   "cucurella": "LB",
+   "bellingham": "CM1",
+   "rodri": "CM",
+   "pedri": "CM2",
+   "yamal": "RW",
+   "mbappe": "ST",
+   "raphinha": "LW"
+  },
+  "manager": "flick"
+ },
+ "players": {
+  "raya": {
+   "name": "RAYA",
+   "full": "David Raya",
+   "num": 1,
+   "skin": "olive",
+   "hair": [
+    "side",
+    "#2b1e16"
+   ],
+   "beard": "short",
+   "gk": true
+  },
+  "timber": {
+   "name": "TIMBER",
+   "full": "Jurriën Timber",
+   "num": 12,
+   "skin": "dark",
+   "hair": [
+    "curlytop",
+    "#1a1410"
+   ],
+   "beard": "stubble"
+  },
+  "saliba": {
+   "name": "SALIBA",
+   "full": "William Saliba",
+   "num": 2,
+   "skin": "dark",
+   "hair": [
+    "buzz",
+    "#121010"
+   ],
+   "beard": "short"
+  },
+  "gabriel": {
+   "name": "GABRIEL",
+   "full": "Gabriel Magalhães",
+   "num": 6,
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#1a1410"
+   ],
+   "beard": "short"
+  },
+  "gvardiol": {
+   "name": "GVARDIOL",
+   "full": "Joško Gvardiol",
+   "num": 24,
+   "skin": "light",
+   "hair": [
+    "buzz",
+    "#6b4a2e"
+   ],
+   "beard": "stubble"
+  },
+  "rice": {
+   "name": "RICE",
+   "full": "Declan Rice",
+   "num": 41,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#4a3220"
+   ],
+   "beard": "stubble"
+  },
+  "gross": {
+   "name": "GROSS",
+   "full": "Pascal Groß",
+   "num": 13,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#8a6a45"
+   ],
+   "beard": "stubble"
+  },
+  "cherki": {
+   "name": "CHERKI",
+   "full": "Rayan Cherki",
+   "num": 10,
+   "skin": "tan",
+   "hair": [
+    "curlytop",
+    "#1e1712"
+   ],
+   "beard": "none"
+  },
+  "joaopedro": {
+   "name": "JOÃO PEDRO",
+   "full": "João Pedro",
+   "num": 20,
+   "skin": "brown",
+   "hair": [
+    "curlytop",
+    "#141010"
+   ],
+   "beard": "stubble"
+  },
+  "rogers": {
+   "name": "ROGERS",
+   "full": "Morgan Rogers",
+   "num": 17,
+   "skin": "brown",
+   "hair": [
+    "curlytop",
+    "#141010"
+   ],
+   "beard": "stubble"
+  },
+  "haaland": {
+   "name": "HAALAND",
+   "full": "Erling Haaland",
+   "num": 9,
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#d9b66f"
+   ],
+   "beard": "stubble"
+  },
+  "arteta": {
+   "name": "ARTETA",
+   "full": "Mikel Arteta",
+   "skin": "olive",
+   "hair": [
+    "slick",
+    "#2a211b"
+   ],
+   "beard": "stubble",
+   "suit": {
+    "jacket": "#1c1d24",
+    "tie": "#3d195b"
+   }
+  },
+  "courtois": {
+   "name": "COURTOIS",
+   "full": "Thibaut Courtois",
+   "num": 1,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#4b3424"
+   ],
+   "beard": "stubble",
+   "gk": true
+  },
+  "kounde": {
+   "name": "KOUNDÉ",
+   "full": "Jules Koundé",
+   "num": 23,
+   "skin": "dark",
+   "hair": [
+    "curlytop",
+    "#151110"
+   ],
+   "beard": "goatee"
+  },
+  "cubarsi": {
+   "name": "CUBARSÍ",
+   "full": "Pau Cubarsí",
+   "num": 5,
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#3a281c"
+   ],
+   "beard": "none"
+  },
+  "romero": {
+   "name": "ROMERO",
+   "full": "Cristian Romero",
+   "num": 21,
+   "skin": "olive",
+   "hair": [
+    "side",
+    "#1e1813"
+   ],
+   "beard": "short"
+  },
+  "cucurella": {
+   "name": "CUCURELLA",
+   "full": "Marc Cucurella",
+   "num": 17,
+   "skin": "olive",
+   "hair": [
+    "bigcurl",
+    "#3a2a1e"
+   ],
+   "beard": "stubble"
+  },
+  "bellingham": {
+   "name": "BELLINGHAM",
+   "full": "Jude Bellingham",
+   "num": 5,
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#1a1410"
+   ],
+   "beard": "stubble"
+  },
+  "rodri": {
+   "name": "RODRI",
+   "full": "Rodri",
+   "num": 16,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#3a2a1e"
+   ],
+   "beard": "stubble"
+  },
+  "pedri": {
+   "name": "PEDRI",
+   "full": "Pedri",
+   "num": 8,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#2a1e16"
+   ],
+   "beard": "none"
+  },
+  "yamal": {
+   "name": "YAMAL",
+   "full": "Lamine Yamal",
+   "num": 10,
+   "skin": "tan",
+   "hair": [
+    "curlytop",
+    "#121010"
+   ],
+   "beard": "none"
+  },
+  "mbappe": {
+   "name": "MBAPPÉ",
+   "full": "Kylian Mbappé",
+   "num": 9,
+   "skin": "brown",
+   "hair": [
+    "bald",
+    "#000000"
+   ],
+   "beard": "none"
+  },
+  "raphinha": {
+   "name": "RAPHINHA",
+   "full": "Raphinha",
+   "num": 11,
+   "skin": "tan",
+   "hair": [
+    "messy",
+    "#1e1712"
+   ],
+   "beard": "goatee"
+  },
+  "flick": {
+   "name": "FLICK",
+   "full": "Hansi Flick",
+   "skin": "light",
+   "hair": [
+    "bald",
+    "#c8c8c8"
+   ],
+   "beard": "none",
+   "suit": {
+    "jacket": "#1c1d24",
+    "tie": "#d3122a"
+   }
+  }
+ },
+ "ratings": {
+  "rows": [
+   [
+    "ATTACK",
+    86,
+    90
+   ],
+   [
+    "MIDFIELD",
+    83,
+    89
+   ],
+   [
+    "DEFENCE",
+    87,
+    85
+   ]
+  ],
+  "starMen": {
+   "home": {
+    "id": "haaland",
+    "rating": 91
+   },
+   "away": {
+    "id": "mbappe",
+    "rating": 91
+   }
+  },
+  "verdict": "LALIGA ARE FAVOURITES"
+ },
+ "events": [
+  {
+   "id": "g1",
+   "minute": "12'",
+   "scorer": "haaland",
+   "assist": "rice",
+   "caption": "HAALAND HEADS IT IN",
+   "footage": {
+    "parts": [
+     [
+      "g1-haaland/tv",
+      16,
+      58
+     ],
+     [
+      "g1-haaland/high",
+      19,
+      105
+     ]
+    ],
+    "goalAt": 2.083
+   },
+   "popup": "popup/g1-haaland"
+  },
+  {
+   "id": "g2",
+   "minute": "31'",
+   "scorer": "raphinha",
+   "assist": "pedri",
+   "caption": "RAPHINHA FROM 25 YARDS",
+   "footage": {
+    "parts": [
+     [
+      "g2-raphinha/tv",
+      13,
+      50
+     ],
+     [
+      "g2-raphinha/high",
+      51,
+      150
+     ]
+    ],
+    "goalAt": 2.383
+   },
+   "popup": "popup/g2-raphinha"
+  },
+  {
+   "id": "g3",
+   "minute": "54'",
+   "scorer": "mbappe",
+   "assist": "bellingham",
+   "caption": "MBAPPÉ IS THROUGH",
+   "footage": {
+    "parts": [
+     [
+      "g3-mbappe/tv",
+      1,
+      81
+     ],
+     [
+      "g3-mbappe/high",
+      82,
+      182
+     ]
+    ],
+    "goalAt": 3.45
+   },
+   "popup": "popup/g3-mbappe"
+  },
+  {
+   "id": "g4",
+   "minute": "71'",
+   "scorer": "haaland",
+   "assist": "rogers",
+   "caption": "HAALAND AGAIN!",
+   "footage": {
+    "parts": [
+     [
+      "g4-haaland/tv",
+      2,
+      35
+     ],
+     [
+      "g4-haaland/high",
+      36,
+      117
+     ]
+    ],
+    "goalAt": 1.633
+   },
+   "popup": "popup/g4-haaland"
+  },
+  {
+   "id": "g5",
+   "minute": "88'",
+   "scorer": "yamal",
+   "assist": "pedri",
+   "caption": "YAMAL WINS IT!",
+   "captionColor": "#ffd23f",
+   "footage": {
+    "parts": [
+     [
+      "g5-yamal/tv",
+      13,
+      50
+     ],
+     [
+      "g5-yamal/high",
+      51,
+      159
+     ]
+    ],
+    "goalAt": 2.283
+   },
+   "popup": "popup/g5-yamal"
+  }
+ ],
+ "potm": {
+  "top3": [
+   "yamal",
+   "haaland",
+   "pedri"
+  ],
+  "name": "LAMINE YAMAL",
+  "subtitle": "THE LATE WINNER"
+ },
+ "vo": [
+  {
+   "seg": "grid",
+   "offset": 0.3,
+   "text": "The best eleven in the Premier League, against the best eleven in La Liga. This season only.",
+   "say": "The best eleven in the Premier League, against the best eleven in La Leega. This season only."
+  },
+  {
+   "seg": "homeSheet",
+   "offset": 0.3,
+   "text": "England's side is built on Arsenal, top of the table. Up front, Haaland: nine goals in nine games.",
+   "say": "England's side is built on Arsenal, top of the table. Up front, Hohland: nine goals in nine games."
+  },
+  {
+   "seg": "awaySheet",
+   "offset": 0.2,
+   "text": "Spain's side: Raphinha fifteen goals, Mbappé twelve, Lamine Yamal ten.",
+   "say": "Spain's side: Hahfeenyah fifteen goals, Embapay twelve, Lahmeen Yahmal ten."
+  },
+  {
+   "seg": "versus",
+   "offset": 0.2,
+   "text": "And this summer, La Liga took Rodri from Manchester City.",
+   "say": "And this summer, La Leega took Rodree from Manchester City."
+  },
+  {
+   "seg": "globe",
+   "offset": 0.4,
+   "text": "Spain are world champions now. And Mbappé's Clásico double just took him to a hundred goals for Real Madrid.",
+   "say": "Spain are world champions now. And Embapay's Klahseekoh double just took him to a hundred goals for Real Madrid."
+  },
+  {
+   "seg": "ratings",
+   "offset": 0.3,
+   "text": "On paper, La Liga's midfield is miles ahead. Kick-off in Lisbon.",
+   "say": "On paper, La Leega's midfield is miles ahead. Kick-off in Lisbon."
+  },
+  {
+   "seg": "g1",
+   "offset": 0.1,
+   "spill": true,
+   "text": "Twelve minutes. Rice's corner, Haaland's head.",
+   "say": "Twelve minutes. Rice's corner, Hohland's head."
+  },
+  {
+   "seg": "g2",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Raphinha answers from twenty-five yards.",
+   "say": "Hahfeenyah answers from twenty-five yards."
+  },
+  {
+   "seg": "g3",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Bellingham slips Mbappé through. Two-one La Liga.",
+   "say": "Bellingham slips Embapay through. Two-one La Leega."
+  },
+  {
+   "seg": "g4",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Rogers cuts it back, and Haaland makes it two each.",
+   "say": "Rogers cuts it back, and Hohland makes it two each."
+  },
+  {
+   "seg": "g5",
+   "offset": 0.1,
+   "spill": true,
+   "text": "Eighty-eight minutes. Lamine Yamal bends it into the far corner.",
+   "say": "Eighty-eight minutes. Lahmeen Yahmal bends it into the far corner."
+  },
+  {
+   "seg": "fulltime",
+   "offset": 0.5,
+   "text": "Three-two La Liga. So which league is really better?",
+   "say": "Three-two La Leega. So which league is really better?"
+  },
+  {
+   "seg": "potm",
+   "offset": 0.8,
+   "text": "Player of the match: Lamine Yamal, still a teenager.",
+   "say": "Player of the match: Lahmeen Yahmal, still a teenager."
+  },
+  {
+   "seg": "end",
+   "offset": 0.3,
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "say": "Follow for more, and play Road to Ballon Dor."
+  }
+ ]
+}

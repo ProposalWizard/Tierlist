@@ -27,8 +27,8 @@
   "full": "ARSENAL",
   "season": "03/04",
   "versus": [
-   "THE",
-   "INVINCIBLES"
+   "ARSENAL",
+   "03/04"
   ],
   "nation": "eng",
   "founded": 1886,
@@ -93,8 +93,8 @@
   "full": "MANCHESTER CITY",
   "season": "17/18",
   "versus": [
-   "THE",
-   "CENTURIONS"
+   "MAN CITY",
+   "17/18"
   ],
   "nation": "eng",
   "founded": 1880,
@@ -618,7 +618,7 @@
    "seg": "homeSheet",
    "offset": 0.3,
    "text": "Wenger's Invincibles: Vieira, Pires, Bergkamp and Thierry Henry.",
-   "say": "Wenger's Invincibles: Veeyaira, Peeress, Burgkamp and Teeairee Onree."
+   "say": "Wenger's Invincibles: Veeyaira, Peerez, Burgkamp and Teeairee Onree."
   },
   {
    "seg": "awaySheet",
@@ -676,7 +676,7 @@
    "offset": 0.1,
    "spill": true,
    "text": "Eighty-seven minutes. Henry cuts it back, Pires sweeps it home.",
-   "say": "Eighty-seven minutes. Onree cuts it back, Peeress sweeps it home."
+   "say": "Eighty-seven minutes. Onree cuts it back, Peerez sweeps it home."
   },
   {
    "seg": "fulltime",
