@@ -1,0 +1,31 @@
+{
+  "_about": "Dominic Calvert-Lewin's header, Everton 2-0 Liverpool, Goodison Park, 24 April 2024, 58th minute (sources say 57 or 58): he rose at the far post to head in Dwight McNeil's deep corner (AP via Irish Times, Sports Mole). Branthwaite scored the first. Corner side not confirmed: left, swinging out, assumed so the far post is right. Kits: Everton home blue/white, Liverpool home red (usual colours); keepers assumed.",
+  "teams": {
+    "home": { "name": "Everton", "kit": { "shirt": "#003399", "shorts": "#FFFFFF", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#F2C230", "shorts": "#F2C230", "socks": "#F2C230" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Liverpool", "kit": { "shirt": "#C8102E", "shorts": "#C8102E", "socks": "#C8102E" }, "keeperKit": { "shirt": "#1F2A44", "shorts": "#1F2A44", "socks": "#1F2A44" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "dcl":        { "name": "Dominic Calvert-Lewin", "skin": "#f0c3a0", "hair": "#2a1d15", "popupName": "Calvert-Lewin" },
+    "mcneil":     { "name": "Dwight McNeil", "skin": "#efc3a0", "hair": "#4a3020" },
+    "branthwaite":{ "name": "Jarrad Branthwaite", "skin": "#efc3a0", "hair": "#4a3020" },
+    "tarkowski":  { "name": "James Tarkowski", "skin": "#efc3a0", "hair": "#2a1d15" },
+    "gueye":      { "name": "Idrissa Gueye", "skin": "#3e2618", "hair": "#0d0a09" },
+    "vandijk":    { "name": "Virgil van Dijk", "skin": "#8a5a3b", "hair": "#0d0a09" },
+    "konate":     { "name": "Ibrahima Konate", "skin": "#3e2618", "hair": "#0d0a09" },
+    "robertson":  { "name": "Andrew Robertson", "skin": "#f2c4a6", "hair": "#5b3a22" },
+    "gomez":      { "name": "Joe Gomez", "skin": "#6a4430", "hair": "#0d0a09" },
+    "mac":        { "name": "Alexis Mac Allister", "skin": "#efc3a0", "hair": "#c9a27e" },
+    "lkeeper":    { "name": "Keeper", "skin": "#e6b48f", "hair": "#2a1d15" }
+  },
+  "clips": [{
+    "id": "dcl-header", "kind": "header", "attacking": "home",
+    "scorer": "dcl", "assister": "mcneil",
+    "defenders": ["konate", "vandijk", "robertson", "gomez", "mac"], "keeper": "lkeeper",
+    "teammates": ["branthwaite", "tarkowski", "gueye"],
+    "minute": 58, "scoreBefore": [1, 0], "scoreAfter": [2, 0], "night": true,
+    "celebration": "roar",
+    "cameras": ["tv", "high", "tight"],
+    "recreate": { "delivery": "corner", "side": "left", "swing": "out", "scorerStart": [1, 15], "scorerSpot": [3.2, 6], "finish": "header", "goalSide": "far", "height": "mid" },
+    "seed": "dcl-2024-a"
+  }]
+}

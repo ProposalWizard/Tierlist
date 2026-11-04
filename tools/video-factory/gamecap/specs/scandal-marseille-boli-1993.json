@@ -1,0 +1,31 @@
+{
+  "_about": "Basile Boli's header, Marseille 1-0 Milan, Champions League final, Olympiastadion Munich, 26 May 1993, 43rd minute, from Abedi Pele's corner (Wikipedia 1993 final, Citi Sports / Afrik-Foot interviews: Pele aimed at the near post; accounts differ on whether Boli beat Rijkaard or Voeller missed it first). Corner side not confirmed: left to the seed. Kits: Marseille all white (photo caption 'white and blue'); Milan's usual home red and black, drawn red as gamecap cannot draw stripes; keepers assumed.",
+  "teams": {
+    "home": { "name": "Marseille", "short": "Marseille", "kit": { "shirt": "#FFFFFF", "shorts": "#FFFFFF", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#1F2A44", "shorts": "#1F2A44", "socks": "#1F2A44" }, "popupTrim": "#2FAEE0" },
+    "away": { "name": "AC Milan", "short": "Milan", "kit": { "shirt": "#D3141C", "shorts": "#FFFFFF", "socks": "#111111" }, "keeperKit": { "shirt": "#2E2E2E", "shorts": "#2E2E2E", "socks": "#2E2E2E" }, "popupTrim": "#111111" }
+  },
+  "people": {
+    "boli":     { "name": "Basile Boli", "skin": "#3e2618", "hair": "#0d0a09" },
+    "pele":     { "name": "Abedi Pele", "skin": "#3a2216", "hair": "#0d0a09", "popupName": "Abedi Pele" },
+    "voller":   { "name": "Rudi Voeller", "skin": "#efc3a0", "hair": "#8a8a8a" },
+    "boksic":   { "name": "Alen Boksic", "skin": "#efc3a0", "hair": "#2a1d15" },
+    "desailly": { "name": "Marcel Desailly", "skin": "#3e2618", "hair": "#0d0a09" },
+    "rijkaard": { "name": "Frank Rijkaard", "skin": "#6a4430", "hair": "#0d0a09" },
+    "baresi":   { "name": "Franco Baresi", "skin": "#e6b48f", "hair": "#2a1d15" },
+    "maldini":  { "name": "Paolo Maldini", "skin": "#e0b08a", "hair": "#2a1d15" },
+    "tassotti": { "name": "Mauro Tassotti", "skin": "#e6b48f", "hair": "#2a1d15" },
+    "albertini":{ "name": "Demetrio Albertini", "skin": "#e6b48f", "hair": "#2a1d15" },
+    "rossi":    { "name": "Sebastiano Rossi", "skin": "#e6b48f", "hair": "#2a1d15" }
+  },
+  "clips": [{
+    "id": "boli-header", "kind": "header", "attacking": "home",
+    "scorer": "boli", "assister": "pele",
+    "defenders": ["rijkaard", "baresi", "maldini", "tassotti", "albertini"], "keeper": "rossi",
+    "teammates": ["voller", "boksic", "desailly"],
+    "minute": 43, "scoreBefore": [0, 0], "scoreAfter": [1, 0], "night": true,
+    "celebration": "jump",
+    "cameras": ["tv", "high", "tight"],
+    "recreate": { "delivery": "corner", "swing": "in", "scorerStart": [-1, 14], "scorerSpot": [1.5, 6], "finish": "header", "height": "mid" },
+    "seed": "boli-1993-a"
+  }]
+}

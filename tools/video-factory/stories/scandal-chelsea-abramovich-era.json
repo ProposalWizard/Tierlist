@@ -1,230 +1,370 @@
 {
-  "id": "scandal-chelsea-abramovich-era",
-  "series": "Football's biggest scandals",
-  "title": "Chelsea's Abramovich-era payments: the record fine",
-  "sources": [
-    "https://www.football365.com/news/chelsea-transfer-ban-punished-breaking-premier-league-rules",
-    "https://www.deccanherald.com/sports/chelsea-fined-1075-million-pounds-given-suspended-transfer-ban-after-premier-league-rule-breaches-3934043",
-    "https://www.2harecourt.com/2026/07/31/the-fa-v-chelsea-fc/",
-    "https://www.teleamazonas.com/deportes/futbol/internacional/chelsea-multado-infracciones-124207/",
-    "https://www.expressandstar.com/uk-sports/chelsea-face-74-fa-charges-after-owners-self-reported-historic-financial-issues-5669977",
-    "https://insideworldfootball.com/?p=143636",
-    "https://www.90min.com/posts/chelsea-hit-with-uefa-fine-over-financial-breach"
-  ],
-  "checked": "UEFA €10m settlement (Jul 2023) for incomplete financial info: InsideWorldFootball + 90min. Premier League record £10.75m, 9-month academy ban, 1-year first-team ban suspended 2 years, payments 2011-2018, no points: Football365 + Deccan Herald (March 2026). FA 74 charges / 32 players (Express & Star), £10m fine + suspended 6 points replaced on appeal by a suspended two-window registration ban to 30 Jun 2027: 2 Hare Court + Reuters via Teleamazonas (31 Jul 2026). Chelsea quote from Football365.",
-  "clubs": {
-    "che": {
-      "name": "Chelsea",
-      "short": "CHE",
-      "c1": "#034694",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    }
+ "id": "scandal-chelsea-abramovich-era",
+ "series": "Football's biggest scandals",
+ "title": "Chelsea's secret payments: the record fine",
+ "v2": true,
+ "sources": [
+  "https://www.skysports.com/football/news/13520518/chelsea-fined-lb10-75m-and-handed-suspended-transfer-ban-over-secret-payments-breaching-premier-league-rules",
+  "https://www.irishtimes.com/sport/soccer/2026/03/16/chelsea-fined-1075m-and-given-suspended-transfer-ban-over-historical-rule-breaking/",
+  "https://global.espn.com/football/story/_/id/48221999/chelsea-accept-fine-transfer-ban-premier-league-rule-breaches",
+  "https://www.thecitizen.co.tz/tanzania/sports/football/chelsea-fined-10-75-million-pounds-given-suspended-transfer-ban-after-premier-league-rule-breaches-5393136",
+  "https://insidersport.com/2026/03/17/chelsea-fined-record-transfer-payments/",
+  "https://www.expressandstar.com/uk-sports/chelsea-given-suspended-transfer-ban-but-points-deduction-removed-after-appeal-8833467",
+  "https://www.irishnews.com/sport/soccer/chelsea-given-suspended-transfer-ban-but-points-deduction-removed-after-appeal-2GFS3PYG5VIPXE77H4GNSRGQOY/",
+  "https://www.enca.com/sport/chelsea-fined-ps10m-handed-suspended-transfer-ban-breaching-agent-rules",
+  "https://www.soccerway.com/news/soccer-europa-conference-league-juventus-excluded-from-europa-conference-league-by-uefa-chelsea-investigated/0AIXfOyo",
+  "https://www.football-italia.net/19013/di-matteo-wins-champions-league",
+  "https://www.bostonglobe.com/sports/2012/05/19/chelsea-wins-champions-league-penalties/kFvsQiz0Xs9zeJkY5BlWTP/story.html"
+ ],
+ "checked": "PL (16 Mar 2026): record £10.75m incl. £750k youth fine, 9-month academy registration ban, 1-year first-team ban suspended 2 years, undisclosed payments 2011-2018 by third parties to players, unregistered agents and others, more than £47m (Sky £47.5m, Insider Sport £47m: said 'more than forty-seven'), self-reported after the 2022 takeover, no points; previous record West Ham £5.5m 2007 (Citizen/AP, Irish Times, Sky, ESPN). UEFA €10m settlement 28 Jul 2023 for incomplete financial information (Soccerway/Flashscore, earlier InsideWorldFootball). FA: 74 breaches of Rule E1.2, £10m fine; first commission -6 pts suspended to 30 Jun 2027; appeal (31 Jul 2026) set the points aside, imposed a two-window registration ban suspended to 30 Jun 2027, a further breach brings an immediate one-year ban (Express & Star/PA, Irish News, eNCA). Drogba's 88th-minute header from Mata's corner, 1-1, won 4-3 on pens, 19 May 2012 (Football Italia, Boston Globe). Trophies 2011-18: CL 2012, EL 2013, PL 2015 and 2017 (club honours). The £20m 'without self-report' figure has one source only: left out. 32 players (one source): left out.",
+ "clubs": {
+  "che": {
+   "name": "Chelsea",
+   "short": "CHE",
+   "c1": "#034694",
+   "c2": "#ffffff",
+   "pattern": "plain"
   },
-  "people": {
-    "abramovich": {
-      "name": "Roman Abramovich",
-      "skin": "light",
-      "hair": [
-        "crop",
-        "#8a6a4a"
-      ],
-      "beard": "stubble",
-      "beardCol": "#8a6a4a",
-      "kit": "suit"
-    },
-    "boehly": {
-      "name": "Todd Boehly",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#6a5a4a"
-      ],
-      "beard": "none",
-      "kit": "suit"
-    }
+  "bay": {
+   "name": "Bayern Munich",
+   "short": "FCB",
+   "c1": "#dc052d",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": "FC Bayern München"
   },
-  "lines": [
-    {
-      "text": "Chelsea got the biggest fine in Premier League history this year, for payments made under Roman Abramovich.",
-      "scene": {
-        "type": "title",
-        "heading": "CHELSEA",
-        "sub": "The Abramovich years · 2011 to 2018",
-        "pill": "FOOTBALL'S BIGGEST SCANDALS",
-        "person": "abramovich",
-        "club": "che"
-      }
+  "whu": {
+   "name": "West Ham United",
+   "short": "WHU",
+   "c1": "#7a263a",
+   "c2": "#1bb1e7",
+   "pattern": "plain"
+  }
+ },
+ "people": {
+  "abramovich": {
+   "name": "Roman Abramovich",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#8a6a4a"
+   ],
+   "beard": "stubble",
+   "beardCol": "#8a6a4a",
+   "kit": "suit",
+   "club": "che"
+  },
+  "boehly": {
+   "name": "Todd Boehly",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#9a9590"
+   ],
+   "beard": "none",
+   "kit": "suit",
+   "club": "che"
+  },
+  "drogba": {
+   "name": "Didier Drogba",
+   "skin": "dark",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "stubble",
+   "beardCol": "#111111",
+   "kit": "che"
+  }
+ },
+ "lines": [
+  {
+   "text": "More than forty-seven million pounds in secret payments. Made in Chelsea's greatest years.",
+   "scene": {
+    "type": "title",
+    "heading": "CHELSEA",
+    "sub": "The Abramovich years · 2011 to 2018",
+    "pill": "FOOTBALL'S BIGGEST SCANDALS",
+    "person": "abramovich",
+    "club": "che"
+   }
+  },
+  {
+   "text": "Under Roman Abramovich, Chelsea won almost everything. In 2012, even the Champions League.",
+   "say": "Under Roman Abrahmovitch, Chelsea won almost everything. In twenty twelve, even the Champions League.",
+   "scene": {
+    "type": "trophies",
+    "kicker": "Chelsea · 2011 to 2018",
+    "title": "The golden years",
+    "items": [
+     {
+      "kind": "bigears",
+      "label": "Champions League 2012"
+     },
+     {
+      "kind": "euro",
+      "label": "Europa League 2013"
+     },
+     {
+      "kind": "league",
+      "label": "Premier League 2015, 2017",
+      "count": 2
+     }
+    ]
+   }
+  },
+  {
+   "text": "Munich, the eighty-eighth minute. Mata's corner. Drogba's head.",
+   "say": "Munich, the eighty-eighth minute. Mahta's corner. Drogba's head.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/cap/scandal-chelsea-drogba-2012/drogba-header/tv",
+      20,
+      70
+     ],
+     [
+      "/tmp/claude-0/cap/scandal-chelsea-drogba-2012/drogba-header/high",
+      27,
+      110
+     ]
+    ],
+    "goalAt": 1.97,
+    "popup": {
+     "home": "bay",
+     "away": "che",
+     "homeName": "Bayern",
+     "awayName": "Chelsea",
+     "hs0": 1,
+     "as0": 0,
+     "hs": 1,
+     "as": 1,
+     "scorer": "Drogba",
+     "assist": "Mata"
     },
-    {
-      "text": "When the new owners bought the club in twenty twenty-two, they found problems in the old paperwork.",
-      "scene": {
-        "type": "person",
-        "person": "boehly",
-        "label": "NEW OWNERS, 2022",
-        "mood": "worried"
-      }
+    "caption": "DROGBA, 88'",
+    "captionColor": "#ffd23f"
+   }
+  },
+  {
+   "text": "But behind the trophies, money was moving where nobody could see it.",
+   "scene": {
+    "type": "timeline",
+    "kicker": "The case",
+    "title": "How it came out",
+    "items": [
+     {
+      "year": "2011-18",
+      "label": "Secret payments",
+      "club": "che",
+      "hl": true
+     },
+     {
+      "year": "2022",
+      "label": "New owners find them"
+     },
+     {
+      "year": "2023",
+      "label": "UEFA settlement"
+     },
+     {
+      "year": "Mar 2026",
+      "label": "Premier League verdict"
+     },
+     {
+      "year": "Jul 2026",
+      "label": "FA appeal ruling"
+     }
+    ]
+   }
+  },
+  {
+   "text": "In 2022, new owners bought the club. Going through the books, they found the payments, and reported them.",
+   "say": "In twenty twenty-two, new owners bought the club. Going through the books, they found the payments, and reported them.",
+   "scene": {
+    "type": "person",
+    "person": "boehly",
+    "label": "NEW OWNERS · 2022",
+    "mood": "shocked"
+   }
+  },
+  {
+   "text": "UEFA moved first. Ten million euros, for incomplete financial information.",
+   "say": "Yooayfah moved first. Ten million euros, for incomplete financial information.",
+   "scene": {
+    "type": "news",
+    "section": "UEFA",
+    "headline": "Chelsea agree €10m settlement with UEFA",
+    "standfirst": "European football's governing body says the club submitted incomplete financial information under its previous owner.",
+    "date": "28 July 2023",
+    "byline": "Knowitball recap",
+    "club": "che",
+    "nav": [
+     "Football",
+     "Champions League",
+     "Chelsea",
+     "Finance"
+    ]
+   }
+  },
+  {
+   "text": "Then the Premier League's findings. Payments to players, to unregistered agents, and to others. Never declared.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Premier League findings",
+    "title": "Never declared",
+    "items": [
+     {
+      "n": "£47m",
+      "l": "and more"
+     },
+     {
+      "n": "7",
+      "l": "seasons, 2011 to 2018"
+     }
+    ]
+   }
+  },
+  {
+   "text": "March 2026: a ten point seven five million pound fine. The biggest in Premier League history.",
+   "say": "March, twenty twenty-six: a ten point seven five million pound fine. The biggest in Premier League history.",
+   "scene": {
+    "type": "bars",
+    "kicker": "Premier League",
+    "title": "The biggest fines ever",
+    "unit": "£m",
+    "items": [
+     {
+      "label": "Chelsea · 2026",
+      "value": 10.75,
+      "club": "che",
+      "hl": true
+     },
+     {
+      "label": "West Ham · 2007",
+      "value": 5.5,
+      "club": "whu"
+     }
+    ],
+    "note": "The previous record stood for 19 years"
+   }
+  },
+  {
+   "text": "Plus a nine-month ban on signing academy players, and a one-year transfer ban, suspended for two years.",
+   "scene": {
+    "type": "list",
+    "kicker": "Premier League · 16 March 2026",
+    "title": "The punishment",
+    "rows": [
+     {
+      "name": "Fine",
+      "value": "£10.75m",
+      "club": "che",
+      "hl": true
+     },
+     {
+      "name": "Academy ban",
+      "value": "9 months",
+      "club": "che"
+     },
+     {
+      "name": "Transfer ban",
+      "value": "Suspended",
+      "club": "che"
+     },
+     {
+      "name": "Points",
+      "value": "None",
+      "club": "che"
+     }
+    ]
+   }
+  },
+  {
+   "text": "But no points. Chelsea had owned up, and reported it themselves.",
+   "scene": {
+    "type": "stamp",
+    "text": "NO POINTS LOST",
+    "sub": "Self-reported · Premier League 2026",
+    "color": "green"
+   }
+  },
+  {
+   "text": "Then the FA. Seventy-four breaches of its rules on agents.",
+   "scene": {
+    "type": "stats",
+    "kicker": "The Football Association",
+    "title": "The second case",
+    "items": [
+     {
+      "n": "74",
+      "l": "rule breaches"
+     },
+     {
+      "n": "£10m",
+      "l": "fine"
+     }
+    ]
+   }
+  },
+  {
+   "text": "The first ruling: six points off, suspended. Chelsea appealed.",
+   "scene": {
+    "type": "stamp",
+    "text": "-6 PTS",
+    "sub": "First ruling · suspended",
+    "color": "yellow"
+   }
+  },
+  {
+   "text": "On appeal, the points were scrapped. Instead, a two-window transfer ban, hanging over them until June 2027.",
+   "say": "On appeal, the points were scrapped. Instead, a two-window transfer ban, hanging over them until June, twenty twenty-seven.",
+   "scene": {
+    "type": "news",
+    "section": "The FA",
+    "headline": "Points deduction removed after Chelsea appeal",
+    "standfirst": "The £10m fine stands. A ban on registering players for two transfer windows is suspended until 30 June 2027.",
+    "date": "31 July 2026",
+    "byline": "Knowitball recap",
+    "club": "che",
+    "nav": [
+     "Football",
+     "Premier League",
+     "Chelsea",
+     "The FA"
+    ]
+   }
+  },
+  {
+   "text": "Break the rules again before then, and the doors shut for a whole year.",
+   "scene": {
+    "type": "whatif",
+    "title": "Until 30 June 2027",
+    "real": {
+     "label": "Stay inside the rules",
+     "value": "NO BAN"
     },
-    {
-      "text": "They reported it themselves, to the Premier League, the FA and UEFA.",
-      "scene": {
-        "type": "text",
-        "heading": "Self-reported",
-        "body": "During the 2022 takeover, Chelsea's new owners told the Premier League, the FA and UEFA about historic financial issues."
-      }
-    },
-    {
-      "text": "UEFA went first. July twenty twenty-three: a ten million euro settlement for incomplete financial information.",
-      "scene": {
-        "type": "stats",
-        "title": "UEFA, 2023",
-        "items": [
-          {
-            "n": "€10m",
-            "l": "settlement"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Then the Premier League. Between twenty eleven and twenty eighteen, it found undisclosed payments by people linked to the club, to players, unregistered agents and others.",
-      "scene": {
-        "type": "timeline",
-        "title": "The case",
-        "items": [
-          {
-            "year": "2011-18",
-            "label": "Secret payments"
-          },
-          {
-            "year": "2022",
-            "label": "Self-reported"
-          },
-          {
-            "year": "2023",
-            "label": "UEFA fine"
-          },
-          {
-            "year": "Mar 26",
-            "label": "Premier League"
-          },
-          {
-            "year": "Jul 26",
-            "label": "FA"
-          }
-        ]
-      }
-    },
-    {
-      "text": "March twenty twenty-six: a ten point seven five million pound fine. A Premier League record.",
-      "scene": {
-        "type": "stats",
-        "title": "Premier League, 2026",
-        "items": [
-          {
-            "n": "£10.75m",
-            "l": "record fine"
-          }
-        ],
-        "person": "abramovich"
-      }
-    },
-    {
-      "text": "Plus a nine-month ban on signing some academy players, and a one-year transfer ban, suspended for two years.",
-      "scene": {
-        "type": "list",
-        "title": "The sanctions",
-        "rows": [
-          {
-            "name": "Fine",
-            "value": "£10.75m",
-            "club": "che",
-            "hl": true
-          },
-          {
-            "name": "Academy signing ban",
-            "value": "9 months",
-            "club": "che"
-          },
-          {
-            "name": "First-team ban",
-            "value": "Suspended",
-            "club": "che"
-          }
-        ]
-      }
-    },
-    {
-      "text": "But no points deduction. The league found Chelsea would never have broken the spending limit.",
-      "scene": {
-        "type": "stamp",
-        "text": "NO POINTS LOST",
-        "color": "white"
-      }
-    },
-    {
-      "text": "Chelsea accepted it, and said they were pleased the matter was concluded.",
-      "scene": {
-        "type": "text",
-        "heading": "Chelsea's statement",
-        "body": "The club accepted both sanctions: \"We are pleased that the matter is now concluded.\""
-      }
-    },
-    {
-      "text": "Then the FA. Seventy-four charges over agent rules, involving thirty-two players.",
-      "scene": {
-        "type": "stats",
-        "title": "FA charges, 2025",
-        "items": [
-          {
-            "n": "74",
-            "l": "charges"
-          },
-          {
-            "n": "32",
-            "l": "players"
-          }
-        ]
-      }
-    },
-    {
-      "text": "In July, a ten million pound fine, and a six-point deduction, suspended.",
-      "scene": {
-        "type": "stamp",
-        "text": "-6 SUSPENDED",
-        "color": "yellow"
-      }
-    },
-    {
-      "text": "On appeal, the points became a suspended two-window transfer ban. It hangs over Chelsea until June twenty twenty-seven.",
-      "scene": {
-        "type": "list",
-        "title": "FA appeal",
-        "rows": [
-          {
-            "name": "First ruling",
-            "value": "-6 pts (suspended)",
-            "club": "che"
-          },
-          {
-            "name": "After appeal",
-            "value": "2-window ban (suspended)",
-            "club": "che",
-            "hl": true
-          },
-          {
-            "name": "Hangs over them until",
-            "value": "30 June 2027",
-            "club": "che"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
+    "alt": {
+     "label": "Break the rules again",
+     "value": "1 YEAR"
     }
-  ]
+   }
+  },
+  {
+   "text": "A record fine, for the club's greatest years.",
+   "scene": {
+    "type": "stamp",
+    "text": "RECORD FINE",
+    "sub": "Chelsea · £10.75m · 2026",
+    "color": "red"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }

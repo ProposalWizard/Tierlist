@@ -1,285 +1,546 @@
 {
-  "id": "scandal-juventus-2023",
-  "series": "Football's biggest scandals",
-  "title": "Juventus 2023: the plusvalenza points deduction",
-  "sources": [
-    "https://en.wikipedia.org/wiki/2022%E2%80%9323_Serie_A",
-    "https://www.insideworldfootball.com/2023/05/23/juventus-hit-new-10-point-penalty-pushing-european-club-qualification-slots/",
-    "https://espndeportes.espn.com/futbol/italia/nota/_/id/12088581/juventus-sancion-quita-10-puntos-serie-a-caso-plusvalias",
-    "https://www.goal.com/en-ca/news/why-uefa-booted-juventus-out-2023-24-europa-conference-league/blt73f64580f3410aa1",
-    "https://tsn.ca/juventus-banned-from-uefa-conference-league-over-capital-gains-case-1.1989589",
-    "https://www.aljazeera.com/sports/2023/5/30/italy-juventus-fined-avoid-further-points-deduction-plea-bargain",
-    "https://www.cbssports.com/soccer/news/juventus-avoid-further-point-deduction-in-second-sporting-trial-on-salary-maneuvers-case"
-  ],
-  "checked": "-15 (Jan 2023), points restored for re-examination (Apr), -10 on 22 May 2023: Wikipedia + InsideWorldFootball + ESPN; final table (Juve 62, 7th; Inter 72) Wikipedia; UEFA exclusion from 2023-24 Conference League with Fiorentina taking the place: Goal + TSN (fine amount differs between sources, so left out); €718,000 salary plea deal: Al Jazeera + CBS. '72 points, level with Inter' is arithmetic.",
-  "clubs": {
-    "juv": {
-      "name": "Juventus",
-      "short": "JUV",
-      "c1": "#ffffff",
-      "c2": "#000000",
-      "pattern": "stripes"
-    },
-    "nap": {
-      "name": "Napoli",
-      "short": "NAP",
-      "c1": "#12a0d7",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "laz": {
-      "name": "Lazio",
-      "short": "LAZ",
-      "c1": "#87d8f7",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "inter": {
-      "name": "Inter",
-      "short": "INT",
-      "c1": "#0068a8",
-      "c2": "#000000",
-      "pattern": "stripes"
-    },
-    "mil": {
-      "name": "Milan",
-      "short": "MIL",
-      "c1": "#d0021b",
-      "c2": "#000000",
-      "pattern": "stripes"
-    },
-    "ata": {
-      "name": "Atalanta",
-      "short": "ATA",
-      "c1": "#1e71b8",
-      "c2": "#000000",
-      "pattern": "stripes"
-    },
-    "rom": {
-      "name": "Roma",
-      "short": "ROM",
-      "c1": "#8e1f2f",
-      "c2": "#f0bc42",
-      "pattern": "plain"
-    },
-    "fio": {
+ "id": "scandal-juventus-2023",
+ "series": "Football's biggest scandals",
+ "title": "Juventus 2023: top four on the pitch, seventh in court",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/2022%E2%80%9323_Serie_A",
+  "https://www.cbssports.com/soccer/news/juventus-penalized-15-points-from-serie-a-standings-11-execs-banned-for-mishandling-transfer-finances/",
+  "https://www.goal.com/en-ng/news/juventus-deducted-15-points-punished-artificially-inflating-players-value-capital-gains/bltf7583e876057d42c",
+  "https://www.accountingtoday.com/articles/juventus-football-club-faces-crisis-after-agnelli-entire-board-resign-in-accounting-scandal",
+  "https://www.total-italianfootball.com/news/329602469382/juventus-capital-gains-15-point-deduction-temporarily-suspended-awaiting-new-trial-and-restructured-punishment",
+  "https://www.skysports.com/football/news/11095/12887143/juventus-handed-10-point-deduction-to-all-but-end-champions-league-hopes",
+  "https://www.thestar.com.my/sport/football/2023/05/23/soccer-juve-slump-to-4-1-defeat-at-empoli-after-points-deduction",
+  "https://juventus.com/en/news/articles/juventus-lose-by-three-goals-at-empoli",
+  "https://www.soccerway.com/news/soccer-europa-conference-league-juventus-excluded-from-europa-conference-league-by-uefa-chelsea-investigated/0AIXfOyo",
+  "https://sport.quotidiano.net/en/calcio/juventus/uefa-conference-league-20-milioni-multa-yjwpw8vg",
+  "https://www.soccerway.com/news/soccer-serie-a-juventus-reaches-settlement-in-salary-case-with-no-further-point-deductions/Em1ZVtmf",
+  "https://global.espn.com/football/story/_/id/37759390/juventus-reach-settlement-italy-fa-player-salaries"
+ ],
+ "checked": "Board incl. Agnelli and Nedved resigned 28 Nov 2022 (Accounting Today, TBS/Reuters). -15 on 20 Jan 2023, prosecutor had asked for 9 (CBS, Goal). CONI's Collegio di Garanzia upheld the appeal in April 2023 and sent it back (Wikipedia, Total Italian Football). -10 on 22 May 2023, ruling just before kick-off at Empoli, Juve fell from 2nd to 7th; Empoli won 4-1, 2-0 at half-time, Caputo pen 18' and 48', Luperto 22', Chiesa 85', Piccoli 90+3' (Sky, Reuters via The Star, juventus.com). False gains about €60m (Wikipedia, CBS). Final table rows 1-8 from Wikipedia. Without-deduction: arithmetic, Juve 72 GD +23 behind Inter 72 GD +29 = 4th. UEFA 28 Jul 2023: out of the 2023-24 Conference League, €20m fine with €10m conditional, Fiorentina took the place (Soccerway, Quotidiano/UEFA). Salary case plea deal €718,000, no more points (Soccerway/Reuters, ESPN, Quotidiano). No gameclip: Juve's kit at Empoli could not be confirmed.",
+ "clubs": {
+  "juv": {
+   "name": "Juventus",
+   "short": "JUV",
+   "c1": "#111111",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "emp": {
+   "name": "Empoli",
+   "short": "EMP",
+   "c1": "#005bab",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "nap": {
+   "name": "Napoli",
+   "short": "NAP",
+   "c1": "#12a0d7",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": "Napoli"
+  },
+  "laz": {
+   "name": "Lazio",
+   "short": "LAZ",
+   "c1": "#87d8f7",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "int": {
+   "name": "Inter",
+   "short": "INT",
+   "c1": "#0068a8",
+   "c2": "#111111",
+   "pattern": "stripes"
+  },
+  "mil": {
+   "name": "AC Milan",
+   "short": "MIL",
+   "c1": "#fb090b",
+   "c2": "#111111",
+   "pattern": "stripes"
+  },
+  "ata": {
+   "name": "Atalanta",
+   "short": "ATA",
+   "c1": "#1e71b8",
+   "c2": "#111111",
+   "pattern": "stripes"
+  },
+  "rom": {
+   "name": "Roma",
+   "short": "ROM",
+   "c1": "#8e1f2f",
+   "c2": "#f0bc42",
+   "pattern": "plain"
+  },
+  "fio": {
+   "name": "Fiorentina",
+   "short": "FIO",
+   "c1": "#5b2b82",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  }
+ },
+ "people": {
+  "agnelli": {
+   "name": "Andrea Agnelli",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#3a2a20"
+   ],
+   "beard": "stubble",
+   "beardCol": "#3a2a20",
+   "kit": "suit",
+   "club": "juv"
+  }
+ },
+ "lines": [
+  {
+   "text": "In 2023, Juventus earned a top-four finish on the pitch. They lost it in a courtroom.",
+   "say": "In twenty twenty-three, Yooventus earned a top-four finish on the pitch. They lost it in a courtroom.",
+   "scene": {
+    "type": "title",
+    "heading": "JUVENTUS",
+    "sub": "Serie A · 2022/23",
+    "pill": "FOOTBALL'S BIGGEST SCANDALS",
+    "club": "juv",
+    "person": "agnelli"
+   }
+  },
+  {
+   "text": "The case was about transfer fees. Players swapped at inflated prices, to dress up the accounts. About sixty million euros of false gains.",
+   "say": "The case was about transfer fees. Players swapped at inflated prices, to dress up the accounts. About sixty million euros of false gains.",
+   "scene": {
+    "type": "stats",
+    "kicker": "The capital gains case",
+    "title": "Dressed-up accounts",
+    "items": [
+     {
+      "n": "€60m",
+      "l": "false gains"
+     }
+    ]
+   }
+  },
+  {
+   "text": "November 2022. The entire board resigns, president Andrea Agnelli and Pavel Nedvěd included.",
+   "say": "November, twenty twenty-two. The entire board resigns, president Andrayah Anyellee, and Pavel Nedvyed, included.",
+   "scene": {
+    "type": "news",
+    "section": "Serie A",
+    "headline": "Agnelli and the entire Juventus board resign",
+    "standfirst": "The club's president, vice-president Pavel Nedvěd and every director step down as the investigation into the accounts grows.",
+    "date": "28 November 2022",
+    "byline": "Knowitball recap",
+    "club": "juv",
+    "person": "agnelli",
+    "nav": [
+     "Football",
+     "Serie A",
+     "Juventus",
+     "Finance"
+    ]
+   }
+  },
+  {
+   "text": "January. The prosecutor asks for nine points. The court takes fifteen.",
+   "scene": {
+    "type": "bars",
+    "kicker": "20 January 2023",
+    "title": "Asked for nine. Got fifteen.",
+    "unit": "pts",
+    "items": [
+     {
+      "label": "The prosecutor asked for",
+      "value": 9,
+      "club": "juv"
+     },
+     {
+      "label": "The court handed out",
+      "value": 15,
+      "club": "juv",
+      "hl": true
+     }
+    ]
+   }
+  },
+  {
+   "text": "In April, Italy's top sports court sent it back for a rethink. The points came back.",
+   "scene": {
+    "type": "timeline",
+    "kicker": "The capital gains case",
+    "title": "The rollercoaster",
+    "items": [
+     {
+      "year": "Nov 2022",
+      "label": "The board resigns"
+     },
+     {
+      "year": "Jan 2023",
+      "label": "Minus 15 points"
+     },
+     {
+      "year": "Apr 2023",
+      "label": "Sent back: points returned",
+      "hl": true
+     },
+     {
+      "year": "22 May",
+      "label": "The new verdict"
+     },
+     {
+      "year": "Jul 2023",
+      "label": "UEFA steps in"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Twenty-second of May. The new verdict lands just before kick-off at Empoli. Minus ten. From second to seventh.",
+   "say": "Twenty-second of May. The new verdict lands just before kick-off at Empolee. Minus ten. From second, to seventh.",
+   "scene": {
+    "type": "news",
+    "section": "Serie A",
+    "headline": "Juventus docked 10 points",
+    "standfirst": "The verdict arrives as the team kicks off at Empoli. Juventus drop from second to seventh, out of the Champions League places.",
+    "date": "22 May 2023",
+    "byline": "Knowitball recap",
+    "club": "juv",
+    "nav": [
+     "Football",
+     "Serie A",
+     "Juventus",
+     "Courts"
+    ]
+   }
+  },
+  {
+   "text": "Then they went out and lost four-one. Two-nil down at half-time.",
+   "scene": {
+    "type": "score",
+    "home": "emp",
+    "away": "juv",
+    "hs": 4,
+    "as": 1,
+    "date": "22 May 2023 · Stadio Castellani",
+    "comp": "Serie A",
+    "note": "Caputo 2, Luperto, Piccoli · Chiesa"
+   }
+  },
+  {
+   "text": "The final table. Juventus, sixty-two points. Seventh.",
+   "say": "The final table. Yooventus, sixty-two points. Seventh.",
+   "scene": {
+    "type": "table",
+    "season": "Final table 2022/23",
+    "title": "Serie A",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "nap",
+      "p": 38,
+      "w": 28,
+      "d": 6,
+      "l": 4,
+      "gd": 49,
+      "pts": 90
+     },
+     {
+      "pos": 2,
+      "club": "laz",
+      "p": 38,
+      "w": 22,
+      "d": 8,
+      "l": 8,
+      "gd": 30,
+      "pts": 74
+     },
+     {
+      "pos": 3,
+      "club": "int",
+      "p": 38,
+      "w": 23,
+      "d": 3,
+      "l": 12,
+      "gd": 29,
+      "pts": 72
+     },
+     {
+      "pos": 4,
+      "club": "mil",
+      "p": 38,
+      "w": 20,
+      "d": 10,
+      "l": 8,
+      "gd": 21,
+      "pts": 70
+     },
+     {
+      "pos": 5,
+      "club": "ata",
+      "p": 38,
+      "w": 19,
+      "d": 7,
+      "l": 12,
+      "gd": 18,
+      "pts": 64
+     },
+     {
+      "pos": 6,
+      "club": "rom",
+      "p": 38,
+      "w": 18,
+      "d": 9,
+      "l": 11,
+      "gd": 12,
+      "pts": 63
+     },
+     {
+      "pos": 7,
+      "club": "juv",
+      "p": 38,
+      "w": 22,
+      "d": 6,
+      "l": 10,
+      "gd": 23,
+      "pts": 62,
+      "hl": true
+     },
+     {
+      "pos": 8,
+      "club": "fio",
+      "p": 38,
+      "w": 15,
+      "d": 11,
+      "l": 12,
+      "gd": 10,
+      "pts": 56
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
+     },
+     {
+      "kind": "uel",
+      "rows": [
+       5,
+       6
+      ],
+      "label": "Europa"
+     },
+     {
+      "kind": "po",
+      "rows": [
+       7,
+       7
+      ],
+      "label": "Conf. League"
+     }
+    ],
+    "gap": {
+     "from": 4,
+     "to": 7,
+     "label": "8 pts",
+     "at": 0.55
+    }
+   }
+  },
+  {
+   "text": "Without the deduction: seventy-two points, level with Inter. Fourth. Champions League.",
+   "say": "Without the deduction: seventy-two points, level with Inter. Fourth. Champions League.",
+   "scene": {
+    "type": "table",
+    "season": "Without the deduction",
+    "title": "What if?",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "nap",
+      "p": 38,
+      "w": 28,
+      "d": 6,
+      "l": 4,
+      "gd": 49,
+      "pts": 90
+     },
+     {
+      "pos": 2,
+      "club": "laz",
+      "p": 38,
+      "w": 22,
+      "d": 8,
+      "l": 8,
+      "gd": 30,
+      "pts": 74
+     },
+     {
+      "pos": 3,
+      "club": "int",
+      "p": 38,
+      "w": 23,
+      "d": 3,
+      "l": 12,
+      "gd": 29,
+      "pts": 72
+     },
+     {
+      "pos": 4,
+      "club": "juv",
+      "p": 38,
+      "w": 22,
+      "d": 6,
+      "l": 10,
+      "gd": 23,
+      "pts": 72,
+      "hl": true,
+      "move": 3
+     },
+     {
+      "pos": 5,
+      "club": "mil",
+      "p": 38,
+      "w": 20,
+      "d": 10,
+      "l": 8,
+      "gd": 21,
+      "pts": 70
+     },
+     {
+      "pos": 6,
+      "club": "ata",
+      "p": 38,
+      "w": 19,
+      "d": 7,
+      "l": 12,
+      "gd": 18,
+      "pts": 64
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
+     },
+     {
+      "kind": "uel",
+      "rows": [
+       5,
+       6
+      ],
+      "label": "Europa"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Seventh still meant the Conference League. Then UEFA stepped in.",
+   "say": "Seventh still meant the Conference League. Then Yooayfah stepped in.",
+   "scene": {
+    "type": "news",
+    "section": "UEFA",
+    "headline": "Juventus thrown out of the Conference League",
+    "standfirst": "UEFA fines the club €20m, half of it conditional, for breaking a settlement over its financial rules.",
+    "date": "28 July 2023",
+    "byline": "Knowitball recap",
+    "club": "juv",
+    "nav": [
+     "Football",
+     "UEFA",
+     "Juventus",
+     "Finance"
+    ]
+   }
+  },
+  {
+   "text": "Eighth-placed Fiorentina took their place.",
+   "say": "Eighth-placed Feeorenteena took their place.",
+   "scene": {
+    "type": "list",
+    "kicker": "Serie A in Europe · 2023/24",
+    "title": "Who went instead",
+    "rows": [
+     {
+      "name": "Napoli, Lazio, Inter, Milan",
+      "value": "UCL",
+      "club": "nap"
+     },
+     {
+      "name": "Atalanta, Roma",
+      "value": "UEL",
+      "club": "ata"
+     },
+     {
       "name": "Fiorentina",
-      "short": "FIO",
-      "c1": "#5b2a86",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    }
+      "value": "UECL",
+      "club": "fio",
+      "hl": true
+     },
+     {
+      "name": "Juventus",
+      "value": "OUT",
+      "club": "juv"
+     }
+    ]
+   }
   },
-  "people": {
-    "allegri": {
-      "name": "Massimiliano Allegri",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#5a5a5a"
-      ],
-      "beard": "stubble",
-      "kit": "suit"
-    },
-    "vlahovic": {
-      "name": "Dušan Vlahović",
-      "skin": "light",
-      "hair": [
-        "tidy",
-        "#2a1e16"
-      ],
-      "beard": "stubble",
-      "kit": "juv"
-    }
+  {
+   "text": "A second case, over wages in the Covid years, ended in a plea deal. Seven hundred and eighteen thousand euros. No more points.",
+   "scene": {
+    "type": "stats",
+    "kicker": "The salary case",
+    "title": "A plea deal",
+    "items": [
+     {
+      "n": "€718k",
+      "l": "plea deal"
+     },
+     {
+      "n": "0",
+      "l": "more points"
+     }
+    ]
+   }
   },
-  "lines": [
-    {
-      "text": "In twenty twenty-three, Juventus earned a top-four place on the pitch, and lost it in a courtroom.",
-      "scene": {
-        "type": "title",
-        "heading": "PLUSVALENZA",
-        "sub": "Juventus · 2022-23",
-        "pill": "FOOTBALL'S BIGGEST SCANDALS",
-        "person": "allegri"
-      }
-    },
-    {
-      "text": "The case was about capital gains on player transfers, around sixty million euros of them, booked in the accounts.",
-      "scene": {
-        "type": "text",
-        "heading": "Plusvalenza",
-        "body": "Italian for capital gain. The case: transfer gains booked in Juventus's accounts, about €60m, judged false by Italian football's courts."
-      }
-    },
-    {
-      "text": "January: the Italian federation docks Juve fifteen points.",
-      "scene": {
-        "type": "stats",
-        "title": "January 2023",
-        "items": [
-          {
-            "n": "-15",
-            "l": "points"
-          }
-        ],
-        "person": "allegri"
-      }
-    },
-    {
-      "text": "April: Italy's top sports court sends it back for a rethink. The points come back.",
-      "scene": {
-        "type": "person",
-        "person": "vlahovic",
-        "label": "POINTS RESTORED… FOR NOW",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "Twenty-second of May: the new verdict. Minus ten.",
-      "scene": {
-        "type": "stamp",
-        "text": "-10 POINTS",
-        "color": "red",
-        "person": "allegri"
-      }
-    },
-    {
-      "text": "Final table: Juventus sixty-two points, seventh.",
-      "scene": {
-        "type": "list",
-        "title": "Serie A 2022-23",
-        "rows": [
-          {
-            "name": "Napoli",
-            "value": "90",
-            "club": "nap"
-          },
-          {
-            "name": "Lazio",
-            "value": "74",
-            "club": "laz"
-          },
-          {
-            "name": "Inter",
-            "value": "72",
-            "club": "inter"
-          },
-          {
-            "name": "Milan",
-            "value": "70",
-            "club": "mil"
-          },
-          {
-            "name": "Atalanta",
-            "value": "64",
-            "club": "ata"
-          },
-          {
-            "name": "Roma",
-            "value": "63",
-            "club": "rom"
-          },
-          {
-            "name": "Juventus",
-            "value": "62",
-            "club": "juv",
-            "hl": true
-          },
-          {
-            "name": "Fiorentina",
-            "value": "56",
-            "club": "fio"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Without the deduction? Seventy-two, level with Inter in the top four.",
-      "scene": {
-        "type": "whatif",
-        "title": "Without the deduction",
-        "real": {
-          "label": "Juventus, 7th",
-          "value": "62"
-        },
-        "alt": {
-          "label": "Top four",
-          "value": "72"
-        }
-      }
-    },
-    {
-      "text": "Seventh still meant the Conference League. Then UEFA stepped in.",
-      "scene": {
-        "type": "timeline",
-        "title": "2023",
-        "items": [
-          {
-            "year": "Jan",
-            "label": "-15 points"
-          },
-          {
-            "year": "Apr",
-            "label": "Points back"
-          },
-          {
-            "year": "May",
-            "label": "-10 points"
-          },
-          {
-            "year": "Jul",
-            "label": "Out of Europe"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Juve agreed a deal with UEFA over its financial rules: a fine, and no European football for a season.",
-      "scene": {
-        "type": "stamp",
-        "text": "OUT OF EUROPE",
-        "color": "red"
-      }
-    },
-    {
-      "text": "Eighth-placed Fiorentina took their Conference League spot.",
-      "scene": {
-        "type": "text",
-        "heading": "Lucky Fiorentina",
-        "body": "Eighth in Serie A, Fiorentina took Juventus's place in the 2023-24 Conference League."
-      }
-    },
-    {
-      "text": "A second case, over players' wages in the Covid years, ended in a plea deal: seven hundred and eighteen thousand euros, and no extra points.",
-      "scene": {
-        "type": "stats",
-        "title": "The wages case",
-        "items": [
-          {
-            "n": "€718,000",
-            "l": "fine"
-          },
-          {
-            "n": "0",
-            "l": "extra points lost"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Two cases. Ten points, a top-four finish and a whole season of Europe gone.",
-      "scene": {
-        "type": "person",
-        "person": "allegri",
-        "label": "JUVENTUS 2022-23",
-        "mood": "worried"
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
-    }
-  ]
+  {
+   "text": "Ten points, a Champions League place, and a whole season of Europe. Gone.",
+   "scene": {
+    "type": "stamp",
+    "text": "-10",
+    "sub": "Juventus · Serie A 2022/23",
+    "color": "red"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }

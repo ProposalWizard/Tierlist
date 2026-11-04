@@ -1,256 +1,431 @@
 {
-  "id": "scandal-marseille-1993",
-  "series": "Football's biggest scandals",
-  "title": "Marseille 1993: European champions, French title stripped",
-  "sources": [
-    "https://en.wikipedia.org/wiki/French_football_bribery_scandal",
-    "https://www.goal.com/en-gb/news/frances-bribery-scandal-the-story-of-marseilles-tainted/wx258x97ydib10pjwjbccx9u8",
-    "https://theneweuropean.co.uk/the-champion-cheats",
-    "https://en.wikipedia.org/wiki/Jean-Jacques_Eydelie"
-  ],
-  "checked": "VA-OM 20 May 1993 0-1, Eydelie as go-between, Burruchaga/Robert, Glassmann refusing and telling coach at half-time, 250,000 francs, title stripped Sep 1993 with PSG declining, UEFA ban, 1994 relegation, CL final 1-0 Boli: Wikipedia + Goal (+ New European/search reports). Tapie: Goal says 2 years incl. 8 months firm; Wikipedia says served six months. Kept to 'convicted and jailed'.",
-  "clubs": {
-    "om": {
-      "name": "Marseille",
-      "short": "OM",
-      "c1": "#ffffff",
-      "c2": "#2faee0",
-      "pattern": "plain"
-    },
-    "va": {
-      "name": "Valenciennes",
-      "short": "VA",
-      "c1": "#d0021b",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "mil": {
-      "name": "AC Milan",
-      "short": "MIL",
-      "c1": "#d0021b",
-      "c2": "#000000",
-      "pattern": "stripes"
-    },
-    "psg": {
-      "name": "Paris Saint-Germain",
-      "short": "PSG",
-      "c1": "#004170",
-      "c2": "#da291c",
-      "pattern": "centre"
-    }
+ "id": "scandal-marseille-1993",
+ "series": "Football's biggest scandals",
+ "title": "Marseille 1993: champions of Europe, and a bribe",
+ "v2": true,
+ "sources": [
+  "https://en.wikipedia.org/wiki/French_football_bribery_scandal",
+  "https://www.thenewworld.co.uk/the-champion-cheats/",
+  "https://www.wsc.co.uk/the-archive/le-championnat-1992-93/",
+  "https://en.wikipedia.org/wiki/1992%E2%80%9393_French_Division_1",
+  "https://www.whatahowler.com/blog-when-marseille-won-a-tainted-ligue-1-title-2309f56a860e/",
+  "https://www.lalibre.be/2003/07/11/chronologie-de-laffaire-MRIAGAUXNFHBRNWA6UWLF2RZUE/",
+  "https://en.wikipedia.org/wiki/1993_UEFA_Champions_League_final",
+  "https://www.afrik-foot.com/om-30-ans-du-sacre-en-ligue-des-champions-les-souvenirs-d-abedi-pele",
+  "https://www.goal.com/en-gb/news/frances-bribery-scandal-the-story-of-marseilles-tainted/wx258x97ydib10pjwjbccx9u8"
+ ],
+ "checked": "VA-OM 20 May 1993, 0-1, Boksic 21'; Eydelie the go-between for Tapie and Bernes; Robert and Burruchaga accepted, Glassmann refused and went public; 250,000 francs dug up in the garden of Robert's aunt (Wikipedia, The New World, WSC). Final 26 May 1993 Munich, Boli header 43' from Abedi Pele's corner (Wikipedia final, Afrik-Foot). Title stripped Sept 1993 (La Libre: 22 Sept), offered to PSG who refused, never awarded (Wikipedia x2, What a Howler); UEFA barred them from 1993-94 Champions League, Monaco took the place after PSG declined (Wikipedia, WSC); administrative relegation to Division 2 (La Libre: April 1994; Wikipedia). Tapie convicted, served six months (Wikipedia, The New World). Glassmann FIFA Fair Play award 1995 (Wikipedia, search reports). Table top 4 from Wikipedia 1992-93 D1 (2 pts a win). Four titles in a row 1989-92 and PSG's 2025 win as the next French champions of Europe: club honours. Marseille kept the Champions League (UEFA never removed it).",
+ "clubs": {
+  "om": {
+   "name": "Marseille",
+   "short": "OM",
+   "c1": "#ffffff",
+   "c2": "#2faee0",
+   "pattern": "plain"
   },
-  "people": {
-    "tapie": {
-      "name": "Bernard Tapie",
-      "skin": "light",
-      "hair": [
-        "side",
-        "#3a2a1a"
-      ],
-      "beard": "none",
-      "kit": "suit"
-    },
-    "eydelie": {
-      "name": "Jean-Jacques Eydelie",
-      "skin": "light",
-      "hair": [
-        "crop",
-        "#3a2a1a"
-      ],
-      "beard": "none",
-      "kit": "om"
-    },
-    "glassmann": {
+  "va": {
+   "name": "Valenciennes",
+   "short": "VAFC",
+   "c1": "#d0021b",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": "Valenciennes FC"
+  },
+  "mil": {
+   "name": "AC Milan",
+   "short": "MIL",
+   "c1": "#fb090b",
+   "c2": "#111111",
+   "pattern": "stripes"
+  },
+  "psg": {
+   "name": "Paris Saint-Germain",
+   "short": "PSG",
+   "c1": "#004170",
+   "c2": "#da291c",
+   "pattern": "centre"
+  },
+  "mon": {
+   "name": "Monaco",
+   "short": "ASM",
+   "c1": "#e51b22",
+   "c2": "#ffffff",
+   "pattern": "halves",
+   "badge": "AS Monaco"
+  },
+  "bor": {
+   "name": "Bordeaux",
+   "short": "BOR",
+   "c1": "#0b1f3a",
+   "c2": "#ffffff",
+   "pattern": "plain",
+   "badge": "FC Girondins de Bordeaux"
+  }
+ },
+ "people": {
+  "tapie": {
+   "name": "Bernard Tapie",
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#2b2118"
+   ],
+   "beard": "none",
+   "kit": "suit",
+   "club": "om"
+  },
+  "eydelie": {
+   "name": "Jean-Jacques Eydelie",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#5b3a22"
+   ],
+   "beard": "none",
+   "kit": "om"
+  },
+  "glassmann": {
+   "name": "Jacques Glassmann",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#4a3020"
+   ],
+   "beard": "none",
+   "kit": "va"
+  },
+  "burruchaga": {
+   "name": "Jorge Burruchaga",
+   "skin": "olive",
+   "hair": [
+    "messy",
+    "#2a1d15"
+   ],
+   "beard": "none",
+   "kit": "va"
+  },
+  "robert": {
+   "name": "Christophe Robert",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#3a2a20"
+   ],
+   "beard": "none",
+   "kit": "va"
+  },
+  "boli": {
+   "name": "Basile Boli",
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none",
+   "kit": "om"
+  }
+ },
+ "lines": [
+  {
+   "text": "Six days before Marseille became champions of Europe, their club bribed the opposition.",
+   "say": "Six days before Marsay became champions of Europe, their club bribed the opposition.",
+   "scene": {
+    "type": "title",
+    "heading": "MARSEILLE",
+    "sub": "1992/93",
+    "pill": "FOOTBALL'S BIGGEST SCANDALS",
+    "club": "om",
+    "person": "tapie"
+   }
+  },
+  {
+   "text": "Bernard Tapie's Marseille had won four French titles in a row.",
+   "say": "Bernar Tahpee's Marsay had won four French titles in a row.",
+   "scene": {
+    "type": "trophies",
+    "kicker": "Olympique de Marseille",
+    "title": "Kings of France",
+    "items": [
+     {
+      "kind": "league",
+      "label": "French champions 1989 to 1992",
+      "count": 4
+     },
+     {
+      "kind": "bigears",
+      "label": "Champions League final · 26 May 1993"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Twentieth of May, 1993. A league game at Valenciennes. Milan in Munich, six days later.",
+   "say": "Twentieth of May, nineteen ninety-three. A league game at Valonsyen. Milan in Munich, six days later.",
+   "scene": {
+    "type": "badge",
+    "clubs": [
+     "va",
+     "om",
+     "mil"
+    ],
+    "kicker": "May 1993",
+    "title": "Six days",
+    "sub": "20 May: at Valenciennes · 26 May: Milan in Munich"
+   }
+  },
+  {
+   "text": "The plan: pay Valenciennes players to ease off, so Marseille stayed fresh for the final.",
+   "say": "The plan: pay Valonsyen players to ease off, so Marsay stayed fresh for the final.",
+   "scene": {
+    "type": "stamp",
+    "text": "EASE OFF",
+    "sub": "The offer · 250,000 francs",
+    "color": "red"
+   }
+  },
+  {
+   "text": "The go-between was Marseille midfielder Jean-Jacques Eydelie.",
+   "say": "The go-between was Marsay midfielder, Jon Jak Aydelee.",
+   "scene": {
+    "type": "person",
+    "person": "eydelie",
+    "label": "THE GO-BETWEEN",
+    "mood": "worried"
+   }
+  },
+  {
+   "text": "Two Valenciennes players took it: Jorge Burruchaga and Christophe Robert. Jacques Glassmann said no.",
+   "say": "Two Valonsyen players took it: Horhay Booroochahga, and Kreestoff Robair. Zhak Glassman said no.",
+   "scene": {
+    "type": "list",
+    "kicker": "Valenciennes · the three players",
+    "title": "Who said yes",
+    "rows": [
+     {
+      "name": "Jorge Burruchaga",
+      "value": "YES",
+      "person": "burruchaga"
+     },
+     {
+      "name": "Christophe Robert",
+      "value": "YES",
+      "person": "robert"
+     },
+     {
       "name": "Jacques Glassmann",
-      "skin": "light",
-      "hair": [
-        "crop",
-        "#5a3a22"
-      ],
-      "beard": "none",
-      "kit": "va"
-    },
-    "boli": {
-      "name": "Basile Boli",
-      "skin": "dark",
-      "hair": [
-        "buzz",
-        "#111111"
-      ],
-      "beard": "none",
-      "kit": "om"
-    }
+      "value": "NO",
+      "person": "glassmann",
+      "hl": true
+     }
+    ]
+   }
   },
-  "lines": [
-    {
-      "text": "Marseille became the first French club to win the Champions League. Six days earlier, their bosses had bribed opponents.",
-      "scene": {
-        "type": "title",
-        "heading": "VA-OM",
-        "sub": "Marseille · May 1993",
-        "pill": "FOOTBALL'S BIGGEST SCANDALS",
-        "person": "tapie"
-      }
+  {
+   "text": "Marseille won one-nil. Then Glassmann went public.",
+   "say": "Marsay won one-nil. Then Glassman went public.",
+   "scene": {
+    "type": "score",
+    "home": "va",
+    "away": "om",
+    "hs": 0,
+    "as": 1,
+    "date": "20 May 1993 · Stade Nungesser",
+    "comp": "French Division 1",
+    "note": "Bokšić 21' · Glassmann tells the world he refused a bribe"
+   }
+  },
+  {
+   "text": "But first, Munich. Abedi Pelé's corner. Basile Boli's header. Marseille, champions of Europe.",
+   "say": "But first, Munich. Abedee Pelay's corner. Bazeel Bolee's header. Marsay, champions of Europe.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/cap/scandal-marseille-boli-1993/boli-header/tv",
+      20,
+      65
+     ],
+     [
+      "/tmp/claude-0/cap/scandal-marseille-boli-1993/boli-header/high",
+      27,
+      110
+     ]
+    ],
+    "goalAt": 1.8,
+    "popup": {
+     "home": "om",
+     "away": "mil",
+     "homeName": "Marseille",
+     "awayName": "Milan",
+     "hs0": 0,
+     "as0": 0,
+     "hs": 1,
+     "as": 0,
+     "scorer": "Boli",
+     "assist": "Abedi Pelé"
     },
-    {
-      "text": "Twentieth of May, nineteen ninety-three. Valenciennes against Marseille. A win seals the French title.",
-      "scene": {
-        "type": "score",
-        "home": "va",
-        "away": "om",
-        "hs": 0,
-        "as": 1,
-        "date": "20 May 1993",
-        "comp": "French Division 1",
-        "note": "Boksic scores. Title sealed."
-      }
-    },
-    {
-      "text": "The plan: get Valenciennes players to ease off, so Marseille stay fresh for the final against Milan.",
-      "scene": {
-        "type": "text",
-        "heading": "The plan",
-        "body": "President Bernard Tapie and general manager Jean-Pierre Bernès wanted Valenciennes players to hold back before the European Cup final."
-      }
-    },
-    {
-      "text": "Marseille midfielder Jean-Jacques Eydelie was the go-between.",
-      "scene": {
-        "type": "person",
-        "person": "eydelie",
-        "label": "THE GO-BETWEEN",
-        "mood": "worried"
-      }
-    },
-    {
-      "text": "Two Valenciennes players took the deal. Jacques Glassmann said no, and told his coach at half-time.",
-      "scene": {
-        "type": "person",
-        "person": "glassmann",
-        "label": "HE SAID NO",
-        "mood": "shocked"
-      }
-    },
-    {
-      "text": "Police later found two hundred and fifty thousand francs buried in a garden linked to Valenciennes player Christophe Robert's family.",
-      "scene": {
-        "type": "stats",
-        "title": "The evidence",
-        "items": [
-          {
-            "n": "250,000",
-            "l": "francs in a garden"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Six days after Valenciennes, Basile Boli heads the winner in Munich. Marseille beat Milan one-nil.",
-      "scene": {
-        "type": "score",
-        "home": "om",
-        "away": "mil",
-        "hs": 1,
-        "as": 0,
-        "date": "26 May 1993",
-        "comp": "Champions League final",
-        "note": "Boli header, first half"
-      }
-    },
-    {
-      "text": "Then it all fell apart. In September, the French federation stripped Marseille of the league title.",
-      "scene": {
-        "type": "stamp",
-        "text": "STRIPPED",
-        "color": "red"
-      }
-    },
-    {
-      "text": "Second-placed PSG refused to take it. So for that season, France has no champion.",
-      "scene": {
-        "type": "list",
-        "title": "French champions 1992-93",
-        "rows": [
-          {
-            "name": "Marseille",
-            "value": "STRIPPED",
-            "club": "om"
-          },
-          {
-            "name": "PSG",
-            "value": "REFUSED",
-            "club": "psg"
-          },
-          {
-            "name": "Champion",
-            "value": "NONE",
-            "hl": true
-          }
-        ]
-      }
-    },
-    {
-      "text": "UEFA banned them from defending their crown, and in nineteen ninety-four they were relegated.",
-      "scene": {
-        "type": "timeline",
-        "title": "The fall",
-        "items": [
-          {
-            "year": "May 93",
-            "label": "Kings of Europe"
-          },
-          {
-            "year": "Sep 93",
-            "label": "Title stripped"
-          },
-          {
-            "year": "93-94",
-            "label": "UEFA ban"
-          },
-          {
-            "year": "1994",
-            "label": "Relegated"
-          },
-          {
-            "year": "1995",
-            "label": "Tapie convicted"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Tapie was convicted of corruption and went to prison.",
-      "scene": {
-        "type": "person",
-        "person": "tapie",
-        "label": "BERNARD TAPIE",
-        "mood": "worried",
-        "stamp": "GUILTY"
-      }
-    },
-    {
-      "text": "But they kept the Champions League. The fixed game wasn't a European match.",
-      "scene": {
-        "type": "trophies",
-        "title": "What they kept",
-        "items": [
-          {
-            "kind": "bigears",
-            "label": "Kept"
-          },
-          {
-            "kind": "league",
-            "label": "Stripped"
-          }
-        ],
-        "person": "boli"
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
-    }
-  ]
+    "caption": "BOLI, 43'",
+    "captionColor": "#ffd23f"
+   }
+  },
+  {
+   "text": "Then the police dug up two hundred and fifty thousand francs, in the garden of Robert's aunt.",
+   "say": "Then the police dug up two hundred and fifty thousand francs, in the garden of Robair's aunt.",
+   "scene": {
+    "type": "news",
+    "section": "Ligue 1",
+    "headline": "Bribe cash found buried in a garden",
+    "standfirst": "Investigators dig up 250,000 francs at the home of Valenciennes player Christophe Robert's aunt.",
+    "date": "Summer 1993",
+    "byline": "Knowitball recap",
+    "club": "va",
+    "person": "robert",
+    "nav": [
+     "Football",
+     "France",
+     "Marseille",
+     "Valenciennes"
+    ]
+   }
+  },
+  {
+   "text": "In September, the federation stripped Marseille of the French title.",
+   "say": "In September, the federation stripped Marsay of the French title.",
+   "scene": {
+    "type": "table",
+    "season": "Final table 1992/93 · 2 points a win",
+    "title": "French Division 1",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "om",
+      "p": 38,
+      "w": 22,
+      "d": 10,
+      "l": 6,
+      "gd": 35,
+      "pts": 53,
+      "hl": true
+     },
+     {
+      "pos": 2,
+      "club": "psg",
+      "p": 38,
+      "w": 20,
+      "d": 11,
+      "l": 7,
+      "gd": 32,
+      "pts": 51,
+      "name": "PSG"
+     },
+     {
+      "pos": 3,
+      "club": "mon",
+      "p": 38,
+      "w": 21,
+      "d": 9,
+      "l": 8,
+      "gd": 27,
+      "pts": 51
+     },
+     {
+      "pos": 4,
+      "club": "bor",
+      "p": 38,
+      "w": 18,
+      "d": 12,
+      "l": 8,
+      "gd": 17,
+      "pts": 48
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ],
+      "label": "Stripped"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Second-placed PSG were offered it, and said no. To this day, France has no champion for 1993.",
+   "say": "Second-placed P S G were offered it, and said no. To this day, France has no champion for nineteen ninety-three.",
+   "scene": {
+    "type": "stamp",
+    "text": "NO CHAMPION",
+    "sub": "French title 1992/93 · never awarded",
+    "color": "white"
+   }
+  },
+  {
+   "text": "UEFA banned them from defending their crown. In 1994, they were relegated.",
+   "say": "Yooayfah banned them from defending their crown. In nineteen ninety-four, they were relegated.",
+   "scene": {
+    "type": "timeline",
+    "kicker": "The fall",
+    "title": "What came next",
+    "items": [
+     {
+      "year": "Sep 1993",
+      "label": "French title stripped",
+      "club": "om",
+      "hl": true
+     },
+     {
+      "year": "1993/94",
+      "label": "Banned from the Champions League"
+     },
+     {
+      "year": "1994",
+      "label": "Relegated to Division 2"
+     },
+     {
+      "year": "1995",
+      "label": "Tapie convicted"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Tapie went to prison. And Glassmann, the man who said no, won FIFA's Fair Play award.",
+   "say": "Tahpee went to prison. And Glassman, the man who said no, won FIFA's Fair Play award.",
+   "scene": {
+    "type": "trophies",
+    "kicker": "1995",
+    "title": "The man who said no",
+    "items": [
+     {
+      "kind": "award",
+      "label": "FIFA Fair Play Award · Jacques Glassmann"
+     }
+    ],
+    "person": "glassmann"
+   }
+  },
+  {
+   "text": "But Marseille kept the Champions League. For thirty-two years, the only French champions of Europe.",
+   "say": "But Marsay kept the Champions League. For thirty-two years, the only French champions of Europe.",
+   "scene": {
+    "type": "trophies",
+    "kicker": "Marseille · 1993",
+    "title": "They kept it",
+    "items": [
+     {
+      "kind": "bigears",
+      "label": "Champions League 1993"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }
