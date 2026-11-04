@@ -1,0 +1,716 @@
+{
+ "id": "ww-utd-1999-v-city-2023",
+ "about": "Who would win? v2: treble v treble. Man United 1998/99 (league, FA Cup, Champions League) v Man City 2022/23 at Old Trafford. XIs: United's usual 4-4-2 (retrounited squad list + the 1999 final line-up, Wikipedia); City's Istanbul final XI (Wikipedia, Sky Sports), drawn as 3-4-2-1 for their 3-2-4-1. Ratings: City from FIFA 23 (our database); United PREDICTED (no FIFA 99 in the database), said in the voiceover. Facts, two sources each: league by one point on the last day (Wikipedia, retrounited); Keane and Scholes banned from the final (Eurosport, Irish Post, UEFA); Camp Nou: Bayern led until stoppage time, both goals from Beckham corners (Wikipedia, Sky Sports, Irish Times); Haaland's 36-goal PL record (Olympics.com, Wikipedia); Gündoğan's 12-second FA Cup final volley from Haaland's flick (CBS, SI); Rodri's Istanbul winner (Wikipedia, Sky). The match is imagined. Footage: gamecap/specs/ww-utd-1999-v-city-2023.json.",
+ "title": "WHO WOULD WIN?",
+ "footageRoot": "footage/ww-utd-1999-v-city-2023",
+ "calm": {
+  "dir": "calm/high"
+ },
+ "music": "09-last-attack.mp3",
+ "competition": {
+  "title": [
+   "TREBLE v TREBLE",
+   "THE DERBY · OLD TRAFFORD"
+  ],
+  "tagline": "6 TROPHIES · 1 WINNER",
+  "versus": "TREBLE v TREBLE · OLD TRAFFORD",
+  "short": "TREBLE v TREBLE"
+ },
+ "venue": {
+  "name": "OLD TRAFFORD",
+  "place": "MANCHESTER · ENGLAND",
+  "lat": 53.4631,
+  "lon": -2.2913
+ },
+ "home": {
+  "name": "MAN UNITED",
+  "full": "MANCHESTER UNITED",
+  "season": "98/99",
+  "versus": [
+   "UNITED",
+   "1999"
+  ],
+  "nation": "eng",
+  "founded": 1878,
+  "city": {
+   "label": "MANCHESTER",
+   "sub": "ENGLAND",
+   "lat": 53.4631,
+   "lon": -2.2913
+  },
+  "formation": "4-4-2",
+  "kit": {
+   "shirt": "#da020e",
+   "trim": "#ffffff",
+   "collar": "#111111",
+   "shorts": "#ffffff",
+   "socks": "#111111",
+   "number": "#ffffff",
+   "gk": {
+    "shirt": "#2e7d32",
+    "trim": "#111111",
+    "collar": "#111111"
+   }
+  },
+  "crest": {
+   "a": "#da020e",
+   "b": "#ffd23f",
+   "c": "#111",
+   "t": "MU",
+   "tc": "#fff",
+   "ts": 40
+  },
+  "colors": {
+   "ring": "#e0262f",
+   "pillBg": "#da020e",
+   "pillFg": "#fff",
+   "headerBg": "#da020e",
+   "headerFg": "#fff",
+   "versusBg": "#7e0f17",
+   "accent": "#ff6b6b",
+   "bar": "#da020e",
+   "confetti": [
+    "#da020e",
+    "#ffffff",
+    "#111111",
+    "#ffd23f"
+   ],
+   "ribbon": [
+    "#da020e",
+    "#ffffff"
+   ]
+  },
+  "grid": [
+   "beckham",
+   "keane",
+   "giggs",
+   "stam",
+   "scholes",
+   "yorke",
+   "cole",
+   "irwin",
+   "gneville",
+   "johnsen",
+   "schmeichel"
+  ],
+  "slots": {
+   "schmeichel": "GK",
+   "gneville": "RB",
+   "stam": "CB1",
+   "johnsen": "CB2",
+   "irwin": "LB",
+   "beckham": "RM",
+   "keane": "CM1",
+   "scholes": "CM2",
+   "giggs": "LM",
+   "yorke": "ST1",
+   "cole": "ST2"
+  },
+  "manager": "ferguson"
+ },
+ "away": {
+  "name": "MAN CITY",
+  "full": "MANCHESTER CITY",
+  "season": "22/23",
+  "versus": [
+   "CITY",
+   "2023"
+  ],
+  "nation": "eng",
+  "founded": 1880,
+  "city": {
+   "label": "MANCHESTER",
+   "sub": "ENGLAND",
+   "lat": 53.4831,
+   "lon": -2.2004
+  },
+  "formation": "3-4-2-1",
+  "kitLabel": "HOME KIT",
+  "kit": {
+   "shirt": "#98c5e9",
+   "trim": "#7a1f2b",
+   "collar": "#7a1f2b",
+   "shorts": "#ffffff",
+   "socks": "#98c5e9",
+   "number": "#1c2c5b",
+   "gk": {
+    "shirt": "#1f1f1f",
+    "trim": "#f2c200",
+    "collar": "#f2c200"
+   }
+  },
+  "crest": {
+   "a": "#98c5e9",
+   "b": "#1c2c5b",
+   "c": "#1c2c5b",
+   "t": "MCFC",
+   "tc": "#ffffff",
+   "ts": 26
+  },
+  "colors": {
+   "ring": "#6cabdd",
+   "pillBg": "#98c5e9",
+   "pillFg": "#1c2c5b",
+   "headerBg": "#98c5e9",
+   "headerFg": "#1c2c5b",
+   "headerSub": "#1c2c5b",
+   "versusBg": "#1c3c62",
+   "accent": "#bfe1ff",
+   "bar": "#6cabdd",
+   "confetti": [
+    "#98c5e9",
+    "#ffffff",
+    "#1c2c5b",
+    "#7a1f2b"
+   ],
+   "ribbon": [
+    "#6cabdd",
+    "#1c2c5b"
+   ]
+  },
+  "grid": [
+   "haaland",
+   "debruyne",
+   "rodri",
+   "bernardo",
+   "dias",
+   "gundogan",
+   "grealish",
+   "stones",
+   "akanji",
+   "ake",
+   "ederson"
+  ],
+  "slots": {
+   "ederson": "GK",
+   "akanji": "RCB",
+   "dias": "CCB",
+   "ake": "LCB",
+   "bernardo": "RWB",
+   "stones": "CM1",
+   "rodri": "CM2",
+   "grealish": "LWB",
+   "debruyne": "RAM",
+   "gundogan": "LAM",
+   "haaland": "ST"
+  },
+  "manager": "guardiola"
+ },
+ "players": {
+  "schmeichel": {
+   "name": "SCHMEICHEL",
+   "full": "Peter Schmeichel",
+   "num": 1,
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#c9b48a"
+   ],
+   "beard": "none",
+   "gk": true
+  },
+  "gneville": {
+   "name": "G. NEVILLE",
+   "full": "Gary Neville",
+   "num": 2,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#3b2a1e"
+   ],
+   "beard": "none"
+  },
+  "stam": {
+   "name": "STAM",
+   "full": "Jaap Stam",
+   "num": 6,
+   "skin": "light",
+   "hair": [
+    "bald",
+    "#6b5a45"
+   ],
+   "beard": "none"
+  },
+  "johnsen": {
+   "name": "JOHNSEN",
+   "full": "Ronny Johnsen",
+   "num": 5,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#4a3424"
+   ],
+   "beard": "none"
+  },
+  "irwin": {
+   "name": "IRWIN",
+   "full": "Denis Irwin",
+   "num": 3,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#3b2a1e"
+   ],
+   "beard": "none"
+  },
+  "beckham": {
+   "name": "BECKHAM",
+   "full": "David Beckham",
+   "num": 7,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#d8b46a"
+   ],
+   "beard": "none"
+  },
+  "keane": {
+   "name": "KEANE",
+   "full": "Roy Keane",
+   "num": 16,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#4a3424"
+   ],
+   "beard": "none"
+  },
+  "scholes": {
+   "name": "SCHOLES",
+   "full": "Paul Scholes",
+   "num": 18,
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#b5652e"
+   ],
+   "beard": "none"
+  },
+  "giggs": {
+   "name": "GIGGS",
+   "full": "Ryan Giggs",
+   "num": 11,
+   "skin": "olive",
+   "hair": [
+    "messy",
+    "#2b1d14"
+   ],
+   "beard": "none"
+  },
+  "yorke": {
+   "name": "YORKE",
+   "full": "Dwight Yorke",
+   "num": 19,
+   "skin": "dark",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "none"
+  },
+  "cole": {
+   "name": "COLE",
+   "full": "Andy Cole",
+   "num": 9,
+   "skin": "dark",
+   "hair": [
+    "bald",
+    "#111111"
+   ],
+   "beard": "none"
+  },
+  "ferguson": {
+   "name": "FERGUSON",
+   "full": "Alex Ferguson",
+   "skin": "pink",
+   "hair": [
+    "side",
+    "#a8a8a8"
+   ],
+   "beard": "none",
+   "suit": {
+    "jacket": "#1c1d24",
+    "tie": "#da020e"
+   }
+  },
+  "ederson": {
+   "name": "EDERSON",
+   "full": "Ederson",
+   "num": 31,
+   "skin": "tan",
+   "hair": [
+    "crop",
+    "#2a1d14"
+   ],
+   "beard": "short",
+   "gk": true
+  },
+  "akanji": {
+   "name": "AKANJI",
+   "full": "Manuel Akanji",
+   "num": 25,
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "short"
+  },
+  "dias": {
+   "name": "DIAS",
+   "full": "Rúben Dias",
+   "num": 3,
+   "skin": "olive",
+   "hair": [
+    "crop",
+    "#1e1611"
+   ],
+   "beard": "short"
+  },
+  "ake": {
+   "name": "AKÉ",
+   "full": "Nathan Aké",
+   "num": 6,
+   "skin": "brown",
+   "hair": [
+    "curlytop",
+    "#111111"
+   ],
+   "beard": "stubble"
+  },
+  "stones": {
+   "name": "STONES",
+   "full": "John Stones",
+   "num": 5,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#3b2a1e"
+   ],
+   "beard": "stubble"
+  },
+  "rodri": {
+   "name": "RODRI",
+   "full": "Rodri",
+   "num": 16,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#4a3424"
+   ],
+   "beard": "stubble"
+  },
+  "bernardo": {
+   "name": "BERNARDO",
+   "full": "Bernardo Silva",
+   "num": 20,
+   "skin": "olive",
+   "hair": [
+    "curlytop",
+    "#2b1d14"
+   ],
+   "beard": "stubble"
+  },
+  "grealish": {
+   "name": "GREALISH",
+   "full": "Jack Grealish",
+   "num": 10,
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#3b2a1e"
+   ],
+   "beard": "stubble"
+  },
+  "debruyne": {
+   "name": "DE BRUYNE",
+   "full": "Kevin De Bruyne",
+   "num": 17,
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#c06a2f"
+   ],
+   "beard": "short"
+  },
+  "gundogan": {
+   "name": "GÜNDOĞAN",
+   "full": "İlkay Gündoğan",
+   "num": 8,
+   "skin": "olive",
+   "hair": [
+    "quiff",
+    "#2b1d14"
+   ],
+   "beard": "short"
+  },
+  "haaland": {
+   "name": "HAALAND",
+   "full": "Erling Haaland",
+   "num": 9,
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#d9c08a"
+   ],
+   "beard": "none"
+  },
+  "guardiola": {
+   "name": "GUARDIOLA",
+   "full": "Pep Guardiola",
+   "skin": "light",
+   "hair": [
+    "bald",
+    "#6b6b6b"
+   ],
+   "beard": "stubble",
+   "suit": {
+    "jacket": "#2a2a30",
+    "tie": "#98c5e9"
+   }
+  }
+ },
+ "ratings": {
+  "label": "PREVIEW · UNITED PREDICTED",
+  "rows": [
+   [
+    "ATTACK",
+    87,
+    87
+   ],
+   [
+    "MIDFIELD",
+    88,
+    87
+   ],
+   [
+    "DEFENCE",
+    85,
+    85
+   ]
+  ],
+  "starMen": {
+   "home": {
+    "id": "beckham",
+    "rating": 88
+   },
+   "away": {
+    "id": "haaland",
+    "rating": 89
+   }
+  },
+  "verdict": "DEAD EVEN ON PAPER"
+ },
+ "events": [
+  {
+   "id": "g1",
+   "minute": "1'",
+   "scorer": "gundogan",
+   "assist": "haaland",
+   "caption": "GÜNDOĞAN, STRAIGHT AWAY",
+   "footage": {
+    "parts": [
+     [
+      "g1-gundogan/tv",
+      16,
+      53
+     ],
+     [
+      "g1-gundogan/high",
+      19,
+      114
+     ]
+    ],
+    "goalAt": 2.217
+   },
+   "popup": "popup/g1-gundogan"
+  },
+  {
+   "id": "g2",
+   "minute": "29'",
+   "scorer": "beckham",
+   "caption": "BECKHAM FREE KICK!",
+   "footage": {
+    "parts": [
+     [
+      "g2-beckham/tv",
+      0,
+      18
+     ],
+     [
+      "g2-beckham/high",
+      19,
+      134
+     ]
+    ],
+    "goalAt": 1.867
+   },
+   "popup": "popup/g2-beckham"
+  },
+  {
+   "id": "g3",
+   "minute": "63'",
+   "scorer": "rodri",
+   "assist": "bernardo",
+   "caption": "RODRI, ISTANBUL AGAIN",
+   "footage": {
+    "parts": [
+     [
+      "g3-rodri/tv",
+      13,
+      50
+     ],
+     [
+      "g3-rodri/high",
+      51,
+      146
+     ]
+    ],
+    "goalAt": 2.25
+   },
+   "popup": "popup/g3-rodri"
+  },
+  {
+   "id": "g4",
+   "minute": "90+1'",
+   "lateCard": "90+1'",
+   "scorer": "yorke",
+   "assist": "beckham",
+   "caption": "YORKE HEADS IT IN",
+   "footage": {
+    "parts": [
+     [
+      "g4-yorke/tv",
+      16,
+      57
+     ],
+     [
+      "g4-yorke/high",
+      19,
+      104
+     ]
+    ],
+    "goalAt": 2.017
+   },
+   "popup": "popup/g4-yorke"
+  },
+  {
+   "id": "g5",
+   "minute": "90+3'",
+   "scorer": "cole",
+   "assist": "beckham",
+   "caption": "COLE! FERGIE TIME!",
+   "captionColor": "#ffd23f",
+   "footage": {
+    "parts": [
+     [
+      "g5-cole/tv",
+      2,
+      35
+     ],
+     [
+      "g5-cole/high",
+      36,
+      130
+     ]
+    ],
+    "goalAt": 1.666
+   },
+   "popup": "popup/g5-cole"
+  }
+ ],
+ "potm": {
+  "top3": [
+   "beckham",
+   "rodri",
+   "stam"
+  ],
+  "name": "DAVID BECKHAM",
+  "subtitle": "A GOAL AND TWO ASSISTS"
+ },
+ "vo": [
+  {
+   "seg": "grid",
+   "offset": 0.3,
+   "text": "Two trebles. One city. Only one can win."
+  },
+  {
+   "seg": "homeSheet",
+   "offset": 0.3,
+   "text": "Manchester United, 1999: Beckham, Keane, Scholes and Giggs. The first English treble.",
+   "say": "Manchester United, nineteen ninety-nine: Beckham, Keen, Skoles and Giggs. The first English treble."
+  },
+  {
+   "seg": "awaySheet",
+   "offset": 0.2,
+   "text": "Manchester City, 2023: Haaland scored thirty-six league goals, a record.",
+   "say": "Manchester City, twenty twenty-three: Hohland scored thirty-six league goals, a record."
+  },
+  {
+   "seg": "versus",
+   "offset": 0.2,
+   "text": "United won the league by one point on the last day. Then Keane and Scholes were banned from the final.",
+   "say": "United won the league by one point on the last day. Then Keen and Skoles were banned from the final."
+  },
+  {
+   "seg": "globe",
+   "offset": 0.4,
+   "text": "Bayern led in Barcelona until stoppage time. Two Beckham corners, two goals, and the treble.",
+   "say": "Byern led in Barcelona until stoppage time. Two Beckham corners, two goals, and the treble."
+  },
+  {
+   "seg": "ratings",
+   "offset": 0.3,
+   "text": "No FIFA game covers 1999, so United's ratings are our prediction. City won theirs in Istanbul.",
+   "say": "No FIFA game covers nineteen ninety-nine, so United's ratings are our prediction. City won theirs in Istanbul."
+  },
+  {
+   "seg": "g1",
+   "offset": 0.1,
+   "spill": true,
+   "text": "Kick-off. Haaland flicks it on, Gündoğan volleys. Just like the cup final.",
+   "say": "Kick-off. Hohland flicks it on, Gundogan volleys. Just like the cup final."
+  },
+  {
+   "seg": "g2",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Beckham bends a free kick over the wall. One all."
+  },
+  {
+   "seg": "g3",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Bernardo cuts it back, and Rodri does it again.",
+   "say": "Bernardoh cuts it back, and Rodree does it again."
+  },
+  {
+   "seg": "late",
+   "offset": 0.0,
+   "spill": true,
+   "text": "Stoppage time. Beckham's corner. Yorke heads it in."
+  },
+  {
+   "seg": "g5",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Then Beckham again, and Andy Cole pokes it home."
+  },
+  {
+   "seg": "fulltime",
+   "offset": 0.5,
+   "text": "Three-two. Late drama at Old Trafford, again."
+  },
+  {
+   "seg": "potm",
+   "offset": 0.8,
+   "text": "Player of the match: David Beckham. Which treble wins it?"
+  },
+  {
+   "seg": "end",
+   "offset": 0.3,
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "say": "Follow for more, and play Road to Ballon Dor."
+  }
+ ]
+}
