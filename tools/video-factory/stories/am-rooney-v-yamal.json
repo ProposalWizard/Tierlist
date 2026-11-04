@@ -287,8 +287,8 @@
    }
   },
   {
-   "text": "Sixteen years and 362 days old. The youngest scorer in Euros history, twenty years after Rooney.",
-   "say": "Sixteen years and three hundred and sixty-two days old. The youngest scorer in Euros history, twenty years after Rooney.",
+   "text": "Sixteen years and 362 days old. The youngest scorer in Euros history.",
+   "say": "Sixteen years and three hundred and sixty-two days old. The youngest scorer in Euros history.",
    "scene": {
     "type": "news",
     "section": "Euro 2024",
@@ -375,111 +375,8 @@
    }
   },
   {
-   "text": "Now match the games. After seventeen caps, Rooney had nine. Yamal had three.",
-   "scene": {
-    "type": "line",
-    "kicker": "Goals cap by cap",
-    "title": "The first 17 caps",
-    "y": {
-     "min": 0,
-     "max": 10,
-     "label": "goals"
-    },
-    "x": [
-     "1",
-     "2",
-     "3",
-     "4",
-     "5",
-     "6",
-     "7",
-     "8",
-     "9",
-     "10",
-     "11",
-     "12",
-     "13",
-     "14",
-     "15",
-     "16",
-     "17"
-    ],
-    "series": [
-     {
-      "name": "Rooney",
-      "club": "eng",
-      "color": "#e8e8e8",
-      "values": [
-       0,
-       0,
-       0,
-       0,
-       0,
-       1,
-       2,
-       2,
-       3,
-       3,
-       3,
-       3,
-       5,
-       5,
-       7,
-       9,
-       9
-      ]
-     },
-     {
-      "name": "Yamal",
-      "club": "esp",
-      "values": [
-       1,
-       1,
-       2,
-       2,
-       2,
-       2,
-       2,
-       2,
-       2,
-       2,
-       2,
-       2,
-       3,
-       3,
-       3,
-       3,
-       3
-      ]
-     }
-    ],
-    "notes": [
-     {
-      "i": 15,
-      "text": "Euro 2004",
-      "series": 0
-     }
-    ]
-   }
-  },
-  {
-   "text": "Rooney was the finisher. Yamal makes the goals. And only one of them was a European champion at eighteen.",
-   "scene": {
-    "type": "trophies",
-    "kicker": "Lamine Yamal · at 18",
-    "title": "European champion",
-    "items": [
-     {
-      "kind": "euro",
-      "label": "Euro 2024"
-     }
-    ],
-    "person": "yamal"
-   }
-  },
-  {
-   "text": "So who was the better eighteen-year-old? Rooney, or Yamal?",
-   "say": "So who was the better eighteen-year-old? Rooney, or Yahmal?",
+   "text": "Rooney the finisher, or Yamal the creator and champion. Who was the better eighteen-year-old?",
+   "say": "Rooney the finisher, or Yahmal the creator and champion. Who was the better eighteen-year-old?",
    "scene": {
     "type": "versus",
     "title": "The better 18-year-old?",
