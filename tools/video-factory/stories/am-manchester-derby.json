@@ -102,7 +102,7 @@
  "lines": [
   {
    "text": "Derby day in September. The youngest man to start was Kobbie Mainoo, twenty-one years and 147 days old.",
-   "say": "Derby day in September. The youngest man to start was Kobbee Maynoo, twenty-one years and a hundred and forty-seven days old.",
+   "say": "Derby day in September. The youngest man to start was Kobby Maynew, twenty-one years and a hundred and forty-seven days old.",
    "scene": {
     "type": "title",
     "heading": "KOBBIE MAINOO",
@@ -128,7 +128,7 @@
   },
   {
    "text": "So what had the great derby players done by Mainoo's age, to the day?",
-   "say": "So what had the great derby players done by Maynoo's age, to the day?",
+   "say": "So what had the great derby players done by Maynew's age, to the day?",
    "scene": {
     "type": "person",
     "person": "mainoo",
@@ -201,8 +201,8 @@
    }
   },
   {
-   "text": "And Mainoo? Four.",
-   "say": "And Maynoo? Four.",
+   "text": "And Mainoo? Just four.",
+   "say": "And Maynew? Just four.",
    "scene": {
     "type": "bars",
     "kicker": "At 21 years, 147 days",
@@ -235,7 +235,7 @@
   },
   {
    "text": "Last place, by a mile. But Rooney, Ronaldo and Foden were attackers. Mainoo plays in midfield.",
-   "say": "Last place, by a mile. But Rooney, Ronaldo and Foden were attackers. Maynoo plays in midfield.",
+   "say": "Last place, by a mile. But Rooney, Ronaldo and Foden were attackers. Maynew plays in midfield.",
    "scene": {
     "type": "stamp",
     "text": "NOT SO FAST",
@@ -246,7 +246,7 @@
   },
   {
    "text": "And when it mattered most against City, he delivered. The 2024 FA Cup final. Bruno Fernandes, no-look pass. Mainoo.",
-   "say": "And when it mattered most against City, he delivered. The twenty twenty-four FA Cup final. Brunoh Fernandez, no-look pass. Maynoo.",
+   "say": "And when it mattered most against City, he delivered. The twenty twenty-four FA Cup final. Brunoh Fernandez, no look pass. Maynew.",
    "scene": {
     "type": "gameclip",
     "parts": [
@@ -286,7 +286,7 @@
    }
   },
   {
-   "text": "Seven weeks later, he started a Euros final for England. Goals aren't the whole story.",
+   "text": "Seven weeks later, he started a Euros final for England. Goals aren't everything.",
    "scene": {
     "type": "timeline",
     "kicker": "Kobbie Mainoo",
@@ -318,7 +318,7 @@
   },
   {
    "text": "So who was the best twenty-one-year-old in derby history? Mainoo, or Rooney?",
-   "say": "So who was the best twenty-one-year-old in derby history? Maynoo, or Rooney?",
+   "say": "So who was the best twenty-one-year-old in derby history? Maynew, or Rooney?",
    "scene": {
     "type": "versus",
     "title": "Best at 21?",
