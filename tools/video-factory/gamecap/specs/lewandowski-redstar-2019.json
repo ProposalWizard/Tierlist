@@ -1,0 +1,101 @@
+{
+ "_about": "One of Lewandowski's four goals in 14 minutes, Red Star 0-6 Bayern, Belgrade, 26 Nov 2019 (0-4 to 0-5, 67 min). Bayern in the white and grey 2019-20 away kit, Red Star red (stripes not drawable). Move not recreated like for like.",
+ "teams": {
+  "home": {
+   "name": "Crvena Zvezda",
+   "short": "Red Star",
+   "kit": {
+    "shirt": "#D2122E",
+    "shorts": "#FFFFFF",
+    "socks": "#D2122E"
+   },
+   "keeperKit": {
+    "shirt": "#2B2B2B",
+    "shorts": "#2B2B2B",
+    "socks": "#2B2B2B"
+   },
+   "popupTrim": "#FFFFFF"
+  },
+  "away": {
+   "name": "FC Bayern München",
+   "short": "Bayern",
+   "kit": {
+    "shirt": "#F2F2F2",
+    "shorts": "#8C8C8C",
+    "socks": "#F2F2F2"
+   },
+   "keeperKit": {
+    "shirt": "#2BB673",
+    "shorts": "#0B3D2A",
+    "socks": "#2BB673"
+   },
+   "popupTrim": "#DC052D"
+  }
+ },
+ "people": {
+  "lewandowski": {
+   "name": "Robert Lewandowski",
+   "skin": "#efc9a8",
+   "hair": "#3a2a1c"
+  },
+  "d0": {
+   "name": "Player",
+   "skin": "#e8bf9c",
+   "hair": "#3a2a1c"
+  },
+  "d1": {
+   "name": "Player",
+   "skin": "#d9a98a",
+   "hair": "#1a1410"
+  },
+  "d2": {
+   "name": "Player",
+   "skin": "#6b4630",
+   "hair": "#120c08"
+  },
+  "d3": {
+   "name": "Player",
+   "skin": "#f0c9a8",
+   "hair": "#7a5a3a"
+  },
+  "d4": {
+   "name": "Player",
+   "skin": "#c99a76",
+   "hair": "#1a1410"
+  }
+ },
+ "clips": [
+  {
+   "id": "lewa-redstar",
+   "kind": "tap_in",
+   "attacking": "away",
+   "scorer": "lewandowski",
+   "defenders": [
+    "d0",
+    "d1",
+    "d3"
+   ],
+   "keeper": "d4",
+   "teammates": [
+    "d2"
+   ],
+   "minute": 67,
+   "scoreBefore": [
+    0,
+    4
+   ],
+   "scoreAfter": [
+    0,
+    5
+   ],
+   "night": true,
+   "celebration": "fist_pump",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "seed": "lewa-rs-a"
+  }
+ ]
+}

@@ -1,0 +1,133 @@
+{
+ "_about": "Ronaldo's header, Man United v Chelsea, Champions League final, Moscow, 21 May 2008, 26 min: Wes Brown's cross from the right. United red/white/black, Chelsea blue.",
+ "teams": {
+  "home": {
+   "name": "Manchester United",
+   "kit": {
+    "shirt": "#DA291C",
+    "shorts": "#FFFFFF",
+    "socks": "#111111"
+   },
+   "keeperKit": {
+    "shirt": "#2B2B2B",
+    "shorts": "#2B2B2B",
+    "socks": "#2B2B2B"
+   },
+   "popupTrim": "#FFFFFF"
+  },
+  "away": {
+   "name": "Chelsea",
+   "kit": {
+    "shirt": "#034694",
+    "shorts": "#034694",
+    "socks": "#FFFFFF"
+   },
+   "keeperKit": {
+    "shirt": "#E8E04A",
+    "shorts": "#1A1A1A",
+    "socks": "#E8E04A"
+   },
+   "popupTrim": "#FFFFFF"
+  }
+ },
+ "people": {
+  "ronaldo": {
+   "name": "Cristiano Ronaldo",
+   "skin": "#c8986e",
+   "hair": "#2a1c12"
+  },
+  "brown": {
+   "name": "Wes Brown",
+   "skin": "#e0b090",
+   "hair": "#2a1c12"
+  },
+  "cech": {
+   "name": "Petr Čech",
+   "skin": "#f0c9a8",
+   "hair": "#3a2a1c"
+  },
+  "d0": {
+   "name": "Player",
+   "skin": "#e8bf9c",
+   "hair": "#3a2a1c"
+  },
+  "d1": {
+   "name": "Player",
+   "skin": "#d9a98a",
+   "hair": "#1a1410"
+  },
+  "d2": {
+   "name": "Player",
+   "skin": "#6b4630",
+   "hair": "#120c08"
+  },
+  "d3": {
+   "name": "Player",
+   "skin": "#f0c9a8",
+   "hair": "#7a5a3a"
+  },
+  "d4": {
+   "name": "Player",
+   "skin": "#c99a76",
+   "hair": "#1a1410"
+  }
+ },
+ "clips": [
+  {
+   "id": "ronaldo-header",
+   "kind": "header",
+   "attacking": "home",
+   "scorer": "ronaldo",
+   "assister": "brown",
+   "defenders": [
+    "d0",
+    "d1"
+   ],
+   "keeper": "cech",
+   "teammates": [
+    "d2"
+   ],
+   "minute": 26,
+   "scoreBefore": [
+    0,
+    0
+   ],
+   "scoreAfter": [
+    1,
+    0
+   ],
+   "night": true,
+   "weather": "rain",
+   "celebration": "jump",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "delivery": "cross",
+    "side": "right",
+    "swing": "in",
+    "passerStart": [
+     26,
+     20
+    ],
+    "passFrom": [
+     27,
+     17
+    ],
+    "scorerStart": [
+     -4,
+     15
+    ],
+    "scorerSpot": [
+     -1.5,
+     9
+    ],
+    "finish": "header",
+    "goalSide": "near"
+   },
+   "seed": "ronaldo-msc-a"
+  }
+ ]
+}

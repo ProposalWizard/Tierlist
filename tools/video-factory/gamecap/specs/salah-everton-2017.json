@@ -1,0 +1,118 @@
+{
+ "_about": "Salah's Puskas Award goal, Liverpool v Everton, 10 Dec 2017, 42 min: in from the right, curled into the far top corner. Liverpool red, Everton blue.",
+ "teams": {
+  "home": {
+   "name": "Liverpool",
+   "kit": {
+    "shirt": "#C8102E",
+    "shorts": "#C8102E",
+    "socks": "#C8102E"
+   },
+   "keeperKit": {
+    "shirt": "#1F2A44",
+    "shorts": "#1F2A44",
+    "socks": "#1F2A44"
+   },
+   "popupTrim": "#FFFFFF"
+  },
+  "away": {
+   "name": "Everton",
+   "kit": {
+    "shirt": "#003399",
+    "shorts": "#FFFFFF",
+    "socks": "#FFFFFF"
+   },
+   "keeperKit": {
+    "shirt": "#E8E04A",
+    "shorts": "#1A1A1A",
+    "socks": "#E8E04A"
+   },
+   "popupTrim": "#FFFFFF"
+  }
+ },
+ "people": {
+  "salah": {
+   "name": "Mohamed Salah",
+   "skin": "#9a6a4a",
+   "hair": "#1a1410"
+  },
+  "pickford": {
+   "name": "Jordan Pickford",
+   "skin": "#f0c9a8",
+   "hair": "#3a2a1c"
+  },
+  "d0": {
+   "name": "Player",
+   "skin": "#e8bf9c",
+   "hair": "#3a2a1c"
+  },
+  "d1": {
+   "name": "Player",
+   "skin": "#d9a98a",
+   "hair": "#1a1410"
+  },
+  "d2": {
+   "name": "Player",
+   "skin": "#6b4630",
+   "hair": "#120c08"
+  },
+  "d3": {
+   "name": "Player",
+   "skin": "#f0c9a8",
+   "hair": "#7a5a3a"
+  },
+  "d4": {
+   "name": "Player",
+   "skin": "#c99a76",
+   "hair": "#1a1410"
+  }
+ },
+ "clips": [
+  {
+   "id": "salah-curler",
+   "kind": "long_range",
+   "attacking": "home",
+   "scorer": "salah",
+   "defenders": [
+    "d0",
+    "d1",
+    "d3"
+   ],
+   "keeper": "pickford",
+   "teammates": [
+    "d2"
+   ],
+   "minute": 42,
+   "scoreBefore": [
+    0,
+    0
+   ],
+   "scoreAfter": [
+    1,
+    0
+   ],
+   "night": false,
+   "celebration": "arms_out",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "side": "right",
+    "scorerStart": [
+     14,
+     22
+    ],
+    "scorerSpot": [
+     9,
+     17
+    ],
+    "finish": "curl",
+    "goalSide": "far",
+    "height": "high"
+   },
+   "seed": "salah-evt-a"
+  }
+ ]
+}
