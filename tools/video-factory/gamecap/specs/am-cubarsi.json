@@ -1,0 +1,134 @@
+{
+  "_about": "Cubarsí's first Barcelona goal: Barcelona 4-4 Atlético Madrid, Copa del Rey semi-final first leg, Estadi Olímpic, Tue 25 Feb 2025, first half, 1-2 to 2-2. Raphinha's corner, Cubarsí's header at the far post (FC Barcelona, Sky Sports). The corner's side is not sourced, so it comes from the seed. Kits: Barcelona home (the figures cannot draw stripes; the shirt uses the blue half of the blaugrana so it does not blur into Atlético's red); Atlético red shirt, blue shorts (their stripes cannot be drawn; the strip worn is assumed). Keeper kits assumed.",
+  "teams": {
+    "home": {
+      "name": "Barcelona",
+      "kit": {
+        "shirt": "#1C4FA0",
+        "shorts": "#0E1E4A",
+        "socks": "#1C4FA0"
+      },
+      "keeperKit": {
+        "shirt": "#E8E04A",
+        "shorts": "#1A1A1A",
+        "socks": "#E8E04A"
+      },
+      "popupTrim": "#EDBB00"
+    },
+    "away": {
+      "name": "Atlético Madrid",
+      "short": "Atlético",
+      "kit": {
+        "shirt": "#CB3524",
+        "shorts": "#272E61",
+        "socks": "#CB3524"
+      },
+      "keeperKit": {
+        "shirt": "#2E8B57",
+        "shorts": "#1B1B1B",
+        "socks": "#2E8B57"
+      },
+      "popupTrim": "#FFFFFF"
+    }
+  },
+  "people": {
+    "cubarsi": {
+      "name": "Pau Cubarsi",
+      "skin": "#f2c4a6",
+      "hair": "#3a2618",
+      "popupName": "Cubarsí"
+    },
+    "raphinha": {
+      "name": "Raphinha",
+      "skin": "#c99a74",
+      "hair": "#1d1512"
+    },
+    "lewa": {
+      "name": "Robert Lewandowski",
+      "skin": "#f2c4a6",
+      "hair": "#3a2a1c"
+    },
+    "inigo": {
+      "name": "Inigo Martinez",
+      "skin": "#eac09c",
+      "hair": "#2a1d15"
+    },
+    "pedri": {
+      "name": "Pedri",
+      "skin": "#e8b994",
+      "hair": "#1d1512"
+    },
+    "gimenez": {
+      "name": "Jose Gimenez",
+      "skin": "#e8b994",
+      "hair": "#1d1512"
+    },
+    "lenglet": {
+      "name": "Clement Lenglet",
+      "skin": "#f2c4a6",
+      "hair": "#3b2a1e"
+    },
+    "llorente": {
+      "name": "Marcos Llorente",
+      "skin": "#f2c4a6",
+      "hair": "#6b4a2a"
+    },
+    "sorloth": {
+      "name": "Alexander Sorloth",
+      "skin": "#f2c4a6",
+      "hair": "#c9a27e"
+    },
+    "oblak": {
+      "name": "Jan Oblak",
+      "skin": "#f2c4a6",
+      "hair": "#6b4a2a"
+    }
+  },
+  "clips": [
+    {
+      "id": "cubarsi-atletico",
+      "kind": "header",
+      "attacking": "home",
+      "scorer": "cubarsi",
+      "assister": "raphinha",
+      "defenders": [
+        "gimenez",
+        "sorloth",
+        "lenglet",
+        "llorente"
+      ],
+      "keeper": "oblak",
+      "teammates": [
+        "lewa",
+        "inigo",
+        "pedri"
+      ],
+      "minute": 21,
+      "scoreBefore": [
+        1,
+        2
+      ],
+      "scoreAfter": [
+        2,
+        2
+      ],
+      "night": true,
+      "celebration": "roar",
+      "cameras": [
+        "tv",
+        "high",
+        "tight"
+      ],
+      "recreate": {
+        "delivery": "corner",
+        "goalSide": "far",
+        "scorerSpot": [
+          -2.5,
+          5.5
+        ],
+        "finish": "header"
+      },
+      "seed": "cubarsi-atm-b"
+    }
+  ]
+}

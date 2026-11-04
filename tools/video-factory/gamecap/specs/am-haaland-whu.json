@@ -1,0 +1,31 @@
+{
+  "_about": "Man City 3-0 West Ham, Premier League, Etihad, Wed 3 May 2023, 70th minute, 1-0 to 2-0: Jack Grealish's through ball, Haaland chips Lukasz Fabianski for his 35th league goal of 2022-23, breaking the 34-goal record (Sports Mole, Yahoo). West Ham claret home kit assumed; keeper kits assumed. A second spec because a spec has one away team.",
+  "teams": {
+    "home": { "name": "Manchester City", "kit": { "shirt": "#6CABDD", "shorts": "#FFFFFF", "socks": "#6CABDD" }, "keeperKit": { "shirt": "#1F2A44", "shorts": "#1F2A44", "socks": "#1F2A44" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "West Ham United", "short": "West Ham", "kit": { "shirt": "#7A263A", "shorts": "#FFFFFF", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#1BB1E7" }
+  },
+  "people": {
+    "haaland":  { "name": "Erling Haaland", "skin": "#f1cfb4", "hair": "#d9b46a" },
+    "grealish": { "name": "Jack Grealish", "skin": "#f2c4a6", "hair": "#4a3424" },
+    "aguerd":   { "name": "Nayef Aguerd", "skin": "#c99a74", "hair": "#1d1512" },
+    "zouma":    { "name": "Kurt Zouma", "skin": "#3e2618", "hair": "#0d0a09" },
+    "fabianski": { "name": "Lukasz Fabianski", "skin": "#f2c4a6", "hair": "#3b2a1e" }
+  },
+  "clips": [
+    {
+      "id": "haaland-westham",
+      "kind": "one_on_one",
+      "attacking": "home",
+      "scorer": "haaland", "assister": "grealish",
+      "defenders": ["aguerd", "zouma"],
+      "keeper": "fabianski",
+      "minute": 70,
+      "scoreBefore": [1, 0], "scoreAfter": [2, 0],
+      "night": true,
+      "celebration": "fist_pump",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "through", "finish": "chip" },
+      "seed": "haaland-whu-a"
+    }
+  ]
+}

@@ -2,44 +2,424 @@
   "id": "am-cubarsi",
   "series": "Age-match",
   "title": "Cubarsí v Puyol, Piqué and Ramos at the same age",
+  "v2": true,
   "sources": [
-    "https://foot-africa.com/en/news/champions-league-2026-27-psg-and-man-city-headline-barcelonas-full-schedule-1333846/",
-    "https://www.uefa.com/uefachampionsleague/news/02a8-2174c9e9019d-f909a77bd77a-1000--champions-league-league-phase-fixtures-by-team/",
+    "https://www.fcbarcelona.com/en/matches/141538/fc-barcelona-manchester-city-uefa-champions-league-2026-2027",
+    "https://ontourfootball.com/fixtures/barcelona-vs-manchester-city-2026-12-08",
     "https://en.wikipedia.org/wiki/Pau_Cubars%C3%AD",
-    "https://www.fifpro.org/en/articles/2026/07/players-recognised-with-individual-awards-at-the-2026-world-cup",
-    "https://www.dtnext.in/news/sports/cubarsi-collects-fifa-young-player-award-simon-bags-golden-glove",
-    "https://www.fcbarcelona.com/en/news/4137011/25-years-since-carles-puyols-official-debut",
-    "https://www.si.com/soccer/2019/04/13/carles-puyol-6-his-best-ever-moments-legendary-barcelona-star-celebrates-his-41st-birthday",
-    "https://bleacherreport.com/articles/253065-the-towering-pique-of-barcelona",
-    "https://www.sevillafc.es/en/actual/news/sergio-ramos-signs-2324",
+    "https://www.football-espana.net/2026/07/20/cubarsi-fifa-young-player-2026-world-cup",
+    "https://www.fcbarcelona.com/en/news/4538848/pau-cubarsi-best-young-player-at-the-world-cup/amp",
+    "https://theanalyst.com/articles/pau-cubarsi-world-cup-2026-young-player-of-the-tournament",
+    "https://en.wikipedia.org/wiki/FIFA_World_Cup_Best_Young_Player",
+    "https://www.fcbarcelona.com/en/football/first-team/news/4223961/pau-cubarsi-scores-first-blaugrana-goal",
+    "https://www.skysports.com/football/barcelona-vs-atletico-madrid/528588",
+    "https://en.wikipedia.org/wiki/Carles_Puyol",
+    "https://en.wikipedia.org/wiki/Gerard_Piqu%C3%A9",
     "https://en.wikipedia.org/wiki/Sergio_Ramos"
   ],
-  "checked": "Barcelona v Manchester City, Champions League, 8 Dec 2026 (Foot Africa + UEFA list). Cubarsí born 22 Jan 2007 = 19 years 320 days. 139 Barcelona first-team games to 31 Oct 2026 and 23 Spain caps to 6 Oct 2026 (Wikipedia; so 'over one hundred and sixty'); La Liga 2024-25 and 2025-26, Copa del Rey 2024-25, Supercopa 2025 and 2026 (Wikipedia); 2026 World Cup winner, started all eight games, FIFA Young Player Award (FIFPro + DT Next + Fox). Puyol at the same age (27 Feb 1998): no first-team games, debut 2 Oct 1999 aged 21 (FC Barcelona + SI). Piqué (19 Dec 2006): on loan at Zaragoza from Man United (Bleacher Report + Wikipedia). Ramos (13 Feb 2006): first season at Real Madrid after signing aged 19 (Sevilla FC + Wikipedia); his exact game count is disputed between sources, so it is left out. 2010 World Cup ages from birth dates. Senior trophies only; Cubarsí's 2024 Olympic gold (under-23) is left out.",
+  "checked": "Barcelona v Man City, Champions League, Camp Nou, 8 Dec 2026 (FC Barcelona + On Tour). Cubarsí born 22 Jan 2007 = 19y 320d that day. 2026 World Cup: Spain beat Argentina 1-0 after extra time in the final, 19 Jul 2026; Cubarsí played every minute of Spain's eight games; Spain conceded one goal all tournament (FC Barcelona + Wikipedia + The Analyst + Football España). FIFA Young Player Award 2026 (Football España + FC Barcelona). Earlier defender winners: Beckenbauer 1966, Żmuda 1974, Cabrini 1978, Amoros 1982, and every winner since 1986 is a midfielder or forward (FIFA list on Wikipedia + IANS/DT Next), so 'first defender since 1982'; the old draft's 'first defender ever' was wrong. First Barcelona goal: Barça 4-4 Atlético, Copa del Rey semi-final first leg, 25 Feb 2025, header at the far post from Raphinha's corner, 1-2 to 2-2 (FC Barcelona + Sky Sports). Same age: Puyol (born 13 Apr 1978) 27 Feb 1998, no first-team games, debut 2 Oct 1999 at Valladolid aged 21 (Wikipedia + FC Barcelona); Piqué (born 2 Feb 1987) 19 Dec 2006, on loan at Real Zaragoza from Man United (Wikipedia + Bleacher Report); Ramos (born 30 Mar 1986) 13 Feb 2006, first season at Real Madrid after joining from Sevilla in 2005 (Wikipedia + Sevilla FC). World Cup final ages by arithmetic: Puyol 32, Piqué 23, Ramos 24 on 11 Jul 2010; Cubarsí 19 on 19 Jul 2026. Spain debut ages: Cubarsí 17 (Mar 2024 v Colombia), Ramos 18 (26 Mar 2005 v China), Puyol 22 (15 Nov 2000 v Netherlands), Piqué 22 (11 Feb 2009 v England) (Wikipedia + RFEF-based lists). Atlético's kit in the recreated goal is assumed. First-team games 139 to 31 Oct 2026 (FotMob + Wikipedia).",
   "clubs": {
-    "bar": { "name": "Barcelona", "short": "FCB", "c1": "#a50044", "c2": "#004d98", "pattern": "stripes" },
-    "mci": { "name": "Manchester City", "short": "MCI", "c1": "#6cabdd", "c2": "#ffffff", "pattern": "plain" },
-    "zar": { "name": "Real Zaragoza", "short": "RZ", "c1": "#ffffff", "c2": "#1a3c8f", "pattern": "plain" },
-    "rma": { "name": "Real Madrid", "short": "RMA", "c1": "#ffffff", "c2": "#febe10", "pattern": "plain" },
-    "esp": { "name": "Spain", "short": "ESP", "c1": "#c60b1e", "c2": "#ffc400", "pattern": "plain" }
+    "fcb": {
+      "name": "Barcelona",
+      "short": "FCB",
+      "c1": "#a50044",
+      "c2": "#004d98",
+      "pattern": "stripes"
+    },
+    "mci": {
+      "name": "Manchester City",
+      "short": "MCI",
+      "c1": "#6cabdd",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "esp": {
+      "name": "Spain",
+      "short": "ESP",
+      "c1": "#c60b1e",
+      "c2": "#ffc400",
+      "pattern": "plain",
+      "badge": false
+    },
+    "arg": {
+      "name": "Argentina",
+      "short": "ARG",
+      "c1": "#75aadb",
+      "c2": "#ffffff",
+      "pattern": "stripes",
+      "badge": false
+    },
+    "atm": {
+      "name": "Atlético Madrid",
+      "short": "ATM",
+      "c1": "#cb3524",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    },
+    "zar": {
+      "name": "Real Zaragoza",
+      "short": "ZAR",
+      "c1": "#ffffff",
+      "c2": "#1d4fa3",
+      "pattern": "plain"
+    },
+    "rma": {
+      "name": "Real Madrid",
+      "short": "RMA",
+      "c1": "#ffffff",
+      "c2": "#febe10",
+      "pattern": "plain"
+    },
+    "sev": {
+      "name": "Sevilla",
+      "short": "SEV",
+      "c1": "#ffffff",
+      "c2": "#d4021d",
+      "pattern": "plain"
+    }
   },
   "people": {
-    "cubarsi": { "name": "Pau Cubarsí", "skin": "light", "hair": ["side", "#5a3a22"], "beard": "none", "kit": "bar" },
-    "puyol": { "name": "Carles Puyol", "skin": "light", "hair": ["bigcurl", "#3a2a1c"], "beard": "none", "kit": "bar" },
-    "pique": { "name": "Gerard Piqué", "skin": "light", "hair": ["messy", "#3a2a1c"], "beard": "none", "kit": "zar" },
-    "ramos": { "name": "Sergio Ramos", "skin": "olive", "hair": ["messy", "#2a1d14"], "beard": "none", "kit": "rma" }
+    "cubarsi": {
+      "name": "Pau Cubarsí",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#3a2618"
+      ],
+      "beard": "none",
+      "kit": "fcb"
+    },
+    "cubarsiesp": {
+      "name": "Pau Cubarsí",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#3a2618"
+      ],
+      "beard": "none",
+      "kit": "esp"
+    },
+    "puyol": {
+      "name": "Carles Puyol",
+      "skin": "light",
+      "hair": [
+        "bigcurl",
+        "#3a2618"
+      ],
+      "beard": "none",
+      "kit": "fcb"
+    },
+    "pique": {
+      "name": "Gerard Piqué",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#3a2618"
+      ],
+      "beard": "none",
+      "kit": "zar"
+    },
+    "ramos": {
+      "name": "Sergio Ramos",
+      "skin": "tan",
+      "hair": [
+        "messy",
+        "#2a1d15"
+      ],
+      "beard": "none",
+      "kit": "rma"
+    },
+    "puyolesp": {
+      "name": "Carles Puyol",
+      "skin": "light",
+      "hair": [
+        "bigcurl",
+        "#3a2618"
+      ],
+      "beard": "none",
+      "kit": "esp"
+    },
+    "piqueesp": {
+      "name": "Gerard Piqué",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#3a2618"
+      ],
+      "beard": "none",
+      "kit": "esp"
+    },
+    "ramosesp": {
+      "name": "Sergio Ramos",
+      "skin": "tan",
+      "hair": [
+        "messy",
+        "#2a1d15"
+      ],
+      "beard": "none",
+      "kit": "esp"
+    }
   },
   "lines": [
-    { "text": "When Barcelona host Manchester City on the eighth of December, Pau Cubarsí will be nineteen years and three hundred and twenty days old.", "scene": { "type": "title", "heading": "PAU CUBARSÍ", "sub": "Barcelona v Man City · 8 Dec 2026", "pill": "AGE-MATCH", "person": "cubarsi" } },
-    { "text": "He's already a world champion. He started all eight games as Spain won the World Cup this summer.", "scene": { "type": "trophies", "items": [ { "kind": "worldcup", "label": "World Cup 2026" }, { "kind": "league", "label": "La Liga x2" }, { "kind": "cup", "label": "Copa del Rey" }, { "kind": "cup", "label": "Supercopa x2" } ], "person": "cubarsi" } },
-    { "text": "And FIFA named him the tournament's best young player. The first defender ever to win it.", "scene": { "type": "stamp", "text": "BEST YOUNG PLAYER", "person": "cubarsi", "color": "yellow" } },
-    { "text": "Over one hundred and sixty senior games for club and country. Six senior trophies.", "scene": { "type": "stats", "title": "Cubarsí at 19 years 320 days", "items": [ { "n": "160+", "l": "senior games" }, { "n": "6", "l": "senior trophies" } ], "person": "cubarsi" } },
-    { "text": "Now Spain's legendary centre-backs at exactly the same age. Carles Puyol: February nineteen ninety-eight.", "scene": { "type": "person", "person": "puyol", "label": "19 years, 320 days", "mood": "flat" } },
-    { "text": "Barcelona first-team games? Zero. His debut didn't come until he was twenty-one.", "scene": { "type": "text", "heading": "PUYOL, 1998", "body": "Still in Barcelona's reserves. First-team debut: Valladolid away, October 1999, aged 21." } },
-    { "text": "Gerard Piqué, December twenty oh-six: on loan at Real Zaragoza from Manchester United. No senior trophies.", "scene": { "type": "person", "person": "pique", "label": "On loan at Zaragoza", "mood": "worried" } },
-    { "text": "Sergio Ramos, February twenty oh-six: in his first season at Real Madrid. Also no trophies yet.", "scene": { "type": "list", "title": "Senior trophies at 19y 320d", "rows": [ { "name": "Pau Cubarsí", "value": "6", "club": "bar", "hl": true }, { "name": "Sergio Ramos", "value": "0", "club": "rma" }, { "name": "Gerard Piqué", "value": "0", "club": "zar" }, { "name": "Carles Puyol", "value": "0", "club": "bar" } ] } },
-    { "text": "So the twist: all four became world champions. Look at the ages.", "scene": { "type": "timeline", "items": [ { "year": "2010", "label": "Puyol, aged 32" }, { "year": "2010", "label": "Ramos, aged 24" }, { "year": "2010", "label": "Piqué, aged 23" }, { "year": "2026", "label": "Cubarsí, aged 19" } ] } },
-    { "text": "Cubarsí got there four years before Piqué, and thirteen years before Puyol.", "scene": { "type": "whatif", "title": "Age when they won the World Cup", "real": { "label": "Puyol", "value": "32" }, "alt": { "label": "Cubarsí", "value": "19" } } },
-    { "text": "So where does Cubarsí end up? Better than all three? Tell me in the comments.", "scene": { "type": "versus", "title": "World champion at…", "left": { "person": "cubarsi", "label": "Cubarsí", "value": "19" }, "right": { "person": "ramos", "label": "Ramos", "value": "24" } } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    {
+      "text": "When Barcelona host Manchester City on the eighth of December, Pau Cubarsí will be nineteen years and three hundred and twenty days old.",
+      "say": "When Barselona host Manchester City on the eighth of December, Pow Koobarsee will be nineteen years, and three hundred and twenty days old.",
+      "scene": {
+        "type": "title",
+        "heading": "PAU CUBARSÍ",
+        "sub": "19 years, 320 days",
+        "pill": "AGE-MATCH",
+        "person": "cubarsi",
+        "club": "fcb"
+      }
+    },
+    {
+      "text": "This summer, Spain won the World Cup. One-nil against Argentina, after extra time.",
+      "say": "This summer, Spain won the World Cup. One nil against Argentina, after extra time.",
+      "scene": {
+        "type": "score",
+        "home": "esp",
+        "away": "arg",
+        "hs": 1,
+        "as": 0,
+        "date": "19 July 2026 · New York New Jersey",
+        "comp": "World Cup final",
+        "ft": "AFTER EXTRA TIME",
+        "note": "Spain are world champions"
+      }
+    },
+    {
+      "text": "Cubarsí played every minute of all eight games. Spain let in one goal in the whole tournament.",
+      "say": "Koobarsee played every minute of all eight games. Spain let in one goal, in the whole tournament.",
+      "scene": {
+        "type": "stats",
+        "kicker": "Cubarsí at the 2026 World Cup",
+        "title": "The wall",
+        "items": [
+          {
+            "n": "8",
+            "l": "games"
+          },
+          {
+            "n": "100%",
+            "l": "of the minutes"
+          },
+          {
+            "n": "1",
+            "l": "goal conceded"
+          }
+        ],
+        "person": "cubarsiesp"
+      }
+    },
+    {
+      "text": "FIFA named him the best young player of the tournament. The first defender since nineteen eighty-two.",
+      "say": "FIFA named him the best young player of the tournament. The first defender since nineteen eighty two.",
+      "scene": {
+        "type": "news",
+        "section": "World Cup",
+        "headline": "Cubarsí named the World Cup's best young player",
+        "standfirst": "The Barcelona centre-back is the first defender to win the award since Manuel Amoros in 1982.",
+        "date": "20 July 2026",
+        "byline": "Knowitball recap",
+        "person": "cubarsiesp",
+        "nav": [
+          "Football",
+          "World Cup",
+          "Spain"
+        ]
+      }
+    },
+    {
+      "text": "And when Barça needed a goal against Atlético, the defender went up for Raphinha's corner, and headed in his first.",
+      "say": "And when Barsa needed a goal against Atletico, the defender went up for Rafeenya's corner, and headed in his first.",
+      "scene": {
+        "type": "gameclip",
+        "caption": "HIS FIRST BARÇA GOAL",
+        "popup": {
+          "home": "fcb",
+          "away": "atm",
+          "homeName": "Barcelona",
+          "awayName": "Atlético",
+          "hs0": 1,
+          "as0": 2,
+          "hs": 2,
+          "as": 2,
+          "scorer": "Cubarsí",
+          "assist": "Raphinha"
+        },
+        "_clip": "cubarsi-atletico",
+        "parts": [
+          [
+            "work/footage/cubarsi-atletico/tv",
+            15,
+            64
+          ],
+          [
+            "work/footage/cubarsi-atletico/high",
+            21,
+            76
+          ],
+          [
+            "work/footage/cubarsi-atletico/tight",
+            17,
+            77
+          ]
+        ],
+        "goalAt": 2.13
+      }
+    },
+    {
+      "text": "Now Spain's great centre-backs at the same age, starting with Carles Puyol in February ninety-eight.",
+      "say": "Now, Spain's great centre backs at the same age, starting with Karlus Pooyol, in February ninety eight.",
+      "scene": {
+        "type": "versus",
+        "title": "Same age: 19 years, 320 days",
+        "left": {
+          "person": "cubarsi",
+          "label": "Cubarsí",
+          "value": "2026"
+        },
+        "right": {
+          "person": "puyol",
+          "label": "Puyol",
+          "value": "1998"
+        }
+      }
+    },
+    {
+      "text": "Barcelona first-team games? Zero. His debut came at twenty-one.",
+      "say": "Barselona first team games? Zero. His debut came at twenty one.",
+      "scene": {
+        "type": "stamp",
+        "text": "ZERO",
+        "sub": "Puyol · first-team games at 19y 320d",
+        "person": "puyol",
+        "color": "white"
+      }
+    },
+    {
+      "text": "Gerard Piqué, December two thousand and six: on loan at Zaragoza.",
+      "say": "Zherar Peekay. December, two thousand and six. On loan at Tharagotha.",
+      "scene": {
+        "type": "person",
+        "person": "pique",
+        "label": "On loan at Zaragoza · 2006",
+        "mood": "flat"
+      }
+    },
+    {
+      "text": "Sergio Ramos, February two thousand and six: first season at Real Madrid, no trophies yet.",
+      "say": "Serhyo Ramoss. February, two thousand and six. First season at Real Madrid, no trophies yet.",
+      "scene": {
+        "type": "person",
+        "person": "ramos",
+        "label": "Real Madrid · first season",
+        "mood": "flat"
+      }
+    },
+    {
+      "text": "Spain debuts? Cubarsí was seventeen. Ramos eighteen. Puyol and Piqué, twenty-two.",
+      "say": "Spain debuts? Koobarsee was seventeen. Ramoss, eighteen. Pooyol and Peekay, twenty two.",
+      "scene": {
+        "type": "timeline",
+        "kicker": "Age at Spain debut",
+        "title": "First cap",
+        "items": [
+          {
+            "year": "17",
+            "label": "Cubarsí · v Colombia, 2024",
+            "hl": true
+          },
+          {
+            "year": "18",
+            "label": "Ramos · v China, 2005"
+          },
+          {
+            "year": "22",
+            "label": "Puyol · v Netherlands, 2000"
+          },
+          {
+            "year": "22",
+            "label": "Piqué · v England, 2009"
+          }
+        ]
+      }
+    },
+    {
+      "text": "All four became world champions. Cubarsí did it thirteen years younger than Puyol.",
+      "scene": {
+        "type": "bars",
+        "kicker": "Age when they won the World Cup",
+        "title": "World champion at",
+        "items": [
+          {
+            "label": "Pau Cubarsí · 2026",
+            "value": 19,
+            "person": "cubarsiesp",
+            "hl": true
+          },
+          {
+            "label": "Gerard Piqué · 2010",
+            "value": 23,
+            "person": "piqueesp"
+          },
+          {
+            "label": "Sergio Ramos · 2010",
+            "value": 24,
+            "person": "ramosesp"
+          },
+          {
+            "label": "Carles Puyol · 2010",
+            "value": 32,
+            "person": "puyolesp"
+          }
+        ],
+        "unit": "yrs",
+        "max": 35
+      },
+      "say": "All four became world champions. Koobarsee did it thirteen years younger than Pooyol."
+    },
+    {
+      "text": "So where does Cubarsí end up? Better than all three? Tell me in the comments.",
+      "say": "So where does Pow Koobarsee end up? Better than all three? Tell me in the comments.",
+      "scene": {
+        "type": "compare",
+        "title": "At 19 years, 320 days",
+        "left": {
+          "person": "cubarsi",
+          "name": "Cubarsí",
+          "sub": "Barcelona"
+        },
+        "right": {
+          "person": "puyol",
+          "name": "Puyol",
+          "sub": "Barcelona B"
+        },
+        "rows": [
+          {
+            "label": "World Cups",
+            "l": 1,
+            "r": 0
+          },
+          {
+            "label": "League titles",
+            "l": 2,
+            "r": 0
+          },
+          {
+            "label": "First-team games",
+            "l": 139,
+            "r": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or.",
+      "scene": {
+        "type": "cta"
+      }
+    }
   ]
 }

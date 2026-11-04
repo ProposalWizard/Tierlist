@@ -1,0 +1,35 @@
+{
+  "_about": "Cesc Fàbregas's first Arsenal goal: Arsenal 5-1 Wolves, League Cup 4th round, Highbury, Tue 2 Dec 2003, near the end (88th minute), 4-1 to 5-1. He tapped in Sylvain Wiltord's cross (Sports Mole 'On this day', Daily Star report; Arsenal.com). The side of the cross is not in the sources, so it comes from the seed. Kits: Arsenal 2003-04 home red, white shorts, white socks (the figures cannot show the white sleeves); Wolves 2003-04 home old gold, black shorts. Keeper kits assumed. Defender names are not shown on screen.",
+  "teams": {
+    "home": { "name": "Arsenal", "kit": { "shirt": "#EF0107", "shorts": "#FFFFFF", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Wolverhampton Wanderers", "short": "Wolves", "kit": { "shirt": "#FDB913", "shorts": "#231F20", "socks": "#FDB913" }, "keeperKit": { "shirt": "#2E8B57", "shorts": "#1B1B1B", "socks": "#2E8B57" }, "popupTrim": "#231F20" }
+  },
+  "people": {
+    "cesc":    { "name": "Cesc Fabregas", "skin": "#ecc29f", "hair": "#2a1d15", "popupName": "Fàbregas" },
+    "wiltord": { "name": "Sylvain Wiltord", "skin": "#5e3a24", "hair": "#0d0a09" },
+    "kanu":    { "name": "Nwankwo Kanu", "skin": "#3e2618", "hair": "#0d0a09" },
+    "aliadiere": { "name": "Jeremie Aliadiere", "skin": "#e8b994", "hair": "#2a1d15" },
+    "d1": { "name": "Wolves defender", "skin": "#f0c3a0", "hair": "#5b3a22" },
+    "d2": { "name": "Wolves defender", "skin": "#e6b48f", "hair": "#2a1d15" },
+    "d3": { "name": "Wolves defender", "skin": "#5e3a24", "hair": "#0d0a09" },
+    "gk": { "name": "Wolves keeper", "skin": "#f2c4a6", "hair": "#6b4a2a" }
+  },
+  "clips": [
+    {
+      "id": "cesc-wolves",
+      "kind": "tap_in",
+      "attacking": "home",
+      "scorer": "cesc", "assister": "wiltord",
+      "defenders": ["d1", "d2", "d3"],
+      "keeper": "gk",
+      "teammates": ["kanu", "aliadiere"],
+      "minute": 88,
+      "scoreBefore": [4, 1], "scoreAfter": [5, 1],
+      "night": true,
+      "celebration": "arms_out",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "finish": "ground" },
+      "seed": "cesc-wolves-a"
+    }
+  ]
+}

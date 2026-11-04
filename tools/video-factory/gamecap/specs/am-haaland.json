@@ -1,0 +1,35 @@
+{
+  "_about": "Two Haaland goals. (1) Man City 2-1 Dortmund, Champions League group, Etihad, Wed 14 Sep 2022, 84th minute, 1-1 to 2-1: Joao Cancelo's cross from the left, Haaland's flying 'kung fu' volley past Alexander Meyer (Fox Sports, Man City). Kits: City home sky blue, white shorts; Dortmund yellow and black assumed (no source names the strip). (2) Man City 3-0 West Ham, Premier League, Etihad, Wed 3 May 2023, 70th minute, 1-0 to 2-0: Jack Grealish's through ball, Haaland chips Lukasz Fabianski for his 35th league goal, the record (Sports Mole, Yahoo). West Ham claret home kit assumed. Keeper kits assumed.",
+  "teams": {
+    "home": { "name": "Manchester City", "kit": { "shirt": "#6CABDD", "shorts": "#FFFFFF", "socks": "#6CABDD" }, "keeperKit": { "shirt": "#1F2A44", "shorts": "#1F2A44", "socks": "#1F2A44" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Borussia Dortmund", "short": "Dortmund", "kit": { "shirt": "#FDE100", "shorts": "#111111", "socks": "#FDE100" }, "keeperKit": { "shirt": "#2E8B57", "shorts": "#1B1B1B", "socks": "#2E8B57" }, "popupTrim": "#111111" }
+  },
+  "people": {
+    "haaland":  { "name": "Erling Haaland", "skin": "#f1cfb4", "hair": "#d9b46a" },
+    "cancelo":  { "name": "Joao Cancelo", "skin": "#c99a74", "hair": "#1d1512" },
+    "debruyne": { "name": "Kevin De Bruyne", "skin": "#f2c4a6", "hair": "#c98b4a" },
+    "foden":    { "name": "Phil Foden", "skin": "#f0c3a0", "hair": "#6b4a2a" },
+    "schlotterbeck": { "name": "Nico Schlotterbeck", "skin": "#f0c3a0", "hair": "#5b3a22" },
+    "sule":     { "name": "Niklas Sule", "skin": "#f2c4a6", "hair": "#3b2a1e" },
+    "guerreiro": { "name": "Raphael Guerreiro", "skin": "#d9a57e", "hair": "#1d1512" },
+    "meyer":    { "name": "Alexander Meyer", "skin": "#f2c4a6", "hair": "#6b4a2a" }
+  },
+  "clips": [
+    {
+      "id": "haaland-dortmund",
+      "kind": "volley",
+      "attacking": "home",
+      "scorer": "haaland", "assister": "cancelo",
+      "defenders": ["schlotterbeck", "sule", "guerreiro"],
+      "keeper": "meyer",
+      "teammates": ["debruyne", "foden"],
+      "minute": 84,
+      "scoreBefore": [1, 1], "scoreAfter": [2, 1],
+      "night": true,
+      "celebration": "roar",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "side": "left", "finish": "volley", "goalSide": "far" },
+      "seed": "haaland-bvb-a"
+    }
+  ]
+}
