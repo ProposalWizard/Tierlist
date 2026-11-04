@@ -220,7 +220,7 @@
   },
   {
    "text": "Then Moscow. Chelsea again, in the Champions League final. Ronaldo heads United in front.",
-   "say": "Then Moskoh. Chelsea again, in the Champions League final. Ronaldo heads United in front.",
+   "say": "Then Moscow. Chelsea again, in the Champions League final. Ronaldo heads United in front.",
    "scene": {
     "type": "gameclip",
     "popup": {
@@ -252,7 +252,7 @@
   },
   {
    "text": "Lampard levels. In the shootout, Ronaldo's penalty is saved. Then Terry slips, and United win it.",
-   "say": "Lampard levels. In the shootout, Ronaldo's penalty is saved. Then Terree slips, and United win it.",
+   "say": "Lampard levels. In the shootout, Ronaldo's penalty is saved. Then Terry slips, and United win it.",
    "scene": {
     "type": "score",
     "home": "mun",
