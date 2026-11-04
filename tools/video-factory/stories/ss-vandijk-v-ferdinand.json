@@ -1,249 +1,500 @@
 {
-  "id": "ss-vandijk-v-ferdinand",
-  "series": "Best season ever, settled",
-  "title": "Van Dijk 2018-19 v Ferdinand 2007-08: the best defender season?",
-  "sources": [
-    "https://en.wikipedia.org/wiki/2018%E2%80%9319_Liverpool_F.C._season",
-    "https://en.wikipedia.org/wiki/2007%E2%80%9308_Manchester_United_F.C._season",
-    "data/competition-history/premier-league.json (champions and runners-up 2007-08 and 2018-19)",
-    "data/competition-history/champions-league.json (2007-08 and 2018-19 finals)",
-    "data/ballondor/rankings.json (2019 podium, from ballondor.com)"
-  ],
-  "checked": "Liverpool 97 points, one league defeat (at City), one point behind City, 4-0 v Barcelona after losing 3-0, 2-0 final v Spurs (Wikipedia season page + local files); Van Dijk second in the 2019 Ballon d'Or behind Messi (ballondor.com rankings). United 87 points and 22 league goals conceded, Ferdinand's three goals (Wikipedia season page); league title and the 1-1, 6-5 penalties final v Chelsea (local files). Final venues and Ferdinand's captaincy left out (not confirmed).",
-  "clubs": {
-    "liverpool": {
-      "name": "Liverpool",
-      "short": "LIV",
-      "c1": "#c8102e",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "manutd": {
-      "name": "Manchester United",
-      "short": "MUN",
-      "c1": "#da291c",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "spurs": {
-      "name": "Tottenham Hotspur",
-      "short": "TOT",
-      "c1": "#ffffff",
-      "c2": "#132257",
-      "pattern": "plain"
-    },
-    "chelsea": {
-      "name": "Chelsea",
-      "short": "CHE",
-      "c1": "#034694",
-      "c2": "#ffffff",
-      "pattern": "plain"
-    },
-    "barca": {
-      "name": "Barcelona",
-      "short": "BAR",
-      "c1": "#a50044",
-      "c2": "#004d98",
-      "pattern": "stripes"
-    },
-    "juve": {
-      "name": "Juventus",
-      "short": "JUV",
-      "c1": "#ffffff",
-      "c2": "#111111",
-      "pattern": "stripes"
-    }
+ "id": "ss-vandijk-v-ferdinand",
+ "series": "Best season ever, settled",
+ "v2": true,
+ "title": "Van Dijk 2018-19 v Ferdinand 2007-08: the best defender season?",
+ "sources": [
+  "https://en.wikipedia.org/wiki/Virgil_van_Dijk",
+  "https://www.bbc.co.uk/sport/football/42483447",
+  "https://en.wikipedia.org/wiki/2018%E2%80%9319_Premier_League",
+  "https://en.wikipedia.org/wiki/2018%E2%80%9319_Liverpool_F.C._season",
+  "https://en.wikipedia.org/wiki/2019_UEFA_Champions_League_final",
+  "https://www.uefa.com/uefachampionsleague/history/seasons/2019/",
+  "https://en.wikipedia.org/wiki/2019_Ballon_d%27Or",
+  "https://www.ballondor.com",
+  "https://en.wikipedia.org/wiki/2007%E2%80%9308_Premier_League",
+  "https://en.wikipedia.org/wiki/2008_UEFA_Champions_League_final",
+  "https://www.aljazeera.com/sport/2008/05/200861505259480161.html",
+  "https://www.manutd.com/en/amp/news/detail/edwin-van-der-sar-reflects-on-the-2008-champions-league-penalty-shootout-win-over-chelsea"
+ ],
+ "checked": "Van Dijk joined Liverpool on 1 January 2018 for a reported £75m, a world record for a defender (BBC, Wikipedia). 2018-19: 97 points, one league defeat, 22 conceded, City 98 (Wikipedia PL, Wikipedia season). Barcelona 3-0 Liverpool 1 May 2019, Liverpool 4-0 Barcelona 7 May 2019 without Salah and Firmino (Wikipedia season, UEFA). Final 1 June 2019 Madrid, Spurs 0-2, Origi's 87th-minute goal from Matip (Wikipedia final, UEFA). Ballon d'Or 2019 Messi 686, Van Dijk 679, Ronaldo 476 (Wikipedia, ballondor.com). 2007-08: United 87, Chelsea 85, 22 conceded (Wikipedia). Moscow final 21 May 2008 1-1, 6-5 on penalties, Terry slipped and hit the post, Van der Sar saved Anelka (Wikipedia final, Al Jazeera, Man United). Gameplay: Origi's goal and Van der Sar's save recreated with gamecap (specs origi-2019, rio-2008).",
+ "clubs": {
+  "liv": {
+   "name": "Liverpool",
+   "short": "LIV",
+   "c1": "#c8102e",
+   "c2": "#ffffff",
+   "pattern": "plain"
   },
-  "people": {
-    "vvd": {
-      "name": "Virgil van Dijk",
-      "skin": "brown",
-      "hair": [
-        "curlytop",
-        "#1a120c"
-      ],
-      "beard": "short",
-      "kit": "liverpool"
-    },
-    "rio": {
-      "name": "Rio Ferdinand",
-      "skin": "brown",
-      "hair": [
-        "buzz",
-        "#111111"
-      ],
-      "beard": "none",
-      "kit": "manutd"
-    }
+  "mun": {
+   "name": "Manchester United",
+   "short": "MUN",
+   "c1": "#da291c",
+   "c2": "#ffffff",
+   "pattern": "plain"
   },
-  "lines": [
-    {
-      "text": "A defender nearly won the Ballon d'Or. Another won everything that mattered. Van Dijk or Rio?",
-      "scene": {
-        "type": "title",
-        "heading": "VAN DIJK v FERDINAND",
-        "sub": "2018-19 v 2007-08",
-        "pill": "SETTLED",
-        "person": "vvd"
-      }
-    },
-    {
-      "text": "Rio Ferdinand, twenty oh seven, oh eight. The calmest centre-back in England.",
-      "scene": {
-        "type": "person",
-        "person": "rio",
-        "label": "Man United · 2007-08",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "United conceded just twenty-two league goals. Eighty-seven points. Rio even chipped in with three goals.",
-      "scene": {
-        "type": "stats",
-        "title": "UNITED 2007-08",
-        "person": "rio",
-        "items": [
-          {
-            "n": "22",
-            "l": "league goals conceded"
-          },
-          {
-            "n": "87",
-            "l": "points"
-          },
-          {
-            "n": "3",
-            "l": "Rio goals"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Virgil van Dijk, twenty eighteen, nineteen. Liverpool lose one league game all season.",
-      "scene": {
-        "type": "person",
-        "person": "vvd",
-        "label": "Liverpool · 2018-19",
-        "mood": "happy"
-      }
-    },
-    {
-      "text": "Ninety-seven points. The most ever for a team that didn't win the title.",
-      "scene": {
-        "type": "stats",
-        "title": "LIVERPOOL 2018-19",
-        "person": "vvd",
-        "items": [
-          {
-            "n": "97",
-            "l": "points"
-          },
-          {
-            "n": "1",
-            "l": "league defeat"
-          },
-          {
-            "n": "2nd",
-            "l": "Ballon d'Or"
-          }
-        ]
-      }
-    },
-    {
-      "text": "On numbers, Van Dijk. Ten more points, and second in the Ballon d'Or, behind only Messi.",
-      "scene": {
-        "type": "podium",
-        "year": "2019",
-        "title": "BALLON D'OR",
-        "places": [
-          {
-            "name": "Lionel Messi",
-            "club": "barca"
-          },
-          {
-            "person": "vvd",
-            "club": "liverpool"
-          },
-          {
-            "name": "Cristiano Ronaldo",
-            "club": "juve"
-          }
-        ]
-      }
-    },
-    {
-      "text": "On trophies, Rio. The league and the Champions League. The double.",
-      "scene": {
-        "type": "trophies",
-        "person": "rio",
-        "items": [
-          {
-            "kind": "league",
-            "label": "Premier League"
-          },
-          {
-            "kind": "bigears",
-            "label": "Champions League"
-          }
-        ]
-      }
-    },
-    {
-      "text": "Van Dijk lost the league by a single point to City.",
-      "scene": {
-        "type": "stamp",
-        "text": "ONE POINT SHORT",
-        "person": "vvd",
-        "color": "red"
-      }
-    },
-    {
-      "text": "Now the twist. Both men won the Champions League final against an English club.",
-      "scene": {
-        "type": "text",
-        "heading": "THE TWIST",
-        "body": "Ferdinand's United beat Chelsea in 2008. Van Dijk's Liverpool beat Spurs in 2019. Two all-English finals, two defenders who won them."
-      }
-    },
-    {
-      "text": "Rio's went to penalties. One-all, then six-five.",
-      "scene": {
-        "type": "score",
-        "home": "manutd",
-        "away": "chelsea",
-        "hs": 1,
-        "as": 1,
-        "date": "21 May 2008",
-        "comp": "Champions League final",
-        "note": "United win 6-5 on penalties"
-      }
-    },
-    {
-      "text": "Van Dijk's was easier. Two-nil. After a four-nil comeback against Barcelona.",
-      "scene": {
-        "type": "score",
-        "home": "spurs",
-        "away": "liverpool",
-        "hs": 0,
-        "as": 2,
-        "date": "1 June 2019",
-        "comp": "Champions League final"
-      }
-    },
-    {
-      "text": "Rio has the medals. But a defender second in the Ballon d'Or? That's the better season. Van Dijk.",
-      "scene": {
-        "type": "stamp",
-        "text": "VAN DIJK",
-        "person": "vvd",
-        "color": "white"
-      }
-    },
-    {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
-      "scene": {
-        "type": "cta"
-      }
+  "che": {
+   "name": "Chelsea",
+   "short": "CHE",
+   "c1": "#034694",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "mci": {
+   "name": "Manchester City",
+   "short": "MCI",
+   "c1": "#6cabdd",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "badge": "FC Barcelona"
+  },
+  "tot": {
+   "name": "Tottenham Hotspur",
+   "short": "TOT",
+   "c1": "#ffffff",
+   "c2": "#132257",
+   "pattern": "plain"
+  },
+  "ars": {
+   "name": "Arsenal",
+   "short": "ARS",
+   "c1": "#ef0107",
+   "c2": "#ffffff",
+   "pattern": "sides"
+  },
+  "juv": {
+   "name": "Juventus",
+   "short": "JUV",
+   "c1": "#111111",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  }
+ },
+ "people": {
+  "vvd": {
+   "name": "Virgil van Dijk",
+   "skin": "brown",
+   "hair": [
+    "crop",
+    "#1a120c"
+   ],
+   "beard": "short",
+   "beardCol": "#1a120c",
+   "kit": "liv"
+  },
+  "rio": {
+   "name": "Rio Ferdinand",
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "none",
+   "kit": "mun"
+  },
+  "messi": {
+   "name": "Lionel Messi",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#4a3424"
+   ],
+   "beard": "full",
+   "beardCol": "#4a3424",
+   "kit": "bar"
+  },
+  "ronaldo": {
+   "name": "Cristiano Ronaldo",
+   "skin": "tan",
+   "hair": [
+    "slick",
+    "#1a120c"
+   ],
+   "beard": "none",
+   "kit": "juv"
+  }
+ },
+ "lines": [
+  {
+   "text": "A defender came seven points from the Ballon d'Or. Another won everything that mattered. Van Dijk, or Rio?",
+   "scene": {
+    "type": "title",
+    "heading": "VAN DIJK v RIO",
+    "sub": "2018/19 v 2007/08",
+    "pill": "BEST SEASON EVER?",
+    "person": "vvd",
+    "club": "liv"
+   },
+   "say": "A defender came seven points from the Balon Dor. Another won everything that mattered. Van Dyke, or Reeoh?"
+  },
+  {
+   "text": "January 2018. Liverpool pay seventy-five million pounds for Virgil van Dijk. A world record for a defender.",
+   "scene": {
+    "type": "news",
+    "section": "Transfers",
+    "headline": "Liverpool sign Van Dijk for world-record fee",
+    "standfirst": "The Dutch centre-back joins from Southampton for a reported £75m, the most ever paid for a defender.",
+    "date": "1 January 2018",
+    "byline": "Knowitball recap",
+    "club": "liv",
+    "person": "vvd",
+    "nav": [
+     "Football",
+     "Transfers",
+     "Liverpool"
+    ]
+   },
+   "say": "January, twenty eighteen. Liverpool pay seventy five million pounds for Virgil van Dijk. A world record for a defender."
+  },
+  {
+   "text": "In 2018-19, Liverpool lose one league game, and still finish second. City get ninety-eight.",
+   "scene": {
+    "type": "table",
+    "season": "Premier League 2018/19",
+    "title": "Final table",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "mci",
+      "p": 38,
+      "w": 32,
+      "d": 2,
+      "l": 4,
+      "gd": 72,
+      "pts": 98
+     },
+     {
+      "pos": 2,
+      "club": "liv",
+      "p": 38,
+      "w": 30,
+      "d": 7,
+      "l": 1,
+      "gd": 67,
+      "pts": 97,
+      "hl": true
+     },
+     {
+      "pos": 3,
+      "club": "che",
+      "p": 38,
+      "w": 21,
+      "d": 9,
+      "l": 8,
+      "gd": 24,
+      "pts": 72
+     },
+     {
+      "pos": 4,
+      "club": "tot",
+      "p": 38,
+      "w": 23,
+      "d": 2,
+      "l": 13,
+      "gd": 28,
+      "pts": 71
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
+     }
+    ],
+    "gap": {
+     "from": 1,
+     "to": 2,
+     "label": "1 pt",
+     "at": 0.45
     }
-  ]
+   },
+   "say": "In twenty eighteen, nineteen, Liverpool lose one league game, and still finish second. City get ninety eight."
+  },
+  {
+   "text": "In Europe, they lose three-nil at the Nou Camp. Dead and buried.",
+   "scene": {
+    "type": "score",
+    "home": "bar",
+    "away": "liv",
+    "hs": 3,
+    "as": 0,
+    "date": "1 May 2019 · Camp Nou",
+    "comp": "Champions League semi-final",
+    "note": "First leg"
+   },
+   "say": "In Europe, they lose three nil at the Noo Camp. Dead and buried."
+  },
+  {
+   "text": "Then Anfield. No Salah, no Firmino. Four-nil.",
+   "scene": {
+    "type": "score",
+    "home": "liv",
+    "away": "bar",
+    "hs": 4,
+    "as": 0,
+    "date": "7 May 2019 · Anfield",
+    "comp": "Champions League semi-final",
+    "note": "Liverpool win 4-3 on aggregate"
+   },
+   "say": "Then Anfield. No Sahlah, no Firmeeno. Four-nil."
+  },
+  {
+   "text": "In the final, Spurs. Origi seals it. Two-nil. Champions of Europe.",
+   "scene": {
+    "type": "gameclip",
+    "popup": {
+     "home": "tot",
+     "away": "liv",
+     "homeName": "Spurs",
+     "hs0": 0,
+     "as0": 1,
+     "hs": 0,
+     "as": 2,
+     "scorer": "Origi",
+     "assist": "Matip"
+    },
+    "caption": "Champions of Europe",
+    "parts": [
+     [
+      "work/gc/origi-2019/origi-87/tv",
+      24,
+      82
+     ],
+     [
+      "work/gc/origi-2019/origi-87/high",
+      82,
+      127
+     ],
+     [
+      "work/gc/origi-2019/origi-87/tight",
+      15,
+      75
+     ]
+    ],
+    "goalAt": 2.7
+   },
+   "say": "In the final, Spurs. Oreegee seals it. Two-nil. Champions of Europe."
+  },
+  {
+   "text": "December. Messi six hundred and eighty-six. Van Dijk six hundred and seventy-nine. Seven points.",
+   "scene": {
+    "type": "podium",
+    "year": "2019",
+    "title": "Ballon d'Or",
+    "places": [
+     {
+      "person": "messi",
+      "club": "bar",
+      "points": 686
+     },
+     {
+      "person": "vvd",
+      "club": "liv",
+      "points": 679
+     },
+     {
+      "person": "ronaldo",
+      "club": "juv",
+      "points": 476
+     }
+    ]
+   },
+   "say": "December. Messi six hundred and eighty-six. Van Dyke six hundred and seventy-nine. Seven points."
+  },
+  {
+   "text": "Now Rio Ferdinand, 2007-08. United concede twenty-two league goals, and win the title by two points.",
+   "scene": {
+    "type": "table",
+    "season": "Premier League 2007/08",
+    "title": "Final table",
+    "rows": [
+     {
+      "pos": 1,
+      "club": "mun",
+      "p": 38,
+      "w": 27,
+      "d": 6,
+      "l": 5,
+      "gd": 58,
+      "pts": 87,
+      "hl": true
+     },
+     {
+      "pos": 2,
+      "club": "che",
+      "p": 38,
+      "w": 25,
+      "d": 10,
+      "l": 3,
+      "gd": 39,
+      "pts": 85
+     },
+     {
+      "pos": 3,
+      "club": "ars",
+      "p": 38,
+      "w": 24,
+      "d": 11,
+      "l": 3,
+      "gd": 43,
+      "pts": 83
+     },
+     {
+      "pos": 4,
+      "club": "liv",
+      "p": 38,
+      "w": 21,
+      "d": 13,
+      "l": 4,
+      "gd": 39,
+      "pts": 76
+     }
+    ],
+    "zones": [
+     {
+      "kind": "champ",
+      "rows": [
+       1,
+       1
+      ]
+     },
+     {
+      "kind": "ucl",
+      "rows": [
+       2,
+       4
+      ]
+     }
+    ],
+    "gap": {
+     "from": 1,
+     "to": 2,
+     "label": "2 pts",
+     "at": 0.45
+    }
+   },
+   "say": "Now Reeoh Ferdinand, twenty oh seven, oh eight. United concede twenty two league goals, and win the title by two points."
+  },
+  {
+   "text": "Then the first all-English Champions League final. Moscow, in the rain. One-one.",
+   "scene": {
+    "type": "score",
+    "home": "mun",
+    "away": "che",
+    "hs": 1,
+    "as": 1,
+    "date": "21 May 2008 · Moscow",
+    "comp": "Champions League final",
+    "ft": "AFTER EXTRA TIME",
+    "note": "Ronaldo scores, Lampard equalises"
+   },
+   "say": "Then the first all-English Champions League final. Moscow, in the rain. One-one."
+  },
+  {
+   "text": "Penalties. John Terry steps up to win it for Chelsea. He slips, and hits the post.",
+   "scene": {
+    "type": "stamp",
+    "text": "SLIP",
+    "sub": "Terry hits the post",
+    "color": "yellow"
+   },
+   "say": "Penalties. John Terry steps up to win it for Chelsea. He slips, and hits the post."
+  },
+  {
+   "text": "Sudden death. Van der Sar saves from Anelka. United win six-five.",
+   "scene": {
+    "type": "gameclip",
+    "caption": "Saved!",
+    "parts": [
+     [
+      "work/gc/rio-2008/vds-save/tv",
+      0,
+      23
+     ],
+     [
+      "work/gc/rio-2008/vds-save/fan",
+      23,
+      106
+     ]
+    ]
+   },
+   "say": "Sudden death. Van der Sar saves from Anelka. United win six-five."
+  },
+  {
+   "text": "Both defences let in twenty-two. Rio has more medals. Van Dijk has the bigger season.",
+   "scene": {
+    "type": "compare",
+    "title": "Head to head",
+    "left": {
+     "person": "vvd",
+     "name": "Van Dijk",
+     "sub": "2018/19"
+    },
+    "right": {
+     "person": "rio",
+     "name": "Ferdinand",
+     "sub": "2007/08"
+    },
+    "rows": [
+     {
+      "label": "League points",
+      "l": 97,
+      "r": 87
+     },
+     {
+      "label": "Goals conceded",
+      "l": 22,
+      "r": 22,
+      "lower": true
+     },
+     {
+      "label": "Big trophies",
+      "l": 1,
+      "r": 2
+     },
+     {
+      "label": "Ballon d'Or place",
+      "l": "2nd",
+      "r": "-",
+      "better": "l"
+     }
+    ]
+   },
+   "say": "Both defences let in twenty-two. Reeoh has more medals. Van Dyke has the bigger season."
+  },
+  {
+   "text": "A defender, seven points from the Ballon d'Or. Settled: Van Dijk.",
+   "scene": {
+    "type": "stamp",
+    "text": "VAN DIJK",
+    "sub": "Best season ever, settled",
+    "person": "vvd",
+    "color": "green"
+   },
+   "say": "A defender, seven points from the Balon Dor. Settled: Van Dyke."
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }
