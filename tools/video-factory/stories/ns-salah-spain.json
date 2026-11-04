@@ -2,27 +2,27 @@
   "id": "ns-salah-spain",
   "series": "What if the countries were swapped?",
   "title": "What if Mo Salah was Spanish?",
+  "v2": true,
   "sources": [
-    "https://www.goal.com/en/news/what-is-salah-s-record-at-international-level-egypt-caps/blt879ac9f6fe9ca3ee",
-    "https://ca.sports.yahoo.com/news/africa-cup-nations-mohamed-salah-072511819.html",
-    "https://guardian.ng/sport/football/the-missing-medal-in-collection-of-serial-winner-salah/",
-    "https://english.ahram.org.eg/NewsAFCON/2021/460548.aspx",
-    "https://www.sport-histoire.fr/en/Sport/Football/Team/Spain.php",
-    "https://khelnow.com/football/spain-international-trophies-list",
-    "https://rfef.es/en/noticias/honours-spain-becomes-the-most-decorated-country-in-europe-with-their-nations-league-title",
-    "https://foot-africa.com/en/news/world-cup-2026-spains-record-in-major-tournament-finals-1284694/",
-    "https://www.sortiraparis.com/en/what-to-do-in-paris/sport-wellness/articles/349129-world-cup-2026-all-results-and-the-final-score",
-    "https://www.khaleejtimes.com/sports/fifa-world-cup/spain-celebrate-glory-argentina-heartbreak-unrest?amp=1",
-    "https://iol.co.za/2026-07-07-egypt-v-argentina/",
-    "https://www.i24news.tv/en/news/fifa-world-cup-2026/artc-argentina-complete-dramatic-comeback-to-knock-egypt-out-of-world-cup"
+    "https://www.goal.com/en/news/afcon-2017-final-egypt-cameroon",
+    "https://en.wikipedia.org/wiki/2017_Africa_Cup_of_Nations_final",
+    "https://en.wikipedia.org/wiki/2021_Africa_Cup_of_Nations_final",
+    "https://www.fotmob.com/pt-BR/news/t0vvmh0we1v81qnw9y2cqqop6/mane-sends-senegal-to-world-cup-as-salah-suffers-penalty-woe-for-egypt-amid-laser-chaos",
+    "https://www.si.com/soccer/2022/03/29/mohamed-salah-penalty-egypt-senegal-laser-pointers",
+    "https://uk.sports.yahoo.com/news/egypt-senegal-laser-pointers-mohamed-salah-world-cup-qualifying-200430948.html",
+    "https://www.al-monitor.com/originals/2026/07/egypt-loses-argentina-3-2-bows-out-world-cup-after-historic-run",
+    "https://www.i24news.tv/en/news/fifa-world-cup-2026/artc-argentina-complete-dramatic-comeback-to-knock-egypt-out-of-world-cup",
+    "https://iol.co.za/2026-07-20-world-cup-2026-final-ferran-torres-seals-historic-world-cup-glory-for-spain-against-10-man-argentina/",
+    "https://www.itv.com/news/2026-07-19/spain-vs-argentina-world-cup-final-2026-kick-off-time-halftime-show-updates",
+    "https://en.wikipedia.org/wiki/Spain_national_football_team"
   ],
-  "checked": "Salah's Egypt debut 2011, no senior trophy, AFCON finals lost 2017 (Cameroon, late goal) and 2021 (Senegal, penalties, played Feb 2022) (Goal + Yahoo + Guardian NG + Ahram). Spain since then: Euro 2012 (4-0 v Italy), Nations League 2023 (pens v Croatia), Euro 2024 (2-1 v England), World Cup 2026 (1-0 aet v Argentina) (Sport-histoire + Khel Now + RFEF + Foot Africa + Sortiraparis + Khaleej Times). Egypt lost to Argentina 3-2 in the 2026 last sixteen after leading 2-0, 7 July 2026 (IOL + i24 + Sortiraparis). Alternate world clearly imagined.",
+  "checked": "Salah's Egypt debut 2011. AFCON 2017 final: Egypt led, Cameroon won 2-1 with Aboubakar's 88th-minute goal, Libreville, 5 Feb 2017 (Wikipedia, Goal). AFCON 2021 final (6 Feb 2022): 0-0, Senegal won 4-2 on pens, Mané the winning kick (Wikipedia, FotMob). 29 March 2022 World Cup play-off v Senegal: Salah, lit by green lasers, shot his penalty over; Mané scored the winner again (SI, Yahoo, FotMob). 2026: Egypt's first World Cup knockout game, led Argentina 2-0, lost 3-2 with a stoppage-time winner, 7 July, Atlanta (Al-Monitor, i24). Spain since 2011: Euro 2012, Nations League 2023, Euro 2024, World Cup 2026 (Ferran Torres, 106th minute, 1-0 aet v Argentina, 19 July) (Wikipedia, IOL, ITV). The Spain-Salah goal is clearly imagined. Kits in the game footage are plain.",
   "clubs": {
     "egy": {
       "name": "Egypt",
       "short": "EGY",
-      "c1": "#ce1126",
-      "c2": "#000000",
+      "c1": "#c8102e",
+      "c2": "#ffffff",
       "pattern": "plain"
     },
     "esp": {
@@ -32,11 +32,18 @@
       "c2": "#ffc400",
       "pattern": "plain"
     },
-    "ita": {
-      "name": "Italy",
-      "short": "ITA",
-      "c1": "#0b56a4",
-      "c2": "#ffffff",
+    "cmr": {
+      "name": "Cameroon",
+      "short": "CMR",
+      "c1": "#007a5e",
+      "c2": "#fcd116",
+      "pattern": "plain"
+    },
+    "sen": {
+      "name": "Senegal",
+      "short": "SEN",
+      "c1": "#ffffff",
+      "c2": "#00853f",
       "pattern": "plain"
     },
     "arg": {
@@ -45,6 +52,20 @@
       "c1": "#75aadb",
       "c2": "#ffffff",
       "pattern": "stripes"
+    },
+    "ita": {
+      "name": "Italy",
+      "short": "ITA",
+      "c1": "#1f5fbf",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "liv": {
+      "name": "Liverpool",
+      "short": "LIV",
+      "c1": "#c8102e",
+      "c2": "#ffffff",
+      "pattern": "plain"
     }
   },
   "people": {
@@ -53,10 +74,10 @@
       "skin": "tan",
       "hair": [
         "bigcurl",
-        "#1b1410"
+        "#1d1510"
       ],
       "beard": "full",
-      "beardCol": "#1b1410",
+      "beardCol": "#1d1510",
       "kit": "egy"
     },
     "salahesp": {
@@ -64,73 +85,183 @@
       "skin": "tan",
       "hair": [
         "bigcurl",
-        "#1b1410"
+        "#1d1510"
       ],
       "beard": "full",
-      "beardCol": "#1b1410",
+      "beardCol": "#1d1510",
       "kit": "esp"
     }
   },
   "lines": [
     {
-      "text": "What if Mo Salah had been born in Spain instead of Egypt?",
+      "text": "Mo Salah has played in two Africa Cup of Nations finals for Egypt. He lost both. What if he'd been born in Spain?",
+      "say": "Mo Sahlah has played in two Africa Cup of Nations finals for Egypt. He lost both. What if he'd been born in Spain?",
       "scene": {
         "type": "title",
-        "heading": "MOHAMED SALAH",
+        "heading": "MO SALAH",
         "sub": "Egypt · since 2011",
         "pill": "WHAT IF HE WAS SPANISH?",
         "person": "salah"
       }
     },
     {
-      "text": "Real world first. Salah made his Egypt debut in twenty eleven.",
+      "text": "2017. Egypt lead Cameroon in the final. Then the winner goes in with two minutes left.",
+      "say": "Twenty seventeen. Egypt lead Cameroon in the final. Then the winner goes in with two minutes left.",
       "scene": {
-        "type": "person",
-        "person": "salah",
-        "label": "Egypt debut: 2011",
-        "mood": "happy"
+        "type": "score",
+        "home": "egy",
+        "away": "cmr",
+        "hs": 1,
+        "as": 2,
+        "date": "5 February 2017 · Libreville",
+        "comp": "Africa Cup of Nations final",
+        "note": "Aboubakar scores in the 88th minute"
       }
     },
     {
-      "text": "He has reached two Africa Cup of Nations finals, and lost both.",
+      "text": "2022. The final against Senegal goes to penalties. His Liverpool team-mate Sadio Mané scores the winner.",
+      "say": "Twenty twenty-two. The final against Senegal goes to penalties. His Liverpool team-mate Sadio Mahnay scores the winner.",
+      "scene": {
+        "type": "score",
+        "home": "sen",
+        "away": "egy",
+        "hs": 0,
+        "as": 0,
+        "date": "6 February 2022 · Yaoundé",
+        "comp": "Africa Cup of Nations final",
+        "ft": "AFTER EXTRA TIME",
+        "note": "Senegal win 4-2 on penalties"
+      }
+    },
+    {
+      "text": "Seven weeks later, a World Cup place at stake. Green lasers in his face, Salah blazes his penalty over.",
+      "say": "Seven weeks later, a World Cup place at stake. Green lasers in his face, Sahlah blazes his penalty over.",
+      "scene": {
+        "type": "news",
+        "section": "World Cup play-off",
+        "headline": "Salah misses as Senegal win shoot-out",
+        "standfirst": "Fans shine green lasers at Egypt's players in Dakar. Mané scores the decisive penalty again, and Egypt miss the World Cup.",
+        "date": "29 March 2022",
+        "byline": "Knowitball recap",
+        "person": "salah",
+        "club": "egy",
+        "nav": [
+          "Football",
+          "World Cup",
+          "Egypt",
+          "Senegal"
+        ]
+      }
+    },
+    {
+      "text": "This summer, Egypt's first ever World Cup knockout game. They go two-nil up against Argentina.",
+      "scene": {
+        "type": "gameclip",
+        "popup": {
+          "home": "egy",
+          "away": "arg",
+          "hs0": 1,
+          "as0": 0,
+          "hs": 2,
+          "as": 0
+        },
+        "caption": "2-0 EGYPT",
+        "parts": [
+          [
+            "work/gamecap/salah-egy-arg/egypt-2-0/high",
+            0,
+            130
+          ]
+        ],
+        "goalAt": 1.7
+      }
+    },
+    {
+      "text": "And lose three-two, to a winner in stoppage time.",
+      "scene": {
+        "type": "score",
+        "home": "egy",
+        "away": "arg",
+        "hs": 2,
+        "as": 3,
+        "date": "7 July 2026 · Atlanta",
+        "comp": "World Cup round of 16",
+        "note": "Argentina come back from 2-0 down"
+      }
+    },
+    {
+      "text": "Now Spain, in the same years. Euro 2012. The Nations League. Euro 2024.",
+      "say": "Now Spain, in the same years. Euro twenty twelve. The Nations League. Euro twenty twenty-four.",
       "scene": {
         "type": "timeline",
+        "kicker": "Spain since 2011",
+        "title": "Spain kept winning",
         "items": [
           {
-            "year": "2017",
-            "label": "AFCON final: lost to Cameroon"
+            "year": "2012",
+            "label": "Euro 2012: 4-0 v Italy",
+            "club": "esp"
           },
           {
-            "year": "2022",
-            "label": "AFCON final: lost to Senegal on pens"
+            "year": "2023",
+            "label": "Nations League: pens v Croatia",
+            "club": "esp"
+          },
+          {
+            "year": "2024",
+            "label": "Euro 2024: 2-1 v England",
+            "club": "esp"
+          },
+          {
+            "year": "2026",
+            "label": "World Cup: 1-0 v Argentina",
+            "club": "esp",
+            "hl": true
           }
         ]
       }
     },
     {
-      "text": "Cameroon won the first with a late goal. Senegal won the second on penalties.",
-      "scene": {
-        "type": "stamp",
-        "text": "RUNNER-UP AGAIN",
-        "person": "salah",
-        "color": "red"
-      }
-    },
-    {
-      "text": "This summer Egypt led Argentina two-nil in the World Cup, then lost three-two.",
+      "text": "And this summer, the World Cup. Ferran Torres wins the final in extra time.",
+      "say": "And this summer, the World Cup. Feran Torres wins the final in extra time.",
       "scene": {
         "type": "score",
-        "home": "arg",
-        "away": "egy",
-        "hs": 3,
-        "as": 2,
-        "date": "7 July 2026",
-        "comp": "World Cup last sixteen",
-        "note": "Egypt led 2-0"
+        "home": "esp",
+        "away": "arg",
+        "hs": 1,
+        "as": 0,
+        "date": "19 July 2026 · New Jersey",
+        "comp": "World Cup final",
+        "ft": "AFTER EXTRA TIME",
+        "note": "Ferran Torres, 106th minute"
       }
     },
     {
-      "text": "Now look at Spain in exactly the same years.",
+      "text": "That's four major trophies while Salah has been playing. Egypt have none.",
+      "say": "That's four major trophies while Sahlah has been playing. Egypt have none.",
+      "scene": {
+        "type": "bars",
+        "kicker": "Major trophies since 2011",
+        "title": "Four against none",
+        "items": [
+          {
+            "label": "Spain",
+            "value": 4,
+            "club": "esp",
+            "hl": true
+          },
+          {
+            "label": "Egypt",
+            "value": 0,
+            "club": "egy"
+          }
+        ],
+        "max": 4
+      }
+    },
+    {
+      "text": "So in this alternate world, Salah is Spain's right winger. Lamine Yamal would have a fight on his hands.",
+      "say": "So in this alternate world, Sahlah is Spain's right winger. Lameen Yamal would have a fight on his hands.",
       "scene": {
         "type": "person",
         "person": "salahesp",
@@ -139,65 +270,37 @@
       }
     },
     {
-      "text": "Euro twenty twelve, with a four-nil final against Italy.",
+      "text": "And in this imagined final, it's Salah who scores the winner.",
+      "say": "And in this imagined final, it's Sahlah who scores the winner.",
       "scene": {
-        "type": "score",
-        "home": "esp",
-        "away": "ita",
-        "hs": 4,
-        "as": 0,
-        "date": "1 July 2012",
-        "comp": "Euro 2012 final"
+        "type": "gameclip",
+        "popup": {
+          "home": "esp",
+          "away": "arg",
+          "hs0": 0,
+          "as0": 0,
+          "hs": 1,
+          "as": 0,
+          "scorer": "Salah"
+        },
+        "caption": "ALTERNATE WORLD",
+        "parts": [
+          [
+            "work/gamecap/salah-esp-arg/salah-esp/high",
+            40,
+            170
+          ]
+        ],
+        "goalAt": 2.167
       }
     },
     {
-      "text": "The Nations League in twenty twenty-three. Euro twenty twenty-four. And this summer, the World Cup.",
-      "scene": {
-        "type": "trophies",
-        "items": [
-          {
-            "kind": "euro",
-            "label": "Euro 2012"
-          },
-          {
-            "kind": "cup",
-            "label": "Nations League 2023"
-          },
-          {
-            "kind": "euro",
-            "label": "Euro 2024"
-          },
-          {
-            "kind": "worldcup",
-            "label": "World Cup 2026"
-          }
-        ]
-      }
-    },
-    {
-      "text": "That's four major trophies while Salah has been playing.",
-      "scene": {
-        "type": "stats",
-        "title": "Spain since Salah's debut",
-        "items": [
-          {
-            "n": "4",
-            "l": "major trophies"
-          },
-          {
-            "n": "1",
-            "l": "World Cup"
-          }
-        ]
-      }
-    },
-    {
-      "text": "So in this alternate world, Salah is Spain's right winger.",
+      "text": "Four trophies instead of none, and a World Cup winner's medal.",
       "scene": {
         "type": "whatif",
         "title": "Salah's international trophies",
         "real": {
-          "label": "Egypt (real)",
+          "label": "Egypt",
           "value": "0"
         },
         "alt": {
@@ -207,32 +310,26 @@
       }
     },
     {
-      "text": "Four trophies instead of none. And a World Cup winner's medal.",
-      "scene": {
-        "type": "quote",
-        "person": "salahesp",
-        "text": "So this is what it feels like."
-      }
-    },
-    {
-      "text": "Egypt's king, or Spain's world champion? Which would you pick? Comment below.",
+      "text": "Egypt's king, or Spain's world champion? Which would you pick? Tell me in the comments.",
       "scene": {
         "type": "versus",
-        "title": "Same player, different passport",
+        "title": "Which Salah would you be?",
         "left": {
           "person": "salah",
           "label": "Egypt",
-          "value": "0"
+          "value": "0",
+          "sub": "trophies"
         },
         "right": {
           "person": "salahesp",
           "label": "Spain",
-          "value": "4"
+          "value": "4",
+          "sub": "trophies"
         }
       }
     },
     {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "text": "Follow for more, and play Road to Ballon d'Or.",
       "scene": {
         "type": "cta"
       }

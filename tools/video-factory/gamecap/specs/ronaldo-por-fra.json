@@ -1,0 +1,116 @@
+{
+  "_about": "Real goal, Portugal 1-0 France (aet), Euro 2016 final, Paris, 10 July 2016, 109': Moutinho's pass, Éder holds off Koscielny and shoots low from about 25 yards past Lloris (Wikipedia, UEFA).",
+  "teams": {
+    "home": {
+      "name": "Portugal",
+      "kit": {
+        "shirt": "#C8102E",
+        "shorts": "#046A38",
+        "socks": "#C8102E"
+      },
+      "keeperKit": {
+        "shirt": "#E8E04A",
+        "shorts": "#1A1A1A",
+        "socks": "#E8E04A"
+      },
+      "popupTrim": "#046A38"
+    },
+    "away": {
+      "name": "France",
+      "kit": {
+        "shirt": "#1D3C8F",
+        "shorts": "#FFFFFF",
+        "socks": "#C8102E"
+      },
+      "keeperKit": {
+        "shirt": "#E8E04A",
+        "shorts": "#1A1A1A",
+        "socks": "#E8E04A"
+      },
+      "popupTrim": "#FFFFFF"
+    }
+  },
+  "people": {
+    "eder": {
+      "name": "Éder",
+      "skin": "#4a2e1e",
+      "hair": "#0d0a09"
+    },
+    "moutinho": {
+      "name": "João Moutinho",
+      "skin": "#e0b08a",
+      "hair": "#2a1d15"
+    },
+    "nani": {
+      "name": "Nani",
+      "skin": "#6e4630",
+      "hair": "#0d0a09"
+    },
+    "koscielny": {
+      "name": "Laurent Koscielny",
+      "skin": "#efc4a2",
+      "hair": "#3b2a1e"
+    },
+    "umtiti": {
+      "name": "Samuel Umtiti",
+      "skin": "#4a2e1e",
+      "hair": "#0d0a09"
+    },
+    "pogba": {
+      "name": "Paul Pogba",
+      "skin": "#3e2618",
+      "hair": "#0d0a09"
+    },
+    "lloris": {
+      "name": "Hugo Lloris",
+      "skin": "#efc4a2",
+      "hair": "#3b2a1e"
+    }
+  },
+  "clips": [
+    {
+      "id": "eder-2016",
+      "kind": "long_range",
+      "attacking": "home",
+      "scorer": "eder",
+      "assister": "moutinho",
+      "defenders": [
+        "koscielny",
+        "umtiti",
+        "pogba"
+      ],
+      "keeper": "lloris",
+      "teammates": [
+        "nani"
+      ],
+      "minute": 109,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "scoreAfter": [
+        1,
+        0
+      ],
+      "night": true,
+      "celebration": "knee_slide",
+      "cameras": [
+        "tv",
+        "high",
+        "tight"
+      ],
+      "recreate": {
+        "scorerSpot": [
+          -1,
+          22
+        ],
+        "finish": "ground",
+        "height": "low",
+        "goalSide": "left",
+        "outcome": "goal"
+      },
+      "seed": "eder-2016-b",
+      "popup": false
+    }
+  ]
+}

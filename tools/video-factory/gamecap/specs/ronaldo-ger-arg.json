@@ -1,0 +1,111 @@
+{
+  "_about": "IMAGINED: Ronaldo in a Germany shirt scores the 2014 World Cup final winner in extra time, the way Götze really did: Schürrle's cross from the left, a volley at the far post. Not a real goal.",
+  "teams": {
+    "home": {
+      "name": "Germany",
+      "kit": {
+        "shirt": "#FFFFFF",
+        "shorts": "#111111",
+        "socks": "#FFFFFF"
+      },
+      "keeperKit": {
+        "shirt": "#2BB673",
+        "shorts": "#0B3D2A",
+        "socks": "#2BB673"
+      },
+      "popupTrim": "#111111"
+    },
+    "away": {
+      "name": "Argentina",
+      "kit": {
+        "shirt": "#75AADB",
+        "shorts": "#1A1A2E",
+        "socks": "#FFFFFF"
+      },
+      "keeperKit": {
+        "shirt": "#7A3FB0",
+        "shorts": "#2A1640",
+        "socks": "#7A3FB0"
+      },
+      "popupTrim": "#FFFFFF"
+    }
+  },
+  "people": {
+    "ronaldo": {
+      "name": "Cristiano Ronaldo",
+      "skin": "#d9a57e",
+      "hair": "#1f1610"
+    },
+    "schurrle": {
+      "name": "André Schürrle",
+      "skin": "#f1c7a4",
+      "hair": "#3b2a1e"
+    },
+    "muller": {
+      "name": "Thomas Müller",
+      "skin": "#f2c4a6",
+      "hair": "#6b4a2e"
+    },
+    "garay": {
+      "name": "Ezequiel Garay",
+      "skin": "#e8b994",
+      "hair": "#2a1d15"
+    },
+    "demichelis": {
+      "name": "Martín Demichelis",
+      "skin": "#efc4a2",
+      "hair": "#c9a27e"
+    },
+    "mascherano": {
+      "name": "Javier Mascherano",
+      "skin": "#e0b08a",
+      "hair": "#1a120e"
+    },
+    "romero": {
+      "name": "Sergio Romero",
+      "skin": "#e8b994",
+      "hair": "#2a1d15"
+    }
+  },
+  "clips": [
+    {
+      "id": "ronaldo-ger",
+      "kind": "volley",
+      "attacking": "home",
+      "scorer": "ronaldo",
+      "assister": "schurrle",
+      "defenders": [
+        "garay",
+        "demichelis",
+        "mascherano"
+      ],
+      "keeper": "romero",
+      "teammates": [
+        "muller"
+      ],
+      "minute": 113,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "scoreAfter": [
+        1,
+        0
+      ],
+      "night": true,
+      "celebration": "jump",
+      "cameras": [
+        "tv",
+        "high",
+        "tight"
+      ],
+      "recreate": {
+        "side": "left",
+        "finish": "volley",
+        "goalSide": "far"
+      },
+      "seed": "ronaldo-ger-a",
+      "popup": false
+    }
+  ]
+}

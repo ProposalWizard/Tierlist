@@ -2,41 +2,380 @@
   "id": "ns-messi-england",
   "series": "What if the countries were swapped?",
   "title": "What if Messi was English?",
+  "v2": true,
   "sources": [
+    "https://www.sportsmole.co.uk/football/england/world-cup-2026/result/utter-agony-late-show-from-argentina-ends-englands-world-cup-hopes_601272.html",
+    "https://www.outlookindia.com/sports/football/england-vs-argentina-fifa-world-cup-2026-match-report-who-won-eng-v-arg-semi-final-match-atlanta-stadium",
+    "https://sport.quotidiano.net/en/ultimaora/mondiali-2-1-allinghilterra-largentina-in-cf30981f",
     "https://www.cbssports.com/general/news/on-this-date-lionel-messi-debuts-for-argentina-national-team-gets-a-red",
     "https://www.beinsports.com/en-us/soccer/articles/what-was-lionel-messi-s-first-match-for-argentina-2026-10-06",
+    "https://www.dawn.com/news/1267564/messi-retires-from-international-football",
+    "https://www.thenationalnews.com/sport/lionel-messi-retires-from-international-football-after-copa-america-defeat-its-over-with-the-argentina-team-1.179428",
     "https://www.beinsports.com/en-us/soccer/articles/lionel-messi-s-titles-with-the-argentina-national-team-2026-10-06",
     "https://copaamerica.com/en/news/copa-america-2021-argentina-champions-after-28-years",
     "https://www.uefa.com/finalissima/news/0273-14b9ca5ef678-b78dc74dcc88-1000/",
-    "https://www.sportinglife.com/football/news/england-1-2-argentina-lionel-messi-late-show-breaks-three-lions-hearts/233244",
-    "https://capeargus.co.za/fifa-world-cup-2026/updates/2026-07-15-argentina-beat-england-2-1-to-meat-spain-in-the-final/",
     "https://www.sportinglife.com/football/news/england-heartbreak-as-italy-win-on-pens/193098",
     "https://www.aljazeera.com/amp/sports/2024/7/12/uefa-euro-2024-spain-vs-england-preview-five-best-final-matches-in-history",
     "https://www.11v11.com/teams/england/tab/honours/"
   ],
-  "checked": "Messi debut 17 Aug 2005 v Hungary, sent off within about a minute (CBS + beIN). Argentina titles 2021 Copa, 2022 Finalissima, 2022 WC, 2024 Copa (beIN + Copa America + UEFA). 2026 WC semi England 1-2 Argentina, 15 July, Messi assisted both goals (Sporting Life + Cape Argus). England have won no senior trophy since 1966; lost Euro 2020 and Euro 2024 finals (Sporting Life + Oman Observer + Al Jazeera + 11v11). Alternate world clearly imagined.",
+  "checked": "2026 WC semi, 15 July, Atlanta: Gordon put England 1-0 up (55'), Enzo Fernández curled in Messi's pass (85'), Lautaro Martínez headed in Messi's cross in stoppage time; 1-2 (Sports Mole, Outlook India, Quotidiano). Messi born 24 June 1987, so 39. Debut 17 Aug 2005 v Hungary, sent off about a minute after coming on (CBS, beIN). Lost the 2014 WC, 2015 and 2016 Copa finals, quit Argentina after the 2016 final, then came back (Dawn, The National). Titles: Copa 2021, Finalissima 2022, WC 2022, Copa 2024 (beIN, Copa America, UEFA). England: Euro 2020 final lost on pens to Italy, Euro 2024 final lost 2-1 to Spain, no senior trophy since 1966 (Sporting Life, Al Jazeera, 11v11). The England-Messi scenes are clearly imagined. Kits in the game footage are plain: the game's figures can't draw Argentina's stripes.",
   "clubs": {
-    "arg": { "name": "Argentina", "short": "ARG", "c1": "#75aadb", "c2": "#ffffff", "pattern": "stripes" },
-    "eng": { "name": "England", "short": "ENG", "c1": "#ffffff", "c2": "#1d2c5e", "pattern": "plain" }
+    "arg": {
+      "name": "Argentina",
+      "short": "ARG",
+      "c1": "#75aadb",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    },
+    "eng": {
+      "name": "England",
+      "short": "ENG",
+      "c1": "#ffffff",
+      "c2": "#1d2c5e",
+      "pattern": "plain"
+    },
+    "ita": {
+      "name": "Italy",
+      "short": "ITA",
+      "c1": "#1f5fbf",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "esp": {
+      "name": "Spain",
+      "short": "ESP",
+      "c1": "#c60b1e",
+      "c2": "#ffc400",
+      "pattern": "plain"
+    }
   },
   "people": {
-    "messi": { "name": "Lionel Messi", "skin": "light", "hair": ["side", "#4a3220"], "beard": "full", "beardCol": "#4a3220", "kit": "arg" },
-    "messiyoung": { "name": "Lionel Messi", "skin": "light", "hair": ["messy", "#4a3220"], "beard": "none", "kit": "arg" },
-    "messieng": { "name": "Lionel Messi", "skin": "light", "hair": ["side", "#4a3220"], "beard": "full", "beardCol": "#4a3220", "kit": "eng" }
+    "messi": {
+      "name": "Lionel Messi",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#4a3220"
+      ],
+      "beard": "full",
+      "beardCol": "#4a3220",
+      "kit": "arg"
+    },
+    "messiyoung": {
+      "name": "Lionel Messi",
+      "skin": "light",
+      "hair": [
+        "messy",
+        "#4a3220"
+      ],
+      "beard": "none",
+      "kit": "arg"
+    },
+    "messieng": {
+      "name": "Lionel Messi",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#4a3220"
+      ],
+      "beard": "full",
+      "beardCol": "#4a3220",
+      "kit": "eng"
+    },
+    "gordon": {
+      "name": "Anthony Gordon",
+      "skin": "light",
+      "hair": [
+        "quiff",
+        "#3a2a1c"
+      ],
+      "beard": "none",
+      "kit": "eng"
+    }
   },
   "lines": [
-    { "text": "What if Lionel Messi had been born in England? Would he be a world champion?", "scene": { "type": "title", "heading": "LIONEL MESSI", "sub": "Argentina · since 2005", "pill": "WHAT IF HE WAS ENGLISH?", "person": "messi" } },
-    { "text": "Real world first. Messi's Argentina debut in twenty oh-five lasted about a minute. Straight red.", "scene": { "type": "person", "person": "messiyoung", "label": "Debut v Hungary, 2005", "mood": "shocked", "stamp": "RED CARD" } },
-    { "text": "Then came the trophies: two Copa Américas, a Finalissima and the World Cup.", "scene": { "type": "trophies", "items": [ { "kind": "cup", "label": "Copa América 2021" }, { "kind": "cup", "label": "Finalissima 2022" }, { "kind": "worldcup", "label": "World Cup 2022" }, { "kind": "cup", "label": "Copa América 2024" } ], "person": "messi" } },
-    { "text": "And this summer he set up both goals as Argentina knocked England out of the World Cup.", "scene": { "type": "score", "home": "eng", "away": "arg", "hs": 1, "as": 2, "date": "15 July 2026", "comp": "World Cup semi-final" } },
-    { "text": "Now look at England in exactly the same years.", "scene": { "type": "timeline", "items": [ { "year": "2008", "label": "Didn't qualify for the Euros" }, { "year": "2018", "label": "World Cup semi-final" }, { "year": "2021", "label": "Euro 2020 final: lost" }, { "year": "2024", "label": "Euro 2024 final: lost" }, { "year": "2026", "label": "World Cup semi-final" } ] } },
-    { "text": "Two Euro finals. Two defeats. Not one trophy since nineteen sixty-six.", "scene": { "type": "stamp", "text": "ZERO", "color": "red" } },
-    { "text": "So in this alternate world, Messi wears the Three Lions.", "scene": { "type": "person", "person": "messieng", "label": "ALTERNATE WORLD", "mood": "worried" } },
-    { "text": "On paper, he swaps four trophies for none.", "scene": { "type": "whatif", "title": "Messi's senior international trophies", "real": { "label": "Argentina (real)", "value": "4" }, "alt": { "label": "England (on paper)", "value": "0" } } },
-    { "text": "But England lost those two finals by the smallest margins. A penalty shootout, then one late goal.", "scene": { "type": "list", "title": "England's two finals", "rows": [ { "name": "Euro 2020 v Italy", "value": "Lost on pens", "club": "eng", "hl": true }, { "name": "Euro 2024 v Spain", "value": "Lost 2-1", "club": "eng", "hl": true } ] } },
-    { "text": "Give that team Messi, and in this imagined world England might finally have their second star.", "scene": { "type": "quote", "person": "messieng", "text": "It's coming home. I'll bring it." } },
-    { "text": "So is Messi great because of Argentina, or Argentina great because of Messi?", "scene": { "type": "versus", "title": "Same genius, different shirt", "left": { "person": "messi", "label": "Argentina", "value": "4" }, "right": { "person": "messieng", "label": "England", "value": "?" } } },
-    { "text": "Tell me in the comments.", "scene": { "type": "text", "heading": "YOUR CALL", "body": "Messi in an England shirt from 2005 to 2026: how many trophies?" } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    {
+      "text": "England were five minutes from a World Cup final. Then Lionel Messi happened.",
+      "say": "England were five minutes from a World Cup final. Then Leeonel Messy happened.",
+      "scene": {
+        "type": "title",
+        "heading": "LIONEL MESSI",
+        "sub": "Argentina · World Cup 2026",
+        "pill": "WHAT IF HE WAS ENGLISH?",
+        "person": "messi"
+      }
+    },
+    {
+      "text": "July, in Atlanta. Anthony Gordon had put England one-nil up in the semi-final.",
+      "scene": {
+        "type": "news",
+        "section": "World Cup 2026",
+        "headline": "Gordon fires England in front",
+        "standfirst": "England lead Argentina 1-0 in the World Cup semi-final in Atlanta. A first final since 1966 is in sight.",
+        "date": "15 July 2026",
+        "byline": "Knowitball recap",
+        "club": "eng",
+        "person": "gordon",
+        "nav": [
+          "Football",
+          "World Cup",
+          "England",
+          "Argentina"
+        ]
+      }
+    },
+    {
+      "text": "Eighty-five minutes. Messi rolls it to Enzo Fernández, and he curls it in.",
+      "say": "Eighty-five minutes. Messy rolls it, to Enzo Fernandez, and he curls it in.",
+      "scene": {
+        "type": "gameclip",
+        "popup": {
+          "home": "eng",
+          "away": "arg",
+          "hs0": 1,
+          "as0": 0,
+          "hs": 1,
+          "as": 1,
+          "scorer": "Fernández",
+          "assist": "Messi"
+        },
+        "caption": "85 MINS",
+        "parts": [
+          [
+            "work/gamecap/messi-eng-arg/enzo-curler/high",
+            15,
+            140
+          ]
+        ],
+        "goalAt": 2.4
+      }
+    },
+    {
+      "text": "Stoppage time. Messi crosses, Lautaro Martínez heads it in. England are out.",
+      "say": "Stoppage time. Messy crosses, Lowtarro Marteenes heads it in. England are out.",
+      "scene": {
+        "type": "gameclip",
+        "popup": {
+          "home": "eng",
+          "away": "arg",
+          "hs0": 1,
+          "as0": 1,
+          "hs": 1,
+          "as": 2,
+          "scorer": "Martínez",
+          "assist": "Messi"
+        },
+        "caption": "HEARTBREAK",
+        "captionColor": "red",
+        "parts": [
+          [
+            "work/gamecap/messi-eng-arg/lautaro-header/tv",
+            12,
+            58
+          ],
+          [
+            "work/gamecap/messi-eng-arg/lautaro-header/high",
+            30,
+            125
+          ]
+        ],
+        "goalAt": 1.767
+      }
+    },
+    {
+      "text": "Two assists in seven minutes, from a man of thirty-nine.",
+      "scene": {
+        "type": "stats",
+        "kicker": "World Cup semi-final 2026",
+        "title": "Messi did it again",
+        "items": [
+          {
+            "n": "2",
+            "l": "assists"
+          },
+          {
+            "n": "7",
+            "l": "minutes apart"
+          },
+          {
+            "n": "39",
+            "l": "years old"
+          }
+        ],
+        "person": "messi"
+      }
+    },
+    {
+      "text": "His Argentina story started badly. Sent off about a minute into his debut, in 2005.",
+      "say": "His Argentina story started badly. Sent off about a minute into his debut, in two thousand and five.",
+      "scene": {
+        "type": "person",
+        "person": "messiyoung",
+        "label": "Debut v Hungary · 2005",
+        "mood": "shocked",
+        "stamp": "RED CARD"
+      }
+    },
+    {
+      "text": "Then three finals lost in three years. In 2016 he quit Argentina altogether.",
+      "say": "Then three finals lost in three years. In twenty sixteen, he quit Argentina altogether.",
+      "scene": {
+        "type": "timeline",
+        "kicker": "Lionel Messi · Argentina",
+        "title": "Three finals, three defeats",
+        "items": [
+          {
+            "year": "2014",
+            "label": "World Cup final: lost to Germany",
+            "club": "arg"
+          },
+          {
+            "year": "2015",
+            "label": "Copa América final: lost on pens",
+            "club": "arg"
+          },
+          {
+            "year": "2016",
+            "label": "Copa América final: lost on pens",
+            "club": "arg"
+          },
+          {
+            "year": "2016",
+            "label": "\"It's over for me\": he quits",
+            "club": "arg",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "He came back, and won the lot. Two Copa Américas, the Finalissima and the World Cup.",
+      "scene": {
+        "type": "trophies",
+        "kicker": "After he came back",
+        "title": "Four trophies",
+        "items": [
+          {
+            "kind": "cup",
+            "label": "Copa América 2021"
+          },
+          {
+            "kind": "cup",
+            "label": "Finalissima 2022"
+          },
+          {
+            "kind": "worldcup",
+            "label": "World Cup 2022"
+          },
+          {
+            "kind": "cup",
+            "label": "Copa América 2024"
+          }
+        ]
+      }
+    },
+    {
+      "text": "England in the same years? Two Euro finals, both lost. Sixty years without a trophy.",
+      "say": "England in the same years? Two Euro finals, both lost. Sixty years without a trophy.",
+      "scene": {
+        "type": "list",
+        "kicker": "England · no trophy since 1966",
+        "title": "Three near misses",
+        "rows": [
+          {
+            "name": "Euro 2020 final",
+            "value": "Pens",
+            "club": "ita"
+          },
+          {
+            "name": "Euro 2024 final",
+            "value": "2-1",
+            "club": "esp"
+          },
+          {
+            "name": "World Cup 2026 semi",
+            "value": "2-1",
+            "club": "arg",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "So imagine Messi was born in England, and wore the Three Lions from 2005.",
+      "say": "So imagine Messy was born in England, and wore the Three Lions from two thousand and five.",
+      "scene": {
+        "type": "person",
+        "person": "messieng",
+        "label": "ALTERNATE WORLD",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Wembley, 2021. In this imagined world, the final against Italy never gets to penalties.",
+      "say": "Wembley, twenty twenty-one. In this imagined world, the final against Italy never gets to penalties.",
+      "scene": {
+        "type": "gameclip",
+        "popup": {
+          "home": "eng",
+          "away": "ita",
+          "hs0": 1,
+          "as0": 1,
+          "hs": 2,
+          "as": 1,
+          "scorer": "Messi"
+        },
+        "caption": "IT'S COMING HOME",
+        "parts": [
+          [
+            "work/gamecap/messi-eng-ita/messi-eng-fk/high",
+            0,
+            140
+          ]
+        ],
+        "goalAt": 1.867
+      }
+    },
+    {
+      "text": "On paper, he swaps four trophies for none. But England lost those finals by the smallest margins.",
+      "scene": {
+        "type": "whatif",
+        "title": "Messi's international trophies",
+        "real": {
+          "label": "Argentina",
+          "value": "4"
+        },
+        "alt": {
+          "label": "England (on paper)",
+          "value": "0"
+        }
+      }
+    },
+    {
+      "text": "So is Messi great because of Argentina, or Argentina great because of Messi? Tell me in the comments.",
+      "say": "So is Messy great because of Argentina, or Argentina great because of Messy? Tell me in the comments.",
+      "scene": {
+        "type": "versus",
+        "title": "Same genius, different shirt",
+        "left": {
+          "person": "messi",
+          "label": "Argentina",
+          "value": "4",
+          "sub": "trophies"
+        },
+        "right": {
+          "person": "messieng",
+          "label": "England",
+          "value": "?",
+          "sub": "trophies"
+        }
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or.",
+      "scene": {
+        "type": "cta"
+      }
+    }
   ]
 }

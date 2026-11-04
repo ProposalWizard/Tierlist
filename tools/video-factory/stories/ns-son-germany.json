@@ -2,27 +2,34 @@
   "id": "ns-son-germany",
   "series": "What if the countries were swapped?",
   "title": "What if Son was German?",
+  "v2": true,
   "sources": [
     "https://en.wikipedia.org/wiki/Son_Heung-min",
-    "https://www.sortiraparis.com/en/what-to-do-in-paris/sport-wellness/articles/349129-world-cup-2026-all-results-and-the-final-score",
+    "https://www.koreajoongangdaily.com/sports/son-notches-first-goal-in-german-league/11915939",
+    "https://skysports.com/football/news/8514267/sky-sports-scout",
+    "https://en.wikipedia.org/wiki/2015_AFC_Asian_Cup_final",
+    "https://www.espn.com/soccer/report/_/gameId/413879",
+    "https://www.sportsmole.co.uk/football/germany/world-cup/live-commentary/south-korea-2-0-germany-as-it-happened_329301.html",
+    "https://www.koreajoongangdaily.com/sports/taeguk-warriors-crush-german-hopes/10129043",
+    "https://www.thedailystar.net/fifa-world-cup-2018/champions-crash-out-1596607",
     "https://en.wikipedia.org/wiki/Germany_national_football_team",
-    "https://en.wikipedia.org/wiki/List_of_FIFA_Confederations_Cup_finals",
-    "https://www.11v11.com/teams/germany/tab/honours/"
+    "https://www.nst.com.my/amp/sports/football/2026/06/1474807/south-koreas-dismal-world-cup-ends-group-phase",
+    "https://english.ahram.org.eg/News/571785.aspx"
   ],
-  "checked": "Son: Hamburg academy from 2008/09, Bundesliga debut 2010, Korea debut 30 Dec 2010 v Syria, lost the 2015 Asian Cup final 2-1 aet to Australia, scored in Korea's 2-0 win over Germany at the 2018 World Cup, no senior trophy; 2026 World Cup: Korea did not get out of the group (Son Wikipedia + Sortiraparis). Germany since Dec 2010: World Cup 2014 and Confederations Cup 2017 (Germany Wikipedia + Confed finals list + 11v11). Asian Games 2018 gold left out (under-23 event). Alternate world clearly imagined.",
+  "checked": "Son joined Hamburg's academy in August 2008 aged 16 (Wikipedia); scored on his Bundesliga debut at Köln, Oct 2010, aged 18 (JoongAng Daily, Sky Sports). Korea debut 30 Dec 2010 v Syria (Wikipedia). 2015 Asian Cup final: Luongo 45', Son 90+1', Troisi 105', Australia 2-1 aet (Wikipedia, ESPN). Kazan, 27 June 2018: Korea 2-0 Germany; Kim Young-gwon's goal given by VAR in stoppage time; Neuer lost the ball upfield, Ju Se-jong's long ball, Son into the empty net at 90+6; Germany's first ever group-stage exit (Sports Mole, JoongAng Daily, Daily Star). Germany since Dec 2010: World Cup 2014, Confederations Cup 2017 (Wikipedia). 2026: Korea beat Czechia 2-1, lost 1-0 to Mexico and South Africa, out in the group (NST, Ahram). Asian Games 2018 gold left out (under-23). The German-Son goal is clearly imagined. Kits in the game footage are plain. No game footage of the real Kazan goal: the game always has a keeper in goal, and that goal went into an empty net.",
   "clubs": {
     "kor": {
       "name": "South Korea",
       "short": "KOR",
-      "c1": "#d2202f",
-      "c2": "#1b2a5c",
+      "c1": "#d0021b",
+      "c2": "#1b2a6b",
       "pattern": "plain"
     },
     "ger": {
       "name": "Germany",
       "short": "GER",
       "c1": "#ffffff",
-      "c2": "#000000",
+      "c2": "#111111",
       "pattern": "plain"
     },
     "aus": {
@@ -30,6 +37,34 @@
       "short": "AUS",
       "c1": "#ffcd00",
       "c2": "#00843d",
+      "pattern": "plain"
+    },
+    "ham": {
+      "name": "Hamburger SV",
+      "short": "HSV",
+      "c1": "#ffffff",
+      "c2": "#0a3f86",
+      "pattern": "plain"
+    },
+    "cze": {
+      "name": "Czechia",
+      "short": "CZE",
+      "c1": "#d7141a",
+      "c2": "#11457e",
+      "pattern": "plain"
+    },
+    "mex": {
+      "name": "Mexico",
+      "short": "MEX",
+      "c1": "#006847",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "rsa": {
+      "name": "South Africa",
+      "short": "RSA",
+      "c1": "#ffb81c",
+      "c2": "#007749",
       "pattern": "plain"
     }
   },
@@ -39,17 +74,27 @@
       "skin": "light",
       "hair": [
         "side",
-        "#14110f"
+        "#151515"
       ],
       "beard": "none",
       "kit": "kor"
+    },
+    "sonyoung": {
+      "name": "Son Heung-min",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#151515"
+      ],
+      "beard": "none",
+      "kit": "ham"
     },
     "songer": {
       "name": "Son Heung-min",
       "skin": "light",
       "hair": [
         "side",
-        "#14110f"
+        "#151515"
       ],
       "beard": "none",
       "kit": "ger"
@@ -58,73 +103,110 @@
   "lines": [
     {
       "text": "Son Heung-min learned his football in Germany. So what if he'd been born German?",
+      "say": "Sohn Hungmin learned his football in Germany. So what if he'd been born German?",
       "scene": {
         "type": "title",
         "heading": "SON HEUNG-MIN",
-        "sub": "South Korea · since 2010",
+        "sub": "Korea · since 2010",
         "pill": "WHAT IF HE WAS GERMAN?",
         "person": "son"
       }
     },
     {
-      "text": "Real world first. He joined Hamburg's academy as a teenager and made his Bundesliga debut in twenty ten.",
+      "text": "At sixteen he moved to Hamburg. At eighteen, he scored on his Bundesliga debut.",
       "scene": {
-        "type": "person",
-        "person": "son",
-        "label": "Hamburg academy, then the Bundesliga",
-        "mood": "happy"
+        "type": "badge",
+        "club": "ham",
+        "kicker": "2008 to 2013",
+        "title": "Hamburger SV",
+        "sub": "Academy at 16 · Bundesliga goal on debut at 18"
       }
     },
     {
-      "text": "His Korea debut came that December. Since then: one Asian Cup final.",
+      "text": "With Korea, he reached the 2015 Asian Cup final. He equalised in stoppage time. Australia won it in extra time.",
+      "say": "With Korea, he reached the twenty fifteen Asian Cup final. He equalised in stoppage time. Australia won it in extra time.",
       "scene": {
         "type": "score",
         "home": "aus",
         "away": "kor",
         "hs": 2,
         "as": 1,
-        "date": "31 January 2015",
+        "date": "31 January 2015 · Sydney",
         "comp": "Asian Cup final",
-        "note": "after extra time"
+        "ft": "AFTER EXTRA TIME",
+        "note": "Son's 91st-minute equaliser isn't enough"
       }
     },
     {
-      "text": "Son scored a stoppage-time equaliser, but Australia won it in extra time.",
+      "text": "Then came Kazan, 2018. Korea against the world champions, Germany.",
+      "say": "Then came Kazan, twenty eighteen. Korea against the world champions, Germany.",
       "scene": {
-        "type": "stamp",
-        "text": "SO CLOSE",
-        "person": "son",
-        "color": "red"
-      }
-    },
-    {
-      "text": "Now look at Germany in exactly the same years.",
-      "scene": {
-        "type": "timeline",
-        "items": [
-          {
-            "year": "2014",
-            "label": "World Cup: WON"
-          },
-          {
-            "year": "2017",
-            "label": "Confed Cup: WON"
-          },
-          {
-            "year": "2018",
-            "label": "World Cup: out in groups"
-          },
-          {
-            "year": "2022",
-            "label": "World Cup: out in groups"
-          }
+        "type": "news",
+        "section": "World Cup 2018",
+        "headline": "Germany need a win in Kazan",
+        "standfirst": "The world champions must beat South Korea to stay in the World Cup. Korea are already almost out.",
+        "date": "27 June 2018",
+        "byline": "Knowitball recap",
+        "club": "ger",
+        "nav": [
+          "Football",
+          "World Cup",
+          "Germany",
+          "Korea"
         ]
       }
     },
     {
-      "text": "A World Cup in Brazil, and the Confederations Cup three years later.",
+      "text": "Stoppage time. Korea score. Germany throw everyone forward, even their keeper, Manuel Neuer.",
+      "say": "Stoppage time. Korea score. Germany throw everyone forward, even their keeper, Manuel Noyer.",
+      "scene": {
+        "type": "score",
+        "home": "kor",
+        "away": "ger",
+        "hs": 1,
+        "as": 0,
+        "date": "27 June 2018 · Kazan",
+        "comp": "World Cup group stage",
+        "ft": "STOPPAGE TIME",
+        "note": "Germany throw everyone forward, even Neuer"
+      }
+    },
+    {
+      "text": "Neuer loses the ball. One long pass, and Son rolls it into an empty net.",
+      "say": "Noyer loses the ball. One long pass, and Sohn rolls it into an empty net.",
+      "scene": {
+        "type": "news",
+        "section": "World Cup 2018",
+        "headline": "Son runs the ball into an empty net",
+        "standfirst": "Neuer is caught upfield. One long ball, a sprint from halfway, and Korea win 2-0. The world champions are out.",
+        "date": "27 June 2018",
+        "byline": "Knowitball recap",
+        "person": "son",
+        "club": "kor",
+        "nav": [
+          "Football",
+          "World Cup",
+          "Korea",
+          "Germany"
+        ]
+      }
+    },
+    {
+      "text": "The champions were out in the group, for the first time ever.",
+      "scene": {
+        "type": "stamp",
+        "text": "OUT",
+        "sub": "Germany · first ever group-stage exit",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Now Germany, in Son's years. A World Cup in Brazil, and the Confederations Cup three years later.",
+      "say": "Now Germany, in Sohn's years. A World Cup in Brazil, and the Confederations Cup three years later.",
       "scene": {
         "type": "trophies",
+        "kicker": "Germany since 2010",
+        "title": "Two trophies",
         "items": [
           {
             "kind": "worldcup",
@@ -132,34 +214,40 @@
           },
           {
             "kind": "cup",
-            "label": "Confed Cup 2017"
+            "label": "Confederations Cup 2017"
           }
         ]
       }
     },
     {
-      "text": "But here's the crazy part. At the twenty eighteen World Cup, Korea beat Germany two-nil.",
+      "text": "And Korea? No senior trophy. This summer, out in the group again.",
       "scene": {
-        "type": "score",
-        "home": "kor",
-        "away": "ger",
-        "hs": 2,
-        "as": 0,
-        "date": "27 June 2018",
-        "comp": "World Cup group stage"
+        "type": "list",
+        "kicker": "World Cup 2026 · Group A",
+        "title": "Korea's summer",
+        "rows": [
+          {
+            "name": "v Czechia",
+            "value": "Won 2-1",
+            "club": "cze"
+          },
+          {
+            "name": "v Mexico",
+            "value": "Lost 1-0",
+            "club": "mex"
+          },
+          {
+            "name": "v South Africa",
+            "value": "Lost 1-0",
+            "club": "rsa",
+            "hl": true
+          }
+        ]
       }
     },
     {
-      "text": "And the man who scored the second goal? Son Heung-min.",
-      "scene": {
-        "type": "text",
-        "heading": "KAZAN, 2018",
-        "body": "Son scores in the 97th minute. Germany, the reigning world champions, go out in the group stage.",
-        "stamp": "GERMANY OUT"
-      }
-    },
-    {
-      "text": "So in this alternate world, Son wears the German shirt instead.",
+      "text": "So in this alternate world, Son plays for Germany.",
+      "say": "So in this alternate world, Sohn plays for Germany.",
       "scene": {
         "type": "person",
         "person": "songer",
@@ -168,12 +256,36 @@
       }
     },
     {
+      "text": "And in this imagined Kazan, the goal goes the other way.",
+      "scene": {
+        "type": "gameclip",
+        "popup": {
+          "home": "kor",
+          "away": "ger",
+          "hs0": 0,
+          "as0": 0,
+          "hs": 0,
+          "as": 1,
+          "scorer": "Son"
+        },
+        "caption": "ALTERNATE WORLD",
+        "parts": [
+          [
+            "work/gamecap/son-kor-ger/son-ger/high",
+            15,
+            140
+          ]
+        ],
+        "goalAt": 2.4
+      }
+    },
+    {
       "text": "Two trophies instead of none, including a World Cup.",
       "scene": {
         "type": "whatif",
-        "title": "Son's senior trophies",
+        "title": "Son's senior international trophies",
         "real": {
-          "label": "Korea (real)",
+          "label": "South Korea",
           "value": "0"
         },
         "alt": {
@@ -183,32 +295,26 @@
       }
     },
     {
-      "text": "And in this imagined world, nobody knocks Germany out in Kazan.",
-      "scene": {
-        "type": "quote",
-        "person": "songer",
-        "text": "I know how to beat that Korea team."
-      }
-    },
-    {
-      "text": "Korea's captain, or a German world champion? Which Son would you rather be? Comment below.",
+      "text": "Korea's captain, or a German world champion? Which would you rather be? Tell me in the comments.",
       "scene": {
         "type": "versus",
-        "title": "Same player, different passport",
+        "title": "Which Son would you be?",
         "left": {
           "person": "son",
           "label": "Korea",
-          "value": "0"
+          "value": "0",
+          "sub": "trophies"
         },
         "right": {
           "person": "songer",
           "label": "Germany",
-          "value": "2"
+          "value": "2",
+          "sub": "trophies"
         }
       }
     },
     {
-      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "text": "Follow for more, and play Road to Ballon d'Or.",
       "scene": {
         "type": "cta"
       }

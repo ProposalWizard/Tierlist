@@ -1,0 +1,117 @@
+{
+  "_about": "Real goal, France 4-2 Croatia, World Cup final, Moscow, 15 July 2018, 65': Lucas Hernández's pass from the left, Mbappé, 19, right foot from about 25 yards, low past Subašić (ESPN, NESN). Croatia's checks can't be drawn: plain red.",
+  "teams": {
+    "home": {
+      "name": "France",
+      "kit": {
+        "shirt": "#1D3C8F",
+        "shorts": "#FFFFFF",
+        "socks": "#C8102E"
+      },
+      "keeperKit": {
+        "shirt": "#E8E04A",
+        "shorts": "#1A1A1A",
+        "socks": "#E8E04A"
+      },
+      "popupTrim": "#FFFFFF"
+    },
+    "away": {
+      "name": "Croatia",
+      "kit": {
+        "shirt": "#D8202B",
+        "shorts": "#FFFFFF",
+        "socks": "#1F3C88"
+      },
+      "keeperKit": {
+        "shirt": "#2BB673",
+        "shorts": "#0B3D2A",
+        "socks": "#2BB673"
+      },
+      "popupTrim": "#FFFFFF"
+    }
+  },
+  "people": {
+    "mbappe": {
+      "name": "Kylian Mbappé",
+      "skin": "#6e4630",
+      "hair": "#1a120e"
+    },
+    "hernandez": {
+      "name": "Lucas Hernández",
+      "skin": "#e8b994",
+      "hair": "#2a1d15"
+    },
+    "griezmann": {
+      "name": "Antoine Griezmann",
+      "skin": "#efc4a2",
+      "hair": "#c9a27e"
+    },
+    "lovren": {
+      "name": "Dejan Lovren",
+      "skin": "#efc4a2",
+      "hair": "#3b2a1e"
+    },
+    "vida": {
+      "name": "Domagoj Vida",
+      "skin": "#efc4a2",
+      "hair": "#c9a27e"
+    },
+    "brozovic": {
+      "name": "Marcelo Brozović",
+      "skin": "#efc4a2",
+      "hair": "#2a1d15"
+    },
+    "subasic": {
+      "name": "Danijel Subašić",
+      "skin": "#efc4a2",
+      "hair": "#2a1d15"
+    }
+  },
+  "clips": [
+    {
+      "id": "mbappe-2018",
+      "kind": "long_range",
+      "attacking": "home",
+      "scorer": "mbappe",
+      "assister": "hernandez",
+      "defenders": [
+        "brozovic",
+        "lovren",
+        "vida"
+      ],
+      "keeper": "subasic",
+      "teammates": [
+        "griezmann"
+      ],
+      "minute": 65,
+      "scoreBefore": [
+        3,
+        1
+      ],
+      "scoreAfter": [
+        4,
+        1
+      ],
+      "night": false,
+      "celebration": "statue",
+      "cameras": [
+        "tv",
+        "high",
+        "tight"
+      ],
+      "recreate": {
+        "side": "left",
+        "scorerSpot": [
+          1.5,
+          21
+        ],
+        "finish": "ground",
+        "height": "low",
+        "goalSide": "left",
+        "outcome": "goal"
+      },
+      "seed": "mbappe-2018-a",
+      "popup": false
+    }
+  ]
+}
