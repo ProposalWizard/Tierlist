@@ -83,22 +83,6 @@
    "c2": "#004d98",
    "pattern": "stripes",
    "badge": "FC Barcelona"
-  },
-  "esp": {
-   "name": "Spain",
-   "short": "ESP",
-   "c1": "#c60b1e",
-   "c2": "#ffc400",
-   "pattern": "plain",
-   "badge": false
-  },
-  "arg": {
-   "name": "Argentina",
-   "short": "ARG",
-   "c1": "#75aadb",
-   "c2": "#ffffff",
-   "pattern": "stripes",
-   "badge": false
   }
  },
  "people": {
@@ -142,20 +126,6 @@
     "sub": "Under 20",
     "pill": "REAL FORM ONLY",
     "person": "yamal"
-   }
-  },
-  {
-   "text": "Spain beat Argentina one-nil in the final, after extra time.",
-   "scene": {
-    "type": "score",
-    "home": "esp",
-    "away": "arg",
-    "hs": 1,
-    "as": 0,
-    "date": "19 July 2026 · New York New Jersey",
-    "comp": "World Cup final",
-    "ft": "AFTER EXTRA TIME",
-    "note": "Spain are world champions for the second time"
    }
   },
   {
