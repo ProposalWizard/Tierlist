@@ -136,8 +136,8 @@
       }
     },
     {
-      "text": "His England story starts with a bang. Debut, Albania, twenty minutes in. Bellingham slides him through, left foot, goal.",
-      "say": "His England story starts with a bang. Debut, Albania, twenty minutes in. Bellingum slides him through. Left foot, goal.",
+      "text": "Debut, Albania, twenty minutes in. Bellingham slides him through: left foot, goal.",
+      "say": "Debut, Albania, twenty minutes in. Bellingum slides him through. Left foot, goal.",
       "scene": {
         "type": "gameclip",
         "caption": "GOAL ON HIS DEBUT",
@@ -188,26 +188,6 @@
       }
     },
     {
-      "text": "Since then: a Premier League title with Arsenal. But no more England goals.",
-      "say": "Since then, a Premier League title with Arsenal. But no more England goals.",
-      "scene": {
-        "type": "stats",
-        "kicker": "Myles Lewis-Skelly at 20",
-        "title": "So far",
-        "items": [
-          {
-            "n": "1",
-            "l": "England goal"
-          },
-          {
-            "n": "1",
-            "l": "league title"
-          }
-        ],
-        "person": "mls"
-      }
-    },
-    {
       "text": "Wayne Rooney, December two thousand and five. Eleven England goals.",
       "say": "Wayne Rooney, December, two thousand and five. Eleven England goals.",
       "scene": {
@@ -218,8 +198,8 @@
       }
     },
     {
-      "text": "The first came at seventeen, in Macedonia. The ball comes back to him, and Rooney hits it first time from twenty-five yards.",
-      "say": "The first came at seventeen, in Macedonia. The ball comes back to him, and Rooney hits it first time, from twenty five yards.",
+      "text": "The first came at seventeen, in Macedonia: first time, from twenty-five yards.",
+      "say": "The first came at seventeen, in Macedonia. First time, from twenty five yards.",
       "scene": {
         "type": "gameclip",
         "caption": "17 YEARS OLD",
@@ -284,8 +264,8 @@
       }
     },
     {
-      "text": "Michael Owen, January two thousand. Five England goals, including the one everyone remembers.",
-      "say": "Michael Owen, January, two thousand. Five England goals, including the one everyone remembers.",
+      "text": "Michael Owen, January two thousand. He had five England goals, including the one everyone remembers.",
+      "say": "Michael Owen. January, two thousand. He had five England goals, including the one everyone remembers.",
       "scene": {
         "type": "person",
         "person": "owen",
@@ -361,8 +341,8 @@
       }
     },
     {
-      "text": "But that's not fair. Rooney and Owen were strikers. Lewis-Skelly plays left-back or midfield.",
-      "say": "But that's not fair. Rooney and Owen were strikers. Lewis Skelly plays left back, or midfield.",
+      "text": "But Rooney and Owen were strikers. Lewis-Skelly plays left-back or midfield.",
+      "say": "But Rooney and Owen were strikers. Lewis Skelly plays left back, or midfield.",
       "scene": {
         "type": "stamp",
         "text": "NOT A STRIKER",
@@ -372,8 +352,8 @@
       }
     },
     {
-      "text": "And he did one thing neither of them ever did. They both drew a blank on their England debut.",
-      "say": "And he did one thing, neither of them ever did. They both drew a blank on their England debut.",
+      "text": "And he did one thing neither of them ever did: score on his England debut.",
+      "say": "And he did one thing, neither of them ever did. Score on his England debut.",
       "scene": {
         "type": "compare",
         "title": "England debuts",
@@ -402,8 +382,8 @@
       }
     },
     {
-      "text": "So which twenty-year-old would you pick for England? Tell me in the comments.",
-      "say": "So which twenty year old would you pick for England? Tell me in the comments.",
+      "text": "Which twenty-year-old would you pick for England? Tell me in the comments.",
+      "say": "Which twenty year old would you pick for England? Tell me in the comments.",
       "scene": {
         "type": "versus",
         "title": "At 20 years, 47 days",
