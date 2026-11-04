@@ -261,8 +261,8 @@
    }
   },
   {
-   "text": "And in those two weeks, a World Cup play-off in Stockholm. Ronaldo against Zlatan.",
-   "say": "And in those two weeks, a World Cup play-off in Stockholm. Ronaldo, against Zlatan.",
+   "text": "And in those two weeks, a World Cup play-off in Stockholm. Zlatan's Sweden against Ronaldo's Portugal.",
+   "say": "And in those two weeks, a World Cup play-off in Stockholm. Zlatan's Sweden, against Ronaldo's Portugal.",
    "scene": {
     "type": "versus",
     "title": "World Cup play-off · 19 November",

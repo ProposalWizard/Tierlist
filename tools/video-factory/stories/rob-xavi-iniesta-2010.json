@@ -390,8 +390,8 @@
    }
   },
   {
-   "text": "Twenty-two point six for Messi. Seventeen point four for Iniesta. Sixteen point five for Xavi.",
-   "say": "Twenty two point six for Messi. Seventeen point four for Inyestah. Sixteen point five for Shahvee.",
+   "text": "Messi, twenty-two point six. Iniesta, seventeen point four. Xavi, sixteen point five.",
+   "say": "Messi, twenty two point six. Inyestah, seventeen point four. Shahvee, sixteen point five.",
    "scene": {
     "type": "bars",
     "kicker": "FIFA Ballon d'Or 2010",
