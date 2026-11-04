@@ -1,0 +1,24 @@
+{
+  "_about": "Kobbie Mainoo's FA Cup final winner: Manchester City 1-2 Manchester United, Wembley, 25 May 2024, 39th minute, for 2-0. Mainoo won the ball in his own box, Bruno Fernandes played a disguised no-look pass, and Mainoo finished first time past Stefan Ortega into the corner (manutd.com, Soccerway/Flashscore). Kits: United red/white/black, City sky blue/white (assumed home kits). Afternoon game.",
+  "teams": {
+    "home": { "name": "Manchester City", "kit": { "shirt": "#6CABDD", "shorts": "#FFFFFF", "socks": "#6CABDD" }, "keeperKit": { "shirt": "#2E2E2E", "shorts": "#2E2E2E", "socks": "#2E2E2E" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Manchester United", "kit": { "shirt": "#DA291C", "shorts": "#FFFFFF", "socks": "#111111" }, "keeperKit": { "shirt": "#2BB673", "shorts": "#0B3D2A", "socks": "#2BB673" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "mainoo": { "name": "Kobbie Mainoo", "skin": "#4a2e1e", "hair": "#0d0a09" },
+    "bruno": { "name": "Bruno Fernandes", "skin": "#d39e78", "hair": "#2a1d15" },
+    "garnacho": { "name": "Alejandro Garnacho", "skin": "#e0b090", "hair": "#1d1512" },
+    "dias": { "name": "Ruben Dias", "skin": "#e0b090", "hair": "#1a1a1a" },
+    "gvardiol": { "name": "Josko Gvardiol", "skin": "#f0c8a8", "hair": "#3a2a1d" },
+    "akanji": { "name": "Manuel Akanji", "skin": "#7a4e33", "hair": "#0d0a09" },
+    "ortega": { "name": "Stefan Ortega", "skin": "#f0c8a8", "hair": "#8a6a50" }
+  },
+  "clips": [{
+    "id": "mainoo-final", "kind": "one_on_one", "attacking": "away",
+    "scorer": "mainoo", "assister": "bruno", "defenders": ["gvardiol", "dias", "akanji"], "keeper": "ortega", "teammates": ["garnacho"],
+    "minute": 39, "scoreBefore": [0, 1], "scoreAfter": [0, 2], "night": false, "celebration": "knee_slide",
+    "cameras": ["tv", "high", "tight"],
+    "recreate": { "delivery": "through", "scorerStart": [-6, 24], "scorerSpot": [-4, 10], "finish": "ground", "goalSide": "far", "height": "low" },
+    "seed": "mainoo-final-a"
+  }]
+}

@@ -1,42 +1,413 @@
 {
-  "id": "am-yamal-clasico",
-  "series": "Age-match",
-  "title": "Yamal on Clásico day v Messi, Ronaldo and Mbappé at the same age",
-  "sources": [
-    "https://www.fcbarcelona.com/en/football/first-team/news/4570226/date-and-kick-off-time-of-laliga-clasico-at-the-spotify-camp-nou-confirmed/featured",
-    "https://www.football-espana.net/2026/09/02/2026-27-el-clasico-date",
-    "https://en.wikipedia.org/wiki/Lamine_Yamal",
-    "https://www.planetfootball.com/stats-tables/lamine-yamal-lionel-messi-cristiano-ronaldo-career-stats-age-19",
-    "https://www.planetfootball.com/stats-tables/lamine-yamal-kylian-mbappe-stats-age-19-goals-assists",
-    "https://www.90min.com/features/lamine-yamal-record-100-games-compared-lionel-messi-cristiano-ronaldo",
-    "https://bolavip.com/en/amp/soccer/barcelona-wonderkid-lamine-yamal-reaches-100-matches-how-his-record-compares-to-messi-and-ronaldo"
-  ],
-  "checked": "Clásico date 25 Oct 2026 at Camp Nou (FC Barcelona + Football España); Yamal born 13 Jul 2007 = 19 years 104 days that day. Figures by each player's 19th birthday (club and country, all competitions): Yamal 182 games 56+64, Messi 43 games 11+6, Ronaldo 55 games 6+7, Mbappé 90 games 39+29, minutes per goal or assist 111/120/217/79 (Planet Football's two age-19 tables, July 2026; one outlet, so framed as their count). After 100 games: Yamal 21+30 at 17y7m, Messi 40+19 at 20y105d, Ronaldo 17+25 at 19y262d, with trophies (90min + Bolavip agree). League-only splits not available, so all-competition numbers are used and said so.",
-  "clubs": {
-    "bar": { "name": "Barcelona", "short": "FCB", "c1": "#a50044", "c2": "#004d98", "pattern": "stripes" },
-    "rma": { "name": "Real Madrid", "short": "RMA", "c1": "#ffffff", "c2": "#febe10", "pattern": "plain" },
-    "mun": { "name": "Manchester United", "short": "MUN", "c1": "#da291c", "c2": "#ffffff", "pattern": "plain" },
-    "mon": { "name": "Monaco", "short": "ASM", "c1": "#e2001a", "c2": "#ffffff", "pattern": "halves" }
+ "id": "am-yamal-clasico",
+ "series": "Age-match",
+ "title": "Yamal on Clásico day v Messi, Ronaldo and Mbappé at the same age",
+ "v2": true,
+ "sources": [
+  "https://www.tsn.ca/soccer/la-liga/article/yamal-misses-easy-chance-for-barcelona-upstaged-by-mbappe-as-madrid-wins-el-clasico/",
+  "https://www.lanacion.com.ar/usa/yamal-misses-easy-chance-for-barcelona-and-is-upstaged-by-mbappe-as-madrid-wins-clasico-nid25102026/",
+  "https://africasoccer.com/?p=643980",
+  "https://en.wikipedia.org/wiki/Lamine_Yamal",
+  "https://www.planetfootball.com/stats-tables/lamine-yamal-lionel-messi-cristiano-ronaldo-career-stats-age-19",
+  "https://www.planetfootball.com/stats-tables/lamine-yamal-kylian-mbappe-stats-age-19-goals-assists",
+  "https://www.90min.com/features/lamine-yamal-record-100-games-compared-lionel-messi-cristiano-ronaldo",
+  "https://bolavip.com/en/amp/soccer/barcelona-wonderkid-lamine-yamal-reaches-100-matches-how-his-record-compares-to-messi-and-ronaldo",
+  "https://www.espn.com/soccer/story/_/id/49397919/kylian-mbappe-wins-golden-boot-2026-world-cup-lionel-messi-goalless-final"
+ ],
+ "checked": "Clásico 25 Oct 2026, Camp Nou: Real Madrid won 2-1; Mbappé 41' (Martín's clearance off him from Diomande's cross) and 87' (Camavinga drew Joan García, squared, tap-in); Raphinha 61'; late in the first half Fermín López sent Yamal clean through and he shot wide from near the corner of the six-yard box; it ended Barça's nine-win start (AP via TSN and La Nación; Africa Soccer). Yamal b. 13 Jul 2007 = 19y 104d. By 19th birthday, all competitions, club and country: Yamal 182 games 56+64, Mbappé 90 games 39+29, Messi 43 games 11+6, Ronaldo 55 games 6+7 (Planet Football's two tables; one outlet, so said as 'by nineteen' only). After 100 games: Messi 40+19 at 20y 105d, Yamal 21+30 at 17y 7m, Ronaldo 17+25 at 19y 262d (90min + Bolavip agree). Trophies by Clásico day: World Cup 2026 (Spain 1-0 Argentina aet, ESPN + Wikipedia), Euro 2024, La Liga 2024-25 and 2025-26 (Wikipedia). Kits in the gameplay: Barcelona drawn in one shirt colour (the game's sprite has no stripes).",
+ "clubs": {
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "badge": "FC Barcelona"
   },
-  "people": {
-    "yamal": { "name": "Lamine Yamal", "skin": "brown", "hair": ["curlytop", "#14110f"], "beard": "none", "kit": "bar" },
-    "messi": { "name": "Lionel Messi", "skin": "light", "hair": ["messy", "#4a3220"], "beard": "none", "kit": "bar" },
-    "ronaldo": { "name": "Cristiano Ronaldo", "skin": "tan", "hair": ["curlytop", "#2a1d14"], "beard": "none", "kit": "mun" },
-    "mbappe": { "name": "Kylian Mbappé", "skin": "brown", "hair": ["buzz", "#1b1410"], "beard": "none", "kit": "mon" }
+  "rma": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#d4af37",
+   "pattern": "plain"
   },
-  "lines": [
-    { "text": "On Clásico day, the twenty-fifth of October, Lamine Yamal was nineteen years and one hundred and four days old.", "scene": { "type": "title", "heading": "LAMINE YAMAL", "sub": "Clásico day · 25 Oct 2026", "pill": "AGE-MATCH", "person": "yamal" } },
-    { "text": "So how does he compare with Messi, Ronaldo and Mbappé at the same age?", "scene": { "type": "person", "person": "yamal", "label": "19 years, 104 days", "mood": "happy" } },
-    { "text": "By his nineteenth birthday, Yamal had fifty-six goals and sixty-four assists, for club and country.", "scene": { "type": "stats", "title": "Yamal by age 19 (all games)", "items": [ { "n": "56", "l": "goals" }, { "n": "64", "l": "assists" }, { "n": "182", "l": "games" } ], "person": "yamal" } },
-    { "text": "Now the legends by nineteen. Mbappé sixty-eight goals and assists. Messi seventeen. Ronaldo thirteen.", "scene": { "type": "list", "title": "Goals + assists by 19th birthday", "rows": [ { "name": "Lamine Yamal", "value": "120", "club": "bar", "hl": true }, { "name": "Kylian Mbappé", "value": "68", "club": "mon" }, { "name": "Lionel Messi", "value": "17", "club": "bar" }, { "name": "Cristiano Ronaldo", "value": "13", "club": "mun" } ] } },
-    { "text": "That's more than Messi and Ronaldo put together. Four times over.", "scene": { "type": "stamp", "text": "4X MESSI + RONALDO", "person": "yamal", "color": "yellow" } },
-    { "text": "But here's the catch. Yamal played one hundred and eighty-two games. Messi only forty-three.", "scene": { "type": "versus", "title": "Games played by age 19", "left": { "person": "yamal", "label": "Yamal", "value": "182" }, "right": { "person": "messi", "label": "Messi", "value": "43" } } },
-    { "text": "So let's match the minutes. Per minute on the pitch, Mbappé was the deadliest of the lot.", "scene": { "type": "list", "title": "Minutes per goal or assist, by 19", "rows": [ { "name": "Kylian Mbappé", "value": "79", "club": "mon", "hl": true }, { "name": "Lamine Yamal", "value": "111", "club": "bar" }, { "name": "Lionel Messi", "value": "120", "club": "bar" }, { "name": "Cristiano Ronaldo", "value": "217", "club": "mun" } ] } },
-    { "text": "And match the games. After one hundred games each, Messi had fifty-nine goals and assists. Yamal fifty-one.", "scene": { "type": "whatif", "title": "After 100 games each", "real": { "label": "Messi", "value": "40 + 19" }, "alt": { "label": "Yamal", "value": "21 + 30" } } },
-    { "text": "Ronaldo, after a hundred games? Forty-two.", "scene": { "type": "stats", "title": "Ronaldo after 100 games", "items": [ { "n": "17", "l": "goals" }, { "n": "25", "l": "assists" } ], "person": "ronaldo" } },
-    { "text": "The difference is age. Yamal hit a hundred games at seventeen. Messi was twenty.", "scene": { "type": "timeline", "items": [ { "year": "17y 7m", "label": "Yamal's 100th game" }, { "year": "19y 262d", "label": "Ronaldo's 100th game" }, { "year": "20y 105d", "label": "Messi's 100th game" } ] } },
-    { "text": "And by then Yamal already had La Liga, the Spanish Super Cup and the Euros.", "scene": { "type": "trophies", "items": [ { "kind": "league", "label": "La Liga" }, { "kind": "cup", "label": "Supercopa" }, { "kind": "euro", "label": "Euro 2024" } ], "person": "yamal" } },
-    { "text": "So who wins the age-match? Yamal, Messi, Ronaldo or Mbappé? Tell me in the comments.", "scene": { "type": "quote", "person": "yamal", "text": "Ask me again when I'm Messi's age." } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
-  ]
+  "mun": {
+   "name": "Manchester United",
+   "short": "MUN",
+   "c1": "#da291c",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "mon": {
+   "name": "AS Monaco",
+   "short": "ASM",
+   "c1": "#e2001a",
+   "c2": "#ffffff",
+   "pattern": "halves",
+   "badge": "AS Monaco"
+  },
+  "spo": {
+   "name": "Sporting CP",
+   "short": "SCP",
+   "c1": "#008057",
+   "c2": "#ffffff",
+   "pattern": "hoops",
+   "badge": "Sporting CP"
+  },
+  "esp": {
+   "name": "Spain",
+   "short": "ESP",
+   "c1": "#c8102e",
+   "c2": "#f1bf00",
+   "pattern": "plain",
+   "badge": false
+  }
+ },
+ "people": {
+  "yamal": {
+   "name": "Lamine Yamal",
+   "skin": "brown",
+   "hair": [
+    "curlytop",
+    "#120d0a"
+   ],
+   "beard": "none",
+   "kit": "bar"
+  },
+  "messi": {
+   "name": "Lionel Messi",
+   "skin": "olive",
+   "hair": [
+    "messy",
+    "#3a2616"
+   ],
+   "beard": "none",
+   "kit": "bar"
+  },
+  "ronaldo": {
+   "name": "Cristiano Ronaldo",
+   "skin": "tan",
+   "hair": [
+    "slick",
+    "#2a1d14"
+   ],
+   "beard": "none",
+   "kit": "mun"
+  },
+  "mbappe": {
+   "name": "Kylian Mbappé",
+   "skin": "dark",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none",
+   "kit": "rma"
+  },
+  "mbappe19": {
+   "name": "Kylian Mbappé",
+   "skin": "dark",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none",
+   "kit": "mon"
+  }
+ },
+ "lines": [
+  {
+   "text": "Clásico day. Lamine Yamal, nineteen years and 104 days old, against Kylian Mbappé.",
+   "say": "Klasseeko day. Lahmeen Yahmal, nineteen years and a hundred and four days old, against Keelian Embapay.",
+   "scene": {
+    "type": "title",
+    "heading": "LAMINE YAMAL",
+    "sub": "El Clásico · 25 Oct 2026",
+    "pill": "AGE-MATCH",
+    "person": "yamal",
+    "club": "bar"
+   }
+  },
+  {
+   "text": "Late in the first half, Fermín López sent him clean through. Wide.",
+   "say": "Late in the first half, Fermeen Lopez sent him clean through. Wide.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/8edd9ac9-b399-51b0-9690-ac18140f20f4/scratchpad/cap/bar-rma-2026/yamal-miss/fan",
+      40,
+      140
+     ]
+    ],
+    "goalAt": 2.03,
+    "caption": "WIDE",
+    "captionColor": "#ff6b6b"
+   }
+  },
+  {
+   "text": "Mbappé scored twice, the winner three minutes from time. Real Madrid won two-one at Camp Nou.",
+   "say": "Embapay scored twice, the winner three minutes from time. Real Madrid won two-one at Camp Noo.",
+   "scene": {
+    "type": "gameclip",
+    "parts": [
+     [
+      "/tmp/claude-0/-home-user-Tierlist/8edd9ac9-b399-51b0-9690-ac18140f20f4/scratchpad/cap/bar-rma-2026/mbappe-winner/tv",
+      8,
+      50
+     ],
+     [
+      "/tmp/claude-0/-home-user-Tierlist/8edd9ac9-b399-51b0-9690-ac18140f20f4/scratchpad/cap/bar-rma-2026/mbappe-winner/tight",
+      9,
+      85
+     ]
+    ],
+    "goalAt": 1.4,
+    "popup": {
+     "home": "bar",
+     "away": "rma",
+     "homeName": "Barcelona",
+     "awayName": "Real Madrid",
+     "hs0": 1,
+     "as0": 1,
+     "hs": 1,
+     "as": 2,
+     "scorer": "Mbappé",
+     "assist": "Camavinga"
+    },
+    "caption": "MBAPPÉ WINS IT"
+   }
+  },
+  {
+   "text": "It ended Barcelona's perfect start. Nine league wins in a row, gone.",
+   "scene": {
+    "type": "news",
+    "section": "La Liga",
+    "headline": "Mbappé ends Barça's perfect start",
+    "standfirst": "Real Madrid win 2-1 at Camp Nou after Yamal misses a clear chance. Barcelona's run of nine straight league wins is over.",
+    "date": "25 October 2026",
+    "byline": "Knowitball recap",
+    "person": "mbappe",
+    "club": "rma",
+    "nav": [
+     "Football",
+     "La Liga",
+     "Barcelona",
+     "Real Madrid"
+    ]
+   }
+  },
+  {
+   "text": "But one bad night says very little. So how does Yamal compare with Messi, Ronaldo and Mbappé at the same age?",
+   "say": "But one bad night says very little. So how does Yahmal compare with Messy, Ronaldo and Embapay at the same age?",
+   "scene": {
+    "type": "person",
+    "person": "yamal",
+    "label": "19 years, 104 days",
+    "mood": "flat"
+   }
+  },
+  {
+   "text": "By his nineteenth birthday: fifty-six goals and sixty-four assists, for club and country.",
+   "scene": {
+    "type": "stats",
+    "kicker": "Lamine Yamal · by 19",
+    "title": "Club and country",
+    "items": [
+     {
+      "n": "56",
+      "l": "goals"
+     },
+     {
+      "n": "64",
+      "l": "assists"
+     },
+     {
+      "n": "182",
+      "l": "games"
+     }
+    ],
+    "person": "yamal"
+   }
+  },
+  {
+   "text": "The legends by nineteen, goals plus assists: Mbappé sixty-eight. Messi seventeen. Ronaldo thirteen.",
+   "say": "The legends by nineteen, goals plus assists: Embapay sixty-eight. Messy seventeen. Ronaldo thirteen.",
+   "scene": {
+    "type": "bars",
+    "kicker": "By their 19th birthday",
+    "title": "Goals + assists",
+    "items": [
+     {
+      "label": "Lamine Yamal",
+      "value": 120,
+      "person": "yamal",
+      "hl": true
+     },
+     {
+      "label": "Kylian Mbappé",
+      "value": 68,
+      "person": "mbappe19"
+     },
+     {
+      "label": "Lionel Messi",
+      "value": 17,
+      "person": "messi"
+     },
+     {
+      "label": "Cristiano Ronaldo",
+      "value": 13,
+      "person": "ronaldo"
+     }
+    ],
+    "note": "All competitions, club and country · Planet Football"
+   }
+  },
+  {
+   "text": "Yamal had more than all three of them put together.",
+   "say": "Yahmal had more than all three of them put together.",
+   "scene": {
+    "type": "bars",
+    "kicker": "By their 19th birthday",
+    "title": "Yamal v all three",
+    "items": [
+     {
+      "label": "Lamine Yamal",
+      "value": 120,
+      "person": "yamal",
+      "hl": true
+     },
+     {
+      "label": "Mbappé + Messi + Ronaldo",
+      "value": 98
+     }
+    ],
+    "note": "Goals + assists, all competitions"
+   }
+  },
+  {
+   "text": "The catch? He'd played 182 games. Messi only forty-three.",
+   "say": "The catch? He'd played a hundred and eighty-two games. Messy only forty-three.",
+   "scene": {
+    "type": "versus",
+    "title": "Games by 19",
+    "left": {
+     "person": "yamal",
+     "label": "Yamal",
+     "value": "182",
+     "sub": "games",
+     "win": true
+    },
+    "right": {
+     "person": "messi",
+     "label": "Messi",
+     "value": "43",
+     "sub": "games"
+    }
+   }
+  },
+  {
+   "text": "So match the games. After a hundred each, Messi had fifty-nine goals and assists. Yamal fifty-one. Ronaldo forty-two.",
+   "say": "So match the games. After a hundred each, Messy had fifty-nine goals and assists. Yahmal fifty-one. Ronaldo forty-two.",
+   "scene": {
+    "type": "bars",
+    "kicker": "After 100 games",
+    "title": "Goals + assists",
+    "items": [
+     {
+      "label": "Lionel Messi",
+      "value": 59,
+      "person": "messi"
+     },
+     {
+      "label": "Lamine Yamal",
+      "value": 51,
+      "person": "yamal",
+      "hl": true
+     },
+     {
+      "label": "Cristiano Ronaldo",
+      "value": 42,
+      "person": "ronaldo"
+     }
+    ]
+   }
+  },
+  {
+   "text": "The difference is age. Yamal reached a hundred games at seventeen. Messi was twenty.",
+   "say": "The difference is age. Yahmal reached a hundred games at seventeen. Messy was twenty.",
+   "scene": {
+    "type": "timeline",
+    "kicker": "Age at game 100",
+    "title": "Who got there first",
+    "items": [
+     {
+      "year": "17y 7m",
+      "label": "Lamine Yamal",
+      "club": "bar",
+      "hl": true
+     },
+     {
+      "year": "19y 8m",
+      "label": "Cristiano Ronaldo",
+      "club": "mun"
+     },
+     {
+      "year": "20y 3m",
+      "label": "Lionel Messi",
+      "club": "bar"
+     }
+    ]
+   }
+  },
+  {
+   "text": "And he's already won the World Cup, the Euros and two league titles.",
+   "scene": {
+    "type": "trophies",
+    "kicker": "Lamine Yamal · at 19",
+    "title": "Already won",
+    "items": [
+     {
+      "kind": "worldcup",
+      "label": "World Cup 2026"
+     },
+     {
+      "kind": "euro",
+      "label": "Euro 2024"
+     },
+     {
+      "kind": "league",
+      "label": "La Liga x2"
+     }
+    ],
+    "person": "yamal"
+   }
+  },
+  {
+   "text": "So who wins the age-match? Yamal, or Mbappé?",
+   "say": "So who wins the age-match? Yahmal, or Embapay?",
+   "scene": {
+    "type": "versus",
+    "title": "Best at 19?",
+    "left": {
+     "person": "yamal",
+     "label": "Yamal",
+     "value": "120",
+     "sub": "goals + assists by 19"
+    },
+    "right": {
+     "person": "mbappe19",
+     "label": "Mbappé",
+     "value": "68",
+     "sub": "goals + assists by 19"
+    }
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
 }

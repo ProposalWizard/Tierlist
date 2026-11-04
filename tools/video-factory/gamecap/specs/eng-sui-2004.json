@@ -1,0 +1,121 @@
+{
+ "_about": "Wayne Rooney's first Euro 2004 goal: England 3-0 Switzerland, Coimbra, 17 June 2004, 23rd minute. Michael Owen's cross, Rooney's header from close range (UEFA, Sky Sports, Irish Times). It made him the youngest scorer in Euros history for four days. Wing of the cross not confirmed in two sources; drawn from the right. Kits: England white/navy/white, Switzerland red/white/red (assumed home kits). Day game.",
+ "teams": {
+  "home": {
+   "name": "England",
+   "kit": {
+    "shirt": "#F4F4F4",
+    "shorts": "#1B2A55",
+    "socks": "#F4F4F4"
+   },
+   "keeperKit": {
+    "shirt": "#E6D21E",
+    "shorts": "#E6D21E",
+    "socks": "#E6D21E"
+   },
+   "popupTrim": "#1B2A55"
+  },
+  "away": {
+   "name": "Switzerland",
+   "short": "Switzerland",
+   "kit": {
+    "shirt": "#D52B1E",
+    "shorts": "#FFFFFF",
+    "socks": "#D52B1E"
+   },
+   "keeperKit": {
+    "shirt": "#2E2E2E",
+    "shorts": "#2E2E2E",
+    "socks": "#2E2E2E"
+   },
+   "popupTrim": "#FFFFFF"
+  }
+ },
+ "people": {
+  "rooney": {
+   "name": "Wayne Rooney",
+   "skin": "#f0c3a0",
+   "hair": "#6b4a2e"
+  },
+  "owen": {
+   "name": "Michael Owen",
+   "skin": "#eec3a0",
+   "hair": "#2a1d15"
+  },
+  "lampard": {
+   "name": "Frank Lampard",
+   "skin": "#f0c3a0",
+   "hair": "#5b3a22"
+  },
+  "gerrard": {
+   "name": "Steven Gerrard",
+   "skin": "#f0c3a0",
+   "hair": "#4a3020"
+  },
+  "yakin": {
+   "name": "Murat Yakin",
+   "skin": "#d9a57e",
+   "hair": "#1a1a1a"
+  },
+  "muller": {
+   "name": "Patrick Muller",
+   "skin": "#f0c8a8",
+   "hair": "#3a2a1d"
+  },
+  "haas": {
+   "name": "Bernt Haas",
+   "skin": "#f0c8a8",
+   "hair": "#c9a27e"
+  },
+  "stiel": {
+   "name": "Jorg Stiel",
+   "skin": "#eec3a0",
+   "hair": "#8a6a50"
+  }
+ },
+ "clips": [
+  {
+   "id": "rooney-header",
+   "kind": "header",
+   "attacking": "home",
+   "scorer": "rooney",
+   "assister": "owen",
+   "defenders": [
+    "muller",
+    "yakin",
+    "haas"
+   ],
+   "keeper": "stiel",
+   "teammates": [
+    "lampard"
+   ],
+   "minute": 23,
+   "scoreBefore": [
+    0,
+    0
+   ],
+   "scoreAfter": [
+    1,
+    0
+   ],
+   "night": false,
+   "celebration": "arms_out",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "delivery": "cross",
+    "side": "right",
+    "scorerSpot": [
+     0.5,
+     6.5
+    ],
+    "finish": "header",
+    "height": "mid"
+   },
+   "seed": "rooney-sui-b"
+  }
+ ]
+}
