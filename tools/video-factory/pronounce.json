@@ -89,7 +89,10 @@
   "Ferran": "Feran",
   "Neuer": "Noyer",
   "Heung-min": "Hungmin",
-  "Son Heung-min": "Sohn Hungmin"
+  "Son Heung-min": "Sohn Hungmin",
+  "Lionel": "Leeonel",
+  "Lautaro": "Lowtarro",
+  "Martínez": "Marteenes"
  },
  "_ipa": {
   "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -159,6 +162,9 @@
   "Ferran": "ca [fəˈran]; heard back as 'Ferran', batch v2-12",
   "Neuer": "de [ˈnɔʏɐ]; heard back as 'Neuer', batch v2-12",
   "Heung-min": "ko [hɯŋmin]; heard back as 'Hongmin', close, batch v2-12",
-  "Son Heung-min": "ko [son hɯŋmin]; 'Sohn' heard back as 'Sohn'/'sewn' (Korean vowel), 'Sonn' came out as 'Sun', batch v2-12"
+  "Son Heung-min": "ko [son hɯŋmin]; 'Sohn' heard back as 'Sohn'/'sewn' (Korean vowel), 'Sonn' came out as 'Sun', batch v2-12",
+  "Lionel": "es [ljoˈnel], English broadcast 'LEE-oh-nel'; heard back as 'Lionel', batch v2-12",
+  "Lautaro": "es [lawˈtaɾo]; 'Lowtahro' came out as 'Lottaro'/'Lotharole', 'Lowtarro' heard back as 'Lautaro', batch v2-12",
+  "Martínez": "es [maɾˈtineθ]; 'Marteenez' came out as 'Marcini's', 'Marteenes' heard back as 'Martinez', batch v2-12"
  }
 }
