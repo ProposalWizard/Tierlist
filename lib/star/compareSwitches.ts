@@ -1,3 +1,4 @@
+import { isGamePath } from "./gamePath";
 /**
  * COMPARE SWITCHES — see the old behaviour again, in the Play Area only.
  *
@@ -35,8 +36,7 @@ const keyFor = (name: CompareSwitch) => `star-compare-${name}`;
 export function inRealGame(): boolean {
   if (typeof window === "undefined") return true;
   try {
-    const p = window.location.pathname.replace(/\/+$/, "");
-    return p === "/star-dev";
+    return isGamePath(window.location.pathname);
   } catch {
     return true;
   }

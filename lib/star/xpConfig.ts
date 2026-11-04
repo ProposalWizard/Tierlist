@@ -1,5 +1,8 @@
 import type { CareerDivision } from "./calendar";
-import { ACHIEVEMENTS, type AchievementTier } from "./achievements";
+import { ACHIEVEMENTS, RETIRED_ACHIEVEMENTS, type AchievementTier } from "./achievements";
+
+/** What each tier paid before 3 Nov 2026: the cut achievements still pay this. */
+const OLD_TIER_XP: Record<AchievementTier, number> = { easy: 600, medium: 2_400, hard: 12_000, legendary: 30_000 };
 export type { AchievementTier };
 
 /**
@@ -126,7 +129,10 @@ export const DEFAULT_XP: XpConfig = {
   ballon: { win: 720_000, top3: 300_000, top10: 120_000 },
   milestones: { firstCap: 48_000, premierDebut: 6_000 },
   // Legendary added 11 Oct 2026 (Roadmap #4) for the once-a-career ones.
-  achievementTiers: { easy: 600, medium: 2_400, hard: 12_000, legendary: 30_000 },
+  // ×2.5 on 3 Nov 2026, when the list went from 136 to 67: an average career
+  // earns the same XP from achievements as before (Mikey: "I'd like the climb
+  // to be how it was"). Measured with three 20-season robot careers.
+  achievementTiers: { easy: 1_500, medium: 6_000, hard: 30_000, legendary: 75_000 },
   // Each achievement's tier lives with it (lib/star/achievements.ts), so a new
   // one is in the XP Book the moment it is written. The first steps are
   // unlocks.ts's, all easy.
@@ -135,7 +141,13 @@ export const DEFAULT_XP: XpConfig = {
     ...Object.fromEntries(ACHIEVEMENTS.map(a => [a.id, a.tier])) as Record<string, AchievementTier>,
   },
   // Signing comes with starting a career, so it earns nothing.
-  achievementXp: { "first-contract": 0 },
+  achievementXp: {
+    "first-contract": 0,
+    // The first steps (unlocks.ts) keep the old easy amount.
+    "first-two-sessions": 600, "first-game": 600, "boss-meeting": 600, "buy-phone": 600,
+    // Cut achievements pay what they paid when they were earned.
+    ...Object.fromEntries(Object.entries(RETIRED_ACHIEVEMENTS).map(([id, t]) => [id, OLD_TIER_XP[t]])),
+  },
   records: {
     "pl-assists-season": 300_000, "pl-goals-season": 300_000, "pl-goals-match": 300_000,
     "pl-goals-career": 300_000, "pl-appearances-career": 300_000,

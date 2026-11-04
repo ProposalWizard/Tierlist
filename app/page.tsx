@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import ObjectivesToast from "@/components/ObjectivesToast";
+import { GAME_PATH } from "@/lib/star/gamePath";
 
 export const metadata: Metadata = {
   title: "Knowitball — Football Games & Challenges",
@@ -43,7 +44,7 @@ export default function HomePage() {
           Beta pill the top nav already uses for it. */}
       <div className="mt-4 flex items-center justify-center gap-1.5">
         <Link
-          href="/star-dev"
+          href={GAME_PATH}
           className="text-lg font-bold text-white transition-colors hover:text-white md:text-xl"
         >
           Road to Ballon d&apos;Or

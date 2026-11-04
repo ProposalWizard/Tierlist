@@ -7,6 +7,7 @@ import type { CompLeaders, ScorerCounts, WorldState, WorldSummary } from "./type
 import { cupScorers, type CupGame } from "./cupScorers";
 import type { CupState } from "../cups";
 import { koAggregate, type EuroBracket } from "../euroBracket";
+import { ownEuroScorers } from "./ownEuroScorers";
 
 /**
  * Names for the world's scorer counts, and last season kept whole after the
@@ -140,8 +141,13 @@ export function summariseWorld(
   }
   if (career.euroState) {
     tables.push({ name: career.euroState.competition, rows: euroRows(career.euroState.table ?? career.euroState.liveTable) });
+    try {
+      const own = ownEuroScorers(career, career.euroState);
+      scorers.push({ name: career.euroState.competition, goals: own.goals.map(strip), assists: own.assists.map(strip) });
+    } catch { /* scorers are extra */ }
   }
   for (const e of world?.europe ?? []) {
+    if (career.euroState?.competition === e.competition) continue; // yours is kept above
     tables.push({ name: e.competition, rows: euroRows(e.table) });
     scorers.push({ name: e.competition, goals: topOf(career, e.scorers, 0).map(strip), assists: topOf(career, e.scorers, 1).map(strip) });
     const b = bestOfCounts(career, e.scorers);
@@ -149,8 +155,22 @@ export function summariseWorld(
   }
   const playOffs: WorldSummary["playOffs"] = [...(ladder?.worldPlayOffs ?? [])];
   if (ladder?.playOffs) playOffs.push({ division: yours as CareerDivision, result: ladder.playOffs });
+  const playOffWinners: NonNullable<WorldSummary["playOffWinners"]> = {};
+  for (const p of playOffs) playOffWinners[p.division] = p.result.promoted;
+  // Your own play-off, played for real: its winner is on the career, not the ladder.
+  if (career.playOffState?.promoted) playOffWinners[yours as CareerDivision] = career.playOffState.promoted;
   const finals: NonNullable<WorldSummary["finals"]> = [];
+  const cupRounds: NonNullable<WorldSummary["cups"]> = [];
   for (const cup of [...cups, ...(world?.leagueCup ? [world.leagueCup] : [])]) {
+    if (!cupRounds.some(c => c.competition === cup.competition)) {
+      // Qualifying rounds left out: they are most of the FA Cup's ties and
+      // would add ~60 KB to every save.
+      cupRounds.push({ competition: cup.competition, winner: cup.winner, rounds: cup.rounds.filter(r => !/qualif/i.test(r.name)).map(r => ({ name: r.name, ties: r.ties.map(t => ({ home: t.home, away: t.away, hs: t.hs, as: t.as, ...(t.pens ? { pens: { home: t.pens.home, away: t.pens.away } } : {}) })), ...(r.byes?.length ? { byes: r.byes } : {}) })) });
+      try {
+        const sc = cupScorers(career, cup.competition, cup.rounds.flatMap(r => r.ties.map(t => ({ round: r.name, home: t.home, away: t.away, hs: t.hs, as: t.as }))));
+        scorers.push({ name: cup.competition, goals: sc.goals.map(strip), assists: sc.assists.map(strip) });
+      } catch { /* scorers are extra */ }
+    }
     const last = cup.rounds[cup.rounds.length - 1];
     const t = last?.ties.length === 1 ? last.ties[0] : null;
     if (t) finals.push({ competition: cup.competition, home: t.home, away: t.away, hs: t.hs, as: t.as, ...(t.pens ? { pens: t.pens } : {}), winner: cup.winner });
@@ -167,8 +187,16 @@ export function summariseWorld(
     const agg = f ? koAggregate(f) : null;
     if (f?.a && f.b) finals.push({ competition, home: f.a, away: f.b, hs: agg?.a, as: agg?.b, ...(f.pens ? { pens: { home: f.pens.a, away: f.pens.b } } : {}), winner: f.winner ?? winner });
   };
-  if (career.euroState) euroFinal(career.euroState.competition, career.euroState.bracket, career.euroState.winner);
-  for (const e of world?.europe ?? []) euroFinal(e.competition, e.bracket, e.winner);
+  const brackets: NonNullable<WorldSummary["brackets"]> = [];
+  if (career.euroState) {
+    euroFinal(career.euroState.competition, career.euroState.bracket, career.euroState.winner);
+    if (career.euroState.bracket) brackets.push({ competition: career.euroState.competition, bracket: career.euroState.bracket });
+  }
+  for (const e of world?.europe ?? []) {
+    if (career.euroState?.competition === e.competition) continue;
+    euroFinal(e.competition, e.bracket, e.winner);
+    if (e.bracket) brackets.push({ competition: e.competition, bracket: e.bracket });
+  }
   for (const sh of world?.shields ?? []) finals.push({ competition: sh.competition, home: sh.home, away: sh.away, hs: sh.hs, as: sh.as, ...(sh.pens ? { pens: sh.pens } : {}), winner: sh.winner });
   for (const f of career.fixtures) {
     if ((f.competition === "Community Shield" || f.competition === "Super Cup") && f.played) {
@@ -177,5 +205,5 @@ export function summariseWorld(
       finals.push({ competition: f.competition, home, away, hs: f.homeScore, as: f.awayScore, winner: won ? career.player.club : f.opponent });
     }
   }
-  return { season: career.season, tables, scorers, winners, playOffs, finals, leaders };
+  return { season: career.season, tables, scorers, winners, playOffs, finals, leaders, cups: cupRounds, brackets, playOffWinners };
 }

@@ -53,7 +53,8 @@ function playUntilTieAndLose(c: CareerState, competition: string): CareerState {
   while (guard++ < 60) {
     const fx = nextFixtureFor(c)!;
     if (fx.competition === competition) {
-      return creditMatchResult(c, fx, statsFor(fx.home ? 0 : 3, fx.home ? 3 : 0)).career;
+      // stats.homeScore is YOUR score (careerFlow), home or away: lose 0-3.
+      return creditMatchResult(c, fx, statsFor(0, 3)).career;
     }
     c = creditMatchResult(c, fx, statsFor(1, 1)).career;
   }

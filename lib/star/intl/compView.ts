@@ -7,7 +7,7 @@
  * nothing new is stored. Pure.
  */
 import type { CareerState } from "../types";
-import { worldOf, intlOf, type GroupView, type MatchView } from "./career";
+import { worldOf, intlOf, ballonDorYearStart, type GroupView, type MatchView } from "./career";
 import type { CompKind, Final, WorldMatch } from "./world";
 import { played, table } from "./engine";
 import { intlSeason } from "./scorers";
@@ -78,9 +78,21 @@ export function intlCompScorers(career: CareerState, comp: CompKind, n = 10): { 
     const r = m.get(key) ?? { name, nation, n: 0 };
     r.n += k; m.set(key, r);
   };
-  for (const m of w.matches) {
-    if (m.comp !== comp || m.hs == null) continue;
-    const named = season.goals.get(m.id);
+  // The edition on show, whole (Mikey, 2 Nov 2026: goals were only counted
+  // since the last Ballon d'Or night, so an edition that runs across one,
+  // like Nations League groups in the autumn and its finals in June, lost
+  // half its scorers). Earlier seasons' named goals fill in the rest.
+  const ms = w.matches.filter((m) => m.comp === comp);
+  const ed = currentEdition(ms);
+  const edMatches = ms.filter((m) => m.edition === ed && m.hs != null);
+  const earliest = Math.min(...edMatches.map((m) => m.date));
+  const earlier: ReturnType<typeof intlSeason>["goals"][] = [];
+  for (let back = 1; back <= 2 && career.season - back >= 1; back++) {
+    if (earliest >= ballonDorYearStart(career, career.season - back + 1)) break;
+    try { earlier.push(intlSeason(career, career.season - back).goals); } catch { break; }
+  }
+  for (const m of edMatches) {
+    const named = season.goals.get(m.id) ?? earlier.map((g) => g.get(m.id)).find(Boolean);
     if (named) {
       for (const [nation, list] of [[m.home, named.home], [m.away, named.away]] as const) {
         for (const goal of list) { add(g, goal.s, nation); if (goal.a) add(a, goal.a, nation); }

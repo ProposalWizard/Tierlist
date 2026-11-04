@@ -218,6 +218,7 @@ import { WatchedScreen } from "@/components/star/IntlKit";
 import CallUpScreen from "@/components/star/CallUpScreen";
 import { tournamentDue, openTournament, applyTournament } from "@/lib/star/tournament";
 import TournamentScreen from "@/components/star/TournamentScreen";
+import { GAME_PATH } from "@/lib/star/gamePath";
 
 // ── Screens that download only when first opened (speed job D, 9 Oct 2026;
 // lib/star/lazyScreen.ts). Home, the title screen and the match stay in the
@@ -539,7 +540,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // (Mikey, 6 Oct 2026). Only achievements pop up here.
     const records = earned.filter(e => e.kind === "record");
     if (records.length) setCareer(c => (c ? { ...c, seasonRecords: addSeasonRecords(c.seasonRecords, records) } : c));
-    const fresh = earned.filter(e => e.kind === "achievement" && !lastMatchAchRef.current.includes(e.id.slice(4)));
+    // Skip any the big card already showed (shownAchRef): one pop-up per achievement.
+    const fresh = earned.filter(e => e.kind === "achievement" && !lastMatchAchRef.current.includes(e.id.slice(4)) && !shownAchRef.current.has(e.id.slice(4)));
     // Your legend lives on (lib/star/hallRecords.ts): a record from one of
     // your own retired careers, broken — checked when something that can
     // break one has just happened (a match, a trophy, an award), so a record
@@ -625,6 +627,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
   // Achievements earned away from a match (a purchase, training, a choice):
   // their pop-ups, with the star rating bar filling (Mikey, 13 Oct 2026).
+  // Achievements the big card (offMatchAch) has shown: the small banner skips them.
+  const shownAchRef = useRef<Set<string>>(new Set());
   const [offMatchAch, setOffMatchAch] = useState<{ items: { label: string; description: string }[]; star?: { from: StarStep; to: StarStep } } | null>(null);
   // Achievements and records earned, waiting to pop up on Home (P36; lib/star/earnPops.ts).
   const [earnPops, setEarnPops] = useState<EarnPop[]>([]);
@@ -1594,6 +1598,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // Pop the achievement toast for ids the reducers already appended to state.
   const toastAchievements = (ids: string[]) => {
     if (ids.length > 0) {
+      for (const id of ids) shownAchRef.current.add(id);
       setUnlockedAchievements(ids);
       setOffMatchAch({ items: achievementCards(ids) });
       setTimeout(() => setUnlockedAchievements([]), 3000);
@@ -1619,6 +1624,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const unlocked = { ...career, achievements: [...career.achievements, ...ids] };
     const next = withStars({ ...unlocked, starRating: computeStarRating(unlocked) });
     const after = starStatus(next);
+    for (const id of ids) shownAchRef.current.add(id);
     setCareer(next);
     setOffMatchAch({
       items: achievementCards(ids),
@@ -2119,11 +2125,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // rollOverSeason so the season-awards screen can land here too, once the
   // player is done looking at what the season handed out.
   const continueAfterRollover = useCallback((next: CareerState) => {
-    if (next.ladderNews && next.contract.seasonsRemaining > 0) {
-      setActiveNav(null);
-      setPhase("ladder");
-      return;
-    }
+    // The "divisions have changed" page (LadderScreen) is skipped (Mikey,
+    // 2 Nov 2026): the season review's trophy list shows every final table.
     if (next.contract.seasonsRemaining <= 0) {
       setPhase("contract-renewal");
     } else {
@@ -3705,7 +3708,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           )}
           {guestAccountsOn() && <div className="mb-3"><GuestPlayButton /></div>}
           <a
-            href="/auth?next=/star-dev"
+            href={`/auth?next=${GAME_PATH}`}
             className={guestAccountsOn()
               ? "inline-block w-full rounded-xl border border-white/20 px-5 py-3 text-sm font-black text-white active:scale-95"
               : "inline-block w-full rounded-xl bg-emerald-500 px-5 py-3 text-sm font-black text-emerald-950 active:scale-95"}
