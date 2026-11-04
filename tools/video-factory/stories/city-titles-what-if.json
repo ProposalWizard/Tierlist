@@ -222,7 +222,7 @@
     "parts": [
      [
       "/tmp/claude-0/foot/qpr/aguero-9320/tv",
-      0,
+      30,
       90
      ],
      [
@@ -236,7 +236,7 @@
       150
      ]
     ],
-    "goalAt": 3.433,
+    "goalAt": 2.433,
     "popup": {
      "home": "mci",
      "away": "qpr",
@@ -404,8 +404,8 @@
    "text": "After that, the gaps get tiny. Liverpool lost two titles by a single point.",
    "scene": {
     "type": "bars",
-    "kicker": "Every City league title",
-    "title": "Runner-up: points behind City",
+    "kicker": "Runner-up · points behind City",
+    "title": "The closest title races",
     "unit": "pts",
     "max": 12,
     "items": [
@@ -441,8 +441,7 @@
       "value": 2,
       "club": "ars"
      }
-    ],
-    "note": "Also 2012: level on points · 2018: 19 behind"
+    ]
    }
   },
   {
