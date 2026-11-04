@@ -176,26 +176,6 @@
    }
   },
   {
-   "text": "He scores thirty that season. Then come three finals.",
-   "say": "He scores thirty that season. Then come three finals.",
-   "scene": {
-    "type": "stats",
-    "kicker": "Diego Milito · 2009/10",
-    "title": "Inter's number 22",
-    "items": [
-     {
-      "n": "30",
-      "l": "goals, all competitions"
-     },
-     {
-      "n": "22",
-      "l": "in Serie A"
-     }
-    ],
-    "person": "milito"
-   }
-  },
-  {
    "text": "Final one. The Coppa Italia against Roma, in Rome. One goal. His.",
    "say": "Final one. The Koppa Itahleeya against Roma, in Rome. One goal. His.",
    "scene": {
@@ -468,15 +448,6 @@
      "Inter",
      "FIFA"
     ]
-   }
-  },
-  {
-   "text": "Inter's president, Massimo Moratti, rang him to say sorry.",
-   "say": "Inter's president, Massimo Morattee, rang him to say sorry.",
-   "scene": {
-    "type": "quote",
-    "person": "moratti",
-    "text": "It's an incredible decision."
    }
   },
   {

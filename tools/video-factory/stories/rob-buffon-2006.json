@@ -131,8 +131,8 @@
  },
  "lines": [
   {
-   "text": "Two goals. That's all Gianluigi Buffon let in at the whole 2006 World Cup. He still didn't win the Ballon d'Or.",
-   "say": "Two goals. That's all Jahnlooeejee Boofon let in at the whole two thousand and six World Cup. He still didn't win the Balon Dor.",
+   "text": "Two goals. That's all Gianluigi Buffon let in at the 2006 World Cup. And he still didn't win the Ballon d'Or.",
+   "say": "Two goals. That's all Jahnlooeejee Boofon let in at the two thousand and six World Cup. And he still didn't win the Balon Dor.",
    "scene": {
     "type": "title",
     "heading": "GIANLUIGI BUFFON",
@@ -171,8 +171,8 @@
    }
   },
   {
-   "text": "The first was an own goal, by his own team-mate Zaccardo, against the USA.",
-   "say": "The first was an own goal, by his own team mate Zakkardoh, against the USA.",
+   "text": "The first was an own goal, by his team-mate Zaccardo, against the USA.",
+   "say": "The first was an own goal, by his team mate Zakkardoh, against the USA.",
    "scene": {
     "type": "score",
     "home": "ita",
@@ -185,8 +185,8 @@
    }
   },
   {
-   "text": "The second? Zidane, in the final, seven minutes in. A chip, in off the crossbar.",
-   "say": "The second? Zeedan, in the final, seven minutes in. A chip, in off the crossbar.",
+   "text": "The second, Zidane's penalty in the final. A chip, in off the bar.",
+   "say": "The second, Zeedan's penalty in the final. A chip, in off the bar.",
    "scene": {
     "type": "gameclip",
     "parts": [
@@ -218,8 +218,8 @@
    }
   },
   {
-   "text": "Materazzi headed Italy level. Then it went to extra time.",
-   "say": "Matterattsee headed Italy level. Then it went to extra time.",
+   "text": "Materazzi heads Italy level. Then, extra time.",
+   "say": "Matterattsee heads Italy level. Then, extra time.",
    "scene": {
     "type": "score",
     "home": "ita",
@@ -233,8 +233,8 @@
    }
   },
   {
-   "text": "A hundred and four minutes. Sagnol crosses. Zidane heads for the top corner. Buffon tips it over.",
-   "say": "A hundred and four minutes. Sanyol crosses. Zeedan heads for the top corner. Boofon tips it over.",
+   "text": "A hundred and four minutes. Zidane's header is going in. Buffon tips it over.",
+   "say": "A hundred and four minutes. Zeedan's header is going in. Boofon tips it over.",
    "scene": {
     "type": "gameclip",
     "parts": [
@@ -255,8 +255,8 @@
    }
   },
   {
-   "text": "Penalties. Italy score all five. They win it five-three.",
-   "say": "Penalties. Italy score all five. They win it five three.",
+   "text": "Penalties. Italy score all five, and win it five-three.",
+   "say": "Penalties. Italy score all five, and win it five three.",
    "scene": {
     "type": "score",
     "home": "ita",
@@ -270,8 +270,8 @@
    }
   },
   {
-   "text": "World champions. And Buffon wins the Yashin Award, as the best keeper of the tournament.",
-   "say": "World champions. And Boofon wins the Yashin Award, as the best keeper of the tournament.",
+   "text": "World champions. And Buffon wins the Yashin Award as the best keeper there.",
+   "say": "World champions. And Boofon wins the Yashin Award as the best keeper there.",
    "scene": {
     "type": "trophies",
     "kicker": "Gianluigi Buffon · summer 2006",
@@ -289,8 +289,8 @@
    }
   },
   {
-   "text": "Back home, chaos. Juventus are relegated to Serie B in the Calciopoli scandal, and stripped of two titles.",
-   "say": "Back home, chaos. Yooventus are relegated to Serie B in the Kalchohpohlee scandal, and stripped of two titles.",
+   "text": "Back home, Juventus are relegated in the Calciopoli scandal, and stripped of two titles.",
+   "say": "Back home, Yooventus are relegated in the Kalchohpohlee scandal, and stripped of two titles.",
    "scene": {
     "type": "news",
     "section": "Serie A",
@@ -309,8 +309,8 @@
    }
   },
   {
-   "text": "The captain, Cannavaro, leaves for Real Madrid. Buffon stays with Juventus, in the second division.",
-   "say": "The captain, Kannahvaroh, leaves for Rayal Madrid. Boofon stays with Yooventus, in the second division.",
+   "text": "Cannavaro leaves for Real Madrid. Buffon stays, in Serie B.",
+   "say": "Kannahvaroh leaves for Rayal Madrid. Boofon stays, in Serie B.",
    "scene": {
     "type": "versus",
     "title": "Summer 2006: which division?",
@@ -329,8 +329,8 @@
    }
   },
   {
-   "text": "November. The Ballon d'Or goes to Cannavaro. Buffon is second, forty-nine points behind.",
-   "say": "November. The Balon Dor goes to Kannahvaroh. Boofon is second, forty nine points behind.",
+   "text": "The Ballon d'Or goes to Cannavaro. Buffon is second, forty-nine points behind.",
+   "say": "The Balon Dor goes to Kannahvaroh. Boofon is second, forty nine points behind.",
    "scene": {
     "type": "podium",
     "year": "2006",
@@ -355,29 +355,8 @@
    }
   },
   {
-   "text": "To be fair, Cannavaro was immense too. He was the captain, and FIFA's player of the year.",
-   "say": "To be fair, Kannahvaroh was immense too. He was the captain, and FIFA's player of the year.",
-   "scene": {
-    "type": "news",
-    "section": "Ballon d'Or",
-    "headline": "Was Buffon really robbed?",
-    "standfirst": "Cannavaro lifted the World Cup as captain and also won FIFA's World Player award. The defence in front of Buffon was his.",
-    "date": "The other side",
-    "byline": "Knowitball recap",
-    "person": "cannavaro",
-    "club": "ita",
-    "mastColor": "#1b1f2b",
-    "nav": [
-     "Football",
-     "Ballon d'Or",
-     "Italy",
-     "Analysis"
-    ]
-   }
-  },
-  {
-   "text": "But only one goalkeeper has ever won it. Lev Yashin, in 1963. Buffon never got closer than this.",
-   "say": "But only one goalkeeper has ever won it. Lev Yashin, in nineteen sixty three. Boofon never got closer than this.",
+   "text": "Only one keeper has ever won it: Lev Yashin, in 1963. Buffon never got closer.",
+   "say": "Only one keeper has ever won it. Lev Yashin, in nineteen sixty three. Boofon never got closer.",
    "scene": {
     "type": "timeline",
     "kicker": "Goalkeepers and the Ballon d'Or",
@@ -401,8 +380,8 @@
    }
   },
   {
-   "text": "Two goals in seven games, neither from open play, and it still wasn't enough. That's the robbery.",
-   "say": "Two goals in seven games, neither from open play, and it still wasn't enough. That's the robbery.",
+   "text": "Two goals all tournament, and it still wasn't enough. That's the robbery.",
+   "say": "Two goals all tournament, and it still wasn't enough. That's the robbery.",
    "scene": {
     "type": "stamp",
     "text": "ROBBED",

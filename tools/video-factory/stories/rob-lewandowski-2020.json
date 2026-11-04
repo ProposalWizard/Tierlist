@@ -120,8 +120,8 @@
    }
   },
   {
-   "text": "2019-20. Thirty-four in the league, six in the cup, fifteen in the Champions League.",
-   "say": "Twenty nineteen, twenty. Thirty four in the league, six in the cup, fifteen in the Champions League.",
+   "text": "2019-20. Thirty-four in the league, six in the cup, fifteen in Europe.",
+   "say": "Twenty nineteen, twenty. Thirty four in the league, six in the cup, fifteen in Europe.",
    "scene": {
     "type": "stats",
     "kicker": "Robert Lewandowski · 2019/20",
@@ -148,8 +148,8 @@
    }
   },
   {
-   "text": "But in July, before the Champions League was even finished, France Football cancelled the award.",
-   "say": "But in July, before the Champions League was even finished, France Football cancelled the award.",
+   "text": "But in July, before the Champions League had even finished, the award was cancelled.",
+   "say": "But in July, before the Champions League had even finished, the award was cancelled.",
    "scene": {
     "type": "news",
     "section": "Ballon d'Or",
@@ -169,8 +169,8 @@
    }
   },
   {
-   "text": "So he kept going. In Lisbon, Bayern beat Barcelona eight-two. He scored one of them.",
-   "say": "So he kept going. In Lisbon, Byern beat Barcelona eight two. He scored one of them.",
+   "text": "He kept going. Bayern beat Barcelona eight-two.",
+   "say": "He kept going. Byern beat Barcelona eight two.",
    "scene": {
     "type": "score",
     "home": "bar",
@@ -183,8 +183,8 @@
    }
   },
   {
-   "text": "Then PSG in the final. The treble. Top scorer in Germany, and in Europe.",
-   "say": "Then P S G in the final. The treble. Top scorer in Germany, and in Europe.",
+   "text": "Then PSG in the final. The treble.",
+   "say": "Then P S G in the final. The treble.",
    "scene": {
     "type": "trophies",
     "kicker": "Bayern · 2019/20",
@@ -210,8 +210,8 @@
    }
   },
   {
-   "text": "In December, FIFA named him the best player in the world. The Ballon d'Or had no winner at all.",
-   "say": "In December, FIFA named him the best player in the world. The Balon Dor had no winner at all.",
+   "text": "FIFA named him the best player in the world. The Ballon d'Or had no winner.",
+   "say": "FIFA named him the best player in the world. The Balon Dor had no winner.",
    "scene": {
     "type": "trophies",
     "kicker": "December 2020",
@@ -230,8 +230,8 @@
    }
   },
   {
-   "text": "Next season, he went after Gerd Müller's record. Forty league goals, set in 1972.",
-   "say": "Next season, he went after Gaird Mewler's record. Forty league goals, set in nineteen seventy two.",
+   "text": "Next season, he chased Gerd Müller's record. Forty league goals, from 1972.",
+   "say": "Next season, he chased Gaird Mewler's record. Forty league goals, from nineteen seventy two.",
    "scene": {
     "type": "bars",
     "kicker": "Most Bundesliga goals in one season",
@@ -254,8 +254,8 @@
    }
   },
   {
-   "text": "Last day, ninetieth minute, still on forty. Sané's shot is saved. Lewandowski gets there first. Forty-one.",
-   "say": "Last day, ninetieth minute, still on forty. Sahnay's shot is saved. Lehvandoffskee gets there first. Forty one.",
+   "text": "Last day, ninetieth minute, still on forty. Sané's shot is saved. Lewandowski is first to it. Forty-one.",
+   "say": "Last day, ninetieth minute, still on forty. Sahnay's shot is saved. Lehvandoffskee is first to it. Forty one.",
    "scene": {
     "type": "gameclip",
     "parts": [
@@ -287,8 +287,8 @@
    }
   },
   {
-   "text": "So, 2021. Surely his year. Messi six hundred and thirteen points. Lewandowski five hundred and eighty.",
-   "say": "So, twenty twenty one. Surely his year. Messi six hundred and thirteen points. Lehvandoffskee five hundred and eighty.",
+   "text": "2021, surely his year. Messi six hundred and thirteen points. Lewandowski five hundred and eighty.",
+   "say": "Twenty twenty one, surely his year. Messi six hundred and thirteen points. Lehvandoffskee five hundred and eighty.",
    "scene": {
     "type": "podium",
     "year": "2021",
@@ -313,8 +313,8 @@
    }
   },
   {
-   "text": "Then Messi turned to him on stage, and said this.",
-   "say": "Then Messi turned to him on stage, and said this.",
+   "text": "Then Messi turned to him on stage.",
+   "say": "Then Messi turned to him on stage.",
    "scene": {
     "type": "quote",
     "person": "messi",
@@ -322,8 +322,8 @@
    }
   },
   {
-   "text": "What he got instead was a brand-new prize. Striker of the Year. The first one ever.",
-   "say": "What he got instead was a brand new prize. Striker of the Year. The first one ever.",
+   "text": "Instead he got a brand-new prize. Striker of the Year.",
+   "say": "Instead he got a brand new prize. Striker of the Year.",
    "scene": {
     "type": "trophies",
     "kicker": "Ballon d'Or night · 2021",
@@ -338,8 +338,8 @@
    }
   },
   {
-   "text": "Two seasons as the best in the world. Two FIFA awards. Zero Ballon d'Ors. That's the robbery.",
-   "say": "Two seasons as the best in the world. Two FIFA awards. Zero Balon Dors. That's the robbery.",
+   "text": "Two seasons as the world's best. Zero Ballon d'Ors. That's the robbery.",
+   "say": "Two seasons as the world's best. Zero Balon Dors. That's the robbery.",
    "scene": {
     "type": "stamp",
     "text": "ROBBED",

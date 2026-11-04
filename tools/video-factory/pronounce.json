@@ -78,7 +78,16 @@
   "Atlético": "Atleteeko",
   "Marquinhos": "Markeenyos",
   "Kostoulas": "Kosstoolass",
-  "Viduka": "Vidooka"
+  "Viduka": "Vidooka",
+  "Genoa": "Jennoa",
+  "Siena": "Seeyenna",
+  "Moratti": "Morattee",
+  "Van Buyten": "Van Boyten",
+  "Zanetti": "Zanettee",
+  "Coppa Italia": "Koppa Itahleeya",
+  "Bayern": "Byern",
+  "José Mourinho": "Hozay Moreenyo",
+  "UEFA": "Yooayfuh"
  },
  "_ipa": {
   "Thierry Henry": "fr [tjɛʁi ɑ̃ʁi] (Wikipedia)",
@@ -137,6 +146,15 @@
   "Guardiola": "ca [ɡwəɾðiˈɔlə] (Wikipedia)",
   "Van Basten": "nl [vɑm ˈbɑstə(n)] (Wikipedia)",
   "Van Dijk": "nl [vɑn ˈdɛik] (Wikipedia); English broadcast 'van DYKE'",
-  "De Bruyne": "nl [də ˈbrœynə] (Wikipedia)"
+  "De Bruyne": "nl [də ˈbrœynə] (Wikipedia)",
+  "Genoa": "English usage 'JEN-oh-uh'; voice D take heard as 'Genoa' (rob-milito-2010)",
+  "Siena": "it [ˈsjɛːna]; heard as 'Siena' (rob-milito-2010)",
+  "Moratti": "it [moˈratti]; heard as 'Morati' (rob-milito-2010)",
+  "Van Buyten": "nl/fr [vɑn ˈbœytə]; heard as 'Van Boyden' (rob-milito-2010)",
+  "Zanetti": "it [dzaˈnetti]; heard as 'Xannity' (rob-milito-2010)",
+  "Coppa Italia": "it [ˈkɔppa iˈtaːlja]; heard as 'Coppa Italea' (rob-milito-2010)",
+  "Bayern": "de [ˈbaɪɐn]; heard as 'Bayern' (rob-milito-2010)",
+  "José Mourinho": "pt [ʒuˈzɛ moˈɾiɲu], English broadcast 'ho-ZAY'; heard as 'Jose Mourinho' (rob-milito-2010)",
+  "UEFA": "English 'yoo-AY-fuh'; heard as 'UEFA' (rob-milito-2010)"
  }
 }
