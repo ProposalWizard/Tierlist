@@ -1,0 +1,722 @@
+{
+ "id": "ww-realmadrid-ronaldo-v-mancity",
+ "about": "Who would win? v2: today's Real Madrid with Cristiano Ronaldo from 2011/12 (FIFA 12, 92: our database) v today's Man City, at the Bernabéu. Why 2011/12: Mourinho is back as Real manager (Sky Sports, theScore); that season Real won La Liga with 100 points and Ronaldo scored 46 league goals (realmadrid.com, Wikipedia). Real XI: the 1 Nov Racing XI (Managing Madrid, one source) with Ronaldo for the banned Vinícius (4-game ban: Al Jazeera, Deccan Chronicle). City XI: the confirmed XI at Villa, 24 Oct (mancity.com, Oddschecker), manager Maresca (Al Jazeera, ITV). Other facts, two sources each: Real beat City 5-1 on aggregate in March 2026 (Al Jazeera, beIN, ESPN); Bernardo Silva joined Real (beIN, Radio X); Haaland 9 in 9 (pakera, NBC); Mbappé reached 100 Real goals in about 115 games, Ronaldo in 105 (World Soccer Talk, GiveMeSport); Real 3-2 City, Ronaldo 90th minute, Mourinho's knee slide, 18 Sep 2012 (Sky, Al Jazeera, Deseret). Ratings: our FC 27 database. Match imagined. Footage: gamecap/specs/ww-realmadrid-ronaldo-v-mancity.json.",
+ "title": "WHO WOULD WIN?",
+ "footageRoot": "footage/ww-realmadrid-ronaldo-v-mancity",
+ "calm": {
+  "dir": "calm/high"
+ },
+ "music": "09-last-attack.mp3",
+ "competition": {
+  "title": [
+   "REAL MADRID + PRIME RONALDO",
+   "v MAN CITY · BERNABÉU"
+  ],
+  "tagline": "1 LEGEND ADDED · 1 WINNER",
+  "versus": "DREAM MATCH · SANTIAGO BERNABÉU",
+  "short": "DREAM MATCH · BERNABÉU"
+ },
+ "venue": {
+  "name": "SANTIAGO BERNABÉU",
+  "place": "MADRID · SPAIN",
+  "lat": 40.4531,
+  "lon": -3.6883
+ },
+ "home": {
+  "name": "REAL MADRID",
+  "full": "REAL MADRID + RONALDO",
+  "versus": [
+   "REAL",
+   "MADRID"
+  ],
+  "nation": "esp",
+  "founded": 1902,
+  "city": {
+   "label": "MADRID",
+   "sub": "SPAIN",
+   "lat": 40.4531,
+   "lon": -3.6883
+  },
+  "formation": "4-3-3",
+  "kit": {
+   "shirt": "#ffffff",
+   "trim": "#0b3d2e",
+   "collar": "#0b3d2e",
+   "shorts": "#ffffff",
+   "socks": "#ffffff",
+   "number": "#0b3d2e",
+   "gk": {
+    "shirt": "#2b2b2b",
+    "trim": "#0b3d2e",
+    "collar": "#0b3d2e"
+   }
+  },
+  "crest": {
+   "a": "#ffffff",
+   "b": "#febe10",
+   "c": "#00529f",
+   "t": "RM",
+   "tc": "#00529f",
+   "ts": 40
+  },
+  "colors": {
+   "ring": "#febe10",
+   "pillBg": "#ffffff",
+   "pillFg": "#0b3d2e",
+   "headerBg": "#ffffff",
+   "headerFg": "#0b3d2e",
+   "headerSub": "#0b3d2e",
+   "headerStripes": [
+    "#febe10",
+    "#0b3d2e"
+   ],
+   "versusBg": "#5a4a10",
+   "accent": "#ffd23f",
+   "bar": "#febe10",
+   "confetti": [
+    "#ffffff",
+    "#febe10",
+    "#0b3d2e",
+    "#00529f"
+   ],
+   "ribbon": [
+    "#febe10",
+    "#ffffff"
+   ]
+  },
+  "grid": [
+   "ronaldo",
+   "mbappe",
+   "courtois",
+   "bellingham",
+   "trent",
+   "cucurella",
+   "konate",
+   "tchouameni",
+   "bernardo",
+   "huijsen",
+   "diomande"
+  ],
+  "slots": {
+   "courtois": "GK",
+   "trent": "RB",
+   "konate": "CB1",
+   "huijsen": "CB2",
+   "cucurella": "LB",
+   "bernardo": "CM1",
+   "tchouameni": "CM",
+   "bellingham": "CM2",
+   "diomande": "RW",
+   "mbappe": "ST",
+   "ronaldo": "LW"
+  },
+  "manager": "mourinho"
+ },
+ "away": {
+  "name": "MAN CITY",
+  "full": "MANCHESTER CITY",
+  "versus": [
+   "MAN",
+   "CITY"
+  ],
+  "nation": "eng",
+  "founded": 1880,
+  "city": {
+   "label": "MANCHESTER",
+   "sub": "ENGLAND",
+   "lat": 53.4831,
+   "lon": -2.2004
+  },
+  "formation": "4-2-3-1",
+  "kitLabel": "HOME KIT",
+  "kit": {
+   "shirt": "#6cabdd",
+   "trim": "#1c2c5b",
+   "collar": "#1c2c5b",
+   "shorts": "#ffffff",
+   "socks": "#ffffff",
+   "number": "#1c2c5b",
+   "gk": {
+    "shirt": "#f28c28",
+    "trim": "#111111",
+    "collar": "#111111"
+   }
+  },
+  "crest": {
+   "a": "#6cabdd",
+   "b": "#1c2c5b",
+   "c": "#1c2c5b",
+   "t": "MCFC",
+   "tc": "#ffffff",
+   "ts": 26
+  },
+  "colors": {
+   "ring": "#6cabdd",
+   "pillBg": "#6cabdd",
+   "pillFg": "#1c2c5b",
+   "headerBg": "#6cabdd",
+   "headerFg": "#1c2c5b",
+   "headerSub": "#1c2c5b",
+   "versusBg": "#1c3c62",
+   "accent": "#bfe1ff",
+   "bar": "#6cabdd",
+   "confetti": [
+    "#6cabdd",
+    "#ffffff",
+    "#1c2c5b",
+    "#ffd23f"
+   ],
+   "ribbon": [
+    "#6cabdd",
+    "#1c2c5b"
+   ]
+  },
+  "grid": [
+   "haaland",
+   "donnarumma",
+   "dias",
+   "enzo",
+   "gvardiol",
+   "guehi",
+   "cherki",
+   "doku",
+   "anderson",
+   "ndiaye",
+   "khusanov"
+  ],
+  "slots": {
+   "donnarumma": "GK",
+   "khusanov": "RB",
+   "dias": "CB1",
+   "guehi": "CB2",
+   "gvardiol": "LB",
+   "anderson": "CM1",
+   "enzo": "CM2",
+   "ndiaye": "RW",
+   "cherki": "CAM",
+   "doku": "LW",
+   "haaland": "ST"
+  },
+  "manager": "maresca"
+ },
+ "players": {
+  "courtois": {
+   "name": "COURTOIS",
+   "full": "Thibaut Courtois",
+   "num": 1,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#4b3424"
+   ],
+   "beard": "stubble",
+   "gk": true
+  },
+  "trent": {
+   "name": "TRENT",
+   "full": "Trent Alexander-Arnold",
+   "num": 12,
+   "skin": "tan",
+   "hair": [
+    "buzz",
+    "#1a1410"
+   ],
+   "beard": "stubble"
+  },
+  "konate": {
+   "name": "KONATÉ",
+   "full": "Ibrahima Konaté",
+   "num": 16,
+   "skin": "dark",
+   "hair": [
+    "buzz",
+    "#121010"
+   ],
+   "beard": "full"
+  },
+  "huijsen": {
+   "name": "HUIJSEN",
+   "full": "Dean Huijsen",
+   "num": 4,
+   "skin": "light",
+   "hair": [
+    "quiff",
+    "#4a3424"
+   ],
+   "beard": "none"
+  },
+  "cucurella": {
+   "name": "CUCURELLA",
+   "full": "Marc Cucurella",
+   "num": 17,
+   "skin": "olive",
+   "hair": [
+    "bigcurl",
+    "#3a2a1e"
+   ],
+   "beard": "stubble"
+  },
+  "bernardo": {
+   "name": "BERNARDO",
+   "full": "Bernardo Silva",
+   "num": 20,
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#2e2118"
+   ],
+   "beard": "stubble"
+  },
+  "tchouameni": {
+   "name": "TCHOUAMÉNI",
+   "full": "Aurélien Tchouaméni",
+   "num": 14,
+   "skin": "dark",
+   "hair": [
+    "buzz",
+    "#121010"
+   ],
+   "beard": "short"
+  },
+  "bellingham": {
+   "name": "BELLINGHAM",
+   "full": "Jude Bellingham",
+   "num": 5,
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#1a1410"
+   ],
+   "beard": "stubble"
+  },
+  "diomande": {
+   "name": "DIOMANDE",
+   "full": "Yan Diomande",
+   "num": 25,
+   "skin": "dark",
+   "hair": [
+    "buzz",
+    "#121010"
+   ],
+   "beard": "none"
+  },
+  "mbappe": {
+   "name": "MBAPPÉ",
+   "full": "Kylian Mbappé",
+   "num": 10,
+   "skin": "brown",
+   "hair": [
+    "bald",
+    "#000000"
+   ],
+   "beard": "none"
+  },
+  "ronaldo": {
+   "name": "RONALDO",
+   "full": "Cristiano Ronaldo",
+   "num": 7,
+   "skin": "olive",
+   "hair": [
+    "slick",
+    "#2a1d14"
+   ],
+   "beard": "none"
+  },
+  "mourinho": {
+   "name": "MOURINHO",
+   "full": "José Mourinho",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#bdbdbd"
+   ],
+   "beard": "none",
+   "suit": {
+    "jacket": "#1c1d24",
+    "tie": "#0b3d2e"
+   }
+  },
+  "donnarumma": {
+   "name": "DONNARUMMA",
+   "full": "Gianluigi Donnarumma",
+   "num": 1,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#2a1e16"
+   ],
+   "beard": "short",
+   "gk": true
+  },
+  "khusanov": {
+   "name": "KHUSANOV",
+   "full": "Abdukodir Khusanov",
+   "num": 45,
+   "skin": "olive",
+   "hair": [
+    "buzz",
+    "#1e1712"
+   ],
+   "beard": "none"
+  },
+  "dias": {
+   "name": "DIAS",
+   "full": "Rúben Dias",
+   "num": 3,
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#261b14"
+   ],
+   "beard": "full"
+  },
+  "guehi": {
+   "name": "GUÉHI",
+   "full": "Marc Guéhi",
+   "num": 6,
+   "skin": "dark",
+   "hair": [
+    "buzz",
+    "#121010"
+   ],
+   "beard": "stubble"
+  },
+  "gvardiol": {
+   "name": "GVARDIOL",
+   "full": "Joško Gvardiol",
+   "num": 24,
+   "skin": "light",
+   "hair": [
+    "buzz",
+    "#6b4a2e"
+   ],
+   "beard": "stubble"
+  },
+  "anderson": {
+   "name": "ANDERSON",
+   "full": "Elliot Anderson",
+   "num": 5,
+   "skin": "tan",
+   "hair": [
+    "curlytop",
+    "#1a1410"
+   ],
+   "beard": "none"
+  },
+  "enzo": {
+   "name": "ENZO",
+   "full": "Enzo Fernández",
+   "num": 17,
+   "skin": "olive",
+   "hair": [
+    "messy",
+    "#2a1e16"
+   ],
+   "beard": "stubble"
+  },
+  "ndiaye": {
+   "name": "NDIAYE",
+   "full": "Iliman Ndiaye",
+   "num": 7,
+   "skin": "dark",
+   "hair": [
+    "buzz",
+    "#121010"
+   ],
+   "beard": "none"
+  },
+  "cherki": {
+   "name": "CHERKI",
+   "full": "Rayan Cherki",
+   "num": 10,
+   "skin": "tan",
+   "hair": [
+    "curlytop",
+    "#1e1712"
+   ],
+   "beard": "none"
+  },
+  "doku": {
+   "name": "DOKU",
+   "full": "Jérémy Doku",
+   "num": 11,
+   "skin": "dark",
+   "hair": [
+    "buzz",
+    "#121010"
+   ],
+   "beard": "none"
+  },
+  "haaland": {
+   "name": "HAALAND",
+   "full": "Erling Haaland",
+   "num": 9,
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#d9b66f"
+   ],
+   "beard": "stubble"
+  },
+  "maresca": {
+   "name": "MARESCA",
+   "full": "Enzo Maresca",
+   "skin": "light",
+   "hair": [
+    "buzz",
+    "#2a221c"
+   ],
+   "beard": "full",
+   "suit": {
+    "jacket": "#1c2c5b",
+    "tie": "#6cabdd"
+   }
+  }
+ },
+ "ratings": {
+  "rows": [
+   [
+    "ATTACK",
+    88,
+    85
+   ],
+   [
+    "MIDFIELD",
+    85,
+    84
+   ],
+   [
+    "DEFENCE",
+    85,
+    85
+   ]
+  ],
+  "starMen": {
+   "home": {
+    "id": "ronaldo",
+    "rating": 92
+   },
+   "away": {
+    "id": "haaland",
+    "rating": 91
+   }
+  },
+  "verdict": "REAL ARE FAVOURITES"
+ },
+ "events": [
+  {
+   "id": "g1",
+   "minute": "11'",
+   "scorer": "haaland",
+   "assist": "doku",
+   "caption": "HAALAND HEADS CITY AHEAD",
+   "footage": {
+    "parts": [
+     [
+      "g1-haaland/tv",
+      15,
+      48
+     ],
+     [
+      "g1-haaland/high",
+      19,
+      102
+     ]
+    ],
+    "goalAt": 1.7
+   },
+   "popup": "popup/g1-haaland"
+  },
+  {
+   "id": "g2",
+   "minute": "27'",
+   "scorer": "ronaldo",
+   "caption": "RONALDO KNUCKLEBALL!",
+   "footage": {
+    "parts": [
+     [
+      "g2-ronaldo-fk/tv",
+      0,
+      18
+     ],
+     [
+      "g2-ronaldo-fk/high",
+      19,
+      138
+     ]
+    ],
+    "goalAt": 2
+   },
+   "popup": "popup/g2-ronaldo-fk"
+  },
+  {
+   "id": "g3",
+   "minute": "56'",
+   "scorer": "mbappe",
+   "assist": "bellingham",
+   "caption": "MBAPPÉ IS THROUGH",
+   "footage": {
+    "parts": [
+     [
+      "g3-mbappe/tv",
+      1,
+      81
+     ],
+     [
+      "g3-mbappe/high",
+      82,
+      168
+     ]
+    ],
+    "goalAt": 3.45
+   },
+   "popup": "popup/g3-mbappe"
+  },
+  {
+   "id": "g4",
+   "minute": "74'",
+   "scorer": "cherki",
+   "assist": "anderson",
+   "caption": "CHERKI CURLS IT IN",
+   "footage": {
+    "parts": [
+     [
+      "g4-cherki/tv",
+      13,
+      50
+     ],
+     [
+      "g4-cherki/high",
+      51,
+      147
+     ]
+    ],
+    "goalAt": 2.316
+   },
+   "popup": "popup/g4-cherki"
+  },
+  {
+   "id": "g5",
+   "minute": "90'",
+   "lateCard": "90'",
+   "scorer": "ronaldo",
+   "assist": "bernardo",
+   "caption": "RONALDO, JUST LIKE 2012!",
+   "captionColor": "#ffd23f",
+   "footage": {
+    "parts": [
+     [
+      "g5-ronaldo/tv",
+      13,
+      50
+     ],
+     [
+      "g5-ronaldo/high",
+      51,
+      158
+     ]
+    ],
+    "goalAt": 2.25
+   },
+   "popup": "popup/g5-ronaldo"
+  }
+ ],
+ "potm": {
+  "top3": [
+   "ronaldo",
+   "haaland",
+   "bellingham"
+  ],
+  "name": "CRISTIANO RONALDO",
+  "subtitle": "TWO GOALS, 2011/12 VERSION"
+ },
+ "vo": [
+  {
+   "seg": "grid",
+   "offset": 0.3,
+   "text": "Today's Real Madrid, with one change: prime Cristiano Ronaldo, from 2011-12.",
+   "say": "Today's Rayal Madrid, with one change: prime Kristeeahnoh Ronaldo, from twenty eleven, twelve."
+  },
+  {
+   "seg": "homeSheet",
+   "offset": 0.3,
+   "text": "Why that season? José Mourinho is back in charge, and that year they won the league with a hundred points.",
+   "say": "Why that season? Jozay Moreenyo is back in charge, and that year they won the league with a hundred points."
+  },
+  {
+   "seg": "awaySheet",
+   "offset": 0.2,
+   "text": "City have no Guardiola now. Maresca has Haaland: nine goals in nine league games.",
+   "say": "City have no Gwardeeohlah now. Mahreska has Hohland: nine goals in nine league games."
+  },
+  {
+   "seg": "versus",
+   "offset": 0.2,
+   "text": "Vinícius is banned for pulling an opponent's hair, so Ronaldo takes the number seven.",
+   "say": "Vineeseeus is banned for pulling an opponent's hair, so Ronaldo takes the number seven."
+  },
+  {
+   "seg": "globe",
+   "offset": 0.4,
+   "text": "Last March, Real knocked City out, five-one on aggregate. And Bernardo Silva has since switched sides.",
+   "say": "Last March, Rayal knocked City out, five-one on aggregate. And Bernardoh Seelvah has since switched sides."
+  },
+  {
+   "seg": "ratings",
+   "offset": 0.3,
+   "text": "Ronaldo, ninety-two. Haaland, ninety-one. Prime against prime."
+  },
+  {
+   "seg": "g1",
+   "offset": 0.1,
+   "spill": true,
+   "text": "Eleven minutes. Doku crosses, Haaland heads City in front.",
+   "say": "Eleven minutes. Dohkoo crosses, Hohland heads City in front."
+  },
+  {
+   "seg": "g2",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Ronaldo, thirty yards, a knuckleball. One each."
+  },
+  {
+   "seg": "g3",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Bellingham sends Mbappé through. Two-one Madrid.",
+   "say": "Bellingham sends Embapay through. Two-one Madrid."
+  },
+  {
+   "seg": "g4",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Cherki curls one in. Two all.",
+   "say": "Shairkee curls one in. Two all."
+  },
+  {
+   "seg": "late",
+   "offset": 0.0,
+   "spill": true,
+   "text": "Ninety minutes. Bernardo finds Ronaldo, he cuts inside...",
+   "say": "Ninety minutes. Bernardoh finds Ronaldo, he cuts inside..."
+  },
+  {
+   "seg": "fulltime",
+   "offset": 0.5,
+   "text": "Three-two. Just like City at the Bernabéu in 2012.",
+   "say": "Three-two. Just like City at the Bernabayoo in twenty twelve."
+  },
+  {
+   "seg": "potm",
+   "offset": 0.8,
+   "text": "Player of the match: Cristiano Ronaldo. Would he still win it today?",
+   "say": "Player of the match: Kristeeahnoh Ronaldo. Would he still win it today?"
+  },
+  {
+   "seg": "end",
+   "offset": 0.3,
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "say": "Follow for more, and play Road to Ballon Dor."
+  }
+ ]
+}

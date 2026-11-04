@@ -1,0 +1,699 @@
+{
+ "id": "ww-invincibles-v-centurions",
+ "about": "Who would win? v2: Arsenal 2003/04 (unbeaten, 26W 12D, 90 pts) v Man City 2017/18 (100 pts, 106 goals, +79) at Highbury. XIs: the final-day line-up v Leicester 15 May 2004 (BBC) and Wikipedia's squad table; City from Wikipedia's 2017-18 season page + Goal line-ups. Ratings: City from FIFA 18 (our database); Arsenal PREDICTED (no FIFA 04 in the database), said in the voiceover. Facts, two sources each: Battle of Old Trafford penalty hit the bar (NBC Sports, RTE); title won at White Hart Lane 25 Apr 2004 (Wikipedia, premierleague.com); City's 18 straight league wins ended at Palace 31 Dec 2017 (NBC, Sky); Jesus's 94th-minute 100th point at Southampton (premierleague.com, Irish Times). The match is imagined; goals echo De Bruyne at Stamford Bridge 2017, Henry from Gilberto v Liverpool 2004, Vieira from Bergkamp v Leicester 2004. Footage: gamecap/specs/ww-invincibles-v-centurions.json.",
+ "title": "WHO WOULD WIN?",
+ "footageRoot": "footage/ww-invincibles-v-centurions",
+ "calm": {
+  "dir": "calm/high"
+ },
+ "music": "09-last-attack.mp3",
+ "competition": {
+  "title": [
+   "INVINCIBLES v CENTURIONS",
+   "PREMIER LEAGUE · HIGHBURY"
+  ],
+  "tagline": "0 DEFEATS v 100 POINTS",
+  "versus": "THE DREAM MATCH · HIGHBURY",
+  "short": "PREMIER LEAGUE · DREAM MATCH"
+ },
+ "venue": {
+  "name": "HIGHBURY",
+  "place": "LONDON · ENGLAND",
+  "lat": 51.5577,
+  "lon": -0.1028
+ },
+ "home": {
+  "name": "ARSENAL",
+  "full": "ARSENAL",
+  "season": "03/04",
+  "versus": [
+   "THE",
+   "INVINCIBLES"
+  ],
+  "nation": "eng",
+  "founded": 1886,
+  "city": {
+   "label": "LONDON",
+   "sub": "ENGLAND",
+   "lat": 51.5577,
+   "lon": -0.1028
+  },
+  "formation": "4-4-2",
+  "kit": {
+   "shirt": "#c8102e",
+   "trim": "#ffffff",
+   "collar": "#ffffff",
+   "shorts": "#ffffff",
+   "socks": "#ffffff",
+   "number": "#ffffff",
+   "gk": {
+    "shirt": "#1f2a44",
+    "trim": "#ffffff",
+    "collar": "#ffffff"
+   }
+  },
+  "crest": {
+   "a": "#c8102e",
+   "b": "#ffffff",
+   "c": "#023474",
+   "t": "AFC",
+   "tc": "#ffffff",
+   "ts": 30
+  },
+  "grid": [
+   "henry",
+   "vieira",
+   "pires",
+   "bergkamp",
+   "campbell",
+   "ljungberg",
+   "cole",
+   "gilberto",
+   "lauren",
+   "toure",
+   "lehmann"
+  ],
+  "slots": {
+   "lehmann": "GK",
+   "lauren": "RB",
+   "toure": "CB1",
+   "campbell": "CB2",
+   "cole": "LB",
+   "ljungberg": "RM",
+   "gilberto": "CM1",
+   "vieira": "CM2",
+   "pires": "LM",
+   "bergkamp": "ST1",
+   "henry": "ST2"
+  },
+  "manager": "wenger"
+ },
+ "away": {
+  "name": "MAN CITY",
+  "full": "MANCHESTER CITY",
+  "season": "17/18",
+  "versus": [
+   "THE",
+   "CENTURIONS"
+  ],
+  "nation": "eng",
+  "founded": 1880,
+  "city": {
+   "label": "MANCHESTER",
+   "sub": "ENGLAND",
+   "lat": 53.4831,
+   "lon": -2.2004
+  },
+  "formation": "4-3-3",
+  "kitLabel": "HOME KIT",
+  "kit": {
+   "shirt": "#98c5e9",
+   "trim": "#ffffff",
+   "collar": "#1c2c5b",
+   "shorts": "#ffffff",
+   "socks": "#98c5e9",
+   "number": "#1c2c5b",
+   "gk": {
+    "shirt": "#2d2d2d",
+    "trim": "#c6ff00",
+    "collar": "#c6ff00"
+   }
+  },
+  "crest": {
+   "a": "#98c5e9",
+   "b": "#1c2c5b",
+   "c": "#1c2c5b",
+   "t": "MCFC",
+   "tc": "#ffffff",
+   "ts": 26
+  },
+  "colors": {
+   "ring": "#6cabdd",
+   "pillBg": "#98c5e9",
+   "pillFg": "#1c2c5b",
+   "headerBg": "#98c5e9",
+   "headerFg": "#1c2c5b",
+   "headerSub": "#1c2c5b",
+   "versusBg": "#1c3c62",
+   "accent": "#bfe1ff",
+   "bar": "#6cabdd",
+   "confetti": [
+    "#98c5e9",
+    "#ffffff",
+    "#1c2c5b",
+    "#ffd23f"
+   ],
+   "ribbon": [
+    "#6cabdd",
+    "#1c2c5b"
+   ]
+  },
+  "grid": [
+   "debruyne",
+   "aguero",
+   "dsilva",
+   "sterling",
+   "sane",
+   "fernandinho",
+   "kompany",
+   "otamendi",
+   "walker",
+   "delph",
+   "ederson"
+  ],
+  "slots": {
+   "ederson": "GK",
+   "walker": "RB",
+   "kompany": "CB1",
+   "otamendi": "CB2",
+   "delph": "LB",
+   "debruyne": "CM1",
+   "fernandinho": "CM",
+   "dsilva": "CM2",
+   "sterling": "RW",
+   "aguero": "ST",
+   "sane": "LW"
+  },
+  "manager": "guardiola"
+ },
+ "players": {
+  "lehmann": {
+   "name": "LEHMANN",
+   "full": "Jens Lehmann",
+   "num": 1,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#9a7a4e"
+   ],
+   "beard": "none",
+   "gk": true
+  },
+  "lauren": {
+   "name": "LAUREN",
+   "full": "Lauren",
+   "num": 12,
+   "skin": "dark",
+   "hair": [
+    "buzz",
+    "#1a1a1a"
+   ],
+   "beard": "stubble"
+  },
+  "toure": {
+   "name": "TOURÉ",
+   "full": "Kolo Touré",
+   "num": 28,
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "none"
+  },
+  "campbell": {
+   "name": "CAMPBELL",
+   "full": "Sol Campbell",
+   "num": 23,
+   "skin": "dark",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "none"
+  },
+  "cole": {
+   "name": "COLE",
+   "full": "Ashley Cole",
+   "num": 3,
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#1a1a1a"
+   ],
+   "beard": "none"
+  },
+  "ljungberg": {
+   "name": "LJUNGBERG",
+   "full": "Freddie Ljungberg",
+   "num": 8,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#4a3424"
+   ],
+   "beard": "stubble"
+  },
+  "gilberto": {
+   "name": "GILBERTO",
+   "full": "Gilberto Silva",
+   "num": 19,
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#1a1a1a"
+   ],
+   "beard": "none"
+  },
+  "vieira": {
+   "name": "VIEIRA",
+   "full": "Patrick Vieira",
+   "num": 4,
+   "skin": "deep",
+   "hair": [
+    "bald",
+    "#111111"
+   ],
+   "beard": "none"
+  },
+  "pires": {
+   "name": "PIRES",
+   "full": "Robert Pires",
+   "num": 7,
+   "skin": "olive",
+   "hair": [
+    "messy",
+    "#2b1d14"
+   ],
+   "beard": "short"
+  },
+  "bergkamp": {
+   "name": "BERGKAMP",
+   "full": "Dennis Bergkamp",
+   "num": 10,
+   "skin": "light",
+   "hair": [
+    "side",
+    "#a07c4a"
+   ],
+   "beard": "none"
+  },
+  "henry": {
+   "name": "HENRY",
+   "full": "Thierry Henry",
+   "num": 14,
+   "skin": "dark",
+   "hair": [
+    "bald",
+    "#111111"
+   ],
+   "beard": "none"
+  },
+  "wenger": {
+   "name": "WENGER",
+   "full": "Arsène Wenger",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#8f8f8f"
+   ],
+   "beard": "none",
+   "suit": {
+    "jacket": "#1c1d24",
+    "tie": "#c8102e"
+   }
+  },
+  "ederson": {
+   "name": "EDERSON",
+   "full": "Ederson",
+   "num": 31,
+   "skin": "tan",
+   "hair": [
+    "crop",
+    "#2a1d14"
+   ],
+   "beard": "stubble",
+   "gk": true
+  },
+  "walker": {
+   "name": "WALKER",
+   "full": "Kyle Walker",
+   "num": 2,
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#1a1a1a"
+   ],
+   "beard": "short"
+  },
+  "kompany": {
+   "name": "KOMPANY",
+   "full": "Vincent Kompany",
+   "num": 4,
+   "skin": "dark",
+   "hair": [
+    "buzz",
+    "#1a1a1a"
+   ],
+   "beard": "short"
+  },
+  "otamendi": {
+   "name": "OTAMENDI",
+   "full": "Nicolás Otamendi",
+   "num": 30,
+   "skin": "olive",
+   "hair": [
+    "slick",
+    "#1e1611"
+   ],
+   "beard": "full"
+  },
+  "delph": {
+   "name": "DELPH",
+   "full": "Fabian Delph",
+   "num": 18,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#3b2a1e"
+   ],
+   "beard": "stubble"
+  },
+  "debruyne": {
+   "name": "DE BRUYNE",
+   "full": "Kevin De Bruyne",
+   "num": 17,
+   "skin": "pink",
+   "hair": [
+    "quiff",
+    "#c06a2f"
+   ],
+   "beard": "stubble"
+  },
+  "fernandinho": {
+   "name": "FERNANDINHO",
+   "full": "Fernandinho",
+   "num": 25,
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#1a1a1a"
+   ],
+   "beard": "stubble"
+  },
+  "dsilva": {
+   "name": "D. SILVA",
+   "full": "David Silva",
+   "num": 21,
+   "skin": "olive",
+   "hair": [
+    "buzz",
+    "#1e1611"
+   ],
+   "beard": "full"
+  },
+  "sterling": {
+   "name": "STERLING",
+   "full": "Raheem Sterling",
+   "num": 7,
+   "skin": "dark",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "none"
+  },
+  "aguero": {
+   "name": "AGÜERO",
+   "full": "Sergio Agüero",
+   "num": 10,
+   "skin": "olive",
+   "hair": [
+    "crop",
+    "#2a1d14"
+   ],
+   "beard": "stubble"
+  },
+  "sane": {
+   "name": "SANÉ",
+   "full": "Leroy Sané",
+   "num": 19,
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "none"
+  },
+  "guardiola": {
+   "name": "GUARDIOLA",
+   "full": "Pep Guardiola",
+   "skin": "light",
+   "hair": [
+    "bald",
+    "#6b6b6b"
+   ],
+   "beard": "stubble",
+   "suit": {
+    "jacket": "#2a2a30",
+    "tie": "#98c5e9"
+   }
+  }
+ },
+ "ratings": {
+  "label": "PREVIEW · ARSENAL PREDICTED",
+  "rows": [
+   [
+    "ATTACK",
+    88,
+    87
+   ],
+   [
+    "MIDFIELD",
+    86,
+    88
+   ],
+   [
+    "DEFENCE",
+    83,
+    84
+   ]
+  ],
+  "starMen": {
+   "home": {
+    "id": "henry",
+    "rating": 94
+   },
+   "away": {
+    "id": "debruyne",
+    "rating": 91
+   }
+  },
+  "verdict": "TOO CLOSE TO CALL"
+ },
+ "events": [
+  {
+   "id": "g1",
+   "minute": "14'",
+   "scorer": "debruyne",
+   "assist": "aguero",
+   "caption": "DE BRUYNE FROM 22 YARDS",
+   "footage": {
+    "parts": [
+     [
+      "g1-debruyne/tv",
+      13,
+      50
+     ],
+     [
+      "g1-debruyne/high",
+      51,
+      146
+     ]
+    ],
+    "goalAt": 2.25
+   },
+   "popup": "popup/g1-debruyne"
+  },
+  {
+   "id": "g2",
+   "minute": "33'",
+   "scorer": "henry",
+   "assist": "gilberto",
+   "caption": "HENRY LEVELS IT",
+   "footage": {
+    "parts": [
+     [
+      "g2-henry/tv",
+      1,
+      81
+     ],
+     [
+      "g2-henry/high",
+      82,
+      182
+     ]
+    ],
+    "goalAt": 3.45
+   },
+   "popup": "popup/g2-henry"
+  },
+  {
+   "id": "g3",
+   "minute": "52'",
+   "scorer": "aguero",
+   "assist": "sane",
+   "caption": "AGÜERO TAPS IN",
+   "footage": {
+    "parts": [
+     [
+      "g3-aguero/tv",
+      2,
+      35
+     ],
+     [
+      "g3-aguero/high",
+      36,
+      117
+     ]
+    ],
+    "goalAt": 1.666
+   },
+   "popup": "popup/g3-aguero"
+  },
+  {
+   "id": "g4",
+   "minute": "67'",
+   "scorer": "vieira",
+   "assist": "bergkamp",
+   "caption": "BERGKAMP TO VIEIRA",
+   "footage": {
+    "parts": [
+     [
+      "g4-vieira/tv",
+      1,
+      81
+     ],
+     [
+      "g4-vieira/high",
+      82,
+      168
+     ]
+    ],
+    "goalAt": 3.45
+   },
+   "popup": "popup/g4-vieira"
+  },
+  {
+   "id": "g5",
+   "minute": "87'",
+   "scorer": "pires",
+   "assist": "henry",
+   "caption": "PIRES WINS IT!",
+   "captionColor": "#ffd23f",
+   "footage": {
+    "parts": [
+     [
+      "g5-pires/tv",
+      2,
+      35
+     ],
+     [
+      "g5-pires/high",
+      36,
+      129
+     ]
+    ],
+    "goalAt": 1.633
+   },
+   "popup": "popup/g5-pires"
+  }
+ ],
+ "potm": {
+  "top3": [
+   "henry",
+   "debruyne",
+   "bergkamp"
+  ],
+  "name": "THIERRY HENRY",
+  "subtitle": "A GOAL AND THE WINNER'S ASSIST"
+ },
+ "vo": [
+  {
+   "seg": "grid",
+   "offset": 0.3,
+   "text": "Thirty-eight games, not one defeat. Or a hundred points, the first team ever."
+  },
+  {
+   "seg": "homeSheet",
+   "offset": 0.3,
+   "text": "Wenger's Invincibles: Vieira, Pires, Bergkamp and Thierry Henry.",
+   "say": "Wenger's Invincibles: Veeyaira, Peeress, Burgkamp and Teeairee Onree."
+  },
+  {
+   "seg": "awaySheet",
+   "offset": 0.2,
+   "text": "Pep's Centurions: De Bruyne, David Silva and Agüero.",
+   "say": "Pep's Centurions: Deh Broynuh, David Silva and Ahgwairoh."
+  },
+  {
+   "seg": "versus",
+   "offset": 0.2,
+   "text": "At Old Trafford in 2003, Van Nistelrooy's late penalty hit the bar. Arsenal never lost a league game all season.",
+   "say": "At Old Trafford in two thousand and three, Van Nistelroy's late penalty hit the bar. Arsenal never lost a league game all season."
+  },
+  {
+   "seg": "globe",
+   "offset": 0.4,
+   "text": "They even won the title at White Hart Lane. City won eighteen league games in a row, and got point one hundred in the ninety-fourth minute."
+  },
+  {
+   "seg": "ratings",
+   "offset": 0.3,
+   "text": "No FIFA game covers 2004, so Arsenal's ratings are our prediction. Henry, ninety-four.",
+   "say": "No FIFA game covers two thousand and four, so Arsenal's ratings are our prediction. Onree, ninety-four."
+  },
+  {
+   "seg": "g1",
+   "offset": 0.1,
+   "spill": true,
+   "text": "Fourteen minutes. De Bruyne, from twenty-two yards. City lead.",
+   "say": "Fourteen minutes. Deh Broynuh, from twenty-two yards. City lead."
+  },
+  {
+   "seg": "g2",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Gilberto finds Henry. Henry runs. One each.",
+   "say": "Zheelbairtoh finds Onree. Onree runs. One each."
+  },
+  {
+   "seg": "g3",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Sané tears down the left, and Agüero taps in.",
+   "say": "Sahnay tears down the left, and Ahgwairoh taps in."
+  },
+  {
+   "seg": "g4",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Then Bergkamp's pass, and Vieira is through. Two all.",
+   "say": "Then Burgkamp's pass, and Veeyaira is through. Two all."
+  },
+  {
+   "seg": "g5",
+   "offset": 0.1,
+   "spill": true,
+   "text": "Eighty-seven minutes. Henry cuts it back, Pires sweeps it home.",
+   "say": "Eighty-seven minutes. Onree cuts it back, Peeress sweeps it home."
+  },
+  {
+   "seg": "fulltime",
+   "offset": 0.5,
+   "text": "Three-two at Highbury. Still invincible."
+  },
+  {
+   "seg": "potm",
+   "offset": 0.8,
+   "text": "Player of the match: Thierry Henry. Invincibles or Centurions: who really wins?",
+   "say": "Player of the match: Teeairee Onree. Invincibles or Centurions: who really wins?"
+  },
+  {
+   "seg": "end",
+   "offset": 0.3,
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "say": "Follow for more, and play Road to Ballon Dor."
+  }
+ ]
+}
