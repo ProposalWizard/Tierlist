@@ -1,0 +1,115 @@
+{
+ "_about": "Arsenal 1-3 Manchester United, Emirates, 31 January 2010. 37th minute: on the counter Rooney plays it to Nani, sprints the length of the pitch and sweeps the return in first time past Almunia for 2-0 (Al Jazeera, Fox Sports; the BBC credits Park with the return). United's black away kit is assumed; Arsenal's white sleeves cannot be drawn.",
+ "teams": {
+  "home": {
+   "name": "Arsenal",
+   "kit": {
+    "shirt": "#EF0107",
+    "shorts": "#FFFFFF",
+    "socks": "#FFFFFF"
+   },
+   "keeperKit": {
+    "shirt": "#E8E04A",
+    "shorts": "#1A1A1A",
+    "socks": "#E8E04A"
+   },
+   "popupTrim": "#FFFFFF"
+  },
+  "away": {
+   "name": "Manchester United",
+   "kit": {
+    "shirt": "#151515",
+    "shorts": "#151515",
+    "socks": "#151515"
+   },
+   "keeperKit": {
+    "shirt": "#2E8B57",
+    "shorts": "#1B1B1B",
+    "socks": "#2E8B57"
+   },
+   "popupTrim": "#C8102E",
+   "short": "Man United"
+  }
+ },
+ "people": {
+  "rooney": {
+   "name": "Wayne Rooney",
+   "skin": "#f2c4a6",
+   "hair": "#6b4a2e"
+  },
+  "nani": {
+   "name": "Nani",
+   "skin": "#a8724e",
+   "hair": "#141010",
+   "popupName": "Nani"
+  },
+  "vermaelen": {
+   "name": "Thomas Vermaelen",
+   "skin": "#f2c6a8",
+   "hair": "#3a2a1e"
+  },
+  "gallas": {
+   "name": "William Gallas",
+   "skin": "#5e3a24",
+   "hair": "#0d0a09"
+  },
+  "almunia": {
+   "name": "Manuel Almunia",
+   "skin": "#e8bd98",
+   "hair": "#2a1d15"
+  }
+ },
+ "clips": [
+  {
+   "id": "rooney-counter",
+   "kind": "one_on_one",
+   "attacking": "away",
+   "scorer": "rooney",
+   "assister": "nani",
+   "defenders": [
+    "vermaelen",
+    "gallas"
+   ],
+   "keeper": "almunia",
+   "minute": 37,
+   "scoreBefore": [
+    0,
+    1
+   ],
+   "scoreAfter": [
+    0,
+    2
+   ],
+   "night": false,
+   "celebration": "knee_slide",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "delivery": "through",
+    "passerStart": [
+     12,
+     30
+    ],
+    "passFrom": [
+     11,
+     20
+    ],
+    "scorerStart": [
+     -2,
+     34
+    ],
+    "scorerSpot": [
+     -1,
+     12
+    ],
+    "finish": "ground",
+    "goalSide": "right",
+    "height": "low"
+   },
+   "seed": "rooney-2010-a"
+  }
+ ]
+}

@@ -1,0 +1,111 @@
+{
+ "_about": "Leicester 1-1 Manchester United, King Power Stadium, 28 November 2015. 24th minute: Vardy races onto Christian Fuchs' pass and slides it past De Gea, a goal in an 11th Premier League game in a row, beating Van Nistelrooy's record (TNT Sports, FourFourTwo, ESPN). United in red; keeper kits assumed.",
+ "teams": {
+  "home": {
+   "name": "Leicester City",
+   "kit": {
+    "shirt": "#0053A0",
+    "shorts": "#FFFFFF",
+    "socks": "#0053A0"
+   },
+   "keeperKit": {
+    "shirt": "#2B2B2B",
+    "shorts": "#2B2B2B",
+    "socks": "#2B2B2B"
+   },
+   "popupTrim": "#FDBE11",
+   "short": "Leicester"
+  },
+  "away": {
+   "name": "Manchester United",
+   "kit": {
+    "shirt": "#DA020E",
+    "shorts": "#FFFFFF",
+    "socks": "#111111"
+   },
+   "keeperKit": {
+    "shirt": "#2E8B57",
+    "shorts": "#1B1B1B",
+    "socks": "#2E8B57"
+   },
+   "popupTrim": "#FFFFFF",
+   "short": "Man United"
+  }
+ },
+ "people": {
+  "vardy": {
+   "name": "Jamie Vardy",
+   "skin": "#f2c6a8",
+   "hair": "#6b4a2e"
+  },
+  "fuchs": {
+   "name": "Christian Fuchs",
+   "skin": "#f4d0b4",
+   "hair": "#c9a27e"
+  },
+  "d1": {
+   "name": "United defender"
+  },
+  "d2": {
+   "name": "United defender"
+  },
+  "degea": {
+   "name": "David de Gea",
+   "skin": "#eac09c",
+   "hair": "#2a1d15"
+  }
+ },
+ "clips": [
+  {
+   "id": "vardy-11",
+   "kind": "one_on_one",
+   "attacking": "home",
+   "scorer": "vardy",
+   "assister": "fuchs",
+   "defenders": [
+    "d1",
+    "d2"
+   ],
+   "keeper": "degea",
+   "minute": 24,
+   "scoreBefore": [
+    0,
+    0
+   ],
+   "scoreAfter": [
+    1,
+    0
+   ],
+   "night": true,
+   "celebration": "roar",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "delivery": "through",
+    "passerStart": [
+     -22,
+     42
+    ],
+    "passFrom": [
+     -20,
+     36
+    ],
+    "scorerStart": [
+     2,
+     32
+    ],
+    "scorerSpot": [
+     -1,
+     10
+    ],
+    "finish": "ground",
+    "goalSide": "left",
+    "height": "low"
+   },
+   "seed": "vardy-11-a"
+  }
+ ]
+}

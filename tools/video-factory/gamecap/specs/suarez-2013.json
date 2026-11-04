@@ -1,0 +1,98 @@
+{
+ "_about": "Liverpool 5-1 Norwich, Anfield, 4 December 2013. 15th minute: Suarez hits a half-volley from about 40 yards over John Ruddy, who is off his line (NESN, Sky Sports, Liverpool FC). Liverpool red, Norwich yellow and green. Keeper kits assumed.",
+ "teams": {
+  "home": {
+   "name": "Liverpool",
+   "kit": {
+    "shirt": "#C8102E",
+    "shorts": "#C8102E",
+    "socks": "#C8102E"
+   },
+   "keeperKit": {
+    "shirt": "#1B1B1B",
+    "shorts": "#1B1B1B",
+    "socks": "#1B1B1B"
+   },
+   "popupTrim": "#FFFFFF"
+  },
+  "away": {
+   "name": "Norwich City",
+   "kit": {
+    "shirt": "#FFF200",
+    "shorts": "#00A650",
+    "socks": "#FFF200"
+   },
+   "keeperKit": {
+    "shirt": "#2B2B2B",
+    "shorts": "#2B2B2B",
+    "socks": "#2B2B2B"
+   },
+   "popupTrim": "#00A650",
+   "short": "Norwich"
+  }
+ },
+ "people": {
+  "suarez": {
+   "name": "Luis Suarez",
+   "skin": "#e8bd98",
+   "hair": "#2a1d15"
+  },
+  "gerrard": {
+   "name": "Steven Gerrard",
+   "skin": "#f2c6a8",
+   "hair": "#6b4a2e"
+  },
+  "d1": {
+   "name": "Norwich defender"
+  },
+  "d2": {
+   "name": "Norwich defender"
+  },
+  "ruddy": {
+   "name": "John Ruddy",
+   "skin": "#f2c6a8",
+   "hair": "#6b4a2e"
+  }
+ },
+ "clips": [
+  {
+   "id": "suarez-40yd",
+   "kind": "long_range",
+   "attacking": "home",
+   "scorer": "suarez",
+   "assister": "gerrard",
+   "defenders": [
+    "d1",
+    "d2"
+   ],
+   "keeper": "ruddy",
+   "minute": 15,
+   "scoreBefore": [
+    0,
+    0
+   ],
+   "scoreAfter": [
+    1,
+    0
+   ],
+   "night": true,
+   "celebration": "arms_out",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "delivery": "lofted",
+    "scorerSpot": [
+     2,
+     36
+    ],
+    "finish": "volley",
+    "goalSide": "centre",
+    "height": "high"
+   },
+   "seed": "suarez-2013-a"
+  }
+ ]
+}

@@ -1,0 +1,118 @@
+{
+ "_about": "2019 Champions League final, Madrid, 1 June 2019: Tottenham 0-2 Liverpool. 87th minute: after a corner is cleared, Matip lays it to Origi on the left of the box and he drills it low into the far corner past Lloris (UEFA, Liverpool FC). Spurs white with navy shorts, Liverpool red. Keeper kits assumed.",
+ "teams": {
+  "home": {
+   "name": "Tottenham Hotspur",
+   "kit": {
+    "shirt": "#FFFFFF",
+    "shorts": "#132257",
+    "socks": "#FFFFFF"
+   },
+   "keeperKit": {
+    "shirt": "#E8E04A",
+    "shorts": "#1A1A1A",
+    "socks": "#E8E04A"
+   },
+   "popupTrim": "#132257",
+   "short": "Spurs"
+  },
+  "away": {
+   "name": "Liverpool",
+   "kit": {
+    "shirt": "#C8102E",
+    "shorts": "#C8102E",
+    "socks": "#C8102E"
+   },
+   "keeperKit": {
+    "shirt": "#1B1B1B",
+    "shorts": "#1B1B1B",
+    "socks": "#1B1B1B"
+   },
+   "popupTrim": "#FFFFFF"
+  }
+ },
+ "people": {
+  "origi": {
+   "name": "Divock Origi",
+   "skin": "#4a2e1e",
+   "hair": "#0d0a09"
+  },
+  "matip": {
+   "name": "Joel Matip",
+   "skin": "#3e2618",
+   "hair": "#0d0a09"
+  },
+  "vandijk": {
+   "name": "Virgil van Dijk",
+   "skin": "#6e4630",
+   "hair": "#1a120c"
+  },
+  "d1": {
+   "name": "Spurs defender"
+  },
+  "d2": {
+   "name": "Spurs defender"
+  },
+  "lloris": {
+   "name": "Hugo Lloris",
+   "skin": "#f2c6a8",
+   "hair": "#3a2a1e"
+  }
+ },
+ "clips": [
+  {
+   "id": "origi-87",
+   "kind": "one_on_one",
+   "attacking": "away",
+   "scorer": "origi",
+   "assister": "matip",
+   "teammates": [
+    "vandijk"
+   ],
+   "defenders": [
+    "d1",
+    "d2"
+   ],
+   "keeper": "lloris",
+   "minute": 87,
+   "scoreBefore": [
+    0,
+    1
+   ],
+   "scoreAfter": [
+    0,
+    2
+   ],
+   "night": true,
+   "celebration": "roar",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "delivery": "through",
+    "passerStart": [
+     -2,
+     20
+    ],
+    "passFrom": [
+     -3,
+     17
+    ],
+    "scorerStart": [
+     -9,
+     18
+    ],
+    "scorerSpot": [
+     -8,
+     12
+    ],
+    "finish": "left",
+    "goalSide": "far",
+    "height": "low"
+   },
+   "seed": "origi-2019-a"
+  }
+ ]
+}

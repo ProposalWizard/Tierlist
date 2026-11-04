@@ -1,0 +1,74 @@
+{
+ "_about": "2008 Champions League final, Moscow, 21 May 2008: Manchester United 1-1 Chelsea, 6-5 on penalties. Van der Sar saves Nicolas Anelka's kick to win it (Wikipedia, Al Jazeera, Channel 4). Rain all night. United red, Chelsea blue; keeper kits assumed.",
+ "teams": {
+  "home": {
+   "name": "Manchester United",
+   "kit": {
+    "shirt": "#DA020E",
+    "shorts": "#FFFFFF",
+    "socks": "#111111"
+   },
+   "keeperKit": {
+    "shirt": "#2B2B2B",
+    "shorts": "#2B2B2B",
+    "socks": "#2B2B2B"
+   },
+   "popupTrim": "#FFFFFF",
+   "short": "Man United"
+  },
+  "away": {
+   "name": "Chelsea",
+   "kit": {
+    "shirt": "#034694",
+    "shorts": "#034694",
+    "socks": "#FFFFFF"
+   },
+   "keeperKit": {
+    "shirt": "#1A1A1A",
+    "shorts": "#1A1A1A",
+    "socks": "#1A1A1A"
+   },
+   "popupTrim": "#FFFFFF"
+  }
+ },
+ "people": {
+  "anelka": {
+   "name": "Nicolas Anelka",
+   "skin": "#4a2e1e",
+   "hair": "#1a120c"
+  },
+  "vandersar": {
+   "name": "Edwin van der Sar",
+   "skin": "#f4d0b4",
+   "hair": "#d9b97a"
+  }
+ },
+ "clips": [
+  {
+   "id": "vds-save",
+   "kind": "save",
+   "attacking": "away",
+   "scorer": "anelka",
+   "keeper": "vandersar",
+   "minute": 120,
+   "minuteLabel": "PENS",
+   "scoreBefore": [
+    1,
+    1
+   ],
+   "night": true,
+   "weather": "rain",
+   "cameras": [
+    "fan",
+    "tv",
+    "high"
+   ],
+   "recreate": {
+    "base": "penalty",
+    "save": "parry"
+   },
+   "seed": "vds-2008-a",
+   "popup": false
+  }
+ ]
+}

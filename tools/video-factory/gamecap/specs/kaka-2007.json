@@ -1,0 +1,128 @@
+{
+ "_about": "2007 Champions League final, Athens, 23 May 2007: AC Milan 2-1 Liverpool. 82nd minute: Kaka plays Inzaghi through, Inzaghi goes round Reina and slots it in for 2-0 (UEFA, Sports Mole, RTE). Milan wore white, Liverpool red. Keeper kits assumed. The figures cannot go round the keeper: a one-on-one finish past him stands in for it.",
+ "teams": {
+  "home": {
+   "name": "AC Milan",
+   "kit": {
+    "shirt": "#FFFFFF",
+    "shorts": "#FFFFFF",
+    "socks": "#FFFFFF"
+   },
+   "keeperKit": {
+    "shirt": "#2B2B2B",
+    "shorts": "#2B2B2B",
+    "socks": "#2B2B2B"
+   },
+   "popupTrim": "#C8102E",
+   "short": "Milan"
+  },
+  "away": {
+   "name": "Liverpool",
+   "kit": {
+    "shirt": "#C8102E",
+    "shorts": "#C8102E",
+    "socks": "#C8102E"
+   },
+   "keeperKit": {
+    "shirt": "#1E7B3A",
+    "shorts": "#1E7B3A",
+    "socks": "#1E7B3A"
+   },
+   "popupTrim": "#FFFFFF"
+  }
+ },
+ "people": {
+  "inzaghi": {
+   "name": "Filippo Inzaghi",
+   "skin": "#e8bd98",
+   "hair": "#2a1d15"
+  },
+  "kaka": {
+   "name": "Kaka",
+   "skin": "#e2b48f",
+   "hair": "#3a2a1e",
+   "popupName": "Kaka"
+  },
+  "seedorf": {
+   "name": "Clarence Seedorf",
+   "skin": "#4a2e1e",
+   "hair": "#0d0a09"
+  },
+  "carragher": {
+   "name": "Jamie Carragher",
+   "skin": "#f2c6a8",
+   "hair": "#6b4a2e"
+  },
+  "agger": {
+   "name": "Daniel Agger",
+   "skin": "#f4d0b4",
+   "hair": "#c9a27e"
+  },
+  "mascherano": {
+   "name": "Javier Mascherano",
+   "skin": "#e2b48f",
+   "hair": "#1d1512"
+  },
+  "reina": {
+   "name": "Pepe Reina",
+   "skin": "#e0b08a",
+   "hair": "#1d1512"
+  }
+ },
+ "clips": [
+  {
+   "id": "inzaghi-82",
+   "kind": "one_on_one",
+   "attacking": "home",
+   "scorer": "inzaghi",
+   "assister": "kaka",
+   "teammates": [
+    "seedorf"
+   ],
+   "defenders": [
+    "carragher",
+    "agger"
+   ],
+   "keeper": "reina",
+   "minute": 82,
+   "scoreBefore": [
+    1,
+    0
+   ],
+   "scoreAfter": [
+    2,
+    0
+   ],
+   "night": true,
+   "celebration": "arms_out",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "delivery": "through",
+    "passerStart": [
+     2,
+     38
+    ],
+    "passFrom": [
+     1,
+     30
+    ],
+    "scorerStart": [
+     -3,
+     28
+    ],
+    "scorerSpot": [
+     -4,
+     9
+    ],
+    "finish": "ground",
+    "goalSide": "left",
+    "height": "low"
+   },
+   "seed": "inzaghi-2007-a"
+  }
+ ]
+}

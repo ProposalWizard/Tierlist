@@ -1,0 +1,101 @@
+{
+ "_about": "Argentina 0-3 Croatia, World Cup group D, Nizhny Novgorod, 21 June 2018. About 80 minutes: Luka Modric curls a shot from outside the box into the bottom corner for 2-0 (Sports Mole, N1, The Quint, SF Chronicle). Croatia's red-and-white checks cannot be drawn (one shirt colour): red shirt, white shorts, blue socks. Argentina in their dark away kit (assumed black); keeper kits assumed.",
+ "popupPosition": "top",
+ "teams": {
+  "home": {
+   "name": "Argentina",
+   "kit": {
+    "shirt": "#1B1B1F",
+    "shorts": "#1B1B1F",
+    "socks": "#1B1B1F"
+   },
+   "keeperKit": {
+    "shirt": "#E8E04A",
+    "shorts": "#1A1A1A",
+    "socks": "#E8E04A"
+   },
+   "popupTrim": "#75AADB"
+  },
+  "away": {
+   "name": "Croatia",
+   "kit": {
+    "shirt": "#E1251B",
+    "shorts": "#FFFFFF",
+    "socks": "#1E4FA8"
+   },
+   "keeperKit": {
+    "shirt": "#2B2B2B",
+    "shorts": "#2B2B2B",
+    "socks": "#2B2B2B"
+   },
+   "popupTrim": "#FFFFFF"
+  }
+ },
+ "people": {
+  "modric": {
+   "name": "Luka Modric",
+   "skin": "#f0c8a8",
+   "hair": "#b89060"
+  },
+  "rakitic": {
+   "name": "Ivan Rakitic",
+   "skin": "#f2c6a8",
+   "hair": "#3a2a1e"
+  },
+  "otamendi": {
+   "name": "Nicolas Otamendi",
+   "skin": "#d9a57e",
+   "hair": "#1d1512"
+  },
+  "mascherano": {
+   "name": "Javier Mascherano",
+   "skin": "#e2b48f",
+   "hair": "#1d1512"
+  },
+  "caballero": {
+   "name": "Willy Caballero",
+   "skin": "#e2b48f",
+   "hair": "#2a1d15"
+  }
+ },
+ "clips": [
+  {
+   "id": "modric-curl",
+   "kind": "long_range",
+   "attacking": "away",
+   "scorer": "modric",
+   "assister": "rakitic",
+   "defenders": [
+    "otamendi",
+    "mascherano"
+   ],
+   "keeper": "caballero",
+   "minute": 80,
+   "scoreBefore": [
+    0,
+    1
+   ],
+   "scoreAfter": [
+    0,
+    2
+   ],
+   "night": true,
+   "celebration": "fist_pump",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "scorerSpot": [
+     5,
+     24
+    ],
+    "finish": "curl",
+    "goalSide": "far",
+    "height": "low"
+   },
+   "seed": "modric-2018-a"
+  }
+ ]
+}
