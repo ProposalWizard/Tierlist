@@ -71,3 +71,7 @@ scripts/tmp/
 docs/handoffs/2026-10-20-builds/b5c-hq/raw/
 docs/handoffs/2026-10-20-builds/b5c-hq/*.png
 docs/handoffs/2026-10-20-builds/b5c-hq/hq-*.jpg
+
+# The packed phone app build (mobile/README.md)
+/.next-app/
+/out-app/

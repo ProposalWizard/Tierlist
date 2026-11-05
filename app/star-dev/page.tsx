@@ -32,6 +32,7 @@ import {
 import { addToHall, loadHall, syncHall, hallEntryFor, type HallEntry } from "@/lib/star/hallOfFame";
 import { hallRecordBook, freshHallRecords, hallChaseLine, amount as hallAmount } from "@/lib/star/hallRecords";
 import { createClient } from "@/lib/supabase/client";
+import { PACKED_APP } from "@/lib/app/packed";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 // Guest accounts + ad landing pages (25 Oct 2026). All of it is off unless
 // NEXT_PUBLIC_GUEST_ACCOUNTS=on: see lib/guest/config.ts.
@@ -791,8 +792,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // "profile-setup" first render wrote over (in practice REMOVED) the
       // saved resumable phase before it was read.
       if (!leoUpdateOn("bugFixes")) setHydrated(true);
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      // The packed phone app has no accounts: it never asks the server who
+      // you are (lib/app/packed.ts), so it starts with no signal.
+      const user = PACKED_APP ? null : (await createClient().auth.getUser()).data.user;
       if (!user) {
         // No account. In production that is the end of it — see the note on
         // `signedIn` above for why requiring an account is deliberate.
@@ -807,7 +809,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         // never syncs to the cloud: the cloud step inside loadCareerIntoState
         // is a no-op without a user id, which is correct — there is no account
         // to sync it to.
-        if (offlineDevPlayEnabled()) {
+        //
+        // The packed phone app plays exactly this way, for real: the career
+        // lives on the phone (lib/app/packed.ts). Not through
+        // offlineDevPlayEnabled, which also opens the admin and Dev tools.
+        if (PACKED_APP || offlineDevPlayEnabled()) {
           setSignedIn(true);
           scopeRef.current = ANON_SCOPE;
           const anonSlot = loadActiveSlot(ANON_SCOPE);
@@ -3566,6 +3572,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // the chance comes from the number of bets, capped at 25%). It replaces the
   // old hidden rule (a heavy loss told your sponsors one time in four).
   const casinoVisitStart = useRef<number | null>(null);
+  // The packed phone app has no casino (Mikey, 5 Nov 2026): any way in lands back home.
+  useEffect(() => {
+    if (PACKED_APP && (phase === "casino-menu" || phase === "casino-3d")) { setActiveNav("home"); setPhase("dashboard"); }
+  }, [phase]);
   useEffect(() => {
     const inCasino = phase === "casino-menu" || phase === "casino-3d";
     if (inCasino && casinoVisitStart.current === null && career) {
@@ -4855,7 +4865,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             links={[
               // Locked means locked: no way into Sponsors before your first offer (Mikey's playtest, 24 Oct 2026).
               { id: "sponsors", icon: "🤝", label: "Sponsors", locked: !isOpen(career, "sponsors"), onClick: () => { if (!isOpen(career, "sponsors")) { showLock(`Sponsors open with your first offer. ${LOCK_HINT.sponsors}.`); return; } pushFrom({ phase, nav: "home" }, "sponsors"); setPhase("sponsors"); } },
-              { id: "casino", icon: "🎰", label: "Casino", onClick: () => { pushFrom({ phase, nav: "home" }, "casino-menu"); setPhase("casino-menu"); } },
+              // Not in the packed phone app: no casino there (Mikey, 5 Nov 2026).
+              ...(PACKED_APP ? [] : [{ id: "casino", icon: "🎰", label: "Casino", onClick: () => { pushFrom({ phase, nav: "home" }, "casino-menu"); setPhase("casino-menu"); } }]),
               { id: "store", icon: "🛒", label: "Store", onClick: () => { pushFrom({ phase, nav: "home" }, "store"); setPhase("store"); } },
               { id: "shop3d", icon: "🕶️", label: "3D shop", onClick: () => { setShopAtDoor(false); setPhase("shop-3d"); } },
             ]}
@@ -4901,6 +4912,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
 
+  // The packed phone app has no casino at all (Mikey, 5 Nov 2026: "hide the
+  // casino only in the app ... anything that allows you to bet"). Any way in
+  // that is left lands back home.
+  if (PACKED_APP && (phase === "casino-3d" || phase === "casino-menu")) {
+    return null; // the effect next to casinoVisitStart sends you home
+  }
   if ((phase === "casino-3d" || phase === "casino-menu") && career && casinoBanned(career)) {
     // Step 4 of a casino scandal: the club has locked the doors (casinoScandal.ts).
     const weeks = casinoBanWeeksLeft(career);
@@ -5075,7 +5092,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         arrive={gardenArrive}
         onBack={() => { setGardenArrive("gate"); handleBackToDashboard(); }}
         onShop={() => { setGardenArrive("gate"); setShopAtDoor(true); setPhase("shop-3d"); }}
-        onCasino={() => { setGardenArrive("gate"); setPhase("casino-3d"); }}
+        // The packed phone app has no casino: its doors stay shut (Mikey, 5 Nov 2026).
+        onCasino={PACKED_APP ? undefined : () => { setGardenArrive("gate"); setPhase("casino-3d"); }}
         onTraining={() => { setGardenArrive("gate"); setPhase("training-3d"); }}
         onHouse={HOME3D_IN_CAREER ? () => { setGardenArrive("gate"); setHomeFromGarden(true); setPhase("home-3d"); } : undefined}
       />
