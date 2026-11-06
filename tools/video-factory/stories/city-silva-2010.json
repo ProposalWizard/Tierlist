@@ -1,0 +1,311 @@
+{
+ "id": "city-silva-2010",
+ "series": "What if Man City…?",
+ "title": "What if David Silva went to Real Madrid?",
+ "sources": [
+  "https://en.wikipedia.org/wiki/David_Silva",
+  "https://www.uefa.com/uefaeuropaleague/news/newsid=1502225.html",
+  "https://www.oldham-chronicle.co.uk/news-features/9/sport-news/43636/city-complete-silva-swoop",
+  "https://www.90min.com/posts/why-david-silva-chose-man-city-instead-of-real-madrid",
+  "https://live.mancity.com/features/davidsilvadecadeofsuccess",
+  "https://abc7ny.com/post/david-villa-i-only-signed-for-barcelona-as-valencia-needed-the-money/1676238/",
+  "https://www.planetfootball.com/quick-reads/an-eye-catching-xi-of-players-sold-by-valencia-since-2010-silva-mata",
+  "https://www.goal.com/en-gb/news/25m-tiny-slow-only-left-footed-didnt-know-his-position-hart/10zhr60hhikrd1ii2ttt8oavhl",
+  "https://www.football-espana.net/2019/10/01/david-silva-was-tiny-slow-one-footed-joe-hart",
+  "https://www.mancity.com/mancitylegends/silva-david",
+  "https://www.premierleague.com/en/events/hall-of-fame/nominees/david-silva",
+  "https://www.aljazeera.com/sports/2012/4/30/kompany-header-sinks-united",
+  "https://en.wikipedia.org/wiki/Manchester_City_F.C._3%E2%80%932_Queens_Park_Rangers_F.C."
+ ],
+ "checked": "Deal agreed 30 June 2010, fee £24m-£25m / about €30m (UEFA, Oldham Chronicle, AP via El Universo); Valencia's debts forced Villa (€40m to Barcelona) and Silva sales (Villa quote, Planet Football); Barcelona and Real Madrid interest (Silva via 90min/Wikipedia), Chelsea courted him (City's own feature); father against Madrid move as a youngster (2020 documentary quote); Hart 'tiny, slow, one-footed' (Goal, Football España); 436 games, 77 goals, 4 PL, 2 FA Cups, 5 League Cups (mancity.com, PL Hall of Fame); Silva corners for Kompany's derby header and Džeko's QPR equaliser (Al Jazeera, Wikipedia). Real Madrid path is imagined.",
+ "clubs": {
+  "mci": {
+   "name": "Manchester City",
+   "short": "MCI",
+   "c1": "#6cabdd",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "val": {
+   "name": "Valencia",
+   "short": "VAL",
+   "c1": "#ffffff",
+   "c2": "#000000",
+   "pattern": "plain"
+  },
+  "rma": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#febe10",
+   "pattern": "plain"
+  },
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes"
+  },
+  "che": {
+   "name": "Chelsea",
+   "short": "CHE",
+   "c1": "#034694",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "esp": {
+   "name": "Spain",
+   "short": "ESP",
+   "c1": "#c60b1e",
+   "c2": "#ffc400",
+   "pattern": "plain"
+  }
+ },
+ "people": {
+  "silvaval": {
+   "name": "David Silva",
+   "skin": "olive",
+   "hair": [
+    "side",
+    "#1a1410"
+   ],
+   "beard": "none",
+   "kit": "val"
+  },
+  "silva": {
+   "name": "David Silva",
+   "skin": "olive",
+   "hair": [
+    "side",
+    "#1a1410"
+   ],
+   "beard": "none",
+   "kit": "mci"
+  },
+  "silvarma": {
+   "name": "David Silva",
+   "skin": "olive",
+   "hair": [
+    "side",
+    "#1a1410"
+   ],
+   "beard": "none",
+   "kit": "rma"
+  },
+  "mourinho": {
+   "name": "José Mourinho",
+   "skin": "olive",
+   "hair": [
+    "side",
+    "#9a9a9a"
+   ],
+   "beard": "none",
+   "kit": "suit"
+  }
+ },
+ "lines": [
+  {
+   "text": "The man who built Manchester City's golden era almost played for someone else.",
+   "scene": {
+    "type": "title",
+    "heading": "DAVID SILVA",
+    "sub": "VALENCIA · 2010",
+    "pill": "WHAT IF?",
+    "person": "silvaval"
+   }
+  },
+  {
+   "text": "Summer twenty ten. David Silva has just become a world champion with Spain.",
+   "scene": {
+    "type": "trophies",
+    "items": [
+     {
+      "kind": "worldcup",
+      "label": "Spain · 2010"
+     }
+    ],
+    "person": "silvaval"
+   }
+  },
+  {
+   "text": "But Valencia are drowning in debt. David Villa goes to Barcelona for forty million euros, and Silva has to go too.",
+   "scene": {
+    "type": "text",
+    "heading": "VALENCIA, 2010",
+    "body": "Big debts. David Villa sold to Barcelona for €40m. David Silva next. Both later said the club needed the money."
+   }
+  },
+  {
+   "text": "Silva says Barcelona and Real Madrid were both interested. City's own history says Chelsea courted him too.",
+   "scene": {
+    "type": "list",
+    "title": "WHO WANTED SILVA",
+    "rows": [
+     {
+      "name": "Real Madrid",
+      "value": "interested",
+      "club": "rma",
+      "hl": true
+     },
+     {
+      "name": "Barcelona",
+      "value": "interested",
+      "club": "bar"
+     },
+     {
+      "name": "Chelsea",
+      "value": "courted him",
+      "club": "che"
+     },
+     {
+      "name": "Man City",
+      "value": "signed him",
+      "club": "mci"
+     }
+    ]
+   }
+  },
+  {
+   "text": "He even visited Real Madrid as a kid, but his dad said no, he was too young.",
+   "scene": {
+    "type": "quote",
+    "person": "silvaval",
+    "text": "I visited Real Madrid as a young player, but my father was against it."
+   }
+  },
+  {
+   "text": "City paid around twenty-five million pounds. Joe Hart later joked he looked tiny, slow and one-footed.",
+   "scene": {
+    "type": "stats",
+    "title": "JULY 2010",
+    "items": [
+     {
+      "n": "£25m",
+      "l": "reported fee"
+     },
+     {
+      "n": "4",
+      "l": "year contract"
+     }
+    ],
+    "person": "silva"
+   }
+  },
+  {
+   "text": "Ten years later he left with four Premier League titles, two FA Cups and five League Cups.",
+   "scene": {
+    "type": "trophies",
+    "items": [
+     {
+      "kind": "league",
+      "label": "4 Premier Leagues"
+     },
+     {
+      "kind": "cup",
+      "label": "2 FA Cups"
+     },
+     {
+      "kind": "cup",
+      "label": "5 League Cups"
+     }
+    ],
+    "person": "silva"
+   }
+  },
+  {
+   "text": "Four hundred and thirty-six games. Seventy-seven goals.",
+   "scene": {
+    "type": "stats",
+    "title": "EL MAGO AT CITY",
+    "items": [
+     {
+      "n": "436",
+      "l": "games"
+     },
+     {
+      "n": "77",
+      "l": "goals"
+     }
+    ],
+    "person": "silva"
+   }
+  },
+  {
+   "text": "Now imagine it differently. In this alternate world, Real Madrid move first.",
+   "scene": {
+    "type": "whatif",
+    "title": "SUMMER 2010",
+    "real": {
+     "label": "Real world",
+     "value": "Man City"
+    },
+    "alt": {
+     "label": "Alternate world",
+     "value": "Real Madrid"
+    }
+   }
+  },
+  {
+   "text": "Silva plays for José Mourinho, in the same team as Cristiano Ronaldo.",
+   "scene": {
+    "type": "versus",
+    "title": "ALTERNATE 2010",
+    "left": {
+     "person": "silvarma",
+     "label": "Silva",
+     "value": "Madrid"
+    },
+    "right": {
+     "person": "mourinho",
+     "label": "Coach",
+     "value": "Mourinho"
+    }
+   }
+  },
+  {
+   "text": "And City? In twenty twelve it was Silva's corner for Kompany's derby header, and Silva's corner for Džeko against QPR.",
+   "scene": {
+    "type": "timeline",
+    "items": [
+     {
+      "year": "30 Apr 2012",
+      "label": "Silva corner, Kompany header"
+     },
+     {
+      "year": "13 May 2012",
+      "label": "Silva corner, Džeko header"
+     },
+     {
+      "year": "13 May 2012",
+      "label": "City champions"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Take away the man who took those corners, and that title race could look completely different.",
+   "scene": {
+    "type": "stamp",
+    "text": "WHAT IF?",
+    "color": "yellow",
+    "person": "silva"
+   }
+  },
+  {
+   "text": "In the real world, City fans just call him El Mago. The magician.",
+   "scene": {
+    "type": "person",
+    "person": "silva",
+    "label": "EL MAGO",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
+}

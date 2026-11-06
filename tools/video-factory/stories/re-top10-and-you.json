@@ -1,0 +1,291 @@
+{
+  "id": "re-top10-and-you",
+  "series": "Three rules to the top",
+  "title": "The real top ten... and you",
+  "sources": [
+    "https://bulinews.com/revealed-full-men-ballon-top-10-rankings",
+    "https://blueprint.ng/?p=856976",
+    "https://yen.com.gh/sports/football/314521-ballon-d-2026-official-top-10-rankings-harry-kane-beats-mbappe-yamal/",
+    "https://www.soccernews.com/kane-scoops-first-ballon-dor-after-pipping-yamal-mbappe/407033/",
+    "https://buenosairesherald.com/sports/lionel-messi-renews-contract-with-inter-miami-to-stay-on-until-2028",
+    "https://batimes.com.ar/news/sports/lionel-messi-signs-new-inter-miami-contract-extending-stay-through-2028.phtml",
+    "https://en.wikipedia.org/wiki/Lamine_Yamal",
+    "https://en.wikipedia.org/wiki/Michael_Olise",
+    "https://en.wikipedia.org/wiki/Erling_Haaland",
+    "https://en.wikipedia.org/wiki/Khvicha_Kvaratskhelia",
+    "https://en.wikipedia.org/wiki/Kylian_Mbapp%C3%A9"
+  ],
+  "checked": "2026 Ballon d'Or top 9 order (Bulinews, Blueprint, Yen); past winners Messi, Dembélé, Rodri, Kane (ballondor.com data + Wikipedia); ages from dates of birth on Wikipedia (Yamal 19, Olise 24, Kvaratskhelia 25, Haaland 26, Mbappé 27 on 3 Nov 2026). Rule three and 'you' are a joke, framed as one.",
+  "clubs": {
+    "bar": {
+      "name": "Barcelona",
+      "short": "BAR",
+      "c1": "#a50044",
+      "c2": "#004d98",
+      "pattern": "stripes"
+    },
+    "bay": {
+      "name": "Bayern Munich",
+      "short": "FCB",
+      "c1": "#dc052d",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "kib": {
+      "name": "Road to Ballon d'Or",
+      "short": "KIB",
+      "c1": "#1f8f4e",
+      "c2": "#ffffff",
+      "pattern": "halves"
+    },
+    "mci": {
+      "name": "Manchester City",
+      "short": "MCI",
+      "c1": "#6cabdd",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "mia": {
+      "name": "Inter Miami",
+      "short": "MIA",
+      "c1": "#f7b5cd",
+      "c2": "#231f20",
+      "pattern": "plain"
+    },
+    "rma": {
+      "name": "Real Madrid",
+      "short": "RMA",
+      "c1": "#ffffff",
+      "c2": "#febe10",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "haaland": {
+      "name": "Erling Haaland",
+      "skin": "pink",
+      "hair": [
+        "slick",
+        "#e3cf8f"
+      ],
+      "beard": "none",
+      "kit": "mci"
+    },
+    "messi": {
+      "name": "Lionel Messi",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#4a3222"
+      ],
+      "beard": "full",
+      "kit": "mia"
+    },
+    "olise": {
+      "name": "Michael Olise",
+      "skin": "brown",
+      "hair": [
+        "buzz",
+        "#111111"
+      ],
+      "beard": "none",
+      "kit": "bay"
+    },
+    "yamal": {
+      "name": "Lamine Yamal",
+      "skin": "brown",
+      "hair": [
+        "curlytop",
+        "#151515"
+      ],
+      "beard": "none",
+      "kit": "bar"
+    },
+    "you": {
+      "name": "You",
+      "skin": "olive",
+      "hair": [
+        "quiff",
+        "#2b1d14"
+      ],
+      "beard": "none",
+      "kit": "kib"
+    }
+  },
+  "lines": [
+    {
+      "text": "We took the real Ballon d'Or top nine, added one more name, and let three rules decide. Spoiler: it's you.",
+      "scene": {
+        "type": "title",
+        "heading": "TOP NINE + YOU",
+        "sub": "Three rules. One winner.",
+        "pill": "JUST FOR FUN",
+        "person": "you"
+      }
+    },
+    {
+      "text": "Kane, Mbappé, Yamal, Rodri, Messi, Kvaratskhelia, Dembélé, Haaland, Olise. And at the bottom, you.",
+      "scene": {
+        "type": "list",
+        "title": "Our ten",
+        "rows": [
+          {
+            "name": "Harry Kane",
+            "value": "1st",
+            "club": "bay"
+          },
+          {
+            "name": "Kylian Mbappé",
+            "value": "2nd",
+            "club": "rma"
+          },
+          {
+            "name": "Lamine Yamal",
+            "value": "3rd",
+            "club": "bar"
+          },
+          {
+            "name": "Rodri",
+            "value": "4th",
+            "club": "mci"
+          },
+          {
+            "name": "Lionel Messi",
+            "value": "5th",
+            "club": "mia"
+          },
+          {
+            "name": "Haaland and co",
+            "value": "6th-9th"
+          },
+          {
+            "name": "You",
+            "value": "???",
+            "club": "kib",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Rule one. You can't have won the Ballon d'Or already.",
+      "scene": {
+        "type": "text",
+        "heading": "RULE 1",
+        "body": "Must never have won the Ballon d'Or."
+      }
+    },
+    {
+      "text": "Kane, Messi, Rodri and Dembélé have all won it. Four gone in one go.",
+      "scene": {
+        "type": "stamp",
+        "text": "ALREADY WON",
+        "person": "messi",
+        "color": "yellow"
+      }
+    },
+    {
+      "text": "Rule two. You have to be under twenty-five.",
+      "scene": {
+        "type": "text",
+        "heading": "RULE 2",
+        "body": "Must be under twenty-five years old today."
+      }
+    },
+    {
+      "text": "Mbappé is twenty-seven, Haaland twenty-six, Kvaratskhelia twenty-five. Out, out and out.",
+      "scene": {
+        "type": "stamp",
+        "text": "TOO OLD",
+        "person": "haaland",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Still standing: Lamine Yamal, Michael Olise, and somehow, you.",
+      "scene": {
+        "type": "versus",
+        "title": "Still in",
+        "left": {
+          "person": "yamal",
+          "label": "Yamal",
+          "value": "19"
+        },
+        "right": {
+          "person": "olise",
+          "label": "Olise",
+          "value": "24"
+        }
+      }
+    },
+    {
+      "text": "Rule three. And this one is completely made up. You must play Road to Ballon d'Or.",
+      "scene": {
+        "type": "text",
+        "heading": "RULE 3",
+        "body": "Just for fun: must play Road to Ballon d'Or. Yes, we made this one up."
+      }
+    },
+    {
+      "text": "Yamal? Busy winning real trophies. Olise? Busy at Bayern. Neither of them has started a career.",
+      "scene": {
+        "type": "stamp",
+        "text": "NO SAVE FILE",
+        "person": "yamal",
+        "color": "white"
+      }
+    },
+    {
+      "text": "Which leaves one name. Yours.",
+      "scene": {
+        "type": "person",
+        "person": "you",
+        "label": "THE LAST NAME LEFT",
+        "mood": "shocked",
+        "stamp": "WINNER"
+      }
+    },
+    {
+      "text": "Is it rigged? Completely. Will the real voters agree? Absolutely not.",
+      "scene": {
+        "type": "whatif",
+        "title": "Real world v our world",
+        "real": {
+          "label": "Real Ballon d'Or",
+          "value": "Kane"
+        },
+        "alt": {
+          "label": "Our rules",
+          "value": "YOU"
+        }
+      }
+    },
+    {
+      "text": "But your player can still win it for real, inside the game.",
+      "scene": {
+        "type": "trophies",
+        "items": [
+          {
+            "kind": "ballon",
+            "label": "Ballon d'Or"
+          },
+          {
+            "kind": "boot",
+            "label": "Golden Boot"
+          },
+          {
+            "kind": "bigears",
+            "label": "Champions League"
+          }
+        ],
+        "person": "you"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

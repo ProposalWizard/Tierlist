@@ -1,0 +1,42 @@
+{
+  "id": "am-england-youngest",
+  "series": "Age-match",
+  "title": "England's youngest starter v Rooney and Owen at the same age",
+  "sources": [
+    "https://sportsdigest.in/england-uefa-nations-league-2026-27-schedule/217245/amp/",
+    "https://en.wikipedia.org/wiki/England_national_football_team_results_(2020%E2%80%93present)",
+    "https://www.101greatgoals.com/?p=214948",
+    "https://m.allfootballapp.com/amp/news/EPL/England-3-0-Czech-Kane-scores-double-on-record-equalling-appearance/5524820",
+    "https://www.aljazeera.com/sports/2026/10/6/kane-equals-england-record-and-scores-twice-in-3-0-win-against-czechia",
+    "https://en.wikipedia.org/wiki/Myles_Lewis-Skelly",
+    "https://en.wikipedia.org/wiki/List_of_international_goals_scored_by_Wayne_Rooney",
+    "https://en.wikipedia.org/wiki/Michael_Owen",
+    "https://www.sporcle.com/games/efc/wc2010",
+    "https://www.11v11.com/players/michael-owen-280/team/stoke-city/"
+  ],
+  "checked": "England's next match: Croatia at Wembley, 12 Nov 2026 (Sportsdigest + England results page). Youngest starter in the last England XI (6 Oct 2026 v Czechia): Lewis-Skelly, born 26 Sep 2006 (101 Great Goals + All Football line-ups) = 20 years 47 days on 12 Nov. Lewis-Skelly: 10 caps, 1 goal to 6 Oct 2026, scored on his debut v Albania, 21 Mar 2025 (Wikipedia). Rooney reached 20y47d on 10 Dec 2005: 28 caps, 11 goals; goals after 10 caps = 3 (Wikipedia goals list with cap numbers). Owen reached it on 30 Jan 2000: 5 England goals (Morocco, Romania, Argentina 1998; Luxembourg Oct 1998 and Sep 1999 per Sporcle list + Wikipedia), debut 11 Feb 1998 aged 18y59d (Wikipedia). Owen's cap count at that date not confirmed, so not used. Minutes not confirmable, so the twist uses caps.",
+  "clubs": {
+    "eng": { "name": "England", "short": "ENG", "c1": "#ffffff", "c2": "#1d2c5e", "pattern": "plain" },
+    "cro": { "name": "Croatia", "short": "CRO", "c1": "#ffffff", "c2": "#e30a17", "pattern": "hoops" },
+    "arg": { "name": "Argentina", "short": "ARG", "c1": "#75aadb", "c2": "#ffffff", "pattern": "stripes" }
+  },
+  "people": {
+    "mls": { "name": "Myles Lewis-Skelly", "skin": "dark", "hair": ["locs", "#14110f"], "beard": "none", "kit": "eng" },
+    "rooney": { "name": "Wayne Rooney", "skin": "pink", "hair": ["buzz", "#6b4a2e"], "beard": "none", "kit": "eng" },
+    "owen": { "name": "Michael Owen", "skin": "light", "hair": ["crop", "#2a1d14"], "beard": "none", "kit": "eng" }
+  },
+  "lines": [
+    { "text": "When England play Croatia at Wembley on the twelfth of November, their youngest starter last time out will be twenty years and forty-seven days old.", "scene": { "type": "title", "heading": "MYLES LEWIS-SKELLY", "sub": "England v Croatia · 12 Nov 2026", "pill": "AGE-MATCH", "person": "mls" } },
+    { "text": "Myles Lewis-Skelly. He scored on his England debut, against Albania, aged eighteen.", "scene": { "type": "person", "person": "mls", "label": "Debut goal, March 2025", "mood": "happy" } },
+    { "text": "So far: ten caps, one goal, and a Premier League title with Arsenal.", "scene": { "type": "stats", "title": "Lewis-Skelly (to 6 Oct 2026)", "items": [ { "n": "10", "l": "England caps" }, { "n": "1", "l": "England goal" }, { "n": "1", "l": "Premier League title" } ], "person": "mls" } },
+    { "text": "Now the legends at exactly the same age. Wayne Rooney, December twenty oh-five.", "scene": { "type": "person", "person": "rooney", "label": "20 years, 47 days", "mood": "happy" } },
+    { "text": "Twenty-eight caps and eleven goals. Already a Euro twenty oh-four star.", "scene": { "type": "versus", "title": "England caps at 20y 47d", "left": { "person": "rooney", "label": "Rooney", "value": "28" }, "right": { "person": "mls", "label": "Lewis-Skelly", "value": "10" } } },
+    { "text": "Michael Owen, January two thousand. Five England goals, including that one against Argentina at the World Cup.", "scene": { "type": "score", "home": "arg", "away": "eng", "hs": 2, "as": 2, "date": "30 June 1998", "comp": "World Cup last sixteen", "note": "Owen's solo goal; Argentina win on pens" } },
+    { "text": "So on goals, it's Rooney eleven, Owen five, Lewis-Skelly one.", "scene": { "type": "list", "title": "England goals at 20 years 47 days", "rows": [ { "name": "Wayne Rooney", "value": "11", "club": "eng" }, { "name": "Michael Owen", "value": "5", "club": "eng" }, { "name": "Myles Lewis-Skelly", "value": "1", "club": "eng", "hl": true } ] } },
+    { "text": "But that's not fair. Rooney and Owen were strikers. Lewis-Skelly is a full-back.", "scene": { "type": "stamp", "text": "NOT FAIR", "person": "mls", "color": "yellow" } },
+    { "text": "So match the games. After ten caps, Rooney had three England goals. Lewis-Skelly has one, from left-back.", "scene": { "type": "whatif", "title": "After 10 England caps", "real": { "label": "Rooney (striker)", "value": "3 goals" }, "alt": { "label": "Lewis-Skelly (full-back)", "value": "1 goal" } } },
+    { "text": "And here's one Rooney and Owen never did. Neither scored on his England debut.", "scene": { "type": "text", "heading": "DEBUT DAY", "body": "Owen v Chile, 1998: no goal. Rooney v Australia, 2003: no goal. Lewis-Skelly v Albania, 2025: scores." } },
+    { "text": "So which twenty-year-old would you pick for England? Tell me in the comments.", "scene": { "type": "quote", "person": "mls", "text": "I'm not here to score. But I will." } },
+    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+  ]
+}

@@ -46,7 +46,7 @@ export default function GoalOfMonthPoll({ spec, author, onVote }: {
         priority={e.clipId ? 1 : 0}
         style={clipStyleFor(author)}
         variant={clipVariantFor(author)}
-        credit={author ? { handle: author.handle, name: author.name } : undefined}
+        credit={author ? { handle: author.handle, name: author.name, archetype: author.archetype, platform: author.platform } : undefined}
         title={`${spec.monthName.toUpperCase()} GOTM | ${e.scorerShort.toUpperCase()}`}
         badge="GOAL"
         fallback={null}

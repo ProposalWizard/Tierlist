@@ -10,6 +10,7 @@
  */
 import { useSyncExternalStore } from "react";
 import { uiVersion, setUiVersion, UI_VERSION_DEFAULT } from "./uiLook";
+import { uiSkin, setUiSkin, UI_SKIN_DEFAULT } from "./uiSkin";
 import { gameplayVersion, setGameplayVersion, defaultVersion } from "./gameplayVersion";
 import { matchRadarLook, setMatchRadarLook } from "./matchRadarLook";
 import { matchFeelLook, setMatchFeelLook } from "./matchFeel";
@@ -63,6 +64,8 @@ export const LOOK_ROWS = {
   // the match's ⚙ and the ⚙ before kick-off. Shown to everyone.
   fhr: row("Full highlights rebuild", "on", "off", "on", fhrMode, setFhrMode),
   ui: row("UI", "new", "old", UI_VERSION_DEFAULT, uiVersion, setUiVersion),
+  // Harry, 1 Nov 2026: the New UI's skin, Glass (default) or Pitch (lib/star/uiSkin.ts).
+  skin: row("UI look", "glass", "pitch", UI_SKIN_DEFAULT, uiSkin, setUiSkin),
 } as const satisfies Record<string, LookRow>;
 
 export type LookRowId = keyof typeof LOOK_ROWS;

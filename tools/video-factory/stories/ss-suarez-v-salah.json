@@ -1,0 +1,38 @@
+{
+  "id": "ss-suarez-v-salah",
+  "series": "Best season ever, settled",
+  "title": "Suarez 2013-14 v Salah 2024-25: Liverpool's best ever season?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/2013%E2%80%9314_Liverpool_F.C._season",
+    "https://en.wikipedia.org/wiki/2024%E2%80%9325_Liverpool_F.C._season",
+    "https://www.premierleague.com/news/4314803",
+    "https://www.liverpoolfc.com/news/mohamed-salah-wins-2024-25-premier-league-golden-boot",
+    "data/competition-history/premier-league.json (top scorers, top assisters, FWA winners, champions)"
+  ],
+  "checked": "Suarez 31 league goals, Golden Boot and PFA award, Liverpool second on 84 points two behind City, the 0-2 Chelsea defeat and the 3-3 at Palace from 3-0 up, ban carried into the season (Wikipedia season page); 13 assists and FWA award (local file, which lists Suarez and Gerrard joint top on 13). Salah 29 league goals, 34 all comps, 47 goal involvements as a 38-game record, title won 5-1 v Spurs on 27 April, 84 points (Wikipedia season page); 18 assists, Golden Boot and Playmaker (Premier League, Liverpool FC, local file).",
+  "clubs": {
+    "liverpool": { "name": "Liverpool", "short": "LIV", "c1": "#c8102e", "c2": "#ffffff", "pattern": "plain" },
+    "mancity": { "name": "Manchester City", "short": "MCI", "c1": "#6cabdd", "c2": "#ffffff", "pattern": "plain" },
+    "palace": { "name": "Crystal Palace", "short": "CRY", "c1": "#1b458f", "c2": "#c4122e", "pattern": "stripes" },
+    "spurs": { "name": "Tottenham Hotspur", "short": "TOT", "c1": "#ffffff", "c2": "#132257", "pattern": "plain" }
+  },
+  "people": {
+    "suarez": { "name": "Luis Suarez", "skin": "light", "hair": ["messy", "#2a1d14"], "beard": "stubble", "kit": "liverpool" },
+    "salah": { "name": "Mohamed Salah", "skin": "tan", "hair": ["curlytop", "#1a120c"], "beard": "full", "beardCol": "#1a120c", "kit": "liverpool" }
+  },
+  "lines": [
+    { "text": "Same club, same shirt, same points total. One got a trophy, one got heartbreak.", "scene": { "type": "title", "heading": "SUAREZ v SALAH", "sub": "Liverpool · 2013-14 v 2024-25", "pill": "SETTLED", "person": "suarez" } },
+    { "text": "Luis Suarez, twenty thirteen, fourteen. He starts the season still serving a ban.", "scene": { "type": "person", "person": "suarez", "label": "Liverpool · 2013-14", "mood": "flat", "stamp": "BANNED" } },
+    { "text": "Then he comes back and destroys everybody. Thirty-one league goals, thirteen assists.", "scene": { "type": "stats", "title": "SUAREZ 2013-14", "person": "suarez", "items": [ { "n": "31", "l": "league goals" }, { "n": "13", "l": "assists" }, { "n": "101", "l": "Liverpool league goals" } ] } },
+    { "text": "Mohamed Salah, twenty twenty-four, twenty-five. Thirty-two years old, and somehow better than ever.", "scene": { "type": "person", "person": "salah", "label": "Liverpool · 2024-25", "mood": "happy" } },
+    { "text": "Twenty-nine goals, eighteen assists. Forty-seven goal involvements, a record for a thirty-eight game season.", "scene": { "type": "stats", "title": "SALAH 2024-25", "person": "salah", "items": [ { "n": "29", "l": "league goals" }, { "n": "18", "l": "assists" }, { "n": "47", "l": "goal involvements" } ] } },
+    { "text": "On numbers it's close. Suarez scored more. Salah made more.", "scene": { "type": "versus", "title": "GOALS + ASSISTS", "left": { "person": "suarez", "label": "Suarez 13-14", "value": "44" }, "right": { "person": "salah", "label": "Salah 24-25", "value": "47" } } },
+    { "text": "Both won the Golden Boot. Both were voted the best player in the country.", "scene": { "type": "trophies", "items": [ { "kind": "boot", "label": "Suarez, Golden Boot" }, { "kind": "boot", "label": "Salah, Golden Boot" } ] } },
+    { "text": "Now the twist. Both Liverpool teams finished on exactly eighty-four points.", "scene": { "type": "versus", "title": "POINTS", "left": { "person": "suarez", "label": "2013-14", "value": "84" }, "right": { "person": "salah", "label": "2024-25", "value": "84" }, "stamp": "SAME" } },
+    { "text": "In twenty fourteen, eighty-four wasn't enough. City got eighty-six. Liverpool threw away a three-nil lead at Palace.", "scene": { "type": "score", "home": "palace", "away": "liverpool", "hs": 3, "as": 3, "date": "May 2014", "comp": "Premier League", "note": "Liverpool led 3-0", "stamp": "HEARTBREAK" } },
+    { "text": "In twenty twenty-five, eighty-four won the league with four games to spare. Five-one against Spurs.", "scene": { "type": "score", "home": "liverpool", "away": "spurs", "hs": 5, "as": 1, "date": "27 April 2025", "comp": "Premier League", "note": "Title clinched" } },
+    { "text": "Same points. One title. Salah has the medal.", "scene": { "type": "trophies", "person": "salah", "items": [ { "kind": "league", "label": "Premier League 2025" }, { "kind": "boot", "label": "Golden Boot" } ] } },
+    { "text": "Suarez was the better show. Salah was the better season. Settled.", "scene": { "type": "stamp", "text": "SALAH", "person": "salah", "color": "white" } },
+    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+  ]
+}

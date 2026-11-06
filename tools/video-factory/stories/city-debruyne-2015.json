@@ -1,0 +1,302 @@
+{
+ "id": "city-debruyne-2015",
+ "series": "What if Man City…?",
+ "title": "What if De Bruyne joined Bayern?",
+ "sources": [
+  "https://www.calciomercato.com/news/de-bruyne-reveals-where-he-could-ve-ended-up-in-2015-33147",
+  "https://www.foxnews.com/sports/de-bruyne-admits-head-turned-by-man-city-psg-interest.amp",
+  "https://www.bavarianfootballworks.com/2018/2/16/17018006/bayern-munich-manchester-city-kevin-de-bruyne-wolfsburg-werder-bremen-pep-guardiola-transfer-2015",
+  "https://www.si.com/soccer/2015/08/27/kevin-de-bruyne-transfer-manchester-city-wolfsburg",
+  "https://www.shoot.co.uk/manchester-city-agree-club-record-50-4-million-fee-for-attacking-midfielder/",
+  "https://www.eurosport.com/football/premier-league/2015-2016/manchester-city-agree-deal-to-sign-kevin-de-bruyne-german-media-reports_sto4879568/story.shtml",
+  "https://www.beinsports.com/en-us/soccer/serie-a/articles/de-bruyne-seals-napoli-move-after-leaving-man-city-2025-06-12",
+  "https://www.mancity.com/news/mens/de-bruyne-to-join-napoli-63885336",
+  "https://www.dailydispatch.co.za/sport/2025-06-12-de-bruyne-joins-italian-champions-napoli-after-man-city-exit"
+ ],
+ "checked": "Wolfsburg paid €25m in Jan 2014 (SI, Calciomercato); Bayern, PSG and staying were his options, City's style suited him (BBC quote via Calciomercato, Fox); agent says personal agreement with Bayern, price was the problem (Bavarian Football Works, reports of a €50m Bayern bid); City fee over £50m, a club record (Shoot £50.4m, Eurosport £54m; never disclosed); 422 games, 108 goals, 170 assists, 6 PL titles, left for Napoli June 2025 (beIN, Daily Dispatch; one outlet says 177 assists, so 170 used). Pep was Bayern coach 2013-16. Bayern path imagined.",
+ "clubs": {
+  "mci": {
+   "name": "Manchester City",
+   "short": "MCI",
+   "c1": "#6cabdd",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "che": {
+   "name": "Chelsea",
+   "short": "CHE",
+   "c1": "#034694",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "wob": {
+   "name": "Wolfsburg",
+   "short": "WOB",
+   "c1": "#65b32e",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "bay": {
+   "name": "Bayern Munich",
+   "short": "FCB",
+   "c1": "#dc052d",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "psg": {
+   "name": "Paris Saint-Germain",
+   "short": "PSG",
+   "c1": "#004170",
+   "c2": "#da291c",
+   "pattern": "centre"
+  },
+  "nap": {
+   "name": "Napoli",
+   "short": "NAP",
+   "c1": "#12a0d7",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  }
+ },
+ "people": {
+  "kdbwob": {
+   "name": "Kevin De Bruyne",
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#c8743a"
+   ],
+   "beard": "none",
+   "kit": "wob"
+  },
+  "kdb": {
+   "name": "Kevin De Bruyne",
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#c8743a"
+   ],
+   "beard": "none",
+   "kit": "mci"
+  },
+  "kdbbay": {
+   "name": "Kevin De Bruyne",
+   "skin": "pink",
+   "hair": [
+    "crop",
+    "#c8743a"
+   ],
+   "beard": "none",
+   "kit": "bay"
+  },
+  "pep": {
+   "name": "Pep Guardiola",
+   "skin": "light",
+   "hair": [
+    "bald",
+    "#5a5a5a"
+   ],
+   "beard": "stubble",
+   "beardCol": "#6b6b6b",
+   "kit": "suit"
+  }
+ },
+ "lines": [
+  {
+   "text": "Chelsea let him go. Bayern nearly had him. City paid a club record to get him.",
+   "scene": {
+    "type": "title",
+    "heading": "KEVIN DE BRUYNE",
+    "sub": "WOLFSBURG · 2015",
+    "pill": "WHAT IF?",
+    "person": "kdbwob"
+   }
+  },
+  {
+   "text": "January twenty fourteen. Chelsea sell Kevin De Bruyne to Wolfsburg for twenty-five million euros.",
+   "scene": {
+    "type": "stats",
+    "title": "JANUARY 2014",
+    "items": [
+     {
+      "n": "€25m",
+      "l": "Chelsea to Wolfsburg"
+     }
+    ],
+    "person": "kdbwob"
+   }
+  },
+  {
+   "text": "In Germany, he turns into one of the best creators in Europe.",
+   "scene": {
+    "type": "person",
+    "person": "kdbwob",
+    "label": "WOLFSBURG",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "Summer twenty fifteen. He said he could go to Bayern, go to PSG, or stay at Wolfsburg.",
+   "scene": {
+    "type": "list",
+    "title": "KDB'S OPTIONS, 2015",
+    "rows": [
+     {
+      "name": "Bayern Munich",
+      "value": "personal terms",
+      "club": "bay",
+      "hl": true
+     },
+     {
+      "name": "PSG",
+      "value": "interested",
+      "club": "psg"
+     },
+     {
+      "name": "Wolfsburg",
+      "value": "stay",
+      "club": "wob"
+     },
+     {
+      "name": "Man City",
+      "value": "signed him",
+      "club": "mci"
+     }
+    ]
+   }
+  },
+  {
+   "text": "His agent says he even agreed personal terms with Bayern. But the clubs never agreed a price.",
+   "scene": {
+    "type": "text",
+    "heading": "BAYERN, SO CLOSE",
+    "body": "De Bruyne's agent later said a personal agreement was reached with Bayern after two meetings. The deal fell apart over the fee."
+   }
+  },
+  {
+   "text": "City paid a fee reported at more than fifty million pounds, their club record at the time.",
+   "scene": {
+    "type": "stats",
+    "title": "AUGUST 2015",
+    "items": [
+     {
+      "n": "£50m+",
+      "l": "reported fee"
+     },
+     {
+      "n": "2015",
+      "l": "club record then"
+     }
+    ],
+    "person": "kdb"
+   }
+  },
+  {
+   "text": "He said City's style of football just suited him better.",
+   "scene": {
+    "type": "person",
+    "person": "kdb",
+    "label": "\"CITY SUITED ME\"",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "Ten years later: six Premier League titles, one hundred and eight goals, one hundred and seventy assists.",
+   "scene": {
+    "type": "stats",
+    "title": "KDB AT CITY",
+    "items": [
+     {
+      "n": "6",
+      "l": "Premier League titles"
+     },
+     {
+      "n": "108",
+      "l": "goals"
+     },
+     {
+      "n": "170",
+      "l": "assists"
+     },
+     {
+      "n": "422",
+      "l": "games"
+     }
+    ],
+    "person": "kdb"
+   }
+  },
+  {
+   "text": "Now the alternate world. Bayern pay up in twenty fifteen.",
+   "scene": {
+    "type": "whatif",
+    "title": "SUMMER 2015",
+    "real": {
+     "label": "Real world",
+     "value": "Man City"
+    },
+    "alt": {
+     "label": "Alternate world",
+     "value": "Bayern Munich"
+    }
+   }
+  },
+  {
+   "text": "And who's Bayern's coach that season? Pep Guardiola, in his last year in Munich.",
+   "scene": {
+    "type": "versus",
+    "title": "BAYERN 2015-16",
+    "left": {
+     "person": "kdbbay",
+     "label": "De Bruyne",
+     "value": "New signing"
+    },
+    "right": {
+     "person": "pep",
+     "label": "Guardiola",
+     "value": "Coach"
+    }
+   }
+  },
+  {
+   "text": "Then Pep leaves for City in twenty sixteen, and his best playmaker stays behind in Germany.",
+   "scene": {
+    "type": "person",
+    "person": "kdbbay",
+    "label": "STUCK IN MUNICH?",
+    "mood": "worried"
+   }
+  },
+  {
+   "text": "The hundred-point season. The twenty twenty-three treble. In this world, all of it without KDB.",
+   "scene": {
+    "type": "stamp",
+    "text": "NO KDB",
+    "color": "red"
+   }
+  },
+  {
+   "text": "In the real world, he left City for Napoli in twenty twenty-five, as a legend.",
+   "scene": {
+    "type": "trophies",
+    "items": [
+     {
+      "kind": "league",
+      "label": "6 Premier Leagues"
+     },
+     {
+      "kind": "bigears",
+      "label": "Champions League 2023"
+     }
+    ],
+    "person": "kdb"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
+}

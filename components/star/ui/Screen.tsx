@@ -90,8 +90,10 @@ export function Backdrop({ glow, tone }: { glow: string; tone?: string }) {
 }
 
 /** The whole page: backdrop, kit styles, and a centred column. */
-export function Screen({ glow, tone, className = "max-w-sm px-3 py-3", center = false, children }: {
+export function Screen({ glow, tone, className = "max-w-sm px-3 py-3", center = false, stadium = false, children }: {
   glow: string;
+  /** In the pitch look, the blurred day stadium fills the top half (ui/pitchLook.css STADIUM BACKDROP). */
+  stadium?: boolean;
   /** A second colour for the bottom of the sky (the other club, a loss red). */
   tone?: string;
   /** The column's width and padding. */
@@ -101,7 +103,7 @@ export function Screen({ glow, tone, className = "max-w-sm px-3 py-3", center = 
   children?: React.ReactNode;
 }) {
   return (
-    <div className="relative min-h-screen bg-[#05070d] text-white" style={{ ["--kit-glow" as string]: glow } as React.CSSProperties}>
+    <div className={`relative min-h-screen bg-[#05070d] text-white${stadium ? " sk-stadium-screen" : ""}`} style={{ ["--kit-glow" as string]: glow } as React.CSSProperties}>
       <KitStyles />
       <style>{SCREEN_CSS}</style>
       <Backdrop glow={glow} tone={tone} />
@@ -146,10 +148,10 @@ export function ScreenHeader({ title, kicker, kickerColor, onBack, right, backLa
   backLabel?: string;
 }) {
   return (
-    <div className="mb-3 grid grid-cols-[auto_1fr_auto] items-center gap-2">
+    <div data-sk-header className="mb-3 grid grid-cols-[auto_1fr_auto] items-center gap-2">
       {onBack ? <BackButton onClick={onBack} label={backLabel} /> : <span />}
       <div className="min-w-0 text-center">
-        {kicker && <div className="truncate text-[9px] font-black uppercase tracking-[0.24em]" style={{ color: kickerColor ?? "#fcd34d" }}>{kicker}</div>}
+        {kicker && <div data-sk-kicker className="truncate text-[9px] font-black uppercase tracking-[0.24em]" style={{ color: kickerColor ?? "#fcd34d" }}>{kicker}</div>}
         <Title className="truncate text-[19px]">{title}</Title>
       </div>
       <div className="flex min-w-[3.5rem] justify-end">{right}</div>

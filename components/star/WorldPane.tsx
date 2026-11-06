@@ -1,17 +1,20 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CareerState, LeagueTeam, LeagueResult } from "@/lib/star/types";
-import { ALL_DIVISIONS, divisionOf, leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
+import { ALL_DIVISIONS, divisionOf, leagueNameFor, seasonStartYear, type CareerDivision } from "@/lib/star/calendar";
 import { sortLeague, buildSeasonFixtures } from "@/lib/star/season";
 import { sortEuro } from "@/lib/star/euro";
 import type { CupState } from "@/lib/star/cups";
-import { koAggregate, type EuroBracket } from "@/lib/star/euroBracket";
 import { worldOf, finishWorld, WORLD_LIVE } from "@/lib/star/world";
 import { worldRoundResults } from "@/lib/star/world/leagues";
 import { compHistoryFor } from "@/lib/star/world/history";
+import { loadRealHistory, joinHistory, careerFirstYear, type HistoryLine } from "@/lib/star/world/realHistory";
+import { leadersFor } from "@/lib/star/intl/editionLeaders";
 import { intlCompetitions, intlCompView, intlCompScorers, fullRanking } from "@/lib/star/intl/compView";
 import { cupScorers } from "@/lib/star/world/cupScorers";
-import { intlOf } from "@/lib/star/intl/career";
+import { ownEuroScorers } from "@/lib/star/world/ownEuroScorers";
+import { intlOf, worldOf as intlWorldOf } from "@/lib/star/intl/career";
+import { seasonQualifiers } from "@/lib/star/qualification";
 import type { CompKind } from "@/lib/star/intl/world";
 import { topOf, ownLeagueTop, type ScorerRow } from "@/lib/star/world/summary";
 import type { WorldState, WorldSummary } from "@/lib/star/world/types";
@@ -20,6 +23,7 @@ import NationFlag from "./NationFlag";
 import IntlWorldPanel from "./IntlWorldPanel";
 import { NationTable, MatchRow, nationGlow } from "./IntlKit";
 import ClubBadge from "./ClubBadge";
+import { EuroKnockout, CupKnockout } from "./KnockoutTree";
 import { ClubCard, rgba, useClubTheme } from "./ui";
 import { SegTabs, CardTitle, youRowStyle } from "./screenKit";
 
@@ -44,7 +48,7 @@ import { SegTabs, CardTitle, youRowStyle } from "./screenKit";
 type Comp =
   | { key: string; kind: "league"; label: string; division: CareerDivision }
   | { key: string; kind: "euro"; label: string; competition: "Champions League" | "Europa League" }
-  | { key: string; kind: "cup"; label: string; competition: "FA Cup" | "League Cup" }
+  | { key: string; kind: "cup"; label: string; competition: "FA Cup" | "League Cup" | "Lower League Trophy" }
   | { key: string; kind: "shield"; label: string; competition: "Community Shield" | "Super Cup" }
   | { key: string; kind: "intl"; label: string; comp: CompKind }
   | { key: string; kind: "nation"; label: string }
@@ -54,6 +58,7 @@ const COMPS: Comp[] = [
   ...ALL_DIVISIONS.map(d => ({ key: d, kind: "league" as const, label: leagueNameFor(d), division: d })),
   { key: "fa", kind: "cup", label: "FA Cup", competition: "FA Cup" },
   { key: "lc", kind: "cup", label: "League Cup", competition: "League Cup" },
+  { key: "llt", kind: "cup", label: "Lower League Trophy", competition: "Lower League Trophy" },
   { key: "ucl", kind: "euro", label: "Champions League", competition: "Champions League" },
   { key: "uel", kind: "euro", label: "Europa League", competition: "Europa League" },
   { key: "cs", kind: "shield", label: "Community Shield", competition: "Community Shield" },
@@ -61,7 +66,7 @@ const COMPS: Comp[] = [
 ];
 const GROUPS: { title: string; keys: string[] }[] = [
   { title: "England", keys: ALL_DIVISIONS },
-  { title: "Cups", keys: ["fa", "lc", "cs", "sc"] },
+  { title: "Cups", keys: ["fa", "lc", "llt", "cs", "sc"] },
   { title: "Europe", keys: ["ucl", "uel"] },
 ];
 
@@ -85,14 +90,16 @@ function zoneColour(d: CareerDivision, pos: number, n: number): string | null {
   return pos > n - l.down ? ZONE.down : null;
 }
 
-export default function WorldPane({ career, final = false, last = false }: {
+export default function WorldPane({ career, final = false, last = false, onClose }: {
   career: CareerState; final?: boolean;
   /** Open on last season (the season review, after the rollover). */
   last?: boolean;
+  /** The season review's own close button (it draws its own header). */
+  onClose?: () => void;
 }) {
   const [showLast, setShowLast] = useState(last && !!career.lastWorld);
   if (showLast && career.lastWorld) {
-    return <LastSeason career={career} summary={career.lastWorld} onNow={last ? undefined : () => setShowLast(false)} />;
+    return <LastSeason career={career} summary={career.lastWorld} onNow={last ? undefined : () => setShowLast(false)} onClose={onClose} />;
   }
   return <NowPane career={career} final={final} onLast={career.lastWorld ? () => setShowLast(true) : undefined} />;
 }
@@ -114,8 +121,10 @@ function NowPane({ career, final, onLast }: { career: CareerState; final: boolea
       ...comps.map(c => ({ key: `intl:${c}`, kind: "intl" as const, label: c, comp: c })),
     ];
   }, [career, nation]);
-  const all = [...COMPS, ...intl];
-  const groups = [...GROUPS, ...(intl.length ? [{ title: "International", keys: intl.map(c => c.key) }] : [])];
+  // The Lower League Trophy only for a season your club is in it.
+  const inTrophy = (career.cupState ?? []).some(c => c.competition === "Lower League Trophy");
+  const all = [...COMPS.filter(c => c.key !== "llt" || inTrophy), ...intl];
+  const groups = [...GROUPS.map(g => ({ ...g, keys: g.keys.filter(k => all.some(c => c.key === k)) })), ...(intl.length ? [{ title: "International", keys: intl.map(c => c.key) }] : [])];
   const comp = all.find(c => c.key === key) ?? all[0];
   const you = career.player.club;
 
@@ -140,9 +149,9 @@ function NowPane({ career, final, onLast }: { career: CareerState; final: boolea
 
       {comp.kind === "league" && <LeagueView career={career} world={world} division={comp.division} glow={glow} you={you} />}
       {comp.kind === "euro" && <EuroView career={career} world={world} competition={comp.competition} glow={glow} you={you} />}
-      {comp.kind === "cup" && <CupView career={career} name={comp.competition} cup={comp.competition === "FA Cup"
-        ? (career.cupState ?? []).find(c => c.competition === "FA Cup")
-        : (career.cupState ?? []).find(c => c.competition === "League Cup") ?? world.leagueCup} glow={glow} you={you} />}
+      {comp.kind === "cup" && <CupView career={career} name={comp.competition} cup={comp.competition === "League Cup"
+        ? (career.cupState ?? []).find(c => c.competition === "League Cup") ?? world.leagueCup
+        : (career.cupState ?? []).find(c => c.competition === comp.competition)} glow={glow} you={you} />}
       {comp.kind === "shield" && <ShieldView career={career} world={world} competition={comp.competition} glow={glow} />}
       {comp.kind === "nation" && <IntlWorldPanel career={career} />}
       {comp.kind === "ranking" && <RankingView career={career} nation={nation} />}
@@ -254,18 +263,29 @@ function Results({ results, glow, you, title }: { results: LeagueResult[]; glow:
   );
 }
 
-function Scorers({ rows, glow, label }: { rows: ScorerRow[]; glow: string; label: string }) {
-  if (!rows.length) return <Empty text="No named players here yet." />;
+function Scorers({ rows, glow, label, you }: {
+  rows: ScorerRow[]; glow: string; label: string;
+  /** You, when you are outside the list: shown under it with your place. */
+  you?: { row: ScorerRow; rank: number } | null;
+}) {
+  if (!rows.length && !you) return <Empty text="No named players here yet." />;
+  const line = (r: ScorerRow, rank: number, mine: boolean) => (
+    <div key={r.id} className={`grid grid-cols-[26px_1fr_auto] items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] font-bold text-white ${mine ? "" : "bg-white/[0.04]"}`} style={mine ? youRowStyle(glow) : undefined}>
+      <span className="text-center font-black">{rank}</span>
+      <span className="flex min-w-0 items-center gap-1.5">{r.club && <ClubBadge club={r.club} size={15} />}<span className="truncate">{r.player}</span></span>
+      <span className="font-black tabular-nums">{r.n} <span className="text-[9px] text-white/70">{label}</span></span>
+    </div>
+  );
   return (
     <ClubCard glow={glow} className="p-1.5">
       <div className="space-y-1">
-        {rows.map((r, i) => (
-          <div key={r.id} className="grid grid-cols-[22px_1fr_auto] items-center gap-2 rounded-lg bg-white/[0.04] px-2 py-1.5 text-[12px] font-bold text-white">
-            <span className="text-center font-black">{i + 1}</span>
-            <span className="flex min-w-0 items-center gap-1.5">{r.club && <ClubBadge club={r.club} size={15} />}<span className="truncate">{r.player}</span></span>
-            <span className="font-black tabular-nums">{r.n} <span className="text-[9px] text-white/70">{label}</span></span>
-          </div>
-        ))}
+        {rows.map((r, i) => line(r, i + 1, false))}
+        {you && (
+          <>
+            <div className="text-center text-[11px] font-black leading-none text-white/60">⋯</div>
+            {line(you.row, you.rank, true)}
+          </>
+        )}
       </div>
     </ClubCard>
   );
@@ -353,24 +373,76 @@ function LeagueRounds({ career, own, lg, glow, you }: { career: CareerState; own
   );
 }
 
-/** Every season's winner and runner-up (Mikey 24:44). */
+/** Every season's winner and runner-up (Mikey 24:44), with its top scorer,
+ *  top assister and player of the season, and the real history before your
+ *  career underneath (Mikey, 2 Nov 2026). */
 function History({ career, comp, glow, you }: { career: CareerState; comp: string; glow: string; you: string }) {
   const rows = useMemo(() => compHistoryFor(career, comp), [career, comp]);
-  if (!rows.length) return <Empty text="No seasons finished yet. The winner and runner-up go here at the end of each season." />;
+  const real = useRealHistory(comp);
+  const lines = useMemo(() => {
+    const mine: HistoryLine[] = rows.map(r => {
+      const y = seasonStartYear(career.player.startYear, r.season);
+      return {
+        label: `${y}-${String((y + 1) % 100).padStart(2, "0")}`, year: y, real: false, season: r.season,
+        winner: r.winner, runnerUp: r.runnerUp, score: r.score, scorers: r.scorers, assisters: r.assisters, best: r.best,
+      };
+    });
+    return joinHistory(mine, real ?? [], careerFirstYear(career.player.startYear));
+  }, [rows, real, career.player.startYear]);
+  if (!lines.length) return <Empty text={real === null ? "Loading the history…" : "No seasons finished yet. The winner and runner-up go here at the end of each season."} />;
+  return <HistoryList lines={lines} glow={glow} comp={comp} mine={(n) => n === you} badge={(club, size) => <ClubBadge club={club} size={size} />} name={shortClub} />;
+}
+
+/** A competition's real history, once its file has loaded (null while loading). */
+function useRealHistory(comp: string): HistoryLine[] | null {
+  const [got, setGot] = useState<{ comp: string; lines: HistoryLine[] } | null>(null);
+  useEffect(() => {
+    let live = true;
+    loadRealHistory(comp).then(lines => { if (live) setGot({ comp, lines }); });
+    return () => { live = false; };
+  }, [comp]);
+  return got && got.comp === comp ? got.lines : null;
+}
+
+/** "Mbappé 10" / "Olise, Kane 3": the leader(s) and the number. */
+function leaderText(xs: { name: string; n: number }[]): string {
+  return `${xs.map(x => x.name).join(", ")} ${xs[0].n}`;
+}
+
+/** One list of seasons, newest first: yours, then the real ones (each marked REAL). */
+function HistoryList({ lines, glow, comp, mine, badge, name }: {
+  lines: HistoryLine[]; glow: string; comp: string;
+  mine: (club: string) => boolean;
+  badge: (club: string, size: number) => React.ReactNode;
+  name: (club: string) => string;
+}) {
   return (
     <ClubCard glow={glow} className="p-1.5" data-history={comp}>
       <div className="space-y-1">
-        {rows.map(r => {
-          const y = career.player.startYear + r.season - 1;
-          const mine = r.winner === you || r.runnerUp === you;
+        {lines.map(r => {
+          const lit = !r.real && !!r.winner && (mine(r.winner) || (!!r.runnerUp && mine(r.runnerUp)));
+          const extra = !r.notHeld && (r.scorers?.length || r.assisters?.length || r.best);
           return (
-            <div key={r.season} className={`rounded-lg px-2 py-1.5 text-[11.5px] font-bold text-white ${mine ? "" : "bg-white/[0.04]"}`} style={mine ? youRowStyle(glow) : undefined}>
-              <div className="text-[9.5px] font-black uppercase tracking-wider text-amber-300">{String(y).slice(2)}/{String(y + 1).slice(2)}{r.score ? ` · final ${r.score}` : ""}</div>
-              <div className="mt-0.5 flex items-center gap-1.5">
-                <span>🏆</span><ClubBadge club={r.winner} size={16} />
-                <span className="min-w-0 flex-1 truncate font-black">{shortClub(r.winner)}</span>
-                {r.runnerUp && <span className="flex min-w-0 items-center gap-1 text-white/75"><span className="text-[9px] uppercase">2nd</span><ClubBadge club={r.runnerUp} size={14} /><span className="max-w-[7rem] truncate">{shortClub(r.runnerUp)}</span></span>}
+            <div key={`${r.real ? "r" : "c"}${r.label}`} data-history-row={r.label} data-real={r.real ? "1" : "0"}
+              className={`rounded-lg px-2 py-1.5 text-[11.5px] font-bold text-white ${lit ? "" : "bg-white/[0.04]"}`} style={lit ? youRowStyle(glow) : undefined}>
+              <div className="flex items-center gap-1.5 text-[9.5px] font-black uppercase tracking-wider text-amber-300">
+                <span>{r.label}{r.score ? ` · final ${r.score}` : ""}</span>
+                {r.real && <span className="rounded bg-white/10 px-1 text-[8px] tracking-widest text-white/60">Real</span>}
               </div>
+              {r.notHeld ? <div className="mt-0.5 text-white/55">Not played</div> : r.winner && (
+                <div className="mt-0.5 flex items-center gap-1.5">
+                  <span>🏆</span>{badge(r.winner, 16)}
+                  <span className="min-w-0 flex-1 truncate font-black">{name(r.winner)}</span>
+                  {r.runnerUp && <span className="flex min-w-0 items-center gap-1 text-white/75"><span className="text-[9px] uppercase">2nd</span>{badge(r.runnerUp, 14)}<span className="max-w-[7rem] truncate">{name(r.runnerUp)}</span></span>}
+                </div>
+              )}
+              {extra && (
+                <div className="mt-1 flex flex-wrap gap-x-2.5 gap-y-0.5 text-[10.5px] font-semibold text-white/75">
+                  {!!r.scorers?.length && <span data-leader="goals">⚽ {leaderText(r.scorers)}</span>}
+                  {!!r.assisters?.length && <span data-leader="assists">🅰️ {leaderText(r.assisters)}</span>}
+                  {r.best && <span data-leader="best">⭐ {r.best.name}</span>}
+                </div>
+              )}
             </div>
           );
         })}
@@ -382,49 +454,31 @@ function History({ career, comp, glow, you }: { career: CareerState; comp: strin
 // ── Europe ──────────────────────────────────────────────────────────────────
 
 function EuroView({ career, world, competition, glow, you }: { career: CareerState; world: WorldState; competition: "Champions League" | "Europa League"; glow: string; you: string }) {
-  const [tab, setTab] = useState<"table" | "knockout" | "goals" | "history">("table");
+  const [tab, setTab] = useState<"table" | "knockout" | "goals" | "assists" | "history">("table");
   const mine = career.euroState?.competition === competition ? career.euroState : null;
   const w = world.europe.find(e => e.competition === competition);
   const table = mine ? sortEuro(mine.table ?? mine.liveTable) : w ? sortEuro(w.table) : [];
   const rows: LeagueTeam[] = table.map(r => ({ name: r.name, strength: 0, played: r.played, won: r.won, drawn: r.drawn, lost: r.lost, goalsFor: r.goalsFor, goalsAgainst: r.goalsAgainst, points: r.points }));
-  const bracket = mine?.bracket ?? w?.bracket;
-  const winner = mine?.winner ?? w?.winner;
-  const goals = w ? topOf(career, w.scorers, 0) : [];
+  // Your own competition is only ever read from your campaign, never the world's.
+  const bracket = mine ? mine.bracket : w?.bracket;
+  const winner = mine ? mine.winner : w?.winner;
+  const own = useMemo(() => (mine ? ownEuroScorers(career, mine, 10000) : null), [career, mine]);
+  const goals = own ? own.goals.slice(0, 10) : w ? topOf(career, w.scorers, 0) : [];
+  const assists = own ? own.assists.slice(0, 10) : w ? topOf(career, w.scorers, 1) : [];
+  // You, if you scored (or assisted) but are outside the top ten.
+  const youBelow = (all: ScorerRow[] | undefined) => {
+    const i = (all ?? []).findIndex(r => r.club === you && r.player === career.player.lastName);
+    return i >= 10 ? { row: all![i], rank: i + 1 } : null;
+  };
   return (
     <div className="space-y-2">
       {winner && <WinnerBar club={winner} glow={glow} />}
-      <SegTabs value={tab} onChange={setTab} tabs={[["table", "League"], ["knockout", "Knockout"], ["goals", "Goals"], ["history", "History"]] as const} />
+      <SegTabs value={tab} onChange={setTab} tabs={[["table", "League"], ["knockout", "KO"], ["goals", "Goals"], ["assists", "Assists"], ["history", "History"]] as const} />
       {tab === "table" && (rows.length ? <Table rows={rows} glow={glow} you={you} zone={(p) => (p <= 8 ? "#10b981" : p <= 24 ? "#3b82f6" : "#ef4444")} /> : <Empty text="Not started yet." />)}
-      {tab === "knockout" && (bracket ? <Bracket bracket={bracket} glow={glow} you={you} /> : <Empty text="The knockout starts after the league phase." />)}
-      {tab === "goals" && (mine ? <Empty text="Scorers are kept for the competitions you're not in." /> : <Scorers rows={goals} glow={glow} label="goals" />)}
+      {tab === "knockout" && (bracket ? <EuroKnockout bracket={bracket} glow={glow} you={you} /> : <Empty text="The knockout starts after the league phase." />)}
+      {tab === "goals" && <Scorers rows={goals} glow={glow} label="goals" you={youBelow(own?.goals)} />}
+      {tab === "assists" && <Scorers rows={assists} glow={glow} label="assists" you={youBelow(own?.assists)} />}
       {tab === "history" && <History career={career} comp={competition} glow={glow} you={you} />}
-    </div>
-  );
-}
-
-function Bracket({ bracket, glow, you }: { bracket: EuroBracket; glow: string; you: string }) {
-  const rounds = bracket.rounds.filter(r => r.ties.some(t => t.a && t.b));
-  return (
-    <div className="space-y-2">
-      {[...rounds].reverse().map(r => (
-        <ClubCard key={r.name} glow={glow} className="p-1.5">
-          <CardTitle className="px-1 pb-1" tone="text-amber-300">{r.name}</CardTitle>
-          <div className="space-y-1">
-            {r.ties.filter(t => t.a && t.b).map((t, i) => {
-              const agg = koAggregate(t);
-              const yours = t.a === you || t.b === you;
-              return (
-                <div key={i} className={`grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 rounded-lg px-1.5 py-1.5 text-[11px] font-bold text-white ${yours ? "" : "bg-white/[0.04]"}`} style={yours ? youRowStyle(glow) : undefined}>
-                  <span className={`truncate text-right ${t.winner === t.a ? "font-black" : "text-white/80"}`}>{shortClub(t.a!)}</span>
-                  <span className="rounded-md bg-black/45 px-1.5 py-0.5 font-black tabular-nums">{agg ? `${agg.a}-${agg.b}` : "v"}</span>
-                  <span className={`truncate ${t.winner === t.b ? "font-black" : "text-white/80"}`}>{shortClub(t.b!)}</span>
-                  {t.pens && <span className="col-span-3 text-center text-[9.5px] font-bold text-amber-300">{t.pens.a}-{t.pens.b} on penalties</span>}
-                </div>
-              );
-            })}
-          </div>
-        </ClubCard>
-      ))}
     </div>
   );
 }
@@ -436,57 +490,29 @@ function CupView({ career, name, cup, glow, you }: { career: CareerState; name: 
   const sc = useMemo(() => cup ? cupScorers(career, name, cup.rounds.flatMap(r => r.ties.map(t => ({ round: r.name, home: t.home, away: t.away, hs: t.hs, as: t.as })))) : { goals: [], assists: [] }, [career, name, cup]);
   return (
     <div className="space-y-2">
+      {cup?.winner && <WinnerBar club={cup.winner} glow={glow} />}
       <SegTabs value={tab} onChange={setTab} tabs={[["rounds", "Rounds"], ["goals", "Goals"], ["assists", "Assists"], ["history", "History"]] as const} />
       {tab === "history" ? <History career={career} comp={name} glow={glow} you={you} />
         : !cup ? <Empty text="This cup isn't being played this season." />
         : tab === "goals" ? <Scorers rows={sc.goals} glow={glow} label="goals" />
         : tab === "assists" ? <Scorers rows={sc.assists} glow={glow} label="assists" />
-        : <CupRounds cup={cup} glow={glow} you={you} />}
+        : <CupKnockout cup={cup} glow={glow} you={you} extra={<StillToJoin cup={cup} glow={glow} you={you} />} />}
     </div>
   );
 }
 
-function CupRounds({ cup, glow, you }: { cup: CupState; glow: string; you: string }) {
+function StillToJoin({ cup, glow, you }: { cup: CupState; glow: string; you: string }) {
+  if (!Object.keys(cup.entries ?? {}).length) return null;
   return (
-    <div className="space-y-2">
-      {cup.winner && <WinnerBar club={cup.winner} glow={glow} />}
-      {Object.keys(cup.entries ?? {}).length > 0 && (
-        <ClubCard glow={glow} className="p-2">
-          <CardTitle className="px-1 pb-1" tone="text-amber-300">Still to join</CardTitle>
-          {Object.entries(cup.entries ?? {}).map(([round, clubs]) => (
-            <div key={round} className="flex justify-between px-1 py-0.5 text-[11px] font-bold text-white">
-              <span>{round}</span>
-              <span className="tabular-nums">{clubs.includes(you) ? `${clubs.length} clubs · you join here` : `${clubs.length} clubs`}</span>
-            </div>
-          ))}
-        </ClubCard>
-      )}
-      {[...cup.rounds].reverse().map(r => (
-        <ClubCard key={r.name} glow={glow} className="p-1.5">
-          <CardTitle className="px-1 pb-1" tone="text-amber-300">{r.name}</CardTitle>
-          <div className="space-y-1">
-            {r.ties.map(t => {
-              const yours = t.home === you || t.away === you;
-              const done = t.hs !== undefined;
-              return (
-                <div key={`${t.home}-${t.away}`} className={`grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 rounded-lg px-1.5 py-1.5 text-[11px] font-bold text-white ${yours ? "" : "bg-white/[0.04]"}`} style={yours ? youRowStyle(glow) : undefined}>
-                  <span className="truncate text-right">{shortClub(t.home)}</span>
-                  <span className="rounded-md bg-black/45 px-1.5 py-0.5 font-black tabular-nums">{done ? `${t.hs}-${t.as}` : "v"}</span>
-                  <span className="truncate">{shortClub(t.away)}</span>
-                  {t.pens && <span className="col-span-3 text-center text-[9.5px] font-bold text-amber-300">{t.pens.home}-{t.pens.away} on penalties</span>}
-                </div>
-              );
-            })}
-          </div>
-          {r.byes && r.byes.length > 0 && (
-            <p className="px-1 pt-1.5 text-[10.5px] font-bold leading-snug text-white">
-              <span className="text-amber-300">Through on a bye ({r.byes.length}): </span>
-              {r.byes.map(shortClub).join(" · ")}
-            </p>
-          )}
-        </ClubCard>
+    <ClubCard glow={glow} className="p-2">
+      <CardTitle className="px-1 pb-1" tone="text-amber-300">Still to join</CardTitle>
+      {Object.entries(cup.entries ?? {}).map(([round, clubs]) => (
+        <div key={round} className="flex justify-between px-1 py-0.5 text-[11px] font-bold text-white">
+          <span>{round}</span>
+          <span className="tabular-nums">{clubs.includes(you) ? `${clubs.length} clubs · you join here` : `${clubs.length} clubs`}</span>
+        </div>
       ))}
-    </div>
+    </ClubCard>
   );
 }
 
@@ -516,12 +542,12 @@ function ShieldCard({ glow, home, away, hs, as, pens, winner }: { glow: string; 
   return (
     <ClubCard glow={glow} className="p-3">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-white">
-        <div className="flex flex-col items-center gap-1 text-center text-[12px] font-bold"><ClubBadge club={home} size={40} /><span>{home}</span></div>
+        <div className="flex flex-col items-center gap-1 text-center text-[12px] font-bold"><ClubBadge club={home} size={40} /><span>{shortClub(home)}</span></div>
         <div className="rounded-lg bg-black/45 px-3 py-1 text-[20px] font-black tabular-nums">{hs !== undefined ? `${hs}-${as}` : "v"}</div>
-        <div className="flex flex-col items-center gap-1 text-center text-[12px] font-bold"><ClubBadge club={away} size={40} /><span>{away}</span></div>
+        <div className="flex flex-col items-center gap-1 text-center text-[12px] font-bold"><ClubBadge club={away} size={40} /><span>{shortClub(away)}</span></div>
       </div>
       {pens && <div className="mt-2 text-center text-[11px] font-bold text-amber-300">{pens.home}-{pens.away} on penalties</div>}
-      {winner && <div className="mt-1 text-center text-[12px] font-black text-white">🏆 {winner}</div>}
+      {winner && <div className="mt-1 text-center text-[12px] font-black text-white">🏆 {shortClub(winner)}</div>}
     </ClubCard>
   );
 }
@@ -531,7 +557,7 @@ function WinnerBar({ club, glow }: { club: string; glow: string }) {
     <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: rgba("#fbbf24", 0.22), boxShadow: `inset 0 0 0 1px ${rgba("#fbbf24", 0.7)}, 0 0 14px -4px ${rgba(glow, 0.8)}` }}>
       <span className="text-lg">🏆</span>
       <ClubBadge club={club} size={22} />
-      <span className="text-[13px] font-black text-white">{club}</span>
+      <span className="text-[13px] font-black text-white">{shortClub(club)}</span>
       <span className="ml-auto text-[10px] font-black uppercase tracking-wider text-amber-200">Winners</span>
     </div>
   );
@@ -569,25 +595,28 @@ function IntlCompPane({ career, comp, nation }: { career: CareerState; comp: Com
           </ClubCard>
         </div>
       )}
-      {tab === "history" && (v.history.length ? (
-        <ClubCard glow={glow} className="p-1.5">
-          <div className="space-y-1">
-            {v.history.map((f, i) => (
-              <div key={i} className="rounded-lg bg-white/[0.04] px-2 py-1.5 text-[11.5px] font-bold text-white" style={f.winner === nation || f.runnerUp === nation ? youRowStyle(glow) : undefined}>
-                <div className="text-[9.5px] font-black uppercase tracking-wider text-amber-300">{f.year} · final {f.score}</div>
-                <div className="mt-0.5 flex items-center gap-1.5">
-                  <span>🏆</span><NationFlag nation={f.winner} width={18} rounded={2} />
-                  <span className="min-w-0 flex-1 truncate font-black">{f.winner}</span>
-                  <span className="text-[9px] uppercase text-white/75">2nd</span><NationFlag nation={f.runnerUp} width={16} rounded={2} />
-                  <span className="max-w-[7rem] truncate text-white/75">{f.runnerUp}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </ClubCard>
-      ) : <Empty text="No final played yet. Each one is added here once it is played." />)}
+      {tab === "history" && <IntlHistory career={career} comp={comp} v={v} nation={nation} glow={glow} />}
     </div>
   );
+}
+
+/** A tournament's finals in your career, then its real history (Mikey, 2 Nov 2026). */
+function IntlHistory({ career, comp, v, nation, glow }: { career: CareerState; comp: CompKind; v: NonNullable<ReturnType<typeof intlCompView>>; nation: string | null; glow: string }) {
+  const real = useRealHistory(comp);
+  const lines = useMemo(() => {
+    const mine: HistoryLine[] = v.history.map(f => {
+      let l: ReturnType<typeof leadersFor> = null;
+      try { l = leadersFor(career, f.final); } catch { /* names unknown */ }
+      return {
+        label: String(f.year), year: f.year, real: false, winner: f.winner, runnerUp: f.runnerUp, score: f.score,
+        ...(l?.scorers.length ? { scorers: l.scorers } : {}), ...(l?.assisters.length ? { assisters: l.assisters } : {}), ...(l?.best ? { best: l.best } : {}),
+      };
+    });
+    // A tournament played the summer your career starts is real history (the 2026 World Cup).
+    return joinHistory(mine, real ?? [], careerFirstYear(career.player.startYear) + 1);
+  }, [v.history, real, career]);
+  if (!lines.length) return <Empty text={real === null ? "Loading the history…" : "No final played yet. Each one is added here once it is played."} />;
+  return <HistoryList lines={lines} glow={glow} comp={comp} mine={(n) => n === nation} badge={(c, size) => <NationFlag nation={c} width={size + 2} rounded={2} />} name={(c) => c} />;
 }
 
 /** International scorers: a flag instead of a club badge; your nation lit. */
@@ -630,98 +659,224 @@ function RankingView({ career, nation }: { career: CareerState; nation: string |
 }
 
 // ── Last season (career.lastWorld) ──────────────────────────────────────────
+//
+// THE SEASON REVIEW (Mikey, 2 Nov 2026): no chooser at the top. One list of
+// every trophy, always in the same order (the leagues top to bottom, the
+// cups, Europe, then any international final played that season), no
+// play-off finals and no "Finals" box. Tap a trophy to see that
+// competition: its final table (green = went up, red = went down, dark blue
+// = Champions League, orange = Europa League), its scorers and assists.
 
-function LastSeason({ career, summary, onNow }: { career: CareerState; summary: WorldSummary; onNow?: () => void }) {
+/** The fixed order of the trophy list. Anything not named sorts after these. */
+const TROPHY_ORDER = [
+  "Premier League", "Championship", "League One", "League Two", "National League",
+  "National League North", "National League South",
+  "FA Cup", "League Cup", "Lower League Trophy", "Community Shield",
+  "Champions League", "Europa League", "Super Cup",
+];
+
+type Trophy =
+  | { kind: "league"; competition: string; club: string; division: CareerDivision }
+  | { kind: "euro" | "cup" | "shield"; competition: string; club: string }
+  | { kind: "intl"; competition: CompKind; club: string; runnerUp: string; score: string };
+
+const TROPHY_TONE: Record<Trophy["kind"], string> = { league: "#22c55e", cup: "#f59e0b", shield: "#f59e0b", euro: "#3b82f6", intl: "#a855f7" };
+const TROPHY_GROUP: Record<Trophy["kind"], string> = { league: "Leagues", cup: "Cups", shield: "Cups", euro: "Europe", intl: "International" };
+
+/** The red round close / back button (centred cross, drawn, not a font glyph). */
+export function CloseButton({ onClick, label = "Close" }: { onClick: () => void; label?: string }) {
+  return (
+    <button type="button" onClick={onClick} aria-label={label} data-close-button
+      className="kib-press grid h-10 w-10 shrink-0 place-items-center rounded-full"
+      style={{ background: "linear-gradient(180deg,#ef4444,#b91c1c)", boxShadow: "0 0 0 2px rgba(255,255,255,.18), 0 4px 12px -2px rgba(185,28,28,.7)" }}>
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden><path d="M3 3L13 13M13 3L3 13" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" /></svg>
+    </button>
+  );
+}
+
+/** Final-table lines, after the season: who went up, who went down, who is in Europe. */
+function finalZone(division: CareerDivision, rows: LeagueTeam[], summary: WorldSummary): (pos: number, n: number) => string | null {
+  const l = LINES[division];
+  if (l.europe) {
+    const fa = summary.winners.find(w => w.competition === "FA Cup")?.club ?? null;
+    const lc = summary.winners.find(w => w.competition === "League Cup")?.club ?? null;
+    let q: { champions: string[]; europa: string[] } = { champions: [], europa: [] };
+    try { q = seasonQualifiers(rows, fa, lc); } catch { /* lines are extra */ }
+    return (pos, n) => {
+      const club = rows[pos - 1]?.name;
+      if (club && q.champions.includes(club)) return ZONE.ucl;
+      if (club && q.europa.includes(club)) return ZONE.uel;
+      return pos > n - l.down ? ZONE.down : null;
+    };
+  }
+  const playOffWinner = summary.playOffWinners?.[division] ?? summary.playOffs.find(p => p.division === division)?.result.promoted;
+  return (pos, n) => {
+    const club = rows[pos - 1]?.name;
+    if (pos <= l.up || (club && club === playOffWinner)) return ZONE.up;
+    return pos > n - l.down ? ZONE.down : null;
+  };
+}
+
+const euroZone = (p: number) => (p <= 8 ? "#10b981" : p <= 24 ? "#3b82f6" : "#ef4444");
+const isEuro = (name: string) => name === "Champions League" || name === "Europa League";
+
+function trophiesOf(career: CareerState, summary: WorldSummary): Trophy[] {
+  const out: Trophy[] = [];
+  for (const w of summary.winners) {
+    if (/play-off/i.test(w.competition)) continue;
+    if (out.some(t => t.competition === w.competition)) continue;
+    const division = ALL_DIVISIONS.find(d => leagueNameFor(d) === w.competition);
+    if (division) out.push({ kind: "league", competition: w.competition, club: w.club, division });
+    else if (isEuro(w.competition)) out.push({ kind: "euro", competition: w.competition, club: w.club });
+    else if ((summary.cups ?? []).some(c => c.competition === w.competition) || w.competition === "FA Cup" || w.competition === "League Cup") out.push({ kind: "cup", competition: w.competition, club: w.club });
+    else out.push({ kind: "shield", competition: w.competition, club: w.club });
+  }
+  // A cup the winners list leaves out (the Lower League Trophy) still shows.
+  for (const c of summary.cups ?? []) {
+    if (c.winner && !out.some(t => t.competition === c.competition)) out.push({ kind: "cup", competition: c.competition, club: c.winner });
+  }
+  const rank = (c: string) => { const i = TROPHY_ORDER.indexOf(c); return i < 0 ? 99 : i; };
+  out.sort((a, b) => rank(a.competition) - rank(b.competition));
+  // Any international final played in the calendar year the season ended in.
+  try {
+    const endYear = career.player.startYear + summary.season;
+    const finals = intlWorldOf(career).finals.filter(f => f.year === endYear);
+    const order = intlCompetitions(career);
+    finals.sort((a, b) => order.indexOf(a.comp) - order.indexOf(b.comp));
+    for (const f of finals) {
+      const winHome = f.home === f.winner;
+      const score = `${winHome ? f.hs : f.as}-${winHome ? f.as : f.hs}${f.pens ? " (pens)" : ""}`;
+      out.push({ kind: "intl", competition: f.comp, club: f.winner, runnerUp: f.runnerUp, score });
+    }
+  } catch { /* no international world on this save */ }
+  return out;
+}
+
+function LastSeason({ career, summary, onNow, onClose }: { career: CareerState; summary: WorldSummary; onNow?: () => void; onClose?: () => void }) {
   const { glow } = useClubTheme(career);
-  const names = ["Winners", ...summary.tables.map(t => t.name)];
-  const [pick, setPick] = useState("Winners");
-  const [choosing, setChoosing] = useState(false);
-  const [tab, setTab] = useState<"table" | "goals" | "assists">("table");
-  const table = summary.tables.find(t => t.name === pick);
-  const sc = summary.scorers.find(x => x.name === pick);
+  const [open, setOpen] = useState<Trophy | null>(null);
+  const trophies = useMemo(() => trophiesOf(career, summary), [career, summary]);
   const you = career.thisSeasonClub ?? career.player.club;
-  const asRows = (r: { player: string; club: string; n: number }[]): ScorerRow[] => r.map((x, i) => ({ id: `${i}`, ...x }));
+  const groups: string[] = [];
+  const groupOf = (t: Trophy) => (t.competition === "Super Cup" ? "Europe" : TROPHY_GROUP[t.kind]);
+  for (const t of trophies) if (!groups.includes(groupOf(t))) groups.push(groupOf(t));
+
+  if (open) {
+    return (
+      <div className="space-y-2" data-world-last-season={open.competition}>
+        <div className="flex items-center justify-between gap-2">
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="text-[20px]">🏆</span>
+            <span className="truncate text-[19px] font-black text-white">{open.competition}</span>
+          </span>
+          <CloseButton onClick={() => setOpen(null)} label="Back to every trophy" />
+        </div>
+        <TrophyDetail career={career} summary={summary} trophy={open} glow={glow} you={you} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2" data-world-last-season>
-      <button type="button" onClick={() => setChoosing(true)} className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left" style={{ background: rgba(glow, 0.28), boxShadow: `inset 0 0 0 1px ${rgba(glow, 0.7)}` }}>
-        <span className="text-[15px] font-black text-white">📜 {pick}</span>
-        <span className="text-[12px] font-bold text-white/85">Change ▾</span>
-      </button>
-      {pick === "Winners" ? (
-        <div className="space-y-2">
-          <ClubCard glow={glow} className="p-1.5">
-            <CardTitle className="px-1 pb-1" tone="text-amber-300">Every trophy</CardTitle>
-            <div className="space-y-1">
-              {summary.winners.map(w => (
-                <div key={w.competition} className="flex items-center gap-2 rounded-lg bg-white/[0.05] px-2 py-1.5 text-[12px] font-bold text-white">
-                  <span className="min-w-0 flex-1 truncate text-white/85">{w.competition}</span>
-                  <ClubBadge club={w.club} size={16} /><span className="font-black">{shortClub(w.club)}</span>
-                </div>
-              ))}
-            </div>
-          </ClubCard>
-          {(summary.finals ?? []).length > 0 && (
-            <ClubCard glow={glow} className="p-1.5">
-              <CardTitle className="px-1 pb-1" tone="text-amber-300">Finals</CardTitle>
-              <div className="space-y-1">
-                {(summary.finals ?? []).map(f => (
-                  <div key={f.competition} className="rounded-lg bg-white/[0.05] px-2 py-1.5 text-[11px] font-bold text-white">
-                    <div className="text-[9px] font-black uppercase tracking-wider text-white/70">{f.competition}</div>
-                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
-                      <span className={`truncate text-right ${f.winner === f.home ? "font-black" : "text-white/80"}`}>{shortClub(f.home)}</span>
-                      <span className="rounded-md bg-black/45 px-1.5 py-0.5 font-black tabular-nums">{f.hs !== undefined ? `${f.hs}-${f.as}` : "v"}</span>
-                      <span className={`truncate ${f.winner === f.away ? "font-black" : "text-white/80"}`}>{shortClub(f.away)}</span>
-                    </div>
-                    {f.pens && <div className="text-center text-[9.5px] text-amber-300">{f.pens.home}-{f.pens.away} on penalties</div>}
-                  </div>
-                ))}
-              </div>
-            </ClubCard>
-          )}
-          {summary.playOffs.length > 0 && (
-            <ClubCard glow={glow} className="p-1.5">
-              <CardTitle className="px-1 pb-1" tone="text-amber-300">Play-off finals</CardTitle>
-              <div className="space-y-1">
-                {summary.playOffs.map(p => (
-                  <div key={p.division} className="rounded-lg bg-white/[0.05] px-2 py-1.5 text-[11px] font-bold text-white">
-                    <div className="text-[9px] font-black uppercase tracking-wider text-white/70">{leagueNameFor(p.division)}</div>
-                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
-                      <span className={`truncate text-right ${p.result.final.winner === p.result.final.home ? "font-black" : "text-white/80"}`}>{shortClub(p.result.final.home)}</span>
-                      <span className="rounded-md bg-black/45 px-1.5 py-0.5 font-black tabular-nums">{p.result.final.hs}-{p.result.final.as}</span>
-                      <span className={`truncate ${p.result.final.winner === p.result.final.away ? "font-black" : "text-white/80"}`}>{shortClub(p.result.final.away)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ClubCard>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <SegTabs value={tab} onChange={setTab} tabs={[["table", "Table"], ["goals", "Goals"], ["assists", "Assists"]] as const} />
-          {tab === "table" && table && <Table rows={table.rows} glow={glow} you={you} zone={table.division ? (p, n) => zoneColour(table.division!, p, n) : undefined} />}
-          {tab === "goals" && <Scorers rows={asRows(sc?.goals ?? [])} glow={glow} label="goals" />}
-          {tab === "assists" && <Scorers rows={asRows(sc?.assists ?? [])} glow={glow} label="assists" />}
+      {(onClose || onNow) && (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[22px] font-black text-white" style={{ fontFamily: "var(--font-display, inherit)" }}>Season {summary.season}</span>
+          {onClose && <CloseButton onClick={onClose} />}
+          {!onClose && onNow && <button type="button" onClick={onNow} className="rounded-lg px-3 py-2 text-[12px] font-black text-white" style={{ background: rgba(glow, 0.3) }}>← This season</button>}
         </div>
       )}
-      {choosing && (
-        <div className="fixed inset-0 z-[80] overflow-y-auto bg-gray-950/95 px-4 pb-8 pt-4">
-          <div className="mx-auto max-w-md">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-[18px] font-black text-white">Last season</span>
-              <button type="button" onClick={() => setChoosing(false)} className="grid h-9 w-9 place-items-center rounded-full bg-white/15 text-lg font-black text-white" aria-label="Close">✕</button>
-            </div>
-            {onNow && (
-              <button type="button" onClick={() => { setChoosing(false); onNow(); }} className="mb-3 w-full rounded-lg px-3 py-3 text-left text-[14px] font-black text-white" style={{ background: rgba(glow, 0.3) }}>← This season</button>
-            )}
-            <div className="space-y-1">
-              {names.map(n => (
-                <button key={n} type="button" onClick={() => { setPick(n); setChoosing(false); }} className="flex w-full items-center rounded-lg px-3 py-3 text-left text-[14px] font-bold text-white" style={n === pick ? youRowStyle(glow) : { background: "rgba(255,255,255,.06)" }}>{n}</button>
-              ))}
-            </div>
-          </div>
+      <div className="px-1 text-[11.5px] font-bold text-white/85">Tap a trophy to see its table, scorers and assists.</div>
+      {groups.map(g => (
+        <div key={g} className="space-y-1.5">
+          <CardTitle className="px-1 pt-1" tone="text-amber-300">{g}</CardTitle>
+          {trophies.filter(t => groupOf(t) === g).map(t => {
+            const tone = TROPHY_TONE[t.kind];
+            const mine = t.club === you;
+            return (
+              <button key={t.competition} type="button" onClick={() => setOpen(t)} data-trophy={t.competition}
+                className="kib-press flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left"
+                style={{
+                  background: `linear-gradient(90deg, ${rgba(tone, 0.32)}, ${rgba(tone, 0.12)} 60%, rgba(255,255,255,.04))`,
+                  boxShadow: `inset 0 0 0 1px ${rgba(tone, mine ? 0.95 : 0.5)}${mine ? `, 0 0 16px -4px ${rgba(tone, 0.9)}` : ""}`,
+                }}>
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[18px]" style={{ background: rgba(tone, 0.28) }}>🏆</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[10.5px] font-black uppercase tracking-wider" style={{ color: tint(tone) }}>{t.competition}</span>
+                  <span className="mt-0.5 flex min-w-0 items-center gap-1.5">
+                    {t.kind === "intl" ? <NationFlag nation={t.club} width={20} rounded={2} /> : <ClubBadge club={t.club} size={20} />}
+                    <span className="truncate text-[15px] font-black text-white">{t.kind === "intl" ? t.club : shortClub(t.club)}</span>
+                    {mine && <span className="rounded-full bg-amber-300 px-1.5 text-[9px] font-black uppercase text-gray-950">You</span>}
+                  </span>
+                </span>
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[20px] font-black text-white" style={{ background: rgba(tone, 0.4) }} aria-hidden>›</span>
+              </button>
+            );
+          })}
         </div>
-      )}
+      ))}
+    </div>
+  );
+}
+
+/** A lighter shade of a colour for small text on a dark row. */
+function tint(hex: string): string {
+  const n = parseInt(hex.slice(1), 16);
+  const mix = (c: number) => Math.round(c + (255 - c) * 0.45);
+  return `rgb(${mix((n >> 16) & 255)},${mix((n >> 8) & 255)},${mix(n & 255)})`;
+}
+
+function TrophyDetail({ career, summary, trophy, glow, you }: { career: CareerState; summary: WorldSummary; trophy: Trophy; glow: string; you: string }) {
+  const name = trophy.competition;
+  const table = summary.tables.find(t => t.name === name);
+  const sc = summary.scorers.find(x => x.name === name);
+  const asRows = (r: { player: string; club: string; n: number }[]): ScorerRow[] => r.map((x, i) => ({ id: `${i}`, ...x }));
+  const final = (summary.finals ?? []).find(f => f.competition === name);
+  const cup = (summary.cups ?? []).find(c => c.competition === name);
+  const bracket = (summary.brackets ?? []).find(b => b.competition === name)?.bracket;
+  type Tab = "table" | "knockout" | "rounds" | "final" | "goals" | "assists";
+  const tabs: [Tab, string][] =
+    trophy.kind === "league" ? [["table", "Table"], ["goals", "Goals"], ["assists", "Assists"]]
+    : trophy.kind === "euro" ? [["table", "League"], ["knockout", "Knockout"], ["goals", "Goals"], ["assists", "Assists"]]
+    : trophy.kind === "cup" ? [["rounds", "Rounds"], ["goals", "Goals"], ["assists", "Assists"]]
+    : [["final", "Final"]];
+  const [tab, setTab] = useState<Tab>(tabs[0][0]);
+
+  if (trophy.kind === "intl") return <IntlCompPane career={career} comp={trophy.competition} nation={(() => { try { return intlOf(career).nation; } catch { return null; } })()} />;
+
+  return (
+    <div className="space-y-2">
+      <WinnerBar club={trophy.club} glow={glow} />
+      {tabs.length > 1 && <SegTabs value={tab} onChange={setTab} tabs={tabs} />}
+      {tab === "table" && (table ? (
+        <>
+          <Table rows={table.rows} glow={glow} you={you}
+            zone={trophy.kind === "league" ? finalZone(trophy.division, table.rows, summary) : euroZone} />
+          <ZoneKey items={trophy.kind === "euro"
+            ? [["#10b981", "Top 8: straight to the last 16"], ["#3b82f6", "9th to 24th: knockout play-off"], ["#ef4444", "Out"]]
+            : LINES[(trophy as { division: CareerDivision }).division].europe
+              ? [[ZONE.ucl, "Champions League"], [ZONE.uel, "Europa League"], [ZONE.down, "Relegated"]]
+              : [[ZONE.up, "Promoted"], [ZONE.down, "Relegated"]]} />
+        </>
+      ) : <Empty text="No table kept for this one." />)}
+      {tab === "knockout" && (bracket ? <EuroKnockout bracket={bracket} glow={glow} you={you} />
+        : final ? <FinalCard final={final} glow={glow} /> : <Empty text="No knockout kept for this season." />)}
+      {tab === "rounds" && (cup ? <CupKnockout cup={{ competition: name, rounds: cup.rounds } as unknown as CupState} glow={glow} you={you} review />
+        : final ? <FinalCard final={final} glow={glow} /> : <Empty text="No rounds kept for this season." />)}
+      {tab === "final" && (final ? <FinalCard final={final} glow={glow} /> : <Empty text="No final kept for this one." />)}
+      {tab === "goals" && <Scorers rows={asRows(sc?.goals ?? [])} glow={glow} label="goals" />}
+      {tab === "assists" && <Scorers rows={asRows(sc?.assists ?? [])} glow={glow} label="assists" />}
+    </div>
+  );
+}
+
+function FinalCard({ final, glow }: { final: NonNullable<WorldSummary["finals"]>[number]; glow: string }) {
+  return <ShieldCard glow={glow} home={final.home} away={final.away} hs={final.hs} as={final.as} pens={final.pens} winner={final.winner} />;
+}
+
+function ZoneKey({ items }: { items: [string, string][] }) {
+  return (
+    <div className="flex flex-wrap gap-x-3 gap-y-1 px-1 text-[10.5px] font-bold text-white/85">
+      {items.map(([c, l]) => <span key={l} className="flex items-center gap-1"><span className="h-3 w-[4px] rounded-sm" style={{ background: c }} />{l}</span>)}
     </div>
   );
 }

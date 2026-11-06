@@ -1,0 +1,327 @@
+{
+  "id": "re-pl-player-of-season",
+  "series": "Three rules to the top",
+  "title": "Three rules to Premier League Player of the Season",
+  "sources": [
+    "https://www.nbcsports.com/soccer/news/premier-league-2026-27-scoring-leaders-the-race-for-the-golden-boot-begins",
+    "https://www.soccernews.com/english-premier-league/golden-boot/",
+    "https://www.nbcsports.com/soccer/news/premier-league-table-for-2026-27-season",
+    "https://caughtoffside.com/2026/10/20/premier-league-club-relaxed-manager-future-man-united",
+    "https://www.chelseafc.com/en/news/article/joao-pedro-wins-premier-league-award",
+    "https://www.si.com/soccer/premier-league-player-manager-of-the-month-august-2026-winners-revealed",
+    "https://www.si.com/soccer/premier-league-player-manager-month-september-2026-winners-revealed",
+    "https://foot-africa.com/en/news/premier-league-september-player-of-the-month-revealed-official-1373621/"
+  ],
+  "checked": "PL goals to 2 Nov (NBC scoring list, Soccernews 3 Nov: Isak 6, Joao Pedro 5, Rogers 5, Tavernier 5, Gross 3; Haaland 8 or 9 so no number used); table after 9 games (NBC 2 Nov; Brighton 3rd also CaughtOffside 20 Oct); Player of the Month Aug Joao Pedro (Chelsea FC, SI), Sep Gross (SI, Foot Africa). October award not out yet on 3 Nov.",
+  "clubs": {
+    "ars": {
+      "name": "Arsenal",
+      "short": "ARS",
+      "c1": "#ef0107",
+      "c2": "#ffffff",
+      "pattern": "sides"
+    },
+    "bha": {
+      "name": "Brighton",
+      "short": "BHA",
+      "c1": "#0057b8",
+      "c2": "#ffffff",
+      "pattern": "stripes"
+    },
+    "bou": {
+      "name": "Bournemouth",
+      "short": "BOU",
+      "c1": "#da291c",
+      "c2": "#000000",
+      "pattern": "stripes"
+    },
+    "che": {
+      "name": "Chelsea",
+      "short": "CHE",
+      "c1": "#034694",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "liv": {
+      "name": "Liverpool",
+      "short": "LIV",
+      "c1": "#c8102e",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "mci": {
+      "name": "Manchester City",
+      "short": "MCI",
+      "c1": "#6cabdd",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "mun": {
+      "name": "Manchester United",
+      "short": "MUN",
+      "c1": "#da291c",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "gross": {
+      "name": "Pascal Groß",
+      "skin": "light",
+      "hair": [
+        "tidy",
+        "#3b2a1e"
+      ],
+      "beard": "stubble",
+      "kit": "bha"
+    },
+    "haaland": {
+      "name": "Erling Haaland",
+      "skin": "pink",
+      "hair": [
+        "slick",
+        "#e3cf8f"
+      ],
+      "beard": "none",
+      "kit": "mci"
+    },
+    "isak": {
+      "name": "Alexander Isak",
+      "skin": "brown",
+      "hair": [
+        "crop",
+        "#111111"
+      ],
+      "beard": "stubble",
+      "kit": "liv"
+    },
+    "joaopedro": {
+      "name": "João Pedro",
+      "skin": "tan",
+      "hair": [
+        "crop",
+        "#111111"
+      ],
+      "beard": "none",
+      "kit": "che"
+    }
+  },
+  "lines": [
+    {
+      "text": "Who is the Premier League's player of the season so far? Ten names, three rules, one left.",
+      "scene": {
+        "type": "title",
+        "heading": "PLAYER OF THE SEASON",
+        "sub": "Premier League · after nine games",
+        "pill": "THREE RULES",
+        "person": "joaopedro"
+      }
+    },
+    {
+      "text": "Our ten: Haaland, Isak, João Pedro, Groß, Rogers, Tavernier, Saka and Cherki. Plus Mbeumo and Palmer.",
+      "scene": {
+        "type": "list",
+        "title": "Our ten",
+        "rows": [
+          {
+            "name": "Erling Haaland",
+            "value": "Man City",
+            "club": "mci"
+          },
+          {
+            "name": "Alexander Isak",
+            "value": "Liverpool",
+            "club": "liv"
+          },
+          {
+            "name": "João Pedro",
+            "value": "Chelsea",
+            "club": "che"
+          },
+          {
+            "name": "Pascal Groß",
+            "value": "Brighton",
+            "club": "bha"
+          },
+          {
+            "name": "Morgan Rogers",
+            "value": "Chelsea",
+            "club": "che"
+          },
+          {
+            "name": "Marcus Tavernier",
+            "value": "Bournemouth",
+            "club": "bou"
+          },
+          {
+            "name": "Saka · Cherki",
+            "value": "ARS · MCI"
+          },
+          {
+            "name": "Mbeumo · Palmer",
+            "value": "MUN · CHE"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Rule one. Your club has to be in the top four right now.",
+      "scene": {
+        "type": "text",
+        "heading": "RULE 1",
+        "body": "His club must be in the top four after nine games."
+      }
+    },
+    {
+      "text": "Arsenal, City, Brighton and Chelsea. Liverpool are fifth, Bournemouth eighth, United seventeenth.",
+      "scene": {
+        "type": "list",
+        "title": "Table after 9 games",
+        "rows": [
+          {
+            "pos": 1,
+            "name": "Arsenal",
+            "value": "24",
+            "club": "ars",
+            "hl": true
+          },
+          {
+            "pos": 2,
+            "name": "Man City",
+            "value": "21",
+            "club": "mci",
+            "hl": true
+          },
+          {
+            "pos": 3,
+            "name": "Brighton",
+            "value": "19",
+            "club": "bha",
+            "hl": true
+          },
+          {
+            "pos": 4,
+            "name": "Chelsea",
+            "value": "16",
+            "club": "che",
+            "hl": true
+          },
+          {
+            "pos": 5,
+            "name": "Liverpool",
+            "value": "15",
+            "club": "liv"
+          },
+          {
+            "pos": 8,
+            "name": "Bournemouth",
+            "value": "12",
+            "club": "bou"
+          },
+          {
+            "pos": 17,
+            "name": "Man United",
+            "value": "7",
+            "club": "mun"
+          }
+        ]
+      }
+    },
+    {
+      "text": "So Isak, Tavernier and Mbeumo are out, even with six, five and four goals.",
+      "scene": {
+        "type": "stamp",
+        "text": "OUT",
+        "person": "isak",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Rule two. You must have won a Player of the Month award this season.",
+      "scene": {
+        "type": "text",
+        "heading": "RULE 2",
+        "body": "Must have won a Premier League Player of the Month award in 2026-27."
+      }
+    },
+    {
+      "text": "August went to João Pedro. September went to Brighton's Pascal Groß, at thirty-five, for the first time ever.",
+      "scene": {
+        "type": "timeline",
+        "items": [
+          {
+            "year": "AUG",
+            "label": "João Pedro"
+          },
+          {
+            "year": "SEP",
+            "label": "Pascal Groß"
+          },
+          {
+            "year": "OCT",
+            "label": "Not out yet"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Haaland, Saka, Rogers, Cherki and Palmer have not won one yet. Gone.",
+      "scene": {
+        "type": "stamp",
+        "text": "NO AWARD",
+        "person": "haaland",
+        "color": "yellow"
+      }
+    },
+    {
+      "text": "Rule three. Most league goals wins.",
+      "scene": {
+        "type": "text",
+        "heading": "RULE 3",
+        "body": "The one with more Premier League goals goes through."
+      }
+    },
+    {
+      "text": "Groß has three. João Pedro has five.",
+      "scene": {
+        "type": "versus",
+        "title": "League goals",
+        "left": {
+          "person": "joaopedro",
+          "label": "João Pedro",
+          "value": "5"
+        },
+        "right": {
+          "person": "gross",
+          "label": "Groß",
+          "value": "3"
+        }
+      }
+    },
+    {
+      "text": "So the rules pick João Pedro. Chelsea's number nine, fourth in the table, and still climbing.",
+      "scene": {
+        "type": "person",
+        "person": "joaopedro",
+        "label": "THE LAST NAME LEFT",
+        "mood": "happy",
+        "stamp": "WINNER"
+      }
+    },
+    {
+      "text": "Do you agree? Or is Haaland the real answer?",
+      "scene": {
+        "type": "person",
+        "person": "haaland",
+        "label": "TOP SCORER, NO AWARD YET",
+        "mood": "worried"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

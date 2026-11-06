@@ -13,6 +13,7 @@ import FeelPreview from "@/components/star/FeelPreview";
 import { LOOK_ROWS, setLookRow, useLook, type LookRowId } from "@/lib/star/lookRows";
 import { GAMEPLAY_SWITCHES, type GameplaySwitch } from "@/lib/star/gameplayVersion";
 import { OCT13_PARTS, OCT13_WITH, oct13State, setOct13 } from "@/lib/star/oct13Update";
+import { GAME_PATH } from "@/lib/star/gamePath";
 
 const MUTED = "var(--bc-ink2)", AMBER = "var(--bc-amber)";
 
@@ -72,7 +73,7 @@ export default function UpdateTestPage() {
             </div>
             {state === "mixed" && <div style={{ fontSize: 12, color: AMBER, fontWeight: 800 }}>Mixed: you changed some parts below by hand.</div>}
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              <Link href="/star-dev" style={{ ...pill(false), display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Play your career →</Link>
+              <Link href={GAME_PATH} style={{ ...pill(false), display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Play your career →</Link>
               <Link href="/star-play-dev" style={{ ...pill(false), display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Play Area →</Link>
             </div>
           </div>

@@ -308,11 +308,7 @@ function SeasonAwardsInner({ career, onContinue }: Props) {
       {world && (
         <div className="fixed inset-0 z-[70] overflow-y-auto bg-[#07110c] px-3 pb-8 pt-3" data-season-world-sheet>
           <div className="mx-auto max-w-md">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-[18px] font-black text-white">Season {stats.season}</span>
-              <button type="button" onClick={() => setWorld(false)} className="grid h-9 w-9 place-items-center rounded-full bg-white/15 text-lg font-black text-white" aria-label="Close">✕</button>
-            </div>
-            <WorldPane career={career} last />
+            <WorldPane career={career} last onClose={() => setWorld(false)} />
           </div>
         </div>
       )}

@@ -1,0 +1,282 @@
+{
+  "id": "ww-realmadrid-ronaldo-v-mancity",
+  "series": "Who would win?",
+  "title": "Real Madrid with prime Ronaldo v Man City: who would win?",
+  "sources": [
+    "https://www.comuniate.com/en/noticias/38524/confirmed-lineups-real-madrid-vs-sevilla-matchday-9",
+    "https://www.extra.ec/noticia/deportes/barcelona-vs-real-madrid-hora-ver-alineaciones-clasico-2026-165775.html",
+    "https://www.teamtalk.com/news/every-completed-real-madrid-transfer-summer-2026-signings-sales-loans",
+    "https://africasoccer.com/real-madrid-2026-summer-transfer-window-cucurella-silva-konate-and-dumfries-set-for-bernabeu-rebuild/",
+    "https://www.aljazeera.com/sports/2026/8/4/real-madrid-vinicius-junior-drops-huge-future-hint-amid-arsenal-interest",
+    "https://citizen.digital/article/what-real-madrids-new-signings-add-to-mourinhos-project-n384929",
+    "https://foot-africa.com/en/news/manchester-city-psg-official-lineups-announced-1386995/",
+    "https://www.premierleague.com/en/news/4688364/how-every-premier-league-club-could-line-up-in-202627",
+    "https://en.wikipedia.org/wiki/2026%E2%80%9327_Premier_League",
+    "https://en.wikipedia.org/wiki/Erling_Haaland",
+    "https://en.wikipedia.org/wiki/2007%E2%80%9308_Manchester_United_F.C._season"
+  ],
+  "checked": "Real XI from 18 Oct Sevilla confirmed XI (Comuniate) + Clasico projected XI (Extra); Konate/Cucurella/Diomande signings (TeamTalk + Africa Soccer); Mourinho as manager (Al Jazeera + Citizen); City XI from 14 Oct PSG game XI (Foot Africa) + PL.com preview; Haaland 9 PL goals (Wikipedia table) and 36-goal PL record 22/23 (Haaland page); Ronaldo 31 league / 42 all comps in 07/08 (United season page; widely reported). Second source for Ronaldo's 07/08 numbers not fetched this session (search budget ran out). Match imagined.",
+  "clubs": {
+    "rma": {
+      "name": "Real Madrid",
+      "short": "RMA",
+      "c1": "#ffffff",
+      "c2": "#febe10",
+      "pattern": "plain"
+    },
+    "mci": {
+      "name": "Manchester City",
+      "short": "MCI",
+      "c1": "#6cabdd",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "ronaldo": {
+      "name": "Cristiano Ronaldo",
+      "skin": "olive",
+      "hair": [
+        "slick",
+        "#2b1d14"
+      ],
+      "beard": "none",
+      "kit": "rma"
+    },
+    "haaland": {
+      "name": "Erling Haaland",
+      "skin": "light",
+      "hair": [
+        "slick",
+        "#e8d08a"
+      ],
+      "beard": "none",
+      "kit": "mci"
+    },
+    "mbappe": {
+      "name": "Kylian Mbappé",
+      "skin": "brown",
+      "hair": [
+        "buzz",
+        "#111111"
+      ],
+      "beard": "none",
+      "kit": "rma"
+    },
+    "mourinho": {
+      "name": "José Mourinho",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#9a9a9a"
+      ],
+      "beard": "none",
+      "kit": "suit"
+    }
+  },
+  "lines": [
+    {
+      "text": "Who would win: Real Madrid with prime Cristiano Ronaldo, or Manchester City?",
+      "scene": {
+        "type": "title",
+        "heading": "REAL MADRID + RONALDO v CITY",
+        "sub": "An imagined match · a prediction",
+        "pill": "WHO WOULD WIN?",
+        "person": "ronaldo"
+      }
+    },
+    {
+      "text": "And who's on Madrid's bench this season? José Mourinho. Again.",
+      "scene": {
+        "type": "person",
+        "person": "mourinho",
+        "label": "REAL MADRID MANAGER 2026/27",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Madrid spent big this summer: Konaté, Cucurella, Diomande. Now add Ronaldo, the twenty oh-eight version.",
+      "scene": {
+        "type": "list",
+        "title": "REAL MADRID XI",
+        "rows": [
+          {
+            "name": "Thibaut Courtois",
+            "value": "GK"
+          },
+          {
+            "name": "Valverde · Konaté · Huijsen · Cucurella",
+            "value": "DEF"
+          },
+          {
+            "name": "Tchouaméni · Bellingham · Güler",
+            "value": "MID"
+          },
+          {
+            "name": "Yan Diomande",
+            "value": "RW"
+          },
+          {
+            "name": "Kylian Mbappé",
+            "value": "ST"
+          },
+          {
+            "name": "Cristiano Ronaldo",
+            "value": "LW",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "That season he scored thirty-one league goals, forty-two in all, and won the Champions League.",
+      "scene": {
+        "type": "stats",
+        "title": "RONALDO 2007/08",
+        "items": [
+          {
+            "n": "31",
+            "l": "league goals"
+          },
+          {
+            "n": "42",
+            "l": "all competitions"
+          },
+          {
+            "n": "1",
+            "l": "Champions League"
+          }
+        ],
+        "person": "ronaldo"
+      }
+    },
+    {
+      "text": "City answer with Donnarumma, Guéhi, Cherki, and one very large Norwegian.",
+      "scene": {
+        "type": "list",
+        "title": "MAN CITY XI",
+        "rows": [
+          {
+            "name": "Gianluigi Donnarumma",
+            "value": "GK"
+          },
+          {
+            "name": "Khusanov · Dias · Guéhi · Gvardiol",
+            "value": "DEF"
+          },
+          {
+            "name": "Anderson · O'Reilly",
+            "value": "MID"
+          },
+          {
+            "name": "Semenyo · Cherki · Doku",
+            "value": "ATT"
+          },
+          {
+            "name": "Erling Haaland",
+            "value": "ST",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Prime against prime. Ronaldo's thirty-one, against Haaland's record thirty-six in one Premier League season.",
+      "scene": {
+        "type": "versus",
+        "title": "BEST LEAGUE SEASON",
+        "left": {
+          "person": "ronaldo",
+          "label": "Ronaldo 07/08",
+          "value": "31"
+        },
+        "right": {
+          "person": "haaland",
+          "label": "Haaland 22/23",
+          "value": "36"
+        }
+      }
+    },
+    {
+      "text": "Fifteen minutes. Haaland, of course. He already has nine league goals this season. Nil-one.",
+      "scene": {
+        "type": "score",
+        "home": "rma",
+        "away": "mci",
+        "hs": 0,
+        "as": 1,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Haaland 15'"
+      }
+    },
+    {
+      "text": "Thirty yards out, Ronaldo plants the feet. Knuckleball. Donnarumma doesn't move. One-all.",
+      "scene": {
+        "type": "score",
+        "home": "rma",
+        "away": "mci",
+        "hs": 1,
+        "as": 1,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Ronaldo 33' (free kick)"
+      }
+    },
+    {
+      "text": "Mbappé squares it, Ronaldo taps in. Then Haaland heads one back. Two-all.",
+      "scene": {
+        "type": "score",
+        "home": "rma",
+        "away": "mci",
+        "hs": 2,
+        "as": 2,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Ronaldo 61' · Haaland 79'"
+      }
+    },
+    {
+      "text": "Ninety minutes. Cross from the right. Ronaldo hangs in the air forever. Three-two.",
+      "scene": {
+        "type": "score",
+        "home": "rma",
+        "away": "mci",
+        "hs": 3,
+        "as": 2,
+        "date": "Full time · prediction",
+        "comp": "Imagined match",
+        "note": "Ronaldo 3 · Haaland 2",
+        "stamp": "HAT-TRICK"
+      }
+    },
+    {
+      "text": "Man of the match: Ronaldo. Haaland second, Mbappé third. Agree?",
+      "scene": {
+        "type": "podium",
+        "year": "Imagined",
+        "title": "MAN OF THE MATCH",
+        "places": [
+          {
+            "person": "ronaldo",
+            "club": "rma"
+          },
+          {
+            "person": "haaland",
+            "club": "mci"
+          },
+          {
+            "person": "mbappe",
+            "club": "rma"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

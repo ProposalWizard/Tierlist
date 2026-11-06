@@ -5,9 +5,9 @@
  * exactly as before. Per device.
  */
 import { useEffect, useState } from "react";
-import { LEO_FEATURES, keeperLookChoice, leoUpdateOn, setKeeperLookChoice, setLeoFeature, setLeoUpdate, type LeoFeature } from "@/lib/star/leoUpdate";
+import { LEO_FEATURES, GOAL_VIDEO_LOOKS, goalVideoLookChoice, keeperLookChoice, leoUpdateOn, setGoalVideoLookChoice, setKeeperLookChoice, setLeoFeature, setLeoUpdate, type LeoFeature } from "@/lib/star/leoUpdate";
 import { KEEPER_LOOKS } from "@/lib/star/keeperShow";
-import { LIVE_EVENT, liveChancesOn, setLiveChances } from "@/lib/star/liveChance";
+import LiveChancesSettings from "./LiveChancesSettings";
 import { SetCard, SetHead, SetNote, SetToggle } from "./settingsKit";
 
 const TEST_PAGES: [string, string][] = [
@@ -25,8 +25,7 @@ export default function LeoUpdateCard({ glow }: { glow: string }) {
   useEffect(() => {
     const r = () => bump((n) => n + 1);
     window.addEventListener("kib-leo-update", r);
-    window.addEventListener(LIVE_EVENT, r);
-    return () => { window.removeEventListener("kib-leo-update", r); window.removeEventListener(LIVE_EVENT, r); };
+    return () => window.removeEventListener("kib-leo-update", r);
   }, []);
   const on = leoUpdateOn();
   const partOn = (f: LeoFeature) => leoUpdateOn(f);
@@ -48,13 +47,18 @@ export default function LeoUpdateCard({ glow }: { glow: string }) {
                 ))}
               </div>
             )}
+            {f.id === "videos2d" && partOn("videos2d") && (
+              <div className="mb-2 flex flex-wrap gap-1.5 pl-1" data-goal-video-look>
+                {GOAL_VIDEO_LOOKS.map((l) => (
+                  <button key={l.id} type="button" onClick={() => setGoalVideoLookChoice(l.id)} title={l.line} data-goal-video-look-pick={l.id}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${goalVideoLookChoice() === l.id ? "bg-white text-black" : "bg-white/10 text-white"}`}>{l.label}</button>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
-      <div className="mt-3" data-live-chances>
-        <SetToggle label={liveChancesOn() ? "Live chances: On (test)" : "Live chances: Off"} on={liveChancesOn()} onClick={() => setLiveChances(!liveChancesOn())} last />
-        <p className="-mt-1 mb-1 pl-1 text-[10.5px] font-semibold leading-snug text-white/70">Its own switch, off by default. On: the last pass keeps coming to you; time your strike as it arrives (early stabs it, late gets under it, miss it and the chance is gone). Set pieces, headers and volleys stay as they are.</p>
-      </div>
+      <div className="mt-3"><LiveChancesSettings /></div>
       <SetNote dim className="mt-2 text-[11px]">Test pages (no switch needed; they never touch your career):</SetNote>
       <div className="mt-1 flex flex-wrap gap-1.5">
         {TEST_PAGES.map(([href, label]) => (

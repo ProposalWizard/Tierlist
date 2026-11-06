@@ -93,6 +93,32 @@ function playMatchday(career: CareerState, w: WorldEuro, md: number, squadOf: (c
   return { ...w, table: w.table.map(r => rows.get(r.name) ?? r), matchdays: md, last: results, scorers };
 }
 
+/**
+ * The knockout's goals count for the top scorers too (Mikey, 2 Nov 2026:
+ * "only tracked for the league stage"): every leg of every tie in the round
+ * just played, named the way a league-phase match is (extra-time goals are
+ * inside the last leg; shoot-out kicks are not goals). Seeded per round.
+ */
+function nameKnockoutGoals(
+  career: CareerState, competition: Comp, bracket: ReturnType<typeof openEuroBracket>, round: string,
+  counts: ScorerCounts, squadOf: (c: string) => LeagueSquad | undefined,
+): ScorerCounts {
+  const r = bracket.rounds.find(x => x.name === round);
+  if (!r) return counts;
+  const out: ScorerCounts = { ...counts };
+  const rng = mulberry32(seed(career.season, competition, 80 + EURO_KO_ROUNDS.indexOf(round as typeof EURO_KO_ROUNDS[number])));
+  for (const t of r.ties) {
+    if (!t.a || !t.b || !t.winner) continue;
+    for (const leg of t.legs) {
+      for (const g of [...pickGoalIds(squadOf(t.a), leg.a, rng), ...pickGoalIds(squadOf(t.b), leg.b, rng)]) {
+        add(out, g.id, true);
+        if (g.assistId) add(out, g.assistId, false);
+      }
+    }
+  }
+  return out;
+}
+
 /** Play every matchday and knockout round of one competition whose date has come. */
 export function advanceWorldEuro(
   career: CareerState, w: WorldEuro, clock: number, squadOf: (c: string) => LeagueSquad | undefined,
@@ -105,10 +131,12 @@ export function advanceWorldEuro(
   const str = (c: string) => cur.clubs.find(x => x.name === c)?.strength ?? 75;
   let bracket = cur.bracket ?? openEuroBracket(sortEuro(cur.table).map(r => r.name), mulberry32(seed(career.season, cur.competition, 50)));
   let koRounds = cur.koRounds;
+  let scorers = cur.scorers;
   while (koRounds < EURO_KO_ROUNDS.length && koRoundTime(career, EURO_KO_ROUNDS[koRounds]) <= clock) {
     bracket = advanceEuroBracket(bracket, "", str, simulate, mulberry32(seed(career.season, cur.competition, 60 + koRounds)), koRounds);
+    scorers = nameKnockoutGoals(career, cur.competition, bracket, EURO_KO_ROUNDS[koRounds], scorers, squadOf);
     koRounds++;
   }
   if (bracket === cur.bracket && koRounds === cur.koRounds) return cur;
-  return { ...cur, bracket, koRounds, ...(bracket.winner ? { winner: bracket.winner } : {}) };
+  return { ...cur, bracket, koRounds, scorers, ...(bracket.winner ? { winner: bracket.winner } : {}) };
 }

@@ -317,6 +317,14 @@ export interface StoryMemory {
   saidRecently: string[];
   /** Every event id ever fired, with a count. Drives rarity weighting. */
   seen: Record<string, number>;
+  /**
+   * Football Twitter (switch part "footballTwitter"): every line used lately
+   * across the whole career, keyed "account|template" (or "reply|line",
+   * "quote|line"), with the career week it was used (season×64 + week).
+   * A line is not used again by that account inside FT_REPEAT_WEEKS.
+   * Absent with the switch off, so an old save and the off feed are unchanged.
+   */
+  ftSaid?: Record<string, number>;
 }
 
 // ── Accounts ────────────────────────────────────────────────────────────────
@@ -388,6 +396,64 @@ export interface MediaAccount {
   interests: Partial<Record<Tag, number>>;
   /** polarity −1 means they enjoy your failures. */
   allegiance?: { club: string; polarity: 1 | -1 };
+  /**
+   * How often this account posts, set in the Social Studio (/admin/social):
+   * 2 = twice as keen, 0 = never. Absent on every account the game builds,
+   * and absent means exactly as before (select.ts multiplies only when set).
+   */
+  weight?: number;
+  /**
+   * Football Twitter (Leo's switch part "footballTwitter",
+   * lib/star/media/twitter/): the invented account type this is, which picks
+   * its own phrase bank (templates/twitter.ts). Absent on every account the
+   * game built before, and absent means exactly as before.
+   */
+  persona?: string;
+  /** The persona in plain words, for the admin page. */
+  personaLabel?: string;
+  /** Chance it writes from its persona bank; the rest from its archetype's. Absent = always. */
+  personaShare?: number;
+  /** Tick colour: blue (paid), gold (an organisation), grey (an official body). */
+  tick?: "blue" | "gold" | "grey";
+}
+
+/** A post quoted inside another (Football Twitter). Stored rendered. */
+export interface QuotedPost {
+  handle: string;
+  name: string;
+  verified: boolean;
+  tick?: "blue" | "gold" | "grey";
+  initials: string;
+  tint: string;
+  tint2?: string;
+  glyph?: AvatarGlyph;
+  text: string;
+  /** The quoted post had a video. */
+  video?: boolean;
+  /** Football Twitter v2: the quoted post's video itself, playable inside the quote. */
+  graphic?: GraphicSpec;
+}
+
+/** One reply under a post (Football Twitter). Stored rendered. */
+export interface PostReply {
+  handle: string;
+  name: string;
+  verified: boolean;
+  tick?: "blue" | "gold" | "grey";
+  initials: string;
+  tint: string;
+  tint2?: string;
+  glyph?: AvatarGlyph;
+  text: string;
+  likes: number;
+  /** Round 4 (Leo, 31 Oct 2026): the tone of the line (twitter/tone.ts), so a test can check it fits its post. */
+  tone?: string;
+  /** Round 4: who is replying: a fan of the post's club, a rival, or a neutral. */
+  side?: "fan" | "rival" | "neutral";
+  /** Round 4: the handle this reply answers (an argument, or TikTok's "replying to @…"). */
+  to?: string;
+  /** Round 4, TikTok: the creator liked this comment. */
+  creatorLiked?: boolean;
 }
 
 // ── Narration ───────────────────────────────────────────────────────────────
@@ -455,6 +521,19 @@ export type GraphicSpec =
       synth?: SynthGoal[];
       /** Your match's highlights: made first, before anyone else's (Leo, 8 Oct 2026). */
       priority?: boolean;
+      /** Social Studio (/admin/social): the cut chosen by hand. Absent: the
+       *  author's own style and cut (clipStyle.ts), exactly as before. */
+      style?: "broadcast" | "reverse" | "fan" | "tiktok"
+        /** Cold edits (part "coldEdits"): the edit a cold line's words describe (templates/coldEdits.ts). */
+        | "cold" | "aura" | "rewind" | "statCard" | "montage" | "angles";
+      variant?: number;
+      /** Football Twitter: one made goal per recorded clip, in the same order,
+       *  played instead when this phone does not have that recording (a save
+       *  opened on another device). So a video post always has a video. */
+      standIn?: SynthGoal[];
+      /** Football Twitter v2: a TikTok post's own caption lines [hook, reaction],
+       *  burnt into the edit (goalClip/editBetter.ts) so the video says what the post says. */
+      captions?: string[];
     }
   /**
    * GOAL OF THE MONTH (Leo, 22 Oct 2026, option B): your best goals of the
@@ -650,10 +729,23 @@ export interface StoredPost {
      */
     tint2?: string;
     glyph?: AvatarGlyph;
+    /** Football Twitter: gold/grey tick. Absent = the blue tick as before. */
+    tick?: "blue" | "gold" | "grey";
   };
   text: string;
   graphic?: GraphicSpec;
-  metrics: { likes: number; reposts: number; replies: number };
+  /** `views` and `quotes` only on posts made with Football Twitter on. */
+  metrics: { likes: number; reposts: number; replies: number; views?: number; quotes?: number };
+  /** Football Twitter: the post this one quotes. */
+  quote?: QuotedPost;
+  /** Football Twitter: the top replies under it. */
+  thread?: PostReply[];
+  /** Football Twitter: about your own player (ranked higher in the feed). */
+  aboutYou?: boolean;
+  /** Football Twitter: which invented account type wrote it (feed variety). */
+  persona?: string;
+  /** Football Twitter v2: a TikTok post's sound line ("original sound – kai edits"). */
+  sound?: string;
   eventId: string;
   tags: Tag[];
   /**
@@ -673,6 +765,12 @@ export interface StoredPost {
    * Optional: absent is "not liked", so every older save still reads.
    */
   liked?: boolean;
+  /** Social Studio (/admin/social): shown first in the Feed, whatever its age. */
+  pinned?: boolean;
+  /** Social Studio: kept in the save but never shown. */
+  hidden?: boolean;
+  /** Social Studio: written or added by hand there, not by the game. */
+  studio?: boolean;
 }
 
 export interface Trend {
@@ -727,6 +825,62 @@ export interface MediaState {
   seenCycleIds?: string[];
   /** Goal of the Month (lib/star/media/goalOfMonth.ts). Absent on older saves. */
   gotm?: GotmState;
+  /**
+   * The Social Studio's settings (/admin/social, Leo 30 Oct 2026): account
+   * changes, new accounts, how often each posts, post kinds turned off. Absent
+   * on every save nobody has opened the studio for, and absent means the feed
+   * is made and shown exactly as before (lib/star/media/studio.ts).
+   */
+  studio?: MediaStudio;
+}
+
+/** A change to one account, by its original handle. Every field optional. */
+export interface AccountOverride {
+  name?: string;
+  handle?: string;
+  verified?: boolean;
+  followers?: number;
+  platform?: Platform;
+  initials?: string;
+  tint?: string;
+  tint2?: string;
+  glyph?: AvatarGlyph;
+  /** How often it posts (1 = as the game decides, 0 = never). */
+  weight?: number;
+}
+
+/** An account made in the Social Studio. Joins the cast when posts are made. */
+export interface CustomAccount {
+  handle: string;
+  name: string;
+  archetype: Archetype;
+  platform: Platform;
+  verified: boolean;
+  followers: number;
+  avatar: { initials: string; tint: string; tint2?: string; glyph?: AvatarGlyph };
+  /** Whose side it is on (a club's own account or fan), if anyone's. */
+  allegiance?: { club: string; polarity: 1 | -1 };
+  weight?: number;
+}
+
+export interface MediaStudio {
+  /** By the account's ORIGINAL handle (the one the game gave it). */
+  accountOverrides?: Record<string, AccountOverride>;
+  customAccounts?: CustomAccount[];
+  /** How often each kind of account posts (1 = as the game decides). */
+  archetypeWeights?: Partial<Record<Archetype, number>>;
+  /** Kinds of post (event ids, e.g. "hat-trick", "match-highlights") never made. */
+  disabledEvents?: string[];
+  /** Subjects (tags, e.g. "rumour") never posted about. */
+  disabledTags?: Tag[];
+  /** Pictures (graphic types) never attached: the post keeps its words. */
+  disabledGraphics?: string[];
+  /** Most posts the save keeps (the game's own is 150). */
+  postCap?: number;
+  /** More or fewer posts a match: 1 = as the game decides. */
+  volume?: number;
+  /** Trends that stay at the top of the ticker whatever the week. */
+  pinnedTrends?: Trend[];
 }
 
 export interface MediaCycle {

@@ -32,13 +32,21 @@ export const LEO_FEATURES = [
   { id: "seasonReel", label: "Season video", line: "Every goal of your season before the Ballon d'Or." },
   { id: "goalsGallery", label: "Career goals list", line: "Stats → Goals: every goal of your career; best 10 in the Hall of Fame." },
   { id: "awardsNight", label: "Season awards night", line: "The 3D awards night in place of the awards page." },
+  { id: "smoothGoals", label: "Smooth goal videos", line: "Real goals move like the made-up ones: no stop-start, no statues." },
   { id: "weather", label: "Weather and pitch", line: "Wind bends the ball, rain skids it, a poor dry pitch kills it; shown before kick-off and in the match." },
   { id: "keeperCatch", label: "Keeper catches and dives", line: "He dives in time, the ball goes into his gloves and moves with him, he lands and gets up. Pick a look below." },
+  { id: "commentaryVoice", label: "New commentary voice", line: "A new, more natural commentator for goal videos and late goals: builds with the goal, calmer co-commentator, TV mic sound." },
+  { id: "footballTwitter", label: "Football Twitter feed", line: "50+ made-up accounts (TikTok edits and POV pages, insider, ratio page, scores app…), 900 lines that do not repeat for weeks, TikTok videos, replies and quotes, a ranked feed. No post talks about a video it does not show." },
+  { id: "betterVideos", label: "Better goal videos", line: "TV replays from 2-3 cameras (reverse angle, super slow-mo, behind the goal), TikTok edits (speed ramp, freeze, zoom punch, flash, captions, name card), fan phone videos from 3 seats, highlights reels with a full-time card. Each account cuts its own way." },
+  { id: "coldEdits", label: "Cold edits", line: "Edit pages post real edits set to their own beats: cold edits (black and white, kit colour kept, shake and flash on the beat), aura edits, rewinds, stat cards, every-goal montages and every-angle edits, with words to match (\"cold.\", \"aura farming\", 🥶)." },
+  { id: "commentators", label: "Different commentators", line: "Four commentary teams with their own voices and lines (classic, poetic, dry, fan TV). Each match gets one; official accounts use the TV teams, other accounts Fan TV." },
+  { id: "videos2d", label: "2D goal videos", line: "Goal videos seen from above, like the 2D match: figures on a flat pitch, a ball trail, the net rippling. Same cuts, captions and commentary. Pick 3D or 2D below." },
+  { id: "seasonEnd", label: "Better end of season", line: "Season video: every goal plays (a made stand-in when this phone has no recording), tap right or left to skip a goal, ⭐ your favourite goals (kept for ever, a Favourites tab and reel), milestone cards and your Goal of the Season." },
   { id: "bugFixes", label: "Bug fixes (21)", line: "Refresh comes back where you were, labels, tour once, no sack after promotion, talks back button, signing manager name…" },
 ] as const;
 export type LeoFeature = (typeof LEO_FEATURES)[number]["id"];
 
-interface Saved { on: boolean; off: LeoFeature[] }
+interface Saved { on: boolean; off: LeoFeature[]; /** When it was last changed (ms), so the newest change wins across devices. */ at?: number }
 const NONE: Saved = { on: false, off: [] };
 
 function read(): Saved {
@@ -47,7 +55,7 @@ function read(): Saved {
     const raw = window.localStorage.getItem(LEO_UPDATE_KEY);
     if (!raw) return NONE;
     const s = JSON.parse(raw) as Partial<Saved>;
-    return { on: s.on === true, off: Array.isArray(s.off) ? (s.off.filter((x) => LEO_FEATURES.some((f) => f.id === x)) as LeoFeature[]) : [] };
+    return { on: s.on === true, off: Array.isArray(s.off) ? (s.off.filter((x) => LEO_FEATURES.some((f) => f.id === x)) as LeoFeature[]) : [], ...(typeof s.at === "number" ? { at: s.at } : {}) };
   } catch { return NONE; }
 }
 function write(s: Saved) {
@@ -61,11 +69,32 @@ export function leoUpdateOn(f?: LeoFeature): boolean {
   if (!s.on) return false;
   return f ? !s.off.includes(f) : true;
 }
-export function setLeoUpdate(on: boolean) { write({ ...read(), on }); }
+export function setLeoUpdate(on: boolean) { write({ ...read(), on, at: Date.now() }); }
 export function setLeoFeature(f: LeoFeature, on: boolean) {
   const s = read();
-  write({ ...s, off: on ? s.off.filter((x) => x !== f) : [...s.off.filter((x) => x !== f), f] });
+  write({ ...s, off: on ? s.off.filter((x) => x !== f) : [...s.off.filter((x) => x !== f), f], at: Date.now() });
 }
+
+/**
+ * THE SWITCH FOLLOWS YOUR ACCOUNT (Leo, 30 Oct 2026: "perfect loading time
+ * for phone, but still takes seconds on pc" — the switch was on on his phone
+ * and off on his computer, because it lived on each device). The setting is
+ * also kept in the career save (CareerState.leoUpdate), which syncs between
+ * devices; app/star-dev/page.tsx copies whichever was changed last.
+ */
+export type LeoUpdateSetting = Saved;
+/** This device's setting, or null if it was never set here. */
+export function leoUpdateLocal(): LeoUpdateSetting | null {
+  try {
+    if (typeof window === "undefined" || window.localStorage.getItem(LEO_UPDATE_KEY) === null) return null;
+  } catch { return null; }
+  return read();
+}
+/** Take the setting from the save (another device changed it more recently). */
+export function adoptLeoUpdate(s: LeoUpdateSetting) {
+  write({ on: s.on === true, off: (Array.isArray(s.off) ? s.off : []).filter((x) => LEO_FEATURES.some((f) => f.id === x)) as LeoFeature[], at: s.at ?? Date.now() });
+}
+export const LEO_UPDATE_EVENT = EVENT;
 
 /** React: re-renders when the switch changes (this tab or another). */
 export function useLeoUpdate(f?: LeoFeature): boolean {
@@ -91,4 +120,42 @@ export function keeperLookChoice(): "natural" | "broadcast" | "arcade" {
 export function setKeeperLookChoice(v: "natural" | "broadcast" | "arcade") {
   try { window.localStorage.setItem(KEEPER_LOOK_KEY, v); } catch { /* private mode */ }
   try { window.dispatchEvent(new Event(EVENT)); } catch { /* no window */ }
+}
+
+/**
+ * 2D GOAL VIDEOS (part "videos2d"; Leo, 31 Oct 2026: "have a 2d option").
+ * The look the player picks under the part: "3d" (the TV picture, as before)
+ * or "2d" (top-down, goalClip/render2d.ts). Per device; 3D until 2D is picked,
+ * so turning the part on changes nothing by itself.
+ */
+export const GOAL_VIDEO_LOOK_KEY = "kib-goal-video-look";
+export type GoalVideoLook = "3d" | "2d";
+export const GOAL_VIDEO_LOOKS: { id: GoalVideoLook; label: string; line: string }[] = [
+  { id: "3d", label: "3D (TV)", line: "The TV cameras, as before." },
+  { id: "2d", label: "2D (from above)", line: "Top-down on a flat pitch, like the 2D match." },
+];
+export function goalVideoLookChoice(): GoalVideoLook {
+  try {
+    return typeof window !== "undefined" && window.localStorage.getItem(GOAL_VIDEO_LOOK_KEY) === "2d" ? "2d" : "3d";
+  } catch { return "3d"; }
+}
+export function setGoalVideoLookChoice(v: GoalVideoLook) {
+  try { window.localStorage.setItem(GOAL_VIDEO_LOOK_KEY, v); } catch { /* private mode */ }
+  try { window.dispatchEvent(new Event(EVENT)); } catch { /* no window */ }
+}
+/** Are goal videos drawn in 2D? The part on AND 2D picked. Off on the server and in tests. */
+export function goalVideos2d(): boolean {
+  return leoUpdateOn("videos2d") && goalVideoLookChoice() === "2d";
+}
+/** React: goalVideos2d(), re-rendering when the switch or the pick changes. */
+export function useGoalVideos2d(): boolean {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const sync = () => setOn(goalVideos2d());
+    sync();
+    window.addEventListener(EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => { window.removeEventListener(EVENT, sync); window.removeEventListener("storage", sync); };
+  }, []);
+  return on;
 }

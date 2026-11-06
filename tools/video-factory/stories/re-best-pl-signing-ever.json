@@ -1,0 +1,287 @@
+{
+  "id": "re-best-pl-signing-ever",
+  "series": "Three rules to the top",
+  "title": "Three rules to the best Premier League signing ever",
+  "sources": [
+    "https://en.wikipedia.org/wiki/Premier_League_Player_of_the_Season",
+    "https://www.skysports.com/football/player/111487/ngolo-kant",
+    "https://global.espn.com/football/soccer-transfers/story/2546487/leicester-sign-ngolo-kante-from-caen-but-aranguiz-not-keen",
+    "https://en.wikipedia.org/wiki/N%27Golo_Kant%C3%A9",
+    "https://en.wikipedia.org/wiki/Erling_Haaland",
+    "https://en.wikipedia.org/wiki/List_of_English_football_champions"
+  ],
+  "checked": "First-season titles: Cantona (joined Nov 1992, won 1992-93), Drogba 2004-05, Kante 2015-16 Leicester, Haaland 2022-23; Henry, Ronaldo, De Bruyne, Salah, Van Dijk, Rodri did not (List of English champions, Wikipedia). PL Player of the Season (award since 1994-95): Kante 2016-17, Haaland 2022-23 (Wikipedia). Kante fee about 5.6m pounds (Sky Sports, ESPN/Leicester Mercury); Haaland about 51m (Wikipedia).",
+  "clubs": {
+    "ars": {
+      "name": "Arsenal",
+      "short": "ARS",
+      "c1": "#ef0107",
+      "c2": "#ffffff",
+      "pattern": "sides"
+    },
+    "che": {
+      "name": "Chelsea",
+      "short": "CHE",
+      "c1": "#034694",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "lei": {
+      "name": "Leicester City",
+      "short": "LEI",
+      "c1": "#003090",
+      "c2": "#fdbe11",
+      "pattern": "plain"
+    },
+    "mci": {
+      "name": "Manchester City",
+      "short": "MCI",
+      "c1": "#6cabdd",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "mun": {
+      "name": "Manchester United",
+      "short": "MUN",
+      "c1": "#da291c",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "cantona": {
+      "name": "Eric Cantona",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#2b1d14"
+      ],
+      "beard": "none",
+      "kit": "mun"
+    },
+    "drogba": {
+      "name": "Didier Drogba",
+      "skin": "deep",
+      "hair": [
+        "buzz",
+        "#111111"
+      ],
+      "beard": "goatee",
+      "kit": "che"
+    },
+    "haaland": {
+      "name": "Erling Haaland",
+      "skin": "pink",
+      "hair": [
+        "slick",
+        "#e3cf8f"
+      ],
+      "beard": "none",
+      "kit": "mci"
+    },
+    "henry": {
+      "name": "Thierry Henry",
+      "skin": "dark",
+      "hair": [
+        "bald",
+        "#111111"
+      ],
+      "beard": "none",
+      "kit": "ars"
+    },
+    "kante": {
+      "name": "N'Golo Kanté",
+      "skin": "deep",
+      "hair": [
+        "buzz",
+        "#111111"
+      ],
+      "beard": "none",
+      "kit": "lei"
+    }
+  },
+  "lines": [
+    {
+      "text": "The best Premier League signing of all time. Ten legends. Three rules. One name.",
+      "scene": {
+        "type": "title",
+        "heading": "BEST SIGNING EVER",
+        "sub": "Premier League · 1992 to now",
+        "pill": "THREE RULES",
+        "person": "kante"
+      }
+    },
+    {
+      "text": "Cantona, Henry, Ronaldo, Drogba, Kanté, De Bruyne, Salah, Van Dijk, Rodri and Haaland.",
+      "scene": {
+        "type": "list",
+        "title": "Our ten",
+        "rows": [
+          {
+            "name": "Eric Cantona",
+            "value": "1992",
+            "club": "mun"
+          },
+          {
+            "name": "Thierry Henry",
+            "value": "1999",
+            "club": "ars"
+          },
+          {
+            "name": "Didier Drogba",
+            "value": "2004",
+            "club": "che"
+          },
+          {
+            "name": "N'Golo Kanté",
+            "value": "2015",
+            "club": "lei"
+          },
+          {
+            "name": "De Bruyne · Rodri",
+            "value": "MCI"
+          },
+          {
+            "name": "Salah · Van Dijk",
+            "value": "LIV"
+          },
+          {
+            "name": "Cristiano Ronaldo",
+            "value": "2003",
+            "club": "mun"
+          },
+          {
+            "name": "Erling Haaland",
+            "value": "2022",
+            "club": "mci"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Rule one. You must win the league in your very first season.",
+      "scene": {
+        "type": "text",
+        "heading": "RULE 1",
+        "body": "Must win the Premier League in his first season at the club."
+      }
+    },
+    {
+      "text": "Henry, Ronaldo, De Bruyne, Salah, Van Dijk and Rodri all had to wait. Six gone.",
+      "scene": {
+        "type": "stamp",
+        "text": "HAD TO WAIT",
+        "person": "henry",
+        "color": "yellow"
+      }
+    },
+    {
+      "text": "Four left. Cantona, Drogba, Kanté and Haaland. Instant champions.",
+      "scene": {
+        "type": "timeline",
+        "items": [
+          {
+            "year": "1993",
+            "label": "Cantona"
+          },
+          {
+            "year": "2005",
+            "label": "Drogba"
+          },
+          {
+            "year": "2016",
+            "label": "Kanté"
+          },
+          {
+            "year": "2023",
+            "label": "Haaland"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Rule two. You must have won the Premier League Player of the Season award.",
+      "scene": {
+        "type": "text",
+        "heading": "RULE 2",
+        "body": "Must have won the official Premier League Player of the Season award."
+      }
+    },
+    {
+      "text": "Kanté won it in twenty seventeen. Haaland in twenty twenty-three. Cantona and Drogba never did.",
+      "scene": {
+        "type": "stamp",
+        "text": "OUT",
+        "person": "drogba",
+        "color": "red"
+      }
+    },
+    {
+      "text": "Rule three. Cheapest wins. You must have cost under ten million pounds.",
+      "scene": {
+        "type": "text",
+        "heading": "RULE 3",
+        "body": "Must have cost his club less than ten million pounds."
+      }
+    },
+    {
+      "text": "Haaland cost City around fifty-one million. Kanté cost Leicester about five point six.",
+      "scene": {
+        "type": "versus",
+        "title": "The fee",
+        "left": {
+          "person": "kante",
+          "label": "Kanté",
+          "value": "£5.6m"
+        },
+        "right": {
+          "person": "haaland",
+          "label": "Haaland",
+          "value": "£51m"
+        }
+      }
+    },
+    {
+      "text": "So it's N'Golo Kanté. Signed from Caen, and champion in his first year.",
+      "scene": {
+        "type": "person",
+        "person": "kante",
+        "label": "THE LAST NAME LEFT",
+        "mood": "happy",
+        "stamp": "WINNER"
+      }
+    },
+    {
+      "text": "Then he moved to Chelsea and won the league again, straight away.",
+      "scene": {
+        "type": "trophies",
+        "items": [
+          {
+            "kind": "league",
+            "label": "2016 Leicester"
+          },
+          {
+            "kind": "league",
+            "label": "2017 Chelsea"
+          }
+        ],
+        "person": "kante"
+      }
+    },
+    {
+      "text": "Best signing ever, or does Cantona have a case?",
+      "scene": {
+        "type": "person",
+        "person": "cantona",
+        "label": "THE KING OF 1993",
+        "mood": "flat"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

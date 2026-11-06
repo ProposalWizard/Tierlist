@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commentary voice: old v new</title>
+<style>
+  :root { --bg:#f6f5f2; --card:#fff; --ink:#1c1c1c; --soft:#666; --line:#e2e0da; --new:#0b7a43; --old:#9a3b2e; --mid:#6b5aa8; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#141414; --card:#1e1e1e; --ink:#eee; --soft:#aaa; --line:#333; --new:#3fcf86; --old:#ff8a75; --mid:#b3a4ff; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  main { max-width:820px; margin:0 auto; padding:24px 16px 60px; }
+  h1 { font-size:26px; margin:0 0 6px; }
+  h2 { font-size:19px; margin:32px 0 8px; }
+  p { margin:6px 0; }
+  .soft { color:var(--soft); font-size:14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; margin:12px 0; }
+  .line { font-weight:600; margin-bottom:8px; }
+  .row { display:grid; grid-template-columns: 140px 1fr; gap:8px; align-items:center; margin:6px 0; }
+  .tag { font-size:13px; font-weight:700; }
+  .A { color:var(--old); } .B { color:var(--mid); } .C { color:var(--new); }
+  audio { width:100%; height:36px; }
+  ol li { margin:4px 0; }
+  @media (max-width:520px) { .row { grid-template-columns: 1fr; gap:2px; } }
+</style>
+</head>
+<body>
+<main>
+<h1>The new commentary voice</h1>
+<p>Same lines, same crowd, three voices. Play A, then C. B is the old voice with better settings, to show that settings alone were not enough.</p>
+<p class="soft">The new voice is an original voice made for the game. It is not a copy of any real commentator. It plays in the game only when Settings → Updates → Leo's update → "New commentary voice" is on.</p>
+
+<h2>Listen to these first</h2>
+<ol>
+  <li>Goal soundtrack 3, the late winner: old, then new.</li>
+  <li>Line 2, the goal from distance: A, then C.</li>
+  <li>Line 5, the co-commentator: A, then C.</li>
+</ol>
+
+<h2>Whole goal soundtracks</h2>
+<p class="soft">Crowd, strike, net, roar, the call, what it means, then the co-commentator over the replay. Mixed the way the goal videos mix them. Sound only, no picture.</p>
+<div class="card"><div class="line">1. A goal from distance that puts them in front</div>
+  <div class="row"><span class="tag A">Old voice</span><audio controls preload="none" src="goal-1-long-range-old.mp3"></audio></div>
+  <div class="row"><span class="tag C">New voice</span><audio controls preload="none" src="goal-1-long-range-new.mp3"></audio></div></div>
+<div class="card"><div class="line">2. A header for the equaliser</div>
+  <div class="row"><span class="tag A">Old voice</span><audio controls preload="none" src="goal-2-header-equaliser-old.mp3"></audio></div>
+  <div class="row"><span class="tag C">New voice</span><audio controls preload="none" src="goal-2-header-equaliser-new.mp3"></audio></div></div>
+<div class="card"><div class="line">3. A late winner</div>
+  <div class="row"><span class="tag A">Old voice</span><audio controls preload="none" src="goal-3-late-winner-old.mp3"></audio></div>
+  <div class="row"><span class="tag C">New voice</span><audio controls preload="none" src="goal-3-late-winner-new.mp3"></audio></div></div>
+
+<h2>Line by line</h2>
+<div id="lines"></div>
+
+<h2>What changed</h2>
+<p>The old voice read every line like a news reader. The new one is a different kind of speech model with an emotion control: it rises on a goal, holds the big word, and the co-commentator stays calm and low. Each line was recorded up to five times. A speech checker kept the take with every word right and the right amount of excitement. Then each line got a TV commentary-box sound: microphone tone, compression and a little room.</p>
+<p class="soft">Honest limits: it is still a computer voice. Some calls may sound a bit strained at the top. Tell us which lines sound wrong and they can be remade one by one, or replaced on the Sound Board.</p>
+</main>
+<script>
+  var L = [
+    ["cl-g1", "Goal call", "And it's in! What a finish!"],
+    ["cl-lr1", "Goal from distance", "Oh, from all of thirty yards! Unbelievable!"],
+    ["cl-late-3", "Late winner", "Oh, he's won it! He's only gone and won it!"],
+    ["cl-s-lv1", "What it means (equaliser)", "And we're all square!"],
+    ["cc-g1", "Co-commentator over the replay", "Look at the technique there. Really, really good."],
+    ["cc-g8", "Co-commentator, a dry joke", "He'll be buying the drinks tonight, I'll tell you."]
+  ];
+  var V = [["A", "A · old voice", "A-old"], ["B", "B · old voice, new settings", "B-old-voice-tuned"], ["C", "C · new voice", "C-new"]];
+  var box = document.getElementById("lines");
+  L.forEach(function (l, i) {
+    var c = document.createElement("div"); c.className = "card";
+    var h = document.createElement("div"); h.className = "line"; h.textContent = (i + 1) + ". " + l[1] + ": “" + l[2] + "”"; c.appendChild(h);
+    V.forEach(function (v) {
+      var r = document.createElement("div"); r.className = "row";
+      var t = document.createElement("span"); t.className = "tag " + v[0]; t.textContent = v[1]; r.appendChild(t);
+      var a = document.createElement("audio"); a.controls = true; a.preload = "none"; a.src = (i + 1) + "-" + l[0] + "-" + v[2] + ".mp3"; r.appendChild(a);
+      c.appendChild(r);
+    });
+    box.appendChild(c);
+  });
+  // One sound at a time.
+  document.addEventListener("play", function (e) { document.querySelectorAll("audio").forEach(function (a) { if (a !== e.target) a.pause(); }); }, true);
+</script>
+</body>
+</html>

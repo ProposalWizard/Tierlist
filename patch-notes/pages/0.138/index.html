@@ -1,0 +1,124 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Weekly Round-up 0.138</title><style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  /* before → after bar */
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  figure{margin:12px 0 2px}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:12px 0 2px}
+  .shots figure{margin:0}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+  .flow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 26px}
+  .flow span{font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink3)}
+  .flow span.done{color:var(--green)}
+  .flow span.cur{background:var(--green);color:#06170e;border-color:var(--green)}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+  th,td{text-align:left;vertical-align:top;padding:9px 11px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  tr:last-child td{border-bottom:0}
+  td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700}
+  td.s{color:var(--ink2)}
+  .p-grn{background:rgba(61,220,132,.15);color:var(--green)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  .ck{list-style:none;margin:0;padding:0}
+  .ck li{padding:10px 0 10px 26px;border-bottom:1px solid var(--line);position:relative}
+  .ck li:last-child{border-bottom:0}
+  .ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);font-weight:800}
+  .ck .q{font-weight:700}.ck .a{color:var(--ink2);font-size:14px;margin-top:2px}
+  .ltr{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:5px;background:var(--card2);border:1px solid var(--line);font-size:12px;margin-right:7px;color:var(--ink)}
+</style></head><body><div class="wrap">
+<header><span class="ver">v0.138 · WEEKLY</span><h1>Weekly round-up, 30 Oct to 6 Nov</h1><p class="sub">By Leo · 6 Nov 2026, 17:50 UK · everything merged into main that week, by area. Each line names the version with the full detail.</p></header>
+<h2 class="fix"><i></i>CHECK THESE</h2><ul class="ck"><li><div class="q">The Glass stadium look on every career screen</div><div class="a">Settings → Screens → UI look: Glass | Pitch. Glass is the default. v0.137.</div></li><li><div class="q">The 3D ball is a real football; one ball on the title screen</div><div class="a">Title screen and 3D views. v0.137.</div></li><li><div class="q">The game's new address</div><div class="a">knowitball.co.uk/road-to-ballon-dor (/star-dev forwards there). 3 Nov.</div></li><li><div class="q">Season review and knockout trees</div><div class="a">End a season: one trophy list, tap a trophy for its table, scorers and assists. 2 Nov.</div></li><li><div class="q">Achievements: a gold trophy wall</div><div class="a">136 → 67 achievements, with Nearly there. 3 Nov.</div></li><li><div class="q">History tabs: real top scorers, assisters and player of the season</div><div class="a">League → a competition → History. PR #830.</div></li><li><div class="q">Free kicks: the very top corner goes in</div><div class="a">Any free kick in a match. v0.135.</div></li><li><div class="q">Leo's switches: Settings → Updates (admins)</div><div class="a">Social feed, goal videos, commentary, live chances. All off by default. v0.129 to v0.134.</div></li></ul>
+<h2 class="add"><i></i>1 · WHO BUILT WHAT</h2><div class="dt" style="margin-bottom:10px">11 pull requests reached main from Fri 30 Oct to Fri 6 Nov: Leo 10, Mikey 1. Harry's and Mikey's other rounds went straight into main. Nothing reached main after 3 Nov.</div><div class="tw" style="padding:14px"><svg viewBox="0 0 565 190" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif"><defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs><rect x="10" y="10" width="170" height="74" rx="12" fill="var(--card2)" stroke="var(--line)" stroke-width="1.5"/><text x="95" y="38" font-size="15" font-weight="700" fill="var(--ink)" text-anchor="middle">Mikey</text><text x="95" y="58" font-size="12" fill="var(--ink2)" text-anchor="middle">season review, history,</text><text x="95" y="74" font-size="12" fill="var(--ink2)" text-anchor="middle">achievements, video factory</text><path d="M95 86 L95 118" stroke="var(--ink3)" stroke-width="2" marker-end="url(#a)"/><rect x="195" y="10" width="170" height="74" rx="12" fill="var(--card2)" stroke="var(--line)" stroke-width="1.5"/><text x="280" y="38" font-size="15" font-weight="700" fill="var(--ink)" text-anchor="middle">Harry</text><text x="280" y="58" font-size="12" fill="var(--ink2)" text-anchor="middle">Glass look, real football,</text><text x="280" y="74" font-size="12" fill="var(--ink2)" text-anchor="middle">faster pushes</text><path d="M280 86 L280 118" stroke="var(--ink3)" stroke-width="2" marker-end="url(#a)"/><rect x="380" y="10" width="170" height="74" rx="12" fill="var(--card2)" stroke="var(--line)" stroke-width="1.5"/><text x="465" y="38" font-size="15" font-weight="700" fill="var(--ink)" text-anchor="middle">Leo</text><text x="465" y="58" font-size="12" fill="var(--ink2)" text-anchor="middle">free kicks, test pages,</text><text x="465" y="74" font-size="12" fill="var(--ink2)" text-anchor="middle">feed and live chances (switches)</text><path d="M465 86 L465 118" stroke="var(--ink3)" stroke-width="2" marker-end="url(#a)"/><rect x="10" y="122" width="540" height="58" rx="12" fill="var(--card2)" stroke="var(--green)" stroke-width="1.5"/><text x="280" y="148" font-size="15" font-weight="700" fill="var(--green)" text-anchor="middle">main · 30 Oct to 6 Nov</text><text x="280" y="168" font-size="12" fill="var(--ink2)" text-anchor="middle">11 PRs · 9 new patch notes</text></svg></div><h2 class="add"><i></i>2 · LOOK AND SITE (HARRY)</h2><ul class="n"><li><div class="hd">Glass stadium is the new default look</div><div class="dt">A blurred day stadium behind every career screen, frosted-glass cards and bars, white text, a glowing green PLAY. Pitch is still a choice, and gets a stadium too. New rule RUL-UI-007: a whole-game look may be a Settings choice. v0.137.</div></li><li><div class="hd">A real football</div><div class="dt">12 black and 20 white patches. The title screen showed two balls; now one. v0.137.</div></li><li><div class="hd">Small pushes go live faster</div><div class="dt">A small push runs a quick check: 30 to 40 minutes → about 10. v0.137.</div></li></ul><h2 class="add"><i></i>3 · CAREER, HISTORY AND MARKETING (MIKEY)</h2><ul class="n"><li><div class="hd">Season review: one trophy list in a fixed order</div><div class="dt">Tap any trophy for its table, scorers and assists. Your European competition is never kept twice. From the 2 Nov commits; no patch note yet.</div></li><li><div class="hd">Knockout tree: last 16 to the final</div><div class="dt">Champions and Europa League from the last 16; the cups from the last 8. Top scorers now count knockout legs and whole international editions, and the European competition you are in has its own scorers. 2 Nov.</div></li><li><div class="hd">Realistic simulated shoot-outs</div><div class="dt">Also your own line under the top 10, and a shorter KO tab. 2 Nov.</div></li><li><div class="hd">Achievements: 136 → 67</div><div class="dt">A gold trophy wall with Nearly there; the XP climb is the same. One gold pop-up per achievement. 3 Nov.</div></li><li><div class="hd">History tabs with real history</div><div class="dt">Top scorer, top assister and player of the season. Your career's seasons first, then the real history before them. PR #830, Brain FACT-DAT-008.</div></li><li><div class="hd">The game's address: knowitball.co.uk/road-to-ballon-dor</div><div class="dt">/star-dev forwards there. 3 Nov.</div></li><li><div class="hd">Smaller saves</div><div class="dt">The Hall of Fame copy leaves out last season's full record: a played career 145 KB → 78 KB. 2 Nov.</div></li><li><div class="hd">Video factory for marketing: 88 shorts</div><div class="dt">A storyboard becomes a 1080×1920 short with voice, drawn scenes, captions and music. MP4s now play on iPhone. PR #830, tools/video-factory/.</div></li><li><div class="hd">Playtest fixes</div><div class="dt">'1 game' not '1 games'; short club names on shield and winner cards; play-off winner in green; the Lower League Trophy in the chooser. 3 Nov.</div></li></ul><h2 class="add"><i></i>4 · MATCH, FEED AND TEST PAGES (LEO)</h2><ul class="n"><li><div class="hd">Free kicks: the very top corner beats the keeper</div><div class="dt">A perfect ball into the very top corner went in 11% of the time against a 92-rated keeper; now 79%. An ordinary taker 10% → 16%. Low and middle shots unchanged. In every match. PR #828, v0.135.</div></li><li><div class="hd">Test pages play like the real game</div><div class="dt">Six test screens had the old, easier free-kick keeper; test screens used skill 40 for free kicks. Both now match the real match. Weather, build-ups and sim90 too. PR #829, v0.136.</div></li><li><div class="hd">Live chances: take a touch, everyone moves, your stats decide</div><div class="dt">One quick flick to open an angle; the keeper rushes one-on-ones; defenders close you down and can win it. Technique, pace, vision and power set the skill. Still off by default. PRs #820, #823, #826, #827; v0.126, v0.133, v0.134.</div></li><li><div class="hd">Social feed: football Twitter and TikTok</div><div class="dt">52 made-up accounts and 899 lines (was 33 and 272); replies that fit the post (mismatches 20.7% → 0.1%); polls, quote posts, a ranked feed. A Social Studio admin page at /admin/social. Behind Leo's switch. PRs #821, #822, #824, #825; v0.129 to v0.132.</div></li><li><div class="hd">Goal videos and commentary</div><div class="dt">Goal videos start in 0.05 s on PC (was about 5 s); full screen; 2D from above; cut five ways plus six new edit types. A new commentary voice and four commentary teams. The season video plays every goal (0 lost clips, was 8 of 21). Behind Leo's switch. v0.129 to v0.132.</div></li></ul><h2 class="bug"><i></i>5 · STILL OPEN (FROM THIS WEEK'S NOTES, NOT RECHECKED TODAY)</h2><ul class="n"><li><div class="hd">Glass look gaps</div><div class="dt">Home keeps its night stadium; energy-can cards on Home are cut off at the bottom; the Phone keeps a red club wallpaper; the League banner stays club red. v0.137.</div></li><li><div class="hd">5 tests were already broken before Harry's round</div><div class="dt">v0.137.</div></li><li><div class="hd">The free-kick fix is not played by hand yet</div><div class="dt">v0.135.</div></li><li><div class="hd">Live chances: the touch is not checked in 3D</div><div class="dt">v0.133, v0.134.</div></li><li><div class="hd">Leo's feed and video work is not played in a real career, nor heard by a person yet</div><div class="dt">v0.131, v0.132.</div></li><li><div class="hd">Mikey's 2-3 Nov round has no patch note</div><div class="dt">Mikey writes notes only when he asks for them (his standing rule).</div></li></ul><h2 class="nxt"><i></i>6 · CALLS FOR HARRY</h2><ul class="n"><li><div class="hd">Day stadium on Home: yes or no</div><div class="dt">v0.137.</div></li><li><div class="hd">When Leo's switches go on for everyone</div><div class="dt">Feed, videos, commentary and live chances are all off by default. v0.129 to v0.134.</div></li></ul><details><summary>The numbers</summary><ul><li><b>11</b> pull requests merged into main this week</li><li><b>9</b> new patch notes this week</li><li><b>11% → 79%</b> perfect top-corner free kick vs a 92 keeper</li><li><b>136 → 67</b> achievements</li></ul><p>Pull requests #820 to #830, all merged into main.</p></details>
+<footer>One page for the week, for Harry. 11 pull requests merged into main from Fri 30 Oct to Fri 6 Nov (Leo 10, Mikey 1), plus Harry's and Mikey's rounds merged straight in. Nothing reached main after 3 Nov. The 9 new patch notes (v0.129 to v0.137) are condensed here; each line names the version with the full detail. Mikey's 2-3 Nov work has no patch note yet, so those lines come from the commit list. Biggest changes: the Glass stadium look is the new default, the 3D ball is a real football, a perfect top-corner free kick now goes in (11% → 79% against a 92 keeper), the season review and knockout trees, achievements cut from 136 to 67, and the game's new address knowitball.co.uk/road-to-ballon-dor. Leo's feed, video and live-chance work is on the site behind switches that are off by default.</footer></div></body></html>

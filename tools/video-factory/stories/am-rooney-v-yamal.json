@@ -1,0 +1,39 @@
+{
+  "id": "am-rooney-v-yamal",
+  "series": "Age-match",
+  "title": "Rooney at Euro 2004 v Yamal at the same age",
+  "sources": [
+    "https://en.wikipedia.org/wiki/List_of_international_goals_scored_by_Wayne_Rooney",
+    "https://en.wikipedia.org/wiki/Wayne_Rooney",
+    "https://en.wikipedia.org/wiki/List_of_international_goals_scored_by_Lamine_Yamal",
+    "https://en.wikipedia.org/wiki/Lamine_Yamal",
+    "https://www.beinsports.com/en-us/soccer/articles/lionel-messi-s-titles-with-the-argentina-national-team-2026-10-06"
+  ],
+  "checked": "Dates of birth: Rooney 24 Oct 1985, Yamal 13 Jul 2007; Rooney's last Euro 2004 game (24 Jun 2004) = 18 years 8 months, Yamal hit the same age on 13 Mar 2026. Rooney's nine England goals by then with cap numbers (two v Switzerland, two v Croatia at Euro 2004; seventeenth cap v Portugal) from his goals list; Yamal's goals with cap numbers (goal 1 cap 1, goal 2 cap 3, goal 3 cap 13 v France at Euro 2024, goal 4 cap 19, goals 5-6 cap 20 v France June 2025, goal 7 June 2026) from his goals list and article. Euro 2024 win from Spain/UEFA records. Assists and minutes for international games could not be confirmed, so the twist uses games. Yamal's exact cap count on 13 Mar 2026 not stated (not confirmable).",
+  "clubs": {
+    "eng": { "name": "England", "short": "ENG", "c1": "#ffffff", "c2": "#1d2c5e", "pattern": "plain" },
+    "esp": { "name": "Spain", "short": "ESP", "c1": "#c60b1e", "c2": "#ffc400", "pattern": "plain" },
+    "sui": { "name": "Switzerland", "short": "SUI", "c1": "#d52b1e", "c2": "#ffffff", "pattern": "plain" },
+    "cro": { "name": "Croatia", "short": "CRO", "c1": "#ffffff", "c2": "#e30a17", "pattern": "hoops" },
+    "fra": { "name": "France", "short": "FRA", "c1": "#21304d", "c2": "#ffffff", "pattern": "plain" }
+  },
+  "people": {
+    "rooney": { "name": "Wayne Rooney", "skin": "pink", "hair": ["buzz", "#6b4a2e"], "beard": "none", "kit": "eng" },
+    "yamal": { "name": "Lamine Yamal", "skin": "brown", "hair": ["curlytop", "#14110f"], "beard": "none", "kit": "esp" }
+  },
+  "lines": [
+    { "text": "Euro twenty oh-four. An eighteen-year-old from Everton terrifies the whole of Europe.", "scene": { "type": "title", "heading": "WAYNE ROONEY", "sub": "England · Euro 2004", "pill": "AGE-MATCH", "person": "rooney" } },
+    { "text": "Wayne Rooney scored twice against Switzerland, then twice more against Croatia.", "scene": { "type": "list", "title": "Rooney at Euro 2004", "rows": [ { "name": "v Switzerland", "value": "2 goals", "club": "sui", "hl": true }, { "name": "v Croatia", "value": "2 goals", "club": "cro", "hl": true }, { "name": "v Portugal (QF)", "value": "Off injured", "club": "eng" } ] } },
+    { "text": "Then he broke a bone in his foot against Portugal, and England went out on penalties.", "scene": { "type": "stamp", "text": "INJURED", "person": "rooney", "color": "red" } },
+    { "text": "On that last day he was eighteen years and eight months old.", "scene": { "type": "stats", "title": "Rooney on 24 June 2004", "items": [ { "n": "18y 8m", "l": "age" }, { "n": "17", "l": "England caps" }, { "n": "9", "l": "England goals" } ], "person": "rooney" } },
+    { "text": "So where was Lamine Yamal at exactly the same age? That's March twenty twenty-six.", "scene": { "type": "person", "person": "yamal", "label": "18 years 8 months: March 2026", "mood": "happy" } },
+    { "text": "Six goals for Spain. Fewer than Rooney's nine.", "scene": { "type": "versus", "title": "England/Spain goals at 18 years 8 months", "left": { "person": "rooney", "label": "Rooney", "value": "9" }, "right": { "person": "yamal", "label": "Yamal", "value": "6" } } },
+    { "text": "But Yamal already had the thing Rooney never won. A European Championship.", "scene": { "type": "trophies", "items": [ { "kind": "euro", "label": "Euro 2024" } ], "person": "yamal" } },
+    { "text": "And that scream of a goal against France made him the youngest scorer in Euros history. Sixteen years old.", "scene": { "type": "text", "heading": "EURO 2024 SEMI-FINAL", "body": "Yamal scores against France, four days before his 17th birthday. Rooney had briefly held that record in 2004." } },
+    { "text": "Now the twist. Same number of games.", "scene": { "type": "whatif", "title": "After 17 international games", "real": { "label": "Rooney", "value": "9 goals" }, "alt": { "label": "Yamal", "value": "3 goals" } } },
+    { "text": "After seventeen caps, Rooney had nine goals. Yamal had three.", "scene": { "type": "stats", "title": "Goals after 17 caps", "items": [ { "n": "9", "l": "Rooney" }, { "n": "3", "l": "Yamal" } ] } },
+    { "text": "Rooney was the finisher. Yamal is the creator. Different jobs, different numbers.", "scene": { "type": "quote", "person": "yamal", "text": "I'll take the trophy." } },
+    { "text": "So who was the better eighteen-year-old? Rooney or Yamal? Tell me in the comments.", "scene": { "type": "versus", "title": "The better 18-year-old?", "left": { "person": "rooney", "label": "Goals", "value": "9" }, "right": { "person": "yamal", "label": "Trophies", "value": "1" } } },
+    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+  ]
+}

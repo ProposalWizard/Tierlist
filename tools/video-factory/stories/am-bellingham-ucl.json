@@ -1,0 +1,265 @@
+{
+  "id": "am-bellingham-ucl",
+  "series": "Age-match",
+  "title": "Bellingham in Athens v Zidane, Gerrard and Lampard at the same age",
+  "sources": [
+    "https://www.uefa.com/uefachampionsleague/news/02a8-2176fa83582b-d99f0b27f405-1000--2026-27-uefa-champions-league-all-the-league-phase-fixtures/",
+    "https://foot-africa.com/en/news/champions-league-2026-27-real-madrids-complete-league-phase-schedule-1333831/",
+    "https://sportsdigest.in/real-madrid-champions-league-2026-27-schedule/203768/",
+    "https://en.wikipedia.org/wiki/Jude_Bellingham",
+    "https://en.wikipedia.org/wiki/Zinedine_Zidane",
+    "https://en.wikipedia.org/wiki/Steven_Gerrard",
+    "https://en.wikipedia.org/wiki/Frank_Lampard"
+  ],
+  "checked": "Real Madrid's next Champions League game: AEK Athens away, Wed 4 Nov 2026 (UEFA + Foot Africa + Sportsdigest). Bellingham born 29 Jun 2003 = 23 years 128 days that day; 231 league games, 54 league goals to 1 Nov 2026; 2024 Champions League winner (Wikipedia). Same age, from each legend's Wikipedia career table: Zidane 29 Oct 1995: 28 league goals in 167 games before 1995-96; Gerrard 5 Oct 2003: 16 PL goals in 136 games before 2003-04; Lampard 26 Oct 2001: 24 PL goals in 148 PL games before 2001-02. Those three dates fall early in a season, so their totals are 'by the start of that season' and shown with a plus. Zidane's 2002, Gerrard's 2005 and Lampard's 2012 Champions League wins are well known. Assists and minutes not confirmable for the 1990s, so goals and games are used. Career tables have one source each.",
+  "clubs": {
+    "rma": {
+      "name": "Real Madrid",
+      "short": "RMA",
+      "c1": "#ffffff",
+      "c2": "#febe10",
+      "pattern": "plain"
+    },
+    "bor": {
+      "name": "Bordeaux",
+      "short": "FCGB",
+      "c1": "#0a1e3f",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "liv": {
+      "name": "Liverpool",
+      "short": "LFC",
+      "c1": "#c8102e",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "che": {
+      "name": "Chelsea",
+      "short": "CFC",
+      "c1": "#034694",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "aek": {
+      "name": "AEK Athens",
+      "short": "AEK",
+      "c1": "#f2c500",
+      "c2": "#000000",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "jude": {
+      "name": "Jude Bellingham",
+      "skin": "brown",
+      "hair": [
+        "crop",
+        "#14110f"
+      ],
+      "beard": "stubble",
+      "beardCol": "#14110f",
+      "kit": "rma"
+    },
+    "zidane": {
+      "name": "Zinedine Zidane",
+      "skin": "olive",
+      "hair": [
+        "crop",
+        "#3a2a1c"
+      ],
+      "beard": "none",
+      "kit": "bor"
+    },
+    "gerrard": {
+      "name": "Steven Gerrard",
+      "skin": "pink",
+      "hair": [
+        "crop",
+        "#8a6a45"
+      ],
+      "beard": "none",
+      "kit": "liv"
+    },
+    "lampard": {
+      "name": "Frank Lampard",
+      "skin": "light",
+      "hair": [
+        "side",
+        "#5a3a22"
+      ],
+      "beard": "none",
+      "kit": "che"
+    }
+  },
+  "lines": [
+    {
+      "text": "On the fourth of November in Athens, Jude Bellingham is twenty-three years and one hundred and twenty-eight days old.",
+      "scene": {
+        "type": "title",
+        "heading": "JUDE BELLINGHAM",
+        "sub": "AEK Athens v Real Madrid · 4 Nov 2026",
+        "pill": "AGE-MATCH",
+        "person": "jude"
+      }
+    },
+    {
+      "text": "So let's line him up against the great goal-scoring midfielders at exactly the same age.",
+      "scene": {
+        "type": "person",
+        "person": "jude",
+        "label": "23 years, 128 days",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Bellingham so far: fifty-four league goals in two hundred and thirty-one league games.",
+      "scene": {
+        "type": "stats",
+        "title": "Bellingham, all league games",
+        "items": [
+          {
+            "n": "54",
+            "l": "league goals"
+          },
+          {
+            "n": "231",
+            "l": "league games"
+          }
+        ],
+        "person": "jude"
+      }
+    },
+    {
+      "text": "Zidane at that age was still at Bordeaux. Twenty-eight league goals, plus a few that autumn.",
+      "scene": {
+        "type": "person",
+        "person": "zidane",
+        "label": "Bordeaux, October 1995",
+        "mood": "flat"
+      }
+    },
+    {
+      "text": "Steven Gerrard at that age: sixteen Premier League goals. Frank Lampard: twenty-four.",
+      "scene": {
+        "type": "versus",
+        "title": "Same age: 23 years, 128 days",
+        "left": {
+          "person": "gerrard",
+          "label": "Gerrard",
+          "value": "16+"
+        },
+        "right": {
+          "person": "lampard",
+          "label": "Lampard",
+          "value": "24+"
+        }
+      }
+    },
+    {
+      "text": "Put them together and Bellingham is miles clear.",
+      "scene": {
+        "type": "list",
+        "title": "League goals at 23y 128d",
+        "rows": [
+          {
+            "name": "Jude Bellingham",
+            "value": "54",
+            "club": "rma",
+            "hl": true
+          },
+          {
+            "name": "Zinedine Zidane",
+            "value": "28+",
+            "club": "bor"
+          },
+          {
+            "name": "Frank Lampard",
+            "value": "24+",
+            "club": "che"
+          },
+          {
+            "name": "Steven Gerrard",
+            "value": "16+",
+            "club": "liv"
+          }
+        ]
+      }
+    },
+    {
+      "text": "But he's also played more. So match the games.",
+      "scene": {
+        "type": "stamp",
+        "text": "MATCH THE GAMES",
+        "person": "jude",
+        "color": "yellow"
+      }
+    },
+    {
+      "text": "Per game, Bellingham scores roughly once every four league games. Zidane and Lampard, once every six. Gerrard, once every eight or nine.",
+      "scene": {
+        "type": "whatif",
+        "title": "League games per goal",
+        "real": {
+          "label": "Bellingham",
+          "value": "about 4"
+        },
+        "alt": {
+          "label": "Gerrard",
+          "value": "about 8.5"
+        }
+      }
+    },
+    {
+      "text": "And the trophy that matters here? Bellingham won the Champions League before he turned twenty-one.",
+      "scene": {
+        "type": "trophies",
+        "items": [
+          {
+            "kind": "bigears",
+            "label": "Champions League 2024"
+          }
+        ],
+        "person": "jude"
+      }
+    },
+    {
+      "text": "Gerrard had to wait until Istanbul, two thousand five. Zidane until twenty oh-two. Lampard until twenty twelve.",
+      "scene": {
+        "type": "timeline",
+        "items": [
+          {
+            "year": "2002",
+            "label": "Zidane wins it, aged 29"
+          },
+          {
+            "year": "2005",
+            "label": "Gerrard wins it, aged 24"
+          },
+          {
+            "year": "2012",
+            "label": "Lampard wins it, aged 33"
+          },
+          {
+            "year": "2024",
+            "label": "Bellingham wins it, aged 20"
+          }
+        ]
+      }
+    },
+    {
+      "text": "So is Bellingham already ahead of all three? Tell me in the comments.",
+      "scene": {
+        "type": "quote",
+        "person": "jude",
+        "text": "Hey Jude? I'm only twenty-three."
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

@@ -235,7 +235,7 @@ function EmptyShelf() {
   return (
     <div className="grid grid-cols-4 gap-1.5">
       {[0, 1, 2, 3].map((k) => (
-        <div key={k} className="h-[66px]" style={{ background: "rgba(0,0,0,.5)", boxShadow: "inset 0 -3px 0 rgba(120,72,24,.5), inset 0 0 0 1px rgba(255,255,255,.05)" }} />
+        <div key={k} className="sk-shelf h-[66px]" style={{ background: "rgba(0,0,0,.5)", boxShadow: "inset 0 -3px 0 rgba(120,72,24,.5), inset 0 0 0 1px rgba(255,255,255,.05)" }} />
       ))}
     </div>
   );
@@ -319,7 +319,7 @@ function Records({ career, glow, hallRecords }: { career: CareerState; glow: str
         <Row icon="🎁" label="Most assists in a game" value={b.mostAssistsMatch ? String(b.mostAssistsMatch.assists) : "—"} sub={b.mostAssistsMatch ? `v ${short(b.mostAssistsMatch.opponent)} · ${s(b.mostAssistsMatch.season)}` : undefined} />
         <Row icon="⏱️" label="Fastest goal" value={b.fastestGoal ? `${b.fastestGoal.minute}'` : "—"} sub={b.fastestGoal ? `v ${short(b.fastestGoal.opponent)} · ${s(b.fastestGoal.season)}` : undefined} />
         <Row icon="💥" label="Biggest win" value={b.biggestWin ? `${b.biggestWin.us}–${b.biggestWin.them}` : "—"} sub={b.biggestWin ? `v ${short(b.biggestWin.opponent)} · ${s(b.biggestWin.season)}` : undefined} />
-        <Row icon="🔥" label="Longest scoring run" value={career.feats?.bestScoringRun ? `${career.feats.bestScoringRun} games` : "—"} sub={career.feats?.bestScoringRunSeason ? s(career.feats.bestScoringRunSeason) : undefined} />
+        <Row icon="🔥" label="Longest scoring run" value={career.feats?.bestScoringRun ? `${career.feats.bestScoringRun} game${career.feats.bestScoringRun === 1 ? "" : "s"}` : "—"} sub={career.feats?.bestScoringRunSeason ? s(career.feats.bestScoringRunSeason) : undefined} />
         <Row icon="🧢" label="Caps" value={String(career.caps ?? 0)} sub={(career.internationalGoals ?? 0) > 0 ? `${career.internationalGoals} international goals` : undefined} />
       </Fold>
       <Fold id="real" glow={glow} title="Real-world records" right={<span className="text-[10px] font-black text-white/60">{beaten} / {RECORDS.length}</span>}>

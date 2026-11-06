@@ -1,0 +1,641 @@
+{
+  "competition": "UEFA Super Cup",
+  "slug": "super-cup",
+  "kind": "cup",
+  "lineage_note": "European Super Cup: European Cup/Champions League winners v Cup Winners' Cup winners (1973-1999), then v UEFA Cup/Europa League winners (2000 on). Season label = the year it was played (1973's edition was played in January 1974). First official edition 1973; the 1972 Ajax v Rangers matches were unofficial (UEFA refused to sanction them) and are not included. Two-legged until 1997 (single match in 1984, 1986, 1991 by agreement); single match from 1998. Not held 1974, 1981, 1985. top_scorer and top_assister do not apply to a one-match final and are null. player_of_season holds UEFA's official man of the match, given without a break from 2010 (2009 had no award per UEFA's press kit).",
+  "history_from": "1973",
+  "history_to": "2026",
+  "field_from": {
+    "runner_up": "1973",
+    "final_score": "1973",
+    "top_scorer": null,
+    "top_assister": null,
+    "player_of_season": "2010"
+  },
+  "player_of_season_award": "Not a season award: UEFA Super Cup official Man of the Match / Player of the Match (continuous from 2010; none in 2009).",
+  "sources": [
+    "https://en.wikipedia.org/wiki/List_of_UEFA_Super_Cup_matches",
+    "https://www.rsssf.org/tabless/sup.html",
+    "https://en.wikipedia.org/wiki/2010_UEFA_Super_Cup (and each year's page to 2026_UEFA_Super_Cup)",
+    "https://www.uefa.com/uefasupercup/news/0278-15d62d438417-a8b8e610f17c-1000--casemiro-named-2022-super-cup-player-of-the-match",
+    "https://uefa.com/uefasupercup/news/0284-18c087a8a3cc-1bb27189a893-1000--cole-palmer-named-2023-uefa-super-cup-player-of-the-match"
+  ],
+  "seasons": [
+    {
+      "season": "1973",
+      "status": "played",
+      "winner": "Ajax",
+      "runner_up": "Milan",
+      "final_score": "6-1 agg.",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "First official edition (Ajax v Milan, played January 1974). The 1972 Ajax v Rangers 'Super Cup' (Ajax won 6-3 agg.) was unofficial: UEFA did not sanction it. Two-legged: first leg 0-1, second leg 6-0 (winner's score first)."
+    },
+    {
+      "season": "1974",
+      "status": "not_held",
+      "notes": "Not held: Bayern Munich (European Cup) and 1. FC Magdeburg (Cup Winners' Cup) never played it (sources differ on the reason: no agreed date / political reasons).",
+      "winner": null,
+      "runner_up": null,
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1975",
+      "status": "played",
+      "winner": "Dynamo Kyiv",
+      "runner_up": "Bayern Munich",
+      "final_score": "3-0 agg.",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two-legged: first leg 1-0, second leg 2-0 (winner's score first)."
+    },
+    {
+      "season": "1976",
+      "status": "played",
+      "winner": "Anderlecht",
+      "runner_up": "Bayern Munich",
+      "final_score": "5-3 agg.",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two-legged: first leg 1-2, second leg 4-1 (winner's score first)."
+    },
+    {
+      "season": "1977",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Hamburger SV",
+      "final_score": "7-1 agg.",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two-legged: first leg 1-1, second leg 6-0 (winner's score first)."
+    },
+    {
+      "season": "1978",
+      "status": "played",
+      "winner": "Anderlecht",
+      "runner_up": "Liverpool",
+      "final_score": "4-3 agg.",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two-legged: first leg 3-1, second leg 1-2 (winner's score first)."
+    },
+    {
+      "season": "1979",
+      "status": "played",
+      "winner": "Nottingham Forest",
+      "runner_up": "Barcelona",
+      "final_score": "2-1 agg.",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two-legged: first leg 1-0, second leg 1-1 (winner's score first)."
+    },
+    {
+      "season": "1980",
+      "status": "played",
+      "winner": "Valencia",
+      "runner_up": "Nottingham Forest",
+      "final_score": "2-2 agg. (away goals)",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two-legged: first leg 1-2, second leg 1-0 (winner's score first)."
+    },
+    {
+      "season": "1981",
+      "status": "not_held",
+      "notes": "Not held: Liverpool and Dinamo Tbilisi could not agree a date.",
+      "winner": null,
+      "runner_up": null,
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1982",
+      "status": "played",
+      "winner": "Aston Villa",
+      "runner_up": "Barcelona",
+      "final_score": "3-1 agg.",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two-legged: first leg 0-1, second leg 3-0 (a.e.t.) (winner's score first)."
+    },
+    {
+      "season": "1983",
+      "status": "played",
+      "winner": "Aberdeen",
+      "runner_up": "Hamburger SV",
+      "final_score": "2-0 agg.",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two-legged: first leg 0-0, second leg 2-0 (winner's score first)."
+    },
+    {
+      "season": "1984",
+      "status": "played",
+      "winner": "Juventus",
+      "runner_up": "Liverpool",
+      "final_score": "2-0",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "One match was played in 1984 by agreement between Liverpool and Juventus managers due to both clubs experiencing fixture congestion."
+    },
+    {
+      "season": "1985",
+      "status": "not_held",
+      "notes": "Not held: Juventus v Everton was cancelled; English clubs were banned from Europe after Heysel.",
+      "winner": null,
+      "runner_up": null,
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1986",
+      "status": "played",
+      "winner": "Steaua București",
+      "runner_up": "Dynamo Kyiv",
+      "final_score": "1-0",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Due to political circumstances, Steaua București and Dynamo Kyiv agreed to contest the 1986 competition on a one-off basis."
+    },
+    {
+      "season": "1987",
+      "status": "played",
+      "winner": "Porto",
+      "runner_up": "Ajax",
+      "final_score": "2-0 agg.",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two-legged: first leg 1-0, second leg 1-0 (winner's score first)."
+    },
+    {
+      "season": "1988",
+      "status": "played",
+      "winner": "KV Mechelen",
+      "runner_up": "PSV Eindhoven",
+      "final_score": "3-1 agg.",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two-legged: first leg 3-0, second leg 0-1 (winner's score first)."
+    },
+    {
+      "season": "1989",
+      "status": "played",
+      "winner": "Milan",
+      "runner_up": "Barcelona",
+      "final_score": "2-1 agg.",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two-legged: first leg 1-1, second leg 1-0 (winner's score first)."
+    },
+    {
+      "season": "1990",
+      "status": "played",
+      "winner": "Milan",
+      "runner_up": "Sampdoria",
+      "final_score": "3-1 agg.",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two-legged: first leg 1-1, second leg 2-0 (winner's score first)."
+    },
+    {
+      "season": "1991",
+      "status": "played",
+      "winner": "Manchester United",
+      "runner_up": "Red Star Belgrade",
+      "final_score": "1-0",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "One match was played in 1991 due to political circumstances in Yugoslavia."
+    },
+    {
+      "season": "1992",
+      "status": "played",
+      "winner": "Barcelona",
+      "runner_up": "Werder Bremen",
+      "final_score": "3-2 agg.",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two-legged: first leg 1-1, second leg 2-1 (winner's score first)."
+    },
+    {
+      "season": "1993",
+      "status": "played",
+      "winner": "Parma",
+      "runner_up": "Milan",
+      "final_score": "2-1 agg.",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two-legged: first leg 0-1, second leg 2-0 (a.e.t.) (winner's score first). European champions Marseille were suspended due to a bribery scandal, so Milan took their place as runner-up in the European Cup."
+    },
+    {
+      "season": "1994",
+      "status": "played",
+      "winner": "Milan",
+      "runner_up": "Arsenal",
+      "final_score": "2-0 agg.",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two-legged: first leg 0-0, second leg 2-0 (winner's score first)."
+    },
+    {
+      "season": "1995",
+      "status": "played",
+      "winner": "Ajax",
+      "runner_up": "Zaragoza",
+      "final_score": "5-1 agg.",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two-legged: first leg 1-1, second leg 4-0 (winner's score first)."
+    },
+    {
+      "season": "1996",
+      "status": "played",
+      "winner": "Juventus",
+      "runner_up": "Paris Saint-Germain",
+      "final_score": "9-2 agg.",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two-legged: first leg 6-1, second leg 3-1 (winner's score first)."
+    },
+    {
+      "season": "1997",
+      "status": "played",
+      "winner": "Barcelona",
+      "runner_up": "Borussia Dortmund",
+      "final_score": "3-1 agg.",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Two-legged: first leg 2-0, second leg 1-1 (winner's score first)."
+    },
+    {
+      "season": "1998",
+      "status": "played",
+      "winner": "Chelsea",
+      "runner_up": "Real Madrid",
+      "final_score": "1-0",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "1999",
+      "status": "played",
+      "winner": "Lazio",
+      "runner_up": "Manchester United",
+      "final_score": "1-0",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2000",
+      "status": "played",
+      "winner": "Galatasaray",
+      "runner_up": "Real Madrid",
+      "final_score": "2-1 (a.e.t., golden goal)",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2001",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Bayern Munich",
+      "final_score": "3-2",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2002",
+      "status": "played",
+      "winner": "Real Madrid",
+      "runner_up": "Feyenoord",
+      "final_score": "3-1",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2003",
+      "status": "played",
+      "winner": "Milan",
+      "runner_up": "Porto",
+      "final_score": "1-0",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2004",
+      "status": "played",
+      "winner": "Valencia",
+      "runner_up": "Porto",
+      "final_score": "2-1",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2005",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "CSKA Moscow",
+      "final_score": "3-1 (a.e.t.)",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2006",
+      "status": "played",
+      "winner": "Sevilla",
+      "runner_up": "Barcelona",
+      "final_score": "3-0",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2007",
+      "status": "played",
+      "winner": "Milan",
+      "runner_up": "Sevilla",
+      "final_score": "3-1",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2008",
+      "status": "played",
+      "winner": "Zenit Saint Petersburg",
+      "runner_up": "Manchester United",
+      "final_score": "2-1",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2009",
+      "status": "played",
+      "winner": "Barcelona",
+      "runner_up": "Shakhtar Donetsk",
+      "final_score": "1-0 (a.e.t.)",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2010",
+      "status": "played",
+      "winner": "Atlético Madrid",
+      "runner_up": "Inter Milan",
+      "final_score": "2-0",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": {
+        "name": "José Antonio Reyes",
+        "team": "Atlético Madrid"
+      }
+    },
+    {
+      "season": "2011",
+      "status": "played",
+      "winner": "Barcelona",
+      "runner_up": "Porto",
+      "final_score": "2-0",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Andrés Iniesta",
+        "team": "Barcelona"
+      }
+    },
+    {
+      "season": "2012",
+      "status": "played",
+      "winner": "Atlético Madrid",
+      "runner_up": "Chelsea",
+      "final_score": "4-1",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Radamel Falcao",
+        "team": "Atlético Madrid"
+      }
+    },
+    {
+      "season": "2013",
+      "status": "played",
+      "winner": "Bayern Munich",
+      "runner_up": "Chelsea",
+      "final_score": "2-2 (a.e.t., 5-4 pens)",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Franck Ribéry",
+        "team": "Bayern Munich"
+      }
+    },
+    {
+      "season": "2014",
+      "status": "played",
+      "winner": "Real Madrid",
+      "runner_up": "Sevilla",
+      "final_score": "2-0",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Cristiano Ronaldo",
+        "team": "Real Madrid"
+      }
+    },
+    {
+      "season": "2015",
+      "status": "played",
+      "winner": "Barcelona",
+      "runner_up": "Sevilla",
+      "final_score": "5-4 (a.e.t.)",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Lionel Messi",
+        "team": "Barcelona"
+      }
+    },
+    {
+      "season": "2016",
+      "status": "played",
+      "winner": "Real Madrid",
+      "runner_up": "Sevilla",
+      "final_score": "3-2 (a.e.t.)",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Sergio Ramos",
+        "team": "Real Madrid"
+      }
+    },
+    {
+      "season": "2017",
+      "status": "played",
+      "winner": "Real Madrid",
+      "runner_up": "Manchester United",
+      "final_score": "2-1",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Isco",
+        "team": "Real Madrid"
+      }
+    },
+    {
+      "season": "2018",
+      "status": "played",
+      "winner": "Atlético Madrid",
+      "runner_up": "Real Madrid",
+      "final_score": "4-2 (a.e.t.)",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Diego Costa",
+        "team": "Atlético Madrid"
+      }
+    },
+    {
+      "season": "2019",
+      "status": "played",
+      "winner": "Liverpool",
+      "runner_up": "Chelsea",
+      "final_score": "2-2 (a.e.t., 5-4 pens)",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Sadio Mané",
+        "team": "Liverpool"
+      }
+    },
+    {
+      "season": "2020",
+      "status": "played",
+      "winner": "Bayern Munich",
+      "runner_up": "Sevilla",
+      "final_score": "2-1 (a.e.t.)",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Thomas Müller",
+        "team": "Bayern Munich"
+      }
+    },
+    {
+      "season": "2021",
+      "status": "played",
+      "winner": "Chelsea",
+      "runner_up": "Villarreal",
+      "final_score": "1-1 (a.e.t., 6-5 pens)",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Gerard Moreno",
+        "team": "Villarreal"
+      }
+    },
+    {
+      "season": "2022",
+      "status": "played",
+      "winner": "Real Madrid",
+      "runner_up": "Eintracht Frankfurt",
+      "final_score": "2-0",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Casemiro",
+        "team": "Real Madrid"
+      }
+    },
+    {
+      "season": "2023",
+      "status": "played",
+      "winner": "Manchester City",
+      "runner_up": "Sevilla",
+      "final_score": "1-1 (5-4 pens)",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Cole Palmer",
+        "team": "Manchester City"
+      }
+    },
+    {
+      "season": "2024",
+      "status": "played",
+      "winner": "Real Madrid",
+      "runner_up": "Atalanta",
+      "final_score": "2-0",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Jude Bellingham",
+        "team": "Real Madrid"
+      }
+    },
+    {
+      "season": "2025",
+      "status": "played",
+      "winner": "Paris Saint-Germain",
+      "runner_up": "Tottenham Hotspur",
+      "final_score": "2-2 (4-3 pens)",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Ousmane Dembélé",
+        "team": "Paris Saint-Germain"
+      }
+    },
+    {
+      "season": "2026",
+      "status": "played",
+      "winner": "Paris Saint-Germain",
+      "runner_up": "Aston Villa",
+      "final_score": "2-1",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Désiré Doué",
+        "team": "Paris Saint-Germain"
+      }
+    }
+  ]
+}

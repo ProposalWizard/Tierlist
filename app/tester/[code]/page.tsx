@@ -17,6 +17,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { roleOf } from "@/lib/admin";
 import { findLink, normaliseTesterCode, outcomeForLink, testerLinkPath, type ClaimOutcome, type TesterClient } from "@/lib/testerLinks";
 import ClaimButton from "./ClaimButton";
+import { GAME_PATH } from "@/lib/star/gamePath";
 
 export const metadata: Metadata = {
   title: "Tester access",
@@ -87,7 +88,7 @@ export default async function TesterLinkPage({ params }: { params: { code: strin
       <Card title={m.title}>
         <p>{m.body}</p>
         {blocked === "already" && (
-          <Link href="/star-dev" className="mt-4 inline-block rounded-xl bg-white/10 px-5 py-2.5 text-sm font-black text-white">Open the career</Link>
+          <Link href={GAME_PATH} className="mt-4 inline-block rounded-xl bg-white/10 px-5 py-2.5 text-sm font-black text-white">Open the career</Link>
         )}
       </Card>
     );

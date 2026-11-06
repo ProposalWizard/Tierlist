@@ -121,8 +121,11 @@ export const SCORE_LINES: Record<Exclude<ScoreTag, "none">, CommentaryLine[]> = 
   consolation: [L("s-co1", "A goal back, but is it too little, too late?")],
 };
 
+/** What the co-commentator's replay lines are sorted by. */
+export type ReplayKey = "generic" | "header" | "long_range" | "penalty" | "free_kick" | "rebound" | "one_on_one" | "saves";
+
 /** The co-commentator over the replay. */
-export const REPLAY_LINES: Record<"generic" | "header" | "long_range" | "penalty" | "free_kick" | "rebound" | "one_on_one" | "saves", CommentaryLine[]> = {
+export const REPLAY_LINES: Record<ReplayKey, CommentaryLine[]> = {
   generic: [
     C("g1", "Look at the technique there. Really, really good."),
     C("g2", "He's picked his spot. The keeper's got no chance."),
@@ -213,6 +216,24 @@ export function lateKindOf(minute: number, isYou: boolean, us: number, them: num
   return undefined;
 }
 
+/**
+ * One commentary team's lines, in the shape planAudio reads. DEFAULT_BANK is
+ * the lines above (the one team the game had until 31 Oct 2026); the
+ * "Different commentators" teams are in commentators.ts.
+ */
+export interface CommentaryBank {
+  calls: Record<FinishTag, CommentaryLine[]>;
+  scoreLines: Record<Exclude<ScoreTag, "none">, CommentaryLine[]>;
+  replayLines: Record<ReplayKey, CommentaryLine[]>;
+  reelLines: CommentaryLine[];
+  lateCalls: Record<LateKind, CommentaryLine[]>;
+  lateReplayLines: CommentaryLine[];
+}
+export const DEFAULT_BANK: CommentaryBank = {
+  calls: CALLS, scoreLines: SCORE_LINES, replayLines: REPLAY_LINES, reelLines: REEL_LINES,
+  lateCalls: LATE_CALLS, lateReplayLines: LATE_REPLAY_LINES,
+};
+
 /** Every line, for the generator and the Sound Board. */
 export function allCommentaryLines(): CommentaryLine[] {
   return [
@@ -239,17 +260,17 @@ export function pickLine(list: CommentaryLine[], key: string, avoid: string[] = 
 }
 
 /** The goal call: a line for this finish two times in three, else a general one. */
-export function pickCall(finish: FinishTag, key: string, avoid: string[] = []): CommentaryLine {
-  const own = CALLS[finish];
+export function pickCall(finish: FinishTag, key: string, avoid: string[] = [], bank: CommentaryBank = DEFAULT_BANK): CommentaryLine {
+  const own = bank.calls[finish] ?? [];
   const useOwn = finish !== "generic" && own.length > 0 && hash(`${key}:own`) % 3 !== 0;
-  return pickLine(useOwn ? own : CALLS.generic, key, avoid);
+  return pickLine(useOwn ? own : bank.calls.generic, key, avoid);
 }
 
-export function pickReplayLine(finish: FinishTag, saves: number, key: string, avoid: string[] = []): CommentaryLine {
-  if (saves >= 2 && hash(`${key}:saves`) % 2 === 0) return pickLine(REPLAY_LINES.saves, key, avoid);
-  const own = (REPLAY_LINES as Record<string, CommentaryLine[]>)[finish];
+export function pickReplayLine(finish: FinishTag, saves: number, key: string, avoid: string[] = [], bank: CommentaryBank = DEFAULT_BANK): CommentaryLine {
+  if (saves >= 2 && hash(`${key}:saves`) % 2 === 0) return pickLine(bank.replayLines.saves, key, avoid);
+  const own = (bank.replayLines as Record<string, CommentaryLine[]>)[finish];
   const useOwn = !!own && hash(`${key}:rown`) % 2 === 0;
-  return pickLine(useOwn ? own : REPLAY_LINES.generic, key, avoid);
+  return pickLine(useOwn ? own : bank.replayLines.generic, key, avoid);
 }
 
 /** Seconds each line lasts (filled in by the generator; a guess if missing). */

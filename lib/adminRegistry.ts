@@ -41,7 +41,7 @@ export interface AdminPage {
  * `home` is where the game's tab opens; `play` is the game as players see it.
  */
 export const GAMES = [
-  { key: "rbd", name: "Road to Ballon d'Or", short: "Ballon d'Or", home: "/admin/star", play: "/star-dev" },
+  { key: "rbd", name: "Road to Ballon d'Or", short: "Ballon d'Or", home: "/admin/star", play: "/road-to-ballon-dor" },
   { key: "web", name: "Website games", short: "Website", home: "/admin/star/game/web", play: "/" },
   { key: "studio", name: "Studio", short: "Studio", home: "/admin/star/game/studio", play: null },
   // Marketing & Production (Harry, 21 Oct 2026: "its own whole tab"; decision 1 in
@@ -132,6 +132,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-goal-clips-dev", "Goal videos", "Record a goal and turn it into a video with sound", "rbd", "career", "Leo", "live", "browser", "team"),
   P("/star-season-reel-dev", "Your season video", "The end-of-season reel of every goal, on a made-up season", "rbd", "career", "Leo", "live", "none", "team"),
   P("/star-dev/media-lab", "Media lab", "Media-feed graphics bench", "rbd", "career", "Harry", "live", "none", "team"),
+  P("/admin/social", "Social Studio", "Run the in-game social media: edit every post, write new ones, accounts, ideas, goal videos", "rbd", "career", "Leo", "live", "browser", "team"),
   P("/star-training-dev", "Training levels", "Play any training game at any level", "rbd", "career", "Mikey", "live", "none", "team"),
   P("/star-gallery-dev", "Scenario gallery", "Every chance as a picture; save, commit", "rbd", "chances", "Harry", "live", "repo", "admin"),
   P("/star-highlights-dev", "Infinite Highlights", "Flick through chances and fix a bad one on the spot", "rbd", "chances", "Harry", "live", "repo", "admin"),

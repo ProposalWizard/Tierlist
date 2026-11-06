@@ -33,6 +33,7 @@ import { Governor, governedPixelRatio } from "../three3d/governor";
 import { installShadowCache } from "../three3d/shadowCache";
 import { cullSkinned } from "../three3d/cullPeople";
 import { withMeshopt } from "../three3d/meshopt";
+import { makeRealBall } from "../three3d/realBall";
 import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, setToonBuild, setPeople3dOutlineRes, type Person3D, type PersonLook } from "../people3d";
 import { people3dLook } from "../look3d";
 import { matchPlayerStyle, matchPlayersStyleLook } from "./toon/matchLook";
@@ -395,14 +396,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const ball = new THREE.Group();
   const handA = new THREE.Vector3(), handB = new THREE.Vector3();
   {
-    const s = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 24, 16), new THREE.MeshStandardMaterial({ color: "#fbfbf8", roughness: 0.45 }));
+    // the real ball: 12 black pentagons, 20 white hexagons (three3d/realBall.ts)
+    const s = makeRealBall(THREE, BALL_R);
     s.castShadow = prof.shadows; ball.add(s);
-    const patch = new THREE.MeshStandardMaterial({ color: "#1d1f24", roughness: 0.5 });
-    for (const [a, b] of [[0, 0], [1.2, 0.9], [2.4, -0.7], [3.6, 1.1], [4.8, -0.2], [0.6, -1.3]]) {
-      const p = new THREE.Mesh(new THREE.CircleGeometry(0.038, 5), patch);
-      const v = new THREE.Vector3(Math.cos(a) * Math.cos(b), Math.sin(b), Math.sin(a) * Math.cos(b));
-      p.position.copy(v.multiplyScalar(0.1105)); p.lookAt(v.clone().multiplyScalar(2)); ball.add(p);
-    }
   }
   root.add(ball);
   const ballShadow = new THREE.Mesh(new THREE.CircleGeometry(0.16, 24), new THREE.MeshBasicMaterial({ color: "#000000", transparent: true, opacity: 0.32, depthWrite: false }));

@@ -1,0 +1,291 @@
+{
+ "id": "city-haaland-2022",
+ "series": "What if Man City…?",
+ "title": "What if Haaland went to Real Madrid?",
+ "sources": [
+  "https://en.wikipedia.org/wiki/Erling_Haaland",
+  "https://www.skysports.com/football/news/11679/12609563/man-city-confirm-agreement-to-sign-haaland",
+  "https://www.football365.com/news/man-city-announce-agreement-with-dortmund-over-haaland-with-51m-fee-revealed",
+  "https://www.cbssports.com/soccer/news/here-we-go-erling-haaland-transfer-faq-including-release-clause-details-possible-suitors-more",
+  "https://www.sportsmole.co.uk/football/real-madrid/transfer-talk/news/real-madrid-step-up-haaland-pursuit-following-mbappe-setback_482940.html",
+  "https://www.ksat.com/sports/2022/05/21/ap-source-mbappe-to-stay-at-psg-after-rejecting-real-madrid/",
+  "https://ca.sports.yahoo.com/news/kylian-mbappe-signs-psg-contract-192054482.html",
+  "https://www.mancity.com/news/mens/erling-haaland-record-2023-63839723",
+  "https://www.premierleague.com/news/3754464",
+  "https://propakistani.pk/2025/01/17/erling-haaland-commits-to-manchester-city-in-landmark-deal/amp/",
+  "https://www.nbcnews.com/sports/soccer/man-city-guilty-almost-115-financial-charges-premier-league-says-rcna600523",
+  "https://www.mishcon.com/news/manchester-city-independent-commission-publishes-decision-on-premier-league-charges"
+ ],
+ "checked": "Release clause €60m (£51.1m-£51.2m), City announced 10 May 2022 (Wikipedia, Sky, Football365); Real Madrid interest but wary of signing him and Mbappé in one summer (CBS, Sports Mole); Mbappé stayed at PSG on 21 May 2022, Madrid bid rejected (AP, Yahoo); 36 PL goals record, 52 in all, treble (mancity.com, PL, Wikipedia); contract to 2034 signed Jan 2025 (Wikipedia, ProPakistani). The 115 charges cover 2009-10 to 2017-18, so the deal is outside that period. Madrid path imagined.",
+ "clubs": {
+  "mci": {
+   "name": "Manchester City",
+   "short": "MCI",
+   "c1": "#6cabdd",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "bvb": {
+   "name": "Borussia Dortmund",
+   "short": "BVB",
+   "c1": "#fde100",
+   "c2": "#000000",
+   "pattern": "plain"
+  },
+  "rma": {
+   "name": "Real Madrid",
+   "short": "RMA",
+   "c1": "#ffffff",
+   "c2": "#febe10",
+   "pattern": "plain"
+  },
+  "psg": {
+   "name": "Paris Saint-Germain",
+   "short": "PSG",
+   "c1": "#004170",
+   "c2": "#da291c",
+   "pattern": "centre"
+  },
+  "ars": {
+   "name": "Arsenal",
+   "short": "ARS",
+   "c1": "#ef0107",
+   "c2": "#ffffff",
+   "pattern": "sides"
+  }
+ },
+ "people": {
+  "haalandbvb": {
+   "name": "Erling Haaland",
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#e3c98a"
+   ],
+   "beard": "none",
+   "kit": "bvb"
+  },
+  "haaland": {
+   "name": "Erling Haaland",
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#e3c98a"
+   ],
+   "beard": "none",
+   "kit": "mci"
+  },
+  "haalandrma": {
+   "name": "Erling Haaland",
+   "skin": "light",
+   "hair": [
+    "slick",
+    "#e3c98a"
+   ],
+   "beard": "none",
+   "kit": "rma"
+  },
+  "perez": {
+   "name": "Florentino Pérez",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#bdbdbd"
+   ],
+   "beard": "none",
+   "kit": "suit"
+  },
+  "mbappe": {
+   "name": "Kylian Mbappé",
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "none",
+   "kit": "psg"
+  }
+ },
+ "lines": [
+  {
+   "text": "Sixty million euros. That's all it took to sign the most feared striker in the world.",
+   "scene": {
+    "type": "title",
+    "heading": "ERLING HAALAND",
+    "sub": "DORTMUND · 2022",
+    "pill": "WHAT IF?",
+    "person": "haalandbvb"
+   }
+  },
+  {
+   "text": "Haaland's Dortmund contract had a release clause. On the tenth of May twenty twenty-two, City triggered it.",
+   "scene": {
+    "type": "text",
+    "heading": "10 MAY 2022",
+    "body": "Manchester City announce an agreement with Borussia Dortmund for Erling Haaland, paying his €60m release clause."
+   }
+  },
+  {
+   "text": "About fifty-one million pounds. For a striker that age, it looked like a steal.",
+   "scene": {
+    "type": "stats",
+    "title": "THE CLAUSE",
+    "items": [
+     {
+      "n": "€60m",
+      "l": "release clause"
+     },
+     {
+      "n": "£51m",
+      "l": "in pounds"
+     }
+    ],
+    "person": "haaland"
+   }
+  },
+  {
+   "text": "Real Madrid wanted him too. But they were chasing Kylian Mbappé first.",
+   "scene": {
+    "type": "versus",
+    "title": "MADRID'S SUMMER",
+    "left": {
+     "person": "haalandbvb",
+     "label": "Haaland",
+     "value": "Plan B"
+    },
+    "right": {
+     "person": "mbappe",
+     "label": "Mbappé",
+     "value": "Plan A"
+    }
+   }
+  },
+  {
+   "text": "Reports said Madrid didn't want to sign both in the same summer.",
+   "scene": {
+    "type": "person",
+    "person": "perez",
+    "label": "REAL MADRID",
+    "mood": "flat"
+   }
+  },
+  {
+   "text": "Eleven days after City's announcement, Mbappé said no to Madrid and signed a new deal at PSG.",
+   "scene": {
+    "type": "timeline",
+    "items": [
+     {
+      "year": "10 May",
+      "label": "City sign Haaland"
+     },
+     {
+      "year": "21 May",
+      "label": "Mbappé stays at PSG"
+     },
+     {
+      "year": "Summer",
+      "label": "Madrid get neither"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Madrid ended that summer with neither of them.",
+   "scene": {
+    "type": "stamp",
+    "text": "NEITHER",
+    "color": "red",
+    "person": "perez"
+   }
+  },
+  {
+   "text": "Haaland's first season? Thirty-six Premier League goals, a record, fifty-two in all, and the treble.",
+   "scene": {
+    "type": "stats",
+    "title": "2022-23",
+    "items": [
+     {
+      "n": "36",
+      "l": "PL goals (record)"
+     },
+     {
+      "n": "52",
+      "l": "goals in all"
+     },
+     {
+      "n": "3",
+      "l": "trophies: the treble"
+     }
+    ],
+    "person": "haaland"
+   }
+  },
+  {
+   "text": "Now the alternate world. Madrid move for Haaland first.",
+   "scene": {
+    "type": "whatif",
+    "title": "MAY 2022",
+    "real": {
+     "label": "Real world",
+     "value": "Man City"
+    },
+    "alt": {
+     "label": "Alternate world",
+     "value": "Real Madrid"
+    }
+   }
+  },
+  {
+   "text": "Haaland in white, scoring at the Bernabéu.",
+   "scene": {
+    "type": "person",
+    "person": "haalandrma",
+    "label": "HAALAND AT MADRID?",
+    "mood": "happy"
+   }
+  },
+  {
+   "text": "And City's treble season without a thirty-six-goal striker? Arsenal pushed them all the way that year.",
+   "scene": {
+    "type": "whatif",
+    "title": "2022-23 TITLE",
+    "real": {
+     "label": "Real world",
+     "value": "City champions"
+    },
+    "alt": {
+     "label": "Alternate world",
+     "value": "Arsenal? (84 pts real)"
+    }
+   }
+  },
+  {
+   "text": "One thing to know: the one hundred and fifteen charges cover twenty oh-nine to twenty eighteen. This deal came later.",
+   "scene": {
+    "type": "text",
+    "heading": "NOTE",
+    "body": "The 115 charges cover 2009-10 to 2017-18. City are appealing the ruling. Haaland's 2022 move is outside that period."
+   }
+  },
+  {
+   "text": "In the real world, he has signed at City until twenty thirty-four.",
+   "scene": {
+    "type": "stats",
+    "title": "THE REAL HAALAND",
+    "items": [
+     {
+      "n": "2034",
+      "l": "contract ends"
+     }
+    ],
+    "person": "haaland"
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
+}

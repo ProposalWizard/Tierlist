@@ -209,7 +209,7 @@ export function goalOfMonthAfterMatch(
   const open = gotm.polls.filter(p => !p.closed);
   gotm.polls = [...gotm.polls.filter(p => p.closed).slice(-POLLS_KEPT), ...open];
 
-  if (added.length) posts = [...posts, ...added].sort((a, b) => a.at - b.at).slice(-POST_CAP);
+  if (added.length) posts = [...posts, ...added].sort((a, b) => a.at - b.at).slice(-(media.studio?.postCap ?? POST_CAP));
   return { ...media, posts, gotm };
 }
 

@@ -54,6 +54,15 @@ const nextConfig = {
   },
   // Prevent Vercel CDN / browser from caching dynamic pages.
   // Ensures logged-in and logged-out users always get fresh data.
+  // The game's player-facing address (lib/star/gamePath.ts): /road-to-ballon-dor
+  // shows app/star-dev's page; /star-dev itself forwards there, query kept.
+  // Not permanent, so a browser never caches it if the address changes again.
+  async rewrites() {
+    return [{ source: "/road-to-ballon-dor", destination: "/star-dev" }];
+  },
+  async redirects() {
+    return [{ source: "/star-dev", destination: "/road-to-ballon-dor", permanent: false }];
+  },
   async headers() {
     const securityHeaders = [
       // SAMEORIGIN (was DENY; Harry, 21 Oct 2026: yes): our own pages may frame

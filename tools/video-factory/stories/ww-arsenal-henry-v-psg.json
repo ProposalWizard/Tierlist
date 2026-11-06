@@ -1,0 +1,301 @@
+{
+  "id": "ww-arsenal-henry-v-psg",
+  "series": "Who would win?",
+  "title": "Arsenal with prime Henry v PSG: who would win?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/2026_UEFA_Champions_League_final",
+    "https://www.gazetaesportiva.com/?p=3795556",
+    "https://en.wikipedia.org/wiki/2026%E2%80%9327_Premier_League",
+    "https://www.oddschecker.com/insight/football/cng102-20261024-arsenal-vs-everton-confirmed-lineups",
+    "https://www.premierleague.com/en/news/4688364/how-every-premier-league-club-could-line-up-in-202627",
+    "https://starting11.com/arsenal?fixture=1635630",
+    "https://www.11v11.com/matches/arsenal-v-lille-osc-13-october-2026-394999/",
+    "https://www.sportsmole.co.uk/football/psg/champions-league/predicted-lineups/dembele-mendes-among-stars-to-return-predicted-psg-lineup-vs-man-city_606672.html",
+    "https://starting11.com/fixtures/paris-saint-germain-vs-le-mans-20261010",
+    "https://www.psg.fr/en/matches/mens-football/20262027/man-city-vs-paris-2026-10-14",
+    "https://en.wikipedia.org/wiki/2003%E2%80%9304_Arsenal_F.C._season",
+    "https://en.wikipedia.org/wiki/Thierry_Henry"
+  ],
+  "checked": "2026 UCL final PSG 1-1 Arsenal, PSG won 4-3 on pens (Wikipedia + Gazeta Esportiva/UCL squad reports); Arsenal 24 pts from 9 (Wikipedia table 2 Nov 2026); Arsenal XI from Oddschecker 24 Oct confirmed XI + Starting11 + 11v11 + PL.com (Konsa, Gyokeres, Lewis-Skelly at Arsenal); PSG XI from Sports Mole 12 Oct + Starting11 + PSG.fr goal list; Henry 30 league / 39 all comps in 03/04 and 0 league defeats (Arsenal season page + Henry page). Match itself is an imagined prediction.",
+  "clubs": {
+    "ars": {
+      "name": "Arsenal",
+      "short": "ARS",
+      "c1": "#ef0107",
+      "c2": "#ffffff",
+      "pattern": "sides"
+    },
+    "psg": {
+      "name": "Paris Saint-Germain",
+      "short": "PSG",
+      "c1": "#004170",
+      "c2": "#da291c",
+      "pattern": "centre"
+    }
+  },
+  "people": {
+    "henry": {
+      "name": "Thierry Henry",
+      "skin": "brown",
+      "hair": [
+        "buzz",
+        "#1a1a1a"
+      ],
+      "beard": "none",
+      "kit": "ars"
+    },
+    "saka": {
+      "name": "Bukayo Saka",
+      "skin": "brown",
+      "hair": [
+        "crop",
+        "#1a1a1a"
+      ],
+      "beard": "none",
+      "kit": "ars"
+    },
+    "dembele": {
+      "name": "Ousmane Dembélé",
+      "skin": "dark",
+      "hair": [
+        "crop",
+        "#1a1a1a"
+      ],
+      "beard": "short",
+      "kit": "psg"
+    },
+    "rice": {
+      "name": "Declan Rice",
+      "skin": "light",
+      "hair": [
+        "tidy",
+        "#6b4a2b"
+      ],
+      "beard": "none",
+      "kit": "ars"
+    }
+  },
+  "lines": [
+    {
+      "text": "Who would win: Arsenal with prime Thierry Henry, or the champions of Europe, PSG?",
+      "scene": {
+        "type": "title",
+        "heading": "ARSENAL + HENRY v PSG",
+        "sub": "An imagined match · a prediction",
+        "pill": "WHO WOULD WIN?",
+        "person": "henry"
+      }
+    },
+    {
+      "text": "This one is personal. PSG beat Arsenal on penalties in the Champions League final in Budapest this May.",
+      "scene": {
+        "type": "score",
+        "home": "psg",
+        "away": "ars",
+        "hs": 1,
+        "as": 1,
+        "date": "30 May 2026",
+        "comp": "Champions League final",
+        "note": "PSG won 4-3 on penalties"
+      }
+    },
+    {
+      "text": "Here's Arsenal, top of the league with twenty-four points from nine games. One change up front.",
+      "scene": {
+        "type": "list",
+        "title": "ARSENAL XI",
+        "rows": [
+          {
+            "name": "David Raya",
+            "value": "GK"
+          },
+          {
+            "name": "White · Konsa · Gabriel · Lewis-Skelly",
+            "value": "DEF"
+          },
+          {
+            "name": "Rice · Merino · Ødegaard",
+            "value": "MID"
+          },
+          {
+            "name": "Bukayo Saka",
+            "value": "RW"
+          },
+          {
+            "name": "Thierry Henry",
+            "value": "ST",
+            "hl": true
+          },
+          {
+            "name": "Eberechi Eze",
+            "value": "LW"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Gyökeres takes a seat. In comes Henry, the two thousand and four version.",
+      "scene": {
+        "type": "person",
+        "person": "henry",
+        "label": "PRIME HENRY · 2003/04",
+        "mood": "happy",
+        "stamp": "SUBBED IN"
+      }
+    },
+    {
+      "text": "That season he scored thirty league goals, thirty-nine in all, and Arsenal never lost a league game.",
+      "scene": {
+        "type": "stats",
+        "title": "HENRY 2003/04",
+        "items": [
+          {
+            "n": "30",
+            "l": "league goals"
+          },
+          {
+            "n": "39",
+            "l": "all competitions"
+          },
+          {
+            "n": "0",
+            "l": "league defeats"
+          }
+        ],
+        "person": "henry"
+      }
+    },
+    {
+      "text": "PSG bring Safonov, Hakimi, Marquinhos, Vitinha, and Dembélé up front.",
+      "scene": {
+        "type": "list",
+        "title": "PSG XI",
+        "rows": [
+          {
+            "name": "Matvey Safonov",
+            "value": "GK"
+          },
+          {
+            "name": "Hakimi · Marquinhos · Pacho · Mendes",
+            "value": "DEF"
+          },
+          {
+            "name": "Neves · Vitinha · Ruiz",
+            "value": "MID"
+          },
+          {
+            "name": "Désiré Doué",
+            "value": "RW"
+          },
+          {
+            "name": "Ousmane Dembélé",
+            "value": "ST",
+            "hl": true
+          },
+          {
+            "name": "Khvicha Kvaratskhelia",
+            "value": "LW"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Twelve minutes. Henry drifts left, cuts in, and side-foots it into the far corner. One-nil.",
+      "scene": {
+        "type": "score",
+        "home": "ars",
+        "away": "psg",
+        "hs": 1,
+        "as": 0,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Henry 12'"
+      }
+    },
+    {
+      "text": "PSG hit back. Dembélé from the spot, just like in Budapest. One-all.",
+      "scene": {
+        "type": "score",
+        "home": "ars",
+        "away": "psg",
+        "hs": 1,
+        "as": 1,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Henry 12' · Dembélé 34' pen"
+      }
+    },
+    {
+      "text": "Second half. Saka slides it in, Henry flicks it round Marquinhos. Two-one.",
+      "scene": {
+        "type": "versus",
+        "title": "THE DUEL",
+        "left": {
+          "person": "henry",
+          "label": "Henry",
+          "value": "2 goals"
+        },
+        "right": {
+          "person": "dembele",
+          "label": "Dembélé",
+          "value": "1 goal"
+        }
+      }
+    },
+    {
+      "text": "Kvaratskhelia levels it again. Then Rice whips in a corner, and Gabriel heads the winner.",
+      "scene": {
+        "type": "score",
+        "home": "ars",
+        "away": "psg",
+        "hs": 3,
+        "as": 2,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Kvaratskhelia 71' · Gabriel 84'",
+        "stamp": "REVENGE"
+      }
+    },
+    {
+      "text": "Full time in our prediction: Arsenal three, PSG two. Budapest, avenged.",
+      "scene": {
+        "type": "score",
+        "home": "ars",
+        "away": "psg",
+        "hs": 3,
+        "as": 2,
+        "date": "Full time · prediction",
+        "comp": "Imagined match",
+        "note": "Henry 2, Gabriel · Dembélé pen, Kvaratskhelia"
+      }
+    },
+    {
+      "text": "Man of the match? Henry, then Saka, then Dembélé. Who wins it for you?",
+      "scene": {
+        "type": "podium",
+        "year": "Imagined",
+        "title": "MAN OF THE MATCH",
+        "places": [
+          {
+            "person": "henry",
+            "club": "ars"
+          },
+          {
+            "person": "saka",
+            "club": "ars"
+          },
+          {
+            "person": "dembele",
+            "club": "psg"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

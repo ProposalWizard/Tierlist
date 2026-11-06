@@ -1,0 +1,39 @@
+{
+  "id": "ns-debruyne-argentina",
+  "series": "What if the countries were swapped?",
+  "title": "What if De Bruyne was Argentinian?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/Kevin_De_Bruyne",
+    "https://www.sortiraparis.com/en/what-to-do-in-paris/sport-wellness/articles/349129-world-cup-2026-all-results-and-the-final-score",
+    "https://www.beinsports.com/en-us/soccer/fifa-world-cup-2026/articles/will-kevin-de-bruyne-start-for-belgium-against-spain-in-the-2026-fifa-world-cup-quarterfinals-2026-07-10",
+    "https://www.beinsports.com/en-us/soccer/articles/lionel-messi-s-titles-with-the-argentina-national-team-2026-10-06",
+    "https://copaamerica.com/en/news/copa-america-2021-argentina-champions-after-28-years",
+    "https://www.uefa.com/finalissima/news/0273-14b9ca5ef678-b78dc74dcc88-1000/",
+    "https://www.khaleejtimes.com/sports/fifa-world-cup/spain-celebrate-glory-argentina-heartbreak-unrest?amp=1"
+  ],
+  "checked": "De Bruyne's Belgium debut 11 Aug 2010 v Finland; Belgium third at the 2018 World Cup (2-0 v England); in the 2026 squad, Belgium lost the QF 2-1 to Spain (Wikipedia + Sortiraparis + beIN preview). Argentina since 2010: Copa América 2021, Finalissima 2022, World Cup 2022, Copa América 2024 (beIN + Copa America + UEFA); 2026 final lost 1-0 aet to Spain (Sortiraparis + Khaleej Times). Alternate world clearly imagined.",
+  "clubs": {
+    "bel": { "name": "Belgium", "short": "BEL", "c1": "#c8102e", "c2": "#000000", "pattern": "plain" },
+    "arg": { "name": "Argentina", "short": "ARG", "c1": "#75aadb", "c2": "#ffffff", "pattern": "stripes" },
+    "esp": { "name": "Spain", "short": "ESP", "c1": "#c60b1e", "c2": "#ffc400", "pattern": "plain" }
+  },
+  "people": {
+    "kdb": { "name": "Kevin De Bruyne", "skin": "pink", "hair": ["crop", "#d9a066"], "beard": "stubble", "beardCol": "#c98a55", "kit": "bel" },
+    "kdbarg": { "name": "Kevin De Bruyne", "skin": "pink", "hair": ["crop", "#d9a066"], "beard": "stubble", "beardCol": "#c98a55", "kit": "arg" },
+    "messi": { "name": "Lionel Messi", "skin": "light", "hair": ["side", "#4a3220"], "beard": "full", "beardCol": "#4a3220", "kit": "arg" }
+  },
+  "lines": [
+    { "text": "What if Kevin De Bruyne had been born in Argentina, passing to Messi every game?", "scene": { "type": "title", "heading": "KEVIN DE BRUYNE", "sub": "Belgium · since 2010", "pill": "WHAT IF HE WAS ARGENTINIAN?", "person": "kdb" } },
+    { "text": "Real world first. De Bruyne made his Belgium debut in August twenty ten.", "scene": { "type": "person", "person": "kdb", "label": "Debut v Finland, 2010", "mood": "flat" } },
+    { "text": "He was the brain of Belgium's golden generation. Their best? Third at the twenty eighteen World Cup.", "scene": { "type": "stats", "title": "Belgium with De Bruyne", "items": [ { "n": "3rd", "l": "World Cup 2018" }, { "n": "0", "l": "trophies" } ], "person": "kdb" } },
+    { "text": "This summer, Spain beat Belgium two-one in the World Cup quarter-finals.", "scene": { "type": "score", "home": "esp", "away": "bel", "hs": 2, "as": 1, "date": "10 July 2026", "comp": "World Cup quarter-final" } },
+    { "text": "Sixteen years, and not a single trophy.", "scene": { "type": "stamp", "text": "GOLDEN GENERATION, NO GOLD", "person": "kdb", "color": "red" } },
+    { "text": "Now look at Argentina in exactly the same years.", "scene": { "type": "timeline", "items": [ { "year": "2021", "label": "Copa América" }, { "year": "2022", "label": "Finalissima" }, { "year": "2022", "label": "World Cup" }, { "year": "2024", "label": "Copa América" } ] } },
+    { "text": "Two Copa Américas, a Finalissima and a World Cup.", "scene": { "type": "trophies", "items": [ { "kind": "cup", "label": "Copa América 2021" }, { "kind": "cup", "label": "Finalissima 2022" }, { "kind": "worldcup", "label": "World Cup 2022" }, { "kind": "cup", "label": "Copa América 2024" } ] } },
+    { "text": "So in this alternate world, De Bruyne plays behind Messi.", "scene": { "type": "versus", "title": "The dream midfield (imagined)", "left": { "person": "kdbarg", "label": "The passer", "value": "KDB" }, "right": { "person": "messi", "label": "The finisher", "value": "MESSI" } } },
+    { "text": "Four trophies instead of none. And a World Cup winner's medal.", "scene": { "type": "whatif", "title": "De Bruyne's senior trophies", "real": { "label": "Belgium (real)", "value": "0" }, "alt": { "label": "Argentina (imagined)", "value": "4" } } },
+    { "text": "Then this summer's final, lost one-nil to Spain after extra time. Does a De Bruyne pass change that?", "scene": { "type": "quote", "person": "kdbarg", "text": "One through ball. That's all I needed." } },
+    { "text": "Belgian legend, or Argentine world champion? Which version do you pick? Comment below.", "scene": { "type": "person", "person": "kdbarg", "label": "ALTERNATE WORLD", "mood": "happy" } },
+    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+  ]
+}

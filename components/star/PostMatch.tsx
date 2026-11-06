@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { AchievementMedal } from "./AchievementWall";
+import { ACHIEVEMENTS } from "@/lib/star/achievements";
 import type { MatchStats } from "@/lib/star/types";
 import { kitsFor, type Kit } from "@/lib/star/kits";
 import { shortClub } from "@/lib/star/media/grammar";
@@ -12,6 +14,8 @@ import { SquareBar } from "./ui/Flat";
 import { FillStar } from "./ui/TopMeter";
 import { Screen, Kicker, SectionLabel, useLater } from "./ui/Screen";
 import FastForward, { ffTimeout } from "./ui/fastForward";
+/** Achievement names, to give each pop-up its own gold medal. */
+const ACH_LABELS = new Set(ACHIEVEMENTS.map(a => a.label));
 
 /** Every star, not a rounded "3k" — Harry wants the real numbers. */
 const exact = (n: number) => Math.round(n).toLocaleString("en-GB");
@@ -487,7 +491,9 @@ function AchievementCard({ a, n, of, onNext }: { a: { label: string; description
       <Burst colors={["#fde047", "#fbbf24", "#ffffff"]} count={20} className="left-1/2 top-[40%]" round />
       <div className="px-3 pb-3 pt-2.5">
         <div className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-300">Achievement{of > 1 ? ` ${n} of ${of}` : ""}</div>
-        <div className="mt-1 text-[40px] leading-none" style={{ filter: "drop-shadow(0 0 14px rgba(251,191,36,.8))" }}>⭐</div>
+        {ACH_LABELS.has(a.label)
+          ? <div className="mt-2 flex justify-center"><AchievementMedal label={a.label} size={60} /></div>
+          : <div className="mt-1 text-[40px] leading-none" style={{ filter: "drop-shadow(0 0 14px rgba(251,191,36,.8))" }}>⭐</div>}
         <div className="mt-1 text-[18px] font-black leading-tight">{a.label}</div>
         <div className="text-[12px] font-bold text-white/85">{a.description}</div>
         <PressButton variant="gold" size="none" onClick={onNext} className="mt-2 w-full rounded-[3px] py-2 text-[13px] font-black">{n < of ? "Next" : "Done"}</PressButton>

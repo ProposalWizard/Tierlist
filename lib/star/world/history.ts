@@ -17,14 +17,35 @@ export interface CompHistoryRow {
   runnerUp?: string;
   /** A final's score, winner first: "2-1", "1-1 (4-3 pens)". */
   score?: string;
+  /** Top scorer(s), ties kept (Mikey, 2 Nov 2026). Absent: not known. */
+  scorers?: HistoryName[];
+  /** Top assister(s), ties kept. */
+  assisters?: HistoryName[];
+  /** Player of the season: the Season Awards' (your league), else most goals
+   *  + assists (leagues, Europe), else the best player in the final (cups). */
+  best?: { name: string; club: string };
 }
+
+export interface HistoryName { name: string; club: string; n: number }
 
 /** The rows one finished season gives: each league's top two, each final. */
 export function historyRowsFromSummary(s: WorldSummary): CompHistoryRow[] {
   const out: CompHistoryRow[] = [];
+  const lead = new Map((s.leaders ?? []).map((l) => [l.competition, l]));
+  const named = (xs: { player: string; club: string; n: number }[]) => xs.map((x) => ({ name: x.player, club: x.club, n: x.n }));
+  const withLeaders = (r: CompHistoryRow): CompHistoryRow => {
+    const l = lead.get(r.comp);
+    if (!l) return r;
+    return {
+      ...r,
+      ...(l.scorers.length ? { scorers: named(l.scorers) } : {}),
+      ...(l.assisters.length ? { assisters: named(l.assisters) } : {}),
+      ...(l.best ? { best: { name: l.best.player, club: l.best.club } } : {}),
+    };
+  };
   for (const t of s.tables) {
     if (!t.division || t.rows.length < 2) continue;
-    out.push({ season: s.season, comp: t.name, winner: t.rows[0].name, runnerUp: t.rows[1].name });
+    out.push(withLeaders({ season: s.season, comp: t.name, winner: t.rows[0].name, runnerUp: t.rows[1].name }));
   }
   for (const f of s.finals ?? []) {
     if (!f.winner) continue;
@@ -32,7 +53,7 @@ export function historyRowsFromSummary(s: WorldSummary): CompHistoryRow[] {
     const score = f.hs !== undefined && f.as !== undefined
       ? `${winHome ? f.hs : f.as}-${winHome ? f.as : f.hs}${f.pens ? ` (${winHome ? f.pens.home : f.pens.away}-${winHome ? f.pens.away : f.pens.home} pens)` : ""}`
       : undefined;
-    out.push({ season: s.season, comp: f.competition, winner: f.winner, runnerUp: winHome ? f.away : f.home, ...(score ? { score } : {}) });
+    out.push(withLeaders({ season: s.season, comp: f.competition, winner: f.winner, runnerUp: winHome ? f.away : f.home, ...(score ? { score } : {}) }));
   }
   return out;
 }

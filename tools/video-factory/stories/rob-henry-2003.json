@@ -1,0 +1,50 @@
+{
+  "id": "rob-henry-2003",
+  "series": "Ballon d'Or robberies",
+  "title": "Henry 2003: twenty goals, twenty assists, no Ballon d'Or",
+  "sources": [
+    "https://www.fourfourtwo.com/features/thierry-henry-arsenal-most-premier-league-assists-season-200203-van-nistelrooy-golden-boot",
+    "https://www.squawka.com/en/cult-corner/thierry-henry-assist-record-arsenal-premier-league/",
+    "https://en.wikipedia.org/wiki/Thierry_Henry",
+    "https://www.uefa.com/news-media/news/0198-0e6a575278ef-5e3ac67408f7-1000--nedved-claims-ballon-d-or",
+    "https://www.topendsports.com/sport/soccer/awards/ballondor-2003.htm",
+    "https://www.maxifoot.fr/football/article-433.htm",
+    "https://en.wikipedia.org/wiki/2002%E2%80%9303_Juventus_FC_season",
+    "https://forzaitalianfootball.com/2020/05/great-seasons-pavel-nedved-2002-03/",
+    "https://www.uefa.com/uefaeuro/history/news/0254-0d7b48313d98-2de5097b6dd3-1000--nedved-s-booking-stands",
+    "https://www.football365.com/news/thierry-henry-ballon-dor-robbery-football-enduring-myth",
+    "https://www.premierleague.com/en/news/59016",
+    "https://www.fourfourtwo.com/features/greatest-individual-seasons-thierry-henry-makes-arsenal-invincible-200304",
+    "https://en.wikipedia.org/wiki/2004_Ballon_d%27Or",
+    "https://www.cbc.ca/sports/soccer/ukrainian-andriy-shevchenko-wins-golden-ball-1.480117"
+  ],
+  "checked": "Henry 2002-03: 24 PL goals, 20 PL assists (record then), PFA and FWA awards (FourFourTwo, Squawka, Wikipedia); 2003 vote Nedved 190, Henry 128, Maldini 123 (UEFA, Topend, Maxifoot 62-point gap); Juve won 2002-03 Serie A, Nedved suspended for the final after a yellow in the Real Madrid semi, Milan won on penalties after 0-0 at Old Trafford (Wikipedia Juve season, Forza Italian Football, UEFA); 2003-04 unbeaten 38 games, Henry 30 league goals (Premier League, FourFourTwo); 2004 Shevchenko 175, Deco 139, Ronaldinho 133, Henry 4th on 80 (Wikipedia, CBC). Picked 2003: he was second, 62 points back; in 2004 he was only fourth, 95 back. Football365's 'myth' argument is mentioned for balance.",
+  "clubs": {
+    "ars": { "name": "Arsenal", "short": "ARS", "c1": "#ef0107", "c2": "#ffffff", "pattern": "sides" },
+    "juv": { "name": "Juventus", "short": "JUV", "c1": "#111111", "c2": "#ffffff", "pattern": "stripes" },
+    "mil": { "name": "AC Milan", "short": "MIL", "c1": "#fb090b", "c2": "#111111", "pattern": "stripes" },
+    "bar": { "name": "Barcelona", "short": "BAR", "c1": "#a50044", "c2": "#004d98", "pattern": "stripes" },
+    "por": { "name": "Porto", "short": "POR", "c1": "#1c4596", "c2": "#ffffff", "pattern": "stripes" }
+  },
+  "people": {
+    "henry": { "name": "Thierry Henry", "skin": "brown", "hair": ["bald", "#1a1a1a"], "beard": "none", "kit": "ars" },
+    "nedved": { "name": "Pavel Nedvěd", "skin": "light", "hair": ["messy", "#e3c77f"], "beard": "none", "kit": "juv" },
+    "maldini": { "name": "Paolo Maldini", "skin": "olive", "hair": ["side", "#2b2118"], "beard": "none", "kit": "mil" }
+  },
+  "lines": [
+    { "text": "Twenty-four goals. Twenty assists. And Thierry Henry still didn't win the Ballon d'Or.", "scene": { "type": "title", "heading": "THIERRY HENRY", "sub": "Arsenal · 2002/03", "pill": "ROBBED IN 2003?", "person": "henry" } },
+    { "text": "Twenty-oh-two oh-three. Henry was scoring them and making them.", "scene": { "type": "stats", "title": "Premier League 2002/03", "items": [ { "n": "24", "l": "goals" }, { "n": "20", "l": "assists" } ], "person": "henry" } },
+    { "text": "Twenty assists was a Premier League record at the time.", "scene": { "type": "person", "person": "henry", "mood": "happy", "stamp": "RECORD" } },
+    { "text": "He swept the PFA and the Football Writers' awards.", "scene": { "type": "trophies", "items": [ { "kind": "cup", "label": "PFA Player of the Year" }, { "kind": "cup", "label": "FWA Footballer of the Year" } ], "person": "henry" } },
+    { "text": "In Turin, Pavel Nedvěd drove Juventus to the Serie A title and the Champions League final.", "scene": { "type": "person", "person": "nedved", "label": "Juventus · Serie A champions", "mood": "happy" } },
+    { "text": "Then a yellow card in the semi against Real Madrid. Suspended. He missed the final.", "scene": { "type": "stamp", "text": "SUSPENDED", "person": "nedved", "color": "yellow" } },
+    { "text": "Without him, Juve drew nil-nil with Milan and lost on penalties.", "scene": { "type": "score", "home": "juv", "away": "mil", "hs": 0, "as": 0, "date": "28 May 2003", "comp": "Champions League final", "note": "Milan won on penalties" } },
+    { "text": "December. The votes came in.", "scene": { "type": "podium", "year": "2003", "title": "Ballon d'Or", "places": [ { "person": "nedved", "club": "juv" }, { "person": "henry", "club": "ars" }, { "person": "maldini", "club": "mil" } ] } },
+    { "text": "Nedvěd one hundred and ninety points. Henry one hundred and twenty-eight. Not even close.", "scene": { "type": "versus", "title": "2003 Ballon d'Or", "left": { "person": "nedved", "label": "Nedvěd", "value": "190" }, "right": { "person": "henry", "label": "Henry", "value": "128" } } },
+    { "text": "Some writers call the Henry robbery a myth. Nedvěd was brilliant too.", "scene": { "type": "text", "heading": "THE OTHER SIDE", "body": "Nedvěd won Serie A and carried Juventus to a Champions League final. Some writers argue the Henry robbery is a football myth." } },
+    { "text": "Next season, Arsenal went the whole league unbeaten. Henry scored thirty.", "scene": { "type": "stats", "title": "Invincibles 2003/04", "items": [ { "n": "38", "l": "games unbeaten" }, { "n": "30", "l": "Henry goals" } ], "person": "henry" } },
+    { "text": "And he finished fourth. Shevchenko won it.", "scene": { "type": "list", "title": "Ballon d'Or 2004", "rows": [ { "name": "Andriy Shevchenko", "value": "175", "club": "mil" }, { "name": "Deco", "value": "139", "club": "por" }, { "name": "Ronaldinho", "value": "133", "club": "bar" }, { "name": "Thierry Henry", "value": "80", "club": "ars", "hl": true } ] } },
+    { "text": "So which year was the real robbery? Twenty-oh-three. Second place, the best season of his life, and the winner missed the final.", "scene": { "type": "stamp", "text": "ROBBED", "person": "henry", "color": "red" } },
+    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+  ]
+}

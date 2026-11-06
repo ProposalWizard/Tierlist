@@ -1,11 +1,15 @@
 "use client";
 import { protectedClipIds } from "@/lib/star/goalLog";
-import { leoUpdateOn, useLeoUpdate } from "@/lib/star/leoUpdate";
+import { favouriteClipIds, toggleFavourite } from "@/lib/star/favouriteGoals";
+import { publishFavourites, unpublishFavourites } from "@/lib/star/favouriteGoalsStore";
+import { leoUpdateOn, useLeoUpdate, leoUpdateLocal, adoptLeoUpdate, LEO_UPDATE_EVENT } from "@/lib/star/leoUpdate";
 import { preloadScene } from "@/lib/star/three3d/perf";
 import { useUiLook, useUiVersionOrNull } from "@/lib/star/uiLook";
+import { useUiSkin } from "@/lib/star/uiSkin";
 import { pitchFont } from "@/components/star/ui/pitchFont";
 import "@/components/star/ui/pitchLook.css";
 import "@/components/star/ui/flat.css";
+import "@/components/star/ui/glassLook.css";
 import { freshItem, isWornOut } from "@/lib/star/fame";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { setToonYou, yourToonBody, yourToonHead } from "@/lib/star/style3d/toon/bodies";
@@ -214,6 +218,7 @@ import { WatchedScreen } from "@/components/star/IntlKit";
 import CallUpScreen from "@/components/star/CallUpScreen";
 import { tournamentDue, openTournament, applyTournament } from "@/lib/star/tournament";
 import TournamentScreen from "@/components/star/TournamentScreen";
+import { GAME_PATH } from "@/lib/star/gamePath";
 
 // ── Screens that download only when first opened (speed job D, 9 Oct 2026;
 // lib/star/lazyScreen.ts). Home, the title screen and the match stay in the
@@ -428,11 +433,13 @@ function NewUiStarDevPage() {
   // green and chalk-lined (lib/star/uiLook.ts, pitchLook.css). Always on here —
   // the Old UI is a different page (see StarDevPage at the bottom).
   const look = useUiLook();
+  // Harry, 1 Nov 2026: the Glass skin (default) sits on top of the pitch look (lib/star/uiSkin.ts, glassLook.css).
+  const skin = useUiSkin();
   // No text highlighting while you drag and tap (Mikey, 28 Sep 2026: on PC
   // "the dragging feature does also do the same thing as highlighting
   // words"). Typing in a box still works — inputs keep their own selection.
   return (
-    <div className={`select-none [&_input]:select-text [&_textarea]:select-text star-root ${pitchFont.variable} ${look === "pitch" ? "star-look-pitch" : ""}`}>
+    <div className={`select-none [&_input]:select-text [&_textarea]:select-text star-root ${pitchFont.variable} ${look === "pitch" ? "star-look-pitch" : ""}${look === "pitch" && skin === "glass" ? " star-skin-glass" : ""}`}>
       <StarDevInner immersive={immersive} />
     </div>
   );
@@ -533,7 +540,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // (Mikey, 6 Oct 2026). Only achievements pop up here.
     const records = earned.filter(e => e.kind === "record");
     if (records.length) setCareer(c => (c ? { ...c, seasonRecords: addSeasonRecords(c.seasonRecords, records) } : c));
-    const fresh = earned.filter(e => e.kind === "achievement" && !lastMatchAchRef.current.includes(e.id.slice(4)));
+    // Skip any the big card already showed (shownAchRef): one pop-up per achievement.
+    const fresh = earned.filter(e => e.kind === "achievement" && !lastMatchAchRef.current.includes(e.id.slice(4)) && !shownAchRef.current.has(e.id.slice(4)));
     // Your legend lives on (lib/star/hallRecords.ts): a record from one of
     // your own retired careers, broken — checked when something that can
     // break one has just happened (a match, a trophy, an award), so a record
@@ -619,6 +627,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
   // Achievements earned away from a match (a purchase, training, a choice):
   // their pop-ups, with the star rating bar filling (Mikey, 13 Oct 2026).
+  // Achievements the big card (offMatchAch) has shown: the small banner skips them.
+  const shownAchRef = useRef<Set<string>>(new Set());
   const [offMatchAch, setOffMatchAch] = useState<{ items: { label: string; description: string }[]; star?: { from: StarStep; to: StarStep } } | null>(null);
   // Achievements and records earned, waiting to pop up on Home (P36; lib/star/earnPops.ts).
   const [earnPops, setEarnPops] = useState<EarnPop[]>([]);
@@ -1305,10 +1315,36 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // never one a saved replay points at.
   const careerForClipsRef = useRef<CareerState | null>(null);
   careerForClipsRef.current = career;
+  // ⭐ favourite goals (Leo's update part "seasonEnd"): every ⭐ button reads
+  // and changes them through lib/star/favouriteGoalsStore.ts.
+  const seasonEndOn = useLeoUpdate("seasonEnd");
+  useEffect(() => {
+    if (!seasonEndOn || !career) { unpublishFavourites(); return; }
+    publishFavourites(career.goalLog ?? [], career.favouriteGoals ?? [], (id) => setCareer(c => (c ? toggleFavourite(c, id) : c)));
+  }, [seasonEndOn, career?.goalLog, career?.favouriteGoals]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => unpublishFavourites(), []);
+  // Leo's update switch follows the account (lib/star/leoUpdate.ts): the save
+  // carries it between devices, and the newest change wins.
+  const careerLeoAt = career?.leoUpdate?.at ?? -1;
+  useEffect(() => {
+    if (!career) return;
+    const local = leoUpdateLocal();
+    const saved = career.leoUpdate;
+    if (saved && (saved.at ?? 0) > (local?.at ?? -1)) adoptLeoUpdate(saved);
+    else if (local && local.at !== undefined && local.at !== saved?.at) setCareer(c => (c ? { ...c, leoUpdate: local } : c));
+    const onChange = () => {
+      const now = leoUpdateLocal();
+      if (now) setCareer(c => (c && c.leoUpdate?.at !== now.at ? { ...c, leoUpdate: now } : c));
+    };
+    window.addEventListener(LEO_UPDATE_EVENT, onChange);
+    return () => window.removeEventListener(LEO_UPDATE_EVENT, onChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!career, careerLeoAt]);
+
   // Leo's 24 Oct update → the media pass (lib/star/media/updateFlags.ts): the
   // label fixes and Goal of the Month follow the switch; off = as on main.
   useEffect(() => {
-    const sync = () => setMediaUpdate({ labelFixes: leoUpdateOn("bugFixes"), goalOfMonth: leoUpdateOn("goalOfMonth"), yourGoalVideo: leoUpdateOn("goalVideoNow") });
+    const sync = () => setMediaUpdate({ labelFixes: leoUpdateOn("bugFixes"), goalOfMonth: leoUpdateOn("goalOfMonth"), yourGoalVideo: leoUpdateOn("goalVideoNow"), footballTwitter: leoUpdateOn("footballTwitter"), coldEdits: leoUpdateOn("coldEdits") });
     sync();
     window.addEventListener("kib-leo-update", sync);
     window.addEventListener("storage", sync);
@@ -1331,6 +1367,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // A season's goals until its reel is made, and the career's best 10 (goalLog.ts).
       // Leo's 24 Oct update only: off, the prune is exactly as before.
       if (leoUpdateOn("seasonReel") || leoUpdateOn("goalsGallery")) for (const id of protectedClipIds(c)) keep.add(id);
+      // Your ⭐ favourites are never pruned (Leo's update part "seasonEnd").
+      if (leoUpdateOn("seasonEnd")) for (const id of favouriteClipIds(c)) keep.add(id);
       return pruneClips(keep);
     });
   }, []);
@@ -1560,6 +1598,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // Pop the achievement toast for ids the reducers already appended to state.
   const toastAchievements = (ids: string[]) => {
     if (ids.length > 0) {
+      for (const id of ids) shownAchRef.current.add(id);
       setUnlockedAchievements(ids);
       setOffMatchAch({ items: achievementCards(ids) });
       setTimeout(() => setUnlockedAchievements([]), 3000);
@@ -1585,6 +1624,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const unlocked = { ...career, achievements: [...career.achievements, ...ids] };
     const next = withStars({ ...unlocked, starRating: computeStarRating(unlocked) });
     const after = starStatus(next);
+    for (const id of ids) shownAchRef.current.add(id);
     setCareer(next);
     setOffMatchAch({
       items: achievementCards(ids),
@@ -2085,11 +2125,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // rollOverSeason so the season-awards screen can land here too, once the
   // player is done looking at what the season handed out.
   const continueAfterRollover = useCallback((next: CareerState) => {
-    if (next.ladderNews && next.contract.seasonsRemaining > 0) {
-      setActiveNav(null);
-      setPhase("ladder");
-      return;
-    }
+    // The "divisions have changed" page (LadderScreen) is skipped (Mikey,
+    // 2 Nov 2026): the season review's trophy list shows every final table.
     if (next.contract.seasonsRemaining <= 0) {
       setPhase("contract-renewal");
     } else {
@@ -3671,7 +3708,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           )}
           {guestAccountsOn() && <div className="mb-3"><GuestPlayButton /></div>}
           <a
-            href="/auth?next=/star-dev"
+            href={`/auth?next=${GAME_PATH}`}
             className={guestAccountsOn()
               ? "inline-block w-full rounded-xl border border-white/20 px-5 py-3 text-sm font-black text-white active:scale-95"
               : "inline-block w-full rounded-xl bg-emerald-500 px-5 py-3 text-sm font-black text-emerald-950 active:scale-95"}
@@ -4675,7 +4712,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   if (phase === "season-reel") {
-    return <SeasonReel career={career} onDone={handleReelDone} />;
+    return <SeasonReel career={career} onDone={handleReelDone} better={leoUpdateOn("seasonEnd")} />;
   }
   if (phase === "ballon-dor") {
     return <BallonDorNight career={career} onContinue={handleBallonDorContinue} />;

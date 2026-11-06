@@ -1,0 +1,240 @@
+{
+  "competition": "OFC Men's Nations Cup",
+  "slug": "ofc-nations-cup",
+  "kind": "tournament",
+  "lineage_note": "Oceania's men's national-team championship: Oceania Cup (1973, 1980), not held 1981-1995, then OFC Nations Cup (1996-2016), renamed OFC Men's Nations Cup (2024). Years with no edition are not gaps. 2020 was scheduled and cancelled. Australia left for the AFC in 2006. top_assister null: no assist table for any edition (incl. 2024) was found on OFC, Wikipedia, ESPN or news round-ups; ESPN does not cover the tournament. player_of_season stays from 2012: OFC gave no best-player award before 2012.",
+  "history_from": "1973",
+  "history_to": "2024",
+  "field_from": {
+    "runner_up": "1973",
+    "final_score": "1973",
+    "top_scorer": "1996",
+    "top_assister": null,
+    "player_of_season": "2012"
+  },
+  "player_of_season_award": "OFC Nations Cup Golden Ball (best player), from 2012",
+  "top_assister_source": null,
+  "sources": [
+    "https://en.wikipedia.org/wiki/OFC_Men%27s_Nations_Cup",
+    "https://en.wikipedia.org/wiki/OFC_Men%27s_Nations_Cup_awards",
+    "https://rsssf.org/tableso/oceania-cup.html",
+    "https://rsssf.org/tables/73oc-scor.html",
+    "https://rsssf.org/tables/80oc-scor.html",
+    "https://rsssf.org/tables/96oc-scor.html",
+    "https://rsssf.org/tables/2024oc-scor.html",
+    "https://www.oceaniafootball.com/ofc-mens-nations-cup-2016/"
+  ],
+  "seasons": [
+    {
+      "season": "1973",
+      "name_then": "Oceania Cup",
+      "status": "played",
+      "winner": "New Zealand",
+      "runner_up": "Tahiti",
+      "final_score": "2-0",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Five teams, all in Auckland. Top scorers (3 goals) disagree between sources (RSSSF: Wayewol, Marley, Bennett; Wikipedia omits Bennett) and 1980's are unverifiable, so the top-scorer run starts 1996."
+    },
+    {
+      "season": "1980",
+      "name_then": "Oceania Cup",
+      "status": "played",
+      "winner": "Australia",
+      "runner_up": "Tahiti",
+      "final_score": "4-2",
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Played in Nouméa. RSSSF's scorer list for 1980 is incomplete (many unknown scorers), so the top scorer cannot be verified."
+    },
+    {
+      "season": "1996",
+      "name_then": "OFC Nations Cup",
+      "status": "played",
+      "winner": "Australia",
+      "runner_up": "Tahiti",
+      "final_score": "6-0, 5-0 (11-0 agg.)",
+      "top_scorer": [
+        {
+          "name": "Kris Trajanovski",
+          "team": "Australia",
+          "goals": 7
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "No host; two-legged semi-finals and final."
+    },
+    {
+      "season": "1998",
+      "name_then": "OFC Nations Cup",
+      "status": "played",
+      "winner": "New Zealand",
+      "runner_up": "Australia",
+      "final_score": "1-0",
+      "top_scorer": [
+        {
+          "name": "Damian Mori",
+          "team": "Australia",
+          "goals": 10
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2000",
+      "name_then": "OFC Nations Cup",
+      "status": "played",
+      "winner": "Australia",
+      "runner_up": "New Zealand",
+      "final_score": "2-0",
+      "top_scorer": [
+        {
+          "name": "Craig Foster",
+          "team": "Australia",
+          "goals": 5
+        },
+        {
+          "name": "Clayton Zane",
+          "team": "Australia",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2002",
+      "name_then": "OFC Nations Cup",
+      "status": "played",
+      "winner": "New Zealand",
+      "runner_up": "Australia",
+      "final_score": "1-0",
+      "top_scorer": [
+        {
+          "name": "Joel Porter",
+          "team": "Australia",
+          "goals": 6
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null
+    },
+    {
+      "season": "2004",
+      "name_then": "OFC Nations Cup",
+      "status": "played",
+      "winner": "Australia",
+      "runner_up": "Solomon Islands",
+      "final_score": "5-1, 6-0 (11-1 agg.)",
+      "top_scorer": [
+        {
+          "name": "Tim Cahill",
+          "team": "Australia",
+          "goals": 6
+        },
+        {
+          "name": "Vaughan Coveny",
+          "team": "New Zealand",
+          "goals": 6
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Six-team round robin in Australia (also 2006 World Cup qualifying), then a two-legged final."
+    },
+    {
+      "season": "2008",
+      "name_then": "OFC Nations Cup",
+      "status": "played",
+      "winner": "New Zealand",
+      "runner_up": "New Caledonia",
+      "final_score": null,
+      "top_scorer": [
+        {
+          "name": "Shane Smeltz",
+          "team": "New Zealand",
+          "goals": 8
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "No final: four-team home-and-away round robin (Oct 2007-Nov 2008), also 2010 World Cup qualifying. New Zealand finished first on 15 points, New Caledonia second on 8."
+    },
+    {
+      "season": "2012",
+      "name_then": "OFC Nations Cup",
+      "status": "played",
+      "winner": "Tahiti",
+      "runner_up": "New Caledonia",
+      "final_score": "1-0",
+      "top_scorer": [
+        {
+          "name": "Jacques Haeko",
+          "team": "New Caledonia",
+          "goals": 6
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Nicolas Vallar",
+        "team": "Tahiti"
+      }
+    },
+    {
+      "season": "2016",
+      "name_then": "OFC Nations Cup",
+      "status": "played",
+      "winner": "New Zealand",
+      "runner_up": "Papua New Guinea",
+      "final_score": "0-0 (a.e.t.) (4-2 pens)",
+      "top_scorer": [
+        {
+          "name": "Raymond Gunemba",
+          "team": "Papua New Guinea",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "David Muta",
+        "team": "Papua New Guinea"
+      }
+    },
+    {
+      "season": "2020",
+      "name_then": "OFC Nations Cup",
+      "status": "not_held",
+      "winner": null,
+      "runner_up": null,
+      "final_score": null,
+      "top_scorer": null,
+      "top_assister": null,
+      "player_of_season": null,
+      "notes": "Scheduled for New Zealand; cancelled due to the COVID-19 pandemic."
+    },
+    {
+      "season": "2024",
+      "status": "played",
+      "winner": "New Zealand",
+      "runner_up": "Vanuatu",
+      "final_score": "3-0",
+      "top_scorer": [
+        {
+          "name": "Roy Krishna",
+          "team": "Fiji",
+          "goals": 5
+        }
+      ],
+      "top_assister": null,
+      "player_of_season": {
+        "name": "Liberato Cacace",
+        "team": "New Zealand"
+      },
+      "notes": "Played June 2024 in Fiji and Vanuatu; final in Port Vila."
+    }
+  ]
+}

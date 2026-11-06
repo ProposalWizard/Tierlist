@@ -1,0 +1,36 @@
+{
+  "id": "ss-vardy-v-shearer",
+  "series": "Best season ever, settled",
+  "title": "Vardy 2015-16 v Shearer 1994-95: the greatest title-winning striker season?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/2015%E2%80%9316_Leicester_City_F.C._season",
+    "https://en.wikipedia.org/wiki/1994%E2%80%9395_Blackburn_Rovers_F.C._season",
+    "data/competition-history/premier-league.json (champions, runners-up, top scorers, FWA winners 1992-93 to 2025-26)"
+  ],
+  "checked": "Vardy 24 league goals, 11 games in a row breaking Van Nistelrooy's record, Leicester 81 points, 5000-1 pre-season odds, Mahrez PFA (Wikipedia season page); Vardy FWA award and Leicester champions with Arsenal second (local file). Shearer 34 league / 37 all comps, Golden Boot, PFA, Blackburn 89 points one ahead of United, 2-1 final-day defeat at Anfield with Shearer scoring while United drew at West Ham (Wikipedia season page); 34 goals and the title (local file). 'Each club's only Premier League title' checked against the full champions list in the local file.",
+  "clubs": {
+    "leicester": { "name": "Leicester City", "short": "LEI", "c1": "#003090", "c2": "#fdbe11", "pattern": "plain" },
+    "blackburn": { "name": "Blackburn Rovers", "short": "BLA", "c1": "#009ee0", "c2": "#ffffff", "pattern": "halves" },
+    "liverpool": { "name": "Liverpool", "short": "LIV", "c1": "#c8102e", "c2": "#ffffff", "pattern": "plain" }
+  },
+  "people": {
+    "vardy": { "name": "Jamie Vardy", "skin": "light", "hair": ["quiff", "#6b4a2e"], "beard": "stubble", "kit": "leicester" },
+    "shearer": { "name": "Alan Shearer", "skin": "light", "hair": ["crop", "#4a3424"], "beard": "none", "kit": "blackburn" }
+  },
+  "lines": [
+    { "text": "Two strikers. Two clubs that have won the Premier League exactly once. Whose title season was better?", "scene": { "type": "title", "heading": "VARDY v SHEARER", "sub": "2015-16 v 1994-95", "pill": "SETTLED", "person": "vardy" } },
+    { "text": "Alan Shearer, nineteen ninety-four, ninety-five. Blackburn Rovers.", "scene": { "type": "person", "person": "shearer", "label": "Blackburn · 1994-95", "mood": "happy" } },
+    { "text": "Thirty-four league goals. Thirty-seven in all competitions. Players' Player of the Year.", "scene": { "type": "stats", "title": "SHEARER 1994-95", "person": "shearer", "items": [ { "n": "34", "l": "league goals" }, { "n": "37", "l": "all competitions" }, { "n": "42", "l": "league games played by Blackburn" } ] } },
+    { "text": "Jamie Vardy, twenty fifteen, sixteen. Leicester City. Five thousand to one.", "scene": { "type": "person", "person": "vardy", "label": "Leicester · 2015-16", "mood": "happy", "stamp": "5000-1" } },
+    { "text": "Twenty-four league goals, and a goal in eleven games in a row. A Premier League record.", "scene": { "type": "stats", "title": "VARDY 2015-16", "person": "vardy", "items": [ { "n": "24", "l": "league goals" }, { "n": "11", "l": "games in a row scoring" }, { "n": "81", "l": "Leicester points" } ] } },
+    { "text": "On goals alone, Shearer wins easily. Ten more.", "scene": { "type": "versus", "title": "LEAGUE GOALS", "left": { "person": "shearer", "label": "Shearer 94-95", "value": "34" }, "right": { "person": "vardy", "label": "Vardy 15-16", "value": "24" } } },
+    { "text": "But Shearer's season had forty-two games. Vardy's had thirty-eight.", "scene": { "type": "versus", "title": "LEAGUE GAMES IN THE SEASON", "left": { "person": "shearer", "label": "1994-95", "value": "42" }, "right": { "person": "vardy", "label": "2015-16", "value": "38" } } },
+    { "text": "Trophies? Same answer. Both won the league.", "scene": { "type": "trophies", "items": [ { "kind": "league", "label": "Blackburn 1995" }, { "kind": "league", "label": "Leicester 2016" } ] } },
+    { "text": "Now the twist. It's still the only Premier League title either club has ever won.", "scene": { "type": "text", "heading": "THE TWIST", "body": "Blackburn 1995. Leicester 2016. Neither club has won the Premier League before or since.", "stamp": "ONLY ONCE" } },
+    { "text": "Blackburn nearly blew it. They lost on the final day at Anfield, and won the title by one point.", "scene": { "type": "score", "home": "liverpool", "away": "blackburn", "hs": 2, "as": 1, "date": "May 1995", "comp": "Premier League", "note": "Blackburn still champions" } },
+    { "text": "Shearer scored that day too, of course.", "scene": { "type": "person", "person": "shearer", "label": "Scored at Anfield", "mood": "happy" } },
+    { "text": "Leicester started the season at five thousand to one, and won it with eighty-one points.", "scene": { "type": "whatif", "title": "BEFORE THE SEASON", "real": { "label": "Bookies' odds", "value": "5000-1" }, "alt": { "label": "What happened", "value": "Champions" } } },
+    { "text": "Shearer had the better numbers. Vardy had the bigger miracle. For the best season, Shearer. For the best story, Vardy.", "scene": { "type": "versus", "title": "THE VERDICT", "left": { "person": "shearer", "label": "Best season", "value": "WIN" }, "right": { "person": "vardy", "label": "Best story", "value": "WIN" } } },
+    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+  ]
+}

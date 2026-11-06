@@ -15,6 +15,7 @@ import type { StyleKit } from "../style3d/kit";
 import type { Signature } from "./signature";
 import { signatureAt } from "./signature";
 import { rng, hashStr } from "./math";
+import { realBallCanvas } from "../three3d/realBall";
 
 export interface PropObj {
   spec: PropSpec;
@@ -190,13 +191,8 @@ export function buildProp(T: any, kit: StyleKit, spec: PropSpec, txt: PropText, 
   }
 
   if (k === "ball") {
-    const s = mesh(new T.SphereGeometry(0.11, 24, 16), mat("#fbfbf8", { rough: 0.45 }), 0, 0, 0); void s;
-    const patch = mat("#1d1f24", { rough: 0.5 });
-    for (const [a, b] of [[0, 0], [1.2, 0.9], [2.4, -0.7], [3.6, 1.1], [4.8, -0.2], [0.6, -1.3], [3.0, -1.2], [1.8, 0.2]]) {
-      const p = new T.Mesh(new T.CircleGeometry(0.036, 5), patch);
-      const v = new T.Vector3(Math.cos(a) * Math.cos(b), Math.sin(b), Math.sin(a) * Math.cos(b));
-      p.position.copy(v.multiplyScalar(0.1105)); p.lookAt(v.clone().multiplyScalar(2)); g.add(p); disp.push(p.geometry);
-    }
+    // the real ball: 12 black pentagons, 20 white hexagons (three3d/realBall.ts), in the scene's art style
+    const s = mesh(new T.SphereGeometry(0.11, 32, 24), mat("#ffffff", { rough: 0.45, map: tex(realBallCanvas()) }), 0, 0, 0); void s;
     g.scale.setScalar(spec.scale ?? 1);
     return { ...base, grip: "grip", handles: { grip: [0, 0, 0] } };
   }

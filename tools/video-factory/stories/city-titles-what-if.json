@@ -1,0 +1,424 @@
+{
+ "id": "city-titles-what-if",
+ "series": "What if Man City…?",
+ "title": "City's 20 trophies: who finished second?",
+ "sources": [
+  "https://en.wikipedia.org/wiki/List_of_Manchester_City_F.C._seasons",
+  "https://en.wikipedia.org/wiki/List_of_English_football_champions",
+  "https://en.wikipedia.org/wiki/List_of_FA_Cup_finals",
+  "https://en.wikipedia.org/wiki/EFL_Cup",
+  "https://en.wikipedia.org/wiki/2023_UEFA_Champions_League_final",
+  "https://en.wikipedia.org/wiki/2011%E2%80%9312_Premier_League",
+  "https://africa.espn.com/football/table/_/league/eng.1/season/2013",
+  "https://africa.espn.com/football/table/_/league/eng.1/season/2022",
+  "https://rsssf.org/tablese/eng2021.html",
+  "https://www.nbcsports.com/soccer/premier-league-2023-24-table",
+  "https://www.mancity.com/news/mens/pep-guardiola-four-premier-league-titles-stats-comparison-63790635",
+  "https://africa.espn.com/football/report/_/gameId/401859837",
+  "https://foot-africa.com/en/news/chelsea-0-1-manchester-city-semenyo-hands-fa-cup-glory-to-the-citizens-1207571/",
+  "https://www.nbcnews.com/sports/soccer/man-city-guilty-almost-115-financial-charges-premier-league-says-rcna600523",
+  "https://www.mishcon.com/news/manchester-city-independent-commission-publishes-decision-on-premier-league-charges",
+  "https://www.premierleague.com/en/news/4729207/premier-league-statement-manchester-city-fc-appeal-decision-of-independent-commission-02-october-2026",
+  "https://dragonfootball.co.uk/football-finance/man-city-115-charges/"
+ ],
+ "checked": "PL titles and runners-up (Wikipedia champions list, City seasons list); runner-up points 2012 89 (GD), 2014 84, 2018 81 (City 100, 19 clear), 2019 97, 2021 74, 2022 92, 2023 84, 2024 89 (ESPN tables, RSSF, mancity.com, NBC); FA Cup finals v Stoke 2011, Watford 2019, United 2023, Chelsea 2026 (Wikipedia FA Cup finals, foot-africa); League Cup finals v Sunderland 2014, Liverpool 2016, Arsenal 2018, Chelsea 2019, Villa 2020, Spurs 2021, Arsenal 2026 (Wikipedia EFL Cup, ESPN 2026 report); UCL 2023 final v Inter (Wikipedia). Total 8+4+7+1 = 20. Hand-over is a thought experiment; no title has been stripped. Status checked 3 Nov 2026: commission ruling published 29 Sep 2026 (all financial charges proven, most cooperation charges proven; widely reported as 114 of 115); City deny wrongdoing and lodged an appeal on 1 Oct 2026; no sanction set; appeal hearing expected around January 2027.",
+ "clubs": {
+  "mci": {
+   "name": "Manchester City",
+   "short": "MCI",
+   "c1": "#6cabdd",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "mun": {
+   "name": "Manchester United",
+   "short": "MUN",
+   "c1": "#da291c",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "liv": {
+   "name": "Liverpool",
+   "short": "LIV",
+   "c1": "#c8102e",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "ars": {
+   "name": "Arsenal",
+   "short": "ARS",
+   "c1": "#ef0107",
+   "c2": "#ffffff",
+   "pattern": "sides"
+  },
+  "che": {
+   "name": "Chelsea",
+   "short": "CHE",
+   "c1": "#034694",
+   "c2": "#ffffff",
+   "pattern": "plain"
+  },
+  "sto": {
+   "name": "Stoke City",
+   "short": "STK",
+   "c1": "#e03a3e",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "wat": {
+   "name": "Watford",
+   "short": "WAT",
+   "c1": "#fbee23",
+   "c2": "#ed2127",
+   "pattern": "plain"
+  },
+  "sun": {
+   "name": "Sunderland",
+   "short": "SUN",
+   "c1": "#eb172b",
+   "c2": "#ffffff",
+   "pattern": "stripes"
+  },
+  "avl": {
+   "name": "Aston Villa",
+   "short": "AVL",
+   "c1": "#670e36",
+   "c2": "#95bfe5",
+   "pattern": "plain"
+  },
+  "tot": {
+   "name": "Tottenham Hotspur",
+   "short": "TOT",
+   "c1": "#ffffff",
+   "c2": "#132257",
+   "pattern": "plain"
+  },
+  "int": {
+   "name": "Inter Milan",
+   "short": "INT",
+   "c1": "#0068a8",
+   "c2": "#000000",
+   "pattern": "stripes"
+  }
+ },
+ "people": {
+  "khaldoon": {
+   "name": "Khaldoon Al Mubarak",
+   "skin": "tan",
+   "hair": [
+    "crop",
+    "#1a1a1a"
+   ],
+   "beard": "short",
+   "beardCol": "#2a2a2a",
+   "kit": "suit"
+  }
+ },
+ "lines": [
+  {
+   "text": "Twenty major trophies since the takeover. Now give every single one to the team that finished second.",
+   "scene": {
+    "type": "title",
+    "heading": "CITY'S 20 TROPHIES",
+    "sub": "2008 TO 2026",
+    "pill": "WHO FINISHED SECOND?",
+    "person": "khaldoon"
+   }
+  },
+  {
+   "text": "Eight Premier Leagues, four FA Cups, seven League Cups, and one Champions League.",
+   "scene": {
+    "type": "trophies",
+    "items": [
+     {
+      "kind": "league",
+      "label": "8 Premier Leagues"
+     },
+     {
+      "kind": "cup",
+      "label": "4 FA Cups"
+     },
+     {
+      "kind": "cup",
+      "label": "7 League Cups"
+     },
+     {
+      "kind": "bigears",
+      "label": "1 Champions League"
+     }
+    ]
+   }
+  },
+  {
+   "text": "The leagues first. Twenty twelve, United, on goal difference. Twenty fourteen, Liverpool, eighty-four points. Twenty eighteen, United. Twenty nineteen, Liverpool, ninety-seven.",
+   "scene": {
+    "type": "list",
+    "title": "PL RUNNERS-UP (1/2)",
+    "rows": [
+     {
+      "name": "2012 · Man United",
+      "value": "89 pts (GD)",
+      "club": "mun"
+     },
+     {
+      "name": "2014 · Liverpool",
+      "value": "84 pts",
+      "club": "liv"
+     },
+     {
+      "name": "2018 · Man United",
+      "value": "81 pts",
+      "club": "mun"
+     },
+     {
+      "name": "2019 · Liverpool",
+      "value": "97 pts",
+      "club": "liv",
+      "hl": true
+     }
+    ]
+   }
+  },
+  {
+   "text": "Twenty twenty-one, United again. Twenty twenty-two, Liverpool by one point. Then Arsenal, twice.",
+   "scene": {
+    "type": "list",
+    "title": "PL RUNNERS-UP (2/2)",
+    "rows": [
+     {
+      "name": "2021 · Man United",
+      "value": "74 pts",
+      "club": "mun"
+     },
+     {
+      "name": "2022 · Liverpool",
+      "value": "92 pts",
+      "club": "liv",
+      "hl": true
+     },
+     {
+      "name": "2023 · Arsenal",
+      "value": "84 pts",
+      "club": "ars"
+     },
+     {
+      "name": "2024 · Arsenal",
+      "value": "89 pts",
+      "club": "ars"
+     }
+    ]
+   }
+  },
+  {
+   "text": "The FA Cup finals: Stoke, Watford, United and Chelsea.",
+   "scene": {
+    "type": "list",
+    "title": "FA CUP FINALS",
+    "rows": [
+     {
+      "name": "2011 · Stoke City",
+      "value": "lost 1-0",
+      "club": "sto"
+     },
+     {
+      "name": "2019 · Watford",
+      "value": "lost 6-0",
+      "club": "wat"
+     },
+     {
+      "name": "2023 · Man United",
+      "value": "lost 2-1",
+      "club": "mun"
+     },
+     {
+      "name": "2026 · Chelsea",
+      "value": "lost 1-0",
+      "club": "che"
+     }
+    ]
+   }
+  },
+  {
+   "text": "The League Cup finals: Sunderland, Liverpool, Arsenal, Chelsea, Villa, Spurs, and Arsenal again.",
+   "scene": {
+    "type": "list",
+    "title": "LEAGUE CUP FINALS",
+    "rows": [
+     {
+      "name": "2014 · Sunderland",
+      "value": "runner-up",
+      "club": "sun"
+     },
+     {
+      "name": "2016 · Liverpool",
+      "value": "runner-up",
+      "club": "liv"
+     },
+     {
+      "name": "2018 · Arsenal",
+      "value": "runner-up",
+      "club": "ars"
+     },
+     {
+      "name": "2019 · Chelsea",
+      "value": "runner-up",
+      "club": "che"
+     },
+     {
+      "name": "2020 · Aston Villa",
+      "value": "runner-up",
+      "club": "avl"
+     },
+     {
+      "name": "2021 · Spurs",
+      "value": "runner-up",
+      "club": "tot"
+     },
+     {
+      "name": "2026 · Arsenal",
+      "value": "runner-up",
+      "club": "ars"
+     }
+    ]
+   }
+  },
+  {
+   "text": "And the twenty twenty-three Champions League final? Inter Milan, beaten one-nil.",
+   "scene": {
+    "type": "score",
+    "home": "mci",
+    "away": "int",
+    "hs": 1,
+    "as": 0,
+    "date": "10 June 2023",
+    "comp": "Champions League final",
+    "note": "Rodri 68'"
+   }
+  },
+  {
+   "text": "Add it all up. Arsenal, Liverpool and United each get four more trophies.",
+   "scene": {
+    "type": "list",
+    "title": "WHO GAINS",
+    "rows": [
+     {
+      "name": "Arsenal",
+      "value": "+4",
+      "club": "ars",
+      "hl": true
+     },
+     {
+      "name": "Liverpool",
+      "value": "+4",
+      "club": "liv",
+      "hl": true
+     },
+     {
+      "name": "Man United",
+      "value": "+4",
+      "club": "mun",
+      "hl": true
+     },
+     {
+      "name": "Chelsea",
+      "value": "+2",
+      "club": "che"
+     },
+     {
+      "name": "Inter",
+      "value": "+1",
+      "club": "int"
+     },
+     {
+      "name": "Spurs",
+      "value": "+1",
+      "club": "tot"
+     },
+     {
+      "name": "Aston Villa",
+      "value": "+1",
+      "club": "avl"
+     },
+     {
+      "name": "Stoke, Watford, Sunderland",
+      "value": "+1 each"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Liverpool's ninety-seven points in twenty nineteen would finally be a title.",
+   "scene": {
+    "type": "whatif",
+    "title": "2018-19",
+    "real": {
+     "label": "Real world",
+     "value": "City 98, Liverpool 97"
+    },
+    "alt": {
+     "label": "Alternate world",
+     "value": "Liverpool champions"
+    }
+   }
+  },
+  {
+   "text": "And Arsenal would have three league titles in four years, counting their real one in twenty twenty-six.",
+   "scene": {
+    "type": "timeline",
+    "items": [
+     {
+      "year": "2023",
+      "label": "Arsenal (imagined)"
+     },
+     {
+      "year": "2024",
+      "label": "Arsenal (imagined)"
+     },
+     {
+      "year": "2026",
+      "label": "Arsenal (real)"
+     }
+    ]
+   }
+  },
+  {
+   "text": "But here's the reality. The charges only cover twenty oh-nine to twenty eighteen. City deny wrongdoing and are appealing.",
+   "scene": {
+    "type": "text",
+    "heading": "THE REAL WORLD",
+    "body": "The 115 ruling covers 2009-10 to 2017-18. City deny wrongdoing and have appealed. No sanction has been set. No trophy has been taken away."
+   }
+  },
+  {
+   "text": "No trophy has been taken away. This is just a thought experiment.",
+   "scene": {
+    "type": "stamp",
+    "text": "THOUGHT EXPERIMENT",
+    "color": "white"
+   }
+  },
+  {
+   "text": "So which runner-up lost the most? Tell us in the comments.",
+   "scene": {
+    "type": "versus",
+    "title": "WHO LOST MOST?",
+    "left": {
+     "person": "khaldoon",
+     "label": "City",
+     "value": "20"
+    },
+    "right": {
+     "person": "khaldoon",
+     "label": "Runners-up",
+     "value": "20"
+    }
+   }
+  },
+  {
+   "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+   "scene": {
+    "type": "cta"
+   }
+  }
+ ]
+}

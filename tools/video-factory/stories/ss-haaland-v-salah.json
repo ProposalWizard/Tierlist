@@ -1,0 +1,259 @@
+{
+  "id": "ss-haaland-v-salah",
+  "series": "Best season ever, settled",
+  "title": "Haaland 2022-23 v Salah 2017-18: the best debut-era season?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/2022%E2%80%9323_Manchester_City_F.C._season",
+    "https://en.wikipedia.org/wiki/2017%E2%80%9318_Liverpool_F.C._season",
+    "data/competition-history/premier-league.json (top scorers 2017-18 and 2022-23, FWA winners)",
+    "data/competition-history/champions-league.json (2017-18 and 2022-23 finals and top scorers)"
+  ],
+  "checked": "Haaland 36 league / 52 all comps, the treble, FWA award and the 38-game record (Wikipedia season page + local history files); Salah 32 league / 44 all comps, the 32-goal 38-game record, fourth place, the 3-1 Kyiv final loss and his injury after about half an hour (Wikipedia season page + local history files). Local files were themselves checked against two sources when collected.",
+  "clubs": {
+    "mancity": {
+      "name": "Manchester City",
+      "short": "MCI",
+      "c1": "#6cabdd",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "liverpool": {
+      "name": "Liverpool",
+      "short": "LIV",
+      "c1": "#c8102e",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "realmadrid": {
+      "name": "Real Madrid",
+      "short": "RMA",
+      "c1": "#ffffff",
+      "c2": "#febe10",
+      "pattern": "plain"
+    },
+    "inter": {
+      "name": "Inter",
+      "short": "INT",
+      "c1": "#1a3fa0",
+      "c2": "#111111",
+      "pattern": "stripes"
+    }
+  },
+  "people": {
+    "haaland": {
+      "name": "Erling Haaland",
+      "skin": "light",
+      "hair": [
+        "slick",
+        "#e2c27a"
+      ],
+      "beard": "none",
+      "kit": "mancity"
+    },
+    "salah": {
+      "name": "Mohamed Salah",
+      "skin": "tan",
+      "hair": [
+        "bigcurl",
+        "#1a120c"
+      ],
+      "beard": "full",
+      "beardCol": "#1a120c",
+      "kit": "liverpool"
+    }
+  },
+  "lines": [
+    {
+      "text": "Two first seasons that broke the Premier League. One ended with a treble. One ended in tears.",
+      "scene": {
+        "type": "title",
+        "heading": "HAALAND v SALAH",
+        "sub": "2022-23 v 2017-18",
+        "pill": "BEST SEASON EVER?",
+        "person": "haaland"
+      }
+    },
+    {
+      "text": "Summer twenty seventeen. Liverpool sign a winger from Roma. Nobody expects what comes next.",
+      "scene": {
+        "type": "person",
+        "person": "salah",
+        "label": "Liverpool · 2017-18",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Thirty-two league goals. A new record for a thirty-eight game season. Forty-four in all.",
+      "scene": {
+        "type": "stats",
+        "title": "SALAH 2017-18",
+        "person": "salah",
+        "items": [
+          {
+            "n": "32",
+            "l": "Premier League goals"
+          },
+          {
+            "n": "44",
+            "l": "all competitions"
+          },
+          {
+            "n": "4th",
+            "l": "league finish"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Five years later, City sign a Norwegian giant from Dortmund.",
+      "scene": {
+        "type": "person",
+        "person": "haaland",
+        "label": "Man City · 2022-23",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Thirty-six league goals. Fifty-two in all competitions. Salah's record? Gone.",
+      "scene": {
+        "type": "stats",
+        "title": "HAALAND 2022-23",
+        "person": "haaland",
+        "items": [
+          {
+            "n": "36",
+            "l": "Premier League goals"
+          },
+          {
+            "n": "52",
+            "l": "all competitions"
+          },
+          {
+            "n": "12",
+            "l": "Champions League goals"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Head to head on goals, Haaland wins by eight.",
+      "scene": {
+        "type": "versus",
+        "title": "GOALS, ALL COMPETITIONS",
+        "left": {
+          "person": "salah",
+          "label": "Salah 17-18",
+          "value": "44"
+        },
+        "right": {
+          "person": "haaland",
+          "label": "Haaland 22-23",
+          "value": "52"
+        }
+      }
+    },
+    {
+      "text": "Now trophies. Haaland won the league, the FA Cup and the Champions League. The treble.",
+      "scene": {
+        "type": "trophies",
+        "person": "haaland",
+        "items": [
+          {
+            "kind": "league",
+            "label": "Premier League"
+          },
+          {
+            "kind": "cup",
+            "label": "FA Cup"
+          },
+          {
+            "kind": "bigears",
+            "label": "Champions League"
+          },
+          {
+            "kind": "boot",
+            "label": "Golden Boot"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Salah won the Golden Boot. Liverpool finished fourth.",
+      "scene": {
+        "type": "trophies",
+        "person": "salah",
+        "items": [
+          {
+            "kind": "boot",
+            "label": "Golden Boot"
+          }
+        ]
+      }
+    },
+    {
+      "text": "But here's the twist. Both seasons came down to one Champions League final.",
+      "scene": {
+        "type": "text",
+        "heading": "THE TWIST",
+        "body": "Same stage, same chance to finish the greatest season ever. One man lifted the trophy. The other never got to finish the game."
+      }
+    },
+    {
+      "text": "Kyiv, twenty eighteen. Salah goes off injured after half an hour. Liverpool lose three-one.",
+      "scene": {
+        "type": "score",
+        "home": "realmadrid",
+        "away": "liverpool",
+        "hs": 3,
+        "as": 1,
+        "date": "26 May 2018",
+        "comp": "Champions League final",
+        "note": "Salah off injured",
+        "stamp": "HEARTBREAK"
+      }
+    },
+    {
+      "text": "Istanbul, twenty twenty-three. City beat Inter one-nil. Treble done.",
+      "scene": {
+        "type": "score",
+        "home": "mancity",
+        "away": "inter",
+        "hs": 1,
+        "as": 0,
+        "date": "10 June 2023",
+        "comp": "Champions League final",
+        "note": "the treble"
+      }
+    },
+    {
+      "text": "In another world, Salah plays ninety minutes in Kyiv and wins it. Then this is a real debate.",
+      "scene": {
+        "type": "whatif",
+        "title": "IN THIS ALTERNATE WORLD",
+        "real": {
+          "label": "Salah, Kyiv",
+          "value": "Off injured, lost"
+        },
+        "alt": {
+          "label": "Imagined Salah",
+          "value": "Champion of Europe"
+        }
+      }
+    },
+    {
+      "text": "In this world, it's not close. More goals, more trophies. Haaland.",
+      "scene": {
+        "type": "stamp",
+        "text": "HAALAND",
+        "person": "haaland",
+        "color": "white"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

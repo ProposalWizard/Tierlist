@@ -1,0 +1,347 @@
+{
+  "id": "pr-ballondor-2027-november",
+  "series": "Power ranking",
+  "title": "Ballon d'Or 2027 power ranking: November",
+  "sources": [
+    "https://www.uefa.com/uefachampionsleague/news/02a9-218f8e669a0a-debba167a199-1000--champions-league-top-scorer-ermedin-demirovic-serhou-guir/",
+    "https://foot-africa.com/en/news/champions-league-the-top-scorers-standings-after-matchday-3-1395029/",
+    "https://www.nbcsports.com/soccer/news/premier-league-2026-27-scoring-leaders-the-race-for-the-golden-boot-begins",
+    "https://www.soccernews.com/english-premier-league/golden-boot/",
+    "https://www.nbcsports.com/soccer/news/premier-league-table-for-2026-27-season",
+    "https://caughtoffside.com/2026/10/20/premier-league-club-relaxed-manager-future-man-united",
+    "https://santamariatimes.com/ap/sports/ferran-torres-scores-in-extra-time-as-spain-beats-argentina-1-0-to-win-the/article_a8e21e5c-8c25-54ce-b065-7ebb7225d56f.html",
+    "https://www.nbcmiami.com/world-cup/spain-argentina-final-messi-yamal-score/3835882/?amp=1",
+    "https://amp.foxsports.com/stories/soccer/2026-fifa-world-cup-every-individual-award-winner",
+    "https://blog.wego.com/who-won-the-fifa-world-cup/",
+    "https://m.allfootballapp.com/news/La-Liga/Kick-Off-Harry-Kane-wins-2026-Ballon-dOr-Yamal-wins-Kopa-Trophy-three-times-in-a-row/5736216",
+    "https://www.beinsports.com/en-us/soccer/articles/live-ballon-d-or-2026-winners-and-all-awards-2026-10-26",
+    "https://bulinews.com/revealed-full-men-ballon-top-10-rankings",
+    "https://blueprint.ng/?p=856976",
+    "https://yen.com.gh/sports/football/314521-ballon-d-2026-official-top-10-rankings-harry-kane-beats-mbappe-yamal/",
+    "https://www.soccernews.com/kane-scoops-first-ballon-dor-after-pipping-yamal-mbappe/407033/",
+    "https://www.chelseafc.com/en/news/article/joao-pedro-wins-premier-league-award",
+    "https://www.si.com/soccer/premier-league-player-manager-of-the-month-august-2026-winners-revealed",
+    "https://www.si.com/soccer/premier-league-player-manager-month-september-2026-winners-revealed",
+    "https://foot-africa.com/en/news/premier-league-september-player-of-the-month-revealed-official-1373621/"
+  ],
+  "checked": "Ranked on real 2026-27 form plus 2026 honours, never game ratings. UCL: Kane, Haaland, Guirassy 4; Mbappe 3; hat-tricks for Foden (MD3) and Ferran Torres; Yamal leads assists (UEFA, Foot Africa). PL goals and table (NBC, Soccernews). WC final Torres 106' (AP, NBC); Rodri Golden Ball (Fox, Wego). Kopa x3 for Yamal (All Football, beIN). Ballon d'Or 2026 order (Bulinews, Blueprint).",
+  "clubs": {
+    "bar": {
+      "name": "Barcelona",
+      "short": "BAR",
+      "c1": "#a50044",
+      "c2": "#004d98",
+      "pattern": "stripes"
+    },
+    "bay": {
+      "name": "Bayern Munich",
+      "short": "FCB",
+      "c1": "#dc052d",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "bvb": {
+      "name": "Borussia Dortmund",
+      "short": "BVB",
+      "c1": "#fde100",
+      "c2": "#000000",
+      "pattern": "plain"
+    },
+    "che": {
+      "name": "Chelsea",
+      "short": "CHE",
+      "c1": "#034694",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "liv": {
+      "name": "Liverpool",
+      "short": "LIV",
+      "c1": "#c8102e",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "mci": {
+      "name": "Manchester City",
+      "short": "MCI",
+      "c1": "#6cabdd",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    },
+    "rma": {
+      "name": "Real Madrid",
+      "short": "RMA",
+      "c1": "#ffffff",
+      "c2": "#febe10",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "haaland": {
+      "name": "Erling Haaland",
+      "skin": "pink",
+      "hair": [
+        "slick",
+        "#e3cf8f"
+      ],
+      "beard": "none",
+      "kit": "mci"
+    },
+    "kane": {
+      "name": "Harry Kane",
+      "skin": "light",
+      "hair": [
+        "crop",
+        "#6b4a2e"
+      ],
+      "beard": "stubble",
+      "kit": "bay"
+    },
+    "yamal": {
+      "name": "Lamine Yamal",
+      "skin": "brown",
+      "hair": [
+        "curlytop",
+        "#151515"
+      ],
+      "beard": "none",
+      "kit": "bar"
+    }
+  },
+  "lines": [
+    {
+      "text": "The twenty twenty-seven Ballon d'Or race has already started. Here is the top ten right now, on real form, not video game ratings.",
+      "scene": {
+        "type": "title",
+        "heading": "BALLON D'OR 2027",
+        "sub": "Power ranking · November",
+        "pill": "REAL FORM ONLY",
+        "person": "haaland"
+      }
+    },
+    {
+      "text": "Ten, Phil Foden, with a Champions League hat-trick. Nine, João Pedro, five league goals. Eight, Serhou Guirassy, four in Europe.",
+      "scene": {
+        "type": "list",
+        "title": "Power ranking",
+        "rows": [
+          {
+            "pos": 10,
+            "name": "Phil Foden",
+            "value": "UCL hat-trick",
+            "club": "mci",
+            "hl": true
+          },
+          {
+            "pos": 9,
+            "name": "João Pedro",
+            "value": "5 PL goals",
+            "club": "che",
+            "hl": true
+          },
+          {
+            "pos": 8,
+            "name": "Serhou Guirassy",
+            "value": "4 UCL goals",
+            "club": "bvb",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Seven, Rodri, the World Cup's Golden Ball. Six, Alexander Isak, six league goals for Liverpool.",
+      "scene": {
+        "type": "list",
+        "title": "Power ranking",
+        "rows": [
+          {
+            "pos": 10,
+            "name": "Phil Foden",
+            "value": "UCL hat-trick",
+            "club": "mci"
+          },
+          {
+            "pos": 9,
+            "name": "João Pedro",
+            "value": "5 PL goals",
+            "club": "che"
+          },
+          {
+            "pos": 8,
+            "name": "Serhou Guirassy",
+            "value": "4 UCL goals",
+            "club": "bvb"
+          },
+          {
+            "pos": 7,
+            "name": "Rodri",
+            "value": "WC Golden Ball",
+            "club": "mci",
+            "hl": true
+          },
+          {
+            "pos": 6,
+            "name": "Alexander Isak",
+            "value": "6 PL goals",
+            "club": "liv",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Five, Ferran Torres, who won the World Cup final and has a Champions League hat-trick. Four, Kylian Mbappé, runner-up last month.",
+      "scene": {
+        "type": "list",
+        "title": "Power ranking",
+        "rows": [
+          {
+            "pos": 10,
+            "name": "Phil Foden",
+            "value": "UCL hat-trick",
+            "club": "mci"
+          },
+          {
+            "pos": 9,
+            "name": "João Pedro",
+            "value": "5 PL goals",
+            "club": "che"
+          },
+          {
+            "pos": 8,
+            "name": "Serhou Guirassy",
+            "value": "4 UCL goals",
+            "club": "bvb"
+          },
+          {
+            "pos": 7,
+            "name": "Rodri",
+            "value": "WC Golden Ball",
+            "club": "mci"
+          },
+          {
+            "pos": 6,
+            "name": "Alexander Isak",
+            "value": "6 PL goals",
+            "club": "liv"
+          },
+          {
+            "pos": 5,
+            "name": "Ferran Torres",
+            "value": "WC final winner",
+            "club": "bar",
+            "hl": true
+          },
+          {
+            "pos": 4,
+            "name": "Kylian Mbappé",
+            "value": "2nd in 2026",
+            "club": "rma",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Number three. Lamine Yamal.",
+      "scene": {
+        "type": "person",
+        "person": "yamal",
+        "label": "NUMBER 3",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Third in the Ballon d'Or at nineteen, a third Kopa Trophy in a row, and the Champions League's top assist maker so far.",
+      "scene": {
+        "type": "trophies",
+        "items": [
+          {
+            "kind": "worldcup",
+            "label": "World Cup"
+          },
+          {
+            "kind": "ballon",
+            "label": "Kopa x3"
+          }
+        ],
+        "person": "yamal"
+      }
+    },
+    {
+      "text": "Number two. The man holding the trophy, Harry Kane.",
+      "scene": {
+        "type": "person",
+        "person": "kane",
+        "label": "NUMBER 2",
+        "mood": "happy"
+      }
+    },
+    {
+      "text": "Four Champions League goals already, and last season's Gerd Müller Trophy for the most goals.",
+      "scene": {
+        "type": "stats",
+        "title": "Kane, 2026-27",
+        "items": [
+          {
+            "n": "4",
+            "l": "UCL goals"
+          },
+          {
+            "n": "1",
+            "l": "Ballon d'Or"
+          }
+        ],
+        "person": "kane"
+      }
+    },
+    {
+      "text": "And number one. Erling Haaland.",
+      "scene": {
+        "type": "person",
+        "person": "haaland",
+        "label": "NUMBER 1",
+        "mood": "happy",
+        "stamp": "NUMBER 1"
+      }
+    },
+    {
+      "text": "Top of the Premier League scoring chart, and four Champions League goals in just two games.",
+      "scene": {
+        "type": "stats",
+        "title": "Haaland, 2026-27",
+        "items": [
+          {
+            "n": "4",
+            "l": "UCL goals"
+          },
+          {
+            "n": "2",
+            "l": "UCL games"
+          },
+          {
+            "n": "1st",
+            "l": "PL scorers"
+          }
+        ],
+        "person": "haaland"
+      }
+    },
+    {
+      "text": "Too early to call? Who is missing from this list?",
+      "scene": {
+        "type": "stamp",
+        "text": "TOO EARLY?",
+        "person": "yamal",
+        "color": "white"
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

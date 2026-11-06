@@ -1,0 +1,292 @@
+{
+  "id": "ww-pl-xi-v-laliga-xi",
+  "series": "Who would win?",
+  "title": "Premier League XI v La Liga XI: who would win?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/2026%E2%80%9327_Premier_League",
+    "https://en.wikipedia.org/wiki/2026%E2%80%9327_La_Liga",
+    "https://www.premierleague.com/en/news/4688364/how-every-premier-league-club-could-line-up-in-202627",
+    "https://www.oddschecker.com/insight/football/cng102-20261024-arsenal-vs-everton-confirmed-lineups",
+    "https://khelnow.com/football/newcastle-united-vs-liverpool-lineups-premier-league-202608",
+    "https://foot-africa.com/en/news/manchester-city-psg-official-lineups-announced-1386995/",
+    "https://www.comuniate.com/en/noticias/38524/confirmed-lineups-real-madrid-vs-sevilla-matchday-9",
+    "https://www.extra.ec/noticia/deportes/barcelona-vs-real-madrid-hora-ver-alineaciones-clasico-2026-165775.html",
+    "https://depor.com/en/us-live/who-won-barcelona-vs-real-madrid-el-clasico-2026-final-score-result-and-goals-nnda-nnrt-noticia/?outputType=amp"
+  ],
+  "checked": "Tables and scorers to 2 Nov 2026 (Wikipedia PL: Arsenal 24 pts/9, Haaland 9, Isak 6; La Liga: Barca 30/11, Raphinha 15, Mbappe 11, Yamal 10); every player checked at his club in a 2026/27 XI (PL.com, Oddschecker, Khel Now, Foot Africa, Comuniate, Extra). The XIs are our own picks from those tables and charts, not an official team of the season. Match imagined.",
+  "clubs": {
+    "pl": {
+      "name": "Premier League XI",
+      "short": "PL",
+      "c1": "#37003c",
+      "c2": "#00ff85",
+      "pattern": "plain"
+    },
+    "ll": {
+      "name": "La Liga XI",
+      "short": "LIGA",
+      "c1": "#ff4b44",
+      "c2": "#ffffff",
+      "pattern": "sash"
+    }
+  },
+  "people": {
+    "haaland": {
+      "name": "Erling Haaland",
+      "skin": "light",
+      "hair": [
+        "slick",
+        "#e8d08a"
+      ],
+      "beard": "none",
+      "kit": "pl"
+    },
+    "saka": {
+      "name": "Bukayo Saka",
+      "skin": "brown",
+      "hair": [
+        "crop",
+        "#1a1a1a"
+      ],
+      "beard": "none",
+      "kit": "pl"
+    },
+    "raphinha": {
+      "name": "Raphinha",
+      "skin": "tan",
+      "hair": [
+        "crop",
+        "#2a1a10"
+      ],
+      "beard": "short",
+      "kit": "ll"
+    },
+    "mbappe": {
+      "name": "Kylian Mbappé",
+      "skin": "brown",
+      "hair": [
+        "buzz",
+        "#111111"
+      ],
+      "beard": "none",
+      "kit": "ll"
+    },
+    "yamal": {
+      "name": "Lamine Yamal",
+      "skin": "brown",
+      "hair": [
+        "curlytop",
+        "#111111"
+      ],
+      "beard": "none",
+      "kit": "ll"
+    }
+  },
+  "lines": [
+    {
+      "text": "Who would win: the best eleven in the Premier League this season, or the best eleven in La Liga?",
+      "scene": {
+        "type": "title",
+        "heading": "PREMIER LEAGUE XI v LA LIGA XI",
+        "sub": "2026/27 so far · an imagined match",
+        "pill": "WHO WOULD WIN?",
+        "person": "haaland"
+      }
+    },
+    {
+      "text": "Our picks, built on the tables and the scoring charts up to the second of November.",
+      "scene": {
+        "type": "text",
+        "heading": "HOW WE PICKED",
+        "body": "Our own picks, not an official team of the season. Built from the league tables and the top scorers up to 2 November 2026."
+      }
+    },
+    {
+      "text": "The Premier League eleven leans on Arsenal, top with twenty-four points from nine.",
+      "scene": {
+        "type": "list",
+        "title": "PREMIER LEAGUE XI",
+        "rows": [
+          {
+            "name": "David Raya",
+            "value": "GK"
+          },
+          {
+            "name": "White · Gabriel · Van Dijk · Gvardiol",
+            "value": "DEF"
+          },
+          {
+            "name": "Rice · Anderson · Wirtz",
+            "value": "MID"
+          },
+          {
+            "name": "Bukayo Saka",
+            "value": "RW"
+          },
+          {
+            "name": "Erling Haaland",
+            "value": "ST",
+            "hl": true
+          },
+          {
+            "name": "Alexander Isak",
+            "value": "ST"
+          }
+        ]
+      }
+    },
+    {
+      "text": "La Liga's eleven: Courtois, Rodri, Pedri, Bellingham, and a scary front three.",
+      "scene": {
+        "type": "list",
+        "title": "LA LIGA XI",
+        "rows": [
+          {
+            "name": "Thibaut Courtois",
+            "value": "GK"
+          },
+          {
+            "name": "Valverde · Cubarsí · Huijsen · Cucurella",
+            "value": "DEF"
+          },
+          {
+            "name": "Rodri · Pedri · Bellingham",
+            "value": "MID"
+          },
+          {
+            "name": "Lamine Yamal",
+            "value": "RW"
+          },
+          {
+            "name": "Kylian Mbappé",
+            "value": "ST"
+          },
+          {
+            "name": "Raphinha",
+            "value": "LW",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Raphinha fifteen, Mbappé eleven, Yamal ten. That's thirty-six league goals between them.",
+      "scene": {
+        "type": "stats",
+        "title": "LA LIGA FRONT THREE",
+        "items": [
+          {
+            "n": "15",
+            "l": "Raphinha"
+          },
+          {
+            "n": "11",
+            "l": "Mbappé"
+          },
+          {
+            "n": "10",
+            "l": "Yamal"
+          }
+        ]
+      }
+    },
+    {
+      "text": "The Premier League's top scorer? Haaland, with nine. Raphinha has six more.",
+      "scene": {
+        "type": "versus",
+        "title": "TOP SCORERS",
+        "left": {
+          "person": "haaland",
+          "label": "Haaland",
+          "value": "9"
+        },
+        "right": {
+          "person": "raphinha",
+          "label": "Raphinha",
+          "value": "15"
+        }
+      }
+    },
+    {
+      "text": "Kick-off. Mbappé, on the turn, inside ten minutes. Nil-one.",
+      "scene": {
+        "type": "score",
+        "home": "pl",
+        "away": "ll",
+        "hs": 0,
+        "as": 1,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Mbappé 9'"
+      }
+    },
+    {
+      "text": "Saka cuts inside Cucurella and curls it. One-all. Then Haaland, from two yards. Two-one.",
+      "scene": {
+        "type": "score",
+        "home": "pl",
+        "away": "ll",
+        "hs": 2,
+        "as": 1,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Saka 28' · Haaland 52'"
+      }
+    },
+    {
+      "text": "Yamal to Raphinha, sixteen goals now in our world. Two-all.",
+      "scene": {
+        "type": "score",
+        "home": "pl",
+        "away": "ll",
+        "hs": 2,
+        "as": 2,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Raphinha 70'"
+      }
+    },
+    {
+      "text": "Eighty-eighth minute. Rice corner, Haaland rises over Rodri. Three-two Premier League.",
+      "scene": {
+        "type": "score",
+        "home": "pl",
+        "away": "ll",
+        "hs": 3,
+        "as": 2,
+        "date": "Full time · prediction",
+        "comp": "Imagined match",
+        "note": "Haaland 2, Saka · Mbappé, Raphinha",
+        "stamp": "WINNER"
+      }
+    },
+    {
+      "text": "Man of the match: Haaland. Raphinha second, Yamal third. Which league is better? Go.",
+      "scene": {
+        "type": "podium",
+        "year": "Imagined",
+        "title": "MAN OF THE MATCH",
+        "places": [
+          {
+            "person": "haaland",
+            "club": "pl"
+          },
+          {
+            "person": "raphinha",
+            "club": "ll"
+          },
+          {
+            "person": "yamal",
+            "club": "ll"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

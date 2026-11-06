@@ -1,6 +1,6 @@
 "use client";
 import { useRef } from "react";
-import type { StoredPost } from "@/lib/star/media/types";
+import type { PostReply, QuotedPost, StoredPost } from "@/lib/star/media/types";
 import { relativeTime } from "@/lib/star/media/schedule";
 import Graphic from "./Graphics";
 import Avatar from "./Avatar";
@@ -35,6 +35,140 @@ function count(n: number): string {
 
 const ICON = { width: 17, height: 17, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" } as const;
 
+/** Tick colours (Football Twitter): blue paid, gold organisations, grey officials. */
+const TICK = { blue: "#1d9bf0", gold: "#e2b719", grey: "#829aab" } as const;
+
+function Tick({ tick, size = 15 }: { tick?: keyof typeof TICK; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className="shrink-0" aria-label="Verified">
+      <path fill={TICK[tick ?? "blue"]} d="M12 2l2.2 2.2 3.1-.4.6 3.1L20.7 8.5l-1.4 2.8 1.4 2.8-2.8 1.6-.6 3.1-3.1-.4L12 22l-2.2-2.6-3.1.4-.6-3.1-2.8-1.6 1.4-2.8-1.4-2.8 2.8-1.6.6-3.1 3.1.4z" />
+      <path fill="#fff" d="M10.6 14.6l-2.2-2.2 1.1-1.1 1.1 1.1 3.9-3.9 1.1 1.1z" />
+    </svg>
+  );
+}
+
+/** A quoted post, boxed inside the one quoting it (Football Twitter). */
+function Quote({ q }: { q: QuotedPost }) {
+  return (
+    <div className="mt-2 rounded-2xl border border-white/15 px-3 py-2">
+      <div className="flex items-center gap-1.5 text-[13px] leading-5">
+        <Avatar initials={q.initials} tint={q.tint} tint2={q.tint2} glyph={q.glyph} size={18} />
+        <span className="truncate font-bold text-white">{q.name}</span>
+        {q.verified && <Tick tick={q.tick} size={13} />}
+        <span className="min-w-0 truncate text-white/55">{q.handle}</span>
+      </div>
+      <p className="mt-0.5 whitespace-pre-line break-words text-[14px] leading-[1.3] text-white/90 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4] overflow-hidden">{q.text}</p>
+      {/* The quoted video itself, playable (Leo: no talk of a video you can't
+          watch). An older quote with only a play icon shows no icon at all. */}
+      {q.graphic && (
+        <div className="mt-2 overflow-hidden rounded-xl" data-quote-video>
+          <Graphic spec={q.graphic} author={{ handle: q.handle, name: q.name, archetype: "aggregator", platform: "x" }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The top replies, under the post (Football Twitter). Round 4 (Leo, 31 Oct
+ * 2026): a reply that answers another reply (an argument between a fan and
+ * a rival) sits one step in, under "Replying to @…", like the real app.
+ */
+function Replies({ thread }: { thread: PostReply[] }) {
+  return (
+    <div className="mt-2 space-y-2 border-l-2 border-white/10 pl-3" data-replies>
+      {thread.map((r, i) => (
+        <div key={i} className={`flex gap-2 ${r.to ? "ml-5" : ""}`} {...(r.to ? { "data-reply-to": r.to } : {})}>
+          <Avatar initials={r.initials} tint={r.tint} tint2={r.tint2} glyph={r.glyph} size={r.to ? 18 : 22} />
+          <div className="min-w-0 flex-1 text-[13px] leading-[1.3]">
+            <span className="flex items-center gap-1">
+              <span className="truncate font-bold text-white">{r.name}</span>
+              {r.verified && <Tick tick={r.tick} size={12} />}
+              <span className="min-w-0 truncate text-white/55">{r.handle}</span>
+            </span>
+            {r.to && <span className="block text-[12px] text-white/45">Replying to <span className="text-[#1d9bf0]">{r.to}</span></span>}
+            <p className="break-words text-white/90">{r.text}</p>
+          </div>
+          <span className="shrink-0 self-start text-[12px] text-white/55">♥ {count(r.likes)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * A TikTok post's comment section (round 4): usernames, not names; the
+ * heart and its count down the right; "Liked by creator"; a reply to a
+ * comment sits under it, one step in, as "Reply to @…".
+ */
+function TikTokComments({ thread, total }: { thread: PostReply[]; total: number }) {
+  return (
+    <div className="mt-2 rounded-xl bg-white/[0.04] px-2.5 py-2" data-tiktok-comments>
+      <div className="mb-1.5 text-center text-[12px] font-semibold text-white/70">{count(Math.max(total, thread.length))} comments</div>
+      <div className="space-y-2.5">
+        {thread.map((r, i) => (
+          <div key={i} className={`flex gap-2 ${r.to ? "ml-8" : ""}`} {...(r.to ? { "data-reply-to": r.to } : {})}>
+            <Avatar initials={r.initials} tint={r.tint} tint2={r.tint2} glyph={r.glyph} size={r.to ? 20 : 26} />
+            <div className="min-w-0 flex-1 text-[13px] leading-[1.3]">
+              <span className="block truncate text-[12px] font-semibold text-white/55">{r.handle.replace(/^@/, "")}</span>
+              <p className="break-words text-white/90">
+                {r.to && <span className="text-white/55">Reply to <span className="font-semibold text-white/70">{r.to.replace(/^@/, "")}</span>: </span>}
+                {r.text}
+              </p>
+              <span className="mt-0.5 flex items-center gap-3 text-[11px] text-white/45">
+                <span>Reply</span>
+                {r.creatorLiked && <span className="font-semibold text-[#fe2c55]">♥ Liked by creator</span>}
+              </span>
+            </div>
+            <span className="flex shrink-0 flex-col items-center self-start text-[11px] text-white/55">
+              <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden><path fill="none" stroke="currentColor" strokeWidth="2" d="M12 21s-7.5-4.6-9.6-9A5.4 5.4 0 0112 5.6 5.4 5.4 0 0121.6 12c-2.1 4.4-9.6 9-9.6 9z" /></svg>
+              {count(r.likes)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** A TikTok post's words: hashtags in the app's pale blue. */
+function TikTokText({ text }: { text: string }) {
+  const parts = text.split(/(#[A-Za-z0-9_]+)/g);
+  return <>{parts.map((t, i) => (t.startsWith("#") ? <span key={i} className="font-semibold text-[#8ab4ff]">{t}</span> : <span key={i}>{t}</span>))}</>;
+}
+
+/** The sound under a TikTok video: a spinning record and "♫ original sound – …". */
+function SoundLine({ sound }: { sound: string }) {
+  return (
+    <div className="mt-2 flex items-center gap-2 text-[13px] text-white/85" data-tiktok-sound>
+      <span className="grid h-6 w-6 shrink-0 animate-[spin_4s_linear_infinite] place-items-center rounded-full bg-gradient-to-br from-neutral-700 to-black ring-2 ring-neutral-600">
+        <span className="h-2 w-2 rounded-full bg-[#fe2c55]" />
+      </span>
+      <span className="min-w-0 truncate">♫ {sound}</span>
+    </div>
+  );
+}
+
+/** TikTok's own counts under its post: likes, comments, saves, shares. */
+function TikTokCounts({ post, liked, onLike }: { post: StoredPost; liked: boolean; onLike?: () => void }) {
+  const m = post.metrics;
+  const item = (icon: React.ReactNode, n: number, label: string) => (
+    <span className="flex items-center gap-1.5" aria-label={label}>{icon}<span className="tabular-nums font-semibold text-white/80">{count(n)}</span></span>
+  );
+  return (
+    <footer className="mt-2 flex items-center gap-4 pr-1 text-[13px] text-white/60" data-tiktok-counts>
+      <button type="button" onClick={onLike} disabled={!onLike} className="flex items-center gap-1.5 disabled:cursor-default" aria-pressed={liked} aria-label={liked ? "Unlike" : "Like"}>
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden><path fill={liked ? "#fe2c55" : "#fff"} d="M12 21s-7.5-4.6-9.6-9A5.4 5.4 0 0112 5.6 5.4 5.4 0 0121.6 12c-2.1 4.4-9.6 9-9.6 9z" /></svg>
+        <span className="tabular-nums font-semibold text-white/80">{count(m.likes + (liked ? 1 : 0))}</span>
+      </button>
+      {item(<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden><path fill="#fff" d="M12 3C6.5 3 2 6.9 2 11.7c0 2.6 1.3 4.9 3.4 6.5L5 22l4.3-2.2c.9.2 1.8.3 2.7.3 5.5 0 10-3.9 10-8.7S17.5 3 12 3z" /></svg>, m.replies, "Comments")}
+      {item(<svg width="16" height="18" viewBox="0 0 20 24" aria-hidden><path fill="#fff" d="M3 2h14a1 1 0 011 1v19l-8-5-8 5V3a1 1 0 011-1z" /></svg>, m.reposts, "Saves")}
+      {item(<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden><path fill="#fff" d="M14 4l8 7.5-8 7.5v-4.5C8 14.5 5 16.5 2 20c1-6 4-10.5 12-11.5z" /></svg>, m.quotes ?? Math.round(m.reposts / 3), "Shares")}
+      {m.views !== undefined && <span className="ml-auto whitespace-nowrap tabular-nums text-white/50">{count(m.views)} views</span>}
+    </footer>
+  );
+}
+
 /** The pink a liked heart turns — the same one real social apps use. */
 const LIKED = "#f91880";
 
@@ -49,6 +183,8 @@ export default function PostCard({ post, now, onToggleLike, onVote }: {
   const heartRef = useRef<SVGSVGElement>(null);
   const ringRef = useRef<HTMLSpanElement>(null);
   const likes = post.metrics.likes + (post.liked ? 1 : 0);
+  // Football Twitter v2: a TikTok post (it carries its sound) looks like TikTok.
+  const tiktok = post.author.platform === "tiktok" && !!post.sound;
 
   // Asked for directly: "a very quick animation and it would like almost
   // flash and turn into a red heart." A pop on the heart and a pink ring
@@ -69,7 +205,7 @@ export default function PostCard({ post, now, onToggleLike, onVote }: {
   };
 
   return (
-    <article className="flex gap-3 border-b border-white/10 px-3.5 pb-2.5 pt-3" data-post-event={post.eventId}>
+    <article className="flex gap-3 border-b border-white/10 px-3.5 pb-2.5 pt-3" data-post-event={post.eventId} {...(tiktok ? { "data-tiktok": "" } : {})}>
       <Avatar
         initials={post.author.initials}
         tint={post.author.tint}
@@ -80,12 +216,7 @@ export default function PostCard({ post, now, onToggleLike, onVote }: {
       <div className="min-w-0 flex-1">
         <header className="flex items-center gap-1 text-[14px] leading-5">
           <span className="truncate font-bold text-white">{post.author.name}</span>
-          {post.author.verified && (
-            <svg width="15" height="15" viewBox="0 0 24 24" className="shrink-0" aria-label="Verified">
-              <path fill="#1d9bf0" d="M12 2l2.2 2.2 3.1-.4.6 3.1L20.7 8.5l-1.4 2.8 1.4 2.8-2.8 1.6-.6 3.1-3.1-.4L12 22l-2.2-2.6-3.1.4-.6-3.1-2.8-1.6 1.4-2.8-1.4-2.8 2.8-1.6.6-3.1 3.1.4z" />
-              <path fill="#fff" d="M10.6 14.6l-2.2-2.2 1.1-1.1 1.1 1.1 3.9-3.9 1.1 1.1z" />
-            </svg>
-          )}
+          {post.author.verified && <Tick tick={post.author.tick} />}
           <span className="min-w-0 truncate text-white/55">{post.author.handle}</span>
           <span className="shrink-0 text-white/55">· {relativeTime(post.at, now)}</span>
           <svg {...ICON} width={16} height={16} className="ml-auto shrink-0 text-white/45" aria-hidden>
@@ -94,8 +225,9 @@ export default function PostCard({ post, now, onToggleLike, onVote }: {
         </header>
 
         <p className="mt-0.5 whitespace-pre-line break-words text-[15px] leading-[1.35] text-white">
-          {post.text}
+          {tiktok ? <TikTokText text={post.text} /> : post.text}
         </p>
+        {post.quote && <Quote q={post.quote} />}
 
         {post.graphic?.type === "gotmPoll" ? (
           <div className="mt-2.5">
@@ -107,10 +239,12 @@ export default function PostCard({ post, now, onToggleLike, onVote }: {
           </div>
         ) : post.graphic && !(post.graphic.type === "thumbnail" && !post.graphic.clips?.length && !post.graphic.synth?.length) && (
           <div className="mt-2.5 overflow-hidden rounded-2xl">
-            <Graphic spec={post.graphic} author={post.author} />
+            <Graphic spec={post.graphic} author={{ ...post.author, persona: post.persona }} />
           </div>
         )}
 
+        {tiktok && post.sound && <SoundLine sound={post.sound} />}
+        {tiktok ? <TikTokCounts post={post} liked={!!post.liked} onLike={onToggleLike ? like : undefined} /> : (
         <footer className="mt-2 flex items-center justify-between pr-1 text-[13px] text-white/55">
           <span className="flex items-center gap-1.5">
             <svg {...ICON} aria-label="Replies"><path d="M21 11.5a8.4 8.4 0 01-8.9 8.4 9.4 9.4 0 01-4-.9L3 20l1.1-4.2A8 8 0 013 11.5 8.5 8.5 0 0112 3a8.4 8.4 0 019 8.5z" /></svg>
@@ -137,9 +271,16 @@ export default function PostCard({ post, now, onToggleLike, onVote }: {
             </span>
             <span className="tabular-nums">{count(likes)}</span>
           </button>
-          <svg {...ICON} aria-hidden><path d="M5 20V12M10 20V6M15 20v-9M20 20V9" /></svg>
+          <span className="flex items-center gap-1.5">
+            <svg {...ICON} aria-label="Views"><path d="M5 20V12M10 20V6M15 20v-9M20 20V9" /></svg>
+            {post.metrics.views !== undefined && <span className="tabular-nums">{count(post.metrics.views)}</span>}
+          </span>
           <svg {...ICON} aria-hidden><path d="M12 3v13M7 8l5-5 5 5M5 14v5a2 2 0 002 2h10a2 2 0 002-2v-5" /></svg>
         </footer>
+        )}
+        {!!post.thread?.length && (tiktok
+          ? <TikTokComments thread={post.thread} total={post.metrics.replies} />
+          : <Replies thread={post.thread} />)}
       </div>
     </article>
   );

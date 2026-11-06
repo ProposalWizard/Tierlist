@@ -1,0 +1,274 @@
+{
+  "id": "ww-invincibles-v-centurions",
+  "series": "Who would win?",
+  "title": "The Invincibles v the Centurions: who would win?",
+  "sources": [
+    "https://en.wikipedia.org/wiki/2003%E2%80%9304_Arsenal_F.C._season",
+    "https://en.wikipedia.org/wiki/Thierry_Henry",
+    "https://en.wikipedia.org/wiki/2017%E2%80%9318_Manchester_City_F.C._season",
+    "https://www.premierleague.com/records"
+  ],
+  "checked": "Arsenal 03/04: 26 W, 12 D, 0 L, Henry 30 league goals (Arsenal season page + Henry page). City 17/18: 100 pts, 106 goals, 32 wins, +79, Aguero 21 league goals (City season page; Premier League records page listed but not fetched: search budget ran out). The two XIs are the usual first-choice sides of those seasons from general football knowledge, not checked line by line this session. Match imagined.",
+  "clubs": {
+    "a04": {
+      "name": "Arsenal 2003/04",
+      "short": "ARS",
+      "c1": "#ef0107",
+      "c2": "#ffffff",
+      "pattern": "sides"
+    },
+    "m18": {
+      "name": "Man City 2017/18",
+      "short": "MCI",
+      "c1": "#6cabdd",
+      "c2": "#ffffff",
+      "pattern": "plain"
+    }
+  },
+  "people": {
+    "henry": {
+      "name": "Thierry Henry",
+      "skin": "brown",
+      "hair": [
+        "buzz",
+        "#1a1a1a"
+      ],
+      "beard": "none",
+      "kit": "a04"
+    },
+    "vieira": {
+      "name": "Patrick Vieira",
+      "skin": "dark",
+      "hair": [
+        "buzz",
+        "#111111"
+      ],
+      "beard": "none",
+      "kit": "a04"
+    },
+    "aguero": {
+      "name": "Sergio Agüero",
+      "skin": "olive",
+      "hair": [
+        "crop",
+        "#2a1a10"
+      ],
+      "beard": "stubble",
+      "kit": "m18"
+    },
+    "kdb": {
+      "name": "Kevin De Bruyne",
+      "skin": "pink",
+      "hair": [
+        "crop",
+        "#c77a3a"
+      ],
+      "beard": "none",
+      "kit": "m18"
+    }
+  },
+  "lines": [
+    {
+      "text": "Who would win: Arsenal's Invincibles, or Manchester City's Centurions?",
+      "scene": {
+        "type": "title",
+        "heading": "INVINCIBLES v CENTURIONS",
+        "sub": "Arsenal 2003/04 v Man City 2017/18",
+        "pill": "WHO WOULD WIN?",
+        "person": "henry"
+      }
+    },
+    {
+      "text": "Arsenal, two thousand and four. Twenty-six wins, twelve draws, zero defeats.",
+      "scene": {
+        "type": "stats",
+        "title": "THE INVINCIBLES",
+        "items": [
+          {
+            "n": "26",
+            "l": "wins"
+          },
+          {
+            "n": "12",
+            "l": "draws"
+          },
+          {
+            "n": "0",
+            "l": "defeats"
+          }
+        ],
+        "person": "vieira"
+      }
+    },
+    {
+      "text": "City, twenty eighteen. A hundred points, a hundred and six goals, plus seventy-nine goal difference.",
+      "scene": {
+        "type": "stats",
+        "title": "THE CENTURIONS",
+        "items": [
+          {
+            "n": "100",
+            "l": "points"
+          },
+          {
+            "n": "106",
+            "l": "goals"
+          },
+          {
+            "n": "32",
+            "l": "wins"
+          },
+          {
+            "n": "+79",
+            "l": "goal difference"
+          }
+        ],
+        "person": "kdb"
+      }
+    },
+    {
+      "text": "Wenger's side: Lehmann, Campbell, Cole, Vieira, Pires, Bergkamp and Henry.",
+      "scene": {
+        "type": "list",
+        "title": "ARSENAL 2003/04",
+        "rows": [
+          {
+            "name": "Jens Lehmann",
+            "value": "GK"
+          },
+          {
+            "name": "Lauren · Campbell · Touré · Cole",
+            "value": "DEF"
+          },
+          {
+            "name": "Ljungberg · Vieira · Gilberto · Pires",
+            "value": "MID"
+          },
+          {
+            "name": "Bergkamp · Henry",
+            "value": "ATT",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Pep's side: Ederson, Walker, Fernandinho, De Bruyne, David Silva, and Agüero.",
+      "scene": {
+        "type": "list",
+        "title": "MAN CITY 2017/18",
+        "rows": [
+          {
+            "name": "Ederson",
+            "value": "GK"
+          },
+          {
+            "name": "Walker · Stones · Otamendi · Delph",
+            "value": "DEF"
+          },
+          {
+            "name": "Fernandinho · De Bruyne · Silva",
+            "value": "MID"
+          },
+          {
+            "name": "Sterling · Agüero · Sané",
+            "value": "ATT",
+            "hl": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Henry scored thirty league goals that year. Agüero scored twenty-one.",
+      "scene": {
+        "type": "versus",
+        "title": "THE STRIKERS",
+        "left": {
+          "person": "henry",
+          "label": "Henry 03/04",
+          "value": "30"
+        },
+        "right": {
+          "person": "aguero",
+          "label": "Agüero 17/18",
+          "value": "21"
+        }
+      }
+    },
+    {
+      "text": "Kick-off. City keep the ball for five minutes straight, then Agüero finishes. Nil-one.",
+      "scene": {
+        "type": "score",
+        "home": "a04",
+        "away": "m18",
+        "hs": 0,
+        "as": 1,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Agüero 14'"
+      }
+    },
+    {
+      "text": "Then Arsenal break. Vieira to Bergkamp, Bergkamp to Henry. One-all, in about eight seconds.",
+      "scene": {
+        "type": "score",
+        "home": "a04",
+        "away": "m18",
+        "hs": 1,
+        "as": 1,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "Henry 22'"
+      }
+    },
+    {
+      "text": "De Bruyne, from thirty yards, into the top corner. Two-one City.",
+      "scene": {
+        "type": "score",
+        "home": "a04",
+        "away": "m18",
+        "hs": 1,
+        "as": 2,
+        "date": "Prediction",
+        "comp": "Imagined match",
+        "note": "De Bruyne 58'"
+      }
+    },
+    {
+      "text": "Eighty-seventh minute. Pires, at the back post. Two-all.",
+      "scene": {
+        "type": "score",
+        "home": "a04",
+        "away": "m18",
+        "hs": 2,
+        "as": 2,
+        "date": "Full time · prediction",
+        "comp": "Imagined match",
+        "note": "Henry, Pires · Agüero, De Bruyne",
+        "stamp": "STILL UNBEATEN"
+      }
+    },
+    {
+      "text": "Full time in our prediction: two-all. The Invincibles stay unbeaten, and the Centurions keep their hundred.",
+      "scene": {
+        "type": "trophies",
+        "items": [
+          {
+            "kind": "league",
+            "label": "Unbeaten 2003/04"
+          },
+          {
+            "kind": "league",
+            "label": "100 points 2017/18"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.",
+      "scene": {
+        "type": "cta"
+      }
+    }
+  ]
+}

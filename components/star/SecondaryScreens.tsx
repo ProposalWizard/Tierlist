@@ -9,15 +9,8 @@ import { clauseSummary, offerClauses } from "@/lib/star/contracts";
 import { willingToRenegotiate } from "@/lib/star/careerFlow";
 import { mulberry32 } from "@/lib/star/season";
 import type { CareerState, Trophy } from "@/lib/star/types";
-import { ACHIEVEMENTS, ACHIEVEMENT_GROUPS, type AchievementTier } from "@/lib/star/achievements";
+import AchievementWall from "./AchievementWall";
 
-/** How rare an achievement is, as the list shows it (tier = XP Book tier). */
-const TIER_LOOK: Record<AchievementTier, { label: string; icon: string; bg: string; fg: string; glow: string }> = {
-  easy: { label: "Bronze", icon: "🥉", bg: "#92400e", fg: "#fde68a", glow: "rgba(217,119,6,.7)" },
-  medium: { label: "Silver", icon: "🥈", bg: "#475569", fg: "#f1f5f9", glow: "rgba(203,213,225,.7)" },
-  hard: { label: "Gold", icon: "🥇", bg: "#a16207", fg: "#fef9c3", glow: "rgba(251,191,36,.7)" },
-  legendary: { label: "Legend", icon: "🏆", bg: "#6d28d9", fg: "#ede9fe", glow: "rgba(167,139,250,.8)" },
-};
 import { formatMoney } from "@/lib/star/money";
 import { renewalWage, renewalMultiplier, RENEWAL_RAISE_PER_WIN, RENEWAL_SOURED_CUT } from "@/lib/star/economy";
 import { Burst, CountUp, FloatText, PressButton, Shine, StatBar, clubTheme, useTrigger } from "./ui";
@@ -145,45 +138,7 @@ export function SponsorsScreen({ career, onBack, onSign }: {
  * the Stats page's Achievements tab and on the Achievements screen.
  */
 export function AchievementList({ career, top }: { career: CareerState; top?: React.ReactNode }) {
-  const got = ACHIEVEMENTS.filter(a => career.achievements.includes(a.id)).length;
-  return (
-    <div data-achievement-list>
-      {top}
-      <div className="mb-2 flex items-center gap-2 px-1 text-xs font-bold text-white/80">
-        <span><span className="text-amber-300">{got}</span> / {ACHIEVEMENTS.length} unlocked</span>
-        <StatBar value={(got / Math.max(1, ACHIEVEMENTS.length)) * 100} colors={["#f59e0b", "#fde047"]} className="h-2 flex-1" />
-      </div>
-      <div className="kit-card overflow-hidden">
-        {ACHIEVEMENT_GROUPS.map((g) => {
-          const list = ACHIEVEMENTS.filter(a => a.group === g);
-          const n = list.filter(a => career.achievements.includes(a.id)).length;
-          return (
-            <div key={g}>
-              <div className="flex items-baseline justify-between bg-black/50 px-3 py-1.5" data-ach-group={g}>
-                <span className="text-[11px] font-black uppercase tracking-wide text-white">{g}</span>
-                <span className="text-[10px] font-black tabular-nums text-amber-300">{n} / {list.length}</span>
-              </div>
-              {list.map((a) => {
-                const unlocked = career.achievements.includes(a.id);
-                const t = TIER_LOOK[a.tier];
-                return (
-                  <div key={a.id} className={`flex items-center gap-3 border-b border-white/[0.06] p-3 ${unlocked ? "bg-amber-400/[0.07]" : ""}`}>
-                    <div className={`text-3xl ${unlocked ? "" : "opacity-20 grayscale"}`} style={unlocked ? { filter: `drop-shadow(0 0 8px ${t.glow})` } : undefined}>{t.icon}</div>
-                    <div className="min-w-0 flex-1">
-                      <div className={`text-sm font-black ${unlocked ? "text-yellow-300" : "text-white/65"}`}>{a.label}</div>
-                      <div className={`text-[10px] ${unlocked ? "text-white/85" : "text-white/65"}`}>{a.description}</div>
-                    </div>
-                    <span data-ach-rarity className="shrink-0 rounded-sm px-1.5 py-0.5 text-[9px] font-black uppercase" style={{ background: t.bg, color: t.fg }}>{t.label}</span>
-                    <div className="w-5 shrink-0 text-center text-lg font-black text-emerald-400">{unlocked ? "✓" : ""}</div>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+  return <AchievementWall career={career} top={top} />;
 }
 
 export function AchievementsScreen({ career, onBack, top }: { career: CareerState; onBack: () => void; /** Shown above the list — the unlock chain's first steps (UnlockChain.tsx). */ top?: React.ReactNode }) {

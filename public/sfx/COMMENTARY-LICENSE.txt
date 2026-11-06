@@ -5,3 +5,7 @@ https://github.com/thewh1teagle/kokoro-onnx, MIT), voices "bm_george" (lead)
 and "bm_fable" (co-commentator), by scripts/commentary/generate.py from the
 lines in lib/star/goalClip/commentary.ts. Any of them can be replaced on the
 Sound Board (/admin/sound-board).
+
+The NEW voice (Leo's update switch, "New commentary voice") is a separate set
+in public/sfx/v2/ (Chatterbox, MIT; see public/sfx/v2/LICENSE.txt and
+scripts/commentary/README.md). These files stay as they are.
