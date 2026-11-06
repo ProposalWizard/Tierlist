@@ -35,6 +35,10 @@ starting point.
 | R11 | https://vm.tiktok.com/ZN8yfrcgG/ | @whatifbagel (What If Bagel) | 1:12 | "Could Man United win a fifth straight game against 10 blind footballers?" The crowd's boos become a sonar for the blind defenders; United lose 1-0. | Blocky 3D (game-like) animated match |
 | R12 | https://vm.tiktok.com/ZN8yfk6wn/ | @story.gaffer (storygaffer) | 0:56 | Before Sunday's Clásico: Yamal at 19 years 104 days v Messi, Ronaldo and Mbappé at the same age, then the same 8,117 league minutes each; Yamal drops to third. | Dark data cards, a stadium "race track" chart |
 | R13 | https://vm.tiktok.com/ZN8yfD8HJ/ | @story.gaffer (storygaffer) | 0:46 | "Could Messi do it on a cold, rainy night in Stoke?" 190 Stoke home games, only 4 cold, wet and under lights; Messi's 11 such La Liga games, all won, a goal or assist in each. | Dark data cards, weather cards, a UK/Spain map |
+| R14 | https://vm.tiktok.com/ZN8f6pSeU/ | @mrbombastic_53 | 11:52 | How Claude learned the "Ricks Clips" style (2D people in an inked 3D world, 14-31M views a short) and made its own: study 20 shorts frame by frame, script formula, three.js + Remotion. Full notes: `references/2026-11-06-four-tiktoks.md`. | Screen-recorded tutorial, theirs next to mine |
+| R15 | https://vm.tiktok.com/ZN8f63tWk/ | @aiwithtroy | 1:00 | "Claude made me rich and I'm scared": secret hook, $41k proof at 0:21, "Comment 'store'" end (really an ad for a store tool). | Face to camera + phone filming a monitor, one-word captions |
+| R16 | https://vm.tiktok.com/ZN8f6qDt5/ | @jackroberts____ | 0:40 | "Your Claude edits are missing sound design": the free Openverse sound library. | Split screen: drawn graphic of every word on top, face below, cut every 0.5-1 s |
+| R17 | https://vm.tiktok.com/ZN8f6QtUh/ | @mrbombastic_53 | 3:00 | Short version of R14: a free "Cartoon Audio Short" Claude skill, step by step (stops at Step 2). | Blue motion-text scenes, chalkboard step cards |
 
 Also sent: a YouTube Short (https://www.youtube.com/shorts/dT8CtzNr7fk), the "oldest Ballon d'Or winner" format.
 
@@ -227,3 +231,10 @@ Page: https://claude.ai/artifact/H6Wm2o1BTJRRXPhePK6pYK (private to Mikey until 
 - **NS-08** Lewandowski for Italy. Italy's tournaments. Ends: The expected trophies.
 - **NS-09** De Bruyne for Argentina. Argentina's tournaments. Ends: The expected trophies.
 - **NS-10** Son Heung-min for Germany. Germany's tournaments. Ends: The expected trophies.
+
+### From the 6 Nov references (R14-R17)
+
+23. **Football story shorts, Ricks Clips style (R14/R17).** A true football story with a paradox in sentence 1, 3-6 escalation beats, the pivot, a twist line; flat figures in our 3D grounds, ink lines, warm light turning night blue at the explanation, a gliding camera, one-word captions, about 60 s.
+24. **"I'm scared to show you" (R15 shape).** Secret hook, proof on screen by 0:20, end on "Comment '<word>'". About the game, with real numbers only.
+25. **Sound on every cut (R16).** Not a video: a rule for all our videos, using a free, commercial-use library such as Openverse.
+26. **Behind the scenes: Claude builds a football game (R14/R17 shape).** Theirs next to ours, big real numbers, step cards.
