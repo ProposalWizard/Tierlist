@@ -37,7 +37,18 @@ if (!fs.existsSync(path.join(PACKED, "index.json"))) {
   process.exit(1);
 }
 if (!process.argv.includes("--skip-build")) {
-  execSync("npx next build", { cwd: ROOT, stdio: "inherit", env: { ...process.env, KIB_APP_BUILD: "1" } });
+  // Next 14 builds an exported site in .next (the website's own build folder)
+  // and only copies the result to distDir. Park the website's .next for the
+  // length of the app build, so a local `next start` still serves the website.
+  const SITE = path.join(ROOT, ".next"), PARKED = path.join(ROOT, ".next-site-parked");
+  fs.rmSync(PARKED, { recursive: true, force: true });
+  if (fs.existsSync(SITE)) fs.renameSync(SITE, PARKED);
+  try {
+    execSync("npx next build", { cwd: ROOT, stdio: "inherit", env: { ...process.env, KIB_APP_BUILD: "1" } });
+  } finally {
+    fs.rmSync(SITE, { recursive: true, force: true });
+    if (fs.existsSync(PARKED)) fs.renameSync(PARKED, SITE);
+  }
 }
 fs.rmSync(WWW, { recursive: true, force: true });
 fs.cpSync(BUILT, WWW, { recursive: true });
