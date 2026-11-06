@@ -446,6 +446,14 @@ function NewUiStarDevPage() {
   );
 }
 
+/** Season and matches played: what makes a cloud save worth sending at once
+ *  rather than within the minute (the save effect; 6 Nov 2026). */
+function cloudMarkOf(c: CareerState): string {
+  let played = 0;
+  for (const f of c.fixtures ?? []) if (f.played) played++;
+  return `${c.season}|${played}`;
+}
+
 function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersiveMode> }) {
   const [career, setCareer] = useState<CareerState | null>(null);
   // Fetch the other screens quietly once Home is up (lib/star/lazyScreen.ts).
@@ -689,9 +697,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    */
   const [signedIn, setSignedIn] = useState(false);
   const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** The cloud save the 3 s timer is still holding, if any — see the
+  /** The cloud save the timer (3 s or up to 60 s) is still holding, if any — see the
    *  flush-on-hide effect below the save effect. */
   const pendingCloudSave = useRef<{ career: CareerState; slot: number } | null>(null);
+  /** Season and matches played at the last cloud save: when either moves on,
+   *  the next save goes up in 3 s rather than within the minute (cloudMarkOf). */
+  const lastCloudMark = useRef("");
   /**
    * WHICH ACCOUNT — always the signed-in user's id (see the sign-in gate:
    * nothing past it runs without one). Resolved once, here, before anything
@@ -860,20 +871,35 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       return;
     }
     saveCareer(career, slotScope(scopeRef.current, activeSlotRef.current)); // localStorage — immediate
-    // Debounced cloud save: waits 3 s after the last change so a burst of
-    // state updates (end of match, season rollover) produces one write, not
-    // many. The slot is captured now, at the moment the timer is set, not
-    // re-read when it actually fires — see flushCloudSave's own note on why
-    // a save already in flight has to land on the slot it was really FOR,
-    // not whichever slot happens to be active three seconds from now.
-    if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
+    // Cloud save (Mikey, 6 Nov 2026: server time). The phone copy above is
+    // written on every change; the cloud copy goes up:
+    //   - 3 s after a match is played or a season turns (as before: a burst
+    //     of updates at full time makes one write), and
+    //   - otherwise at most once a minute, carrying the latest career.
+    // It used to go 3 s after EVERY change (each tap in a menu, each shop
+    // buy), about a third of the site's server time. Hiding or closing the
+    // page still sends what is waiting at once (flushOnHide, below).
+    // The slot is captured at the change, not when the timer fires — see
+    // flushCloudSave's own note on why a save in flight has to land on the
+    // slot it was really FOR.
     const slotAtSaveTime = activeSlotRef.current;
     latestCareerRef.current = { career, slot: slotAtSaveTime };
     pendingCloudSave.current = { career, slot: slotAtSaveTime };
-    cloudSaveTimer.current = setTimeout(() => {
+    const mark = cloudMarkOf(career);
+    const send = () => {
+      cloudSaveTimer.current = null;
+      const p = pendingCloudSave.current;
+      if (!p) return;
       pendingCloudSave.current = null;
-      saveCareerToCloud(career, slotAtSaveTime, { scope: slotScope(scopeRef.current, slotAtSaveTime) });
-    }, 3000);
+      lastCloudMark.current = cloudMarkOf(p.career);
+      saveCareerToCloud(p.career, p.slot, { scope: slotScope(scopeRef.current, p.slot) });
+    };
+    if (mark !== lastCloudMark.current) {
+      if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
+      cloudSaveTimer.current = setTimeout(send, 3000);
+    } else if (!cloudSaveTimer.current) {
+      cloudSaveTimer.current = setTimeout(send, 60_000);
+    }
   }, [career]);
 
   // ── Signal comes back: upload what this device has that the cloud hasn't ──
@@ -909,9 +935,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   // ── Leaving the page must not lose the last few seconds ──
   //
-  // The cloud save above waits 3 s for things to settle. Switching app,
-  // locking the phone or closing the tab inside those 3 s used to leave the
-  // cloud one step behind: the timer never fired, and the next device (or a
+  // The cloud save above waits 3 s, or up to a minute (6 Nov 2026). Switching
+  // app, locking the phone or closing the tab inside that wait used to leave
+  // the cloud one step behind: the timer never fired, and the next device (or a
   // wiped browser) loaded the older save. When the page is hidden, the
   // pending save goes NOW instead — and the local copy is written again too,
   // belt and braces, since it is the one thing guaranteed to be there on

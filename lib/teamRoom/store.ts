@@ -456,7 +456,16 @@ export function startTeamRoom() {
   started = true;
   set({ status: "loading", read: loadRead(), seenJobs: readJson<string[]>(SEEN_JOBS_KEY, []), chRead: readJson<ChannelReads>(CH_READ_KEY, {}) });
   loadJobs();
-  jobsPoll = setInterval(loadJobs, TEAM_ROOM.jobs.refreshMs);
+  // Every 10 minutes, and only while this tab is on screen; coming back to
+  // the tab after that long catches up at once (6 Nov 2026: server time).
+  let lastJobs = Date.now();
+  const jobsIfDue = () => {
+    if (!jobsPoll || document.visibilityState !== "visible" || Date.now() - lastJobs < TEAM_ROOM.jobs.bubblePollMs - 1000) return;
+    lastJobs = Date.now();
+    loadJobs();
+  };
+  jobsPoll = setInterval(jobsIfDue, TEAM_ROOM.jobs.bubblePollMs);
+  document.addEventListener("visibilitychange", jobsIfDue);
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) { if (offlineDevPlayEnabled()) startDemo(); else set({ status: "error", error: "No database address set." }); return; }
   sb = createClient();
   sb.auth.getUser().then(async ({ data }) => {
