@@ -35,6 +35,10 @@ starting point.
 | R11 | https://vm.tiktok.com/ZN8yfrcgG/ | @whatifbagel (What If Bagel) | 1:12 | "Could Man United win a fifth straight game against 10 blind footballers?" The crowd's boos become a sonar for the blind defenders; United lose 1-0. | Blocky 3D (game-like) animated match |
 | R12 | https://vm.tiktok.com/ZN8yfk6wn/ | @story.gaffer (storygaffer) | 0:56 | Before Sunday's Clásico: Yamal at 19 years 104 days v Messi, Ronaldo and Mbappé at the same age, then the same 8,117 league minutes each; Yamal drops to third. | Dark data cards, a stadium "race track" chart |
 | R13 | https://vm.tiktok.com/ZN8yfD8HJ/ | @story.gaffer (storygaffer) | 0:46 | "Could Messi do it on a cold, rainy night in Stoke?" 190 Stoke home games, only 4 cold, wet and under lights; Messi's 11 such La Liga games, all won, a goal or assist in each. | Dark data cards, weather cards, a UK/Spain map |
+| R14 | https://vm.tiktok.com/ZN8fP8S3V/ | (account not in the download) | 1:52 | Breaking Bad: Walt v Mike at gunpoint, "every line rated like a chess move", Part 1. | TV clip in the middle, chess eval bar on the left, a name tag for each side, move badges (Book, Best, Brilliant, Checkmate), a typed-out move card on top, voiceover |
+| R15 | https://vm.tiktok.com/ZN8fPx8CJ/ | (account not in the download) | 1:07 | Dexter v Doakes on the jetty, "analysed like chess". | Same chess overlay, white title box on top, small move cards |
+| R16 | https://vm.tiktok.com/ZN8fPPdrY/ | @chess.analyzer | 6:10 | American Psycho: the detective interview, "Who wins this game?", move by move. | Header card (title, both "players", a 50%/50% win bar that moves), move badges, typed explanation, subtitles under the clip |
+| R17 | https://vm.tiktok.com/ZN8fP7q3p/ | (account not in the download) | 1:30 | The Mentalist: Patrick Jane gets a father to give himself away, "analysed like chess", ends "checkmate delivered by Black's own queen". | Eval bar, numbered move cards ("31. Jane · Best", "Discovered check"), voiceover |
 
 Also sent: a YouTube Short (https://www.youtube.com/shorts/dT8CtzNr7fk), the "oldest Ballon d'Or winner" format.
 
@@ -227,3 +231,21 @@ Page: https://claude.ai/artifact/H6Wm2o1BTJRRXPhePK6pYK (private to Mikey until 
 - **NS-08** Lewandowski for Italy. Italy's tournaments. Ends: The expected trophies.
 - **NS-09** De Bruyne for Argentina. Argentina's tournaments. Ends: The expected trophies.
 - **NS-10** Son Heung-min for Germany. Germany's tournaments. Ends: The expected trophies.
+
+---
+
+## CH · Analysed like chess (Mikey, 6 Nov 2026, from R14 to R17)
+
+A football duel told as a chess game: each decision is a "move" with a badge
+(book, best, great !, brilliant !!, mistake ?, blunder ??, checkmate #), an
+evaluation bar swings between the two managers, and a typed card says why.
+Our version is drawn on a tactics board (the pitch is the board, players are
+pieces), not broadcast footage, and uses our own badge drawings and series
+name. Facts below are from memory and must be checked before a script.
+
+- **CH-01** Pep v Klopp, final day 2021-22: City 0-2 down to Villa, Liverpool's bar fills, then three City goals in about five minutes. Checkmate by one point (93 v 92).
+- **CH-02** Pep v Klopp, 2018-19 as one long game: Liverpool well clear at Christmas, Stones' goal-line clearance in the 2-1 (Brilliant), Kompany's long shot v Leicester, 98 v 97.
+- **CH-03** Mourinho v Pep, Camp Nou 2010 (Champions League semi, 2nd leg): Inter down to ten men, lose 1-0 and still go through 3-2 on aggregate. "Losing the game, winning the match."
+- **CH-04** Mourinho v Pep, El Clásico April 2012: Real Madrid win 2-1 at the Camp Nou and all but win the league.
+- **CH-05** Flick v Ancelotti, El Clásico October 2024: Barça's high line catches Madrid offside again and again, 4-0 at the Bernabéu.
+
