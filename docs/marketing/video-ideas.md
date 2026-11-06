@@ -234,6 +234,8 @@ Page: https://claude.ai/artifact/H6Wm2o1BTJRRXPhePK6pYK (private to Mikey until 
 
 ### From the 6 Nov references (R14-R17)
 
+Page: https://claude.ai/artifact/D5MXjAm9mSckuXvskmHgDy (private to Mikey until shared).
+
 23. **Football story shorts, Ricks Clips style (R14/R17).** A true football story with a paradox in sentence 1, 3-6 escalation beats, the pivot, a twist line; flat figures in our 3D grounds, ink lines, warm light turning night blue at the explanation, a gliding camera, one-word captions, about 60 s.
 24. **"I'm scared to show you" (R15 shape).** Secret hook, proof on screen by 0:20, end on "Comment '<word>'". About the game, with real numbers only.
 25. **Sound on every cut (R16).** Not a video: a rule for all our videos, using a free, commercial-use library such as Openverse.
