@@ -21,9 +21,9 @@
  {
   "id": "ch-analysed-like-chess",
   "title": "CH-03 · Mourinho v Pep, Camp Nou 2010, analysed like chess",
-  "stage": "making",
+  "stage": "check",
   "owner": "Claude",
-  "updated": "2026-11-07T21:10:00Z",
+  "updated": "2026-11-07T21:30:00Z",
   "line": "He lost the game 1-0 and still won the match: Inter's 10 men at the Camp Nou, told move by move like a chess game.",
   "links": [
    "https://claude.ai/artifact/LrX1XPQMcAKW7GTuRUeqWW"
@@ -34,11 +34,10 @@
    "2026-11-07 Made: 75 s, voice E, drawn chessboard pitch. Two lines reworded because the voice said 'trouble' for 'treble'. Waiting for Mikey's check.",
    "2026-11-07 v2 after Mikey's notes: football first (real pitch, every player a named icon, camera on the action), chess grades and eval bar on top; Eto'o said right; voice ends on 'Follow for more.' only.",
    "2026-11-07 Mikey prefers the real-clips draft. Not rebuilding yet: plan page made (clip log so every clip shows what is said, 15 graded moves, win bar from a goals model, scoreboard options A/B). Waiting for his calls.",
-   "2026-11-07 Mikey: scoreboard A, real badges, one video, keep the clips' sound; Mikey and Harry OK'd posting real footage (RUL-KIB-006). Making the real-clips version: 15 graded moves, every clip checked against its line."
+   "2026-11-07 Mikey: scoreboard A, real badges, one video, keep the clips' sound; Mikey and Harry OK'd posting real footage (RUL-KIB-006). Making the real-clips version: 15 graded moves, every clip checked against its line.",
+   "2026-11-07 Made the real-clips version (3:09): 15 graded moves, game review, scoreboard A with real faces and badges, clips' own sound under the voice. The file stays out of the repo (real footage); sent to Mikey in chat. Waiting for his check."
   ],
   "script": "tools/video-factory/stories/ch-mourinho-pep-2010.json",
-  "seconds": 72.2,
-  "video": "docs/marketing/videos/ch03-mourinho-pep-2010/knowitball-ch03-mourinho-pep-2010.mp4",
-  "cover": "docs/marketing/videos/ch03-mourinho-pep-2010/cover.jpg"
+  "seconds": 189.4
  }
 ]
