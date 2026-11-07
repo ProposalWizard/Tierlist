@@ -170,7 +170,7 @@ function possession(g, lt, pct) {
   g.save(); g.globalAlpha = ez((lt - 0.6) * 3); rr(g, x, y, w, 120, 18, "rgba(10,10,12,.88)");
   T(g, "POSSESSION", x + w / 2, y + 40, 30, { align: "center", font: "Oswald", weight: 700, color: "#cfd3da" });
   const bw = w - 220, bx = x + 110; rr(g, bx, y + 62, bw, 34, 17, "#1f4fb3"); rr(g, bx, y + 62, bw * (pct / 100) * k, 34, 17, "#a50044");
-  T(g, ST().possLabels ? ST().possLabels[0] : `${Math.round(pct * k)}%`, x + 20, y + 92, 40, { color: "#ff6b9a" }); T(g, ST().possLabels ? ST().possLabels[1] : `${Math.round(100 - pct * k)}%`, x + w - 20, y + 92, 40, { align: "right", color: "#7fa8ff" });
+  T(g, Array.isArray(ST().possLabels) ? ST().possLabels[0] : `${Math.round(pct * k)}%`, x + 20, y + 92, 40, { color: "#ff6b9a" }); T(g, Array.isArray(ST().possLabels) ? ST().possLabels[1] : `${Math.round(100 - pct * k)}%`, x + w - 20, y + 92, 40, { align: "right", color: "#7fa8ff" });
   g.restore();
 }
 function coachMap(g, lt) {
@@ -236,8 +236,8 @@ function badgeIcon(g, b, x, y, r, k = 1) {
   g.fillText(b.sym, 0, r * (emoji ? 0.06 : 0.08));
   g.restore();
 }
-function evalFrac(e) { if (ST().evalPct) return Math.max(0, Math.min(1, Number(e) / 100)); if (e === "M") return 1; if (e === "-M") return 0; return 0.5 + 0.5 * Math.tanh(Number(e) / 4); }
-function evalText(e) { if (ST().evalPct) return Math.round(Number(e)) + "%"; if (e === "M") return "M"; if (e === "-M") return "-M"; const v = Number(e); return (v > 0 ? "+" : "") + v.toFixed(1); }
+function evalFrac(e) { if (ST().evalPct === true) return Math.max(0, Math.min(1, Number(e) / 100)); if (e === "M") return 1; if (e === "-M") return 0; return 0.5 + 0.5 * Math.tanh(Number(e) / 4); }
+function evalText(e) { if (ST().evalPct === true) return Math.round(Number(e)) + "%"; if (e === "M") return "M"; if (e === "-M") return "-M"; const v = Number(e); return (v > 0 ? "+" : "") + v.toFixed(1); }
 function flipAt(s) { const sc = s.scene; if (sc.flipWord) { const w = (s.words || []).find((x) => x.w.toLowerCase().replace(/[^a-z]/g, "").startsWith(sc.flipWord)); if (w) return w.t0 - s.t0; } return sc.flipAt || 3.2; }
 function wordAt(s, word, dflt) { const w = (s.words || []).find((x) => x.w.toLowerCase().replace(/[^a-z0-9]/g, "").startsWith(word)); return w ? w.t0 - s.t0 : dflt; }
 function evalBar(g, t, s, prevSc) {
@@ -300,7 +300,7 @@ function scoreboardA(g, lt, sc) {
   const cx = x + w / 2, mw = 176;
   g.save(); g.beginPath(); g.roundRect(x, y, w, h, 22); g.clip(); g.fillStyle = "#e8263f"; g.fillRect(cx - mw / 2, y, mw, h); g.restore();
   const names = s.names || null;
-  const hide = sc.hideScore; if (hide) { g.save(); g.filter = "blur(11px)"; }
+  const hide = sc.hideScore; if (hide) { g.save(); g.filter = "blur(22px)"; }
   T(g, `${s.h ?? 0}-${s.a ?? 0}`, cx, y + 84, 74, { align: "center", maxW: mw - 20 });
   if (s.min) { g.font = "700 22px Oswald"; const mw2 = g.measureText(s.min).width + 22; rr(g, cx - mw2 / 2, y + 96, mw2, 30, 7, "#111"); T(g, s.min, cx, y + 118, 22, { align: "center", font: "Oswald", weight: 700 }); }
   if (hide) g.restore();
@@ -315,7 +315,7 @@ function scoreboardA(g, lt, sc) {
     if (crest) { const cw = 56, chh = crest.height / crest.width * cw; const ccx = L ? cx - mw / 2 - 40 : cx + mw / 2 + 40; g.drawImage(crest, ccx - cw / 2, fy - chh / 2, cw, chh); }
   }
   if (names) { T(g, names[0], cx - mw / 2 - 40, y + h - 10, 18, { align: "center", font: "Oswald", weight: 700, color: "#cfd3da" }); T(g, names[1], cx + mw / 2 + 40, y + h - 10, 18, { align: "center", font: "Oswald", weight: 700, color: "#cfd3da" }); }
-  if (hide) { g.save(); g.filter = "blur(9px)"; }
+  if (hide) { g.save(); g.filter = "blur(14px)"; }
   T(g, [s.agg, s.where].filter(Boolean).join("  ·  "), cx, y + h + 34, 24, { align: "center", font: "Oswald", weight: 700, color: "#ffd84a", maxW: w });
   if (hide) g.restore();
 }
