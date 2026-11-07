@@ -1,0 +1,104 @@
+[
+{
+"id": "hook",
+"say": "Who was Cole Palmer ten years ago?",
+"cap": "WHO WAS COLE PALMER 10|ten YEARS AGO?",
+"sfx": [
+[
+"hit",
+0.05,
+0.6
+]
+]
+},
+{
+"id": "pool",
+"say": "I took every Premier League attacker season from sixteen-seventeen and seventeen-eighteen. One hundred and eighty-one of them.",
+"cap": "I TOOK EVERY PREMIER LEAGUE ATTACKER SEASON FROM 16/17|sixteen-seventeen AND 17/18.|seventeen-eighteen 181|one-hundred-and-eighty-one OF THEM.",
+"sfx": [
+[
+"hit",
+"181",
+0.45
+]
+]
+},
+{
+"id": "stats",
+"say": "Nineteen stats each, per ninety minutes, ranked against that season's attackers. Chances created count the most.",
+"cap": "19|nineteen STATS EACH, PER 90|ninety MINUTES, RANKED AGAINST THAT SEASON'S ATTACKERS. CHANCES CREATED COUNT THE MOST."
+},
+{
+"id": "web",
+"say": "Then we find who's closest to Palmer's twenty-three twenty-four and twenty-four twenty-five. Two thousand times, shuffling every weight.",
+"cap": "THEN WE FIND WHO'S CLOSEST TO PALMER'S 23/24|twenty-three-twenty-four AND 24/25.|twenty-four-twenty-five 2,000|two-thousand TIMES, SHUFFLING EVERY WEIGHT."
+},
+{
+"id": "profile",
+"say": "And Palmer's 24/25? Fourth for chances created, out of ninety-six attackers. Third for long balls. Sixth for big chances made. Sixth for shots.",
+"cap": "AND PALMER'S 24/25?|twenty-four-twenty-five FOURTH FOR CHANCES CREATED, OUT OF 96|ninety-six ATTACKERS. THIRD FOR LONG BALLS. SIXTH FOR BIG CHANCES MADE. SIXTH FOR SHOTS.",
+"sfx": [
+[
+"tick",
+"FOURTH",
+0.4
+],
+[
+"tick",
+"THIRD",
+0.4
+]
+]
+},
+{
+"id": "top8",
+"say": "Here's the top eight. Hazard. Firmino. Even De Broyna. But number one is... Philippe Koo-cheen-yo.",
+"cap": "HERE'S THE TOP EIGHT. HAZARD. FIRMINO. EVEN DE|de BRUYNE.|broyna BUT NUMBER ONE IS... PHILIPPE COUTINHO.|koo-cheen-yo",
+"hold": 0.3,
+"sfx": [
+[
+"hit",
+"PHILIPPE",
+0.7
+]
+]
+},
+{
+"id": "reveal",
+"say": "Liverpool, sixteen-seventeen. Thirteen goals, seven assists.",
+"cap": "LIVERPOOL, 16/17.|sixteen-seventeen 13|thirteen GOALS, 7|seven ASSISTS."
+},
+{
+"id": "runs",
+"say": "Closest in one thousand five hundred and ninety-six of two thousand runs.",
+"cap": "CLOSEST IN 1,596|one-thousand-five-hundred-and-ninety-six OF 2,000|two-thousand RUNS."
+},
+{
+"id": "why",
+"say": "Why? They create the same. Chances, passes, long balls, shots. Nearly identical.",
+"cap": "WHY? THEY CREATE THE SAME. CHANCES, PASSES, LONG BALLS, SHOTS. NEARLY IDENTICAL."
+},
+{
+"id": "surprise",
+"say": "Now use only Palmer's 24/25. And number two is... Ross Barkley.",
+"cap": "NOW USE ONLY PALMER'S 24/25.|twenty-four-twenty-five AND NUMBER TWO IS... ROSS BARKLEY.",
+"hold": 0.3,
+"sfx": [
+[
+"hit",
+"ROSS",
+0.7
+]
+]
+},
+{
+"id": "notsame",
+"say": "But they're not the same player. Koo-cheen-yo dribbled twice as much. Palmer makes way more big chances. And Koo-cheen-yo scored more without penalties.",
+"cap": "BUT THEY'RE NOT THE SAME PLAYER. COUTINHO|koo-cheen-yo DRIBBLED TWICE AS MUCH. PALMER MAKES WAY MORE BIG CHANCES. AND COUTINHO|koo-cheen-yo SCORED MORE WITHOUT PENALTIES."
+},
+{
+"id": "end",
+"say": "So ten years ago, Cole Palmer was Philippe Koo-cheen-yo. Who should I find the twin of next? Comment below.",
+"cap": "SO 10|ten YEARS AGO, COLE PALMER WAS PHILIPPE COUTINHO.|koo-cheen-yo WHO SHOULD I FIND THE TWIN OF NEXT? COMMENT BELOW."
+}
+]
