@@ -118,6 +118,26 @@ def main():
     eng = os.path.join(HERE, "engine")
     html = open(os.path.join(eng, "chess.html" if story.get("layout") == "chess" else "edit.html")).read().replace('src="avatars.js"', f'src="{eng}/avatars.js"').replace('src="scenes.js"', f'src="{eng}/scenes.js"').replace('src="chess.js"', f'src="{eng}/chess.js"').replace("url(../assets/", f"url({HERE}/assets/")
     open(os.path.join(work, "edit.html"), "w").write(html)
+    # 2b. real footage (optional, private drafts only): a scene with "clip": [[file, start, seconds, xcentre?], ...]
+    #     gets its frames cut to the pitch window; files are read from story["clipsDir"]
+    cd = story.get("clipsDir")
+    if cd:
+        for i, s in enumerate(scenes):
+            segs = s["scene"].get("clip")
+            if not segs: continue
+            need = int((s["t1"] - s["t0"]) * FPS) + 4; outd = os.path.join(work, "clipframes", f"l{i:02d}"); shutil.rmtree(outd, ignore_errors=True); os.makedirs(outd)
+            got = 0
+            for j, seg in enumerate(segs):
+                if got >= need: break
+                src, st, ln = seg[0], float(seg[1]), float(seg[2]); xc = float(seg[3]) if len(seg) > 3 else 0.5
+                if j == len(segs) - 1: ln = max(ln, (need - got) / FPS)
+                vf = f"fps={FPS},scale=-2:820,crop=834:820:(in_w-834)*{xc}:0"
+                subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", str(st), "-i", os.path.join(cd, src), "-t", str(ln), "-vf", vf, "-q:v", "3", "-start_number", str(got + 1), os.path.join(outd, "c%05d.jpg")], check=True)
+                got = len(os.listdir(outd))
+            s["clipDir"] = outd; s["clipFrames"] = got
+        with open(os.path.join(work, "timeline.js"), "w") as f:
+            f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes")}) + ";\n")
+            f.write("window.TL = " + json.dumps(tl) + ";\n")
     # 3. render
     frames = os.path.join(work, "eframes"); shutil.rmtree(frames, ignore_errors=True)
     n = int(total * FPS); k = max(1, a.workers); parts = [(i * n // k, (i + 1) * n // k - 1) for i in range(k)]

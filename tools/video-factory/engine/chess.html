@@ -20,7 +20,11 @@ window.draw = async (f) => {
   const i = Math.max(0, TL.scenes.findIndex((x) => t >= x.t0 && t < x.t1)); const s = TL.scenes[i] || TL.scenes[TL.scenes.length - 1];
   try {
     if (s.scene.type === "cta") { g.fillStyle = "#26252a"; g.fillRect(0, 0, 1080, 1920); g.save(); g.translate(0, 300); SCENES.cta(g, t - s.t0, s.t1 - s.t0, s.scene); g.restore(); }
-    else CHESS.draw(g, t, s, TL.scenes[i - 1]);
+    else {
+      window.CLIPIMG = null;
+      if (s.clipDir) { const n = Math.min(s.clipFrames, Math.floor((t - s.t0) * FPS) + 1); const im = new Image(); im.src = "file://" + s.clipDir + "/c" + String(Math.max(1, n)).padStart(5, "0") + ".jpg"; await im.decode().catch(() => {}); window.CLIPIMG = im; }
+      CHESS.draw(g, t, s, TL.scenes[i - 1]);
+    }
   } catch (e) { window.errorsSeen.push(String(e && e.stack || e)); }
   if (t - s.t0 < 0.08 && i > 0) { g.fillStyle = "rgba(255,255,255,.25)"; g.fillRect(0, 0, 1080, 1920); }
   return cv.toDataURL("image/jpeg", 0.9);

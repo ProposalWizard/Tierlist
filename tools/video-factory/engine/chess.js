@@ -51,11 +51,14 @@ function avatar(g, id, x, y, r, opts = {}) {
 function shade(hex, k) { const n = parseInt(hex.slice(1), 16); const f = (v) => Math.max(0, Math.min(255, Math.round(v * k))); return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`; }
 const nameOf = (id) => (((ST().players || {})[id] || (ST().people || {})[id] || {}).short || ((ST().players || {})[id] || {}).name || id).toUpperCase();
 
+// keyframe tracks: [[t, a, b, (c)], ...] -> values at time t (smooth between keys)
+function track(tr, t) { if (!tr || !tr.length) return null; if (t <= tr[0][0]) return tr[0].slice(1); for (let i = 1; i < tr.length; i++) if (t <= tr[i][0]) { const a = tr[i - 1], b = tr[i]; const k = (t - a[0]) / (b[0] - a[0] || 1); const e = k * k * (3 - 2 * k); return a.slice(1).map((v, j) => lerp(v, b[j + 1], b.length > 4 || j < 2 ? e : e)); } return tr[tr.length - 1].slice(1); }
 // ── camera ──
 function camOf(sc) { const c = sc.cam || {}; return { cx: c.cx ?? WD / 2, cy: c.cy ?? L / 2, len: c.len ?? L + 6 }; }
 function camAt(lt, sc, prev) {
   const a = prev ? camOf(prev) : camOf(sc), b = camOf(sc); const k = ez(lt / 0.9);
   let cx = lerp(a.cx, b.cx, k), cy = lerp(a.cy, b.cy, k), len = lerp(a.len, b.len, k);
+  const ct = track(sc.camTrack, lt); if (ct) [cx, cy, len] = ct;
   if (sc.cam && sc.cam.push) len *= 1 - 0.08 * ez(lt / 4); // slow push-in
   const s = PH / len; const vw = PW / s, vh = PH / s;
   // never show empty stands past the goal lines or touchlines when zoomed in
@@ -100,6 +103,7 @@ function posAt(lt, sc, prev, gt) {
   const cur = shapeOf(sc), old = prev ? shapeOf(prev) : cur; const k = ez(lt / 1.0); const out = {};
   for (const id in cur) { const a = old[id] || cur[id]; out[id] = { x: lerp(a[0], cur[id][0], k), y: lerp(a[1], cur[id][1], k), a: old[id] ? 1 : ez(lt / 0.6) }; }
   for (const id in old) if (!cur[id]) out[id] = { x: old[id][0], y: old[id][1], a: 1 - ez(lt / 0.5) };
+  for (const id in sc.tracks || {}) { const v = track(sc.tracks[id], lt); if (v && out[id]) { const w = track(sc.tracks[id], lt + 0.1); const sp = Math.hypot(w[0] - v[0], w[1] - v[1]) * 10; out[id].x = v[0]; out[id].y = v[1]; out[id].run = sp; } }
   for (const m of sc.runs || []) { const p = out[m.id]; if (!p) continue; const s = ez((lt - (m.at || 0.5)) / (m.dur || 1.4)); p.x = lerp(p.x, m.to[0], s); p.y = lerp(p.y, m.to[1], s); }
   if (sc.red && out[sc.red]) { const s = ez((lt - (sc.redAt || 1.6)) / 1.6); out[sc.red].x = lerp(out[sc.red].x, -6, s); out[sc.red].a *= 1 - 0.5 * s; }
   if (sc.sway) for (const id in out) { if ((ST().players[id] || {}).club === sc.sway) { out[id].x += Math.sin(gt * 1.4 + id.length) * 0.9; } }
@@ -109,7 +113,7 @@ function drawPlayers(g, cam, pos, sc, lt, gt) {
   const r = Math.max(19, Math.min(34, cam.s * 2.5)); const focus = new Set([].concat(sc.focus || []));
   const ids = Object.keys(pos).sort((a, b) => pos[a].y - pos[b].y);
   for (const id of ids) {
-    const p = pos[id]; if (p.a <= 0.01) continue; const [x, y] = P(cam, p.x, p.y);
+    const p = pos[id]; if (p.a <= 0.01) continue; let [x, y] = P(cam, p.x, p.y); if (p.run > 0.5) y -= Math.abs(Math.sin(gt * 11 + id.length)) * Math.min(6, p.run * 0.9);
     const dim = focus.size && !focus.has(id) ? 0.55 : 1; const hl = focus.has(id);
     g.save(); g.globalAlpha = p.a * dim;
     g.fillStyle = "rgba(0,0,0,.35)"; g.beginPath(); g.ellipse(x + 3, y + r * 0.95, r * 0.9, r * 0.3, 0, 0, 7); g.fill();
@@ -125,10 +129,12 @@ function drawPlayers(g, cam, pos, sc, lt, gt) {
 }
 function ballAt(lt, sc, pos, gt) {
   if (sc.pass) { const ids = sc.pass.filter((i) => pos[i]); if (ids.length < 2) return null; const u = (gt * (sc.passSpeed || 1.1)) % ids.length; const i = Math.floor(u), f = ez(u - i); const a = pos[ids[i]], b = pos[ids[(i + 1) % ids.length]]; return [lerp(a.x, b.x, f), lerp(a.y, b.y, f) + 1.6]; }
+  const bt = track(sc.ballTrack, lt); if (bt) return bt;
   const b = sc.ball; if (!b) return null; const pts = b.path; const s = cl((lt - (b.at || 0.6)) / (b.dur || 1.2)); const seg = s * (pts.length - 1); const i = Math.min(pts.length - 2, Math.floor(seg)); const f = seg - i;
   return [lerp(pts[i][0], pts[i + 1][0], f), lerp(pts[i][1], pts[i + 1][1], f)];
 }
-function drawBall(g, cam, b) { if (!b) return; const [x, y] = P(cam, b[0], b[1]); const r = Math.max(8, cam.s * 0.7); g.save(); g.fillStyle = "#fff"; g.strokeStyle = "#111"; g.lineWidth = 2.5; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); g.stroke(); g.fillStyle = "#111"; g.beginPath(); g.arc(x, y, r * 0.38, 0, 7); g.fill(); g.restore(); }
+function drawBall(g, cam, b) { if (!b) return; let [x, y] = P(cam, b[0], b[1]); const r = Math.max(8, cam.s * 0.7) * (1 + (b[2] || 0) * 0.08);
+  if (b[2]) { g.save(); g.fillStyle = "rgba(0,0,0,.35)"; g.beginPath(); g.ellipse(x, y + 4, r, r * 0.4, 0, 0, 7); g.fill(); g.restore(); y -= b[2] * cam.s; } g.save(); g.fillStyle = "#fff"; g.strokeStyle = "#111"; g.lineWidth = 2.5; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); g.stroke(); g.fillStyle = "#111"; g.beginPath(); g.arc(x, y, r * 0.38, 0, 7); g.fill(); g.restore(); }
 function arrow(g, cam, a, b, k, col = "rgba(255,200,40,.95)") {
   if (k <= 0) return; const [x1, y1] = P(cam, a[0], a[1]), [x2, y2] = P(cam, b[0], b[1]); const ex = lerp(x1, x2, k), ey = lerp(y1, y2, k); const an = Math.atan2(ey - y1, ex - x1);
   g.save(); g.strokeStyle = col; g.fillStyle = col; g.lineWidth = 7; g.setLineDash([16, 10]); g.lineCap = "round"; g.beginPath(); g.moveTo(x1, y1); g.lineTo(ex, ey); g.stroke(); g.setLineDash([]);
@@ -283,26 +289,32 @@ window.CHESS = { BADGES, draw(g, gt, s, prev) {
   const grd = g.createRadialGradient(540, 900, 200, 540, 900, 1300); grd.addColorStop(0, "rgba(255,255,255,.05)"); grd.addColorStop(1, "rgba(0,0,0,.45)"); g.fillStyle = grd; g.fillRect(0, 0, W, 1920);
   // the match
   g.save(); g.beginPath(); g.roundRect(PX, PY, PW, PH, 16); g.clip();
-  stands(g, gt); const cam = camAt(lt, sc, pv); pitch(g, cam);
-  const pos = posAt(lt, sc, pv, gt);
-  for (const a of sc.arrows || []) arrow(g, cam, a.from, a.to, ez((lt - (a.at || 0.6)) / 0.8));
-  if (sc.banks) banks(g, cam, pos, lt);
-  const r = drawPlayers(g, cam, pos, sc, lt, gt);
-  drawBall(g, cam, ballAt(lt, sc, pos, gt));
+  const cam = camAt(lt, sc, pv); const pos = posAt(lt, sc, pv, gt); let r = 30;
+  const clip = s.clipDir && window.CLIPIMG && window.CLIPIMG.naturalWidth;
+  if (clip) { g.drawImage(window.CLIPIMG, PX, PY, PW, PH); g.fillStyle = "rgba(0,0,0,.12)"; g.fillRect(PX, PY, PW, PH); }
+  else {
+    stands(g, gt); pitch(g, cam);
+    for (const a of sc.arrows || []) arrow(g, cam, a.from, a.to, ez((lt - (a.at || 0.6)) / 0.8));
+    if (sc.banks) banks(g, cam, pos, lt);
+    r = drawPlayers(g, cam, pos, sc, lt, gt);
+    drawBall(g, cam, ballAt(lt, sc, pos, gt));
+  }
   if (sc.where) { g.save(); g.font = "700 22px Oswald"; const tw = g.measureText(sc.where).width + 24; rr(g, PX + PW - tw - 18, PY + PH - 50, tw, 34, 8, "rgba(0,0,0,.6)"); g.fillStyle = "#fff"; g.fillText(sc.where, PX + PW - tw - 6, PY + PH - 26); g.restore(); }
   if (sc.goal) { const gt0 = sc.goalWord ? wordAt(s, sc.goalWord, 1.8) : 1.8; const k = (lt - gt0) / 1.6; if (k > 0 && k < 0.3) { g.fillStyle = `rgba(255,255,255,${0.5 * (1 - k / 0.3)})`; g.fillRect(PX, PY, PW, PH); } flash(g, "GOAL!", k, "#ffd84a"); }
   if (sc.flip === "nogoal") { const ft = flipAt(s); const k = (lt - ft) / 2.6; if (k > 0) { g.fillStyle = `rgba(0,0,0,${0.4 * cl(k * 4)})`; g.fillRect(PX, PY, PW, PH); flash(g, "NO GOAL", Math.min(k, 0.79), "#ff4d5e", "HANDBALL · YAYA TOURÉ"); } }
   if (sc.red) redCard(g, lt, sc);
   if (sc.overlay === "coach") coachMap(g, lt);
   if (sc.overlay === "possession") possession(g, lt, 76);
-  if (sc.overlay === "sprinklers") { sprinklers(g, cam, lt, gt); mourinhoRun(g, cam, lt, gt); flash(g, "FULL TIME", (lt - 0.1) / 1.6, "#ffffff"); }
+  if (sc.overlay === "sprinklers" && !clip) { sprinklers(g, cam, lt, gt); mourinhoRun(g, cam, lt, gt); flash(g, "FULL TIME", (lt - 0.1) / 1.6, "#ffffff"); }
   if (sc.overlay === "trophy") bigEars(g, lt);
-  if (sc.overlay === "hook") hook(g, lt);
-  if (sc.overlay === "next") nextUp(g, lt);
+  if (sc.overlay === "hook" && !clip) hook(g, lt);
+  if (sc.overlay === "next" && !clip) nextUp(g, lt);
+  if (clip && sc.overlay === "hook") { T(g, "MOURINHO v GUARDIOLA", PX + PW / 2, PY + PH - 90, 64, { align: "center", stroke: 10, alpha: ez(lt * 3), maxW: PW - 40 }); T(g, "BARÇA v INTER · CAMP NOU · 2010", PX + PW / 2, PY + PH - 40, 36, { align: "center", font: "Oswald", weight: 700, color: "#ffd84a", stroke: 6, alpha: ez((lt - 0.3) * 3), maxW: PW - 40 }); }
+  if (clip && sc.overlay === "next") { T(g, "PART 2", PX + PW / 2, PY + PH - 110, 90, { align: "center", color: "#ffd84a", stroke: 10, alpha: ez(lt * 3) }); T(g, "PEP'S REVENGE", PX + PW / 2, PY + PH - 40, 64, { align: "center", stroke: 10, alpha: ez((lt - 0.3) * 3) }); }
   // the grade lands next to the player who made the move
   const b = BADGES[sc.flip && lt > flipAt(s) ? sc.flip : sc.badge];
   if (b) { let bx = PX + PW - 70, by = PY + 70; const p = pos[sc.on];
-    if (p && !['hook', 'next', 'trophy', 'sprinklers'].includes(sc.overlay)) { [bx, by] = P(cam, p.x, p.y); bx += r * 1.1; by -= r * 1.1; }
+    if (p && !clip && !['hook', 'next', 'trophy', 'sprinklers'].includes(sc.overlay)) { [bx, by] = P(cam, p.x, p.y); bx += r * 1.1; by -= r * 1.1; }
     const flipT = sc.flip ? flipAt(s) : -1; const k = flipT > 0 && lt > flipT ? pop((lt - flipT) * 3) : pop((lt - (sc.badgeAt || 0.35)) * 3);
     badgeIcon(g, b, bx, by, 40, k); }
   g.restore();
@@ -312,6 +324,6 @@ window.CHESS = { BADGES, draw(g, gt, s, prev) {
   moveCard(g, gt, lt, s);
   bottomBar(g, lt, sc);
   // drawn, not footage (RUL-KIB-002)
-  T(g, "ILLUSTRATION", PX + 16, PY + PH - 16, 18, { font: "Oswald", weight: 700, color: "rgba(255,255,255,.55)" });
+  if (!(s.clipDir)) T(g, "ILLUSTRATION", PX + 16, PY + PH - 16, 18, { font: "Oswald", weight: 700, color: "rgba(255,255,255,.55)" });
 } };
 })();
