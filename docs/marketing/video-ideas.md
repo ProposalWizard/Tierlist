@@ -39,6 +39,7 @@ starting point.
 | R15 | https://vm.tiktok.com/ZN8f63tWk/ | @aiwithtroy | 1:00 | "Claude made me rich and I'm scared": secret hook, $41k proof at 0:21, "Comment 'store'" end (really an ad for a store tool). | Face to camera + phone filming a monitor, one-word captions |
 | R16 | https://vm.tiktok.com/ZN8f6qDt5/ | @jackroberts____ | 0:40 | "Your Claude edits are missing sound design": the free Openverse sound library. | Split screen: drawn graphic of every word on top, face below, cut every 0.5-1 s |
 | R17 | https://vm.tiktok.com/ZN8f6QtUh/ | @mrbombastic_53 | 3:00 | Short version of R14: a free "Cartoon Audio Short" Claude skill, step by step (stops at Step 2). | Blue motion-text scenes, chalkboard step cards |
+| R18 | https://vm.tiktok.com/ZN8fVMYjG/ | @jackescapes01 | 1:12 | "Red Onion vs 1000 cuts" (5.6M views): 6 rounds (10, 50, 100, 250, 500, 1,000 cuts), each down, sideways, then dice; two counters; 1 s of silence before each dice. Notes: `references/2026-11-06-four-tiktoks.md`. | 3D render, fixed camera, no voice, no captions |
 
 Also sent: a YouTube Short (https://www.youtube.com/shorts/dT8CtzNr7fk), the "oldest Ballon d'Or winner" format.
 
@@ -240,3 +241,5 @@ Page: https://claude.ai/artifact/D5MXjAm9mSckuXvskmHgDy (private to Mikey until 
 24. **"I'm scared to show you" (R15 shape).** Secret hook, proof on screen by 0:20, end on "Comment '<word>'". About the game, with real numbers only.
 25. **Sound on every cut (R16).** Not a video: a rule for all our videos, using a free, commercial-use library such as Openverse.
 26. **Behind the scenes: Claude builds a football game (R14/R17 shape).** Theirs next to ours, big real numbers, step cards.
+27. **A football / a golden ball vs 1000 cuts (R18).** Same 6 rounds, same two counters, same pause before each dice. Our own 3D, ILLUSTRATION.
+28. **1 striker vs 10 to 1000 defenders (R18 rounds).** The rounds and the pause, with football instead of a knife.

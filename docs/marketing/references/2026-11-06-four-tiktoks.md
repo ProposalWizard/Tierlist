@@ -144,3 +144,58 @@ commercially" and check each licence before posting.
    'ball' for the link."
 6. **A behind-the-scenes series (R14/R17 shape):** "Claude built my football
    game: here's how", their thing next to ours, real numbers, step cards.
+
+---
+
+# R18: "Red Onion vs 1000 cuts" (Mikey, 7 Nov 2026)
+
+https://vm.tiktok.com/ZN8fVMYjG/ · @jackescapes01 · 1:12 · 5.6M views, 354k likes.
+Watched frame by frame (13 sheets, all read) plus a loudness trace. No voice.
+
+## The format (all SEEN in the frames unless marked)
+
+| Round | Cuts | Time | Cubes at the end |
+|---|---|---|---|
+| 1 | 10 | 0:00-0:05 | 66 |
+| 2 | 50 | 0:05-0:16 | 2,989 |
+| 3 | 100 | 0:16-0:28 | 18,288 |
+| 4 | 250 | 0:28-0:41 | ≈271,000 |
+| 5 | 500 | 0:41-0:55 | ≈2,126,000 |
+| 6 | 1,000 | 0:56-1:11 | ≈16,892,000 |
+
+- **Every round is the same three moves:** (1) cuts straight down from above,
+  (2) cuts sideways at the board, (3) the dice: the knife sweeps front to back
+  and the cubes tumble out while the bottom counter races. Then a hard cut
+  back to a whole onion at 0 / 0.
+- **Rounds get longer** (5 s to 15 s) and the pieces smaller, so the last
+  pile looks like powder.
+- **Two counters, never anything else on screen:** big white number + gold
+  "CUTS" at the top, the same at the bottom for "CUBES". "≈" appears once
+  the cubes pass 10,000. No title, no captions, no voice, no end card.
+- **Frame 1 is already action:** the knife is in the onion at 0:00.
+- **The look:** one fixed high three-quarter camera, a warm light from the
+  top left with a hard shadow, a pale wood board, a dark brick wall. Fast
+  knife = motion blur. The later rounds are framed a little closer.
+- **The sound (measured):** a steady chopping sound, then about 1 s of total
+  SILENCE just before each dice moment (e.g. 10.8-12.0 s, 22.6-23.3 s,
+  48.8-50.0 s, 63.5-64.8 s). During that silence the knife moves slowly and
+  sharply (0:44-0:45, 1:04). Then the dice and the counter explode.
+  The sounds themselves are GUESSED (chops, crunch); none were listened to.
+- **Ending:** stops on the 1,000 pile and loops back to the start (GUESSED:
+  the loop is why it gets rewatched).
+
+## Why it works
+1. You know the end from the title (1,000) and want to see it.
+2. Each round raises the stakes; the cube number grows much faster than the
+   cut number (10 cuts = 66, 1,000 = 17 million).
+3. The silence before each dice is the drum roll.
+4. Nothing to read, nothing to hear: anyone, anywhere, sound on or off.
+
+## Knowitball versions (illustration, our own 3D, RUL-KIB-002)
+- **"A football vs 1000 cuts"**: a black-and-white ball diced into panels
+  and cubes. Counters CUTS / PIECES.
+- **"A golden ball vs 1000 cuts"**: a gold trophy ball (our own design, no
+  real trophy, RUL-KIB-003) diced into gold cubes. Ties to Road to Ballon d'Or.
+- **Same rounds, football action:** "1 striker vs 10 / 50 / 100 / 500 /
+  1000 defenders", counters DEFENDERS / GOALS. Uses the rounds and the
+  pause, not the cutting.
