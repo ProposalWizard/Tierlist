@@ -16,6 +16,7 @@ const BADGES = {
   great: { sym: "!", label: "GREAT MOVE", col: "#5c8bb0" },
   best: { sym: "★", label: "BEST MOVE", col: "#81b64c" },
   excellent: { sym: "👍", label: "EXCELLENT", col: "#81b64c" },
+  good: { sym: "✓", label: "GOOD MOVE", col: "#96af8b" },
   book: { sym: "📖", label: "BOOK MOVE", col: "#a88865" },
   inaccuracy: { sym: "?!", label: "INACCURACY", col: "#f7c631" },
   mistake: { sym: "?", label: "MISTAKE", col: "#e6912c" },
