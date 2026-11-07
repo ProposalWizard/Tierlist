@@ -37,6 +37,6 @@
     { "text": "So match the games. After ten caps, Rooney had three England goals. Lewis-Skelly has one, from left-back.", "scene": { "type": "whatif", "title": "After 10 England caps", "real": { "label": "Rooney (striker)", "value": "3 goals" }, "alt": { "label": "Lewis-Skelly (full-back)", "value": "1 goal" } } },
     { "text": "And here's one Rooney and Owen never did. Neither scored on his England debut.", "scene": { "type": "text", "heading": "DEBUT DAY", "body": "Owen v Chile, 1998: no goal. Rooney v Australia, 2003: no goal. Lewis-Skelly v Albania, 2025: scores." } },
     { "text": "So which twenty-year-old would you pick for England? Tell me in the comments.", "scene": { "type": "quote", "person": "mls", "text": "I'm not here to score. But I will." } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

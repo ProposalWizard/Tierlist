@@ -45,6 +45,6 @@
     { "text": "Next season, Arsenal went the whole league unbeaten. Henry scored thirty.", "scene": { "type": "stats", "title": "Invincibles 2003/04", "items": [ { "n": "38", "l": "games unbeaten" }, { "n": "30", "l": "Henry goals" } ], "person": "henry" } },
     { "text": "And he finished fourth. Shevchenko won it.", "scene": { "type": "list", "title": "Ballon d'Or 2004", "rows": [ { "name": "Andriy Shevchenko", "value": "175", "club": "mil" }, { "name": "Deco", "value": "139", "club": "por" }, { "name": "Ronaldinho", "value": "133", "club": "bar" }, { "name": "Thierry Henry", "value": "80", "club": "ars", "hl": true } ] } },
     { "text": "So which year was the real robbery? Twenty-oh-three. Second place, the best season of his life, and the winner missed the final.", "scene": { "type": "stamp", "text": "ROBBED", "person": "henry", "color": "red" } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

@@ -40,6 +40,7 @@ FACT-KIB-007 | Learning from v01: v0.2 and v0.3 had no screenshots in the repo, 
 FACT-KIB-008 | Learning from v01: render frames in chunks of 250, one page per chunk; one long session crashed the page. | client-kib
 FACT-KIB-009 | The one list of video ideas and the reference TikToks they came from (link, @account, what it is, style, what we made) is docs/marketing/video-ideas.md; add new references and ideas there. | client-kib
 FACT-KIB-010 | Base voice for Knowitball videos is voice E: Chatterbox TTS's own built-in voice, finished with humanise.sh (mic-in-a-room). Mikey, 3 Nov 2026; replaces Kokoro bm_george and the George clone. | team,process,client-kib
+FACT-KIB-011 | "Analysed like chess" videos (CH) are football first: a real pitch, every player a drawn icon with his name, the chess grades, eval bar and typed card laid on top. Never a chessboard with pieces (Mikey, 7 Nov 2026). | team,rule,client-kib
 FACT-TEAM-001 | next build needs about 6.5 GB; package.json gives it 6 GB of heap (node --max-old-space-size=6144). A Vercel deploy that fails with no other clue may be out of memory again: build locally with no NODE_OPTIONS to check. | deploy,team
 FACT-UI-001 | Settings keeps only real player preferences (sound, full screen, 3D quality, faces, names) and the Settings UI Old/New row. | three-d,ui
 FACT-UI-002 | Decided, no toggle: to see or bring back an old option, read the files at ebe02ad; old stored values are ignored. | ui
@@ -108,6 +109,7 @@ RUL-KIB-001 | Voice: short, cheeky, football-mad, numbers first ("9.8% to 47.6%"
 RUL-KIB-002 | Real game footage only, or marked "ILLUSTRATION" on screen. | client-kib
 RUL-KIB-003 | No real club badges or player photos in ads unless we have the right to use them. | client-kib
 RUL-KIB-004 | Never claim a feature that is not live; every number comes from a patch note. | process,rule,style,client-kib
+RUL-KIB-005 | Video endings: keep the end card on screen as it is, but the voice-over says only "Follow for more." (Mikey, 7 Nov 2026). | team,client-kib
 RUL-TEAM-001 | [SUPERSEDED] Deploy only when told: commit and push to the Harry branch freely, merge to main only when Harry says push. | team,rule,deploy
 RUL-TEAM-002 | [SUPERSEDED] Every deploy comes with patch notes; Harry decides each time whether to push now or see patch notes first. | process,deploy,team
 RUL-TEAM-003 | Progress updates every 5 minutes on every task, with % and time left on every bar and the token/weekly usage block. | process,team

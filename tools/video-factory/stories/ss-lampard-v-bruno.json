@@ -32,6 +32,6 @@
     { "text": "Bruno's club, sixteen years earlier, beaten by Lampard's goals.", "scene": { "type": "timeline", "items": [ { "year": "2010", "label": "Chelsea pip United by a point" }, { "year": "2026", "label": "Bruno breaks the assist record" } ] } },
     { "text": "Even Lampard's bad moment ended well. He missed a penalty in the cup final, and Chelsea still won one-nil.", "scene": { "type": "score", "home": "chelsea", "away": "portsmouth", "hs": 1, "as": 0, "date": "2010", "comp": "FA Cup final", "note": "Lampard missed a penalty" } },
     { "text": "Bruno has the record. Lampard has the better season. Settled.", "scene": { "type": "stamp", "text": "LAMPARD", "person": "lampard", "color": "white" } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

@@ -14,7 +14,7 @@ CBX = os.environ.get("CHATTERBOX_PY", "/tmp/claude-0/-home-user/f9db4640-b55f-52
 HUMANISE = os.path.join(ROOT, "scripts/marketing/voice/humanise.sh")
 MUSIC = os.path.join(ROOT, "public/star/music")
 SR, FPS = 44100, 30
-CTA = "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk."
+CTA = "Follow for more."  # Mikey, 7 Nov 2026: the end card stays, the voice only says this
 
 def log(*a): print(*a, flush=True)
 def load(p, sr=SR):
@@ -113,7 +113,7 @@ def main():
     env = np.round(np.convolve(np.clip(env / ref, 0, 1), [0.25, 0.5, 0.25], "same"), 3)
     tl = {"total": round(total, 3), "end": round(vo_end, 3), "endCard": end_card, "scenes": scenes, "chunks": chunks, "env": env.tolist()}
     with open(os.path.join(work, "timeline.js"), "w") as f:
-        f.write("window.STORY = " + json.dumps({"clubs": story.get("clubs", {}), "people": story.get("people", {})}) + ";\n")
+        f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes")}) + ";\n")
         f.write("window.TL = " + json.dumps(tl) + ";\n")
     eng = os.path.join(HERE, "engine")
     html = open(os.path.join(eng, "chess.html" if story.get("layout") == "chess" else "edit.html")).read().replace('src="avatars.js"', f'src="{eng}/avatars.js"').replace('src="scenes.js"', f'src="{eng}/scenes.js"').replace('src="chess.js"', f'src="{eng}/chess.js"').replace("url(../assets/", f"url({HERE}/assets/")
