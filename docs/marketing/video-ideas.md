@@ -245,7 +245,7 @@ name. Facts below are from memory and must be checked before a script.
 
 - **CH-01** Pep v Klopp, final day 2021-22: City 0-2 down to Villa, Liverpool's bar fills, then three City goals in about five minutes. Checkmate by one point (93 v 92).
 - **CH-02** Pep v Klopp, 2018-19 as one long game: Liverpool well clear at Christmas, Stones' goal-line clearance in the 2-1 (Brilliant), Kompany's long shot v Leicester, 98 v 97.
-- **CH-03** Mourinho v Pep, Camp Nou 2010 (Champions League semi, 2nd leg): Inter down to ten men, lose 1-0 and still go through 3-2 on aggregate. "Losing the game, winning the match."
+- **CH-03** (making, 7 Nov 2026: `tools/video-factory/stories/ch-mourinho-pep-2010.json`) Mourinho v Pep, Camp Nou 2010 (Champions League semi, 2nd leg): Inter down to ten men, lose 1-0 and still go through 3-2 on aggregate. "Losing the game, winning the match."
 - **CH-04** Mourinho v Pep, El Clásico April 2012: Real Madrid win 2-1 at the Camp Nou and all but win the league.
 - **CH-05** Flick v Ancelotti, El Clásico October 2024: Barça's high line catches Madrid offside again and again, 4-0 at the Bernabéu.
 

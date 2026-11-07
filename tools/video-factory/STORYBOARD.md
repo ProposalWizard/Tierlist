@@ -58,3 +58,28 @@ him, red-box captions, music, and the Knowitball call-to-action at the end.
 | `cta` | — | end card (last line only) |
 
 Any scene can add `"stamp": "ROBBED"` (shown halfway through the line).
+
+## Layout "chess": analysed like chess (Mikey, 7 Nov 2026)
+
+Set `"layout": "chess"` on the story. No narrator on screen: a move card on
+top types the voice's words as they are said, the pitch is drawn as a
+chessboard with pawns (White = the bottom side, Black = the top), an
+evaluation bar sits on the left, a name tag for each manager, and a scoreboard
+at the bottom. Engine: `engine/chess.html` + `engine/chess.js` (formations,
+labels and the two managers' ids are at the top of chess.js: change them per
+story). First video: `stories/ch-mourinho-pep-2010.json`.
+
+Each line may add `"say"`: what the voice reads, when it differs from the
+text on screen (e.g. text "3-1", say "three-one").
+
+Every scene is `{ "type": "move", ... }`:
+| field | meaning |
+|---|---|
+| `n`, `who`, `title` | "MOVE n · who's name" and the coloured title. `who`: a person id, `result` or `next`. `hook: true` for line 1. |
+| `badge` | brilliant, great, best, excellent, book, inaccuracy, mistake, blunder, checkmate, nogoal |
+| `flip`, `flipWord` | swap to a second badge when the voice reaches that word (Bojan: brilliant → nogoal at "handball") |
+| `on` | the piece the badge lands on (motta, etoo, pique, bojan) or a manager (badge in the corner) |
+| `eval`, `evalAfter` | the bar: a number (+ = White better) or "M" for mate; `evalAfter` moves it again at `flipWord` |
+| `board` | `inter`, `barca` (formation names in chess.js), `ball` [x, y], `goal` top/bottom, `arrows` [[x1, y1, x2, y2]] |
+| `red`, `passes`, `sprinklers`, `trophy` | a red card walks that piece off; the ball circles the wall; sprinkler spray; the cup over the board |
+| `score` | `where`, `min`, `h`, `a`, `agg`, `poss`, `names` |

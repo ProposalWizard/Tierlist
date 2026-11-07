@@ -77,11 +77,11 @@ def main():
     for round_, seed in enumerate([3, 11, 21]):
         todo = [i for i in range(len(lines)) if best.get(i, (0,))[0] < 0.86]
         if not todo: break
-        reqs = [[os.path.join(work, f"l{i:02d}-s{seed}.wav"), lines[i]["text"], seed] for i in todo]
+        reqs = [[os.path.join(work, f"l{i:02d}-s{seed}.wav"), lines[i].get("say", lines[i]["text"]), seed] for i in todo]
         json.dump(reqs, open(os.path.join(work, "req.json"), "w"))
         subprocess.run([CBX, "-I", os.path.join(HERE, "voice_gen.py"), os.path.join(work, "req.json")], check=True)
         for i in todo:
-            p = os.path.join(work, f"l{i:02d}-s{seed}.wav"); heard, words = transcribe(p); s = sim(lines[i]["text"], heard)
+            p = os.path.join(work, f"l{i:02d}-s{seed}.wav"); heard, words = transcribe(p); s = sim(lines[i].get("say", lines[i]["text"]), heard)
             if s > best.get(i, (-1,))[0]: best[i] = (s, p, words)
         log(f"voice round {round_ + 1}: " + ", ".join(f"{i}:{best[i][0]:.2f}" for i in sorted(best)))
     # 2. finish, place, caption
@@ -99,7 +99,7 @@ def main():
             if len(cur) >= 3 or re.search(r"[.,?!:;]$", w["w"]) or not nxt:
                 t1 = at + (nxt["t0"] if nxt else d - 0.1)
                 chunks.append({"t0": round(cur[0]["t0"] - 0.03, 3), "t1": round(t1, 3), "words": cur}); cur = []
-        scenes.append({"t0": round(at - (0.14 if i else at), 3), "scene": ln["scene"]})
+        scenes.append({"t0": round(at - (0.14 if i else at), 3), "scene": ln["scene"], "words": [{"w": w["w"], "t0": round(at + w["t0"], 3)} for w in timed], "vo1": round(at + d, 3)})
         at += d + 0.28
     vo_end = at - 0.28
     for i, s in enumerate(scenes): s["t1"] = scenes[i + 1]["t0"] if i + 1 < len(scenes) else round(vo_end + 0.4, 3)
@@ -116,7 +116,7 @@ def main():
         f.write("window.STORY = " + json.dumps({"clubs": story.get("clubs", {}), "people": story.get("people", {})}) + ";\n")
         f.write("window.TL = " + json.dumps(tl) + ";\n")
     eng = os.path.join(HERE, "engine")
-    html = open(os.path.join(eng, "edit.html")).read().replace('src="avatars.js"', f'src="{eng}/avatars.js"').replace('src="scenes.js"', f'src="{eng}/scenes.js"').replace("url(../assets/", f"url({HERE}/assets/")
+    html = open(os.path.join(eng, "chess.html" if story.get("layout") == "chess" else "edit.html")).read().replace('src="avatars.js"', f'src="{eng}/avatars.js"').replace('src="scenes.js"', f'src="{eng}/scenes.js"').replace('src="chess.js"', f'src="{eng}/chess.js"').replace("url(../assets/", f"url({HERE}/assets/")
     open(os.path.join(work, "edit.html"), "w").write(html)
     # 3. render
     frames = os.path.join(work, "eframes"); shutil.rmtree(frames, ignore_errors=True)

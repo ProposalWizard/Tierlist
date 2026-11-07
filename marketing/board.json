@@ -20,14 +20,16 @@
  },
  {
   "id": "ch-analysed-like-chess",
-  "title": "CH · Football analysed like chess",
-  "stage": "idea",
+  "title": "CH-03 · Mourinho v Pep, Camp Nou 2010, analysed like chess",
+  "stage": "making",
   "owner": "Claude",
-  "updated": "2026-11-06T19:19:57Z",
-  "line": "A football duel told as a chess game: move badges, a swinging evaluation bar and a typed card for each decision. First pick from CH-01 to CH-05.",
+  "updated": "2026-11-07T00:00:00Z",
+  "line": "He lost the game 1-0 and still won the match: Inter's 10 men at the Camp Nou, told move by move like a chess game.",
   "links": [],
   "log": [
-   "2026-11-06 Idea: format taken from 4 TikToks (R14 to R17 in docs/marketing/video-ideas.md). Waiting for Mikey to pick the first story."
-  ]
+   "2026-11-06 Idea: format taken from 4 TikToks (R14 to R17 in docs/marketing/video-ideas.md). Waiting for Mikey to pick the first story.",
+   "2026-11-07 Mikey picked CH-03. Facts checked (sources in the story file). Making: voice E, drawn chessboard pitch, 1080x1920."
+  ],
+  "script": "tools/video-factory/stories/ch-mourinho-pep-2010.json"
  }
 ]
