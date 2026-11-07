@@ -1,17 +1,394 @@
-{"meta":{"series":"STAT TWINS · EP 1","source":"Data: Opta via FotMob · Premier League attackers, 900+ mins"},
-"scenes":{
-"hook":{"type":"title","kicker":"Salah · Liverpool · 2024/25","lines":["WHO IS","SALAH'S","STATISTICAL","TWIN?"],"red":[1],"size":120},
-"pool":{"type":"count","kicker":"Step 1 · the inputs","title":"Every season.","sub":"PL attackers · 900+ minutes","number":601,"label":"player-seasons since 2020/21","bars":[["20/21",99],["21/22",98],["22/23",94],["23/24",101],["24/25",96],["25/26",113]]},
-"stats":{"type":"bars","kicker":"Step 2 · what counts","title":"23 stats, per 90.","sub":"weight in the model","items":[{"label":"Goals (no pens)","pct":100,"value":"×3","red":true},{"label":"Expected goals","pct":100,"value":"×3","red":true},{"label":"Shots","pct":67,"value":"×2"},{"label":"Assists","pct":67,"value":"×2"},{"label":"Chances created","pct":67,"value":"×2"},{"label":"Big chances made","pct":67,"value":"×2"},{"label":"Dribbles","pct":50,"value":"×1.5"},{"label":"Defending","pct":12,"value":"×0.25"}],"at":["23",0.9,1.4,1.9,2.4,2.9,3.4,3.9]},
-"web":{"type":"web","kicker":"Step 3 · the model","title":"Nearest neighbour.","sub":"601 seasons · 2,000 runs","center":"SALAH 24/25","n":600,"lit":8,"litAt":"CLOSEST","corner":"2,000"},
-"special":{"type":"bars","kicker":"The profile · 2024/25","title":"Salah, 24/25.","sub":"rank out of 96 PL attackers","items":[{"label":"Goals + assists per 90","pct":100,"value":"1.01","rank":"#1","red":true},{"label":"Assists per 90","pct":98,"value":"0.48","rank":"#2"},{"label":"Big chances made","pct":96,"value":"0.72","rank":"#4"},{"label":"Shots on target","pct":96,"value":"1.6","rank":"#4"},{"label":"Goals per 90 (no pens)","pct":95,"value":"0.53","rank":"#5"}],"at":["RIDICULOUS","29","THE","PER","SEASON."]},
-"top8":{"type":"rank","kicker":"The ranking · all seasons","title":"The top eight.","sub":"distance from Salah 24/25 · lower = closer","rows":[{"name":"Mohamed Salah","sub":"2021/22 · Liverpool","d":15.7},{"name":"Mohamed Salah","sub":"2022/23 · Liverpool","d":18.5},{"name":"Harry Kane","sub":"2021/22 · Tottenham","d":19.0},{"name":"Heung-Min Son","sub":"2021/22 · Tottenham","d":19.9},{"name":"Mohamed Salah","sub":"2023/24 · Liverpool","d":20.8},{"name":"Riyad Mahrez","sub":"2021/22 · Man City","d":20.9},{"name":"Cole Palmer","sub":"2023/24 · Chelsea","d":20.9},{"name":"Kelechi Iheanacho","sub":"2020/21 · Leicester","d":21.1}],"revealAt":"SALAH","red":[0]},
-"twist":{"type":"rank","kicker":"The ranking · other players","title":"Without Salah.","sub":"distance from Salah 24/25 · lower = closer","rows":[{"name":"Harry Kane","sub":"2021/22 · Tottenham · striker","d":19.0},{"name":"Heung-Min Son","sub":"2021/22 · Tottenham","d":19.9},{"name":"Riyad Mahrez","sub":"2021/22 · Man City","d":20.9},{"name":"Cole Palmer","sub":"2023/24 · Chelsea","d":20.9},{"name":"Kelechi Iheanacho","sub":"2020/21 · Leicester","d":21.1}],"revealAt":"HARRY","red":[0],"preShown":[1,2,3,4],"legend":"Closest in 1,283 of 2,000 runs"},
-"why":{"type":"versus","kicker":"Why Kane","title":"They shoot the same.","sub":"0 = worst attacker that season, 100 = best","a":"Salah 24/25","b":"Kane 21/22","rows":[{"label":"Shots","a":91,"b":97},{"label":"On target","a":96,"b":97},{"label":"Expected goals","a":92,"b":91},{"label":"Big chances made","a":96,"b":94}],"at":["SHOTS,","TARGET,","EXPECTED","BIG"]},
-"diff":{"type":"versus","kicker":"But…","title":"Not the same player.","sub":"0 = worst attacker that season, 100 = best","a":"Salah 24/25","b":"Kane 21/22","rows":[{"label":"Chances created","a":94,"b":56},{"label":"Assists","a":98,"b":83},{"label":"Conversion %","a":94,"b":57}],"at":["SALAH","WAY","FINISHED"]},
-"wing":{"type":"runs","kicker":"Wingers only · 24/25 + 25/26","title":"Most similar winger.","sub":"closest in each of 2,000 runs","total":2000,"parts":[{"name":"Harvey Barnes 24/25 · Newcastle","n":1974,"col":"#c8102e"},{"name":"Leandro Trossard 25/26 · Arsenal","n":26,"col":"#3a3732"}]},
-"now":{"type":"rank","kicker":"This season · 26/27 + a bit of 25/26","title":"Right now.","sub":"about 10 games in · 450+ mins","rows":[{"name":"Rayan Cherki","sub":"Man City","d":27.3},{"name":"Bryan Mbeumo","sub":"Man United","d":28.9},{"name":"João Pedro","sub":"Chelsea","d":30.2},{"name":"Bukayo Saka","sub":"Arsenal","d":31.9},{"name":"Morgan Rogers","sub":"Aston Villa","d":32.0}],"revealAt":"RAYAN","red":[0]},
-"nowruns":{"type":"runs","kicker":"This season","title":"Every run.","sub":"closest in each of 2,000 runs","total":2000,"parts":[{"name":"Rayan Cherki","n":1372,"col":"#c8102e"},{"name":"Bryan Mbeumo","n":446,"col":"#3a3732"},{"name":"João Pedro","n":182,"col":"#9a9386"}]},
-"notsame":{"type":"versus","kicker":"But…","title":"Not the same player.","sub":"0 = worst attacker that season, 100 = best","a":"Salah 24/25","b":"Cherki now","rows":[{"label":"Passes","a":58,"b":99},{"label":"Expected goals","a":92,"b":62},{"label":"Chances created","a":94,"b":99}],"at":["CHERKI","SALAH","BIG"]},
-"end":{"type":"end","lines":["WHO'S NEXT?","COMMENT BELOW"],"captions":false}
-}}
+{
+"meta": {
+"series": "STAT TWINS · EP 1",
+"source": "Data: Opta via FotMob · PL attackers 900+ mins (26/27: 450+)",
+"engine": "video2.html",
+"imgDir": "/tmp/claude-0/-home-user-Tierlist/84a0c395-3776-5543-b933-7d1eba9d58ff/scratchpad/img"
+},
+"lists": {
+"top": {
+"title": "The top eight.",
+"sub": "Match to Salah 24/25 · 100% = identical",
+"target": {
+"name": "Mohamed Salah",
+"season": "2024/25",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY"
+},
+"rows": [
+{
+"name": "Cole Palmer",
+"season": "2023/24",
+"face": "p1096353",
+"club": "t8455",
+"flag": "cENG",
+"match": 79.1,
+"line": "His first season at Chelsea",
+"sure": "#1 in 8 of 10 tests"
+},
+{
+"name": "Roberto Firmino",
+"season": "2022/23",
+"face": "p242709",
+"club": "t8650",
+"flag": "cBRA",
+"match": 78.1,
+"line": "His old Liverpool team-mate",
+"sure": null
+},
+{
+"name": "Kelechi Iheanacho",
+"season": "2022/23",
+"face": "p643709",
+"club": "t8197",
+"flag": "cNGA",
+"match": 76.2,
+"line": "Yes, really",
+"sure": null
+},
+{
+"name": "Harvey Barnes",
+"season": "2024/25",
+"face": "p760359",
+"club": "t10261",
+"flag": "cENG",
+"match": 76.1,
+"line": null,
+"sure": null
+},
+{
+"name": "Heung-Min Son",
+"season": "2023/24",
+"face": "p212867",
+"club": "t8586",
+"flag": "cKOR",
+"match": 75.9,
+"line": null,
+"sure": null
+},
+{
+"name": "Rayan Cherki",
+"season": "2026/27",
+"face": "p1104053",
+"club": "t8456",
+"flag": "cFRA",
+"match": 75.9,
+"line": "Doing it this season",
+"sure": null
+},
+{
+"name": "Alexander Isak",
+"season": "2024/25",
+"face": "p690107",
+"club": "t10261",
+"flag": "cSWE",
+"match": 75.3,
+"line": "A striker",
+"sure": null
+},
+{
+"name": "Darwin Núñez",
+"season": "2022/23",
+"face": "p950561",
+"club": "t8650",
+"flag": "cURU",
+"match": 75.3,
+"line": "Another Liverpool team-mate",
+"sure": null
+}
+]
+},
+"now": {
+"title": "This season only.",
+"sub": "26/27 · about 10 games in · 450+ mins",
+"target": {
+"name": "Mohamed Salah",
+"season": "2024/25",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY"
+},
+"rows": [
+{
+"name": "Rayan Cherki",
+"season": "2026/27",
+"face": "p1104053",
+"club": "t8456",
+"flag": "cFRA",
+"match": 75.9,
+"line": null,
+"sure": "#1 in 10 of 10 tests"
+},
+{
+"name": "Evanilson",
+"season": "2026/27",
+"face": "p1098096",
+"club": "t8678",
+"flag": "cBRA",
+"match": 71.3,
+"line": null,
+"sure": null
+},
+{
+"name": "Bryan Mbeumo",
+"season": "2026/27",
+"face": "p923312",
+"club": "t10260",
+"flag": "cCMR",
+"match": 69.3,
+"line": null,
+"sure": null
+},
+{
+"name": "João Pedro",
+"season": "2026/27",
+"face": "p1021382",
+"club": "t8455",
+"flag": "cBRA",
+"match": 69.3,
+"line": null,
+"sure": null
+},
+{
+"name": "Julio Enciso",
+"season": "2026/27",
+"face": "p1073742",
+"club": "t9902",
+"flag": "cPAR",
+"match": 66.2,
+"line": null,
+"sure": null
+}
+]
+}
+},
+"scenes": {
+"intro": {
+"type": "intro",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY",
+"name": "SALAH",
+"season": "2024/25",
+"facts": [
+[
+"5",
+"seasons · 22/23 to 26/27"
+],
+[
+"465",
+"Premier League attacker seasons"
+],
+[
+"23",
+"stats, all per 90 minutes"
+]
+],
+"at": [
+"LAST",
+"EVERY",
+"23"
+]
+},
+"c8": {
+"type": "countdown",
+"list": "top",
+"upto": 8,
+"at": "DARWIN"
+},
+"c7": {
+"type": "countdown",
+"list": "top",
+"upto": 7,
+"at": "ALEXANDER",
+"cont": true
+},
+"c6": {
+"type": "countdown",
+"list": "top",
+"upto": 6,
+"at": "RAYAN",
+"cont": true
+},
+"c5": {
+"type": "countdown",
+"list": "top",
+"upto": 5,
+"at": "SON",
+"cont": true
+},
+"c4": {
+"type": "countdown",
+"list": "top",
+"upto": 4,
+"at": "HARVEY",
+"cont": true
+},
+"c3": {
+"type": "countdown",
+"list": "top",
+"upto": 3,
+"at": "KELECHI",
+"cont": true
+},
+"c2": {
+"type": "countdown",
+"list": "top",
+"upto": 2,
+"at": "ROBERTO",
+"cont": true
+},
+"c1": {
+"type": "countdown",
+"list": "top",
+"upto": 1,
+"at": "COLE",
+"cont": true
+},
+"tests": {
+"type": "statement",
+"face": "p1096353",
+"lines": [
+[
+"COLE PALMER · 23/24",
+48,
+"#141414"
+],
+[
+"#1 IN 8 OF 10 TESTS",
+72,
+"#c8102e"
+],
+[
+"each test counts the stats differently",
+30,
+"#5b564d"
+]
+],
+"at": [
+0.1,
+"PALMER",
+"CHANGED"
+],
+"dots": {
+"at": "PALMER",
+"n": 8,
+"total": 10
+}
+},
+"why": {
+"type": "compare",
+"kicker": "Why Palmer",
+"title": "They create the same.",
+"a": {
+"name": "Mohamed Salah",
+"season": "2024/25",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY"
+},
+"b": {
+"name": "Cole Palmer",
+"season": "2023/24",
+"face": "p1096353"
+},
+"rows": [
+{
+"label": "Chances created",
+"a": 2.37,
+"b": 2.47
+},
+{
+"label": "Shots on target",
+"a": 1.6,
+"b": 1.6
+}
+],
+"at": [
+"CHANCES",
+"SHOTS"
+]
+},
+"diff": {
+"type": "compare",
+"kicker": "But…",
+"title": "Not the same player.",
+"a": {
+"name": "Mohamed Salah",
+"season": "2024/25",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY"
+},
+"b": {
+"name": "Cole Palmer",
+"season": "2023/24",
+"face": "p1096353"
+},
+"rows": [
+{
+"label": "Passes",
+"a": 22.7,
+"b": 37.4
+},
+{
+"label": "Goals (no pens)",
+"a": 0.53,
+"b": 0.45
+},
+{
+"label": "Big chances made",
+"a": 0.72,
+"b": 0.58
+}
+],
+"at": [
+"PALMER",
+"SALAH",
+"BIG"
+]
+},
+"now4": {
+"type": "countdown",
+"list": "now",
+"steps": [
+[
+5,
+"JULIO"
+],
+[
+4,
+"JOÃO"
+],
+[
+3,
+"BRYAN"
+],
+[
+2,
+"EVANILSON"
+]
+]
+},
+"now1": {
+"type": "countdown",
+"list": "now",
+"upto": 1,
+"at": "RAYAN",
+"cont": true
+},
+"end": {
+"type": "end",
+"faces": [
+"p292462",
+"p1096353"
+],
+"lines": [
+"WHO'S NEXT?",
+"COMMENT BELOW"
+],
+"captions": true
+}
+}
+}

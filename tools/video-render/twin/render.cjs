@@ -7,7 +7,7 @@ const V=path.resolve(process.argv[2]); const mode=process.argv[3]||'video';
   const tl=JSON.parse(fs.readFileSync(V+'/timeline.json')); const sc=JSON.parse(fs.readFileSync(V+'/scenes.json'));
   const b=await chromium.launch(); const pg=await b.newPage({viewport:{width:1080,height:1920},deviceScaleFactor:1});
   pg.on('pageerror',e=>console.log('ERR',e.message)); pg.on('console',m=>console.log('PAGE',m.text()));
-  await pg.goto('file://'+__dirname+'/video.html'); await pg.evaluate(a=>window.boot(a[0],a[1]),[tl,sc]);
+  await pg.goto('file://'+__dirname+'/'+((sc.meta&&sc.meta.engine)||'video.html')); const nimg=await pg.evaluate(a=>window.boot(a[0],a[1]),[tl,sc]); if(nimg) console.log('images',nimg);
   await pg.evaluate(()=>document.fonts.ready);
   if(mode==='stills'){ fs.mkdirSync(V+'/stills',{recursive:true});
     for(const t of process.argv[4].split(',').map(Number)){await pg.evaluate(t=>window.render(t),t);await pg.screenshot({path:`${V}/stills/t${t.toFixed(2)}.png`});}

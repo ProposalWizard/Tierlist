@@ -23,17 +23,18 @@
     "title": "v02 · Salah's statistical twin",
     "stage": "check",
     "owner": "Claude",
-    "updated": "2026-11-07T20:30:00Z",
+    "updated": "2026-11-07T21:30:00Z",
     "postOn": null,
-    "line": "Who is Salah 24/25's statistical twin? Every PL attacker season since 2020, 23 stats, 2,000 runs.",
+    "line": "Who is Salah 24/25's statistical twin? Every PL attacker season 22/23–26/27, plus this season only.",
     "script": "docs/marketing/videos/v02-salah-twin/script.md",
     "cover": "docs/marketing/videos/v02-salah-twin/cover.png",
     "video": "docs/marketing/videos/v02-salah-twin/knowitball-v02-salah-twin.mp4",
-    "seconds": 87.2,
+    "seconds": 87.7,
     "links": [],
     "log": [
       "2026-11-07 Card made; data done (FotMob/Opta PL stats), script being written. Mikey's statistical-twins format.",
-      "2026-11-07 Rendered 87.2 s: Kane 21/22 overall, Barnes 24/25 most similar winger, Cherki right now. Waiting for Mikey's look."
+      "2026-11-07 Rendered 87.2 s: Kane 21/22 overall, Barnes 24/25 most similar winger, Cherki right now. Waiting for Mikey's look.",
+      "2026-11-07 v2 cut (Mikey's notes): faces, badges, flags, % match, 5-s intro, long countdown. Answer now Cole Palmer 23/24 (79%); this season Cherki (76%). Waiting for Mikey's look."
     ]
   },
   {
@@ -41,17 +42,18 @@
     "title": "v03 · Palmer 10 years ago",
     "stage": "check",
     "owner": "Claude",
-    "updated": "2026-11-07T20:30:00Z",
+    "updated": "2026-11-07T21:30:00Z",
     "postOn": null,
-    "line": "Who was Cole Palmer 10 years ago? Palmer against every PL attacker from 2016/17 and 2017/18.",
+    "line": "Who was Cole Palmer 10 years ago? His 24/25 + 25/26 + 26/27 per 90 against every PL attacker in 2016/17.",
     "script": "docs/marketing/videos/v03-palmer-10-years/script.md",
     "cover": "docs/marketing/videos/v03-palmer-10-years/cover.png",
     "video": "docs/marketing/videos/v03-palmer-10-years/knowitball-v03-palmer-10-years.mp4",
-    "seconds": 78.4,
+    "seconds": 82.1,
     "links": [],
     "log": [
       "2026-11-07 Card made; data done (FotMob/Opta PL stats), script being written. Mikey's statistical-twins format.",
-      "2026-11-07 Rendered 78.4 s: Coutinho 16/17 (1,596 of 2,000 runs), Barkley surprise. Waiting for Mikey's look."
+      "2026-11-07 Rendered 78.4 s: Coutinho 16/17 (1,596 of 2,000 runs), Barkley surprise. Waiting for Mikey's look.",
+      "2026-11-07 v2 cut (Mikey's notes): faces, badges, flags, % match, real per-90 numbers. Answer now Roberto Firmino 16/17 (86%); 24/25 alone = Coutinho (83%). Waiting for Mikey's look."
     ]
   }
 ]

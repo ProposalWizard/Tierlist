@@ -1,32 +1,24 @@
 # Knowitball short v03: Who was Cole Palmer 10 years ago? (Stat Twins · Ep 2)
 
-- File: `knowitball-v03-palmer-10-years.mp4`. Size: 1080×1920 (9:16), 30 fps, H.264 High, AAC 48 kHz stereo. Length: 78.4 s.
-- Cover: `cover.png` (the hook frame at 1.6 s).
-- Format: copied from the @more_tactics_board "Who is the next Kevin De Bruyne?" TikTok. Charts on a cream card, black with one red highlight, built up one bar at a time. A voice reads the script. Big word-by-word captions. No face. Same engine and look as Ep 1 (Salah's twin).
-- Voice: Kokoro v1.0 (offline), voice `bm_george`, speed 1.15, en-gb. "Coutinho" is spoken as "Koo-cheen-yo" and "De Bruyne" as "De Broyna"; the captions show the real spelling.
-- Sound: whooshes, hits, ticks and a quiet low music bed, all synthesised (numpy). No samples.
-- Pictures: none. No club badges, no player photos. Names and text only.
-- Data: Opta via FotMob, every Premier League attacker season (wingers, 10s, strikers) with 900+ minutes. All numbers come from `palmer_final.json` (in the working folder, see below).
-- Model: 19 stats per 90 minutes, each ranked 0–100 against that season's attackers. Weights: chances created ×3, big chances made ×2.5, goals (no pens) / shots / assists / passes ×2, dribbles ×1.5, and lower weights for the rest. No xG (FotMob has none before 2019/20). Target = Palmer's 2023/24 and 2024/25 Chelsea seasons averaged. Pool = 2016/17 (88) + 2017/18 (93) = 181 seasons. Nearest by weighted distance, then 2,000 runs with every weight shuffled ±50%.
-- Safe area: captions and cards stay inside x 64–950 and y 150–1536.
+- File: `knowitball-v03-palmer-10-years.mp4`. 1080×1920 (9:16), 30 fps, H.264, AAC 48 kHz stereo. Length: 82.1 s. Cover: `cover.png` (the intro card at 3 s).
+- Version 2 (7 Nov 2026), rebuilt on Mikey's notes: 5-second intro, a long countdown with faces, club badges and flags (RUL-KIB-005), "% match" (100% = identical), "#1 in x of 10 tests" in place of "2,000 runs", real per-90 numbers on screen (never ranks).
+- Answer: Roberto Firmino 16/17 (86% match, #1 in 19 of 20 tests) for Palmer's 24/25 + 25/26 + 26/27 added up per 90; Palmer's 24/25 alone: Philippe Coutinho 16/17 (83%).
+- Model: Premier League attackers (wingers, 10s, strikers), 900+ minutes (450+ for 26/27, about 10 games in). Every stat per 90 minutes, ranked 0–100 against that player's own season; weighted gap; match % = 100 minus the gap; 2,000 tests with the weights shuffled ±50%. Data: FotMob's public stat pages (Opta), read 7 Nov 2026. Pictures: FotMob headshots, club badges (the club that season) and flags.
+- Voice: Kokoro v1.0 (offline), `bm_george`, en-gb. Sound made in numpy. Made with `tools/video-render/twin/` (engine `video2.html`, numbers `model/v2data.py`).
 
 | Time (s) | Voiceover | On screen | Source |
 |---|---|---|---|
-| 0.15–2.58 | "Who was Cole Palmer ten years ago?" | Title card "WHO WAS / COLE PALMER / 10 YEARS / AGO?" (name in red). Kicker "Palmer · Chelsea · 23/24 + 24/25". | Hook |
-| 2.58–10.09 | "I took every Premier League attacker season from sixteen-seventeen and seventeen-eighteen. One hundred and eighty-one of them." | "Ten years ago." 181 counts up. Two bars: 2016/17 88, 2017/18 93. | `pool` |
-| 10.09–17.06 | "Nineteen stats each, per ninety minutes, ranked against that season's attackers. Chances created count the most." | "19 stats, per 90." Weight bars: chances created ×3 (red), big chances made ×2.5, goals (no pens) ×2, shots ×2, assists ×2, passes ×2, dribbles ×1.5, defending ×0.5. | `weights` |
-| 17.06–24.82 | "Then we find who's closest to Palmer's 23/24 and 24/25. Two thousand times, shuffling every weight." | "Nearest neighbour." 181 dots around "PALMER 23/24 + 24/25"; the 8 nearest light red; "2,000" badge. | `pool`, method |
-| 24.82–35.48 | "And Palmer's 24/25? Fourth for chances created, out of ninety-six attackers. Third for long balls. Sixth for big chances made. Sixth for shots." | "Palmer, 24/25." Rank out of 96: chances created #4 (2.51 per 90), long balls #3 (2.6), big chances made #6 (0.68), shots #6 (3.5). | `palmer2425_ranks`, `palmer2425_rank_of`, `palmer_raw_2425` |
-| 35.48–41.85 | "Here's the top eight. Hazard. Firmino. Even De Bruyne. But number one is... Philippe Coutinho." | Top-8 countdown, #1 hidden as "?" until "Philippe": Coutinho 16/17 13.7, Willian 17/18 14.6, Sánchez 17/18 14.6, Sánchez 16/17 15.8, Hazard 17/18 17.2, Firmino 16/17 17.9, Martial 17/18 18.6, De Bruyne 17/18 19.4. | `top8` (distances) |
-| 41.85–45.74 | "Liverpool, sixteen-seventeen. Thirteen goals, seven assists." | Reveal card "COUTINHO", "Liverpool · 2016/17", "2,243 minutes", 13 goals, 7 assists. | `top8[0]` (goals, assists, minutes) |
-| 45.74–50.68 | "Closest in one thousand five hundred and ninety-six of two thousand runs." | 2,000-cell grid fills: Coutinho 16/17 1,596 (red), Sánchez 17/18 234, Willian 17/18 165, Sánchez 16/17 5. | `wins` |
-| 50.68–55.91 | "Why? They create the same. Chances, passes, long balls, shots. Nearly identical." | Versus (0–100): chances created 94 v 93, passes 88 v 91, long balls 96 v 94, shots 92 v 98. | `vs_coutinho_pct` |
-| 55.91–61.84 | "Now use only Palmer's 24/25. And number two is... Ross Barkley." | "Just 24/25." vs 2016/17: Coutinho 16.8, #2 appears on "Ross": Ross Barkley 17.8 (red), Firmino 18.1, Sánchez 19.7. Note: "Coutinho still #1: closest in 1,635 of 2,000 runs". | `p2425_vs_1617`, `p2425_wins` |
-| 61.84–70.39 | "But they're not the same player. Coutinho dribbled twice as much. Palmer makes way more big chances. And Coutinho scored more without penalties." | "Not the same player." Dribbles 71 v 86 (per 90: Palmer 1.4 in 24/25, Coutinho 2.8). Big chances made 94 v 85 (per 90: 0.68 in 24/25 v 0.28). Goals (no pens) 70 v 89 (per 90: Palmer 0.31 / 0.45, Coutinho 0.52). | `vs_coutinho_pct`, `palmer_raw_2425`, `palmer_raw_2324`, `coutinho_raw` |
-| 70.39–78.42 | "So ten years ago, Cole Palmer was Philippe Coutinho. Who should I find the twin of next? Comment below." | End card: "KNOWITBALL", "WHO'S NEXT? / COMMENT BELOW", green knowitball.co.uk pill. | CTA |
-
-## How it was made
-1. `lines.json` (voice lines and caption words) and `scenes.json` (one chart card per line) feed the shared Stat Twins engine in `tools/video-render/twin/`.
-2. `tts.py` voices each line with Kokoro. `timeline.py` times every caption word and mixes the sound. `render.cjs` draws each frame from time t alone in Playwright Chromium and encodes with ffmpeg.
-
-The working files are outside the repo, in `/tmp/claude-0/-home-user-Tierlist/84a0c395-3776-5543-b933-7d1eba9d58ff/scratchpad/v03/`, with the data in `palmer_final.json` one folder up.
+| 0.15–9.06 | "Who was Cole Palmer ten years ago? His last three seasons. Every attacker from 2016/17. Nineteen stats." | Intro card: face, badge, flag, PALMER 24/25 → 26/27; 3 seasons added up · 24/25 to 26/27; 88 Premier League attackers in 2016/17; 19 stats, all per 90 minutes | v2data.json |
+| 9.06–16.98 | "Here's the top eight. A hundred percent would be identical. Number eight: Juan Mata. Manchester United. seventy-eight percent." | Countdown #8: spotlight Juan Mata 2016/17, 78% match, "Ex-Chelsea" | v2data.json |
+| 16.98–22.24 | "Seven: Paul Pogba. That summer's record signing. seventy-eight percent." | Countdown #7: spotlight Paul Pogba 2016/17, 78% match, "That summer's record signing" | v2data.json |
+| 22.24–27.06 | "Six: Kevin De Bruyne. Manchester City. seventy-eight percent." | Countdown #6: spotlight Kevin De Bruyne 2016/17, 78% match, "Ex-Chelsea too" | v2data.json |
+| 27.06–31.49 | "Five: Christian Eriksen. Tottenham. seventy-nine percent." | Countdown #5: spotlight Christian Eriksen 2016/17, 79% match, "Spurs' playmaker" | v2data.json |
+| 31.49–35.68 | "Four: Ross Barkley. Everton. Who later joined Chelsea." | Countdown #4: spotlight Ross Barkley 2016/17, 79% match, "Later joined Chelsea" | v2data.json |
+| 35.68–39.62 | "Three: Alexis Sánchez. Arsenal. eighty percent." | Countdown #3: spotlight Alexis Sánchez 2016/17, 80% match, "24 league goals that season" | v2data.json |
+| 39.62–43.97 | "Two: Philippe Coutinho. Liverpool. eighty-three percent." | Countdown #2: spotlight Philippe Coutinho 2016/17, 83% match, "Firmino's team-mate" | v2data.json |
+| 43.97–49.35 | "And number one... his team-mate. Roberto Firmino. A eighty-six percent match." | Countdown #1: spotlight Roberto Firmino 2016/17, 86% match, #1 in 19 of 20 tests | v2data.json |
+| 49.35–56.22 | "We changed how much each stat counts, two thousand times. Firmino stayed number one in nineteen out of twenty." | ROBERTO FIRMINO · 16/17 / #1 IN 19 OF 20 TESTS / each test counts the stats differently | v2data.json |
+| 56.22–62.05 | "Why? Two chances created every ninety minutes. And they score and assist at almost the same rate." | They create the same. (per 90): Chances created 2.01 vs 2.26; Goals (no pens) 0.27 vs 0.32; Assists 0.18 vs 0.21 | v2data.json |
+| 62.05–68.51 | "The difference? Palmer makes way more big chances, and plays more long balls. Firmino won the ball back more." | Not the same player. (per 90): Big chances made 0.5 vs 0.29; Long balls 2.06 vs 0.9; Ball recoveries 3.41 vs 4.9 | v2data.json |
+| 68.51–74.83 | "But use only Palmer's 24/25? Then it's Coutinho. eighty-three percent." | PALMER'S 24/25 ONLY / PHILIPPE COUTINHO / 83% match · Liverpool 16/17 | v2data.json |
+| 74.83–82.08 | "So ten years ago, Cole Palmer was Roberto Firmino. Who should I do next? Comment below." | End card: both faces, KNOWITBALL, WHO'S NEXT? COMMENT BELOW, knowitball.co.uk | v2data.json |

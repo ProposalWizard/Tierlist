@@ -1,8 +1,8 @@
 [
 {
-"id": "hook",
-"say": "Who was Cole Palmer ten years ago?",
-"cap": "WHO WAS COLE PALMER 10|ten YEARS AGO?",
+"id": "intro",
+"say": "Who was Cole Palmer ten years ago? His last three seasons. Every attacker from 2016/17. Nineteen stats.",
+"cap": "WHO WAS COLE PALMER 10|ten YEARS AGO? HIS LAST THREE SEASONS. EVERY ATTACKER FROM 2016/17.|twenty-sixteen-seventeen 19|nineteen STATS.",
 "sfx": [
 [
 "hit",
@@ -12,93 +12,146 @@
 ]
 },
 {
-"id": "pool",
-"say": "I took every Premier League attacker season from sixteen-seventeen and seventeen-eighteen. One hundred and eighty-one of them.",
-"cap": "I TOOK EVERY PREMIER LEAGUE ATTACKER SEASON FROM 16/17|sixteen-seventeen AND 17/18.|seventeen-eighteen 181|one-hundred-and-eighty-one OF THEM.",
+"id": "c8",
+"say": "Here's the top eight. A hundred percent would be identical. Number eight: Juan Mata. Manchester United. seventy-eight percent.",
+"cap": "HERE'S THE TOP EIGHT. 100%|a-hundred-percent WOULD BE IDENTICAL. NUMBER EIGHT: JUAN MATA. MANCHESTER UNITED. 78%.|x-percent",
 "sfx": [
 [
-"hit",
-"181",
-0.45
+"pop",
+"JUAN",
+0.5
 ]
 ]
 },
 {
-"id": "stats",
-"say": "Nineteen stats each, per ninety minutes, ranked against that season's attackers. Chances created count the most.",
-"cap": "19|nineteen STATS EACH, PER 90|ninety MINUTES, RANKED AGAINST THAT SEASON'S ATTACKERS. CHANCES CREATED COUNT THE MOST."
-},
-{
-"id": "web",
-"say": "Then we find who's closest to Palmer's twenty-three twenty-four and twenty-four twenty-five. Two thousand times, shuffling every weight.",
-"cap": "THEN WE FIND WHO'S CLOSEST TO PALMER'S 23/24|twenty-three-twenty-four AND 24/25.|twenty-four-twenty-five 2,000|two-thousand TIMES, SHUFFLING EVERY WEIGHT."
-},
-{
-"id": "profile",
-"say": "And Palmer's 24/25? Fourth for chances created, out of ninety-six attackers. Third for long balls. Sixth for big chances made. Sixth for shots.",
-"cap": "AND PALMER'S 24/25?|twenty-four-twenty-five FOURTH FOR CHANCES CREATED, OUT OF 96|ninety-six ATTACKERS. THIRD FOR LONG BALLS. SIXTH FOR BIG CHANCES MADE. SIXTH FOR SHOTS.",
+"id": "c7",
+"say": "Seven: Paul Pogba. That summer's record signing. seventy-eight percent.",
+"cap": "SEVEN: PAUL POGBA. THAT SUMMER'S RECORD SIGNING. 78%.|x-percent",
+"hold": 0.6,
 "sfx": [
 [
-"tick",
-"FOURTH",
-0.4
-],
-[
-"tick",
-"THIRD",
-0.4
+"pop",
+"PAUL",
+0.5
 ]
 ]
 },
 {
-"id": "top8",
-"say": "Here's the top eight. Hazard. Firmino. Even De Broyna. But number one is... Philippe Koo-cheen-yo.",
-"cap": "HERE'S THE TOP EIGHT. HAZARD. FIRMINO. EVEN DE|de BRUYNE.|broyna BUT NUMBER ONE IS... PHILIPPE COUTINHO.|koo-cheen-yo",
+"id": "c6",
+"say": "Six: Kevin De Broyna. Manchester City. seventy-eight percent.",
+"cap": "SIX: KEVIN DE BRUYNE.|de-broyna MANCHESTER CITY. 78%.|x-percent",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"KEVIN",
+0.5
+]
+]
+},
+{
+"id": "c5",
+"say": "Five: Christian Eriksen. Tottenham. seventy-nine percent.",
+"cap": "FIVE: CHRISTIAN ERIKSEN. TOTTENHAM. 79%.|x-percent",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"CHRISTIAN",
+0.5
+]
+]
+},
+{
+"id": "c4",
+"say": "Four: Ross Barkley. Everton. Who later joined Chelsea.",
+"cap": "FOUR: ROSS BARKLEY. EVERTON. WHO LATER JOINED CHELSEA.",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"ROSS",
+0.5
+]
+]
+},
+{
+"id": "c3",
+"say": "Three: Alexis Sánchez. Arsenal. eighty percent.",
+"cap": "THREE: ALEXIS SÁNCHEZ. ARSENAL. 80%.|x-percent",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"ALEXIS",
+0.5
+]
+]
+},
+{
+"id": "c2",
+"say": "Two: Philippe Koo-cheen-yo. Liverpool. eighty-three percent.",
+"cap": "TWO: PHILIPPE COUTINHO.|koo-cheen-yo LIVERPOOL. 83%.|x-percent",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"PHILIPPE",
+0.55
+]
+]
+},
+{
+"id": "c1",
+"say": "And number one... his team-mate. Roberto Firmino. A eighty-six percent match.",
+"cap": "AND NUMBER ONE... HIS TEAM-MATE. ROBERTO FIRMINO. A 86%|x-percent MATCH.",
 "hold": 0.3,
 "sfx": [
 [
 "hit",
-"PHILIPPE",
-0.7
+"ROBERTO",
+0.75
 ]
 ]
 },
 {
-"id": "reveal",
-"say": "Liverpool, sixteen-seventeen. Thirteen goals, seven assists.",
-"cap": "LIVERPOOL, 16/17.|sixteen-seventeen 13|thirteen GOALS, 7|seven ASSISTS."
-},
-{
-"id": "runs",
-"say": "Closest in one thousand five hundred and ninety-six of two thousand runs.",
-"cap": "CLOSEST IN 1,596|one-thousand-five-hundred-and-ninety-six OF 2,000|two-thousand RUNS."
+"id": "tests",
+"say": "We changed how much each stat counts, two thousand times. Firmino stayed number one in nineteen out of twenty.",
+"cap": "WE CHANGED HOW MUCH EACH STAT COUNTS, 2,000|two-thousand TIMES. FIRMINO STAYED NUMBER ONE IN 19|x OUT OF 20.|twenty",
+"sfx": [
+[
+"tick",
+"FIRMINO",
+0.4
+]
+]
 },
 {
 "id": "why",
-"say": "Why? They create the same. Chances, passes, long balls, shots. Nearly identical.",
-"cap": "WHY? THEY CREATE THE SAME. CHANCES, PASSES, LONG BALLS, SHOTS. NEARLY IDENTICAL."
+"say": "Why? Two chances created every ninety minutes. And they score and assist at almost the same rate.",
+"cap": "WHY? TWO CHANCES CREATED EVERY 90|ninety MINUTES. AND THEY SCORE AND ASSIST AT ALMOST THE SAME RATE."
 },
 {
-"id": "surprise",
-"say": "Now use only Palmer's 24/25. And number two is... Ross Barkley.",
-"cap": "NOW USE ONLY PALMER'S 24/25.|twenty-four-twenty-five AND NUMBER TWO IS... ROSS BARKLEY.",
+"id": "diff",
+"say": "The difference? Palmer makes way more big chances, and plays more long balls. Firmino won the ball back more.",
+"cap": "THE DIFFERENCE? PALMER MAKES WAY MORE BIG CHANCES, AND PLAYS MORE LONG BALLS. FIRMINO WON THE BALL BACK MORE."
+},
+{
+"id": "twist",
+"say": "But use only Palmer's 24/25? Then it's Koo-cheen-yo. eighty-three percent.",
+"cap": "BUT USE ONLY PALMER'S 24/25?|twenty-four-twenty-five THEN IT'S COUTINHO.|koo-cheen-yo 83%.|x-percent",
 "hold": 0.3,
 "sfx": [
 [
 "hit",
-"ROSS",
-0.7
+"COUTINHO",
+0.6
 ]
 ]
-},
-{
-"id": "notsame",
-"say": "But they're not the same player. Koo-cheen-yo dribbled twice as much. Palmer makes way more big chances. And Koo-cheen-yo scored more without penalties.",
-"cap": "BUT THEY'RE NOT THE SAME PLAYER. COUTINHO|koo-cheen-yo DRIBBLED TWICE AS MUCH. PALMER MAKES WAY MORE BIG CHANCES. AND COUTINHO|koo-cheen-yo SCORED MORE WITHOUT PENALTIES."
 },
 {
 "id": "end",
-"say": "So ten years ago, Cole Palmer was Philippe Koo-cheen-yo. Who should I find the twin of next? Comment below.",
-"cap": "SO 10|ten YEARS AGO, COLE PALMER WAS PHILIPPE COUTINHO.|koo-cheen-yo WHO SHOULD I FIND THE TWIN OF NEXT? COMMENT BELOW."
+"say": "So ten years ago, Cole Palmer was Roberto Firmino. Who should I do next? Comment below.",
+"cap": "SO 10|ten YEARS AGO, COLE PALMER WAS ROBERTO FIRMINO. WHO SHOULD I DO NEXT? COMMENT BELOW."
 }
 ]
