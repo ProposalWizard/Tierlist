@@ -21,15 +21,19 @@
  {
   "id": "ch-analysed-like-chess",
   "title": "CH-03 · Mourinho v Pep, Camp Nou 2010, analysed like chess",
-  "stage": "making",
+  "stage": "check",
   "owner": "Claude",
-  "updated": "2026-11-07T00:00:00Z",
+  "updated": "2026-11-07T12:00:00Z",
   "line": "He lost the game 1-0 and still won the match: Inter's 10 men at the Camp Nou, told move by move like a chess game.",
   "links": [],
   "log": [
    "2026-11-06 Idea: format taken from 4 TikToks (R14 to R17 in docs/marketing/video-ideas.md). Waiting for Mikey to pick the first story.",
-   "2026-11-07 Mikey picked CH-03. Facts checked (sources in the story file). Making: voice E, drawn chessboard pitch, 1080x1920."
+   "2026-11-07 Mikey picked CH-03. Facts checked (sources in the story file). Making: voice E, drawn chessboard pitch, 1080x1920.",
+   "2026-11-07 Made: 75 s, voice E, drawn chessboard pitch. Two lines reworded because the voice said 'trouble' for 'treble'. Waiting for Mikey's check."
   ],
-  "script": "tools/video-factory/stories/ch-mourinho-pep-2010.json"
+  "script": "tools/video-factory/stories/ch-mourinho-pep-2010.json",
+  "seconds": 75.1,
+  "video": "docs/marketing/videos/ch03-mourinho-pep-2010/knowitball-ch03-mourinho-pep-2010.mp4",
+  "cover": "docs/marketing/videos/ch03-mourinho-pep-2010/cover.jpg"
  }
 ]
