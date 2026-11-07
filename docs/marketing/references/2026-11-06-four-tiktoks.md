@@ -199,3 +199,38 @@ Watched frame by frame (13 sheets, all read) plus a loudness trace. No voice.
 - **Same rounds, football action:** "1 striker vs 10 / 50 / 100 / 500 /
   1000 defenders", counters DEFENDERS / GOALS. Uses the rounds and the
   pause, not the cutting.
+
+## R19-R22: four more by the same creator (7 Nov 2026)
+
+| # | Link | Object | Views | Look |
+|---|---|---|---|---|
+| R18 | (above) | Red onion | 5.6M | realistic, round and tall, rings inside |
+| R22 | https://vm.tiktok.com/ZN8fV2uJQ/ | Avocado | 1.9M | realistic, stone revealed in the last round |
+| R20 | https://vm.tiktok.com/ZN8f4EaXx/ | Fish | 180k | cartoon, long and low, plain white inside |
+| R21 | https://vm.tiktok.com/ZN8fVSabf/ | Papaya | 35.5k | semi-real, seeds inside |
+| R19 | https://vm.tiktok.com/ZN8fVeU1b/ | Steak | 7k | flat cartoon colour, flat slab, another account's watermark (@InfiniteSlice01) |
+
+Watched: avocado, steak, fish every sheet; papaya 4 of 7 sheets. Silences
+measured on all five.
+
+**The same in all five (the rules):** the same board, wall, knife, camera,
+counters and fonts; rounds of 10, 50, 100, 250, 500, 1,000 cuts; each round
+down, sideways, dice; "≈" past 10,000; ends near 17 million cubes; about
+1:05-1:12; no voice, no captions. Avocado and papaya have the SAME silence
+times to a tenth of a second (1.0, 2.9, 7.7, 11.1, 19.2 ...): one timeline,
+the object swapped. The onion is within 0.4 s of it. Two silences per round
+(before the sideways pass and before the dice). The steak has one per round.
+
+**What changes, and the views follow it (5 videos: a pattern, not proof):**
+1. Realistic beats cartoon: onion and avocado look real; steak and fish are
+   flat cartoon colour.
+2. Round and tall beats flat and long: a tall object makes a tall pile that
+   fills the screen; the steak and fish make a low smear.
+3. A surprise inside: onion rings, the avocado's stone in the last round.
+   The fish is plain white inside.
+4. Everyday objects: everyone has diced an onion or cut an avocado.
+5. The final round is framed closer (onion, papaya, avocado).
+
+**So for us:** a round, realistic football object with something to reveal
+inside. Best: a golden ball, solid gold, with a real football at its core
+that is revealed in the last round (the avocado-stone moment).
