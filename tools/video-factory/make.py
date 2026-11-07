@@ -138,9 +138,9 @@ def main():
                 subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", str(st), "-i", os.path.join(cd, src), "-t", str(ln), "-vf", vf, "-q:v", "3", "-start_number", str(got + 1), os.path.join(outd, "c%05d.jpg")], check=True)
                 got = len(os.listdir(outd))
                 # the clip's own sound (crowd, commentary), same cut
-                a = subprocess.run(["ffmpeg", "-v", "error", "-ss", str(st), "-i", os.path.join(cd, src), "-t", str(ln), "-vn", "-f", "f32le", "-ac", "1", "-ar", str(SR), "-"], capture_output=True).stdout
-                a = np.frombuffer(a, dtype=np.float32).copy(); i0 = int((s["t0"] + (got_before := clip_t.get(i, 0.0))) * SR)
-                fx[i0:i0 + len(a)] += a[:max(0, len(fx) - i0)]; clip_t[i] = got_before + len(a) / SR
+                aud = subprocess.run(["ffmpeg", "-v", "error", "-ss", str(st), "-i", os.path.join(cd, src), "-t", str(ln), "-vn", "-f", "f32le", "-ac", "1", "-ar", str(SR), "-"], capture_output=True).stdout
+                aud = np.frombuffer(aud, dtype=np.float32).copy(); i0 = int((s["t0"] + (got_before := clip_t.get(i, 0.0))) * SR)
+                fx[i0:i0 + len(aud)] += aud[:max(0, len(fx) - i0)]; clip_t[i] = got_before + len(aud) / SR
             s["clipDir"] = outd; s["clipFrames"] = got
         with open(os.path.join(work, "timeline.js"), "w") as f:
             f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes", "images", "evalPct", "possLabels")}) + ";\n")
