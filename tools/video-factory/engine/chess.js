@@ -150,10 +150,10 @@ function flash(g, text, k, col = "#ffffff", sub) {
   g.restore();
 }
 function redCard(g, lt, sc) {
-  const k = pop((lt - 0.9) * 2.2); if (k <= 0) return; const out = ez((lt - 3.4) / 0.5);
+  const r0 = sc.redAt || 0.9; const k = pop((lt - r0) * 2.2); if (k <= 0) return; const out = ez((lt - r0 - 2.5) / 0.5);
   g.save(); g.globalAlpha = 1 - out; g.translate(PX + PW - 150, PY + 190); g.rotate(0.14); g.scale(k, k);
   g.shadowColor = "rgba(0,0,0,.5)"; g.shadowBlur = 24; rr(g, -70, -100, 140, 200, 14, "#e0202e"); g.shadowBlur = 0; g.restore();
-  if (lt > 1.6) { const a = ez((lt - 1.6) * 3); g.save(); g.globalAlpha = a; rr(g, PX + 24, PY + 24, 230, 64, 14, "#e0202e"); T(g, "10 MEN", PX + 139, PY + 74, 48, { align: "center" }); g.restore(); }
+  if (lt > r0 + 0.7) { const a = ez((lt - r0 - 0.7) * 3); g.save(); g.globalAlpha = a; rr(g, PX + 24, PY + 24, 230, 64, 14, "#e0202e"); T(g, "10 MEN", PX + 139, PY + 74, 48, { align: "center" }); g.restore(); }
 }
 function banks(g, cam, pos, lt) {
   const k = ez((lt - 1.2) / 0.8); if (k <= 0) return;
@@ -169,7 +169,7 @@ function possession(g, lt, pct) {
   g.save(); g.globalAlpha = ez((lt - 0.6) * 3); rr(g, x, y, w, 120, 18, "rgba(10,10,12,.88)");
   T(g, "POSSESSION", x + w / 2, y + 40, 30, { align: "center", font: "Oswald", weight: 700, color: "#cfd3da" });
   const bw = w - 220, bx = x + 110; rr(g, bx, y + 62, bw, 34, 17, "#1f4fb3"); rr(g, bx, y + 62, bw * (pct / 100) * k, 34, 17, "#a50044");
-  T(g, `${Math.round(pct * k)}%`, x + 20, y + 92, 40, { color: "#ff6b9a" }); T(g, `${Math.round(100 - pct * k)}%`, x + w - 20, y + 92, 40, { align: "right", color: "#7fa8ff" });
+  T(g, ST().possLabels ? ST().possLabels[0] : `${Math.round(pct * k)}%`, x + 20, y + 92, 40, { color: "#ff6b9a" }); T(g, ST().possLabels ? ST().possLabels[1] : `${Math.round(100 - pct * k)}%`, x + w - 20, y + 92, 40, { align: "right", color: "#7fa8ff" });
   g.restore();
 }
 function coachMap(g, lt) {
@@ -235,13 +235,13 @@ function badgeIcon(g, b, x, y, r, k = 1) {
   g.fillText(b.sym, 0, r * (emoji ? 0.06 : 0.08));
   g.restore();
 }
-function evalFrac(e) { if (e === "M") return 1; if (e === "-M") return 0; return 0.5 + 0.5 * Math.tanh(Number(e) / 4); }
-function evalText(e) { if (e === "M") return "M"; const v = Number(e); return (v > 0 ? "+" : "") + v.toFixed(1); }
+function evalFrac(e) { if (ST().evalPct) return Math.max(0, Math.min(1, Number(e) / 100)); if (e === "M") return 1; if (e === "-M") return 0; return 0.5 + 0.5 * Math.tanh(Number(e) / 4); }
+function evalText(e) { if (ST().evalPct) return Math.round(Number(e)) + "%"; if (e === "M") return "M"; const v = Number(e); return (v > 0 ? "+" : "") + v.toFixed(1); }
 function flipAt(s) { const sc = s.scene; if (sc.flipWord) { const w = (s.words || []).find((x) => x.w.toLowerCase().replace(/[^a-z]/g, "").startsWith(sc.flipWord)); if (w) return w.t0 - s.t0; } return sc.flipAt || 3.2; }
 function wordAt(s, word, dflt) { const w = (s.words || []).find((x) => x.w.toLowerCase().replace(/[^a-z0-9]/g, "").startsWith(word)); return w ? w.t0 - s.t0 : dflt; }
 function evalBar(g, t, s, prevSc) {
   const sc = s.scene; const from = prevSc ? (prevSc.evalAfter ?? prevSc.eval ?? 0) : 0; const mid = sc.eval ?? 0; const after = sc.evalAfter;
-  const k1 = ez((t - 0.3) / 0.7); let f = evalFrac(from) + (evalFrac(mid) - evalFrac(from)) * k1; let shown = k1 > 0.5 ? mid : from;
+  const k1 = ez((t - (sc.badgeAt ?? (sc.lead ? sc.lead - 0.2 : 0.3))) / 0.7); let f = evalFrac(from) + (evalFrac(mid) - evalFrac(from)) * k1; let shown = k1 > 0.5 ? mid : from;
   if (after != null) { const k2 = ez((t - flipAt(s)) / 0.5); f += (evalFrac(after) - evalFrac(mid)) * k2; if (k2 > 0.5) shown = after; }
   rr(g, EVX, PY, EVW, PH, 8, "#403d39"); g.save(); g.beginPath(); g.roundRect(EVX, PY, EVW, PH, 8); g.clip(); g.fillStyle = "#f4f1ea"; const h = PH * f; g.fillRect(EVX, PY + PH - h, EVW, h); g.restore();
   const white = f >= 0.5; T(g, evalText(shown), EVX + EVW / 2, white ? PY + PH - 14 : PY + 28, 19, { align: "center", font: "Oswald", weight: 700, color: white ? "#222" : "#eee", maxW: EVW - 4 });
@@ -257,9 +257,9 @@ function moveCard(g, gt, lt, s) {
   const h = Math.max(250, 118 + lines.length * lh + 16);
   rr(g, x, y0, w, h, 18, "rgba(18,18,20,.94)"); g.fillStyle = b.col; g.fillRect(x, y0, 9, h);
   const ppl = ST().people || {};
-  const who = sc.who === "result" ? "RESULT" : sc.who === "next" ? "UP NEXT" : sc.hook ? "ANALYSED LIKE CHESS" : `MOVE ${sc.n} · ${(ppl[sc.who] || {}).name || ""}`.toUpperCase();
+  const who = sc.who === "result" ? "RESULT" : sc.who === "next" ? "UP NEXT" : sc.hook ? "ANALYSED LIKE CHESS" : `MOVE ${sc.n} · ${sc.whoName || (ppl[sc.who] || {}).name || ""}`.toUpperCase();
   T(g, who, x + 32, y0 + 40, 22, { font: "Oswald", weight: 700, color: "#9a9ea8", maxW: w - 300 });
-  g.save(); g.font = "700 22px Oswald"; const pw = g.measureText(b.label).width + 50; const pk = pop((lt - 0.25) * 3);
+  g.save(); g.font = "700 22px Oswald"; const pw = g.measureText(b.label).width + 50; const pk = pop((lt - (sc.badgeAt ?? (sc.lead ? sc.lead - 0.2 : 0.25))) * 3);
   g.translate(x + w - pw / 2 - 22, y0 + 32); g.scale(pk, pk); rr(g, -pw / 2, -19, pw, 38, 19, b.col); g.fillStyle = "#fff"; g.textAlign = "center"; g.fillText(b.label, 0, 8); g.restore();
   T(g, sc.title || "", x + 32, y0 + 94, sc.hook ? 50 : 46, { color: sc.hook ? "#fff" : b.col, maxW: w - 64 });
   g.save(); g.font = font; g.fillStyle = "#fff"; const sp = g.measureText(" ").width;
@@ -283,6 +283,50 @@ function bottomBar(g, lt, sc) {
   T(g, s.agg || "", cx, y + h - 16, 22, { align: "center", font: "Oswald", weight: 700, color: "#ffd84a", maxW: 300 });
 }
 
+
+// ── scoreboard A (Mikey, 7 Nov 2026): real faces and badges, the score in the middle ──
+function circImg(g, im, x, y, r, ring) {
+  if (!im) return; g.save(); g.beginPath(); g.arc(x, y, r, 0, 7); g.clip();
+  const s = Math.max(2 * r / im.width, 2 * r / im.height); g.drawImage(im, x - im.width * s / 2, y - im.height * s / 2, im.width * s, im.height * s); g.restore();
+  if (ring) { g.strokeStyle = ring; g.lineWidth = 5; g.beginPath(); g.arc(x, y, r, 0, 7); g.stroke(); }
+}
+function scoreboardA(g, lt, sc) {
+  const I = window.IMG || {}; const s = sc.score || {}; const y = PY + PH + 22, h = 132, x = X0, w = X1 - X0;
+  const gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, "#26262d"); gr.addColorStop(1, "#0e0e12");
+  g.save(); g.shadowColor = "rgba(0,0,0,.5)"; g.shadowBlur = 24; rr(g, x, y, w, h, 22, gr); g.restore();
+  const blackOn = sc.who === "pep" || sc.side === "black", whiteOn = ["mourinho", "result"].includes(sc.who) || sc.side === "white";
+  const cx = x + w / 2, mw = 176;
+  g.save(); g.beginPath(); g.roundRect(x, y, w, h, 22); g.clip(); g.fillStyle = "#e8263f"; g.fillRect(cx - mw / 2, y, mw, h); g.restore();
+  const names = s.names || null;
+  T(g, `${s.h ?? 0}-${s.a ?? 0}`, cx, y + 84, 74, { align: "center", maxW: mw - 20 });
+  if (s.min) { g.font = "700 22px Oswald"; const mw2 = g.measureText(s.min).width + 22; rr(g, cx - mw2 / 2, y + 96, mw2, 30, 7, "#111"); T(g, s.min, cx, y + 118, 22, { align: "center", font: "Oswald", weight: 700 }); }
+  for (const [side, on] of [["L", blackOn], ["R", whiteOn]]) {
+    const L = side === "L"; const face = L ? I.pepFace : I.mouFace; const crest = L ? I.barCrest : I.intCrest; const ring = L ? "#a50044" : "#1f4fb3";
+    const fx = L ? x + 66 : x + w - 66, fy = y + h / 2;
+    if (on) { g.save(); g.globalAlpha = 0.45 + 0.3 * Math.sin(lt * 6); g.fillStyle = "#81b64c"; g.beginPath(); g.arc(fx, fy, 58, 0, 7); g.fill(); g.restore(); }
+    circImg(g, face, fx, fy, 50, ring);
+    const tx = L ? fx + 64 : fx - 64; const al = L ? "left" : "right";
+    T(g, L ? "GUARDIOLA" : "MOURINHO", tx, fy - 2, 34, { align: al, maxW: 190 });
+    T(g, (L ? "Barcelona" : "Inter") + (L ? " · Black" : " · White"), tx, fy + 30, 20, { align: al, font: "Oswald", weight: 700, color: "#b9bcc4", maxW: 190 });
+    if (crest) { const cw = 56, chh = crest.height / crest.width * cw; const ccx = L ? cx - mw / 2 - 40 : cx + mw / 2 + 40; g.drawImage(crest, ccx - cw / 2, fy - chh / 2, cw, chh); }
+  }
+  if (names) { T(g, names[0], cx - mw / 2 - 40, y + h - 10, 18, { align: "center", font: "Oswald", weight: 700, color: "#cfd3da" }); T(g, names[1], cx + mw / 2 + 40, y + h - 10, 18, { align: "center", font: "Oswald", weight: 700, color: "#cfd3da" }); }
+  T(g, [s.agg, s.where].filter(Boolean).join("  ·  "), cx, y + h + 34, 24, { align: "center", font: "Oswald", weight: 700, color: "#ffd84a", maxW: w });
+}
+function review(g, lt, sc) {
+  const k = ez((lt - 0.2) / 0.5); if (k <= 0) return; const I = window.IMG || {};
+  g.save(); g.globalAlpha = k; g.fillStyle = "rgba(10,10,14,.9)"; g.fillRect(PX, PY, PW, PH);
+  T(g, "GAME REVIEW", PX + PW / 2, PY + 78, 64, { align: "center", color: "#fff" });
+  const cols = [["pep", I.pepFace, "GUARDIOLA", sc.reviewBlack || {}], ["mourinho", I.mouFace, "MOURINHO", sc.reviewWhite || {}]];
+  cols.forEach(([id, face, nm, counts], j) => {
+    const cx = PX + PW * (j ? 0.73 : 0.27); circImg(g, face, cx, PY + 190, 70, j ? "#1f4fb3" : "#a50044");
+    T(g, nm, cx, PY + 300, 40, { align: "center" });
+    Object.entries(counts).forEach(([b, n], i) => { const yy = PY + 350 + i * 66; const at = 0.5 + i * 0.35 + j * 0.15; const q = pop((lt - at) * 3); if (q <= 0) return;
+      badgeIcon(g, BADGES[b], cx - 110, yy + 22, 24, q); T(g, BADGES[b].label, cx - 74, yy + 32, 28, { font: "Oswald", weight: 700, color: BADGES[b].col, alpha: cl(q), maxW: 170 }); T(g, String(n), cx + 130, yy + 34, 40, { align: "right", alpha: cl(q) }); });
+  });
+  g.restore();
+}
+
 window.CHESS = { BADGES, draw(g, gt, s, prev) {
   const sc = s.scene, lt = gt - s.t0; const pv = prev && prev.scene;
   g.fillStyle = "#1c1c21"; g.fillRect(0, 0, W, 1920);
@@ -300,13 +344,15 @@ window.CHESS = { BADGES, draw(g, gt, s, prev) {
     drawBall(g, cam, ballAt(lt, sc, pos, gt));
   }
   if (sc.where) { g.save(); g.font = "700 22px Oswald"; const tw = g.measureText(sc.where).width + 24; rr(g, PX + PW - tw - 18, PY + PH - 50, tw, 34, 8, "rgba(0,0,0,.6)"); g.fillStyle = "#fff"; g.fillText(sc.where, PX + PW - tw - 6, PY + PH - 26); g.restore(); }
-  if (sc.goal) { const gt0 = sc.goalWord ? wordAt(s, sc.goalWord, 1.8) : 1.8; const k = (lt - gt0) / 1.6; if (k > 0 && k < 0.3) { g.fillStyle = `rgba(255,255,255,${0.5 * (1 - k / 0.3)})`; g.fillRect(PX, PY, PW, PH); } flash(g, "GOAL!", k, "#ffd84a"); }
+  if (sc.goal && !clip) { const gt0 = sc.goalWord ? wordAt(s, sc.goalWord, 1.8) : 1.8; const k = (lt - gt0) / 1.6; if (k > 0 && k < 0.3) { g.fillStyle = `rgba(255,255,255,${0.5 * (1 - k / 0.3)})`; g.fillRect(PX, PY, PW, PH); } flash(g, "GOAL!", k, "#ffd84a"); }
   if (sc.flip === "nogoal") { const ft = flipAt(s); const k = (lt - ft) / 2.6; if (k > 0) { g.fillStyle = `rgba(0,0,0,${0.4 * cl(k * 4)})`; g.fillRect(PX, PY, PW, PH); flash(g, "NO GOAL", Math.min(k, 0.79), "#ff4d5e", "HANDBALL · YAYA TOURÉ"); } }
   if (sc.red) redCard(g, lt, sc);
   if (sc.overlay === "coach") coachMap(g, lt);
   if (sc.overlay === "possession") possession(g, lt, 76);
   if (sc.overlay === "sprinklers" && !clip) { sprinklers(g, cam, lt, gt); mourinhoRun(g, cam, lt, gt); flash(g, "FULL TIME", (lt - 0.1) / 1.6, "#ffffff"); }
   if (sc.overlay === "trophy") bigEars(g, lt);
+  if (sc.overlay === "review") review(g, lt, sc);
+  if (sc.overlay === "quote" && clip) { const q = ez((lt - 0.4) * 2); g.save(); g.globalAlpha = q; rr(g, PX + 30, PY + PH - 230, PW - 60, 190, 18, "rgba(10,10,14,.86)"); const lines = sc.quote || []; lines.forEach((l, i) => T(g, l, PX + PW / 2, PY + PH - 160 + i * 64, 50, { align: "center", color: i ? "#ffd84a" : "#fff", maxW: PW - 100 })); g.restore(); }
   if (sc.overlay === "hook" && !clip) hook(g, lt);
   if (sc.overlay === "next" && !clip) nextUp(g, lt);
   if (clip && sc.overlay === "hook") { T(g, "MOURINHO v GUARDIOLA", PX + PW / 2, PY + PH - 90, 64, { align: "center", stroke: 10, alpha: ez(lt * 3), maxW: PW - 40 }); T(g, "BARÇA v INTER · CAMP NOU · 2010", PX + PW / 2, PY + PH - 40, 36, { align: "center", font: "Oswald", weight: 700, color: "#ffd84a", stroke: 6, alpha: ez((lt - 0.3) * 3), maxW: PW - 40 }); }
@@ -315,14 +361,14 @@ window.CHESS = { BADGES, draw(g, gt, s, prev) {
   const b = BADGES[sc.flip && lt > flipAt(s) ? sc.flip : sc.badge];
   if (b) { let bx = PX + PW - 70, by = PY + 70; const p = pos[sc.on];
     if (p && !clip && !['hook', 'next', 'trophy', 'sprinklers'].includes(sc.overlay)) { [bx, by] = P(cam, p.x, p.y); bx += r * 1.1; by -= r * 1.1; }
-    const flipT = sc.flip ? flipAt(s) : -1; const k = flipT > 0 && lt > flipT ? pop((lt - flipT) * 3) : pop((lt - (sc.badgeAt || 0.35)) * 3);
+    const flipT = sc.flip ? flipAt(s) : -1; const k = flipT > 0 && lt > flipT ? pop((lt - flipT) * 3) : pop((lt - (sc.badgeAt ?? (sc.lead ? sc.lead - 0.2 : 0.35))) * 3);
     badgeIcon(g, b, bx, by, 40, k); }
   g.restore();
   g.strokeStyle = "rgba(255,255,255,.12)"; g.lineWidth = 2; g.beginPath(); g.roundRect(PX, PY, PW, PH, 16); g.stroke();
   evalBar(g, lt, s, pv);
   T(g, "♚", EVX + EVW / 2, PY - 10, 30, { align: "center", font: "'DejaVu Sans', sans-serif", color: "#cfcfcf" });
   moveCard(g, gt, lt, s);
-  bottomBar(g, lt, sc);
+  if (window.IMG && (window.IMG.pepFace || window.IMG.mouFace)) scoreboardA(g, lt, sc); else bottomBar(g, lt, sc);
   // drawn, not footage (RUL-KIB-002)
   if (!(s.clipDir)) T(g, "ILLUSTRATION", PX + 16, PY + PH - 16, 18, { font: "Oswald", weight: 700, color: "rgba(255,255,255,.55)" });
 } };

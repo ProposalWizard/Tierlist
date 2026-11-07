@@ -90,6 +90,9 @@ def main():
         s, raw, words = best[i]
         fin = os.path.join(work, f"l{i:02d}.wav"); subprocess.run([HUMANISE, raw, fin], check=True)
         d = len(load(fin)) / SR
+        lead = float(ln.get("lead", 0))  # seconds of the real moment before the voice starts
+        scene_t0 = round(at - (0.14 if i else at), 3)
+        at += lead
         plan.append({"file": fin, "t": at})
         timed = align(ln["text"], words)
         cur = []
@@ -99,7 +102,7 @@ def main():
             if len(cur) >= 3 or re.search(r"[.,?!:;]$", w["w"]) or not nxt:
                 t1 = at + (nxt["t0"] if nxt else d - 0.1)
                 chunks.append({"t0": round(cur[0]["t0"] - 0.03, 3), "t1": round(t1, 3), "words": cur}); cur = []
-        scenes.append({"t0": round(at - (0.14 if i else at), 3), "scene": ln["scene"], "words": [{"w": w["w"], "t0": round(at + w["t0"], 3)} for w in timed], "vo1": round(at + d, 3)})
+        scenes.append({"t0": scene_t0, "scene": {**ln["scene"], "lead": lead}, "words": [{"w": w["w"], "t0": round(at + w["t0"], 3)} for w in timed], "vo1": round(at + d, 3)})
         at += d + 0.28
     vo_end = at - 0.28
     for i, s in enumerate(scenes): s["t1"] = scenes[i + 1]["t0"] if i + 1 < len(scenes) else round(vo_end + 0.4, 3)
@@ -113,14 +116,14 @@ def main():
     env = np.round(np.convolve(np.clip(env / ref, 0, 1), [0.25, 0.5, 0.25], "same"), 3)
     tl = {"total": round(total, 3), "end": round(vo_end, 3), "endCard": end_card, "scenes": scenes, "chunks": chunks, "env": env.tolist()}
     with open(os.path.join(work, "timeline.js"), "w") as f:
-        f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes")}) + ";\n")
+        f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes", "images", "evalPct", "possLabels")}) + ";\n")
         f.write("window.TL = " + json.dumps(tl) + ";\n")
     eng = os.path.join(HERE, "engine")
     html = open(os.path.join(eng, "chess.html" if story.get("layout") == "chess" else "edit.html")).read().replace('src="avatars.js"', f'src="{eng}/avatars.js"').replace('src="scenes.js"', f'src="{eng}/scenes.js"').replace('src="chess.js"', f'src="{eng}/chess.js"').replace("url(../assets/", f"url({HERE}/assets/")
     open(os.path.join(work, "edit.html"), "w").write(html)
     # 2b. real footage (optional, private drafts only): a scene with "clip": [[file, start, seconds, xcentre?], ...]
     #     gets its frames cut to the pitch window; files are read from story["clipsDir"]
-    cd = story.get("clipsDir")
+    cd = story.get("clipsDir"); fx = np.zeros(len(voice)); clip_t = {}
     if cd:
         for i, s in enumerate(scenes):
             segs = s["scene"].get("clip")
@@ -134,9 +137,13 @@ def main():
                 vf = f"fps={FPS},scale=-2:820,crop=834:820:(in_w-834)*{xc}:0"
                 subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", str(st), "-i", os.path.join(cd, src), "-t", str(ln), "-vf", vf, "-q:v", "3", "-start_number", str(got + 1), os.path.join(outd, "c%05d.jpg")], check=True)
                 got = len(os.listdir(outd))
+                # the clip's own sound (crowd, commentary), same cut
+                a = subprocess.run(["ffmpeg", "-v", "error", "-ss", str(st), "-i", os.path.join(cd, src), "-t", str(ln), "-vn", "-f", "f32le", "-ac", "1", "-ar", str(SR), "-"], capture_output=True).stdout
+                a = np.frombuffer(a, dtype=np.float32).copy(); i0 = int((s["t0"] + (got_before := clip_t.get(i, 0.0))) * SR)
+                fx[i0:i0 + len(a)] += a[:max(0, len(fx) - i0)]; clip_t[i] = got_before + len(a) / SR
             s["clipDir"] = outd; s["clipFrames"] = got
         with open(os.path.join(work, "timeline.js"), "w") as f:
-            f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes")}) + ";\n")
+            f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes", "images", "evalPct", "possLabels")}) + ";\n")
             f.write("window.TL = " + json.dumps(tl) + ";\n")
     # 3. render
     frames = os.path.join(work, "eframes"); shutil.rmtree(frames, ignore_errors=True)
@@ -146,9 +153,14 @@ def main():
         if p.wait() != 0: raise SystemExit("render failed")
     # 4. mix: a quiet bed under the voice, a lift on the end card
     out = voice[:int(total * SR)].copy()
-    bed = load(os.path.join(MUSIC, story.get("music", "02-working-it-out.mp3"))); nb = int((end_card + 0.3) * SR)
-    bed = np.concatenate([bed] * (nb // len(bed) + 1))[:nb]; f1 = int(1.0 * SR); bed[:f1] *= np.linspace(0, 1, f1); bed[-f1:] *= np.linspace(1, 0, f1)
-    out[:nb] += bed * 0.16
+    if fx.any():  # clip sound: full while the moment plays, ducked under the voice
+        e = np.abs(voice); k = SR // 10; e = np.convolve(e, np.ones(k) / k, "same"); act = np.convolve((e > 0.01).astype(float), np.ones(SR // 2) / (SR // 2), "same")
+        gain = 0.85 - 0.65 * np.clip(act * 3, 0, 1); f = fx * gain; f /= max(1, np.abs(f).max() / 0.6)
+        out += f[:len(out)]
+    if story.get("music", "02-working-it-out.mp3") != "none":
+        bed = load(os.path.join(MUSIC, story.get("music", "02-working-it-out.mp3"))); nb = int((end_card + 0.3) * SR)
+        bed = np.concatenate([bed] * (nb // len(bed) + 1))[:nb]; f1 = int(1.0 * SR); bed[:f1] *= np.linspace(0, 1, f1); bed[-f1:] *= np.linspace(1, 0, f1)
+        out[:nb] += bed * 0.16
     lift = load(os.path.join(MUSIC, "03-winning.mp3"))[: len(out) - int(end_card * SR)]; i = int(end_card * SR); f2 = int(0.4 * SR)
     if len(lift) > f2: lift[:f2] *= np.linspace(0, 1, f2); lift[-f2:] *= np.linspace(1, 0, f2)
     out[i:i + len(lift)] += lift * 0.3

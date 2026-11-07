@@ -11,7 +11,9 @@ body{margin:0;background:#000}</style></head><body><canvas id="c" width="1080" h
 const FPS = 30;
 const cv = document.getElementById("c"), g = cv.getContext("2d");
 window.TOTAL = Math.ceil(TL.total * FPS);
-window.ready = (async () => { await document.fonts.load("40px Anton"); await document.fonts.load("700 40px Oswald"); await document.fonts.load("40px 'Noto Color Emoji'"); })();
+window.IMG = {};
+window.ready = (async () => { for (const [k, src] of Object.entries(STORY.images || {})) { const im = new Image(); im.src = "file://" + src; await im.decode().catch(() => {}); if (im.naturalWidth) window.IMG[k] = im; }
+  await document.fonts.load("40px Anton"); await document.fonts.load("700 40px Oswald"); await document.fonts.load("40px 'Noto Color Emoji'"); })();
 window.errorsSeen = [];
 window.draw = async (f) => {
   const t = f / FPS;

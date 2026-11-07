@@ -110,6 +110,7 @@ RUL-KIB-002 | Real game footage only, or marked "ILLUSTRATION" on screen. | clie
 RUL-KIB-003 | No real club badges or player photos in ads unless we have the right to use them. | client-kib
 RUL-KIB-004 | Never claim a feature that is not live; every number comes from a patch note. | process,rule,style,client-kib
 RUL-KIB-005 | Video endings: keep the end card on screen as it is, but the voice-over says only "Follow for more." (Mikey, 7 Nov 2026). | team,client-kib
+RUL-KIB-006 | Football-story videos (like CH, analysed like chess) may use real match footage, real manager faces and real club badges; Mikey and Harry OK'd posting it (7 Nov 2026). Game ads still follow RUL-KIB-002/003. | team,client-kib
 RUL-TEAM-001 | [SUPERSEDED] Deploy only when told: commit and push to the Harry branch freely, merge to main only when Harry says push. | team,rule,deploy
 RUL-TEAM-002 | [SUPERSEDED] Every deploy comes with patch notes; Harry decides each time whether to push now or see patch notes first. | process,deploy,team
 RUL-TEAM-003 | Progress updates every 5 minutes on every task, with % and time left on every bar and the token/weekly usage block. | process,team
