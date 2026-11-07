@@ -17,84 +17,351 @@
  ],
  "checked": "First leg 20 Apr 2010 Inter 3-1 Barça (Pedro; Sneijder, Maicon, Milito), Barça by coach because of the Eyjafjallajokull ash cloud, about 15 hours (inter.it, FCB, Sky Italia). Second leg 28 Apr 2010 Barça 1-0 Inter, Motta sent off 28', Pique 84', Bojan's stoppage-time goal ruled out for a Yaya Toure handball, Inter through 3-2 on aggregate, Inter in a 4-4-1 with Eto'o wide, Barça about 76% possession, Mourinho ran onto the pitch and the sprinklers came on (inter.it, Sky, Eurosport, Republic). 'Most beautiful defeat of my career' (BBC via Pulse, FourFourTwo). Final 22 May 2010 at the Bernabeu, Inter 2-0 Bayern, treble. Eto'o won the 2009 treble with Barça. Away goals rule applied in 2010, so 2-0 would have put Barça through.",
  "clubs": {
-  "int": { "name": "Inter", "short": "INT", "c1": "#1f4fb3", "c2": "#0b0b0b", "pattern": "stripes" },
-  "bar": { "name": "Barcelona", "short": "BAR", "c1": "#a50044", "c2": "#004d98", "pattern": "stripes" }
+  "int": {
+   "name": "Inter",
+   "short": "INT",
+   "c1": "#1f4fb3",
+   "c2": "#0b0b0b",
+   "pattern": "stripes"
+  },
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes"
+  }
  },
  "people": {
-  "mourinho": { "name": "José Mourinho", "skin": "light", "hair": ["side", "#4a4440"], "beard": "stubble", "beardCol": "#5a5450", "kit": "suit", "club": "int" },
-  "pep": { "name": "Pep Guardiola", "skin": "light", "hair": ["bald", "#000"], "beard": "stubble", "beardCol": "#6a5a4a", "kit": "suit", "club": "bar" }
+  "mourinho": {
+   "name": "José Mourinho",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#4a4440"
+   ],
+   "beard": "stubble",
+   "beardCol": "#5a5450",
+   "kit": "suit",
+   "club": "int"
+  },
+  "pep": {
+   "name": "Pep Guardiola",
+   "skin": "light",
+   "hair": [
+    "bald",
+    "#000"
+   ],
+   "beard": "stubble",
+   "beardCol": "#6a5a4a",
+   "kit": "suit",
+   "club": "bar"
+  }
  },
  "lines": [
   {
    "text": "He lost the game 1-0. Here's how Mourinho still won the match.",
    "say": "He lost the game, one-nil. Here's how Mourinho still won the match.",
-   "scene": { "type": "move", "hook": true, "title": "Mourinho v Pep, analysed like chess", "badge": "checkmate", "on": "mourinho", "eval": "M",
-     "board": { "inter": "i441", "barca": "siege" },
-     "score": { "where": "CAMP NOU · SEMI-FINAL 2ND LEG", "min": "FT", "h": 1, "a": 0, "agg": "AGG 2-3" } }
+   "scene": {
+    "type": "move",
+    "hook": true,
+    "title": "Mourinho v Pep, analysed like chess",
+    "badge": "checkmate",
+    "on": "mourinho",
+    "eval": "M",
+    "board": {
+     "inter": "i441",
+     "barca": "siege"
+    },
+    "score": {
+     "where": "CAMP NOU · SEMI-FINAL 2ND LEG",
+     "min": "FT",
+     "h": 1,
+     "a": 0,
+     "agg": "AGG 2-3"
+    }
+   }
   },
   {
    "text": "First leg, San Siro. Barça arrive by coach, about fifteen hours, because a volcano has shut Europe's skies. Inter win 3-1.",
    "say": "First leg, San Siro. Barça arrive by coach, about fifteen hours, because a volcano has shut Europe's skies. Inter win three-one.",
-   "scene": { "type": "move", "n": "1", "who": "mourinho", "title": "3-1 at San Siro", "badge": "excellent", "on": "mourinho", "eval": 2.5,
-     "board": { "inter": "i4231", "barca": "b433", "ball": [0.5, 0.06], "goal": "top" },
-     "score": { "where": "SAN SIRO · SEMI-FINAL 1ST LEG", "min": "FT", "h": 1, "a": 3, "agg": "INTER WIN 3-1" } }
+   "scene": {
+    "type": "move",
+    "n": "1",
+    "who": "mourinho",
+    "title": "3-1 at San Siro",
+    "badge": "excellent",
+    "on": "mourinho",
+    "eval": 2.5,
+    "board": {
+     "inter": "i4231",
+     "barca": "b433",
+     "ball": [
+      0.5,
+      0.06
+     ],
+     "goal": "top"
+    },
+    "score": {
+     "where": "SAN SIRO · SEMI-FINAL 1ST LEG",
+     "min": "FT",
+     "h": 1,
+     "a": 3,
+     "agg": "INTER WIN 3-1"
+    }
+   }
   },
   {
    "text": "Second leg, Camp Nou. Pep needs 2-0. His Barça keep the ball, push everyone up and squeeze.",
    "say": "Second leg, Camp Nou. Pep needs two-nil. His Barça keep the ball, push everyone up and squeeze.",
-   "scene": { "type": "move", "n": "1...", "who": "pep", "title": "Everyone forward", "badge": "book", "on": "pep", "eval": 1.8,
-     "board": { "inter": "i4231deep", "barca": "siege", "arrows": [[0.5, 0.35, 0.5, 0.6], [0.15, 0.5, 0.2, 0.72], [0.85, 0.5, 0.8, 0.72]] },
-     "score": { "where": "CAMP NOU · SEMI-FINAL 2ND LEG", "min": "KO", "h": 0, "a": 0, "agg": "AGG 1-3" } }
+   "scene": {
+    "type": "move",
+    "n": "1...",
+    "who": "pep",
+    "title": "Everyone forward",
+    "badge": "book",
+    "on": "pep",
+    "eval": 1.8,
+    "board": {
+     "inter": "i4231deep",
+     "barca": "siege",
+     "arrows": [
+      [
+       0.5,
+       0.35,
+       0.5,
+       0.6
+      ],
+      [
+       0.15,
+       0.5,
+       0.2,
+       0.72
+      ],
+      [
+       0.85,
+       0.5,
+       0.8,
+       0.72
+      ]
+     ]
+    },
+    "score": {
+     "where": "CAMP NOU · SEMI-FINAL 2ND LEG",
+     "min": "KO",
+     "h": 0,
+     "a": 0,
+     "agg": "AGG 1-3"
+    }
+   }
   },
   {
    "text": "Twenty-eight minutes. Thiago Motta clashes with Busquets and gets a straight red. Ten men, an hour to survive.",
-   "scene": { "type": "move", "n": "2", "who": "mourinho", "title": "Motta sent off", "badge": "mistake", "on": "motta", "eval": -0.6, "red": "i6",
-     "board": { "inter": "i4231deep", "barca": "siege" },
-     "score": { "where": "CAMP NOU · SEMI-FINAL 2ND LEG", "min": "28'", "h": 0, "a": 0, "agg": "AGG 1-3" } }
+   "scene": {
+    "type": "move",
+    "n": "2",
+    "who": "mourinho",
+    "title": "Motta sent off",
+    "badge": "mistake",
+    "on": "motta",
+    "eval": -0.6,
+    "red": "i6",
+    "board": {
+     "inter": "i4231deep",
+     "barca": "siege"
+    },
+    "score": {
+     "where": "CAMP NOU · SEMI-FINAL 2ND LEG",
+     "min": "28'",
+     "h": 0,
+     "a": 0,
+     "agg": "AGG 1-3"
+    }
+   }
   },
   {
-   "text": "Mourinho's answer: give Pep the ball. Two banks of four, no space behind them. Eto'o, the striker who won the treble with Barça a year ago, now defends wide.",
-   "scene": { "type": "move", "n": "3", "who": "mourinho", "title": "Give them the ball", "badge": "brilliant", "on": "etoo", "eval": 1.2,
-     "board": { "inter": "i441", "barca": "siege" },
-     "score": { "where": "CAMP NOU · SEMI-FINAL 2ND LEG", "min": "30'", "h": 0, "a": 0, "agg": "AGG 1-3" } }
+   "text": "Mourinho's answer: give Pep the ball. Two banks of four, no space behind them. Eto'o, the striker who won everything with Barça a year ago, now defends wide.",
+   "scene": {
+    "type": "move",
+    "n": "3",
+    "who": "mourinho",
+    "title": "Give them the ball",
+    "badge": "brilliant",
+    "on": "etoo",
+    "eval": 1.2,
+    "board": {
+     "inter": "i441",
+     "barca": "siege"
+    },
+    "score": {
+     "where": "CAMP NOU · SEMI-FINAL 2ND LEG",
+     "min": "30'",
+     "h": 0,
+     "a": 0,
+     "agg": "AGG 1-3"
+    }
+   }
   },
   {
    "text": "Barça have about three quarters of the ball. It doesn't matter. Every pass goes sideways, round the outside of the wall.",
-   "scene": { "type": "move", "n": "3...", "who": "pep", "title": "All the ball, nowhere to go", "badge": "inaccuracy", "on": "pep", "eval": 1.5, "passes": true,
-     "board": { "inter": "i441", "barca": "siege" },
-     "score": { "where": "CAMP NOU · SEMI-FINAL 2ND LEG", "min": "60'", "h": 0, "a": 0, "agg": "AGG 1-3", "poss": "POSSESSION 76% · 24%" } }
+   "scene": {
+    "type": "move",
+    "n": "3...",
+    "who": "pep",
+    "title": "All the ball, nowhere to go",
+    "badge": "inaccuracy",
+    "on": "pep",
+    "eval": 1.5,
+    "passes": true,
+    "board": {
+     "inter": "i441",
+     "barca": "siege"
+    },
+    "score": {
+     "where": "CAMP NOU · SEMI-FINAL 2ND LEG",
+     "min": "60'",
+     "h": 0,
+     "a": 0,
+     "agg": "AGG 1-3",
+     "poss": "POSSESSION 76% · 24%"
+    }
+   }
   },
   {
    "text": "Eighty-four minutes. Piqué, a centre-back thrown up front, scores. 1-0. One more goal and Barça are through on away goals.",
    "say": "Eighty-four minutes. Piqué, a centre-back thrown up front, scores. One-nil. One more goal and Barça are through on away goals.",
-   "scene": { "type": "move", "n": "4", "who": "pep", "title": "Piqué up front", "badge": "great", "on": "pique", "eval": -0.4,
-     "board": { "inter": "i441", "barca": "pique", "ball": [0.5, 0.965], "goal": "bottom" },
-     "score": { "where": "CAMP NOU · SEMI-FINAL 2ND LEG", "min": "84'", "h": 1, "a": 0, "agg": "AGG 2-3" } }
+   "scene": {
+    "type": "move",
+    "n": "4",
+    "who": "pep",
+    "title": "Piqué up front",
+    "badge": "great",
+    "on": "pique",
+    "eval": -0.4,
+    "board": {
+     "inter": "i441",
+     "barca": "pique",
+     "ball": [
+      0.5,
+      0.965
+     ],
+     "goal": "bottom"
+    },
+    "score": {
+     "where": "CAMP NOU · SEMI-FINAL 2ND LEG",
+     "min": "84'",
+     "h": 1,
+     "a": 0,
+     "agg": "AGG 2-3"
+    }
+   }
   },
   {
    "text": "Stoppage time. Bojan scores and the Camp Nou goes up. Then the call: handball, Yaya Touré. No goal.",
-   "scene": { "type": "move", "n": "5", "who": "pep", "title": "Bojan's goal", "badge": "brilliant", "flip": "nogoal", "flipWord": "handball", "on": "bojan", "eval": -4, "evalAfter": 4,
-     "board": { "inter": "i441", "barca": "pique", "ball": [0.5, 0.965], "goal": "bottom" },
-     "score": { "where": "CAMP NOU · SEMI-FINAL 2ND LEG", "min": "90+'", "h": 1, "a": 0, "agg": "AGG 2-3" } }
+   "scene": {
+    "type": "move",
+    "n": "5",
+    "who": "pep",
+    "title": "Bojan's goal",
+    "badge": "brilliant",
+    "flip": "nogoal",
+    "flipWord": "handball",
+    "on": "bojan",
+    "eval": -4,
+    "evalAfter": 4,
+    "board": {
+     "inter": "i441",
+     "barca": "pique",
+     "ball": [
+      0.5,
+      0.965
+     ],
+     "goal": "bottom"
+    },
+    "score": {
+     "where": "CAMP NOU · SEMI-FINAL 2ND LEG",
+     "min": "90+'",
+     "h": 1,
+     "a": 0,
+     "agg": "AGG 2-3"
+    }
+   }
   },
   {
    "text": "Full time. Mourinho sprints onto the Camp Nou pitch, finger in the air. They turn the sprinklers on. He doesn't care.",
-   "scene": { "type": "move", "n": "6", "who": "mourinho", "title": "Inter are through", "badge": "checkmate", "on": "mourinho", "eval": "M", "sprinklers": true,
-     "board": { "inter": "i441", "barca": "pique" },
-     "score": { "where": "CAMP NOU · SEMI-FINAL 2ND LEG", "min": "FT", "h": 1, "a": 0, "agg": "AGG 2-3" } }
+   "scene": {
+    "type": "move",
+    "n": "6",
+    "who": "mourinho",
+    "title": "Inter are through",
+    "badge": "checkmate",
+    "on": "mourinho",
+    "eval": "M",
+    "sprinklers": true,
+    "board": {
+     "inter": "i441",
+     "barca": "pique"
+    },
+    "score": {
+     "where": "CAMP NOU · SEMI-FINAL 2ND LEG",
+     "min": "FT",
+     "h": 1,
+     "a": 0,
+     "agg": "AGG 2-3"
+    }
+   }
   },
   {
-   "text": "He called it the most beautiful defeat of his career. Less than a month later, at the Bernabéu, Inter won the treble.",
-   "scene": { "type": "move", "n": "1-0", "who": "result", "title": "Lost the game. Won the match.", "badge": "checkmate", "on": "mourinho", "eval": "M", "trophy": true,
-     "board": { "inter": "i441", "barca": "pique" },
-     "score": { "where": "BERNABÉU · 22 MAY 2010 · FINAL", "min": "FT", "h": 0, "a": 2, "agg": "INTER 2-0 BAYERN", "names": ["BAYERN", "INTER"] } }
+   "text": "He called it the most beautiful defeat of his career. Less than a month later, at the Bernabéu, Inter were champions of Europe.",
+   "scene": {
+    "type": "move",
+    "n": "1-0",
+    "who": "result",
+    "title": "Lost the game. Won the match.",
+    "badge": "checkmate",
+    "on": "mourinho",
+    "eval": "M",
+    "trophy": true,
+    "board": {
+     "inter": "i441",
+     "barca": "pique"
+    },
+    "score": {
+     "where": "BERNABÉU · 22 MAY 2010 · FINAL",
+     "min": "FT",
+     "h": 0,
+     "a": 2,
+     "agg": "INTER 2-0 BAYERN",
+     "names": [
+      "BAYERN",
+      "INTER"
+     ]
+    }
+   }
   },
   {
    "text": "Part two: Pep gets his revenge.",
    "say": "Part two. Pep gets his revenge.",
-   "scene": { "type": "move", "n": "?", "who": "next", "title": "Coming up", "badge": "book", "on": "pep", "eval": 0,
-     "board": { "inter": "i4231", "barca": "b433" },
-     "score": { "where": "NEXT · PART 2", "min": "", "h": 0, "a": 0, "agg": "PEP v MOURINHO" } }
+   "scene": {
+    "type": "move",
+    "n": "?",
+    "who": "next",
+    "title": "Coming up",
+    "badge": "book",
+    "on": "pep",
+    "eval": 0,
+    "board": {
+     "inter": "i4231",
+     "barca": "b433"
+    },
+    "score": {
+     "where": "NEXT · PART 2",
+     "min": "",
+     "h": 0,
+     "a": 0,
+     "agg": "PEP v MOURINHO"
+    }
+   }
   }
  ]
 }
