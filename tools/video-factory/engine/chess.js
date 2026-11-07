@@ -237,7 +237,7 @@ function badgeIcon(g, b, x, y, r, k = 1) {
   g.restore();
 }
 function evalFrac(e) { if (ST().evalPct) return Math.max(0, Math.min(1, Number(e) / 100)); if (e === "M") return 1; if (e === "-M") return 0; return 0.5 + 0.5 * Math.tanh(Number(e) / 4); }
-function evalText(e) { if (ST().evalPct) return Math.round(Number(e)) + "%"; if (e === "M") return "M"; const v = Number(e); return (v > 0 ? "+" : "") + v.toFixed(1); }
+function evalText(e) { if (ST().evalPct) return Math.round(Number(e)) + "%"; if (e === "M") return "M"; if (e === "-M") return "-M"; const v = Number(e); return (v > 0 ? "+" : "") + v.toFixed(1); }
 function flipAt(s) { const sc = s.scene; if (sc.flipWord) { const w = (s.words || []).find((x) => x.w.toLowerCase().replace(/[^a-z]/g, "").startsWith(sc.flipWord)); if (w) return w.t0 - s.t0; } return sc.flipAt || 3.2; }
 function wordAt(s, word, dflt) { const w = (s.words || []).find((x) => x.w.toLowerCase().replace(/[^a-z0-9]/g, "").startsWith(word)); return w ? w.t0 - s.t0 : dflt; }
 function evalBar(g, t, s, prevSc) {
@@ -258,10 +258,10 @@ function moveCard(g, gt, lt, s) {
   const h = Math.max(250, 118 + lines.length * lh + 16);
   rr(g, x, y0, w, h, 18, "rgba(18,18,20,.94)"); g.fillStyle = b.col; g.fillRect(x, y0, 9, h);
   const ppl = ST().people || {};
-  const who = sc.who === "result" ? "RESULT" : sc.who === "next" ? "UP NEXT" : sc.hook ? "ANALYSED LIKE CHESS" : `MOVE ${sc.n} · ${sc.whoName || (ppl[sc.who] || {}).name || ""}`.toUpperCase();
+  const who = sc.who === "result" ? "RESULT" : sc.who === "next" ? "UP NEXT" : sc.hook ? (sc.kicker || "") : `MOVE ${sc.n} · ${sc.whoName || (ppl[sc.who] || {}).name || ""}`.toUpperCase();
   T(g, who, x + 32, y0 + 40, 22, { font: "Oswald", weight: 700, color: "#9a9ea8", maxW: w - 300 });
-  g.save(); g.font = "700 22px Oswald"; const pw = g.measureText(b.label).width + 50; const pk = pop((lt - (sc.badgeAt ?? (sc.lead ? sc.lead - 0.2 : 0.25))) * 3);
-  g.translate(x + w - pw / 2 - 22, y0 + 32); g.scale(pk, pk); rr(g, -pw / 2, -19, pw, 38, 19, b.col); g.fillStyle = "#fff"; g.textAlign = "center"; g.fillText(b.label, 0, 8); g.restore();
+  if (sc.badge) { g.save(); g.font = "700 22px Oswald"; const pw = g.measureText(b.label).width + 50; const pk = pop((lt - (sc.badgeAt ?? (sc.lead ? sc.lead - 0.2 : 0.25))) * 3);
+  g.translate(x + w - pw / 2 - 22, y0 + 32); g.scale(pk, pk); rr(g, -pw / 2, -19, pw, 38, 19, b.col); g.fillStyle = "#fff"; g.textAlign = "center"; g.fillText(b.label, 0, 8); g.restore(); }
   T(g, sc.title || "", x + 32, y0 + 94, sc.hook ? 50 : 46, { color: sc.hook ? "#fff" : b.col, maxW: w - 64 });
   g.save(); g.font = font; g.fillStyle = "#fff"; const sp = g.measureText(" ").width;
   lines.forEach((ln, i) => { let cx = x + 32; for (const wd of ln) { const a = cl((gt - wd.t0 + 0.05) / 0.12); if (a > 0) { g.globalAlpha = a; g.fillText(wd.w, cx, y0 + 148 + i * lh); } cx += wd.ww + sp; } });
@@ -289,7 +289,8 @@ function bottomBar(g, lt, sc) {
 function circImg(g, im, x, y, r, ring) {
   if (!im) return; g.save(); g.beginPath(); g.arc(x, y, r, 0, 7); g.clip();
   const s = Math.max(2 * r / im.width, 2 * r / im.height); g.drawImage(im, x - im.width * s / 2, y - im.height * s / 2, im.width * s, im.height * s); g.restore();
-  if (ring) { g.strokeStyle = ring; g.lineWidth = 5; g.beginPath(); g.arc(x, y, r, 0, 7); g.stroke(); }
+  if (ring) { g.strokeStyle = ring; g.lineWidth = 6; g.beginPath(); g.arc(x, y, r, 0, 7); g.stroke();
+    g.strokeStyle = ring === "#111111" ? "rgba(255,255,255,.75)" : "rgba(0,0,0,.6)"; g.lineWidth = 1.5; g.beginPath(); g.arc(x, y, r + 3.5, 0, 7); g.stroke(); }
 }
 function scoreboardA(g, lt, sc) {
   const I = window.IMG || {}; const s = sc.score || {}; const y = PY + PH + 22, h = 132, x = X0, w = X1 - X0;
@@ -299,10 +300,12 @@ function scoreboardA(g, lt, sc) {
   const cx = x + w / 2, mw = 176;
   g.save(); g.beginPath(); g.roundRect(x, y, w, h, 22); g.clip(); g.fillStyle = "#e8263f"; g.fillRect(cx - mw / 2, y, mw, h); g.restore();
   const names = s.names || null;
+  const hide = sc.hideScore; if (hide) { g.save(); g.filter = "blur(11px)"; }
   T(g, `${s.h ?? 0}-${s.a ?? 0}`, cx, y + 84, 74, { align: "center", maxW: mw - 20 });
   if (s.min) { g.font = "700 22px Oswald"; const mw2 = g.measureText(s.min).width + 22; rr(g, cx - mw2 / 2, y + 96, mw2, 30, 7, "#111"); T(g, s.min, cx, y + 118, 22, { align: "center", font: "Oswald", weight: 700 }); }
+  if (hide) g.restore();
   for (const [side, on] of [["L", blackOn], ["R", whiteOn]]) {
-    const L = side === "L"; const face = L ? I.pepFace : I.mouFace; const crest = L ? I.barCrest : I.intCrest; const ring = L ? "#a50044" : "#1f4fb3";
+    const L = side === "L"; const face = L ? I.pepFace : I.mouFace; const crest = L ? I.barCrest : I.intCrest; const ring = L ? "#111111" : "#f4f1ea";
     const fx = L ? x + 66 : x + w - 66, fy = y + h / 2;
     if (on) { g.save(); g.globalAlpha = 0.45 + 0.3 * Math.sin(lt * 6); g.fillStyle = "#81b64c"; g.beginPath(); g.arc(fx, fy, 58, 0, 7); g.fill(); g.restore(); }
     circImg(g, face, fx, fy, 50, ring);
@@ -312,7 +315,9 @@ function scoreboardA(g, lt, sc) {
     if (crest) { const cw = 56, chh = crest.height / crest.width * cw; const ccx = L ? cx - mw / 2 - 40 : cx + mw / 2 + 40; g.drawImage(crest, ccx - cw / 2, fy - chh / 2, cw, chh); }
   }
   if (names) { T(g, names[0], cx - mw / 2 - 40, y + h - 10, 18, { align: "center", font: "Oswald", weight: 700, color: "#cfd3da" }); T(g, names[1], cx + mw / 2 + 40, y + h - 10, 18, { align: "center", font: "Oswald", weight: 700, color: "#cfd3da" }); }
+  if (hide) { g.save(); g.filter = "blur(9px)"; }
   T(g, [s.agg, s.where].filter(Boolean).join("  ·  "), cx, y + h + 34, 24, { align: "center", font: "Oswald", weight: 700, color: "#ffd84a", maxW: w });
+  if (hide) g.restore();
 }
 function review(g, lt, sc) {
   const k = ez((lt - 0.2) / 0.5); if (k <= 0) return; const I = window.IMG || {};
@@ -320,7 +325,7 @@ function review(g, lt, sc) {
   T(g, "GAME REVIEW", PX + PW / 2, PY + 78, 64, { align: "center", color: "#fff" });
   const cols = [["pep", I.pepFace, "GUARDIOLA", sc.reviewBlack || {}], ["mourinho", I.mouFace, "MOURINHO", sc.reviewWhite || {}]];
   cols.forEach(([id, face, nm, counts], j) => {
-    const cx = PX + PW * (j ? 0.73 : 0.27); circImg(g, face, cx, PY + 190, 70, j ? "#1f4fb3" : "#a50044");
+    const cx = PX + PW * (j ? 0.73 : 0.27); circImg(g, face, cx, PY + 190, 70, j ? "#f4f1ea" : "#111111");
     T(g, nm, cx, PY + 300, 40, { align: "center" });
     Object.entries(counts).forEach(([b, n], i) => { const yy = PY + 350 + i * 66; const at = 0.5 + i * 0.35 + j * 0.15; const q = pop((lt - at) * 3); if (q <= 0) return;
       badgeIcon(g, BADGES[b], cx - 110, yy + 22, 24, q); T(g, BADGES[b].label, cx - 74, yy + 32, 28, { font: "Oswald", weight: 700, color: BADGES[b].col, alpha: cl(q), maxW: 170 }); T(g, String(n), cx + 130, yy + 34, 40, { align: "right", alpha: cl(q) }); });
@@ -336,7 +341,9 @@ window.CHESS = { BADGES, draw(g, gt, s, prev) {
   g.save(); g.beginPath(); g.roundRect(PX, PY, PW, PH, 16); g.clip();
   const cam = camAt(lt, sc, pv); const pos = posAt(lt, sc, pv, gt); let r = 30;
   const clip = s.clipDir && window.CLIPIMG && window.CLIPIMG.naturalWidth;
-  if (clip) { g.drawImage(window.CLIPIMG, PX, PY, PW, PH); g.fillStyle = "rgba(0,0,0,.12)"; g.fillRect(PX, PY, PW, PH); }
+  if (clip) { g.drawImage(window.CLIPIMG, PX, PY, PW, PH);
+    for (const [x0, y0, x1, y1] of sc.blurClip || []) { g.save(); g.beginPath(); g.rect(PX + x0 * PW, PY + y0 * PH, (x1 - x0) * PW, (y1 - y0) * PH); g.clip(); g.filter = "blur(18px)"; g.drawImage(window.CLIPIMG, PX - 30, PY - 30, PW + 60, PH + 60); g.restore(); }
+    g.fillStyle = "rgba(0,0,0,.12)"; g.fillRect(PX, PY, PW, PH); }
   else {
     stands(g, gt); pitch(g, cam);
     for (const a of sc.arrows || []) arrow(g, cam, a.from, a.to, ez((lt - (a.at || 0.6)) / 0.8));
