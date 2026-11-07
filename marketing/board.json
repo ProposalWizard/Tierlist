@@ -17,5 +17,39 @@
       "2026-10-21 Made: drawn frame by frame in a browser, voice by Kokoro (bm_george), 1080×1920.",
       "2026-10-21 Done: committed with its cover and script (commit 9b770682). No channel link recorded yet: add it under links."
     ]
+  },
+  {
+    "id": "v02-salah-twin",
+    "title": "v02 · Salah's statistical twin",
+    "stage": "script",
+    "owner": "Claude",
+    "updated": "2026-11-07T19:55:00Z",
+    "postOn": null,
+    "line": "Who is Salah 24/25's statistical twin? Every PL attacker season since 2020, 23 stats, 2,000 runs.",
+    "script": null,
+    "cover": null,
+    "video": null,
+    "seconds": null,
+    "links": [],
+    "log": [
+      "2026-11-07 Card made; data done (FotMob/Opta PL stats), script being written. Mikey's statistical-twins format."
+    ]
+  },
+  {
+    "id": "v03-palmer-10-years",
+    "title": "v03 · Palmer 10 years ago",
+    "stage": "script",
+    "owner": "Claude",
+    "updated": "2026-11-07T19:55:00Z",
+    "postOn": null,
+    "line": "Who was Cole Palmer 10 years ago? Palmer against every PL attacker from 2016/17 and 2017/18.",
+    "script": null,
+    "cover": null,
+    "video": null,
+    "seconds": null,
+    "links": [],
+    "log": [
+      "2026-11-07 Card made; data done (FotMob/Opta PL stats), script being written. Mikey's statistical-twins format."
+    ]
   }
 ]
