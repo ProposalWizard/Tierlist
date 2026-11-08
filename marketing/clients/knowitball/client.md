@@ -48,5 +48,8 @@ To change a fact: write a new Brain note, set the old one to superseded, run `py
 - FACT-KIB-008
 - No view, watch-time or comment numbers recorded yet for v01.
 
+## How to make
+- PRO-KIB-001
+
 ## Winning scripts
 - REF-KIB-001

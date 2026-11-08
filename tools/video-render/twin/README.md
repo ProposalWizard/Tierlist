@@ -20,6 +20,27 @@ Scene types (see `video.html`): `title`, `count`, `bars`, `web`, `rank` (countdo
 hidden as "?" until the `revealAt` word), `runs` (the 2,000-run grid), `versus` (two
 players' 0–100 ranks), `reveal`, `end`. Cards and captions stay inside x 64–950, y 150–1536.
 
+## Make a new episode for any player (the locked format, Mikey 8 Nov 2026)
+The format is the Salah episode (v02, cut 5): Poster style, Hugo's voice, "Who is prime X's statistical twin? From
+the last five seasons.", X's own seasons shown first and removed, the countdown from the bottom (a repeated player's
+places shown together), "You'd think <famous name> would be up here?", "guess the twin" at #2, the twin, "first in
+x% of 2,000 tests", why / not the same, this season's top 5, end card in club colours, "Follow for more."
+
+1. Data (once per session; a fresh cloud session has none):
+   `TWIN_DATA=/tmp/fm python3 model/fmpull.py && TWIN_DATA=/tmp/fm python3 model/build.py` (FotMob, ~5 min, never commit it).
+2. Write `episodes/<player>-<season>.json`, e.g. `episodes/haaland-2223.json`:
+   `{"player": "Erling Haaland", "season": "2022/23", "short": "Haaland", "series": "STAT TWINS · EP 3",
+     "surprise": ["Harry Kane", "Mohamed Salah", ...], "stories": {}, "spoken": {"Núñez": "Noonyez"}}`
+   - `surprise`: famous names, best first; the first one clearly outside the list is used ("You'd think Kane...? 29th").
+   - `stories`: optional one-liners for a player (true facts only); otherwise his club's short name is said.
+   - `spoken`: how Hugo should say a hard name. `shorts`: a short name when the surname alone is wrong.
+3. `TWIN_DATA=/tmp/fm python3 make_episode.py episodes/haaland-2223.json OUT` prints the twin, the list and every line.
+   Read the lines: every number comes from the data, but check the words make sense.
+4. `python3 tts.py OUT -` (Hugo, ElevenLabs; the key is a network secret, FACT-KIB-012), `python3 timeline.py OUT`,
+   `node render.cjs OUT stills 2,10,30,45` and LOOK, then `node render.cjs OUT` (about 8 minutes).
+5. Put `OUT/out.mp4`, cover, lines.json, scenes.json in `docs/marketing/videos/<id>/` and add the board card (video-board skill).
+Split screen instead of Poster: `"layout": "split"` in the episode file.
+
 ## Engine v2 (`video2.html`, Mikey's notes, 7 Nov 2026)
 Set `"engine":"video2.html"` and `"imgDir"` in scenes.json `meta`. Adds: real faces, club badges and
 flags (RUL-KIB-005, Mikey's videos only), "% match" (100% = identical; = 100 minus the weighted

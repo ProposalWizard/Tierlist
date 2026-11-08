@@ -27,7 +27,8 @@ function flag(k,X,Y,s,a=1){const im=IMG[k];if(!im||a<=0)return;x.save();x.global
 function stripes(a){x.save();x.globalAlpha=a;x.fillStyle='#fff';for(let i=-6;i<14;i++){x.save();x.translate(i*160,0);x.rotate(0.35);x.fillRect(0,-300,60,2800);x.restore();}x.restore();}
 function clubBg(club,Y0=0,H=1920){const c=col(club);const g=x.createLinearGradient(0,Y0,0,Y0+H);g.addColorStop(0,c);g.addColorStop(0.6,shade(c,0.55));g.addColorStop(1,shade(c,0.2));x.fillStyle=g;x.fillRect(0,Y0,1080,H);}
 function darkBg(){const g=x.createLinearGradient(0,0,0,1920);g.addColorStop(0,'#141c33');g.addColorStop(1,'#05070f');x.fillStyle=g;x.fillRect(0,0,1080,1920);}
-function tag(){x.save();x.fillStyle='rgba(0,0,0,0.38)';rr(64,108,470,56,28);x.fill();T((META.series||'STAT TWINS')+' · SALAH 24/25',88,146,F(900,25),WHITE);x.restore();}
+function TGT(){const g=(SC.__lists.top||{}).target||{};return {short:(META.targetShort||(g.name||'Salah').split(' ').pop()).toUpperCase(),full:(g.name||'Mohamed Salah'),season:(g.season||'2024/25'),club:g.club,flag:g.flag,face:g.face,clubName:META.targetClub||''};}
+function tag(){const g=TGT();x.save();x.font=F(900,25);const txt=(META.series||'STAT TWINS')+' · '+g.short+' '+g.season.slice(2);const w=x.measureText(txt).width+48;x.fillStyle='rgba(0,0,0,0.38)';rr(64,108,w,56,28);x.fill();T(txt,88,146,F(900,25),WHITE);x.restore();}
 function pill(text,X,Y,size,bg,fg,rot=0,sc=1){x.save();x.translate(X,Y);x.rotate(rot);x.scale(sc,sc);x.font=F(900,size);const w=x.measureText(text).width+size*1.6;x.fillStyle=bg;rr(-w/2,-size*0.95,w,size*1.9,size*0.95);x.fill();T(text,0,size*0.35,F(900,size),fg,'center');x.restore();}
 // captions: bold white with an outline, the spoken word in gold
 function chunks(s){const out=[];let cur=[];for(const w of s.words){cur.push(w);if(cur.length>=3||/[.,?!:]$/.test(w.w)){out.push(cur);cur=[];}}if(cur.length)out.push(cur);return out;}
@@ -67,13 +68,13 @@ P.cd2=P.countdown=(sc,p,s,t)=>{const {L,p:pl,rt,shown}=current(sc,s,t);const row
   const gold=pl.twinNow, ex=!!pl.excluded;
   face(pl.face,330,520,200*(pl.target?1:clamp(back((t-rt)/0.45),0,1.12)),1,gold?GOLD:(ex?'rgba(255,255,255,0.4)':WHITE));
   badge(pl.club||L.target.club,560,350,110);flag(pl.flag||L.target.flag,690,362,90);
-  if(pl.target){T(sc.list==='now'?'RIGHT NOW · THIS SEASON':'MATCHING',64,780,F(900,40),GOLD);T('MOHAMED SALAH',64,860,F(900,fit('MOHAMED SALAH',900,110,900)),WHITE);T('2024/25',64,920,F(700,38),DIM);}
+  if(pl.target){T(sc.list==='now'?'RIGHT NOW · THIS SEASON':'MATCHING',64,780,F(900,40),GOLD);{const g=TGT();T(g.full.toUpperCase(),64,860,F(900,fit(g.full.toUpperCase(),900,110,900)),WHITE);T(g.season,64,920,F(700,38),DIM);}}
   else{const nm=pl.name.toUpperCase();T(nm,64,860,F(900,fit(nm,900,118,920)),gold?GOLD:WHITE);
     T((pl.seasons||[pl.season]).join(' · ')+(pl.line&&!ex&&!gold?'  ·  '+pl.line:''),64,920,F(700,36),DIM);
-    if(ex){x.save();x.translate(540,1060);x.rotate(-0.08);x.strokeStyle=WHITE;x.lineWidth=8;rr(-330,-80,660,140,16);x.stroke();T('NOT COUNTED',0,30,F(900,82),WHITE,'center');x.restore();T('#'+pl.ranks.join(' · #')+' are Salah himself',540,1190,F(800,34),DIM,'center');}
+    if(ex){x.save();x.translate(540,1060);x.rotate(-0.08);x.strokeStyle=WHITE;x.lineWidth=8;rr(-330,-80,660,140,16);x.stroke();T('NOT COUNTED',0,30,F(900,82),WHITE,'center');x.restore();T('#'+pl.ranks.join(' · #')+' are '+TGT().short.charAt(0)+TGT().short.slice(1).toLowerCase()+' himself',540,1190,F(800,34),DIM,'center');}
     else{const pc=Math.round(pl.match*clamp((t-rt)/0.6));x.font=F(900,220);const pw=x.measureText(pc+'%').width;T(pc+'%',64,1120,F(900,220),gold?GOLD:WHITE);
-      T('MATCH TO',64+pw+24,1040,F(900,40),DIM);T('SALAH',64+pw+24,1088,F(900,40),WHITE);
-      if(gold)T("SALAH'S STATISTICAL TWIN",64,1180,F(900,44),GOLD,'left',ease((t-wordT(s,sc.twinAt))/0.3));
+      T('MATCH TO',64+pw+24,1040,F(900,40),DIM);T(TGT().short,64+pw+24,1088,F(900,40),WHITE);
+      if(gold)T(TGT().short+"'S STATISTICAL TWIN",64,1180,F(900,44),GOLD,'left',ease((t-wordT(s,sc.twinAt))/0.3));
       if(pl.aside)T(pl.text||'',64,1180,F(900,44),GOLD);}}
   x.restore();
   if(sc.pop){const at=wordT(s,sc.pop.at),kk=back((t-at)/0.4);if(t>=at){x.save();x.translate(64,1215);x.scale(clamp(kk,0,1.1),clamp(kk,0,1.1));x.fillStyle=GOLD;rr(0,0,880,90,20);x.fill();T(sc.pop.big,26,64,F(900,58),'#111');x.font=F(900,58);const w=x.measureText(sc.pop.big).width;T(sc.pop.label,46+w,40,F(800,28),'#111');T(sc.pop.rank,46+w,74,F(700,25),'#333');x.restore();}}
@@ -96,7 +97,7 @@ P.statement=(sc,p,s,t)=>{const tw=SC.__lists.top.rows.find(r=>r.twin);clubBg(tw?
 P.compare=(sc,p,s,t)=>{darkBg();const ca=col(SC.intro.club), cb=col(SC.__lists.top.rows.find(r=>r.name===sc.b.name)?.club||SC.__lists.now.rows.find(r=>r.name===sc.b.name)?.club||'t8455');
   x.save();x.globalAlpha=0.55;let g=x.createLinearGradient(0,0,540,0);g.addColorStop(0,ca);g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,540,640);g=x.createLinearGradient(1080,0,540,0);g.addColorStop(0,cb);g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(540,0,540,640);x.restore();
   tag();T(sc.kicker.toUpperCase(),540,230,F(800,30),GOLD,'center');T(sc.title,540,310,F(900,fit(sc.title,900,76,940)),WHITE,'center');
-  [[sc.a,0],[sc.b,1]].forEach(([pl,j])=>{const cx=j?810:270;face(pl.face,cx,470,110,1,j?'#7cc4ff':RED);T(pl.name.split(' ').pop().toUpperCase(),cx,640,F(900,44),j?'#7cc4ff':RED,'center');T(pl.season,cx,684,F(700,28),DIM,'center');});
+  [[sc.a,0],[sc.b,1]].forEach(([pl,j])=>{const cx=j?810:270;face(pl.face,cx,470,110,1,j?'#7cc4ff':RED);T((pl.name.length<=11?pl.name:pl.name.split(' ').pop()).toUpperCase(),cx,640,F(900,44),j?'#7cc4ff':RED,'center');T(pl.season,cx,684,F(700,28),DIM,'center');});
   const n=sc.rows.length, y0=770, rowH=Math.min(220,640/n);
   sc.rows.forEach((r,i)=>{const at=sc.at?wordT(s,sc.at[i]):s.start+0.3+i*(s.vo*0.7/n);const a=ease((t-at)/0.5);const yy=y0+i*rowH;x.save();x.globalAlpha=clamp(a*2);
     T(r.label.toUpperCase(),540,yy+40,F(900,40),WHITE,'center');T('per 90 minutes',540,yy+76,F(600,24),DIM,'center');const mx=Math.max(r.a,r.b)*1.1;
@@ -111,10 +112,11 @@ P.end2=(sc,p,s,t)=>{darkBg();stripes(0.04);(sc.pairs||[]).forEach((pr,i)=>{const
   const pa=ease((p-0.6)/0.4);x.save();x.globalAlpha=pa;x.font=F(800,40);const w=x.measureText('knowitball.co.uk').width+64;x.fillStyle='#1f9d55';rr(540-w/2,1290,w,76,38);x.fill();T('knowitball.co.uk',540,1341,F(800,40),WHITE,'center');x.restore();};
 // =============== SPLIT ===============
 const Q={};
-function topHalf(){const g=x.createLinearGradient(0,0,0,960);g.addColorStop(0,LFC);g.addColorStop(1,shade(LFC,0.6));x.fillStyle=g;x.fillRect(0,0,1080,960);
-  x.save();x.globalAlpha=0.12;x.font=F(900,300);x.fillStyle=WHITE;x.fillText('SALAH',-20,720);x.restore();tag();
-  const L=SC.__lists.top.target;face(L.face,300,500,190,1,WHITE);badge(L.club,540,320,104);flag(L.flag,668,332,84);
-  T('MOHAMED',540,560,F(900,60),WHITE);T('SALAH',540,660,F(900,116),WHITE);T('2024/25 · Liverpool',540,720,F(700,34),DIM);}
+function topHalf(){const g=TGT();const c=col(g.club);const gr=x.createLinearGradient(0,0,0,960);gr.addColorStop(0,c);gr.addColorStop(1,shade(c,0.6));x.fillStyle=gr;x.fillRect(0,0,1080,960);
+  const parts=g.full.split(' '), last=parts.pop().toUpperCase(), first=parts.join(' ').toUpperCase();
+  x.save();x.globalAlpha=0.12;x.font=F(900,300);x.fillStyle=WHITE;x.fillText(last,-20,720);x.restore();tag();
+  face(g.face,300,500,190,1,WHITE);badge(g.club,540,320,104);flag(g.flag,668,332,84);
+  if(first)T(first,540,560,F(900,60),WHITE);T(last,540,660,F(900,fit(last,900,116,500)),WHITE);T(g.season+(g.clubName?' · '+g.clubName:''),540,720,F(700,34),DIM);}
 function seam(txt,sub,gold,a=1){x.save();x.globalAlpha=a;x.shadowColor='rgba(0,0,0,0.5)';x.shadowBlur=30;x.fillStyle=gold?GOLD:'#111';x.beginPath();x.arc(540,960,135,0,7);x.fill();x.restore();
   T(txt,540,txt.length>4?985:995,F(900,txt.length>4?60:92),gold?'#111':WHITE,'center',a);if(sub)T(sub,540,1040,F(900,26),gold?'#111':GOLD,'center',a);}
 Q.intro=(sc,p,s,t)=>{topHalf();x.fillStyle='#161a26';x.fillRect(0,960,1080,960);
@@ -129,14 +131,14 @@ Q.cd2=Q.countdown=(sc,p,s,t)=>{const {L,p:pl,rt}=current(sc,s,t);topHalf();
     x.save();x.globalAlpha=0.12;x.font=F(900,300);x.fillStyle=WHITE;x.fillText(pl.name.split(' ').pop().toUpperCase(),-20,1680);x.restore();
     face(pl.face,830,1230,160,ex?0.5:1,gold?GOLD:WHITE);badge(pl.club,64,1130,104);flag(pl.flag,190,1140,84);
     const nm=pl.name.toUpperCase();T(nm,64,1320,F(900,fit(nm,900,96,580)),gold?GOLD:WHITE);T((pl.seasons||[pl.season]).join(' · '),64,1370,F(700,32),DIM);
-    const ln=gold?"Salah's statistical twin":(ex?'Salah himself · not counted':(pl.aside?pl.text:pl.line));if(ln)T(ln,64,1412,F(800,30),gold?GOLD:WHITE);
+    const nm1=TGT().short.charAt(0)+TGT().short.slice(1).toLowerCase();const ln=gold?nm1+"'s statistical twin":(ex?nm1+' himself · not counted':(pl.aside?pl.text:pl.line));if(ln)T(ln,64,1412,F(800,30),gold?GOLD:WHITE);
     x.restore();
     if(ex) seam('NOT','COUNTED',false,k); else seam(Math.round(pl.match*clamp((t-rt)/0.6))+'%',(pl.aside?'#'+pl.rank+' · NOT TOP 30':'#'+pl.ranks[0])+(gold?' · TWIN':''),gold,k);}
   if(sc.pop){const at=wordT(s,sc.pop.at),kk=back((t-at)/0.4);if(t>=at){x.save();x.translate(64,1440);x.scale(clamp(kk,0,1.1),clamp(kk,0,1.1));x.fillStyle=GOLD;rr(0,-6,600,0,1);x.restore();
     x.save();x.translate(540,190);x.rotate(-0.03);x.scale(clamp(kk,0,1.1),clamp(kk,0,1.1));x.fillStyle=GOLD;rr(0,0,476,112,20);x.fill();T(sc.pop.big,22,72,F(900,58),'#111');T(sc.pop.label,170,46,F(800,22),'#111');T(sc.pop.rank,170,80,F(700,20),'#333');x.restore();}}
   if(sc.sticker){const at=wordT(s,sc.sticker.at);if(t>=at)pill(sc.sticker.text,540,792,30,RED,WHITE,-0.04,clamp(back((t-at)/0.4),0,1.2));}};
 Q.statement=(sc,p,s,t)=>{topHalf();const tw=SC.__lists.top.rows.find(r=>r.twin);clubBg(tw.club,960,960);stripes(0.06);face(sc.face,830,1230,160,1,GOLD);
-  T('COLE PALMER',64,1200,F(900,84),GOLD);T('2023/24 · Chelsea',64,1250,F(700,32),DIM);
+  T(tw.name.toUpperCase(),64,1200,F(900,fit(tw.name.toUpperCase(),900,84,640)),GOLD);T(tw.season,64,1250,F(700,32),DIM);
   const l=(sc.lines||[])[1];if(l){const at=wordT(s,sc.at[1]);T(l[0],64,1350,F(900,fit(l[0],900,52,640)),WHITE,'left',ease((t-at)/0.35));}
   seam(Math.round(tw.match)+'%','THE TWIN',true);};
 Q.compare=P.compare; Q.end2=P.end2;
