@@ -6,6 +6,8 @@ data = os.path.join(FM, 'twin_data.json'); cache = os.path.join(FM, 'twin_teams.
 subprocess.run([sys.executable, '-I', os.path.join(HERE, 'pack.py'), FM, data], check=True)
 subprocess.run([sys.executable, '-I', os.path.join(HERE, 'teams.py'), data, cache], check=True)
 D = json.load(open(data)); T = json.load(open(cache))
+import glob, time
+fs = glob.glob(os.path.join(FM, 'raw*', '*.json')); D['asOf'] = time.strftime('%d %b %Y', time.gmtime(max(os.path.getmtime(f) for f in fs)))
 D['teams'] = {k: v['name'] for k, v in T.items() if v.get('name')}; D['badges'] = {k: v['badge'] for k, v in T.items() if v.get('badge')}
 open(os.path.join(OUT, 'data.js'), 'w').write('window.TWIN_DATA=' + json.dumps(D, separators=(',', ':'), ensure_ascii=False) + ';')
 shutil.copy(os.path.join(HERE, 'index.html'), os.path.join(OUT, 'index.html'))
