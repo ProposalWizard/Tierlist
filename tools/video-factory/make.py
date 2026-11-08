@@ -81,7 +81,7 @@ def eleven_voice(cfg, lines, work, best):
             # Hugo's pauses hold breath and room sound, so -42 dB left 0.3 s gaps; -39 dB with 0.09 s kept
             # trims them without clipping soft word edges ("handball"). Then an even, pitch-safe speed-up
             # (cfg "tempo") brings the read to voice E's pace (Mikey, 8 Nov 2026).
-            af = f"silenceremove=start_periods=1:start_threshold=-45dB:stop_periods=-1:stop_duration={gap + 0.02}:stop_threshold=-39dB:stop_silence={gap},areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,atempo={cfg.get('tempo', 1.0)},apad=pad_dur=0.06"
+            af = f"silenceremove=start_periods=1:start_threshold=-45dB:stop_periods=-1:stop_duration={gap + 0.02}:stop_threshold=-39dB:stop_silence={gap},areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,atempo={cfg.get('tempo', 1.13)},apad=pad_dur=0.06"
             subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", mp3, "-af", af, "-ac", "1", "-ar", str(SR), wav], check=True)
             heard, words = transcribe(wav); sc = sim(text, heard)
             if sc > best.get(i, (-1,))[0]: best[i] = (sc, wav, words)
