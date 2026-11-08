@@ -191,7 +191,7 @@
 "at": [
 "LAST",
 "EVERY",
-"23"
+"EVERY"
 ]
 },
 "own": {
@@ -223,7 +223,14 @@
 7
 ],
 "at": "SON",
-"cont": true
+"cont": true,
+"from": 1,
+"pop": {
+"big": "0.61",
+"label": "big chances made per 90",
+"rank": "4th of 101 PL attackers",
+"at": "TOTTENHAM"
+}
 },
 "c6": {
 "type": "cd2",
@@ -241,7 +248,14 @@
 8
 ],
 "at": "HARVEY",
-"cont": true
+"cont": true,
+"from": -1,
+"pop": {
+"big": "0.46",
+"label": "goals per 90 (no pens)",
+"rank": "14th of 96 PL attackers",
+"at": "NEWCASTLE"
+}
 },
 "c5": {
 "type": "cd2",
@@ -260,7 +274,14 @@
 6
 ],
 "at": "KELECHI",
-"cont": true
+"cont": true,
+"from": -1,
+"pop": {
+"big": "0.40",
+"label": "assists per 90",
+"rank": "5th of 94 PL attackers",
+"at": "LEICESTER"
+}
 },
 "c4": {
 "type": "cd2",
@@ -280,7 +301,18 @@
 5
 ],
 "at": "ROBERTO",
-"cont": true
+"cont": true,
+"from": 1,
+"pop": {
+"big": "0.82",
+"label": "goals per 90 (no pens)",
+"rank": "2nd of 94 PL attackers",
+"at": "78%"
+},
+"sticker": {
+"text": "GUESS THE TWIN IN THE COMMENTS",
+"at": "GUESS"
+}
 },
 "c3": {
 "type": "cd2",
@@ -302,7 +334,14 @@
 ],
 "at": "COLE",
 "twinAt": "THAT",
-"cont": true
+"cont": true,
+"from": -1,
+"pop": {
+"big": "22+11",
+"label": "goals + assists",
+"rank": "Premier League 2023/24",
+"at": "HIS"
+}
 },
 "tests": {
 "type": "statement",
@@ -487,6 +526,40 @@
 "COLE",
 "RAYAN"
 ]
+},
+"saka": {
+"type": "cd2",
+"list": "top",
+"show": [],
+"before": [
+1,
+2,
+7,
+8,
+6
+],
+"prevShow": [
+6
+],
+"at": "SAKA",
+"aside": {
+"name": "Bukayo Saka",
+"season": "2023/24",
+"face": "p961995",
+"club": "t9825",
+"flag": "cENG",
+"rank": 31,
+"match": 70.3,
+"text": "Not even top 30"
+},
+"cont": true,
+"from": 1,
+"pop": {
+"big": "2.79",
+"label": "chances created per 90",
+"rank": "2nd of 101 PL attackers",
+"at": "HE'S"
+}
 }
 }
 }

@@ -1,8 +1,8 @@
 [
 {
 "id": "intro",
-"say": "Who is Mo Salah's statistical twin? Last five seasons. Every Premier League attacker. Twenty-three stats.",
-"cap": "WHO IS MO SALAH'S STATISTICAL TWIN? LAST FIVE SEASONS. EVERY PREMIER LEAGUE ATTACKER. 23|twenty-three STATS.",
+"say": "Who is Mo Salah's statistical twin? Last five seasons, every Premier League attacker.",
+"cap": "WHO IS MO SALAH'S STATISTICAL TWIN? LAST FIVE SEASONS, EVERY PREMIER LEAGUE ATTACKER.",
 "sfx": [
 [
 "hit",
@@ -26,14 +26,19 @@
 },
 {
 "id": "c8",
-"say": "Now from the bottom. A hundred percent would be identical. Number eight: Son Heung-min. Tottenham. seventy-six percent.",
-"cap": "NOW FROM THE BOTTOM. 100%|a-hundred-percent WOULD BE IDENTICAL. NUMBER EIGHT: SON HEUNG-MIN. TOTTENHAM. 76%.|x-percent",
+"say": "Now from the bottom. Number eight: Son Heung-min. Tottenham. Seventy-six percent.",
+"cap": "NOW FROM THE BOTTOM. NUMBER EIGHT: SON HEUNG-MIN. TOTTENHAM. 76%.|x-percent",
 "hold": 0.5,
 "sfx": [
 [
 "pop",
 "SON",
 0.5
+],
+[
+"tick",
+"TOTTENHAM",
+0.4
 ]
 ]
 },
@@ -46,6 +51,19 @@
 [
 "pop",
 "HARVEY",
+0.5
+]
+]
+},
+{
+"id": "saka",
+"say": "You'd think Saka would be up here? He's thirty-first.",
+"cap": "YOU'D THINK SAKA WOULD BE UP HERE? HE'S 31ST.|thirty-first",
+"hold": 0.6,
+"sfx": [
+[
+"hit",
+"HE'S",
 0.5
 ]
 ]
@@ -65,14 +83,19 @@
 },
 {
 "id": "c4",
-"say": "Four: his old Liverpool team-mate, Roberto Firmino. seventy-eight percent.",
-"cap": "FOUR: HIS OLD LIVERPOOL TEAM-MATE, ROBERTO FIRMINO. 78%.|x-percent",
+"say": "Four: his old Liverpool team-mate, Roberto Firmino. Seventy-eight percent. Guess the twin in the comments.",
+"cap": "FOUR: HIS OLD LIVERPOOL TEAM-MATE, ROBERTO FIRMINO. 78%.|x-percent GUESS THE TWIN IN THE COMMENTS.",
 "hold": 0.6,
 "sfx": [
 [
 "pop",
 "ROBERTO",
 0.55
+],
+[
+"pop",
+"GUESS",
+0.45
 ]
 ]
 },

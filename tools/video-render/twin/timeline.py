@@ -34,7 +34,17 @@ def tick():
     n=int(0.05*SR); tt=np.arange(n)/SR; return (np.sin(2*np.pi*1900*tt)*np.exp(-tt*110)).astype(np.float32)
 def pop():
     n=int(0.12*SR); tt=np.arange(n)/SR; return (np.sin(2*np.pi*(600+900*tt*8)*tt)*np.exp(-tt*35)).astype(np.float32)
-FX={"whoosh":whoosh(),"hit":hit(),"tick":tick(),"pop":pop()}
+def roll(Ln=1.1):  # snare-style drumroll that speeds up and swells, made from noise bursts
+    n=int(Ln*SR); y=np.zeros(n,np.float32); tt=0.0
+    while tt<Ln:
+        i=int(tt*SR); m=int(0.03*SR); b=rng.standard_normal(m).astype(np.float32)*np.exp(-np.arange(m)/SR*90)
+        y[i:i+m]+=b[:max(0,min(m,n-i))]*(0.35+0.65*tt/Ln); tt+=0.075-0.05*tt/Ln
+    return y/np.abs(y).max()
+def riser(Ln=1.6):  # rising filtered noise into a reveal
+    n=int(Ln*SR); x=rng.standard_normal(n).astype(np.float32); cut=np.linspace(0.01,0.45,n); y=np.zeros(n,np.float32); s=0.0
+    for i in range(n): s+=cut[i]*(x[i]-s); y[i]=s
+    return y*np.linspace(0,1,n)**2/np.abs(y).max()
+FX={"whoosh":whoosh(),"hit":hit(),"tick":tick(),"pop":pop(),"roll":roll(),"riser":riser()}
 # quiet music bed: soft pulsing low chord (made here, no samples)
 tt=np.arange(N)/SR; bed=np.zeros(N,np.float32)
 for f in (55,82.4,110,164.8): bed+=np.sin(2*np.pi*f*tt).astype(np.float32)*0.25
@@ -45,7 +55,8 @@ for l,s in zip(L,segs):
     put(load_wav(f"{V}/vo/{l['id']}.wav"),s["start"],1.0)
     if s is not segs[0]: put(FX["whoosh"],s["start"]-0.2,0.3)
     for kind,at,g in l.get("sfx",[]):
-        if isinstance(at,str): at=next((w["t"] for w in s["words"] if w["w"].startswith(at)),s["start"])
+        if at=="END": at=s["start"]+s["vo"]
+        elif isinstance(at,str): at=next((w["t"] for w in s["words"] if w["w"].startswith(at)),s["start"])
         else: at=s["start"]+at
         put(FX[kind],at,g)
 mix=np.tanh(mix*1.1)*0.9; fade=int(0.4*SR); mix[-fade:]*=np.linspace(1,0,fade)
