@@ -45,18 +45,19 @@
     "title": "v02 · Salah's statistical twin",
     "stage": "check",
     "owner": "Claude",
-    "updated": "2026-11-07T21:30:00Z",
+    "updated": "2026-11-08T12:00:00Z",
     "postOn": null,
     "line": "Who is Salah 24/25's statistical twin? Every PL attacker season 22/23–26/27, plus this season only.",
     "script": "docs/marketing/videos/v02-salah-twin/script.md",
     "cover": "docs/marketing/videos/v02-salah-twin/cover.png",
     "video": "docs/marketing/videos/v02-salah-twin/knowitball-v02-salah-twin.mp4",
-    "seconds": 87.7,
+    "seconds": 95.2,
     "links": [],
     "log": [
       "2026-11-07 Card made; data done (FotMob/Opta PL stats), script being written. Mikey's statistical-twins format.",
       "2026-11-07 Rendered 87.2 s: Kane 21/22 overall, Barnes 24/25 most similar winger, Cherki right now. Waiting for Mikey's look.",
-      "2026-11-07 v2 cut (Mikey's notes): faces, badges, flags, % match, 5-s intro, long countdown. Answer now Cole Palmer 23/24 (79%); this season Cherki (76%). Waiting for Mikey's look."
+      "2026-11-07 v2 cut (Mikey's notes): faces, badges, flags, % match, 5-s intro, long countdown. Answer now Cole Palmer 23/24 (79%); this season Cherki (76%). Waiting for Mikey's look.",
+      "2026-11-08 v3 cut (Mikey's notes): Hugo voice (ElevenLabs), Salah's own seasons shown first and greyed out, countdown from the bottom, 'first in 79% of tests', Cherki compare, end card Salah = Palmer and Salah = Cherki, 'Follow for more.' Waiting for Mikey's look."
     ]
   },
   {

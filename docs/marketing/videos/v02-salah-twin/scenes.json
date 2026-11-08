@@ -18,14 +18,35 @@
 },
 "rows": [
 {
+"name": "Mohamed Salah",
+"season": "2022/23",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY",
+"match": 81.5,
+"excluded": true,
+"line": null
+},
+{
+"name": "Mohamed Salah",
+"season": "2023/24",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY",
+"match": 79.2,
+"excluded": true,
+"line": null
+},
+{
 "name": "Cole Palmer",
 "season": "2023/24",
 "face": "p1096353",
 "club": "t8455",
 "flag": "cENG",
 "match": 79.1,
-"line": "His first season at Chelsea",
-"sure": "#1 in 8 of 10 tests"
+"excluded": false,
+"twin": true,
+"line": "His first season at Chelsea"
 },
 {
 "name": "Roberto Firmino",
@@ -34,8 +55,8 @@
 "club": "t8650",
 "flag": "cBRA",
 "match": 78.1,
-"line": "His old Liverpool team-mate",
-"sure": null
+"excluded": false,
+"line": "His old Liverpool team-mate"
 },
 {
 "name": "Kelechi Iheanacho",
@@ -44,8 +65,8 @@
 "club": "t8197",
 "flag": "cNGA",
 "match": 76.2,
-"line": "Yes, really",
-"sure": null
+"excluded": false,
+"line": "Yes, really"
 },
 {
 "name": "Harvey Barnes",
@@ -54,8 +75,18 @@
 "club": "t10261",
 "flag": "cENG",
 "match": 76.1,
-"line": null,
-"sure": null
+"excluded": false,
+"line": null
+},
+{
+"name": "Mohamed Salah",
+"season": "2025/26",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY",
+"match": 76.1,
+"excluded": true,
+"line": null
 },
 {
 "name": "Heung-Min Son",
@@ -64,40 +95,12 @@
 "club": "t8586",
 "flag": "cKOR",
 "match": 75.9,
-"line": null,
-"sure": null
-},
-{
-"name": "Rayan Cherki",
-"season": "2026/27",
-"face": "p1104053",
-"club": "t8456",
-"flag": "cFRA",
-"match": 75.9,
-"line": "Doing it this season",
-"sure": null
-},
-{
-"name": "Alexander Isak",
-"season": "2024/25",
-"face": "p690107",
-"club": "t10261",
-"flag": "cSWE",
-"match": 75.3,
-"line": "A striker",
-"sure": null
-},
-{
-"name": "Darwin Núñez",
-"season": "2022/23",
-"face": "p950561",
-"club": "t8650",
-"flag": "cURU",
-"match": 75.3,
-"line": "Another Liverpool team-mate",
-"sure": null
+"excluded": false,
+"line": null
 }
-]
+],
+"twinLine": "SALAH'S STATISTICAL TWIN",
+"exLine": "Salah himself · not counted"
 },
 "now": {
 "title": "This season only.",
@@ -118,7 +121,7 @@
 "flag": "cFRA",
 "match": 75.9,
 "line": null,
-"sure": "#1 in 10 of 10 tests"
+"sure": null
 },
 {
 "name": "Evanilson",
@@ -191,59 +194,114 @@
 "23"
 ]
 },
+"own": {
+"type": "cd2",
+"list": "top",
+"show": [
+1,
+2,
+7
+],
+"before": [],
+"prevShow": [],
+"at": "SALAH"
+},
 "c8": {
-"type": "countdown",
+"type": "cd2",
 "list": "top",
-"upto": 8,
-"at": "DARWIN"
-},
-"c7": {
-"type": "countdown",
-"list": "top",
-"upto": 7,
-"at": "ALEXANDER",
-"cont": true
-},
-"c6": {
-"type": "countdown",
-"list": "top",
-"upto": 6,
-"at": "RAYAN",
-"cont": true
-},
-"c5": {
-"type": "countdown",
-"list": "top",
-"upto": 5,
+"show": [
+8
+],
+"before": [
+1,
+2,
+7
+],
+"prevShow": [
+1,
+2,
+7
+],
 "at": "SON",
 "cont": true
 },
-"c4": {
-"type": "countdown",
+"c6": {
+"type": "cd2",
 "list": "top",
-"upto": 4,
+"show": [
+6
+],
+"before": [
+1,
+2,
+7,
+8
+],
+"prevShow": [
+8
+],
 "at": "HARVEY",
 "cont": true
 },
-"c3": {
-"type": "countdown",
+"c5": {
+"type": "cd2",
 "list": "top",
-"upto": 3,
+"show": [
+5
+],
+"before": [
+1,
+2,
+7,
+8,
+6
+],
+"prevShow": [
+6
+],
 "at": "KELECHI",
 "cont": true
 },
-"c2": {
-"type": "countdown",
+"c4": {
+"type": "cd2",
 "list": "top",
-"upto": 2,
+"show": [
+4
+],
+"before": [
+1,
+2,
+7,
+8,
+6,
+5
+],
+"prevShow": [
+5
+],
 "at": "ROBERTO",
 "cont": true
 },
-"c1": {
-"type": "countdown",
+"c3": {
+"type": "cd2",
 "list": "top",
-"upto": 1,
+"show": [
+3
+],
+"before": [
+1,
+2,
+7,
+8,
+6,
+5,
+4
+],
+"prevShow": [
+4
+],
 "at": "COLE",
+"twinAt": "THAT",
 "cont": true
 },
 "tests": {
@@ -256,7 +314,7 @@
 "#141414"
 ],
 [
-"#1 IN 8 OF 10 TESTS",
+"FIRST IN 79% OF TESTS",
 72,
 "#c8102e"
 ],
@@ -270,12 +328,7 @@
 0.1,
 "PALMER",
 "CHANGED"
-],
-"dots": {
-"at": "PALMER",
-"n": 8,
-"total": 10
-}
+]
 },
 "why": {
 "type": "compare",
@@ -378,17 +431,62 @@
 "at": "RAYAN",
 "cont": true
 },
+"nowcmp": {
+"type": "compare",
+"kicker": "This season",
+"title": "Salah vs Cherki.",
+"a": {
+"name": "Mohamed Salah",
+"season": "2024/25",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY"
+},
+"b": {
+"name": "Rayan Cherki",
+"season": "2026/27",
+"face": "p1104053"
+},
+"rows": [
+{
+"label": "Chances created",
+"a": 2.37,
+"b": 3.41
+},
+{
+"label": "Goals (no pens)",
+"a": 0.53,
+"b": 0.76
+}
+],
+"at": [
+"THREE",
+"GOALS"
+]
+},
 "end": {
-"type": "end",
-"faces": [
-"p292462",
-"p1096353"
+"type": "end2",
+"captions": true,
+"pairs": [
+{
+"label": "Last 5 seasons",
+"a": "p292462",
+"b": "p1096353",
+"aName": "SALAH 24/25",
+"bName": "PALMER 23/24"
+},
+{
+"label": "This season",
+"a": "p292462",
+"b": "p1104053",
+"aName": "SALAH 24/25",
+"bName": "CHERKI"
+}
 ],
-"lines": [
-"WHO'S NEXT?",
-"COMMENT BELOW"
-],
-"captions": true
+"at": [
+"COLE",
+"RAYAN"
+]
 }
 }
 }

@@ -12,48 +12,23 @@
 ]
 },
 {
+"id": "own",
+"say": "First, Salah himself. Three of his own seasons made the top eight. They don't count.",
+"cap": "FIRST, SALAH HIMSELF. THREE OF HIS OWN SEASONS MADE THE TOP EIGHT. THEY DON'T COUNT.",
+"hold": 0.4,
+"sfx": [
+[
+"pop",
+"SALAH",
+0.5
+]
+]
+},
+{
 "id": "c8",
-"say": "Here's the top eight. A hundred percent would be identical. Number eight: Darwin Núñez. 75 percent.",
-"cap": "HERE'S THE TOP EIGHT. 100%|a-hundred-percent WOULD BE IDENTICAL. NUMBER EIGHT: DARWIN NÚÑEZ. 75%.|seventy-five-percent",
-"sfx": [
-[
-"pop",
-"DARWIN",
-0.5
-]
-]
-},
-{
-"id": "c7",
-"say": "Seven: Alexander Isak. Newcastle, twenty-four twenty-five. Seventy-five percent.",
-"cap": "SEVEN: ALEXANDER ISAK. NEWCASTLE, 24/25.|twenty-four-twenty-five 75%.|seventy-five-percent",
-"hold": 0.6,
-"sfx": [
-[
-"pop",
-"ALEXANDER",
-0.5
-]
-]
-},
-{
-"id": "c6",
-"say": "Six: Rayan Cherki. Seventy-six percent. And that's this season.",
-"cap": "SIX: RAYAN CHERKI. 76%.|seventy-six-percent AND THAT'S THIS SEASON.",
-"hold": 0.6,
-"sfx": [
-[
-"pop",
-"RAYAN",
-0.5
-]
-]
-},
-{
-"id": "c5",
-"say": "Five: Son Heung-min. Tottenham, twenty-three twenty-four. Seventy-six percent.",
-"cap": "FIVE: SON HEUNG-MIN. TOTTENHAM, 23/24.|twenty-three-twenty-four 76%.|seventy-six-percent",
-"hold": 0.6,
+"say": "Now from the bottom. A hundred percent would be identical. Number eight: Son Heung-min. Tottenham. seventy-six percent.",
+"cap": "NOW FROM THE BOTTOM. 100%|a-hundred-percent WOULD BE IDENTICAL. NUMBER EIGHT: SON HEUNG-MIN. TOTTENHAM. 76%.|x-percent",
+"hold": 0.5,
 "sfx": [
 [
 "pop",
@@ -63,9 +38,9 @@
 ]
 },
 {
-"id": "c4",
-"say": "Four: Harvey Barnes. Newcastle, twenty-four twenty-five. Seventy-six percent.",
-"cap": "FOUR: HARVEY BARNES. NEWCASTLE, 24/25.|twenty-four-twenty-five 76%.|seventy-six-percent",
+"id": "c6",
+"say": "Six: Harvey Barnes. Newcastle. seventy-six percent.",
+"cap": "SIX: HARVEY BARNES. NEWCASTLE. 76%.|x-percent",
 "hold": 0.6,
 "sfx": [
 [
@@ -76,22 +51,22 @@
 ]
 },
 {
-"id": "c3",
-"say": "Three... Kelechi Iheanacho. Leicester, twenty-two twenty-three. Yes, really.",
-"cap": "THREE... KELECHI IHEANACHO. LEICESTER, 22/23.|twenty-two-twenty-three YES, REALLY.",
+"id": "c5",
+"say": "Five: Kelechi Iheanacho. Leicester. Yes, really.",
+"cap": "FIVE: KELECHI IHEANACHO. LEICESTER. YES, REALLY.",
 "hold": 0.6,
 "sfx": [
 [
 "pop",
 "KELECHI",
-0.55
+0.5
 ]
 ]
 },
 {
-"id": "c2",
-"say": "Two: his old Liverpool team-mate, Roberto Firmino. Seventy-eight percent.",
-"cap": "TWO: HIS OLD LIVERPOOL TEAM-MATE, ROBERTO FIRMINO. 78%.|seventy-eight-percent",
+"id": "c4",
+"say": "Four: his old Liverpool team-mate, Roberto Firmino. seventy-eight percent.",
+"cap": "FOUR: HIS OLD LIVERPOOL TEAM-MATE, ROBERTO FIRMINO. 78%.|x-percent",
 "hold": 0.6,
 "sfx": [
 [
@@ -102,22 +77,27 @@
 ]
 },
 {
-"id": "c1",
-"say": "And number one... Cole Palmer. His first season at Chelsea. A 79 percent match.",
-"cap": "AND NUMBER ONE... COLE PALMER. HIS FIRST SEASON AT CHELSEA. A 79%|seventy-nine-percent MATCH.",
-"hold": 0.3,
+"id": "c3",
+"say": "And three... Cole Palmer. His first season at Chelsea. seventy-nine percent. That makes him Salah's statistical twin.",
+"cap": "AND THREE... COLE PALMER. HIS FIRST SEASON AT CHELSEA. 79%.|x-percent THAT MAKES HIM SALAH'S STATISTICAL TWIN.",
+"hold": 0.4,
 "sfx": [
 [
 "hit",
 "COLE",
-0.75
+0.7
+],
+[
+"hit",
+"THAT",
+0.5
 ]
 ]
 },
 {
 "id": "tests",
-"say": "We changed how much each stat counts, two thousand times. Palmer stayed number one in 8 out of ten.",
-"cap": "WE CHANGED HOW MUCH EACH STAT COUNTS, 2,000|two-thousand TIMES. PALMER STAYED NUMBER ONE IN 8|eight OUT OF TEN.",
+"say": "We changed how much each stat counts, two thousand times. Palmer came first in seventy-nine percent of them.",
+"cap": "WE CHANGED HOW MUCH EACH STAT COUNTS, 2,000|two-thousand TIMES. PALMER CAME FIRST IN 79%|x-percent OF THEM.",
 "sfx": [
 [
 "tick",
@@ -143,8 +123,8 @@
 },
 {
 "id": "now1",
-"say": "And number one, after about ten games... Rayan Cherki. 76 percent.",
-"cap": "AND NUMBER ONE, AFTER ABOUT TEN GAMES... RAYAN CHERKI. 76%.|seventy-six-percent",
+"say": "And number one, after about ten games... Rayan Cherki. seventy-six percent.",
+"cap": "AND NUMBER ONE, AFTER ABOUT TEN GAMES... RAYAN CHERKI. 76%.|x-percent",
 "hold": 0.3,
 "sfx": [
 [
@@ -155,8 +135,13 @@
 ]
 },
 {
+"id": "nowcmp",
+"say": "He creates even more. Over three chances every ninety minutes. And more goals, so far.",
+"cap": "HE CREATES EVEN MORE. OVER THREE CHANCES EVERY 90|ninety MINUTES. AND MORE GOALS, SO FAR."
+},
+{
 "id": "end",
-"say": "So Salah's twin? Cole Palmer. Who should I do next? Comment below.",
-"cap": "SO SALAH'S TWIN? COLE PALMER. WHO SHOULD I DO NEXT? COMMENT BELOW."
+"say": "So Salah's twin is Cole Palmer. And right now, it's Rayan Cherki. Follow for more.",
+"cap": "SO SALAH'S TWIN IS COLE PALMER. AND RIGHT NOW, IT'S RAYAN CHERKI. FOLLOW FOR MORE."
 }
 ]

@@ -126,7 +126,55 @@ S.end=(sc,p,s,t)=>{ x.fillStyle=CREAM;x.fillRect(0,0,1080,1920); const a=ease(p/
   (sc.lines||[]).forEach((l,i)=>T(l,cx,860+i*86,F(900,68),i===0?RED:INK,'center',ease((p-0.3-i*0.15)/0.4)));
   const pa=ease((p-0.6)/0.4);x.save();x.globalAlpha=pa;x.font=F(800,44);const w=x.measureText('knowitball.co.uk').width+70;x.fillStyle='#1f9d55';rr(cx-w/2,1080,w,92,46);x.fill();T('knowitball.co.uk',cx,1142,F(800,44),'#fff','center');x.restore();};
 
-function render(t){const s=seg(t);const sc=SC[s.id]||{type:'end'};chrome();(S[sc.type])(sc,t-s.start,s,t);if(sc.type!=='end'||sc.captions)captions(t,s);}
+// ---- countdown v2 (Mikey, 8 Nov 2026): the target's own seasons first (greyed, not counted), then from the
+// bottom up; a player who is in the list more than once shows all his places together; the twin is decided last.
+// scene: {type:'cd2', list, show:[ranks revealed in this line], before:[ranks already shown], at:word, prevShow:[...], twinAt:word?}
+S.cd2=(sc,p,s,t)=>{ const L=SC.__lists[sc.list]; const done=enter(p,sc.cont); const rows=L.rows,n=rows.length;
+  T(L.title,SX0+44,CY0+70,F(900,46),INK); T(L.sub.toUpperCase(),SX0+44,CY0+102,F(600,20),INK3);
+  const revealT=sc.at!=null?wordT(s,sc.at):s.start+0.15; const now=t>=revealT;
+  const grp=now?(sc.show||[]):(sc.prevShow||[]); const gT=now?revealT:-99; const ga=ease((t-gT)/0.3), gr=back((t-gT)/0.45);
+  const twinT=sc.twinAt!=null?wordT(s,sc.twinAt):null; const twinOn=twinT!=null&&t>=twinT;
+  const spY=CY0+130, spH=300, tx=SX0+290, tw=SX1-60-tx;
+  x.fillStyle='#fff';rr(SX0+30,spY,SX1-SX0-60,spH,22);x.fill();
+  if(!grp.length){ const g=L.target; face(g.face,SX0+150,spY+150,105,1,INK3); T('MATCHING',tx,spY+95,F(800,24),INK3);
+    T(g.name,tx,spY+165,F(900,fit(g.name,900,56,tw)),INK); T(g.season,tx,spY+210,F(700,30),INK2);
+  } else { const r=rows[grp[0]-1]; const ex=!!r.excluded; const isTwin=!!r.twin&&(twinOn||sc.twinShown);
+    face(r.face,SX0+150,spY+150,112*clamp(gr,0,1.15),clamp(gr*2),isTwin?RED:(ex?INK3:null));
+    T(grp.map(k=>'#'+k).join(' · '),tx,spY+92,F(900,40),isTwin?RED:INK3,'left',ga);
+    if(!ex){const pc=Math.round(r.match*clamp((t-gT)/0.6)); T(pc+'% match',SX1-60,spY+92,F(900,48),isTwin?RED:INK,'right',ga);}
+    T(r.name,tx,spY+160,F(900,fit(r.name,900,60,tw)),isTwin?RED:(ex?INK2:INK),'left',ga);
+    const seasons=grp.map(k=>rows[k-1].season).join(' · '); T(seasons,tx,spY+208,F(700,30),INK2,'left',ga);
+    x.font=F(700,30); const sw=x.measureText(seasons).width; icon(r.club,tx+sw+16,spY+176,44,ga); flag(r.flag,tx+sw+70,spY+180,36,ga);
+    const ln=isTwin?(L.twinLine||'THE TWIN'):(ex?(L.exLine||'Same player · not counted'):r.line);
+    if(ln) T(ln,tx,spY+258,F(800,28),isTwin?RED:INK2,'left',ease((t-(isTwin?twinT||gT:gT)-0.4)/0.3));
+  }
+  const ly=spY+spH+24, rowH=Math.min(70,(CY1-ly-14)/n), before=new Set(sc.before||[]);
+  for(let i=0;i<n;i++){const r=rows[i],rank=i+1,yy=ly+i*rowH; const inNow=(sc.show||[]).includes(rank);
+    const shown=before.has(rank)||(inNow&&now);
+    if(!shown){T('#'+rank,SX0+44,yy+rowH*0.62,F(800,24),INK3);x.fillStyle=TRACK;rr(SX0+96,yy+8,SX1-SX0-140,rowH-16,10);x.fill();T('?',(SX0+SX1)/2+20,yy+rowH*0.66,F(900,28),INK3,'center');continue;}
+    const a=inNow?ease((t-revealT)/0.4):1; const ex=!!r.excluded; const tw2=!!r.twin&&(twinOn||sc.twinShown);
+    const fade=ex?(inNow&&!sc.greyNow?1-0.6*ease((t-revealT-1.2)/0.5):0.4):1;
+    x.save();x.globalAlpha=a*fade; if(tw2){x.fillStyle='rgba(200,16,46,.10)';rr(SX0+36,yy+3,SX1-SX0-72,rowH-6,10);x.fill();}
+    T('#'+rank,SX0+44,yy+rowH*0.62,F(800,24),tw2?RED:INK3); const fr=rowH*0.38;
+    face(r.face,SX0+96+fr,yy+rowH/2,fr,1); const nx=SX0+96+fr*2+16;
+    T(r.name,nx,yy+rowH*0.5,F(900,fit(r.name,900,28,330)),tw2?RED:INK); T(r.season,nx,yy+rowH*0.83,F(600,18),INK3);
+    icon(r.club,SX0+560,yy+rowH/2-17,34); flag(r.flag,SX0+604,yy+rowH/2-14,28);
+    const bw=150*((r.match-50)/50); x.fillStyle=tw2?RED:'#2b2925'; rr(SX1-44-60-bw-14,yy+rowH/2-8,bw,16,5);x.fill();
+    T(Math.round(r.match)+'%',SX1-44,yy+rowH*0.64,F(900,28),tw2?RED:INK,'right');
+    if(ex&&fade<0.99){x.globalAlpha=a*(1-fade)*1.6;x.strokeStyle=INK2;x.lineWidth=3;x.beginPath();x.moveTo(SX0+96,yy+rowH/2);x.lineTo(SX1-44,yy+rowH/2);x.stroke();}
+    x.restore();}
+  done();};
+// ---- two "=" pairs on the end card
+S.end2=(sc,p,s,t)=>{ x.fillStyle=CREAM;x.fillRect(0,0,1080,1920); const cx=(SX0+SX1)/2;
+  (sc.pairs||[]).forEach((pr,i)=>{const at=sc.at?wordT(s,sc.at[i]):s.start+i*0.8;const a=ease((t-at)/0.35),b=back((t-at)/0.45);const y=330+i*360;
+    T(pr.label.toUpperCase(),cx,y-115,F(800,26),INK3,'center',a);
+    face(pr.a,cx-150,y,95*clamp(b,0,1.15),clamp(b*2),RED); T('=',cx,y+28,F(900,90),INK,'center',a); face(pr.b,cx+150,y,95*clamp(b,0,1.15),clamp(b*2),BLUE);
+    T(pr.aName,cx-150,y+135,F(900,30),RED,'center',a); T(pr.bName,cx+150,y+135,F(900,30),BLUE,'center',a);});
+  const a=ease((p-0.2)/0.4); T('KNOWITBALL',cx,950,F(900,96),INK,'center',a); x.fillStyle=RED;x.globalAlpha=a;x.fillRect(cx-80,980,160,7);x.globalAlpha=1;
+  T("WHO'S NEXT? COMMENT BELOW",cx,1050,F(900,46),RED,'center',ease((p-0.4)/0.4));
+  const pa=ease((p-0.6)/0.4);x.save();x.globalAlpha=pa;x.font=F(800,40);const w=x.measureText('knowitball.co.uk').width+64;x.fillStyle='#1f9d55';rr(cx-w/2,1090,w,76,38);x.fill();T('knowitball.co.uk',cx,1141,F(800,40),'#fff','center');x.restore();};
+
+function render(t){const s=seg(t);const sc=SC[s.id]||{type:'end'};chrome();(S[sc.type])(sc,t-s.start,s,t);if(!['end','end2'].includes(sc.type)||sc.captions)captions(t,s);}
 function boot(tl,scenes){TL=tl;SC=scenes.scenes;META=scenes.meta||{};SC.__lists=scenes.lists||{};
   const keys=new Set();JSON.stringify(scenes,(k,v)=>{if(typeof v==='string'&&/^[ptc][A-Za-z0-9]+$/.test(v)&&['face','club','flag','faces'].some(()=>true))keys.add(v);return v;});
   const dir=META.imgDir; const ps=[...keys].map(k=>new Promise(r=>{const im=new Image();im.onload=()=>{IMG[k]=im;r()};im.onerror=()=>r();im.src='file://'+dir+'/'+k+'.png';}));
