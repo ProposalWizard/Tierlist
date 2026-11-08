@@ -46,7 +46,9 @@ for k in order:
     if k=='why': l['hold']=l.get('hold',0)+0.2
     if k=='diff': l['hold']=l.get('hold',0)+0.35
     L.append(l)
-    if k not in new and os.path.exists(f'v02f/vo/{k}.mp3'): shutil.copy(f'v02f/vo/{k}.mp3',f'v02g/vo/{k}.mp3')
+    if k not in new and k!='intro' and os.path.exists(f'v02f/vo/{k}.mp3'): shutil.copy(f'v02f/vo/{k}.mp3',f'v02g/vo/{k}.mp3')
+for l in L:
+    if l['id']=='intro': l.update(say="Who is prime Mo Salah's statistical twin? Last five seasons, every Premier League attacker.",cap="WHO IS PRIME MO SALAH'S STATISTICAL TWIN? LAST FIVE SEASONS, EVERY PREMIER LEAGUE ATTACKER.")
 src['lists']=lists; src['scenes']=sc; src['meta']['engine']='video_full.html'; src['meta']['layout']='poster'
 json.dump(L,open('v02g/lines.json','w'),indent=0,ensure_ascii=False); json.dump(src,open('v02g/scenes.json','w'),indent=0,ensure_ascii=False)
 shutil.copy('v02f/voice.json','v02g/voice.json')
