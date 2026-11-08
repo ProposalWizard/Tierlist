@@ -45,13 +45,13 @@
     "title": "v02 · Salah's statistical twin",
     "stage": "check",
     "owner": "Claude",
-    "updated": "2026-11-08T16:00:00Z",
+    "updated": "2026-11-08T19:00:00Z",
     "postOn": null,
     "line": "Who is Salah 24/25's statistical twin? Every PL attacker season 22/23–26/27, plus this season only.",
     "script": "docs/marketing/videos/v02-salah-twin/script.md",
     "cover": "docs/marketing/videos/v02-salah-twin/cover.png",
     "video": "docs/marketing/videos/v02-salah-twin/knowitball-v02-salah-twin.mp4",
-    "seconds": 79.9,
+    "seconds": 84.5,
     "links": [],
     "log": [
       "2026-11-07 Card made; data done (FotMob/Opta PL stats), script being written. Mikey's statistical-twins format.",
@@ -59,7 +59,8 @@
       "2026-11-07 v2 cut (Mikey's notes): faces, badges, flags, % match, 5-s intro, long countdown. Answer now Cole Palmer 23/24 (79%); this season Cherki (76%). Waiting for Mikey's look.",
       "2026-11-08 v3 cut (Mikey's notes): Hugo voice (ElevenLabs), Salah's own seasons shown first and greyed out, countdown from the bottom, 'first in 79% of tests', Cherki compare, end card Salah = Palmer and Salah = Cherki, 'Follow for more.' Waiting for Mikey's look.",
       "2026-11-08 v4 cut (Mikey's picks): 4-s intro, '100% = identical' on screen only, 'You'd think Saka? 31st', guess sticker at #4, pop-up fact per player, alternating slide-ins; Hugo sped up 13%. 95 s -> 80 s. Waiting for Mikey's look.",
-      "2026-11-08 Intro card now shows the two twins blurred (LAST 5 YEARS, CURRENT), Mikey's ask. Still 79.9 s. Waiting for Mikey's look."
+      "2026-11-08 Intro card now shows the two twins blurred (LAST 5 YEARS, CURRENT), Mikey's ask. Still 79.9 s. Waiting for Mikey's look.",
+      "2026-11-08 v5 cut: Poster style picked by Mikey (#6); Salah's own seasons removed with an animation, list re-ranked to a top 5 (Palmer #1); 'this season' starts at #5 Enciso; why +0.2 s, diff +0.35 s; end card in club colours; Saka 28th. Waiting for Mikey's look."
     ]
   },
   {

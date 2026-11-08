@@ -39,6 +39,7 @@ function captions(t,s){if(t>s.start+s.vo+0.25)return;let cur=null;for(const c of
 // which player a countdown line is showing right now
 function current(sc,s,t){const L=SC.__lists[sc.list];const rows=L.rows;
   if(sc.type==='countdown'){let k=sc.upto,rt=sc.at!=null?wordT(s,sc.at):s.start;if(sc.steps){k=null;for(const [rk,w] of sc.steps){const tt=wordT(s,w);if(t>=tt){k=rk;rt=tt;}}}
+    if(k&&k>rows.length) return {L,p:{...L.target,target:true},rt:-99,shown:new Set()};
     if(!k||t<rt){const prev=sc.steps?null:(sc.upto+1<=rows.length?sc.upto+1:null);return {L,p:prev?{...rows[prev-1],ranks:[prev]}:{...L.target,target:true},rt:-99,shown:new Set(prev?range(prev,rows.length):[])};}
     return {L,p:{...rows[k-1],ranks:[k]},rt,shown:new Set(range(k,rows.length))};}
   const rt=sc.at!=null?wordT(s,sc.at):s.start, now=t>=rt; const before=new Set(sc.before||[]);
@@ -77,10 +78,17 @@ P.cd2=P.countdown=(sc,p,s,t)=>{const {L,p:pl,rt,shown}=current(sc,s,t);const row
   x.restore();
   if(sc.pop){const at=wordT(s,sc.pop.at),kk=back((t-at)/0.4);if(t>=at){x.save();x.translate(64,1215);x.scale(clamp(kk,0,1.1),clamp(kk,0,1.1));x.fillStyle=GOLD;rr(0,0,880,90,20);x.fill();T(sc.pop.big,26,64,F(900,58),'#111');x.font=F(900,58);const w=x.measureText(sc.pop.big).width;T(sc.pop.label,46+w,40,F(800,28),'#111');T(sc.pop.rank,46+w,74,F(700,25),'#333');x.restore();}}
   // strip of the list, lowest place on the left
-  const n=rows.length, gap=Math.min(112,880/n);rows.forEach((r,i)=>{const cx=64+44+(n-1-i)*gap, cy=1370, on=shown.has(i+1);
-    if(!on){x.fillStyle='rgba(0,0,0,0.35)';x.beginPath();x.arc(cx,cy,42,0,7);x.fill();T('?',cx,cy+15,F(900,40),'rgba(255,255,255,0.6)','center');}
-    else{face(r.face,cx,cy,42,r.excluded?0.35:1,r.twin&&pl.twinNow?GOLD:WHITE);}
-    T('#'+(i+1),cx,cy+72,F(900,22),DIM,'center');});
+  // strip of the list, lowest place on the left. With sc.collapse: the target's own seasons shrink away and the
+  // rest slide into a re-ranked list (Mikey, 8 Nov 2026: "removes those 3 Salahs and reorders the other positions").
+  const n=rows.length, gap=Math.min(112,880/n); const ct=sc.collapse?wordT(s,sc.collapse.at):null, cp=ct!=null?ease((t-ct)/0.9):0;
+  const keep=rows.filter(r=>!r.excluded), n2=keep.length, gap2=Math.min(112,880/n2);
+  rows.forEach((r,i)=>{let cx=64+44+(n-1-i)*gap, cy=1370, rad=42, a=1, lab='#'+(i+1); const on=shown.has(i+1);
+    if(ct!=null&&t>=ct){ if(r.excluded){rad=42*(1-cp);a=1-cp;cy=1370+60*cp;} else {const j=keep.indexOf(r);const nx=64+44+(n2-1-j)*gap2;cx=cx+(nx-cx)*cp;if(cp>0.5)lab='#'+(j+1);} }
+    if(rad<=1)return;
+    x.save();x.globalAlpha=a;
+    if(!on){x.fillStyle='rgba(0,0,0,0.35)';x.beginPath();x.arc(cx,cy,rad,0,7);x.fill();T('?',cx,cy+15,F(900,40),'rgba(255,255,255,0.6)','center');}
+    else{face(r.face,cx,cy,rad,r.excluded?0.35:1,r.twin&&pl.twinNow?GOLD:WHITE);}
+    T(lab,cx,cy+72,F(900,22),DIM,'center');x.restore();});
   if(sc.sticker){const at=wordT(s,sc.sticker.at);if(t>=at)pill(sc.sticker.text,540,705,34,RED,WHITE,-0.06,clamp(back((t-at)/0.4),0,1.2));}};
 P.statement=(sc,p,s,t)=>{const tw=SC.__lists.top.rows.find(r=>r.twin);clubBg(tw?tw.club:'t8455');stripes(0.07);tag();
   face(sc.face,540,560,230*clamp(back((p-0.05)/0.45),0,1.12),1,GOLD);
@@ -95,8 +103,10 @@ P.compare=(sc,p,s,t)=>{darkBg();const ca=col(SC.intro.club), cb=col(SC.__lists.t
     [[r.a,RED,-1],[r.b,'#7cc4ff',1]].forEach(([v,cl,d])=>{const w=400*v/mx*a;x.fillStyle=cl;if(d<0)rr(540-20-w,yy+100,w,44,10);else rr(560,yy+100,w,44,10);x.fill();
       T(String(v),d<0?540-30-w:570+w,yy+136,F(900,40),cl,d<0?'right':'left');});x.restore();});};
 P.end2=(sc,p,s,t)=>{darkBg();stripes(0.04);(sc.pairs||[]).forEach((pr,i)=>{const at=sc.at?wordT(s,sc.at[i]):s.start+i*0.8,a=ease((t-at)/0.35),b=back((t-at)/0.45),y=380+i*390;
-    T(pr.label.toUpperCase(),540,y-150,F(900,32),DIM,'center',a);face(pr.a,330,y,125*clamp(b,0,1.15),clamp(b*2),RED);T('=',540,y+40,F(900,130),WHITE,'center',a);face(pr.b,750,y,125*clamp(b,0,1.15),clamp(b*2),GOLD);
-    T(pr.aName,330,y+180,F(900,34),RED,'center',a);T(pr.bName,750,y+180,F(900,34),GOLD,'center',a);});
+    // each player in his own club colour (Mikey, 8 Nov 2026)
+    const ca=pr.aClub?col(pr.aClub):RED, cb=pr.bClub?col(pr.bClub):GOLD;
+    T(pr.label.toUpperCase(),540,y-150,F(900,32),DIM,'center',a);face(pr.a,330,y,125*clamp(b,0,1.15),clamp(b*2),ca);T('=',540,y+40,F(900,130),WHITE,'center',a);face(pr.b,750,y,125*clamp(b,0,1.15),clamp(b*2),cb);
+    [[pr.aName,330,ca],[pr.bName,750,cb]].forEach(([nm,cx,c])=>{x.save();x.globalAlpha=a;x.font=F(900,32);const w=x.measureText(nm).width+40;x.fillStyle=c;rr(cx-w/2,y+148,w,50,25);x.fill();x.strokeStyle='rgba(255,255,255,0.35)';x.lineWidth=2;x.stroke();T(nm,cx,y+184,F(900,32),WHITE,'center');x.restore();});});
   const a=ease((p-0.2)/0.4);T('KNOWITBALL',540,1180,F(900,104),WHITE,'center',a);T("WHO'S NEXT? COMMENT BELOW",540,1250,F(900,44),GOLD,'center',ease((p-0.4)/0.4));
   const pa=ease((p-0.6)/0.4);x.save();x.globalAlpha=pa;x.font=F(800,40);const w=x.measureText('knowitball.co.uk').width+64;x.fillStyle='#1f9d55';rr(540-w/2,1290,w,76,38);x.fill();T('knowitball.co.uk',540,1341,F(800,40),WHITE,'center');x.restore();};
 // =============== SPLIT ===============

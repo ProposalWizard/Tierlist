@@ -13,22 +13,27 @@
 },
 {
 "id": "own",
-"say": "First, Salah himself. Three of his own seasons made the top eight. They don't count.",
-"cap": "FIRST, SALAH HIMSELF. THREE OF HIS OWN SEASONS MADE THE TOP EIGHT. THEY DON'T COUNT.",
-"hold": 0.4,
+"say": "First, Salah himself. Three of his own seasons made the top eight. They don't count. So that leaves five.",
+"cap": "FIRST, SALAH HIMSELF. THREE OF HIS OWN SEASONS MADE THE TOP EIGHT. THEY DON'T COUNT. SO THAT LEAVES FIVE.",
+"hold": 0.9,
 "sfx": [
 [
 "pop",
 "SALAH",
+0.5
+],
+[
+"whoosh",
+"LEAVES",
 0.5
 ]
 ]
 },
 {
 "id": "c8",
-"say": "Now from the bottom. Number eight: Son Heung-min. Tottenham. Seventy-six percent.",
-"cap": "NOW FROM THE BOTTOM. NUMBER EIGHT: SON HEUNG-MIN. TOTTENHAM. 76%.|x-percent",
-"hold": 0.5,
+"say": "Number five: Son Heung-min. Tottenham. Seventy-six percent.",
+"cap": "NUMBER FIVE: SON HEUNG-MIN. TOTTENHAM. 76%.|x-percent",
+"hold": 0.9,
 "sfx": [
 [
 "pop",
@@ -44,9 +49,9 @@
 },
 {
 "id": "c6",
-"say": "Six: Harvey Barnes. Newcastle. seventy-six percent.",
-"cap": "SIX: HARVEY BARNES. NEWCASTLE. 76%.|x-percent",
-"hold": 0.6,
+"say": "Four: Harvey Barnes. Newcastle. Seventy-six percent.",
+"cap": "FOUR: HARVEY BARNES. NEWCASTLE. 76%.|x-percent",
+"hold": 0.9,
 "sfx": [
 [
 "pop",
@@ -57,9 +62,9 @@
 },
 {
 "id": "saka",
-"say": "You'd think Saka would be up here? He's thirty-first.",
-"cap": "YOU'D THINK SAKA WOULD BE UP HERE? HE'S 31ST.|thirty-first",
-"hold": 0.6,
+"say": "You'd think Saka would be up here? He's twenty-eighth.",
+"cap": "YOU'D THINK SAKA WOULD BE UP HERE? HE'S 28TH.|twenty-eighth",
+"hold": 0.9,
 "sfx": [
 [
 "hit",
@@ -70,9 +75,9 @@
 },
 {
 "id": "c5",
-"say": "Five: Kelechi Iheanacho. Leicester. Yes, really.",
-"cap": "FIVE: KELECHI IHEANACHO. LEICESTER. YES, REALLY.",
-"hold": 0.6,
+"say": "Three: Kelechi Iheanacho. Leicester. Yes, really.",
+"cap": "THREE: KELECHI IHEANACHO. LEICESTER. YES, REALLY.",
+"hold": 0.9,
 "sfx": [
 [
 "pop",
@@ -83,8 +88,8 @@
 },
 {
 "id": "c4",
-"say": "Four: his old Liverpool team-mate, Roberto Firmino. Seventy-eight percent. Guess the twin in the comments.",
-"cap": "FOUR: HIS OLD LIVERPOOL TEAM-MATE, ROBERTO FIRMINO. 78%.|x-percent GUESS THE TWIN IN THE COMMENTS.",
+"say": "Two: his old Liverpool team-mate, Roberto Firmino. Seventy-eight percent. Guess the twin in the comments.",
+"cap": "TWO: HIS OLD LIVERPOOL TEAM-MATE, ROBERTO FIRMINO. 78%.|x-percent GUESS THE TWIN IN THE COMMENTS.",
 "hold": 0.6,
 "sfx": [
 [
@@ -101,8 +106,8 @@
 },
 {
 "id": "c3",
-"say": "And three... Cole Palmer. His first season at Chelsea. seventy-nine percent. That makes him Salah's statistical twin.",
-"cap": "AND THREE... COLE PALMER. HIS FIRST SEASON AT CHELSEA. 79%.|x-percent THAT MAKES HIM SALAH'S STATISTICAL TWIN.",
+"say": "And number one... Cole Palmer. His first season at Chelsea. Seventy-nine percent. That makes him Salah's statistical twin.",
+"cap": "AND NUMBER ONE... COLE PALMER. HIS FIRST SEASON AT CHELSEA. 79%.|x-percent THAT MAKES HIM SALAH'S STATISTICAL TWIN.",
 "hold": 0.4,
 "sfx": [
 [
@@ -132,17 +137,72 @@
 {
 "id": "why",
 "say": "Why? They create the same. Nearly two and a half chances every ninety minutes. The same shots on target.",
-"cap": "WHY? THEY CREATE THE SAME. NEARLY TWO AND A HALF CHANCES EVERY 90|ninety MINUTES. THE SAME SHOTS ON TARGET."
+"cap": "WHY? THEY CREATE THE SAME. NEARLY TWO AND A HALF CHANCES EVERY 90|ninety MINUTES. THE SAME SHOTS ON TARGET.",
+"hold": 0.2
 },
 {
 "id": "diff",
 "say": "The difference? Palmer passes way more. Salah scores more, and makes more big chances.",
-"cap": "THE DIFFERENCE? PALMER PASSES WAY MORE. SALAH SCORES MORE, AND MAKES MORE BIG CHANCES."
+"cap": "THE DIFFERENCE? PALMER PASSES WAY MORE. SALAH SCORES MORE, AND MAKES MORE BIG CHANCES.",
+"hold": 0.35
 },
 {
-"id": "now4",
-"say": "And this season only? Five, Julio Enciso. Four, João Pedro. Three, Bryan Mbeumo. Two, Evanilson.",
-"cap": "AND THIS SEASON ONLY? FIVE, JULIO ENCISO. FOUR, JOÃO PEDRO. THREE, BRYAN MBEUMO. TWO, EVANILSON."
+"id": "n0",
+"say": "And this season only?",
+"cap": "AND THIS SEASON ONLY?",
+"hold": 0.3
+},
+{
+"id": "n5",
+"say": "Five: Julio Enciso.",
+"cap": "FIVE: JULIO ENCISO.",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"JULIO",
+0.5
+]
+]
+},
+{
+"id": "n4",
+"say": "Four: João Pedro.",
+"cap": "FOUR: JOÃO PEDRO.",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"JOÃO",
+0.5
+]
+]
+},
+{
+"id": "n3",
+"say": "Three: Bryan Mbeumo.",
+"cap": "THREE: BRYAN MBEUMO.",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"BRYAN",
+0.5
+]
+]
+},
+{
+"id": "n2",
+"say": "Two: Evanilson.",
+"cap": "TWO: EVANILSON.",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"EVANILSON",
+0.5
+]
+]
 },
 {
 "id": "now1",
