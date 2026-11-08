@@ -1,7 +1,8 @@
 # counters + sound for the whole 72 s, all from the cut events
 import json,os,sys,numpy as np,wave
 from PIL import Image,ImageDraw,ImageFont,ImageFilter
-P=json.load(open('/tmp/claude-0/-home-user-Tierlist/c1503037-5087-50d1-9ca4-718cbb45521d/scratchpad/avo/plan.json'));R1=json.load(open('events_r1.json'))['R']
+HERE=os.path.dirname(os.path.abspath(__file__));os.chdir(os.path.join(HERE,'out'))
+P=json.load(open(os.path.join(HERE,'plan_avocado.json')));R1=json.load(open('events_r1.json'))['R']
 ev=[];  # (seconds, kind)
 ev+= [(f/30,'chop') for f in R1['down']]+[(f/30,'side') for f in R1['side']]+[(f/30,'dice') for f in R1['dice']]
 for r in P['rounds'][1:]:
@@ -22,7 +23,7 @@ if 'video' in sys.argv:
   def ct(d,y,s,f,c):w=d.textlength(s,font=f);d.text(((W-w)/2,y),s,font=f,fill=c)
   g=Image.new('L',(1,H));[g.putpixel((0,y),int(max(0,(y-1400)/520)*140)) for y in range(H)];g=g.resize((W,H))
   os.makedirs('final',exist_ok=True)
-  for f in range(2160):
+  for f in range(166 if 'test' in sys.argv else 2160):
     src=f'fr2/f{f:05d}.png' if f<166 else f'fr3/f{f:05d}.png'
     if not os.path.exists(src): print('MISSING',src);continue
     im=Image.open(src).convert('RGB').resize((W,H),Image.LANCZOS);im=Image.composite(Image.new('RGB',(W,H),(12,10,8)),im,g)
@@ -32,7 +33,7 @@ if 'video' in sys.argv:
     im.save(f'final/f{f:05d}.jpg',quality=92)
   print('frames done')
 if 'sound' in sys.argv:
-  src=open('/tmp/claude-0/-home-user-Tierlist/c1503037-5087-50d1-9ca4-718cbb45521d/scratchpad/cuts/audio.py').read().split("cnt={'chop'")[0].replace("E=json.load(open(f'events{n}.json'))","E={'T':{'end':72.0}}").replace("n=sys.argv[1];","n='all';")
+  src=open(os.path.join(HERE,'..','audio.py')).read().split("cnt={'chop'")[0].replace("E=json.load(open(f'events{n}.json'))","E={'T':{'end':72.0}}").replace("n=sys.argv[1];","n='all';")
   exec(src)
   # per 1/30 s, at most a few audible hits; dense runs become a fast rattle at lower volume
   from collections import Counter

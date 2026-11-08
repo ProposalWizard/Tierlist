@@ -1,10 +1,12 @@
 # X vs cuts, version 2: every cut is ONE event (frame, kind, plane).
 # The knife pose, the line on the skin and the slice drop all read the same event.
 import bpy, bmesh, math, sys, time, json
+import os as _os
+HERE=_os.path.dirname(_os.path.abspath(__file__)) if '__file__' in globals() else _os.getcwd()
+OUT=_os.path.join(HERE,'out')+_os.sep;_os.makedirs(OUT,exist_ok=True)
 from mathutils import Vector, Matrix, Quaternion
 argv=sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []
 MODE=argv[0] if argv else 'build'
-OUT='/tmp/claude-0/-home-user-Tierlist/c1503037-5087-50d1-9ca4-718cbb45521d/scratchpad/blend/'
 FPS=30
 # ---- object: avocado, local axes X long (narrow end +X), Y depth (front = -Y), Z up
 L,RM,EH=3.05,0.86,0.92
@@ -348,5 +350,5 @@ else:
   else:
     a,b=int(argv[1]),int(argv[2])
     for f in range(a,b):
-      s.frame_set(f);s.render.filepath=OUT+f'fr2/f{f:05d}.png';bpy.ops.render.render(write_still=True)
+      s.frame_set(f);_os.makedirs(OUT+'fr2',exist_ok=True);s.render.filepath=OUT+f'fr2/f{f:05d}.png';bpy.ops.render.render(write_still=True)
     print('DONE',a,b)

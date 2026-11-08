@@ -3,11 +3,13 @@ import bpy, bmesh, math, sys, json, time, random
 import numpy as np
 from mathutils import Vector, Matrix, Quaternion
 _args=sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []
-src=open('/tmp/claude-0/-home-user-Tierlist/c1503037-5087-50d1-9ca4-718cbb45521d/scratchpad/blend/cuts2.py').read()
-src=src.split("def build(R):")[0].replace("MODE=argv[0] if argv else 'build'","MODE='lib'")
+import os as _os
+HERE=_os.path.dirname(_os.path.abspath(__file__))
+src=open(_os.path.join(HERE,'cuts2.py')).read().replace("if '__file__' in globals() else _os.getcwd()","")
+src=src.replace('HERE=_os.path.dirname(_os.path.abspath(__file__)) ','HERE=HERE ').split("def build(R):")[0].replace("MODE=argv[0] if argv else 'build'","MODE='lib'")
 exec(src)
 MODE=_args[0] if _args else 'build'; RI=int(_args[1]) if len(_args)>1 else 1
-PLAN=json.load(open('/tmp/claude-0/-home-user-Tierlist/c1503037-5087-50d1-9ca4-718cbb45521d/scratchpad/avo/plan.json'))
+PLAN=json.load(open(_os.path.join(HERE,'plan_avocado.json')))
 def round_def(i):
   r=PLAN['rounds'][i];nxt=PLAN['rounds'][i+1]['t0'] if i+1<len(PLAN['rounds']) else PLAN['end']
   ev=lambda s,e,n:[s+(k+1)/n*(e-s) for k in range(n)]
