@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Twin Finder</title>
+<style>
+:root{--bg:#0b1020;--card:#141c33;--card2:#1b2542;--line:#2a3658;--ink:#f3f6ff;--ink2:#aeb9d6;--ink3:#7482a8;--gold:#ffd23f;--red:#ff4d6a;--blue:#4fb3ff;--green:#3ddc84;--r:14px}
+*{box-sizing:border-box}html,body{margin:0;max-width:100%;overflow-x:hidden}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:18px 14px 80px}
+h1{font-size:28px;margin:6px 0 2px;letter-spacing:-.02em}.sub{color:var(--ink3);font-size:13px;margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+label.h{display:block;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin:0 0 6px}
+input[type=text],select{width:100%;background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{border:1px solid var(--line);background:var(--card2);color:var(--ink2);border-radius:999px;padding:6px 11px;font-size:13px;cursor:pointer;user-select:none}
+.chip.on{background:var(--gold);color:#111;border-color:var(--gold);font-weight:700}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.row2>*{min-width:0}
+button.go{width:100%;background:var(--gold);color:#111;border:0;border-radius:12px;padding:14px;font-size:17px;font-weight:900;cursor:pointer}
+button.ghost{background:transparent;color:var(--ink2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:13px;cursor:pointer}
+.sugg{background:var(--card2);border:1px solid var(--line);border-radius:10px;margin-top:4px;max-height:260px;overflow:auto}
+.sugg div{padding:9px 12px;border-bottom:1px solid var(--line);cursor:pointer}.sugg div:last-child{border:0}.sugg small{color:var(--ink3)}
+.twin{display:flex;gap:14px;align-items:center}
+.av{flex:0 0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;position:relative}
+.av img{position:absolute;right:-4px;bottom:-4px;width:40%;height:40%;background:#fff;border-radius:50%;padding:2px}
+.big{font-size:44px;font-weight:900;line-height:1;color:var(--gold)}
+.list .it{display:grid;grid-template-columns:30px 40px 1fr 74px;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.list .it>*{min-width:0}.list .it.own{opacity:.45}.list .it.sel{background:var(--card2);border-radius:10px}
+.nm{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta{color:var(--ink3);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pct{text-align:right;font-weight:900}.bar{height:5px;background:var(--card2);border-radius:3px;margin-top:4px}.bar i{display:block;height:5px;border-radius:3px;background:var(--ink2)}
+.cmp .st{padding:7px 0;border-bottom:1px solid var(--line)}.cmp .st:last-child{border:0}
+.cmp .lb{display:flex;justify-content:space-between;font-size:13px;color:var(--ink2)}.cmp .lb b{color:var(--ink)}
+.dual{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}.dual div{height:8px;background:var(--card2);border-radius:4px;overflow:hidden}
+.dual div i{display:block;height:8px}.dual div:first-child{transform:scaleX(-1)}
+.score{display:flex;align-items:baseline;gap:10px}.score b{font-size:34px;color:var(--gold)}
+ul.ck{list-style:none;margin:8px 0 0;padding:0}ul.ck li{padding:6px 0 6px 26px;position:relative;font-size:14px;color:var(--ink2)}
+ul.ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);font-weight:900}ul.ck li.no::before{content:"–";color:var(--ink3)}
+.tag{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--card2);color:var(--ink2);margin-left:6px}
+.muted{color:var(--ink3);font-size:12px}details summary{cursor:pointer;color:var(--ink3);font-size:13px;font-weight:700;padding:6px 0}
+.hide{display:none}
+</style></head>
+<body><div class="wrap">
+<h1>Twin Finder</h1>
+<p class="sub">Pick a player and season, see his statistical twins. Data: Opta via FotMob, top 5 leagues, 2016/17 to now. <span id="dsz"></span></p>
+
+<div class="card">
+  <label class="h">1 · Player</label>
+  <input id="q" type="text" placeholder="Type a name, e.g. Van Dijk, Kane, Mahrez" autocomplete="off">
+  <div id="sugg" class="sugg hide"></div>
+  <div id="pickwrap" class="hide"><div class="muted" style="margin-top:10px">His seasons (tap one or more; several are added together):</div><div id="pseasons" class="chips"></div></div>
+</div>
+
+<div class="card">
+  <label class="h">2 · Compare with</label>
+  <div class="row2">
+    <div><div class="muted">Seasons</div><select id="span">
+      <option value="this">This season only</option><option value="last5" selected>Last 5 seasons</option><option value="all">Every season since 2016/17</option><option value="one">One season…</option></select></div>
+    <div><div class="muted">Position</div><select id="grp">
+      <option value="auto">Same as him (auto)</option><option value="GK">Goalkeepers</option><option value="CB">Centre-backs</option><option value="FB">Full-backs</option><option value="MID">Midfielders</option><option value="AMW">10s and wingers</option><option value="ST">Strikers</option><option value="ATT">All attackers</option></select></div>
+  </div>
+  <select id="oneseason" class="hide" style="margin-top:8px"></select>
+  <div class="muted" style="margin-top:10px">Leagues</div><div id="lgs" class="chips"></div>
+  <div class="chips"><span class="chip on" id="ownchip">Show his own seasons (greyed)</span></div>
+</div>
+<button class="go" id="go">Find his twins</button>
+
+<div id="out" class="hide" style="margin-top:14px">
+  <div class="card"><div class="twin" id="twin"></div></div>
+  <div class="card"><label class="h">Good video?</label><div id="score"></div></div>
+  <div class="card"><label class="h">Top 10 · tap one to compare</label><div class="list" id="list"></div></div>
+  <div class="card"><label class="h" id="cmph">Side by side · per 90 minutes</label><div class="cmp" id="cmp"></div></div>
+  <div class="card"><label class="h">Make it a video</label>
+    <div class="muted">Copies the episode file for the video builder (tools/video-render/twin/make_episode.py). Paste it into a chat with "make this episode".</div>
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="ghost" id="copy">Copy episode file</button><span id="copied" class="muted"></span></div>
+    <pre id="epi" class="muted" style="white-space:pre-wrap;word-break:break-word"></pre></div>
+  <details class="card"><summary>How this works</summary><div class="muted" id="how"></div></details>
+</div>
+</div>
+<script src="data.js"></script>
+<script>
+// ---------- data ----------
+const D=window.TWIN_DATA, C={}; D.cols.forEach((c,i)=>C[c]=i);
+const N=D.L.length, LG=D.leagues, SEAS=D.seasons, CUR=SEAS[SEAS.length-1];
+document.getElementById('dsz').textContent=N.toLocaleString()+' player-seasons.';
+const v=(i,c)=>D.X[i][C[c]];
+function group(pos){ if(pos===11)return 'GK'; if([32,38,62,68,71,72,39,31].includes(pos))return 'FB'; if(pos>=30&&pos<40)return 'CB';
+  if(pos>=60&&pos<80)return 'MID'; if(pos>=80&&pos<100)return 'AMW'; if(pos===103||pos===104||pos===106||pos===107)return 'AMW'; if(pos>=100)return 'ST'; return 'MID'; }
+const GN={GK:'Goalkeepers',CB:'Centre-backs',FB:'Full-backs',MID:'Midfielders',AMW:'10s and wingers',ST:'Strikers',ATT:'All attackers'};
+const W={
+ ST:{npG:3,npxG:3,shots:2,SoT:1.5,conv:1,bigMiss:1,A:1,xA:1,chances:1,bigCC:1,drib:.5,passes:.5,'pass%':.5,wonHigh:.5,def:.25,rec:.25,penWon:.5},
+ AMW:{npG:3,npxG:3,shots:2,SoT:1,conv:1,A:2,xA:2,chances:2,bigCC:2,drib:1.5,'drib%':.5,passes:1,'pass%':1,long:.5,def:.5,rec:.5,wonHigh:.5,bigMiss:1,penWon:.5,tkl:.25,int:.25},
+ MID:{passes:2,'pass%':2,long:1.5,'long%':1,chances:1.5,bigCC:1,A:1,xA:1,npG:1,npxG:1,shots:.5,drib:1,def:1.5,tkl:1.5,int:1.5,rec:1.5,wonHigh:1,fouls:.5},
+ FB:{def:1.5,tkl:1.5,int:1.5,rec:1,clear:1,block:.5,chances:1.5,bigCC:1,A:1,xA:1,drib:1,passes:1,'pass%':1,long:1,npG:.5,wonHigh:.5},
+ CB:{def:2,int:2,tkl:1,rec:1,clear:2,block:1.5,passes:2,'pass%':2,long:2,'long%':1.5,npG:1,A:.5,fouls:.5},
+ GK:{'save%':3,prevented:3,saves:2,cs:1.5,conceded:1,long:1.5,'long%':1,passes:1,'pass%':1}};
+W.ATT=W.AMW;
+const LAB={npG:'Goals (no pens)',npxG:'xG (no pens)',shots:'Shots',SoT:'Shots on target',conv:'Shot conversion %',bigMiss:'Big chances missed',A:'Assists',xA:'xA',chances:'Chances created',bigCC:'Big chances made',
+ drib:'Dribbles won','drib%':'Dribble success %',passes:'Accurate passes','pass%':'Pass accuracy %',long:'Accurate long balls','long%':'Long ball accuracy %',def:'Defensive actions',tkl:'Tackles',int:'Interceptions',rec:'Ball recoveries',
+ wonHigh:'Ball won high up',fouls:'Fouls',clear:'Clearances',block:'Blocks',penWon:'Penalties won',saves:'Saves','save%':'Save %',prevented:'Goals prevented',cs:'Clean sheets',conceded:'Goals conceded'};
+const TOT=['mins','apps','G','pens','A','xG','xA','xGOT','bigCC','CC','bigMiss','penWon','prevented','cs'];
+function combine(ids){const o={};let m=0;ids.forEach(i=>m+=v(i,'mins')||0);
+  D.cols.forEach(c=>{ if(TOT.includes(c)){let s=null;ids.forEach(i=>{const x=v(i,c);if(x!=null)s=(s||0)+x});o[c]=s;}
+    else{let s=0,w=0;ids.forEach(i=>{const x=v(i,c),mm=v(i,'mins')||0;if(x!=null){s+=x*mm;w+=mm}});o[c]=w?s/w:null;} });return o;}
+function feats(r){const p=(r.mins||0)/90||1, pens=r.pens||0, nz=x=>x==null?null:x;
+  return {npG:((r.G||0)-pens)/p, npxG:r.xG==null?null:Math.max(r.xG-0.79*pens,0)/p, A:(r.A||0)/p, xA:r.xA==null?null:r.xA/p, chances:r.CC==null?null:r.CC/p,
+   bigCC:r.bigCC==null?null:r.bigCC/p, bigMiss:r.bigMiss==null?null:r.bigMiss/p, penWon:r.penWon==null?null:r.penWon/p, prevented:r.prevented==null?null:r.prevented/p, cs:r.cs==null?null:r.cs/p,
+   shots:nz(r.shots),SoT:nz(r.SoT),conv:nz(r.conv),drib:nz(r.drib),'drib%':nz(r['drib%']),passes:nz(r.passes),'pass%':nz(r['pass%']),long:nz(r.long),'long%':nz(r['long%']),
+   def:nz(r.def),tkl:nz(r.tkl),int:nz(r.int),rec:nz(r.rec),wonHigh:nz(r.wonHigh),fouls:nz(r.fouls),clear:nz(r.clear),block:nz(r.block),saves:nz(r.saves),'save%':nz(r['save%']),conceded:nz(r.conceded)};}
+const row=i=>{const o={};D.cols.forEach(c=>o[c]=v(i,c));return o};
+const F=new Array(N); for(let i=0;i<N;i++)F[i]=feats(row(i));
+const G=new Array(N); for(let i=0;i<N;i++)G[i]=group(D.P[i]);
+const inGroup=(i,g)=>g==='ATT'?(G[i]==='AMW'||G[i]==='ST'):G[i]===g;
+const minOK=i=>(v(i,'mins')||0)>=(SEAS[D.S[i]]===CUR?450:900);
+// pools: league + season + group, ranked 0-100 per stat
+const POOL={};
+function pool(l,s,g){const k=l+'|'+s+'|'+g; if(POOL[k])return POOL[k]; const ids=[];for(let i=0;i<N;i++)if(D.L[i]===l&&D.S[i]===s&&inGroup(i,g)&&minOK(i))ids.push(i);
+  const keys=Object.keys(W[g]); const sorted={}; keys.forEach(k=>{sorted[k]=ids.map(i=>F[i][k]).filter(x=>x!=null).sort((a,b)=>a-b)}); return POOL[k]={ids,sorted};}
+function pct(sorted,x){if(x==null||!sorted.length)return null;let lo=0,hi=sorted.length;while(lo<hi){const m=(lo+hi)>>1;if(sorted[m]<x)lo=m+1;else hi=m}let eq=lo;while(eq<sorted.length&&sorted[eq]===x)eq++;return 100*(lo+0.5*(eq-lo))/sorted.length;}
+function pctOf(f,P,g){const o={};Object.keys(W[g]).forEach(k=>o[k]=pct(P.sorted[k],f[k]));return o;}
+function dist(a,b,w){let s=0,t=0;for(const k in w){if(a[k]==null||b[k]==null)continue;s+=w[k]*(a[k]-b[k])**2;t+=w[k]}return t?Math.sqrt(s/t):99;}
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+// ---------- names, clubs ----------
+const pname=i=>D.names[D.N[i]];
+const club=t=>(D.teams&&D.teams[t])||('Team '+t);
+const ccol=t=>(D.teamColors&&D.teamColors[t])||'#33416b';
+const badge=t=>(D.badges&&D.badges[t])||null;
+function light(c){const m=(c||'').match(/^#?([0-9a-f]{6})$/i);if(!m)return false;const n=parseInt(m[1],16);return (0.299*(n>>16)+0.587*((n>>8)&255)+0.114*(n&255))>170;}
+function av(i,size){const n=pname(i).split(' ');const ini=(n.length>1?n[0][0]+n[n.length-1][0]:n[0].slice(0,2)).toUpperCase();const b=badge(D.T[i]);const c=ccol(D.T[i]);
+  return `<div class="av" style="width:${size}px;height:${size}px;background:${c};color:${light(c)?'#111':'#fff'};border:${light(c)?'1px solid #888':'0'};font-size:${size*0.36}px">${ini}${b?`<img src="${b}">`:''}</div>`;}
+const sname=s=>s.slice(2);
+const PART=['van','de','da','di','dos','der','den','le','la','el','von','ter','du','del'];
+function shortName(n){const w=n.split(' ');let k=w.length-1;while(k>0&&PART.includes(w[k-1].toLowerCase()))k--;const s=w.slice(k).join(' ');return s.charAt(0).toUpperCase()+s.slice(1);}
+// big clubs: the top 25% of each league by the average rating of their regular players (a fame stand-in)
+const BIG=(()=>{const acc={};for(let i=0;i<N;i++){if((v(i,'mins')||0)<1500||v(i,'rating')==null)continue;const k=D.L[i]+'|'+D.T[i];(acc[k]=acc[k]||[]).push(v(i,'rating'))}
+  const byL={};for(const k in acc){const [l,t]=k.split('|');const a=acc[k];if(a.length<8)continue;(byL[l]=byL[l]||[]).push([t,a.reduce((x,y)=>x+y,0)/a.length])}
+  const out=new Set();for(const l in byL){const arr=byL[l].sort((a,b)=>b[1]-a[1]);arr.slice(0,Math.max(4,Math.round(arr.length*0.25))).forEach(x=>out.add(+x[0]))}return out;})();
+// ---------- UI ----------
+const $=id=>document.getElementById(id); let PID=null, PICK=new Set();
+const LEAGS=[...new Set(D.L)]; const LON=new Set(LEAGS);
+$('lgs').innerHTML=LEAGS.map(l=>`<span class="chip on" data-l="${l}">${LG[l]}</span>`).join('');
+$('lgs').onclick=e=>{const c=e.target.closest('.chip');if(!c)return;const l=+c.dataset.l;LON.has(l)?LON.delete(l):LON.add(l);c.classList.toggle('on');};
+$('ownchip').onclick=e=>e.target.classList.toggle('on');
+$('oneseason').innerHTML=SEAS.slice().reverse().map((s,i)=>`<option value="${SEAS.indexOf(s)}">${s}</option>`).join('');
+$('span').onchange=()=>$('oneseason').classList.toggle('hide',$('span').value!=='one');
+// player index: name -> list of rows
+const BYNAME={};for(let i=0;i<N;i++){(BYNAME[pname(i)]=BYNAME[pname(i)]||[]).push(i)}
+const NAMES=Object.keys(BYNAME); const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const NN=NAMES.map(n=>norm(n));
+$('q').oninput=()=>{const q=norm($('q').value.trim());if(q.length<2){$('sugg').classList.add('hide');return}
+  const hits=[];for(let k=0;k<NAMES.length&&hits.length<12;k++)if(NN[k].includes(q))hits.push(NAMES[k]);
+  $('sugg').innerHTML=hits.map(n=>{const r=BYNAME[n];const last=r[r.length-1];return `<div data-n="${n.replace(/"/g,'&quot;')}">${n} <small>· ${club(D.T[last])} · ${r.length} season${r.length>1?'s':''}</small></div>`}).join('')||'<div class="muted">No player found</div>';
+  $('sugg').classList.remove('hide');};
+$('sugg').onclick=e=>{const d=e.target.closest('div[data-n]');if(!d)return;PID=d.dataset.n;$('q').value=PID;$('sugg').classList.add('hide');PICK=new Set();
+  const r=BYNAME[PID].slice().sort((a,b)=>D.S[b]-D.S[a]);
+  $('pseasons').innerHTML=r.map(i=>`<span class="chip" data-i="${i}">${SEAS[D.S[i]]} · ${club(D.T[i])}${LEAGS.length>1?' · '+LG[D.L[i]]:''} · ${Math.round(v(i,'mins'))}′</span>`).join('');
+  const best=r.filter(i=>minOK(i)).sort((a,b)=>(v(b,'rating')||0)-(v(a,'rating')||0))[0]||r[0]; PICK.add(best);
+  [...$('pseasons').children].forEach(c=>c.classList.toggle('on',PICK.has(+c.dataset.i)));$('pickwrap').classList.remove('hide');};
+$('pseasons').onclick=e=>{const c=e.target.closest('.chip');if(!c)return;const i=+c.dataset.i;PICK.has(i)?PICK.delete(i):PICK.add(i);c.classList.toggle('on');};
+$('go').onclick=run;
+let LAST=null;
+function run(){ if(!PICK.size){alert('Pick a player and a season first');return}
+  const ids=[...PICK].sort((a,b)=>D.S[a]-D.S[b]); const ref=ids[ids.length-1];
+  const g=$('grp').value==='auto'?G[ref]:$('grp').value; const w=W[g];
+  const tf=feats(combine(ids)); const tp=pctOf(tf,pool(D.L[ref],D.S[ref],g),g);
+  let seas; const sp=$('span').value, ci=SEAS.length-1;
+  if(sp==='this')seas=[ci];else if(sp==='last5')seas=[ci-4,ci-3,ci-2,ci-1,ci];else if(sp==='all')seas=SEAS.map((s,i)=>i);else seas=[+$('oneseason').value];
+  const showOwn=$('ownchip').classList.contains('on');
+  const cand=[];for(let i=0;i<N;i++){if(!LON.has(D.L[i])||!seas.includes(D.S[i])||!inGroup(i,g)||!minOK(i)||ids.includes(i))continue;if(!showOwn&&pname(i)===PID)continue;cand.push(i)}
+  if(!cand.length){alert('Nobody to compare with. Widen the seasons or leagues.');return}
+  const cp=cand.map(i=>pctOf(F[i],pool(D.L[i],D.S[i],g),g));
+  const order=cand.map((i,k)=>[dist(tp,cp[k],w),k]).sort((a,b)=>a[0]-b[0]);
+  // 2,000 tests (other players only)
+  const others=order.filter(([d,k])=>pname(cand[k])!==PID).slice(0,60).map(x=>x[1]); const wins={}; const R=rng(7);
+  for(let n=0;n<2000;n++){const wr={};for(const k in w)wr[k]=w[k]*(0.5+R());let b=null,bd=1e9;for(const k of others){const d=dist(tp,cp[k],wr);if(d<bd){bd=d;b=k}}wins[b]=(wins[b]||0)+1;}
+  LAST={ids,ref,g,w,tf,tp,cand,cp,order,wins,seas};
+  render(0);}
+function render(sel){ const {ids,ref,g,w,tf,tp,cand,cp,order,wins}=LAST; $('out').classList.remove('hide');
+  const top=order.slice(0,10); const twinK=order.find(([d,k])=>pname(cand[k])!==PID)[1], ti=cand[twinK];
+  const twinM=100-order.find(x=>x[1]===twinK)[0]; const sure=Math.round(100*(wins[twinK]||0)/2000);
+  const tgtS=ids.map(i=>sname(SEAS[D.S[i]])).join(' + ');
+  $('twin').innerHTML=`${av(ti,84)}<div style="min-width:0"><div class="muted">${PID.toUpperCase()} ${tgtS} · ${GN[g]}</div><div style="font-size:24px;font-weight:900">${pname(ti)}</div>
+   <div class="muted">${SEAS[D.S[ti]]} · ${club(D.T[ti])} · ${LG[D.L[ti]]}</div><div style="display:flex;gap:16px;align-items:baseline;margin-top:6px"><span class="big">${twinM.toFixed(0)}%</span><span class="muted">match · first in <b style="color:var(--ink)">${sure}%</b> of 2,000 tests</span></div></div>`;
+  $('list').innerHTML=top.map(([d,k],n)=>{const i=cand[k],own=pname(i)===PID;const m=100-d;
+    return `<div class="it ${own?'own':''} ${k===(sel||twinK)?'sel':''}" data-k="${k}"><b style="color:var(--ink3)">#${n+1}</b>${av(i,38)}<div><div class="nm">${pname(i)}${own?'<span class="tag">himself</span>':''}${k===twinK?'<span class="tag" style="background:var(--gold);color:#111">twin</span>':''}</div>
+      <div class="meta">${sname(SEAS[D.S[i]])} · ${club(D.T[i])}${LON.size>1?' · '+LG[D.L[i]]:''}</div></div><div class="pct">${m.toFixed(0)}%<div class="bar"><i style="width:${Math.max(0,(m-40)/60*100)}%"></i></div></div></div>`}).join('');
+  $('list').onclick=e=>{const it=e.target.closest('.it');if(!it)return;render(+it.dataset.k);};
+  const ck=sel||twinK, ci=cand[ck], cf=F[ci];
+  $('cmph').textContent=`${shortName(PID)} ${tgtS} vs ${pname(ci)} ${sname(SEAS[D.S[ci]])} · per 90 minutes`;
+  const keys=Object.keys(w).filter(k=>tf[k]!=null&&cf[k]!=null).sort((a,b)=>w[b]-w[a]);
+  const gap=k=>Math.abs((tp[k]??50)-(cp[ck][k]??50));
+  $('cmp').innerHTML=keys.map(k=>{const a=tf[k],b=cf[k],mx=Math.max(Math.abs(a),Math.abs(b))||1;const f=x=>Math.abs(x)>=10?x.toFixed(0):x.toFixed(2);
+    return `<div class="st"><div class="lb"><span>${LAB[k]}${w[k]>=2?' <span class="tag">counts most</span>':''}${gap(k)<8?' <span class="tag" style="color:var(--green)">same</span>':gap(k)>35?' <span class="tag" style="color:var(--red)">different</span>':''}</span><span><b style="color:var(--red)">${f(a)}</b> · <b style="color:var(--blue)">${f(b)}</b></span></div>
+     <div class="dual"><div><i style="width:${Math.abs(a)/mx*100}%;background:var(--red)"></i></div><div><i style="width:${Math.abs(b)/mx*100}%;background:var(--blue)"></i></div></div></div>`}).join('');
+  // ---- good video? ----
+  const ownTop=top.filter(([d,k])=>pname(cand[k])===PID).length;
+  const rank=order.map(([d,k])=>cand[k]);
+  const famous=[]; const seen=new Set([PID]); order.forEach(([d,k],n)=>{const i=cand[k];if(n<12||seen.has(pname(i)))return;seen.add(pname(i));if(BIG.has(D.T[i])&&(v(i,'rating')||0)>=7.1&&(v(i,'mins')||0)>=2000)famous.push([pname(i),n+1,SEAS[D.S[i]]])});
+  const ft=famous.sort((a,b)=>a[1]-b[1]).slice(0,4);
+  const crossClub=D.T[ti]!==D.T[ref], crossLeague=D.L[ti]!==D.L[ref], crossEra=Math.abs(D.S[ti]-D.S[ref])>=4, underrated=!BIG.has(D.T[ti])&&BIG.has(D.T[ref]);
+  const pts=[[twinM>=80,'A strong twin ('+twinM.toFixed(0)+'% match)',2],[sure>=60,'A clear winner (first in '+sure+'% of tests)',1],[underrated,'A surprise: a big-club star, a twin from a smaller club',2],
+    [crossClub,'A different club',1],[crossLeague,'A different league',1],[crossEra,'A different era (4+ seasons apart)',1],[ownTop>0,'His own seasons are in the top 10 (the "they don\'t count" moment)',1],[ft.length>0,'A famous name far down the list for "You\'d think…?"',2]];
+  const sc=Math.round(10*pts.reduce((s,p)=>s+(p[0]?p[2]:0),0)/pts.reduce((s,p)=>s+p[2],0));
+  $('score').innerHTML=`<div class="score"><b>${sc}/10</b><span class="muted">for a Stat Twins video</span></div><ul class="ck">${pts.map(p=>`<li class="${p[0]?'':'no'}">${p[1]}</li>`).join('')}</ul>`+
+    (ft.length?`<div class="muted" style="margin-top:6px">"You'd think…?" ideas: ${ft.map(f=>`${f[0]} (${f[2]}) is ${f[1]}th`).join(' · ')}</div>`:'');
+  const ep={player:PID,season:SEAS[D.S[ref]],seasons:ids.map(i=>SEAS[D.S[i]]),league:LG[D.L[ref]],position:GN[g],compare:{seasons:LAST.seas.map(s=>SEAS[s]),leagues:[...LON].map(l=>LG[l])},
+    short:shortName(PID),series:'STAT TWINS',surprise:ft.map(f=>f[0]),twin:pname(ti)+' '+SEAS[D.S[ti]]};
+  $('epi').textContent=JSON.stringify(ep,null,1);
+  $('copy').onclick=()=>{navigator.clipboard.writeText(JSON.stringify(ep)).then(()=>$('copied').textContent='Copied',()=>$('copied').textContent='Select the text below and copy it')};
+  $('how').innerHTML=`<p>He is compared only with <b>${GN[g]}</b> who played 900+ minutes in a season (450+ this season). Every stat is per 90 minutes, then ranked 0–100 against the players in the same league and season, so leagues and years compare fairly. The stats that count, and how much: ${Object.entries(w).map(([k,x])=>LAB[k]+' ×'+x).join(', ')}. Match % = 100 minus the weighted average gap in those ranks (a typical player is about 50–55%). The 2,000 tests shuffle every weight ±50% and count how often the twin stays first. xG and xA are left out when either season has none.</p>`;
+}
+</script></body></html>
