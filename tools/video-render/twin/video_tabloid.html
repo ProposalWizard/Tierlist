@@ -1,0 +1,233 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#0a0e1a}canvas{display:block}</style></head>
+<body><canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Stat Twins engine v3 look 'matchday' (dark broadcast style, 8 Nov 2026), same scenes as v2.
+// Stat Twins engine v2 (Mikey's notes, 7 Nov 2026): faces, club badges, flags, % match,
+// a long countdown with a spotlight card, real per-90 numbers. Every frame is drawn from t alone.
+// boot(timeline, {meta:{series,source,imgDir}, scenes:{<lineId>:{type,...}}})  -> Promise (images preload)
+const C=document.getElementById('c'), x=C.getContext('2d');
+const CREAM='#f1ede2', CARD='#ffffff', INK='#111111', INK2='#333333', INK3='#6b6b6b', RED='#e10600', LINE='#111111', BLUE='#0047bb', TRACK='#e4dfd2', GOLD='#e10600', BAR='#111111';
+const SX0=64, SX1=950, CY0=196, CY1=1080;
+let TL, SC, META, IMG={};
+const F=(w,s)=>`${w} ${s}px Inter, "Inter Display", sans-serif`;
+const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+const ease=p=>{p=clamp(p);return 1-Math.pow(1-p,3)};
+const back=p=>{p=clamp(p);const c1=1.6,c3=c1+1;return 1+c3*Math.pow(p-1,3)+c1*Math.pow(p-1,2)};
+const eio=p=>{p=clamp(p);return p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2};
+function rr(X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath();}
+function T(s,X,Y,font,col,align='left',a=1){if(a<=0)return;x.save();x.globalAlpha*=a;x.font=font;x.fillStyle=col;x.textAlign=align;x.textBaseline='alphabetic';x.fillText(s,X,Y);x.restore();}
+function fit(s,w,size,maxW){x.font=F(w,size);const m=x.measureText(s).width;return m>maxW?size*maxW/m:size;}
+function seg(t){let s=TL.segs[0];for(const q of TL.segs) if(t>=q.start-0.05) s=q;return s;}
+function wordT(s,pre){if(typeof pre==='number')return s.start+pre;const w=s.words.find(w=>w.w.replace(/[^A-Z0-9#%.,']/gi,'').toUpperCase().startsWith(String(pre).toUpperCase()));return w?w.t:s.start;}
+// pictures
+function face(key,cx,cy,r,a=1,ring=null){ if(a<=0)return; x.save();x.globalAlpha*=a;
+  x.save();x.shadowColor='rgba(0,0,0,0.6)';x.shadowBlur=r*0.35;x.beginPath();x.arc(cx,cy,r,0,7);const fg=x.createLinearGradient(0,cy-r,0,cy+r);fg.addColorStop(0,'#d9d4c7');fg.addColorStop(1,'#bdb7a8');x.fillStyle=fg;x.fill();x.restore();
+  const im=IMG[key]; if(im){x.save();x.beginPath();x.arc(cx,cy,r,0,7);x.clip();const s=r*2.05;x.drawImage(im,cx-s/2,cy-r*0.98,s,s);x.restore();}
+  if(ring){x.save();x.shadowColor=ring;x.shadowBlur=r*0.4;x.lineWidth=Math.max(3,r*0.07);x.strokeStyle=ring;x.beginPath();x.arc(cx,cy,r,0,7);x.stroke();x.restore();x.lineWidth=Math.max(3,r*0.07);x.strokeStyle=ring;x.beginPath();x.arc(cx,cy,r,0,7);x.stroke();}
+  x.restore();}
+function icon(key,X,Y,s,a=1){const im=IMG[key]; if(!im||a<=0)return; x.save();x.globalAlpha*=a;const k=Math.min(s/im.width,s/im.height);x.drawImage(im,X+(s-im.width*k)/2,Y+(s-im.height*k)/2,im.width*k,im.height*k);x.restore();}
+function flag(key,X,Y,s,a=1){const im=IMG[key]; if(!im||a<=0)return; x.save();x.globalAlpha*=a;x.beginPath();x.arc(X+s/2,Y+s/2,s/2,0,7);x.clip();x.drawImage(im,X,Y,s,s);x.restore();}
+
+function bgNight(){ x.fillStyle='#f1ede2';x.fillRect(0,0,1080,1920);
+  x.fillStyle='rgba(0,0,0,0.06)'; for(let yy=0;yy<1920;yy+=14) for(let xx=(yy/14%2)*7;xx<1080;xx+=14){x.beginPath();x.arc(xx,yy,2.2,0,7);x.fill();}
+  x.fillStyle='rgba(0,0,0,0.08)'; for(let c=0;c<3;c++) for(let yy=1560;yy<1900;yy+=16){x.fillRect(64+c*330,yy,300*(0.6+0.4*((yy*7+c*13)%10)/10),6);}
+  x.fillStyle=RED; x.fillRect(0,0,1080,118); x.save(); x.font=F(900,64); x.fillStyle='#fff'; x.textAlign='left'; x.fillText('THE TWIN',64,86); x.font=F(900,26); x.fillText('EXCLUSIVE · STATS DON\u2019T LIE',470,78); x.restore();}
+function chrome(){
+  bgNight();
+  T((META.series||'STAT TWINS').toUpperCase(),SX0,160,F(900,30),'#111');
+  T(META.source||'',SX0,1500,F(500,22),INK3);
+}
+function cardBg(){x.fillStyle='#111';rr(SX0+12,CY0+12,SX1-SX0,CY1-CY0,6);x.fill();x.fillStyle='#fff';rr(SX0,CY0,SX1-SX0,CY1-CY0,6);x.fill();x.strokeStyle='#111';x.lineWidth=6;rr(SX0,CY0,SX1-SX0,CY1-CY0,6);x.stroke();}
+function enter(p,cont){cardBg();const e=cont?1:ease(p/0.3);x.save();x.globalAlpha=e;x.translate(0,(1-e)*30);return()=>x.restore();}
+
+// captions
+function chunks(s){const out=[];let cur=[];for(const w of s.words){cur.push(w);if(cur.length>=3||/[.,?!:]$/.test(w.w)){out.push(cur);cur=[];}}if(cur.length)out.push(cur);return out;}
+function captions(t,s){
+  if(t>s.start+s.vo+0.25) return; const cs=chunks(s); let cur=null;
+  for(const c of cs) if(t>=c[0].t-0.04) cur=c; if(!cur) return;
+  const pop=ease((t-cur[0].t)/0.12), text=cur.map(w=>w.w).join(' ');
+  const size=fit(text,900,80,SX1-SX0-20); x.font=F(900,size); let X=(SX0+SX1)/2-x.measureText(text).width/2; const Y=1300;
+  x.save();x.translate((SX0+SX1)/2,Y);x.scale(.92+.08*pop,.92+.08*pop);x.translate(-(SX0+SX1)/2,-Y);
+  for(let i=0;i<cur.length;i++){const w=cur[i];const on=t>=w.t-0.03;const last=(i===cur.length-1)||t<cur[i+1].t-0.03;
+    x.globalAlpha=on?1:.35;x.font=F(900,size);x.textAlign='left';if(on&&last){const ww=x.measureText(w.w).width;x.fillStyle='#ffe600';x.fillRect(X-8,Y-size*0.82,ww+16,size*1.0);}x.fillStyle=on&&last?RED:'#111';x.fillText(w.w,X,Y);X+=x.measureText(w.w+' ').width;}
+  x.restore();
+}
+function clubCol(key){return (META.clubColors||{})[key]||'#3fa9ff';}
+function spot(X,Y,W,H,club){x.fillStyle='#ffe600';rr(X,Y,W,H,4);x.fill();x.strokeStyle='#111';x.lineWidth=5;rr(X,Y,W,H,4);x.stroke();x.fillStyle=RED;x.fillRect(X,Y,14,H);}
+const S={};
+// ---- intro: who + what data, one card
+S.intro=(sc,p,s,t)=>{ const done=enter(p);
+  const a1=back((p-0.05)/0.45); face(sc.face,SX0+190,CY0+215,150*clamp(a1,0,1.2),clamp(a1*2),RED);
+  T('FINDING THE',SX0+380,CY0+120,F(800,28),RED,'left',ease((p-.1)/.3)); T('STATISTICAL TWIN OF',SX0+380,CY0+156,F(800,28),RED,'left',ease((p-.1)/.3));
+  const ns=fit(sc.name,900,92,SX1-SX0-420); T(sc.name,SX0+380,CY0+250,F(900,ns),INK,'left',ease((p-.2)/.3));
+  T(sc.season,SX0+380,CY0+300,F(800,40),INK,'left',ease((p-.3)/.3));
+  icon(sc.club,SX0+380,CY0+320,64,ease((p-.4)/.3)); flag(sc.flag,SX0+460,CY0+326,52,ease((p-.45)/.3));
+  x.fillStyle=LINE;x.fillRect(SX0+44,CY0+440,SX1-SX0-88,2);
+  const fy=sc.mystery?CY0+505:CY0+530, fs=sc.mystery?62:92;
+  (sc.facts||[]).forEach((f,i)=>{const at=sc.at?wordT(s,sc.at[i]):s.start+0.8+i*0.6;const a=ease((t-at)/0.35);const y=fy+i*fs;
+    T(f[0],SX0+44,y,F(900,54),RED,'left',a); T(f[1],SX0+44+fit(f[0],900,54,999)*0+ (x.font=F(900,54),x.measureText(f[0]).width)+22,y,F(700,34),INK,'left',a);});
+  // two blurred twins to come (Mikey, 8 Nov 2026): unrecognisable until the reveals
+  (sc.mystery||[]).forEach((m,i)=>{const at=s.start+(m.delay!=null?m.delay:0.35+i*0.25);const b=back((t-at)/0.45);if(t<at)return;
+    const cx=(SX0+SX1)/2+(i?200:-200), cy=CY0+790, r=76*clamp(b,0,1.15);
+    T(m.label,cx,CY0+698,F(900,30),i?BLUE:RED,'center',clamp(b*2));
+    x.save();x.filter='blur(26px)';face(m.face,cx,cy,r,1,null);x.restore();
+    x.lineWidth=7;x.strokeStyle=i?BLUE:RED;x.beginPath();x.arc(cx,cy,r,0,7);x.stroke();
+    T('?',cx,cy+r*0.42,F(900,r*1.15),'#fff','center',clamp(b*2));});
+  done();};
+// ---- countdown with spotlight; one scene per line, `upto` = lowest rank revealed in this line
+S.countdown=(sc,p,s,t)=>{ const L=SC.__lists[sc.list]; const done=enter(p,sc.cont);
+  const rows=L.rows, n=rows.length; let revealT=sc.at?wordT(s,sc.at):s.start+0.15; let k=sc.upto; // rank being revealed now (1-based)
+  if(sc.steps){ // several ranks revealed in one line: [[rank, word], ...] in order
+    k=sc.steps[0][0]+1; revealT=s.start; for(const [rk,w] of sc.steps){const tt=wordT(s,w); if(t>=tt){k=rk;revealT=tt;}} if(k>n){k=sc.steps[0][0];revealT=wordT(s,sc.steps[0][1]);} }
+  // header
+  T(L.title,SX0+44,CY0+70,F(900,46),INK); T(L.sub.toUpperCase(),SX0+44,CY0+102,F(600,20),INK3);
+  // spotlight (top)
+  const spY=CY0+130, spH=300; const cur=(t>=revealT)?k:k+1; // the player in the big card: new one once revealed, else the last one
+  const sp=(cur&&cur<=n)?rows[cur-1]:null; const rT=(cur===k)?revealT:-99; const ra=back((t-rT)/0.45), sa=ease((t-rT)/0.3);
+  {const cr=(sc.show&&sc.show.length&&t>=(sc.at!=null?wordT(s,sc.at):0))?L.rows[sc.show[0]-1]:(sc.prevShow&&sc.prevShow.length?L.rows[sc.prevShow[0]-1]:(sc.upto?L.rows[Math.min(sc.upto,L.rows.length)-1]:L.target)); spot(SX0+30,spY,SX1-SX0-60,spH,(sc.aside&&t>=wordT(s,sc.at))?sc.aside.club:(cr||L.target).club);}
+  const tx=SX0+290, tw=SX1-60-tx;
+  if(!sp){ // target shown before the first reveal
+    const g=L.target; face(g.face,SX0+150,spY+150,105,1,INK3); T('MATCHING',tx,spY+95,F(800,24),INK3);
+    T(g.name,tx,spY+165,F(900,fit(g.name,900,56,tw)),INK); T(g.season,tx,spY+210,F(700,30),INK2);
+    T('#'+k+' ?',SX1-60,spY+95,F(900,40),INK3,'right',clamp((t-s.start)/0.2));
+  } else {
+    const K=cur; face(sp.face,SX0+150,spY+150,112*clamp(ra,0,1.15),clamp(ra*2),K===1?RED:null);
+    T('#'+K,tx,spY+92,F(900,40),K===1?RED:INK3,'left',sa);
+    const pc=Math.round(sp.match*clamp((t-rT)/0.6)); T(pc+'% match',SX1-60,spY+92,F(900,48),K===1?RED:INK,'right',sa);
+    T(sp.name,tx,spY+160,F(900,fit(sp.name,900,60,tw)),K===1?RED:INK,'left',sa);
+    T(sp.season,tx,spY+208,F(700,30),INK2,'left',sa); x.font=F(700,30); const sw=x.measureText(sp.season).width;
+    icon(sp.club,tx+sw+16,spY+176,44,sa); flag(sp.flag,tx+sw+70,spY+180,36,sa);
+    const ln=sp.sure&&K===1?sp.sure:sp.line; if(ln) T(ln,tx,spY+258,F(700,28),K===1?RED:INK2,'left',ease((t-rT-0.5)/0.3));
+  }
+  // list (bottom-up)
+  const ly=spY+spH+24, rowH=Math.min(70,(CY1-ly-14)/n);
+  for(let i=0;i<n;i++){const r=rows[i], rank=i+1, yy=ly+i*rowH;
+    const shown = rank>k || (rank===k && t>=revealT);
+    T('#'+rank,SX0+44,yy+rowH*0.62,F(800,24),rank===1&&shown?RED:INK3);
+    if(!shown){x.fillStyle=TRACK;rr(SX0+96,yy+8,SX1-SX0-140,rowH-16,10);x.fill();T('?',(SX0+SX1)/2+20,yy+rowH*0.66,F(900,28),INK3,'center');continue;}
+    const a=rank===k?ease((t-revealT)/0.4):1; const fr=rowH*0.38;
+    face(r.face,SX0+96+fr,yy+rowH/2,fr,a); const nx=SX0+96+fr*2+16;
+    T(r.name,nx,yy+rowH*0.5,F(900,fit(r.name,900,28,330)),rank===1?RED:INK,'left',a);
+    T(r.season,nx,yy+rowH*0.83,F(600,18),INK3,'left',a);
+    icon(r.club,SX0+560,yy+rowH/2-17,34,a); flag(r.flag,SX0+604,yy+rowH/2-14,28,a);
+    const bw=150*((r.match-50)/50); x.globalAlpha=a; x.fillStyle=rank===1?RED:BAR; rr(SX1-44-60-bw-14,yy+rowH/2-8,bw,16,5);x.fill(); x.globalAlpha=1;
+    T(Math.round(r.match)+'%',SX1-44,yy+rowH*0.64,F(900,28),rank===1?RED:INK,'right',a);}
+  done();};
+// ---- real numbers, two players, per 90
+S.compare=(sc,p,s,t)=>{ const done=enter(p);
+  T(sc.kicker.toUpperCase(),SX0+44,CY0+60,F(700,22),INK3); T(sc.title,SX0+44,CY0+118,F(900,fit(sc.title,900,56,SX1-SX0-88)),INK);
+  const hy=CY0+150; [[sc.a,RED,SX0+44],[sc.b,BLUE,SX0+470]].forEach(([pl,col,X])=>{face(pl.face,X+40,hy+46,40,1,col);T(pl.name,X+94,hy+40,F(900,fit(pl.name,900,30,300)),col);T(pl.season,X+94,hy+74,F(600,22),INK2);});
+  const y0=hy+130, n=sc.rows.length, rowH=Math.min(150,(CY1-30-y0)/n), bx=SX0+44, bw=SX1-SX0-88-150;
+  sc.rows.forEach((r,i)=>{const at=sc.at?wordT(s,sc.at[i]):s.start+0.3+i*(s.vo*0.7/n);const a=ease((t-at)/0.5);const yy=y0+i*rowH;
+    x.save();x.globalAlpha=clamp(a*2);T(r.label,bx,yy+30,F(800,30),INK);T(r.unit||'per 90',bx+fit('x',800,30,999)*0+ (x.font=F(800,30),x.measureText(r.label).width)+14,yy+30,F(500,22),INK3);
+    const mx=Math.max(r.a,r.b)*1.08;
+    [[r.a,RED,0],[r.b,BLUE,1]].forEach(([v,col,j])=>{const yb=yy+46+j*36;x.fillStyle=TRACK;rr(bx,yb,bw,24,6);x.fill();x.fillStyle=col;rr(bx,yb,Math.max(6,bw*v/mx*a),24,6);x.fill();
+      T((j?r.bTxt:r.aTxt)||String(v),SX1-44,yb+22,F(900,32),col,'right');});
+    if(r.note) T(r.note,bx,yy+rowH-10,F(600,20),INK2);
+    x.restore();});
+  done();};
+// ---- big statement card (e.g. "Still #1 in 8 of 10 tests")
+S.statement=(sc,p,s,t)=>{ const done=enter(p);
+  if(sc.face) face(sc.face,(SX0+SX1)/2,CY0+230,140,back((p-0.05)/0.45),RED);
+  (sc.lines||[]).forEach((l,i)=>{const at=sc.at?wordT(s,sc.at[i]):s.start+0.2+i*0.5;const a=ease((t-at)/0.35);const sz=fit(l[0],900,l[1]||64,SX1-SX0-88);
+    T(l[0],(SX0+SX1)/2,CY0+(sc.face?470:200)+i*110,F(900,sz),l[2]||INK,'center',a);});
+  if(sc.dots){const at=wordT(s,sc.dots.at);const n=sc.dots.total||10;for(let i=0;i<n;i++){const a=ease((t-at-i*0.08)/0.25);const sp=Math.min(72,(SX1-SX0-120)/n), cx=(SX0+SX1)/2+(i-(n-1)/2)*sp, cy=CY1-120;
+    x.globalAlpha=a;x.fillStyle=i<sc.dots.n?RED:TRACK;x.beginPath();x.arc(cx,cy,Math.min(26,sp*0.38),0,7);x.fill();x.globalAlpha=1;}}
+  done();};
+S.end=(sc,p,s,t)=>{ bgNight(); const a=ease(p/0.4), cx=(SX0+SX1)/2;
+  if(sc.faces){sc.faces.forEach((f,i)=>face(f,cx+(i?110:-110),420,120,back((p-0.1-i*0.15)/0.45),i?BLUE:RED));T('=',cx,450,F(900,90),INK,'center',a);}
+  T('KNOWITBALL',cx,700,F(900,110),INK,'center',a);x.fillStyle=RED;x.globalAlpha=a;x.fillRect(cx-90,735,180,8);x.globalAlpha=1;
+  (sc.lines||[]).forEach((l,i)=>T(l,cx,860+i*86,F(900,68),i===0?RED:INK,'center',ease((p-0.3-i*0.15)/0.4)));
+  const pa=ease((p-0.6)/0.4);x.save();x.globalAlpha=pa;x.font=F(800,44);const w=x.measureText('knowitball.co.uk').width+70;x.fillStyle='#1f9d55';rr(cx-w/2,1080,w,92,46);x.fill();T('knowitball.co.uk',cx,1142,F(800,44),'#fff','center');x.restore();};
+
+// ---- countdown v2 (Mikey, 8 Nov 2026): the target's own seasons first (greyed, not counted), then from the
+// bottom up; a player who is in the list more than once shows all his places together; the twin is decided last.
+// scene: {type:'cd2', list, show:[ranks revealed in this line], before:[ranks already shown], at:word, prevShow:[...], twinAt:word?}
+S.cd2=(sc,p,s,t)=>{ const L=SC.__lists[sc.list]; const done=enter(p,sc.cont); const rows=L.rows,n=rows.length;
+  T(L.title,SX0+44,CY0+70,F(900,46),INK); T(L.sub.toUpperCase(),SX0+44,CY0+102,F(600,20),INK3);
+  const revealT=sc.at!=null?wordT(s,sc.at):s.start+0.15; const now=t>=revealT;
+  const grp=(now&&!sc.aside)?(sc.show||[]):(sc.prevShow||[]); const gT=now?revealT:-99; const ga=ease((t-gT)/0.3), gr=back((t-gT)/0.45);
+  const twinT=sc.twinAt!=null?wordT(s,sc.twinAt):null; const twinOn=twinT!=null&&t>=twinT;
+  const spY=CY0+130, spH=300, tx=SX0+290, tw=SX1-60-tx;
+  {const cr=(sc.show&&sc.show.length&&t>=(sc.at!=null?wordT(s,sc.at):0))?L.rows[sc.show[0]-1]:(sc.prevShow&&sc.prevShow.length?L.rows[sc.prevShow[0]-1]:(sc.upto?L.rows[Math.min(sc.upto,L.rows.length)-1]:L.target)); spot(SX0+30,spY,SX1-SX0-60,spH,(sc.aside&&t>=wordT(s,sc.at))?sc.aside.club:(cr||L.target).club);}
+  const side=sc.from||0, slide=side*(1-ease((t-gT)/0.35))*260; x.save(); x.beginPath(); x.rect(SX0+30,spY,SX1-SX0-60,spH); x.clip(); x.translate(slide,0);
+  if(sc.mystery&&now){ const m=sc.mystery; x.save();x.filter='blur(18px)';face(m.face,SX0+150,spY+150,112,1,null);x.restore();
+    x.lineWidth=7;x.strokeStyle=RED;x.beginPath();x.arc(SX0+150,spY+150,112,0,7);x.stroke(); T('?',SX0+150,spY+190,F(900,120),'#fff','center');
+    T('#?',tx,spY+92,F(900,40),RED); T("SALAH'S TWIN IS...",tx,spY+170,F(900,fit("SALAH'S TWIN IS...",900,56,tw)),INK);
+    const dots=Math.floor((t-revealT)*3)%4; T('.'.repeat(dots),tx,spY+235,F(900,60),RED);
+  } else if(sc.aside&&now){ const r=sc.aside; face(r.face,SX0+150,spY+150,112*clamp(gr,0,1.15),clamp(gr*2),INK3);
+    T('#'+r.rank,tx,spY+92,F(900,40),INK3,'left',ga); T(Math.round(r.match)+'% match',SX1-60,spY+92,F(900,48),INK2,'right',ga);
+    T(r.name,tx,spY+160,F(900,fit(r.name,900,60,tw)),INK,'left',ga); T(r.season,tx,spY+208,F(700,30),INK2,'left',ga);
+    x.font=F(700,30);const sw=x.measureText(r.season).width; icon(r.club,tx+sw+16,spY+176,44,ga); flag(r.flag,tx+sw+70,spY+180,36,ga);
+    T(r.text||'Not in the top 8',tx,spY+258,F(900,28),'#ffffff','left',ease((t-gT-0.3)/0.3));
+  } else if(!grp.length){ const g=L.target; face(g.face,SX0+150,spY+150,105,1,INK3); T('MATCHING',tx,spY+95,F(800,24),INK3);
+    T(g.name,tx,spY+165,F(900,fit(g.name,900,56,tw)),INK); T(g.season,tx,spY+210,F(700,30),INK2);
+  } else { const r=rows[grp[0]-1]; const ex=!!r.excluded; const isTwin=!!r.twin&&(twinOn||sc.twinShown); const RED0=RED;
+    face(r.face,SX0+150,spY+150,112*clamp(gr,0,1.15),clamp(gr*2),isTwin?GOLD:(ex?INK3:'#ffffff'));
+    T(grp.map(k=>'#'+k).join(' · '),tx,spY+92,F(900,40),isTwin?RED:INK3,'left',ga);
+    if(!ex){const pc=Math.round(r.match*clamp((t-gT)/0.6)); T(pc+'% match',SX1-60,spY+92,F(900,48),isTwin?RED:INK,'right',ga);}
+    T(r.name,tx,spY+160,F(900,fit(r.name,900,60,tw)),isTwin?GOLD:(ex?INK2:INK),'left',ga);
+    const seasons=grp.map(k=>rows[k-1].season).join(' · '); T(seasons,tx,spY+208,F(700,30),INK2,'left',ga);
+    x.font=F(700,30); const sw=x.measureText(seasons).width; icon(r.club,tx+sw+16,spY+176,44,ga); flag(r.flag,tx+sw+70,spY+180,36,ga);
+    const ln=isTwin?(L.twinLine||'THE TWIN'):(ex?(L.exLine||'Same player · not counted'):r.line);
+    if(ln) T(ln,tx,spY+258,F(800,28),isTwin?GOLD:'#ffffff','left',ease((t-(isTwin?twinT||gT:gT)-0.4)/0.3));
+  }
+  x.restore();
+  const ly=spY+spH+24, rowH=Math.min(70,(CY1-ly-14)/n), before=new Set(sc.before||[]);
+  for(let i=0;i<n;i++){const r=rows[i],rank=i+1,yy=ly+i*rowH; const inNow=(sc.show||[]).includes(rank);
+    const shown=before.has(rank)||(inNow&&now&&!sc.aside);
+    if(!shown){T('#'+rank,SX0+44,yy+rowH*0.62,F(800,24),INK3);x.fillStyle=TRACK;rr(SX0+96,yy+8,SX1-SX0-140,rowH-16,10);x.fill();T('?',(SX0+SX1)/2+20,yy+rowH*0.66,F(900,28),INK3,'center');continue;}
+    const a=inNow?ease((t-revealT)/0.4):1; const ex=!!r.excluded; const tw2=!!r.twin&&(twinOn||sc.twinShown);
+    const fade=ex?(inNow&&!sc.greyNow?1-0.6*ease((t-revealT-1.2)/0.5):0.4):1;
+    x.save();x.globalAlpha=a*fade; if(tw2){x.fillStyle='rgba(255,207,63,.16)';rr(SX0+36,yy+3,SX1-SX0-72,rowH-6,10);x.fill();}
+    T('#'+rank,SX0+44,yy+rowH*0.62,F(800,24),tw2?RED:INK3); const fr=rowH*0.38;
+    face(r.face,SX0+96+fr,yy+rowH/2,fr,1); const nx=SX0+96+fr*2+16;
+    T(r.name,nx,yy+rowH*0.5,F(900,fit(r.name,900,28,330)),tw2?GOLD:INK); T(r.season,nx,yy+rowH*0.83,F(600,18),INK3);
+    icon(r.club,SX0+560,yy+rowH/2-17,34); flag(r.flag,SX0+604,yy+rowH/2-14,28);
+    const bw=150*((r.match-50)/50); x.fillStyle=tw2?GOLD:BAR; rr(SX1-44-60-bw-14,yy+rowH/2-8,bw,16,5);x.fill();
+    T(Math.round(r.match)+'%',SX1-44,yy+rowH*0.64,F(900,28),tw2?GOLD:INK,'right');
+    if(ex&&fade<0.99){x.globalAlpha=a*(1-fade)*1.6;x.strokeStyle=INK2;x.lineWidth=3;x.beginPath();x.moveTo(SX0+96,yy+rowH/2);x.lineTo(SX1-44,yy+rowH/2);x.stroke();}
+    x.restore();}
+  done();
+  if(sc.pop){const at=wordT(s,sc.pop.at); const k=back((t-at)/0.4); if(t>=at){ const X=SX1-40, Y=CY0+130+300+62;
+    x.save(); x.translate(X,Y); x.rotate(0.035); x.scale(clamp(k,0,1.15),clamp(k,0,1.15));
+    x.font=F(900,62); const w1=x.measureText(sc.pop.big).width; x.font=F(800,26); const w2=Math.max(x.measureText(sc.pop.label).width,x.measureText(sc.pop.rank).width);
+    const W=w1+w2+76, H=104; x.fillStyle=RED; rr(-W,-H/2,W,H,18); x.fill(); x.shadowColor='rgba(0,0,0,0)';
+    T(sc.pop.big,-W+26,22,F(900,62),'#fff'); T(sc.pop.label,-W+46+w1,-6,F(800,26),'#fff'); T(sc.pop.rank,-W+46+w1,28,F(700,24),'#ffd6dc');
+    x.restore();}}
+  if(sc.sticker){const at=wordT(s,sc.sticker.at);const b2=back((t-at)/0.4);if(t>=at){x.save();x.translate((SX0+SX1)/2,CY1-40);x.rotate(-0.05);x.scale(clamp(b2,0,1.2),clamp(b2,0,1.2));
+    x.font=F(900,40);const w=x.measureText(sc.sticker.text).width+70;x.fillStyle=RED;rr(-w/2,-40,w,80,40);x.fill();T(sc.sticker.text,0,14,F(900,40),'#fff','center');x.restore();}}
+};
+// ---- two "=" pairs on the end card
+S.end2=(sc,p,s,t)=>{ bgNight(); const cx=(SX0+SX1)/2;
+  (sc.pairs||[]).forEach((pr,i)=>{const at=sc.at?wordT(s,sc.at[i]):s.start+i*0.8;const a=ease((t-at)/0.35),b=back((t-at)/0.45);const y=330+i*360;
+    T(pr.label.toUpperCase(),cx,y-115,F(800,26),INK3,'center',a);
+    face(pr.a,cx-150,y,95*clamp(b,0,1.15),clamp(b*2),RED); T('=',cx,y+28,F(900,90),INK,'center',a); face(pr.b,cx+150,y,95*clamp(b,0,1.15),clamp(b*2),BLUE);
+    T(pr.aName,cx-150,y+135,F(900,30),RED,'center',a); T(pr.bName,cx+150,y+135,F(900,30),BLUE,'center',a);});
+  const a=ease((p-0.2)/0.4); T('KNOWITBALL',cx,950,F(900,96),INK,'center',a); x.fillStyle=RED;x.globalAlpha=a;x.fillRect(cx-80,980,160,7);x.globalAlpha=1;
+  T("WHO'S NEXT? COMMENT BELOW",cx,1050,F(900,46),RED,'center',ease((p-0.4)/0.4));
+  const pa=ease((p-0.6)/0.4);x.save();x.globalAlpha=pa;x.font=F(800,40);const w=x.measureText('knowitball.co.uk').width+64;x.fillStyle='#1f9d55';rr(cx-w/2,1090,w,76,38);x.fill();T('knowitball.co.uk',cx,1141,F(800,40),'#fff','center');x.restore();};
+
+S.hook=(sc,p,s,t)=>{ const done=enter(p,true); const cx=(SX0+SX1)/2;
+  const l1=sc.lines||[]; l1.forEach((l,i)=>{const sz=fit(l,900,84,SX1-SX0-88);T(l,cx,CY0+110+i*92,F(900,sz),i===1?RED:INK,'center',1);});
+  const y=CY0+470, b=back((p-0.05)/0.4);
+  face(sc.a,cx-190,y,135*clamp(b,0,1.15),1,RED); T('=',cx,y+36,F(900,120),INK,'center',1);
+  x.save(); x.filter='blur(22px)'; face(sc.b,cx+190,y,135,1,null); x.restore();
+  x.lineWidth=8;x.strokeStyle=BLUE;x.beginPath();x.arc(cx+190,y,135,0,7);x.stroke();
+  const clubT=sc.clubAt?wordT(s,sc.clubAt):1e9; const ca=back((t-clubT)/0.4);
+  T('?',cx+190,y+48,F(900,140),'#fff','center',1);
+  if(t>=clubT){const sz=96*clamp(ca,0,1.15);x.save();x.globalAlpha=clamp(ca*2);x.beginPath();x.arc(cx+190+100,y+95,58,0,7);x.fillStyle='#fff';x.fill();x.restore();icon(sc.club,cx+190+100-sz/2,y+95-sz/2,sz,clamp(ca*2));}
+  T(sc.aName,cx-190,y+190,F(900,34),RED,'center'); T(t>=clubT?sc.bLabel:'???',cx+190,y+190,F(900,34),BLUE,'center');
+  const nowT=sc.nowAt?wordT(s,sc.nowAt):1e9; if(t>=nowT){const a=back((t-nowT)/0.4);x.save();x.translate(cx,CY1-150);x.scale(clamp(a,0,1.2),clamp(a,0,1.2));
+    x.font=F(900,38);const w=x.measureText(sc.nowText).width+60;x.fillStyle=INK;rr(-w/2,-38,w,76,38);x.fill();T(sc.nowText,0,13,F(900,38),'#fff','center');x.restore();}
+  T(sc.facts||'',cx,CY1-40,F(700,26),INK3,'center');
+  done();};
+
+function render(t){const s=seg(t);const sc=SC[s.id]||{type:'end'};chrome();(S[sc.type])(sc,t-s.start,s,t);if(!['end','end2'].includes(sc.type)||sc.captions)captions(t,s);}
+function boot(tl,scenes){TL=tl;SC=scenes.scenes;META=scenes.meta||{};SC.__lists=scenes.lists||{};
+  const keys=new Set();JSON.stringify(scenes,(k,v)=>{if(typeof v==='string'&&/^[ptc][A-Za-z0-9]+$/.test(v)&&['face','club','flag','faces'].some(()=>true))keys.add(v);return v;});
+  const dir=META.imgDir; const ps=[...keys].map(k=>new Promise(r=>{const im=new Image();im.onload=()=>{IMG[k]=im;r()};im.onerror=()=>r();im.src='file://'+dir+'/'+k+'.png';}));
+  return Promise.all(ps).then(()=>Object.keys(IMG).length);}
+window.render=render;window.boot=boot;
+</script></body></html>
