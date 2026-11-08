@@ -62,6 +62,28 @@ def align(script, words):
     for i in range(1, len(t0)): t0[i] = max(t0[i], t0[i - 1] + 0.05)
     return [{"w": w, "t0": t} for w, t in zip(sw, t0)]
 
+# ElevenLabs voice (Mikey, 8 Nov 2026: Hugo, a young London voice; Starter plan). The key is not in
+# the code: the session's network proxy adds it to requests to api.elevenlabs.io.
+def eleven_voice(cfg, lines, work, best):
+    import urllib.request
+    vid = cfg["voiceId"]; model = cfg.get("model", "eleven_multilingual_v2")
+    vs = cfg.get("settings", {"stability": 0.45, "similarity_boost": 0.8, "style": 0.3, "use_speaker_boost": True})
+    gap = cfg.get("maxGap", 0.16)  # Mikey: shorter gaps between sentences, same speaking speed
+    for i, ln in enumerate(lines):
+        text = ln.get("sayEleven") or ln.get("say") or ln["text"]
+        for take, seed in enumerate(cfg.get("seeds", [7, 19])):
+            mp3 = os.path.join(work, f"l{i:02d}-e{seed}.mp3"); wav = os.path.join(work, f"l{i:02d}-e{seed}.wav")
+            if not os.path.exists(mp3):
+                body = json.dumps({"text": text, "model_id": model, "voice_settings": vs, "seed": seed}).encode()
+                req = urllib.request.Request(f"https://api.elevenlabs.io/v1/text-to-speech/{vid}?output_format=mp3_44100_128", data=body, method="POST", headers={"Content-Type": "application/json", "xi-api-key": "proxy-injected"})
+                open(mp3, "wb").write(urllib.request.urlopen(req, timeout=120).read())
+            af = f"silenceremove=start_periods=1:start_threshold=-45dB:stop_periods=-1:stop_duration={gap}:stop_threshold=-42dB:stop_silence={gap},areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,apad=pad_dur=0.08"
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", mp3, "-af", af, "-ac", "1", "-ar", str(SR), wav], check=True)
+            heard, words = transcribe(wav); sc = sim(text, heard)
+            if sc > best.get(i, (-1,))[0]: best[i] = (sc, wav, words)
+            if sc >= 0.86: break
+        log(f"eleven line {i}: {best[i][0]:.2f}")
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("story"); ap.add_argument("--out", default=os.path.join(HERE, "out")); ap.add_argument("--workers", type=int, default=3)
     a = ap.parse_args()
@@ -74,7 +96,9 @@ def main():
 
     # 1. voice: up to three seeds a line, keep the best match
     best = {}
-    for round_, seed in enumerate([3, 11, 21]):
+    eleven = (story.get("voice") or {}).get("provider") == "elevenlabs"
+    if eleven: eleven_voice(story["voice"], lines, work, best)
+    for round_, seed in enumerate([] if eleven else [3, 11, 21]):
         todo = [i for i in range(len(lines)) if best.get(i, (0,))[0] < 0.86]
         if not todo: break
         reqs = [[os.path.join(work, f"l{i:02d}-s{seed}.wav"), lines[i].get("say", lines[i]["text"]), seed] for i in todo]
@@ -88,7 +112,9 @@ def main():
     at, scenes, chunks, plan = 0.35, [], [], []
     for i, ln in enumerate(lines):
         s, raw, words = best[i]
-        fin = os.path.join(work, f"l{i:02d}.wav"); subprocess.run([HUMANISE, raw, fin], check=True)
+        fin = os.path.join(work, f"l{i:02d}.wav")
+        if eleven: shutil.copy(raw, fin)  # a studio voice: no mic-in-a-room finish
+        else: subprocess.run([HUMANISE, raw, fin], check=True)
         d = len(load(fin)) / SR
         lead = float(ln.get("lead", 0))  # seconds of the real moment before the voice starts
         scene_t0 = round(at - (0.14 if i else at), 3)

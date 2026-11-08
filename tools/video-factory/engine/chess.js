@@ -260,8 +260,9 @@ function moveCard(g, gt, lt, s) {
   const ppl = ST().people || {};
   const who = sc.who === "result" ? "RESULT" : sc.who === "next" ? "UP NEXT" : sc.hook ? (sc.kicker || "") : `MOVE ${sc.n} · ${sc.whoName || (ppl[sc.who] || {}).name || ""}`.toUpperCase();
   T(g, who, x + 32, y0 + 40, 22, { font: "Oswald", weight: 700, color: "#9a9ea8", maxW: w - 300 });
-  if (sc.badge) { g.save(); g.font = "700 22px Oswald"; const pw = g.measureText(b.label).width + 50; const pk = pop((lt - (sc.badgeAt ?? (sc.lead ? sc.lead - 0.2 : 0.25))) * 3);
-  g.translate(x + w - pw / 2 - 22, y0 + 32); g.scale(pk, pk); rr(g, -pw / 2, -19, pw, 38, 19, b.col); g.fillStyle = "#fff"; g.textAlign = "center"; g.fillText(b.label, 0, 8); g.restore(); }
+  if (sc.badge) { g.save(); g.font = "700 22px Oswald"; const pw = g.measureText(b.label).width + 74; const pk = pop((lt - (sc.badgeAt ?? (sc.lead ? sc.lead - 0.2 : 0.25))) * 3);
+  g.translate(x + w - pw / 2 - 22, y0 + 32); g.scale(pk, pk); rr(g, -pw / 2, -19, pw, 38, 19, b.col);
+  badgeIcon(g, b, -pw / 2 + 21, 0, 15, 1); g.fillStyle = "#fff"; g.textAlign = "center"; g.font = "700 22px Oswald"; g.fillText(b.label, 13, 8); g.restore(); }
   T(g, sc.title || "", x + 32, y0 + 94, sc.hook ? 50 : 46, { color: sc.hook ? "#fff" : b.col, maxW: w - 64 });
   g.save(); g.font = font; g.fillStyle = "#fff"; const sp = g.measureText(" ").width;
   lines.forEach((ln, i) => { let cx = x + 32; for (const wd of ln) { const a = cl((gt - wd.t0 + 0.05) / 0.12); if (a > 0) { g.globalAlpha = a; g.fillText(wd.w, cx, y0 + 148 + i * lh); } cx += wd.ww + sp; } });
@@ -300,23 +301,29 @@ function scoreboardA(g, lt, sc) {
   const cx = x + w / 2, mw = 176;
   g.save(); g.beginPath(); g.roundRect(x, y, w, h, 22); g.clip(); g.fillStyle = "#e8263f"; g.fillRect(cx - mw / 2, y, mw, h); g.restore();
   const names = s.names || null;
+  // the score changes when the goal goes in, not before (Mikey, 8 Nov 2026)
+  let sh = s.h ?? 0, sa = s.a ?? 0, agg = s.agg, bump = 0;
+  if (sc.scoreSteps) { const st = sc.scoreStart || {}; sh = st.h ?? 0; sa = st.a ?? 0; agg = st.agg ?? agg;
+    for (const [t, hh, aa, ag] of sc.scoreSteps) if (lt >= t) { sh = hh; sa = aa; if (ag) agg = ag; bump = Math.max(0, 1 - (lt - t) / 0.6); } }
+  if (bump > 0) { g.save(); g.globalAlpha = bump * 0.8; g.fillStyle = "#fff"; g.beginPath(); g.roundRect(cx - mw / 2, y, mw, h, 0); g.fill(); g.restore(); }
   const hide = sc.hideScore; if (hide) { g.save(); g.filter = "blur(22px)"; }
-  T(g, `${s.h ?? 0}-${s.a ?? 0}`, cx, y + 84, 74, { align: "center", maxW: mw - 20 });
+  g.save(); g.translate(cx, y + 60); const bs = 1 + 0.4 * bump; g.scale(bs, bs); T(g, `${sh}-${sa}`, 0, 24, 74, { align: "center", maxW: mw - 20 }); g.restore();
   if (s.min) { g.font = "700 22px Oswald"; const mw2 = g.measureText(s.min).width + 22; rr(g, cx - mw2 / 2, y + 96, mw2, 30, 7, "#111"); T(g, s.min, cx, y + 118, 22, { align: "center", font: "Oswald", weight: 700 }); }
   if (hide) g.restore();
-  for (const [side, on] of [["L", blackOn], ["R", whiteOn]]) {
-    const L = side === "L"; const face = L ? I.pepFace : I.mouFace; const crest = L ? I.barCrest : I.intCrest; const ring = L ? "#111111" : "#f4f1ea";
-    const fx = L ? x + 66 : x + w - 66, fy = y + h / 2;
+  const interHome = sc.home === "int"; // Inter at home: Inter on the left
+  for (const [side, on] of [["L", interHome ? whiteOn : blackOn], ["R", interHome ? blackOn : whiteOn]]) {
+    const L = (side === "L") !== interHome; const face = L ? I.pepFace : I.mouFace; const crest = L ? I.barCrest : I.intCrest; const ring = L ? "#111111" : "#f4f1ea";
+    const left = side === "L"; const fx = left ? x + 66 : x + w - 66, fy = y + h / 2;
     if (on) { g.save(); g.globalAlpha = 0.45 + 0.3 * Math.sin(lt * 6); g.fillStyle = "#81b64c"; g.beginPath(); g.arc(fx, fy, 58, 0, 7); g.fill(); g.restore(); }
     circImg(g, face, fx, fy, 50, ring);
-    const tx = L ? fx + 64 : fx - 64; const al = L ? "left" : "right";
+    const tx = left ? fx + 64 : fx - 64; const al = left ? "left" : "right";
     T(g, L ? "GUARDIOLA" : "MOURINHO", tx, fy - 2, 34, { align: al, maxW: 190 });
     T(g, (L ? "Barcelona" : "Inter") + (L ? " · Black" : " · White"), tx, fy + 30, 20, { align: al, font: "Oswald", weight: 700, color: "#b9bcc4", maxW: 190 });
-    if (crest) { const cw = 56, chh = crest.height / crest.width * cw; const ccx = L ? cx - mw / 2 - 40 : cx + mw / 2 + 40; g.drawImage(crest, ccx - cw / 2, fy - chh / 2, cw, chh); }
+    if (crest) { const cw = 56, chh = crest.height / crest.width * cw; const ccx = left ? cx - mw / 2 - 40 : cx + mw / 2 + 40; g.drawImage(crest, ccx - cw / 2, fy - chh / 2, cw, chh); }
   }
   if (names) { T(g, names[0], cx - mw / 2 - 40, y + h - 10, 18, { align: "center", font: "Oswald", weight: 700, color: "#cfd3da" }); T(g, names[1], cx + mw / 2 + 40, y + h - 10, 18, { align: "center", font: "Oswald", weight: 700, color: "#cfd3da" }); }
   if (hide) { g.save(); g.filter = "blur(14px)"; }
-  T(g, [s.agg, s.where].filter(Boolean).join("  ·  "), cx, y + h + 34, 24, { align: "center", font: "Oswald", weight: 700, color: "#ffd84a", maxW: w });
+  T(g, [agg, s.where].filter(Boolean).join("  ·  "), cx, y + h + 34, 24, { align: "center", font: "Oswald", weight: 700, color: "#ffd84a", maxW: w });
   if (hide) g.restore();
 }
 function review(g, lt, sc) {
