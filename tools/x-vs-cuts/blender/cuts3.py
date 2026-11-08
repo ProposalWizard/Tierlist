@@ -27,7 +27,7 @@ def line_mask(n,l,X,Z,R,obj_attr=True):
     ok=M(n,l,'MULTIPLY',M(n,l,'GREATER_THAN',i,0.5),M(n,l,'LESS_THAN',i,M(n,l,'ADD',done(name),0.5)))
     w=min(0.0045,0.22*spacing);return M(n,l,'MULTIPLY',ok,M(n,l,'LESS_THAN',d,w))
   lx=one(X,M(n,l,'SUBTRACT',L/2,X),dx,'nxd');lz=one(Z,Z,dz,'nyd')
-  k=min(0.75,11.0/max(R['kx'],1))
+  k=0.6 if R['kx']<=17 else (0.35 if R['kx']<=34 else 0.0)
   return M(n,l,'MULTIPLY',M(n,l,'MAXIMUM',lx,lz),k)
 
 def ss(e): e=max(0.0,min(1.0,e));return e*e*(3-2*e)
@@ -81,13 +81,17 @@ def knife_pose(t,R):
     e=(t-tp)/max(1e-6,(C[k]-d)-tp);return Q_DICE,Vector((0.0,lerp(Y[k-1],Y[k],ss(min(1,e*1.6))),(hover+0.5)*ss(min(1,e*2.2))))
   e=ss((t-C[-1])/0.25);return Q_DICE,Vector((0.0,Y[-1],(hover+0.7)*e))
 
+PILE={1:(0.15,(0.75,0.95,0.35)),2:(0.25,(0.62,0.88,0.28)),3:(0.4,(0.55,0.85,0.22)),4:(0.75,(0.95,1.0,0.42)),5:(0.85,(1.0,1.0,0.5))}
+GLOW={1:0.4,2:0.22,3:0.22,4:0.28,5:0.32}
 # small pieces read as pale yellow-green in the original, not white
 def cube_mat():
   m,n,l=newmat('cube');b=n['Principled BSDF'];at=n.new('ShaderNodeAttribute');at.attribute_name='orig'
   col,out,X,Z=interior_color(n,l,at.outputs['Vector'])
-  fade={1:0.25,2:0.55,3:0.7,4:0.78,5:0.85}.get(RI,0.5)
-  mx=n.new('ShaderNodeMix');mx.data_type='RGBA';mx.inputs[0].default_value=fade;l.new(col,mx.inputs[6]);mx.inputs[7].default_value=(1.0,1.0,0.55,1)
+  # per round, matched to the original's measured pile colour (see README)
+  fade,tc=PILE.get(RI,(0.5,(1.0,1.0,0.55)))
+  mx=n.new('ShaderNodeMix');mx.data_type='RGBA';mx.inputs[0].default_value=fade;l.new(col,mx.inputs[6]);mx.inputs[7].default_value=(*tc,1)
   l.new(mx.outputs[2],b.inputs['Base Color']);b.inputs['Roughness'].default_value=0.6
+  l.new(mx.outputs[2],b.inputs['Emission Color']);b.inputs['Emission Strength'].default_value=GLOW.get(RI,0.2)
   return m
 # ---------- the pile: one mesh, every cube animated by us ----------
 def make_cells(R,G=30):
@@ -101,10 +105,14 @@ def make_cells(R,G=30):
   idx=np.searchsorted(Cy,back-1e-6)  # first plane at or behind the cube's back
   tr=np.where(idx<len(C),Ct[np.minimum(idx,len(C)-1)],Ct[-1])
   # pile: the avocado slumps forward, pieces mixed so the mound looks pale like the original
-  T=np.stack([P[:,0]*1.10,P[:,1]*1.22-0.32,np.maximum(0.5*sz,P[:,2]*0.86)],1)
-  T=T[rng.permutation(len(T))]
+  T=np.stack([P[:,0]*1.10,P[:,1]*1.22-0.32,np.maximum(0.5*sz,P[:,2]*(0.86 if R['i']<=1 else 0.96))],1)
   T[:,:2]+=rng.uniform(-0.25,0.25,(len(T),2))*np.array([sx,sy])
-  rot=rng.uniform(1.0,3.2,len(P))*rng.choice([-1,1],len(P));spin=rng.uniform(-0.8,0.8,len(P));dur=rng.uniform(0.32,0.55,len(P))
+  # the first pieces off take the front of the mound, so the pile grows in FRONT of the
+  # cut face and the face (and the stone) stays in view, like the original
+  tgt=np.argsort((T[:,1] if R['i']<=1 else T[:,2]*1.6+0.35*(T[:,1]+RM))+rng.normal(0,0.06,len(T)));cub=np.argsort(tr+rng.uniform(0,1e-3,len(tr)))
+  T2=np.empty_like(T);T2[cub]=T[tgt]
+  yp=Cy[np.minimum(idx,len(C)-1)];gap=0.12 if R['i']<=1 else 0.4;T2[:,1]=np.minimum(T2[:,1],yp-gap);T=T2
+  rot=rng.uniform(1.0,3.2,len(P))*rng.choice([-1,1],len(P));spin=rng.uniform(-0.8,0.8,len(P));dur=rng.uniform(0.32,0.55,len(P)) if R['i']<=1 else (rng.uniform(0.14,0.24,len(P)) if R['i']<=3 else rng.uniform(0.07,0.12,len(P)))
   return dict(P=P,T=T,tr=tr,rot=rot,spin=spin,dur=dur,size=np.array([sx,sy,sz])*(0.94 if R['i']<=1 else 1.18))
 def build_pile(cells,rig):
   n=len(cells['P']);cor=np.array([(x,y,z) for x in(-.5,.5) for y in(-.5,.5) for z in(-.5,.5)])*cells['size']

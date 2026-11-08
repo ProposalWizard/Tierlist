@@ -118,10 +118,10 @@ def wood_mat():
   m,n,l=newmat('wood');b=n['Principled BSDF'];tc=n.new('ShaderNodeTexCoord');mp=n.new('ShaderNodeMapping');mp.inputs['Scale'].default_value=(0.04,1.0,1)
   w=n.new('ShaderNodeTexWave');w.inputs['Scale'].default_value=6;w.inputs['Distortion'].default_value=5;w.inputs['Detail'].default_value=4;w.inputs['Detail Scale'].default_value=1.5;w.bands_direction='Y'
   l.new(tc.outputs['Object'],mp.inputs['Vector']);l.new(mp.outputs['Vector'],w.inputs['Vector'])
-  r=n.new('ShaderNodeValToRGB');r.color_ramp.elements[0].color=(0.45,0.21,0.06,1);r.color_ramp.elements[1].color=(0.74,0.44,0.17,1);l.new(w.outputs['Fac'],r.inputs['Fac']);l.new(r.outputs['Color'],b.inputs['Base Color']);b.inputs['Roughness'].default_value=0.55;return m
+  r=n.new('ShaderNodeValToRGB');r.color_ramp.elements[0].color=(0.42,0.17,0.035,1);r.color_ramp.elements[1].color=(0.70,0.36,0.10,1);l.new(w.outputs['Fac'],r.inputs['Fac']);l.new(r.outputs['Color'],b.inputs['Base Color']);b.inputs['Roughness'].default_value=0.55;return m
 def brick_mat():
-  m,n,l=newmat('brick');b=n['Principled BSDF'];br=n.new('ShaderNodeTexBrick');br.inputs['Scale'].default_value=0.42;tcb=n.new('ShaderNodeTexCoord');l.new(tcb.outputs['Object'],br.inputs['Vector'])
-  br.inputs['Color1'].default_value=(0.05,0.047,0.04,1);br.inputs['Color2'].default_value=(0.06,0.056,0.048,1);br.inputs['Mortar'].default_value=(0.035,0.032,0.028,1);br.inputs['Mortar Size'].default_value=0.025
+  m,n,l=newmat('brick');b=n['Principled BSDF'];br=n.new('ShaderNodeTexBrick');br.inputs['Scale'].default_value=0.30;tcb=n.new('ShaderNodeTexCoord');l.new(tcb.outputs['Object'],br.inputs['Vector'])
+  br.inputs['Color1'].default_value=(0.042,0.041,0.034,1);br.inputs['Color2'].default_value=(0.052,0.05,0.042,1);br.inputs['Mortar'].default_value=(0.035,0.032,0.028,1);br.inputs['Mortar Size'].default_value=0.025
   l.new(br.outputs['Color'],b.inputs['Base Color']);b.inputs['Roughness'].default_value=0.9;return m
 
 # ---------- set ----------

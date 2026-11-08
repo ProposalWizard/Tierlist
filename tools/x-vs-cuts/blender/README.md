@@ -47,3 +47,9 @@ the counters and makes the sound for all 72 s.
 Pile colour: tiny pieces must blend toward the average flesh colour (theirs
 measures about RGB 216,215,171), and touch each other, or the pile reads grey
 and speckled.
+
+## Fixes after the first PC render (8 Nov 2026)
+1. Pale skin in rounds 4-6: the hundreds of fine cut lines lightened it. Lines fade out as they crowd (none drawn past 34 per direction).
+2. The last-round stone moment: pieces fall faster in late rounds (0.07-0.12 s) and fill the mound bottom-up and front-first, so a low pancake sits in front and the cut face with the stone stays in view.
+3. Pile colour per round (PILE / GLOW in cuts3.py), measured against the original at each round's end: within about 3-9% in every round.
+4. Board deeper orange, bricks larger and darker.
