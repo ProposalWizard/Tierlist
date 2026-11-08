@@ -48,6 +48,6 @@
     { "text": "Fifteen years separate the youngest from the oldest.", "scene": { "type": "versus", "title": "THE GAP", "left": { "person": "passarella", "label": "Passarella 1978", "value": "25" }, "right": { "person": "zoff", "label": "Zoff 1982", "value": "40" } } },
     { "text": "And Zoff did it just four years after Passarella.", "scene": { "type": "timeline", "items": [ { "year": "1978", "label": "Passarella, 25" }, { "year": "1982", "label": "Zoff, 40" }, { "year": "2022", "label": "Messi, 35" }, { "year": "2026", "label": "Rodri, 30" } ] } },
     { "text": "So which one is the greatest captain? Tell me in the comments.", "scene": { "type": "stats", "title": "WINNING CAPTAINS", "items": [ { "n": "23", "l": "captains" }, { "n": "25", "l": "youngest" }, { "n": "40", "l": "oldest" } ] } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

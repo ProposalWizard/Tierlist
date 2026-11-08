@@ -34,6 +34,6 @@
     { "text": "Four trophies instead of none. And a World Cup winner's medal.", "scene": { "type": "whatif", "title": "De Bruyne's senior trophies", "real": { "label": "Belgium (real)", "value": "0" }, "alt": { "label": "Argentina (imagined)", "value": "4" } } },
     { "text": "Then this summer's final, lost one-nil to Spain after extra time. Does a De Bruyne pass change that?", "scene": { "type": "quote", "person": "kdbarg", "text": "One through ball. That's all I needed." } },
     { "text": "Belgian legend, or Argentine world champion? Which version do you pick? Comment below.", "scene": { "type": "person", "person": "kdbarg", "label": "ALTERNATE WORLD", "mood": "happy" } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

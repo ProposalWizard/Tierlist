@@ -35,6 +35,6 @@
     { "text": "He picks up a Euro winner's medal, one more than he has now.", "scene": { "type": "whatif", "title": "Lewandowski's senior trophies", "real": { "label": "Poland (real)", "value": "0" }, "alt": { "label": "Italy (imagined)", "value": "1" } } },
     { "text": "And with the striker Italy were missing, maybe those World Cup misses never happen.", "scene": { "type": "quote", "person": "lewyita", "text": "Three World Cups missed? Not with me up front." } },
     { "text": "Would Italian Lewandowski be a world champion? Tell me in the comments.", "scene": { "type": "versus", "title": "Same striker, different passport", "left": { "person": "lewy", "label": "Poland", "value": "0" }, "right": { "person": "lewyita", "label": "Italy", "value": "1+" } } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

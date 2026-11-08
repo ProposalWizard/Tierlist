@@ -34,6 +34,6 @@
     { "text": "Lined up in order, it goes twenty-four, twenty-eight, then thirty-one all the way to thirty-six.", "scene": { "type": "timeline", "items": [ { "year": "24", "label": "Vinicius" }, { "year": "28", "label": "Dembele" }, { "year": "31", "label": "Ronaldo" }, { "year": "33", "label": "Modric, Lewandowski" }, { "year": "36", "label": "Messi" } ] } },
     { "text": "Lewandowski's twenty twenty win came in the year the Ballon d'Or wasn't held.", "scene": { "type": "whatif", "title": "2020", "real": { "label": "FIFA The Best", "value": "Lewandowski" }, "alt": { "label": "Ballon d'Or", "value": "Not held" } } },
     { "text": "And last year, the runner-up was Lamine Yamal, eighteen. The youngest winner might be very close.", "scene": { "type": "list", "title": "THE BEST 2025", "rows": [ { "name": "Ousmane Dembele", "value": "1st", "club": "psg", "hl": true }, { "name": "Lamine Yamal", "value": "2nd", "club": "barca" }, { "name": "Kylian Mbappe", "value": "3rd", "club": "realmadrid" } ] } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

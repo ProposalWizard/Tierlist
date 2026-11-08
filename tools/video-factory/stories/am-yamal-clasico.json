@@ -37,6 +37,6 @@
     { "text": "The difference is age. Yamal hit a hundred games at seventeen. Messi was twenty.", "scene": { "type": "timeline", "items": [ { "year": "17y 7m", "label": "Yamal's 100th game" }, { "year": "19y 262d", "label": "Ronaldo's 100th game" }, { "year": "20y 105d", "label": "Messi's 100th game" } ] } },
     { "text": "And by then Yamal already had La Liga, the Spanish Super Cup and the Euros.", "scene": { "type": "trophies", "items": [ { "kind": "league", "label": "La Liga" }, { "kind": "cup", "label": "Supercopa" }, { "kind": "euro", "label": "Euro 2024" } ], "person": "yamal" } },
     { "text": "So who wins the age-match? Yamal, Messi, Ronaldo or Mbappé? Tell me in the comments.", "scene": { "type": "quote", "person": "yamal", "text": "Ask me again when I'm Messi's age." } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }
