@@ -1,0 +1,581 @@
+{
+"meta": {
+"series": "STAT TWINS · EP 1",
+"source": "Data: Opta via FotMob · PL attackers 900+ mins (26/27: 450+)",
+"engine": "video_full.html",
+"imgDir": "/tmp/claude-0/-home-user-Tierlist/84a0c395-3776-5543-b933-7d1eba9d58ff/scratchpad/img",
+"clubColors": {
+"t8650": "rgb(231,26,35)",
+"t10260": "rgb(216,111,16)",
+"t8197": "rgb(106,151,198)",
+"t8586": "rgb(9,25,70)",
+"t10261": "rgb(0,148,179)",
+"t8678": "rgb(204,19,24)",
+"t8668": "rgb(48,49,176)",
+"t8456": "rgb(22,68,123)",
+"t9825": "rgb(237,4,7)",
+"t9902": "rgb(244,86,101)",
+"t8455": "rgb(7,19,149)"
+},
+"layout": "poster"
+},
+"lists": {
+"top": {
+"title": "The top five.",
+"sub": "Match to Salah 24/25 · 100% = identical",
+"target": {
+"name": "Mohamed Salah",
+"season": "2024/25",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY"
+},
+"rows": [
+{
+"name": "Cole Palmer",
+"season": "2023/24",
+"face": "p1096353",
+"club": "t8455",
+"flag": "cENG",
+"match": 79.1,
+"excluded": false,
+"line": "His first season at Chelsea",
+"twin": true
+},
+{
+"name": "Roberto Firmino",
+"season": "2022/23",
+"face": "p242709",
+"club": "t8650",
+"flag": "cBRA",
+"match": 78.1,
+"excluded": false,
+"line": "His old Liverpool team-mate"
+},
+{
+"name": "Kelechi Iheanacho",
+"season": "2022/23",
+"face": "p643709",
+"club": "t8197",
+"flag": "cNGA",
+"match": 76.2,
+"excluded": false,
+"line": "Yes, really"
+},
+{
+"name": "Harvey Barnes",
+"season": "2024/25",
+"face": "p760359",
+"club": "t10261",
+"flag": "cENG",
+"match": 76.1,
+"excluded": false,
+"line": null
+},
+{
+"name": "Heung-Min Son",
+"season": "2023/24",
+"face": "p212867",
+"club": "t8586",
+"flag": "cKOR",
+"match": 75.9,
+"excluded": false,
+"line": null
+}
+],
+"twinLine": "SALAH'S STATISTICAL TWIN",
+"exLine": "Salah himself · not counted"
+},
+"now": {
+"title": "This season only.",
+"sub": "26/27 · about 10 games in · 450+ mins",
+"target": {
+"name": "Mohamed Salah",
+"season": "2024/25",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY"
+},
+"rows": [
+{
+"name": "Rayan Cherki",
+"season": "2026/27",
+"face": "p1104053",
+"club": "t8456",
+"flag": "cFRA",
+"match": 75.9,
+"line": null,
+"sure": null
+},
+{
+"name": "Evanilson",
+"season": "2026/27",
+"face": "p1098096",
+"club": "t8678",
+"flag": "cBRA",
+"match": 71.3,
+"line": null,
+"sure": null
+},
+{
+"name": "Bryan Mbeumo",
+"season": "2026/27",
+"face": "p923312",
+"club": "t10260",
+"flag": "cCMR",
+"match": 69.3,
+"line": null,
+"sure": null
+},
+{
+"name": "João Pedro",
+"season": "2026/27",
+"face": "p1021382",
+"club": "t8455",
+"flag": "cBRA",
+"match": 69.3,
+"line": null,
+"sure": null
+},
+{
+"name": "Julio Enciso",
+"season": "2026/27",
+"face": "p1073742",
+"club": "t9902",
+"flag": "cPAR",
+"match": 66.2,
+"line": null,
+"sure": null
+}
+]
+},
+"top8": {
+"title": "The top eight.",
+"sub": "Match to Salah 24/25 · 100% = identical",
+"target": {
+"name": "Mohamed Salah",
+"season": "2024/25",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY"
+},
+"rows": [
+{
+"name": "Mohamed Salah",
+"season": "2022/23",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY",
+"match": 81.5,
+"excluded": true,
+"line": null
+},
+{
+"name": "Mohamed Salah",
+"season": "2023/24",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY",
+"match": 79.2,
+"excluded": true,
+"line": null
+},
+{
+"name": "Cole Palmer",
+"season": "2023/24",
+"face": "p1096353",
+"club": "t8455",
+"flag": "cENG",
+"match": 79.1,
+"excluded": false,
+"twin": true,
+"line": "His first season at Chelsea"
+},
+{
+"name": "Roberto Firmino",
+"season": "2022/23",
+"face": "p242709",
+"club": "t8650",
+"flag": "cBRA",
+"match": 78.1,
+"excluded": false,
+"line": "His old Liverpool team-mate"
+},
+{
+"name": "Kelechi Iheanacho",
+"season": "2022/23",
+"face": "p643709",
+"club": "t8197",
+"flag": "cNGA",
+"match": 76.2,
+"excluded": false,
+"line": "Yes, really"
+},
+{
+"name": "Harvey Barnes",
+"season": "2024/25",
+"face": "p760359",
+"club": "t10261",
+"flag": "cENG",
+"match": 76.1,
+"excluded": false,
+"line": null
+},
+{
+"name": "Mohamed Salah",
+"season": "2025/26",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY",
+"match": 76.1,
+"excluded": true,
+"line": null
+},
+{
+"name": "Heung-Min Son",
+"season": "2023/24",
+"face": "p212867",
+"club": "t8586",
+"flag": "cKOR",
+"match": 75.9,
+"excluded": false,
+"line": null
+}
+],
+"twinLine": "SALAH'S STATISTICAL TWIN",
+"exLine": "Salah himself · not counted"
+}
+},
+"scenes": {
+"hook": {
+"type": "intro",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY",
+"name": "SALAH",
+"season": "2024/25",
+"facts": [],
+"at": [
+0.5,
+0.9,
+1.3
+],
+"mystery": [
+{
+"face": "p1096353",
+"label": "LAST 5 YEARS",
+"delay": 0
+},
+{
+"face": "p1104053",
+"label": "CURRENT",
+"delay": 0
+}
+],
+"instant": true,
+"kicker": "HIS TWIN IS NOT WHO YOU THINK"
+},
+"own": {
+"type": "cd2",
+"list": "top8",
+"show": [
+1,
+2,
+7
+],
+"before": [],
+"prevShow": [],
+"at": "HIS",
+"collapse": {
+"at": "LEAVES"
+}
+},
+"c8": {
+"type": "cd2",
+"list": "top",
+"show": [
+5
+],
+"before": [],
+"prevShow": [],
+"at": "SON",
+"cont": true,
+"from": 1,
+"pop": {
+"big": "0.61",
+"label": "big chances made per 90",
+"rank": "4th of 101 PL attackers",
+"at": "SON"
+}
+},
+"c6": {
+"type": "cd2",
+"list": "top",
+"show": [
+4
+],
+"before": [
+5
+],
+"prevShow": [
+5
+],
+"at": "HARVEY",
+"cont": true,
+"from": -1,
+"pop": {
+"big": "0.46",
+"label": "goals per 90 (no pens)",
+"rank": "14th of 96 PL attackers",
+"at": "HARVEY"
+}
+},
+"c5": {
+"type": "cd2",
+"list": "top",
+"show": [
+3
+],
+"before": [
+5,
+4
+],
+"prevShow": [
+4
+],
+"at": "KELECHI",
+"cont": true,
+"from": -1,
+"pop": {
+"big": "0.40",
+"label": "assists per 90",
+"rank": "5th of 94 PL attackers",
+"at": "KELECHI"
+}
+},
+"c4": {
+"type": "cd2",
+"list": "top",
+"show": [
+2
+],
+"before": [
+5,
+4,
+3
+],
+"prevShow": [
+3
+],
+"at": "ROBERTO",
+"cont": true,
+"from": 1,
+"pop": {
+"big": "0.82",
+"label": "goals per 90 (no pens)",
+"rank": "2nd of 94 PL attackers",
+"at": "ROBERTO"
+},
+"sticker": {
+"text": "GUESS THE TWIN IN THE COMMENTS",
+"at": "GUESS"
+}
+},
+"c3": {
+"type": "cd2",
+"list": "top",
+"show": [
+1
+],
+"before": [
+5,
+4,
+3,
+2
+],
+"prevShow": [
+2
+],
+"at": "COLE",
+"cont": true,
+"from": -1,
+"pop": {
+"big": "22+11",
+"label": "goals + assists",
+"rank": "Premier League 2023/24",
+"at": "COLE"
+},
+"twinAt": "MATCH"
+},
+"saka": {
+"type": "cd2",
+"list": "top",
+"show": [],
+"before": [
+5,
+4
+],
+"prevShow": [
+4
+],
+"at": "SAKA",
+"aside": {
+"name": "Bukayo Saka",
+"season": "2023/24",
+"face": "p961995",
+"club": "t9825",
+"flag": "cENG",
+"rank": 28,
+"match": 70.3,
+"text": "Not even top 25"
+},
+"cont": true,
+"from": 1,
+"pop": {
+"big": "2.79",
+"label": "chances created per 90",
+"rank": "2nd of 101 PL attackers",
+"at": "28TH"
+}
+},
+"why": {
+"type": "compare",
+"kicker": "Why Palmer",
+"title": "They create the same.",
+"a": {
+"name": "Mohamed Salah",
+"season": "2024/25",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY"
+},
+"b": {
+"name": "Cole Palmer",
+"season": "2023/24",
+"face": "p1096353"
+},
+"rows": [
+{
+"label": "Chances created",
+"a": 2.37,
+"b": 2.47
+},
+{
+"label": "Shots on target",
+"a": 1.6,
+"b": 1.6
+}
+],
+"at": [
+"CHANCES",
+"SHOTS"
+]
+},
+"diff": {
+"type": "compare",
+"kicker": "But…",
+"title": "Not the same player.",
+"a": {
+"name": "Mohamed Salah",
+"season": "2024/25",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY"
+},
+"b": {
+"name": "Cole Palmer",
+"season": "2023/24",
+"face": "p1096353"
+},
+"rows": [
+{
+"label": "Passes",
+"a": 22.7,
+"b": 37.4
+},
+{
+"label": "Goals (no pens)",
+"a": 0.53,
+"b": 0.45
+},
+{
+"label": "Big chances made",
+"a": 0.72,
+"b": 0.58
+}
+],
+"at": [
+"PALMER",
+"SALAH",
+"BIG"
+]
+},
+"nowcmp": {
+"type": "compare",
+"kicker": "This season",
+"title": "Salah vs Cherki.",
+"a": {
+"name": "Mohamed Salah",
+"season": "2024/25",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY"
+},
+"b": {
+"name": "Rayan Cherki",
+"season": "2026/27",
+"face": "p1104053"
+},
+"rows": [
+{
+"label": "Chances created",
+"a": 2.37,
+"b": 3.41
+},
+{
+"label": "Goals (no pens)",
+"a": 0.53,
+"b": 0.76
+}
+],
+"at": [
+"THREE",
+"GOALS"
+]
+},
+"now1": {
+"type": "countdown",
+"list": "now",
+"upto": 1,
+"at": "RAYAN"
+},
+"end": {
+"type": "end2",
+"captions": true,
+"pairs": [
+{
+"label": "Last 5 seasons",
+"a": "p292462",
+"b": "p1096353",
+"aName": "SALAH 24/25",
+"bName": "PALMER 23/24",
+"aClub": "t8650",
+"bClub": "t8455"
+},
+{
+"label": "This season",
+"a": "p292462",
+"b": "p1104053",
+"aName": "SALAH 24/25",
+"bName": "CHERKI",
+"aClub": "t8650",
+"bClub": "t8456"
+}
+],
+"at": [
+"COLE",
+0.9
+]
+}
+}
+}
