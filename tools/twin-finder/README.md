@@ -12,3 +12,4 @@ A private page: type a player and season, see his statistical twins across the t
   within its own league and season; weighted gap; match % = 100 minus the gap; 2,000 tests with the weights
   shuffled ±50%. The weights per position are at the top of the page's script (`W`). xG and xA are skipped when a
   season has none. Players with fewer than 900 minutes (450 this season) are left out.
+- Published: https://claude.ai/artifact/Q6mrgcheJyCeKgnB6NDhLn (private to Mikey until shared). 20,844 player-seasons, 165 clubs.
