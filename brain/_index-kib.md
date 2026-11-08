@@ -11,7 +11,7 @@ FACT-KIB-008 | Learning from v01: render frames in chunks of 250, one page per c
 FACT-KIB-009 | The one list of video ideas and the reference TikToks they came from (link, @account, what it is, style, what we made) is docs/marketing/video-ideas.md; add new references and ideas there. | client-kib
 FACT-KIB-010 | Base voice for Knowitball videos is voice E: Chatterbox TTS's own built-in voice, finished with humanise.sh (mic-in-a-room). Mikey, 3 Nov 2026; replaces Kokoro bm_george and the George clone. | team,process,client-kib
 FACT-KIB-011 | "Analysed like chess" videos (CH) are football first: a real pitch, every player a drawn icon with his name, the chess grades, eval bar and typed card laid on top. Never a chessboard with pieces (Mikey, 7 Nov 2026). | team,rule,client-kib
-FACT-KIB-012 | Football-story videos are voiced by Hugo (ElevenLabs Voice Library, young modern London accent) on Mikey's ElevenLabs Starter plan; gaps between sentences trimmed to about 0.16 s, speaking speed unchanged. | team,style,client-kib
+FACT-KIB-012 | Football-story videos are voiced by Hugo (ElevenLabs Voice Library, young modern London accent) on Mikey's ElevenLabs Starter plan; pauses trimmed to about 0.1 s (breath counts as silence) and the read sped up 13% with pitch kept, so it matches voice E's pace. | team,client-kib
 REF-KIB-001 | Script v01, patch notes 0.1 to 0.3: the first Knowitball short, word for word with its sources. | process,client-kib
 RUL-KIB-001 | Voice: short, cheeky, football-mad, numbers first ("9.8% to 47.6%"). | client-kib
 RUL-KIB-002 | Real game footage only, or marked "ILLUSTRATION" on screen. | client-kib
