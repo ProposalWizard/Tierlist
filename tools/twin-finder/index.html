@@ -36,6 +36,9 @@ ul.ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);fon
 .tag{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--card2);color:var(--ink2);margin-left:6px}
 .muted{color:var(--ink3);font-size:12px}details summary{cursor:pointer;color:var(--ink3);font-size:13px;font-weight:700;padding:6px 0}
 .hide{display:none}
+#pop{position:absolute;z-index:20;background:#1d2747;border:1px solid #3a4a7a;border-radius:14px;padding:12px 14px;box-shadow:0 14px 40px rgba(0,0,0,.55);width:min(360px,calc(100vw - 28px))}
+#pop::before{content:"";position:absolute;top:-8px;left:var(--ax,40px);width:14px;height:14px;background:#1d2747;border-left:1px solid #3a4a7a;border-top:1px solid #3a4a7a;transform:rotate(45deg)}
+#popx{position:absolute;right:8px;top:6px;background:none;border:0;color:var(--ink2);font-size:22px;cursor:pointer;line-height:1}
 .ks{display:grid;grid-template-columns:1fr auto auto;gap:4px 14px;font-size:14px}.ks>*{min-width:0}.ks .h2{font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em}
 .ks .a{color:var(--red);font-weight:800;text-align:right}.ks .b{color:var(--blue);font-weight:800;text-align:right}
 </style></head>
@@ -70,7 +73,6 @@ ul.ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);fon
   <div class="card"><label class="h" id="listh">Top 10 · tap one to compare</label><div class="list" id="list"></div></div>
   <div class="card" id="nowcard"><label class="h">Right now · this season only · top 5</label><div class="list" id="nowlist"></div><div class="muted" id="nowmeta" style="margin-top:6px"></div></div>
   <div class="card"><label class="h">Find anyone in these lists</label><input id="fq" type="text" placeholder="e.g. Saka" autocomplete="off"><div id="fres" class="list" style="margin-top:6px"></div><div class="muted" style="margin-top:4px">Shows where they finish, so you can spot a "You'd think…?" surprise. Tap one to see him.</div></div>
-  <div class="card"><label class="h" id="keyh">Key stats</label><div id="keys"></div></div>
   <div class="card"><label class="h" id="cmph">Side by side · per 90 minutes</label><div class="cmp" id="cmp"></div></div>
   <div class="card"><label class="h">Make it a video</label>
     <div class="muted">Copies the episode file for the video builder (tools/video-render/twin/make_episode.py). Paste it into a chat with "make this episode".</div>
@@ -79,6 +81,7 @@ ul.ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);fon
   <details class="card"><summary>How this works</summary><div class="muted" id="how"></div></details>
 </div>
 </div>
+<div id="pop" class="hide"><button id="popx" aria-label="Close">×</button><div id="keyh" style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin:0 26px 8px 0"></div><div id="keys"></div><div class="muted" style="margin-top:8px">Per-90 comparison: further down. Tap another player, or anywhere else to close.</div></div>
 <script src="data.js"></script>
 <script>
 // ---------- data ----------
@@ -190,6 +193,11 @@ function keyStats(i,ids){ // the basics only (Mikey): games, minutes, goals, ass
   if(gk) out.push(['Clean sheets',r.cs,0],['Saves',r.saves==null?null:r.saves*p,0],['Goals conceded',r.conceded==null?null:r.conceded*p,0],['Goals prevented',r.prevented,1]);
   else out.push(['Goals',r.G||0,0],['Assists',r.A||0,0],['Penalty goals',r.pens||0,0]);
   out.push(['FotMob rating',r.rating,2]); return out;}
+$('popx').onclick=()=>$('pop').classList.add('hide');
+function showPop(el){const p=$('pop'),r=el.getBoundingClientRect();p.classList.remove('hide');const w=p.offsetWidth;
+  const left=Math.max(14,Math.min(innerWidth-w-14,r.left+8));p.style.left=left+'px';p.style.top=(r.bottom+scrollY+8)+'px';p.style.setProperty('--ax',Math.max(14,Math.min(w-30,r.left+40-left))+'px');}
+document.addEventListener('click',e=>{if(!e.target.closest('#pop'))$('pop').classList.add('hide')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('pop').classList.add('hide')});
 function render(sel){ const {ids,ref,g,w,tf,tp,M,NOW}=LAST; $('out').classList.remove('hide');
   const S=sel.set==='NOW'?NOW:M; const twinK=M.others[0][1], ti=M.cand[twinK];
   const twinM=100-M.others[0][0]; const sure=Math.round(100*(M.wins[twinK]||0)/2000);
@@ -200,7 +208,9 @@ function render(sel){ const {ids,ref,g,w,tf,tp,M,NOW}=LAST; $('out').classList.r
   if(LAST.sp==='this'){$('nowcard').classList.add('hide')}else{$('nowcard').classList.remove('hide');
     $('nowlist').innerHTML=NOW.order.slice(0,5).map(([d,k],n)=>item(NOW,k,n+1,'NOW',sel.set==='NOW'&&sel.k===k)).join('')||'<div class="muted">Nobody yet this season (450+ minutes).</div>';
     const nt=NOW.others[0]; $('nowmeta').textContent=nt?`${pname(NOW.cand[nt[1]])} is first in ${Math.round(100*(NOW.wins[nt[1]]||0)/2000)}% of 2,000 tests. Season ${CUR}, players with 450+ minutes so far.`:'';}
-  for(const id of ['list','nowlist','fres'])$(id).onclick=e=>{const it=e.target.closest('.it');if(!it)return;render({set:it.dataset.s,k:+it.dataset.k});window.scrollTo({top:$('keyh').getBoundingClientRect().top+scrollY-10,behavior:'smooth'});};
+  for(const id of ['list','nowlist','fres'])$(id).onclick=e=>{const it=e.target.closest('.it');if(!it)return;e.stopPropagation();const sset=it.dataset.s,kk=+it.dataset.k,keep=$('fq').value;
+    render({set:sset,k:kk});if(id==='fres'){$('fq').value=keep;$('fq').oninput();}
+    const el=$(id).querySelector(`.it[data-s="${sset}"][data-k="${kk}"]`)||it;showPop(el);};
   $('fq').oninput=()=>{const q=norm($('fq').value.trim());if(q.length<2){$('fres').innerHTML='';return}const res=[];
     for(const [SN,SS,lab] of [['M',M,''],['NOW',NOW,' · this season']]){if(SN==='NOW'&&LAST.sp==='this')continue;SS.order.forEach(([d,k],n)=>{const i=SS.cand[k];if(norm(pname(i)).includes(q)){const pl=placeOf(SS,k);const own=pname(i)===PID;
       res.push(item(SS,k,n+1,SN,false,(own?'':` · ${ord(pl.o)} without his own seasons`)+lab))}})}
