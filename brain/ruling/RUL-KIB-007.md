@@ -5,7 +5,7 @@ client: kib
 tags: [team, client-kib]
 status: live
 date: 2026-11-07
-source: "tools/video-render/twin/README.md:35"
+source: "tools/video-render/twin/README.md:47"
 summary: Exception to RUL-KIB-003 for Mikey's Stat Twins videos only: real player faces, club badges and nation flags are allowed.
 ---
 Mikey's statistical-twin shorts (docs/marketing/videos/v02-*, v03-* and later Stat Twins episodes) may show

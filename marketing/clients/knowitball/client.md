@@ -23,12 +23,15 @@ To change a fact: write a new Brain note, set the old one to superseded, run `py
 ## Voice
 - RUL-KIB-001
 - RUL-KIB-002
+- FACT-KIB-012
 
 ## Audience
 - FACT-KIB-002
 
 ## Rules
 - RUL-KIB-003
+- RUL-KIB-005
+- RUL-KIB-006
 - RUL-KIB-007
 - RUL-KIB-004
 - RUL-KIB-002
