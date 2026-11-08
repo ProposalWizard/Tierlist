@@ -18,9 +18,22 @@
 "maxGap": 0.06
 },
 {
-"id": "c8",
-"say": "Number eight and four: Raphinha. Barcelona. Twice. Eighty-six percent.",
-"cap": "NUMBER EIGHT AND FOUR: RAPHINHA. BARCELONA. TWICE. 86%|eighty-six-percent.",
+"id": "c5",
+"say": "Number five: Vinícius Júnior. Real Madrid. Eighty-six percent.",
+"cap": "NUMBER FIVE: VINÍCIUS JÚNIOR. REAL MADRID. 86%|eighty-six-percent.",
+"hold": 0.12,
+"sfx": [
+[
+"pop",
+"VINÍCIUS",
+0.5
+]
+]
+},
+{
+"id": "c4",
+"say": "Four: Raphinha. Barcelona. Eighty-six percent.",
+"cap": "FOUR: RAPHINHA. BARCELONA. 86%|eighty-six-percent.",
 "hold": 0.12,
 "sfx": [
 [
@@ -31,22 +44,9 @@
 ]
 },
 {
-"id": "c7",
-"say": "Seven and two: Lamine Yamal. Barcelona. Twice. Eighty-eight percent.",
-"cap": "SEVEN AND TWO: LAMINE YAMAL. BARCELONA. TWICE. 88%|eighty-eight-percent.",
-"hold": 0.12,
-"sfx": [
-[
-"pop",
-"LAMINE",
-0.5
-]
-]
-},
-{
 "id": "surprise",
-"say": "You'd think Mohamed Salah would be up here? He's fifty-first.",
-"cap": "YOU'D THINK MOHAMED SALAH WOULD BE UP HERE? HE'S 51ST.",
+"say": "You'd think his old PSG team-mate Lionel Messi would be up here? He's sixth.",
+"cap": "YOU'D THINK HIS OLD PSG TEAM-MATE LIONEL MESSI WOULD BE UP HERE? HE'S 6TH.",
 "hold": 0.15,
 "sfx": [
 [
@@ -57,27 +57,14 @@
 ]
 },
 {
-"id": "c6",
-"say": "Six: Lionel Messi. His old PSG team-mate. Eighty-six percent.",
-"cap": "SIX: LIONEL MESSI. HIS OLD PSG TEAM-MATE. 86%|eighty-six-percent.",
-"hold": 0.12,
-"sfx": [
-[
-"pop",
-"LIONEL",
-0.5
-]
-]
-},
-{
-"id": "c5",
-"say": "Five: Vinícius Júnior. Real Madrid. Eighty-six percent. Guess the twin in the comments.",
-"cap": "FIVE: VINÍCIUS JÚNIOR. REAL MADRID. 86%|eighty-six-percent. GUESS THE TWIN IN THE COMMENTS.",
+"id": "c2",
+"say": "Two: Lamine Yamal. Barcelona. Eighty-eight percent. Guess the twin in the comments.",
+"cap": "TWO: LAMINE YAMAL. BARCELONA. 88%|eighty-eight-percent. GUESS THE TWIN IN THE COMMENTS.",
 "hold": 0.25,
 "sfx": [
 [
 "pop",
-"VINÍCIUS",
+"LAMINE",
 0.5
 ],
 [

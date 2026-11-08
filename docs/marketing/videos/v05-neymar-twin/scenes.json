@@ -91,41 +91,11 @@
 "match": 86.1,
 "excluded": false,
 "rank": 5
-},
-{
-"name": "Lionel Messi",
-"season": "2022/23",
-"face": "p30981",
-"club": "t9847",
-"flag": "cARG",
-"match": 85.8,
-"excluded": false,
-"rank": 6
-},
-{
-"name": "Lamine Yamal",
-"season": "2026/27",
-"face": "p1467236",
-"club": "t8634",
-"flag": "cESP",
-"match": 85.6,
-"excluded": false,
-"rank": 7
-},
-{
-"name": "Raphinha",
-"season": "2025/26",
-"face": "p696679",
-"club": "t8634",
-"flag": "cBRA",
-"match": 84.7,
-"excluded": false,
-"rank": 8
 }
 ]
 },
 "top": {
-"title": "The top eight.",
+"title": "The top five.",
 "sub": "",
 "target": {
 "name": "Neymar",
@@ -185,36 +155,6 @@
 "match": 86.1,
 "excluded": false,
 "rank": 5
-},
-{
-"name": "Lionel Messi",
-"season": "2022/23",
-"face": "p30981",
-"club": "t9847",
-"flag": "cARG",
-"match": 85.8,
-"excluded": false,
-"rank": 6
-},
-{
-"name": "Lamine Yamal",
-"season": "2026/27",
-"face": "p1467236",
-"club": "t8634",
-"flag": "cESP",
-"match": 85.6,
-"excluded": false,
-"rank": 7
-},
-{
-"name": "Raphinha",
-"season": "2025/26",
-"face": "p696679",
-"club": "t8634",
-"flag": "cBRA",
-"match": 84.7,
-"excluded": false,
-"rank": 8
 }
 ]
 },
@@ -302,12 +242,11 @@
 "kicker": "HIS TWIN IS NOT WHO YOU THINK",
 "kickerAt": "NOT"
 },
-"c8": {
+"c5": {
 "type": "cd2",
 "list": "top",
 "show": [
-4,
-8
+5
 ],
 "before": [],
 "prevShow": [],
@@ -315,22 +254,76 @@
 "cont": true,
 "from": 1,
 "pop": {
+"big": "3.30",
+"label": "dribbles per 90",
+"rank": "3rd of 72 La Liga attackers",
+"at": "REAL"
+},
+"fromClub": "t9847"
+},
+"c4": {
+"type": "cd2",
+"list": "top",
+"show": [
+4
+],
+"before": [
+5
+],
+"prevShow": [
+5
+],
+"at": 0.0,
+"cont": true,
+"from": -1,
+"pop": {
 "big": "0.82",
 "label": "big chances made per 90",
 "rank": "2nd of 70 La Liga attackers",
 "at": "BARCELONA"
 },
-"fromClub": "t9847"
+"fromClub": "t8633"
 },
-"c7": {
+"surprise": {
+"type": "cd2",
+"list": "top",
+"show": [],
+"before": [
+5,
+4
+],
+"prevShow": [
+4
+],
+"at": 0.0,
+"aside": {
+"name": "Lionel Messi",
+"season": "2022/23",
+"face": "p30981",
+"club": "t9847",
+"flag": "cARG",
+"rank": 6,
+"match": 85.8,
+"text": "Not even top 5"
+},
+"cont": true,
+"from": 1,
+"pop": {
+"big": "4.10",
+"label": "shots per 90",
+"rank": "1st of 64 Ligue 1 attackers",
+"at": "HE'S"
+},
+"fromClub": "t8634"
+},
+"c2": {
 "type": "cd2",
 "list": "top",
 "show": [
-2,
-7
+2
 ],
 "before": [
-8,
+5,
 4
 ],
 "prevShow": [
@@ -344,93 +337,6 @@
 "label": "big chances made per 90",
 "rank": "1st of 77 La Liga attackers",
 "at": "BARCELONA"
-},
-"fromClub": "t8634"
-},
-"surprise": {
-"type": "cd2",
-"list": "top",
-"show": [],
-"before": [
-8,
-4,
-7,
-2
-],
-"prevShow": [
-2
-],
-"at": 0.0,
-"aside": {
-"name": "Mohamed Salah",
-"season": "2024/25",
-"face": "p292462",
-"club": "t8650",
-"flag": "cEGY",
-"rank": 51,
-"match": 76.9,
-"text": "Not even top 50"
-},
-"cont": true,
-"from": 1,
-"pop": {
-"big": "0.53",
-"label": "goals per 90 (no pens)",
-"rank": "1st of 72 Premier League attackers",
-"at": "HE'S"
-},
-"fromClub": "t8634"
-},
-"c6": {
-"type": "cd2",
-"list": "top",
-"show": [
-6
-],
-"before": [
-8,
-4,
-7,
-2
-],
-"prevShow": [
-2
-],
-"at": 0.0,
-"cont": true,
-"from": -1,
-"pop": {
-"big": "4.10",
-"label": "shots per 90",
-"rank": "1st of 64 Ligue 1 attackers",
-"at": "HIS"
-},
-"fromClub": "t8650"
-},
-"c5": {
-"type": "cd2",
-"list": "top",
-"show": [
-5
-],
-"before": [
-8,
-4,
-7,
-2,
-6
-],
-"prevShow": [
-6
-],
-"at": 0.0,
-"cont": true,
-"from": 1,
-"pop": {
-"big": "3.30",
-"label": "dribbles per 90",
-"rank": "3rd of 72 La Liga attackers",
-"at": "REAL"
 },
 "sticker": {
 "text": "GUESS THE TWIN IN THE COMMENTS",
@@ -446,19 +352,16 @@
 3
 ],
 "before": [
-8,
+5,
 4,
-7,
-2,
-6,
-5
+2
 ],
 "prevShow": [
-5
+2
 ],
 "at": "MICHAEL",
 "cont": true,
-"from": -1,
+"from": 1,
 "pop": {
 "big": "0.74",
 "label": "assists per 90",
@@ -466,7 +369,7 @@
 "at": "BAYERN"
 },
 "twinAt": "THAT",
-"fromClub": "t8633"
+"fromClub": "t8634"
 },
 "why": {
 "type": "compare",

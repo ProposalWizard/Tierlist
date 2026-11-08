@@ -1,5 +1,22 @@
-{"player": "Neymar", "season": "2017/18", "short": "Neymar", "series": "STAT TWINS · EP 4",
- "leagues": ["Premier League", "La Liga", "Serie A", "Bundesliga", "Ligue 1"],
- "surprise": ["Mohamed Salah", "Bukayo Saka", "Jamal Musiala"],
- "stories": {"Lionel Messi": "His old PSG team-mate"},
- "spoken": {}}
+{
+ "player": "Neymar",
+ "season": "2017/18",
+ "short": "Neymar",
+ "series": "STAT TWINS · EP 4",
+ "leagues": [
+  "Premier League",
+  "La Liga",
+  "Serie A",
+  "Bundesliga",
+  "Ligue 1"
+ ],
+ "surprise": [
+  "Lionel Messi"
+ ],
+ "stories": {
+  "Lionel Messi": "His old PSG team-mate"
+ },
+ "spoken": {},
+ "top": 5,
+ "surpriseAnyPlace": true
+}

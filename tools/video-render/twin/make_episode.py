@@ -139,23 +139,28 @@ def fact(v):
 
 # ---------- the list: own seasons first, then from the bottom; a repeated player's places together ----------
 rows8 = []
+if EP.get('top'):  # e.g. "top": 5 -> the list holds that many other players (his own seasons above them still shown, then removed)
+    top8, n_ = [], 0
+    for d, v in base:
+        if n_ >= EP['top']: break
+        top8.append((d, v)); n_ += v['name'] != NAME
 for d, v in top8:
     r = pics(v); r['match'] = round(100 - d, 1); r['excluded'] = v['name'] == NAME; r['_v'] = v; rows8.append(r)
 keep = [r for r in rows8 if not r['excluded']]
 for i, r in enumerate(keep): r['rank'] = i + 1
 keep[0]['twin'] = True; TW = keep[0]
 groups = []; done = set()
-for r in reversed(keep):
-    if r['rank'] in done: continue
+for r in reversed(keep):   # the twin's places are kept for the last reveal, even when one of them is lower down
+    if r['rank'] in done or r['name'] == TW['name']: continue
     g = [x['rank'] for x in keep if x['name'] == r['name'] and x['rank'] not in done]; groups.append(sorted(g, reverse=True)); done |= set(g)
-groups[-1] = sorted(groups[-1])  # the twin's group
+groups.append(sorted(x['rank'] for x in keep if x['name'] == TW['name']))  # the twin's group
 sure = round(100 * winsO[(TW['name'], TW['season'])] / 2000)
 # surprise: the best-placed famous name that is outside the list
 sur = None
 others = [(i + 1, d, v) for i, (d, v) in enumerate([(d, v) for d, v in base if v['name'] != NAME])]
 for nm in EP.get('surprise', []):   # the first famous name (in the order given) that is clearly outside the list
     h = [(rk, d, v) for rk, d, v in others if v['name'] == nm]
-    if h and h[0][0] > max(len(keep) + 4, 12): sur = h[0]; break
+    if h and h[0][0] > (len(keep) if EP.get('surpriseAnyPlace') else max(len(keep) + 4, 12)): sur = h[0]; break
 nowrows = []
 for d, v in now5:
     r = pics(v); r['match'] = round(100 - d, 1); r['_v'] = v; nowrows.append(r)
@@ -203,7 +208,8 @@ for gi, g in enumerate(groups):
     S[id] = sc; side = -side; before += g
     if gi == 1 and sur:   # the surprise after the second place
         rk, d, v = sur; a = pics(v); a.update(rank=rk, match=round(100 - d, 1), text=f"Not even top {((rk - 1) // 5) * 5}")
-        line('surprise', f"You'd think {spoken(v['name'])} would be up here? He's {ordinal(rk)}.", f"YOU'D THINK {v['name'].upper()} WOULD BE UP HERE? HE'S {rk}{osuf(rk).upper()}.", hold=0.9, sfx=[["hit", "HE'S", 0.5]])
+        st = EP.get('stories', {}).get(v['name']); st = (st[0].lower() + st[1:] + ' ') if st else ''
+        line('surprise', f"You'd think {st}{spoken(v['name'])} would be up here? He's {ordinal(rk)}.", f"YOU'D THINK {st.upper()}{v['name'].upper()} WOULD BE UP HERE? HE'S {rk}{osuf(rk).upper()}.", hold=0.9, sfx=[["hit", "HE'S", 0.5]])
         S['surprise'] = {'type': 'cd2', 'list': 'top', 'show': [], 'before': list(before), 'prevShow': before[-1:], 'at': v['name'].upper().split()[0], 'aside': a, 'cont': True, 'from': side,
                          'pop': {**fact(v), 'at': "HE'S"}}; side = -side
 s_say = "every single one" if sure >= 100 else f"{words(sure)} percent of them"
