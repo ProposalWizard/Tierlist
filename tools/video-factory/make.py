@@ -68,20 +68,24 @@ def eleven_voice(cfg, lines, work, best):
     import urllib.request
     vid = cfg["voiceId"]; model = cfg.get("model", "eleven_multilingual_v2")
     vs = cfg.get("settings", {"stability": 0.45, "similarity_boost": 0.8, "style": 0.3, "use_speaker_boost": True})
-    gap = cfg.get("maxGap", 0.16)  # Mikey: shorter gaps between sentences, same speaking speed
+    gap = cfg.get("maxGap", 0.09)  # Mikey: shorter gaps between sentences, same speaking speed
     for i, ln in enumerate(lines):
         text = ln.get("sayEleven") or ln.get("say") or ln["text"]
         for take, seed in enumerate(cfg.get("seeds", [7, 19])):
             mp3 = os.path.join(work, f"l{i:02d}-e{seed}.mp3"); wav = os.path.join(work, f"l{i:02d}-e{seed}.wav")
+            if not os.path.exists(mp3) and take > 0 and cfg.get("noNewTakes"): continue  # reuse what was already paid for
             if not os.path.exists(mp3):
                 body = json.dumps({"text": text, "model_id": model, "voice_settings": vs, "seed": seed}).encode()
                 req = urllib.request.Request(f"https://api.elevenlabs.io/v1/text-to-speech/{vid}?output_format=mp3_44100_128", data=body, method="POST", headers={"Content-Type": "application/json", "xi-api-key": "proxy-injected"})
                 open(mp3, "wb").write(urllib.request.urlopen(req, timeout=120).read())
-            af = f"silenceremove=start_periods=1:start_threshold=-45dB:stop_periods=-1:stop_duration={gap}:stop_threshold=-42dB:stop_silence={gap},areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,apad=pad_dur=0.08"
+            # Hugo's pauses hold breath and room sound, so -42 dB left 0.3 s gaps; -39 dB with 0.09 s kept
+            # trims them without clipping soft word edges ("handball"). Then an even, pitch-safe speed-up
+            # (cfg "tempo") brings the read to voice E's pace (Mikey, 8 Nov 2026).
+            af = f"silenceremove=start_periods=1:start_threshold=-45dB:stop_periods=-1:stop_duration={gap + 0.02}:stop_threshold=-39dB:stop_silence={gap},areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,atempo={cfg.get('tempo', 1.0)},apad=pad_dur=0.06"
             subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", mp3, "-af", af, "-ac", "1", "-ar", str(SR), wav], check=True)
             heard, words = transcribe(wav); sc = sim(text, heard)
             if sc > best.get(i, (-1,))[0]: best[i] = (sc, wav, words)
-            if sc >= 0.86: break
+            if sc >= cfg.get("pass", 0.8): break
         log(f"eleven line {i}: {best[i][0]:.2f}")
 
 def main():
