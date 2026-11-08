@@ -32,3 +32,18 @@ Bugs found on the way (do not repeat):
 - Blender reuses a baked physics result from the .blend, so tests on a saved file can be stale: rebuild from scratch to test physics.
 - A procedural texture with no coordinates stretches over the whole object (giant bricks): feed it Object coordinates.
 - Filmic colour, not AgX, matches their saturated wood and green.
+
+## Rounds 2-6: cuts3.py (8 Nov 2026)
+
+`blender -b --factory-startup --python cuts3.py -- build <i>` / `check <i>` / `still <i> <frames>` / `render <i> <from> <to>`
+(i = 1..5 for rounds 2..6). Cut times come from the original's measured
+timeline (avocado-practice plan.json). The knife is worked out from the cut
+times, so any number of cuts works; the check proves every cut (2,000+) lands
+on its line at its cut time. Cubes are one mesh animated by us (no Blender
+physics: tens of thousands of pieces), released when the dice passes them,
+falling into a mound shaped like the avocado.
+`runall.sh` renders rounds 2-6 with 3 workers; `finish.py video|sound` draws
+the counters and makes the sound for all 72 s.
+Pile colour: tiny pieces must blend toward the average flesh colour (theirs
+measures about RGB 216,215,171), and touch each other, or the pile reads grey
+and speckled.

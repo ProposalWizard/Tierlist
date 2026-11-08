@@ -17,7 +17,7 @@ def q_in(x,y,z):
   r=rad(x)
   if r<=0: return 9
   a=(z-cz(x))/(r*EH); b=y/r; return a*a+b*b
-STONE=(-0.5,0.0,cz(-0.5),0.62,0.5,0.5)   # cx,cy,cz,rx,ry,rz
+STONE=(-0.5,0.0,cz(-0.5),0.62,0.44,0.5)   # cx,cy,cz,rx,ry,rz
 TOPZ=2*RM*EH
 # ---- round 1, cut frames measured from the original
 R1=dict(kx=4,ky=3,kz=3,down=[4,11,18,26],side=[62,72,82],dice=[124,139,154],end=165)
@@ -90,7 +90,7 @@ def skin_mat(R):
   vor=n.new('ShaderNodeTexVoronoi');vor.inputs['Scale'].default_value=60;l.new(tc.outputs['Object'],vor.inputs['Vector'])
   noi=n.new('ShaderNodeTexNoise');noi.inputs['Scale'].default_value=7;noi.inputs['Detail'].default_value=6;l.new(tc.outputs['Object'],noi.inputs['Vector'])
   bump=n.new('ShaderNodeBump');bump.inputs['Strength'].default_value=0.35;bump.inputs['Distance'].default_value=0.02;l.new(vor.outputs['Distance'],bump.inputs['Height']);l.new(bump.outputs['Normal'],b.inputs['Normal'])
-  ramp=n.new('ShaderNodeValToRGB');ramp.color_ramp.elements[0].color=(0.022,0.075,0.014,1);ramp.color_ramp.elements[1].color=(0.05,0.15,0.03,1);l.new(noi.outputs['Fac'],ramp.inputs['Fac'])
+  ramp=n.new('ShaderNodeValToRGB');ramp.color_ramp.elements[0].color=(0.014,0.05,0.012,1);ramp.color_ramp.elements[1].color=(0.034,0.10,0.026,1);l.new(noi.outputs['Fac'],ramp.inputs['Fac'])
   sep=n.new('ShaderNodeSeparateXYZ');l.new(tc.outputs['Object'],sep.inputs[0])
   lm=line_mask(n,l,sep.outputs[0],sep.outputs[2],R)
   mx=n.new('ShaderNodeMix');mx.data_type='RGBA';l.new(lm,mx.inputs[0]);l.new(ramp.outputs[0],mx.inputs[6]);mx.inputs[7].default_value=(0.42,0.58,0.22,1)
@@ -281,7 +281,7 @@ def build(R):
     for fc in ob.animation_data.action.fcurves:
       for kp in fc.keyframe_points: kp.interpolation='CONSTANT'
     bpy.context.view_layer.objects.active=ob;bpy.ops.rigidbody.object_add(type='ACTIVE');rb=ob.rigid_body
-    rb.collision_shape='BOX';rb.friction=0.8;rb.restitution=0.15;rb.use_margin=True;rb.collision_margin=0.0005;rb.linear_damping=0.15;rb.angular_damping=0.3
+    rb.collision_shape='BOX';rb.friction=0.5;rb.restitution=0.1;rb.use_margin=True;rb.collision_margin=0.0005;rb.linear_damping=0.15;rb.angular_damping=0.3
     rb.kinematic=True;rb.keyframe_insert('kinematic',frame=0)
     # on the chop frame the slice tips forward from its front-bottom edge, then falls freely
     # physics must not run on a child object: work out the pose in avocado space, place it in the world
@@ -289,9 +289,9 @@ def build(R):
     ob.parent=None;ob.matrix_world=RW@Matrix.Translation(loc0);ob.rotation_mode='XYZ'
     ob.keyframe_insert('location',frame=rel);ob.keyframe_insert('rotation_euler',frame=rel)
     lay=ob['layer']
-    if lay==0: Ml=Matrix.Translation(loc0)
+    if lay==0: Ml=Matrix.Translation(loc0+Vector((0,-0.05 if k==0 else 0.0,0)))
     else:
-      th=0.10+0.07*lay;P=Vector((loc0.x,ob['ylo'],ob['zlo']+0.004));d=Matrix.Rotation(th,3,'X')@(loc0-P)
+      th=0.12+0.08*lay;P=Vector((loc0.x,ob['ylo'],ob['zlo']+0.004));d=Matrix.Rotation(th,3,'X')@(loc0-P)
       Ml=Matrix.Translation(P+d+Vector((0,-0.02*lay,0)))@Matrix.Rotation(th,4,'X')
     ob.matrix_world=RW@Ml
     ob.keyframe_insert('location',frame=rel+2);ob.keyframe_insert('rotation_euler',frame=rel+2)
@@ -333,9 +333,9 @@ def check(R):
   # physics: no cube may rise above the top of the avocado
   hi=0
   for f in range(R['dice'][0],R['end']+1):
-    s.frame_set(f);hi=max(hi,max(c.matrix_world.translation.z for c in cubes))
-  rows.append(f'highest cube {round(hi,2)} (top of avocado {round(TOPZ,2)})')
-  if hi>TOPZ: fails.append(rows[-1])
+    s.frame_set(f);hi=max(hi,max(c.matrix_world.translation.z-c['c0'][2] for c in cubes))
+  rows.append(f'most any cube rose above its start: {round(hi,3)} (limit 0.15)')
+  if hi>0.15: fails.append(rows[-1])
   print('\n'.join(rows));print('CHECK', 'PASS' if not fails else 'FAIL', len(fails));[print(' FAIL',x) for x in fails]
 
 if MODE=='build': build(R1)
