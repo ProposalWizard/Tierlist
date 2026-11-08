@@ -9,7 +9,9 @@
 0.05,
 0.6
 ]
-]
+],
+"sayEleven": "Who is prime <break time=\"0.25s\" /> Mo Salah's statistical twin? Last five seasons, every Premier League attacker.",
+"maxGap": 0.12
 },
 {
 "id": "own",

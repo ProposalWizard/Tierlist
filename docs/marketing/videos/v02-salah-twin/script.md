@@ -1,6 +1,6 @@
 # Knowitball short v02: Salah's statistical twin (Stat Twins · Ep 1)
 
-- File: `knowitball-v02-salah-twin.mp4`. 1080×1920 (9:16), 30 fps, H.264, AAC 48 kHz stereo. Length: 84.2 s. Cover: `cover.png` (the intro card at 4.5 s, with the two blurred twins).
+- File: `knowitball-v02-salah-twin.mp4`. 1080×1920 (9:16), 30 fps, H.264, AAC 48 kHz stereo. Length: 85.4 s. Cover: `cover.png` (the intro card at 4.5 s, with the two blurred twins).
 - Version 5 (8 Nov 2026): the Poster style (full page, each player in his club colour; engine video_full.html), Salah's own seasons removed with an animation and the list re-ranked to a top 5, each 'this season' place its own line, end card in club colours. Version 4 = version 3 plus Mikey's picks: 4-s intro, '100% = identical' on screen only, 'You'd think Saka? 31st', 'guess the twin' sticker at #4, a pop-up fact per player, cards slide in from alternating sides; the intro card shows the two twins blurred (LAST 5 YEARS, CURRENT). Version 3: voice Hugo on ElevenLabs (FACT-KIB-012); the target's own seasons shown first and greyed out, then the countdown from the bottom, a repeated player's places shown together; "first in x% of tests"; end card with both = pairs; ending line "Follow for more." (RUL-KIB-005). Faces, club badges and flags (RUL-KIB-007), "% match" (100% = identical), "#1 in x of 10 tests" in place of "2,000 runs", real per-90 numbers on screen (never ranks).
 - Answer: Cole Palmer 23/24 (79% match, first in 79% of tests), #1 of a top 5 once Salah's own 22/23, 23/24 and 25/26 are removed; this season only: Rayan Cherki (76%). Saka's best season is 28th (70%).
 - Model: Premier League attackers (wingers, 10s, strikers), 900+ minutes (450+ for 26/27, about 10 games in). Every stat per 90 minutes, ranked 0–100 against that player's own season; weighted gap; match % = 100 minus the gap; 2,000 tests with the weights shuffled ±50%. Data: FotMob's public stat pages (Opta), read 7 Nov 2026. Pictures: FotMob headshots, club badges (the club that season) and flags.
@@ -8,22 +8,22 @@
 
 | Time (s) | Voiceover | On screen | Source |
 |---|---|---|---|
-| 0.15–4.82 | "Who is prime Mo Salah's statistical twin? Last five seasons, every Premier League attacker." | Intro card: face, badge, flag, SALAH 2024/25; 5 seasons · 22/23 to 26/27; 465 Premier League attacker seasons; 23 stats, all per 90 minutes; two blurred faces: LAST 5 YEARS, CURRENT | v2data.json |
-| 4.82–11.55 | "First, Salah himself. Three of his own seasons made the top eight. They don't count. So that leaves five." | Countdown #1 · #2 · #7: Mohamed Salah 2022/23 · 2023/24 · 2025/26 (greyed out, not counted) | v2data.json |
-| 11.55–16.31 | "Number five: Son Heung-min. Tottenham. Seventy-six percent." | Countdown #5: Heung-Min Son 2023/24, 76% match; pop-up 0.61 big chances made per 90 (4th of 101 PL attackers) | v2data.json |
-| 16.31–21.05 | "Four: Harvey Barnes. Newcastle. Seventy-six percent." | Countdown #4: Harvey Barnes 2024/25, 76% match; pop-up 0.46 goals per 90 (no pens) (14th of 96 PL attackers) | v2data.json |
-| 21.05–24.24 | "You'd think Saka would be up here? He's twenty-eighth." | Aside: Bukayo Saka 2023/24, #28, 70% match, 'Not even top 25'; pop-up 2.79 chances created per 90 (2nd of 101 PL attackers) | v2data.json |
-| 24.24–29.20 | "Three: Kelechi Iheanacho. Leicester. Yes, really." | Countdown #3: Kelechi Iheanacho 2022/23, 76% match; pop-up 0.40 assists per 90 (5th of 94 PL attackers) | v2data.json |
-| 29.20–35.72 | "Two: his old Liverpool team-mate, Roberto Firmino. Seventy-eight percent. Guess the twin in the comments." | Countdown #2: Roberto Firmino 2022/23, 78% match; pop-up 0.82 goals per 90 (no pens) (2nd of 94 PL attackers); sticker GUESS THE TWIN IN THE COMMENTS | v2data.json |
-| 35.72–43.12 | "And number one... Cole Palmer. His first season at Chelsea. Seventy-nine percent. That makes him Salah's statistical twin." | Countdown #1: Cole Palmer 2023/24, 79% match, becomes SALAH'S STATISTICAL TWIN; pop-up 22+11 goals + assists (Premier League 2023/24) | v2data.json |
-| 43.12–49.08 | "We changed how much each stat counts, two thousand times. Palmer came first in seventy-nine percent of them." | COLE PALMER · 23/24 / FIRST IN 79% OF TESTS / each test counts the stats differently | v2data.json |
-| 49.08–54.84 | "Why? They create the same. Nearly two and a half chances every ninety minutes. The same shots on target." | They create the same. (per 90): Chances created 2.37 vs 2.47; Shots on target 1.6 vs 1.6 | v2data.json |
-| 54.84–59.58 | "The difference? Palmer passes way more. Salah scores more, and makes more big chances." | Not the same player. (per 90): Passes 22.7 vs 37.4; Goals (no pens) 0.53 vs 0.45; Big chances made 0.72 vs 0.58 | v2data.json |
-| 59.58–60.86 | "And this season only?" | countdown card | v2data.json |
-| 60.86–63.03 | "Five: Julio Enciso." | Countdown #5: spotlight Julio Enciso 2026/27, 66% match | v2data.json |
-| 63.03–65.00 | "Four: João Pedro." | Countdown #4: spotlight João Pedro 2026/27, 69% match | v2data.json |
-| 65.00–67.29 | "Three: Bryan Mbeumo." | Countdown #3: spotlight Bryan Mbeumo 2026/27, 69% match | v2data.json |
-| 67.29–69.15 | "Two: Evanilson." | Countdown #2: spotlight Evanilson 2026/27, 71% match | v2data.json |
-| 69.15–73.75 | "And number one, after about ten games... Rayan Cherki. seventy-six percent." | Countdown #1: spotlight Rayan Cherki 2026/27, 76% match | v2data.json |
-| 73.75–78.33 | "He creates even more. Over three chances every ninety minutes. And more goals, so far." | Salah vs Cherki. (per 90): Chances created 2.37 vs 3.41; Goals (no pens) 0.53 vs 0.76 | v2data.json |
-| 78.33–84.20 | "So Salah's twin is Cole Palmer. And right now, it's Rayan Cherki. Follow for more." | End card: Last 5 seasons: SALAH 24/25 = PALMER 23/24 / This season: SALAH 24/25 = CHERKI; KNOWITBALL, WHO'S NEXT? COMMENT BELOW, knowitball.co.uk | v2data.json |
+| 0.15–6.06 | "Who is prime Mo Salah's statistical twin? Last five seasons, every Premier League attacker." | Intro card: face, badge, flag, SALAH 2024/25; 5 seasons · 22/23 to 26/27; 465 Premier League attacker seasons; 23 stats, all per 90 minutes; two blurred faces: LAST 5 YEARS, CURRENT | v2data.json |
+| 6.06–12.79 | "First, Salah himself. Three of his own seasons made the top eight. They don't count. So that leaves five." | Countdown #1 · #2 · #7: Mohamed Salah 2022/23 · 2023/24 · 2025/26 (greyed out, not counted) | v2data.json |
+| 12.79–17.55 | "Number five: Son Heung-min. Tottenham. Seventy-six percent." | Countdown #5: Heung-Min Son 2023/24, 76% match; pop-up 0.61 big chances made per 90 (4th of 101 PL attackers) | v2data.json |
+| 17.55–22.29 | "Four: Harvey Barnes. Newcastle. Seventy-six percent." | Countdown #4: Harvey Barnes 2024/25, 76% match; pop-up 0.46 goals per 90 (no pens) (14th of 96 PL attackers) | v2data.json |
+| 22.29–25.48 | "You'd think Saka would be up here? He's twenty-eighth." | Aside: Bukayo Saka 2023/24, #28, 70% match, 'Not even top 25'; pop-up 2.79 chances created per 90 (2nd of 101 PL attackers) | v2data.json |
+| 25.48–30.45 | "Three: Kelechi Iheanacho. Leicester. Yes, really." | Countdown #3: Kelechi Iheanacho 2022/23, 76% match; pop-up 0.40 assists per 90 (5th of 94 PL attackers) | v2data.json |
+| 30.45–36.96 | "Two: his old Liverpool team-mate, Roberto Firmino. Seventy-eight percent. Guess the twin in the comments." | Countdown #2: Roberto Firmino 2022/23, 78% match; pop-up 0.82 goals per 90 (no pens) (2nd of 94 PL attackers); sticker GUESS THE TWIN IN THE COMMENTS | v2data.json |
+| 36.96–44.36 | "And number one... Cole Palmer. His first season at Chelsea. Seventy-nine percent. That makes him Salah's statistical twin." | Countdown #1: Cole Palmer 2023/24, 79% match, becomes SALAH'S STATISTICAL TWIN; pop-up 22+11 goals + assists (Premier League 2023/24) | v2data.json |
+| 44.36–50.31 | "We changed how much each stat counts, two thousand times. Palmer came first in seventy-nine percent of them." | COLE PALMER · 23/24 / FIRST IN 79% OF TESTS / each test counts the stats differently | v2data.json |
+| 50.31–56.08 | "Why? They create the same. Nearly two and a half chances every ninety minutes. The same shots on target." | They create the same. (per 90): Chances created 2.37 vs 2.47; Shots on target 1.6 vs 1.6 | v2data.json |
+| 56.08–60.82 | "The difference? Palmer passes way more. Salah scores more, and makes more big chances." | Not the same player. (per 90): Passes 22.7 vs 37.4; Goals (no pens) 0.53 vs 0.45; Big chances made 0.72 vs 0.58 | v2data.json |
+| 60.82–62.10 | "And this season only?" | countdown card | v2data.json |
+| 62.10–64.27 | "Five: Julio Enciso." | Countdown #5: spotlight Julio Enciso 2026/27, 66% match | v2data.json |
+| 64.27–66.24 | "Four: João Pedro." | Countdown #4: spotlight João Pedro 2026/27, 69% match | v2data.json |
+| 66.24–68.53 | "Three: Bryan Mbeumo." | Countdown #3: spotlight Bryan Mbeumo 2026/27, 69% match | v2data.json |
+| 68.53–70.39 | "Two: Evanilson." | Countdown #2: spotlight Evanilson 2026/27, 71% match | v2data.json |
+| 70.39–74.99 | "And number one, after about ten games... Rayan Cherki. seventy-six percent." | Countdown #1: spotlight Rayan Cherki 2026/27, 76% match | v2data.json |
+| 74.99–79.57 | "He creates even more. Over three chances every ninety minutes. And more goals, so far." | Salah vs Cherki. (per 90): Chances created 2.37 vs 3.41; Goals (no pens) 0.53 vs 0.76 | v2data.json |
+| 79.57–85.44 | "So Salah's twin is Cole Palmer. And right now, it's Rayan Cherki. Follow for more." | End card: Last 5 seasons: SALAH 24/25 = PALMER 23/24 / This season: SALAH 24/25 = CHERKI; KNOWITBALL, WHO'S NEXT? COMMENT BELOW, knowitball.co.uk | v2data.json |
