@@ -44,33 +44,48 @@ def pct(x): x = round(x); return f"{words(x)} percent", f"{x}%|{words(x).replace
 CAP = lambda s: s.upper()
 
 # ---------- the data ----------
-P9, b9 = pool(900); P4, b4 = pool(450)
-def season_pool(s): return b4[s] if s == CUR else b9[s]
-def rank_in(f, L): return {k: 100 * (sum(1 for y in L if y['f'][k] < f[k]) + 0.5 * sum(1 for y in L if y['f'][k] == f[k])) / len(L) for k in W}
-def solve(tf, own, cands, n=2000, seed=7):
-    T = rank_in(tf, own); base = sorted(((dist(T, v['pct'], W), v) for v in cands), key=lambda x: x[0])
-    rnd = random.Random(seed); wins = collections.Counter()
-    for _ in range(n):
-        Wr = {k: w * rnd.uniform(.5, 1.5) for k, w in W.items()}
-        b = min(cands, key=lambda v: dist(T, v['pct'], Wr)); wins[(b['name'], b['season'])] += 1
-    return base, wins
-idx = {(v['season'], v['name']): k.split('|')[1] for k, v in t.items()}
-tg = [v for v in P9 if v['name'] == EP['player'] and v['season'] == EP['season']][0]
+TOP5 = bool(EP.get('leagues'))   # top 5 leagues: the Twin Finder data and method (model/finder_model.py), same answer as the Finder page
+if TOP5:
+    from finder_model import Data, W as FW, GROUP_NAME
+    FD = Data(EP.get('data') or os.path.join(os.environ.get('TWIN_DATA', 'fm'), 'twin_data.json'))
+    LGS = {int(k) for k, v in FD.D['leagues'].items() if v in EP['leagues']}
+    trows = FD.find(EP['player'], EP['season'])
+    order, winsO, _tp, _tf, GRP, cands = FD.rank(trows, FIVE, LGS)
+    W = FW[GRP]; tg = sorted(trows, key=lambda o: o['s'])[-1]; tg['f'] = _tf
+    base = order; top8 = order[:8]
+    nbase, nwins, *_ = FD.rank(trows, [CUR], LGS, include_own=False); now5 = nbase[:5]
+    idx = {}
+    def season_pool(s, v=None): return FD.pool(v['league'], v['s'], GRP)[0]
+    POOLNAME = lambda v: f"{v['leagueName']} {GROUP_NAME[GRP]}s"
+else:
+    P9, b9 = pool(900); P4, b4 = pool(450)
+    def season_pool(s, v=None): return b4[s] if s == CUR else b9[s]
+    POOLNAME = lambda v: 'PL attackers'
+    def rank_in(f, L): return {k: 100 * (sum(1 for y in L if y['f'][k] < f[k]) + 0.5 * sum(1 for y in L if y['f'][k] == f[k])) / len(L) for k in W}
+    def solve(tf, own, cands, n=2000, seed=7):
+        T = rank_in(tf, own); base = sorted(((dist(T, v['pct'], W), v) for v in cands), key=lambda x: x[0])
+        rnd = random.Random(seed); wins = collections.Counter()
+        for _ in range(n):
+            Wr = {k: w * rnd.uniform(.5, 1.5) for k, w in W.items()}
+            b = min(cands, key=lambda v: dist(T, v['pct'], Wr)); wins[(b['name'], b['season'])] += 1
+        return base, wins
+    idx = {(v['season'], v['name']): k.split('|')[1] for k, v in t.items()}
+    tg = [v for v in P9 if v['name'] == EP['player'] and v['season'] == EP['season']][0]
+    cands = [v for s in FIVE for v in season_pool(s) if v is not tg]
+    base, _ = solve(tg['f'], b9[EP['season']], cands, n=1)
+    _, winsO = solve(tg['f'], b9[EP['season']], [v for v in cands if v['name'] != EP['player']])
+    top8 = base[:8]
+    now_c = [v for v in season_pool(CUR) if v['name'] != EP['player']]
+    nbase, nwins = solve(tg['f'], b9[EP['season']], now_c)
+    now5 = nbase[:5]
 NAME, SHORT = EP['player'], EP.get('short', EP['player'].split()[-1])
-cands = [v for s in FIVE for v in season_pool(s) if v is not tg]
-base, _ = solve(tg['f'], b9[EP['season']], cands, n=1)
-_, winsO = solve(tg['f'], b9[EP['season']], [v for v in cands if v['name'] != NAME])
-top8 = base[:8]
-now_c = [v for v in season_pool(CUR) if v['name'] != NAME]
-nbase, nwins = solve(tg['f'], b9[EP['season']], now_c)
-now5 = nbase[:5]
 
 # ---------- pictures: headshots, badges (that season's club), flags ----------
 def get(u):
     return urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'}), timeout=30).read()
 META = json.load(open(os.path.join(IMG, "meta.json"))) if os.path.exists(os.path.join(IMG, "meta.json")) else {}
 def pics(v):
-    pid = idx[(v['season'], v['name'])]
+    pid = v.get('id') or idx[(v['season'], v['name'])]
     if pid not in META or not META[pid].get('cc'):
         h = get(f'https://www.fotmob.com/players/{pid}/x').decode()
         s = json.dumps(json.loads(re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', h, re.S).group(1))['props']['pageProps'])
@@ -93,10 +108,13 @@ def club_colours():
             if mx < 60 or (mx - mn) / mx < 0.35: continue
             e = bins.setdefault((r >> 5, g >> 5, b >> 5), [0, 0, 0, 0]); e[0] += 1; e[1] += r; e[2] += g; e[3] += b
         if bins: n, r, g, b = max(bins.values()); cols[fn[:-4]] = f'rgb({r // n},{g // n},{b // n})'
+    cols.update({k: v for k, v in CLUB_COLOUR.items()})  # badges whose main colour isn't the club colour
     return cols
+CLUB_COLOUR = {'t8634': 'rgb(165,0,68)', 't9823': 'rgb(220,5,45)'}  # Barcelona, Bayern
 CLUBNAME = {}
 _TS = open(os.path.join(HERE, "..", "..", "..", "lib", "star", "clubs.ts")).read()
-SHORTNAMES = dict(re.findall(r'"([^"]+)":\s*"([^"]+)"', _TS[_TS.index("CLUB_SHORT_NAMES"):_TS.index("};", _TS.index("CLUB_SHORT_NAMES"))]))
+SHORTNAMES = {'Bayern München': 'Bayern Munich', 'Paris Saint-Germain': 'PSG', 'Inter': 'Inter', 'Borussia Dortmund': 'Dortmund'}
+SHORTNAMES.update(re.findall(r'"([^"]+)":\s*"([^"]+)"', _TS[_TS.index("CLUB_SHORT_NAMES"):_TS.index("};", _TS.index("CLUB_SHORT_NAMES"))]))
 def club_name(tid):
     """The club's spoken name: the project's CLUB_SHORT_NAMES (CLAUDE.md gotcha 7) first, else FotMob's short name."""
     if tid not in CLUBNAME:
@@ -104,7 +122,7 @@ def club_name(tid):
             h = get(f'https://www.fotmob.com/teams/{tid}/overview/x').decode()
             full = re.search(r'<title[^>]*>([^<]+?) - ', h).group(1).strip()
             short = re.search(r'"shortName":\s*"([^"]+)"', h)
-            CLUBNAME[tid] = SHORTNAMES.get(full) or (short.group(1) if short else full)
+            CLUBNAME[tid] = SHORTNAMES.get(full) or SHORTNAMES.get(short.group(1) if short else '') or (short.group(1) if short else full)
         except Exception: CLUBNAME[tid] = ''
     return CLUBNAME[tid]
 
@@ -112,11 +130,12 @@ def club_name(tid):
 LAB = {'npG': 'goals per 90 (no pens)', 'A': 'assists per 90', 'chances': 'chances created per 90', 'bigCC': 'big chances made per 90', 'shots': 'shots per 90',
        'SoT': 'shots on target per 90', 'drib': 'dribbles per 90', 'npxG': 'xG per 90 (no pens)'}
 def fact(v):
-    L = season_pool(v['season']); best = None
+    L = season_pool(v['season'], v); best = None
     for k in LAB:
-        r = sorted(L, key=lambda y: -y['f'][k]); rk = [i + 1 for i, y in enumerate(r) if y['name'] == v['name']][0]
-        if best is None or rk < best[0]: best = (rk, k)
-    rk, k = best; return {'big': f"{v['f'][k]:.2f}", 'label': LAB[k], 'rank': f"{rk}{osuf(rk)} of {len(L)} PL attackers"}
+        if v['f'].get(k) is None: continue
+        r = sorted([y for y in L if y['f'].get(k) is not None], key=lambda y: -y['f'][k]); hit = [i + 1 for i, y in enumerate(r) if y['name'] == v['name']]
+        if hit and (best is None or hit[0] < best[0]): best = (hit[0], k, len(r))
+    rk, k, n = best; return {'big': f"{v['f'][k]:.2f}", 'label': LAB[k], 'rank': f"{rk}{osuf(rk)} of {n} {POOLNAME(v)}"}
 
 # ---------- the list: own seasons first, then from the bottom; a repeated player's places together ----------
 rows8 = []
@@ -151,7 +170,7 @@ def line(id, say, cap=None, **kw): L.append(dict(id=id, say=say, cap=cap or CAP(
 pt_say, pt_cap = f"Who is prime {spoken(NAME)}'s statistical twin? From the last five seasons.", f"WHO IS PRIME {NAME.upper()}'S STATISTICAL TWIN? FROM THE LAST FIVE SEASONS."
 line('intro', pt_say, pt_cap, sfx=[["hit", 0.05, 0.6]], voiceSettings={"speed": 1.1}, tempo=1.05, gapDb=-33, maxGap=0.06)
 S['intro'] = {'type': 'intro', 'face': tgp['face'], 'club': tgp['club'], 'flag': tgp['flag'], 'name': SHORT.upper(), 'season': EP['season'],
-              'facts': [['5', f'seasons · {FIVE[0][2:]} to {FIVE[-1][2:]}'], [str(len(cands)), 'Premier League attacker seasons'], ['23', 'stats, all per 90 minutes']],
+              'facts': [['5', f'seasons · {FIVE[0][2:]} to {FIVE[-1][2:]}'], [str(len(cands)), ('top 5 league ' + GROUP_NAME[GRP] + ' seasons') if TOP5 else 'Premier League attacker seasons'], ['23', 'stats, all per 90 minutes']],
               'at': [0.3, 0.9, 1.5], 'mystery': [{'face': TW['face'], 'label': 'LAST 5 YEARS'}, {'face': nowrows[0]['face'], 'label': 'CURRENT'}]}
 ex = [i + 1 for i, r in enumerate(rows8) if r['excluded']]
 if ex:
@@ -166,13 +185,14 @@ for gi, g in enumerate(groups):
     story = EP.get('stories', {}).get(r['name']) or club_name(r['_v']['teamId'])
     ps, pc = pct(r['match'])
     if twin:
-        line(id, f"And number one... {nm}. {story}. {ps.capitalize()}. That makes him {SHORT}'s statistical twin.",
-             f"AND NUMBER ONE... {r['name'].upper()}. {story.upper()}. {pc}. THAT MAKES HIM {SHORT.upper()}'S STATISTICAL TWIN.", hold=0.4, sfx=[["hit", first, 0.7], ["hit", "THAT", 0.5]])
+        also = [k for k in g if k != 1]; tw2 = f" He's number {words(also[0])} too." if also else ""
+        line(id, f"And number one... {nm}. {story}. {ps.capitalize()}.{tw2} That makes him {SHORT}'s statistical twin.",
+             f"AND NUMBER ONE... {r['name'].upper()}. {story.upper()}. {pc}.{tw2.upper()} THAT MAKES HIM {SHORT.upper()}'S STATISTICAL TWIN.", hold=0.4, sfx=[["hit", first, 0.7], ["hit", "THAT", 0.5]])
     else:
         lead = ("Number " if gi == 0 else "") + " and ".join(words(k) for k in g)
         lead = lead[0].upper() + lead[1:]
         tail = " Twice." if len(g) > 1 else ""
-        extra = " Guess the twin in the comments." if 1 in [k - 1 for k in g] or g[-1] == 2 else ""
+        extra = " Guess the twin in the comments." if gi == len(groups) - 2 else ""  # just before the twin is revealed
         line(id, f"{lead}: {nm}. {story}.{tail} {ps.capitalize()}.{extra}",
              f"{lead.upper()}: {r['name'].upper()}. {story.upper()}.{tail.upper()} {pc}.{extra.upper()}", hold=0.9 if not extra else 0.6,
              sfx=[["pop", first, 0.5]] + ([["pop", "GUESS", 0.45]] if extra else []))
@@ -194,7 +214,7 @@ S['tests'] = {'type': 'statement', 'face': TW['face'], 'lines': [[f"{TW['name'].
 NOUN = {'npG': 'goals', 'A': 'assists', 'chances': 'chances created', 'bigCC': 'big chances made', 'shots': 'shots', 'SoT': 'shots on target', 'npxG': 'expected goals', 'passes': 'passes', 'drib': 'dribbles'}
 VERB = {'npG': 'scores more', 'A': 'assists more', 'chances': 'creates more', 'bigCC': 'makes more big chances', 'shots': 'shoots more', 'SoT': 'hits the target more', 'npxG': 'gets better chances', 'passes': 'passes more', 'drib': 'dribbles more'}
 tf, wf = tg['f'], TW['_v']['f']
-rel = lambda k: abs(tf[k] - wf[k]) / max(tf[k], wf[k], 1e-9)
+rel = lambda k: 9 if tf.get(k) is None or wf.get(k) is None else abs(tf[k] - wf[k]) / max(tf[k], wf[k], 1e-9)
 close = sorted(['npG', 'npxG', 'shots', 'SoT', 'A', 'chances', 'bigCC'], key=rel)[:2]
 far = sorted(['npG', 'A', 'chances', 'bigCC', 'passes', 'drib', 'shots', 'SoT'], key=lambda k: -rel(k))[:3]
 row = lambda k, a, b: {'label': NOUN[k][0].upper() + NOUN[k][1:], 'a': round(a[k], 2), 'b': round(b[k], 2)}
@@ -203,7 +223,7 @@ line('why', f"Why? Almost the same {NOUN[close[0]]} and {NOUN[close[1]]}, every 
 S['why'] = {'type': 'compare', 'kicker': f"Why {sname(TW['name'])}", 'title': 'Almost the same.', 'a': tgx, 'b': twx, 'rows': [row(k, tf, wf) for k in close], 'at': [NOUN[close[0]].upper().split()[0], NOUN[close[1]].upper().split()[0]]}
 who = lambda k: SHORT if tf[k] > wf[k] else sname(TW['name'])
 d1, d2 = far[0], next((k for k in far[1:] if who(k) != who(far[0])), far[1])
-line('diff', f"The difference? {who(d1)} {VERB[d1]}. {who(d2)} {VERB[d2]}.", hold=0.35)
+line('diff', f"The difference? {who(d1)} {VERB[d1]}. {who(d2)} {VERB[d2]}." if who(d1) != who(d2) else f"The difference? {who(d1)} {VERB[d1]}, and {VERB[d2]}.", hold=0.35)
 S['diff'] = {'type': 'compare', 'kicker': 'But…', 'title': 'Not the same player.', 'a': tgx, 'b': twx, 'rows': [row(k, tf, wf) for k in [d1, d2]], 'at': [who(d1).upper(), who(d2).upper()]}
 # this season
 line('n0', "And this season only?", hold=0.3); S['n0'] = {'type': 'countdown', 'list': 'now', 'upto': 6, 'at': 0.0}
@@ -214,20 +234,46 @@ for k in range(len(nowrows), 1, -1):
 NW = nowrows[0]; ps, pc = pct(NW['match'])
 line('now1', f"And number one, after about ten games... {spoken(NW['name'])}. {ps.capitalize()}.", f"AND NUMBER ONE, AFTER ABOUT TEN GAMES... {NW['name'].upper()}. {pc}.", hold=0.3, sfx=[["hit", NW['name'].upper().split()[0], 0.7]])
 S['now1'] = {'type': 'countdown', 'list': 'now', 'upto': 1, 'at': NW['name'].upper().split()[0], 'cont': True}
-nf = NW['_v']['f']; nclose = sorted(['npG', 'shots', 'SoT', 'A', 'chances', 'bigCC'], key=lambda k: abs(tf[k] - nf[k]) / max(tf[k], nf[k], 1e-9))[:2]
+nf = NW['_v']['f']; nclose = sorted(['npG', 'shots', 'SoT', 'A', 'chances', 'bigCC'], key=lambda k: 9 if tf.get(k) is None or nf.get(k) is None else abs(tf[k] - nf[k]) / max(tf[k], nf[k], 1e-9))[:2]
 line('nowcmp', f"{sname(NW['name'])} against {SHORT}: {NOUN[nclose[0]]} and {NOUN[nclose[1]]}, every ninety minutes.", f"{sname(NW['name']).upper()} AGAINST {SHORT.upper()}: {NOUN[nclose[0]].upper()} AND {NOUN[nclose[1]].upper()}, EVERY 90|ninety MINUTES.")
 S['nowcmp'] = {'type': 'compare', 'kicker': 'This season', 'title': f"{SHORT} vs {sname(NW['name'])}.", 'a': tgx, 'b': {'name': NW['name'], 'season': CUR, 'face': NW['face']}, 'rows': [row(k, tf, nf) for k in nclose], 'at': [NOUN[nclose[0]].upper().split()[0], NOUN[nclose[1]].upper().split()[0]]}
 line('end', f"So {SHORT}'s twin is {spoken(TW['name'])}. And right now, it's {spoken(NW['name'])}. Follow for more.", f"SO {SHORT.upper()}'S TWIN IS {TW['name'].upper()}. AND RIGHT NOW, IT'S {NW['name'].upper()}. FOLLOW FOR MORE.")
 S['end'] = {'type': 'end2', 'captions': True, 'at': [TW['name'].upper().split()[0], 'RIGHT'],
             'pairs': [{'label': 'Last 5 seasons', 'a': tgp['face'], 'b': TW['face'], 'aName': f"{SHORT.upper()} {EP['season'][2:]}", 'bName': f"{sname(TW['name']).upper()} {TW['season'][2:]}", 'aClub': tgp['club'], 'bClub': TW['club']},
                       {'label': 'This season', 'a': tgp['face'], 'b': NW['face'], 'aName': f"{SHORT.upper()} {EP['season'][2:]}", 'bName': sname(NW['name']).upper(), 'aClub': tgp['club'], 'bClub': NW['club']}]}
+# ---------- fast style (Mikey, 9 Nov 2026: no dead air): the default; "style": "long" keeps the old pacing ----------
+if EP.get('style', 'fast') == 'fast':
+    for l in L:
+        if l['id'] == 'intro':
+            l.update(say=f"Prime {spoken(NAME)}'s statistical twin is not who you think.", cap=f"PRIME {NAME.upper()}'S STATISTICAL TWIN IS NOT WHO YOU THINK.", sfx=[["hit", 0.0, 0.7]])
+        if l['id'] == 'own':
+            l.update(say=f"His own seasons don't count. That leaves {words(len(keep))}.", cap=f"HIS OWN SEASONS DON'T COUNT. THAT LEAVES {words(len(keep)).upper()}.")
+    L = [l for l in L if l['id'] != 'tests']; S.pop('tests', None)
+    S['intro'].update(instant=True, kicker='HIS TWIN IS NOT WHO YOU THINK', kickerAt='NOT', facts=[], mystery=[{**m, 'delay': 0} for m in S['intro']['mystery']])
+    if 'own' in S: S['own']['at'] = 'HIS'
+    prev = tgp['club']; prevn = tgp['club']
+    for l in L:
+        k = l['id']; sc = S.get(k, {})
+        if k.startswith('c') and sc.get('type') == 'cd2':
+            twin = 'twinAt' in sc
+            l['hold'] = 0.5 if twin else (0.25 if sc.get('sticker') else 0.12)
+            if not twin: sc['at'] = 0.0
+            sc['fromClub'] = prev; prev = next(x for x in keep if x['rank'] == sc['show'][0])['club']
+        elif k == 'surprise':
+            l['hold'] = 0.15; sc['at'] = 0.0; sc['fromClub'] = prev; prev = sc['aside']['club']
+        elif k == 'own': l['hold'] = 0.12
+        elif k in ('why', 'diff', 'nowcmp', 'now1'): l['hold'] = 0.3
+        elif k == 'n0': l['hold'] = 0.05
+        elif k.startswith('n') and k[1:].isdigit():
+            l['hold'] = 0.08; sc['at'] = 0.0; sc['fromClub'] = prevn; prevn = nowrows[int(k[1:]) - 1]['club']
+        if k == 'now1': sc['fromClub'] = prevn
 for r in rows8 + nowrows: r.pop('_v', None)
 target = {'name': NAME, 'season': EP['season'], 'face': tgp['face'], 'club': tgp['club'], 'flag': tgp['flag']}
 lists = {'top8': {'title': 'The top eight.', 'sub': '', 'target': target, 'rows': rows8},
          'top': {'title': f'The top {words(len(keep))}.', 'sub': '', 'target': target, 'rows': keep},
          'now': {'title': 'Right now.', 'sub': '', 'target': target, 'rows': nowrows}}
 json.dump(META, open(os.path.join(IMG, "meta.json"), "w"), indent=1, ensure_ascii=False)
-meta = {'targetShort': SHORT, 'targetClub': club_name(tg['teamId']), 'series': EP.get('series', 'STAT TWINS'), 'source': 'Data: Opta via FotMob · PL attackers 900+ mins', 'engine': 'video_full.html', 'layout': EP.get('layout', 'poster'), 'imgDir': IMG, 'clubColors': club_colours()}
+meta = {'targetShort': SHORT, 'targetClub': club_name(tg['teamId']), 'series': EP.get('series', 'STAT TWINS'), 'source': ('Data: Opta via FotMob · top 5 leagues, 900+ mins' if TOP5 else 'Data: Opta via FotMob · PL attackers 900+ mins'), 'engine': 'video_full.html', 'layout': EP.get('layout', 'poster'), 'imgDir': IMG, 'clubColors': club_colours()}
 json.dump(L, open(os.path.join(OUT, 'lines.json'), 'w'), indent=0, ensure_ascii=False)
 json.dump({'meta': meta, 'lists': lists, 'scenes': S}, open(os.path.join(OUT, 'scenes.json'), 'w'), indent=0, ensure_ascii=False)
 json.dump({'provider': 'elevenlabs', 'voiceId': 'WAppqUXeqDqXjNTaQxG9'}, open(os.path.join(OUT, 'voice.json'), 'w'))

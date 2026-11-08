@@ -1,0 +1,639 @@
+{
+"meta": {
+"targetShort": "Neymar",
+"targetClub": "PSG",
+"series": "STAT TWINS · EP 4",
+"source": "Data: Opta via FotMob · top 5 leagues, 900+ mins",
+"engine": "video_full.html",
+"layout": "poster",
+"imgDir": "/tmp/claude-0/-home-user-Tierlist/84a0c395-3776-5543-b933-7d1eba9d58ff/scratchpad/img",
+"clubColors": {
+"t8472": "rgb(203,102,112)",
+"t8650": "rgb(231,26,35)",
+"t10260": "rgb(216,111,16)",
+"t8197": "rgb(106,151,198)",
+"t8634": "rgb(165,0,68)",
+"t178475": "rgb(242,143,168)",
+"t8586": "rgb(9,25,70)",
+"t10261": "rgb(0,148,179)",
+"t9937": "rgb(198,12,12)",
+"t9847": "rgb(6,69,120)",
+"t8678": "rgb(204,19,24)",
+"t8668": "rgb(48,49,176)",
+"t8456": "rgb(22,68,123)",
+"t9825": "rgb(237,4,7)",
+"t9823": "rgb(220,5,45)",
+"t9902": "rgb(244,86,101)",
+"t8455": "rgb(7,19,149)",
+"t10252": "rgb(251,227,7)",
+"t8633": "rgb(177,152,44)"
+}
+},
+"lists": {
+"top8": {
+"title": "The top eight.",
+"sub": "",
+"target": {
+"name": "Neymar",
+"season": "2017/18",
+"face": "p19533",
+"club": "t9847",
+"flag": "cBRA"
+},
+"rows": [
+{
+"name": "Michael Olise",
+"season": "2025/26",
+"face": "p1029063",
+"club": "t9823",
+"flag": "cFRA",
+"match": 88.6,
+"excluded": false,
+"rank": 1,
+"twin": true
+},
+{
+"name": "Lamine Yamal",
+"season": "2025/26",
+"face": "p1467236",
+"club": "t8634",
+"flag": "cESP",
+"match": 87.6,
+"excluded": false,
+"rank": 2
+},
+{
+"name": "Michael Olise",
+"season": "2024/25",
+"face": "p1029063",
+"club": "t9823",
+"flag": "cFRA",
+"match": 87.2,
+"excluded": false,
+"rank": 3
+},
+{
+"name": "Raphinha",
+"season": "2024/25",
+"face": "p696679",
+"club": "t8634",
+"flag": "cBRA",
+"match": 86.3,
+"excluded": false,
+"rank": 4
+},
+{
+"name": "Vinícius Júnior",
+"season": "2024/25",
+"face": "p846033",
+"club": "t8633",
+"flag": "cBRA",
+"match": 86.1,
+"excluded": false,
+"rank": 5
+},
+{
+"name": "Lionel Messi",
+"season": "2022/23",
+"face": "p30981",
+"club": "t9847",
+"flag": "cARG",
+"match": 85.8,
+"excluded": false,
+"rank": 6
+},
+{
+"name": "Lamine Yamal",
+"season": "2026/27",
+"face": "p1467236",
+"club": "t8634",
+"flag": "cESP",
+"match": 85.6,
+"excluded": false,
+"rank": 7
+},
+{
+"name": "Raphinha",
+"season": "2025/26",
+"face": "p696679",
+"club": "t8634",
+"flag": "cBRA",
+"match": 84.7,
+"excluded": false,
+"rank": 8
+}
+]
+},
+"top": {
+"title": "The top eight.",
+"sub": "",
+"target": {
+"name": "Neymar",
+"season": "2017/18",
+"face": "p19533",
+"club": "t9847",
+"flag": "cBRA"
+},
+"rows": [
+{
+"name": "Michael Olise",
+"season": "2025/26",
+"face": "p1029063",
+"club": "t9823",
+"flag": "cFRA",
+"match": 88.6,
+"excluded": false,
+"rank": 1,
+"twin": true
+},
+{
+"name": "Lamine Yamal",
+"season": "2025/26",
+"face": "p1467236",
+"club": "t8634",
+"flag": "cESP",
+"match": 87.6,
+"excluded": false,
+"rank": 2
+},
+{
+"name": "Michael Olise",
+"season": "2024/25",
+"face": "p1029063",
+"club": "t9823",
+"flag": "cFRA",
+"match": 87.2,
+"excluded": false,
+"rank": 3
+},
+{
+"name": "Raphinha",
+"season": "2024/25",
+"face": "p696679",
+"club": "t8634",
+"flag": "cBRA",
+"match": 86.3,
+"excluded": false,
+"rank": 4
+},
+{
+"name": "Vinícius Júnior",
+"season": "2024/25",
+"face": "p846033",
+"club": "t8633",
+"flag": "cBRA",
+"match": 86.1,
+"excluded": false,
+"rank": 5
+},
+{
+"name": "Lionel Messi",
+"season": "2022/23",
+"face": "p30981",
+"club": "t9847",
+"flag": "cARG",
+"match": 85.8,
+"excluded": false,
+"rank": 6
+},
+{
+"name": "Lamine Yamal",
+"season": "2026/27",
+"face": "p1467236",
+"club": "t8634",
+"flag": "cESP",
+"match": 85.6,
+"excluded": false,
+"rank": 7
+},
+{
+"name": "Raphinha",
+"season": "2025/26",
+"face": "p696679",
+"club": "t8634",
+"flag": "cBRA",
+"match": 84.7,
+"excluded": false,
+"rank": 8
+}
+]
+},
+"now": {
+"title": "Right now.",
+"sub": "",
+"target": {
+"name": "Neymar",
+"season": "2017/18",
+"face": "p19533",
+"club": "t9847",
+"flag": "cBRA"
+},
+"rows": [
+{
+"name": "Lamine Yamal",
+"season": "2026/27",
+"face": "p1467236",
+"club": "t8634",
+"flag": "cESP",
+"match": 85.6
+},
+{
+"name": "Raphinha",
+"season": "2026/27",
+"face": "p696679",
+"club": "t8634",
+"flag": "cBRA",
+"match": 80.5
+},
+{
+"name": "Fermín López",
+"season": "2026/27",
+"face": "p1404415",
+"club": "t8634",
+"flag": "cESP",
+"match": 80.0
+},
+{
+"name": "Rayan Cherki",
+"season": "2026/27",
+"face": "p1104053",
+"club": "t8456",
+"flag": "cFRA",
+"match": 79.2
+},
+{
+"name": "Antonio Nusa",
+"season": "2026/27",
+"face": "p1248482",
+"club": "t178475",
+"flag": "cNOR",
+"match": 78.7
+}
+]
+}
+},
+"scenes": {
+"intro": {
+"type": "intro",
+"face": "p19533",
+"club": "t9847",
+"flag": "cBRA",
+"name": "NEYMAR",
+"season": "2017/18",
+"facts": [],
+"at": [
+0.3,
+0.9,
+1.5
+],
+"mystery": [
+{
+"face": "p1029063",
+"label": "LAST 5 YEARS",
+"delay": 0
+},
+{
+"face": "p1467236",
+"label": "CURRENT",
+"delay": 0
+}
+],
+"instant": true,
+"kicker": "HIS TWIN IS NOT WHO YOU THINK",
+"kickerAt": "NOT"
+},
+"c8": {
+"type": "cd2",
+"list": "top",
+"show": [
+4,
+8
+],
+"before": [],
+"prevShow": [],
+"at": 0.0,
+"cont": true,
+"from": 1,
+"pop": {
+"big": "0.82",
+"label": "big chances made per 90",
+"rank": "2nd of 70 La Liga attackers",
+"at": "BARCELONA"
+},
+"fromClub": "t9847"
+},
+"c7": {
+"type": "cd2",
+"list": "top",
+"show": [
+2,
+7
+],
+"before": [
+8,
+4
+],
+"prevShow": [
+4
+],
+"at": 0.0,
+"cont": true,
+"from": -1,
+"pop": {
+"big": "1.03",
+"label": "big chances made per 90",
+"rank": "1st of 77 La Liga attackers",
+"at": "BARCELONA"
+},
+"fromClub": "t8634"
+},
+"surprise": {
+"type": "cd2",
+"list": "top",
+"show": [],
+"before": [
+8,
+4,
+7,
+2
+],
+"prevShow": [
+2
+],
+"at": 0.0,
+"aside": {
+"name": "Mohamed Salah",
+"season": "2024/25",
+"face": "p292462",
+"club": "t8650",
+"flag": "cEGY",
+"rank": 51,
+"match": 76.9,
+"text": "Not even top 50"
+},
+"cont": true,
+"from": 1,
+"pop": {
+"big": "0.53",
+"label": "goals per 90 (no pens)",
+"rank": "1st of 72 Premier League attackers",
+"at": "HE'S"
+},
+"fromClub": "t8634"
+},
+"c6": {
+"type": "cd2",
+"list": "top",
+"show": [
+6
+],
+"before": [
+8,
+4,
+7,
+2
+],
+"prevShow": [
+2
+],
+"at": 0.0,
+"cont": true,
+"from": -1,
+"pop": {
+"big": "4.10",
+"label": "shots per 90",
+"rank": "1st of 64 Ligue 1 attackers",
+"at": "HIS"
+},
+"fromClub": "t8650"
+},
+"c5": {
+"type": "cd2",
+"list": "top",
+"show": [
+5
+],
+"before": [
+8,
+4,
+7,
+2,
+6
+],
+"prevShow": [
+6
+],
+"at": 0.0,
+"cont": true,
+"from": 1,
+"pop": {
+"big": "3.30",
+"label": "dribbles per 90",
+"rank": "3rd of 72 La Liga attackers",
+"at": "REAL"
+},
+"sticker": {
+"text": "GUESS THE TWIN IN THE COMMENTS",
+"at": "GUESS"
+},
+"fromClub": "t9847"
+},
+"c3": {
+"type": "cd2",
+"list": "top",
+"show": [
+1,
+3
+],
+"before": [
+8,
+4,
+7,
+2,
+6,
+5
+],
+"prevShow": [
+5
+],
+"at": "MICHAEL",
+"cont": true,
+"from": -1,
+"pop": {
+"big": "0.74",
+"label": "assists per 90",
+"rank": "1st of 59 Bundesliga attackers",
+"at": "BAYERN"
+},
+"twinAt": "THAT",
+"fromClub": "t8633"
+},
+"why": {
+"type": "compare",
+"kicker": "Why Olise",
+"title": "Almost the same.",
+"a": {
+"name": "Neymar",
+"season": "2017/18",
+"face": "p19533"
+},
+"b": {
+"name": "Michael Olise",
+"season": "2025/26",
+"face": "p1029063"
+},
+"rows": [
+{
+"label": "Big chances made",
+"a": 1.11,
+"b": 1.05
+},
+{
+"label": "Shots on target",
+"a": 2.1,
+"b": 1.9
+}
+],
+"at": [
+"BIG",
+"SHOTS"
+]
+},
+"diff": {
+"type": "compare",
+"kicker": "But…",
+"title": "Not the same player.",
+"a": {
+"name": "Neymar",
+"season": "2017/18",
+"face": "p19533"
+},
+"b": {
+"name": "Michael Olise",
+"season": "2025/26",
+"face": "p1029063"
+},
+"rows": [
+{
+"label": "Dribbles",
+"a": 7.1,
+"b": 2.5
+},
+{
+"label": "Goals",
+"a": 0.76,
+"b": 0.58
+}
+],
+"at": [
+"NEYMAR",
+"NEYMAR"
+]
+},
+"n0": {
+"type": "countdown",
+"list": "now",
+"upto": 6,
+"at": 0.0
+},
+"n5": {
+"type": "countdown",
+"list": "now",
+"upto": 5,
+"at": 0.0,
+"cont": true,
+"fromClub": "t9847"
+},
+"n4": {
+"type": "countdown",
+"list": "now",
+"upto": 4,
+"at": 0.0,
+"cont": true,
+"fromClub": "t178475"
+},
+"n3": {
+"type": "countdown",
+"list": "now",
+"upto": 3,
+"at": 0.0,
+"cont": true,
+"fromClub": "t8456"
+},
+"n2": {
+"type": "countdown",
+"list": "now",
+"upto": 2,
+"at": 0.0,
+"cont": true,
+"fromClub": "t8634"
+},
+"now1": {
+"type": "countdown",
+"list": "now",
+"upto": 1,
+"at": "LAMINE",
+"cont": true,
+"fromClub": "t8634"
+},
+"nowcmp": {
+"type": "compare",
+"kicker": "This season",
+"title": "Neymar vs Yamal.",
+"a": {
+"name": "Neymar",
+"season": "2017/18",
+"face": "p19533"
+},
+"b": {
+"name": "Lamine Yamal",
+"season": "2026/27",
+"face": "p1467236"
+},
+"rows": [
+{
+"label": "Chances created",
+"a": 3.47,
+"b": 3.58
+},
+{
+"label": "Assists",
+"a": 0.65,
+"b": 0.7
+}
+],
+"at": [
+"CHANCES",
+"ASSISTS"
+]
+},
+"end": {
+"type": "end2",
+"captions": true,
+"at": [
+"MICHAEL",
+"RIGHT"
+],
+"pairs": [
+{
+"label": "Last 5 seasons",
+"a": "p19533",
+"b": "p1029063",
+"aName": "NEYMAR 17/18",
+"bName": "OLISE 25/26",
+"aClub": "t9847",
+"bClub": "t9823"
+},
+{
+"label": "This season",
+"a": "p19533",
+"b": "p1467236",
+"aName": "NEYMAR 17/18",
+"bName": "YAMAL",
+"aClub": "t9847",
+"bClub": "t8634"
+}
+]
+}
+}
+}
