@@ -57,8 +57,16 @@ S.intro=(sc,p,s,t)=>{ const done=enter(p);
   T(sc.season,SX0+380,CY0+300,F(800,40),INK,'left',ease((p-.3)/.3));
   icon(sc.club,SX0+380,CY0+320,64,ease((p-.4)/.3)); flag(sc.flag,SX0+460,CY0+326,52,ease((p-.45)/.3));
   x.fillStyle=LINE;x.fillRect(SX0+44,CY0+440,SX1-SX0-88,2);
-  (sc.facts||[]).forEach((f,i)=>{const at=sc.at?wordT(s,sc.at[i]):s.start+0.8+i*0.6;const a=ease((t-at)/0.35);const y=CY0+530+i*92;
+  const fy=sc.mystery?CY0+505:CY0+530, fs=sc.mystery?62:92;
+  (sc.facts||[]).forEach((f,i)=>{const at=sc.at?wordT(s,sc.at[i]):s.start+0.8+i*0.6;const a=ease((t-at)/0.35);const y=fy+i*fs;
     T(f[0],SX0+44,y,F(900,54),RED,'left',a); T(f[1],SX0+44+fit(f[0],900,54,999)*0+ (x.font=F(900,54),x.measureText(f[0]).width)+22,y,F(700,34),INK,'left',a);});
+  // two blurred twins to come (Mikey, 8 Nov 2026): unrecognisable until the reveals
+  (sc.mystery||[]).forEach((m,i)=>{const at=s.start+(m.delay!=null?m.delay:0.35+i*0.25);const b=back((t-at)/0.45);if(t<at)return;
+    const cx=(SX0+SX1)/2+(i?200:-200), cy=CY0+790, r=76*clamp(b,0,1.15);
+    T(m.label,cx,CY0+698,F(900,30),i?BLUE:RED,'center',clamp(b*2));
+    x.save();x.filter='blur(26px)';face(m.face,cx,cy,r,1,null);x.restore();
+    x.lineWidth=7;x.strokeStyle=i?BLUE:RED;x.beginPath();x.arc(cx,cy,r,0,7);x.stroke();
+    T('?',cx,cy+r*0.42,F(900,r*1.15),'#fff','center',clamp(b*2));});
   done();};
 // ---- countdown with spotlight; one scene per line, `upto` = lowest rank revealed in this line
 S.countdown=(sc,p,s,t)=>{ const L=SC.__lists[sc.list]; const done=enter(p,sc.cont);

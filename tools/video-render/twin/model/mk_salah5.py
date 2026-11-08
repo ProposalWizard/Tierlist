@@ -29,6 +29,7 @@ for l in L:
     if l['id']=='c6': out.append(newL['saka'])
 L=out
 sc['intro']['at']=['LAST','EVERY','EVERY']
+sc['intro']['mystery']=[{'face':pal['face'],'label':'LAST 5 YEARS'},{'face':'p'+ch['id'],'label':'CURRENT'}]
 sc['saka']={'type':'cd2','list':'top','show':[],'before':G[0]+G[1]+G[2],'prevShow':G[2],'at':'SAKA','aside':aside,'cont':True}
 side=1
 for k in ['c8','c6','saka','c5','c4','c3']:
