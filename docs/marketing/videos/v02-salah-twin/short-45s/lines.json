@@ -20,7 +20,7 @@
 {
 "id": "own",
 "say": "His own seasons don't count. That leaves five.",
-"hold": 0.8,
+"hold": 0.12,
 "sfx": [
 [
 "whoosh",
@@ -33,7 +33,7 @@
 {
 "id": "c8",
 "say": "Five: Son Heung-min.",
-"hold": 1.3,
+"hold": 0.12,
 "sfx": [
 [
 "pop",
@@ -46,7 +46,7 @@
 {
 "id": "c6",
 "say": "Four: Harvey Barnes.",
-"hold": 1.3,
+"hold": 0.12,
 "sfx": [
 [
 "pop",
@@ -60,7 +60,7 @@
 "id": "saka",
 "say": "Saka? Twenty-eighth.",
 "cap": "SAKA? 28TH.|twenty-eighth",
-"hold": 1.3,
+"hold": 0.15,
 "sfx": [
 [
 "hit",
@@ -72,7 +72,7 @@
 {
 "id": "c5",
 "say": "Three: Kelechi Iheanacho. Yes, really.",
-"hold": 1.2,
+"hold": 0.15,
 "sfx": [
 [
 "pop",
@@ -85,7 +85,7 @@
 {
 "id": "c4",
 "say": "Two: Roberto Firmino. Guess the twin in the comments.",
-"hold": 1.0,
+"hold": 0.25,
 "sfx": [
 [
 "pop",
@@ -104,7 +104,7 @@
 "id": "c3",
 "say": "And number one... Cole Palmer. A seventy-nine percent match.",
 "cap": "AND NUMBER ONE... COLE PALMER. A 79%|seventy-nine-percent MATCH.",
-"hold": 1.1,
+"hold": 0.5,
 "sfx": [
 [
 "hit",
@@ -116,32 +116,91 @@
 {
 "id": "why",
 "say": "They create the same. Same chances, same shots on target.",
-"hold": 0.9,
+"hold": 0.3,
 "cap": "THEY CREATE THE SAME. SAME CHANCES, SAME SHOTS ON TARGET."
 },
 {
 "id": "diff",
 "say": "The difference? Palmer passes way more. Salah scores more, and makes more big chances.",
 "cap": "THE DIFFERENCE? PALMER PASSES WAY MORE. SALAH SCORES MORE, AND MAKES MORE BIG CHANCES.",
-"hold": 0.35
+"hold": 0.3
+},
+{
+"id": "n0",
+"say": "And this season only?",
+"cap": "AND THIS SEASON ONLY?",
+"hold": 0.05
+},
+{
+"id": "n5",
+"say": "Five: Julio Enciso.",
+"cap": "FIVE: JULIO ENCISO.",
+"hold": 0.08,
+"sfx": [
+[
+"pop",
+"JULIO",
+0.5
+]
+]
+},
+{
+"id": "n4",
+"say": "Four: João Pedro.",
+"cap": "FOUR: JOÃO PEDRO.",
+"hold": 0.08,
+"sfx": [
+[
+"pop",
+"JOÃO",
+0.5
+]
+]
+},
+{
+"id": "n3",
+"say": "Three: Bryan Mbeumo.",
+"cap": "THREE: BRYAN MBEUMO.",
+"hold": 0.08,
+"sfx": [
+[
+"pop",
+"BRYAN",
+0.5
+]
+]
+},
+{
+"id": "n2",
+"say": "Two: Evanilson.",
+"cap": "TWO: EVANILSON.",
+"hold": 0.08,
+"sfx": [
+[
+"pop",
+"EVANILSON",
+0.5
+]
+]
 },
 {
 "id": "now1",
-"say": "And right now? Rayan Cherki.",
-"hold": 0.5,
+"say": "And number one, after about ten games... Rayan Cherki. seventy-six percent.",
+"cap": "AND NUMBER ONE, AFTER ABOUT TEN GAMES... RAYAN CHERKI. 76%.|x-percent",
+"hold": 0.3,
 "sfx": [
 [
 "hit",
 "RAYAN",
 0.7
 ]
-],
-"cap": "AND RIGHT NOW? RAYAN CHERKI."
+]
 },
 {
 "id": "nowcmp",
 "say": "He creates even more. Over three chances every ninety minutes. And more goals, so far.",
-"cap": "HE CREATES EVEN MORE. OVER THREE CHANCES EVERY 90|ninety MINUTES. AND MORE GOALS, SO FAR."
+"cap": "HE CREATES EVEN MORE. OVER THREE CHANCES EVERY 90|ninety MINUTES. AND MORE GOALS, SO FAR.",
+"hold": 0.3
 },
 {
 "id": "end",

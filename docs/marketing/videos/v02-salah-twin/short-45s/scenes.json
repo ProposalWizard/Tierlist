@@ -273,6 +273,7 @@
 }
 ],
 "instant": true,
+"kickerAt": "NOT",
 "kicker": "HIS TWIN IS NOT WHO YOU THINK"
 },
 "own": {
@@ -298,7 +299,7 @@
 ],
 "before": [],
 "prevShow": [],
-"at": "SON",
+"at": 0.0,
 "cont": true,
 "from": 1,
 "pop": {
@@ -306,7 +307,8 @@
 "label": "big chances made per 90",
 "rank": "4th of 101 PL attackers",
 "at": "SON"
-}
+},
+"fromClub": "t8650"
 },
 "c6": {
 "type": "cd2",
@@ -320,7 +322,7 @@
 "prevShow": [
 5
 ],
-"at": "HARVEY",
+"at": 0.0,
 "cont": true,
 "from": -1,
 "pop": {
@@ -328,7 +330,8 @@
 "label": "goals per 90 (no pens)",
 "rank": "14th of 96 PL attackers",
 "at": "HARVEY"
-}
+},
+"fromClub": "t8586"
 },
 "c5": {
 "type": "cd2",
@@ -343,7 +346,7 @@
 "prevShow": [
 4
 ],
-"at": "KELECHI",
+"at": 0.0,
 "cont": true,
 "from": -1,
 "pop": {
@@ -351,7 +354,8 @@
 "label": "assists per 90",
 "rank": "5th of 94 PL attackers",
 "at": "KELECHI"
-}
+},
+"fromClub": "t9825"
 },
 "c4": {
 "type": "cd2",
@@ -367,7 +371,7 @@
 "prevShow": [
 3
 ],
-"at": "ROBERTO",
+"at": 0.0,
 "cont": true,
 "from": 1,
 "pop": {
@@ -379,7 +383,8 @@
 "sticker": {
 "text": "GUESS THE TWIN IN THE COMMENTS",
 "at": "GUESS"
-}
+},
+"fromClub": "t8197"
 },
 "c3": {
 "type": "cd2",
@@ -405,7 +410,8 @@
 "rank": "Premier League 2023/24",
 "at": "COLE"
 },
-"twinAt": "MATCH"
+"twinAt": "MATCH",
+"fromClub": "t8650"
 },
 "saka": {
 "type": "cd2",
@@ -418,7 +424,7 @@
 "prevShow": [
 4
 ],
-"at": "SAKA",
+"at": 0.0,
 "aside": {
 "name": "Bukayo Saka",
 "season": "2023/24",
@@ -436,7 +442,8 @@
 "label": "chances created per 90",
 "rank": "2nd of 101 PL attackers",
 "at": "28TH"
-}
+},
+"fromClub": "t10261"
 },
 "why": {
 "type": "compare",
@@ -543,11 +550,51 @@
 "GOALS"
 ]
 },
+"n0": {
+"type": "countdown",
+"list": "now",
+"upto": 6,
+"at": 0.0
+},
+"n5": {
+"type": "countdown",
+"list": "now",
+"upto": 5,
+"at": 0.0,
+"cont": true,
+"fromClub": "t8650"
+},
+"n4": {
+"type": "countdown",
+"list": "now",
+"upto": 4,
+"at": 0.0,
+"cont": true,
+"fromClub": "t9902"
+},
+"n3": {
+"type": "countdown",
+"list": "now",
+"upto": 3,
+"at": 0.0,
+"cont": true,
+"fromClub": "t8455"
+},
+"n2": {
+"type": "countdown",
+"list": "now",
+"upto": 2,
+"at": 0.0,
+"cont": true,
+"fromClub": "t10260"
+},
 "now1": {
 "type": "countdown",
 "list": "now",
 "upto": 1,
-"at": "RAYAN"
+"at": "RAYAN",
+"cont": true,
+"fromClub": "t8678"
 },
 "end": {
 "type": "end2",
