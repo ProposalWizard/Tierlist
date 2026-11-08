@@ -82,3 +82,21 @@ body:has([data-star-game]) [data-global-chrome] {
 body:has([data-rbd-admin]) [data-global-chrome] {
   display: none !important;
 }
+
+/* DRAGGABLE CARDS: the picture is never picked up on its own (player
+ * feedback, 8 Nov 2026: "the drag on the player is kinda bugged, it's picking
+ * up the image itself"). iPhone Safari lifts an image on press-and-hold
+ * (Apple's own drag and drop) even with draggable={false}. Every dnd-kit card
+ * carries aria-roledescription="draggable": touches pass through its picture
+ * to the card, so the card's drag and tap get them, and no "save image" menu
+ * or text selection starts. Profile → collection squad, the squad builder,
+ * the Draft's squad screens, the tierlists. */
+[aria-roledescription="draggable"] {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+[aria-roledescription="draggable"] img {
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
