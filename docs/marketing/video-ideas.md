@@ -249,3 +249,7 @@ name. Facts below are from memory and must be checked before a script.
 - **CH-04** Mourinho v Pep, El Clásico April 2012: Real Madrid win 2-1 at the Camp Nou and all but win the league.
 - **CH-05** Flick v Ancelotti, El Clásico October 2024: Barça's high line catches Madrid offside again and again, 4-0 at the Bernabéu.
 
+
+## Real footage in football-story videos (Mikey, 7 Nov 2026)
+
+Mikey and Harry OK'd posting real match footage, real manager faces and real club badges in football-story videos like CH (analysed like chess). Game ads still use our own game or drawings. Footage stays out of the public repo (.recordings/, git-ignored), and every clip must show exactly what the voice says at that moment.
