@@ -45,13 +45,13 @@
     "title": "v02 · Salah's statistical twin",
     "stage": "check",
     "owner": "Claude",
-    "updated": "2026-11-08T20:00:00Z",
+    "updated": "2026-11-08T21:00:00Z",
     "postOn": null,
     "line": "Who is Salah 24/25's statistical twin? Every PL attacker season 22/23–26/27, plus this season only.",
     "script": "docs/marketing/videos/v02-salah-twin/script.md",
     "cover": "docs/marketing/videos/v02-salah-twin/cover.png",
     "video": "docs/marketing/videos/v02-salah-twin/knowitball-v02-salah-twin.mp4",
-    "seconds": 85.4,
+    "seconds": 83.6,
     "links": [],
     "log": [
       "2026-11-07 Card made; data done (FotMob/Opta PL stats), script being written. Mikey's statistical-twins format.",
@@ -62,7 +62,8 @@
       "2026-11-08 Intro card now shows the two twins blurred (LAST 5 YEARS, CURRENT), Mikey's ask. Still 79.9 s. Waiting for Mikey's look.",
       "2026-11-08 v5 cut: Poster style picked by Mikey (#6); Salah's own seasons removed with an animation, list re-ranked to a top 5 (Palmer #1); 'this season' starts at #5 Enciso; why +0.2 s, diff +0.35 s; end card in club colours; Saka 28th. Waiting for Mikey's look.",
       "2026-11-08 Opening line now 'Who is prime Mo Salah's statistical twin?' (Mikey).",
-      "2026-11-08 'prime' sounded like 'primer': a 0.25 s break after 'prime' in the ElevenLabs text, the pause kept (maxGap 0.12 for that line)."
+      "2026-11-08 'prime' sounded like 'primer': a 0.25 s break after 'prime' in the ElevenLabs text, the pause kept (maxGap 0.12 for that line).",
+      "2026-11-08 Opening now one flowing line: 'Who is prime Mo Salah's statistical twin? From the last five seasons.' (take with ElevenLabs speed 1.1, seed 23; no break, pauses trimmed)."
     ]
   },
   {

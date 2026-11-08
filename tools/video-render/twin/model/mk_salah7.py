@@ -47,8 +47,9 @@ for k in order:
     if k=='diff': l['hold']=l.get('hold',0)+0.35
     L.append(l)
     if k not in new and k!='intro' and os.path.exists(f'v02f/vo/{k}.mp3'): shutil.copy(f'v02f/vo/{k}.mp3',f'v02g/vo/{k}.mp3')
-for l in L:
-    if l['id']=='intro': l.update(say="Who is prime Mo Salah's statistical twin? Last five seasons, every Premier League attacker.",cap="WHO IS PRIME MO SALAH'S STATISTICAL TWIN? LAST FIVE SEASONS, EVERY PREMIER LEAGUE ATTACKER.",sayEleven='Who is prime <break time="0.25s" /> Mo Salah\'s statistical twin? Last five seasons, every Premier League attacker.',maxGap=0.12)
+INTRO={"id": "intro", "say": "Who is prime Mo Salah's statistical twin? From the last five seasons.", "cap": "WHO IS PRIME MO SALAH'S STATISTICAL TWIN? FROM THE LAST FIVE SEASONS.", "sfx": [["hit", 0.05, 0.6]], "seed": 23, "voiceSettings": {"speed": 1.1}, "tempo": 1.05, "gapDb": -33, "maxGap": 0.06}
+L=[INTRO if l['id']=='intro' else l for l in L]
+sc['intro']['at']=[0.3,0.9,1.5]
 src['lists']=lists; src['scenes']=sc; src['meta']['engine']='video_full.html'; src['meta']['layout']='poster'
 json.dump(L,open('v02g/lines.json','w'),indent=0,ensure_ascii=False); json.dump(src,open('v02g/scenes.json','w'),indent=0,ensure_ascii=False)
 shutil.copy('v02f/voice.json','v02g/voice.json')

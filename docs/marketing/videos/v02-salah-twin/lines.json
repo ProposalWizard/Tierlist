@@ -1,8 +1,8 @@
 [
 {
 "id": "intro",
-"say": "Who is prime Mo Salah's statistical twin? Last five seasons, every Premier League attacker.",
-"cap": "WHO IS PRIME MO SALAH'S STATISTICAL TWIN? LAST FIVE SEASONS, EVERY PREMIER LEAGUE ATTACKER.",
+"say": "Who is prime Mo Salah's statistical twin? From the last five seasons.",
+"cap": "WHO IS PRIME MO SALAH'S STATISTICAL TWIN? FROM THE LAST FIVE SEASONS.",
 "sfx": [
 [
 "hit",
@@ -10,8 +10,13 @@
 0.6
 ]
 ],
-"sayEleven": "Who is prime <break time=\"0.25s\" /> Mo Salah's statistical twin? Last five seasons, every Premier League attacker.",
-"maxGap": 0.12
+"seed": 23,
+"voiceSettings": {
+"speed": 1.1
+},
+"tempo": 1.05,
+"gapDb": -33,
+"maxGap": 0.06
 },
 {
 "id": "own",

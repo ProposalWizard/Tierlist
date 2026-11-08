@@ -13,11 +13,11 @@ if VOICE.get("provider")=="elevenlabs":
         id,text=L["id"],L.get("sayEleven") or L["say"]; mp3=f"{V}/vo/{id}.mp3"
         g=L.get("maxGap",gap)  # a line can keep a longer pause, e.g. a <break> after "prime" so it is not heard as "primer"
         if not os.path.exists(mp3) or os.path.getsize(mp3)<1000:
-            body=json.dumps({"text":text,"model_id":VOICE.get("model","eleven_multilingual_v2"),"voice_settings":vs,"seed":VOICE.get("seed",7)}).encode()
+            body=json.dumps({"text":text,"model_id":VOICE.get("model","eleven_multilingual_v2"),"voice_settings":{**vs,**L.get("voiceSettings",{})},"seed":L.get("seed",VOICE.get("seed",7))}).encode()
             req=urllib.request.Request(f"https://api.elevenlabs.io/v1/text-to-speech/{vid}?output_format=mp3_44100_128",data=body,method="POST",headers={"Content-Type":"application/json","xi-api-key":"proxy-injected"})
             open(mp3,"wb").write(urllib.request.urlopen(req,timeout=120).read())
         # FACT-KIB-012 pace fix (same as video-factory/make.py): breath counts as silence (-39 dB), pauses ~0.09 s, pitch-safe 1.13x
-        af=f"silenceremove=start_periods=1:start_threshold=-45dB:stop_periods=-1:stop_duration={g+0.02}:stop_threshold=-39dB:stop_silence={g},areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,atempo={tempo},apad=pad_dur=0.06"
+        af=f"silenceremove=start_periods=1:start_threshold=-45dB:stop_periods=-1:stop_duration={g+0.02}:stop_threshold={L.get("gapDb",-39)}dB:stop_silence={g},areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,atempo={L.get("tempo",tempo)},apad=pad_dur=0.06"
         subprocess.run(["ffmpeg","-v","error","-y","-i",mp3,"-af",af,"-ac","1","-ar","24000",f"{V}/vo/{id}.wav"],check=True)
         x,sr=sf.read(f"{V}/vo/{id}.wav"); out[id]=round(len(x)/sr,3); print(id,out[id],flush=True)
     json.dump(out,open(V+"/vo/durs.json","w")); print("total",round(sum(out.values()),2)); sys.exit(0)
