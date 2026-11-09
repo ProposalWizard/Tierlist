@@ -1,6 +1,6 @@
 # v06 · Ballon d'Or winner Harry Kane 25/26's statistical twin
 
-Top 5 leagues, last 5 seasons, strikers. Method v2, plain-scale %. 60 s, fast style, Hugo. A Ballon d'Or trophy pops onto Kane on the first word.
+Top 5 leagues, last 5 seasons, strikers. Method v2, plain-scale %. 62 s, fast style, Hugo. A Ballon d'Or trophy pops onto Kane on the first word.
 
 - **intro**: Ballon d'Or winner Harry Kane's statistical twin is not who you think.
 - **c7**: Number seven: Serhou Guirassy. Seventy-one percent.
@@ -17,5 +17,5 @@ Top 5 leagues, last 5 seasons, strikers. Method v2, plain-scale %. 60 s, fast st
 - **n3**: Three: Nikola Krstović.
 - **n2**: Two: Erling Haaland.
 - **now1**: And number one, after about ten games... Kylian Mbappé. Seventy percent.
-- **nowcmp**: Mbappé against Kane: chances created and assists, every ninety minutes.
+- **nowcmp**: Mbappé against Kane, on what matters most for a striker: goals, expected goals, shots and assists.
 - **end**: So Kane's twin is Kylian Mbappé. And right now, it's also Kylian Mbappé. Follow for more.

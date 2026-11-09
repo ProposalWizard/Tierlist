@@ -570,18 +570,34 @@
 },
 "rows": [
 {
-"label": "Chances created",
-"a": 1.51,
-"b": 1.68
+"label": "Goals",
+"a": 0.98,
+"b": 0.84,
+"sub": "per 90 minutes · no penalties"
+},
+{
+"label": "Expected goals",
+"a": 0.72,
+"b": 1.03,
+"sub": "per 90 minutes · no penalties"
+},
+{
+"label": "Shots",
+"a": 4.5,
+"b": 5.4,
+"sub": "per 90 minutes"
 },
 {
 "label": "Assists",
 "a": 0.19,
-"b": 0.17
+"b": 0.17,
+"sub": "per 90 minutes"
 }
 ],
 "at": [
-"CHANCES",
+"GOALS",
+"EXPECTED",
+"SHOTS",
 "ASSISTS"
 ]
 },

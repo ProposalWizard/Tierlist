@@ -242,9 +242,16 @@ for k in range(len(nowrows), 1, -1):
 NW = nowrows[0]; ps, pc = pct(NW['match'])
 line('now1', f"And number one, after about ten games... {spoken(NW['name'])}. {ps.capitalize()}.", f"AND NUMBER ONE, AFTER ABOUT TEN GAMES... {NW['name'].upper()}. {pc}.", hold=0.3, sfx=[["hit", NW['name'].upper().split()[0], 0.7]])
 S['now1'] = {'type': 'countdown', 'list': 'now', 'upto': 1, 'at': NW['name'].upper().split()[0], 'cont': True}
-nf = NW['_v']['f']; nclose = sorted(['npG', 'shots', 'SoT', 'A', 'chances', 'bigCC'], key=lambda k: 9 if tf.get(k) is None or nf.get(k) is None else abs(tf[k] - nf[k]) / max(tf[k], nf[k], 1e-9))[:2]
-line('nowcmp', f"{sname(NW['name'])} against {SHORT}: {NOUN[nclose[0]]} and {NOUN[nclose[1]]}, every ninety minutes.", f"{sname(NW['name']).upper()} AGAINST {SHORT.upper()}: {NOUN[nclose[0]].upper()} AND {NOUN[nclose[1]].upper()}, EVERY 90|ninety MINUTES.")
-S['nowcmp'] = {'type': 'compare', 'kicker': 'This season', 'title': f"{SHORT} vs {sname(NW['name'])}.", 'a': tgx, 'b': {'name': NW['name'], 'season': CUR, 'face': NW['face']}, 'rows': [row(k, tf, nf) for k in nclose], 'at': [NOUN[nclose[0]].upper().split()[0], NOUN[nclose[1]].upper().split()[0]]}
+nf = NW['_v']['f']
+# Mikey, 9 Nov 2026: show what the twin is chosen on, not just the two closest stats: the stats that count most for the position (+ one for creating)
+okk = lambda k: k in NOUN and tf.get(k) is not None and nf.get(k) is not None
+main = [k for k, _ in sorted(W.items(), key=lambda kv: -kv[1]) if okk(k)]
+nclose = main[:3] + [next((k for k in main if k in ('chances', 'A', 'bigCC') and k not in main[:3]), main[3])]
+said = ", ".join(NOUN[k] for k in nclose[:-1]) + " and " + NOUN[nclose[-1]]
+line('nowcmp', f"{sname(NW['name'])} against {SHORT}, on what matters most for a {GROUP_NAME[GRP]}: {said}.", f"{sname(NW['name']).upper()} AGAINST {SHORT.upper()}, ON WHAT MATTERS MOST FOR A {GROUP_NAME[GRP].upper()}: {said.upper()}.")
+SUB = {'npG': 'per 90 minutes · no penalties', 'npxG': 'per 90 minutes · no penalties'}
+S['nowcmp'] = {'type': 'compare', 'kicker': 'This season', 'title': f"{SHORT} vs {sname(NW['name'])}.", 'a': tgx, 'b': {'name': NW['name'], 'season': CUR, 'face': NW['face']},
+               'rows': [{**row(k, tf, nf), 'sub': SUB.get(k, 'per 90 minutes')} for k in nclose], 'at': [NOUN[k].upper().split()[0] for k in nclose]}
 ALSO = 'also ' if NW['name'] == TW['name'] else ''
 line('end', f"So {SHORT}'s twin is {spoken(TW['name'])}. And right now, it's {ALSO}{spoken(NW['name'])}. Follow for more.", f"SO {SHORT.upper()}'S TWIN IS {TW['name'].upper()}. AND RIGHT NOW, IT'S {ALSO.upper()}{NW['name'].upper()}. FOLLOW FOR MORE.")
 S['end'] = {'type': 'end2', 'captions': True, 'at': [TW['name'].upper().split()[0], 'RIGHT'],
