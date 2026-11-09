@@ -50,6 +50,27 @@ function current(sc,s,t){const L=SC.__lists[sc.list];const rows=L.rows;
   const r=rows[grp[0]-1]; const twinOn=sc.twinAt!=null&&t>=wordT(s,sc.twinAt);
   return {L,p:{...r,ranks:grp,seasons:grp.map(k=>rows[k-1].season),twinNow:!!r.twin&&twinOn},rt:now?rt:-99,shown};}
 function range(a,b){const o=[];for(let i=a;i<=b;i++)o.push(i);return o;}
+
+// a golden-ball trophy (drawn here, no photo): pops onto the target on the intro when the award is said
+function trophy(X,Y,sz,a=1,rot=0){if(a<=0||sz<=0)return;x.save();x.globalAlpha*=a;x.translate(X,Y);x.rotate(rot);
+  const g0=x.createRadialGradient(0,-sz*0.15,0,0,-sz*0.15,sz*1.25);g0.addColorStop(0,'rgba(255,214,90,0.55)');g0.addColorStop(1,'rgba(255,214,90,0)');x.fillStyle=g0;x.beginPath();x.arc(0,-sz*0.15,sz*1.25,0,7);x.fill();
+  // stand: dark block with a gold band, then a short gold neck
+  x.fillStyle='#17130a';rr(-sz*0.42,sz*0.38,sz*0.84,sz*0.34,sz*0.05);x.fill();
+  const gb=x.createLinearGradient(-sz*0.42,0,sz*0.42,0);gb.addColorStop(0,'#9a6a0c');gb.addColorStop(0.5,'#ffe27a');gb.addColorStop(1,'#9a6a0c');
+  x.fillStyle=gb;x.fillRect(-sz*0.42,sz*0.48,sz*0.84,sz*0.08);x.beginPath();x.moveTo(-sz*0.2,sz*0.38);x.lineTo(sz*0.2,sz*0.38);x.lineTo(sz*0.1,sz*0.22);x.lineTo(-sz*0.1,sz*0.22);x.closePath();x.fill();
+  // the ball
+  const R=sz*0.5, cy=-sz*0.25, gr=x.createRadialGradient(-R*0.35,cy-R*0.4,R*0.05,0,cy,R);gr.addColorStop(0,'#fff6c8');gr.addColorStop(0.35,'#ffd23f');gr.addColorStop(0.8,'#c8900f');gr.addColorStop(1,'#7a5206');
+  x.fillStyle=gr;x.beginPath();x.arc(0,cy,R,0,7);x.fill();
+  x.save();x.beginPath();x.arc(0,cy,R,0,7);x.clip();x.strokeStyle='rgba(110,70,0,0.55)';x.lineWidth=sz*0.022;
+  [0.35,0.7].forEach(k=>{x.beginPath();x.ellipse(0,cy,R*k,R,0,0,7);x.stroke();});[-0.5,0,0.5].forEach(k=>{x.beginPath();x.ellipse(0,cy+R*k,R*Math.sqrt(1-k*k),R*0.12,0,0,7);x.stroke();});
+  x.fillStyle='rgba(255,255,255,0.55)';x.beginPath();x.ellipse(-R*0.38,cy-R*0.42,R*0.22,R*0.12,-0.6,0,7);x.fill();x.restore();
+  x.restore();}
+function awardOn(sc,s,t){const aw=sc.award;if(!aw)return;const at=wordT(s,aw.at),d=t-at;if(d<0)return;const b=back(d/0.45);
+  const SZ=aw.size||220,X=aw.x||225,Y=aw.y||420,tw=0.18*Math.sin(clamp(d,0,1.2)*9)*(1-clamp(d/1.2)), bob=Math.sin(t*3)*6;
+  trophy(X,Y+bob,SZ*b,clamp(d/0.12),-0.12+tw);
+  // sparkles while it lands
+  if(d<1.2)for(let i=0;i<7;i++){const an=i*0.9+1.3,rd=SZ*0.6+SZ*1.1*ease(d/0.9);x.save();x.globalAlpha=clamp(1-d/1.2);x.fillStyle=GOLD;x.translate(X+Math.cos(an)*rd,Y-40+Math.sin(an)*rd);x.rotate(an);x.fillRect(-7,-7,14,14);x.restore();}
+  if(aw.label)pill(aw.label,X,Y+SZ*0.9,32,GOLD,'#17130a',-0.08,ease(clamp((d-0.15)/0.3)));}
 const S={};
 // =============== POSTER ===============
 const P={};
@@ -61,7 +82,7 @@ P.intro=(sc,p,s,t)=>{const p0=p;clubBg(sc.club);stripes(0.07);tag();if(sc.instan
   (sc.facts||[]).forEach((f,i)=>{const at=sc.at?wordT(s,sc.at[i]):s.start+0.8+i*0.5;const a=ease((t-at)/0.35);x.font=F(900,56);const w=x.measureText(f[0]).width;x.font=F(700,32);const w2=x.measureText(f[1]).width;const X=540-(w+16+w2)/2;
     T(f[0],X,1030+i*64,F(900,56),GOLD,'left',a);T(f[1],X+w+16,1030+i*64,F(700,32),WHITE,'left',a);});
   (sc.mystery||[]).forEach((m,i)=>{const at=m.delay===0?-1:s.start+(m.delay!=null?m.delay:0.35+i*0.25),bb=m.delay===0?1:back((t-at)/0.45);if(t<at)return;const cx=540+(i?170:-170);
-    const pu=sc.instant?1+0.06*Math.sin(t*5+i*1.7):1;T(m.label,cx,1250,F(900,30),i?'#7cc4ff':GOLD,'center',clamp(bb*2));face(m.face,cx,1345,78*pu*clamp(bb,0,1.15),1,i?'#7cc4ff':GOLD,true);});};
+    const pu=sc.instant?1+0.06*Math.sin(t*5+i*1.7):1;T(m.label,cx,1250,F(900,30),i?'#7cc4ff':GOLD,'center',clamp(bb*2));face(m.face,cx,1345,78*pu*clamp(bb,0,1.15),1,i?'#7cc4ff':GOLD,true);});awardOn(sc,s,t);};
 P.cd2=P.countdown=(sc,p,s,t)=>{const {L,p:pl,rt,shown}=current(sc,s,t);const rows=L.rows;const club=pl.target?L.target.club:pl.club;
   const wp=(sc.fromClub&&rt>0)?ease((t-rt)/0.32):1;
   if(wp<1){clubBg(sc.fromClub);x.save();x.beginPath();const side=sc.from||1;const ww=1080*wp;if(side>0)x.rect(1080-ww,0,ww,1920);else x.rect(0,0,ww,1920);x.clip();clubBg(club);x.restore();

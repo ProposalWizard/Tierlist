@@ -189,19 +189,19 @@ before = []; side = 1
 for gi, g in enumerate(groups):
     r = next(x for x in keep if x['rank'] == min(g)); twin = r.get('twin'); id = f"c{max(g)}"
     nm = spoken(r['name']); first = r['name'].upper().split()[0]
-    story = EP.get('stories', {}).get(r['name']) or club_name(r['_v']['teamId'])
+    story = EP.get('stories', {}).get(r['name'])   # Mikey, 9 Nov: don't say the club after each name (the badge shows it); a custom story is still said
     ps, pc = pct(r['match'])
     if twin:
         also = [k for k in g if k != 1]; tw2 = (f" He's number {words(also[0])} too." if len(also) == 1 else f" He's number {', '.join(words(k) for k in also[:-1])} and {words(also[-1])} too.") if also else ""
-        line(id, f"And number one... {nm}. {story}. {ps.capitalize()}.{tw2} That makes him {SHORT}'s statistical twin.",
-             f"AND NUMBER ONE... {r['name'].upper()}. {story.upper()}. {pc}.{tw2.upper()} THAT MAKES HIM {SHORT.upper()}'S STATISTICAL TWIN.", hold=0.4, sfx=[["hit", first, 0.7], ["hit", "THAT", 0.5]])
+        line(id, f"And number one... {nm}.{' ' + story + '.' if story else ''} {ps.capitalize()}.{tw2} That makes him {SHORT}'s statistical twin.",
+             f"AND NUMBER ONE... {r['name'].upper()}.{' ' + story.upper() + '.' if story else ''} {pc}.{tw2.upper()} THAT MAKES HIM {SHORT.upper()}'S STATISTICAL TWIN.", hold=0.4, sfx=[["hit", first, 0.7], ["hit", "THAT", 0.5]])
     else:
         lead = ("Number " if gi == 0 else "") + " and ".join(words(k) for k in g)
         lead = lead[0].upper() + lead[1:]
         tail = " Twice." if len(g) > 1 else ""
         extra = " Guess the twin in the comments." if gi == len(groups) - 2 else ""  # just before the twin is revealed
-        line(id, f"{lead}: {nm}. {story}.{tail} {ps.capitalize()}.{extra}",
-             f"{lead.upper()}: {r['name'].upper()}. {story.upper()}.{tail.upper()} {pc}.{extra.upper()}", hold=0.9 if not extra else 0.6,
+        line(id, f"{lead}: {nm}.{' ' + story + '.' if story else ''}{tail} {ps.capitalize()}.{extra}",
+             f"{lead.upper()}: {r['name'].upper()}.{' ' + story.upper() + '.' if story else ''}{tail.upper()} {pc}.{extra.upper()}", hold=0.9 if not extra else 0.6,
              sfx=[["pop", first, 0.5]] + ([["pop", "GUESS", 0.45]] if extra else []))
     sc = {'type': 'cd2', 'list': 'top', 'show': sorted(g), 'before': list(before), 'prevShow': before[-1:] if before else [], 'at': first, 'cont': True, 'from': side,
           'pop': {**fact(r['_v']), 'at': story.upper().split()[0] if story else first}}
@@ -245,7 +245,8 @@ S['now1'] = {'type': 'countdown', 'list': 'now', 'upto': 1, 'at': NW['name'].upp
 nf = NW['_v']['f']; nclose = sorted(['npG', 'shots', 'SoT', 'A', 'chances', 'bigCC'], key=lambda k: 9 if tf.get(k) is None or nf.get(k) is None else abs(tf[k] - nf[k]) / max(tf[k], nf[k], 1e-9))[:2]
 line('nowcmp', f"{sname(NW['name'])} against {SHORT}: {NOUN[nclose[0]]} and {NOUN[nclose[1]]}, every ninety minutes.", f"{sname(NW['name']).upper()} AGAINST {SHORT.upper()}: {NOUN[nclose[0]].upper()} AND {NOUN[nclose[1]].upper()}, EVERY 90|ninety MINUTES.")
 S['nowcmp'] = {'type': 'compare', 'kicker': 'This season', 'title': f"{SHORT} vs {sname(NW['name'])}.", 'a': tgx, 'b': {'name': NW['name'], 'season': CUR, 'face': NW['face']}, 'rows': [row(k, tf, nf) for k in nclose], 'at': [NOUN[nclose[0]].upper().split()[0], NOUN[nclose[1]].upper().split()[0]]}
-line('end', f"So {SHORT}'s twin is {spoken(TW['name'])}. And right now, it's {spoken(NW['name'])}. Follow for more.", f"SO {SHORT.upper()}'S TWIN IS {TW['name'].upper()}. AND RIGHT NOW, IT'S {NW['name'].upper()}. FOLLOW FOR MORE.")
+ALSO = 'also ' if NW['name'] == TW['name'] else ''
+line('end', f"So {SHORT}'s twin is {spoken(TW['name'])}. And right now, it's {ALSO}{spoken(NW['name'])}. Follow for more.", f"SO {SHORT.upper()}'S TWIN IS {TW['name'].upper()}. AND RIGHT NOW, IT'S {ALSO.upper()}{NW['name'].upper()}. FOLLOW FOR MORE.")
 S['end'] = {'type': 'end2', 'captions': True, 'at': [TW['name'].upper().split()[0], 'RIGHT'],
             'pairs': [{'label': 'Last 5 seasons', 'a': tgp['face'], 'b': TW['face'], 'aName': f"{SHORT.upper()} {EP['season'][2:]}", 'bName': f"{sname(TW['name']).upper()} {TW['season'][2:]}", 'aClub': tgp['club'], 'bClub': TW['club']},
                       {'label': 'This season', 'a': tgp['face'], 'b': NW['face'], 'aName': f"{SHORT.upper()} {EP['season'][2:]}", 'bName': sname(NW['name']).upper(), 'aClub': tgp['club'], 'bClub': NW['club']}]}
@@ -258,6 +259,8 @@ if EP.get('style', 'fast') == 'fast':
             l.update(say=f"His own seasons don't count. That leaves {words(len(keep))}.", cap=f"HIS OWN SEASONS DON'T COUNT. THAT LEAVES {words(len(keep)).upper()}.")
     L = [l for l in L if l['id'] != 'tests']; S.pop('tests', None)
     S['intro'].update(instant=True, kicker='HIS TWIN IS NOT WHO YOU THINK', kickerAt='NOT', facts=[], mystery=[{**m, 'delay': 0} for m in S['intro']['mystery']])
+    if EP.get('award'):   # e.g. {"at": "BALLON", "label": "BALLON D'OR 25/26"}: a trophy pops onto him when the word is said
+        S['intro']['award'] = EP['award']; next(l for l in L if l['id'] == 'intro')['sfx'].append(["pop", EP['award']['at'], 0.7])
     if 'own' in S: S['own']['at'] = 'HIS'
     prev = tgp['club']; prevn = tgp['club']
     for l in L:

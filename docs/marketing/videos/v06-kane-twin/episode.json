@@ -20,5 +20,9 @@
  "spoken": {},
  "top": 7,
  "surpriseAnyPlace": true,
- "prefix": "Ballon d'Or winner"
+ "prefix": "Ballon d'Or winner",
+ "award": {
+  "at": "BALLON",
+  "label": "BALLON D'OR"
+ }
 }

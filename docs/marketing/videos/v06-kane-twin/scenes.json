@@ -284,7 +284,11 @@
 ],
 "instant": true,
 "kicker": "HIS TWIN IS NOT WHO YOU THINK",
-"kickerAt": "NOT"
+"kickerAt": "NOT",
+"award": {
+"at": "BALLON",
+"label": "BALLON D'OR"
+}
 },
 "c7": {
 "type": "cd2",
@@ -301,7 +305,7 @@
 "big": "2.16",
 "label": "chances created per 90",
 "rank": "1st of 29 Bundesliga strikers",
-"at": "STUTTGART"
+"at": "SERHOU"
 },
 "fromClub": "t9823"
 },
@@ -324,7 +328,7 @@
 "big": "0.62",
 "label": "big chances made per 90",
 "rank": "1st of 26 La Liga strikers",
-"at": "REAL"
+"at": "KARIM"
 },
 "fromClub": "t10269"
 },
@@ -380,7 +384,7 @@
 "big": "0.64",
 "label": "big chances made per 90",
 "rank": "1st of 26 Bundesliga strikers",
-"at": "STUTTGART"
+"at": "DENIZ"
 },
 "fromClub": "t8456"
 },
@@ -405,7 +409,7 @@
 "big": "1.04",
 "label": "goals per 90 (no pens)",
 "rank": "1st of 17 Ligue 1 strikers",
-"at": "PSG"
+"at": "OUSMANE"
 },
 "sticker": {
 "text": "GUESS THE TWIN IN THE COMMENTS",
@@ -437,7 +441,7 @@
 "big": "0.88",
 "label": "goals per 90 (no pens)",
 "rank": "1st of 26 Ligue 1 strikers",
-"at": "PSG"
+"at": "KYLIAN"
 },
 "twinAt": "THAT",
 "fromClub": "t9847"
