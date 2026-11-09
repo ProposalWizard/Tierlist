@@ -154,20 +154,21 @@
   ]
  },
  {
-  "id": "v07-replace-him",
-  "title": "v07 · Who replaces him if he leaves? (Stat Twins spin-off)",
-  "stage": "idea",
+  "id": "v07-replace-hall",
+  "title": "v07 · Who replaces Lewis Hall at Newcastle?",
+  "stage": "check",
   "owner": "Claude",
-  "updated": "2026-11-09T17:10:00Z",
+  "updated": "2026-11-09T18:30:00Z",
   "postOn": null,
-  "line": "A star might leave: find his replacement from the top 5 leagues with the twin method, then filter to young / cheaper players for the pick.",
-  "script": null,
-  "cover": null,
-  "video": null,
-  "seconds": null,
+  "line": "Hall off to Man United: closest left-backs Galán (80%, 31) and Neco Williams (79%, 25, €42M); 23 and under only: Kaiki (Como, 23, €15M, 77%, first in 92% of tests).",
+  "script": "docs/marketing/videos/v07-replace-hall/script.md",
+  "cover": "docs/marketing/videos/v07-replace-hall/cover.png",
+  "video": "docs/marketing/videos/v07-replace-hall/knowitball-v07-replace-hall.mp4",
+  "seconds": 51.3,
   "links": [],
   "log": [
-   "2026-11-09 From a TikTok Mikey shared (replacement-finder format). Waiting for Mikey to pick the player."
+   "2026-11-09 From a TikTok Mikey shared (replacement-finder format). Waiting for Mikey to pick the player.",
+   "2026-11-09 Made: make_replace.py + video_replace.html (hook with badge swap, profile ranks, 140 left-backs count, map, judge, under-23 filter, table, pick with price bars, Hall v Kaiki, end). 51 s. Waiting for Mikey's look."
   ]
  }
 ]

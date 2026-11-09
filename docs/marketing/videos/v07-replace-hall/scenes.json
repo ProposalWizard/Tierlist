@@ -1,0 +1,1567 @@
+{
+"meta": {
+"series": "WHO REPLACES HIM?",
+"targetShort": "Hall",
+"engine": "video_replace.html",
+"imgDir": "/tmp/claude-0/-home-user-Tierlist/84a0c395-3776-5543-b933-7d1eba9d58ff/scratchpad/img",
+"clubColors": {
+"t8406": "rgb(184,53,49)",
+"t8472": "rgb(203,102,112)",
+"t8619": "rgb(107,85,50)",
+"t8658": "rgb(115,134,186)",
+"t8650": "rgb(231,26,35)",
+"t9848": "rgb(12,166,235)",
+"t10260": "rgb(218,41,28)",
+"t8197": "rgb(106,151,198)",
+"t8302": "rgb(227,86,100)",
+"t7732": "rgb(205,11,45)",
+"t8226": "rgb(26,97,180)",
+"t10205": "rgb(5,80,136)",
+"t8634": "rgb(165,0,68)",
+"t10080": "rgb(49,148,208)",
+"t8722": "rgb(246,107,112)",
+"t9906": "rgb(39,41,111)",
+"t10249": "rgb(245,104,16)",
+"t8460": "rgb(0,90,169)",
+"t8315": "rgb(242,74,73)",
+"t178475": "rgb(242,143,168)",
+"t8586": "rgb(9,25,70)",
+"t9851": "rgb(238,4,19)",
+"t8603": "rgb(79,170,111)",
+"t9864": "rgb(4,73,152)",
+"t8636": "rgb(0,21,151)",
+"t10261": "rgb(30,30,30)",
+"t8560": "rgb(144,81,26)",
+"t8521": "rgb(235,3,3)",
+"t10171": "rgb(79,114,143)",
+"t8178": "rgb(181,171,3)",
+"t9789": "rgb(254,231,0)",
+"t8639": "rgb(253,108,107)",
+"t9937": "rgb(198,12,12)",
+"t9847": "rgb(6,69,120)",
+"t9879": "rgb(172,14,14)",
+"t8678": "rgb(204,19,24)",
+"t8686": "rgb(148,11,42)",
+"t8543": "rgb(230,201,112)",
+"t10235": "rgb(251,6,5)",
+"t8668": "rgb(48,49,176)",
+"t8456": "rgb(22,68,123)",
+"t10203": "rgb(242,82,104)",
+"t8371": "rgb(8,51,110)",
+"t10267": "rgb(235,48,36)",
+"t9826": "rgb(48,115,182)",
+"t9825": "rgb(237,4,7)",
+"t10269": "rgb(233,138,150)",
+"t9823": "rgb(220,5,45)",
+"t8191": "rgb(140,78,119)",
+"t8524": "rgb(8,101,175)",
+"t9910": "rgb(233,37,78)",
+"t8588": "rgb(215,3,3)",
+"t8602": "rgb(252,167,24)",
+"t9902": "rgb(244,86,101)",
+"t8463": "rgb(254,227,20)",
+"t8455": "rgb(7,19,149)",
+"t10252": "rgb(251,227,7)",
+"t8305": "rgb(15,71,138)",
+"t8697": "rgb(20,139,76)",
+"t8633": "rgb(177,152,44)",
+"t8592": "rgb(11,104,180)"
+},
+"source": "Data: Opta via FotMob · top 5 leagues · ages and values: FotMob"
+},
+"scenes": {
+"hook": {
+"type": "hook",
+"face": "p1197655",
+"flag": "cENG",
+"from": "t10261",
+"to": "t10260",
+"name": "LEWIS HALL",
+"swapAt": "MANCHESTER",
+"qAt": "WHO",
+"kicker": "WHO REPLACES HIM?"
+},
+"profile": {
+"type": "profile",
+"face": "p1197655",
+"club": "t10261",
+"name": "LEWIS HALL",
+"season": "2025/26",
+"chips": [
+{
+"label": "Dribbles",
+"v": "1.5",
+"rank": "2nd of 55 Premier League full-backs",
+"at": "DRIBBLES",
+"good": true
+},
+{
+"label": "Blocked shots",
+"v": "0.60",
+"rank": "2nd of 54 Premier League full-backs",
+"at": "BLOCKED",
+"good": true
+},
+{
+"label": "Ball recoveries",
+"v": "5.5",
+"rank": "2nd of 55 Premier League full-backs",
+"at": "BALL",
+"good": true
+},
+{
+"label": "Assists",
+"v": "0.04",
+"rank": "40th of 60",
+"at": "BUT",
+"good": false
+}
+]
+},
+"method": {
+"type": "method",
+"n": 140,
+"leagues": [
+[
+"Premier League",
+32
+],
+[
+"La Liga",
+34
+],
+[
+"Serie A",
+18
+],
+[
+"Bundesliga",
+27
+],
+[
+"Ligue 1",
+29
+]
+],
+"posWord": "left-back",
+"at": "ALL",
+"testsAt": "2,000"
+},
+"map": {
+"type": "map",
+"dots": [
+{
+"k": 0,
+"x": -0.8144,
+"y": 0.5803,
+"m": 80.3,
+"age": 31,
+"face": "p695062",
+"club": "t9910",
+"name": "Javi Galán"
+},
+{
+"k": 1,
+"x": -0.9999,
+"y": 0.0103,
+"m": 79.3,
+"age": 25,
+"face": "p1078788",
+"club": "t10203",
+"name": "Neco Williams"
+},
+{
+"k": 2,
+"x": -0.9075,
+"y": -0.42,
+"m": 79.3,
+"age": 26,
+"face": "p957118",
+"club": "t8543",
+"name": "Nuno Tavares"
+},
+{
+"k": 3,
+"x": 0.0093,
+"y": -1.0,
+"m": 78.4,
+"age": 26,
+"face": "p844477",
+"club": "t8560",
+"name": "Sergio Gómez"
+},
+{
+"k": 4,
+"x": -0.64,
+"y": 0.7684,
+"m": 78.3,
+"age": 25,
+"face": "p1291325",
+"club": "t8191",
+"name": "Lucas Pires"
+},
+{
+"k": 5,
+"x": -0.8568,
+"y": 0.5157,
+"m": 77.4,
+"age": 23,
+"face": "p1459564",
+"club": "t10171",
+"name": "Kaiki"
+},
+{
+"k": 6,
+"x": 0.9178,
+"y": -0.397,
+"m": 77.3,
+"age": 27,
+"face": "p874025",
+"club": "t8668",
+"name": "Vitaliy Mykolenko"
+},
+{
+"k": 7,
+"x": -0.8397,
+"y": -0.543,
+"m": 77.2,
+"age": 24,
+"face": "p1177358",
+"club": "t8678",
+"name": "Adrien Truffert"
+},
+{
+"k": 8,
+"x": -0.9963,
+"y": -0.0857,
+"m": 76.3,
+"age": 24,
+"face": "p966026",
+"club": "t10252",
+"name": "Ian Maatsen"
+},
+{
+"k": 9,
+"x": -0.1672,
+"y": -0.9859,
+"m": 75.8,
+"age": 29,
+"face": "p614384",
+"club": "t10269",
+"name": "Maximilian Mittelstädt"
+},
+{
+"k": 10,
+"x": 0.9859,
+"y": 0.1674,
+"m": 75.8,
+"age": 20,
+"face": "p1445416",
+"club": "t8226",
+"name": "Mats Rots"
+},
+{
+"k": 11,
+"x": 0.0788,
+"y": 0.9969,
+"m": 75.5,
+"age": 25,
+"face": "p1395964",
+"club": "t10205",
+"name": "Carlos Romero"
+},
+{
+"k": 12,
+"x": -0.9948,
+"y": 0.102,
+"m": 75.4,
+"age": 24,
+"face": "p1233931",
+"club": "t9851",
+"name": "Quentin Merlin"
+},
+{
+"k": 13,
+"x": 0.9996,
+"y": -0.0279,
+"m": 75.4,
+"age": 28,
+"face": "p988805",
+"club": "t8455",
+"name": "Pep Chavarría"
+},
+{
+"k": 14,
+"x": -0.7413,
+"y": 0.6712,
+"m": 74.8,
+"age": 31,
+"face": "p670009",
+"club": "t8619",
+"name": "Dimitrios Giannoulis"
+},
+{
+"k": 15,
+"x": 0.9685,
+"y": -0.249,
+"m": 74.7,
+"age": 27,
+"face": "p807148",
+"club": "t8543",
+"name": "Luca Pellegrini"
+},
+{
+"k": 16,
+"x": -0.271,
+"y": 0.9626,
+"m": 74.7,
+"age": 28,
+"face": "p1098243",
+"club": "t10249",
+"name": "Yanis Zouaoui"
+},
+{
+"k": 17,
+"x": -0.9394,
+"y": 0.3429,
+"m": 74.6,
+"age": 30,
+"face": "p629594",
+"club": "t8543",
+"name": "Alfonso Pedraza"
+},
+{
+"k": 18,
+"x": -0.9936,
+"y": -0.1134,
+"m": 74.0,
+"age": 29,
+"face": "p659490",
+"club": "t8302",
+"name": "Gabriel Suazo"
+},
+{
+"k": 19,
+"x": 0.9608,
+"y": 0.2773,
+"m": 73.5,
+"age": 26,
+"face": "p1092403",
+"club": "t8463",
+"name": "Melvin Bard"
+},
+{
+"k": 20,
+"x": -0.8647,
+"y": 0.5024,
+"m": 73.5,
+"age": 30,
+"face": "p784225",
+"club": "t8460",
+"name": "Raphael Obermair"
+},
+{
+"k": 21,
+"x": -0.9761,
+"y": 0.2174,
+"m": 72.8,
+"age": 24,
+"face": "p1116391",
+"club": "t8602",
+"name": "Hugo Bueno"
+},
+{
+"k": 22,
+"x": -0.9916,
+"y": 0.129,
+"m": 72.8,
+"age": 23,
+"face": "p1575945",
+"club": "t9848",
+"name": "Oso"
+},
+{
+"k": 23,
+"x": 0.9968,
+"y": 0.08,
+"m": 72.8,
+"age": 29,
+"face": "p662428",
+"club": "t9879",
+"name": "Antonee Robinson"
+},
+{
+"k": 24,
+"x": 0.846,
+"y": 0.5331,
+"m": 72.6,
+"age": 28,
+"face": "p771630",
+"club": "t8722",
+"name": "Gideon Mensah"
+},
+{
+"k": 25,
+"x": 0.8301,
+"y": 0.5576,
+"m": 72.6,
+"age": 24,
+"face": "p1285784",
+"club": "t8521",
+"name": "Bradley Locko"
+},
+{
+"k": 26,
+"x": 0.943,
+"y": -0.3327,
+"m": 72.3,
+"age": 22,
+"face": "p1717331",
+"club": "t9864",
+"name": "Rafita"
+},
+{
+"k": 27,
+"x": -0.083,
+"y": 0.9966,
+"m": 72.3,
+"age": 23,
+"face": "p1220187",
+"club": "t10267",
+"name": "Jesus Vázquez"
+},
+{
+"k": 28,
+"x": -0.6644,
+"y": -0.7474,
+"m": 72.2,
+"age": 27,
+"face": "p1059657",
+"club": "t10205",
+"name": "Sergi Cardona"
+},
+{
+"k": 29,
+"x": -0.2741,
+"y": -0.9617,
+"m": 72.1,
+"age": 19,
+"face": "p1815149",
+"club": "t8634",
+"name": "Xavi Espart"
+},
+{
+"k": 30,
+"x": 0.4798,
+"y": -0.8774,
+"m": 72.0,
+"age": 36,
+"face": "p80295",
+"club": "t8315",
+"name": "Yuri Berchiche"
+},
+{
+"k": 31,
+"x": 0.5873,
+"y": 0.8094,
+"m": 71.9,
+"age": 26,
+"face": "p1323398",
+"club": "t8371",
+"name": "Abel Bretones"
+},
+{
+"k": 32,
+"x": -0.5609,
+"y": -0.8279,
+"m": 71.9,
+"age": 24,
+"face": "p1051097",
+"club": "t10252",
+"name": "Matteo Ruggeri"
+},
+{
+"k": 33,
+"x": 0.1625,
+"y": 0.9867,
+"m": 71.8,
+"age": 26,
+"face": "p894803",
+"club": "t8636",
+"name": "Djed Spence"
+},
+{
+"k": 34,
+"x": -0.2948,
+"y": -0.9555,
+"m": 71.6,
+"age": 25,
+"face": "p942379",
+"club": "t8178",
+"name": "Miguel Gutiérrez"
+},
+{
+"k": 35,
+"x": -0.4037,
+"y": 0.9149,
+"m": 71.5,
+"age": 34,
+"face": "p474673",
+"club": "t8305",
+"name": "Johan Mojica"
+},
+{
+"k": 36,
+"x": 0.685,
+"y": 0.7285,
+"m": 71.4,
+"age": 24,
+"face": "p1159181",
+"club": "t10235",
+"name": "Javi López"
+},
+{
+"k": 37,
+"x": 0.4555,
+"y": -0.8902,
+"m": 71.4,
+"age": 23,
+"face": "p1190025",
+"club": "t8633",
+"name": "Alvaro Carreras"
+},
+{
+"k": 38,
+"x": 0.7967,
+"y": 0.6044,
+"m": 71.3,
+"age": 24,
+"face": "p1235086",
+"club": "t8658",
+"name": "Kristoffer Lund Hansen"
+},
+{
+"k": 39,
+"x": -0.9778,
+"y": 0.2094,
+"m": 71.1,
+"age": 23,
+"face": "p1320176",
+"club": "t8686",
+"name": "Wesley"
+},
+{
+"k": 40,
+"x": -0.7728,
+"y": -0.6346,
+"m": 70.8,
+"age": 24,
+"face": "p1070712",
+"club": "t8456",
+"name": "Joško Gvardiol"
+},
+{
+"k": 41,
+"x": 0.8304,
+"y": -0.5572,
+"m": 70.7,
+"age": 28,
+"face": "p873289",
+"club": "t8633",
+"name": "Marc Cucurella"
+},
+{
+"k": 42,
+"x": -0.6092,
+"y": 0.793,
+"m": 70.4,
+"age": 32,
+"face": "p488415",
+"club": "t8600",
+"name": "Hassane Kamara"
+},
+{
+"k": 43,
+"x": 0.8992,
+"y": -0.4376,
+"m": 70.2,
+"age": 24,
+"face": "p1209228",
+"club": "t9789",
+"name": "Daniel Svensson"
+},
+{
+"k": 44,
+"x": -0.9433,
+"y": -0.3318,
+"m": 70.2,
+"age": 21,
+"face": "p1678681",
+"club": "t8406",
+"name": "Hennes Behrens"
+},
+{
+"k": 45,
+"x": 0.8374,
+"y": 0.5465,
+"m": 70.0,
+"age": 33,
+"face": "p477588",
+"club": "t7732",
+"name": "Álex Moreno"
+},
+{
+"k": 46,
+"x": -0.9933,
+"y": -0.1154,
+"m": 70.0,
+"age": 21,
+"face": "p1300526",
+"club": "t8456",
+"name": "Nico O'Reilly"
+},
+{
+"k": 47,
+"x": -0.0021,
+"y": 1.0,
+"m": 69.8,
+"age": 27,
+"face": "p744494",
+"club": "t8463",
+"name": "Gabriel Gudmundsson"
+},
+{
+"k": 48,
+"x": -0.9998,
+"y": 0.019,
+"m": 69.7,
+"age": 29,
+"face": "p815465",
+"club": "t8639",
+"name": "Romain Perraud"
+},
+{
+"k": 49,
+"x": -0.6336,
+"y": 0.7737,
+"m": 69.5,
+"age": 34,
+"face": "p526968",
+"club": "t10080",
+"name": "Pacha Espino"
+},
+{
+"k": 50,
+"x": 0.9929,
+"y": 0.1188,
+"m": 69.4,
+"age": 26,
+"face": "p969856",
+"club": "t8697",
+"name": "Olivier Deman"
+},
+{
+"k": 51,
+"x": -0.9999,
+"y": -0.0127,
+"m": 69.2,
+"age": 31,
+"face": "p288406",
+"club": "t9906",
+"name": "Alejandro Grimaldo"
+},
+{
+"k": 52,
+"x": 0.9509,
+"y": -0.3094,
+"m": 69.0,
+"age": 28,
+"face": "p775539",
+"club": "t10260",
+"name": "Noussair Mazraoui"
+},
+{
+"k": 53,
+"x": -0.1819,
+"y": 0.9833,
+"m": 68.9,
+"age": 30,
+"face": "p660326",
+"club": "t8588",
+"name": "Matthieu Udol"
+},
+{
+"k": 54,
+"x": -0.6424,
+"y": -0.7664,
+"m": 68.8,
+"age": 32,
+"face": "p267371",
+"club": "t8592",
+"name": "Emerson"
+},
+{
+"k": 55,
+"x": -0.5674,
+"y": -0.8234,
+"m": 68.8,
+"age": 28,
+"face": "p806669",
+"club": "t178475",
+"name": "David Raum"
+},
+{
+"k": 56,
+"x": 1.0,
+"y": 0.0001,
+"m": 68.7,
+"age": 32,
+"face": "p600524",
+"club": "t8472",
+"name": "Reinildo"
+},
+{
+"k": 57,
+"x": 0.9962,
+"y": 0.0873,
+"m": 68.6,
+"age": 29,
+"face": "p672469",
+"club": "t9826",
+"name": "Ben Chilwell"
+},
+{
+"k": 58,
+"x": 0.8298,
+"y": -0.5581,
+"m": 68.6,
+"age": 27,
+"face": "p750028",
+"club": "t8603",
+"name": "Fran García"
+},
+{
+"k": 59,
+"x": 0.7054,
+"y": -0.7088,
+"m": 68.4,
+"age": 20,
+"face": "p1413846",
+"club": "t8455",
+"name": "Jorrel Hato"
+}
+],
+"hi": [
+[
+0,
+"JAVI"
+],
+[
+1,
+"NECO"
+]
+],
+"fly": true
+},
+"judge": {
+"type": "judge",
+"cards": [
+{
+"name": "Javi Galán",
+"face": "p695062",
+"club": "t9910",
+"match": 80.3,
+"age": 31,
+"team": "Celta Vigo",
+"stamp": "31",
+"at": "31"
+},
+{
+"name": "Neco Williams",
+"face": "p1078788",
+"club": "t10203",
+"match": 79.3,
+"age": 25,
+"team": "Nottingham Forest",
+"stamp": "25 · €42M",
+"at": "€42M"
+}
+]
+},
+"filter": {
+"type": "map",
+"dots": [
+{
+"k": 0,
+"x": -0.8144,
+"y": 0.5803,
+"m": 80.3,
+"age": 31,
+"face": "p695062",
+"club": "t9910",
+"name": "Javi Galán"
+},
+{
+"k": 1,
+"x": -0.9999,
+"y": 0.0103,
+"m": 79.3,
+"age": 25,
+"face": "p1078788",
+"club": "t10203",
+"name": "Neco Williams"
+},
+{
+"k": 2,
+"x": -0.9075,
+"y": -0.42,
+"m": 79.3,
+"age": 26,
+"face": "p957118",
+"club": "t8543",
+"name": "Nuno Tavares"
+},
+{
+"k": 3,
+"x": 0.0093,
+"y": -1.0,
+"m": 78.4,
+"age": 26,
+"face": "p844477",
+"club": "t8560",
+"name": "Sergio Gómez"
+},
+{
+"k": 4,
+"x": -0.64,
+"y": 0.7684,
+"m": 78.3,
+"age": 25,
+"face": "p1291325",
+"club": "t8191",
+"name": "Lucas Pires"
+},
+{
+"k": 5,
+"x": -0.8568,
+"y": 0.5157,
+"m": 77.4,
+"age": 23,
+"face": "p1459564",
+"club": "t10171",
+"name": "Kaiki"
+},
+{
+"k": 6,
+"x": 0.9178,
+"y": -0.397,
+"m": 77.3,
+"age": 27,
+"face": "p874025",
+"club": "t8668",
+"name": "Vitaliy Mykolenko"
+},
+{
+"k": 7,
+"x": -0.8397,
+"y": -0.543,
+"m": 77.2,
+"age": 24,
+"face": "p1177358",
+"club": "t8678",
+"name": "Adrien Truffert"
+},
+{
+"k": 8,
+"x": -0.9963,
+"y": -0.0857,
+"m": 76.3,
+"age": 24,
+"face": "p966026",
+"club": "t10252",
+"name": "Ian Maatsen"
+},
+{
+"k": 9,
+"x": -0.1672,
+"y": -0.9859,
+"m": 75.8,
+"age": 29,
+"face": "p614384",
+"club": "t10269",
+"name": "Maximilian Mittelstädt"
+},
+{
+"k": 10,
+"x": 0.9859,
+"y": 0.1674,
+"m": 75.8,
+"age": 20,
+"face": "p1445416",
+"club": "t8226",
+"name": "Mats Rots"
+},
+{
+"k": 11,
+"x": 0.0788,
+"y": 0.9969,
+"m": 75.5,
+"age": 25,
+"face": "p1395964",
+"club": "t10205",
+"name": "Carlos Romero"
+},
+{
+"k": 12,
+"x": -0.9948,
+"y": 0.102,
+"m": 75.4,
+"age": 24,
+"face": "p1233931",
+"club": "t9851",
+"name": "Quentin Merlin"
+},
+{
+"k": 13,
+"x": 0.9996,
+"y": -0.0279,
+"m": 75.4,
+"age": 28,
+"face": "p988805",
+"club": "t8455",
+"name": "Pep Chavarría"
+},
+{
+"k": 14,
+"x": -0.7413,
+"y": 0.6712,
+"m": 74.8,
+"age": 31,
+"face": "p670009",
+"club": "t8619",
+"name": "Dimitrios Giannoulis"
+},
+{
+"k": 15,
+"x": 0.9685,
+"y": -0.249,
+"m": 74.7,
+"age": 27,
+"face": "p807148",
+"club": "t8543",
+"name": "Luca Pellegrini"
+},
+{
+"k": 16,
+"x": -0.271,
+"y": 0.9626,
+"m": 74.7,
+"age": 28,
+"face": "p1098243",
+"club": "t10249",
+"name": "Yanis Zouaoui"
+},
+{
+"k": 17,
+"x": -0.9394,
+"y": 0.3429,
+"m": 74.6,
+"age": 30,
+"face": "p629594",
+"club": "t8543",
+"name": "Alfonso Pedraza"
+},
+{
+"k": 18,
+"x": -0.9936,
+"y": -0.1134,
+"m": 74.0,
+"age": 29,
+"face": "p659490",
+"club": "t8302",
+"name": "Gabriel Suazo"
+},
+{
+"k": 19,
+"x": 0.9608,
+"y": 0.2773,
+"m": 73.5,
+"age": 26,
+"face": "p1092403",
+"club": "t8463",
+"name": "Melvin Bard"
+},
+{
+"k": 20,
+"x": -0.8647,
+"y": 0.5024,
+"m": 73.5,
+"age": 30,
+"face": "p784225",
+"club": "t8460",
+"name": "Raphael Obermair"
+},
+{
+"k": 21,
+"x": -0.9761,
+"y": 0.2174,
+"m": 72.8,
+"age": 24,
+"face": "p1116391",
+"club": "t8602",
+"name": "Hugo Bueno"
+},
+{
+"k": 22,
+"x": -0.9916,
+"y": 0.129,
+"m": 72.8,
+"age": 23,
+"face": "p1575945",
+"club": "t9848",
+"name": "Oso"
+},
+{
+"k": 23,
+"x": 0.9968,
+"y": 0.08,
+"m": 72.8,
+"age": 29,
+"face": "p662428",
+"club": "t9879",
+"name": "Antonee Robinson"
+},
+{
+"k": 24,
+"x": 0.846,
+"y": 0.5331,
+"m": 72.6,
+"age": 28,
+"face": "p771630",
+"club": "t8722",
+"name": "Gideon Mensah"
+},
+{
+"k": 25,
+"x": 0.8301,
+"y": 0.5576,
+"m": 72.6,
+"age": 24,
+"face": "p1285784",
+"club": "t8521",
+"name": "Bradley Locko"
+},
+{
+"k": 26,
+"x": 0.943,
+"y": -0.3327,
+"m": 72.3,
+"age": 22,
+"face": "p1717331",
+"club": "t9864",
+"name": "Rafita"
+},
+{
+"k": 27,
+"x": -0.083,
+"y": 0.9966,
+"m": 72.3,
+"age": 23,
+"face": "p1220187",
+"club": "t10267",
+"name": "Jesus Vázquez"
+},
+{
+"k": 28,
+"x": -0.6644,
+"y": -0.7474,
+"m": 72.2,
+"age": 27,
+"face": "p1059657",
+"club": "t10205",
+"name": "Sergi Cardona"
+},
+{
+"k": 29,
+"x": -0.2741,
+"y": -0.9617,
+"m": 72.1,
+"age": 19,
+"face": "p1815149",
+"club": "t8634",
+"name": "Xavi Espart"
+},
+{
+"k": 30,
+"x": 0.4798,
+"y": -0.8774,
+"m": 72.0,
+"age": 36,
+"face": "p80295",
+"club": "t8315",
+"name": "Yuri Berchiche"
+},
+{
+"k": 31,
+"x": 0.5873,
+"y": 0.8094,
+"m": 71.9,
+"age": 26,
+"face": "p1323398",
+"club": "t8371",
+"name": "Abel Bretones"
+},
+{
+"k": 32,
+"x": -0.5609,
+"y": -0.8279,
+"m": 71.9,
+"age": 24,
+"face": "p1051097",
+"club": "t10252",
+"name": "Matteo Ruggeri"
+},
+{
+"k": 33,
+"x": 0.1625,
+"y": 0.9867,
+"m": 71.8,
+"age": 26,
+"face": "p894803",
+"club": "t8636",
+"name": "Djed Spence"
+},
+{
+"k": 34,
+"x": -0.2948,
+"y": -0.9555,
+"m": 71.6,
+"age": 25,
+"face": "p942379",
+"club": "t8178",
+"name": "Miguel Gutiérrez"
+},
+{
+"k": 35,
+"x": -0.4037,
+"y": 0.9149,
+"m": 71.5,
+"age": 34,
+"face": "p474673",
+"club": "t8305",
+"name": "Johan Mojica"
+},
+{
+"k": 36,
+"x": 0.685,
+"y": 0.7285,
+"m": 71.4,
+"age": 24,
+"face": "p1159181",
+"club": "t10235",
+"name": "Javi López"
+},
+{
+"k": 37,
+"x": 0.4555,
+"y": -0.8902,
+"m": 71.4,
+"age": 23,
+"face": "p1190025",
+"club": "t8633",
+"name": "Alvaro Carreras"
+},
+{
+"k": 38,
+"x": 0.7967,
+"y": 0.6044,
+"m": 71.3,
+"age": 24,
+"face": "p1235086",
+"club": "t8658",
+"name": "Kristoffer Lund Hansen"
+},
+{
+"k": 39,
+"x": -0.9778,
+"y": 0.2094,
+"m": 71.1,
+"age": 23,
+"face": "p1320176",
+"club": "t8686",
+"name": "Wesley"
+},
+{
+"k": 40,
+"x": -0.7728,
+"y": -0.6346,
+"m": 70.8,
+"age": 24,
+"face": "p1070712",
+"club": "t8456",
+"name": "Joško Gvardiol"
+},
+{
+"k": 41,
+"x": 0.8304,
+"y": -0.5572,
+"m": 70.7,
+"age": 28,
+"face": "p873289",
+"club": "t8633",
+"name": "Marc Cucurella"
+},
+{
+"k": 42,
+"x": -0.6092,
+"y": 0.793,
+"m": 70.4,
+"age": 32,
+"face": "p488415",
+"club": "t8600",
+"name": "Hassane Kamara"
+},
+{
+"k": 43,
+"x": 0.8992,
+"y": -0.4376,
+"m": 70.2,
+"age": 24,
+"face": "p1209228",
+"club": "t9789",
+"name": "Daniel Svensson"
+},
+{
+"k": 44,
+"x": -0.9433,
+"y": -0.3318,
+"m": 70.2,
+"age": 21,
+"face": "p1678681",
+"club": "t8406",
+"name": "Hennes Behrens"
+},
+{
+"k": 45,
+"x": 0.8374,
+"y": 0.5465,
+"m": 70.0,
+"age": 33,
+"face": "p477588",
+"club": "t7732",
+"name": "Álex Moreno"
+},
+{
+"k": 46,
+"x": -0.9933,
+"y": -0.1154,
+"m": 70.0,
+"age": 21,
+"face": "p1300526",
+"club": "t8456",
+"name": "Nico O'Reilly"
+},
+{
+"k": 47,
+"x": -0.0021,
+"y": 1.0,
+"m": 69.8,
+"age": 27,
+"face": "p744494",
+"club": "t8463",
+"name": "Gabriel Gudmundsson"
+},
+{
+"k": 48,
+"x": -0.9998,
+"y": 0.019,
+"m": 69.7,
+"age": 29,
+"face": "p815465",
+"club": "t8639",
+"name": "Romain Perraud"
+},
+{
+"k": 49,
+"x": -0.6336,
+"y": 0.7737,
+"m": 69.5,
+"age": 34,
+"face": "p526968",
+"club": "t10080",
+"name": "Pacha Espino"
+},
+{
+"k": 50,
+"x": 0.9929,
+"y": 0.1188,
+"m": 69.4,
+"age": 26,
+"face": "p969856",
+"club": "t8697",
+"name": "Olivier Deman"
+},
+{
+"k": 51,
+"x": -0.9999,
+"y": -0.0127,
+"m": 69.2,
+"age": 31,
+"face": "p288406",
+"club": "t9906",
+"name": "Alejandro Grimaldo"
+},
+{
+"k": 52,
+"x": 0.9509,
+"y": -0.3094,
+"m": 69.0,
+"age": 28,
+"face": "p775539",
+"club": "t10260",
+"name": "Noussair Mazraoui"
+},
+{
+"k": 53,
+"x": -0.1819,
+"y": 0.9833,
+"m": 68.9,
+"age": 30,
+"face": "p660326",
+"club": "t8588",
+"name": "Matthieu Udol"
+},
+{
+"k": 54,
+"x": -0.6424,
+"y": -0.7664,
+"m": 68.8,
+"age": 32,
+"face": "p267371",
+"club": "t8592",
+"name": "Emerson"
+},
+{
+"k": 55,
+"x": -0.5674,
+"y": -0.8234,
+"m": 68.8,
+"age": 28,
+"face": "p806669",
+"club": "t178475",
+"name": "David Raum"
+},
+{
+"k": 56,
+"x": 1.0,
+"y": 0.0001,
+"m": 68.7,
+"age": 32,
+"face": "p600524",
+"club": "t8472",
+"name": "Reinildo"
+},
+{
+"k": 57,
+"x": 0.9962,
+"y": 0.0873,
+"m": 68.6,
+"age": 29,
+"face": "p672469",
+"club": "t9826",
+"name": "Ben Chilwell"
+},
+{
+"k": 58,
+"x": 0.8298,
+"y": -0.5581,
+"m": 68.6,
+"age": 27,
+"face": "p750028",
+"club": "t8603",
+"name": "Fran García"
+},
+{
+"k": 59,
+"x": 0.7054,
+"y": -0.7088,
+"m": 68.4,
+"age": 20,
+"face": "p1413846",
+"club": "t8455",
+"name": "Jorrel Hato"
+}
+],
+"maxAge": 23,
+"fadeAt": "SO:",
+"title": "23 AND UNDER"
+},
+"young": {
+"type": "table",
+"rows": [
+{
+"name": "Kaiki",
+"face": "p1459564",
+"club": "t10171",
+"age": 23,
+"value": "€15M",
+"m": 77.4
+},
+{
+"name": "Mats Rots",
+"face": "p1445416",
+"club": "t8226",
+"age": 20,
+"value": "€19M",
+"m": 75.8
+},
+{
+"name": "Oso",
+"face": "p1575945",
+"club": "t9848",
+"age": 23,
+"value": "—",
+"m": 72.8
+},
+{
+"name": "Rafita",
+"face": "p1717331",
+"club": "t9864",
+"age": 22,
+"value": "€1M",
+"m": 72.3
+},
+{
+"name": "Jesus Vázquez",
+"face": "p1220187",
+"club": "t10267",
+"age": 23,
+"value": "€4M",
+"m": 72.3
+}
+],
+"title": "23 and under",
+"pickAt": "KAIKI"
+},
+"pick": {
+"type": "pick",
+"face": "p1459564",
+"club": "t10171",
+"flag": "cBRA",
+"name": "KAIKI",
+"team": "Como",
+"age": 23,
+"value": "€15M",
+"m": 77.4,
+"tests": 92,
+"hall": {
+"value": "€63M",
+"v": 62981262,
+"face": "p1197655"
+},
+"pv": 15049617,
+"fracAt": "QUARTER"
+},
+"compare": {
+"type": "compare",
+"kicker": "Hall v Kaiki",
+"title": "What makes him special.",
+"a": {
+"name": "Lewis Hall",
+"season": "2025/26",
+"face": "p1197655",
+"club": "t10261"
+},
+"b": {
+"name": "Kaiki",
+"season": "2026/27",
+"face": "p1459564",
+"club": "t10171"
+},
+"rows": [
+{
+"label": "Dribbles",
+"a": 1.5,
+"b": 2.1,
+"sub": "per 90 minutes"
+},
+{
+"label": "Blocked shots",
+"a": 0.6,
+"b": 0.4,
+"sub": "per 90 minutes"
+},
+{
+"label": "Ball recoveries",
+"a": 5.5,
+"b": 4.6,
+"sub": "per 90 minutes"
+},
+{
+"label": "Passes",
+"a": 44.4,
+"b": 34.9,
+"sub": "per 90 minutes"
+}
+],
+"at": [
+"DRIBBLES",
+"BLOCKED",
+"BALL",
+"PASSES"
+]
+},
+"edge": {
+"type": "compare",
+"kicker": "And",
+"title": "Where Kaiki is better.",
+"a": {
+"name": "Lewis Hall",
+"season": "2025/26",
+"face": "p1197655",
+"club": "t10261"
+},
+"b": {
+"name": "Kaiki",
+"season": "2026/27",
+"face": "p1459564",
+"club": "t10171"
+},
+"rows": [
+{
+"label": "Chances created",
+"a": 1.03,
+"b": 1.73,
+"sub": "per 90 minutes"
+},
+{
+"label": "Dribbles",
+"a": 1.5,
+"b": 2.1,
+"sub": "per 90 minutes"
+}
+],
+"at": [
+"CREATES",
+"DRIBBLES"
+],
+"caveat": "ONLY 467 MINUTES THIS SEASON",
+"caveatAt": "EARLY"
+},
+"end": {
+"type": "end",
+"a": {
+"face": "p1197655",
+"club": "t10261",
+"name": "HALL"
+},
+"b": {
+"face": "p1459564",
+"club": "t10171",
+"name": "KAIKI"
+},
+"title": "NEWCASTLE'S NEXT HALL",
+"at": "KAIKI"
+}
+}
+}

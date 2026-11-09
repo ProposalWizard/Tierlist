@@ -1,0 +1,172 @@
+[
+{
+"id": "hook",
+"say": "Lewis Hall is off to Manchester United. So who replaces him at Newcastle?",
+"cap": "LEWIS HALL IS OFF TO MANCHESTER UNITED. SO WHO REPLACES HIM AT NEWCASTLE?",
+"sfx": [
+[
+"hit",
+0.0,
+0.7
+],
+[
+"whoosh",
+"MANCHESTER",
+0.6
+],
+[
+"hit",
+"WHO",
+0.7
+]
+],
+"voiceSettings": {
+"speed": 1.1
+},
+"tempo": 1.05
+},
+{
+"id": "profile",
+"say": "He's second of every Premier League full-back for dribbles, blocked shots and ball recoveries. But not many assists.",
+"cap": "HE'S SECOND OF EVERY PREMIER LEAGUE FULL-BACK FOR DRIBBLES, BLOCKED SHOTS AND BALL RECOVERIES. BUT NOT MANY ASSISTS.",
+"hold": 0.2,
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "method",
+"say": "So we compared him with all 140 left-backs in Europe's top five leagues. Every stat per ninety, two thousand tests.",
+"cap": "SO WE COMPARED HIM WITH ALL 140|140 LEFT-BACKS IN EUROPE'S TOP FIVE LEAGUES. EVERY STAT PER 90|ninety, 2,000|two-thousand TESTS.",
+"hold": 0.1,
+"sfx": [
+[
+"tick",
+"ALL",
+0.4
+],
+[
+"pop",
+"2,000",
+0.6
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "map",
+"say": "The two closest: Javi Galán and Neco Williams.",
+"cap": "THE TWO CLOSEST: JAVI GALÁN AND NECO WILLIAMS.",
+"hold": 0.15,
+"sfx": [
+[
+"pop",
+"JAVI",
+0.5
+],
+[
+"pop",
+"NECO",
+0.5
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "judge",
+"say": "But Galán is thirty-one. And Williams is twenty-five, worth forty-two million euros.",
+"cap": "BUT GALÁN IS 31|thirty-one. AND WILLIAMS IS 25|twenty-five, WORTH €42M|forty-two-million-euros.",
+"sfx": [
+[
+"hit",
+"31",
+0.6
+],
+[
+"hit",
+"€42M",
+0.5
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "filter",
+"say": "Hall is only twenty-two. So: twenty-three and under only.",
+"cap": "HALL IS ONLY 22|twenty-two. SO: 23|twenty-three AND UNDER ONLY.",
+"sfx": [
+[
+"whoosh",
+"SO:",
+0.6
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "young",
+"say": "And number one is Kaiki, from Como.",
+"cap": "AND NUMBER ONE IS KAIKI, FROM COMO.",
+"hold": 0.1,
+"sfx": [
+[
+"hit",
+"KAIKI",
+0.7
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "pick",
+"say": "He's twenty-three, and worth fifteen million euros. A quarter of Hall's price.",
+"cap": "HE'S 23|twenty-three, AND WORTH €15M|fifteen-million-euros. A QUARTER OF HALL'S PRICE.",
+"sfx": [
+[
+"pop",
+"€15M",
+0.5
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "compare",
+"say": "Hall against Kaiki, on what makes Hall special: dribbles, blocked shots, ball recoveries and passes.",
+"cap": "HALL AGAINST KAIKI, ON WHAT MAKES HALL SPECIAL: DRIBBLES, BLOCKED SHOTS, BALL RECOVERIES AND PASSES.",
+"hold": 0.2,
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "edge",
+"say": "And Kaiki creates more chances, and dribbles even more. Early days though: only five games' worth this season.",
+"cap": "AND KAIKI CREATES MORE CHANCES, AND DRIBBLES EVEN MORE. EARLY DAYS THOUGH: ONLY FIVE GAMES' WORTH THIS SEASON.",
+"hold": 0.2,
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "end",
+"say": "So Newcastle's next Lewis Hall? Kaiki. Would you sign him? Follow for more.",
+"cap": "SO NEWCASTLE'S NEXT LEWIS HALL? KAIKI. WOULD YOU SIGN HIM? FOLLOW FOR MORE.",
+"hold": 0.0,
+"voiceSettings": {
+"speed": 1.08
+}
+}
+]
