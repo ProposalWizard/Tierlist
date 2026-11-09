@@ -146,5 +146,22 @@
    "2026-11-09 Mikey's notes: Ballon d'Or trophy pops onto Kane; club names no longer said after each player; ending says 'right now, it's also Kylian Mbappé'. 60 s.",
    "2026-11-09 'This season' card now shows what matters most for a striker (goals, xG, shots, assists), not just the two closest stats."
   ]
+ },
+ {
+  "id": "v07-replace-him",
+  "title": "v07 · Who replaces him if he leaves? (Stat Twins spin-off)",
+  "stage": "idea",
+  "owner": "Claude",
+  "updated": "2026-11-09T17:10:00Z",
+  "postOn": null,
+  "line": "A star might leave: find his replacement from the top 5 leagues with the twin method, then filter to young / cheaper players for the pick.",
+  "script": null,
+  "cover": null,
+  "video": null,
+  "seconds": null,
+  "links": [],
+  "log": [
+   "2026-11-09 From a TikTok Mikey shared (replacement-finder format). Waiting for Mikey to pick the player."
+  ]
  }
 ]
