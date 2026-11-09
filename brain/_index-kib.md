@@ -21,3 +21,4 @@ RUL-KIB-004 | Never claim a feature that is not live; every number comes from a 
 RUL-KIB-005 | Video endings: keep the end card on screen as it is, but the voice-over says only "Follow for more." (Mikey, 7 Nov 2026). | team,client-kib
 RUL-KIB-006 | Football-story videos (like CH, analysed like chess) may use real match footage, real manager faces and real club badges; Mikey and Harry OK'd posting it (7 Nov 2026). Game ads still follow RUL-KIB-002/003. | team,client-kib
 RUL-KIB-007 | Exception to RUL-KIB-003 for Mikey's Stat Twins videos only: real player faces, club badges and nation flags are allowed. | team,client-kib
+RUL-KIB-008 | Stat Twins comparison cards keep the "player v his twin" framing and show the MOST IMPORTANT stats for the twin pick; never swap them for a generic "what matters for a striker" card. | rule,client-kib
