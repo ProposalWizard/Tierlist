@@ -44,7 +44,8 @@ def pct(x): x = round(x); return f"{words(x)} percent", f"{x}%|{words(x).replace
 CAP = lambda s: s.upper()
 
 # ---------- the data ----------
-TOP5 = bool(EP.get('leagues'))   # top 5 leagues: the Twin Finder data and method (model/finder_model.py), same answer as the Finder page
+TOP5 = True   # every episode uses the Twin Finder data and method v2 (model/finder_model.py); 'leagues' defaults to the Premier League
+EP.setdefault('leagues', ['Premier League'])
 if TOP5:
     from finder_model import Data, W as FW, GROUP_NAME
     FD = Data(EP.get('data') or os.path.join(os.environ.get('TWIN_DATA', 'fm'), 'twin_data.json'))
@@ -57,6 +58,7 @@ if TOP5:
     idx = {}
     def season_pool(s, v=None): return FD.pool(v['league'], v['s'], GRP)[0]
     POOLNAME = lambda v: f"{v['leagueName']} {GROUP_NAME[GRP]}s"
+    LEAGUE_WORDS = 'Premier League' if EP['leagues'] == ['Premier League'] else 'top 5 league'
 else:
     P9, b9 = pool(900); P4, b4 = pool(450)
     def season_pool(s, v=None): return b4[s] if s == CUR else b9[s]
@@ -145,7 +147,7 @@ if EP.get('top'):  # e.g. "top": 5 -> the list holds that many other players (hi
         if n_ >= EP['top']: break
         top8.append((d, v)); n_ += v['name'] != NAME
 for d, v in top8:
-    r = pics(v); r['match'] = round(100 - d, 1); r['excluded'] = v['name'] == NAME; r['_v'] = v; rows8.append(r)
+    r = pics(v); r['match'] = round(Data.match(d, GRP), 1); r['excluded'] = v['name'] == NAME; r['_v'] = v; rows8.append(r)
 keep = [r for r in rows8 if not r['excluded']]
 for i, r in enumerate(keep): r['rank'] = i + 1
 keep[0]['twin'] = True; TW = keep[0]
@@ -163,7 +165,7 @@ for nm in EP.get('surprise', []):   # the first famous name (in the order given)
     if h and h[0][0] > (len(keep) if EP.get('surpriseAnyPlace') else max(len(keep) + 4, 12)): sur = h[0]; break
 nowrows = []
 for d, v in now5:
-    r = pics(v); r['match'] = round(100 - d, 1); r['_v'] = v; nowrows.append(r)
+    r = pics(v); r['match'] = round(Data.match(d, GRP), 1); r['_v'] = v; nowrows.append(r)
 tgp = pics(tg); tgp['season'] = EP['season']
 SP = lambda s: EP.get('spoken', {}).get(s, s)
 def spoken(name): return " ".join(SP(w) for w in name.split())
@@ -175,7 +177,7 @@ def line(id, say, cap=None, **kw): L.append(dict(id=id, say=say, cap=cap or CAP(
 pt_say, pt_cap = f"Who is prime {spoken(NAME)}'s statistical twin? From the last five seasons.", f"WHO IS PRIME {NAME.upper()}'S STATISTICAL TWIN? FROM THE LAST FIVE SEASONS."
 line('intro', pt_say, pt_cap, sfx=[["hit", 0.05, 0.6]], voiceSettings={"speed": 1.1}, tempo=1.05, gapDb=-33, maxGap=0.06)
 S['intro'] = {'type': 'intro', 'face': tgp['face'], 'club': tgp['club'], 'flag': tgp['flag'], 'name': SHORT.upper(), 'season': EP['season'],
-              'facts': [['5', f'seasons · {FIVE[0][2:]} to {FIVE[-1][2:]}'], [str(len(cands)), ('top 5 league ' + GROUP_NAME[GRP] + ' seasons') if TOP5 else 'Premier League attacker seasons'], ['23', 'stats, all per 90 minutes']],
+              'facts': [['5', f'seasons · {FIVE[0][2:]} to {FIVE[-1][2:]}'], [str(len(cands)), LEAGUE_WORDS + ' ' + GROUP_NAME[GRP] + ' seasons'], ['23', 'stats, all per 90 minutes']],
               'at': [0.3, 0.9, 1.5], 'mystery': [{'face': TW['face'], 'label': 'LAST 5 YEARS'}, {'face': nowrows[0]['face'], 'label': 'CURRENT'}]}
 ex = [i + 1 for i, r in enumerate(rows8) if r['excluded']]
 if ex:
@@ -207,7 +209,7 @@ for gi, g in enumerate(groups):
     if len(L[-1]['say'].split("Guess")) > 1: sc['sticker'] = {'text': 'GUESS THE TWIN IN THE COMMENTS', 'at': 'GUESS'}
     S[id] = sc; side = -side; before += g
     if gi == 1 and sur:   # the surprise after the second place
-        rk, d, v = sur; a = pics(v); a.update(rank=rk, match=round(100 - d, 1), text=f"Not even top {((rk - 1) // 5) * 5}")
+        rk, d, v = sur; a = pics(v); a.update(rank=rk, match=round(Data.match(d, GRP), 1), text=f"Not even top {((rk - 1) // 5) * 5}")
         st = EP.get('stories', {}).get(v['name']); st = (st[0].lower() + st[1:] + ' ') if st else ''
         line('surprise', f"You'd think {st}{spoken(v['name'])} would be up here? He's {ordinal(rk)}.", f"YOU'D THINK {st.upper()}{v['name'].upper()} WOULD BE UP HERE? HE'S {rk}{osuf(rk).upper()}.", hold=0.9, sfx=[["hit", "HE'S", 0.5]])
         S['surprise'] = {'type': 'cd2', 'list': 'top', 'show': [], 'before': list(before), 'prevShow': before[-1:], 'at': v['name'].upper().split()[0], 'aside': a, 'cont': True, 'from': side,
@@ -279,7 +281,7 @@ lists = {'top8': {'title': 'The top eight.', 'sub': '', 'target': target, 'rows'
          'top': {'title': f'The top {words(len(keep))}.', 'sub': '', 'target': target, 'rows': keep},
          'now': {'title': 'Right now.', 'sub': '', 'target': target, 'rows': nowrows}}
 json.dump(META, open(os.path.join(IMG, "meta.json"), "w"), indent=1, ensure_ascii=False)
-meta = {'targetShort': SHORT, 'targetClub': club_name(tg['teamId']), 'series': EP.get('series', 'STAT TWINS'), 'source': ('Data: Opta via FotMob · top 5 leagues, 900+ mins' if TOP5 else 'Data: Opta via FotMob · PL attackers 900+ mins'), 'engine': 'video_full.html', 'layout': EP.get('layout', 'poster'), 'imgDir': IMG, 'clubColors': club_colours()}
+meta = {'targetShort': SHORT, 'targetClub': club_name(tg['teamId']), 'series': EP.get('series', 'STAT TWINS'), 'source': ('Data: Opta via FotMob · ' + ('Premier League' if EP['leagues'] == ['Premier League'] else 'top 5 leagues') + ', 900+ mins'), 'engine': 'video_full.html', 'layout': EP.get('layout', 'poster'), 'imgDir': IMG, 'clubColors': club_colours()}
 json.dump(L, open(os.path.join(OUT, 'lines.json'), 'w'), indent=0, ensure_ascii=False)
 json.dump({'meta': meta, 'lists': lists, 'scenes': S}, open(os.path.join(OUT, 'scenes.json'), 'w'), indent=0, ensure_ascii=False)
 json.dump({'provider': 'elevenlabs', 'voiceId': 'WAppqUXeqDqXjNTaQxG9'}, open(os.path.join(OUT, 'voice.json'), 'w'))

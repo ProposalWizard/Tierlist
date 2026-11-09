@@ -8,7 +8,7 @@ A private page: type a player and season, see his statistical twins across the t
   (87, 55, 54, 53), one page a second, about 20 minutes a league. The downloaded data never goes in the repo.
 - `python3 build.py FM_DIR OUT_DIR` packs the data (`pack.py`), fetches club names and 40 px badges (`teams.py`,
   cached) and writes `OUT_DIR/index.html` + `data.js`. Publish the folder as the "Twin Finder" artifact.
-- The method: same position group only (GK, CB, FB, MID, 10s and wingers, ST); every stat per 90; ranked 0-100
+- The method (v2, 9 Nov 2026): same position group only; every stat per 90; measured as how far above or below the average of its league + season + group it is (standard deviations, capped at ±4); weighted gap; match % = the share of random same-position pairs further apart (tables in model/gap_quantiles.json); 2,000 tests with the weights shuffled ±50%. "short" = under 1,500 minutes.
   within its own league and season; weighted gap; match % = 100 minus the gap; 2,000 tests with the weights
   shuffled ±50%. The weights per position are at the top of the page's script (`W`). xG and xA are skipped when a
   season has none. Players with fewer than 900 minutes (450 this season) are left out.
