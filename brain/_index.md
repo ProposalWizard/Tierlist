@@ -59,6 +59,7 @@ FACT-UI-015 | Faces: photo faces OFF for everyone, every head is the drawn one (
 FACT-UI-016 | A new career opens its match moves one at a time (headers and volleys after game 3, steer at Pace 60, sprint at Pace 65, dribble after game 4); power shot, knuckleball, skill moves and one-twos wait for an update. | career,ui
 FACT-UI-017 | Mikey's Broadcast pop-ups (scoreboard for a goal, TV caption for the rest) are the only match pop-ups; no setting, the Classic and Arcade words are gone. | team,ui
 FACT-UI-018 | Players reach the game at /road-to-ballon-dor; /star-dev forwards there, and the page's code stays in app/star-dev/. | admin,ui
+FACT-UI-019 | The phone app is a separate packed build of the game only (mobile/): offline, saves on the phone, no sign-in, no casino; the website is unchanged. | economy,ui
 PRO-3D-001 | Any 3D, animation, mocap, model or cut-scene work: merge main first, then read docs/3D_HANDBOOK.md. | three-d,deploy
 PRO-DAT-001 | Run a pending migration in the Supabase SQL Editor before touching the related features. | data
 PRO-DAT-002 | Bug report? Use the supabase-bug-hunt skill: read the report and the player's save, compare normal saves, reproduce, fix the code. | data

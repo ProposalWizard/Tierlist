@@ -1,3 +1,4 @@
+import { PACKED_APP } from "../app/packed";
 /**
  * THE UNLOCK CHAIN — a new career opens one thing at a time.
  *
@@ -467,7 +468,8 @@ export const APP_STORE: { id: string; label: string; icon: string; note: string;
   { id: "store", label: "Store", icon: "🛒", note: "Daily specials and Coins", price: 1500 },
   { id: "shop-kib", label: "Shop", icon: "🛍️", note: "Cans, boots and style", price: 2000 },
   { id: "sponsors", label: "Sponsors", icon: "🤝", note: "Deals and offers", price: 2500 },
-  { id: "casino-menu", label: "Casino", icon: "🎰", note: "Slots, cards, racing", price: 3500 },
+  // Not in the packed phone app: no casino there at all (Mikey, 5 Nov 2026).
+  ...(PACKED_APP ? [] : [{ id: "casino-menu", label: "Casino", icon: "🎰", note: "Slots, cards, racing", price: 3500 }]),
   { id: "garden", label: "Garden", icon: "🌳", note: "Your garden and horse", price: 5000 },
   { id: "ownership", label: "Owner", icon: "🏛️", note: "Buy into clubs", price: 15000 },
 ];
