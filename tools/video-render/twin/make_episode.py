@@ -192,7 +192,7 @@ for gi, g in enumerate(groups):
     story = EP.get('stories', {}).get(r['name']) or club_name(r['_v']['teamId'])
     ps, pc = pct(r['match'])
     if twin:
-        also = [k for k in g if k != 1]; tw2 = f" He's number {words(also[0])} too." if also else ""
+        also = [k for k in g if k != 1]; tw2 = (f" He's number {words(also[0])} too." if len(also) == 1 else f" He's number {', '.join(words(k) for k in also[:-1])} and {words(also[-1])} too.") if also else ""
         line(id, f"And number one... {nm}. {story}. {ps.capitalize()}.{tw2} That makes him {SHORT}'s statistical twin.",
              f"AND NUMBER ONE... {r['name'].upper()}. {story.upper()}. {pc}.{tw2.upper()} THAT MAKES HIM {SHORT.upper()}'S STATISTICAL TWIN.", hold=0.4, sfx=[["hit", first, 0.7], ["hit", "THAT", 0.5]])
     else:
@@ -253,7 +253,7 @@ S['end'] = {'type': 'end2', 'captions': True, 'at': [TW['name'].upper().split()[
 if EP.get('style', 'fast') == 'fast':
     for l in L:
         if l['id'] == 'intro':
-            l.update(say=f"Prime {spoken(NAME)}'s statistical twin is not who you think.", cap=f"PRIME {NAME.upper()}'S STATISTICAL TWIN IS NOT WHO YOU THINK.", sfx=[["hit", 0.0, 0.7]])
+            PRE = EP.get('prefix', 'Prime'); l.update(say=f"{PRE} {spoken(NAME)}'s statistical twin is not who you think.", cap=f"{PRE.upper()} {NAME.upper()}'S STATISTICAL TWIN IS NOT WHO YOU THINK.", sfx=[["hit", 0.0, 0.7]])
         if l['id'] == 'own':
             l.update(say=f"His own seasons don't count. That leaves {words(len(keep))}.", cap=f"HIS OWN SEASONS DON'T COUNT. THAT LEAVES {words(len(keep)).upper()}.")
     L = [l for l in L if l['id'] != 'tests']; S.pop('tests', None)
