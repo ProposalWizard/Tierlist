@@ -243,6 +243,7 @@ NW = nowrows[0]; ps, pc = pct(NW['match'])
 line('now1', f"And number one, after about ten games... {spoken(NW['name'])}. {ps.capitalize()}.", f"AND NUMBER ONE, AFTER ABOUT TEN GAMES... {NW['name'].upper()}. {pc}.", hold=0.3, sfx=[["hit", NW['name'].upper().split()[0], 0.7]])
 S['now1'] = {'type': 'countdown', 'list': 'now', 'upto': 1, 'at': NW['name'].upper().split()[0], 'cont': True}
 nf = NW['_v']['f']
+# RUL-KIB-008 (Mikey, 9 Nov 2026): Stat Twins comparison cards keep the "player v his twin" framing and show the MOST IMPORTANT stats for the twin pick; never swap them for a generic "what matters for a striker" card. Fix the nowcmp/why lines in the next episode.
 # Mikey, 9 Nov 2026: show what the twin is chosen on, not just the two closest stats: the stats that count most for the position (+ one for creating)
 okk = lambda k: k in NOUN and tf.get(k) is not None and nf.get(k) is not None
 main = [k for k, _ in sorted(W.items(), key=lambda kv: -kv[1]) if okk(k)]
