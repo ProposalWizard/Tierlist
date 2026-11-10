@@ -185,16 +185,22 @@
   "title": "Stat Twins · batch 1 (27 videos)",
   "stage": "check",
   "owner": "Claude",
-  "updated": "2026-11-10T20:00:00Z",
+  "updated": "2026-11-10T21:30:00Z",
   "postOn": null,
   "line": "27 Stat Twins videos picked by score: Benzema, Messi, Mbappé, De Bruyne, Mané, Rice, Van Dijk, Kane, Modrić, Bellingham, Ronaldo, Kanté, Hazard and 14 more. List, captions and scripts in the README.",
   "script": "docs/marketing/videos/twins-batch-01/README.md",
   "cover": "docs/marketing/videos/twins-batch-01/cover.png",
   "video": "docs/marketing/videos/twins-batch-01/01-karim-benzema-2122.mp4",
   "seconds": 64.6,
-  "links": [],
+  "links": [
+   {
+    "label": "Instagram Reel · 07 Van Dijk",
+    "url": "https://www.instagram.com/reel/DfkXvJpFbEU/"
+   }
+  ],
   "log": [
-   "2026-11-10 Batch made: pick_batch.py scored 118 famous player-seasons, 27 chosen (one per player, all positions), all voiced by Hugo. Every video checked by eye; 8 re-rendered for name and bar fixes. Waiting for Mikey's look."
+   "2026-11-10 Batch made: pick_batch.py scored 118 famous player-seasons, 27 chosen (one per player, all positions), all voiced by Hugo. Every video checked by eye; 8 re-rendered for name and bar fixes. Waiting for Mikey's look.",
+   "2026-11-10 07 Van Dijk 18/19 posted to Instagram (knowitballjr) as a Reel via Windsor.ai. 26 of the batch still to post."
   ]
  }
 ]
