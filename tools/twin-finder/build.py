@@ -9,6 +9,12 @@ D = json.load(open(data)); T = json.load(open(cache))
 import glob, time
 fs = glob.glob(os.path.join(FM, 'raw*', '*.json')); D['asOf'] = time.strftime('%d %b %Y', time.gmtime(max(os.path.getmtime(f) for f in fs)))
 D['teams'] = {k: v['name'] for k, v in T.items() if v.get('name')}; D['badges'] = {k: v['badge'] for k, v in T.items() if v.get('badge')}
+pl = os.path.join(FM, '..', 'fmplayers.json')   # ages, values, clubs today (fmpull_players.py); the Replace tab reads D.players
+if os.path.exists(pl):
+    P = json.load(open(pl)); NS = len(D['seasons']); ids = {str(D['id'][i]) for i in range(len(D['L'])) if D['S'][i] >= NS - 2}
+    D['players'] = {k: [v.get('age'), None if v.get('value') is None else round(v['value'] / 1e6, 1), v.get('team'), v.get('foot'), (v.get('contract') or '')[:4] or None, v.get('teamId')]
+                    for k, v in P.items() if k in ids}
+    D['playersAsOf'] = time.strftime('%d %b %Y', time.gmtime(os.path.getmtime(pl)))
 open(os.path.join(OUT, 'data.js'), 'w').write('window.TWIN_DATA=' + json.dumps(D, separators=(',', ':'), ensure_ascii=False) + ';')
 shutil.copy(os.path.join(HERE, 'index.html'), os.path.join(OUT, 'index.html'))
 print('built', OUT, os.path.getsize(os.path.join(OUT, 'data.js')) // 1024, 'KB')

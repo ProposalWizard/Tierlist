@@ -7,15 +7,17 @@ out={}
 if VOICE.get("provider")=="elevenlabs":
     # Hugo on ElevenLabs (FACT-KIB-012), same call and settings as tools/video-factory/make.py.
     # The key is a network secret: the proxy adds it to requests to api.elevenlabs.io.
-    import urllib.request,subprocess
+    import urllib.request,subprocess,hashlib
     vid=VOICE["voiceId"]; vs=VOICE.get("settings",{"stability":0.45,"similarity_boost":0.8,"style":0.3,"use_speaker_boost":True}); gap=VOICE.get("maxGap",0.09); tempo=VOICE.get("tempo",1.13)
     for L in json.load(open(V+"/lines.json")):
         id,text=L["id"],L.get("sayEleven") or L["say"]; mp3=f"{V}/vo/{id}.mp3"
         g=L.get("maxGap",gap)  # a line can keep a longer pause, e.g. a <break> after "prime" so it is not heard as "primer"
-        if not os.path.exists(mp3) or os.path.getsize(mp3)<1000:
-            body=json.dumps({"text":text,"model_id":VOICE.get("model","eleven_multilingual_v2"),"voice_settings":{**vs,**L.get("voiceSettings",{})},"seed":L.get("seed",VOICE.get("seed",7))}).encode()
+        body=json.dumps({"text":text,"model_id":VOICE.get("model","eleven_multilingual_v2"),"voice_settings":{**vs,**L.get("voiceSettings",{})},"seed":L.get("seed",VOICE.get("seed",7))}).encode()
+        # the saved take is reused only when the words, voice and settings are the same (10 Nov 2026: a changed line used to keep its old audio)
+        key=hashlib.sha1(vid.encode()+body).hexdigest(); kf=f"{V}/vo/{id}.key"; same=os.path.exists(kf) and open(kf).read()==key
+        if not same or not os.path.exists(mp3) or os.path.getsize(mp3)<1000:
             req=urllib.request.Request(f"https://api.elevenlabs.io/v1/text-to-speech/{vid}?output_format=mp3_44100_128",data=body,method="POST",headers={"Content-Type":"application/json","xi-api-key":"proxy-injected"})
-            open(mp3,"wb").write(urllib.request.urlopen(req,timeout=120).read())
+            open(mp3,"wb").write(urllib.request.urlopen(req,timeout=120).read()); open(kf,"w").write(key)
         # FACT-KIB-012 pace fix (same as video-factory/make.py): breath counts as silence (-39 dB), pauses ~0.09 s, pitch-safe 1.13x
         af=f"silenceremove=start_periods=1:start_threshold=-45dB:stop_periods=-1:stop_duration={g+0.02}:stop_threshold={L.get("gapDb",-39)}dB:stop_silence={g},areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,atempo={L.get("tempo",tempo)},apad=pad_dur=0.06"
         subprocess.run(["ffmpeg","-v","error","-y","-i",mp3,"-af",af,"-ac","1","-ar","24000",f"{V}/vo/{id}.wav"],check=True)

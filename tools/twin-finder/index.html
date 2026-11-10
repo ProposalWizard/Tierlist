@@ -35,6 +35,14 @@ ul.ck{list-style:none;margin:8px 0 0;padding:0}ul.ck li{padding:6px 0 6px 26px;p
 ul.ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);font-weight:900}ul.ck li.no::before{content:"–";color:var(--ink3)}
 .tag{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--card2);color:var(--ink2);margin-left:6px}
 .muted{color:var(--ink3);font-size:12px}details summary{cursor:pointer;color:var(--ink3);font-size:13px;font-weight:700;padding:6px 0}
+.opt{display:grid;grid-template-columns:54px 1fr auto;gap:12px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;margin-top:8px;cursor:pointer}.opt>*{min-width:0}
+.opt .t{font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)}.opt.b .t{color:var(--blue)}
+#modeR .opt .meta,#rlist .meta{white-space:normal}
+.lad{margin-top:10px}.lad .lh{display:flex;justify-content:space-between;align-items:baseline;font-weight:800}.lad .lh small{color:var(--ink3);font-weight:700}
+.lad .lr{display:grid;grid-template-columns:38px 1fr auto;gap:8px;padding:5px 8px;border-radius:8px;font-size:13px;color:var(--ink2)}.lad .lr>*{min-width:0}
+.lad .lr.me{background:var(--gold);color:#111;font-weight:800}.lad.bad .lr.me{background:var(--red);color:#fff}
+.ini{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:15px;position:relative;flex:0 0 auto}
+.ini img{position:absolute;right:-4px;bottom:-4px;width:42%;height:42%;background:#fff;border-radius:50%;padding:2px}
 .hide{display:none}
 #map svg{display:block;width:100%;height:auto;touch-action:manipulation}#map .dot{cursor:pointer}
 #pop{position:absolute;z-index:20;background:#1d2747;border:1px solid #3a4a7a;border-radius:14px;padding:12px 14px;box-shadow:0 14px 40px rgba(0,0,0,.55);width:min(360px,calc(100vw - 28px))}
@@ -45,8 +53,10 @@ ul.ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);fon
 </style></head>
 <body><div class="wrap">
 <h1>Twin Finder</h1>
-<p class="sub">Pick a player and season, see his statistical twins (method v2). Data: Opta via FotMob, top 5 leagues, 2016/17 to now. <span id="dsz"></span></p>
+<p class="sub">Find a player's statistical twins, or who could replace him (method v2). Data: Opta via FotMob, top 5 leagues, 2016/17 to now. <span id="dsz"></span></p>
 
+<div class="chips" id="tabs" style="margin:0 0 14px"><span class="chip on" data-m="T">Statistical twins</span><span class="chip" data-m="R">Replace a player</span></div>
+<div id="modeT">
 <div class="card">
   <label class="h">1 · Player</label>
   <input id="q" type="text" placeholder="Type a name, e.g. Van Dijk, Kane, Mahrez" autocomplete="off">
@@ -83,6 +93,40 @@ ul.ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);fon
   <details class="card"><summary>How this works</summary><div class="muted" id="how"></div></details>
 </div>
 </div>
+<div id="modeR" class="hide">
+<div class="card">
+  <label class="h">Who is leaving?</label>
+  <input id="rq" type="text" placeholder="Type a name, e.g. Lewis Hall" autocomplete="off">
+  <div id="rsugg" class="sugg hide"></div>
+  <div id="rwho" style="margin-top:10px"></div>
+</div>
+<div class="card">
+  <label class="h">What kind of replacement?</label>
+  <div class="row2">
+    <div><div class="muted">Position</div><select id="rpos"><option value="role">Same position</option><option value="group">Whole position group</option></select></div>
+    <div><div class="muted">Minutes over the two seasons</div><select id="rmin"><option value="450">450+ (5 games)</option><option value="900">900+ (10 games)</option><option value="1800">1,800+ (20 games)</option></select></div>
+  </div>
+  <div class="row2" style="margin-top:8px">
+    <div><div class="muted">Oldest age</div><select id="rage"><option value="0">Any age</option><option>21</option><option>23</option><option>25</option><option>27</option><option>30</option></select></div>
+    <div><div class="muted">Top value</div><select id="rval"><option value="0">Any value</option><option value="5">€5M</option><option value="10">€10M</option><option value="20">€20M</option><option value="30">€30M</option><option value="50">€50M</option></select></div>
+  </div>
+  <div class="muted" style="margin-top:10px">Leagues he plays in</div><div id="rlgs" class="chips"></div>
+  <div class="chips"><span class="chip on" id="rclub">Leave out his own team-mates</span></div>
+</div>
+<button class="go" id="rgo">Find replacements</button>
+<div id="rout" class="hide" style="margin-top:14px">
+  <div class="card"><label class="h" id="rprofh">What makes him him · this season + last</label><div id="rprof"></div></div>
+  <div class="card"><label class="h">Two options</label><div id="ropts"></div></div>
+  <div class="card"><label class="h" id="rlisth">Closest 20 · tap one to compare</label><div class="list" id="rlist"></div><div class="muted" id="rnote" style="margin-top:6px"></div></div>
+  <div class="card"><label class="h" id="rcmph">Side by side · per 90 minutes</label><div class="cmp" id="rcmp"></div></div>
+  <div class="card"><label class="h">Make it a video</label>
+    <div class="muted">The settings file for a "How do you replace him?" video. Fill in the club he is joining.</div>
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="ghost" id="rcopy">Copy episode file</button><span id="rcopied" class="muted"></span></div>
+    <pre id="repi" class="muted" style="white-space:pre-wrap;word-break:break-word"></pre></div>
+  <details class="card"><summary>How this works</summary><div class="muted" id="rhow"></div></details>
+</div>
+</div>
+</div>
 <div id="pop" class="hide"><button id="popx" aria-label="Close">×</button><div id="keyh" style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin:0 26px 8px 0"></div><div id="keys"></div><div class="muted" style="margin-top:8px">Per-90 comparison: further down. Tap another player, or anywhere else to close.</div></div>
 <script src="data.js"></script>
 <script>
@@ -107,16 +151,18 @@ const LAB={npG:'Goals (no pens)',npxG:'xG (no pens)',shots:'Shots',SoT:'Shots on
  wonHigh:'Ball won high up',fouls:'Fouls',clear:'Clearances',block:'Blocks',penWon:'Penalties won',saves:'Saves','save%':'Save %',prevented:'Goals prevented',cs:'Clean sheets',conceded:'Goals conceded'};
 const TOT=['mins','apps','G','pens','A','xG','xA','xGOT','bigCC','CC','bigMiss','penWon','prevented','cs'];
 function combine(ids){const o={};let m=0;ids.forEach(i=>m+=v(i,'mins')||0);
-  D.cols.forEach(c=>{ if(TOT.includes(c)){let s=null;ids.forEach(i=>{const x=v(i,c);if(x!=null)s=(s||0)+x});o[c]=s;}
+  D.cols.forEach(c=>{ if(TOT.includes(c)){let s=null,hm=0;ids.forEach(i=>{const x=v(i,c);if(x!=null){s=(s||0)+x;hm+=v(i,'mins')||0}});if(s!=null&&hm&&['xG','xA','xGOT'].includes(c))s*=m/hm;o[c]=s;}  // v2.1: a season with no xG is not minutes with 0 xG
     else{let s=0,w=0;ids.forEach(i=>{const x=v(i,c),mm=v(i,'mins')||0;if(x!=null){s+=x*mm;w+=mm}});o[c]=w?s/w:null;} });return o;}
 function feats(r){const p=(r.mins||0)/90||1, pens=r.pens||0, nz=x=>x==null?null:x;
-  return {npG:((r.G||0)-pens)/p, npxG:r.xG==null?null:Math.max(r.xG-0.79*pens,0)/p, A:(r.A||0)/p, xA:r.xA==null?null:r.xA/p, chances:r.CC==null?null:r.CC/p,
+  const f={npG:((r.G||0)-pens)/p, npxG:r.xG==null?null:Math.max(r.xG-0.79*pens,0)/p, A:(r.A||0)/p, xA:r.xA==null?null:r.xA/p, chances:r.CC==null?null:r.CC/p,
    bigCC:r.bigCC==null?null:r.bigCC/p, bigMiss:r.bigMiss==null?null:r.bigMiss/p, penWon:r.penWon==null?null:r.penWon/p, prevented:r.prevented==null?null:r.prevented/p, cs:r.cs==null?null:r.cs/p,
    shots:nz(r.shots),SoT:nz(r.SoT),conv:nz(r.conv),drib:nz(r.drib),'drib%':nz(r['drib%']),passes:nz(r.passes),'pass%':nz(r['pass%']),long:nz(r.long),'long%':nz(r['long%']),
-   def:nz(r.def),tkl:nz(r.tkl),int:nz(r.int),rec:nz(r.rec),wonHigh:nz(r.wonHigh),fouls:nz(r.fouls),clear:nz(r.clear),block:nz(r.block),saves:nz(r.saves),'save%':nz(r['save%']),conceded:nz(r.conceded)};}
+   def:nz(r.def),tkl:nz(r.tkl),int:nz(r.int),rec:nz(r.rec),wonHigh:nz(r.wonHigh),fouls:nz(r.fouls),clear:nz(r.clear),block:nz(r.block),saves:nz(r.saves),'save%':nz(r['save%']),conceded:nz(r.conceded)};
+  // v2.1: on the main lists but not on one of these = a real 0, not "no data" (same as model/finder_model.py)
+  if(r.passes!=null)['penWon','bigMiss','block','wonHigh','SoT','bigCC'].forEach(k=>{if(f[k]==null)f[k]=0});return f;}
 const row=i=>{const o={};D.cols.forEach(c=>o[c]=v(i,c));return o};
 const F=new Array(N); for(let i=0;i<N;i++)F[i]=feats(row(i));
-const G=new Array(N); for(let i=0;i<N;i++)G[i]=group(D.P[i]);
+const G=new Array(N); for(let i=0;i<N;i++)G[i]=D.P[i]?group(D.P[i]):(v(i,'saves')!=null?'GK':'MID');  // v2.1: a keeper with no position on file is a keeper
 const inGroup=(i,g)=>g==='ATT'?(G[i]==='AMW'||G[i]==='ST'):G[i]===g;
 const minOK=i=>(v(i,'mins')||0)>=(SEAS[D.S[i]]===CUR?450:900);
 // pools: league + season + group, ranked 0-100 per stat
@@ -291,4 +337,98 @@ function render(sel){ const {ids,ref,g,w,tf,tp,M,NOW}=LAST; $('out').classList.r
   $('copy').onclick=()=>{navigator.clipboard.writeText(JSON.stringify(ep)).then(()=>$('copied').textContent='Copied',()=>$('copied').textContent='Select the text below and copy it')};
   $('how').innerHTML=`<p>He is compared only with <b>${GN[g]}</b> who played 900+ minutes in a season (450+ this season). Every stat is per 90 minutes, then measured as <b>how far above or below average</b> it is for that league, season and position (so leagues and years compare fairly, and "best by a mile" stays far from "quite good"). The stats that count, and how much: ${Object.entries(w).map(([k,x])=>LAB[k]+' ×'+x).join(', ')}.</p><p><b>Match %</b> (plain scale) = 100% for identical stats, minus 25 points for every step of difference (one step = how much players in his position normally differ from the average on a stat). Two random players in the same position are about 70%; 85%+ is a real twin. The 2,000 tests shuffle every weight ±50% and count how often the twin stays first. xG and xA are left out when either season has none; a player who shares fewer than 60% of the stats that count is left out. <b>"short"</b> = under 1,500 minutes, mostly bench minutes, so his per-90 numbers can run high.</p><p>${D.asOf?'Data downloaded '+D.asOf+'. ':''}${CUR} is in progress.</p>`;
 }
+</script>
+<script>
+// ---------- Replace a player (Mikey, 10 Nov 2026): the "How do you replace him?" search ----------
+// Same method as the twins (z-scores in the league + season + position pool, weighted gap), but every player is his
+// last two seasons together (each season measured in its own pool, averaged by minutes), and the list can be cut by
+// position, age, value and minutes. Ages, values and clubs: FotMob player pages (D.players). Same as make_replace.py.
+(function(){
+const NS=SEAS.length, PLY=D.players||{}, NOLAD=['fouls','bigMiss','conceded','wonHigh'];
+const side=p=>p%10<=3?'R':p%10>=7?'L':'C';
+function role(p){const g=group(p),sd=side(p); if(g==='GK')return ['GK','Goalkeeper']; if(g==='CB')return ['CB','Centre-back']; if(g==='ST')return ['ST','Striker'];
+  if(g==='FB')return ['FB'+sd,sd==='L'?'Left-back':sd==='R'?'Right-back':'Full-back'];
+  if(g==='MID')return sd==='C'?['MIDC','Central midfielder']:['MID'+sd,sd==='L'?'Left midfielder':'Right midfielder'];
+  return sd==='C'?['AMWC','Number 10']:['AMW'+sd,sd==='L'?'Left winger':'Right winger'];}
+const BY={}; for(let i=0;i<N;i++){ if(D.S[i]<NS-2)continue; (BY[D.id[i]]=BY[D.id[i]]||[]).push(i); }
+const mainRow=ids=>ids.reduce((a,b)=>(v(b,'mins')||0)>(v(a,'mins')||0)?b:a);
+const minsOf=ids=>ids.reduce((a,i)=>a+(v(i,'mins')||0),0);
+function zmix(ids,g){const o={};for(const k in W[g]){let sm=0,t=0;ids.forEach(i=>{const z=zof(pool(D.L[i],D.S[i],g).ms,k,F[i][k]),m=v(i,'mins')||0;if(z!=null){sm+=z*m;t+=m}});o[k]=t?sm/t:null}return o}
+const info=id=>{const p=PLY[id]||[];return {age:p[0]==null?null:p[0],val:p[1]==null?null:p[1],team:p[2]||null,foot:p[3]||null,teamId:p[5]||null}};
+const money=x=>x==null?'no value':'€'+(x>=10?Math.round(x):(+x).toFixed(1))+'M';
+const ALL=Object.keys(BY).map(id=>{const m=mainRow(BY[id]);return {id:+id,name:pname(m),m,mins:minsOf(BY[id])}}).sort((a,b)=>b.mins-a.mins);
+const norm=x=>x.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+let RID=null, RES=null, RSEL=null;
+function ini(c,size){const n=c.name.split(' ');const t=(n.length>1?n[0][0]+n[n.length-1][0]:n[0].slice(0,2)).toUpperCase();const b=badge(c.teamId)||badge(D.T[c.m]);const col=ccol(D.T[c.m]);
+  return `<div class="ini" style="width:${size}px;height:${size}px;background:${col};color:${light(col)?'#111':'#fff'}">${t}${b?`<img src="${b}" alt="">`:''}</div>`;}
+// tabs
+document.querySelectorAll('#tabs .chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('#tabs .chip').forEach(x=>x.classList.toggle('on',x===c));
+  $('modeT').classList.toggle('hide',c.dataset.m!=='T');$('modeR').classList.toggle('hide',c.dataset.m!=='R');$('pop').classList.add('hide');});
+Object.keys(LG).forEach(l=>{const c=document.createElement('span');c.className='chip on';c.dataset.l=l;c.textContent=LG[l];c.onclick=()=>c.classList.toggle('on');$('rlgs').appendChild(c)});
+$('rclub').onclick=()=>$('rclub').classList.toggle('on');
+$('rq').oninput=()=>{const q=norm($('rq').value.trim());const el=$('rsugg');if(q.length<2){el.classList.add('hide');return}
+  const hits=ALL.filter(p=>norm(p.name).includes(q)).slice(0,12);
+  el.innerHTML=hits.map(p=>{const i=info(p.id);return `<div data-id="${p.id}">${p.name} <small>· ${role(D.P[p.m])[1]} · ${i.team||club(D.T[p.m])}${i.age!=null?' · '+i.age:''}</small></div>`}).join('')||'<div><small>No one found in the last two seasons</small></div>';
+  el.classList.remove('hide');el.querySelectorAll('div[data-id]').forEach(d=>d.onclick=()=>pick(+d.dataset.id));};
+function pick(id){RID=id;const p=ALL.find(x=>x.id===id),i=info(id),r=role(D.P[p.m]);$('rq').value=p.name;$('rsugg').classList.add('hide');
+  $('rpos').options[0].textContent='Same position: '+r[1];$('rpos').options[1].textContent='All '+GN[G[p.m]].toLowerCase();
+  $('rwho').innerHTML=`<div class="twin">${ini({name:p.name,m:p.m,teamId:i.teamId},54)}<div style="min-width:0"><div class="nm">${p.name}</div><div class="meta" style="white-space:normal">${r[1]} · ${i.team||club(D.T[p.m])}${i.age!=null?' · age '+i.age:''}${i.val!=null?' · '+money(i.val):''} · ${p.mins.toLocaleString()} minutes in two seasons</div></div></div>`;}
+function ladder(ids,g,tp,tf){const lg=D.L[mainRow(ids)], rows=[];
+  for(const id in BY){const rs=BY[id].filter(i=>D.L[i]===lg&&inGroup(i,g));if(!rs.length||minsOf(rs)<900)continue;rows.push({id:+id,name:pname(rs[0]),f:feats(combine(rs))});}
+  const keys=Object.keys(W[g]).filter(k=>!NOLAD.includes(k)&&tp[k]!=null&&tf[k]!=null).sort((a,b)=>tp[b]-tp[a]); const use=keys.slice(0,3).concat(keys.slice(-1));
+  return use.map((k,n)=>{const L=rows.filter(r=>r.f[k]!=null).sort((a,b)=>b.f[k]-a.f[k]);let i=L.findIndex(r=>r.id===RID);if(i<0)return null;
+    const lo=Math.max(0,Math.min(i-1,L.length-3));return {k,bad:n===3,rank:i+1,n:L.length,rows:L.slice(lo,lo+3).map((r,j)=>({rank:lo+j+1,name:r.name,v:r.f[k],me:r.id===RID}))};}).filter(Boolean);}
+const dp=(k,vals)=>{for(const d of [1,2,3]){const o=vals.map(x=>x.toFixed(d));if(new Set(o).size===o.length)return d}return 3};
+function run(){ if(RID==null){$('rq').focus();return}
+  const ids=BY[RID], m0=mainRow(ids), g=G[m0], rk=role(D.P[m0]), w=W[g], tp=zmix(ids,g), tf=feats(combine(ids)), me=info(RID);
+  const mode=$('rpos').value, maxAge=+$('rage').value||0, maxVal=+$('rval').value||0, minM=+$('rmin').value, noMates=$('rclub').classList.contains('on');
+  const lgs=new Set([...document.querySelectorAll('#rlgs .chip.on')].map(c=>+c.dataset.l));
+  const cands=[];
+  for(const id in BY){ if(+id===RID)continue; const rs=BY[id].filter(i=>inGroup(i,g)&&minOK(i)); if(!rs.length)continue; const m=mainRow(rs);
+    if(mode==='role'&&role(D.P[m])[0]!==rk[0])continue; const z=zmix(rs,g), d=dist(tp,z,w); if(d>=99)continue; const p=info(+id);
+    cands.push({id:+id,name:pname(m),rs,m,d,z,mins:minsOf(rs),age:p.age,val:p.val,team:p.team||club(D.T[m]),teamId:p.teamId||D.T[m],lg:D.L[m]}); }
+  const list=cands.filter(c=>c.mins>=minM&&lgs.has(c.lg)&&(!maxAge||(c.age!=null&&c.age<=maxAge))&&(!maxVal||(c.val!=null&&c.val<=maxVal))&&(!noMates||me.teamId==null||c.teamId!==me.teamId)).sort((a,b)=>a.d-b.d);
+  // 2,000 tests with the weights shuffled: how often is each of the closest 30 the closest?
+  const top=list.slice(0,30), wins={}, rnd=rng(7);
+  for(let t=0;t<2000&&top.length;t++){const wr={};for(const k in w)wr[k]=w[k]*(0.5+rnd());let b=null,bd=1e9;for(const c of top){const d=dist(tp,c.z,wr);if(d<bd){bd=d;b=c}}wins[b.id]=(wins[b.id]||0)+1;}
+  // two options: the closest of all, then a young one (or, when the closest is already young, a cheaper one)
+  const o1=list[0]; let o2=null, t2='';
+  if(o1){ if(o1.age==null||o1.age>23){o2=list.find(c=>c.age!=null&&c.age<=23);t2='For the future · 23 and under';}
+    if(!o2&&o1.val!=null){o2=list.find(c=>c!==o1&&c.val!=null&&c.val<=o1.val/2);t2='The cheaper option';}
+    if(!o2){o2=list[1];t2='Second choice';} }
+  RES={ids,g,rk,w,tp,tf,me,list,cands,wins,o1,o2,t2,m0,maxAge,maxVal,minM,mode}; RSEL=o1?o1.id:null; draw(); $('rout').classList.remove('hide');
+  $('rout').scrollIntoView({behavior:'smooth',block:'start'}); }
+function line(c,i){const small=c.mins<900;return `<div class="it${RSEL===c.id?' sel':''}" data-id="${c.id}"><div class="muted">#${i+1}</div>${ini(c,40)}<div><div class="nm">${c.name}${small?'<span class="tag">small sample</span>':''}</div>
+  <div class="meta">${c.age!=null?c.age+' · ':''}${c.team} · ${money(c.val)} · ${c.mins.toLocaleString()} min</div></div><div class="pct">${match(c.d).toFixed(0)}%<div class="bar"><i style="width:${Math.max(0,(match(c.d)-40)/60*100)}%"></i></div></div></div>`;}
+function draw(){const R=RES, nm=shortName(pname(R.m0));
+  // what makes him him
+  const lad=ladder(R.ids,R.g,R.tp,R.tf), lgn=LG[D.L[R.m0]];
+  $('rprofh').textContent=`What makes ${nm} ${nm} · this season + last · ${lgn} ${GN[R.g].toLowerCase()}`;
+  $('rprof').innerHTML=lad.map(l=>{const d=dp(l.k,l.rows.map(r=>r.v));return `<div class="lad${l.bad?' bad':''}"><div class="lh"><span>${LAB[l.k]}</span><small>${l.rank}${['th','st','nd','rd'][(l.rank%100>10&&l.rank%100<14)?0:Math.min(l.rank%10,4)%4]} of ${l.n}</small></div>`+
+    l.rows.map(r=>`<div class="lr${r.me?' me':''}"><span>#${r.rank}</span><span class="nm" style="font-weight:inherit">${r.name}</span><span>${r.v.toFixed(d)}</span></div>`).join('')+`</div>`}).join('')||'<div class="muted">Not enough players in his league to rank him.</div>';
+  // options
+  const opt=(c,t,cls)=>c?`<div class="opt ${cls}" data-id="${c.id}">${ini(c,54)}<div><div class="t">${t}</div><div class="nm">${c.name}</div><div class="meta">${c.age!=null?'age '+c.age+' · ':''}${c.team} · ${money(c.val)}${c.mins<900?' · only '+c.mins+' minutes':''}</div></div><div class="big" style="font-size:30px">${match(c.d).toFixed(0)}%</div></div>`:'';
+  $('ropts').innerHTML=R.o1?opt(R.o1,'Ready now · the closest of all','a')+(R.o2?opt(R.o2,R.t2,'b'):'')+`<div class="muted" style="margin-top:8px">${R.o1.name} came closest in ${Math.round((R.wins[R.o1.id]||0)/20)}% of 2,000 tests (each test counts the stats a little differently).</div>`:'<div class="muted">No one fits those filters. Loosen the age, value or minutes.</div>';
+  $('rlisth').textContent=`Closest ${Math.min(20,R.list.length)} of ${R.list.length} · tap one to compare`;
+  $('rlist').innerHTML=R.list.slice(0,20).map(line).join('');
+  $('rnote').textContent=`${R.cands.length} ${R.mode==='role'?R.rk[1].toLowerCase()+'s':GN[R.g].toLowerCase()} compared; ${R.list.length} fit your filters. Age, value and club are today's (FotMob); a player with no age or value on file is left out when that filter is on.`;
+  document.querySelectorAll('#rlist .it,#ropts .opt').forEach(el=>el.onclick=()=>{RSEL=+el.dataset.id;draw();$('rcmph').scrollIntoView({behavior:'smooth',block:'start'})});
+  // side by side
+  const c=R.list.find(x=>x.id===RSEL)||R.o1; if(c){const cf=feats(combine(c.rs)); const keys=Object.keys(R.w).sort((a,b)=>R.w[b]-R.w[a]);
+    $('rcmph').textContent=`${nm} v ${shortName(c.name)} · per 90 minutes · this season + last`;
+    $('rcmp').innerHTML=`<div class="lb" style="margin-bottom:6px"><b style="color:var(--red)">${nm}</b><b style="color:var(--blue)">${shortName(c.name)}</b></div>`+keys.map(k=>{const a=R.tf[k],b=cf[k];if(a==null||b==null)return '';const mx=Math.max(Math.abs(a),Math.abs(b),1e-9),d=dp(k,[a,b]);
+      return `<div class="st"><div class="lb"><b>${a.toFixed(d)}</b><span>${LAB[k]}</span><b>${b.toFixed(d)}</b></div><div class="dual"><div><i style="width:${Math.abs(a)/mx*100}%;background:var(--red)"></i></div><div><i style="width:${Math.abs(b)/mx*100}%;background:var(--blue)"></i></div></div></div>`}).join('');}
+  else $('rcmp').innerHTML='';
+  // episode file
+  const codes=[...new Set(D.P)].filter(p=>R.mode==='role'?role(p)[0]===R.rk[0]:group(p)===R.g).sort((a,b)=>a-b);
+  const ep={player:pname(R.m0),season:SEAS[NS-1],short:nm,from:R.me.team||club(D.T[R.m0]),to:'CLUB HE JOINS',toId:0,positions:codes,posWord:(R.mode==='role'?R.rk[1]:GN[R.g].replace(/s$/,'')).toLowerCase(),maxAge:23,seasons:[SEAS[NS-2],SEAS[NS-1]],series:'WHO REPLACES HIM?'};
+  $('repi').textContent=JSON.stringify(ep,null,1);
+  $('rhow').innerHTML=`<p>Every player is his <b>last two seasons together</b> (${SEAS[NS-2]} and ${SEAS[NS-1]}), each stat per 90 minutes and measured against players in the same league, season and position group, then averaged by minutes played.</p>
+   <p><b>Match %</b>: 100% = identical stats, minus 25 points for every step of difference. The stats used for ${GN[R.g].toLowerCase()}: ${Object.keys(R.w).map(k=>LAB[k]).join(', ')}.</p>
+   <p><b>Two options</b>: the closest player of all, then the closest aged 23 or under (or a cheaper one when the closest is already young). <b>Small sample</b> = under 900 minutes, so treat that number with care.</p>
+   <p>Ages, values and clubs come from FotMob today. Values are FotMob's estimates, not real fees. The data measures what a player does, not his height, speed or price to buy.</p>`; }
+$('rgo').onclick=run;
+$('rcopy').onclick=()=>{navigator.clipboard.writeText($('repi').textContent).then(()=>{$('rcopied').textContent='Copied';setTimeout(()=>$('rcopied').textContent='',1500)})};
+window.__repl={pick,run,ALL};
+})();
 </script></body></html>

@@ -158,7 +158,7 @@
   "title": "v07 · How do you replace Lewis Hall?",
   "stage": "check",
   "owner": "Claude",
-  "updated": "2026-11-10T12:00:00Z",
+  "updated": "2026-11-10T14:00:00Z",
   "postOn": null,
   "line": "Hall likely off to Man United. Two options: Nuno Tavares (Lazio, 26, €14M, 84%) ready now, or Kaiki (Como, 23, €15M, 77%) for the future.",
   "script": "docs/marketing/videos/v07-replace-hall/script.md",
@@ -170,7 +170,8 @@
    "2026-11-09 From a TikTok Mikey shared (replacement-finder format). Waiting for Mikey to pick the player.",
    "2026-11-09 Made: make_replace.py + video_replace.html (hook with badge swap, profile ranks, 140 left-backs count, map, judge, under-23 filter, table, pick with price bars, Hall v Kaiki, end). 51 s. Waiting for Mikey's look.",
    "2026-11-10 Mikey's notes: 'likely off to', 'how do you replace him?', last two seasons combined, ranking ladders with the players above/below him, 140 tiny faces instead of squares, no '2,000 tests' line. Closest now Tavares + Galán. 51 s. Waiting for Mikey's look.",
-   "2026-11-10 Two options, not one verdict (Mikey): Tavares = ready now (with Hall v Tavares card), Kaiki = for the future (467 minutes flagged). End card shows both. 52 s."
+   "2026-11-10 Two options, not one verdict (Mikey): Tavares = ready now (with Hall v Tavares card), Kaiki = for the future (467 minutes flagged). End card shows both. 52 s.",
+   "2026-11-10 Re-rendered with real word times (captions and animations pinned to the spoken words). Same words, same numbers, 52 s."
   ]
  }
 ]

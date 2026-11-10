@@ -6,7 +6,7 @@ const V=path.resolve(process.argv[2]); const mode=process.argv[3]||'video';
 (async()=>{
   const tl=JSON.parse(fs.readFileSync(V+'/timeline.json')); const sc=JSON.parse(fs.readFileSync(V+'/scenes.json'));
   const b=await chromium.launch(); const pg=await b.newPage({viewport:{width:1080,height:1920},deviceScaleFactor:1});
-  pg.on('pageerror',e=>console.log('ERR',e.message)); pg.on('console',m=>console.log('PAGE',m.text()));
+  let bad=0;pg.on('pageerror',e=>{bad++;if(bad<4)console.log('ERR',e.message)}); pg.on('console',m=>console.log('PAGE',m.text()));
   await pg.goto('file://'+__dirname+'/'+((sc.meta&&sc.meta.engine)||'video.html')); const nimg=await pg.evaluate(a=>window.boot(a[0],a[1]),[tl,sc]); if(nimg) console.log('images',nimg);
   await pg.evaluate(()=>document.fonts.ready);
   if(mode==='stills'){ fs.mkdirSync(V+'/stills',{recursive:true});
@@ -19,7 +19,7 @@ const V=path.resolve(process.argv[2]); const mode=process.argv[3]||'video';
     for(let i=0;i<N;i++){ await pg.evaluate(t=>window.render(t),i/fps);
       const buf=await pg.screenshot({type:'jpeg',quality:92}); if(!ff.stdin.write(buf)) await new Promise(r=>ff.stdin.once('drain',r));
       if(i%300===0) console.log('frame',i,'/',N); }
-    ff.stdin.end(); await new Promise(r=>ff.on('close',r));
+    ff.stdin.end(); const code=await new Promise(r=>ff.on('close',r)); if(code){console.log('FFMPEG FAILED',code);process.exitCode=1;}
   }
-  await b.close();
+  await b.close(); if(bad){console.log('PAGE ERRORS:',bad,'(the picture is not to be trusted)');process.exitCode=1;}
 })();

@@ -36,11 +36,14 @@ def words(n):
     return str(n)
 ORD = {"one": "first", "two": "second", "three": "third", "five": "fifth", "eight": "eighth", "nine": "ninth", "twelve": "twelfth"}
 def ordinal(n):
+    n = int(n)
+    if n >= 100: return f"{n}{osuf(n)}"   # Hugo reads "101st" correctly; the old code said "101th"
     w = words(n); last = re.split(r"[- ]", w)[-1]
     o = ORD.get(last, last[:-1] + "ieth" if last.endswith("y") else last + "th")
     return w[: len(w) - len(last)] + o
 def osuf(n): return "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
-def pct(x): x = round(x); return f"{words(x)} percent", f"{x}%|{words(x).replace(' ', '-')}-percent"
+def pct(x):   # half up, the same as the screen's Math.round (10 Nov 2026: 80.5 was said "eighty" under a big 81%)
+    x = int(x + 0.5); return f"{words(x)} percent", f"{x}%|{words(x).replace(' ', '-')}-percent"
 CAP = lambda s: s.upper()
 
 # ---------- the data ----------
@@ -198,7 +201,7 @@ for gi, g in enumerate(groups):
     else:
         lead = ("Number " if gi == 0 else "") + " and ".join(words(k) for k in g)
         lead = lead[0].upper() + lead[1:]
-        tail = " Twice." if len(g) > 1 else ""
+        tail = {1: "", 2: " Twice.", 3: " Three times."}.get(len(g), f" {words(len(g)).capitalize()} times.")
         extra = " Guess the twin in the comments." if gi == len(groups) - 2 else ""  # just before the twin is revealed
         line(id, f"{lead}: {nm}.{' ' + story + '.' if story else ''}{tail} {ps.capitalize()}.{extra}",
              f"{lead.upper()}: {r['name'].upper()}.{' ' + story.upper() + '.' if story else ''}{tail.upper()} {pc}.{extra.upper()}", hold=0.9 if not extra else 0.6,

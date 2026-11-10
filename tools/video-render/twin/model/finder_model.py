@@ -37,7 +37,13 @@ def feats(r):
          'penWon': per('penWon'), 'prevented': per('prevented'), 'cs': per('cs')}
     for k in ('shots', 'SoT', 'conv', 'drib', 'drib%', 'passes', 'pass%', 'long', 'long%', 'def', 'tkl', 'int', 'rec', 'wonHigh', 'fouls', 'clear', 'block', 'saves', 'save%', 'conceded'):
         f[k] = r.get(k)
+    # v2.1 (10 Nov 2026): FotMob's lists leave a player out when his number is 0 (pens won: 6 in 10 players). A player who is on
+    # the main lists (has a passes number) but not on one of these has a real 0, not "no data"; before, he was skipped on that stat.
+    if r.get('passes') is not None:
+        for k in ZERO_OK:
+            if f.get(k) is None: f[k] = 0.0
     return f
+ZERO_OK = ('penWon', 'bigMiss', 'block', 'wonHigh', 'SoT', 'bigCC')
 
 TOT = ['mins', 'apps', 'G', 'pens', 'A', 'xG', 'xA', 'xGOT', 'bigCC', 'CC', 'bigMiss', 'penWon', 'prevented', 'cs']
 
@@ -49,7 +55,8 @@ class Data:
             r = dict(zip(cols, D['X'][i]))
             o = {'i': i, 'name': D['names'][D['N'][i]], 'season': D['seasons'][D['S'][i]], 's': D['S'][i], 'league': D['L'][i],
                  'leagueName': D['leagues'][str(D['L'][i])] if str(D['L'][i]) in D['leagues'] else D['leagues'].get(D['L'][i]),
-                 'teamId': D['T'][i], 'id': str(D['id'][i]), 'pos': D['P'][i], 'group': group(D['P'][i]), 'raw': r,
+                 'teamId': D['T'][i], 'id': str(D['id'][i]), 'pos': D['P'][i], 'raw': r,
+                 'group': ('GK' if r.get('saves') is not None else 'MID') if not D['P'][i] else group(D['P'][i]),   # v2.1: a keeper with no position on file is a keeper
                  'mins_played': r.get('mins') or 0, 'goals': r.get('G'), 'goal_assist': r.get('A'), 'rating': r.get('rating')}
             o['f'] = feats(r); self.rows.append(o)
         self._pools = {}
@@ -93,7 +100,9 @@ class Data:
         out = {}
         for c in self.D['cols']:
             if c in TOT:
-                vals = [o['raw'][c] for o in rows if o['raw'].get(c) is not None]; out[c] = sum(vals) if vals else None
+                have = [o for o in rows if o['raw'].get(c) is not None]; out[c] = sum(o['raw'][c] for o in have) if have else None
+                if have and c in ('xG', 'xA', 'xGOT'):   # v2.1: a season with no xG at all (before 2019/20) must not count as minutes with 0 xG
+                    out[c] *= sum(o['mins_played'] for o in rows) / max(1, sum(o['mins_played'] for o in have))
             else:
                 s = w = 0
                 for o in rows:

@@ -21,6 +21,8 @@ def words(n):
     return str(n)
 ORD = {"one": "first", "two": "second", "three": "third", "five": "fifth", "eight": "eighth", "nine": "ninth", "twelve": "twelfth"}
 def ordinal(n):
+    n = int(n)
+    if n >= 100: return f"{n}{osuf(n)}"   # Hugo reads "101st" correctly; the old code said "101th"
     w = words(n); last = re.split(r"[- ]", w)[-1]
     return w[: len(w) - len(last)] + ORD.get(last, last[:-1] + "ieth" if last.endswith("y") else last + "th")
 def osuf(n): return "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")

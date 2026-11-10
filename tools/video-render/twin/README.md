@@ -67,3 +67,37 @@ card, a long `countdown` (one voice line per place, a big spotlight card + the l
 ## Decisions
 - Mikey, 7 Nov 2026, on photos and badges: "get rid of this team rule for these videos that I'm creating as Mikey ... use real faces and clubs ... The club logos is fine ... use the real nation flags."
 - Mikey, 7 Nov 2026, on the seasons: "it should be last 5 seasons starting from the current season. So 26/27."
+
+## "How do you replace him?" episodes (10 Nov 2026)
+
+A second kind of episode: a player is likely leaving, who replaces him. Format from a replacement-finder TikTok (format only).
+1. Episode file in `episodes/` (see `replace-hall.json`): player, the club he is at (`from`), the club he joins (`to`, `toId`),
+   `positions` (FotMob position ids; 38 + 68 = left-back), `posWord`, `maxAge` (23). The Twin Finder page's "Replace a player"
+   tab writes this file for you.
+2. `TWIN_DATA=<dir> python3 make_replace.py episodes/<x>.json OUT`, then `tts.py OUT -`, `timeline.py OUT`, `node render.cjs OUT`.
+3. What it does: every player = this season + last season together; ranking ladders for his three best stats and his worst
+   (the player above, him, the player below); all the players in his position as tiny faces; the map; option 1 = the closest
+   of all ("ready now"), option 2 = the closest aged `maxAge` and under ("for the future"); a small sample (under 900 minutes)
+   is said out loud. Ages, values and clubs come from FotMob player pages (cached in `<dir>/../fmplayers.json`).
+4. Engine: `video_replace.html`.
+
+## Upgrades, 10 Nov 2026 (review of the whole pipeline)
+
+- **Voice cache** (`tts.py`): a saved take is reused only when the words, voice and settings are the same (`vo/<id>.key`).
+  Before, a changed line kept its old audio unless the mp3 was deleted by hand.
+- **Real word times** (`timeline.py`): each finished line is listened to (faster-whisper, offline, `vo/align.json`) and every
+  caption word that was heard is pinned to the moment it is said. Before, word times were guessed from letter counts
+  (0.2 s off on average, up to 0.7 s). No whisper on the machine = the old guess, with a note.
+- **Cues** (both engines + `timeline.py`): matching ignores accents and punctuation ("GALÁN", "SO:", "31." now match), and a
+  cue that is not found prints `CUE NOT FOUND` once, not silently firing at the start of the line.
+- **Numbers**: the voice rounds like the screen (80.5 is 81 in both); ordinals past 100 ("101st"); "Three times." for three places.
+- **Render** (`render.cjs`): a page error or a failed ffmpeg ends with an error, not a quiet broken video.
+- **Method v2.1** (`model/finder_model.py`, same in the Twin Finder page): a player who is on FotMob's main lists but not on a
+  count list (pens won, big chances missed, blocks, ball won high up, shots on target, big chances made) has a real 0 there,
+  not "no data"; a season with no xG at all no longer counts as minutes with 0 xG; a keeper with no position on file is a
+  keeper. Checked on Kane, Salah, Haaland, Neymar, Palmer, Van Dijk, Hall: every twin stays the same, % moves 2 points at most.
+- **Not changed, Mikey's call**: FotMob position ids 104/106 (the two of a front two, e.g. Lautaro Martínez) count as
+  "10s and wingers". Moving them to strikers changes Kane 25/26's twin from Mbappé to Mika Biereth and makes Neymar 17/18 a striker.
+- **Still open** (from the review): players are matched by name, not id (two players with one name would merge); short names
+  are the last word ("Bruyne"); no league-strength adjustment (a Ligue 1 number counts the same as a Premier League one);
+  `make_episode.py` only works for attackers and full-backs; the two makers share copied helpers.

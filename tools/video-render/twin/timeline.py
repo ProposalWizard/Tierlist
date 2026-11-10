@@ -4,6 +4,43 @@
 import json,sys,re,numpy as np,soundfile as sf
 V=sys.argv[1]; L=json.load(open(V+"/lines.json")); durs=json.load(open(V+"/vo/durs.json"))
 GAP=0.16; t=0.15; segs=[]
+# Real word times (10 Nov 2026): listen to each finished line (faster-whisper, offline) and pin every caption word that
+# was heard to the moment it is said; words not recognised (names, numbers) sit between their neighbours by letter count.
+# Before this every word time was a guess from letter counts. No whisper on the machine = the old guess, with a note.
+import unicodedata,difflib,os
+NRM=lambda w:re.sub(r"[^A-Z0-9]","","".join(c for c in unicodedata.normalize("NFD",w.upper()) if unicodedata.category(c)!="Mn"))
+ALN=V+"/vo/align.json"; ALIGN=json.load(open(ALN)) if os.path.exists(ALN) else {}; _W=[None]
+def listen(id):
+    wav=f"{V}/vo/{id}.wav"; key=f"{os.path.getsize(wav)}"
+    if ALIGN.get(id,{}).get("key")==key: return ALIGN[id]["words"]
+    if _W[0] is None:
+        try:
+            from faster_whisper import WhisperModel; _W[0]=WhisperModel(os.environ.get("TWIN_WHISPER","small.en"),device="cpu",compute_type="int8")
+        except Exception as e: _W[0]=False; print("NOTE: no faster-whisper here, word times are estimated:",str(e)[:80])
+    if not _W[0]: return None
+    try:   # hand whisper the samples themselves (16 kHz), so it does not need its own audio reader
+        x,sr=sf.read(wav,dtype="float32"); x=x if x.ndim==1 else x.mean(1); x16=np.interp(np.arange(int(len(x)*16000/sr))*sr/16000,np.arange(len(x)),x).astype(np.float32)
+        seg,_=_W[0].transcribe(x16,word_timestamps=True,language="en",beam_size=3)
+        ws=[[NRM(w.word),round(w.start,3)] for sg in seg for w in sg.words if NRM(w.word)]
+    except Exception as e: print("NOTE: could not listen to",id,"- its word times are estimated:",str(e)[:80]); return None
+    ALIGN[id]={"key":key,"words":ws}; json.dump(ALIGN,open(ALN,"w")); return ws
+def heard(id,d,spoken,est):
+    ws=listen(id)
+    if not ws: return est
+    A=[NRM(sp.split("-")[0]) for sp in spoken]; B=[w for w,_ in ws]
+    anc=[(0,0.0,0.0)]   # (token, guessed time, real time)
+    for m in difflib.SequenceMatcher(None,A,B,autojunk=False).get_matching_blocks():
+        for k in range(m.size):
+            i=m.a+k; tt=ws[m.b+k][1]
+            if A[i] and tt>=anc[-1][2] and tt<=d and i>anc[-1][0]: anc.append((i,est[i],tt))
+            elif A[i] and i==0: anc[0]=(0,est[0],min(tt,d))
+    anc.append((len(est),d*0.96 if d*0.96>anc[-1][1] else anc[-1][1]+1e-6,max(d*0.96,anc[-1][2])))
+    out=[]; j=0
+    for i,e in enumerate(est):
+        while j+1<len(anc)-1 and anc[j+1][0]<=i: j+=1
+        i0,e0,t0=anc[j]; i1,e1,t1=anc[j+1]
+        out.append(t0 if i==i0 else t0+(t1-t0)*(e-e0)/max(e1-e0,1e-6))
+    return out
 for l in L:
     d=durs[l["id"]]; toks=[]
     for tk in (l.get("cap") or l["say"].upper()).split(" "):
@@ -11,7 +48,10 @@ for l in L:
         w=len(re.sub(r"[^A-Za-z0-9]","",spoken))+1.5+(2.5 if re.search(r"[.,?!:]$",shown) else 0)
         toks.append([shown,w])
     tot=sum(w for _,w in toks); a=0; words=[]
-    for shown,w in toks: words.append({"w":shown,"t":round(t+d*0.96*a/tot,3)}); a+=w
+    est=[]
+    for shown,w in toks: est.append(d*0.96*a/tot); a+=w
+    real=heard(l["id"],d,[tk.partition("|")[2] or tk for tk in (l.get("cap") or l["say"].upper()).split(" ")],est)
+    for (shown,w),e in zip(toks,real): words.append({"w":shown,"t":round(t+e,3)})
     segs.append({"id":l["id"],"start":round(t,3),"vo":d,"words":words}); t+=d+GAP+l.get("hold",0)
 END=t+1.6
 for i,s in enumerate(segs): s["end"]=round(segs[i+1]["start"] if i+1<len(segs) else END,3)
@@ -56,7 +96,10 @@ for l,s in zip(L,segs):
     if s is not segs[0]: put(FX["whoosh"],s["start"]-0.2,0.3)
     for kind,at,g in l.get("sfx",[]):
         if at=="END": at=s["start"]+s["vo"]
-        elif isinstance(at,str): at=next((w["t"] for w in s["words"] if w["w"].startswith(at)),s["start"])
+        elif isinstance(at,str):
+            hit_=next((w["t"] for w in s["words"] if NRM(w["w"]).startswith(NRM(at.split()[0]))),None)
+            if hit_ is None: print(f'CUE NOT FOUND in line "{l["id"]}" (sound {kind}): {at}')
+            at=s["start"] if hit_ is None else hit_
         else: at=s["start"]+at
         put(FX[kind],at,g)
 mix=np.tanh(mix*1.1)*0.9; fade=int(0.4*SR); mix[-fade:]*=np.linspace(1,0,fade)
