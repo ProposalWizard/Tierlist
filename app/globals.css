@@ -100,3 +100,27 @@ body:has([data-rbd-admin]) [data-global-chrome] {
   pointer-events: none;
   -webkit-user-drag: none;
 }
+
+/* THE PACKED PHONE APP ONLY (app/layout.app.tsx puts data-kib-app on <body>;
+ * the website never has it). A game, not a web page: no rubber-band bounce
+ * or pull-to-refresh, no grey flash on a tap, no text selection or "copy /
+ * save image" menu on a long press. Typing boxes still select as normal. */
+body[data-kib-app],
+body[data-kib-app] * {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+body[data-kib-app] {
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+html:has(body[data-kib-app]) {
+  overscroll-behavior: none;
+}
+body[data-kib-app] input,
+body[data-kib-app] textarea,
+body[data-kib-app] [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}

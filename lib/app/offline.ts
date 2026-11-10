@@ -40,8 +40,10 @@ export function packedImage(url: string): string {
 }
 
 async function answer(url: URL, method: string): Promise<Response | null> {
-  if (!index) return null;
   const local = url.origin === window.location.origin;
+  // The app has no server: without the packed list (a broken install), an
+  // /api/ ask still gets a quick, clear answer and not a "page not found".
+  if (!index) return local && url.pathname.startsWith("/api/") ? json({ error: "Not available in the app" }, 503) : null;
 
   if (local && url.pathname.startsWith("/api/")) {
     const p = url.pathname;
@@ -93,8 +95,17 @@ function patchImages() {
   }
   const setAttr = Element.prototype.setAttribute;
   Element.prototype.setAttribute = function (this: Element, name: string, value: string) {
-    if (this instanceof HTMLImageElement && name === "src" && typeof value === "string") value = packedImage(value);
+    if (typeof value === "string") {
+      if (this instanceof HTMLImageElement && name === "src") value = packedImage(value);
+      // A picture inside a drawing (<svg><image href>): the garden's faces.
+      else if (this instanceof SVGImageElement && (name === "href" || name === "xlink:href")) value = packedImage(value);
+    }
     return setAttr.call(this, name, value);
+  };
+  const setAttrNS = Element.prototype.setAttributeNS;
+  Element.prototype.setAttributeNS = function (this: Element, ns: string | null, name: string, value: string) {
+    if (typeof value === "string" && this instanceof SVGImageElement && /(^|:)href$/.test(name)) value = packedImage(value);
+    return setAttrNS.call(this, ns, name, value);
   };
 }
 
