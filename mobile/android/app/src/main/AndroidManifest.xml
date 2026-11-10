@@ -39,4 +39,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- The game buzzes on a goal (lib/app/native.ts). -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 </manifest>

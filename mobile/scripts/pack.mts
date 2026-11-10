@@ -16,6 +16,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { createRequire } from "node:module";
 import * as CLUBS from "../../lib/star/clubs";
 import { STAR_FIFA_YEAR } from "../../lib/star/edition";
 import { ALL_NATIONALITIES, getFlagUrl } from "../../lib/nationalities";
@@ -24,12 +25,24 @@ import { PACK_ROUTES, type PackedIndex } from "../../lib/app/packedIndex";
 const argv = process.argv.slice(2);
 const arg = (f: string, d: string) => { const i = argv.indexOf(f); return i >= 0 && argv[i + 1] ? argv[i + 1] : d; };
 const BASE = arg("--base", "http://localhost:3000").replace(/\/$/, "");
-const OUT = path.resolve(arg("--out", "mobile/packed"));
+// Packed into "<out>.new" and swapped in only once everything has worked, so
+// a failed pack (the website not running, no signal) never destroys the last
+// good one (it used to empty the folder first; 10 Nov 2026).
+const FINAL = path.resolve(arg("--out", "mobile/packed"));
+const OUT = FINAL + ".new";
 const YEAR = STAR_FIFA_YEAR;
 const FREE_AGENTS = "Free Agents";
-// sharp (mobile/package.json) shrinks the pictures; without it they are kept as they came.
+// sharp shrinks the pictures (252 MB of photos -> 14 MB). It is installed in
+// mobile/ (mobile/package.json), so it is loaded from there, wherever this is
+// run from. Without it the app would silently come out 240 MB bigger, so the
+// script stops; `--no-shrink` packs the pictures as they came.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const sharp: any = await import("sharp").then((m) => m.default).catch(() => null);
+let sharp: any = null;
+try { sharp = createRequire(path.resolve("mobile/package.json"))("sharp"); } catch { /* handled below */ }
+if (!sharp && !argv.includes("--no-shrink")) {
+  console.error("sharp is not installed: run `cd mobile && npm install` first (or pass --no-shrink).");
+  process.exit(1);
+}
 
 // The two public Supabase values (not secrets: they ship in every page of the
 // website). From the environment, else .env.local.
@@ -155,5 +168,12 @@ log(`pictures: ${got} of ${urls.size}, ${(bytes / 1e6).toFixed(1)} MB`);
 
 write("index.json", index);
 fs.writeFileSync(path.join(OUT, "problems.txt"), problems.join("\n"));
-log(`problems: ${problems.length} (see ${path.join(OUT, "problems.txt")})`);
-log(`packed into ${OUT}`);
+// A pack with no squads is not a pack: keep the old one.
+if (withPlayers < clubList.length / 2 || Object.keys(index.rosters).length < clubList.length / 2) {
+  console.error(`Only ${withPlayers} of ${clubList.length} clubs came back with players: kept the old pack. Is the website's database reachable?`);
+  process.exit(1);
+}
+fs.rmSync(FINAL, { recursive: true, force: true });
+fs.renameSync(OUT, FINAL);
+log(`problems: ${problems.length} (see ${path.join(FINAL, "problems.txt")})`);
+log(`packed into ${FINAL}`);

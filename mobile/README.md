@@ -60,6 +60,30 @@ A new season's ratings or a new badge reach the app only in a new app version:
 run all three steps again and upload. The website keeps reading the database
 as before.
 
+## Phone features (10 Nov 2026)
+
+- **Android back button** (`lib/app/native.ts`): presses the screen's own
+  Back or Close button. With none on screen (Home, a match), a second press
+  inside 2 seconds puts the app away. Needs `@capacitor/app`.
+- **Vibration**: the game's buzz goes through `@capacitor/haptics` (iPhone has
+  no `navigator.vibrate`); Android also has the VIBRATE permission.
+- **Feels like an app** (`app/globals.css`, `body[data-kib-app]`): no bounce
+  or pull-to-refresh, no tap flash, no text selection or long-press menu.
+- **Icon and opening screen**: `node scripts/icons.mjs` makes every Android
+  size from `public/star/app-icon-512.png`.
+
+## iPhone and Codemagic (10 Nov 2026, not run yet)
+
+`mobile/ios` is the iPhone project (made with `npx cap add ios`): iPhone
+only, upright only, the game's icon. It cannot be built on Linux. The repo's
+`codemagic.yaml` has two workflows, `iphone` (to TestFlight) and `android`
+(the install file); its first lines say what to set up in Codemagic. Neither
+has been run: expect small fixes on the first run.
+
+The pack is safe to re-run: it writes to `mobile/packed.new` and swaps it in
+only when it has worked, and it stops if `sharp` is missing (the app would
+come out 240 MB bigger).
+
 ## Known limits (5 Nov 2026)
 
 - About 1,460 player photos come from SoFIFA's site, which refuses them
