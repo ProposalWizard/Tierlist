@@ -1,5 +1,5 @@
 /**
- * mobile/scripts/icons.mjs — the Android app's icon and opening screen.
+ * mobile/scripts/icons.mjs — the app's icon and opening screen (Android and iPhone).
  *
  *   cd mobile && node scripts/icons.mjs
  *
@@ -50,5 +50,18 @@ for (const dir of fs.readdirSync(RES).filter((x) => x.startsWith("drawable"))) {
   const out = await sharp({ create: { width: m.width, height: m.height, channels: 4, background: SPLASH_BG } }).composite([{ input: art, gravity: "centre" }]).png().toBuffer();
   fs.writeFileSync(file, out);
   n++;
+}
+// iPhone (mobile/ios): one 1024 icon with no see-through parts, and the
+// opening picture. The source is 512, so the 1024 is an enlargement: swap in
+// a true 1024 original before the App Store upload if one exists.
+const IOS = path.join(MOBILE, "ios/App/App/Assets.xcassets");
+if (fs.existsSync(IOS)) {
+  await sharp(ICON).resize(1024, 1024, { kernel: "lanczos3" }).flatten({ background: green }).png().toFile(path.join(IOS, "AppIcon.appiconset/AppIcon-512@2x.png"));
+  const side = 2732, art = Math.round(side * 0.2);
+  const circle = Buffer.from(`<svg width="${art}" height="${art}"><circle cx="${art / 2}" cy="${art / 2}" r="${art / 2}"/></svg>`);
+  const ball = await sharp(ICON).resize(art, art).composite([{ input: circle, blend: "dest-in" }]).png().toBuffer();
+  const splash = await sharp({ create: { width: side, height: side, channels: 4, background: SPLASH_BG } }).composite([{ input: ball, gravity: "centre" }]).png().toBuffer();
+  for (const f of fs.readdirSync(path.join(IOS, "Splash.imageset")).filter((x) => x.endsWith(".png"))) fs.writeFileSync(path.join(IOS, "Splash.imageset", f), splash);
+  console.log("iPhone: icon 1024 and opening picture");
 }
 console.log(`icons: 5 sizes x 3, background ${green}; opening screens: ${n}`);

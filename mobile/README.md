@@ -72,6 +72,18 @@ as before.
 - **Icon and opening screen**: `node scripts/icons.mjs` makes every Android
   size from `public/star/app-icon-512.png`.
 
+## iPhone and Codemagic (10 Nov 2026, not run yet)
+
+`mobile/ios` is the iPhone project (made with `npx cap add ios`): iPhone
+only, upright only, the game's icon. It cannot be built on Linux. The repo's
+`codemagic.yaml` has two workflows, `iphone` (to TestFlight) and `android`
+(the install file); its first lines say what to set up in Codemagic. Neither
+has been run: expect small fixes on the first run.
+
+The pack is safe to re-run: it writes to `mobile/packed.new` and swaps it in
+only when it has worked, and it stops if `sharp` is missing (the app would
+come out 240 MB bigger).
+
 ## Known limits (5 Nov 2026)
 
 - About 1,460 player photos come from SoFIFA's site, which refuses them
