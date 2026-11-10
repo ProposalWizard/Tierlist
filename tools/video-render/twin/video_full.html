@@ -130,7 +130,7 @@ P.compare=(sc,p,s,t)=>{darkBg();const ca=col(TGT().club), cb=col(SC.__lists.top.
   const n=sc.rows.length, y0=n>3?740:770, rowH=Math.min(220,(n>3?680:640)/n);
   sc.rows.forEach((r,i)=>{const at=sc.at?wordT(s,sc.at[i]):s.start+0.3+i*(s.vo*0.7/n);const a=ease((t-at)/0.5);const yy=y0+i*rowH;x.save();x.globalAlpha=clamp(a*2);
     T(r.label.toUpperCase(),540,yy+40,F(900,40),WHITE,'center');T(r.sub||'per 90 minutes',540,yy+76,F(600,24),DIM,'center');const mx=Math.max(Math.abs(r.a),Math.abs(r.b))*1.1||1;
-    [[r.a,RED,-1],[r.b,'#7cc4ff',1]].forEach(([v,cl,d])=>{const w=400*Math.abs(v)/mx*a;  // a minus number (goals prevented) is a bar of its size, not a broken onex.fillStyle=cl;if(d<0)rr(540-20-w,yy+100,w,44,10);else rr(560,yy+100,w,44,10);x.fill();
+    [[r.a,RED,-1],[r.b,'#7cc4ff',1]].forEach(([v,cl,d])=>{const w=400*Math.abs(v)/mx*a;x.fillStyle=cl;if(d<0)rr(540-20-w,yy+100,w,44,10);else rr(560,yy+100,w,44,10);x.fill();
       T(String(v),d<0?540-30-w:570+w,yy+136,F(900,40),cl,d<0?'right':'left');});x.restore();});};
 P.end2=(sc,p,s,t)=>{darkBg();stripes(0.04);(sc.pairs||[]).forEach((pr,i)=>{const at=sc.at?wordT(s,sc.at[i]):s.start+i*0.8,a=ease((t-at)/0.35),b=back((t-at)/0.45),y=380+i*390;
     // each player in his own club colour (Mikey, 8 Nov 2026)
