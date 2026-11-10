@@ -18,7 +18,7 @@ CUT = [  # shot, frames, line 1, line 2, where the words sit (clear of the phone
     ("match", 120, "EVERY CHANCE", "IS YOURS TO TAKE.", 150),
     ("train", 96,  "TRAIN. EARN.", "SPEND.", 1470),
     ("climb", 96,  "CLIMB EVERY LEAGUE.", "LIVE A WHOLE CAREER.", 150),
-    ("gold",  132, "", "WIN THE GOLDEN BALL.", 1470),
+    ("gold",  132, "", "WIN THE GOLDEN BALL.", 1590),
 ]
 END = 108  # the end card's frames
 GOLD = (255, 204, 96)
