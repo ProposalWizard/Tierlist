@@ -11,14 +11,14 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 ROOT, FONT, MUSIC, OUT = sys.argv[1:5]
 W, H, FPS = 1080, 1920, 24
-CUT = [  # shot, frames, line 1, line 2
-    ("open",  96,  "YOU ARE SIXTEEN.", "NOBODY KNOWS YOUR NAME."),
-    ("trial", 96,  "ONE TRIAL.", "ONE CHANCE."),
-    ("sign",  96,  "SIGN YOUR", "FIRST CONTRACT."),
-    ("match", 120, "EVERY CHANCE", "IS YOURS TO TAKE."),
-    ("train", 96,  "TRAIN. EARN.", "SPEND."),
-    ("climb", 96,  "CLIMB EVERY LEAGUE.", "LIVE A WHOLE CAREER."),
-    ("gold",  132, "", "WIN THE GOLDEN BALL."),
+CUT = [  # shot, frames, line 1, line 2, where the words sit (clear of the phone)
+    ("open",  96,  "YOU ARE SIXTEEN.", "NOBODY KNOWS YOUR NAME.", 1470),
+    ("trial", 96,  "ONE TRIAL.", "ONE CHANCE.", 1470),
+    ("sign",  96,  "SIGN YOUR", "FIRST CONTRACT.", 1470),
+    ("match", 120, "EVERY CHANCE", "IS YOURS TO TAKE.", 150),
+    ("train", 96,  "TRAIN. EARN.", "SPEND.", 1470),
+    ("climb", 96,  "CLIMB EVERY LEAGUE.", "LIVE A WHOLE CAREER.", 150),
+    ("gold",  132, "", "WIN THE GOLDEN BALL.", 1470),
 ]
 END = 108  # the end card's frames
 GOLD = (255, 204, 96)
@@ -49,7 +49,7 @@ def text_layer(lines, y, sizes, colours, alpha, drift=0):
 ease = lambda k: k * k * (3 - 2 * k)
 tmp = OUT + ".frames"; os.makedirs(tmp, exist_ok=True)
 n = 0; last = None
-for si, (shot, frames, l1, l2) in enumerate(CUT):
+for si, (shot, frames, l1, l2, ty) in enumerate(CUT):
     for f in range(1, frames + 1):
         n += 1
         im = Image.open(os.path.join(ROOT, shot, f"c_{f:04d}.png")).convert("RGBA"); last = im
@@ -59,7 +59,7 @@ for si, (shot, frames, l1, l2) in enumerate(CUT):
         a = a_in * a_out
         if a > 0:
             cols = ((255, 255, 255), (255, 255, 255)) if shot != "gold" else (GOLD, GOLD)
-            im = Image.alpha_composite(im, text_layer([l1, l2], 1470, (66, 66), cols, a, drift=int((1 - a_in) * 18)))
+            im = Image.alpha_composite(im, text_layer([l1, l2], ty, (66, 66), cols, a, drift=int((1 - a_in) * 18)))
         if si == 0 and f <= 12:  # up from black
             im = Image.blend(Image.new("RGBA", (W, H), (0, 0, 0, 255)), im, ease(f / 12))
         im.convert("RGB").save(f"{tmp}/a_{n:05d}.png", compress_level=1)
