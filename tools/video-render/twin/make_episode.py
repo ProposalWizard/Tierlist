@@ -256,7 +256,7 @@ CLOSE_K = [k for k in W if k in NOUN and k not in PCT and W[k] >= 1]
 close = sorted(CLOSE_K, key=rel)[:2]
 far = sorted([k for k in W if k in VERB and rel(k) < 9], key=lambda k: -rel(k))[:3]
 row = lambda k, a, b: {'label': NOUN[k][0].upper() + NOUN[k][1:], 'a': round(a[k], 2), 'b': round(b[k], 2), 'sub': 'per cent' if k in PCT else ('per 90 minutes · no penalties' if k in ('npG', 'npxG') else 'per 90 minutes')}
-tgx = {'name': NAME, 'season': EP['season'], 'face': tgp['face']}; twx = {'name': TW['name'], 'season': TW['season'], 'face': TW['face']}
+tgx = {'name': NAME, 'short': NAME if len(NAME) <= 11 and not EP.get('short') else SHORT, 'season': EP['season'], 'face': tgp['face']}; twx = {'name': TW['name'], 'short': sname(TW['name']), 'season': TW['season'], 'face': TW['face']}
 tight = max(rel(k) for k in close) <= 0.12
 why_cap = (f"WHY? ALMOST THE SAME {NOUN[close[0]].upper()} AND {NOUN[close[1]].upper()}, EVERY 90|ninety MINUTES." if tight else f"WHY? CLOSEST ON {NOUN[close[0]].upper()} AND {NOUN[close[1]].upper()}, EVERY 90|ninety MINUTES.")
 line('why', (f"Why? Almost the same {NOUN[close[0]]} and {NOUN[close[1]]}, every ninety minutes." if tight else f"Why? Closest on {NOUN[close[0]]} and {NOUN[close[1]]}, every ninety minutes."), why_cap, hold=0.2)
@@ -286,7 +286,7 @@ nclose = main[:3] + [next((k for k in main if k in ('chances', 'A', 'bigCC') and
 said = ", ".join(NOUN[k] for k in nclose[:-1]) + " and " + NOUN[nclose[-1]]
 now_cap = f"{sname(NW['name']).upper()} AGAINST {SHORT.upper()}, ON WHAT MATTERS MOST FOR {AN.upper()} {GROUP_NAME[GRP].upper()}: {said.upper()}."
 line('nowcmp', f"{sname(NW['name'])} against {SHORT}, on what matters most for {AN} {GROUP_NAME[GRP]}: {said}.", now_cap)
-S['nowcmp'] = {'type': 'compare', 'kicker': 'This season', 'title': f"{SHORT} vs {sname(NW['name'])}.", 'a': tgx, 'b': {'name': NW['name'], 'season': CUR, 'face': NW['face']},
+S['nowcmp'] = {'type': 'compare', 'kicker': 'This season', 'title': f"{SHORT} vs {sname(NW['name'])}.", 'a': tgx, 'b': {'name': NW['name'], 'short': sname(NW['name']), 'season': CUR, 'face': NW['face']},
                'rows': [row(k, tf, nf) for k in nclose], 'at': [{'i': c['i'] + len(now_cap.split(':')[0].split(' '))} for c in cues(now_cap.split(':', 1)[1].strip(), [NOUN[k] for k in nclose])]}
 ALSO = 'also ' if NW['name'] == TW['name'] else ''
 line('end', f"So {SHORT}'s twin is {spoken(TW['name'])}. And right now, it's {ALSO}{spoken(NW['name'])}. Follow for more.", f"SO {SHORT.upper()}'S TWIN IS {TW['name'].upper()}. AND RIGHT NOW, IT'S {ALSO.upper()}{NW['name'].upper()}. FOLLOW FOR MORE.")
@@ -299,7 +299,7 @@ if EP.get('style', 'fast') == 'fast':
         if l['id'] == 'intro':
             PRE = EP.get('prefix', 'Prime'); l.update(say=f"{PRE} {spoken(NAME)}'s statistical twin is not who you think.", cap=f"{PRE.upper()} {NAME.upper()}'S STATISTICAL TWIN IS NOT WHO YOU THINK.", sfx=[["hit", 0.0, 0.7]])
         if l['id'] == 'own':
-            l.update(say=f"His own seasons don't count. That leaves {words(len(keep))}.", cap=f"HIS OWN SEASONS DON'T COUNT. THAT LEAVES {words(len(keep)).upper()}.")
+            l.update(say=f"His own seasons don't count. That leaves {words(len(keep))}.", cap=f"HIS OWN SEASONS DON'T COUNT. THAT LEAVES {words(len(keep)).upper()}.", sfx=[["pop", "HIS", 0.5], ["whoosh", "LEAVES", 0.5]])
     L = [l for l in L if l['id'] != 'tests']; S.pop('tests', None)
     S['intro'].update(instant=True, kicker='HIS TWIN IS NOT WHO YOU THINK', kickerAt='NOT', facts=[], mystery=[{**m, 'delay': 0} for m in S['intro']['mystery']])
     if EP.get('award'):   # e.g. {"at": "BALLON", "label": "BALLON D'OR 25/26"}: a trophy pops onto him when the word is said
