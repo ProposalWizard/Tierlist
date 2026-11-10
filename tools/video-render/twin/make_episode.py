@@ -54,10 +54,10 @@ if TOP5:
     FD = Data(EP.get('data') or os.path.join(os.environ.get('TWIN_DATA', 'fm'), 'twin_data.json'))
     LGS = {int(k) for k, v in FD.D['leagues'].items() if v in EP['leagues']}
     trows = FD.find(EP['player'], EP['season'])
-    order, winsO, _tp, _tf, GRP, cands = FD.rank(trows, FIVE, LGS)
+    order, winsO, _tp, _tf, GRP, cands = FD.rank(trows, FIVE, LGS, g=EP.get('group'))   # 'group': e.g. "MID" when FotMob files a midfielder as a number 10
     W = FW[GRP]; tg = sorted(trows, key=lambda o: o['s'])[-1]; tg['f'] = _tf
     base = order; top8 = order[:8]
-    nbase, nwins, *_ = FD.rank(trows, [CUR], LGS, include_own=False); now5 = nbase[:5]
+    nbase, nwins, *_ = FD.rank(trows, [CUR], LGS, g=GRP, include_own=False); now5 = nbase[:5]
     idx = {}
     def season_pool(s, v=None): return FD.pool(v['league'], v['s'], GRP)[0]
     POOLNAME = lambda v: f"{v['leagueName']} {GROUP_NAME[GRP]}s"
@@ -83,7 +83,15 @@ else:
     now_c = [v for v in season_pool(CUR) if v['name'] != EP['player']]
     nbase, nwins = solve(tg['f'], b9[EP['season']], now_c)
     now5 = nbase[:5]
-NAME, SHORT = EP['player'], EP.get('short', EP['player'].split()[-1])
+PART = ('van', 'de', 'da', 'di', 'dos', 'der', 'den', 'le', 'la', 'el', 'von', 'ter', 'du', 'del', 'mac', 'ben')
+def lastname(name):
+    """'Kevin De Bruyne' -> 'De Bruyne', 'Virgil van Dijk' -> 'Van Dijk', 'Vinícius Júnior' -> 'Vinícius' (10 Nov 2026: was 'Bruyne', 'Dijk', 'Júnior')"""
+    w = name.split()
+    if len(w) > 1 and w[-1].lower().strip('.') in ('júnior', 'junior', 'jr'): return w[0]
+    k = len(w) - 1
+    while k > 0 and w[k - 1].lower() in PART: k -= 1
+    out = ' '.join(w[k:]); return out[0].upper() + out[1:]
+NAME, SHORT = EP['player'], EP.get('short') or lastname(EP['player'])
 
 # ---------- pictures: headshots, badges (that season's club), flags ----------
 def get(u):
@@ -132,15 +140,24 @@ def club_name(tid):
     return CLUBNAME[tid]
 
 # ---------- pop-up fact: that player's best rank among that season's attackers ----------
-LAB = {'npG': 'goals per 90 (no pens)', 'A': 'assists per 90', 'chances': 'chances created per 90', 'bigCC': 'big chances made per 90', 'shots': 'shots per 90',
-       'SoT': 'shots on target per 90', 'drib': 'dribbles per 90', 'npxG': 'xG per 90 (no pens)'}
+NOUN = {'npG': 'goals', 'npxG': 'expected goals', 'shots': 'shots', 'SoT': 'shots on target', 'A': 'assists', 'xA': 'expected assists', 'chances': 'chances created',
+        'bigCC': 'big chances made', 'drib': 'dribbles', 'passes': 'passes', 'pass%': 'pass accuracy', 'long': 'long balls', 'long%': 'long ball accuracy',
+        'def': 'defensive actions', 'tkl': 'tackles', 'int': 'interceptions', 'rec': 'ball recoveries', 'clear': 'clearances', 'block': 'blocks',
+        'saves': 'saves', 'save%': 'save percentage', 'prevented': 'goals prevented', 'cs': 'clean sheets'}
+VERB = {'npG': 'scores more', 'npxG': 'gets better chances', 'shots': 'shoots more', 'SoT': 'hits the target more', 'A': 'assists more', 'xA': 'sets up better chances',
+        'chances': 'creates more', 'bigCC': 'makes more big chances', 'drib': 'dribbles more', 'passes': 'passes more', 'pass%': 'passes more accurately',
+        'long': 'plays more long balls', 'def': 'defends more', 'tkl': 'tackles more', 'int': 'intercepts more', 'rec': 'wins the ball back more',
+        'clear': 'clears more', 'block': 'blocks more', 'saves': 'makes more saves', 'save%': 'saves a bigger share', 'prevented': 'prevents more goals', 'cs': 'keeps more clean sheets'}
+PCT = ('pass%', 'long%', 'save%', 'conv', 'drib%')   # per cent, not per 90
+def numfmt(k, x): return f"{x:.0f}%" if k in PCT else (f"{x:.1f}" if abs(x) >= 10 else f"{x:.2f}")
+LAB = {k: (NOUN[k] if k in PCT else NOUN[k] + ' per 90' + (' (no pens)' if k in ('npG', 'npxG') else '')) for k in NOUN if k in W}
 def fact(v):
     L = season_pool(v['season'], v); best = None
     for k in LAB:
         if v['f'].get(k) is None: continue
         r = sorted([y for y in L if y['f'].get(k) is not None], key=lambda y: -y['f'][k]); hit = [i + 1 for i, y in enumerate(r) if y['name'] == v['name']]
         if hit and (best is None or hit[0] < best[0]): best = (hit[0], k, len(r))
-    rk, k, n = best; return {'big': f"{v['f'][k]:.2f}", 'label': LAB[k], 'rank': f"{rk}{osuf(rk)} of {n} {POOLNAME(v)}"}
+    rk, k, n = best; return {'big': numfmt(k, v['f'][k]), 'label': LAB[k], 'rank': f"{rk}{osuf(rk)} of {n} {POOLNAME(v)}"}
 
 # ---------- the list: own seasons first, then from the bottom; a repeated player's places together ----------
 rows8 = []
@@ -165,14 +182,14 @@ sur = None
 others = [(i + 1, d, v) for i, (d, v) in enumerate([(d, v) for d, v in base if v['name'] != NAME])]
 for nm in EP.get('surprise', []):   # the first famous name (in the order given) that is clearly outside the list
     h = [(rk, d, v) for rk, d, v in others if v['name'] == nm]
-    if h and h[0][0] > (len(keep) if EP.get('surpriseAnyPlace') else max(len(keep) + 4, 12)): sur = h[0]; break
+    if h and h[0][0] > (EP['surpriseMin'] - 1 if EP.get('surpriseMin') else len(keep) if EP.get('surpriseAnyPlace') else max(len(keep) + 4, 12)): sur = h[0]; break   # 'surpriseMin': 10 = he must be 10th or lower (8th is not a surprise)
 nowrows = []
 for d, v in now5:
     r = pics(v); r['match'] = round(Data.match(d, GRP), 1); r['_v'] = v; nowrows.append(r)
 tgp = pics(tg); tgp['season'] = EP['season']
 SP = lambda s: EP.get('spoken', {}).get(s, s)
 def spoken(name): return " ".join(SP(w) for w in name.split())
-def sname(name): return EP.get('shorts', {}).get(name) or (name if len(name) <= 11 else name.split()[-1])  # 'João Pedro' stays whole, 'Callum Wilson' -> 'Wilson'
+def sname(name): return EP.get('shorts', {}).get(name) or (name if len(name) <= 11 else lastname(name))  # 'João Pedro' stays whole, 'Callum Wilson' -> 'Wilson'
 
 # ---------- lines + scenes ----------
 L, S = [], {}
@@ -222,20 +239,34 @@ line('tests', f"We changed how much each stat counts, two thousand times. {sname
      f"WE CHANGED HOW MUCH EACH STAT COUNTS, 2,000|two-thousand TIMES. {sname(TW['name']).upper()} CAME FIRST IN {'EVERY SINGLE ONE' if sure >= 100 else str(sure) + '%|x-percent OF THEM'}.", sfx=[["tick", sname(TW['name']).upper(), 0.4]])
 S['tests'] = {'type': 'statement', 'face': TW['face'], 'lines': [[f"{TW['name'].upper()} · {TW['season'][2:]}", 48, '#141414'], [f'FIRST IN {sure}% OF TESTS', 72, '#c8102e'], ['each test counts the stats differently', 30, '#5b564d']], 'at': [0.1, sname(TW['name']).upper(), 'CHANGED']}
 # why / not the same: the closest and the furthest of the main stats (real per-90 numbers)
-NOUN = {'npG': 'goals', 'A': 'assists', 'chances': 'chances created', 'bigCC': 'big chances made', 'shots': 'shots', 'SoT': 'shots on target', 'npxG': 'expected goals', 'passes': 'passes', 'drib': 'dribbles'}
-VERB = {'npG': 'scores more', 'A': 'assists more', 'chances': 'creates more', 'bigCC': 'makes more big chances', 'shots': 'shoots more', 'SoT': 'hits the target more', 'npxG': 'gets better chances', 'passes': 'passes more', 'drib': 'dribbles more'}
+def cues(cap, phrases):
+    """word places of each phrase's first word, searched in order -> [{'i': n}] (the engine reads the time of word n)"""
+    toks = [re.sub(r"[^A-Z0-9%]", "", t.split("|")[0].upper()) for t in cap.split(" ")]; out = []; at = 0
+    for ph in phrases:
+        w0 = re.sub(r"[^A-Z0-9%]", "", ph.upper().split()[0]); i = next((j for j in range(at, len(toks)) if toks[j] == w0), None)
+        if i is None: i = next((j for j in range(at, len(toks)) if toks[j].startswith(w0)), at)
+        out.append({'i': i}); at = i + 1
+    return out
 tf, wf = tg['f'], TW['_v']['f']
-rel = lambda k: 9 if tf.get(k) is None or wf.get(k) is None else abs(tf[k] - wf[k]) / max(tf[k], wf[k], 1e-9)
-close = sorted(['npG', 'npxG', 'shots', 'SoT', 'A', 'chances', 'bigCC'], key=rel)[:2]
-far = sorted(['npG', 'A', 'chances', 'bigCC', 'passes', 'drib', 'shots', 'SoT'], key=lambda k: -rel(k))[:3]
-row = lambda k, a, b: {'label': NOUN[k][0].upper() + NOUN[k][1:], 'a': round(a[k], 2), 'b': round(b[k], 2)}
+def rel(k, b=None):
+    b = wf if b is None else b
+    if tf.get(k) is None or b.get(k) is None or max(abs(tf[k]), abs(b[k])) < 0.03: return 9   # no data, or both about 0: nothing to show
+    return abs(tf[k] - b[k]) / max(abs(tf[k]), abs(b[k]), 1e-9)
+CLOSE_K = [k for k in W if k in NOUN and k not in PCT and W[k] >= 1]
+close = sorted(CLOSE_K, key=rel)[:2]
+far = sorted([k for k in W if k in VERB and rel(k) < 9], key=lambda k: -rel(k))[:3]
+row = lambda k, a, b: {'label': NOUN[k][0].upper() + NOUN[k][1:], 'a': round(a[k], 2), 'b': round(b[k], 2), 'sub': 'per cent' if k in PCT else ('per 90 minutes · no penalties' if k in ('npG', 'npxG') else 'per 90 minutes')}
 tgx = {'name': NAME, 'season': EP['season'], 'face': tgp['face']}; twx = {'name': TW['name'], 'season': TW['season'], 'face': TW['face']}
-line('why', f"Why? Almost the same {NOUN[close[0]]} and {NOUN[close[1]]}, every ninety minutes.", f"WHY? ALMOST THE SAME {NOUN[close[0]].upper()} AND {NOUN[close[1]].upper()}, EVERY 90|ninety MINUTES.", hold=0.2)
-S['why'] = {'type': 'compare', 'kicker': f"Why {sname(TW['name'])}", 'title': 'Almost the same.', 'a': tgx, 'b': twx, 'rows': [row(k, tf, wf) for k in close], 'at': [NOUN[close[0]].upper().split()[0], NOUN[close[1]].upper().split()[0]]}
+tight = max(rel(k) for k in close) <= 0.12
+why_cap = (f"WHY? ALMOST THE SAME {NOUN[close[0]].upper()} AND {NOUN[close[1]].upper()}, EVERY 90|ninety MINUTES." if tight else f"WHY? CLOSEST ON {NOUN[close[0]].upper()} AND {NOUN[close[1]].upper()}, EVERY 90|ninety MINUTES.")
+line('why', (f"Why? Almost the same {NOUN[close[0]]} and {NOUN[close[1]]}, every ninety minutes." if tight else f"Why? Closest on {NOUN[close[0]]} and {NOUN[close[1]]}, every ninety minutes."), why_cap, hold=0.2)
+S['why'] = {'type': 'compare', 'kicker': f"Why {sname(TW['name'])}", 'title': 'Almost the same.' if tight else 'Closest on these.', 'a': tgx, 'b': twx, 'rows': [row(k, tf, wf) for k in close], 'at': cues(why_cap, [NOUN[k] for k in close])}
 who = lambda k: SHORT if tf[k] > wf[k] else sname(TW['name'])
 d1, d2 = far[0], next((k for k in far[1:] if who(k) != who(far[0])), far[1])
-line('diff', f"The difference? {who(d1)} {VERB[d1]}. {who(d2)} {VERB[d2]}." if who(d1) != who(d2) else f"The difference? {who(d1)} {VERB[d1]}, and {VERB[d2]}.", hold=0.35)
-S['diff'] = {'type': 'compare', 'kicker': 'But…', 'title': 'Not the same player.', 'a': tgx, 'b': twx, 'rows': [row(k, tf, wf) for k in [d1, d2]], 'at': [who(d1).upper(), who(d2).upper()]}
+diff_say = f"The difference? {who(d1)} {VERB[d1]}. {who(d2)} {VERB[d2]}." if who(d1) != who(d2) else f"The difference? {who(d1)} {VERB[d1]}, and {VERB[d2]}."
+line('diff', diff_say, hold=0.35)
+S['diff'] = {'type': 'compare', 'kicker': 'But…', 'title': 'Not the same player.', 'a': tgx, 'b': twx, 'rows': [row(k, tf, wf) for k in [d1, d2]],
+             'at': cues(diff_say.upper(), [VERB[d1].split()[0], VERB[d2].split()[0]])}
 # this season
 line('n0', "And this season only?", hold=0.3); S['n0'] = {'type': 'countdown', 'list': 'now', 'upto': 6, 'at': 0.0}
 for k in range(len(nowrows), 1, -1):
@@ -248,14 +279,15 @@ S['now1'] = {'type': 'countdown', 'list': 'now', 'upto': 1, 'at': NW['name'].upp
 nf = NW['_v']['f']
 # RUL-KIB-008 (Mikey, 9 Nov 2026): Stat Twins comparison cards keep the "player v his twin" framing and show the MOST IMPORTANT stats for the twin pick; never swap them for a generic "what matters for a striker" card. Fix the nowcmp/why lines in the next episode.
 # Mikey, 9 Nov 2026: show what the twin is chosen on, not just the two closest stats: the stats that count most for the position (+ one for creating)
-okk = lambda k: k in NOUN and tf.get(k) is not None and nf.get(k) is not None
+AN = 'an' if GROUP_NAME[GRP][0] in 'aeiou' else 'a'
+okk = lambda k: k in NOUN and tf.get(k) is not None and nf.get(k) is not None and rel(k, nf) < 9
 main = [k for k, _ in sorted(W.items(), key=lambda kv: -kv[1]) if okk(k)]
-nclose = main[:3] + [next((k for k in main if k in ('chances', 'A', 'bigCC') and k not in main[:3]), main[3])]
+nclose = main[:3] + [next((k for k in main if k in ('chances', 'A', 'bigCC') and k not in main[:3]), main[3])] if len(main) > 3 else main
 said = ", ".join(NOUN[k] for k in nclose[:-1]) + " and " + NOUN[nclose[-1]]
-line('nowcmp', f"{sname(NW['name'])} against {SHORT}, on what matters most for a {GROUP_NAME[GRP]}: {said}.", f"{sname(NW['name']).upper()} AGAINST {SHORT.upper()}, ON WHAT MATTERS MOST FOR A {GROUP_NAME[GRP].upper()}: {said.upper()}.")
-SUB = {'npG': 'per 90 minutes · no penalties', 'npxG': 'per 90 minutes · no penalties'}
+now_cap = f"{sname(NW['name']).upper()} AGAINST {SHORT.upper()}, ON WHAT MATTERS MOST FOR {AN.upper()} {GROUP_NAME[GRP].upper()}: {said.upper()}."
+line('nowcmp', f"{sname(NW['name'])} against {SHORT}, on what matters most for {AN} {GROUP_NAME[GRP]}: {said}.", now_cap)
 S['nowcmp'] = {'type': 'compare', 'kicker': 'This season', 'title': f"{SHORT} vs {sname(NW['name'])}.", 'a': tgx, 'b': {'name': NW['name'], 'season': CUR, 'face': NW['face']},
-               'rows': [{**row(k, tf, nf), 'sub': SUB.get(k, 'per 90 minutes')} for k in nclose], 'at': [NOUN[k].upper().split()[0] for k in nclose]}
+               'rows': [row(k, tf, nf) for k in nclose], 'at': [{'i': c['i'] + len(now_cap.split(':')[0].split(' '))} for c in cues(now_cap.split(':', 1)[1].strip(), [NOUN[k] for k in nclose])]}
 ALSO = 'also ' if NW['name'] == TW['name'] else ''
 line('end', f"So {SHORT}'s twin is {spoken(TW['name'])}. And right now, it's {ALSO}{spoken(NW['name'])}. Follow for more.", f"SO {SHORT.upper()}'S TWIN IS {TW['name'].upper()}. AND RIGHT NOW, IT'S {ALSO.upper()}{NW['name'].upper()}. FOLLOW FOR MORE.")
 S['end'] = {'type': 'end2', 'captions': True, 'at': [TW['name'].upper().split()[0], 'RIGHT'],

@@ -14,7 +14,7 @@ const V=path.resolve(process.argv[2]); const mode=process.argv[3]||'video';
   } else {
     const fps=30,N=Math.ceil(tl.total*fps);
     const ff=spawn('ffmpeg',['-y','-v','error','-f','image2pipe','-framerate','30','-c:v','mjpeg','-i','-','-i',V+'/mix.wav',
-      '-c:v','libx264','-preset','medium','-crf','19','-pix_fmt','yuv420p','-profile:v','high','-r','30',
+      '-c:v','libx264','-preset','medium','-crf',process.env.TWIN_CRF||'19','-pix_fmt','yuv420p','-profile:v','high','-r','30',
       '-c:a','aac','-b:a','192k','-ar','48000','-shortest','-movflags','+faststart',V+'/out.mp4'],{stdio:['pipe','inherit','inherit']});
     for(let i=0;i<N;i++){ await pg.evaluate(t=>window.render(t),i/fps);
       const buf=await pg.screenshot({type:'jpeg',quality:92}); if(!ff.stdin.write(buf)) await new Promise(r=>ff.stdin.once('drain',r));

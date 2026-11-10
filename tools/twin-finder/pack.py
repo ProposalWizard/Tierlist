@@ -33,6 +33,9 @@ for f in glob.glob(os.path.join(FM, 'raw', '*.json')):
 for f in glob.glob(os.path.join(FM, 'raw_lg', '*_*_*.json')):
     d = json.load(open(f)); add(d['league'], season_name(d['season']), d['stat'], d['rows'], d.get('teamColors'))
 keep = [(k, v) for k, v in rows.items() if (v.get('mins') or 0) >= 450 and 'name' in v]
+_latest = {}   # one spelling per player: the newest season's (FotMob writes some names two ways across seasons)
+for (lid, s_, pid), v in sorted(keep, key=lambda kv: kv[0][1]): _latest[pid] = v['name']
+for (lid, s_, pid), v in keep: v['name'] = _latest[pid]
 names = sorted({v['name'] for k, v in keep}); nidx = {n: i for i, n in enumerate(names)}
 seasons = sorted({k[1] for k, v in keep}); sidx = {s: i for i, s in enumerate(seasons)}
 out = {'leagues': LEAGUE, 'seasons': seasons, 'names': names, 'cols': COLS,

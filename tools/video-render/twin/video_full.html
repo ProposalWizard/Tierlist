@@ -16,7 +16,7 @@ function T(s,X,Y,font,col,align='left',a=1){if(a<=0||s==null)return;x.save();x.g
 function fit(s,w,size,maxW){x.font=F(w,size);const m=x.measureText(s).width;return m>maxW?size*maxW/m:size;}
 function seg(t){let s=TL.segs[0];for(const q of TL.segs) if(t>=q.start-0.05) s=q;return s;}
 const NRM=q=>String(q).normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9#%€]/g,''), MISS=new Set();
-function wordT(s,pre){if(pre==null)return s.start;if(typeof pre==='number')return s.start+pre;const p=NRM(String(pre).trim().split(/\s+/)[0]);const w=s.words.find(w=>NRM(w.w).startsWith(p));
+function wordT(s,pre){if(pre==null)return s.start;if(typeof pre==='number')return s.start+pre;if(typeof pre==='object')return (s.words[Math.min(pre.i,s.words.length-1)]||{t:s.start}).t;const p=NRM(String(pre).trim().split(/\s+/)[0]);const w=s.words.find(w=>NRM(w.w).startsWith(p));
   if(!w&&!MISS.has(s.id+'|'+pre)){MISS.add(s.id+'|'+pre);console.log('CUE NOT FOUND in line "'+s.id+'": '+pre);}return w?w.t:s.start;}
 function col(k){return (META.clubColors||{})[k]||'rgb(40,60,110)';}
 function shade(c,f){const m=c.match(/\d+/g).map(Number);return `rgb(${m.slice(0,3).map(v=>Math.round(v*f)).join(',')})`;}

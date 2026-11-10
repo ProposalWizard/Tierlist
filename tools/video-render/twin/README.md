@@ -101,3 +101,19 @@ A second kind of episode: a player is likely leaving, who replaces him. Format f
 - **Still open** (from the review): players are matched by name, not id (two players with one name would merge); short names
   are the last word ("Bruyne"); no league-strength adjustment (a Ligue 1 number counts the same as a Premier League one);
   `make_episode.py` only works for attackers and full-backs; the two makers share copied helpers.
+
+## Batches: the best N episodes, picked by a score (10 Nov 2026)
+
+1. `TWIN_DATA=<dir> python3 pick_batch.py PICK.json 25` scores a long list of famous player-seasons (in the file) and picks the best,
+   one per player, spread over positions. Rules (Mikey): a Premier League player that season is compared with the Premier League only,
+   anyone else with all five leagues; always the same kind of position. The score is written at the top of the file
+   (fame, award season, strong twin, clear winner, famous or surprising twin, different club/league/era, own seasons in the list,
+   a famous name far down for "You'd think...?"). `TWIN_FORCE=<json list of "Name|season">` makes a hand-picked final list.
+2. `python3 make_batch.py scripts PICK.json OUTDIR` writes each episode file and prints every script (free: read them first).
+3. `KOKORO_DIR=<dir> python3 make_batch.py videos PICK.json OUTDIR 3` voices, times and renders, 3 at a time. If ElevenLabs refuses
+   (no credits), that video and the later ones use the offline Kokoro voice (`TWIN_FALLBACK_VOICE`, default `bm_fable`), never half and half.
+- `make_episode.py` now works for every position (strikers, wingers/10s, midfielders, full-backs, centre-backs, keepers), takes
+  `"group"` (e.g. "MID" when FotMob files a midfielder as a number 10) and `"surpriseMin"` (10 = the "You'd think" name must be 10th or lower).
+- Names: one spelling per player (79 players were written two ways across seasons and counted as two people), and two different
+  players with one name (38 names, e.g. the two Vítinhas, Rodri, Luis Suárez) are no longer added together. Short names keep
+  particles ("De Bruyne", "Van Dijk"; "Vinícius" for Vinícius Júnior).

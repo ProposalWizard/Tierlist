@@ -59,6 +59,21 @@ class Data:
                  'group': ('GK' if r.get('saves') is not None else 'MID') if not D['P'][i] else group(D['P'][i]),   # v2.1: a keeper with no position on file is a keeper
                  'mins_played': r.get('mins') or 0, 'goals': r.get('G'), 'goal_assist': r.get('A'), 'rating': r.get('rating')}
             o['f'] = feats(r); self.rows.append(o)
+        # one spelling per player (10 Nov 2026): FotMob writes 79 players two ways across seasons ("Luka Modric" / "Luka Modrić"),
+        # which made them two different people. The newest season's spelling is used for every row.
+        latest = {}
+        for o in sorted(self.rows, key=lambda o: o['s']): latest[o['id']] = o['name']
+        for o in self.rows: o['name'] = latest[o['id']]
+        # two different players with one name (e.g. the two Vítinhas) must not be added together: the one with fewer minutes
+        # gets an invisible mark on his name (a zero-width space), so he looks the same on screen but is a different player.
+        tot = collections.Counter(); who = collections.defaultdict(set)
+        for o in self.rows: tot[o['id']] += o['mins_played']; who[o['name']].add(o['id'])
+        for nm, ids_ in who.items():
+            if len(ids_) > 1:
+                for n_, pid in enumerate(sorted(ids_, key=lambda i: -tot[i])[1:], 1):
+                    for o in self.rows:
+                        if o['id'] == pid: o['name'] = nm + '\u200b' * n_
+        self.namesakes = sorted(nm for nm, ids_ in who.items() if len(ids_) > 1)
         self._pools = {}
     def min_ok(self, o): return o['mins_played'] >= (450 if o['s'] == self.CUR else 900)
     def in_group(self, o, g): return o['group'] in ('AMW', 'ST') if g == 'ATT' else o['group'] == g
