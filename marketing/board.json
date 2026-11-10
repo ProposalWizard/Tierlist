@@ -113,19 +113,25 @@
  {
   "id": "v05-neymar-twin",
   "title": "v05 · Neymar 17/18's statistical twin",
-  "stage": "check",
+  "stage": "posted",
   "owner": "Claude",
-  "updated": "2026-11-09T16:00:00Z",
+  "updated": "2026-11-10T21:00:00Z",
   "postOn": null,
   "line": "Prime Neymar (17/18)'s statistical twin across the top 5 leagues: Michael Olise 25/26 (89%). Right now: Lamine Yamal.",
   "script": "docs/marketing/videos/v05-neymar-twin/script.md",
   "cover": "docs/marketing/videos/v05-neymar-twin/cover.png",
   "video": "docs/marketing/videos/v05-neymar-twin/knowitball-v05-neymar-twin.mp4",
   "seconds": 57.3,
-  "links": [],
+  "links": [
+   {
+    "label": "Instagram Reel",
+    "url": "https://www.instagram.com/reel/DfkTe_xD9NN/"
+   }
+  ],
   "log": [
    "2026-11-09 First top-5-leagues episode: make_episode.py now uses the Twin Finder data and method, fast style by default. Waiting for Mikey's look.",
-   "2026-11-09 Top 5 instead of top 8; surprise is Messi 22/23 (6th), 'his old PSG team-mate'. 57 s."
+   "2026-11-09 Top 5 instead of top 8; surprise is Messi 22/23 (6th), 'his old PSG team-mate'. 57 s.",
+   "2026-11-10 Posted to Instagram (knowitballjr) as a Reel via Windsor.ai, Mikey's pick. It shows 89% from the older % scale (today's scale: 80%)."
   ]
  },
  {
