@@ -52,19 +52,14 @@
 },
 {
 "id": "map",
-"say": "The two closest: Nuno Tavares and Javi Galán.",
-"cap": "THE TWO CLOSEST: NUNO TAVARES AND JAVI GALÁN.",
+"say": "The closest of them all: Nuno Tavares, at Lazio.",
+"cap": "THE CLOSEST OF THEM ALL: NUNO TAVARES, AT LAZIO.",
 "hold": 0.15,
 "sfx": [
 [
-"pop",
+"hit",
 "NUNO",
-0.5
-],
-[
-"pop",
-"JAVI",
-0.5
+0.7
 ]
 ],
 "voiceSettings": {
@@ -72,33 +67,43 @@
 }
 },
 {
-"id": "judge",
-"say": "But Tavares is twenty-six, and Galán is thirty-one.",
-"cap": "BUT TAVARES IS 26|twenty-six, AND GALÁN IS 31|thirty-one.",
+"id": "opt1",
+"say": "He's twenty-six, an eighty-four percent match, and worth fourteen million euros. The ready-made option.",
+"cap": "HE'S 26|twenty-six, AN 84%|eighty-four-percent MATCH, AND WORTH €14M|fourteen-million-euros. THE READY-MADE OPTION.",
+"hold": 0.25,
 "sfx": [
 [
-"hit",
-"26",
-0.6
+"pop",
+"WORTH",
+0.5
 ],
 [
 "hit",
-"31.",
+"THE",
 0.6
 ]
 ],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "compare",
+"say": "Hall against Tavares, on what makes Hall special: dribbles, ball recoveries, blocked shots and long balls.",
+"cap": "HALL AGAINST TAVARES, ON WHAT MAKES HALL SPECIAL: DRIBBLES, BALL RECOVERIES, BLOCKED SHOTS AND LONG BALLS.",
+"hold": 0.2,
 "voiceSettings": {
 "speed": 1.08
 }
 },
 {
 "id": "filter",
-"say": "Hall is only twenty-two. So: twenty-three and under only.",
-"cap": "HALL IS ONLY 22|twenty-two. SO: 23|twenty-three AND UNDER ONLY.",
+"say": "But Hall is only twenty-two. So what about twenty-three and under?",
+"cap": "BUT HALL IS ONLY 22|twenty-two. SO WHAT ABOUT 23|twenty-three AND UNDER?",
 "sfx": [
 [
 "whoosh",
-"SO:",
+"SO",
 0.6
 ]
 ],
@@ -108,8 +113,8 @@
 },
 {
 "id": "young",
-"say": "And number one is Kaiki, from Como.",
-"cap": "AND NUMBER ONE IS KAIKI, FROM COMO.",
+"say": "The closest is Kaiki, at Como.",
+"cap": "THE CLOSEST IS KAIKI, AT COMO.",
 "hold": 0.1,
 "sfx": [
 [
@@ -123,14 +128,20 @@
 }
 },
 {
-"id": "pick",
-"say": "He's twenty-three, and worth fifteen million euros. A quarter of Hall's price.",
-"cap": "HE'S 23|twenty-three, AND WORTH €15M|fifteen-million-euros. A QUARTER OF HALL'S PRICE.",
+"id": "opt2",
+"say": "He's twenty-three, a seventy-seven percent match, and worth fifteen million euros. One for the future. But he's only played five games' worth of minutes.",
+"cap": "HE'S 23|twenty-three, A 77%|seventy-seven-percent MATCH, AND WORTH €15M|fifteen-million-euros. ONE FOR THE FUTURE. BUT HE'S ONLY PLAYED FIVE GAMES' WORTH OF MINUTES.",
+"hold": 0.25,
 "sfx": [
 [
 "pop",
-"€15M",
+"WORTH",
 0.5
+],
+[
+"hit",
+"ONE",
+0.6
 ]
 ],
 "voiceSettings": {
@@ -138,27 +149,9 @@
 }
 },
 {
-"id": "compare",
-"say": "Hall against Kaiki, on what makes Hall special: dribbles, ball recoveries, blocked shots and long balls.",
-"cap": "HALL AGAINST KAIKI, ON WHAT MAKES HALL SPECIAL: DRIBBLES, BALL RECOVERIES, BLOCKED SHOTS AND LONG BALLS.",
-"hold": 0.2,
-"voiceSettings": {
-"speed": 1.08
-}
-},
-{
-"id": "edge",
-"say": "And Kaiki creates more chances, and dribbles even more. Early days though: only five games' worth of minutes.",
-"cap": "AND KAIKI CREATES MORE CHANCES, AND DRIBBLES EVEN MORE. EARLY DAYS THOUGH: ONLY FIVE GAMES' WORTH OF MINUTES.",
-"hold": 0.2,
-"voiceSettings": {
-"speed": 1.08
-}
-},
-{
 "id": "end",
-"say": "So Newcastle's next Lewis Hall? Kaiki. Would you sign him? Follow for more.",
-"cap": "SO NEWCASTLE'S NEXT LEWIS HALL? KAIKI. WOULD YOU SIGN HIM? FOLLOW FOR MORE.",
+"say": "So: Tavares to do it now, or Kaiki for the future. Who would you sign? Follow for more.",
+"cap": "SO: TAVARES TO DO IT NOW, OR KAIKI FOR THE FUTURE. WHO WOULD YOU SIGN? FOLLOW FOR MORE.",
 "hold": 0.0,
 "voiceSettings": {
 "speed": 1.08

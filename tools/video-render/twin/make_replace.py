@@ -59,11 +59,11 @@ def club_colours():
             if mx < 60 or (mx - mn) / mx < 0.35: continue
             e = bins.setdefault((r >> 5, g >> 5, b >> 5), [0, 0, 0, 0]); e[0] += 1; e[1] += r; e[2] += g; e[3] += b
         if bins: n, r, g, b = max(bins.values()); cols[fn[:-4]] = f'rgb({r // n},{g // n},{b // n})'
-    cols.update({'t8634': 'rgb(165,0,68)', 't9823': 'rgb(220,5,45)', 't10260': 'rgb(218,41,28)', 't10261': 'rgb(30,30,30)'})  # Barcelona, Bayern, Man United, Newcastle
+    cols.update({'t8634': 'rgb(165,0,68)', 't9823': 'rgb(220,5,45)', 't10260': 'rgb(218,41,28)', 't10261': 'rgb(30,30,30)', 't8543': 'rgb(70,140,200)'})  # Barcelona, Bayern, Man United, Newcastle, Lazio
     cols.update(EP.get('clubColors', {}))
     return cols
 def money(v):  # 62981262 -> ('sixty-three million euros', '€63M')
-    m = round(v / 1e6); return f"{words(m)} million euros", f"€{m}M"
+    m = int(v / 1e6 + 0.5); return f"{words(m)} million euros", f"€{m}M"
 
 # ---------- the search ----------
 D = Data(os.path.join(DATA, 'twin_data.json'))
@@ -112,7 +112,7 @@ young = [r for r in rows if r['age'] is not None and r['age'] <= EP.get('maxAge'
 winsY = tests([(r['d'], r['o']) for r in young[:30]])
 ti = info(TG['id']); tgp = pics(TG['id'], EP.get('fromId', ti['teamId']))
 for r in rows: r.update(pics(r['o']['id'], r['teamId'] or r['o']['teamId']))
-c1, c2 = rows[0], rows[1]; pick = young[0]
+pick = young[0]
 print('compared', NPOS, 'players;', 'closest', [(r['name'], r['match'], r['age'], r['team']) for r in rows[:5]])
 print('young', [(r['name'], r['match'], r['age'], r['team'], r['value']) for r in young[:5]], 'pick first in', winsY[pick['name']], 'tests')
 
@@ -187,43 +187,43 @@ line('method', f"So we compared him with all {NPOS} {POSW}s in Europe's top five
 S['method'] = {'type': 'method', 'n': NPOS, 'leagues': [[k, lg_counts[k], faces.get(k, [])] for k in ['Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1']], 'posWord': POSW, 'at': 'ALL'}
 dots = [{'k': i, 'x': round(r['mx'], 4), 'y': round(r['my'], 4), 'm': r['match'], 'age': r['age'], 'face': r['face'], 'club': r['club'], 'name': r['name']} for i, r in enumerate(rows)]
 first = lambda r: r['name'].split()[0].upper()
-line('map', f"The two closest: {c1['name']} and {c2['name']}.", hold=0.15, sfx=[["pop", first(c1), 0.5], ["pop", first(c2), 0.5]])
-S['map'] = {'type': 'map', 'dots': dots, 'hi': [[0, first(c1)], [1, first(c2)]], 'fly': True}
-line('judge', f"But {c1['name'].split()[-1]} is {words(c1['age'])}, and {c2['name'].split()[-1]} is {words(c2['age'])}.",
-     f"BUT {c1['name'].split()[-1].upper()} IS {c1['age']}|{words(c1['age'])}, AND {c2['name'].split()[-1].upper()} IS {c2['age']}|{words(c2['age'])}.",
-     sfx=[["hit", str(c1['age']), 0.6], ["hit", str(c2['age']) + '.', 0.6]])
-S['judge'] = {'type': 'judge', 'cards': [{**{k: c[k] for k in ('name', 'face', 'club', 'match', 'age', 'team')}, 'stamp': f"AGE {c['age']}", 'at': str(c['age'])} for c in (c1, c2)]}
-MA = EP.get('maxAge', 23)
-line('filter', f"{SHORT} is only {words(ti['age'])}. So: {words(MA)} and under only.", f"{SHORT.upper()} IS ONLY {ti['age']}|{words(ti['age'])}. SO: {MA}|{words(MA)} AND UNDER ONLY.", sfx=[["whoosh", "SO:", 0.6]])
-S['filter'] = {'type': 'map', 'dots': dots, 'maxAge': MA, 'fadeAt': 'SO:', 'title': f"{MA} AND UNDER"}
-ys = young[:5]; vps, vpc = money(pick['value']); hvs, hvc = money(ti['value'])
-line('young', f"And number one is {pick['name']}, from {pick['team']}.", hold=0.1, sfx=[["hit", first(pick), 0.7]])
-S['young'] = {'type': 'table', 'rows': [{'name': r['name'], 'face': r['face'], 'club': r['club'], 'age': r['age'], 'value': money(r['value'])[1] if r['value'] else '—', 'm': r['match']} for r in ys],
-              'title': f"{MA} and under", 'pickAt': first(pick)}
-frac = {2: 'half', 3: 'a third', 4: 'a quarter', 5: 'a fifth'}.get(round(ti['value'] / pick['value']))
-line('pick', f"He's {words(pick['age'])}, and worth {vps}." + (f" {frac[0].upper() + frac[1:]} of {SHORT}'s price." if frac else ""),
-     f"HE'S {pick['age']}|{words(pick['age'])}, AND WORTH {vpc}|{vps.replace(' ', '-')}." + (f" {frac.upper()} OF {SHORT.upper()}'S PRICE." if frac else ""), sfx=[["pop", vpc, 0.5]])
-S['pick'] = {'type': 'pick', 'face': pick['face'], 'club': pick['club'], 'flag': pick['flag'], 'name': pick['name'].upper(), 'team': pick['team'], 'age': pick['age'], 'value': vpc, 'm': pick['match'],
-             'tests': round(100 * winsY[pick['name']] / 2000), 'hall': {'value': hvc, 'v': ti['value'], 'face': tgp['face']}, 'pv': pick['value'], 'fracAt': (frac.upper().split()[-1] if frac else None)}
-# Hall v the pick, on what makes Hall special (RUL-KIB-008: keep the "him v his replacement" framing, most important stats)
-pf = pick['o']['fc']; cmp4 = [k for k in ranked if pf.get(k) is not None][:4]
+# Mikey, 10 Nov 2026: two options, not one verdict. Option 1 = the closest player of all (ready now);
+# option 2 = the closest aged maxAge and under (one for the future). Age is a choice for the viewer, not a reason to rule a man out.
+MA = EP.get('maxAge', 23); o1 = rows[0]; o2 = pick if pick['name'] != o1['name'] else young[1]
+last = lambda r: r['name'].split()[-1]
+hvs, hvc = money(ti['value'])
+R0 = lambda v: int(v + 0.5)   # round half up, the same as the page's Math.round
+def option(id, r, n, tagline, say_tag, extra=''):
+    vs, vc = money(r['value']); ps = f"{words(R0(r['match']))} percent"
+    line(id, f"He's {words(r['age'])}, a{'n' if ps[0] in 'ae' else ''} {ps} match, and worth {vs}. {say_tag}{extra}",
+         f"HE'S {r['age']}|{words(r['age'])}, A{'N' if ps[0] in 'ae' else ''} {R0(r['match'])}%|{ps.replace(' ', '-')} MATCH, AND WORTH {vc}|{vs.replace(' ', '-')}. {say_tag.upper()}{extra.upper()}",
+         hold=0.25, sfx=[["pop", "WORTH", 0.5], ["hit", say_tag.upper().split()[0], 0.6]])
+    S[id] = {'type': 'pick', 'face': r['face'], 'club': r['club'], 'flag': r['flag'], 'name': r['name'].upper(), 'team': r['team'], 'age': r['age'], 'value': vc, 'm': r['match'],
+             'hall': {'value': hvc, 'v': ti['value'], 'face': tgp['face']}, 'pv': r['value'], 'pill': f"OPTION {n} · {tagline}", 'pillAt': say_tag.upper().split()[0],
+             'caveat': (f"ONLY {r['o']['mins']} MINUTES SO FAR" if r['o']['mins'] < 900 else None), 'caveatAt': 'BUT'}
+line('map', f"The closest of them all: {o1['name']}, at {o1['team']}.", hold=0.15, sfx=[["hit", first(o1), 0.7]])
+S['map'] = {'type': 'map', 'dots': dots, 'hi': [[0, first(o1)]], 'fly': True}
+option('opt1', o1, 1, 'READY NOW', 'The ready-made option.')
+# Hall v option 1, on what makes Hall special (RUL-KIB-008: keep the "him v his replacement" framing, most important stats)
+pf = o1['o']['fc']; cmp4 = [k for k in ranked if pf.get(k) is not None][:4]
 say4 = ", ".join(LAB[k][0] for k in cmp4[:-1]) + " and " + LAB[cmp4[-1]][0]
-line('compare', f"{SHORT} against {pick['name'].split()[-1]}, on what makes {SHORT} special: {say4}.", hold=0.2)
-row = lambda k: {'label': LAB[k][1], 'a': round(tf[k], 2), 'b': round(pf[k], 2), 'sub': 'per 90 minutes' if k != 'pass%' else 'per cent'}
-S['compare'] = {'type': 'compare', 'kicker': f"{SHORT} v {pick['name'].split()[-1]}", 'title': 'What makes him special.', 'a': {'name': NAME, 'season': ' + '.join(x[2:] for x in SEAS), 'face': tgp['face'], 'club': tgp['club']},
-                'b': {'name': pick['name'], 'season': ' + '.join(x[2:] for x in pick['o']['seasons']), 'face': pick['face'], 'club': pick['club']}, 'rows': [row(k) for k in cmp4], 'at': [LAB[k][0].upper().split()[0] for k in cmp4]}
-# where the pick is better (his own edge) + the honest caveat on a small sample
-edge = sorted([k for k in ('chances', 'drib', 'pass%', 'tkl', 'int') if pf.get(k) is not None and tf.get(k) is not None and pf[k] > tf[k]],
-              key=lambda k: -(pf[k] - tf[k]) / max(tf[k], 1e-9))[:2]
-VERB = {'chances': 'creates more chances', 'drib': 'dribbles even more', 'xA': 'sets up better chances', 'pass%': 'passes more accurately', 'tkl': 'tackles more', 'int': 'reads the game more', 'A': 'assists more'}
-mins = pick['o']['mins']; games = round(mins / 90)
-cav = f" Early days though: only {words(games)} games' worth of minutes." if mins < 900 else ""
-line('edge', f"And {pick['name'].split()[-1]} {VERB[edge[0]]}" + (f", and {VERB[edge[1]]}." if len(edge) > 1 else ".") + cav, hold=0.2)
-S['edge'] = {'type': 'compare', 'kicker': 'And', 'title': f"Where {pick['name'].split()[-1]} is better.", 'a': S['compare']['a'], 'b': S['compare']['b'], 'rows': [row(k) for k in edge],
-             'at': [VERB[k].split()[0].upper() for k in edge], 'caveat': (f"ONLY {mins} MINUTES IN TWO SEASONS" if cav else None), 'caveatAt': 'EARLY'}
-line('end', f"So {FROM}'s next {NAME}? {pick['name']}. Would you sign him? Follow for more.", hold=0.0)
-S['end'] = {'type': 'end', 'a': {'face': tgp['face'], 'club': tgp['club'], 'name': SHORT.upper()}, 'b': {'face': pick['face'], 'club': pick['club'], 'name': pick['name'].split()[-1].upper()},
-            'title': f"{FROM.upper()}'S NEXT {SHORT.upper()}", 'at': first(pick)}
+line('compare', f"{SHORT} against {last(o1)}, on what makes {SHORT} special: {say4}.", hold=0.2)
+row = lambda k, f: {'label': LAB[k][1], 'a': round(tf[k], 2), 'b': round(f[k], 2), 'sub': 'per 90 minutes' if k != 'pass%' else 'per cent'}
+side = lambda r: {'name': r['name'], 'season': ' + '.join(x[2:] for x in r['o']['seasons']), 'face': r['face'], 'club': r['club']}
+S['compare'] = {'type': 'compare', 'kicker': f"{SHORT} v {last(o1)}", 'title': f"What makes {SHORT} special.", 'a': {'name': NAME, 'season': ' + '.join(x[2:] for x in SEAS), 'face': tgp['face'], 'club': tgp['club']},
+                'b': side(o1), 'rows': [row(k, pf) for k in cmp4], 'at': [LAB[k][0].upper().split()[0] for k in cmp4]}
+line('filter', f"But {SHORT} is only {words(ti['age'])}. So what about {words(MA)} and under?", f"BUT {SHORT.upper()} IS ONLY {ti['age']}|{words(ti['age'])}. SO WHAT ABOUT {MA}|{words(MA)} AND UNDER?", sfx=[["whoosh", "SO", 0.6]])
+S['filter'] = {'type': 'map', 'dots': dots, 'maxAge': MA, 'fadeAt': 'SO', 'title': f"{MA} AND UNDER"}
+ys = [o2] + [r for r in young if r['name'] != o2['name']][:4]
+line('young', f"The closest is {o2['name']}, at {o2['team']}.", hold=0.1, sfx=[["hit", first(o2), 0.7]])
+S['young'] = {'type': 'table', 'rows': [{'name': r['name'], 'face': r['face'], 'club': r['club'], 'age': r['age'], 'value': money(r['value'])[1] if r['value'] else '—', 'm': r['match']} for r in ys],
+              'title': f"{MA} and under", 'pickAt': first(o2)}
+games = round(o2['o']['mins'] / 90)
+option('opt2', o2, 2, 'FOR THE FUTURE', 'One for the future.', f" But he's only played {words(games)} games' worth of minutes." if o2['o']['mins'] < 900 else '')
+line('end', f"So: {last(o1)} to do it now, or {last(o2)} for the future. Who would you sign? Follow for more.", hold=0.0)
+S['end'] = {'type': 'end2', 'a': {'face': tgp['face'], 'club': tgp['club'], 'name': SHORT.upper()}, 'title': f"HOW DO YOU REPLACE {SHORT.upper()}?",
+            'opts': [{'face': r['face'], 'club': r['club'], 'name': last(r).upper(), 'sub': f"{r['age']} · {money(r['value'])[1]} · {R0(r['match'])}%", 'tag': t_, 'at': last(r).upper()}
+                     for r, t_ in ((o1, 'READY NOW'), (o2, 'FOR THE FUTURE'))]}
 meta = {'series': EP.get('series', 'WHO REPLACES HIM?'), 'targetShort': SHORT, 'engine': 'video_replace.html', 'imgDir': IMG, 'clubColors': club_colours(),
         'source': 'Data: Opta via FotMob · top 5 leagues · ages and values: FotMob'}
 for l in L: l.setdefault('voiceSettings', {"speed": 1.08})
@@ -231,3 +231,6 @@ json.dump(L, open(os.path.join(OUT, 'lines.json'), 'w'), indent=0, ensure_ascii=
 json.dump({'meta': meta, 'scenes': S}, open(os.path.join(OUT, 'scenes.json'), 'w'), indent=0, ensure_ascii=False)
 json.dump({'provider': 'elevenlabs', 'voiceId': 'WAppqUXeqDqXjNTaQxG9'}, open(os.path.join(OUT, 'voice.json'), 'w'))
 for l in L: print(f"  [{l['id']}] {l['say']}")
+if os.environ.get('DEBUG_LIST'):
+    for r in rows[:12]: print('ALL', r['name'], r['match'], r['age'], r['team'], (r['value'] or 0) // 10**6, r['o']['mins'], r['o']['seasons'])
+    for r in young[:10]: print('YOUNG', r['name'], r['match'], r['age'], r['team'], (r['value'] or 0) // 10**6, r['o']['mins'], r['o']['seasons'], winsY[r['name']])
