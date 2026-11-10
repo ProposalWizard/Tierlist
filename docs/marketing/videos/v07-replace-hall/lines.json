@@ -1,8 +1,8 @@
 [
 {
 "id": "hook",
-"say": "Lewis Hall is off to Manchester United. So who replaces him at Newcastle?",
-"cap": "LEWIS HALL IS OFF TO MANCHESTER UNITED. SO WHO REPLACES HIM AT NEWCASTLE?",
+"say": "Lewis Hall is likely off to Manchester United. So how do you replace him?",
+"cap": "LEWIS HALL IS LIKELY OFF TO MANCHESTER UNITED. SO HOW DO YOU REPLACE HIM?",
 "sfx": [
 [
 "hit",
@@ -16,7 +16,7 @@
 ],
 [
 "hit",
-"WHO",
+"HOW",
 0.7
 ]
 ],
@@ -27,28 +27,23 @@
 },
 {
 "id": "profile",
-"say": "He's second of every Premier League full-back for dribbles, blocked shots and ball recoveries. But not many assists.",
-"cap": "HE'S SECOND OF EVERY PREMIER LEAGUE FULL-BACK FOR DRIBBLES, BLOCKED SHOTS AND BALL RECOVERIES. BUT NOT MANY ASSISTS.",
-"hold": 0.2,
+"say": "Over the last two seasons, among Premier League full-backs, he's first for ball recoveries and blocked shots, and fourth for dribbles. But only thirty-fourth for assists.",
+"cap": "OVER THE LAST TWO SEASONS, AMONG PREMIER LEAGUE FULL-BACKS, HE'S FIRST FOR BALL RECOVERIES AND BLOCKED SHOTS, AND FOURTH FOR DRIBBLES. BUT ONLY THIRTY-FOURTH FOR ASSISTS.",
+"hold": 0.3,
 "voiceSettings": {
 "speed": 1.08
 }
 },
 {
 "id": "method",
-"say": "So we compared him with all 140 left-backs in Europe's top five leagues. Every stat per ninety, two thousand tests.",
-"cap": "SO WE COMPARED HIM WITH ALL 140|140 LEFT-BACKS IN EUROPE'S TOP FIVE LEAGUES. EVERY STAT PER 90|ninety, 2,000|two-thousand TESTS.",
-"hold": 0.1,
+"say": "So we compared him with all 140 left-backs in Europe's top five leagues.",
+"cap": "SO WE COMPARED HIM WITH ALL 140|140 LEFT-BACKS IN EUROPE'S TOP FIVE LEAGUES.",
+"hold": 0.2,
 "sfx": [
 [
 "tick",
 "ALL",
 0.4
-],
-[
-"pop",
-"2,000",
-0.6
 ]
 ],
 "voiceSettings": {
@@ -57,18 +52,18 @@
 },
 {
 "id": "map",
-"say": "The two closest: Javi Galán and Neco Williams.",
-"cap": "THE TWO CLOSEST: JAVI GALÁN AND NECO WILLIAMS.",
+"say": "The two closest: Nuno Tavares and Javi Galán.",
+"cap": "THE TWO CLOSEST: NUNO TAVARES AND JAVI GALÁN.",
 "hold": 0.15,
 "sfx": [
 [
 "pop",
-"JAVI",
+"NUNO",
 0.5
 ],
 [
 "pop",
-"NECO",
+"JAVI",
 0.5
 ]
 ],
@@ -78,18 +73,18 @@
 },
 {
 "id": "judge",
-"say": "But Galán is thirty-one. And Williams is twenty-five, worth forty-two million euros.",
-"cap": "BUT GALÁN IS 31|thirty-one. AND WILLIAMS IS 25|twenty-five, WORTH €42M|forty-two-million-euros.",
+"say": "But Tavares is twenty-six, and Galán is thirty-one.",
+"cap": "BUT TAVARES IS 26|twenty-six, AND GALÁN IS 31|thirty-one.",
 "sfx": [
 [
 "hit",
-"31",
+"26",
 0.6
 ],
 [
 "hit",
-"€42M",
-0.5
+"31.",
+0.6
 ]
 ],
 "voiceSettings": {
@@ -144,8 +139,8 @@
 },
 {
 "id": "compare",
-"say": "Hall against Kaiki, on what makes Hall special: dribbles, blocked shots, ball recoveries and passes.",
-"cap": "HALL AGAINST KAIKI, ON WHAT MAKES HALL SPECIAL: DRIBBLES, BLOCKED SHOTS, BALL RECOVERIES AND PASSES.",
+"say": "Hall against Kaiki, on what makes Hall special: dribbles, ball recoveries, blocked shots and long balls.",
+"cap": "HALL AGAINST KAIKI, ON WHAT MAKES HALL SPECIAL: DRIBBLES, BALL RECOVERIES, BLOCKED SHOTS AND LONG BALLS.",
 "hold": 0.2,
 "voiceSettings": {
 "speed": 1.08
@@ -153,8 +148,8 @@
 },
 {
 "id": "edge",
-"say": "And Kaiki creates more chances, and dribbles even more. Early days though: only five games' worth this season.",
-"cap": "AND KAIKI CREATES MORE CHANCES, AND DRIBBLES EVEN MORE. EARLY DAYS THOUGH: ONLY FIVE GAMES' WORTH THIS SEASON.",
+"say": "And Kaiki creates more chances, and dribbles even more. Early days though: only five games' worth of minutes.",
+"cap": "AND KAIKI CREATES MORE CHANCES, AND DRIBBLES EVEN MORE. EARLY DAYS THOUGH: ONLY FIVE GAMES' WORTH OF MINUTES.",
 "hold": 0.2,
 "voiceSettings": {
 "speed": 1.08

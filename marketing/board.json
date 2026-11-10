@@ -155,12 +155,12 @@
  },
  {
   "id": "v07-replace-hall",
-  "title": "v07 · Who replaces Lewis Hall at Newcastle?",
+  "title": "v07 · How do you replace Lewis Hall?",
   "stage": "check",
   "owner": "Claude",
-  "updated": "2026-11-09T18:30:00Z",
+  "updated": "2026-11-10T10:00:00Z",
   "postOn": null,
-  "line": "Hall off to Man United: closest left-backs Galán (80%, 31) and Neco Williams (79%, 25, €42M); 23 and under only: Kaiki (Como, 23, €15M, 77%, first in 92% of tests).",
+  "line": "Hall likely off to Man United. Last two seasons: 1st of PL full-backs for ball recoveries and blocks, 4th dribbles, 34th assists. Closest: Tavares (84%, 26), Galán (80%, 31). 23 and under: Kaiki (Como, €15M, 77%).",
   "script": "docs/marketing/videos/v07-replace-hall/script.md",
   "cover": "docs/marketing/videos/v07-replace-hall/cover.png",
   "video": "docs/marketing/videos/v07-replace-hall/knowitball-v07-replace-hall.mp4",
@@ -168,7 +168,8 @@
   "links": [],
   "log": [
    "2026-11-09 From a TikTok Mikey shared (replacement-finder format). Waiting for Mikey to pick the player.",
-   "2026-11-09 Made: make_replace.py + video_replace.html (hook with badge swap, profile ranks, 140 left-backs count, map, judge, under-23 filter, table, pick with price bars, Hall v Kaiki, end). 51 s. Waiting for Mikey's look."
+   "2026-11-09 Made: make_replace.py + video_replace.html (hook with badge swap, profile ranks, 140 left-backs count, map, judge, under-23 filter, table, pick with price bars, Hall v Kaiki, end). 51 s. Waiting for Mikey's look.",
+   "2026-11-10 Mikey's notes: 'likely off to', 'how do you replace him?', last two seasons combined, ranking ladders with the players above/below him, 140 tiny faces instead of squares, no '2,000 tests' line. Closest now Tavares + Galán. 51 s. Waiting for Mikey's look."
   ]
  }
 ]

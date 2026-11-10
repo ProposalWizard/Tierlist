@@ -7,7 +7,7 @@
 # and left wing-back), posWord ("left-back"), maxAge (23 = "23 and under"), seasons, plus optional "say" overrides.
 import json, os, sys, re, random, collections, urllib.request, time, math
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, os.path.join(HERE, "model"))
-from finder_model import Data, W as FW
+from finder_model import Data, W as FW, feats
 EP = json.load(open(sys.argv[1])); OUT = os.path.abspath(sys.argv[2]); os.makedirs(OUT, exist_ok=True)
 DATA = os.environ.get("TWIN_DATA", "fm"); IMG = os.path.abspath(EP.get("imgDir", os.path.join(DATA, "..", "img"))); os.makedirs(IMG, exist_ok=True)
 CACHE = os.path.join(DATA, "..", "fmplayers.json")
@@ -68,28 +68,49 @@ def money(v):  # 62981262 -> ('sixty-three million euros', '€63M')
 # ---------- the search ----------
 D = Data(os.path.join(DATA, 'twin_data.json'))
 NAME, SHORT = EP['player'], EP.get('short', EP['player'].split()[-1])
-trows = D.find(NAME, EP['season']); assert trows, 'player/season not found'
-LGS = {int(k) for k in D.D['leagues']}
-order, _, tp, tf, GRP, cand = D.rank(trows, EP.get('seasons', ['2025/26', '2026/27']), LGS, include_own=False, n=1)
+# Mikey, 10 Nov 2026: this season + last season together (this season alone is ~10 games). Every player = his rows in those
+# seasons, each measured against its own league + season + position pool, then averaged by minutes.
+SEAS = EP.get('seasons', ['2025/26', '2026/27'])
+TGr = [o for o in D.rows if o['name'] == NAME and o['season'] in SEAS]; assert TGr, 'player not found'
+TG = max(TGr, key=lambda o: o['mins_played']); GRP = TG['group']; w = FW[GRP]
+ZC = {}
+def zrow(o):
+    if o['i'] not in ZC: ZC[o['i']] = D.pct_of(o['f'], D.pool(o['league'], o['s'], GRP), GRP)
+    return ZC[o['i']]
+def zmix(rs):
+    out = {}
+    for k in w:
+        s_ = t_ = 0
+        for o in rs:
+            z = zrow(o).get(k)
+            if z is not None: s_ += z * o['mins_played']; t_ += o['mins_played']
+        out[k] = s_ / t_ if t_ else None
+    return out
+tp = zmix(TGr); tf = feats(D.combine(TGr)); TMINS = sum(o['mins_played'] for o in TGr)
 POS = set(EP.get('positions', [38, 68]))
-best = {}
-for d, o in order:
-    if o['pos'] in POS and o['name'] not in best: best[o['name']] = (d, o)
-allpos = sorted(best.values(), key=lambda x: x[0]); NPOS = len(allpos); top = allpos[:EP.get('mapN', 60)]
-w = FW[GRP]
+byp = collections.defaultdict(list)
+for o in D.rows:
+    if o['season'] in SEAS and D.in_group(o, GRP) and D.min_ok(o) and o['name'] != NAME: byp[o['id']].append(o)
+allpos = []
+for pid, rs in byp.items():
+    main = max(rs, key=lambda o: o['mins_played'])
+    if main['pos'] not in POS: continue
+    z = zmix(rs); d = D.dist(tp, z, w)
+    if d >= 99: continue
+    allpos.append((d, {**main, '_pct': z, 'fc': feats(D.combine(rs)), 'mins': sum(o['mins_played'] for o in rs), 'seasons': sorted(o['season'] for o in rs)}))
+allpos.sort(key=lambda x: x[0]); NPOS = len(allpos); top = allpos[:EP.get('mapN', 60)]
 def tests(group, n=2000, seed=7):
     rnd = random.Random(seed); wins = collections.Counter()
     for _ in range(n):
         wr = {k: x * (0.5 + rnd.random()) for k, x in w.items()}
         b = min(group, key=lambda x: D.dist(tp, x[1]['_pct'], wr)); wins[b[1]['name']] += 1
     return wins
-winsAll = tests(top)
 rows = []
 for d, o in top:
     i = info(o['id']); rows.append({'name': o['name'], 'd': d, 'match': round(Data.match(d), 1), 'o': o, **i})
 young = [r for r in rows if r['age'] is not None and r['age'] <= EP.get('maxAge', 23)]
 winsY = tests([(r['d'], r['o']) for r in young[:30]])
-TG = trows[0]; ti = info(TG['id']); tgp = pics(TG['id'], EP.get('fromId', ti['teamId']))
+ti = info(TG['id']); tgp = pics(TG['id'], EP.get('fromId', ti['teamId']))
 for r in rows: r.update(pics(r['o']['id'], r['teamId'] or r['o']['teamId']))
 c1, c2 = rows[0], rows[1]; pick = young[0]
 print('compared', NPOS, 'players;', 'closest', [(r['name'], r['match'], r['age'], r['team']) for r in rows[:5]])
@@ -118,11 +139,15 @@ LAB = {'drib': ('dribbles', 'Dribbles'), 'rec': ('ball recoveries', 'Ball recove
        'chances': ('chances created', 'Chances created'), 'A': ('assists', 'Assists'), 'tkl': ('tackles', 'Tackles'), 'int': ('interceptions', 'Interceptions'),
        'xA': ('expected assists', 'Expected assists'), 'pass%': ('pass accuracy', 'Pass accuracy'), 'long': ('long balls', 'Long balls'), 'wonHigh': ('high regains', 'High regains'),
        'clear': ('clearances', 'Clearances'), 'npG': ('goals', 'Goals'), 'def': ('defensive actions', 'Defensive actions'), 'bigCC': ('big chances made', 'Big chances made')}
-POOL = D.pool(TG['league'], TG['s'], GRP)[0]
-def rank_of(k):
-    vals = sorted([o['f'][k] for o in POOL if o['f'].get(k) is not None], reverse=True); v = TG['f'].get(k)
-    return (vals.index(v) + 1, len(vals)) if v in vals else (None, len(vals))
-ranked = sorted([k for k in LAB if TG['f'].get(k) is not None and k in w and k != 'wonHigh'], key=lambda k: -(tp.get(k) or -9))
+lp = collections.defaultdict(list)
+for o in D.rows:
+    if o['season'] in SEAS and o['league'] == TG['league'] and D.in_group(o, GRP): lp[o['id']].append(o)
+POOL = [{'id': pid, 'name': rs[0]['name'], 'teamId': max(rs, key=lambda o: o['mins_played'])['teamId'], 'f': feats(D.combine(rs))}
+        for pid, rs in lp.items() if sum(o['mins_played'] for o in rs) >= 900]
+def ladder(k):
+    L_ = sorted([o for o in POOL if o['f'].get(k) is not None], key=lambda o: -o['f'][k]); i = next(j for j, o in enumerate(L_) if o['id'] == TG['id'])
+    lo = max(0, min(i - 1, len(L_) - 3)); return i + 1, len(L_), [(j + 1, L_[j]) for j in range(lo, lo + 3)]
+ranked = sorted([k for k in LAB if tf.get(k) is not None and k in w and k != 'wonHigh'], key=lambda k: -(tp.get(k) or -9))
 strong = ranked[:3]; weak = ranked[-1]
 LEAGUE = TG['leagueName']; POSW = EP.get('posWord', 'full-back'); GROUPW = {'FB': 'full-backs', 'CB': 'centre-backs', 'MID': 'midfielders', 'AMW': 'attackers', 'ST': 'strikers'}[GRP]
 fmt = lambda k, v: (f"{v:.0f}%" if k == 'pass%' else f"{v:.1f}" if v >= 1 or k in ('rec', 'drib', 'tkl', 'int', 'clear', 'long') else f"{v:.2f}")
@@ -131,33 +156,43 @@ fmt = lambda k, v: (f"{v:.0f}%" if k == 'pass%' else f"{v:.1f}" if v >= 1 or k i
 L, S = [], {}
 def line(id, say, cap=None, **kw): L.append(dict(id=id, say=say, cap=cap or say.upper(), **kw))
 FROM, TO = EP['from'], EP['to']
-line('hook', f"{NAME} is off to {TO}. So who replaces him at {FROM}?", sfx=[["hit", 0.0, 0.7], ["whoosh", TO.upper().split()[0], 0.6], ["hit", "WHO", 0.7]], voiceSettings={"speed": 1.1}, tempo=1.05)
-S['hook'] = {'type': 'hook', 'face': tgp['face'], 'flag': tgp['flag'], 'from': tgp['club'], 'to': 't' + str(EP['toId']), 'name': NAME.upper(), 'swapAt': TO.upper().split()[0], 'qAt': 'WHO',
-             'kicker': 'WHO REPLACES HIM?'}
-rk = [rank_of(k) for k in strong]; same = len({r[0] for r in rk}) == 1
-nth = ordinal(rk[0][0]) if same else None
-st_say = ", ".join(LAB[k][0] for k in strong[:-1]) + " and " + LAB[strong[-1]][0]
-line('profile', (f"He's {nth} of every {LEAGUE} {GROUPW[:-1]} for {st_say}." if same else f"He's top {words(max(r[0] for r in rk))} of every {LEAGUE} {GROUPW[:-1]} for {st_say}.")
-     + f" But {'he gets' if True else ''} very few {LAB[weak][0]}.".replace("he gets very few", "not many"), hold=0.2)
-wr_ = rank_of(weak)
-S['profile'] = {'type': 'profile', 'face': tgp['face'], 'club': tgp['club'], 'name': NAME.upper(), 'season': EP['season'],
-                'chips': [{'label': LAB[k][1], 'v': fmt(k, TG['f'][k]), 'rank': f"{r[0]}{osuf(r[0])} of {r[1]} {LEAGUE} {GROUPW}", 'at': LAB[k][0].upper().split()[0], 'good': True} for k, r in zip(strong, rk)]
-                         + [{'label': LAB[weak][1], 'v': fmt(weak, TG['f'][weak]), 'rank': f"{wr_[0]}{osuf(wr_[0])} of {wr_[1]}", 'at': 'BUT', 'good': False}]}
+line('hook', f"{NAME} is likely off to {TO}. So how do you replace him?", sfx=[["hit", 0.0, 0.7], ["whoosh", TO.upper().split()[0], 0.6], ["hit", "HOW", 0.7]], voiceSettings={"speed": 1.1}, tempo=1.05)
+S['hook'] = {'type': 'hook', 'face': tgp['face'], 'flag': tgp['flag'], 'from': tgp['club'], 'to': 't' + str(EP['toId']), 'name': NAME.upper(), 'swapAt': TO.upper().split()[0], 'qAt': 'HOW',
+             'kicker': 'HOW DO YOU REPLACE HIM?', 'likely': 'LIKELY'}
+# what makes him him: his three best stats and his worst (against the league's players in his position), each as a ladder:
+# the player above him, him, the player below (top three if he is first, bottom three if he is last) (Mikey, 10 Nov 2026)
+def lv(k, vals):  # enough decimals that the three ladder values don't look tied
+    if k == 'pass%': return [f"{v:.1f}%" for v in vals]
+    for dp in (1, 2, 3):
+        out = [f"{v:.{dp}f}" for v in vals]
+        if len(set(out)) == len(out): return out
+    return out
+LAD = []
+for k in strong + [weak]:
+    rk_, n_, three = ladder(k)
+    LAD.append({'k': k, 'label': LAB[k][1], 'rank': rk_, 'n': n_, 'good': k != weak, 'at': LAB[k][0].upper().split()[0] if k != weak else 'BUT',
+                'rows': [{'rank': j, 'name': o['name'], 'v': lv(k, [x['f'][k] for _, x in three])[n], 'me': o['id'] == TG['id'], **pics(o['id'], o['teamId'])} for n, (j, o) in enumerate(three)]})
+LAD[-1]['at'] = LAD[-1]['label'].upper().split()[0]
+byr = collections.OrderedDict()
+for l in sorted(LAD[:3], key=lambda l: l['rank']): byr.setdefault(l['rank'], []).append(LAB[l['k']][0])
+parts = [f"{ordinal(r)} for " + " and ".join(ks) for r, ks in byr.items()]
+said = (", ".join(parts[:-1]) + ", and " + parts[-1]) if len(parts) > 1 else parts[0]
+line('profile', f"Over the last two seasons, among {LEAGUE} {GROUPW}, he's {said}. But only {ordinal(LAD[3]['rank'])} for {LAB[weak][0]}.", hold=0.3)
+LAD[:3] = sorted(LAD[:3], key=lambda l: l['rank'])
+S['profile'] = {'type': 'ladder', 'stats': LAD, 'group': f"{LEAGUE} {GROUPW}".upper(), 'seasons': ' + '.join(SEAS)}
 lg_counts = collections.Counter(o['leagueName'] for d, o in allpos)
-line('method', f"So we compared him with all {NPOS} {POSW}s in Europe's top five leagues. Every stat per ninety, two thousand tests.",
-     f"SO WE COMPARED HIM WITH ALL {NPOS}|{words(NPOS)} {POSW.upper()}S IN EUROPE'S TOP FIVE LEAGUES. EVERY STAT PER 90|ninety, 2,000|two-thousand TESTS.", hold=0.1,
-     sfx=[["tick", "ALL", 0.4], ["pop", "2,000", 0.6]])
-S['method'] = {'type': 'method', 'n': NPOS, 'leagues': [[k, lg_counts[k]] for k in ['Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1']], 'posWord': POSW, 'at': 'ALL', 'testsAt': '2,000'}
+faces = {lg: [pics(o['id'], o['teamId'])['face'] for d, o in allpos if o['leagueName'] == lg] for lg in lg_counts}
+line('method', f"So we compared him with all {NPOS} {POSW}s in Europe's top five leagues.", f"SO WE COMPARED HIM WITH ALL {NPOS}|{words(NPOS)} {POSW.upper()}S IN EUROPE'S TOP FIVE LEAGUES.", hold=0.2,
+     sfx=[["tick", "ALL", 0.4]])
+S['method'] = {'type': 'method', 'n': NPOS, 'leagues': [[k, lg_counts[k], faces.get(k, [])] for k in ['Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1']], 'posWord': POSW, 'at': 'ALL'}
 dots = [{'k': i, 'x': round(r['mx'], 4), 'y': round(r['my'], 4), 'm': r['match'], 'age': r['age'], 'face': r['face'], 'club': r['club'], 'name': r['name']} for i, r in enumerate(rows)]
 first = lambda r: r['name'].split()[0].upper()
 line('map', f"The two closest: {c1['name']} and {c2['name']}.", hold=0.15, sfx=[["pop", first(c1), 0.5], ["pop", first(c2), 0.5]])
 S['map'] = {'type': 'map', 'dots': dots, 'hi': [[0, first(c1)], [1, first(c2)]], 'fly': True}
-v2s, v2c = money(c2['value'])
-line('judge', f"But {c1['name'].split()[-1]} is {words(c1['age'])}. And {c2['name'].split()[-1]} is {words(c2['age'])}, worth {v2s}.",
-     f"BUT {c1['name'].split()[-1].upper()} IS {c1['age']}|{words(c1['age'])}. AND {c2['name'].split()[-1].upper()} IS {c2['age']}|{words(c2['age'])}, WORTH {v2c}|{v2s.replace(' ', '-')}.",
-     sfx=[["hit", str(c1['age']), 0.6], ["hit", v2c, 0.5]])
-S['judge'] = {'type': 'judge', 'cards': [{**{k: c1[k] for k in ('name', 'face', 'club', 'match', 'age', 'team')}, 'stamp': f"{c1['age']}", 'at': str(c1['age'])},
-                                         {**{k: c2[k] for k in ('name', 'face', 'club', 'match', 'age', 'team')}, 'stamp': f"{c2['age']} · {v2c}", 'at': v2c}]}
+line('judge', f"But {c1['name'].split()[-1]} is {words(c1['age'])}, and {c2['name'].split()[-1]} is {words(c2['age'])}.",
+     f"BUT {c1['name'].split()[-1].upper()} IS {c1['age']}|{words(c1['age'])}, AND {c2['name'].split()[-1].upper()} IS {c2['age']}|{words(c2['age'])}.",
+     sfx=[["hit", str(c1['age']), 0.6], ["hit", str(c2['age']) + '.', 0.6]])
+S['judge'] = {'type': 'judge', 'cards': [{**{k: c[k] for k in ('name', 'face', 'club', 'match', 'age', 'team')}, 'stamp': f"AGE {c['age']}", 'at': str(c['age'])} for c in (c1, c2)]}
 MA = EP.get('maxAge', 23)
 line('filter', f"{SHORT} is only {words(ti['age'])}. So: {words(MA)} and under only.", f"{SHORT.upper()} IS ONLY {ti['age']}|{words(ti['age'])}. SO: {MA}|{words(MA)} AND UNDER ONLY.", sfx=[["whoosh", "SO:", 0.6]])
 S['filter'] = {'type': 'map', 'dots': dots, 'maxAge': MA, 'fadeAt': 'SO:', 'title': f"{MA} AND UNDER"}
@@ -171,21 +206,21 @@ line('pick', f"He's {words(pick['age'])}, and worth {vps}." + (f" {frac[0].upper
 S['pick'] = {'type': 'pick', 'face': pick['face'], 'club': pick['club'], 'flag': pick['flag'], 'name': pick['name'].upper(), 'team': pick['team'], 'age': pick['age'], 'value': vpc, 'm': pick['match'],
              'tests': round(100 * winsY[pick['name']] / 2000), 'hall': {'value': hvc, 'v': ti['value'], 'face': tgp['face']}, 'pv': pick['value'], 'fracAt': (frac.upper().split()[-1] if frac else None)}
 # Hall v the pick, on what makes Hall special (RUL-KIB-008: keep the "him v his replacement" framing, most important stats)
-pf = pick['o']['f']; cmp4 = [k for k in ranked if pf.get(k) is not None][:4]
+pf = pick['o']['fc']; cmp4 = [k for k in ranked if pf.get(k) is not None][:4]
 say4 = ", ".join(LAB[k][0] for k in cmp4[:-1]) + " and " + LAB[cmp4[-1]][0]
 line('compare', f"{SHORT} against {pick['name'].split()[-1]}, on what makes {SHORT} special: {say4}.", hold=0.2)
-row = lambda k: {'label': LAB[k][1], 'a': round(TG['f'][k], 2), 'b': round(pf[k], 2), 'sub': 'per 90 minutes' if k != 'pass%' else 'per cent'}
-S['compare'] = {'type': 'compare', 'kicker': f"{SHORT} v {pick['name'].split()[-1]}", 'title': 'What makes him special.', 'a': {'name': NAME, 'season': EP['season'], 'face': tgp['face'], 'club': tgp['club']},
-                'b': {'name': pick['name'], 'season': pick['o']['season'], 'face': pick['face'], 'club': pick['club']}, 'rows': [row(k) for k in cmp4], 'at': [LAB[k][0].upper().split()[0] for k in cmp4]}
+row = lambda k: {'label': LAB[k][1], 'a': round(tf[k], 2), 'b': round(pf[k], 2), 'sub': 'per 90 minutes' if k != 'pass%' else 'per cent'}
+S['compare'] = {'type': 'compare', 'kicker': f"{SHORT} v {pick['name'].split()[-1]}", 'title': 'What makes him special.', 'a': {'name': NAME, 'season': ' + '.join(x[2:] for x in SEAS), 'face': tgp['face'], 'club': tgp['club']},
+                'b': {'name': pick['name'], 'season': ' + '.join(x[2:] for x in pick['o']['seasons']), 'face': pick['face'], 'club': pick['club']}, 'rows': [row(k) for k in cmp4], 'at': [LAB[k][0].upper().split()[0] for k in cmp4]}
 # where the pick is better (his own edge) + the honest caveat on a small sample
-edge = sorted([k for k in ('chances', 'drib', 'pass%', 'tkl', 'int') if pf.get(k) is not None and TG['f'].get(k) is not None and pf[k] > TG['f'][k]],
-              key=lambda k: -(pf[k] - TG['f'][k]) / max(TG['f'][k], 1e-9))[:2]
+edge = sorted([k for k in ('chances', 'drib', 'pass%', 'tkl', 'int') if pf.get(k) is not None and tf.get(k) is not None and pf[k] > tf[k]],
+              key=lambda k: -(pf[k] - tf[k]) / max(tf[k], 1e-9))[:2]
 VERB = {'chances': 'creates more chances', 'drib': 'dribbles even more', 'xA': 'sets up better chances', 'pass%': 'passes more accurately', 'tkl': 'tackles more', 'int': 'reads the game more', 'A': 'assists more'}
-mins = pick['o']['mins_played']; games = round(mins / 90)
-cav = f" Early days though: only {words(games)} games' worth this season." if mins < 900 else ""
+mins = pick['o']['mins']; games = round(mins / 90)
+cav = f" Early days though: only {words(games)} games' worth of minutes." if mins < 900 else ""
 line('edge', f"And {pick['name'].split()[-1]} {VERB[edge[0]]}" + (f", and {VERB[edge[1]]}." if len(edge) > 1 else ".") + cav, hold=0.2)
 S['edge'] = {'type': 'compare', 'kicker': 'And', 'title': f"Where {pick['name'].split()[-1]} is better.", 'a': S['compare']['a'], 'b': S['compare']['b'], 'rows': [row(k) for k in edge],
-             'at': [VERB[k].split()[0].upper() for k in edge], 'caveat': (f"ONLY {mins} MINUTES THIS SEASON" if cav else None), 'caveatAt': 'EARLY'}
+             'at': [VERB[k].split()[0].upper() for k in edge], 'caveat': (f"ONLY {mins} MINUTES IN TWO SEASONS" if cav else None), 'caveatAt': 'EARLY'}
 line('end', f"So {FROM}'s next {NAME}? {pick['name']}. Would you sign him? Follow for more.", hold=0.0)
 S['end'] = {'type': 'end', 'a': {'face': tgp['face'], 'club': tgp['club'], 'name': SHORT.upper()}, 'b': {'face': pick['face'], 'club': pick['club'], 'name': pick['name'].split()[-1].upper()},
             'title': f"{FROM.upper()}'S NEXT {SHORT.upper()}", 'at': first(pick)}

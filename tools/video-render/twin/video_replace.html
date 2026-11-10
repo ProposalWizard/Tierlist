@@ -50,7 +50,7 @@ P.hook=(sc,p,s,t)=>{const ts=wordT(s,sc.swapAt),qt=wordT(s,sc.qAt),sw=ease((t-ts
   T(sc.name,540,1010,F(900,fit(sc.name,900,120,960)),WHITE,'center',ease((p-0.1)/0.3));
   // the move: his old badge, an arrow, the new badge
   const a0=ease((p-0.2)/0.3);badge(sc.from,t>=ts?250:470,1080,140,a0);
-  if(t>=ts){const k=back((t-ts)/0.45);T('→',540,1180,F(900,110),WHITE,'center',clamp(k));x.save();x.translate(760,1150);x.scale(clamp(k,0,1.2),clamp(k,0,1.2));badge(sc.to,-70,-70,140,1);x.restore();}
+  if(t>=ts){const k=back((t-ts)/0.45);T('→',540,1180,F(900,110),WHITE,'center',clamp(k));if(sc.likely)pill(sc.likely,540,1068,26,'rgba(0,0,0,0.55)',WHITE,0,clamp(k));x.save();x.translate(760,1150);x.scale(clamp(k,0,1.2),clamp(k,0,1.2));badge(sc.to,-70,-70,140,1);x.restore();}
   if(t>=qt){const kd=t-qt,q=clamp(kd/0.18);pill(sc.kicker,540,1330,52,GOLD,'#111',-0.03-0.05*(1-q),2.3-1.3*ease(q));}
   tag();};
 P.profile=(sc,p,s,t)=>{darkBg();tag();const b=back(p/0.4);face(sc.face,240,330,120*clamp(b,0,1.1),1,WHITE);badge(sc.club,320,400,64,ease(p/0.3));
@@ -59,12 +59,26 @@ P.profile=(sc,p,s,t)=>{darkBg();tag();const b=back(p/0.4);face(sc.face,240,330,1
     x.fillStyle=c.good?CARD:'rgba(255,59,92,0.16)';rr(64,y,952,170,28);x.fill();x.fillStyle=c.good?GOLD:RED;rr(64,y,14,170,7);x.fill();
     T(c.v,110,y+108,F(900,84),c.good?GOLD:RED);T(c.label.toUpperCase(),330,y+74,F(900,40),WHITE);T(c.rank,330,y+122,F(700,28),DIM);
     const rk=c.rank.match(/^\d+/)[0];T('#'+rk,980,y+112,F(900,76),c.good?WHITE:RED,'right');x.restore();});};
+P.ladder=(sc,p,s,t)=>{darkBg();tag();let cur=0,ct=s.start;sc.stats.forEach((st,i)=>{const at=wordT(s,st.at);if(i===0||t>=at){cur=i;ct=i===0?s.start:at;}});
+  const st=sc.stats[cur],k=ease((t-ct)/0.35),dx=(cur?1-k:0)*1080;
+  T('LAST TWO SEASONS · '+sc.group,540,236,F(800,26),GOLD,'center');
+  x.save();x.translate(dx,0);T(st.label.toUpperCase(),540,330,F(900,fit(st.label.toUpperCase(),900,80,960)),WHITE,'center');T(st.k==='pass%'?'per cent':'per 90 minutes',540,380,F(700,28),DIM,'center');
+  st.rows.forEach((r,i)=>{const a=ease((t-ct-0.08-i*0.1)/0.3);if(a<=0)return;const y=450+i*240,me=r.me,good=st.good;x.save();x.globalAlpha=a;x.translate(0,(1-a)*40);
+    if(me){x.translate(540,y+105);x.scale(1.05,1.05);x.translate(-540,-(y+105));}
+    x.fillStyle=me?(good?GOLD:RED):CARD;rr(56,y,968,210,34);x.fill();const fg=me?(good?'#111':WHITE):WHITE;
+    T('#'+r.rank,96,y+128,F(900,64),me?fg:DIM);face(r.face,330,y+105,82,1,me?(good?'#111':WHITE):'rgba(255,255,255,0.7)');badge(r.club,370,y+140,56,1);
+    const nm=r.name.toUpperCase();T(nm,450,y+96,F(900,fit(nm,900,46,380)),fg);T(me?'HIM':'',450,y+146,F(800,28),me?fg:DIM);
+    T(r.v,990,y+128,F(900,72),me?fg:(good?GOLD:WHITE),'right');x.restore();});
+  T(st.rank+(st.rank%100>10&&st.rank%100<14?'TH':({1:'ST',2:'ND',3:'RD'}[st.rank%10]||'TH'))+' OF '+st.n,540,1230,F(900,48),st.good?GOLD:RED,'center',ease((t-ct-0.3)/0.3));
+  x.restore();};
 P.method=(sc,p,s,t)=>{darkBg();tag();const at=wordT(s,sc.at),k=clamp((t-at)/1.1);title('THE SEARCH','Every '+sc.posWord+'.',ease(p/0.3));
   T(String(Math.round(sc.n*ease(k))),540,600,F(900,220),GOLD,'center',ease((t-at)/0.2));T((sc.posWord+'s · top 5 leagues').toUpperCase(),540,670,F(800,32),WHITE,'center',ease((t-at)/0.3));
   const tot=sc.leagues.reduce((a,l)=>a+l[1],0);let shown=Math.round(tot*k);
-  sc.leagues.forEach(([lg,n],j)=>{const cx=148+j*196;for(let i=0;i<n;i++){const g=sc.leagues.slice(0,j).reduce((a,l)=>a+l[1],0)+i;if(g>=shown)break;const col_=i%5,row=Math.floor(i/5);x.fillStyle=WHITE;x.globalAlpha=0.85;rr(cx-62+col_*26,1110-row*26,18,18,4);x.fill();x.globalAlpha=1;}
-    T(lg.replace('Premier League','PREM').toUpperCase(),cx,1170,F(800,24),DIM,'center',ease((t-at)/0.3));T(String(n),cx,1206,F(900,30),WHITE,'center',ease((t-at)/0.3));});
-  const tt=wordT(s,sc.testsAt);if(t>=tt){pill('× 2,000 TESTS',540,1320,54,RED,WHITE,-0.04,clamp(back((t-tt)/0.4),0,1.2));T('each test counts every stat differently',540,1410,F(700,28),DIM,'center',ease((t-tt-0.2)/0.3));}};
+  sc.leagues.forEach(([lg,n,fs],j)=>{const cx=148+j*196;for(let i=0;i<n;i++){const g=sc.leagues.slice(0,j).reduce((a,l)=>a+l[1],0)+i;if(g>=shown)break;const col_=i%5,row=Math.floor(i/5);
+      mini(fs&&fs[i],cx-62+col_*31+12,1120-row*31,13);}
+    T(lg.replace('Premier League','PREM').toUpperCase(),cx,1180,F(800,24),DIM,'center',ease((t-at)/0.3));T(String(n),cx,1216,F(900,30),WHITE,'center',ease((t-at)/0.3));});};
+function mini(k,X,Y,r){x.save();x.beginPath();x.arc(X,Y,r,0,7);x.fillStyle='#2a3658';x.fill();x.clip();const im=IMG[k];if(im)x.drawImage(im,X-r*1.05,Y-r*0.98,r*2.1,r*2.1);x.restore();x.save();x.strokeStyle='rgba(255,255,255,0.55)';x.lineWidth=1.5;x.beginPath();x.arc(X,Y,r,0,7);x.stroke();x.restore();}
+
 function mapPos(sc,d){const ms=sc.dots.map(o=>o.m),hi=Math.max(...ms),lo=Math.min(...ms),R=420;const f=(100-d.m-(100-hi))/Math.max(0.1,hi-lo);return {X:540+d.x*R*(0.36+0.64*f),Y:830-d.y*R*(0.36+0.64*f)};}
 P.map=(sc,p,s,t)=>{darkBg();tag();const young=sc.maxAge!=null,ft=young?wordT(s,sc.fadeAt):9e9,fd=ease((t-ft)/0.5);
   title(young?'THE FILTER':'THE MAP',young&&t>=ft?sc.title.charAt(0)+sc.title.slice(1).toLowerCase()+' only.':'Closest to '+(META.targetShort||'him')+'?');
