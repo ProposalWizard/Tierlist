@@ -544,8 +544,13 @@ export function syncIntl(career: CareerState): CareerState {
   }
   // Left out, in a league that stops for the break: your nation's matches go
   // on the calendar to watch (Plan B, Mikey 12 Oct 2026).
+  // Never beside an old save's summer tournament (lib/star/tournament.ts, the
+  // way it worked before the international world): its own fixtures run on
+  // their own weeks, and a June friendly to watch landed between two group
+  // games (tests/star/tournament.mts, 10 Nov 2026).
+  const oldTournamentOn = career.tournament?.season === career.season;
   const watchList = new Map<string, WorldMatch>();
-  if (stopsForBreaks(divisionOf(career))) {
+  if (stopsForBreaks(divisionOf(career)) && !oldTournamentOn) {
     for (const p of periodsFrom(w, nation, from)) {
       if (p.kind !== "window" || s.periods[p.key]?.called !== false) continue;
       for (const m of p.matches) {

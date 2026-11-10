@@ -53,6 +53,27 @@ if (!process.argv.includes("--skip-build")) {
 fs.rmSync(WWW, { recursive: true, force: true });
 fs.cpSync(BUILT, WWW, { recursive: true });
 for (const f of LEAVE_OUT) fs.rmSync(path.join(WWW, f), { recursive: true, force: true });
+// A .png that has a .webp twin and that no code names any more is the old
+// copy of a picture the game now loads as WebP (10 Nov 2026: 5 MB of them).
+const SOURCE_DIRS = ["app", "components", "lib"].map((d) => path.join(ROOT, d));
+// (not assetVersions.ts: a generated list of every file in public/star, so it names them all)
+const sourceText = [];
+const readAll = (d) => { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const f = path.join(d, e.name); if (e.isDirectory()) readAll(f); else if (/\.(tsx?|css|json)$/.test(e.name) && e.name !== "assetVersions.ts") sourceText.push(fs.readFileSync(f, "utf8")); } };
+SOURCE_DIRS.forEach(readAll);
+const allSource = sourceText.join("\n");
+let dropped = 0;
+const dropOldPngs = (d) => {
+  for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+    const f = path.join(d, e.name);
+    if (e.isDirectory()) { if (e.name !== "_next" && e.name !== "packed") dropOldPngs(f); continue; }
+    if (!e.name.endsWith(".png") || !fs.existsSync(f.replace(/\.png$/, ".webp"))) continue;
+    if (allSource.includes(e.name)) continue; // still named somewhere (by file name, so a built-up path counts)
+    dropped += fs.statSync(f).size;
+    fs.rmSync(f);
+  }
+};
+dropOldPngs(WWW);
+console.log(`left out ${(dropped / 1e6).toFixed(1)} MB of old .png copies`);
 fs.cpSync(PACKED, path.join(WWW, "packed"), { recursive: true });
 fs.rmSync(path.join(WWW, "packed", "problems.txt"), { force: true });
 
