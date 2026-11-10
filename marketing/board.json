@@ -173,5 +173,22 @@
    "2026-11-10 Two options, not one verdict (Mikey): Tavares = ready now (with Hall v Tavares card), Kaiki = for the future (467 minutes flagged). End card shows both. 52 s.",
    "2026-11-10 Re-rendered with real word times (captions and animations pinned to the spoken words). Same words, same numbers, 52 s."
   ]
+ },
+ {
+  "id": "twins-batch-01",
+  "title": "Stat Twins · batch 1 (27 videos)",
+  "stage": "check",
+  "owner": "Claude",
+  "updated": "2026-11-10T20:00:00Z",
+  "postOn": null,
+  "line": "27 Stat Twins videos picked by score: Benzema, Messi, Mbappé, De Bruyne, Mané, Rice, Van Dijk, Kane, Modrić, Bellingham, Ronaldo, Kanté, Hazard and 14 more. List, captions and scripts in the README.",
+  "script": "docs/marketing/videos/twins-batch-01/README.md",
+  "cover": "docs/marketing/videos/twins-batch-01/cover.png",
+  "video": "docs/marketing/videos/twins-batch-01/01-karim-benzema-2122.mp4",
+  "seconds": 64.6,
+  "links": [],
+  "log": [
+   "2026-11-10 Batch made: pick_batch.py scored 118 famous player-seasons, 27 chosen (one per player, all positions), all voiced by Hugo. Every video checked by eye; 8 re-rendered for name and bar fixes. Waiting for Mikey's look."
+  ]
  }
 ]
