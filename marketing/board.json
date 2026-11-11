@@ -206,20 +206,26 @@
  {
   "id": "v08-palmer-2627-twin",
   "title": "v08 · Current Cole Palmer (26/27)'s statistical twin",
-  "stage": "check",
+  "stage": "posted",
   "owner": "Claude",
-  "updated": "2026-11-11T17:30:00Z",
+  "updated": "2026-11-11T18:00:00Z",
   "postOn": null,
   "line": "Current Palmer (26/27) v the last 5 full Premier League seasons: Philippe Coutinho 21/22 (85%, first in 96% of tests). Antony 82nd. Right now: Dewsbury-Hall.",
   "script": "docs/marketing/videos/v08-palmer-2627-twin/script.md",
   "cover": "docs/marketing/videos/v08-palmer-2627-twin/cover.png",
-  "video": "docs/marketing/videos/v08-palmer-2627-twin/knowitball-v08-palmer-2627-twin.mp4",
+  "video": "docs/marketing/videos/v08-palmer-2627-twin/knowitball-v08-palmer-2627-twin-motion.mp4",
   "seconds": 66.3,
-  "links": [],
+  "links": [
+   {
+    "label": "Instagram Reel",
+    "url": "https://www.instagram.com/reel/Dfm632GgW6H/"
+   }
+  ],
   "log": [
    "2026-11-11 Made (Mikey's brief): full seasons only for the list, RIGHT NOW sticker on the hook, Antony surprise. Waiting for Mikey's look.",
    "2026-11-11 Motion remake (after the Tifo Short breakdown): knowitball-v08-palmer-2627-twin-motion.mp4 on the new video_motion.html engine (camera push, moving backgrounds, badge wallpaper, card flips, circle wipes, ticking numbers, confetti). Still 0% of the time (old 76%, Tifo 2%). Same voice and words.",
-   "2026-11-11 Mikey: keep the circle wipes and particles, take out the zoom/drift (it reset every scene). Re-rendered without it: still 8% of the time, longest still 1.6 s."
+   "2026-11-11 Mikey: keep the circle wipes and particles, take out the zoom/drift (it reset every scene). Re-rendered without it: still 8% of the time, longest still 1.6 s.",
+   "2026-11-11 Motion version posted to Instagram (knowitballjr) as a Reel via Windsor.ai."
   ]
  }
 ]
