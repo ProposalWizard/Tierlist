@@ -202,5 +202,22 @@
    "2026-11-10 Batch made: pick_batch.py scored 118 famous player-seasons, 27 chosen (one per player, all positions), all voiced by Hugo. Every video checked by eye; 8 re-rendered for name and bar fixes. Waiting for Mikey's look.",
    "2026-11-10 07 Van Dijk 18/19 posted to Instagram (knowitballjr) as a Reel via Windsor.ai. 26 of the batch still to post."
   ]
+ },
+ {
+  "id": "v08-palmer-2627-twin",
+  "title": "v08 · Current Cole Palmer (26/27)'s statistical twin",
+  "stage": "check",
+  "owner": "Claude",
+  "updated": "2026-11-11T16:00:00Z",
+  "postOn": null,
+  "line": "Current Palmer (26/27) v the last 5 full Premier League seasons: Philippe Coutinho 21/22 (85%, first in 96% of tests). Antony 82nd. Right now: Dewsbury-Hall.",
+  "script": "docs/marketing/videos/v08-palmer-2627-twin/script.md",
+  "cover": "docs/marketing/videos/v08-palmer-2627-twin/cover.png",
+  "video": "docs/marketing/videos/v08-palmer-2627-twin/knowitball-v08-palmer-2627-twin.mp4",
+  "seconds": 66.3,
+  "links": [],
+  "log": [
+   "2026-11-11 Made (Mikey's brief): full seasons only for the list, RIGHT NOW sticker on the hook, Antony surprise. Waiting for Mikey's look."
+  ]
  }
 ]

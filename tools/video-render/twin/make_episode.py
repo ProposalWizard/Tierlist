@@ -23,6 +23,7 @@ EP = json.load(open(sys.argv[1])); OUT = os.path.abspath(sys.argv[2]); os.makedi
 IMG = os.path.join(os.environ.get("TWIN_DATA", "fm"), "..", "img"); IMG = os.path.abspath(EP.get("imgDir", IMG)); os.makedirs(IMG, exist_ok=True)
 CUR = EP.get("current", "2026/27"); SEASONS = ['2016/17', '2017/18', '2018/19', '2019/20', '2020/21', '2021/22', '2022/23', '2023/24', '2024/25', '2025/26', '2026/27']
 FIVE = SEASONS[SEASONS.index(CUR) - 4: SEASONS.index(CUR) + 1]
+if EP.get('compareSeasons'): FIVE = EP['compareSeasons']   # e.g. the last 5 FULL seasons, so this season is only in "this season" (Mikey, 11 Nov 2026)
 W = W_SALAH  # the attacker weights (goals and xG x3, shots/assists/chances/big chances x2 ...)
 
 # ---------- numbers in words (for Hugo) ----------
@@ -230,7 +231,7 @@ for gi, g in enumerate(groups):
     S[id] = sc; side = -side; before += g
     if gi == 1 and sur:   # the surprise after the second place
         rk, d, v = sur; a = pics(v); a.update(rank=rk, match=round(Data.match(d, GRP), 1), text=f"Not even top {((rk - 1) // 5) * 5}")
-        st = EP.get('stories', {}).get(v['name']); st = (st[0].lower() + st[1:] + ' ') if st else ''
+        st = EP.get('stories', {}).get(v['name']); st = ((st[0].lower() + st[1:] if st.split()[0] in ('His', 'Her', 'The', 'A', 'An', 'Their') else st) + ' ') if st else ''   # "Manchester United's" keeps its capital
         line('surprise', f"You'd think {st}{spoken(v['name'])} would be up here? He's {ordinal(rk)}.", f"YOU'D THINK {st.upper()}{v['name'].upper()} WOULD BE UP HERE? HE'S {rk}{osuf(rk).upper()}.", hold=0.9, sfx=[["hit", "HE'S", 0.5]])
         S['surprise'] = {'type': 'cd2', 'list': 'top', 'show': [], 'before': list(before), 'prevShow': before[-1:], 'at': v['name'].upper().split()[0], 'aside': a, 'cont': True, 'from': side,
                          'pop': {**fact(v), 'at': "HE'S"}}; side = -side

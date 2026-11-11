@@ -1,0 +1,233 @@
+[
+{
+"id": "intro",
+"say": "Current Cole Palmer's statistical twin is not who you think.",
+"cap": "CURRENT COLE PALMER'S STATISTICAL TWIN IS NOT WHO YOU THINK.",
+"sfx": [
+[
+"hit",
+0.0,
+0.7
+],
+[
+"pop",
+"CURRENT",
+0.7
+]
+],
+"voiceSettings": {
+"speed": 1.1
+},
+"tempo": 1.05,
+"gapDb": -33,
+"maxGap": 0.06
+},
+{
+"id": "c7",
+"say": "Number seven: Marcus Tavernier. Eighty-two percent.",
+"cap": "NUMBER SEVEN: MARCUS TAVERNIER. 82%|eighty-two-percent.",
+"hold": 0.12,
+"sfx": [
+[
+"pop",
+"MARCUS",
+0.5
+]
+]
+},
+{
+"id": "c6",
+"say": "Six: Bryan Mbeumo. Eighty-two percent.",
+"cap": "SIX: BRYAN MBEUMO. 82%|eighty-two-percent.",
+"hold": 0.12,
+"sfx": [
+[
+"pop",
+"BRYAN",
+0.5
+]
+]
+},
+{
+"id": "surprise",
+"say": "You'd think Manchester United's Antony would be up here? He's eighty-second.",
+"cap": "YOU'D THINK MANCHESTER UNITED'S ANTONY WOULD BE UP HERE? HE'S 82ND.",
+"hold": 0.15,
+"sfx": [
+[
+"hit",
+"HE'S",
+0.5
+]
+]
+},
+{
+"id": "c5",
+"say": "Five: Hakim Ziyech. Eighty-two percent.",
+"cap": "FIVE: HAKIM ZIYECH. 82%|eighty-two-percent.",
+"hold": 0.12,
+"sfx": [
+[
+"pop",
+"HAKIM",
+0.5
+]
+]
+},
+{
+"id": "c4",
+"say": "Four: Bukayo Saka. Eighty-two percent.",
+"cap": "FOUR: BUKAYO SAKA. 82%|eighty-two-percent.",
+"hold": 0.12,
+"sfx": [
+[
+"pop",
+"BUKAYO",
+0.5
+]
+]
+},
+{
+"id": "c3",
+"say": "Three: Leandro Trossard. Eighty-two percent.",
+"cap": "THREE: LEANDRO TROSSARD. 82%|eighty-two-percent.",
+"hold": 0.12,
+"sfx": [
+[
+"pop",
+"LEANDRO",
+0.5
+]
+]
+},
+{
+"id": "c2",
+"say": "Two: Eberechi Eze. Eighty-three percent. Guess the twin in the comments.",
+"cap": "TWO: EBERECHI EZE. 83%|eighty-three-percent. GUESS THE TWIN IN THE COMMENTS.",
+"hold": 0.25,
+"sfx": [
+[
+"pop",
+"EBERECHI",
+0.5
+],
+[
+"pop",
+"GUESS",
+0.45
+]
+]
+},
+{
+"id": "c1",
+"say": "And number one... Philippe Coutinho. Eighty-five percent. That makes him Palmer's statistical twin.",
+"cap": "AND NUMBER ONE... PHILIPPE COUTINHO. 85%|eighty-five-percent. THAT MAKES HIM PALMER'S STATISTICAL TWIN.",
+"hold": 0.5,
+"sfx": [
+[
+"hit",
+"PHILIPPE",
+0.7
+],
+[
+"hit",
+"THAT",
+0.5
+]
+]
+},
+{
+"id": "why",
+"say": "Why? Almost the same expected assists and shots on target, every ninety minutes.",
+"cap": "WHY? ALMOST THE SAME EXPECTED ASSISTS AND SHOTS ON TARGET, EVERY 90|ninety MINUTES.",
+"hold": 0.3
+},
+{
+"id": "diff",
+"say": "The difference? Palmer defends more. Coutinho plays more long balls.",
+"cap": "THE DIFFERENCE? PALMER DEFENDS MORE. COUTINHO PLAYS MORE LONG BALLS.",
+"hold": 0.3
+},
+{
+"id": "n0",
+"say": "And this season only?",
+"cap": "AND THIS SEASON ONLY?",
+"hold": 0.05
+},
+{
+"id": "n5",
+"say": "Five: Jaidon Anthony.",
+"cap": "FIVE: JAIDON ANTHONY.",
+"hold": 0.08,
+"sfx": [
+[
+"pop",
+"JAIDON",
+0.5
+]
+]
+},
+{
+"id": "n4",
+"say": "Four: Matheus Cunha.",
+"cap": "FOUR: MATHEUS CUNHA.",
+"hold": 0.08,
+"sfx": [
+[
+"pop",
+"MATHEUS",
+0.5
+]
+]
+},
+{
+"id": "n3",
+"say": "Three: Justin Kluivert.",
+"cap": "THREE: JUSTIN KLUIVERT.",
+"hold": 0.08,
+"sfx": [
+[
+"pop",
+"JUSTIN",
+0.5
+]
+]
+},
+{
+"id": "n2",
+"say": "Two: Julio Enciso.",
+"cap": "TWO: JULIO ENCISO.",
+"hold": 0.08,
+"sfx": [
+[
+"pop",
+"JULIO",
+0.5
+]
+]
+},
+{
+"id": "now1",
+"say": "And number one, after about ten games... Kiernan Dewsbury-Hall. Eighty-three percent.",
+"cap": "AND NUMBER ONE, AFTER ABOUT TEN GAMES... KIERNAN DEWSBURY-HALL. 83%|eighty-three-percent.",
+"hold": 0.3,
+"sfx": [
+[
+"hit",
+"KIERNAN",
+0.7
+]
+]
+},
+{
+"id": "nowcmp",
+"say": "Dewsbury-Hall against Palmer, on what matters most for an attacker: goals, expected goals, shots and assists.",
+"cap": "DEWSBURY-HALL AGAINST PALMER, ON WHAT MATTERS MOST FOR AN ATTACKER: GOALS, EXPECTED GOALS, SHOTS AND ASSISTS.",
+"hold": 0.3
+},
+{
+"id": "end",
+"say": "So Palmer's twin is Philippe Coutinho. And right now, it's Kiernan Dewsbury-Hall. Follow for more.",
+"cap": "SO PALMER'S TWIN IS PHILIPPE COUTINHO. AND RIGHT NOW, IT'S KIERNAN DEWSBURY-HALL. FOLLOW FOR MORE."
+}
+]

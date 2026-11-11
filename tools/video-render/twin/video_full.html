@@ -68,6 +68,13 @@ function trophy(X,Y,sz,a=1,rot=0){if(a<=0||sz<=0)return;x.save();x.globalAlpha*=
   x.fillStyle='rgba(255,255,255,0.55)';x.beginPath();x.ellipse(-R*0.38,cy-R*0.42,R*0.22,R*0.12,-0.6,0,7);x.fill();x.restore();
   x.restore();}
 function awardOn(sc,s,t){const aw=sc.award;if(!aw)return;const at=wordT(s,aw.at),d=t-at;if(d<0)return;const b=back(d/0.45);
+  // kind 'now' (Mikey, 11 Nov 2026): a live "RIGHT NOW" sticker instead of the trophy: a red tag with a pulsing dot, stuck on his photo
+  if(aw.kind==='now'){const X=aw.x||300,Y=aw.y||300,k=clamp(b,0,1.15),pulse=0.5+0.5*Math.sin(t*7);x.save();x.translate(X,Y);x.rotate(-0.1+0.12*Math.sin(clamp(d,0,0.8)*14)*(1-clamp(d/0.8)));x.scale(k,k);
+    x.font=F(900,46);const lw=x.measureText(aw.label).width,w=lw+120,h=92;x.shadowColor='rgba(0,0,0,0.45)';x.shadowBlur=24;x.fillStyle='#e8112d';rr(-w/2,-h/2,w,h,22);x.fill();x.shadowBlur=0;
+    x.strokeStyle='#fff';x.lineWidth=5;rr(-w/2,-h/2,w,h,22);x.stroke();
+    x.fillStyle='rgba(255,255,255,'+(0.35*pulse)+')';x.beginPath();x.arc(-w/2+50,0,22+8*pulse,0,7);x.fill();x.fillStyle='#fff';x.beginPath();x.arc(-w/2+50,0,15,0,7);x.fill();
+    T(aw.label,-w/2+86,16,F(900,46),'#fff');x.restore();
+    if(aw.sub)pill(aw.sub,X,Y+92,28,'rgba(0,0,0,0.6)',WHITE,-0.06,ease(clamp((d-0.2)/0.3)));return;}
   const SZ=aw.size||220,X=aw.x||225,Y=aw.y||420,tw=0.18*Math.sin(clamp(d,0,1.2)*9)*(1-clamp(d/1.2)), bob=Math.sin(t*3)*6;
   trophy(X,Y+bob,SZ*b,clamp(d/0.12),-0.12+tw);
   // sparkles while it lands
