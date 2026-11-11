@@ -125,3 +125,12 @@ to `video_full.html`). Use it with `"engine": "video_motion.html"` in an episode
 card flips between countdown players, circle wipes between parts, comparison numbers that tick up, gold confetti on the twin.
 Measured (picture change every 0.1 s, caption band left out): old Palmer v08 still 76% of the time, Tifo Short 2%, motion Palmer 8% (0% with the camera push, taken out).
 Breakdown of the Tifo Short: https://claude.ai/artifact/GTG5ZcPRWLnCSV86sFWL1H
+
+## Faces from the season shown (11 Nov 2026)
+
+FotMob only has today's photo. `model/season_faces.py` gives a past season's face instead: it finds the player's EA/SoFIFA id for
+that season in our own `sofifa_players` table (every league, FIFA 18 = 2017/18; pulled once into `<data>/../sofifa_top5.json`),
+matched by name + league + club, then takes that year's photo from FUTBIN (a plain image link per edition), else FUTWIZ.
+No login and no faked headers (SoFIFA's own image server refuses plain requests, so it is not used). No match = today's FotMob photo.
+`make_episode.py` uses it for every past season (target, countdown, surprise, twin); "this season" players keep today's photo.
+`"todayFaces": true` in an episode turns it off. Checked on 16 players, 16 right (Salah 17/18 curly hair, Neymar 17/18 blond at PSG).

@@ -98,6 +98,11 @@ NAME, SHORT = EP['player'], EP.get('short') or lastname(EP['player'])
 def get(u):
     return urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'}), timeout=30).read()
 META = json.load(open(os.path.join(IMG, "meta.json"))) if os.path.exists(os.path.join(IMG, "meta.json")) else {}
+try:
+    from season_faces import SeasonFaces
+    SF = SeasonFaces(os.environ.get('TWIN_DATA', 'fm'), IMG)
+except Exception as e:
+    print('NOTE: season faces off:', str(e)[:80]); SF = None
 def pics(v):
     pid = v.get('id') or idx[(v['season'], v['name'])]
     if pid not in META or not META[pid].get('cc'):
@@ -109,7 +114,10 @@ def pics(v):
                     (f'https://images.fotmob.com/image_resources/logo/teamlogo/{v["teamId"]}.png', f't{v["teamId"]}.png')] + \
                    ([(f'https://images.fotmob.com/image_resources/logo/teamlogo/{cc.lower()}.png', f'c{cc}.png')] if cc else []):
         if not os.path.exists(os.path.join(IMG, fn)): open(os.path.join(IMG, fn), 'wb').write(get(url))
-    return {'name': v['name'], 'season': v['season'], 'face': 'p' + pid, 'club': 't' + str(v['teamId']), 'flag': 'c' + (cc or 'ENG')}
+    face = 'p' + pid
+    if SF and v.get('season') and v['season'] != CUR and not EP.get('todayFaces'):   # his face from THAT season (Mikey, 11 Nov 2026), today's photo if none
+        face = SF.face(pid, v['name'], v['season'], v.get('leagueName') or '', v['teamId']) or face
+    return {'name': v['name'], 'season': v['season'], 'face': face, 'club': 't' + str(v['teamId']), 'flag': 'c' + (cc or 'ENG')}
 def club_colours():
     from PIL import Image
     cols = {}
