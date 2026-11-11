@@ -208,7 +208,7 @@
   "title": "v08 · Current Cole Palmer (26/27)'s statistical twin",
   "stage": "check",
   "owner": "Claude",
-  "updated": "2026-11-11T16:00:00Z",
+  "updated": "2026-11-11T17:00:00Z",
   "postOn": null,
   "line": "Current Palmer (26/27) v the last 5 full Premier League seasons: Philippe Coutinho 21/22 (85%, first in 96% of tests). Antony 82nd. Right now: Dewsbury-Hall.",
   "script": "docs/marketing/videos/v08-palmer-2627-twin/script.md",
@@ -217,7 +217,8 @@
   "seconds": 66.3,
   "links": [],
   "log": [
-   "2026-11-11 Made (Mikey's brief): full seasons only for the list, RIGHT NOW sticker on the hook, Antony surprise. Waiting for Mikey's look."
+   "2026-11-11 Made (Mikey's brief): full seasons only for the list, RIGHT NOW sticker on the hook, Antony surprise. Waiting for Mikey's look.",
+   "2026-11-11 Motion remake (after the Tifo Short breakdown): knowitball-v08-palmer-2627-twin-motion.mp4 on the new video_motion.html engine (camera push, moving backgrounds, badge wallpaper, card flips, circle wipes, ticking numbers, confetti). Still 0% of the time (old 76%, Tifo 2%). Same voice and words."
   ]
  }
 ]
