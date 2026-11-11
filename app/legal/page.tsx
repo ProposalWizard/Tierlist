@@ -40,7 +40,7 @@ export default function LegalPage() {
           </section>
 
           {/* 2 */}
-          <section>
+          <section id="privacy">
             <h2 className="mb-3 text-lg font-bold text-white">2. Privacy Policy</h2>
             <h3 className="mb-2 font-semibold text-white">Information We Collect</h3>
             <p className="mb-2">
@@ -66,7 +66,29 @@ export default function LegalPage() {
               <li>maintain account features</li>
               <li>protect the website from misuse or abuse</li>
             </ul>
-            <p>We do not sell personal information to third parties.</p>
+            <p className="mb-4">We do not sell personal information to third parties.</p>
+            <h3 id="social-accounts" className="mb-2 font-semibold text-white">Our Own Social Media Accounts</h3>
+            <p className="mb-2">
+              Knowitball staff can connect Knowitball&apos;s own Instagram, Facebook and YouTube accounts to
+              a private admin tool on this website. The tool uploads our videos to those accounts and reads
+              their view, like and comment counts. It is never used with visitors&apos; accounts.
+            </p>
+            <ul className="mb-4 list-disc space-y-1.5 pl-5">
+              <li>Login tokens for those accounts are stored encrypted and are used only to post our videos and read their numbers.</li>
+              <li>No data from these platforms is sold or shared with anyone else.</li>
+              <li>
+                The tool uses YouTube API Services. By using it, our staff agree to the{" "}
+                <a className="underline" href="https://www.youtube.com/t/terms" target="_blank" rel="noreferrer">YouTube Terms of Service</a>, and
+                Google&apos;s use of data is covered by the{" "}
+                <a className="underline" href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Google Privacy Policy</a>.
+              </li>
+              <li>
+                Access can be removed at any time from the admin tool, or from{" "}
+                <a className="underline" href="https://security.google.com/settings/security/permissions" target="_blank" rel="noreferrer">Google security settings</a>{" "}
+                and Facebook&apos;s Business Integrations settings. Stored tokens are then deleted on request
+                (knowitballcontact@gmail.com).
+              </li>
+            </ul>
           </section>
 
           {/* 3 */}

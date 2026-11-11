@@ -2904,6 +2904,49 @@ export const ADMIN_GUIDES = {
     dev: "app/admin/marketing/uploads/page.tsx · components/admin/marketing/UploadsPanel.tsx · lib/marketing/uploadClient.ts · lib/marketing/{r2,mediaApi,storage,caller}.ts · /api/admin/marketing/{upload,upload/done,media} · tests/star/marketingStorage.mts",
   },
 
+  "/admin/marketing/publish": {
+    title: "Publish",
+    what: "Post a finished video to Instagram, Facebook and YouTube now or at a set time, and see its views, likes and comments. Admins only.",
+    buttons: [
+      { group: "Accounts", items: [
+        ["Connect Facebook + Instagram", "Opens Facebook's login. Pick the Knowitball Page and its Instagram, press Allow. One login connects both."],
+        ["Connect YouTube", "Opens Google's login. Pick the Knowitball channel, press Allow."],
+        ["Reconnect …", "Same as Connect. Use it if a platform says the login has run out."],
+        ["Forget", "Removes that platform's saved login. Posts to it stop until you connect again."],
+      ] },
+      { group: "New post", items: [
+        ["Video", "Pick a video already in our storage. Put new ones in with Marketing → Uploads first."],
+        ["Instagram / Facebook / YouTube", "Tick where it goes. A platform that is not connected cannot be ticked."],
+        ["Title (YouTube and Facebook)", "The video title. YouTube needs one."],
+        ["Caption (all platforms)", "Caption and hashtags. On YouTube it is the description."],
+        ["Different caption per platform", "Gives each platform its own caption box."],
+        ["Post now / Schedule", "Now posts within a few minutes. Schedule shows a date and time box."],
+        ["Post now / Schedule post (big button)", "Puts the post in the queue."],
+      ] },
+      { group: "Posts and numbers", items: [
+        ["↻ Check now", "Runs the poster straight away instead of waiting for the 5-minute timer, and refreshes numbers that are due."],
+        ["Post now", "Posts a scheduled post straight away."],
+        ["Cancel", "Stops a scheduled post. Nothing goes out."],
+        ["Try again", "Retries the platforms that failed. Platforms that already posted are not posted twice."],
+        ["open", "Opens the live post on that platform."],
+      ] },
+    ],
+    saving: [
+      "Shared with Harry, Mikey and Leo: the queue and results are in the database (tables publish_posts and publish_accounts). The page re-reads every minute.",
+      "Logins are stored encrypted. Nobody can read them from the page.",
+      "A timer in the database runs the poster every 5 minutes. Instagram takes a few extra minutes to process a Reel; it shows \"Instagram is processing it\" meanwhile.",
+      "Numbers refresh every 3 hours for 30 days after a post goes up.",
+      "A chat can also post: it uploads the video and queues it the same way (scripts/publish/post.mjs).",
+    ],
+    inGame: ["Nowhere. This posts our own videos to our own accounts."],
+    needs: [
+      "The database tables and timer: run supabase/migrations/publishing.sql once (with the cron secret pasted in). Without it the page says the tables are missing.",
+      "Vercel settings: PUBLISH_TOKEN_KEY, PUBLISH_CRON_SECRET, PUBLISH_AGENT_TOKEN, META_APP_ID, META_APP_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, plus the four R2 storage settings. The page lists any that are missing.",
+      "Until Google approves our YouTube audit, YouTube keeps every video posted from here private. Instagram must be a Professional account linked to the Facebook Page.",
+    ],
+    dev: "app/admin/marketing/publish/page.tsx · components/admin/marketing/PublishPanel.tsx · lib/publish/{engine,live,meta,youtube,db,crypto,auth,video,types}.ts · /api/admin/publish{,/[id],/tick,/upload,/accounts,/connect/[platform],/callback/[platform]} · supabase/migrations/publishing.sql · scripts/publish/post.mjs · tests/star/publishEngine.mts",
+  },
+
 } satisfies Record<string, AdminGuide>;
 
 export type GuidePage = keyof typeof ADMIN_GUIDES;
