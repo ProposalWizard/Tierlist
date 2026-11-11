@@ -50,6 +50,6 @@
     { "text": "But nobody touches the very first winner. Stanley Matthews, nineteen fifty-six. Forty-one years old.", "scene": { "type": "person", "person": "matthews", "label": "41 · 1956", "mood": "happy", "stamp": "OLDEST EVER" } },
     { "text": "So the window runs from twenty-one to forty-one. Twenty years.", "scene": { "type": "timeline", "items": [ { "year": "21", "label": "Ronaldo" }, { "year": "22", "label": "Best, Owen, Messi" }, { "year": "28", "label": "Eleven winners" }, { "year": "33", "label": "Kane" }, { "year": "41", "label": "Matthews" } ] } },
     { "text": "Now the only question left is yours. At what age would you win it?", "scene": { "type": "text", "heading": "YOUR TURN", "body": "Build a player from scratch in Road to Ballon d'Or and find out the age you'd win it." } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

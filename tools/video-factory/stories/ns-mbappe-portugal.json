@@ -34,6 +34,6 @@
     { "text": "On paper, it's two trophies either way. But he swaps a World Cup for a second Nations League.", "scene": { "type": "whatif", "title": "Mbappé's senior trophies", "real": { "label": "France (real)", "value": "2, incl. World Cup" }, "alt": { "label": "Portugal (imagined)", "value": "2, no World Cup" } } },
     { "text": "Unless, in this imagined world, his goals carry Portugal much further in Russia and Qatar.", "scene": { "type": "quote", "person": "mbappepor", "text": "Give me the ball, Cristiano." } },
     { "text": "Better deal or worse deal? Tell me in the comments.", "scene": { "type": "versus", "title": "Same player, different passport", "left": { "person": "mbappe", "label": "France", "value": "2" }, "right": { "person": "mbappepor", "label": "Portugal", "value": "2" } } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

@@ -44,6 +44,6 @@
     { "text": "Only one goalkeeper has ever won the Ballon d'Or. Lev Yashin, in nineteen sixty-three.", "scene": { "type": "timeline", "items": [ { "year": "1963", "label": "Yashin wins it" }, { "year": "2006", "label": "Buffon 2nd" }, { "year": "Today", "label": "Still only Yashin" } ] } },
     { "text": "Buffon never got closer. Twenty-oh-six was his shot.", "scene": { "type": "person", "person": "buffon", "mood": "flat", "label": "Never won it" } },
     { "text": "A keeper who let in two goals all tournament, and it still wasn't enough.", "scene": { "type": "stamp", "text": "ROBBED", "person": "buffon", "color": "red" } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

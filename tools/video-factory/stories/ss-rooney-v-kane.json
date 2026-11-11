@@ -36,6 +36,6 @@
     { "text": "Drogba beat Rooney with twenty-nine. Salah beat Kane with thirty-two.", "scene": { "type": "list", "title": "WHO BEAT THEM", "rows": [ { "name": "Drogba 2009-10", "value": "29", "club": "chelsea", "hl": true }, { "name": "Rooney 2009-10", "value": "26", "club": "manutd" }, { "name": "Salah 2017-18", "value": "32", "club": "liverpool", "hl": true }, { "name": "Kane 2017-18", "value": "30", "club": "spurs" } ] } },
     { "text": "Rooney's what-if: he got injured against Bayern in the spring, and United lost to Chelsea without him.", "scene": { "type": "whatif", "title": "IN THIS ALTERNATE WORLD", "real": { "label": "Rooney injured", "value": "United 2nd by a point" }, "alt": { "label": "Imagined fit Rooney", "value": "Title race goes on" } } },
     { "text": "Kane scored more. Rooney came closer to winning it all, and got a medal. Settled: Rooney.", "scene": { "type": "stamp", "text": "ROONEY", "person": "rooney", "color": "white" } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

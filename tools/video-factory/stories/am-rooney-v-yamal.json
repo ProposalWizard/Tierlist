@@ -34,6 +34,6 @@
     { "text": "After seventeen caps, Rooney had nine goals. Yamal had three.", "scene": { "type": "stats", "title": "Goals after 17 caps", "items": [ { "n": "9", "l": "Rooney" }, { "n": "3", "l": "Yamal" } ] } },
     { "text": "Rooney was the finisher. Yamal is the creator. Different jobs, different numbers.", "scene": { "type": "quote", "person": "yamal", "text": "I'll take the trophy." } },
     { "text": "So who was the better eighteen-year-old? Rooney or Yamal? Tell me in the comments.", "scene": { "type": "versus", "title": "The better 18-year-old?", "left": { "person": "rooney", "label": "Goals", "value": "9" }, "right": { "person": "yamal", "label": "Trophies", "value": "1" } } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

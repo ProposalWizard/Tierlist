@@ -1,21 +1,231 @@
 [
-  {
-    "id": "v01-patch-0.1-0.3",
-    "title": "v01 · Patch notes 0.1 to 0.3",
-    "stage": "posted",
-    "owner": "Claude",
-    "updated": "2026-10-21T11:19:27Z",
-    "postOn": "2026-10-21",
-    "line": "Three mates building the best football game ever: the keeper who saved everything (9.8% → 47.6%), Goalie Mode, exact aim, real grass, no more team-mates in the way.",
-    "script": "docs/marketing/videos/v01-patch-0.1-0.3/script.md",
-    "cover": "docs/marketing/videos/v01-patch-0.1-0.3/cover.png",
-    "video": "docs/marketing/videos/v01-patch-0.1-0.3/knowitball-v01-patch-0.1-0.3.mp4",
-    "seconds": 44.7,
-    "links": [],
-    "log": [
-      "2026-10-21 Script: 11 beats, each from a line of patch notes 0.1, 0.2 or 0.3.",
-      "2026-10-21 Made: drawn frame by frame in a browser, voice by Kokoro (bm_george), 1080×1920.",
-      "2026-10-21 Done: committed with its cover and script (commit 9b770682). No channel link recorded yet: add it under links."
-    ]
-  }
+ {
+  "id": "v01-patch-0.1-0.3",
+  "title": "v01 · Patch notes 0.1 to 0.3",
+  "stage": "posted",
+  "owner": "Claude",
+  "updated": "2026-10-21T11:19:27Z",
+  "postOn": "2026-10-21",
+  "line": "Three mates building the best football game ever: the keeper who saved everything (9.8% → 47.6%), Goalie Mode, exact aim, real grass, no more team-mates in the way.",
+  "script": "docs/marketing/videos/v01-patch-0.1-0.3/script.md",
+  "cover": "docs/marketing/videos/v01-patch-0.1-0.3/cover.png",
+  "video": "docs/marketing/videos/v01-patch-0.1-0.3/knowitball-v01-patch-0.1-0.3.mp4",
+  "seconds": 44.7,
+  "links": [],
+  "log": [
+   "2026-10-21 Script: 11 beats, each from a line of patch notes 0.1, 0.2 or 0.3.",
+   "2026-10-21 Made: drawn frame by frame in a browser, voice by Kokoro (bm_george), 1080×1920.",
+   "2026-10-21 Done: committed with its cover and script (commit 9b770682). No channel link recorded yet: add it under links."
+  ]
+ },
+ {
+  "id": "ch-analysed-like-chess",
+  "title": "CH-03 · Mourinho v Pep, Camp Nou 2010, analysed like chess",
+  "stage": "check",
+  "owner": "Claude",
+  "updated": "2026-11-07T21:30:00Z",
+  "line": "He lost the game 1-0 and still won the match: Inter's 10 men at the Camp Nou, told move by move like a chess game.",
+  "links": [
+   "https://claude.ai/artifact/LrX1XPQMcAKW7GTuRUeqWW"
+  ],
+  "log": [
+   "2026-11-06 Idea: format taken from 4 TikToks (R14 to R17 in docs/marketing/video-ideas.md). Waiting for Mikey to pick the first story.",
+   "2026-11-07 Mikey picked CH-03. Facts checked (sources in the story file). Making: voice E, drawn chessboard pitch, 1080x1920.",
+   "2026-11-07 Made: 75 s, voice E, drawn chessboard pitch. Two lines reworded because the voice said 'trouble' for 'treble'. Waiting for Mikey's check.",
+   "2026-11-07 v2 after Mikey's notes: football first (real pitch, every player a named icon, camera on the action), chess grades and eval bar on top; Eto'o said right; voice ends on 'Follow for more.' only.",
+   "2026-11-07 Mikey prefers the real-clips draft. Not rebuilding yet: plan page made (clip log so every clip shows what is said, 15 graded moves, win bar from a goals model, scoreboard options A/B). Waiting for his calls.",
+   "2026-11-07 Mikey: scoreboard A, real badges, one video, keep the clips' sound; Mikey and Harry OK'd posting real footage (RUL-KIB-006). Making the real-clips version: 15 graded moves, every clip checked against its line.",
+   "2026-11-07 Made the real-clips version (3:09): 15 graded moves, game review, scoreboard A with real faces and badges, clips' own sound under the voice. The file stays out of the repo (real footage); sent to Mikey in chat. Waiting for his check."
+  ],
+  "script": "tools/video-factory/stories/ch-mourinho-pep-2010.json",
+  "seconds": 189.4
+ },
+ {
+  "id": "v02-salah-twin",
+  "title": "v02 · Salah's statistical twin",
+  "stage": "check",
+  "owner": "Claude",
+  "updated": "2026-11-09T12:00:00Z",
+  "postOn": null,
+  "line": "Who is Salah 24/25's statistical twin? Every PL attacker season 22/23–26/27, plus this season only.",
+  "script": "docs/marketing/videos/v02-salah-twin/script.md",
+  "cover": "docs/marketing/videos/v02-salah-twin/cover.png",
+  "video": "docs/marketing/videos/v02-salah-twin/knowitball-v02-salah-twin.mp4",
+  "seconds": 83.6,
+  "links": [
+   {
+    "label": "Instagram Reel",
+    "url": "https://www.instagram.com/reel/Dfeyp03DdGt/"
+   }
+  ],
+  "log": [
+   "2026-11-07 Card made; data done (FotMob/Opta PL stats), script being written. Mikey's statistical-twins format.",
+   "2026-11-07 Rendered 87.2 s: Kane 21/22 overall, Barnes 24/25 most similar winger, Cherki right now. Waiting for Mikey's look.",
+   "2026-11-07 v2 cut (Mikey's notes): faces, badges, flags, % match, 5-s intro, long countdown. Answer now Cole Palmer 23/24 (79%); this season Cherki (76%). Waiting for Mikey's look.",
+   "2026-11-08 v3 cut (Mikey's notes): Hugo voice (ElevenLabs), Salah's own seasons shown first and greyed out, countdown from the bottom, 'first in 79% of tests', Cherki compare, end card Salah = Palmer and Salah = Cherki, 'Follow for more.' Waiting for Mikey's look.",
+   "2026-11-08 v4 cut (Mikey's picks): 4-s intro, '100% = identical' on screen only, 'You'd think Saka? 31st', guess sticker at #4, pop-up fact per player, alternating slide-ins; Hugo sped up 13%. 95 s -> 80 s. Waiting for Mikey's look.",
+   "2026-11-08 Intro card now shows the two twins blurred (LAST 5 YEARS, CURRENT), Mikey's ask. Still 79.9 s. Waiting for Mikey's look.",
+   "2026-11-08 v5 cut: Poster style picked by Mikey (#6); Salah's own seasons removed with an animation, list re-ranked to a top 5 (Palmer #1); 'this season' starts at #5 Enciso; why +0.2 s, diff +0.35 s; end card in club colours; Saka 28th. Waiting for Mikey's look.",
+   "2026-11-08 Opening line now 'Who is prime Mo Salah's statistical twin?' (Mikey).",
+   "2026-11-08 'prime' sounded like 'primer': a 0.25 s break after 'prime' in the ElevenLabs text, the pause kept (maxGap 0.12 for that line).",
+   "2026-11-08 Opening now one flowing line: 'Who is prime Mo Salah's statistical twin? From the last five seasons.' (take with ElevenLabs speed 1.1, seed 23; no break, pauses trimmed).",
+   "2026-11-08 Posted to Instagram (knowitballjr) as a Reel via Windsor.ai. TikTok and YouTube Shorts still to post (Windsor can't post there).",
+   "2026-11-09 45 s cut made (short-45s/): hook 'His twin is not who you think' on screen from frame 0, faster countdown. Answer to IG stats (60% skip in 3 s, 11 s avg watch).",
+   "2026-11-09 Fast cut (49 s): hook pill slams on, no pauses between places, club-colour wipes between players, this season's top 5 back."
+  ]
+ },
+ {
+  "id": "v03-palmer-10-years",
+  "title": "v03 · Palmer 10 years ago",
+  "stage": "check",
+  "owner": "Claude",
+  "updated": "2026-11-07T21:30:00Z",
+  "postOn": null,
+  "line": "Who was Cole Palmer 10 years ago? His 24/25 + 25/26 + 26/27 per 90 against every PL attacker in 2016/17.",
+  "script": "docs/marketing/videos/v03-palmer-10-years/script.md",
+  "cover": "docs/marketing/videos/v03-palmer-10-years/cover.png",
+  "video": "docs/marketing/videos/v03-palmer-10-years/knowitball-v03-palmer-10-years.mp4",
+  "seconds": 82.1,
+  "links": [],
+  "log": [
+   "2026-11-07 Card made; data done (FotMob/Opta PL stats), script being written. Mikey's statistical-twins format.",
+   "2026-11-07 Rendered 78.4 s: Coutinho 16/17 (1,596 of 2,000 runs), Barkley surprise. Waiting for Mikey's look.",
+   "2026-11-07 v2 cut (Mikey's notes): faces, badges, flags, % match, real per-90 numbers. Answer now Roberto Firmino 16/17 (86%); 24/25 alone = Coutinho (83%). Waiting for Mikey's look."
+  ]
+ },
+ {
+  "id": "v04-haaland-twin",
+  "title": "v04 · Haaland's statistical twin",
+  "stage": "check",
+  "owner": "Claude",
+  "updated": "2026-11-08T23:00:00Z",
+  "postOn": null,
+  "line": "Who is prime Erling Haaland's (22/23) statistical twin? Callum Wilson 22/23, 90%. Right now: João Pedro.",
+  "script": "docs/marketing/videos/v04-haaland-twin/script.md",
+  "cover": "docs/marketing/videos/v04-haaland-twin/cover.png",
+  "video": "docs/marketing/videos/v04-haaland-twin/knowitball-v04-haaland-twin.mp4",
+  "seconds": 79.9,
+  "links": [],
+  "log": [
+   "2026-11-08 First episode made with make_episode.py (the locked Stat Twins format, PRO-KIB-001) from episodes/haaland-2223.json; one small engine fix (long names on the compare card). Waiting for Mikey's look."
+  ]
+ },
+ {
+  "id": "v05-neymar-twin",
+  "title": "v05 · Neymar 17/18's statistical twin",
+  "stage": "posted",
+  "owner": "Claude",
+  "updated": "2026-11-10T21:00:00Z",
+  "postOn": null,
+  "line": "Prime Neymar (17/18)'s statistical twin across the top 5 leagues: Michael Olise 25/26 (89%). Right now: Lamine Yamal.",
+  "script": "docs/marketing/videos/v05-neymar-twin/script.md",
+  "cover": "docs/marketing/videos/v05-neymar-twin/cover.png",
+  "video": "docs/marketing/videos/v05-neymar-twin/knowitball-v05-neymar-twin.mp4",
+  "seconds": 57.3,
+  "links": [
+   {
+    "label": "Instagram Reel",
+    "url": "https://www.instagram.com/reel/DfkTe_xD9NN/"
+   }
+  ],
+  "log": [
+   "2026-11-09 First top-5-leagues episode: make_episode.py now uses the Twin Finder data and method, fast style by default. Waiting for Mikey's look.",
+   "2026-11-09 Top 5 instead of top 8; surprise is Messi 22/23 (6th), 'his old PSG team-mate'. 57 s.",
+   "2026-11-10 Posted to Instagram (knowitballjr) as a Reel via Windsor.ai, Mikey's pick. It shows 89% from the older % scale (today's scale: 80%)."
+  ]
+ },
+ {
+  "id": "v06-kane-twin",
+  "title": "v06 · Kane 25/26's statistical twin",
+  "stage": "posted",
+  "owner": "Claude",
+  "updated": "2026-11-09T17:30:00Z",
+  "postOn": null,
+  "line": "Ballon d'Or winner Harry Kane (25/26)'s statistical twin across the top 5 leagues: Kylian Mbappé 23/24 (82%, also 3rd and 5th). Haaland only 14th. Right now: Mbappé.",
+  "script": "docs/marketing/videos/v06-kane-twin/script.md",
+  "cover": "docs/marketing/videos/v06-kane-twin/cover.png",
+  "video": "docs/marketing/videos/v06-kane-twin/knowitball-v06-kane-twin.mp4",
+  "seconds": 59.8,
+  "links": [
+   {
+    "label": "Instagram Reel",
+    "url": "https://www.instagram.com/reel/Dfh8VT-Ez_t/"
+   }
+  ],
+  "log": [
+   "2026-11-09 First episode on the plain-scale %. Top 7, Haaland surprise (14th), hook says Ballon d'Or winner. Waiting for Mikey's look.",
+   "2026-11-09 Mikey's notes: Ballon d'Or trophy pops onto Kane; club names no longer said after each player; ending says 'right now, it's also Kylian Mbappé'. 60 s.",
+   "2026-11-09 'This season' card now shows what matters most for a striker (goals, xG, shots, assists), not just the two closest stats.",
+   "2026-11-09 Posted to Instagram (knowitballjr) as a Reel via Windsor.ai, cover at 1.5 s (trophy on). TikTok and YouTube Shorts still to post by hand."
+  ]
+ },
+ {
+  "id": "v07-replace-hall",
+  "title": "v07 · How do you replace Lewis Hall?",
+  "stage": "check",
+  "owner": "Claude",
+  "updated": "2026-11-10T14:00:00Z",
+  "postOn": null,
+  "line": "Hall likely off to Man United. Two options: Nuno Tavares (Lazio, 26, €14M, 84%) ready now, or Kaiki (Como, 23, €15M, 77%) for the future.",
+  "script": "docs/marketing/videos/v07-replace-hall/script.md",
+  "cover": "docs/marketing/videos/v07-replace-hall/cover.png",
+  "video": "docs/marketing/videos/v07-replace-hall/knowitball-v07-replace-hall.mp4",
+  "seconds": 52.3,
+  "links": [],
+  "log": [
+   "2026-11-09 From a TikTok Mikey shared (replacement-finder format). Waiting for Mikey to pick the player.",
+   "2026-11-09 Made: make_replace.py + video_replace.html (hook with badge swap, profile ranks, 140 left-backs count, map, judge, under-23 filter, table, pick with price bars, Hall v Kaiki, end). 51 s. Waiting for Mikey's look.",
+   "2026-11-10 Mikey's notes: 'likely off to', 'how do you replace him?', last two seasons combined, ranking ladders with the players above/below him, 140 tiny faces instead of squares, no '2,000 tests' line. Closest now Tavares + Galán. 51 s. Waiting for Mikey's look.",
+   "2026-11-10 Two options, not one verdict (Mikey): Tavares = ready now (with Hall v Tavares card), Kaiki = for the future (467 minutes flagged). End card shows both. 52 s.",
+   "2026-11-10 Re-rendered with real word times (captions and animations pinned to the spoken words). Same words, same numbers, 52 s."
+  ]
+ },
+ {
+  "id": "twins-batch-01",
+  "title": "Stat Twins · batch 1 (27 videos)",
+  "stage": "check",
+  "owner": "Claude",
+  "updated": "2026-11-10T21:30:00Z",
+  "postOn": null,
+  "line": "27 Stat Twins videos picked by score: Benzema, Messi, Mbappé, De Bruyne, Mané, Rice, Van Dijk, Kane, Modrić, Bellingham, Ronaldo, Kanté, Hazard and 14 more. List, captions and scripts in the README.",
+  "script": "docs/marketing/videos/twins-batch-01/README.md",
+  "cover": "docs/marketing/videos/twins-batch-01/cover.png",
+  "video": "docs/marketing/videos/twins-batch-01/01-karim-benzema-2122.mp4",
+  "seconds": 64.6,
+  "links": [
+   {
+    "label": "Instagram Reel · 07 Van Dijk",
+    "url": "https://www.instagram.com/reel/DfkXvJpFbEU/"
+   }
+  ],
+  "log": [
+   "2026-11-10 Batch made: pick_batch.py scored 118 famous player-seasons, 27 chosen (one per player, all positions), all voiced by Hugo. Every video checked by eye; 8 re-rendered for name and bar fixes. Waiting for Mikey's look.",
+   "2026-11-10 07 Van Dijk 18/19 posted to Instagram (knowitballjr) as a Reel via Windsor.ai. 26 of the batch still to post."
+  ]
+ },
+ {
+  "id": "v08-palmer-2627-twin",
+  "title": "v08 · Current Cole Palmer (26/27)'s statistical twin",
+  "stage": "posted",
+  "owner": "Claude",
+  "updated": "2026-11-11T18:00:00Z",
+  "postOn": null,
+  "line": "Current Palmer (26/27) v the last 5 full Premier League seasons: Philippe Coutinho 21/22 (85%, first in 96% of tests). Antony 82nd. Right now: Dewsbury-Hall.",
+  "script": "docs/marketing/videos/v08-palmer-2627-twin/script.md",
+  "cover": "docs/marketing/videos/v08-palmer-2627-twin/cover.png",
+  "video": "docs/marketing/videos/v08-palmer-2627-twin/knowitball-v08-palmer-2627-twin-motion.mp4",
+  "seconds": 66.3,
+  "links": [
+   {
+    "label": "Instagram Reel",
+    "url": "https://www.instagram.com/reel/Dfm632GgW6H/"
+   }
+  ],
+  "log": [
+   "2026-11-11 Made (Mikey's brief): full seasons only for the list, RIGHT NOW sticker on the hook, Antony surprise. Waiting for Mikey's look.",
+   "2026-11-11 Motion remake (after the Tifo Short breakdown): knowitball-v08-palmer-2627-twin-motion.mp4 on the new video_motion.html engine (camera push, moving backgrounds, badge wallpaper, card flips, circle wipes, ticking numbers, confetti). Still 0% of the time (old 76%, Tifo 2%). Same voice and words.",
+   "2026-11-11 Mikey: keep the circle wipes and particles, take out the zoom/drift (it reset every scene). Re-rendered without it: still 8% of the time, longest still 1.6 s.",
+   "2026-11-11 Motion version posted to Instagram (knowitballjr) as a Reel via Windsor.ai."
+  ]
+ }
 ]

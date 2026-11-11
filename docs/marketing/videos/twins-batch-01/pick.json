@@ -1,0 +1,7416 @@
+{
+ "picked": [
+  {
+   "player": "Karim Benzema",
+   "season": "2021/22",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 3,
+   "award": "Ballon d'Or winner",
+   "twin": "Kylian Mbappé",
+   "twinSeason": "2022/23",
+   "twinClub": 9847,
+   "match": 81.5,
+   "sure": 98,
+   "famousTwin": true,
+   "ownTop": 1,
+   "surprise": [
+    "Harry Kane",
+    "Gonçalo Ramos",
+    "Darwin Núñez",
+    "Erling Haaland",
+    "Serhou Guirassy",
+    "Nicolas Jackson"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Harry Kane"
+    ],
+    [
+     12,
+     "Gonçalo Ramos"
+    ],
+    [
+     17,
+     "Darwin Núñez"
+    ]
+   ],
+   "top7": [
+    "Kylian Mbappé 22/23",
+    "Kylian Mbappé 23/24",
+    "Kylian Mbappé 26/27",
+    "Donyell Malen 26/27",
+    "Robert Lewandowski 22/23",
+    "Ousmane Dembélé 24/25",
+    "Ferrán Torres 24/25"
+   ],
+   "score": 14,
+   "twinMins": 2822
+  },
+  {
+   "player": "Lionel Messi",
+   "season": "2022/23",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 104,
+   "league": "Ligue 1",
+   "pl": false,
+   "fame": 3,
+   "award": "Ballon d'Or winner",
+   "twin": "Lamine Yamal",
+   "twinSeason": "2026/27",
+   "twinClub": 8634,
+   "match": 81.7,
+   "sure": 99,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Serge Gnabry",
+    "Khvicha Kvaratskhelia",
+    "Ademola Lookman",
+    "Marcus Rashford",
+    "Mohamed Salah",
+    "Luis Díaz"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Serge Gnabry"
+    ],
+    [
+     13,
+     "Khvicha Kvaratskhelia"
+    ],
+    [
+     16,
+     "Ademola Lookman"
+    ]
+   ],
+   "top7": [
+    "Lamine Yamal 26/27",
+    "Michael Olise 25/26",
+    "Raphinha 24/25",
+    "Lamine Yamal 25/26",
+    "Antoine Griezmann 22/23",
+    "Raphinha 22/23",
+    "Michael Olise 24/25"
+   ],
+   "score": 12,
+   "twinMins": 905
+  },
+  {
+   "player": "Kylian Mbappé",
+   "season": "2023/24",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Ligue 1",
+   "pl": false,
+   "fame": 3,
+   "twin": "Harry Kane",
+   "twinSeason": "2025/26",
+   "twinClub": 9823,
+   "match": 82.2,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 3,
+   "surprise": [
+    "Karim Benzema",
+    "Erling Haaland",
+    "Nicolas Jackson",
+    "Serhou Guirassy",
+    "Victor Osimhen",
+    "Dušan Vlahović"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Karim Benzema"
+    ],
+    [
+     13,
+     "Erling Haaland"
+    ],
+    [
+     15,
+     "Nicolas Jackson"
+    ]
+   ],
+   "top7": [
+    "Harry Kane 25/26",
+    "Ousmane Dembélé 24/25",
+    "Deniz Undav 23/24",
+    "Robert Lewandowski 22/23",
+    "Deniz Undav 25/26",
+    "Harry Kane 23/24",
+    "Alexander Isak 24/25"
+   ],
+   "score": 13,
+   "twinMins": 2382
+  },
+  {
+   "player": "Kevin De Bruyne",
+   "season": "2019/20",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 85,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Bruno Fernandes",
+   "twinSeason": "2025/26",
+   "twinClub": 10260,
+   "match": 83.7,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 2,
+   "surprise": [
+    "Phil Foden",
+    "Jack Grealish",
+    "Morgan Gibbs-White",
+    "Michael Olise",
+    "Mohamed Salah",
+    "Xavi Simons"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Phil Foden"
+    ],
+    [
+     15,
+     "Jack Grealish"
+    ],
+    [
+     17,
+     "Morgan Gibbs-White"
+    ]
+   ],
+   "top7": [
+    "Bruno Fernandes 25/26",
+    "Rayan Cherki 25/26",
+    "Bukayo Saka 24/25",
+    "Bruno Fernandes 22/23",
+    "Riyad Mahrez 22/23",
+    "Dwight McNeil 24/25",
+    "Cole Palmer 24/25"
+   ],
+   "score": 13,
+   "twinMins": 3066
+  },
+  {
+   "player": "Sadio Mané",
+   "season": "2020/21",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 78,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Mohamed Salah",
+   "twinSeason": "2025/26",
+   "twinClub": 8650,
+   "match": 82.7,
+   "sure": 43,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Cole Palmer",
+    "Anthony Gordon",
+    "Eberechi Eze",
+    "Julián Álvarez",
+    "Raheem Sterling",
+    "Bryan Mbeumo"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Cole Palmer"
+    ],
+    [
+     14,
+     "Anthony Gordon"
+    ],
+    [
+     15,
+     "Eberechi Eze"
+    ]
+   ],
+   "top7": [
+    "Mohamed Salah 25/26",
+    "Noni Madueke 24/25",
+    "Mohamed Salah 22/23",
+    "Cody Gakpo 23/24",
+    "Luis Díaz 23/24",
+    "Luis Díaz 24/25",
+    "Bukayo Saka 25/26"
+   ],
+   "score": 10,
+   "twinMins": 2148
+  },
+  {
+   "player": "Declan Rice",
+   "season": "2023/24",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 66,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Douglas Luiz",
+   "twinSeason": "2022/23",
+   "twinClub": 10252,
+   "match": 88.8,
+   "sure": 100,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Bernardo Silva",
+    "Bruno Guimarães",
+    "Reece James",
+    "Granit Xhaka",
+    "Fabinho",
+    "Moisés Caicedo"
+   ],
+   "surpriseRank": [
+    [
+     16,
+     "Bernardo Silva"
+    ],
+    [
+     20,
+     "Bruno Guimarães"
+    ],
+    [
+     23,
+     "Reece James"
+    ]
+   ],
+   "top7": [
+    "Douglas Luiz 22/23",
+    "Mateo Kovacic 22/23",
+    "Douglas Luiz 23/24",
+    "Youri Tielemans 26/27",
+    "Sandro Tonali 26/27",
+    "Pervis Estupinán 23/24",
+    "Alexis Mac Allister 24/25"
+   ],
+   "score": 10,
+   "twinMins": 2933
+  },
+  {
+   "player": "Virgil van Dijk",
+   "season": "2018/19",
+   "group": "CB",
+   "declared": "CB",
+   "pos": 36,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Thiago Silva",
+   "twinSeason": "2023/24",
+   "twinClub": 8455,
+   "match": 84.0,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 5,
+   "surprise": [
+    "Ibrahima Konaté",
+    "William Saliba",
+    "Gabriel",
+    "Joško Gvardiol",
+    "Micky van de Ven",
+    "Lisandro Martínez"
+   ],
+   "surpriseRank": [
+    [
+     27,
+     "Ibrahima Konaté"
+    ],
+    [
+     32,
+     "William Saliba"
+    ],
+    [
+     38,
+     "Gabriel"
+    ]
+   ],
+   "top7": [
+    "Thiago Silva 23/24",
+    "Lewis Dunk 26/27",
+    "Jan Paul van Hecke 26/27",
+    "Tosin Adarabioyo 24/25",
+    "Rúben Dias 25/26",
+    "Jan Paul van Hecke 24/25",
+    "Jan Paul van Hecke 25/26"
+   ],
+   "score": 13,
+   "twinMins": 2527
+  },
+  {
+   "player": "Harry Kane",
+   "season": "2023/24",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Bundesliga",
+   "pl": false,
+   "fame": 3,
+   "twin": "Robert Lewandowski",
+   "twinSeason": "2022/23",
+   "twinClub": 8634,
+   "match": 88.7,
+   "sure": 99,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Dušan Vlahović",
+    "Gonçalo Ramos",
+    "Victor Osimhen",
+    "Alexander Isak",
+    "Pierre-Emerick Aubameyang",
+    "Callum Wilson"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Dušan Vlahović"
+    ],
+    [
+     15,
+     "Gonçalo Ramos"
+    ],
+    [
+     19,
+     "Victor Osimhen"
+    ]
+   ],
+   "top7": [
+    "Robert Lewandowski 22/23",
+    "Erling Haaland 22/23",
+    "Robert Lewandowski 24/25",
+    "Erling Haaland 26/27",
+    "Erling Haaland 25/26",
+    "Loïs Openda 22/23",
+    "Robert Lewandowski 25/26"
+   ],
+   "score": 12,
+   "twinMins": 2852
+  },
+  {
+   "player": "Luka Modrić",
+   "season": "2017/18",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 75,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 3,
+   "award": "Ballon d'Or winner",
+   "twin": "Angelo Stiller",
+   "twinSeason": "2024/25",
+   "twinClub": 10269,
+   "match": 85.6,
+   "sure": 72,
+   "famousTwin": false,
+   "ownTop": 1,
+   "surprise": [
+    "Bernardo Silva",
+    "Nicolò Barella",
+    "Ilkay Gündogan",
+    "Declan Rice",
+    "Bruno Guimarães",
+    "Granit Xhaka"
+   ],
+   "surpriseRank": [
+    [
+     13,
+     "Bernardo Silva"
+    ],
+    [
+     15,
+     "Nicolò Barella"
+    ],
+    [
+     19,
+     "Ilkay Gündogan"
+    ]
+   ],
+   "top7": [
+    "Angelo Stiller 24/25",
+    "Nicolò Fagioli 25/26",
+    "Tom Cairney 23/24",
+    "Dominik Szoboszlai 25/26",
+    "Rodrigo De Paul 23/24",
+    "Frenkie de Jong 22/23",
+    "Mario Pašalić 25/26"
+   ],
+   "score": 14,
+   "twinMins": 2743
+  },
+  {
+   "player": "Jude Bellingham",
+   "season": "2023/24",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 85,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 3,
+   "twin": "Phil Foden",
+   "twinSeason": "2023/24",
+   "twinClub": 8456,
+   "match": 84.6,
+   "sure": 79,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Jamal Musiala",
+    "Morgan Gibbs-White",
+    "Antoine Griezmann",
+    "Roberto Firmino",
+    "Cole Palmer",
+    "Antoine Semenyo"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Jamal Musiala"
+    ],
+    [
+     13,
+     "Morgan Gibbs-White"
+    ],
+    [
+     14,
+     "Antoine Griezmann"
+    ]
+   ],
+   "top7": [
+    "Phil Foden 23/24",
+    "Pedro 24/25",
+    "Phil Foden 22/23",
+    "Christian Pulisic 26/27",
+    "Luis Díaz 24/25",
+    "Maghnes Akliouche 23/24",
+    "Sofiane Diop 24/25"
+   ],
+   "score": 12,
+   "twinMins": 2865
+  },
+  {
+   "player": "Cristiano Ronaldo",
+   "season": "2020/21",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Serie A",
+   "pl": false,
+   "fame": 3,
+   "twin": "Dušan Vlahović",
+   "twinSeason": "2023/24",
+   "twinClub": 9885,
+   "match": 85.2,
+   "sure": 99,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Alexander Isak",
+    "Nicolas Jackson",
+    "Gonçalo Ramos",
+    "Callum Wilson",
+    "Serhou Guirassy",
+    "Kylian Mbappé"
+   ],
+   "surpriseRank": [
+    [
+     20,
+     "Alexander Isak"
+    ],
+    [
+     24,
+     "Nicolas Jackson"
+    ],
+    [
+     25,
+     "Gonçalo Ramos"
+    ]
+   ],
+   "top7": [
+    "Dušan Vlahović 23/24",
+    "Victor Okoh Boniface 24/25",
+    "Álvaro Morata 23/24",
+    "Harry Kane 23/24",
+    "Erling Haaland 23/24",
+    "Victor Osimhen 23/24",
+    "Robert Lewandowski 24/25"
+   ],
+   "score": 10,
+   "twinMins": 2317
+  },
+  {
+   "player": "N'Golo Kanté",
+   "season": "2016/17",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 64,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Moisés Caicedo",
+   "twinSeason": "2022/23",
+   "twinClub": 10204,
+   "match": 88.5,
+   "sure": 60,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Declan Rice",
+    "Alexis Mac Allister",
+    "Fabinho",
+    "Bruno Guimarães",
+    "Casemiro",
+    "Enzo Fernández"
+   ],
+   "surpriseRank": [
+    [
+     14,
+     "Declan Rice"
+    ],
+    [
+     19,
+     "Alexis Mac Allister"
+    ],
+    [
+     23,
+     "Fabinho"
+    ]
+   ],
+   "top7": [
+    "Moisés Caicedo 22/23",
+    "Moisés Caicedo 23/24",
+    "Manuel Ugarte 24/25",
+    "Moisés Caicedo 24/25",
+    "André 24/25",
+    "Moisés Caicedo 25/26",
+    "Yves Bissouma 23/24"
+   ],
+   "score": 12,
+   "twinMins": 3140
+  },
+  {
+   "player": "Eden Hazard",
+   "season": "2018/19",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 107,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Jérémy Doku",
+   "twinSeason": "2025/26",
+   "twinClub": 8456,
+   "match": 77.4,
+   "sure": 99,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Bukayo Saka",
+    "Eberechi Eze",
+    "Riyad Mahrez",
+    "Kevin De Bruyne",
+    "Mohamed Salah",
+    "Matheus Cunha"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Bukayo Saka"
+    ],
+    [
+     16,
+     "Eberechi Eze"
+    ],
+    [
+     25,
+     "Riyad Mahrez"
+    ]
+   ],
+   "top7": [
+    "Jérémy Doku 25/26",
+    "Cole Palmer 23/24",
+    "Allan Saint-Maximin 22/23",
+    "Michael Olise 23/24",
+    "Jérémy Doku 23/24",
+    "Phil Foden 22/23",
+    "Rayan Cherki 25/26"
+   ],
+   "score": 10,
+   "twinMins": 1784
+  },
+  {
+   "player": "Robert Lewandowski",
+   "season": "2020/21",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Bundesliga",
+   "pl": false,
+   "fame": 3,
+   "twin": "Kylian Mbappé",
+   "twinSeason": "2023/24",
+   "twinClub": 9847,
+   "match": 80.4,
+   "sure": 66,
+   "famousTwin": true,
+   "ownTop": 2,
+   "surprise": [
+    "Karim Benzema",
+    "Dušan Vlahović",
+    "Callum Wilson",
+    "Serhou Guirassy",
+    "Ousmane Dembélé",
+    "Nicolas Jackson"
+   ],
+   "surpriseRank": [
+    [
+     21,
+     "Karim Benzema"
+    ],
+    [
+     22,
+     "Dušan Vlahović"
+    ],
+    [
+     23,
+     "Callum Wilson"
+    ]
+   ],
+   "top7": [
+    "Kylian Mbappé 23/24",
+    "Victor Osimhen 22/23",
+    "Harry Kane 23/24",
+    "Erling Haaland 25/26",
+    "Erling Haaland 22/23",
+    "Erling Haaland 23/24",
+    "Gonçalo Ramos 24/25"
+   ],
+   "score": 13,
+   "twinMins": 2158
+  },
+  {
+   "player": "Cole Palmer",
+   "season": "2023/24",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 85,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Michael Olise",
+   "twinSeason": "2023/24",
+   "twinClub": 9826,
+   "match": 83.2,
+   "sure": 76,
+   "famousTwin": true,
+   "ownTop": 1,
+   "surprise": [
+    "Eberechi Eze",
+    "Cody Gakpo",
+    "Julián Álvarez",
+    "Mohamed Salah",
+    "Luis Díaz",
+    "Bryan Mbeumo"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Eberechi Eze"
+    ],
+    [
+     13,
+     "Cody Gakpo"
+    ],
+    [
+     15,
+     "Julián Álvarez"
+    ]
+   ],
+   "top7": [
+    "Michael Olise 23/24",
+    "Phil Foden 25/26",
+    "Bukayo Saka 23/24",
+    "Gabriel Martinelli 22/23",
+    "Phil Foden 22/23",
+    "Phil Foden 23/24",
+    "Bukayo Saka 25/26"
+   ],
+   "score": 10,
+   "twinMins": 1277
+  },
+  {
+   "player": "Trent Alexander-Arnold",
+   "season": "2019/20",
+   "group": "FB",
+   "declared": "FB",
+   "pos": 32,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "short": "Trent",
+   "twin": "Kieran Trippier",
+   "twinSeason": "2023/24",
+   "twinClub": 10261,
+   "match": 77.8,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 3,
+   "surprise": [
+    "Ben White",
+    "Joško Gvardiol",
+    "Reece James",
+    "Kyle Walker",
+    "Jurriën Timber",
+    "Jeremie Frimpong"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Ben White"
+    ],
+    [
+     16,
+     "Joško Gvardiol"
+    ],
+    [
+     27,
+     "Reece James"
+    ]
+   ],
+   "top7": [
+    "Kieran Trippier 23/24",
+    "Kieran Trippier 22/23",
+    "Pedro Porro 24/25",
+    "Abdoul Ouattara 26/27",
+    "Pedro Porro 25/26",
+    "Pedro Porro 23/24",
+    "Andrew Robertson 22/23"
+   ],
+   "score": 12,
+   "twinMins": 2240
+  },
+  {
+   "player": "Lamine Yamal",
+   "season": "2024/25",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 83,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 3,
+   "short": "Yamal",
+   "twin": "Edon Zhegrova",
+   "twinSeason": "2022/23",
+   "twinClub": 8639,
+   "match": 85.5,
+   "sure": 100,
+   "famousTwin": false,
+   "ownTop": 2,
+   "surprise": [
+    "Michael Olise",
+    "Dani Olmo",
+    "Raphinha",
+    "Rafael Leão",
+    "Lionel Messi",
+    "Rayan Cherki"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Michael Olise"
+    ],
+    [
+     15,
+     "Dani Olmo"
+    ],
+    [
+     19,
+     "Raphinha"
+    ]
+   ],
+   "top7": [
+    "Edon Zhegrova 22/23",
+    "Florian Wirtz 24/25",
+    "Bukayo Saka 24/25",
+    "Leroy Sané 23/24",
+    "Désiré Doué 24/25",
+    "Vinícius Júnior 24/25",
+    "Khvicha Kvaratskhelia 25/26"
+   ],
+   "score": 10,
+   "twinMins": 1054
+  },
+  {
+   "player": "Sergio Agüero",
+   "season": "2018/19",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 105,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Alexander Isak",
+   "twinSeason": "2024/25",
+   "twinClub": 10261,
+   "match": 79.4,
+   "sure": 84,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Erling Haaland",
+    "Ollie Watkins",
+    "Gabriel Jesus",
+    "Diogo Jota",
+    "Nicolas Jackson",
+    "Darwin Núñez"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Erling Haaland"
+    ],
+    [
+     11,
+     "Ollie Watkins"
+    ],
+    [
+     12,
+     "Gabriel Jesus"
+    ]
+   ],
+   "top7": [
+    "Alexander Isak 24/25",
+    "Hugo Ekitiké 25/26",
+    "Richarlison 23/24",
+    "Evan Ferguson 22/23",
+    "Harry Kane 22/23",
+    "Callum Wilson 22/23",
+    "Yoane Wissa 24/25"
+   ],
+   "score": 11,
+   "twinMins": 2769
+  },
+  {
+   "player": "Alisson Becker",
+   "season": "2018/19",
+   "group": "GK",
+   "declared": "GK",
+   "pos": 11,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "short": "Alisson",
+   "twin": "Gianluigi Donnarumma",
+   "twinSeason": "2025/26",
+   "twinClub": 8456,
+   "match": 83.6,
+   "sure": 87,
+   "famousTwin": true,
+   "ownTop": 3,
+   "surprise": [
+    "Jordan Pickford",
+    "Nick Pope",
+    "André Onana"
+   ],
+   "surpriseRank": [
+    [
+     13,
+     "Jordan Pickford"
+    ],
+    [
+     18,
+     "Nick Pope"
+    ],
+    [
+     21,
+     "André Onana"
+    ]
+   ],
+   "top7": [
+    "Gianluigi Donnarumma 25/26",
+    "Bart Verbruggen 26/27",
+    "David Raya 26/27",
+    "David Raya 24/25",
+    "Ederson 23/24",
+    "David Raya 25/26",
+    "Emiliano Martínez 22/23"
+   ],
+   "score": 13,
+   "twinMins": 3060
+  },
+  {
+   "player": "Bruno Fernandes",
+   "season": "2020/21",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 85,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Kevin De Bruyne",
+   "twinSeason": "2024/25",
+   "twinClub": 8456,
+   "match": 82.1,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 3,
+   "surprise": [
+    "Mohamed Salah",
+    "Michael Olise",
+    "Enzo Fernández",
+    "Dominik Szoboszlai",
+    "Jack Grealish",
+    "Morgan Gibbs-White"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Mohamed Salah"
+    ],
+    [
+     11,
+     "Michael Olise"
+    ],
+    [
+     15,
+     "Enzo Fernández"
+    ]
+   ],
+   "top7": [
+    "Kevin De Bruyne 24/25",
+    "Cole Palmer 23/24",
+    "Cole Palmer 24/25",
+    "Bukayo Saka 23/24",
+    "Phil Foden 25/26",
+    "Solly March 22/23",
+    "Bukayo Saka 25/26"
+   ],
+   "score": 13,
+   "twinMins": 1704
+  },
+  {
+   "player": "Vítinha",
+   "season": "2024/25",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 75,
+   "league": "Ligue 1",
+   "pl": false,
+   "fame": 2,
+   "twin": "Aleksandar Pavlović",
+   "twinSeason": "2025/26",
+   "twinClub": 9823,
+   "match": 81.2,
+   "sure": 49,
+   "famousTwin": false,
+   "ownTop": 1,
+   "surprise": [
+    "Toni Kroos",
+    "Joshua Kimmich",
+    "Enzo Fernández",
+    "Frenkie de Jong",
+    "Nicolò Barella",
+    "Sergio Busquets"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Toni Kroos"
+    ],
+    [
+     19,
+     "Joshua Kimmich"
+    ],
+    [
+     34,
+     "Enzo Fernández"
+    ]
+   ],
+   "top7": [
+    "Aleksandar Pavlović 25/26",
+    "Rodri 25/26",
+    "Granit Xhaka 23/24",
+    "Koke 25/26",
+    "Rodri 23/24",
+    "Luka Modrić 25/26",
+    "Aleix García 23/24"
+   ],
+   "score": 8,
+   "twinMins": 1460
+  },
+  {
+   "player": "Heung-Min Son",
+   "season": "2021/22",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 115,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "short": "Son",
+   "twin": "Roberto Firmino",
+   "twinSeason": "2022/23",
+   "twinClub": 8650,
+   "match": 82.5,
+   "sure": 93,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Mohamed Salah",
+    "Morgan Rogers",
+    "Cole Palmer",
+    "Marcus Rashford",
+    "Julián Álvarez",
+    "Michael Olise"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Mohamed Salah"
+    ],
+    [
+     15,
+     "Morgan Rogers"
+    ],
+    [
+     16,
+     "Cole Palmer"
+    ]
+   ],
+   "top7": [
+    "Roberto Firmino 22/23",
+    "Luis Díaz 24/25",
+    "Anthony Martial 22/23",
+    "Phil Foden 23/24",
+    "Leandro Trossard 23/24",
+    "Cody Gakpo 24/25",
+    "Morgan Gibbs-White 25/26"
+   ],
+   "score": 9,
+   "twinMins": 1212
+  },
+  {
+   "player": "Gareth Bale",
+   "season": "2017/18",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 83,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 3,
+   "twin": "Christopher Nkunku",
+   "twinSeason": "2022/23",
+   "twinClub": 178475,
+   "match": 86.6,
+   "sure": 98,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Bradley Barcola",
+    "Morgan Gibbs-White",
+    "Phil Foden",
+    "Julián Álvarez",
+    "Ademola Lookman",
+    "Marcus Thuram"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Bradley Barcola"
+    ],
+    [
+     11,
+     "Morgan Gibbs-White"
+    ],
+    [
+     12,
+     "Phil Foden"
+    ]
+   ],
+   "top7": [
+    "Christopher Nkunku 22/23",
+    "Serge Gnabry 22/23",
+    "Dani Olmo 24/25",
+    "Raphinha 25/26",
+    "Luis Díaz 24/25",
+    "Ángel Correa 22/23",
+    "Cody Gakpo 24/25"
+   ],
+   "score": 12,
+   "twinMins": 1898
+  },
+  {
+   "player": "Toni Kroos",
+   "season": "2023/24",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 66,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 3,
+   "twin": "Joshua Kimmich",
+   "twinSeason": "2024/25",
+   "twinClub": 9823,
+   "match": 84.2,
+   "sure": 54,
+   "famousTwin": true,
+   "ownTop": 1,
+   "surprise": [
+    "Luka Modrić",
+    "Rodri",
+    "Frenkie de Jong",
+    "Granit Xhaka",
+    "Pedri",
+    "Ilkay Gündogan"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Luka Modrić"
+    ],
+    [
+     15,
+     "Rodri"
+    ],
+    [
+     18,
+     "Frenkie de Jong"
+    ]
+   ],
+   "top7": [
+    "Joshua Kimmich 24/25",
+    "Joshua Kimmich 25/26",
+    "Aleix García 25/26",
+    "Vítinha 25/26",
+    "Vítinha 26/27",
+    "Joshua Kimmich 23/24",
+    "Joshua Kimmich 26/27"
+   ],
+   "score": 12,
+   "twinMins": 2847
+  },
+  {
+   "player": "Pierre-Emerick Aubameyang",
+   "season": "2018/19",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Ollie Watkins",
+   "twinSeason": "2025/26",
+   "twinClub": 10252,
+   "match": 88.5,
+   "sure": 96,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Richarlison",
+    "Chris Wood",
+    "Nicolas Jackson",
+    "Viktor Gyökeres",
+    "Jean-Philippe Mateta",
+    "Erling Haaland"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Richarlison"
+    ],
+    [
+     18,
+     "Chris Wood"
+    ],
+    [
+     20,
+     "Nicolas Jackson"
+    ]
+   ],
+   "top7": [
+    "Ollie Watkins 25/26",
+    "Alexander Isak 23/24",
+    "Yoane Wissa 24/25",
+    "Callum Wilson 22/23",
+    "Alexander Isak 24/25",
+    "Beto 25/26",
+    "Ollie Watkins 24/25"
+   ],
+   "score": 11,
+   "twinMins": 2852
+  },
+  {
+   "player": "Manuel Neuer",
+   "season": "2019/20",
+   "group": "GK",
+   "declared": "GK",
+   "pos": 11,
+   "league": "Bundesliga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Yann Sommer",
+   "twinSeason": "2023/24",
+   "twinClub": 8636,
+   "match": 91.7,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Thibaut Courtois",
+    "David Raya",
+    "Unai Simón",
+    "Alisson Becker",
+    "Ederson",
+    "Jan Oblak"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Thibaut Courtois"
+    ],
+    [
+     13,
+     "David Raya"
+    ],
+    [
+     17,
+     "Unai Simón"
+    ]
+   ],
+   "top7": [
+    "Yann Sommer 23/24",
+    "Bart Verbruggen 26/27",
+    "Marc ter Stegen 22/23",
+    "Andriy Lunin 23/24",
+    "Gianluigi Donnarumma 25/26",
+    "Ivan Provedel 22/23",
+    "Alex Meret 22/23"
+   ],
+   "score": 12,
+   "twinMins": 3060
+  },
+  {
+   "player": "Jamal Musiala",
+   "season": "2023/24",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 85,
+   "league": "Bundesliga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Christian Pulisic",
+   "twinSeason": "2025/26",
+   "twinClub": 8564,
+   "match": 82.8,
+   "sure": 96,
+   "famousTwin": true,
+   "ownTop": 2,
+   "surprise": [
+    "Bradley Barcola",
+    "Michael Olise",
+    "Vinícius Júnior",
+    "Rodrygo",
+    "Luis Díaz",
+    "Florian Wirtz"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Bradley Barcola"
+    ],
+    [
+     13,
+     "Michael Olise"
+    ],
+    [
+     14,
+     "Vinícius Júnior"
+    ]
+   ],
+   "top7": [
+    "Christian Pulisic 25/26",
+    "Rafael Leão 22/23",
+    "Khvicha Kvaratskhelia 25/26",
+    "Karim Adeyemi 24/25",
+    "Leroy Sané 22/23",
+    "Brahim Díaz 23/24",
+    "Ademola Lookman 23/24"
+   ],
+   "score": 12,
+   "twinMins": 1611
+  }
+ ],
+ "all": [
+  {
+   "player": "Karim Benzema",
+   "season": "2021/22",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 3,
+   "award": "Ballon d'Or winner",
+   "twin": "Kylian Mbappé",
+   "twinSeason": "2022/23",
+   "twinClub": 9847,
+   "match": 81.5,
+   "sure": 98,
+   "famousTwin": true,
+   "ownTop": 1,
+   "surprise": [
+    "Harry Kane",
+    "Gonçalo Ramos",
+    "Darwin Núñez",
+    "Erling Haaland",
+    "Serhou Guirassy",
+    "Nicolas Jackson"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Harry Kane"
+    ],
+    [
+     12,
+     "Gonçalo Ramos"
+    ],
+    [
+     17,
+     "Darwin Núñez"
+    ]
+   ],
+   "top7": [
+    "Kylian Mbappé 22/23",
+    "Kylian Mbappé 23/24",
+    "Kylian Mbappé 26/27",
+    "Donyell Malen 26/27",
+    "Robert Lewandowski 22/23",
+    "Ousmane Dembélé 24/25",
+    "Ferrán Torres 24/25"
+   ],
+   "score": 14,
+   "twinMins": 2822
+  },
+  {
+   "player": "Luka Modrić",
+   "season": "2017/18",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 75,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 3,
+   "award": "Ballon d'Or winner",
+   "twin": "Angelo Stiller",
+   "twinSeason": "2024/25",
+   "twinClub": 10269,
+   "match": 85.6,
+   "sure": 72,
+   "famousTwin": false,
+   "ownTop": 1,
+   "surprise": [
+    "Bernardo Silva",
+    "Nicolò Barella",
+    "Ilkay Gündogan",
+    "Declan Rice",
+    "Bruno Guimarães",
+    "Granit Xhaka"
+   ],
+   "surpriseRank": [
+    [
+     13,
+     "Bernardo Silva"
+    ],
+    [
+     15,
+     "Nicolò Barella"
+    ],
+    [
+     19,
+     "Ilkay Gündogan"
+    ]
+   ],
+   "top7": [
+    "Angelo Stiller 24/25",
+    "Nicolò Fagioli 25/26",
+    "Tom Cairney 23/24",
+    "Dominik Szoboszlai 25/26",
+    "Rodrigo De Paul 23/24",
+    "Frenkie de Jong 22/23",
+    "Mario Pašalić 25/26"
+   ],
+   "score": 14,
+   "twinMins": 2743
+  },
+  {
+   "player": "Robert Lewandowski",
+   "season": "2020/21",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Bundesliga",
+   "pl": false,
+   "fame": 3,
+   "twin": "Kylian Mbappé",
+   "twinSeason": "2023/24",
+   "twinClub": 9847,
+   "match": 80.4,
+   "sure": 66,
+   "famousTwin": true,
+   "ownTop": 2,
+   "surprise": [
+    "Karim Benzema",
+    "Dušan Vlahović",
+    "Callum Wilson",
+    "Serhou Guirassy",
+    "Ousmane Dembélé",
+    "Nicolas Jackson"
+   ],
+   "surpriseRank": [
+    [
+     21,
+     "Karim Benzema"
+    ],
+    [
+     22,
+     "Dušan Vlahović"
+    ],
+    [
+     23,
+     "Callum Wilson"
+    ]
+   ],
+   "top7": [
+    "Kylian Mbappé 23/24",
+    "Victor Osimhen 22/23",
+    "Harry Kane 23/24",
+    "Erling Haaland 25/26",
+    "Erling Haaland 22/23",
+    "Erling Haaland 23/24",
+    "Gonçalo Ramos 24/25"
+   ],
+   "score": 13,
+   "twinMins": 2158
+  },
+  {
+   "player": "Kylian Mbappé",
+   "season": "2023/24",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Ligue 1",
+   "pl": false,
+   "fame": 3,
+   "twin": "Harry Kane",
+   "twinSeason": "2025/26",
+   "twinClub": 9823,
+   "match": 82.2,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 3,
+   "surprise": [
+    "Karim Benzema",
+    "Erling Haaland",
+    "Nicolas Jackson",
+    "Serhou Guirassy",
+    "Victor Osimhen",
+    "Dušan Vlahović"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Karim Benzema"
+    ],
+    [
+     13,
+     "Erling Haaland"
+    ],
+    [
+     15,
+     "Nicolas Jackson"
+    ]
+   ],
+   "top7": [
+    "Harry Kane 25/26",
+    "Ousmane Dembélé 24/25",
+    "Deniz Undav 23/24",
+    "Robert Lewandowski 22/23",
+    "Deniz Undav 25/26",
+    "Harry Kane 23/24",
+    "Alexander Isak 24/25"
+   ],
+   "score": 13,
+   "twinMins": 2382
+  },
+  {
+   "player": "Lionel Messi",
+   "season": "2018/19",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 104,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 3,
+   "award": "Ballon d'Or winner",
+   "twin": "Michael Olise",
+   "twinSeason": "2025/26",
+   "twinClub": 9823,
+   "match": 73.3,
+   "sure": 95,
+   "famousTwin": true,
+   "ownTop": 1,
+   "surprise": [
+    "Luis Díaz",
+    "Raphinha",
+    "Rayan Cherki",
+    "Neymar",
+    "Mohamed Salah",
+    "Rafael Leão"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Luis Díaz"
+    ],
+    [
+     11,
+     "Raphinha"
+    ],
+    [
+     12,
+     "Rayan Cherki"
+    ]
+   ],
+   "top7": [
+    "Michael Olise 25/26",
+    "Lamine Yamal 26/27",
+    "Lamine Yamal 25/26",
+    "Marco Asensio 22/23",
+    "Michael Olise 24/25",
+    "Antoine Griezmann 22/23",
+    "Michael Olise 26/27"
+   ],
+   "score": 13,
+   "twinMins": 2317
+  },
+  {
+   "player": "Kevin De Bruyne",
+   "season": "2019/20",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 85,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Bruno Fernandes",
+   "twinSeason": "2025/26",
+   "twinClub": 10260,
+   "match": 83.7,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 2,
+   "surprise": [
+    "Phil Foden",
+    "Jack Grealish",
+    "Morgan Gibbs-White",
+    "Michael Olise",
+    "Mohamed Salah",
+    "Xavi Simons"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Phil Foden"
+    ],
+    [
+     15,
+     "Jack Grealish"
+    ],
+    [
+     17,
+     "Morgan Gibbs-White"
+    ]
+   ],
+   "top7": [
+    "Bruno Fernandes 25/26",
+    "Rayan Cherki 25/26",
+    "Bukayo Saka 24/25",
+    "Bruno Fernandes 22/23",
+    "Riyad Mahrez 22/23",
+    "Dwight McNeil 24/25",
+    "Cole Palmer 24/25"
+   ],
+   "score": 13,
+   "twinMins": 3066
+  },
+  {
+   "player": "Bruno Fernandes",
+   "season": "2020/21",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 85,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Kevin De Bruyne",
+   "twinSeason": "2024/25",
+   "twinClub": 8456,
+   "match": 82.1,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 3,
+   "surprise": [
+    "Mohamed Salah",
+    "Michael Olise",
+    "Enzo Fernández",
+    "Dominik Szoboszlai",
+    "Jack Grealish",
+    "Morgan Gibbs-White"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Mohamed Salah"
+    ],
+    [
+     11,
+     "Michael Olise"
+    ],
+    [
+     15,
+     "Enzo Fernández"
+    ]
+   ],
+   "top7": [
+    "Kevin De Bruyne 24/25",
+    "Cole Palmer 23/24",
+    "Cole Palmer 24/25",
+    "Bukayo Saka 23/24",
+    "Phil Foden 25/26",
+    "Solly March 22/23",
+    "Bukayo Saka 25/26"
+   ],
+   "score": 13,
+   "twinMins": 1704
+  },
+  {
+   "player": "Virgil van Dijk",
+   "season": "2018/19",
+   "group": "CB",
+   "declared": "CB",
+   "pos": 36,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Thiago Silva",
+   "twinSeason": "2023/24",
+   "twinClub": 8455,
+   "match": 84.0,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 5,
+   "surprise": [
+    "Ibrahima Konaté",
+    "William Saliba",
+    "Gabriel",
+    "Joško Gvardiol",
+    "Micky van de Ven",
+    "Lisandro Martínez"
+   ],
+   "surpriseRank": [
+    [
+     27,
+     "Ibrahima Konaté"
+    ],
+    [
+     32,
+     "William Saliba"
+    ],
+    [
+     38,
+     "Gabriel"
+    ]
+   ],
+   "top7": [
+    "Thiago Silva 23/24",
+    "Lewis Dunk 26/27",
+    "Jan Paul van Hecke 26/27",
+    "Tosin Adarabioyo 24/25",
+    "Rúben Dias 25/26",
+    "Jan Paul van Hecke 24/25",
+    "Jan Paul van Hecke 25/26"
+   ],
+   "score": 13,
+   "twinMins": 2527
+  },
+  {
+   "player": "Alisson Becker",
+   "season": "2018/19",
+   "group": "GK",
+   "declared": "GK",
+   "pos": 11,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "short": "Alisson",
+   "twin": "Gianluigi Donnarumma",
+   "twinSeason": "2025/26",
+   "twinClub": 8456,
+   "match": 83.6,
+   "sure": 87,
+   "famousTwin": true,
+   "ownTop": 3,
+   "surprise": [
+    "Jordan Pickford",
+    "Nick Pope",
+    "André Onana"
+   ],
+   "surpriseRank": [
+    [
+     13,
+     "Jordan Pickford"
+    ],
+    [
+     18,
+     "Nick Pope"
+    ],
+    [
+     21,
+     "André Onana"
+    ]
+   ],
+   "top7": [
+    "Gianluigi Donnarumma 25/26",
+    "Bart Verbruggen 26/27",
+    "David Raya 26/27",
+    "David Raya 24/25",
+    "Ederson 23/24",
+    "David Raya 25/26",
+    "Emiliano Martínez 22/23"
+   ],
+   "score": 13,
+   "twinMins": 3060
+  },
+  {
+   "player": "Harry Kane",
+   "season": "2023/24",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Bundesliga",
+   "pl": false,
+   "fame": 3,
+   "twin": "Robert Lewandowski",
+   "twinSeason": "2022/23",
+   "twinClub": 8634,
+   "match": 88.7,
+   "sure": 99,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Dušan Vlahović",
+    "Gonçalo Ramos",
+    "Victor Osimhen",
+    "Alexander Isak",
+    "Pierre-Emerick Aubameyang",
+    "Callum Wilson"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Dušan Vlahović"
+    ],
+    [
+     15,
+     "Gonçalo Ramos"
+    ],
+    [
+     19,
+     "Victor Osimhen"
+    ]
+   ],
+   "top7": [
+    "Robert Lewandowski 22/23",
+    "Erling Haaland 22/23",
+    "Robert Lewandowski 24/25",
+    "Erling Haaland 26/27",
+    "Erling Haaland 25/26",
+    "Loïs Openda 22/23",
+    "Robert Lewandowski 25/26"
+   ],
+   "score": 12,
+   "twinMins": 2852
+  },
+  {
+   "player": "Romelu Lukaku",
+   "season": "2020/21",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 105,
+   "league": "Serie A",
+   "pl": false,
+   "fame": 2,
+   "twin": "Robert Lewandowski",
+   "twinSeason": "2023/24",
+   "twinClub": 8634,
+   "match": 86.9,
+   "sure": 96,
+   "famousTwin": true,
+   "ownTop": 1,
+   "surprise": [
+    "Richarlison",
+    "Nicolas Jackson",
+    "Callum Wilson",
+    "Gabriel Jesus",
+    "Diogo Jota",
+    "Harry Kane"
+   ],
+   "surpriseRank": [
+    [
+     17,
+     "Richarlison"
+    ],
+    [
+     21,
+     "Nicolas Jackson"
+    ],
+    [
+     29,
+     "Callum Wilson"
+    ]
+   ],
+   "top7": [
+    "Robert Lewandowski 23/24",
+    "Alexander Isak 24/25",
+    "Olivier Giroud 23/24",
+    "Pierre-Emerick Aubameyang 26/27",
+    "Artem Dovbyk 23/24",
+    "Ollie Watkins 23/24",
+    "Jonathan David 22/23"
+   ],
+   "score": 12,
+   "twinMins": 2758
+  },
+  {
+   "player": "Victor Osimhen",
+   "season": "2022/23",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Serie A",
+   "pl": false,
+   "fame": 2,
+   "twin": "Robert Lewandowski",
+   "twinSeason": "2024/25",
+   "twinClub": 8634,
+   "match": 81.1,
+   "sure": 68,
+   "famousTwin": true,
+   "ownTop": 1,
+   "surprise": [
+    "Callum Wilson",
+    "Kylian Mbappé",
+    "Gonçalo Ramos",
+    "Alexander Isak",
+    "Richarlison",
+    "Nicolas Jackson"
+   ],
+   "surpriseRank": [
+    [
+     18,
+     "Callum Wilson"
+    ],
+    [
+     28,
+     "Kylian Mbappé"
+    ],
+    [
+     36,
+     "Gonçalo Ramos"
+    ]
+   ],
+   "top7": [
+    "Robert Lewandowski 24/25",
+    "Erling Haaland 23/24",
+    "Harry Kane 23/24",
+    "Robert Lewandowski 22/23",
+    "Dušan Vlahović 23/24",
+    "Álvaro Morata 23/24",
+    "Erling Haaland 26/27"
+   ],
+   "score": 12,
+   "twinMins": 2681
+  },
+  {
+   "player": "Lionel Messi",
+   "season": "2022/23",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 104,
+   "league": "Ligue 1",
+   "pl": false,
+   "fame": 3,
+   "award": "Ballon d'Or winner",
+   "twin": "Lamine Yamal",
+   "twinSeason": "2026/27",
+   "twinClub": 8634,
+   "match": 81.7,
+   "sure": 99,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Serge Gnabry",
+    "Khvicha Kvaratskhelia",
+    "Ademola Lookman",
+    "Marcus Rashford",
+    "Mohamed Salah",
+    "Luis Díaz"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Serge Gnabry"
+    ],
+    [
+     13,
+     "Khvicha Kvaratskhelia"
+    ],
+    [
+     16,
+     "Ademola Lookman"
+    ]
+   ],
+   "top7": [
+    "Lamine Yamal 26/27",
+    "Michael Olise 25/26",
+    "Raphinha 24/25",
+    "Lamine Yamal 25/26",
+    "Antoine Griezmann 22/23",
+    "Raphinha 22/23",
+    "Michael Olise 24/25"
+   ],
+   "score": 12,
+   "twinMins": 905
+  },
+  {
+   "player": "Jude Bellingham",
+   "season": "2023/24",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 85,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 3,
+   "twin": "Phil Foden",
+   "twinSeason": "2023/24",
+   "twinClub": 8456,
+   "match": 84.6,
+   "sure": 79,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Jamal Musiala",
+    "Morgan Gibbs-White",
+    "Antoine Griezmann",
+    "Roberto Firmino",
+    "Cole Palmer",
+    "Antoine Semenyo"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Jamal Musiala"
+    ],
+    [
+     13,
+     "Morgan Gibbs-White"
+    ],
+    [
+     14,
+     "Antoine Griezmann"
+    ]
+   ],
+   "top7": [
+    "Phil Foden 23/24",
+    "Pedro 24/25",
+    "Phil Foden 22/23",
+    "Christian Pulisic 26/27",
+    "Luis Díaz 24/25",
+    "Maghnes Akliouche 23/24",
+    "Sofiane Diop 24/25"
+   ],
+   "score": 12,
+   "twinMins": 2865
+  },
+  {
+   "player": "Raphinha",
+   "season": "2024/25",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 87,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Ademola Lookman",
+   "twinSeason": "2024/25",
+   "twinClub": 8524,
+   "match": 81.8,
+   "sure": 77,
+   "famousTwin": true,
+   "ownTop": 2,
+   "surprise": [
+    "Lionel Messi",
+    "Rafael Leão",
+    "Luis Díaz",
+    "Leroy Sané",
+    "Michael Olise",
+    "Antoine Griezmann"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Lionel Messi"
+    ],
+    [
+     13,
+     "Rafael Leão"
+    ],
+    [
+     14,
+     "Luis Díaz"
+    ]
+   ],
+   "top7": [
+    "Ademola Lookman 24/25",
+    "Ademola Lookman 23/24",
+    "Cole Palmer 24/25",
+    "Christian Pulisic 25/26",
+    "Thomas Müller 22/23",
+    "Serge Gnabry 24/25",
+    "Mohamed Salah 24/25"
+   ],
+   "score": 12,
+   "twinMins": 2263
+  },
+  {
+   "player": "Jamal Musiala",
+   "season": "2023/24",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 85,
+   "league": "Bundesliga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Christian Pulisic",
+   "twinSeason": "2025/26",
+   "twinClub": 8564,
+   "match": 82.8,
+   "sure": 96,
+   "famousTwin": true,
+   "ownTop": 2,
+   "surprise": [
+    "Bradley Barcola",
+    "Michael Olise",
+    "Vinícius Júnior",
+    "Rodrygo",
+    "Luis Díaz",
+    "Florian Wirtz"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Bradley Barcola"
+    ],
+    [
+     13,
+     "Michael Olise"
+    ],
+    [
+     14,
+     "Vinícius Júnior"
+    ]
+   ],
+   "top7": [
+    "Christian Pulisic 25/26",
+    "Rafael Leão 22/23",
+    "Khvicha Kvaratskhelia 25/26",
+    "Karim Adeyemi 24/25",
+    "Leroy Sané 22/23",
+    "Brahim Díaz 23/24",
+    "Ademola Lookman 23/24"
+   ],
+   "score": 12,
+   "twinMins": 1611
+  },
+  {
+   "player": "Michael Olise",
+   "season": "2024/25",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 83,
+   "league": "Bundesliga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Bukayo Saka",
+   "twinSeason": "2024/25",
+   "twinClub": 9825,
+   "match": 82.1,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 1,
+   "surprise": [
+    "Rayan Cherki",
+    "Leroy Sané",
+    "Kevin De Bruyne",
+    "Rafael Leão",
+    "Neymar",
+    "Paulo Dybala"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Rayan Cherki"
+    ],
+    [
+     14,
+     "Leroy Sané"
+    ],
+    [
+     16,
+     "Kevin De Bruyne"
+    ]
+   ],
+   "top7": [
+    "Bukayo Saka 24/25",
+    "Antoine Griezmann 22/23",
+    "Lamine Yamal 25/26",
+    "Lamine Yamal 26/27",
+    "Raphinha 23/24",
+    "Edon Zhegrova 22/23",
+    "Raphinha 22/23"
+   ],
+   "score": 12,
+   "twinMins": 1735
+  },
+  {
+   "player": "Thomas Müller",
+   "season": "2019/20",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 85,
+   "league": "Bundesliga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Kevin De Bruyne",
+   "twinSeason": "2022/23",
+   "twinClub": 8456,
+   "match": 81.6,
+   "sure": 82,
+   "famousTwin": true,
+   "ownTop": 1,
+   "surprise": [
+    "Paulo Dybala",
+    "Antoine Griezmann",
+    "Raphinha",
+    "Michael Olise",
+    "Riyad Mahrez",
+    "Rafael Leão"
+   ],
+   "surpriseRank": [
+    [
+     13,
+     "Paulo Dybala"
+    ],
+    [
+     15,
+     "Antoine Griezmann"
+    ],
+    [
+     16,
+     "Raphinha"
+    ]
+   ],
+   "top7": [
+    "Kevin De Bruyne 22/23",
+    "Marco Asensio 23/24",
+    "Bruno Fernandes 25/26",
+    "Bukayo Saka 24/25",
+    "Rayan Cherki 24/25",
+    "Florian Thauvin 26/27",
+    "Kevin De Bruyne 24/25"
+   ],
+   "score": 12,
+   "twinMins": 2425
+  },
+  {
+   "player": "Gareth Bale",
+   "season": "2017/18",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 83,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 3,
+   "twin": "Christopher Nkunku",
+   "twinSeason": "2022/23",
+   "twinClub": 178475,
+   "match": 86.6,
+   "sure": 98,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Bradley Barcola",
+    "Morgan Gibbs-White",
+    "Phil Foden",
+    "Julián Álvarez",
+    "Ademola Lookman",
+    "Marcus Thuram"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Bradley Barcola"
+    ],
+    [
+     11,
+     "Morgan Gibbs-White"
+    ],
+    [
+     12,
+     "Phil Foden"
+    ]
+   ],
+   "top7": [
+    "Christopher Nkunku 22/23",
+    "Serge Gnabry 22/23",
+    "Dani Olmo 24/25",
+    "Raphinha 25/26",
+    "Luis Díaz 24/25",
+    "Ángel Correa 22/23",
+    "Cody Gakpo 24/25"
+   ],
+   "score": 12,
+   "twinMins": 1898
+  },
+  {
+   "player": "N'Golo Kanté",
+   "season": "2016/17",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 64,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Moisés Caicedo",
+   "twinSeason": "2022/23",
+   "twinClub": 10204,
+   "match": 88.5,
+   "sure": 60,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Declan Rice",
+    "Alexis Mac Allister",
+    "Fabinho",
+    "Bruno Guimarães",
+    "Casemiro",
+    "Enzo Fernández"
+   ],
+   "surpriseRank": [
+    [
+     14,
+     "Declan Rice"
+    ],
+    [
+     19,
+     "Alexis Mac Allister"
+    ],
+    [
+     23,
+     "Fabinho"
+    ]
+   ],
+   "top7": [
+    "Moisés Caicedo 22/23",
+    "Moisés Caicedo 23/24",
+    "Manuel Ugarte 24/25",
+    "Moisés Caicedo 24/25",
+    "André 24/25",
+    "Moisés Caicedo 25/26",
+    "Yves Bissouma 23/24"
+   ],
+   "score": 12,
+   "twinMins": 3140
+  },
+  {
+   "player": "Toni Kroos",
+   "season": "2023/24",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 66,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 3,
+   "twin": "Joshua Kimmich",
+   "twinSeason": "2024/25",
+   "twinClub": 9823,
+   "match": 84.2,
+   "sure": 54,
+   "famousTwin": true,
+   "ownTop": 1,
+   "surprise": [
+    "Luka Modrić",
+    "Rodri",
+    "Frenkie de Jong",
+    "Granit Xhaka",
+    "Pedri",
+    "Ilkay Gündogan"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Luka Modrić"
+    ],
+    [
+     15,
+     "Rodri"
+    ],
+    [
+     18,
+     "Frenkie de Jong"
+    ]
+   ],
+   "top7": [
+    "Joshua Kimmich 24/25",
+    "Joshua Kimmich 25/26",
+    "Aleix García 25/26",
+    "Vítinha 25/26",
+    "Vítinha 26/27",
+    "Joshua Kimmich 23/24",
+    "Joshua Kimmich 26/27"
+   ],
+   "score": 12,
+   "twinMins": 2847
+  },
+  {
+   "player": "Paul Pogba",
+   "season": "2018/19",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 86,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Dominik Szoboszlai",
+   "twinSeason": "2025/26",
+   "twinClub": 8650,
+   "match": 82.6,
+   "sure": 89,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Alexis Mac Allister",
+    "Ilkay Gündogan",
+    "James Maddison",
+    "Declan Rice",
+    "Granit Xhaka",
+    "Bernardo Silva"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Alexis Mac Allister"
+    ],
+    [
+     12,
+     "Ilkay Gündogan"
+    ],
+    [
+     13,
+     "James Maddison"
+    ]
+   ],
+   "top7": [
+    "Dominik Szoboszlai 25/26",
+    "Bruno Guimarães 25/26",
+    "Enzo Fernández 24/25",
+    "Bruno Guimarães 24/25",
+    "Douglas Luiz 23/24",
+    "Enzo Fernández 23/24",
+    "Bruno Guimarães 23/24"
+   ],
+   "score": 12,
+   "twinMins": 3233
+  },
+  {
+   "player": "Fabinho",
+   "season": "2019/20",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 66,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Moisés Caicedo",
+   "twinSeason": "2023/24",
+   "twinClub": 8455,
+   "match": 87.3,
+   "sure": 75,
+   "famousTwin": true,
+   "ownTop": 1,
+   "surprise": [
+    "Declan Rice",
+    "Bruno Guimarães",
+    "Alexis Mac Allister",
+    "Bernardo Silva",
+    "Reece James",
+    "Jordan Henderson"
+   ],
+   "surpriseRank": [
+    [
+     15,
+     "Declan Rice"
+    ],
+    [
+     31,
+     "Bruno Guimarães"
+    ],
+    [
+     55,
+     "Alexis Mac Allister"
+    ]
+   ],
+   "top7": [
+    "Moisés Caicedo 23/24",
+    "Thomas Partey 24/25",
+    "Douglas Luiz 22/23",
+    "Moisés Caicedo 24/25",
+    "Moisés Caicedo 22/23",
+    "Jorginho 22/23",
+    "Sandro Tonali 26/27"
+   ],
+   "score": 12,
+   "twinMins": 2872
+  },
+  {
+   "player": "Trent Alexander-Arnold",
+   "season": "2019/20",
+   "group": "FB",
+   "declared": "FB",
+   "pos": 32,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "short": "Trent",
+   "twin": "Kieran Trippier",
+   "twinSeason": "2023/24",
+   "twinClub": 10261,
+   "match": 77.8,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 3,
+   "surprise": [
+    "Ben White",
+    "Joško Gvardiol",
+    "Reece James",
+    "Kyle Walker",
+    "Jurriën Timber",
+    "Jeremie Frimpong"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Ben White"
+    ],
+    [
+     16,
+     "Joško Gvardiol"
+    ],
+    [
+     27,
+     "Reece James"
+    ]
+   ],
+   "top7": [
+    "Kieran Trippier 23/24",
+    "Kieran Trippier 22/23",
+    "Pedro Porro 24/25",
+    "Abdoul Ouattara 26/27",
+    "Pedro Porro 25/26",
+    "Pedro Porro 23/24",
+    "Andrew Robertson 22/23"
+   ],
+   "score": 12,
+   "twinMins": 2240
+  },
+  {
+   "player": "Alphonso Davies",
+   "season": "2019/20",
+   "group": "FB",
+   "declared": "FB",
+   "pos": 38,
+   "league": "Bundesliga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Andrei Rațiu",
+   "twinSeason": "2024/25",
+   "twinClub": 8370,
+   "match": 83.0,
+   "sure": 98,
+   "famousTwin": false,
+   "ownTop": 2,
+   "surprise": [
+    "Joško Gvardiol",
+    "João Cancelo",
+    "Nuno Mendes",
+    "Pedro Porro",
+    "Theo Hernández",
+    "Jules Koundé"
+   ],
+   "surpriseRank": [
+    [
+     30,
+     "Joško Gvardiol"
+    ],
+    [
+     31,
+     "João Cancelo"
+    ],
+    [
+     40,
+     "Nuno Mendes"
+    ]
+   ],
+   "top7": [
+    "Andrei Rațiu 24/25",
+    "Alexis Saelemaekers 25/26",
+    "Andrei Rațiu 25/26",
+    "Rayan Aït-Nouri 24/25",
+    "Andrea Cambiaso 22/23",
+    "Lewis Hall 25/26",
+    "Konrad Laimer 23/24"
+   ],
+   "score": 12,
+   "twinMins": 3067
+  },
+  {
+   "player": "Manuel Neuer",
+   "season": "2019/20",
+   "group": "GK",
+   "declared": "GK",
+   "pos": 11,
+   "league": "Bundesliga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Yann Sommer",
+   "twinSeason": "2023/24",
+   "twinClub": 8636,
+   "match": 91.7,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Thibaut Courtois",
+    "David Raya",
+    "Unai Simón",
+    "Alisson Becker",
+    "Ederson",
+    "Jan Oblak"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Thibaut Courtois"
+    ],
+    [
+     13,
+     "David Raya"
+    ],
+    [
+     17,
+     "Unai Simón"
+    ]
+   ],
+   "top7": [
+    "Yann Sommer 23/24",
+    "Bart Verbruggen 26/27",
+    "Marc ter Stegen 22/23",
+    "Andriy Lunin 23/24",
+    "Gianluigi Donnarumma 25/26",
+    "Ivan Provedel 22/23",
+    "Alex Meret 22/23"
+   ],
+   "score": 12,
+   "twinMins": 3060
+  },
+  {
+   "player": "Harry Kane",
+   "season": "2020/21",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Alexander Isak",
+   "twinSeason": "2024/25",
+   "twinClub": 10261,
+   "match": 78.8,
+   "sure": 64,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Darwin Núñez",
+    "Gabriel Jesus",
+    "Diogo Jota",
+    "Callum Wilson",
+    "Erling Haaland",
+    "Nicolas Jackson"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Darwin Núñez"
+    ],
+    [
+     11,
+     "Gabriel Jesus"
+    ],
+    [
+     13,
+     "Diogo Jota"
+    ]
+   ],
+   "top7": [
+    "Alexander Isak 24/25",
+    "Richarlison 25/26",
+    "Ollie Watkins 23/24",
+    "Richarlison 23/24",
+    "João Pedro​ 26/27",
+    "Hugo Ekitiké 25/26",
+    "Ollie Watkins 24/25"
+   ],
+   "score": 11,
+   "twinMins": 2769
+  },
+  {
+   "player": "Sergio Agüero",
+   "season": "2018/19",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 105,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Alexander Isak",
+   "twinSeason": "2024/25",
+   "twinClub": 10261,
+   "match": 79.4,
+   "sure": 84,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Erling Haaland",
+    "Ollie Watkins",
+    "Gabriel Jesus",
+    "Diogo Jota",
+    "Nicolas Jackson",
+    "Darwin Núñez"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Erling Haaland"
+    ],
+    [
+     11,
+     "Ollie Watkins"
+    ],
+    [
+     12,
+     "Gabriel Jesus"
+    ]
+   ],
+   "top7": [
+    "Alexander Isak 24/25",
+    "Hugo Ekitiké 25/26",
+    "Richarlison 23/24",
+    "Evan Ferguson 22/23",
+    "Harry Kane 22/23",
+    "Callum Wilson 22/23",
+    "Yoane Wissa 24/25"
+   ],
+   "score": 11,
+   "twinMins": 2769
+  },
+  {
+   "player": "Pierre-Emerick Aubameyang",
+   "season": "2018/19",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Ollie Watkins",
+   "twinSeason": "2025/26",
+   "twinClub": 10252,
+   "match": 88.5,
+   "sure": 96,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Richarlison",
+    "Chris Wood",
+    "Nicolas Jackson",
+    "Viktor Gyökeres",
+    "Jean-Philippe Mateta",
+    "Erling Haaland"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Richarlison"
+    ],
+    [
+     18,
+     "Chris Wood"
+    ],
+    [
+     20,
+     "Nicolas Jackson"
+    ]
+   ],
+   "top7": [
+    "Ollie Watkins 25/26",
+    "Alexander Isak 23/24",
+    "Yoane Wissa 24/25",
+    "Callum Wilson 22/23",
+    "Alexander Isak 24/25",
+    "Beto 25/26",
+    "Ollie Watkins 24/25"
+   ],
+   "score": 11,
+   "twinMins": 2852
+  },
+  {
+   "player": "Kylian Mbappé",
+   "season": "2021/22",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Ligue 1",
+   "pl": false,
+   "fame": 3,
+   "twin": "Ousmane Dembélé",
+   "twinSeason": "2024/25",
+   "twinClub": 9847,
+   "match": 80.5,
+   "sure": 73,
+   "famousTwin": true,
+   "ownTop": 4,
+   "surprise": [
+    "Alexander Isak",
+    "Darwin Núñez",
+    "Nicolas Jackson",
+    "Harry Kane",
+    "Paulo Dybala",
+    "Randal Kolo Muani"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Alexander Isak"
+    ],
+    [
+     12,
+     "Darwin Núñez"
+    ],
+    [
+     13,
+     "Nicolas Jackson"
+    ]
+   ],
+   "top7": [
+    "Ousmane Dembélé 24/25",
+    "Omar Marmoush 24/25",
+    "Ferrán Torres 24/25",
+    "Ousmane Dembélé 25/26",
+    "Deniz Undav 23/24",
+    "Donyell Malen 22/23",
+    "Karim Benzema 22/23"
+   ],
+   "score": 11,
+   "twinMins": 1736
+  },
+  {
+   "player": "Diego Costa",
+   "season": "2016/17",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 104,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Ollie Watkins",
+   "twinSeason": "2025/26",
+   "twinClub": 10252,
+   "match": 88.2,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Nicolas Jackson",
+    "Diogo Jota",
+    "Callum Wilson",
+    "Kai Havertz",
+    "Darwin Núñez",
+    "Harry Kane"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Nicolas Jackson"
+    ],
+    [
+     11,
+     "Diogo Jota"
+    ],
+    [
+     12,
+     "Callum Wilson"
+    ]
+   ],
+   "top7": [
+    "Ollie Watkins 25/26",
+    "Evan Ferguson 22/23",
+    "Yoane Wissa 24/25",
+    "Hugo Ekitiké 25/26",
+    "Gabriel Jesus 22/23",
+    "Alexander Isak 24/25",
+    "Richarlison 23/24"
+   ],
+   "score": 11,
+   "twinMins": 2852
+  },
+  {
+   "player": "Édinson Cavani",
+   "season": "2016/17",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 106,
+   "league": "Ligue 1",
+   "pl": false,
+   "fame": 2,
+   "twin": "Erling Haaland",
+   "twinSeason": "2023/24",
+   "twinClub": 8456,
+   "match": 79.7,
+   "sure": 96,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Gonçalo Ramos",
+    "Callum Wilson",
+    "Alexander Isak",
+    "Serhou Guirassy",
+    "Ollie Watkins",
+    "Pierre-Emerick Aubameyang"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Gonçalo Ramos"
+    ],
+    [
+     24,
+     "Callum Wilson"
+    ],
+    [
+     35,
+     "Alexander Isak"
+    ]
+   ],
+   "top7": [
+    "Erling Haaland 23/24",
+    "Robert Lewandowski 24/25",
+    "Victor Osimhen 22/23",
+    "Harry Kane 23/24",
+    "Dušan Vlahović 23/24",
+    "Bamba Dieng 25/26",
+    "Robert Lewandowski 22/23"
+   ],
+   "score": 11,
+   "twinMins": 2556
+  },
+  {
+   "player": "Roberto Firmino",
+   "season": "2017/18",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 85,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Bryan Mbeumo",
+   "twinSeason": "2025/26",
+   "twinClub": 10260,
+   "match": 87.9,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Richarlison",
+    "Alexander Isak",
+    "Matheus Cunha",
+    "Nicolas Jackson",
+    "Diogo Jota",
+    "Harry Kane"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Richarlison"
+    ],
+    [
+     12,
+     "Alexander Isak"
+    ],
+    [
+     17,
+     "Matheus Cunha"
+    ]
+   ],
+   "top7": [
+    "Bryan Mbeumo 25/26",
+    "Heung-Min Son 23/24",
+    "Bryan Mbeumo 26/27",
+    "Kai Havertz 23/24",
+    "Evanilson 26/27",
+    "Kelechi Iheanacho 22/23",
+    "Gabriel Jesus 22/23"
+   ],
+   "score": 11,
+   "twinMins": 2621
+  },
+  {
+   "player": "Sadio Mané",
+   "season": "2018/19",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 78,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Leandro Trossard",
+   "twinSeason": "2023/24",
+   "twinClub": 9825,
+   "match": 88.1,
+   "sure": 94,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Cody Gakpo",
+    "Jarrod Bowen",
+    "Brennan Johnson",
+    "Bryan Mbeumo",
+    "Matheus Cunha",
+    "Phil Foden"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Cody Gakpo"
+    ],
+    [
+     16,
+     "Jarrod Bowen"
+    ],
+    [
+     22,
+     "Brennan Johnson"
+    ]
+   ],
+   "top7": [
+    "Leandro Trossard 23/24",
+    "Antoine Semenyo 25/26",
+    "Morgan Gibbs-White 25/26",
+    "Noah Okafor 25/26",
+    "Morgan Rogers 26/27",
+    "Julián Álvarez 22/23",
+    "Junior Kroupi 25/26"
+   ],
+   "score": 11,
+   "twinMins": 1646
+  },
+  {
+   "player": "Kevin De Bruyne",
+   "season": "2022/23",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 85,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Bruno Fernandes",
+   "twinSeason": "2025/26",
+   "twinClub": 10260,
+   "match": 78.6,
+   "sure": 84,
+   "famousTwin": true,
+   "ownTop": 1,
+   "surprise": [
+    "Cole Palmer",
+    "Phil Foden",
+    "Michael Olise",
+    "Cody Gakpo",
+    "Xavi Simons",
+    "Bernardo Silva"
+   ],
+   "surpriseRank": [
+    [
+     18,
+     "Cole Palmer"
+    ],
+    [
+     25,
+     "Phil Foden"
+    ],
+    [
+     28,
+     "Michael Olise"
+    ]
+   ],
+   "top7": [
+    "Bruno Fernandes 25/26",
+    "Rayan Cherki 25/26",
+    "Bukayo Saka 24/25",
+    "Bruno Fernandes 22/23",
+    "Riyad Mahrez 22/23",
+    "Dwight McNeil 24/25",
+    "Jack Grealish 22/23"
+   ],
+   "score": 11,
+   "twinMins": 3066
+  },
+  {
+   "player": "Bukayo Saka",
+   "season": "2023/24",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 103,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Cole Palmer",
+   "twinSeason": "2024/25",
+   "twinClub": 8455,
+   "match": 82.0,
+   "sure": 24,
+   "famousTwin": true,
+   "ownTop": 2,
+   "surprise": [
+    "Julián Álvarez",
+    "Dominik Szoboszlai",
+    "Eberechi Eze",
+    "Florian Wirtz",
+    "Bryan Mbeumo",
+    "Cody Gakpo"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Julián Álvarez"
+    ],
+    [
+     11,
+     "Dominik Szoboszlai"
+    ],
+    [
+     13,
+     "Eberechi Eze"
+    ]
+   ],
+   "top7": [
+    "Cole Palmer 24/25",
+    "Mohamed Salah 25/26",
+    "Julio Enciso 26/27",
+    "Gabriel Martinelli 23/24",
+    "Marcus Tavernier 25/26",
+    "Cole Palmer 23/24",
+    "Kaoru Mitoma 22/23"
+   ],
+   "score": 11,
+   "twinMins": 3195
+  },
+  {
+   "player": "Alexis Sánchez",
+   "season": "2016/17",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 106,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Matheus Cunha",
+   "twinSeason": "2024/25",
+   "twinClub": 8602,
+   "match": 83.8,
+   "sure": 83,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Cody Gakpo",
+    "Morgan Gibbs-White",
+    "Eberechi Eze",
+    "Roberto Firmino",
+    "Bukayo Saka",
+    "Morgan Rogers"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Cody Gakpo"
+    ],
+    [
+     11,
+     "Morgan Gibbs-White"
+    ],
+    [
+     13,
+     "Eberechi Eze"
+    ]
+   ],
+   "top7": [
+    "Matheus Cunha 24/25",
+    "Michael Olise 23/24",
+    "Cole Palmer 23/24",
+    "Mohamed Salah 22/23",
+    "Phil Foden 23/24",
+    "Luis Díaz 24/25",
+    "Antoine Semenyo 25/26"
+   ],
+   "score": 11,
+   "twinMins": 2600
+  },
+  {
+   "player": "Christian Eriksen",
+   "season": "2017/18",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 85,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Dominik Szoboszlai",
+   "twinSeason": "2024/25",
+   "twinClub": 8650,
+   "match": 85.1,
+   "sure": 81,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Enzo Fernández",
+    "Kevin De Bruyne",
+    "Cole Palmer",
+    "Xavi Simons",
+    "Riyad Mahrez",
+    "Eberechi Eze"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Enzo Fernández"
+    ],
+    [
+     12,
+     "Kevin De Bruyne"
+    ],
+    [
+     14,
+     "Cole Palmer"
+    ]
+   ],
+   "top7": [
+    "Dominik Szoboszlai 24/25",
+    "Bruno Fernandes 23/24",
+    "Phil Foden 25/26",
+    "Bruno Fernandes 24/25",
+    "Bukayo Saka 23/24",
+    "Harvey Elliott 23/24",
+    "Kiernan Dewsbury-Hall 26/27"
+   ],
+   "score": 11,
+   "twinMins": 2496
+  },
+  {
+   "player": "Philippe Coutinho",
+   "season": "2016/17",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 85,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Cole Palmer",
+   "twinSeason": "2023/24",
+   "twinClub": 8455,
+   "match": 85.0,
+   "sure": 66,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Bukayo Saka",
+    "Luis Díaz",
+    "Cody Gakpo",
+    "Rayan Cherki",
+    "Julián Álvarez",
+    "Morgan Gibbs-White"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Bukayo Saka"
+    ],
+    [
+     14,
+     "Luis Díaz"
+    ],
+    [
+     17,
+     "Cody Gakpo"
+    ]
+   ],
+   "top7": [
+    "Cole Palmer 23/24",
+    "Michael Olise 23/24",
+    "Matheus Cunha 24/25",
+    "Phil Foden 23/24",
+    "Eberechi Eze 23/24",
+    "Mohamed Salah 22/23",
+    "Cole Palmer 24/25"
+   ],
+   "score": 11,
+   "twinMins": 2624
+  },
+  {
+   "player": "Pedri",
+   "season": "2024/25",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 66,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Nicolò Barella",
+   "twinSeason": "2025/26",
+   "twinClub": 8636,
+   "match": 79.9,
+   "sure": 75,
+   "famousTwin": true,
+   "ownTop": 2,
+   "surprise": [
+    "Luka Modrić",
+    "Joshua Kimmich",
+    "Dominik Szoboszlai",
+    "Rodri",
+    "Bruno Guimarães",
+    "Granit Xhaka"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Luka Modrić"
+    ],
+    [
+     12,
+     "Joshua Kimmich"
+    ],
+    [
+     18,
+     "Dominik Szoboszlai"
+    ]
+   ],
+   "top7": [
+    "Nicolò Barella 25/26",
+    "Nicolò Barella 24/25",
+    "Nicolò Fagioli 25/26",
+    "Moi Gómez 25/26",
+    "Aleksandar Pavlović 26/27",
+    "Nadiem Amiri 24/25",
+    "Mario Pašalić 25/26"
+   ],
+   "score": 11,
+   "twinMins": 2533
+  },
+  {
+   "player": "Casemiro",
+   "season": "2021/22",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 64,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Éderson",
+   "twinSeason": "2025/26",
+   "twinClub": 8524,
+   "match": 84.1,
+   "sure": 71,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Sergio Busquets",
+    "Declan Rice",
+    "Alexis Mac Allister",
+    "Luka Modrić",
+    "Aurélien Tchouaméni",
+    "Rodri"
+   ],
+   "surpriseRank": [
+    [
+     15,
+     "Sergio Busquets"
+    ],
+    [
+     37,
+     "Declan Rice"
+    ],
+    [
+     57,
+     "Alexis Mac Allister"
+    ]
+   ],
+   "top7": [
+    "Éderson 25/26",
+    "Jonas Martin 23/24",
+    "Moisés Caicedo 24/25",
+    "Leandro Paredes 23/24",
+    "Benjamin André 22/23",
+    "Manuel Locatelli 25/26",
+    "Equi Fernández 25/26"
+   ],
+   "score": 11,
+   "twinMins": 2235
+  },
+  {
+   "player": "Frenkie de Jong",
+   "season": "2022/23",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 64,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Angelo Stiller",
+   "twinSeason": "2024/25",
+   "twinClub": 10269,
+   "match": 85.2,
+   "sure": 71,
+   "famousTwin": false,
+   "ownTop": 2,
+   "surprise": [
+    "Vítinha",
+    "Sergio Busquets",
+    "Luka Modrić",
+    "Jordan Henderson",
+    "Nicolò Barella",
+    "João Neves"
+   ],
+   "surpriseRank": [
+    [
+     16,
+     "Vítinha"
+    ],
+    [
+     20,
+     "Sergio Busquets"
+    ],
+    [
+     40,
+     "Luka Modrić"
+    ]
+   ],
+   "top7": [
+    "Angelo Stiller 24/25",
+    "Dani Parejo 22/23",
+    "Angelo Stiller 25/26",
+    "Angelo Stiller 23/24",
+    "Lucas Da Cunha 25/26",
+    "Nicolò Fagioli 25/26",
+    "Bernardo Silva 25/26"
+   ],
+   "score": 11,
+   "twinMins": 2743
+  },
+  {
+   "player": "Andrew Robertson",
+   "season": "2018/19",
+   "group": "FB",
+   "declared": "FB",
+   "pos": 38,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Malo Gusto",
+   "twinSeason": "2023/24",
+   "twinClub": 8455,
+   "match": 82.9,
+   "sure": 95,
+   "famousTwin": false,
+   "ownTop": 2,
+   "surprise": [
+    "Pedro Porro",
+    "Kieran Trippier",
+    "Kyle Walker",
+    "Jurriën Timber",
+    "Joško Gvardiol",
+    "Reece James"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Pedro Porro"
+    ],
+    [
+     12,
+     "Kieran Trippier"
+    ],
+    [
+     16,
+     "Kyle Walker"
+    ]
+   ],
+   "top7": [
+    "Malo Gusto 23/24",
+    "Matheus Nunes 24/25",
+    "Ben White 26/27",
+    "Oleksandr Zinchenko 23/24",
+    "Malo Gusto 25/26",
+    "Oleksandr Zinchenko 22/23",
+    "Lewis Hall 24/25"
+   ],
+   "score": 11,
+   "twinMins": 1755
+  },
+  {
+   "player": "Achraf Hakimi",
+   "season": "2024/25",
+   "group": "FB",
+   "declared": "FB",
+   "pos": 32,
+   "league": "Ligue 1",
+   "pl": false,
+   "fame": 2,
+   "twin": "Raphaël Guerreiro",
+   "twinSeason": "2022/23",
+   "twinClub": 9789,
+   "match": 82.5,
+   "sure": 100,
+   "famousTwin": false,
+   "ownTop": 2,
+   "surprise": [
+    "Nuno Mendes",
+    "Theo Hernández",
+    "Joško Gvardiol",
+    "Alphonso Davies",
+    "Andrew Robertson",
+    "Jules Koundé"
+   ],
+   "surpriseRank": [
+    [
+     13,
+     "Nuno Mendes"
+    ],
+    [
+     16,
+     "Theo Hernández"
+    ],
+    [
+     20,
+     "Joško Gvardiol"
+    ]
+   ],
+   "top7": [
+    "Raphaël Guerreiro 22/23",
+    "Alejandro Grimaldo 25/26",
+    "Tom Bischof 25/26",
+    "Andrea Cambiaso 25/26",
+    "Konrad Laimer 25/26",
+    "Alejandro Grimaldo 24/25",
+    "Federico Valverde 23/24"
+   ],
+   "score": 11,
+   "twinMins": 2296
+  },
+  {
+   "player": "Kalidou Koulibaly",
+   "season": "2018/19",
+   "group": "CB",
+   "declared": "CB",
+   "pos": 36,
+   "league": "Serie A",
+   "pl": false,
+   "fame": 2,
+   "twin": "Dante",
+   "twinSeason": "2022/23",
+   "twinClub": 9831,
+   "match": 90.0,
+   "sure": 100,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Virgil van Dijk",
+    "Joško Gvardiol",
+    "Thiago Silva",
+    "Dean Huijsen",
+    "Ibrahima Konaté",
+    "Pau Cubarsí"
+   ],
+   "surpriseRank": [
+    [
+     18,
+     "Virgil van Dijk"
+    ],
+    [
+     26,
+     "Joško Gvardiol"
+    ],
+    [
+     27,
+     "Thiago Silva"
+    ]
+   ],
+   "top7": [
+    "Dante 22/23",
+    "Dante 23/24",
+    "Min-Jae Kim 22/23",
+    "Waldemar Anton 24/25",
+    "Emre Can 24/25",
+    "Jhon Lucumí 22/23",
+    "Marcos Alonso 25/26"
+   ],
+   "score": 11,
+   "twinMins": 3300
+  },
+  {
+   "player": "Thiago Silva",
+   "season": "2020/21",
+   "group": "CB",
+   "declared": "CB",
+   "pos": 34,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Virgil van Dijk",
+   "twinSeason": "2022/23",
+   "twinClub": 8650,
+   "match": 84.4,
+   "sure": 90,
+   "famousTwin": true,
+   "ownTop": 2,
+   "surprise": [
+    "Rúben Dias",
+    "William Saliba",
+    "Cristian Romero",
+    "Joško Gvardiol",
+    "Harry Maguire",
+    "Ibrahima Konaté"
+   ],
+   "surpriseRank": [
+    [
+     17,
+     "Rúben Dias"
+    ],
+    [
+     20,
+     "William Saliba"
+    ],
+    [
+     23,
+     "Cristian Romero"
+    ]
+   ],
+   "top7": [
+    "Virgil van Dijk 22/23",
+    "Virgil van Dijk 23/24",
+    "Virgil van Dijk 24/25",
+    "Lewis Dunk 23/24",
+    "Lewis Dunk 22/23",
+    "Jan Paul van Hecke 23/24",
+    "Lewis Dunk 25/26"
+   ],
+   "score": 11,
+   "twinMins": 2835
+  },
+  {
+   "player": "Harry Maguire",
+   "season": "2018/19",
+   "group": "CB",
+   "declared": "CB",
+   "pos": 35,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Virgil van Dijk",
+   "twinSeason": "2022/23",
+   "twinClub": 8650,
+   "match": 84.1,
+   "sure": 60,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Thiago Silva",
+    "William Saliba",
+    "Rúben Dias",
+    "Ibrahima Konaté",
+    "Kalidou Koulibaly",
+    "Lisandro Martínez"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Thiago Silva"
+    ],
+    [
+     49,
+     "William Saliba"
+    ],
+    [
+     51,
+     "Rúben Dias"
+    ]
+   ],
+   "top7": [
+    "Virgil van Dijk 22/23",
+    "Luka Vušković 26/27",
+    "Virgil van Dijk 23/24",
+    "Jan Paul van Hecke 24/25",
+    "Virgil van Dijk 26/27",
+    "Tim Ream 22/23",
+    "Fabian Schär 23/24"
+   ],
+   "score": 11,
+   "twinMins": 2835
+  },
+  {
+   "player": "Thibaut Courtois",
+   "season": "2021/22",
+   "group": "GK",
+   "declared": "GK",
+   "pos": 11,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Gregor Kobel",
+   "twinSeason": "2022/23",
+   "twinClub": 9789,
+   "match": 92.6,
+   "sure": 97,
+   "famousTwin": false,
+   "ownTop": 2,
+   "surprise": [
+    "Gianluigi Donnarumma",
+    "Unai Simón",
+    "Mike Maignan",
+    "Yann Sommer",
+    "David Raya",
+    "Jordan Pickford"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Gianluigi Donnarumma"
+    ],
+    [
+     14,
+     "Unai Simón"
+    ],
+    [
+     18,
+     "Mike Maignan"
+    ]
+   ],
+   "top7": [
+    "Gregor Kobel 22/23",
+    "Ivan Provedel 22/23",
+    "Brice Samba 23/24",
+    "Alisson Becker 24/25",
+    "Mile Svilar 24/25",
+    "Gregor Kobel 23/24",
+    "Ivan Provedel 25/26"
+   ],
+   "score": 11,
+   "twinMins": 2430
+  },
+  {
+   "player": "Harry Kane",
+   "season": "2017/18",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Erling Haaland",
+   "twinSeason": "2026/27",
+   "twinClub": 8456,
+   "match": 80.6,
+   "sure": 97,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Richarlison",
+    "Darwin Núñez",
+    "Alexander Isak",
+    "Ollie Watkins",
+    "Nicolas Jackson",
+    "Diogo Jota"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Richarlison"
+    ],
+    [
+     13,
+     "Darwin Núñez"
+    ],
+    [
+     15,
+     "Alexander Isak"
+    ]
+   ],
+   "top7": [
+    "Erling Haaland 26/27",
+    "Erling Haaland 24/25",
+    "Erling Haaland 23/24",
+    "Rodrigo Muniz 24/25",
+    "Benjamin Šeško 25/26",
+    "Callum Wilson 22/23",
+    "Erling Haaland 22/23"
+   ],
+   "score": 10,
+   "twinMins": 800
+  },
+  {
+   "player": "Jamie Vardy",
+   "season": "2019/20",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 106,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Jørgen Strand Larsen",
+   "twinSeason": "2024/25",
+   "twinClub": 8602,
+   "match": 83.2,
+   "sure": 77,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Callum Wilson",
+    "Alexander Isak",
+    "Jean-Philippe Mateta",
+    "Ivan Toney",
+    "Harry Kane",
+    "Richarlison"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Callum Wilson"
+    ],
+    [
+     13,
+     "Alexander Isak"
+    ],
+    [
+     16,
+     "Jean-Philippe Mateta"
+    ]
+   ],
+   "top7": [
+    "Jørgen Strand Larsen 24/25",
+    "Ollie Watkins 25/26",
+    "Igor Thiago 25/26",
+    "Chris Wood 23/24",
+    "Chris Wood 24/25",
+    "Danny Welbeck 25/26",
+    "Viktor Gyökeres 25/26"
+   ],
+   "score": 10,
+   "twinMins": 2599
+  },
+  {
+   "player": "Cristiano Ronaldo",
+   "season": "2020/21",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Serie A",
+   "pl": false,
+   "fame": 3,
+   "twin": "Dušan Vlahović",
+   "twinSeason": "2023/24",
+   "twinClub": 9885,
+   "match": 85.2,
+   "sure": 99,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Alexander Isak",
+    "Nicolas Jackson",
+    "Gonçalo Ramos",
+    "Callum Wilson",
+    "Serhou Guirassy",
+    "Kylian Mbappé"
+   ],
+   "surpriseRank": [
+    [
+     20,
+     "Alexander Isak"
+    ],
+    [
+     24,
+     "Nicolas Jackson"
+    ],
+    [
+     25,
+     "Gonçalo Ramos"
+    ]
+   ],
+   "top7": [
+    "Dušan Vlahović 23/24",
+    "Victor Okoh Boniface 24/25",
+    "Álvaro Morata 23/24",
+    "Harry Kane 23/24",
+    "Erling Haaland 23/24",
+    "Victor Osimhen 23/24",
+    "Robert Lewandowski 24/25"
+   ],
+   "score": 10,
+   "twinMins": 2317
+  },
+  {
+   "player": "Lautaro Martínez",
+   "season": "2023/24",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 106,
+   "league": "Serie A",
+   "pl": false,
+   "fame": 2,
+   "twin": "Álvaro Morata",
+   "twinSeason": "2023/24",
+   "twinClub": 9906,
+   "match": 84.4,
+   "sure": 82,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Jonathan David",
+    "Erling Haaland",
+    "Callum Wilson",
+    "Robert Lewandowski",
+    "Victor Osimhen",
+    "Alexander Isak"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Jonathan David"
+    ],
+    [
+     13,
+     "Erling Haaland"
+    ],
+    [
+     14,
+     "Callum Wilson"
+    ]
+   ],
+   "top7": [
+    "Álvaro Morata 23/24",
+    "Eric Maxim Choupo-Moting 22/23",
+    "Gonçalo Ramos 23/24",
+    "Álvaro Morata 22/23",
+    "Loïs Openda 22/23",
+    "Bamba Dieng 25/26",
+    "Sébastien Haller 22/23"
+   ],
+   "score": 10,
+   "twinMins": 1909
+  },
+  {
+   "player": "Viktor Gyökeres",
+   "season": "2025/26",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Jean-Philippe Mateta",
+   "twinSeason": "2024/25",
+   "twinClub": 9826,
+   "match": 91.5,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Dominic Solanke",
+    "Darwin Núñez",
+    "Nicolas Jackson",
+    "Chris Wood",
+    "Kai Havertz",
+    "Richarlison"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Dominic Solanke"
+    ],
+    [
+     16,
+     "Darwin Núñez"
+    ],
+    [
+     19,
+     "Nicolas Jackson"
+    ]
+   ],
+   "top7": [
+    "Jean-Philippe Mateta 24/25",
+    "Yoane Wissa 23/24",
+    "Ivan Toney 22/23",
+    "Danny Welbeck 25/26",
+    "Igor Thiago 25/26",
+    "Dominic Calvert-Lewin 26/27",
+    "Ollie Watkins 22/23"
+   ],
+   "score": 10,
+   "twinMins": 2654
+  },
+  {
+   "player": "Ollie Watkins",
+   "season": "2023/24",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Nicolas Jackson",
+   "twinSeason": "2024/25",
+   "twinClub": 8455,
+   "match": 83.7,
+   "sure": 50,
+   "famousTwin": true,
+   "ownTop": 3,
+   "surprise": [
+    "Jean-Philippe Mateta",
+    "Gabriel Jesus",
+    "Ivan Toney",
+    "Dominic Solanke",
+    "Viktor Gyökeres",
+    "Alexander Isak"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Jean-Philippe Mateta"
+    ],
+    [
+     12,
+     "Gabriel Jesus"
+    ],
+    [
+     15,
+     "Ivan Toney"
+    ]
+   ],
+   "top7": [
+    "Nicolas Jackson 24/25",
+    "Richarlison 25/26",
+    "João Pedro​ 25/26",
+    "Kai Havertz 24/25",
+    "Darwin Núñez 24/25",
+    "Nicolas Jackson 23/24",
+    "Diogo Jota 22/23"
+   ],
+   "score": 10,
+   "twinMins": 2238
+  },
+  {
+   "player": "Luis Suárez",
+   "season": "2020/21",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 106,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 3,
+   "twin": "Dušan Vlahović",
+   "twinSeason": "2025/26",
+   "twinClub": 9885,
+   "match": 83.9,
+   "sure": 46,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Harry Kane",
+    "Victor Osimhen",
+    "Callum Wilson",
+    "Richarlison",
+    "Alexander Isak",
+    "Robert Lewandowski"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Harry Kane"
+    ],
+    [
+     12,
+     "Victor Osimhen"
+    ],
+    [
+     16,
+     "Callum Wilson"
+    ]
+   ],
+   "top7": [
+    "Dušan Vlahović 25/26",
+    "Erling Haaland 24/25",
+    "Bamba Dieng 25/26",
+    "Erling Haaland 26/27",
+    "Loïs Openda 23/24",
+    "Rodrigo Muniz 24/25",
+    "Loïs Openda 22/23"
+   ],
+   "score": 10,
+   "twinMins": 970
+  },
+  {
+   "player": "Zlatan Ibrahimovic",
+   "season": "2016/17",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "short": "Zlatan",
+   "twin": "Darwin Núñez",
+   "twinSeason": "2022/23",
+   "twinClub": 8650,
+   "match": 77.8,
+   "sure": 51,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Ollie Watkins",
+    "Alexander Isak",
+    "Callum Wilson",
+    "Richarlison",
+    "Harry Kane",
+    "Kai Havertz"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Ollie Watkins"
+    ],
+    [
+     14,
+     "Alexander Isak"
+    ],
+    [
+     21,
+     "Callum Wilson"
+    ]
+   ],
+   "top7": [
+    "Darwin Núñez 22/23",
+    "Darwin Núñez 23/24",
+    "Thierno Barry 26/27",
+    "Nicolas Jackson 24/25",
+    "Erling Haaland 23/24",
+    "Bryan Mbeumo 26/27",
+    "Diogo Jota 24/25"
+   ],
+   "score": 10,
+   "twinMins": 1699
+  },
+  {
+   "player": "Sadio Mané",
+   "season": "2020/21",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 78,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Mohamed Salah",
+   "twinSeason": "2025/26",
+   "twinClub": 8650,
+   "match": 82.7,
+   "sure": 43,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Cole Palmer",
+    "Anthony Gordon",
+    "Eberechi Eze",
+    "Julián Álvarez",
+    "Raheem Sterling",
+    "Bryan Mbeumo"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Cole Palmer"
+    ],
+    [
+     14,
+     "Anthony Gordon"
+    ],
+    [
+     15,
+     "Eberechi Eze"
+    ]
+   ],
+   "top7": [
+    "Mohamed Salah 25/26",
+    "Noni Madueke 24/25",
+    "Mohamed Salah 22/23",
+    "Cody Gakpo 23/24",
+    "Luis Díaz 23/24",
+    "Luis Díaz 24/25",
+    "Bukayo Saka 25/26"
+   ],
+   "score": 10,
+   "twinMins": 2148
+  },
+  {
+   "player": "Eden Hazard",
+   "season": "2018/19",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 107,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Jérémy Doku",
+   "twinSeason": "2025/26",
+   "twinClub": 8456,
+   "match": 77.4,
+   "sure": 99,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Bukayo Saka",
+    "Eberechi Eze",
+    "Riyad Mahrez",
+    "Kevin De Bruyne",
+    "Mohamed Salah",
+    "Matheus Cunha"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Bukayo Saka"
+    ],
+    [
+     16,
+     "Eberechi Eze"
+    ],
+    [
+     25,
+     "Riyad Mahrez"
+    ]
+   ],
+   "top7": [
+    "Jérémy Doku 25/26",
+    "Cole Palmer 23/24",
+    "Allan Saint-Maximin 22/23",
+    "Michael Olise 23/24",
+    "Jérémy Doku 23/24",
+    "Phil Foden 22/23",
+    "Rayan Cherki 25/26"
+   ],
+   "score": 10,
+   "twinMins": 1784
+  },
+  {
+   "player": "Raheem Sterling",
+   "season": "2018/19",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 107,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Phil Foden",
+   "twinSeason": "2022/23",
+   "twinClub": 8456,
+   "match": 85.8,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Eberechi Eze",
+    "Antoine Semenyo",
+    "Matheus Cunha",
+    "Morgan Gibbs-White",
+    "Mohamed Salah",
+    "Morgan Rogers"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Eberechi Eze"
+    ],
+    [
+     11,
+     "Antoine Semenyo"
+    ],
+    [
+     12,
+     "Matheus Cunha"
+    ]
+   ],
+   "top7": [
+    "Phil Foden 22/23",
+    "Luis Díaz 24/25",
+    "Gabriel Martinelli 22/23",
+    "Phil Foden 23/24",
+    "Cody Gakpo 24/25",
+    "Michael Olise 23/24",
+    "Cole Palmer 23/24"
+   ],
+   "score": 10,
+   "twinMins": 1843
+  },
+  {
+   "player": "Phil Foden",
+   "season": "2023/24",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 86,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Gabriel Martinelli",
+   "twinSeason": "2022/23",
+   "twinClub": 9825,
+   "match": 82.2,
+   "sure": 58,
+   "famousTwin": false,
+   "ownTop": 2,
+   "surprise": [
+    "Bukayo Saka",
+    "Julián Álvarez",
+    "Morgan Rogers",
+    "Eberechi Eze",
+    "Antoine Semenyo",
+    "Roberto Firmino"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Bukayo Saka"
+    ],
+    [
+     11,
+     "Julián Álvarez"
+    ],
+    [
+     12,
+     "Morgan Rogers"
+    ]
+   ],
+   "top7": [
+    "Gabriel Martinelli 22/23",
+    "Matheus Cunha 24/25",
+    "Cole Palmer 23/24",
+    "Tijjani Reijnders 25/26",
+    "Luis Díaz 24/25",
+    "Morgan Gibbs-White 25/26",
+    "Cody Gakpo 24/25"
+   ],
+   "score": 10,
+   "twinMins": 2805
+  },
+  {
+   "player": "Cole Palmer",
+   "season": "2023/24",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 85,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Michael Olise",
+   "twinSeason": "2023/24",
+   "twinClub": 9826,
+   "match": 83.2,
+   "sure": 76,
+   "famousTwin": true,
+   "ownTop": 1,
+   "surprise": [
+    "Eberechi Eze",
+    "Cody Gakpo",
+    "Julián Álvarez",
+    "Mohamed Salah",
+    "Luis Díaz",
+    "Bryan Mbeumo"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Eberechi Eze"
+    ],
+    [
+     13,
+     "Cody Gakpo"
+    ],
+    [
+     15,
+     "Julián Álvarez"
+    ]
+   ],
+   "top7": [
+    "Michael Olise 23/24",
+    "Phil Foden 25/26",
+    "Bukayo Saka 23/24",
+    "Gabriel Martinelli 22/23",
+    "Phil Foden 22/23",
+    "Phil Foden 23/24",
+    "Bukayo Saka 25/26"
+   ],
+   "score": 10,
+   "twinMins": 1277
+  },
+  {
+   "player": "Lamine Yamal",
+   "season": "2024/25",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 83,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 3,
+   "short": "Yamal",
+   "twin": "Edon Zhegrova",
+   "twinSeason": "2022/23",
+   "twinClub": 8639,
+   "match": 85.5,
+   "sure": 100,
+   "famousTwin": false,
+   "ownTop": 2,
+   "surprise": [
+    "Michael Olise",
+    "Dani Olmo",
+    "Raphinha",
+    "Rafael Leão",
+    "Lionel Messi",
+    "Rayan Cherki"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Michael Olise"
+    ],
+    [
+     15,
+     "Dani Olmo"
+    ],
+    [
+     19,
+     "Raphinha"
+    ]
+   ],
+   "top7": [
+    "Edon Zhegrova 22/23",
+    "Florian Wirtz 24/25",
+    "Bukayo Saka 24/25",
+    "Leroy Sané 23/24",
+    "Désiré Doué 24/25",
+    "Vinícius Júnior 24/25",
+    "Khvicha Kvaratskhelia 25/26"
+   ],
+   "score": 10,
+   "twinMins": 1054
+  },
+  {
+   "player": "Khvicha Kvaratskhelia",
+   "season": "2022/23",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 107,
+   "league": "Serie A",
+   "pl": false,
+   "fame": 2,
+   "twin": "Nico Williams",
+   "twinSeason": "2023/24",
+   "twinClub": 8315,
+   "match": 81.1,
+   "sure": 45,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Jack Grealish",
+    "Phil Foden",
+    "Anthony Gordon",
+    "Dani Olmo",
+    "Ademola Lookman",
+    "Cole Palmer"
+   ],
+   "surpriseRank": [
+    [
+     16,
+     "Jack Grealish"
+    ],
+    [
+     20,
+     "Phil Foden"
+    ],
+    [
+     30,
+     "Anthony Gordon"
+    ]
+   ],
+   "top7": [
+    "Nico Williams 23/24",
+    "Florian Wirtz 24/25",
+    "Vinícius Júnior 24/25",
+    "Xavi Simons 23/24",
+    "Rafael Leão 24/25",
+    "Vinícius Júnior 22/23",
+    "Lamine Yamal 23/24"
+   ],
+   "score": 10,
+   "twinMins": 2280
+  },
+  {
+   "player": "Rafael Leão",
+   "season": "2021/22",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 106,
+   "league": "Serie A",
+   "pl": false,
+   "fame": 2,
+   "twin": "Samuel Chukwueze",
+   "twinSeason": "2022/23",
+   "twinClub": 10205,
+   "match": 86.5,
+   "sure": 98,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Matheus Cunha",
+    "Eberechi Eze",
+    "Vinícius Júnior",
+    "Bukayo Saka",
+    "Xavi Simons",
+    "Jamal Musiala"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Matheus Cunha"
+    ],
+    [
+     11,
+     "Eberechi Eze"
+    ],
+    [
+     12,
+     "Vinícius Júnior"
+    ]
+   ],
+   "top7": [
+    "Samuel Chukwueze 22/23",
+    "Karim Adeyemi 24/25",
+    "Edon Zhegrova 23/24",
+    "Nico Williams 25/26",
+    "Evann Guessand 24/25",
+    "Nico Williams 24/25",
+    "Giorgi Kvernadze 26/27"
+   ],
+   "score": 10,
+   "twinMins": 2346
+  },
+  {
+   "player": "Martin Ødegaard",
+   "season": "2022/23",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 73,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Phil Foden",
+   "twinSeason": "2022/23",
+   "twinClub": 8456,
+   "match": 85.1,
+   "sure": 91,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Dominik Szoboszlai",
+    "Florian Wirtz",
+    "Matheus Cunha",
+    "Jack Grealish",
+    "Julián Álvarez",
+    "Cody Gakpo"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Dominik Szoboszlai"
+    ],
+    [
+     13,
+     "Florian Wirtz"
+    ],
+    [
+     18,
+     "Matheus Cunha"
+    ]
+   ],
+   "top7": [
+    "Phil Foden 22/23",
+    "Phil Foden 23/24",
+    "Phil Foden 25/26",
+    "Bukayo Saka 23/24",
+    "Cole Palmer 23/24",
+    "Phil Foden 24/25",
+    "Eberechi Eze 23/24"
+   ],
+   "score": 10,
+   "twinMins": 1843
+  },
+  {
+   "player": "Marcus Rashford",
+   "season": "2022/23",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 87,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Noni Madueke",
+   "twinSeason": "2024/25",
+   "twinClub": 8455,
+   "match": 83.3,
+   "sure": 67,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Antoine Semenyo",
+    "Cole Palmer",
+    "Luis Díaz",
+    "Anthony Gordon",
+    "Jarrod Bowen",
+    "Matheus Cunha"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Antoine Semenyo"
+    ],
+    [
+     13,
+     "Cole Palmer"
+    ],
+    [
+     15,
+     "Luis Díaz"
+    ]
+   ],
+   "top7": [
+    "Noni Madueke 24/25",
+    "Harvey Barnes 25/26",
+    "Anthony Martial 22/23",
+    "Cody Gakpo 23/24",
+    "Mohamed Salah 22/23",
+    "Julián Álvarez 22/23",
+    "Leandro Trossard 23/24"
+   ],
+   "score": 10,
+   "twinMins": 2046
+  },
+  {
+   "player": "Dele Alli",
+   "season": "2016/17",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 85,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Luis Díaz",
+   "twinSeason": "2024/25",
+   "twinClub": 8650,
+   "match": 84.6,
+   "sure": 53,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Matheus Cunha",
+    "Julián Álvarez",
+    "Cody Gakpo",
+    "Marcus Rashford",
+    "Bukayo Saka",
+    "Morgan Rogers"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Matheus Cunha"
+    ],
+    [
+     14,
+     "Julián Álvarez"
+    ],
+    [
+     15,
+     "Cody Gakpo"
+    ]
+   ],
+   "top7": [
+    "Luis Díaz 24/25",
+    "Morgan Gibbs-White 25/26",
+    "Harvey Barnes 24/25",
+    "Raheem Sterling 23/24",
+    "Harvey Barnes 25/26",
+    "Jarrod Bowen 24/25",
+    "Antoine Semenyo 25/26"
+   ],
+   "score": 10,
+   "twinMins": 2410
+  },
+  {
+   "player": "Rodri",
+   "season": "2023/24",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 65,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "award": "Ballon d'Or winner",
+   "twin": "Dominik Szoboszlai",
+   "twinSeason": "2025/26",
+   "twinClub": 8650,
+   "match": 69.8,
+   "sure": 52,
+   "famousTwin": true,
+   "ownTop": 2,
+   "surprise": [
+    "Bruno Guimarães",
+    "Bernardo Silva",
+    "Moisés Caicedo",
+    "Jordan Henderson",
+    "Declan Rice",
+    "Ilkay Gündogan"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Bruno Guimarães"
+    ],
+    [
+     13,
+     "Bernardo Silva"
+    ],
+    [
+     18,
+     "Moisés Caicedo"
+    ]
+   ],
+   "top7": [
+    "Dominik Szoboszlai 25/26",
+    "Curtis Jones 25/26",
+    "Pierre-Emile Højbjerg 22/23",
+    "Mateo Kovacic 24/25",
+    "Thomas Partey 22/23",
+    "Enzo Fernández 23/24",
+    "Tom Cairney 22/23"
+   ],
+   "score": 10,
+   "twinMins": 3233
+  },
+  {
+   "player": "Declan Rice",
+   "season": "2023/24",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 66,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Douglas Luiz",
+   "twinSeason": "2022/23",
+   "twinClub": 10252,
+   "match": 88.8,
+   "sure": 100,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Bernardo Silva",
+    "Bruno Guimarães",
+    "Reece James",
+    "Granit Xhaka",
+    "Fabinho",
+    "Moisés Caicedo"
+   ],
+   "surpriseRank": [
+    [
+     16,
+     "Bernardo Silva"
+    ],
+    [
+     20,
+     "Bruno Guimarães"
+    ],
+    [
+     23,
+     "Reece James"
+    ]
+   ],
+   "top7": [
+    "Douglas Luiz 22/23",
+    "Mateo Kovacic 22/23",
+    "Douglas Luiz 23/24",
+    "Youri Tielemans 26/27",
+    "Sandro Tonali 26/27",
+    "Pervis Estupinán 23/24",
+    "Alexis Mac Allister 24/25"
+   ],
+   "score": 10,
+   "twinMins": 2933
+  },
+  {
+   "player": "Moisés Caicedo",
+   "season": "2024/25",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 66,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Thomas Partey",
+   "twinSeason": "2022/23",
+   "twinClub": 9825,
+   "match": 87.4,
+   "sure": 99,
+   "famousTwin": false,
+   "ownTop": 2,
+   "surprise": [
+    "Bruno Guimarães",
+    "Alexis Mac Allister",
+    "Bernardo Silva",
+    "Jordan Henderson",
+    "Declan Rice",
+    "Granit Xhaka"
+   ],
+   "surpriseRank": [
+    [
+     13,
+     "Bruno Guimarães"
+    ],
+    [
+     21,
+     "Alexis Mac Allister"
+    ],
+    [
+     76,
+     "Bernardo Silva"
+    ]
+   ],
+   "top7": [
+    "Thomas Partey 22/23",
+    "Nico González 25/26",
+    "Manuel Ugarte 24/25",
+    "Jorginho 22/23",
+    "Mateus Fernandes 25/26",
+    "Pierre-Emile Højbjerg 22/23",
+    "Fabinho 22/23"
+   ],
+   "score": 10,
+   "twinMins": 2485
+  },
+  {
+   "player": "Joshua Kimmich",
+   "season": "2019/20",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 64,
+   "league": "Bundesliga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Angelo Stiller",
+   "twinSeason": "2024/25",
+   "twinClub": 10269,
+   "match": 83.5,
+   "sure": 54,
+   "famousTwin": false,
+   "ownTop": 3,
+   "surprise": [
+    "Frenkie de Jong",
+    "Granit Xhaka",
+    "Luka Modrić",
+    "Dominik Szoboszlai",
+    "Vítinha",
+    "Pedri"
+   ],
+   "surpriseRank": [
+    [
+     13,
+     "Frenkie de Jong"
+    ],
+    [
+     14,
+     "Granit Xhaka"
+    ],
+    [
+     15,
+     "Luka Modrić"
+    ]
+   ],
+   "top7": [
+    "Angelo Stiller 24/25",
+    "Aleix García 23/24",
+    "Toni Kroos 22/23",
+    "Hakan Çalhanoglu 24/25",
+    "Mario Pašalić 25/26",
+    "Aleix García 26/27",
+    "Kristjan Asllani 24/25"
+   ],
+   "score": 10,
+   "twinMins": 2743
+  },
+  {
+   "player": "Sergio Busquets",
+   "season": "2018/19",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 76,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Roberto Gagliardini",
+   "twinSeason": "2023/24",
+   "twinClub": 6504,
+   "match": 85.4,
+   "sure": 42,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Fabinho",
+    "Aurélien Tchouaméni",
+    "Frenkie de Jong",
+    "Declan Rice",
+    "João Neves",
+    "Bernardo Silva"
+   ],
+   "surpriseRank": [
+    [
+     16,
+     "Fabinho"
+    ],
+    [
+     48,
+     "Aurélien Tchouaméni"
+    ],
+    [
+     124,
+     "Frenkie de Jong"
+    ]
+   ],
+   "top7": [
+    "Roberto Gagliardini 23/24",
+    "Marten de Roon 25/26",
+    "Geoffrey Kondogbia 23/24",
+    "Moisés Caicedo 22/23",
+    "Jorginho 22/23",
+    "Salih Özcan 22/23",
+    "Moisés Caicedo 23/24"
+   ],
+   "score": 10,
+   "twinMins": 2366
+  },
+  {
+   "player": "Ilkay Gündogan",
+   "season": "2020/21",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 66,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Martin Ødegaard",
+   "twinSeason": "2026/27",
+   "twinClub": 9825,
+   "match": 82.4,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 1,
+   "surprise": [
+    "Granit Xhaka",
+    "Declan Rice",
+    "Bernardo Silva",
+    "Enzo Fernández",
+    "Dejan Kulusevski",
+    "Casemiro"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Granit Xhaka"
+    ],
+    [
+     14,
+     "Declan Rice"
+    ],
+    [
+     19,
+     "Bernardo Silva"
+    ]
+   ],
+   "top7": [
+    "Martin Ødegaard 26/27",
+    "Martin Ødegaard 22/23",
+    "Curtis Jones 24/25",
+    "Alexis Mac Allister 22/23",
+    "Bruno Guimarães 25/26",
+    "James Maddison 24/25",
+    "Dominik Szoboszlai 25/26"
+   ],
+   "score": 10,
+   "twinMins": 829
+  },
+  {
+   "player": "Daniel Carvajal",
+   "season": "2023/24",
+   "group": "FB",
+   "declared": "FB",
+   "pos": 32,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Marc Cucurella",
+   "twinSeason": "2024/25",
+   "twinClub": 8455,
+   "match": 86.8,
+   "sure": 61,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Ben White",
+    "Jules Koundé",
+    "Theo Hernández",
+    "Jurriën Timber",
+    "Alejandro Grimaldo",
+    "Pedro Porro"
+   ],
+   "surpriseRank": [
+    [
+     23,
+     "Ben White"
+    ],
+    [
+     58,
+     "Jules Koundé"
+    ],
+    [
+     72,
+     "Theo Hernández"
+    ]
+   ],
+   "top7": [
+    "Marc Cucurella 24/25",
+    "Matty Cash 23/24",
+    "Josip Stanišić 25/26",
+    "Giovanni Di Lorenzo 24/25",
+    "Arnau Martínez 24/25",
+    "Yuri Berchiche 23/24",
+    "Marcos Llorente 24/25"
+   ],
+   "score": 10,
+   "twinMins": 2989
+  },
+  {
+   "player": "Sergio Ramos",
+   "season": "2016/17",
+   "group": "CB",
+   "declared": "CB",
+   "pos": 36,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 3,
+   "twin": "Jan Paul van Hecke",
+   "twinSeason": "2026/27",
+   "twinClub": 8586,
+   "match": 84.7,
+   "sure": 99,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Rúben Dias",
+    "Joško Gvardiol",
+    "Marquinhos",
+    "Cristian Romero",
+    "William Saliba",
+    "Dean Huijsen"
+   ],
+   "surpriseRank": [
+    [
+     28,
+     "Rúben Dias"
+    ],
+    [
+     33,
+     "Joško Gvardiol"
+    ],
+    [
+     37,
+     "Marquinhos"
+    ]
+   ],
+   "top7": [
+    "Jan Paul van Hecke 26/27",
+    "Aitor Paredes 26/27",
+    "Eric García 23/24",
+    "Eric Dier 24/25",
+    "Ilya Zabarnyi 26/27",
+    "Virgil van Dijk 22/23",
+    "Tiago Djaló 22/23"
+   ],
+   "score": 10,
+   "twinMins": 900
+  },
+  {
+   "player": "Gabriel",
+   "season": "2024/25",
+   "group": "CB",
+   "declared": "CB",
+   "pos": 36,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Conor Coady",
+   "twinSeason": "2024/25",
+   "twinClub": 8197,
+   "match": 85.3,
+   "sure": 97,
+   "famousTwin": false,
+   "ownTop": 4,
+   "surprise": [
+    "Ibrahima Konaté",
+    "Harry Maguire",
+    "Rúben Dias",
+    "Joško Gvardiol",
+    "William Saliba",
+    "Virgil van Dijk"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Ibrahima Konaté"
+    ],
+    [
+     25,
+     "Harry Maguire"
+    ],
+    [
+     32,
+     "Rúben Dias"
+    ]
+   ],
+   "top7": [
+    "Conor Coady 24/25",
+    "Eric Dier 22/23",
+    "Micky van de Ven 25/26",
+    "Lisandro Martínez 26/27",
+    "Victor Nilsson Lindelöf 23/24",
+    "Levi Colwill 24/25",
+    "Axel Disasi 23/24"
+   ],
+   "score": 10,
+   "twinMins": 1713
+  },
+  {
+   "player": "Ederson",
+   "season": "2017/18",
+   "group": "GK",
+   "declared": "GK",
+   "pos": 11,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Alisson Becker",
+   "twinSeason": "2022/23",
+   "twinClub": 8650,
+   "match": 73.5,
+   "sure": 64,
+   "famousTwin": true,
+   "ownTop": 3,
+   "surprise": [
+    "David de Gea",
+    "André Onana",
+    "Gianluigi Donnarumma",
+    "Jordan Pickford",
+    "Nick Pope"
+   ],
+   "surpriseRank": [
+    [
+     18,
+     "David de Gea"
+    ],
+    [
+     21,
+     "André Onana"
+    ],
+    [
+     23,
+     "Gianluigi Donnarumma"
+    ]
+   ],
+   "top7": [
+    "Alisson Becker 22/23",
+    "Bart Verbruggen 26/27",
+    "Emiliano Martínez 23/24",
+    "David Raya 24/25",
+    "Alisson Becker 25/26",
+    "Alisson Becker 24/25",
+    "Antonín Kinský 26/27"
+   ],
+   "score": 10,
+   "twinMins": 3330
+  },
+  {
+   "player": "Jan Oblak",
+   "season": "2020/21",
+   "group": "GK",
+   "declared": "GK",
+   "pos": 11,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Frederik Rønnow",
+   "twinSeason": "2022/23",
+   "twinClub": 8149,
+   "match": 87.4,
+   "sure": 100,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Unai Simón",
+    "Jordan Pickford",
+    "Mike Maignan",
+    "André Onana",
+    "David Raya",
+    "Yann Sommer"
+   ],
+   "surpriseRank": [
+    [
+     15,
+     "Unai Simón"
+    ],
+    [
+     18,
+     "Jordan Pickford"
+    ],
+    [
+     36,
+     "Mike Maignan"
+    ]
+   ],
+   "top7": [
+    "Frederik Rønnow 22/23",
+    "Finn Dahmen 24/25",
+    "David Soria 25/26",
+    "Daniel Batz 25/26",
+    "Christos Mandas 26/27",
+    "Mile Svilar 24/25",
+    "Gianluigi Donnarumma 23/24"
+   ],
+   "score": 10,
+   "twinMins": 2610
+  },
+  {
+   "player": "Emiliano Martínez",
+   "season": "2022/23",
+   "group": "GK",
+   "declared": "GK",
+   "pos": 11,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Jordan Pickford",
+   "twinSeason": "2026/27",
+   "twinClub": 8668,
+   "match": 93.9,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 1,
+   "surprise": [
+    "David Raya",
+    "David de Gea",
+    "André Onana",
+    "Gianluigi Donnarumma",
+    "Ederson",
+    "Nick Pope"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "David Raya"
+    ],
+    [
+     16,
+     "David de Gea"
+    ],
+    [
+     18,
+     "André Onana"
+    ]
+   ],
+   "top7": [
+    "Jordan Pickford 26/27",
+    "Alisson Becker 24/25",
+    "Caoimhín Kelleher 26/27",
+    "Caoimhín Kelleher 25/26",
+    "Bernd Leno 23/24",
+    "Bart Verbruggen 23/24",
+    "Kepa Arrizabalaga 22/23"
+   ],
+   "score": 10,
+   "twinMins": 900
+  },
+  {
+   "player": "Erling Haaland",
+   "season": "2023/24",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Thierno Barry",
+   "twinSeason": "2026/27",
+   "twinClub": 8668,
+   "match": 82.8,
+   "sure": 100,
+   "famousTwin": false,
+   "ownTop": 4,
+   "surprise": [
+    "Darwin Núñez",
+    "Diogo Jota",
+    "Richarlison",
+    "Ollie Watkins",
+    "Nicolas Jackson",
+    "Jean-Philippe Mateta"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Darwin Núñez"
+    ],
+    [
+     11,
+     "Diogo Jota"
+    ],
+    [
+     13,
+     "Richarlison"
+    ]
+   ],
+   "top7": [
+    "Thierno Barry 26/27",
+    "Callum Wilson 22/23",
+    "Benjamin Šeško 25/26",
+    "Alexander Isak 23/24",
+    "Callum Wilson 23/24",
+    "Callum Wilson 25/26",
+    "Rodrigo Muniz 24/25"
+   ],
+   "score": 9,
+   "twinMins": 855
+  },
+  {
+   "player": "Robert Lewandowski",
+   "season": "2019/20",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Bundesliga",
+   "pl": false,
+   "fame": 3,
+   "twin": "Harry Kane",
+   "twinSeason": "2024/25",
+   "twinClub": 9823,
+   "match": 71.0,
+   "sure": 95,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Nicolas Jackson",
+    "Kylian Mbappé",
+    "Alexander Isak",
+    "Diogo Jota",
+    "Darwin Núñez",
+    "Erling Haaland"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Nicolas Jackson"
+    ],
+    [
+     12,
+     "Kylian Mbappé"
+    ],
+    [
+     17,
+     "Alexander Isak"
+    ]
+   ],
+   "top7": [
+    "Harry Kane 24/25",
+    "Harry Kane 22/23",
+    "Gianluca Scamacca 25/26",
+    "Gianluca Scamacca 23/24",
+    "Dušan Vlahović 25/26",
+    "Nikola Krstović 26/27",
+    "Estéban Lepaul 26/27"
+   ],
+   "score": 9,
+   "twinMins": 2389
+  },
+  {
+   "player": "Alexander Isak",
+   "season": "2024/25",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Hugo Ekitiké",
+   "twinSeason": "2025/26",
+   "twinClub": 8650,
+   "match": 83.1,
+   "sure": 51,
+   "famousTwin": false,
+   "ownTop": 1,
+   "surprise": [
+    "Nicolas Jackson",
+    "Diogo Jota",
+    "Richarlison",
+    "Erling Haaland",
+    "Bryan Mbeumo",
+    "Darwin Núñez"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Nicolas Jackson"
+    ],
+    [
+     13,
+     "Diogo Jota"
+    ],
+    [
+     15,
+     "Richarlison"
+    ]
+   ],
+   "top7": [
+    "Hugo Ekitiké 25/26",
+    "Harry Kane 22/23",
+    "Ollie Watkins 25/26",
+    "Gabriel Jesus 22/23",
+    "João Pedro​ 25/26",
+    "João Pedro​ 26/27",
+    "Callum Wilson 22/23"
+   ],
+   "score": 9,
+   "twinMins": 1810
+  },
+  {
+   "player": "Dušan Vlahović",
+   "season": "2021/22",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 105,
+   "league": "Serie A",
+   "pl": false,
+   "fame": 1,
+   "twin": "Alexander Isak",
+   "twinSeason": "2026/27",
+   "twinClub": 8650,
+   "match": 87.1,
+   "sure": 87,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Ollie Watkins",
+    "Callum Wilson",
+    "Richarlison",
+    "Harry Kane",
+    "Jonathan David",
+    "Romelu Lukaku"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Ollie Watkins"
+    ],
+    [
+     17,
+     "Callum Wilson"
+    ],
+    [
+     23,
+     "Richarlison"
+    ]
+   ],
+   "top7": [
+    "Alexander Isak 26/27",
+    "Vedat Muriqi 25/26",
+    "Antonio Raimondo 26/27",
+    "Ludovic Ajorque 22/23",
+    "Anastasios Douvikas 25/26",
+    "Artem Dovbyk 24/25",
+    "Michael Gregoritsch 26/27"
+   ],
+   "score": 9,
+   "twinMins": 661
+  },
+  {
+   "player": "Lionel Messi",
+   "season": "2020/21",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 104,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 3,
+   "award": "Ballon d'Or winner",
+   "twin": "Lamine Yamal",
+   "twinSeason": "2026/27",
+   "twinClub": 8634,
+   "match": 69.4,
+   "sure": 89,
+   "famousTwin": true,
+   "ownTop": 1,
+   "surprise": [
+    "Serge Gnabry",
+    "Luis Díaz",
+    "Rayan Cherki",
+    "Christian Pulisic",
+    "Rafael Leão",
+    "Ademola Lookman"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Serge Gnabry"
+    ],
+    [
+     13,
+     "Luis Díaz"
+    ],
+    [
+     14,
+     "Rayan Cherki"
+    ]
+   ],
+   "top7": [
+    "Lamine Yamal 26/27",
+    "Michael Olise 26/27",
+    "Raphinha 25/26",
+    "Lamine Yamal 25/26",
+    "Michael Olise 25/26",
+    "Leroy Sané 24/25",
+    "Khvicha Kvaratskhelia 25/26"
+   ],
+   "score": 9,
+   "twinMins": 905
+  },
+  {
+   "player": "Mohamed Salah",
+   "season": "2017/18",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 83,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "Roberto Firmino",
+   "twinSeason": "2022/23",
+   "twinClub": 8650,
+   "match": 76.0,
+   "sure": 98,
+   "famousTwin": true,
+   "ownTop": 3,
+   "surprise": [
+    "Morgan Gibbs-White",
+    "Cole Palmer",
+    "Cody Gakpo",
+    "Julián Álvarez",
+    "Eberechi Eze",
+    "Rayan Cherki"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Morgan Gibbs-White"
+    ],
+    [
+     11,
+     "Cole Palmer"
+    ],
+    [
+     14,
+     "Cody Gakpo"
+    ]
+   ],
+   "top7": [
+    "Roberto Firmino 22/23",
+    "Marcus Rashford 22/23",
+    "Michael Olise 23/24",
+    "Leandro Trossard 23/24",
+    "Junior Kroupi 25/26",
+    "Antoine Semenyo 25/26",
+    "Phil Foden 23/24"
+   ],
+   "score": 9,
+   "twinMins": 1212
+  },
+  {
+   "player": "Heung-Min Son",
+   "season": "2021/22",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 115,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "short": "Son",
+   "twin": "Roberto Firmino",
+   "twinSeason": "2022/23",
+   "twinClub": 8650,
+   "match": 82.5,
+   "sure": 93,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Mohamed Salah",
+    "Morgan Rogers",
+    "Cole Palmer",
+    "Marcus Rashford",
+    "Julián Álvarez",
+    "Michael Olise"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Mohamed Salah"
+    ],
+    [
+     15,
+     "Morgan Rogers"
+    ],
+    [
+     16,
+     "Cole Palmer"
+    ]
+   ],
+   "top7": [
+    "Roberto Firmino 22/23",
+    "Luis Díaz 24/25",
+    "Anthony Martial 22/23",
+    "Phil Foden 23/24",
+    "Leandro Trossard 23/24",
+    "Cody Gakpo 24/25",
+    "Morgan Gibbs-White 25/26"
+   ],
+   "score": 9,
+   "twinMins": 1212
+  },
+  {
+   "player": "Ousmane Dembélé",
+   "season": "2024/25",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 105,
+   "league": "Ligue 1",
+   "pl": false,
+   "fame": 3,
+   "award": "Ballon d'Or winner",
+   "twin": "Raphinha",
+   "twinSeason": "2025/26",
+   "twinClub": 8634,
+   "match": 71.5,
+   "sure": 87,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Lautaro Martínez",
+    "Mohamed Salah",
+    "Serge Gnabry",
+    "Ademola Lookman",
+    "Bradley Barcola",
+    "Jamal Musiala"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Lautaro Martínez"
+    ],
+    [
+     12,
+     "Mohamed Salah"
+    ],
+    [
+     13,
+     "Serge Gnabry"
+    ]
+   ],
+   "top7": [
+    "Raphinha 25/26",
+    "Leroy Sané 24/25",
+    "Raphinha 26/27",
+    "Michael Olise 26/27",
+    "Lionel Messi 22/23",
+    "Lamine Yamal 26/27",
+    "Vinícius Júnior 23/24"
+   ],
+   "score": 9,
+   "twinMins": 1388
+  },
+  {
+   "player": "Jack Grealish",
+   "season": "2020/21",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 87,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Jérémy Doku",
+   "twinSeason": "2025/26",
+   "twinClub": 8456,
+   "match": 78.7,
+   "sure": 40,
+   "famousTwin": false,
+   "ownTop": 1,
+   "surprise": [
+    "Bruno Fernandes",
+    "Morgan Gibbs-White",
+    "Rayan Cherki",
+    "Cole Palmer",
+    "Michael Olise",
+    "Phil Foden"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Bruno Fernandes"
+    ],
+    [
+     14,
+     "Morgan Gibbs-White"
+    ],
+    [
+     19,
+     "Rayan Cherki"
+    ]
+   ],
+   "top7": [
+    "Jérémy Doku 25/26",
+    "Riyad Mahrez 22/23",
+    "Dwight McNeil 24/25",
+    "Kevin De Bruyne 24/25",
+    "Bukayo Saka 24/25",
+    "Sávio 24/25",
+    "Leandro Trossard 22/23"
+   ],
+   "score": 9,
+   "twinMins": 1784
+  },
+  {
+   "player": "Riyad Mahrez",
+   "season": "2020/21",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 83,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Phil Foden",
+   "twinSeason": "2022/23",
+   "twinClub": 8456,
+   "match": 85.7,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Michael Olise",
+    "Eberechi Eze",
+    "Dominik Szoboszlai",
+    "Mohamed Salah",
+    "Jarrod Bowen",
+    "Julián Álvarez"
+   ],
+   "surpriseRank": [
+    [
+     15,
+     "Michael Olise"
+    ],
+    [
+     18,
+     "Eberechi Eze"
+    ],
+    [
+     20,
+     "Dominik Szoboszlai"
+    ]
+   ],
+   "top7": [
+    "Phil Foden 22/23",
+    "Bukayo Saka 23/24",
+    "Gabriel Martinelli 22/23",
+    "Cole Palmer 23/24",
+    "Phil Foden 23/24",
+    "Jack Grealish 22/23",
+    "Leandro Trossard 22/23"
+   ],
+   "score": 9,
+   "twinMins": 1843
+  },
+  {
+   "player": "Florian Wirtz",
+   "season": "2023/24",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 85,
+   "league": "Bundesliga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Fermín López",
+   "twinSeason": "2024/25",
+   "twinClub": 8634,
+   "match": 85.2,
+   "sure": 71,
+   "famousTwin": false,
+   "ownTop": 1,
+   "surprise": [
+    "Cole Palmer",
+    "Vinícius Júnior",
+    "Christian Pulisic",
+    "Rafael Leão",
+    "Leroy Sané",
+    "Bukayo Saka"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Cole Palmer"
+    ],
+    [
+     11,
+     "Vinícius Júnior"
+    ],
+    [
+     12,
+     "Christian Pulisic"
+    ]
+   ],
+   "top7": [
+    "Fermín López 24/25",
+    "Matias Soulé 26/27",
+    "Jamal Musiala 22/23",
+    "Brahim Díaz 23/24",
+    "Phil Foden 22/23",
+    "Kenan Yıldız 25/26",
+    "Xavi Simons 23/24"
+   ],
+   "score": 9,
+   "twinMins": 1245
+  },
+  {
+   "player": "David Silva",
+   "season": "2017/18",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 84,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Riyad Mahrez",
+   "twinSeason": "2022/23",
+   "twinClub": 8456,
+   "match": 81.8,
+   "sure": 40,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Bukayo Saka",
+    "Cole Palmer",
+    "Florian Wirtz",
+    "Xavi Simons",
+    "Enzo Fernández",
+    "Antoine Semenyo"
+   ],
+   "surpriseRank": [
+    [
+     13,
+     "Bukayo Saka"
+    ],
+    [
+     14,
+     "Cole Palmer"
+    ],
+    [
+     15,
+     "Florian Wirtz"
+    ]
+   ],
+   "top7": [
+    "Riyad Mahrez 22/23",
+    "Jack Grealish 22/23",
+    "Phil Foden 25/26",
+    "Bernardo Silva 23/24",
+    "Dominik Szoboszlai 24/25",
+    "Dwight McNeil 24/25",
+    "Kevin De Bruyne 24/25"
+   ],
+   "score": 9,
+   "twinMins": 1923
+  },
+  {
+   "player": "Neymar",
+   "season": "2019/20",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 106,
+   "league": "Ligue 1",
+   "pl": false,
+   "fame": 3,
+   "twin": "Lamine Yamal",
+   "twinSeason": "2026/27",
+   "twinClub": 8634,
+   "match": 73.1,
+   "sure": 100,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Vinícius Júnior",
+    "Jamal Musiala",
+    "Rafael Leão",
+    "Christian Pulisic",
+    "Bradley Barcola",
+    "Raphinha"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Vinícius Júnior"
+    ],
+    [
+     12,
+     "Jamal Musiala"
+    ],
+    [
+     13,
+     "Rafael Leão"
+    ]
+   ],
+   "top7": [
+    "Lamine Yamal 26/27",
+    "Lionel Messi 22/23",
+    "Michael Olise 25/26",
+    "Khvicha Kvaratskhelia 23/24",
+    "Lamine Yamal 25/26",
+    "Luis Díaz 25/26",
+    "Khvicha Kvaratskhelia 25/26"
+   ],
+   "score": 9,
+   "twinMins": 905
+  },
+  {
+   "player": "Wilfried Zaha",
+   "season": "2018/19",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 107,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Noni Madueke",
+   "twinSeason": "2023/24",
+   "twinClub": 8455,
+   "match": 83.4,
+   "sure": 97,
+   "famousTwin": false,
+   "ownTop": 1,
+   "surprise": [
+    "Antoine Semenyo",
+    "Marcus Rashford",
+    "Jadon Sancho",
+    "Cody Gakpo",
+    "Mohammed Kudus",
+    "Morgan Rogers"
+   ],
+   "surpriseRank": [
+    [
+     13,
+     "Antoine Semenyo"
+    ],
+    [
+     19,
+     "Marcus Rashford"
+    ],
+    [
+     21,
+     "Jadon Sancho"
+    ]
+   ],
+   "top7": [
+    "Noni Madueke 23/24",
+    "Mykhaylo Mudryk 23/24",
+    "Eberechi Eze 22/23",
+    "Crysencio Summerville 25/26",
+    "Mateus Mané 25/26",
+    "Anthony Gordon 23/24",
+    "Raheem Sterling 23/24"
+   ],
+   "score": 9,
+   "twinMins": 1053
+  },
+  {
+   "player": "James Maddison",
+   "season": "2022/23",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 77,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Bukayo Saka",
+   "twinSeason": "2022/23",
+   "twinClub": 9825,
+   "match": 85.1,
+   "sure": 44,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Cody Gakpo",
+    "Mohamed Salah",
+    "Bryan Mbeumo",
+    "Dominik Szoboszlai",
+    "Matheus Cunha",
+    "Julián Álvarez"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Cody Gakpo"
+    ],
+    [
+     13,
+     "Mohamed Salah"
+    ],
+    [
+     14,
+     "Bryan Mbeumo"
+    ]
+   ],
+   "top7": [
+    "Bukayo Saka 22/23",
+    "Bukayo Saka 23/24",
+    "Cole Palmer 23/24",
+    "Cole Palmer 24/25",
+    "Solly March 22/23",
+    "Cole Palmer 26/27",
+    "Eberechi Eze 24/25"
+   ],
+   "score": 9,
+   "twinMins": 3191
+  },
+  {
+   "player": "Alexis Mac Allister",
+   "season": "2024/25",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 66,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Douglas Luiz",
+   "twinSeason": "2022/23",
+   "twinClub": 10252,
+   "match": 84.6,
+   "sure": 52,
+   "famousTwin": false,
+   "ownTop": 1,
+   "surprise": [
+    "Dominik Szoboszlai",
+    "Bernardo Silva",
+    "Reece James",
+    "Enzo Fernández",
+    "Moisés Caicedo",
+    "Jordan Henderson"
+   ],
+   "surpriseRank": [
+    [
+     30,
+     "Dominik Szoboszlai"
+    ],
+    [
+     38,
+     "Bernardo Silva"
+    ],
+    [
+     68,
+     "Reece James"
+    ]
+   ],
+   "top7": [
+    "Douglas Luiz 22/23",
+    "Bruno Guimarães 24/25",
+    "Youri Tielemans 25/26",
+    "Bruno Guimarães 25/26",
+    "Bruno Guimarães 22/23",
+    "Declan Rice 23/24",
+    "Douglas Luiz 23/24"
+   ],
+   "score": 9,
+   "twinMins": 2933
+  },
+  {
+   "player": "Yaya Touré",
+   "season": "2016/17",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 85,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Bernardo Silva",
+   "twinSeason": "2025/26",
+   "twinClub": 8456,
+   "match": 81.2,
+   "sure": 29,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Alexis Mac Allister",
+    "Ilkay Gündogan",
+    "Jordan Henderson",
+    "Moisés Caicedo",
+    "Fabinho",
+    "Granit Xhaka"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Alexis Mac Allister"
+    ],
+    [
+     19,
+     "Ilkay Gündogan"
+    ],
+    [
+     21,
+     "Jordan Henderson"
+    ]
+   ],
+   "top7": [
+    "Bernardo Silva 25/26",
+    "Sander Berge 26/27",
+    "Tom Cairney 22/23",
+    "Enzo Fernández 23/24",
+    "Thomas Partey 22/23",
+    "Curtis Jones 25/26",
+    "Billy Gilmour 23/24"
+   ],
+   "score": 9,
+   "twinMins": 2886
+  },
+  {
+   "player": "João Cancelo",
+   "season": "2021/22",
+   "group": "FB",
+   "declared": "FB",
+   "pos": 32,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Oleksandr Zinchenko",
+   "twinSeason": "2023/24",
+   "twinClub": 9825,
+   "match": 80.4,
+   "sure": 86,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Reece James",
+    "Kieran Trippier",
+    "Pedro Porro",
+    "Andrew Robertson",
+    "Ben White",
+    "Jurriën Timber"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Reece James"
+    ],
+    [
+     16,
+     "Kieran Trippier"
+    ],
+    [
+     19,
+     "Pedro Porro"
+    ]
+   ],
+   "top7": [
+    "Oleksandr Zinchenko 23/24",
+    "Malo Gusto 25/26",
+    "Matheus Nunes 24/25",
+    "Oleksandr Zinchenko 22/23",
+    "Matheus Nunes 25/26",
+    "Timothy Castagne 26/27",
+    "Joško Gvardiol 26/27"
+   ],
+   "score": 9,
+   "twinMins": 1722
+  },
+  {
+   "player": "Theo Hernández",
+   "season": "2021/22",
+   "group": "FB",
+   "declared": "FB",
+   "pos": 38,
+   "league": "Serie A",
+   "pl": false,
+   "fame": 2,
+   "twin": "Sergio Gómez",
+   "twinSeason": "2024/25",
+   "twinClub": 8560,
+   "match": 82.3,
+   "sure": 50,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Nuno Mendes",
+    "Pedro Porro",
+    "João Cancelo",
+    "Joško Gvardiol",
+    "Federico Valverde",
+    "Kieran Trippier"
+   ],
+   "surpriseRank": [
+    [
+     17,
+     "Nuno Mendes"
+    ],
+    [
+     32,
+     "Pedro Porro"
+    ],
+    [
+     38,
+     "João Cancelo"
+    ]
+   ],
+   "top7": [
+    "Sergio Gómez 24/25",
+    "Alejandro Grimaldo 25/26",
+    "Yan Couto 25/26",
+    "Ian Maatsen 24/25",
+    "Alfie Doughty 23/24",
+    "Miguel Gutiérrez 24/25",
+    "Malo Gusto 23/24"
+   ],
+   "score": 9,
+   "twinMins": 2743
+  },
+  {
+   "player": "Kyle Walker",
+   "season": "2017/18",
+   "group": "FB",
+   "declared": "FB",
+   "pos": 32,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Matheus Nunes",
+   "twinSeason": "2025/26",
+   "twinClub": 8456,
+   "match": 83.2,
+   "sure": 89,
+   "famousTwin": false,
+   "ownTop": 1,
+   "surprise": [
+    "Reece James",
+    "Joško Gvardiol",
+    "Kieran Trippier",
+    "Jurriën Timber",
+    "Pedro Porro",
+    "Jeremie Frimpong"
+   ],
+   "surpriseRank": [
+    [
+     18,
+     "Reece James"
+    ],
+    [
+     23,
+     "Joško Gvardiol"
+    ],
+    [
+     26,
+     "Kieran Trippier"
+    ]
+   ],
+   "top7": [
+    "Matheus Nunes 25/26",
+    "Matheus Nunes 24/25",
+    "Oleksandr Zinchenko 22/23",
+    "Ben White 22/23",
+    "Andrew Robertson 22/23",
+    "Ben White 26/27",
+    "Oleksandr Zinchenko 23/24"
+   ],
+   "score": 9,
+   "twinMins": 2865
+  },
+  {
+   "player": "Nuno Mendes",
+   "season": "2024/25",
+   "group": "FB",
+   "declared": "FB",
+   "pos": 38,
+   "league": "Ligue 1",
+   "pl": false,
+   "fame": 2,
+   "twin": "Theo Hernández",
+   "twinSeason": "2023/24",
+   "twinClub": 8564,
+   "match": 79.6,
+   "sure": 58,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Reece James",
+    "Achraf Hakimi",
+    "Pedro Porro",
+    "Jules Koundé",
+    "Alphonso Davies",
+    "Federico Valverde"
+   ],
+   "surpriseRank": [
+    [
+     15,
+     "Reece James"
+    ],
+    [
+     20,
+     "Achraf Hakimi"
+    ],
+    [
+     36,
+     "Pedro Porro"
+    ]
+   ],
+   "top7": [
+    "Theo Hernández 23/24",
+    "Alejandro Grimaldo 25/26",
+    "Marius Wolf 22/23",
+    "Aleksa Terzic 22/23",
+    "Matheus Nunes 25/26",
+    "João Cancelo 23/24",
+    "Lewis Hall 25/26"
+   ],
+   "score": 9,
+   "twinMins": 2794
+  },
+  {
+   "player": "Gianluigi Donnarumma",
+   "season": "2024/25",
+   "group": "GK",
+   "declared": "GK",
+   "pos": 11,
+   "league": "Ligue 1",
+   "pl": false,
+   "fame": 2,
+   "twin": "Antonín Kinský",
+   "twinSeason": "2026/27",
+   "twinClub": 8586,
+   "match": 88.1,
+   "sure": 67,
+   "famousTwin": false,
+   "ownTop": 1,
+   "surprise": [
+    "Unai Simón",
+    "Alisson Becker",
+    "André Onana",
+    "Emiliano Martínez",
+    "Yann Sommer",
+    "Mike Maignan"
+   ],
+   "surpriseRank": [
+    [
+     15,
+     "Unai Simón"
+    ],
+    [
+     21,
+     "Alisson Becker"
+    ],
+    [
+     35,
+     "André Onana"
+    ]
+   ],
+   "top7": [
+    "Antonín Kinský 26/27",
+    "Manuel Neuer 23/24",
+    "Guillaume Restes 26/27",
+    "Pau López 23/24",
+    "Jan Oblak 23/24",
+    "Karl Hein 26/27",
+    "Rui Patrício 23/24"
+   ],
+   "score": 9,
+   "twinMins": 900
+  },
+  {
+   "player": "Cristiano Ronaldo",
+   "season": "2017/18",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 3,
+   "twin": "Donyell Malen",
+   "twinSeason": "2026/27",
+   "twinClub": 8686,
+   "match": 76.3,
+   "sure": 56,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Gonçalo Ramos",
+    "Erling Haaland",
+    "Harry Kane",
+    "Karim Benzema",
+    "Dušan Vlahović",
+    "Ousmane Dembélé"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Gonçalo Ramos"
+    ],
+    [
+     11,
+     "Erling Haaland"
+    ],
+    [
+     12,
+     "Harry Kane"
+    ]
+   ],
+   "top7": [
+    "Donyell Malen 26/27",
+    "Kylian Mbappé 22/23",
+    "Kylian Mbappé 26/27",
+    "Kylian Mbappé 23/24",
+    "Victor Osimhen 22/23",
+    "Kylian Mbappé 24/25",
+    "Robert Lewandowski 22/23"
+   ],
+   "score": 8,
+   "twinMins": 652
+  },
+  {
+   "player": "Ciro Immobile",
+   "season": "2019/20",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Serie A",
+   "pl": false,
+   "fame": 2,
+   "twin": "Sébastien Haller",
+   "twinSeason": "2022/23",
+   "twinClub": 9789,
+   "match": 89.2,
+   "sure": 100,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Erling Haaland",
+    "Jonathan David",
+    "Alexander Isak",
+    "Robert Lewandowski",
+    "Dušan Vlahović",
+    "Gonçalo Ramos"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Erling Haaland"
+    ],
+    [
+     11,
+     "Jonathan David"
+    ],
+    [
+     14,
+     "Alexander Isak"
+    ]
+   ],
+   "top7": [
+    "Sébastien Haller 22/23",
+    "Loïs Openda 23/24",
+    "Callum Wilson 22/23",
+    "Álvaro Morata 23/24",
+    "Odsonne Édouard 25/26",
+    "Ferrán Torres 25/26",
+    "Harry Kane 24/25"
+   ],
+   "score": 8,
+   "twinMins": 1232
+  },
+  {
+   "player": "Darwin Núñez",
+   "season": "2022/23",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 105,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 1,
+   "twin": "Nicolas Jackson",
+   "twinSeason": "2024/25",
+   "twinClub": 8455,
+   "match": 74.4,
+   "sure": 69,
+   "famousTwin": true,
+   "ownTop": 1,
+   "surprise": [
+    "Erling Haaland",
+    "Harry Kane",
+    "Callum Wilson",
+    "Ollie Watkins",
+    "Richarlison",
+    "Ivan Toney"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Erling Haaland"
+    ],
+    [
+     13,
+     "Harry Kane"
+    ],
+    [
+     15,
+     "Callum Wilson"
+    ]
+   ],
+   "top7": [
+    "Nicolas Jackson 24/25",
+    "Edward Nketiah 24/25",
+    "Diogo Jota 24/25",
+    "Alexander Isak 24/25",
+    "Lukas Nmecha 25/26",
+    "Bryan Mbeumo 26/27",
+    "Gabriel Jesus 22/23"
+   ],
+   "score": 8,
+   "twinMins": 2238
+  },
+  {
+   "player": "Olivier Giroud",
+   "season": "2016/17",
+   "group": "ST",
+   "declared": "ST",
+   "pos": 115,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "João Pedro​",
+   "twinSeason": "2026/27",
+   "twinClub": 8455,
+   "match": 81.4,
+   "sure": 82,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Chris Wood",
+    "Ollie Watkins",
+    "Richarlison",
+    "Nicolas Jackson",
+    "Jean-Philippe Mateta",
+    "Viktor Gyökeres"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Chris Wood"
+    ],
+    [
+     14,
+     "Ollie Watkins"
+    ],
+    [
+     17,
+     "Richarlison"
+    ]
+   ],
+   "top7": [
+    "João Pedro​ 26/27",
+    "Diogo Jota 23/24",
+    "Yoane Wissa 24/25",
+    "Callum Wilson 22/23",
+    "Erling Haaland 22/23",
+    "Harry Kane 22/23",
+    "Alexander Isak 24/25"
+   ],
+   "score": 8,
+   "twinMins": 521
+  },
+  {
+   "player": "Vinícius Júnior",
+   "season": "2023/24",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 107,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 3,
+   "twin": "Gerard Moreno",
+   "twinSeason": "2022/23",
+   "twinClub": 10205,
+   "match": 82.9,
+   "sure": 95,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Christian Pulisic",
+    "Jamal Musiala",
+    "Marcus Thuram",
+    "Rafael Leão",
+    "Antoine Griezmann",
+    "Rodrygo"
+   ],
+   "surpriseRank": [
+    [
+     14,
+     "Christian Pulisic"
+    ],
+    [
+     15,
+     "Jamal Musiala"
+    ],
+    [
+     19,
+     "Marcus Thuram"
+    ]
+   ],
+   "top7": [
+    "Gerard Moreno 22/23",
+    "Mohamed Salah 22/23",
+    "Leroy Sané 24/25",
+    "Marcus Rashford 22/23",
+    "Bradley Barcola 25/26",
+    "Lautaro Martínez 22/23",
+    "Serge Gnabry 24/25"
+   ],
+   "score": 8,
+   "twinMins": 1231
+  },
+  {
+   "player": "Vítinha",
+   "season": "2024/25",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 75,
+   "league": "Ligue 1",
+   "pl": false,
+   "fame": 2,
+   "twin": "Aleksandar Pavlović",
+   "twinSeason": "2025/26",
+   "twinClub": 9823,
+   "match": 81.2,
+   "sure": 49,
+   "famousTwin": false,
+   "ownTop": 1,
+   "surprise": [
+    "Toni Kroos",
+    "Joshua Kimmich",
+    "Enzo Fernández",
+    "Frenkie de Jong",
+    "Nicolò Barella",
+    "Sergio Busquets"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Toni Kroos"
+    ],
+    [
+     19,
+     "Joshua Kimmich"
+    ],
+    [
+     34,
+     "Enzo Fernández"
+    ]
+   ],
+   "top7": [
+    "Aleksandar Pavlović 25/26",
+    "Rodri 25/26",
+    "Granit Xhaka 23/24",
+    "Koke 25/26",
+    "Rodri 23/24",
+    "Luka Modrić 25/26",
+    "Aleix García 23/24"
+   ],
+   "score": 8,
+   "twinMins": 1460
+  },
+  {
+   "player": "Bruno Guimarães",
+   "season": "2023/24",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 73,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Mateus Fernandes",
+   "twinSeason": "2024/25",
+   "twinClub": 8466,
+   "match": 80.0,
+   "sure": 49,
+   "famousTwin": false,
+   "ownTop": 3,
+   "surprise": [
+    "Enzo Fernández",
+    "Declan Rice",
+    "Bernardo Silva",
+    "Reece James",
+    "Jordan Henderson",
+    "Dejan Kulusevski"
+   ],
+   "surpriseRank": [
+    [
+     13,
+     "Enzo Fernández"
+    ],
+    [
+     17,
+     "Declan Rice"
+    ],
+    [
+     28,
+     "Bernardo Silva"
+    ]
+   ],
+   "top7": [
+    "Mateus Fernandes 24/25",
+    "Tom Cairney 23/24",
+    "Dominik Szoboszlai 25/26",
+    "Youri Tielemans 24/25",
+    "Douglas Luiz 23/24",
+    "Alexis Mac Allister 24/25",
+    "Conor Gallagher 23/24"
+   ],
+   "score": 8,
+   "twinMins": 2919
+  },
+  {
+   "player": "Granit Xhaka",
+   "season": "2023/24",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 64,
+   "league": "Bundesliga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Aleksandar Pavlović",
+   "twinSeason": "2025/26",
+   "twinClub": 9823,
+   "match": 81.0,
+   "sure": 88,
+   "famousTwin": false,
+   "ownTop": 1,
+   "surprise": [
+    "Joshua Kimmich",
+    "Toni Kroos",
+    "Frenkie de Jong",
+    "Bernardo Silva",
+    "Nicolò Barella",
+    "Pedri"
+   ],
+   "surpriseRank": [
+    [
+     25,
+     "Joshua Kimmich"
+    ],
+    [
+     26,
+     "Toni Kroos"
+    ],
+    [
+     28,
+     "Frenkie de Jong"
+    ]
+   ],
+   "top7": [
+    "Aleksandar Pavlović 25/26",
+    "Vítinha 24/25",
+    "Koke 25/26",
+    "Rodri 25/26",
+    "Vítinha 26/27",
+    "Aleix García 23/24",
+    "Luka Modrić 25/26"
+   ],
+   "score": 8,
+   "twinMins": 1460
+  },
+  {
+   "player": "Fernandinho",
+   "season": "2017/18",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 75,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Mateo Kovacic",
+   "twinSeason": "2024/25",
+   "twinClub": 8456,
+   "match": 84.3,
+   "sure": 100,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Moisés Caicedo",
+    "Ilkay Gündogan",
+    "Alexis Mac Allister",
+    "Enzo Fernández",
+    "Jordan Henderson",
+    "Declan Rice"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Moisés Caicedo"
+    ],
+    [
+     25,
+     "Ilkay Gündogan"
+    ],
+    [
+     28,
+     "Alexis Mac Allister"
+    ]
+   ],
+   "top7": [
+    "Mateo Kovacic 24/25",
+    "Nico González 25/26",
+    "Mateo Kovacic 22/23",
+    "Thomas Partey 24/25",
+    "Pierre-Emile Højbjerg 22/23",
+    "Bernardo Silva 25/26",
+    "Fabinho 22/23"
+   ],
+   "score": 8,
+   "twinMins": 2202
+  },
+  {
+   "player": "Thiago Alcántara",
+   "season": "2019/20",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 77,
+   "league": "Bundesliga",
+   "pl": false,
+   "fame": 2,
+   "short": "Thiago",
+   "twin": "Yacine Adli",
+   "twinSeason": "2023/24",
+   "twinClub": 8564,
+   "match": 77.5,
+   "sure": 100,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Vítinha",
+    "Moisés Caicedo",
+    "Rodri",
+    "Aurélien Tchouaméni",
+    "Bruno Guimarães",
+    "Sergio Busquets"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Vítinha"
+    ],
+    [
+     14,
+     "Moisés Caicedo"
+    ],
+    [
+     22,
+     "Rodri"
+    ]
+   ],
+   "top7": [
+    "Yacine Adli 23/24",
+    "Thomas Partey 22/23",
+    "Dani Ceballos 22/23",
+    "Pierre-Emile Højbjerg 23/24",
+    "Declan Rice 22/23",
+    "Luka Modrić 25/26",
+    "Kobbie Mainoo 26/27"
+   ],
+   "score": 8,
+   "twinMins": 1412
+  },
+  {
+   "player": "Rúben Dias",
+   "season": "2020/21",
+   "group": "CB",
+   "declared": "CB",
+   "pos": 34,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Manuel Akanji",
+   "twinSeason": "2023/24",
+   "twinClub": 8456,
+   "match": 86.2,
+   "sure": 100,
+   "famousTwin": false,
+   "ownTop": 4,
+   "surprise": [
+    "William Saliba",
+    "Lisandro Martínez",
+    "Virgil van Dijk",
+    "Ibrahima Konaté",
+    "Joško Gvardiol",
+    "John Stones"
+   ],
+   "surpriseRank": [
+    [
+     14,
+     "William Saliba"
+    ],
+    [
+     16,
+     "Lisandro Martínez"
+    ],
+    [
+     17,
+     "Virgil van Dijk"
+    ]
+   ],
+   "top7": [
+    "Manuel Akanji 23/24",
+    "Lewis Dunk 25/26",
+    "Jan Paul van Hecke 23/24",
+    "Ezri Konsa 25/26",
+    "Adam Webster 22/23",
+    "Manuel Akanji 22/23",
+    "Micky van de Ven 26/27"
+   ],
+   "score": 8,
+   "twinMins": 2513
+  },
+  {
+   "player": "William Saliba",
+   "season": "2023/24",
+   "group": "CB",
+   "declared": "CB",
+   "pos": 34,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Victor Nilsson Lindelöf",
+   "twinSeason": "2023/24",
+   "twinClub": 10260,
+   "match": 86.4,
+   "sure": 75,
+   "famousTwin": false,
+   "ownTop": 2,
+   "surprise": [
+    "Rúben Dias",
+    "Joško Gvardiol",
+    "Gabriel",
+    "Lisandro Martínez",
+    "Ibrahima Konaté",
+    "Harry Maguire"
+   ],
+   "surpriseRank": [
+    [
+     13,
+     "Rúben Dias"
+    ],
+    [
+     21,
+     "Joško Gvardiol"
+    ],
+    [
+     24,
+     "Gabriel"
+    ]
+   ],
+   "top7": [
+    "Victor Nilsson Lindelöf 23/24",
+    "Manuel Akanji 23/24",
+    "Manuel Akanji 22/23",
+    "Ezri Konsa 23/24",
+    "Nathan Aké 22/23",
+    "Micky van de Ven 25/26",
+    "Micky van de Ven 23/24"
+   ],
+   "score": 8,
+   "twinMins": 1332
+  },
+  {
+   "player": "Antonio Rüdiger",
+   "season": "2021/22",
+   "group": "CB",
+   "declared": "CB",
+   "pos": 34,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Calvin Bassey",
+   "twinSeason": "2026/27",
+   "twinClub": 9879,
+   "match": 89.4,
+   "sure": 98,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Virgil van Dijk",
+    "Ibrahima Konaté",
+    "William Saliba",
+    "Micky van de Ven",
+    "Gabriel",
+    "Joško Gvardiol"
+   ],
+   "surpriseRank": [
+    [
+     14,
+     "Virgil van Dijk"
+    ],
+    [
+     15,
+     "Ibrahima Konaté"
+    ],
+    [
+     16,
+     "William Saliba"
+    ]
+   ],
+   "top7": [
+    "Calvin Bassey 26/27",
+    "Lewis Dunk 26/27",
+    "Jan Paul van Hecke 24/25",
+    "Pau Torres 23/24",
+    "Manuel Akanji 23/24",
+    "Lisandro Martínez 26/27",
+    "Rúben Dias 26/27"
+   ],
+   "score": 8,
+   "twinMins": 900
+  },
+  {
+   "player": "David de Gea",
+   "season": "2017/18",
+   "group": "GK",
+   "declared": "GK",
+   "pos": 11,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 3,
+   "twin": "David Raya",
+   "twinSeason": "2026/27",
+   "twinClub": 9825,
+   "match": 77.2,
+   "sure": 49,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Nick Pope",
+    "Emiliano Martínez",
+    "Ederson"
+   ],
+   "surpriseRank": [
+    [
+     13,
+     "Nick Pope"
+    ],
+    [
+     17,
+     "Emiliano Martínez"
+    ],
+    [
+     46,
+     "Ederson"
+    ]
+   ],
+   "top7": [
+    "David Raya 26/27",
+    "Alisson Becker 23/24",
+    "Gianluigi Donnarumma 25/26",
+    "Robert Sánchez 24/25",
+    "James Trafford 26/27",
+    "Jordan Pickford 24/25",
+    "André Onana 23/24"
+   ],
+   "score": 8,
+   "twinMins": 900
+  },
+  {
+   "player": "Paulo Dybala",
+   "season": "2017/18",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 105,
+   "league": "Serie A",
+   "pl": false,
+   "fame": 2,
+   "twin": "Pedro",
+   "twinSeason": "2024/25",
+   "twinClub": 8543,
+   "match": 79.5,
+   "sure": 92,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Serge Gnabry",
+    "Antoine Semenyo",
+    "Eberechi Eze",
+    "Raphinha",
+    "Roberto Firmino",
+    "Christian Pulisic"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Serge Gnabry"
+    ],
+    [
+     13,
+     "Antoine Semenyo"
+    ],
+    [
+     14,
+     "Eberechi Eze"
+    ]
+   ],
+   "top7": [
+    "Pedro 24/25",
+    "Phil Foden 23/24",
+    "Jamal Musiala 24/25",
+    "Matheus Cunha 24/25",
+    "Michael Olise 23/24",
+    "Can Uzun 25/26",
+    "Jude Bellingham 23/24"
+   ],
+   "score": 7,
+   "twinMins": 1087
+  },
+  {
+   "player": "Jadon Sancho",
+   "season": "2019/20",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 83,
+   "league": "Bundesliga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Fermín López",
+   "twinSeason": "2026/27",
+   "twinClub": 8634,
+   "match": 79.7,
+   "sure": 49,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Rayan Cherki",
+    "Christian Pulisic",
+    "Luis Díaz",
+    "Rafael Leão",
+    "Vinícius Júnior",
+    "Jude Bellingham"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Rayan Cherki"
+    ],
+    [
+     11,
+     "Christian Pulisic"
+    ],
+    [
+     12,
+     "Luis Díaz"
+    ]
+   ],
+   "top7": [
+    "Fermín López 26/27",
+    "Brahim Díaz 23/24",
+    "Charles De Ketelaere 23/24",
+    "Jamal Musiala 22/23",
+    "Phil Foden 22/23",
+    "Neymar 22/23",
+    "Ademola Lookman 22/23"
+   ],
+   "score": 7,
+   "twinMins": 702
+  },
+  {
+   "player": "Luis Díaz",
+   "season": "2024/25",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 87,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Cody Gakpo",
+   "twinSeason": "2022/23",
+   "twinClub": 8650,
+   "match": 85.4,
+   "sure": 94,
+   "famousTwin": true,
+   "ownTop": 0,
+   "surprise": [
+    "Antoine Semenyo",
+    "Phil Foden",
+    "Bukayo Saka",
+    "Matheus Cunha",
+    "Raheem Sterling",
+    "Anthony Gordon"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Antoine Semenyo"
+    ],
+    [
+     12,
+     "Phil Foden"
+    ],
+    [
+     15,
+     "Bukayo Saka"
+    ]
+   ],
+   "top7": [
+    "Cody Gakpo 22/23",
+    "Morgan Gibbs-White 25/26",
+    "Morgan Rogers 26/27",
+    "Cody Gakpo 24/25",
+    "Leandro Trossard 23/24",
+    "Julián Álvarez 22/23",
+    "Eberechi Eze 23/24"
+   ],
+   "score": 7,
+   "twinMins": 1465
+  },
+  {
+   "player": "Jordan Henderson",
+   "season": "2019/20",
+   "group": "MID",
+   "declared": "MID",
+   "pos": 64,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Mateo Kovacic",
+   "twinSeason": "2022/23",
+   "twinClub": 8455,
+   "match": 78.3,
+   "sure": 36,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Moisés Caicedo",
+    "Alexis Mac Allister",
+    "Bernardo Silva",
+    "Dominik Szoboszlai",
+    "Enzo Fernández",
+    "Fabinho"
+   ],
+   "surpriseRank": [
+    [
+     12,
+     "Moisés Caicedo"
+    ],
+    [
+     13,
+     "Alexis Mac Allister"
+    ],
+    [
+     19,
+     "Bernardo Silva"
+    ]
+   ],
+   "top7": [
+    "Mateo Kovacic 22/23",
+    "Douglas Luiz 22/23",
+    "Declan Rice 23/24",
+    "Youri Tielemans 23/24",
+    "Conor Gallagher 23/24",
+    "Bruno Guimarães 24/25",
+    "Bruno Guimarães 22/23"
+   ],
+   "score": 7,
+   "twinMins": 1705
+  },
+  {
+   "player": "Antoine Griezmann",
+   "season": "2022/23",
+   "group": "AMW",
+   "declared": "AMW",
+   "pos": 104,
+   "league": "La Liga",
+   "pl": false,
+   "fame": 2,
+   "twin": "Marco Asensio",
+   "twinSeason": "2022/23",
+   "twinClub": 8633,
+   "match": 79.6,
+   "sure": 72,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Thomas Müller",
+    "Ademola Lookman",
+    "Bukayo Saka",
+    "Cole Palmer",
+    "Serge Gnabry",
+    "Rafael Leão"
+   ],
+   "surpriseRank": [
+    [
+     11,
+     "Thomas Müller"
+    ],
+    [
+     12,
+     "Ademola Lookman"
+    ],
+    [
+     15,
+     "Bukayo Saka"
+    ]
+   ],
+   "top7": [
+    "Marco Asensio 22/23",
+    "Raphinha 23/24",
+    "Michael Olise 24/25",
+    "Raphinha 22/23",
+    "Lionel Messi 22/23",
+    "Neymar 22/23",
+    "Raphinha 24/25"
+   ],
+   "score": 6,
+   "twinMins": 1435
+  },
+  {
+   "player": "Reece James",
+   "season": "2021/22",
+   "group": "FB",
+   "declared": "FB",
+   "pos": 32,
+   "league": "Premier League",
+   "pl": true,
+   "fame": 2,
+   "twin": "Matheus Nunes",
+   "twinSeason": "2024/25",
+   "twinClub": 8456,
+   "match": 71.3,
+   "sure": 42,
+   "famousTwin": false,
+   "ownTop": 0,
+   "surprise": [
+    "Kieran Trippier",
+    "Jeremie Frimpong",
+    "Joško Gvardiol",
+    "Trent Alexander-Arnold",
+    "Jurriën Timber",
+    "Kyle Walker"
+   ],
+   "surpriseRank": [
+    [
+     10,
+     "Kieran Trippier"
+    ],
+    [
+     16,
+     "Jeremie Frimpong"
+    ],
+    [
+     18,
+     "Joško Gvardiol"
+    ]
+   ],
+   "top7": [
+    "Matheus Nunes 24/25",
+    "Andrew Robertson 22/23",
+    "Amad Diallo 24/25",
+    "Maxim De Cuyper 25/26",
+    "Andrew Robertson 23/24",
+    "Andrew Robertson 26/27",
+    "Ben White 26/27"
+   ],
+   "score": 6,
+   "twinMins": 1673
+  }
+ ]
+}
