@@ -1,0 +1,178 @@
+<!doctype html>
+<!--
+  tools/preview-film/ad2/ad.html — the second ad: fast motion graphics, cut to the beat.
+  A page that can draw itself at any moment: window.setT(seconds) puts every word, phone and
+  wipe where it belongs at that time (nothing runs on a clock). render.mjs steps through it
+  30 times a second and photographs each frame. Footage: ?foot=<folder of <shot>/s_0001.png>.
+  The beat grid is the music's own (09-last-attack: first beat 0.569 s, one every 0.58 s).
+-->
+<html><head><meta charset="utf-8">
+<style>
+@font-face { font-family: K; src: url("file:///usr/share/fonts/opentype/inter/InterDisplay-BlackItalic.otf"); }
+@font-face { font-family: KB; src: url("file:///usr/share/fonts/opentype/inter/InterDisplay-ExtraBold.otf"); }
+@font-face { font-family: C; src: url("cinzel.ttf"); font-weight: 400 900; }
+html, body { margin: 0; background: #000; }
+#stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #060a14; font-family: K; color: #fff; }
+#stage * { position: absolute; box-sizing: border-box; will-change: transform, opacity; }
+.fill { left: 0; top: 0; width: 1080px; height: 1920px; }
+.word { left: 0; width: 1080px; text-align: center; text-transform: uppercase; line-height: 0.92; letter-spacing: -0.02em; white-space: nowrap; text-shadow: 0 10px 40px rgba(0,0,0,.55); }
+.gold { color: #ffc94f; }
+.phone { border-radius: 9.5% / 4.4%; background: #05070c; box-shadow: 0 50px 120px rgba(0,0,0,.65), 0 0 0 3px #2a2f3a, inset 0 0 0 2px #000; }
+.phone img { left: 3.2%; top: 1.5%; width: 93.6%; height: 97%; border-radius: 7.5% / 3.5%; object-fit: cover; }
+.chip { font-family: KB; font-size: 40px; letter-spacing: .06em; padding: 18px 34px; border-radius: 60px; background: #ffc94f; color: #10131c; white-space: nowrap; box-shadow: 0 16px 40px rgba(0,0,0,.45); }
+.label { font-family: K; font-size: 62px; width: 360px; text-align: center; letter-spacing: -0.01em; text-shadow: 0 6px 24px rgba(0,0,0,.6); }
+</style></head><body><div id="stage"></div>
+<script>
+const FOOT = new URLSearchParams(location.search).get("foot") || "../foot";
+const B = n => 0.569 + 0.58 * n;                       // the time of beat n
+const END = B(42) + 0.4;
+window.DURATION = END;
+const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const pr = (t, a, d) => cl((t - a) / d);                // 0..1 progress from time a over d seconds
+const lerp = (a, b, k) => a + (b - a) * k;
+const outExpo = k => k >= 1 ? 1 : 1 - Math.pow(2, -10 * k);
+const outBack = k => { const c = 1.9; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+const inOut = k => k * k * (3 - 2 * k);
+const stage = document.getElementById("stage");
+const el = (cls, html = "", css = "") => { const d = document.createElement("div"); d.className = cls; d.innerHTML = html; d.style.cssText = css; stage.appendChild(d); return d; };
+const pending = [];
+function phone(shot) {
+  const d = el("phone"); const im = document.createElement("img"); d.appendChild(im); d.shot = shot; d.im = im; d.cur = -1; return d;
+}
+function frame(p, n, max) {                               // show footage frame n on a phone
+  n = Math.round(cl(n, 1, max)); if (n === p.cur) return; p.cur = n;
+  p.im.src = `${FOOT}/${p.shot}/s_${String(n).padStart(4, "0")}.png`; pending.push(p.im.decode().catch(() => {}));
+}
+const place = (d, x, y, w, h, rot = 0, sc = 1, op = 1) => { d.style.left = (x - w / 2) + "px"; d.style.top = (y - h / 2) + "px"; d.style.width = w + "px"; d.style.height = h + "px"; d.style.transform = `rotate(${rot}deg) scale(${sc})`; d.style.opacity = op; };
+// a word that slams in: big and blurred to sharp and in place
+function slam(d, t, at, { y, size, out = 1e9, dim = 1e9 }) {
+  const k = outExpo(pr(t, at, 0.26)), o = pr(t, out, 0.16);
+  d.style.top = (y - o * 260) + "px"; d.style.fontSize = size + "px";
+  d.style.transform = `scale(${lerp(2.3, 1, k)}) skewX(${lerp(-10, 0, k)}deg)`;
+  d.style.filter = `blur(${lerp(22, 0, k)}px)`;
+  d.style.opacity = (t < at ? 0 : lerp(0, 1, cl(k * 3))) * (1 - o) * (t > dim ? lerp(1, 0.32, pr(t, dim, 0.15)) : 1);
+}
+
+// ---------- everything on the stage ----------
+const bg = el("fill"), glow = el("fill"), stripes = el("fill", "", "background: repeating-linear-gradient(115deg, rgba(255,255,255,.035) 0 3px, transparent 3px 46px); width: 2400px; left: -600px;");
+// 1 the hook
+const h1 = el("word", 'AGE&nbsp;<span class="gold">16.</span>'), h2 = el("word", "NO CLUB."), h3 = el("word", "NO NAME.");
+// 2 the trial
+const t1 = el("word", "ONE TRIAL."), t2 = el("word gold", "ONE CHANCE."), pT = phone("trial"), cT = el("chip", "A SCOUT IS WATCHING");
+// 3 signing
+const s1 = el("word", "SIGN YOUR"), s2 = el("word", "FIRST"), s3 = el("word gold", "CONTRACT."), pS = phone("sign");
+const stamp = el("", "SIGNED", "font-family: K; font-size: 96px; color: #ffc94f; border: 10px solid #ffc94f; border-radius: 22px; padding: 6px 34px; letter-spacing: .04em; background: rgba(6,10,20,.55);");
+// 4 the match
+const m1 = el("word", "EVERY SHOT"), m2 = el("word gold", "IS YOURS."), pM = phone("match");
+const burst = el("", "", "left: -460px; top: 0; width: 2000px; height: 2000px; border-radius: 50%; background: repeating-conic-gradient(rgba(255,201,79,.0) 0 7deg, rgba(255,201,79,.5) 7deg 10deg); -webkit-mask-image: radial-gradient(circle, transparent 22%, #000 30%, transparent 70%);");
+const goal = el("word", "GOAL!", "font-size: 330px; color: #ffc94f; -webkit-text-stroke: 10px #10131c; paint-order: stroke fill; text-shadow: 0 18px 0 #10131c, 0 40px 80px rgba(0,0,0,.6);");
+const flash = el("fill", "", "background: #fff;");
+// 5 build your player
+const b1 = el("word", "BUILD YOUR"), b2 = el("word gold", "PLAYER."), pA = phone("train"), pB = phone("climb"), pC = phone("gold");
+const lA = el("label", "TRAIN"), lB = el("label gold", "LEVEL UP"), lC = el("label", "WIN");
+// 6 the climb
+const c1 = el("word", "CLIMB"), c2 = el("word gold", "EVERY LEAGUE.");
+const bars = [...Array(6)].map((_, i) => el("", "", `border-radius: 14px 14px 0 0; background: linear-gradient(#${i === 5 ? "ffc94f" : "2f6bff"}, #${i === 5 ? "b8862a" : "12245e"}); box-shadow: 0 20px 50px rgba(0,0,0,.4);`));
+const ballS = el("", "", "width: 130px; height: 130px; border-radius: 50%; background: radial-gradient(circle at 34% 30%, #fff6cf 0, #ffd15e 22%, #c88a1e 62%, #6b430a 100%); box-shadow: 0 0 80px rgba(255,201,79,.6);");
+const lo = el("label", "NON-LEAGUE", "font-size: 44px; width: 420px; text-align: left;"), hi = el("label gold", "THE TOP", "font-size: 44px; width: 300px; text-align: right;");
+// 7 the name
+const hero = el("fill", "", `background: url("${FOOT}/../clean/gold/c_0132.png") center/cover;`), heroDark = el("fill", "", "background: linear-gradient(rgba(6,10,20,.72), rgba(6,10,20,.5) 40%, rgba(6,10,20,.88));");
+const n1 = el("word", "KNOWITBALL", "font-family: C; font-weight: 800; font-size: 132px; letter-spacing: 0;");
+const n2 = el("word gold", "ROAD TO", "font-family: C; font-weight: 700; font-size: 66px;");
+const n3 = el("word", "GOLDEN BALL", "font-family: C; font-weight: 900; font-size: 118px; background: linear-gradient(100deg, #b8862a 0%, #ffd872 30%, #fff6cf 50%, #ffd872 70%, #b8862a 100%); background-size: 300% 100%; -webkit-background-clip: text; color: transparent; text-shadow: none;");
+const n4 = el("chip", "FREE TO PLAY", "font-size: 46px;");
+// the gold bar that wipes across at every change of scene, and the edges
+const wipe = el("", "", "left: -700px; top: -400px; width: 620px; height: 2800px; background: linear-gradient(90deg, #ffc94f, #fff1b8 50%, #ffc94f); transform-origin: center;");
+const vig = el("fill", "", "background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.55)); pointer-events: none;");
+const black = el("fill", "", "background: #000;");
+const CUTS = [3, 8, 13, 22, 29, 34].map(B);
+const HUE = [[6, 10, 20, "#1b2a55"], [8, 16, 34, "#1f4fd1"], [22, 12, 8, "#b3541e"], [6, 26, 14, "#19a34a"], [10, 12, 34, "#5a3fd6"], [8, 14, 30, "#2f6bff"], [6, 10, 20, "#b8862a"]];
+const show = (d, on) => { d.style.display = on ? "" : "none"; };
+
+window.setT = async function (t) {
+  const sc = CUTS.filter(c => t >= c).length;            // which scene, 0..6
+  const [r, g, b_, glowC] = HUE[sc];
+  bg.style.background = `rgb(${r},${g},${b_})`;
+  glow.style.background = `radial-gradient(circle at ${50 + 18 * Math.sin(t * 0.9)}% ${46 + 10 * Math.cos(t * 0.7)}%, ${glowC} 0, transparent 62%)`; glow.style.opacity = 0.75;
+  stripes.style.transform = `translateX(${(t * 90) % 460}px)`;
+  const beatPulse = 1 + 0.012 * Math.pow(1 - ((t - B(0)) / 0.58 % 1 + 1) % 1, 3);   // everything breathes on the beat
+  stage.style.transform = "";
+  // 1 hook
+  [h1, h2, h3].forEach((d, i) => { show(d, sc === 0); slam(d, t, B(i), { y: 560 + i * 250, size: 220, out: B(3) - 0.14, dim: B(i + 1) }); });
+  // 2 trial
+  [t1, t2, pT, cT].forEach(d => show(d, sc === 1));
+  if (sc === 1) {
+    slam(t1, t, B(3), { y: 170, size: 150, out: B(8) - 0.14 }); slam(t2, t, B(4), { y: 315, size: 150, out: B(8) - 0.14 });
+    const k = outBack(pr(t, B(3) + 0.05, 0.55)), o = pr(t, B(8) - 0.2, 0.2);
+    place(pT, 540 + 30 * Math.sin(t), lerp(2700, 1210, k) + o * 1400, 600, 1298, lerp(-16, -5 + 1.5 * Math.sin(t * 1.3), k), beatPulse);
+    frame(pT, 1 + (t - B(3)) * 24, 96);
+    const ck = outBack(pr(t, B(5), 0.4)); cT.style.left = lerp(1100, 500, ck) + "px"; cT.style.top = "1560px"; cT.style.transform = "rotate(-5deg)"; cT.style.opacity = 1 - o;
+  }
+  // 3 sign
+  [s1, s2, s3, pS, stamp].forEach(d => show(d, sc === 2));
+  if (sc === 2) {
+    const o = pr(t, B(13) - 0.2, 0.2);
+    [s1, s2, s3].forEach((d, i) => { slam(d, t, B(8 + i), { y: 150 + i * 150, size: 150, out: B(13) - 0.14 }); });
+    const k = outBack(pr(t, B(8) + 0.05, 0.55));
+    place(pS, lerp(1700, 560, k) - o * 1500, 1260 + 14 * Math.sin(t * 1.1), 580, 1255, lerp(18, 5 + 1.2 * Math.sin(t * 1.2), k), beatPulse);
+    frame(pS, 1 + (t - B(8)) * 24, 96);
+    const sk = pr(t, B(11), 0.16); stamp.style.left = "120px"; stamp.style.top = "1500px";
+    stamp.style.transform = `rotate(-13deg) scale(${lerp(3.2, 1, outExpo(sk))})`; stamp.style.opacity = (t < B(11) ? 0 : 1) * (1 - o);
+  }
+  // 4 match
+  [m1, m2, pM, burst, goal].forEach(d => show(d, sc === 3));
+  const G = B(18);                                        // the ball hits the net on this beat (footage frame 67)
+  if (sc === 3) {
+    const o = pr(t, B(22) - 0.2, 0.2);
+    slam(m1, t, B(13), { y: 110, size: 150, out: G - 0.1 }); slam(m2, t, B(14), { y: 250, size: 150, out: G - 0.1 });
+    const k = outBack(pr(t, B(13) + 0.05, 0.5)), z = inOut(pr(t, B(13), G - B(13)));
+    const shake = t >= G ? Math.exp(-(t - G) * 7) : 0;
+    place(pM, 540 + shake * 26 * Math.sin(t * 90), lerp(2800, 1130, k) + shake * 20 * Math.cos(t * 70) + o * 1500, 640, 1385, shake * 3 * Math.sin(t * 60), lerp(0.94, 1.12, z) * beatPulse);
+    frame(pM, 67 + (t - G) * 24, 73);   // stop before the scorer names come up: no real names in the ad
+    const gk = pr(t, G, 0.3);
+    burst.style.transform = `rotate(${t * 40}deg) scale(${lerp(0.4, 1.25, outExpo(gk))})`; burst.style.opacity = (t < G ? 0 : 0.9 * (1 - pr(t, G + 1.2, 0.8))) * (1 - o);
+    goal.style.top = (1190 + o * 600) + "px"; goal.style.transform = `rotate(-6deg) scale(${lerp(3.4, 1, outBack(gk)) * (1 + 0.03 * Math.sin(t * 20) * (1 - gk))})`;
+    goal.style.opacity = (t < G ? 0 : 1) * (1 - o);
+  }
+  flash.style.opacity = t >= G ? cl(1 - (t - G) / 0.22) * 0.95 : 0;
+  // 5 build
+  [b1, b2, pA, pB, pC, lA, lB, lC].forEach(d => show(d, sc === 4));
+  if (sc === 4) {
+    const o = pr(t, B(29) - 0.2, 0.2);
+    slam(b1, t, B(22), { y: 130, size: 150, out: B(29) - 0.14 }); slam(b2, t, B(23), { y: 280, size: 150, out: B(29) - 0.14 });
+    [[pA, lA, 200, -9, 22, 96, "train"], [pB, lB, 540, 0, 24, 96, "climb"], [pC, lC, 880, 9, 26, 132, "gold"]].forEach(([p, l, x, rot, bt, max], i) => {
+      const k = outBack(pr(t, B(bt), 0.45)), y = (i === 1 ? 1060 : 1130) + 16 * Math.sin(t * 1.4 + i * 2) + o * 1500;
+      place(p, x, lerp(2500, y, k), i === 1 ? 400 : 350, i === 1 ? 866 : 757, rot + 1.2 * Math.sin(t + i), 1, t < B(bt) ? 0 : 1); p.style.zIndex = i === 1 ? 3 : 2;
+      frame(p, 1 + (t - B(bt)) * 24, max);
+      l.style.left = (x - 180) + "px"; l.style.top = (i === 1 ? 1560 : 1570) + "px"; l.style.opacity = (t < B(bt) + 0.1 ? 0 : cl(pr(t, B(bt) + 0.1, 0.15))) * (1 - o); l.style.transform = `translateY(${lerp(40, 0, outExpo(pr(t, B(bt) + 0.1, 0.3)))}px) rotate(${rot / 3}deg)`; l.style.zIndex = 4;
+    });
+  }
+  // 6 climb
+  [c1, c2, ...bars, ballS, lo, hi].forEach(d => show(d, sc === 5));
+  if (sc === 5) {
+    const o = pr(t, B(34) - 0.2, 0.2);
+    slam(c1, t, B(29), { y: 150, size: 170, out: B(34) - 0.14 }); slam(c2, t, B(30), { y: 320, size: 128, out: B(34) - 0.14 });
+    const bx = i => 130 + i * 142, bh = i => 150 + i * 150, T0 = B(29) + 0.15, step = (B(33) - T0) / 6;
+    bars.forEach((d, i) => { const k = outBack(pr(t, T0 + i * step, 0.35)); d.style.left = bx(i) + "px"; d.style.width = "116px"; d.style.height = bh(i) * k + "px"; d.style.top = (1700 - bh(i) * k + o * 900) + "px"; d.style.opacity = 1 - o; });
+    // the golden ball hops up the steps and lands on the top one
+    const u = cl((t - T0 - 0.2) / step, 0, 5), i0 = Math.floor(u), f = u - i0, i1 = Math.min(5, i0 + 1);
+    const x = lerp(bx(i0), bx(i1), f) + 58 - 65, y = lerp(1700 - bh(i0), 1700 - bh(i1), f) - 130 - 150 * Math.sin(Math.PI * f) * (u < 5 ? 1 : 0);
+    ballS.style.left = x + "px"; ballS.style.top = (y + o * 900) + "px"; ballS.style.transform = `scale(${1 + (u >= 5 ? 0.25 * Math.exp(-(t - (T0 + 0.2 + 5 * step)) * 5) : 0)})`; ballS.style.opacity = t < T0 ? 0 : 1 - o;
+    lo.style.left = "120px"; lo.style.top = "1730px"; lo.style.opacity = cl(pr(t, T0, 0.2)) * (1 - o); hi.style.left = "660px"; hi.style.top = "1730px"; hi.style.opacity = cl(pr(t, B(33), 0.2)) * (1 - o);
+  }
+  // 7 name
+  [hero, heroDark, n1, n2, n3, n4].forEach(d => show(d, sc === 6));
+  if (sc === 6) {
+    const a = B(34); hero.style.transform = `scale(${lerp(1.16, 1.02, inOut(pr(t, a, END - a)))})`;
+    const k1 = outExpo(pr(t, a + 0.1, 0.7)); n1.style.top = "640px"; n1.style.letterSpacing = lerp(0.5, 0.02, k1) + "em"; n1.style.opacity = cl(k1 * 2); n1.style.filter = `blur(${lerp(14, 0, k1)}px)`;
+    const k2 = outExpo(pr(t, B(35), 0.5)); n2.style.top = lerp(860, 830, k2) + "px"; n2.style.opacity = k2;
+    const k3 = outExpo(pr(t, B(36), 0.5)); n3.style.top = lerp(950, 915, k3) + "px"; n3.style.opacity = k3; n3.style.backgroundPosition = `${lerp(120, -60, pr(t, B(36), 2.2))}% 0`;
+    const k4 = outBack(pr(t, B(38), 0.4)); n4.style.left = "366px"; n4.style.top = "1250px"; n4.style.transform = `scale(${k4})`; n4.style.opacity = t < B(38) ? 0 : 1;
+  }
+  // the wipe at each cut, and in/out of black
+  let wx = -900; for (const c of CUTS) { const k = (t - (c - 0.16)) / 0.32; if (k > 0 && k < 1) wx = lerp(-900, 1500, inOut(k)); }
+  wipe.style.transform = `translateX(${wx}px) rotate(18deg)`;
+  black.style.opacity = Math.max(1 - pr(t, 0.1, 0.35), pr(t, END - 0.45, 0.4));
+  await Promise.all(pending.splice(0)); await document.fonts.ready;
+};
+</script></body></html>

@@ -25,3 +25,12 @@ in anything public.
 Python needs: opencv-python-headless, OpenEXR, pillow, numpy, fonttools, brotli (a venv).
 
 Reference only (not copied): the breakdown in Drive, "one-prompt Blender film reference".
+
+## The second ad: fast motion graphics (11 Nov 2026)
+`ad2/ad.html` is a page that can draw itself at any moment (`window.setT(seconds)`): big
+words that slam in, phones with the real game on them, a gold wipe at each cut, all on
+the beat of the game's track "Last attack" (first beat 0.569 s, one every 0.58 s; the goal
+lands on beat 18). `node ad2/render.mjs <work dir with foot/, clean/, cinzel.ttf> <music> <out.mp4>`
+photographs it 30 times a second (about 5 minutes for 25 s) and adds the music.
+No rendering in Blender: a change of words or timing is a 5-minute re-run.
+The match footage stops before the scorer names appear, so no real player name is shown.
