@@ -337,7 +337,6 @@ export default function ProfileSetup({ onComplete, onMainMenu }: Props) {
                   <input
                     value={nationalitySearch}
                     onChange={(e) => setNationalitySearch(e.target.value)}
-                    autoFocus
                     placeholder={`Search ${ALL_NATIONALITIES.length} nationalities…`}
                     className="w-full bg-white text-black text-center font-bold py-2.5 rounded-lg outline-none placeholder:font-normal placeholder:text-black/40"
                   />
@@ -497,10 +496,6 @@ export default function ProfileSetup({ onComplete, onMainMenu }: Props) {
                 "Your photo" measured 11px of the Start Career button off the
                 bottom of an iPhone 13 — the exact overflow step 1 was split in
                 two to avoid. */}
-            <p className="mb-3 text-center text-[11px] font-bold leading-snug text-white/70">
-              Optional. Nobody has signed you yet, so this is shown in a plain trialist&apos;s
-              kit — you&apos;ll wear a club&apos;s colours once one comes in for you.
-            </p>
             <PortraitPicker
               value={portrait}
               onChange={setPortrait}

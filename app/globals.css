@@ -110,8 +110,11 @@ body[data-kib-app] * {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
 }
+/* (No overscroll rule on <body>: with it, a finger swipe could not scroll any
+ * page taller than the screen, and a button below the fold was out of reach.
+ * Seen on a real phone, 11 Nov 2026: stuck on a cup result. The rule on
+ * <html> below is enough to stop the bounce.) */
 body[data-kib-app] {
-  overscroll-behavior: none;
   -webkit-user-select: none;
   user-select: none;
 }
