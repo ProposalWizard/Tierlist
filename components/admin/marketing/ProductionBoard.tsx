@@ -26,7 +26,8 @@ export default function ProductionBoard({ initial }: { initial: BoardRead }) {
   }, []);
   useEffect(() => {
     load();
-    const id = setInterval(load, BOARD.refreshMs);
+    // Not while the tab is hidden (6 Nov 2026: server time).
+    const id = setInterval(() => { if (document.visibilityState === "visible") load(); }, BOARD.refreshMs);
     return () => clearInterval(id);
   }, [load]);
 

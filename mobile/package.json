@@ -1,0 +1,21 @@
+{
+  "name": "knowitball-app",
+  "private": true,
+  "description": "The packed phone app of Road to Ballon d'Or (read README.md). Separate from the website: the website never installs or builds anything in this folder.",
+  "scripts": {
+    "pack": "cd .. && npx tsx mobile/scripts/pack.mts",
+    "www": "node scripts/build-www.mjs",
+    "icons": "node scripts/icons.mjs",
+    "sync": "npx cap sync",
+    "android:apk": "cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/cli": "8.6.0",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "8.6.0",
+    "sharp": "0.33.5"
+  }
+}

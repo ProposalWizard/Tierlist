@@ -276,7 +276,8 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(
     { club, year, roster: cleanRoster },
     {
-      headers: { "Cache-Control": "public, max-age=3600" },
+      // s-maxage: Vercel's CDN keeps it too, so repeat asks cost no server time (6 Nov 2026).
+      headers: { "Cache-Control": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400" },
     }
   );
 }

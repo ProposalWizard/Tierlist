@@ -147,7 +147,23 @@ const nextConfig = {
 // is safe to ship before those exist. `silent: true` keeps that warning out
 // of normal build output; set it to false locally if source maps aren't
 // uploading and the reason isn't obvious.
-export default withSentryConfig(nextConfig, {
+// THE PACKED PHONE APP (Mikey, 5 Nov 2026; mobile/README.md). `npm run
+// app:build` sets KIB_APP_BUILD=1 and gets a second, separate build: only the
+// game, as plain files in out-app/, no server. It reads `*.app.tsx` pages and
+// nothing else, so every website page, API route and middleware is left out,
+// and the website's own build (below) never sees this branch.
+const appConfig = {
+  output: "export",
+  distDir: ".next-app",
+  // Two, not one: Next 14 passes this list through a query string, and a
+  // one-item list comes back as plain text ("pageExtensions.map is not a function").
+  pageExtensions: ["app.tsx", "app.ts"],
+  images: { unoptimized: true },
+  env: { NEXT_PUBLIC_KIB_APP: "1" },
+  webpack: nextConfig.webpack,
+};
+
+export default process.env.KIB_APP_BUILD === "1" ? appConfig : withSentryConfig(nextConfig, {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   authToken: process.env.SENTRY_AUTH_TOKEN,

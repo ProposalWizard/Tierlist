@@ -1,4 +1,5 @@
 "use client";
+import { PACKED_APP } from "@/lib/app/packed";
 
 /**
  * THE RIGHT SWIPE PAGE — shops and the casino.
@@ -86,7 +87,8 @@ export default function ShopPage({ career, onOpen, sponsorsLock }: { career: Car
       <RiseIn onPageActive index={1}>
         <div className="grid grid-cols-2 gap-2.5">
           <SmallHero onClick={() => onOpen("store")} icon="🛒" title="Store" sub={`${(career.coins ?? 0).toLocaleString("en-GB")} Coins · specials`} colors={["#fbbf24", "#7c3aed"]} />
-          <SmallHero onClick={() => onOpen("casino-menu")} icon="🎰" title="Casino" sub="Slots, cards, racing" colors={["#facc15", "#dc2626"]} />
+          {/* Not in the packed phone app: no casino there (Mikey, 5 Nov 2026). */}
+          {!PACKED_APP && <SmallHero onClick={() => onOpen("casino-menu")} icon="🎰" title="Casino" sub="Slots, cards, racing" colors={["#facc15", "#dc2626"]} />}
         </div>
       </RiseIn>
       {/* Walk the 3D shop (beta) — Harry, 2 Oct 2026: "Don't replace the
