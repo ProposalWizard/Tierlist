@@ -23,3 +23,9 @@ and the episode file for `tools/video-render/twin/make_replace.py`. Every player
 - Ages, values, clubs: `python3 fmpull_players.py <FM_DIR> 4` (FotMob player pages, about 2,200 players, about an hour)
   -> `<FM_DIR>/../fmplayers.json`; `build.py` packs it into `data.js` as `players`. Pull it again after a transfer window.
 - Method v2.1 (real zeros, see the twin README) is in the page too.
+
+## The twins list never holds this season (Mikey, 11 Nov 2026)
+
+The Statistical twins top 10 (and the map, the list search and the "Good video?" score) only use full seasons: "Last 5 full
+seasons" = 2021/22 to 2025/26, "Every full season" stops at 2025/26, and "One season" lists only full seasons. This season
+(2026/27, about 10 games in) appears only in the "Right now" card. The "This season only" option is gone.
