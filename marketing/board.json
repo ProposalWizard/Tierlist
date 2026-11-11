@@ -217,9 +217,15 @@
   "cover": "docs/marketing/videos/twins-batch-01/cover.png",
   "video": "docs/marketing/videos/twins-batch-01/01-karim-benzema-2122.mp4",
   "seconds": 64.6,
-  "links": [],
+  "links": [
+   {
+    "label": "Instagram Reel · 07 Van Dijk",
+    "url": "https://www.instagram.com/reel/DfkXvJpFbEU/"
+   }
+  ],
   "log": [
-   "2026-11-10 Batch made: pick_batch.py scored 118 famous player-seasons, 27 chosen (one per player, all positions), all voiced by Hugo. Every video checked by eye; 8 re-rendered for name and bar fixes. Waiting for Mikey's look.",
+   "2026-11-10 Batch made: 27 Stat Twins videos picked by score, all voiced by Hugo.",
+   "2026-11-10 07 Van Dijk posted to Instagram (knowitballjr).",
    "2026-11-11 All 27 re-rendered with faces from the season shown (201 of 216 faces; the rest are today's photo). Voices reused."
   ]
  }
