@@ -90,7 +90,8 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage, 
     }
   }, []);
 
-  useEffect(() => { load(); const id = setInterval(load, REFRESH_MS); return () => clearInterval(id); }, [load]);
+  // Not while the tab is hidden (6 Nov 2026: server time).
+  useEffect(() => { load(); const id = setInterval(() => { if (document.visibilityState === "visible") load(); }, REFRESH_MS); return () => clearInterval(id); }, [load]);
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 15_000); return () => clearInterval(id); }, []);
 
   // The address follows the tab, so a link to a patch note can be shared.

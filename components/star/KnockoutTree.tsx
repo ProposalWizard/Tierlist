@@ -96,10 +96,15 @@ export function KnockoutTree({ columns, glow, you }: { columns: TreeColumn[]; gl
 }
 
 function Side({ club, score, won }: { club?: string; score?: number; won: boolean }) {
+  const name = club ? shortClub(club) : "?";
   return (
     <span className={`flex min-w-0 items-center gap-[3px] text-[9.5px] leading-none tracking-[-0.01em] ${won ? "font-black text-white" : "font-bold text-white/45"}`}>
       {club ? <ClubBadge club={club} size={11} /> : <span className="inline-block h-[11px] w-[11px] shrink-0 rounded-full bg-white/15" />}
-      <span className="min-w-0 flex-1 overflow-hidden whitespace-nowrap" style={{ WebkitMaskImage: "linear-gradient(90deg,#000 82%,transparent)", maskImage: "linear-gradient(90deg,#000 82%,transparent)" }}>{club ? shortClub(club) : "?"}</span>
+      {/* A long name (33 of 248 clubs are over 10 letters: "Kidderminster",
+          "Shamrock Rovers") is set a little smaller so it fits whole; it used
+          to fade out half-read (playtest, 3 Nov 2026). The fade stays as the
+          last resort on a very narrow phone. */}
+      <span className="min-w-0 flex-1 overflow-hidden whitespace-nowrap" style={{ fontSize: name.length > 12 ? "7.8px" : name.length > 10 ? "8.6px" : undefined, WebkitMaskImage: "linear-gradient(90deg,#000 92%,transparent)", maskImage: "linear-gradient(90deg,#000 92%,transparent)" }}>{name}</span>
       {score !== undefined && <span className="shrink-0 tabular-nums">{score}</span>}
     </span>
   );

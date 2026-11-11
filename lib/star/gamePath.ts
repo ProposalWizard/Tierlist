@@ -1,3 +1,4 @@
+import { PACKED_APP } from "../app/packed";
 /**
  * WHERE THE GAME LIVES (Mikey, 3 Nov 2026: "star-dev is clearly like a
  * development link … make it something like /road-to-ballon-dor").
@@ -14,6 +15,8 @@ export const GAME_PATH_OLD = "/star-dev";
 
 /** Is this address the game itself (either name)? */
 export function isGamePath(path: string | null | undefined): boolean {
+  // The packed app shows nothing but the game, at "/".
+  if (PACKED_APP) return true;
   const p = (path ?? "").replace(/\/+$/, "");
   return p === GAME_PATH || p === GAME_PATH_OLD;
 }

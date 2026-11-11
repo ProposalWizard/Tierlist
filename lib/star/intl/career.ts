@@ -520,10 +520,17 @@ export function syncIntl(career: CareerState): CareerState {
   // late: its matches are played without you.
   const lastT = lastPlayedTime(career);
   let passed: Record<string, { called: boolean; chance: number; starter: boolean }> | null = null;
-  for (const p of periodsFrom(w, nation, from)) {
+  // From the career's first season, not this one: a June window still
+  // unanswered when the season rolled over sits before this season's start,
+  // and while it waits every later international waits too (the world stood
+  // still at Spain v England, 10 Jun 2027, from season 2 on; Mikey's
+  // playtest check, 3 Nov 2026). Anything before this season is behind you.
+  const careerStart = openingSaturday(seasonStartYear(career.player.startYear, 1)).getTime();
+  const behind = Math.max(lastT, from);
+  for (const p of periodsFrom(w, nation, careerStart)) {
     if (s.periods[p.key]) continue;
     const first = p.matches.find((m) => !played(m) && !s.played[m.id]);
-    if (first && first.date < lastT) (passed ??= { ...s.periods })[p.key] = { called: false, chance: 0, starter: false };
+    if (first && first.date < behind) (passed ??= { ...s.periods })[p.key] = { called: false, chance: 0, starter: false };
   }
   if (passed) {
     s = { ...s, periods: passed };
@@ -537,8 +544,13 @@ export function syncIntl(career: CareerState): CareerState {
   }
   // Left out, in a league that stops for the break: your nation's matches go
   // on the calendar to watch (Plan B, Mikey 12 Oct 2026).
+  // Never beside an old save's summer tournament (lib/star/tournament.ts, the
+  // way it worked before the international world): its own fixtures run on
+  // their own weeks, and a June friendly to watch landed between two group
+  // games (tests/star/tournament.mts, 10 Nov 2026).
+  const oldTournamentOn = career.tournament?.season === career.season;
   const watchList = new Map<string, WorldMatch>();
-  if (stopsForBreaks(divisionOf(career))) {
+  if (stopsForBreaks(divisionOf(career)) && !oldTournamentOn) {
     for (const p of periodsFrom(w, nation, from)) {
       if (p.kind !== "window" || s.periods[p.key]?.called !== false) continue;
       for (const m of p.matches) {
