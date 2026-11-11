@@ -166,5 +166,13 @@
     "added": "2026-11-10T19:54:00Z",
     "title": "Progress 10 Nov: security updates (22 to 12 problems; Next 15 needs a team decision), saves 4x smaller, app for iPhone set up. No new patch note.",
     "prompt": "Daily progress update, 9 Nov 19:54 to 10 Nov 19:54 (UK). No pull requests merged; 4 changes pushed straight to main.\n\nStraight to main:\n- Security updates: Next 14.2.28 to 14.2.35, Sentry 10.73 to 10.78 and others; known problems 22 to 12. The rest needs Next 15.5+ (Next 14 is end of life), a decision for the team.\n- Online saves are gzipped before sending (332 KB to 88 KB on a real save), cutting Vercel data use (6.6 of the free 10 GB were used).\n- Fixed a regression from the international rollover fix (an old save’s summer tournament got a stray friendly); knockout names fit.\n- The packed app: back button, vibration, icon and app feel; an iPhone project and Codemagic set-up (iPhone to TestFlight, Android install). The iPhone build has not been run yet.\n\nHarry, Mikey and Leo: no pull requests in this window.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- No new patch note since 0.137 (Harry: Glass UI, real football): https://claude.ai/artifact/XzJ588o9s1tsQWGd3kAcwR"
+  },
+  {
+    "id": "progress-2026-11-11",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-11-11T19:54:00Z",
+    "title": "Progress 11 Nov: marketing videos on main: Stat Twins finder, 27-video batch, 5 posted to Instagram, video library. No new patch note.",
+    "prompt": "Daily progress update, 10 Nov 19:54 to 11 Nov 19:54 (UK). No pull requests merged; the marketing video branch (71 changes since 6 Nov) was merged straight into main today.\n\nMarketing videos (now on main):\n- Stat Twins: a Twin Finder page that finds any player’s statistical twins (top 5 leagues, every position, method v2 in standard deviations), and a batch system that made 27 videos.\n- Videos posted to Instagram: v02 Salah’s twin, v05 Neymar, v06 Kane, batch 1 Van Dijk, v08 Palmer 26/27 (motion).\n- A new ‘who replaces him’ format (v07: Lewis Hall at Newcastle).\n- A motion engine for twin videos (moving backgrounds, flips, circle wipes, tickers); faces from the season shown.\n- A video library: every Knowitball video in one searchable page.\n- Brain rule RUL-KIB-008: Stat Twins comparison cards keep the twin framing.\n\nGame: nothing new reached main in this window.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- No new patch note since 0.137 (Harry: Glass UI, real football): https://claude.ai/artifact/XzJ588o9s1tsQWGd3kAcwR"
   }
 ]
