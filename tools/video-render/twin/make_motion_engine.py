@@ -2,7 +2,7 @@
 # after the Tifo Football Short: "there's always animation on the screen happening to keep the users engaged").
 # Measured before: our videos were still 74-76% of the time; the Tifo Short 2%.
 # What it adds (every frame still drawn from t alone):
-#   camera  - a slow push-in and drift on every scene, alternating direction
+#   (no camera push or drift: tried and taken out, Mikey 11 Nov 2026)
 #   life    - backgrounds that move: scrolling stripes, a drifting wallpaper of the club badge, floating light specks
 #   faces   - a gentle bob and breathe on every face
 #   flips   - a countdown player turns edge-on and comes back as the next one (a card flip), not a slide
@@ -51,8 +51,7 @@ rep("T(String(v),d<0?540-30-w:570+w,yy+136,F(900,40),cl,d<0?'right':'left');",
 rep("function render(t){x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;x.filter='none';const s=seg(t);const sc=SC[s.id];const E=LAYOUT==='split'",
     "function partOf(sc){return sc.type==='cd2'||sc.type==='countdown'?(sc.list||'top'):sc.type==='compare'?'cmp':sc.type;}\n"
     "function drawAt(ctx,s,t){const prev=x;x=ctx;x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;x.filter='none';x.clearRect(0,0,1080,1920);const sc=SC[s.id];const E=LAYOUT==='split'?Q:P;"
-    "const i=TL.segs.indexOf(s),k=clamp((t-s.start)/Math.max(0.5,s.end-s.start)),dir=i%2?1:-1,z=1.015+0.05*k,dx=dir*(-14+28*k),dy=-10*k;"
-    "x.translate(540+dx,960+dy);x.scale(z,z);x.rotate(dir*0.006*(k-0.5));x.translate(-540,-960);(E[sc.type]||P.end2)(sc,t-s.start,s,t);x.setTransform(1,0,0,1,0,0);x=prev;}\n"
+    "(E[sc.type]||P.end2)(sc,t-s.start,s,t);x.setTransform(1,0,0,1,0,0);x=prev;}\n"   # no camera push/drift (Mikey, 11 Nov 2026: "confusing for the brain", it reset every scene)
     "function render(t){TNOW=t;const s=seg(t);const i=TL.segs.indexOf(s),ps=TL.segs[i-1],sc=SC[s.id];x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;x.filter='none';"
     "const d=t-s.start,IR=0.45,iris=ps&&d<IR&&partOf(SC[ps.id])!==partOf(sc);"
     "if(iris){drawAt(BUF[0].getContext('2d'),ps,ps.end-0.02);drawAt(BUF[1].getContext('2d'),s,t);x.drawImage(BUF[0],0,0);const r=ease(d/IR)*1150;"

@@ -121,8 +121,7 @@ A second kind of episode: a player is likely leaving, who replaces him. Format f
 ## Motion style (11 Nov 2026, after the Tifo Football Short Mikey sent)
 
 `video_motion.html` is the full-page engine with a motion layer, built by `python3 make_motion_engine.py` (re-run it after any change
-to `video_full.html`). Use it with `"engine": "video_motion.html"` in an episode's scenes meta. It adds: a slow camera push and drift on
-every scene, moving backgrounds (scrolling stripes, a drifting wallpaper of the club badge, light specks), faces that bob and breathe,
+to `video_full.html`). Use it with `"engine": "video_motion.html"` in an episode's scenes meta. It adds (no camera push or drift: Mikey took it out, it reset every scene and was confusing): moving backgrounds (scrolling stripes, a drifting wallpaper of the club badge, light specks), faces that bob and breathe,
 card flips between countdown players, circle wipes between parts, comparison numbers that tick up, gold confetti on the twin.
-Measured (picture change every 0.1 s, caption band left out): old Palmer v08 still 76% of the time, Tifo Short 2%, motion Palmer 0%.
+Measured (picture change every 0.1 s, caption band left out): old Palmer v08 still 76% of the time, Tifo Short 2%, motion Palmer 8% (0% with the camera push, taken out).
 Breakdown of the Tifo Short: https://claude.ai/artifact/GTG5ZcPRWLnCSV86sFWL1H
