@@ -26,9 +26,9 @@ import "./home.css";
  * To make this the real home: app/page.tsx returns <PublicHome look="…" />
  * and exports HOME_METADATA (meta.ts).
  */
-export default function PublicHome({ look }: { look: HomeLook }) {
+export default function PublicHome({ look, pitch }: { look: HomeLook; pitch?: "1" | "2" | "3" }) {
   return (
-    <div className={`kh kh-${look}`} data-home-look={look}>
+    <div className={`kh kh-${look}${look === "b" && pitch ? ` kh-pitch-${pitch}` : ""}`} data-home-look={look}>
       <LoadingIntro />
       <ObjectivesToast />
 

@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function HomeNewDevPage({ searchParams }: { searchParams: { look?: string | string[]; bare?: string } }) {
+export default function HomeNewDevPage({ searchParams }: { searchParams: { look?: string | string[]; bare?: string; pitch?: string } }) {
   const look = pickLook(searchParams.look);
   return (
     <>
@@ -36,7 +36,7 @@ export default function HomeNewDevPage({ searchParams }: { searchParams: { look?
           ))}
         </div>
       )}
-      <PublicHome look={look} />
+      <PublicHome look={look} pitch={searchParams.pitch === "1" || searchParams.pitch === "2" || searchParams.pitch === "3" ? searchParams.pitch : undefined} />
     </>
   );
 }
