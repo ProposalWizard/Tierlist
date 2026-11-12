@@ -42,6 +42,16 @@ export function demoRoom(now: number) {
     { id: 17, person: "Mikey", body: "[pn:0.136] The test pages feel right now. Can the lag test show the phone's frame rate too?", image_url: null, page: "/admin/team?tab=notes&v=0.136", pinned: false, created_at: ago(1.1) },
     { id: 18, person: "Leo", body: "[pn:0.136] yes, adding it. @Harry anything from you?", image_url: null, page: "/admin/team?tab=chat", pinned: false, created_at: ago(1.0) },
   ];
+  // #today (12 Nov 2026): Mikey and Leo have checked in today, Harry has not; two older days for the week grid.
+  messages.push(
+    { id: 19, person: "Leo", body: "[#today] finishing the lag test page, then the clip page on phones", image_url: null, page: null, pinned: false, created_at: ago(60 * 26) },
+    { id: 20, person: "Mikey", body: "[#today] filming the goal replays", image_url: null, page: null, pinned: false, created_at: ago(60 * 25) },
+    { id: 21, person: "Mikey", body: "[#today] sound for the goal replays, then the shop pictures", image_url: null, page: null, pinned: false, created_at: ago(40) },
+    { id: 22, person: "Leo", body: "[#today] keeper dive timing on corners", image_url: null, page: null, pinned: false, created_at: ago(35) },
+    // The Team board's small notes box (a quiet channel of its own).
+    { id: 23, person: "Mikey", body: "[#board] the admin home tiles changed today, Videos moved up", image_url: null, page: null, pinned: false, created_at: ago(55) },
+    { id: 24, person: "Harry", body: "[#board] bars are live again for all three of us", image_url: null, page: null, pinned: false, created_at: ago(20) },
+  );
   const reactions: TeamReaction[] = [
     { message_id: 2, emoji: "👀", person: "Harry", at: ago(13) }, { message_id: 2, emoji: "👀", person: "Leo", at: ago(12) },
     { message_id: 2, emoji: "🔥", person: "Mikey", at: ago(12) },
@@ -117,10 +127,36 @@ export function demoRoom(now: number) {
   ];
   // The Patch bot's own rows: one announcement in #general (Leo's note, so Harry and Mikey are asked).
   botRows.push({ id: 483, bot: "patch-notes", channel: "general", title: "v0.136 · Test pages play like the real game", body: "Every test page now runs the real match, so what you test is what players get.\n@Harry @Mikey please review.", url: "/admin/team?tab=notes&v=0.136", everyone: false, created_at: ago(11), meta: { kind: "announce", version: "0.136", author: "Leo", reviewers: ["Harry", "Mikey"] } });
+  // The Health bot's morning posts (today all green, yesterday amber) and the Today bot's ask.
+  const dayOf = (min: number) => new Date(now - min * 60_000).toISOString().slice(0, 10);
+  const green = [{ what: "Database", level: "green" }, { what: "Supabase Storage", level: "green" }, { what: "Cloudflare R2", level: "green" }, { what: "Backup", level: "green" }];
+  botRows.push(
+    { id: 470, bot: "health", channel: "health", title: `Morning limits · ${dayOf(60 * 27)} · Amber: getting full`, body: "🟠 Database: 380 MB of 500 MB (76%)\n🟢 Supabase Storage: 410 MB of 1 GB (40%)\n🟢 Cloudflare R2: 1.2 GB of 10 GB (12%) · patch-notes 700 MB, backups 300 MB\n🟢 Last night's backup: OK, 41 MB, 182,000 rows, 38 tables in 21 s", url: null, everyone: false, created_at: ago(60 * 27), meta: { kind: "limits", red: false, level: "amber", day: dayOf(60 * 27), lines: [{ what: "Database", level: "amber" }, ...green.slice(1)] } },
+    { id: 484, bot: "health", channel: "health", title: `Morning limits · ${dayOf(180)} · All green`, body: "🟢 Database: 371 MB of 500 MB (74%)\n🟢 Supabase Storage: 412 MB of 1 GB (40%)\n🟢 Cloudflare R2: 1.2 GB of 10 GB (12%) · patch-notes 700 MB, backups 320 MB\n🟢 Last night's backup: OK, 41 MB, 182,400 rows, 38 tables in 22 s", url: null, everyone: false, created_at: ago(180), meta: { kind: "limits", red: false, level: "green", day: dayOf(180), lines: green } },
+    { id: 485, bot: "today", channel: "today", title: "What are you on today?", body: "@Harry one line is enough. Type it in the Today tab, or anywhere: /today filming the goal replays", url: "/admin/team?tab=chat&ch=today", everyone: false, created_at: ago(30), meta: { kind: "ask", day: dayOf(30), people: ["Harry"] } },
+  );
   const bugMarks: BugMark[] = [{ post_id: 481, handed_to: "Leo", fixed_by: null, fixed_at: null, updated_by: "Leo", updated_at: ago(80) }];
   const me: TeamPerson | null = fresh ? null : "Harry";
   return {
     me, taken: fresh ? (["Mikey"] as TeamPerson[]) : [], messages, ideas, votes, tasks, notes, online: ["Harry", "Mikey"] as TeamPerson[], marks, acks,
     reactions, dms: me ? dms : [], channelRows, botRows, chRead, statuses, welcome, welcomeReads, bugMarks,
+  };
+}
+
+/** Sample Team board rows for the same dev build: pushes a day for two weeks and each person's bars. */
+export function demoBoard(now: number) {
+  const at = (min: number) => new Date(now - min * 60_000).toISOString();
+  const mk = (person: TeamPerson, days: number[], bars: { label: string; pct: number; note: string }[], last: number, waiting: string | null = null) => ({
+    person, branch: person, pushes: [],
+    count: { week: days.slice(7).reduce((a, b) => a + b, 0), days, weekComplete: true, last: at(last) },
+    status: bars.length ? { at: at(last), bars, waiting, session: null } : null,
+  });
+  return {
+    fetchedAt: at(0), problems: [] as string[], pulls: [], statusOn: true, pushLogFrom: at(60 * 24 * 14),
+    people: [
+      mk("Harry", [1, 0, 3, 2, 4, 3, 0, 1, 3, 4, 2, 3, 5, 2], [{ label: "Team room: every channel", pct: 60, note: "building" }, { label: "Team room: a run of all bots", pct: 20, note: "next" }], 9, "Mikey: run the bug SQL file"),
+      mk("Mikey", [0, 1, 0, 2, 3, 0, 0, 2, 1, 0, 2, 3, 1, 1], [{ label: "Goal replays: sound", pct: 70, note: "building" }], 34),
+      mk("Leo", [1, 2, 2, 0, 0, 3, 4, 2, 0, 1, 2, 0, 2, 1], [], 60 * 5),
+    ],
   };
 }

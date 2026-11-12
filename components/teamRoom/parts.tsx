@@ -63,7 +63,7 @@ function WhoAreYou({ taken }: { taken: TeamPerson[] }) {
  * Your to-do list: yours, given to you, jobs you gave, ticked today.
  * Jobs that arrived by push (team/jobs.json) sit under "Given to me" too.
  */
-export function TodoList({ visible = true }: { visible?: boolean }) {
+export function TodoList({ visible = true, noPush = false }: { visible?: boolean; /** Leave the phone-notifications row out (Me has its own). */ noPush?: boolean }) {
   const s = useTeamRoom();
   const [now, setNow] = useState(() => Date.now());
   const [title, setTitle] = useState("");
@@ -101,7 +101,7 @@ export function TodoList({ visible = true }: { visible?: boolean }) {
   );
   return (
     <div className="tr-todo">
-      <PushToggle />
+      {!noPush && <PushToggle />}
       <div className="tr-add">
         <input id="tr-task-new" value={title} placeholder="Add a job…" aria-label="New job" maxLength={200}
           onChange={(e) => { setTitle(e.target.value); setErr(null); }} onKeyDown={(e) => { if (e.key === "Enter") add(); }} />

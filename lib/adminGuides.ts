@@ -1207,6 +1207,17 @@ export const ADMIN_GUIDES = {
         ["Me → Dark or light: Auto | Dark | Light", "The same choice with Auto (follow the device) as a third option."],
         ["The small shields (crests)", "Each of us has a club-style crest in our own colour instead of a letter: Harry green with a ball, Mikey blue with a star, Leo violet with chevrons. Each bot has a round badge. They are drawn by the site; there are no profile photos yet."],
       ] },
+      { group: "Team room: Me and the Team board tab (12 Nov 2026)", items: [
+        ["Me (top of the list; your name at its foot; Me on a phone's bottom bar)", "Your own home in the room: your status, today's check-in, your to-do with proposals, what you are working on (your bars), quick links, schedules, notifications and the look."],
+        ["Here | 🎬 Filming | 💼 Work | 🌙 Off | ✎ Set a status", "One tap sets your status for the others. Here clears it. Filming and Work last until midnight. Off pauses your buzzes until 9 tomorrow and shows a red dot. ✎ Set a status opens the full editor (emoji, words, clear after, pause buzzes)."],
+        ["Today → Check in", "One line on what you are on today. It is posted as your message in #today and shows in everyone's Today tab. Type again and press Update to change it (your newest line of the day counts)."],
+        ["Working on", "Your own current-work bars, the same ones the Team board shows. They come from the progress updates in your Claude chats; there is nothing to type here."],
+        ["Notifications → Turn on pop-ups · Turn on phone notifications", "Pop-ups on this computer and buzzes on this phone, each with its own switch. To quieten one channel use the 🔔 in that channel's top bar."],
+        ["Turn on notifications? (a box, the first time you open the room on a device)", "Turn on: asks the browser once, then switches on pop-ups for this computer and buzzes for this phone. Not now: closes it. It is asked once per device; change it later under Me → Notifications."],
+        ["Team board (second line of the list; Board on a phone's bottom bar)", "The board inside the room, cut down to what is used: for each of us the pushes a day for two weeks, the pushes this week and the current-work bars with Waiting on. Refreshes once a minute. The full board (pull requests, every push) is still Admin → Team board."],
+        ["Team board → Notes · Add", "A small notes box for the three of us about the board or the admin. A note is an ordinary message kept in a quiet channel of its own, so it needs no setup; ✕ deletes your own."],
+        ["Phone: Chat · Board · Me · Activity (bottom)", "Chat = the channel you were in (tap again for the list, where Direct messages are). Board = the Team board tab. Me = your home. Activity = things for you."],
+      ] },
       { group: "Team room: #bugs (the Bug bot)", items: [
         ["Bug report #N (a card from the Bug bot)", "A player's bug report, posted by itself the moment they send it from the site's feedback form: Title, the Page it came from (tap to open it), From (a signed-in player or not) and What they said. Everyone gets a buzz by their #bugs 🔔 (every message to start with)."],
         ["🤝 Hand to…", "Pick Harry, Mikey or Leo. The card says With Leo, and it becomes a task in their #todo (\"🐞 Bug #N: …\"). Bots join this list once they exist."],

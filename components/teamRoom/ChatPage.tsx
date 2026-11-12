@@ -36,7 +36,10 @@ import { Av, ChatThread, RoomGate } from "./parts";
 import { V3Note } from "./chat";
 import { useBotPosts, useRoomCounts } from "./roomCounts";
 import { TOOL_TAB, ToolPanel } from "./roomTools";
-import { ActivityPanel, DmsPanel, JumpBox, LaterPanel, YouPanel } from "./roomPanels";
+import { ActivityPanel, DmsPanel, JumpBox, LaterPanel } from "./roomPanels";
+import { MeHome, NotifyAsk } from "./roomMe";
+import { BoardPanel } from "./roomBoard";
+import "./roomHome.css";
 import { LastPush, PersonFace, StatusBit, usePersonStatus, type LastPushes } from "./roomFace";
 import { ProfileCard } from "./roomProfile";
 import { WelcomeGate, WelcomePin } from "./roomWelcome";
@@ -53,9 +56,12 @@ import { setLookPref, useRoomLook } from "./roomLook";
 import { BotFace } from "./bits";
 
 export type RoomTab = "messages" | "tool" | "pins";
-export interface RoomStart { place: RoomPlace; m: number | null; t: number | null; v: string | null; tab?: RoomTab; pn?: string | null; bot?: string | null }
+export interface RoomStart { place: RoomPlace; m: number | null; t: number | null; v: string | null; tab?: RoomTab; pn?: string | null; bot?: string | null; view?: string | null }
 /** A screen in the middle that is not a channel or a DM. */
-export type RoomView = "activity" | "later" | "you" | "dms";
+/** "you" is Me (your own home); "board" is the Team board tab (12 Nov 2026). */
+export type RoomView = "activity" | "later" | "you" | "dms" | "board";
+const VIEW_FROM: Record<string, RoomView> = { me: "you", you: "you", board: "board", activity: "activity", later: "later", dms: "dms" };
+const VIEW_URL: Record<RoomView, string> = { you: "me", board: "board", activity: "activity", later: "later", dms: "dms" };
 /** A bot's own page (12 Nov 2026: "by clicking on him I shouldn't get a chat … the patch bot is a bot"). */
 type Where = RoomPlace | { kind: "view"; view: RoomView } | { kind: "bot"; bot: string };
 
@@ -129,7 +135,7 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
     const p = m ? parentOf(m) : null;
     return p && s.messages.some((x) => x.id === p) ? p : null;
   })();
-  const [where, setWhere] = useState<Where>(first.bot && botInfo(first.bot) ? { kind: "bot", bot: first.bot } : first.place);
+  const [where, setWhere] = useState<Where>(first.bot && botInfo(first.bot) ? { kind: "bot", bot: first.bot } : first.view && VIEW_FROM[first.view] ? { kind: "view", view: VIEW_FROM[first.view] } : first.place);
   const [thread, setThread] = useState<number | null>(startThread);
   // A patch note's thread (the Patch bot's post and its comments), by version.
   const [patchT, setPatchT] = useState<string | null>(first.pn ?? null);
@@ -173,6 +179,7 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
     try { window.history.replaceState(null, "", roomUrl(place, { t: thread }) + (patchT ? `&pn=${encodeURIComponent(patchT)}` : "")); } catch { /* old browser */ }
   }, [place, thread, patchT]);
   useEffect(() => {
+    if (where.kind === "view") { try { window.history.replaceState(null, "", `${TEAM_ROOM.home}?tab=chat&view=${VIEW_URL[where.view]}`); } catch { /* old browser */ } }
     if (where.kind !== "bot") return;
     try { window.history.replaceState(null, "", `${TEAM_ROOM.home}?tab=chat&bot=${where.bot}`); } catch { /* old browser */ }
   }, [where]);
@@ -308,7 +315,8 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
           )}
           {view === "activity" && <ActivityPanel onJump={goTo} onDm={(p) => go({ kind: "dm", with: p })} />}
           {view === "later" && <LaterPanel onJump={goTo} />}
-          {view === "you" && <YouPanel />}
+          {view === "you" && <MeHome onGo={(slug) => go({ kind: "channel", slug })} />}
+          {view === "board" && <BoardPanel />}
           {view === "dms" && <DmsPanel onGo={(p) => go({ kind: "dm", with: p })} />}
           {botPage && <BotPage info={botPage} onGo={(slug) => go({ kind: "channel", slug })} />}
         </div>
@@ -343,24 +351,26 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
 
       {phone && (
         <nav className="trr-bottom" aria-label="Team room">
-          <BottomTab on={!!place && place.kind === "channel" && !drawer} label="Home" icon={<HomeIcon />} onClick={() => { if (place?.kind === "channel") setDrawer(true); else go({ kind: "channel", slug: slug ?? GENERAL }); }} />
-          <BottomTab on={view === "dms" || place?.kind === "dm"} label="DMs" icon={<span aria-hidden>✉︎</span>} n={Object.values(counts.dms).reduce((a, b) => a + (b ?? 0), 0)} onClick={() => go({ kind: "view", view: "dms" })} />
+          <BottomTab on={(!!place || !!botPage || view === "dms") && !drawer} label="Chat" icon={<ChatIcon />} n={Object.values(counts.dms).reduce((a, b) => a + (b ?? 0), 0)} onClick={() => { if (place?.kind === "channel") setDrawer(true); else go({ kind: "channel", slug: slug ?? GENERAL }); }} />
+          <BottomTab on={view === "board"} label="Board" icon={<BoardIcon />} onClick={() => go({ kind: "view", view: "board" })} />
+          <BottomTab on={view === "you"} label="Me" icon={s.me ? <Av p={s.me} sm /> : <span aria-hidden>☺︎</span>} onClick={() => go({ kind: "view", view: "you" })} />
           <BottomTab on={view === "activity" || view === "later"} label="Activity" icon={<BellIcon />} n={counts.mentions - Object.values(counts.dms).reduce((a, b) => a + (b ?? 0), 0)} onClick={() => go({ kind: "view", view: "activity" })} />
-          <BottomTab on={view === "you"} label="You" icon={s.me ? <Av p={s.me} sm /> : <span aria-hidden>☺︎</span>} onClick={() => go({ kind: "view", view: "you" })} />
         </nav>
       )}
       {profile && <ProfileCard p={profile.p} at={profile.at} sheet={profile.sheet} onClose={() => setProfile(null)} onMessage={(p) => go({ kind: "dm", with: p })} onStatus={() => go({ kind: "view", view: "you" })} />}
       <WelcomeGate />
+      <NotifyAsk />
       {jumper && <JumpBox channels={channels} onClose={() => setJumper(false)} onGo={(w2) => { setJumper(false); go(w2); }} onJump={(id) => { setJumper(false); goTo(id); }} />}
     </div>
   );
 }
 
-const VIEW_NAME: Record<RoomView, string> = { activity: "Activity", later: "Later", you: "You", dms: "Direct messages" };
+const VIEW_NAME: Record<RoomView, string> = { activity: "Activity", later: "Later", you: "Me", dms: "Direct messages", board: "Team board" };
 const VIEW_LINE: Record<RoomView, string> = {
   activity: "@mentions, replies in your threads, points and DMs",
   later: "Messages you saved with 🔖 (this device)",
-  you: "Your status, buzzes and how the room looks",
+  you: "Your status, your day, your to-do and your quick links",
+  board: "Who is pushing, and what each of us is on",
   dms: "Private chats: only the two of you can read one",
 };
 
@@ -485,6 +495,12 @@ function ChannelList({ channels, where, onGo, onClose, onSearch, homeBtn, narrow
           : <button className="trr-fold" onClick={onClose} aria-label="Close the channel list" title="Close the list (Ctrl/⌘+Shift+D)">«</button>}
       </div>
       <div className="trr-lscroll">
+        <button className="trr-row" aria-current={isView("you") ? "page" : undefined} onClick={() => onGo({ kind: "view", view: "you" })} title="Your status, your day, your to-do and your quick links">
+          <span className="ic" aria-hidden>☺</span><span className="nm">Me</span>
+        </button>
+        <button className="trr-row" aria-current={isView("board") ? "page" : undefined} onClick={() => onGo({ kind: "view", view: "board" })} title="Pushes a day, current work and notes">
+          <span className="ic" aria-hidden><BoardIcon /></span><span className="nm">Team board</span>
+        </button>
         <button className="trr-row trr-search" onClick={onSearch}><span className="ic" aria-hidden>🔍</span><span className="nm">Search</span><kbd>⌘K</kbd></button>
         <button className={`trr-row${activity ? " unread" : ""}`} aria-current={isView("activity") ? "page" : undefined} onClick={() => onGo({ kind: "view", view: "activity" })}>
           <span className="ic" aria-hidden><BellIcon /></span><span className="nm">Activity</span>{activity > 0 && <span className="trr-n">{activity}</span>}
@@ -539,7 +555,7 @@ function ChannelList({ channels, where, onGo, onClose, onSearch, homeBtn, narrow
       </div>
       <div className="trr-mefoot">
         {s.me && (
-          <button className="trr-me" onClick={() => onGo({ kind: "view", view: "you" })} aria-current={isView("you") ? "page" : undefined} title="Your status, buzzes and look">
+          <button className="trr-me" onClick={() => onGo({ kind: "view", view: "you" })} aria-current={isView("you") ? "page" : undefined} title="Me: your status, to-do, quick links and notifications">
             <PersonFace p={s.me} /><MeLine me={s.me} />
           </button>
         )}
@@ -591,5 +607,7 @@ export function botMembers(bots: readonly BotPost[]) {
 }
 
 const HomeIcon = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden><path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg>;
+const ChatIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden><path d="M4 5h16v11H9l-5 4z" /></svg>;
+const BoardIcon = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M5 20V11M12 20V4M19 20v-6" /></svg>;
 const MenuIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden><path d="M4 7h16M4 12h16M4 17h16" /></svg>;
 export { BellIcon };

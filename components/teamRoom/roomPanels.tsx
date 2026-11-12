@@ -14,13 +14,9 @@ import { ADMIN_PAGES } from "@/lib/adminRegistry";
 import { nameOfPage } from "./bits";
 import { setLookPref, useRoomLook } from "./roomLook";
 import { Av, WaitingOnMe } from "./parts";
-import PushToggle from "./PushToggle";
 import { useRoomCounts } from "./roomCounts";
 import { setPrefs, toggleIn, useRoomPrefs } from "./roomPrefs";
 import { PersonFace } from "./roomFace";
-import { StatusEditor } from "./roomProfile";
-import { WelcomeEditor } from "./roomWelcome";
-import { ScheduleEditor } from "./roomSchedules";
 
 const where = (m: TeamMessage, names: Map<string, string>) => {
   const c = channelOf(m.body);
@@ -93,36 +89,6 @@ export function LaterPanel({ onJump }: { onJump: (id: number) => void }) {
   );
 }
 
-/** You: your status, buzzes and the look. Built up over the next slices. */
-export function YouPanel() {
-  const s = useTeamRoom();
-  const prefs = useRoomPrefs();
-  return (
-    <div className="trw-pad trr-panel trr-you">
-      {s.me && (
-        <div className="trr-youcard">
-          <PersonFace p={s.me} big />
-          <span className="tx"><b>{s.me}</b><small>{s.online.includes(s.me) ? "● Active" : "○ Away"} · the others see your dot and status</small></span>
-        </div>
-      )}
-      <QuickLinks />
-      <StatusEditor />
-      <ScheduleEditor />
-      <p className="tr-lbl" style={{ marginTop: 6 }}>Buzzes on this device</p>
-      <PushToggle />
-      <p className="tr-lbl" style={{ marginTop: 10 }}>Dark or light</p>
-      <LookPicker />
-      <p className="tr-lbl" style={{ marginTop: 10 }}>Message look</p>
-      <div className="tr-seg trr-seg" role="group" aria-label="Message look">
-        <button aria-pressed={prefs.density === "clean"} onClick={() => setPrefs({ density: "clean" })}>Clean · faces</button>
-        <button aria-pressed={prefs.density === "compact"} onClick={() => setPrefs({ density: "compact" })}>Compact · tighter</button>
-      </div>
-      <small className="tr-muted">Kept on this device. Clean shows a 36 px face by each message; Compact uses 20 px faces and less space.</small>
-      <WelcomeEditor />
-    </div>
-  );
-}
-
 /** Auto | Dark | Light for the Team room, on this device. */
 export function LookPicker() {
   const { pref, look } = useRoomLook();
@@ -141,7 +107,7 @@ export function LookPicker() {
  * into his home"): pin any admin page; tap to open it. Kept in your account,
  * so the same links show on your phone and your computer.
  */
-function QuickLinks() {
+export function QuickLinks() {
   const s = useTeamRoom();
   const [err, setErr] = useState<string | null>(null);
   const pages = useMemo(() => ADMIN_PAGES.map((p) => ({ url: p.url, name: p.name })).filter((p, i, a) => a.findIndex((x) => x.url === p.url) === i).sort((a, b) => a.name.localeCompare(b.name)), []);

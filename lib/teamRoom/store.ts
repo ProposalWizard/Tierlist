@@ -434,6 +434,8 @@ function recheck() {
 
 /** A dev build with no database or no sign-in plays with sample rows, kept in this tab only. */
 let demo = false;
+/** True in a dev build showing sample rows (no sign-in, no database). */
+export const isDemoRoom = () => demo;
 let demoId = 1000;
 // Read when the page first loads: pages tidy their address before the room starts.
 const DEMO_NO_V2 = typeof window !== "undefined" && /[?&]teamroom=nov2\b/.test(window.location.search);
