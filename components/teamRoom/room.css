@@ -400,3 +400,30 @@
 .trb-switch:disabled { opacity: .5; cursor: not-allowed; }
 .trb-seg { flex: 0 0 auto; }
 .trb > .tr-btn { align-self: flex-start; }
+
+/* ── Messages → tasks, / commands, quick links (12 Nov 2026) ─────────── */
+.tr-askrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 5px; }
+.tr-askbtn { border: 1px dashed var(--ash-line2); background: none; color: var(--ash-ink2); border-radius: 999px; padding: 4px 11px; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; min-height: 28px; }
+.tr-askbtn:hover { border-color: var(--ash-accent); color: var(--ash-accent); }
+.tr-asksent { font-size: 12.5px; color: var(--ash-ink3); font-weight: 700; }
+.tr-ask { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border: 1px dashed var(--ash-accent); border-radius: 10px; padding: 9px 11px; margin-bottom: 6px; }
+.tr-ask .tx { flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; }
+.tr-ask .tx small { color: var(--ash-ink3); font-size: 12px; }
+.tr-ask .tx small a { color: var(--ash-accent); }
+.tr-ask .bt { display: flex; gap: 6px; }
+.tr-ask .tr-btn { padding: 6px 12px; font-size: 13px; min-height: 34px; }
+.tr-sugg { display: flex; gap: 6px; padding: 0 12px 5px; opacity: .55; }
+.tr-sugg:hover, .tr-sugg:focus-within { opacity: 1; }
+.tr-sugg button { border: 1px dashed var(--ash-line2); background: none; color: var(--ash-ink3); border-radius: 999px; padding: 2px 9px; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; cursor: pointer; min-height: 24px; }
+.tr-sugg button:hover { color: var(--ash-accent); border-color: var(--ash-accent); }
+.tr-sugg button small { font: 10px inherit; opacity: .8; }
+.tr-cmddone { margin: 0; padding: 0 12px 6px; font-size: 13px; color: var(--ash-accent); font-weight: 700; }
+.tr-today { margin: 0 12px 8px; border: 1px solid var(--ash-line2); border-radius: 10px; background: var(--ash-panel2); padding: 9px 11px; display: flex; flex-direction: column; gap: 7px; }
+.tr-today .tr-lbl { margin: 0; display: flex; justify-content: space-between; align-items: center; }
+.tr-todayrow { display: flex; gap: 9px; align-items: flex-start; font-size: 13.5px; line-height: 1.35; }
+.tr-todayrow small { color: var(--ash-ink3); font-size: 12.5px; }
+.trr-linkgrid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.trr-link { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--ash-line2); border-radius: 10px; background: var(--ash-panel2); padding: 0 4px 0 12px; min-height: 40px; }
+.trr-link a { color: var(--ash-ink); font-weight: 800; font-size: 14px; text-decoration: none; }
+.trr-link a:hover { color: var(--ash-accent); }
+.trr-linkadd { border-radius: 10px; border: 1px dashed var(--ash-line2); background: none; color: var(--ash-ink2); padding: 9px 11px; font: inherit; font-size: 14px; max-width: 100%; }

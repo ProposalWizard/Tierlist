@@ -36,6 +36,7 @@ import { BELLS_KEY, NO_BELLS, cleanBells, withBell, withMute, type Bell, type Be
 import { cleanWelcome, nextVersion, WELCOME_EDITOR, type WelcomeRead, type WelcomeRow } from "./welcome";
 import { cleanMark, type BugMark } from "./bugs";
 import { BOTS, botSettings, settingsRow, type BotSettings } from "./patchBot";
+import { LINKS_KEY, MAX_LINKS, acceptedTitle, askRow, cleanLinks, isAsk, isSitePath, withLink } from "./asks";
 
 export interface TeamRoomState {
   status: "idle" | "loading" | "ready" | "missing" | "signedOut" | "error";
@@ -90,6 +91,8 @@ export interface TeamRoomState {
   bugMarks: BugMark[];
   /** Your 🔔 per channel (lib/teamRoom/bells.ts), kept in your account's details. */
   bells: BellPrefs;
+  /** Your quick links (lib/teamRoom/asks.ts): admin pages pinned to your home, kept in your account's details. */
+  links: string[];
 }
 
 const READ_KEY = "kib-team-read";
@@ -110,6 +113,8 @@ const CH_READ_KEY = "kib-team-ch-read";
 // Until team_room_v4.sql runs, your status is kept on this device; bells in demo too.
 const STATUS_KEY = "kib-team-status";
 const BELLS_LOCAL_KEY = "kib-team-bells";
+const LINKS_LOCAL_KEY = "kib-team-links";
+const DEMO_LINKS = ["/admin/marketing/studio", "/admin/patch-notes"];
 function readJson<T>(key: string, fallback: T): T {
   try { const v = JSON.parse(localStorage.getItem(key) ?? "null"); return v ?? fallback; } catch { return fallback; }
 }
@@ -122,7 +127,7 @@ let state: TeamRoomState = {
   online: [], live: false, read: { chat: 0, tasks: 0, notes: 0, pushNotes: 0, patchNotes: 0 }, pageOpen: false,
   v2: "unknown", marks: {}, acks: [], pointing: false, jobs: [], jobsFrom: null, seenJobs: [],
   v3: "unknown", channelRows: [], reactions: [], dms: [], botRows: [], chRead: {},
-  v4: "unknown", statuses: {}, welcome: null, welcomeReads: [], bugMarks: [], bells: NO_BELLS,
+  v4: "unknown", statuses: {}, welcome: null, welcomeReads: [], bugMarks: [], bells: NO_BELLS, links: [],
 };
 const listeners = new Set<() => void>();
 function set(patch: Partial<TeamRoomState> | ((s: TeamRoomState) => Partial<TeamRoomState>)) {
@@ -224,10 +229,11 @@ function localStatus(): Partial<Record<TeamPerson, StatusRow>> {
 }
 /** Your bells, from your account's details (or this device in a demo). */
 async function loadBells() {
-  if (demo || !sb) { set({ bells: cleanBells(readJson(BELLS_LOCAL_KEY, null)) }); return; }
+  if (demo || !sb) { set({ bells: cleanBells(readJson(BELLS_LOCAL_KEY, null)), links: cleanLinks(readJson(LINKS_LOCAL_KEY, DEMO_LINKS)) }); return; }
   try {
     const { data } = await sb.auth.getUser();
-    set({ bells: cleanBells((data.user?.user_metadata as Record<string, unknown> | undefined)?.[BELLS_KEY]) });
+    const meta = data.user?.user_metadata as Record<string, unknown> | undefined;
+    set({ bells: cleanBells(meta?.[BELLS_KEY]), links: cleanLinks(meta?.[LINKS_KEY]) });
   } catch { /* keep the starting setup */ }
 }
 
@@ -914,6 +920,42 @@ async function saveBells(bells: BellPrefs): Promise<Result> {
   if (error) return fail(error, "Not saved.");
   return { ok: true };
 }
+/**
+ * Pin an admin page to your home, or take it off. Saved in your own sign-in
+ * account's details (no table), so it follows you to every device.
+ */
+export async function setQuickLink(url: string, on: boolean): Promise<Result> {
+  if (on && !isSitePath(url)) return { ok: false, error: "Only pages on this site can be pinned." };
+  if (on && !state.links.includes(url) && state.links.length >= MAX_LINKS) return { ok: false, error: `At most ${MAX_LINKS} quick links. Take one off first.` };
+  const links = withLink(state.links, url, on);
+  set({ links });
+  if (demo || !sb) { writeJson(LINKS_LOCAL_KEY, links); return { ok: true }; }
+  const { error } = await sb.auth.updateUser({ data: { [LINKS_KEY]: links } });
+  if (error) return fail(error, "Not saved.");
+  return { ok: true };
+}
+
+/** Ask someone to do something (a message turned into a task): it lands in their to-do as a proposal. */
+export async function sendAsk(to: TeamPerson, title: string, messageId?: number | null): Promise<Result> {
+  if (!state.me) return { ok: false, error: "Pick your name first." };
+  if (to === state.me) return addTask(title, state.me);
+  if (!title.trim()) return { ok: false, error: "Say what the job is." };
+  return insert("team_tasks", "tasks", askRow({ title: title.trim() }, to, state.me, messageId), "Not sent.");
+}
+/** Accept a proposal: it becomes an ordinary job in your to-do. */
+export async function acceptAsk(id: number): Promise<Result> {
+  const t = state.tasks.find((x) => x.id === id);
+  if (!t || !isAsk(t)) return { ok: false, error: "That proposal has gone." };
+  const title = acceptedTitle(t);
+  if (!sb && !demo) return { ok: false, error: "Not connected yet." };
+  const { error } = demo ? { error: null } : await sb!.from("team_tasks").update({ title }).eq("id", id);
+  if (error) return fail(error, "Could not accept it.");
+  set((s) => ({ tasks: s.tasks.map((x) => (x.id === id ? { ...x, title } : x)) }));
+  return { ok: true };
+}
+/** Decline a proposal: it is deleted (its sender sees it leave "Waiting for a yes"). */
+export const declineAsk = (id: number) => deleteTask(id);
+
 /** Set one channel's 🔔: every message, only @mentions, off (or only red in #health). */
 export const setBell = (slug: string, bell: Bell) => saveBells(withBell(state.bells, slug, bell));
 /** Mute one channel for a while (null = unmute). */

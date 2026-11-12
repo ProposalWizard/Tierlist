@@ -145,7 +145,10 @@ export function ringsForDm(d: { from_person: TeamPerson; to_person: TeamPerson }
 }
 
 export function payloadForTask(t: Pick<TeamTask, "made_by" | "title">): PushPayload {
-  return { title: `${t.made_by} gave you a job`, body: cut(t.title, 160), tag: "kib-todo", url: `${TEAM_ROOM.home}?tab=todo`, icon: TEAM_ROOM.push.icon };
+  // A proposal ("[ask] …", lib/teamRoom/asks.ts): the buzz asks, and never shows the tag.
+  const ask = t.title.startsWith("[ask] ");
+  const words = (ask ? t.title.slice(6) : t.title).replace(/\s*\(message \d+\)$/, "");
+  return { title: ask ? `${t.made_by} asked you to do something` : `${t.made_by} gave you a job`, body: cut(ask ? `${words} · Accept or Decline` : words, 160), tag: "kib-todo", url: `${TEAM_ROOM.home}?tab=todo`, icon: TEAM_ROOM.push.icon };
 }
 
 export function payloadForJob(j: Pick<TeamJob, "from" | "title">): PushPayload {

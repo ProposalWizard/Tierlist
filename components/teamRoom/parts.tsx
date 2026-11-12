@@ -10,8 +10,9 @@ import { TEAM_PEOPLE, TEAM_ROOM, type TeamPerson } from "@/lib/teamRoom/config";
 import { notesFor, stamp, tasksFor, tasksGivenBy, type NoteKind, type TeamTask } from "@/lib/teamRoom/logic";
 import { pushedFor, type PushedJob } from "@/lib/teamRoom/jobs";
 import {
-  addNote, addTask, claimName, deleteNote, deleteTask, markJobsSeen, markRead, setAck, tickTask, useTeamRoom,
+  acceptAsk, addNote, addTask, claimName, declineAsk, deleteNote, deleteTask, markJobsSeen, markRead, setAck, tickTask, useTeamRoom,
 } from "@/lib/teamRoom/store";
+import { askMessageId, askTitle, asksFor, asksSentBy } from "@/lib/teamRoom/asks";
 import { splitQuotes } from "@/lib/teamRoom/notify";
 import { noteMentionsFor, noteSeenKey } from "@/lib/teamRoom/inbox";
 import { clearPatchSelection, usePatchSelection, watchSelection } from "@/lib/teamRoom/patchQuote";
@@ -72,6 +73,9 @@ export function TodoList({ visible = true }: { visible?: boolean }) {
   useEffect(() => { if (visible && s.me) markRead("tasks"); }, [visible, s.me, s.tasks.length]);
   const l = tasksFor(s.tasks, s.me, now);
   const gave = tasksGivenBy(s.tasks, s.me);
+  // Proposals (12 Nov 2026): a message someone turned into a task for you waits here for Accept or Decline.
+  const asks = asksFor(s.tasks, s.me);
+  const asked = asksSentBy(s.tasks, s.me);
   const pj = pushedFor(s.jobs, s.tasks, s.me, now);
   const openIds = pj.open.map((j) => j.id).join(",");
   useEffect(() => { if (visible && s.me && openIds) markJobsSeen(openIds.split(",")); }, [visible, s.me, openIds]);
@@ -108,10 +112,26 @@ export function TodoList({ visible = true }: { visible?: boolean }) {
         <button className="tr-btn" onClick={add} disabled={!title.trim()}>Add</button>
       </div>
       {err && <p className="tr-err">{err}</p>}
-      {l.open === 0 && done.length === 0 && gave.length === 0 && pj.open.length === 0 && <p className="tr-muted">Nothing to do. Add a job, or give one to Mikey or Leo.</p>}
+      {asks.length > 0 && (
+        <div>
+          <p className="tr-lbl">Asked of you · {asks.length}</p>
+          {asks.map((x) => (
+            <div key={x.id} className="tr-ask">
+              <span className="tx"><b>{askTitle(x).replace(/\s*\(message \d+\)$/, "")}</b>
+                <small>{x.made_by} asked you · {stamp(x.created_at, now)}{askMessageId(x) ? <> · <a href={`${TEAM_ROOM.home}?tab=chat&m=${askMessageId(x)}`}>see the message</a></> : null}</small></span>
+              <span className="bt">
+                <button className="tr-btn" onClick={async () => { const r = await acceptAsk(x.id); if (!r.ok) setErr(r.error); }}>Accept</button>
+                <button className="tr-btn ghost" onClick={async () => { const r = await declineAsk(x.id); if (!r.ok) setErr(r.error); }}>Decline</button>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+      {l.open === 0 && done.length === 0 && gave.length === 0 && pj.open.length === 0 && asks.length === 0 && asked.length === 0 && <p className="tr-muted">Nothing to do. Add a job, or give one to Mikey or Leo.</p>}
       {given.length > 0 && <div><p className="tr-lbl">Given to me</p>{given.map((x) => item(x, (t) => <small>from {t.made_by} · {stamp(t.created_at, now)}</small>))}</div>}
       {l.mine.length > 0 && <div><p className="tr-lbl">Mine</p>{l.mine.map((x) => row(x))}</div>}
       {gave.length > 0 && <div><p className="tr-lbl">Jobs I gave</p>{gave.map((x) => row(x, <small>for {x.owner}</small>))}</div>}
+      {asked.length > 0 && <div><p className="tr-lbl">Waiting for a yes</p>{asked.map((x) => row({ ...x, title: askTitle(x).replace(/\s*\(message \d+\)$/, "") }, <small>asked {x.owner} · {stamp(x.created_at, now)}</small>))}</div>}
       {done.length > 0 && <div><p className="tr-lbl">Done today</p>{done.map((x) => item(x))}</div>}
     </div>
   );

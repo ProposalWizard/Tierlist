@@ -1195,6 +1195,13 @@ export const ADMIN_GUIDES = {
         ["A bot's page: Nudge · Never | After 24 h | After 48 h", "The Patch bot reminds whoever has still not read a patch note, once, in #general. Starts on After 24 h."],
         ["A bot's page: See its posts in #channel", "Goes to the channel that bot posts in."],
       ] },
+      { group: "Team room: messages into tasks, / commands, quick links (12 Nov 2026)", items: [
+        ["＋ Add as task for Mikey (under your own message)", "Shows under a message of yours that names someone with a job in it (\"@Mikey do the thumbnail by Friday\"). Press it: the words land in Mikey's to-do as a proposal. It then reads ✓ Sent to Mikey's to-do. Nothing is sent until you press it."],
+        ["Asked of you · Accept | Decline (top of ✓ Tasks)", "A proposal someone sent you. Accept: it becomes an ordinary job under Given to me. Decline: it is deleted, and it leaves the sender's Waiting for a yes. \"see the message\" opens the message it came from."],
+        ["Waiting for a yes (in ✓ Tasks)", "Proposals you sent that have not been answered. ✕ takes one back."],
+        ["/show · /today · /todo (faint row above the message box)", "Tap one to start typing it. /today shows one line per person: their status, open jobs and newest job. /today filming clips sets your status until midnight. /todo opens the to-do; /todo buy cones adds a job for you; /todo @Mikey film the replays sends Mikey a proposal. /show is marked soon. A line that starts with a command is never posted in the chat."],
+        ["You → Quick links · ＋ Pin a page…", "Pick any admin page: it becomes a button at the top of You. Tap it to open the page; ✕ takes it off. Up to 8."],
+      ] },
       { group: "Team room: #bugs (the Bug bot)", items: [
         ["Bug report #N (a card from the Bug bot)", "A player's bug report, posted by itself the moment they send it from the site's feedback form: Title, the Page it came from (tap to open it), From (a signed-in player or not) and What they said. Everyone gets a buzz by their #bugs 🔔 (every message to start with)."],
         ["🤝 Hand to…", "Pick Harry, Mikey or Leo. The card says With Leo, and it becomes a task in their #todo (\"🐞 Bug #N: …\"). Bots join this list once they exist."],
@@ -1260,6 +1267,7 @@ export const ADMIN_GUIDES = {
       "Which channels and DMs you have read is kept in this browser (like the old chat's red number). A channel you have never opened here counts from when you last read the old chat.",
       "New and renamed channels, reactions and private DMs save to the shared database at once (supabase/migrations/team_room_v3.sql). DMs: only the two people in one can ever read it, by the database's own row rules.",
       "Bot posts are never saved by anyone's browser. The Patch bot's posts, its reminders and its on/off setting are rows the SITE writes with its own key (the team_bot_posts table), every 15 minutes on a timer and whenever one of us opens an admin page. The jobs bot is drawn from the jobs file the site already reads.",
+      "A proposal is an ordinary to-do row whose title starts \"[ask] \": Accept takes the tag off, Decline deletes the row. No new table. Quick links are kept in your own sign-in account's details (like your 🔔 choices), so they are on every phone and computer you sign in on; no table, no SQL.",
       "A comment on a patch note is an ordinary chat message with \"[pn:0.138]\" at the front of its text, so it saves like any message and needs no database change. Moving a post to #patch-notes changes nothing in the database: where it shows follows who has read the note.",
       "Status, do not disturb and schedules save to the shared database (team_status in team_room_v4.sql), one row per person that only that person can change. The 🔔 choices save in your own sign-in account's details (no table), so they follow you to every device. List width, thread width, folded sections, starred channels, Later and the message look are kept in this browser only.",
       "Bug reports: the database itself turns each new row of the feedback table into a Bug bot post (a trigger in team_room_v4.sql); no browser writes it. Hand to… and Mark fixed save to team_bug_marks; Hand to… also adds a to-do for that person.",

@@ -81,6 +81,8 @@ export function demoRoom(now: number) {
   const tasks: TeamTask[] = [
     { id: 1, owner: "Harry", made_by: "Harry", title: "Test the Drive upload on my phone", done_at: null, created_at: ago(200) },
     { id: 2, owner: "Harry", made_by: "Leo", title: "Check goal clips on iPhone", done_at: null, created_at: ago(30) },
+    // A proposal (12 Nov 2026): Leo's message turned into a task, waiting for Harry's Accept or Decline.
+    { id: 9, owner: "Harry", made_by: "Leo", title: "[ask] Anything from you? (message 18)", done_at: null, created_at: ago(1) },
     { id: 3, owner: "Harry", made_by: "Mikey", title: "Say yes or no on night kits", done_at: null, created_at: ago(60 * 20) },
     { id: 4, owner: "Harry", made_by: "Harry", title: "Run tester_access.sql", done_at: ago(120), created_at: ago(60 * 30) },
     { id: 5, owner: "Mikey", made_by: "Harry", title: "Run dev_status.sql", done_at: null, created_at: ago(60 * 26) },

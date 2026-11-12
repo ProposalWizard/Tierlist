@@ -9,7 +9,9 @@ import { TEAM_PEOPLE, type TeamPerson } from "@/lib/teamRoom/config";
 import { stamp, type TeamMessage } from "@/lib/teamRoom/logic";
 import { parseMessage, quoteLine } from "@/lib/teamRoom/extras";
 import { GENERAL, channelOf, dmsWith, listChannels, parentOf, type Channel, type RoomPlace } from "@/lib/teamRoom/channels";
-import { useTeamRoom } from "@/lib/teamRoom/store";
+import { setQuickLink, useTeamRoom } from "@/lib/teamRoom/store";
+import { ADMIN_PAGES } from "@/lib/adminRegistry";
+import { nameOfPage } from "./bits";
 import { Av, WaitingOnMe } from "./parts";
 import PushToggle from "./PushToggle";
 import { useRoomCounts } from "./roomCounts";
@@ -102,6 +104,7 @@ export function YouPanel() {
           <span className="tx"><b>{s.me}</b><small>{s.online.includes(s.me) ? "● Active" : "○ Away"} · the others see your dot and status</small></span>
         </div>
       )}
+      <QuickLinks />
       <StatusEditor />
       <ScheduleEditor />
       <p className="tr-lbl" style={{ marginTop: 6 }}>Buzzes on this device</p>
@@ -113,6 +116,38 @@ export function YouPanel() {
       </div>
       <small className="tr-muted">Kept on this device. Clean shows a 36 px face by each message; Compact uses 20 px faces and less space.</small>
       <WelcomeEditor />
+    </div>
+  );
+}
+
+/**
+ * Quick links (Harry, 12 Nov 2026: "he can quickly link the marketing studio
+ * into his home"): pin any admin page; tap to open it. Kept in your account,
+ * so the same links show on your phone and your computer.
+ */
+function QuickLinks() {
+  const s = useTeamRoom();
+  const [err, setErr] = useState<string | null>(null);
+  const pages = useMemo(() => ADMIN_PAGES.map((p) => ({ url: p.url, name: p.name })).filter((p, i, a) => a.findIndex((x) => x.url === p.url) === i).sort((a, b) => a.name.localeCompare(b.name)), []);
+  const name = (url: string) => pages.find((p) => p.url === url)?.name ?? nameOfPage(url.split("?")[0]);
+  const set = async (url: string, on: boolean) => { const r = await setQuickLink(url, on); setErr(r.ok ? null : r.error); };
+  return (
+    <div className="trr-links">
+      <p className="tr-lbl" style={{ marginTop: 6 }}>Quick links</p>
+      {s.links.length === 0 && <p className="tr-muted">Pin the admin pages you use most. They wait here on every device you sign in on.</p>}
+      <div className="trr-linkgrid">
+        {s.links.map((url) => (
+          <span key={url} className="trr-link">
+            <a href={url}>{name(url)}</a>
+            <button className="tr-x" onClick={() => set(url, false)} aria-label={`Take ${name(url)} off your quick links`} title="Take it off">✕</button>
+          </span>
+        ))}
+      </div>
+      <select className="trr-linkadd" value="" aria-label="Pin a page" onChange={(e) => { if (e.target.value) set(e.target.value, true); }}>
+        <option value="">＋ Pin a page…</option>
+        {pages.filter((p) => !s.links.includes(p.url)).map((p) => <option key={p.url} value={p.url}>{p.name}</option>)}
+      </select>
+      {err && <p className="tr-err">{err}</p>}
     </div>
   );
 }

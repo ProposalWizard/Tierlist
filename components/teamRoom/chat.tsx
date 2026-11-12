@@ -28,8 +28,10 @@ import {
   type BotPost, type Reaction, type StreamItem, type TeamReaction,
 } from "@/lib/teamRoom/channels";
 import {
-  addTask, deleteDm, deleteMessage, markChannelRead, markSeen, sendDm, sendMessage, setAck, setPinned, startPointing, tickJob, toggleReaction, useTeamRoom,
+  addTask, deleteDm, deleteMessage, markChannelRead, markSeen, saveStatus, sendAsk, sendDm, sendMessage, setAck, setPinned, startPointing, tickJob, toggleReaction, useTeamRoom,
 } from "@/lib/teamRoom/store";
+import { COMMANDS, askOffer, askedFrom, endOfToday, parseCommand, todayLines, type Command } from "@/lib/teamRoom/asks";
+import { liveStatus } from "@/lib/teamRoom/status";
 import { Av, Linked, PAGE_NAMES, nameOfPage, siteOrigins } from "./bits";
 import { PATCH_META } from "./roomCounts";
 import { patchThread, patchThreadSummary } from "@/lib/teamRoom/patchBot";
@@ -271,6 +273,7 @@ function MessageRow({ m, me, now, day, open, onOpen, onZoom, onReply, onThread, 
           )}
           {p.text && <p><Linked text={p.text} me={me} /></p>}
           {p.cards.map((c, i) => <PageCard key={i} c={c} acks={acks} me={me} />)}
+          {mine && !dm && <AskOfferRow m={m} />}
           {m.image_url && <img src={m.image_url} alt="Picture sent in the chat" loading="lazy" onClick={(e) => { e.stopPropagation(); onZoom(m.image_url!); }} />}
           {reacts.length > 0 && (
             <span className="tr-reacts" aria-label="Reactions">
@@ -318,6 +321,51 @@ function MessageRow({ m, me, now, day, open, onOpen, onZoom, onReply, onThread, 
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * Under your own message that @'s someone with a job in it ("@Mikey do X"):
+ * one faint button, "＋ Add as task for Mikey". It lands in their to-do as a
+ * proposal they Accept or Decline (lib/teamRoom/asks.ts). Once sent, it says so.
+ */
+function AskOfferRow({ m }: { m: TeamMessage }) {
+  const s = useTeamRoom();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const offer = useMemo(() => askOffer(m), [m]);
+  if (!offer) return null;
+  const sent = askedFrom(s.tasks, m.id);
+  const left = offer.to.filter((p) => !sent.includes(p));
+  const send = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setBusy(true); setErr(null);
+    for (const p of left) { const r = await sendAsk(p, offer.title, m.id); if (!r.ok) { setErr(r.error); break; } }
+    setBusy(false);
+  };
+  return (
+    <span className="tr-askrow">
+      {left.length > 0 && <button className="tr-askbtn" disabled={busy} onClick={send} title={`"${offer.title}" goes to their to-do as a proposal: they Accept or Decline`}>＋ Add as task for {left.join(" and ")}</button>}
+      {sent.length > 0 && <span className="tr-asksent">✓ Sent to {sent.join(" and ")}&apos;s to-do</span>}
+      {err && <span className="tr-err">{err}</span>}
+    </span>
+  );
+}
+
+/** /today: one line per person, above the message box. */
+function TodayPanel({ onClose }: { onClose: () => void }) {
+  const s = useTeamRoom();
+  const lines = todayLines({ tasks: s.tasks, statusOf: (p) => { const l = liveStatus(s.statuses[p], new Date()); return [l.emoji, l.text].filter(Boolean).join(" ") || null; } });
+  return (
+    <div className="tr-today" role="status">
+      <p className="tr-lbl">Today<button className="tr-x" onClick={onClose} aria-label="Close">✕</button></p>
+      {lines.map((l) => (
+        <div key={l.person} className="tr-todayrow">
+          <Av p={l.person} sm />
+          <span><b>{l.person}</b> <small>{l.status}</small><br /><small>{l.open === 0 ? "no open jobs" : `${l.open} open job${l.open === 1 ? "" : "s"}${l.first ? ` · newest: ${l.first}` : ""}`}</small></span>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -492,11 +540,28 @@ function Composer({ autoFocus, replyTo, onClearReply, view }: { autoFocus?: bool
     setLinks((l) => (l.some((x) => x.url === url) ? l : [...l, { url, name }]));
   };
 
+  const [today, setToday] = useState(false);
+  const [done, setDone] = useState<string | null>(null);
+  const said = (t: string) => { setDone(t); setTimeout(() => setDone((d) => (d === t ? null : d)), 3500); };
+  /** A line that starts with /todo, /today or /show is a command: nothing is posted in the chat. */
+  const runCommand = async (c: Command): Promise<{ ok: true } | { ok: false; error: string }> => {
+    if (c.kind === "show") { said("/show (record your screen for the team) is coming soon. Until then: Admin home → Videos."); return { ok: true }; }
+    if (c.kind === "today-show") { setToday(true); return { ok: true }; }
+    if (c.kind === "today-set") { const r = await saveStatus({ text: c.text, clear_at: endOfToday(Date.now()) }); if (r.ok) said(`Status set until midnight: ${c.text}`); return r; }
+    if (c.kind === "todo-open") { window.location.assign(`${TEAM_ROOM.home}?tab=chat&ch=todo`); return { ok: true }; }
+    if (c.kind === "todo-add") { const r = await addTask(c.title, s.me); if (r.ok) said("Added to your to-do."); return r; }
+    for (const p of c.to) { const r = await sendAsk(p, c.title); if (!r.ok) return r; }
+    said(`Sent to ${c.to.join(" and ")}'s to-do as a proposal.`);
+    return { ok: true };
+  };
   const send = async () => {
     if (busy || (!text.trim() && !file && links.length === 0)) return;
     setBusy(true); setErr(null);
     let r: { ok: true } | { ok: false; error: string };
-    if (view.kind === "dm") {
+    const command = !file && links.length === 0 ? parseCommand(text, s.me) : null;
+    if (command) {
+      r = await runCommand(command);
+    } else if (view.kind === "dm") {
       r = await sendDm(view.with, composeBody(text, { links: links.map((l) => l.url) }));
     } else {
       const to = view.kind === "thread" ? view.parent : replyTo?.id;
@@ -519,6 +584,18 @@ function Composer({ autoFocus, replyTo, onClearReply, view }: { autoFocus?: bool
               onPointerDown={(e) => e.preventDefault()} onClick={() => choose(i)}>
               {tok?.kind === "@" ? <Av p={o.key as TeamPerson} sm /> : <span className="ic">🔗</span>}
               <span>{o.label}{"sub" in o && o.sub ? <small>{o.sub}</small> : null}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {today && <TodayPanel onClose={() => setToday(false)} />}
+      {done && <p className="tr-cmddone" role="status">{done}</p>}
+      {view.kind === "channel" && !text && !replyTo && (
+        <div className="tr-sugg" aria-label="Commands you can type">
+          {COMMANDS.map((c) => (
+            <button key={c.cmd} title={c.soon ? `${c.hint} (soon)` : c.hint} className={c.soon ? "soon" : ""}
+              onClick={() => { setText(`${c.cmd} `); setHide(false); requestAnimationFrame(() => { box.current?.focus(); const n = c.cmd.length + 1; box.current?.setSelectionRange(n, n); setCaret(n); }); }}>
+              {c.cmd}{c.soon && <small> soon</small>}
             </button>
           ))}
         </div>
