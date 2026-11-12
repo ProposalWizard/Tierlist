@@ -35,6 +35,7 @@ import { cleanStatus, AWAY_AFTER_MS, type StatusRow } from "./status";
 import { BELLS_KEY, NO_BELLS, cleanBells, withBell, withMute, type Bell, type BellPrefs } from "./bells";
 import { cleanWelcome, nextVersion, WELCOME_EDITOR, type WelcomeRead, type WelcomeRow } from "./welcome";
 import { cleanMark, type BugMark } from "./bugs";
+import { BOTS, botSettings, settingsRow, type BotSettings } from "./patchBot";
 
 export interface TeamRoomState {
   status: "idle" | "loading" | "ready" | "missing" | "signedOut" | "error";
@@ -472,8 +473,55 @@ export function startTeamRoom() {
     if (!data.user && offlineDevPlayEnabled()) { startDemo(); return; }
     if (!data.user) { set({ status: "signedOut" }); return; }
     userId = data.user.id;
-    if (await loadAll()) connect();
+    if (await loadAll()) { connect(); askBots(); }
   }).catch(() => set({ status: "error", error: "Could not reach the database." }));
+}
+
+/**
+ * The Patch bot's "first request" (lib/teamRoom/patchBot.ts): once the room has
+ * loaded, ask the site to announce any patch note it has not announced yet.
+ * The site does the work with its own key and posts once however many ask;
+ * this browser asks at most once every 10 minutes.
+ */
+const BOT_ASK_KEY = "kib-team-bot-asked";
+const BOTS_API = "/api/admin/team/bots";
+function askBots() {
+  if (demo || state.v3 !== "on") return;
+  try {
+    if (Date.now() - Number(sessionStorage.getItem(BOT_ASK_KEY) || 0) < 10 * 60_000) return;
+    sessionStorage.setItem(BOT_ASK_KEY, String(Date.now()));
+  } catch { /* private window: ask anyway */ }
+  fetch(BOTS_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ run: true }) }).catch(() => { /* the timer will do it */ });
+}
+
+export interface BotSettingsView { settings: Record<string, BotSettings>; timer: boolean | null }
+/** Each bot's settings, read by the site (whole even when old rows are not loaded here). */
+export async function loadBotSettings(): Promise<BotSettingsView> {
+  const local: Record<string, BotSettings> = {};
+  for (const b of BOTS) local[b.bot] = botSettings(state.botRows, b.bot);
+  if (demo) return { settings: local, timer: null };
+  try {
+    const r = await fetch(BOTS_API, { cache: "no-store" });
+    const j = (await r.json()) as { ok?: boolean; settings?: Record<string, BotSettings>; timer?: boolean };
+    if (r.ok && j.ok && j.settings) return { settings: j.settings, timer: !!j.timer };
+  } catch { /* fall through */ }
+  return { settings: local, timer: null };
+}
+
+/** Switch a bot on or off, or change its reminder. Saved by the site (no browser can write a bot's rows). */
+export async function saveBotSettings(bot: string, patch: Partial<Pick<BotSettings, "enabled" | "nudgeHours">>): Promise<Result & { settings?: BotSettings }> {
+  if (demo) {
+    const now = botSettings(state.botRows, bot);
+    const row = { ...settingsRow(bot, { ...now, ...patch }, state.me), id: ++demoId, created_at: new Date().toISOString() } as BotRow;
+    set((s) => ({ botRows: [...s.botRows, row] }));
+    return { ok: true, settings: botSettings([row], bot) };
+  }
+  try {
+    const r = await fetch(BOTS_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bot, ...patch }) });
+    const j = (await r.json()) as { ok?: boolean; error?: string; settings?: BotSettings };
+    if (!r.ok || !j.ok) return { ok: false, error: j.error ?? "Could not save it." };
+    return { ok: true, settings: j.settings };
+  } catch { return { ok: false, error: "Could not reach the site." }; }
 }
 
 /** For tests and sign-out: forget everything. */

@@ -142,6 +142,8 @@ export function channelStream(messages: readonly TeamMessage[], slug: string): T
   const ids = new Set(messages.map((m) => m.id));
   return messages.filter((m) => {
     if (channelOf(m.body) !== slug) return false;
+    // A comment on a patch note sits in that note's thread (lib/teamRoom/patchBot.ts), never in the stream.
+    if (parseMessage(m.body).patch) return false;
     const p = parentOf(m);
     return !(p && ids.has(p)) || alsoInChannel(m.body);
   });
@@ -268,6 +270,15 @@ export interface BotPost {
   jobId?: string;
   /** A row a bot wrote (team_bot_posts.id): the Bug bot's card reads its marks by it. */
   postId?: number;
+  /** The Patch bot's announcement (lib/teamRoom/patchBot.ts): who is asked to review, by name. */
+  mentions?: TeamPerson[];
+  /** In the announce flow: #general until everyone has read it, then #patch-notes (archived). */
+  flow?: boolean;
+  archived?: boolean;
+  /** Published, but the site has not written its post yet (drawn from the patch-notes list meanwhile). */
+  pending?: boolean;
+  /** A reminder about a patch note: the version whose thread it belongs to. */
+  threadOf?: string;
 }
 
 /** A row a future bot (a Claude routine) wrote into team_bot_posts with the site's own key. */

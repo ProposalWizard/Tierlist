@@ -1,6 +1,7 @@
 # Brain index team
 ID | summary | tags
 FACT-TEAM-001 | next build needs about 6.5 GB; package.json gives it 6 GB of heap (node --max-old-space-size=6144). A Vercel deploy that fails with no other clue may be out of memory again: build locally with no NODE_OPTIONS to check. | deploy,team
+FACT-TEAM-002 | The Patch bot posts each new patch note once in #general naming the two who did not write it; comments ride "[pn:version]" in one thread; the post moves to #patch-notes when all three have read it. No new table. | data,process,style,team
 PRO-TEAM-001 | Push means merge Harry into main after tsc, both guards, the tests and npm run build pass, once the team reviewed the patch notes. | team,process,deploy
 PRO-TEAM-002 | [SUPERSEDED] Patch notes order: stills on the page, push, publish; then film the gameplay clips; never hold the push for a video. | process,rule,deploy
 PRO-TEAM-003 | Pictures as they come in: builders save each still at once, and the lead sends each new still to Harry with a caption. | process

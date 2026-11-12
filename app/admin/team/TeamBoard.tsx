@@ -69,7 +69,7 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage, 
   /** ?m=<id>: a phone notification opened the chat on this message. */
   initialMessage?: number | null;
   /** ?ch= / ?dm= / ?t=: the channel, DM or thread the chat opens on (23 Oct 2026). */
-  initialPlace?: { ch: string | null; dm: string | null; t: number | null };
+  initialPlace?: { ch: string | null; dm: string | null; t: number | null; pn?: string | null; bot?: string | null };
 }) {
   const [tab, setTab] = useState<RoomTab>(initialTab);
   const room = useTeamRoom();
@@ -150,6 +150,8 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage, 
         <ChatPage onOpenPatch={openNote} homeHref={ADMIN_HUB} pushes={lastPushes} first={{
           place, m: fromLink ? initialMessage ?? null : null, t: fromLink ? initialPlace?.t ?? null : null, v: fromLink ? initialVersion ?? null : null,
           tab: tab === "chat" ? "messages" : "tool",
+          // &pn=<version>: a patch note's thread; &bot=<name>: a bot's own page (12 Nov 2026).
+          pn: fromLink ? initialPlace?.pn ?? null : null, bot: fromLink ? initialPlace?.bot ?? null : null,
         }} />
       </div>
     );

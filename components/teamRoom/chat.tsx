@@ -32,6 +32,7 @@ import {
 } from "@/lib/teamRoom/store";
 import { Av, Linked, PAGE_NAMES, nameOfPage, siteOrigins } from "./bits";
 import { PATCH_META } from "./roomCounts";
+import { patchThread, patchThreadSummary } from "@/lib/teamRoom/patchBot";
 import { readPrefs, setPrefs, toggleIn, useRoomPrefs } from "./roomPrefs";
 import { StatusBit } from "./roomFace";
 import { BugCard, useBugReport } from "./roomBugs";
@@ -49,11 +50,13 @@ const dayLabel = (iso: string, now: number) => {
 export type ChatView =
   | { kind: "channel"; slug: string }
   | { kind: "thread"; slug: string; parent: number }
+  /** A patch note's thread: the Patch bot's post, then every comment on that version ("[pn:0.138] …"). */
+  | { kind: "patch"; slug: string; version: string }
   | { kind: "dm"; with: TeamPerson };
 const GENERAL_VIEW: ChatView = { kind: "channel", slug: GENERAL };
 
 /** The chat: messages, then the box to type in. `visible` marks it read and seen. */
-export function ChatThread({ visible = true, autoFocus, jumpTo, view = GENERAL_VIEW, bots = [], threads = false, onThread, onOpenPatch, jumpBot }: {
+export function ChatThread({ visible = true, autoFocus, jumpTo, view = GENERAL_VIEW, bots = [], threads = false, onThread, onOpenPatch, jumpBot, onPatchThread }: {
   visible?: boolean; autoFocus?: boolean; jumpTo?: number | null;
   view?: ChatView;
   /** Bot posts for this channel (the patch-notes bot, the jobs bot, rows a bot wrote). */
@@ -65,6 +68,8 @@ export function ChatThread({ visible = true, autoFocus, jumpTo, view = GENERAL_V
   onOpenPatch?: (version: string) => void;
   /** Scroll to a bot post ("patch:0.62") when the room opens on it. */
   jumpBot?: string | null;
+  /** Open a patch note's thread (the Patch bot's post: "Reply in thread", "3 replies"). */
+  onPatchThread?: (version: string) => void;
 }) {
   const s = useTeamRoom();
   const prefs = useRoomPrefs();
@@ -87,6 +92,10 @@ export function ChatThread({ visible = true, autoFocus, jumpTo, view = GENERAL_V
     if (view.kind === "thread") {
       const p = s.messages.find((m) => m.id === view.parent);
       return [...(p ? [p] : []), ...threadOf(s.messages, view.parent)].map((m) => ({ kind: "msg" as const, at: m.created_at, m }));
+    }
+    if (view.kind === "patch") {
+      const post = bots.find((b) => b.key === `patch:${view.version}`);
+      return [...(post ? [{ kind: "bot" as const, at: post.at, b: post }] : []), ...patchThread(s.messages, view.version).map((m) => ({ kind: "msg" as const, at: m.created_at, m }))];
     }
     const own = threads ? channelStream(s.messages, view.slug) : s.messages.filter((m) => channelOf(m.body) === view.slug);
     return mergeStream(own, bots.filter((b) => b.channel === view.slug));
@@ -171,7 +180,7 @@ export function ChatThread({ visible = true, autoFocus, jumpTo, view = GENERAL_V
         {items.map((it, i) => {
           const prev = items[i - 1];
           const day = i === 0 || dayOf(it.at) !== dayOf(prev.at);
-          if (it.kind === "bot") return <BotRow key={it.b.key} b={it.b} now={now} day={day} onOpenPatch={onOpenPatch} />;
+          if (it.kind === "bot") return <BotRow key={it.b.key} b={it.b} now={now} day={day} onOpenPatch={onOpenPatch} onPatchThread={view.kind === "patch" ? undefined : onPatchThread} />;
           const m = it.m;
           const isParent = parent === m.id;
           // The Team room groups a run of messages from one person (under 5 minutes apart): one face and name.
@@ -180,18 +189,19 @@ export function ChatThread({ visible = true, autoFocus, jumpTo, view = GENERAL_V
           return (
             <MessageRow key={`${isDm ? "d" : "m"}${m.id}`} m={m} me={s.me} now={now} marks={s.marks} acks={s.acks} origins={origins}
               day={day} reply={byId} flash={flash === m.id} dm={isDm} showSeen={general && !isDm}
-              hideQuote={view.kind === "thread" && !isParent}
+              hideQuote={(view.kind === "thread" && !isParent) || view.kind === "patch"}
               summary={threads && view.kind === "channel" ? threadSummary(s.messages, m.id) : null}
               reactions={isDm ? [] : s.reactions} canReact={!isDm} v3={s.v3 === "on"} saved={prefs.later.includes(m.id)}
               alsoFrom={view.kind === "channel" && threads ? parentOf(m) : null} flat={threads} cont={cont}
               open={openId === m.id} onOpen={() => setOpenId(openId === m.id ? null : m.id)} onZoom={setZoom}
-              onReply={isParent || isDm ? null : () => reply(m)} onThread={onThread} onJump={jump} />
+              onReply={isParent || isDm || view.kind === "patch" ? null : () => reply(m)} onThread={onThread} onJump={jump} />
           );
         })}
+        {view.kind === "patch" && <span className="tr-day tr-thread-end">{items.filter((x) => x.kind === "msg").length === 0 ? "No comments yet. Say what you think." : `${items.filter((x) => x.kind === "msg").length} comment${items.filter((x) => x.kind === "msg").length === 1 ? "" : "s"}`}</span>}
         {view.kind === "thread" && items.length > 1 && <span className="tr-day tr-thread-end">{items.length - 1} repl{items.length === 2 ? "y" : "ies"}</span>}
       </div>
       {!(isDm && s.v3 !== "on") && (
-        <Composer autoFocus={autoFocus} view={view} replyTo={view.kind === "thread" ? null : replyTo} onClearReply={() => setReplyTo(null)} />
+        <Composer autoFocus={autoFocus} view={view} replyTo={view.kind === "thread" || view.kind === "patch" ? null : replyTo} onClearReply={() => setReplyTo(null)} />
       )}
       {zoom && <div className="tr-zoom" onClick={() => setZoom(null)} role="dialog" aria-label="Picture"><img src={zoom} alt="" /></div>}
     </div>
@@ -312,7 +322,7 @@ function MessageRow({ m, me, now, day, open, onOpen, onZoom, onReply, onThread, 
 }
 
 /** A bot's post: the patch-notes bot (@everyone, read receipts), the jobs bot (✅ ticks the job), or a row a bot wrote. */
-function BotRow({ b, now, day, onOpenPatch }: { b: BotPost; now: number; day: boolean; onOpenPatch?: (v: string) => void }) {
+function BotRow({ b, now, day, onOpenPatch, onPatchThread }: { b: BotPost; now: number; day: boolean; onOpenPatch?: (v: string) => void; onPatchThread?: (version: string) => void }) {
   const s = useTeamRoom();
   const me = s.me;
   const [busy, setBusy] = useState(false);
@@ -322,6 +332,9 @@ function BotRow({ b, now, day, onOpenPatch }: { b: BotPost; now: number; day: bo
   const readers = meta ? patchReaders(meta, s.acks) : [];
   const author = meta ? patchAuthor(meta.title) : null;
   const done = job ? jobDoneBy(s.tasks, job.id) : [];
+  // The Patch bot's thread: comments on this version (or, for a reminder, on the note it is about).
+  const threadVersion = b.version ?? b.threadOf;
+  const thread = threadVersion && onPatchThread ? patchThreadSummary(s.messages, threadVersion) : null;
   // The Bug bot's post is a report card (roomBugs.tsx).
   const bug = useBugReport(b.bot === "bug" ? b.postId : undefined);
   const run = async (f: () => Promise<{ ok: boolean; error?: string }>) => {
@@ -334,12 +347,18 @@ function BotRow({ b, now, day, onOpenPatch }: { b: BotPost; now: number; day: bo
     <>
       {day && <span className="tr-day">{dayLabel(b.at, now)}</span>}
       <div className="tr-msg tr-botmsg" data-bot={b.key}>
-        <span className="tr-botav" aria-hidden>{b.bot === "patch-notes" ? "📣" : b.bot === "jobs" ? "🧰" : b.bot === "bug" ? "🐞" : "🤖"}</span>
+        <span className="tr-botav" aria-hidden>{b.bot === "patch-notes" ? "📣" : b.bot === "jobs" ? "🧰" : b.bot === "bug" ? "🐞" : b.bot === "health" ? "🩺" : "🤖"}</span>
         <div className="tr-bub tr-botbub">
-          <small><b>{b.name}</b><span className="tr-bottag">BOT</span><span>{stamp(b.at, now)}</span></small>
+          <small><b>{b.bot === "patch-notes" ? "Patch bot" : b.name}</b><span className="tr-bottag">BOT</span><span>{stamp(b.at, now)}</span>
+            {b.archived && <span className="tr-archived" title="Everyone has read it, so it moved here from #general">archived</span>}
+            {b.pending && <span className="tr-archived" title="The site posts it within 15 minutes (or when one of us next opens an admin page)">posting…</span>}
+          </small>
           {bug ? <BugCard report={bug} /> : (<>
             <p className="tr-bott">{b.everyone && <span className="tr-everyone">@everyone</span>} {b.title}</p>
-            {b.body && <p className="tr-botb">{b.body}</p>}
+            {b.body && <p className="tr-botb"><Linked text={b.body} me={me} /></p>}
+            {b.mentions && b.mentions.length > 0 && !b.archived && (
+              <p className="tr-botask">{b.mentions.map((p) => <span key={p} className={`tr-at${p === me ? " me" : ""}`}>@{p}</span>)} please review.</p>
+            )}
           </>)}
           {meta && (
             <span className="tr-botfoot">
@@ -354,7 +373,15 @@ function BotRow({ b, now, day, onOpenPatch }: { b: BotPost; now: number; day: bo
               )}
               {onOpenPatch ? <button className="tr-btn ghost" onClick={() => onOpenPatch(meta.version)}>Open</button>
                 : b.url && <a className="tr-btn ghost" href={b.url}>Open</a>}
+              {onPatchThread && thread && thread.count === 0 && <button className="tr-btn ghost" onClick={() => onPatchThread(meta.version)} title="Comment on this patch note in its thread">💬 Reply in thread</button>}
             </span>
+          )}
+          {thread && thread.count > 0 && (
+            <button className="tr-threadline" onClick={() => onPatchThread!(threadVersion!)} title="Open the thread">
+              <span className="faces">{thread.people.map((x) => <Av key={x} p={x} xs />)}</span>
+              <b>{thread.count} repl{thread.count === 1 ? "y" : "ies"}</b>
+              <span>last reply {thread.last ? stamp(thread.last.created_at, now) : ""}</span>
+            </button>
           )}
           {job && (
             <span className="tr-botfoot">
@@ -421,7 +448,7 @@ function Composer({ autoFocus, replyTo, onClearReply, view }: { autoFocus?: bool
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
   const isDm = view.kind === "dm";
   const chName = view.kind === "dm" ? "" : listChannels(s.channelRows).find((c) => c.slug === view.slug)?.name ?? view.slug;
-  const placeholder = view.kind === "dm" ? `Message ${view.with}` : view.kind === "thread" ? "Reply in the thread" : `Message #${chName}`;
+  const placeholder = view.kind === "dm" ? `Message ${view.with}` : view.kind === "thread" ? "Reply in the thread" : view.kind === "patch" ? `Comment on v${view.version}` : `Message #${chName}`;
 
   const [hide, setHide] = useState(false);
   const tok = hide ? null : typingToken(text, caret);
@@ -473,7 +500,9 @@ function Composer({ autoFocus, replyTo, onClearReply, view }: { autoFocus?: bool
       r = await sendDm(view.with, composeBody(text, { links: links.map((l) => l.url) }));
     } else {
       const to = view.kind === "thread" ? view.parent : replyTo?.id;
-      const body = composeBody(text, { replyTo: to, links: links.map((l) => l.url), channel: view.slug, also: view.kind === "thread" && also });
+      // A patch note's thread lives in #general's messages whatever channel its post shows in.
+      const body = view.kind === "patch" ? composeBody(text, { links: links.map((l) => l.url), patch: view.version })
+        : composeBody(text, { replyTo: to, links: links.map((l) => l.url), channel: view.slug, also: view.kind === "thread" && also });
       r = await sendMessage(body, file, typeof window === "undefined" ? null : window.location.pathname + window.location.search);
     }
     setBusy(false);
@@ -522,7 +551,7 @@ function Composer({ autoFocus, replyTo, onClearReply, view }: { autoFocus?: bool
           </button>
         )}
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { setFile(e.target.files?.[0] ?? null); e.target.value = ""; }} />
-        <textarea id={view.kind === "thread" ? "tr-compose-thread" : "tr-compose"} ref={box} rows={1} value={text} autoFocus={autoFocus} placeholder={placeholder} aria-label={placeholder.replace(/… @ or #$|…$/, "")}
+        <textarea id={view.kind === "thread" || view.kind === "patch" ? "tr-compose-thread" : "tr-compose"} ref={box} rows={1} value={text} autoFocus={autoFocus} placeholder={placeholder} aria-label={placeholder.replace(/… @ or #$|…$/, "")}
           onChange={(e) => { setText(e.target.value); setHide(false); setCaret(e.target.selectionStart ?? e.target.value.length); resize(e.target); }}
           onSelect={(e) => setCaret((e.target as HTMLTextAreaElement).selectionStart ?? 0)}
           onPaste={(e) => { if (isDm) return; const f = Array.from(e.clipboardData.files).find((x) => x.type.startsWith("image/")); if (f) { e.preventDefault(); setFile(f); } }}

@@ -89,9 +89,13 @@ function onIncoming(x: Incoming) {
     void show(`${d.from_person} sent you a private message`, d.body.slice(0, 160), `kib-dm-${d.from_person}`, `${TEAM_ROOM.home}?tab=chat&dm=${d.from_person}`);
   } else {
     const b = x.row;
+    // A bot's saved settings are a row too: never a pop-up.
+    if (b.channel === "bot-settings") return;
     if (typeof document !== "undefined" && document.visibilityState === "visible" && viewing === b.channel) return;
-    if (!popupFor({ me, sender: null, slug: b.channel, namesMe: !!b.everyone, prefs: st.bells, quiet, now })) return;
-    const name = b.bot === "bug" ? "Bug bot" : `${b.bot} bot`;
+    // The Patch bot names its two reviewers in the post's words ("@Mikey @Leo please review").
+    const namesMe = !!b.everyone || new RegExp(`@${me}\\b`, "i").test(b.body ?? "");
+    if (!popupFor({ me, sender: null, slug: b.channel, namesMe, prefs: st.bells, quiet, now })) return;
+    const name = b.bot === "bug" ? "Bug bot" : b.bot === "patch-notes" ? "Patch bot" : `${b.bot} bot`;
     void show(`${name} in #${b.channel}`, b.title, `kib-bot-${b.channel}`, `${TEAM_ROOM.home}?tab=chat&ch=${b.channel}`);
   }
 }

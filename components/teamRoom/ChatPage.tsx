@@ -44,14 +44,17 @@ import { BellIcon, BellMenu, useQuiet } from "./roomBells";
 import { setViewing, wirePopups } from "@/lib/teamRoom/popups";
 import { dmKey } from "@/lib/teamRoom/channels";
 import { LIST_W, THREAD_W, clamp, setPrefs, toggleIn, useRoomPrefs } from "./roomPrefs";
+import { botInfo, patchThreadOf } from "@/lib/teamRoom/patchBot";
+import { BotPage, CopyForClaude } from "./roomBots";
 import "./teamRoom.css";
 import "./room.css";
 
 export type RoomTab = "messages" | "tool" | "pins";
-export interface RoomStart { place: RoomPlace; m: number | null; t: number | null; v: string | null; tab?: RoomTab }
+export interface RoomStart { place: RoomPlace; m: number | null; t: number | null; v: string | null; tab?: RoomTab; pn?: string | null; bot?: string | null }
 /** A screen in the middle that is not a channel or a DM. */
 export type RoomView = "activity" | "later" | "you" | "dms";
-type Where = RoomPlace | { kind: "view"; view: RoomView };
+/** A bot's own page (12 Nov 2026: "by clicking on him I shouldn't get a chat … the patch bot is a bot"). */
+type Where = RoomPlace | { kind: "view"; view: RoomView } | { kind: "bot"; bot: string };
 
 export default function ChatPage({ first, onOpenPatch, homeHref = TEAM_ROOM.home, onHome, pushes = {} }: {
   first?: RoomStart; onOpenPatch?: (version: string) => void;
@@ -121,8 +124,12 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
     const p = m ? parentOf(m) : null;
     return p && s.messages.some((x) => x.id === p) ? p : null;
   })();
-  const [where, setWhere] = useState<Where>(first.place);
+  const [where, setWhere] = useState<Where>(first.bot && botInfo(first.bot) ? { kind: "bot", bot: first.bot } : first.place);
   const [thread, setThread] = useState<number | null>(startThread);
+  // A patch note's thread (the Patch bot's post and its comments), by version.
+  const [patchT, setPatchT] = useState<string | null>(first.pn ?? null);
+  const openThread = useCallback((id: number | null) => { setThread(id); if (id) setPatchT(null); }, []);
+  const openPatchThread = useCallback((v: string) => { setPatchT(v); setThread(null); }, []);
   const [jump, setJump] = useState<number | null>(first.m && !startThread ? first.m : startThread);
   const [jumpBot] = useState<string | null>(first.v ? `patch:${first.v}` : null);
   const [tab, setTab] = useState<RoomTab>(first.tab ?? "messages");
@@ -149,7 +156,8 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
     e.stopPropagation();
     openProfile(el.dataset.person as TeamPerson, el.getBoundingClientRect());
   };
-  const place: RoomPlace | null = where.kind === "view" ? null : where;
+  const place: RoomPlace | null = where.kind === "view" || where.kind === "bot" ? null : where;
+  const botPage = where.kind === "bot" ? botInfo(where.bot) : null;
   const channel: Channel | null = place?.kind === "channel" ? channels.find((c) => c.slug === place.slug) ?? channels[0] : null;
   const slug = channel?.slug ?? null;
   // On a computer the list follows the saved setting; under 900 px it lays over the chat when open.
@@ -157,21 +165,28 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
 
   useEffect(() => {
     if (!place) return;
-    try { window.history.replaceState(null, "", roomUrl(place, { t: thread })); } catch { /* old browser */ }
-  }, [place, thread]);
+    try { window.history.replaceState(null, "", roomUrl(place, { t: thread }) + (patchT ? `&pn=${encodeURIComponent(patchT)}` : "")); } catch { /* old browser */ }
+  }, [place, thread, patchT]);
+  useEffect(() => {
+    if (where.kind !== "bot") return;
+    try { window.history.replaceState(null, "", `${TEAM_ROOM.home}?tab=chat&bot=${where.bot}`); } catch { /* old browser */ }
+  }, [where]);
   // Computer pop-ups (U12): wired once; never for the channel or DM on screen.
   useEffect(() => { wirePopups(); }, []);
   useEffect(() => { setViewing(place ? (place.kind === "dm" ? dmKey(place.with) : place.slug) : null); return () => setViewing(null); }, [place]);
 
   const closeDrawer = () => setDrawer(false);
-  const go = (w: Where) => { setWhere(w); setThread(null); setTab("messages"); setDrawer(false); setJump(null); };
+  const go = (w: Where) => { setWhere(w); setThread(null); setPatchT(null); setTab("messages"); setDrawer(false); setJump(null); };
   const goTo = useCallback((id: number) => {
     const m = s.messages.find((x) => x.id === id);
     if (!m) return;
     const p = parentOf(m);
     const inThread = p && s.messages.some((x) => x.id === p) ? p : null;
     setWhere({ kind: "channel", slug: channelOf(m.body) }); setTab("messages"); setDrawer(false);
-    setThread(inThread);
+    // A comment on a patch note: open that note's thread.
+    const pn = patchThreadOf(m);
+    setPatchT(pn);
+    setThread(pn ? null : inThread);
     setJump(null); setTimeout(() => setJump(inThread ?? id), 0);
   }, [s.messages]);
   const toggleList = useCallback(() => {
@@ -189,11 +204,12 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
         if (drawer) { setDrawer(false); return; }
         const typing = (e.target as HTMLElement | null)?.closest?.("textarea, input");
         if (thread && !typing) setThread(null);
+        if (patchT && !typing) setPatchT(null);
       }
     };
     window.addEventListener("keydown", k);
     return () => window.removeEventListener("keydown", k);
-  }, [toggleList, jumper, drawer, thread]);
+  }, [toggleList, jumper, drawer, thread, patchT]);
 
   // Phone: a swipe right from the left edge opens the list; a swipe left on it closes it.
   const touch = useRef<{ x: number; y: number; edge: boolean } | null>(null);
@@ -220,7 +236,7 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
   const view = where.kind === "view" ? where.view : null;
 
   return (
-    <div className="trr" data-list={listShown ? "open" : "closed"} data-narrow={narrow} data-phone={phone} data-thread={thread && slug ? "true" : "false"}
+    <div className="trr" data-list={listShown ? "open" : "closed"} data-narrow={narrow} data-phone={phone} data-thread={(thread || patchT) && slug ? "true" : "false"}
       data-density={prefs.density} style={{ ["--trr-list" as string]: `${w}px`, ["--trr-thread" as string]: `${tw}px` }}
       onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} onMouseOver={onOver} onClickCapture={onFaceClick}>
       {narrow && drawer && <div className="trr-scrim" onClick={closeDrawer} aria-hidden />}
@@ -248,7 +264,8 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
                 <b><Av p={place.with} sm /> {place.with} <span className="trw-lock">🔒 private</span></b>
                 <small>Only you and {place.with} can read this.</small>
               </div>
-            ) : <div className="trr-title"><b>{VIEW_NAME[view!]}</b><small>{VIEW_LINE[view!]}</small></div>}
+            ) : botPage ? <div className="trr-title"><b>{botPage.name} <span className="tr-bottag">BOT</span></b><small>What it does, when it runs and its settings</small></div>
+              : <div className="trr-title"><b>{VIEW_NAME[view!]}</b><small>{VIEW_LINE[view!]}</small></div>}
           {channel && (
             <span className="trr-members" title={`Everyone is in every channel: Harry, Mikey and Leo${chBots ? `, plus ${chBots} bot${chBots === 1 ? "" : "s"} posting here` : ""}`}>
               <span className="faces">{TEAM_PEOPLE.map((p) => <Av key={p} p={p} xs off={!s.online.includes(p)} />)}</span>
@@ -266,12 +283,12 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
             <button aria-pressed={tab === "pins"} onClick={() => setTab("pins")}>📌 Pinned{pins.length ? ` ${pins.length}` : ""}</button>
           </nav>
         )}
-        <div className="trw-body" data-tab={channel ? tab : view ? "tool" : "messages"}>
+        <div className="trw-body" data-tab={channel ? tab : view || botPage ? "tool" : "messages"}>
           {channel?.slug === GENERAL && tab === "messages" && <WelcomePin />}
           {place && (!channel || tab === "messages") && (
             <ChatThread key={channel ? `c-${channel.slug}` : `d-${(place as { with: string }).with}`}
               view={channel ? { kind: "channel", slug: channel.slug } : { kind: "dm", with: (place as { with: TeamPerson }).with }}
-              threads bots={bots} onThread={setThread} onOpenPatch={onOpenPatch} jumpTo={jump} jumpBot={channel?.slug === PATCH_CHANNEL ? jumpBot : null} />
+              threads bots={bots} onThread={openThread} onPatchThread={openPatchThread} onOpenPatch={onOpenPatch} jumpTo={jump} jumpBot={channel && bots.some((b) => b.key === jumpBot && b.channel === channel.slug) ? jumpBot : null} />
           )}
           {channel && tab === "tool" && <ToolPanel tool={channel.tool} onOpenPatch={onOpenPatch} />}
           {channel && tab === "pins" && (
@@ -288,8 +305,23 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
           {view === "later" && <LaterPanel onJump={goTo} />}
           {view === "you" && <YouPanel />}
           {view === "dms" && <DmsPanel onGo={(p) => go({ kind: "dm", with: p })} />}
+          {botPage && <BotPage info={botPage} onGo={(slug) => go({ kind: "channel", slug })} />}
         </div>
       </section>
+
+      {patchT && slug && (<>
+        {!phone && <DragEdge value={tw} range={THREAD_W} side="thread" label="Thread width" onChange={(n) => { setThreadW(n); setPrefs({ threadW: n }); }} />}
+        <section className="trr-thread" aria-label={`Thread on patch notes v${patchT}`}>
+          <header className="trr-head">
+            <div className="trr-title"><b>Thread</b><small>Patch notes v{patchT}</small></div>
+            <CopyForClaude version={patchT} />
+            <button className="tr-x trw-close" onClick={() => setPatchT(null)} aria-label="Close the thread" title="Close the thread (Esc)">✕</button>
+          </header>
+          <div className="trw-body">
+            <ChatThread key={`pn-${patchT}`} view={{ kind: "patch", slug: GENERAL, version: patchT }} threads bots={bots} onOpenPatch={onOpenPatch} autoFocus={false} />
+          </div>
+        </section>
+      </>)}
 
       {thread && slug && (<>
         {!phone && <DragEdge value={tw} range={THREAD_W} side="thread" label="Thread width" onChange={(n) => { setThreadW(n); setPrefs({ threadW: n }); }} />}
@@ -492,7 +524,8 @@ function ChannelList({ channels, where, onGo, onClose, onSearch, homeBtn, narrow
 
         <Section id="bots" title="Bots">
           {botList.map((b) => (
-            <button key={b.bot} className="trr-row trr-bot" onClick={() => onGo({ kind: "channel", slug: b.channel })} title={`${b.name}: ${b.line}`}>
+            <button key={b.bot} className="trr-row trr-bot" aria-current={where.kind === "bot" && where.bot === b.bot ? "page" : undefined}
+              onClick={() => onGo(botInfo(b.bot) ? { kind: "bot", bot: b.bot } : { kind: "channel", slug: b.channel })} title={`${b.name}: ${b.line}`}>
               <span className="trr-botface" aria-hidden>{b.icon}</span>
               <span className="nm"><span className="bn">{b.name}<span className="tr-bottag">BOT</span></span><small>{b.line}</small></span>
             </button>
@@ -523,13 +556,15 @@ function MeLine({ me }: { me: TeamPerson }) {
 export function botMembers(bots: readonly BotPost[]) {
   const last = (bot: string) => bots.filter((b) => b.bot === bot).sort((a, b) => (Date.parse(b.at) || 0) - (Date.parse(a.at) || 0))[0];
   const ago = (iso?: string) => (iso ? stamp(iso, Date.now()) : "nothing yet");
-  const patch = last("patch-notes");
+  const patch = bots.filter((b) => b.bot === "patch-notes" && b.flow).sort((a, b) => (Date.parse(b.at) || 0) - (Date.parse(a.at) || 0))[0];
   const job = last("jobs");
   const bug = last("bug");
+  const health = last("health");
   return [
-    { bot: "patch-notes", name: "Patch bot", icon: "📄", channel: PATCH_CHANNEL, line: patch ? `last post ${ago(patch.at)} · #patch-notes` : "posts each patch note · #patch-notes" },
+    { bot: "patch-notes", name: "Patch bot", icon: "📣", channel: GENERAL, line: patch ? `last post ${ago(patch.at)} · #general` : "posts each patch note · #general" },
+    { bot: "bug", name: "Bug bot", icon: "🐞", channel: "bugs", line: bug ? `last report ${ago(bug.at)} · #bugs` : "not posting yet · #bugs" },
+    { bot: "health", name: "Health bot", icon: "🩺", channel: "health", line: health ? `last post ${ago(health.at)} · #health` : "not posting yet · 08:00 · #health" },
     { bot: "jobs", name: "Jobs bot", icon: "🧰", channel: "todo", line: job ? `last job ${ago(job.at)} · #todo` : "posts pushed jobs · #todo" },
-    { bot: "bug", name: "Bug bot", icon: "🐞", channel: "bugs", line: bug ? `last report ${ago(bug.at)} · #bugs` : "posts bug reports · #bugs" },
   ];
 }
 

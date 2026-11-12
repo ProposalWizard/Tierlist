@@ -38,6 +38,9 @@ export function demoRoom(now: number) {
     { id: 14, person: "Harry", body: "[#marketing] v03 short is in the Studio, notes welcome\n/admin/marketing/studio", image_url: null, page: "/admin/marketing", pinned: false, created_at: ago(1.4) },
     { id: 15, person: "Leo", body: "[#context] Ruling: the FA Cup has ten rounds now, each league joins at its real round", image_url: null, page: "/admin/team?tab=chat", pinned: false, created_at: ago(1.3) },
     { id: 16, person: "Mikey", body: "[#patch-notes] read 0.108, the bicycle kicks look great @everyone", image_url: null, page: "/admin/team?tab=chat", pinned: false, created_at: ago(1.2) },
+    // The Patch bot's thread (12 Nov 2026): comments on a patch note ride "[pn:version]".
+    { id: 17, person: "Mikey", body: "[pn:0.136] The test pages feel right now. Can the lag test show the phone's frame rate too?", image_url: null, page: "/admin/team?tab=notes&v=0.136", pinned: false, created_at: ago(1.1) },
+    { id: 18, person: "Leo", body: "[pn:0.136] yes, adding it. @Harry anything from you?", image_url: null, page: "/admin/team?tab=chat", pinned: false, created_at: ago(1.0) },
   ];
   const reactions: TeamReaction[] = [
     { message_id: 2, emoji: "👀", person: "Harry", at: ago(13) }, { message_id: 2, emoji: "👀", person: "Leo", at: ago(12) },
@@ -110,6 +113,8 @@ export function demoRoom(now: number) {
     { id: 481, bot: "bug", channel: "bugs", title: "Keeper froze mid dive in the cup semi", body: "Keeper froze mid dive in the cup semi\nSecond half, took the penalty, the keeper stopped mid dive.", url: "/star-dev", everyone: false, created_at: ago(95), meta: { page: "https://knowitball.co.uk/star-dev", signed_in: true } },
     { id: 482, bot: "bug", channel: "bugs", title: "Shop button is off the screen on my phone", body: "Shop button is off the screen on my phone", url: "/star-dev", everyone: false, created_at: ago(7), meta: { page: "https://knowitball.co.uk/star-dev", signed_in: false } },
   ];
+  // The Patch bot's own rows: one announcement in #general (Leo's note, so Harry and Mikey are asked).
+  botRows.push({ id: 483, bot: "patch-notes", channel: "general", title: "v0.136 · Test pages play like the real game", body: "Every test page now runs the real match, so what you test is what players get.\n@Harry @Mikey please review.", url: "/admin/team?tab=notes&v=0.136", everyone: false, created_at: ago(11), meta: { kind: "announce", version: "0.136", author: "Leo", reviewers: ["Harry", "Mikey"] } });
   const bugMarks: BugMark[] = [{ post_id: 481, handed_to: "Leo", fixed_by: null, fixed_at: null, updated_by: "Leo", updated_at: ago(80) }];
   const me: TeamPerson | null = fresh ? null : "Harry";
   return {
