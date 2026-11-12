@@ -234,16 +234,17 @@
   "title": "v09 · How do you replace Lewis Hall? Tavares or Wesley",
   "stage": "check",
   "owner": "Claude",
-  "updated": "2026-11-12T10:00:00Z",
+  "updated": "2026-11-12T19:40:00Z",
   "postOn": null,
   "line": "Left-backs, 1,800+ minutes, any age/value/league. Ready now: Nuno Tavares (Lazio, 26, €14M, 84%): cheaper and closer to Hall. For the future: Wesley (Roma, 23, €46M, 72%): less like Hall and pricier, but younger with potential.",
   "script": "docs/marketing/videos/v09-replace-hall-tavares-wesley/script.md",
   "cover": "docs/marketing/videos/v09-replace-hall-tavares-wesley/cover.png",
-  "video": "docs/marketing/videos/v09-replace-hall-tavares-wesley/knowitball-v09-replace-hall.mp4",
+  "video": "docs/marketing/videos/v09-replace-hall-tavares-wesley/knowitball-v09-replace-hall-motion.mp4",
   "seconds": 55.2,
   "links": [],
   "log": [
-   "2026-11-12 Made from Mikey's Replace-a-player settings and wording. Waiting for Mikey's look."
+   "2026-11-12 Made from Mikey's Replace-a-player settings and wording. Waiting for Mikey's look.",
+   "2026-11-12 Motion version (Mikey): video_replace_motion.html, same layer as the twins (moving backgrounds, badge wallpaper, specks, bobbing faces, circle wipes, ticking numbers, confetti on each option). No zoom."
   ]
  }
 ]

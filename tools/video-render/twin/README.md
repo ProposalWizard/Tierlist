@@ -134,3 +134,5 @@ matched by name + league + club, then takes that year's photo from FUTBIN (a pla
 No login and no faked headers (SoFIFA's own image server refuses plain requests, so it is not used). No match = today's FotMob photo.
 `make_episode.py` uses it for every past season (target, countdown, surprise, twin); "this season" players keep today's photo.
 `"todayFaces": true` in an episode turns it off. Checked on 16 players, 16 right (Salah 17/18 curly hair, Neymar 17/18 blond at PSG).
+
+`video_replace_motion.html` (12 Nov 2026) is the same motion layer on the replace engine, also built by `make_motion_engine.py`; use it with "engine": "video_replace_motion.html".
