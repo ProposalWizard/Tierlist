@@ -4,5 +4,11 @@
       "**": false,
       "main": true
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/admin/patch-notes/media-sync",
+      "schedule": "*/5 * * * *"
+    }
+  ]
 }
