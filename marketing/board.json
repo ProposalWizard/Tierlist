@@ -228,5 +228,22 @@
    "2026-11-10 07 Van Dijk posted to Instagram (knowitballjr).",
    "2026-11-11 All 27 re-rendered with faces from the season shown (201 of 216 faces; the rest are today's photo). Voices reused."
   ]
+ },
+ {
+  "id": "v09-replace-hall-tavares-wesley",
+  "title": "v09 · How do you replace Lewis Hall? Tavares or Wesley",
+  "stage": "check",
+  "owner": "Claude",
+  "updated": "2026-11-12T10:00:00Z",
+  "postOn": null,
+  "line": "Left-backs, 1,800+ minutes, any age/value/league. Ready now: Nuno Tavares (Lazio, 26, €14M, 84%): cheaper and closer to Hall. For the future: Wesley (Roma, 23, €46M, 72%): less like Hall and pricier, but younger with potential.",
+  "script": "docs/marketing/videos/v09-replace-hall-tavares-wesley/script.md",
+  "cover": "docs/marketing/videos/v09-replace-hall-tavares-wesley/cover.png",
+  "video": "docs/marketing/videos/v09-replace-hall-tavares-wesley/knowitball-v09-replace-hall.mp4",
+  "seconds": 55.2,
+  "links": [],
+  "log": [
+   "2026-11-12 Made from Mikey's Replace-a-player settings and wording. Waiting for Mikey's look."
+  ]
  }
 ]

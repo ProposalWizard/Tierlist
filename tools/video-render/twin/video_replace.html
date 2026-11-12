@@ -106,7 +106,7 @@ P.judge=(sc,p,s,t)=>{darkBg();tag();title('THE CLOSEST TWO','Close, but…',ease
     const at=wordT(s,c.at);if(t>=at){const k=back((t-at)/0.4);pill(c.stamp,cx,1060,c.stamp.length>4?40:64,RED,WHITE,-0.08,clamp(k,0,1.2));}});};
 P.table=(sc,p,s,t)=>{darkBg();tag();const pt=wordT(s,sc.pickAt);title('CLOSEST TO '+(META.targetShort||'').toUpperCase(),sc.title.charAt(0).toUpperCase()+sc.title.slice(1)+'.');
   T('AGE',640,440,F(800,22),DIM,'center');T('VALUE',790,440,F(800,22),DIM,'center');T('MATCH',960,440,F(800,22),DIM,'center');
-  sc.rows.forEach((r,i)=>{const a=ease((p-0.1-i*0.12)/0.3);if(a<=0)return;const y=470+i*170,on=i===0&&t>=pt,k=on?back((t-pt)/0.4):0;x.save();x.globalAlpha=a;
+  sc.rows.forEach((r,i)=>{const a=ease((p-0.1-i*0.12)/0.3);if(a<=0)return;const y=470+i*170,on=(r.pick!=null?r.pick:i===0)&&t>=pt,k=on?back((t-pt)/0.4):0;x.save();x.globalAlpha=a;
     x.translate(0,(1-a)*60);if(on){x.translate(540,y+75);x.scale(1+0.04*clamp(k),1+0.04*clamp(k));x.translate(-540,-(y+75));}
     x.fillStyle=on?GOLD:CARD;rr(48,y,984,150,26);x.fill();const fg=on?'#111':WHITE;
     T('#'+(i+1),80,y+96,F(900,44),on?'#111':DIM);face(r.face,220,y+75,56,1,on?'#111':WHITE);badge(r.club,252,y+92,44,1);

@@ -100,6 +100,7 @@ for pid, rs in byp.items():
     z = zmix(rs); d = D.dist(tp, z, w)
     if d >= 99: continue
     allpos.append((d, {**main, '_pct': z, 'fc': feats(D.combine(rs)), 'mins': sum(o['mins_played'] for o in rs), 'seasons': sorted(o['season'] for o in rs)}))
+if EP.get('minMins'): allpos = [x for x in allpos if x[1]['mins'] >= EP['minMins']]   # e.g. 1800 = 20 games' worth over the two seasons
 allpos.sort(key=lambda x: x[0]); NPOS = len(allpos); top = allpos[:EP.get('mapN', 60)]
 def tests(group, n=2000, seed=7):
     rnd = random.Random(seed); wins = collections.Counter()
@@ -192,6 +193,10 @@ first = lambda r: r['name'].split()[0].upper()
 # Mikey, 10 Nov 2026: two options, not one verdict. Option 1 = the closest player of all (ready now);
 # option 2 = the closest aged maxAge and under (one for the future). Age is a choice for the viewer, not a reason to rule a man out.
 MA = EP.get('maxAge', 23); o1 = rows[0]; o2 = pick if pick['name'] != o1['name'] else young[1]
+# Mikey can name the two options ("option1": "Nuno Tavares", "option2": "Wesley"); the data still decides every number said about them
+byname = lambda nm: next(r for r in rows if r['name'] == nm)
+if EP.get('option1'): o1 = byname(EP['option1'])
+if EP.get('option2'): o2 = byname(EP['option2'])
 last = lambda r: r['name'].split()[-1]
 hvs, hvc = money(ti['value'])
 R0 = lambda v: int(v + 0.5)   # round half up, the same as the page's Math.round
@@ -203,9 +208,9 @@ def option(id, r, n, tagline, say_tag, extra=''):
     S[id] = {'type': 'pick', 'face': r['face'], 'club': r['club'], 'flag': r['flag'], 'name': r['name'].upper(), 'team': r['team'], 'age': r['age'], 'value': vc, 'm': r['match'],
              'hall': {'value': hvc, 'v': ti['value'], 'face': tgp['face']}, 'pv': r['value'], 'pill': f"OPTION {n} · {tagline}", 'pillAt': say_tag.upper().split()[0],
              'caveat': (f"ONLY {r['o']['mins']} MINUTES SO FAR" if r['o']['mins'] < 900 else None), 'caveatAt': 'BUT'}
-line('map', f"The closest of them all: {o1['name']}, at {o1['team']}.", hold=0.15, sfx=[["hit", first(o1), 0.7]])
+line('map', (f"The closest of them all: {o1['name']}, at {o1['team']}." if o1 is rows[0] else f"Our ready-made pick: {o1['name']}, at {o1['team']}."), hold=0.15, sfx=[["hit", first(o1), 0.7]])
 S['map'] = {'type': 'map', 'dots': dots, 'hi': [[0, first(o1)]], 'fly': True}
-option('opt1', o1, 1, 'READY NOW', 'The ready-made option.')
+option('opt1', o1, 1, EP.get('opt1Tag', 'READY NOW'), EP.get('opt1Say', 'The ready-made option.'))
 # Hall v option 1, on what makes Hall special (RUL-KIB-008: keep the "him v his replacement" framing, most important stats)
 pf = o1['o']['fc']; cmp4 = [k for k in ranked if pf.get(k) is not None][:4]
 say4 = ", ".join(LAB[k][0] for k in cmp4[:-1]) + " and " + LAB[cmp4[-1]][0]
@@ -216,12 +221,12 @@ S['compare'] = {'type': 'compare', 'kicker': f"{SHORT} v {last(o1)}", 'title': f
                 'b': side(o1), 'rows': [row(k, pf) for k in cmp4], 'at': [LAB[k][0].upper().split()[0] for k in cmp4]}
 line('filter', f"But {SHORT} is only {words(ti['age'])}. So what about {words(MA)} and under?", f"BUT {SHORT.upper()} IS ONLY {ti['age']}|{words(ti['age'])}. SO WHAT ABOUT {MA}|{words(MA)} AND UNDER?", sfx=[["whoosh", "SO", 0.6]])
 S['filter'] = {'type': 'map', 'dots': dots, 'maxAge': MA, 'fadeAt': 'SO', 'title': f"{MA} AND UNDER"}
-ys = [o2] + [r for r in young if r['name'] != o2['name']][:4]
-line('young', f"The closest is {o2['name']}, at {o2['team']}.", hold=0.1, sfx=[["hit", first(o2), 0.7]])
-S['young'] = {'type': 'table', 'rows': [{'name': r['name'], 'face': r['face'], 'club': r['club'], 'age': r['age'], 'value': money(r['value'])[1] if r['value'] else '—', 'm': r['match']} for r in ys],
+ys = young[:5] if o2 in young[:5] else young[:4] + [o2]   # in match order; the chosen one is lit up where he sits
+line('young', EP.get('youngSay') or (f"The closest is {o2['name']}, at {o2['team']}." if o2 is young[0] else f"Our pick for the future: {o2['name']}, at {o2['team']}."), hold=0.1, sfx=[["hit", first(o2), 0.7]])
+S['young'] = {'type': 'table', 'rows': [{'name': r['name'], 'face': r['face'], 'club': r['club'], 'age': r['age'], 'value': money(r['value'])[1] if r['value'] else '—', 'm': r['match'], 'pick': r is o2} for r in ys],
               'title': f"{MA} and under", 'pickAt': first(o2)}
 games = round(o2['o']['mins'] / 90)
-option('opt2', o2, 2, 'FOR THE FUTURE', 'One for the future.', f" But he's only played {words(games)} games' worth of minutes." if o2['o']['mins'] < 900 else '')
+option('opt2', o2, 2, EP.get('opt2Tag', 'FOR THE FUTURE'), EP.get('opt2Say', 'One for the future.'), f" But he's only played {words(games)} games' worth of minutes." if o2['o']['mins'] < 900 else '')
 line('end', f"So: {last(o1)} to do it now, or {last(o2)} for the future. Who would you sign? Follow for more.", hold=0.0)
 S['end'] = {'type': 'end2', 'a': {'face': tgp['face'], 'club': tgp['club'], 'name': SHORT.upper()}, 'title': f"HOW DO YOU REPLACE {SHORT.upper()}?",
             'opts': [{'face': r['face'], 'club': r['club'], 'name': last(r).upper(), 'sub': f"{r['age']} · {money(r['value'])[1]} · {R0(r['match'])}%", 'tag': t_, 'at': last(r).upper()}

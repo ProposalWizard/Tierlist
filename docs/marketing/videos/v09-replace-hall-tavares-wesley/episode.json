@@ -1,0 +1,20 @@
+{
+ "player": "Lewis Hall",
+ "season": "2025/26",
+ "short": "Hall",
+ "from": "Newcastle",
+ "to": "Manchester United",
+ "toId": 10260,
+ "positions": [38, 68],
+ "posWord": "left-back",
+ "maxAge": 23,
+ "minMins": 1800,
+ "seasons": ["2025/26", "2026/27"],
+ "series": "WHO REPLACES HIM?",
+ "option1": "Nuno Tavares",
+ "option2": "Wesley",
+ "opt1Tag": "READY NOW",
+ "opt1Say": "Cheaper, and closer to Hall, so he suits Newcastle better.",
+ "opt2Tag": "FOR THE FUTURE",
+ "opt2Say": "Less like Hall, and pricier, but younger, with real potential."
+}
