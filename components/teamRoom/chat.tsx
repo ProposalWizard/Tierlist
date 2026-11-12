@@ -32,6 +32,8 @@ import {
 } from "@/lib/teamRoom/store";
 import { COMMANDS, askOffer, askedFrom, endOfToday, parseCommand, todayLines, type Command } from "@/lib/teamRoom/asks";
 import { liveStatus } from "@/lib/teamRoom/status";
+import { HealthLines } from "./roomTools";
+import { checkInBody } from "@/lib/teamRoom/today";
 import { Av, BotFace, Linked, PAGE_NAMES, nameOfPage, siteOrigins } from "./bits";
 import { PATCH_META } from "./roomCounts";
 import { patchThread, patchThreadSummary } from "@/lib/teamRoom/patchBot";
@@ -58,7 +60,9 @@ export type ChatView =
 const GENERAL_VIEW: ChatView = { kind: "channel", slug: GENERAL };
 
 /** The chat: messages, then the box to type in. `visible` marks it read and seen. */
-export function ChatThread({ visible = true, autoFocus, jumpTo, view = GENERAL_VIEW, bots = [], threads = false, onThread, onOpenPatch, jumpBot, onPatchThread }: {
+export function ChatThread({ visible = true, autoFocus, jumpTo, view = GENERAL_VIEW, bots = [], threads = false, onThread, onOpenPatch, jumpBot, onPatchThread, emptyLine }: {
+  /** What an empty channel says: what it is for and how to use it, in one line. */
+  emptyLine?: string;
   visible?: boolean; autoFocus?: boolean; jumpTo?: number | null;
   view?: ChatView;
   /** Bot posts for this channel (the patch-notes bot, the jobs bot, rows a bot wrote). */
@@ -176,7 +180,7 @@ export function ChatThread({ visible = true, autoFocus, jumpTo, view = GENERAL_V
         {isDm && s.v3 !== "on" && <V3Note what="Private messages" />}
         {items.length === 0 && !(isDm && s.v3 !== "on") && (
           <p className="tr-muted" style={{ textAlign: "center", marginTop: 30 }}>
-            {isDm ? `No messages with ${dmWith} yet. Only the two of you can read this.` : view.kind === "thread" ? "That message isn't loaded any more." : "No messages yet. Say hello."}
+            {isDm ? `No messages with ${dmWith} yet. Only the two of you can read this.` : view.kind === "thread" ? "That message isn't loaded any more." : emptyLine ?? "No messages yet. Say hello."}
           </p>
         )}
         {items.map((it, i) => {
@@ -401,7 +405,10 @@ function BotRow({ b, now, day, onOpenPatch, onPatchThread }: { b: BotPost; now: 
             {b.archived && <span className="tr-archived" title="Everyone has read it, so it moved here from #general">archived</span>}
             {b.pending && <span className="tr-archived" title="The site posts it within 15 minutes (or when one of us next opens an admin page)">posting…</span>}
           </small>
-          {bug ? <BugCard report={bug} /> : (<>
+          {bug ? <BugCard report={bug} /> : b.bot === "health" ? (<>
+            <p className="tr-bott">{b.title}</p>
+            <HealthLines row={{ body: b.body, meta: b.meta ?? null }} />
+          </>) : (<>
             <p className="tr-bott">{b.everyone && <span className="tr-everyone">@everyone</span>} {b.title}</p>
             {b.body && <p className="tr-botb"><Linked text={b.body} me={me} /></p>}
             {b.mentions && b.mentions.length > 0 && !b.archived && (
@@ -547,7 +554,14 @@ function Composer({ autoFocus, replyTo, onClearReply, view }: { autoFocus?: bool
   const runCommand = async (c: Command): Promise<{ ok: true } | { ok: false; error: string }> => {
     if (c.kind === "show") { said("/show (record your screen for the team) is coming soon. Until then: Admin home → Videos."); return { ok: true }; }
     if (c.kind === "today-show") { setToday(true); return { ok: true }; }
-    if (c.kind === "today-set") { const r = await saveStatus({ text: c.text, clear_at: endOfToday(Date.now()) }); if (r.ok) said(`Status set until midnight: ${c.text}`); return r; }
+    if (c.kind === "today-set") {
+      // /today words: your check-in for the day (a message in #today) and your status until midnight.
+      const sent = await sendMessage(checkInBody(c.text), null, "/admin/team?tab=chat&ch=today");
+      if (!sent.ok) return sent;
+      const r = await saveStatus({ text: c.text, clear_at: endOfToday(Date.now()) });
+      said(`Checked in for today in #today${r.ok ? ", and your status is set until midnight" : ""}: ${c.text}`);
+      return { ok: true };
+    }
     if (c.kind === "todo-open") { window.location.assign(`${TEAM_ROOM.home}?tab=chat&ch=todo`); return { ok: true }; }
     if (c.kind === "todo-add") { const r = await addTask(c.title, s.me); if (r.ok) said("Added to your to-do."); return r; }
     for (const p of c.to) { const r = await sendAsk(p, c.title); if (!r.ok) return r; }

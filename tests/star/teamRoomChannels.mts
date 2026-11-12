@@ -29,10 +29,10 @@ const rows: ChannelRow[] = [
   { slug: "Bad Slug!", name: "x", topic: null, made_by: "Harry", created_at: at(0) },
 ];
 const list = listChannels(rows);
-ok(list.slice(0, 9).map((c) => c.slug).join() === BUILT_IN_CHANNELS.map((c) => c.slug).join(), "the nine presets come first, in order");
+ok(list.slice(0, 10).map((c) => c.slug).join() === BUILT_IN_CHANNELS.map((c) => c.slug).join(), "the ten presets come first, in order");
 ok(list.find((c) => c.slug === "ideas")?.name === "Ideas Lab" && list.find((c) => c.slug === "ideas")?.tool === "ideas", "a rename keeps the channel's tool");
-ok(list.slice(9).map((c) => c.slug).join() === "aaa,3d-world", "new channels follow, oldest first; a bad slug is left out");
-ok(listChannels([]).length === 9 && listChannels([]).map((c) => c.slug).join() === "general,ideas,todo,bugs,health,patch-notes,connectors,marketing,context", "no rows: just the nine presets, in the plan's order");
+ok(list.slice(10).map((c) => c.slug).join() === "aaa,3d-world", "new channels follow, oldest first; a bad slug is left out");
+ok(listChannels([]).length === 10 && listChannels([]).map((c) => c.slug).join() === "general,today,ideas,todo,bugs,health,patch-notes,connectors,marketing,context", "no rows: just the ten presets, in order (#today added 12 Nov 2026)");
 ok(slugify("Match Engine!") === "match-engine" && slugify("#  ") === "" && slugify("x".repeat(40)).length === 30, "slugify");
 ok(cleanName("##  big   room ") === "big room", "a name is tidied");
 ok(newChannelSlug("Bugs", list).ok === false && newChannelSlug("", list).ok === false, "a taken or empty name is refused");

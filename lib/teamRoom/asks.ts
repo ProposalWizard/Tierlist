@@ -76,7 +76,7 @@ export const acceptedTitle = (t: Pick<TeamTask, "title">) => askTitle(t);
 
 export const COMMANDS = [
   { cmd: "/show", hint: "record your screen for the team", soon: true },
-  { cmd: "/today", hint: "what everyone is on · /today words sets your status until midnight", soon: false },
+  { cmd: "/today", hint: "what everyone is on · /today words checks you in for today (in #today) and sets your status until midnight", soon: false },
   { cmd: "/todo", hint: "/todo words adds a job for you · /todo @Mikey words asks Mikey", soon: false },
 ] as const;
 

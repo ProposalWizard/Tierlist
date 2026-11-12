@@ -11,7 +11,7 @@ import { ideasByPerson, ideasByStage, votersOf, type IdeaStage, type TeamIdea } 
 import { addIdea, deleteIdea, moveIdea, toggleVote, useTeamRoom } from "@/lib/teamRoom/store";
 import { Av, NoteCount, NotesThread, RoomGate } from "./parts";
 
-const STAGES: { key: IdeaStage; name: string }[] = [{ key: "idea", name: "Idea" }, { key: "doing", name: "Doing" }, { key: "done", name: "Done" }];
+const STAGES: { key: IdeaStage; name: string }[] = [{ key: "idea", name: "Ideas" }, { key: "doing", name: "Doing" }, { key: "done", name: "Done" }];
 const VIEW_KEY = "kib-team-ideas-view";
 
 export default function IdeasBoard() {
@@ -88,10 +88,10 @@ function Dots({ ideaId }: { ideaId: number }) {
   const on = votersOf(s.votes, ideaId);
   const mine = !!s.me && on.includes(s.me);
   return (
-    <button className="tr-votes" onClick={(e) => { e.stopPropagation(); toggleVote(ideaId); }}
-      title={`${on.length ? `Wanted by ${on.join(", ")}` : "Nobody has said they want it yet"}. Tap to ${mine ? "take your dot back" : "say you want it"}.`}
-      aria-label={mine ? "Take your vote back" : "I want this"} aria-pressed={mine}>
-      {TEAM_PEOPLE.map((p) => <i key={p} className={`tr-v ${p}${on.includes(p) ? " on" : ""}`} />)}
+    <button className="trh-vote" onClick={(e) => { e.stopPropagation(); toggleVote(ideaId); }}
+      title={`${on.length ? `👍 from ${on.join(", ")}` : "Nobody has voted yet"}. Tap to ${mine ? "take your vote back" : "vote for it"}.`}
+      aria-label={mine ? `Take your vote back (${on.length} so far)` : `Vote for this (${on.length} so far)`} aria-pressed={mine}>
+      <span aria-hidden>👍</span> {on.length}
     </button>
   );
 }

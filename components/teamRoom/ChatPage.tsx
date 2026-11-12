@@ -28,14 +28,14 @@ import { stamp, tasksFor } from "@/lib/teamRoom/logic";
 import { quoteLine } from "@/lib/teamRoom/extras";
 import { pushedFor } from "@/lib/teamRoom/jobs";
 import {
-  GENERAL, PATCH_CHANNEL, channelOf, listChannels, parentOf, pinsIn, roomUrl,
+  GENERAL, PATCH_CHANNEL, channelHow, channelOf, listChannels, parentOf, pinsIn, roomUrl, tabFor, tabsFor,
   type BotPost, type Channel, type RoomPlace,
 } from "@/lib/teamRoom/channels";
 import { addChannel, renameChannel, setChatPageOpen, setPinned, useTeamRoom } from "@/lib/teamRoom/store";
 import { Av, ChatThread, RoomGate } from "./parts";
 import { V3Note } from "./chat";
 import { useBotPosts, useRoomCounts } from "./roomCounts";
-import { TOOL_TAB, ToolPanel } from "./roomTools";
+import { ChannelPanel } from "./roomTools";
 import { ActivityPanel, DmsPanel, JumpBox, LaterPanel } from "./roomPanels";
 import { MeHome, NotifyAsk } from "./roomMe";
 import { BoardPanel } from "./roomBoard";
@@ -55,7 +55,8 @@ import "./roomLook.css";
 import { setLookPref, useRoomLook } from "./roomLook";
 import { BotFace } from "./bits";
 
-export type RoomTab = "messages" | "tool" | "pins";
+/** A channel tab's id (lib/teamRoom/channels.ts CHANNEL_TABS); "tool" = the channel's own first tab. */
+export type RoomTab = string;
 export interface RoomStart { place: RoomPlace; m: number | null; t: number | null; v: string | null; tab?: RoomTab; pn?: string | null; bot?: string | null; view?: string | null }
 /** A screen in the middle that is not a channel or a DM. */
 /** "you" is Me (your own home); "board" is the Team board tab (12 Nov 2026). */
@@ -143,7 +144,8 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
   const openPatchThread = useCallback((v: string) => { setPatchT(v); setThread(null); }, []);
   const [jump, setJump] = useState<number | null>(first.m && !startThread ? first.m : startThread);
   const [jumpBot] = useState<string | null>(first.v ? `patch:${first.v}` : null);
-  const [tab, setTab] = useState<RoomTab>(first.tab ?? "messages");
+  // A link to a message, thread or patch note opens Messages; anything else opens the channel's own first tab.
+  const [tab, setTab] = useState<RoomTab>(first.m || first.t || first.pn || first.v ? "messages" : first.tab ?? "tool");
   const [drawer, setDrawer] = useState(false);
   const [jumper, setJumper] = useState(false);
   // Drag widths live here while dragging, saved when the drag settles.
@@ -188,7 +190,7 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
   useEffect(() => { setViewing(place ? (place.kind === "dm" ? dmKey(place.with) : place.slug) : null); return () => setViewing(null); }, [place]);
 
   const closeDrawer = () => setDrawer(false);
-  const go = (w: Where) => { setWhere(w); setThread(null); setPatchT(null); setTab("messages"); setDrawer(false); setJump(null); };
+  const go = (w: Where) => { setWhere(w); setThread(null); setPatchT(null); setTab("tool"); setDrawer(false); setJump(null); };
   const goTo = useCallback((id: number) => {
     const m = s.messages.find((x) => x.id === id);
     if (!m) return;
@@ -236,7 +238,9 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
     if (drawer && dx < -60) setDrawer(false);
   };
 
-  const toolName = channel ? TOOL_TAB[channel.tool] : null;
+  const tabs = channel ? tabsFor(channel) : [];
+  // The tab on screen: the one asked for when this channel has it, else the channel's first.
+  const onTab = channel ? tabFor(channel, tab) : "messages";
   const pins = slug ? pinsIn(s.messages, slug) : [];
   const chBots = channel ? botsIn(bots, channel.slug) : 0;
   const forYou = counts.mentions;
@@ -288,22 +292,21 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
           {channel && <ChannelMenu channel={channel} />}
           <span className={`tr-live${s.live ? " on" : ""}`} title={s.live ? "Live" : "Live link off: checking once a minute"} />
         </header>
-        {channel && (
+        {channel && tabs.length > 1 && (
           <nav className="trr-tabs" aria-label={`#${channel.name}`}>
-            <button aria-pressed={tab === "messages"} onClick={() => setTab("messages")}>Messages</button>
-            {toolName && <button aria-pressed={tab === "tool"} onClick={() => setTab("tool")}>{toolName}</button>}
-            <button aria-pressed={tab === "pins"} onClick={() => setTab("pins")}>📌 Pinned{pins.length ? ` ${pins.length}` : ""}</button>
+            {tabs.map((t) => <button key={t.id} data-tab={t.id} aria-pressed={onTab === t.id} onClick={() => setTab(t.id)}>{t.name}{t.id === "pins" && pins.length ? ` ${pins.length}` : ""}</button>)}
           </nav>
         )}
-        <div className="trw-body" data-tab={channel ? tab : view || botPage ? "tool" : "messages"}>
-          {channel?.slug === GENERAL && tab === "messages" && <WelcomePin />}
-          {place && (!channel || tab === "messages") && (
+        <div className="trw-body" data-tab={channel ? (onTab === "messages" ? "messages" : onTab === "pins" ? "pins" : "tool") : view || botPage ? "tool" : "messages"}>
+          {channel?.slug === GENERAL && onTab === "messages" && <WelcomePin />}
+          {place && (!channel || onTab === "messages") && (
             <ChatThread key={channel ? `c-${channel.slug}` : `d-${(place as { with: string }).with}`}
               view={channel ? { kind: "channel", slug: channel.slug } : { kind: "dm", with: (place as { with: TeamPerson }).with }}
+              emptyLine={channel ? channelHow(channel) : undefined}
               threads bots={bots} onThread={openThread} onPatchThread={openPatchThread} onOpenPatch={onOpenPatch} jumpTo={jump} jumpBot={channel && bots.some((b) => b.key === jumpBot && b.channel === channel.slug) ? jumpBot : null} />
           )}
-          {channel && tab === "tool" && <ToolPanel tool={channel.tool} onOpenPatch={onOpenPatch} />}
-          {channel && tab === "pins" && (
+          {channel && onTab !== "messages" && onTab !== "pins" && <ChannelPanel channel={channel} tab={onTab} onOpenPatch={onOpenPatch} onBot={(bot) => go({ kind: "bot", bot })} />}
+          {channel && onTab === "pins" && (
             <div className="trw-pad">
               {pins.length === 0 ? <p className="tr-muted">Nothing pinned in #{channel.name}. Hover a message (tap on a phone), then 📌 Pin.</p> : pins.map((m) => (
                 <div key={m.id} className="tr-pin">

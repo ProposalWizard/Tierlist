@@ -86,7 +86,7 @@
 .trh-week { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
 .trh-week th, .trh-week td { border: 1px solid var(--ash-line); padding: 6px 8px; vertical-align: top; text-align: left; overflow-wrap: anywhere; }
 .trh-week th { font-size: 12px; color: var(--ash-ink2); background: var(--ash-panel2); }
-.trh-week th:first-child, .trh-week td:first-child { width: 58px; white-space: nowrap; color: var(--ash-ink2); font-weight: 700; }
+.trh-week th:first-child, .trh-week td:first-child { width: 64px; white-space: nowrap; color: var(--ash-ink2); font-weight: 700; }
 .trh-week td { background: var(--ash-panel); }
 .trh-week tr.today td { background: var(--ash-accent-soft); }
 .trh-week tr.future td { color: var(--ash-ink3); background: none; }
