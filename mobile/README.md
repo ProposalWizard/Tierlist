@@ -1,6 +1,6 @@
-# The packed phone app (Road to Ballon d'Or)
+# The packed phone app (Road to the Golden Ball)
 
-Mikey, 5 Nov 2026: the app is **only Road to Ballon d'Or**, with **everything
+Mikey, 5 Nov 2026: the app is **only Road to the Golden Ball**, with **everything
 inside the download**. It plays with no signal, saves on the phone, has no
 sign-in and no casino. The website is not changed by any of this.
 

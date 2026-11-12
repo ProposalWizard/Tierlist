@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const MESSAGES: Record<Exclude<ClaimOutcome, "joined">, { title: string; body: string }> = {
-  already: { title: "You're already a tester", body: "Nothing to do. The developer tools are in Road to Ballon d'Or → Settings." },
+  already: { title: "You're already a tester", body: "Nothing to do. The developer tools are in Road to the Golden Ball → Settings." },
   off: { title: "This link is switched off", body: "Ask the Knowitball team for a new one." },
   unknown: { title: "This link doesn't work", body: "Check you copied all of it, or ask the Knowitball team for a new one." },
   "not-ready": { title: "Tester links aren't switched on yet", body: "Try again later, or ask the Knowitball team." },
@@ -96,7 +96,7 @@ export default async function TesterLinkPage({ params }: { params: { code: strin
 
   return (
     <Card title="Become a tester">
-      <p>You&apos;ll get the developer tools in Road to Ballon d&apos;Or (Settings → Developer tab) and the team&apos;s test pages. Any career you use the tools on is marked &quot;Tester save&quot;.</p>
+      <p>You&apos;ll get the developer tools in Road to the Golden Ball (Settings → Developer tab) and the team&apos;s test pages. Any career you use the tools on is marked &quot;Tester save&quot;.</p>
       <ClaimButton code={code} />
     </Card>
   );

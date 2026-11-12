@@ -17,7 +17,7 @@ interface GameLink {
 
 const GAMES: GameLink[] = [
   { name: "Home",                description: "Browse all games & news",                 href: "/"           },
-  { name: "Road to Ballon d'Or", description: "Live a career and win the world's greatest award", href: GAME_PATH, beta: true },
+  { name: "Road to the Golden Ball", description: "Live a career and win the world's greatest award", href: GAME_PATH, beta: true },
   { name: "Tierlists",           description: "Create & play drag-and-drop tierlists",    href: "/tierlists"  },
   { name: "PL Draft",            description: "Build a dream XI from random FIFA rosters", href: "/draft"     },
   { name: "Ten-A-Ball",          description: "Football trivia — ten questions, ten lives", href: "/tenable"  },

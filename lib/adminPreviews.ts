@@ -45,4 +45,21 @@ export const ADMIN_PREVIEW: Record<string, string> = {
   "/admin/star-xp": "/admin/previews/admin-star-xp.webp",
   "/star-store-dev": "/admin/previews/star-store-dev.webp",
   "/star-wallet-dev": "/admin/previews/star-wallet-dev.webp",
+  // Added 12 Nov 2026 (Harry, 19:04: "some of them have images on the front,
+  // some of them don't"): every Career screens card now has a still. Taken on a
+  // local test build at 1440×900. Pages still without one (they need a sign-in
+  // to show anything) get the same drawn tile on their group page.
+  "/star-dev": "/admin/previews/star-dev.webp",
+  "/star-guest-dev": "/admin/previews/star-guest-dev.webp",
+  "/star-awards-night-dev": "/admin/previews/star-awards-night-dev.webp",
+  "/star-goals-gallery-dev": "/admin/previews/star-goals-gallery-dev.webp",
+  "/star-season-reel-dev": "/admin/previews/star-season-reel-dev.webp",
+  "/admin/social": "/admin/previews/admin-social.webp",
+  "/star-aerials-dev": "/admin/previews/star-aerials-dev.webp",
+  "/star-live-chances-dev": "/admin/previews/star-live-chances-dev.webp",
+  "/star-weather-dev": "/admin/previews/star-weather-dev.webp",
+  "/star-shootout-dev": "/admin/previews/star-shootout-dev.webp",
+  "/star-pc-match-dev": "/admin/previews/star-pc-match-dev.webp",
+  "/star-3d-bench-dev": "/admin/previews/star-3d-bench-dev.webp",
+  "/admin/motion-refs": "/admin/previews/admin-motion-refs.webp",
 };

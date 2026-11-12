@@ -44,7 +44,7 @@ export const TEAM_ROOM = {
   /** Chat bubble shows on these pages (plus every page in the admin list). */
   bubblePrefixes: ["/admin"],
   /** …but never on these (the game itself, the home page). */
-  bubbleNever: ["/", "/star-dev", "/road-to-ballon-dor"],
+  bubbleNever: ["/", "/star-dev", "/road-to-ballon-dor", "/road-to-the-golden-ball"],
   /**
    * Jobs that arrive by push (Harry, 20 Oct 2026: "just use pushes"). The
    * site reads `path` from GitHub on each of `branches`, about once a minute,

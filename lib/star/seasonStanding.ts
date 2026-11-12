@@ -76,10 +76,10 @@ export function seasonStanding(
 
   // ── The Ballon d'Or ──
   if (userWonBallonDor) {
-    gain(FAME_EVENTS.ballonDorWin, "won the Ballon d'Or");
+    gain(FAME_EVENTS.ballonDorWin, "won the Golden Ball");
   } else {
     const rank = computeBallonDorShortlist(career).playerRank;
-    if (rank === 2 || rank === 3) gain(FAME_EVENTS.ballonDorTopThree, `finished ${rank === 2 ? "2nd" : "3rd"} in the Ballon d'Or`);
+    if (rank === 2 || rank === 3) gain(FAME_EVENTS.ballonDorTopThree, `finished ${rank === 2 ? "2nd" : "3rd"} in the Golden Ball`);
   }
 
   // ── A season mostly on the bench ──

@@ -31,7 +31,15 @@ class SeasonFaces:
         tp = os.path.join(data_dir, 'twin_teams.json'); self.teams = teams or ({k: v.get('name') for k, v in json.load(open(tp)).items()} if os.path.exists(tp) else {})
         cp = os.path.join(data_dir, '..', 'season_faces.json'); self.cache_path = cp; self.cache = json.load(open(cp)) if os.path.exists(cp) else {}
     def match(self, name, season, league, team_id=None):
-        fy = int(season[:4]) + 1; cands = self.by.get((fy, league), [])
+        fy = int(season[:4]) + 1
+        # EA ids never change, so when our table misses him that year (it has gaps, e.g. Kroos in 2023/24), the nearest year's row
+        # in the same league gives the id, then any league; the photo is still that season's
+        for yr in sorted({fy} | {y for (y, lg) in self.by}, key=lambda y: (abs(y - fy), y)):
+            for lg in ([league] if yr != fy else [league]) + ([] if abs(yr - fy) < 3 else [l for (y, l) in self.by if y == yr and l != league]):
+                r = self._match(name, self.by.get((yr, lg), []), team_id)
+                if r: return r
+        return None
+    def _match(self, name, cands, team_id=None):
         full = norm(name); club = norm(self.teams.get(str(team_id), '') or '')
         best = None
         for r in cands:

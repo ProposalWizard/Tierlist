@@ -192,7 +192,7 @@ export function compareRows(a: CareerOverviewData, b: CareerOverviewData): Compa
     { label: "Goals a game", a: a.totals.goalsPerGame, b: b.totals.goalsPerGame, show: n => n.toFixed(2) },
     { label: "Trophies", a: a.totals.trophies, b: b.totals.trophies },
     { label: "League titles", a: a.totals.leagueTitles, b: b.totals.leagueTitles },
-    { label: "Ballon d'Or", a: a.totals.ballonDors, b: b.totals.ballonDors },
+    { label: "Golden Ball", a: a.totals.ballonDors, b: b.totals.ballonDors },
     { label: "Best season (goals)", a: peak(a), b: peak(b) },
     { label: "Caps", a: a.totals.caps, b: b.totals.caps },
     { label: "Clubs", a: a.clubs.length, b: b.clubs.length },

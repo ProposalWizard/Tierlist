@@ -27,7 +27,7 @@ export interface CabinetSlot {
 
 /** The big ones, most prestigious first: always in the cabinet, won or not. */
 export const CABINET_TARGETS = [
-  "Ballon d'Or", "World Cup", "Champions League", "Premier League", "Europa League",
+  "Golden Ball", "World Cup", "Champions League", "Premier League", "Europa League",
   "FA Cup", "Golden Boot", "Player of the Season", "League Cup", "Player of the Month",
   "Championship", "Community Shield",
 ];
@@ -40,7 +40,7 @@ const OTHERS = [
 ];
 
 const SHAPE: Record<string, TrophyShape> = {
-  "Ballon d'Or": "ball",
+  "Golden Ball": "ball",
   "World Cup": "globe",
   "Champions League": "jug",
   "Europa League": "jug",
@@ -74,7 +74,7 @@ export function winsOf(career: Pick<CareerState, "trophies" | "awards" | "ballon
   for (const t of career.trophies ?? []) add(t.competition, `${t.competition}|${t.season}`);
   for (const a of career.awards ?? []) add(a.kind, `${a.kind}|${a.season}${a.week !== undefined ? `|w${a.week}` : ""}`);
   const bd = career.ballonDorWins ?? 0;
-  if (bd > (n.get("Ballon d'Or") ?? 0)) n.set("Ballon d'Or", bd);
+  if (bd > (n.get("Golden Ball") ?? 0)) n.set("Golden Ball", bd);
   return n;
 }
 

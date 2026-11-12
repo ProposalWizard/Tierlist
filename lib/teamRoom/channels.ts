@@ -64,7 +64,7 @@ export const BUILT_IN_CHANNELS: readonly Channel[] = [
   { slug: "ideas", name: "ideas", topic: "New ideas, votes and where each one is", tool: "ideas", builtIn: true },
   { slug: JOBS_CHANNEL, name: "todo", topic: "Jobs for each of us: typed here or pushed in team/jobs.json", tool: "jobs", builtIn: true },
   { slug: BUGS_CHANNEL, name: "bugs", topic: "Players' bug reports post themselves here", tool: "bugs", builtIn: true },
-  { slug: "health", name: "health", topic: "Is the site well: a morning post once the Health bot exists", tool: "none", builtIn: true },
+  { slug: "health", name: "health", topic: "Is the site well: the Health bot posts the limits at 8am and any failed backup", tool: "none", builtIn: true },
   { slug: PATCH_CHANNEL, name: "patch-notes", topic: "Every patch note as it ships, with who has read it", tool: "patches", builtIn: true },
   { slug: "connectors", name: "connectors", topic: "Talk about the services we connect to (Supabase, Vercel, Higgsfield…)", tool: "none", builtIn: true },
   { slug: "marketing", name: "marketing", topic: "Videos: the Studio, uploads and the production board", tool: "marketing", builtIn: true },
@@ -273,7 +273,7 @@ export interface BotPost {
 /** A row a future bot (a Claude routine) wrote into team_bot_posts with the site's own key. */
 export interface BotRow { id: number; bot: string; channel: string; title: string; body: string; url: string | null; everyone: boolean; created_at: string; meta?: Record<string, unknown> | null }
 
-export const BOT_NAMES: Record<string, string> = { "patch-notes": "Patch notes bot", jobs: "Jobs bot", bug: "Bug bot" };
+export const BOT_NAMES: Record<string, string> = { "patch-notes": "Patch notes bot", jobs: "Jobs bot", bug: "Bug bot", health: "Health bot" };
 export const botName = (bot: string) => BOT_NAMES[bot] ?? `${bot.replace(/[-_]+/g, " ").replace(/^\w/, (c) => c.toUpperCase())} bot`;
 
 /** "Harry's patch notes: B14 Running" → "B14 Running". */

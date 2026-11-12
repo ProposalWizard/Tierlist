@@ -192,11 +192,11 @@ function BallonDorInner({ career, onContinue, startAt, result }: Props) {
           <div className="relative mx-auto mb-5 grid h-40 w-40 place-items-center">
             <Rays color="#fde68a" size={300} />
             <div className="kit-trophy-in relative" style={{ filter: "drop-shadow(0 0 30px rgba(251,191,36,0.55))" }}>
-              <TrophyImage name="Ballon d'Or" height={130} fallback="🏅" />
+              <TrophyImage name="Golden Ball" height={130} fallback="🏅" />
             </div>
           </div>
           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-400/80">Ceremony</p>
-          <h1 className="kit-text-shine mt-2 pr-1 text-[42px] font-black italic tracking-tight" style={{ backgroundImage: "linear-gradient(100deg,#fde68a 20%,#ffffff 45%,#fbbf24 60%,#fde68a 80%)", filter: "drop-shadow(0 3px 0 rgba(0,0,0,.5))" }}>Ballon d&apos;Or</h1>
+          <h1 className="kit-text-shine mt-2 pr-1 text-[42px] font-black italic tracking-tight" style={{ backgroundImage: "linear-gradient(100deg,#fde68a 20%,#ffffff 45%,#fbbf24 60%,#fde68a 80%)", filter: "drop-shadow(0 3px 0 rgba(0,0,0,.5))" }}>Golden Ball</h1>
           <p className="mt-2 text-sm font-bold text-amber-300">Season {career.season}</p>
         </div>
       </Backdrop>
@@ -214,7 +214,7 @@ function BallonDorInner({ career, onContinue, startAt, result }: Props) {
               <Shine trigger={1} />
               <p className="text-[10px] font-black uppercase tracking-widest text-amber-300">Nominated</p>
               <p className="mt-2 text-2xl font-black text-white">{career.player.firstName} {career.player.lastName}</p>
-              <p className="mt-1 text-xs font-bold text-amber-300">Ballon d&apos;Or Season {career.season}</p>
+              <p className="mt-1 text-xs font-bold text-amber-300">Golden Ball Season {career.season}</p>
             </div>
           ) : (
             <div className="kit-card kit-slam px-6 py-8">
@@ -290,7 +290,7 @@ function BallonDorInner({ career, onContinue, startAt, result }: Props) {
         {revealStep >= 1 && winner.isPlayer && <Confetti />}
         <div className="relative z-10 w-full space-y-5">
           <div className="mb-1 text-center">
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-400/70">Ballon d&apos;Or {career.season}</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-400/70">Golden Ball {career.season}</p>
             <h2 className="mt-1 text-lg font-black text-white">
               {revealStep === 0 ? "The envelope is opened…" : "🏅 The Winner Is…"}
             </h2>
@@ -326,8 +326,8 @@ function BallonDorInner({ career, onContinue, startAt, result }: Props) {
             <>
               <Rays color="#fde68a" size={280} className="top-[38%]" />
               <Burst colors={["#fde047", "#fbbf24", "#ffffff", "#f59e0b"]} count={26} className="left-1/2 top-[35%]" />
-              <div className="kit-trophy-in relative mx-auto w-fit"><TrophyImage name="Ballon d'Or" height={96} fallback="🏅" /></div>
-              <h2 className="relative mt-2 text-xl font-black text-amber-300">Ballon d&apos;Or Winner</h2>
+              <div className="kit-trophy-in relative mx-auto w-fit"><TrophyImage name="Golden Ball" height={96} fallback="🏅" /></div>
+              <h2 className="relative mt-2 text-xl font-black text-amber-300">Golden Ball Winner</h2>
               <p className="relative mt-2 text-xs text-white/80">History will remember this season.</p>
             </>
           ) : playerNominated ? (
@@ -440,7 +440,7 @@ function Backdrop({ children }: { children: React.ReactNode }) {
 function Header({ season, title }: { season: number; title: string }) {
   return (
     <div className="sticky top-0 z-10 -mx-3 border-b border-amber-300/15 bg-[#070b16]/85 px-3 py-3.5 text-center backdrop-blur">
-      <p className="text-[9px] font-black uppercase tracking-[0.4em] text-amber-400/70">Ballon d&apos;Or Season {season}</p>
+      <p className="text-[9px] font-black uppercase tracking-[0.4em] text-amber-400/70">Golden Ball Season {season}</p>
       <h2 className="mt-0.5 text-[15px] font-black uppercase tracking-wide text-white">{title}</h2>
     </div>
   );
@@ -533,10 +533,10 @@ function WinnerCard({ entry }: { entry: BallonDorEntry }) {
       <Shine trigger={1} />
       <div className="relative mx-auto w-fit"><Face image={entry.image} name={entry.name} club={entry.club} isYou={entry.isPlayer} size={84} ring={entry.isPlayer ? "border-amber-300" : "border-amber-400/60"} /></div>
       <div className="relative mx-auto mt-3 w-fit">
-        <TrophyImage name="Ballon d'Or" height={46} fallback="🏅" />
+        <TrophyImage name="Golden Ball" height={46} fallback="🏅" />
       </div>
       <p className="relative mt-1 text-2xl font-black leading-tight text-amber-300" style={{ textShadow: "0 0 16px rgba(251,191,36,.45)" }}>{entry.name}</p>
-      <p className="mt-1 text-sm font-bold text-white/90">has won the Ballon d&apos;Or</p>
+      <p className="mt-1 text-sm font-bold text-white/90">has won the Golden Ball</p>
       <div className="mt-2 flex items-center justify-center gap-1.5">
         <ClubBadge club={entry.club} size={16} />
         <p className="text-xs font-bold text-white/80">{shortClub(entry.club)}</p>

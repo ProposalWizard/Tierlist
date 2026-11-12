@@ -82,13 +82,38 @@ export const ADMIN_GUIDES = {
   // ════════════════════════════════════════════════════════════════════
 
   "/admin": {
-    title: "Admin Dashboard",
-    what: "Run the live site's content: tierlists, categories, vote tierlists, blind rankings, the daily games, objectives, cards and feedback. Since 20 Oct 2026 Admin in the site's top menu opens the Team board (the admin's home), not this page; reach this one from Website games → Tierlists.",
+    title: "Admin home",
+    what: "The front of the admin: one big tile per area (Team, Road to the Golden Ball, Website games, Studio, Marketing, Videos) and a small panel of what changed. Admin in the site's menu, the KIB Admin app and every back arrow inside the admin end up here. Testers see only their tiles (no Team, no Marketing).",
+    buttons: [
+      { group: "Tiles", items: [
+        ["Team", "Opens the Team room (channels, DMs). Admins only."],
+        ["Team board / Patch notes (under Team)", "Open the Team board, or the Patch notes, straight away."],
+        ["Road to the Golden Ball · Website games · Studio · Marketing", "Open that game's own home, with its groups. The number is how many pages it has that you can open. Marketing is admins only."],
+        ["Videos", "The screen recorder: record your screen and voice, straight to Drive."],
+      ] },
+      { group: "What changed (admins only)", items: [
+        ["The dot and line", "Green: the live site is up to date. Amber: a new version is going out now. Red: the last deploy failed (the site keeps running the version before). Read from GitHub about once a minute."],
+        ["The rows", "The last four pushes from Harry, Mikey and Leo (merges left out), newest first."],
+        ["Team board ›", "The full picture: every push, pull request and patch note."],
+      ] },
+      { group: "Around the page", items: [
+        ["← (top left)", "Here only, it leaves the admin for the site. On every other admin page the back arrow leads back towards this page."],
+        ["Admin home (first line of the side menu)", "This page, from any admin page."],
+        ["Back to Knowitball (bottom of the side menu)", "Leaves the admin for the site."],
+      ] },
+    ],
+    saving: ["Nothing. This page only links to the others."],
+    inGame: ["Nowhere. This is the front door to the tools."],
+    dev: "app/admin/page.tsx (who may open it), app/admin/AdminHub.tsx, app/admin/adminHub.css · lib/adminRegistry.ts ADMIN_HUB, adminHomeFor, backFor · /api/admin/team (what changed) · app/admin/home/page.tsx (old front door, now also sends here)",
+  },
+  "/admin/site-content": {
+    title: "Site content",
+    what: "Run the live site's content: tierlists, categories, vote tierlists, blind rankings, the daily games, objectives, cards and feedback. This page was /admin until 12 Nov 2026; /admin is now the admin home. Reach it from Website games → Tierlists.",
     buttons: [
       {
         group: "Top of the page",
         items: [
-          ["🏅 Ballon d'Or Beta", "Opens the admin-only Ballon d'Or career game."],
+          ["🏅 Golden Ball Beta", "Opens the admin-only Golden Ball career game."],
           ["⚽ Scrape Data", "Opens Scrape / Import (player data from SoFIFA)."],
           ["👥 Players DB", "Opens the Players database editor."],
           ["Export Backup", "Downloads a JSON copy of all tierlist data to your computer. Changes nothing."],
@@ -203,8 +228,8 @@ export const ADMIN_GUIDES = {
         ["Your saves on this device", "A real save from this browser. It is only read: retiring here retires a copy, never the save."],
       ] },
       { group: "The screens, in order", items: [
-        ["1. After season 19: final season", "The warning after the season-19 Ballon d'Or night, before the transfer window. Continue comes back here."],
-        ["2. After season 20: the final whistle", "The end after the season-20 Ballon d'Or night. Hang them up opens the career overview."],
+        ["1. After season 19: final season", "The warning after the season-19 Golden Ball night, before the transfer window. Continue comes back here."],
+        ["2. After season 20: the final whistle", "The end after the season-20 Golden Ball night. Hang them up opens the career overview."],
         ["3. The career overview", "The end-of-career screen, as in the game. Flip its seven pages with the arrows at the top, or swipe."],
         ["Hall of Fame / New career / Menu", "The bar under the overview, as in the game. Here: Hall of Fame opens the made-up Hall; the other two come back here."],
         ["4. The Hall of Fame", "One made-up career of each shape. Tap one for its overview. Remove here only goes back: nothing is stored."],
@@ -219,12 +244,12 @@ export const ADMIN_GUIDES = {
         ["Full time (made-up 4–3)", "The farewell's last screen, with a made-up score. Hang them up opens the overview with the farewell line on it."],
         ["The match itself", "Not here: it is the real match. In the game, Dev Skip to the end of season 20, then Hang them up."],
       ] },
-      { group: "The Ballon d'Or night", items: [
-        ["You win · 3D / You come 2nd · 3D", "The ceremony as the game shows it (Settings → Look → Ballon d'Or night: New): the host at his lectern, the final three walk up one by one as he calls each name, \"And the winner is…\", the name, the golden ball over him, confetti, then your place. Skip › goes to the result page."],
+      { group: "The Golden Ball night", items: [
+        ["You win · 3D / You come 2nd · 3D", "The ceremony as the game shows it (Settings → Look → Golden Ball night: New): the host at his lectern, the final three walk up one by one as he calls each name, \"And the winner is…\", the name, the golden ball over him, confetti, then your place. Skip › goes to the result page."],
         ["Not in the top three (7th) · 3D", "The shorter night: the three walk up together, the winner is named, then \"You finished 7th\"."],
         ["… · drawn", "What a phone that can't run 3D sees: the same night on a drawn stage."],
         ["The result page after it", "Your season, the winner and the top ten, as after the ceremony. Continue comes back here."],
-        ["Old (the countdown cards)", "The Ballon d'Or screen as it was (Settings → Look → Ballon d'Or night: Old)."],
+        ["Old (the countdown cards)", "The Golden Ball screen as it was (Settings → Look → Golden Ball night: Old)."],
       ] },
       { group: "Season awards", items: [
         ["Season awards (last season)", "The awards screen after a season: the trophies, the Golden Boot and the other awards, and the Team of the Season, worked out from the picked career's last season. Each face is a headshot shot from the 3D model (the drawn head shows until it is made). Continue comes back here."],
@@ -239,15 +264,15 @@ export const ADMIN_GUIDES = {
     inGame: [
       "Every screen here is in the game. The warning shows after season 19, the final whistle after season 20 (a career is 20 seasons).",
       "Hang them up on the final whistle opens the farewell invite (once per career), then the overview.",
-      "The Ballon d'Or night is shown at the end of every season (New: the ceremony, then the result page; Old: the countdown cards).",
+      "The Golden Ball night is shown at the end of every season (New: the ceremony, then the result page; Old: the countdown cards).",
       "The overview replaced the old end screen. The Hall of Fame is on the title screen. All seasons is Stats → All seasons (Settings → Look → All seasons page: New | Old).",
       "Share link and Compare: on the end screen and in the Hall of Fame. A shared career opens at /legend/CODE, no sign-in.",
     ],
-    dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts, the ovation ovation.ts, ovation3d.ts, ovationLook.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts; the Ballon d'Or night components/star/BallonDorNight.tsx, lib/star/ballonDorNight.ts, ballonDor3d.ts, ballonDorNightLook.ts; the season awards components/star/SeasonAwardsScreen.tsx (lib/star/seasonAwards.ts computeSeasonAwardStats); the faces on the award cards components/star/Headshot3D.tsx, lib/star/headshot3d/.",
+    dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts, the ovation ovation.ts, ovation3d.ts, ovationLook.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts; the Golden Ball night components/star/BallonDorNight.tsx, lib/star/ballonDorNight.ts, ballonDor3d.ts, ballonDorNightLook.ts; the season awards components/star/SeasonAwardsScreen.tsx (lib/star/seasonAwards.ts computeSeasonAwardStats); the faces on the award cards components/star/Headshot3D.tsx, lib/star/headshot3d/.",
   },
   "/star-guest-dev": {
     title: "Guest accounts",
-    what: "Playing Road to Ballon d'Or without signing in. A guest gets a hidden account that saves like a real one; later, Save with Google keeps the same account so nothing is lost. Also the ad landing pages at /play/… that drop a player straight into a ready-made career. This page shows every screen at phone size.",
+    what: "Playing Road to the Golden Ball without signing in. A guest gets a hidden account that saves like a real one; later, Save with Google keeps the same account so nothing is lost. Also the ad landing pages at /play/… that drop a player straight into a ready-made career. This page shows every screen at phone size.",
     buttons: [
       { group: "The switch", items: [
         ["ON / OFF", "Whether this build has guest accounts. OFF = the live site works exactly as before: no Play now button, the /play/ pages are not found, no prompt."],
@@ -320,7 +345,7 @@ export const ADMIN_GUIDES = {
         ["Watched on TV", "Not picked for the first break, Premier League: the screen after watching your nation's first match of it."],
         ["Country page after a season", "Stats → Country after a whole 2026/27 season, always picked, so Tables, Matches, Scorers, Ranking and Who won are full. Takes a few seconds to play."],
         ["On duty at a tournament", "Two seasons on, two group games into the summer 2028 tournament (Euro for England): the League tab at the tournament. Says so if that nation didn't qualify."],
-        ["Ballon d'Or after a season", "The Ballon d'Or result after 2027/28, with your international goals counted. The other clubs' players are made up, with big nations' nationalities."],
+        ["Golden Ball after a season", "The Golden Ball result after 2027/28, with your international goals counted. The other clubs' players are made up, with big nations' nationalities."],
         ["The card pictures", "Each card draws the real screen for the nation you picked, shrunk. The three slow ones (a season played first) show the flag until you point at the card."],
       ] },
     ],
@@ -764,7 +789,7 @@ export const ADMIN_GUIDES = {
       "Logos write to club_logos and league_logos.",
       "Player photos are NOT done here — they come from the local Python scripts.",
     ],
-    inGame: ["Every game that shows real players and crests: PL Draft, Star Career, Ballon d'Or."],
+    inGame: ["Every game that shows real players and crests: PL Draft, Road to the Golden Ball."],
     dev: "app/admin/football/scrape/page.tsx · /api/admin/football/scrape-sofifa, /import-sofifa, /import-logos, /normalize-attributes",
   },
 
@@ -774,7 +799,7 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["Move media to Cloudflare", "One-time. Copies every patch-note picture and clip (about 2,100 files, 181 MB) into Cloudflare R2, a batch at a time, with a progress bar. Keep the tab open; Stop or a lost connection is fine: press Carry on moving and files already there are skipped. Works on the live site only (the keys are in Vercel). When it says Done, tell Claude so the follow-up can stop bundling the pictures into the site."],
+          ["Patch-note pictures in Cloudflare (card at the top)", "Copies every patch-note picture and clip (about 2,360 files, 215 MB) into Cloudflare R2. It runs by itself on the live site every 5 minutes (a Vercel timed job), so nobody has to press anything; the bar shows how far it is and refreshes every minute. Move faster now (with Stop) runs it from this tab too; files already there are skipped. Works on the live site only (the keys are in Vercel). Done = nothing left to move."],
           ["Version list", "Tap a version to read it. The small H / M / L faces show who has read it (bright = read; the author counts as read). On a phone a red dot = you haven't read it yet."],
           ["Read by H ✓ read · M wrote it · L not yet", "Who has read this version. Only versions from 18 Oct 2026 on count towards \"to read\"; older ones show faces but never nag."],
           ["Read and understood", "Say you have read and understood this version. Press again (✓ Read and understood) to take it back. Not shown on your own patch notes."],
@@ -794,14 +819,14 @@ export const ADMIN_GUIDES = {
       "The notes themselves don't save here. New patch notes are added by Claude as part of shipping a change.",
       "Read and understood and the notes under a version save to the shared database at once (team_acks, team_notes), so the other two see them. Until supabase/migrations/team_room_v2.sql runs they stay on this device only, and the page says so (then an @ in a note can't buzz anyone or reach their Inbox).",
       "The Inbox has no table of its own: a patch note leaves it when you say Read and understood (or open it from the Inbox), and a mention leaves it when you open that version's notes. Both are the same saved receipts (team_acks).",
-      "Move media to Cloudflare writes to the R2 bucket (R2_BUCKET, folder patch-notes/), never the repo or the database. Once a picture is there, the page shows it from Cloudflare (a link that works for an hour); until then it comes from the site, so nothing breaks half way.",
+      "The Cloudflare move (timed job or Move faster now) writes to the R2 bucket (R2_BUCKET, folder patch-notes/, layout in docs/r2-layout.md), never the repo or the database. Once a picture is there, the page shows it from Cloudflare (a link that works for an hour); until then it comes from the site, so nothing breaks half way.",
       "An UPDATED version (green tag, and a green line at the top saying what changed) is one that changed after it went up. It moves to the front, counts as unread again for everyone (reading the old version doesn't count for the update) and buzzes again as \"Updated patch notes\". Your Read and understood on it is per update.",
       "A new patch note on the site buzzes everyone but its author once (one buzz per person, however many notes are new; only notes from the last 3 days). The site sends it the first time one of the three opens an admin page after the deploy. Who has been buzzed for which version is kept in each person's sign-in account, so no SQL.",
     ],
     commit: ["New entries live in a file, not the database. Each build ends with its patch notes going to main at once in a patch-notes-only pull request (scripts/patch-notes/ship.mjs), without the feature code; they appear after that deploys. Each version's page and pictures are copied into patch-notes/ in the repo."],
     inGame: ["Admin only. Players never see this page."],
     needs: ["supabase/migrations/team_room_v2.sql (PENDING) for read ticks and notes to be shared. Run after team_room.sql."],
-    dev: "app/admin/patch-notes/PatchNotesArchive.tsx · media move: app/admin/patch-notes/MediaSyncPanel.tsx, /api/admin/patch-notes/media-sync, lib/patchNoteMedia.ts, lib/patchNoteMediaServer.ts · Inbox list: lib/patchNoteHeadlines.json (scripts/patch-notes/build-headlines.mjs) · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/ · read ticks: components/teamRoom/PatchReceipts.tsx, lib/teamRoom/extras.ts · Inbox: components/teamRoom/InboxBell.tsx, lib/teamRoom/inbox.ts · quotes: lib/teamRoom/patchQuote.ts · buzz: /api/admin/team/notify {patches:true} and {table:\"team_notes\"}",
+    dev: "app/admin/patch-notes/PatchNotesArchive.tsx · media move: app/admin/patch-notes/MediaSyncPanel.tsx, /api/admin/patch-notes/media-sync (timed job: vercel.json crons), lib/patchNoteMedia.ts, lib/patchNoteMediaServer.ts · Inbox list: lib/patchNoteHeadlines.json (scripts/patch-notes/build-headlines.mjs) · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/ · read ticks: components/teamRoom/PatchReceipts.tsx, lib/teamRoom/extras.ts · Inbox: components/teamRoom/InboxBell.tsx, lib/teamRoom/inbox.ts · quotes: lib/teamRoom/patchQuote.ts · buzz: /api/admin/team/notify {patches:true} and {table:\"team_notes\"}",
   },
 
   "/admin/sound-board": {
@@ -840,17 +865,17 @@ export const ADMIN_GUIDES = {
 
   "/admin/star": {
     title: "Game home",
-    what: "Every admin and test page, split by game: one tab per game across the top (Road to Ballon d'Or, Website games, Studio). Inside a tab you only see that game's groups and pages. The admin itself opens on the Team area (Team, first in the side menu); the games sit under it. Testers have no Team area: this is their home, and they see only the pages they can open.",
+    what: "Every admin and test page, split by game: one tab per game across the top (Road to the Golden Ball, Website games, Studio). Inside a tab you only see that game's groups and pages. The admin itself opens on the admin home (/admin), which has a tile for each game. Testers see only the pages they can open.",
     buttons: [
       { group: "Game tabs (across the top of every admin page)", items: [
           ["🔔 Inbox (top right)", "The patch notes you haven't read yet, from 20 Oct 2026 on (older ones never show), newest first, plus notes under a patch note that @ you (Mentions). The red number is how many. Tap a patch note: it opens and counts as Read and understood. Tap a mention: that version opens with its notes showing. ✓ marks one read without opening it; Mark all read clears the list. Only Harry, Mikey and Leo see it."],
-        ["Road to Ballon d'Or", "The career game's groups and pages. This is /admin/star."],
+        ["Road to the Golden Ball", "The career game's groups and pages. This is /admin/star."],
         ["Website games", "PL Draft, Tierlists, Site XP + Tic Tac Toe and the old tests. Opens /admin/star/game/web."],
         ["Studio", "The team: Team board, Patch notes, Videos, Research, App plan, Tester access. Opens /admin/star/game/studio."],
         ["The number on a tab", "How many pages that game has (that you can open)."],
       ] },
       { group: "Top", items: [
-        ["← (top left)", "The one back arrow, in the same corner on every admin and test page. Here (a game's home) it goes to the Team area, the admin's home; for a tester to the site (Road to Ballon d'Or) or to the Road to Ballon d'Or home (the other games). On a group page it goes to the game's home; on any other admin page to that page's group."],
+        ["← (top left)", "The one back arrow, in the same corner on every admin and test page. Here (a game's home) it goes to the admin home. On a group page it goes to the game's home; on any other admin page to that page's group. Only the admin home's own arrow leaves for the site."],
         ["Search … pages in (game)", "Type part of a name or what a page does. Searches this game only. While you search, the matching pages show as rows under their group."],
         ["All / Harry / Mikey / Leo", "Show everyone's pages, or only one person's, in this game."],
         ["Saves real data", "Only pages whose buttons change things other players see."],
@@ -863,7 +888,8 @@ export const ADMIN_GUIDES = {
         ["Clear", "Shows when a search or filter matches nothing; puts everything back."],
       ] },
       { group: "Side menu", items: [
-        ["Team (first line)", "The Team area, the admin's home: Team board, Team chat, Ideas, My to-do, Patch notes. Opens on the Team board. Admins only."],
+        ["Admin home (first line)", "The admin home: a tile for each area and what changed."],
+        ["Team", "The Team area: Team board, Team room, Patch notes. Opens on the Team board. Admins only."],
         ["(Game) home", "This game's home page."],
         ["The game's groups", "Every group of the game you are in, the one you are on lit up. Each opens the group's own page. On a phone they are in ☰ Menu (Team first); on a computer « folds them to icons."],
         ["Videos", "How to hand Claude a screen recording. The same in every game."],
@@ -873,7 +899,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing here saves anything shared. The look and Admin mode are kept in this browser only."],
     inGame: ["Nowhere. This is the front door to the tools."],
-    dev: "app/admin/home/page.tsx (the front door: admin → /admin/team, tester → /admin/star; the KIB Admin app opens there) · lib/adminRegistry.ts TEAM_HOME, adminHomeFor, backFor · app/admin/star/page.tsx (first game) · app/admin/star/game/[game]/page.tsx (other games) · app/admin/star/g/[group] (a group's page) · app/admin/star/AdminHome.tsx · lib/adminRegistry.ts (GAMES = the tabs: a new game is one line there, then its groups say game: \"<key>\"; GROUPS; ADMIN_PAGES) · components/admin/shell/* · components/AdminNavPanel.tsx (the side menu on other pages, also one game at a time) · lib/adminLook.ts",
+    dev: "app/admin/home/page.tsx (the old front door: now sends everyone to the admin home, /admin; the KIB Admin app opens there) · lib/adminRegistry.ts TEAM_HOME, adminHomeFor, backFor · app/admin/star/page.tsx (first game) · app/admin/star/game/[game]/page.tsx (other games) · app/admin/star/g/[group] (a group's page) · app/admin/star/AdminHome.tsx · lib/adminRegistry.ts (GAMES = the tabs: a new game is one line there, then its groups say game: \"<key>\"; GROUPS; ADMIN_PAGES) · components/admin/shell/* · components/AdminNavPanel.tsx (the side menu on other pages, also one game at a time) · lib/adminLook.ts",
   },
   "/admin/research": {
     title: "Research",
@@ -1041,7 +1067,8 @@ export const ADMIN_GUIDES = {
         ["Record screen", "The browser asks which screen, window or tab to share. Pick the game. Your voice records too if the microphone is on."],
         ["Microphone", "On = your voice is in the recording. The browser asks once."],
         ["Stop", "Ends the recording. The browser's own Stop sharing bar does the same."],
-        ["Connect Drive", "Google asks once to let the site add files to your Drive. After that, each recording saves itself."],
+        ["● Recording 12:34 · Stop (bottom of every page)", "While you record you can leave this page: the recording keeps going on every admin and test page, and this pill shows how long it has run. Stop ends it from anywhere. After Stop it says Saving to Drive / Saved to Drive; tap it to come back here. A full reload of the page (F5, or typing an address) still ends a recording: the browser stops sharing."],
+        ["Connect Drive", "Google asks once on this device to let the site add files to your Drive. After that, each recording saves itself. Google gives the site a key for one hour at a time: within the hour nothing asks; after it, pressing Stop (or Save to Drive) gets a fresh key from Google without the Allow box. The box only comes back if Google needs it (signed out of Google, or access removed)."],
         ["Recorded on your phone? Upload the file", "Pick a video from this device; it goes to Drive the same way."],
       ] },
       { group: "After a recording", items: [
@@ -1067,13 +1094,14 @@ export const ADMIN_GUIDES = {
       "Your own Google Drive, folder \"Knowitball screen recordings\" → a folder for whoever is picked under Who is recording (the site makes them the first time), named \"date · who · what it is about (length)\". The file is set to \"anyone with the link\" so Claude can fetch it. You can move the main folder anywhere in Drive; the site still finds it.",
       "The video goes from your browser straight to Google. The site keeps only its name and link (dev_recordings table), so that person's Claude chats break it down the next time they are messaged (scripts/hooks/recordings-hook.mjs). Needs dev_recordings.sql run once.",
       "Drive needs NEXT_PUBLIC_GOOGLE_CLIENT_ID on the site. Until it is set, recordings only download.",
+      "Drive's one-hour key and a note that Drive was allowed are kept in this browser only (nothing on the server).",
       "Send to Marketing: the file goes from your browser straight into the Marketing video storage (Cloudflare R2, private). It needs the R2 settings in Vercel; without them it says \"Storage not connected here\".",
       "Live share: once a second, when the screen changed, a small picture (720 px wide) goes to public storage (tierlist-images → live/<code>/), with what was said (transcript.json) and how it is going (state.json, including how much each picture changed). Only the newest 300 pictures (about 5 minutes) are kept. No table. Anyone with the code can open the pictures while they exist; Delete removes them all.",
       "Claude's side: npx tsx scripts/live-watch.mts <code> prints each line said with the picture on screen at that moment, a SCREEN line when the screen changes (new screen / part changed / small change), and keeps the newest picture in a file it can look at. Claude answers in its chat (about 5–20 s behind), and may comment without being asked. Nothing is said back on this page.",
     ],
     inGame: ["Nowhere."],
     needs: ["Live share needs SUPABASE_SERVICE_ROLE_KEY on the site (it is there for the other admin uploads). Without it, Start shows \"the site has no storage key\"."],
-    dev: "app/admin/videos/* · lib/recording.ts (recorder, Drive upload, names; tests/star/recording.mts) · /api/dev-recordings + scripts/hooks/recordings-hook.mjs (auto-read) · the breakdown: scripts/screen-video/, .claude/skills/screen-video/SKILL.md · Live share: app/admin/videos/LiveShareCard.tsx, lib/liveShare.ts (pure; tests/star/liveShare.mts), lib/liveShareBrowser.ts, lib/liveShareStore.ts, /api/admin/live-share, scripts/live-watch.mts",
+    dev: "app/admin/videos/* · components/admin/recorder/RecorderProvider.tsx (the recording itself, mounted once in app/layout.tsx, and the pill) · lib/recording.ts (recorder, Drive upload and kept key, names; tests/star/recording.mts) · /api/dev-recordings + scripts/hooks/recordings-hook.mjs (auto-read) · the breakdown: scripts/screen-video/, .claude/skills/screen-video/SKILL.md · Live share: app/admin/videos/LiveShareCard.tsx, lib/liveShare.ts (pure; tests/star/liveShare.mts), lib/liveShareBrowser.ts, lib/liveShareStore.ts, /api/admin/live-share, scripts/live-watch.mts",
   },
   "/admin/videos/live": {
     title: "Live share",
@@ -1090,19 +1118,20 @@ export const ADMIN_GUIDES = {
   },
   "/admin/team": {
     title: "Team board",
-    what: "The Team area: the admin's home. Every way into the admin opens here, on the Team board. Board: what Harry, Mikey and Leo are doing (pushes, pull requests, live bars, patch notes). Team room (25 Oct 2026): Slack's layout in our colours, full screen with no admin menu: a channel list on the left (9 preset channels: #general, #ideas, #todo, #bugs, #health, #patch-notes, #connectors, #marketing, #context, plus any you add), the chat in the middle, a thread on the right. Ideas and To-do are channels now (#ideas carries the idea board, #todo the jobs). Patch notes: every version. Testers have no Team area; they go to the game home instead.",
+    what: "The Team area. Since 12 Nov 2026 the admin opens on the admin home (/admin), whose Team tile leads here. Board: what Harry, Mikey and Leo are doing (pushes, pull requests, live bars, patch notes). Team room (25 Oct 2026): Slack's layout in our colours, full screen with no admin menu: a channel list on the left (9 preset channels: #general, #ideas, #todo, #bugs, #health, #patch-notes, #connectors, #marketing, #context, plus any you add), the chat in the middle, a thread on the right. Ideas and To-do are channels now (#ideas carries the idea board, #todo the jobs). Patch notes: every version. Testers have no Team area; they go to the game home instead.",
     buttons: [
       { group: "Side menu (Team area)", items: [
-        ["Team (first line, lit)", "The Team area, the admin's home. It is the first line of the side menu on every admin page. These all open here, on the Team board: Admin in the site's top menu, Settings → Developer → Admin pages, Admin & Dev · Team in the admin slide-out, the KIB Admin home-screen app, and ← on a game's home."],
+        ["Admin home (first line)", "The admin home: a tile for each area and what changed. Admin in the site's top menu, the KIB Admin app and ← on a game's home all open there now."],
+        ["Team (lit)", "The Team area, second line of the side menu on every admin page."],
         ["Team board / Team room / Patch notes", "The Team area's views, under Team. Team room opens the full-screen room (old links to Ideas or To-do open it on #ideas or #todo). A red number on Team room = @mentions and private messages for you only; other new messages just show bold inside the room."],
-        ["Games: Ballon d'Or / Website / Studio / Marketing", "Each game's home (its groups and pages). The game tabs across the top do the same; in the Team area none of them is lit. Marketing (our videos) shows for Harry, Mikey and Leo only, never for testers."],
+        ["Games: Golden Ball / Website / Studio / Marketing", "Each game's home (its groups and pages). The game tabs across the top do the same; in the Team area none of them is lit. Marketing (our videos) shows for Harry, Mikey and Leo only, never for testers."],
         ["Videos", "How to hand Claude a screen recording."],
-        ["← (top left)", "Back to the site. The Team area is the top of the admin: a game's home goes back to here."],
+        ["← (top left)", "Back to the admin home (it used to leave for the site)."],
         ["« (top of the side menu)", "Folds the side menu to a strip of icons on a computer. » opens it again. On a phone the menu is ☰ Menu, Team first."],
         ["🔔 Inbox (top right)", "The patch notes you haven't read yet, from 20 Oct 2026 on (older ones never show), newest first, plus notes under a patch note that @ you (Mentions). The red number is how many. Tap a patch note: it opens and counts as Read and understood. Tap a mention: that version opens with its notes showing. ✓ marks one read without opening it; Mark all read clears the list. Only Harry, Mikey and Leo see it."],
       ] },
       { group: "Team room: the channel list (left)", items: [
-        ["⌂ (top left of the list)", "Back to the admin home (the Team board). Inside the room there is no admin menu, only this."],
+        ["⌂ (top left of the list)", "Back to the admin home (/admin, a tile for each area). Inside the room there is no admin menu, only this."],
         ["« (green, top right of the list) · Ctrl/⌘+Shift+D", "Closes the list so the chat fills the screen. ⌂ » at the top left of the chat opens it again. Remembered on this device (your phone and laptop each keep their own)."],
         ["The list's right edge (grey bar)", "Drag to make the list narrower or wider (180 to 320 px; it starts at 220). Double-click it: back to 220. Remembered on this device."],
         ["🔍 Search ⌘K (or Ctrl/⌘+K anywhere in the room)", "A small box: type a few letters to jump to a channel, a person (their DM) or a message with those words. ↑ ↓ pick, Enter goes, Esc closes."],
@@ -1189,6 +1218,7 @@ export const ADMIN_GUIDES = {
         ["Notes", "Leave a note on the push. Its owner gets a red number on Board."],
       ] },
       { group: "Patch notes tab", items: [
+        ["Patch-note pictures in Cloudflare (card at the top)", "How far the move of every patch-note picture and clip into Cloudflare is. It moves by itself on the live site every 5 minutes, so there is nothing to press; the bar refreshes every minute. Move faster now speeds it up while the tab stays open. Same card as on /admin/patch-notes."],
         ["Version list", "Every patch note, newest first. Same as /admin/patch-notes, with who has read each one, Read and understood, and notes (which can @ someone and quote lines of the note)."],
         ["N patch notes to read (on a person's card)", "How many patch notes since 18 Oct that person hasn't marked Read and understood (their own don't count). Tap to open the oldest one."],
       ] },
@@ -1246,7 +1276,7 @@ export const ADMIN_GUIDES = {
       "Only admins can make or change links, through the site's server. Nobody can write either table from their own browser.",
     ],
     inGame: [
-      "A tester sees Road to Ballon d'Or → Settings → Developer tab (add money and coins, max skills, skip ahead, switch club, captain, reputation, fame, happiness, unlock training). Goal Replays stays admins only.",
+      "A tester sees Road to the Golden Ball → Settings → Developer tab (add money and coins, max skills, skip ahead, switch club, captain, reputation, fame, happiness, unlock training). Goal Replays stays admins only.",
       "A tester can open every page marked for testers on the admin home (/admin/star), which shows a tester only those pages. Pages that save or commit shared things stay admins only.",
       "Any career a developer tool is used on is marked \"Tester save\" in its Settings, for good.",
       "Testers never get admin pages or anything that changes what other players see.",
@@ -2615,7 +2645,7 @@ export const ADMIN_GUIDES = {
       {
         group: "💡 Ideas",
         items: [
-          ["Quick idea cards (Hat-trick reaction, Last-minute winner, Transfer rumour, Manager meme, Ballon d'Or night…)", "Shows the posts the media would make about it, written by the game itself."],
+          ["Quick idea cards (Hat-trick reaction, Last-minute winner, Transfer rumour, Manager meme, Golden Ball night…)", "Shows the posts the media would make about it, written by the game itself."],
           ["🎲 Random idea", "Three random ideas, a few posts each."],
           ["A match / A career moment / Any event / One line / Goal of the Month / Trends", "Build your own: a made-up match (every real detector runs on it), any career moment, any event with its facts, one template line from one account, a Goal of the Month poll, or the trends ticker."],
           ["See the reaction / 🔁 Re-roll / Tick all / Untick all", "Make the posts, make a new set, choose which to keep."],
@@ -2805,7 +2835,10 @@ export const ADMIN_GUIDES = {
       { group: "The board", items: [
         ["All · Idea · Script · Script OK · Making · In edit · Final check · Posted", "Show every column, or one. The number is how many videos are in it. On a phone the row slides sideways, and All shows only the columns with videos in, with the empty ones named on one line (\"Nothing in …\"). A computer shows all seven columns side by side."],
         ["A card", "One video: its cover, title, step, who is making it, the day it goes (or went) out, its length and one line about it."],
-        ["Script ↗ / Cover ↗ / Video ↗", "Open that file on GitHub, on the branch the card came from."],
+        ["Script ↗ / Cover ↗", "Open that file on GitHub, on the branch the card came from."],
+        ["▶ Video", "Plays the video's newest upload for this card from the private video storage (Cloudflare R2), in a new tab. GitHub can't play big files, so the board never links the video there."],
+        ["Studio", "Opens that same upload in Marketing → Studio (the editing suite)."],
+        ["Video: not uploaded yet", "No upload is linked to this card. On Uploads, pick this video's card under Video card and upload the file; the link appears here within a minute."],
         ["What happened (N)", "Opens the card's short log: one line per step, newest last."],
       ] },
     ],
@@ -2813,6 +2846,7 @@ export const ADMIN_GUIDES = {
       "Nothing is saved from this page. You cannot move a card here yet.",
       "The cards live in the code, in one file (marketing/board.json). A Claude chat moves a card by changing that file and pushing its own branch (the video-board skill). The board reads main and Harry's, Mikey's and Leo's branches from GitHub about once a minute, so a pushed change shows within a minute or two, with no deploy and no database. Two branches with the same card: the newest change wins.",
       "If GitHub can't be reached, the board shows the copy built into the site and says so at the top.",
+      "▶ Video reads the upload list (the same one as the Uploads page) when the board opens. An upload belongs to a card when it was uploaded with that card picked.",
     ],
     inGame: ["Nowhere. This is for making our own videos."],
     dev: "app/admin/marketing/page.tsx · components/admin/marketing/{ProductionBoard,MarketingTabs}.tsx · lib/marketing/board.ts (pure; tests/star/adminMarketing.mts) · /api/admin/marketing/board · marketing/board.json · .claude/skills/{video-board,patch-note-video,tiktok-remix}/SKILL.md · leak guard: scripts/marketing/private-names-guard.mjs",
@@ -2902,6 +2936,49 @@ export const ADMIN_GUIDES = {
     inGame: ["Nowhere. This is for making our own videos."],
     needs: ["The four storage settings in Vercel: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET. The bucket's sharing rule (CORS) must allow PUT from knowitball.co.uk, or uploads stop at 0%."],
     dev: "app/admin/marketing/uploads/page.tsx · components/admin/marketing/UploadsPanel.tsx · lib/marketing/uploadClient.ts · lib/marketing/{r2,mediaApi,storage,caller}.ts · /api/admin/marketing/{upload,upload/done,media} · tests/star/marketingStorage.mts",
+  },
+
+  "/admin/marketing/publish": {
+    title: "Publish",
+    what: "Post a finished video to Instagram, Facebook and YouTube now or at a set time, and see its views, likes and comments. Admins only.",
+    buttons: [
+      { group: "Accounts", items: [
+        ["Connect Facebook + Instagram", "Opens Facebook's login. Pick the Knowitball Page and its Instagram, press Allow. One login connects both."],
+        ["Connect YouTube", "Opens Google's login. Pick the Knowitball channel, press Allow."],
+        ["Reconnect …", "Same as Connect. Use it if a platform says the login has run out."],
+        ["Forget", "Removes that platform's saved login. Posts to it stop until you connect again."],
+      ] },
+      { group: "New post", items: [
+        ["Video", "Pick a video already in our storage. Put new ones in with Marketing → Uploads first."],
+        ["Instagram / Facebook / YouTube", "Tick where it goes. A platform that is not connected cannot be ticked."],
+        ["Title (YouTube and Facebook)", "The video title. YouTube needs one."],
+        ["Caption (all platforms)", "Caption and hashtags. On YouTube it is the description."],
+        ["Different caption per platform", "Gives each platform its own caption box."],
+        ["Post now / Schedule", "Now posts within a few minutes. Schedule shows a date and time box."],
+        ["Post now / Schedule post (big button)", "Puts the post in the queue."],
+      ] },
+      { group: "Posts and numbers", items: [
+        ["↻ Check now", "Runs the poster straight away instead of waiting for the 5-minute timer, and refreshes numbers that are due."],
+        ["Post now", "Posts a scheduled post straight away."],
+        ["Cancel", "Stops a scheduled post. Nothing goes out."],
+        ["Try again", "Retries the platforms that failed. Platforms that already posted are not posted twice."],
+        ["open", "Opens the live post on that platform."],
+      ] },
+    ],
+    saving: [
+      "Shared with Harry, Mikey and Leo: the queue and results are in the database (tables publish_posts and publish_accounts). The page re-reads every minute.",
+      "Logins are stored encrypted. Nobody can read them from the page.",
+      "A timer in the database runs the poster every 5 minutes. Instagram takes a few extra minutes to process a Reel; it shows \"Instagram is processing it\" meanwhile.",
+      "Numbers refresh every 3 hours for 30 days after a post goes up.",
+      "A chat can also post: it uploads the video and queues it the same way (scripts/publish/post.mjs).",
+    ],
+    inGame: ["Nowhere. This posts our own videos to our own accounts."],
+    needs: [
+      "The database tables and timer: run supabase/migrations/publishing.sql once (with the cron secret pasted in). Without it the page says the tables are missing.",
+      "Vercel settings: PUBLISH_TOKEN_KEY, PUBLISH_CRON_SECRET, PUBLISH_AGENT_TOKEN, META_APP_ID, META_APP_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, plus the four R2 storage settings. The page lists any that are missing.",
+      "Until Google approves our YouTube audit, YouTube keeps every video posted from here private. Instagram must be a Professional account linked to the Facebook Page.",
+    ],
+    dev: "app/admin/marketing/publish/page.tsx · components/admin/marketing/PublishPanel.tsx · lib/publish/{engine,live,meta,youtube,db,crypto,auth,video,types}.ts · /api/admin/publish{,/[id],/tick,/upload,/accounts,/connect/[platform],/callback/[platform]} · supabase/migrations/publishing.sql · scripts/publish/post.mjs · tests/star/publishEngine.mts",
   },
 
 } satisfies Record<string, AdminGuide>;

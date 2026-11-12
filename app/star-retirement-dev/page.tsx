@@ -332,7 +332,7 @@ export default function RetirementPreviewPage() {
           </div>
 
           <div data-ballon-dor-tests>
-            <Panel title="Ballon d'Or night" note="made-up rivals fill the list where this career has fewer than ten">
+            <Panel title="Golden Ball night" note="made-up rivals fill the list where this career has fewer than ten">
               <div className="rt-cards">
                 {card("You win · 3D", "bd-win", !!lastSeason, "bd-win")}
                 {card("You come 2nd · 3D", "bd-second", !!lastSeason, "bd-second")}

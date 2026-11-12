@@ -11,6 +11,9 @@ import GlobalNav from "@/components/GlobalNav";
 import SiteFooter from "@/components/SiteFooter";
 import { PostHogProvider } from "@/components/PostHogProvider";
 import CookieConsent from "@/components/CookieConsent";
+// The admin screen recorder sits above every page, so moving page never stops
+// a recording (Harry, 12 Nov 2026). Shows nothing until a recording starts.
+import RecorderProvider from "@/components/admin/recorder/RecorderProvider";
 
 
 /**
@@ -89,10 +92,12 @@ export default function RootLayout({
       </head>
       <body className={`font-sans bg-gray-950 text-gray-100 min-h-screen flex flex-col overflow-x-hidden`}>
         <PostHogProvider>
-          <GlobalNav />
-          <div className="flex-1">{children}</div>
-          <SiteFooter />
-          <CookieConsent />
+          <RecorderProvider>
+            <GlobalNav />
+            <div className="flex-1">{children}</div>
+            <SiteFooter />
+            <CookieConsent />
+          </RecorderProvider>
         </PostHogProvider>
       </body>
     </html>

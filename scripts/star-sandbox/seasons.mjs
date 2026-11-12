@@ -42,7 +42,9 @@ const log = (s) => { const l = `[${new Date().toISOString().slice(11, 19)}] ${s}
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || "/opt/pw-browsers/chromium" });
-const ctx = await browser.newContext({ ...devices["iPhone 13"] });
+const VIDEO = val("--video", null); // also film the whole run (a .webm in this folder), for preview films
+// (filming uses a full-height phone, 390x844: the film's phone screen is that shape)
+const ctx = await browser.newContext({ ...devices["iPhone 13"], ...(VIDEO ? { viewport: { width: 390, height: 844 }, recordVideo: { dir: path.resolve(VIDEO), size: { width: 780, height: 1688 } } } : {}) });
 if (OFFLINE) {
   await ctx.route("**/*", (r) => { const u = r.request().url(); if (u.startsWith(BASE)) return r.continue(); fs.appendFileSync(path.join(OUT, "blocked.txt"), u + "\n"); return r.abort("internetdisconnected"); });
   ctx.on("response", (r) => { if (r.status() >= 400) fs.appendFileSync(path.join(OUT, "failed.txt"), `${r.status()} ${r.url()}\n`); });

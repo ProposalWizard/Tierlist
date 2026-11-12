@@ -97,6 +97,21 @@
 .agp-pic { display: block; aspect-ratio: 16 / 10; background: var(--sk-pic); overflow: hidden; }
 .agp-pic img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
 .agp-pic .agp-icon { width: 88px; height: 88px; margin: 34px auto; object-fit: cover; border-radius: 16px; clip-path: inset(4% round 14px); }
+/* A page with no still gets the same drawn tile as every other one: a small
+   screen in the group's colour, its icon and its name (Harry, 12 Nov 2026). */
+.agp-pic[data-drawn] { position: relative; }
+.agp-drawn {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  background:
+    radial-gradient(90% 80% at 50% 0%, color-mix(in srgb, var(--g, #34e08b) 34%, transparent), transparent 70%),
+    linear-gradient(180deg, color-mix(in srgb, var(--g, #34e08b) 14%, var(--sk-pic)), var(--sk-pic));
+}
+.agp-drawn-bar { position: absolute; top: 0; left: 0; right: 0; height: 16px; display: flex; gap: 4px; align-items: center; padding: 0 8px;
+  background: color-mix(in srgb, var(--g, #34e08b) 22%, transparent); }
+.agp-drawn-bar i { width: 5px; height: 5px; border-radius: 50%; background: color-mix(in srgb, var(--sk-card-ink) 45%, transparent); }
+.agp-pic .agp-drawn .agp-icon { margin: 10px 0 0; width: 64px; height: 64px; box-shadow: 0 8px 22px rgba(0, 0, 0, .25); }
+.agp-drawn-name { max-width: 86%; font-size: 13px; font-weight: 900; text-align: center; color: var(--sk-card-ink); opacity: .85;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-style: var(--sk-type-style); text-transform: var(--sk-type-case); }
 .agp-body { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px 14px; flex: 1; }
 .agp-body b { font-size: 17px; font-weight: 900; font-style: var(--sk-type-style); text-transform: var(--sk-type-case); line-height: 1.15; }
 .agp-purpose { font-size: 13px; color: var(--sk-card-ink2); line-height: 1.4; flex: 1; }
@@ -156,6 +171,11 @@
   .agp-banner span { font-size: 11.5px; }
   .agp-grid { grid-template-columns: 1fr 1fr; gap: 7px; }
   .agp-pic .agp-icon { width: 44px; height: 44px; margin: 18px auto; border-radius: 10px; }
+  .agp-pic .agp-drawn .agp-icon { margin: 8px 0 0; width: 36px; height: 36px; }
+  .agp-drawn { gap: 4px; }
+  .agp-drawn-bar { height: 10px; padding: 0 5px; gap: 3px; }
+  .agp-drawn-bar i { width: 3px; height: 3px; }
+  .agp-drawn-name { font-size: 10.5px; }
   .agp-body { padding: 7px 8px 8px; gap: 4px; }
   .agp-body b { font-size: 12.5px; }
   .agp-purpose { flex: none; font-size: 11.5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

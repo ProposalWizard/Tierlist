@@ -27,7 +27,9 @@ const nextConfig = {
     // route reads by a computed path are not traced into the serverless
     // bundle on their own, so the folder is listed here or Vercel 404s them.
     outputFileTracingIncludes: {
-      "/api/admin/patch-notes/page": ["./patch-notes/**/*"],
+      // The page route reads only the .html pages (every PATCH_NOTE_PAGES entry
+      // is one); its pictures come through the file route below.
+      "/api/admin/patch-notes/page": ["./patch-notes/**/*.html"],
       "/api/admin/patch-notes/file/[...path]": ["./patch-notes/**/*"],
       // The one-time "Move media to Cloudflare" button copies from its own
       // bundled copy (lib/patchNoteMedia.ts). The follow-up commit drops the
@@ -37,6 +39,25 @@ const nextConfig = {
       "/api/star/real-moments": ["./data/realmoments/*.json"],
       // Marketing → Client reads the client record and its Brain notes at request time.
       "/admin/marketing/client": ["./marketing/clients/**/*", "./brain/*/*.md"],
+    },
+    // Kept OUT of every serverless function (Vercel caps one at 250 MB).
+    // lib/marketing/storage.ts reads docs/marketing/videos by a computed path,
+    // so the tracer pulled the whole ~320 MB folder into the Studio page and
+    // the marketing API routes (342 MB: the 12 Nov 2026 failed deploys). That
+    // folder is read only in development (local storage mode); the live site
+    // reads every video from R2. Big repo-only media never belongs in a
+    // function either.
+    outputFileTracingExcludes: {
+      "**": [
+        "./docs/marketing/videos/**/*",
+        "./docs/handoffs/**/*",
+        "./docs/stills/**/*",
+        "./playtest-notes/**/*",
+        "./tools/**/*",
+        "./.recordings/**/*",
+      ],
+      // The page route reads only .html; the pictures go through the file route.
+      "/api/admin/patch-notes/page": ["./patch-notes/**/*.{jpg,jpeg,png,webp,gif,mp4}"],
     },
   },
   // face-api.js depends on node-fetch (which needs 'encoding') and
@@ -54,14 +75,18 @@ const nextConfig = {
   },
   // Prevent Vercel CDN / browser from caching dynamic pages.
   // Ensures logged-in and logged-out users always get fresh data.
-  // The game's player-facing address (lib/star/gamePath.ts): /road-to-ballon-dor
+  // The game's player-facing address (lib/star/gamePath.ts): /road-to-the-golden-ball
   // shows app/star-dev's page; /star-dev itself forwards there, query kept.
-  // Not permanent, so a browser never caches it if the address changes again.
+  // /star-dev's forward is not permanent (it is the page's own folder).
+  // The old name /road-to-ballon-dor (Harry, 12 Nov 2026: renamed) forwards for good.
   async rewrites() {
-    return [{ source: "/road-to-ballon-dor", destination: "/star-dev" }];
+    return [{ source: "/road-to-the-golden-ball", destination: "/star-dev" }];
   },
   async redirects() {
-    return [{ source: "/star-dev", destination: "/road-to-ballon-dor", permanent: false }];
+    return [
+      { source: "/star-dev", destination: "/road-to-the-golden-ball", permanent: false },
+      { source: "/road-to-ballon-dor", destination: "/road-to-the-golden-ball", permanent: true },
+    ];
   },
   async headers() {
     const securityHeaders = [

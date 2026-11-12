@@ -219,11 +219,11 @@ export default function TitleScreen(p: TitleScreenProps) {
             <MenuButton primary={!career} icon="＋" label="New game" onClick={newGame} />
           </RiseIn>
           <RiseIn index={career ? 2 : 1} delay={760}>
-            <MenuButton icon="▤" label="Load game" hint={`${saves.filter((s) => !s.empty).length}/${saves.length}`} onClick={() => setSheet("load")} />
+            <MenuButton icon="▤" label="Load game" onClick={() => setSheet("load")} />
           </RiseIn>
           {p.onHallOfFame && (
             <RiseIn index={career ? 3 : 2} delay={760}>
-              <MenuButton icon="🏛" label="Hall of Fame" gold hint={p.hallCount ? `${p.hallCount} career${p.hallCount === 1 ? "" : "s"}` : "Empty"} onClick={p.onHallOfFame} />
+              <MenuButton icon="🏛" label="Hall of Fame" gold onClick={p.onHallOfFame} />
             </RiseIn>
           )}
           {p.onTutorial && (
@@ -294,7 +294,7 @@ function Wordmark({ glow }: { glow: string }) {
       </div>
       <div className="mt-1 flex items-center justify-center gap-2">
         <span className="h-px w-8 bg-gradient-to-r from-transparent to-amber-300/80" />
-        <span className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-200" style={{ textShadow: "0 0 10px rgba(251,191,36,.5)" }}>Road to the Ballon d&apos;Or</span>
+        <span className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-200" style={{ textShadow: "0 0 10px rgba(251,191,36,.5)" }}>Road to the Golden Ball</span>
         <span className="h-px w-8 bg-gradient-to-l from-transparent to-amber-300/80" />
       </div>
     </div>
@@ -488,7 +488,7 @@ function Credits({ onClose }: { onClose: () => void }) {
     <Sheet title="Credits" onClose={onClose}>
       <div className="space-y-3 text-center">
         <div className="bg-gradient-to-b from-white to-slate-300 bg-clip-text text-[26px] font-black italic tracking-tight text-transparent">KNOWITBALL</div>
-        <div className="text-[11px] font-black uppercase tracking-[0.25em] text-amber-200">Road to the Ballon d&apos;Or</div>
+        <div className="text-[11px] font-black uppercase tracking-[0.25em] text-amber-200">Road to the Golden Ball</div>
         <div className="space-y-1 text-[13px] font-bold text-white/85">
           <div>Made by Harry, Mikey and Leo</div>
           <div className="text-white/60">knowitball.co.uk</div>

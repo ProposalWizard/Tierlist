@@ -132,6 +132,21 @@ export const repoRaw = (path: string, branch: string, repo = BOARD.repo) =>
 
 export const isOwner = (x: unknown): x is TeamPerson => isTeamPerson(x);
 
+/**
+ * The upload to play for a card (Harry, 12 Nov 2026, 10:06: "links in the
+ * marketing studio don't actually take you to the video" — GitHub can't play
+ * big files). An upload belongs to a card when it was uploaded with that card
+ * picked (its folder is the card's id). The newest video wins; null = none.
+ */
+export function uploadForCard<T extends { folder: string; kind: string; uploaded: string; key: string }>(cardId: string, items: T[]): T | null {
+  let best: T | null = null;
+  for (const it of items) {
+    if (it.folder !== cardId || it.kind !== "video") continue;
+    if (!best || (it.uploaded || "") > (best.uploaded || "") || ((it.uploaded || "") === (best.uploaded || "") && it.key > best.key)) best = it;
+  }
+  return best;
+}
+
 /* ── Reading the board file from GitHub ───────────────────────────────── */
 
 type Fetch = (url: string, init?: { headers?: Record<string, string> }) => Promise<{ ok: boolean; status: number; text(): Promise<string> }>;

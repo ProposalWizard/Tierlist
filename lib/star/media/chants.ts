@@ -91,7 +91,7 @@ export const PLAYER_GOAL_CHANTS: Record<string, string[]> = {
     "he goes by the name of Sam Smitty, Sam Smitty, he goes by the name of Sam Smitty",
     "he's smithing up the templates and he's doing it so right",
   ],
-  "Kylian Mbappe": ["Ballon d'or"],
+  "Kylian Mbappe": ["Golden Ball"],
   "Lamine Yamal": ["Classique"],
   "Bradley Barcola": ["Fonsu Que"],
   "Paul Pogba": ["pog", "Dont miss on Pog that's a 2x prem winner"],
