@@ -48,6 +48,8 @@
 .mk-links { display: flex; flex-wrap: wrap; gap: 6px; }
 .mk-links a { font-size: 12px; font-weight: 800; color: var(--bc-ink); text-decoration: none; padding: 6px 10px; min-height: 32px; display: inline-flex; align-items: center;
   border-radius: 3px; border: 1px solid var(--bc-line); background: rgba(255, 255, 255, 0.04); }
+.mk-links a.mk-play { border-color: var(--bc-accent, #34e08b); color: var(--bc-accent, #34e08b); }
+.mk-links a.mk-novideo { border-style: dashed; color: var(--bc-ink2); font-weight: 700; }
 .mk-log { font-size: 12px; color: var(--bc-ink2); }
 .mk-log summary { cursor: pointer; font-weight: 800; }
 .mk-log ol { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }

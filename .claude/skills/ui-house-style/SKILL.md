@@ -73,6 +73,29 @@ Newest first. Each is something that was actually said.
   penalty box is getting gargantuanly bigger."** No late zoom on a chance:
   the camera stays as the build-up left it, the men stay their size.
 
+### 12 Nov 2026 — the admin feels like one app: a hub at /admin (Harry, recording)
+- **"There should be a home page for the admin … the team board being the home
+  page of the admin doesn't really make sense … we have no kind of hub."**
+  /admin is the admin home: one big tile per area (Team → the team room, Road
+  to Ballon d'Or, Website games, Studio, Marketing, Videos) and a SMALL "what
+  changed" (live site dot + last 4 pushes). Every way into the admin lands
+  there. "Admin home" is the first line of the side menu. Replaces the 20 Oct
+  rule that the Team board is the admin's home. The tierlist Site content page
+  moved from /admin to /admin/site-content. (app/admin/AdminHub.tsx, ADMIN_HUB)
+- **"I press back, takes me to here" (out to knowitball.co.uk).** No back
+  inside the admin leaves it: every back chain ends at /admin; only the hub's
+  own arrow and "Back to Knowitball" go to the site. The room's ⌂ goes to /admin.
+- **"If I click on any other page … this recording will stop."** The recorder
+  lives above every page (components/admin/recorder/RecorderProvider.tsx, in
+  app/layout.tsx); a pill "● Recording 12s · Stop" sits bottom centre on every
+  page (bubble owns bottom left, the eye bottom right).
+- **"I don't like how some of them have images on the front, some of them
+  don't."** Every card on a group page has a picture: its still
+  (lib/adminPreviews.ts), else the same drawn tile (group colour, icon, name).
+  Hub tiles all use the same drawn icon square, no mix of photos and icons.
+- **Marketing board: the Video link never opens GitHub** (it can't play big
+  files): ▶ Video plays the card's upload from R2; else "Video: not uploaded yet".
+
 ### 25 Oct 2026 — the Team room is Slack's layout, full screen (Harry)
 - **"It should just be a home icon rather than a whole column … the sidebar
   comes out too far while open and needs to be closable."** Inside the Team
@@ -107,7 +130,7 @@ Newest first. Each is something that was actually said.
   floating strip covered the words and ran off the screen on your own
   messages at 390 px (seen in the build stills, 23 Oct).
 
-### 20 Oct 2026 — the Team area is the admin's home (Harry)
+### 20 Oct 2026 — the Team area is the admin's home (Harry) — SUPERSEDED 12 Nov 2026 by the hub at /admin (above)
 - **"The team area should be the default home area, and it should open on
   Team board, and have its own tab on the left."** Every way into the admin
   (Admin in the site menu, Settings → Admin pages, the admin slide-out, the KIB

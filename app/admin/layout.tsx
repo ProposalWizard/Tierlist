@@ -10,7 +10,7 @@
  * Add to Home Screen opens the admin room as its own app, "KIB Admin"
  * (Harry, 19 Oct 2026, icon option C), the same way the game does it
  * (app/star-dev/layout.tsx). Opens at /admin/home, which sends an admin to the
- * Team board and a tester to their game home (Harry, 20 Oct 2026); scope "/"
+ * admin home, /admin (Harry, 12 Nov 2026; it was the Team board); scope "/"
  * so test pages opened from it stay inside the app. Icons: scripts/admin-app/make-icons.cjs.
  */
 import type { Metadata } from "next";

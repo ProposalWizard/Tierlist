@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminShell, { type RoomTab } from "@/components/admin/shell/AdminShell";
 import { useAdminLook } from "@/lib/adminLook";
+import { ADMIN_HUB } from "@/lib/adminRegistry";
 import ChatPage from "@/components/teamRoom/ChatPage";
 import { NoteCount, NotesThread } from "@/components/teamRoom/parts";
 import { newGivenTasks, unreadNotes } from "@/lib/teamRoom/logic";
@@ -146,7 +147,7 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage, 
     const fromLink = initialTab === tab;
     return (
       <div className="tr-vars trr-page" data-look={look}>
-        <ChatPage onOpenPatch={openNote} onHome={() => setTab("team")} pushes={lastPushes} first={{
+        <ChatPage onOpenPatch={openNote} homeHref={ADMIN_HUB} pushes={lastPushes} first={{
           place, m: fromLink ? initialMessage ?? null : null, t: fromLink ? initialPlace?.t ?? null : null, v: fromLink ? initialVersion ?? null : null,
           tab: tab === "chat" ? "messages" : "tool",
         }} />

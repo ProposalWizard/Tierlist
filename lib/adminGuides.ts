@@ -82,8 +82,33 @@ export const ADMIN_GUIDES = {
   // ════════════════════════════════════════════════════════════════════
 
   "/admin": {
-    title: "Admin Dashboard",
-    what: "Run the live site's content: tierlists, categories, vote tierlists, blind rankings, the daily games, objectives, cards and feedback. Since 20 Oct 2026 Admin in the site's top menu opens the Team board (the admin's home), not this page; reach this one from Website games → Tierlists.",
+    title: "Admin home",
+    what: "The front of the admin: one big tile per area (Team, Road to Ballon d'Or, Website games, Studio, Marketing, Videos) and a small panel of what changed. Admin in the site's menu, the KIB Admin app and every back arrow inside the admin end up here. Testers see only their tiles (no Team, no Marketing).",
+    buttons: [
+      { group: "Tiles", items: [
+        ["Team", "Opens the Team room (channels, DMs). Admins only."],
+        ["Team board / Patch notes (under Team)", "Open the Team board, or the Patch notes, straight away."],
+        ["Road to Ballon d'Or · Website games · Studio · Marketing", "Open that game's own home, with its groups. The number is how many pages it has that you can open. Marketing is admins only."],
+        ["Videos", "The screen recorder: record your screen and voice, straight to Drive."],
+      ] },
+      { group: "What changed (admins only)", items: [
+        ["The dot and line", "Green: the live site is up to date. Amber: a new version is going out now. Red: the last deploy failed (the site keeps running the version before). Read from GitHub about once a minute."],
+        ["The rows", "The last four pushes from Harry, Mikey and Leo (merges left out), newest first."],
+        ["Team board ›", "The full picture: every push, pull request and patch note."],
+      ] },
+      { group: "Around the page", items: [
+        ["← (top left)", "Here only, it leaves the admin for the site. On every other admin page the back arrow leads back towards this page."],
+        ["Admin home (first line of the side menu)", "This page, from any admin page."],
+        ["Back to Knowitball (bottom of the side menu)", "Leaves the admin for the site."],
+      ] },
+    ],
+    saving: ["Nothing. This page only links to the others."],
+    inGame: ["Nowhere. This is the front door to the tools."],
+    dev: "app/admin/page.tsx (who may open it), app/admin/AdminHub.tsx, app/admin/adminHub.css · lib/adminRegistry.ts ADMIN_HUB, adminHomeFor, backFor · /api/admin/team (what changed) · app/admin/home/page.tsx (old front door, now also sends here)",
+  },
+  "/admin/site-content": {
+    title: "Site content",
+    what: "Run the live site's content: tierlists, categories, vote tierlists, blind rankings, the daily games, objectives, cards and feedback. This page was /admin until 12 Nov 2026; /admin is now the admin home. Reach it from Website games → Tierlists.",
     buttons: [
       {
         group: "Top of the page",
@@ -840,7 +865,7 @@ export const ADMIN_GUIDES = {
 
   "/admin/star": {
     title: "Game home",
-    what: "Every admin and test page, split by game: one tab per game across the top (Road to Ballon d'Or, Website games, Studio). Inside a tab you only see that game's groups and pages. The admin itself opens on the Team area (Team, first in the side menu); the games sit under it. Testers have no Team area: this is their home, and they see only the pages they can open.",
+    what: "Every admin and test page, split by game: one tab per game across the top (Road to Ballon d'Or, Website games, Studio). Inside a tab you only see that game's groups and pages. The admin itself opens on the admin home (/admin), which has a tile for each game. Testers see only the pages they can open.",
     buttons: [
       { group: "Game tabs (across the top of every admin page)", items: [
           ["🔔 Inbox (top right)", "The patch notes you haven't read yet, from 20 Oct 2026 on (older ones never show), newest first, plus notes under a patch note that @ you (Mentions). The red number is how many. Tap a patch note: it opens and counts as Read and understood. Tap a mention: that version opens with its notes showing. ✓ marks one read without opening it; Mark all read clears the list. Only Harry, Mikey and Leo see it."],
@@ -850,7 +875,7 @@ export const ADMIN_GUIDES = {
         ["The number on a tab", "How many pages that game has (that you can open)."],
       ] },
       { group: "Top", items: [
-        ["← (top left)", "The one back arrow, in the same corner on every admin and test page. Here (a game's home) it goes to the Team area, the admin's home; for a tester to the site (Road to Ballon d'Or) or to the Road to Ballon d'Or home (the other games). On a group page it goes to the game's home; on any other admin page to that page's group."],
+        ["← (top left)", "The one back arrow, in the same corner on every admin and test page. Here (a game's home) it goes to the admin home. On a group page it goes to the game's home; on any other admin page to that page's group. Only the admin home's own arrow leaves for the site."],
         ["Search … pages in (game)", "Type part of a name or what a page does. Searches this game only. While you search, the matching pages show as rows under their group."],
         ["All / Harry / Mikey / Leo", "Show everyone's pages, or only one person's, in this game."],
         ["Saves real data", "Only pages whose buttons change things other players see."],
@@ -863,7 +888,8 @@ export const ADMIN_GUIDES = {
         ["Clear", "Shows when a search or filter matches nothing; puts everything back."],
       ] },
       { group: "Side menu", items: [
-        ["Team (first line)", "The Team area, the admin's home: Team board, Team chat, Ideas, My to-do, Patch notes. Opens on the Team board. Admins only."],
+        ["Admin home (first line)", "The admin home: a tile for each area and what changed."],
+        ["Team", "The Team area: Team board, Team room, Patch notes. Opens on the Team board. Admins only."],
         ["(Game) home", "This game's home page."],
         ["The game's groups", "Every group of the game you are in, the one you are on lit up. Each opens the group's own page. On a phone they are in ☰ Menu (Team first); on a computer « folds them to icons."],
         ["Videos", "How to hand Claude a screen recording. The same in every game."],
@@ -873,7 +899,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing here saves anything shared. The look and Admin mode are kept in this browser only."],
     inGame: ["Nowhere. This is the front door to the tools."],
-    dev: "app/admin/home/page.tsx (the front door: admin → /admin/team, tester → /admin/star; the KIB Admin app opens there) · lib/adminRegistry.ts TEAM_HOME, adminHomeFor, backFor · app/admin/star/page.tsx (first game) · app/admin/star/game/[game]/page.tsx (other games) · app/admin/star/g/[group] (a group's page) · app/admin/star/AdminHome.tsx · lib/adminRegistry.ts (GAMES = the tabs: a new game is one line there, then its groups say game: \"<key>\"; GROUPS; ADMIN_PAGES) · components/admin/shell/* · components/AdminNavPanel.tsx (the side menu on other pages, also one game at a time) · lib/adminLook.ts",
+    dev: "app/admin/home/page.tsx (the old front door: now sends everyone to the admin home, /admin; the KIB Admin app opens there) · lib/adminRegistry.ts TEAM_HOME, adminHomeFor, backFor · app/admin/star/page.tsx (first game) · app/admin/star/game/[game]/page.tsx (other games) · app/admin/star/g/[group] (a group's page) · app/admin/star/AdminHome.tsx · lib/adminRegistry.ts (GAMES = the tabs: a new game is one line there, then its groups say game: \"<key>\"; GROUPS; ADMIN_PAGES) · components/admin/shell/* · components/AdminNavPanel.tsx (the side menu on other pages, also one game at a time) · lib/adminLook.ts",
   },
   "/admin/research": {
     title: "Research",
@@ -1041,7 +1067,8 @@ export const ADMIN_GUIDES = {
         ["Record screen", "The browser asks which screen, window or tab to share. Pick the game. Your voice records too if the microphone is on."],
         ["Microphone", "On = your voice is in the recording. The browser asks once."],
         ["Stop", "Ends the recording. The browser's own Stop sharing bar does the same."],
-        ["Connect Drive", "Google asks once to let the site add files to your Drive. After that, each recording saves itself."],
+        ["● Recording 12:34 · Stop (bottom of every page)", "While you record you can leave this page: the recording keeps going on every admin and test page, and this pill shows how long it has run. Stop ends it from anywhere. After Stop it says Saving to Drive / Saved to Drive; tap it to come back here. A full reload of the page (F5, or typing an address) still ends a recording: the browser stops sharing."],
+        ["Connect Drive", "Google asks once on this device to let the site add files to your Drive. After that, each recording saves itself. Google gives the site a key for one hour at a time: within the hour nothing asks; after it, pressing Stop (or Save to Drive) gets a fresh key from Google without the Allow box. The box only comes back if Google needs it (signed out of Google, or access removed)."],
         ["Recorded on your phone? Upload the file", "Pick a video from this device; it goes to Drive the same way."],
       ] },
       { group: "After a recording", items: [
@@ -1067,13 +1094,14 @@ export const ADMIN_GUIDES = {
       "Your own Google Drive, folder \"Knowitball screen recordings\" → a folder for whoever is picked under Who is recording (the site makes them the first time), named \"date · who · what it is about (length)\". The file is set to \"anyone with the link\" so Claude can fetch it. You can move the main folder anywhere in Drive; the site still finds it.",
       "The video goes from your browser straight to Google. The site keeps only its name and link (dev_recordings table), so that person's Claude chats break it down the next time they are messaged (scripts/hooks/recordings-hook.mjs). Needs dev_recordings.sql run once.",
       "Drive needs NEXT_PUBLIC_GOOGLE_CLIENT_ID on the site. Until it is set, recordings only download.",
+      "Drive's one-hour key and a note that Drive was allowed are kept in this browser only (nothing on the server).",
       "Send to Marketing: the file goes from your browser straight into the Marketing video storage (Cloudflare R2, private). It needs the R2 settings in Vercel; without them it says \"Storage not connected here\".",
       "Live share: once a second, when the screen changed, a small picture (720 px wide) goes to public storage (tierlist-images → live/<code>/), with what was said (transcript.json) and how it is going (state.json, including how much each picture changed). Only the newest 300 pictures (about 5 minutes) are kept. No table. Anyone with the code can open the pictures while they exist; Delete removes them all.",
       "Claude's side: npx tsx scripts/live-watch.mts <code> prints each line said with the picture on screen at that moment, a SCREEN line when the screen changes (new screen / part changed / small change), and keeps the newest picture in a file it can look at. Claude answers in its chat (about 5–20 s behind), and may comment without being asked. Nothing is said back on this page.",
     ],
     inGame: ["Nowhere."],
     needs: ["Live share needs SUPABASE_SERVICE_ROLE_KEY on the site (it is there for the other admin uploads). Without it, Start shows \"the site has no storage key\"."],
-    dev: "app/admin/videos/* · lib/recording.ts (recorder, Drive upload, names; tests/star/recording.mts) · /api/dev-recordings + scripts/hooks/recordings-hook.mjs (auto-read) · the breakdown: scripts/screen-video/, .claude/skills/screen-video/SKILL.md · Live share: app/admin/videos/LiveShareCard.tsx, lib/liveShare.ts (pure; tests/star/liveShare.mts), lib/liveShareBrowser.ts, lib/liveShareStore.ts, /api/admin/live-share, scripts/live-watch.mts",
+    dev: "app/admin/videos/* · components/admin/recorder/RecorderProvider.tsx (the recording itself, mounted once in app/layout.tsx, and the pill) · lib/recording.ts (recorder, Drive upload and kept key, names; tests/star/recording.mts) · /api/dev-recordings + scripts/hooks/recordings-hook.mjs (auto-read) · the breakdown: scripts/screen-video/, .claude/skills/screen-video/SKILL.md · Live share: app/admin/videos/LiveShareCard.tsx, lib/liveShare.ts (pure; tests/star/liveShare.mts), lib/liveShareBrowser.ts, lib/liveShareStore.ts, /api/admin/live-share, scripts/live-watch.mts",
   },
   "/admin/videos/live": {
     title: "Live share",
@@ -1090,19 +1118,20 @@ export const ADMIN_GUIDES = {
   },
   "/admin/team": {
     title: "Team board",
-    what: "The Team area: the admin's home. Every way into the admin opens here, on the Team board. Board: what Harry, Mikey and Leo are doing (pushes, pull requests, live bars, patch notes). Team room (25 Oct 2026): Slack's layout in our colours, full screen with no admin menu: a channel list on the left (9 preset channels: #general, #ideas, #todo, #bugs, #health, #patch-notes, #connectors, #marketing, #context, plus any you add), the chat in the middle, a thread on the right. Ideas and To-do are channels now (#ideas carries the idea board, #todo the jobs). Patch notes: every version. Testers have no Team area; they go to the game home instead.",
+    what: "The Team area. Since 12 Nov 2026 the admin opens on the admin home (/admin), whose Team tile leads here. Board: what Harry, Mikey and Leo are doing (pushes, pull requests, live bars, patch notes). Team room (25 Oct 2026): Slack's layout in our colours, full screen with no admin menu: a channel list on the left (9 preset channels: #general, #ideas, #todo, #bugs, #health, #patch-notes, #connectors, #marketing, #context, plus any you add), the chat in the middle, a thread on the right. Ideas and To-do are channels now (#ideas carries the idea board, #todo the jobs). Patch notes: every version. Testers have no Team area; they go to the game home instead.",
     buttons: [
       { group: "Side menu (Team area)", items: [
-        ["Team (first line, lit)", "The Team area, the admin's home. It is the first line of the side menu on every admin page. These all open here, on the Team board: Admin in the site's top menu, Settings → Developer → Admin pages, Admin & Dev · Team in the admin slide-out, the KIB Admin home-screen app, and ← on a game's home."],
+        ["Admin home (first line)", "The admin home: a tile for each area and what changed. Admin in the site's top menu, the KIB Admin app and ← on a game's home all open there now."],
+        ["Team (lit)", "The Team area, second line of the side menu on every admin page."],
         ["Team board / Team room / Patch notes", "The Team area's views, under Team. Team room opens the full-screen room (old links to Ideas or To-do open it on #ideas or #todo). A red number on Team room = @mentions and private messages for you only; other new messages just show bold inside the room."],
         ["Games: Ballon d'Or / Website / Studio / Marketing", "Each game's home (its groups and pages). The game tabs across the top do the same; in the Team area none of them is lit. Marketing (our videos) shows for Harry, Mikey and Leo only, never for testers."],
         ["Videos", "How to hand Claude a screen recording."],
-        ["← (top left)", "Back to the site. The Team area is the top of the admin: a game's home goes back to here."],
+        ["← (top left)", "Back to the admin home (it used to leave for the site)."],
         ["« (top of the side menu)", "Folds the side menu to a strip of icons on a computer. » opens it again. On a phone the menu is ☰ Menu, Team first."],
         ["🔔 Inbox (top right)", "The patch notes you haven't read yet, from 20 Oct 2026 on (older ones never show), newest first, plus notes under a patch note that @ you (Mentions). The red number is how many. Tap a patch note: it opens and counts as Read and understood. Tap a mention: that version opens with its notes showing. ✓ marks one read without opening it; Mark all read clears the list. Only Harry, Mikey and Leo see it."],
       ] },
       { group: "Team room: the channel list (left)", items: [
-        ["⌂ (top left of the list)", "Back to the admin home (the Team board). Inside the room there is no admin menu, only this."],
+        ["⌂ (top left of the list)", "Back to the admin home (/admin, a tile for each area). Inside the room there is no admin menu, only this."],
         ["« (green, top right of the list) · Ctrl/⌘+Shift+D", "Closes the list so the chat fills the screen. ⌂ » at the top left of the chat opens it again. Remembered on this device (your phone and laptop each keep their own)."],
         ["The list's right edge (grey bar)", "Drag to make the list narrower or wider (180 to 320 px; it starts at 220). Double-click it: back to 220. Remembered on this device."],
         ["🔍 Search ⌘K (or Ctrl/⌘+K anywhere in the room)", "A small box: type a few letters to jump to a channel, a person (their DM) or a message with those words. ↑ ↓ pick, Enter goes, Esc closes."],
@@ -2806,7 +2835,10 @@ export const ADMIN_GUIDES = {
       { group: "The board", items: [
         ["All · Idea · Script · Script OK · Making · In edit · Final check · Posted", "Show every column, or one. The number is how many videos are in it. On a phone the row slides sideways, and All shows only the columns with videos in, with the empty ones named on one line (\"Nothing in …\"). A computer shows all seven columns side by side."],
         ["A card", "One video: its cover, title, step, who is making it, the day it goes (or went) out, its length and one line about it."],
-        ["Script ↗ / Cover ↗ / Video ↗", "Open that file on GitHub, on the branch the card came from."],
+        ["Script ↗ / Cover ↗", "Open that file on GitHub, on the branch the card came from."],
+        ["▶ Video", "Plays the video's newest upload for this card from the private video storage (Cloudflare R2), in a new tab. GitHub can't play big files, so the board never links the video there."],
+        ["Studio", "Opens that same upload in Marketing → Studio (the editing suite)."],
+        ["Video: not uploaded yet", "No upload is linked to this card. On Uploads, pick this video's card under Video card and upload the file; the link appears here within a minute."],
         ["What happened (N)", "Opens the card's short log: one line per step, newest last."],
       ] },
     ],
@@ -2814,6 +2846,7 @@ export const ADMIN_GUIDES = {
       "Nothing is saved from this page. You cannot move a card here yet.",
       "The cards live in the code, in one file (marketing/board.json). A Claude chat moves a card by changing that file and pushing its own branch (the video-board skill). The board reads main and Harry's, Mikey's and Leo's branches from GitHub about once a minute, so a pushed change shows within a minute or two, with no deploy and no database. Two branches with the same card: the newest change wins.",
       "If GitHub can't be reached, the board shows the copy built into the site and says so at the top.",
+      "▶ Video reads the upload list (the same one as the Uploads page) when the board opens. An upload belongs to a card when it was uploaded with that card picked.",
     ],
     inGame: ["Nowhere. This is for making our own videos."],
     dev: "app/admin/marketing/page.tsx · components/admin/marketing/{ProductionBoard,MarketingTabs}.tsx · lib/marketing/board.ts (pure; tests/star/adminMarketing.mts) · /api/admin/marketing/board · marketing/board.json · .claude/skills/{video-board,patch-note-video,tiktok-remix}/SKILL.md · leak guard: scripts/marketing/private-names-guard.mjs",

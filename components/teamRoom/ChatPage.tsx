@@ -57,7 +57,7 @@ export default function ChatPage({ first, onOpenPatch, homeHref = TEAM_ROOM.home
   first?: RoomStart; onOpenPatch?: (version: string) => void;
   /** Each person's newest push (from the Team board), for the profile cards. */
   pushes?: LastPushes;
-  /** ⌂: back to the admin home (the Team board). */
+  /** ⌂: back to the admin home (/admin since 12 Nov 2026). */
   homeHref?: string; onHome?: () => void;
 }) {
   useEffect(() => { setChatPageOpen(true); return () => setChatPageOpen(false); }, []);
