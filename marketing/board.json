@@ -246,5 +246,22 @@
    "2026-11-12 Made from Mikey's Replace-a-player settings and wording. Waiting for Mikey's look.",
    "2026-11-12 Motion version (Mikey): video_replace_motion.html, same layer as the twins (moving backgrounds, badge wallpaper, specks, bobbing faces, circle wipes, ticking numbers, confetti on each option). No zoom."
   ]
+ },
+ {
+  "id": "v10-replace-bruno",
+  "title": "v10 · How do United replace Bruno Fernandes?",
+  "stage": "check",
+  "owner": "Claude",
+  "updated": "2026-11-12T21:00:00Z",
+  "postOn": null,
+  "line": "Contract runs out. #1 Güler 83% (won't leave Madrid), #2 Dybala 81% (old, cheap), #3 Cherki 75% (won't leave City), #5 Olmo 70%: the realistic pick (out of favour at Barça).",
+  "script": "docs/marketing/videos/v10-replace-bruno/script.md",
+  "cover": "docs/marketing/videos/v10-replace-bruno/cover.png",
+  "video": "docs/marketing/videos/v10-replace-bruno/knowitball-v10-replace-bruno.mp4",
+  "seconds": 74.5,
+  "links": [],
+  "log": [
+   "2026-11-12 Made in story mode from Mikey's context, motion style. Güler is not 'by far' the closest (83% v Dybala 81%): the line says 'the closest of them all'. Waiting for Mikey's look."
+  ]
  }
 ]

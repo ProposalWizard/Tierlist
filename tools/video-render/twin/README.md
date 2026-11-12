@@ -136,3 +136,10 @@ No login and no faked headers (SoFIFA's own image server refuses plain requests,
 `"todayFaces": true` in an episode turns it off. Checked on 16 players, 16 right (Salah 17/18 curly hair, Neymar 17/18 blond at PSG).
 
 `video_replace_motion.html` (12 Nov 2026) is the same motion layer on the replace engine, also built by `make_motion_engine.py`; use it with "engine": "video_replace_motion.html".
+
+## Story mode for replacement videos (12 Nov 2026, Bruno Fernandes)
+
+`"story": [ {"name", "lead", "verdict", "stamp", "stampAt", "kind": "no"|"maybe"|"yes", "tag"} , ... ]` in a replace episode swaps the
+two-option ending for a run through the list: each candidate (rank, age, match, value from the data) with Mikey's verdict and a stamp
+(red cross = ruled out, amber = maybe, gold tick = the pick), then "<him> against <pick>" and an end card (dream v realistic pick).
+`"to": ""` + `"hookSay"` + `"hookSticker"` = a hook with no transfer (e.g. a contract running out). Episode: `episodes/replace-bruno.json`.

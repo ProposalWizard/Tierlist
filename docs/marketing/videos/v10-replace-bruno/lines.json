@@ -1,0 +1,171 @@
+[
+{
+"id": "hook",
+"say": "Bruno Fernandes's contract runs out in the summer. So how do Manchester United replace him?",
+"cap": "BRUNO FERNANDES'S CONTRACT RUNS OUT IN THE SUMMER. SO HOW DO MANCHESTER UNITED REPLACE HIM?",
+"sfx": [
+[
+"hit",
+0.0,
+0.7
+],
+[
+"pop",
+"CONTRACT",
+0.6
+],
+[
+"hit",
+"HOW",
+0.7
+]
+],
+"voiceSettings": {
+"speed": 1.1
+},
+"tempo": 1.05
+},
+{
+"id": "profile",
+"say": "Over the last two seasons, among Premier League attackers, he's first for long balls and chances created, and second for assists. But only eighty-first for dribbles.",
+"cap": "OVER THE LAST TWO SEASONS, AMONG PREMIER LEAGUE ATTACKERS, HE'S FIRST FOR LONG BALLS AND CHANCES CREATED, AND SECOND FOR ASSISTS. BUT ONLY EIGHTY-FIRST FOR DRIBBLES.",
+"hold": 0.3,
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "method",
+"say": "So we compared him with all 175 number 10s in Europe's top five leagues.",
+"cap": "SO WE COMPARED HIM WITH ALL 175|175 NUMBER 10S IN EUROPE'S TOP FIVE LEAGUES.",
+"hold": 0.2,
+"sfx": [
+[
+"tick",
+"ALL",
+0.4
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "map",
+"say": "The closest of them all: Arda Güler, at Real Madrid.",
+"cap": "THE CLOSEST OF THEM ALL: ARDA GÜLER, AT REAL MADRID.",
+"hold": 0.15,
+"sfx": [
+[
+"hit",
+"ARDA",
+0.7
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "s1",
+"say": "He's twenty-one, an eighty-three percent match, and worth ninety-eight million euros. But would he leave Real Madrid for United? Very unlikely.",
+"cap": "HE'S 21|twenty-one, AN 83%|eighty-three-percent MATCH, AND WORTH €98M|ninety-eight-million-euros. BUT WOULD HE LEAVE REAL MADRID FOR UNITED? VERY UNLIKELY.",
+"hold": 0.3,
+"sfx": [
+[
+"pop",
+"WORTH",
+0.5
+],
+[
+"hit",
+"VERY",
+0.6
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "s2",
+"say": "Next, Paulo Dybala, at Roma. He's thirty-two, an eighty-one percent match, and worth two million euros. Old and cheap, but still very like Bruno.",
+"cap": "NEXT, PAULO DYBALA, AT ROMA. HE'S 32|thirty-two, AN 81%|eighty-one-percent MATCH, AND WORTH €2M|two-million-euros. OLD AND CHEAP, BUT STILL VERY LIKE BRUNO.",
+"hold": 0.3,
+"sfx": [
+[
+"pop",
+"WORTH",
+0.5
+],
+[
+"hit",
+"OLD",
+0.6
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "s3",
+"say": "Then the next young option: Rayan Cherki, at Manchester City. He's twenty-three, a seventy-five percent match, and worth ninety-nine million euros. But we can't see City selling him to United.",
+"cap": "THEN THE NEXT YOUNG OPTION: RAYAN CHERKI, AT MANCHESTER CITY. HE'S 23|twenty-three, A 75%|seventy-five-percent MATCH, AND WORTH €99M|ninety-nine-million-euros. BUT WE CAN'T SEE CITY SELLING HIM TO UNITED.",
+"hold": 0.3,
+"sfx": [
+[
+"pop",
+"WORTH",
+0.5
+],
+[
+"hit",
+"BUT",
+0.6
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "s4",
+"say": "So who could United actually get? Dani Olmo, at Barcelona. He's twenty-eight, a seventy percent match, and worth fifty-eight million euros. He's slipped out of favour, with Fermín López starting and playing well. Not the first choice, but a good fit, a fair price and the right age.",
+"cap": "SO WHO COULD UNITED ACTUALLY GET? DANI OLMO, AT BARCELONA. HE'S 28|twenty-eight, A 70%|seventy-percent MATCH, AND WORTH €58M|fifty-eight-million-euros. HE'S SLIPPED OUT OF FAVOUR, WITH FERMÍN LÓPEZ STARTING AND PLAYING WELL. NOT THE FIRST CHOICE, BUT A GOOD FIT, A FAIR PRICE AND THE RIGHT AGE.",
+"hold": 0.3,
+"sfx": [
+[
+"pop",
+"WORTH",
+0.5
+],
+[
+"hit",
+"GOOD",
+0.6
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "compare",
+"say": "Bruno against Olmo, on what makes Bruno special: long balls, chances created, assists and big chances made.",
+"cap": "BRUNO AGAINST OLMO, ON WHAT MAKES BRUNO SPECIAL: LONG BALLS, CHANCES CREATED, ASSISTS AND BIG CHANCES MADE.",
+"hold": 0.2,
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "end",
+"say": "So: Güler is the dream, but Olmo is the realistic pick. Who would you sign? Follow for more.",
+"cap": "SO: GÜLER IS THE DREAM, BUT OLMO IS THE REALISTIC PICK. WHO WOULD YOU SIGN? FOLLOW FOR MORE.",
+"hold": 0.0,
+"voiceSettings": {
+"speed": 1.08
+}
+}
+]

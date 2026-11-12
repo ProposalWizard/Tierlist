@@ -159,9 +159,14 @@ fmt = lambda k, v: (f"{v:.0f}%" if k == 'pass%' else f"{v:.1f}" if v >= 1 or k i
 L, S = [], {}
 def line(id, say, cap=None, **kw): L.append(dict(id=id, say=say, cap=cap or say.upper(), **kw))
 FROM, TO = EP['from'], EP['to']
-line('hook', f"{NAME} is likely off to {TO}. So how do you replace him?", sfx=[["hit", 0.0, 0.7], ["whoosh", TO.upper().split()[0], 0.6], ["hit", "HOW", 0.7]], voiceSettings={"speed": 1.1}, tempo=1.05)
-S['hook'] = {'type': 'hook', 'face': tgp['face'], 'flag': tgp['flag'], 'from': tgp['club'], 'to': 't' + str(EP['toId']), 'name': NAME.upper(), 'swapAt': TO.upper().split()[0], 'qAt': 'HOW',
-             'kicker': 'HOW DO YOU REPLACE HIM?', 'likely': 'LIKELY'}
+if TO:
+    line('hook', f"{NAME} is likely off to {TO}. So how do you replace him?", sfx=[["hit", 0.0, 0.7], ["whoosh", TO.upper().split()[0], 0.6], ["hit", "HOW", 0.7]], voiceSettings={"speed": 1.1}, tempo=1.05)
+    S['hook'] = {'type': 'hook', 'face': tgp['face'], 'flag': tgp['flag'], 'from': tgp['club'], 'to': 't' + str(EP['toId']), 'name': NAME.upper(), 'swapAt': TO.upper().split()[0], 'qAt': 'HOW',
+                 'kicker': 'HOW DO YOU REPLACE HIM?', 'likely': 'LIKELY'}
+else:   # no move: the hook says why he needs replacing (EP hookSay), a sticker says it on screen (EP hookSticker at hookStickerAt)
+    line('hook', EP['hookSay'], sfx=[["hit", 0.0, 0.7], ["pop", EP.get('hookStickerAt', 'CONTRACT'), 0.6], ["hit", "HOW", 0.7]], voiceSettings={"speed": 1.1}, tempo=1.05)
+    S['hook'] = {'type': 'hook', 'face': tgp['face'], 'flag': tgp['flag'], 'from': tgp['club'], 'to': None, 'name': NAME.upper(), 'swapAt': None, 'qAt': 'HOW',
+                 'kicker': 'HOW DO YOU REPLACE HIM?', 'sticker': EP.get('hookSticker'), 'stickerAt': EP.get('hookStickerAt', 'CONTRACT')}
 # what makes him him: his three best stats and his worst (against the league's players in his position), each as a ladder:
 # the player above him, him, the player below (top three if he is first, bottom three if he is last) (Mikey, 10 Nov 2026)
 def lv(k, vals):  # enough decimals that the three ladder values don't look tied
@@ -231,6 +236,37 @@ line('end', f"So: {last(o1)} to do it now, or {last(o2)} for the future. Who wou
 S['end'] = {'type': 'end2', 'a': {'face': tgp['face'], 'club': tgp['club'], 'name': SHORT.upper()}, 'title': f"HOW DO YOU REPLACE {SHORT.upper()}?",
             'opts': [{'face': r['face'], 'club': r['club'], 'name': last(r).upper(), 'sub': f"{r['age']} · {money(r['value'])[1]} · {R0(r['match'])}%", 'tag': t_, 'at': last(r).upper()}
                      for r, t_ in ((o1, 'READY NOW'), (o2, 'FOR THE FUTURE'))]}
+if EP.get('story'):
+    # replace the two-option part (map -> end) with the story: each candidate in list order with the verdict Mikey gave
+    keep_ids = ('hook', 'profile', 'method')
+    L[:] = [l for l in L if l['id'] in keep_ids]; S = {k: v for k, v in S.items() if k in keep_ids}
+    byname = lambda nm: next(r for r in rows if r['name'] == nm)
+    st = EP['story']; first_c = byname(st[0]['name'])
+    line('map', st[0].get('mapSay', f"The closest of them all: {first_c['name']}, at {first_c['team']}."), hold=0.15, sfx=[["hit", first(first_c), 0.7]])
+    S['map'] = {'type': 'map', 'dots': dots, 'hi': [[rows.index(first_c), first(first_c)]], 'fly': True}
+    for n, b in enumerate(st):
+        r = byname(b['name']); vs, vc = money(r['value']); ps = f"{words(R0(r['match']))} percent"; rank = rows.index(r) + 1
+        lead = b.get('lead', '')
+        say = (lead + ' ' if lead else '') + f"He's {words(r['age'])}, a{'n' if ps[0] in 'ae' else ''} {ps} match, and worth {vs}. " + b['verdict']
+        cap = ((lead.upper() + ' ') if lead else '') + f"HE'S {r['age']}|{words(r['age'])}, A{'N' if ps[0] in 'ae' else ''} {R0(r['match'])}%|{ps.replace(' ', '-')} MATCH, AND WORTH {vc}|{vs.replace(' ', '-')}. " + b['verdict'].upper()
+        id = f's{n + 1}'; good = b.get('kind') == 'yes'
+        line(id, say, cap, hold=0.3, sfx=[["pop", "WORTH", 0.5], ["hit", b.get('stampAt', b['verdict'].split()[0]).upper(), 0.6]])
+        S[id] = {'type': 'pick', 'face': r['face'], 'club': r['club'], 'flag': r['flag'], 'name': r['name'].upper(), 'team': r['team'], 'age': r['age'], 'value': vc, 'm': r['match'],
+                 'hall': {'value': hvc, 'v': ti['value'], 'face': tgp['face']}, 'pv': r['value'], 'rank': rank,
+                 'pill': b.get('tag'), 'pillAt': (lead.upper().split()[0] if lead else 'HE\'S'),
+                 'stamp': b.get('stamp'), 'stampAt': b.get('stampAt', b['verdict'].split()[0]).upper(), 'good': good, 'kind': b.get('kind', 'no')}
+    pk = byname(st[-1]['name']); pf = pk['o']['fc']; cmp4 = [k for k in ranked if pf.get(k) is not None][:4]
+    say4 = ", ".join(LAB[k][0] for k in cmp4[:-1]) + " and " + LAB[cmp4[-1]][0]
+    line('compare', f"{SHORT} against {last(pk)}, on what makes {SHORT} special: {say4}.", hold=0.2)
+    row = lambda k, f: {'label': LAB[k][1], 'a': round(tf[k], 2), 'b': round(f[k], 2), 'sub': 'per 90 minutes' if k != 'pass%' else 'per cent'}
+    side = lambda r: {'name': r['name'], 'season': ' + '.join(x[2:] for x in r['o']['seasons']), 'face': r['face'], 'club': r['club']}
+    S['compare'] = {'type': 'compare', 'kicker': f"{SHORT} v {last(pk)}", 'title': f"What makes {SHORT} special.", 'a': {'name': NAME, 'season': ' + '.join(x[2:] for x in SEAS), 'face': tgp['face'], 'club': tgp['club']},
+                    'b': side(pk), 'rows': [row(k, pf) for k in cmp4], 'at': [LAB[k][0].upper().split()[0] for k in cmp4]}
+    dream = byname(EP.get('dream', st[0]['name']))
+    line('end', EP.get('endSay', f"So: {last(dream)} is the dream, but {last(pk)} is the realistic one. Who would you sign? Follow for more."), hold=0.0)
+    S['end'] = {'type': 'end2', 'a': {'face': tgp['face'], 'club': tgp['club'], 'name': SHORT.upper()}, 'title': f"HOW DO YOU REPLACE {SHORT.upper()}?",
+                'opts': [{'face': r['face'], 'club': r['club'], 'name': last(r).upper(), 'sub': f"{r['age']} · {money(r['value'])[1]} · {R0(r['match'])}%", 'tag': t_, 'at': last(r).upper()}
+                         for r, t_ in ((dream, EP.get('dreamTag', 'THE DREAM')), (pk, EP.get('pickTag', 'THE REALISTIC PICK')))]}
 meta = {'series': EP.get('series', 'WHO REPLACES HIM?'), 'targetShort': SHORT, 'engine': 'video_replace.html', 'imgDir': IMG, 'clubColors': club_colours(),
         'source': 'Data: Opta via FotMob · top 5 leagues · ages and values: FotMob'}
 for l in L: l.setdefault('voiceSettings', {"speed": 1.08})

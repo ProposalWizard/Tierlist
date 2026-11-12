@@ -49,15 +49,16 @@ function confetti(d){if(d<0||d>2.4)return;x.save();for(let i=0;i<70;i++){const a
 const P={};
 P.hook=(sc,p,s,t)=>{const ts=wordT(s,sc.swapAt),qt=wordT(s,sc.qAt),sw=ease((t-ts)/0.4);
   clubBg(sc.from);stripes(0.08);
-  if(t>=ts){x.save();x.beginPath();const W=2400*sw;x.moveTo(-200,0);x.lineTo(-200+W,0);x.lineTo(-200+W-700,1920);x.lineTo(-200,1920);x.closePath();x.clip();clubBg(sc.to);stripes(0.08);x.restore();}
+  if(sc.to&&t>=ts){x.save();x.beginPath();const W=2400*sw;x.moveTo(-200,0);x.lineTo(-200+W,0);x.lineTo(-200+W-700,1920);x.lineTo(-200,1920);x.closePath();x.clip();clubBg(sc.to);stripes(0.08);x.restore();}
   kick(sc,s,t,sc.qAt);
   if(t>=qt){const q=back((t-qt)/0.45);x.save();x.translate(540,640);x.rotate(0.12);x.scale(q,q);T('?',0,330,F(900,900),'rgba(255,210,63,0.22)','center');x.restore();}
   const b=back(p/0.45),push=1+0.05*clamp(p/4);face(sc.face,540,620,250*push*clamp(b,0,1.15),clamp(b*2),WHITE);flag(sc.flag,740,420,80,ease((p-0.3)/0.3));
   T(sc.name,540,1010,F(900,fit(sc.name,900,120,960)),WHITE,'center',ease((p-0.1)/0.3));
   // the move: his old badge, an arrow, the new badge
-  const a0=ease((p-0.2)/0.3);badge(sc.from,t>=ts?250:470,1080,140,a0);
-  if(t>=ts){const k=back((t-ts)/0.45);T('→',540,1180,F(900,110),WHITE,'center',clamp(k));if(sc.likely)pill(sc.likely,540,1068,26,'rgba(0,0,0,0.55)',WHITE,0,clamp(k));x.save();x.translate(760,1150);x.scale(clamp(k,0,1.2),clamp(k,0,1.2));badge(sc.to,-70,-70,140,1);x.restore();}
-  if(t>=qt){const kd=t-qt,q=clamp(kd/0.18);pill(sc.kicker,540,1330,52,GOLD,'#111',-0.03-0.05*(1-q),2.3-1.3*ease(q));}
+  const a0=ease((p-0.2)/0.3);badge(sc.from,sc.to&&t>=ts?250:470,1080,140,a0);
+  if(sc.sticker){const st_=wordT(s,sc.stickerAt);if(t>=st_)pill(sc.sticker,540,1250,34,RED,WHITE,-0.05,clamp(back((t-st_)/0.4),0,1.2));}
+  if(sc.to&&t>=ts){const k=back((t-ts)/0.45);T('→',540,1180,F(900,110),WHITE,'center',clamp(k));if(sc.likely)pill(sc.likely,540,1068,26,'rgba(0,0,0,0.55)',WHITE,0,clamp(k));x.save();x.translate(760,1150);x.scale(clamp(k,0,1.2),clamp(k,0,1.2));badge(sc.to,-70,-70,140,1);x.restore();}
+  if(t>=qt){const kd=t-qt,q=clamp(kd/0.18);pill(sc.kicker,540,sc.sticker?1370:1330,52,GOLD,'#111',-0.03-0.05*(1-q),2.3-1.3*ease(q));}
   tag();};
 P.profile=(sc,p,s,t)=>{darkBg();tag();const b=back(p/0.4);face(sc.face,240,330,120*clamp(b,0,1.1),1,WHITE);badge(sc.club,320,400,64,ease(p/0.3));
   T(sc.name,400,320,F(900,fit(sc.name,900,64,620)),WHITE,'left',ease(p/0.3));T(sc.season+' · PER 90 MINUTES',400,370,F(700,28),DIM,'left',ease(p/0.3));
@@ -122,6 +123,8 @@ P.pick=(sc,p,s,t)=>{clubBg(sc.club);stripes(0.07);tag();const b=back(p/0.45);fac
   const vt=wordT(s,'WORTH'),va=ease((t-vt)/0.6);if(t>=vt-0.05){const W0=820;x.save();x.globalAlpha=clamp(va*3);
     T((META.targetShort||'').toUpperCase(),130,1110,F(900,30),WHITE);const big=Math.max(sc.hall.v,sc.pv),hw=(W0-110)*sc.hall.v/big*va,pw=(W0-110)*sc.pv/big*va;x.fillStyle=RED;rr(130,1126,hw,58,14);x.fill();T(sc.hall.value,140+hw,1170,F(900,40),WHITE,'left');
     T(sc.name,130,1230,F(900,30),WHITE);x.fillStyle=GOLD;rr(130,1246,pw,58,14);x.fill();T(sc.value,145+pw,1290,F(900,40),GOLD,'left');x.restore();}
+  if(sc.rank){T('#'+sc.rank,90,330,F(900,90),'rgba(255,255,255,0.85)','left',ease((p-0.2)/0.3));}
+  if(sc.stamp){const at=wordT(s,sc.stampAt);if(t>=at){const k=back((t-at)/0.35);x.save();x.translate(540,1395);x.rotate(-0.09);x.scale(clamp(k,0,1.25),clamp(k,0,1.25));x.font=F(900,50);const w=x.measureText(sc.stamp).width+120;const sk=sc.kind||(sc.good?'yes':'no'),scol=sk==='yes'?GOLD:sk==='maybe'?'#ffb347':RED;x.strokeStyle=scol;x.lineWidth=9;x.fillStyle='rgba(0,0,0,0.55)';rr(-w/2,-60,w,108,18);x.fill();x.stroke();T((sk==='yes'?'✓ ':sk==='maybe'?'~ ':'✗ ')+sc.stamp,0,18,F(900,50),scol,'center');x.restore();}}
   if(sc.pill){const ft=wordT(s,sc.pillAt);if(t>=ft){pill(sc.pill,540,250,44,GOLD,'#111',-0.03,clamp(back((t-ft)/0.4),0,1.2));confetti(t-ft);}}
   if(sc.caveat){const ct=wordT(s,sc.caveatAt);if(t>=ct)pill(sc.caveat,540,1385,34,RED,WHITE,-0.03,clamp(back((t-ct)/0.4),0,1.2));}};
 P.end2=(sc,p,s,t)=>{darkBg();stripes(0.04);T(sc.title,540,270,F(900,fit(sc.title,900,60,960)),GOLD,'center',ease(p/0.3));
