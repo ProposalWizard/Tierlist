@@ -186,7 +186,7 @@ def build():
       cm=glass(disc_col(kk),f'g{kk}');sm=glass(tuple(x*0.8 for x in disc_col(kk)),f'gs{kk}');sm.node_tree.nodes['Principled BSDF'].inputs['Alpha'].default_value=0.9
       zc=disc_z(kk);rad_k=RAD;th_k=TH;ns=30+(6 if kk<=3 else 0);m_k=disc_mass
       bpy.ops.mesh.primitive_cylinder_add(vertices=96,radius=RAD,depth=TH,location=(0,0,zc));whole=bpy.context.object;whole.name=f'disc_{kk:02d}';whole.data.materials.append(cm)
-    cells=shard_cells(rad_k,th_k,RI*1000+kk,ns);vols=[max(1e-9,bm.calc_volume()) for bm in cells];vt=sum(vols);sh=[]
+    cells=shard_cells(rad_k,th_k,4242+kk,ns);vols=[max(1e-9,bm.calc_volume()) for bm in cells];vt=sum(vols);sh=[]
     for si,bm in enumerate(cells):
       me=bpy.data.meshes.new(f's{kk}_{si}');bm.to_mesh(me);bm.free();o=bpy.data.objects.new(me.name,me);s.collection.objects.link(o);me.materials.append(sm)
       cen=sum((v.co for v in me.vertices),Vector())/len(me.vertices)
