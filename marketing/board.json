@@ -181,29 +181,6 @@
   ]
  },
  {
-  "id": "twins-batch-01",
-  "title": "Stat Twins · batch 1 (27 videos)",
-  "stage": "check",
-  "owner": "Claude",
-  "updated": "2026-11-10T21:30:00Z",
-  "postOn": null,
-  "line": "27 Stat Twins videos picked by score: Benzema, Messi, Mbappé, De Bruyne, Mané, Rice, Van Dijk, Kane, Modrić, Bellingham, Ronaldo, Kanté, Hazard and 14 more. List, captions and scripts in the README.",
-  "script": "docs/marketing/videos/twins-batch-01/README.md",
-  "cover": "docs/marketing/videos/twins-batch-01/cover.png",
-  "video": "docs/marketing/videos/twins-batch-01/01-karim-benzema-2122.mp4",
-  "seconds": 64.6,
-  "links": [
-   {
-    "label": "Instagram Reel · 07 Van Dijk",
-    "url": "https://www.instagram.com/reel/DfkXvJpFbEU/"
-   }
-  ],
-  "log": [
-   "2026-11-10 Batch made: pick_batch.py scored 118 famous player-seasons, 27 chosen (one per player, all positions), all voiced by Hugo. Every video checked by eye; 8 re-rendered for name and bar fixes. Waiting for Mikey's look.",
-   "2026-11-10 07 Van Dijk 18/19 posted to Instagram (knowitballjr) as a Reel via Windsor.ai. 26 of the batch still to post."
-  ]
- },
- {
   "id": "v08-palmer-2627-twin",
   "title": "v08 · Current Cole Palmer (26/27)'s statistical twin",
   "stage": "posted",
@@ -226,6 +203,30 @@
    "2026-11-11 Motion remake (after the Tifo Short breakdown): knowitball-v08-palmer-2627-twin-motion.mp4 on the new video_motion.html engine (camera push, moving backgrounds, badge wallpaper, card flips, circle wipes, ticking numbers, confetti). Still 0% of the time (old 76%, Tifo 2%). Same voice and words.",
    "2026-11-11 Mikey: keep the circle wipes and particles, take out the zoom/drift (it reset every scene). Re-rendered without it: still 8% of the time, longest still 1.6 s.",
    "2026-11-11 Motion version posted to Instagram (knowitballjr) as a Reel via Windsor.ai."
+  ]
+ },
+ {
+  "id": "twins-batch-01",
+  "title": "Stat Twins · batch 1 (27 videos)",
+  "stage": "check",
+  "owner": "Claude",
+  "updated": "2026-11-11T20:00:00Z",
+  "postOn": null,
+  "line": "27 Stat Twins videos picked by score: Benzema, Messi, Mbappé, De Bruyne, Mané, Rice, Van Dijk, Kane, Modrić, Bellingham, Ronaldo, Kanté, Hazard and 14 more. List, captions and scripts in the README.",
+  "script": "docs/marketing/videos/twins-batch-01/README.md",
+  "cover": "docs/marketing/videos/twins-batch-01/cover.png",
+  "video": "docs/marketing/videos/twins-batch-01/01-karim-benzema-2122.mp4",
+  "seconds": 64.6,
+  "links": [
+   {
+    "label": "Instagram Reel · 07 Van Dijk",
+    "url": "https://www.instagram.com/reel/DfkXvJpFbEU/"
+   }
+  ],
+  "log": [
+   "2026-11-10 Batch made: 27 Stat Twins videos picked by score, all voiced by Hugo.",
+   "2026-11-10 07 Van Dijk posted to Instagram (knowitballjr).",
+   "2026-11-11 All 27 re-rendered with faces from the season shown (201 of 216 faces; the rest are today's photo). Voices reused."
   ]
  }
 ]
