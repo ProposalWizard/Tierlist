@@ -6,7 +6,7 @@ import ConfirmHost from "@/components/star/ConfirmHost";
 import LagTestHost from "@/components/star/LagTest";
 
 export const metadata: Metadata = {
-  title: "Star Career — Admin Only",
+  title: "Road to the Golden Ball",
   robots: { index: false, follow: false },
   // Add to Home Screen opens the game with no browser bars (v0.25, point 3).
   // iPhone has no Fullscreen API for pages; this is the only way there.

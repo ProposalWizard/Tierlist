@@ -252,7 +252,7 @@ export default function ProfileSetup({ onComplete, onMainMenu }: Props) {
         )}
         <div className="text-center mb-3">
           <div className="inline-block px-3 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-bold tracking-widest uppercase">
-            Star Career
+            Road to the Golden Ball
           </div>
           <h1 className="mt-1.5 text-xl font-black text-white leading-tight">
             {step === 1 ? (pane === "who" ? "Who are you?" : "Your style") : "Your photo"}

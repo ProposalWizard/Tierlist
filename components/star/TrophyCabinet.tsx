@@ -49,9 +49,9 @@ export default function TrophyCabinet({ trophies, ballonDors, awards }: {
       <div className="kit-card relative mb-3 overflow-hidden p-4 text-center" style={{ boxShadow: "inset 0 0 0 1px rgba(251,191,36,.55), 0 0 30px rgba(251,191,36,.2)" }}>
         <Rays color="#fde68a" size={300} className="top-[40%]" />
         <Shine trigger={1} />
-        <div className="kit-trophy-in relative mb-1 flex justify-center"><TrophyImage name="Ballon d'Or" height={96} /></div>
+        <div className="kit-trophy-in relative mb-1 flex justify-center"><TrophyImage name="Golden Ball" height={96} /></div>
         <div className="relative text-3xl font-black tabular-nums text-yellow-300" style={{ textShadow: "0 0 14px rgba(251,191,36,.55)" }}><CountUp value={shown ? ballonDors : 0} ms={700} /></div>
-        <div className="relative text-[10px] font-black uppercase tracking-widest text-yellow-200">Ballon d&apos;Or</div>
+        <div className="relative text-[10px] font-black uppercase tracking-widest text-yellow-200">Golden Ball</div>
         {ballonDors > 0 && <Burst colors={["#fde047", "#fbbf24", "#ffffff"]} count={18} className="left-1/2 top-[38%]" />}
       </div>
 

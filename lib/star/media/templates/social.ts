@@ -235,7 +235,7 @@ export const SOCIAL_TEMPLATES: Template[] = [
   },
   {
     id: "rival-hype", archetype: "rivalFan", tags: ["goal", "award"], frames: ["mock"],
-    body: "one good game and it's ballon d'or talk again",
+    body: "one good game and it's golden ball talk again",
     weight: 2,
   },
   {

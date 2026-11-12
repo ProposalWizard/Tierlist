@@ -75,14 +75,18 @@ const nextConfig = {
   },
   // Prevent Vercel CDN / browser from caching dynamic pages.
   // Ensures logged-in and logged-out users always get fresh data.
-  // The game's player-facing address (lib/star/gamePath.ts): /road-to-ballon-dor
+  // The game's player-facing address (lib/star/gamePath.ts): /road-to-the-golden-ball
   // shows app/star-dev's page; /star-dev itself forwards there, query kept.
-  // Not permanent, so a browser never caches it if the address changes again.
+  // /star-dev's forward is not permanent (it is the page's own folder).
+  // The old name /road-to-ballon-dor (Harry, 12 Nov 2026: renamed) forwards for good.
   async rewrites() {
-    return [{ source: "/road-to-ballon-dor", destination: "/star-dev" }];
+    return [{ source: "/road-to-the-golden-ball", destination: "/star-dev" }];
   },
   async redirects() {
-    return [{ source: "/star-dev", destination: "/road-to-ballon-dor", permanent: false }];
+    return [
+      { source: "/star-dev", destination: "/road-to-the-golden-ball", permanent: false },
+      { source: "/road-to-ballon-dor", destination: "/road-to-the-golden-ball", permanent: true },
+    ];
   },
   async headers() {
     const securityHeaders = [

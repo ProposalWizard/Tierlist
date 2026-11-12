@@ -785,5 +785,5 @@ lit with an amber edge); on a phone they sit behind ☰ Menu, on a computer « f
 ## The admin is split by game (Harry, 19 Oct 2026)
 "stuff on the wider website should be on a completely different tab than road to ballon dor stuff
 — remember we may be a production company that makes a lot of games". One tab per game across the
-top of every admin page (Road to Ballon d'Or | Website games | Studio); inside a tab you only see
+top of every admin page (Road to the Golden Ball | Website games | Studio); inside a tab you only see
 that game's groups, pages and search. A new game = one line in GAMES (lib/adminRegistry.ts).

@@ -37,7 +37,7 @@ export const SFX_CATALOG: SfxCatalogEntry[] = [
   { name: "keeper-save", label: "Keeper catches or parries", group: "The match", wired: true, where: "In goal videos in the feed (and a saved video). The live match still makes its own sound." },
   { name: "match-pass", label: "Live match: a pass or a team-mate's kick", group: "The match", wired: true, where: "In the live match when a team-mate passes, lays it off or shoots. Arcade texture pack only (made by scripts/sfx/arcade.py)." },
   { name: "match-goal", label: "Live match: goal sting", group: "The match", wired: true, where: "In the live match the moment your team scores, with the net and the crowd. Arcade texture pack only." },
-  { name: "match-crowd", label: "Live match: crowd swell", group: "The crowd", wired: true, where: "In the live match after your goal or their miss, and on Ballon d'Or night. Arcade texture pack only." },
+  { name: "match-crowd", label: "Live match: crowd swell", group: "The crowd", wired: true, where: "In the live match after your goal or their miss, and on Golden Ball night. Arcade texture pack only." },
   { name: "crowd-cheer-small", label: "Goal at a small non-league ground", group: "The crowd", wired: false, where: "Not played yet. The match makes its own crowd noise." },
   { name: "crowd-cheer-stadium", label: "Goal in a big stadium", group: "The crowd", wired: true, where: "In goal videos in the feed (and a saved video). The live match still makes its own sound." },
   { name: "crowd-groan", label: "A near miss or a save", group: "The crowd", wired: false, where: "Not played yet. The match makes its own crowd noise." },

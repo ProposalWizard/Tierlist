@@ -83,12 +83,12 @@ export const ADMIN_GUIDES = {
 
   "/admin": {
     title: "Admin home",
-    what: "The front of the admin: one big tile per area (Team, Road to Ballon d'Or, Website games, Studio, Marketing, Videos) and a small panel of what changed. Admin in the site's menu, the KIB Admin app and every back arrow inside the admin end up here. Testers see only their tiles (no Team, no Marketing).",
+    what: "The front of the admin: one big tile per area (Team, Road to the Golden Ball, Website games, Studio, Marketing, Videos) and a small panel of what changed. Admin in the site's menu, the KIB Admin app and every back arrow inside the admin end up here. Testers see only their tiles (no Team, no Marketing).",
     buttons: [
       { group: "Tiles", items: [
         ["Team", "Opens the Team room (channels, DMs). Admins only."],
         ["Team board / Patch notes (under Team)", "Open the Team board, or the Patch notes, straight away."],
-        ["Road to Ballon d'Or · Website games · Studio · Marketing", "Open that game's own home, with its groups. The number is how many pages it has that you can open. Marketing is admins only."],
+        ["Road to the Golden Ball · Website games · Studio · Marketing", "Open that game's own home, with its groups. The number is how many pages it has that you can open. Marketing is admins only."],
         ["Videos", "The screen recorder: record your screen and voice, straight to Drive."],
       ] },
       { group: "What changed (admins only)", items: [
@@ -113,7 +113,7 @@ export const ADMIN_GUIDES = {
       {
         group: "Top of the page",
         items: [
-          ["🏅 Ballon d'Or Beta", "Opens the admin-only Ballon d'Or career game."],
+          ["🏅 Golden Ball Beta", "Opens the admin-only Golden Ball career game."],
           ["⚽ Scrape Data", "Opens Scrape / Import (player data from SoFIFA)."],
           ["👥 Players DB", "Opens the Players database editor."],
           ["Export Backup", "Downloads a JSON copy of all tierlist data to your computer. Changes nothing."],
@@ -228,8 +228,8 @@ export const ADMIN_GUIDES = {
         ["Your saves on this device", "A real save from this browser. It is only read: retiring here retires a copy, never the save."],
       ] },
       { group: "The screens, in order", items: [
-        ["1. After season 19: final season", "The warning after the season-19 Ballon d'Or night, before the transfer window. Continue comes back here."],
-        ["2. After season 20: the final whistle", "The end after the season-20 Ballon d'Or night. Hang them up opens the career overview."],
+        ["1. After season 19: final season", "The warning after the season-19 Golden Ball night, before the transfer window. Continue comes back here."],
+        ["2. After season 20: the final whistle", "The end after the season-20 Golden Ball night. Hang them up opens the career overview."],
         ["3. The career overview", "The end-of-career screen, as in the game. Flip its seven pages with the arrows at the top, or swipe."],
         ["Hall of Fame / New career / Menu", "The bar under the overview, as in the game. Here: Hall of Fame opens the made-up Hall; the other two come back here."],
         ["4. The Hall of Fame", "One made-up career of each shape. Tap one for its overview. Remove here only goes back: nothing is stored."],
@@ -244,12 +244,12 @@ export const ADMIN_GUIDES = {
         ["Full time (made-up 4–3)", "The farewell's last screen, with a made-up score. Hang them up opens the overview with the farewell line on it."],
         ["The match itself", "Not here: it is the real match. In the game, Dev Skip to the end of season 20, then Hang them up."],
       ] },
-      { group: "The Ballon d'Or night", items: [
-        ["You win · 3D / You come 2nd · 3D", "The ceremony as the game shows it (Settings → Look → Ballon d'Or night: New): the host at his lectern, the final three walk up one by one as he calls each name, \"And the winner is…\", the name, the golden ball over him, confetti, then your place. Skip › goes to the result page."],
+      { group: "The Golden Ball night", items: [
+        ["You win · 3D / You come 2nd · 3D", "The ceremony as the game shows it (Settings → Look → Golden Ball night: New): the host at his lectern, the final three walk up one by one as he calls each name, \"And the winner is…\", the name, the golden ball over him, confetti, then your place. Skip › goes to the result page."],
         ["Not in the top three (7th) · 3D", "The shorter night: the three walk up together, the winner is named, then \"You finished 7th\"."],
         ["… · drawn", "What a phone that can't run 3D sees: the same night on a drawn stage."],
         ["The result page after it", "Your season, the winner and the top ten, as after the ceremony. Continue comes back here."],
-        ["Old (the countdown cards)", "The Ballon d'Or screen as it was (Settings → Look → Ballon d'Or night: Old)."],
+        ["Old (the countdown cards)", "The Golden Ball screen as it was (Settings → Look → Golden Ball night: Old)."],
       ] },
       { group: "Season awards", items: [
         ["Season awards (last season)", "The awards screen after a season: the trophies, the Golden Boot and the other awards, and the Team of the Season, worked out from the picked career's last season. Each face is a headshot shot from the 3D model (the drawn head shows until it is made). Continue comes back here."],
@@ -264,15 +264,15 @@ export const ADMIN_GUIDES = {
     inGame: [
       "Every screen here is in the game. The warning shows after season 19, the final whistle after season 20 (a career is 20 seasons).",
       "Hang them up on the final whistle opens the farewell invite (once per career), then the overview.",
-      "The Ballon d'Or night is shown at the end of every season (New: the ceremony, then the result page; Old: the countdown cards).",
+      "The Golden Ball night is shown at the end of every season (New: the ceremony, then the result page; Old: the countdown cards).",
       "The overview replaced the old end screen. The Hall of Fame is on the title screen. All seasons is Stats → All seasons (Settings → Look → All seasons page: New | Old).",
       "Share link and Compare: on the end screen and in the Hall of Fame. A shared career opens at /legend/CODE, no sign-in.",
     ],
-    dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts, the ovation ovation.ts, ovation3d.ts, ovationLook.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts; the Ballon d'Or night components/star/BallonDorNight.tsx, lib/star/ballonDorNight.ts, ballonDor3d.ts, ballonDorNightLook.ts; the season awards components/star/SeasonAwardsScreen.tsx (lib/star/seasonAwards.ts computeSeasonAwardStats); the faces on the award cards components/star/Headshot3D.tsx, lib/star/headshot3d/.",
+    dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts, the ovation ovation.ts, ovation3d.ts, ovationLook.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts; the Golden Ball night components/star/BallonDorNight.tsx, lib/star/ballonDorNight.ts, ballonDor3d.ts, ballonDorNightLook.ts; the season awards components/star/SeasonAwardsScreen.tsx (lib/star/seasonAwards.ts computeSeasonAwardStats); the faces on the award cards components/star/Headshot3D.tsx, lib/star/headshot3d/.",
   },
   "/star-guest-dev": {
     title: "Guest accounts",
-    what: "Playing Road to Ballon d'Or without signing in. A guest gets a hidden account that saves like a real one; later, Save with Google keeps the same account so nothing is lost. Also the ad landing pages at /play/… that drop a player straight into a ready-made career. This page shows every screen at phone size.",
+    what: "Playing Road to the Golden Ball without signing in. A guest gets a hidden account that saves like a real one; later, Save with Google keeps the same account so nothing is lost. Also the ad landing pages at /play/… that drop a player straight into a ready-made career. This page shows every screen at phone size.",
     buttons: [
       { group: "The switch", items: [
         ["ON / OFF", "Whether this build has guest accounts. OFF = the live site works exactly as before: no Play now button, the /play/ pages are not found, no prompt."],
@@ -345,7 +345,7 @@ export const ADMIN_GUIDES = {
         ["Watched on TV", "Not picked for the first break, Premier League: the screen after watching your nation's first match of it."],
         ["Country page after a season", "Stats → Country after a whole 2026/27 season, always picked, so Tables, Matches, Scorers, Ranking and Who won are full. Takes a few seconds to play."],
         ["On duty at a tournament", "Two seasons on, two group games into the summer 2028 tournament (Euro for England): the League tab at the tournament. Says so if that nation didn't qualify."],
-        ["Ballon d'Or after a season", "The Ballon d'Or result after 2027/28, with your international goals counted. The other clubs' players are made up, with big nations' nationalities."],
+        ["Golden Ball after a season", "The Golden Ball result after 2027/28, with your international goals counted. The other clubs' players are made up, with big nations' nationalities."],
         ["The card pictures", "Each card draws the real screen for the nation you picked, shrunk. The three slow ones (a season played first) show the flag until you point at the card."],
       ] },
     ],
@@ -789,7 +789,7 @@ export const ADMIN_GUIDES = {
       "Logos write to club_logos and league_logos.",
       "Player photos are NOT done here — they come from the local Python scripts.",
     ],
-    inGame: ["Every game that shows real players and crests: PL Draft, Star Career, Ballon d'Or."],
+    inGame: ["Every game that shows real players and crests: PL Draft, Road to the Golden Ball."],
     dev: "app/admin/football/scrape/page.tsx · /api/admin/football/scrape-sofifa, /import-sofifa, /import-logos, /normalize-attributes",
   },
 
@@ -865,11 +865,11 @@ export const ADMIN_GUIDES = {
 
   "/admin/star": {
     title: "Game home",
-    what: "Every admin and test page, split by game: one tab per game across the top (Road to Ballon d'Or, Website games, Studio). Inside a tab you only see that game's groups and pages. The admin itself opens on the admin home (/admin), which has a tile for each game. Testers see only the pages they can open.",
+    what: "Every admin and test page, split by game: one tab per game across the top (Road to the Golden Ball, Website games, Studio). Inside a tab you only see that game's groups and pages. The admin itself opens on the admin home (/admin), which has a tile for each game. Testers see only the pages they can open.",
     buttons: [
       { group: "Game tabs (across the top of every admin page)", items: [
           ["🔔 Inbox (top right)", "The patch notes you haven't read yet, from 20 Oct 2026 on (older ones never show), newest first, plus notes under a patch note that @ you (Mentions). The red number is how many. Tap a patch note: it opens and counts as Read and understood. Tap a mention: that version opens with its notes showing. ✓ marks one read without opening it; Mark all read clears the list. Only Harry, Mikey and Leo see it."],
-        ["Road to Ballon d'Or", "The career game's groups and pages. This is /admin/star."],
+        ["Road to the Golden Ball", "The career game's groups and pages. This is /admin/star."],
         ["Website games", "PL Draft, Tierlists, Site XP + Tic Tac Toe and the old tests. Opens /admin/star/game/web."],
         ["Studio", "The team: Team board, Patch notes, Videos, Research, App plan, Tester access. Opens /admin/star/game/studio."],
         ["The number on a tab", "How many pages that game has (that you can open)."],
@@ -1124,7 +1124,7 @@ export const ADMIN_GUIDES = {
         ["Admin home (first line)", "The admin home: a tile for each area and what changed. Admin in the site's top menu, the KIB Admin app and ← on a game's home all open there now."],
         ["Team (lit)", "The Team area, second line of the side menu on every admin page."],
         ["Team board / Team room / Patch notes", "The Team area's views, under Team. Team room opens the full-screen room (old links to Ideas or To-do open it on #ideas or #todo). A red number on Team room = @mentions and private messages for you only; other new messages just show bold inside the room."],
-        ["Games: Ballon d'Or / Website / Studio / Marketing", "Each game's home (its groups and pages). The game tabs across the top do the same; in the Team area none of them is lit. Marketing (our videos) shows for Harry, Mikey and Leo only, never for testers."],
+        ["Games: Golden Ball / Website / Studio / Marketing", "Each game's home (its groups and pages). The game tabs across the top do the same; in the Team area none of them is lit. Marketing (our videos) shows for Harry, Mikey and Leo only, never for testers."],
         ["Videos", "How to hand Claude a screen recording."],
         ["← (top left)", "Back to the admin home (it used to leave for the site)."],
         ["« (top of the side menu)", "Folds the side menu to a strip of icons on a computer. » opens it again. On a phone the menu is ☰ Menu, Team first."],
@@ -1276,7 +1276,7 @@ export const ADMIN_GUIDES = {
       "Only admins can make or change links, through the site's server. Nobody can write either table from their own browser.",
     ],
     inGame: [
-      "A tester sees Road to Ballon d'Or → Settings → Developer tab (add money and coins, max skills, skip ahead, switch club, captain, reputation, fame, happiness, unlock training). Goal Replays stays admins only.",
+      "A tester sees Road to the Golden Ball → Settings → Developer tab (add money and coins, max skills, skip ahead, switch club, captain, reputation, fame, happiness, unlock training). Goal Replays stays admins only.",
       "A tester can open every page marked for testers on the admin home (/admin/star), which shows a tester only those pages. Pages that save or commit shared things stay admins only.",
       "Any career a developer tool is used on is marked \"Tester save\" in its Settings, for good.",
       "Testers never get admin pages or anything that changes what other players see.",
@@ -2645,7 +2645,7 @@ export const ADMIN_GUIDES = {
       {
         group: "💡 Ideas",
         items: [
-          ["Quick idea cards (Hat-trick reaction, Last-minute winner, Transfer rumour, Manager meme, Ballon d'Or night…)", "Shows the posts the media would make about it, written by the game itself."],
+          ["Quick idea cards (Hat-trick reaction, Last-minute winner, Transfer rumour, Manager meme, Golden Ball night…)", "Shows the posts the media would make about it, written by the game itself."],
           ["🎲 Random idea", "Three random ideas, a few posts each."],
           ["A match / A career moment / Any event / One line / Goal of the Month / Trends", "Build your own: a made-up match (every real detector runs on it), any career moment, any event with its facts, one template line from one account, a Goal of the Month poll, or the trends ticker."],
           ["See the reaction / 🔁 Re-roll / Tick all / Untick all", "Make the posts, make a new set, choose which to keep."],

@@ -613,7 +613,7 @@ export const MORE_TWITTER: Template[] = [
   ...bank("commentBot", "meme", [
     g("top comment under {clubS}'s goal post:\n\n\"{short} plays like he owes the defenders money\" 💬", 3),
     g("the comments under the {short} goal are undefeated:\n\n\"my nan could see that run and she's not even watching\" 💬", 2),
-    you(HAUL, "comments under the hat-trick post:\n\n\"give him the ballon d'or and a parking space\"\n\"{oppS} defenders in group therapy\" 💬", 4),
+    you(HAUL, "comments under the hat-trick post:\n\n\"give him the golden ball and a parking space\"\n\"{oppS} defenders in group therapy\" 💬", 4),
     you(SHAME, "top reply to {short}'s rating:\n\n\"bro was on airplane mode\" 💀", 3),
     you(["hooked"], "comment section on the {short} sub:\n\n\"he saw the board and said finally\" 💀", 2),
     ev(["hammered"], "top comment under {loserS}'s full-time post:\n\n\"can we play the second half again but with our eyes open\" 💬", 2),

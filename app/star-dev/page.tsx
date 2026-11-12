@@ -3738,7 +3738,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             </p>
           ) : (
           <p className="text-sm text-white/60 mb-6">
-            Road to Ballon d&apos;Or saves to your account, so your career follows you between
+            Road to the Golden Ball saves to your account, so your career follows you between
             devices instead of being stuck on whichever one you started it on.
           </p>
           )}

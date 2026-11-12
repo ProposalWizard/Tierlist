@@ -47,7 +47,7 @@ export default function HomePage() {
           href={GAME_PATH}
           className="text-lg font-bold text-white transition-colors hover:text-white md:text-xl"
         >
-          Road to Ballon d&apos;Or
+          Road to the Golden Ball
         </Link>
         <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-400">
           Beta

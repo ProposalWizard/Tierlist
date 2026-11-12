@@ -41,7 +41,7 @@ export interface AdminPage {
  * `home` is where the game's tab opens; `play` is the game as players see it.
  */
 export const GAMES = [
-  { key: "rbd", name: "Road to Ballon d'Or", short: "Ballon d'Or", home: "/admin/star", play: "/road-to-ballon-dor" },
+  { key: "rbd", name: "Road to the Golden Ball", short: "Golden Ball", home: "/admin/star", play: "/road-to-the-golden-ball" },
   { key: "web", name: "Website games", short: "Website", home: "/admin/star/game/web", play: "/" },
   { key: "studio", name: "Studio", short: "Studio", home: "/admin/star/game/studio", play: null },
   // Marketing & Production (Harry, 21 Oct 2026: "its own whole tab"; decision 1 in
@@ -74,7 +74,7 @@ export const ADMIN_FRONT_DOOR = "/admin/home";
 export const adminHomeFor = (role?: AdminRole): string => { void role; return ADMIN_HUB; };
 
 export const SECTIONS: { key: AdminSection; name: string }[] = [
-  { key: "rbd", name: "Road to Ballon d'Or" },
+  { key: "rbd", name: "Road to the Golden Ball" },
   { key: "site", name: "Site" },
   { key: "draft", name: "PL Draft" },
   { key: "tierlists", name: "Tierlists" },
@@ -128,7 +128,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/draft-dev", "Draft test", "The PL Draft with the test setup screen", "draft", "draft", "Harry", "live", "shared", "admin"),
   P("/draft-challenge-dev", "Challenge draft", "Draft with random briefs", "draft", "draft", "Harry", "live", "shared", "admin"),
   P("/draft/preview", "Draft design preview", "Draft screen redesigns, sample data", "old", "old", "Harry", "old", "none", "team"),
-  P("/star-dev", "Play the game", "Road to Ballon d'Or, as players see it", "rbd", "career", "Shared", "live", "own", "open"),
+  P("/star-dev", "Play the game", "Road to the Golden Ball, as players see it", "rbd", "career", "Shared", "live", "own", "open"),
   P("/star-retirement-dev", "Retirement screens", "Every end-of-career screen, with made-up or real saves", "rbd", "career", "Leo", "live", "own", "team"),
   P("/star-guest-dev", "Guest accounts", "Play without signing in: the ad landing pages and the save-your-career prompt", "rbd", "career", "Harry", "live", "own", "team"),
   P("/star-awards-night-dev", "Season awards night", "The awards read out in a small 3D hall, made-up results", "rbd", "career", "Leo", "live", "none", "team"),
@@ -200,7 +200,7 @@ export const ADMIN_PAGES: AdminPage[] = [
  * Longest prefix wins. Admin pages fall back to the other pages in their group.
  */
 export const RELATED: { prefix: string; label: string; urls: string[] }[] = [
-  { prefix: "/star-dev", label: "Road to Ballon d'Or", urls: ["/star-gallery-dev", "/star-highlights-dev", "/star-play-dev", "/lineups", "/admin/star-pass", "/admin/star-xp", "/star-tuning-dev", "/admin/sound-board", "/admin/clubs", "/admin/testers"] },
+  { prefix: "/star-dev", label: "Road to the Golden Ball", urls: ["/star-gallery-dev", "/star-highlights-dev", "/star-play-dev", "/lineups", "/admin/star-pass", "/admin/star-xp", "/star-tuning-dev", "/admin/sound-board", "/admin/clubs", "/admin/testers"] },
   { prefix: "/draft", label: "PL Draft", urls: ["/admin/football/players", "/admin/football/pl-clubs", "/admin/football/scrape", "/draft-dev", "/draft-challenge-dev", "/admin/xp"] },
   { prefix: "/tic-tac-toe", label: "Tic Tac Toe", urls: ["/admin/football", "/admin/site-content"] },
   { prefix: "/tenable", label: "Ten-A-Ball", urls: ["/admin/site-content"] },
