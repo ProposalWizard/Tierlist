@@ -29,9 +29,12 @@ const nextConfig = {
     outputFileTracingIncludes: {
       "/api/admin/patch-notes/page": ["./patch-notes/**/*"],
       "/api/admin/patch-notes/file/[...path]": ["./patch-notes/**/*"],
-      // The one-time "Move media to Cloudflare" button copies from its own
-      // bundled copy (lib/patchNoteMedia.ts). The follow-up commit drops the
-      // pictures from all three once the move is done.
+      // The Cloudflare move (timed job every 5 minutes, lib/patchNoteMedia.ts)
+      // copies from its own bundled copy. Since the cleanup (Nov 2026) every
+      // old picture lives only in R2 (docs/r2-layout.md), so patch-notes/ is
+      // pages plus any NEW patch note's pictures: about 6 MB, not 215 MB.
+      // The three includes stay on purpose: a new picture is served from the
+      // site until the timed job has copied it to R2 (within ~10 minutes).
       "/api/admin/patch-notes/media-sync": ["./patch-notes/**/*"],
       // The real-moment test pages' data (Real moments, Real shots, Real Goals).
       "/api/star/real-moments": ["./data/realmoments/*.json"],

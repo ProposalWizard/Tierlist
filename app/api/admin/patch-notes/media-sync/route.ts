@@ -58,7 +58,8 @@ export async function GET(req: NextRequest) {
   if (!mode.connected) return NextResponse.json({ ...mode, totalFiles: 0, totalBytes: 0, doneFiles: 0, doneBytes: 0, finished: false });
   try {
     const p = progressOf(planUploads(await listLocalMedia(), await listRemote()));
-    return NextResponse.json({ ...mode, ...p, finished: p.totalFiles > 0 && p.doneFiles >= p.totalFiles });
+    // After the cleanup the site holds only new pictures (often none): nothing waiting = done.
+    return NextResponse.json({ ...mode, ...p, finished: p.doneFiles >= p.totalFiles });
   } catch (e) {
     return NextResponse.json({ ...mode, error: e instanceof Error ? e.message : "Could not read the bucket." }, { status: 502 });
   }

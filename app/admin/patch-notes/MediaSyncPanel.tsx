@@ -84,7 +84,7 @@ export default function MediaSyncPanel() {
             {!s.connected
               ? "Works on the live site only (the Cloudflare keys are in Vercel)."
               : done
-                ? `Done: all ${s.totalFiles.toLocaleString()} files (${mb(s.totalBytes)}) are in Cloudflare. Nothing to do.`
+                ? "Done: every patch-note picture is in Cloudflare. Nothing to do."
                 : `${s.doneFiles.toLocaleString()} of ${s.totalFiles.toLocaleString()} files · ${mb(s.doneBytes)} of ${mb(s.totalBytes)} · moving by itself every 5 minutes`}
             {s.mode === "dev" && <span className="ml-1 text-[#f5b942]">(test copy on this computer)</span>}
           </div>
