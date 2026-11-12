@@ -3,8 +3,9 @@
  *
  * GET  → each bot's settings (on/off, reminder) and whether the timer can run
  *        (CRON_SECRET set). Read with the site's key so it is always whole.
- * POST { run: true }                         run the Patch bot now (the Team room asks once a visit,
- *                                            so a new patch note is announced without waiting for the timer)
+ * POST { run: true }                         the quarter-hour run now: Patch, Bug and Today bots (the Team room
+ *                                            asks once a visit, so they work without waiting for the timer)
+ * POST { run: true, bot }                    Run now on one bot's page: patch-notes, bug, today or health
  * POST { bot, enabled?, nudgeHours? }        save a bot's settings (only the Patch bot can be switched)
  *
  * Writes only team_bot_posts, with the site's own key; no browser can.
@@ -16,6 +17,8 @@ import { serviceOrNull } from "@/lib/backup/route";
 import { isTeamPerson, type TeamPerson } from "@/lib/teamRoom/config";
 import { BOTS, PATCH_BOT, botSettings, type BotSettings } from "@/lib/teamRoom/patchBot";
 import { runPatchBot, saveBotSettings, settingsRows } from "@/lib/teamRoom/patchBotServer";
+import { runOne, runQuarterHour } from "@/lib/teamRoom/botsServer";
+import { ringRed } from "@/lib/backup/route";
 
 export const dynamic = "force-dynamic";
 
@@ -51,8 +54,18 @@ export async function POST(req: Request) {
   try { body = (await req.json()) as Record<string, unknown>; } catch { return NextResponse.json({ error: "Bad request." }, { status: 400 }); }
 
   if (body.run === true) {
-    const run = await runPatchBot(sb);
-    return NextResponse.json(run, { status: run.ok ? 200 : 500 });
+    if (typeof body.bot !== "string") {
+      const all = await runQuarterHour(sb);
+      return NextResponse.json(all, { status: all.ok ? 200 : 500 });
+    }
+    const which = BOTS.find((b) => b.bot === body.bot);
+    if (!which) return NextResponse.json({ error: "Which bot?" }, { status: 400 });
+    if (!which.runnable) return NextResponse.json({ ok: false, error: which.noRun ?? "This bot has nothing to run." }, { status: 400 });
+    const { data: who } = await sb.from("team_members").select("person").eq("user_id", c.id).maybeSingle();
+    const name = (who as { person?: string } | null)?.person;
+    const run = await runOne(sb, which.bot, isTeamPerson(name) ? name : null);
+    if (run.red && run.title) await ringRed(sb, run.title, run.body ?? "");
+    return NextResponse.json({ ok: run.ok, text: run.text, posted: run.posted, off: !!run.off, error: run.ok ? undefined : run.text }, { status: run.ok ? 200 : 500 });
   }
 
   const info = BOTS.find((b) => b.bot === body.bot);

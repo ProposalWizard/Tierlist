@@ -41,6 +41,37 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 12 Nov 2026 — the Team room: two looks, its own board, a tab for every channel (Harry)
+- **"Midnight slate and Light C as dark/light mode."** Picked from the four
+  option pictures (docs/stills/team-room-options/). Dark = Midnight slate
+  (warm greys, one green), Light = Light C (green paper, white cards, a dark
+  green channel list: the admin's Knowitball look). The room follows the
+  device's own dark / light setting until you tap ☀ / ☾ beside your name
+  (per device; Auto | Dark | Light under Me). Paint only, in tokens
+  (components/teamRoom/roomLook.css): never a look-specific layout.
+  Measured (scripts/team-room/contrast.mjs): 5,604 texts, 23 screens x 2 looks
+  x 2 sizes, lowest 4.5:1, 0 under 4.5:1. A faint row (the /commands chips at
+  55% see-through) failed at 2.4:1: faint is done with a colour, not opacity.
+- **"Just use one of those ESPN-like profile pictures … something football
+  related for each of us."** Faces are club-style crests (Harry green with a
+  ball, Mikey blue with a star, Leo violet with chevrons); bots get round
+  badges. No letter-in-a-ring faces and no emoji as a bot's face.
+- **"None of this page other than the activity pushes and the current work is
+  being used."** The Team board inside the room shows only pushes a day,
+  current-work bars and a small notes box. Cut a screen to what is used.
+- **"Each page gets its own custom stuff."** Every channel has its own tabs and
+  opens on its own first one (lib/teamRoom/channels.ts CHANNEL_TABS). A tab
+  that does nothing is not shown; an empty channel says in one line what it is
+  for and how to use it.
+- **"By clicking on him I shouldn't get a chat … the patch bot is a bot."** A
+  bot's page says whether it is really posting, what it does, when it runs,
+  has Run now and its switch. A bot that does nothing is not in the list.
+- **"Notifications should be asked when we first come in … the auto should be
+  on."** Asked once per device, Turn on is the green button (a browser only
+  lets a site ask from a tap). Per-channel mute stays on the channel's 🔔.
+- Phone bottom bar: Chat · Board · Me · Activity (was Home · DMs · Activity ·
+  You; DMs are in the list). (inferred from the picked option pictures)
+
 ### 12 Nov 2026 — THE admin look: "A for admin home and C for the rest" (Harry)
 - Picked from option pictures (docs/stills/admin-look-options/sheet-390.png,
   sheet-1440.png): **"A for admin home and C for the rest — however I think we

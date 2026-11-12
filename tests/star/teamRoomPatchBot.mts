@@ -130,7 +130,7 @@ ok(botSettings([offRow, onRow]).enabled === true && botSettings([onRow, offRow])
 ok(botSettings([offRow], "health").enabled === true, "one bot's switch does not touch another's");
 ok(botStatusLine("patch-notes", [offRow], botSettings([offRow]), at12).tone === "off", "its page says Off");
 ok(botStatusLine("patch-notes", rows1, botSettings(rows1), at12).tone === "ok", "with posts: Working");
-ok(botStatusLine("health", [], botSettings([], "health"), at12).text.startsWith("Not posting yet"), "Health bot with no post says honestly it is not posting yet");
+ok(botStatusLine("health", [], botSettings([], "health"), at12).text.includes("no morning post has arrived yet"), "Health bot with no post says honestly that no morning post has arrived yet");
 const log = patchBotActivity({ notes, rows: [...rows1, offRow], acks: allRead });
 ok(log.length <= 5 && log.some((e) => /Posted v0\.138 in #general and asked Mikey and Leo/.test(e.text)), "the last things: the post, and who was asked");
 ok(log.some((e) => /Everyone has read v0\.138/.test(e.text)) && log.some((e) => /Mikey saved its settings: off/.test(e.text)), "…the archive, and the switch");

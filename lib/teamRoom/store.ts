@@ -34,8 +34,11 @@ import {
 import { cleanStatus, AWAY_AFTER_MS, type StatusRow } from "./status";
 import { BELLS_KEY, NO_BELLS, cleanBells, withBell, withMute, type Bell, type BellPrefs } from "./bells";
 import { cleanWelcome, nextVersion, WELCOME_EDITOR, type WelcomeRead, type WelcomeRow } from "./welcome";
-import { cleanMark, type BugMark } from "./bugs";
-import { BOTS, botSettings, settingsRow, type BotSettings } from "./patchBot";
+import { bugPollPlan, cleanMark, type BugMark } from "./bugs";
+import { todayAskPlan, ukDay } from "./today";
+import { limitsPost } from "@/lib/backup/plan";
+import HEADLINES from "@/lib/patchNoteHeadlines.json";
+import { BOTS, announcePlan, botInfo, botSettings, settingsRow, type BotSettings } from "./patchBot";
 import { LINKS_KEY, MAX_LINKS, acceptedTitle, askRow, cleanLinks, isAsk, isSitePath, withLink } from "./asks";
 
 export interface TeamRoomState {
@@ -130,6 +133,9 @@ let state: TeamRoomState = {
   v4: "unknown", statuses: {}, welcome: null, welcomeReads: [], bugMarks: [], bells: NO_BELLS, links: [],
 };
 const listeners = new Set<() => void>();
+/** The state before anything loads: what the server draws. */
+const BLANK: TeamRoomState = state;
+
 function set(patch: Partial<TeamRoomState> | ((s: TeamRoomState) => Partial<TeamRoomState>)) {
   state = { ...state, ...(typeof patch === "function" ? patch(state) : patch) };
   listeners.forEach((l) => l());
@@ -532,6 +538,52 @@ export async function saveBotSettings(bot: string, patch: Partial<Pick<BotSettin
   } catch { return { ok: false, error: "Could not reach the site." }; }
 }
 
+/**
+ * Run now, on a bot's page: ask the site to do that bot's job this minute
+ * (admins only; the site does it with its own key). The answer is one plain
+ * line: what it did, or why it did nothing.
+ *
+ * In a dev build with sample rows there is no site key and no database, so
+ * the SAME sums run here on the sample rows and the new post is added to this
+ * browser only. That shows the bot's real behaviour (asked twice, it posts
+ * once) without touching anything.
+ */
+export async function runBot(bot: string): Promise<Result & { text?: string }> {
+  const info = botInfo(bot);
+  if (!info?.runnable) return { ok: false, error: info?.noRun ?? "This bot has nothing to run." };
+  if (demo) {
+    const now = new Date();
+    const add = (rows: Omit<BotRow, "id" | "created_at">[]) => set((s) => ({ botRows: [...s.botRows, ...rows.map((r) => ({ ...r, id: ++demoId, created_at: now.toISOString() }) as BotRow)] }));
+    if (!botSettings(state.botRows, bot).enabled && info.switchable && bot !== "health") return { ok: true, text: "Switched off: nothing posted. (Sample rows: this browser only.)" };
+    if (bot === "patch-notes") {
+      const notes = (HEADLINES as { version: string; title: string; publishedAt: string; author?: string | null }[]).map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt, author: n.author ?? null }));
+      const plan = announcePlan({ notes, rows: state.botRows });
+      add(plan);
+      return { ok: true, text: `${plan.length ? `Done: announced ${plan.map((p) => `v${p.meta.version}`).join(", ")} in #general.` : "Nothing to do: every patch note is already announced and no reminder is due."} (Sample rows: this browser only.)` };
+    }
+    if (bot === "bug") {
+      const feedback = [{ id: "sample-report-1", message: "League table shows last season\nAfter the final day the table on my phone still shows last season's places.", page_url: "https://knowitball.co.uk/star-dev", created_at: new Date(now.getTime() - 6 * 60_000).toISOString(), user_id: null }];
+      const plan = bugPollPlan({ feedback, rows: state.botRows, now: now.getTime() });
+      add(plan);
+      return { ok: true, text: `${plan.length ? `Done: posted ${plan.length} report card in #bugs that the database had not posted.` : "Nothing to do: all 1 report from the last 3 days already has its card."} (Sample rows: this browser only.)` };
+    }
+    if (bot === "today") {
+      const plan = todayAskPlan({ now, rows: state.botRows, messages: state.messages });
+      add(plan);
+      return { ok: true, text: `${plan.length ? `Done: asked ${(plan[0].meta.people as string[]).join(" and ")} in #today.` : "Nothing to do: it has already asked today, everyone has checked in, or it is outside 09:00 to 14:00 UK on a weekday."} (Sample rows: this browser only.)` };
+    }
+    const post = limitsPost({ day: ukDay(now).day, dbBytes: 371 * 1048576, storageBytes: 412 * 1048576, r2: { total: 1.2 * 1073741824, folders: [{ folder: "patch-notes", bytes: 700 * 1048576 }, { folder: "backups", bytes: 320 * 1048576 }] }, backup: null, notes: ["sample numbers: a dev build cannot read the real sizes"] });
+    add([{ bot: "health", channel: "health", title: `${post.title} · asked for by ${state.me ?? "you"}`, body: post.body, url: null, everyone: false, meta: { kind: "limits", red: post.red, level: post.level, day: ukDay(now).day, lines: post.lines, manual: true, by: state.me } }]);
+    return { ok: true, text: "Done: posted the limits in #health. (Sample rows and sample numbers: this browser only.)" };
+  }
+  try {
+    const r = await fetch(BOTS_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ run: true, bot }) });
+    const j = (await r.json()) as { ok?: boolean; error?: string; text?: string };
+    if (!r.ok || !j.ok) return { ok: false, error: j.error ?? j.text ?? "The site could not run it." };
+    return { ok: true, text: j.text ?? "Done." };
+  } catch { return { ok: false, error: "Could not reach the site." }; }
+}
+
 /** For tests and sign-out: forget everything. */
 export function stopTeamRoom() {
   if (channel && sb) sb.removeChannel(channel);
@@ -544,7 +596,10 @@ export function useTeamRoom(): TeamRoomState {
   return useSyncExternalStore(
     (l) => { listeners.add(l); startTeamRoom(); return () => listeners.delete(l); },
     () => state,
-    () => state,
+    // While a page is still being put together from the server's copy, answer as the server did
+    // (nothing loaded yet). Otherwise a room that loaded early (the chat bubble starts it) makes
+    // the first paint differ from the server's and React throws the page away and redraws it.
+    () => BLANK,
   );
 }
 

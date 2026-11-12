@@ -16,6 +16,8 @@ const BASE = arg("--url", "http://localhost:3427");
 export const SCREENS = [
   ["general", "&ch=general"], ["ideas", "&ch=ideas"], ["todo", "&ch=todo"], ["bugs", "&ch=bugs"], ["health", "&ch=health"],
   ["patch-notes", "&ch=patch-notes"], ["marketing", "&ch=marketing"], ["today", "&ch=today"], ["me", "&view=me"], ["board", "&view=board"],
+  ["today-week", "&ch=today&tb=week"], ["today-msgs", "&ch=today&tb=messages"], ["bugs-fixed", "&ch=bugs&tb=fixed"], ["bugs-msgs", "&ch=bugs&tb=messages"], ["health-msgs", "&ch=health&tb=messages"],
+  ["patch-msgs", "&ch=patch-notes&tb=messages"], ["connectors", "&ch=connectors"], ["dm", "&dm=Mikey"],
   ["bot-patch", "&bot=patch-notes"], ["bot-health", "&bot=health"], ["bot-bug", "&bot=bug"], ["bot-jobs", "&bot=jobs"], ["bot-today", "&bot=today"],
 ];
 const SIZES = [{ name: "390x844", width: 390, height: 844, phone: true }, { name: "1440x900", width: 1440, height: 900, phone: false }];

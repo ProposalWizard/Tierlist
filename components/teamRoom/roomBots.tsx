@@ -18,7 +18,7 @@ import {
   PATCH_BOT, botSettings, botStatusLine, patchBotActivity, rowBotActivity, threadForClaude, patchThread,
   type BotInfo, type BotSettings,
 } from "@/lib/teamRoom/patchBot";
-import { loadBotSettings, saveBotSettings, useTeamRoom } from "@/lib/teamRoom/store";
+import { loadBotSettings, runBot, saveBotSettings, useTeamRoom } from "@/lib/teamRoom/store";
 import { PATCH_META } from "./roomCounts";
 import { BotFace } from "./bits";
 
@@ -59,8 +59,19 @@ export function BotPage({ info, onGo }: { info: BotInfo; onGo: (slug: string) =>
   }, [info.bot]);
   // A newer settings row seen live (someone else switched it) wins over what was first read.
   const settings = local.at && (!server?.settings.at || local.at >= server.settings.at) ? local : server?.settings ?? local;
-  const status = botStatusLine(info.bot, s.botRows, settings, now);
-  const events = info.bot === PATCH_BOT.bot ? patchBotActivity({ notes: PATCH_META, rows: s.botRows, acks: s.acks }) : rowBotActivity(info.bot, s.botRows);
+  const status = botStatusLine(info.bot, s.botRows, settings, now, s.jobs.length);
+  const events = info.bot === PATCH_BOT.bot ? patchBotActivity({ notes: PATCH_META, rows: s.botRows, acks: s.acks })
+    : info.bot === "jobs" ? [...s.jobs].sort((a, b) => (Date.parse(b.added) || 0) - (Date.parse(a.added) || 0)).slice(0, 5).map((j) => ({ at: j.added, text: `Showed "${j.title}" for ${j.owner === "all" ? "everyone" : j.owner}` }))
+      : rowBotActivity(info.bot, s.botRows);
+  const [running, setRunning] = useState(false);
+  const [ran, setRan] = useState<{ ok: boolean; text: string } | null>(null);
+  useEffect(() => { setRan(null); }, [info.bot]);
+  const run = async () => {
+    setRunning(true); setRan(null);
+    const r = await runBot(info.bot);
+    setRunning(false);
+    setRan(r.ok ? { ok: true, text: r.text ?? "Done." } : { ok: false, text: r.error });
+  };
   const save = async (patch: Partial<Pick<BotSettings, "enabled" | "nudgeHours">>) => {
     setBusy(true); setErr(null);
     const r = await saveBotSettings(info.bot, patch);
@@ -88,9 +99,24 @@ export function BotPage({ info, onGo }: { info: BotInfo; onGo: (slug: string) =>
       <section className="trb-card">
         <p className="tr-lbl">When it runs</p>
         <p>{info.runs}</p>
-        {info.bot === PATCH_BOT.bot && server?.timer === false && (
-          <p className="trb-warn">The 15-minute timer is not switched on (CRON_SECRET is not set in Vercel). Until it is, the bot posts when one of us opens an admin page.</p>
+        {server?.timer === false && info.bot !== "jobs" && (
+          <p className="trb-warn">{info.bot === "health"
+            ? "The site's timer is not switched on (CRON_SECRET is not set in Vercel), so the 08:00 post does not go out by itself. Run now still works."
+            : info.bot === "bug"
+              ? "The 15-minute timer is not switched on (CRON_SECRET is not set in Vercel). The rule inside the database still posts each report; the safety-net check runs when one of us opens an admin page."
+              : "The 15-minute timer is not switched on (CRON_SECRET is not set in Vercel). Until it is, the bot runs when one of us opens an admin page."}</p>
         )}
+      </section>
+
+      <section className="trb-card">
+        <p className="tr-lbl">Run now</p>
+        {info.runnable ? (
+          <div className="trh-run">
+            <span className="tx"><b>Do its job this minute</b><small>{info.runDoes}</small></span>
+            <button className="tr-btn" data-run-bot={info.bot} onClick={run} disabled={running}>{running ? "Running…" : "Run now"}</button>
+            {ran && <p className={`res${ran.ok ? "" : " bad"}`} role="status">{ran.text}</p>}
+          </div>
+        ) : <p className="tr-muted">{info.noRun}</p>}
       </section>
 
       <section className="trb-card">

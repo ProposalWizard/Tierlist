@@ -23,7 +23,7 @@
  */
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { TEAM_PEOPLE, TEAM_ROOM, type TeamPerson } from "@/lib/teamRoom/config";
+import { TEAM_PEOPLE, TEAM_ROOM, isTeamPerson, type TeamPerson } from "@/lib/teamRoom/config";
 import { stamp, tasksFor } from "@/lib/teamRoom/logic";
 import { quoteLine } from "@/lib/teamRoom/extras";
 import { pushedFor } from "@/lib/teamRoom/jobs";
@@ -47,7 +47,7 @@ import { BellIcon, BellMenu, useQuiet } from "./roomBells";
 import { setViewing, wirePopups } from "@/lib/teamRoom/popups";
 import { dmKey } from "@/lib/teamRoom/channels";
 import { LIST_W, THREAD_W, clamp, setPrefs, toggleIn, useRoomPrefs } from "./roomPrefs";
-import { botInfo, patchThreadOf } from "@/lib/teamRoom/patchBot";
+import { BOTS, botInfo, patchThreadOf } from "@/lib/teamRoom/patchBot";
 import { BotPage, CopyForClaude } from "./roomBots";
 import "./teamRoom.css";
 import "./room.css";
@@ -159,13 +159,14 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
     if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
     const el = (e.target as HTMLElement).closest<HTMLElement>("[data-person]");
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    if (!el || profile) return;
+    // Only a real person's face or name: other parts of the page use data-person for their own ends.
+    if (!el || profile || !isTeamPerson(el.dataset.person)) return;
     const p = el.dataset.person as TeamPerson;
     hoverTimer.current = setTimeout(() => openProfile(p, el.getBoundingClientRect()), 500);
   };
   const onFaceClick = (e: React.MouseEvent) => {
     const el = (e.target as HTMLElement).closest<HTMLElement>(".tr-msg [data-person]");
-    if (!el) return;
+    if (!el || !isTeamPerson(el.dataset.person)) return;
     e.stopPropagation();
     openProfile(el.dataset.person as TeamPerson, el.getBoundingClientRect());
   };
@@ -593,20 +594,17 @@ function MeLine({ me }: { me: TeamPerson }) {
   return <span className="nm"><b>{me}</b><small>{line || { active: "Active", away: "Away", dnd: "Do not disturb", busy: "Busy" }[presence]} · set a status</small></span>;
 }
 
-/** The bots that exist, with their live line (what each one is doing). */
+/** The bots that exist (lib/teamRoom/patchBot.ts BOTS), each with a live line: the last thing it did. */
 export function botMembers(bots: readonly BotPost[]) {
   const last = (bot: string) => bots.filter((b) => b.bot === bot).sort((a, b) => (Date.parse(b.at) || 0) - (Date.parse(a.at) || 0))[0];
-  const ago = (iso?: string) => (iso ? stamp(iso, Date.now()) : "nothing yet");
+  const ago = (iso: string) => stamp(iso, Date.now());
   const patch = bots.filter((b) => b.bot === "patch-notes" && b.flow).sort((a, b) => (Date.parse(b.at) || 0) - (Date.parse(a.at) || 0))[0];
-  const job = last("jobs");
-  const bug = last("bug");
-  const health = last("health");
-  return [
-    { bot: "patch-notes", name: "Patch bot", icon: "📣", channel: GENERAL, line: patch ? `last post ${ago(patch.at)} · #general` : "posts each patch note · #general" },
-    { bot: "bug", name: "Bug bot", icon: "🐞", channel: "bugs", line: bug ? `last report ${ago(bug.at)} · #bugs` : "not posting yet · #bugs" },
-    { bot: "health", name: "Health bot", icon: "🩺", channel: "health", line: health ? `last post ${ago(health.at)} · #health` : "not posting yet · 08:00 · #health" },
-    { bot: "jobs", name: "Jobs bot", icon: "🧰", channel: "todo", line: job ? `last job ${ago(job.at)} · #todo` : "posts pushed jobs · #todo" },
-  ];
+  const idle: Record<string, string> = { "patch-notes": "posts each patch note", bug: "no report yet", health: "no post yet · 08:00", today: "asks at 09:00", jobs: "no pushed job now" };
+  const did: Record<string, string> = { "patch-notes": "last post", bug: "last report", health: "last post", today: "last ask", jobs: "last job" };
+  return BOTS.map((info) => {
+    const l = info.bot === "patch-notes" ? patch : last(info.bot);
+    return { bot: info.bot, name: info.name, channel: info.channel, line: `${l ? `${did[info.bot] ?? "last post"} ${ago(l.at)}` : idle[info.bot] ?? "nothing yet"} · #${info.channel}` };
+  });
 }
 
 const HomeIcon = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden><path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg>;

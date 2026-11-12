@@ -1157,7 +1157,7 @@ export const ADMIN_GUIDES = {
         ["A channel", "Opens it. Bold name = new messages there. Red number = messages that @ you (or say @all / @everyone). Nothing else gets a red number."],
         ["+ Add channel", "Type a name, Add. Everyone sees it at once. Needs team_room_v3.sql; until it runs a short note says so in place."],
         ["Direct messages (Mikey / Leo / Harry)", "A private chat with one person: only the two of you can read it (the database's own row rules). Green dot = has the room open now; empty ring = away."],
-        ["Bots (Patch bot, Bug bot, Health bot, Jobs bot, each with a BOT tag)", "The bots that post here, with a line on what each did last. Tap Patch bot, Bug bot or Health bot to open THE BOT'S PAGE (not a chat): whether it is really posting, what it does, when it runs, the last 5 things it did, on/off and its settings. Jobs bot still opens #todo."],
+        ["Bots (Patch bot, Bug bot, Health bot, Today bot, Jobs bot, each with a BOT tag)", "The bots that post here, with a line on the last thing each did. Tap one to open THE BOT'S PAGE (not a chat): whether it is really posting, what it does, when it runs, Run now, the last 5 things it did, and its switch."],
         ["Your name (bottom of the list)", "Opens You: your phone/computer buzzes and the message look (Clean or Compact)."],
       ] },
       { group: "Team room: a channel (middle) and a thread (right)", items: [
@@ -1191,7 +1191,8 @@ export const ADMIN_GUIDES = {
         ["Copy thread for Claude (top of the thread)", "Copies the version, who wrote it and every comment with its author as tidy text, ending with \"make the changes suggested\". Paste it into your own Claude chat. Nothing is sent anywhere."],
         ["archived (small tag) in #patch-notes", "Once all three have read a patch note (its author counts), its post and thread leave #general and show in #patch-notes. Take a Read and understood back and it returns to #general."],
         ["Comment on vX as you read… (on the patch note page)", "A box under Read by on every patch note. Type, Enter: your comment lands in that note's thread in the Team room and its author's phone buzzes. The line under it links to the thread."],
-        ["A bot's page: the switch", "Patch bot on or off, for everyone. Off = new patch notes are not announced; switch it on again and any it missed are posted at once. Bug bot and Health bot show the switch greyed with the reason (one lives inside the database, the other on the site's timer)."],
+        ["A bot's page: the switch", "On or off, for everyone. Patch bot, Health bot and Today bot can be switched. Off = it posts nothing (the Patch bot posts what it missed when switched back on). Bug bot and Jobs bot show the switch greyed with the reason: one lives inside the database, the other only shows what is in the jobs file."],
+        ["A bot's page: Run now", "Asks the site to do that bot's job this minute, with the site's own key (admins only). The line under the button says what it did, or why it did nothing (\"Nothing to do: every patch note is already announced\"). Pressing it twice never posts twice, except the Health bot, which posts the limits each time, marked \"asked for by Harry\". Jobs bot has no Run now and says why."],
         ["A bot's page: Nudge · Never | After 24 h | After 48 h", "The Patch bot reminds whoever has still not read a patch note, once, in #general. Starts on After 24 h."],
         ["A bot's page: See its posts in #channel", "Goes to the channel that bot posts in."],
       ] },
@@ -1230,6 +1231,11 @@ export const ADMIN_GUIDES = {
         ["#context: Brain | Messages", "A link to the Brain's index on GitHub. Post a fact or ruling as a message; a Claude chat writes the note."],
         ["#connectors, and channels you add", "#connectors is chat only for now (nothing posts there by itself yet). A channel made with + Add channel gets Messages | Pinned."],
         ["An empty channel", "Says in one line what the channel is for and how to use it."],
+      ] },
+      { group: "Team room: Health bot and Today bot (12 Nov 2026)", items: [
+        ["Health bot's post in #health", "Every morning at 08:00 UK: four lines with a coloured dot each (database, Supabase Storage, Cloudflare R2, last night's backup). Green under 75% full, amber from 75%, red from 90% or a failed backup. A red post buzzes whoever's 🔔 for #health allows it."],
+        ["Today bot's post in #today (\"What are you on today?\")", "At 09:00 UK, Monday to Friday, it names whoever has not checked in yet. Once a day at most; nothing when all three have checked in, nothing at the weekend, never after 14:00."],
+        ["Bug bot's safety net", "Each report is posted by a rule inside the database the moment it is sent. Every 15 minutes the site also looks at the last 3 days of reports and posts a card for any that has none, so #bugs still fills if that rule is ever missing. A report gets one card, never two."],
       ] },
       { group: "Team room: #bugs (the Bug bot)", items: [
         ["Bug report #N (a card from the Bug bot)", "A player's bug report, posted by itself the moment they send it from the site's feedback form: Title, the Page it came from (tap to open it), From (a signed-in player or not) and What they said. Everyone gets a buzz by their #bugs 🔔 (every message to start with)."],
@@ -1295,6 +1301,7 @@ export const ADMIN_GUIDES = {
       "Channels and threads are part of the message itself too (\"[#ideas] [re:12] …\" at the front of the text), so they work for everyone with no database change, and every message from before channels is in #general.",
       "Which channels and DMs you have read is kept in this browser (like the old chat's red number). A channel you have never opened here counts from when you last read the old chat.",
       "New and renamed channels, reactions and private DMs save to the shared database at once (supabase/migrations/team_room_v3.sql). DMs: only the two people in one can ever read it, by the database's own row rules.",
+      "The Health bot, Today bot and the Bug bot's safety net write rows the same way as the Patch bot (the site's own key, the team_bot_posts table). The Bug bot's check only READS the players' feedback table. A check-in in #today and a note on the Team board are ordinary chat messages (\"[#today] …\", \"[#board] …\"): no new table. Dark / Light is kept on this device.",
       "Bot posts are never saved by anyone's browser. The Patch bot's posts, its reminders and its on/off setting are rows the SITE writes with its own key (the team_bot_posts table), every 15 minutes on a timer and whenever one of us opens an admin page. The jobs bot is drawn from the jobs file the site already reads.",
       "A proposal is an ordinary to-do row whose title starts \"[ask] \": Accept takes the tag off, Decline deletes the row. No new table. Quick links are kept in your own sign-in account's details (like your 🔔 choices), so they are on every phone and computer you sign in on; no table, no SQL.",
       "A comment on a patch note is an ordinary chat message with \"[pn:0.138]\" at the front of its text, so it saves like any message and needs no database change. Moving a post to #patch-notes changes nothing in the database: where it shows follows who has read the note.",
@@ -1307,6 +1314,7 @@ export const ADMIN_GUIDES = {
     ],
     inGame: ["Nowhere. Admins only."],
     needs: [
+      "The Health bot's 08:00 post, the Today bot's 09:00 ask and the Bug bot's 15-minute check all run on the site's timer, which needs CRON_SECRET set in Vercel. Without it: the Today bot and the Bug bot's check still run when one of us opens an admin page; the Health bot posts only when someone presses Run now on its page. The Health bot's real numbers also need supabase/migrations/ops_limits.sql and the R2 keys; a reading it cannot take shows as a grey dot with a Note line.",
       "The Patch bot's 15-minute timer needs CRON_SECRET set in Vercel (the same setting the nightly backup needs). Without it the timer refuses, and the bot still posts when one of us opens an admin page. Its page says which.",
       "GITHUB_TOKEN in Vercel (already set for scenario commits). Without it, or if GitHub refuses it, the board asks without a key (the repository is public): that works about 60 times an hour, and one line on the board says which happened. On a local test build the key comes from the computer running it, not from Vercel, and the line says so.",
       "The live progress bars (\"Now working on\") are step 2: one database file for Mikey to run and a shared password. Until then each card says so.",

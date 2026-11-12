@@ -29,7 +29,8 @@ const SHIELD = "M20 2 36 7v13c0 9-6.5 15-16 18C10.5 35 4 29 4 20V7z";
 
 export function Crest({ p }: { p: TeamPerson }) {
   const id = useId();
-  const c = CREST[p];
+  // A name that is not one of the three (old data, a test) gets a plain grey shield, never a crash.
+  const c = CREST[p] ?? { a: "#9aa3ad", b: "#2b2f36" };
   return (
     <svg viewBox="0 0 40 40" aria-hidden focusable="false">
       <path d={SHIELD} fill={c.a} />

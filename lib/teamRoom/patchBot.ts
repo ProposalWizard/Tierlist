@@ -326,9 +326,18 @@ export interface BotInfo {
   runs: string;
   /** Can it be switched off from its page? If not, why. */
   switchable: boolean; fixed?: string;
+  /** Has a Run now button (an admin asks the site to do its job this minute). If not, why. */
+  runnable: boolean; noRun?: string;
+  /** What Run now does, in one line. */
+  runDoes?: string;
 }
 
-/** The bots that exist today. A bot is a small job the site runs, not a person to chat with. */
+/**
+ * The bots that exist today. A bot is a small job the site runs, not a person
+ * to chat with. Only bots that really do their job are listed (Harry, 12 Nov
+ * 2026: "the bots don't actually genuinely work yet"): each has a test of its
+ * sums in tests/star/teamRoomBots.mts and a line in docs/team-room-run.md.
+ */
 export const BOTS: readonly BotInfo[] = [
   {
     bot: PATCH_BOT.bot, name: "Patch bot", icon: "📣", channel: GENERAL,
@@ -339,33 +348,68 @@ export const BOTS: readonly BotInfo[] = [
       "Moves the post and its thread to #patch-notes once all three have read it.",
     ],
     runs: `Every ${PATCH_BOT.everyMinutes} minutes on the site's timer, and the moment any of us opens an admin page after a deploy.`,
-    switchable: true,
+    switchable: true, runnable: true, runDoes: "Announces any patch note not announced yet and sends a reminder that is due. Nothing new = nothing posted.",
   },
   {
     bot: "bug", name: "Bug bot", icon: "🐞", channel: "bugs",
-    does: ["Turns each bug report a player sends into a report card in #bugs.", "Each card can be handed to one of us and marked fixed."],
-    runs: "The moment a player sends a report (it runs inside the database).",
-    switchable: false, fixed: "Always on: it lives inside the database, so this page can't switch it off.",
+    does: [
+      "Turns each bug report a player sends from the site into a report card in #bugs.",
+      "Each card can be handed to one of us (it becomes a #todo task) and marked fixed.",
+      "A report gets one card, never two: it is matched by the report's own number.",
+    ],
+    runs: `The moment a player sends a report (a rule inside the database does it). As a safety net the site also checks the last 3 days of reports every ${PATCH_BOT.everyMinutes} minutes and posts any card that is missing.`,
+    switchable: false, fixed: "Always on: the rule lives inside the database, so this page can't switch it off.",
+    runnable: true, runDoes: "Checks the last 3 days of players' reports and posts a card for any that has none. All there already = nothing posted.",
   },
   {
     bot: "health", name: "Health bot", icon: "🩺", channel: "health",
-    does: ["Posts the site's limits (database, storage, backups) in #health every morning.", "Posts in red, and buzzes, when a backup fails."],
-    runs: "08:00 UK time, every day, once the limits job runs (it needs CRON_SECRET set in Vercel).",
-    switchable: false, fixed: "Runs on the site's timer; it can't be switched off from here yet.",
+    does: [
+      "Posts the site's limits in #health every morning, four lines: database, Supabase Storage, Cloudflare R2, last night's backup.",
+      "Each line has a colour: green under 75% full, amber from 75%, red from 90% or when the backup failed.",
+      "A red post buzzes whoever's 🔔 for #health allows it (Only when red, to start with).",
+    ],
+    runs: "08:00 UK time, every day, on the site's timer (it needs CRON_SECRET set in Vercel).",
+    switchable: true, runnable: true, runDoes: "Reads the limits this minute and posts them in #health, marked \"asked for\". The morning post still goes out as usual.",
+  },
+  {
+    bot: "today", name: "Today bot", icon: "☀️", channel: "today",
+    does: [
+      "At 09:00 UK time, Monday to Friday, asks in #today whoever has not checked in yet, by name.",
+      "One ask a day at most. Nothing when all three have checked in, and nothing at the weekend.",
+    ],
+    runs: `The first run of the site's ${PATCH_BOT.everyMinutes}-minute timer after 09:00 UK time (never after 14:00), or when one of us opens an admin page in those hours.`,
+    switchable: true, runnable: true, runDoes: "Does its morning check now. It posts only between 09:00 and 14:00 UK on a weekday, once, and only if someone has not checked in.",
+  },
+  {
+    bot: "jobs", name: "Jobs bot", icon: "🧰", channel: "todo",
+    does: [
+      "Shows each job that arrived by push (the jobs file in the code) as a post in #todo, for the person it is for.",
+      "✅ Mark done on the post ticks that job in your own to-do.",
+    ],
+    runs: "It has no timer. The room reads the jobs file from GitHub about once a minute (every 10 minutes from the chat bubble), so a pushed job shows by itself.",
+    switchable: false, fixed: "Nothing to switch: it only shows what is in the jobs file.",
+    runnable: false, noRun: "Nothing to run: there is no job to do between pushes.",
   },
 ];
 export const botInfo = (bot: string) => BOTS.find((b) => b.bot === bot) ?? null;
 
 /** A plain line for a bot's page: is it really posting? */
-export function botStatusLine(bot: string, rows: readonly BotRow[], settings: BotSettings, now: number): { tone: "ok" | "wait" | "off"; text: string } {
+export function botStatusLine(bot: string, rows: readonly BotRow[], settings: BotSettings, now: number, jobs = 0): { tone: "ok" | "wait" | "off"; text: string } {
+  const info = botInfo(bot);
   if (bot === PATCH_BOT.bot) {
     if (!settings.enabled) return { tone: "off", text: `Switched off${settings.by ? ` by ${settings.by}` : ""}. New patch notes are not announced until it is on again.` };
     const n = announcedRows(rows).size;
     return n ? { tone: "ok", text: `Working: ${n} patch note${n === 1 ? "" : "s"} announced.` }
       : { tone: "wait", text: `On and waiting: it posts the next patch note published from ${new Date(PATCH_BOT.from).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}.` };
   }
+  if (bot === "jobs") return jobs ? { tone: "ok", text: `Working: ${jobs} pushed job${jobs === 1 ? "" : "s"} showing in #todo.` } : { tone: "wait", text: "On and waiting: there is no pushed job in the jobs file right now." };
+  if (info?.switchable && !settings.enabled) return { tone: "off", text: `Switched off${settings.by ? ` by ${settings.by}` : ""}. It posts nothing until it is on again.` };
   const mine = rows.filter((r) => r.bot === bot && !isSettingsRow(r)).sort((a, b) => b.id - a.id);
-  if (!mine.length) return { tone: "wait", text: bot === "health" ? "Not posting yet: no morning post has arrived. It starts at 08:00 UK once the limits job runs." : "Not posting yet: no report has come in since it was set up." };
+  if (!mine.length) {
+    return { tone: "wait", text: bot === "health" ? "On, but no morning post has arrived yet. It posts at 08:00 UK once the site's timer runs; Run now posts one this minute."
+      : bot === "today" ? "On and waiting: it has not needed to ask yet (it asks at 09:00 UK on a weekday when someone has not checked in)."
+        : "On and waiting: no player has sent a report since #bugs was set up." };
+  }
   const days = Math.floor((now - (Date.parse(mine[0].created_at) || 0)) / 86400_000);
   return { tone: "ok", text: `Working: ${mine.length} post${mine.length === 1 ? "" : "s"}, the last ${days <= 0 ? "today" : days === 1 ? "yesterday" : `${days} days ago`}.` };
 }

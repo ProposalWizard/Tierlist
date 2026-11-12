@@ -63,3 +63,6 @@
 .trr-host[data-room] .tr-sugg button { color: var(--ash-ink3); }
 .trr-host[data-room] .tr-sugg button small { opacity: 1; font-size: 11px; }
 .trr-host[data-room="slate"] .tr-at.me { color: #ffcf6b; }
+
+/* Words never touch a bot card's green edge. */
+.trr-host[data-room] .tr-botbub { padding-left: 10px; }
