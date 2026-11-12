@@ -12,6 +12,7 @@ import { GENERAL, channelOf, dmsWith, listChannels, parentOf, type Channel, type
 import { setQuickLink, useTeamRoom } from "@/lib/teamRoom/store";
 import { ADMIN_PAGES } from "@/lib/adminRegistry";
 import { nameOfPage } from "./bits";
+import { setLookPref, useRoomLook } from "./roomLook";
 import { Av, WaitingOnMe } from "./parts";
 import PushToggle from "./PushToggle";
 import { useRoomCounts } from "./roomCounts";
@@ -109,6 +110,8 @@ export function YouPanel() {
       <ScheduleEditor />
       <p className="tr-lbl" style={{ marginTop: 6 }}>Buzzes on this device</p>
       <PushToggle />
+      <p className="tr-lbl" style={{ marginTop: 10 }}>Dark or light</p>
+      <LookPicker />
       <p className="tr-lbl" style={{ marginTop: 10 }}>Message look</p>
       <div className="tr-seg trr-seg" role="group" aria-label="Message look">
         <button aria-pressed={prefs.density === "clean"} onClick={() => setPrefs({ density: "clean" })}>Clean · faces</button>
@@ -118,6 +121,19 @@ export function YouPanel() {
       <WelcomeEditor />
     </div>
   );
+}
+
+/** Auto | Dark | Light for the Team room, on this device. */
+export function LookPicker() {
+  const { pref, look } = useRoomLook();
+  return (<>
+    <div className="tr-seg trr-seg" role="group" aria-label="Dark or light">
+      {(["auto", "dark", "light"] as const).map((p) => (
+        <button key={p} aria-pressed={pref === p} onClick={() => setLookPref(p)}>{p === "auto" ? "Auto" : p === "dark" ? "Dark" : "Light"}</button>
+      ))}
+    </div>
+    <small className="tr-muted">Kept on this device. Auto follows your phone or computer: it is {look === "slate" ? "dark" : "light"} now.</small>
+  </>);
 }
 
 /**

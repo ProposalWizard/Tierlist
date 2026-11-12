@@ -20,6 +20,7 @@ import {
 } from "@/lib/teamRoom/patchBot";
 import { loadBotSettings, saveBotSettings, useTeamRoom } from "@/lib/teamRoom/store";
 import { PATCH_META } from "./roomCounts";
+import { BotFace } from "./bits";
 
 /** One button on a patch note's thread: the version and every comment, as text to paste into your own Claude. */
 export function CopyForClaude({ version }: { version: string }) {
@@ -70,7 +71,7 @@ export function BotPage({ info, onGo }: { info: BotInfo; onGo: (slug: string) =>
   return (
     <div className="trw-pad trb">
       <div className="trb-top">
-        <span className="trb-face" aria-hidden>{info.icon}</span>
+        <BotFace bot={info.bot} className="trb-face" />
         <span className="tx">
           <b>{info.name}</b>
           <small>A bot is a small job the site runs by itself. It is not a person to chat with.</small>

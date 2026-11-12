@@ -48,6 +48,9 @@ import { botInfo, patchThreadOf } from "@/lib/teamRoom/patchBot";
 import { BotPage, CopyForClaude } from "./roomBots";
 import "./teamRoom.css";
 import "./room.css";
+import "./roomLook.css";
+import { setLookPref, useRoomLook } from "./roomLook";
+import { BotFace } from "./bits";
 
 export type RoomTab = "messages" | "tool" | "pins";
 export interface RoomStart { place: RoomPlace; m: number | null; t: number | null; v: string | null; tab?: RoomTab; pn?: string | null; bot?: string | null }
@@ -64,8 +67,10 @@ export default function ChatPage({ first, onOpenPatch, homeHref = TEAM_ROOM.home
   homeHref?: string; onHome?: () => void;
 }) {
   useEffect(() => { setChatPageOpen(true); return () => setChatPageOpen(false); }, []);
+  // Dark = Midnight slate, Light = Light C; follows the device until you pick (roomLook.ts).
+  const { look } = useRoomLook();
   return (
-    <div className="tr trr-host">
+    <div className="tr trr-host" data-room={look}>
       <RoomGate>
         <LastPush.Provider value={pushes}>
         <Room first={first ?? { place: { kind: "channel", slug: GENERAL }, m: null, t: null, v: null }} onOpenPatch={onOpenPatch} homeHref={homeHref} onHome={onHome} />
@@ -526,18 +531,35 @@ function ChannelList({ channels, where, onGo, onClose, onSearch, homeBtn, narrow
           {botList.map((b) => (
             <button key={b.bot} className="trr-row trr-bot" aria-current={where.kind === "bot" && where.bot === b.bot ? "page" : undefined}
               onClick={() => onGo(botInfo(b.bot) ? { kind: "bot", bot: b.bot } : { kind: "channel", slug: b.channel })} title={`${b.name}: ${b.line}`}>
-              <span className="trr-botface" aria-hidden>{b.icon}</span>
+              <BotFace bot={b.bot} className="trr-botface" />
               <span className="nm"><span className="bn">{b.name}<span className="tr-bottag">BOT</span></span><small>{b.line}</small></span>
             </button>
           ))}
         </Section>
       </div>
-      {s.me && (
-        <button className="trr-me" onClick={() => onGo({ kind: "view", view: "you" })} aria-current={isView("you") ? "page" : undefined} title="Your status, buzzes and look">
-          <PersonFace p={s.me} /><MeLine me={s.me} />
-        </button>
-      )}
+      <div className="trr-mefoot">
+        {s.me && (
+          <button className="trr-me" onClick={() => onGo({ kind: "view", view: "you" })} aria-current={isView("you") ? "page" : undefined} title="Your status, buzzes and look">
+            <PersonFace p={s.me} /><MeLine me={s.me} />
+          </button>
+        )}
+        <LookButton />
+      </div>
     </div>
+  );
+}
+
+/** One tap: Dark ⇄ Light for the Team room on this device (Auto is under Me). */
+function LookButton() {
+  const { look } = useRoomLook();
+  const dark = look === "slate";
+  return (
+    <button className="trr-iconbtn trr-lookbtn" onClick={() => setLookPref(dark ? "light" : "dark")} aria-label={dark ? "Switch to the light look" : "Switch to the dark look"}
+      title={dark ? "Dark now. Tap for Light (this device)" : "Light now. Tap for Dark (this device)"}>
+      {dark
+        ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><circle cx="12" cy="12" r="4.200" /><path d="M12 2.500v2.500M12 19v2.500M2.500 12H5M19 12h2.500M5.300 5.300 7 7M17 17l1.700 1.700M5.300 18.700 7 17M17 7l1.700-1.700" /></svg>
+        : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" aria-hidden><path d="M20 14.500A8 8 0 0 1 9.500 4a8 8 0 1 0 10.500 10.500z" /></svg>}
+    </button>
   );
 }
 

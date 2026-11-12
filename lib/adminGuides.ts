@@ -1202,6 +1202,11 @@ export const ADMIN_GUIDES = {
         ["/show · /today · /todo (faint row above the message box)", "Tap one to start typing it. /today shows one line per person: their status, open jobs and newest job. /today filming clips sets your status until midnight. /todo opens the to-do; /todo buy cones adds a job for you; /todo @Mikey film the replays sends Mikey a proposal. /show is marked soon. A line that starts with a command is never posted in the chat."],
         ["You → Quick links · ＋ Pin a page…", "Pick any admin page: it becomes a button at the top of You. Tap it to open the page; ✕ takes it off. Up to 8."],
       ] },
+      { group: "Team room: Dark / Light and the crests (12 Nov 2026)", items: [
+        ["☀ / ☾ (beside your name, foot of the list)", "One tap: the Team room's Dark look (Midnight slate) or Light look (Light C: green paper, white cards, a dark green list). Kept on this device. Until you tap it the room follows your phone's or computer's own dark / light setting."],
+        ["Me → Dark or light: Auto | Dark | Light", "The same choice with Auto (follow the device) as a third option."],
+        ["The small shields (crests)", "Each of us has a club-style crest in our own colour instead of a letter: Harry green with a ball, Mikey blue with a star, Leo violet with chevrons. Each bot has a round badge. They are drawn by the site; there are no profile photos yet."],
+      ] },
       { group: "Team room: #bugs (the Bug bot)", items: [
         ["Bug report #N (a card from the Bug bot)", "A player's bug report, posted by itself the moment they send it from the site's feedback form: Title, the Page it came from (tap to open it), From (a signed-in player or not) and What they said. Everyone gets a buzz by their #bugs 🔔 (every message to start with)."],
         ["🤝 Hand to…", "Pick Harry, Mikey or Leo. The card says With Leo, and it becomes a task in their #todo (\"🐞 Bug #N: …\"). Bots join this list once they exist."],

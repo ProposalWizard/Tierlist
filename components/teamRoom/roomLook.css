@@ -1,0 +1,65 @@
+/* The Team room's two looks (Harry, 12 Nov 2026: "Midnight slate and Light C
+ * as dark/light mode"). Paint only: every Team room rule reads these tokens,
+ * so nothing here moves or resizes anything. Chosen by roomLook.ts.
+ * Small text is at least 4.5:1 in both (scripts/team-room/contrast.mjs). */
+
+/* Dark = Midnight slate */
+.trr-host[data-room="slate"] {
+  --ash-bg: #2b2d31; --ash-bg2: #232428; --ash-panel: #313338; --ash-panel-solid: #313338; --ash-panel2: #383a40;
+  --ash-line: #3f4148; --ash-line2: #50535b; --ash-ink: #f2f3f5; --ash-ink2: #c4c9cf; --ash-ink3: #a9aeb7;
+  --ash-accent: #3ddc84; --ash-accent-ink: #06170e; --ash-accent-soft: rgba(61, 220, 132, 0.14);
+  --ash-amber: #f0b232; --ash-amber-soft: rgba(240, 178, 50, 0.14); --ash-red: #ff8589; --ash-red-soft: rgba(242, 63, 67, 0.16);
+  --ash-harry: #3ddc84; --ash-mikey: #7cc0ff; --ash-leo: #c2a2ff; --ash-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --trr-cur: #404249; --trr-cur-ink: #ffffff; --trr-badge: #d83c3e; --trr-at: rgba(61, 220, 132, 0.14); --trr-at-ink: #7ce8ab;
+  color-scheme: dark;
+}
+/* Light = Light C (the admin's Knowitball look: green paper, white cards, dark green list) */
+.trr-host[data-room="lightc"] {
+  --ash-bg: #f1f4f0; --ash-bg2: #ffffff; --ash-panel: #ffffff; --ash-panel-solid: #ffffff; --ash-panel2: #e9eee8;
+  --ash-line: #dfe6df; --ash-line2: #c5d0c6; --ash-ink: #12241a; --ash-ink2: #3d5045; --ash-ink3: #55675b;
+  --ash-accent: #09673a; --ash-accent-ink: #ffffff; --ash-accent-soft: rgba(12, 122, 66, 0.10);
+  --ash-amber: #7a4b00; --ash-amber-soft: rgba(165, 106, 0, 0.12); --ash-red: #b3261e; --ash-red-soft: rgba(198, 40, 40, 0.08);
+  --ash-harry: #0c7a42; --ash-mikey: #1a5fb4; --ash-leo: #6a3fc0; --ash-shadow: 0 10px 28px rgba(18, 36, 26, 0.16);
+  --trr-cur: #1d4630; --trr-cur-ink: #ffffff; --trr-badge: #c62828; --trr-at: rgba(12, 122, 66, 0.12); --trr-at-ink: #0a6537;
+  color-scheme: light;
+}
+.trr-host[data-room] { background: var(--ash-bg); color: var(--ash-ink); height: 100%; }
+
+/* Light C: the channel list is dark green, so it carries its own inks. */
+.trr-host[data-room="lightc"] .trr-list {
+  --ash-bg2: #0f2a1c; --ash-panel: #153524; --ash-panel-solid: #153524; --ash-panel2: rgba(255, 255, 255, 0.09);
+  --ash-line: rgba(255, 255, 255, 0.10); --ash-line2: rgba(255, 255, 255, 0.20);
+  --ash-ink: #f0f7f2; --ash-ink2: #cfe2d7; --ash-ink3: #a5c4b3; --ash-accent: #3ddc84; --ash-accent-ink: #06170e;
+  --ash-accent-soft: rgba(61, 220, 132, 0.16); --ash-amber: #f0b232; --ash-red: #ff8589;
+  color: var(--ash-ink); border-right: 0; color-scheme: dark;
+}
+/* The current row: a quiet bar, not a block of green (both looks). */
+.trr-host[data-room] .trr-row[aria-current="page"] { background: var(--trr-cur); color: var(--trr-cur-ink); box-shadow: inset 3px 0 0 var(--ash-accent); }
+.trr-host[data-room] .trr-n, .trr-host[data-room] .tr-badge { background: var(--trr-badge); color: #fff; }
+.trr-host[data-room] .tr-badge.amber { background: var(--ash-amber); color: #1a1205; }
+.trr-host[data-room="lightc"] .tr-badge.amber { color: #fff; }
+/* @names: a soft green chip; yours stays amber. */
+.trr-host[data-room] .tr-at { color: var(--trr-at-ink); background: var(--trr-at); border-radius: 5px; padding: 0 4px; }
+.trr-host[data-room] .tr-at.me { color: var(--ash-amber); background: var(--ash-amber-soft); }
+/* Bot cards: a hairline box with a green edge, no glow. */
+.trr-host[data-room] .tr-botbub { border-left: 3px solid var(--ash-accent); }
+.trr-host[data-room] .trr-main, .trr-host[data-room] .trr-thread { background: var(--ash-bg); }
+.trr-host[data-room="lightc"] .trr-bottom { background: #ffffff; }
+
+/* Crests: a small club badge for each of us, a round badge for each bot. */
+.tr-av.crest { border: 0; background: none; border-radius: 0; display: inline-block; line-height: 0; }
+.tr-av.crest svg { width: 100%; height: 100%; display: block; }
+.tr-av.crest.off { filter: grayscale(.75); opacity: .34; background: none; }
+.tr-botav.crest, .trr-botface.crest, .trb-face.crest { border: 0; background: none; padding: 0; line-height: 0; display: inline-block; }
+.tr-botav.crest svg, .trr-botface.crest svg, .trb-face.crest svg { width: 100%; height: 100%; display: block; }
+
+/* The Dark / Light button sits beside your name at the foot of the list. */
+.trr-mefoot { display: flex; align-items: center; gap: 6px; border-top: 1px solid var(--ash-line); padding-right: 8px; flex: 0 0 auto; }
+.trr-mefoot .trr-me { border-top: 0; flex: 1; min-width: 0; }
+.trr-mefoot .trr-lookbtn { margin-left: auto; }
+
+/* Readable at 4.5:1: the faint command chips and your own @name. */
+.trr-host[data-room] .tr-sugg { opacity: 1; }
+.trr-host[data-room] .tr-sugg button { color: var(--ash-ink3); }
+.trr-host[data-room] .tr-sugg button small { opacity: 1; font-size: 11px; }
+.trr-host[data-room="slate"] .tr-at.me { color: #ffcf6b; }

@@ -32,7 +32,7 @@ import {
 } from "@/lib/teamRoom/store";
 import { COMMANDS, askOffer, askedFrom, endOfToday, parseCommand, todayLines, type Command } from "@/lib/teamRoom/asks";
 import { liveStatus } from "@/lib/teamRoom/status";
-import { Av, Linked, PAGE_NAMES, nameOfPage, siteOrigins } from "./bits";
+import { Av, BotFace, Linked, PAGE_NAMES, nameOfPage, siteOrigins } from "./bits";
 import { PATCH_META } from "./roomCounts";
 import { patchThread, patchThreadSummary } from "@/lib/teamRoom/patchBot";
 import { readPrefs, setPrefs, toggleIn, useRoomPrefs } from "./roomPrefs";
@@ -395,7 +395,7 @@ function BotRow({ b, now, day, onOpenPatch, onPatchThread }: { b: BotPost; now: 
     <>
       {day && <span className="tr-day">{dayLabel(b.at, now)}</span>}
       <div className="tr-msg tr-botmsg" data-bot={b.key}>
-        <span className="tr-botav" aria-hidden>{b.bot === "patch-notes" ? "📣" : b.bot === "jobs" ? "🧰" : b.bot === "bug" ? "🐞" : b.bot === "health" ? "🩺" : "🤖"}</span>
+        <BotFace bot={b.bot} />
         <div className="tr-bub tr-botbub">
           <small><b>{b.bot === "patch-notes" ? "Patch bot" : b.name}</b><span className="tr-bottag">BOT</span><span>{stamp(b.at, now)}</span>
             {b.archived && <span className="tr-archived" title="Everyone has read it, so it moved here from #general">archived</span>}
