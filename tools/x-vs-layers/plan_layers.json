@@ -1,0 +1,149 @@
+{
+ "rounds": [
+  {
+   "name": "Ping Pong Ball",
+   "t0": 0.0,
+   "t1": 3.2,
+   "impact": 1.1,
+   "full": 1.1,
+   "layers": 0
+  },
+  {
+   "name": "Foam Ball",
+   "t0": 3.2,
+   "t1": 6.3,
+   "impact": 4.3,
+   "full": 4.3,
+   "layers": 1
+  },
+  {
+   "name": "Tennis Ball",
+   "t0": 6.3,
+   "t1": 9.5,
+   "impact": 7.4,
+   "full": 7.4,
+   "layers": 1
+  },
+  {
+   "name": "Rubber Ball",
+   "t0": 9.5,
+   "t1": 13.3,
+   "impact": 10.6,
+   "full": 11.4,
+   "layers": 2
+  },
+  {
+   "name": "Wood Ball",
+   "t0": 13.3,
+   "t1": 16.4,
+   "impact": 14.4,
+   "full": 14.4,
+   "layers": 1
+  },
+  {
+   "name": "Plastic Ball",
+   "t0": 16.4,
+   "t1": 19.6,
+   "impact": 17.5,
+   "full": 17.6,
+   "layers": 3
+  },
+  {
+   "name": "Glass Ball",
+   "t0": 19.6,
+   "t1": 22.8,
+   "impact": 20.7,
+   "full": 20.8,
+   "layers": 3
+  },
+  {
+   "name": "Marble Ball",
+   "t0": 22.8,
+   "t1": 25.9,
+   "impact": 23.9,
+   "full": 24.1,
+   "layers": 5
+  },
+  {
+   "name": "Aluminum Ball",
+   "t0": 25.9,
+   "t1": 29.3,
+   "impact": 27.0,
+   "full": 28.1,
+   "layers": 8
+  },
+  {
+   "name": "Titanium Ball",
+   "t0": 29.3,
+   "t1": 32.6,
+   "impact": 30.4,
+   "full": 30.7,
+   "layers": 8
+  },
+  {
+   "name": "Iron Ball",
+   "t0": 32.6,
+   "t1": 36.0,
+   "impact": 33.7,
+   "full": 34.2,
+   "layers": 10
+  },
+  {
+   "name": "Steel Ball",
+   "t0": 36.0,
+   "t1": 39.8,
+   "impact": 37.1,
+   "full": 37.9,
+   "layers": 12
+  },
+  {
+   "name": "Copper Ball",
+   "t0": 39.8,
+   "t1": 43.5,
+   "impact": 40.9,
+   "full": 41.6,
+   "layers": 13
+  },
+  {
+   "name": "Silver Ball",
+   "t0": 43.5,
+   "t1": 47.8,
+   "impact": 44.6,
+   "full": 46.2,
+   "layers": 15
+  },
+  {
+   "name": "Lead Ball",
+   "t0": 47.8,
+   "t1": 51.7,
+   "impact": 48.9,
+   "full": 49.8,
+   "layers": 17
+  },
+  {
+   "name": "Gold Ball",
+   "t0": 51.7,
+   "t1": 55.5,
+   "impact": 52.8,
+   "full": 53.6,
+   "layers": 20
+  },
+  {
+   "name": "Tungsten Ball",
+   "t0": 55.5,
+   "t1": 58.8,
+   "impact": 56.95,
+   "full": 57.1,
+   "layers": 20,
+   "gold": true
+  }
+ ],
+ "end": 60.7,
+ "loop_from": 59.9,
+ "rewind": {
+  "src_from": 55.5,
+  "src_to": 58.8,
+  "out_from": 58.8,
+  "out_to": 60.7
+ }
+}
