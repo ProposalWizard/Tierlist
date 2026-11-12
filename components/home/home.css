@@ -1,0 +1,297 @@
+/*
+ * THE PUBLIC HOME: three looks of one page (components/home/PublicHome.tsx).
+ *   .kh-a  Stadium night    .kh-b  Friv Classic    .kh-c  Clean arcade
+ * Phone first (390 wide), then a computer (from 900 px).
+ * Text is at least 4.5:1 on its background in every look.
+ * Fonts are the two files the game already ships (public/star/banners).
+ */
+@font-face { font-family: "KH Oswald"; src: url(/star/banners/Oswald-Bold.woff2) format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "KH Lucky"; src: url(/star/banners/LuckiestGuy.woff2) format("woff2"); font-weight: 400; font-display: swap; }
+
+.kh {
+  --bg: #070b16; --ink: #fff; --muted: #c3ccdd; --accent: #f6c945; --accent-ink: #1a1300;
+  --focus: #fff; --intro-bg: #070b16; --intro-ink: #fff;
+  position: relative; min-height: 100%; background: var(--bg); color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.4; overflow-x: clip;
+}
+.kh *, .kh *::before, .kh *::after { box-sizing: border-box; }
+.kh a { color: inherit; }
+.kh :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 6px; }
+.kh-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; opacity: 0; }
+
+.kh-main { margin: 0 auto; max-width: 1180px; padding: 0 16px 28px; }
+.kh-h2 { margin: 0 0 12px; font-size: 22px; line-height: 1.1; font-weight: 800; }
+.kh-sub { margin: -4px 0 14px; font-size: 15px; color: var(--muted); max-width: 46ch; }
+
+/* ── The game ─────────────────────────────────────────────────────────── */
+.kh-hero-in { display: flex; flex-direction: column; gap: 16px; }
+.kh-kicker { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.kh-beta-tag { padding: 3px 8px; border-radius: 6px; background: #f6c945; color: #1a1300; font-size: 12px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+.kh-title { margin: 0; font-size: 40px; line-height: 1; font-weight: 800; text-wrap: balance; }
+.kh-line { margin: 12px 0 18px; font-size: 16px; color: var(--muted); max-width: 40ch; }
+.kh-play {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%;
+  min-height: 58px; padding: 0 28px; border-radius: 14px; background: var(--accent); color: var(--accent-ink) !important;
+  font-size: 20px; font-weight: 900; letter-spacing: .02em; text-decoration: none; text-transform: uppercase;
+  transition: transform .08s ease, filter .12s ease, box-shadow .12s ease;
+}
+.kh-play:hover { filter: brightness(1.07); }
+.kh-play:active { transform: translateY(2px) scale(.99); }
+.kh-hero-media { position: relative; }
+.kh-hero-media img { display: block; max-width: 100%; height: auto; }
+
+/* ── Get the game + Join the beta ─────────────────────────────────────── */
+.kh-band { display: grid; gap: 16px; margin-top: 20px; }
+.kh-get-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.kh-get-install { grid-column: 1 / -1; display: grid; gap: 8px; }
+.kh-get-done { grid-column: 1 / -1; }
+.kh-get-item {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 10px 14px;
+  border-radius: 12px; border: 0; font: inherit; text-align: left; text-decoration: none;
+}
+.kh-get-item svg { flex: none; }
+.kh-get-item span { display: grid; min-width: 0; }
+.kh-get-item b { font-size: 15px; font-weight: 800; line-height: 1.2; }
+.kh-get-item small { font-size: 13px; line-height: 1.25; }
+.kh-get-btn { cursor: pointer; transition: transform .08s ease, filter .12s ease; }
+.kh-get-btn:hover { filter: brightness(1.06); }
+.kh-get-btn:active { transform: translateY(2px); }
+.kh-get-tip { margin: 0; padding: 10px 12px; border-radius: 10px; font-size: 14px; font-weight: 600; list-style: none; display: grid; gap: 6px; }
+.kh-get-tip li { display: flex; align-items: center; gap: 8px; }
+.kh-step { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; font-size: 13px; font-weight: 900; }
+
+.kh-beta-row { display: grid; gap: 10px; }
+.kh-beta-input { width: 100%; min-height: 54px; padding: 0 14px; border-radius: 12px; font: inherit; font-size: 16px; }
+.kh-beta-btn {
+  min-height: 54px; padding: 0 22px; border: 0; border-radius: 12px; font: inherit; font-size: 16px; font-weight: 900;
+  cursor: pointer; white-space: nowrap; transition: transform .08s ease, filter .12s ease;
+}
+.kh-beta-btn:hover { filter: brightness(1.07); }
+.kh-beta-btn:active { transform: translateY(2px); }
+.kh-beta-btn:disabled { opacity: .7; cursor: default; }
+.kh-beta-note, .kh-beta-msg { margin: 10px 0 0; font-size: 13.5px; }
+.kh-beta-note { color: var(--muted); }
+.kh-beta-msg { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; font-size: 15px; font-weight: 700; }
+
+/* ── More games ───────────────────────────────────────────────────────── */
+.kh-more { margin-top: 28px; }
+.kh-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.kh-cell:first-child { grid-column: 1 / -1; }
+.kh-tile { display: flex; flex-direction: column; height: 100%; min-height: 44px; text-decoration: none; overflow: hidden; transition: transform .1s ease, box-shadow .12s ease, filter .12s ease; }
+.kh-tile-art { display: block; aspect-ratio: 1; overflow: hidden; }
+.kh-cell:first-child .kh-tile-art { aspect-ratio: 2 / 1; }
+.kh-tile-art svg { display: block; width: 100%; height: 100%; }
+.kh-tile-text { display: grid; gap: 2px; padding: 10px 12px 12px; }
+.kh-tile-name { font-size: 17px; font-weight: 800; line-height: 1.15; }
+.kh-tile-line { font-size: 13px; line-height: 1.25; color: var(--muted); }
+
+.kh-foot { display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; margin-top: 32px; padding-top: 16px; font-size: 14px; color: var(--muted); }
+.kh-foot a { color: var(--ink); font-weight: 700; text-underline-offset: 3px; }
+.kh-foot-links { display: flex; gap: 16px; }
+
+@media (min-width: 640px) {
+  .kh-beta-row { grid-template-columns: 1fr auto; }
+  .kh-play { width: auto; min-width: 240px; }
+}
+@media (min-width: 900px) {
+  .kh-main { padding: 0 32px 40px; }
+  .kh-h2 { font-size: 26px; }
+  .kh-band { grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 28px; }
+  .kh-more { margin-top: 40px; }
+  .kh-grid { grid-template-columns: repeat(5, 1fr); gap: 18px; }
+  .kh-cell:first-child { grid-column: auto; }
+  .kh-cell:first-child .kh-tile-art { aspect-ratio: 1; }
+  .kh-line { font-size: 18px; }
+}
+
+/* ══ A · STADIUM NIGHT ═════════════════════════════════════════════════ */
+.kh-a { --bg: #070b16; --ink: #fff; --muted: #c3ccdd; --accent: #f6c945; --accent-ink: #1a1300; --focus: #f6c945; }
+.kh-a::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 760px; pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(7,11,22,.55) 0%, rgba(7,11,22,.78) 55%, #070b16 100%),
+    url(/home/title-stadium-night.webp) center top / cover no-repeat;
+}
+.kh-a .kh-main { position: relative; }
+.kh-a .kh-hero { padding-top: 16px; }
+.kh-a .kh-title, .kh-a .kh-h2 { font-family: "KH Oswald", Impact, "Arial Narrow", sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: .01em; }
+.kh-a .kh-title { font-size: 44px; text-shadow: 0 2px 18px rgba(0,0,0,.6); }
+.kh-a .kh-gold { color: #f6c945; }
+.kh-a .kh-kicker, .kh-a .kh-line { color: #e3e8f3; text-shadow: 0 1px 8px rgba(0,0,0,.7); }
+.kh-a .kh-play { box-shadow: 0 0 0 1px rgba(255,255,255,.25) inset, 0 10px 34px rgba(246,201,69,.38); }
+.kh-a .kh-hero-media { order: -1; }
+.kh-a .kh-shot > img { width: 100%; border-radius: 18px; border: 1px solid rgba(255,255,255,.22); box-shadow: 0 18px 50px rgba(0,0,0,.55); }
+.kh-a .kh-shot-side { position: absolute; right: 10px; bottom: -10px; width: 84px; transform: rotate(5deg); border-radius: 10px; overflow: hidden; border: 2px solid #fff; box-shadow: 0 10px 26px rgba(0,0,0,.6); }
+.kh-a .kh-shot-side img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; object-position: center 40%; }
+.kh-a .kh-get, .kh-a .kh-beta { padding: 18px; border-radius: 16px; background: rgba(16,23,42,.86); border: 1px solid rgba(255,255,255,.14); }
+.kh-a .kh-get-btn { background: #fff; color: #0b1020; }
+.kh-a .kh-get-btn small { color: #333c4f; }
+.kh-a .kh-get-soon, .kh-a .kh-get-done { border: 1.5px dashed rgba(255,255,255,.38); color: #fff; }
+.kh-a .kh-get-soon small, .kh-a .kh-get-done small { color: #f6c945; font-weight: 700; }
+.kh-a .kh-get-tip { background: rgba(255,255,255,.1); }
+.kh-a .kh-step { background: #f6c945; color: #1a1300; }
+.kh-a .kh-beta-input { background: #0a1020; border: 1.5px solid rgba(255,255,255,.45); color: #fff; }
+.kh-a .kh-beta-input::placeholder { color: #a9b3c7; }
+.kh-a .kh-beta-btn { background: #f6c945; color: #1a1300; }
+.kh-a .kh-beta-ok { background: rgba(34,197,94,.16); color: #b9f5cd; border: 1px solid rgba(34,197,94,.5); }
+.kh-a .kh-beta-soon { background: rgba(246,201,69,.14); color: #ffe7a1; border: 1px solid rgba(246,201,69,.5); }
+.kh-a .kh-beta-warn { background: rgba(248,113,113,.14); color: #ffd0d0; border: 1px solid rgba(248,113,113,.5); }
+.kh-a .kh-tile { border-radius: 16px; background: #10172a; border: 1px solid rgba(255,255,255,.14); }
+.kh-a .kh-tile:hover { transform: translateY(-4px); border-color: #f6c945; box-shadow: 0 14px 30px rgba(0,0,0,.5); }
+.kh-a .kh-tile:active { transform: translateY(0) scale(.985); }
+.kh-a .kh-foot { border-top: 1px solid rgba(255,255,255,.14); }
+@media (min-width: 900px) {
+  .kh-a::before { height: 820px; }
+  .kh-a .kh-hero { padding-top: 44px; }
+  .kh-a .kh-hero-in { display: grid; grid-template-columns: 1.02fr .98fr; align-items: center; gap: 48px; min-height: 500px; }
+  .kh-a .kh-hero-media { order: 0; }
+  .kh-a .kh-title { font-size: 84px; line-height: .98; }
+  .kh-a .kh-shot-side { width: 150px; right: auto; left: -40px; bottom: -22px; transform: rotate(-5deg); border-width: 3px; border-radius: 14px; }
+  .kh-a .kh-get, .kh-a .kh-beta { padding: 24px; }
+}
+
+/* ══ B · FRIV CLASSIC ══════════════════════════════════════════════════ */
+.kh-b {
+  --bg: #1857c9; --ink: #fff; --muted: #eaf1ff; --accent: #0f7a36; --accent-ink: #fff; --focus: #ffd21f;
+  --intro-bg: #ffd21f; --intro-ink: #1b1b1b;
+  background-image: radial-gradient(rgba(255,255,255,.1) 2px, transparent 2.5px); background-size: 22px 22px;
+}
+.kh-b .kh-main { padding-top: 16px; }
+.kh-b .kh-title, .kh-b .kh-h2, .kh-b .kh-tile-name, .kh-b .kh-play, .kh-b .kh-beta-btn { font-family: "KH Lucky", "Arial Black", Impact, sans-serif; font-weight: 400; letter-spacing: .02em; }
+.kh-b .kh-h2 { font-size: 28px; text-shadow: 0 3px 0 rgba(0,0,0,.28); }
+.kh-b .kh-hero-in { gap: 0; border: 5px solid #fff; border-radius: 26px; overflow: hidden; background: #ffd21f; box-shadow: 0 8px 0 rgba(0,0,0,.28); }
+.kh-b .kh-hero-media { order: -1; }
+.kh-b .kh-shot > img { width: 100%; object-fit: cover; object-position: center bottom; border-bottom: 5px solid #fff; }
+.kh-b .kh-hero-copy { padding: 16px 16px 20px; color: #1b1b1b; }
+.kh-b .kh-kicker { color: #1b1b1b; }
+.kh-b .kh-beta-tag { background: #d81e3a; color: #fff; }
+.kh-b .kh-title { font-size: 38px; line-height: 1.02; color: #1b1b1b; }
+.kh-b .kh-gold { color: #a3270f; }
+.kh-b .kh-line { color: #1b1b1b; font-weight: 600; }
+.kh-b .kh-play { border-radius: 18px; min-height: 62px; font-size: 26px; padding-top: 4px; box-shadow: 0 6px 0 #0a5325; }
+.kh-b .kh-play:active { transform: translateY(5px); box-shadow: 0 1px 0 #0a5325; }
+.kh-b .kh-get, .kh-b .kh-beta { padding: 16px; border: 5px solid #fff; border-radius: 24px; box-shadow: 0 8px 0 rgba(0,0,0,.28); }
+.kh-b .kh-get { background: #0f7a36; }
+.kh-b .kh-beta { background: #6d28d9; }
+.kh-b .kh-sub { color: #fff; }
+.kh-b .kh-get-btn { background: #fff; color: #1b1b1b; border-radius: 16px; box-shadow: 0 5px 0 rgba(0,0,0,.3); }
+.kh-b .kh-get-btn small { color: #3a4350; }
+.kh-b .kh-get-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,.3); }
+.kh-b .kh-get-soon, .kh-b .kh-get-done { background: rgba(0,0,0,.26); color: #fff; border: 2.5px dashed rgba(255,255,255,.75); border-radius: 16px; }
+.kh-b .kh-get-soon small, .kh-b .kh-get-done small { color: #fff; font-weight: 700; }
+.kh-b .kh-get-tip { background: rgba(0,0,0,.3); color: #fff; }
+.kh-b .kh-step { background: #ffd21f; color: #1b1b1b; }
+.kh-b .kh-beta-input { background: #fff; color: #1b1b1b; border: 3px solid #1b1b1b; border-radius: 16px; }
+.kh-b .kh-beta-input::placeholder { color: #5b6470; }
+.kh-b .kh-beta-btn { background: #ffd21f; color: #1b1b1b; border-radius: 16px; font-size: 20px; padding-top: 3px; box-shadow: 0 5px 0 #b98600; }
+.kh-b .kh-beta-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #b98600; }
+.kh-b .kh-beta-note { color: #fff; }
+.kh-b .kh-beta-msg { background: #fff; color: #1b1b1b; border: 3px solid #1b1b1b; }
+.kh-b .kh-tile { border: 4px solid #fff; border-radius: 20px; background: #fff; box-shadow: 0 6px 0 rgba(0,0,0,.28); }
+.kh-b .kh-tile:hover { transform: translateY(-4px) rotate(-1deg); box-shadow: 0 10px 0 rgba(0,0,0,.28); }
+.kh-b .kh-tile:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.28); }
+.kh-b .kh-tile-art { border-radius: 14px 14px 0 0; }
+.kh-b .kh-tile-name { font-size: 20px; color: #1b1b1b; padding-top: 2px; }
+.kh-b .kh-tile-line { color: #3a4350; font-weight: 600; }
+.kh-b .kh-foot { border-top: 3px solid rgba(255,255,255,.4); color: #fff; }
+@media (min-width: 900px) {
+  .kh-b .kh-main { padding-top: 28px; }
+  .kh-b .kh-hero-in { display: grid; grid-template-columns: 1.2fr 1fr; align-items: stretch; border-width: 6px; border-radius: 32px; }
+  .kh-b .kh-hero-media { order: 0; }
+  .kh-b .kh-shot { height: 100%; }
+  .kh-b .kh-shot > img { height: 100%; min-height: 440px; border-bottom: 0; border-left: 6px solid #fff; }
+  .kh-b .kh-hero-copy { padding: 32px 36px; align-self: center; }
+  .kh-b .kh-title { font-size: 62px; }
+  .kh-b .kh-h2 { font-size: 34px; }
+  .kh-b .kh-get, .kh-b .kh-beta { padding: 22px 24px; }
+}
+
+/* ══ C · CLEAN ARCADE ══════════════════════════════════════════════════ */
+.kh-c {
+  --bg: #f5f4ef; --ink: #12151a; --muted: #474f5c; --accent: #0a7a3d; --accent-ink: #fff; --focus: #12151a;
+  --intro-bg: #f5f4ef; --intro-ink: #12151a;
+}
+.kh-c .kh-hero { padding-top: 24px; }
+.kh-c .kh-title { font-size: 46px; line-height: .96; font-weight: 900; letter-spacing: -.035em; }
+.kh-c .kh-gold { color: #8a5300; }
+.kh-c .kh-beta-tag { background: #12151a; color: #fff; }
+.kh-c .kh-devices { height: 430px; margin-top: 8px; display: flex; justify-content: center; }
+.kh-c .kh-phone { position: relative; z-index: 1; width: 196px; height: 430px; padding: 8px; border-radius: 32px; background: #12151a; box-shadow: 0 24px 50px rgba(18,21,26,.28); }
+.kh-c .kh-phone img { width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: 24px; }
+.kh-c .kh-card-back { position: absolute; left: 50%; top: 46px; width: 150px; margin-left: -178px; transform: rotate(-8deg); border-radius: 16px; overflow: hidden; box-shadow: 0 16px 34px rgba(18,21,26,.22); }
+.kh-c .kh-card-back img { width: 100%; aspect-ratio: 3 / 5; object-fit: cover; }
+.kh-c .kh-band { margin-top: 28px; padding-top: 24px; border-top: 2px solid #12151a; gap: 28px; }
+.kh-c .kh-get-btn { background: #12151a; color: #fff; }
+.kh-c .kh-get-btn small { color: #d9dde4; }
+.kh-c .kh-get-soon, .kh-c .kh-get-done { border: 1.5px dashed #5b6470; color: #12151a; }
+.kh-c .kh-get-soon small, .kh-c .kh-get-done small { color: #474f5c; font-weight: 700; }
+.kh-c .kh-get-tip { background: #e8e6de; }
+.kh-c .kh-step { background: #12151a; color: #fff; }
+.kh-c .kh-beta-input { background: #fff; color: #12151a; border: 1.5px solid #12151a; }
+.kh-c .kh-beta-input::placeholder { color: #5b6470; }
+.kh-c .kh-beta-btn { background: #0a7a3d; color: #fff; }
+.kh-c .kh-beta-ok { background: #dff3e6; color: #0b4f2a; }
+.kh-c .kh-beta-soon { background: #fdf0c8; color: #5a3d00; }
+.kh-c .kh-beta-warn { background: #fde2e2; color: #7a1414; }
+.kh-c .kh-more { padding-top: 24px; border-top: 2px solid #12151a; }
+.kh-c .kh-tile { overflow: visible; }
+.kh-c .kh-tile-art { border-radius: 16px; transition: transform .12s ease, box-shadow .12s ease; }
+.kh-c .kh-tile:hover .kh-tile-art { transform: translateY(-4px); box-shadow: 0 14px 28px rgba(18,21,26,.22); }
+.kh-c .kh-tile:active .kh-tile-art { transform: scale(.985); }
+.kh-c .kh-tile-text { padding: 10px 2px 4px; }
+.kh-c .kh-foot { border-top: 1px solid #c9c6ba; }
+@media (min-width: 900px) {
+  .kh-c .kh-hero { padding-top: 56px; }
+  .kh-c .kh-hero-in { display: grid; grid-template-columns: 1.15fr .85fr; align-items: center; gap: 32px; }
+  .kh-c .kh-title { font-size: 96px; }
+  .kh-c .kh-line { font-size: 20px; }
+  .kh-c .kh-devices { height: 560px; margin-top: 0; }
+  .kh-c .kh-phone { width: 258px; height: 560px; padding: 10px; border-radius: 40px; }
+  .kh-c .kh-phone img { border-radius: 30px; }
+  .kh-c .kh-card-back { width: 210px; top: 70px; margin-left: -250px; }
+  .kh-c .kh-band { margin-top: 48px; padding-top: 36px; gap: 48px; }
+  .kh-c .kh-more { padding-top: 36px; }
+}
+
+/* ── The loading picture ──────────────────────────────────────────────── */
+.kh-intro {
+  position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  background: var(--intro-bg); color: var(--intro-ink); cursor: pointer;
+  animation: kh-intro-out .18s ease-out 1s forwards;
+}
+.kh-intro[hidden] { display: none; }
+.kh-intro-stage { position: relative; width: 120px; height: 150px; }
+.kh-intro-ball { position: absolute; left: 28px; bottom: 12px; animation: kh-drop .9s cubic-bezier(.34,.02,.66,1) both; }
+.kh-intro-shadow { position: absolute; left: 30px; bottom: 4px; width: 60px; height: 10px; border-radius: 50%; background: currentColor; opacity: .22; animation: kh-shadow .9s ease-in both; }
+.kh-intro-name { font-family: "KH Oswald", Impact, "Arial Narrow", sans-serif; font-size: 34px; font-weight: 700; letter-spacing: .12em; animation: kh-name .45s ease-out .3s both; }
+.kh-b .kh-intro-name { font-family: "KH Lucky", "Arial Black", sans-serif; font-weight: 400; letter-spacing: .04em; }
+.kh-intro-skip { font-size: 13px; font-weight: 600; opacity: .75; }
+@keyframes kh-drop {
+  0% { transform: translateY(-150px) rotate(-200deg); }
+  40% { transform: translateY(0) rotate(0deg) scale(1.08, .9); }
+  58% { transform: translateY(-44px) rotate(70deg); }
+  76% { transform: translateY(0) rotate(130deg) scale(1.04, .95); }
+  88% { transform: translateY(-12px) rotate(160deg); }
+  100% { transform: translateY(0) rotate(180deg); }
+}
+@keyframes kh-shadow { 0% { transform: scale(.3); opacity: .05; } 40% { transform: scale(1); opacity: .25; } 58% { transform: scale(.6); opacity: .12; } 76% { transform: scale(1); opacity: .25; } 100% { transform: scale(1); opacity: .22; } }
+@keyframes kh-name { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes kh-intro-out { to { opacity: 0; visibility: hidden; pointer-events: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .kh-intro { display: none; }
+  .kh *, .kh *::before, .kh *::after { transition: none !important; animation: none !important; }
+}
+
+.kh-beta-note a { text-decoration: underline; text-underline-offset: 3px; font-weight: 700; }
+
+/* The Friv look font has odd small letters: capitals only. */
+.kh-b .kh-title, .kh-b .kh-h2, .kh-b .kh-tile-name, .kh-b .kh-beta-btn, .kh-b .kh-intro-name { text-transform: uppercase; }
+
+/* ── The site bar on the home: slim ───────────────────────────────────────
+ * Harry: "I don't think we should have all of these at the top." Wherever
+ * this home is shown, the bar keeps KNOWITBALL, Sign in and one menu button:
+ * the strip of game links and the games menu button are hidden (the tiles do
+ * that job). Every other page keeps the full bar. */
+body:has(.kh) [data-nav-games], body:has(.kh) [data-nav-games-menu] { display: none !important; }

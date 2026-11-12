@@ -60,6 +60,7 @@ export default function GameSidebar() {
   return (
     <>
       <button
+        data-nav-games-menu
         onClick={() => setOpen(true)}
         className="flex h-9 w-9 items-center justify-center rounded-lg text-white transition-colors hover:text-white"
         aria-label="Open game menu"
