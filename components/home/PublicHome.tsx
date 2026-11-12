@@ -32,6 +32,8 @@ export default function PublicHome({ look, v }: { look: HomeLook; v?: "1" | "2" 
       <LoadingIntro />
       <ObjectivesToast />
 
+      {look === "d" && <HomeTabs active="home" />}
+
       <main className="kh-main">
         {/* 1. The game */}
         <section className="kh-hero" aria-labelledby="kh-hero-title">
@@ -112,6 +114,45 @@ export default function PublicHome({ look, v }: { look: HomeLook; v?: "1" | "2" 
           <span>Questions or ideas? <a href="mailto:knowitballcontact@gmail.com">knowitballcontact@gmail.com</a></span>
           <span className="kh-foot-links"><Link href="/legal">Privacy and Terms</Link><Link href="/credits">Credits</Link></span>
         </footer>
+      </main>
+    </div>
+  );
+}
+
+/** Home | All games. The second tab is the games and nothing else. */
+export function HomeTabs({ active }: { active: "home" | "games" }) {
+  return (
+    <nav className="kh-tabs" aria-label="Home sections">
+      <Link href="/" className={`kh-tab${active === "home" ? " kh-tab-on" : ""}`} aria-current={active === "home" ? "page" : undefined}>Home</Link>
+      <Link href="/games" className={`kh-tab${active === "games" ? " kh-tab-on" : ""}`} aria-current={active === "games" ? "page" : undefined}>All games</Link>
+    </nav>
+  );
+}
+
+/** The All games tab (/games): every game as a tile, names only. */
+export function AllGames() {
+  return (
+    <div className="kh kh-c kh-d kh-dv-2 kh-all" data-home-look="d">
+      <HomeTabs active="games" />
+      <main className="kh-main">
+        <h1 className="kh-sr">All games</h1>
+        <ul className="kh-grid">
+          <li className="kh-cell kh-cell-main">
+            <Link href={MAIN_GAME.href} className="kh-tile" prefetch={false}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <span className="kh-tile-art"><img src="/home/site/hero-player.webp" width={750} height={709} alt="" decoding="async" /></span>
+              <span className="kh-tile-text"><span className="kh-tile-name">Golden Ball</span></span>
+            </Link>
+          </li>
+          {MORE_GAMES.map((g) => (
+            <li key={g.id} className="kh-cell">
+              <Link href={g.href} className="kh-tile" prefetch={false}>
+                <span className="kh-tile-art"><TileArt id={g.id} /></span>
+                <span className="kh-tile-text"><span className="kh-tile-name">{g.name}</span></span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </main>
     </div>
   );

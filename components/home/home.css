@@ -386,3 +386,23 @@ body:has(.kh-d) { background: #0a6a34; }
 /* one set of footer links, not two */
 .kh-d .kh-foot-links { display: none; }
 .kh-d .kh-foot { border-top: 0; justify-content: center; text-align: center; }
+
+/* D: Home | All games tabs, and the All games tab itself (the games, no words). */
+.kh-tabs { display: flex; justify-content: center; gap: 6px; padding: 10px 16px 0; }
+.kh-tab { min-height: 44px; display: inline-flex; align-items: center; padding: 0 18px; border-radius: 999px; font-size: 15px; font-weight: 800; text-decoration: none; color: #12151a; background: transparent; }
+.kh-tab:hover { background: rgba(18,21,26,.07); }
+.kh-tab-on, .kh-tab-on:hover { background: #12151a; color: #fff !important; }
+.kh-all { min-height: 70vh; }
+.kh-all .kh-main { padding-top: 18px; padding-bottom: 40px; }
+.kh-all .kh-cell-main { display: block; }
+.kh-all .kh-cell, .kh-all .kh-cell:first-child { grid-column: auto; }
+.kh-all .kh-cell .kh-tile-art, .kh-all .kh-cell:first-child .kh-tile-art { aspect-ratio: 1; }
+@media (min-width: 900px) {
+  .kh-all .kh-grid { grid-template-columns: repeat(6, 1fr); gap: 18px; }
+  .kh-all .kh-tile { overflow: hidden; background: #fff; border-radius: 18px; box-shadow: 0 5px 0 rgba(18,21,26,.16), 0 12px 24px rgba(18,21,26,.08); }
+  .kh-all .kh-tile:hover { transform: translateY(-4px); }
+  .kh-all .kh-tile:hover .kh-tile-art { transform: none; box-shadow: none; }
+  .kh-all .kh-tile-art { border-radius: 0; }
+  .kh-all .kh-tile-text { padding: 10px 6px 12px; text-align: center; }
+  .kh-all .kh-tile-name { font-weight: 900; }
+}
