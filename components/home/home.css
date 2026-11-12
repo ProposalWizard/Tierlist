@@ -339,3 +339,50 @@ body:has(.kh) [data-nav-games], body:has(.kh) [data-nav-games-menu] { display: n
   .kh-b.kh-bv-2 .kh-title { font-size: 66px; line-height: .98; }
   .kh-b[class*="kh-bv-"] .kh-shot > img { border-left-width: 0; }
 }
+
+/* ══ D · CREAM PHONE (Harry, 12 Nov 2026: "I really like the white background
+   phone screen from before, maybe the cream here goes well … on phone use the
+   white phone play now from before and then have all the games friv style
+   without the beta stuff"). Look C on cream. On a phone: the game, then the
+   games as chunky tiles; no Get the game, no Join the beta.
+   ?v=1 two big tiles a row · ?v=2 three small tiles a row, all six games. ══ */
+.kh-c.kh-d { --bg: #f4efe2; --intro-bg: #f4efe2; }
+.kh-d .kh-cell-main { display: none; }
+.kh-d .kh-cell-main .kh-tile-art img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
+@media (max-width: 899px) {
+  .kh-d .kh-band { display: none; }
+  .kh-d .kh-more { margin-top: 20px; padding-top: 20px; }
+  .kh-d .kh-h2 { font-weight: 900; letter-spacing: -.02em; font-size: 24px; }
+  .kh-d .kh-tile { overflow: hidden; background: #fff; border-radius: 18px; box-shadow: 0 5px 0 rgba(18,21,26,.16), 0 12px 24px rgba(18,21,26,.08); }
+  .kh-d .kh-tile:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(18,21,26,.16); }
+  .kh-d .kh-tile-art { border-radius: 0; }
+  .kh-d .kh-tile:hover .kh-tile-art { transform: none; box-shadow: none; }
+  .kh-d .kh-tile-text { padding: 10px 12px 12px; }
+  .kh-d .kh-tile-name { font-weight: 900; letter-spacing: -.01em; }
+  .kh-d.kh-dv-1 .kh-cell-main + .kh-cell { grid-column: 1 / -1; }
+  .kh-d.kh-dv-1 .kh-cell-main + .kh-cell .kh-tile-art { aspect-ratio: 2 / 1; }
+  /* v=2: three a row, like the old Friv menu */
+  .kh-d.kh-dv-2 .kh-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .kh-d.kh-dv-2 .kh-cell-main { display: block; }
+  .kh-d.kh-dv-2 .kh-cell:first-child, .kh-d.kh-dv-2 .kh-cell { grid-column: auto; }
+  .kh-d.kh-dv-2 .kh-cell .kh-tile-art, .kh-d.kh-dv-2 .kh-cell:first-child .kh-tile-art { aspect-ratio: 1; }
+  .kh-d.kh-dv-2 .kh-tile { border-radius: 14px; }
+  .kh-d.kh-dv-2 .kh-tile-text { padding: 7px 4px 8px; text-align: center; }
+  .kh-d.kh-dv-2 .kh-tile-name { font-size: 13px; line-height: 1.15; }
+  .kh-d.kh-dv-2 .kh-tile-line { display: none; }
+  .kh-d.kh-dv-2 .kh-h2 { font-size: 0; margin: 0; }
+  .kh-d.kh-dv-2 .kh-h2::after { content: "All games"; font-size: 24px; display: block; margin-bottom: 12px; }
+}
+/* D: the site's top bar and footer in the Play-now green, on this home only
+   (Harry: "adjust the footer and header to fit, maybe green"). */
+body:has(.kh-d) nav[data-global-chrome] { background: #0a6a34 !important; border-bottom-color: #085a2c !important; backdrop-filter: none; }
+body:has(.kh-d) footer[data-global-chrome] { background: #0a6a34 !important; border-top-color: #085a2c !important; }
+body:has(.kh-d) [data-global-chrome] .bg-indigo-600 { background: #f4efe2 !important; color: #0a4a26 !important; font-weight: 800; }
+body:has(.kh-d) [data-global-chrome] .bg-indigo-600:hover { background: #fff !important; }
+body:has(.kh-d) nav[data-global-chrome] .border-gray-700 { border-color: rgba(255,255,255,.55) !important; }
+body:has(.kh-d) footer[data-global-chrome] textarea { background: #085a2c !important; border-color: rgba(255,255,255,.5) !important; }
+body:has(.kh-d) footer[data-global-chrome] textarea::placeholder { color: #d5e9dc !important; }
+body:has(.kh-d) { background: #0a6a34; }
+/* one set of footer links, not two */
+.kh-d .kh-foot-links { display: none; }
+.kh-d .kh-foot { border-top: 0; justify-content: center; text-align: center; }

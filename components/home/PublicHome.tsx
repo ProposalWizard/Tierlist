@@ -28,7 +28,7 @@ import "./home.css";
  */
 export default function PublicHome({ look, v }: { look: HomeLook; v?: "1" | "2" | "3" }) {
   return (
-    <div className={`kh kh-${look}${look === "b" && v ? ` kh-bv-${v}` : ""}`} data-home-look={look}>
+    <div className={`kh kh-${look === "d" ? "c kh-d" : look}${look === "b" && v ? ` kh-bv-${v}` : ""}${look === "d" ? ` kh-dv-${v === "2" ? "2" : "1"}` : ""}`} data-home-look={look}>
       <LoadingIntro />
       <ObjectivesToast />
 
@@ -45,7 +45,7 @@ export default function PublicHome({ look, v }: { look: HomeLook; v?: "1" | "2" 
                 Play now
               </Link>
             </div>
-            <HeroMedia look={look} />
+            <HeroMedia look={look === "d" ? "c" : look} />
           </div>
         </section>
 
@@ -81,6 +81,18 @@ export default function PublicHome({ look, v }: { look: HomeLook; v?: "1" | "2" 
         <section className="kh-more" aria-labelledby="kh-more-title">
           <h2 id="kh-more-title" className="kh-h2">More games</h2>
           <ul className="kh-grid">
+            {look === "d" && (
+              <li className="kh-cell kh-cell-main">
+                <Link href={MAIN_GAME.href} className="kh-tile" prefetch={false}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <span className="kh-tile-art"><img src="/home/site/hero-player.webp" width={750} height={709} alt="" loading="lazy" decoding="async" /></span>
+                  <span className="kh-tile-text">
+                    <span className="kh-tile-name">Golden Ball</span>
+                    <span className="kh-tile-line">Your football career</span>
+                  </span>
+                </Link>
+              </li>
+            )}
             {MORE_GAMES.map((g) => (
               <li key={g.id} className="kh-cell">
                 <Link href={g.href} className="kh-tile" prefetch={false}>

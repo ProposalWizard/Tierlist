@@ -30,13 +30,14 @@ export const MORE_GAMES: HomeGame[] = [
   { id: "blind", name: "Blind Rankings", line: "Rank them one by one", href: "/blind-rankings" },
 ];
 
-export type HomeLook = "a" | "b" | "c";
+export type HomeLook = "a" | "b" | "c" | "d";
 export const HOME_LOOKS: { id: HomeLook; name: string }[] = [
   { id: "a", name: "Stadium night" },
   { id: "b", name: "Friv Classic" },
   { id: "c", name: "Clean arcade" },
+  { id: "d", name: "Cream phone" },
 ];
 export function pickLook(v: string | string[] | undefined): HomeLook {
   const s = (Array.isArray(v) ? v[0] : v ?? "").toLowerCase();
-  return s === "b" || s === "c" ? s : "a";
+  return s === "b" || s === "c" || s === "d" ? s : "a";
 }
