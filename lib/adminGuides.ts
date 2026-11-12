@@ -774,7 +774,7 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["Move media to Cloudflare", "One-time. Copies every patch-note picture and clip (about 2,100 files, 181 MB) into Cloudflare R2, a batch at a time, with a progress bar. Keep the tab open; Stop or a lost connection is fine: press Carry on moving and files already there are skipped. Works on the live site only (the keys are in Vercel). When it says Done, tell Claude so the follow-up can stop bundling the pictures into the site."],
+          ["Patch-note pictures in Cloudflare (card at the top)", "Copies every patch-note picture and clip (about 2,360 files, 215 MB) into Cloudflare R2. It runs by itself on the live site every 5 minutes (a Vercel timed job), so nobody has to press anything; the bar shows how far it is and refreshes every minute. Move faster now (with Stop) runs it from this tab too; files already there are skipped. Works on the live site only (the keys are in Vercel). Done = nothing left to move."],
           ["Version list", "Tap a version to read it. The small H / M / L faces show who has read it (bright = read; the author counts as read). On a phone a red dot = you haven't read it yet."],
           ["Read by H ✓ read · M wrote it · L not yet", "Who has read this version. Only versions from 18 Oct 2026 on count towards \"to read\"; older ones show faces but never nag."],
           ["Read and understood", "Say you have read and understood this version. Press again (✓ Read and understood) to take it back. Not shown on your own patch notes."],
@@ -794,14 +794,14 @@ export const ADMIN_GUIDES = {
       "The notes themselves don't save here. New patch notes are added by Claude as part of shipping a change.",
       "Read and understood and the notes under a version save to the shared database at once (team_acks, team_notes), so the other two see them. Until supabase/migrations/team_room_v2.sql runs they stay on this device only, and the page says so (then an @ in a note can't buzz anyone or reach their Inbox).",
       "The Inbox has no table of its own: a patch note leaves it when you say Read and understood (or open it from the Inbox), and a mention leaves it when you open that version's notes. Both are the same saved receipts (team_acks).",
-      "Move media to Cloudflare writes to the R2 bucket (R2_BUCKET, folder patch-notes/), never the repo or the database. Once a picture is there, the page shows it from Cloudflare (a link that works for an hour); until then it comes from the site, so nothing breaks half way.",
+      "The Cloudflare move (timed job or Move faster now) writes to the R2 bucket (R2_BUCKET, folder patch-notes/, layout in docs/r2-layout.md), never the repo or the database. Once a picture is there, the page shows it from Cloudflare (a link that works for an hour); until then it comes from the site, so nothing breaks half way.",
       "An UPDATED version (green tag, and a green line at the top saying what changed) is one that changed after it went up. It moves to the front, counts as unread again for everyone (reading the old version doesn't count for the update) and buzzes again as \"Updated patch notes\". Your Read and understood on it is per update.",
       "A new patch note on the site buzzes everyone but its author once (one buzz per person, however many notes are new; only notes from the last 3 days). The site sends it the first time one of the three opens an admin page after the deploy. Who has been buzzed for which version is kept in each person's sign-in account, so no SQL.",
     ],
     commit: ["New entries live in a file, not the database. Each build ends with its patch notes going to main at once in a patch-notes-only pull request (scripts/patch-notes/ship.mjs), without the feature code; they appear after that deploys. Each version's page and pictures are copied into patch-notes/ in the repo."],
     inGame: ["Admin only. Players never see this page."],
     needs: ["supabase/migrations/team_room_v2.sql (PENDING) for read ticks and notes to be shared. Run after team_room.sql."],
-    dev: "app/admin/patch-notes/PatchNotesArchive.tsx · media move: app/admin/patch-notes/MediaSyncPanel.tsx, /api/admin/patch-notes/media-sync, lib/patchNoteMedia.ts, lib/patchNoteMediaServer.ts · Inbox list: lib/patchNoteHeadlines.json (scripts/patch-notes/build-headlines.mjs) · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/ · read ticks: components/teamRoom/PatchReceipts.tsx, lib/teamRoom/extras.ts · Inbox: components/teamRoom/InboxBell.tsx, lib/teamRoom/inbox.ts · quotes: lib/teamRoom/patchQuote.ts · buzz: /api/admin/team/notify {patches:true} and {table:\"team_notes\"}",
+    dev: "app/admin/patch-notes/PatchNotesArchive.tsx · media move: app/admin/patch-notes/MediaSyncPanel.tsx, /api/admin/patch-notes/media-sync (timed job: vercel.json crons), lib/patchNoteMedia.ts, lib/patchNoteMediaServer.ts · Inbox list: lib/patchNoteHeadlines.json (scripts/patch-notes/build-headlines.mjs) · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/ · read ticks: components/teamRoom/PatchReceipts.tsx, lib/teamRoom/extras.ts · Inbox: components/teamRoom/InboxBell.tsx, lib/teamRoom/inbox.ts · quotes: lib/teamRoom/patchQuote.ts · buzz: /api/admin/team/notify {patches:true} and {table:\"team_notes\"}",
   },
 
   "/admin/sound-board": {
@@ -1189,6 +1189,7 @@ export const ADMIN_GUIDES = {
         ["Notes", "Leave a note on the push. Its owner gets a red number on Board."],
       ] },
       { group: "Patch notes tab", items: [
+        ["Patch-note pictures in Cloudflare (card at the top)", "How far the move of every patch-note picture and clip into Cloudflare is. It moves by itself on the live site every 5 minutes, so there is nothing to press; the bar refreshes every minute. Move faster now speeds it up while the tab stays open. Same card as on /admin/patch-notes."],
         ["Version list", "Every patch note, newest first. Same as /admin/patch-notes, with who has read each one, Read and understood, and notes (which can @ someone and quote lines of the note)."],
         ["N patch notes to read (on a person's card)", "How many patch notes since 18 Oct that person hasn't marked Read and understood (their own don't count). Tap to open the oldest one."],
       ] },

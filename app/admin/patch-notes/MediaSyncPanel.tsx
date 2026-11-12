@@ -1,11 +1,12 @@
 "use client";
 /**
- * The "Move media to Cloudflare" card on /admin/patch-notes (Harry, 22 Oct
- * 2026). One press copies every patch-note picture and clip into R2, a batch
- * at a time (/api/admin/patch-notes/media-sync), with a progress bar. Files
- * already there at the same size are skipped, so pressing again after a stop
- * carries on. Once it says done, the follow-up change (next.config.mjs) can
- * stop bundling the pictures into the site.
+ * The "Patch-note pictures in Cloudflare" card (Harry, 22 Oct 2026), on
+ * /admin/patch-notes AND the admin menu's Patch notes tab (the Team board,
+ * app/admin/team/TeamBoard.tsx: that is the page Harry opens, and it had no
+ * card until 12 Nov 2026). The move runs by itself on the live site every
+ * 5 minutes (vercel.json crons); this card shows how far it is and refreshes
+ * every minute. The button still runs it faster from an open tab. Files
+ * already there at the same size are skipped, so a stop is always safe.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -37,9 +38,19 @@ export default function MediaSyncPanel() {
       const j = (await r.json()) as Status;
       setS(j);
       if (j.error) setErr(j.error);
-    } catch { setErr("Could not reach the site."); }
+    } catch {
+      // Never stick on "Checking…": show the card with the reason.
+      setS((old) => old ?? { totalFiles: 0, totalBytes: 0, doneFiles: 0, doneBytes: 0, connected: false });
+      setErr("Could not read how far the move is.");
+    }
   }, []);
   useEffect(() => { void load(); }, [load]);
+  // The timed job moves files with no tab open: refresh the bar once a minute until done.
+  useEffect(() => {
+    if (running || s?.finished || !s?.connected) return;
+    const t = setInterval(() => { void load(); }, 60_000);
+    return () => clearInterval(t);
+  }, [load, running, s?.finished, s?.connected]);
 
   const run = async () => {
     setRunning(true); setErr(null); setFails([]); stop.current = false;
@@ -73,15 +84,15 @@ export default function MediaSyncPanel() {
             {!s.connected
               ? "Works on the live site only (the Cloudflare keys are in Vercel)."
               : done
-                ? `Done: all ${s.totalFiles.toLocaleString()} files (${mb(s.totalBytes)}) are in Cloudflare. Tell Claude, so the follow-up can shrink the site.`
-                : `${s.doneFiles.toLocaleString()} of ${s.totalFiles.toLocaleString()} files · ${mb(s.doneBytes)} of ${mb(s.totalBytes)}`}
+                ? `Done: all ${s.totalFiles.toLocaleString()} files (${mb(s.totalBytes)}) are in Cloudflare. Nothing to do.`
+                : `${s.doneFiles.toLocaleString()} of ${s.totalFiles.toLocaleString()} files · ${mb(s.doneBytes)} of ${mb(s.totalBytes)} · moving by itself every 5 minutes`}
             {s.mode === "dev" && <span className="ml-1 text-[#f5b942]">(test copy on this computer)</span>}
           </div>
         </div>
         {s.connected && !done && (running
           ? <button type="button" onClick={() => { stop.current = true; }} className="rounded-full border border-[#24332b] px-4 py-2 text-[13px] font-bold text-[#f2f7f4]">Stop</button>
           : <button type="button" onClick={run} className="rounded-full bg-[#3ddc84] px-4 py-2 text-[13px] font-black text-[#06170e]">
-              {s.doneFiles > 0 ? "Carry on moving" : "Move media to Cloudflare"}
+              Move faster now
             </button>)}
       </div>
       {s.connected && s.totalFiles > 0 && (
@@ -90,7 +101,7 @@ export default function MediaSyncPanel() {
             <div className={`h-full rounded-full ${done ? "bg-[#3ddc84]" : "bg-[#6fb8ff]"} transition-[width] duration-500`} style={{ width: `${pct}%` }} />
           </div>
           <div className="mt-1 flex justify-between text-[12px] text-[#6f8679]">
-            <span>{running ? "Moving… keep this tab open" : done ? "Nothing left to move" : "Pictures already moved are served from Cloudflare"}</span>
+            <span>{running ? "Moving faster while this tab is open" : done ? "Nothing left to move" : "No need to press anything: it carries on by itself"}</span>
             <span>{pct}%</span>
           </div>
         </div>
