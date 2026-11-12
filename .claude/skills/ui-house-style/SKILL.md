@@ -41,6 +41,23 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 12 Nov 2026 — the public home: the game first, then a Friv grid (Harry, recording)
+- **"This is one of the worst home screens I've ever seen."** / **"Road to the
+  Golden Ball is like the main thing on the site. Play now."** The home leads
+  with the game: a real picture, one plain line, a big Play now.
+- **"A Friv style … a notable loading screen … then we have our games kind of
+  laid out."** Other games are square picture tiles, one each; a short loading
+  picture (about 1 s, skippable, once per session). The old Friv was
+  "information overload": keep it clean.
+- **"I don't think we should have all of these at the top."** On the home the
+  site bar is slim: no strip of game links (the tiles do that job).
+- **"Try the beta, sign up … buy it on Steam or download it on the App
+  Store."** Nothing is sold yet, so: a beta email box, and the stores as
+  "Coming soon" tags that are not links. Never invent a store link, a price,
+  a player count or a review.
+- Built as three looks on /home-new-dev for him to pick from (FACT-UI-022);
+  the live home is unchanged until he picks. Stills: docs/stills/public-home/.
+
 ### 12 Nov 2026 — the Team room: two looks, its own board, a tab for every channel (Harry)
 - **"Midnight slate and Light C as dark/light mode."** Picked from the four
   option pictures (docs/stills/team-room-options/). Dark = Midnight slate
