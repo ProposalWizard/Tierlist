@@ -300,3 +300,12 @@
 .ash.ash[data-look="house"] .ash-pill-sw { min-height: 0; }
 .ash.ash[data-look="house"] .ash-games { padding-top: 8px; }
 .ash.ash[data-look="house"]:has(.ahub) .ash-games { top: 16px; }
+/* Recent recordings (added by the recorder build, 12 Nov 2026): the same rules. */
+.ash.ash[data-look="house"] .vt-also, .ash.ash[data-look="house"] .rl-btn { font-size: 14px; padding: 4px 12px; }
+.ash.ash[data-look="house"] .rl-kept { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; border-radius: 4px; padding: 0 8px; }
+.ash.ash[data-look="house"] .rl-row { gap: 8px; padding: 12px 0; }
+.ash.ash[data-look="house"] .rl-what { gap: 4px; }
+.ash.ash[data-look="house"] .rl-what b { font-size: 14px; font-weight: 600; }
+.ash.ash[data-look="house"] .rl-what span { font-size: 12px; color: var(--kh-ink2); }
+.ash.ash[data-look="house"] .rl-what i[data-keep="true"] { color: var(--kh-accent2); font-weight: 600; }
+.ash.ash[data-look="house"] .rl-keep { font-size: 14px; font-weight: 500; color: var(--kh-ink); }
