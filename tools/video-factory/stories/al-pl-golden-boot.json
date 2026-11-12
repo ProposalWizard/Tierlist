@@ -50,6 +50,6 @@
     { "text": "Eight years after his non-league days, he outscored the whole Premier League.", "scene": { "type": "timeline", "items": [ { "year": "2012", "label": "Joins Leicester from Fleetwood" }, { "year": "2016", "label": "Champions" }, { "year": "2020", "label": "Golden Boot at 33" } ] } },
     { "text": "Last season Haaland made it three in four years, at just twenty-five.", "scene": { "type": "person", "person": "haaland", "label": "25 · 2025-26", "mood": "happy" } },
     { "text": "So from eighteen to thirty-three, there's no wrong age to be the best finisher in England.", "scene": { "type": "timeline", "items": [ { "year": "18", "label": "Owen" }, { "year": "22", "label": "Cole, Kane, Haaland" }, { "year": "25", "label": "Salah, Haaland" }, { "year": "32", "label": "Drogba, Salah" }, { "year": "33", "label": "Vardy" } ] } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

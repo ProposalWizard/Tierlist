@@ -1,0 +1,34 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Anton;src:url(../assets/Anton.ttf)}@font-face{font-family:Oswald;src:url(../assets/Oswald-Bold.woff2);font-weight:700}@font-face{font-family:Oswald;src:url(../assets/Oswald-Bold.woff2);font-weight:400}
+body{margin:0;background:#000}</style></head><body><canvas id="c" width="1080" height="1920"></canvas>
+<script src="avatars.js"></script>
+<script src="scenes.js"></script>
+<script src="chess.js"></script>
+<script src="timeline.js"></script>
+<script>
+// "Analysed like chess" video (Mikey, 7 Nov 2026): no narrator on screen; the
+// move card types the voice's words as they are said. timeline.js from make.py.
+const FPS = 30;
+const cv = document.getElementById("c"), g = cv.getContext("2d");
+window.TOTAL = Math.ceil(TL.total * FPS);
+window.IMG = {};
+window.ready = (async () => { for (const [k, src] of Object.entries(STORY.images || {})) { const im = new Image(); im.src = "file://" + src; await im.decode().catch(() => {}); if (im.naturalWidth) window.IMG[k] = im; }
+  await document.fonts.load("40px Anton"); await document.fonts.load("700 40px Oswald"); await document.fonts.load("40px 'Noto Color Emoji'"); })();
+window.errorsSeen = [];
+window.draw = async (f) => {
+  const t = f / FPS;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.fillStyle = "#000"; g.fillRect(0, 0, 1080, 1920);
+  if (t >= TL.endCard) { SCENES.end(g, t - TL.endCard); return cv.toDataURL("image/jpeg", 0.9); }
+  const i = Math.max(0, TL.scenes.findIndex((x) => t >= x.t0 && t < x.t1)); const s = TL.scenes[i] || TL.scenes[TL.scenes.length - 1];
+  try {
+    if (s.scene.type === "cta") { g.fillStyle = "#26252a"; g.fillRect(0, 0, 1080, 1920); g.save(); g.translate(0, 300); SCENES.cta(g, t - s.t0, s.t1 - s.t0, s.scene); g.restore(); }
+    else {
+      window.CLIPIMG = null;
+      if (s.clipDir) { const n = Math.min(s.clipFrames, Math.floor((t - s.t0) * FPS) + 1); const im = new Image(); im.src = "file://" + s.clipDir + "/c" + String(Math.max(1, n)).padStart(5, "0") + ".jpg"; await im.decode().catch(() => {}); window.CLIPIMG = im; }
+      CHESS.draw(g, t, s, TL.scenes[i - 1]);
+    }
+  } catch (e) { window.errorsSeen.push(String(e && e.stack || e)); }
+  if (t - s.t0 < 0.08 && i > 0) { g.fillStyle = "rgba(255,255,255,.25)"; g.fillRect(0, 0, 1080, 1920); }
+  return cv.toDataURL("image/jpeg", 0.9);
+};
+</script></body></html>

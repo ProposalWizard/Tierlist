@@ -29,6 +29,7 @@ import { OPEN_PATCH_EVENT } from "@/components/teamRoom/InboxBell";
 import HEADLINES from "@/lib/patchNoteHeadlines.json";
 import "@/components/teamRoom/teamRoom.css";
 import PatchNotesArchive from "@/app/admin/patch-notes/PatchNotesArchive";
+import MediaSyncPanel from "@/app/admin/patch-notes/MediaSyncPanel";
 import { perDay, type Person, type PullRequest, type Push, type PushCount, type TeamBoardData } from "@/lib/teamBoard";
 import type { DevStatus } from "@/lib/devStatus";
 import "./teamBoard.css";
@@ -155,7 +156,11 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage, 
   return (
     <AdminShell tab={tab} role="admin" badges={badges} onTab={(t) => { setTab(t); if (t !== "notes") setVersion(undefined); }}>
       {tab === "notes" ? (
-        <div className="tb-notes"><PatchNotesArchive key={version ?? "latest"} initialVersion={version} /></div>
+        <div className="tb-notes">
+          {/* The Cloudflare move card, here too: this tab is the Patch notes Harry opens (12 Nov 2026). */}
+          <MediaSyncPanel />
+          <PatchNotesArchive key={version ?? "latest"} initialVersion={version} />
+        </div>
       ) : (
         <div className="tb" data-tab={tab}>
           {tab === "team" && <PitchLines />}

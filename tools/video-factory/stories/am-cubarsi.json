@@ -40,6 +40,6 @@
     { "text": "So the twist: all four became world champions. Look at the ages.", "scene": { "type": "timeline", "items": [ { "year": "2010", "label": "Puyol, aged 32" }, { "year": "2010", "label": "Ramos, aged 24" }, { "year": "2010", "label": "Piqué, aged 23" }, { "year": "2026", "label": "Cubarsí, aged 19" } ] } },
     { "text": "Cubarsí got there four years before Piqué, and thirteen years before Puyol.", "scene": { "type": "whatif", "title": "Age when they won the World Cup", "real": { "label": "Puyol", "value": "32" }, "alt": { "label": "Cubarsí", "value": "19" } } },
     { "text": "So where does Cubarsí end up? Better than all three? Tell me in the comments.", "scene": { "type": "versus", "title": "World champion at…", "left": { "person": "cubarsi", "label": "Cubarsí", "value": "19" }, "right": { "person": "ramos", "label": "Ramos", "value": "24" } } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

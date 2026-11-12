@@ -33,6 +33,6 @@
     { "text": "So in the same number of games, Mbappé scored ninety-nine more goals.", "scene": { "type": "whatif", "title": "Same games, different goals", "real": { "label": "Henry, 326 games", "value": "160" }, "alt": { "label": "Mbappé, 322 games", "value": "259" } } },
     { "text": "Henry started out on the wing at Monaco and Juventus. Mbappé was scoring from day one.", "scene": { "type": "trophies", "items": [ { "kind": "boot", "label": "Henry: Golden Boots" }, { "kind": "boot", "label": "Mbappé: World Cup Golden Boot 2026" } ] } },
     { "text": "Is Mbappé already better than Henry? Tell me in the comments.", "scene": { "type": "quote", "person": "henry", "text": "Ninety-nine more? Fine. But I had the Invincibles." } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

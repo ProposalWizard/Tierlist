@@ -1,0 +1,792 @@
+{
+"meta": {
+"targetShort": "Palmer",
+"targetClub": "Chelsea",
+"series": "STAT TWINS",
+"source": "Data: Opta via FotMob · Premier League, 900+ mins",
+"engine": "video_full.html",
+"layout": "poster",
+"imgDir": "/tmp/claude-0/-home-user-Tierlist/84a0c395-3776-5543-b933-7d1eba9d58ff/scratchpad/img",
+"clubColors": {
+"t9746": "rgb(10,43,70)",
+"t8406": "rgb(184,53,49)",
+"t94937": "rgb(226,0,20)",
+"t8472": "rgb(203,102,112)",
+"t8619": "rgb(107,85,50)",
+"t8658": "rgb(115,134,186)",
+"t8650": "rgb(231,26,35)",
+"t9848": "rgb(12,166,235)",
+"t8149": "rgb(226,82,23)",
+"t10260": "rgb(216,111,16)",
+"t10242": "rgb(11,105,176)",
+"t8721": "rgb(8,98,60)",
+"t8197": "rgb(106,151,198)",
+"t8670": "rgb(253,231,119)",
+"t8302": "rgb(227,86,100)",
+"t7732": "rgb(205,11,45)",
+"t8654": "rgb(122,41,57)",
+"t8226": "rgb(26,97,180)",
+"t8669": "rgb(172,48,53)",
+"t6504": "rgb(227,2,43)",
+"t9829": "rgb(240,81,107)",
+"t10205": "rgb(5,80,136)",
+"t8634": "rgb(165,0,68)",
+"t10080": "rgb(49,148,208)",
+"t8722": "rgb(246,107,112)",
+"t9906": "rgb(39,41,111)",
+"t10249": "rgb(245,104,16)",
+"t8460": "rgb(0,90,169)",
+"t8315": "rgb(242,74,73)",
+"t178475": "rgb(242,143,168)",
+"t8564": "rgb(145,14,19)",
+"t8586": "rgb(9,25,70)",
+"t8689": "rgb(251,101,3)",
+"t9851": "rgb(238,4,19)",
+"t8603": "rgb(79,170,111)",
+"t9864": "rgb(4,73,152)",
+"t8346": "rgb(84,109,146)",
+"t8370": "rgb(217,179,53)",
+"t9748": "rgb(9,38,180)",
+"t8636": "rgb(0,21,151)",
+"t10261": "rgb(0,148,179)",
+"t9941": "rgb(61,39,87)",
+"t8535": "rgb(141,109,172)",
+"t8581": "rgb(178,4,56)",
+"t9810": "rgb(203,11,11)",
+"t8560": "rgb(144,81,26)",
+"t8521": "rgb(235,3,3)",
+"t10171": "rgb(79,114,143)",
+"t8661": "rgb(239,112,13)",
+"t10204": "rgb(0,69,151)",
+"t9891": "rgb(13,73,144)",
+"t8232": "rgb(115,103,71)",
+"t8178": "rgb(181,171,3)",
+"t9789": "rgb(254,231,0)",
+"t8639": "rgb(253,108,107)",
+"t9937": "rgb(198,12,12)",
+"t9847": "rgb(6,69,120)",
+"t9879": "rgb(172,14,14)",
+"t8678": "rgb(204,19,24)",
+"t8583": "rgb(0,65,153)",
+"t9831": "rgb(176,143,78)",
+"t6379": "rgb(49,44,80)",
+"t8686": "rgb(148,11,42)",
+"t8543": "rgb(230,201,112)",
+"t8529": "rgb(201,87,105)",
+"t10235": "rgb(251,6,5)",
+"t9875": "rgb(6,168,225)",
+"t8668": "rgb(48,49,176)",
+"t8456": "rgb(22,68,123)",
+"t10203": "rgb(242,82,104)",
+"t8371": "rgb(8,51,110)",
+"t10267": "rgb(235,48,36)",
+"t9826": "rgb(48,115,182)",
+"t9825": "rgb(237,4,7)",
+"t8667": "rgb(242,138,1)",
+"t10269": "rgb(233,138,150)",
+"t9866": "rgb(44,83,176)",
+"t9783": "rgb(198,109,73)",
+"t8152": "rgb(240,138,143)",
+"t10268": "rgb(216,183,106)",
+"t9823": "rgb(220,5,45)",
+"t9888": "rgb(9,43,86)",
+"t8191": "rgb(140,78,119)",
+"t8524": "rgb(8,101,175)",
+"t9910": "rgb(233,37,78)",
+"t8588": "rgb(215,3,3)",
+"t8558": "rgb(234,77,24)",
+"t8602": "rgb(252,167,24)",
+"t9902": "rgb(244,86,101)",
+"t8463": "rgb(254,227,20)",
+"t7943": "rgb(52,140,78)",
+"t8455": "rgb(7,19,149)",
+"t8550": "rgb(114,13,17)",
+"t8696": "rgb(41,149,38)",
+"t9857": "rgb(17,45,70)",
+"t10252": "rgb(251,227,7)",
+"t8305": "rgb(15,71,138)",
+"t8697": "rgb(20,139,76)",
+"t8633": "rgb(177,152,44)",
+"t8592": "rgb(11,104,180)"
+}
+},
+"lists": {
+"top8": {
+"title": "The top eight.",
+"sub": "",
+"target": {
+"name": "Cole Palmer",
+"season": "2026/27",
+"face": "p1096353",
+"club": "t8455",
+"flag": "cENG"
+},
+"rows": [
+{
+"name": "Philippe Coutinho",
+"season": "2021/22",
+"face": "p184536",
+"club": "t10252",
+"flag": "cBRA",
+"match": 84.5,
+"excluded": false,
+"rank": 1,
+"twin": true
+},
+{
+"name": "Eberechi Eze",
+"season": "2024/25",
+"face": "p818975",
+"club": "t9826",
+"flag": "cENG",
+"match": 82.5,
+"excluded": false,
+"rank": 2
+},
+{
+"name": "Leandro Trossard",
+"season": "2024/25",
+"face": "p318615",
+"club": "t9825",
+"flag": "cBEL",
+"match": 82.3,
+"excluded": false,
+"rank": 3
+},
+{
+"name": "Bukayo Saka",
+"season": "2022/23",
+"face": "p961995",
+"club": "t9825",
+"flag": "cENG",
+"match": 82.1,
+"excluded": false,
+"rank": 4
+},
+{
+"name": "Hakim Ziyech",
+"season": "2021/22",
+"face": "p360559",
+"club": "t8455",
+"flag": "cMAR",
+"match": 81.9,
+"excluded": false,
+"rank": 5
+},
+{
+"name": "Bryan Mbeumo",
+"season": "2022/23",
+"face": "p923312",
+"club": "t9937",
+"flag": "cCMR",
+"match": 81.8,
+"excluded": false,
+"rank": 6
+},
+{
+"name": "Marcus Tavernier",
+"season": "2025/26",
+"face": "p789630",
+"club": "t8678",
+"flag": "cENG",
+"match": 81.8,
+"excluded": false,
+"rank": 7
+}
+]
+},
+"top": {
+"title": "The top seven.",
+"sub": "",
+"target": {
+"name": "Cole Palmer",
+"season": "2026/27",
+"face": "p1096353",
+"club": "t8455",
+"flag": "cENG"
+},
+"rows": [
+{
+"name": "Philippe Coutinho",
+"season": "2021/22",
+"face": "p184536",
+"club": "t10252",
+"flag": "cBRA",
+"match": 84.5,
+"excluded": false,
+"rank": 1,
+"twin": true
+},
+{
+"name": "Eberechi Eze",
+"season": "2024/25",
+"face": "p818975",
+"club": "t9826",
+"flag": "cENG",
+"match": 82.5,
+"excluded": false,
+"rank": 2
+},
+{
+"name": "Leandro Trossard",
+"season": "2024/25",
+"face": "p318615",
+"club": "t9825",
+"flag": "cBEL",
+"match": 82.3,
+"excluded": false,
+"rank": 3
+},
+{
+"name": "Bukayo Saka",
+"season": "2022/23",
+"face": "p961995",
+"club": "t9825",
+"flag": "cENG",
+"match": 82.1,
+"excluded": false,
+"rank": 4
+},
+{
+"name": "Hakim Ziyech",
+"season": "2021/22",
+"face": "p360559",
+"club": "t8455",
+"flag": "cMAR",
+"match": 81.9,
+"excluded": false,
+"rank": 5
+},
+{
+"name": "Bryan Mbeumo",
+"season": "2022/23",
+"face": "p923312",
+"club": "t9937",
+"flag": "cCMR",
+"match": 81.8,
+"excluded": false,
+"rank": 6
+},
+{
+"name": "Marcus Tavernier",
+"season": "2025/26",
+"face": "p789630",
+"club": "t8678",
+"flag": "cENG",
+"match": 81.8,
+"excluded": false,
+"rank": 7
+}
+]
+},
+"now": {
+"title": "Right now.",
+"sub": "",
+"target": {
+"name": "Cole Palmer",
+"season": "2026/27",
+"face": "p1096353",
+"club": "t8455",
+"flag": "cENG"
+},
+"rows": [
+{
+"name": "Kiernan Dewsbury-Hall",
+"season": "2026/27",
+"face": "p886016",
+"club": "t8668",
+"flag": "cENG",
+"match": 83.1
+},
+{
+"name": "Julio Enciso",
+"season": "2026/27",
+"face": "p1073742",
+"club": "t9902",
+"flag": "cPAR",
+"match": 82.6
+},
+{
+"name": "Justin Kluivert",
+"season": "2026/27",
+"face": "p794253",
+"club": "t8678",
+"flag": "cNED",
+"match": 81.9
+},
+{
+"name": "Matheus Cunha",
+"season": "2026/27",
+"face": "p863098",
+"club": "t10260",
+"flag": "cBRA",
+"match": 77.7
+},
+{
+"name": "Jaidon Anthony",
+"season": "2026/27",
+"face": "p1171140",
+"club": "t9937",
+"flag": "cENG",
+"match": 76.5
+}
+]
+}
+},
+"scenes": {
+"intro": {
+"type": "intro",
+"face": "p1096353",
+"club": "t8455",
+"flag": "cENG",
+"name": "PALMER",
+"season": "2026/27",
+"facts": [],
+"at": [
+0.3,
+0.9,
+1.5
+],
+"mystery": [
+{
+"face": "p184536",
+"label": "LAST 5 YEARS",
+"delay": 0
+},
+{
+"face": "p886016",
+"label": "CURRENT",
+"delay": 0
+}
+],
+"instant": true,
+"kicker": "HIS TWIN IS NOT WHO YOU THINK",
+"kickerAt": "NOT",
+"award": {
+"at": "CURRENT",
+"kind": "now",
+"label": "RIGHT NOW",
+"x": 300,
+"y": 610
+}
+},
+"c7": {
+"type": "cd2",
+"list": "top",
+"show": [
+7
+],
+"before": [],
+"prevShow": [],
+"at": 0.0,
+"cont": true,
+"from": 1,
+"pop": {
+"big": "4.90",
+"label": "ball recoveries per 90",
+"rank": "9th of 82 Premier League attackers",
+"at": "MARCUS"
+},
+"fromClub": "t8455"
+},
+"c6": {
+"type": "cd2",
+"list": "top",
+"show": [
+6
+],
+"before": [
+7
+],
+"prevShow": [
+7
+],
+"at": 0.0,
+"cont": true,
+"from": -1,
+"pop": {
+"big": "0.43",
+"label": "big chances made per 90",
+"rank": "7th of 73 Premier League attackers",
+"at": "BRYAN"
+},
+"fromClub": "t8678"
+},
+"surprise": {
+"type": "cd2",
+"list": "top",
+"show": [],
+"before": [
+7,
+6
+],
+"prevShow": [
+6
+],
+"at": 0.0,
+"aside": {
+"name": "Antony",
+"season": "2022/23",
+"face": "p967622",
+"club": "t10260",
+"flag": "cBRA",
+"rank": 82,
+"match": 74.3,
+"text": "Not even top 80"
+},
+"cont": true,
+"from": 1,
+"pop": {
+"big": "3.60",
+"label": "shots per 90",
+"rank": "1st of 67 Premier League attackers",
+"at": "HE'S"
+},
+"fromClub": "t9937"
+},
+"c5": {
+"type": "cd2",
+"list": "top",
+"show": [
+5
+],
+"before": [
+7,
+6
+],
+"prevShow": [
+6
+],
+"at": 0.0,
+"cont": true,
+"from": -1,
+"pop": {
+"big": "3.60",
+"label": "shots per 90",
+"rank": "3rd of 70 Premier League attackers",
+"at": "HAKIM"
+},
+"fromClub": "t10260"
+},
+"c4": {
+"type": "cd2",
+"list": "top",
+"show": [
+4
+],
+"before": [
+7,
+6,
+5
+],
+"prevShow": [
+5
+],
+"at": 0.0,
+"cont": true,
+"from": 1,
+"pop": {
+"big": "0.31",
+"label": "assists per 90",
+"rank": "9th of 74 Premier League attackers",
+"at": "BUKAYO"
+},
+"fromClub": "t8455"
+},
+"c3": {
+"type": "cd2",
+"list": "top",
+"show": [
+3
+],
+"before": [
+7,
+6,
+5,
+4
+],
+"prevShow": [
+4
+],
+"at": 0.0,
+"cont": true,
+"from": -1,
+"pop": {
+"big": "0.25",
+"label": "assists per 90",
+"rank": "18th of 72 Premier League attackers",
+"at": "LEANDRO"
+},
+"fromClub": "t9825"
+},
+"c2": {
+"type": "cd2",
+"list": "top",
+"show": [
+2
+],
+"before": [
+7,
+6,
+5,
+4,
+3
+],
+"prevShow": [
+3
+],
+"at": 0.0,
+"cont": true,
+"from": 1,
+"pop": {
+"big": "3.50",
+"label": "shots per 90",
+"rank": "4th of 70 Premier League attackers",
+"at": "EBERECHI"
+},
+"sticker": {
+"text": "GUESS THE TWIN IN THE COMMENTS",
+"at": "GUESS"
+},
+"fromClub": "t9825"
+},
+"c1": {
+"type": "cd2",
+"list": "top",
+"show": [
+1
+],
+"before": [
+7,
+6,
+5,
+4,
+3,
+2
+],
+"prevShow": [
+2
+],
+"at": "PHILIPPE",
+"cont": true,
+"from": -1,
+"pop": {
+"big": "2.90",
+"label": "shots per 90",
+"rank": "8th of 70 Premier League attackers",
+"at": "PHILIPPE"
+},
+"twinAt": "THAT",
+"fromClub": "t9826"
+},
+"why": {
+"type": "compare",
+"kicker": "Why Coutinho",
+"title": "Almost the same.",
+"a": {
+"name": "Cole Palmer",
+"short": "Palmer",
+"season": "2026/27",
+"face": "p1096353"
+},
+"b": {
+"name": "Philippe Coutinho",
+"short": "Coutinho",
+"season": "2021/22",
+"face": "p184536"
+},
+"rows": [
+{
+"label": "Expected assists",
+"a": 0.13,
+"b": 0.11,
+"sub": "per 90 minutes"
+},
+{
+"label": "Shots on target",
+"a": 1.0,
+"b": 1.1,
+"sub": "per 90 minutes"
+}
+],
+"at": [
+{
+"i": 4
+},
+{
+"i": 7
+}
+]
+},
+"diff": {
+"type": "compare",
+"kicker": "But…",
+"title": "Not the same player.",
+"a": {
+"name": "Cole Palmer",
+"short": "Palmer",
+"season": "2026/27",
+"face": "p1096353"
+},
+"b": {
+"name": "Philippe Coutinho",
+"short": "Coutinho",
+"season": "2021/22",
+"face": "p184536"
+},
+"rows": [
+{
+"label": "Defensive actions",
+"a": 6.4,
+"b": 1.9,
+"sub": "per 90 minutes"
+},
+{
+"label": "Long balls",
+"a": 1.0,
+"b": 1.8,
+"sub": "per 90 minutes"
+}
+],
+"at": [
+{
+"i": 3
+},
+{
+"i": 6
+}
+]
+},
+"n0": {
+"type": "countdown",
+"list": "now",
+"upto": 6,
+"at": 0.0
+},
+"n5": {
+"type": "countdown",
+"list": "now",
+"upto": 5,
+"at": 0.0,
+"cont": true,
+"fromClub": "t8455"
+},
+"n4": {
+"type": "countdown",
+"list": "now",
+"upto": 4,
+"at": 0.0,
+"cont": true,
+"fromClub": "t9937"
+},
+"n3": {
+"type": "countdown",
+"list": "now",
+"upto": 3,
+"at": 0.0,
+"cont": true,
+"fromClub": "t10260"
+},
+"n2": {
+"type": "countdown",
+"list": "now",
+"upto": 2,
+"at": 0.0,
+"cont": true,
+"fromClub": "t8678"
+},
+"now1": {
+"type": "countdown",
+"list": "now",
+"upto": 1,
+"at": "KIERNAN",
+"cont": true,
+"fromClub": "t9902"
+},
+"nowcmp": {
+"type": "compare",
+"kicker": "This season",
+"title": "Palmer vs Dewsbury-Hall.",
+"a": {
+"name": "Cole Palmer",
+"short": "Palmer",
+"season": "2026/27",
+"face": "p1096353"
+},
+"b": {
+"name": "Kiernan Dewsbury-Hall",
+"short": "Dewsbury-Hall",
+"season": "2026/27",
+"face": "p886016"
+},
+"rows": [
+{
+"label": "Goals",
+"a": 0.23,
+"b": 0.3,
+"sub": "per 90 minutes · no penalties"
+},
+{
+"label": "Expected goals",
+"a": 0.19,
+"b": 0.18,
+"sub": "per 90 minutes · no penalties"
+},
+{
+"label": "Shots",
+"a": 3.3,
+"b": 2.5,
+"sub": "per 90 minutes"
+},
+{
+"label": "Assists",
+"a": 0.34,
+"b": 0.1,
+"sub": "per 90 minutes"
+}
+],
+"at": [
+{
+"i": 10
+},
+{
+"i": 11
+},
+{
+"i": 13
+},
+{
+"i": 15
+}
+]
+},
+"end": {
+"type": "end2",
+"captions": true,
+"at": [
+"PHILIPPE",
+"RIGHT"
+],
+"pairs": [
+{
+"label": "Last 5 seasons",
+"a": "p1096353",
+"b": "p184536",
+"aName": "PALMER 26/27",
+"bName": "COUTINHO 21/22",
+"aClub": "t8455",
+"bClub": "t10252"
+},
+{
+"label": "This season",
+"a": "p1096353",
+"b": "p886016",
+"aName": "PALMER 26/27",
+"bName": "DEWSBURY-HALL",
+"aClub": "t8455",
+"bClub": "t8668"
+}
+]
+}
+}
+}

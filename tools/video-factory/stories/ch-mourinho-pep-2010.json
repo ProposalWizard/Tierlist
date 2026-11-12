@@ -1,0 +1,1249 @@
+{
+ "id": "ch-mourinho-pep-2010",
+ "series": "Analysed like chess",
+ "title": "Mourinho v Pep, Camp Nou 2010, analysed like chess",
+ "layout": "chess",
+ "music": "05-under-the-cosh.mp3",
+ "sources": [
+  "https://www.inter.it/en/news/2020/04/28/barcelona-1-0-inter-2010-champions-league-semi-final.html",
+  "https://www.inter.it/en/news/2020/04/20/inter-3-1-barcelona-champions-league-2010-highlights-photos.html",
+  "https://www.skysports.com/football/barcelona-vs-inter/212464",
+  "https://www.fcbarcelona.com/en/news/1647162/barca-rewind-the-ash-cloud",
+  "https://sport.sky.it/calcio/champions-league/2020/04/10/inter-barcellona-trasferta-viaggio-15-ore",
+  "https://www.eurosport.com/football/champions-league/2009-2010/retro-report-jose-mourinho-mastermind-as-10-man-inter-reach-final-at-barcelonas-expense_sto7737119/story.shtml",
+  "https://www.republicworld.com/sports/football/jose-mourinho-run-camp-nou-after-inter-knock-out-barcelona-apr-28-2010",
+  "https://www.pulsesports.ug/football/story/the-most-beautiful-defeat-of-my-career-mourinho-reflects-on-barcelona-vs-inter-milan-clash-in-2010-2025042512301760462",
+  "https://www.fourfourtwo.com/news/jose-sweetest-defeat-my-life",
+  "https://www.inter.it/en/match_center/3829",
+  "https://www.inter.it/en/match_center/3828",
+  "https://www.rte.ie/sport/soccer/2010/0428/264407-barcelona_intermilan"
+ ],
+ "checked": "First leg 20 Apr 2010 Inter 3-1 Barça (Pedro; Sneijder, Maicon, Milito), Barça by coach because of the Eyjafjallajokull ash cloud, about 15 hours (inter.it, FCB, Sky Italia). Second leg 28 Apr 2010 Barça 1-0 Inter, Motta sent off 28', Pique 84', Bojan's stoppage-time goal ruled out for a Yaya Toure handball, Inter through 3-2 on aggregate, Inter in a 4-4-1 with Eto'o wide, Barça about 76% possession, Mourinho ran onto the pitch and the sprinklers came on (inter.it, Sky, Eurosport, Republic). 'Most beautiful defeat of my career' (BBC via Pulse, FourFourTwo). Final 22 May 2010 at the Bernabeu, Inter 2-0 Bayern, treble. Eto'o won the 2009 treble with Barça. Away goals rule applied in 2010, so 2-0 would have put Barça through. Line-ups and subs (inter.it match centres 3828/3829, RTE): leg 2 Barça Valdés; Alves, Piqué, G. Milito, Keita; Xavi, Touré, Busquets; Messi, Ibrahimović, Pedro; Maxwell 46, Jeffrén and Bojan 63. Inter Júlio César; Maicon, Lúcio, Samuel, Zanetti; Cambiasso, Motta, Chivu; Eto'o, Sneijder, D. Milito; Muntari for Sneijder, Córdoba 81, Mariga 86. Xavi assisted Piqué. Positions on the drawn pitch are illustrative.",
+ "clubs": {
+  "int": {
+   "name": "Inter",
+   "short": "INT",
+   "c1": "#1f4fb3",
+   "c2": "#0b0b0b",
+   "pattern": "stripes",
+   "gk": "#e8e04a"
+  },
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "collar": "#edbb00",
+   "gk": "#2bb673"
+  }
+ },
+ "people": {
+  "mourinho": {
+   "name": "José Mourinho",
+   "short": "Mourinho",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#4a4440"
+   ],
+   "beard": "stubble",
+   "beardCol": "#5a5450",
+   "kit": "suit",
+   "club": "int"
+  },
+  "pep": {
+   "name": "Pep Guardiola",
+   "short": "Guardiola",
+   "skin": "light",
+   "hair": [
+    "bald",
+    "#000"
+   ],
+   "beard": "stubble",
+   "beardCol": "#6a5a4a",
+   "kit": "suit",
+   "club": "bar"
+  }
+ },
+ "lines": [
+  {
+   "text": "He lost the game 1-0. Here's how Mourinho still won the match.",
+   "say": "He lost the game, one-nil. Here's how Mourinho still won the match.",
+   "scene": {
+    "type": "move",
+    "hook": true,
+    "title": "Mourinho v Pep, analysed like chess",
+    "badge": "checkmate",
+    "on": "mourinho",
+    "eval": "M",
+    "overlay": "hook",
+    "shape": [
+     "inter_441",
+     "barca_siege"
+    ],
+    "cam": {
+     "cy": 78,
+     "len": 66
+    },
+    "score": {
+     "h": 1,
+     "a": 0,
+     "min": "FT",
+     "agg": "INTER THROUGH 3-2 ON AGG"
+    }
+   }
+  },
+  {
+   "text": "First leg, San Siro. Barça arrive by coach, about fifteen hours, because a volcano has shut Europe's skies. Inter win 3-1.",
+   "say": "First leg, San Siro. Barça arrive by coach, about fifteen hours, because a volcano has shut Europe's skies. Inter win three-one.",
+   "scene": {
+    "type": "move",
+    "n": "1",
+    "who": "mourinho",
+    "title": "3-1 at San Siro",
+    "badge": "excellent",
+    "on": "milito",
+    "eval": 2.5,
+    "overlay": "coach",
+    "where": "SAN SIRO · 20 APRIL 2010",
+    "shape": [
+     "inter_leg1",
+     "barca_leg1"
+    ],
+    "cam": {
+     "cy": 40,
+     "len": 84
+    },
+    "focus": [
+     "milito"
+    ],
+    "ball": {
+     "path": [
+      [
+       34,
+       56
+      ],
+      [
+       30,
+       20
+      ],
+      [
+       31,
+       1
+      ]
+     ],
+     "at": 4.2,
+     "dur": 1.2
+    },
+    "score": {
+     "h": 1,
+     "a": 3,
+     "min": "FT",
+     "agg": "1ST LEG"
+    }
+   }
+  },
+  {
+   "text": "Second leg, Camp Nou. Pep needs 2-0. His Barça keep the ball, push everyone up and squeeze.",
+   "say": "Second leg, Camp Nou. Pep needs two-nil. His Barça keep the ball, push everyone up and squeeze.",
+   "scene": {
+    "type": "move",
+    "n": "1...",
+    "who": "pep",
+    "title": "Everyone forward",
+    "badge": "book",
+    "on": "xavi",
+    "eval": 1.8,
+    "where": "CAMP NOU · 28 APRIL 2010",
+    "shape": [
+     "inter_ko",
+     "barca_siege"
+    ],
+    "cam": {
+     "cy": 66,
+     "len": 82
+    },
+    "pass": [
+     "busquets",
+     "xavi",
+     "messi",
+     "toure",
+     "keita",
+     "alves"
+    ],
+    "arrows": [
+     {
+      "from": [
+       8,
+       58
+      ],
+      "to": [
+       8,
+       74
+      ],
+      "at": 1.5
+     },
+     {
+      "from": [
+       60,
+       58
+      ],
+      "to": [
+       60,
+       74
+      ],
+      "at": 1.7
+     },
+     {
+      "from": [
+       34,
+       70
+      ],
+      "to": [
+       34,
+       84
+      ],
+      "at": 1.9
+     }
+    ],
+    "score": {
+     "h": 0,
+     "a": 0,
+     "min": "KO",
+     "agg": "AGG 1-3"
+    }
+   }
+  },
+  {
+   "text": "Twenty-eight minutes. Thiago Motta clashes with Busquets and gets a straight red. Ten men, an hour to survive.",
+   "scene": {
+    "type": "move",
+    "n": "2",
+    "who": "mourinho",
+    "title": "Motta sent off",
+    "badge": "mistake",
+    "on": "motta",
+    "eval": -0.6,
+    "red": "motta",
+    "redAt": 2.4,
+    "shape": [
+     "inter_ko",
+     "barca_siege"
+    ],
+    "cam": {
+     "cx": 38,
+     "cy": 80,
+     "len": 44,
+     "push": true
+    },
+    "focus": [
+     "motta",
+     "busquets"
+    ],
+    "runs": [
+     {
+      "id": "busquets",
+      "to": [
+       38,
+       80
+      ],
+      "at": 0.3,
+      "dur": 0.8
+     }
+    ],
+    "score": {
+     "h": 0,
+     "a": 0,
+     "min": "28'",
+     "agg": "AGG 1-3"
+    }
+   }
+  },
+  {
+   "text": "Mourinho's answer: give Pep the ball. Two banks of four, no space behind them. Eto'o, the striker who won everything with Barça a year ago, now defends wide.",
+   "scene": {
+    "type": "move",
+    "n": "3",
+    "who": "mourinho",
+    "title": "Give them the ball",
+    "badge": "brilliant",
+    "on": "etoo",
+    "eval": 1.2,
+    "banks": true,
+    "shape": [
+     "inter_441",
+     "barca_siege"
+    ],
+    "cam": {
+     "cy": 82,
+     "len": 58
+    },
+    "focus": [
+     "etoo"
+    ],
+    "score": {
+     "h": 0,
+     "a": 0,
+     "min": "30'",
+     "agg": "AGG 1-3"
+    }
+   },
+   "say": "Mourinho's answer: give Pep the ball. Two banks of four, no space behind them. Etto, the striker who won everything with Barça a year ago, now defends wide."
+  },
+  {
+   "text": "Barça have about three quarters of the ball. It doesn't matter. Every pass goes sideways, round the outside of the wall.",
+   "scene": {
+    "type": "move",
+    "n": "3...",
+    "who": "pep",
+    "title": "All the ball, nowhere to go",
+    "badge": "inaccuracy",
+    "on": "xavi",
+    "eval": 1.5,
+    "overlay": "possession",
+    "sway": "bar",
+    "shape": [
+     "inter_441",
+     "barca_60"
+    ],
+    "cam": {
+     "cy": 78,
+     "len": 64
+    },
+    "pass": [
+     "alves",
+     "xavi",
+     "busquets",
+     "keita",
+     "maxwell",
+     "keita",
+     "busquets",
+     "xavi"
+    ],
+    "passSpeed": 1.3,
+    "score": {
+     "h": 0,
+     "a": 0,
+     "min": "60'",
+     "agg": "AGG 1-3"
+    }
+   }
+  },
+  {
+   "text": "Eighty-four minutes. Piqué, a centre-back thrown up front, scores. 1-0. One more goal and Barça are through on away goals.",
+   "say": "Eighty-four minutes. Piqué, a centre-back thrown up front, scores. One-nil. One more goal and Barça are through on away goals.",
+   "scene": {
+    "type": "move",
+    "n": "4",
+    "who": "pep",
+    "title": "Piqué up front",
+    "badge": "great",
+    "on": "pique",
+    "eval": -0.4,
+    "goal": true,
+    "goalWord": "scores",
+    "shape": [
+     "inter_84",
+     "barca_84"
+    ],
+    "cam": {
+     "cx": 34,
+     "cy": 88,
+     "len": 46,
+     "push": true
+    },
+    "focus": [
+     "pique",
+     "xavi"
+    ],
+    "ball": {
+     "path": [
+      [
+       20,
+       74
+      ],
+      [
+       49,
+       90
+      ],
+      [
+       37,
+       104.5
+      ]
+     ],
+     "at": 1.4,
+     "dur": 1.3
+    },
+    "score": {
+     "h": 1,
+     "a": 0,
+     "min": "84'",
+     "agg": "AGG 2-3"
+    }
+   }
+  },
+  {
+   "text": "Stoppage time. Bojan scores and the Camp Nou goes up. Then the call: handball, Yaya Touré. No goal.",
+   "scene": {
+    "type": "move",
+    "n": "5",
+    "who": "pep",
+    "title": "Bojan's goal",
+    "badge": "brilliant",
+    "flip": "nogoal",
+    "flipWord": "handball",
+    "on": "bojan",
+    "eval": -4,
+    "evalAfter": 4,
+    "goal": true,
+    "goalWord": "scores",
+    "shape": [
+     "inter_90",
+     "barca_84"
+    ],
+    "cam": {
+     "cx": 30,
+     "cy": 90,
+     "len": 40
+    },
+    "focus": [
+     "bojan",
+     "toure"
+    ],
+    "runs": [
+     {
+      "id": "toure",
+      "to": [
+       24,
+       88
+      ],
+      "at": 0.2,
+      "dur": 0.8
+     }
+    ],
+    "ball": {
+     "path": [
+      [
+       18,
+       90
+      ],
+      [
+       24,
+       97
+      ],
+      [
+       31,
+       104.5
+      ]
+     ],
+     "at": 0.9,
+     "dur": 0.8
+    },
+    "score": {
+     "h": 1,
+     "a": 0,
+     "min": "90+'",
+     "agg": "AGG 2-3"
+    }
+   }
+  },
+  {
+   "text": "Full time. Mourinho sprints onto the Camp Nou pitch, finger in the air. They turn the sprinklers on. He doesn't care.",
+   "scene": {
+    "type": "move",
+    "n": "6",
+    "who": "mourinho",
+    "title": "Inter are through",
+    "badge": "checkmate",
+    "on": "mourinho",
+    "eval": "M",
+    "overlay": "sprinklers",
+    "shape": [
+     "inter_90",
+     "barca_84"
+    ],
+    "cam": {
+     "cy": 80,
+     "len": 66
+    },
+    "score": {
+     "h": 1,
+     "a": 0,
+     "min": "FT",
+     "agg": "INTER THROUGH 3-2 ON AGG"
+    }
+   }
+  },
+  {
+   "text": "He called it the most beautiful defeat of his career. Less than a month later, at the Bernabéu, Inter were champions of Europe.",
+   "scene": {
+    "type": "move",
+    "n": "1-0",
+    "who": "result",
+    "title": "Lost the game. Won the match.",
+    "badge": "checkmate",
+    "on": "mourinho",
+    "eval": "M",
+    "overlay": "trophy",
+    "shape": [
+     "inter_90",
+     "barca_84"
+    ],
+    "cam": {
+     "cy": 80,
+     "len": 66
+    },
+    "score": {
+     "h": 0,
+     "a": 2,
+     "min": "FT",
+     "agg": "FINAL · 22 MAY 2010",
+     "names": [
+      "BAY",
+      "INT"
+     ]
+    }
+   }
+  },
+  {
+   "text": "Part two: Pep gets his revenge.",
+   "say": "Part two. Pep gets his revenge.",
+   "scene": {
+    "type": "move",
+    "n": "?",
+    "who": "next",
+    "title": "Coming up",
+    "badge": "book",
+    "on": "pep",
+    "eval": 0,
+    "overlay": "next",
+    "shape": [
+     "inter_ko",
+     "barca_siege"
+    ],
+    "cam": {
+     "cy": 52,
+     "len": 112
+    },
+    "score": {
+     "h": 0,
+     "a": 0,
+     "min": "",
+     "agg": "PEP v MOURINHO"
+    }
+   }
+  }
+ ],
+ "players": {
+  "julio": {
+   "name": "Júlio César",
+   "club": "int",
+   "skin": "tan",
+   "hair": [
+    "crop",
+    "#1a1410"
+   ],
+   "beard": "stubble",
+   "gk": true
+  },
+  "maicon": {
+   "name": "Maicon",
+   "club": "int",
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "none"
+  },
+  "lucio": {
+   "name": "Lúcio",
+   "club": "int",
+   "skin": "tan",
+   "hair": [
+    "buzz",
+    "#1a1410"
+   ],
+   "beard": "goatee"
+  },
+  "samuel": {
+   "name": "Samuel",
+   "club": "int",
+   "skin": "olive",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "short"
+  },
+  "zanetti": {
+   "name": "Zanetti",
+   "club": "int",
+   "skin": "olive",
+   "hair": [
+    "slick",
+    "#111111"
+   ],
+   "beard": "none"
+  },
+  "cambiasso": {
+   "name": "Cambiasso",
+   "club": "int",
+   "skin": "light",
+   "hair": [
+    "bald",
+    "#000000"
+   ],
+   "beard": "none"
+  },
+  "motta": {
+   "name": "Motta",
+   "club": "int",
+   "skin": "olive",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "short"
+  },
+  "chivu": {
+   "name": "Chivu",
+   "club": "int",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "none"
+  },
+  "etoo": {
+   "name": "Eto'o",
+   "club": "int",
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "sneijder": {
+   "name": "Sneijder",
+   "club": "int",
+   "skin": "light",
+   "hair": [
+    "buzz",
+    "#8a6440"
+   ],
+   "beard": "none"
+  },
+  "milito": {
+   "name": "Milito",
+   "club": "int",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "short"
+  },
+  "pandev": {
+   "name": "Pandev",
+   "club": "int",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "stubble"
+  },
+  "muntari": {
+   "name": "Muntari",
+   "club": "int",
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "cordoba": {
+   "name": "Córdoba",
+   "club": "int",
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "none"
+  },
+  "mariga": {
+   "name": "Mariga",
+   "club": "int",
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "valdes": {
+   "name": "Valdés",
+   "club": "bar",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "stubble",
+   "gk": true
+  },
+  "alves": {
+   "name": "Dani Alves",
+   "club": "bar",
+   "skin": "brown",
+   "hair": [
+    "crop",
+    "#120e0c"
+   ],
+   "beard": "goatee",
+   "short": "Alves"
+  },
+  "pique": {
+   "name": "Piqué",
+   "club": "bar",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#5a3e28"
+   ],
+   "beard": "stubble"
+  },
+  "gmilito": {
+   "name": "G. Milito",
+   "club": "bar",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "none"
+  },
+  "puyol": {
+   "name": "Puyol",
+   "club": "bar",
+   "skin": "light",
+   "hair": [
+    "bigcurl",
+    "#5a3e28"
+   ],
+   "beard": "none"
+  },
+  "maxwell": {
+   "name": "Maxwell",
+   "club": "bar",
+   "skin": "tan",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "none"
+  },
+  "keita": {
+   "name": "Keita",
+   "club": "bar",
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "xavi": {
+   "name": "Xavi",
+   "club": "bar",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "stubble"
+  },
+  "busquets": {
+   "name": "Busquets",
+   "club": "bar",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "none"
+  },
+  "toure": {
+   "name": "Yaya Touré",
+   "club": "bar",
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none",
+   "short": "Touré"
+  },
+  "pedro": {
+   "name": "Pedro",
+   "club": "bar",
+   "skin": "olive",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "none"
+  },
+  "messi": {
+   "name": "Messi",
+   "club": "bar",
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#5a3e28"
+   ],
+   "beard": "none"
+  },
+  "ibra": {
+   "name": "Ibrahimović",
+   "club": "bar",
+   "skin": "olive",
+   "hair": [
+    "slick",
+    "#1d1512"
+   ],
+   "beard": "stubble",
+   "short": "Ibra"
+  },
+  "bojan": {
+   "name": "Bojan",
+   "club": "bar",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "none"
+  },
+  "jeffren": {
+   "name": "Jeffrén",
+   "club": "bar",
+   "skin": "brown",
+   "hair": [
+    "crop",
+    "#120e0c"
+   ],
+   "beard": "none"
+  }
+ },
+ "shapes": {
+  "inter_leg1": {
+   "julio": [
+    34,
+    101
+   ],
+   "maicon": [
+    58,
+    90
+   ],
+   "lucio": [
+    42,
+    94
+   ],
+   "samuel": [
+    26,
+    94
+   ],
+   "zanetti": [
+    10,
+    90
+   ],
+   "cambiasso": [
+    27,
+    80
+   ],
+   "motta": [
+    41,
+    80
+   ],
+   "pandev": [
+    12,
+    67
+   ],
+   "sneijder": [
+    34,
+    67
+   ],
+   "etoo": [
+    56,
+    67
+   ],
+   "milito": [
+    34,
+    56
+   ]
+  },
+  "barca_leg1": {
+   "valdes": [
+    34,
+    4
+   ],
+   "alves": [
+    8,
+    20
+   ],
+   "pique": [
+    26,
+    14
+   ],
+   "puyol": [
+    42,
+    14
+   ],
+   "maxwell": [
+    60,
+    20
+   ],
+   "xavi": [
+    27,
+    30
+   ],
+   "busquets": [
+    41,
+    30
+   ],
+   "pedro": [
+    10,
+    42
+   ],
+   "messi": [
+    34,
+    44
+   ],
+   "keita": [
+    58,
+    42
+   ],
+   "ibra": [
+    34,
+    52
+   ]
+  },
+  "inter_ko": {
+   "julio": [
+    34,
+    101
+   ],
+   "maicon": [
+    58,
+    92
+   ],
+   "lucio": [
+    42,
+    95
+   ],
+   "samuel": [
+    26,
+    95
+   ],
+   "zanetti": [
+    10,
+    92
+   ],
+   "cambiasso": [
+    28,
+    84
+   ],
+   "motta": [
+    40,
+    84
+   ],
+   "chivu": [
+    14,
+    80
+   ],
+   "sneijder": [
+    34,
+    73
+   ],
+   "etoo": [
+    56,
+    75
+   ],
+   "milito": [
+    42,
+    64
+   ]
+  },
+  "barca_siege": {
+   "valdes": [
+    34,
+    24
+   ],
+   "pique": [
+    25,
+    52
+   ],
+   "gmilito": [
+    43,
+    52
+   ],
+   "alves": [
+    4,
+    72
+   ],
+   "keita": [
+    64,
+    72
+   ],
+   "busquets": [
+    30,
+    60
+   ],
+   "xavi": [
+    19,
+    70
+   ],
+   "toure": [
+    49,
+    70
+   ],
+   "messi": [
+    26,
+    78
+   ],
+   "ibra": [
+    44,
+    79
+   ],
+   "pedro": [
+    65,
+    82
+   ]
+  },
+  "inter_441": {
+   "julio": [
+    34,
+    101
+   ],
+   "maicon": [
+    58,
+    93
+   ],
+   "lucio": [
+    42,
+    96
+   ],
+   "samuel": [
+    26,
+    96
+   ],
+   "zanetti": [
+    10,
+    93
+   ],
+   "etoo": [
+    58,
+    84
+   ],
+   "sneijder": [
+    42,
+    86
+   ],
+   "cambiasso": [
+    26,
+    86
+   ],
+   "chivu": [
+    10,
+    84
+   ],
+   "milito": [
+    34,
+    69
+   ]
+  },
+  "barca_60": {
+   "valdes": [
+    34,
+    28
+   ],
+   "pique": [
+    26,
+    56
+   ],
+   "toure": [
+    42,
+    56
+   ],
+   "alves": [
+    4,
+    74
+   ],
+   "maxwell": [
+    64,
+    74
+   ],
+   "busquets": [
+    27,
+    62
+   ],
+   "xavi": [
+    19,
+    72
+   ],
+   "keita": [
+    49,
+    72
+   ],
+   "messi": [
+    26,
+    78
+   ],
+   "ibra": [
+    44,
+    79
+   ],
+   "pedro": [
+    65,
+    82
+   ]
+  },
+  "inter_84": {
+   "julio": [
+    34,
+    101
+   ],
+   "maicon": [
+    58,
+    93
+   ],
+   "lucio": [
+    42,
+    96
+   ],
+   "samuel": [
+    26,
+    96
+   ],
+   "zanetti": [
+    10,
+    93
+   ],
+   "cordoba": [
+    34,
+    92
+   ],
+   "etoo": [
+    58,
+    84
+   ],
+   "muntari": [
+    42,
+    86
+   ],
+   "cambiasso": [
+    26,
+    86
+   ],
+   "chivu": [
+    10,
+    84
+   ]
+  },
+  "barca_84": {
+   "valdes": [
+    34,
+    32
+   ],
+   "toure": [
+    34,
+    62
+   ],
+   "alves": [
+    4,
+    74
+   ],
+   "maxwell": [
+    64,
+    74
+   ],
+   "xavi": [
+    20,
+    74
+   ],
+   "keita": [
+    48,
+    73
+   ],
+   "messi": [
+    30,
+    79
+   ],
+   "jeffren": [
+    16,
+    78
+   ],
+   "pedro": [
+    65,
+    81
+   ],
+   "bojan": [
+    18,
+    90
+   ],
+   "pique": [
+    49,
+    90
+   ]
+  },
+  "inter_90": {
+   "julio": [
+    34,
+    101
+   ],
+   "maicon": [
+    58,
+    93
+   ],
+   "lucio": [
+    42,
+    96
+   ],
+   "samuel": [
+    26,
+    96
+   ],
+   "zanetti": [
+    10,
+    93
+   ],
+   "cordoba": [
+    34,
+    92
+   ],
+   "mariga": [
+    58,
+    84
+   ],
+   "muntari": [
+    42,
+    86
+   ],
+   "cambiasso": [
+    26,
+    86
+   ],
+   "chivu": [
+    10,
+    84
+   ]
+  }
+ }
+}

@@ -1,0 +1,334 @@
+{
+"meta": {
+"series": "STAT TWINS · EP 2",
+"source": "Data: Opta via FotMob · PL attackers 900+ mins (26/27: 450+)",
+"engine": "video2.html",
+"imgDir": "/tmp/claude-0/-home-user-Tierlist/84a0c395-3776-5543-b933-7d1eba9d58ff/scratchpad/img"
+},
+"lists": {
+"top": {
+"title": "Ten years ago.",
+"sub": "Match to Palmer 24/25–26/27 · 100% = identical",
+"target": {
+"name": "Cole Palmer",
+"season": "24/25 to 26/27",
+"face": "p1096353",
+"club": "t8455",
+"flag": "cENG"
+},
+"rows": [
+{
+"name": "Roberto Firmino",
+"season": "2016/17",
+"face": "p242709",
+"club": "t8650",
+"flag": "cBRA",
+"match": 85.6,
+"line": null,
+"sure": "#1 in 19 of 20 tests"
+},
+{
+"name": "Philippe Coutinho",
+"season": "2016/17",
+"face": "p184536",
+"club": "t8650",
+"flag": "cBRA",
+"match": 83.2,
+"line": "Firmino's team-mate",
+"sure": null
+},
+{
+"name": "Alexis Sánchez",
+"season": "2016/17",
+"face": "p50047",
+"club": "t9825",
+"flag": "cCHI",
+"match": 80.5,
+"line": "24 league goals that season",
+"sure": null
+},
+{
+"name": "Ross Barkley",
+"season": "2016/17",
+"face": "p215384",
+"club": "t8668",
+"flag": "cENG",
+"match": 79.2,
+"line": "Later joined Chelsea",
+"sure": null
+},
+{
+"name": "Christian Eriksen",
+"season": "2016/17",
+"face": "p157723",
+"club": "t8586",
+"flag": "cDEN",
+"match": 78.7,
+"line": "Spurs' playmaker",
+"sure": null
+},
+{
+"name": "Kevin De Bruyne",
+"season": "2016/17",
+"face": "p169200",
+"club": "t8456",
+"flag": "cBEL",
+"match": 78.4,
+"line": "Ex-Chelsea too",
+"sure": null
+},
+{
+"name": "Paul Pogba",
+"season": "2016/17",
+"face": "p248453",
+"club": "t10260",
+"flag": "cFRA",
+"match": 78.1,
+"line": "That summer's record signing",
+"sure": null
+},
+{
+"name": "Juan Mata",
+"season": "2016/17",
+"face": "p41468",
+"club": "t10260",
+"flag": "cESP",
+"match": 77.9,
+"line": "Ex-Chelsea",
+"sure": null
+}
+]
+}
+},
+"scenes": {
+"intro": {
+"type": "intro",
+"face": "p1096353",
+"club": "t8455",
+"flag": "cENG",
+"name": "PALMER",
+"season": "24/25 → 26/27",
+"facts": [
+[
+"3",
+"seasons added up · 24/25 to 26/27"
+],
+[
+"88",
+"Premier League attackers in 2016/17"
+],
+[
+"19",
+"stats, all per 90 minutes"
+]
+],
+"at": [
+"LAST",
+"EVERY",
+"19"
+]
+},
+"c8": {
+"type": "countdown",
+"list": "top",
+"upto": 8,
+"at": "JUAN"
+},
+"c7": {
+"type": "countdown",
+"list": "top",
+"upto": 7,
+"at": "PAUL",
+"cont": true
+},
+"c6": {
+"type": "countdown",
+"list": "top",
+"upto": 6,
+"at": "KEVIN",
+"cont": true
+},
+"c5": {
+"type": "countdown",
+"list": "top",
+"upto": 5,
+"at": "CHRISTIAN",
+"cont": true
+},
+"c4": {
+"type": "countdown",
+"list": "top",
+"upto": 4,
+"at": "ROSS",
+"cont": true
+},
+"c3": {
+"type": "countdown",
+"list": "top",
+"upto": 3,
+"at": "ALEXIS",
+"cont": true
+},
+"c2": {
+"type": "countdown",
+"list": "top",
+"upto": 2,
+"at": "PHILIPPE",
+"cont": true
+},
+"c1": {
+"type": "countdown",
+"list": "top",
+"upto": 1,
+"at": "ROBERTO",
+"cont": true
+},
+"tests": {
+"type": "statement",
+"face": "p242709",
+"lines": [
+[
+"ROBERTO FIRMINO · 16/17",
+48,
+"#141414"
+],
+[
+"#1 IN 19 OF 20 TESTS",
+72,
+"#c8102e"
+],
+[
+"each test counts the stats differently",
+30,
+"#5b564d"
+]
+],
+"at": [
+0.1,
+"FIRMINO",
+"CHANGED"
+],
+"dots": {
+"at": "FIRMINO",
+"n": 19,
+"total": 20
+}
+},
+"why": {
+"type": "compare",
+"kicker": "Why Firmino",
+"title": "They create the same.",
+"a": {
+"name": "Cole Palmer",
+"season": "24/25 to 26/27",
+"face": "p1096353",
+"club": "t8455",
+"flag": "cENG"
+},
+"b": {
+"name": "Roberto Firmino",
+"season": "2016/17",
+"face": "p242709"
+},
+"rows": [
+{
+"label": "Chances created",
+"a": 2.01,
+"b": 2.26
+},
+{
+"label": "Goals (no pens)",
+"a": 0.27,
+"b": 0.32
+},
+{
+"label": "Assists",
+"a": 0.18,
+"b": 0.21
+}
+],
+"at": [
+"CHANCES",
+"SCORE",
+"ASSIST"
+]
+},
+"diff": {
+"type": "compare",
+"kicker": "But…",
+"title": "Not the same player.",
+"a": {
+"name": "Cole Palmer",
+"season": "24/25 to 26/27",
+"face": "p1096353",
+"club": "t8455",
+"flag": "cENG"
+},
+"b": {
+"name": "Roberto Firmino",
+"season": "2016/17",
+"face": "p242709"
+},
+"rows": [
+{
+"label": "Big chances made",
+"a": 0.5,
+"b": 0.29
+},
+{
+"label": "Long balls",
+"a": 2.06,
+"b": 0.9
+},
+{
+"label": "Ball recoveries",
+"a": 3.41,
+"b": 4.9
+}
+],
+"at": [
+"BIG",
+"LONG",
+"FIRMINO"
+]
+},
+"twist": {
+"type": "statement",
+"face": "p184536",
+"lines": [
+[
+"PALMER'S 24/25 ONLY",
+44,
+"#5b564d"
+],
+[
+"PHILIPPE COUTINHO",
+64,
+"#c8102e"
+],
+[
+"83% match · Liverpool 16/17",
+36,
+"#141414"
+]
+],
+"at": [
+0.1,
+"COUTINHO",
+"COUTINHO"
+]
+},
+"end": {
+"type": "end",
+"faces": [
+"p1096353",
+"p242709"
+],
+"lines": [
+"WHO'S NEXT?",
+"COMMENT BELOW"
+],
+"captions": true
+}
+}
+}
