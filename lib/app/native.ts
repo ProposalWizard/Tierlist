@@ -70,6 +70,11 @@ function toast(text: string) {
 export function installNative(): void {
   if (typeof window === "undefined") return;
   try { void plugin("App")?.addListener?.("backButton", onBack); } catch { /* not in the app shell (a browser test) */ }
+  // The keyboard's Go / Enter closes the keyboard (11 Nov 2026: on a phone there was no way back but the back button).
+  window.addEventListener("keydown", (e) => {
+    const t = e.target as HTMLElement | null;
+    if (e.key === "Enter" && t && t.tagName === "INPUT") (t as HTMLInputElement).blur();
+  });
   const haptics = plugin("Haptics");
   if (haptics?.vibrate) {
     try {

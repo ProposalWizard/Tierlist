@@ -219,11 +219,11 @@ export default function TitleScreen(p: TitleScreenProps) {
             <MenuButton primary={!career} icon="＋" label="New game" onClick={newGame} />
           </RiseIn>
           <RiseIn index={career ? 2 : 1} delay={760}>
-            <MenuButton icon="▤" label="Load game" hint={`${saves.filter((s) => !s.empty).length}/${saves.length}`} onClick={() => setSheet("load")} />
+            <MenuButton icon="▤" label="Load game" onClick={() => setSheet("load")} />
           </RiseIn>
           {p.onHallOfFame && (
             <RiseIn index={career ? 3 : 2} delay={760}>
-              <MenuButton icon="🏛" label="Hall of Fame" gold hint={p.hallCount ? `${p.hallCount} career${p.hallCount === 1 ? "" : "s"}` : "Empty"} onClick={p.onHallOfFame} />
+              <MenuButton icon="🏛" label="Hall of Fame" gold onClick={p.onHallOfFame} />
             </RiseIn>
           )}
           {p.onTutorial && (
