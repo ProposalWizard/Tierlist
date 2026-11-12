@@ -10,6 +10,7 @@ FACT-DAT-008 | Every History tab shows your career's seasons, then the real hist
 FACT-DAT-009 | Cloudflare R2 bucket kib-marketing folders: videos/, ledger/, patch-notes/<repo path>, library/, footage/kib/<code>/, backups/. | client-kib,data
 FACT-DAT-010 | Nightly backup 03:00 UK copies the key tables to R2 backups/db/<day>/; the 08:00 UK limits post goes in #health. Both need CRON_SECRET. | data
 FACT-DAT-011 | ops_limits.sql is PENDING; until run, the morning limits post cannot read the database and Storage sizes. | data
+FACT-DAT-012 | Admin Videos recordings save to R2 first (recordings/<who>/), Drive is the copy; deleted after 30 days unless Keep is on; the link for Claude is /api/dev-recordings/watch. | admin,data
 PRO-DAT-001 | Run a pending migration in the Supabase SQL Editor before touching the related features. | data
 PRO-DAT-002 | Bug report? Use the supabase-bug-hunt skill: read the report and the player's save, compare normal saves, reproduce, fix the code. | data
 RUL-DAT-001 | SQL for a person to run goes out as an artifact page (each file's name, one line on what it does, a Copy all button and the full text), never as links; build it with scripts/supabase/sql-page.py. | rule,data

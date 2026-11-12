@@ -5,6 +5,11 @@ Download a screen recording from a share link into .recordings/<name>/.
     python3 scripts/screen-video/fetch.py <link> [--name bug-checkout-0928]
 
 Works with:
+  - a Knowitball recording link (Admin -> Videos, since 12 Nov 2026)
+                   https://knowitball.co.uk/api/dev-recordings/watch?k=<who>/<file>&t=<token>
+                   The site answers with a redirect to the video in team storage
+                   (Cloudflare R2). No sign-in. If this machine's network can't
+                   reach R2, the same link is tried again through the site (&stream=1).
   - Google Drive   https://drive.google.com/file/d/<ID>/view?...   (and open?id= / uc?id=)
   - Dropbox        https://www.dropbox.com/...?dl=0                 (rewritten to dl=1)
   - a bare Drive file id (what a Google Drive connector's search returns)
@@ -38,6 +43,11 @@ def direct_url(link: str) -> str:
         link = re.sub(r"([?&])dl=0", r"\1dl=1", link)
         return link if "dl=1" in link else link + ("&" if "?" in link else "?") + "dl=1"
     return link
+
+
+def is_site_recording(link: str) -> bool:
+    """A link Admin -> Videos made: the site's watch route with a per-recording token."""
+    return re.match(r"https://[a-z0-9.-]+/api/dev-recordings/watch\?k=[a-z]+/[A-Za-z0-9._-]+&t=[a-f0-9]{32}$", link) is not None
 
 
 # Share pages that hold a video rather than being one. yt-dlp knows how to read them.
@@ -155,7 +165,15 @@ def main() -> None:
             sys.exit("Download failed. Is the video public (or shared by link)? For Loom: Share -> anyone with the link.")
     else:
         r = subprocess.run(["curl", "-L", "--fail", "--retry", "3", "-o", dest, direct_url(a.link)])
-        if r.returncode != 0:
+        if r.returncode != 0 and is_site_recording(a.link):
+            # The redirect goes to Cloudflare R2. A network that allows the site but
+            # not R2 gets the same video through the site instead.
+            print("  storage not reached directly; trying through the site")
+            r = subprocess.run(["curl", "-L", "--fail", "--retry", "3", "-o", dest, a.link + "&stream=1"])
+            if r.returncode != 0:
+                sys.exit("Download failed. The recording may be gone: recordings are deleted after 30 days "
+                         "unless Keep is on (Admin -> Videos -> Recent recordings). Ask for the Drive copy.")
+        elif r.returncode != 0:
             sys.exit("Download failed. Is the link shared as 'Anyone with the link'?")
 
     with open(dest, "rb") as f:
