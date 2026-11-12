@@ -78,7 +78,7 @@ rep("function clubBg(club,Y0=0,H=1920){const c=col(club);const g=x.createLinearG
     "x.globalAlpha=0.10+0.10*Math.sin(TNOW*1.3+i);x.fillStyle='#fff';x.beginPath();x.arc(X,Y,r,0,7);x.fill();}x.restore();}")
 rep("function darkBg(){const g=x.createLinearGradient(0,0,0,1920);g.addColorStop(0,'#141c33');g.addColorStop(1,'#05070f');x.fillStyle=g;x.fillRect(0,0,1080,1920);",
     "function darkBg(){const g=x.createLinearGradient(0,0,0,1920);g.addColorStop(0,'#141c33');g.addColorStop(1,'#05070f');x.fillStyle=g;x.fillRect(0,0,1080,1920);"
-    "{const gx=540+260*Math.sin(TNOW*0.35),gy=900+220*Math.cos(TNOW*0.28),rg=x.createRadialGradient(gx,gy,0,gx,gy,700);rg.addColorStop(0,'rgba(90,120,220,0.20)');rg.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=rg;x.fillRect(0,0,1080,1920);}specks();")
+    "{const gx=540+260*Math.sin(TNOW*0.35),gy=900+220*Math.cos(TNOW*0.28),rg=x.createRadialGradient(gx,gy,0,gx,gy,700);rg.addColorStop(0,'rgba(90,120,220,0.24)');rg.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=rg;x.fillRect(0,0,1080,1920);}stripes(0.035);specks();")   # the replace video has more dark screens: faint moving stripes too
 rep("function face(k,cx,cy,r,a=1,ring=null,blur=false){if(a<=0||r<=0)return;",
     "function face(k,cx,cy,r,a=1,ring=null,blur=false){if(a<=0||r<=0)return;cy+=r*0.035*Math.sin(TNOW*2.1+cx*0.013);r*=1+0.018*Math.sin(TNOW*2.9+cx*0.02);")
 rep("T(String(v),d<0?540-30-w:570+w,yy+136,F(900,40),cl,d<0?'right':'left');",
