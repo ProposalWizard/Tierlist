@@ -43,6 +43,10 @@ ul.ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);fon
 .lad .lr.me{background:var(--gold);color:#111;font-weight:800}.lad.bad .lr.me{background:var(--red);color:#fff}
 .ini{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:15px;position:relative;flex:0 0 auto}
 .ini img{position:absolute;right:-4px;bottom:-4px;width:42%;height:42%;background:#fff;border-radius:50%;padding:2px}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}.pager span{color:var(--ink3);font-size:12px}
+.pager button{background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:7px 12px;font-size:13px;cursor:pointer}.pager button:disabled{opacity:.35;cursor:default}
+.lsearch{margin:0 0 8px}.score.sm{gap:8px}.score.sm b{font-size:22px}.better{color:var(--green)!important}
+details.inner summary{color:var(--ink3);font-size:12px;font-weight:700;padding:4px 0;cursor:pointer}
 .hide{display:none}
 #map svg{display:block;width:100%;height:auto;touch-action:manipulation}#map .dot{cursor:pointer}
 #pop{position:absolute;z-index:20;background:#1d2747;border:1px solid #3a4a7a;border-radius:14px;padding:12px 14px;box-shadow:0 14px 40px rgba(0,0,0,.55);width:min(360px,calc(100vw - 28px))}
@@ -79,13 +83,14 @@ ul.ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);fon
 <button class="go" id="go">Find his twins</button>
 
 <div id="out" class="hide" style="margin-top:14px">
+  <div class="card" style="padding:10px 14px"><div id="score"></div></div>
   <div class="card"><div class="twin" id="twin"></div></div>
-  <div class="card"><label class="h">The map · who is near him</label><div id="map"></div><div class="muted" id="mapnote" style="margin-top:6px"></div></div>
-  <div class="card"><label class="h">Good video?</label><div id="score"></div></div>
-  <div class="card"><label class="h" id="listh">Top 10 · tap one to compare</label><div class="list" id="list"></div></div>
+  <div class="card"><label class="h" id="listh">Top 10 · tap one to compare</label>
+    <input id="fq" class="lsearch" type="text" placeholder="Search this list, e.g. Saka" autocomplete="off"><div class="list" id="list"></div>
+    <div class="pager" id="pager"><button id="pgp">‹ Prev</button><span id="pgt"></span><button id="pgn">Next ›</button></div></div>
   <div class="card" id="nowcard"><label class="h">Right now · this season only · top 5</label><div class="list" id="nowlist"></div><div class="muted" id="nowmeta" style="margin-top:6px"></div></div>
-  <div class="card"><label class="h">Find anyone in these lists</label><input id="fq" type="text" placeholder="e.g. Saka" autocomplete="off"><div id="fres" class="list" style="margin-top:6px"></div><div class="muted" style="margin-top:4px">Shows where they finish, so you can spot a "You'd think…?" surprise. Tap one to see him.</div></div>
   <div class="card"><label class="h" id="cmph">Side by side · per 90 minutes</label><div class="cmp" id="cmp"></div></div>
+  <div class="card"><label class="h">The map · who is near him</label><div id="map"></div><div class="muted" id="mapnote" style="margin-top:6px"></div></div>
   <div class="card"><label class="h">Make it a video</label>
     <div class="muted">Copies the episode file for the video builder (tools/video-render/twin/make_episode.py). Paste it into a chat with "make this episode".</div>
     <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="ghost" id="copy">Copy episode file</button><span id="copied" class="muted"></span></div>
@@ -106,19 +111,19 @@ ul.ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);fon
     <div><div class="muted">Position</div><select id="rpos"><option value="role">Same position</option><option value="group">Whole position group</option></select></div>
     <div><div class="muted">Minutes over the two seasons</div><select id="rmin"><option value="450">450+ (5 games)</option><option value="900">900+ (10 games)</option><option value="1800">1,800+ (20 games)</option></select></div>
   </div>
-  <div class="row2" style="margin-top:8px">
-    <div><div class="muted">Oldest age</div><select id="rage"><option value="0">Any age</option><option>21</option><option>23</option><option>25</option><option>27</option><option>30</option></select></div>
-    <div><div class="muted">Top value</div><select id="rval"><option value="0">Any value</option><option value="5">€5M</option><option value="10">€10M</option><option value="20">€20M</option><option value="30">€30M</option><option value="50">€50M</option></select></div>
-  </div>
+  <div class="muted" style="margin-top:10px">Age</div><div class="chips"><span class="chip" id="ru23">23 and under only</span></div>
+  <div class="muted" style="margin-top:6px">Value (none picked = any)</div><div class="chips" id="rvals"><span class="chip" data-v="high">High · €40M+</span><span class="chip" data-v="mid">Medium · €10–40M</span><span class="chip" data-v="low">Low · under €10M</span></div>
   <div class="muted" style="margin-top:10px">Leagues he plays in</div><div id="rlgs" class="chips"></div>
   <div class="chips"><span class="chip on" id="rclub">Leave out his own team-mates</span></div>
 </div>
 <button class="go" id="rgo">Find replacements</button>
 <div id="rout" class="hide" style="margin-top:14px">
-  <div class="card"><label class="h" id="rprofh">What makes him him · this season + last</label><div id="rprof"></div></div>
   <div class="card"><label class="h">Two options</label><div id="ropts"></div></div>
-  <div class="card"><label class="h" id="rlisth">Closest 20 · tap one to compare</label><div class="list" id="rlist"></div><div class="muted" id="rnote" style="margin-top:6px"></div></div>
+  <div class="card"><label class="h" id="rlisth">Closest 10 · tap one to compare</label>
+    <input id="rfq" class="lsearch" type="text" placeholder="Search this list, e.g. Wesley" autocomplete="off"><div class="list" id="rlist"></div>
+    <div class="pager" id="rpager"><button id="rpgp">‹ Prev</button><span id="rpgt"></span><button id="rpgn">Next ›</button></div><div class="muted" id="rnote" style="margin-top:6px"></div></div>
   <div class="card"><label class="h" id="rcmph">Side by side · per 90 minutes</label><div class="cmp" id="rcmp"></div></div>
+  <details class="card"><summary id="rprofh">What makes him him · this season + last</summary><div id="rprof"></div></details>
   <div class="card"><label class="h">Make it a video</label>
     <div class="muted">The settings file for a "How do you replace him?" video. Fill in the club he is joining.</div>
     <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="ghost" id="rcopy">Copy episode file</button><span id="rcopied" class="muted"></span></div>
@@ -149,6 +154,7 @@ W.ATT=W.AMW;
 const LAB={npG:'Goals (no pens)',npxG:'xG (no pens)',shots:'Shots',SoT:'Shots on target',conv:'Shot conversion %',bigMiss:'Big chances missed',A:'Assists',xA:'xA',chances:'Chances created',bigCC:'Big chances made',
  drib:'Dribbles won','drib%':'Dribble success %',passes:'Accurate passes','pass%':'Pass accuracy %',long:'Accurate long balls','long%':'Long ball accuracy %',def:'Defensive actions',tkl:'Tackles',int:'Interceptions',rec:'Ball recoveries',
  wonHigh:'Ball won high up',fouls:'Fouls',clear:'Clearances',block:'Blocks',penWon:'Penalties won',saves:'Saves','save%':'Save %',prevented:'Goals prevented',cs:'Clean sheets',conceded:'Goals conceded'};
+const LOWER=['fouls','bigMiss','conceded'];   // stats where less is better (the green number)
 const TOT=['mins','apps','G','pens','A','xG','xA','xGOT','bigCC','CC','bigMiss','penWon','prevented','cs'];
 function combine(ids){const o={};let m=0;ids.forEach(i=>m+=v(i,'mins')||0);
   D.cols.forEach(c=>{ if(TOT.includes(c)){let s=null,hm=0;ids.forEach(i=>{const x=v(i,c);if(x!=null){s=(s||0)+x;hm+=v(i,'mins')||0}});if(s!=null&&hm&&['xG','xA','xGOT'].includes(c))s*=m/hm;o[c]=s;}  // v2.1: a season with no xG is not minutes with 0 xG
@@ -234,7 +240,7 @@ function run(){ if(!PICK.size){alert('Pick a player and a season first');return}
   const showOwn=$('ownchip').classList.contains('on');
   const M=rankSet(ids,tp,g,w,seas,showOwn); if(!M.others.length){alert('Nobody to compare with. Widen the seasons or leagues.');return}
   const NOW=rankSet(ids,tp,g,w,[ci],false);
-  LAST={ids,ref,g,w,tf,tp,seas,M,NOW,sp}; $('fq').value='';$('fres').innerHTML='';
+  LAST={ids,ref,g,w,tf,tp,seas,M,NOW,sp}; $('fq').value='';PG=0;
   render({set:'M',k:M.others[0][1]});}
 function ord(n){return n+(n%100>=11&&n%100<=13?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th'))}
 function placeOf(S,k){const n=S.order.findIndex(x=>x[1]===k)+1, o=S.others.findIndex(x=>x[1]===k)+1;return {n,o};}
@@ -291,35 +297,43 @@ function drawMap(sel){ const {tp,w,M,g}=LAST; const S=M, keys=Object.keys(w).fil
   $('mapnote').textContent=`The ${Math.min(70,pts.length)} nearest players. The further from the middle, the less alike (the rings show the match %). Left/right and up/down show which stats pull players away from him. Gold = his twin, grey = his own seasons. Tap a dot.`;
   $('map').querySelectorAll('.dot').forEach(el=>el.onclick=e=>{e.stopPropagation();const k=+el.dataset.k;render({set:'M',k});showPop(document.querySelector(`#map .dot[data-k="${k}"]`)||$('map'));});
 }
-function render(sel){ const {ids,ref,g,w,tf,tp,M,NOW}=LAST; $('out').classList.remove('hide');
+// the twins list: 10 a page; with a search, every match in the list (and this season's) with its place
+let PG=0; const PER=10;
+function drawList(sel){ const {M,NOW}=LAST; const q=norm($('fq').value.trim());
+  if(q.length>=2){const res=[];for(const [SN,SS,lab] of [['M',M,''],['NOW',NOW,' · this season']]){SS.order.forEach(([d,k],n)=>{const i=SS.cand[k];if(norm(pname(i)).includes(q)){const pl=placeOf(SS,k);const own=pname(i)===PID;
+      res.push(item(SS,k,n+1,SN,sel&&sel.set===SN&&sel.k===k,(own?'':` · ${ord(pl.o)} without his own seasons`)+lab))}})}
+    $('list').innerHTML=res.slice(0,30).join('')||'<div class="muted">Not in these lists (other position, league or too few minutes).</div>';$('pager').classList.add('hide');
+    $('listh').textContent=`Search · ${res.length} found · tap one to compare`;return;}
+  const n=M.order.length, pages=Math.max(1,Math.ceil(n/PER)); PG=Math.max(0,Math.min(PG,pages-1));
+  $('list').innerHTML=M.order.slice(PG*PER,PG*PER+PER).map(([d,k],j)=>item(M,k,PG*PER+j+1,'M',sel&&sel.set==='M'&&sel.k===k)).join('');
+  $('pager').classList.remove('hide');$('pgt').textContent=`${PG*PER+1}–${Math.min(n,PG*PER+PER)} of ${n.toLocaleString()}`;$('pgp').disabled=PG===0;$('pgn').disabled=PG>=pages-1;
+  $('listh').textContent=PG===0?'Top 10 · tap one to compare':`Places ${PG*PER+1} to ${Math.min(n,PG*PER+PER)} · tap one to compare`;}
+$('pgp').onclick=()=>{PG--;drawList(LAST.sel);};$('pgn').onclick=()=>{PG++;drawList(LAST.sel);};
+$('fq').oninput=()=>drawList(LAST.sel);
+function render(sel){ const {ids,ref,g,w,tf,tp,M,NOW}=LAST; LAST.sel=sel; $('out').classList.remove('hide');
   const S=sel.set==='NOW'?NOW:M; const twinK=M.others[0][1], ti=M.cand[twinK];
   const twinM=match(M.others[0][0]); const sure=Math.round(100*(M.wins[twinK]||0)/2000);
   const tgtS=ids.map(i=>sname(SEAS[D.S[i]])).join(' + ');
   $('twin').innerHTML=`${av(ti,84)}<div style="min-width:0"><div class="muted">${PID.toUpperCase()} ${tgtS} · ${GN[g]}</div><div style="font-size:24px;font-weight:900">${pname(ti)}</div>
    <div class="muted">${SEAS[D.S[ti]]} · ${club(D.T[ti])} · ${LG[D.L[ti]]}</div><div style="display:flex;gap:16px;align-items:baseline;margin-top:6px"><span class="big">${twinM.toFixed(0)}%</span><span class="muted">match · first in <b style="color:var(--ink)">${sure}%</b> of 2,000 tests</span></div></div>`;
   drawMap(sel);
-  $('list').innerHTML=M.order.slice(0,10).map(([d,k],n)=>item(M,k,n+1,'M',sel.set==='M'&&sel.k===k)).join('');
+  drawList(sel);
   if(LAST.sp==='this'){$('nowcard').classList.add('hide')}else{$('nowcard').classList.remove('hide');
     $('nowlist').innerHTML=NOW.order.slice(0,5).map(([d,k],n)=>item(NOW,k,n+1,'NOW',sel.set==='NOW'&&sel.k===k)).join('')||'<div class="muted">Nobody yet this season (450+ minutes).</div>';
     const nt=NOW.others[0]; $('nowmeta').textContent=nt?`${pname(NOW.cand[nt[1]])} is first in ${Math.round(100*(NOW.wins[nt[1]]||0)/2000)}% of 2,000 tests. Season ${CUR}, players with 450+ minutes so far.`:'';}
-  for(const id of ['list','nowlist','fres'])$(id).onclick=e=>{const it=e.target.closest('.it');if(!it)return;e.stopPropagation();const sset=it.dataset.s,kk=+it.dataset.k,keep=$('fq').value;
-    render({set:sset,k:kk});if(id==='fres'){$('fq').value=keep;$('fq').oninput();}
-    const el=$(id).querySelector(`.it[data-s="${sset}"][data-k="${kk}"]`)||it;showPop(el);};
-  $('fq').oninput=()=>{const q=norm($('fq').value.trim());if(q.length<2){$('fres').innerHTML='';return}const res=[];
-    for(const [SN,SS,lab] of [['M',M,''],['NOW',NOW,' · this season']]){if(SN==='NOW'&&LAST.sp==='this')continue;SS.order.forEach(([d,k],n)=>{const i=SS.cand[k];if(norm(pname(i)).includes(q)){const pl=placeOf(SS,k);const own=pname(i)===PID;
-      res.push(item(SS,k,n+1,SN,false,(own?'':` · ${ord(pl.o)} without his own seasons`)+lab))}})}
-    $('fres').innerHTML=res.slice(0,12).join('')||'<div class="muted">Not in these lists (other position, league or too few minutes).</div>';};
+  for(const id of ['list','nowlist'])$(id).onclick=e=>{const it=e.target.closest('.it');if(!it)return;e.stopPropagation();const sset=it.dataset.s,kk=+it.dataset.k;
+    render({set:sset,k:kk});const el=$(id).querySelector(`.it[data-s="${sset}"][data-k="${kk}"]`)||it;showPop(el);};
   // key stats: him vs the selected player
   const ck=sel.k, ci=S.cand[ck], cf=F[ci];
   const A=keyStats(null,ids), B=keyStats(ci); const fmt=(x,dp)=>x==null?'–':(+x).toFixed(dp);
   $('keyh').textContent=`Key stats · ${shortName(PID)} ${tgtS} vs ${pname(ci)} ${sname(SEAS[D.S[ci]])}`;
   $('keys').innerHTML=`<div class="ks"><span class="h2">${club(D.T[ci])} · ${LG[D.L[ci]]}${sel.set==='NOW'?' · this season':''}</span><span class="h2" style="text-align:right">${shortName(PID)}</span><span class="h2" style="text-align:right">${shortName(pname(ci))}</span>`+
-    A.map((a,n)=>`<span>${a[0]}</span><span class="a">${fmt(a[1],a[2])}</span><span class="b">${fmt(B[n][1],B[n][2])}</span>`).join('')+'</div>';
+    A.map((a,n)=>{const x=a[1],y=B[n][1],lo=/conceded/i.test(a[0]),ba=x!=null&&y!=null&&(lo?x<y:x>y),bb=x!=null&&y!=null&&(lo?y<x:y>x);return `<span>${a[0]}</span><span class="a${ba?' better':''}">${fmt(x,a[2])}</span><span class="b${bb?' better':''}">${fmt(y,B[n][2])}</span>`}).join('')+'</div>';
   $('cmph').textContent=`${shortName(PID)} ${tgtS} vs ${pname(ci)} ${sname(SEAS[D.S[ci]])} · per 90 minutes`;
   const keys=Object.keys(w).filter(k=>tf[k]!=null&&cf[k]!=null).sort((a,b)=>w[b]-w[a]);
   const gap=k=>Math.abs((tp[k]??50)-(S.cp[ck][k]??50));
   $('cmp').innerHTML=keys.map(k=>{const a=tf[k],b=cf[k],mx=Math.max(Math.abs(a),Math.abs(b))||1;const f=x=>Math.abs(x)>=10?x.toFixed(0):x.toFixed(2);
-    return `<div class="st"><div class="lb"><span>${LAB[k]}${w[k]>=2?' <span class="tag">counts most</span>':''}${gap(k)<8?' <span class="tag" style="color:var(--green)">same</span>':gap(k)>35?' <span class="tag" style="color:var(--red)">different</span>':''}</span><span><b style="color:var(--red)">${f(a)}</b> · <b style="color:var(--blue)">${f(b)}</b></span></div>
+    return `<div class="st"><div class="lb"><span>${LAB[k]}${w[k]>=2?' <span class="tag">counts most</span>':''}${gap(k)<8?' <span class="tag" style="color:var(--green)">same</span>':gap(k)>35?' <span class="tag" style="color:var(--red)">different</span>':''}</span><span><b class="${(LOWER.includes(k)?a<b:a>b)?'better':''}" style="color:var(--red)">${f(a)}</b> · <b class="${(LOWER.includes(k)?b<a:b>a)?'better':''}" style="color:var(--blue)">${f(b)}</b></span></div>
      <div class="dual"><div><i style="width:${Math.abs(a)/mx*100}%;background:var(--red)"></i></div><div><i style="width:${Math.abs(b)/mx*100}%;background:var(--blue)"></i></div></div></div>`}).join('');
   // ---- good video? ----
   const top=M.order.slice(0,10); const ownTop=top.filter(([d,k])=>pname(M.cand[k])===PID).length;
@@ -329,8 +343,8 @@ function render(sel){ const {ids,ref,g,w,tf,tp,M,NOW}=LAST; $('out').classList.r
   const pts=[[twinM>=82,'A strong twin ('+twinM.toFixed(0)+'% match)',2],[sure>=60,'A clear winner (first in '+sure+'% of tests)',1],[underrated,'A surprise: a big-club star, a twin from a smaller club',2],
     [crossClub,'A different club',1],[crossLeague,'A different league',1],[crossEra,'A different era (4+ seasons apart)',1],[ownTop>0,'His own seasons are in the top 10 (the "they don\'t count" moment)',1],[ft.length>0,'A famous name far down the list for "You\'d think…?"',2]];
   const sc=Math.round(10*pts.reduce((s,p)=>s+(p[0]?p[2]:0),0)/pts.reduce((s,p)=>s+p[2],0));
-  $('score').innerHTML=`<div class="score"><b>${sc}/10</b><span class="muted">for a Stat Twins video</span></div><ul class="ck">${pts.map(p=>`<li class="${p[0]?'':'no'}">${p[1]}</li>`).join('')}</ul>`+
-    (ft.length?`<div class="muted" style="margin-top:6px">"You'd think…?" ideas (place without his own seasons): ${ft.map(f=>`${f[0]} (${f[2]}) is ${ord(f[1])}`).join(' · ')}</div>`:'');
+  $('score').innerHTML=`<div class="score sm"><b>${sc}/10</b><span class="muted">good video?</span></div><details class="inner"><summary>Why this rating</summary><ul class="ck">${pts.map(p=>`<li class="${p[0]?'':'no'}">${p[1]}</li>`).join('')}</ul>`+
+    (ft.length?`<div class="muted" style="margin-top:6px">"You'd think…?" ideas (place without his own seasons): ${ft.map(f=>`${f[0]} (${f[2]}) is ${ord(f[1])}`).join(' · ')}</div>`:'')+'</details>';
   const nt=NOW.others[0];
   const ep={player:PID,season:SEAS[D.S[ref]],seasons:ids.map(i=>SEAS[D.S[i]]),league:LG[D.L[ref]],position:GN[g],compare:{seasons:LAST.seas.map(s=>SEAS[s]),leagues:[...LON].map(l=>LG[l])},
     short:shortName(PID),series:'STAT TWINS',surprise:ft.map(f=>f[0]),twin:pname(ti)+' '+SEAS[D.S[ti]],now:nt?pname(NOW.cand[nt[1]]):null};
@@ -382,13 +396,14 @@ function ladder(ids,g,tp,tf){const lg=D.L[mainRow(ids)], rows=[];
 const dp=(k,vals)=>{for(const d of [1,2,3]){const o=vals.map(x=>x.toFixed(d));if(new Set(o).size===o.length)return d}return 3};
 function run(){ if(RID==null){$('rq').focus();return}
   const ids=BY[RID], m0=mainRow(ids), g=G[m0], rk=role(D.P[m0]), w=W[g], tp=zmix(ids,g), tf=feats(combine(ids)), me=info(RID);
-  const mode=$('rpos').value, maxAge=+$('rage').value||0, maxVal=+$('rval').value||0, minM=+$('rmin').value, noMates=$('rclub').classList.contains('on');
+  const mode=$('rpos').value, maxAge=$('ru23').classList.contains('on')?23:0, maxVal=0, minM=+$('rmin').value, noMates=$('rclub').classList.contains('on');
+  const VT=[...document.querySelectorAll('#rvals .chip.on')].map(c=>c.dataset.v), tier=x=>x==null?null:x>=40?'high':x>=10?'mid':'low';
   const lgs=new Set([...document.querySelectorAll('#rlgs .chip.on')].map(c=>+c.dataset.l));
   const cands=[];
   for(const id in BY){ if(+id===RID)continue; const rs=BY[id].filter(i=>inGroup(i,g)&&minOK(i)); if(!rs.length)continue; const m=mainRow(rs);
     if(mode==='role'&&role(D.P[m])[0]!==rk[0])continue; const z=zmix(rs,g), d=dist(tp,z,w); if(d>=99)continue; const p=info(+id);
     cands.push({id:+id,name:pname(m),rs,m,d,z,mins:minsOf(rs),age:p.age,val:p.val,team:p.team||club(D.T[m]),teamId:p.teamId||D.T[m],lg:D.L[m]}); }
-  const list=cands.filter(c=>c.mins>=minM&&lgs.has(c.lg)&&(!maxAge||(c.age!=null&&c.age<=maxAge))&&(!maxVal||(c.val!=null&&c.val<=maxVal))&&(!noMates||me.teamId==null||c.teamId!==me.teamId)).sort((a,b)=>a.d-b.d);
+  const list=cands.filter(c=>c.mins>=minM&&lgs.has(c.lg)&&(!maxAge||(c.age!=null&&c.age<=maxAge))&&(!VT.length||VT.includes(tier(c.val)))&&(!noMates||me.teamId==null||c.teamId!==me.teamId)).sort((a,b)=>a.d-b.d);
   // 2,000 tests with the weights shuffled: how often is each of the closest 30 the closest?
   const top=list.slice(0,30), wins={}, rnd=rng(7);
   for(let t=0;t<2000&&top.length;t++){const wr={};for(const k in w)wr[k]=w[k]*(0.5+rnd());let b=null,bd=1e9;for(const c of top){const d=dist(tp,c.z,wr);if(d<bd){bd=d;b=c}}wins[b.id]=(wins[b.id]||0)+1;}
@@ -397,10 +412,21 @@ function run(){ if(RID==null){$('rq').focus();return}
   if(o1){ if(o1.age==null||o1.age>23){o2=list.find(c=>c.age!=null&&c.age<=23);t2='For the future · 23 and under';}
     if(!o2&&o1.val!=null){o2=list.find(c=>c!==o1&&c.val!=null&&c.val<=o1.val/2);t2='The cheaper option';}
     if(!o2){o2=list[1];t2='Second choice';} }
-  RES={ids,g,rk,w,tp,tf,me,list,cands,wins,o1,o2,t2,m0,maxAge,maxVal,minM,mode}; RSEL=o1?o1.id:null; draw(); $('rout').classList.remove('hide');
+  RES={ids,g,rk,w,tp,tf,me,list,cands,wins,o1,o2,t2,m0,maxAge,maxVal,minM,mode,VT}; RSEL=o1?o1.id:null; RPG=0; $('rfq').value=''; draw(); $('rout').classList.remove('hide');
   $('rout').scrollIntoView({behavior:'smooth',block:'start'}); }
 function line(c,i){const small=c.mins<900;return `<div class="it${RSEL===c.id?' sel':''}" data-id="${c.id}"><div class="muted">#${i+1}</div>${ini(c,40)}<div><div class="nm">${c.name}${small?'<span class="tag">small sample</span>':''}</div>
   <div class="meta">${c.age!=null?c.age+' · ':''}${c.team} · ${money(c.val)} · ${c.mins.toLocaleString()} min</div></div><div class="pct">${match(c.d).toFixed(0)}%<div class="bar"><i style="width:${Math.max(0,(match(c.d)-40)/60*100)}%"></i></div></div></div>`;}
+let RPG=0;
+function rlist(){const R=RES,q=norm($('rfq').value.trim());let L=R.list.map((c,i)=>[c,i]);
+  if(q.length>=2){L=L.filter(([c])=>norm(c.name).includes(q));$('rpager').classList.add('hide');$('rlisth').textContent=`Search · ${L.length} found · tap one to compare`;$('rlist').innerHTML=L.slice(0,30).map(([c,i])=>line(c,i)).join('')||'<div class="muted">Not in this list.</div>';}
+  else{const n=L.length,pages=Math.max(1,Math.ceil(n/10));RPG=Math.max(0,Math.min(RPG,pages-1));$('rlist').innerHTML=L.slice(RPG*10,RPG*10+10).map(([c,i])=>line(c,i)).join('');
+    $('rpager').classList.remove('hide');$('rpgt').textContent=n?`${RPG*10+1}–${Math.min(n,RPG*10+10)} of ${n}`:'0';$('rpgp').disabled=RPG===0;$('rpgn').disabled=RPG>=pages-1;
+    $('rlisth').textContent=RPG===0?`Closest 10 of ${n} · tap one to compare`:`Places ${RPG*10+1} to ${Math.min(n,RPG*10+10)} of ${n}`;}
+  $('rlist').querySelectorAll('.it').forEach(el=>el.onclick=()=>{RSEL=+el.dataset.id;draw();$('rcmph').scrollIntoView({behavior:'smooth',block:'start'})});}
+$('rpgp').onclick=()=>{RPG--;rlist();};$('rpgn').onclick=()=>{RPG++;rlist();};$('rfq').oninput=()=>rlist();
+// the filters re-run at once when there are results on screen
+$('ru23').onclick=()=>{$('ru23').classList.toggle('on');if(RES)run();};
+document.querySelectorAll('#rvals .chip').forEach(c=>c.onclick=()=>{c.classList.toggle('on');if(RES)run();});
 function draw(){const R=RES, nm=shortName(pname(R.m0));
   // what makes him him
   const lad=ladder(R.ids,R.g,R.tp,R.tf), lgn=LG[D.L[R.m0]];
@@ -410,15 +436,14 @@ function draw(){const R=RES, nm=shortName(pname(R.m0));
   // options
   const opt=(c,t,cls)=>c?`<div class="opt ${cls}" data-id="${c.id}">${ini(c,54)}<div><div class="t">${t}</div><div class="nm">${c.name}</div><div class="meta">${c.age!=null?'age '+c.age+' · ':''}${c.team} · ${money(c.val)}${c.mins<900?' · only '+c.mins+' minutes':''}</div></div><div class="big" style="font-size:30px">${match(c.d).toFixed(0)}%</div></div>`:'';
   $('ropts').innerHTML=R.o1?opt(R.o1,'Ready now · the closest of all','a')+(R.o2?opt(R.o2,R.t2,'b'):'')+`<div class="muted" style="margin-top:8px">${R.o1.name} came closest in ${Math.round((R.wins[R.o1.id]||0)/20)}% of 2,000 tests (each test counts the stats a little differently).</div>`:'<div class="muted">No one fits those filters. Loosen the age, value or minutes.</div>';
-  $('rlisth').textContent=`Closest ${Math.min(20,R.list.length)} of ${R.list.length} · tap one to compare`;
-  $('rlist').innerHTML=R.list.slice(0,20).map(line).join('');
-  $('rnote').textContent=`${R.cands.length} ${R.mode==='role'?R.rk[1].toLowerCase()+'s':GN[R.g].toLowerCase()} compared; ${R.list.length} fit your filters. Age, value and club are today's (FotMob); a player with no age or value on file is left out when that filter is on.`;
-  document.querySelectorAll('#rlist .it,#ropts .opt').forEach(el=>el.onclick=()=>{RSEL=+el.dataset.id;draw();$('rcmph').scrollIntoView({behavior:'smooth',block:'start'})});
+  rlist();
+  $('rnote').textContent=`${R.cands.length} ${R.mode==='role'?R.rk[1].toLowerCase()+'s':GN[R.g].toLowerCase()} compared; ${R.list.length} fit your filters. Age, value and club are today's (FotMob); a player with no age or value on file is left out when that filter is on. Green number = the better one.`;
+  document.querySelectorAll('#ropts .opt').forEach(el=>el.onclick=()=>{RSEL=+el.dataset.id;draw();$('rcmph').scrollIntoView({behavior:'smooth',block:'start'})});
   // side by side
   const c=R.list.find(x=>x.id===RSEL)||R.o1; if(c){const cf=feats(combine(c.rs)); const keys=Object.keys(R.w).sort((a,b)=>R.w[b]-R.w[a]);
     $('rcmph').textContent=`${nm} v ${shortName(c.name)} · per 90 minutes · this season + last`;
     $('rcmp').innerHTML=`<div class="lb" style="margin-bottom:6px"><b style="color:var(--red)">${nm}</b><b style="color:var(--blue)">${shortName(c.name)}</b></div>`+keys.map(k=>{const a=R.tf[k],b=cf[k];if(a==null||b==null)return '';const mx=Math.max(Math.abs(a),Math.abs(b),1e-9),d=dp(k,[a,b]);
-      return `<div class="st"><div class="lb"><b>${a.toFixed(d)}</b><span>${LAB[k]}</span><b>${b.toFixed(d)}</b></div><div class="dual"><div><i style="width:${Math.abs(a)/mx*100}%;background:var(--red)"></i></div><div><i style="width:${Math.abs(b)/mx*100}%;background:var(--blue)"></i></div></div></div>`}).join('');}
+      const lo=LOWER.includes(k);return `<div class="st"><div class="lb"><b class="${(lo?a<b:a>b)?'better':''}">${a.toFixed(d)}</b><span>${LAB[k]}</span><b class="${(lo?b<a:b>a)?'better':''}">${b.toFixed(d)}</b></div><div class="dual"><div><i style="width:${Math.abs(a)/mx*100}%;background:var(--red)"></i></div><div><i style="width:${Math.abs(b)/mx*100}%;background:var(--blue)"></i></div></div></div>`}).join('');}
   else $('rcmp').innerHTML='';
   // episode file
   const codes=[...new Set(D.P)].filter(p=>R.mode==='role'?role(p)[0]===R.rk[0]:group(p)===R.g).sort((a,b)=>a-b);
