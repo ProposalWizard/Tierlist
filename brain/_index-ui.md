@@ -20,6 +20,7 @@ FACT-UI-017 | Mikey's Broadcast pop-ups (scoreboard for a goal, TV caption for t
 FACT-UI-018 | [SUPERSEDED] Players reach the game at /road-to-ballon-dor; /star-dev forwards there, and the page's code stays in app/star-dev/. | admin,ui
 FACT-UI-019 | The phone app is a separate packed build of the game only (mobile/): offline, saves on the phone, no sign-in, no casino; the website is unchanged. | economy,ui
 FACT-UI-020 | The game is named Road to the Golden Ball, its award the Golden Ball; players reach it at /road-to-the-golden-ball. | ui
+FACT-UI-021 | The admin's default look is "Knowitball": calm tiles on the admin home, a dark green menu and rows everywhere else; the four older looks stay as skins. | ui,admin
 RUL-UI-001 | [SUPERSEDED] Decide, don't toggle: a new look or gameplay change is built as THE game, with no new New/Old row in Settings. | ui
 RUL-UI-002 | Unfinished work lives on a test page (a /star-*-dev page), not behind a switch in the real game. | ui,admin
 RUL-UI-003 | Existing switches stay until someone decides each one; never delete one unasked. | rule,ui

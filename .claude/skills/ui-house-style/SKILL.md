@@ -41,6 +41,45 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 12 Nov 2026 — THE admin look: "A for admin home and C for the rest" (Harry)
+- Picked from option pictures (docs/stills/admin-look-options/sheet-390.png,
+  sheet-1440.png): **"A for admin home and C for the rest — however I think we
+  can do one more pass over and improve it a lot."** Built as the look
+  "Knowitball" (`house` in lib/adminLook.ts), the one everyone starts on. The
+  four older looks stay on the Look switch as skins (RUL-UI-007). Stills:
+  docs/stills/admin-look-built/.
+- **Admin home (/admin) = A**: calm tiles, greys, one green, no glows, no
+  game-tab row (the menu already lists the games). It fits one phone screen
+  (844 px page on a 390×844 phone, was 916) and nothing sits under the chat
+  bubble.
+- **Every other admin page = C**: a dark green side menu (a dark green top bar
+  on a phone, the menu behind Menu), green-tinted paper, a list of links is
+  ROWS with the count in one right-hand column (a game's home: one row per
+  group). Group pages keep a picture on every card. Pages with no side menu
+  (the Broadcast frame) get the same green as a top bar.
+- **The one-more-pass rules, for anything added to the admin** (written at the
+  top of components/admin/shell/houseTokens.css):
+  one font family; type 12 / 14 / 16 / 20 / 24 px; spacing 4 / 8 / 12 / 16 /
+  24 / 32; corners 6 px on controls and 8 px on boxes; one button (outline,
+  the main action green); green only for the current page, the main action
+  and a good status; no tracked-capital labels; no violet; no pills (the
+  recorder pill is the one pill); small text at least 4.5:1.
+  Measured on the five pictured pages at 390 and 1440 px: lowest text
+  contrast 5.16:1, 0 texts under 4.5:1, 0 pills, 0 tracked-capital labels.
+  Measure again with `node scripts/admin-look/shots.mjs http://localhost:3000`.
+- **Supersedes, for the admin's default look only**: 20 Oct "the default look
+  on the admin should be the clean light"; 19 Oct "Broadcast is the default"
+  and "Look C (Broadcast) for the RBD admin pages on a computer"; 19 Oct
+  "admin home = tile grid AND list behind a grid/list toggle" (in this look a
+  game's home is always rows; the toggle shows only in the older looks);
+  20 Oct "Bento … the count in a white pill" (counts are plain numbers here).
+  Still standing: one layout for every look's pages, the one back arrow top
+  left, the hub at /admin, a picture on every group-page card, the chat
+  bubble bottom left, functional first.
+- (inferred) The green menu is on the admin home too, not A's grey menu: one
+  frame for the whole admin ("the admin feels like one app"). Say if the home
+  should have the grey menu from picture A.
+
 ### 1 Nov 2026 — Glass stadium is a new UI option and the default (Harry)
 - **"Go for glass stadium as a new UI option (make it default)."** Settings →
   Screens → **UI look: Glass | Pitch**, default Glass (`lib/star/uiSkin.ts`,

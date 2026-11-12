@@ -3,7 +3,7 @@
  * The admin pages' frame: one tab per GAME across the top (Harry, 19 Oct
  * 2026: "stuff on the wider website should be on a completely different tab
  * than road to ballon dor stuff"), a side menu and the Look switch
- * (Broadcast, Bento, Ops room, Clean light). Games and groups come from
+ * (Knowitball, the default since 12 Nov 2026, then Broadcast, Bento, Ops room, Clean light). Games and groups come from
  * lib/adminRegistry.ts (GAMES, GROUPS). Used by /admin/star (and its game
  * and group pages), /admin/team and /admin/videos. On a phone the menu hides
  * behind "☰ Menu"; on a computer « folds it to a thin strip of icons
@@ -23,6 +23,8 @@
  */
 import "./adminShell.css";
 import "./skin.css";
+import "./houseTokens.css";
+import "./house.css";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useState, type ReactNode } from "react";
@@ -216,7 +218,7 @@ export default function AdminShell({ tab, role, children, onTab, badges, game: g
           {/* One tab per game; inside a tab you only see that game's pages. */}
           <nav className="ash-games" aria-label="Games">
             {gamesFor(role).map((g) => (
-              <Link key={g.key} href={g.home} className="ash-game" aria-current={!inTeam && !atHub && g.key === game ? "page" : undefined} title={`${g.name}: ${gameCount(g.key)} pages`}>
+              <Link key={g.key} href={g.home} className="ash-game" aria-current={!inTeam && !atHub && g.key === game && tab !== "videos" ? "page" : undefined} title={`${g.name}: ${gameCount(g.key)} pages`}>
                 <span className="ash-game-full">{g.name}</span><span className="ash-game-short">{g.short}</span>
                 <span className="ash-game-n">{gameCount(g.key)}</span>
               </Link>

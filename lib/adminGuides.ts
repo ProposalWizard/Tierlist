@@ -879,7 +879,7 @@ export const ADMIN_GUIDES = {
         ["Search … pages in (game)", "Type part of a name or what a page does. Searches this game only. While you search, the matching pages show as rows under their group."],
         ["All / Harry / Mikey / Leo", "Show everyone's pages, or only one person's, in this game."],
         ["Saves real data", "Only pages whose buttons change things other players see."],
-        ["Grid / List", "The game's groups as big tiles or one row each. Kept on this device."],
+        ["Grid / List", "Only in the four older looks: the game's groups as big tiles or one row each. Kept on this device. In the Knowitball look the groups are always rows, so the switch is not shown."],
       ] },
       { group: "Cards", items: [
         ["A group tile", "Opens that group's own page (its admin tools first, then its test pages)."],
@@ -893,7 +893,7 @@ export const ADMIN_GUIDES = {
         ["(Game) home", "This game's home page."],
         ["The game's groups", "Every group of the game you are in, the one you are on lit up. Each opens the group's own page. On a phone they are in ☰ Menu (Team first); on a computer « folds them to icons."],
         ["Videos", "How to hand Claude a screen recording. The same in every game."],
-        ["Broadcast / Bento / Ops room / Clean light", "The admin look: the same pages and the same layout in all four, only the paint changes (Broadcast dark blue, Bento a soft colour per group, Ops room near-black and green, Clean light white). Every admin and test page follows it. Kept on this device."],
+        ["Knowitball / Broadcast / Bento / Ops room / Clean light", "The admin look. Knowitball is the one everyone starts on (a dark green menu, pale paper, lists as rows). The other four are older skins: the same pages, different paint (Broadcast dark blue, Bento a soft colour per group, Ops room near-black and green, Clean light white). Every admin and test page follows it. Kept on this device."],
         ["Admin mode", "On: the admin side menu sits on every page of the site, opened on the admin pages for the page you are on. Off: it hides. Kept on this device."],
       ] },
     ],
