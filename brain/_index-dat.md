@@ -8,6 +8,8 @@ FACT-DAT-005 | star_xp_config and star_tuning_notes were run live on 23 Oct 2026
 FACT-DAT-006 | The Supabase connector works in cloud Claude chats since 23 Oct 2026 (project cagkgfketucousksgtbk); CLAUDE.md's "Pending Setup" line saying cloud connectors fail is out of date for Supabase. | process,data
 FACT-DAT-008 | Every History tab shows your career's seasons, then the real history before them (data/competition-history, loaded only when the tab opens), each season with winner, runner-up, final score, top scorer, top assister and player of the season. | career,rule,data
 FACT-DAT-009 | Cloudflare R2 bucket kib-marketing folders: videos/, ledger/, patch-notes/<repo path>, library/, footage/kib/<code>/, backups/. | client-kib,data
+FACT-DAT-010 | Nightly backup 03:00 UK copies the key tables to R2 backups/db/<day>/; the 08:00 UK limits post goes in #health. Both need CRON_SECRET. | data
+FACT-DAT-011 | ops_limits.sql is PENDING; until run, the morning limits post cannot read the database and Storage sizes. | data
 PRO-DAT-001 | Run a pending migration in the Supabase SQL Editor before touching the related features. | data
 PRO-DAT-002 | Bug report? Use the supabase-bug-hunt skill: read the report and the player's save, compare normal saves, reproduce, fix the code. | data
 RUL-DAT-001 | SQL for a person to run goes out as an artifact page (each file's name, one line on what it does, a Copy all button and the full text), never as links; build it with scripts/supabase/sql-page.py. | rule,data
