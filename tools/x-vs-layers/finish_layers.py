@@ -13,7 +13,7 @@ def source(f):
 def label(f):
   m=next(m for m in M if m['F0']<=f<m['F1']) if f<M[-1]['F1'] else M[-1]
   n=sum(1 for b in m['brk_frames'] if b<=f); txt=f'Layers {n}/20'
-  if m['gold'] and n==20 and f>=m['brk_frames'][-1]+3: txt+=' + Gold'
+  if m['gold'] and n==20 and f>=m['brk_frames'][-1]+3: txt+=' + Base'
   return m['name'],txt
 def frames():
   F=ImageFont.truetype('/usr/share/fonts/opentype/inter/Inter-SemiBold.otf',58) if os.path.exists('/usr/share/fonts/opentype/inter/Inter-SemiBold.otf') else ImageFont.load_default()
