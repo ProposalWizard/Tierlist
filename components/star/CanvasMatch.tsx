@@ -7743,7 +7743,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (leadRef.current) stepLeadIn(replayDt);
       if (liveRef.current) stepLive(dt);
       recordGoalFrame(dt);
-      render();
+      // During the commentary the pitch is completely covered (MatchCommentary is an
+      // opaque panel over it), so drawing it is wasted work on every frame: most of
+      // a match. Measured at phone speed, 13 Nov 2026: the commentary ran at 36
+      // frames a second with the hidden pitch still being drawn. Everything is still
+      // stepped; the first frame after the commentary draws as before. A frame
+      // reader (test screens) still gets every frame.
+      if (phaseRef.current !== "feed" || frameObsRef.current) render();
       rafRef.current = requestAnimationFrame(loop);
     };
     rafRef.current = requestAnimationFrame(loop);

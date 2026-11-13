@@ -121,6 +121,13 @@ body[data-kib-app] {
 html:has(body[data-kib-app]) {
   overscroll-behavior: none;
 }
+/* No see-through blur in the app: a blur behind a panel is redone on every
+ * frame the game moves under it, which phones pay for (13 Nov 2026, the
+ * match felt slow on a real Android phone). The panels keep their own tint. */
+body[data-kib-app] * {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
 body[data-kib-app] input,
 body[data-kib-app] textarea,
 body[data-kib-app] [contenteditable="true"] {
