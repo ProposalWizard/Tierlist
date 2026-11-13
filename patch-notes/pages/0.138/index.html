@@ -1,0 +1,325 @@
+<title>Home, Team Room, Bots</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: one phone-width column; numbered points, each an idea + a picture; numbers in one closed toggle. */
+  :root{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --pillink:#fff;--r:12px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+      --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+      --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+      --pillink:#06170e;color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --pillink:#06170e;color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 70px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--green);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 22px}
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:38px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix{color:var(--green)} .fix i{background:var(--green)}
+  .add{color:var(--blue)} .add i{background:var(--blue)}
+  .chg{color:var(--violet)} .chg i{background:var(--violet)}
+  .bug{color:var(--amber)} .bug i{background:var(--amber)}
+  .nxt{color:var(--ink3)} .nxt i{background:var(--ink3)}
+  .idea{font-size:16px;font-weight:700;margin:0 0 10px;color:var(--ink)}
+  .pwf{display:grid;gap:8px;margin:0 0 12px}
+  .pwf div{min-width:0}
+  .pwf b{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+  .pwf span{color:var(--ink2);font-size:14.5px}
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:14px}
+  .tw svg{display:block;width:100%;height:auto}
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin:12px 0 2px}
+  .shots figure{margin:0}
+  .shots3{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:12px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-grn{background:rgba(61,220,132,.15);color:var(--green)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .seen{font-size:12px;color:var(--ink3);margin-top:8px}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+  @media (prefers-reduced-motion: reduce){summary::before{transition:none}}
+</style>
+<div class="wrap">
+<header>
+  <span class="ver">v0.138 · 13 NOV · HARRY</span>
+  <h1>A new front door, a rebuilt Team room, and bots that post by themselves</h1>
+  <p class="sub">Made by Harry · 11 to 13 Nov 2026 · live on the site, except one line marked "next push"</p>
+</header>
+
+<h2 class="add"><i></i>THE HEADLINE: THIS NOTE TESTS THE PATCH BOT</h2>
+<p class="idea">This note is the first one the Patch bot can announce by itself. If it works, you will see it in #general with Mikey and Leo named.</p>
+<div class="tw">
+<svg viewBox="0 0 560 300" font-family="-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-label="Four steps: the note goes live, the bot posts it in general, the team comments in one thread, the post moves to patch-notes when all three have read it">
+  <defs><marker id="a1" viewBox="0 0 10 10" refX="5" refY="9" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 0L5 10z" fill="var(--ink3)"/></marker></defs>
+  <g stroke="var(--line)" stroke-width="1.5">
+    <rect x="10" y="8" width="540" height="54" rx="10" fill="var(--card2)"/>
+    <rect x="10" y="84" width="540" height="54" rx="10" fill="rgba(61,220,132,.14)" stroke="var(--green)"/>
+    <rect x="10" y="160" width="540" height="54" rx="10" fill="var(--card2)"/>
+    <rect x="10" y="236" width="540" height="54" rx="10" fill="var(--card2)"/>
+  </g>
+  <g stroke="var(--ink3)" stroke-width="1.8" marker-end="url(#a1)"><path d="M280 62V80"/><path d="M280 138V156"/><path d="M280 214V232"/></g>
+  <g font-size="15" font-weight="700" fill="var(--ink)">
+    <text x="26" y="31">1 · This note goes live on the site</text>
+    <text x="26" y="107" fill="var(--green)">2 · The Patch bot posts it in #general</text>
+    <text x="26" y="183">3 · Comments stay in one thread</text>
+    <text x="26" y="259">4 · All three have read it: it moves to #patch-notes</text>
+  </g>
+  <g font-size="12.5" fill="var(--ink2)">
+    <text x="26" y="50">nobody presses anything</text>
+    <text x="26" y="126">within 15 minutes, with "@Mikey @Leo please review"</text>
+    <text x="26" y="202">a comment typed on the note's page lands there too</text>
+    <text x="26" y="278">one reminder after a day to whoever has not read it</text>
+  </g>
+</svg></div>
+<p class="seen">Drawing. Step 2 is the test. Proven with stand-in data on 12 Nov; the live site has never done it (0 Patch bot posts in the live table, read 13 Nov).</p>
+<div class="pwf" style="margin-top:14px">
+  <div><b>Problem</b><span>New patch notes sat on their page. Nobody was told. Harry: "the bots don't actually genuinely work yet".</span></div>
+  <div><b>Why</b><span>The bots only drew posts in the room. Nothing on the site wrote a real post.</span></div>
+  <div><b>Fix</b><span>The site now writes the post itself, on a 15-minute timer, and when one of us opens an admin page. It names the two people who did not write the note. It posts once, never twice.</span></div>
+</div>
+
+<h2 class="nxt"><i></i>CHECK THESE</h2>
+<ul class="ck">
+  <li><label><input type="checkbox" data-k="bot"><span><span class="q">This note announced in #general, with @Mikey and @Leo</span><span class="a">Admin → Team → #general</span></span></label></li>
+  <li><label><input type="checkbox" data-k="home"><span><span class="q">The new home</span><span class="a">knowitball.co.uk, on a phone and on a computer</span></span></label></li>
+  <li><label><input type="checkbox" data-k="games"><span><span class="q">The All games tab</span><span class="a">knowitball.co.uk/games</span></span></label></li>
+  <li><label><input type="checkbox" data-k="beta"><span><span class="q">Install, App Store, Steam and "Join the beta"</span><span class="a">The home, on a computer only</span></span></label></li>
+  <li><label><input type="checkbox" data-k="name"><span><span class="q">The new name: Road to the Golden Ball</span><span class="a">Title screen, the home, the awards night; the old link still works</span></span></label></li>
+  <li><label><input type="checkbox" data-k="look"><span><span class="q">Team room: Dark and Light</span><span class="a">Admin → Team → Me</span></span></label></li>
+  <li><label><input type="checkbox" data-k="me"><span><span class="q">Me: status, check-in, to-do with Accept and Decline</span><span class="a">Admin → Team → Me</span></span></label></li>
+  <li><label><input type="checkbox" data-k="board"><span><span class="q">Team board tab</span><span class="a">Admin → Team → Board</span></span></label></li>
+  <li><label><input type="checkbox" data-k="chan"><span><span class="q">Every channel has its own tabs; #today is new</span><span class="a">Admin → Team → each channel</span></span></label></li>
+  <li><label><input type="checkbox" data-k="slash"><span><span class="q">A message into a task; /today and /todo</span><span class="a">Any channel's message box</span></span></label></li>
+  <li><label><input type="checkbox" data-k="bots"><span><span class="q">Five bot pages, each with Run now</span><span class="a">Admin → Team → tap a bot's name</span></span></label></li>
+  <li><label><input type="checkbox" data-k="admin"><span><span class="q">The admin home and the Knowitball look</span><span class="a">knowitball.co.uk/admin</span></span></label></li>
+  <li><label><input type="checkbox" data-k="back"><span><span class="q">Back stays inside admin; the recorder keeps going</span><span class="a">Start a recording in Admin → Videos, then change page</span></span></label></li>
+  <li><label><input type="checkbox" data-k="rec"><span><span class="q">Recordings: a link everyone can open, 30 days, Keep</span><span class="a">Admin → Videos → Recent recordings (needs Cloudflare joined up, see Known issues)</span></span></label></li>
+</ul>
+
+<h2 class="add"><i></i>1 · A NEW HOME AT KNOWITBALL.CO.UK</h2>
+<p class="idea">The home now shows the game first, on a phone, with one big Play now. Every game is a tile under it.</p>
+<div class="shots">
+  <figure><img src="img/home-phone.webp" alt="The new home on a phone"><figcaption>Phone: the game, Play now, then all six games, three a row.</figcaption></figure>
+  <figure><img src="img/games-phone.webp" alt="The All games tab on a phone"><figcaption>All games (/games): tiles only, no other words.</figcaption></figure>
+</div>
+<figure><img src="img/home-desktop.webp" alt="The new home on a computer" loading="lazy"><figcaption>Computer: the same home, plus "Get the game" and "Join the beta". Look at App Store and Steam: "Coming soon", not links.</figcaption></figure>
+<div class="pwf" style="margin-top:14px">
+  <div><b>Problem</b><span>The home was a list of tierlists. A new visitor did not see the main game.</span></div>
+  <div><b>Fix</b><span>Cream look, green top bar and footer. Harry picked it after trying several looks, and picked three tiles a row. A short loading animation plays first.</span></div>
+</div>
+<ul class="n">
+  <li><div class="hd">"Join the beta" email box <span class="pill p-grn">table is live</span></div><div class="dt">On computers only. The table that keeps the emails was added on 13 Nov (seen in the live database).</div></li>
+  <li><div class="hd">"Install on your phone", App Store, Steam</div><div class="dt">Shown on computers only. App Store and Steam say "Coming soon" and cannot be tapped.</div></li>
+</ul>
+
+<h2 class="chg"><i></i>2 · THE GAME IS NOW "ROAD TO THE GOLDEN BALL"</h2>
+<p class="idea">The game has a new name everywhere. The award is the Golden Ball. Old links still work.</p>
+<div class="shots">
+  <figure><img src="img/name-title.webp" alt="Title screen with the new name"><figcaption>Title screen: the new name under KNOWITBALL.</figcaption></figure>
+  <figure><img src="img/name-night.webp" alt="The Golden Ball night result"><figcaption>The awards night, now the Golden Ball night.</figcaption></figure>
+</div>
+<p class="seen">New address: /road-to-the-golden-ball. The old address sends you there by itself.</p>
+
+<h2 class="add"><i></i>3 · THE TEAM ROOM, REBUILT</h2>
+<p class="idea">The Team room has two looks, a home for each of us, and a different way of working in each channel.</p>
+<div class="shots">
+  <figure><img src="img/room-me-dark.webp" alt="Me, dark look"><figcaption><b>Dark</b> (Midnight slate). Me: status, check-in, to-do. Look at Accept and Decline.</figcaption></figure>
+  <figure><img src="img/room-me-light.webp" alt="Me, light look"><figcaption><b>Light</b> (Light C). The same screen.</figcaption></figure>
+</div>
+<div class="pwf" style="margin-top:14px">
+  <div><b>Problem</b><span>The room was one chat with one look. Tasks, ideas and bugs were all only messages.</span></div>
+  <div><b>Fix</b><span>Each channel got the tabs that fit its job. A message can become a task. Type /today or /todo anywhere.</span></div>
+</div>
+<div class="tw">
+<svg viewBox="0 0 560 318" font-family="-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-label="Each channel and its tabs">
+  <g font-size="13.5">
+    <g font-weight="800" fill="var(--ink)">
+      <text x="10" y="22">#general</text><text x="10" y="56">#today</text><text x="10" y="90">#ideas</text><text x="10" y="124">#todo</text><text x="10" y="158">#bugs</text><text x="10" y="192">#health</text><text x="10" y="226">#patch-notes</text><text x="10" y="260">#marketing</text><text x="10" y="294">#context</text>
+    </g>
+    <g fill="var(--ink2)">
+      <text x="150" y="22">Messages · Pinned</text>
+      <text x="150" y="56">Today · This week · Messages</text>
+      <text x="150" y="90">Ideas board (with votes) · Messages</text>
+      <text x="150" y="124">Tasks (Mine, Everyone) · Messages</text>
+      <text x="150" y="158">Open reports · Fixed · Messages</text>
+      <text x="150" y="192">Limits · Messages</text>
+      <text x="150" y="226">Archive (who has read what) · Messages</text>
+      <text x="150" y="260">Production board · Messages</text>
+      <text x="150" y="294">Brain · Messages</text>
+    </g>
+    <text x="96" y="56" font-size="10.5" font-weight="800" fill="var(--green)">NEW</text>
+  </g>
+  <g stroke="var(--line)"><path d="M10 34H550M10 68H550M10 102H550M10 136H550M10 170H550M10 204H550M10 238H550M10 272H550"/></g>
+</svg></div>
+<p class="seen">Drawing: each channel and its tabs.</p>
+<div class="shots">
+  <figure><img src="img/room-general.webp" alt="#general, dark"><figcaption>#general. Look at the yellow row: a message that points at you.</figcaption></figure>
+  <figure><img src="img/room-today.webp" alt="#today, light"><figcaption>#today (new): one line each on what you are on.</figcaption></figure>
+</div>
+<details><summary>More pictures (4)</summary>
+  <div class="shots">
+    <figure><img src="img/room-board.webp" alt="Team board tab" loading="lazy"><figcaption>Team board tab: pushes a day and current work for each of us.</figcaption></figure>
+    <figure><img src="img/room-todo.webp" alt="#todo" loading="lazy"><figcaption>#todo: Mine and Everyone. The grey line about phone notifications is from before Harry made the setting.</figcaption></figure>
+    <figure><img src="img/room-ask.webp" alt="The notifications question" loading="lazy"><figcaption>First visit on a device: one question, asked once.</figcaption></figure>
+    <figure><img src="img/room-health.webp" alt="#health limits" loading="lazy"><figcaption>#health → Limits. The numbers in this picture are sample numbers, not the site's.</figcaption></figure>
+  </div>
+</details>
+<ul class="n" style="margin-top:8px">
+  <li><div class="hd">Pop-ups stay on screen until you close or tap them <span class="pill p-amb">next push</span></div><div class="dt">Harry: "the pop up isn't popping up for long enough". Built on Harry's branch; it goes live with the next push.</div></li>
+</ul>
+<p class="seen">All Team room pictures use sample rows, not the team's real messages. Text contrast was measured on 23 screens in both looks: none under 4.5 to 1.</p>
+
+<h2 class="add"><i></i>4 · FIVE BOTS, EACH WITH ITS OWN PAGE</h2>
+<p class="idea">A bot is a small job the site runs by itself. Each one has a page that says what it does, when it runs, and a Run now button.</p>
+<div class="shots">
+  <figure><img src="img/bot-patch.webp" alt="The Patch bot's page"><figcaption>Patch bot's page. Look at "When it runs" and Run now.</figcaption></figure>
+  <figure><img src="img/bot-today.webp" alt="The Today bot's page"><figcaption>Today bot (new): asks at 09:00 who has not checked in.</figcaption></figure>
+</div>
+<ul class="n" style="margin-top:8px">
+  <li><div class="hd">Patch bot <span class="pill p-amb">live test: this note</span></div><div class="dt">Posts each new patch note in #general and names the two who did not write it. Proven with stand-in data. Not seen live yet.</div></li>
+  <li><div class="hd">Health bot <span class="pill p-grn">seen live 13 Nov</span></div><div class="dt">Posted the site's limits in #health at 08:00 on 13 Nov. It also reported the failed backup (see Known issues).</div></li>
+  <li><div class="hd">Today bot <span class="pill p-grn">seen live 13 Nov</span></div><div class="dt">Asked "What are you on today?" in #today at 09:00 on 13 Nov.</div></li>
+  <li><div class="hd">Bug bot <span class="pill p-amb">stand-in data only</span></div><div class="dt">Turns a player's bug report into a card in #bugs. No player has sent a report since 24 Oct, so no real card yet.</div></li>
+  <li><div class="hd">Jobs bot <span class="pill p-grn">works as before</span></div><div class="dt">Shows pushed jobs in #todo. It has no Run now, and its page says why.</div></li>
+</ul>
+<p class="seen">The full table of what was run and what it proved: docs/team-room-run.md (56 bot checks and 124 on-screen checks, all passed, all with made-up rows).</p>
+
+<h2 class="add"><i></i>5 · ADMIN: ONE HOME, ONE LOOK</h2>
+<p class="idea">Admin now has a real home page. Back never throws you out of admin. A recording keeps going when you change page.</p>
+<div class="shots">
+  <figure><img src="img/admin-home-phone.webp" alt="Admin home on a phone"><figcaption>Admin home: six doors. Team, the game, website games, Studio, Marketing, Videos.</figcaption></figure>
+  <figure><img src="img/admin-videos.webp" alt="Videos page"><figcaption>Videos in the new look. Look at "Kept 30 days".</figcaption></figure>
+</div>
+<figure><img src="img/admin-home-wide.webp" alt="Admin home on a computer" loading="lazy"><figcaption>Admin home on a computer.</figcaption></figure>
+<div class="pwf" style="margin-top:14px">
+  <div><b>Problem</b><span>Admin had no front page. Back could drop you on the public site. A recording stopped when you opened another page.</span></div>
+  <div><b>Fix</b><span>One home at /admin. Back stays in admin. The recorder lives above the pages, so it survives a page change. New "Knowitball" look: look A on the admin home, look C on the rest.</span></div>
+</div>
+<details><summary>More pictures (2)</summary>
+  <div class="shots">
+    <figure><img src="img/admin-menu.webp" alt="The admin menu" loading="lazy"><figcaption>The menu, open on a phone.</figcaption></figure>
+    <figure><img src="img/admin-group.webp" alt="A group page" loading="lazy"><figcaption>A group page: every tool as a card.</figcaption></figure>
+  </div>
+</details>
+
+<h2 class="chg"><i></i>6 · RECORDINGS GO TO CLOUDFLARE FIRST</h2>
+<p class="idea">A screen recording now saves to our Cloudflare storage first, with a link all three of us can open. Google Drive is the second copy.</p>
+<div class="tw">
+<svg viewBox="0 0 560 150" font-family="-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-label="Press Stop, then Cloudflare with a link, then Drive as the copy, deleted after 30 days unless kept">
+  <g stroke="var(--line)" stroke-width="1.5">
+    <rect x="10" y="8" width="540" height="38" rx="9" fill="var(--card2)"/>
+    <rect x="10" y="56" width="540" height="38" rx="9" fill="rgba(61,220,132,.14)" stroke="var(--green)"/>
+    <rect x="10" y="104" width="540" height="38" rx="9" fill="var(--card2)"/>
+  </g>
+  <g font-size="14.5" font-weight="700" fill="var(--ink)">
+    <text x="26" y="32">1 · Press Stop</text>
+    <text x="26" y="80" fill="var(--green)">2 · Saved to Cloudflare: a link everyone can open</text>
+    <text x="26" y="128">3 · Copy to Drive · deleted after 30 days unless you press Keep</text>
+  </g>
+</svg></div>
+<p class="seen">Drawing. Not seen live: on 13 Nov the live site said Cloudflare is not joined up (see Known issues). Until then a recording goes to Drive or downloads, as before.</p>
+
+<h2 class="fix"><i></i>7 · BEHIND THE SCENES</h2>
+<ul class="n">
+  <li><div class="hd">Pushes to the site work again <span class="pill p-grn">fixed</span></div><div class="dt">Problem: pushes failed. Why: the marketing videos were packed into a page, which made it too big for Vercel. Fix: the videos are kept out.</div></li>
+  <li><div class="hd">A morning limits check <span class="pill p-grn">seen live</span></div><div class="dt">Every day at 08:00 in #health. On 13 Nov: database 260 MB of 500 MB, storage 537 MB of 1 GB. Both about half full.</div></li>
+  <li><div class="hd">A nightly database backup to Cloudflare <span class="pill p-red">failed its first night</span></div><div class="dt">Built to run at 03:00 every night. On 13 Nov it copied nothing: the live site said Cloudflare is not joined up.</div></li>
+  <li><div class="hd">Patch-note pictures move to Cloudflare by themselves <span class="pill p-amb">not confirmed live</span></div><div class="dt">Every 5 minutes, no button. It needs the same Cloudflare settings. Until then pictures show from the site, as before.</div></li>
+</ul>
+
+<h2 class="bug"><i></i>KNOWN ISSUES</h2>
+<ul class="n">
+  <li><div class="hd">Cloudflare is not joined up on the live site <span class="pill p-red">blocks 3 things</span></div><div class="dt">Read from the live #health posts of 13 Nov (03:00 and 08:00): "R2 is not connected". It blocks the nightly backup, recordings to Cloudflare, and the picture move. Status: the Cloudflare settings in Vercel need checking.</div></li>
+  <li><div class="hd">There is no backup of the database yet <span class="pill p-red">open</span></div><div class="dt">It follows from the line above.</div></li>
+  <li><div class="hd">The Patch bot is not proven live until this note appears in #general <span class="pill p-amb">this is the test</span></div></li>
+  <li><div class="hd">Bug bot and the Team board tab are proven with stand-in data only</div><div class="dt">The live site must confirm a real bug card and the real push bars.</div></li>
+  <li><div class="hd">About 70 admin tool pages still have their old insides</div><div class="dt">They sit inside the new frame, but the page itself is the old design.</div></li>
+  <li><div class="hd">No real profile pictures yet</div><div class="dt">There is nowhere to keep a person's picture, so everyone has a drawn crest.</div></li>
+  <li><div class="hd">Phone buzzes: Harry made the Vercel setting on 13 Nov <span class="pill p-amb">not seen on a phone yet</span></div><div class="dt">Each of us still has to press "Turn on" once on each device.</div></li>
+  <li><div class="hd">"Install on your phone" shows on computers only</div><div class="dt">On a phone the home shows the game and the tiles, with no install button.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>NEXT</h2>
+<ul class="n">
+  <li><div class="hd">Bots you can @, and a Claude bot <span class="pill p-grn">being built now</span></div></li>
+  <li><div class="hd">Join Cloudflare up on the live site, then check the first backup</div></li>
+  <li><div class="hd">New insides for the 70 old admin tool pages</div></li>
+  <li><div class="hd">Footage hub, video library, marketing studio <span class="pill p-amb">not started</span></div></li>
+</ul>
+
+<details><summary>The numbers, if you want them</summary>
+  <p><b>Limits, live, 13 Nov 08:00:</b> database 260 MB of 500 MB (52%); storage 537 MB of 1 GB (52%). Colours: green under 75%, amber from 75%, red from 90% or a failed backup.</p>
+  <p><b>Bot run, 12 Nov, made-up rows:</b> 56 checks of the bots' own code, 124 on-screen checks, 98 pictures, 0 page errors.</p>
+  <p><b>Live bot posts so far (read 13 Nov):</b> 3. Health 2 (the failed backup at 03:00, the limits at 08:00), Today 1 (09:00). Patch bot 0.</p>
+  <p><b>Timers:</b> Patch, Bug and Today bots every 15 minutes; limits 08:00; backup 03:00; picture move every 5 minutes; recordings clean-up once a night. All UK time.</p>
+  <p><b>Patch bot rules:</b> it announces notes made from 12 Nov 2026; at most 5 in one run; one reminder after 24 hours.</p>
+  <p><b>Contrast:</b> 5,604 pieces of text, 23 screens, 2 looks, 2 sizes. Lowest 4.5 to 1.</p>
+  <p><b>Pictures:</b> phones at 390 × 844, computers at 1440 wide.</p>
+</details>
+
+<h2 class="nxt"><i></i>PREVIOUS VERSIONS</h2>
+<details><summary>v0.137 · 1 Nov 2026 · Glass look, real football, quicker check</summary>
+  <ul>
+    <li>Added: Glass stadium, the new look for every career screen; Settings → Screens → UI look: Glass | Pitch.</li>
+    <li>Fixed: the 3D ball is a real football; one ball on the title screen; a small push takes about 10 minutes, not 30 to 40.</li>
+    <li>Changed: the Pitch look gets a stadium; a whole-game look may be a Settings choice.</li>
+    <li>Still open from it: Home keeps its night stadium; energy-can cards cut off on Home; 5 tests already broken.</li>
+  </ul>
+</details>
+
+<footer>Harry · site 0.138 · 13 Nov 2026 · live on the site, except the pop-up line</footer>
+</div>
+<script>
+(function(){
+  var K="kib-pn-0.138-checks", s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||"{}")||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll(".ck input");
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute("data-k"); if(s[id]) b.checked=true;
+    b.addEventListener("change",function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+})();
+</script>
