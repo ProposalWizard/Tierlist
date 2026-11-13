@@ -188,7 +188,7 @@ export default function AdminNavPanel() {
   useEffect(() => { setPicked(null); }, [pathname]);
   const game = picked ?? gameForPath(pathname);
   // The admin pages' own side menu already does this job there.
-  const inShell = pathname === ADMIN_HUB || ["/admin/star", "/admin/team", "/admin/videos"].some((u) => pathname === u || pathname.startsWith(u + "/"));
+  const inShell = pathname === ADMIN_HUB || ["/admin/star", "/admin/team", "/admin/videos", "/admin/marketing"].some((u) => pathname === u || pathname.startsWith(u + "/"));
   const showTab = mode && !inShell;
 
   const [spot, setSpot] = useState<TabSpot | null>(null);
@@ -287,8 +287,8 @@ export default function AdminNavPanel() {
 
       {/* Panel */}
       <div
-        className={`fixed left-0 top-0 z-[90] flex h-full w-80 max-w-[85vw] flex-col border-r border-emerald-400/25 bg-[#070b09] shadow-2xl transition-transform duration-300 ease-in-out ${
-          open ? "translate-x-0" : "-translate-x-full"
+        className={`fixed left-0 top-0 z-[90] flex h-full w-80 max-w-[85vw] flex-col border-r border-emerald-400/25 bg-[#070b09] transition-transform duration-300 ease-in-out ${
+          open ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         }`}
       >
         <div className="flex items-center justify-between border-b border-gray-800 px-5 py-4">

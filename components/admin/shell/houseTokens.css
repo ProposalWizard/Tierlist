@@ -1,0 +1,34 @@
+/*
+ * THE ADMIN LOOK, "Knowitball" (Harry, 12 Nov 2026, picked from option
+ * pictures in docs/stills/admin-look-options: "A for admin home and C for the
+ * rest"). This file is only the paint every admin piece shares; where things
+ * sit is house.css (the shell) and broadcast/skins.css (framed pages).
+ *
+ * THE RULES (keep to them when adding to the admin):
+ *  - One font family. Type sizes: 12, 14, 16, 20, 24 px. Weights 400, 500, 600, 700.
+ *  - Spacing: 4, 8, 12, 16, 24, 32 px.
+ *  - Corners: 6 px on controls (buttons, chips, inputs, menu lines, icon squares),
+ *    8 px on boxes (tiles, tables, panels, cards). Faces and dots are round.
+ *  - One button: 6 px corners, 14 px / 600, an outline; the main action is green.
+ *  - Green is for the current page, the main action and a good status. Nothing else.
+ *  - No tracked capitals, no glows, no violet, no pills (the recorder pill is the one pill).
+ *  - Small text is at least 4.5:1 on what is behind it (measured: scripts/admin-look/contrast.mjs).
+ */
+:root {
+  --kh-rail: #12271d; --kh-rail2: #1f3d2e; --kh-rail-line: rgba(255, 255, 255, 0.16);
+  --kh-rail-ink: #eef4f0; --kh-rail-ink2: #b9cabf; --kh-rail-ink3: #9ab0a3; --kh-rail-accent: #62dc98;
+  --kh-bg: #f2f4f0; --kh-panel: #fbfcfa; --kh-panel2: #e8ece6; --kh-line: #dce2db; --kh-line2: #c5cfc5;
+  --kh-ink: #17201b; --kh-ink2: #46534b; --kh-ink3: #56645b;
+  --kh-accent: #0b7a3d; --kh-accent2: #096332; --kh-accent-soft: #dcefe3;
+  --kh-amber: #8a5a00; --kh-amber-soft: #f6ecd4; --kh-red: #b42335; --kh-red-soft: #f8e1e3; --kh-blue: #1f5fa8; --kh-slate: #4f6b8a;
+  --kh-r1: 6px; --kh-r2: 8px;
+}
+/* The Team room's pieces that sit outside the shell (the chat bubble, the bell's list) read these. */
+.tr-vars[data-look="house"] {
+  --ash-bg: var(--kh-bg); --ash-bg2: var(--kh-panel); --ash-panel: var(--kh-panel); --ash-panel-solid: var(--kh-panel); --ash-panel2: var(--kh-panel2);
+  --ash-line: var(--kh-line); --ash-line2: var(--kh-line2); --ash-ink: var(--kh-ink); --ash-ink2: var(--kh-ink2); --ash-ink3: var(--kh-ink3);
+  --ash-accent: var(--kh-accent); --ash-accent-ink: #ffffff; --ash-accent-soft: var(--kh-accent-soft);
+  --ash-amber: var(--kh-amber); --ash-amber-soft: var(--kh-amber-soft); --ash-red: var(--kh-red); --ash-red-soft: var(--kh-red-soft);
+  --ash-harry: var(--kh-accent); --ash-mikey: var(--kh-blue); --ash-leo: var(--kh-slate); --ash-shadow: 0 12px 34px rgba(15, 23, 19, 0.18);
+  color-scheme: light;
+}

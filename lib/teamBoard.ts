@@ -23,6 +23,9 @@ export type Person = "Harry" | "Mikey" | "Leo";
 export const PEOPLE: Person[] = ["Harry", "Mikey", "Leo"];
 
 /** GitHub login → person. Every commit is authored "Claude", so the PR opener is the only name on GitHub. */
+/** Each person's own branch. A push there counts as theirs. */
+export const BRANCH_PERSON: Record<string, Person> = { Harry: "Harry", Mikey: "Mikey", Leo: "Leo" };
+
 export const LOGIN_PERSON: Record<string, Person> = {
   "harryv2157-dev": "Harry",
   ProposalWizard: "Mikey",
@@ -220,9 +223,12 @@ export function pushLog(events: GhEvent[], whole: boolean): PushLog {
   for (const e of events) {
     if (e.type !== "PushEvent") continue;
     const login = e.actor?.login ?? "";
+    const branch = (e.payload?.ref ?? "").replace(/^refs\/heads\//, "");
     pushes.push({
-      person: LOGIN_PERSON[login] ?? null, login, at: e.created_at,
-      branch: (e.payload?.ref ?? "").replace(/^refs\/heads\//, ""), head: e.payload?.head ?? null,
+      // A push to someone's own branch is theirs, whoever's GitHub name the
+      // cloud chat pushed with (Harry, 13 Nov 2026: his card said 4 a week).
+      person: BRANCH_PERSON[branch] ?? LOGIN_PERSON[login] ?? null, login, at: e.created_at,
+      branch, head: e.payload?.head ?? null,
     });
   }
   const times = events.map((e) => Date.parse(e.created_at)).filter(Number.isFinite);

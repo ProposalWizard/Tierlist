@@ -25,6 +25,14 @@
     {
       "path": "/api/cron/limits",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/recordings",
+      "schedule": "30 4 * * *"
+    },
+    {
+      "path": "/api/cron/patch-bot",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

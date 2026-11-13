@@ -35,5 +35,13 @@ ok(/<RecorderProvider>/.test(fs.readFileSync("app/layout.tsx", "utf8")), "the re
 const tab = fs.readFileSync("app/admin/videos/VideosTab.tsx", "utf8");
 ok(/useRecorder\(\)/.test(tab) && !/startRecording\(/.test(tab), "the Videos page only drives the shared recorder (it never owns a recording)");
 
+// Team storage (R2) first, Drive second (Harry, 12 Nov 2026).
+const prov = fs.readFileSync("components/admin/recorder/RecorderProvider.tsx", "utf8");
+const afterStop = prov.slice(prov.indexOf("const out = await r.done;"), prov.indexOf("}, [mic, reset, send, sendCloud]"));
+ok(afterStop.indexOf("await sendCloud(t)") > 0 && afterStop.indexOf("await sendCloud(t)") < afterStop.indexOf("send(t, key.token)"), "on Stop: team storage first, then the Drive copy");
+ok(/if \(key\) \{ setDrive\(key\); void send\(t, key\.token\); \}/.test(afterStop) && !/connectDrive\(\{ quiet: false \}\)/.test(afterStop), "on Stop: Drive only when it is already connected, never an Allow box");
+ok(/if \(!inCloud\.current\) fetch\("\/api\/dev-recordings"/.test(prov), "a recording in team storage is not noted twice for Claude");
+ok(/Also save to Drive/.test(tab) && /RecordingsList/.test(tab), "the Videos page has the small Drive button and the list");
+
 if (failed) { console.error(`\n${failed} failed`); process.exit(1); }
 console.log("\nrecording: all passed");

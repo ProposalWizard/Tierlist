@@ -95,5 +95,28 @@ const framed = fs.readdirSync("app", { recursive: true }).map(String).filter((f)
 const ownBack = framed.filter((f) => /<BroadcastPage[^>]*\sback="/.test(fs.readFileSync(`app/${f}`, "utf8").replace(/\n\s*/g, " ")));
 ok(ownBack.length === 0, `no framed page sends its arrow somewhere of its own${ownBack.length ? ` (${ownBack.join(", ")})` : ""}`);
 
+console.log("The Knowitball look is the default (Harry, 12 Nov 2026: \"A for admin home and C for the rest\")");
+const lookSrc = fs.readFileSync("lib/adminLook.ts", "utf8");
+ok(/\{ id: "house", name: "Knowitball" \},\s*\{ id: "broadcast"/.test(lookSrc), "Knowitball is first on the Look switch, the four older looks stay");
+ok(/: "house";\s*\};/.test(lookSrc) && /usePref\(getAdminLook, "house" as AdminLook\)/.test(lookSrc), "a browser that never picked a look gets Knowitball");
+ok(/isLightLook = \(l: AdminLook\) => l === "house"/.test(lookSrc), "Knowitball is a light look (the ink guard runs in it)");
+const houseCss = fs.readFileSync("components/admin/shell/house.css", "utf8");
+ok(houseCss.split("\n").filter((l) => /^\s*\.ash/.test(l)).every((l) => l.includes('[data-look="house"]')), "every rule of the look is scoped to it, so the older looks are untouched");
+ok(/:has\(\.ahub\) \.ash-game \{ display: none; \}/.test(houseCss), "no game-tab row on the admin home");
+ok(!/text-transform: uppercase|letter-spacing: \.[1-9]|border-radius: 99/.test(houseCss), "no tracked capitals and no pills in the look's shell");
+const tokens = fs.readFileSync("components/admin/shell/houseTokens.css", "utf8");
+{
+  // Small text is at least 4.5:1: every ink on every surface it sits on.
+  const hex = (n: string) => tokens.match(new RegExp(`--kh-${n}: (#[0-9a-f]{6})`))?.[1] ?? "";
+  const lum = (h: string) => { const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+  const ratio = (a: string, b: string) => { const [x, y] = [lum(hex(a)), lum(hex(b))].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+  const pairs: [string, string][] = [["ink", "bg"], ["ink2", "bg"], ["ink3", "bg"], ["ink2", "panel2"], ["ink3", "panel2"], ["accent", "bg"], ["accent2", "accent-soft"], ["amber", "amber-soft"], ["red", "red-soft"],
+    ["rail-ink", "rail"], ["rail-ink2", "rail"], ["rail-ink3", "rail"], ["rail-ink3", "rail2"], ["rail-ink2", "rail2"]];
+  const low = pairs.map(([a, b]) => [a, b, ratio(a, b)] as const).filter((p) => !(p[2] >= 4.5));
+  ok(low.length === 0, `every ink reads at 4.5:1 or more on its surface${low.length ? ` (low: ${low.map((p) => `${p[0]} on ${p[1]} ${p[2].toFixed(2)}`).join(", ")})` : ""}`);
+  const white = (b: string) => 1.05 / (lum(hex(b)) + 0.05);
+  ok(white("accent") >= 4.5 && white("red") >= 4.5 && white("ink") >= 4.5, "white words read on the green button, the red button and a pressed chip");
+}
+
 if (failed) { console.error(`\n${failed} failed`); process.exit(1); }
 console.log("\nadminLook: all passed");

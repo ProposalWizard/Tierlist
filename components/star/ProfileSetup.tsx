@@ -240,8 +240,8 @@ export default function ProfileSetup({ onComplete, onMainMenu }: Props) {
   const flag = getFlagUrl(nationality);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-900 to-emerald-950 text-white flex flex-col items-center py-3 px-3">
-      <div className="w-full max-w-sm">
+    <div className="min-h-[100dvh] bg-gradient-to-b from-emerald-900 to-emerald-950 text-white flex flex-col items-center py-3 px-3">
+      <div className="flex w-full max-w-sm flex-1 flex-col">
         {onMainMenu && (
           <button
             onClick={onMainMenu}
@@ -508,15 +508,18 @@ export default function ProfileSetup({ onComplete, onMainMenu }: Props) {
           </div>
         )}
 
-        <div className="flex gap-3 mt-4">
-          {(step === 2 || pane === "style") && (
+        {/* Back bottom-left, Continue bottom-right, at the bottom of the screen on EVERY step
+            (Mikey, 11 Nov 2026: the buttons moved between steps). On the first step Back
+            leaves to the main menu. */}
+        <div className="mt-auto flex gap-3 pt-4">
+          {(step === 2 || pane === "style" || onMainMenu) ? (
             <button
-              onClick={() => (step === 2 ? setStep(1) : setPane("who"))}
+              onClick={() => (step === 2 ? setStep(1) : pane === "style" ? setPane("who") : onMainMenu?.())}
               className="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-black transition"
             >
               ← Back
             </button>
-          )}
+          ) : <span aria-hidden className="flex-1" />}
           {step === 1 && pane === "who" && (
             <button
               onClick={() => setPane("style")}

@@ -71,8 +71,7 @@ export function BugCard({ report }: { report: BugReport }) {
 }
 
 /** #bugs → 🐞 Open reports: the reports nobody has marked fixed, newest first. */
-export function BugList({ onOpen }: { onOpen?: (key: string) => void }) {
-  void onOpen;
+export function BugList({ show = "open" }: { /** Open reports, or the ones marked fixed. */ show?: "open" | "fixed" }) {
   const s = useTeamRoom();
   const list = useMemo(() => bugReports(s.botRows, s.bugMarks), [s.botRows, s.bugMarks]);
   const n = bugCounts(list, s.me);
@@ -83,11 +82,13 @@ export function BugList({ onOpen }: { onOpen?: (key: string) => void }) {
       </p>
     );
   }
-  const open = list.filter(isOpen);
+  const shown = list.filter((r) => (show === "open" ? isOpen(r) : !isOpen(r)));
   return (
     <div className="trr-buglist">
       <p className="trr-bugbar">Open {n.open} · With me {n.mine} · Fixed {n.fixed}</p>
-      {open.length === 0 ? <p className="tr-muted">No open bug reports. 🎉</p> : open.map((r) => <BugCard key={r.postId} report={r} />)}
+      {shown.length === 0
+        ? <p className="tr-muted">{show === "open" ? (list.length ? "No open bug reports. Every one is marked fixed." : "No bug reports yet. A report a player sends from the site shows here by itself.") : "Nothing marked fixed yet. Press ✓ Mark fixed on a report and it moves here."}</p>
+        : shown.map((r) => <BugCard key={r.postId} report={r} />)}
     </div>
   );
 }

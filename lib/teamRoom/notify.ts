@@ -56,7 +56,8 @@ export function ringsForMessage(m: Pick<TeamMessage, "person" | "body">, answers
   const p = parseMessage(m.body);
   const rings: Ring[] = [];
   for (const c of p.cards) for (const x of c.point?.to ?? []) rings.push({ person: x, why: "point" });
-  if (p.replyTo && answers) rings.push({ person: answers.person, why: "reply" });
+  // A comment in a patch note's thread ("[pn:0.138] …") answers that note's author.
+  if ((p.replyTo || p.patch) && answers) rings.push({ person: answers.person, why: "reply" });
   for (const x of p.mentions) rings.push({ person: x, why: "mention" });
   if (mentionsAll(p.text)) for (const x of TEAM_PEOPLE) rings.push({ person: x, why: "all" });
   return pick(rings, m.person);
@@ -121,14 +122,14 @@ export function payloadForMessage(m: Pick<TeamMessage, "id" | "person" | "body" 
   const p = parseMessage(m.body);
   const title =
     why === "point" ? `${m.person} pointed at something for you`
-      : why === "reply" ? `${m.person} replied to you`
+      : why === "reply" ? (p.patch && !p.replyTo ? `${m.person} commented on your patch notes v${p.patch}` : `${m.person} replied to you`)
         : why === "all" ? `${m.person} to the team`
           // A buzz only because the channel's 🔔 says every new message (bells.ts).
           : why === "message" ? `${m.person} in #${p.channel ?? "general"}`
             : `${m.person} mentioned you`;
   const where = p.channel && p.channel !== "general" ? ` in #${p.channel}` : "";
   // Opens the right channel, and the thread when it is a reply in one.
-  const url = `${TEAM_ROOM.home}?tab=chat${p.channel && p.channel !== "general" ? `&ch=${p.channel}` : ""}&m=${m.id}${p.replyTo ? `&t=${p.replyTo}` : ""}`;
+  const url = `${TEAM_ROOM.home}?tab=chat${p.channel && p.channel !== "general" ? `&ch=${p.channel}` : ""}&m=${m.id}${p.replyTo ? `&t=${p.replyTo}` : ""}${p.patch ? `&pn=${encodeURIComponent(p.patch)}` : ""}`;
   return { title: why === "message" ? title : title + where, body: cut(quoteLine(m, 160), 160), tag: chatTag(m.body), url, icon: TEAM_ROOM.push.icon };
 }
 
@@ -144,7 +145,10 @@ export function ringsForDm(d: { from_person: TeamPerson; to_person: TeamPerson }
 }
 
 export function payloadForTask(t: Pick<TeamTask, "made_by" | "title">): PushPayload {
-  return { title: `${t.made_by} gave you a job`, body: cut(t.title, 160), tag: "kib-todo", url: `${TEAM_ROOM.home}?tab=todo`, icon: TEAM_ROOM.push.icon };
+  // A proposal ("[ask] …", lib/teamRoom/asks.ts): the buzz asks, and never shows the tag.
+  const ask = t.title.startsWith("[ask] ");
+  const words = (ask ? t.title.slice(6) : t.title).replace(/\s*\(message \d+\)$/, "");
+  return { title: ask ? `${t.made_by} asked you to do something` : `${t.made_by} gave you a job`, body: cut(ask ? `${words} · Accept or Decline` : words, 160), tag: "kib-todo", url: `${TEAM_ROOM.home}?tab=todo`, icon: TEAM_ROOM.push.icon };
 }
 
 export function payloadForJob(j: Pick<TeamJob, "from" | "title">): PushPayload {

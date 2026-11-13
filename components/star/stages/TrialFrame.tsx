@@ -34,7 +34,9 @@ const BOARD_STYLE = {
  *  pips and any trial-day banner. */
 export function TrialPage({ top, children, ...rest }: { top?: ReactNode; children: ReactNode } & HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className="min-h-[100dvh] w-full pb-3 text-white" style={{ background: TRIAL_PAGE_BG }} data-trial-page {...rest}>
+    // data-pitch-fit: the match keeps this many px free under its pitch (the two caption lines + the page's
+    // bottom padding) and counts the bars above it, so a stage fits the phone like a league match does.
+    <div className="min-h-[100dvh] w-full pb-3 text-white" style={{ background: TRIAL_PAGE_BG }} data-trial-page data-pitch-fit="56" {...rest}>
       <div className="mx-auto w-full max-w-md">
         {top}
         {children}

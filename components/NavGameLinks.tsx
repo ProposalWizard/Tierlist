@@ -27,6 +27,7 @@ export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {
   if (mobile) {
     return (
       <div
+        data-nav-games
         className="md:hidden flex overflow-x-auto border-t border-gray-800/60 px-3 py-1.5 gap-1"
         style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
       >
@@ -52,7 +53,7 @@ export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {
   }
 
   return (
-    <div className="hidden md:flex items-center gap-0.5 overflow-x-auto w-full" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+    <div data-nav-games className="hidden md:flex items-center gap-0.5 overflow-x-auto w-full" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
       {LIVE_GAMES.map(g => {
         const isActive = pathname === g.href || pathname.startsWith(g.href + "/");
         return (
