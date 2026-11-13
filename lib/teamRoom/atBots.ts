@@ -183,7 +183,8 @@ export function noteLines(n: AskNote, max = 5): string[] {
   const own = (n.lines ?? []).map((l) => l.replace(/\s+/g, " ").trim()).filter(Boolean);
   const fromSummary = (n.summary ?? "").split(/(?<=[.!?])\s+/).map((l) => l.trim()).filter((l) => l.length > 8);
   const all = own.length >= 3 ? own : [...own, ...fromSummary.filter((s) => !own.includes(s))];
-  return all.slice(0, max).map((l) => clip(l, 120));
+  // "@Mikey" inside a note's own words is not a mention here: the @ comes off.
+  return all.slice(0, max).map((l) => clip(l.replace(/@(?=\w)/g, ""), 120));
 }
 
 function noteBlock(n: AskNote, lines: number): string {

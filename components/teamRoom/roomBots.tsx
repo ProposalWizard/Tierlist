@@ -115,7 +115,7 @@ export function BotPage({ info, onGo }: { info: BotInfo; onGo: (slug: string) =>
           <p className="tr-lbl">Not switched on yet</p>
           <p><b>{info.name} is not switched on yet: one Vercel setting.</b></p>
           <ol>
-            <li>Make a key at console.anthropic.com → API keys.</li>
+            <li>Make a key in the Claude Console (platform.claude.com) → API keys.</li>
             <li>In Vercel: the site&apos;s project → Settings → Environment Variables → add <code>ANTHROPIC_API_KEY</code> with that key (Production).</li>
             <li>Redeploy once. This page then shows On, with the month&apos;s spend.</li>
           </ol>
@@ -178,7 +178,7 @@ export function BotPage({ info, onGo }: { info: BotInfo; onGo: (slug: string) =>
       {ai && s.me && (
         <section className="trb-card trb-dm">
           <p className="tr-lbl">Ask {info.name} here</p>
-          <p className="tr-muted">Your own side room with {info.name}. It is kept off the channel list, but it is not locked: Mikey, Leo and Harry could each read it.</p>
+          <p className="tr-muted">Your own side room with {info.name}. It is kept off the channel list, but it is not locked: the other two could read it.</p>
           <div className="trb-dmbox"><ChatThread view={{ kind: "channel", slug: `ask-${info.bot.replace(/-bot$/, "")}-${s.me.toLowerCase()}` }} sayTo={botHandle(info.bot)} autoFocus={false} visible={false} emptyLine={`Nothing asked yet. Type a question below.`} /></div>
         </section>
       )}
@@ -268,7 +268,7 @@ function AiSettingsCard({ bot, name, view, onSaved }: { bot: string; name: strin
           {mine && <span className="trb-fieldfoot"><small>{text.length} of {CLAUDE_BOT.maxInstructions}</small><button className="tr-btn" disabled={busy || text.trim() === st.instructions} onClick={() => save({ instructions: text })}>Save</button></span>}
         </div>
         <div className="trb-field">
-          <span><b>Where it may answer</b><small>{all ? "Every channel." : st.channels!.length ? `Only: ${st.channels!.map((c) => `#${c}`).join(", ")}.` : "Nowhere yet."} Asked anywhere else, it says so in one line.</small></span>
+          <span><b>Where it may answer</b><small>{all ? "Every channel. Tap one to leave it out." : `${st.channels!.length ? `Only: ${st.channels!.map((c) => `#${c}`).join(", ")}.` : "Nowhere yet."} Asked anywhere else, it says so in one line.`}</small></span>
           <div className="trb-chips" role="group" aria-label="Channels it may answer in">
             {channels.map((c) => <button key={c.slug} aria-pressed={all || st.channels!.includes(c.slug)} disabled={!mine || busy} onClick={() => toggle(c.slug)}>#{c.name}</button>)}
           </div>

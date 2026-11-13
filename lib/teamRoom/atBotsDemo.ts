@@ -44,9 +44,10 @@ export async function demoAnswer(room: DemoRoomBits, a: AskFor, now: Date, aiOn:
     const settings = aiSettings(room.rows, a.bot);
     const gate = claudeGate({ bot: a.bot, rows: room.rows, asker: a.message.person as TeamPerson, channel, now: now.getTime(), keySet: aiOn, settings });
     const owner = botOwner(a.bot);
-    if (!gate.ok) ans = { text: gate.text, meta: { note: gate.note } };
+    const tier2 = !!owner && settings.handoff === "ask" && wantsChange(a.words);
+    if (!gate.ok && !(tier2 && (gate.note === "rate" || gate.note === "day" || gate.note === "cap"))) ans = { text: gate.text, meta: { note: gate.note } };
     else if (!a.words) ans = { text: helpLine("claude", owner ? `I'm ${owner}'s bot.` : "Ask me a question.").replace(/@Claude/g, `@${aiBotName(a.bot)}`) };
-    else if (owner && settings.handoff === "ask" && wantsChange(a.words)) return proposalRow(a.bot, a.message, "it asks for a change, and a bot may not change anything", a.words);
+    else if (tier2) return proposalRow(a.bot, a.message, "it asks for a change, and a bot may not change anything", a.words);
     else {
       const brain = (await import("./brainBundle.json")).default as BrainNote[];
       const found = brainSearch(a.words, brain);

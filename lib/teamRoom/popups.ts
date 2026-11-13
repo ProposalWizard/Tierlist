@@ -17,7 +17,7 @@ import { useSyncExternalStore } from "react";
 import { TEAM_ROOM, type TeamPerson } from "./config";
 import { popupFor } from "./bells";
 import { liveStatus } from "./status";
-import { channelOf, dmKey } from "./channels";
+import { BOT_NAMES, channelOf, dmKey } from "./channels";
 import { parseMessage, quoteLine } from "./extras";
 import { mentionsAll } from "./notify";
 import { pushStateNow } from "./push";
@@ -91,6 +91,17 @@ function onIncoming(x: Incoming) {
     const b = x.row;
     // A bot's saved settings are a row too: never a pop-up.
     if (b.channel === "bot-settings") return;
+    // A bot's answer in a thread (or its card) is for whoever asked, and for its owner: nobody else gets a pop-up.
+    const bm = (b.meta ?? {}) as Record<string, unknown>;
+    if (bm.kind === "reply" || bm.kind === "proposal") {
+      const owner = /^(harry|mikey|leo)-bot$/.exec(b.bot)?.[1];
+      const forMe = bm.by === me || (bm.kind === "proposal" && owner === me.toLowerCase()) || bm.from_claude === me;
+      if (!forMe || quiet) return;
+      const who = BOT_NAMES[b.bot] ?? `${b.bot} bot`;
+      const t = Number(bm.reply_to) || 0;
+      void show(bm.kind === "proposal" ? `${who}: needs ${owner === me.toLowerCase() ? "your" : "its owner's"} yes` : `${who === "Patch notes bot" ? "Patch bot" : who} answered`, (b.body ?? "").slice(0, 160), `kib-botreply-${b.id}`, `${TEAM_ROOM.home}?tab=chat${b.channel !== "general" ? `&ch=${b.channel}` : ""}${t ? `&m=${t}&t=${t}` : ""}`);
+      return;
+    }
     if (typeof document !== "undefined" && document.visibilityState === "visible" && viewing === b.channel) return;
     // The Patch bot names its two reviewers in the post's words ("@Mikey @Leo please review").
     const namesMe = !!b.everyone || new RegExp(`@${me}\\b`, "i").test(b.body ?? "");

@@ -126,11 +126,13 @@ async function aiAnswer(c: Ctx, a: AskFor): Promise<{ answer?: BotAnswer; propos
   const channel = p.channel ?? "general";
   const settings = aiSettings(c.rows, a.bot);
   const gate = claudeGate({ bot: a.bot, rows: c.rows, asker: a.message.person, channel, now: now.getTime(), keySet: !!call, settings, ownKey: own });
-  if (!gate.ok) return { answer: { text: gate.text, meta: { note: gate.note } } };
   const owner = botOwner(a.bot);
+  // A bigger ask is spotted by plain rules and costs nothing, so the money and speed limits do not hold its card back.
+  const tier2 = !!owner && settings.handoff === "ask" && wantsChange(a.words);
+  if (!gate.ok && !(tier2 && (gate.note === "rate" || gate.note === "day" || gate.note === "cap"))) return { answer: { text: gate.text, meta: { note: gate.note } } };
   if (!a.words) return { answer: { text: helpLine(owner ? "claude" : a.bot, owner ? `I'm ${owner}'s bot.` : "Ask me a question.").replace(/@Claude/g, `@${aiBotName(a.bot)}`) } };
   // Tier 2, decided by plain rules before any AI call: a change to the game, files or database is never attempted.
-  if (owner && settings.handoff === "ask" && wantsChange(a.words)) return { proposal: proposalRow(a.bot, a.message, "it asks for a change, and a bot may not change anything", a.words) };
+  if (tier2) return { proposal: proposalRow(a.bot, a.message, "it asks for a change, and a bot may not change anything", a.words) };
 
   const all = await c.recent();
   const parent = p.replyTo ?? a.message.id;

@@ -41,7 +41,7 @@ import HEADLINES from "@/lib/patchNoteHeadlines.json";
 import { BOTS, announcePlan, botInfo, botSettings, settingsRow, type BotSettings } from "./patchBot";
 import { asksOwed, isReplyRow } from "./atBots";
 import { botMentionsIn, parseMessage } from "./extras";
-import { CLAUDE_BOT, aiSettings, aiSettingsRow, botOwner, canAnswerProposal, canChangeAi, handoffTask, isProposal, spendThisMonth, type AiBotSettings, type Spend } from "./claudeBot";
+import { CLAUDE_BOT, aiSettings, aiSettingsRow, botOwner, canAnswerProposal, canChangeAi, handoffPrompt, handoffTask, isProposal, threadLink, spendThisMonth, type AiBotSettings, type Spend } from "./claudeBot";
 import { LINKS_KEY, MAX_LINKS, acceptedTitle, askRow, cleanLinks, isAsk, isSitePath, withLink } from "./asks";
 
 export interface TeamRoomState {
@@ -568,6 +568,11 @@ export async function answerBotProposal(id: number, accept: boolean): Promise<Re
     if (!row || !isProposal(row)) return { ok: false, error: "That card is gone." };
     if (!canAnswerProposal(row, state.me)) return { ok: false, error: `Only ${botOwner(row.bot)} can answer this.` };
     const meta: Record<string, unknown> = { ...(row.meta ?? {}), state: accept ? "accepted" : "declined", answered_at: new Date().toISOString() };
+    if (accept) {
+      const parent = Number(meta.reply_to) || 0;
+      meta.prompt = handoffPrompt({ owner: state.me!, asker: isTeamPerson(meta.by) ? meta.by : state.me!, question: String(meta.question ?? ""), why: String(meta.why ?? ""), channel: row.channel,
+        thread: state.messages.filter((m) => m.id === parent || parseMessage(m.body).replyTo === parent), link: threadLink(window.location.origin, row.channel, parent) });
+    }
     set((s) => ({
       botReplies: s.botReplies.map((r) => (r.id === id ? { ...r, meta } : r)),
       tasks: accept ? upsertById(s.tasks, { id: ++demoId, ...handoffTask(state.me!, String(meta.question ?? ""), id), done_at: null, created_at: new Date().toISOString() }) : s.tasks,

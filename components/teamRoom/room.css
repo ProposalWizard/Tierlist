@@ -463,3 +463,4 @@
 .trb-saved { margin: 0; font-size: 13px; color: var(--ash-accent); font-weight: 700; }
 .trb-dmbox { display: flex; flex-direction: column; height: 340px; border: 1px solid var(--ash-line); border-radius: 12px; overflow: hidden; background: var(--ash-panel-solid); }
 .trb-dmbox .tr-chat { flex: 1; min-height: 0; }
+.tr-suggest button.on small, .tr-suggest button:hover small { color: var(--ash-ink2); }

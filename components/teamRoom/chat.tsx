@@ -442,7 +442,10 @@ function BotRow({ b, now, day, onOpenPatch, onPatchThread }: { b: BotPost; now: 
               ) : <p className="tr-propstate">Waiting for {card.owner}. Only {card.owner} can press Accept or Decline.</p>)}
               {card.state === "declined" && <p className="tr-propstate">Declined by {card.owner}. Nothing was sent.</p>}
               {(card.state === "accepted" || card.state === "picked") && (<>
-                <p className="tr-propstate ok">Sent to {card.owner}&apos;s Claude · waiting. {card.state === "picked" ? `${card.owner}'s Claude chat has taken it.` : `It is in ${card.owner}'s to-do, and ${card.owner}'s Claude will pick it up in ${card.owner === me ? "your" : "their"} next chat.`}</p>
+                <p className="tr-propstate ok">Sent to {card.owner}&apos;s Claude · waiting.</p>
+                <p className="tr-botb">{card.state === "picked" ? `${card.owner}'s Claude chat has taken it. Its reply will land here.`
+                  : card.owner === me ? "It is in your to-do. Your Claude picks it up in your next chat; or copy it and paste it into a chat now."
+                    : `It is in ${card.owner}'s to-do. ${card.owner}'s Claude will pick this up in ${card.owner}'s next chat.`}</p>
                 {card.mine && typeof b.meta?.prompt === "string" && <span className="tr-botfoot"><CopyText text={b.meta.prompt} label="Copy for my Claude" /></span>}
               </>)}
               {card.state === "done" && <p className="tr-propstate ok">Done: {card.owner}&apos;s Claude replied below.</p>}

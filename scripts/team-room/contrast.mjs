@@ -19,6 +19,8 @@ export const SCREENS = [
   ["today-week", "&ch=today&tb=week"], ["today-msgs", "&ch=today&tb=messages"], ["bugs-fixed", "&ch=bugs&tb=fixed"], ["bugs-msgs", "&ch=bugs&tb=messages"], ["health-msgs", "&ch=health&tb=messages"],
   ["patch-msgs", "&ch=patch-notes&tb=messages"], ["connectors", "&ch=connectors"], ["dm", "&dm=Mikey"],
   ["bot-patch", "&bot=patch-notes"], ["bot-health", "&bot=health"], ["bot-bug", "&bot=bug"], ["bot-jobs", "&bot=jobs"], ["bot-today", "&bot=today"],
+  // The AI bots (13 Nov 2026): Claude off (no key), then on with a sample spend; a person's bot as its owner and as someone else.
+  ["bot-claude", "&bot=claude"], ["bot-claude-on", "&bot=claude&teamroom=claude"], ["bot-harry", "&bot=harry-bot&teamroom=claude"], ["bot-leo", "&bot=leo-bot&teamroom=claude"],
 ];
 const SIZES = [{ name: "390x844", width: 390, height: 844, phone: true }, { name: "1440x900", width: 1440, height: 900, phone: false }];
 
@@ -51,6 +53,8 @@ export function audit() {
     const bg = bgOf(el);
     // Opacity on the way up fades the text toward what is behind it.
     let op = 1; for (let e = el; e && e !== root; e = e.parentElement) op *= Number(getComputedStyle(e).opacity);
+    // Text that is fully see-through on purpose (a time that only shows on hover) is not text to read yet.
+    if (fg[3] * op === 0) continue;
     fg = over([fg[0], fg[1], fg[2], fg[3] * op], bg);
     const a = lum(fg), b = lum(bg);
     const ratio = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);

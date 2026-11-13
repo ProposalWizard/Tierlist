@@ -3,7 +3,8 @@ id: FACT-TEAM-005
 type: fact
 client: team
 tags: [team]
-status: live
+status: superseded
+superseded_by: FACT-TEAM-006
 date: 2026-11-12
 source: "lib/teamRoom/botsServer.ts:1-20"
 summary: Five Team room bots (Patch, Bug, Health, Today, Jobs). Each posts once however often it is asked, has its own page with Run now, and only bots that do their job are listed. Health and Today can be switched off.
