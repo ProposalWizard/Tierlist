@@ -142,6 +142,9 @@ export function pointUrl(path: string, p: PointBox): string {
   return `${path.split("#")[0]}#${POINT_KEY}${encodePoint(p)}`;
 }
 
+/** "@all", "@everyone" or "@team" anywhere in the words ("x@all.com" does not count). */
+export const mentionsAll = (text: string) => /(^|[^\w@])@(all|everyone|team)\b/i.test(text ?? "");
+
 /** Who a text @s, in board order. "@Mikey" and "@mikey" both count; "x@leo.com" does not. */
 export function atMentionsIn(text: string): TeamPerson[] {
   const found = new Set<TeamPerson>();
@@ -218,7 +221,7 @@ export function seenBy(m: Pick<TeamMessage, "id" | "person">, marks: ReadMarks):
 export function unseenMentions(messages: TeamMessage[], me: TeamPerson | null, marks: ReadMarks): TeamMessage[] {
   if (!me) return [];
   const mine = marks[me] ?? 0;
-  return messages.filter((m) => m.person !== me && m.id > mine && mentionsIn(m.body).includes(me));
+  return messages.filter((m) => m.person !== me && m.id > mine && (mentionsIn(m.body).includes(me) || mentionsAll(m.body)));
 }
 
 /** Points sent to you that you have not pressed "Got it" on. */

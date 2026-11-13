@@ -112,6 +112,8 @@ ok(mentionsIn("thanks mikey and Leo").join() === "Mikey,Leo", "plain names, any 
 ok(mentionsIn("ask Harry bot").length === 0, "Harry bot is the bot, not Harry");
 ok(mentionsIn("mail leo@x.com or harry.v2157").length === 0, "an email or a handle is not a name");
 ok(mentionsIn("Leonardo and Harrys").length === 0, "a longer word is still not a name");
+ok(unseenMentions([{ id: 9, person: "Mikey", body: "@all standup in 5", created_at: "" } as never], "Harry", {}).length === 1, "@all counts as naming you");
+ok(unseenMentions([{ id: 9, person: "Mikey", body: "mail x@all.com", created_at: "" } as never], "Harry", {}).length === 0, "an email with @all is not @all");
 
 console.log("Replies, cards, points");
 const pt: PointBox = { v: 1, id: "ab12", by: "Mikey", to: ["Harry"], n: "numbers look off – “£”", pn: "Team board",

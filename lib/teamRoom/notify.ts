@@ -21,7 +21,7 @@
  * (TEAM_ROOM.push.devicesKey), not in a table (Harry: no new SQL).
  */
 import { TEAM_PEOPLE, TEAM_ROOM, isTeamPerson, type TeamPerson } from "./config";
-import { parseMessage, quoteLine } from "./extras";
+import { mentionsAll, parseMessage, quoteLine } from "./extras";
 import { isJobMarker, jobOwners, type TeamJob } from "./jobs";
 import type { TeamMessage, TeamTask } from "./logic";
 
@@ -33,9 +33,8 @@ const ORDER: RingWhy[] = ["point", "reply", "mention", "all", "task", "job", "me
 export interface PushPayload { title: string; body: string; tag: string; url: string; icon?: string }
 export interface Ring { person: TeamPerson; why: RingWhy }
 
-const ALL = /(^|[^\w@])@(all|everyone|team)\b/i;
-/** "@all", "@everyone" or "@team" anywhere in the words ("x@all.com" does not count). */
-export const mentionsAll = (text: string) => ALL.test(text ?? "");
+/** "@all", "@everyone" or "@team" (the rule lives in extras.ts). */
+export { mentionsAll };
 
 /** One entry per person, the strongest reason kept, the sender left out. Board order. */
 function pick(rings: Ring[], sender: TeamPerson): Ring[] {

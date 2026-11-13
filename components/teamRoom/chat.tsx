@@ -19,7 +19,7 @@ import { ADMIN_PAGES } from "@/lib/adminRegistry";
 import { TEAM_PEOPLE, TEAM_ROOM, type TeamPerson } from "@/lib/teamRoom/config";
 import { stamp, type TeamMessage } from "@/lib/teamRoom/logic";
 import {
-  AT_BOTS, ackedBy, botMentionsIn, composeBody, parseMessage, patchAuthor, patchReaders, pointsWaiting, quoteLine, seenBy, typingToken, unseenMentions,
+  AT_BOTS, ackedBy, botMentionsIn, composeBody, mentionsAll, parseMessage, patchAuthor, patchReaders, pointsWaiting, quoteLine, seenBy, typingToken, unseenMentions,
   type MessageCard, type ReadMarks, type TeamAck,
 } from "@/lib/teamRoom/extras";
 import {
@@ -258,7 +258,7 @@ function MessageRow({ m, me, now, day, open, onOpen, onZoom, onReply, onThread, 
   const [note, setNote] = useState<string | null>(null);
   const p = useMemo(() => parseMessage(m.body, origins), [m.body, origins]);
   const where = nameOfPage(m.page ?? "");
-  const atMe = !!me && !mine && (p.mentions.includes(me) || p.cards.some((c) => c.point?.to.includes(me)));
+  const atMe = !!me && !mine && (p.mentions.includes(me) || mentionsAll(p.text) || p.cards.some((c) => c.point?.to.includes(me)));
   const seen = seenBy(m, marks);
   const others = TEAM_PEOPLE.filter((x) => x !== m.person);
   const original = p.replyTo ? reply?.get(p.replyTo) : undefined;
@@ -569,13 +569,15 @@ function Composer({ autoFocus, replyTo, onClearReply, view, sayTo }: { autoFocus
   const [hide, setHide] = useState(false);
   const tok = hide ? null : typingToken(text, caret);
   const people = tok?.kind === "@" ? TEAM_PEOPLE.filter((p) => p !== s.me && p.toLowerCase().startsWith(tok.query)) : [];
+  // "@all" rings everyone (Harry, 13 Nov 2026: "@all doesn't work"): offered in the list too.
+  const everyone = tok?.kind === "@" && view.kind !== "dm" && (tok.query === "" || "all".startsWith(tok.query) || "everyone".startsWith(tok.query));
   // Bots you can @ (not in a private DM: a bot never reads those). "@pat", "@patch b" and "@bot" all find Patch bot.
   const botList = tok?.kind === "@" && view.kind !== "dm" && !sayTo
     ? AT_BOTS.filter((b) => { const n = b.name.toLowerCase(); return n.startsWith(tok.query) || n.replace(/\s/g, "").startsWith(tok.query.replace(/\s/g, "")) || n.split(" ").some((w) => tok.query.length > 0 && w.startsWith(tok.query)); })
     : [];
   const pages = tok?.kind === "#" ? PAGES.filter((p) => p.name.toLowerCase().includes(tok.query) || p.url.toLowerCase().includes(tok.query)).slice(0, tok.query ? 6 : 8) : [];
   const options: { key: string; label: string; sub?: string; bot?: string }[] = tok?.kind === "@"
-    ? [...people.map((p) => ({ key: p, label: p })), ...botList.map((b) => ({ key: b.bot, label: b.name, sub: BOT_HINT[b.bot], bot: b.bot }))]
+    ? [...people.map((p) => ({ key: p, label: p })), ...(everyone ? [{ key: "@all", label: "all", sub: "Everyone in the team" }] : []), ...botList.map((b) => ({ key: b.bot, label: b.name, sub: BOT_HINT[b.bot], bot: b.bot }))]
     : pages.map((p) => ({ key: p.url, label: p.name, sub: p.url }));
   // An "Ask me" example on a bot's page lands here once ("@Patch bot latest").
   useEffect(() => {
@@ -674,7 +676,7 @@ function Composer({ autoFocus, replyTo, onClearReply, view, sayTo }: { autoFocus
           {options.map((o, i) => (
             <button key={o.key} role="option" aria-selected={i === pick} className={i === pick ? "on" : ""}
               onPointerDown={(e) => e.preventDefault()} onClick={() => choose(i)}>
-              {o.bot ? <BotFace bot={o.bot} className="tr-botav sm" /> : tok?.kind === "@" ? <Av p={o.key as TeamPerson} sm /> : <span className="ic">🔗</span>}
+              {o.bot ? <BotFace bot={o.bot} className="tr-botav sm" /> : o.key === "@all" ? <span className="ic">👥</span> : tok?.kind === "@" ? <Av p={o.key as TeamPerson} sm /> : <span className="ic">🔗</span>}
               <span>{o.label}{o.bot && <span className="tr-bottag">BOT</span>}{o.sub ? <small>{o.sub}</small> : null}</span>
             </button>
           ))}
