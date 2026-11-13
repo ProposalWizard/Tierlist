@@ -58,10 +58,10 @@ export const setViewing = (key: string | null) => { viewing = key; };
 async function show(title: string, body: string, tag: string, url: string) {
   try {
     const reg = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration(TEAM_ROOM.push.scope) : undefined;
-    if (reg) { await reg.showNotification(title, { body, tag, icon: TEAM_ROOM.push.icon, data: { url, count: 1 } }); return; }
+    if (reg) { await reg.showNotification(title, { body, tag, icon: TEAM_ROOM.push.icon, data: { url, count: 1 }, requireInteraction: true }); return; }
   } catch { /* fall back to a plain pop-up */ }
   try {
-    const n = new Notification(title, { body, tag, icon: TEAM_ROOM.push.icon });
+    const n = new Notification(title, { body, tag, icon: TEAM_ROOM.push.icon, requireInteraction: true });
     n.onclick = () => { window.focus(); window.location.assign(url); n.close(); };
   } catch { /* not allowed here */ }
 }
