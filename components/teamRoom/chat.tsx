@@ -19,17 +19,19 @@ import { ADMIN_PAGES } from "@/lib/adminRegistry";
 import { TEAM_PEOPLE, TEAM_ROOM, type TeamPerson } from "@/lib/teamRoom/config";
 import { stamp, type TeamMessage } from "@/lib/teamRoom/logic";
 import {
-  ackedBy, composeBody, parseMessage, patchAuthor, patchReaders, pointsWaiting, quoteLine, seenBy, typingToken, unseenMentions,
+  AT_BOTS, ackedBy, botMentionsIn, composeBody, parseMessage, patchAuthor, patchReaders, pointsWaiting, quoteLine, seenBy, typingToken, unseenMentions,
   type MessageCard, type ReadMarks, type TeamAck,
 } from "@/lib/teamRoom/extras";
 import {
   GENERAL, REACTIONS, channelOf, channelStream, parentOf, dmAsMessage, dmKey, dmsWith, jobDoneBy, jobIsFor, listChannels, mergeStream, newestIn,
-  reactionsOn, threadOf, threadSummary, whoReacted,
+  reactionsOn, rowBotPosts, threadOf, threadSummary, whoReacted,
   type BotPost, type Reaction, type StreamItem, type TeamReaction,
 } from "@/lib/teamRoom/channels";
 import {
-  addTask, deleteDm, deleteMessage, markChannelRead, markSeen, saveStatus, sendAsk, sendDm, sendMessage, setAck, setPinned, startPointing, tickJob, toggleReaction, useTeamRoom,
+  addTask, answerBotProposal, deleteDm, deleteMessage, markChannelRead, markSeen, saveStatus, sendAsk, sendDm, sendMessage, setAck, setPinned, startPointing, takeComposeDraft, tickJob, toggleReaction, useTeamRoom,
 } from "@/lib/teamRoom/store";
+import { ASK_ME, isReplyRow, repliesInPatch, repliesUnder, replyLinks, replyParent, replyPatch, replyText } from "@/lib/teamRoom/atBots";
+import { botOwner, canAnswerProposal, isProposal, proposalState } from "@/lib/teamRoom/claudeBot";
 import { COMMANDS, askOffer, askedFrom, endOfToday, parseCommand, todayLines, type Command } from "@/lib/teamRoom/asks";
 import { liveStatus } from "@/lib/teamRoom/status";
 import { HealthLines } from "./roomTools";
@@ -60,7 +62,9 @@ export type ChatView =
 const GENERAL_VIEW: ChatView = { kind: "channel", slug: GENERAL };
 
 /** The chat: messages, then the box to type in. `visible` marks it read and seen. */
-export function ChatThread({ visible = true, autoFocus, jumpTo, view = GENERAL_VIEW, bots = [], threads = false, onThread, onOpenPatch, jumpBot, onPatchThread, emptyLine }: {
+export function ChatThread({ visible = true, autoFocus, jumpTo, view = GENERAL_VIEW, bots = [], threads = false, onThread, onOpenPatch, jumpBot, onPatchThread, emptyLine, sayTo }: {
+  /** A bot's own page: every message typed here is put to that bot ("@Claude " goes on the front). */
+  sayTo?: string;
   /** What an empty channel says: what it is for and how to use it, in one line. */
   emptyLine?: string;
   visible?: boolean; autoFocus?: boolean; jumpTo?: number | null;
@@ -95,17 +99,20 @@ export function ChatThread({ visible = true, autoFocus, jumpTo, view = GENERAL_V
 
   const items: StreamItem[] = useMemo(() => {
     if (view.kind === "dm") return dmsWith(s.dms, s.me, view.with).map((d) => ({ kind: "msg" as const, at: d.created_at, m: dmAsMessage(d) }));
+    // A bot's answers (and its proposal cards) sit in the thread they were asked in, in time order.
     if (view.kind === "thread") {
       const p = s.messages.find((m) => m.id === view.parent);
-      return [...(p ? [p] : []), ...threadOf(s.messages, view.parent)].map((m) => ({ kind: "msg" as const, at: m.created_at, m }));
+      return [...(p ? [{ kind: "msg" as const, at: p.created_at, m: p }] : []), ...mergeStream(threadOf(s.messages, view.parent), rowBotPosts(repliesUnder(s.botReplies, view.parent)))];
     }
     if (view.kind === "patch") {
       const post = bots.find((b) => b.key === `patch:${view.version}`);
-      return [...(post ? [{ kind: "bot" as const, at: post.at, b: post }] : []), ...patchThread(s.messages, view.version).map((m) => ({ kind: "msg" as const, at: m.created_at, m }))];
+      return [...(post ? [{ kind: "bot" as const, at: post.at, b: post }] : []), ...mergeStream(patchThread(s.messages, view.version), rowBotPosts(repliesInPatch(s.botReplies, view.version)))];
     }
     const own = threads ? channelStream(s.messages, view.slug) : s.messages.filter((m) => channelOf(m.body) === view.slug);
-    return mergeStream(own, bots.filter((b) => b.channel === view.slug));
-  }, [view, s.messages, s.dms, s.me, bots, threads]);
+    // Where there is no thread panel (the chat bubble, a bot's own page) the answers show in line.
+    const inline = threads ? [] : rowBotPosts(s.botReplies.filter((r) => r.channel === view.slug && !replyPatch(r)));
+    return mergeStream(own, [...bots.filter((b) => b.channel === view.slug), ...inline]);
+  }, [view, s.messages, s.dms, s.me, bots, threads, s.botReplies]);
   const msgCount = items.length;
 
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(id); }, []);
@@ -196,7 +203,7 @@ export function ChatThread({ visible = true, autoFocus, jumpTo, view = GENERAL_V
             <MessageRow key={`${isDm ? "d" : "m"}${m.id}`} m={m} me={s.me} now={now} marks={s.marks} acks={s.acks} origins={origins}
               day={day} reply={byId} flash={flash === m.id} dm={isDm} showSeen={general && !isDm}
               hideQuote={(view.kind === "thread" && !isParent) || view.kind === "patch"}
-              summary={threads && view.kind === "channel" ? threadSummary(s.messages, m.id) : null}
+              summary={threads && view.kind === "channel" ? withBotReplies(threadSummary(s.messages, m.id), s.botReplies, m.id) : null}
               reactions={isDm ? [] : s.reactions} canReact={!isDm} v3={s.v3 === "on"} saved={prefs.later.includes(m.id)}
               alsoFrom={view.kind === "channel" && threads ? parentOf(m) : null} flat={threads} cont={cont}
               open={openId === m.id} onOpen={() => setOpenId(openId === m.id ? null : m.id)} onZoom={setZoom}
@@ -207,11 +214,20 @@ export function ChatThread({ visible = true, autoFocus, jumpTo, view = GENERAL_V
         {view.kind === "thread" && items.length > 1 && <span className="tr-day tr-thread-end">{items.length - 1} repl{items.length === 2 ? "y" : "ies"}</span>}
       </div>
       {!(isDm && s.v3 !== "on") && (
-        <Composer autoFocus={autoFocus} view={view} replyTo={view.kind === "thread" || view.kind === "patch" ? null : replyTo} onClearReply={() => setReplyTo(null)} />
+        <Composer autoFocus={autoFocus} view={view} sayTo={sayTo} replyTo={view.kind === "thread" || view.kind === "patch" ? null : replyTo} onClearReply={() => setReplyTo(null)} />
       )}
       {zoom && <div className="tr-zoom" onClick={() => setZoom(null)} role="dialog" aria-label="Picture"><img src={zoom} alt="" /></div>}
     </div>
   );
+}
+
+/** "3 replies" counts a bot's answers too; its newest answer is the "last reply" when it is the latest. */
+function withBotReplies(sum: ReturnType<typeof threadSummary>, replies: readonly { id: number; created_at: string; bot: string; meta?: Record<string, unknown> | null }[], parentId: number) {
+  const mine = replies.filter((r) => isReplyRow(r) && !replyPatch(r) && replyParent(r) === parentId);
+  if (!mine.length) return { ...sum, bots: [] as string[], lastAt: sum.last?.created_at ?? null };
+  const newest = mine.reduce((a, b) => (Date.parse(b.created_at) > Date.parse(a.created_at) ? b : a));
+  const lastAt = sum.last && Date.parse(sum.last.created_at) > Date.parse(newest.created_at) ? sum.last.created_at : newest.created_at;
+  return { ...sum, count: sum.count + mine.length, bots: Array.from(new Set(mine.map((r) => r.bot))), lastAt };
 }
 
 /** The short "run team_room_v3.sql" note, in place of a thing that needs it. */
@@ -227,7 +243,7 @@ function MessageRow({ m, me, now, day, open, onOpen, onZoom, onReply, onThread, 
   m: TeamMessage; me: TeamPerson | null; now: number; day: boolean; open: boolean; onOpen: () => void; onZoom: (u: string) => void;
   onReply: (() => void) | null; onThread?: (id: number) => void; onJump: (id: number) => void; marks: ReadMarks; acks: TeamAck[]; origins: string[];
   reply: Map<number, TeamMessage> | null; flash: boolean; dm: boolean; showSeen: boolean; hideQuote: boolean;
-  summary: ReturnType<typeof threadSummary> | null; reactions: TeamReaction[]; canReact: boolean; v3: boolean;
+  summary: ReturnType<typeof withBotReplies> | null; reactions: TeamReaction[]; canReact: boolean; v3: boolean;
   /** Saved for later (🔖, this device). */
   saved?: boolean;
   /** A thread reply shown in the channel ("Also send to #channel"): the message it answers. */
@@ -295,9 +311,9 @@ function MessageRow({ m, me, now, day, open, onOpen, onZoom, onReply, onThread, 
           {open && reacts.length > 0 && <span className="tr-whoreact">{whoReacted(reactions, m.id)}</span>}
           {summary && summary.count > 0 && (
             <button className="tr-threadline" onClick={(e) => { e.stopPropagation(); onThread?.(m.id); }} title="Open the thread">
-              <span className="faces">{summary.people.map((x) => <Av key={x} p={x} xs />)}</span>
+              <span className="faces">{summary.people.map((x) => <Av key={x} p={x} xs />)}{summary.bots.map((b) => <BotFace key={b} bot={b} className="tr-botav xs" />)}</span>
               <b>{summary.count} repl{summary.count === 1 ? "y" : "ies"}</b>
-              <span>last reply {summary.last ? stamp(summary.last.created_at, now) : ""}</span>
+              <span>last reply {summary.lastAt ? stamp(summary.lastAt, now) : ""}</span>
             </button>
           )}
           {showSeen && (
@@ -389,6 +405,10 @@ function BotRow({ b, now, day, onOpenPatch, onPatchThread }: { b: BotPost; now: 
   const thread = threadVersion && onPatchThread ? patchThreadSummary(s.messages, threadVersion) : null;
   // The Bug bot's post is a report card (roomBugs.tsx).
   const bug = useBugReport(b.bot === "bug" ? b.postId : undefined);
+  // An answer in a thread, or a person's bot's card ("This needs Harry's Claude. Send it?").
+  const row = { meta: b.meta ?? null, bot: b.bot };
+  const reply = b.meta?.kind === "reply";
+  const card = isProposal(row) ? { state: proposalState(row), owner: botOwner(b.bot), mine: canAnswerProposal({ ...row, meta: { ...row.meta, state: "waiting" } }, me) } : null;
   const run = async (f: () => Promise<{ ok: boolean; error?: string }>) => {
     setBusy(true); setErr(null);
     const r = await f();
@@ -401,11 +421,33 @@ function BotRow({ b, now, day, onOpenPatch, onPatchThread }: { b: BotPost; now: 
       <div className="tr-msg tr-botmsg" data-bot={b.key}>
         <BotFace bot={b.bot} />
         <div className="tr-bub tr-botbub">
-          <small><b>{b.bot === "patch-notes" ? "Patch bot" : b.name}</b><span className="tr-bottag">BOT</span><span>{stamp(b.at, now)}</span>
+          <small><b>{b.meta?.from_claude ? `${String(b.meta.from_claude)}'s Claude` : b.bot === "patch-notes" ? "Patch bot" : b.name}</b><span className="tr-bottag">{b.meta?.from_claude ? "VIA BOT" : "BOT"}</span><span>{stamp(b.at, now)}</span>
             {b.archived && <span className="tr-archived" title="Everyone has read it, so it moved here from #general">archived</span>}
             {b.pending && <span className="tr-archived" title="The site posts it within 15 minutes (or when one of us next opens an admin page)">posting…</span>}
           </small>
-          {bug ? <BugCard report={bug} /> : b.bot === "health" ? (<>
+          {reply ? (<>
+            <p className="tr-botreply"><Linked text={replyText({ body: b.body, meta: b.meta })} me={me} /></p>
+            {Array.isArray(b.meta?.lines) && <HealthLines row={{ body: b.body.split("\n").slice(1).join("\n"), meta: b.meta ?? null }} />}
+            {replyLinks({ meta: b.meta }).length > 0 && <span className="tr-botfoot">{replyLinks({ meta: b.meta }).map((l) => <a key={l.url} className="tr-btn ghost" href={l.url}>{l.label}</a>)}</span>}
+          </>) : card ? (
+            <div className="tr-propose" data-state={card.state} data-proposal={b.postId}>
+              <p className="tr-bott">This needs {card.owner}&apos;s Claude. {card.state === "waiting" ? "Send it?" : ""}</p>
+              <p className="tr-botb">{String(b.meta?.by ?? "Someone")} asked: “{String(b.meta?.question ?? "")}” · Why: {String(b.meta?.why ?? "it needs more than a quick answer")}.</p>
+              {card.state === "waiting" && (card.mine ? (
+                <span className="tr-botfoot">
+                  <button className="tr-btn" disabled={busy} onClick={() => run(() => answerBotProposal(b.postId!, true))}>Accept</button>
+                  <button className="tr-btn ghost" disabled={busy} onClick={() => run(() => answerBotProposal(b.postId!, false))}>Decline</button>
+                  <small>Accept puts one job in your to-do for your own Claude chat. Nothing is changed by the bot.</small>
+                </span>
+              ) : <p className="tr-propstate">Waiting for {card.owner}. Only {card.owner} can press Accept or Decline.</p>)}
+              {card.state === "declined" && <p className="tr-propstate">Declined by {card.owner}. Nothing was sent.</p>}
+              {(card.state === "accepted" || card.state === "picked") && (<>
+                <p className="tr-propstate ok">Sent to {card.owner}&apos;s Claude · waiting. {card.state === "picked" ? `${card.owner}'s Claude chat has taken it.` : `It is in ${card.owner}'s to-do, and ${card.owner}'s Claude will pick it up in ${card.owner === me ? "your" : "their"} next chat.`}</p>
+                {card.mine && typeof b.meta?.prompt === "string" && <span className="tr-botfoot"><CopyText text={b.meta.prompt} label="Copy for my Claude" /></span>}
+              </>)}
+              {card.state === "done" && <p className="tr-propstate ok">Done: {card.owner}&apos;s Claude replied below.</p>}
+            </div>
+          ) : bug ? <BugCard report={bug} /> : b.bot === "health" ? (<>
             <p className="tr-bott">{b.title}</p>
             <HealthLines row={{ body: b.body, meta: b.meta ?? null }} />
           </>) : (<>
@@ -452,11 +494,21 @@ function BotRow({ b, now, day, onOpenPatch, onPatchThread }: { b: BotPost; now: 
               {b.url && <a className="tr-btn ghost" href={b.url}>To-do</a>}
             </span>
           )}
-          {!meta && !job && !bug && b.url && <span className="tr-botfoot"><a className="tr-btn ghost" href={b.url}>Open</a></span>}
+          {!meta && !job && !bug && !reply && !card && b.url && <span className="tr-botfoot"><a className="tr-btn ghost" href={b.url}>Open</a></span>}
           {err && <span className="tr-err">{err}</span>}
         </div>
       </div>
     </>
+  );
+}
+
+/** A small copy button (the text for your own Claude chat). */
+function CopyText({ text, label }: { text: string; label: string }) {
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+  return (
+    <button className="tr-btn ghost" onClick={async () => { try { await navigator.clipboard.writeText(text); setState("copied"); } catch { setState("failed"); } setTimeout(() => setState("idle"), 2200); }}>
+      {state === "copied" ? "✓ Copied" : state === "failed" ? "Could not copy here" : label}
+    </button>
   );
 }
 
@@ -487,7 +539,13 @@ type Attach = { url: string; name: string };
 const PAGES = ADMIN_PAGES.map((p) => ({ url: p.url, name: p.name })).concat([{ url: "/admin/team", name: "Team board" }, { url: "/admin/patch-notes", name: "Patch notes" }])
   .filter((p, i, a) => a.findIndex((x) => x.url === p.url) === i);
 
-function Composer({ autoFocus, replyTo, onClearReply, view }: { autoFocus?: boolean; replyTo: TeamMessage | null; onClearReply: () => void; view: ChatView }) {
+/** What each bot is for, under its name in the @ list. */
+const BOT_HINT: Record<string, string> = {
+  "patch-notes": "ask for patch notes", bug: "players' bug reports", health: "the site's limits now", today: "who has checked in", jobs: "your open jobs",
+  claude: "ask a question", "harry-bot": "Harry's helper", "mikey-bot": "Mikey's helper", "leo-bot": "Leo's helper",
+};
+
+function Composer({ autoFocus, replyTo, onClearReply, view, sayTo }: { autoFocus?: boolean; replyTo: TeamMessage | null; onClearReply: () => void; view: ChatView; sayTo?: string }) {
   const s = useTeamRoom();
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -503,13 +561,28 @@ function Composer({ autoFocus, replyTo, onClearReply, view }: { autoFocus?: bool
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
   const isDm = view.kind === "dm";
   const chName = view.kind === "dm" ? "" : listChannels(s.channelRows).find((c) => c.slug === view.slug)?.name ?? view.slug;
-  const placeholder = view.kind === "dm" ? `Message ${view.with}` : view.kind === "thread" ? "Reply in the thread" : view.kind === "patch" ? `Comment on v${view.version}` : `Message #${chName}`;
+  const placeholder = sayTo ? `Ask ${sayTo.slice(1)}` : view.kind === "dm" ? `Message ${view.with}` : view.kind === "thread" ? "Reply in the thread" : view.kind === "patch" ? `Comment on v${view.version}` : `Message #${chName}`;
 
   const [hide, setHide] = useState(false);
   const tok = hide ? null : typingToken(text, caret);
   const people = tok?.kind === "@" ? TEAM_PEOPLE.filter((p) => p !== s.me && p.toLowerCase().startsWith(tok.query)) : [];
+  // Bots you can @ (not in a private DM: a bot never reads those). "@pat", "@patch b" and "@bot" all find Patch bot.
+  const botList = tok?.kind === "@" && view.kind !== "dm" && !sayTo
+    ? AT_BOTS.filter((b) => { const n = b.name.toLowerCase(); return n.startsWith(tok.query) || n.replace(/\s/g, "").startsWith(tok.query.replace(/\s/g, "")) || n.split(" ").some((w) => tok.query.length > 0 && w.startsWith(tok.query)); })
+    : [];
   const pages = tok?.kind === "#" ? PAGES.filter((p) => p.name.toLowerCase().includes(tok.query) || p.url.toLowerCase().includes(tok.query)).slice(0, tok.query ? 6 : 8) : [];
-  const options = tok?.kind === "@" ? people.map((p) => ({ key: p, label: p })) : pages.map((p) => ({ key: p.url, label: p.name, sub: p.url }));
+  const options: { key: string; label: string; sub?: string; bot?: string }[] = tok?.kind === "@"
+    ? [...people.map((p) => ({ key: p, label: p })), ...botList.map((b) => ({ key: b.bot, label: b.name, sub: BOT_HINT[b.bot], bot: b.bot }))]
+    : pages.map((p) => ({ key: p.url, label: p.name, sub: p.url }));
+  // An "Ask me" example on a bot's page lands here once ("@Patch bot latest").
+  useEffect(() => {
+    if (view.kind !== "channel") return;
+    const d = takeComposeDraft();
+    if (!d) return;
+    setText(d); setCaret(d.length);
+    requestAnimationFrame(() => { box.current?.focus(); box.current?.setSelectionRange(d.length, d.length); });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => setPick(0), [tok?.kind, tok?.query]);
 
   const resize = (el: HTMLTextAreaElement) => { el.style.height = "auto"; el.style.height = `${Math.min(120, el.scrollHeight)}px`; };
@@ -517,7 +590,7 @@ function Composer({ autoFocus, replyTo, onClearReply, view }: { autoFocus?: bool
     if (!tok) return;
     const end = tok.start + 1 + tok.query.length;
     if (tok.kind === "@") {
-      const name = people[i];
+      const name = options[i]?.label;
       if (!name) return;
       const next = `${text.slice(0, tok.start)}@${name} ${text.slice(end)}`;
       setText(next);
@@ -580,8 +653,10 @@ function Composer({ autoFocus, replyTo, onClearReply, view }: { autoFocus?: bool
     } else {
       const to = view.kind === "thread" ? view.parent : replyTo?.id;
       // A patch note's thread lives in #general's messages whatever channel its post shows in.
-      const body = view.kind === "patch" ? composeBody(text, { links: links.map((l) => l.url), patch: view.version })
-        : composeBody(text, { replyTo: to, links: links.map((l) => l.url), channel: view.slug, also: view.kind === "thread" && also });
+      // On a bot's own page every message is put to that bot.
+      const words = sayTo && !botMentionsIn(text).length ? `${sayTo} ${text}` : text;
+      const body = view.kind === "patch" ? composeBody(words, { links: links.map((l) => l.url), patch: view.version })
+        : composeBody(words, { replyTo: to, links: links.map((l) => l.url), channel: view.slug, also: view.kind === "thread" && also });
       r = await sendMessage(body, file, typeof window === "undefined" ? null : window.location.pathname + window.location.search);
     }
     setBusy(false);
@@ -596,15 +671,22 @@ function Composer({ autoFocus, replyTo, onClearReply, view }: { autoFocus?: bool
           {options.map((o, i) => (
             <button key={o.key} role="option" aria-selected={i === pick} className={i === pick ? "on" : ""}
               onPointerDown={(e) => e.preventDefault()} onClick={() => choose(i)}>
-              {tok?.kind === "@" ? <Av p={o.key as TeamPerson} sm /> : <span className="ic">🔗</span>}
-              <span>{o.label}{"sub" in o && o.sub ? <small>{o.sub}</small> : null}</span>
+              {o.bot ? <BotFace bot={o.bot} className="tr-botav sm" /> : tok?.kind === "@" ? <Av p={o.key as TeamPerson} sm /> : <span className="ic">🔗</span>}
+              <span>{o.label}{o.bot && <span className="tr-bottag">BOT</span>}{o.sub ? <small>{o.sub}</small> : null}</span>
             </button>
           ))}
         </div>
       )}
       {today && <TodayPanel onClose={() => setToday(false)} />}
       {done && <p className="tr-cmddone" role="status">{done}</p>}
-      {view.kind === "channel" && !text && !replyTo && (
+      {sayTo && !text && (
+        <div className="tr-sugg" aria-label="Things you can ask">
+          {(ASK_ME[AT_BOTS.find((b) => `@${b.name}` === sayTo)?.bot ?? ""] ?? ASK_ME.claude).slice(0, 3).map((x) => (
+            <button key={x.say} title={x.gets} onClick={() => { setText(x.say); setCaret(x.say.length); requestAnimationFrame(() => box.current?.focus()); }}>{x.say}</button>
+          ))}
+        </div>
+      )}
+      {view.kind === "channel" && !sayTo && !text && !replyTo && (
         <div className="tr-sugg" aria-label="Commands you can type">
           {COMMANDS.map((c) => (
             <button key={c.cmd} title={c.soon ? `${c.hint} (soon)` : c.hint} className={c.soon ? "soon" : ""}

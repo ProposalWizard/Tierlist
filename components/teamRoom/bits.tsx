@@ -28,11 +28,16 @@ const CREST: Record<TeamPerson, { a: string; b: string }> = { Harry: { a: "#34e0
 const SHIELD = "M20 2 36 7v13c0 9-6.5 15-16 18C10.5 35 4 29 4 20V7z";
 
 export function Crest({ p }: { p: TeamPerson }) {
+  return <svg viewBox="0 0 40 40" aria-hidden focusable="false"><CrestArt p={p} /></svg>;
+}
+
+/** The crest's drawing, without its frame: a person's own bot wears it inside a bot badge. */
+function CrestArt({ p }: { p: TeamPerson }) {
   const id = useId();
   // A name that is not one of the three (old data, a test) gets a plain grey shield, never a crash.
   const c = CREST[p] ?? { a: "#9aa3ad", b: "#2b2f36" };
   return (
-    <svg viewBox="0 0 40 40" aria-hidden focusable="false">
+    <>
       <path d={SHIELD} fill={c.a} />
       <clipPath id={id}><path d={SHIELD} /></clipPath>
       <g clipPath={`url(#${id})`}>
@@ -41,7 +46,7 @@ export function Crest({ p }: { p: TeamPerson }) {
         {p === "Leo" && (<><path d="M4 16 20 26 36 16v6L20 32 4 22z" fill={c.b} opacity=".35" /><path d="M4 7 20 17 36 7v6L20 23 4 13z" fill="#fff" /></>)}
       </g>
       <path d={SHIELD} fill="none" stroke="rgba(0,0,0,.25)" strokeWidth="1.5" />
-    </svg>
+    </>
   );
 }
 
@@ -53,8 +58,10 @@ export function Av({ p, sm, xs, off, title, card }: { p: TeamPerson; sm?: boolea
 /** A bot's round badge: its own colour and a drawn sign. */
 const BOT_BADGE: Record<string, { a: string; b: string }> = {
   "patch-notes": { a: "#f5b942", b: "#3d2a05" }, bug: { a: "#ff8f6b", b: "#4a1d0e" }, health: { a: "#7de3d0", b: "#0d3b34" },
-  jobs: { a: "#9db4ff", b: "#16225a" }, today: { a: "#ffd166", b: "#4a3300" },
+  jobs: { a: "#9db4ff", b: "#16225a" }, today: { a: "#ffd166", b: "#4a3300" }, claude: { a: "#e8a27c", b: "#4a2414" },
+  "harry-bot": { a: CREST.Harry.a, b: "#10151b" }, "mikey-bot": { a: CREST.Mikey.a, b: "#10151b" }, "leo-bot": { a: CREST.Leo.a, b: "#10151b" },
 };
+const BOT_OWNER: Record<string, TeamPerson> = { "harry-bot": "Harry", "mikey-bot": "Mikey", "leo-bot": "Leo" };
 export function BotFace({ bot, className = "tr-botav" }: { bot: string; className?: string }) {
   const c = BOT_BADGE[bot] ?? { a: "#b5bac1", b: "#2b2d31" };
   return (
@@ -66,6 +73,8 @@ export function BotFace({ bot, className = "tr-botav" }: { bot: string; classNam
         {bot === "health" && <path d="M10 21h5l2.5-6 4 11 2.5-5h6" stroke="#fff" strokeWidth="2.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />}
         {bot === "jobs" && <path d="m12 20 5.5 5.5L28 14.5" stroke="#fff" strokeWidth="3.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />}
         {bot === "today" && (<><circle cx="20" cy="20" r="5.5" fill="#fff" /><path d="M20 9v3M20 28v3M9 20h3M28 20h3M12.2 12.2l2.1 2.1M25.700 25.700l2.1 2.1M12.2 27.800l2.1-2.1M25.700 14.300l2.1-2.1" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" /></>)}
+        {bot === "claude" && <path d="M20 8.500v23M8.500 20h23M11.900 11.900l16.200 16.200M28.100 11.900 11.900 28.100" stroke="#fff" strokeWidth="2.800" strokeLinecap="round" />}
+        {BOT_OWNER[bot] && <g transform="translate(8.500 8.500) scale(.575)"><CrestArt p={BOT_OWNER[bot]} /></g>}
         {!BOT_BADGE[bot] && <rect x="12" y="14" width="16" height="13" rx="3" fill="#fff" />}
       </svg>
     </span>
@@ -73,7 +82,8 @@ export function BotFace({ bot, className = "tr-botav" }: { bot: string; classNam
 }
 
 const LINK = /(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"])/g;
-const AT = /(@(?:Harry|Mikey|Leo|everyone|all|team)\b)/gi;
+// A bot's name first, so "@Harry bot" lights up whole (and is not read as Harry).
+const AT = /(@(?:patch(?:[ -]?notes?)?[ -]?bot|bugs?[ -]?bot|health[ -]?bot|today[ -]?bot|jobs?[ -]?bot|claude(?:[ -]?bot)?|(?:harry|mikey|leo)[ -]?bot|Harry|Mikey|Leo|everyone|all|team)\b)/gi;
 
 /** Text with web links clickable and @Harry / @Mikey / @Leo lit up (yours brighter). */
 export function Linked({ text, me }: { text: string; me?: TeamPerson | null }) {
@@ -83,7 +93,7 @@ export function Linked({ text, me }: { text: string; me?: TeamPerson | null }) {
       {parts.map((x, i) => (i % 2
         ? <a key={i} href={x} target="_blank" rel="noreferrer">{x}</a>
         : <Fragment key={i}>{x.split(AT).map((y, j) => (j % 2
-          ? <span key={j} className={`tr-at${me && y.slice(1).toLowerCase() === me.toLowerCase() ? " me" : ""}`}>{y}</span>
+          ? <span key={j} className={`tr-at${me && y.slice(1).toLowerCase() === me.toLowerCase() ? " me" : ""}${/bot$|^@claude/i.test(y) ? " bot" : ""}`}>{y}</span>
           : y))}</Fragment>))}
     </>
   );

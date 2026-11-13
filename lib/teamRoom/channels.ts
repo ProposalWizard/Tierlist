@@ -337,7 +337,7 @@ export interface BotPost {
 /** A row a future bot (a Claude routine) wrote into team_bot_posts with the site's own key. */
 export interface BotRow { id: number; bot: string; channel: string; title: string; body: string; url: string | null; everyone: boolean; created_at: string; meta?: Record<string, unknown> | null }
 
-export const BOT_NAMES: Record<string, string> = { "patch-notes": "Patch notes bot", jobs: "Jobs bot", bug: "Bug bot", health: "Health bot", today: "Today bot" };
+export const BOT_NAMES: Record<string, string> = { "patch-notes": "Patch notes bot", jobs: "Jobs bot", bug: "Bug bot", health: "Health bot", today: "Today bot", claude: "Claude", "harry-bot": "Harry bot", "mikey-bot": "Mikey bot", "leo-bot": "Leo bot" };
 export const botName = (bot: string) => BOT_NAMES[bot] ?? `${bot.replace(/[-_]+/g, " ").replace(/^\w/, (c) => c.toUpperCase())} bot`;
 
 /** "Harry's patch notes: B14 Running" → "B14 Running". */

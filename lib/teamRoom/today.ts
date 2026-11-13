@@ -10,7 +10,7 @@
  * Pure: tested in tests/star/teamRoomBots.mts.
  */
 import { TEAM_PEOPLE, TEAM_ROOM, type TeamPerson } from "./config";
-import { parseMessage } from "./extras";
+import { botMentionsIn, parseMessage } from "./extras";
 import type { BotRow } from "./channels";
 import type { TeamMessage } from "./logic";
 import type { NewBotRow } from "./patchBot";
@@ -36,6 +36,8 @@ function checkIns(messages: readonly TeamMessage[]): (CheckIn & { day: string })
   for (const m of messages) {
     const p = parseMessage(m.body);
     if (p.channel !== TODAY_CHANNEL || p.replyTo || p.patch || !p.text.trim()) continue;
+    // A question to a bot ("@Today bot who is in?") is not a check-in.
+    if (botMentionsIn(p.text).length) continue;
     out.push({ id: m.id, person: m.person, text: p.text.trim(), at: m.created_at, day: ukDay(m.created_at).day });
   }
   return out;

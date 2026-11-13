@@ -147,8 +147,8 @@ const tasks: TeamTask[] = [
 ];
 ok(jobDoneBy(tasks, "lag").join() === "Harry", "✅ ticks are each person's own");
 ok(jobIsFor(job, "Leo") && !jobIsFor({ owner: "Mikey" }, "Leo") && !jobIsFor(job, null), "only a job's owners can tick it");
-const rb = rowBotPosts([{ id: 4, bot: "claude", channel: "Bad!", title: "t", body: "", url: "https://evil.example", everyone: false, created_at: at(1) }]);
-ok(rb[0].channel === GENERAL && rb[0].url === null && rb[0].name === "Claude bot", "a future bot's row: a bad channel goes to #general; only site links");
+const rb = rowBotPosts([{ id: 4, bot: "scout", channel: "Bad!", title: "t", body: "", url: "https://evil.example", everyone: false, created_at: at(1) }]);
+ok(rb[0].channel === GENERAL && rb[0].url === null && rb[0].name === "Scout bot", "a future bot's row: a bad channel goes to #general; only site links");
 const st = mergeStream([msg(2, "Leo", "x", 2), msg(1, "Leo", "y", 9)], pb.slice(0, 1).map((b) => ({ ...b, at: at(5) })));
 ok(st.map((x) => (x.kind === "msg" ? x.m.id : "bot")).join() === "2,bot,1", "messages and bot posts in time order");
 

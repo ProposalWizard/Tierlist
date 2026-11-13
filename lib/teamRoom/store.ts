@@ -39,6 +39,9 @@ import { todayAskPlan, ukDay } from "./today";
 import { limitsPost } from "@/lib/backup/plan";
 import HEADLINES from "@/lib/patchNoteHeadlines.json";
 import { BOTS, announcePlan, botInfo, botSettings, settingsRow, type BotSettings } from "./patchBot";
+import { asksOwed, isReplyRow } from "./atBots";
+import { botMentionsIn, parseMessage } from "./extras";
+import { CLAUDE_BOT, aiSettings, aiSettingsRow, botOwner, canAnswerProposal, canChangeAi, handoffTask, isProposal, spendThisMonth, type AiBotSettings, type Spend } from "./claudeBot";
 import { LINKS_KEY, MAX_LINKS, acceptedTitle, askRow, cleanLinks, isAsk, isSitePath, withLink } from "./asks";
 
 export interface TeamRoomState {
@@ -79,8 +82,10 @@ export interface TeamRoomState {
   reactions: TeamReaction[];
   /** Your own private DMs only: the database's row rules never send anyone else's. */
   dms: TeamDm[];
-  /** Posts a future bot wrote (team_bot_posts). */
+  /** Posts a bot wrote (team_bot_posts). Thread replies are kept apart, in botReplies. */
   botRows: BotRow[];
+  /** A bot's answers in threads, and its proposal cards (lib/teamRoom/atBots.ts): never posts in a channel. */
+  botReplies: BotRow[];
   /** The newest message read in each channel and DM (this browser). */
   chRead: ChannelReads;
   /** Round four (team_room_v4.sql): status, the first-open note, bug marks. "off" = not run yet. */
@@ -129,7 +134,7 @@ let state: TeamRoomState = {
   status: "idle", error: null, me: null, taken: [], messages: [], ideas: [], votes: [], tasks: [], notes: [],
   online: [], live: false, read: { chat: 0, tasks: 0, notes: 0, pushNotes: 0, patchNotes: 0 }, pageOpen: false,
   v2: "unknown", marks: {}, acks: [], pointing: false, jobs: [], jobsFrom: null, seenJobs: [],
-  v3: "unknown", channelRows: [], reactions: [], dms: [], botRows: [], chRead: {},
+  v3: "unknown", channelRows: [], reactions: [], dms: [], botRows: [], botReplies: [], chRead: {},
   v4: "unknown", statuses: {}, welcome: null, welcomeReads: [], bugMarks: [], bells: NO_BELLS, links: [],
 };
 const listeners = new Set<() => void>();
@@ -263,7 +268,7 @@ async function loadV3() {
     channelRows: (ch.data ?? []) as ChannelRow[],
     reactions: ((re.data ?? []) as TeamReaction[]).filter((r) => isTeamPerson(r.person) && isReaction(r.emoji)).map((r) => ({ ...r, message_id: Number(r.message_id) })),
     dms: ((dm.data ?? []) as TeamDm[]).reverse(),
-    botRows: ((bot.data ?? []) as BotRow[]).reverse(),
+    ...splitBotRows(((bot.data ?? []) as BotRow[]).reverse()),
   });
 }
 
@@ -297,6 +302,9 @@ function localV2(): Pick<TeamRoomState, "marks" | "acks"> {
   const seen = readJson<number>(SEEN_KEY, 0);
   return { marks: me ? { [me]: +seen || 0 } : {}, acks: readJson<TeamAck[]>(ACKS_KEY, []).map(patchAckKey) };
 }
+
+/** A bot's rows, in two piles: its posts, and its thread replies and proposal cards. */
+const splitBotRows = (rows: BotRow[]) => ({ botRows: rows.filter((r) => !isReplyRow(r)), botReplies: rows.filter((r) => isReplyRow(r)) });
 
 type Change = { eventType: "INSERT" | "UPDATE" | "DELETE"; new: Record<string, unknown>; old: Record<string, unknown> };
 
@@ -377,7 +385,17 @@ function apply(table: string, c: Change) {
     });
     return;
   }
-  const key = ({ team_messages: "messages", team_ideas: "ideas", team_tasks: "tasks", team_notes: "notes", team_dms: "dms", team_bot_posts: "botRows" } as const)[table as "team_messages"];
+  if (table === "team_bot_posts") {
+    const id = Number(row.id);
+    const r = row as unknown as BotRow;
+    set((s) => {
+      const posts = s.botRows.filter((x) => x.id !== id), replies = s.botReplies.filter((x) => x.id !== id);
+      if (del) return { botRows: posts, botReplies: replies };
+      return isReplyRow(r) ? { botRows: posts, botReplies: upsertById(replies, r) } : { botRows: upsertById(posts, r), botReplies: replies };
+    });
+    return;
+  }
+  const key = ({ team_messages: "messages", team_ideas: "ideas", team_tasks: "tasks", team_notes: "notes", team_dms: "dms" } as const)[table as "team_messages"];
   if (!key) return;
   set((s) => {
     const list = s[key] as { id: number }[];
@@ -457,7 +475,7 @@ function startDemo() {
   // ?teamroom=nov2 shows the screens as they are before team_room_v2.sql runs.
   const noV2 = DEMO_NO_V2;
   set({ ...room, status: "ready", live: true, read: loadRead(), v2: noV2 ? "off" : "on", v3: DEMO_NO_V3 ? "off" : "on", v4: DEMO_NO_V4 ? "off" : "on", chRead: readJson<ChannelReads>(CH_READ_KEY, room.chRead) });
-  if (DEMO_NO_V3) set({ channelRows: [], reactions: [], dms: [], botRows: [] });
+  if (DEMO_NO_V3) set({ channelRows: [], reactions: [], dms: [], botRows: [], botReplies: [] });
   if (DEMO_NO_V4) set({ statuses: {}, welcome: null, welcomeReads: [], bugMarks: [], botRows: room.botRows.filter((r) => r.bot !== "bug") });
   // ?teamroom=welcome shows the first-open note as a new reader would see it.
   if (DEMO_WELCOME) set({ welcomeReads: [] });
@@ -508,16 +526,94 @@ function askBots() {
   fetch(BOTS_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ run: true }) }).catch(() => { /* the timer will do it */ });
 }
 
-export interface BotSettingsView { settings: Record<string, BotSettings>; timer: boolean | null }
+/** An AI bot's page: is a key set on the server (never the key), this month's spend, its settings. */
+export interface AiBotView { settings: AiBotSettings; keySet: boolean; ownKey: boolean; spend: Spend; today: number }
+export interface BotSettingsView { settings: Record<string, BotSettings>; timer: boolean | null; ai?: Record<string, AiBotView> }
+
+// ?teamroom=claude (a dev build with sample rows): show the AI bots as they are once a key is set, with a pretend AI and a sample spend.
+const DEMO_AI_ON = typeof window !== "undefined" && /[?&]teamroom=claude\b/.test(window.location.search);
+const DEMO_SPEND_USD = 3.1;
+function demoAiViews(): Record<string, AiBotView> {
+  const rows = [...state.botRows, ...state.botReplies];
+  const out: Record<string, AiBotView> = {};
+  for (const bot of [CLAUDE_BOT.bot, "harry-bot", "mikey-bot", "leo-bot"]) {
+    const spend = spendThisMonth(rows, Date.now());
+    const usd = DEMO_AI_ON ? spend.usd + DEMO_SPEND_USD : 0;
+    out[bot] = { settings: aiSettings(rows, bot), keySet: DEMO_AI_ON, ownKey: false, today: DEMO_AI_ON ? spend.replies + 7 : 0, spend: { ...spend, usd, gbp: usd, replies: DEMO_AI_ON ? spend.replies + 41 : 0, left: spend.capGbp - usd } };
+  }
+  return out;
+}
+
+/** Save an AI bot's settings (a person's bot: its owner only). The site checks who is asking. */
+export async function saveAiBotSettings(bot: string, patch: Partial<Pick<AiBotSettings, "enabled" | "instructions" | "channels" | "handoff">>): Promise<Result & { settings?: AiBotSettings }> {
+  if (demo) {
+    if (!canChangeAi(bot, state.me)) return { ok: false, error: `Only ${botOwner(bot)} can change this bot.` };
+    const now = aiSettings(state.botRows, bot);
+    const row = { ...aiSettingsRow(bot, { ...now, ...patch }, state.me), id: ++demoId, created_at: new Date().toISOString() } as BotRow;
+    set((s) => ({ botRows: [...s.botRows, row] }));
+    return { ok: true, settings: aiSettings([row], bot) };
+  }
+  try {
+    const r = await fetch(BOTS_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bot, ...patch }) });
+    const j = (await r.json()) as { ok?: boolean; error?: string; settings?: AiBotSettings };
+    if (!r.ok || !j.ok) return { ok: false, error: j.error ?? "Could not save it." };
+    return { ok: true, settings: j.settings };
+  } catch { return { ok: false, error: "Could not reach the site." }; }
+}
+
+/** Accept or Decline on your own bot's card. Only the bot's owner can; the site checks. Accept adds one job to your own to-do. */
+export async function answerBotProposal(id: number, accept: boolean): Promise<Result> {
+  if (demo) {
+    const row = state.botReplies.find((r) => r.id === id);
+    if (!row || !isProposal(row)) return { ok: false, error: "That card is gone." };
+    if (!canAnswerProposal(row, state.me)) return { ok: false, error: `Only ${botOwner(row.bot)} can answer this.` };
+    const meta: Record<string, unknown> = { ...(row.meta ?? {}), state: accept ? "accepted" : "declined", answered_at: new Date().toISOString() };
+    set((s) => ({
+      botReplies: s.botReplies.map((r) => (r.id === id ? { ...r, meta } : r)),
+      tasks: accept ? upsertById(s.tasks, { id: ++demoId, ...handoffTask(state.me!, String(meta.question ?? ""), id), done_at: null, created_at: new Date().toISOString() }) : s.tasks,
+    }));
+    return { ok: true };
+  }
+  try {
+    const r = await fetch(BOTS_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ proposal: id, accept }) });
+    const j = (await r.json()) as { ok?: boolean; error?: string };
+    return r.ok && j.ok ? { ok: true } : { ok: false, error: j.error ?? "Could not save it." };
+  } catch { return { ok: false, error: "Could not reach the site." }; }
+}
+
+/**
+ * A message that @s a bot was just sent: ask the site to answer it now, in
+ * its thread (the site does it with its own key; the 15-minute timer is the
+ * fallback). In a dev build with sample rows the same sums run in this browser.
+ */
+function askAtBots(m: TeamMessage) {
+  if (!botMentionsIn(parseMessage(m.body).text).length) return;
+  if (!demo) {
+    fetch(BOTS_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ask: m.id }) }).catch(() => { /* the timer will do it */ });
+    return;
+  }
+  void (async () => {
+    const { demoAnswer } = await import("./atBotsDemo");
+    for (const a of asksOwed({ messages: [m], rows: state.botReplies, now: Date.now() })) {
+      const row = await demoAnswer({ messages: state.messages, rows: [...state.botRows, ...state.botReplies], tasks: state.tasks, jobs: state.jobs, bugMarks: state.bugMarks }, a, new Date(), DEMO_AI_ON);
+      set((s) => ({ botReplies: [...s.botReplies, { ...row, id: ++demoId, created_at: new Date().toISOString() } as BotRow] }));
+    }
+  })();
+}
+
+/** Words waiting to be dropped into the message box (an "Ask me" example on a bot's page). Taken once. */
+let draft: string | null = null;
+export const setComposeDraft = (text: string) => { draft = text; };
+export const takeComposeDraft = () => { const d = draft; draft = null; return d; };
 /** Each bot's settings, read by the site (whole even when old rows are not loaded here). */
 export async function loadBotSettings(): Promise<BotSettingsView> {
   const local: Record<string, BotSettings> = {};
   for (const b of BOTS) local[b.bot] = botSettings(state.botRows, b.bot);
-  if (demo) return { settings: local, timer: null };
+  if (demo) return { settings: local, timer: null, ai: demoAiViews() };
   try {
     const r = await fetch(BOTS_API, { cache: "no-store" });
-    const j = (await r.json()) as { ok?: boolean; settings?: Record<string, BotSettings>; timer?: boolean };
-    if (r.ok && j.ok && j.settings) return { settings: j.settings, timer: !!j.timer };
+    const j = (await r.json()) as { ok?: boolean; settings?: Record<string, BotSettings>; timer?: boolean; ai?: Record<string, AiBotView> };
+    if (r.ok && j.ok && j.settings) return { settings: j.settings, timer: !!j.timer, ai: j.ai };
   } catch { /* fall through */ }
   return { settings: local, timer: null };
 }
@@ -657,7 +753,11 @@ export async function sendMessage(body: string, file: File | null, page: string 
   const text = body.trim().slice(0, 2000);
   if (!text && !image_url) return { ok: false, error: "Type something first." };
   // (Read marks are per channel now: the open channel marks itself read, channels.ts.)
-  return insert("team_messages", "messages", { person: state.me, body: text, image_url, page: page?.slice(0, 200) ?? null }, "Message not sent.");
+  const before = state.messages.reduce((n, m) => Math.max(n, m.id), 0);
+  const r = await insert("team_messages", "messages", { person: state.me, body: text, image_url, page: page?.slice(0, 200) ?? null }, "Message not sent.");
+  // "@Patch bot latest": the bot answers in a thread under this message.
+  if (r.ok) { const mine = state.messages.filter((m) => m.id > before && m.person === state.me && m.body === text).sort((a, b) => b.id - a.id)[0]; if (mine) askAtBots(mine); }
+  return r;
 }
 
 export async function setPinned(id: number, pinned: boolean): Promise<Result> {

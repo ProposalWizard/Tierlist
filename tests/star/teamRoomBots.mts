@@ -33,7 +33,7 @@ const msg = (person: TeamMessage["person"], body: string, when: Date): TeamMessa
 const channels = new Set(BUILT_IN_CHANNELS.map((c) => c.slug));
 
 console.log("The list of bots");
-ok(BOTS.map((b) => b.bot).join() === "patch-notes,bug,health,today,jobs", "five bots: Patch, Bug, Health, Today, Jobs");
+ok(BOTS.map((b) => b.bot).join() === "patch-notes,bug,health,today,jobs,claude,harry-bot,mikey-bot,leo-bot", "nine bots: Patch, Bug, Health, Today, Jobs, then Claude and one each for Harry, Mikey and Leo (13 Nov 2026)");
 ok(BOTS.every((b) => channels.has(b.channel)), "each bot posts in a channel that exists");
 ok(BOTS.every((b) => b.does.length >= 2 && b.runs.length > 20), "each says what it does and when it runs");
 ok(BOTS.every((b) => (b.runnable ? !!b.runDoes : !!b.noRun)), "each either has Run now (and says what it does) or says why not");

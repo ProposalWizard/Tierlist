@@ -57,7 +57,41 @@ const ALSO = /^\[also\]\s?/;
 export const PATCH_THREAD_TAG = /^\[pn:([\w.]{1,24})\]\s?/;
 /** "[#ideas] " at the very front: the message's channel (23 Oct 2026, channels.ts). Comes before any [re:…]. */
 export const CHANNEL_TAG = /^\[#([a-z0-9][a-z0-9-]{0,29})\]\s?/;
-const MENTION = /(^|[^\w@])@(harry|mikey|leo)\b/gi;
+// "@Harry bot" names Harry's bot, not Harry: it never rings Harry's phone.
+const MENTION = /(^|[^\w@])@(harry|mikey|leo)\b(?![ -]?bot\b)/gi;
+
+/**
+ * Bots you can @ (Harry, 13 Nov 2026: "I should be able to @patch notes bot in
+ * general and ask for x patch notes"). The id is the bot's own (team_bot_posts.bot).
+ * What each answers: lib/teamRoom/atBots.ts.
+ */
+export const AT_BOTS = [
+  { bot: "patch-notes", name: "Patch bot", re: "patch(?:[ -]?notes?)?[ -]?bot" },
+  { bot: "bug", name: "Bug bot", re: "bugs?[ -]?bot" },
+  { bot: "health", name: "Health bot", re: "health[ -]?bot" },
+  { bot: "today", name: "Today bot", re: "today[ -]?bot" },
+  { bot: "jobs", name: "Jobs bot", re: "jobs?[ -]?bot" },
+  { bot: "claude", name: "Claude", re: "claude(?:[ -]?bot)?" },
+  { bot: "harry-bot", name: "Harry bot", re: "harry[ -]?bot" },
+  { bot: "mikey-bot", name: "Mikey bot", re: "mikey[ -]?bot" },
+  { bot: "leo-bot", name: "Leo bot", re: "leo[ -]?bot" },
+] as const;
+export type AtBotId = (typeof AT_BOTS)[number]["bot"];
+const BOT_MENTION = new RegExp(`(^|[^\\w@])@(?:${AT_BOTS.map((b) => `(${b.re})`).join("|")})\\b[,:]?`, "gi");
+
+/** Which bots a text @s, in the order they are named. "@Patch bot", "@patch notes bot" and "@patchbot" all count. */
+export function botMentionsIn(text: string): AtBotId[] {
+  const out: AtBotId[] = [];
+  const re = new RegExp(BOT_MENTION.source, "gi");
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text ?? ""))) {
+    const i = m.slice(2).findIndex((x) => x !== undefined);
+    if (i >= 0 && !out.includes(AT_BOTS[i].bot)) out.push(AT_BOTS[i].bot);
+  }
+  return out;
+}
+/** The words left once every @bot is taken out: what was asked. */
+export const withoutBotMentions = (text: string) => (text ?? "").replace(new RegExp(BOT_MENTION.source, "gi"), "$1").replace(/\s+/g, " ").replace(/^[\s,:;.\-–]+/, "").trim();
 
 const isName = (s: unknown): s is TeamPerson => typeof s === "string" && (TEAM_PEOPLE as readonly string[]).includes(s);
 const proper = (s: string) => (s[0].toUpperCase() + s.slice(1).toLowerCase()) as TeamPerson;
@@ -258,7 +292,8 @@ export function quoteLine(m: Pick<TeamMessage, "body" | "image_url"> | undefined
 /** The @… or #… being typed just before the cursor, if any. */
 export function typingToken(text: string, caret: number): { kind: "@" | "#"; query: string; start: number } | null {
   const before = text.slice(0, caret);
-  const m = /(^|\s)([@#])([\w-]{0,30})$/.exec(before);
+  // "@patch b" keeps suggesting Patch bot: one space is allowed when the next word is the start of "bot".
+  const m = /(^|\s)([@#])([\w-]{0,30}(?: (?:b|bo|bot))?)$/.exec(before);
   if (!m) return null;
   return { kind: m[2] as "@" | "#", query: m[3].toLowerCase(), start: caret - m[3].length - 1 };
 }

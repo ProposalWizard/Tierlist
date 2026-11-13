@@ -427,3 +427,39 @@
 .trr-link a { color: var(--ash-ink); font-weight: 800; font-size: 14px; text-decoration: none; }
 .trr-link a:hover { color: var(--ash-accent); }
 .trr-linkadd { border-radius: 10px; border: 1px dashed var(--ash-line2); background: none; color: var(--ash-ink2); padding: 9px 11px; font: inherit; font-size: 14px; max-width: 100%; }
+
+/* ── Bots you can @, and the AI bots (13 Nov 2026) ───────────────────── */
+.tr-botav.sm { width: 26px; height: 26px; flex: 0 0 26px; }
+.tr-botav.xs { width: 18px; height: 18px; flex: 0 0 18px; }
+.tr-suggest .tr-bottag { margin-left: 6px; vertical-align: 1px; }
+.tr-at.bot { color: var(--ash-accent); }
+.tr-bub p.tr-botreply { white-space: pre-wrap; font-size: 14px; line-height: 1.45; margin: 2px 0 0; overflow-wrap: anywhere; }
+.tr-propose { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; padding: 10px 12px; border: 1px solid var(--ash-line); border-radius: 12px; background: var(--ash-panel2); }
+.tr-propose .tr-botfoot small { flex-basis: 100%; color: var(--ash-ink3); font-size: 12px; line-height: 1.35; }
+.tr-propstate { margin: 0; font-size: 13px; font-weight: 700; color: var(--ash-ink2); }
+.tr-propstate.ok { color: var(--ash-accent); }
+.trb-asks { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.trb-ask { display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 9px 11px; min-height: 44px; border: 1px solid var(--ash-line); border-radius: 10px; background: var(--ash-panel-solid); color: var(--ash-ink); cursor: pointer; font: inherit; }
+.trb-ask:hover { border-color: var(--ash-accent); }
+.trb-ask b { font-size: 13.5px; overflow-wrap: anywhere; }
+.trb-ask small { color: var(--ash-ink3); font-size: 12px; }
+.trb-setup ol { margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.5; list-style: decimal; }
+.trb-setup code { font-size: 12.5px; padding: 1px 5px; border-radius: 5px; background: var(--ash-panel-solid); overflow-wrap: anywhere; }
+.trb-card > small { color: var(--ash-ink3); font-size: 12.5px; line-height: 1.45; }
+.trb-bar { height: 12px; border-radius: 999px; background: var(--ash-panel-solid); border: 1px solid var(--ash-line); overflow: hidden; }
+.trb-bar i { display: block; height: 100%; border-radius: 999px; background: var(--ash-accent); }
+.trb-bar.amber i { background: var(--ash-amber); }
+.trb-bar.red i { background: var(--ash-red); }
+.trb-field { display: flex; flex-direction: column; gap: 6px; }
+.trb-field label, .trb-field > span { display: flex; flex-direction: column; }
+.trb-field small { color: var(--ash-ink3); font-size: 12.5px; line-height: 1.35; }
+.trb-field textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 68px; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--ash-line); background: var(--ash-panel-solid); color: var(--ash-ink); font: inherit; font-size: 14px; }
+.trb-field textarea[readonly] { color: var(--ash-ink2); cursor: default; }
+.trb-fieldfoot { flex-direction: row !important; align-items: center; justify-content: space-between; gap: 10px; }
+.trb-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.trb-chips button { min-height: 32px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--ash-line); background: none; color: var(--ash-ink2); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.trb-chips button[aria-pressed="true"] { background: var(--ash-accent-soft); border-color: var(--ash-accent); color: var(--ash-ink); }
+.trb-chips button:disabled, .trb-switch:disabled { cursor: default; opacity: .75; }
+.trb-saved { margin: 0; font-size: 13px; color: var(--ash-accent); font-weight: 700; }
+.trb-dmbox { display: flex; flex-direction: column; height: 340px; border: 1px solid var(--ash-line); border-radius: 12px; overflow: hidden; background: var(--ash-panel-solid); }
+.trb-dmbox .tr-chat { flex: 1; min-height: 0; }

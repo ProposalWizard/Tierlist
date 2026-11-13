@@ -131,22 +131,27 @@ export async function runTodayBot(sb: SupabaseClient, now: Date): Promise<BotRun
  * the bot's page (`by`: who pressed Run now). Reads sizes, never changes
  * anything, writes the one post.
  */
+/** The limits, read this minute: the database, Storage, R2 and last night's backup. Reads only. */
+export async function readLimits(sb: SupabaseClient, now: Date) {
+  const day = ukClock(now).day;
+  const notes: string[] = [];
+  const sizes = await supabaseSizes(sb).catch(() => ({ dbBytes: null, storageBytes: null, note: "could not read database sizes" }));
+  if (sizes.note) notes.push(sizes.note);
+  const { config, missing } = r2Config();
+  let r2: ReturnType<typeof sizesByTopFolder> | null = null;
+  let backup: Manifest | null = null;
+  if (!config) notes.push(`R2 is not connected here (${missing.join(", ")})`);
+  else {
+    try { r2 = sizesByTopFolder(await r2ListAll(config)); } catch { notes.push("could not list the R2 bucket"); }
+    try { backup = await readManifest(config, day); } catch { notes.push("could not read last night's backup manifest"); }
+  }
+  return { day, post: limitsPost({ day, dbBytes: sizes.dbBytes, storageBytes: sizes.storageBytes, r2, backup, notes }) };
+}
+
 export async function runHealthBot(sb: SupabaseClient, now: Date, opts: { by?: TeamPerson | null; manual?: boolean } = {}): Promise<BotRun> {
   try {
     if (!opts.manual && !(await enabled(sb, "health"))) return { bot: "health", ok: true, posted: 0, off: true, text: "Switched off: no morning post." };
-    const day = ukClock(now).day;
-    const notes: string[] = [];
-    const sizes = await supabaseSizes(sb).catch(() => ({ dbBytes: null, storageBytes: null, note: "could not read database sizes" }));
-    if (sizes.note) notes.push(sizes.note);
-    const { config, missing } = r2Config();
-    let r2: ReturnType<typeof sizesByTopFolder> | null = null;
-    let backup: Manifest | null = null;
-    if (!config) notes.push(`R2 is not connected here (${missing.join(", ")})`);
-    else {
-      try { r2 = sizesByTopFolder(await r2ListAll(config)); } catch { notes.push("could not list the R2 bucket"); }
-      try { backup = await readManifest(config, day); } catch { notes.push("could not read last night's backup manifest"); }
-    }
-    const post = limitsPost({ day, dbBytes: sizes.dbBytes, storageBytes: sizes.storageBytes, r2, backup, notes });
+    const { day, post } = await readLimits(sb, now);
     const title = opts.manual ? `${post.title} · asked for${opts.by ? ` by ${opts.by}` : ""}`.slice(0, 200) : post.title;
     await postHealth(sb, { title, body: post.body, meta: { kind: "limits", red: post.red, level: post.level, day, lines: post.lines, ...(opts.manual ? { manual: true, by: opts.by ?? null } : {}) } });
     return { bot: "health", ok: true, posted: 1, red: post.red, title, body: post.body, text: `Done: posted the limits in #health (${post.level === "green" ? "all green" : post.level === "unknown" ? "some readings missing" : post.level}).` };

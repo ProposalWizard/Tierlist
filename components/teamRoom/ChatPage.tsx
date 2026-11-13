@@ -600,8 +600,10 @@ export function botMembers(bots: readonly BotPost[]) {
   const ago = (iso: string) => stamp(iso, Date.now());
   const patch = bots.filter((b) => b.bot === "patch-notes" && b.flow).sort((a, b) => (Date.parse(b.at) || 0) - (Date.parse(a.at) || 0))[0];
   const idle: Record<string, string> = { "patch-notes": "posts each patch note", bug: "no report yet", health: "no post yet · 08:00", today: "asks at 09:00", jobs: "no pushed job now" };
+  const ai: Record<string, string> = { claude: "@ it with a question", "harry-bot": "Harry's helper · @ it", "mikey-bot": "Mikey's helper · @ it", "leo-bot": "Leo's helper · @ it" };
   const did: Record<string, string> = { "patch-notes": "last post", bug: "last report", health: "last post", today: "last ask", jobs: "last job" };
   return BOTS.map((info) => {
+    if (ai[info.bot]) return { bot: info.bot, name: info.name, channel: info.channel, line: ai[info.bot] };
     const l = info.bot === "patch-notes" ? patch : last(info.bot);
     return { bot: info.bot, name: info.name, channel: info.channel, line: `${l ? `${did[info.bot] ?? "last post"} ${ago(l.at)}` : idle[info.bot] ?? "nothing yet"} · #${info.channel}` };
   });

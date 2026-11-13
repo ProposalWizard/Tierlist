@@ -13,11 +13,17 @@
  * lib/teamRoom/botsServer.ts): the Bug bot's safety net (a card for any
  * player report of the last 3 days that has none; it only READS feedback) and
  * the Today bot's 09:00 ask. One failing never stops the others.
+ *
+ * Last (13 Nov 2026, lib/teamRoom/atBotsServer.ts): the sweep for "bots you
+ * can @". An @bot message is normally answered the moment it is sent (the
+ * asker's browser asks the site); this catches one that was missed, if it is
+ * still under 10 minutes old.
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { cronGate } from "@/lib/backup/plan";
 import { serviceOrNull } from "@/lib/backup/route";
 import { runQuarterHour } from "@/lib/teamRoom/botsServer";
+import { answerOwed, liveDeps } from "@/lib/teamRoom/atBotsServer";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -29,5 +35,7 @@ export async function GET(req: NextRequest) {
   if (!sb) return NextResponse.json({ ok: false, error: "The Supabase service key is not set." }, { status: 503 });
   // The quarter-hour run: the Patch bot, then the Bug bot's check, then the Today bot's morning ask.
   const run = await runQuarterHour(sb);
-  return NextResponse.json(run, { status: run.ok ? 200 : 500 });
+  // The fallback sweep for "bots you can @": any ask of the last 10 minutes nobody's browser got answered.
+  const asks = await answerOwed(sb, await liveDeps(new URL(req.url).origin));
+  return NextResponse.json({ ...run, asks }, { status: run.ok ? 200 : 500 });
 }

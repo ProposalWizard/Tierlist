@@ -390,12 +390,35 @@ export const BOTS: readonly BotInfo[] = [
     switchable: false, fixed: "Nothing to switch: it only shows what is in the jobs file.",
     runnable: false, noRun: "Nothing to run: there is no job to do between pushes.",
   },
+  {
+    bot: "claude", name: "Claude", icon: "✳️", channel: GENERAL,
+    does: [
+      "Answers a question when you @Claude in any channel, in a thread under your message.",
+      "Reads the thread, the channel's last 30 messages, up to 3 matching Brain notes and the 5 newest patch notes. It gives the Brain codes it used, or says \"no note yet\".",
+      "It only answers. It cannot change the game, files, tasks or the database. Asked to change something, it says what it would do and that a person must do it.",
+    ],
+    runs: "Only when someone @s it. It is off until the site has its AI key (one Vercel setting).",
+    switchable: true, runnable: false, noRun: "Nothing to run: it answers when someone @s it.",
+  },
+  ...TEAM_PEOPLE.map((p): BotInfo => ({
+    bot: `${p.toLowerCase()}-bot`, name: `${p} bot`, icon: "🤖", channel: GENERAL,
+    does: [
+      `${p}'s own helper. @${p} bot in a channel and it answers in a thread, the way ${p} asked it to answer.`,
+      `A bigger ask (anything that needs a change to the game, files or database) is never done by the bot. It posts a card: "This needs ${p}'s Claude. Send it?" Only ${p} can press Accept or Decline.`,
+      `It is a bot, not ${p}: it never accepts a task, approves anything or promises anything for ${p}.`,
+    ],
+    runs: "Only when someone @s it. It uses the same AI key and the same monthly limit as Claude.",
+    switchable: true, runnable: false, noRun: "Nothing to run: it answers when someone @s it.",
+  })),
 ];
 export const botInfo = (bot: string) => BOTS.find((b) => b.bot === bot) ?? null;
+/** The bots that are AI (lib/teamRoom/claudeBot.ts): their page has the key, the spend and their own settings. */
+const AI_IDS = ["claude", ...TEAM_PEOPLE.map((p) => `${p.toLowerCase()}-bot`)];
 
 /** A plain line for a bot's page: is it really posting? */
 export function botStatusLine(bot: string, rows: readonly BotRow[], settings: BotSettings, now: number, jobs = 0): { tone: "ok" | "wait" | "off"; text: string } {
   const info = botInfo(bot);
+  if (AI_IDS.includes(bot)) return settings.enabled ? { tone: "wait", text: "It answers when someone @s it." } : { tone: "off", text: `Switched off${settings.by ? ` by ${settings.by}` : ""}. It answers nobody until it is on again.` };
   if (bot === PATCH_BOT.bot) {
     if (!settings.enabled) return { tone: "off", text: `Switched off${settings.by ? ` by ${settings.by}` : ""}. New patch notes are not announced until it is on again.` };
     const n = announcedRows(rows).size;
