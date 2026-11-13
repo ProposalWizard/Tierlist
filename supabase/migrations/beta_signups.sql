@@ -6,7 +6,7 @@
 -- Who can do what: anyone may ADD a row (the form). Nobody can read, change
 --       or delete rows from the website; only the Supabase dashboard (the
 --       service role) can see the list. One row per email.
--- Status: NOT RUN. Needs Harry's yes, then run once in the Supabase SQL
+-- Status: RUN on the live database, 13 Nov 2026 (Harry said yes). Was: run once in the Supabase SQL
 --       Editor. Until then the form says "Sign-ups open soon" and keeps
 --       nothing. Safe to run twice.
 
