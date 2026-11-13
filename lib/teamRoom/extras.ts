@@ -59,6 +59,10 @@ export const PATCH_THREAD_TAG = /^\[pn:([\w.]{1,24})\]\s?/;
 export const CHANNEL_TAG = /^\[#([a-z0-9][a-z0-9-]{0,29})\]\s?/;
 // "@Harry bot" names Harry's bot, not Harry: it never rings Harry's phone.
 const MENTION = /(^|[^\w@])@(harry|mikey|leo)\b(?![ -]?bot\b)/gi;
+// A plain name counts the same as an @ (Harry, 13 Nov 2026: "any name mention
+// should be the same as @ing someone"). "Harry bot" is still the bot, and
+// "x@leo.com" or "Leonardo" are not names.
+const NAME = /(^|[^\w@.])(harry|mikey|leo)\b(?![ -]?bot\b)(?![@.]\w)/gi;
 
 /**
  * Bots you can @ (Harry, 13 Nov 2026: "I should be able to @patch notes bot in
@@ -138,10 +142,19 @@ export function pointUrl(path: string, p: PointBox): string {
   return `${path.split("#")[0]}#${POINT_KEY}${encodePoint(p)}`;
 }
 
-/** Who a text mentions, in board order. "@Mikey" and "@mikey" both count; "x@leo.com" does not. */
-export function mentionsIn(text: string): TeamPerson[] {
+/** Who a text @s, in board order. "@Mikey" and "@mikey" both count; "x@leo.com" does not. */
+export function atMentionsIn(text: string): TeamPerson[] {
   const found = new Set<TeamPerson>();
   const re = new RegExp(MENTION.source, "gi");
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text ?? ""))) found.add(proper(m[2]));
+  return TEAM_PEOPLE.filter((p) => found.has(p));
+}
+
+/** Who a text mentions, in board order: an @ or the plain name ("Harry, can you…"). Rings, counts and pop-ups use this. */
+export function mentionsIn(text: string): TeamPerson[] {
+  const found = new Set<TeamPerson>(atMentionsIn(text));
+  const re = new RegExp(NAME.source, "gi");
   let m: RegExpExecArray | null;
   while ((m = re.exec(text ?? ""))) found.add(proper(m[2]));
   return TEAM_PEOPLE.filter((p) => found.has(p));

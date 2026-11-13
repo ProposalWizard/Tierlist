@@ -107,6 +107,11 @@ ok(mentionsIn("hey @mikey and @Leo, look").join() === "Mikey,Leo", "@names found
 ok(mentionsIn("mail me at x@leo.com").length === 0, "an email address is not a mention");
 ok(mentionsIn("@Harry@Mikey").join() === "Harry", "two names glued together: only the first");
 ok(mentionsIn("@Leonardo").length === 0, "a longer word is not a mention");
+ok(mentionsIn("Harry can you look at this").join() === "Harry", "a plain name counts as a mention");
+ok(mentionsIn("thanks mikey and Leo").join() === "Mikey,Leo", "plain names, any case, board order");
+ok(mentionsIn("ask Harry bot").length === 0, "Harry bot is the bot, not Harry");
+ok(mentionsIn("mail leo@x.com or harry.v2157").length === 0, "an email or a handle is not a name");
+ok(mentionsIn("Leonardo and Harrys").length === 0, "a longer word is still not a name");
 
 console.log("Replies, cards, points");
 const pt: PointBox = { v: 1, id: "ab12", by: "Mikey", to: ["Harry"], n: "numbers look off – “£”", pn: "Team board",

@@ -13,7 +13,7 @@
  *     🔔 choices, so they follow you to every phone and computer.
  */
 import { TEAM_PEOPLE, type TeamPerson } from "./config";
-import { parseMessage } from "./extras";
+import { atMentionsIn, parseMessage } from "./extras";
 import type { TeamMessage, TeamTask } from "./logic";
 
 /* ── Proposals ───────────────────────────────────────────────────────── */
@@ -38,7 +38,8 @@ export interface AskOffer { to: TeamPerson[]; title: string }
  */
 export function askOffer(m: Pick<TeamMessage, "body" | "person">): AskOffer | null {
   const p = parseMessage(m.body);
-  const to = p.mentions.filter((x) => x !== m.person);
+  // Only an @ offers a task: a plain name rings the person but is not an ask.
+  const to = atMentionsIn(p.text).filter((x) => x !== m.person);
   if (!to.length) return null;
   const words = p.text.replace(/(^|[^\w@])@(harry|mikey|leo|all|everyone|team)\b[,:]?/gi, "$1").replace(/\s+/g, " ").replace(/^[\s,:;.\-–]+/, "").trim();
   if (words.split(" ").filter((w) => /\w/.test(w)).length < 2) return null;
