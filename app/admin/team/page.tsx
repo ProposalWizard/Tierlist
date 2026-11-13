@@ -7,7 +7,10 @@
  * lands). A local dev build lets everyone in, like AdminOnly.
  *
  * Channels (23 Oct 2026): ?tab=chat&ch=ideas opens a channel, &dm=Mikey a
- * private DM, &t=<id> a thread, &v=<version> the patch-notes bot's post.
+ * private DM, &t=<id> a thread, &v=<version> the patch-notes bot's post,
+ * &pn=<version> a patch note's thread, &bot=patch-notes a bot's own page (12 Nov 2026),
+ * &view=me your own home, &view=board the Team board tab inside the room,
+ * &tb=<tab> one of a channel's own tabs (&ch=bugs&tb=fixed, &ch=today&tb=week).
  *
  * The Team area is the admin's home (Harry, 20 Oct 2026): every way into the
  * admin lands here, on the Team board. A tester has no Team room and goes to
@@ -25,7 +28,7 @@ import TeamBoard from "./TeamBoard";
 export const metadata: Metadata = { title: "Team board", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-export default async function TeamPage({ searchParams }: { searchParams?: { tab?: string; v?: string; m?: string; ch?: string; dm?: string; t?: string } }) {
+export default async function TeamPage({ searchParams }: { searchParams?: { tab?: string; v?: string; m?: string; ch?: string; dm?: string; t?: string; pn?: string; bot?: string; view?: string; tb?: string } }) {
   if (!offlineDevPlayEnabled()) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -39,7 +42,10 @@ export default async function TeamPage({ searchParams }: { searchParams?: { tab?
   return (
     <>
       <TeamBoard initialTab={tab} initialVersion={searchParams?.v} initialMessage={Number(searchParams?.m) > 0 ? Number(searchParams?.m) : null}
-        initialPlace={{ ch: searchParams?.ch ?? null, dm: searchParams?.dm ?? null, t: Number(searchParams?.t) > 0 ? Number(searchParams?.t) : null }} />
+        initialPlace={{ ch: searchParams?.ch ?? null, dm: searchParams?.dm ?? null, t: Number(searchParams?.t) > 0 ? Number(searchParams?.t) : null,
+          pn: searchParams?.pn && /^[\w.]{1,24}$/.test(searchParams.pn) ? searchParams.pn : null, bot: searchParams?.bot ?? null,
+          view: searchParams?.view && /^[a-z]{2,10}$/.test(searchParams.view) ? searchParams.view : null,
+          tb: searchParams?.tb && /^[a-z]{2,12}$/.test(searchParams.tb) ? searchParams.tb : null }} />
       {/* In the Team room the eye sits top right (bottom right would cover Send); the room keeps 56 px free there. */}
       <PageGuide page="/admin/team" corner={tab === "team" || tab === "notes" ? undefined : "top-right"} />
     </>

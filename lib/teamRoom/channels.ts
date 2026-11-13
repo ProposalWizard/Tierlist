@@ -32,7 +32,7 @@ import type { TeamMessage, TeamTask } from "./logic";
 /* ── Channels ─────────────────────────────────────────────────────────── */
 
 /** The tool a channel carries beside its messages. */
-export type ChannelTool = "pinned" | "ideas" | "marketing" | "context" | "jobs" | "patches" | "bugs" | "none";
+export type ChannelTool = "pinned" | "ideas" | "marketing" | "context" | "jobs" | "patches" | "bugs" | "today" | "health" | "none";
 
 export interface Channel {
   slug: string;
@@ -53,23 +53,74 @@ export const JOBS_CHANNEL = "todo";
 export const TODO_CHANNEL = JOBS_CHANNEL;
 /** Players' bug reports post themselves here (the Bug bot, team_room_v4.sql). */
 export const BUGS_CHANNEL = "bugs";
+/** Each person's check-in for the day (lib/teamRoom/today.ts). */
+const TODAY_SLUG = "today";
+export const HEALTH_CHANNEL = "health";
 
 /**
- * The nine presets (Harry, 25 Oct 2026: "channels down the side replace the
+ * The ten presets (nine from 25 Oct 2026, #today added 12 Nov 2026; Harry, 25 Oct 2026: "channels down the side replace the
  * separate sections"). Order as on the plan page. Presets can be renamed,
  * muted and starred, never deleted.
  */
 export const BUILT_IN_CHANNELS: readonly Channel[] = [
   { slug: GENERAL, name: "general", topic: "The team chat: anything and everything", tool: "pinned", builtIn: true },
+  { slug: TODAY_SLUG, name: "today", topic: "What each of us is on today: one line each", tool: "today", builtIn: true },
   { slug: "ideas", name: "ideas", topic: "New ideas, votes and where each one is", tool: "ideas", builtIn: true },
   { slug: JOBS_CHANNEL, name: "todo", topic: "Jobs for each of us: typed here or pushed in team/jobs.json", tool: "jobs", builtIn: true },
   { slug: BUGS_CHANNEL, name: "bugs", topic: "Players' bug reports post themselves here", tool: "bugs", builtIn: true },
-  { slug: "health", name: "health", topic: "Is the site well: a morning post once the Health bot exists", tool: "none", builtIn: true },
+  { slug: "health", name: "health", topic: "Is the site well: the Health bot posts the limits at 8am and any failed backup", tool: "health", builtIn: true },
   { slug: PATCH_CHANNEL, name: "patch-notes", topic: "Every patch note as it ships, with who has read it", tool: "patches", builtIn: true },
   { slug: "connectors", name: "connectors", topic: "Talk about the services we connect to (Supabase, Vercel, Higgsfield…)", tool: "none", builtIn: true },
   { slug: "marketing", name: "marketing", topic: "Videos: the Studio, uploads and the production board", tool: "marketing", builtIn: true },
   { slug: "context", name: "context", topic: "Facts and rulings that should become Brain notes", tool: "context", builtIn: true },
 ];
+
+/**
+ * EVERY CHANNEL HAS ITS OWN WAY OF WORKING (Harry, 12 Nov 2026: "each page
+ * gets its own custom stuff"). The tabs under a channel's name, in order; the
+ * FIRST one is where the channel opens. A tab that would do nothing is not
+ * listed. New channels made with + Add channel get Messages and Pinned.
+ */
+export interface ChannelTab { id: string; name: string }
+const MESSAGES: ChannelTab = { id: "messages", name: "Messages" };
+const PINNED: ChannelTab = { id: "pins", name: "Pinned" };
+export const CHANNEL_TABS: Readonly<Record<ChannelTool, readonly ChannelTab[]>> = {
+  pinned: [MESSAGES, PINNED],
+  today: [{ id: "today", name: "Today" }, { id: "week", name: "This week" }, MESSAGES],
+  ideas: [{ id: "ideas", name: "Ideas board" }, MESSAGES],
+  jobs: [{ id: "tasks", name: "Tasks" }, MESSAGES],
+  bugs: [{ id: "open", name: "Open reports" }, { id: "fixed", name: "Fixed" }, MESSAGES],
+  health: [{ id: "health", name: "Limits" }, MESSAGES],
+  patches: [{ id: "archive", name: "Archive" }, MESSAGES],
+  marketing: [{ id: "production", name: "Production board" }, MESSAGES],
+  context: [{ id: "brain", name: "Brain" }, MESSAGES],
+  none: [MESSAGES, PINNED],
+};
+/** The tabs of one channel. #connectors has nothing of its own yet, so it is chat only. */
+export function tabsFor(channel: Pick<Channel, "tool" | "slug" | "builtIn">): readonly ChannelTab[] {
+  if (channel.builtIn && channel.tool === "none") return [MESSAGES];
+  return CHANNEL_TABS[channel.tool] ?? CHANNEL_TABS.none;
+}
+/** The tab a channel opens on; `want` is kept when the channel has it (a link to a message opens Messages). */
+export function tabFor(channel: Pick<Channel, "tool" | "slug" | "builtIn">, want?: string | null): string {
+  const tabs = tabsFor(channel);
+  return tabs.some((t) => t.id === want) ? want! : tabs[0].id;
+}
+
+/** One line per preset: what the channel is for and how to use it (its empty state). */
+export const CHANNEL_HOW: Readonly<Record<string, string>> = {
+  general: "The team chat. Type a message below; the Patch bot posts each new patch note here.",
+  today: "One line each on what you are on today. Type it in the Today tab, or anywhere: /today filming the replays.",
+  ideas: "Post an idea in one line, everyone votes with 👍, then move it from Ideas to Doing to Done.",
+  todo: "Jobs for each of us. Add one in Tasks, or type /todo @Mikey film the replays to ask someone.",
+  bugs: "Players' bug reports post themselves here as cards. Hand one to someone, or mark it fixed.",
+  health: "The Health bot posts the site's limits here at 08:00 every morning. Talk about them in Messages.",
+  "patch-notes": "Every patch note that all three of us have read, with who read it. New ones start in #general.",
+  connectors: "Talk about the services we connect to (Supabase, Vercel, Higgsfield). Nothing posts here by itself yet.",
+  marketing: "Our videos. The Production board tab shows what is at each step; talk about them in Messages.",
+  context: "Facts and rulings that should become Brain notes. Post one as a message.",
+};
+export const channelHow = (c: Pick<Channel, "slug" | "name" | "builtIn">) => (c.builtIn ? CHANNEL_HOW[c.slug] : null) ?? `Nothing in #${c.name} yet. Type a message below.`;
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,29}$/;
 export const isSlug = (s: unknown): s is string => typeof s === "string" && SLUG.test(s);
@@ -142,6 +193,8 @@ export function channelStream(messages: readonly TeamMessage[], slug: string): T
   const ids = new Set(messages.map((m) => m.id));
   return messages.filter((m) => {
     if (channelOf(m.body) !== slug) return false;
+    // A comment on a patch note sits in that note's thread (lib/teamRoom/patchBot.ts), never in the stream.
+    if (parseMessage(m.body).patch) return false;
     const p = parentOf(m);
     return !(p && ids.has(p)) || alsoInChannel(m.body);
   });
@@ -268,12 +321,23 @@ export interface BotPost {
   jobId?: string;
   /** A row a bot wrote (team_bot_posts.id): the Bug bot's card reads its marks by it. */
   postId?: number;
+  /** The Patch bot's announcement (lib/teamRoom/patchBot.ts): who is asked to review, by name. */
+  mentions?: TeamPerson[];
+  /** In the announce flow: #general until everyone has read it, then #patch-notes (archived). */
+  flow?: boolean;
+  archived?: boolean;
+  /** Published, but the site has not written its post yet (drawn from the patch-notes list meanwhile). */
+  pending?: boolean;
+  /** A reminder about a patch note: the version whose thread it belongs to. */
+  threadOf?: string;
+  /** What the bot wrote beside its row (the Health bot's four coloured lines). */
+  meta?: Record<string, unknown> | null;
 }
 
 /** A row a future bot (a Claude routine) wrote into team_bot_posts with the site's own key. */
 export interface BotRow { id: number; bot: string; channel: string; title: string; body: string; url: string | null; everyone: boolean; created_at: string; meta?: Record<string, unknown> | null }
 
-export const BOT_NAMES: Record<string, string> = { "patch-notes": "Patch notes bot", jobs: "Jobs bot", bug: "Bug bot" };
+export const BOT_NAMES: Record<string, string> = { "patch-notes": "Patch notes bot", jobs: "Jobs bot", bug: "Bug bot", health: "Health bot", today: "Today bot", claude: "Claude", "harry-bot": "Harry bot", "mikey-bot": "Mikey bot", "leo-bot": "Leo bot" };
 export const botName = (bot: string) => BOT_NAMES[bot] ?? `${bot.replace(/[-_]+/g, " ").replace(/^\w/, (c) => c.toUpperCase())} bot`;
 
 /** "Harry's patch notes: B14 Running" → "B14 Running". */
@@ -312,7 +376,7 @@ export function jobBotPosts(jobs: readonly TeamJob[]): BotPost[] {
 export function rowBotPosts(rows: readonly BotRow[]): BotPost[] {
   return rows.map((r) => ({
     key: `row:${r.id}`, bot: r.bot, name: botName(r.bot), channel: isSlug(r.channel) ? r.channel : GENERAL, at: r.created_at,
-    title: r.title, body: r.body, url: r.url && r.url.startsWith("/") ? r.url : null, everyone: !!r.everyone, postId: r.id,
+    title: r.title, body: r.body, url: r.url && r.url.startsWith("/") ? r.url : null, everyone: !!r.everyone, postId: r.id, meta: r.meta ?? null,
   }));
 }
 

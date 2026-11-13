@@ -32,6 +32,7 @@ import {
 import { addToHall, loadHall, syncHall, hallEntryFor, type HallEntry } from "@/lib/star/hallOfFame";
 import { hallRecordBook, freshHallRecords, hallChaseLine, amount as hallAmount } from "@/lib/star/hallRecords";
 import { createClient } from "@/lib/supabase/client";
+import { PACKED_APP } from "@/lib/app/packed";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 // Guest accounts + ad landing pages (25 Oct 2026). All of it is off unless
 // NEXT_PUBLIC_GUEST_ACCOUNTS=on: see lib/guest/config.ts.
@@ -445,6 +446,14 @@ function NewUiStarDevPage() {
   );
 }
 
+/** Season and matches played: what makes a cloud save worth sending at once
+ *  rather than within the minute (the save effect; 6 Nov 2026). */
+function cloudMarkOf(c: CareerState): string {
+  let played = 0;
+  for (const f of c.fixtures ?? []) if (f.played) played++;
+  return `${c.season}|${played}`;
+}
+
 function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersiveMode> }) {
   const [career, setCareer] = useState<CareerState | null>(null);
   // Fetch the other screens quietly once Home is up (lib/star/lazyScreen.ts).
@@ -688,9 +697,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    */
   const [signedIn, setSignedIn] = useState(false);
   const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** The cloud save the 3 s timer is still holding, if any — see the
+  /** The cloud save the timer (3 s or up to 60 s) is still holding, if any — see the
    *  flush-on-hide effect below the save effect. */
   const pendingCloudSave = useRef<{ career: CareerState; slot: number } | null>(null);
+  /** Season and matches played at the last cloud save: when either moves on,
+   *  the next save goes up in 3 s rather than within the minute (cloudMarkOf). */
+  const lastCloudMark = useRef("");
   /**
    * WHICH ACCOUNT — always the signed-in user's id (see the sign-in gate:
    * nothing past it runs without one). Resolved once, here, before anything
@@ -791,8 +803,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // "profile-setup" first render wrote over (in practice REMOVED) the
       // saved resumable phase before it was read.
       if (!leoUpdateOn("bugFixes")) setHydrated(true);
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      // The packed phone app has no accounts: it never asks the server who
+      // you are (lib/app/packed.ts), so it starts with no signal.
+      const user = PACKED_APP ? null : (await createClient().auth.getUser()).data.user;
       if (!user) {
         // No account. In production that is the end of it — see the note on
         // `signedIn` above for why requiring an account is deliberate.
@@ -807,7 +820,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         // never syncs to the cloud: the cloud step inside loadCareerIntoState
         // is a no-op without a user id, which is correct — there is no account
         // to sync it to.
-        if (offlineDevPlayEnabled()) {
+        //
+        // The packed phone app plays exactly this way, for real: the career
+        // lives on the phone (lib/app/packed.ts). Not through
+        // offlineDevPlayEnabled, which also opens the admin and Dev tools.
+        if (PACKED_APP || offlineDevPlayEnabled()) {
           setSignedIn(true);
           scopeRef.current = ANON_SCOPE;
           const anonSlot = loadActiveSlot(ANON_SCOPE);
@@ -854,20 +871,35 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       return;
     }
     saveCareer(career, slotScope(scopeRef.current, activeSlotRef.current)); // localStorage — immediate
-    // Debounced cloud save: waits 3 s after the last change so a burst of
-    // state updates (end of match, season rollover) produces one write, not
-    // many. The slot is captured now, at the moment the timer is set, not
-    // re-read when it actually fires — see flushCloudSave's own note on why
-    // a save already in flight has to land on the slot it was really FOR,
-    // not whichever slot happens to be active three seconds from now.
-    if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
+    // Cloud save (Mikey, 6 Nov 2026: server time). The phone copy above is
+    // written on every change; the cloud copy goes up:
+    //   - 3 s after a match is played or a season turns (as before: a burst
+    //     of updates at full time makes one write), and
+    //   - otherwise at most once a minute, carrying the latest career.
+    // It used to go 3 s after EVERY change (each tap in a menu, each shop
+    // buy), about a third of the site's server time. Hiding or closing the
+    // page still sends what is waiting at once (flushOnHide, below).
+    // The slot is captured at the change, not when the timer fires — see
+    // flushCloudSave's own note on why a save in flight has to land on the
+    // slot it was really FOR.
     const slotAtSaveTime = activeSlotRef.current;
     latestCareerRef.current = { career, slot: slotAtSaveTime };
     pendingCloudSave.current = { career, slot: slotAtSaveTime };
-    cloudSaveTimer.current = setTimeout(() => {
+    const mark = cloudMarkOf(career);
+    const send = () => {
+      cloudSaveTimer.current = null;
+      const p = pendingCloudSave.current;
+      if (!p) return;
       pendingCloudSave.current = null;
-      saveCareerToCloud(career, slotAtSaveTime, { scope: slotScope(scopeRef.current, slotAtSaveTime) });
-    }, 3000);
+      lastCloudMark.current = cloudMarkOf(p.career);
+      saveCareerToCloud(p.career, p.slot, { scope: slotScope(scopeRef.current, p.slot) });
+    };
+    if (mark !== lastCloudMark.current) {
+      if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
+      cloudSaveTimer.current = setTimeout(send, 3000);
+    } else if (!cloudSaveTimer.current) {
+      cloudSaveTimer.current = setTimeout(send, 60_000);
+    }
   }, [career]);
 
   // ── Signal comes back: upload what this device has that the cloud hasn't ──
@@ -903,9 +935,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   // ── Leaving the page must not lose the last few seconds ──
   //
-  // The cloud save above waits 3 s for things to settle. Switching app,
-  // locking the phone or closing the tab inside those 3 s used to leave the
-  // cloud one step behind: the timer never fired, and the next device (or a
+  // The cloud save above waits 3 s, or up to a minute (6 Nov 2026). Switching
+  // app, locking the phone or closing the tab inside that wait used to leave
+  // the cloud one step behind: the timer never fired, and the next device (or a
   // wiped browser) loaded the older save. When the page is hidden, the
   // pending save goes NOW instead — and the local copy is written again too,
   // belt and braces, since it is the one thing guaranteed to be there on
@@ -3566,6 +3598,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // the chance comes from the number of bets, capped at 25%). It replaces the
   // old hidden rule (a heavy loss told your sponsors one time in four).
   const casinoVisitStart = useRef<number | null>(null);
+  // The packed phone app has no casino (Mikey, 5 Nov 2026): any way in lands back home.
+  useEffect(() => {
+    if (PACKED_APP && (phase === "casino-menu" || phase === "casino-3d")) { setActiveNav("home"); setPhase("dashboard"); }
+  }, [phase]);
   useEffect(() => {
     const inCasino = phase === "casino-menu" || phase === "casino-3d";
     if (inCasino && casinoVisitStart.current === null && career) {
@@ -3702,7 +3738,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             </p>
           ) : (
           <p className="text-sm text-white/60 mb-6">
-            Road to Ballon d&apos;Or saves to your account, so your career follows you between
+            Road to the Golden Ball saves to your account, so your career follows you between
             devices instead of being stuck on whichever one you started it on.
           </p>
           )}
@@ -4855,7 +4891,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             links={[
               // Locked means locked: no way into Sponsors before your first offer (Mikey's playtest, 24 Oct 2026).
               { id: "sponsors", icon: "🤝", label: "Sponsors", locked: !isOpen(career, "sponsors"), onClick: () => { if (!isOpen(career, "sponsors")) { showLock(`Sponsors open with your first offer. ${LOCK_HINT.sponsors}.`); return; } pushFrom({ phase, nav: "home" }, "sponsors"); setPhase("sponsors"); } },
-              { id: "casino", icon: "🎰", label: "Casino", onClick: () => { pushFrom({ phase, nav: "home" }, "casino-menu"); setPhase("casino-menu"); } },
+              // Not in the packed phone app: no casino there (Mikey, 5 Nov 2026).
+              ...(PACKED_APP ? [] : [{ id: "casino", icon: "🎰", label: "Casino", onClick: () => { pushFrom({ phase, nav: "home" }, "casino-menu"); setPhase("casino-menu"); } }]),
               { id: "store", icon: "🛒", label: "Store", onClick: () => { pushFrom({ phase, nav: "home" }, "store"); setPhase("store"); } },
               { id: "shop3d", icon: "🕶️", label: "3D shop", onClick: () => { setShopAtDoor(false); setPhase("shop-3d"); } },
             ]}
@@ -4901,6 +4938,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
 
+  // The packed phone app has no casino at all (Mikey, 5 Nov 2026: "hide the
+  // casino only in the app ... anything that allows you to bet"). Any way in
+  // that is left lands back home.
+  if (PACKED_APP && (phase === "casino-3d" || phase === "casino-menu")) {
+    return null; // the effect next to casinoVisitStart sends you home
+  }
   if ((phase === "casino-3d" || phase === "casino-menu") && career && casinoBanned(career)) {
     // Step 4 of a casino scandal: the club has locked the doors (casinoScandal.ts).
     const weeks = casinoBanWeeksLeft(career);
@@ -5075,7 +5118,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         arrive={gardenArrive}
         onBack={() => { setGardenArrive("gate"); handleBackToDashboard(); }}
         onShop={() => { setGardenArrive("gate"); setShopAtDoor(true); setPhase("shop-3d"); }}
-        onCasino={() => { setGardenArrive("gate"); setPhase("casino-3d"); }}
+        // The packed phone app has no casino: its doors stay shut (Mikey, 5 Nov 2026).
+        onCasino={PACKED_APP ? undefined : () => { setGardenArrive("gate"); setPhase("casino-3d"); }}
         onTraining={() => { setGardenArrive("gate"); setPhase("training-3d"); }}
         onHouse={HOME3D_IN_CAREER ? () => { setGardenArrive("gate"); setHomeFromGarden(true); setPhase("home-3d"); } : undefined}
       />

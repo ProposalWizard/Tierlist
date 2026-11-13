@@ -2,7 +2,8 @@
  * tests/star/recording.mts — the Videos tab recorder's pure parts
  * (lib/recording.ts): the file name, the length label, the format pick.
  */
-import { lengthLabel, pickFormat, recordingName, starterFor } from "@/lib/recording";
+import fs from "node:fs";
+import { driveKeyFrom, lengthLabel, pickFormat, recordingName, starterFor } from "@/lib/recording";
 // @ts-expect-error plain JS hook, no types
 import { contextFor } from "../../scripts/hooks/recordings-hook.mjs";
 
@@ -23,6 +24,24 @@ ok(starterFor("https://drive.google.com/file/d/x/view") === "Watch this recordin
 ok(contextFor("Harry", []) === "", "auto-read: nothing waiting → says nothing");
 const ctx = contextFor("Mikey", [{ title: "2026-10-19 · Mikey · corner camera (1m02s)", link: "https://drive.google.com/file/d/abc/view" }]);
 ok(ctx.includes("from Mikey") && ctx.includes("https://drive.google.com/file/d/abc/view") && ctx.includes("screen-video"), "auto-read: names the person, the link and the skill");
+
+// Drive stays connected for as long as Google's one-hour key lasts (Harry, 12 Nov 2026).
+const now = Date.parse("2026-11-12T12:00:00Z");
+ok(driveKeyFrom(JSON.stringify({ token: "k", until: now + 30 * 60_000 }), now)?.token === "k", "a kept Drive key with time left is used: no asking");
+ok(driveKeyFrom(JSON.stringify({ token: "k", until: now + 30_000 }), now) === null, "a key with under a minute left is not used");
+ok(driveKeyFrom("not json", now) === null && driveKeyFrom(null, now) === null && driveKeyFrom(JSON.stringify({ until: now + 9e6 }), now) === null, "a broken or empty store means connect again");
+// The recording lives above every page, so moving page never stops it.
+ok(/<RecorderProvider>/.test(fs.readFileSync("app/layout.tsx", "utf8")), "the recorder is mounted once, above every page");
+const tab = fs.readFileSync("app/admin/videos/VideosTab.tsx", "utf8");
+ok(/useRecorder\(\)/.test(tab) && !/startRecording\(/.test(tab), "the Videos page only drives the shared recorder (it never owns a recording)");
+
+// Team storage (R2) first, Drive second (Harry, 12 Nov 2026).
+const prov = fs.readFileSync("components/admin/recorder/RecorderProvider.tsx", "utf8");
+const afterStop = prov.slice(prov.indexOf("const out = await r.done;"), prov.indexOf("}, [mic, reset, send, sendCloud]"));
+ok(afterStop.indexOf("await sendCloud(t)") > 0 && afterStop.indexOf("await sendCloud(t)") < afterStop.indexOf("send(t, key.token)"), "on Stop: team storage first, then the Drive copy");
+ok(/if \(key\) \{ setDrive\(key\); void send\(t, key\.token\); \}/.test(afterStop) && !/connectDrive\(\{ quiet: false \}\)/.test(afterStop), "on Stop: Drive only when it is already connected, never an Allow box");
+ok(/if \(!inCloud\.current\) fetch\("\/api\/dev-recordings"/.test(prov), "a recording in team storage is not noted twice for Claude");
+ok(/Also save to Drive/.test(tab) && /RecordingsList/.test(tab), "the Videos page has the small Drive button and the list");
 
 if (failed) { console.error(`\n${failed} failed`); process.exit(1); }
 console.log("\nrecording: all passed");

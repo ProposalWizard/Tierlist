@@ -212,7 +212,7 @@ function HallCardRow({ entry, onOpen }: { entry: HallEntry; onOpen: () => void }
           <div className="sk-num text-[24px] leading-none tabular-nums text-white">{c.goals}</div>
           <div className="text-[9px] font-black uppercase tracking-wider text-white/65">goals</div>
           <div className="mt-1 flex items-center justify-end gap-1.5 text-[11px] font-black tabular-nums text-amber-200">
-            {c.ballonDors > 0 && <span className="flex items-end gap-0.5"><TrophyImage name="Ballon d'Or" height={14} />{c.ballonDors}</span>}
+            {c.ballonDors > 0 && <span className="flex items-end gap-0.5"><TrophyImage name="Golden Ball" height={14} />{c.ballonDors}</span>}
             <span>🏆 {c.trophies}</span>
           </div>
         </div>

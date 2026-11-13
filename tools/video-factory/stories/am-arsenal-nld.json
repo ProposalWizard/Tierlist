@@ -40,6 +40,6 @@
     { "text": "Now the twist. Match the games. In Henry's first eight league games, he scored three times. Dowman has one.", "scene": { "type": "whatif", "title": "After 8 league games", "real": { "label": "Henry (1994-95)", "value": "3 goals" }, "alt": { "label": "Dowman", "value": "1 goal" } } },
     { "text": "And Henry went on to score one hundred and seventy-five league goals for Arsenal. A club record.", "scene": { "type": "stats", "title": "Henry for Arsenal", "items": [ { "n": "175", "l": "league goals" }, { "n": "228", "l": "goals in all" } ], "person": "henry" } },
     { "text": "So does Dowman become the next Henry, the next Cesc, or something bigger? Tell me in the comments.", "scene": { "type": "versus", "title": "Who had more at 16?", "left": { "person": "dowman", "label": "Dowman", "value": "8+ games" }, "right": { "person": "cesc", "label": "Fàbregas", "value": "0 PL" } } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

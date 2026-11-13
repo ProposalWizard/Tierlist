@@ -216,7 +216,7 @@ export function ReputationScreen({ career, onBack }: { career: CareerState; onBa
 
         <div className="kit-card kit-rise p-3" style={{ boxShadow: "inset 0 0 0 1px rgba(251,191,36,.35), 0 10px 24px -12px rgba(0,0,0,.8)" }}>
           <ReputationRow label={`Fame · ${level.name}`} value={fame} icon="⭐"
-            blurb="How many people know your name. Earned from big moments — promotions, trophies, awards, the Ballon d'Or — plus what you own. Playing well alone earns none." />
+            blurb="How many people know your name. Earned from big moments — promotions, trophies, awards, the Golden Ball — plus what you own. Playing well alone earns none." />
           <div className="mt-2 text-[11px] font-bold text-white">
             {earned} earned + {fromOwned} from what you own
             {next ? ` · ${next.min - fame} to ${next.name}` : " · maxed"}

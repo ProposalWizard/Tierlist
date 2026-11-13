@@ -81,7 +81,7 @@ export const CAMPAIGNS: Campaign[] = [
   {
     slug: "league-two-striker",
     source: "tiktok",
-    headline: "League Two to the Ballon d'Or",
+    headline: "League Two to the Golden Ball",
     sub: "You're 16. One trial. Score your way to the top.",
     points: ["Free to play", "No sign-up", "Saves as you go"],
     cta: "Start my career",
@@ -89,8 +89,8 @@ export const CAMPAIGNS: Campaign[] = [
     colours: ["#10b981", "#f59e0b"],
     player: { firstName: "Jay", lastName: "Carter", position: "ST", nationality: "England", preferredNumber: 9 },
     meta: {
-      title: "From League Two to the Ballon d'Or — play free",
-      description: "Start as a 16-year-old striker and play your way to the Ballon d'Or. No sign-up.",
+      title: "From League Two to the Golden Ball — play free",
+      description: "Start as a 16-year-old striker and play your way to the Golden Ball. No sign-up.",
     },
     // The trial's club comes from League Two, as the ad says.
     startLeague: "league_two",
@@ -106,7 +106,7 @@ export const CAMPAIGNS: Campaign[] = [
     colours: ["#8b5cf6", "#ec4899"],
     player: { firstName: "Leon", lastName: "Hart", position: "ST", nationality: "England", preferredNumber: 10 },
     meta: {
-      title: "Wonderkid to legend — Road to Ballon d'Or",
+      title: "Wonderkid to legend — Road to the Golden Ball",
       description: "A football career game you can start in one tap. No sign-up.",
     },
   },

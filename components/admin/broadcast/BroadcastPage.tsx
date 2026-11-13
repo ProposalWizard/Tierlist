@@ -14,7 +14,7 @@ import Link from "next/link";
 import { useRef, type ReactNode } from "react";
 import { useInkGuard } from "./inkGuard";
 import BackArrow from "@/components/admin/BackArrow";
-import { useAdminLook } from "@/lib/adminLook";
+import { isLightLook, useAdminLook } from "@/lib/adminLook";
 
 /**
  * The frame follows the admin Look (Harry, 20 Oct 2026: "everything to look
@@ -38,7 +38,7 @@ export function BroadcastPage({ title, sub, back, actions, width = 1400, childre
   const look = useAdminLook();
   const root = useRef<HTMLDivElement>(null);
   // Light looks: keep every page's own dark tiles and white words readable (inkGuard.ts).
-  useInkGuard(root, look === "light" || look === "bento");
+  useInkGuard(root, isLightLook(look));
   return (
     <div className="bc" data-broadcast-page data-look={look} ref={root}>
       <div className="bc-top">

@@ -13,8 +13,9 @@
  *
  * The file route sends a short-lived signed R2 link when the object is there,
  * and the bundled copy when it is not, so nothing breaks mid-move. The move
- * itself is one button on /admin/patch-notes (runBatch below; it runs on
- * Vercel, the only place with the keys).
+ * itself (runBatch below) runs on Vercel, the only place with the keys: by
+ * itself every 5 minutes (vercel.json crons, cronAllowed below), or from the
+ * button on the Patch notes card. Bucket layout: docs/r2-layout.md.
  *
  * PURE: no fs, no network, no clock. Everything real is passed in, so
  * tests/star/patchNoteMedia.mts runs it with fakes. The signing is the
@@ -173,3 +174,34 @@ export async function runBatch(deps: MigrateDeps, opt: MigrateOptions = MIGRATE_
     finished: p.doneFiles + uploaded >= p.totalFiles,
   };
 }
+
+/* ── The timed job: the move runs by itself on the live site ─────────── */
+
+/**
+ * Vercel's timed job (vercel.json "crons") calls the media-sync route every
+ * 5 minutes with GET, so the move finishes without anyone pressing a button
+ * (Harry, 12 Nov 2026: he won't press buttons).
+ *
+ * Who may start a batch this way:
+ *  - CRON_SECRET set in Vercel: only `Authorization: Bearer <CRON_SECRET>`,
+ *    which Vercel adds to its own timed calls. Nothing else gets in.
+ *  - CRON_SECRET not set: a request whose user agent starts "vercel-cron/".
+ *    Anyone could fake that header. We accept that because a batch is
+ *    idempotent (a file already in R2 at the same size is skipped), it only
+ *    copies our own patch-note pictures (public in the repo anyway) into our
+ *    own bucket, it never deletes anything, and it never sends a picture, a
+ *    link or a key back. The worst a faker can do is make the move finish
+ *    sooner. Setting CRON_SECRET in Vercel closes even that.
+ */
+export function cronAllowed(h: { authorization?: string | null; userAgent?: string | null }, secret: string | undefined): boolean {
+  const s = secret?.trim();
+  if (s) return (h.authorization ?? "") === `Bearer ${s}`;
+  return /^vercel-cron\//i.test(h.userAgent ?? "");
+}
+
+/** A timed call has the 60 s the route allows; it uses 40 of them. */
+export const CRON_DEFAULTS: MigrateOptions = { budgetMs: 40_000, maxFiles: 400, parallel: 8 };
+
+/** Once a run finds nothing left to copy, later calls on that server skip the work for
+ *  this long, then look once more (which picks up a new patch note's pictures). */
+export const CRON_IDLE_MS = 6 * 60 * 60 * 1000;

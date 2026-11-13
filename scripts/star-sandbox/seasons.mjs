@@ -16,6 +16,11 @@
  * screen (window.__starMatch, read-only, needs an offline-dev build). Buttons
  * are pressed by their words; nothing in the save is changed by the script.
  * Writes <out>/log.txt, <out>/screens/NNN-*.jpg and <out>/career.json at the end.
+ *
+ * --offline: the packed phone app test (mobile/README.md). --url is mobile/www
+ *   served on a port; every request to anywhere else is blocked (as with no
+ *   signal) and written to <out>/blocked.txt, every failed one to
+ *   <out>/failed.txt. The game starts at "/" (the app has only that page).
  */
 import { chromium, devices } from "playwright";
 import fs from "node:fs";
@@ -30,13 +35,20 @@ const GAMES = Number(val("--games", 0));
 const UNTIL_SEASON = Number(val("--until-season", 0));
 const MAX_MS = Number(val("--max-min", 60)) * 60000;
 const KEY = "star-career-v2::anon";
+const OFFLINE = argv.includes("--offline");
 fs.mkdirSync(path.join(OUT, "screens"), { recursive: true });
 const logf = fs.createWriteStream(path.join(OUT, "log.txt"), { flags: "a" });
 const log = (s) => { const l = `[${new Date().toISOString().slice(11, 19)}] ${s}`; console.log(l); logf.write(l + "\n"); };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || "/opt/pw-browsers/chromium" });
-const ctx = await browser.newContext({ ...devices["iPhone 13"] });
+const VIDEO = val("--video", null); // also film the whole run (a .webm in this folder), for preview films
+// (filming uses a full-height phone, 390x844: the film's phone screen is that shape)
+const ctx = await browser.newContext({ ...devices["iPhone 13"], ...(VIDEO ? { viewport: { width: 390, height: 844 }, recordVideo: { dir: path.resolve(VIDEO), size: { width: 780, height: 1688 } } } : {}) });
+if (OFFLINE) {
+  await ctx.route("**/*", (r) => { const u = r.request().url(); if (u.startsWith(BASE)) return r.continue(); fs.appendFileSync(path.join(OUT, "blocked.txt"), u + "\n"); return r.abort("internetdisconnected"); });
+  ctx.on("response", (r) => { if (r.status() >= 400) fs.appendFileSync(path.join(OUT, "failed.txt"), `${r.status()} ${r.url()}\n`); });
+}
 const page = await ctx.newPage();
 const errors = new Map();
 const noise = /flagcdn|googletagmanager|ERR_CERT|ERR_TUNNEL|sentry|supabase|club_logos|status of (4\d\d|5\d\d)|Failed to fetch|posthog/i;
@@ -148,7 +160,7 @@ let lastBeat = 0;
 let homeSince = 0, lastCheckpoint = 0, lastRing = "";
 let ceremonySince = 0, lastCeremonyShot = 0, transferTried = false;
 
-await page.goto(`${BASE}/star-dev`, { waitUntil: "domcontentloaded", timeout: 180000 });
+await page.goto(OFFLINE ? `${BASE}/` : `${BASE}/star-dev`, { waitUntil: "domcontentloaded", timeout: 180000 });
 await sleep(3000);
 await page.evaluate(() => { try { localStorage.setItem("kib-cookie-consent", "no"); localStorage.setItem("kib-admin-mode", "off"); } catch {} });
 if (SAVE) {

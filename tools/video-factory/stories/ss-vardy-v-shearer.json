@@ -31,6 +31,6 @@
     { "text": "Shearer scored that day too, of course.", "scene": { "type": "person", "person": "shearer", "label": "Scored at Anfield", "mood": "happy" } },
     { "text": "Leicester started the season at five thousand to one, and won it with eighty-one points.", "scene": { "type": "whatif", "title": "BEFORE THE SEASON", "real": { "label": "Bookies' odds", "value": "5000-1" }, "alt": { "label": "What happened", "value": "Champions" } } },
     { "text": "Shearer had the better numbers. Vardy had the bigger miracle. For the best season, Shearer. For the best story, Vardy.", "scene": { "type": "versus", "title": "THE VERDICT", "left": { "person": "shearer", "label": "Best season", "value": "WIN" }, "right": { "person": "vardy", "label": "Best story", "value": "WIN" } } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

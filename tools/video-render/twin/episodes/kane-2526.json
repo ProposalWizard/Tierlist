@@ -1,0 +1,28 @@
+{
+ "player": "Harry Kane",
+ "season": "2025/26",
+ "short": "Kane",
+ "series": "STAT TWINS · EP 5",
+ "leagues": [
+  "Premier League",
+  "La Liga",
+  "Serie A",
+  "Bundesliga",
+  "Ligue 1"
+ ],
+ "surprise": [
+  "Erling Haaland",
+  "Robert Lewandowski",
+  "Lautaro Martínez",
+  "Victor Osimhen"
+ ],
+ "stories": {},
+ "spoken": {},
+ "top": 7,
+ "surpriseAnyPlace": true,
+ "prefix": "Ballon d'Or winner",
+ "award": {
+  "at": "BALLON",
+  "label": "BALLON D'OR"
+ }
+}

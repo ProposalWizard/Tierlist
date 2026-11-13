@@ -1,0 +1,207 @@
+[
+{
+"id": "intro",
+"say": "Ballon d'Or winner Harry Kane's statistical twin is not who you think.",
+"cap": "BALLON D'OR WINNER HARRY KANE'S STATISTICAL TWIN IS NOT WHO YOU THINK.",
+"sfx": [
+[
+"hit",
+0.0,
+0.7
+],
+[
+"pop",
+"BALLON",
+0.7
+]
+],
+"voiceSettings": {
+"speed": 1.1
+},
+"tempo": 1.05,
+"gapDb": -33,
+"maxGap": 0.06
+},
+{
+"id": "c7",
+"say": "Number seven: Serhou Guirassy. Seventy-one percent.",
+"cap": "NUMBER SEVEN: SERHOU GUIRASSY. 71%|seventy-one-percent.",
+"hold": 0.12,
+"sfx": [
+[
+"pop",
+"SERHOU",
+0.5
+]
+]
+},
+{
+"id": "c6",
+"say": "Six: Karim Benzema. Seventy-three percent.",
+"cap": "SIX: KARIM BENZEMA. 73%|seventy-three-percent.",
+"hold": 0.12,
+"sfx": [
+[
+"pop",
+"KARIM",
+0.5
+]
+]
+},
+{
+"id": "surprise",
+"say": "You'd think Erling Haaland would be up here? He's fourteenth.",
+"cap": "YOU'D THINK ERLING HAALAND WOULD BE UP HERE? HE'S 14TH.",
+"hold": 0.15,
+"sfx": [
+[
+"hit",
+"HE'S",
+0.5
+]
+]
+},
+{
+"id": "c4",
+"say": "Four: Deniz Undav. Seventy-five percent.",
+"cap": "FOUR: DENIZ UNDAV. 75%|seventy-five-percent.",
+"hold": 0.12,
+"sfx": [
+[
+"pop",
+"DENIZ",
+0.5
+]
+]
+},
+{
+"id": "c2",
+"say": "Two: Ousmane Dembélé. Seventy-seven percent. Guess the twin in the comments.",
+"cap": "TWO: OUSMANE DEMBÉLÉ. 77%|seventy-seven-percent. GUESS THE TWIN IN THE COMMENTS.",
+"hold": 0.25,
+"sfx": [
+[
+"pop",
+"OUSMANE",
+0.5
+],
+[
+"pop",
+"GUESS",
+0.45
+]
+]
+},
+{
+"id": "c5",
+"say": "And number one... Kylian Mbappé. Eighty-two percent. He's number three and five too. That makes him Kane's statistical twin.",
+"cap": "AND NUMBER ONE... KYLIAN MBAPPÉ. 82%|eighty-two-percent. HE'S NUMBER THREE AND FIVE TOO. THAT MAKES HIM KANE'S STATISTICAL TWIN.",
+"hold": 0.5,
+"sfx": [
+[
+"hit",
+"KYLIAN",
+0.7
+],
+[
+"hit",
+"THAT",
+0.5
+]
+]
+},
+{
+"id": "why",
+"say": "Why? Almost the same shots on target and expected goals, every ninety minutes.",
+"cap": "WHY? ALMOST THE SAME SHOTS ON TARGET AND EXPECTED GOALS, EVERY 90|ninety MINUTES.",
+"hold": 0.3
+},
+{
+"id": "diff",
+"say": "The difference? Mbappé dribbles more. Kane makes more big chances.",
+"cap": "THE DIFFERENCE? MBAPPÉ DRIBBLES MORE. KANE MAKES MORE BIG CHANCES.",
+"hold": 0.3
+},
+{
+"id": "n0",
+"say": "And this season only?",
+"cap": "AND THIS SEASON ONLY?",
+"hold": 0.05
+},
+{
+"id": "n5",
+"say": "Five: Patrik Schick.",
+"cap": "FIVE: PATRIK SCHICK.",
+"hold": 0.08,
+"sfx": [
+[
+"pop",
+"PATRIK",
+0.5
+]
+]
+},
+{
+"id": "n4",
+"say": "Four: Donyell Malen.",
+"cap": "FOUR: DONYELL MALEN.",
+"hold": 0.08,
+"sfx": [
+[
+"pop",
+"DONYELL",
+0.5
+]
+]
+},
+{
+"id": "n3",
+"say": "Three: Nikola Krstović.",
+"cap": "THREE: NIKOLA KRSTOVIĆ.",
+"hold": 0.08,
+"sfx": [
+[
+"pop",
+"NIKOLA",
+0.5
+]
+]
+},
+{
+"id": "n2",
+"say": "Two: Erling Haaland.",
+"cap": "TWO: ERLING HAALAND.",
+"hold": 0.08,
+"sfx": [
+[
+"pop",
+"ERLING",
+0.5
+]
+]
+},
+{
+"id": "now1",
+"say": "And number one, after about ten games... Kylian Mbappé. Seventy percent.",
+"cap": "AND NUMBER ONE, AFTER ABOUT TEN GAMES... KYLIAN MBAPPÉ. 70%|seventy-percent.",
+"hold": 0.3,
+"sfx": [
+[
+"hit",
+"KYLIAN",
+0.7
+]
+]
+},
+{
+"id": "nowcmp",
+"say": "Mbappé against Kane, on what matters most for a striker: goals, expected goals, shots and assists.",
+"cap": "MBAPPÉ AGAINST KANE, ON WHAT MATTERS MOST FOR A STRIKER: GOALS, EXPECTED GOALS, SHOTS AND ASSISTS.",
+"hold": 0.3
+},
+{
+"id": "end",
+"say": "So Kane's twin is Kylian Mbappé. And right now, it's also Kylian Mbappé. Follow for more.",
+"cap": "SO KANE'S TWIN IS KYLIAN MBAPPÉ. AND RIGHT NOW, IT'S ALSO KYLIAN MBAPPÉ. FOLLOW FOR MORE."
+}
+]

@@ -34,7 +34,15 @@ import {
 import { cleanStatus, AWAY_AFTER_MS, type StatusRow } from "./status";
 import { BELLS_KEY, NO_BELLS, cleanBells, withBell, withMute, type Bell, type BellPrefs } from "./bells";
 import { cleanWelcome, nextVersion, WELCOME_EDITOR, type WelcomeRead, type WelcomeRow } from "./welcome";
-import { cleanMark, type BugMark } from "./bugs";
+import { bugPollPlan, cleanMark, type BugMark } from "./bugs";
+import { todayAskPlan, ukDay } from "./today";
+import { limitsPost } from "@/lib/backup/plan";
+import HEADLINES from "@/lib/patchNoteHeadlines.json";
+import { BOTS, announcePlan, botInfo, botSettings, settingsRow, type BotSettings } from "./patchBot";
+import { asksOwed, isReplyRow } from "./atBots";
+import { botMentionsIn, parseMessage } from "./extras";
+import { CLAUDE_BOT, aiSettings, aiSettingsRow, botOwner, canAnswerProposal, canChangeAi, handoffPrompt, handoffTask, isProposal, threadLink, spendThisMonth, type AiBotSettings, type Spend } from "./claudeBot";
+import { LINKS_KEY, MAX_LINKS, acceptedTitle, askRow, cleanLinks, isAsk, isSitePath, withLink } from "./asks";
 
 export interface TeamRoomState {
   status: "idle" | "loading" | "ready" | "missing" | "signedOut" | "error";
@@ -74,8 +82,10 @@ export interface TeamRoomState {
   reactions: TeamReaction[];
   /** Your own private DMs only: the database's row rules never send anyone else's. */
   dms: TeamDm[];
-  /** Posts a future bot wrote (team_bot_posts). */
+  /** Posts a bot wrote (team_bot_posts). Thread replies are kept apart, in botReplies. */
   botRows: BotRow[];
+  /** A bot's answers in threads, and its proposal cards (lib/teamRoom/atBots.ts): never posts in a channel. */
+  botReplies: BotRow[];
   /** The newest message read in each channel and DM (this browser). */
   chRead: ChannelReads;
   /** Round four (team_room_v4.sql): status, the first-open note, bug marks. "off" = not run yet. */
@@ -89,6 +99,8 @@ export interface TeamRoomState {
   bugMarks: BugMark[];
   /** Your 🔔 per channel (lib/teamRoom/bells.ts), kept in your account's details. */
   bells: BellPrefs;
+  /** Your quick links (lib/teamRoom/asks.ts): admin pages pinned to your home, kept in your account's details. */
+  links: string[];
 }
 
 const READ_KEY = "kib-team-read";
@@ -109,6 +121,8 @@ const CH_READ_KEY = "kib-team-ch-read";
 // Until team_room_v4.sql runs, your status is kept on this device; bells in demo too.
 const STATUS_KEY = "kib-team-status";
 const BELLS_LOCAL_KEY = "kib-team-bells";
+const LINKS_LOCAL_KEY = "kib-team-links";
+const DEMO_LINKS = ["/admin/marketing/studio", "/admin/patch-notes"];
 function readJson<T>(key: string, fallback: T): T {
   try { const v = JSON.parse(localStorage.getItem(key) ?? "null"); return v ?? fallback; } catch { return fallback; }
 }
@@ -120,10 +134,13 @@ let state: TeamRoomState = {
   status: "idle", error: null, me: null, taken: [], messages: [], ideas: [], votes: [], tasks: [], notes: [],
   online: [], live: false, read: { chat: 0, tasks: 0, notes: 0, pushNotes: 0, patchNotes: 0 }, pageOpen: false,
   v2: "unknown", marks: {}, acks: [], pointing: false, jobs: [], jobsFrom: null, seenJobs: [],
-  v3: "unknown", channelRows: [], reactions: [], dms: [], botRows: [], chRead: {},
-  v4: "unknown", statuses: {}, welcome: null, welcomeReads: [], bugMarks: [], bells: NO_BELLS,
+  v3: "unknown", channelRows: [], reactions: [], dms: [], botRows: [], botReplies: [], chRead: {},
+  v4: "unknown", statuses: {}, welcome: null, welcomeReads: [], bugMarks: [], bells: NO_BELLS, links: [],
 };
 const listeners = new Set<() => void>();
+/** The state before anything loads: what the server draws. */
+const BLANK: TeamRoomState = state;
+
 function set(patch: Partial<TeamRoomState> | ((s: TeamRoomState) => Partial<TeamRoomState>)) {
   state = { ...state, ...(typeof patch === "function" ? patch(state) : patch) };
   listeners.forEach((l) => l());
@@ -223,10 +240,11 @@ function localStatus(): Partial<Record<TeamPerson, StatusRow>> {
 }
 /** Your bells, from your account's details (or this device in a demo). */
 async function loadBells() {
-  if (demo || !sb) { set({ bells: cleanBells(readJson(BELLS_LOCAL_KEY, null)) }); return; }
+  if (demo || !sb) { set({ bells: cleanBells(readJson(BELLS_LOCAL_KEY, null)), links: cleanLinks(readJson(LINKS_LOCAL_KEY, DEMO_LINKS)) }); return; }
   try {
     const { data } = await sb.auth.getUser();
-    set({ bells: cleanBells((data.user?.user_metadata as Record<string, unknown> | undefined)?.[BELLS_KEY]) });
+    const meta = data.user?.user_metadata as Record<string, unknown> | undefined;
+    set({ bells: cleanBells(meta?.[BELLS_KEY]), links: cleanLinks(meta?.[LINKS_KEY]) });
   } catch { /* keep the starting setup */ }
 }
 
@@ -250,7 +268,7 @@ async function loadV3() {
     channelRows: (ch.data ?? []) as ChannelRow[],
     reactions: ((re.data ?? []) as TeamReaction[]).filter((r) => isTeamPerson(r.person) && isReaction(r.emoji)).map((r) => ({ ...r, message_id: Number(r.message_id) })),
     dms: ((dm.data ?? []) as TeamDm[]).reverse(),
-    botRows: ((bot.data ?? []) as BotRow[]).reverse(),
+    ...splitBotRows(((bot.data ?? []) as BotRow[]).reverse()),
   });
 }
 
@@ -284,6 +302,9 @@ function localV2(): Pick<TeamRoomState, "marks" | "acks"> {
   const seen = readJson<number>(SEEN_KEY, 0);
   return { marks: me ? { [me]: +seen || 0 } : {}, acks: readJson<TeamAck[]>(ACKS_KEY, []).map(patchAckKey) };
 }
+
+/** A bot's rows, in two piles: its posts, and its thread replies and proposal cards. */
+const splitBotRows = (rows: BotRow[]) => ({ botRows: rows.filter((r) => !isReplyRow(r)), botReplies: rows.filter((r) => isReplyRow(r)) });
 
 type Change = { eventType: "INSERT" | "UPDATE" | "DELETE"; new: Record<string, unknown>; old: Record<string, unknown> };
 
@@ -364,7 +385,17 @@ function apply(table: string, c: Change) {
     });
     return;
   }
-  const key = ({ team_messages: "messages", team_ideas: "ideas", team_tasks: "tasks", team_notes: "notes", team_dms: "dms", team_bot_posts: "botRows" } as const)[table as "team_messages"];
+  if (table === "team_bot_posts") {
+    const id = Number(row.id);
+    const r = row as unknown as BotRow;
+    set((s) => {
+      const posts = s.botRows.filter((x) => x.id !== id), replies = s.botReplies.filter((x) => x.id !== id);
+      if (del) return { botRows: posts, botReplies: replies };
+      return isReplyRow(r) ? { botRows: posts, botReplies: upsertById(replies, r) } : { botRows: upsertById(posts, r), botReplies: replies };
+    });
+    return;
+  }
+  const key = ({ team_messages: "messages", team_ideas: "ideas", team_tasks: "tasks", team_notes: "notes", team_dms: "dms" } as const)[table as "team_messages"];
   if (!key) return;
   set((s) => {
     const list = s[key] as { id: number }[];
@@ -427,6 +458,8 @@ function recheck() {
 
 /** A dev build with no database or no sign-in plays with sample rows, kept in this tab only. */
 let demo = false;
+/** True in a dev build showing sample rows (no sign-in, no database). */
+export const isDemoRoom = () => demo;
 let demoId = 1000;
 // Read when the page first loads: pages tidy their address before the room starts.
 const DEMO_NO_V2 = typeof window !== "undefined" && /[?&]teamroom=nov2\b/.test(window.location.search);
@@ -442,7 +475,7 @@ function startDemo() {
   // ?teamroom=nov2 shows the screens as they are before team_room_v2.sql runs.
   const noV2 = DEMO_NO_V2;
   set({ ...room, status: "ready", live: true, read: loadRead(), v2: noV2 ? "off" : "on", v3: DEMO_NO_V3 ? "off" : "on", v4: DEMO_NO_V4 ? "off" : "on", chRead: readJson<ChannelReads>(CH_READ_KEY, room.chRead) });
-  if (DEMO_NO_V3) set({ channelRows: [], reactions: [], dms: [], botRows: [] });
+  if (DEMO_NO_V3) set({ channelRows: [], reactions: [], dms: [], botRows: [], botReplies: [] });
   if (DEMO_NO_V4) set({ statuses: {}, welcome: null, welcomeReads: [], bugMarks: [], botRows: room.botRows.filter((r) => r.bot !== "bug") });
   // ?teamroom=welcome shows the first-open note as a new reader would see it.
   if (DEMO_WELCOME) set({ welcomeReads: [] });
@@ -456,15 +489,200 @@ export function startTeamRoom() {
   started = true;
   set({ status: "loading", read: loadRead(), seenJobs: readJson<string[]>(SEEN_JOBS_KEY, []), chRead: readJson<ChannelReads>(CH_READ_KEY, {}) });
   loadJobs();
-  jobsPoll = setInterval(loadJobs, TEAM_ROOM.jobs.refreshMs);
+  // Every 10 minutes, and only while this tab is on screen; coming back to
+  // the tab after that long catches up at once (6 Nov 2026: server time).
+  let lastJobs = Date.now();
+  const jobsIfDue = () => {
+    if (!jobsPoll || document.visibilityState !== "visible" || Date.now() - lastJobs < TEAM_ROOM.jobs.bubblePollMs - 1000) return;
+    lastJobs = Date.now();
+    loadJobs();
+  };
+  jobsPoll = setInterval(jobsIfDue, TEAM_ROOM.jobs.bubblePollMs);
+  document.addEventListener("visibilitychange", jobsIfDue);
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) { if (offlineDevPlayEnabled()) startDemo(); else set({ status: "error", error: "No database address set." }); return; }
   sb = createClient();
   sb.auth.getUser().then(async ({ data }) => {
     if (!data.user && offlineDevPlayEnabled()) { startDemo(); return; }
     if (!data.user) { set({ status: "signedOut" }); return; }
     userId = data.user.id;
-    if (await loadAll()) connect();
+    if (await loadAll()) { connect(); askBots(); }
   }).catch(() => set({ status: "error", error: "Could not reach the database." }));
+}
+
+/**
+ * The Patch bot's "first request" (lib/teamRoom/patchBot.ts): once the room has
+ * loaded, ask the site to announce any patch note it has not announced yet.
+ * The site does the work with its own key and posts once however many ask;
+ * this browser asks at most once every 10 minutes.
+ */
+const BOT_ASK_KEY = "kib-team-bot-asked";
+const BOTS_API = "/api/admin/team/bots";
+function askBots() {
+  if (demo || state.v3 !== "on") return;
+  try {
+    if (Date.now() - Number(sessionStorage.getItem(BOT_ASK_KEY) || 0) < 10 * 60_000) return;
+    sessionStorage.setItem(BOT_ASK_KEY, String(Date.now()));
+  } catch { /* private window: ask anyway */ }
+  fetch(BOTS_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ run: true }) }).catch(() => { /* the timer will do it */ });
+}
+
+/** An AI bot's page: is a key set on the server (never the key), this month's spend, its settings. */
+export interface AiBotView { settings: AiBotSettings; keySet: boolean; ownKey: boolean; spend: Spend; today: number }
+export interface BotSettingsView { settings: Record<string, BotSettings>; timer: boolean | null; ai?: Record<string, AiBotView> }
+
+// ?teamroom=claude (a dev build with sample rows): show the AI bots as they are once a key is set, with a pretend AI and a sample spend.
+const DEMO_AI_ON = typeof window !== "undefined" && /[?&]teamroom=claude\b/.test(window.location.search);
+const DEMO_SPEND_USD = 3.1;
+function demoAiViews(): Record<string, AiBotView> {
+  const rows = [...state.botRows, ...state.botReplies];
+  const out: Record<string, AiBotView> = {};
+  for (const bot of [CLAUDE_BOT.bot, "harry-bot", "mikey-bot", "leo-bot"]) {
+    const spend = spendThisMonth(rows, Date.now());
+    const usd = DEMO_AI_ON ? spend.usd + DEMO_SPEND_USD : 0;
+    out[bot] = { settings: aiSettings(rows, bot), keySet: DEMO_AI_ON, ownKey: false, today: DEMO_AI_ON ? spend.replies + 7 : 0, spend: { ...spend, usd, gbp: usd, replies: DEMO_AI_ON ? spend.replies + 41 : 0, left: spend.capGbp - usd } };
+  }
+  return out;
+}
+
+/** Save an AI bot's settings (a person's bot: its owner only). The site checks who is asking. */
+export async function saveAiBotSettings(bot: string, patch: Partial<Pick<AiBotSettings, "enabled" | "instructions" | "channels" | "handoff">>): Promise<Result & { settings?: AiBotSettings }> {
+  if (demo) {
+    if (!canChangeAi(bot, state.me)) return { ok: false, error: `Only ${botOwner(bot)} can change this bot.` };
+    const now = aiSettings(state.botRows, bot);
+    const row = { ...aiSettingsRow(bot, { ...now, ...patch }, state.me), id: ++demoId, created_at: new Date().toISOString() } as BotRow;
+    set((s) => ({ botRows: [...s.botRows, row] }));
+    return { ok: true, settings: aiSettings([row], bot) };
+  }
+  try {
+    const r = await fetch(BOTS_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bot, ...patch }) });
+    const j = (await r.json()) as { ok?: boolean; error?: string; settings?: AiBotSettings };
+    if (!r.ok || !j.ok) return { ok: false, error: j.error ?? "Could not save it." };
+    return { ok: true, settings: j.settings };
+  } catch { return { ok: false, error: "Could not reach the site." }; }
+}
+
+/** Accept or Decline on your own bot's card. Only the bot's owner can; the site checks. Accept adds one job to your own to-do. */
+export async function answerBotProposal(id: number, accept: boolean): Promise<Result> {
+  if (demo) {
+    const row = state.botReplies.find((r) => r.id === id);
+    if (!row || !isProposal(row)) return { ok: false, error: "That card is gone." };
+    if (!canAnswerProposal(row, state.me)) return { ok: false, error: `Only ${botOwner(row.bot)} can answer this.` };
+    const meta: Record<string, unknown> = { ...(row.meta ?? {}), state: accept ? "accepted" : "declined", answered_at: new Date().toISOString() };
+    if (accept) {
+      const parent = Number(meta.reply_to) || 0;
+      meta.prompt = handoffPrompt({ owner: state.me!, asker: isTeamPerson(meta.by) ? meta.by : state.me!, question: String(meta.question ?? ""), why: String(meta.why ?? ""), channel: row.channel,
+        thread: state.messages.filter((m) => m.id === parent || parseMessage(m.body).replyTo === parent), link: threadLink(window.location.origin, row.channel, parent) });
+    }
+    set((s) => ({
+      botReplies: s.botReplies.map((r) => (r.id === id ? { ...r, meta } : r)),
+      tasks: accept ? upsertById(s.tasks, { id: ++demoId, ...handoffTask(state.me!, String(meta.question ?? ""), id), done_at: null, created_at: new Date().toISOString() }) : s.tasks,
+    }));
+    return { ok: true };
+  }
+  try {
+    const r = await fetch(BOTS_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ proposal: id, accept }) });
+    const j = (await r.json()) as { ok?: boolean; error?: string };
+    return r.ok && j.ok ? { ok: true } : { ok: false, error: j.error ?? "Could not save it." };
+  } catch { return { ok: false, error: "Could not reach the site." }; }
+}
+
+/**
+ * A message that @s a bot was just sent: ask the site to answer it now, in
+ * its thread (the site does it with its own key; the 15-minute timer is the
+ * fallback). In a dev build with sample rows the same sums run in this browser.
+ */
+function askAtBots(m: TeamMessage) {
+  if (!botMentionsIn(parseMessage(m.body).text).length) return;
+  if (!demo) {
+    fetch(BOTS_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ask: m.id }) }).catch(() => { /* the timer will do it */ });
+    return;
+  }
+  void (async () => {
+    const { demoAnswer } = await import("./atBotsDemo");
+    for (const a of asksOwed({ messages: [m], rows: state.botReplies, now: Date.now() })) {
+      const row = await demoAnswer({ messages: state.messages, rows: [...state.botRows, ...state.botReplies], tasks: state.tasks, jobs: state.jobs, bugMarks: state.bugMarks }, a, new Date(), DEMO_AI_ON);
+      set((s) => ({ botReplies: [...s.botReplies, { ...row, id: ++demoId, created_at: new Date().toISOString() } as BotRow] }));
+    }
+  })();
+}
+
+/** Words waiting to be dropped into the message box (an "Ask me" example on a bot's page). Taken once. */
+let draft: string | null = null;
+export const setComposeDraft = (text: string) => { draft = text; };
+export const takeComposeDraft = () => { const d = draft; draft = null; return d; };
+/** Each bot's settings, read by the site (whole even when old rows are not loaded here). */
+export async function loadBotSettings(): Promise<BotSettingsView> {
+  const local: Record<string, BotSettings> = {};
+  for (const b of BOTS) local[b.bot] = botSettings(state.botRows, b.bot);
+  if (demo) return { settings: local, timer: null, ai: demoAiViews() };
+  try {
+    const r = await fetch(BOTS_API, { cache: "no-store" });
+    const j = (await r.json()) as { ok?: boolean; settings?: Record<string, BotSettings>; timer?: boolean; ai?: Record<string, AiBotView> };
+    if (r.ok && j.ok && j.settings) return { settings: j.settings, timer: !!j.timer, ai: j.ai };
+  } catch { /* fall through */ }
+  return { settings: local, timer: null };
+}
+
+/** Switch a bot on or off, or change its reminder. Saved by the site (no browser can write a bot's rows). */
+export async function saveBotSettings(bot: string, patch: Partial<Pick<BotSettings, "enabled" | "nudgeHours">>): Promise<Result & { settings?: BotSettings }> {
+  if (demo) {
+    const now = botSettings(state.botRows, bot);
+    const row = { ...settingsRow(bot, { ...now, ...patch }, state.me), id: ++demoId, created_at: new Date().toISOString() } as BotRow;
+    set((s) => ({ botRows: [...s.botRows, row] }));
+    return { ok: true, settings: botSettings([row], bot) };
+  }
+  try {
+    const r = await fetch(BOTS_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bot, ...patch }) });
+    const j = (await r.json()) as { ok?: boolean; error?: string; settings?: BotSettings };
+    if (!r.ok || !j.ok) return { ok: false, error: j.error ?? "Could not save it." };
+    return { ok: true, settings: j.settings };
+  } catch { return { ok: false, error: "Could not reach the site." }; }
+}
+
+/**
+ * Run now, on a bot's page: ask the site to do that bot's job this minute
+ * (admins only; the site does it with its own key). The answer is one plain
+ * line: what it did, or why it did nothing.
+ *
+ * In a dev build with sample rows there is no site key and no database, so
+ * the SAME sums run here on the sample rows and the new post is added to this
+ * browser only. That shows the bot's real behaviour (asked twice, it posts
+ * once) without touching anything.
+ */
+export async function runBot(bot: string): Promise<Result & { text?: string }> {
+  const info = botInfo(bot);
+  if (!info?.runnable) return { ok: false, error: info?.noRun ?? "This bot has nothing to run." };
+  if (demo) {
+    const now = new Date();
+    const add = (rows: Omit<BotRow, "id" | "created_at">[]) => set((s) => ({ botRows: [...s.botRows, ...rows.map((r) => ({ ...r, id: ++demoId, created_at: now.toISOString() }) as BotRow)] }));
+    if (!botSettings(state.botRows, bot).enabled && info.switchable && bot !== "health") return { ok: true, text: "Switched off: nothing posted. (Sample rows: this browser only.)" };
+    if (bot === "patch-notes") {
+      const notes = (HEADLINES as { version: string; title: string; publishedAt: string; author?: string | null }[]).map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt, author: n.author ?? null }));
+      const plan = announcePlan({ notes, rows: state.botRows });
+      add(plan);
+      return { ok: true, text: `${plan.length ? `Done: announced ${plan.map((p) => `v${p.meta.version}`).join(", ")} in #general.` : "Nothing to do: every patch note is already announced and no reminder is due."} (Sample rows: this browser only.)` };
+    }
+    if (bot === "bug") {
+      const feedback = [{ id: "sample-report-1", message: "League table shows last season\nAfter the final day the table on my phone still shows last season's places.", page_url: "https://knowitball.co.uk/star-dev", created_at: new Date(now.getTime() - 6 * 60_000).toISOString(), user_id: null }];
+      const plan = bugPollPlan({ feedback, rows: state.botRows, now: now.getTime() });
+      add(plan);
+      return { ok: true, text: `${plan.length ? `Done: posted ${plan.length} report card in #bugs that the database had not posted.` : "Nothing to do: all 1 report from the last 3 days already has its card."} (Sample rows: this browser only.)` };
+    }
+    if (bot === "today") {
+      const plan = todayAskPlan({ now, rows: state.botRows, messages: state.messages });
+      add(plan);
+      return { ok: true, text: `${plan.length ? `Done: asked ${(plan[0].meta.people as string[]).join(" and ")} in #today.` : "Nothing to do: it has already asked today, everyone has checked in, or it is outside 09:00 to 14:00 UK on a weekday."} (Sample rows: this browser only.)` };
+    }
+    const post = limitsPost({ day: ukDay(now).day, dbBytes: 371 * 1048576, storageBytes: 412 * 1048576, r2: { total: 1.2 * 1073741824, folders: [{ folder: "patch-notes", bytes: 700 * 1048576 }, { folder: "backups", bytes: 320 * 1048576 }] }, backup: null, notes: ["sample numbers: a dev build cannot read the real sizes"] });
+    add([{ bot: "health", channel: "health", title: `${post.title} · asked for by ${state.me ?? "you"}`, body: post.body, url: null, everyone: false, meta: { kind: "limits", red: post.red, level: post.level, day: ukDay(now).day, lines: post.lines, manual: true, by: state.me } }]);
+    return { ok: true, text: "Done: posted the limits in #health. (Sample rows and sample numbers: this browser only.)" };
+  }
+  try {
+    const r = await fetch(BOTS_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ run: true, bot }) });
+    const j = (await r.json()) as { ok?: boolean; error?: string; text?: string };
+    if (!r.ok || !j.ok) return { ok: false, error: j.error ?? j.text ?? "The site could not run it." };
+    return { ok: true, text: j.text ?? "Done." };
+  } catch { return { ok: false, error: "Could not reach the site." }; }
 }
 
 /** For tests and sign-out: forget everything. */
@@ -479,7 +697,10 @@ export function useTeamRoom(): TeamRoomState {
   return useSyncExternalStore(
     (l) => { listeners.add(l); startTeamRoom(); return () => listeners.delete(l); },
     () => state,
-    () => state,
+    // While a page is still being put together from the server's copy, answer as the server did
+    // (nothing loaded yet). Otherwise a room that loaded early (the chat bubble starts it) makes
+    // the first paint differ from the server's and React throws the page away and redraws it.
+    () => BLANK,
   );
 }
 
@@ -537,7 +758,11 @@ export async function sendMessage(body: string, file: File | null, page: string 
   const text = body.trim().slice(0, 2000);
   if (!text && !image_url) return { ok: false, error: "Type something first." };
   // (Read marks are per channel now: the open channel marks itself read, channels.ts.)
-  return insert("team_messages", "messages", { person: state.me, body: text, image_url, page: page?.slice(0, 200) ?? null }, "Message not sent.");
+  const before = state.messages.reduce((n, m) => Math.max(n, m.id), 0);
+  const r = await insert("team_messages", "messages", { person: state.me, body: text, image_url, page: page?.slice(0, 200) ?? null }, "Message not sent.");
+  // "@Patch bot latest": the bot answers in a thread under this message.
+  if (r.ok) { const mine = state.messages.filter((m) => m.id > before && m.person === state.me && m.body === text).sort((a, b) => b.id - a.id)[0]; if (mine) askAtBots(mine); }
+  return r;
 }
 
 export async function setPinned(id: number, pinned: boolean): Promise<Result> {
@@ -857,6 +1082,42 @@ async function saveBells(bells: BellPrefs): Promise<Result> {
   if (error) return fail(error, "Not saved.");
   return { ok: true };
 }
+/**
+ * Pin an admin page to your home, or take it off. Saved in your own sign-in
+ * account's details (no table), so it follows you to every device.
+ */
+export async function setQuickLink(url: string, on: boolean): Promise<Result> {
+  if (on && !isSitePath(url)) return { ok: false, error: "Only pages on this site can be pinned." };
+  if (on && !state.links.includes(url) && state.links.length >= MAX_LINKS) return { ok: false, error: `At most ${MAX_LINKS} quick links. Take one off first.` };
+  const links = withLink(state.links, url, on);
+  set({ links });
+  if (demo || !sb) { writeJson(LINKS_LOCAL_KEY, links); return { ok: true }; }
+  const { error } = await sb.auth.updateUser({ data: { [LINKS_KEY]: links } });
+  if (error) return fail(error, "Not saved.");
+  return { ok: true };
+}
+
+/** Ask someone to do something (a message turned into a task): it lands in their to-do as a proposal. */
+export async function sendAsk(to: TeamPerson, title: string, messageId?: number | null): Promise<Result> {
+  if (!state.me) return { ok: false, error: "Pick your name first." };
+  if (to === state.me) return addTask(title, state.me);
+  if (!title.trim()) return { ok: false, error: "Say what the job is." };
+  return insert("team_tasks", "tasks", askRow({ title: title.trim() }, to, state.me, messageId), "Not sent.");
+}
+/** Accept a proposal: it becomes an ordinary job in your to-do. */
+export async function acceptAsk(id: number): Promise<Result> {
+  const t = state.tasks.find((x) => x.id === id);
+  if (!t || !isAsk(t)) return { ok: false, error: "That proposal has gone." };
+  const title = acceptedTitle(t);
+  if (!sb && !demo) return { ok: false, error: "Not connected yet." };
+  const { error } = demo ? { error: null } : await sb!.from("team_tasks").update({ title }).eq("id", id);
+  if (error) return fail(error, "Could not accept it.");
+  set((s) => ({ tasks: s.tasks.map((x) => (x.id === id ? { ...x, title } : x)) }));
+  return { ok: true };
+}
+/** Decline a proposal: it is deleted (its sender sees it leave "Waiting for a yes"). */
+export const declineAsk = (id: number) => deleteTask(id);
+
 /** Set one channel's 🔔: every message, only @mentions, off (or only red in #health). */
 export const setBell = (slug: string, bell: Bell) => saveBells(withBell(state.bells, slug, bell));
 /** Mute one channel for a while (null = unmute). */

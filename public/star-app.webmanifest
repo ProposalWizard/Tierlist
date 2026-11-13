@@ -1,9 +1,9 @@
 {
-  "name": "Knowitball Star Career",
+  "name": "Road to the Golden Ball",
   "short_name": "Knowitball",
-  "description": "Road to the Ballon d'Or — the Knowitball career game.",
+  "description": "Road to the Golden Ball — the Knowitball career game.",
   "id": "/star-dev",
-  "start_url": "/road-to-ballon-dor",
+  "start_url": "/road-to-the-golden-ball",
   "scope": "/",
   "display": "standalone",
   "display_override": ["fullscreen", "standalone"],

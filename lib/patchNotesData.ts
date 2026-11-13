@@ -27,7 +27,185 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
-      "version": "0.138",
+      "version": "0.140",
+      "title": "Leo's patch notes: Weekly round-up, 6 to 13 Nov",
+      "author": "Leo",
+      "publishedAt": "2026-11-13T17:50:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "One page for the week, for Harry. 1 pull request merged into main from Fri 6 Nov to Fri 13 Nov (#831); everything else went straight into main, about 90 commits. One new patch note this week (Harry's v0.138); the rest of these lines come from the commit list and say so. Biggest changes: a new public home at knowitball.co.uk, the game renamed Road to the Golden Ball, the Team room rebuilt with bots you can @, one admin home, a nightly database backup set up (not working yet), the app packed for iPhone, and a week of marketing videos (Stat Twins, Twin Finder, posting to Instagram).",
+      "stats": [
+        {
+          "value": "1",
+          "label": "pull request merged into main (about 90 direct commits)"
+        },
+        {
+          "value": "1",
+          "label": "new patch note this week (v0.138)"
+        },
+        {
+          "value": "6",
+          "label": "games on the new home"
+        },
+        {
+          "value": "0",
+          "label": "database backups so far (Cloudflare not joined up)"
+        }
+      ],
+      "updates": [],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The new home at knowitball.co.uk",
+              "detail": "Cream phone look, green bar and footer, an All games tab, Join the beta. v0.138."
+            },
+            {
+              "title": "The new name: Road to the Golden Ball",
+              "detail": "Title screen and the award night. New address /road-to-the-golden-ball. v0.138."
+            },
+            {
+              "title": "Team room: Dark and Light, channel tabs, five bots with Run now",
+              "detail": "Admin → Team. v0.138."
+            },
+            {
+              "title": "Bots you can @, and a Claude bot",
+              "detail": "Admin → Team, type @. Built after v0.138; needs the ANTHROPIC_API_KEY setting. 13 Nov commits."
+            },
+            {
+              "title": "One admin home at /admin",
+              "detail": "Back never leaves admin; the recorder keeps going. v0.138."
+            },
+            {
+              "title": "Marketing → Publish",
+              "detail": "Posting to Instagram, Facebook and YouTube from the admin. 11 Nov commits."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Site, Team room and admin (Harry)",
+          "items": [
+            {
+              "title": "A new public home",
+              "detail": "Built as three looks on a test page first, then look D went in: the phone-screen look on cream with a green bar and footer. 6 games. Install, App Store, Steam and Join the beta. v0.138."
+            },
+            {
+              "title": "The game is now Road to the Golden Ball",
+              "detail": "The award is the Golden Ball. New address /road-to-the-golden-ball. v0.138."
+            },
+            {
+              "title": "Team room rebuilt",
+              "detail": "Dark and Light looks; every channel has its own tabs; #today is new; a message can become a task; /today and /todo; a Me home and a Team board tab. Pop-ups stay until you close them. v0.138."
+            },
+            {
+              "title": "Five bots, each with its own page and Run now",
+              "detail": "Health, Bug, Today, Jobs and Patch. The Patch bot announces new patch notes in #general by itself. v0.138."
+            },
+            {
+              "title": "Bots you can @",
+              "detail": "A Claude bot, and a bot each for Harry, Mikey and Leo, with an on-screen run and a run table. Needs ANTHROPIC_API_KEY set. From the 13 Nov commits; not in a patch note yet."
+            },
+            {
+              "title": "One admin home, one look",
+              "detail": "The Knowitball look is the default. Back stays inside admin. v0.138."
+            },
+            {
+              "title": "Recordings save to Cloudflare first",
+              "detail": "Drive is the copy. A link everyone can open, a 30-day clean-up and a Keep button. v0.138."
+            },
+            {
+              "title": "Behind the scenes",
+              "detail": "Failed pushes to the site fixed (marketing videos kept out of the site's functions). A morning limits check at 08:00 in #health. A nightly database backup at 03:00. Patch-note pictures move to Cloudflare by themselves. v0.138."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "The app (from the commit list)",
+          "items": [
+            {
+              "title": "iPhone project and Codemagic set-up",
+              "detail": "A packed app with a back button, vibration, an icon and a more app-like feel; security updates. 10 Nov."
+            },
+            {
+              "title": "Online saves go up squeezed",
+              "detail": "About a quarter of the size. 10 Nov."
+            },
+            {
+              "title": "App fixes",
+              "detail": "A scroll lock that trapped a player on a tall screen is fixed; the phone's top bar is hidden; Go closes the keyboard; knockout names fit. 10-11 Nov."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Marketing videos (Mikey, from the commit list)",
+          "items": [
+            {
+              "title": "Stat Twins: a player's statistical twin",
+              "detail": "Episodes for Salah, Haaland, Neymar, Kane, Van Dijk and Cole Palmer, a batch of 27 videos, and a motion engine for them. Several posted to Instagram. 8-11 Nov."
+            },
+            {
+              "title": "Twin Finder page",
+              "detail": "Find any player's statistical twins across the top 5 leagues and every position, with key stats on tap. 8-9 Nov."
+            },
+            {
+              "title": "Who replaces him? and Analysed like chess",
+              "detail": "New formats: v07 (who replaces Lewis Hall at Newcastle) and CH-03 (Mourinho v Pep, Camp Nou 2010). PR #831 adds an X vs cuts template. 7-10 Nov."
+            },
+            {
+              "title": "Posting and a video library",
+              "detail": "Marketing → Publish posts to Instagram, Facebook and YouTube (a queue, a 5-minute timer, encrypted logins). Every Knowitball video in one searchable page. 11 Nov."
+            },
+            {
+              "title": "Preview film",
+              "detail": "A dressing-room set made in Blender, seven shots, and a second fast ad cut to the beat. 10 Nov."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Still open (from this week's notes, not rechecked today)",
+          "items": [
+            {
+              "title": "No database backup yet",
+              "detail": "Cloudflare is not joined up on the live site, so the first nightly backup failed. v0.138."
+            },
+            {
+              "title": "The Patch bot is not proven live until a note appears in #general",
+              "detail": "Bug bot and the Team board tab are proven with stand-in data only. v0.138."
+            },
+            {
+              "title": "About 70 admin tool pages still have their old insides",
+              "detail": "v0.138."
+            },
+            {
+              "title": "Only one patch note this week",
+              "detail": "The app, marketing and @bot work has no patch note yet; those lines come from the commit list."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Calls for Harry",
+          "items": [
+            {
+              "title": "Join Cloudflare up on the live site, then check the first backup",
+              "detail": "v0.138."
+            },
+            {
+              "title": "Set ANTHROPIC_API_KEY so the @bots can run",
+              "detail": "13 Nov commits (CLAUDE.md note)."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.139",
       "title": "Leo's patch notes: Weekly round-up, 30 Oct to 6 Nov",
       "author": "Leo",
       "publishedAt": "2026-11-06T17:50:00Z",
@@ -738,6 +916,289 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "author": "Leo",
+      "updates": []
+    },
+    {
+      "version": "0.138",
+      "title": "Harry's patch notes: New home, Team room, bots, admin",
+      "author": "Harry",
+      "publishedAt": "2026-11-13T15:52:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/1fG5jWkYiRbUs7CwrYQz1z",
+      "summary": "A new home at knowitball.co.uk, a rebuilt Team room with five bots, and a real admin home. This is the first note the Patch bot can announce by itself in #general. Also: the game is now Road to the Golden Ball, recordings save to Cloudflare first, and a morning limits check. Honest: Cloudflare is not joined up on the live site yet, so the first nightly backup failed.",
+      "stats": [
+        {
+          "value": "6",
+          "label": "games on the new home"
+        },
+        {
+          "value": "5",
+          "label": "bots, each with its own page"
+        },
+        {
+          "value": "9",
+          "label": "channels with their own tabs"
+        },
+        {
+          "value": "0",
+          "label": "database backups so far"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "This note announced in #general, with @Mikey and @Leo",
+              "detail": "Admin → Team → #general."
+            },
+            {
+              "title": "The new home",
+              "detail": "knowitball.co.uk, on a phone and on a computer."
+            },
+            {
+              "title": "The All games tab",
+              "detail": "knowitball.co.uk/games."
+            },
+            {
+              "title": "Install, App Store, Steam and \"Join the beta\"",
+              "detail": "The home, on a computer only."
+            },
+            {
+              "title": "The new name: Road to the Golden Ball",
+              "detail": "Title screen, the home, the awards night; the old link still works."
+            },
+            {
+              "title": "Team room: Dark and Light",
+              "detail": "Admin → Team → Me."
+            },
+            {
+              "title": "Me: status, check-in, to-do with Accept and Decline",
+              "detail": "Admin → Team → Me."
+            },
+            {
+              "title": "Team board tab",
+              "detail": "Admin → Team → Board."
+            },
+            {
+              "title": "Every channel has its own tabs; #today is new",
+              "detail": "Admin → Team → each channel."
+            },
+            {
+              "title": "A message into a task; /today and /todo",
+              "detail": "Any channel's message box."
+            },
+            {
+              "title": "Five bot pages, each with Run now",
+              "detail": "Admin → Team → tap a bot's name."
+            },
+            {
+              "title": "The admin home and the Knowitball look",
+              "detail": "knowitball.co.uk/admin."
+            },
+            {
+              "title": "Back stays inside admin; the recorder keeps going",
+              "detail": "Start a recording in Admin → Videos, then change page."
+            },
+            {
+              "title": "Recordings: a link everyone can open, 30 days, Keep",
+              "detail": "Admin → Videos → Recent recordings (needs Cloudflare joined up, see Known issues)."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "The Patch bot announces new patch notes by itself. This note is its first live test.",
+              "detail": "Problem: new notes sat on their page and nobody was told. Fix: the site posts each new note in #general within 15 minutes and names the two people who did not write it. Comments stay in one thread. When all three have read it, the post moves to #patch-notes.",
+              "pill": {
+                "text": "not seen live yet",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "A new home at knowitball.co.uk",
+              "detail": "Cream look, green top bar and footer. The game on a phone with Play now, then all six games as tiles (three a row on a phone). An \"All games\" tab at /games shows tiles only. A short loading animation plays first.",
+              "more": {
+                "summary": "On a computer only",
+                "points": [
+                  "\"Install on your phone\".",
+                  "App Store and Steam, marked \"Coming soon\"; they cannot be tapped.",
+                  "A \"Join the beta\" email box. The table that keeps the emails was added on 13 Nov (seen in the live database)."
+                ]
+              }
+            },
+            {
+              "title": "The Team room, rebuilt",
+              "detail": "Two looks: Dark (Midnight slate) and Light (Light C). A Me home: status, check-in, to-do with Accept and Decline, quick links. A Team board tab. A first-visit question about notifications.",
+              "more": {
+                "summary": "Each channel and its tabs",
+                "points": [
+                  "#general: Messages, Pinned.",
+                  "#today (new): Today, This week, Messages.",
+                  "#ideas: Ideas board with votes, Messages.",
+                  "#todo: Tasks (Mine, Everyone), Messages.",
+                  "#bugs: Open reports, Fixed, Messages.",
+                  "#health: Limits, Messages.",
+                  "#patch-notes: Archive (who has read what), Messages.",
+                  "#marketing: Production board, Messages.",
+                  "#context: Brain, Messages.",
+                  "A message can become a task. Type /today or /todo anywhere."
+                ]
+              }
+            },
+            {
+              "title": "Five bots, each with its own page and Run now",
+              "detail": "Patch, Bug, Health, Today (new) and Jobs. Each page says what the bot does and when it runs. Proven on 12 Nov with stand-in data: 56 checks of the bots' own code and 124 on-screen checks, all passed.",
+              "more": {
+                "summary": "What is seen live so far (read from the live site, 13 Nov)",
+                "points": [
+                  "Health bot: posted the limits in #health at 08:00, and the failed backup at 03:00.",
+                  "Today bot: asked \"What are you on today?\" in #today at 09:00.",
+                  "Patch bot: 0 posts. This note is the test.",
+                  "Bug bot: no real card yet; no player has sent a report since 24 Oct.",
+                  "Jobs bot: shows pushed jobs in #todo as before. It has no Run now, and its page says why.",
+                  "The full table: docs/team-room-run.md."
+                ]
+              }
+            },
+            {
+              "title": "Admin has a real home, and one look",
+              "detail": "Problem: admin had no front page, Back could drop you on the public site, and a recording stopped when you changed page. Fix: one home at /admin, Back stays in admin, the recorder survives page changes. New \"Knowitball\" look: look A on the admin home, look C on the rest."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "The game is now \"Road to the Golden Ball\"",
+              "detail": "Was Road to Ballon d'Or. The award is the Golden Ball. New address /road-to-the-golden-ball; the old address sends you there by itself."
+            },
+            {
+              "title": "Recordings save to Cloudflare first, Drive second",
+              "detail": "A link all three of us can open. Deleted after 30 days unless you press Keep. Not seen live: until Cloudflare is joined up, a recording goes to Drive or downloads, as before.",
+              "pill": {
+                "text": "not confirmed live",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Team room pop-ups stay on screen until you close or tap them",
+              "detail": "Harry: \"the pop up isn't popping up for long enough\". Built on Harry's branch; it goes live with the next push.",
+              "pill": {
+                "text": "next push",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Behind the scenes",
+          "items": [
+            {
+              "title": "Pushes to the site failed. Now they work.",
+              "detail": "Why: the marketing videos were packed into a page, which made it too big for Vercel. Fix: the videos are kept out."
+            },
+            {
+              "title": "A morning limits check, every day at 08:00 in #health",
+              "detail": "Seen live on 13 Nov: database 260 MB of 500 MB, storage 537 MB of 1 GB. Both about half full."
+            },
+            {
+              "title": "A nightly database backup to Cloudflare, at 03:00",
+              "detail": "It failed its first night (13 Nov): it copied nothing, because the live site said Cloudflare is not joined up.",
+              "pill": {
+                "text": "failed its first night",
+                "tone": "red"
+              }
+            },
+            {
+              "title": "Patch-note pictures move to Cloudflare by themselves",
+              "detail": "Every 5 minutes, no button. It needs the same Cloudflare settings. Until then pictures show from the site, as before.",
+              "pill": {
+                "text": "not confirmed live",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Cloudflare is not joined up on the live site",
+              "detail": "Read from the live #health posts of 13 Nov (03:00 and 08:00): \"R2 is not connected\". It blocks the nightly backup, recordings to Cloudflare and the picture move. The Cloudflare settings in Vercel need checking.",
+              "pill": {
+                "text": "blocks 3 things",
+                "tone": "red"
+              }
+            },
+            {
+              "title": "There is no backup of the database yet",
+              "detail": "It follows from the line above.",
+              "pill": {
+                "text": "open",
+                "tone": "red"
+              }
+            },
+            {
+              "title": "The Patch bot is not proven live until this note appears in #general",
+              "pill": {
+                "text": "this is the test",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Bug bot and the Team board tab are proven with stand-in data only",
+              "detail": "The live site must confirm a real bug card and the real push bars."
+            },
+            {
+              "title": "About 70 admin tool pages still have their old insides",
+              "detail": "They sit inside the new frame, but the page itself is the old design."
+            },
+            {
+              "title": "No real profile pictures yet",
+              "detail": "There is nowhere to keep a person's picture, so everyone has a drawn crest."
+            },
+            {
+              "title": "Phone buzzes: Harry made the Vercel setting on 13 Nov",
+              "detail": "Not seen on a phone yet. Each of us still has to press \"Turn on\" once on each device.",
+              "pill": {
+                "text": "not seen on a phone yet",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "\"Install on your phone\" shows on computers only",
+              "detail": "On a phone the home shows the game and the tiles, with no install button."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Bots you can @, and a Claude bot: being built now"
+            },
+            {
+              "title": "Join Cloudflare up on the live site, then check the first backup"
+            },
+            {
+              "title": "New insides for the 70 old admin tool pages"
+            },
+            {
+              "title": "Footage hub, video library, marketing studio: not started"
+            }
+          ]
+        }
+      ],
       "updates": []
     },
     {

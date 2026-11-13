@@ -1,0 +1,189 @@
+[
+{
+"id": "intro",
+"say": "Prime Neymar's statistical twin is not who you think.",
+"cap": "PRIME NEYMAR'S STATISTICAL TWIN IS NOT WHO YOU THINK.",
+"sfx": [
+[
+"hit",
+0.0,
+0.7
+]
+],
+"voiceSettings": {
+"speed": 1.1
+},
+"tempo": 1.05,
+"gapDb": -33,
+"maxGap": 0.06
+},
+{
+"id": "c5",
+"say": "Number five: Vinícius Júnior. Real Madrid. Eighty-six percent.",
+"cap": "NUMBER FIVE: VINÍCIUS JÚNIOR. REAL MADRID. 86%|eighty-six-percent.",
+"hold": 0.12,
+"sfx": [
+[
+"pop",
+"VINÍCIUS",
+0.5
+]
+]
+},
+{
+"id": "c4",
+"say": "Four: Raphinha. Barcelona. Eighty-six percent.",
+"cap": "FOUR: RAPHINHA. BARCELONA. 86%|eighty-six-percent.",
+"hold": 0.12,
+"sfx": [
+[
+"pop",
+"RAPHINHA",
+0.5
+]
+]
+},
+{
+"id": "surprise",
+"say": "You'd think his old PSG team-mate Lionel Messi would be up here? He's sixth.",
+"cap": "YOU'D THINK HIS OLD PSG TEAM-MATE LIONEL MESSI WOULD BE UP HERE? HE'S 6TH.",
+"hold": 0.15,
+"sfx": [
+[
+"hit",
+"HE'S",
+0.5
+]
+]
+},
+{
+"id": "c2",
+"say": "Two: Lamine Yamal. Barcelona. Eighty-eight percent. Guess the twin in the comments.",
+"cap": "TWO: LAMINE YAMAL. BARCELONA. 88%|eighty-eight-percent. GUESS THE TWIN IN THE COMMENTS.",
+"hold": 0.25,
+"sfx": [
+[
+"pop",
+"LAMINE",
+0.5
+],
+[
+"pop",
+"GUESS",
+0.45
+]
+]
+},
+{
+"id": "c3",
+"say": "And number one... Michael Olise. Bayern Munich. Eighty-nine percent. He's number three too. That makes him Neymar's statistical twin.",
+"cap": "AND NUMBER ONE... MICHAEL OLISE. BAYERN MUNICH. 89%|eighty-nine-percent. HE'S NUMBER THREE TOO. THAT MAKES HIM NEYMAR'S STATISTICAL TWIN.",
+"hold": 0.5,
+"sfx": [
+[
+"hit",
+"MICHAEL",
+0.7
+],
+[
+"hit",
+"THAT",
+0.5
+]
+]
+},
+{
+"id": "why",
+"say": "Why? Almost the same big chances made and shots on target, every ninety minutes.",
+"cap": "WHY? ALMOST THE SAME BIG CHANCES MADE AND SHOTS ON TARGET, EVERY 90|ninety MINUTES.",
+"hold": 0.3
+},
+{
+"id": "diff",
+"say": "The difference? Neymar dribbles more, and scores more.",
+"cap": "THE DIFFERENCE? NEYMAR DRIBBLES MORE, AND SCORES MORE.",
+"hold": 0.3
+},
+{
+"id": "n0",
+"say": "And this season only?",
+"cap": "AND THIS SEASON ONLY?",
+"hold": 0.05
+},
+{
+"id": "n5",
+"say": "Five: Antonio Nusa.",
+"cap": "FIVE: ANTONIO NUSA.",
+"hold": 0.08,
+"sfx": [
+[
+"pop",
+"ANTONIO",
+0.5
+]
+]
+},
+{
+"id": "n4",
+"say": "Four: Rayan Cherki.",
+"cap": "FOUR: RAYAN CHERKI.",
+"hold": 0.08,
+"sfx": [
+[
+"pop",
+"RAYAN",
+0.5
+]
+]
+},
+{
+"id": "n3",
+"say": "Three: Fermín López.",
+"cap": "THREE: FERMÍN LÓPEZ.",
+"hold": 0.08,
+"sfx": [
+[
+"pop",
+"FERMÍN",
+0.5
+]
+]
+},
+{
+"id": "n2",
+"say": "Two: Raphinha.",
+"cap": "TWO: RAPHINHA.",
+"hold": 0.08,
+"sfx": [
+[
+"pop",
+"RAPHINHA",
+0.5
+]
+]
+},
+{
+"id": "now1",
+"say": "And number one, after about ten games... Lamine Yamal. Eighty-six percent.",
+"cap": "AND NUMBER ONE, AFTER ABOUT TEN GAMES... LAMINE YAMAL. 86%|eighty-six-percent.",
+"hold": 0.3,
+"sfx": [
+[
+"hit",
+"LAMINE",
+0.7
+]
+]
+},
+{
+"id": "nowcmp",
+"say": "Yamal against Neymar: chances created and assists, every ninety minutes.",
+"cap": "YAMAL AGAINST NEYMAR: CHANCES CREATED AND ASSISTS, EVERY 90|ninety MINUTES.",
+"hold": 0.3
+},
+{
+"id": "end",
+"say": "So Neymar's twin is Michael Olise. And right now, it's Lamine Yamal. Follow for more.",
+"cap": "SO NEYMAR'S TWIN IS MICHAEL OLISE. AND RIGHT NOW, IT'S LAMINE YAMAL. FOLLOW FOR MORE."
+}
+]

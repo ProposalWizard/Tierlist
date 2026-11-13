@@ -35,7 +35,7 @@ export function cardShareText(o: CareerOverviewData): string {
     `${o.seasonsPlayed} seasons`,
     `${t.goals} goals`,
     ...(t.trophies > 0 ? [t.trophies === 1 ? "1 trophy" : `${t.trophies} trophies`] : []),
-    ...(t.ballonDors > 0 ? [`${t.ballonDors}× Ballon d'Or`] : []),
+    ...(t.ballonDors > 0 ? [`${t.ballonDors}× Golden Ball`] : []),
   ];
   return `${o.name} — ${o.verdict.title}. ${bits.join(", ")}. Legacy ${Math.round(o.verdict.score)}. knowitball.co.uk`;
 }

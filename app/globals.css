@@ -82,3 +82,48 @@ body:has([data-star-game]) [data-global-chrome] {
 body:has([data-rbd-admin]) [data-global-chrome] {
   display: none !important;
 }
+
+/* DRAGGABLE CARDS: the picture is never picked up on its own (player
+ * feedback, 8 Nov 2026: "the drag on the player is kinda bugged, it's picking
+ * up the image itself"). iPhone Safari lifts an image on press-and-hold
+ * (Apple's own drag and drop) even with draggable={false}. Every dnd-kit card
+ * carries aria-roledescription="draggable": touches pass through its picture
+ * to the card, so the card's drag and tap get them, and no "save image" menu
+ * or text selection starts. Profile → collection squad, the squad builder,
+ * the Draft's squad screens, the tierlists. */
+[aria-roledescription="draggable"] {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+[aria-roledescription="draggable"] img {
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+/* THE PACKED PHONE APP ONLY (app/layout.app.tsx puts data-kib-app on <body>;
+ * the website never has it). A game, not a web page: no rubber-band bounce
+ * or pull-to-refresh, no grey flash on a tap, no text selection or "copy /
+ * save image" menu on a long press. Typing boxes still select as normal. */
+body[data-kib-app],
+body[data-kib-app] * {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+/* (No overscroll rule on <body>: with it, a finger swipe could not scroll any
+ * page taller than the screen, and a button below the fold was out of reach.
+ * Seen on a real phone, 11 Nov 2026: stuck on a cup result. The rule on
+ * <html> below is enough to stop the bounce.) */
+body[data-kib-app] {
+  -webkit-user-select: none;
+  user-select: none;
+}
+html:has(body[data-kib-app]) {
+  overscroll-behavior: none;
+}
+body[data-kib-app] input,
+body[data-kib-app] textarea,
+body[data-kib-app] [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}

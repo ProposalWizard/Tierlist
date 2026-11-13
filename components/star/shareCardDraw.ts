@@ -258,7 +258,7 @@ export function drawCareerCard(ctx: Ctx, o: CareerOverviewData, farewell: Farewe
   const t = o.totals;
   const tiles: [number, string, boolean][] = [
     [t.apps, "APPS", false], [t.goals, "GOALS", false], [t.assists, "ASSISTS", false],
-    [t.trophies, "TROPHIES", t.trophies > 0], [t.ballonDors, "BALLON D'OR", t.ballonDors > 0],
+    [t.trophies, "TROPHIES", t.trophies > 0], [t.ballonDors, "GOLDEN BALL", t.ballonDors > 0],
   ];
   const ty = 220, th = 60, gap = 6, tw = (CARD_W - PAD * 2 - gap * 4) / 5;
   tiles.forEach(([v, label, gold], i) => {
@@ -393,7 +393,7 @@ export function drawCareerCard(ctx: Ctx, o: CareerOverviewData, farewell: Farewe
   ctx.fillText(".CO.UK", PAD + kw, CARD_H - 14);
   ctx.fillStyle = "rgba(255,255,255,0.7)";
   font(ctx, 900, 9.5, f.body);
-  spaced(ctx, "ROAD TO THE BALLON D'OR", CARD_W - PAD, CARD_H - 16, 0.22, "right");
+  spaced(ctx, "ROAD TO THE GOLDEN BALL", CARD_W - PAD, CARD_H - 16, 0.22, "right");
 
   ctx.restore();
 }

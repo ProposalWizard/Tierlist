@@ -108,7 +108,7 @@ export function LegacyScreen({ career, onNewCareer }: {
           {Array.from(byCompetition.entries()).map(([comp, n]) => (
             <Line key={comp}>{n}× {comp}</Line>
           ))}
-          {career.ballonDorWins > 0 && <Line>{career.ballonDorWins}× Ballon d&apos;Or</Line>}
+          {career.ballonDorWins > 0 && <Line>{career.ballonDorWins}× Golden Ball</Line>}
         </Panel>
 
         <Panel title="Individual">

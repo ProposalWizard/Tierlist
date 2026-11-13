@@ -17,7 +17,7 @@ interface GameLink {
 
 const GAMES: GameLink[] = [
   { name: "Home",                description: "Browse all games & news",                 href: "/"           },
-  { name: "Road to Ballon d'Or", description: "Live a career and win the world's greatest award", href: GAME_PATH, beta: true },
+  { name: "Road to the Golden Ball", description: "Live a career and win the world's greatest award", href: GAME_PATH, beta: true },
   { name: "Tierlists",           description: "Create & play drag-and-drop tierlists",    href: "/tierlists"  },
   { name: "PL Draft",            description: "Build a dream XI from random FIFA rosters", href: "/draft"     },
   { name: "Ten-A-Ball",          description: "Football trivia — ten questions, ten lives", href: "/tenable"  },
@@ -60,6 +60,7 @@ export default function GameSidebar() {
   return (
     <>
       <button
+        data-nav-games-menu
         onClick={() => setOpen(true)}
         className="flex h-9 w-9 items-center justify-center rounded-lg text-white transition-colors hover:text-white"
         aria-label="Open game menu"
@@ -79,7 +80,7 @@ export default function GameSidebar() {
 
           {/* Sidebar */}
           <div
-            className={`fixed left-0 top-0 z-[70] flex h-full w-80 flex-col bg-gray-950 border-r border-gray-800 shadow-2xl transition-transform duration-300 ease-in-out ${open ? "translate-x-0" : "-translate-x-full"}`}
+            className={`fixed left-0 top-0 z-[70] flex h-full w-80 flex-col bg-gray-950 border-r border-gray-800 transition-transform duration-300 ease-in-out ${open ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-gray-800 px-5 py-4">

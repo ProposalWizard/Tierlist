@@ -112,6 +112,9 @@ export const config = {
     // Also skips the game's own files in public/star, public/sfx and public/models
     // (3D models, sounds, music, JSON): plain files that need no login check.
     // No page lives under those three paths (/star-dev is "star-", not "star/").
-    "/((?!_next/static|_next/image|favicon.ico|star/|sfx/|models/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Also skips the two squad routes (6 Nov 2026): they never ask who you
+    // are, and a login cookie refreshed on their answer would stop Vercel's
+    // CDN keeping it (they are the same for every player).
+    "/((?!_next/static|_next/image|favicon.ico|star/|sfx/|models/|api/star/league-squads|api/draft/roster|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

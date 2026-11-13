@@ -15,7 +15,12 @@
 .kb-back[data-look="light"]:hover { border-color: #12a150; color: #12a150; }
 .kb-back[data-look="bento"] { clip-path: none; width: 44px; border-radius: 14px; background: #fff; border-color: #e4e8f0; color: #2f6bff; box-shadow: 0 1px 2px rgba(21, 26, 45, 0.06), 0 6px 18px rgba(21, 26, 45, 0.06); }
 .kb-back[data-look="bento"]:hover { background: #eef3ff; }
-.kb-back[data-look="light"]:focus-visible, .kb-back[data-look="ops"]:focus-visible, .kb-back[data-look="bento"]:focus-visible { outline-color: currentColor; }
+/* Knowitball (THE look, 12 Nov 2026): a plain outlined square; white on the green menu and bars. */
+.kb-back[data-look="house"] { clip-path: none; width: 40px; height: 40px; border-radius: var(--kh-r1); background: var(--kh-panel); border-color: var(--kh-line2); color: var(--kh-ink); }
+.kb-back[data-look="house"]:hover { background: var(--kh-panel); border-color: var(--kh-ink3); }
+:is(.ash-side, .ash-top, .bc-top, .kb-topbar) .kb-back[data-look="house"] { background: transparent; border-color: var(--kh-rail-line); color: #fff; }
+:is(.ash-side, .ash-top, .bc-top, .kb-topbar) .kb-back[data-look="house"]:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.4); }
+.kb-back[data-look="house"]:focus-visible, .kb-back[data-look="light"]:focus-visible, .kb-back[data-look="ops"]:focus-visible, .kb-back[data-look="bento"]:focus-visible { outline-color: currentColor; }
 
 /* Full-screen pages: pinned in the corner, over the scene. */
 .kb-back[data-floating="true"] {
@@ -31,6 +36,10 @@
 .kb-topbar[data-look="ops"] { background: #0b120e; color: #eef6f1; border-bottom-color: rgba(120, 200, 160, 0.18); }
 .kb-topbar[data-look="light"] { background: #ffffff; color: #0f1713; border-bottom-color: #dfe6e1; }
 .kb-topbar[data-look="bento"] { background: #ffffff; color: #151a2d; border-bottom-color: #e4e8f0; }
+.kb-topbar[data-look="house"] { background: var(--kh-rail); color: var(--kh-rail-ink); border-bottom: 0; padding: 8px 16px; }
+.kb-topbar[data-look="house"] .kb-topbar-t { font-size: 16px; font-weight: 600; letter-spacing: 0; }
+.kb-topbar[data-look="house"] .kb-topbar-k { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; opacity: 1; color: var(--kh-rail-ink3); }
+.kb-topbar[data-look="house"] .tr-bell, .kb-topbar[data-look="house"] .tr-bell svg { color: #fff; }
 .kb-topbar:not([data-look="broadcast"]) .kb-topbar-t { font-style: normal; text-transform: none; }
 /* Nested locks (/admin/football → /admin/football/players): only the inner page's bar. */
 .kb-topbar:has(+ .kb-topbar) { display: none; }
@@ -44,5 +53,7 @@ body:has([data-admin-topbar]) [data-global-chrome] { display: none !important; }
   .kb-topbar-t { font-size: 15px; }
   .kb-back { height: 36px; width: 46px; }
   .kb-back[data-look="ops"], .kb-back[data-look="light"], .kb-back[data-look="bento"] { width: 40px; }
+  .kb-back[data-look="house"] { height: 40px; }
+  .kb-topbar[data-look="house"] { padding: 8px 12px; }
   .kb-back[data-floating="true"] { top: calc(8px + env(safe-area-inset-top, 0px)); left: calc(12px + env(safe-area-inset-left, 0px)); }
 }

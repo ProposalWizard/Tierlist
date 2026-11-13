@@ -34,6 +34,6 @@
     { "text": "In this imagined world he finally gets the one thing missing: a World Cup.", "scene": { "type": "quote", "person": "ronaldoger", "text": "Siuuu, in Rio." } },
     { "text": "But he might lose Euro twenty sixteen, the night Portugal became champions of Europe.", "scene": { "type": "text", "heading": "THE TRADE-OFF", "body": "Germany: a World Cup, but two group-stage exits since. Portugal: a Euro and two Nations Leagues." } },
     { "text": "So which Ronaldo wins more? German Ronaldo or the real one? Tell me in the comments.", "scene": { "type": "versus", "title": "Same Ronaldo, different passport", "left": { "person": "ronaldo", "label": "Portugal", "value": "3" }, "right": { "person": "ronaldoger", "label": "Germany", "value": "2+" } } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

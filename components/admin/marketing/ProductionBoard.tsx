@@ -7,15 +7,29 @@
  * Phone: a stage switch and the cards under it. Computer: the seven columns.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BOARD, STAGES, inStage, repoLink, repoRaw, stageName, type BoardCard, type BoardRead, type StageKey } from "@/lib/marketing/board";
+import { BOARD, STAGES, inStage, repoLink, repoRaw, stageName, uploadForCard, type BoardCard, type BoardRead, type StageKey } from "@/lib/marketing/board";
+import { playLink, suiteLink } from "@/lib/marketing/uploadClient";
+import type { MediaItem } from "@/lib/marketing/r2";
 import "./marketing.css";
 
 type Filter = StageKey | "all";
+/** The uploads list: null while reading, [] when storage can't be read. */
+type Uploads = MediaItem[] | null;
 
 export default function ProductionBoard({ initial }: { initial: BoardRead }) {
   const [data, setData] = useState<BoardRead>(initial);
   const [filter, setFilter] = useState<Filter>("all");
   const [busy, setBusy] = useState(false);
+  // The private video storage (R2): which card has an uploaded video to play.
+  const [uploads, setUploads] = useState<Uploads>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/admin/marketing/media", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (alive) setUploads(Array.isArray(j?.items) ? (j.items as MediaItem[]) : []); })
+      .catch(() => { if (alive) setUploads([]); });
+    return () => { alive = false; };
+  }, []);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -26,7 +40,8 @@ export default function ProductionBoard({ initial }: { initial: BoardRead }) {
   }, []);
   useEffect(() => {
     load();
-    const id = setInterval(load, BOARD.refreshMs);
+    // Not while the tab is hidden (6 Nov 2026: server time).
+    const id = setInterval(() => { if (document.visibilityState === "visible") load(); }, BOARD.refreshMs);
     return () => clearInterval(id);
   }, [load]);
 
@@ -59,7 +74,7 @@ export default function ProductionBoard({ initial }: { initial: BoardRead }) {
         {shown.map((s) => (
           <section key={s.key} className="mk-col" data-stage={s.key} data-empty={counts[s.key] === 0}>
             <h3 title={s.help}><span>{s.name}</span><b>{counts[s.key]}</b></h3>
-            {counts[s.key] === 0 ? <p className="mk-empty">Nothing here</p> : inStage(cards, s.key).map((c) => <Card key={c.id} c={c} />)}
+            {counts[s.key] === 0 ? <p className="mk-empty">Nothing here</p> : inStage(cards, s.key).map((c) => <Card key={c.id} c={c} uploads={uploads} />)}
           </section>
         ))}
       </div>
@@ -67,9 +82,13 @@ export default function ProductionBoard({ initial }: { initial: BoardRead }) {
   );
 }
 
-function Card({ c }: { c: BoardCard }) {
+function Card({ c, uploads }: { c: BoardCard; uploads: Uploads }) {
   const [noPic, setNoPic] = useState(false);
-  const files: [string, string | null][] = [["Script", c.script], ["Cover", c.cover], ["Video", c.video]];
+  // The video never links to GitHub (it can't play big files): it plays from the upload, if there is one.
+  const files: [string, string | null][] = [["Script", c.script], ["Cover", c.cover]];
+  const up = uploads ? uploadForCard(c.id, uploads) : null;
+  // Say "not uploaded yet" only for a card that has (or is due) a video: from Making on.
+  const wantsVideo = !!c.video || ["making", "edit", "check", "posted"].includes(c.stage);
   return (
     <article className="mk-card" data-stage={c.stage}>
       <div className="mk-card-top">
@@ -93,6 +112,12 @@ function Card({ c }: { c: BoardCard }) {
         {files.filter(([, p]) => p).map(([label, p]) => (
           <a key={label} href={repoLink(p!, c.branch)} target="_blank" rel="noreferrer">{label} ↗</a>
         ))}
+        {up ? (<>
+          <a href={playLink(up.key)} target="_blank" rel="noreferrer" className="mk-play" title={`Play ${up.name} from the private video storage`}>▶ Video</a>
+          <a href={suiteLink(up.key)} title="Open it in the editing suite">Studio</a>
+        </>) : wantsVideo && uploads !== null ? (
+          <a href="/admin/marketing/uploads" className="mk-novideo" title="Upload it on the Uploads page with this card picked">Video: not uploaded yet</a>
+        ) : null}
         {c.links.map((l) => <a key={l.url} href={l.url} target="_blank" rel="noreferrer">{l.label} ↗</a>)}
       </div>
       {c.log.length > 0 && (

@@ -33,6 +33,6 @@
     { "text": "In twenty twenty-five, eighty-four won the league with four games to spare. Five-one against Spurs.", "scene": { "type": "score", "home": "liverpool", "away": "spurs", "hs": 5, "as": 1, "date": "27 April 2025", "comp": "Premier League", "note": "Title clinched" } },
     { "text": "Same points. One title. Salah has the medal.", "scene": { "type": "trophies", "person": "salah", "items": [ { "kind": "league", "label": "Premier League 2025" }, { "kind": "boot", "label": "Golden Boot" } ] } },
     { "text": "Suarez was the better show. Salah was the better season. Settled.", "scene": { "type": "stamp", "text": "SALAH", "person": "salah", "color": "white" } },
-    { "text": "Follow for more, and play Road to Ballon d'Or at knowitball dot co dot uk.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

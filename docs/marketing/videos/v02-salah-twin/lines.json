@@ -1,0 +1,237 @@
+[
+{
+"id": "intro",
+"say": "Who is prime Mo Salah's statistical twin? From the last five seasons.",
+"cap": "WHO IS PRIME MO SALAH'S STATISTICAL TWIN? FROM THE LAST FIVE SEASONS.",
+"sfx": [
+[
+"hit",
+0.05,
+0.6
+]
+],
+"seed": 23,
+"voiceSettings": {
+"speed": 1.1
+},
+"tempo": 1.05,
+"gapDb": -33,
+"maxGap": 0.06
+},
+{
+"id": "own",
+"say": "First, Salah himself. Three of his own seasons made the top eight. They don't count. So that leaves five.",
+"cap": "FIRST, SALAH HIMSELF. THREE OF HIS OWN SEASONS MADE THE TOP EIGHT. THEY DON'T COUNT. SO THAT LEAVES FIVE.",
+"hold": 0.9,
+"sfx": [
+[
+"pop",
+"SALAH",
+0.5
+],
+[
+"whoosh",
+"LEAVES",
+0.5
+]
+]
+},
+{
+"id": "c8",
+"say": "Number five: Son Heung-min. Tottenham. Seventy-six percent.",
+"cap": "NUMBER FIVE: SON HEUNG-MIN. TOTTENHAM. 76%.|x-percent",
+"hold": 0.9,
+"sfx": [
+[
+"pop",
+"SON",
+0.5
+],
+[
+"tick",
+"TOTTENHAM",
+0.4
+]
+]
+},
+{
+"id": "c6",
+"say": "Four: Harvey Barnes. Newcastle. Seventy-six percent.",
+"cap": "FOUR: HARVEY BARNES. NEWCASTLE. 76%.|x-percent",
+"hold": 0.9,
+"sfx": [
+[
+"pop",
+"HARVEY",
+0.5
+]
+]
+},
+{
+"id": "saka",
+"say": "You'd think Saka would be up here? He's twenty-eighth.",
+"cap": "YOU'D THINK SAKA WOULD BE UP HERE? HE'S 28TH.|twenty-eighth",
+"hold": 0.9,
+"sfx": [
+[
+"hit",
+"HE'S",
+0.5
+]
+]
+},
+{
+"id": "c5",
+"say": "Three: Kelechi Iheanacho. Leicester. Yes, really.",
+"cap": "THREE: KELECHI IHEANACHO. LEICESTER. YES, REALLY.",
+"hold": 0.9,
+"sfx": [
+[
+"pop",
+"KELECHI",
+0.5
+]
+]
+},
+{
+"id": "c4",
+"say": "Two: his old Liverpool team-mate, Roberto Firmino. Seventy-eight percent. Guess the twin in the comments.",
+"cap": "TWO: HIS OLD LIVERPOOL TEAM-MATE, ROBERTO FIRMINO. 78%.|x-percent GUESS THE TWIN IN THE COMMENTS.",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"ROBERTO",
+0.55
+],
+[
+"pop",
+"GUESS",
+0.45
+]
+]
+},
+{
+"id": "c3",
+"say": "And number one... Cole Palmer. His first season at Chelsea. Seventy-nine percent. That makes him Salah's statistical twin.",
+"cap": "AND NUMBER ONE... COLE PALMER. HIS FIRST SEASON AT CHELSEA. 79%.|x-percent THAT MAKES HIM SALAH'S STATISTICAL TWIN.",
+"hold": 0.4,
+"sfx": [
+[
+"hit",
+"COLE",
+0.7
+],
+[
+"hit",
+"THAT",
+0.5
+]
+]
+},
+{
+"id": "tests",
+"say": "We changed how much each stat counts, two thousand times. Palmer came first in seventy-nine percent of them.",
+"cap": "WE CHANGED HOW MUCH EACH STAT COUNTS, 2,000|two-thousand TIMES. PALMER CAME FIRST IN 79%|x-percent OF THEM.",
+"sfx": [
+[
+"tick",
+"PALMER",
+0.4
+]
+]
+},
+{
+"id": "why",
+"say": "Why? They create the same. Nearly two and a half chances every ninety minutes. The same shots on target.",
+"cap": "WHY? THEY CREATE THE SAME. NEARLY TWO AND A HALF CHANCES EVERY 90|ninety MINUTES. THE SAME SHOTS ON TARGET.",
+"hold": 0.2
+},
+{
+"id": "diff",
+"say": "The difference? Palmer passes way more. Salah scores more, and makes more big chances.",
+"cap": "THE DIFFERENCE? PALMER PASSES WAY MORE. SALAH SCORES MORE, AND MAKES MORE BIG CHANCES.",
+"hold": 0.35
+},
+{
+"id": "n0",
+"say": "And this season only?",
+"cap": "AND THIS SEASON ONLY?",
+"hold": 0.3
+},
+{
+"id": "n5",
+"say": "Five: Julio Enciso.",
+"cap": "FIVE: JULIO ENCISO.",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"JULIO",
+0.5
+]
+]
+},
+{
+"id": "n4",
+"say": "Four: João Pedro.",
+"cap": "FOUR: JOÃO PEDRO.",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"JOÃO",
+0.5
+]
+]
+},
+{
+"id": "n3",
+"say": "Three: Bryan Mbeumo.",
+"cap": "THREE: BRYAN MBEUMO.",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"BRYAN",
+0.5
+]
+]
+},
+{
+"id": "n2",
+"say": "Two: Evanilson.",
+"cap": "TWO: EVANILSON.",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"EVANILSON",
+0.5
+]
+]
+},
+{
+"id": "now1",
+"say": "And number one, after about ten games... Rayan Cherki. seventy-six percent.",
+"cap": "AND NUMBER ONE, AFTER ABOUT TEN GAMES... RAYAN CHERKI. 76%.|x-percent",
+"hold": 0.3,
+"sfx": [
+[
+"hit",
+"RAYAN",
+0.7
+]
+]
+},
+{
+"id": "nowcmp",
+"say": "He creates even more. Over three chances every ninety minutes. And more goals, so far.",
+"cap": "HE CREATES EVEN MORE. OVER THREE CHANCES EVERY 90|ninety MINUTES. AND MORE GOALS, SO FAR."
+},
+{
+"id": "end",
+"say": "So Salah's twin is Cole Palmer. And right now, it's Rayan Cherki. Follow for more.",
+"cap": "SO SALAH'S TWIN IS COLE PALMER. AND RIGHT NOW, IT'S RAYAN CHERKI. FOLLOW FOR MORE."
+}
+]

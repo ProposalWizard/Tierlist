@@ -19,8 +19,13 @@
  */
 import { useEffect, useState } from "react";
 
-export type AdminLook = "ops" | "light" | "broadcast" | "bento";
+/** "house" is THE admin look (Harry, 12 Nov 2026, picked from option pictures:
+ *  "A for admin home and C for the rest"): calm tiles on the admin home, a dark
+ *  green side menu, green-tinted paper and rows on every other page. The four
+ *  older looks stay on the switch as skins (RUL-UI-007). */
+export type AdminLook = "house" | "ops" | "light" | "broadcast" | "bento";
 export const ADMIN_LOOKS: { id: AdminLook; name: string }[] = [
+  { id: "house", name: "Knowitball" },
   { id: "broadcast", name: "Broadcast" },
   { id: "bento", name: "Bento" },
   { id: "ops", name: "Ops room" },
@@ -31,8 +36,10 @@ export const ADMIN_LOOKS: { id: AdminLook; name: string }[] = [
  *  never branch a layout on the look. */
 export const isBoardLook = (l: AdminLook) => l === "broadcast" || l === "bento";
 /** The two light looks (for anything that paints itself dark or light). */
-export const isLightLook = (l: AdminLook) => l === "light" || l === "bento";
-const LOOK_KEY = "kib-admin-look";
+export const isLightLook = (l: AdminLook) => l === "house" || l === "light" || l === "bento";
+/** A new key on 12 Nov 2026, so everyone starts on the Knowitball look once
+ *  (the old key, "kib-admin-look", is left alone and no longer read). */
+const LOOK_KEY = "kib-admin-look-2";
 const MODE_KEY = "kib-admin-mode";
 const EVENT = "knowitball:admin-prefs";
 
@@ -44,12 +51,11 @@ function write(key: string, v: string) {
   try { window.dispatchEvent(new Event(EVENT)); } catch { /* server */ }
 }
 
-/** Never chosen = Clean light (Harry, 20 Oct 2026: "the default look on the
- *  admin should be the clean light, because I think he [Mikey] preferred
- *  that"). Anyone who picked a look keeps it. */
+/** Never chosen = the Knowitball look (Harry, 12 Nov 2026; it was Clean light
+ *  from 20 Oct 2026). Anyone who picks another look after that keeps it. */
 export const getAdminLook = (): AdminLook => {
   const v = read(LOOK_KEY);
-  return v === "ops" || v === "broadcast" || v === "bento" ? v : "light";
+  return v === "ops" || v === "broadcast" || v === "bento" || v === "light" ? v : "house";
 };
 export const setAdminLook = (l: AdminLook) => write(LOOK_KEY, l);
 /** On unless switched off: today's admin tab was always there for admins. */
@@ -68,5 +74,5 @@ function usePref<T>(get: () => T, fallback: T): T {
   return v;
 }
 
-export const useAdminLook = () => usePref(getAdminLook, "light" as AdminLook);
+export const useAdminLook = () => usePref(getAdminLook, "house" as AdminLook);
 export const useAdminMode = () => usePref(getAdminMode, true);

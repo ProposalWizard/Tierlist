@@ -1,0 +1,59 @@
+/*
+ * The admin home (app/admin/AdminHub.tsx). Painted by the skin tokens
+ * (--sk-* in components/admin/shell/skin.css, --ash-* in adminShell.css), so
+ * every Look repaints it and none changes where things sit (Harry, 20 Oct 2026).
+ */
+.ahub { display: flex; flex-direction: column; gap: 18px; max-width: 1180px; }
+.ahub-head .ash-sub { max-width: 60ch; }
+.ahub-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.ahub-tile {
+  position: relative; display: flex; flex-direction: column; min-width: 0; border-radius: var(--sk-r); overflow: hidden;
+  background: var(--sk-tile); border: 1px solid var(--sk-tile-border); color: var(--sk-tile-ink); box-shadow: var(--ash-shadow);
+}
+.ahub-tile:hover { box-shadow: var(--sk-hover, var(--ash-shadow)); }
+.ahub-main {
+  display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto 1fr; column-gap: 14px; row-gap: 4px;
+  padding: 18px; min-height: 150px; text-decoration: none; color: inherit; flex: 1;
+}
+.ahub-ic {
+  grid-row: 1 / span 3; width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center;
+  color: #0b0f0d; background: var(--ahub-tint); box-shadow: 0 8px 22px color-mix(in srgb, var(--ahub-tint) 35%, transparent);
+}
+.ahub-name { font-size: 20px; font-weight: 900; line-height: 1.15; font-style: var(--sk-type-style); text-transform: var(--sk-type-case); align-self: end; }
+.ahub-line { font-size: 13.5px; line-height: 1.4; color: var(--sk-tile-ink2); }
+.ahub-n { align-self: end; justify-self: start; margin-top: 6px; font-size: 11.5px; font-weight: 900; padding: 3px 9px; border-radius: 99px; color: var(--sk-badge-ink, inherit); background: var(--sk-badge, rgba(255,255,255,.12)); }
+.ahub-subs { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 18px 14px 96px; margin-top: -8px; }
+.ahub-subs a {
+  font-size: 12.5px; font-weight: 800; text-decoration: none; color: var(--sk-tile-ink); padding: 5px 10px; border-radius: 99px;
+  border: 1px solid color-mix(in srgb, var(--sk-tile-ink) 22%, transparent);
+}
+.ahub-subs a:hover { background: color-mix(in srgb, var(--sk-tile-ink) 10%, transparent); }
+
+/* What changed: small on purpose (full detail on the Team board). */
+.ahub-changed { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+.ahub-ch-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13.5px; }
+.ahub-site { display: inline-flex; align-items: center; gap: 7px; color: var(--ash-ink2); font-weight: 700; }
+.ahub-site i { width: 9px; height: 9px; border-radius: 50%; background: var(--ash-ink3); }
+.ahub-site[data-tone="ok"] i { background: var(--ash-accent); }
+.ahub-site[data-tone="bad"] i { background: var(--ash-red); }
+.ahub-site[data-tone="wait"] i { background: var(--ash-amber); }
+.ahub-more { margin-left: auto; font-weight: 800; font-size: 13px; color: var(--ash-accent); text-decoration: none; }
+.ahub-pushes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ahub-pushes li { display: flex; align-items: center; gap: 10px; font-size: 13px; min-width: 0; }
+.ahub-pushes .ash-av { width: 22px; height: 22px; font-size: 10.5px; }
+.ahub-pt { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ash-ink); }
+.ahub-when { color: var(--ash-ink3); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ahub-foot { margin: 0; color: var(--ash-ink3); font-size: 12px; }
+
+@media (max-width: 1100px) { .ahub-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) {
+  .ahub-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .ahub-main { grid-template-columns: 1fr; grid-template-rows: auto auto auto 1fr; padding: 12px; min-height: 0; column-gap: 0; }
+  .ahub-ic { grid-row: auto; width: 44px; height: 44px; border-radius: 12px; margin-bottom: 6px; }
+  .ahub-ic svg { width: 24px; height: 24px; }
+  .ahub-name { font-size: 15.5px; }
+  .ahub-line { font-size: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .ahub-subs { padding: 0 12px 12px; margin-top: 0; }
+  .ahub-subs a { font-size: 11.5px; padding: 4px 8px; }
+  .ahub-more { margin-left: 0; }
+}

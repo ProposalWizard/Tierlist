@@ -1,0 +1,6 @@
+# Made by the scripts (mobile/README.md), never committed
+node_modules/
+www/
+packed/
+www-test/
+packed.new/
