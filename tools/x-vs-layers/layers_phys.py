@@ -248,8 +248,9 @@ def check():
   # 2 every break: the ball was moving down at the disc, with enough energy, and the disc was whole until then
   for e in M['events']:
     k=e['k'];name='plate' if k==N+1 else f'disc_{k:02d}';d=bpy.data.objects[name]
-    s.frame_set(e['frame']-1);whole=not d.hide_render;p=ball.matrix_world.translation;near=(p.z-BR)-e['top']<abs(e['v'])*LOOK/FPS+0.05 and (p.z-BR)>e['top']-0.25
-    s.frame_set(e['frame']);gone=d.hide_render
+    s.frame_set(e['frame']-1);whole=not d.hide_render
+    s.frame_set(e['frame']);gone=d.hide_render;p=ball.matrix_world.translation
+    near=(p.z-BR)-e['top']<abs(e['v'])*LOOK/FPS+0.05 and (p.z-BR)>e['top']-0.25
     ok=whole and gone and near and e['v']<0 and e['ke']>=(E_PLATE if k==N+1 else E_BREAK)
     rows.append(f"layer {k}: frame {e['frame']} speed {e['v']} energy {e['ke']} whole before {whole} gone after {gone} ball there {near}")
     if not ok: fails.append(rows[-1])
