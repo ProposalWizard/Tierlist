@@ -168,6 +168,7 @@ def build():
     bpy.context.view_layer.objects.active=o;bpy.ops.rigidbody.object_add(type='PASSIVE');o.rigid_body.collision_shape='MESH' if o is c else 'CONVEX_HULL';o.rigid_body.friction=0.8
 
   for o in (c,base,plate): o.rigid_body.restitution=0.4
+  rw.use_split_impulse=bool(globals().get('SPLIT',1))
   # ball: a real body. Held above the frame, let go so it lands at the original's impact time.
   col,rough,metal,_=BALLS[key];mass=DENS[key]*(4/3*math.pi*BR**3)*K
   bpy.ops.mesh.primitive_uv_sphere_add(segments=48,ring_count=32,radius=BR);ball=bpy.context.object;ball.name='ball';bpy.ops.object.shade_smooth();ball.data.materials.append(plain('ball',col,rough,metal))
@@ -229,8 +230,13 @@ def build():
   meta=dict(round=RI,name=r['name'],F0=F0,F1=F1,brk_frames=[e['frame'] for e in glass_ev],n=len(glass_ev),gold=any(e['k']==N+1 for e in events),events=events,mass=round(mass,4),release=frel,path=path)
   json.dump(meta,open(OUT+f'meta_r{RI:02d}.json','w'))
   bpy.ops.wm.save_as_mainfile(filepath=OUT+f'layers_r{RI:02d}.blend')
+  wild=0;allsh=[o for d in discs for o in d['shards']]
+  for f in (F0+(F1-F0)*2//3,F1-1):
+    s.frame_set(f)
+    wild=max(wild,sum(1 for o in allsh if (not o.hide_render) and (o.matrix_world.translation.z>TOP+2.5 or math.hypot(o.matrix_world.translation.x,o.matrix_world.translation.y)>6 or o.matrix_world.translation.z<-2)))
+  meta['wild']=wild;json.dump(meta,open(OUT+f'meta_r{RI:02d}.json','w'))
   zend=path[-1][2]-BR
-  print('built',r['name'],'mass',round(mass,3),'BROKE',len(glass_ev),'plate' if meta['gold'] else '','ball ends at z',round(zend,2),'max z after hit',round(max(p[2] for p in path[max(0,frel-F0+16):])-BR,2),'sim',round(time.time()-t,1),'s')
+  print('built',r['name'],'BROKE',len(glass_ev),'WILD',wild,'of',sum(1 for o in allsh if not o.hide_render),'plate' if meta['gold'] else '','ball ends at z',round(zend,2),'max z after hit',round(max(p[2] for p in path[max(0,frel-F0+16):])-BR,2),'sim',round(time.time()-t,1),'s')
 
 def check():
   bpy.ops.wm.open_mainfile(filepath=OUT+f'layers_r{RI:02d}.blend');s=bpy.context.scene;M=json.load(open(OUT+f'meta_r{RI:02d}.json'))
