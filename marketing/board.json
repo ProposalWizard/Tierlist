@@ -267,7 +267,7 @@
  {
   "id": "v11-replace-van-dijk",
   "title": "v11 · How do Liverpool replace Van Dijk?",
-  "stage": "check",
+  "stage": "posted",
   "owner": "Claude",
   "updated": "2026-11-13T12:00:00Z",
   "postOn": null,
@@ -276,7 +276,12 @@
   "cover": "docs/marketing/videos/v11-replace-van-dijk/cover.png",
   "video": "docs/marketing/videos/v11-replace-van-dijk/knowitball-v11-replace-van-dijk.mp4",
   "seconds": 93.9,
-  "links": [],
+  "links": [
+   {
+    "label": "Instagram Reel",
+    "url": "https://www.instagram.com/reel/DfsPQfbj6R_/"
+   }
+  ],
   "log": [
    "2026-11-13 Made in story mode from Mikey's context, motion style. Lienhart (#1) left out on purpose. Waiting for Mikey's look."
   ]
