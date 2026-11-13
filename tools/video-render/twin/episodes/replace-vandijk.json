@@ -1,0 +1,76 @@
+{
+ "player": "Virgil van Dijk",
+ "season": "2025/26",
+ "short": "Van Dijk",
+ "from": "Liverpool",
+ "to": "",
+ "toId": 0,
+ "positions": [
+  33,
+  34,
+  35,
+  36,
+  37
+ ],
+ "posWord": "centre-back",
+ "maxAge": 23,
+ "minMins": 900,
+ "seasons": [
+  "2025/26",
+  "2026/27"
+ ],
+ "series": "WHO REPLACES HIM?",
+ "hookSay": "Virgil van Dijk's contract runs out at the end of the season. If it isn't renewed, how do Liverpool replace him?",
+ "hookSticker": "CONTRACT RUNS OUT THIS SUMMER",
+ "hookStickerAt": "CONTRACT",
+ "dream": "Jacobo Ramón",
+ "dreamTag": "THE YOUNG PICK",
+ "pickTag": "THE EXPERIENCED PICK",
+ "comparePick": "Jacobo Ramón",
+ "story": [
+  {
+   "name": "Dean Huijsen",
+   "mapSay": "Right at the top of the list: Dean Huijsen, at Real Madrid.",
+   "verdict": "He'd cost a lot, but the real problem: when you're starting for Real Madrid, you don't leave.",
+   "stamp": "WON'T LEAVE MADRID",
+   "stampAt": "WHEN",
+   "kind": "no"
+  },
+  {
+   "name": "Jan Paul van Hecke",
+   "lead": "Next, Jan Paul van Hecke.",
+   "verdict": "But he's only just signed for Spurs, so prising him away looks unlikely.",
+   "stamp": "JUST JOINED SPURS",
+   "stampAt": "BUT",
+   "kind": "no"
+  },
+  {
+   "name": "Jacobo Ramón",
+   "lead": "Then Jacobo Ramón, at Como.",
+   "verdict": "He'd be expensive, and he's linked with Real Madrid. But he's been excellent, and for the right price, we think Liverpool could get him.",
+   "stamp": "THE YOUNG PICK",
+   "stampAt": "WE",
+   "kind": "yes",
+   "tag": "OPTION 1 · THE YOUNG PICK"
+  },
+  {
+   "name": "Malick Thiaw",
+   "lead": "What about Malick Thiaw, at Newcastle?",
+   "verdict": "We like him, but he hasn't played well this season.",
+   "stamp": "OUT OF FORM",
+   "stampAt": "HASN'T",
+   "kind": "maybe"
+  },
+  {
+   "name": "Nico Schlotterbeck",
+   "lead": "Van Dijk brings experience, and someone has to partner Jérémy Jacquet. So: Nico Schlotterbeck, at Dortmund.",
+   "verdict": "He's played for Germany and in a Champions League final, and Dortmund have conceded just five in seven this season. He's less like Van Dijk, but he brings a different style.",
+   "stamp": "THE EXPERIENCED PICK",
+   "stampAt": "PLAYED",
+   "kind": "yes",
+   "tag": "OPTION 2 · EXPERIENCE"
+  }
+ ],
+ "endSay": "So: Ramón for the future, or Schlotterbeck for experience. Who would you sign? Follow for more.",
+ "mapN": 90
+}

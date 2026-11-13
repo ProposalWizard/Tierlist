@@ -222,7 +222,7 @@ say4 = ", ".join(LAB[k][0] for k in cmp4[:-1]) + " and " + LAB[cmp4[-1]][0]
 line('compare', f"{SHORT} against {last(o1)}, on what makes {SHORT} special: {say4}.", hold=0.2)
 row = lambda k, f: {'label': LAB[k][1], 'a': round(tf[k], 2), 'b': round(f[k], 2), 'sub': 'per 90 minutes' if k != 'pass%' else 'per cent'}
 side = lambda r: {'name': r['name'], 'season': ' + '.join(x[2:] for x in r['o']['seasons']), 'face': r['face'], 'club': r['club']}
-S['compare'] = {'type': 'compare', 'kicker': f"{SHORT} v {last(o1)}", 'title': f"What makes {SHORT} special.", 'a': {'name': NAME, 'season': ' + '.join(x[2:] for x in SEAS), 'face': tgp['face'], 'club': tgp['club']},
+S['compare'] = {'type': 'compare', 'kicker': f"{SHORT} v {last(o1)}", 'title': f"What makes {SHORT} special.", 'a': {'name': NAME, 'short': SHORT, 'season': ' + '.join(x[2:] for x in SEAS), 'face': tgp['face'], 'club': tgp['club']},
                 'b': side(o1), 'rows': [row(k, pf) for k in cmp4], 'at': [LAB[k][0].upper().split()[0] for k in cmp4]}
 line('filter', f"But {SHORT} is only {words(ti['age'])}. So what about {words(MA)} and under?", f"BUT {SHORT.upper()} IS ONLY {ti['age']}|{words(ti['age'])}. SO WHAT ABOUT {MA}|{words(MA)} AND UNDER?", sfx=[["whoosh", "SO", 0.6]])
 S['filter'] = {'type': 'map', 'dots': dots, 'maxAge': MA, 'fadeAt': 'SO', 'title': f"{MA} AND UNDER"}
@@ -255,18 +255,18 @@ if EP.get('story'):
                  'hall': {'value': hvc, 'v': ti['value'], 'face': tgp['face']}, 'pv': r['value'], 'rank': rank,
                  'pill': b.get('tag'), 'pillAt': (lead.upper().split()[0] if lead else 'HE\'S'),
                  'stamp': b.get('stamp'), 'stampAt': b.get('stampAt', b['verdict'].split()[0]).upper(), 'good': good, 'kind': b.get('kind', 'no')}
-    pk = byname(st[-1]['name']); pf = pk['o']['fc']; cmp4 = [k for k in ranked if pf.get(k) is not None][:4]
+    pk = byname(EP.get('comparePick', st[-1]['name'])); last_pick = byname(st[-1]['name']); pf = pk['o']['fc'];   # who is compared with him (default: the last one) cmp4 = [k for k in ranked if pf.get(k) is not None][:4]
     say4 = ", ".join(LAB[k][0] for k in cmp4[:-1]) + " and " + LAB[cmp4[-1]][0]
     line('compare', f"{SHORT} against {last(pk)}, on what makes {SHORT} special: {say4}.", hold=0.2)
     row = lambda k, f: {'label': LAB[k][1], 'a': round(tf[k], 2), 'b': round(f[k], 2), 'sub': 'per 90 minutes' if k != 'pass%' else 'per cent'}
     side = lambda r: {'name': r['name'], 'season': ' + '.join(x[2:] for x in r['o']['seasons']), 'face': r['face'], 'club': r['club']}
-    S['compare'] = {'type': 'compare', 'kicker': f"{SHORT} v {last(pk)}", 'title': f"What makes {SHORT} special.", 'a': {'name': NAME, 'season': ' + '.join(x[2:] for x in SEAS), 'face': tgp['face'], 'club': tgp['club']},
+    S['compare'] = {'type': 'compare', 'kicker': f"{SHORT} v {last(pk)}", 'title': f"What makes {SHORT} special.", 'a': {'name': NAME, 'short': SHORT, 'season': ' + '.join(x[2:] for x in SEAS), 'face': tgp['face'], 'club': tgp['club']},
                     'b': side(pk), 'rows': [row(k, pf) for k in cmp4], 'at': [LAB[k][0].upper().split()[0] for k in cmp4]}
     dream = byname(EP.get('dream', st[0]['name']))
-    line('end', EP.get('endSay', f"So: {last(dream)} is the dream, but {last(pk)} is the realistic one. Who would you sign? Follow for more."), hold=0.0)
+    line('end', EP.get('endSay', f"So: {last(dream)} is the dream, but {last(last_pick)} is the realistic one. Who would you sign? Follow for more."), hold=0.0)
     S['end'] = {'type': 'end2', 'a': {'face': tgp['face'], 'club': tgp['club'], 'name': SHORT.upper()}, 'title': f"HOW DO YOU REPLACE {SHORT.upper()}?",
                 'opts': [{'face': r['face'], 'club': r['club'], 'name': last(r).upper(), 'sub': f"{r['age']} · {money(r['value'])[1]} · {R0(r['match'])}%", 'tag': t_, 'at': last(r).upper()}
-                         for r, t_ in ((dream, EP.get('dreamTag', 'THE DREAM')), (pk, EP.get('pickTag', 'THE REALISTIC PICK')))]}
+                         for r, t_ in ((dream, EP.get('dreamTag', 'THE DREAM')), (last_pick, EP.get('pickTag', 'THE REALISTIC PICK')))]}
 meta = {'series': EP.get('series', 'WHO REPLACES HIM?'), 'targetShort': SHORT, 'engine': 'video_replace.html', 'imgDir': IMG, 'clubColors': club_colours(),
         'source': 'Data: Opta via FotMob · top 5 leagues · ages and values: FotMob'}
 for l in L: l.setdefault('voiceSettings', {"speed": 1.08})
@@ -275,5 +275,5 @@ json.dump({'meta': meta, 'scenes': S}, open(os.path.join(OUT, 'scenes.json'), 'w
 json.dump({'provider': 'elevenlabs', 'voiceId': 'WAppqUXeqDqXjNTaQxG9'}, open(os.path.join(OUT, 'voice.json'), 'w'))
 for l in L: print(f"  [{l['id']}] {l['say']}")
 if os.environ.get('DEBUG_LIST'):
-    for r in rows[:12]: print('ALL', r['name'], r['match'], r['age'], r['team'], (r['value'] or 0) // 10**6, r['o']['mins'], r['o']['seasons'])
+    for n_, r in enumerate(rows[:int(os.environ.get('DEBUG_LIST'))], 1): print('ALL', n_, r['name'], r['match'], r['age'], r['team'], (r['value'] or 0) // 10**6, r['o']['mins'], r['o']['seasons'])
     for r in young[:10]: print('YOUNG', r['name'], r['match'], r['age'], r['team'], (r['value'] or 0) // 10**6, r['o']['mins'], r['o']['seasons'], winsY[r['name']])

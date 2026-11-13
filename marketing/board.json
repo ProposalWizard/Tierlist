@@ -263,5 +263,22 @@
   "log": [
    "2026-11-12 Made in story mode from Mikey's context, motion style. Güler is not 'by far' the closest (83% v Dybala 81%): the line says 'the closest of them all'. Waiting for Mikey's look."
   ]
+ },
+ {
+  "id": "v11-replace-van-dijk",
+  "title": "v11 · How do Liverpool replace Van Dijk?",
+  "stage": "check",
+  "owner": "Claude",
+  "updated": "2026-11-13T12:00:00Z",
+  "postOn": null,
+  "line": "Contract runs out. Huijsen #2 (won't leave Madrid), Van Hecke #4 (just joined Spurs), Jacobo Ramón #14 (21, Como, €48M): the young pick; Thiaw #20 (out of form); Schlotterbeck #85 (26, Dortmund, €54M): the experienced pick.",
+  "script": "docs/marketing/videos/v11-replace-van-dijk/script.md",
+  "cover": "docs/marketing/videos/v11-replace-van-dijk/cover.png",
+  "video": "docs/marketing/videos/v11-replace-van-dijk/knowitball-v11-replace-van-dijk.mp4",
+  "seconds": 93.9,
+  "links": [],
+  "log": [
+   "2026-11-13 Made in story mode from Mikey's context, motion style. Lienhart (#1) left out on purpose. Waiting for Mikey's look."
+  ]
  }
 ]

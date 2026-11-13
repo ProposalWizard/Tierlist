@@ -1,0 +1,192 @@
+[
+{
+"id": "hook",
+"say": "Virgil van Dijk's contract runs out at the end of the season. If it isn't renewed, how do Liverpool replace him?",
+"cap": "VIRGIL VAN DIJK'S CONTRACT RUNS OUT AT THE END OF THE SEASON. IF IT ISN'T RENEWED, HOW DO LIVERPOOL REPLACE HIM?",
+"sfx": [
+[
+"hit",
+0.0,
+0.7
+],
+[
+"pop",
+"CONTRACT",
+0.6
+],
+[
+"hit",
+"HOW",
+0.7
+]
+],
+"voiceSettings": {
+"speed": 1.1
+},
+"tempo": 1.05
+},
+{
+"id": "profile",
+"say": "Over the last two seasons, among Premier League centre-backs, he's third for goals, fourth for long balls, and seventh for passes. But only fifty-eighth for tackles.",
+"cap": "OVER THE LAST TWO SEASONS, AMONG PREMIER LEAGUE CENTRE-BACKS, HE'S THIRD FOR GOALS, FOURTH FOR LONG BALLS, AND SEVENTH FOR PASSES. BUT ONLY FIFTY-EIGHTH FOR TACKLES.",
+"hold": 0.3,
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "method",
+"say": "So we compared him with all 318 centre-backs in Europe's top five leagues.",
+"cap": "SO WE COMPARED HIM WITH ALL 318|318 CENTRE-BACKS IN EUROPE'S TOP FIVE LEAGUES.",
+"hold": 0.2,
+"sfx": [
+[
+"tick",
+"ALL",
+0.4
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "map",
+"say": "Right at the top of the list: Dean Huijsen, at Real Madrid.",
+"cap": "RIGHT AT THE TOP OF THE LIST: DEAN HUIJSEN, AT REAL MADRID.",
+"hold": 0.15,
+"sfx": [
+[
+"hit",
+"DEAN",
+0.7
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "s1",
+"say": "He's twenty-one, a seventy-nine percent match, and worth seventy-five million euros. He'd cost a lot, but the real problem: when you're starting for Real Madrid, you don't leave.",
+"cap": "HE'S 21|twenty-one, A 79%|seventy-nine-percent MATCH, AND WORTH €75M|seventy-five-million-euros. HE'D COST A LOT, BUT THE REAL PROBLEM: WHEN YOU'RE STARTING FOR REAL MADRID, YOU DON'T LEAVE.",
+"hold": 0.3,
+"sfx": [
+[
+"pop",
+"WORTH",
+0.5
+],
+[
+"hit",
+"WHEN",
+0.6
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "s2",
+"say": "Next, Jan Paul van Hecke. He's twenty-six, a seventy-nine percent match, and worth thirty-eight million euros. But he's only just signed for Spurs, so prising him away looks unlikely.",
+"cap": "NEXT, JAN PAUL VAN HECKE. HE'S 26|twenty-six, A 79%|seventy-nine-percent MATCH, AND WORTH €38M|thirty-eight-million-euros. BUT HE'S ONLY JUST SIGNED FOR SPURS, SO PRISING HIM AWAY LOOKS UNLIKELY.",
+"hold": 0.3,
+"sfx": [
+[
+"pop",
+"WORTH",
+0.5
+],
+[
+"hit",
+"BUT",
+0.6
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "s3",
+"say": "Then Jacobo Ramón, at Como. He's twenty-one, a seventy-six percent match, and worth forty-eight million euros. He'd be expensive, and he's linked with Real Madrid. But he's been excellent, and for the right price, we think Liverpool could get him.",
+"cap": "THEN JACOBO RAMÓN, AT COMO. HE'S 21|twenty-one, A 76%|seventy-six-percent MATCH, AND WORTH €48M|forty-eight-million-euros. HE'D BE EXPENSIVE, AND HE'S LINKED WITH REAL MADRID. BUT HE'S BEEN EXCELLENT, AND FOR THE RIGHT PRICE, WE THINK LIVERPOOL COULD GET HIM.",
+"hold": 0.3,
+"sfx": [
+[
+"pop",
+"WORTH",
+0.5
+],
+[
+"hit",
+"WE",
+0.6
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "s4",
+"say": "What about Malick Thiaw, at Newcastle? He's twenty-five, a seventy-five percent match, and worth sixty-one million euros. We like him, but he hasn't played well this season.",
+"cap": "WHAT ABOUT MALICK THIAW, AT NEWCASTLE? HE'S 25|twenty-five, A 75%|seventy-five-percent MATCH, AND WORTH €61M|sixty-one-million-euros. WE LIKE HIM, BUT HE HASN'T PLAYED WELL THIS SEASON.",
+"hold": 0.3,
+"sfx": [
+[
+"pop",
+"WORTH",
+0.5
+],
+[
+"hit",
+"HASN'T",
+0.6
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "s5",
+"say": "Van Dijk brings experience, and someone has to partner Jérémy Jacquet. So: Nico Schlotterbeck, at Dortmund. He's twenty-six, a sixty-nine percent match, and worth fifty-four million euros. He's played for Germany and in a Champions League final, and Dortmund have conceded just five in seven this season. He's less like Van Dijk, but he brings a different style.",
+"cap": "VAN DIJK BRINGS EXPERIENCE, AND SOMEONE HAS TO PARTNER JÉRÉMY JACQUET. SO: NICO SCHLOTTERBECK, AT DORTMUND. HE'S 26|twenty-six, A 69%|sixty-nine-percent MATCH, AND WORTH €54M|fifty-four-million-euros. HE'S PLAYED FOR GERMANY AND IN A CHAMPIONS LEAGUE FINAL, AND DORTMUND HAVE CONCEDED JUST FIVE IN SEVEN THIS SEASON. HE'S LESS LIKE VAN DIJK, BUT HE BRINGS A DIFFERENT STYLE.",
+"hold": 0.3,
+"sfx": [
+[
+"pop",
+"WORTH",
+0.5
+],
+[
+"hit",
+"PLAYED",
+0.6
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "compare",
+"say": "Van Dijk against Ramón, on what makes Van Dijk special: goals, long balls, passes and clearances.",
+"cap": "VAN DIJK AGAINST RAMÓN, ON WHAT MAKES VAN DIJK SPECIAL: GOALS, LONG BALLS, PASSES AND CLEARANCES.",
+"hold": 0.2,
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "end",
+"say": "So: Ramón for the future, or Schlotterbeck for experience. Who would you sign? Follow for more.",
+"cap": "SO: RAMÓN FOR THE FUTURE, OR SCHLOTTERBECK FOR EXPERIENCE. WHO WOULD YOU SIGN? FOLLOW FOR MORE.",
+"hold": 0.0,
+"voiceSettings": {
+"speed": 1.08
+}
+}
+]
