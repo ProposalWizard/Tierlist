@@ -40,16 +40,54 @@ fs.mkdirSync(path.join(OUT, "screens"), { recursive: true });
 const logf = fs.createWriteStream(path.join(OUT, "log.txt"), { flags: "a" });
 const log = (s) => { const l = `[${new Date().toISOString().slice(11, 19)}] ${s}`; console.log(l); logf.write(l + "\n"); };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+/** The screen's height, the page's height (TALL when the page is taller than the phone) and the pitch's size. */
+const sizes = () => page.evaluate(() => { const c = document.querySelector("canvas")?.getBoundingClientRect(); const d = document.documentElement.scrollHeight;
+  return `screen ${innerWidth}x${innerHeight} · page ${d}${d > innerHeight + 1 ? " TALL by " + (d - innerHeight) : ""}${c ? ` · pitch ${Math.round(c.width)}x${Math.round(c.height)}` : ""}`; });
 
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || "/opt/pw-browsers/chromium" });
+const VP = (val("--viewport", "") || "").match(/^(\d+)x(\d+)$/); // e.g. --viewport 360x752: a real Android phone's room for the app
 const VIDEO = val("--video", null); // also film the whole run (a .webm in this folder), for preview films
 // (filming uses a full-height phone, 390x844: the film's phone screen is that shape)
-const ctx = await browser.newContext({ ...devices["iPhone 13"], ...(VIDEO ? { viewport: { width: 390, height: 844 }, recordVideo: { dir: path.resolve(VIDEO), size: { width: 780, height: 1688 } } } : {}) });
+const ctx = await browser.newContext({ ...devices["iPhone 13"], ...(VP ? { viewport: { width: Number(VP[1]), height: Number(VP[2]) } } : {}), ...(VIDEO ? { viewport: { width: 390, height: 844 }, recordVideo: { dir: path.resolve(VIDEO), size: { width: 780, height: 1688 } } } : {}) });
 if (OFFLINE) {
   await ctx.route("**/*", (r) => { const u = r.request().url(); if (u.startsWith(BASE)) return r.continue(); fs.appendFileSync(path.join(OUT, "blocked.txt"), u + "\n"); return r.abort("internetdisconnected"); });
   ctx.on("response", (r) => { if (r.status() >= 400) fs.appendFileSync(path.join(OUT, "failed.txt"), `${r.status()} ${r.url()}\n`); });
 }
 const page = await ctx.newPage();
+// --skip-draw <min width>: an experiment. Leave out every picture copied from an off-screen canvas at least that wide, to see what it costs.
+// --skip <what>: an experiment, to find what a slow screen spends its time drawing. Leaves out one kind of drawing:
+//   canvas (pictures copied from an off-screen canvas) · gradient (anything filled with a gradient) · pattern (a repeated texture) · text · clip (clipping)
+if (val("--skip", null)) await page.addInitScript((what) => { const P = CanvasRenderingContext2D.prototype;
+  if (what === "canvas") { const d = P.drawImage; P.drawImage = function (src, ...r) { if (src instanceof HTMLCanvasElement) return; return d.call(this, src, ...r); }; }
+  const kind = (ctx) => ctx.fillStyle instanceof CanvasGradient ? "gradient" : ctx.fillStyle instanceof CanvasPattern ? "pattern" : "plain";
+  if (what === "gradient" || what === "pattern") { for (const m of ["fill", "fillRect"]) { const f = P[m]; P[m] = function (...r) { if (kind(this) === what) return; return f.apply(this, r); }; } }
+  if (what === "text") { P.fillText = function () {}; P.strokeText = function () {}; }
+  if (what === "clip") { P.clip = function () {}; }
+}, val("--skip", ""));
+// --perf <rate>: slow the processor <rate> times (a mid-range phone is about 4) and time the frames of every
+// trial stage and match chance. --profile <dir>: also save what the processor spent its time on (.cpuprofile).
+const PERF = Number(val("--perf", 0)), PROFILE = val("--profile", null);
+const cdp = PERF || PROFILE ? await ctx.newCDPSession(page) : null;
+let slowed = false; // the processor is slowed from the first timed moment, not through sign-up (that only wastes minutes)
+if (PROFILE) { fs.mkdirSync(path.resolve(PROFILE), { recursive: true }); await cdp.send("Profiler.enable"); await cdp.send("Profiler.setSamplingInterval", { interval: 500 }); }
+let perfN = 0;
+async function perfSample(label, ms = 4000) {
+  if (!cdp) return;
+  if (PERF && !slowed) { slowed = true; await cdp.send("Emulation.setCPUThrottlingRate", { rate: PERF }); await sleep(300); }
+  const TRACE = val("--trace", null); let traced = null;   // --trace <dir>: what the browser itself spent the time on (paint, picture decoding, layout...)
+  if (TRACE) { traced = []; cdp.on("Tracing.dataCollected", (e) => traced && traced.push(...e.value)); await cdp.send("Tracing.start", { transferMode: "ReportEvents", traceConfig: { includedCategories: ["devtools.timeline", "disabled-by-default-devtools.timeline", "blink", "cc", "gpu", "v8"] } }); }
+  if (PROFILE) await cdp.send("Profiler.start");
+  const r = await page.evaluate((ms) => new Promise((done) => { const t = []; let last = performance.now(); const t0 = last;
+    const step = (now) => { t.push(now - last); last = now; if (now - t0 < ms) requestAnimationFrame(step); else { t.sort((a, b) => a - b); const sum = t.reduce((a, b) => a + b, 0);
+      done({ frames: t.length, fps: +(1000 * t.length / sum).toFixed(1), median: +t[t.length >> 1].toFixed(1), p95: +t[Math.floor(t.length * 0.95)].toFixed(1), worst: +t[t.length - 1].toFixed(1) }); } };
+    requestAnimationFrame(step); }), ms);
+  log(`  PERF ${label}: ${r.fps} frames a second · a frame takes ${r.median} ms (slow ones ${r.p95}, worst ${r.worst})`);
+  if (TRACE) { const done = new Promise((r) => cdp.once("Tracing.tracingComplete", r)); await cdp.send("Tracing.end"); await done;
+    const by = new Map(); for (const e of traced) if (e.ph === "X" && e.dur) { const k = e.name; const v = by.get(k) || { n: 0, total: 0, worst: 0 }; v.n++; v.total += e.dur / 1000; v.worst = Math.max(v.worst, e.dur / 1000); by.set(k, v); }
+    const top = [...by].sort((a, b) => b[1].total - a[1].total).slice(0, 14).map(([k, v]) => `${k} ${Math.round(v.total)}ms/${v.n} (worst ${Math.round(v.worst)})`);
+    log(`  TRACE ${label}: ${top.join(" · ")}`); fs.mkdirSync(path.resolve(TRACE), { recursive: true }); fs.writeFileSync(path.join(path.resolve(TRACE), label.replace(/\W+/g, "-") + ".trace.json"), JSON.stringify(traced)); traced = null; }
+  if (PROFILE) { const { profile } = await cdp.send("Profiler.stop"); fs.writeFileSync(path.join(path.resolve(PROFILE), label.replace(/\W+/g, "-") + ".cpuprofile"), JSON.stringify(profile)); }
+}
 const errors = new Map();
 const noise = /flagcdn|googletagmanager|ERR_CERT|ERR_TUNNEL|sentry|supabase|club_logos|status of (4\d\d|5\d\d)|Failed to fetch|posthog/i;
 page.on("pageerror", (e) => { const k = `PAGEERROR ${e.message.slice(0, 200)}`; errors.set(k, (errors.get(k) ?? 0) + 1); });
@@ -201,6 +239,7 @@ while (Date.now() - t0 < MAX_MS) {
     const lines = await bodyLines();
     const f = await still(`${phase}`);
     log(`SCREEN ${phase} (${f}): ${lines.slice(0, 30).join(" | ").slice(0, 900)}`);
+    log(`  SIZE ${await sizes()}`);
     lastPhase = phase;
   }
   // The trial's five stages are their own mini-games (not the match's chance
@@ -208,7 +247,13 @@ while (Date.now() - t0 < MAX_MS) {
   // it at "average" (DevTrialPanel.tsx), so the run reaches the signing.
   if (phase === "trial-stages") {
     const stage = await page.evaluate(() => { const t = document.body.innerText; const n = (t.match(/\b([1-5])\/5\b/) || [""])[0]; const lines = t.split("\n").map((x) => x.trim()).filter(Boolean); const i = lines.indexOf("YOU"); return n ? `${n} ${lines[i + 1] ?? ""}` : ""; });
-    if (stage && !trialSeen.has(stage)) { trialSeen.add(stage); log(`TRIAL stage ${stage} (${await still(`trial-${stage}`)})`); }
+    if (stage && !trialSeen.has(stage)) { trialSeen.add(stage); log(`TRIAL stage ${stage} (${await still(`trial-${stage}`)})`); log(`  SIZE ${await sizes()}`); if (cdp) { // time the stage while it is really being played: close its how-to card, start it, then measure
+        await page.mouse.click(180, 420); await sleep(900);                      // the how-to card
+        for (let i = 0; i < 8 && !(await page.evaluate(() => /Tap to start/i.test(document.body.innerText))); i++) await sleep(400);
+        const startBtn = page.getByLabel("Tap to start the run"); if (await startBtn.count()) { await startBtn.click({ force: true }).catch(() => {}); await sleep(300); }
+        else { await page.mouse.click(180, 420); await sleep(600); }
+        setTimeout(() => still(`trial-${stage.slice(0, 1)}-playing`).catch(() => {}), 1500);   // what was on screen while it was timed
+        await perfSample(`trial ${stage.slice(0, 3)} playing`, 4000); } }
     const devBtn = page.locator("button", { hasText: /Skip \/ Sim Trial/i }).first();
     if (await devBtn.count()) {
       await devBtn.click({ force: true, timeout: 3000 }).catch((e) => log(`  dev button: ${e.message.slice(0, 80)}`)); await sleep(400); const sk = await page.locator("button", { hasText: /^Skip / }).first().click({ force: true, timeout: 3000 }).then(() => "skip", () => null); log(`  dev panel: ${sk ?? "no skip button"}`); await sleep(1500); continue; }
@@ -233,6 +278,7 @@ while (Date.now() - t0 < MAX_MS) {
   if (Date.now() - lastBeat > 60000) {
     lastBeat = Date.now();
     await page.screenshot({ path: path.join(OUT, "now.jpg"), type: "jpeg", quality: 50 }).catch(() => {});
+    if (m && cdp && (perfN = (perfN || 0) + 1) <= 8) await perfSample(`match ${perfN} ${m.phase} ${m.kind ?? ""}`, 2500);
     log(`  … ${m ? `match phase ${m.phase} ${m.kind ?? ""}` : "no match"} · buttons: ${(await visibleButtons()).slice(0, 8).join(" | ")}`);
   }
   if (m && m.phase === "aim" && !m.auto) {

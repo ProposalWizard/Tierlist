@@ -199,7 +199,7 @@ export default function MatchCommentary({
         onClick={onSpeed}
         aria-label={`Commentary speed ${speed}x`}
         data-tour="match-speed"
-        className="absolute right-2 top-2 z-20 flex w-12 flex-col items-center justify-center rounded-lg border border-white/10 bg-gray-900/85 py-1 shadow-md backdrop-blur-sm transition hover:bg-gray-800"
+        className="absolute right-2 top-2 z-20 flex w-14 flex-col items-center justify-center rounded-lg border border-white/10 bg-gray-900/85 py-1 shadow-md backdrop-blur-sm transition hover:bg-gray-800"
       >
         <span className={`font-black leading-none tabular-nums ${minuteLabel && minuteLabel.includes("+") ? "text-[12px] text-amber-300" : "text-sm text-white"}`}>{minuteLabel ?? minute}&#39;</span>
         <span className={`mt-0.5 text-[9px] font-black leading-none ${
@@ -214,9 +214,10 @@ export default function MatchCommentary({
         <button
           onClick={onOpenScores}
           aria-label="Live scores"
-          className="absolute right-2 top-[3.1rem] z-20 flex w-12 items-center justify-center gap-0.5 rounded-lg border border-white/10 bg-gray-900/85 py-1 text-[9px] font-black uppercase text-white shadow-md backdrop-blur-sm transition hover:bg-gray-800"
+          className="absolute right-2 top-[3.1rem] z-20 flex w-14 items-center justify-center rounded-lg border border-white/10 bg-gray-900/85 py-1.5 text-[10px] font-black uppercase leading-none text-white shadow-md backdrop-blur-sm transition hover:bg-gray-800"
         >
-          Scores <span aria-hidden className="text-[10px]">▸</span>
+          {/* (13 Nov 2026: "SCORES ▸" was wider than its 48 px box on a phone; the word alone fits.) */}
+          Scores
         </button>
       )}
 
@@ -292,16 +293,17 @@ export default function MatchCommentary({
                 >
                   <KibCanIcon can={{ color: "bg-orange-400", image: "/star/kib-basic.webp" }} className="h-8 w-5 shrink-0" />
                   <span className="flex flex-col items-start leading-none">
-                    <span className="text-[10px] font-black uppercase tracking-wide">Use KIB can</span>
+                    <span className="whitespace-nowrap text-[10px] font-black uppercase tracking-wide">Use can</span>
                     <span className="mt-0.5 text-sm font-black tabular-nums">&times;{kibCans}</span>
                   </span>
                 </button>
               )}
               <button
                 onClick={pause.onContinue}
-                className="flex-1 rounded-lg bg-amber-400 py-2.5 text-sm font-black uppercase tracking-widest text-gray-950 transition hover:bg-amber-300 active:scale-[0.99]"
+                className="flex-1 rounded-lg bg-amber-400 py-2.5 text-center text-sm font-black uppercase tracking-widest text-gray-950 shadow-[0_0_16px_rgba(251,191,36,.55)] transition hover:bg-amber-300 active:scale-[0.99]"
               >
-                {pause.cta}
+                {/* No arrow: the word, centred, with a soft glow to say "this is the way on" (Mikey, 13 Nov 2026). */}
+                {pause.cta.replace(/\s*→\s*$/, "")}
               </button>
             </div>
           </div>

@@ -2935,6 +2935,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         const b = el.getBoundingClientRect().bottom;
         if (b > rootBottom + 1 && b < window.innerHeight) room = Math.min(room, b - rootTop - above - 4);
       }
+      // A page that puts its OWN things above and below this match (the trial:
+      // its scoreboard above, two caption lines below) marks itself with
+      // data-pitch-fit="<px kept free below>". Those count as well, so the
+      // pitch fits that page the way it fits a league match (Mikey, 13 Nov
+      // 2026: on a phone the trial's pitch took the whole screen and pushed
+      // the page 197 px off the bottom). No marker (every real match): nothing changes.
+      const fit = root.closest<HTMLElement>("[data-pitch-fit]");
+      if (fit) {
+        const below = Number(fit.dataset.pitchFit) || 0;
+        const pageTop = rootTop + window.scrollY;
+        room = Math.min(room, window.innerHeight - pageTop - above - below - 4);
+      }
       setNewViewH(newViewCanvasHeight(w, room));
     };
     measure(true);

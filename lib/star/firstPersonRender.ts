@@ -284,6 +284,47 @@ function groundLine(ctx: CanvasRenderingContext2D, cam: FpCamera, ax: number, ay
   ], fill);
 }
 
+// ── The scene's big colour fades, painted once and reused ──────────────────
+//
+// Sky, sun, turf, glare and the dark corners used to be filled with a fresh
+// gradient across most of the canvas on EVERY frame. Measured on the trial's
+// take-him-on stage with the processor slowed to a mid-range phone (13 Nov
+// 2026, after Mikey's first real-phone test: "whoa, it's so laggy"): 12
+// frames a second with them, 42 without. Each fade is now painted once into a
+// small off-screen picture and stamped on with one drawImage: the same
+// colours in the same places.
+const fades = new Map<string, HTMLCanvasElement | null>();
+function fade(key: string, w: number, h: number, paint: (g: CanvasRenderingContext2D, w: number, h: number) => void): HTMLCanvasElement | null {
+  const hit = fades.get(key);
+  if (hit !== undefined) return hit;
+  let out: HTMLCanvasElement | null = null;
+  if (typeof document !== "undefined") {
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h));
+    const g = c.getContext("2d");
+    if (g) { paint(g, c.width, c.height); out = c; }
+  }
+  if (fades.size > 24) fades.clear(); // a resized window: start again rather than keep every size
+  fades.set(key, out);
+  return out;
+}
+/** A top-to-bottom fade as a 1 px wide strip, to be stretched over any rectangle. */
+function fadeStrip(key: string, stops: [number, string][]): HTMLCanvasElement | null {
+  return fade(key, 1, 256, (g, _w, h) => {
+    const lg = g.createLinearGradient(0, 0, 0, h);
+    for (const [at, col] of stops) lg.addColorStop(at, col);
+    g.fillStyle = lg; g.fillRect(0, 0, 1, h);
+  });
+}
+/** A round glow fading out from its centre, as a square picture of side 2 × r. */
+function glowDisc(key: string, r: number, stops: [number, string][]): HTMLCanvasElement | null {
+  return fade(key, r * 2, r * 2, (g, w) => {
+    const rg = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
+    for (const [at, col] of stops) rg.addColorStop(at, col);
+    g.fillStyle = rg; g.fillRect(0, 0, w, w);
+  });
+}
+
 /** Screen x of the camera's own vanishing point (straight down its view). */
 function vanishX(cam: FpCamera): number {
   const fwd = cam.forward ?? { x: 0, y: -1 };
@@ -295,21 +336,13 @@ function vanishX(cam: FpCamera): number {
  *  yet), and two floodlight towers above it. */
 function drawStadium(ctx: CanvasRenderingContext2D, cam: FpCamera, W: number, H: number, backdrop?: HTMLImageElement | null) {
   const horizon = horizonPx(cam);
-  const sky = ctx.createLinearGradient(0, 0, 0, Math.max(horizon, 1));
-  sky.addColorStop(0, "#2a1d55");
-  sky.addColorStop(0.38, "#6d3a77");
-  sky.addColorStop(0.72, "#d8684f");
-  sky.addColorStop(1, "#f8ad4c");
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, W, Math.max(horizon, 1) + 2);
-  // The low sun, straight down the pitch.
+  const sky = fadeStrip("sky", [[0, "#2a1d55"], [0.38, "#6d3a77"], [0.72, "#d8684f"], [1, "#f8ad4c"]]);
+  if (sky) ctx.drawImage(sky, 0, 0, 1, sky.height, 0, 0, W, Math.max(horizon, 1) + 2);
+  // The low sun, straight down the pitch (only its top half shows: the turf covers the rest).
   const vx = vanishX(cam);
-  const sun = ctx.createRadialGradient(vx, horizon, 0, vx, horizon, W * 0.75);
-  sun.addColorStop(0, "rgba(255,226,150,0.75)");
-  sun.addColorStop(0.35, "rgba(255,170,90,0.25)");
-  sun.addColorStop(1, "rgba(255,150,80,0)");
-  ctx.fillStyle = sun;
-  ctx.fillRect(0, 0, W, horizon + 2);
+  const sunR = Math.round(W * 0.75);
+  const sun = glowDisc(`sun${sunR}`, sunR, [[0, "rgba(255,226,150,0.75)"], [0.35, "rgba(255,170,90,0.25)"], [1, "rgba(255,150,80,0)"]]);
+  if (sun) ctx.drawImage(sun, 0, 0, sunR * 2, sunR, vx - sunR, horizon - sunR, sunR * 2, sunR);
 
   // Floodlight towers, behind the stand's two ends.
   for (const tx of [12, 56]) {
@@ -328,12 +361,8 @@ function drawStadium(ctx: CanvasRenderingContext2D, cam: FpCamera, W: number, H:
     }
     // The lamps' glare, over the lamp bank so it reads as light, not a box.
     const gx = top.px, gy = top.py - bh / 2, gr = bw * 2.6;
-    const glow = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
-    glow.addColorStop(0, "rgba(255,252,235,0.95)");
-    glow.addColorStop(0.2, "rgba(255,244,205,0.6)");
-    glow.addColorStop(1, "rgba(255,220,160,0)");
-    ctx.fillStyle = glow;
-    ctx.fillRect(gx - gr, gy - gr, gr * 2, gr * 2);
+    const glow = glowDisc("lamp", 64, [[0, "rgba(255,252,235,0.95)"], [0.2, "rgba(255,244,205,0.6)"], [1, "rgba(255,220,160,0)"]]);
+    if (glow) ctx.drawImage(glow, gx - gr, gy - gr, gr * 2, gr * 2);
   }
 
   const strip = standStrip(backdrop);
@@ -395,13 +424,8 @@ function drawStadium(ctx: CanvasRenderingContext2D, cam: FpCamera, W: number, H:
 /** The pitch: lit turf, stripes fixed to the pitch, grain, the lines. */
 function drawGround(ctx: CanvasRenderingContext2D, W: number, H: number, cam: FpCamera, minX: number, maxX: number, pitchLines = true) {
   const horizon = horizonPx(cam);
-  const base = ctx.createLinearGradient(0, horizon, 0, H);
-  base.addColorStop(0, "#8fae4a");
-  base.addColorStop(0.12, "#58a02c");
-  base.addColorStop(0.55, "#3a8d1f");
-  base.addColorStop(1, "#2b7517");
-  ctx.fillStyle = base;
-  ctx.fillRect(0, horizon, W, H - horizon);
+  const base = fadeStrip("turf", [[0, "#8fae4a"], [0.12, "#58a02c"], [0.55, "#3a8d1f"], [1, "#2b7517"]]);
+  if (base) ctx.drawImage(base, 0, 0, 1, base.height, 0, horizon, W, H - horizon);
 
   // Mown stripes, fixed to the turf: they slide past at exactly your speed,
   // which is what sells the run (see the file header).
@@ -428,12 +452,9 @@ function drawGround(ctx: CanvasRenderingContext2D, W: number, H: number, cam: Fp
 
   // Evening light coming down the pitch at you.
   const vx = vanishX(cam);
-  const glare = ctx.createRadialGradient(vx, horizon, 0, vx, horizon, W * 0.9);
-  glare.addColorStop(0, "rgba(255,214,140,0.42)");
-  glare.addColorStop(0.45, "rgba(255,190,110,0.12)");
-  glare.addColorStop(1, "rgba(255,190,110,0)");
-  ctx.fillStyle = glare;
-  ctx.fillRect(0, horizon, W, H - horizon);
+  const glareR = Math.round(W * 0.9);   // only its bottom half shows: it lies on the turf
+  const glare = glowDisc(`glare${glareR}`, glareR, [[0, "rgba(255,214,140,0.42)"], [0.45, "rgba(255,190,110,0.12)"], [1, "rgba(255,190,110,0)"]]);
+  if (glare) ctx.drawImage(glare, 0, glareR, glareR * 2, glareR, vx - glareR, horizon, glareR * 2, glareR);
 
   // The lines — a real pitch's, minus anything at the far end (no goal).
   // The duel runs on real pitch metres (CX = 34, the run starts 48 m out);
@@ -460,22 +481,21 @@ function drawGround(ctx: CanvasRenderingContext2D, W: number, H: number, cam: Fp
   // Haze where the turf meets the stand.
   const sb = pitchLines ? project(cam, cam.x, STAND_Y, 0) : null;
   if (sb) {
-    const hz = ctx.createLinearGradient(0, sb.py - H * 0.03, 0, sb.py + H * 0.06);
-    hz.addColorStop(0, "rgba(255,196,140,0)");
-    hz.addColorStop(0.4, "rgba(255,196,140,0.28)");
-    hz.addColorStop(1, "rgba(255,196,140,0)");
-    ctx.fillStyle = hz;
-    ctx.fillRect(0, sb.py - H * 0.03, W, H * 0.09);
+    const hz = fadeStrip("haze", [[0, "rgba(255,196,140,0)"], [0.4, "rgba(255,196,140,0.28)"], [1, "rgba(255,196,140,0)"]]);
+    if (hz) ctx.drawImage(hz, 0, 0, 1, hz.height, 0, sb.py - H * 0.03, W, H * 0.09);
   }
 }
 
 /** A soft darkening at the corners, drawn over everything but the HUD. */
 function drawVignette(ctx: CanvasRenderingContext2D, W: number, H: number) {
-  const v = ctx.createRadialGradient(W / 2, H * 0.52, Math.min(W, H) * 0.42, W / 2, H * 0.52, Math.hypot(W, H) * 0.62);
-  v.addColorStop(0, "rgba(10,6,20,0)");
-  v.addColorStop(1, "rgba(10,6,20,0.42)");
-  ctx.fillStyle = v;
-  ctx.fillRect(0, 0, W, H);
+  const img = fade(`vignette${Math.round(W)}x${Math.round(H)}`, W, H, (g, w, h) => {
+    const v = g.createRadialGradient(w / 2, h * 0.52, Math.min(w, h) * 0.42, w / 2, h * 0.52, Math.hypot(w, h) * 0.62);
+    v.addColorStop(0, "rgba(10,6,20,0)");
+    v.addColorStop(1, "rgba(10,6,20,0.42)");
+    g.fillStyle = v;
+    g.fillRect(0, 0, w, h);
+  });
+  if (img) ctx.drawImage(img, 0, 0, W, H);
 }
 
 
