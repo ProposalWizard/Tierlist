@@ -55,6 +55,9 @@ if (OFFLINE) {
 }
 const page = await ctx.newPage();
 // --skip-draw <min width>: an experiment. Leave out every picture copied from an off-screen canvas at least that wide, to see what it costs.
+// --css "<rules>": an experiment. Adds these style rules to the page (e.g. switch every blur off) to see what they cost.
+if (val("--css", null)) await page.addInitScript((css) => { const add = () => { const st = document.createElement("style"); st.textContent = css; document.documentElement.appendChild(st); };
+  if (document.documentElement) add(); else document.addEventListener("DOMContentLoaded", add); }, val("--css", ""));
 // --skip <what>: an experiment, to find what a slow screen spends its time drawing. Leaves out one kind of drawing:
 //   canvas (pictures copied from an off-screen canvas) · gradient (anything filled with a gradient) · pattern (a repeated texture) · text · clip (clipping)
 if (val("--skip", null)) await page.addInitScript((what) => { const P = CanvasRenderingContext2D.prototype;
