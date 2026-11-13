@@ -29,10 +29,10 @@ const rows: ChannelRow[] = [
   { slug: "Bad Slug!", name: "x", topic: null, made_by: "Harry", created_at: at(0) },
 ];
 const list = listChannels(rows);
-ok(list.slice(0, 9).map((c) => c.slug).join() === BUILT_IN_CHANNELS.map((c) => c.slug).join(), "the nine presets come first, in order");
+ok(list.slice(0, 10).map((c) => c.slug).join() === BUILT_IN_CHANNELS.map((c) => c.slug).join(), "the ten presets come first, in order");
 ok(list.find((c) => c.slug === "ideas")?.name === "Ideas Lab" && list.find((c) => c.slug === "ideas")?.tool === "ideas", "a rename keeps the channel's tool");
-ok(list.slice(9).map((c) => c.slug).join() === "aaa,3d-world", "new channels follow, oldest first; a bad slug is left out");
-ok(listChannels([]).length === 9 && listChannels([]).map((c) => c.slug).join() === "general,ideas,todo,bugs,health,patch-notes,connectors,marketing,context", "no rows: just the nine presets, in the plan's order");
+ok(list.slice(10).map((c) => c.slug).join() === "aaa,3d-world", "new channels follow, oldest first; a bad slug is left out");
+ok(listChannels([]).length === 10 && listChannels([]).map((c) => c.slug).join() === "general,today,ideas,todo,bugs,health,patch-notes,connectors,marketing,context", "no rows: just the ten presets, in order (#today added 12 Nov 2026)");
 ok(slugify("Match Engine!") === "match-engine" && slugify("#  ") === "" && slugify("x".repeat(40)).length === 30, "slugify");
 ok(cleanName("##  big   room ") === "big room", "a name is tidied");
 ok(newChannelSlug("Bugs", list).ok === false && newChannelSlug("", list).ok === false, "a taken or empty name is refused");
@@ -147,8 +147,8 @@ const tasks: TeamTask[] = [
 ];
 ok(jobDoneBy(tasks, "lag").join() === "Harry", "✅ ticks are each person's own");
 ok(jobIsFor(job, "Leo") && !jobIsFor({ owner: "Mikey" }, "Leo") && !jobIsFor(job, null), "only a job's owners can tick it");
-const rb = rowBotPosts([{ id: 4, bot: "claude", channel: "Bad!", title: "t", body: "", url: "https://evil.example", everyone: false, created_at: at(1) }]);
-ok(rb[0].channel === GENERAL && rb[0].url === null && rb[0].name === "Claude bot", "a future bot's row: a bad channel goes to #general; only site links");
+const rb = rowBotPosts([{ id: 4, bot: "scout", channel: "Bad!", title: "t", body: "", url: "https://evil.example", everyone: false, created_at: at(1) }]);
+ok(rb[0].channel === GENERAL && rb[0].url === null && rb[0].name === "Scout bot", "a future bot's row: a bad channel goes to #general; only site links");
 const st = mergeStream([msg(2, "Leo", "x", 2), msg(1, "Leo", "y", 9)], pb.slice(0, 1).map((b) => ({ ...b, at: at(5) })));
 ok(st.map((x) => (x.kind === "msg" ? x.m.id : "bot")).join() === "2,bot,1", "messages and bot posts in time order");
 

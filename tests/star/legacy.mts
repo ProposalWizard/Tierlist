@@ -214,7 +214,7 @@ const offerRate = (c: CareerState) =>
   check(great.score > journeyman.score, `a great career scores higher (${great.score.toFixed(0)} vs ${journeyman.score.toFixed(0)})`);
   check(great.score > 80 && journeyman.score < 45, "and the two land in different brackets");
   check(great.title !== journeyman.title, `with different titles ("${great.title}" vs "${journeyman.title}")`);
-  check(great.summary.includes("Ballon"), "the summary leads with the biggest thing you did");
+  check(great.summary.includes("Golden Ball"), "the summary leads with the biggest thing you did");
   check(journeyman.summary.includes("goals"), "and falls back to what there is");
 
   // Longevity counts but does not carry a career on its own.

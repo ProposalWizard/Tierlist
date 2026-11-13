@@ -41,6 +41,105 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 13 Nov 2026 — the Team board tab: who is active now, work first (Harry)
+- **"This can be improved visually, where is the live now/active now?"** Said
+  of the Team board tab on a computer (three equal cards, mostly white space).
+  A board about people says who is live first: an Active now strip on top and
+  a state beside every name (green pulsing dot = live). The rule is one small
+  function, lib/teamRoom/activeNow.ts.
+- (inferred, from the build brief) The point of a card comes first and
+  biggest (current work), the chart is slim; finished work folds to a quiet
+  ticked line; cards keep their own height (no card stretched to match a
+  taller one); an empty card says one useful line; no wide empty strip.
+  Stills: docs/stills/team-board-tab-v2/ (before-* and after-*).
+
+### 12 Nov 2026 — the public home: the game first, then a Friv grid (Harry, recording)
+- **"This is one of the worst home screens I've ever seen."** / **"Road to the
+  Golden Ball is like the main thing on the site. Play now."** The home leads
+  with the game: a real picture, one plain line, a big Play now.
+- **"A Friv style … a notable loading screen … then we have our games kind of
+  laid out."** Other games are square picture tiles, one each; a short loading
+  picture (about 1 s, skippable, once per session). The old Friv was
+  "information overload": keep it clean.
+- **"I don't think we should have all of these at the top."** On the home the
+  site bar is slim: no strip of game links (the tiles do that job).
+- **"Try the beta, sign up … buy it on Steam or download it on the App
+  Store."** Nothing is sold yet, so: a beta email box, and the stores as
+  "Coming soon" tags that are not links. Never invent a store link, a price,
+  a player count or a review.
+- Built as three looks on /home-new-dev for him to pick from (FACT-UI-022);
+  the live home is unchanged until he picks. Stills: docs/stills/public-home/.
+
+### 12 Nov 2026 — the Team room: two looks, its own board, a tab for every channel (Harry)
+- **"Midnight slate and Light C as dark/light mode."** Picked from the four
+  option pictures (docs/stills/team-room-options/). Dark = Midnight slate
+  (warm greys, one green), Light = Light C (green paper, white cards, a dark
+  green channel list: the admin's Knowitball look). The room follows the
+  device's own dark / light setting until you tap ☀ / ☾ beside your name
+  (per device; Auto | Dark | Light under Me). Paint only, in tokens
+  (components/teamRoom/roomLook.css): never a look-specific layout.
+  Measured (scripts/team-room/contrast.mjs): 5,604 texts, 23 screens x 2 looks
+  x 2 sizes, lowest 4.5:1, 0 under 4.5:1. A faint row (the /commands chips at
+  55% see-through) failed at 2.4:1: faint is done with a colour, not opacity.
+- **"Just use one of those ESPN-like profile pictures … something football
+  related for each of us."** Faces are club-style crests (Harry green with a
+  ball, Mikey blue with a star, Leo violet with chevrons); bots get round
+  badges. No letter-in-a-ring faces and no emoji as a bot's face.
+- **"None of this page other than the activity pushes and the current work is
+  being used."** The Team board inside the room shows only pushes a day,
+  current-work bars and a small notes box. Cut a screen to what is used.
+- **"Each page gets its own custom stuff."** Every channel has its own tabs and
+  opens on its own first one (lib/teamRoom/channels.ts CHANNEL_TABS). A tab
+  that does nothing is not shown; an empty channel says in one line what it is
+  for and how to use it.
+- **"By clicking on him I shouldn't get a chat … the patch bot is a bot."** A
+  bot's page says whether it is really posting, what it does, when it runs,
+  has Run now and its switch. A bot that does nothing is not in the list.
+- **"Notifications should be asked when we first come in … the auto should be
+  on."** Asked once per device, Turn on is the green button (a browser only
+  lets a site ask from a tap). Per-channel mute stays on the channel's 🔔.
+- Phone bottom bar: Chat · Board · Me · Activity (was Home · DMs · Activity ·
+  You; DMs are in the list). (inferred from the picked option pictures)
+
+### 12 Nov 2026 — THE admin look: "A for admin home and C for the rest" (Harry)
+- Picked from option pictures (docs/stills/admin-look-options/sheet-390.png,
+  sheet-1440.png): **"A for admin home and C for the rest — however I think we
+  can do one more pass over and improve it a lot."** Built as the look
+  "Knowitball" (`house` in lib/adminLook.ts), the one everyone starts on. The
+  four older looks stay on the Look switch as skins (RUL-UI-007). Stills:
+  docs/stills/admin-look-built/.
+- **Admin home (/admin) = A**: calm tiles, greys, one green, no glows, no
+  game-tab row (the menu already lists the games). It fits one phone screen
+  (844 px page on a 390×844 phone, was 916) and nothing sits under the chat
+  bubble.
+- **Every other admin page = C**: a dark green side menu (a dark green top bar
+  on a phone, the menu behind Menu), green-tinted paper, a list of links is
+  ROWS with the count in one right-hand column (a game's home: one row per
+  group). Group pages keep a picture on every card. Pages with no side menu
+  (the Broadcast frame) get the same green as a top bar.
+- **The one-more-pass rules, for anything added to the admin** (written at the
+  top of components/admin/shell/houseTokens.css):
+  one font family; type 12 / 14 / 16 / 20 / 24 px; spacing 4 / 8 / 12 / 16 /
+  24 / 32; corners 6 px on controls and 8 px on boxes; one button (outline,
+  the main action green); green only for the current page, the main action
+  and a good status; no tracked-capital labels; no violet; no pills (the
+  recorder pill is the one pill); small text at least 4.5:1.
+  Measured on the five pictured pages at 390 and 1440 px: lowest text
+  contrast 5.16:1, 0 texts under 4.5:1, 0 pills, 0 tracked-capital labels.
+  Measure again with `node scripts/admin-look/shots.mjs http://localhost:3000`.
+- **Supersedes, for the admin's default look only**: 20 Oct "the default look
+  on the admin should be the clean light"; 19 Oct "Broadcast is the default"
+  and "Look C (Broadcast) for the RBD admin pages on a computer"; 19 Oct
+  "admin home = tile grid AND list behind a grid/list toggle" (in this look a
+  game's home is always rows; the toggle shows only in the older looks);
+  20 Oct "Bento … the count in a white pill" (counts are plain numbers here).
+  Still standing: one layout for every look's pages, the one back arrow top
+  left, the hub at /admin, a picture on every group-page card, the chat
+  bubble bottom left, functional first.
+- (inferred) The green menu is on the admin home too, not A's grey menu: one
+  frame for the whole admin ("the admin feels like one app"). Say if the home
+  should have the grey menu from picture A.
+
 ### 1 Nov 2026 — Glass stadium is a new UI option and the default (Harry)
 - **"Go for glass stadium as a new UI option (make it default)."** Settings →
   Screens → **UI look: Glass | Pitch**, default Glass (`lib/star/uiSkin.ts`,
@@ -72,6 +171,29 @@ Newest first. Each is something that was actually said.
 - **"The camera is zooming in, players are staying the same size, and the
   penalty box is getting gargantuanly bigger."** No late zoom on a chance:
   the camera stays as the build-up left it, the men stay their size.
+
+### 12 Nov 2026 — the admin feels like one app: a hub at /admin (Harry, recording)
+- **"There should be a home page for the admin … the team board being the home
+  page of the admin doesn't really make sense … we have no kind of hub."**
+  /admin is the admin home: one big tile per area (Team → the team room, Road
+  to Ballon d'Or, Website games, Studio, Marketing, Videos) and a SMALL "what
+  changed" (live site dot + last 4 pushes). Every way into the admin lands
+  there. "Admin home" is the first line of the side menu. Replaces the 20 Oct
+  rule that the Team board is the admin's home. The tierlist Site content page
+  moved from /admin to /admin/site-content. (app/admin/AdminHub.tsx, ADMIN_HUB)
+- **"I press back, takes me to here" (out to knowitball.co.uk).** No back
+  inside the admin leaves it: every back chain ends at /admin; only the hub's
+  own arrow and "Back to Knowitball" go to the site. The room's ⌂ goes to /admin.
+- **"If I click on any other page … this recording will stop."** The recorder
+  lives above every page (components/admin/recorder/RecorderProvider.tsx, in
+  app/layout.tsx); a pill "● Recording 12s · Stop" sits bottom centre on every
+  page (bubble owns bottom left, the eye bottom right).
+- **"I don't like how some of them have images on the front, some of them
+  don't."** Every card on a group page has a picture: its still
+  (lib/adminPreviews.ts), else the same drawn tile (group colour, icon, name).
+  Hub tiles all use the same drawn icon square, no mix of photos and icons.
+- **Marketing board: the Video link never opens GitHub** (it can't play big
+  files): ▶ Video plays the card's upload from R2; else "Video: not uploaded yet".
 
 ### 25 Oct 2026 — the Team room is Slack's layout, full screen (Harry)
 - **"It should just be a home icon rather than a whole column … the sidebar
@@ -107,7 +229,7 @@ Newest first. Each is something that was actually said.
   floating strip covered the words and ran off the screen on your own
   messages at 390 px (seen in the build stills, 23 Oct).
 
-### 20 Oct 2026 — the Team area is the admin's home (Harry)
+### 20 Oct 2026 — the Team area is the admin's home (Harry) — SUPERSEDED 12 Nov 2026 by the hub at /admin (above)
 - **"The team area should be the default home area, and it should open on
   Team board, and have its own tab on the left."** Every way into the admin
   (Admin in the site menu, Settings → Admin pages, the admin slide-out, the KIB
@@ -762,5 +884,5 @@ lit with an amber edge); on a phone they sit behind ☰ Menu, on a computer « f
 ## The admin is split by game (Harry, 19 Oct 2026)
 "stuff on the wider website should be on a completely different tab than road to ballon dor stuff
 — remember we may be a production company that makes a lot of games". One tab per game across the
-top of every admin page (Road to Ballon d'Or | Website games | Studio); inside a tab you only see
+top of every admin page (Road to the Golden Ball | Website games | Studio); inside a tab you only see
 that game's groups, pages and search. A new game = one line in GAMES (lib/adminRegistry.ts).

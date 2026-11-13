@@ -29,7 +29,7 @@ export const LEO_FEATURES = [
   { id: "feedSpeed", label: "Fast social feed", line: "Smooth scrolling on slow phones; videos made off the main thread and kept." },
   { id: "goalVideoNow", label: "Goal videos play at once", line: "Your goal and the highlights play straight away from the recording." },
   { id: "goalOfMonth", label: "Goal of the Month", line: "A monthly poll in the feed: your 3 best goals v 2 others." },
-  { id: "seasonReel", label: "Season video", line: "Every goal of your season before the Ballon d'Or." },
+  { id: "seasonReel", label: "Season video", line: "Every goal of your season before the Golden Ball." },
   { id: "goalsGallery", label: "Career goals list", line: "Stats → Goals: every goal of your career; best 10 in the Hall of Fame." },
   { id: "awardsNight", label: "Season awards night", line: "The 3D awards night in place of the awards page." },
   { id: "smoothGoals", label: "Smooth goal videos", line: "Real goals move like the made-up ones: no stop-start, no statues." },

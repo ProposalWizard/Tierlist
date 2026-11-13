@@ -34,7 +34,7 @@ const PRESETS: Preset[] = [
   { id: "rumour", emoji: "👀", label: "Transfer rumour", note: "the insiders start talking", mode: "event", event: c => ({ id: "transfer-rumour", subject: { kind: "you", name: youName(c) }, tags: ["rumour"], importance: 72, facts: baseFacts(c) }) },
   { id: "done", emoji: "✍️", label: "Done deal", note: "you sign for a rival", mode: "moment", moment: "transfer" },
   { id: "sack", emoji: "🪑", label: "Manager meme", note: "the boss is sacked", mode: "moment", moment: "manager-out" },
-  { id: "bdor", emoji: "🥇", label: "Ballon d'Or night", note: "you win it", mode: "moment", moment: "ballon-dor" },
+  { id: "bdor", emoji: "🥇", label: "Golden Ball night", note: "you win it", mode: "moment", moment: "ballon-dor" },
   { id: "armband", emoji: "©️", label: "Made captain", note: "the armband", mode: "moment", moment: "captain" },
   { id: "callup", emoji: "🏴", label: "International call-up", note: "your first", mode: "moment", moment: "call-up" },
   { id: "casino", emoji: "🎰", label: "Casino scandal", note: "spotted at the tables", mode: "moment", moment: "casino-scandal" },

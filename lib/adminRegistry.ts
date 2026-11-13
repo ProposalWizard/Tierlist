@@ -41,7 +41,7 @@ export interface AdminPage {
  * `home` is where the game's tab opens; `play` is the game as players see it.
  */
 export const GAMES = [
-  { key: "rbd", name: "Road to Ballon d'Or", short: "Ballon d'Or", home: "/admin/star", play: "/road-to-ballon-dor" },
+  { key: "rbd", name: "Road to the Golden Ball", short: "Golden Ball", home: "/admin/star", play: "/road-to-the-golden-ball" },
   { key: "web", name: "Website games", short: "Website", home: "/admin/star/game/web", play: "/" },
   { key: "studio", name: "Studio", short: "Studio", home: "/admin/star/game/studio", play: null },
   // Marketing & Production (Harry, 21 Oct 2026: "its own whole tab"; decision 1 in
@@ -55,20 +55,26 @@ export const DEFAULT_GAME: AdminGameKey = GAMES[0].key;
 export const gamesFor = (role: "admin" | "tester") => GAMES.filter((g) => role === "admin" || !("adminOnly" in g && g.adminOnly));
 
 /**
- * THE ADMIN'S HOME is the Team area, open on the Team board (Harry, 20 Oct
- * 2026: "the team area should be the default home area, and it should open on
- * Team board, and have its own tab on the left"). Every way into the admin
- * lands there for an admin. Testers cannot see the Team room, so they keep the
- * first game's home. ADMIN_FRONT_DOOR (app/admin/home) sends each person to
- * theirs, for links that do not know who is opening them (the KIB Admin app).
+ * THE ADMIN HOME is /admin: one hub with a big tile per area (Team, each game,
+ * Videos) and a small "what changed" (Harry, 12 Nov 2026: "there should be a
+ * home page for the admin … the team board being the home page of the admin
+ * doesn't really make sense … we have no kind of hub"). This replaces the
+ * 20 Oct 2026 rule that the Team board was the admin's home. Every way into
+ * the admin lands on the hub, and every back arrow inside the admin ends
+ * there; only the hub's own back arrow (and "Back to Knowitball") leaves for
+ * the site. Testers get the same hub, without the Team and Marketing tiles.
+ * ADMIN_FRONT_DOOR (app/admin/home) is kept for old links (the KIB Admin app).
+ * The tierlist "Site content" page that used to be /admin is /admin/site-content.
  */
 export type AdminRole = "admin" | "tester";
+export const ADMIN_HUB = "/admin";
 export const TEAM_HOME = "/admin/team";
 export const ADMIN_FRONT_DOOR = "/admin/home";
-export const adminHomeFor = (role: AdminRole): string => (role === "admin" ? TEAM_HOME : GAMES[0].home);
+/** Everyone's admin home is the hub now (kept as a function: callers pass the role). */
+export const adminHomeFor = (role?: AdminRole): string => { void role; return ADMIN_HUB; };
 
 export const SECTIONS: { key: AdminSection; name: string }[] = [
-  { key: "rbd", name: "Road to Ballon d'Or" },
+  { key: "rbd", name: "Road to the Golden Ball" },
   { key: "site", name: "Site" },
   { key: "draft", name: "PL Draft" },
   { key: "tierlists", name: "Tierlists" },
@@ -115,14 +121,14 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/admin/xp", "Site XP rewards", "Level-up rewards across the whole site (frames, titles)", "site", "site", "Harry", "live", "shared", "admin"),
   P("/admin/football", "Tic Tac Toe data", "Wikidata data behind Tic Tac Toe", "site", "site", "Harry", "live", "shared", "admin"),
   P("/squad-builder", "Dream XI builder", "Pick a formation and drag players into a dream XI", "old", "old", "Harry", "old", "none", "team"),
-  P("/admin", "Site content", "Tierlists, votes, blind rankings, daily games, objectives, cards, feedback", "tierlists", "tierlists", "Harry", "live", "shared", "admin"),
+  P("/admin/site-content", "Site content", "Tierlists, votes, blind rankings, daily games, objectives, cards, feedback", "tierlists", "tierlists", "Harry", "live", "shared", "admin"),
   P("/admin/football/players", "SoFIFA players", "Edit SoFIFA players", "draft", "draft", "Harry", "live", "shared", "admin"),
   P("/admin/football/pl-clubs", "PL clubs per season", "Which clubs the Draft has for each season", "draft", "draft", "Harry", "live", "none", "admin"),
   P("/admin/football/scrape", "Scrape / import", "SoFIFA + logo import", "draft", "draft", "Harry", "live", "shared", "admin"),
   P("/draft-dev", "Draft test", "The PL Draft with the test setup screen", "draft", "draft", "Harry", "live", "shared", "admin"),
   P("/draft-challenge-dev", "Challenge draft", "Draft with random briefs", "draft", "draft", "Harry", "live", "shared", "admin"),
   P("/draft/preview", "Draft design preview", "Draft screen redesigns, sample data", "old", "old", "Harry", "old", "none", "team"),
-  P("/star-dev", "Play the game", "Road to Ballon d'Or, as players see it", "rbd", "career", "Shared", "live", "own", "open"),
+  P("/star-dev", "Play the game", "Road to the Golden Ball, as players see it", "rbd", "career", "Shared", "live", "own", "open"),
   P("/star-retirement-dev", "Retirement screens", "Every end-of-career screen, with made-up or real saves", "rbd", "career", "Leo", "live", "own", "team"),
   P("/star-guest-dev", "Guest accounts", "Play without signing in: the ad landing pages and the save-your-career prompt", "rbd", "career", "Harry", "live", "own", "team"),
   P("/star-awards-night-dev", "Season awards night", "The awards read out in a small 3D hall, made-up results", "rbd", "career", "Leo", "live", "none", "team"),
@@ -195,18 +201,18 @@ export const ADMIN_PAGES: AdminPage[] = [
  * Longest prefix wins. Admin pages fall back to the other pages in their group.
  */
 export const RELATED: { prefix: string; label: string; urls: string[] }[] = [
-  { prefix: "/star-dev", label: "Road to Ballon d'Or", urls: ["/star-gallery-dev", "/star-highlights-dev", "/star-play-dev", "/lineups", "/admin/star-pass", "/admin/star-xp", "/star-tuning-dev", "/admin/sound-board", "/admin/clubs", "/admin/testers"] },
+  { prefix: "/star-dev", label: "Road to the Golden Ball", urls: ["/star-gallery-dev", "/star-highlights-dev", "/star-play-dev", "/lineups", "/admin/star-pass", "/admin/star-xp", "/star-tuning-dev", "/admin/sound-board", "/admin/clubs", "/admin/testers"] },
   { prefix: "/draft", label: "PL Draft", urls: ["/admin/football/players", "/admin/football/pl-clubs", "/admin/football/scrape", "/draft-dev", "/draft-challenge-dev", "/admin/xp"] },
-  { prefix: "/tic-tac-toe", label: "Tic Tac Toe", urls: ["/admin/football", "/admin"] },
-  { prefix: "/tenable", label: "Ten-A-Ball", urls: ["/admin"] },
-  { prefix: "/blind-rankings", label: "Blind rankings", urls: ["/admin"] },
-  { prefix: "/objectives", label: "Objectives", urls: ["/admin", "/admin/xp"] },
+  { prefix: "/tic-tac-toe", label: "Tic Tac Toe", urls: ["/admin/football", "/admin/site-content"] },
+  { prefix: "/tenable", label: "Ten-A-Ball", urls: ["/admin/site-content"] },
+  { prefix: "/blind-rankings", label: "Blind rankings", urls: ["/admin/site-content"] },
+  { prefix: "/objectives", label: "Objectives", urls: ["/admin/site-content", "/admin/xp"] },
   { prefix: "/profile", label: "Profile", urls: ["/admin/xp", "/admin/testers"] },
-  { prefix: "/tierlist", label: "Tierlists", urls: ["/admin"] },
-  { prefix: "/play", label: "Tierlists", urls: ["/admin"] },
-  { prefix: "/vote", label: "Vote tierlists", urls: ["/admin"] },
-  { prefix: "/create", label: "Tierlists", urls: ["/admin"] },
-  { prefix: "/find", label: "Tierlists", urls: ["/admin"] },
+  { prefix: "/tierlist", label: "Tierlists", urls: ["/admin/site-content"] },
+  { prefix: "/play", label: "Tierlists", urls: ["/admin/site-content"] },
+  { prefix: "/vote", label: "Vote tierlists", urls: ["/admin/site-content"] },
+  { prefix: "/create", label: "Tierlists", urls: ["/admin/site-content"] },
+  { prefix: "/find", label: "Tierlists", urls: ["/admin/site-content"] },
   { prefix: "/legend", label: "Hall of Fame shares", urls: ["/star-retirement-dev"] },
 ];
 
@@ -249,31 +255,29 @@ export const isTeamPath = (path: string) => (path.split(/[?#]/)[0].replace(/\/+$
 /**
  * Where the one back arrow goes (Harry, 20 Oct 2026: "Always top left … always
  * the same"). A page in the list → its group's page; a group page → its
- * game's home; a game's home → the Team area (the admin's home); the Team
- * area → the site. Anything else → the admin's home.
- * A tester has no Team area: the first game's home is their top (→ the site),
- * and the other games' homes go back to it.
+ * game's home; a game's home, the Team area and Videos → the admin home (the
+ * hub). Only the hub itself goes back to the site (Harry, 12 Nov 2026, seen at
+ * 00:47 and 17:24: back on the Team board threw him out to knowitball.co.uk).
+ * Anything else → the hub. Same for testers.
  */
 export function backFor(path: string, role: AdminRole = "admin"): { href: string; label: string } {
+  void role;
   const p = path.split(/[?#]/)[0].replace(/\/+$/, "") || "/";
-  const team = { href: TEAM_HOME, label: "Team" };
-  const first = { href: GAMES[0].home, label: GAMES[0].name };
-  if (p === TEAM_HOME) return { href: "/", label: "Knowitball" };
+  const hub = { href: ADMIN_HUB, label: "Admin home" };
+  if (p === ADMIN_HUB) return { href: "/", label: "Knowitball" };
+  if (p === TEAM_HOME || p === "/admin/videos") return hub;
   const g = p.match(/^\/admin\/star\/g\/([^/]+)$/);
   if (g) {
     const game = gameOf(GROUPS.find((x) => x.key === g[1])?.game ?? DEFAULT_GAME) ?? GAMES[0];
     return { href: game.home, label: game.name };
   }
-  if (GAMES.some((x) => x.home === p)) {
-    if (role === "admin") return team;
-    return p === GAMES[0].home ? { href: "/", label: "Knowitball" } : first;
-  }
+  if (GAMES.some((x) => x.home === p)) return hub;
   const own = currentPage(p);
   if (own && own.url !== "/admin/star") {
     const grp = GROUPS.find((x) => x.key === own.group);
     if (grp) return { href: `/admin/star/g/${grp.key}`, label: grp.name };
   }
-  return role === "admin" ? team : first;
+  return hub;
 }
 
 /** What admin mode lists first on this path: a label and the pages. */
@@ -289,7 +293,7 @@ export function relatedFor(path: string): { label: string; pages: AdminPage[] } 
     if (path === r.prefix || path.startsWith(r.prefix + "/") || path.startsWith(r.prefix + "?"))
       if (!best || r.prefix.length > best.prefix.length) best = r;
   }
-  if (!best && path === "/") best = { prefix: "/", label: "Home page", urls: ["/admin", "/admin/xp"] };
+  if (!best && path === "/") best = { prefix: "/", label: "Home page", urls: ["/admin/site-content", "/admin/xp"] };
   if (!best) return null;
   return { label: `Admin for ${best.label}`, pages: best.urls.map(pageFor).filter((p): p is AdminPage => !!p) };
 }

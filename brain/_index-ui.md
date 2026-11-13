@@ -17,8 +17,11 @@ FACT-UI-014 | Cut scenes: people and camera New, no row; the Version picker went
 FACT-UI-015 | Faces: photo faces OFF for everyone, every head is the drawn one (PHOTO_FACES); face editors hidden until the photo revamp. | ui
 FACT-UI-016 | A new career opens its match moves one at a time (headers and volleys after game 3, steer at Pace 60, sprint at Pace 65, dribble after game 4); power shot, knuckleball, skill moves and one-twos wait for an update. | career,ui
 FACT-UI-017 | Mikey's Broadcast pop-ups (scoreboard for a goal, TV caption for the rest) are the only match pop-ups; no setting, the Classic and Arcade words are gone. | team,ui
-FACT-UI-018 | Players reach the game at /road-to-ballon-dor; /star-dev forwards there, and the page's code stays in app/star-dev/. | admin,ui
+FACT-UI-018 | [SUPERSEDED] Players reach the game at /road-to-ballon-dor; /star-dev forwards there, and the page's code stays in app/star-dev/. | admin,ui
 FACT-UI-019 | The phone app is a separate packed build of the game only (mobile/): offline, saves on the phone, no sign-in, no casino; the website is unchanged. | economy,ui
+FACT-UI-020 | The game is named Road to the Golden Ball, its award the Golden Ball; players reach it at /road-to-the-golden-ball. | ui
+FACT-UI-021 | The admin's default look is "Knowitball": calm tiles on the admin home, a dark green menu and rows everywhere else; the four older looks stay as skins. | ui,admin
+FACT-UI-022 | The new public home is on the test page /home-new-dev in three looks (a Stadium night, b Friv Classic, c Clean arcade); the live home is unchanged until Harry picks. | ui
 RUL-UI-001 | [SUPERSEDED] Decide, don't toggle: a new look or gameplay change is built as THE game, with no new New/Old row in Settings. | ui
 RUL-UI-002 | Unfinished work lives on a test page (a /star-*-dev page), not behind a switch in the real game. | ui,admin
 RUL-UI-003 | Existing switches stay until someone decides each one; never delete one unasked. | rule,ui

@@ -349,7 +349,7 @@ export default function IntlDevPage() {
               {card("Watched on TV", "watched", "Not picked: after the match.")}
               {card("Country page after a season", "season", "Full tables. Takes a few seconds.")}
               {card("On duty at a tournament", "tournament", "Two group games into summer 2028.")}
-              {card("Ballon d'Or after a season", "ballon", "With your international goals.")}
+              {card("Golden Ball after a season", "ballon", "With your international goals.")}
             </div>
           </Panel>
 

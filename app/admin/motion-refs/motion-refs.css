@@ -45,3 +45,8 @@
   .mr-ref { grid-column: 1 / -1; }
   .mr-ref .mr-clip { width: min(100%, 300px); margin: 0 auto; }
 }
+/* Knowitball (THE admin look, 12 Nov 2026): the shared rules in components/admin/shell/houseTokens.css. */
+.bc[data-look="house"] .mr-card { border-radius: var(--kh-r2); border-top: 1px solid var(--kh-line); box-shadow: none; padding: 16px; gap: 12px; }
+.bc[data-look="house"] .mr-head h2 { font-size: 16px; font-weight: 600; }
+.bc[data-look="house"] .mr-tag { font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; padding: 0 8px; border-radius: 4px; background: var(--kh-panel2); }
+.bc[data-look="house"] .mr-tag.mr-base { color: #6b4500; background: var(--kh-amber-soft); }

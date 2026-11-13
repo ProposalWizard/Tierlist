@@ -328,7 +328,7 @@ export function rivalsPool(career: CareerState, notThese: Set<string>, surnamesT
   // 1. The men who beat you to a Ballon d'Or.
   for (const b of ballonDorRivals(career)) {
     const hit = findByName(b.name, b.club);
-    const when = b.seasons.length > 1 ? `Ballon d'Or ×${b.seasons.length}` : `Ballon d'Or ${longSeason(startYear, b.seasons[0], calendarYears)}`;
+    const when = b.seasons.length > 1 ? `Golden Ball ×${b.seasons.length}` : `Golden Ball ${longSeason(startYear, b.seasons[0], calendarYears)}`;
     take(hit?.p ?? null, hit?.club ?? b.club, when, true, b.name);
   }
   // 2. The clubs that beat you to titles: their best men.

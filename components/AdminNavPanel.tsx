@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ADMIN_PAGES, GAMES, GROUPS as REG_GROUPS, TEAM_HOME, gameForPath, gameOf, relatedFor, type AdminGameKey } from "@/lib/adminRegistry";
+import { ADMIN_HUB, ADMIN_PAGES, GAMES, GROUPS as REG_GROUPS, gameForPath, gameOf, relatedFor, type AdminGameKey } from "@/lib/adminRegistry";
 import { setAdminMode, useAdminMode } from "@/lib/adminLook";
 
 /**
@@ -188,7 +188,7 @@ export default function AdminNavPanel() {
   useEffect(() => { setPicked(null); }, [pathname]);
   const game = picked ?? gameForPath(pathname);
   // The admin pages' own side menu already does this job there.
-  const inShell = ["/admin/star", "/admin/team", "/admin/videos"].some((u) => pathname === u || pathname.startsWith(u + "/"));
+  const inShell = pathname === ADMIN_HUB || ["/admin/star", "/admin/team", "/admin/videos", "/admin/marketing"].some((u) => pathname === u || pathname.startsWith(u + "/"));
   const showTab = mode && !inShell;
 
   const [spot, setSpot] = useState<TabSpot | null>(null);
@@ -287,14 +287,14 @@ export default function AdminNavPanel() {
 
       {/* Panel */}
       <div
-        className={`fixed left-0 top-0 z-[90] flex h-full w-80 max-w-[85vw] flex-col border-r border-emerald-400/25 bg-[#070b09] shadow-2xl transition-transform duration-300 ease-in-out ${
-          open ? "translate-x-0" : "-translate-x-full"
+        className={`fixed left-0 top-0 z-[90] flex h-full w-80 max-w-[85vw] flex-col border-r border-emerald-400/25 bg-[#070b09] transition-transform duration-300 ease-in-out ${
+          open ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         }`}
       >
         <div className="flex items-center justify-between border-b border-gray-800 px-5 py-4">
-          {/* The admin's home is the Team board (Harry, 20 Oct 2026). */}
-          <Link href={TEAM_HOME} className="text-xs font-bold uppercase tracking-wider text-emerald-300 hover:text-emerald-200">
-            Admin &amp; Dev · Team
+          {/* The admin home, /admin (Harry, 12 Nov 2026; it was the Team board from 20 Oct). */}
+          <Link href={ADMIN_HUB} className="text-xs font-bold uppercase tracking-wider text-emerald-300 hover:text-emerald-200">
+            Admin &amp; Dev · Home
           </Link>
           <button
             onClick={() => setOpen(false)}

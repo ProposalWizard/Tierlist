@@ -67,7 +67,7 @@ export interface ShelfTrophy {
 
 /** Shelf order: the biggest prizes first, then by how many you have. */
 const PRESTIGE = [
-  "Ballon d'Or", "World Cup", "Champions League", "Premier League", "Europa League",
+  "Golden Ball", "World Cup", "Champions League", "Premier League", "Europa League",
   "FA Cup", "Golden Boot", "Player of the Season", "League Cup", "Championship",
   "League One", "League Two", "National League", "Player of the Month",
 ];
@@ -80,7 +80,7 @@ const PRESTIGE = [
 export function trophyShelf(trophies: Trophy[] | undefined, ballonDors: number): ShelfTrophy[] {
   const counts = new Map<string, number>();
   for (const t of trophies ?? []) counts.set(t.competition, (counts.get(t.competition) ?? 0) + 1);
-  if (ballonDors > 0) counts.set("Ballon d'Or", Math.max(ballonDors, counts.get("Ballon d'Or") ?? 0));
+  if (ballonDors > 0) counts.set("Golden Ball", Math.max(ballonDors, counts.get("Golden Ball") ?? 0));
   const rank = (n: string) => { const i = PRESTIGE.indexOf(n); return i < 0 ? PRESTIGE.length : i; };
   return Array.from(counts.entries())
     .map(([name, count]) => ({ name, count, art: trophyArt(name) }))

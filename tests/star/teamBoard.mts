@@ -139,7 +139,8 @@ console.log("Pushes counted from GitHub's push log (B13)");
 console.log("The page list");
 const urls = ADMIN_PAGES.map((p) => p.url);
 ok(new Set(urls).size === urls.length, "no page listed twice");
-ok(urls.every((u) => u in ADMIN_GUIDES || u === "/star-dev" || u === "/admin"), "every listed admin page has a help eye entry");
+ok(urls.every((u) => u in ADMIN_GUIDES || u === "/star-dev"), "every listed admin page has a help eye entry");
+ok("/admin" in ADMIN_GUIDES, "the admin home has its help eye entry");
 for (const gone of ["/star-match-dev", "/star-scenario-dev", "/star-bigger-dev", "/ballon-dor", "/manager", "/draft-dev2"])
   ok(!urls.includes(gone), `Harry's delete list: ${gone} not listed`);
 ok(visibleTo("tester").every((p) => p.access !== "admin"), "testers never see admin-only pages");
@@ -170,7 +171,7 @@ ok(hookExtract(upd) === ex, "the hook keeps exactly what the site's rules keep")
 console.log("The one lock (test run only: Harry, ADM-Q110 B)");
 {
   const fs = await import("node:fs");
-  const own = new Set(["/star-dev", "/admin", "/admin/patch-notes"]); // open game; /admin and patch notes check inside the page
+  const own = new Set(["/star-dev", "/admin/site-content", "/admin/patch-notes"]); // open game; Site content and patch notes check inside the page
   const gated = (url: string) => {
     for (let u = url; u.length > 1; u = u.slice(0, u.lastIndexOf("/")) || "/") {
       const f = `app${u}/layout.tsx`;

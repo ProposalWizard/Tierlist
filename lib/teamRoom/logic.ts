@@ -6,6 +6,9 @@
 import { TEAM_PEOPLE, TEAM_ROOM, type TeamPerson } from "./config";
 import { isJobMarker } from "./jobs";
 
+/** A proposal ("[ask] …", lib/teamRoom/asks.ts): not a job until its owner accepts it. */
+const isAskRow = (x: Pick<TeamTask, "title">) => (x.title ?? "").startsWith("[ask] ");
+
 export interface TeamMessage { id: number; person: TeamPerson; body: string; image_url: string | null; page: string | null; pinned: boolean; created_at: string }
 export type IdeaStage = "idea" | "doing" | "done";
 export interface TeamIdea { id: number; person: TeamPerson; title: string; stage: IdeaStage; created_at: string; updated_at: string }
@@ -73,7 +76,7 @@ export function tasksFor(tasks: TeamTask[], me: TeamPerson | null, now: number) 
   const empty = { mine: [] as TeamTask[], given: [] as TeamTask[], done: [] as TeamTask[], open: 0 };
   if (!me) return empty;
   const keep = TEAM_ROOM.keepDoneHours * 3600_000;
-  const own = tasks.filter((x) => x.owner === me && !isJobMarker(x));
+  const own = tasks.filter((x) => x.owner === me && !isJobMarker(x) && !isAskRow(x));
   const open = own.filter((x) => !x.done_at).sort((a, b) => t(b.created_at) - t(a.created_at));
   return {
     mine: open.filter((x) => x.made_by === me),
@@ -86,7 +89,7 @@ export function tasksFor(tasks: TeamTask[], me: TeamPerson | null, now: number) 
 /** Jobs you gave the other two that are still open. */
 export function tasksGivenBy(tasks: TeamTask[], me: TeamPerson | null): TeamTask[] {
   if (!me) return [];
-  return tasks.filter((x) => x.made_by === me && x.owner !== me && !x.done_at && !isJobMarker(x)).sort((a, b) => t(b.created_at) - t(a.created_at));
+  return tasks.filter((x) => x.made_by === me && x.owner !== me && !x.done_at && !isJobMarker(x) && !isAskRow(x)).sort((a, b) => t(b.created_at) - t(a.created_at));
 }
 
 /** Open jobs the other two gave you since you last looked at the list. */

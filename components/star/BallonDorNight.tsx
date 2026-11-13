@@ -149,7 +149,7 @@ function Captions({ career, plan, t, loading }: { career: CareerState; plan: Nig
   const top = (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 px-4 pt-5 text-center" style={{ background: "linear-gradient(180deg, rgba(0,0,0,.6), transparent)" }}>
       <div className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-200">Season {career.season}</div>
-      <h1 className="text-[30px] uppercase leading-none text-white" style={{ filter: "drop-shadow(0 2px 6px rgba(0,0,0,.8))" }}>Ballon d&apos;Or</h1>
+      <h1 className="text-[30px] uppercase leading-none text-white" style={{ filter: "drop-shadow(0 2px 6px rgba(0,0,0,.8))" }}>Golden Ball</h1>
     </div>
   );
   let line: React.ReactNode = null;
@@ -176,7 +176,7 @@ function Captions({ career, plan, t, loading }: { career: CareerState; plan: Nig
           {youWon ? "You!" : winner.entry.name}
         </div>
         <div className="mt-1 text-[13px] font-black uppercase tracking-wide text-white">
-          {youWon ? `${winner.entry.name} wins the Ballon d'Or` : "wins the Ballon d'Or"}
+          {youWon ? `${winner.entry.name} wins the Golden Ball` : "wins the Golden Ball"}
         </div>
       </div>
     );
@@ -335,7 +335,7 @@ function StageDrawn({ career, plan, t }: { career: CareerState; plan: NightPlan;
       </div>
       {/* The golden ball. */}
       <div className="absolute -translate-x-1/2" style={{ left: `${ballX}%`, bottom: `calc(34% + ${ballUp}px)`, zIndex: 6,filter: `drop-shadow(0 0 ${8 + 22 * e}px rgba(253,224,71,${0.4 + 0.5 * e}))` }} data-bdor-ball>
-        <TrophyImage name="Ballon d'Or" height={34 + 16 * e} fallback="🏅" />
+        <TrophyImage name="Golden Ball" height={34 + 16 * e} fallback="🏅" />
       </div>
     </div>
   );

@@ -65,7 +65,7 @@ export const DIVISION_SHORT: Record<CareerDivision, string> = {
  * the garden's shelf uses (gardenLevel.ts), plus the ones it leaves out.
  */
 export const HONOUR_ORDER = [
-  "Ballon d'Or", "World Cup", "European Championship", "Champions League", "Premier League",
+  "Golden Ball", "World Cup", "European Championship", "Champions League", "Premier League",
   "Europa League", "FA Cup", "Conference League", "League Cup", "Super Cup", "Community Shield",
   "Championship", "Play-Offs", "League One", "League Two", "National League", "Lower League Trophy",
 ];
@@ -371,7 +371,7 @@ export function careerOverview(career: CareerState, opts: { calendarYears?: bool
   if (career.ballonDorWins > 0) {
     const won = (career.seasonHistory ?? []).filter(r => r.ballonDor?.yourRank === 1).map(r => r.season);
     honours.push({
-      competition: "Ballon d'Or",
+      competition: "Golden Ball",
       count: career.ballonDorWins,
       // Seasons only for the wins the save recorded; never more than the count.
       seasons: won.slice(0, career.ballonDorWins).map(s => shortSeason(startYear, s, cal)),
