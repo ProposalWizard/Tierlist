@@ -138,7 +138,7 @@ export function demoRoom(now: number) {
   const bugMarks: BugMark[] = [{ post_id: 481, handed_to: "Leo", fixed_by: null, fixed_at: null, updated_by: "Leo", updated_at: ago(80) }];
   const me: TeamPerson | null = fresh ? null : "Harry";
   return {
-    me, taken: fresh ? (["Mikey"] as TeamPerson[]) : [], messages, ideas, votes, tasks, notes, online: ["Harry", "Mikey"] as TeamPerson[], marks, acks,
+    me, taken: fresh ? (["Mikey"] as TeamPerson[]) : [], messages, ideas, votes, tasks, notes, online: ["Harry"] as TeamPerson[], marks, acks,
     reactions, dms: me ? dms : [], channelRows, botRows, chRead, statuses, welcome, welcomeReads, bugMarks,
   };
 }
@@ -154,8 +154,13 @@ export function demoBoard(now: number) {
   return {
     fetchedAt: at(0), problems: [] as string[], pulls: [], statusOn: true, pushLogFrom: at(60 * 24 * 14),
     people: [
-      mk("Harry", [1, 0, 3, 2, 4, 3, 0, 1, 3, 4, 2, 3, 5, 2], [{ label: "Team room: every channel", pct: 60, note: "building" }, { label: "Team room: a run of all bots", pct: 20, note: "next" }], 9, "Mikey: run the bug SQL file"),
-      mk("Mikey", [0, 1, 0, 2, 3, 0, 0, 2, 1, 0, 2, 3, 1, 1], [{ label: "Goal replays: sound", pct: 70, note: "building" }], 34),
+      mk("Harry", [1, 0, 3, 2, 4, 3, 0, 1, 3, 4, 2, 3, 5, 2], [
+        { label: "Team room: every channel", pct: 60, note: "building" }, { label: "Team room: a run of all bots", pct: 20, note: "next" },
+        { label: "Green top bar and footer", pct: 100, note: "live" }, { label: "All games tab", pct: 100, note: "live" },
+        { label: "Beta sign-up box", pct: 100, note: "live" }, { label: "Cream phone look", pct: 100, note: "pushed" },
+      ], 9, "you: say which home look to keep"),
+      // Mikey has the room closed but a Claude chat posted 6 minutes ago: "Working now · via Claude chat".
+      mk("Mikey", [0, 1, 0, 2, 3, 0, 0, 2, 1, 0, 2, 3, 1, 1], [{ label: "Goal replays: sound", pct: 70, note: "building" }, { label: "Night kits", pct: 40, note: "waiting on Harry's yes" }], 6),
       mk("Leo", [1, 2, 2, 0, 0, 3, 4, 2, 0, 1, 2, 0, 2, 1], [], 60 * 5),
     ],
   };

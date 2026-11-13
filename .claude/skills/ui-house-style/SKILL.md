@@ -41,6 +41,18 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 13 Nov 2026 — the Team board tab: who is active now, work first (Harry)
+- **"This can be improved visually, where is the live now/active now?"** Said
+  of the Team board tab on a computer (three equal cards, mostly white space).
+  A board about people says who is live first: an Active now strip on top and
+  a state beside every name (green pulsing dot = live). The rule is one small
+  function, lib/teamRoom/activeNow.ts.
+- (inferred, from the build brief) The point of a card comes first and
+  biggest (current work), the chart is slim; finished work folds to a quiet
+  ticked line; cards keep their own height (no card stretched to match a
+  taller one); an empty card says one useful line; no wide empty strip.
+  Stills: docs/stills/team-board-tab-v2/ (before-* and after-*).
+
 ### 12 Nov 2026 — the public home: the game first, then a Friv grid (Harry, recording)
 - **"This is one of the worst home screens I've ever seen."** / **"Road to the
   Golden Ball is like the main thing on the site. Play now."** The home leads
