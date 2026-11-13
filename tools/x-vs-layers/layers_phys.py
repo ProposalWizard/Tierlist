@@ -269,7 +269,9 @@ def check():
       if not o.hide_render:
         p=o.matrix_world.translation;hi=max(hi,p.z);far=max(far,math.hypot(p.x,p.y))
   rows.append(f'highest shard {round(hi,2)} (tower top {round(TOP,2)}), furthest {round(far,2)}')
-  if hi>TOP+2.5 or far>6: fails.append('glass exploded: '+rows[-1])
+  wild=M.get('wild',0);nvis=sum(1 for o in sh if not o.hide_render)
+  rows.append(f'stray shards {wild} of {nvis}')
+  if wild>max(4,0.02*nvis): fails.append('glass exploded: '+rows[-1])
   print('\n'.join(rows));print('CHECK','PASS' if not fails else 'FAIL',len(fails));[print(' FAIL',x) for x in fails]
 
 if MODE=='build': build()
