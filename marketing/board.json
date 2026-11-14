@@ -286,5 +286,22 @@
    "2026-11-13 Made in story mode from Mikey's context, motion style. Lienhart (#1) left out on purpose. Waiting for Mikey's look.",
    "2026-11-13 Posted to Instagram (knowitballjr) as a Reel via Windsor.ai."
   ]
+ },
+ {
+  "id": "v12-replace-van-dijk-file",
+  "title": "v12 · Replace Van Dijk, new look (scout's file)",
+  "stage": "final-check",
+  "owner": "Claude",
+  "updated": "2026-11-14T14:45:00Z",
+  "postOn": null,
+  "line": "Same script and voice as v11, new art and animation: a transfer dossier on paper, polaroids with tape, red marker, rubber stamps that slam, a corkboard with pins and string, pages sliding over each other.",
+  "script": "docs/marketing/videos/v11-replace-van-dijk/script.md",
+  "cover": "docs/marketing/videos/v12-replace-van-dijk-file/cover.png",
+  "video": "docs/marketing/videos/v12-replace-van-dijk-file/knowitball-v12-replace-van-dijk-file.mp4",
+  "seconds": 93.9,
+  "links": [],
+  "log": [
+   "2026-11-14 Remade in the new 'scout's file' look (engine video_replace_file.html) because v11's dark motion look was not performing (about 20 s average watch of 94 s). Waiting for Mikey's look."
+  ]
  }
 ]
