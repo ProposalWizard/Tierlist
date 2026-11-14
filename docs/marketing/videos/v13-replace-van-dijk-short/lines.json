@@ -1,0 +1,133 @@
+[
+ {
+  "id": "hook",
+  "say": "Virgil van Dijk's contract runs out at the end of the season. If it isn't renewed, how do Liverpool replace him?",
+  "cap": "VIRGIL VAN DIJK'S CONTRACT RUNS OUT AT THE END OF THE SEASON. IF IT ISN'T RENEWED, HOW DO LIVERPOOL REPLACE HIM?",
+  "sfx": [
+   [
+    "hit",
+    0.0,
+    0.7
+   ],
+   [
+    "pop",
+    "CONTRACT",
+    0.6
+   ],
+   [
+    "hit",
+    "HOW",
+    0.7
+   ]
+  ],
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "tempo": 1.05,
+  "hold": 0
+ },
+ {
+  "id": "method",
+  "say": "So we compared him with all 318 centre-backs in Europe's top five leagues.",
+  "cap": "SO WE COMPARED HIM WITH ALL 318|318 CENTRE-BACKS IN EUROPE'S TOP FIVE LEAGUES.",
+  "hold": 0.1,
+  "sfx": [
+   [
+    "tick",
+    "ALL",
+    0.4
+   ]
+  ],
+  "voiceSettings": {
+   "speed": 1.08
+  }
+ },
+ {
+  "id": "map",
+  "say": "Right at the top of the list: Dean Huijsen, at Real Madrid.",
+  "cap": "RIGHT AT THE TOP OF THE LIST: DEAN HUIJSEN, AT REAL MADRID.",
+  "hold": 0.1,
+  "sfx": [
+   [
+    "hit",
+    "DEAN",
+    0.7
+   ]
+  ],
+  "voiceSettings": {
+   "speed": 1.08
+  }
+ },
+ {
+  "id": "s1",
+  "say": "He's twenty-one, a seventy-nine percent match, and worth seventy-five million euros. He'd cost a lot, but the real problem: when you're starting for Real Madrid, you don't leave.",
+  "cap": "HE'S 21|twenty-one, A 79%|seventy-nine-percent MATCH, AND WORTH €75M|seventy-five-million-euros. HE'D COST A LOT, BUT THE REAL PROBLEM: WHEN YOU'RE STARTING FOR REAL MADRID, YOU DON'T LEAVE.",
+  "hold": 0.1,
+  "sfx": [
+   [
+    "pop",
+    "WORTH",
+    0.5
+   ],
+   [
+    "hit",
+    "WHEN",
+    0.6
+   ]
+  ],
+  "voiceSettings": {
+   "speed": 1.08
+  }
+ },
+ {
+  "id": "s3",
+  "say": "Then Jacobo Ramón, at Como. He's twenty-one, a seventy-six percent match, and worth forty-eight million euros. He'd be expensive, and he's linked with Real Madrid. But he's been excellent, and for the right price, we think Liverpool could get him.",
+  "cap": "THEN JACOBO RAMÓN, AT COMO. HE'S 21|twenty-one, A 76%|seventy-six-percent MATCH, AND WORTH €48M|forty-eight-million-euros. HE'D BE EXPENSIVE, AND HE'S LINKED WITH REAL MADRID. BUT HE'S BEEN EXCELLENT, AND FOR THE RIGHT PRICE, WE THINK LIVERPOOL COULD GET HIM.",
+  "hold": 0.1,
+  "sfx": [
+   [
+    "pop",
+    "WORTH",
+    0.5
+   ],
+   [
+    "hit",
+    "WE",
+    0.6
+   ]
+  ],
+  "voiceSettings": {
+   "speed": 1.08
+  }
+ },
+ {
+  "id": "s5",
+  "say": "Van Dijk brings experience, and someone has to partner Jérémy Jacquet. So: Nico Schlotterbeck, at Dortmund. He's twenty-six, a sixty-nine percent match, and worth fifty-four million euros. He's played for Germany and in a Champions League final, and Dortmund have conceded just five in seven this season.",
+  "cap": "VAN DIJK BRINGS EXPERIENCE, AND SOMEONE HAS TO PARTNER JÉRÉMY JACQUET. SO: NICO SCHLOTTERBECK, AT DORTMUND. HE'S 26|twenty-six, A 69%|sixty-nine-percent MATCH, AND WORTH €54M|fifty-four-million-euros. HE'S PLAYED FOR GERMANY AND IN A CHAMPIONS LEAGUE FINAL, AND DORTMUND HAVE CONCEDED JUST FIVE IN SEVEN THIS SEASON.",
+  "hold": 0.1,
+  "sfx": [
+   [
+    "pop",
+    "WORTH",
+    0.5
+   ],
+   [
+    "hit",
+    "PLAYED",
+    0.6
+   ]
+  ],
+  "voiceSettings": {
+   "speed": 1.08
+  }
+ },
+ {
+  "id": "end",
+  "say": "So: Ramón for the future, or Schlotterbeck for experience. Who would you sign? Follow for more.",
+  "cap": "SO: RAMÓN FOR THE FUTURE, OR SCHLOTTERBECK FOR EXPERIENCE. WHO WOULD YOU SIGN? FOLLOW FOR MORE.",
+  "hold": 0.0,
+  "voiceSettings": {
+   "speed": 1.08
+  }
+ }
+]

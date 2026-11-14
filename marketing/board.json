@@ -303,5 +303,22 @@
   "log": [
    "2026-11-14 Remade in the new 'scout's file' look (engine video_replace_file.html) because v11's dark motion look was not performing (about 20 s average watch of 94 s). Waiting for Mikey's look."
   ]
+ },
+ {
+  "id": "v13-replace-van-dijk-short",
+  "title": "v13 · Replace Van Dijk, short cut (53 s, scout's file)",
+  "stage": "final-check",
+  "owner": "Claude",
+  "updated": "2026-11-14T15:30:00Z",
+  "postOn": null,
+  "line": "v12 cut from 94 s to 53 s: hook, the search, map, Huijsen (won't leave Madrid), Ramón (the young pick), Schlotterbeck (the experienced pick), ending. Dropped: his rankings, Van Hecke, Thiaw, the head-to-head, Schlotterbeck's last sentence. Voice 6% faster, same takes.",
+  "script": "docs/marketing/videos/v11-replace-van-dijk/script.md",
+  "cover": "docs/marketing/videos/v13-replace-van-dijk-short/cover.png",
+  "video": "docs/marketing/videos/v13-replace-van-dijk-short/knowitball-v13-replace-van-dijk-short.mp4",
+  "seconds": 52.9,
+  "links": [],
+  "log": [
+   "2026-11-14 Short cut made from v12 because the average watch on v11 was about 20 s of 94 s. Waiting for Mikey's look."
+  ]
  }
 ]
