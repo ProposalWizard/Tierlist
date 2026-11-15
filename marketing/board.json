@@ -320,5 +320,22 @@
   "log": [
    "2026-11-14 Short cut made from v12 because the average watch on v11 was about 20 s of 94 s. Waiting for Mikey's look."
   ]
+ },
+ {
+  "id": "v14-replace-alisson",
+  "title": "v14 · How do Liverpool replace Alisson? (scout's file, short)",
+  "stage": "final-check",
+  "owner": "Claude",
+  "updated": "2026-11-15T20:30:00Z",
+  "postOn": null,
+  "line": "Contract runs out. Mamardashvili (already there; stats from Valencia 24/25 as he's barely played): 64% pass accuracy v Alisson's 79%, not good enough. Verbruggen (Brighton, 24, €47M) the standout pick: only a 67% match because he's been better (save %, goals prevented, passes, 25/26). Younger options: Kinský (Spurs, 90%, only 10 games), Restes (Toulouse, 21, 82%).",
+  "script": "docs/marketing/videos/v14-replace-alisson/lines.json",
+  "cover": "docs/marketing/videos/v14-replace-alisson/cover.png",
+  "video": "docs/marketing/videos/v14-replace-alisson/knowitball-v14-replace-alisson.mp4",
+  "seconds": 66.3,
+  "links": [],
+  "log": [
+   "2026-11-15 Made from Mikey's story in the scout's file look, short format. Waiting for Mikey's look."
+  ]
  }
 ]

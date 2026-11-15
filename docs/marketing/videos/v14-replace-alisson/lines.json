@@ -1,0 +1,113 @@
+[
+ {
+  "id": "hook",
+  "say": "Alisson's contract runs out at the end of the season, and there are doubts he'll sign a new one. So how do Liverpool replace him?",
+  "cap": "ALISSON'S CONTRACT RUNS OUT AT THE END OF THE SEASON, AND THERE ARE DOUBTS HE'LL SIGN A NEW ONE. SO HOW DO LIVERPOOL REPLACE HIM?",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "sfx": [
+   [
+    "hit",
+    0.0,
+    0.7
+   ],
+   [
+    "pop",
+    "CONTRACT",
+    0.6
+   ],
+   [
+    "hit",
+    "HOW",
+    0.7
+   ]
+  ],
+  "hold": 0.1
+ },
+ {
+  "id": "method",
+  "say": "We compared him with all 131 goalkeepers in Europe's top five leagues.",
+  "cap": "WE COMPARED HIM WITH ALL 131 GOALKEEPERS IN EUROPE'S TOP FIVE LEAGUES.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "sfx": [
+   [
+    "tick",
+    "ALL",
+    0.4
+   ]
+  ],
+  "hold": 0.1
+ },
+ {
+  "id": "s1",
+  "say": "First, the keeper they already have: Giorgi Mamardashvili. He's twenty-six, a seventy-eight percent match, and worth thirty-six million euros. He's barely played for Liverpool, so we used his last full season, at Valencia. Only sixty-four percent of his passes found a teammate. Alisson managed seventy-nine. For Liverpool, that's not good enough.",
+  "cap": "FIRST, THE KEEPER THEY ALREADY HAVE: GIORGI MAMARDASHVILI. HE'S 26|twenty-six, A 78%|seventy-eight-percent MATCH, AND WORTH €36M|thirty-six-million-euros. HE'S BARELY PLAYED FOR LIVERPOOL, SO WE USED HIS LAST FULL SEASON, AT VALENCIA. ONLY 64%|sixty-four-percent OF HIS PASSES FOUND A TEAMMATE. ALISSON MANAGED 79.|seventy-nine. FOR LIVERPOOL, THAT'S NOT GOOD ENOUGH.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "sfx": [
+   [
+    "pop",
+    "WORTH",
+    0.5
+   ],
+   [
+    "hit",
+    "NOT",
+    0.6
+   ]
+  ],
+  "hold": 0.8
+ },
+ {
+  "id": "s2",
+  "say": "So Liverpool need to buy, and our pick is Bart Verbruggen, at Brighton. He's twenty-four, a sixty-seven percent match, and worth forty-seven million euros, so he won't come cheap. But he's been in great form, and you'd expect that to continue.",
+  "cap": "SO LIVERPOOL NEED TO BUY, AND OUR PICK IS BART VERBRUGGEN, AT BRIGHTON. HE'S 24|twenty-four, A 67%|sixty-seven-percent MATCH, AND WORTH €47M|forty-seven-million-euros, SO HE WON'T COME CHEAP. BUT HE'S BEEN IN GREAT FORM, AND YOU'D EXPECT THAT TO CONTINUE.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "sfx": [
+   [
+    "pop",
+    "WORTH",
+    0.5
+   ],
+   [
+    "hit",
+    "GREAT",
+    0.6
+   ]
+  ],
+  "hold": 0.1
+ },
+ {
+  "id": "compare",
+  "say": "He's only a sixty-seven percent match because he's been better. Last season, he saved a bigger share of shots, prevented more goals, and made more passes than Alisson. A good passer, like Alisson: that matters at Liverpool.",
+  "cap": "HE'S ONLY A 67%|sixty-seven-percent MATCH BECAUSE HE'S BEEN BETTER. LAST SEASON, HE SAVED A BIGGER SHARE OF SHOTS, PREVENTED MORE GOALS, AND MADE MORE PASSES THAN ALISSON. A GOOD PASSER, LIKE ALISSON: THAT MATTERS AT LIVERPOOL.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "hold": 0.1
+ },
+ {
+  "id": "others",
+  "say": "Want a younger option? Antonín Kinský at Spurs is a ninety percent match, but from only ten games. Guillaume Restes at Toulouse is twenty-one, and an eighty-two percent match.",
+  "cap": "WANT A YOUNGER OPTION? ANTONÍN KINSKÝ AT SPURS IS A 90%|ninety-percent MATCH, BUT FROM ONLY TEN GAMES. GUILLAUME RESTES AT TOULOUSE IS 21,|twenty-one, AND AN 82%|eighty-two-percent MATCH.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "hold": 0.1
+ },
+ {
+  "id": "end",
+  "say": "But for us, the man to replace Alisson is Verbruggen. Would you sign him? Follow for more.",
+  "cap": "BUT FOR US, THE MAN TO REPLACE ALISSON IS VERBRUGGEN. WOULD YOU SIGN HIM? FOLLOW FOR MORE.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "hold": 0.0
+ }
+]

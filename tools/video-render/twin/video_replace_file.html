@@ -114,7 +114,7 @@ P.hook=(sc,p,s,t)=>{p=Math.max(p,0.3);bg('paper');const qt=wordT(s,sc.qAt),stT=s
   polaroid(sc.face,sc.from,540,690,520,-0.035,p,0,null);
   sticker(sc.from,800,950,150,0.12,ease((p-0.15)/0.2));sticker(sc.flag,300,430,90,-0.1,ease((p-0.2)/0.2));
   const nm=sc.name;T(nm,540,1140,F(900,fit(nm,900,120,960)),INK,'center',ease((p-0.05)/0.2));
-  typed(sc.to?'LIKELY LEAVING':'LIVERPOOL · CENTRE-BACK',540,1200,32,clamp((p-0.2)/0.5),INK2,'center');
+  typed(sc.sub||(sc.to?'LIKELY LEAVING':'LIVERPOOL · CENTRE-BACK'),540,1200,32,clamp((p-0.2)/0.5),INK2,'center');
   if(sc.sticker)stamp(sc.sticker,540,620,74,RED,-0.16,t,stT,860);
   if(t>=qt){const k=clamp((t-qt)/0.45);mtext(sc.kicker,540,1320,fit(sc.kicker,900,72,930),k,RED,'center',-0.025);mline(120,1350,960,1342,clamp((t-qt-0.4)/0.3),RED,8);}
   x.restore();};
@@ -164,6 +164,7 @@ P.pick=(sc,p,s,t)=>{bg('paper');const at=sc.stamp?wordT(s,sc.stampAt):9e9;x.save
   typed('CANDIDATE',90,252,30,clamp(p/0.3),INK2,'left',800);
   polaroid(sc.face,sc.club,350,620,440,-0.045,p,0,null);sticker(sc.club,560,800,120,0.1,ease((p-0.15)/0.2));sticker(sc.flag,160,420,80,-0.1,ease((p-0.2)/0.2));
   // right column: rank on the list, match, age
+  if(!sc.rank&&sc.basis){sc.basis.forEach((l,i)=>typed(l,800,400+i*44,30,clamp((p-0.2-i*0.1)/0.4),i?RED:INK2,'center',800));}
   if(sc.rank){mtext('#'+sc.rank,800,430,110,clamp((p-0.2)/0.3),RED,'center',-0.05);ring(800,395,95,80,clamp((p-0.35)/0.4),RED,sc.rank*3,8);typed('ON THE LIST',800,510,24,clamp((p-0.3)/0.4),INK2,'center',800);}
   T(Math.round(sc.m)+'%',800,650,F(900,96),INK,'center',ease((p-0.25)/0.3));typed('MATCH',800,692,26,clamp((p-0.3)/0.4),INK2,'center',800);
   T(String(sc.age),800,810,F(900,80),INK,'center',ease((p-0.3)/0.3));typed('AGE',800,850,26,clamp((p-0.35)/0.4),INK2,'center',800);
@@ -182,7 +183,7 @@ P.compare=(sc,p,s,t)=>{bg('paper');tag();
   const n=sc.rows.length,y0=800,rowH=Math.min(160,620/n);
   sc.rows.forEach((r,i)=>{const at=sc.at?wordT(s,sc.at[i]):s.start+0.3+i*0.5;const a=ease((t-at)/0.45);if(t<at-0.02)return;const yy=y0+i*rowH;
     T(r.label.toUpperCase(),540,yy+36,F(900,38),INK,'center',clamp(a*3));const mx=Math.max(r.a,r.b)*1.1||1;
-    [[r.a,RED,-1],[r.b,BLUE,1]].forEach(([v,c,d])=>{const w=380*v/mx*a;x.save();x.globalAlpha=0.85;x.fillStyle=c;x.beginPath();if(d<0){x.moveTo(530,yy+58);x.lineTo(530-w,yy+62);x.lineTo(530-w-3,yy+104);x.lineTo(530,yy+100);}else{x.moveTo(550,yy+60);x.lineTo(550+w,yy+57);x.lineTo(550+w+3,yy+101);x.lineTo(550,yy+104);}x.closePath();x.fill();x.restore();
+    [[r.a,RED,-1],[r.b,BLUE,1]].forEach(([v,c,d])=>{const w=Math.max(6,380*Math.max(0,v)/mx)*a;x.save();x.globalAlpha=0.85;x.fillStyle=c;x.beginPath();if(d<0){x.moveTo(530,yy+58);x.lineTo(530-w,yy+62);x.lineTo(530-w-3,yy+104);x.lineTo(530,yy+100);}else{x.moveTo(550,yy+60);x.lineTo(550+w,yy+57);x.lineTo(550+w+3,yy+101);x.lineTo(550,yy+104);}x.closePath();x.fill();x.restore();
       const tx=d<0?530-w-18:550+w+18;T(String(v),tx,yy+96,TY(36,800),INK,d<0?'right':'left',clamp(a*3));
       const better=(d<0?r.a>r.b:r.b>r.a);if(better&&a>=1){x.font=TY(36,800);const tw=x.measureText(String(v)).width;ring(d<0?tx-tw/2:tx+tw/2,yy+84,tw/2+22,34,clamp((t-at-0.45)/0.3),GREEN,i*5+2,6);}});});};
 P.end2=(sc,p,s,t)=>{bg('cork');
@@ -192,9 +193,19 @@ P.end2=(sc,p,s,t)=>{bg('cork');
   sc.opts.forEach((o,i)=>{const at=wordT(s,o.at);if(t<at)return;const cx=i?790:290,cy=950,dt=t-at,q=clamp(dt/0.4);
     x.save();x.strokeStyle='#c01818';x.lineWidth=5;x.beginPath();x.moveTo(540,560);x.lineTo(540+(cx-540)*q,560+(cy-180-560)*q);x.stroke();x.restore();
     polaroid(o.face,o.club,cx,cy,290,i?0.05:-0.05,dt,0,o.name,{tape:false,pin:i?BLUE:RED,capSize:40});
-    note(o.tag,cx+(i?-30:30),cy+270,330,i?-0.05:0.05,clamp((dt-0.2)/0.35),i?'#9fd3ff':NOTE);typed(o.sub,cx,cy+372,28,clamp((dt-0.3)/0.4),'#fff','center',800);});
-  stamp('KNOWITBALL',540,1430,70,'#fff',-0.06,t,s.start+s.vo+0.3,800);};
+    note(o.tag,cx+(i?-30:30),cy+270,330,i?-0.05:0.05,clamp((dt-0.2)/0.35),i?'#9fd3ff':NOTE);typed(o.sub,cx,cy+405,28,clamp((dt-0.3)/0.4),'#fff','center',800);});
+  if(!sc.noStamp)stamp('KNOWITBALL',540,1430,70,'#fff',-0.06,t,s.start+s.vo+0.3,800);};
 P.end=P.end2;
+// one answer: him, a string, the pick big with a stamp (Alisson, 15 Nov 2026)
+P.end1=(sc,p,s,t)=>{bg('cork');const at=wordT(s,sc.at);x.save();shake(t,[at]);
+  shadowed(()=>{x.save();x.translate(540,250);x.rotate(-0.015);x.fillStyle='#f7f1e3';x.fillRect(-470,-80,940,150);x.restore();},16,8,0.4);
+  x.save();x.translate(540,250);x.rotate(-0.015);T(sc.title,0,22,F(900,fit(sc.title,900,64,880)),INK,'center',ease(p/0.25));x.restore();pin(110,190,RED);pin(970,180,RED);
+  polaroid(sc.a.face,sc.a.club,250,520,170,-0.06,p,0.05,sc.a.name,{tape:false,pin:RED,capSize:28});
+  const q=clamp((p-0.3)/0.5);x.save();x.strokeStyle='#c01818';x.lineWidth=5;x.beginPath();x.moveTo(250,440);x.lineTo(250+(560-250)*q,440+(640-440)*q);x.stroke();x.restore();
+  polaroid(sc.b.face,sc.b.club,600,900,440,0.04,p,0.2,sc.b.name,{tape:false,pin:GREEN,capSize:48});sticker(sc.b.club,840,1120,120,0.1,ease((p-0.4)/0.2));
+  typed(sc.b.sub,600,1250,32,clamp((p-0.5)/0.5),'#fff','center',800);
+  stamp(sc.stamp,560,900,96,GREEN,-0.16,t,at,560);
+  stamp('KNOWITBALL',540,1430,70,'#fff',-0.06,t,s.start+s.vo+0.3,800);x.restore();};
 // pages slide over each other at each new line (no zoom)
 function draw(sc,p,s,t){(P[sc.type]||P.end2)(sc,p,s,t);}
 function render(t){x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;x.filter='none';const s=seg(t);const sc=SC[s.id];const i=TL.segs.indexOf(s),D=0.32,dt=t-s.start+0.05;

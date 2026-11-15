@@ -141,7 +141,9 @@ for r, cv in zip(rows, CV):
 LAB = {'drib': ('dribbles', 'Dribbles'), 'rec': ('ball recoveries', 'Ball recoveries'), 'block': ('blocked shots', 'Blocked shots'), 'passes': ('passes', 'Passes'),
        'chances': ('chances created', 'Chances created'), 'A': ('assists', 'Assists'), 'tkl': ('tackles', 'Tackles'), 'int': ('interceptions', 'Interceptions'),
        'xA': ('expected assists', 'Expected assists'), 'pass%': ('pass accuracy', 'Pass accuracy'), 'long': ('long balls', 'Long balls'), 'wonHigh': ('high regains', 'High regains'),
-       'clear': ('clearances', 'Clearances'), 'npG': ('goals', 'Goals'), 'def': ('defensive actions', 'Defensive actions'), 'bigCC': ('big chances made', 'Big chances made')}
+       'clear': ('clearances', 'Clearances'), 'npG': ('goals', 'Goals'), 'def': ('defensive actions', 'Defensive actions'), 'bigCC': ('big chances made', 'Big chances made'),
+       # keepers (15 Nov 2026, Alisson): goals conceded is left out of the ladders (lower is better there)
+       'save%': ('save percentage', 'Save percentage'), 'prevented': ('goals prevented', 'Goals prevented'), 'saves': ('saves', 'Saves'), 'cs': ('clean sheets', 'Clean sheets'), 'long%': ('long-ball accuracy', 'Long-ball accuracy')}
 lp = collections.defaultdict(list)
 for o in D.rows:
     if o['season'] in SEAS and o['league'] == TG['league'] and D.in_group(o, GRP): lp[o['id']].append(o)
@@ -152,7 +154,7 @@ def ladder(k):
     lo = max(0, min(i - 1, len(L_) - 3)); return i + 1, len(L_), [(j + 1, L_[j]) for j in range(lo, lo + 3)]
 ranked = sorted([k for k in LAB if tf.get(k) is not None and k in w and k != 'wonHigh'], key=lambda k: -(tp.get(k) or -9))
 strong = ranked[:3]; weak = ranked[-1]
-LEAGUE = TG['leagueName']; POSW = EP.get('posWord', 'full-back'); GROUPW = {'FB': 'full-backs', 'CB': 'centre-backs', 'MID': 'midfielders', 'AMW': 'attackers', 'ST': 'strikers'}[GRP]
+LEAGUE = TG['leagueName']; POSW = EP.get('posWord', 'full-back'); GROUPW = {'FB': 'full-backs', 'CB': 'centre-backs', 'MID': 'midfielders', 'AMW': 'attackers', 'ST': 'strikers', 'GK': 'goalkeepers'}[GRP]
 fmt = lambda k, v: (f"{v:.0f}%" if k == 'pass%' else f"{v:.1f}" if v >= 1 or k in ('rec', 'drib', 'tkl', 'int', 'clear', 'long') else f"{v:.2f}")
 
 # ---------- lines + scenes ----------
