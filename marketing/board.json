@@ -338,5 +338,22 @@
    "2026-11-15 Made from Mikey's story in the scout's file look, short format. Waiting for Mikey's look.",
    "2026-11-15 Mikey's notes: Mamardashvili with no stats ('we don't think he's good enough'), Verbruggen's international experience added. 57 s."
   ]
+ },
+ {
+  "id": "v15-next-club-vinicius",
+  "title": "v15 · Where should Vinícius go? (new series: next club)",
+  "stage": "final-check",
+  "owner": "Claude",
+  "updated": "2026-11-15T22:30:00Z",
+  "postOn": null,
+  "line": "All 96 top-5 clubs scored on need, style and level. #5 Milan, #4 Brighton, #3 Spurs, #2 Dortmund, #1 Arsenal (upgrade on Tzolis, 9th for possession of 96, top of the PL, €1.4bn squad).",
+  "script": "docs/marketing/videos/v15-next-club-vinicius/lines.json",
+  "cover": "docs/marketing/videos/v15-next-club-vinicius/cover.png",
+  "video": "docs/marketing/videos/v15-next-club-vinicius/knowitball-v15-next-club-vinicius.mp4",
+  "seconds": 58.1,
+  "links": [],
+  "log": [
+   "2026-11-15 First 'next club' video, from the Twin Finder's new Next club tab (model/next_club.py). Waiting for Mikey's look."
+  ]
  }
 ]

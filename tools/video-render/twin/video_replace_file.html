@@ -196,6 +196,28 @@ P.end2=(sc,p,s,t)=>{bg('cork');
     note(o.tag,cx+(i?-30:30),cy+270,330,i?-0.05:0.05,clamp((dt-0.2)/0.35),i?'#9fd3ff':NOTE);typed(o.sub,cx,cy+405,28,clamp((dt-0.3)/0.4),'#fff','center',800);});
   if(!sc.noStamp)stamp('KNOWITBALL',540,1430,70,'#fff',-0.06,t,s.start+s.vo+0.3,800);};
 P.end=P.end2;
+// ---- "Where should he go?" (next club, 15 Nov 2026) ----
+// the search: every club's badge pinned up, then the three checks written on
+P.checks=(sc,p,s,t)=>{bg('cork');tag();
+  shadowed(()=>{x.save();x.translate(540,250);x.rotate(-0.015);x.fillStyle='#f7f1e3';x.fillRect(-440,-75,880,140);x.restore();},16,8,0.4);
+  x.save();x.translate(540,250);x.rotate(-0.015);T(String(Math.round(sc.n*ease(clamp(p/1.4)))),-330,30,F(900,84),RED,'left');T(sc.title,-150,20,F(900,fit(sc.title,900,46,560)),INK,'left');x.restore();
+  const cols=12,sz=66,gx=(1080-cols*80)/2+40;sc.clubs.forEach((k,i)=>{const r_=Math.floor(i/cols),c_=i%cols;const [s_,a_]=drop(p,0.02+i*0.012,0.16);if(a_<=0)return;x.save();x.globalAlpha=a_;x.translate(gx+c_*80,400+r_*80);x.scale(s_,s_);sticker(k,0,0,sz,((i*37)%9-4)*0.02,1);x.restore();});
+  sc.labels.forEach((l,i)=>{const at=wordT(s,l.at);if(t<at)return;const k=clamp((t-at)/0.3);note(l.text,200+i*340,1290,300,(i-1)*0.05,k,[NOTE,'#9fd3ff','#b8f0a8'][i]);});};
+// one club in the countdown: the badge, three checks filled in like a report card
+P.club=(sc,p,s,t)=>{bg('paper');const st=sc.stamp?wordT(s,sc.stampAt):9e9;x.save();shake(t,[st]);tag();
+  typed('CLUB '+sc.rank+' OF 5',90,252,30,clamp(p/0.3),INK2,'left',800);
+  mtext('#'+sc.rank,200,470,170,clamp((p-0.05)/0.25),RED,'center',-0.05);ring(200,410,140,110,clamp((p-0.2)/0.4),RED,sc.rank*7,9);
+  const [bs,ba]=drop(p,0.05,0.3);x.save();x.globalAlpha=ba;x.translate(720,400);x.scale(bs,bs);sticker(sc.club,0,0,260,0.06,1);x.restore();
+  T(sc.name,540,700,F(900,fit(sc.name,900,96,960)),INK,'center',ease((p-0.1)/0.25));typed(sc.sub,540,752,30,clamp((p-0.2)/0.5),INK2,'center',800);
+  sc.rows.forEach((r,i)=>{const at=wordT(s,r.at),k=clamp((t-at)/0.45);if(t<at-0.02)return;const y=830+i*175;
+    typed(r.l,90,y+40,30,clamp(k*3),INK,'left',800);T(String(Math.round(r.v*ease(k))),880,y+46,F(900,52),INK,'right',clamp(k*3));
+    x.save();x.globalAlpha=0.18;x.fillStyle=INK;x.fillRect(260,y+12,520,40);x.restore();
+    x.save();x.globalAlpha=0.85;x.fillStyle=[RED,BLUE,GREEN][i];const w=520*r.v/100*ease(k);x.beginPath();x.moveTo(260,y+14);x.lineTo(260+w,y+10);x.lineTo(260+w+3,y+54);x.lineTo(260,y+52);x.closePath();x.fill();x.restore();
+    typed(r.fact,90,y+104,27,clamp((t-at-0.15)/0.5),INK2,'left',700);
+    if(r.face&&k>0)polaroid(r.face,r.fclub,960,y+92,90,0.06,t-at,0.1,null,{tape:false});});
+  if(sc.total!=null){const at=wordT(s,sc.rows[sc.rows.length-1].at)+0.5;if(t>=at){mtext(Math.round(sc.total)+'/100',900,1395,58,clamp((t-at)/0.4),RED,'center',-0.04);}}
+  if(sc.stamp)stamp('✓ '+sc.stamp,370,1385,60,GREEN,-0.08,t,st,560);
+  x.restore();};
 // one answer: him, a string, the pick big with a stamp (Alisson, 15 Nov 2026)
 P.end1=(sc,p,s,t)=>{bg('cork');const at=wordT(s,sc.at);x.save();shake(t,[at]);
   shadowed(()=>{x.save();x.translate(540,250);x.rotate(-0.015);x.fillStyle='#f7f1e3';x.fillRect(-470,-80,940,150);x.restore();},16,8,0.4);

@@ -1,0 +1,228 @@
+[
+ {
+  "id": "hook",
+  "say": "Let's say Vinícius Júnior leaves Real Madrid this summer. Where should he go?",
+  "cap": "LET'S SAY VINÍCIUS JÚNIOR LEAVES REAL MADRID THIS SUMMER. WHERE SHOULD HE GO?",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "sfx": [
+   [
+    "hit",
+    0.0,
+    0.7
+   ],
+   [
+    "pop",
+    "LEAVES",
+    0.6
+   ],
+   [
+    "hit",
+    "WHERE",
+    0.7
+   ]
+  ],
+  "hold": 0.1
+ },
+ {
+  "id": "method",
+  "say": "We checked all 96 clubs in Europe's top five leagues on three things: do they need him, does their style suit him, and would it be a step up for him?",
+  "cap": "WE CHECKED ALL 96|ninety-six CLUBS IN EUROPE'S TOP FIVE LEAGUES ON THREE THINGS: DO THEY NEED HIM, DOES THEIR STYLE SUIT HIM, AND WOULD IT BE A STEP UP FOR HIM?",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "sfx": [
+   [
+    "tick",
+    "ALL",
+    0.4
+   ],
+   [
+    "pop",
+    "NEED",
+    0.5
+   ],
+   [
+    "pop",
+    "STYLE",
+    0.5
+   ],
+   [
+    "pop",
+    "STEP",
+    0.5
+   ]
+  ],
+  "hold": 0.1
+ },
+ {
+  "id": "c5",
+  "say": "Number five: Milan. He'd be an upgrade on Samuel Chukwueze, they keep the ball fifty-nine percent of the time, and they're fourth in Serie A.",
+  "cap": "NUMBER FIVE: MILAN. HE'D BE AN UPGRADE ON SAMUEL CHUKWUEZE, THEY KEEP THE BALL FIFTY-NINE PERCENT OF THE TIME, AND THEY'RE FOURTH IN SERIE A.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "sfx": [
+   [
+    "hit",
+    0.0,
+    0.6
+   ],
+   [
+    "pop",
+    "UPGRADE",
+    0.45
+   ],
+   [
+    "pop",
+    "KEEP",
+    0.45
+   ],
+   [
+    "pop",
+    "FOURTH",
+    0.45
+   ]
+  ],
+  "hold": 0.1
+ },
+ {
+  "id": "c4",
+  "say": "Number four: Brighton. He'd be an upgrade on Maxim De Cuyper, they have almost sixty percent of the ball, and they're second in the Premier League.",
+  "cap": "NUMBER FOUR: BRIGHTON. HE'D BE AN UPGRADE ON MAXIM DE CUYPER, THEY HAVE ALMOST SIXTY PERCENT OF THE BALL, AND THEY'RE SECOND IN THE PREMIER LEAGUE.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "sfx": [
+   [
+    "hit",
+    0.0,
+    0.6
+   ],
+   [
+    "pop",
+    "UPGRADE",
+    0.45
+   ],
+   [
+    "pop",
+    "HAVE",
+    0.45
+   ],
+   [
+    "pop",
+    "SECOND",
+    0.45
+   ]
+  ],
+  "hold": 0.1
+ },
+ {
+  "id": "c3",
+  "say": "Number three: Tottenham. He'd be a huge upgrade on Mathys Tel, and only four clubs keep the ball more. But they're eleventh in the Premier League.",
+  "cap": "NUMBER THREE: TOTTENHAM. HE'D BE A HUGE UPGRADE ON MATHYS TEL, AND ONLY FOUR CLUBS KEEP THE BALL MORE. BUT THEY'RE ELEVENTH IN THE PREMIER LEAGUE.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "sfx": [
+   [
+    "hit",
+    0.0,
+    0.6
+   ],
+   [
+    "pop",
+    "HUGE",
+    0.45
+   ],
+   [
+    "pop",
+    "ONLY",
+    0.45
+   ],
+   [
+    "pop",
+    "ELEVENTH",
+    0.45
+   ]
+  ],
+  "hold": 0.1
+ },
+ {
+  "id": "c2",
+  "say": "Number two: Borussia Dortmund. He'd be an upgrade on Carney Chukwuemeka, they're in the box thirty-one times a game, and they're second in the Bundesliga.",
+  "cap": "NUMBER TWO: BORUSSIA DORTMUND. HE'D BE AN UPGRADE ON CARNEY CHUKWUEMEKA, THEY'RE IN THE BOX 31|thirty-one TIMES A GAME, AND THEY'RE SECOND IN THE BUNDESLIGA.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "sfx": [
+   [
+    "hit",
+    0.0,
+    0.6
+   ],
+   [
+    "pop",
+    "UPGRADE",
+    0.45
+   ],
+   [
+    "pop",
+    "BOX",
+    0.45
+   ],
+   [
+    "pop",
+    "SECOND",
+    0.45
+   ]
+  ],
+  "hold": 0.1
+ },
+ {
+  "id": "c1",
+  "say": "And number one: Arsenal. He'd be a clear upgrade on their left winger, Christos Tzolis. Only eight clubs have more of the ball. And they're top of the Premier League, with a squad worth one point four billion euros, so they could afford him. Arsenal tick every box.",
+  "cap": "AND NUMBER ONE: ARSENAL. HE'D BE A CLEAR UPGRADE ON THEIR LEFT WINGER, CHRISTOS TZOLIS. ONLY EIGHT CLUBS HAVE MORE OF THE BALL. AND THEY'RE TOP OF THE PREMIER LEAGUE, WITH A SQUAD WORTH ONE POINT FOUR BILLION EUROS, SO THEY COULD AFFORD HIM. ARSENAL TICK EVERY BOX.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "sfx": [
+   [
+    "hit",
+    0.0,
+    0.6
+   ],
+   [
+    "pop",
+    "CLEAR",
+    0.45
+   ],
+   [
+    "pop",
+    "EIGHT",
+    0.45
+   ],
+   [
+    "pop",
+    "TOP",
+    0.45
+   ],
+   [
+    "hit",
+    "TICK",
+    0.7
+   ]
+  ],
+  "hold": 0.25
+ },
+ {
+  "id": "end",
+  "say": "So, would you send Vinícius to Arsenal? Follow for more.",
+  "cap": "SO, WOULD YOU SEND VINÍCIUS TO ARSENAL? FOLLOW FOR MORE.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "hold": 0.0
+ }
+]
