@@ -326,16 +326,17 @@
   "title": "v14 · How do Liverpool replace Alisson? (scout's file, short)",
   "stage": "final-check",
   "owner": "Claude",
-  "updated": "2026-11-15T20:30:00Z",
+  "updated": "2026-11-15T21:30:00Z",
   "postOn": null,
-  "line": "Contract runs out. Mamardashvili (already there; stats from Valencia 24/25 as he's barely played): 64% pass accuracy v Alisson's 79%, not good enough. Verbruggen (Brighton, 24, €47M) the standout pick: only a 67% match because he's been better (save %, goals prevented, passes, 25/26). Younger options: Kinský (Spurs, 90%, only 10 games), Restes (Toulouse, 21, 82%).",
+  "line": "Contract runs out. Mamardashvili (already there): shown with no numbers, 'we just don't think he's good enough'. Verbruggen (Brighton, 24, €47M) the standout pick: great form, Netherlands international; only a 67% match because he's been better (save %, goals prevented, passes, 25/26). Younger options: Kinský (Spurs, 90%, only 10 games), Restes (Toulouse, 21, 82%).",
   "script": "docs/marketing/videos/v14-replace-alisson/lines.json",
   "cover": "docs/marketing/videos/v14-replace-alisson/cover.png",
   "video": "docs/marketing/videos/v14-replace-alisson/knowitball-v14-replace-alisson.mp4",
-  "seconds": 66.3,
+  "seconds": 56.7,
   "links": [],
   "log": [
-   "2026-11-15 Made from Mikey's story in the scout's file look, short format. Waiting for Mikey's look."
+   "2026-11-15 Made from Mikey's story in the scout's file look, short format. Waiting for Mikey's look.",
+   "2026-11-15 Mikey's notes: Mamardashvili with no stats ('we don't think he's good enough'), Verbruggen's international experience added. 57 s."
   ]
  }
 ]

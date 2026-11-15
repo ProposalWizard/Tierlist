@@ -43,29 +43,24 @@
  },
  {
   "id": "s1",
-  "say": "First, the keeper they already have: Giorgi Mamardashvili. He's twenty-six, a seventy-eight percent match, and worth thirty-six million euros. He's barely played for Liverpool, so we used his last full season, at Valencia. Only sixty-four percent of his passes found a teammate. Alisson managed seventy-nine. For Liverpool, that's not good enough.",
-  "cap": "FIRST, THE KEEPER THEY ALREADY HAVE: GIORGI MAMARDASHVILI. HE'S 26|twenty-six, A 78%|seventy-eight-percent MATCH, AND WORTH €36M|thirty-six-million-euros. HE'S BARELY PLAYED FOR LIVERPOOL, SO WE USED HIS LAST FULL SEASON, AT VALENCIA. ONLY 64%|sixty-four-percent OF HIS PASSES FOUND A TEAMMATE. ALISSON MANAGED 79.|seventy-nine. FOR LIVERPOOL, THAT'S NOT GOOD ENOUGH.",
+  "say": "First, the keeper they already have: Giorgi Mamardashvili. We just don't think he's good enough to replace Alisson.",
+  "cap": "FIRST, THE KEEPER THEY ALREADY HAVE: GIORGI MAMARDASHVILI. WE JUST DON'T THINK HE'S GOOD ENOUGH TO REPLACE ALISSON.",
   "voiceSettings": {
    "speed": 1.1
   },
   "sfx": [
    [
-    "pop",
-    "WORTH",
-    0.5
-   ],
-   [
     "hit",
-    "NOT",
+    "GOOD",
     0.6
    ]
   ],
-  "hold": 0.8
+  "hold": 0.5
  },
  {
   "id": "s2",
-  "say": "So Liverpool need to buy, and our pick is Bart Verbruggen, at Brighton. He's twenty-four, a sixty-seven percent match, and worth forty-seven million euros, so he won't come cheap. But he's been in great form, and you'd expect that to continue.",
-  "cap": "SO LIVERPOOL NEED TO BUY, AND OUR PICK IS BART VERBRUGGEN, AT BRIGHTON. HE'S 24|twenty-four, A 67%|sixty-seven-percent MATCH, AND WORTH €47M|forty-seven-million-euros, SO HE WON'T COME CHEAP. BUT HE'S BEEN IN GREAT FORM, AND YOU'D EXPECT THAT TO CONTINUE.",
+  "say": "So Liverpool need to buy, and our pick is Bart Verbruggen, at Brighton. He's twenty-four, a sixty-seven percent match, and worth forty-seven million euros, so he won't come cheap. But he's been in great form, you'd expect that to continue, and he has international experience with the Netherlands.",
+  "cap": "SO LIVERPOOL NEED TO BUY, AND OUR PICK IS BART VERBRUGGEN, AT BRIGHTON. HE'S 24|twenty-four, A 67%|sixty-seven-percent MATCH, AND WORTH €47M|forty-seven-million-euros, SO HE WON'T COME CHEAP. BUT HE'S BEEN IN GREAT FORM, YOU'D EXPECT THAT TO CONTINUE, AND HE HAS INTERNATIONAL EXPERIENCE WITH THE NETHERLANDS.",
   "voiceSettings": {
    "speed": 1.1
   },
