@@ -57,9 +57,9 @@ details.inner summary{color:var(--ink3);font-size:12px;font-weight:700;padding:4
 </style></head>
 <body><div class="wrap">
 <h1>Twin Finder</h1>
-<p class="sub">Find a player's statistical twins, or who could replace him (method v2). Data: Opta via FotMob, top 5 leagues, 2016/17 to now. <span id="dsz"></span></p>
+<p class="sub">Find a player's statistical twins, who could replace him, or his best next club (method v2). Data: Opta via FotMob, top 5 leagues, 2016/17 to now. <span id="dsz"></span></p>
 
-<div class="chips" id="tabs" style="margin:0 0 14px"><span class="chip on" data-m="T">Statistical twins</span><span class="chip" data-m="R">Replace a player</span></div>
+<div class="chips" id="tabs" style="margin:0 0 14px"><span class="chip on" data-m="T">Statistical twins</span><span class="chip" data-m="R">Replace a player</span><span class="chip" data-m="N">Next club</span></div>
 <div id="modeT">
 <div class="card">
   <label class="h">1 · Player</label>
@@ -129,6 +129,32 @@ details.inner summary{color:var(--ink3);font-size:12px;font-weight:700;padding:4
     <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="ghost" id="rcopy">Copy episode file</button><span id="rcopied" class="muted"></span></div>
     <pre id="repi" class="muted" style="white-space:pre-wrap;word-break:break-word"></pre></div>
   <details class="card"><summary>How this works</summary><div class="muted" id="rhow"></div></details>
+</div>
+</div>
+<div id="modeN" class="hide">
+<div class="card">
+  <label class="h">Who is moving?</label>
+  <input id="nq" type="text" placeholder="Type a name, e.g. Vinícius Júnior" autocomplete="off">
+  <div id="nsugg" class="sugg hide"></div>
+  <div id="nwho" style="margin-top:10px"></div>
+</div>
+<div class="card">
+  <label class="h">Which clubs?</label>
+  <div class="muted">Leagues</div><div id="nlgs" class="chips"></div>
+  <div class="chips"><span class="chip on" id="nafford">Only clubs that could afford him</span></div>
+</div>
+<button class="go" id="ngo">Find his next club</button>
+<div id="nout" class="hide" style="margin-top:14px">
+  <div class="card"><label class="h">The best fit</label><div id="nbest"></div></div>
+  <div class="card"><label class="h" id="nlisth">Top 10 clubs · tap one for the three checks</label>
+    <input id="nfq" class="lsearch" type="text" placeholder="Search the clubs, e.g. Arsenal" autocomplete="off"><div class="list" id="nlist"></div>
+    <div class="pager"><button id="npgp">‹ Prev</button><span id="npgt"></span><button id="npgn">Next ›</button></div></div>
+  <div class="card"><label class="h" id="ndeth">The three checks</label><div id="ndet"></div></div>
+  <div class="card"><label class="h">Make it a video</label>
+    <div class="muted">The settings file for a "Where should he go?" video. Paste it into a chat with "make this video".</div>
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="ghost" id="ncopy">Copy episode file</button><span id="ncopied" class="muted"></span></div>
+    <pre id="nepi" class="muted" style="white-space:pre-wrap;word-break:break-word"></pre></div>
+  <details class="card"><summary>How this works</summary><div class="muted" id="nhow"></div></details>
 </div>
 </div>
 </div>
@@ -378,7 +404,7 @@ function ini(c,size){const n=c.name.split(' ');const t=(n.length>1?n[0][0]+n[n.l
   return `<div class="ini" style="width:${size}px;height:${size}px;background:${col};color:${light(col)?'#111':'#fff'}">${t}${b?`<img src="${b}" alt="">`:''}</div>`;}
 // tabs
 document.querySelectorAll('#tabs .chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('#tabs .chip').forEach(x=>x.classList.toggle('on',x===c));
-  $('modeT').classList.toggle('hide',c.dataset.m!=='T');$('modeR').classList.toggle('hide',c.dataset.m!=='R');$('pop').classList.add('hide');});
+  $('modeT').classList.toggle('hide',c.dataset.m!=='T');$('modeR').classList.toggle('hide',c.dataset.m!=='R');$('modeN').classList.toggle('hide',c.dataset.m!=='N');$('pop').classList.add('hide');});
 Object.keys(LG).forEach(l=>{const c=document.createElement('span');c.className='chip on';c.dataset.l=l;c.textContent=LG[l];c.onclick=()=>c.classList.toggle('on');$('rlgs').appendChild(c)});
 $('rclub').onclick=()=>$('rclub').classList.toggle('on');
 $('rq').oninput=()=>{const q=norm($('rq').value.trim());const el=$('rsugg');if(q.length<2){el.classList.add('hide');return}
@@ -456,5 +482,81 @@ function draw(){const R=RES, nm=shortName(pname(R.m0));
 $('rgo').onclick=run;
 $('rcopy').onclick=()=>{navigator.clipboard.writeText($('repi').textContent).then(()=>{$('rcopied').textContent='Copied';setTimeout(()=>$('rcopied').textContent='',1500)})};
 window.__repl={pick,run,ALL};
+})();
+// ---------- NEXT CLUB (Mikey, 15 Nov 2026): every top-5 club this season, scored on three checks. Same as model/next_club.py ----------
+(function(){
+const CL=D.clubs||{}, PLY=D.players||{}, NS=SEAS.length, R=window.__repl, $=id=>document.getElementById(id);
+if(!Object.keys(CL).length){$('ngo').textContent='No club data in this build';return;}
+const EQ={LM:'LW',RM:'RW',LWB:'LB',RWB:'RB',CF:'ST'}, fam=d=>EQ[d]||d, firstPos=m=>fam(((m[3]||'').split(','))[0]);
+const RECIPE={AMW:{possession:1,xg:1,bigc:1,box:1},ATT:{possession:1,xg:1,bigc:1,box:1},ST:{xg:1.5,bigc:1.5,cross:.75,box:1},MID:{possession:1.5,passes:1.5,high:1},
+  FB:{possession:1,cross:1,xga:-1,high:.5},CB:{possession:1,passes:1,xga:-1.5,long:.5},GK:{possession:1,passes:1,xga:-1}};
+const SAY={possession:['% possession',1,'%'],xg:['xG a game',2,''],bigc:['big chances a game',1,''],box:['touches in their box a game',0,''],cross:['crosses a game',1,''],
+  passes:['passes a game',0,''],high:['balls won high up a game',1,''],xga:['xG against a game',2,''],long:['long balls a game',0,'']};
+const POSMAP={};for(const t in CL)for(const m of CL[t].squad){const ids=(m[4]||'').split(','),ds=(m[3]||'').split(',');ids.forEach((i,k)=>{if(i&&ds[k])POSMAP[+i]=fam(ds[k])})}
+const RAT={};for(let i=0;i<N;i++){if(D.S[i]<NS-2)continue;const r=v(i,'rating'),m=v(i,'mins')||0;if(r==null)continue;const o=RAT[D.id[i]]=RAT[D.id[i]]||[0,0];o[0]+=r*m;o[1]+=m}
+const rating=id=>{const o=RAT[id];return o&&o[1]?[o[0]/o[1],o[1]]:[null,0]};
+const BYP={};for(let i=0;i<N;i++){if(D.S[i]>=NS-2)(BYP[D.id[i]]=BYP[D.id[i]]||[]).push(i)}
+const LGS=Object.keys(LG);LGS.forEach(l=>{const c=document.createElement('span');c.className='chip on';c.dataset.l=l;c.textContent=LG[l];c.onclick=()=>c.classList.toggle('on');$('nlgs').appendChild(c)});
+$('nafford').onclick=()=>$('nafford').classList.toggle('on');
+let NID=null,NRES=null,NPG=0,NSEL=null;
+$('nq').oninput=()=>{const q=norm($('nq').value.trim()),el=$('nsugg');if(q.length<2){el.classList.add('hide');return}
+  const hits=R.ALL.filter(p=>norm(p.name).includes(q)).slice(0,12);
+  el.innerHTML=hits.map(p=>{const i=PLY[p.id]||[];return `<div data-id="${p.id}">${p.name} <small>· ${i[2]||club(D.T[p.m])}${i[0]!=null?' · '+i[0]:''}</small></div>`}).join('')||'<div><small>No one found in the last two seasons</small></div>';
+  el.classList.remove('hide');el.querySelectorAll('div[data-id]').forEach(d=>d.onclick=()=>npick(+d.dataset.id));};
+const norm=x=>x.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+function npick(id){NID=id;const p=R.ALL.find(x=>x.id===id),i=PLY[id]||[];$('nq').value=p.name;$('nsugg').classList.add('hide');
+  $('nwho').innerHTML=`<div class="nm">${p.name}</div><div class="meta" style="white-space:normal">${i[2]||club(D.T[p.m])}${i[0]!=null?' · age '+i[0]:''}${i[1]!=null?' · €'+Math.round(i[1])+'M':''} · ${p.mins.toLocaleString()} minutes in two seasons</div>`;}
+function share(d,t){let b=0,n=0;for(const k in d){n++;if(d[k]<d[t])b++}return 100*b/Math.max(1,n-1)}
+function find(pid){
+  let me=null,home=null;for(const t in CL)for(const m of CL[t].squad)if(m[0]===pid){me=m;home=t}
+  const ids=BYP[pid]||[],m0=ids.reduce((a,b)=>(v(b,'mins')||0)>(v(a,'mins')||0)?b:a,ids[0]),g=G[m0],rec=RECIPE[g]||RECIPE.AMW;
+  const pos=me?firstPos(me):null,Rt=rating(pid)[0],val=(PLY[pid]||[])[1];
+  const zs={};new Set(Object.values(RECIPE).flatMap(r=>Object.keys(r))).forEach(k=>{const vals=Object.values(CL).map(c=>c.ts[k]).filter(x=>x!=null);const mu=vals.reduce((a,b)=>a+b,0)/vals.length;
+    const sd=Math.sqrt(vals.reduce((a,b)=>a+(b-mu)**2,0)/vals.length)||1;zs[k]={};for(const t in CL)if(CL[t].ts[k]!=null)zs[k][t]=(CL[t].ts[k]-mu)/sd});
+  const wsum=Object.values(rec).reduce((a,b)=>a+Math.abs(b),0),fitraw={},ppg={},sval={};
+  for(const t in CL){fitraw[t]=Object.entries(rec).reduce((a,[k,w])=>a+w*(zs[k][t]||0),0)/wsum;ppg[t]=CL[t].pts/Math.max(1,CL[t].played);sval[t]=CL[t].squad.reduce((a,m)=>a+(m[5]||0),0)}
+  const out=[];
+  for(const t in CL){const c=CL[t];if(t===home)continue;
+    const st=c.starters.filter(x=>POSMAP[x[1]]===pos).map(x=>x[0]);const inc=c.squad.filter(m=>st.includes(m[0])||firstPos(m)===pos);
+    let best=null;for(const m of inc){const [r,mins]=rating(m[0]);if(r==null)continue;const q=mins>=900?r:Math.min(r,6.6);if(!best||q>best.q)best={q,m,r,mins}}
+    const Rinc=best?best.q:6.4;let need=Math.max(0,Math.min(1,(Rt-Rinc)/1.0))*85+(best&&(best.m[2]||0)>=31?15:0);
+    let fit=share(fitraw,t);const starts=c.starters.some(x=>POSMAP[x[1]]===pos),wide=['LW','RW','LB','RB'].includes(pos);
+    if(wide&&c.starters.length&&!starts){fit=Math.max(0,fit-25);need*=0.6}
+    const level=0.5*share(ppg,t)+0.5*share(sval,t),tot=0.4*Math.min(100,need)+0.3*fit+0.3*level;
+    const top2=Object.entries(rec).map(([k,w])=>[w*(zs[k][t]||0),k]).sort((a,b)=>b[0]-a[0]).slice(0,2).map(([_,k])=>{const sg=rec[k]>0?1:-1;
+      return {k,v:c.ts[k],rank:1+Object.values(CL).filter(o=>o.ts[k]!=null&&c.ts[k]!=null&&sg*o.ts[k]>sg*c.ts[k]).length}});
+    out.push({t,c,tot,need:Math.min(100,need),fit,level,best,starts,top2,ppg:ppg[t],sv:sval[t],afford:!val||sval[t]>=5*val*1e6})}
+  out.sort((a,b)=>b.tot-a.tot);return {pos,home,Rt,g,out,val}}
+const ord=n=>n+(n%100>10&&n%100<14?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th'));
+const bar=(lab,x,col)=>`<div style="display:grid;grid-template-columns:52px 1fr 34px;gap:8px;align-items:center;font-size:12px;color:var(--ink3)"><span>${lab}</span><div class="bar" style="margin:0"><i style="width:${Math.round(x)}%;background:${col}"></i></div><b style="color:var(--ink);text-align:right">${Math.round(x)}</b></div>`;
+function facts(r){const c=r.c,nm=$('nq').value,me=/J[uú]nior$/i.test(nm)?nm.split(' ')[0]:shortName(nm);
+  const n=r.best?`${me} ${r.best.r<NRES.Rt?'would be an upgrade on':'would have to beat'} <b>${r.best.m[1]}</b> (rating ${NRES.Rt.toFixed(2)} v ${r.best.r.toFixed(2)}${r.best.mins<900?', only '+r.best.mins+' top-5 minutes':''}${(r.best.m[2]||0)>=31?', age '+r.best.m[2]:''}).`:`They have nobody listed in his position (${NRES.pos}).`;
+  const f=r.top2.map(o=>`${SAY[o.k][0]==='% possession'?(+o.v).toFixed(1)+'% possession':(+o.v).toFixed(SAY[o.k][1])+' '+SAY[o.k][0]} (${ord(o.rank)} of ${Object.keys(CL).length})`).join(', ')+(r.starts?'':`; their last line-up had no ${NRES.pos}`)+'.';
+  const l=`${ord(c.pos)} in the ${LG[c.league]} (${r.ppg.toFixed(2)} points a game)${c.zone?', '+c.zone+' place':''}; squad worth ${r.sv>=1e9?'€'+(r.sv/1e9).toFixed(1)+'bn':'€'+Math.round(r.sv/1e6)+'M'}.`;
+  return {n,f,l}}
+function card(r){const F=facts(r),b=badge(r.c.id||r.t);return `<div class="twin" style="margin-bottom:8px">${badge(r.t)?`<img src="${badge(r.t)}" style="width:44px;height:44px">`:''}<div style="min-width:0"><div class="nm">${r.c.name}</div><div class="meta">${LG[r.c.league]} · ${r.c.formation||''} · score ${Math.round(r.tot)}</div></div></div>
+  ${bar('Need',r.need,'var(--gold)')}<div class="muted" style="margin:2px 0 8px 60px">${F.n}</div>${bar('Fit',r.fit,'var(--blue)')}<div class="muted" style="margin:2px 0 8px 60px">${F.f}</div>${bar('Level',r.level,'var(--green)')}<div class="muted" style="margin:2px 0 0 60px">${F.l}</div>`}
+function shown(){const L=[...document.querySelectorAll('#nlgs .chip.on')].map(c=>+c.dataset.l),aff=$('nafford').classList.contains('on'),q=norm($('nfq').value.trim());
+  return NRES.out.filter(r=>L.includes(r.c.league)&&(!aff||r.afford)&&(!q||norm(r.c.name).includes(q)))}
+function draw(){const S=shown(),P=10,pages=Math.max(1,Math.ceil(S.length/P));NPG=Math.min(NPG,pages-1);
+  $('nlist').innerHTML=S.slice(NPG*P,NPG*P+P).map((r,k)=>{const i=NPG*P+k+1;return `<div class="it${r===NSEL?' sel':''}" data-t="${r.t}"><b>#${i}</b>${badge(r.t)?`<img src="${badge(r.t)}" style="width:34px;height:34px">`:'<span></span>'}<div style="min-width:0"><div class="nm">${r.c.name}</div>
+    <div class="meta">need ${Math.round(r.need)} · fit ${Math.round(r.fit)} · level ${Math.round(r.level)}</div></div><div class="pct">${Math.round(r.tot)}</div></div>`}).join('')||'<div class="muted">No club left with these filters.</div>';
+  $('npgt').textContent=`Page ${NPG+1} of ${pages} · ${S.length} clubs`;$('npgp').disabled=NPG===0;$('npgn').disabled=NPG>=pages-1;
+  $('nlist').querySelectorAll('.it').forEach(e=>e.onclick=()=>{NSEL=NRES.out.find(r=>r.t===e.dataset.t);$('ndet').innerHTML=card(NSEL);$('ndeth').textContent='The three checks · '+NSEL.c.name;draw()});}
+$('npgp').onclick=()=>{NPG--;draw()};$('npgn').onclick=()=>{NPG++;draw()};$('nfq').oninput=()=>{NPG=0;draw()};
+function nrun(){if(NID==null){$('nq').focus();return}NRES=find(NID);NPG=0;const S=shown();if(!S.length){$('nout').classList.remove('hide');$('nlist').innerHTML='<div class="muted">No club left.</div>';return}
+  NSEL=S[0];$('nbest').innerHTML=card(S[0]);$('ndet').innerHTML=card(S[0]);$('ndeth').textContent='The three checks · '+S[0].c.name;
+  $('nlisth').textContent=`Top clubs for ${$('nq').value} (${NRES.pos||'?'}) · tap one`;draw();
+  const p=R.ALL.find(x=>x.id===NID);$('nepi').textContent=JSON.stringify({kind:'next-club',player:p.name,short:/J[uú]nior$/i.test(p.name)?p.name.split(' ')[0]:shortName(p.name),leagues:[...document.querySelectorAll('#nlgs .chip.on')].map(c=>+c.dataset.l),
+    afford:$('nafford').classList.contains('on'),top:S.slice(0,5).map(r=>r.c.name),series:'WHERE SHOULD HE GO?',hookSay:`Let's say ${p.name} leaves ${(PLY[NID]||[])[2]||'his club'} this summer. Where should he go?`},null,1);
+  $('nhow').innerHTML=`<p>Every club in the top 5 leagues this season (${Object.keys(CL).length}, FotMob, ${D.clubsAsOf||''}) gets three scores out of 100. Total = 40% need + 30% fit + 30% level.</p>
+   <p><b>Need</b>: would he be an upgrade? His FotMob rating (this season + last, by minutes) against the best of whoever started in his position in their last line-up or is listed there first. Someone with under 900 top-5 minutes counts as unproven (6.6 at most). One rating point better = 85; +15 if their man is 31 or older.</p>
+   <p><b>Fit</b>: does the way they play suit his kind of player? This season's team stats, each against all the clubs; an attacker wants possession, xG, big chances and touches in the box; a midfielder possession, passes and balls won high up; a defender possession, passes and little xG against. A wide player loses 25 (and 40% of need) if their last line-up had nobody in his position.</p>
+   <p><b>Level</b>: is it good for him? Points per game and squad value, each as the share of clubs below. "Could afford him" = their squad is worth at least five times him.</p>
+   <p>It can't see transfer budgets, the manager's plans, wages or what the player wants. This season is about ten games in.</p>`;
+  $('nout').classList.remove('hide');}
+$('ngo').onclick=nrun;
+$('ncopy').onclick=()=>{navigator.clipboard.writeText($('nepi').textContent).then(()=>{$('ncopied').textContent='Copied';setTimeout(()=>$('ncopied').textContent='',1500)})};
+window.__next={npick,nrun,find};
 })();
 </script></body></html>

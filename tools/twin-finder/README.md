@@ -29,3 +29,12 @@ and the episode file for `tools/video-render/twin/make_replace.py`. Every player
 The Statistical twins top 10 (and the map, the list search and the "Good video?" score) only use full seasons: "Last 5 full
 seasons" = 2021/22 to 2025/26, "Every full season" stops at 2025/26, and "One season" lists only full seasons. This season
 (2026/27, about 10 games in) appears only in the "Right now" card. The "This season only" option is gone.
+
+## Next club (15 Nov 2026)
+
+Third tab: "where should he go?" Every club in the top 5 leagues this season gets three scores out of 100 (need, fit, level;
+total = 40/30/30), with the reasons in words. Same method as `tools/video-render/twin/model/next_club.py` (read its top
+comment); change both together.
+- Clubs: `python3 fmpull_clubs.py <FM_DIR>` (league tables, each club's squad + last line-up, league-wide team stats; about
+  100 FotMob pages, 2 minutes) -> `<FM_DIR>/../clubs.json`; `build.py` packs it into `data.js` as `clubs`. Pull it again
+  every few weeks: the table, squads and team stats move.
