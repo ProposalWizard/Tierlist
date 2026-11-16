@@ -353,7 +353,25 @@
   "seconds": 58.1,
   "links": [],
   "log": [
-   "2026-11-15 First 'next club' video, from the Twin Finder's new Next club tab (model/next_club.py). Waiting for Mikey's look."
+   "2026-11-15 First 'next club' video, from the Twin Finder's new Next club tab (model/next_club.py). Waiting for Mikey's look.",
+   "2026-11-16 Replaced by v16 (Mikey: the method was wrong). Don't post."
+  ]
+ },
+ {
+  "id": "v16-next-club-vinicius-sim",
+  "title": "v16 · Where should Vinícius go? (season sim + game highlights)",
+  "stage": "final-check",
+  "owner": "Claude",
+  "updated": "2026-11-16T21:00:00Z",
+  "postOn": null,
+  "line": "His season played 400 times at every top-5 club with the Road to Ballon d'Or match model + 10 years of club history. #5 Man City, #4 Inter, #3 Barcelona, #2 Arsenal, #1 Bayern (title 74%, top in 9 of last 10). Ends with a game-style reel of his best simulated season: Klassiker, CL semi v Chelsea, CL final v Atlético.",
+  "script": "docs/marketing/videos/v16-next-club-vinicius-sim/lines.json",
+  "cover": "docs/marketing/videos/v16-next-club-vinicius-sim/cover.png",
+  "video": "docs/marketing/videos/v16-next-club-vinicius-sim/knowitball-v16-next-club-vinicius-sim.mp4",
+  "seconds": 71.4,
+  "links": [],
+  "log": [
+   "2026-11-16 Remade after Mikey's notes on v15 (level = this season's table, need = few games, fit = possession). Reel made with tools/video-render/twin/highlights (the game's goal clips). Waiting for Mikey's look."
   ]
  }
 ]
