@@ -204,6 +204,12 @@ P.checks=(sc,p,s,t)=>{bg('cork');tag();
   const cols=12,sz=66,gx=(1080-cols*80)/2+40;sc.clubs.forEach((k,i)=>{const r_=Math.floor(i/cols),c_=i%cols;const [s_,a_]=drop(p,0.02+i*0.012,0.16);if(a_<=0)return;x.save();x.globalAlpha=a_;x.translate(gx+c_*80,400+r_*80);x.scale(s_,s_);sticker(k,0,0,sz,((i*37)%9-4)*0.02,1);x.restore();});
   sc.labels.forEach((l,i)=>{const at=wordT(s,l.at);if(t<at)return;const k=clamp((t-at)/0.3);note(l.text,200+i*340,1290,300,(i-1)*0.05,k,[NOTE,'#9fd3ff','#b8f0a8'][i]);});};
 // one club in the countdown: the badge, three checks filled in like a report card
+// the highlights: a dark film board; the reel itself (lib/star/goalClip, the game's own goal clips) is laid over the box
+// REEL_BOX afterwards by ffmpeg (tools/video-render/twin/highlights/). No captions here: the clips speak.
+const REEL_BOX={x:140,y:250,w:800,h:1422};
+P.reel=(sc,p,s,t)=>{bg('cork');x.fillStyle='rgba(10,10,12,0.92)';x.fillRect(0,0,1080,1920);
+  T(sc.title,540,150,F(900,fit(sc.title,900,58,960)),'#fff','center',ease(p/0.3));typed(sc.sub,540,205,28,clamp((p-0.1)/0.5),'#ffd23f','center',800);
+  x.strokeStyle='rgba(255,255,255,0.25)';x.lineWidth=4;x.strokeRect(REEL_BOX.x-4,REEL_BOX.y-4,REEL_BOX.w+8,REEL_BOX.h+8);};
 P.club=(sc,p,s,t)=>{bg('paper');const st=sc.stamp?wordT(s,sc.stampAt):9e9;x.save();shake(t,[st]);tag();
   typed('CLUB '+sc.rank+' OF 5',90,252,30,clamp(p/0.3),INK2,'left',800);
   mtext('#'+sc.rank,200,470,170,clamp((p-0.05)/0.25),RED,'center',-0.05);ring(200,410,140,110,clamp((p-0.2)/0.4),RED,sc.rank*7,9);
@@ -235,7 +241,7 @@ function render(t){x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;x.filter='none';c
     x.fillStyle=`rgba(0,0,0,${0.25*clamp(dt/D)})`;x.fillRect(0,0,1080,1920);
     const k=ease(dt/D);x.save();x.translate((1-k)*1120,0);x.rotate((1-k)*0.05);x.save();x.shadowColor='rgba(0,0,0,0.5)';x.shadowBlur=40;x.shadowOffsetX=-20;x.fillStyle='#000';x.fillRect(0,0,1080,1920);x.restore();x.beginPath();x.rect(0,0,1080,1920);x.clip();draw(sc,t-s.start,s,t);x.restore();}
   else draw(sc,t-s.start,s,t);
-  x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;x.globalCompositeOperation='source-over';captions(t,s);}
+  x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;x.globalCompositeOperation='source-over';if(sc.type!=='reel')captions(t,s);}
 function boot(tl,scenes){TL=tl;SC=scenes.scenes;META=scenes.meta||{};textures();
   const keys=new Set();JSON.stringify(scenes,(k,v)=>{if(typeof v==='string'&&/^[ptc][A-Za-z0-9]+$/.test(v))keys.add(v);return v;});
   return Promise.all([...keys].map(k=>new Promise(r=>{const im=new Image();im.onload=()=>{IMG[k]=im;r()};im.onerror=()=>r();im.src='file://'+META.imgDir+'/'+k+'.png';}))).then(()=>Object.keys(IMG).length);}
