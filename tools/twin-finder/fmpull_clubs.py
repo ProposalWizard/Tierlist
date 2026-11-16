@@ -3,6 +3,7 @@
 # From FotMob's public pages: each league's table (one team page per league carries it), then each club's page:
 # squad (age, position, value, nation), last line-up (formation + who started where), and the league-wide team stats
 # files those pages point at (possession, xG, big chances, crosses, touches in the box, ball won high up, ...).
+# --history: fetch every club again to add its past league finishes and trophy list.
 # About 100 pages, one a second. Never commit the output.
 import json, re, sys, os, time, gzip, urllib.request
 OUT = os.path.join(sys.argv[1], '..', 'clubs.json')
@@ -32,8 +33,9 @@ for lg, seed in SEED.items():
             time.sleep(0.4)
     print(lg, len(rows), 'clubs', flush=True)
 json.dump(out, open(OUT, 'w'))
+REDO = '--history' in sys.argv   # 16 Nov 2026: also keep each club's past league finishes and trophies (club stature)
 for tid, c in out['clubs'].items():
-    if c.get('squad'): continue
+    if c.get('squad') and (not REDO or 'history' in c): continue
     try: d = team(tid)
     except Exception as e: print('skip', tid, e); continue
     sq = []
@@ -46,6 +48,11 @@ for tid, c in out['clubs'].items():
     ll = (d['overview'] or {}).get('lastLineupStats') or {}
     c['formation'] = ll.get('formation')
     c['starters'] = [{'id': p['id'], 'name': p['name'], 'posId': p.get('positionId'), 'usual': p.get('usualPlayingPositionId')} for p in ll.get('starters', [])]
+    hi = d.get('history') or {}
+    c['history'] = [{'season': r.get('seasonName'), 'league': r.get('templateId'), 'name': r.get('tournamentName'), 'pos': r.get('position'), 'n': r.get('numberOfTeams')}
+                    for r in (hi.get('historicalTableData') or {}).get('ranks', [])]
+    c['divisions'] = (hi.get('historicalTableData') or {}).get('divisions', [])
+    c['trophies'] = [{'name': x.get('name'), 'league': x.get('leagueId'), 'won': x.get('won'), 'seasonsWon': x.get('seasonsWon'), 'runnerup': x.get('runnerup')} for x in hi.get('trophyList', [])]
     c['colors'] = ((d['overview'] or {}).get('teamColors') or {}).get('lightMode') if isinstance((d['overview'] or {}).get('teamColors'), dict) else None
     json.dump(out, open(OUT, 'w')); print(c['name'], len(sq), c['formation'], flush=True); time.sleep(1)
 print('done', len(out['clubs']))

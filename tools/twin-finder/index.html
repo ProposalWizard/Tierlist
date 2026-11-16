@@ -146,10 +146,10 @@ details.inner summary{color:var(--ink3);font-size:12px;font-weight:700;padding:4
 <button class="go" id="ngo">Find his next club</button>
 <div id="nout" class="hide" style="margin-top:14px">
   <div class="card"><label class="h">The best fit</label><div id="nbest"></div></div>
-  <div class="card"><label class="h" id="nlisth">Top 10 clubs · tap one for the three checks</label>
+  <div class="card"><label class="h" id="nlisth">Top 10 clubs · tap one for the two checks</label>
     <input id="nfq" class="lsearch" type="text" placeholder="Search the clubs, e.g. Arsenal" autocomplete="off"><div class="list" id="nlist"></div>
     <div class="pager"><button id="npgp">‹ Prev</button><span id="npgt"></span><button id="npgn">Next ›</button></div></div>
-  <div class="card"><label class="h" id="ndeth">The three checks</label><div id="ndet"></div></div>
+  <div class="card"><label class="h" id="ndeth">The two checks</label><div id="ndet"></div></div>
   <div class="card"><label class="h">Make it a video</label>
     <div class="muted">The settings file for a "Where should he go?" video. Paste it into a chat with "make this video".</div>
     <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="ghost" id="ncopy">Copy episode file</button><span id="ncopied" class="muted"></span></div>
@@ -483,19 +483,25 @@ $('rgo').onclick=run;
 $('rcopy').onclick=()=>{navigator.clipboard.writeText($('repi').textContent).then(()=>{$('rcopied').textContent='Copied';setTimeout(()=>$('rcopied').textContent='',1500)})};
 window.__repl={pick,run,ALL};
 })();
-// ---------- NEXT CLUB (Mikey, 15 Nov 2026): every top-5 club this season, scored on three checks. Same as model/next_club.py ----------
+// ---------- NEXT CLUB v2 (Mikey, 16 Nov 2026): club pull from the long run + his season simulated at every club.
+// Same method as tools/video-render/twin/model/next_club_sim.py + sim_season.mts + club_strength.py: change them together.
 (function(){
 const CL=D.clubs||{}, PLY=D.players||{}, NS=SEAS.length, R=window.__repl, $=id=>document.getElementById(id);
 if(!Object.keys(CL).length){$('ngo').textContent='No club data in this build';return;}
-const EQ={LM:'LW',RM:'RW',LWB:'LB',RWB:'RB',CF:'ST'}, fam=d=>EQ[d]||d, firstPos=m=>fam(((m[3]||'').split(','))[0]);
-const RECIPE={AMW:{possession:1,xg:1,bigc:1,box:1},ATT:{possession:1,xg:1,bigc:1,box:1},ST:{xg:1.5,bigc:1.5,cross:.75,box:1},MID:{possession:1.5,passes:1.5,high:1},
-  FB:{possession:1,cross:1,xga:-1,high:.5},CB:{possession:1,passes:1,xga:-1.5,long:.5},GK:{possession:1,passes:1,xga:-1}};
-const SAY={possession:['% possession',1,'%'],xg:['xG a game',2,''],bigc:['big chances a game',1,''],box:['touches in their box a game',0,''],cross:['crosses a game',1,''],
-  passes:['passes a game',0,''],high:['balls won high up a game',1,''],xga:['xG against a game',2,''],long:['long balls a game',0,'']};
-const POSMAP={};for(const t in CL)for(const m of CL[t].squad){const ids=(m[4]||'').split(','),ds=(m[3]||'').split(',');ids.forEach((i,k)=>{if(i&&ds[k])POSMAP[+i]=fam(ds[k])})}
-const RAT={};for(let i=0;i<N;i++){if(D.S[i]<NS-2)continue;const r=v(i,'rating'),m=v(i,'mins')||0;if(r==null)continue;const o=RAT[D.id[i]]=RAT[D.id[i]]||[0,0];o[0]+=r*m;o[1]+=m}
-const rating=id=>{const o=RAT[id];return o&&o[1]?[o[0]/o[1],o[1]]:[null,0]};
-const BYP={};for(let i=0;i<N;i++){if(D.S[i]>=NS-2)(BYP[D.id[i]]=BYP[D.id[i]]||[]).push(i)}
+const norm=x=>x.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+// the game's league model (lib/star/season.ts simulateFixtureScore, tuning defaults in lib/star/tuning.ts leagueSim.*)
+const HOME=3,SLOPE=0.065,BASE=1.5,MINX=0.4,MAXX=3.5;
+function mulberry32(seed){let a=seed>>>0;return function(){a=(a+0x6d2b79f5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296}}
+function poisson(l,rng){const L=Math.exp(-l);let k=0,p=1;do{k++;p*=rng()}while(p>L);return k-1}
+function score(h,a,rng){const d=(h+HOME)-a;return {home:poisson(Math.max(MINX,Math.min(MAXX,BASE+d*SLOPE)),rng),away:poisson(Math.max(MINX,Math.min(MAXX,BASE-d*SLOPE)),rng)}}
+// a club's strength the way the game rates a team: average EA overall of the best eleven (4-3-3), filled greedily
+const SLOTS=['GK','RB','CB','CB','LB','MID','MID','MID','LW','ST','RW'],FITS={GK:['GK'],RB:['RB','RWB'],LB:['LB','LWB'],CB:['CB'],MID:['CM','CDM','CAM','DM','AM','LM','RM'],LW:['LW','LM'],RW:['RW','RM'],ST:['ST','CF']};
+const ORDER=SLOTS.map((s,i)=>i).sort((x,y)=>(SLOTS[x]==='MID')-(SLOTS[y]==='MID'));
+function xi(squad,extra){const men=squad.map(m=>({id:m[0],name:m[1],ov:m[4],pos:(m[3]||'').split(',').filter(Boolean)}));if(extra)men.push(extra);const used=new Set(),out=[];
+  for(const i of ORDER){const s=SLOTS[i];let best=null;for(const m of men){if(used.has(m.id)||!m.pos.some(p=>FITS[s].includes(p)))continue;if(!best||m.ov>best.ov)best=m}
+    if(!best)for(const m of men){if(used.has(m.id)||(m.pos.includes('GK'))!==(s==='GK'))continue;if(!best||m.ov>best.ov)best=m}
+    if(best){used.add(best.id);out.push([s,best])}}return out}
+const strength=x=>x.reduce((a,q)=>a+q[1].ov,0)/Math.max(1,x.length);
 const LGS=Object.keys(LG);LGS.forEach(l=>{const c=document.createElement('span');c.className='chip on';c.dataset.l=l;c.textContent=LG[l];c.onclick=()=>c.classList.toggle('on');$('nlgs').appendChild(c)});
 $('nafford').onclick=()=>$('nafford').classList.toggle('on');
 let NID=null,NRES=null,NPG=0,NSEL=null;
@@ -503,58 +509,74 @@ $('nq').oninput=()=>{const q=norm($('nq').value.trim()),el=$('nsugg');if(q.lengt
   const hits=R.ALL.filter(p=>norm(p.name).includes(q)).slice(0,12);
   el.innerHTML=hits.map(p=>{const i=PLY[p.id]||[];return `<div data-id="${p.id}">${p.name} <small>· ${i[2]||club(D.T[p.m])}${i[0]!=null?' · '+i[0]:''}</small></div>`}).join('')||'<div><small>No one found in the last two seasons</small></div>';
   el.classList.remove('hide');el.querySelectorAll('div[data-id]').forEach(d=>d.onclick=()=>npick(+d.dataset.id));};
-const norm=x=>x.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 function npick(id){NID=id;const p=R.ALL.find(x=>x.id===id),i=PLY[id]||[];$('nq').value=p.name;$('nsugg').classList.add('hide');
   $('nwho').innerHTML=`<div class="nm">${p.name}</div><div class="meta" style="white-space:normal">${i[2]||club(D.T[p.m])}${i[0]!=null?' · age '+i[0]:''}${i[1]!=null?' · €'+Math.round(i[1])+'M':''} · ${p.mins.toLocaleString()} minutes in two seasons</div>`;}
-function share(d,t){let b=0,n=0;for(const k in d){n++;if(d[k]<d[t])b++}return 100*b/Math.max(1,n-1)}
-function find(pid){
+const share=(d,k)=>{let b=0,n=0;for(const x in d){n++;if(d[x]<d[k])b++}return 100*b/Math.max(1,n-1)};
+function find(pid,RUNS=200){
   let me=null,home=null;for(const t in CL)for(const m of CL[t].squad)if(m[0]===pid){me=m;home=t}
-  const ids=BYP[pid]||[],m0=ids.reduce((a,b)=>(v(b,'mins')||0)>(v(a,'mins')||0)?b:a,ids[0]),g=G[m0],rec=RECIPE[g]||RECIPE.AMW;
-  const pos=me?firstPos(me):null,Rt=rating(pid)[0],val=(PLY[pid]||[])[1];
-  const zs={};new Set(Object.values(RECIPE).flatMap(r=>Object.keys(r))).forEach(k=>{const vals=Object.values(CL).map(c=>c.ts[k]).filter(x=>x!=null);const mu=vals.reduce((a,b)=>a+b,0)/vals.length;
-    const sd=Math.sqrt(vals.reduce((a,b)=>a+(b-mu)**2,0)/vals.length)||1;zs[k]={};for(const t in CL)if(CL[t].ts[k]!=null)zs[k][t]=(CL[t].ts[k]-mu)/sd});
-  const wsum=Object.values(rec).reduce((a,b)=>a+Math.abs(b),0),fitraw={},ppg={},sval={};
-  for(const t in CL){fitraw[t]=Object.entries(rec).reduce((a,[k,w])=>a+w*(zs[k][t]||0),0)/wsum;ppg[t]=CL[t].pts/Math.max(1,CL[t].played);sval[t]=CL[t].squad.reduce((a,m)=>a+(m[5]||0),0)}
-  const out=[];
-  for(const t in CL){const c=CL[t];if(t===home)continue;
-    const st=c.starters.filter(x=>POSMAP[x[1]]===pos).map(x=>x[0]);const inc=c.squad.filter(m=>st.includes(m[0])||firstPos(m)===pos);
-    let best=null;for(const m of inc){const [r,mins]=rating(m[0]);if(r==null)continue;const q=mins>=900?r:Math.min(r,6.6);if(!best||q>best.q)best={q,m,r,mins}}
-    const Rinc=best?best.q:6.4;let need=Math.max(0,Math.min(1,(Rt-Rinc)/1.0))*85+(best&&(best.m[2]||0)>=31?15:0);
-    let fit=share(fitraw,t);const starts=c.starters.some(x=>POSMAP[x[1]]===pos),wide=['LW','RW','LB','RB'].includes(pos);
-    if(wide&&c.starters.length&&!starts){fit=Math.max(0,fit-25);need*=0.6}
-    const level=0.5*share(ppg,t)+0.5*share(sval,t),tot=0.4*Math.min(100,need)+0.3*fit+0.3*level;
-    const top2=Object.entries(rec).map(([k,w])=>[w*(zs[k][t]||0),k]).sort((a,b)=>b[0]-a[0]).slice(0,2).map(([_,k])=>{const sg=rec[k]>0?1:-1;
-      return {k,v:c.ts[k],rank:1+Object.values(CL).filter(o=>o.ts[k]!=null&&c.ts[k]!=null&&sg*o.ts[k]>sg*c.ts[k]).length}});
-    out.push({t,c,tot,need:Math.min(100,need),fit,level,best,starts,top2,ppg:ppg[t],sv:sval[t],afford:!val||sval[t]>=5*val*1e6})}
-  out.sort((a,b)=>b.tot-a.tot);return {pos,home,Rt,g,out,val}}
-const ord=n=>n+(n%100>10&&n%100<14?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th'));
-const bar=(lab,x,col)=>`<div style="display:grid;grid-template-columns:52px 1fr 34px;gap:8px;align-items:center;font-size:12px;color:var(--ink3)"><span>${lab}</span><div class="bar" style="margin:0"><i style="width:${Math.round(x)}%;background:${col}"></i></div><b style="color:var(--ink);text-align:right">${Math.round(x)}</b></div>`;
-function facts(r){const c=r.c,nm=$('nq').value,me=/J[uú]nior$/i.test(nm)?nm.split(' ')[0]:shortName(nm);
-  const n=r.best?`${me} ${r.best.r<NRES.Rt?'would be an upgrade on':'would have to beat'} <b>${r.best.m[1]}</b> (rating ${NRES.Rt.toFixed(2)} v ${r.best.r.toFixed(2)}${r.best.mins<900?', only '+r.best.mins+' top-5 minutes':''}${(r.best.m[2]||0)>=31?', age '+r.best.m[2]:''}).`:`They have nobody listed in his position (${NRES.pos}).`;
-  const f=r.top2.map(o=>`${SAY[o.k][0]==='% possession'?(+o.v).toFixed(1)+'% possession':(+o.v).toFixed(SAY[o.k][1])+' '+SAY[o.k][0]} (${ord(o.rank)} of ${Object.keys(CL).length})`).join(', ')+(r.starts?'':`; their last line-up had no ${NRES.pos}`)+'.';
-  const l=`${ord(c.pos)} in the ${LG[c.league]} (${r.ppg.toFixed(2)} points a game)${c.zone?', '+c.zone+' place':''}; squad worth ${r.sv>=1e9?'€'+(r.sv/1e9).toFixed(1)+'bn':'€'+Math.round(r.sv/1e6)+'M'}.`;
-  return {n,f,l}}
-function card(r){const F=facts(r),b=badge(r.c.id||r.t);return `<div class="twin" style="margin-bottom:8px">${badge(r.t)?`<img src="${badge(r.t)}" style="width:44px;height:44px">`:''}<div style="min-width:0"><div class="nm">${r.c.name}</div><div class="meta">${LG[r.c.league]} · ${r.c.formation||''} · score ${Math.round(r.tot)}</div></div></div>
-  ${bar('Need',r.need,'var(--gold)')}<div class="muted" style="margin:2px 0 8px 60px">${F.n}</div>${bar('Fit',r.fit,'var(--blue)')}<div class="muted" style="margin:2px 0 8px 60px">${F.f}</div>${bar('Level',r.level,'var(--green)')}<div class="muted" style="margin:2px 0 0 60px">${F.l}</div>`}
+  if(!me)return {err:'He is not in any top-5 squad today.'};
+  const extra={id:me[0],name:me[1],ov:me[4],pos:(me[3]||'').split(',').filter(Boolean)};
+  // his share of his club's goals and assists, this season + last
+  const mine=[];for(let i=0;i<N;i++)if(D.id[i]===pid&&D.S[i]>=NS-2)mine.push(i);
+  let G=0,A=0,mins=0;mine.forEach(i=>{G+=v(i,'G')||0;A+=v(i,'A')||0;mins+=v(i,'mins')||0});
+  let tg=0;for(let i=0;i<N;i++)if(D.S[i]>=NS-2&&mine.some(j=>D.S[j]===D.S[i]&&D.T[j]===D.T[i]))tg+=v(i,'G')||0;
+  let gp=0;mine.forEach(j=>{gp+=D.S[j]===NS-1?CL[home].played:(CL[home].n===18?34:38)});
+  const P={goalShare:tg?G/tg:0.2,assistShare:tg?A/Math.max(1,tg-G):0.15,avail:Math.min(1,mins/Math.max(1,gp*90)),G,A,tg,mins};
+  const st={},withp={};for(const t in CL)st[t]=strength(xi(CL[t].squad));
+  const lav={};for(const t in CL)(lav[CL[t].league]=lav[CL[t].league]||[]).push(st[t]);for(const k in lav)lav[k]=lav[k].reduce((a,b)=>a+b,0)/lav[k].length;
+  const lmax=Math.max(...Object.values(lav)),lw={};for(const k in lav)lw[k]=Math.max(0,lav[k]-70)/(lmax-70);
+  const val=((PLY[pid]||[])[1]||0)*1e6, cands=[], benched=[];
+  for(const t in CL){if(t===home)continue;const x=xi(CL[t].squad,extra);withp[t]={x,s:strength(x)};
+    if(!x.some(q=>q[1].id===pid)){benched.push(t);continue}cands.push(t)}
+  const all=Object.keys(CL).map(t=>({id:t,league:CL[t].league,s:st[t]})),top36=[...all].sort((a,b)=>b.s-a.s).slice(0,36),top16=top36.slice(0,16);
+  const byL={};all.forEach(c=>(byL[c.league]=byL[c.league]||[]).push(c));const PLACES={47:4,87:4,55:4,54:4,53:3};
+  const sims={};
+  for(const t of cands){const rng=mulberry32(+t*7919+17),cand={id:t,league:CL[t].league,s:withp[t].s};let title=0,top=0,pos=0,g=0,a=0,clw=0;const stages={};
+    for(let r=0;r<RUNS;r++){let goals=0,ast=0;const mineM=(us)=>{if(rng()>P.avail)return;let left=us;for(let k=0;k<us;k++)if(rng()<P.goalShare){goals++;left--}for(let k=0;k<left;k++)if(rng()<P.assistShare)ast++};
+      const L=byL[cand.league],pts={},gd={},sv=c=>c.id===t?cand.s:c.s;
+      for(const h of L)for(const aw of L){if(h===aw)continue;const x=score(sv(h),sv(aw),rng);const add=(c,f,ag)=>{pts[c.id]=(pts[c.id]||0)+(f>ag?3:f===ag?1:0);gd[c.id]=(gd[c.id]||0)+f-ag};
+        add(h,x.home,x.away);add(aw,x.away,x.home);if(h.id===t)mineM(x.home);if(aw.id===t)mineM(x.away)}
+      const tab=[...L].sort((p,q)=>(pts[q.id]-pts[p.id])||(gd[q.id]-gd[p.id])||(rng()-.5)),ps=tab.findIndex(c=>c.id===t)+1;let cl='none';
+      if(ps<=PLACES[cand.league]){cl='League phase';const pool=top36.filter(c=>c.id!==t&&c.league!==cand.league),pick=f=>f[Math.floor(rng()*f.length)];let p8=0;
+        for(let i=0;i<8;i++){const o=pick(pool),hm=i%2===0,x=hm?score(cand.s,o.s,rng):score(o.s,cand.s,rng),us=hm?x.home:x.away,th=hm?x.away:x.home;p8+=us>th?3:us===th?1:0;mineM(us)}
+        const tie=o=>{const x=score(cand.s,o.s,rng),y=score(o.s,cand.s,rng);mineM(x.home);mineM(y.away);const us=x.home+y.away,th=x.away+y.home;return us>th||(us===th&&rng()<.5)};
+        let alive=p8>=16||(p8>=11&&tie(pick(pool)));
+        if(alive){for(const rd of ['Last 16','Quarter-final','Semi-final']){cl=rd;if(!tie(pick(top16.filter(c=>c.id!==t)))){alive=false;break}}
+          if(alive){cl='Final';const o=pick(top16.filter(c=>c.id!==t).slice(0,8)),x=score(cand.s-HOME,o.s,rng);mineM(x.home);if(x.home>x.away||(x.home===x.away&&rng()<.5))cl='Winners'}}}
+      if(ps===1)title++;if(ps<=PLACES[cand.league])top++;pos+=ps;g+=goals;a+=ast;if(cl==='Winners')clw++;stages[cl]=(stages[cl]||0)+1}
+    sims[t]={title:title/RUNS,top:top/RUNS,avgPos:pos/RUNS,goals:g/RUNS,assists:a/RUNS,clWin:clw/RUNS,stages}}
+  const gmax=Math.max(1,...cands.map(t=>sims[t].goals)),out=cands.map(t=>{const s=sims[t];
+    const season=40*s.title*lw[CL[t].league]+40*s.clWin+10*s.top+10*s.goals/gmax;const repl=xi(CL[t].squad).find(q=>!withp[t].x.some(z=>z[1].id===q[1].id));
+    return {t,c:CL[t],sim:s,season,st:st[t],sw:withp[t].s,repl:repl?repl[1]:null,pull:CL[t].pull,afford:!val||CL[t].squadValue>=5*val}});
+  const smax=Math.max(...out.map(r=>r.season))||1;out.forEach(r=>{r.seasonScore=100*r.season/smax;r.tot=0.7*r.seasonScore+0.3*r.pull});out.sort((a,b)=>b.tot-a.tot);
+  return {me,home,P,out,benched,lw,RUNS}}
+const pc=x=>Math.round(100*x)+'%', bn=x=>x>=1e9?'€'+(x/1e9).toFixed(1)+'bn':'€'+Math.round(x/1e6)+'M';
+const bar=(lab,x,col)=>`<div style="display:grid;grid-template-columns:86px 1fr 34px;gap:8px;align-items:center;font-size:12px;color:var(--ink3)"><span>${lab}</span><div class="bar" style="margin:0"><i style="width:${Math.round(x)}%;background:${col}"></i></div><b style="color:var(--ink);text-align:right">${Math.round(x)}</b></div>`;
+function card(r){const s=r.sim,c=r.c,n=NRES.me[1].split(' ')[0];
+  const fin=c.last10.map(x=>x==null?'–':typeof x==='number'?x:'↓').join(', ');
+  const clLine=['Winners','Final','Semi-final','Quarter-final','Last 16'].map(k=>`${k==='Winners'?'win it':k==='Final'?'lose the final':'out in the '+k.toLowerCase()} ${pc((s.stages[k]||0)/NRES.RUNS)}`).join(' · ');
+  return `<div class="twin" style="margin-bottom:8px">${badge(r.t)?`<img src="${badge(r.t)}" style="width:44px;height:44px">`:''}<div style="min-width:0"><div class="nm">${c.name}</div><div class="meta">${LG[c.league]} · score ${Math.round(r.tot)}</div></div></div>
+  ${bar('His season',r.seasonScore,'var(--gold)')}<div class="muted" style="margin:2px 0 8px 94px">${NRES.RUNS} simulated seasons: league title ${pc(s.title)}, top ${c.league==53?3:4} ${pc(s.top)}, average finish ${s.avgPos.toFixed(1)}. Champions League: ${clLine}. His average season: ${s.goals.toFixed(1)} goals, ${s.assists.toFixed(1)} assists. He'd take the place of <b>${r.repl?r.repl.name+' ('+r.repl.ov+')':'nobody'}</b>; team rating ${r.st.toFixed(1)} → ${r.sw.toFixed(1)}.</div>
+  ${bar('Club pull',r.pull,'var(--green)')}<div class="muted" style="margin:2px 0 0 94px">League finishes, last 10 seasons: ${fin} (↓ = not in the top flight). Trophy points ${c.trophyPts}. Squad worth ${bn(c.squadValue)}. This season: ${c.pos}${c.pos==1?'st':c.pos==2?'nd':c.pos==3?'rd':'th'}.</div>`}
 function shown(){const L=[...document.querySelectorAll('#nlgs .chip.on')].map(c=>+c.dataset.l),aff=$('nafford').classList.contains('on'),q=norm($('nfq').value.trim());
   return NRES.out.filter(r=>L.includes(r.c.league)&&(!aff||r.afford)&&(!q||norm(r.c.name).includes(q)))}
 function draw(){const S=shown(),P=10,pages=Math.max(1,Math.ceil(S.length/P));NPG=Math.min(NPG,pages-1);
   $('nlist').innerHTML=S.slice(NPG*P,NPG*P+P).map((r,k)=>{const i=NPG*P+k+1;return `<div class="it${r===NSEL?' sel':''}" data-t="${r.t}"><b>#${i}</b>${badge(r.t)?`<img src="${badge(r.t)}" style="width:34px;height:34px">`:'<span></span>'}<div style="min-width:0"><div class="nm">${r.c.name}</div>
-    <div class="meta">need ${Math.round(r.need)} · fit ${Math.round(r.fit)} · level ${Math.round(r.level)}</div></div><div class="pct">${Math.round(r.tot)}</div></div>`}).join('')||'<div class="muted">No club left with these filters.</div>';
+    <div class="meta">title ${pc(r.sim.title)} · CL win ${pc(r.sim.clWin)} · ${r.sim.goals.toFixed(0)} goals · pull ${Math.round(r.pull)}</div></div><div class="pct">${Math.round(r.tot)}</div></div>`}).join('')||'<div class="muted">No club left with these filters.</div>';
   $('npgt').textContent=`Page ${NPG+1} of ${pages} · ${S.length} clubs`;$('npgp').disabled=NPG===0;$('npgn').disabled=NPG>=pages-1;
-  $('nlist').querySelectorAll('.it').forEach(e=>e.onclick=()=>{NSEL=NRES.out.find(r=>r.t===e.dataset.t);$('ndet').innerHTML=card(NSEL);$('ndeth').textContent='The three checks · '+NSEL.c.name;draw()});}
+  $('nlist').querySelectorAll('.it').forEach(e=>e.onclick=()=>{NSEL=NRES.out.find(r=>r.t===e.dataset.t);$('ndet').innerHTML=card(NSEL);$('ndeth').textContent='The two checks · '+NSEL.c.name;draw()});}
 $('npgp').onclick=()=>{NPG--;draw()};$('npgn').onclick=()=>{NPG++;draw()};$('nfq').oninput=()=>{NPG=0;draw()};
-function nrun(){if(NID==null){$('nq').focus();return}NRES=find(NID);NPG=0;const S=shown();if(!S.length){$('nout').classList.remove('hide');$('nlist').innerHTML='<div class="muted">No club left.</div>';return}
-  NSEL=S[0];$('nbest').innerHTML=card(S[0]);$('ndet').innerHTML=card(S[0]);$('ndeth').textContent='The three checks · '+S[0].c.name;
-  $('nlisth').textContent=`Top clubs for ${$('nq').value} (${NRES.pos||'?'}) · tap one`;draw();
-  const p=R.ALL.find(x=>x.id===NID);$('nepi').textContent=JSON.stringify({kind:'next-club',player:p.name,short:/J[uú]nior$/i.test(p.name)?p.name.split(' ')[0]:shortName(p.name),leagues:[...document.querySelectorAll('#nlgs .chip.on')].map(c=>+c.dataset.l),
+function nrun(){if(NID==null){$('nq').focus();return}$('ngo').textContent='Simulating…';setTimeout(()=>{NRES=find(NID);$('ngo').textContent='Find his next club';
+  if(NRES.err){$('nout').classList.remove('hide');$('nbest').innerHTML=`<div class="muted">${NRES.err}</div>`;return}
+  NPG=0;const S=shown();$('nout').classList.remove('hide');if(!S.length){$('nlist').innerHTML='<div class="muted">No club left.</div>';return}
+  NSEL=S[0];$('nbest').innerHTML=card(S[0])+(NRES.benched.length?`<div class="muted" style="margin-top:8px">He wouldn't make the best eleven at: ${NRES.benched.map(t=>CL[t].name).join(', ')} (left out).</div>`:'');
+  $('ndet').innerHTML=card(S[0]);$('ndeth').textContent='The two checks · '+S[0].c.name;$('nlisth').textContent=`Top clubs for ${NRES.me[1]} (EA ${NRES.me[4]}) · tap one`;draw();
+  const p=R.ALL.find(x=>x.id===NID);$('nepi').textContent=JSON.stringify({kind:'next-club',player:NRES.me[1],leagues:[...document.querySelectorAll('#nlgs .chip.on')].map(c=>+c.dataset.l),
     afford:$('nafford').classList.contains('on'),top:S.slice(0,5).map(r=>r.c.name),series:'WHERE SHOULD HE GO?',hookSay:`Let's say ${p.name} leaves ${(PLY[NID]||[])[2]||'his club'} this summer. Where should he go?`},null,1);
-  $('nhow').innerHTML=`<p>Every club in the top 5 leagues this season (${Object.keys(CL).length}, FotMob, ${D.clubsAsOf||''}) gets three scores out of 100. Total = 40% need + 30% fit + 30% level.</p>
-   <p><b>Need</b>: would he be an upgrade? His FotMob rating (this season + last, by minutes) against the best of whoever started in his position in their last line-up or is listed there first. Someone with under 900 top-5 minutes counts as unproven (6.6 at most). One rating point better = 85; +15 if their man is 31 or older.</p>
-   <p><b>Fit</b>: does the way they play suit his kind of player? This season's team stats, each against all the clubs; an attacker wants possession, xG, big chances and touches in the box; a midfielder possession, passes and balls won high up; a defender possession, passes and little xG against. A wide player loses 25 (and 40% of need) if their last line-up had nobody in his position.</p>
-   <p><b>Level</b>: is it good for him? Points per game and squad value, each as the share of clubs below. "Could afford him" = their squad is worth at least five times him.</p>
-   <p>It can't see transfer budgets, the manager's plans, wages or what the player wants. This season is about ten games in.</p>`;
-  $('nout').classList.remove('hide');}
+  $('nhow').innerHTML=`<p>Every club in the top 5 leagues this season (${Object.keys(CL).length}). Total = 70% <b>his season</b> + 30% <b>club pull</b>.</p>
+   <p><b>His season</b>: each club is rated the way Road to Ballon d'Or rates a team: the average EA rating of its best eleven (4-3-3), from our player table (FC 27, else FC 26; a man we can't match gets an estimate from his market value). He goes into that eleven; if he wouldn't make it, the club is left out. Then the club's league is played ${NRES.RUNS} times with the game's own match model (home advantage included). Finishing in the top four (three in Ligue 1) = a Champions League season: 8 league-phase games against the 36 strongest clubs from other leagues, play-off or straight to the last 16, two-legged ties, a one-off final. His goals: each team goal is his with his real share of his club's goals (${pc(NRES.P.goalShare)}), when he plays (${pc(NRES.P.avail)} of games, his real minutes). Season score = 40 × title chance × league weight + 40 × Champions League win chance + 10 × top-four chance + 10 × his goals. League weight = the league's average club rating (70 = 0, the strongest league = 1): ${Object.entries(NRES.lw).map(([k,v])=>LG[k]+' '+v.toFixed(2)).join(', ')}.</p>
+   <p><b>Club pull</b>: average league finish over the last 10 full seasons (1st = 100, last = 0, outside the top flight = -25) 45%, trophies (league ×3, Champions League ×5, Europa League ×2, domestic cups ×1, the last 10 years double) 25%, squad value 20%, this season's points per game 10%.</p>
+   <p>It can't see wages, the manager's plans or what the player wants. Domestic cups aren't played. Simulated seasons use today's squads.</p>`},20)}
 $('ngo').onclick=nrun;
 $('ncopy').onclick=()=>{navigator.clipboard.writeText($('nepi').textContent).then(()=>{$('ncopied').textContent='Copied';setTimeout(()=>$('ncopied').textContent='',1500)})};
 window.__next={npick,nrun,find};
