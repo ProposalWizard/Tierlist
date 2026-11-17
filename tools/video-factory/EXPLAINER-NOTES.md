@@ -26,3 +26,10 @@ The rules:
   (work/ex-people/<name>.png) as a reference image.
 - If a likeness can't be had, frame it so no face is readable (from behind, wide, hands, the object) rather than a wrong face.
 - Generic faces are fine only when nobody is named (punters in a betting shop, a crowd).
+
+## Explain HOW, not just WHAT (Mikey, 17 Nov 2026)
+"it explains the story... but it doesn't give so much about how it actually happened."
+For any "how did X happen" story, spend real time on the mechanics: the signings and what each one added
+(fee, where from, what changed), the tactical idea and which player it unlocked (who moved where, why it
+worked, a pitch diagram), the turning-point decisions, and the numbers that prove it. The pizza / deep-line
+level of detail is the minimum, not the target. Every "how" beat still gets its own picture.
