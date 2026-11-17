@@ -19,3 +19,10 @@ The rules:
 6. Not too short: detail matters. Voice, text and pictures go hand in hand so people understand and stay.
 7. Stick to the reference account's style and flow; drop the extra styles/formats (dark, paper, pastel,
    quiz, myth cards) unless Mikey asks for one back.
+
+## Named people must look like themselves (Mikey, 17 Nov 2026)
+"some of the images... are just generic things... Ranieri doesn't even look like Ranieri... a group of random people."
+- If the voice names a person or team, the picture shows THEM: name them in the prompt and attach their portrait
+  (work/ex-people/<name>.png) as a reference image.
+- If a likeness can't be had, frame it so no face is readable (from behind, wide, hands, the object) rather than a wrong face.
+- Generic faces are fine only when nobody is named (punters in a betting shop, a crowd).
