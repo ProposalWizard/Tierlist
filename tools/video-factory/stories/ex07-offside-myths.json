@@ -1,0 +1,122 @@
+{
+  "id": "ex07-offside-myths",
+  "series": "Explainer",
+  "variant": "FORMAT: myth v fact cards · no people needed",
+  "title": "Five offside myths, busted",
+  "layout": "explainer",
+  "music": "04-dribble.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://www.theifab.com/laws/latest/offside/"
+  ],
+  "images": {},
+  "lines": [
+    {
+      "text": "Five things people get wrong about offside.",
+      "scene": {
+        "type": "statement",
+        "hook": true,
+        "bg": "red",
+        "text": "OFFSIDE|MYTHS"
+      }
+    },
+    {
+      "text": "Number one: level is offside.",
+      "scene": {
+        "type": "myth",
+        "bg": "red",
+        "verdict": "myth",
+        "label": "#1",
+        "claim": "LEVEL|IS OFFSIDE"
+      }
+    },
+    {
+      "text": "Wrong. If you're level with the second-last defender, you're onside.",
+      "scene": {
+        "type": "myth",
+        "bg": "green",
+        "verdict": "fact",
+        "label": "THE LAW",
+        "claim": "LEVEL|IS ONSIDE"
+      }
+    },
+    {
+      "text": "Number two: you can be offside from a throw-in.",
+      "scene": {
+        "type": "myth",
+        "bg": "red",
+        "verdict": "myth",
+        "label": "#2",
+        "claim": "OFFSIDE FROM|A THROW-IN"
+      }
+    },
+    {
+      "text": "You can't. Or from a goal kick, or a corner.",
+      "scene": {
+        "type": "statement",
+        "bg": "teal",
+        "text": "THROW-IN|GOAL KICK|CORNER",
+        "hi": 1,
+        "size": 120
+      }
+    },
+    {
+      "text": "Number three: you can't be offside in your own half.",
+      "scene": {
+        "type": "myth",
+        "bg": "green",
+        "verdict": "fact",
+        "label": "#3",
+        "claim": "NOT OFFSIDE IN|YOUR OWN HALF"
+      }
+    },
+    {
+      "text": "That one's true.",
+      "scene": {
+        "type": "statement",
+        "bg": "green",
+        "text": "TRUE"
+      }
+    },
+    {
+      "text": "Number four: being in an offside position is an offence.",
+      "scene": {
+        "type": "myth",
+        "bg": "red",
+        "verdict": "myth",
+        "label": "#4",
+        "claim": "OFFSIDE POSITION|= OFFENCE"
+      }
+    },
+    {
+      "text": "Only if you get involved. Stand still and stay out of it, and nothing happens.",
+      "scene": {
+        "type": "press",
+        "bg": "green",
+        "won": "NOT INVOLVED = NO OFFENCE"
+      }
+    },
+    {
+      "text": "And number five: your arms don't count.",
+      "scene": {
+        "type": "myth",
+        "bg": "green",
+        "verdict": "fact",
+        "label": "#5",
+        "claim": "ARMS|DON'T COUNT"
+      }
+    },
+    {
+      "text": "True. Only the parts you can legally score with.",
+      "scene": {
+        "type": "statement",
+        "bg": "purple",
+        "text": "HEAD · BODY · FEET",
+        "size": 110
+      }
+    }
+  ]
+}

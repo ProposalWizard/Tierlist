@@ -1,0 +1,139 @@
+{
+  "id": "ex08-ballon-dor-countdown",
+  "series": "Explainer",
+  "variant": "STYLE: dark + neon karaoke captions · FORMAT: top-5 countdown",
+  "title": "Who has won the most Ballon d'Ors?",
+  "layout": "explainer",
+  "music": "11-final-boss.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://www.ballondor.com/",
+    "https://en.wikipedia.org/wiki/Ballon_d%27Or"
+  ],
+  "images": {
+    "messi": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/messi.png",
+    "ronaldo": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/ronaldo.png",
+    "platini": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/platini.png",
+    "cruyff": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/cruyff.png",
+    "vanbasten": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/vanbasten.png"
+  },
+  "lines": [
+    {
+      "text": "Who has won the most Ballon d'Ors? Here's the top five.",
+      "scene": {
+        "type": "statement",
+        "hook": true,
+        "text": "BALLON D'OR|TOP 5",
+        "hi": 1
+      }
+    },
+    {
+      "text": "Number five. Marco van Basten. Three.",
+      "scene": {
+        "type": "rank",
+        "n": 5,
+        "title": "MARCO VAN BASTEN",
+        "sub": "3 · 1988, 1989, 1992",
+        "person": {
+          "image": "vanbasten"
+        }
+      }
+    },
+    {
+      "text": "Number four. Johan Cruyff. Also three.",
+      "scene": {
+        "type": "rank",
+        "n": 4,
+        "title": "JOHAN CRUYFF",
+        "sub": "3 · 1971, 1973, 1974",
+        "person": {
+          "image": "cruyff"
+        }
+      }
+    },
+    {
+      "text": "Number three. Michel Platini. Three, and all in a row.",
+      "scene": {
+        "type": "rank",
+        "n": 3,
+        "title": "MICHEL PLATINI",
+        "sub": "3 IN A ROW · 1983–85",
+        "person": {
+          "image": "platini"
+        }
+      }
+    },
+    {
+      "text": "Number two. Cristiano Ronaldo, with five.",
+      "scene": {
+        "type": "rank",
+        "n": 2,
+        "title": "CRISTIANO RONALDO",
+        "sub": "5 · 2008–2017",
+        "person": {
+          "image": "ronaldo",
+          "back": true
+        }
+      }
+    },
+    {
+      "text": "And number one, by a mile. Lionel Messi.",
+      "scene": {
+        "type": "rank",
+        "n": 1,
+        "title": "LIONEL MESSI",
+        "sub": "THE MOST EVER",
+        "person": {
+          "image": "messi",
+          "back": true
+        }
+      }
+    },
+    {
+      "text": "Eight Ballon d'Ors.",
+      "scene": {
+        "type": "counter",
+        "from": 0,
+        "to": 8,
+        "word": "BALLON D'ORS",
+        "size": 420
+      }
+    },
+    {
+      "text": "Fourteen years apart: the first in 2009, the last in 2023.",
+      "scene": {
+        "type": "years",
+        "items": [
+          {
+            "year": "2009",
+            "top": "FIRST",
+            "label": "Barcelona",
+            "tick": true,
+            "head": "#39ff88"
+          },
+          {
+            "year": "2023",
+            "top": "EIGHTH",
+            "label": "After the World Cup",
+            "tick": true,
+            "head": "#39ff88"
+          }
+        ]
+      }
+    }
+  ],
+  "theme": {
+    "mono": "navy",
+    "palette": {
+      "navy": [
+        "#161c40",
+        "#05060d"
+      ]
+    },
+    "captions": "karaoke",
+    "hi": "#39ff88"
+  }
+}

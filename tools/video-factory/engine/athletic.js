@@ -20,7 +20,11 @@ const grain = document.createElement("canvas"); grain.width = 540; grain.height 
   for (let i = 0; i < im.data.length; i += 4) { s = (s * 16807) % 2147483647; const v = s % 255; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 22; }
   gg.putImageData(im, 0, 0); }
 
+let THon = false;
 function bg(g, pal, t = 0) {
+  const TH = (window.STORY && window.STORY.theme) || {};   // read late: timeline.js loads after this file
+  if (!THon && TH.palette) { Object.assign(PAL, TH.palette); THon = true; }
+  if (TH.mono) pal = TH.mono;
   const [a, b] = PAL[pal] || PAL.teal;
   const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, a); gr.addColorStop(1, b); g.fillStyle = gr; g.fillRect(0, 0, W, H);
   const rg = g.createRadialGradient(540, 760, 120, 540, 760, 1300); rg.addColorStop(0, "rgba(255,255,255,.18)"); rg.addColorStop(1, "rgba(0,0,0,.22)"); g.fillStyle = rg; g.fillRect(0, 0, W, H);
@@ -364,6 +368,40 @@ S.kit = (g, t, dur, sc) => {
   if (from.tie && k < 0.5) { g.globalAlpha = 1 - k * 2; g.fillStyle = "#111"; g.beginPath(); g.moveTo(-18, -215); g.lineTo(18, -215); g.lineTo(28, -40); g.lineTo(0, 0); g.lineTo(-28, -40); g.closePath(); g.fill(); g.globalAlpha = 1; }
   g.restore();
   if (sc.label) T(g, sc.label, 540, 1380, 90, { shadow: true, alpha: cl((t - 0.4) * 3) });
+};
+
+// ── format scenes (17 Nov batch): countdown rank, myth/fact, clues, a big statement, a stopwatch ──
+S.rank = (g, t, dur, sc) => {
+  bg(g, sc.bg || "navy", t); const k = pop(cl(t * 3));
+  g.save(); g.translate(540, 640); g.scale(k, k); T(g, "#" + sc.n, 0, 120, 420, { shadow: true, stroke: 16, color: YEL }); g.restore();
+  if (sc.person) person(g, 540, 1920 + 260 * (1 - ez(t * 2)), sc.scale || 1.05, sc.person);
+  const k2 = ez((t - 0.3) * 3); if (k2 > 0) { g.save(); g.globalAlpha = k2; card(g, 90, 900, 900, 230, "#fff", 24); T(g, sc.title, 540, 1000, 86, { color: INK, maxW: 820 }); T(g, sc.sub || "", 540, 1080, 50, { color: "#666", maxW: 820 }); g.restore(); }
+};
+S.myth = (g, t, dur, sc) => {
+  const fact = sc.verdict === "fact"; bg(g, sc.bg || (fact ? "green" : "red"), t);
+  const k = ez(t * 2.5); g.save(); g.globalAlpha = k; card(g, 90, 520 + 60 * (1 - k), 900, 520, "#fff", 26);
+  const lines = String(sc.claim).split("|"); lines.forEach((l, i) => T(g, l, 540, 680 + i * 110 + 60 * (1 - k), 84, { color: INK, maxW: 820 })); g.restore();
+  const s = cl((t - 0.6) * 3); if (s > 0) { g.save(); g.translate(540, 1240); g.rotate(-0.12); const z = 2.2 - 1.2 * pop(s); g.scale(z, z); g.globalAlpha = cl(s * 2);
+    const col = fact ? "#1ea85a" : "#e2384a"; g.strokeStyle = col; g.lineWidth = 16; rr(g, -270, -100, 540, 170, 18); g.stroke(); T(g, fact ? "TRUE" : "MYTH", 0, 45, 140, { color: col }); g.restore(); }
+  if (sc.label) T(g, sc.label, 540, 430, 60, { color: YEL, alpha: k });
+};
+S.clues = (g, t, dur, sc) => {
+  bg(g, sc.bg || "purple", t); T(g, sc.title || "GUESS THE CLUB", 540, 400, 80, { color: YEL, shadow: true });
+  sc.items.forEach((c, i) => { const shown = i < (sc.show ?? sc.items.length); if (!shown) return; const k = i === (sc.show ?? sc.items.length) - 1 ? ez(t * 3) : 1;
+    g.save(); g.globalAlpha = k; card(g, 100 + 60 * (1 - k), 520 + i * 190, 880, 150, "#fff", 22); T(g, `${i + 1}`, 170, 625 + i * 190, 80, { color: "#e2384a" }); T(g, c, 240, 615 + i * 190, 56, { color: INK, align: "left", maxW: 700 }); g.restore(); });
+  if (sc.answer) { const k = pop(cl((t - 0.3) * 3)); if (k > 0) { g.save(); g.translate(540, 1420); g.scale(k, k); g.fillStyle = "#e2384a"; g.strokeStyle = INK; g.lineWidth = 8; rr(g, -440, -110, 880, 180, 24); g.fill(); g.stroke(); T(g, sc.answer, 0, 20, 110, { maxW: 820 }); g.restore(); } }
+};
+S.statement = (g, t, dur, sc) => {
+  bg(g, sc.bg || "navy", t); const lines = String(sc.text).split("|"); const n = lines.length;
+  lines.forEach((l, i) => { const k = ez((t - i * 0.25) * 3); T(g, l, 540 + 80 * (1 - k), 820 + (i - (n - 1) / 2) * 150, sc.size || 130, { alpha: k, shadow: true, stroke: 12, color: i === (sc.hi ?? -1) ? YEL : "#fff", maxW: 960 }); });
+};
+S.stopwatch = (g, t, dur, sc) => {
+  bg(g, sc.bg || "red", t); const v = Math.min(sc.to, sc.to * cl(t / Math.max(0.5, dur * 0.7)));
+  g.save(); g.translate(540, 820); g.fillStyle = "#fff"; g.strokeStyle = INK; g.lineWidth = 14; g.beginPath(); g.arc(0, 0, 330, 0, 7); g.fill(); g.stroke();
+  rr(g, -50, -420, 100, 80, 14); g.fillStyle = INK; g.fill();
+  for (let i = 0; i < 60; i++) { const a = i / 60 * Math.PI * 2; g.strokeStyle = INK; g.lineWidth = i % 5 ? 4 : 10; g.beginPath(); g.moveTo(Math.sin(a) * 300, -Math.cos(a) * 300); g.lineTo(Math.sin(a) * (i % 5 ? 280 : 260), -Math.cos(a) * (i % 5 ? 280 : 260)); g.stroke(); }
+  const a = v / 60 * Math.PI * 2; g.strokeStyle = "#e2384a"; g.lineWidth = 12; g.lineCap = "round"; g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.sin(a) * 250, -Math.cos(a) * 250); g.stroke(); g.restore();
+  T(g, v.toFixed(2) + "s", 540, 1360, 190, { shadow: true, stroke: 12 }); if (sc.word) T(g, sc.word, 540, 1460, 64, { color: YEL, alpha: cl((t - 0.4) * 3) });
 };
 // the end card
 S.cta = (g, t, dur, sc) => { bg(g, "red", t); const k = pop(cl(t * 2.5)); g.save(); g.translate(540, 900); g.scale(k, k); T(g, "FOLLOW", 0, -40, 190, { shadow: true }); T(g, "FOR MORE", 0, 150, 150, { color: YEL, shadow: true }); g.restore(); };

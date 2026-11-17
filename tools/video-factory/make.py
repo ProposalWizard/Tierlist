@@ -146,7 +146,7 @@ def main():
     env = np.round(np.convolve(np.clip(env / ref, 0, 1), [0.25, 0.5, 0.25], "same"), 3)
     tl = {"total": round(total, 3), "end": round(vo_end, 3), "endCard": end_card, "scenes": scenes, "chunks": chunks, "env": env.tolist()}
     with open(os.path.join(work, "timeline.js"), "w") as f:
-        f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes", "images", "evalPct", "possLabels", "layoutScale")}) + ";\n")
+        f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes", "images", "evalPct", "possLabels", "layoutScale", "theme")}) + ";\n")
         f.write("window.TL = " + json.dumps(tl) + ";\n")
     eng = os.path.join(HERE, "engine")
     page = {"chess": "chess.html", "explainer": "athletic.html"}.get(story.get("layout"), "edit.html")
@@ -174,7 +174,7 @@ def main():
                 fx[i0:i0 + len(aud)] += aud[:max(0, len(fx) - i0)]; clip_t[i] = got_before + len(aud) / SR
             s["clipDir"] = outd; s["clipFrames"] = got
         with open(os.path.join(work, "timeline.js"), "w") as f:
-            f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes", "images", "evalPct", "possLabels", "layoutScale")}) + ";\n")
+            f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes", "images", "evalPct", "possLabels", "layoutScale", "theme")}) + ";\n")
             f.write("window.TL = " + json.dumps(tl) + ";\n")
     # 3. render
     frames = os.path.join(work, "eframes"); shutil.rmtree(frames, ignore_errors=True)

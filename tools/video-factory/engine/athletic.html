@@ -26,6 +26,16 @@ function captions(t, s) {
       g.fillStyle = "rgba(0,0,0,.45)"; g.fillText(l, 7, y + 9); g.lineJoin = "round"; g.lineWidth = 12; g.strokeStyle = "#1b1416"; g.strokeText(l, 0, y); g.fillStyle = "#fff"; g.fillText(l, 0, y); g.font = "150px Anton"; });
     g.restore(); return;
   }
+  const cs = (STORY.theme || {}).captions;
+  if (cs === "karaoke") {  // word-by-word: the spoken word lights up, no box
+    g.save(); g.font = "92px Anton"; g.textAlign = "left"; const ws = ch.words; const sp = 24; const wd = ws.map((w) => g.measureText(w.w).width); let tot = wd.reduce((a, b) => a + b, 0) + sp * (ws.length - 1); const sc2 = Math.min(1, 940 / tot);
+    g.translate(540, 1520); g.scale(sc2, sc2); let x = -tot / 2;
+    ws.forEach((w, i) => { const on = t >= w.t0 && t < (ws[i + 1]?.t0 ?? ch.t1); g.lineJoin = "round"; g.lineWidth = 14; g.strokeStyle = "#111"; g.strokeText(w.w, x, 0); g.fillStyle = on ? (STORY.theme.hi || "#39ff88") : "#fff"; g.fillText(w.w, x, 0); x += wd[i] + sp; });
+    g.restore(); return;
+  }
+  if (cs === "paper") {  // newspaper strip: black on cream
+    g.save(); g.font = "700 74px Oswald"; g.textAlign = "center"; const w = g.measureText(words).width; g.fillStyle = "#f4ecd8"; g.strokeStyle = "#111"; g.lineWidth = 5; X.rr(g, 540 - w / 2 - 26, 1440, w + 52, 104, 4); g.fill(); g.stroke(); g.fillStyle = "#111"; g.fillText(words, 540, 1516); g.restore(); return;
+  }
   g.save(); g.font = "86px Anton"; g.textAlign = "center"; let sz = 86; const w = g.measureText(words).width; if (w > 920) { sz = 86 * 920 / w; g.font = `${sz}px Anton`; }
   const ww = g.measureText(words).width; const k = X.ez(X.cl((t - ch.t0) * 9)); g.translate(540, 1500); g.scale(0.9 + 0.1 * k, 0.9 + 0.1 * k); g.globalAlpha = k;
   g.fillStyle = "rgba(20,14,16,.88)"; X.rr(g, -ww / 2 - 22, -sz * 0.92, ww + 44, sz * 1.18, 10); g.fill();

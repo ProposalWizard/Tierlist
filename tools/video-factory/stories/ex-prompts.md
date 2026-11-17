@@ -36,3 +36,21 @@ Save each file under the name in bold (Claude Code cuts the backgrounds out and 
 - **kante**: Flat editorial football illustration of N'Golo Kanté in 2016, short hair, plain royal blue football shirt + portrait style
 - **mahrez**: Flat editorial football illustration of Riyad Mahrez in 2016, short dark hair, plain royal blue football shirt + portrait style
 - **leicesterfans** (9:16 scene): jubilant football fans in plain blue shirts celebrating in a city street at night, blue smoke, confetti, arms in the air + scene style
+
+## Batch 2 (17 Nov 2026, early morning)
+Videos ex07 (offside myths) and ex12 (new rules) need no images. ex11 and ex14 reuse **pochettino**.
+
+### ex08 · Ballon d'Or top 5 (messi + ronaldo back views already made)
+- **platini**: Flat editorial football illustration of Michel Platini in 1984, aged 29, curly brown hair, plain white football shirt + portrait style
+- **cruyff**: Flat editorial football illustration of Johan Cruyff in 1974, aged 27, long brown hair parted in the middle, plain orange football shirt + portrait style
+- **vanbasten**: Flat editorial football illustration of Marco van Basten in 1988, aged 23, short brown hair, plain red and black striped football shirt + portrait style
+  (If a face gets blocked, use the back view: "seen from behind, … with the name PLATINI / CRUYFF / VAN BASTEN and the number 10 / 14 / 9 on the back")
+
+### ex09 · Fastest Premier League goal
+- **long**: Flat editorial football illustration of Shane Long in 2019, short dark hair, red and white striped football shirt + portrait style
+
+### ex10 · Why is it called a hat-trick? (paper style)
+- **hattrick1858** (9:16 scene): a Victorian cricket match in 1858 Sheffield, a bowler in white flannels celebrating as the stumps fly, gentlemen in top hats cheering, one man holding up a new top hat, warm sepia tones + scene style
+
+### ex13 · World Cup 2030
+- **centenario** (9:16 scene): a huge packed concrete football stadium in Montevideo in 1930 with a tall white tower at one end, crowds in hats, early 1900s football match in progress, warm sunny afternoon + scene style

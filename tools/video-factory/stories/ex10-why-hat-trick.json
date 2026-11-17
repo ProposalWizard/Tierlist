@@ -1,0 +1,82 @@
+{
+  "id": "ex10-why-hat-trick",
+  "series": "Explainer",
+  "variant": "STYLE: old newspaper (cream, black ink, paper captions)",
+  "title": "Why is it called a hat-trick?",
+  "layout": "explainer",
+  "music": "08-lobby.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://www.etymonline.com/word/hat-trick",
+    "https://en.wikipedia.org/wiki/Hat-trick"
+  ],
+  "images": {
+    "hattrick1858": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/hattrick1858.png"
+  },
+  "lines": [
+    {
+      "text": "Why is it called a hat-trick?",
+      "scene": {
+        "type": "statement",
+        "hook": true,
+        "text": "HAT|TRICK",
+        "hi": 0
+      }
+    },
+    {
+      "text": "It didn't start in football. It started in cricket.",
+      "scene": {
+        "type": "statement",
+        "text": "NOT FOOTBALL.|CRICKET.",
+        "hi": 1
+      }
+    },
+    {
+      "text": "Sheffield, 1858. A bowler called H. H. Stephenson took three wickets with three balls.",
+      "scene": {
+        "type": "picture",
+        "image": "hattrick1858",
+        "label": "SHEFFIELD · 1858"
+      }
+    },
+    {
+      "text": "Three in three. Almost unheard of.",
+      "scene": {
+        "type": "counter",
+        "from": 0,
+        "to": 3,
+        "word": "WICKETS · 3 BALLS",
+        "size": 420
+      }
+    },
+    {
+      "text": "So, the story goes, the crowd had a whip-round, and bought him a hat.",
+      "scene": {
+        "type": "statement",
+        "text": "A WHIP-ROUND|= A NEW HAT",
+        "hi": 1
+      }
+    },
+    {
+      "text": "Three of something special became a hat-trick. And football borrowed it.",
+      "scene": {
+        "type": "statement",
+        "text": "3 IN A ROW|= HAT-TRICK",
+        "hi": 1
+      }
+    }
+  ],
+  "theme": {
+    "mono": "paper",
+    "palette": {
+      "paper": [
+        "#efe4c8",
+        "#cbbd98"
+      ]
+    },
+    "captions": "paper"
+  }
+}
