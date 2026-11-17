@@ -95,16 +95,12 @@
     {
       "text": "Jamie Vardy scored in eleven league games in a row. A Premier League record.",
       "scene": {
-        "type": "grid",
+        "type": "portrait",
         "bg": "blue",
-        "cols": 11,
-        "groups": [
-          {
-            "n": 11,
-            "col": "#1d3fa0",
-            "label": "GAMES IN A ROW"
-          }
-        ]
+        "person": {
+          "image": "vardy"
+        },
+        "name": "VARDY · 11 GAMES IN A ROW"
       }
     },
     {
