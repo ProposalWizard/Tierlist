@@ -326,12 +326,12 @@ S.picture = (g, t, dur, sc) => {
 };
 // a betting slip: the odds tick up to the number
 S.odds = (g, t, dur, sc) => {
-  bg(g, sc.bg || "blue", t); const k = ez(t * 2.2); g.save(); g.translate(540, 820 + 300 * (1 - k)); g.rotate(-0.05);
+  bg(g, sc.bg || "blue", t); const k = sc.cut ? 1 : ez(t * 2.2); g.save(); g.translate(540, 820 + 300 * (1 - k)); g.rotate(-0.05);
   card(g, -360, -420, 720, 840, "#fbf7ea", 18);
   for (let x = -360; x < 360; x += 40) { g.fillStyle = PAL[sc.bg || "blue"][0]; g.beginPath(); g.arc(x + 20, 420, 18, Math.PI, 0); g.fill(); }
   T(g, sc.title || "BET SLIP", 0, -320, 60, { color: INK }); g.fillStyle = "rgba(0,0,0,.2)"; g.fillRect(-300, -290, 600, 6);
   T(g, sc.pick || "", 0, -190, 64, { color: INK, maxW: 620 }); T(g, sc.market || "", 0, -120, 44, { color: "#666", maxW: 620 });
-  const v = Math.round(sc.to * ez(cl((t - 0.4) / 1.2))); T(g, `${v.toLocaleString("en-GB")}/1`, 0, 110, 190, { color: "#e2384a", maxW: 640 });
+  const v = sc.cut ? sc.to : Math.round(sc.to * ez(cl((t - 0.4) / 1.2))); T(g, `${v.toLocaleString("en-GB")}/1`, 0, 110, 190, { color: "#e2384a", maxW: 640 });
   T(g, sc.foot || "", 0, 260, 44, { color: "#666", maxW: 620 });
   g.restore();
 };
