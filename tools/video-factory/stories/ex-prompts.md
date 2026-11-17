@@ -54,3 +54,17 @@ Videos ex07 (offside myths) and ex12 (new rules) need no images. ex11 and ex14 r
 
 ### ex13 · World Cup 2030
 - **centenario** (9:16 scene): a huge packed concrete football stadium in Montevideo in 1930 with a tall white tower at one end, crowds in hats, early 1900s football match in progress, warm sunny afternoon + scene style
+
+## ex01b · Pochettino v2 (17 Nov 2026, the steps style: about 1 picture every 2 seconds)
+All 9:16 scenes + scene style. Reuses pochettino, carrick, bielsa portraits.
+1. **united_slump**: footballers in plain red kits slumped on the grass of a huge rainy stadium, heads in hands, fans in the background silent
+2. **four_four**: a chaotic football match at a packed stadium, players in plain red kits and plain claret and light blue kits, the ball bulging the net, players appealing
+3. **carrick_exit**: a man in a dark club tracksuit seen from behind, walking down a stadium tunnel carrying a cardboard box, lonely
+4. **poch_arrives**: Mauricio Pochettino, grey hair, dark suit, walking through the gates of a training ground, photographers flashing
+5. **bielsa_night**: a small farmhouse in rural Argentina at night, two men in coats at the door with torches, a young boy asleep inside, warm window light
+6. **poch_knees**: Mauricio Pochettino on his knees on a football pitch in tears of joy, arms open, players in plain white kits running to him, stadium at night
+7. **madrid_final**: players in plain white kits sitting dejected on the pitch while players in plain red kits celebrate behind them, confetti, a huge stadium at night
+8. **high_press**: three footballers in plain red kits swarming one opponent in a plain white kit high up the pitch and stealing the ball
+9. **psg_lift**: Mauricio Pochettino in a dark navy tracksuit lifting a gold trophy, players in plain navy kits around him, confetti
+10. **anfield_night**: a packed stadium at night with red flags and red smoke, an away team in plain white kits walking out of the tunnel into the noise
+11. **tactics_board**: Mauricio Pochettino at a tactics whiteboard in a training room, pointing, players in plain red training tops watching
