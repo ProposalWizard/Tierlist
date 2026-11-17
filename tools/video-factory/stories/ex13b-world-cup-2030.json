@@ -163,6 +163,21 @@
             "type": "tally",
             "n": 13,
             "cols": 4,
+            "labels": [
+              "URUGUAY",
+              "ARGENTINA",
+              "BRAZIL",
+              "CHILE",
+              "PARAGUAY",
+              "PERU",
+              "BOLIVIA",
+              "USA",
+              "MEXICO",
+              "FRANCE",
+              "BELGIUM",
+              "ROMANIA",
+              "YUGOSLAVIA"
+            ],
             "title": "13 TEAMS",
             "dy": 40,
             "w": 0
