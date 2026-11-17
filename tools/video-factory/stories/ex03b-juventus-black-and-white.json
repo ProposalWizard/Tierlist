@@ -1,0 +1,393 @@
+{
+  "id": "ex03b-juventus-black-and-white",
+  "series": "Explainer",
+  "variant": "v2: steps every 1-2 s",
+  "title": "Why do Juventus wear black and white?",
+  "layout": "explainer",
+  "music": "02-working-it-out.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://www.juventus.com/en/news/articles/black-and-white-brothers-unite-in-the-name-of-tom-savage",
+    "https://leftlion.co.uk/features/2021/09/tom-gordon-savage-notts-county-juventus/",
+    "https://www.foxsports.com/stories/soccer/magpies-hold-juve-in-stadium-opener",
+    "https://www.footyheadlines.com/2015/06/pink-adidas-juventus-15-16-away-kit.html",
+    "https://en.italiani.it/1-11-1897-Juventus-is-born-from-a-high-school-in-Turin-at-the-top-of-the-world/"
+  ],
+  "facts": {
+    "founded": "1 Nov 1897, students of Turin's Massimo d'Azeglio lyceum",
+    "kit": "pink shirts, black tie; pink faded fast",
+    "1903": "Tom (Gordon) Savage got black-and-white stripes from a Notts County-supporting friend in Nottingham; club tradition ('the story goes')",
+    "notts": "founded 1862, oldest professional club",
+    "2011": "Juventus Stadium opener 8 Sept 2011: Juventus 1-1 Notts County, Toni 54', Lee Hughes 87'",
+    "2015": "Adidas 2015-16 pink away kit nods to the original pink"
+  },
+  "images": {
+    "juve1897": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/juve1897.png",
+    "juve_tunnel": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/juve_tunnel.png",
+    "nottingham1900": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/nottingham1900.png",
+    "turin_students": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/turin_students.png",
+    "savage_letter": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/savage_letter.png",
+    "parcel_open": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/parcel_open.png",
+    "stadium_2011": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/stadium_2011.png",
+    "juve_pink2015": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/juve_pink2015.png"
+  },
+  "lines": [
+    {
+      "text": "Why do Juventus wear black and white?",
+      "scene": {
+        "hook": true,
+        "bg": "navy",
+        "type": "kit",
+        "steps": [
+          {
+            "type": "kit",
+            "from": {
+              "c1": "#ffffff",
+              "stripes": "#111111"
+            },
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "juve_tunnel",
+            "big": "?",
+            "bigSize": 420,
+            "bigY": 1300,
+            "w": 4
+          }
+        ]
+      }
+    },
+    {
+      "text": "Well, it's all because of a football club in Nottingham.",
+      "scene": {
+        "bg": "navy",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "BECAUSE OF|NOTTINGHAM",
+            "hi": 1,
+            "size": 150,
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "nottingham1900",
+            "label": "NOTTINGHAM, ENGLAND",
+            "w": 9
+          }
+        ]
+      }
+    },
+    {
+      "text": "Juventus were founded in Turin, in 1897, by a group of school students.",
+      "scene": {
+        "bg": "purple",
+        "type": "years",
+        "steps": [
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "1897",
+                "top": "TURIN",
+                "label": "Juventus founded",
+                "tick": true,
+                "head": "#111111"
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "turin_students",
+            "label": "TURIN · 1897",
+            "w": 11
+          }
+        ]
+      }
+    },
+    {
+      "text": "Juventus is Latin, for youth.",
+      "scene": {
+        "bg": "purple",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "JUVENTUS|= YOUTH",
+            "hi": 1,
+            "size": 170,
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "And their first kit? Pink shirts, with a black tie.",
+      "scene": {
+        "bg": "pink",
+        "type": "kit",
+        "steps": [
+          {
+            "type": "kit",
+            "from": {
+              "c1": "#f4a6c4",
+              "tie": true
+            },
+            "label": "PINK + A BLACK TIE",
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "juve1897",
+            "label": "JUVENTUS · 1890s",
+            "w": 8
+          }
+        ]
+      }
+    },
+    {
+      "text": "But pink faded fast. By 1903, the story goes, the shirts were almost white.",
+      "scene": {
+        "bg": "pink",
+        "type": "kit",
+        "steps": [
+          {
+            "type": "kit",
+            "from": {
+              "c1": "#f4a6c4",
+              "tie": true
+            },
+            "fade": true,
+            "label": "FADED",
+            "w": 0
+          },
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "1903",
+                "top": "TURIN",
+                "label": "Time for new shirts",
+                "tick": true,
+                "head": "#e2384a"
+              }
+            ],
+            "w": 5
+          }
+        ]
+      }
+    },
+    {
+      "text": "So an Englishman in the team, Tom Savage, asked a friend back home to send new ones.",
+      "scene": {
+        "bg": "teal",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "savage_letter",
+            "label": "TOM SAVAGE",
+            "w": 0
+          },
+          {
+            "type": "route",
+            "cities": [
+              "TURIN",
+              "NOTTINGHAM"
+            ],
+            "w": 10
+          }
+        ]
+      }
+    },
+    {
+      "text": "His friend supported Notts County.",
+      "scene": {
+        "bg": "navy",
+        "type": "kit",
+        "steps": [
+          {
+            "type": "kit",
+            "from": {
+              "c1": "#ffffff",
+              "stripes": "#111111"
+            },
+            "label": "NOTTS COUNTY",
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "So the parcel that arrived in Turin was full of black and white stripes.",
+      "scene": {
+        "bg": "teal",
+        "type": "route",
+        "steps": [
+          {
+            "type": "route",
+            "cities": [
+              "NOTTINGHAM",
+              "TURIN"
+            ],
+            "parcel": true,
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "parcel_open",
+            "w": 8
+          }
+        ]
+      }
+    },
+    {
+      "text": "Pink became black and white, and Juventus have worn it ever since.",
+      "scene": {
+        "bg": "navy",
+        "type": "kit",
+        "steps": [
+          {
+            "type": "kit",
+            "from": {
+              "c1": "#f4a6c4"
+            },
+            "to": {
+              "c1": "#ffffff",
+              "stripes": "#111111"
+            },
+            "change": true,
+            "label": "SINCE 1903",
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "juve_tunnel",
+            "w": 10
+          }
+        ]
+      }
+    },
+    {
+      "text": "And Notts County? Founded in 1862, they're the oldest professional club in the world.",
+      "scene": {
+        "bg": "navy",
+        "type": "years",
+        "steps": [
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "1862",
+                "top": "NOTTS COUNTY",
+                "label": "Founded",
+                "tick": true,
+                "head": "#111111"
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "THE OLDEST|PROFESSIONAL CLUB|IN THE WORLD",
+            "hi": 0,
+            "size": 110,
+            "w": 8
+          }
+        ]
+      }
+    },
+    {
+      "text": "So when Juventus opened their new stadium in 2011, guess who they invited.",
+      "scene": {
+        "bg": "navy",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "stadium_2011",
+            "label": "TURIN · SEPTEMBER 2011",
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "GUESS WHO?",
+            "hi": 0,
+            "size": 200,
+            "w": 9
+          }
+        ]
+      }
+    },
+    {
+      "text": "Notts County. It finished one-all, and County scored in the eighty-seventh minute.",
+      "scene": {
+        "bg": "navy",
+        "type": "kit",
+        "steps": [
+          {
+            "type": "kit",
+            "from": {
+              "c1": "#ffffff",
+              "stripes": "#111111"
+            },
+            "label": "NOTTS COUNTY",
+            "w": 0
+          },
+          {
+            "type": "score",
+            "top": "8 SEPTEMBER 2011",
+            "home": "JUVENTUS",
+            "homeCol": "#ffffff",
+            "homeInk": "#111",
+            "away": "NOTTS COUNTY",
+            "awayCol": "#111111",
+            "awayInk": "#fff",
+            "score": "1-1",
+            "w": 4
+          },
+          {
+            "type": "statement",
+            "text": "87'|LEE HUGHES",
+            "hi": 0,
+            "size": 200,
+            "w": 10
+          }
+        ]
+      }
+    },
+    {
+      "text": "And in 2015, Juventus brought the pink back. As their away kit.",
+      "scene": {
+        "bg": "pink",
+        "type": "kit",
+        "steps": [
+          {
+            "type": "kit",
+            "from": {
+              "c1": "#ffffff",
+              "stripes": "#111111"
+            },
+            "to": {
+              "c1": "#f4a6c4"
+            },
+            "change": true,
+            "label": "2015/16 AWAY",
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "juve_pink2015",
+            "w": 10
+          }
+        ]
+      }
+    }
+  ]
+}
