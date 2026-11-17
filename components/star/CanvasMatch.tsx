@@ -1075,6 +1075,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const newView = newViewRef.current;
   /** New view: the pitch box's height in CSS px (fills the phone; see newViewCanvasHeight). */
   const [newViewH, setNewViewH] = useState<number | null>(null);
+  /** When "POST" was last called live (the ball off the woodwork), so the chance's ending does not call it again. */
+  const postShownAtRef = useRef(-1e9);
   const newViewHRef = useRef<number | null>(null);
   newViewHRef.current = newViewH;
   /** New view: the sandbox's commentary and hint sit at the top of the pitch
@@ -7550,6 +7552,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           if (onGoalClipRef.current) goalRecRef.current?.event("post");
           pushLine("Off the woodwork — and it's still live!");
           showAction("POST");
+          postShownAtRef.current = performance.now();
           nudge(0.28, 0.25);
           playPost();
           playCrowdSwell("groan");
@@ -8257,11 +8260,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       showAction(res === "wide" ? "WIDE" : res === "over" ? "OVER" : res === "short" ? "NOBODY THERE" : "OUT OF PLAY");
     } else if (res === "post") {
       // Your shot's ending says what happened like every other (sweep, 29 Oct 2026:
-      // a saved penalty ended in 3 s of silence).
-      showAction("POST");
-      nudge(0.28, 0.25);
-      playPost();
-      playCrowdSwell("groan");
+      // a saved penalty ended in 3 s of silence). Not a second time when the woodwork
+      // was just called as it happened (Mikey's phone test, 11 Nov 2026: "why did it
+      // say post twice? It didn't hit the post twice").
+      if (performance.now() - postShownAtRef.current > 4000) {
+        showAction("POST");
+        nudge(0.28, 0.25);
+        playPost();
+        playCrowdSwell("groan");
+      }
     } else if (res === "saved") {
       showAction("SAVED");
       nudge(0.18, 0.14);

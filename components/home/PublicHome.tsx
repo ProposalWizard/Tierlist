@@ -130,12 +130,23 @@ export function HomeTabs({ active }: { active: "home" | "games" }) {
 }
 
 /** The All games tab (/games): every game as a tile, names only. */
-export function AllGames() {
+export function AllGames({ paused = false }: { paused?: boolean } = {}) {
   return (
     <div className="kh kh-c kh-d kh-dv-2 kh-all" data-home-look="d">
-      <HomeTabs active="games" />
+      {!paused && <HomeTabs active="games" />}
       <main className="kh-main">
-        <h1 className="kh-sr">All games</h1>
+        {paused ? (
+          /* The Rankings pause (lib/rankingsPaused.ts, app/paused). */
+          <section data-rankings-paused style={{ textAlign: "center", padding: "28px 16px 20px" }}>
+            <h1 style={{ margin: "0 0 8px", fontSize: 24, lineHeight: 1.15, fontWeight: 900, letterSpacing: "-.02em" }}>Rankings isn&apos;t running right now</h1>
+            <p className="kh-sub" style={{ marginBottom: 18 }}>It&apos;s switched off for a while. Try one of our other games below.</p>
+            <Link href="/" className="kh-tab kh-tab-on" style={{ display: "inline-block", padding: "12px 28px", fontWeight: 800 }}>
+              Back to home
+            </Link>
+          </section>
+        ) : (
+          <h1 className="kh-sr">All games</h1>
+        )}
         <ul className="kh-grid">
           <li className="kh-cell kh-cell-main">
             <Link href={MAIN_GAME.href} className="kh-tile" prefetch={false}>

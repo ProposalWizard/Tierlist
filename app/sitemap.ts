@@ -18,6 +18,7 @@
 
 import type { MetadataRoute } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
+import { RANKINGS_PAUSED, isRankingsPath } from "@/lib/rankingsPaused";
 
 // Generated on demand so newly created tierlists appear without a redeploy.
 // (Kept dynamic rather than ISR because the DB isn't reachable at build time.)
@@ -80,5 +81,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  // Rankings pause (lib/rankingsPaused.ts): no Rankings links for search engines.
+  if (RANKINGS_PAUSED) return staticRoutes.filter((r) => !isRankingsPath(new URL(r.url).pathname));
   return [...staticRoutes, ...tierlistRoutes, ...voteRoutes, ...blindRoutes];
 }
