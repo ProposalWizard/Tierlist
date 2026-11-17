@@ -20,7 +20,6 @@
       "text": "Football's rules changed this season. Here's what you might have missed.",
       "scene": {
         "type": "statement",
-        "hook": true,
         "text": "NEW RULES|2026/27",
         "hi": 1
       }

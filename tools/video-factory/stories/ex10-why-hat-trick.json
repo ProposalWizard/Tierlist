@@ -21,7 +21,6 @@
       "text": "Why is it called a hat-trick?",
       "scene": {
         "type": "statement",
-        "hook": true,
         "text": "HAT|TRICK",
         "hi": 0
       }

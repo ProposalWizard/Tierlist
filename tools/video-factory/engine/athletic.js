@@ -401,7 +401,7 @@ S.stopwatch = (g, t, dur, sc) => {
   rr(g, -50, -420, 100, 80, 14); g.fillStyle = INK; g.fill();
   for (let i = 0; i < 60; i++) { const a = i / 60 * Math.PI * 2; g.strokeStyle = INK; g.lineWidth = i % 5 ? 4 : 10; g.beginPath(); g.moveTo(Math.sin(a) * 300, -Math.cos(a) * 300); g.lineTo(Math.sin(a) * (i % 5 ? 280 : 260), -Math.cos(a) * (i % 5 ? 280 : 260)); g.stroke(); }
   const a = v / 60 * Math.PI * 2; g.strokeStyle = "#e2384a"; g.lineWidth = 12; g.lineCap = "round"; g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.sin(a) * 250, -Math.cos(a) * 250); g.stroke(); g.restore();
-  T(g, v.toFixed(2) + "s", 540, 1360, 190, { shadow: true, stroke: 12 }); if (sc.word) T(g, sc.word, 540, 1460, 64, { color: YEL, alpha: cl((t - 0.4) * 3) });
+  T(g, v.toFixed(2) + "s", 540, 1330, 190, { shadow: true, stroke: 12 }); if (sc.word) T(g, sc.word, 540, 1440, 64, { color: YEL, alpha: cl((t - 0.4) * 3) });
 };
 // the end card
 S.cta = (g, t, dur, sc) => { bg(g, "red", t); const k = pop(cl(t * 2.5)); g.save(); g.translate(540, 900); g.scale(k, k); T(g, "FOLLOW", 0, -40, 190, { shadow: true }); T(g, "FOR MORE", 0, 150, 150, { color: YEL, shadow: true }); g.restore(); };

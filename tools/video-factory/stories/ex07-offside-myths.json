@@ -18,7 +18,6 @@
       "text": "Five things people get wrong about offside.",
       "scene": {
         "type": "statement",
-        "hook": true,
         "bg": "red",
         "text": "OFFSIDE|MYTHS"
       }

@@ -25,7 +25,6 @@
       "text": "Who has won the most Ballon d'Ors? Here's the top five.",
       "scene": {
         "type": "statement",
-        "hook": true,
         "text": "BALLON D'OR|TOP 5",
         "hi": 1
       }

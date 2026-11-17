@@ -21,7 +21,6 @@
       "text": "The 2030 World Cup will be played on three continents.",
       "scene": {
         "type": "statement",
-        "hook": true,
         "bg": "teal",
         "text": "WORLD CUP 2030|3 CONTINENTS",
         "hi": 1
