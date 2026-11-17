@@ -141,8 +141,15 @@
               "image": "pele"
             },
             "name": "PELÉ",
-            "stamp": "7",
             "w": 8
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 7,
+            "word": "BALLON D'ORS FOR PELÉ",
+            "size": 440,
+            "w": 12
           }
         ]
       }

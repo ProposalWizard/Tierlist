@@ -39,6 +39,11 @@
             "w": 0
           },
           {
+            "type": "picture",
+            "image": "fans_screaming",
+            "w": 5
+          },
+          {
             "type": "x7_offside",
             "def": [
               [
@@ -71,15 +76,7 @@
               0.3
             ],
             "verdict": "OFFSIDE?",
-            "vy": 1000,
-            "title": "EVERY WEEKEND",
-            "w": 5
-          },
-          {
-            "type": "statement",
-            "text": "MOST FANS|GET IT WRONG",
-            "hi": 1,
-            "size": 170,
+            "vy": 1150,
             "w": 8
           }
         ]
@@ -467,7 +464,6 @@
                 "year": "1990",
                 "top": "SINCE",
                 "label": "Level = onside",
-                "tick": true,
                 "head": "#1ea85a"
               }
             ],
@@ -506,29 +502,31 @@
               ],
               [
                 0.3,
-                0.8
+                0.42
               ],
               [
                 0.5,
-                0.8
+                0.4
               ],
               [
                 0.7,
-                0.8
+                0.42
               ]
             ],
             "half": true,
+            "halfY": 0.55,
             "mate": [
               0.3,
-              0.97
+              0.95
             ],
             "att": [
               0.62,
-              0.92
+              0.68
             ],
             "line": false,
             "verdict": "ONSIDE",
-            "vy": 800,
+            "vy": 760,
+            "title": "YOUR OWN HALF",
             "w": 0
           },
           {
@@ -540,13 +538,13 @@
           {
             "type": "statement",
             "text": "THROW-IN|GOAL KICK",
-            "size": 190,
+            "size": 165,
             "w": 14
           },
           {
             "type": "statement",
             "text": "THROW-IN|GOAL KICK|CORNER",
-            "size": 190,
+            "size": 135,
             "w": 18
           }
         ]
@@ -636,7 +634,7 @@
             "type": "statement",
             "text": "GET|INVOLVED",
             "hi": 1,
-            "size": 200,
+            "size": 165,
             "w": 10
           }
         ]
@@ -808,7 +806,7 @@
             "type": "statement",
             "text": "GOALS|DRIED UP",
             "hi": 1,
-            "size": 190,
+            "size": 165,
             "w": 8
           }
         ]
@@ -846,6 +844,9 @@
           {
             "type": "picture",
             "image": "fans_screaming",
+            "big": "HE WAS LEVEL!",
+            "bigSize": 150,
+            "bigY": 1300,
             "w": 0
           },
           {
@@ -883,7 +884,14 @@
             "attLabel": "LEVEL",
             "verdict": "ONSIDE",
             "vy": 1050,
-            "w": 9
+            "w": 7
+          },
+          {
+            "type": "statement",
+            "text": "LEVEL =|ONSIDE",
+            "hi": 1,
+            "size": 165,
+            "w": 8
           }
         ]
       }

@@ -171,20 +171,20 @@
             "w": 9
           },
           {
-            "type": "ages",
+            "type": "x5_bars",
             "title": "YOUNGEST SCORER",
             "items": [
               {
                 "name": "WAYNE ROONEY",
-                "age": "16y 360d",
-                "days": 360,
-                "col": "#cfe0ff"
+                "val": "16y 360d",
+                "frac": 1.0,
+                "hi": false
               },
               {
                 "name": "JAMES MILNER",
-                "age": "16y 356d",
-                "days": 356,
-                "col": "#ffd400"
+                "val": "16y 356d",
+                "frac": 0.9888888888888889,
+                "hi": true
               }
             ],
             "w": 14
@@ -236,29 +236,29 @@
       "text": "Sixteen years, two hundred and seventy days. It stood for almost twenty-one years.",
       "scene": {
         "bg": "teal",
-        "type": "ages",
+        "type": "x5_bars",
         "steps": [
           {
-            "type": "ages",
+            "type": "x5_bars",
             "title": "YOUNGEST SCORER",
             "items": [
               {
                 "name": "WAYNE ROONEY",
-                "age": "16y 360d",
-                "days": 360,
-                "col": "#cfe0ff"
+                "val": "16y 360d",
+                "frac": 1.0,
+                "hi": false
               },
               {
                 "name": "JAMES MILNER",
-                "age": "16y 356d",
-                "days": 356,
-                "col": "#cfe0ff"
+                "val": "16y 356d",
+                "frac": 0.9888888888888889,
+                "hi": false
               },
               {
                 "name": "JAMES VAUGHAN",
-                "age": "16y 270d",
-                "days": 270,
-                "col": "#ffd400"
+                "val": "16y 270d",
+                "frac": 0.75,
+                "hi": true
               }
             ],
             "w": 0
@@ -531,32 +531,32 @@
             "w": 0
           },
           {
-            "type": "ages",
+            "type": "x5_bars",
             "title": "YOUNGEST SCORER",
             "items": [
               {
                 "name": "WAYNE ROONEY",
-                "age": "16y 360d",
-                "days": 360,
-                "col": "#cfe0ff"
+                "val": "16y 360d",
+                "frac": 1.0,
+                "hi": false
               },
               {
                 "name": "JAMES MILNER",
-                "age": "16y 356d",
-                "days": 356,
-                "col": "#cfe0ff"
+                "val": "16y 356d",
+                "frac": 0.9888888888888889,
+                "hi": false
               },
               {
                 "name": "JAMES VAUGHAN",
-                "age": "16y 270d",
-                "days": 270,
-                "col": "#cfe0ff"
+                "val": "16y 270d",
+                "frac": 0.75,
+                "hi": false
               },
               {
                 "name": "MAX DOWMAN",
-                "age": "16y 73d",
-                "days": 73,
-                "col": "#ffd400"
+                "val": "16y 73d",
+                "frac": 0.20277777777777778,
+                "hi": true
               }
             ],
             "w": 6

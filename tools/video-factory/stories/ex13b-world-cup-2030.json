@@ -139,7 +139,6 @@
                 "year": "1930",
                 "top": "JULY",
                 "label": "Uruguay",
-                "tick": true,
                 "head": "#0038a8"
               }
             ],
@@ -189,7 +188,7 @@
               }
             ],
             "title": "FROM EUROPE: 4",
-            "gap": 0.2,
+            "gap": 0.12,
             "w": 5
           }
         ]
@@ -261,7 +260,7 @@
             "type": "statement",
             "text": "NOT|READY",
             "hi": 1,
-            "size": 240,
+            "size": 165,
             "w": 8
           }
         ]
@@ -304,7 +303,7 @@
             "type": "statement",
             "text": "100TH|BIRTHDAY",
             "hi": 1,
-            "size": 220,
+            "size": 165,
             "w": 0
           },
           {
@@ -372,7 +371,6 @@
                 "year": "2023",
                 "top": "OCTOBER",
                 "label": "FIFA agrees",
-                "tick": true,
                 "head": "#1ea85a"
               }
             ],
@@ -413,6 +411,7 @@
               }
             ],
             "title": "6 HOSTS",
+            "cols": 3,
             "w": 7
           },
           {
@@ -420,7 +419,7 @@
             "from": 0,
             "to": 101,
             "fmt": "{v}",
-            "word": "OF 104 GAMES IN SPAIN, PORTUGAL, MOROCCO",
+            "word": "OF THE 104 GAMES",
             "size": 380,
             "w": 11
           }
@@ -464,14 +463,14 @@
           {
             "type": "statement",
             "text": "6 COUNTRIES|3 CONTINENTS",
-            "size": 200,
+            "size": 165,
             "w": 2
           },
           {
             "type": "statement",
             "text": "6 COUNTRIES|3 CONTINENTS|1 WORLD CUP",
             "hi": 2,
-            "size": 190,
+            "size": 135,
             "w": 4
           }
         ]

@@ -46,7 +46,7 @@
             "type": "statement",
             "text": "HAT|TRICK?",
             "hi": 0,
-            "size": 240,
+            "size": 165,
             "w": 9
           }
         ]
@@ -87,7 +87,6 @@
                 "year": "1858",
                 "top": "SHEFFIELD",
                 "label": "Hyde Park ground",
-                "tick": true,
                 "head": "#1d3fa0"
               }
             ],
@@ -146,7 +145,7 @@
             "type": "statement",
             "text": "ALMOST|UNHEARD OF",
             "hi": 1,
-            "size": 170,
+            "size": 165,
             "w": 0
           },
           {
@@ -176,7 +175,7 @@
             "type": "statement",
             "text": "3 IN 3 =|HAT-TRICK",
             "hi": 1,
-            "size": 180,
+            "size": 165,
             "w": 0
           },
           {
@@ -191,7 +190,6 @@
                 "year": "1865",
                 "top": "IN PRINT",
                 "label": "'Hat trick'",
-                "tick": true,
                 "head": "#1ea85a"
               }
             ],
@@ -240,7 +238,7 @@
             "type": "statement",
             "text": "THE PERFECT|HAT-TRICK",
             "hi": 1,
-            "size": 170,
+            "size": 165,
             "w": 0
           },
           {
@@ -252,14 +250,14 @@
           {
             "type": "statement",
             "text": "LEFT FOOT|RIGHT FOOT",
-            "size": 190,
+            "size": 165,
             "w": 8
           },
           {
             "type": "statement",
             "text": "LEFT FOOT|RIGHT FOOT|HEADER",
             "hi": 2,
-            "size": 190,
+            "size": 135,
             "w": 12
           }
         ]
@@ -275,7 +273,7 @@
             "type": "statement",
             "text": "FASTEST|IN THE PL?",
             "hi": 1,
-            "size": 180,
+            "size": 165,
             "w": 0
           },
           {
@@ -290,7 +288,7 @@
             "type": "statement",
             "text": "2 MIN|56 SEC",
             "hi": 0,
-            "size": 260,
+            "size": 165,
             "w": 8
           },
           {
@@ -300,6 +298,7 @@
             "homeCol": "#d71920",
             "away": "ASTON VILLA",
             "awayCol": "#670e36",
+            "awayInk": "#ffffff",
             "score": "6-1",
             "foot": "GOALS ON 13, 14 AND 16 MINUTES",
             "w": 13

@@ -474,6 +474,16 @@ S.x5_move = (g, t, dur, sc) => {
   const done = cl((t - T1) * 3); if (sc.foot && done > 0) T(g, sc.foot, 540, 1720, 96, { alpha: done, color: YEL, stroke: 12, maxW: 960 });
 };
 
+// x5_bars (ex05b/ex09b): a full-screen ranking. Each row: a name above a thick bar whose length is `frac`
+// (0..1) with the value at its end; rows slide in one by one; `hi` rows are yellow.
+S.x5_bars = (g, t, dur, sc) => {
+  bg(g, sc.bg || "navy", t); const it = sc.items || []; const n = it.length; const rh = Math.min(300, 1100 / Math.max(1, n)); const y0 = 960 - (n * rh) / 2 + 40;
+  if (sc.title) T(g, sc.title, 540, y0 - 90, 84, { shadow: true, stroke: 10, color: YEL, maxW: 980 });
+  it.forEach((x, i) => { const k = ez(cl((t - 0.15 - i * (sc.gap ?? 0.35)) * 2.5)); if (k <= 0) return; const y = y0 + i * rh; const w = (300 + 660 * (x.frac ?? 1)) * k;
+    g.save(); g.globalAlpha = cl(k * 2); T(g, x.name, 60, y + 58, 62, { align: "left", stroke: 9, maxW: 960 });
+    card(g, 60, y + 80, w, rh - 120, x.hi ? YEL : (x.col || "#fff"), 18); T(g, x.val, 60 + w - 26, y + rh - 62, Math.min(110, rh - 150), { align: "right", color: INK }); g.restore(); });
+};
+
 window.EXPLAINER = { S, bg, finish, T, rr, INK, YEL, IMG, cl, ez, pop };
 })();
 
@@ -527,7 +537,7 @@ S.x7_countdown = (g, t, dur, sc) => {
   g.strokeStyle = f < 1 ? "#e2384a" : "#888"; g.lineWidth = 46; g.lineCap = "round"; g.beginPath(); g.arc(0, 0, 280, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - f)); g.stroke();
   const tick = (t / run * n) % 1; const z = 1 + 0.18 * (1 - ez(tick * 3)) * (f < 1 ? 1 : 0); g.scale(z, z);
   T(g, String(v), 0, 110, 330, { color: INK }); g.restore();
-  if (sc.word) T(g, sc.word, 540, 1390, 80, { color: YEL, shadow: true, stroke: 10, alpha: ez((t - 0.2) * 3), maxW: 960 });
+  if (sc.word) T(g, sc.word, 540, sc.wordY || 1335, 76, { color: YEL, shadow: true, stroke: 10, alpha: ez((t - 0.2) * 3), maxW: 960 });
   if (sc.end && f >= 1) stamp(g, sc.end, 540, 900, cl((t - run) * 4), sc.endCol || "#e2384a", sc.endSize || 130);
 };
 
@@ -545,7 +555,7 @@ const FLAGS = {
   YU: (g, w, h) => { g.fillStyle = "#0c4076"; g.fillRect(0, 0, w, h / 3); g.fillStyle = "#fff"; g.fillRect(0, h / 3, w, h / 3); g.fillStyle = "#c6363c"; g.fillRect(0, h * 2 / 3, w, h / 3); },
 };
 S.x7_flags = (g, t, dur, sc) => {
-  bg(g, sc.bg || "blue", t); const it = sc.items || [], cols = sc.cols || 2, n = it.length; const cw = cols === 1 ? 760 : 440, chh = cw * 0.62, gap = 40, lab = 90;
+  bg(g, sc.bg || "blue", t); const it = sc.items || [], cols = sc.cols || 2, n = it.length; const cw = cols === 1 ? 760 : cols === 2 ? 440 : 300, chh = cw * 0.62, gap = 40, lab = 90;
   const rows = Math.ceil(n / cols), totH = rows * (chh + lab) + (rows - 1) * gap; const y0 = (sc.y ?? 960) - totH / 2; let fresh = 0;
   if (sc.title) T(g, sc.title, 540, Math.max(200, y0 - 60), 90, { shadow: true, stroke: 10, alpha: ez(t * 4), maxW: 960 });
   it.forEach((f, i) => { const d = f.old ? -1 : (fresh++) * (sc.gap ?? 0.3); const k = f.old ? 1 : pop(cl((t - d) * 4)); if (k <= 0) return;

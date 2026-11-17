@@ -30,13 +30,14 @@
       "scene": {
         "bg": "red",
         "hook": true,
-        "type": "statement",
+        "type": "picture",
         "steps": [
           {
-            "type": "statement",
-            "text": "NEW RULES|2026/27",
-            "hi": 1,
-            "size": 200,
+            "type": "picture",
+            "image": "timewaster",
+            "big": "NEW RULES",
+            "bigSize": 170,
+            "bigY": 1300,
             "w": 0
           },
           {
@@ -81,7 +82,7 @@
             "type": "statement",
             "text": "THEIR|THROW",
             "hi": 1,
-            "size": 220,
+            "size": 165,
             "w": 14
           }
         ]
@@ -176,7 +177,7 @@
             "from": 0,
             "to": 60,
             "fmt": "{v}",
-            "word": "SECONDS, AT LEAST, BEFORE THE SUB",
+            "word": "SECONDS BEFORE YOUR SUB",
             "size": 360,
             "w": 8
           },
@@ -225,14 +226,14 @@
             "type": "statement",
             "text": "UNLESS:|KEEPER",
             "hi": 0,
-            "size": 200,
+            "size": 165,
             "w": 0
           },
           {
             "type": "statement",
             "text": "UNLESS:|KEEPER|FOULED + CARD",
             "hi": 0,
-            "size": 180,
+            "size": 135,
             "w": 6
           }
         ]
@@ -254,14 +255,14 @@
             "type": "statement",
             "text": "2ND YELLOW|WRONG?",
             "hi": 1,
-            "size": 200,
+            "size": 165,
             "w": 8
           },
           {
             "type": "statement",
             "text": "RED CARD|OVERTURNED",
             "hi": 0,
-            "size": 190,
+            "size": 165,
             "w": 18
           }
         ]
@@ -300,7 +301,7 @@
             "type": "statement",
             "text": "COVER YOUR|MOUTH = RED",
             "hi": 1,
-            "size": 190,
+            "size": 165,
             "w": 8
           }
         ]
@@ -337,7 +338,7 @@
             "type": "statement",
             "text": "WHICH RULE|CHANGES MOST?",
             "hi": 1,
-            "size": 180,
+            "size": 165,
             "w": 0
           }
         ]

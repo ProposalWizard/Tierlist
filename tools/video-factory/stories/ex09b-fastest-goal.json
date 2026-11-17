@@ -69,15 +69,8 @@
       "text": "Only three goals in Premier League history have come inside ten seconds.",
       "scene": {
         "bg": "navy",
-        "type": "statement",
+        "type": "tally",
         "steps": [
-          {
-            "type": "statement",
-            "text": "UNDER|10 SECONDS",
-            "hi": 1,
-            "size": 200,
-            "w": 0
-          },
           {
             "type": "tally",
             "n": 3,
@@ -90,7 +83,14 @@
               "???"
             ],
             "title": "ONLY THREE",
-            "w": 1
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "UNDER|10 SECONDS",
+            "hi": 1,
+            "size": 200,
+            "w": 9
           }
         ]
       }
@@ -130,7 +130,6 @@
           {
             "type": "stopwatch",
             "to": 9.82,
-            "word": "LEDLEY KING · 2000",
             "w": 0
           }
         ]
@@ -388,7 +387,6 @@
           {
             "type": "stopwatch",
             "to": 7.69,
-            "word": "NEW RECORD",
             "w": 0
           },
           {
@@ -473,7 +471,6 @@
           {
             "type": "stopwatch",
             "to": 9.11,
-            "word": "PHILIP BILLING · 2023",
             "w": 0
           },
           {
@@ -496,29 +493,29 @@
       "text": "So the top three: Long, Billing and King. And nobody has touched seven point six nine.",
       "scene": {
         "bg": "navy",
-        "type": "ages",
+        "type": "x5_bars",
         "steps": [
           {
-            "type": "ages",
+            "type": "x5_bars",
             "title": "FASTEST PREMIER LEAGUE GOALS",
             "items": [
               {
                 "name": "SHANE LONG · 2019",
-                "age": "7.69s",
-                "days": 769,
-                "col": "#ffd400"
+                "val": "7.69s",
+                "frac": 0.7830957230142567,
+                "hi": true
               },
               {
                 "name": "PHILIP BILLING · 2023",
-                "age": "9.11s",
-                "days": 911,
-                "col": "#fff"
+                "val": "9.11s",
+                "frac": 0.9276985743380856,
+                "hi": false
               },
               {
                 "name": "LEDLEY KING · 2000",
-                "age": "9.82s",
-                "days": 982,
-                "col": "#fff"
+                "val": "9.82s",
+                "frac": 1.0,
+                "hi": false
               }
             ],
             "w": 0
