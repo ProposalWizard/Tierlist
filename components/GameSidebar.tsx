@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { GAME_PATH } from "@/lib/star/gamePath";
+import { withoutPaused } from "@/lib/rankingsPaused";
 
 interface GameLink {
   name: string;
@@ -15,7 +16,7 @@ interface GameLink {
   beta?: boolean;
 }
 
-const GAMES: GameLink[] = [
+const ALL_GAMES: GameLink[] = [
   { name: "Home",                description: "Browse all games & news",                 href: "/"           },
   { name: "Road to the Golden Ball", description: "Live a career and win the world's greatest award", href: GAME_PATH, beta: true },
   { name: "Tierlists",           description: "Create & play drag-and-drop tierlists",    href: "/tierlists"  },
@@ -24,6 +25,7 @@ const GAMES: GameLink[] = [
   { name: "Football Tic Tac Toe",description: "Pick players to fill the grid",            href: "/tic-tac-toe"},
   { name: "Blind Rankings",      description: "Rank players without knowing who's next",   href: "/blind-rankings" },
 ];
+const GAMES = withoutPaused(ALL_GAMES);
 
 const COMING_SOON: GameLink[] = [
   { name: "Player Ratings", description: "Rate and compare players", href: "#", comingSoon: true },
