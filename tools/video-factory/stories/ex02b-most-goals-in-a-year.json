@@ -12,6 +12,7 @@
   "sources": [
     "https://www.fcbarcelona.com/en/news/1146881/messi-ends-2012-with-91-goals",
     "https://www.si.com/soccer/2012/12/09/messi-goal-record",
+    "https://www.uefa.com/uefachampionsleague/news/01fb-0e7c4364f288-34adad46f792-1000/",
     "https://www.guinnessworldrecords.com/news/2012/12/barcelona-star-lionel-messi-sets-new-goalscoring-record-46285/",
     "https://www.irishtimes.com/sport/zambia-claim-striker-godfrey-chitalu-scored-107-goals-in-1972-1.2751",
     "https://www.eluniverso.com/2012/12/14/1/1372/fifa-descarta-vaya-validar-107-goles-habria-marcado-chitalu.html",
@@ -20,7 +21,7 @@
     "https://inside.fifa.com/news/tragedy-spurs-fairytale-story-for-zambia-2064751"
   ],
   "facts": {
-    "messi": "91 in 2012: 79 Barcelona + 12 Argentina; 86th at Real Betis 9 Dec 2012 (Betis 1-2 Barca, both his); 91st at Valladolid 22 Dec 2012",
+    "messi": "91 in 2012: 79 Barcelona (59 La Liga, 13 CL, 5 Copa, 2 Super Cup) + 12 Argentina; 5 v Leverkusen 7 Mar 2012 (7-1, first 5-goal CL game); 86th at Real Betis 9 Dec 2012 (Betis 1-2 Barca, both his); 91st at Valladolid 22 Dec 2012",
     "muller": "85 in 1972: 72 Bayern + 13 West Germany",
     "chitalu": "Zambian FA/researchers: 107 in 1972 (49 league, 58 cup + internationals); FIFA said it could not verify",
     "death": "Chitalu was Zambia's coach in the 27 April 1993 plane crash off Gabon"
@@ -29,6 +30,7 @@
     "messi": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/messi.png",
     "muller": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/muller.png",
     "messi_2012": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/messi_2012.png",
+    "messi_leverkusen": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/messi_leverkusen.png",
     "messi_betis": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/messi_betis.png",
     "guinness_cert": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/guinness_cert.png",
     "zambia_1972": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/zambia_1972.png",
@@ -102,6 +104,56 @@
               }
             ],
             "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "How? Fifty-nine in La Liga. Thirteen in the Champions League, five of them in one night against Leverkusen.",
+      "scene": {
+        "bg": "navy",
+        "type": "x2_bars",
+        "steps": [
+          {
+            "type": "x2_bars",
+            "title": "HOW HE GOT TO 91",
+            "items": [
+              {
+                "label": "LA LIGA",
+                "v": 59,
+                "col": "#a50044"
+              },
+              {
+                "label": "CHAMPIONS LEAGUE",
+                "v": 13,
+                "col": "#1d3fa0"
+              },
+              {
+                "label": "ARGENTINA",
+                "v": 12,
+                "col": "#75aadb"
+              },
+              {
+                "label": "COPA DEL REY",
+                "v": 5,
+                "col": "#f2c230"
+              },
+              {
+                "label": "SUPER CUP",
+                "v": 2,
+                "col": "#ffffff"
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "messi_leverkusen",
+            "label": "BARCELONA 7-1 LEVERKUSEN",
+            "big": "5 GOALS",
+            "bigSize": 230,
+            "bigY": 1300,
+            "w": 15
           }
         ]
       }
@@ -335,7 +387,7 @@
       }
     },
     {
-      "text": "Zambian researchers say that in 1972, the same year as Müller, he scored a hundred and seven.",
+      "text": "Researchers there say that in 1972, Müller's year, he scored a hundred and seven.",
       "scene": {
         "bg": "green",
         "type": "picture",
@@ -352,7 +404,7 @@
             "to": 107,
             "word": "GOALS IN 1972",
             "size": 420,
-            "w": 14
+            "w": 11
           }
         ]
       }

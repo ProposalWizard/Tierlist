@@ -1,0 +1,548 @@
+{
+  "id": "ex09b-fastest-goal",
+  "series": "Explainer",
+  "variant": "v2: steps every 1-2 s",
+  "title": "What's the fastest goal in Premier League history?",
+  "layout": "explainer",
+  "music": "09-last-attack.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://guinnessworldrecords.com/world-records/411353-fastest-goal-scored-in-the-football-soccer-premier-league",
+    "https://www.premierleague.com/en/news/3528857",
+    "https://theanalyst.com/articles/fastest-premier-league-goals/",
+    "https://www.thenewdaily.com.au/sport/football/2019/04/24/premier-league-fastest-goal",
+    "https://global.espn.com/football/story/_/id/37572064/southampton-shane-long-scores-fastest-premier-league-goal-history"
+  ],
+  "facts": {
+    "king": "Ledley King, 9.82 s, Bradford 3-3 Tottenham, 9 Dec 2000, his first PL goal; the record for over 18 years",
+    "long": "Shane Long, 7.69 s, Watford 1-1 Southampton, Vicarage Road, 23 Apr 2019: Watford kicked off, Pereyra passed back to Craig Cathcart, Long blocked/intercepted the clearance and lifted it over Ben Foster; Andre Gray equalised in the 90th minute",
+    "billing": "Philip Billing, 9.11 s, Arsenal 3-2 Bournemouth, 4 Mar 2023 (Reiss Nelson winner, 90+7); second fastest"
+  },
+  "lines": [
+    {
+      "text": "What's the fastest goal in Premier League history?",
+      "scene": {
+        "hook": true,
+        "bg": "red",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "long_chip",
+            "big": "?",
+            "bigSize": 420,
+            "bigY": 1300,
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "For over eighteen years, the answer was a defender. Ledley King.",
+      "scene": {
+        "bg": "navy",
+        "type": "counter",
+        "steps": [
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 18,
+            "word": "YEARS AS THE RECORD",
+            "size": 420,
+            "w": 0
+          },
+          {
+            "type": "portrait",
+            "person": {
+              "image": "ledley"
+            },
+            "name": "LEDLEY KING",
+            "w": 9
+          }
+        ]
+      }
+    },
+    {
+      "text": "Only three goals in Premier League history have come inside ten seconds.",
+      "scene": {
+        "bg": "navy",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "UNDER|10 SECONDS",
+            "hi": 1,
+            "size": 200,
+            "w": 0
+          },
+          {
+            "type": "tally",
+            "n": 3,
+            "cols": 3,
+            "mark": "?",
+            "markCol": "#e2384a",
+            "labels": [
+              "???",
+              "???",
+              "???"
+            ],
+            "title": "ONLY THREE",
+            "w": 1
+          }
+        ]
+      }
+    },
+    {
+      "text": "Tottenham, away at Bradford, December 2000. His first ever Premier League goal.",
+      "scene": {
+        "bg": "navy",
+        "type": "score",
+        "steps": [
+          {
+            "type": "score",
+            "top": "9 DECEMBER 2000",
+            "home": "BRADFORD",
+            "homeCol": "#7a1f3d",
+            "homeInk": "#fff",
+            "away": "TOTTENHAM",
+            "awayCol": "#fff",
+            "score": "3-3",
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "king_goal",
+            "label": "HIS FIRST PL GOAL",
+            "w": 7
+          }
+        ]
+      }
+    },
+    {
+      "text": "Nine point eight two seconds.",
+      "scene": {
+        "bg": "navy",
+        "type": "stopwatch",
+        "steps": [
+          {
+            "type": "stopwatch",
+            "to": 9.82,
+            "word": "LEDLEY KING · 2000",
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "Then, April 2019. Southampton, away at Watford.",
+      "scene": {
+        "bg": "red",
+        "type": "years",
+        "steps": [
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "2019",
+                "top": "23 APRIL",
+                "label": "Vicarage Road",
+                "head": "#e2384a"
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "score",
+            "top": "KICK-OFF",
+            "home": "WATFORD",
+            "homeCol": "#ffd400",
+            "away": "SOUTHAMPTON",
+            "awayCol": "#e2384a",
+            "awayInk": "#fff",
+            "score": "0-0",
+            "w": 3
+          }
+        ]
+      }
+    },
+    {
+      "text": "Watford kick off. Roberto Pereyra plays it back to their defender, Craig Cathcart.",
+      "scene": {
+        "bg": "green",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "kickoff",
+            "label": "WATFORD KICK OFF",
+            "w": 0
+          },
+          {
+            "type": "x5_move",
+            "title": "0 SECONDS · KICK-OFF",
+            "players": [
+              {
+                "x": 0.56,
+                "y": 0.56,
+                "col": "#e2384a",
+                "label": "LONG",
+                "to": [
+                  0.47,
+                  0.34
+                ]
+              },
+              {
+                "x": 0.5,
+                "y": 0.5,
+                "col": "#ffd400",
+                "label": "PEREYRA"
+              },
+              {
+                "x": 0.44,
+                "y": 0.3,
+                "col": "#ffd400",
+                "label": "CATHCART"
+              },
+              {
+                "x": 0.5,
+                "y": 0.06,
+                "col": "#7fe3a1",
+                "label": "FOSTER",
+                "to": [
+                  0.5,
+                  0.17
+                ]
+              },
+              {
+                "x": 0.25,
+                "y": 0.3,
+                "col": "#ffd400"
+              },
+              {
+                "x": 0.72,
+                "y": 0.3,
+                "col": "#ffd400"
+              },
+              {
+                "x": 0.3,
+                "y": 0.47,
+                "col": "#ffd400"
+              },
+              {
+                "x": 0.7,
+                "y": 0.47,
+                "col": "#ffd400"
+              },
+              {
+                "x": 0.25,
+                "y": 0.56,
+                "col": "#e2384a"
+              },
+              {
+                "x": 0.75,
+                "y": 0.56,
+                "col": "#e2384a"
+              }
+            ],
+            "path": [
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.44,
+                0.31
+              ]
+            ],
+            "span": 0.6,
+            "foot": "BACK TO CATHCART",
+            "w": 3
+          }
+        ]
+      }
+    },
+    {
+      "text": "Shane Long chases it, charges down the clearance, and lifts it over Ben Foster.",
+      "scene": {
+        "bg": "green",
+        "type": "portrait",
+        "steps": [
+          {
+            "type": "portrait",
+            "person": {
+              "image": "long"
+            },
+            "name": "SHANE LONG",
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "long_press",
+            "big": "BLOCKED",
+            "bigSize": 220,
+            "bigCol": "#ffd400",
+            "w": 4
+          },
+          {
+            "type": "x5_move",
+            "title": "7.69 SECONDS",
+            "carrier": 0,
+            "players": [
+              {
+                "x": 0.47,
+                "y": 0.33,
+                "col": "#e2384a",
+                "label": "LONG"
+              },
+              {
+                "x": 0.5,
+                "y": 0.42,
+                "col": "#ffd400",
+                "label": "PEREYRA"
+              },
+              {
+                "x": 0.44,
+                "y": 0.3,
+                "col": "#ffd400",
+                "label": "CATHCART"
+              },
+              {
+                "x": 0.5,
+                "y": 0.06,
+                "col": "#7fe3a1",
+                "label": "FOSTER",
+                "to": [
+                  0.5,
+                  0.2
+                ]
+              },
+              {
+                "x": 0.25,
+                "y": 0.3,
+                "col": "#ffd400"
+              },
+              {
+                "x": 0.72,
+                "y": 0.3,
+                "col": "#ffd400"
+              },
+              {
+                "x": 0.3,
+                "y": 0.47,
+                "col": "#ffd400"
+              },
+              {
+                "x": 0.7,
+                "y": 0.47,
+                "col": "#ffd400"
+              },
+              {
+                "x": 0.25,
+                "y": 0.56,
+                "col": "#e2384a"
+              },
+              {
+                "x": 0.75,
+                "y": 0.56,
+                "col": "#e2384a"
+              }
+            ],
+            "path": [
+              [
+                0.46,
+                0.3
+              ],
+              [
+                0.5,
+                0.2
+              ],
+              [
+                0.5,
+                0.0
+              ]
+            ],
+            "span": 0.75,
+            "foot": "OVER THE KEEPER",
+            "w": 9
+          },
+          {
+            "type": "picture",
+            "image": "long_chip",
+            "big": "GOAL",
+            "bigSize": 300,
+            "bigCol": "#ffd400",
+            "w": 12
+          }
+        ]
+      }
+    },
+    {
+      "text": "Seven point six nine seconds. Southampton hadn't even started with the ball.",
+      "scene": {
+        "bg": "red",
+        "type": "stopwatch",
+        "steps": [
+          {
+            "type": "stopwatch",
+            "to": 7.69,
+            "word": "NEW RECORD",
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "WATFORD|KICKED OFF",
+            "hi": 1,
+            "size": 190,
+            "w": 5
+          }
+        ]
+      }
+    },
+    {
+      "text": "And the twist? Watford equalised in the ninetieth minute.",
+      "scene": {
+        "bg": "red",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "late_equaliser",
+            "label": "90TH MINUTE",
+            "w": 0
+          },
+          {
+            "type": "score",
+            "top": "FULL TIME",
+            "home": "WATFORD",
+            "homeCol": "#ffd400",
+            "away": "SOUTHAMPTON",
+            "awayCol": "#e2384a",
+            "awayInk": "#fff",
+            "score": "1-1",
+            "foot": "ANDRE GRAY, 90'",
+            "w": 7
+          }
+        ]
+      }
+    },
+    {
+      "text": "Since then, only one man has come close. Philip Billing, for Bournemouth at Arsenal, in 2023.",
+      "scene": {
+        "bg": "purple",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "ONLY ONE|CAME CLOSE",
+            "hi": 1,
+            "size": 180,
+            "w": 0
+          },
+          {
+            "type": "portrait",
+            "person": {
+              "image": "billing"
+            },
+            "name": "PHILIP BILLING",
+            "w": 8
+          },
+          {
+            "type": "score",
+            "top": "4 MARCH 2023",
+            "home": "ARSENAL",
+            "homeCol": "#e2384a",
+            "homeInk": "#fff",
+            "away": "BOURNEMOUTH",
+            "awayCol": "#111",
+            "awayInk": "#fff",
+            "score": "0-1",
+            "w": 13
+          }
+        ]
+      }
+    },
+    {
+      "text": "Nine point one one seconds. And Arsenal still won three-two, in the ninety-seventh minute.",
+      "scene": {
+        "bg": "purple",
+        "type": "stopwatch",
+        "steps": [
+          {
+            "type": "stopwatch",
+            "to": 9.11,
+            "word": "PHILIP BILLING · 2023",
+            "w": 0
+          },
+          {
+            "type": "score",
+            "top": "FULL TIME",
+            "home": "ARSENAL",
+            "homeCol": "#e2384a",
+            "homeInk": "#fff",
+            "away": "BOURNEMOUTH",
+            "awayCol": "#111",
+            "awayInk": "#fff",
+            "score": "3-2",
+            "foot": "WINNER IN THE 97TH MINUTE",
+            "w": 6
+          }
+        ]
+      }
+    },
+    {
+      "text": "So the top three: Long, Billing and King. And nobody has touched seven point six nine.",
+      "scene": {
+        "bg": "navy",
+        "type": "ages",
+        "steps": [
+          {
+            "type": "ages",
+            "title": "FASTEST PREMIER LEAGUE GOALS",
+            "items": [
+              {
+                "name": "SHANE LONG · 2019",
+                "age": "7.69s",
+                "days": 769,
+                "col": "#ffd400"
+              },
+              {
+                "name": "PHILIP BILLING · 2023",
+                "age": "9.11s",
+                "days": 911,
+                "col": "#fff"
+              },
+              {
+                "name": "LEDLEY KING · 2000",
+                "age": "9.82s",
+                "days": 982,
+                "col": "#fff"
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "long_chip",
+            "big": "7.69",
+            "bigSize": 380,
+            "bigCol": "#ffd400",
+            "w": 9
+          }
+        ]
+      }
+    }
+  ],
+  "images": {
+    "ledley": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/ledley.png",
+    "king_goal": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/king_goal.png",
+    "kickoff": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/kickoff.png",
+    "long_press": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/long_press.png",
+    "long": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/long.png",
+    "long_chip": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/long_chip.png",
+    "late_equaliser": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/late_equaliser.png",
+    "billing": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/billing.png"
+  }
+}

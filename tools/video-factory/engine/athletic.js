@@ -446,5 +446,114 @@ S.statbars = (g, t, dur, sc) => {
 S.cta = (g, t, dur, sc) => { bg(g, "red", t); const k = pop(cl(t * 2.5)); g.save(); g.translate(540, 900); g.scale(k, k); T(g, "FOLLOW", 0, -40, 190, { shadow: true }); T(g, "FOR MORE", 0, 150, 150, { color: YEL, shadow: true }); g.restore(); };
 S.text = (g, t, dur, sc) => { bg(g, sc.bg || "teal", t); };
 
+// (fork x2) a breakdown: one bar per part, growing in turn, value at the end ({title, items:[{label, v, col}]})
+S.x2_bars = (g, t, dur, sc) => {
+  bg(g, sc.bg || "navy", t); const it = sc.items, n = it.length, max = Math.max(...it.map((x) => x.v)); const rh = Math.min(200, 1000 / n), y0 = 960 - (n * rh) / 2;
+  if (sc.title) T(g, sc.title, 540, y0 - 90, 90, { shadow: true, color: YEL, stroke: 10 });
+  it.forEach((x, i) => { const k = ez((t - 0.15 - i * Math.min(0.45, dur * 0.6 / n)) * 2.5); if (k <= 0) return; const y = y0 + i * rh, w = 120 + 560 * x.v / max;
+    g.save(); g.globalAlpha = cl(k * 2); T(g, x.label, 80, y + 56, 64, { align: "left", maxW: 900, shadow: true });
+    card(g, 80, y + 70, w * k, rh - 100, x.col || "#fff", 18); T(g, String(Math.round(x.v * k)), 80 + w * k + 24, y + rh - 36, 110, { align: "left", shadow: true }); g.restore(); });
+};
+
+// x5_move (ex05b/ex09b, 17 Nov 2026): a move told on a full-screen pitch. Players are dots (0..1 pitch
+// coordinates, y 0 = the goal at the top); the ball follows `path` from 0.15 s to 85% of the step, drawing
+// a yellow arrow behind it; `carrier` (a player index) runs with the ball; `moves` slide other dots to `to`.
+S.x5_move = (g, t, dur, sc) => {
+  bg(g, sc.bg || "green", t); pitch(g, PX, PY, PW, PH);
+  const path = sc.path || [[0.5, 0.5], [0.5, 0.05]]; const T0 = sc.delay ?? 0.15, T1 = Math.max(T0 + 0.6, dur * (sc.span || 0.85));
+  const u = inout(cl((t - T0) / (T1 - T0))); const segs = path.length - 1;
+  const at = (v) => { const s = Math.min(segs - 1, Math.floor(v * segs)), f = v * segs - s; const a = fp(path[s]), b = fp(path[s + 1]); return [lerp(a[0], b[0], f), lerp(a[1], b[1], f)]; };
+  for (let s = 0; s < segs; s++) { const k = cl(u * segs - s); if (k <= 0) break; const a = fp(path[s]), b = fp(path[s + 1]); arrow(g, a[0], a[1], b[0], b[1], k, YEL, 12, 0); }
+  const [bx, by] = at(u);
+  (sc.players || []).forEach((p, i) => { let [x, y] = fp([p.x, p.y]);
+    if (p.to) { const k = inout(cl((t - (p.at ?? T0)) / (p.dur ?? (T1 - T0)))); const [tx, ty] = fp(p.to); x = lerp(x, tx, k); y = lerp(y, ty, k); }
+    if (i === sc.carrier && u > (sc.carryFrom ?? 0)) { x = bx - 26; y = by + 40; }
+    dot(g, x, y, p.r || 40, p.col || "#e2384a", p.n || ""); if (p.label) T(g, p.label, x, y - 58, 42, { stroke: 8, maxW: 360 }); });
+  g.save(); g.fillStyle = "#fff"; g.strokeStyle = INK; g.lineWidth = 5; g.beginPath(); g.arc(bx, by, 20, 0, 7); g.fill(); g.stroke(); g.restore();
+  if (sc.title) T(g, sc.title, 540, 330, 80, { shadow: true, stroke: 10, color: YEL, maxW: 960 });
+  const done = cl((t - T1) * 3); if (sc.foot && done > 0) T(g, sc.foot, 540, 1720, 96, { alpha: done, color: YEL, stroke: 12, maxW: 960 });
+};
+
 window.EXPLAINER = { S, bg, finish, T, rr, INK, YEL, IMG, cl, ez, pop };
+})();
+
+// ── x7_ scenes (17 Nov 2026, explainer redo: offside / hat-trick / rules / World Cup 2030). Added, not edits. ──
+(() => {
+const X = window.EXPLAINER, S = X.S, T = X.T, rr = X.rr, INK = X.INK, YEL = X.YEL, cl = X.cl, ez = X.ez, pop = X.pop, bg = X.bg;
+const card = (g, x, y, w, h, fill = "#fff", r = 26) => { g.save(); g.fillStyle = "rgba(0,0,0,.25)"; rr(g, x + 10, y + 14, w, h, r); g.fill(); g.fillStyle = fill; g.lineWidth = 6; g.strokeStyle = INK; rr(g, x, y, w, h, r); g.fill(); g.stroke(); g.restore(); };
+const dot = (g, x, y, r, fill, k = 1) => { if (k <= 0) return; g.save(); g.translate(x, y); g.scale(k, k); g.fillStyle = "rgba(0,0,0,.25)"; g.beginPath(); g.arc(5, 7, r, 0, 7); g.fill(); g.fillStyle = fill; g.lineWidth = 7; g.strokeStyle = INK; g.beginPath(); g.arc(0, 0, r, 0, 7); g.fill(); g.stroke(); g.restore(); };
+const ball = (g, x, y, r) => { g.save(); g.fillStyle = "#fff"; g.strokeStyle = INK; g.lineWidth = 5; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); g.stroke(); g.fillStyle = INK; g.beginPath(); for (let j = 0; j < 5; j++) { const a = j / 5 * Math.PI * 2 - Math.PI / 2; g.lineTo(x + Math.cos(a) * r * 0.42, y + Math.sin(a) * r * 0.42); } g.fill(); g.restore(); };
+const stamp = (g, s, x, y, k, col = "#e2384a", size = 150) => { if (k <= 0) return; g.save(); g.translate(x, y); g.rotate(-0.08); const z = 1.6 - 0.6 * ez(k); g.scale(z, z); g.globalAlpha = cl(k * 2); g.font = `${size}px Anton`; const w = g.measureText(s).width + 70;
+  g.fillStyle = col; g.strokeStyle = INK; g.lineWidth = 10; rr(g, -w / 2, -size * 0.85, w, size * 1.15, 18); g.fill(); g.stroke(); T(g, s, 0, size * 0.2, size, { color: "#fff", stroke: 10 }); g.restore(); };
+
+// a vertical attacking half: goal at the top, halfway line at the bottom. Positions are 0..1 (x across, y from goal line).
+const P = { x0: 70, y0: 300, w: 940, h: 1180 };
+const pp = ([x, y]) => [P.x0 + x * P.w, P.y0 + y * P.h];
+S.x7_offside = (g, t, dur, sc) => {
+  bg(g, sc.bg || "green", t); const sp = Math.min(1, Math.max(0.45, dur / 2.4)); const u = (a) => t / sp - a;
+  g.save(); g.fillStyle = "#2f9a4e"; rr(g, P.x0, P.y0 - 40, P.w, P.h + 80, 24); g.fill();
+  for (let i = 0; i < 9; i++) { g.fillStyle = i % 2 ? "rgba(255,255,255,.06)" : "rgba(0,0,0,.05)"; g.fillRect(P.x0, P.y0 + i * P.h / 9, P.w, P.h / 9); }
+  g.strokeStyle = "rgba(255,255,255,.9)"; g.lineWidth = 7; g.beginPath(); g.moveTo(P.x0, P.y0); g.lineTo(P.x0 + P.w, P.y0); g.stroke();
+  g.strokeRect(P.x0 + P.w * 0.2, P.y0, P.w * 0.6, P.h * 0.15); g.strokeRect(P.x0 + P.w * 0.36, P.y0, P.w * 0.28, P.h * 0.05);
+  g.fillStyle = "#fff"; g.fillRect(P.x0 + P.w * 0.4, P.y0 - 34, P.w * 0.2, 30); g.strokeStyle = INK; g.lineWidth = 5; g.strokeRect(P.x0 + P.w * 0.4, P.y0 - 34, P.w * 0.2, 30);
+  const hy = P.y0 + P.h * (sc.halfY ?? 0.86); g.strokeStyle = "rgba(255,255,255,.9)"; g.lineWidth = 7; g.beginPath(); g.moveTo(P.x0, hy); g.lineTo(P.x0 + P.w, hy); g.stroke(); g.beginPath(); g.arc(P.x0 + P.w / 2, hy, 120, Math.PI, 0); g.stroke();
+  if (sc.half) { const k = cl(u(0.3) * 2); g.fillStyle = `rgba(255,212,0,${0.28 * k})`; g.fillRect(P.x0, hy, P.w, P.y0 + P.h + 40 - hy); T(g, "OWN HALF", P.x0 + P.w / 2, hy + 120, 70, { color: YEL, stroke: 8, alpha: k }); }
+  g.restore();
+  const step = (sc.step || 0) * ez(u(0.5) * 1.5);
+  const def = (sc.def || []).map(([x, y], i) => [x, i === 0 ? y : y + step]);
+  const order = def.map((d, i) => [d[1], i]).sort((a, b) => a[0] - b[0]); const second = order[Math.min(1, order.length - 1)];
+  const ly = P.y0 + P.h * (sc.lineY ?? second[0]);
+  if (sc.line !== false && def.length) { const k = ez(u(0.35) * 2.5); g.save(); g.strokeStyle = YEL; g.lineWidth = 9; g.setLineDash([30, 20]); g.beginPath(); g.moveTo(P.x0, ly); g.lineTo(P.x0 + P.w * k, ly); g.stroke(); g.restore(); }
+  def.forEach((d, i) => { const [x, y] = pp(d); dot(g, x, y, 44, i === 0 ? "#ffd400" : "#e2384a", pop(cl(u(i * 0.06) * 4))); });
+  if (sc.ring != null && def[sc.ring]) { const [x, y] = pp(def[sc.ring]); const k = ez(u(0.5) * 3); g.save(); g.strokeStyle = "#fff"; g.lineWidth = 8; g.beginPath(); g.arc(x, y, 70, 0, 7 * k); g.stroke(); g.restore(); if (sc.ringLabel) T(g, sc.ringLabel, x, y - 90, 54, { stroke: 8, alpha: k }); }
+  if (sc.keeperLabel) { const [x, y] = pp(def[0]); T(g, sc.keeperLabel, x, y + 110, 50, { stroke: 8, alpha: ez(u(0.4) * 3) }); }
+  const mate = sc.mate && pp(sc.mate); if (mate) dot(g, mate[0], mate[1], 44, "#4c8cf0", pop(cl(u(0.1) * 4)));
+  const att = sc.att && pp(sc.att);
+  if (att) { dot(g, att[0], att[1], 44, "#4c8cf0", pop(cl(u(0.15) * 4)));
+    if (sc.arm) { const k = ez(u(0.3) * 3); g.save(); g.strokeStyle = INK; g.lineWidth = 26; g.lineCap = "round"; g.beginPath(); g.moveTo(att[0] + 20, att[1] - 20); g.lineTo(att[0] + 20 + 50 * k, att[1] - 20 - 120 * k); g.stroke(); g.strokeStyle = "#f2c7a5"; g.lineWidth = 16; g.stroke(); g.restore();
+      if (sc.armX) { const k2 = cl(u(0.9) * 3); g.save(); g.strokeStyle = "#e2384a"; g.lineWidth = 12; g.globalAlpha = k2; g.beginPath(); g.moveTo(att[0] + 20, att[1] - 170); g.lineTo(att[0] + 120, att[1] - 70); g.moveTo(att[0] + 120, att[1] - 170); g.lineTo(att[0] + 20, att[1] - 70); g.stroke(); g.restore(); } }
+    if (sc.attLabel) T(g, sc.attLabel, att[0], att[1] + 110, 50, { stroke: 8, alpha: ez(u(0.3) * 3) }); }
+  if (mate && att && sc.pass !== false) { const k = ez(u(0.7) * 1.6); if (k > 0) { const bx = mate[0] + (att[0] - mate[0]) * k, by = mate[1] + (att[1] - mate[1]) * k; g.save(); g.strokeStyle = "rgba(255,255,255,.8)"; g.lineWidth = 8; g.setLineDash([18, 14]); g.beginPath(); g.moveTo(mate[0], mate[1]); g.lineTo(bx, by); g.stroke(); g.restore(); ball(g, bx, by, 24); } }
+  if (sc.title) T(g, sc.title, 540, 210, 92, { shadow: true, stroke: 10, alpha: ez(t * 4) });
+  if (sc.verdict) stamp(g, sc.verdict, 540, sc.vy || 900, cl(u(1.2) * 3), sc.vcol || (sc.verdict.includes("ON") && !sc.verdict.includes("OFF") ? "#1ea85a" : "#e2384a"), sc.vsize || 150);
+};
+
+// a big countdown ring: from N to 0, then a stamp
+S.x7_countdown = (g, t, dur, sc) => {
+  bg(g, sc.bg || "red", t); const n = sc.from || 5, run = Math.min(dur * 0.7, n * (sc.per || 0.32)); const f = cl(t / run); const v = Math.ceil(n * (1 - f));
+  if (sc.title) T(g, sc.title, 540, 330, 100, { shadow: true, stroke: 10, alpha: ez(t * 4), maxW: 960 });
+  g.save(); g.translate(540, 900); const k = pop(cl(t * 4)); g.scale(k, k);
+  g.fillStyle = "#fff"; g.strokeStyle = INK; g.lineWidth = 14; g.beginPath(); g.arc(0, 0, 340, 0, 7); g.fill(); g.stroke();
+  g.strokeStyle = f < 1 ? "#e2384a" : "#888"; g.lineWidth = 46; g.lineCap = "round"; g.beginPath(); g.arc(0, 0, 280, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - f)); g.stroke();
+  const tick = (t / run * n) % 1; const z = 1 + 0.18 * (1 - ez(tick * 3)) * (f < 1 ? 1 : 0); g.scale(z, z);
+  T(g, String(v), 0, 110, 330, { color: INK }); g.restore();
+  if (sc.word) T(g, sc.word, 540, 1390, 80, { color: YEL, shadow: true, stroke: 10, alpha: ez((t - 0.2) * 3), maxW: 960 });
+  if (sc.end && f >= 1) stamp(g, sc.end, 540, 900, cl((t - run) * 4), sc.endCol || "#e2384a", sc.endSize || 130);
+};
+
+// flags as cards (simple drawn flags, no emblems): items [{code, label, old}] - new ones pop in one after another
+const FLAGS = {
+  ES: (g, w, h) => { g.fillStyle = "#c60b1e"; g.fillRect(0, 0, w, h); g.fillStyle = "#ffc400"; g.fillRect(0, h / 4, w, h / 2); },
+  PT: (g, w, h) => { g.fillStyle = "#006600"; g.fillRect(0, 0, w * 0.4, h); g.fillStyle = "#ff0000"; g.fillRect(w * 0.4, 0, w * 0.6, h); g.fillStyle = "#ffcc00"; g.beginPath(); g.arc(w * 0.4, h / 2, h * 0.2, 0, 7); g.fill(); g.strokeStyle = INK; g.lineWidth = 3; g.stroke(); },
+  MA: (g, w, h) => { g.fillStyle = "#c1272d"; g.fillRect(0, 0, w, h); g.strokeStyle = "#006233"; g.lineWidth = h * 0.05; g.beginPath(); for (let j = 0; j <= 5; j++) { const a = j * 4 * Math.PI / 5 - Math.PI / 2; g.lineTo(w / 2 + Math.cos(a) * h * 0.3, h / 2 + Math.sin(a) * h * 0.3); } g.closePath(); g.stroke(); },
+  UY: (g, w, h) => { g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); g.fillStyle = "#0038a8"; for (let j = 1; j < 9; j += 2) g.fillRect(0, j * h / 9, w, h / 9); g.fillStyle = "#fff"; g.fillRect(0, 0, w * 0.4, h * 5 / 9); g.fillStyle = "#fcd116"; g.beginPath(); g.arc(w * 0.2, h * 2.5 / 9, h * 0.14, 0, 7); g.fill(); },
+  AR: (g, w, h) => { g.fillStyle = "#74acdf"; g.fillRect(0, 0, w, h); g.fillStyle = "#fff"; g.fillRect(0, h / 3, w, h / 3); g.fillStyle = "#f6b40e"; g.beginPath(); g.arc(w / 2, h / 2, h * 0.11, 0, 7); g.fill(); },
+  PY: (g, w, h) => { g.fillStyle = "#d52b1e"; g.fillRect(0, 0, w, h / 3); g.fillStyle = "#fff"; g.fillRect(0, h / 3, w, h / 3); g.fillStyle = "#0038a8"; g.fillRect(0, h * 2 / 3, w, h / 3); },
+  FR: (g, w, h) => { g.fillStyle = "#0055a4"; g.fillRect(0, 0, w / 3, h); g.fillStyle = "#fff"; g.fillRect(w / 3, 0, w / 3, h); g.fillStyle = "#ef4135"; g.fillRect(w * 2 / 3, 0, w / 3, h); },
+  BE: (g, w, h) => { g.fillStyle = "#000"; g.fillRect(0, 0, w / 3, h); g.fillStyle = "#fdda24"; g.fillRect(w / 3, 0, w / 3, h); g.fillStyle = "#ef3340"; g.fillRect(w * 2 / 3, 0, w / 3, h); },
+  RO: (g, w, h) => { g.fillStyle = "#002b7f"; g.fillRect(0, 0, w / 3, h); g.fillStyle = "#fcd116"; g.fillRect(w / 3, 0, w / 3, h); g.fillStyle = "#ce1126"; g.fillRect(w * 2 / 3, 0, w / 3, h); },
+  YU: (g, w, h) => { g.fillStyle = "#0c4076"; g.fillRect(0, 0, w, h / 3); g.fillStyle = "#fff"; g.fillRect(0, h / 3, w, h / 3); g.fillStyle = "#c6363c"; g.fillRect(0, h * 2 / 3, w, h / 3); },
+};
+S.x7_flags = (g, t, dur, sc) => {
+  bg(g, sc.bg || "blue", t); const it = sc.items || [], cols = sc.cols || 2, n = it.length; const cw = cols === 1 ? 760 : 440, chh = cw * 0.62, gap = 40, lab = 90;
+  const rows = Math.ceil(n / cols), totH = rows * (chh + lab) + (rows - 1) * gap; const y0 = (sc.y ?? 960) - totH / 2; let fresh = 0;
+  if (sc.title) T(g, sc.title, 540, Math.max(200, y0 - 60), 90, { shadow: true, stroke: 10, alpha: ez(t * 4), maxW: 960 });
+  it.forEach((f, i) => { const d = f.old ? -1 : (fresh++) * (sc.gap ?? 0.3); const k = f.old ? 1 : pop(cl((t - d) * 4)); if (k <= 0) return;
+    const r = Math.floor(i / cols), c = i % cols; const rowN = Math.min(cols, n - r * cols); const x = 540 + (c - (rowN - 1) / 2) * (cw + gap), y = y0 + r * (chh + lab + gap) + chh / 2;
+    g.save(); g.translate(x, y); g.scale(k, k); g.rotate(Math.sin(t * 2 + i) * 0.015); g.fillStyle = "rgba(0,0,0,.25)"; rr(g, -cw / 2 + 10, -chh / 2 + 14, cw, chh, 18); g.fill();
+    g.save(); rr(g, -cw / 2, -chh / 2, cw, chh, 18); g.clip(); g.translate(-cw / 2, -chh / 2); (FLAGS[f.code] || FLAGS.FR)(g, cw, chh); g.restore();
+    g.lineWidth = 7; g.strokeStyle = INK; rr(g, -cw / 2, -chh / 2, cw, chh, 18); g.stroke();
+    if (f.dim) { g.fillStyle = "rgba(0,0,0,.55)"; rr(g, -cw / 2, -chh / 2, cw, chh, 18); g.fill(); }
+    T(g, f.label || "", 0, chh / 2 + 78, 66, { stroke: 9, maxW: cw, color: f.hi ? YEL : "#fff" }); g.restore(); });
+};
 })();

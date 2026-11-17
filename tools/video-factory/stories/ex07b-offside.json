@@ -1,0 +1,900 @@
+{
+  "id": "ex07b-offside",
+  "series": "Explainer",
+  "variant": "v2: steps every 1-2 s",
+  "title": "Offside: what most fans get wrong",
+  "layout": "explainer",
+  "music": "04-dribble.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://www.thefa.com/football-rules-governance/lawsandrules/laws/football-11-11/law-11---offside",
+    "https://www.theifab.com/laws/latest/offside/",
+    "https://www.skysports.com/football/news/11661/13339920/premier-league-semi-automated-offside-to-be-introduced-in-top-flight-on-april-12-following-fa-cup-tests-earlier-in-season",
+    "https://en.wikipedia.org/wiki/Bill_McCracken",
+    "https://fourfourtwo.com/features/the-one-rule-change-that-saw-the-birth-of-40-goal-a-season-strikers-like-dixie-dean-guy-whittingham-and-aleksandar-mitrovic",
+    "https://www.sportsjournalists.co.uk/sports-digest/the-season-that-it-rained-goals/",
+    "https://en.wikipedia.org/wiki/1990_FIFA_World_Cup"
+  ],
+  "facts": {
+    "law": "Law 11: offside position = any part of head, body or feet in the opponents' half (not the halfway line) and nearer the goal line than both the ball and the second-last opponent, judged when a team-mate plays/touches the ball; hands/arms of all players incl. keepers not considered; level = onside; no offence from goal kick, throw-in, corner; position alone is not an offence (must interfere with play/opponent or gain advantage)",
+    "1990": "level made onside by IFAB in 1990 after Italia 90 (2.21 goals per game, lowest World Cup average)",
+    "1925": "three -> two opponents, June 1925, effective 1925/26; First Division goals up 42.3%",
+    "mccracken": "Newcastle full-back Bill McCracken perfected the offside trap",
+    "saot": "Premier League semi-automated offside first used 12 Apr 2025 (Man City v Crystal Palace); up to ~30 cameras under the roof track the ball and thousands of data points per player"
+  },
+  "lines": [
+    {
+      "text": "Offside is the rule everyone argues about. But most fans get it wrong.",
+      "scene": {
+        "bg": "green",
+        "hook": true,
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "var_lines",
+            "w": 0
+          },
+          {
+            "type": "x7_offside",
+            "def": [
+              [
+                0.5,
+                0.05
+              ],
+              [
+                0.25,
+                0.42
+              ],
+              [
+                0.45,
+                0.4
+              ],
+              [
+                0.65,
+                0.41
+              ],
+              [
+                0.82,
+                0.43
+              ]
+            ],
+            "mate": [
+              0.4,
+              0.74
+            ],
+            "att": [
+              0.6,
+              0.3
+            ],
+            "verdict": "OFFSIDE?",
+            "vy": 1000,
+            "title": "EVERY WEEKEND",
+            "w": 5
+          },
+          {
+            "type": "statement",
+            "text": "MOST FANS|GET IT WRONG",
+            "hi": 1,
+            "size": 170,
+            "w": 8
+          }
+        ]
+      }
+    },
+    {
+      "text": "Here's how it's really judged. Freeze the moment your team-mate plays the ball.",
+      "scene": {
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "assistant_flag",
+            "label": "HOW IT'S JUDGED",
+            "w": 0
+          },
+          {
+            "type": "x7_offside",
+            "def": [
+              [
+                0.5,
+                0.05
+              ],
+              [
+                0.25,
+                0.42
+              ],
+              [
+                0.45,
+                0.4
+              ],
+              [
+                0.65,
+                0.41
+              ],
+              [
+                0.82,
+                0.43
+              ]
+            ],
+            "mate": [
+              0.4,
+              0.74
+            ],
+            "att": [
+              0.6,
+              0.3
+            ],
+            "line": false,
+            "title": "FREEZE",
+            "w": 5
+          },
+          {
+            "type": "x7_offside",
+            "def": [
+              [
+                0.5,
+                0.05
+              ],
+              [
+                0.25,
+                0.42
+              ],
+              [
+                0.45,
+                0.4
+              ],
+              [
+                0.65,
+                0.41
+              ],
+              [
+                0.82,
+                0.43
+              ]
+            ],
+            "mate": [
+              0.4,
+              0.74
+            ],
+            "att": [
+              0.6,
+              0.3
+            ],
+            "line": false,
+            "title": "THE MOMENT IT'S PLAYED",
+            "w": 9,
+            "pass": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Now find the second-last defender. Usually, the keeper is the last one.",
+      "scene": {
+        "type": "x7_offside",
+        "steps": [
+          {
+            "type": "x7_offside",
+            "def": [
+              [
+                0.5,
+                0.05
+              ],
+              [
+                0.25,
+                0.42
+              ],
+              [
+                0.45,
+                0.4
+              ],
+              [
+                0.65,
+                0.41
+              ],
+              [
+                0.82,
+                0.43
+              ]
+            ],
+            "mate": [
+              0.4,
+              0.74
+            ],
+            "att": [
+              0.6,
+              0.3
+            ],
+            "ring": 2,
+            "ringLabel": "2ND LAST",
+            "title": "FIND THE 2ND-LAST",
+            "w": 0,
+            "pass": false
+          },
+          {
+            "type": "x7_offside",
+            "def": [
+              [
+                0.5,
+                0.05
+              ],
+              [
+                0.25,
+                0.42
+              ],
+              [
+                0.45,
+                0.4
+              ],
+              [
+                0.65,
+                0.41
+              ],
+              [
+                0.82,
+                0.43
+              ]
+            ],
+            "mate": [
+              0.4,
+              0.74
+            ],
+            "att": [
+              0.6,
+              0.3
+            ],
+            "ring": 0,
+            "ringLabel": "LAST",
+            "title": "THE KEEPER COUNTS",
+            "w": 5,
+            "pass": false
+          }
+        ]
+      }
+    },
+    {
+      "text": "If your head, body or feet are nearer the goal line than him and the ball, you're offside.",
+      "scene": {
+        "type": "x7_offside",
+        "steps": [
+          {
+            "type": "x7_offside",
+            "def": [
+              [
+                0.5,
+                0.05
+              ],
+              [
+                0.25,
+                0.42
+              ],
+              [
+                0.45,
+                0.4
+              ],
+              [
+                0.65,
+                0.41
+              ],
+              [
+                0.82,
+                0.43
+              ]
+            ],
+            "mate": [
+              0.4,
+              0.74
+            ],
+            "att": [
+              0.6,
+              0.3
+            ],
+            "title": "HEAD, BODY, FEET",
+            "w": 0
+          },
+          {
+            "type": "x7_offside",
+            "def": [
+              [
+                0.5,
+                0.05
+              ],
+              [
+                0.25,
+                0.42
+              ],
+              [
+                0.45,
+                0.4
+              ],
+              [
+                0.65,
+                0.41
+              ],
+              [
+                0.82,
+                0.43
+              ]
+            ],
+            "mate": [
+              0.4,
+              0.74
+            ],
+            "att": [
+              0.6,
+              0.3
+            ],
+            "title": "NEARER THE GOAL LINE",
+            "w": 7
+          },
+          {
+            "type": "x7_offside",
+            "def": [
+              [
+                0.5,
+                0.05
+              ],
+              [
+                0.25,
+                0.42
+              ],
+              [
+                0.45,
+                0.4
+              ],
+              [
+                0.65,
+                0.41
+              ],
+              [
+                0.82,
+                0.43
+              ]
+            ],
+            "mate": [
+              0.4,
+              0.74
+            ],
+            "att": [
+              0.6,
+              0.3
+            ],
+            "verdict": "OFFSIDE",
+            "vy": 1050,
+            "w": 17
+          }
+        ]
+      }
+    },
+    {
+      "text": "Your arms don't count.",
+      "scene": {
+        "type": "x7_offside",
+        "steps": [
+          {
+            "type": "x7_offside",
+            "def": [
+              [
+                0.5,
+                0.05
+              ],
+              [
+                0.25,
+                0.42
+              ],
+              [
+                0.45,
+                0.4
+              ],
+              [
+                0.65,
+                0.41
+              ],
+              [
+                0.82,
+                0.43
+              ]
+            ],
+            "mate": [
+              0.4,
+              0.74
+            ],
+            "att": [
+              0.6,
+              0.42
+            ],
+            "arm": true,
+            "armX": true,
+            "verdict": "ONSIDE",
+            "vy": 1050,
+            "title": "ARMS DON'T COUNT",
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "Level is onside. It has been since 1990, after a World Cup with the fewest goals per game ever.",
+      "scene": {
+        "bg": "green",
+        "type": "x7_offside",
+        "steps": [
+          {
+            "type": "x7_offside",
+            "def": [
+              [
+                0.5,
+                0.05
+              ],
+              [
+                0.25,
+                0.42
+              ],
+              [
+                0.45,
+                0.4
+              ],
+              [
+                0.65,
+                0.41
+              ],
+              [
+                0.82,
+                0.43
+              ]
+            ],
+            "mate": [
+              0.4,
+              0.74
+            ],
+            "att": [
+              0.6,
+              0.4
+            ],
+            "attLabel": "LEVEL",
+            "verdict": "ONSIDE",
+            "vy": 1050,
+            "w": 0
+          },
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "1990",
+                "top": "SINCE",
+                "label": "Level = onside",
+                "tick": true,
+                "head": "#1ea85a"
+              }
+            ],
+            "w": 6
+          },
+          {
+            "type": "picture",
+            "image": "italia90",
+            "label": "WORLD CUP 1990",
+            "w": 10
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 2.21,
+            "dec": 2,
+            "fmt": "{v}",
+            "word": "GOALS A GAME · A RECORD LOW",
+            "size": 330,
+            "w": 14
+          }
+        ]
+      }
+    },
+    {
+      "text": "You can't be offside in your own half. Or straight from a throw-in, a goal kick, or a corner.",
+      "scene": {
+        "type": "x7_offside",
+        "steps": [
+          {
+            "type": "x7_offside",
+            "def": [
+              [
+                0.5,
+                0.05
+              ],
+              [
+                0.3,
+                0.8
+              ],
+              [
+                0.5,
+                0.8
+              ],
+              [
+                0.7,
+                0.8
+              ]
+            ],
+            "half": true,
+            "mate": [
+              0.3,
+              0.97
+            ],
+            "att": [
+              0.62,
+              0.92
+            ],
+            "line": false,
+            "verdict": "ONSIDE",
+            "vy": 800,
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "THROW-IN",
+            "size": 190,
+            "w": 12
+          },
+          {
+            "type": "statement",
+            "text": "THROW-IN|GOAL KICK",
+            "size": 190,
+            "w": 14
+          },
+          {
+            "type": "statement",
+            "text": "THROW-IN|GOAL KICK|CORNER",
+            "size": 190,
+            "w": 18
+          }
+        ]
+      }
+    },
+    {
+      "text": "And just standing offside isn't an offence. You have to get involved.",
+      "scene": {
+        "type": "x7_offside",
+        "steps": [
+          {
+            "type": "x7_offside",
+            "def": [
+              [
+                0.5,
+                0.05
+              ],
+              [
+                0.25,
+                0.42
+              ],
+              [
+                0.45,
+                0.4
+              ],
+              [
+                0.65,
+                0.41
+              ],
+              [
+                0.82,
+                0.43
+              ]
+            ],
+            "mate": [
+              0.4,
+              0.74
+            ],
+            "att": [
+              0.82,
+              0.25
+            ],
+            "attLabel": "NOT INVOLVED",
+            "line": true,
+            "title": "STANDING THERE",
+            "w": 0,
+            "pass": false
+          },
+          {
+            "type": "x7_offside",
+            "def": [
+              [
+                0.5,
+                0.05
+              ],
+              [
+                0.25,
+                0.42
+              ],
+              [
+                0.45,
+                0.4
+              ],
+              [
+                0.65,
+                0.41
+              ],
+              [
+                0.82,
+                0.43
+              ]
+            ],
+            "mate": [
+              0.4,
+              0.74
+            ],
+            "att": [
+              0.3,
+              0.45
+            ],
+            "attLabel": "SCORES",
+            "verdict": "NO OFFENCE",
+            "vy": 1050,
+            "w": 6
+          },
+          {
+            "type": "statement",
+            "text": "GET|INVOLVED",
+            "hi": 1,
+            "size": 200,
+            "w": 10
+          }
+        ]
+      }
+    },
+    {
+      "text": "Today, the Premier League's semi-automated offside draws the line, with cameras under the roof tracking every player.",
+      "scene": {
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "saot_cameras",
+            "label": "SEMI-AUTOMATED OFFSIDE",
+            "w": 0
+          },
+          {
+            "type": "x7_offside",
+            "def": [
+              [
+                0.5,
+                0.05
+              ],
+              [
+                0.25,
+                0.42
+              ],
+              [
+                0.45,
+                0.4
+              ],
+              [
+                0.65,
+                0.41
+              ],
+              [
+                0.82,
+                0.43
+              ]
+            ],
+            "mate": [
+              0.4,
+              0.74
+            ],
+            "att": [
+              0.6,
+              0.38
+            ],
+            "title": "THE LINE",
+            "verdict": "OFFSIDE",
+            "vsize": 110,
+            "vy": 1100,
+            "w": 6
+          },
+          {
+            "type": "picture",
+            "image": "saot_cameras",
+            "big": "EVERY PLAYER",
+            "bigSize": 140,
+            "w": 10
+          }
+        ]
+      }
+    },
+    {
+      "text": "But until 1925, it was even harsher. You needed three opponents in front of you, not two.",
+      "scene": {
+        "type": "years",
+        "steps": [
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "1925",
+                "top": "UNTIL",
+                "label": "Three, not two",
+                "cross": true
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "x7_offside",
+            "def": [
+              [
+                0.5,
+                0.05
+              ],
+              [
+                0.3,
+                0.36
+              ],
+              [
+                0.6,
+                0.3
+              ],
+              [
+                0.75,
+                0.45
+              ]
+            ],
+            "lineY": 0.36,
+            "mate": [
+              0.4,
+              0.74
+            ],
+            "att": [
+              0.45,
+              0.33
+            ],
+            "verdict": "OFFSIDE",
+            "vy": 1050,
+            "title": "3 OPPONENTS NEEDED",
+            "w": 9
+          }
+        ]
+      }
+    },
+    {
+      "text": "Newcastle's Bill McCracken had perfected the offside trap. Goals dried up.",
+      "scene": {
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "mccracken_trap",
+            "label": "NEWCASTLE · BILL McCRACKEN",
+            "w": 0
+          },
+          {
+            "type": "x7_offside",
+            "def": [
+              [
+                0.5,
+                0.05
+              ],
+              [
+                0.25,
+                0.42
+              ],
+              [
+                0.45,
+                0.4
+              ],
+              [
+                0.65,
+                0.41
+              ],
+              [
+                0.82,
+                0.43
+              ]
+            ],
+            "step": -0.14,
+            "mate": [
+              0.4,
+              0.74
+            ],
+            "att": [
+              0.55,
+              0.36
+            ],
+            "title": "THE OFFSIDE TRAP",
+            "verdict": "OFFSIDE",
+            "vy": 1100,
+            "w": 6
+          },
+          {
+            "type": "statement",
+            "text": "GOALS|DRIED UP",
+            "hi": 1,
+            "size": 190,
+            "w": 8
+          }
+        ]
+      }
+    },
+    {
+      "text": "So they cut it to two. The next season, First Division goals jumped by over forty per cent.",
+      "scene": {
+        "bg": "blue",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "3 → 2",
+            "size": 320,
+            "w": 0
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 42,
+            "fmt": "+{v}%",
+            "word": "FIRST DIVISION GOALS · 1925/26",
+            "size": 330,
+            "w": 7
+          }
+        ]
+      }
+    },
+    {
+      "text": "So next time someone screams 'he was level', they're right.",
+      "scene": {
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "fans_screaming",
+            "w": 0
+          },
+          {
+            "type": "x7_offside",
+            "def": [
+              [
+                0.5,
+                0.05
+              ],
+              [
+                0.25,
+                0.42
+              ],
+              [
+                0.45,
+                0.4
+              ],
+              [
+                0.65,
+                0.41
+              ],
+              [
+                0.82,
+                0.43
+              ]
+            ],
+            "mate": [
+              0.4,
+              0.74
+            ],
+            "att": [
+              0.6,
+              0.4
+            ],
+            "attLabel": "LEVEL",
+            "verdict": "ONSIDE",
+            "vy": 1050,
+            "w": 9
+          }
+        ]
+      }
+    }
+  ],
+  "images": {
+    "var_lines": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/var_lines.png",
+    "assistant_flag": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/assistant_flag.png",
+    "italia90": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/italia90.png",
+    "saot_cameras": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/saot_cameras.png",
+    "mccracken_trap": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/mccracken_trap.png",
+    "fans_screaming": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/fans_screaming.png"
+  }
+}

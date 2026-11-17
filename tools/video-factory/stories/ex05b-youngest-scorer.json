@@ -1,0 +1,627 @@
+{
+  "id": "ex05b-youngest-scorer",
+  "series": "Explainer",
+  "variant": "v2: steps every 1-2 s",
+  "title": "Who is the youngest goalscorer in Premier League history?",
+  "layout": "explainer",
+  "music": "02-working-it-out.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://www.premierleague.com/en/news/4613476/dowman-becomes-premier-leagues-youngest-ever-goalscorer",
+    "https://www.foxsports.com/articles/soccer/max-dowman-16-becomes-youngest-premier-league-scorer-with-remarkable-goal-for-arsenal",
+    "https://theanalyst.com/articles/youngest-premier-league-scorers/",
+    "https://www.premierleague.com/en/news/4592633/the-stats-behind-james-milners-incredible-premier-league-career",
+    "https://www.irishexaminer.com/sport/soccer/arid-40986104.html",
+    "https://en.wikipedia.org/wiki/James_Vaughan_(footballer,_born_1988)"
+  ],
+  "facts": {
+    "rooney": "19 Oct 2002, Everton 2-1 Arsenal at Goodison, late winner past David Seaman, ended Arsenal's 30-game unbeaten run; 16y 360d; Clive Tyldesley 'Remember the name'",
+    "milner": "26 Dec 2002, scored for Leeds v Sunderland aged 16y 356d, 4 days younger than Rooney; Rooney's record lasted 68 days (19 Oct -> 26 Dec)",
+    "vaughan": "10 Apr 2005, Everton 4-0 Crystal Palace, sub, scored the 4th; 16y 270d (some sources 271)",
+    "dowman": "14 Mar 2026, Arsenal 2-0 Everton; on 74'; crossed for the first (Hincapie -> Gyokeres); in stoppage time Pickford went up for a corner, Dowman won the loose ball, ran half the pitch, scored into an empty net; 16y 73d, 197 days younger than Vaughan; PL champion May 2026"
+  },
+  "lines": [
+    {
+      "text": "Who is the youngest goalscorer in Premier League history?",
+      "scene": {
+        "hook": true,
+        "bg": "red",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "dowman_goal",
+            "big": "?",
+            "bigSize": 420,
+            "bigY": 1300,
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "October 2002. Everton against Arsenal, the champions, unbeaten in thirty games.",
+      "scene": {
+        "bg": "blue",
+        "type": "years",
+        "steps": [
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "2002",
+                "top": "OCTOBER",
+                "label": "Goodison Park",
+                "head": "#1d3fa0"
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "score",
+            "top": "19 OCTOBER 2002",
+            "home": "EVERTON",
+            "homeCol": "#1d3fa0",
+            "away": "ARSENAL",
+            "awayCol": "#e2384a",
+            "awayInk": "#fff",
+            "score": "1-1",
+            "w": 2
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 30,
+            "word": "GAMES UNBEATEN",
+            "size": 400,
+            "w": 7
+          }
+        ]
+      }
+    },
+    {
+      "text": "In the last minute, a sixteen-year-old sub curls one in from distance, past David Seaman.",
+      "scene": {
+        "bg": "blue",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "rooney_goal",
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "rooney_goal",
+            "big": "2-1",
+            "bigSize": 300,
+            "bigCol": "#ffd400",
+            "w": 12
+          }
+        ]
+      }
+    },
+    {
+      "text": "Remember the name. Wayne Rooney. Sixteen years, three hundred and sixty days.",
+      "scene": {
+        "bg": "blue",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "REMEMBER|THE NAME",
+            "hi": 1,
+            "size": 170,
+            "w": 0
+          },
+          {
+            "type": "portrait",
+            "person": {
+              "image": "rooney"
+            },
+            "name": "WAYNE ROONEY",
+            "w": 3
+          },
+          {
+            "type": "statement",
+            "text": "16 YEARS|360 DAYS",
+            "hi": 0,
+            "size": 200,
+            "w": 5
+          }
+        ]
+      }
+    },
+    {
+      "text": "But it lasted just sixty-eight days. On Boxing Day, James Milner scored for Leeds. Four days younger.",
+      "scene": {
+        "bg": "purple",
+        "type": "portrait",
+        "steps": [
+          {
+            "type": "portrait",
+            "person": {
+              "image": "rooney"
+            },
+            "name": "RECORD HOLDER",
+            "stamp": "68 DAYS",
+            "w": 0
+          },
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "2002",
+                "top": "26 DEC",
+                "label": "Boxing Day",
+                "head": "#e2384a"
+              }
+            ],
+            "w": 7
+          },
+          {
+            "type": "portrait",
+            "person": {
+              "image": "milner"
+            },
+            "name": "JAMES MILNER",
+            "w": 9
+          },
+          {
+            "type": "ages",
+            "title": "YOUNGEST SCORER",
+            "items": [
+              {
+                "name": "WAYNE ROONEY",
+                "age": "16y 360d",
+                "days": 360,
+                "col": "#cfe0ff"
+              },
+              {
+                "name": "JAMES MILNER",
+                "age": "16y 356d",
+                "days": 356,
+                "col": "#ffd400"
+              }
+            ],
+            "w": 14
+          }
+        ]
+      }
+    },
+    {
+      "text": "Then, in 2005, another Everton sub beat them both, against Crystal Palace. James Vaughan.",
+      "scene": {
+        "bg": "blue",
+        "type": "years",
+        "steps": [
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "2005",
+                "top": "10 APRIL",
+                "label": "Goodison Park",
+                "head": "#1d3fa0"
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "score",
+            "top": "10 APRIL 2005",
+            "home": "EVERTON",
+            "homeCol": "#1d3fa0",
+            "away": "CRYSTAL PALACE",
+            "awayCol": "#e2384a",
+            "awayInk": "#fff",
+            "score": "4-0",
+            "w": 9
+          },
+          {
+            "type": "portrait",
+            "person": {
+              "image": "vaughan"
+            },
+            "name": "JAMES VAUGHAN",
+            "w": 12
+          }
+        ]
+      }
+    },
+    {
+      "text": "Sixteen years, two hundred and seventy days. It stood for almost twenty-one years.",
+      "scene": {
+        "bg": "teal",
+        "type": "ages",
+        "steps": [
+          {
+            "type": "ages",
+            "title": "YOUNGEST SCORER",
+            "items": [
+              {
+                "name": "WAYNE ROONEY",
+                "age": "16y 360d",
+                "days": 360,
+                "col": "#cfe0ff"
+              },
+              {
+                "name": "JAMES MILNER",
+                "age": "16y 356d",
+                "days": 356,
+                "col": "#cfe0ff"
+              },
+              {
+                "name": "JAMES VAUGHAN",
+                "age": "16y 270d",
+                "days": 270,
+                "col": "#ffd400"
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 21,
+            "word": "YEARS (ALMOST)",
+            "size": 420,
+            "w": 8
+          }
+        ]
+      }
+    },
+    {
+      "text": "March 2026. Arsenal against Everton. On comes Max Dowman, aged sixteen.",
+      "scene": {
+        "bg": "red",
+        "type": "years",
+        "steps": [
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "2026",
+                "top": "MARCH",
+                "label": "The Emirates",
+                "head": "#e2384a"
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "score",
+            "top": "14 MARCH 2026",
+            "home": "ARSENAL",
+            "homeCol": "#e2384a",
+            "away": "EVERTON",
+            "awayCol": "#1d3fa0",
+            "awayInk": "#fff",
+            "score": "0-0",
+            "w": 2
+          },
+          {
+            "type": "portrait",
+            "person": {
+              "image": "dowman"
+            },
+            "name": "MAX DOWMAN",
+            "w": 7
+          }
+        ]
+      }
+    },
+    {
+      "text": "First, his deep cross finds Piero Hincapié at the back post, and Viktor Gyökeres taps it in.",
+      "scene": {
+        "bg": "green",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "dowman_cross",
+            "label": "THE ASSIST",
+            "w": 0
+          },
+          {
+            "type": "x5_move",
+            "title": "89' · THE OPENER",
+            "players": [
+              {
+                "x": 0.86,
+                "y": 0.4,
+                "col": "#e2384a",
+                "label": "DOWMAN"
+              },
+              {
+                "x": 0.14,
+                "y": 0.13,
+                "col": "#e2384a",
+                "label": "HINCAPIÉ"
+              },
+              {
+                "x": 0.5,
+                "y": 0.1,
+                "col": "#e2384a",
+                "label": "GYÖKERES"
+              },
+              {
+                "x": 0.35,
+                "y": 0.12,
+                "col": "#4c8cf0"
+              },
+              {
+                "x": 0.62,
+                "y": 0.14,
+                "col": "#4c8cf0"
+              },
+              {
+                "x": 0.5,
+                "y": 0.04,
+                "col": "#ffd400"
+              },
+              {
+                "x": 0.7,
+                "y": 0.3,
+                "col": "#4c8cf0"
+              }
+            ],
+            "path": [
+              [
+                0.86,
+                0.38
+              ],
+              [
+                0.15,
+                0.12
+              ],
+              [
+                0.48,
+                0.09
+              ],
+              [
+                0.5,
+                0.0
+              ]
+            ],
+            "foot": "1-0",
+            "w": 3
+          }
+        ]
+      }
+    },
+    {
+      "text": "Then, in stoppage time, Everton's keeper, Jordan Pickford, goes up for a corner.",
+      "scene": {
+        "bg": "red",
+        "type": "score",
+        "steps": [
+          {
+            "type": "score",
+            "top": "STOPPAGE TIME",
+            "home": "ARSENAL",
+            "homeCol": "#e2384a",
+            "homeInk": "#fff",
+            "away": "EVERTON",
+            "awayCol": "#1d3fa0",
+            "awayInk": "#fff",
+            "score": "1-0",
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "keeper_up",
+            "label": "THE KEEPER GOES UP",
+            "w": 5
+          }
+        ]
+      }
+    },
+    {
+      "text": "Dowman wins the loose ball, skips past two Everton players, runs half the length of the pitch, and rolls it into an empty net.",
+      "scene": {
+        "bg": "green",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "dowman_run",
+            "label": "MAX DOWMAN",
+            "w": 0
+          },
+          {
+            "type": "x5_move",
+            "title": "90+ · THE RUN",
+            "carrier": 0,
+            "players": [
+              {
+                "x": 0.3,
+                "y": 0.86,
+                "col": "#e2384a",
+                "label": "DOWMAN"
+              },
+              {
+                "x": 0.36,
+                "y": 0.8,
+                "col": "#4c8cf0",
+                "label": "MYKOLENKO"
+              },
+              {
+                "x": 0.52,
+                "y": 0.6,
+                "col": "#4c8cf0",
+                "label": "DEWSBURY-HALL"
+              },
+              {
+                "x": 0.42,
+                "y": 0.9,
+                "col": "#ffd400",
+                "label": "PICKFORD",
+                "to": [
+                  0.48,
+                  0.5
+                ]
+              },
+              {
+                "x": 0.2,
+                "y": 0.88,
+                "col": "#4c8cf0"
+              },
+              {
+                "x": 0.6,
+                "y": 0.84,
+                "col": "#4c8cf0"
+              },
+              {
+                "x": 0.5,
+                "y": 0.95,
+                "col": "#e2384a"
+              }
+            ],
+            "path": [
+              [
+                0.33,
+                0.84
+              ],
+              [
+                0.46,
+                0.66
+              ],
+              [
+                0.55,
+                0.42
+              ],
+              [
+                0.52,
+                0.18
+              ],
+              [
+                0.5,
+                0.0
+              ]
+            ],
+            "foot": "EMPTY NET",
+            "w": 5
+          },
+          {
+            "type": "picture",
+            "image": "dowman_goal",
+            "big": "GOAL",
+            "bigSize": 300,
+            "bigCol": "#ffd400",
+            "w": 18
+          }
+        ]
+      }
+    },
+    {
+      "text": "Sixteen years and seventy-three days. A hundred and ninety-seven days younger than Vaughan.",
+      "scene": {
+        "bg": "red",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "16 YEARS|73 DAYS",
+            "hi": 1,
+            "size": 210,
+            "w": 0
+          },
+          {
+            "type": "ages",
+            "title": "YOUNGEST SCORER",
+            "items": [
+              {
+                "name": "WAYNE ROONEY",
+                "age": "16y 360d",
+                "days": 360,
+                "col": "#cfe0ff"
+              },
+              {
+                "name": "JAMES MILNER",
+                "age": "16y 356d",
+                "days": 356,
+                "col": "#cfe0ff"
+              },
+              {
+                "name": "JAMES VAUGHAN",
+                "age": "16y 270d",
+                "days": 270,
+                "col": "#cfe0ff"
+              },
+              {
+                "name": "MAX DOWMAN",
+                "age": "16y 73d",
+                "days": 73,
+                "col": "#ffd400"
+              }
+            ],
+            "w": 6
+          }
+        ]
+      }
+    },
+    {
+      "text": "And who did he score against? Everton. The club of two of the old record holders.",
+      "scene": {
+        "bg": "blue",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "dowman_goal",
+            "big": "v EVERTON",
+            "bigSize": 200,
+            "w": 0
+          },
+          {
+            "type": "versus",
+            "left": {
+              "image": "rooney"
+            },
+            "right": {
+              "image": "vaughan"
+            },
+            "leftName": "ROONEY",
+            "rightName": "VAUGHAN",
+            "leftNum": "2002",
+            "rightNum": "2005",
+            "w": 8
+          }
+        ]
+      }
+    },
+    {
+      "text": "Two months later, he was a Premier League champion too.",
+      "scene": {
+        "bg": "red",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "dowman_champion",
+            "big": "CHAMPION AT 16",
+            "bigSize": 150,
+            "bigCol": "#ffd400",
+            "w": 0
+          }
+        ]
+      }
+    }
+  ],
+  "images": {
+    "rooney": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/rooney.png",
+    "vaughan": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/vaughan.png",
+    "dowman": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/dowman.png",
+    "milner": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/milner.png",
+    "rooney_goal": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/rooney_goal.png",
+    "dowman_cross": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/dowman_cross.png",
+    "keeper_up": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/keeper_up.png",
+    "dowman_run": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/dowman_run.png",
+    "dowman_goal": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/dowman_goal.png",
+    "dowman_champion": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/dowman_champion.png"
+  }
+}

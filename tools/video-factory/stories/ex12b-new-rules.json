@@ -1,0 +1,361 @@
+{
+  "id": "ex12b-new-rules",
+  "series": "Explainer",
+  "variant": "v2: steps every 1-2 s",
+  "title": "Football's new rules for 2026/27",
+  "layout": "explainer",
+  "music": "07-find-a-way.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://www.theifab.com/law-changes/latest/",
+    "https://downloads.theifab.com/downloads/changes-to-the-laws-of-the-game-202627?l=en",
+    "https://www.concacaf.com/competitions/concacaf/news/concacaf-confirms-implementation-of-the-ifab-2026-27-laws-of-the-game-amendments",
+    "https://www.skysports.com/football/news/12098/13549645/world-cup-ifab-confirm-new-var-powers-10-second-substitutions-and-tactical-timeout-ban-in-major-rule-changes"
+  ],
+  "facts": {
+    "countdown": "Law 15/16 2026/27: delaying a throw-in or goal kick -> referee whistles, counts down five seconds with a raised hand; throw-in goes to opponents; late goal kick = corner to opponents",
+    "keeper": "2025/26: keeper controlling the ball with hands > 8 s -> corner (Law 17 text)",
+    "subs": "10 s to leave when substituted; else substitute cannot enter until first stoppage after one minute",
+    "injury": "players treated/assessed on the field or who stop play due to injury leave and stay off one minute (running clock) after the restart; exceptions incl. goalkeeper, injured by an offence punished by YC/RC",
+    "var": "VAR may review a red from a clearly wrong second yellow; mistaken identity; wrongly awarded corner (competition option)",
+    "mouth": "sending-off for covering mouth when communicating with an opponent in a provocative manner (competition option)",
+    "protest": "Law 3/7: fewer than seven players / abandoned match where a team is responsible -> in principle forfeited (approved 28 Apr 2026)"
+  },
+  "lines": [
+    {
+      "text": "Football's rules changed this summer. And they're coming for time-wasters.",
+      "scene": {
+        "bg": "red",
+        "hook": true,
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "NEW RULES|2026/27",
+            "hi": 1,
+            "size": 200,
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "timewaster",
+            "big": "TIME-WASTERS",
+            "bigSize": 150,
+            "bigY": 1300,
+            "w": 7
+          }
+        ]
+      }
+    },
+    {
+      "text": "Delay a throw-in, and the referee counts down five seconds with a raised hand. Miss it, and it's their throw.",
+      "scene": {
+        "bg": "red",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "throwin_wait",
+            "label": "DELAY A THROW-IN",
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "ref_countdown",
+            "big": "5",
+            "bigSize": 420,
+            "bigY": 1250,
+            "w": 5
+          },
+          {
+            "type": "x7_countdown",
+            "title": "THROW-IN",
+            "word": "5-SECOND COUNTDOWN",
+            "w": 8,
+            "from": 5
+          },
+          {
+            "type": "statement",
+            "text": "THEIR|THROW",
+            "hi": 1,
+            "size": 220,
+            "w": 14
+          }
+        ]
+      }
+    },
+    {
+      "text": "Same with goal kicks. Too slow, and it's a corner to the other team.",
+      "scene": {
+        "bg": "red",
+        "type": "x7_countdown",
+        "steps": [
+          {
+            "type": "x7_countdown",
+            "title": "GOAL KICK",
+            "end": "CORNER",
+            "w": 0,
+            "from": 5
+          },
+          {
+            "type": "picture",
+            "image": "corner_given",
+            "big": "CORNER",
+            "bigSize": 200,
+            "bigY": 1300,
+            "w": 9
+          }
+        ]
+      }
+    },
+    {
+      "text": "That's on top of last season's eight-second limit for keepers holding the ball.",
+      "scene": {
+        "bg": "purple",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "keeper_ball",
+            "label": "LAST SEASON",
+            "w": 0
+          },
+          {
+            "type": "x7_countdown",
+            "title": "KEEPER",
+            "end": "CORNER",
+            "word": "HOLD IT 8 SECONDS MAX",
+            "w": 6,
+            "from": 8
+          }
+        ]
+      }
+    },
+    {
+      "text": "Substitutions. The player coming off now has ten seconds to leave the pitch.",
+      "scene": {
+        "bg": "blue",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "sub_board",
+            "label": "SUBSTITUTIONS",
+            "w": 0
+          },
+          {
+            "type": "x7_countdown",
+            "per": 0.2,
+            "title": "OFF IN 10",
+            "word": "10 SECONDS TO LEAVE",
+            "w": 7,
+            "from": 10
+          }
+        ]
+      }
+    },
+    {
+      "text": "Take longer, and your sub waits until the first stoppage after a full minute. You play with ten.",
+      "scene": {
+        "bg": "blue",
+        "type": "x7_countdown",
+        "steps": [
+          {
+            "type": "x7_countdown",
+            "per": 0.12,
+            "title": "TOO SLOW",
+            "end": "WAIT",
+            "w": 0,
+            "from": 10
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 60,
+            "fmt": "{v}",
+            "word": "SECONDS, AT LEAST, BEFORE THE SUB",
+            "size": 360,
+            "w": 8
+          },
+          {
+            "type": "picture",
+            "image": "ten_men",
+            "big": "10 v 11",
+            "bigSize": 230,
+            "bigY": 1300,
+            "w": 14
+          }
+        ]
+      }
+    },
+    {
+      "text": "Injuries. Get treated on the pitch, and you must stay off for a minute after the restart.",
+      "scene": {
+        "bg": "teal",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "physio",
+            "label": "INJURIES",
+            "w": 0
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 1,
+            "fmt": "{v}",
+            "word": "MINUTE OFF THE PITCH",
+            "size": 420,
+            "w": 9
+          }
+        ]
+      }
+    },
+    {
+      "text": "Unless you're a keeper, or the foul on you got a card.",
+      "scene": {
+        "bg": "teal",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "UNLESS:|KEEPER",
+            "hi": 0,
+            "size": 200,
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "UNLESS:|KEEPER|FOULED + CARD",
+            "hi": 0,
+            "size": 180,
+            "w": 6
+          }
+        ]
+      }
+    },
+    {
+      "text": "VAR gets new powers too. It can now check a red card that came from a clearly wrong second yellow.",
+      "scene": {
+        "bg": "navy",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "var_screen",
+            "label": "NEW VAR POWERS",
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "2ND YELLOW|WRONG?",
+            "hi": 1,
+            "size": 200,
+            "w": 8
+          },
+          {
+            "type": "statement",
+            "text": "RED CARD|OVERTURNED",
+            "hi": 0,
+            "size": 190,
+            "w": 18
+          }
+        ]
+      }
+    },
+    {
+      "text": "And it can fix mistaken identity, when the wrong player gets booked.",
+      "scene": {
+        "bg": "navy",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "wrong_player",
+            "big": "WRONG MAN",
+            "bigSize": 170,
+            "bigY": 1300,
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "Competitions can also show a red card for covering your mouth when confronting an opponent.",
+      "scene": {
+        "bg": "red",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "mouth_cover",
+            "label": "COMPETITION OPTION",
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "COVER YOUR|MOUTH = RED",
+            "hi": 1,
+            "size": 190,
+            "w": 8
+          }
+        ]
+      }
+    },
+    {
+      "text": "And walk off in protest? If the game can't go on, your team can lose it by forfeit.",
+      "scene": {
+        "bg": "red",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "walk_off",
+            "label": "WALK OFF IN PROTEST?",
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "FORFEIT",
+            "size": 300,
+            "w": 17
+          }
+        ]
+      }
+    },
+    {
+      "text": "Which rule will change the game most?",
+      "scene": {
+        "bg": "purple",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "WHICH RULE|CHANGES MOST?",
+            "hi": 1,
+            "size": 180,
+            "w": 0
+          }
+        ]
+      }
+    }
+  ],
+  "images": {
+    "timewaster": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/timewaster.png",
+    "throwin_wait": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/throwin_wait.png",
+    "ref_countdown": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/ref_countdown.png",
+    "corner_given": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/corner_given.png",
+    "keeper_ball": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/keeper_ball.png",
+    "sub_board": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/sub_board.png",
+    "ten_men": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/ten_men.png",
+    "physio": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/physio.png",
+    "var_screen": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/var_screen.png",
+    "wrong_player": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/wrong_player.png",
+    "mouth_cover": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/mouth_cover.png",
+    "walk_off": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/walk_off.png"
+  }
+}

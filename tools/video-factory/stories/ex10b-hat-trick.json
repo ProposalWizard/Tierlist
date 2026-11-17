@@ -1,0 +1,342 @@
+{
+  "id": "ex10b-hat-trick",
+  "series": "Explainer",
+  "variant": "v2: steps every 1-2 s",
+  "title": "Why is it called a hat-trick?",
+  "layout": "explainer",
+  "music": "08-lobby.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://en.wikipedia.org/wiki/H._H._Stephenson",
+    "https://en.wikipedia.org/wiki/Hat-trick",
+    "https://www.etymonline.com/word/hat-trick",
+    "https://www.guinnessworldrecords.com/world-records/385454-fastest-hat-trick-in-a-football-soccer-english-premier-league-match",
+    "https://www.washingtontimes.com/news/2015/may/16/mane-scores-fastest-premier-league-hat-trick/"
+  ],
+  "facts": {
+    "1858": "Hyde Park ground, Sheffield, 1858: All-England Eleven v 22 of Hallam; H. H. Stephenson took three wickets in three balls; a collection was taken and a hat bought for him (popular account; a 2024 ADS-L post finds a July 1858 'claiming a new hat' report, so the custom may be slightly older)",
+    "print": "'hat trick' in print by 1865",
+    "mane": "Sadio Mané, 2 min 56 s, Southampton 6-1 Aston Villa, 16 May 2015, goals 13', 14', 16'"
+  },
+  "lines": [
+    {
+      "text": "Why are three goals in a game called a hat-trick?",
+      "scene": {
+        "bg": "blue",
+        "hook": true,
+        "type": "tally",
+        "steps": [
+          {
+            "type": "tally",
+            "n": 3,
+            "cols": 3,
+            "icon": "ball",
+            "labels": [
+              "GOAL 1",
+              "GOAL 2",
+              "GOAL 3"
+            ],
+            "count": true,
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "HAT|TRICK?",
+            "hi": 0,
+            "size": 240,
+            "w": 9
+          }
+        ]
+      }
+    },
+    {
+      "text": "Well, the hat was real. And it was won in cricket, not football.",
+      "scene": {
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "top_hat",
+            "big": "THE HAT WAS REAL",
+            "bigSize": 120,
+            "bigY": 1300,
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "hattrick1858",
+            "label": "CRICKET",
+            "w": 10
+          }
+        ]
+      }
+    },
+    {
+      "text": "Sheffield, 1858. The All-England Eleven took on twenty-two players from Hallam.",
+      "scene": {
+        "bg": "blue",
+        "type": "years",
+        "steps": [
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "1858",
+                "top": "SHEFFIELD",
+                "label": "Hyde Park ground",
+                "tick": true,
+                "head": "#1d3fa0"
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "hattrick1858",
+            "label": "ALL-ENGLAND XI v HALLAM",
+            "w": 3
+          },
+          {
+            "type": "statement",
+            "text": "11 v 22",
+            "size": 300,
+            "w": 7
+          }
+        ]
+      }
+    },
+    {
+      "text": "Then their bowler, H. H. Stephenson, took three wickets with three balls in a row.",
+      "scene": {
+        "bg": "green",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "stephenson_bowl",
+            "label": "H. H. STEPHENSON",
+            "w": 0
+          },
+          {
+            "type": "tally",
+            "n": 3,
+            "cols": 3,
+            "mark": "OUT",
+            "markCol": "#e2384a",
+            "labels": [
+              "BALL 1",
+              "BALL 2",
+              "BALL 3"
+            ],
+            "title": "3 BALLS, 3 WICKETS",
+            "w": 7
+          }
+        ]
+      }
+    },
+    {
+      "text": "Almost unheard of. So the crowd passed round a collection, and bought him a brand new hat.",
+      "scene": {
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "ALMOST|UNHEARD OF",
+            "hi": 1,
+            "size": 170,
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "hat_collection",
+            "label": "A COLLECTION",
+            "w": 5
+          },
+          {
+            "type": "picture",
+            "image": "hat_presented",
+            "big": "A NEW HAT",
+            "bigSize": 170,
+            "bigY": 1350,
+            "w": 11
+          }
+        ]
+      }
+    },
+    {
+      "text": "Three wickets in three balls became a 'hat-trick'. By 1865, the word was in print.",
+      "scene": {
+        "bg": "purple",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "3 IN 3 =|HAT-TRICK",
+            "hi": 1,
+            "size": 180,
+            "w": 0
+          },
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "1858",
+                "top": "THE HAT",
+                "label": "Sheffield"
+              },
+              {
+                "year": "1865",
+                "top": "IN PRINT",
+                "label": "'Hat trick'",
+                "tick": true,
+                "head": "#1ea85a"
+              }
+            ],
+            "w": 8
+          }
+        ]
+      }
+    },
+    {
+      "text": "Football borrowed it. Now it means three goals in one game.",
+      "scene": {
+        "bg": "blue",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "hat_presented",
+            "big": "FOOTBALL BORROWED IT",
+            "bigSize": 110,
+            "bigY": 1350,
+            "w": 0
+          },
+          {
+            "type": "tally",
+            "n": 3,
+            "cols": 3,
+            "icon": "ball",
+            "labels": [
+              "GOAL 1",
+              "GOAL 2",
+              "GOAL 3"
+            ],
+            "title": "ONE GAME",
+            "w": 6
+          }
+        ]
+      }
+    },
+    {
+      "text": "The rarest kind? A perfect hat-trick: left foot, right foot, and a header.",
+      "scene": {
+        "bg": "orange",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "THE PERFECT|HAT-TRICK",
+            "hi": 1,
+            "size": 170,
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "LEFT FOOT",
+            "size": 190,
+            "w": 6
+          },
+          {
+            "type": "statement",
+            "text": "LEFT FOOT|RIGHT FOOT",
+            "size": 190,
+            "w": 8
+          },
+          {
+            "type": "statement",
+            "text": "LEFT FOOT|RIGHT FOOT|HEADER",
+            "hi": 2,
+            "size": 190,
+            "w": 12
+          }
+        ]
+      }
+    },
+    {
+      "text": "The fastest in Premier League history? Sadio Mané. Two minutes fifty-six seconds, for Southampton against Aston Villa.",
+      "scene": {
+        "bg": "red",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "FASTEST|IN THE PL?",
+            "hi": 1,
+            "size": 180,
+            "w": 0
+          },
+          {
+            "type": "portrait",
+            "person": {
+              "image": "mane"
+            },
+            "name": "SADIO MANÉ",
+            "w": 6
+          },
+          {
+            "type": "statement",
+            "text": "2 MIN|56 SEC",
+            "hi": 0,
+            "size": 260,
+            "w": 8
+          },
+          {
+            "type": "score",
+            "top": "16 MAY 2015",
+            "home": "SOUTHAMPTON",
+            "homeCol": "#d71920",
+            "away": "ASTON VILLA",
+            "awayCol": "#670e36",
+            "score": "6-1",
+            "foot": "GOALS ON 13, 14 AND 16 MINUTES",
+            "w": 13
+          }
+        ]
+      }
+    },
+    {
+      "text": "And today? The scorer takes home the match ball. In 1858, you got a hat.",
+      "scene": {
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "match_ball",
+            "label": "THE MATCH BALL",
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "hat_presented",
+            "big": "1858: A HAT",
+            "bigSize": 150,
+            "bigY": 1350,
+            "w": 10
+          }
+        ]
+      }
+    }
+  ],
+  "images": {
+    "top_hat": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/top_hat.png",
+    "hattrick1858": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/hattrick1858.png",
+    "stephenson_bowl": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/stephenson_bowl.png",
+    "hat_collection": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/hat_collection.png",
+    "hat_presented": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/hat_presented.png",
+    "mane": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/mane.png",
+    "match_ball": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/match_ball.png"
+  }
+}

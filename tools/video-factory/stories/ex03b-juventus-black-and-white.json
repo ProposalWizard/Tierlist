@@ -275,6 +275,22 @@
       }
     },
     {
+      "text": "Today, their nickname is the Bianconeri. The white-blacks.",
+      "scene": {
+        "bg": "navy",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "BIANCONERI|THE WHITE-BLACKS",
+            "hi": 1,
+            "size": 150,
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
       "text": "And Notts County? Founded in 1862, they're the oldest professional club in the world.",
       "scene": {
         "bg": "navy",

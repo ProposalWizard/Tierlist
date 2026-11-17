@@ -11,6 +11,7 @@
   },
   "sources": [
     "https://guinnessworldrecords.com/world-records/most-career-goals-(football)",
+    "https://www.gulf-times.com/article/652359/sport/the-only-player-to-have-won-world-cup-title-three-times",
     "https://www.history.com/this-day-in-history/november-19/pele-scores-1000th-goal",
     "https://www.africanews.com/amp/2022/12/30/how-pele-scored-his-thousandth-goal-at-maracana-stadium/",
     "https://global.espn.com/football/story/_/id/37623253/has-messi-overtaken-pele-career-goals-record-depends-ask",
@@ -19,7 +20,8 @@
   ],
   "facts": {
     "guinness": "1,279 goals in 1,363 games, 7 Sep 1956 to 1 Oct 1977, incl. friendlies and tours",
-    "1000th": "penalty v Vasco da Gama, Maracana, 19 Nov 1969, ~80,000 crowd (sources say 65-80k); dedicated to the poor children of Brazil; Santos won 2-1 (reported)",
+    "1000th": "penalty v Vasco da Gama, Maracana, 19 Nov 1969, ~80,000 crowd (sources say 65-80k); dedicated to the poor children of Brazil; score reported differently, not shown",
+    "1959": "127 goals in calendar 1959 (Reuters facts via Gulf Times; club-only vs all disputed, so the video says just 127 in 1959)",
     "official": "official-only counts 757-769 -> 'around 760'",
     "ronaldo": "900th official goal 5 Sept 2024 v Croatia, first man to 900"
   },
@@ -27,6 +29,7 @@
     "pele": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pele.png",
     "ronaldo": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/ronaldo.png",
     "maracana1969": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/maracana1969.png",
+    "pele_debut": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pele_debut.png",
     "pele_leap": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pele_leap.png",
     "pele_mics": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pele_mics.png",
     "santos_tour": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/santos_tour.png",
@@ -46,6 +49,59 @@
             "big": "?",
             "bigSize": 420,
             "bigY": 1300,
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "He made his Santos debut aged fifteen, in 1956. And scored.",
+      "scene": {
+        "bg": "green",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "pele_debut",
+            "label": "SANTOS · 1956",
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "AGED 15|AND SCORED",
+            "hi": 1,
+            "size": 170,
+            "w": 10
+          }
+        ]
+      }
+    },
+    {
+      "text": "He won three World Cups. 1958, 1962 and 1970.",
+      "scene": {
+        "bg": "yellow",
+        "type": "shelf",
+        "steps": [
+          {
+            "type": "shelf",
+            "title": "BRAZIL",
+            "items": [
+              {
+                "label": "World Cup",
+                "year": "1958",
+                "kind": "cup"
+              },
+              {
+                "label": "World Cup",
+                "year": "1962",
+                "kind": "cup"
+              },
+              {
+                "label": "World Cup",
+                "year": "1970",
+                "kind": "cup"
+              }
+            ],
             "w": 0
           }
         ]
@@ -153,14 +209,10 @@
             "w": 0
           },
           {
-            "type": "score",
-            "top": "19 NOVEMBER 1969",
-            "home": "VASCO DA GAMA",
-            "homeCol": "#111111",
-            "homeInk": "#fff",
-            "away": "SANTOS",
-            "awayCol": "#ffffff",
-            "score": "1-2",
+            "type": "statement",
+            "text": "PENALTY|v VASCO DA GAMA",
+            "hi": 1,
+            "size": 150,
             "w": 3
           },
           {
@@ -186,6 +238,29 @@
             "image": "pele_mics",
             "label": "“FOR THE CHILDREN”",
             "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "How did it get so big? In 1959 alone, he scored a hundred and twenty-seven.",
+      "scene": {
+        "bg": "green",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "pele_leap",
+            "label": "SANTOS · 1959",
+            "w": 0
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 127,
+            "word": "GOALS IN 1959",
+            "size": 420,
+            "w": 12
           }
         ]
       }
