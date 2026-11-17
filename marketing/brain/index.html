@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mikey's Brain</title>
+<style>
+:root{--bg:#f7f4ee;--card:#ffffff;--ink:#1f1d1a;--ink2:#5d5850;--ink3:#948d82;--line:#ebe5da;--soft:#f2ede4;
+  --green:#2f9e5b;--greenbg:#e5f5ea;--amber:#c98a12;--amberbg:#fbf1dc;--grey:#a39d93;--greybg:#f0ede8;--blue:#3a6fd8;--bluebg:#e6eefc;--red:#d0453a;
+  --foot:#2f9e5b;--cont:#8a5cd6;--r:20px;--sh:0 1px 2px rgba(40,30,10,.05),0 6px 20px rgba(40,30,10,.06)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17161a;--card:#211f24;--ink:#f2efe9;--ink2:#c3bdb3;--ink3:#8d877e;--line:#302d33;--soft:#2a272d;
+  --greenbg:#1d3326;--amberbg:#3a2e14;--greybg:#2a282c;--bluebg:#1d2740;--sh:none}}
+:root[data-theme="dark"]{--bg:#17161a;--card:#211f24;--ink:#f2efe9;--ink2:#c3bdb3;--ink3:#8d877e;--line:#302d33;--soft:#2a272d;--greenbg:#1d3326;--amberbg:#3a2e14;--greybg:#2a282c;--bluebg:#1d2740;--sh:none}
+*{box-sizing:border-box}html,body{margin:0;overflow-x:hidden}
+body{background:var(--bg);color:var(--ink);font:17px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif}
+.wrap{max-width:720px;margin:0 auto;padding:22px 16px 90px}
+h1{font-size:32px;line-height:1.1;margin:4px 0 6px;letter-spacing:-.02em}
+.lead{color:var(--ink2);margin:0 0 18px}
+h2{font-size:22px;margin:34px 0 4px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+h2 .n{width:30px;height:30px;border-radius:50%;background:var(--ink);color:var(--bg);font-size:15px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.sub{color:var(--ink3);margin:0 0 14px;font-size:15px}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--line);padding:18px;margin:0 0 12px;min-width:0}
+.today{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.today>*{min-width:0}
+.today .card{margin:0;padding:14px;text-align:center}.today b{display:block;font-size:30px;line-height:1.1}.today span{font-size:13px;color:var(--ink2)}
+/* the loop */
+.loop{position:relative;padding-left:4px}
+.step{display:grid;grid-template-columns:48px 1fr;gap:14px;align-items:start;position:relative;padding-bottom:16px}.step>*{min-width:0}
+.step:not(:last-child)::after{content:"";position:absolute;left:23px;top:50px;bottom:0;width:2px;background:var(--line)}
+.dot{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--soft)}
+.step .t{font-weight:800;font-size:18px;margin-top:2px}.step .d{color:var(--ink2);font-size:15px}
+.chip{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;margin:6px 6px 0 0;white-space:nowrap}
+.c-you{background:var(--bluebg);color:var(--blue)}.c-me{background:var(--soft);color:var(--ink2)}
+.c-ok{background:var(--greenbg);color:var(--green)}.c-half{background:var(--amberbg);color:var(--amber)}.c-no{background:var(--greybg);color:var(--ink3)}
+.back{margin:2px 0 0 62px;color:var(--ink3);font-size:14px}
+/* waiting videos */
+.vid{display:grid;grid-template-columns:108px 1fr;gap:14px}.vid>*{min-width:0}
+.vid img,.vid video{width:108px;height:192px;object-fit:cover;border-radius:14px;background:#000;display:block}
+.vid .tt{font-weight:800;font-size:18px;line-height:1.25}.vid .m{color:var(--ink3);font-size:14px;margin-top:2px}
+.to{margin-top:8px}.to .chip{margin-top:4px}
+.cap{margin-top:10px;font-size:14px;color:var(--ink2);background:var(--soft);border-radius:12px;padding:10px 12px;white-space:pre-wrap;word-break:break-word}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button{font:inherit;font-size:15px;font-weight:800;border:0;border-radius:14px;padding:11px 16px;cursor:pointer}
+.ok{background:var(--green);color:#fff}.later{background:var(--soft);color:var(--ink)}.chg{background:var(--soft);color:var(--ink)}
+.state{margin-top:12px;border-radius:12px;padding:10px 12px;font-size:15px;font-weight:700}
+.s-approved{background:var(--greenbg);color:var(--green)}.s-later{background:var(--greybg);color:var(--ink2)}.s-changes{background:var(--amberbg);color:var(--amber)}
+textarea{width:100%;font:inherit;font-size:15px;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--card);color:var(--ink);margin-top:10px;min-height:70px}
+.undo{background:none;color:var(--ink3);font-weight:700;padding:4px 0;font-size:13px;text-decoration:underline}
+/* accounts */
+.grp{display:flex;align-items:center;gap:8px;font-weight:800;font-size:17px;margin:4px 0 8px}.grp i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.acc{display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}.acc>*{min-width:0}
+.acc:first-of-type{border-top:0}
+.pf{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:13px}
+.acc .nm{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.acc .ms{font-size:13px;color:var(--ink3)}
+/* results */
+.bar{display:grid;grid-template-columns:1fr 64px;gap:10px;align-items:center;margin:8px 0}.bar>*{min-width:0}
+.bar .l{font-size:14px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .track{height:12px;background:var(--soft);border-radius:6px;margin-top:4px;overflow:hidden}.bar .track i{display:block;height:12px;border-radius:6px}
+.bar b{text-align:right;font-size:15px}
+.lesson{border-left:4px solid var(--green);padding:4px 0 4px 12px;margin:10px 0;font-size:16px}
+details{margin-top:6px}summary{cursor:pointer;font-weight:800;color:var(--ink2);padding:6px 0;font-size:15px}
+.todo{display:grid;grid-template-columns:30px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--line)}.todo>*{min-width:0}.todo:first-child{border-top:0}
+.box{width:24px;height:24px;border-radius:8px;border:2px solid var(--line);margin-top:2px}
+.muted{color:var(--ink3);font-size:14px}a{color:var(--blue)}
+.foot{margin-top:30px;color:var(--ink3);font-size:13px;text-align:center}
+</style></head>
+<body><div class="wrap">
+<div class="muted">Updated <span id="upd"></span></div>
+<h1>Mikey's Brain</h1>
+<p class="lead">Every video, every account, one place. Claude makes and posts. You say yes.</p>
+
+<div class="today" id="today"></div>
+
+<h2><span class="n">1</span>How it works</h2>
+<p class="sub">One loop. Every video goes round it once.</p>
+<div class="card"><div class="loop" id="loop"></div><div class="back">↺ What we learn in step 6 picks the next ideas in step 1.</div></div>
+
+<h2><span class="n">2</span>Waiting for your OK</h2>
+<p class="sub">Watch it, read the words, then press a button. Nothing goes out without your yes.</p>
+<div id="queue"></div>
+
+<h2><span class="n">3</span>Your 8 accounts</h2>
+<p class="sub">Green = Claude can post there. Amber = Claude can only read the numbers. Grey = not linked yet.</p>
+<div id="accounts"></div>
+
+<h2><span class="n">4</span>How the posts are doing</h2>
+<p class="sub">Instagram, last 30 days. Views on each Reel.</p>
+<div id="results"></div>
+
+<h2><span class="n">5</span>The rules Claude follows</h2>
+<p class="sub">So every post is done the same way. Tap one to read it.</p>
+<div class="card" id="rules"></div>
+
+<h2><span class="n">6</span>To switch everything on</h2>
+<p class="sub">Things only you can do. Three steps.</p>
+<div class="card" id="setup"></div>
+
+<div class="foot">Private to you. Claude updates this page when a new video is ready or new numbers come in.</div>
+</div>
+<script>
+// ---------- what the page shows (Claude rewrites this block when things change) ----------
+const DATA={
+updated:"17 Nov 2026",
+loop:[
+ {i:"💡",t:"Ideas",d:"Pick the player and the story: stat twins, who replaces him, his next club.",who:"me",st:"ok",stw:"Working (Twin Finder)"},
+ {i:"🎬",t:"Make",d:"Script, Hugo's voice, the video, game highlights.",who:"me",st:"ok",stw:"Working"},
+ {i:"👀",t:"Check",d:"Claude looks at frames from the whole video before you see it.",who:"me",st:"ok",stw:"Working"},
+ {i:"✅",t:"You say yes",d:"The video, its words and where it goes. Right here, section 2.",who:"you",st:"ok",stw:"New on this page"},
+ {i:"📤",t:"Post",d:"Each video goes to the right account on every app.",who:"me",st:"half",stw:"Instagram only for now"},
+ {i:"📈",t:"Learn",d:"What got watched, and for how long. It shapes the next ideas.",who:"me",st:"half",stw:"Instagram numbers only"}],
+queue:[
+ {id:"v16",title:"Where should Vinícius go?",len:"1:11",made:"16 Nov",group:"football",cover:"img/v16-next-club-vinicius-sim.jpg",
+  video:"https://raw.githubusercontent.com/ProposalWizard/Tierlist/1e5019658e462869651d9a95d6829abf78cb44ac/docs/marketing/videos/v16-next-club-vinicius-sim/knowitball-v16-next-club-vinicius-sim.mp4",
+  to:["Instagram · knowitballjr"],toLater:["TikTok · BallKnowledgeFC","YouTube Shorts","Facebook Reels"],
+  note:"Season played 400 times at every club, then game highlights at the end.",
+  caption:"If Vinícius Júnior left Real Madrid, where should he go? 🤔\n\nWe put him into every club in Europe's top 5 leagues and played his season 400 times with the match engine from our game, Road to Ballon d'Or. Then we checked 10 years of finishes and trophies.\n\nWhere would you send him? 👇\n\n#vinicius #viniciusjr #realmadrid #bayern #arsenal #barcelona #football #transfers #footballstats #knowitball"},
+ {id:"v14",title:"How do Liverpool replace Alisson?",len:"0:57",made:"15 Nov",group:"football",cover:"img/v14-replace-alisson.jpg",
+  video:"https://raw.githubusercontent.com/ProposalWizard/Tierlist/1e5019658e462869651d9a95d6829abf78cb44ac/docs/marketing/videos/v14-replace-alisson/knowitball-v14-replace-alisson.mp4",
+  to:["Instagram · knowitballjr"],toLater:["TikTok · BallKnowledgeFC","YouTube Shorts","Facebook Reels"],
+  note:"Your story: Mamardashvili isn't the answer, Verbruggen is.",
+  caption:"Alisson's contract runs out this summer. How do Liverpool replace him? 🧤\n\nMamardashvili isn't the answer… our pick is Bart Verbruggen. Want younger? Kinský or Restes.\n\nWho would you sign? 👇\n\n#alisson #liverpool #lfc #verbruggen #mamardashvili #premierleague #football #goalkeeper #knowitball"},
+ {id:"v13",title:"Replace Van Dijk (short, new look)",len:"0:53",made:"14 Nov",group:"football",cover:"img/v13-replace-van-dijk-short.jpg",
+  video:"https://raw.githubusercontent.com/ProposalWizard/Tierlist/1e5019658e462869651d9a95d6829abf78cb44ac/docs/marketing/videos/v13-replace-van-dijk-short/knowitball-v13-replace-van-dijk-short.mp4",
+  to:["Instagram · knowitballjr"],toLater:["TikTok · BallKnowledgeFC","YouTube Shorts","Facebook Reels"],
+  note:"Same story as the Van Dijk Reel from 13 Nov, but shorter and in the paper look. Maybe one for the apps it isn't on yet.",
+  caption:"Van Dijk's contract runs out this summer. How do Liverpool replace him? 🤔\n\nHuijsen won't leave Madrid… so it's Jacobo Ramón for the future, or Schlotterbeck for experience.\n\nWho would you sign? 👇\n\n#vandijk #liverpool #lfc #jacoboramon #schlotterbeck #premierleague #football #knowitball"}],
+accounts:{
+ football:[{p:"Instagram",n:"knowitballjr",s:"post"},{p:"TikTok",n:"BallKnowledgeFC",s:"read",m:"Numbers only. Posting needs step 6."},{p:"YouTube",n:"1 channel linked",s:"read",m:"Can't upload yet. Football or content?"},{p:"Facebook",n:"Not linked",s:"none"}],
+ content:[{p:"Instagram",n:"cutcutthings",s:"post"},{p:"TikTok",n:"Not linked",s:"none"},{p:"YouTube",n:"Not linked",s:"none"},{p:"Facebook",n:"Not linked",s:"none"}]},
+results:{
+ knowitballjr:[["Kane: stat twin",1245],["Neymar: stat twin",145],["Van Dijk 18/19: stat twin",139],["Salah: stat twin",126],["Palmer: right now",126],["Replace Van Dijk",122]],
+ cutcutthings:[["Ice cream × 1000",1676],["Apple × 1000",179],["Bread × 1000",137],["Cookie × 1000",133],["Soap × 1000",123],["Tungsten cube × 1000",122]]},
+lessons:["Each account had one break-out (Kane 1,245 and ice cream 1,676 views). Most posts sit at about 120 to 180 views: that's Instagram's first test audience.",
+ "People watch about 15 seconds on average. Shorter cuts (under 60 s) and a strong first 2 seconds are the next thing to test."],
+rules:[
+ {t:"Football account captions",b:"Open with the question the video asks. One line on how we worked it out. End with a question to the viewer (\"Who would you sign? 👇\"). 8 to 10 hashtags: the players, the clubs, #football #footballstats #knowitball."},
+ {t:"Content account captions",b:"\"Cutting X 1000 Times! 🔪\" plus the emoji for the thing. Hashtags: #asmr #oddlysatisfying #satisfying #cutting #3danimation #blender3d #reels plus the thing itself."},
+ {t:"Which video goes where",b:"Football stats, replacements and next-club videos go on the football accounts only. Cutting videos and other viral tests go on the content accounts only. Never cross them."},
+ {t:"Before anything is posted",b:"Claude checks the video plays, the cover frame looks right, and the caption has no wrong numbers. Then it waits for your yes."},
+ {t:"After posting",b:"Claude checks the post is really live before saying it's done (never posts twice), and marks it Posted on the Production board."}],
+setup:[
+ {t:"Link a posting service for TikTok, YouTube and Facebook",d:"Metricool (or Upload-Post). Sign up, link your 6 other accounts, then connect it to Claude. It's the one missing piece for posting everywhere."},
+ {t:"Tell Claude your account names",d:"Your content account on TikTok, both YouTube channels and both Facebook pages."},
+ {t:"Facebook pages in pro mode",d:"You've done this for one page. The other needs it too, so its Reels can be shown to new people."}]
+};
+// ---------- drawing ----------
+const $=id=>document.getElementById(id), esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const PF={Instagram:"#d6336c",TikTok:"#111",YouTube:"#e02a1f",Facebook:"#1f6fe0"},PS={Instagram:"IG",TikTok:"TT",YouTube:"YT",Facebook:"FB"};
+const ST={post:["c-ok","Can post"],read:["c-half","Numbers only"],none:["c-no","Not linked"]};
+let DEC={};   // your decisions: {videoId: {status, note, at}}
+$('upd').textContent=DATA.updated;
+function today(){const waiting=DATA.queue.filter(q=>!DEC[q.id]||DEC[q.id].status!=='approved').length, appr=DATA.queue.filter(q=>DEC[q.id]&&DEC[q.id].status==='approved').length;
+  const linked=[...DATA.accounts.football,...DATA.accounts.content].filter(a=>a.s==='post').length;
+  $('today').innerHTML=`<div class="card"><b>${waiting}</b><span>waiting for you</span></div><div class="card"><b>${appr}</b><span>approved, ready to post</span></div><div class="card"><b>${linked}/8</b><span>accounts Claude can post to</span></div>`;}
+$('loop').innerHTML=DATA.loop.map((s,i)=>`<div class="step"><div class="dot">${s.i}</div><div><div class="t">${i+1}. ${s.t}</div><div class="d">${s.d}</div>
+  <span class="chip ${s.who==='you'?'c-you':'c-me'}">${s.who==='you'?'You':'Claude'}</span><span class="chip ${s.st==='ok'?'c-ok':'c-half'}">${s.stw}</span></div></div>`).join('');
+function queue(){$('queue').innerHTML=DATA.queue.map(q=>{const d=DEC[q.id];
+  const st=!d?'':d.status==='approved'?`<div class="state s-approved">✓ Approved. Say "post my approved videos" to Claude and it goes out.<br><button class="undo" data-u="${q.id}">Undo</button></div>`
+    :d.status==='later'?`<div class="state s-later">Saved for later.<br><button class="undo" data-u="${q.id}">Undo</button></div>`
+    :`<div class="state s-changes">Change asked: "${esc(d.note||'')}". Claude will remake it.<br><button class="undo" data-u="${q.id}">Undo</button></div>`;
+  return `<div class="card"><div class="vid"><video controls playsinline preload="none" poster="${q.cover}" src="${q.video}"></video><div>
+    <div class="tt">${esc(q.title)}</div><div class="m">${q.len} · made ${q.made} · ${q.group==='football'?'football':'content'}</div><div class="m" style="color:var(--ink2);margin-top:6px">${esc(q.note)}</div>
+    <div class="to"><div class="muted">Goes to</div>${q.to.map(t=>`<span class="chip c-ok">${esc(t)}</span>`).join('')}${q.toLater.map(t=>`<span class="chip c-no">${esc(t)} · later</span>`).join('')}</div></div></div>
+    <details><summary>Read the caption</summary><div class="cap">${esc(q.caption)}</div></details>
+    ${d?st:`<div class="btns"><button class="ok" data-a="${q.id}">✓ Post it</button><button class="later" data-l="${q.id}">Not now</button><button class="chg" data-c="${q.id}">Change something</button></div><div id="chg-${q.id}"></div>`}</div>`}).join('')||'<div class="card muted">Nothing waiting. Claude adds new videos here when they\'re ready.</div>';
+  document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>decide(b.dataset.a,{status:'approved'}));
+  document.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>decide(b.dataset.l,{status:'later'}));
+  document.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>decide(b.dataset.u,null));
+  document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const id=b.dataset.c;$('chg-'+id).innerHTML=`<textarea id="t-${id}" placeholder="What should change? e.g. cut it to 45 seconds"></textarea><div class="btns"><button class="ok" id="s-${id}">Send to Claude</button></div>`;
+    $('s-'+id).onclick=()=>{const v=$('t-'+id).value.trim();if(v)decide(id,{status:'changes',note:v})};});
+  today();}
+function accounts(){const g=(k,lab,col)=>`<div class="card"><div class="grp"><i style="background:${col}"></i>${lab}</div>${DATA.accounts[k].map(a=>`<div class="acc"><div class="pf" style="background:${PF[a.p]}">${PS[a.p]}</div>
+   <div><div class="nm">${esc(a.n)}</div><div class="ms">${a.p}${a.m?' · '+esc(a.m):''}</div></div><span class="chip ${ST[a.s][0]}" style="margin:0">${ST[a.s][1]}</span></div>`).join('')}</div>`;
+  $('accounts').innerHTML=g('football','Football accounts','var(--foot)')+g('content','Content accounts','var(--cont)');}
+function results(){const mx=Math.max(...Object.values(DATA.results).flat().map(r=>r[1]));
+  $('results').innerHTML=Object.entries(DATA.results).map(([acc,rows],k)=>`<div class="card"><div class="grp"><i style="background:${k?'var(--cont)':'var(--foot)'}"></i>${acc}</div>
+    ${rows.map(r=>`<div class="bar"><div><div class="l">${esc(r[0])}</div><div class="track"><i style="width:${Math.max(3,100*r[1]/mx)}%;background:${k?'var(--cont)':'var(--foot)'}"></i></div></div><b>${r[1].toLocaleString()}</b></div>`).join('')}</div>`).join('')
+    +`<div class="card"><div style="font-weight:800;margin-bottom:4px">What it tells us</div>${DATA.lessons.map(l=>`<div class="lesson">${esc(l)}</div>`).join('')}</div>`;}
+$('rules').innerHTML=DATA.rules.map(r=>`<details><summary>${esc(r.t)}</summary><div style="color:var(--ink2);font-size:16px;padding:0 0 8px">${esc(r.b)}</div></details>`).join('');
+$('setup').innerHTML=DATA.setup.map(s=>`<div class="todo"><div class="box"></div><div><div style="font-weight:800">${esc(s.t)}</div><div class="muted" style="font-size:15px">${esc(s.d)}</div></div></div>`).join('');
+// ---------- your decisions are saved, so Claude can read them ----------
+let DB=null;
+function decide(id,val){if(val){val.at=new Date().toISOString();DEC[id]=val}else delete DEC[id];queue();
+  try{localStorage.setItem('brain-dec',JSON.stringify(DEC))}catch(e){}
+  if(DB){const ref=DB.doc('decisions/'+id);(val?ref.set(val):ref.delete()).catch(()=>{});}}
+try{DEC=JSON.parse(localStorage.getItem('brain-dec')||'{}')}catch(e){}
+queue();accounts();results();
+(async()=>{try{if(!window.claude||!window.claude.use)return;DB=await window.claude.use('db');if(!DB)return;
+  DB.collection('decisions').onSnapshot(snap=>{const d={};(snap.docs||snap).forEach(x=>{const v=x.data?x.data():x;d[x.id]=v});DEC=d;queue();},()=>{});}catch(e){}})();
+</script></body></html>
