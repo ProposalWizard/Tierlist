@@ -41,7 +41,7 @@ function card(g, x, y, w, h, fill = "#fff", r = 26) { g.save(); g.fillStyle = "r
 // ── drawn people: a dark silhouette with a light rim (the faceless style), or a portrait image ──
 const IMG = {};
 function person(g, x, y, s, o = {}) {
-  const im = o.image && IMG[o.image];
+  const im = o.image && IMG[o.image] && IMG[o.image].naturalWidth ? IMG[o.image] : null;
   if (im) { const w = 760 * s, h = w * im.height / im.width; g.drawImage(im, x - w / 2, y - h, w, h); return; }
   g.save(); g.translate(x, y); g.scale(s, s);
   const body = o.color || "#2a1f22", rim = o.rim || "rgba(255,255,255,.55)";
@@ -264,6 +264,55 @@ S.dejected = (g, t, dur, sc) => {
   // rain
   g.strokeStyle = "rgba(220,230,255,.35)"; g.lineWidth = 3; g.beginPath(); for (let i = 0; i < 140; i++) { const x = (i * 131 + t * 300) % (W + 200) - 100, y = (i * 263 + t * 1900) % H; g.moveTo(x, y); g.lineTo(x - 16, y + 60); } g.stroke();
   g.fillStyle = "rgba(10,14,30,.25)"; g.fillRect(0, 0, W, H);
+};
+
+// a grid of footballs filling one per goal, coloured by group ({n, col, label} each)
+function ball(g, x, y, r) { g.save(); g.fillStyle = "#fff"; g.strokeStyle = INK; g.lineWidth = Math.max(2, r * 0.16); g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); g.stroke();
+  g.fillStyle = INK; g.beginPath(); for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * 2 * Math.PI / 5; g.lineTo(x + Math.cos(a) * r * 0.42, y + Math.sin(a) * r * 0.42); } g.fill(); g.restore(); }
+S.grid = (g, t, dur, sc) => {
+  bg(g, sc.bg || "navy", t); const groups = sc.groups; const n = groups.reduce((a, b) => a + b.n, 0); const cols = sc.cols || 13;
+  const cell = 72, x0 = 540 - (cols * cell) / 2 + cell / 2, y0 = 470; const fill = sc.instant ? 1 : cl(t / Math.max(0.6, dur * 0.7));
+  let i = 0, shown = Math.floor(n * fill + (sc.instant ? 0 : 0.0001));
+  groups.forEach((gp) => { for (let j = 0; j < gp.n; j++, i++) { const x = x0 + (i % cols) * cell, y = y0 + Math.floor(i / cols) * cell; const on = i < shown || sc.instant;
+    if (on) { g.save(); g.fillStyle = gp.col; g.beginPath(); g.arc(x, y, 32, 0, 7); g.fill(); g.restore(); ball(g, x, y, 22); } else { g.save(); g.globalAlpha = 0.18; g.fillStyle = "#fff"; g.beginPath(); g.arc(x, y, 28, 0, 7); g.fill(); g.restore(); } } });
+  const rows = Math.ceil(n / cols); const yb = y0 + rows * cell + 40;
+  T(g, String(Math.min(n, shown)), 540, yb + 190, 220, { shadow: true, stroke: 12 });
+  if (sc.legend) groups.forEach((gp, k) => { const lx = 540 + (k - (groups.length - 1) / 2) * 440; g.fillStyle = gp.col; g.beginPath(); g.arc(lx - 160, 360, 26, 0, 7); g.fill(); T(g, `${gp.n} ${gp.label}`, lx - 120, 380, 54, { align: "left", alpha: cl(fill * 3 - 2) || 1 }); });
+};
+// two people, two numbers, face to face
+S.versus = (g, t, dur, sc) => {
+  bg(g, sc.bg || "purple", t); const k1 = ez(t * 2.4), k2 = ez((t - 0.4) * 2.4);
+  g.save(); g.beginPath(); g.rect(0, 0, 540, H); g.clip(); person(g, 270, 1500 + 300 * (1 - k1), sc.left?.image ? 0.72 : 0.8, sc.left || {}); g.restore();
+  g.save(); g.beginPath(); g.rect(540, 0, 540, H); g.clip(); person(g, 810, 1500 + 300 * (1 - k2), sc.right?.image ? 0.72 : 0.8, sc.right || {}); g.restore();
+  g.fillStyle = INK; g.fillRect(534, 0, 12, H);
+  T(g, sc.leftNum, 270, 520, 230, { shadow: true, stroke: 12, alpha: k1 }); T(g, sc.rightNum, 810, 520, 230, { shadow: true, stroke: 12, alpha: k2, color: YEL });
+  nameTag(g, sc.leftName, 270, 1640, k1); nameTag(g, sc.rightName, 810, 1640, k2);
+  const vk = pop(cl((t - 0.9) * 3)); if (vk > 0) { g.save(); g.translate(540, 1020); g.scale(vk, vk); g.fillStyle = "#e2384a"; g.strokeStyle = INK; g.lineWidth = 8; g.beginPath(); g.arc(0, 0, 90, 0, 7); g.fill(); g.stroke(); T(g, "VS", 0, 30, 90); g.restore(); }
+};
+// a flag waving on its own colour
+S.flag = (g, t, dur, sc) => {
+  bg(g, sc.bg || "green", t); const k = ez(t * 2); g.save(); g.translate(540, 820); g.scale(0.85 + 0.15 * k, 0.85 + 0.15 * k); g.rotate(-0.04);
+  const w = 840, h = 560; const wave = (x) => Math.sin(x / 120 + t * 4) * 18 * (x + w / 2) / w;
+  for (let x = -w / 2; x < w / 2; x += 6) { const y = wave(x); const fx = (x + w / 2) / w;
+    let col = sc.flag.base; for (const s of sc.flag.stripes || []) if (fx >= s.x0 && fx < s.x1) { g.fillStyle = sc.flag.base; g.fillRect(x, -h / 2 + y, 7, h * (s.top || 0)); }
+    g.fillStyle = col; g.fillRect(x, -h / 2 + y, 7, h);
+    for (const s of sc.flag.stripes || []) if (fx >= s.x0 && fx < s.x1) { g.fillStyle = s.col; g.fillRect(x, -h / 2 + y + h * (s.top || 0), 7, h * (1 - (s.top || 0))); } }
+  if (sc.flag.emblem) { const ex = w / 2 - 150, ey = -h / 2 + 90 + wave(ex); g.fillStyle = sc.flag.emblem; g.beginPath(); g.moveTo(ex - 90, ey); g.quadraticCurveTo(ex, ey - 60, ex + 90, ey); g.quadraticCurveTo(ex, ey - 20, ex - 90, ey); g.fill(); g.beginPath(); g.arc(ex, ey + 10, 22, 0, 7); g.fill(); }
+  g.strokeStyle = INK; g.lineWidth = 8; g.strokeRect(-w / 2, -h / 2, w, h); g.restore();
+  g.fillStyle = "#6b4a2b"; g.fillRect(96, 500, 22, 1000);
+  if (sc.label) T(g, sc.label, 540, 1340, 110, { shadow: true, alpha: cl((t - 0.4) * 3) });
+};
+// an old record book: half the pages missing, question marks where the numbers should be
+S.ledger = (g, t, dur, sc) => {
+  bg(g, sc.bg || "orange", t); g.save(); g.translate(540, 860); g.rotate(-0.05 + 0.01 * Math.sin(t * 2));
+  card(g, -420, -460, 840, 920, "#efe3c4", 14); g.fillStyle = "rgba(0,0,0,.08)"; g.fillRect(-6, -460, 12, 920);
+  T(g, sc.title || "1972", -210, -370, 70, { color: "#6b4a2b" }); T(g, sc.title2 || "RESULTS", 210, -370, 50, { color: "#6b4a2b" });
+  const rows = 11; for (let i = 0; i < rows; i++) { const y = -290 + i * 66; const k = cl((t - 0.08 * i) * 4); if (k <= 0) continue;
+    for (const side of [-1, 1]) { const x = side * 210; g.fillStyle = "rgba(60,40,20,.35)"; g.fillRect(x - 170, y, 200 * k, 10);
+      const miss = ((i * 7 + (side + 1) * 3) % 4) === 0; if (miss) T(g, "?", x + 120, y + 26, 70, { color: "#e2384a", alpha: k }); else T(g, String((i * 3 + side + 4) % 6), x + 120, y + 22, 50, { color: "#3a2a1a", alpha: k }); } }
+  // a torn corner
+  g.fillStyle = PAL[sc.bg || "orange"][1]; g.beginPath(); g.moveTo(420, 200); g.lineTo(420, 460); g.lineTo(160, 460); g.lineTo(260, 380); g.lineTo(300, 300); g.closePath(); g.fill();
+  g.restore();
 };
 // the end card
 S.cta = (g, t, dur, sc) => { bg(g, "red", t); const k = pop(cl(t * 2.5)); g.save(); g.translate(540, 900); g.scale(k, k); T(g, "FOLLOW", 0, -40, 190, { shadow: true }); T(g, "FOR MORE", 0, 150, 150, { color: YEL, shadow: true }); g.restore(); };
