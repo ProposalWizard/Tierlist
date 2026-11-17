@@ -190,5 +190,13 @@
     "added": "2026-11-13T19:54:00Z",
     "title": "Progress 13 Nov: Team room bots and a new Team board tab, new public home (test page), app fixes. Patch note 0.138.",
     "prompt": "Daily progress update, 12 Nov 19:54 to 13 Nov 19:54 (UK). No pull requests; Harry’s and Mikey’s branches were merged straight into main.\n\nHarry (now on main):\n- Team room: bots you can @ (a Claude bot, and one each for Harry, Mikey and Leo), a run of all bots (Health, Bug, Today, Jobs, Patch), the Patch bot working end to end, Dark and Light looks, messages into tasks, /today and /todo.\n- Team board tab: an Active now strip, work first, three kinds of bar; a push to someone’s own branch counts as theirs.\n- A new public home on a test page (/home-new-dev): cream phone look with a green bar and footer, the game first; a beta sign-up form (its table is now on the live database).\n- Admin: the Knowitball look is the default; Videos recordings save to Cloudflare R2 first, Drive is the copy (30-day clean-up).\n\nMikey / app (now on main):\n- App test fixes: take-him-on runs three times faster, both Android bars hidden, the trial pitch fits the phone, match labels fit.\n- Match: the hidden pitch is not drawn during the commentary; no blur behind panels in the app.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.138 Harry: new home, Team room, bots, admin: https://claude.ai/artifact/1fG5jWkYiRbUs7CwrYQz1z"
+  },
+  {
+    "id": "progress-2026-11-17",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-11-17T19:54:00Z",
+    "title": "Progress 17 Nov: phone-test fixes, POST once, Rankings paused",
+    "prompt": "Daily progress update, 16 Nov 19:54 to 17 Nov 19:54 (UK).\nNothing reached main on 14, 15 or 16 Nov.\n\nStraight to main (3 commits):\n- Fixes from Mikey's phone test: the star bar says when a full level is held until your next match; the KIB can count sits on the can so Premium and Elite keep their Use buttons; the 4x badge shows only while something is still playing; the physio's free can at full energy says keep it; fixtures score pills are one width and played rows are tinted by result.\n- Match: hitting the post shows POST once, not twice.\n- Rankings paused: every Rankings page (tierlists, vote and blind rankings, chooser, search) shows a \"not running right now\" page. Tiles, menu links and sitemap entries are hidden. Nothing is deleted and admin pages still work. One switch: RANKINGS_PAUSED in lib/rankingsPaused.ts.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- No new patch note today. Latest is still 0.138, Harry's New home, Team room, bots, admin: https://claude.ai/artifact/1fG5jWkYiRbUs7CwrYQz1z"
   }
 ]
