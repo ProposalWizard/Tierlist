@@ -225,51 +225,18 @@ const zero = { apps: 0, starts: 0, wins: 0, draws: 0, goals: 0, assists: 0, hatT
   check(pointLines(after).reduce((t, l) => t + l.sp, 0) === Object.values(livePoints(after)).reduce((a, b) => a + b, 0), "the named lines are the whole of livePoints");
 }
 
-// ── Never two levels from one match (Harry, 1 Oct 2026: "you should never jump 2 levels") ──
-// Played-out careers through the real careerFlow: every match, plus anything
-// credited before the next one (season-end awards, promotion, a gate
-// opening), moves the rating by at most one level. Fails if any match moves 2+.
+// ── No cap on levels a match (Mikey, 17 Nov 2026: "go up as much as the XP you get allows") ──
+// Harry's one-level-a-match cap (1 Oct 2026) is gone: a big match pays every
+// level its points reach, at once, and nothing is held back for later.
 {
-  check(MAX_RISE_PER_MATCH === 1, "the cap is one level");
-  let worst = 0, heldSeen = 0, matches = 0;
-  const rnd = (() => { let x = 7; return () => ((x = (x * 1103515245 + 12345) % 2147483648) / 2147483648); })();
-  for (const [start, clubs, div, goals] of [
-    ["Chelsea", PREMIER_LEAGUE_CLUBS, "premier", 0.9], [NATIONAL_LEAGUE_CLUBS[3], NATIONAL_LEAGUE_CLUBS, "national_league", 0.8],
-  ] as const) {
-    let c: CareerState = withStars(makeInitialCareer({ ...P, club: start }, [...clubs], div));
-    let last = starStatus(c).stars;
-    for (let season = 1; season <= 3; season++) {
-      for (let g = 0; g < 80; g++) {
-        const f = c.fixtures.find(x => !x.played);
-        if (!f) break;
-        const won = rnd() < 0.7, n = rnd() < goals ? (rnd() < 0.3 ? 3 : 1) : 0;
-        const achBefore = c.achievements.length;
-        c = creditMatchResult(c, f, stats({ goals: n, assists: rnd() < 0.5 ? 1 : 0, starMan: n > 0, rating: n > 0 ? 8.8 : 7, homeScore: won ? n + 1 : 0, awayScore: won ? 0 : 1 })).career;
-        const now = starStatus(c).stars;
-        // Achievements level you up on the spot (Mikey, 13 Oct 2026): a step
-        // that earned one may lift past the one-level cap.
-        if (c.achievements.length === achBefore) worst = Math.max(worst, now - last);
-        last = now; matches++;
-        if (starStatus(c).held > 0) heldSeen++;
-      }
-      const achBefore = c.achievements.length;
-      c = advanceSeason(c, false).career;
-      const now = starStatus(c).stars;
-      if (c.achievements.length === achBefore) worst = Math.max(worst, now - last);
-      last = now;
-    }
-  }
-  check(worst <= 1, `no match moved the rating 2+ levels without an achievement (biggest: ${worst}, over ${matches} matches)`);
-  check(heldSeen > 0, `the cap did hold points back at times (${heldSeen} matches), so this isn't passing by accident`);
-  // Nothing is lost: what was held pays out one level a match after.
+  check(MAX_RISE_PER_MATCH === Number.POSITIVE_INFINITY, "no cap on levels per match");
   const c0 = freshChelsea(), f0 = leagueFixture(c0);
   const big = creditMatchResult(c0, f0, stats({ goals: 3, assists: 1, starMan: true, rating: 9.5, homeScore: 4, awayScore: 0 })).career;
   const st = starStatus(big);
-  check(st.stars === c0.stars! + 1 && st.held > 0 && st.carried > 0, `a dream Premier League debut is still one level, the rest carried (${c0.stars} → ${st.stars}, ${st.held} held, +${st.carried})`);
-  check(withStars(withStars(big)).stars === st.stars, "banking again between matches doesn't sneak a second level in");
-  const g2 = big.fixtures.find(x => !x.played)!;
-  const next = creditMatchResult(big, g2, stats({})).career;
-  check(starStatus(next).stars === st.stars + 1, `the next match (even a quiet defeat) pays out a held level (${st.stars} → ${starStatus(next).stars})`);
+  check(st.held === 0 && st.carried === 0, `nothing is held back (${st.held} held, +${st.carried} carried)`);
+  check(st.stars === Math.min(st.ungated, st.gate?.cap ?? Infinity) || st.stars >= POINTS_CAP_LEVEL, `the rating is what the points say (${st.stars}, points say ${st.ungated})`);
+  check(st.stars >= c0.stars! + 2, `a dream Premier League debut can lift you two or more levels at once (${c0.stars} → ${st.stars})`);
+  check(withStars(withStars(big)).stars === st.stars, "banking again between matches changes nothing");
 }
 
 // ── After level 4 a match is less than a level; 60→61 is many times 4→5 ──

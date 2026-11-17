@@ -858,6 +858,15 @@ export interface OfferedPosition {
    * the square you would stand in. The pitch graphic still says LM.
    */
   label: string;
+  /**
+   * Mikey, 17 Nov 2026, phone test: "This formation doesn't have a CAM, left
+   * winger or right winger ... that's right mid, and that is a central
+   * midfielder. Why is it giving me fake positions?" The short name of the
+   * slot you would really stand in, in this shape: LM/RM in a flat four, CM
+   * when attacking mid is seated in centre mid. The quick picker on the
+   * line-up shows this, so it only ever names positions the team has.
+   */
+  short: string;
 }
 
 /**
@@ -902,8 +911,21 @@ export function offeredPositions(realPosition: string, formation: Formation): Of
     // Still never offers a role the shape genuinely cannot seat — but with
     // SEAT_CHAIN that is now almost never true, rather than being true of
     // attacking mid in nine formations out of twenty-odd.
-    seatSlotFor(role, formation) ? [{ role, label: POSITION_NAMES[role] }] : []
-  ));
+    seatSlotFor(role, formation) ? [{ role, label: POSITION_NAMES[role], short: slotShortName(seatSlotFor(role, formation)!) }] : []
+  // One button per real position: two choices that land in the same kind of
+  // slot (attacking mid and striker both seated up front) show once.
+  )).filter((o, i, all) => all.findIndex((x) => x.short === o.short) === i);
+}
+
+/** What the team sheet prints for a slot: its label (LM, RM) or its role. */
+export function slotShortName(slot: Slot): string {
+  return slot.label ?? slot.role;
+}
+
+/** The short name of the slot you would really play in for a role, in this shape. */
+export function playedAsShort(role: Role, formation: Formation): string {
+  const slot = seatSlotFor(role, formation);
+  return slot ? slotShortName(slot) : role;
 }
 
 /** What to call a role in a picker — not what the pitch calls the SLOT, which
