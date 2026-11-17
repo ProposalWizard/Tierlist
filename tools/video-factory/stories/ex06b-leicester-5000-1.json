@@ -1,0 +1,498 @@
+{
+  "id": "ex06b-leicester-5000-1",
+  "series": "Explainer",
+  "variant": "v2: steps every 1-2 s",
+  "title": "How did a 5,000-to-1 shot win the Premier League?",
+  "layout": "explainer",
+  "music": "03-winning.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://lcfc.com/news/1664758/leicesters-201516-title-win-in-numbers",
+    "https://www.skysports.com/football/news/30385/10283289/leicester-city-201516-premier-league-season-review",
+    "https://www.premierleague.com/en/news/2748139",
+    "https://www.theanalyst.com/articles/on-this-day-leicester-city-premier-league-title-2-may",
+    "https://www.guinnessworldrecords.com/world-records/77677-most-consecutive-games-scored-in-the-football-soccer-premier-league",
+    "https://fourfourtwo.com/features/stats-zone-premier-league-player-201516-ngolo-kante"
+  ],
+  "images": {
+    "ranieri": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/ranieri.png",
+    "vardy": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/vardy.png",
+    "kante": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/kante.png",
+    "mahrez": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/mahrez.png",
+    "leicesterfans": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/leicesterfans.png",
+    "odds_board": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/odds_board.png",
+    "christmas_bottom": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/christmas_bottom.png",
+    "pizza": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pizza.png",
+    "vardy_goal": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/vardy_goal.png",
+    "kante_tackle": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/kante_tackle.png",
+    "mahrez_trophy": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/mahrez_trophy.png",
+    "chelsea_spurs": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/chelsea_spurs.png",
+    "vardy_party": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/vardy_party.png",
+    "trophy_lift": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/trophy_lift.png"
+  },
+  "lines": [
+    {
+      "text": "How did a five-thousand-to-one shot win the Premier League?",
+      "scene": {
+        "hook": true,
+        "bg": "blue",
+        "type": "odds",
+        "steps": [
+          {
+            "type": "odds",
+            "pick": "LEICESTER CITY",
+            "market": "TO WIN THE PREMIER LEAGUE",
+            "to": 5000,
+            "foot": "AUGUST 2015",
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "trophy_lift",
+            "big": "?",
+            "bigSize": 420,
+            "bigY": 1300,
+            "w": 7
+          }
+        ]
+      }
+    },
+    {
+      "text": "In August 2015, the bookmakers made Leicester City five-thousand-to-one to win the title.",
+      "scene": {
+        "bg": "blue",
+        "type": "years",
+        "steps": [
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "2015",
+                "top": "AUGUST",
+                "label": "Before a ball is kicked",
+                "tick": true,
+                "head": "#1d3fa0"
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "odds_board",
+            "w": 4
+          },
+          {
+            "type": "picture",
+            "image": "odds_board",
+            "big": "5,000/1",
+            "bigSize": 230,
+            "bigCol": "#ffd400",
+            "w": 8
+          }
+        ]
+      }
+    },
+    {
+      "text": "And fair enough. At Christmas the season before, they were bottom of the league.",
+      "scene": {
+        "bg": "navy",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "christmas_bottom",
+            "label": "CHRISTMAS 2014",
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "20TH|OUT OF 20",
+            "hi": 0,
+            "size": 200,
+            "w": 10
+          }
+        ]
+      }
+    },
+    {
+      "text": "Then they won seven of their last nine games, and survived.",
+      "scene": {
+        "bg": "blue",
+        "type": "tally",
+        "steps": [
+          {
+            "type": "tally",
+            "n": 7,
+            "cols": 4,
+            "mark": "W",
+            "markCol": "#1ea85a",
+            "title": "7 WINS IN THE LAST 9",
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "SURVIVED",
+            "hi": 0,
+            "size": 200,
+            "w": 10
+          }
+        ]
+      }
+    },
+    {
+      "text": "Next, they hired Claudio Ranieri. Greece had just sacked him, after losing to the Faroe Islands.",
+      "scene": {
+        "bg": "blue",
+        "type": "portrait",
+        "steps": [
+          {
+            "type": "portrait",
+            "person": {
+              "image": "ranieri"
+            },
+            "name": "CLAUDIO RANIERI",
+            "w": 0
+          },
+          {
+            "type": "portrait",
+            "person": {
+              "image": "ranieri"
+            },
+            "name": "SACKED BY GREECE",
+            "stamp": "SACKED",
+            "w": 5
+          },
+          {
+            "type": "score",
+            "top": "NOVEMBER 2014",
+            "home": "GREECE",
+            "homeCol": "#0d5eaf",
+            "away": "FAROE ISLANDS",
+            "awayCol": "#ffffff",
+            "score": "0-1",
+            "w": 11
+          }
+        ]
+      }
+    },
+    {
+      "text": "His deal with the players? Keep a clean sheet, and I'll buy you pizza.",
+      "scene": {
+        "bg": "orange",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "RANIERI'S|DEAL",
+            "hi": 1,
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "CLEAN SHEET|=",
+            "hi": 0,
+            "size": 170,
+            "w": 7
+          },
+          {
+            "type": "picture",
+            "image": "pizza",
+            "big": "PIZZA",
+            "bigSize": 220,
+            "w": 13
+          }
+        ]
+      }
+    },
+    {
+      "text": "They finally kept one in October, and he took them all out for pizza.",
+      "scene": {
+        "bg": "orange",
+        "type": "tally",
+        "steps": [
+          {
+            "type": "tally",
+            "n": 1,
+            "cols": 1,
+            "mark": "0",
+            "markCol": "#1ea85a",
+            "title": "FIRST CLEAN SHEET",
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "pizza",
+            "label": "OCTOBER 2015",
+            "w": 8
+          }
+        ]
+      }
+    },
+    {
+      "text": "On the pitch, they sat deep, and hit you on the break.",
+      "scene": {
+        "bg": "green",
+        "type": "press",
+        "steps": [
+          {
+            "type": "press",
+            "won": "ON THE BREAK",
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "Up front, Jamie Vardy scored in eleven league games in a row.",
+      "scene": {
+        "bg": "blue",
+        "type": "portrait",
+        "steps": [
+          {
+            "type": "portrait",
+            "person": {
+              "image": "vardy"
+            },
+            "name": "JAMIE VARDY",
+            "w": 0
+          },
+          {
+            "type": "tally",
+            "n": 11,
+            "cols": 4,
+            "icon": "ball",
+            "labels": [
+              "BOURNEMOUTH",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "MAN UNITED"
+            ],
+            "title": "11 IN A ROW",
+            "count": true,
+            "dy": 40,
+            "w": 6
+          }
+        ]
+      }
+    },
+    {
+      "text": "A Premier League record.",
+      "scene": {
+        "bg": "blue",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "vardy_goal",
+            "stamp": "RECORD",
+            "stampY": 520,
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "Behind him, N'Golo Kanté made a hundred and seventy-five tackles. More than anyone in the league.",
+      "scene": {
+        "bg": "blue",
+        "type": "portrait",
+        "steps": [
+          {
+            "type": "portrait",
+            "person": {
+              "image": "kante"
+            },
+            "name": "N'GOLO KANTÉ",
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "kante_tackle",
+            "w": 4
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 175,
+            "word": "TACKLES",
+            "size": 400,
+            "w": 6
+          },
+          {
+            "type": "heatmap",
+            "label": "EVERYWHERE",
+            "w": 10
+          }
+        ]
+      }
+    },
+    {
+      "text": "And Riyad Mahrez scored seventeen, set up eleven, and was named PFA Player of the Year.",
+      "scene": {
+        "bg": "blue",
+        "type": "statbars",
+        "steps": [
+          {
+            "type": "statbars",
+            "person": {
+              "image": "mahrez"
+            },
+            "stats": [
+              {
+                "v": 17,
+                "label": "GOALS"
+              },
+              {
+                "v": 11,
+                "label": "ASSISTS"
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "mahrez_trophy",
+            "label": "PFA PLAYER OF THE YEAR",
+            "w": 10
+          }
+        ]
+      }
+    },
+    {
+      "text": "Then, on the second of May, they could win the title without even playing.",
+      "scene": {
+        "bg": "blue",
+        "type": "years",
+        "steps": [
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "2016",
+                "top": "2 MAY",
+                "label": "Title day",
+                "tick": true,
+                "head": "#1d3fa0"
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "WITHOUT|PLAYING",
+            "hi": 1,
+            "size": 180,
+            "w": 11
+          }
+        ]
+      }
+    },
+    {
+      "text": "Tottenham had to win at Chelsea. It finished two-all.",
+      "scene": {
+        "bg": "navy",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "chelsea_spurs",
+            "label": "CHELSEA v SPURS",
+            "w": 0
+          },
+          {
+            "type": "score",
+            "top": "2 MAY 2016",
+            "home": "CHELSEA",
+            "homeCol": "#034694",
+            "away": "TOTTENHAM",
+            "awayCol": "#ffffff",
+            "score": "2-2",
+            "foot": "LEICESTER ARE CHAMPIONS",
+            "w": 7
+          }
+        ]
+      }
+    },
+    {
+      "text": "The Leicester players watched it together, at Jamie Vardy's house.",
+      "scene": {
+        "bg": "blue",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "vardy_party",
+            "label": "AT VARDY'S HOUSE",
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "Champions. By ten points.",
+      "scene": {
+        "bg": "navy",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "trophy_lift",
+            "big": "CHAMPIONS",
+            "bigSize": 170,
+            "w": 0
+          },
+          {
+            "type": "table",
+            "title": "PREMIER LEAGUE 2015/16",
+            "rows": [
+              {
+                "pos": 1,
+                "name": "Leicester City",
+                "pts": 81,
+                "hi": true
+              },
+              {
+                "pos": 2,
+                "name": "Arsenal",
+                "pts": 71
+              },
+              {
+                "pos": 3,
+                "name": "Tottenham",
+                "pts": 70
+              }
+            ],
+            "w": 2
+          }
+        ]
+      }
+    },
+    {
+      "text": "From five-thousand-to-one.",
+      "scene": {
+        "bg": "blue",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "leicesterfans",
+            "big": "5,000/1",
+            "bigSize": 240,
+            "bigCol": "#ffd400",
+            "w": 0
+          }
+        ]
+      }
+    }
+  ]
+}

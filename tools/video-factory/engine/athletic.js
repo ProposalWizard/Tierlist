@@ -325,8 +325,10 @@ S.picture = (g, t, dur, sc) => {
   bg(g, sc.bg || "navy", t); const im = IMG[sc.image] && IMG[sc.image].naturalWidth ? IMG[sc.image] : null;
   if (im) { const z = 1.04 + 0.08 * (t / dur), w = W * z, h = w * im.height / im.width; const dx = (sc.drift || 0) * 60 * (t / dur);
     g.drawImage(im, 540 - w / 2 + dx, Math.min(0, (H - h) / 2), w, Math.max(h, H * z)); g.fillStyle = "rgba(0,0,0,.12)"; g.fillRect(0, 0, W, H); }
-  else { person(g, 540, 1920, 1.3, { suit: false }); }
+  else { g.save(); g.setLineDash([24, 18]); g.strokeStyle = "rgba(255,255,255,.6)"; g.lineWidth = 8; rr(g, 70, 380, 940, 1160, 30); g.stroke(); g.restore(); T(g, "IMAGE: " + sc.image, 540, 980, 60, { color: "rgba(255,255,255,.8)", maxW: 880 }); }
   if (sc.label) nameTag(g, sc.label, 540, 300, cl((t - 0.3) * 3));
+  if (sc.big) T(g, sc.big, 540, sc.bigY || 1250, sc.bigSize || 200, { shadow: true, stroke: 14, color: sc.bigCol || "#fff", alpha: cl((t - 0.15) * 4), maxW: 980 });
+  if (sc.stamp) { const s = cl((t - 0.25) * 3); if (s > 0) { g.save(); g.translate(540, sc.stampY || 600); g.rotate(-0.15); g.scale(2.4 - 1.4 * pop(s), 2.4 - 1.4 * pop(s)); g.globalAlpha = cl(s * 2); g.strokeStyle = "#e2384a"; g.lineWidth = 16; rr(g, -330, -100, 660, 170, 18); g.stroke(); T(g, sc.stamp, 0, 50, 130, { color: "#e2384a", maxW: 620 }); g.restore(); } }
 };
 // a betting slip: the odds tick up to the number
 S.odds = (g, t, dur, sc) => {
@@ -402,6 +404,43 @@ S.stopwatch = (g, t, dur, sc) => {
   for (let i = 0; i < 60; i++) { const a = i / 60 * Math.PI * 2; g.strokeStyle = INK; g.lineWidth = i % 5 ? 4 : 10; g.beginPath(); g.moveTo(Math.sin(a) * 300, -Math.cos(a) * 300); g.lineTo(Math.sin(a) * (i % 5 ? 280 : 260), -Math.cos(a) * (i % 5 ? 280 : 260)); g.stroke(); }
   const a = v / 60 * Math.PI * 2; g.strokeStyle = "#e2384a"; g.lineWidth = 12; g.lineCap = "round"; g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.sin(a) * 250, -Math.cos(a) * 250); g.stroke(); g.restore();
   T(g, v.toFixed(2) + "s", 540, 1330, 190, { shadow: true, stroke: 12 }); if (sc.word) T(g, sc.word, 540, 1440, 64, { color: YEL, alpha: cl((t - 0.4) * 3) });
+};
+
+// ── full-screen beats (17 Nov 2026 redo) ──
+// a big score that fills the screen: two team names in their colours and the score between
+S.score = (g, t, dur, sc) => {
+  bg(g, sc.bg || "navy", t); const k = pop(cl(t * 4));
+  if (sc.top) T(g, sc.top, 540, 470, 64, { color: YEL, alpha: cl(t * 4) });
+  const half = (y, name, col, ink, d) => { const kk = ez(cl((t - d) * 4)); g.save(); g.translate((1 - kk) * (y < 900 ? -1100 : 1100), 0); g.fillStyle = col; g.strokeStyle = INK; g.lineWidth = 8; rr(g, 60, y, 960, 230, 28); g.fill(); g.stroke(); T(g, name, 540, y + 155, 120, { color: ink, maxW: 900 }); g.restore(); };
+  half(560, sc.home, sc.homeCol || "#1d3fa0", sc.homeInk || "#fff", 0); half(1090, sc.away, sc.awayCol || "#fff", sc.awayInk || INK, 0.12);
+  g.save(); g.translate(540, 940); g.scale(k, k); g.fillStyle = YEL; g.strokeStyle = INK; g.lineWidth = 10; rr(g, -230, -110, 460, 220, 30); g.fill(); g.stroke(); T(g, sc.score, 0, 60, 170, { color: INK }); g.restore();
+  if (sc.foot) T(g, sc.foot, 540, 1480, 70, { shadow: true, alpha: cl((t - 0.4) * 3) });
+};
+// n tiles that pop in one by one across the beat (goals in a row, wins, games)
+S.tally = (g, t, dur, sc) => {
+  bg(g, sc.bg || "blue", t); const n = sc.n, cols = sc.cols || 4, sz = 210, gap = 26; const x0 = 540 - (cols * sz + (cols - 1) * gap) / 2; const rows = Math.ceil(n / cols); const y0 = 960 - (rows * sz + (rows - 1) * gap) / 2 + (sc.dy || 0);
+  const per = Math.max(0.12, (dur * 0.85) / n); let shown = 0;
+  for (let i = 0; i < n; i++) { const k = pop(cl((t - i * per) * 6)); if (k <= 0) continue; shown++; const x = x0 + (i % cols) * (sz + gap) + sz / 2, y = y0 + Math.floor(i / cols) * (sz + gap) + sz / 2; const lab = (sc.labels || [])[i];
+    g.save(); g.translate(x, y); g.scale(k, k); card(g, -sz / 2, -sz / 2, sz, sz, sc.col || "#fff", 26); if (sc.icon === "ball") { g.fillStyle = INK; g.beginPath(); g.arc(0, -18, 52, 0, 7); g.fill(); g.fillStyle = "#fff"; g.beginPath(); g.arc(0, -18, 44, 0, 7); g.fill(); g.fillStyle = INK; g.beginPath(); for (let j = 0; j < 5; j++) { const a = -Math.PI / 2 + j * 2 * Math.PI / 5; g.lineTo(Math.cos(a) * 19, -18 + Math.sin(a) * 19); } g.fill(); }
+    else T(g, sc.mark || String(i + 1), 0, 20, 110, { color: sc.markCol || INK });
+    T(g, lab || ("GAME " + (i + 1)), 0, sz / 2 - 22, lab ? 30 : 30, { color: "#555", maxW: sz - 20 }); g.restore(); }
+  if (sc.title) T(g, sc.title, 540, y0 - 70, 90, { shadow: true, color: YEL, stroke: 10 });
+  if (sc.count) T(g, `${shown}`, 540, y0 + rows * (sz + gap) + 170, 200, { shadow: true, stroke: 12 });
+};
+// a pitch covered by a heat map that spreads everywhere
+S.heatmap = (g, t, dur, sc) => {
+  bg(g, sc.bg || "green", t); pitch(g, PX, PY, PW, PH); const k = cl(t / Math.max(0.8, dur * 0.8)); let s = 11;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  g.save(); g.globalCompositeOperation = "source-over";
+  for (let i = 0; i < 70 * k; i++) { const x = PX + 60 + rnd() * (PW - 120), y = PY + 60 + rnd() * (PH - 120); const r = 90 + rnd() * 90;
+    const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, "rgba(255,40,40,.55)"); gr.addColorStop(0.5, "rgba(255,200,0,.28)"); gr.addColorStop(1, "rgba(255,200,0,0)"); g.fillStyle = gr; g.fillRect(x - r, y - r, 2 * r, 2 * r); }
+  g.restore(); if (sc.label) T(g, sc.label, 540, 360, 90, { shadow: true, stroke: 10, alpha: cl(t * 3) });
+};
+// a person on the left half, stat bars growing on the right
+S.statbars = (g, t, dur, sc) => {
+  bg(g, sc.bg || "blue", t); if (sc.person) person(g, 300, 1920 + 200 * (1 - ez(t * 2.5)), sc.scale || 0.95, sc.person);
+  sc.stats.forEach((st, i) => { const k = ez((t - 0.25 - i * 0.35) * 2.5); if (k <= 0) return; const y = 560 + i * 300;
+    g.save(); g.globalAlpha = k; card(g, 560, y, 460, 240, "#fff", 24); T(g, String(Math.round(st.v * k)), 790, y + 150, 150, { color: st.col || "#1d3fa0" }); T(g, st.label, 790, y + 215, 40, { color: "#555", maxW: 420 }); g.restore(); });
 };
 // the end card
 S.cta = (g, t, dur, sc) => { bg(g, "red", t); const k = pop(cl(t * 2.5)); g.save(); g.translate(540, 900); g.scale(k, k); T(g, "FOLLOW", 0, -40, 190, { shadow: true }); T(g, "FOR MORE", 0, 150, 150, { color: YEL, shadow: true }); g.restore(); };

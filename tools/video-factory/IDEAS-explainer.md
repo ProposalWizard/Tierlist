@@ -31,3 +31,10 @@ Short illustrated explainers in the style of the big football explainer accounts
 | 23 | Who is the youngest Premier League scorer? | A 16-year-old | James Vaughan, Everton 2005 (check age) |
 | 24 | Why are there 92 Football League clubs? | How the pyramid grew | Premier League 20 + EFL 72 |
 | 25 | How will Pochettino change Man United? | Made ✓ (ex01) | — |
+
+## Series idea (Mikey, 17 Nov 2026): "Half the squad vanishes"
+Half of a team's squad / starting XI disappears at random (the "snap"), and the video simulates
+building the team back from the half that's left (who plays where, how the season would go). A series:
+one club per video. Keep it our own: no Marvel character, glove or name on screen; a generic "snap"
+graphic (players fading to dust) is fine. Could use the game's own squad data and match engine to
+simulate the results.

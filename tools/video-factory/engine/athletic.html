@@ -10,9 +10,32 @@ const FPS = 30, X = window.EXPLAINER;
 const cv = document.getElementById("c"), g = cv.getContext("2d");
 const off = document.createElement("canvas"); off.width = 1080; off.height = 1920; const og = off.getContext("2d");
 
+// STEPS (17 Nov 2026, Mikey: "something new every second or two, what you see explains what you hear"):
+// a line's scene may carry steps: [{w: word index, type, ...}] - each step starts on its word and draws
+// full screen; the step before it pops/slides away under it in 0.22 s.
+function stepTimes(s) {
+  const st = s.scene.steps; const out = [];
+  st.forEach((x, i) => { const wd = s.words[Math.min(x.w || 0, s.words.length - 1)]; out.push(i === 0 ? s.t0 : Math.max(s.t0, (wd ? wd.t0 : s.t0) - 0.06)); });
+  return out;
+}
+function spec(s, i) { const base = Object.assign({}, s.scene); delete base.steps; delete base.hook; return Object.assign(base, s.scene.steps[i]); }
+function drawOne(c, sp, lt, dur) { try { (X.S[sp.type] || X.S.text)(c, lt, dur, sp); } catch (e) { window.errorsSeen.push(sp.type + ": " + e.message); } }
+const off2 = document.createElement("canvas"); off2.width = 1080; off2.height = 1920; const o2 = off2.getContext("2d");
 function drawScene(c, s, t) {
   const lt = t - s.t0, dur = s.t1 - s.t0;
-  try { (X.S[s.scene.type] || X.S.text)(c, lt, dur, s.scene); } catch (e) { window.errorsSeen.push(s.scene.type + ": " + e.message); }
+  if (!s.scene.steps) return drawOne(c, s.scene, lt, dur);
+  const T0 = stepTimes(s); let k = 0; for (let i = 0; i < T0.length; i++) if (t >= T0[i]) k = i;
+  const end = k + 1 < T0.length ? T0[k + 1] : s.t1; const st = spec(s, k); const sl = t - T0[k];
+  if (k > 0 && sl < 0.22 && st.tr !== "cut") {   // transition: the new step pops in over the old one
+    o2.setTransform(1, 0, 0, 1, 0, 0); drawOne(o2, spec(s, k - 1), T0[k] - T0[k - 1], T0[k] - T0[k - 1]);
+    c.drawImage(off2, 0, 0); const u = X.ez(sl / 0.22);
+    o2.setTransform(1, 0, 0, 1, 0, 0); drawOne(o2, st, sl, end - T0[k]);
+    c.save();
+    if (st.tr === "slide") { c.translate(1080 * (1 - u), 0); }
+    else { const z = 1.12 - 0.12 * u; c.translate(540, 960); c.scale(z, z); c.translate(-540, -960); c.globalAlpha = u; }
+    c.drawImage(off2, 0, 0); c.restore(); return;
+  }
+  drawOne(c, st, sl, end - T0[k]);
 }
 function mark(c) { c.save(); c.globalAlpha = 0.9; c.font = "64px Anton"; c.textAlign = "right"; c.lineWidth = 5; c.strokeStyle = "#1b1416"; c.strokeText("KIB", 1010, 150); c.fillStyle = "#fff"; c.fillText("KIB", 1010, 150); c.restore(); }
 
