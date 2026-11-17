@@ -146,7 +146,7 @@ S.table = (g, t, dur, sc) => {
     T(g, String(r.pts), x + 840, y + 76, 60, { color: hi ? "#fff" : INK, align: "right" }); g.restore();
   });
   const zy = y0 + (sc.zoneFrom - 1) * rh - 22; const zk = ez((t - 1.0) * 2);
-  if (zk > 0) { g.save(); g.globalAlpha = zk; g.strokeStyle = "#fff"; g.lineWidth = 6; g.setLineDash([22, 16]); g.beginPath(); g.moveTo(60, zy); g.lineTo(1020, zy); g.stroke(); g.restore(); T(g, "RELEGATION ZONE", 540, zy + 4 * rh + 60, 52, { alpha: zk, color: "#fff" }); }
+  if (zk > 0) { g.save(); g.globalAlpha = zk; g.strokeStyle = "#fff"; g.lineWidth = 6; g.setLineDash([22, 16]); g.beginPath(); g.moveTo(60, zy); g.lineTo(1020, zy); g.stroke(); g.restore(); T(g, "RELEGATION ZONE", 540, zy + 3 * rh + 75, 52, { alpha: zk, color: "#fff" }); }
 };
 // a row of result tiles, one per game, popping in time
 S.tiles = (g, t, dur, sc) => {
@@ -228,6 +228,42 @@ S.fixture = (g, t, dur, sc) => {
   if (sc.then) { g.save(); g.globalAlpha = k1; card(g, 120, 420 - 200 * (1 - k1), 840, 360, "#fff", 26); T(g, sc.then.top, 540, 500 - 200 * (1 - k1), 46, { color: "#666" });
     T(g, sc.then.score, 540, 650 - 200 * (1 - k1), 120, { color: INK, maxW: 780 }); T(g, sc.then.foot, 540, 730 - 200 * (1 - k1), 46, { color: "#e2384a" }); g.restore(); }
   if (k2 > 0) { g.save(); g.translate(540, 1150); g.scale(pop(k2), pop(k2)); card(g, -420, -230, 840, 460, INK, 26); T(g, sc.now.top, 0, -130, 50, { color: YEL }); T(g, sc.now.teams, 0, 20, 110, { maxW: 780 }); T(g, sc.now.foot, 0, 140, 56, { color: "#bbb" }); g.restore(); }
+};
+
+// heads down: United players under the floodlights in the rain, hands on heads, one crouched
+function player(g, x, y, s, pose, o = {}) {
+  g.save(); g.translate(x, y); g.scale(s, s); g.lineJoin = "round"; g.lineCap = "round";
+  const skin = o.skin || "#d9a27c", shirt = o.shirt || "#d7192d", shorts = o.shorts || "#f4f4f4", sock = o.sock || "#111";
+  g.fillStyle = "rgba(0,0,0,.35)"; g.beginPath(); g.ellipse(0, 6, 120, 22, 0, 0, 7); g.fill();
+  const leg = (dx, bend) => { g.strokeStyle = skin; g.lineWidth = 34; g.beginPath(); g.moveTo(dx * 30, -270); g.lineTo(dx * (34 + bend), -140); g.stroke(); g.strokeStyle = sock; g.lineWidth = 36; g.beginPath(); g.moveTo(dx * (34 + bend), -140); g.lineTo(dx * 36, -20); g.stroke(); g.fillStyle = "#111"; rr(g, dx * 36 - 26 + dx * 14, -26, 52, 26, 10); g.fill(); };
+  if (pose === "crouch") { g.translate(0, 120); }
+  leg(-1, pose === "crouch" ? 40 : 0); leg(1, pose === "crouch" ? 40 : 0);
+  g.fillStyle = shorts; g.strokeStyle = INK; g.lineWidth = 6; rr(g, -70, -330, 140, 90, 16); g.fill(); g.stroke();
+  g.fillStyle = shirt; rr(g, -82, -540, 164, 230, 34); g.fill(); g.stroke();
+  g.fillStyle = "#fff"; g.fillRect(-30, -540, 60, 10);
+  // head bowed
+  const hy = pose === "crouch" ? -560 : -585; g.fillStyle = skin; g.beginPath(); g.ellipse(0, hy, 52, 60, 0, 0, 7); g.fill(); g.stroke();
+  g.fillStyle = o.hair || "#2a1d16"; g.beginPath(); g.ellipse(0, hy - 18, 54, 46, 0, Math.PI, 0); g.fill();
+  // arms
+  g.strokeStyle = skin; g.lineWidth = 30;
+  if (pose === "hands-head") { for (const d of [-1, 1]) { g.beginPath(); g.moveTo(d * 74, -520); g.lineTo(d * 130, -620); g.lineTo(d * 40, -650); g.stroke(); } }
+  else if (pose === "hips") { for (const d of [-1, 1]) { g.beginPath(); g.moveTo(d * 74, -520); g.lineTo(d * 130, -420); g.lineTo(d * 66, -350); g.stroke(); } }
+  else if (pose === "crouch") { for (const d of [-1, 1]) { g.beginPath(); g.moveTo(d * 74, -520); g.lineTo(d * 60, -420); g.lineTo(d * 50, -300); g.stroke(); } }
+  else { for (const d of [-1, 1]) { g.beginPath(); g.moveTo(d * 78, -520); g.lineTo(d * 96, -400); g.lineTo(d * 92, -300); g.stroke(); } }
+  g.restore();
+}
+S.dejected = (g, t, dur, sc) => {
+  const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "#101629"); gr.addColorStop(0.55, "#1d2742"); gr.addColorStop(0.56, "#1e5a33"); gr.addColorStop(1, "#123d22"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  // the stand and the floodlights
+  g.fillStyle = "#0b0f1d"; g.fillRect(0, 760, W, 300); for (let i = 0; i < 400; i++) { g.fillStyle = i % 3 ? "rgba(200,30,45,.35)" : "rgba(255,255,255,.12)"; g.fillRect((i * 97) % W, 780 + ((i * 53) % 260), 7, 7); }
+  for (const lx of [150, 930]) { const lg = g.createRadialGradient(lx, 260, 10, lx, 260, 420); lg.addColorStop(0, "rgba(255,250,220,.9)"); lg.addColorStop(0.15, "rgba(255,250,220,.25)"); lg.addColorStop(1, "rgba(255,250,220,0)"); g.fillStyle = lg; g.fillRect(lx - 420, -160, 840, 840); g.fillStyle = "#e9e7da"; rr(g, lx - 70, 220, 140, 70, 8); g.fill(); }
+  const z = 1 + 0.07 * (t / dur); g.save(); g.translate(540, 1500); g.scale(z, z); g.translate(-540, -1500);
+  const team = [[180, 1560, 0.78, "hips"], [400, 1500, 0.72, "hands-head"], [640, 1580, 0.8, "crouch"], [880, 1520, 0.74, "hands-head"], [1020, 1640, 0.9, "down"]];
+  team.forEach(([x, y, s, p], i) => { const k = ez((t - 0.1 * i) * 2.5); g.save(); g.globalAlpha = k; player(g, x, y + 40 * (1 - k), s, p, { skin: ["#d9a27c", "#8d5a3b", "#e8b896", "#6b4430", "#c98e66"][i], hair: ["#2a1d16", "#111", "#7a5a2a", "#111", "#3b2a1d"][i] }); g.restore(); });
+  g.restore();
+  // rain
+  g.strokeStyle = "rgba(220,230,255,.35)"; g.lineWidth = 3; g.beginPath(); for (let i = 0; i < 140; i++) { const x = (i * 131 + t * 300) % (W + 200) - 100, y = (i * 263 + t * 1900) % H; g.moveTo(x, y); g.lineTo(x - 16, y + 60); } g.stroke();
+  g.fillStyle = "rgba(10,14,30,.25)"; g.fillRect(0, 0, W, H);
 };
 // the end card
 S.cta = (g, t, dur, sc) => { bg(g, "red", t); const k = pop(cl(t * 2.5)); g.save(); g.translate(540, 900); g.scale(k, k); T(g, "FOLLOW", 0, -40, 190, { shadow: true }); T(g, "FOR MORE", 0, 150, 150, { color: YEL, shadow: true }); g.restore(); };

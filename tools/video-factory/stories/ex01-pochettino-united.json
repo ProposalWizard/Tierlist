@@ -22,7 +22,8 @@
     "before": "United considered him in 2019 (kept Solskjaer) and 2022 (chose Ten Hag), as widely reported",
     "style": "usually 4-2-3-1, high press, quick attacks, full-backs give width, wingers come inside; Bielsa coached him at Newell's Old Boys and Argentina",
     "spurs": "86 points and 2nd in 2016-17; 2019 Champions League final, lost 2-0 to Liverpool in Madrid",
-    "psg": "Trophee des Champions (played Jan 2021), Coupe de France 2021, Ligue 1 2021-22"
+    "psg": "Trophee des Champions (played Jan 2021), Coupe de France 2021, Ligue 1 2021-22",
+    "table": "as of 8 Nov 2026 (international break since): 17 Coventry 9, 18 Man United 8, 19 Sunderland 8, 20 Crystal Palace 7 (Wikipedia 2026-27 Premier League)"
   },
   "lines": [
     {
@@ -41,15 +42,7 @@
     {
       "text": "Well, first, look at what he's walking into.",
       "scene": {
-        "type": "portrait",
-        "bg": "navy",
-        "person": false,
-        "shirt": [
-          "#d7192d",
-          "#ffffff",
-          "",
-          ""
-        ]
+        "type": "dejected"
       }
     },
     {
@@ -79,7 +72,20 @@
             "pos": 18,
             "name": "Man United",
             "pts": 8,
-            "hi": true
+            "hi": true,
+            "zone": true
+          },
+          {
+            "pos": 19,
+            "name": "Sunderland",
+            "pts": 8,
+            "zone": true
+          },
+          {
+            "pos": 20,
+            "name": "Crystal Palace",
+            "pts": 7,
+            "zone": true
           }
         ],
         "zoneFrom": 2
