@@ -125,6 +125,14 @@ function finiteAnimations(): Animation[] {
   });
 }
 
+/** Is anything still to come on this screen (a beat waiting, or an animation running)?
+ *  Holding only shows "4×" while there is (Mikey's phone test, 11 Nov 2026: it showed
+ *  "4×" after everything had finished, with nothing left to speed up). */
+function ffBusy(): boolean {
+  if (pending.size > 0) return true;
+  return finiteAnimations().some(a => a.playState === "running");
+}
+
 /** Run every frame while a <FastForward /> is mounted. */
 function syncCss(): void {
   const rate = scale;
@@ -158,12 +166,19 @@ export default function FastForward({ hint = true }: { hint?: boolean }) {
     ffReset();
     let holdTimer: ReturnType<typeof setTimeout> | null = null;
     let raf = 0;
-    const loop = () => { syncCss(); raf = requestAnimationFrame(loop); };
+    let shown = false; // the "4×" badge, as last set (so the frame loop sets state only on a change)
+    const show = (on: boolean) => { if (on !== shown) { shown = on; setFast(on); } };
+    const loop = () => {
+      syncCss();
+      if (shown && !ffBusy()) show(false); // everything has played out while held
+      raf = requestAnimationFrame(loop);
+    };
     raf = requestAnimationFrame(loop);
 
     const stopHold = () => {
       if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
-      if (scale !== 1) { setFastForward(false); setFast(false); }
+      if (scale !== 1) setFastForward(false);
+      show(false);
     };
     const down = (e: PointerEvent) => {
       if (e.button !== undefined && e.button > 0) return;
@@ -180,9 +195,9 @@ export default function FastForward({ hint = true }: { hint?: boolean }) {
       if (holdTimer) clearTimeout(holdTimer);
       holdTimer = setTimeout(() => {
         holdTimer = null;
-        if (skipped) return;
+        if (skipped || !ffBusy()) return; // nothing left to speed up: no badge
         setFastForward(true);
-        setFast(true);
+        show(true);
         setShowHint(false);
       }, HOLD_MS);
     };

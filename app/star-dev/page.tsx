@@ -5451,7 +5451,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     if (b === "boss") handleOpenRelationshipGame("boss");
     else if (b === "training") point("nav-training", "");
     else if (b === "starpass") point("rating", "");
-    else if (b === "can") point("can-use-basic", "");
+    // A can you can drink now: the finger shows where (Mikey, 11 Nov 2026: after buying the
+    // half-price can, show how to use it). At full energy there is nothing to drink it for.
+    else if ((b === "can" || b === "candeal") && (career?.energy ?? 100) < 100) point("can-use-basic", "");
     // The phone is yours now: the finger points at it, you open it.
     else if (b === "phone") point("nav-phone", "");
     else if (b === "shop") { setActiveNav("home"); setPhase(shopLookNow === "new" ? "shop-kib" : "dashboard"); if (shopLookNow !== "new") setHomePage(2); }
