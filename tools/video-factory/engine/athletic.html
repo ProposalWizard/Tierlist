@@ -21,7 +21,7 @@ function captions(t, s) {
   const words = ch.words.map((w) => w.w).join(" ");
   if (s && s.scene.hook) {   // the hook: big, white, two lines, centred
     g.save(); g.font = "150px Anton"; g.textAlign = "center"; const parts = words.split(" "); const lines = parts.length > 2 ? [parts.slice(0, Math.ceil(parts.length / 2)).join(" "), parts.slice(Math.ceil(parts.length / 2)).join(" ")] : [words];
-    const k = X.pop(X.cl((t - ch.t0) * 7)); g.translate(540, 880); g.scale(k, k);
+    const k = X.pop(X.cl((t - ch.t0) * 7)); g.translate(540, 400); g.scale(k, k);
     lines.forEach((l, i) => { const y = (i - (lines.length - 1) / 2) * 160 + 50; let sz = 150; const w = g.measureText(l).width; if (w > 960) { sz = 150 * 960 / w; g.font = `${sz}px Anton`; }
       g.fillStyle = "rgba(0,0,0,.45)"; g.fillText(l, 7, y + 9); g.lineJoin = "round"; g.lineWidth = 12; g.strokeStyle = "#1b1416"; g.strokeText(l, 0, y); g.fillStyle = "#fff"; g.fillText(l, 0, y); g.font = "150px Anton"; });
     g.restore(); return;

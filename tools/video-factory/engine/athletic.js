@@ -130,8 +130,8 @@ S.portrait = (g, t, dur, sc) => {
   bg(g, sc.bg || "red", t); const k = ez(t * 2.2), z = 1 + 0.05 * (t / dur);
   g.save(); g.translate(540, 1000); g.scale(z, z); g.translate(-540, -1000);
   if (sc.shirt) shirt(g, 540, 640 - 60 * ez(t * 1.5), 1.25, sc.shirt[0], sc.shirt[1], sc.shirt[2], sc.shirt[3]);
-  if (sc.stamp) { const s = cl((t - 0.5) * 3); if (s > 0) { g.save(); g.translate(540, 760); g.rotate(-0.18); g.scale(2.4 - 1.4 * pop(s), 2.4 - 1.4 * pop(s)); g.globalAlpha = cl(s * 2); g.strokeStyle = "#e2384a"; g.lineWidth = 14; rr(g, -260, -90, 520, 150, 16); g.stroke(); T(g, sc.stamp, 0, 40, 120, { color: "#e2384a" }); g.restore(); } }
-  if (sc.person !== false) person(g, 540, 1920 + 360 * (1 - k), 1.55, sc.person || {});
+  if (sc.person !== false) person(g, 540, 1920 + 360 * (1 - k), sc.scale || 1.55, sc.person || {});
+  if (sc.stamp) { const s = cl((t - 0.5) * 3); if (s > 0) { g.save(); g.translate(540, 520); g.rotate(-0.18); g.scale(2.4 - 1.4 * pop(s), 2.4 - 1.4 * pop(s)); g.globalAlpha = cl(s * 2); g.strokeStyle = "#e2384a"; g.lineWidth = 14; rr(g, -260, -90, 520, 150, 16); g.stroke(); T(g, sc.stamp, 0, 40, 120, { color: "#e2384a" }); g.restore(); } }
   g.restore();
   if (sc.name) nameTag(g, sc.name, 540, 1700, cl((t - 0.3) * 3));
 };
@@ -209,8 +209,8 @@ S.width = (g, t, dur, sc) => {
 // mentor: two people, a line between them
 S.mentor = (g, t, dur, sc) => {
   bg(g, sc.bg || "orange", t); const k1 = ez(t * 2.4), k2 = ez((t - 0.5) * 2.4);
-  person(g, 300, 1500 + 400 * (1 - k1), 0.85, sc.left || {}); nameTag(g, sc.leftName, 300, 1620, k1);
-  person(g, 790, 1500 + 400 * (1 - k2), 0.85, sc.right || {}); nameTag(g, sc.rightName, 790, 1620, k2);
+  person(g, 285, 1500 + 400 * (1 - k1), sc.left?.image ? 0.7 : 0.85, sc.left || {}); nameTag(g, sc.leftName, 285, 1620, k1);
+  person(g, 800, 1500 + 400 * (1 - k2), sc.right?.image ? 0.7 : 0.85, sc.right || {}); nameTag(g, sc.rightName, 800, 1620, k2);
   arrow(g, 360, 820, 720, 820, ez((t - 1.0) * 1.5), "#fff", 14, -0.2);
   if (sc.caption) T(g, sc.caption, 540, 660, 64, { alpha: cl((t - 1.2) * 3) });
 };
