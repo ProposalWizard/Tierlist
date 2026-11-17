@@ -477,7 +477,7 @@ S.x5_move = (g, t, dur, sc) => {
 // x5_bars (ex05b/ex09b): a full-screen ranking. Each row: a name above a thick bar whose length is `frac`
 // (0..1) with the value at its end; rows slide in one by one; `hi` rows are yellow.
 S.x5_bars = (g, t, dur, sc) => {
-  bg(g, sc.bg || "navy", t); const it = sc.items || []; const n = it.length; const rh = Math.min(300, 1100 / Math.max(1, n)); const y0 = 960 - (n * rh) / 2 + 40;
+  bg(g, sc.bg || "navy", t); const it = sc.items || []; const n = it.length; const rh = Math.min(260, 940 / Math.max(1, n)); const y0 = 460 + (940 - n * rh) / 2;
   if (sc.title) T(g, sc.title, 540, y0 - 90, 84, { shadow: true, stroke: 10, color: YEL, maxW: 980 });
   it.forEach((x, i) => { const k = ez(cl((t - 0.15 - i * (sc.gap ?? 0.35)) * 2.5)); if (k <= 0) return; const y = y0 + i * rh; const w = (300 + 660 * (x.frac ?? 1)) * k;
     g.save(); g.globalAlpha = cl(k * 2); T(g, x.name, 60, y + 58, 62, { align: "left", stroke: 9, maxW: 960 });
