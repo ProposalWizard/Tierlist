@@ -120,7 +120,8 @@
         "bg": "red",
         "person": {
           "image": "ronaldo",
-          "hairStyle": "short"
+          "hairStyle": "short",
+          "back": true
         },
         "name": "CRISTIANO RONALDO · 900+"
       }
@@ -136,7 +137,8 @@
         "leftNum": "1,279",
         "leftName": "EVERY GAME",
         "right": {
-          "image": "ronaldo"
+          "image": "ronaldo",
+          "back": true
         },
         "rightNum": "900+",
         "rightName": "OFFICIAL ONLY"
