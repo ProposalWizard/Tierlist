@@ -145,7 +145,7 @@ S.table = (g, t, dur, sc) => {
     T(g, String(r.pos), x + 70, y + 76, 60, { color: hi ? "#fff" : INK }); T(g, r.name, x + 140, y + 76, 58, { color: hi ? "#fff" : INK, align: "left", maxW: 520 });
     T(g, String(r.pts), x + 840, y + 76, 60, { color: hi ? "#fff" : INK, align: "right" }); g.restore();
   });
-  const zy = y0 + (sc.zoneFrom - 1) * rh - 22; const zk = ez((t - 1.0) * 2);
+  const zy = y0 + ((sc.zoneFrom || 99) - 1) * rh - 22; const zk = sc.zoneFrom ? ez((t - 1.0) * 2) : 0;
   if (zk > 0) { g.save(); g.globalAlpha = zk; g.strokeStyle = "#fff"; g.lineWidth = 6; g.setLineDash([22, 16]); g.beginPath(); g.moveTo(60, zy); g.lineTo(1020, zy); g.stroke(); g.restore(); T(g, "RELEGATION ZONE", 540, zy + 3 * rh + 75, 52, { alpha: zk, color: "#fff" }); }
 };
 // a row of result tiles, one per game, popping in time
@@ -171,7 +171,8 @@ S.counter = (g, t, dur, sc) => {
   if (sc.prop === "contract") { g.save(); g.translate(540, 760); g.rotate(-0.06 + 0.02 * Math.sin(t)); card(g, -300, -380, 600, 760, "#fbf7ea", 16); for (let i = 0; i < 9; i++) { g.fillStyle = "rgba(0,0,0,.15)"; g.fillRect(-230, -300 + i * 56, i === 8 ? 220 : 460, 14); }
     g.strokeStyle = "#1d3fa0"; g.lineWidth = 8; g.beginPath(); for (let i = 0; i <= 40 * cl(t * 1.2); i++) { const u = i / 40; g.lineTo(-180 + 360 * u, 270 + Math.sin(u * 18) * 24 * (1 - u)); } g.stroke(); g.restore(); }
   if (sc.prop === "calendar") calendar(g, 540, 700, 1.3, sc.top || "", String(Math.round(v)), { head: "#e2384a" });
-  const txt = sc.fmt ? sc.fmt.replace("{v}", (sc.dec ? v.toFixed(sc.dec) : Math.round(v))) : String(Math.round(v));
+  const nf = (x) => sc.dec ? x.toFixed(sc.dec) : (sc.comma ? Math.round(x).toLocaleString("en-GB") : String(Math.round(x)));
+  const txt = sc.fmt ? sc.fmt.replace("{v}", nf(v)) : nf(v);
   const ty = sc.prop ? 1250 : 1000;
   if (sc.prop !== "calendar") T(g, txt, 540, ty, sc.size || 300, { shadow: true, stroke: 14 });
   if (sc.word) T(g, sc.word, 540, ty + 110, 80, { alpha: cl((t - 0.4) * 3), color: YEL, stroke: 10 });
@@ -313,6 +314,56 @@ S.ledger = (g, t, dur, sc) => {
   // a torn corner
   g.fillStyle = PAL[sc.bg || "orange"][1]; g.beginPath(); g.moveTo(420, 200); g.lineTo(420, 460); g.lineTo(160, 460); g.lineTo(260, 380); g.lineTo(300, 300); g.closePath(); g.fill();
   g.restore();
+};
+
+// a full-screen illustration (STORY.images[sc.image]) with a slow push and drift
+S.picture = (g, t, dur, sc) => {
+  bg(g, sc.bg || "navy", t); const im = IMG[sc.image] && IMG[sc.image].naturalWidth ? IMG[sc.image] : null;
+  if (im) { const z = 1.04 + 0.08 * (t / dur), w = W * z, h = w * im.height / im.width; const dx = (sc.drift || 0) * 60 * (t / dur);
+    g.drawImage(im, 540 - w / 2 + dx, Math.min(0, (H - h) / 2), w, Math.max(h, H * z)); g.fillStyle = "rgba(0,0,0,.12)"; g.fillRect(0, 0, W, H); }
+  else { person(g, 540, 1920, 1.3, { suit: false }); }
+  if (sc.label) nameTag(g, sc.label, 540, 300, cl((t - 0.3) * 3));
+};
+// a betting slip: the odds tick up to the number
+S.odds = (g, t, dur, sc) => {
+  bg(g, sc.bg || "blue", t); const k = ez(t * 2.2); g.save(); g.translate(540, 820 + 300 * (1 - k)); g.rotate(-0.05);
+  card(g, -360, -420, 720, 840, "#fbf7ea", 18);
+  for (let x = -360; x < 360; x += 40) { g.fillStyle = PAL[sc.bg || "blue"][0]; g.beginPath(); g.arc(x + 20, 420, 18, Math.PI, 0); g.fill(); }
+  T(g, sc.title || "BET SLIP", 0, -320, 60, { color: INK }); g.fillStyle = "rgba(0,0,0,.2)"; g.fillRect(-300, -290, 600, 6);
+  T(g, sc.pick || "", 0, -190, 64, { color: INK, maxW: 620 }); T(g, sc.market || "", 0, -120, 44, { color: "#666", maxW: 620 });
+  const v = Math.round(sc.to * ez(cl((t - 0.4) / 1.2))); T(g, `${v.toLocaleString("en-GB")}/1`, 0, 110, 190, { color: "#e2384a", maxW: 640 });
+  T(g, sc.foot || "", 0, 260, 44, { color: "#666", maxW: 620 });
+  g.restore();
+};
+// ages as bars: the record getting younger
+S.ages = (g, t, dur, sc) => {
+  bg(g, sc.bg || "teal", t); const it = sc.items; const max = Math.max(...it.map((x) => x.days)), min = Math.min(...it.map((x) => x.days)) - 60;
+  T(g, sc.title || "", 540, 380, 70, { color: YEL });
+  it.forEach((x, i) => { const k = ez((t - 0.35 * i) * 2.2); if (k <= 0) return; const y = 520 + i * 260, w = 160 + 640 * (x.days - min) / (max - min);
+    g.save(); g.globalAlpha = k; card(g, 110, y, w * k, 150, x.col || "#fff", 20); T(g, x.name, 140, y - 18, 50, { align: "left" }); T(g, x.age, 140 + w * k - 30, y + 98, 60, { align: "right", color: x.ink || INK }); g.restore(); });
+};
+// two cities, a parcel flying between them
+S.route = (g, t, dur, sc) => {
+  bg(g, sc.bg || "teal", t); const [a, b] = sc.cities; const ax = 230, ay = 1250, bx = 850, by = 560;
+  for (const [x, y, c] of [[ax, ay, a], [bx, by, b]]) { g.fillStyle = "#e2384a"; g.strokeStyle = INK; g.lineWidth = 6; g.beginPath(); g.arc(x, y - 60, 44, Math.PI, 0); g.lineTo(x, y); g.closePath(); g.fill(); g.stroke(); g.fillStyle = "#fff"; g.beginPath(); g.arc(x, y - 60, 16, 0, 7); g.fill(); nameTag(g, c, x, y + 110, 1); }
+  const k = inout(cl((t - 0.3) / Math.max(1, dur * 0.6))); arrow(g, ax, ay - 120, bx, by - 120, k, "#fff", 12, 0.25);
+  const mx = (ax + bx) / 2 - (by - ay) * 0.25, my = (ay + by) / 2 + (bx - ax) * 0.25 - 120; const px = (1 - k) * (1 - k) * ax + 2 * (1 - k) * k * mx + k * k * bx, py = (1 - k) * (1 - k) * (ay - 120) + 2 * (1 - k) * k * my + k * k * (by - 120);
+  if (sc.parcel) { g.save(); g.translate(px, py - 30); g.rotate(Math.sin(t * 6) * 0.1); card(g, -70, -55, 140, 110, "#c9945a", 10); g.fillStyle = "#8a5a2b"; g.fillRect(-8, -55, 16, 110); g.restore(); }
+};
+// a shirt that changes: from one look to another (fade), with stripes and a tie when asked
+S.kit = (g, t, dur, sc) => {
+  bg(g, sc.bg || "pink", t); const k = sc.change ? inout(cl((t - 0.6) / 1.2)) : 0;
+  const mix = (a, b, u) => { const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16); const c = [16, 8, 0].map((s) => Math.round(((pa >> s) & 255) * (1 - u) + ((pb >> s) & 255) * u)); return `rgb(${c[0]},${c[1]},${c[2]})`; };
+  const from = sc.from, to = sc.to || sc.from; const z = 1 + 0.05 * (t / dur);
+  g.save(); g.translate(540, 900); g.scale(1.5 * z, 1.5 * z);
+  const path = () => { g.beginPath(); g.moveTo(-120, -260); g.lineTo(-300, -180); g.lineTo(-250, -40); g.lineTo(-190, -70); g.lineTo(-190, 240); g.lineTo(190, 240); g.lineTo(190, -70); g.lineTo(250, -40); g.lineTo(300, -180); g.lineTo(120, -260); g.bezierCurveTo(80, -200, -80, -200, -120, -260); g.closePath(); };
+  path(); g.fillStyle = mix(from.c1, to.c1, k); g.fill(); g.save(); path(); g.clip();
+  const st = (look, a) => { if (!look.stripes || a <= 0) return; g.globalAlpha = a; g.fillStyle = look.stripes; for (let x = -300; x < 300; x += 100) g.fillRect(x + 25, -300, 50, 600); g.globalAlpha = 1; };
+  st(from, 1 - k); st(to, k); if (sc.fade) { g.fillStyle = `rgba(255,255,255,${0.55 * ez(cl((t - 0.5) / 1.5))})`; g.fillRect(-320, -300, 640, 600); }
+  g.restore(); path(); g.lineWidth = 10; g.strokeStyle = INK; g.stroke();
+  if (from.tie && k < 0.5) { g.globalAlpha = 1 - k * 2; g.fillStyle = "#111"; g.beginPath(); g.moveTo(-18, -215); g.lineTo(18, -215); g.lineTo(28, -40); g.lineTo(0, 0); g.lineTo(-28, -40); g.closePath(); g.fill(); g.globalAlpha = 1; }
+  g.restore();
+  if (sc.label) T(g, sc.label, 540, 1380, 90, { shadow: true, alpha: cl((t - 0.4) * 3) });
 };
 // the end card
 S.cta = (g, t, dur, sc) => { bg(g, "red", t); const k = pop(cl(t * 2.5)); g.save(); g.translate(540, 900); g.scale(k, k); T(g, "FOLLOW", 0, -40, 190, { shadow: true }); T(g, "FOR MORE", 0, 150, 150, { color: YEL, shadow: true }); g.restore(); };
