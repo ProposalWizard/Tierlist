@@ -149,7 +149,8 @@ def main():
         f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes", "images", "evalPct", "possLabels", "layoutScale")}) + ";\n")
         f.write("window.TL = " + json.dumps(tl) + ";\n")
     eng = os.path.join(HERE, "engine")
-    html = open(os.path.join(eng, "chess.html" if story.get("layout") == "chess" else "edit.html")).read().replace('src="avatars.js"', f'src="{eng}/avatars.js"').replace('src="scenes.js"', f'src="{eng}/scenes.js"').replace('src="chess.js"', f'src="{eng}/chess.js"').replace("url(../assets/", f"url({HERE}/assets/")
+    page = {"chess": "chess.html", "explainer": "athletic.html"}.get(story.get("layout"), "edit.html")
+    html = open(os.path.join(eng, page)).read().replace('src="avatars.js"', f'src="{eng}/avatars.js"').replace('src="scenes.js"', f'src="{eng}/scenes.js"').replace('src="chess.js"', f'src="{eng}/chess.js"').replace('src="athletic.js"', f'src="{eng}/athletic.js"').replace("url(../assets/", f"url({HERE}/assets/")
     open(os.path.join(work, "edit.html"), "w").write(html)
     # 2b. real footage (optional, private drafts only): a scene with "clip": [[file, start, seconds, xcentre?], ...]
     #     gets its frames cut to the pitch window; files are read from story["clipsDir"]

@@ -1,0 +1,42 @@
+{
+  "id": "ex01-pochettino-united",
+  "series": "Explainer",
+  "title": "How will Pochettino change Manchester United?",
+  "layout": "explainer",
+  "music": "02-working-it-out.mp3",
+  "voice": { "provider": "elevenlabs", "voiceId": "WAppqUXeqDqXjNTaQxG9" },
+  "sources": [
+    "https://www.skysports.com/football/news/13611745/mauricio-pochettino-manchester-united-agree-two-and-a-half-year-deal-with-usa-manager-to-replace-michael-carrick",
+    "https://www.aljazeera.com/sports/2026/11/12/manchester-united-sack-michael-carrick-as-manager",
+    "https://www.cbssports.com/soccer/news/what-needs-to-happen-for-manchester-united-relegated-premier-league-2026/",
+    "https://www.premierleague.com/en/news/4763586/how-man-utd-could-line-up-under-mauricio-pochettino",
+    "https://www.sportsmole.co.uk/football/man-utd/news/pochettinos-official-start-date-revealed-as-man-united-confirm-argentines-arrival_609049.html",
+    "https://en.wikipedia.org/wiki/Mauricio_Pochettino"
+  ],
+  "facts": {
+    "carrick": "sacked c. 12 Nov 2026 after a 4-4 draw with Aston Villa; United 18th, 8 points from 10 games (1W 5D 4L), a point behind Coventry City (17th)",
+    "deal": "two-and-a-half-year deal; starts 18 Nov 2026; first game Liverpool away, Sun 22 Nov 2026",
+    "before": "United considered him in 2019 (kept Solskjaer) and 2022 (chose Ten Hag), as widely reported",
+    "style": "usually 4-2-3-1, high press, quick attacks, full-backs give width, wingers come inside; Bielsa coached him at Newell's Old Boys and Argentina",
+    "spurs": "86 points and 2nd in 2016-17; 2019 Champions League final, lost 2-0 to Liverpool in Madrid",
+    "psg": "Trophee des Champions (played Jan 2021), Coupe de France 2021, Ligue 1 2021-22"
+  },
+  "lines": [
+    { "text": "How will Mauricio Pochettino change Manchester United?", "scene": { "type": "portrait", "hook": true, "bg": "red", "person": { "hairStyle": "slick", "hair": "#b9b4ad" }, "name": "MAURICIO POCHETTINO" } },
+    { "text": "Well, first, look at what he's walking into.", "scene": { "type": "portrait", "bg": "navy", "person": false, "shirt": ["#d7192d", "#ffffff", "", ""] } },
+    { "text": "Michael Carrick is gone, after a four-all draw with Aston Villa.", "scene": { "type": "portrait", "bg": "purple", "person": { "hair": "#5a4632" }, "name": "MICHAEL CARRICK", "stamp": "SACKED" } },
+    { "text": "United are eighteenth, with eight points from ten games.", "scene": { "type": "table", "bg": "navy", "rows": [ { "pos": 17, "name": "Coventry City", "pts": 9 }, { "pos": 18, "name": "Man United", "pts": 8, "hi": true } ], "zoneFrom": 2 } },
+    { "text": "One win. Five draws. Four defeats.", "scene": { "type": "tiles", "bg": "navy", "title": "10 GAMES", "results": ["W", "D", "D", "D", "D", "D", "L", "L", "L", "L"] } },
+    { "text": "And United have looked at Pochettino before.", "scene": { "type": "portrait", "bg": "teal", "person": { "hairStyle": "slick", "hair": "#b9b4ad" }, "name": "POCHETTINO" } },
+    { "text": "In 2019, and again in 2022. Both times, they went elsewhere.", "scene": { "type": "years", "bg": "purple", "items": [ { "year": "2019", "top": "UNITED", "label": "Kept Solskjær", "cross": true }, { "year": "2022", "top": "UNITED", "label": "Chose Ten Hag", "cross": true }, { "year": "2026", "top": "UNITED", "label": "Pochettino", "tick": true, "head": "#1ea85a" } ] } },
+    { "text": "Now, he's got two and a half years.", "scene": { "type": "counter", "bg": "teal", "prop": "contract", "from": 0, "to": 2.5, "dec": 1, "fmt": "{v}", "word": "YEARS", "size": 260 } },
+    { "text": "So what does a Pochettino team look like? Usually, a four-two-three-one.", "scene": { "type": "formation", "bg": "green", "label": "4-2-3-1" } },
+    { "text": "And it presses. Hard. Win the ball high, then attack fast.", "scene": { "type": "press", "bg": "green", "won": "WON IT HIGH" } },
+    { "text": "He learned that from Marcelo Bielsa, who coached him as a player.", "scene": { "type": "mentor", "bg": "orange", "left": { "hairStyle": "bald", "hair": "#cfcac2" }, "leftName": "BIELSA", "right": { "hairStyle": "slick", "hair": "#b9b4ad" }, "rightName": "POCHETTINO", "caption": "COACH  →  PLAYER" } },
+    { "text": "The full-backs give the width, so the wingers can come inside.", "scene": { "type": "width", "bg": "green" } },
+    { "text": "At Tottenham, that meant eighty-six points, and a Champions League final.", "scene": { "type": "counter", "bg": "blue", "from": 0, "to": 86, "word": "POINTS · 2016/17", "size": 380 } },
+    { "text": "At Paris Saint-Germain, he won three trophies, including Ligue 1.", "scene": { "type": "shelf", "bg": "blue", "title": "AT PSG", "items": [ { "label": "Trophée des Champions", "year": "2021", "kind": "plate", "col": "#d9dde3" }, { "label": "Coupe de France", "year": "2021", "kind": "cup" }, { "label": "Ligue 1", "year": "2022", "kind": "bigears", "col": "#d9dde3" } ] } },
+    { "text": "His first game? Liverpool. The team that beat him in that final.", "scene": { "type": "fixture", "bg": "red", "then": { "top": "2019 CHAMPIONS LEAGUE FINAL", "score": "SPURS 0-2 LIVERPOOL", "foot": "MADRID" }, "now": { "top": "SUNDAY 22 NOVEMBER", "teams": "LIVERPOOL v MAN UTD", "foot": "ANFIELD" } } },
+    { "text": "He gets four days with the squad before Anfield.", "scene": { "type": "counter", "bg": "red", "prop": "calendar", "top": "NOVEMBER", "from": 18, "to": 22 } }
+  ]
+}

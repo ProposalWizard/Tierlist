@@ -1,0 +1,58 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Anton;src:url(../assets/Anton.ttf)}@font-face{font-family:Oswald;src:url(../assets/Oswald-Bold.woff2);font-weight:700}
+body{margin:0;background:#000}</style></head><body><canvas id="c" width="1080" height="1920"></canvas>
+<script src="athletic.js"></script>
+<script src="timeline.js"></script>
+<script>
+// The explainer look (athletic.js): full-screen drawn scenes, a circle wipe into each new idea, the hook
+// line big and white, every other line as 2-3 word captions in yellow on a dark box. No narrator on screen.
+const FPS = 30, X = window.EXPLAINER;
+const cv = document.getElementById("c"), g = cv.getContext("2d");
+const off = document.createElement("canvas"); off.width = 1080; off.height = 1920; const og = off.getContext("2d");
+
+function drawScene(c, s, t) {
+  const lt = t - s.t0, dur = s.t1 - s.t0;
+  try { (X.S[s.scene.type] || X.S.text)(c, lt, dur, s.scene); } catch (e) { window.errorsSeen.push(s.scene.type + ": " + e.message); }
+}
+function mark(c) { c.save(); c.globalAlpha = 0.9; c.font = "64px Anton"; c.textAlign = "right"; c.lineWidth = 5; c.strokeStyle = "#1b1416"; c.strokeText("KIB", 1010, 150); c.fillStyle = "#fff"; c.fillText("KIB", 1010, 150); c.restore(); }
+
+function captions(t, s) {
+  const ch = TL.chunks.find((k) => t >= k.t0 && t < k.t1); if (!ch) return;
+  const words = ch.words.map((w) => w.w).join(" ");
+  if (s && s.scene.hook) {   // the hook: big, white, two lines, centred
+    g.save(); g.font = "150px Anton"; g.textAlign = "center"; const parts = words.split(" "); const lines = parts.length > 2 ? [parts.slice(0, Math.ceil(parts.length / 2)).join(" "), parts.slice(Math.ceil(parts.length / 2)).join(" ")] : [words];
+    const k = X.pop(X.cl((t - ch.t0) * 7)); g.translate(540, 880); g.scale(k, k);
+    lines.forEach((l, i) => { const y = (i - (lines.length - 1) / 2) * 160 + 50; let sz = 150; const w = g.measureText(l).width; if (w > 960) { sz = 150 * 960 / w; g.font = `${sz}px Anton`; }
+      g.fillStyle = "rgba(0,0,0,.45)"; g.fillText(l, 7, y + 9); g.lineJoin = "round"; g.lineWidth = 12; g.strokeStyle = "#1b1416"; g.strokeText(l, 0, y); g.fillStyle = "#fff"; g.fillText(l, 0, y); g.font = "150px Anton"; });
+    g.restore(); return;
+  }
+  g.save(); g.font = "86px Anton"; g.textAlign = "center"; let sz = 86; const w = g.measureText(words).width; if (w > 920) { sz = 86 * 920 / w; g.font = `${sz}px Anton`; }
+  const ww = g.measureText(words).width; const k = X.ez(X.cl((t - ch.t0) * 9)); g.translate(540, 1500); g.scale(0.9 + 0.1 * k, 0.9 + 0.1 * k); g.globalAlpha = k;
+  g.fillStyle = "rgba(20,14,16,.88)"; X.rr(g, -ww / 2 - 22, -sz * 0.92, ww + 44, sz * 1.18, 10); g.fill();
+  g.fillStyle = X.YEL; g.fillText(words, 0, 0); g.restore();
+}
+
+window.TOTAL = Math.ceil(TL.total * FPS);
+window.errorsSeen = [];
+window.ready = (async () => {
+  await document.fonts.load("40px Anton");
+  for (const [k, src] of Object.entries(STORY.images || {})) { const im = new Image(); im.src = src; await im.decode().catch(() => {}); X.IMG[k] = im; }
+})();
+
+window.draw = async (f) => {
+  const t = f / FPS; g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1;
+  const end = { t0: TL.endCard, t1: TL.total, scene: { type: "cta" } };
+  const all = TL.scenes.concat([end]);
+  let i = all.findIndex((x) => t >= x.t0 && t < x.t1); if (i < 0) i = all.length - 1; const s = all[i];
+  drawScene(g, s, t);
+  const lt = t - s.t0, W0 = 0.36;
+  if (i > 0 && lt < W0 && !s.scene.cut) {   // the circle wipe: the old idea stays, the new one opens out of the middle
+    const p = all[i - 1]; og.setTransform(1, 0, 0, 1, 0, 0); drawScene(og, p, s.t0 - 0.001);
+    const k = X.ez(lt / W0), r = 1150 * k, cx = s.scene.wipeX ?? 540, cy = s.scene.wipeY ?? 900;
+    g.save(); g.beginPath(); g.rect(0, 0, 1080, 1920); g.moveTo(cx + r, cy); g.arc(cx, cy, r, 0, Math.PI * 2, true); g.closePath(); g.clip(); g.drawImage(off, 0, 0); g.restore();
+    g.save(); g.strokeStyle = "#fff"; g.lineWidth = 14 * (1 - k); g.beginPath(); g.arc(cx, cy, r, 0, 7); g.stroke(); g.restore();
+  }
+  X.finish(g, t); mark(g); if (s !== end) captions(t, s);
+  return cv.toDataURL("image/jpeg", 0.9);
+};
+</script></body></html>
