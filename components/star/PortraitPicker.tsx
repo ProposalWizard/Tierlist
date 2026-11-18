@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  clampOffset, encodePortrait, initialView, portraitBytes, sourceRect, type CropView,
+  clampOffset, encodePortrait, initialView, sourceRect, type CropView,
 } from "@/lib/star/portrait";
 import { kitsOf, labelInk } from "@/lib/star/kits";
 import { paletteFor } from "@/lib/star/media/graphics/palette";
@@ -332,7 +332,7 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
             <TilePreview portrait={value} club={club} number={number} />
             <p className="flex-1 text-[11px] font-bold leading-snug text-white/85">
               {value
-                ? "This is how you will appear on Player of the Month graphics."
+                ? ""
                 : "Without one you'll show up as a generic face in matches, and as the back of your shirt on Player of the Month graphics."}
             </p>
           </div>
@@ -393,11 +393,6 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
           >
             {value ? "Use my shirt" : "✓ Using your shirt"}
           </button>
-          {value && !FAKE_FACES.includes(value) && (
-            <p className="mt-1.5 text-center text-[10px] font-bold text-white">
-              Stored on this device only — about {Math.round(portraitBytes(value) / 1024)} KB.
-            </p>
-          )}
 
           <div className="mt-3 border-t border-white/10 pt-3">
             <span className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">

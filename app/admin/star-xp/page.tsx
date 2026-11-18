@@ -166,9 +166,9 @@ export default function XpBook() {
               ))}
             </div>
           ))}
-          <div className="pt-2 text-[12px] font-black uppercase tracking-widest text-amber-300">Ballon d&apos;Or</div>
+          <div className="pt-2 text-[12px] font-black uppercase tracking-widest text-amber-300">Golden Ball</div>
           {(["win", "top3", "top10"] as const).map((b) => (
-            <Row book={book} key={b} k={`ballon:${b}`} label={b === "win" ? "Win the Ballon d'Or" : b === "top3" ? "Finish top 3" : "Finish top 10"} value={cfg.ballon[b]} def={DEFAULT_XP.ballon[b]} step={1000}
+            <Row book={book} key={b} k={`ballon:${b}`} label={b === "win" ? "Win the Golden Ball" : b === "top3" ? "Finish top 3" : "Finish top 10"} value={cfg.ballon[b]} def={DEFAULT_XP.ballon[b]} step={1000}
               onValue={(n) => change({ ...cfg, ballon: { ...cfg.ballon, [b]: n } })} />
           ))}
         </>)}

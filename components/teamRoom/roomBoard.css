@@ -1,0 +1,112 @@
+/* The Team board TAB inside the Team room (13 Nov 2026, Harry: "this can be
+ * improved visually, where is the live now/active now?"). Only this tab uses
+ * these rules (every class starts "tbb-"), so the look can be changed here
+ * without touching another screen. Colours come from the room's tokens, so
+ * both looks (roomLook.css) paint it. Phone first: one column at 390 px.
+ * Small text is at least 4.5:1 (scripts/team-room/contrast.mjs). */
+
+.tbb { gap: 12px; }
+.tbb .tbb-lbl { margin: 0; font-size: 12px; font-weight: 800; color: var(--ash-ink3); }
+.tbb .tbb-lbl span { font-weight: 500; }
+
+/* The dot: grey, green when live. Live dots pulse (not with reduced motion). */
+.tbb-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; display: inline-block; background: var(--ash-ink3); }
+.tbb-now.live .tbb-dot, .tbb-state.active .tbb-dot, .tbb-state.working .tbb-dot { background: var(--ash-accent); animation: tbb-pulse 1.8s ease-out infinite; }
+.tbb-state.status .tbb-dot { background: var(--ash-amber); }
+.tbb-state.last .tbb-dot, .tbb-state.away .tbb-dot { background: none; box-shadow: inset 0 0 0 1.5px var(--ash-ink3); }
+@keyframes tbb-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ash-accent) 55%, transparent); }
+  70%, 100% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--ash-accent) 0%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) { .tbb .tbb-dot { animation: none !important; } }
+
+/* Active now: the strip at the top */
+.tbb-now { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--ash-line); background: var(--ash-panel); font-size: 14px; color: var(--ash-ink2); flex: 0 0 auto; }
+.tbb-now.live { border-color: var(--ash-accent); background: linear-gradient(var(--ash-accent-soft), var(--ash-accent-soft)), var(--ash-panel); color: var(--ash-ink); }
+.tbb-now > b { font-size: 15px; }
+.tbb-now .who { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.tbb-now .p { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+.tbb-now .p .tr-av { width: 22px; height: 22px; }
+.tbb-now .p small { font-weight: 500; font-size: 12.5px; color: var(--ash-ink2); }
+
+/* Cards on the left, notes on the right (under, on a narrow screen) */
+.tbb-layout { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.tbb-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; min-width: 0; }
+.tbb-side { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+@media (min-width: 901px) {
+  .tbb-cards { grid-template-columns: var(--tbb-cols, repeat(3, minmax(0, 1fr))); }
+  .tbb-side { max-width: 520px; }
+}
+@media (min-width: 1280px) {
+  .tbb-layout { flex-direction: row; align-items: flex-start; }
+  .tbb-cards { flex: 1; }
+  .tbb-side { flex: 0 0 264px; max-width: none; }
+}
+
+/* One person's card: its own height, never stretched */
+.tbb-card { border: 1px solid var(--ash-line); border-radius: 8px; background: var(--ash-panel); padding: 12px; min-width: 0; display: flex; flex-direction: column; gap: 10px; --tbb-pc: var(--ash-accent); }
+.tbb-card.Harry { --tbb-pc: var(--ash-harry); } .tbb-card.Mikey { --tbb-pc: var(--ash-mikey); } .tbb-card.Leo { --tbb-pc: var(--ash-leo); }
+.tbb-card.live { border-color: var(--ash-line2); box-shadow: inset 0 3px 0 var(--ash-accent); }
+/* Crest | name | pushes on the first line; the state runs under the name at the full width, so it never squeezes. */
+.tbb-card header { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 10px; row-gap: 2px; align-items: center; min-width: 0; }
+.tbb-card header > .tr-av { grid-row: 1 / span 2; align-self: start; }
+.tbb-card header .tbb-state { grid-column: 2 / span 2; }
+.tbb-card header .tr-av { width: 36px; height: 36px; }
+.tbb-card header .id { display: contents; }
+.tbb-card header .id > b { font-size: 16px; line-height: 1.2; }
+.tbb-card header .id > b small { font-weight: 500; font-size: 12px; color: var(--ash-ink3); }
+.tbb-card header .week { grid-column: 3; grid-row: 1; display: flex; align-items: baseline; gap: 5px; color: var(--ash-ink3); }
+.tbb-card header .week b { font-size: 16px; font-weight: 700; color: var(--ash-ink2); }
+.tbb-card header .week small { font-size: 12px; white-space: nowrap; }
+.tbb-state { display: flex; align-items: baseline; gap: 6px; font-size: 13px; font-weight: 700; color: var(--ash-ink2); min-width: 0; flex-wrap: wrap; }
+.tbb-state .tbb-dot { align-self: center; }
+.tbb-state.active, .tbb-state.working { color: var(--ash-accent); }
+.tbb-state small { font-weight: 500; font-size: 12.5px; color: var(--ash-ink3); }
+
+/* "Waiting on you": the first thing on the card when it is you */
+.tbb-you { margin: 0; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--ash-amber); background: var(--ash-amber-soft); display: flex; flex-direction: column; gap: 1px; font-size: 14px; color: var(--ash-ink); overflow-wrap: anywhere; }
+.tbb-you b { font-size: 12px; font-weight: 800; color: var(--ash-amber); }
+.tbb-wait { margin: 0; font-size: 13px; color: var(--ash-ink2); overflow-wrap: anywhere; }
+
+/* Current work */
+.tbb-work { display: flex; flex-direction: column; gap: 12px; }
+.tbb-bar .t { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.tbb-bar .t b { font-size: 15px; min-width: 0; overflow-wrap: anywhere; }
+.tbb-bar .pct { font-size: 22px; font-weight: 800; line-height: 1; color: var(--tbb-pc); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tbb-bar .pct small { font-size: 13px; font-weight: 700; }
+.tbb-bar .track { height: 10px; border-radius: 5px; background: var(--ash-panel2); border: 1px solid var(--ash-line); margin-top: 5px; overflow: hidden; }
+.tbb-bar .track i { display: block; height: 100%; border-radius: 5px; background: var(--tbb-pc); }
+.tbb-bar .n { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.tbb-bar .n small { color: var(--ash-ink3); font-size: 12.5px; overflow-wrap: anywhere; }
+.tbb-bar.waiting .pct { color: var(--ash-amber); }
+.tbb-bar.waiting .track i { background: var(--ash-amber); }
+.tbb-chip { font-size: 12px; font-weight: 800; padding: 1px 7px; border-radius: 6px; border: 1px solid var(--ash-line2); color: var(--ash-ink2); white-space: nowrap; }
+.tbb-chip.amber { border-color: var(--ash-amber); background: var(--ash-amber-soft); color: var(--ash-amber); }
+.tbb-done { list-style: none; margin: 0; padding: 8px 0 0; border-top: 1px solid var(--ash-line); display: flex; flex-direction: column; gap: 4px; }
+.tbb-work > .tbb-done:first-child { border-top: 0; padding-top: 0; }
+.tbb-done li { display: flex; gap: 7px; align-items: baseline; font-size: 13px; color: var(--ash-ink2); overflow-wrap: anywhere; }
+.tbb-done .tick { color: var(--ash-accent); font-weight: 800; flex: 0 0 auto; }
+.tbb-done li small { font-size: 12.5px; color: var(--ash-ink3); }
+.tbb-done li.more { color: var(--ash-ink3); font-size: 12.5px; padding-left: 19px; }
+.tbb-none { margin: 0; font-size: 14px; color: var(--ash-ink2); }
+.tbb-none span { color: var(--ash-ink3); white-space: nowrap; }
+
+/* The slim chart: pushes a day, today marked */
+.tbb-spark { margin-top: 2px; padding-top: 10px; border-top: 1px solid var(--ash-line); }
+.tbb-spark .bars { display: flex; align-items: flex-end; gap: 3px; height: 26px; }
+.tbb-spark .bars i { flex: 1; border-radius: 2px 2px 0 0; min-height: 2px; background: color-mix(in srgb, var(--tbb-pc) 45%, var(--ash-panel)); }
+.tbb-spark .bars i.z { background: var(--ash-line2); height: 2px; }
+.tbb-spark .bars i.na { background: none; height: 0; }
+.tbb-spark .bars i.today { background: var(--tbb-pc); }
+.tbb-spark .bars i.today.z { background: var(--ash-ink3); }
+.tbb-spark .axis { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--ash-ink3); margin-top: 4px; }
+.tbb-spark .axis span:last-child { font-weight: 700; color: var(--ash-ink2); }
+
+/* Notes: a narrow box, newest first */
+.tbb-notes { border: 1px solid var(--ash-line); border-radius: 8px; background: var(--ash-panel); padding: 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.tbb-notes .tr-add { flex-wrap: nowrap; }
+.tbb-notes .tr-add input { flex: 1 1 0; }
+.tbb-note { display: flex; gap: 8px; align-items: flex-start; padding-top: 8px; border-top: 1px solid var(--ash-line); font-size: 14px; }
+.tbb-note .tr-av { margin-top: 1px; }
+.tbb-note .tx { flex: 1; min-width: 0; overflow-wrap: anywhere; display: flex; flex-direction: column; }
+.tbb-note small { color: var(--ash-ink3); font-size: 12px; }

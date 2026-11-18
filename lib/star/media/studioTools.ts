@@ -562,7 +562,7 @@ export function defaultMoment(c: CareerState, kind: MomentKind): CareerRecord["m
 
 export const MOMENT_KINDS: { kind: MomentKind; label: string }[] = [
   { kind: "transfer", label: "Transfer" }, { kind: "contract", label: "New contract" },
-  { kind: "award", label: "Award" }, { kind: "ballon-dor", label: "Ballon d'Or" },
+  { kind: "award", label: "Award" }, { kind: "ballon-dor", label: "Golden Ball" },
   { kind: "manager-out", label: "Manager sacked" }, { kind: "call-up", label: "International call-up" },
   { kind: "captain", label: "Made captain" }, { kind: "testimonial", label: "Testimonial" },
   { kind: "retirement", label: "Retirement" }, { kind: "hall-record", label: "Hall of Fame record" },

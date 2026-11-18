@@ -1,0 +1,311 @@
+/*
+ * THE ADMIN LOOK, "Knowitball": the shell (Harry, 12 Nov 2026: "A for admin
+ * home and C for the rest"). Rules and colours: houseTokens.css.
+ *  - The admin home (/admin): look A. Calm tiles, greys, no game-tab row.
+ *  - Every other page: look C. A dark green side menu (a dark green bar on a
+ *    phone), green-tinted paper, lists as rows with the count in one
+ *    right-hand column. Group pages keep their picture cards.
+ * Every rule here is scoped to data-look="house", so the four older looks
+ * (Broadcast, Bento, Ops room, Clean light) are untouched.
+ */
+.ash.ash[data-look="house"] {
+  --ash-bg: var(--kh-bg); --ash-bg2: var(--kh-rail); --ash-panel: var(--kh-panel); --ash-panel-solid: var(--kh-panel); --ash-panel2: var(--kh-panel2);
+  --ash-line: var(--kh-line); --ash-line2: var(--kh-line2); --ash-ink: var(--kh-ink); --ash-ink2: var(--kh-ink2); --ash-ink3: var(--kh-ink3);
+  --ash-accent: var(--kh-accent); --ash-accent-ink: #ffffff; --ash-accent-soft: var(--kh-accent-soft);
+  --ash-amber: var(--kh-amber); --ash-amber-soft: var(--kh-amber-soft); --ash-red: var(--kh-red); --ash-red-soft: var(--kh-red-soft);
+  --ash-blue: var(--kh-blue); --ash-violet: var(--kh-slate); --ash-harry: var(--kh-accent); --ash-mikey: var(--kh-blue); --ash-leo: var(--kh-slate);
+  --ash-shadow: none; --ash-grid: transparent; --ash-blur: none;
+  --sk-r: var(--kh-r2); --sk-type-style: normal; --sk-type-case: none;
+  --sk-tile: var(--kh-panel); --sk-tile-border: var(--kh-line); --sk-tile-ink: var(--kh-ink); --sk-tile-ink2: var(--kh-ink2);
+  --sk-bar: none; --sk-bar-ink: var(--kh-ink); --sk-bar-clip: none;
+  --sk-badge: transparent; --sk-badge-ink: var(--kh-ink2); --sk-badge-skew: none;
+  --sk-card: var(--kh-panel); --sk-card-border: var(--kh-line); --sk-card-ink: var(--kh-ink); --sk-card-ink2: var(--kh-ink2); --sk-pic: var(--kh-panel2);
+  --sk-open: transparent; --sk-open-ink: var(--kh-ink); --sk-open-clip: none; --sk-open-r: var(--kh-r1);
+  --sk-h2: var(--kh-ink2); --sk-hover: none;
+  color-scheme: light; background: var(--kh-bg); font-size: 14px; line-height: 1.45;
+}
+.ash.ash[data-look="house"] .ash-av { color: #fff; }
+
+/* ── The side menu: the shell's one committed colour. ── */
+.ash.ash[data-look="house"] .ash-side { background: var(--kh-rail); border-right: 0; color: var(--kh-rail-ink); gap: 4px; }
+@media (min-width: 1024px) { .ash.ash[data-look="house"][data-folded="false"] .ash-side { width: 224px; flex-basis: 224px; padding: 16px 12px; } }
+.ash.ash[data-look="house"] .ash-brand { padding: 0 0 16px; gap: 12px; }
+.ash.ash[data-look="house"] .ash-brand b { color: var(--kh-rail-ink); font-size: 14px; font-weight: 700; letter-spacing: 0; }
+.ash.ash[data-look="house"] .ash-brand small { color: var(--kh-rail-ink3); text-transform: none; letter-spacing: 0; font-size: 12px; }
+.ash.ash[data-look="house"] .ash-navh { color: var(--kh-rail-ink3); text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 500; margin: 16px 8px 4px; }
+.ash.ash[data-look="house"] .ash-nav, .ash.ash[data-look="house"] .ash-gnav, .ash.ash[data-look="house"] .ash-area {
+  color: var(--kh-rail-ink2); font-weight: 500; font-size: 14px; border: 0; border-radius: var(--kh-r1); padding: 8px; gap: 8px; margin: 0;
+}
+.ash.ash[data-look="house"] .ash-navl { gap: 8px; }
+.ash.ash[data-look="house"] .ash-nav svg { opacity: 1; }
+.ash.ash[data-look="house"] .ash-nav:hover, .ash.ash[data-look="house"] .ash-gnav:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
+.ash.ash[data-look="house"] .ash-nav[aria-current="page"], .ash.ash[data-look="house"] .ash-gnav[aria-current="page"],
+.ash.ash[data-look="house"] .ash-area[data-on="true"], .ash.ash[data-look="house"] .ash-area[data-on="true"]:hover { background: var(--kh-rail2); color: #fff; font-weight: 600; }
+.ash.ash[data-look="house"] .ash-nav[aria-current="page"] svg, .ash.ash[data-look="house"] .ash-area[data-on="true"] svg { color: var(--kh-rail-accent); }
+.ash.ash[data-look="house"] .ash-nav .n, .ash.ash[data-look="house"] .ash-gnav .n { color: var(--kh-rail-ink3); font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.ash.ash[data-look="house"] .ash-glist { gap: 4px; }
+.ash.ash[data-look="house"] .ash-gic { width: 20px; height: 20px; border-radius: 4px; box-shadow: none; clip-path: inset(4% round 4px); }
+.ash.ash[data-look="house"] .ash-subs { margin: 4px 0 4px 16px; padding-left: 8px; border-left: 1px solid var(--kh-rail-line); gap: 4px; }
+.ash.ash[data-look="house"] .ash-subs .ash-nav { padding: 8px; font-size: 14px; }
+.ash.ash[data-look="house"] .ash-nbadge { border-radius: var(--kh-r1); font-size: 12px; font-weight: 600; background: #c93a4b; }
+.ash.ash[data-look="house"] .ash-switch { border-radius: var(--kh-r1); background: transparent; border-color: var(--kh-rail-line); padding: 4px; gap: 4px; }
+.ash.ash[data-look="house"] .ash-switch button { color: var(--kh-rail-ink2); border-radius: 4px; font-weight: 500; font-size: 12px; padding: 4px 8px; }
+.ash.ash[data-look="house"] .ash-switch button:first-child { grid-column: 1 / -1; }
+.ash.ash[data-look="house"] .ash-switch button[aria-pressed="true"] { background: var(--kh-rail2); color: #fff; font-weight: 600; }
+.ash.ash[data-look="house"] .ash-side .ash-toggle { color: var(--kh-rail-ink2); font-weight: 500; font-size: 14px; padding: 8px; }
+.ash.ash[data-look="house"] .ash-side .ash-toggle small { color: var(--kh-rail-ink3) !important; font-size: 12px; font-weight: 400 !important; }
+.ash.ash[data-look="house"] .ash-side > p { color: var(--kh-rail-ink3) !important; font-size: 12px !important; margin: 4px 8px 0 !important; }
+.ash.ash[data-look="house"] .ash-side .ash-pill-sw { background: #4a6557; }
+.ash.ash[data-look="house"] .ash-side .ash-pill-sw[aria-checked="true"] { background: var(--kh-rail-accent); }
+.ash.ash[data-look="house"] .ash-fold { border-radius: var(--kh-r1); border-color: var(--kh-rail-line); color: var(--kh-rail-ink2); width: 32px; height: 32px; }
+.ash.ash[data-look="house"] .ash-fold:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
+.ash.ash[data-look="house"] .ash-side a:focus-visible, .ash.ash[data-look="house"] .ash-side button:focus-visible, .ash.ash[data-look="house"] .ash-top a:focus-visible, .ash.ash[data-look="house"] .ash-top button:focus-visible { outline-color: var(--kh-rail-accent); }
+@media (min-width: 1024px) {
+  .ash.ash[data-look="house"][data-folded="true"] .ash-side { padding: 16px 8px; }
+  .ash.ash[data-look="house"][data-folded="true"] .ash-nav, .ash.ash[data-look="house"][data-folded="true"] .ash-area, .ash.ash[data-look="house"][data-folded="true"] .ash-gnav { width: 40px; padding: 8px; }
+  .ash.ash[data-look="house"][data-folded="true"] .ash-gic { width: 24px; height: 24px; }
+}
+
+/* ── Phone: the same green as a top bar; the menu folds into "Menu". ── */
+.ash.ash[data-look="house"] .ash-top { background: var(--kh-rail); border-bottom: 0; color: var(--kh-rail-ink); padding: 8px 16px; gap: 8px; }
+.ash.ash[data-look="house"] .ash-top .ash-btn.ghost {
+  background: transparent; color: #fff; border: 1px solid var(--kh-rail-line); border-radius: var(--kh-r1); font-weight: 600; font-size: 14px;
+  height: 40px; min-height: 40px; padding: 0 12px;
+}
+.ash.ash[data-look="house"] .ash-top .ash-word { color: #fff; font-size: 14px; font-weight: 700; letter-spacing: 0; }
+.ash.ash[data-look="house"] .ash-top .ash-bell, .ash.ash[data-look="house"] .ash-top .ash-bell svg { color: #fff; }
+.ash.ash[data-look="house"] .ash-top .ash-bell { margin-left: 8px; border-radius: var(--kh-r1); border: 1px solid var(--kh-rail-line); background: transparent; width: 40px; height: 40px; }
+.ash.ash[data-look="house"] .ash-scrim { background: rgba(10, 20, 15, 0.55); }
+.ash.ash[data-look="house"] .ash-main { padding: 24px 32px 80px; }
+@media (max-width: 1023px) { .ash.ash[data-look="house"] .ash-main { padding: 16px 16px 80px; } .ash.ash[data-look="house"] .ash-side { width: 280px; padding: 16px 12px; box-shadow: none; } }
+
+/* ── The game tabs: plain tabs. Not on the admin home, where the menu already lists the games. ── */
+.ash.ash[data-look="house"] .ash-games { gap: 4px; margin: 0 0 24px; border-bottom: 1px solid var(--kh-line); }
+.ash.ash[data-look="house"] .ash-game { font-weight: 500; font-size: 14px; padding: 8px 12px; border-bottom-width: 2px; color: var(--kh-ink2); gap: 8px; }
+.ash.ash[data-look="house"] .ash-game[aria-current="page"] { font-weight: 600; color: var(--kh-ink); border-bottom-color: var(--kh-accent); }
+.ash.ash[data-look="house"] .ash-game-n { font-weight: 500; font-size: 12px; color: var(--kh-ink3); font-variant-numeric: tabular-nums; }
+.ash.ash[data-look="house"] .ash-bell-pc { border-radius: var(--kh-r1); }
+.ash.ash[data-look="house"]:has(.ahub) .ash-game { display: none; }
+.ash.ash[data-look="house"]:has(.ahub) .ash-main { position: relative; }
+.ash.ash[data-look="house"]:has(.ahub) .ash-games { position: absolute; top: 24px; right: 32px; margin: 0; border: 0; overflow: visible; }
+@media (max-width: 1023px) { .ash.ash[data-look="house"]:has(.ahub) .ash-games { display: none; } }
+@media (max-width: 640px) {
+  .ash.ash[data-look="house"] .ash-games { margin: -4px -16px 16px; padding: 0 16px; }
+  .ash.ash[data-look="house"] .ash-game { padding: 8px; }
+}
+
+/* ── Type and the shared pieces. ── */
+.ash.ash[data-look="house"] .ash-h1, .ash.ash[data-look="house"] .agh-title, .ash.ash[data-look="house"] .agp-banner h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; font-style: normal; text-transform: none; }
+.ash.ash[data-look="house"] .ash-sub { font-size: 14px; color: var(--kh-ink2); margin: 4px 0 0; }
+.ash.ash[data-look="house"] .ash-h2 { font-size: 14px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--kh-ink2); margin: 0 0 8px; }
+.ash.ash[data-look="house"] .ash-panel { border-radius: var(--kh-r2); box-shadow: none; background: var(--kh-panel); border-color: var(--kh-line); }
+.ash.ash[data-look="house"] .ash-btn { border-radius: var(--kh-r1); font-weight: 600; font-size: 14px; padding: 8px 16px; gap: 8px; }
+.ash.ash[data-look="house"] .ash-btn.ghost { background: var(--kh-panel); color: var(--kh-ink); border: 1px solid var(--kh-line2); }
+.ash.ash[data-look="house"] .ash-btn.ghost:hover { border-color: var(--kh-ink3); }
+.ash.ash[data-look="house"] .ash-chip { border-radius: var(--kh-r1); font-weight: 500; font-size: 14px; padding: 4px 12px; gap: 8px; background: var(--kh-panel); border-color: var(--kh-line2); color: var(--kh-ink2); }
+.ash.ash[data-look="house"] .ash-chip:hover { border-color: var(--kh-ink3); color: var(--kh-ink); }
+.ash.ash[data-look="house"] .ash-chip[aria-pressed="true"] { background: var(--kh-ink); color: #fff; border-color: var(--kh-ink); font-weight: 600; }
+.ash.ash[data-look="house"] .ash-tag { border-radius: 4px; font-size: 12px; font-weight: 500; letter-spacing: 0; padding: 0 8px; line-height: 20px; }
+.ash.ash[data-look="house"] .ash-tag.grey { background: var(--kh-panel2); color: var(--kh-ink2); }
+.ash.ash[data-look="house"] .ash-tag.green { color: var(--kh-accent2); }
+.ash.ash[data-look="house"] .ash-search { border-radius: var(--kh-r1); padding: 8px 12px; gap: 8px; background: var(--kh-panel); border-color: var(--kh-line2); }
+.ash.ash[data-look="house"] .ash-search input { font-size: 14px; }
+.ash.ash[data-look="house"] .ash-search input::placeholder { color: var(--kh-ink3); }
+.ash.ash[data-look="house"] .ash-search:focus-within { border-color: var(--kh-accent); }
+.ash.ash[data-look="house"] .ash-dot.live { animation: none; box-shadow: none; }
+.ash.ash[data-look="house"] .ash-mono { font-family: inherit; font-size: 12px; }
+.ash.ash[data-look="house"] .tb-pitch { display: none; }
+
+/* ── THE ADMIN HOME (look A): calm tiles, greys, one green. ── */
+.ash.ash[data-look="house"] .ahub { max-width: 1040px; gap: 24px; }
+.ash.ash[data-look="house"] .ahub-grid { gap: 12px; }
+.ash.ash[data-look="house"] .ahub-tile { border-radius: var(--kh-r2); background: var(--kh-panel); border-color: var(--kh-line); box-shadow: none; }
+.ash.ash[data-look="house"] .ahub-tile:hover { border-color: var(--kh-ink3); }
+.ash.ash[data-look="house"] .ahub-main { grid-template-columns: 40px 1fr; grid-template-rows: auto auto 1fr; column-gap: 12px; row-gap: 4px; padding: 16px; min-height: 0; }
+.ash.ash[data-look="house"] .ahub-ic { grid-row: 1 / span 3; width: 40px; height: 40px; border-radius: var(--kh-r1); box-shadow: none; background: var(--kh-panel2); color: var(--kh-ink); }
+.ash.ash[data-look="house"] .ahub-ic svg { width: 22px; height: 22px; }
+.ash.ash[data-look="house"] .ahub-name { font-size: 16px; font-weight: 600; line-height: 1.25; align-self: start; }
+.ash.ash[data-look="house"] .ahub-line { font-size: 14px; line-height: 1.45; color: var(--kh-ink2); }
+.ash.ash[data-look="house"] .ahub-n { margin: 4px 0 0; padding: 0; background: none; border-radius: 0; font-size: 12px; font-weight: 500; color: var(--kh-ink2); font-variant-numeric: tabular-nums; }
+.ash.ash[data-look="house"] .ahub-subs { padding: 0 16px 16px 68px; margin: -8px 0 0; gap: 16px; }
+.ash.ash[data-look="house"] .ahub-subs a { border: 0; border-radius: 0; padding: 0; font-size: 14px; font-weight: 600; color: var(--kh-ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--kh-line2); }
+.ash.ash[data-look="house"] .ahub-subs a:hover { background: none; text-decoration-color: var(--kh-ink); }
+.ash.ash[data-look="house"] .ahub-changed { padding: 12px 16px; gap: 8px; }
+.ash.ash[data-look="house"] .ahub-ch-top { font-size: 14px; gap: 12px; }
+.ash.ash[data-look="house"] .ahub-ch-top b { font-weight: 600; }
+.ash.ash[data-look="house"] .ahub-site { font-weight: 500; gap: 8px; }
+.ash.ash[data-look="house"] .ahub-site i { width: 8px; height: 8px; }
+.ash.ash[data-look="house"] .ahub-more { font-size: 14px; font-weight: 600; color: var(--kh-ink); }
+.ash.ash[data-look="house"] .ahub-pushes { gap: 8px; }
+.ash.ash[data-look="house"] .ahub-pushes li { font-size: 14px; gap: 8px; }
+.ash.ash[data-look="house"] .ahub-pushes .ash-av { width: 20px; height: 20px; font-size: 12px; font-weight: 600; }
+.ash.ash[data-look="house"] .ahub-when { color: var(--kh-ink2); font-size: 12px; }
+.ash.ash[data-look="house"] .ahub-foot { color: var(--kh-ink2); font-size: 12px; }
+@media (max-width: 640px) {
+  /* The whole home fits one phone screen, and nothing sits under the chat bubble (bottom left). */
+  .ash.ash[data-look="house"]:has(.ahub) .ash-main { padding-bottom: 64px; }
+  .ash.ash[data-look="house"] .ahub { gap: 12px; }
+  .ash.ash[data-look="house"] .ahub-head .ash-sub { display: none; }
+  .ash.ash[data-look="house"] .ahub-grid { gap: 8px; }
+  .ash.ash[data-look="house"] .ahub-main { grid-template-columns: 32px 1fr; grid-template-rows: auto auto; column-gap: 8px; row-gap: 4px; padding: 12px; align-items: center; }
+  .ash.ash[data-look="house"] .ahub-ic { grid-row: 1; width: 32px; height: 32px; margin: 0; }
+  .ash.ash[data-look="house"] .ahub-ic svg { width: 18px; height: 18px; }
+  .ash.ash[data-look="house"] .ahub-name { font-size: 14px; align-self: center; }
+  .ash.ash[data-look="house"] .ahub-line { grid-column: 1 / -1; font-size: 12px; -webkit-line-clamp: 2; }
+  .ash.ash[data-look="house"] .ahub-n { grid-column: 1 / -1; margin: 0; }
+  .ash.ash[data-look="house"] .ahub-subs { padding: 0 12px 12px; margin: -4px 0 0; gap: 8px; }
+  .ash.ash[data-look="house"] .ahub-subs a { font-size: 12px; font-weight: 500; }
+  .ash.ash[data-look="house"] .ahub-changed { padding: 12px; }
+  .ash.ash[data-look="house"] .ahub-ch-top { gap: 4px 12px; }
+  .ash.ash[data-look="house"] .ahub-more { margin-left: auto; }
+  .ash.ash[data-look="house"] .ahub-pushes li:nth-child(n+3) { display: none; }
+}
+
+/* ── A GAME'S HOME (look C): the groups as one table, a row each, the count in its own column. ── */
+.ash.ash[data-look="house"] .ah { max-width: 1040px; gap: 16px; }
+.ash.ash[data-look="house"] .ah-bar { gap: 12px; }
+.ash.ash[data-look="house"] .ah-chips { gap: 8px; }
+.ash.ash[data-look="house"] .ah-n { opacity: 1; color: inherit; font-weight: 400; }
+.ash.ash[data-look="house"] .ah-team { padding: 4px 12px; gap: 8px; border-radius: var(--kh-r1); border-color: var(--kh-line2); }
+.ash.ash[data-look="house"] .ah-team-t b { font-size: 14px; font-weight: 600; }
+.ash.ash[data-look="house"] .ah-team-t small { font-size: 12px; color: var(--kh-ink2); }
+.ash.ash[data-look="house"] .ah-empty { padding: 16px; }
+.ash.ash[data-look="house"] .agh { gap: 12px; }
+.ash.ash[data-look="house"] .agh-toggle { display: none; }
+.ash.ash[data-look="house"] .agh-groups, .ash.ash[data-look="house"] .agh[data-view="list"] .agh-groups {
+  grid-template-columns: 1fr; gap: 0; border: 1px solid var(--kh-line); border-radius: var(--kh-r2); background: var(--kh-panel); overflow: hidden;
+}
+.ash.ash[data-look="house"] .agh-g, .ash.ash[data-look="house"] .agh[data-view="list"] .agh-g {
+  grid-template-columns: 32px minmax(0, 220px) minmax(0, 1fr) 80px; grid-template-rows: auto; align-items: center; column-gap: 12px;
+  min-height: 0; padding: 12px 16px; border: 0; border-radius: 0; background: none; box-shadow: none;
+}
+.ash.ash[data-look="house"] .agh-g + .agh-g { border-top: 1px solid var(--kh-line); }
+.ash.ash[data-look="house"] .agh-g:hover { background: var(--kh-bg); }
+.ash.ash[data-look="house"] .agh-art, .ash.ash[data-look="house"] .agh[data-view="list"] .agh-art { grid-column: 1; grid-row: 1; width: 32px; height: 32px; margin: 0; border-radius: var(--kh-r1); box-shadow: none; clip-path: inset(3% round 6px); }
+.ash.ash[data-look="house"] .agh-name, .ash.ash[data-look="house"] .agh[data-view="list"] .agh-name { grid-column: 2; margin: 0; padding: 0; width: auto; max-width: none; font-size: 14px; font-weight: 600; letter-spacing: 0; background: none; clip-path: none; align-self: center; }
+.ash.ash[data-look="house"] .agh-line, .ash.ash[data-look="house"] .agh[data-view="list"] .agh-line { grid-column: 3; display: block; padding: 0; font-weight: 400; font-size: 14px; color: var(--kh-ink2); align-self: center; }
+.ash.ash[data-look="house"] .agh-n, .ash.ash[data-look="house"] .agh[data-view="list"] .agh-n {
+  grid-column: 4; grid-row: 1; position: static; justify-self: end; margin: 0; padding: 0; border-radius: 0; background: none; transform: none;
+  text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 14px; color: var(--kh-ink2); font-variant-numeric: tabular-nums;
+}
+/* Search results: the same table, a block per group. */
+.ash.ash[data-look="house"] .ahb { columns: 3 280px; column-gap: 16px; }
+.ash.ash[data-look="house"] .ahb-g { border-radius: var(--kh-r2); margin: 0 0 16px; padding-bottom: 4px; }
+.ash.ash[data-look="house"] .ahb-head { padding: 12px 16px 8px; gap: 8px; margin: 0; }
+.ash.ash[data-look="house"] .ahb-ic { width: 24px; height: 24px; border-radius: 4px; clip-path: inset(4% round 4px); }
+.ash.ash[data-look="house"] .ahb-t b { font-size: 14px; font-weight: 600; }
+.ash.ash[data-look="house"] .ahb-t small { font-size: 12px; opacity: 1; color: var(--kh-ink2); }
+.ash.ash[data-look="house"] .ahb-n { font-size: 14px; font-weight: 500; padding: 0; border-radius: 0; font-variant-numeric: tabular-nums; }
+.ash.ash[data-look="house"] .ahb-rows { padding: 0 8px; }
+.ash.ash[data-look="house"] .ahb-row { padding: 8px; gap: 8px; font-size: 14px; font-weight: 500; border-radius: 4px; }
+.ash.ash[data-look="house"] .ahb-o { width: 20px; height: 20px; font-size: 12px; font-weight: 600; color: #fff; background: var(--kh-ink3); }
+.ash.ash[data-look="house"] .ahb-o.Harry { color: #fff; background: var(--kh-accent); }
+.ash.ash[data-look="house"] .ahb-o.Mikey { background: var(--kh-blue); }
+.ash.ash[data-look="house"] .ahb-o.Leo { background: var(--kh-slate); }
+
+/* ── A GROUP'S PAGE: the picture cards stay, tidied to the same type, spacing and corners. ── */
+.ash.ash[data-look="house"] .agp { gap: 16px; }
+.ash.ash[data-look="house"] .agp-banner { padding: 0; }
+.ash.ash[data-look="house"] .agp-banner span { display: block; margin-top: 4px; font-size: 14px; font-weight: 400; opacity: 1; color: var(--kh-ink2); }
+.ash.ash[data-look="house"] .agp-jump { gap: 8px; }
+.ash.ash[data-look="house"] .agp-jump a { font-size: 14px; font-weight: 500; padding: 4px 12px; border-radius: var(--kh-r1); border-color: var(--kh-line2); color: var(--kh-ink2); }
+.ash.ash[data-look="house"] .agp-jump a:hover { border-color: var(--kh-ink3); color: var(--kh-ink); }
+.ash.ash[data-look="house"] .agp-sec { gap: 12px; }
+.ash.ash[data-look="house"] .agp-h2 { margin: 8px 0 0; font-size: 14px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--kh-ink); }
+.ash.ash[data-look="house"] .agp-h2 span { color: var(--kh-ink2); font-weight: 400; margin-left: 4px; }
+.ash.ash[data-look="house"] .agp-grid { gap: 16px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.ash.ash[data-look="house"] .agp-card { border-radius: var(--kh-r2); box-shadow: none; }
+.ash.ash[data-look="house"] .agp-card:hover { border-color: var(--kh-ink3); }
+.ash.ash[data-look="house"] .agp-pic { border-bottom: 1px solid var(--kh-line); }
+.ash.ash[data-look="house"] .agp-drawn { background: var(--kh-panel2); gap: 8px; }
+.ash.ash[data-look="house"] .agp-drawn-bar { background: var(--kh-line); height: 16px; }
+.ash.ash[data-look="house"] .agp-drawn-bar i { background: var(--kh-ink3); opacity: .6; }
+.ash.ash[data-look="house"] .agp-pic .agp-drawn .agp-icon { width: 56px; height: 56px; margin: 8px 0 0; border-radius: var(--kh-r2); clip-path: inset(4% round 8px); box-shadow: none; }
+.ash.ash[data-look="house"] .agp-drawn-name { font-size: 12px; font-weight: 500; opacity: 1; color: var(--kh-ink2); }
+.ash.ash[data-look="house"] .agp-body { padding: 12px 16px 16px; gap: 4px; }
+.ash.ash[data-look="house"] .agp-body b { font-size: 16px; font-weight: 600; line-height: 1.25; }
+.ash.ash[data-look="house"] .agp-purpose { font-size: 14px; line-height: 1.45; }
+.ash.ash[data-look="house"] .agp-foot { gap: 8px; margin-top: 8px; }
+.ash.ash[data-look="house"] .agp-open { font-size: 14px; font-weight: 600; padding: 4px 12px; border: 1px solid var(--kh-line2); border-radius: var(--kh-r1); background: var(--kh-panel); }
+.ash.ash[data-look="house"] .agp-card:hover .agp-open { border-color: var(--kh-ink); }
+
+@media (max-width: 640px) {
+  .ash.ash[data-look="house"] .ah { gap: 12px; }
+  .ash.ash[data-look="house"] .ah-bar { gap: 8px; }
+  .ash.ash[data-look="house"] .ah-search { padding: 8px 12px; border-radius: var(--kh-r1); gap: 8px; }
+  .ash.ash[data-look="house"] .ah-search svg { width: 16px; height: 16px; }
+  .ash.ash[data-look="house"] .ah-chips { gap: 8px; }
+  .ash.ash[data-look="house"] .ah-chips .ash-chip { padding: 4px 12px; font-size: 14px; min-height: 32px; gap: 4px; }
+  .ash.ash[data-look="house"] .ah-team { border-radius: var(--kh-r1); padding: 4px 8px; gap: 4px; }
+  .ash.ash[data-look="house"] .ah-team .ash-av { width: 24px; height: 24px; font-size: 12px; }
+  .ash.ash[data-look="house"] .ash-h1, .ash.ash[data-look="house"] .agh-title, .ash.ash[data-look="house"] .agp-banner h1 { font-size: 20px; }
+  .ash.ash[data-look="house"] .agh-g, .ash.ash[data-look="house"] .agh[data-view="list"] .agh-g { grid-template-columns: 32px minmax(0, 1fr) auto; grid-template-rows: auto auto; row-gap: 0; padding: 8px 12px; column-gap: 12px; border-radius: 0; }
+  .ash.ash[data-look="house"] .agh-art, .ash.ash[data-look="house"] .agh[data-view="list"] .agh-art { grid-row: 1 / span 2; width: 32px; height: 32px; border-radius: var(--kh-r1); }
+  .ash.ash[data-look="house"] .agh-name, .ash.ash[data-look="house"] .agh[data-view="list"] .agh-name { grid-column: 2; grid-row: 1; font-size: 14px; padding: 0; align-self: end; }
+  .ash.ash[data-look="house"] .agh-line, .ash.ash[data-look="house"] .agh[data-view="list"] .agh-line { grid-column: 2; grid-row: 2; font-size: 12px; align-self: start; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ash.ash[data-look="house"] .agh-n, .ash.ash[data-look="house"] .agh[data-view="list"] .agh-n { grid-column: 3; grid-row: 1 / span 2; font-size: 14px; margin: 0; padding: 0; align-self: center; }
+  .ash.ash[data-look="house"] .agp { gap: 12px; }
+  .ash.ash[data-look="house"] .agp-banner span { font-size: 12px; }
+  .ash.ash[data-look="house"] .agp-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ash.ash[data-look="house"] .agp-pic .agp-drawn .agp-icon { width: 36px; height: 36px; margin: 8px 0 0; }
+  .ash.ash[data-look="house"] .agp-drawn-bar { height: 12px; }
+  .ash.ash[data-look="house"] .agp-drawn-name { font-size: 12px; }
+  .ash.ash[data-look="house"] .agp-body { padding: 8px 12px 12px; gap: 4px; }
+  .ash.ash[data-look="house"] .agp-body b { font-size: 14px; }
+  .ash.ash[data-look="house"] .agp-purpose { font-size: 12px; }
+  .ash.ash[data-look="house"] .agp-foot { gap: 4px; margin-top: 4px; }
+  .ash.ash[data-look="house"] .agp-foot .ash-tag { font-size: 12px; padding: 0 4px; }
+  .ash.ash[data-look="house"] .agp-open { font-size: 12px; padding: 4px 8px; }
+  .ash.ash[data-look="house"] .agp-h2 { font-size: 14px; margin: 4px 0 0; }
+}
+
+/* ── Phone: a page is never taller than the screen for no reason (the top bar is 56 px). ── */
+@media (max-width: 1023px) { .ash.ash[data-look="house"], .ash.ash[data-look="house"] .ash-layout { min-height: 0; } .ash.ash[data-look="house"] .ash-layout { min-height: calc(100dvh - 56px); } }
+
+/* ── Switches and the bell inside a page (not the menu). ── */
+.ash.ash[data-look="house"] .ash-main .ash-toggle { color: var(--kh-ink); font-weight: 500; font-size: 14px; padding: 0; gap: 12px; }
+.ash.ash[data-look="house"] .ash-main .ash-pill-sw { background: var(--kh-line2); }
+.ash.ash[data-look="house"] .ash-main .ash-pill-sw[aria-checked="true"] { background: var(--kh-accent); }
+.ash.ash[data-look="house"] .tr-bell-n { background: var(--kh-red); color: #fff; font-size: 12px; font-weight: 600; border-radius: var(--kh-r1); }
+
+/* ── Videos: the same type, corners and one button. Recording is the one red (a status). ── */
+.ash.ash[data-look="house"] .vt { gap: 16px; max-width: 640px; }
+.ash.ash[data-look="house"] .vt-card { padding: 16px; gap: 12px; border-radius: var(--kh-r2); }
+.ash.ash[data-look="house"] .vt-label, .ash.ash[data-look="house"] .ls-code span { margin: 4px 0 0; font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--kh-ink2); }
+.ash.ash[data-look="house"] .vt-chips { gap: 8px; }
+.ash.ash[data-look="house"] .vt-input { padding: 8px 12px; border-radius: var(--kh-r1); background: #fff; border-color: var(--kh-line2); font-size: 16px; }
+.ash.ash[data-look="house"] .vt-input::placeholder { color: var(--kh-ink3); }
+.ash.ash[data-look="house"] .vt-record, .ash.ash[data-look="house"] .vt-stop { border-radius: var(--kh-r1); padding: 12px 16px; font-size: 14px; font-weight: 600; gap: 8px; }
+.ash.ash[data-look="house"] .vt-record { background: var(--kh-red); color: #fff; }
+.ash.ash[data-look="house"] .vt-record i { width: 12px; height: 12px; }
+.ash.ash[data-look="house"] .ls-start { background: var(--kh-accent); color: #fff; }
+.ash.ash[data-look="house"] .ls-start i { background: #fff; }
+.ash.ash[data-look="house"] .vt-stop { background: var(--kh-ink); color: #fff; }
+.ash.ash[data-look="house"] .vt-rec { font-size: 14px; font-weight: 600; }
+.ash.ash[data-look="house"] .vt-ok { color: var(--kh-accent2); font-size: 14px; font-weight: 500; }
+.ash.ash[data-look="house"] .vt-hint, .ash.ash[data-look="house"] .vt-link, .ash.ash[data-look="house"] .vt-note, .ash.ash[data-look="house"] .ls-sub, .ash.ash[data-look="house"] .ls-meta, .ash.ash[data-look="house"] .ls-hearing, .ash.ash[data-look="house"] .ls-lines, .ash.ash[data-look="house"] .vt-else summary, .ash.ash[data-look="house"] .vt-else ol { font-size: 14px; }
+.ash.ash[data-look="house"] .ls-hearing { font-style: normal; }
+.ash.ash[data-look="house"] .vt-link { color: var(--kh-ink); font-weight: 500; }
+.ash.ash[data-look="house"] .vt-err { font-size: 14px; font-weight: 500; }
+.ash.ash[data-look="house"] .vt-name { font-size: 14px; font-weight: 600; }
+.ash.ash[data-look="house"] .vt-meta, .ash.ash[data-look="house"] .vt-small, .ash.ash[data-look="house"] .ls-line, .ash.ash[data-look="house"] .ls-limits, .ash.ash[data-look="house"] .vt-progress b { font-size: 12px; color: var(--kh-ink2); }
+.ash.ash[data-look="house"] .ls-lines span { color: var(--kh-ink2); }
+.ash.ash[data-look="house"] .vt-video { border-radius: var(--kh-r1); }
+.ash.ash[data-look="house"] .vt-progress span { border-radius: 4px; }
+.ash.ash[data-look="house"] .vt-done, .ash.ash[data-look="house"] .ls-box { border-radius: var(--kh-r1); padding: 12px; gap: 8px; }
+.ash.ash[data-look="house"] .vt-done { border-color: var(--kh-accent); }
+.ash.ash[data-look="house"] .vt-done b { color: var(--kh-accent2); }
+.ash.ash[data-look="house"] .ls-code b { font-size: 24px; letter-spacing: 0.08em; }
+.ash.ash[data-look="house"] .vt-else summary { font-weight: 600; }
+.ash.ash[data-look="house"] .ash-pill-sw { min-height: 0; }
+.ash.ash[data-look="house"] .ash-games { padding-top: 8px; }
+.ash.ash[data-look="house"]:has(.ahub) .ash-games { top: 16px; }
+/* Recent recordings (added by the recorder build, 12 Nov 2026): the same rules. */
+.ash.ash[data-look="house"] .vt-also, .ash.ash[data-look="house"] .rl-btn { font-size: 14px; padding: 4px 12px; }
+.ash.ash[data-look="house"] .rl-kept { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; border-radius: 4px; padding: 0 8px; }
+.ash.ash[data-look="house"] .rl-row { gap: 8px; padding: 12px 0; }
+.ash.ash[data-look="house"] .rl-what { gap: 4px; }
+.ash.ash[data-look="house"] .rl-what b { font-size: 14px; font-weight: 600; }
+.ash.ash[data-look="house"] .rl-what span { font-size: 12px; color: var(--kh-ink2); }
+.ash.ash[data-look="house"] .rl-what i[data-keep="true"] { color: var(--kh-accent2); font-weight: 600; }
+.ash.ash[data-look="house"] .rl-keep { font-size: 14px; font-weight: 500; color: var(--kh-ink); }

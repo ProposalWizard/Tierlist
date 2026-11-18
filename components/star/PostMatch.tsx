@@ -472,6 +472,14 @@ function StarBar({ before, after, on, star }: { before?: number; after?: number;
         </div>
         <LevelEnd n={left + 1} />
       </div>
+      {/* The one-level-a-match rule (Harry, 1 Oct 2026) held a level back: say so,
+          or a full bar that does not tick over looks broken (Mikey's phone test,
+          11 Nov 2026: "it stopped right at the top two games in a row"). */}
+      {(star?.held ?? 0) > 0 && stage !== 0 && (
+        <div data-star-held className="mt-1.5 text-center text-[11px] font-bold text-amber-100">
+          Bar full: level {left + 1} lands after your next match (one level a match).
+        </div>
+      )}
     </div>
   );
 }

@@ -39,7 +39,7 @@
 .sg-off { background: rgba(255, 77, 94, .18); color: #ffb3bb; }
 .sg-on { background: #16a34a; color: #fff; }
 .sg-tally { white-space: nowrap; }
-.bc[data-look="light"] .sg-off, .bc[data-look="bento"] .sg-off { color: #9f1239; }
+.bc[data-look="house"] .sg-off, .bc[data-look="light"] .sg-off, .bc[data-look="bento"] .sg-off { color: #9f1239; }
 @media (max-width: 900px) {
   .sg-grid, .sg-grid2 { grid-template-columns: 1fr; }
   .sg-table th:nth-child(3), .sg-table td:nth-child(3) { display: none; }

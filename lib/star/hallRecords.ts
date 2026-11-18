@@ -91,7 +91,7 @@ export const HALL_RECORDS: HallRecordDef[] = [
     now: c => c.trophies?.length ?? 0,
   },
   {
-    id: "ballon-dors", icon: "🏅", label: "Most Ballons d'Or", unit: "Ballons d'Or", unitOne: "Ballon d'Or", scope: "career",
+    id: "ballon-dors", icon: "🏅", label: "Most Golden Balls", unit: "Golden Balls", unitOne: "Golden Ball", scope: "career",
     best: c => (n(c.ballonDorWins) > 0 ? { value: n(c.ballonDorWins) } : null),
     now: c => n(c.ballonDorWins),
   },

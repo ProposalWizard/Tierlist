@@ -7,12 +7,13 @@
 import { useMemo } from "react";
 import HEADLINES from "@/lib/patchNoteHeadlines.json";
 import { TEAM_ROOM } from "@/lib/teamRoom/config";
-import { listChannels, patchBotPosts, roomCounts, rowBotPosts, jobBotPosts, type BotPost, type RoomCounts } from "@/lib/teamRoom/channels";
-import { patchUnread, type PatchMeta } from "@/lib/teamRoom/extras";
+import { GENERAL, PATCH_CHANNEL, listChannels, roomCounts, rowBotPosts, jobBotPosts, type BotPost, type RoomCounts } from "@/lib/teamRoom/channels";
+import { announcedRows, otherBotRows, patchFlowPosts, patchPostChannel, PATCH_BOT, type BotNote } from "@/lib/teamRoom/patchBot";
+import { patchUnread } from "@/lib/teamRoom/extras";
 import { newPushedJobs } from "@/lib/teamRoom/jobs";
 import { useTeamRoom } from "@/lib/teamRoom/store";
 
-export const PATCH_META: PatchMeta[] = HEADLINES.map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt }));
+export const PATCH_META: BotNote[] = HEADLINES.map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt, author: n.author }));
 
 export function useRoomCounts(): RoomCounts {
   const s = useTeamRoom();
@@ -23,9 +24,18 @@ export function useRoomCounts(): RoomCounts {
       patchToRead: s.me ? patchUnread(PATCH_META, s.me, s.acks, TEAM_ROOM.inboxFrom).length : 0,
       newJobs: newPushedJobs(s.jobs, s.tasks, s.me, s.seenJobs),
     });
+    // The Patch bot's flow (12 Nov 2026): a note announced in #general asks for you THERE until everyone has read it.
+    if (s.me) {
+      const have = announcedRows(s.botRows);
+      const start = Date.parse(PATCH_BOT.from) || 0;
+      const inGeneral = patchUnread(PATCH_META, s.me, s.acks, TEAM_ROOM.inboxFrom)
+        .filter((n) => (have.has(n.version) || (Date.parse(n.publishedAt) || 0) >= start) && patchPostChannel(n, s.acks) === GENERAL).length;
+      const from = c.channels[PATCH_CHANNEL], to = c.channels[GENERAL];
+      if (inGeneral && from && to) { from.unread -= inGeneral; from.mentions -= inGeneral; to.unread += inGeneral; to.mentions += inGeneral; }
+    }
     // A bot's new rows (a Bug bot report) make its channel bold until it is opened (no red number:
     // that is for @mentions and DMs). A channel never opened here counts from when the chat was last read.
-    for (const r of s.botRows) {
+    for (const r of otherBotRows(s.botRows)) {
       const n = c.channels[r.channel];
       if (!n) continue;
       const seen = s.chRead[`bot:${r.channel}`];
@@ -38,5 +48,5 @@ export function useRoomCounts(): RoomCounts {
 /** Every bot post, by channel: the patch-notes bot, the jobs bot and any rows a future bot wrote. */
 export function useBotPosts(): BotPost[] {
   const s = useTeamRoom();
-  return useMemo(() => [...patchBotPosts(PATCH_META), ...jobBotPosts(s.jobs), ...rowBotPosts(s.botRows)], [s.jobs, s.botRows]);
+  return useMemo(() => [...patchFlowPosts(PATCH_META, s.botRows, s.acks), ...jobBotPosts(s.jobs), ...rowBotPosts(otherBotRows(s.botRows))], [s.jobs, s.botRows, s.acks]);
 }

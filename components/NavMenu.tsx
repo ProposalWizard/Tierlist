@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { OPEN_ADMIN_NAV_EVENT } from "./AdminNavPanel";
 // "Admin" opens the admin's home, the Team board (Harry, 20 Oct 2026).
-import { TEAM_HOME } from "@/lib/adminRegistry";
+import { ADMIN_HUB } from "@/lib/adminRegistry";
 
 interface Props {
   isLoggedIn: boolean;
@@ -81,7 +81,7 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
             <>
               {isAdmin && (
                 <Link
-                  href={TEAM_HOME}
+                  href={ADMIN_HUB}
                   className="rounded-lg border border-indigo-700 px-3 py-2 text-sm font-semibold text-indigo-300 transition-colors hover:border-indigo-500 hover:text-white"
                 >
                   Admin
@@ -159,7 +159,7 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
                 <>
                   {isAdmin && (
                     <Link
-                      href={TEAM_HOME}
+                      href={ADMIN_HUB}
                       onClick={() => setOpen(false)}
                       className="px-4 py-2.5 text-sm font-semibold text-indigo-300 hover:bg-gray-900 hover:text-white"
                     >

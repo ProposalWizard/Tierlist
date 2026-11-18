@@ -31,7 +31,7 @@ for (const { id } of PREVIEW_SHAPES) {
     check(o.seasons[0].age === 16 && o.seasons[o.seasons.length - 1].age === c.player.age, `${tag}: ages run 16 to ${c.player.age}`);
     check(o.seasons.every(s => !!s.stats && !!s.world), `${tag}: every season has numbers and winners`);
     check(o.seasons.filter(s => s.live).length === 0, `${tag}: a finished career has no live season`);
-    const honourTotal = o.honours.filter(h => h.competition !== "Ballon d'Or").reduce((n, h) => n + h.count, 0);
+    const honourTotal = o.honours.filter(h => h.competition !== "Golden Ball").reduce((n, h) => n + h.count, 0);
     check(honourTotal === c.trophies.length, `${tag}: the cabinet holds every trophy (${honourTotal} v ${c.trophies.length})`);
     check(o.clubs.reduce((n, cl) => n + cl.goals, 0) === c.careerStats.goals, `${tag}: club goals add up to career goals`);
     check(o.clubs.filter(cl => cl.last).length === 1 && o.clubs.find(cl => cl.last)?.club === c.player.club, `${tag}: the club you finished at is marked last`);

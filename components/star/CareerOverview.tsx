@@ -289,7 +289,7 @@ function CareerPage({ o, onOpen, share }: {
         <BigNumber value={t.goals} label="Goals" />
         <BigNumber value={t.assists} label="Assists" />
         <BigNumber value={t.trophies} label="Trophies" gold={t.trophies > 0} />
-        <BigNumber value={t.ballonDors} label="Ballon d'Or" gold={t.ballonDors > 0} />
+        <BigNumber value={t.ballonDors} label="Golden Ball" gold={t.ballonDors > 0} />
         <BigNumber value={t.caps} label="Caps" />
       </div>
 
@@ -440,7 +440,7 @@ export function SeasonList({ o, newestFirst = false, awardsFor }: {
                   <span className="mt-0.5 flex flex-wrap items-center gap-1">
                     <PositionTag s={s} />
                     {s.trophies.map((t, k) => <TapTip key={k} tip={t}><TrophyImage name={t} height={15} /></TapTip>)}
-                    {s.ballonDorRank === 1 && <TapTip tip="Ballon d'Or"><TrophyImage name="Ballon d'Or" height={15} /></TapTip>}
+                    {s.ballonDorRank === 1 && <TapTip tip="Golden Ball"><TrophyImage name="Golden Ball" height={15} /></TapTip>}
                     {s.awards.map(a => <TapTip key={a} tip={a} className="text-[11px]">{AWARD_ICON[a.replace(/ ×\d+$/, "")] ?? "🏅"}{/×(\d+)/.test(a) ? <span className="text-[9px] font-black text-white/70">{a.match(/×\d+/)![0]}</span> : null}</TapTip>)}
                     {s.ballonDorRank !== undefined && s.ballonDorRank > 1 && <span className="px-1 text-[9px] font-black text-amber-200" style={{ background: "rgba(251,191,36,.15)", borderRadius: 2 }}>BdO #{s.ballonDorRank}</span>}
                   </span>
@@ -472,7 +472,7 @@ function SeasonDetail({ s, o, won }: { s: OverviewSeason; o: CareerOverviewData;
     { label: "League Cup", club: w.winners.leagueCup },
     ...(w.winners.championsLeague ? [{ label: "Champions League", club: w.winners.championsLeague }] : []),
     ...(w.winners.europaLeague ? [{ label: "Europa League", club: w.winners.europaLeague }] : []),
-    ...(w.ballonDor ? [{ label: "Ballon d'Or", club: w.ballonDor.club, person: w.ballonDor.winner }] : []),
+    ...(w.ballonDor ? [{ label: "Golden Ball", club: w.ballonDor.club, person: w.ballonDor.winner }] : []),
   ] : [];
   return (
     <div className="px-2 pb-2">
@@ -544,7 +544,7 @@ function WinnersPage({ o }: { o: CareerOverviewData }) {
       <div className="mt-2 grid grid-cols-[46px_repeat(4,1fr)_minmax(0,1.5fr)] items-end gap-1 px-1.5 text-[9px] font-black uppercase tracking-wider text-white/60">
         <span>Season</span>
         {cols.map(c => <span key={c.key} className="text-center">{c.label}</span>)}
-        <span className="text-center">Ballon d&apos;Or</span>
+        <span className="text-center">Golden Ball</span>
       </div>
       <div className="mt-1 space-y-1">
         {o.seasons.map(s => {
@@ -665,7 +665,7 @@ function Shelf({ items, empty }: { items: { competition: string; count: number; 
       {items.map((h, k) => (
         <RiseIn key={h.competition} index={k}>
           <div className="relative flex h-full flex-col items-center px-1.5 pb-2 pt-3" style={{ background: "linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.35))", boxShadow: "inset 0 -4px 0 rgba(120,72,24,.9), inset 0 0 0 1px rgba(255,255,255,.07)" }}>
-            {h.competition === "Ballon d'Or" && <Rays color={GOLD_LIGHT} size={120} className="top-[38%]" />}
+            {h.competition === "Golden Ball" && <Rays color={GOLD_LIGHT} size={120} className="top-[38%]" />}
             <div className="relative"><TrophyImage name={h.competition} height={58} /></div>
             <span className="absolute right-1 top-1 px-1 text-[12px] font-black leading-[16px] text-gray-950" style={{ background: GOLD, borderRadius: 2 }}>×{h.count}</span>
             <span className="relative mt-1 w-full text-center text-[10px] font-black uppercase leading-tight tracking-wide text-white">{h.competition}</span>
@@ -681,8 +681,8 @@ function TrophiesPage({ o }: { o: CareerOverviewData }) {
   const unlocked = o.achievements.filter(a => a.unlocked).length;
   const [openAch, setOpenAch] = useState<string | null>(null);
   // The Ballon d'Or is yours, not the team's: it heads the awards shelf.
-  const team = o.honours.filter(h => h.competition !== "Ballon d'Or");
-  const awards = [...o.honours.filter(h => h.competition === "Ballon d'Or"), ...o.individual];
+  const team = o.honours.filter(h => h.competition !== "Golden Ball");
+  const awards = [...o.honours.filter(h => h.competition === "Golden Ball"), ...o.individual];
   const awardCount = awards.reduce((n, a) => n + a.count, 0);
   return (
     <>

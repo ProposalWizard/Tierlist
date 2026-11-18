@@ -29,6 +29,9 @@ self.addEventListener("push", (e) => {
       body: d.body || "",
       tag,
       renotify: true,
+      // Stays on screen until you close or tap it (Harry, 13 Nov 2026: "the pop up
+      // isn't popping up for long enough"). Computers honour this; phones decide themselves.
+      requireInteraction: true,
       icon: d.icon || ICON,
       badge: ICON,
       data: { url: d.url || "/admin/team", count },

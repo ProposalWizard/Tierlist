@@ -30,7 +30,7 @@ export function awardWhen(career: CareerState, a: Award): string {
 
 /** One award as a title and its line: the league's name first, then the month or the numbers. */
 export function awardLine(career: CareerState, a: Award): { title: string; sub: string } {
-  const league = a.kind === "Ballon d'Or" ? "" : `${leagueNameFor(divisionFor(career, a))} `;
+  const league = a.kind === "Golden Ball" ? "" : `${leagueNameFor(divisionFor(career, a))} `;
   const m = awardMonth(career, a);
   // A monthly award's detail starts with its month ("February — 4 goals"): drop it, the month leads.
   const detail = a.detail.replace(/^[A-Z][a-z]+ — /, "");

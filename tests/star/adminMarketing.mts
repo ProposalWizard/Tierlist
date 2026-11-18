@@ -10,7 +10,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { ADMIN_PAGES, GAMES, GROUPS, backFor, gamesFor, gameForPath } from "@/lib/adminRegistry";
 import { ADMIN_GUIDES } from "@/lib/adminGuides";
-import { STAGES, clearBoardCache, fetchBoard, mergeBoards, parseBoard, repoLink, type VideoCard } from "@/lib/marketing/board";
+import { STAGES, clearBoardCache, fetchBoard, mergeBoards, parseBoard, repoLink, uploadForCard, type VideoCard } from "@/lib/marketing/board";
 import { parseClientRecord, parseNote, readClientRecord } from "@/lib/marketing/clientRecord";
 
 let failed = 0;
@@ -25,7 +25,7 @@ const pages = ADMIN_PAGES.filter((p) => p.group === "marketing");
 ok(pages.length === 4 && pages.every((p) => p.access === "admin" && p.section === "marketing"), "four pages (board, client, studio, uploads), all admins only");
 ok(GROUPS.find((g) => g.key === "marketing")?.game === "marketing", "the Marketing group sits on the Marketing tab");
 ok(gameForPath("/admin/marketing/client") === "marketing", "the client page belongs to the Marketing tab");
-ok(backFor("/admin/marketing").href === "/admin/team", "← on the board (a tab's home) goes to the Team area");
+ok(backFor("/admin/marketing").href === "/admin", "← on the board (a tab's home) goes to the admin home");
 ok(pages.every((p) => p.url in ADMIN_GUIDES), "each page has its eye guide");
 for (const p of pages) {
   const src = fs.readFileSync(path.join("app", p.url, "page.tsx"), "utf8");
@@ -123,5 +123,18 @@ console.log("The leak guard");
   fs.rmSync(tmp, { recursive: true, force: true });
 }
 
+console.log("The board plays the upload, never GitHub (12 Nov 2026)");
+{
+  const items = [
+    { key: "videos/v02/20261101-100000-aaaa-cut1.mp4", folder: "v02", kind: "video", uploaded: "2026-11-01T10:00:00Z" },
+    { key: "videos/v02/20261105-100000-bbbb-cut2.mp4", folder: "v02", kind: "video", uploaded: "2026-11-05T10:00:00Z" },
+    { key: "videos/v02/20261106-100000-cccc-cover.png", folder: "v02", kind: "image", uploaded: "2026-11-06T10:00:00Z" },
+    { key: "videos/inbox/20261107-100000-dddd-x.mp4", folder: "inbox", kind: "video", uploaded: "2026-11-07T10:00:00Z" },
+  ];
+  ok(uploadForCard("v02", items)?.key.endsWith("cut2.mp4") ?? false, "a card plays its newest uploaded video (not a picture, not another card's)");
+  ok(uploadForCard("v03", items) === null, "no upload for the card → none (the board says not uploaded yet)");
+  const pb = fs.readFileSync("components/admin/marketing/ProductionBoard.tsx", "utf8");
+  ok(!/\["Video", c\.video\]/.test(pb) && /playLink\(up\.key\)/.test(pb) && /not uploaded yet/.test(pb), "the Video link plays from storage, with a not-uploaded-yet state");
+}
 if (failed) { console.error(`\n${failed} failed`); process.exit(1); }
 console.log("\nadminMarketing: all passed");

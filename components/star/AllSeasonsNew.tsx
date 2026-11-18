@@ -27,8 +27,8 @@ export default function AllSeasonsNew({ career }: { career: CareerState }) {
   const o = useMemo(() => careerOverview(career, { calendarYears: calYears }), [career, calYears]);
   const t = o.totals;
   // Team trophies, then yours (the Ballon d'Or leads them).
-  const team = o.honours.filter(h => h.competition !== "Ballon d'Or");
-  const awards = [...o.honours.filter(h => h.competition === "Ballon d'Or"), ...o.individual];
+  const team = o.honours.filter(h => h.competition !== "Golden Ball");
+  const awards = [...o.honours.filter(h => h.competition === "Golden Ball"), ...o.individual];
   return (
     <div data-all-seasons="new">
       <div className="grid grid-cols-3 gap-1.5">

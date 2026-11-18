@@ -1,7 +1,7 @@
 {
   "name": "knowitball-app",
   "private": true,
-  "description": "The packed phone app of Road to Ballon d'Or (read README.md). Separate from the website: the website never installs or builds anything in this folder.",
+  "description": "The packed phone app of Road to the Golden Ball (read README.md). Separate from the website: the website never installs or builds anything in this folder.",
   "scripts": {
     "pack": "cd .. && npx tsx mobile/scripts/pack.mts",
     "www": "node scripts/build-www.mjs",

@@ -6,7 +6,9 @@
  * recordings put by the name of the person be automatically read").
  *
  * Who this chat is: DEV_NAME, else a Harry/Mikey/Leo branch; no name = nothing.
- * Asks /api/dev-recordings/claim (3 s timeout). Anything it prints is added to
+ * Asks /api/dev-recordings/claim (3 s timeout). The links it gets are the
+ * site's own recording links (team storage, Cloudflare R2; since 12 Nov 2026)
+ * or, for a recording that only reached Drive, a Drive link. Anything it prints is added to
  * Claude's context for this turn. Never blocks or fails the message.
  */
 import { execSync } from "node:child_process";

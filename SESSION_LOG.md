@@ -5,6 +5,10 @@
 > `CLAUDE.md` keeps only the current architecture/state; this file is the archive.
 > New session summaries should be appended here, not to `CLAUDE.md`.
 
+## 12 Nov 2026 — Team room: two looks, Team board tab, Me, a tab for every channel, a run of all bots (Harry branch)
+
+Four commits. (1) Dark = Midnight slate, Light = Light C, a per-device switch, crests for faces (FACT-TEAM-003). (2) Team board tab and Me home inside the room, the first-visit notifications question. (3) Every channel has its own tabs; #today is new (FACT-TEAM-004). (4) Five bots, each with Run now and a test; the 15-minute timer now runs Patch, the Bug bot's check and the Today bot; the 08:00 limits job is the Health bot's own code (FACT-TEAM-005). The run, with what the live site must still confirm: docs/team-room-run.md. Pictures: docs/stills/team-room-v2-run/ (98). Read on the live database that day: the Bug bot's trigger is there, 0 bot posts, 0 player reports in 14 days.
+
 ## Moved from CLAUDE.md, 21 Oct 2026 (session history and superseded rules)
 
 > Moved word for word to shrink CLAUDE.md (it is loaded into every message). Each block notes its old CLAUDE.md line number.

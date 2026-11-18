@@ -2,8 +2,8 @@
  * app/admin/home/page.tsx — the admin's front door (Harry, 20 Oct 2026: "the
  * team area should be the default home area, and it should open on Team
  * board"). It shows nothing: it sends each person to their own home.
- *   admin  → the Team area, on the Team board (/admin/team)
- *   tester → the first game's home (/admin/star); testers have no Team room
+ *   admin or tester → the admin home, /admin (since 12 Nov 2026: Harry
+ *   wanted a hub, not the Team board, as the admin's home)
  *   anyone else → the site; signed out → sign in, then back here.
  * Used where the link cannot know who is opening it: the KIB Admin
  * home-screen app (public/admin-app.webmanifest start_url). A local dev build

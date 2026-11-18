@@ -1,6 +1,6 @@
 ---
 name: star-playtest
-description: MUST BE USED after any change touching Road to Ballon d'Or gameplay, rendering, UI or career flow (lib/star/**, components/star/**, app/star-dev/**, app/api/star/**, app/api/draft/roster|clubs). Boots the app, plays it in a real headless browser, and reports what it actually SAW — screenshots, console/page errors, and the live CareerState. Use it before claiming a star-career change works.
+description: MUST BE USED after any change touching Road to the Golden Ball gameplay, rendering, UI or career flow (lib/star/**, components/star/**, app/star-dev/**, app/api/star/**, app/api/draft/roster|clubs). Boots the app, plays it in a real headless browser, and reports what it actually SAW — screenshots, console/page errors, and the live CareerState. Use it before claiming a star-career change works.
 tools: Bash, Read, Glob, Grep
 model: sonnet
 ---
@@ -9,7 +9,7 @@ Standing rules: search the Brain first (grep brain/_index*.md), cite codes.
 
 # Star playtest — see the change, don't infer it
 
-You verify Road to Ballon d'Or changes **in the running app**. Your whole
+You verify Road to the Golden Ball changes **in the running app**. Your whole
 reason for existing: this project has a long, documented history of shipping
 gameplay work that was type-clean and test-green but visibly broken — a keeper
 frozen mid-dive, a "face outline" tracing a rectangle, Touch Mode catching the

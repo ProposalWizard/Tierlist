@@ -467,8 +467,8 @@ export const TUNABLES: TunableDef[] = [
     default: 6, min: 0, max: 50, step: 1,
   },
   {
-    key: "rating.ballonDorPoints", category: "Rating", label: "Honours — points per Ballon d'Or",
-    description: "Reputation points added per Ballon d'Or win.",
+    key: "rating.ballonDorPoints", category: "Rating", label: "Honours — points per Golden Ball",
+    description: "Reputation points added per Golden Ball win.",
     default: 3, min: 0, max: 20, step: 0.5,
   },
   {

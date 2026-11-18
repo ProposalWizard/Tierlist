@@ -3,7 +3,8 @@ id: FACT-UI-018
 type: fact
 client: ui
 tags: [admin, ui]
-status: live
+status: superseded
+superseded_by: FACT-UI-020
 date: 2026-11-03
 source: "lib/star/gamePath.ts:1-20"
 summary: Players reach the game at /road-to-ballon-dor; /star-dev forwards there, and the page's code stays in app/star-dev/.

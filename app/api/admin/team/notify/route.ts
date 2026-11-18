@@ -41,6 +41,7 @@ import { ringsWithBells } from "@/lib/teamRoom/bells";
 import { patchesToRing, payloadForPatches, withRungPatches } from "@/lib/teamRoom/inbox";
 import { patchReadKey } from "@/lib/teamRoom/extras";
 import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
+import { noteAuthor } from "@/lib/teamRoom/patchBot";
 
 export const dynamic = "force-dynamic";
 
@@ -144,6 +145,13 @@ export async function POST(req: Request) {
     if (re) {
       const { data: a } = await sb.from("team_messages").select("person").eq("id", Number(re)).maybeSingle();
       if (a && isTeamPerson((a as { person: string }).person)) answers = { person: (a as { person: TeamPerson }).person };
+    }
+    // A comment in a patch note's thread ("[pn:0.138] …") tells that note's author (lib/teamRoom/patchBot.ts).
+    const pn = parseMessage(row.body).patch;
+    if (!answers && pn) {
+      const note = BUILT_IN_PATCH_NOTES.find((n) => n.version === pn);
+      const author = note ? noteAuthor(note) : null;
+      if (author) answers = { person: author };
     }
     // Each person's 🔔 for this channel (25 Oct 2026): every message / only @mentions / off / muted,
     // and nobody whose buzzes are paused (do not disturb, or a schedule).

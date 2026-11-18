@@ -283,7 +283,7 @@ export function pointLines(career: CareerState): StarLine[] {
     byAward.set(a.kind, { sp: was.sp + (row[a.division ?? "national_league"] ?? 0), n: was.n + 1 });
   }
   for (const [kind, v] of Array.from(byAward)) add(`award:${kind}`, "awards", kind, v.sp, v.n);
-  add("ballon", "awards", "Ballon d'Or placings", led.ballonRanks.reduce((s, r) => s + (r === 1 ? X.ballon.win : r <= 3 ? X.ballon.top3 : X.ballon.top10), 0), led.ballonRanks.length);
+  add("ballon", "awards", "Golden Ball placings", led.ballonRanks.reduce((s, r) => s + (r === 1 ? X.ballon.win : r <= 3 ? X.ballon.top3 : X.ballon.top10), 0), led.ballonRanks.length);
 
   add("caps", "milestones", "First cap", (career.caps ?? 0) >= 1 ? X.milestones.firstCap : 0);
   add("pl-debut", "milestones", "Premier League debut", (led.tiers.premier?.apps ?? 0) > 0 ? X.milestones.premierDebut : 0);
@@ -469,8 +469,8 @@ export const STAR_GATES: StarGate[] = [
   { cap: 49, need: `Play ${GATE_GAMES} league games in the Championship or higher`, open: (_c, l) => gamesAtOrAbove(l, "championship") >= GATE_GAMES },
   { cap: 59, need: `Play ${GATE_GAMES} Premier League games`, open: (_c, l) => gamesAtOrAbove(l, "premier") >= GATE_GAMES },
   { cap: 69, need: "Win a major trophy, or play in the Champions League", open: (c, l) => l.uclApps > 0 || c.trophies.some(t => MAJOR.includes(t.competition)) },
-  { cap: 79, need: "Win the Premier League or Champions League, and finish top 10 in a Ballon d'Or", open: (c, l) => (count(c, "Premier League") + count(c, "Champions League") > 0) && l.ballonRanks.length > 0 },
-  { cap: 89, need: "Win the Ballon d'Or, or finish top 3 twice", open: (c, l) => c.ballonDorWins > 0 || l.ballonRanks.includes(1) || l.ballonRanks.filter(r => r <= 3).length >= 2 },
+  { cap: 79, need: "Win the Premier League or Champions League, and finish top 10 in a Golden Ball vote", open: (c, l) => (count(c, "Premier League") + count(c, "Champions League") > 0) && l.ballonRanks.length > 0 },
+  { cap: 89, need: "Win the Golden Ball, or finish top 3 twice", open: (c, l) => c.ballonDorWins > 0 || l.ballonRanks.includes(1) || l.ballonRanks.filter(r => r <= 3).length >= 2 },
 ];
 
 // ── 4. The last ten levels: Legend tasks ──────────────────────────────────────────
@@ -481,7 +481,7 @@ export const LEGEND = { ballons: 4, ucl: 3, titles: 5, trophies: 20, clubStature
 
 /** Ten tasks, one level each, from 90 to 100. Add one here when the game grows. */
 export const LEGEND_TASKS: LegendTask[] = [
-  { id: "ballons", label: `Win ${LEGEND.ballons} Ballon d'Ors`, done: c => c.ballonDorWins >= LEGEND.ballons, progress: c => `${c.ballonDorWins} / ${LEGEND.ballons}` },
+  { id: "ballons", label: `Win ${LEGEND.ballons} Golden Balls`, done: c => c.ballonDorWins >= LEGEND.ballons, progress: c => `${c.ballonDorWins} / ${LEGEND.ballons}` },
   { id: "ucl", label: `Win ${LEGEND.ucl} Champions Leagues`, done: c => count(c, "Champions League") >= LEGEND.ucl, progress: c => `${count(c, "Champions League")} / ${LEGEND.ucl}` },
   { id: "titles", label: `Win ${LEGEND.titles} Premier League titles`, done: c => count(c, "Premier League") >= LEGEND.titles, progress: c => `${count(c, "Premier League")} / ${LEGEND.titles}` },
   { id: "trophies", label: `Win ${LEGEND.trophies} trophies`, done: c => c.trophies.length >= LEGEND.trophies, progress: c => `${c.trophies.length} / ${LEGEND.trophies}` },

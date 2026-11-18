@@ -397,7 +397,7 @@ function cabinetSet(k: Kit, env: RoomEnv, R: RoomPreset, slots: CabinetSlot[], g
     const x = -cabW / 2 + 0.1 + (col + 0.5) * CAB.cw;
     const y = CAB.base + row * CAB.rh + (row > 0 ? 0.012 : 0);
     const z = cabZ - 0.02;
-    const big = s.name === "Ballon d'Or" || s.name === "World Cup" || s.name === "Champions League" ? 1.12 : 1;
+    const big = s.name === "Golden Ball" || s.name === "World Cup" || s.name === "Champions League" ? 1.12 : 1;
     const m = new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion(), new THREE.Vector3(big, big, big));
     for (const g of trophyGeo(THREE, s.shape)) {
       g.applyMatrix4(m);
@@ -2099,7 +2099,7 @@ function buildNew(env: RoomEnv, inp: RoomInput, id: RoomId): BuiltRoom {
     k.glow(k.glowT, "#ffe0a8", 0.3, 1.8, 2.2, -W2 + 0.07, 1.6, -0.2, 0, Math.PI / 2);
     k.glow(k.glowT, "#ffe0a8", 0.3, 1.8, 2.2, W2 - 0.07, 1.6, -0.2, 0, -Math.PI / 2);
     // the Ballon d'Or on a plinth in the middle (an empty one that waits for it)
-    const bd = inp.slots.find((s) => s.name === "Ballon d'Or");
+    const bd = inp.slots.find((s) => s.name === "Golden Ball");
     const bx = W2 - 1.25, bz = 0.75;
     solids.push(plinth(k, k.mat("#1a1a1e", { roughness: 0.3, metalness: 0.4 }), bx, bz, 0.5, 0.85));
     const g = trophyGeo(THREE, "ball").map(cleanGeo);

@@ -90,7 +90,7 @@ function entry(name: string, at: number, bests: { goalsSeason?: number; goals?: 
   const bd = HALL_RECORDS.find(d => d.id === "ballon-dors")!;
   const far = HALL_RECORDS.find(d => d.id === "furthest-goal")!;
   check(amount(goals, 1) === "1 goal" && amount(goals, 52) === "52 goals", "goals: one and many");
-  check(amount(bd, 1) === "1 Ballon d'Or" && amount(bd, 2) === "2 Ballons d'Or", "Ballons d'Or");
+  check(amount(bd, 1) === "1 Golden Ball" && amount(bd, 2) === "2 Golden Balls", "Golden Balls");
   check(amount(far, 38) === "38 m", "metres");
   check(surnameOf("Jamie Calloway") === "Calloway" && surnameOf("Pedri") === "Pedri" && surnameOf("Kevin De Bruyne") === "De Bruyne", "surnames");
 }

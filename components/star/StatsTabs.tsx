@@ -147,8 +147,8 @@ function SeasonCareer({ label, season, career, gold = false }: { label: string; 
 function StatsTab({ career }: { career: CareerState }) {
   const calYears = useLeoUpdate("bugFixes"); // Leo's 24 Oct update: calendar season years
   const o = useMemo(() => careerOverview(career, { calendarYears: calYears }), [career, calYears]);
-  const team = o.honours.filter((h) => h.competition !== "Ballon d'Or");
-  const awards = [...o.honours.filter((h) => h.competition === "Ballon d'Or"), ...o.individual];
+  const team = o.honours.filter((h) => h.competition !== "Golden Ball");
+  const awards = [...o.honours.filter((h) => h.competition === "Golden Ball"), ...o.individual];
   const seasonTrophies = career.trophies.filter((t) => t.season === career.season).length;
   return (
     <div data-stats-tab>

@@ -701,6 +701,11 @@ export function CanTile({ can: c, career, e, onUse, onBuy, compact = false, mini
           <Shake trigger={drinking} className="absolute inset-0 flex items-end justify-center" style={{ filter: `drop-shadow(0 3px 6px ${rgba(accent, 0.65)}) drop-shadow(0 1px 1px rgba(0,0,0,.6))` }}>
             <KibCanIcon can={c} className="h-[38px] w-[22px]" />
           </Shake>
+          {/* The count sits on the can's corner, so the name keeps the whole line (Mikey's phone
+              test, 11 Nov 2026: on Premium and Elite the name and count wrapped, and the Use
+              buttons were pushed out of the bottom of the tile). */}
+          <span data-can-count className={`absolute -right-2 -top-1 z-10 rounded-full text-center font-black tabular-nums text-gray-950 ${bold ? "min-w-[22px] px-1 text-[10.5px] leading-[15px]" : "min-w-[18px] px-1 text-[9.5px] leading-[14px]"}`}
+            style={{ background: `linear-gradient(180deg, ${tint(accent, 0.35)}, ${accent})`, boxShadow: `0 1px 4px ${rgba(accent, 0.6)}` }}>×{Math.round(shownCount)}</span>
           {drinking > 0 && (
             <div key={`d${drinking}`} className="pointer-events-none absolute inset-0">
               <Drips trigger={drinking} color={accent} />
@@ -711,11 +716,7 @@ export function CanTile({ can: c, career, e, onUse, onBuy, compact = false, mini
         <div className="min-w-0 flex-1">
           {/* The count sits beside the name, never over the text (Mikey, 22 Oct 2026: the cans overlap). */}
           {/* The name never cuts ("Pre…"): the count drops under it when there isn't room (sweep, 29 Oct 2026). */}
-          <div className="flex min-w-0 flex-wrap items-center gap-x-1">
-            <span className={`whitespace-nowrap font-black leading-tight tracking-tight text-white ${c.name.replace(" KIB Can", "").length > 5 ? "text-[10.5px]" : bold ? "text-[12.5px]" : "text-[11px]"}`}>{c.name.replace(" KIB Can", "")}</span>
-            <span data-can-count className={`shrink-0 rounded-full text-center font-black tabular-nums text-gray-950 ${bold ? "min-w-[24px] px-1.5 text-[11.5px] leading-[16px]" : "min-w-[18px] px-1 text-[9.5px] leading-[14px]"}`}
-              style={{ background: `linear-gradient(180deg, ${tint(accent, 0.35)}, ${accent})`, boxShadow: `0 1px 4px ${rgba(accent, 0.6)}` }}>×{Math.round(shownCount)}</span>
-          </div>
+          <div className={`truncate whitespace-nowrap pl-1 font-black leading-tight tracking-tight text-white ${c.name.replace(" KIB Can", "").length > 5 ? "text-[10.5px]" : bold ? "text-[12.5px]" : "text-[11px]"}`}>{c.name.replace(" KIB Can", "")}</div>
           <div className="line-clamp-2 text-[9.5px] font-bold leading-[11px] text-white/80">{effect}</div>
         </div>
       </div>

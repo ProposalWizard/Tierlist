@@ -513,7 +513,7 @@ function headlineFrom(e: FootballEvent, you: string): string {
     // scoreline facts a career moment never carries, so the default below
     // rendered "Club undefined-undefined undefined" for every award.
     case "award-won": return String(f.award ?? `${short} wins an award`);
-    case "ballon-dor": return `${short} wins the Ballon d'Or`;
+    case "ballon-dor": return `${short} wins the Golden Ball`;
     default: return `${f.club} ${f.us}-${f.them} ${f.opponent}`;
   }
 }

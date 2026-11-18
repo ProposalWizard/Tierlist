@@ -14,8 +14,9 @@
 import { useState } from "react";
 import { TEAM_PEOPLE, TEAM_ROOM } from "@/lib/teamRoom/config";
 import { notesFor } from "@/lib/teamRoom/logic";
-import { patchAuthor, patchReaders, patchReadKey, patchTime, type PatchMeta } from "@/lib/teamRoom/extras";
-import { setAck, useTeamRoom } from "@/lib/teamRoom/store";
+import { composeBody, patchAuthor, patchReaders, patchReadKey, patchTime, quoteLine, type PatchMeta } from "@/lib/teamRoom/extras";
+import { sendMessage, setAck, useTeamRoom } from "@/lib/teamRoom/store";
+import { patchThread } from "@/lib/teamRoom/patchBot";
 import { Av } from "./bits";
 import { takeNotesRequest } from "@/lib/teamRoom/patchQuote";
 import { NotesThread } from "./parts";
@@ -63,8 +64,49 @@ export function PatchReadBar({ note, lines }: { note: PatchMeta; lines?: string[
       </div>
       {s.v2 === "off" && <p className="tr-muted">Ticks and notes here are saved on this device only until <code>{TEAM_ROOM.sqlFileV2}</code> runs.</p>}
       {err && <p className="tr-err">{err}</p>}
+      <PatchQuickComment version={note.version} />
       {open && <div className="notes"><NotesThread kind="patch" id={note.version} owner={author} lines={lines} /></div>}
     </section>
+  );
+}
+
+/**
+ * Comment while you read (Harry, 12 Nov 2026: "as you're reading the patch
+ * notes it's super easy to leave comments as you're going"). One box, always
+ * there; Enter sends. The comment lands in this note's thread in the Team room
+ * (under the Patch bot's post), where the author can copy the whole thread for
+ * their Claude.
+ */
+export function PatchQuickComment({ version }: { version: string }) {
+  const s = useTeamRoom();
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+  const thread = patchThread(s.messages, version);
+  const last = thread[thread.length - 1];
+  const send = async () => {
+    if (busy || !text.trim()) return;
+    setBusy(true); setErr(null);
+    const r = await sendMessage(composeBody(text, { patch: version }), null, typeof window === "undefined" ? null : window.location.pathname + window.location.search);
+    setBusy(false);
+    if (r.ok) { setText(""); setSent(true); setTimeout(() => setSent(false), 2500); } else setErr(r.error);
+  };
+  if (!s.me) return null;
+  return (
+    <div className="tr-quick">
+      <div className="tr-add">
+        <input value={text} maxLength={1000} placeholder={`Comment on v${version} as you read…`} aria-label={`Comment on patch notes v${version}`}
+          onChange={(e) => { setText(e.target.value); setErr(null); }} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); send(); } }} />
+        <button className="tr-btn" onClick={send} disabled={busy || !text.trim()}>{busy ? "…" : "Send"}</button>
+      </div>
+      <small className="tr-muted">
+        {sent ? "✓ Sent to this note's thread. " : ""}
+        <a href={`${TEAM_ROOM.home}?tab=chat&pn=${encodeURIComponent(version)}`}>{thread.length ? `${thread.length} comment${thread.length === 1 ? "" : "s"} in the thread` : "Goes to this note's thread in the Team room"}</a>
+        {last ? ` · last: ${last.person}, “${quoteLine(last, 60)}”` : ""}
+      </small>
+      {err && <p className="tr-err">{err}</p>}
+    </div>
   );
 }
 

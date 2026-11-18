@@ -1,6 +1,12 @@
 # Brain index team
 ID | summary | tags
 FACT-TEAM-001 | next build needs about 6.5 GB; package.json gives it 6 GB of heap (node --max-old-space-size=6144). A Vercel deploy that fails with no other clue may be out of memory again: build locally with no NODE_OPTIONS to check. | deploy,team
+FACT-TEAM-002 | The Patch bot posts each new patch note once in #general naming the two who did not write it; comments ride "[pn:version]" in one thread; the post moves to #patch-notes when all three have read it. No new table. | data,process,style,team
+FACT-TEAM-003 | The Team room has two looks: Dark = Midnight slate, Light = Light C. It follows the device until you tap the sun/moon beside your name (per device). Faces are club-style crests. | ui,team
+FACT-TEAM-004 | Every Team room channel has its own tabs and opens on its first one (CHANNEL_TABS). #today is a channel: a check-in is a "[#today]" message, /today words writes one. Me and Team board are views inside the room. | team,style
+FACT-TEAM-005 | [SUPERSEDED] Five Team room bots (Patch, Bug, Health, Today, Jobs). Each posts once however often it is asked, has its own page with Run now, and only bots that do their job are listed. Health and Today can be switched off. | team
+FACT-TEAM-006 | Nine Team room bots. Patch, Bug, Health, Today and Jobs post as before and can be @ed in any channel; each answers once, in a thread, by plain rules. Claude and Harry, Mikey and Leo bot are AI. | team,style
+FACT-TEAM-007 | The Team room's AI bots (Claude, Harry bot, Mikey bot, Leo bot) only answer, are off until ANTHROPIC_API_KEY is set in Vercel, and stop at 20 pounds a calendar month. | team,style
 PRO-TEAM-001 | Push means merge Harry into main after tsc, both guards, the tests and npm run build pass, once the team reviewed the patch notes. | team,process,deploy
 PRO-TEAM-002 | [SUPERSEDED] Patch notes order: stills on the page, push, publish; then film the gameplay clips; never hold the push for a video. | process,rule,deploy
 PRO-TEAM-003 | Pictures as they come in: builders save each still at once, and the lead sends each new still to Harry with a caption. | process
@@ -39,3 +45,4 @@ RUL-TEAM-026 | Big tasks: do every step that needs no approval first; leave anyt
 RUL-TEAM-027 | When Mikey asks to measure, report or discuss something, report back and do not change the game; build only what he asks to be built. | team
 RUL-TEAM-028 | "Every patch note: author, real date and time, every update with time and where, its own number (no base shared with anyone's, search all branches), a menu name saying what it is about, and the one standard page; checked by rules.mjs." | team,process
 RUL-TEAM-029 | Leo's chats: start with a plan as progress bars (steps, time each, % done), update them and the admin board often; end every task with yes/no lines (works? patch notes made/updated? live on admin page? merged into the game?), then at most 5 lines; ask for every approval together at the start or end. | admin,team,process,deploy
+RUL-TEAM-030 | A Team room bot never changes anything. A person's bot turns a bigger ask into a card only its owner can Accept; Accept adds one job to the owner's own to-do for their own Claude chat. | team,process,rule

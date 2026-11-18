@@ -116,7 +116,7 @@ export function careerVerdict(career: CareerState): CareerVerdict {
 
   const won = trophies === 1 ? "1 trophy" : `${trophies} trophies`;
   const summary = career.ballonDorWins > 0
-    ? `${career.ballonDorWins} Ballon d'Or${career.ballonDorWins > 1 ? "s" : ""}, ${s.goals} goals and ${won} across ${seasons} seasons.`
+    ? `${career.ballonDorWins} Golden Ball${career.ballonDorWins > 1 ? "s" : ""}, ${s.goals} goals and ${won} across ${seasons} seasons.`
     : trophies > 0
       ? `${s.goals} goals and ${won} across ${seasons} seasons.`
       : `${s.goals} goals in ${s.appearances} appearances across ${seasons} seasons.`;

@@ -154,26 +154,71 @@ function loadGis(): Promise<void> {
   return gisLoading;
 }
 
-/** Opens Google's "Allow Knowitball to add files to your Drive" box. Must run from a tap. */
-export async function connectDrive(): Promise<{ token: string; until: number }> {
+/* ── Keeping Drive connected (Harry, 12 Nov 2026: "I have to connect my drive
+ * every single time") ─────────────────────────────────────────────────────
+ * Google gives a website that runs in the browser a key for ONE HOUR at a
+ * time (no lasting key without a sign-in flow on the server). So the key and
+ * when it runs out are kept on this device and used on every visit until
+ * then. After the hour the site asks Google again WITHOUT the "Allow" box
+ * (`quiet`), at the next tap that may open Google's window (Stop, Save to
+ * Drive). The box only shows again when Google itself says it must (signed
+ * out of Google, or access taken away). */
+export interface DriveKey { token: string; until: number }
+const DRIVE_KEY = "kib-drive-key";
+const DRIVE_GRANTED = "kib-drive-granted";
+
+/** A stored key, if it is still good for at least a minute. Pure (tested). */
+export function driveKeyFrom(raw: string | null, now: number): DriveKey | null {
+  if (!raw) return null;
+  try {
+    const d = JSON.parse(raw) as Partial<DriveKey>;
+    return typeof d.token === "string" && d.token && typeof d.until === "number" && d.until > now + 60_000 ? { token: d.token, until: d.until } : null;
+  } catch { return null; }
+}
+/** The key kept on this device, if still good. */
+export function storedDrive(): DriveKey | null {
+  try { return driveKeyFrom(localStorage.getItem(DRIVE_KEY), Date.now()); } catch { return null; }
+}
+/** True once this device has connected Drive (so later asks can be quiet). */
+export function driveWasGranted(): boolean {
+  try { return localStorage.getItem(DRIVE_GRANTED) === "1"; } catch { return false; }
+}
+function keepDrive(d: DriveKey) {
+  try { localStorage.setItem(DRIVE_KEY, JSON.stringify(d)); localStorage.setItem(DRIVE_GRANTED, "1"); } catch { /* private window */ }
+}
+/** Forget the key (Google refused it). The "granted" mark stays. */
+export function forgetDrive() {
+  try { localStorage.removeItem(DRIVE_KEY); } catch { /* private window */ }
+}
+
+/**
+ * Opens Google's "Allow Knowitball to add files to your Drive" box. Must run
+ * from a tap. `quiet`: ask Google for a fresh key without showing the box
+ * (works when this Google account already allowed it); fails instead of asking.
+ */
+export async function connectDrive(opts: { quiet?: boolean } = {}): Promise<DriveKey> {
   if (!DRIVE_CLIENT_ID) throw new Error("Drive isn't switched on yet (no Google id on the site).");
   await loadGis();
   return new Promise((resolve, reject) => {
     const client = window.google!.accounts!.oauth2!.initTokenClient({
       client_id: DRIVE_CLIENT_ID,
       scope: SCOPE,
-      callback: (r) => r.access_token
-        ? resolve({ token: r.access_token, until: Date.now() + ((r.expires_in ?? 3600) - 60) * 1000 })
-        : reject(new Error(r.error === "access_denied" ? "Drive wasn't allowed." : "Google said no. Try again.")),
+      callback: (r) => {
+        if (!r.access_token) { reject(new Error(r.error === "access_denied" ? "Drive wasn't allowed." : "Google said no. Try again.")); return; }
+        const d = { token: r.access_token, until: Date.now() + ((r.expires_in ?? 3600) - 60) * 1000 };
+        keepDrive(d);
+        resolve(d);
+      },
       error_callback: (e) => reject(new Error(e.type === "popup_closed" ? "The Google box was closed." : "Google's box didn't open. Allow pop-ups and try again.")),
     });
-    client.requestAccessToken({ prompt: "" });
+    // "" = the Allow box only the first time; "none" = never a box (fails when one is needed).
+    client.requestAccessToken({ prompt: opts.quiet ? "none" : "" });
   });
 }
 
 async function driveJson(token: string, url: string, init: RequestInit = {}): Promise<Record<string, unknown>> {
   const r = await fetch(url, { ...init, headers: { Authorization: `Bearer ${token}`, ...(init.headers ?? {}) } });
-  if (r.status === 401) throw new Error("The Drive connection ran out. Tap Connect Drive again.");
+  if (r.status === 401) { forgetDrive(); throw new Error("The Drive connection ran out. Tap Save to Drive again."); }
   if (!r.ok) throw new Error(`Drive answered ${r.status}.`);
   return r.status === 204 ? {} : r.json();
 }
@@ -215,7 +260,7 @@ export async function uploadToDrive(token: string, file: Blob, name: string, onP
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "X-Upload-Content-Type": file.type || "video/webm", "X-Upload-Content-Length": String(file.size) },
     body: JSON.stringify({ name, parents: [parent], description: "Recorded on knowitball.co.uk → Admin → Videos" }),
   });
-  if (start.status === 401) throw new Error("The Drive connection ran out. Tap Connect Drive again.");
+  if (start.status === 401) { forgetDrive(); throw new Error("The Drive connection ran out. Tap Save to Drive again."); }
   const where = start.headers.get("Location");
   if (!start.ok || !where) throw new Error(`Drive wouldn't start the upload (${start.status}).`);
 

@@ -358,3 +358,109 @@
 .trr-schedrow .em { font-size: 20px; }
 .trr-schedrow .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .trr-schedrow .tx small { color: var(--ash-ink3); font-size: 12px; }
+
+/* ── The Patch bot, end to end (12 Nov 2026) ─────────────────────────── */
+.tr-archived { margin-left: 6px; font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--ash-ink3); border: 1px solid var(--ash-line2); border-radius: 999px; padding: 0 6px; }
+.tr-bub p.tr-botask { margin-top: 4px; font-size: 13.5px; color: var(--ash-ink2); }
+.tr-botask .tr-at { margin-right: 4px; }
+.tr-quick { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+.tr-quick .tr-add input { font-size: 16px; min-height: 40px; }
+.tr-quick small a { color: var(--ash-accent); font-weight: 700; }
+.trb-copy { padding: 6px 10px; font-size: 12.5px; min-height: 32px; white-space: nowrap; flex: 0 0 auto; }
+.trr[data-phone="true"] .trb-copy { font-size: 12px; padding: 6px 8px; }
+/* A bot's own page */
+.trb { max-width: 680px; display: flex; flex-direction: column; gap: 12px; }
+.trb-top { display: flex; align-items: center; gap: 12px; }
+.trb-face { width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center; font-size: 26px; background: var(--ash-panel2); border: 1px solid var(--ash-line2); flex: 0 0 auto; }
+.trb-top .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.trb-top .tx b { font-size: 19px; }
+.trb-top .tx small, .trb-row .tx small { color: var(--ash-ink3); font-size: 12.5px; line-height: 1.35; }
+.trb-pill { font-size: 11px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--ash-line2); color: var(--ash-ink2); flex: 0 0 auto; }
+.trb-pill.ok { background: var(--ash-accent); border-color: var(--ash-accent); color: var(--ash-accent-ink); }
+.trb-pill.wait { color: var(--ash-amber); border-color: var(--ash-amber); }
+.trb-status { margin: 0; font-size: 14.5px; font-weight: 700; }
+.trb-status.wait { color: var(--ash-amber); }
+.trb-status.off { color: var(--ash-ink3); }
+.trb-card { border: 1px solid var(--ash-line); border-radius: 12px; background: var(--ash-panel2); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.trb-card .tr-lbl { margin: 0; }
+.trb-card p { margin: 0; font-size: 14.5px; line-height: 1.45; }
+.trb-card ul { margin: 0; padding-left: 20px; list-style: disc; font-size: 14.5px; line-height: 1.5; }
+.trb-warn { color: var(--ash-amber); font-size: 13px !important; }
+.trb-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.trb-log li { display: flex; gap: 10px; align-items: baseline; padding: 7px 0; border-top: 1px solid var(--ash-line); font-size: 14px; }
+.trb-log li:first-child { border-top: 0; }
+.trb-log li span { flex: 1; min-width: 0; }
+.trb-log li small { color: var(--ash-ink3); font-size: 12px; white-space: nowrap; }
+.trb-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.trb-row .tx { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; }
+.trb-switch { width: 50px; height: 30px; border-radius: 999px; border: 1px solid var(--ash-line2); background: var(--ash-panel-solid); position: relative; cursor: pointer; flex: 0 0 auto; padding: 0; }
+.trb-switch i { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--ash-ink3); transition: left .15s; }
+.trb-switch[aria-checked="true"] { background: var(--ash-accent); border-color: var(--ash-accent); }
+.trb-switch[aria-checked="true"] i { left: 23px; background: var(--ash-accent-ink); }
+.trb-switch:disabled { opacity: .5; cursor: not-allowed; }
+.trb-seg { flex: 0 0 auto; }
+.trb > .tr-btn { align-self: flex-start; }
+
+/* ── Messages → tasks, / commands, quick links (12 Nov 2026) ─────────── */
+.tr-askrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 5px; }
+.tr-askbtn { border: 1px dashed var(--ash-line2); background: none; color: var(--ash-ink2); border-radius: 999px; padding: 4px 11px; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; min-height: 28px; }
+.tr-askbtn:hover { border-color: var(--ash-accent); color: var(--ash-accent); }
+.tr-asksent { font-size: 12.5px; color: var(--ash-ink3); font-weight: 700; }
+.tr-ask { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border: 1px dashed var(--ash-accent); border-radius: 10px; padding: 9px 11px; margin-bottom: 6px; }
+.tr-ask .tx { flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; }
+.tr-ask .tx small { color: var(--ash-ink3); font-size: 12px; }
+.tr-ask .tx small a { color: var(--ash-accent); }
+.tr-ask .bt { display: flex; gap: 6px; }
+.tr-ask .tr-btn { padding: 6px 12px; font-size: 13px; min-height: 34px; }
+.tr-sugg { display: flex; gap: 6px; padding: 0 12px 5px; opacity: .55; }
+.tr-sugg:hover, .tr-sugg:focus-within { opacity: 1; }
+.tr-sugg button { border: 1px dashed var(--ash-line2); background: none; color: var(--ash-ink3); border-radius: 999px; padding: 2px 9px; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; cursor: pointer; min-height: 24px; }
+.tr-sugg button:hover { color: var(--ash-accent); border-color: var(--ash-accent); }
+.tr-sugg button small { font: 10px inherit; opacity: .8; }
+.tr-cmddone { margin: 0; padding: 0 12px 6px; font-size: 13px; color: var(--ash-accent); font-weight: 700; }
+.tr-today { margin: 0 12px 8px; border: 1px solid var(--ash-line2); border-radius: 10px; background: var(--ash-panel2); padding: 9px 11px; display: flex; flex-direction: column; gap: 7px; }
+.tr-today .tr-lbl { margin: 0; display: flex; justify-content: space-between; align-items: center; }
+.tr-todayrow { display: flex; gap: 9px; align-items: flex-start; font-size: 13.5px; line-height: 1.35; }
+.tr-todayrow small { color: var(--ash-ink3); font-size: 12.5px; }
+.trr-linkgrid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.trr-link { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--ash-line2); border-radius: 10px; background: var(--ash-panel2); padding: 0 4px 0 12px; min-height: 40px; }
+.trr-link a { color: var(--ash-ink); font-weight: 800; font-size: 14px; text-decoration: none; }
+.trr-link a:hover { color: var(--ash-accent); }
+.trr-linkadd { border-radius: 10px; border: 1px dashed var(--ash-line2); background: none; color: var(--ash-ink2); padding: 9px 11px; font: inherit; font-size: 14px; max-width: 100%; }
+
+/* ── Bots you can @, and the AI bots (13 Nov 2026) ───────────────────── */
+.tr-botav.sm { width: 26px; height: 26px; flex: 0 0 26px; }
+.tr-botav.xs { width: 18px; height: 18px; flex: 0 0 18px; }
+.tr-suggest .tr-bottag { margin-left: 6px; vertical-align: 1px; }
+.tr-at.bot { color: var(--ash-accent); }
+.tr-bub p.tr-botreply { white-space: pre-wrap; font-size: 14px; line-height: 1.45; margin: 2px 0 0; overflow-wrap: anywhere; }
+.tr-propose { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; padding: 10px 12px; border: 1px solid var(--ash-line); border-radius: 12px; background: var(--ash-panel2); }
+.tr-propose .tr-botfoot small { flex-basis: 100%; color: var(--ash-ink3); font-size: 12px; line-height: 1.35; }
+.tr-propstate { margin: 0; font-size: 13px; font-weight: 700; color: var(--ash-ink2); }
+.tr-propstate.ok { color: var(--ash-accent); }
+.trb-asks { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.trb-ask { display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 9px 11px; min-height: 44px; border: 1px solid var(--ash-line); border-radius: 10px; background: var(--ash-panel-solid); color: var(--ash-ink); cursor: pointer; font: inherit; }
+.trb-ask:hover { border-color: var(--ash-accent); }
+.trb-ask b { font-size: 13.5px; overflow-wrap: anywhere; }
+.trb-ask small { color: var(--ash-ink3); font-size: 12px; }
+.trb-setup ol { margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.5; list-style: decimal; }
+.trb-setup code { font-size: 12.5px; padding: 1px 5px; border-radius: 5px; background: var(--ash-panel-solid); overflow-wrap: anywhere; }
+.trb-card > small { color: var(--ash-ink3); font-size: 12.5px; line-height: 1.45; }
+.trb-bar { height: 12px; border-radius: 999px; background: var(--ash-panel-solid); border: 1px solid var(--ash-line); overflow: hidden; }
+.trb-bar i { display: block; height: 100%; border-radius: 999px; background: var(--ash-accent); }
+.trb-bar.amber i { background: var(--ash-amber); }
+.trb-bar.red i { background: var(--ash-red); }
+.trb-field { display: flex; flex-direction: column; gap: 6px; }
+.trb-field label, .trb-field > span { display: flex; flex-direction: column; }
+.trb-field small { color: var(--ash-ink3); font-size: 12.5px; line-height: 1.35; }
+.trb-field textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 68px; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--ash-line); background: var(--ash-panel-solid); color: var(--ash-ink); font: inherit; font-size: 14px; }
+.trb-field textarea[readonly] { color: var(--ash-ink2); cursor: default; }
+.trb-fieldfoot { flex-direction: row !important; align-items: center; justify-content: space-between; gap: 10px; }
+.trb-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.trb-chips button { min-height: 32px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--ash-line); background: none; color: var(--ash-ink2); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.trb-chips button[aria-pressed="true"] { background: var(--ash-accent-soft); border-color: var(--ash-accent); color: var(--ash-ink); }
+.trb-chips button:disabled, .trb-switch:disabled { cursor: default; opacity: .75; }
+.trb-saved { margin: 0; font-size: 13px; color: var(--ash-accent); font-weight: 700; }
+.trb-dmbox { display: flex; flex-direction: column; height: 340px; border: 1px solid var(--ash-line); border-radius: 12px; overflow: hidden; background: var(--ash-panel-solid); }
+.trb-dmbox .tr-chat { flex: 1; min-height: 0; }
+.tr-suggest button.on small, .tr-suggest button:hover small { color: var(--ash-ink2); }

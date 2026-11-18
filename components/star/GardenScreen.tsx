@@ -462,7 +462,7 @@ export default function GardenScreen({ career, onBack, sky }: {
               {(trophyCount > 0 || ballonDors > 0) && (
                 <div className="absolute right-3 top-14 flex flex-col items-end gap-1.5">
                   {trophyCount > 0 && <Chip img={trophyArt("Premier League") ?? undefined} n={trophyCount} />}
-                  {ballonDors > 0 && <Chip img={trophyArt("Ballon d'Or") ?? undefined} n={ballonDors} />}
+                  {ballonDors > 0 && <Chip img={trophyArt("Golden Ball") ?? undefined} n={ballonDors} />}
                 </div>
               )}
             </div>
