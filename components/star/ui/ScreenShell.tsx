@@ -44,7 +44,11 @@ export default function ScreenShell({ glow, title, icon, onBack, backLabel = "Ba
   tone?: "calm" | "pitch";
 }) {
   return (
-    <div data-sk-tone={tone} className="relative min-h-[100dvh] overflow-x-hidden bg-[#05080f] text-white">
+    // App layout (Mikey's phone test, 17 Nov 2026: "no page really needs to
+    // scroll ... that's not really meant for an app"): the screen is exactly
+    // the phone's height and never scrolls; the top (HUD and title) stays put
+    // and only the area under it scrolls when a list is longer than the phone.
+    <div data-sk-tone={tone} data-screen-shell className="relative flex h-[100dvh] flex-col overflow-hidden bg-[#05080f] text-white">
       <KitStyles />
       <div aria-hidden className="pointer-events-none fixed inset-0">
         <div
@@ -63,7 +67,8 @@ export default function ScreenShell({ glow, title, icon, onBack, backLabel = "Ba
           }}
         />
       </div>
-      <div className={`relative mx-auto w-full max-w-md px-3 ${bottomBar ? "pb-[84px]" : "pb-10"} ${className}`}>
+      <style>{`.kib-shell-body::-webkit-scrollbar{display:none}.kib-shell-body{scrollbar-width:none}`}</style>
+      <div data-screen-body className={`kib-shell-body relative mx-auto min-h-0 w-full max-w-md flex-1 overflow-y-auto overscroll-contain px-3 ${bottomBar ? "pb-[84px]" : "pb-10"} ${className}`}>
         <div className={`sticky top-0 z-30 -mx-3 ${bare ? "mb-2" : "mb-3"}`} style={{ background: bare && hud ? "rgba(5,8,15,.96)" : "linear-gradient(180deg, rgba(5,8,15,.94) 60%, rgba(5,8,15,0))", backdropFilter: bare && hud ? undefined : "blur(4px)" }}>
           {hud}
           {!bare && (

@@ -177,9 +177,30 @@ function ReputationCell({ career }: { career: CareerState }) {
 }
 
 /** Energy, on every screen: the bar runs to the end of its cell (P1-14), no number (P5). */
+/** Sent by EnergyBackToast: the energy bar shows the rest days' gain filling in. */
+export const ENERGY_BACK_EVENT = "kib-energy-back";
+
 function EnergyCell({ career }: { career: CareerState }) {
   const e = Math.max(0, Math.min(100, Math.round(career.energy)));
+  // Mikey's phone test (17 Nov 2026): "+47 energy ... I would prefer it if that
+  // actually showed on the energy bar going up from where it was at the end of
+  // the game." When the toast shows, the bar drops back by the amount at once
+  // and then fills up to today's energy.
+  const [from, setFrom] = useState<number | null>(null);
+  const [dur, setDur] = useState(0);
+  useEffect(() => {
+    const on = (ev: Event) => {
+      const amount = Number((ev as CustomEvent).detail) || 0;
+      if (amount <= 0) return;
+      setDur(0);
+      setFrom(Math.max(0, e - amount));
+      window.setTimeout(() => { setDur(1400); setFrom(null); }, 120);
+    };
+    window.addEventListener(ENERGY_BACK_EVENT, on);
+    return () => window.removeEventListener(ENERGY_BACK_EVENT, on);
+  }, [e]);
+  const shown = from ?? e;
   return (
-    <TopMeter tour="energy" label={`Energy ${e}`} className={CELL_H} icon={<HudIcon name="energy" />} value={e} colors={levelColors(e)} />
+    <TopMeter tour="energy" label={`Energy ${e}`} className={CELL_H} icon={<HudIcon name="energy" />} value={shown} duration={dur || undefined} colors={levelColors(shown)} />
   );
 }

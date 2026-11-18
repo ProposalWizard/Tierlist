@@ -19,7 +19,7 @@ export default function LegalPage() {
         <h1 className="mb-2 text-3xl font-black tracking-tight text-white">
           Privacy Policy &amp; Terms of Use
         </h1>
-        <p className="mb-10 text-sm text-white">Last Updated: March 2026</p>
+        <p className="mb-10 text-sm text-white">Last Updated: November 2026</p>
 
         <div className="space-y-10 text-sm leading-relaxed text-white">
 
@@ -89,6 +89,26 @@ export default function LegalPage() {
                 (knowitballcontact@gmail.com).
               </li>
             </ul>
+
+            <h3 id="app" className="mb-2 font-semibold text-white">Our Phone App (Road to the Golden Ball)</h3>
+            <p className="mb-2">
+              The Road to the Golden Ball app on Google Play works differently from this website:
+            </p>
+            <ul className="mb-4 list-disc space-y-1.5 pl-5">
+              <li>The whole game is inside the download and plays without an internet connection.</li>
+              <li>There is no sign-in or account, and the app does not ask for your name, email or any other personal details.</li>
+              <li>The app has no analytics, no tracking, no cookies and no advertising.</li>
+              <li>Your saved game is stored only on your own phone. We cannot see it, and it is deleted when you uninstall the app.</li>
+              <li>The app does not collect, sell or share any personal information.</li>
+              <li>
+                Google Play may collect information about your download and device under{" "}
+                <a className="underline" href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Google&apos;s Privacy Policy</a>;
+                we do not control that.
+              </li>
+            </ul>
+            <p className="mb-4">
+              If we ever add online features, sign-in or advertising to the app, we will update this section first.
+            </p>
           </section>
 
           {/* 3 */}

@@ -18,6 +18,8 @@ import { formatMoneyPrecise as formatMoney } from "@/lib/star/money";
 import { ClubCard, PressButton, Shine, StatBar, clubTheme, rgba } from "./ui";
 import { Screen, ScreenHeader } from "./ui/Screen";
 import { SegTabs, CardTitle } from "./screenKit";
+import { ADVERT_WIN } from "./relgames/AdvertShoot";
+const ADVERT_NEED_TEXT = 3;
 
 type Tab = "deals" | "offers" | "brands";
 
@@ -112,6 +114,13 @@ function DealCard({ d, money, onWalkAway, onAdvert, advertDone }: { d: BrandDeal
         <button onClick={() => onAdvert(d.id)} disabled={advertDone} data-advert={d.id} className="kib-press relative mt-2 w-full rounded-xl bg-black/35 py-2 text-[12px] font-black uppercase tracking-wide text-white ring-1 ring-white/30 disabled:opacity-45">
           {advertDone ? "🎬 Advert shot this week" : "🎬 Shoot an advert · 1 day"}
         </button>
+      )}
+      {/* What it is, before you press it (Mikey's phone test, 17 Nov 2026,
+          47:05: "it should have given me some sort of tutorial"). */}
+      {onAdvert && !advertDone && (
+        <div data-advert-how className="relative mt-1 text-[10.5px] font-bold leading-snug text-white/85">
+          A quick timing game: tap when the marker hits your mark. Land {ADVERT_NEED_TEXT} of 5 takes and {d.brand} get happier (+{ADVERT_WIN}). Once a week.
+        </div>
       )}
       {d.clause && <div className="relative mt-2 text-[10.5px] font-bold text-white">📎 {d.clause === "exclusive" ? CLAUSE.exclusive(d.category) : CLAUSE.behaviour()}</div>}
       {d.category === "Boots" && <div className="relative mt-1 text-[10.5px] font-black text-emerald-300">👟 {Math.round(BOOT_DEAL_DISCOUNT * 100)}% off every pair of boots in the shop</div>}

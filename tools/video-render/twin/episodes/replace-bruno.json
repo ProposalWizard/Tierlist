@@ -1,0 +1,65 @@
+{
+ "player": "Bruno Fernandes",
+ "season": "2025/26",
+ "short": "Bruno",
+ "from": "Manchester United",
+ "to": "",
+ "toId": 0,
+ "positions": [
+  84,
+  85,
+  86,
+  104,
+  106
+ ],
+ "posWord": "number 10",
+ "maxAge": 23,
+ "minMins": 900,
+ "seasons": [
+  "2025/26",
+  "2026/27"
+ ],
+ "series": "WHO REPLACES HIM?",
+ "hookSay": "Bruno Fernandes's contract runs out in the summer. So how do Manchester United replace him?",
+ "hookSticker": "CONTRACT ENDS IN THE SUMMER",
+ "hookStickerAt": "CONTRACT",
+ "dream": "Arda Güler",
+ "dreamTag": "THE DREAM",
+ "pickTag": "THE REALISTIC PICK",
+ "story": [
+  {
+   "name": "Arda Güler",
+   "mapSay": "The closest of them all: Arda Güler, at Real Madrid.",
+   "verdict": "But would he leave Real Madrid for United? Very unlikely.",
+   "stamp": "WON'T LEAVE MADRID",
+   "stampAt": "VERY",
+   "kind": "no"
+  },
+  {
+   "name": "Paulo Dybala",
+   "lead": "Next, Paulo Dybala, at Roma.",
+   "verdict": "Old and cheap, but still very like Bruno.",
+   "stamp": "OLD, BUT CHEAP",
+   "stampAt": "OLD",
+   "kind": "maybe"
+  },
+  {
+   "name": "Rayan Cherki",
+   "lead": "Then the next young option: Rayan Cherki, at Manchester City.",
+   "verdict": "But we can't see City selling him to United.",
+   "stamp": "WON'T LEAVE CITY",
+   "stampAt": "BUT",
+   "kind": "no"
+  },
+  {
+   "name": "Dani Olmo",
+   "lead": "So who could United actually get? Dani Olmo, at Barcelona.",
+   "verdict": "He's slipped out of favour, with Fermín López starting and playing well. Not the first choice, but a good fit, a fair price and the right age.",
+   "stamp": "GOOD FIT",
+   "stampAt": "GOOD",
+   "kind": "yes",
+   "tag": "THE REALISTIC PICK"
+  }
+ ],
+ "endSay": "So: Güler is the dream, but Olmo is the realistic pick. Who would you sign? Follow for more."
+}

@@ -103,12 +103,18 @@ export function Screen({ glow, tone, className = "max-w-sm px-3 py-3", center = 
   children?: React.ReactNode;
 }) {
   return (
-    <div className={`relative min-h-screen bg-[#05070d] text-white${stadium ? " sk-stadium-screen" : ""}`} style={{ ["--kit-glow" as string]: glow } as React.CSSProperties}>
+    // App layout (Mikey's phone test, 17 Nov 2026): the screen is exactly the
+    // phone's height and the page itself never scrolls. A screen taller than
+    // the phone scrolls inside this box, so a sticky HUD stays on top.
+    <div data-screen-frame className={`relative h-[100dvh] overflow-hidden bg-[#05070d] text-white${stadium ? " sk-stadium-screen" : ""}`} style={{ ["--kit-glow" as string]: glow } as React.CSSProperties}>
       <KitStyles />
       <style>{SCREEN_CSS}</style>
+      <style>{`.kib-screen-body::-webkit-scrollbar{display:none}.kib-screen-body{scrollbar-width:none}`}</style>
       <Backdrop glow={glow} tone={tone} />
-      <div className={`relative mx-auto w-full ${center ? "flex min-h-screen flex-col justify-center" : ""} ${className}`}>
-        {children}
+      <div data-screen-body className="kib-screen-body relative h-full overflow-y-auto overscroll-contain">
+        <div className={`relative mx-auto w-full ${center ? "flex min-h-full flex-col justify-center" : ""} ${className}`}>
+          {children}
+        </div>
       </div>
     </div>
   );
