@@ -16,7 +16,7 @@ import { Canvas, Picture, createPicture, Skia } from "@shopify/react-native-skia
 import { useSharedValue } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import * as Haptics from "expo-haptics";
-import type { MatchKits } from "@/lib/star/kits";
+import { keeperKit, type MatchKits } from "@/lib/star/kits";
 import { nudgeFromDrag, RUNUP } from "@/lib/star/penaltyRunup";
 import { MatchDriver, FRAME_DT } from "../match/driver";
 import { drawPitch, camFor } from "../match/drawPitch";
@@ -26,7 +26,7 @@ import { tapToContact } from "../match/contactBall";
 import { matchSounds } from "../match/sound";
 import { setSkia } from "../match/skiaApi";
 import { loadSpriteSheet } from "../match/spriteAssets";
-import { atlasFor } from "../match/sprites";
+import { warmSpriteKits } from "../match/sprites";
 import { installWebStorage } from "../match/webStorage";
 import { C } from "../ui/theme";
 
@@ -70,7 +70,9 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
     let live = true;
     void loadSpriteSheet().then((ok) => {
       if (!ok || !live) return;
-      for (const k of [kits.home, kits.away, kits.keeper]) atlasFor({ shirt: k.shirt, shorts: k.trim, socks: k.shirt });
+      // CanvasMatch warmSpriteKits: both sides, their keeper and ours (a shootout's).
+      const sk = (k: { shirt: string; trim: string }) => ({ shirt: k.shirt, shorts: k.trim, socks: k.shirt });
+      warmSpriteKits([sk(kits.home), sk(kits.away), sk(kits.keeper), sk(keeperKit(kits.home.shirt, kits.keeper.shirt)), sk(keeperKit(kits.away.shirt, kits.keeper.shirt))]);
     });
     return () => { live = false; };
   }, [kits]);

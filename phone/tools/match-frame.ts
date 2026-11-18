@@ -17,7 +17,7 @@ import { JsiSkApi } from "@shopify/react-native-skia/lib/commonjs/skia/web/JsiSk
 import { setVisitSalt } from "@/lib/star/chanceMaker";
 import { kitsFor } from "@/lib/star/kits";
 import { setSkia } from "../src/match/skiaApi";
-import { setSpriteSheet, atlasFor, type SpriteIndex } from "../src/match/sprites";
+import { setSpriteSheet, setAtlas, atlasFor, tintTimes, type SpriteIndex } from "../src/match/sprites";
 import { drawPitch, paintPitch } from "../src/match/drawPitch";
 import { MatchDriver } from "../src/match/driver";
 import { matchSetupFor } from "../src/match/setup";
@@ -39,18 +39,22 @@ async function main() {
   setSkia(Skia);
   const dir = path.join(__dirname, "../src/match/assets/sprites");
   const t0 = performance.now();
-  const idx = JSON.parse(fs.readFileSync(path.join(dir, "index-0.json"), "utf8")) as SpriteIndex;
+  const idx = JSON.parse(fs.readFileSync(path.join(dir, "index.json"), "utf8")) as SpriteIndex;
   const img = (f: string) => Skia.Image.MakeImageFromEncoded(Skia.Data.fromBytes(new Uint8Array(fs.readFileSync(path.join(dir, f)))))!;
   setSpriteSheet(idx, img("atlas-0.webp"), img("mask-0.webp"));
   const tLoad = performance.now() - t0;
+  // Atlases 1-5 (the New kicks and saves, celebrations, aerial moves, keeper catches), as the phone loads them later.
+  const tL = performance.now();
+  for (let n = 1; n <= 5; n++) setAtlas(n, img(`atlas-${n}.webp`), img(`mask-${n}.webp`));
+  console.log(`atlases 1-5 decoded in ${(performance.now() - tL).toFixed(0)} ms (on the phone: off the frame loop, at idle)`);
 
   const career = testCareer();
   const fx = career.fixtures.find((f) => !f.played)!;
   const kits = fx.home ? kitsFor(career.player.club, fx.opponent) : kitsFor(fx.opponent, career.player.club);
   const t1 = performance.now();
-  for (const k of [kits.home, kits.away, kits.keeper]) atlasFor({ shirt: k.shirt, shorts: k.trim, socks: k.shirt });
+  for (const k of [kits.home, kits.away, kits.keeper]) for (let n = 0; n <= 5; n++) atlasFor({ shirt: k.shirt, shorts: k.trim, socks: k.shirt }, n);
   const tTint = (performance.now() - t1) / 3;
-  console.log(`sprite sheet decoded in ${tLoad.toFixed(0)} ms; coloured per kit in ${tTint.toFixed(0)} ms (once, before kick-off)`);
+  console.log(`sprite sheet decoded in ${tLoad.toFixed(0)} ms; coloured per kit (all six atlases) in ${tTint.toFixed(0)} ms (once, before kick-off); per atlas median ${[...tintTimes].sort((a, b) => a - b)[tintTimes.length >> 1]} ms`);
 
   const d = new MatchDriver(matchSetupFor({ ...career, week: fx.week }, fx), { hw: H / W });
   d.start();

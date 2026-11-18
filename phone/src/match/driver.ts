@@ -197,7 +197,7 @@ interface Stretch {
   handover?: "penalty" | "free_kick" | null; board?: boolean;
 }
 interface Runup { t: number; dir0: Vec2; power: number; nudgeM: number; nudge: boolean; arrived: boolean; styled: StyledRunup; runS: number; auto?: { contact: { cx: number; cy: number }; skills: KickSkills } }
-interface Aerial { sc: Scenario; move: AerialMove; e: number; preS: number; opened: boolean }
+interface Aerial { sc: Scenario; move: AerialMove; e: number; preS: number; opened: boolean; /** Picture only: when the tap struck it (s, driver clock), for the follow-through frames. */ struckAt?: number }
 interface Lead { lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[]; ball: Vec2; z: number; mates0: number; defs0: number; cam: { at(t: number, chance: Viewport): Viewport }; }
 interface RunOn { lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[] }
 type Timer = { at: number; gen: number; fn: () => void };
@@ -1839,6 +1839,7 @@ export class MatchDriver {
     if (!a) return;
     const aerNow = !over && this.aerial?.sc === this.sc && this.aerial.opened ? this.aerial : null;
     if (aerNow) a = aerialStrikeTint(aerNow.move, a.dir, a.power, (this.seed ^ Math.imul(this.rngCalls.current + 1, 0x27d4eb2d)) >>> 0);
+    if (aerNow) aerNow.struckAt = this.now / 1000;
     this.runOn = null;
     let contact: StrikeContact = { cx: tapped.cx, cy: tapped.cy };
     if (!over && tapped.lift !== undefined && (airborneOn() || isAirKind(this.sc.kind))) {
@@ -2468,6 +2469,12 @@ export class MatchDriver {
 
   /** Everything the screen needs to know changed since it last looked (cheap to compare). */
   get done() { return this.phase === "done"; }
+  /** Picture only: your aerial move on this chance (the figure draws its clip), or null. */
+  aerialNow(): { move: AerialMove; e: number; preS: number; struckAt: number | null } | null {
+    const a = this.aerial;
+    if (!a || a.sc !== this.sc || autoKickOf(this.sc)) return null;
+    return { move: a.move, e: a.e, preS: a.preS, struckAt: a.struckAt ?? null };
+  }
   /** Debug/parity: the pressed-for-foul and keeper-catch fields are internal; this exposes the match's random-draw count. */
   get rngDrawn() { return this.rngCalls.current; }
 }

@@ -6,6 +6,8 @@
  */
 import { tiltFor, canvasToScreen, screenToCanvas, type Tilt } from "@/lib/star/cameraTilt";
 import { VIEW_ASPECT, type Viewport } from "@/lib/star/canvasEngine";
+import type { SkMatrix } from "@shopify/react-native-skia";
+import { sk } from "./skiaApi";
 
 export type Facing = "up" | "left" | "right";
 
@@ -40,6 +42,44 @@ export function toScreen(c: Cam, p: { x: number; y: number }): { X: number; Y: n
     k = t.s / (1 - (t.s * y * t.sin) / t.d);
   }
   return { X: g.X, Y: g.Y, k };
+}
+
+/** Pitch point -> the FLAT canvas's px (before the tilt): where the website draws it on its canvas. */
+export function toCanvasPx(c: Cam, p: { x: number; y: number }): { X: number; Y: number } {
+  const f = toFrac(c, p);
+  return { X: f.sx * c.W, Y: f.sy * c.H };
+}
+
+const tiltMats = new WeakMap<Tilt, number[]>();
+/**
+ * The website's CSS tilt (cameraTilt.ts tiltCss: perspective(d) rotateX(θ)
+ * scale(s) about the box's centre) as one 3×3 matrix from flat-canvas px to
+ * screen px, row by row: canvasToScreen's sums, written projectively. Drawn
+ * under it, a picture leans back and shrinks with the grass exactly as the
+ * website's tipped canvas does. Null when flat.
+ */
+export function tiltMatrixValues(c: Cam): number[] | null {
+  const t = c.tilt;
+  if (!t) return null;
+  const hit = tiltMats.get(t);
+  if (hit) return hit;
+  const a = (t.s * t.sin) / t.d, W = t.W, H = t.H, k = 1 + (a * H) / 2;
+  const m = [
+    t.s, -(W / 2) * a, (W / 2) * k - (t.s * W) / 2,
+    0, t.s * t.cos - (H / 2) * a, (H / 2) * k - (t.s * t.cos * H) / 2,
+    0, -a, k,
+  ];
+  tiltMats.set(t, m);
+  return m;
+}
+const skMats = new WeakMap<number[], SkMatrix>();
+/** tiltMatrixValues as a Skia matrix (made once per camera size). */
+export function tiltMatrix(c: Cam): SkMatrix | null {
+  const v = tiltMatrixValues(c);
+  if (!v) return null;
+  let m = skMats.get(v);
+  if (!m) { m = sk().Matrix(v); skMats.set(v, m); }
+  return m;
 }
 
 /** Screen px -> pitch point (CanvasMatch pitchFromPointer). */
