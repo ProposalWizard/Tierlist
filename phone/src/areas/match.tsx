@@ -1,6 +1,8 @@
 // MATCH AREA: everything played on the pitch.
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { View, Text } from "react-native";
+import { ovationLook } from "@/lib/star/ovationLook";
+import { StandingOvation } from "../three/Farewell3D";
 import type { ScreenMap } from "./types";
 import { Match } from "../screens/Match";
 import { GoalReplays } from "../screens/MatchReplays";
@@ -77,10 +79,24 @@ function FarewellMatchScreen() {
     const s = farewellMatchDone(d.finalStats);
     if (s.screen === "tabs") nav.home(); else nav.replace(s.screen, s.params);
   }, [nav]);
+  // The standing ovation (page.tsx: CanvasMatch farewell.onOvation → StandingOvation over the match):
+  // once the commentary reaches the minute you came off, under Settings → Look "Standing ovation: New".
+  const [ovationAt, setOvationAt] = useState<number | null>(null);
+  const ovationSeen = useRef(false);
+  const watch = useCallback((d: MatchDriver) => {
+    if (ovationSeen.current || !d.hooked || d.hookedAt === null || d.matchMinute < d.hookedAt) return;
+    ovationSeen.current = true;
+    if (ovationLook() === "new") setOvationAt(d.hookedAt);
+  }, []);
   if (!start || !f) {
     return <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: "center", alignItems: "center" }}><Text style={{ color: C.text }}>No farewell to play.</Text></View>;
   }
-  return <Match career={f.career} fixture={f.fixture} setupFor={setupFor} recordGoals={false} onFullTime={onFullTime} />;
+  return (
+    <View style={{ flex: 1 }}>
+      <Match career={f.career} fixture={f.fixture} setupFor={setupFor} recordGoals={false} onFullTime={onFullTime} watch={watch} frozen={ovationAt !== null} />
+      {ovationAt !== null && start && <StandingOvation career={start} sides={f.sides} minute={ovationAt} onDone={() => setOvationAt(null)} />}
+    </View>
+  );
 }
 
 function GoalReplaysScreen() {

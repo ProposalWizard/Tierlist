@@ -20,6 +20,7 @@
     },
     "plugins": [
       "expo-font",
+      "expo-asset",
       ["expo-media-library", { "granularPermissions": [], "photosPermission": false, "savePhotosPermission": "Allow KIB Next to save your goal videos to your photos." }]
     ]
   }

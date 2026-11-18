@@ -13,6 +13,7 @@ import { listSlots, loadSlot, newInSlot, deleteSlot, activeSlot } from "../../wo
 import { usePhoneHall } from "../../world/hall";
 import { Press } from "../../ui/Press";
 import { Btn, ClubCrest, C, R } from "./kit";
+import { HomePlayer } from "../../three/HomePlayer";
 
 function MenuButton({ icon, label, onPress, primary, gold, disabled }: { icon: string; label: string; onPress: () => void; primary?: boolean; gold?: boolean; disabled?: boolean }) {
   return (
@@ -49,6 +50,7 @@ export function TitleMenu({ onContinue, onNew, onHall, onTutorial, onSettings }:
   const hall = usePhoneHall();
   const [sheet, setSheet] = useState<"load" | "credits" | null>(null);
   const [armed, setArmed] = useState<number | null>(null);
+  const [stage, setStage] = useState(0);
   const slots = sheet === "load" ? listSlots() : [];
   const full = slots.length > 0 && slots.every((s) => !s.empty);
   const active = activeSlot();
@@ -58,6 +60,12 @@ export function TitleMenu({ onContinue, onNew, onHall, onTutorial, onSettings }:
         <Text style={{ color: C.text, fontSize: 46, fontWeight: "900", fontStyle: "italic", letterSpacing: -1 }}>KNOWITBALL</Text>
         <Text style={{ color: C.gold, fontSize: 14, fontWeight: "800", letterSpacing: 4, marginTop: 6 }}>ROAD TO THE GOLDEN BALL</Text>
       </View>
+      {/* You, standing on the pitch with the ball (TitleScreen's HomePlayer, where="title"). */}
+      {career && (
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "flex-end", paddingVertical: 8 }} onLayout={(e) => setStage(e.nativeEvent.layout.height)}>
+          {stage > 120 && <HomePlayer career={career} where="title" height={Math.round(Math.min(stage - 16, 420))} width={Math.round(Math.min(stage - 16, 420) * 0.86)} />}
+        </View>
+      )}
       <View style={{ gap: 10, marginBottom: 10 }}>
         {career && <MenuButton primary icon="▶" label="Continue" onPress={onContinue} />}
         <MenuButton primary={!career} icon="＋" label="New game" onPress={() => {

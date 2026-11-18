@@ -15,9 +15,9 @@
  *     Then the season awards page (SeasonEnd.tsx SeasonAwardsScreen).
  *
  * The website plays these in 3D on a phone that can; its own drawn stage is
- * what it shows when it can't, and that is what is here. Faces: the website
- * has photo faces off and shows each man's headshot, the drawn head until it
- * is made; here it is the drawn head (draw/PlayerHead.tsx) in his kit.
+ * what it shows when it can't, and that is what is here. Faces: as the
+ * website, each man's headshot shot from his 3D model (three/Headshot3D.tsx),
+ * his drawn head in his kit (draw/PlayerHead.tsx) until it is made.
  * The still parts (wall, floor, room) are drawn once as pictures; the clock
  * runs only while the night plays and stops when it ends.
  */
@@ -39,6 +39,8 @@ import { retirementCheck } from "@/lib/star/retirement";
 import { Drawn } from "../../draw/useDrawing";
 import { paintStageBack, paintPodiums, paintHost, paintRoomBack } from "../../draw/ceremonyPaint";
 import { PlayerHead } from "../../draw/PlayerHead";
+import { Headshot3D } from "../../three/Headshot3D";
+import { playerOf } from "@/lib/star/potm";
 import { playCheer } from "../../match/sound";
 import * as flow from "../../game/flow";
 import { ClubCrest } from "./kit";
@@ -76,12 +78,20 @@ export function TrophyImage({ name, height, fallback = "🏆" }: { name: string;
   return <Image source={src} style={{ height, width: height * 0.8 }} resizeMode="contain" />;
 }
 
-/** A man's face: his drawn head in his kit, in a ring (the website's headshot chip). */
+/**
+ * A man's face in a ring (the website's headshot chip): his 3D headshot
+ * (three/Headshot3D.tsx), his drawn head in his kit until it is made or when
+ * the phone can't make it. The id is the one his Player of the Month card
+ * uses (the website's HeadshotCareer: potm.ts playerOf), so he has one face.
+ */
 function Face({ name, club, isYou, career, size, ring }: { name: string; club: string; isYou: boolean; career: CareerState; size: number; ring: string }) {
   const kit = isYou ? kitsOf(career.player.club, career.clubKits?.[career.player.club]).home : kitsOf(club).home;
+  const id = headshotIdFor(name, club, isYou, isYou ? undefined : playerOf(career, name, club)?.id);
+  const skin = isYou ? skinToneHex(career.player.skinTone) : undefined;
   return (
     <View style={{ width: size + 6, height: size + 6, borderRadius: (size + 6) / 2, borderWidth: 3, borderColor: ring, backgroundColor: kit.shirt, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
-      <PlayerHead id={headshotIdFor(name, club, isYou)} shirt={kit.shirt} shorts={kit.trim} trim={kit.trim} size={size} skin={isYou ? skinToneHex(career.player.skinTone) : undefined} />
+      <Headshot3D id={id} you={isYou} kit={{ shirt: kit.shirt, trim: kit.trim }} size={size} zoom={size >= 60 ? 1.1 : 1.4}
+        fallback={<PlayerHead id={id} shirt={kit.shirt} shorts={kit.trim} trim={kit.trim} size={size} skin={skin} />} />
     </View>
   );
 }

@@ -19,7 +19,7 @@ import { PreMatchScreen, WatchedScreen, CallUpScreen, ContractRenewalScreen, Set
 import { YouthScreen, FreeAgentScreen, LoanBriefScreen } from "../screens/career/Youth";
 import { DeadlineDayScreen, KnockoutRoundupScreen, PlayOffRoundupScreen, TournamentTableScreen } from "../screens/career/Roundups";
 import { WageTalkScreen, RelegationMoveScreen } from "../screens/career/Moves";
-import { FarewellInviteScreen, FarewellSheetsScreen, FarewellResultScreen, LegacyScreen, HallOfFameScreen } from "../screens/career/Farewell";
+import { FarewellInviteScreen, FarewellSheetsScreen, FarewellWalkoutScreen, FarewellResultScreen, LegacyScreen, HallOfFameScreen } from "../screens/career/Farewell";
 import { PressScreen, DilemmaScreen, SeasonReelScreen, HelpScreen, WithPops } from "../screens/career/Moments";
 import { RelationsScreen, RelGameScreen, AdvertShootScreen } from "../screens/career/Relations";
 import { brandsOf } from "@/lib/star/sponsorDeals";
@@ -112,6 +112,7 @@ export const careerScreens: ScreenMap = {
   "career-season-reel": withCareer((c, go) => <SeasonReelScreen career={c} go={go} />),
   "career-farewell-invite": withCareer((c, go) => <FarewellInviteScreen career={c} go={go} />),
   "career-farewell-sheets": withCareer((c, go, _nav) => <FarewellSheetsScreen career={c} go={go} onBack={() => go({ screen: "career-farewell-invite" })} />),
+  "career-farewell-walkout": withCareer((c, go) => <FarewellWalkoutScreen career={c} go={go} />),
   "career-farewell-result": withCareer((c, go) => <FarewellResultScreen career={c} go={go} />),
   "career-legacy": withCareer((c, _go, nav) => (
     <LegacyScreen career={c} onHall={() => nav.go("hall-of-fame")} onMenu={() => nav.replace("title")}

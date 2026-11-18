@@ -7,7 +7,10 @@
  * The match itself is played on the phone's match (the match area's
  * "farewell-match" screen: CanvasMatch with farewell.offAt), every chance
  * yours, no energy, off at the ovation minute.
- * The guard of honour and the standing ovation are 3D: not on the phone.
+ * KICK OFF walks you out through the guard of honour first (page.tsx
+ * farewell-walkout; three/Farewell3D.tsx GuardOfHonour), and the standing
+ * ovation plays over the match the minute you come off (the match area's
+ * farewell-match screen).
  */
 import { useMemo, useState } from "react";
 import { View, Text } from "react-native";
@@ -23,7 +26,8 @@ import type { HallEntry } from "@/lib/star/hallOfFame";
 import * as flow from "../../game/flow";
 import { usePhoneHall, removeFromPhoneHall } from "../../world/hall";
 import { Press } from "../../ui/Press";
-import { Frame, Card, Label, Row, Btn, ClubCrest, StandInNote, Tile, C } from "./kit";
+import { Frame, Card, Label, Row, Btn, ClubCrest, Tile, C } from "./kit";
+import { GuardOfHonour } from "../../three/Farewell3D";
 
 function names(ids: (string | null)[], pool: { id: string; name: string }[], youName?: string): string[] {
   return ids.filter((x): x is string => !!x).map((id) => (id === "you" ? youName ?? "You" : shortNameOf(pool.find((p) => p.id === id)?.name ?? id)));
@@ -92,13 +96,19 @@ export function FarewellSheetsScreen({ career, go, onBack }: { career: CareerSta
   if (!f) return <Frame title="Retired"><Btn label="Continue" onPress={() => go(flow.retireWith())} /></Frame>;
   const you = `${career.player.firstName[0]}. ${career.player.lastName}`;
   return (
-    <Frame kicker="Farewell match" title="One last game" onBack={onBack} footer={<Btn kind="gold" label="KICK OFF" onPress={() => go(flow.playFarewell())} />}>
+    <Frame kicker="Farewell match" title="One last game" onBack={onBack} footer={<Btn kind="gold" label="KICK OFF" onPress={() => go({ screen: "career-farewell-walkout" })} />}>
       <Side title={f.sides.ours.name} club={f.sides.host} list={names(f.sides.ours.lineup.xi, f.sides.ours.players, you)} gold />
       <Side title={`Bench`} club={f.sides.host} list={names(f.sides.ours.lineup.bench ?? [], f.sides.ours.players)} />
       <Side title={f.sides.rivals.name} list={names(f.sides.rivals.lineup.xi, f.sides.rivals.players)} />
-      <StandInNote>The guard of honour and the standing ovation are 3D and not on the phone yet.</StandInNote>
     </Frame>
   );
+}
+
+/** The walk-out (page.tsx farewell-walkout): the guard of honour, then the match. */
+export function FarewellWalkoutScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
+  const f = flow.currentFarewell();
+  if (!f) return <Frame title="Retired"><Btn label="Continue" onPress={() => go(flow.retireWith())} /></Frame>;
+  return <GuardOfHonour career={career} sides={f.sides} onDone={() => go(flow.playFarewell())} />;
 }
 
 export function FarewellResultScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
