@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mikey's Brain</title>
+<style>
+:root{--bg:#f7f4ee;--card:#fff;--ink:#1f1d1a;--ink2:#5d5850;--ink3:#948d82;--line:#ebe5da;--soft:#f2ede4;
+  --green:#2f9e5b;--greenbg:#e5f5ea;--amber:#c98a12;--amberbg:#fbf1dc;--greybg:#f0ede8;--blue:#3a6fd8;--bluebg:#e6eefc;--red:#d0453a;
+  --foot:#2f9e5b;--cont:#8a5cd6;--r:18px;--sh:0 1px 2px rgba(40,30,10,.05),0 6px 20px rgba(40,30,10,.06)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17161a;--card:#211f24;--ink:#f2efe9;--ink2:#c3bdb3;--ink3:#8d877e;--line:#302d33;--soft:#2a272d;--greenbg:#1d3326;--amberbg:#3a2e14;--greybg:#2a282c;--bluebg:#1d2740;--sh:none}}
+:root[data-theme="dark"]{--bg:#17161a;--card:#211f24;--ink:#f2efe9;--ink2:#c3bdb3;--ink3:#8d877e;--line:#302d33;--soft:#2a272d;--greenbg:#1d3326;--amberbg:#3a2e14;--greybg:#2a282c;--bluebg:#1d2740;--sh:none}
+*{box-sizing:border-box}html,body{margin:0;overflow-x:hidden}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:18px 16px 80px}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:28px;line-height:1.1;margin:0;letter-spacing:-.02em}.muted{color:var(--ink3);font-size:13px}
+.pills{display:flex;gap:8px;flex-wrap:wrap}.pill{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--ink2)}.pill b{color:var(--ink)}
+.tabs{display:flex;gap:6px;margin:16px 0 14px;overflow-x:auto;padding-bottom:2px}
+.tab{font:inherit;font-weight:800;font-size:15px;border:0;border-radius:12px;padding:10px 14px;background:var(--soft);color:var(--ink2);cursor:pointer;white-space:nowrap}
+.tab.on{background:var(--ink);color:var(--bg)}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--line);padding:16px;margin:0 0 12px;min-width:0}
+.hide{display:none!important}
+/* video picker */
+.picker{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 6px}
+.pick{flex:0 0 auto;width:150px;border:2px solid transparent;border-radius:16px;background:var(--card);box-shadow:var(--sh);padding:8px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.pick.on{border-color:var(--ink)}.pick img{width:100%;height:110px;object-fit:cover;object-position:top;border-radius:10px;display:block}
+.pick .t{font-weight:800;font-size:14px;line-height:1.25;margin-top:6px}.pick .s{font-size:12px;margin-top:4px;font-weight:700}
+/* the chain */
+.chainhead{display:flex;align-items:center;gap:12px;margin:6px 0 10px}.chainhead .tt{font-weight:900;font-size:20px;flex:1;min-width:0}
+.prog{height:10px;background:var(--soft);border-radius:5px;overflow:hidden;margin:0 0 14px}.prog i{display:block;height:10px;background:var(--green);border-radius:5px;transition:width .3s}
+.layout{display:grid;grid-template-columns:240px 1fr;gap:16px;align-items:start}.layout>*{min-width:0}
+@media (max-width:720px){.layout{grid-template-columns:1fr}.side{display:none}}
+.side{position:sticky;top:12px}.side video{width:100%;aspect-ratio:9/16;border-radius:16px;background:#000;display:block;object-fit:cover}
+.steps{position:relative}
+.st{display:grid;grid-template-columns:40px 1fr;gap:12px;position:relative;padding-bottom:12px}.st>*{min-width:0}
+.st:not(:last-child)::after{content:"";position:absolute;left:19px;top:42px;bottom:0;width:2px;background:var(--line)}
+.st.done:not(:last-child)::after{background:var(--green)}
+.num{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;background:var(--soft);color:var(--ink2);cursor:pointer;border:2px solid transparent}
+.st.done .num{background:var(--green);color:#fff}.st.now .num{border-color:var(--ink);background:var(--card);color:var(--ink)}
+.box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;box-shadow:var(--sh)}
+.st.done .box{opacity:.78}.st.lock .box{opacity:.55}
+.sh{display:flex;align-items:center;gap:10px}.sh .n{font-weight:800;font-size:16px;flex:1;min-width:0}.sh .sum{color:var(--ink3);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%}
+.body{margin-top:10px}.st.done .body{display:none}.st.done.open .body{display:block}
+label.f{display:block;font-size:12px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 4px}
+input[type=text],input[type=datetime-local],textarea{width:100%;font:inherit;font-size:15px;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--bg);color:var(--ink)}
+textarea{min-height:96px;resize:vertical}.cnt{font-size:12px;color:var(--ink3);text-align:right}
+.ptabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}.ptab{font:inherit;font-size:13px;font-weight:800;border:1px solid var(--line);background:var(--card);color:var(--ink2);border-radius:999px;padding:5px 11px;cursor:pointer}.ptab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button.ok{font:inherit;font-weight:800;font-size:15px;border:0;border-radius:12px;padding:10px 14px;background:var(--green);color:#fff;cursor:pointer;margin-top:10px}
+button.ok:disabled{background:var(--soft);color:var(--ink3);cursor:default}
+button.ghost{font:inherit;font-weight:700;font-size:13px;border:0;background:none;color:var(--ink3);text-decoration:underline;cursor:pointer;padding:4px 0}
+.dest{display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.dest>*{min-width:0}.dest:first-child{border-top:0}
+.pf{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:11px}
+.chip{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.c-ok{background:var(--greenbg);color:var(--green)}.c-half{background:var(--amberbg);color:var(--amber)}.c-no{background:var(--greybg);color:var(--ink3)}.c-blue{background:var(--bluebg);color:var(--blue)}
+.tg{display:flex;width:44px;height:26px;border-radius:13px;background:var(--soft);position:relative;cursor:pointer;border:0;flex:0 0 auto}.tg::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:left .15s}
+.tg.on{background:var(--green)}.tg.on::after{left:21px}.tg:disabled{opacity:.4;cursor:default}
+.live{display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:center;padding:6px 0}.live>*{min-width:0}
+.note{background:var(--amberbg);color:var(--amber);border-radius:12px;padding:10px 12px;font-size:14px;font-weight:600;margin-top:10px}
+.good{background:var(--greenbg);color:var(--green);border-radius:12px;padding:10px 12px;font-size:15px;font-weight:700;margin-top:10px}
+/* other tabs */
+.grp{display:flex;align-items:center;gap:8px;font-weight:800;font-size:16px;margin:2px 0 6px}.grp i{width:11px;height:11px;border-radius:50%}
+.acc{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}.acc>*{min-width:0}.acc:first-of-type{border-top:0}
+.acc .nm{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.acc .ms{font-size:13px;color:var(--ink3)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.two>*{min-width:0}@media (max-width:720px){.two{grid-template-columns:1fr}}
+.bar{display:grid;grid-template-columns:1fr 56px;gap:10px;align-items:center;margin:7px 0}.bar>*{min-width:0}
+.bar .l{font-size:14px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bar .track{height:10px;background:var(--soft);border-radius:5px;margin-top:3px;overflow:hidden}.bar .track i{display:block;height:10px;border-radius:5px}.bar b{text-align:right;font-size:14px}
+.lesson{border-left:4px solid var(--green);padding:3px 0 3px 12px;margin:8px 0;font-size:15px}
+.todo{display:grid;grid-template-columns:34px 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line)}.todo>*{min-width:0}.todo:first-child{border-top:0}
+.todo .k{width:28px;height:28px;border-radius:50%;background:var(--ink);color:var(--bg);font-weight:900;display:flex;align-items:center;justify-content:center;font-size:14px}
+.todo .w{font-weight:800}.todo .d{color:var(--ink2);font-size:15px}.todo ol{margin:6px 0 0;padding-left:20px;color:var(--ink2);font-size:15px}.todo li{margin:3px 0}
+details summary{cursor:pointer;font-weight:800;color:var(--ink2);padding:6px 0}
+h3{font-size:18px;margin:4px 0 8px}
+.phoneonly{display:none}@media (max-width:720px){.phoneonly{display:block}}
+</style></head>
+<body><div class="wrap">
+<div class="top"><div><div class="muted">Updated <span id="upd"></span></div><h1>Mikey's Brain</h1></div><div class="pills" id="pills"></div></div>
+<div class="tabs" id="tabs"></div>
+<div id="t-post"></div>
+<div id="t-acc" class="hide"></div>
+<div id="t-res" class="hide"></div>
+<div id="t-next" class="hide"></div>
+<div id="t-rules" class="hide"></div>
+</div>
+<script>
+// ======== WHAT THE PAGE SHOWS (Claude rewrites this block when things change) ========
+const RAW="https://raw.githubusercontent.com/ProposalWizard/Tierlist/1e5019658e462869651d9a95d6829abf78cb44ac/docs/marketing/videos/";
+const DATA={
+updated:"18 Nov 2026",
+// where each account can be posted from today. via: "chat" = Claude posts it from the chat; "site" = the site's Publish tool (once set up); null = can't yet
+dest:[
+ {id:"ig-foot",group:"football",p:"Instagram",n:"knowitballjr",can:"yes",via:"Claude posts it"},
+ {id:"fb-foot",group:"football",p:"Facebook",n:"Football page",can:"setup",via:"Needs the site's Publish tool switched on (Next steps 1)"},
+ {id:"yt-foot",group:"football",p:"YouTube",n:"Football channel",can:"setup",via:"Publish tool, and private until Google's check (Next steps 1 + 3)"},
+ {id:"tt-foot",group:"football",p:"TikTok",n:"BallKnowledgeFC",can:"no",via:"Not in any posting tool yet (Next steps 4)"},
+ {id:"ig-cont",group:"content",p:"Instagram",n:"cutcutthings",can:"yes",via:"Claude posts it"},
+ {id:"fb-cont",group:"content",p:"Facebook",n:"Content page",can:"no",via:"The Publish tool holds one page for now"},
+ {id:"yt-cont",group:"content",p:"YouTube",n:"Content channel",can:"no",via:"The Publish tool holds one channel for now"},
+ {id:"tt-cont",group:"content",p:"TikTok",n:"Content account",can:"no",via:"Not in any posting tool yet"}],
+videos:[
+ {id:"v16",name:"Where should Vinícius go?",len:"1:11",made:"16 Nov",group:"football",cover:"img/v16-next-club-vinicius-sim.jpg",video:RAW+"v16-next-club-vinicius-sim/knowitball-v16-next-club-vinicius-sim.mp4",
+  why:"His season played 400 times at every club, with game highlights at the end.",
+  title:{yt:"Where Should Vinícius Jr Go Next? We Simulated 400 Seasons 🤯",fb:"Where should Vinícius Jr go next? We simulated it 400 times"},
+  cap:{ig:"If Vinícius Júnior left Real Madrid, where should he go? 🤔\n\nWe put him into every club in Europe's top 5 leagues and played his season 400 times with the match engine from our game, Road to Ballon d'Or. Then we checked 10 years of finishes and trophies.\n\nNumber 1 wins the league 3 seasons out of 4 👀 Where would YOU send him? 👇",
+       fb:"If Vinícius Júnior left Real Madrid, where should he go? 🤔 We played his season 400 times at every club in Europe's top 5 leagues. Number 1 might surprise you. Where would you send him? 👇",
+       yt:"If Vinícius Júnior left Real Madrid, where should he go? We put him into every club in Europe's top 5 leagues and played his season 400 times with the match engine from our game, Road to Ballon d'Or, then checked 10 years of league finishes and trophies.\n\nWhere would you send him? Comment below 👇",
+       tt:"Where should Vinícius go? We simulated 400 seasons 🤯 #1 might surprise you 👀"},
+  tags:{ig:"#vinicius #viniciusjr #realmadrid #bayern #arsenal #barcelona #transfers #football #footballstats #knowitball",fb:"#vinicius #realmadrid #transfers #football",yt:"#shorts #vinicius #realmadrid #football",tt:"#vinicius #realmadrid #football #transfers #fyp"}},
+ {id:"v14",name:"How do Liverpool replace Alisson?",len:"0:57",made:"15 Nov",group:"football",cover:"img/v14-replace-alisson.jpg",video:RAW+"v14-replace-alisson/knowitball-v14-replace-alisson.mp4",
+  why:"Your story: Mamardashvili isn't the answer, Verbruggen is.",
+  title:{yt:"How Do Liverpool Replace Alisson? 🧤 The Answer Isn't Mamardashvili",fb:"How do Liverpool replace Alisson? Our pick isn't Mamardashvili"},
+  cap:{ig:"Alisson's contract runs out this summer. How do Liverpool replace him? 🧤\n\nMamardashvili isn't the answer… our pick is Bart Verbruggen: great form, a Netherlands international, and he beat Alisson on saves last season.\n\nWant younger? Kinský or Restes. Who would you sign? 👇",
+       fb:"Alisson's contract runs out this summer. How do Liverpool replace him? 🧤 Our pick is Bart Verbruggen. Who would you sign? 👇",
+       yt:"Alisson's contract runs out at the end of the season, and there are doubts he'll sign a new one. Mamardashvili isn't the answer, so who is? Our pick: Bart Verbruggen. Younger options: Kinský and Restes.\n\nWho would you sign? Comment below 👇",
+       tt:"How do Liverpool replace Alisson? 🧤 Our pick isn't Mamardashvili 👀"},
+  tags:{ig:"#alisson #liverpool #lfc #verbruggen #mamardashvili #premierleague #goalkeeper #football #footballstats #knowitball",fb:"#liverpool #alisson #lfc #football",yt:"#shorts #liverpool #alisson #football",tt:"#liverpool #lfc #alisson #football #fyp"}},
+ {id:"v13",name:"Replace Van Dijk (short)",len:"0:53",made:"14 Nov",group:"football",cover:"img/v13-replace-van-dijk-short.jpg",video:RAW+"v13-replace-van-dijk-short/knowitball-v13-replace-van-dijk-short.mp4",
+  why:"Same story as the Van Dijk Reel from 13 Nov, shorter. Best for the apps it isn't on yet.",
+  title:{yt:"How Do Liverpool Replace Van Dijk? We Checked 318 Centre-Backs",fb:"How do Liverpool replace Van Dijk? We checked 318 centre-backs"},
+  cap:{ig:"Van Dijk's contract runs out this summer. How do Liverpool replace him? 🤔\n\nHuijsen won't leave Madrid… so it's Jacobo Ramón for the future, or Schlotterbeck for experience.\n\nWho would you sign? 👇",
+       fb:"Van Dijk's contract runs out this summer. How do Liverpool replace him? 🤔 Ramón for the future, or Schlotterbeck for experience? 👇",
+       yt:"Van Dijk's contract runs out this summer. We compared him with all 318 centre-backs in Europe's top 5 leagues. Huijsen won't leave Madrid, so it's Jacobo Ramón for the future or Nico Schlotterbeck for experience.\n\nWho would you sign? Comment below 👇",
+       tt:"How do Liverpool replace Van Dijk? 🤔 We checked 318 centre-backs"},
+  tags:{ig:"#vandijk #liverpool #lfc #jacoboramon #schlotterbeck #premierleague #football #footballstats #knowitball",fb:"#liverpool #vandijk #lfc #football",yt:"#shorts #liverpool #vandijk #football",tt:"#liverpool #vandijk #lfc #football #fyp"}}],
+results:{knowitballjr:[["Kane: stat twin",1245],["Neymar: stat twin",145],["Van Dijk 18/19: stat twin",139],["Salah: stat twin",126],["Palmer: right now",126],["Replace Van Dijk",122]],
+ cutcutthings:[["Ice cream × 1000",1676],["Apple × 1000",179],["Bread × 1000",137],["Cookie × 1000",133],["Soap × 1000",123],["Tungsten cube × 1000",122]]},
+lessons:["Each account had one break-out (Kane 1,245 and ice cream 1,676 views). Most posts get about 120 to 180 views: Instagram's first test audience.",
+ "People watch about 15 seconds on average. Next to test: cuts under 60 seconds, with a strong first 2 seconds."],
+rules:[
+ ["Titles (YouTube, Facebook)","Under 70 characters. The question the video answers, the player's name early, one emoji at most. Capital Letters On YouTube."],
+ ["Captions","Line 1 is the question (that's all most people see). Line 2 is how we worked it out. The last line asks the viewer something, so they comment."],
+ ["Hashtags","Instagram: 8 to 10 (players, clubs, #football #footballstats #knowitball). YouTube: 3 to 4, always #shorts. Facebook: 3 to 4. TikTok: 4 to 5, plus #fyp."],
+ ["Which video goes where","Football videos go on football accounts only. Cutting videos and other viral tests go on content accounts only. Never mixed."],
+ ["Before posting","Claude checks the video plays, the words have no wrong numbers, and you ticked every step."],
+ ["After posting","Claude checks each post is really live before saying it's done, so nothing is posted twice. Then it marks the step green here."]]
+};
+// ======== DRAWING ========
+const $=id=>document.getElementById(id),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const PF={Instagram:"#d6336c",TikTok:"#111",YouTube:"#e02a1f",Facebook:"#1f6fe0"},PS={Instagram:"IG",TikTok:"TT",YouTube:"YT",Facebook:"FB"},PK={Instagram:"ig",Facebook:"fb",YouTube:"yt",TikTok:"tt"};
+const STEPS=["Watch it","Title","Caption","Hashtags","Where it goes","When","Send to Claude","Live"];
+let DB=null,SEL=DATA.videos[0]?.id,OPEN=-1,PT={};
+let ST={};      // your work per video: {ticks:[..], title:{}, cap:{}, tags:{}, to:{destId:true}, when:"now"|iso, sent, at}
+let LIVE={};    // Claude's posting progress per video: {destId: {stage:"posting"|"live"|"failed", link, note}}
+$('upd').textContent=DATA.updated;
+function s(v){return ST[v]||(ST[v]={ticks:[],title:{},cap:{},tags:{},to:defaultTo(v),when:"now"})}
+function vid(id){return DATA.videos.find(x=>x.id===id)}
+function defaultTo(id){const v=vid(id),o={};DATA.dest.forEach(d=>{if(d.group===v.group&&d.can==="yes")o[d.id]=true});return o}
+const val=(v,k,p)=>{const x=s(v.id)[k][p];return x!=null?x:(v[k==="title"?"title":k==="cap"?"cap":"tags"][p]||"")};
+function doneCount(id){const t=s(id).ticks;let n=0;for(let i=0;i<7;i++)if(t[i])n++;const L=LIVE[id];if(L&&Object.values(L).length&&Object.values(L).every(x=>x.stage==="live"))n++;return n}
+function save(id){const x=s(id);try{localStorage.setItem('brain2',JSON.stringify(ST))}catch(e){}if(DB)DB.doc('drafts/'+id).set(JSON.parse(JSON.stringify(x))).catch(()=>{})}
+// tabs
+const TABS=[["post","① Post a video"],["acc","My 8 accounts"],["res","How posts are doing"],["next","What to do next"],["rules","The rules"]];
+$('tabs').innerHTML=TABS.map(([k,l],i)=>`<button class="tab${i?'':' on'}" data-t="${k}">${l}</button>`).join('');
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));TABS.forEach(([k])=>$('t-'+k).classList.toggle('hide',k!==b.dataset.t))});
+function pills(){const waiting=DATA.videos.filter(v=>!s(v.id).sent).length,can=DATA.dest.filter(d=>d.can==="yes").length;
+  $('pills').innerHTML=`<span class="pill"><b>${waiting}</b> videos to post</span><span class="pill"><b>${can}/8</b> accounts ready</span>`}
+// ---------- the chain ----------
+function post(){const v=vid(SEL);if(!v){$('t-post').innerHTML='<div class="card muted">No videos waiting. Claude adds them here when they are ready.</div>';return}
+  const x=s(v.id),n=doneCount(v.id),firstOpen=[0,1,2,3,4,5,6].find(i=>!x.ticks[i]);
+  const pickHtml=`<div class="picker">${DATA.videos.map(q=>{const c=doneCount(q.id),sent=s(q.id).sent;return `<button class="pick${q.id===SEL?' on':''}" data-v="${q.id}"><img src="${q.cover}" alt=""><div class="t">${esc(q.name)}</div>
+    <div class="s" style="color:${sent?'var(--green)':'var(--ink3)'}">${sent?'✓ Sent to Claude':c+' of 8 steps'}</div></button>`}).join('')}</div>`;
+  const step=(i,name,sum,body)=>{const done=!!x.ticks[i]||(i===7&&n===8),now=i===firstOpen,lock=i===7?!x.sent:(i===6&&[0,1,2,3,4,5].some(k=>!x.ticks[k]));
+    return `<div class="st${done?' done':''}${now?' now':''}${lock&&!done?' lock':''}${OPEN===i?' open':''}"><div class="num" data-o="${i}">${done?'✓':i+1}</div><div class="box"><div class="sh"><div class="n">${name}</div><div class="sum">${sum}</div>${done&&i<6?`<button class="ghost" data-o="${i}">${OPEN===i?'close':'change'}</button>`:''}</div><div class="body">${body}</div></div></div>`};
+  const tick=(i,label)=>`<button class="ok" data-k="${i}">✓ ${label}</button>`;
+  const ptabs=(k,list)=>`<div class="ptabs">${list.map(p=>`<button class="ptab${(PT[k]||list[0])===p?' on':''}" data-pt="${k}" data-p="${p}">${({ig:'Instagram',fb:'Facebook',yt:'YouTube',tt:'TikTok'})[p]}</button>`).join('')}</div>`;
+  const tp=PT.title||'yt',cp=PT.cap||'ig',gp=PT.tags||'ig';
+  const dests=DATA.dest.filter(d=>d.group===v.group);
+  const chosen=dests.filter(d=>x.to[d.id]);
+  const L=LIVE[v.id]||{};
+  const steps=[
+   step(0,"Watch it","Plays to the end, looks right",`<div class="muted">${esc(v.why)}</div><video controls playsinline preload="none" poster="${v.cover}" src="${v.video}" style="width:160px;aspect-ratio:9/16;border-radius:12px;background:#000;margin-top:8px;display:block" class="phoneonly"></video>${tick(0,'It looks good')}`),
+   step(1,"Title",esc(val(v,'title','yt')),`<div class="muted">YouTube and Facebook show a title. Instagram and TikTok don't use one.</div>${ptabs('title',['yt','fb'])}<input type="text" maxlength="100" data-e="title" data-p="${tp}" value="${esc(val(v,'title',tp))}"><div class="cnt">${val(v,'title',tp).length} / 70 best</div>${tick(1,'Titles are good')}`),
+   step(2,"Caption","Written for each app",`<div class="muted">The first line is all most people see. Each app gets its own length.</div>${ptabs('cap',['ig','fb','yt','tt'])}<textarea data-e="cap" data-p="${cp}">${esc(val(v,'cap',cp))}</textarea>${tick(2,'Captions are good')}`),
+   step(3,"Hashtags",esc(val(v,'tags','ig').split(' ').slice(0,3).join(' '))+'…',`<div class="muted">Instagram 8 to 10, YouTube always #shorts, TikTok #fyp.</div>${ptabs('tags',['ig','fb','yt','tt'])}<textarea data-e="tags" data-p="${gp}" style="min-height:60px">${esc(val(v,'tags',gp))}</textarea>${tick(3,'Hashtags are good')}`),
+   step(4,"Where it goes",chosen.map(d=>PS[d.p]).join(' + ')||'nothing picked',`<div class="muted">${v.group==='football'?'Football':'Content'} accounts only. Grey ones can't be posted to yet.</div>${dests.map(d=>`<div class="dest"><div class="pf" style="background:${PF[d.p]}">${PS[d.p]}</div><div><b>${esc(d.n)}</b><div class="muted">${esc(d.via)}</div></div><button class="tg${x.to[d.id]?' on':''}" data-d="${d.id}" ${d.can==='yes'?'':'disabled'}></button></div>`).join('')}${tick(4,'These accounts')}`),
+   step(5,"When",x.when==="now"?"As soon as Claude gets it":new Date(x.when).toLocaleString(),`<div class="ptabs"><button class="ptab${x.when==='now'?' on':''}" data-w="now">Now</button><button class="ptab${x.when!=='now'?' on':''}" data-w="later">Pick a time</button></div>${x.when!=='now'?`<input type="datetime-local" data-wt="1" value="${x.when&&x.when!=='later'?x.when.slice(0,16):''}" style="margin-top:8px">`:''}${tick(5,'That time')}`),
+   step(6,"Send to Claude",x.sent?'Sent '+new Date(x.sent).toLocaleString():'Ticks 1 to 6 first',x.sent?`<div class="good">✓ Sent. Now say <b>"post my videos"</b> to Claude in the chat. It posts exactly what you ticked and turns step 8 green.</div><button class="ghost" data-unsend="1">Take it back</button>`
+     :`<div class="muted">Claude posts exactly these words to exactly these accounts.</div><button class="ok" data-send="1" ${[0,1,2,3,4,5].some(k=>!x.ticks[k])?'disabled':''}>✓ Send to Claude</button>`),
+   step(7,"Live",Object.keys(L).length?Object.values(L).filter(q=>q.stage==='live').length+' of '+Object.keys(L).length+' live':'Waiting',chosen.map(d=>{const q=L[d.id]||{};return `<div class="live"><div class="pf" style="background:${PF[d.p]}">${PS[d.p]}</div><div><b>${esc(d.n)}</b>${q.note?`<div class="muted">${esc(q.note)}</div>`:''}</div>${q.stage==='live'?`<a class="chip c-ok" href="${esc(q.link)}" target="_blank">✓ Live · open</a>`:q.stage==='failed'?'<span class="chip c-no" style="color:var(--red)">Failed</span>':q.stage==='posting'?'<span class="chip c-half">Posting…</span>':'<span class="chip c-no">Waiting</span>'}</div>`}).join('')||'<div class="muted">No account picked.</div>')];
+  $('t-post').innerHTML=pickHtml+`<div class="chainhead"><div class="tt">${esc(v.name)}</div><span class="chip ${n===8?'c-ok':'c-blue'}">${n} of 8 done</span></div><div class="prog"><i style="width:${100*n/8}%"></i></div>
+   <div class="layout"><div class="side"><video controls playsinline preload="none" poster="${v.cover}" src="${v.video}"></video><div class="muted" style="margin-top:6px">${v.len} · made ${v.made} · ${v.group}</div></div><div class="steps">${steps.join('')}</div></div>`;
+  wire();pills()}
+function wire(){const id=SEL,x=s(id);
+  document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{SEL=b.dataset.v;OPEN=-1;post()});
+  document.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{x.ticks[+b.dataset.k]=true;OPEN=-1;save(id);post()});
+  document.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{const i=+b.dataset.o;if(x.ticks[i]&&i<6){OPEN=OPEN===i?-1:i;post()}});
+  document.querySelectorAll('[data-pt]').forEach(b=>b.onclick=()=>{PT[b.dataset.pt]=b.dataset.p;post()});
+  document.querySelectorAll('[data-e]').forEach(el=>{el.oninput=()=>{x[el.dataset.e][el.dataset.p]=el.value;if(x.sent){}};el.onchange=()=>{x[el.dataset.e][el.dataset.p]=el.value;save(id)}});
+  document.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{x.to[b.dataset.d]=!x.to[b.dataset.d];save(id);post()});
+  document.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{x.when=b.dataset.w==='now'?'now':(x.when!=='now'?x.when:'later');save(id);post()});
+  document.querySelectorAll('[data-wt]').forEach(el=>el.onchange=()=>{x.when=el.value?new Date(el.value).toISOString():'later';save(id)});
+  document.querySelectorAll('[data-send]').forEach(b=>b.onclick=()=>{const v=vid(id);x.final={};['ig','fb','yt','tt'].forEach(p=>x.final[p]={title:val(v,'title',p),caption:val(v,'cap',p),tags:val(v,'tags',p)});x.ticks[6]=true;x.sent=new Date().toISOString();save(id);post()});
+  document.querySelectorAll('[data-unsend]').forEach(b=>b.onclick=()=>{x.ticks[6]=false;delete x.sent;delete x.final;save(id);post()});}
+// ---------- other tabs ----------
+function acc(){const g=(k,lab,col)=>`<div class="card"><div class="grp"><i style="background:${col}"></i>${lab}</div>${DATA.dest.filter(d=>d.group===k).map(d=>`<div class="acc"><div class="pf" style="background:${PF[d.p]};width:34px;height:34px">${PS[d.p]}</div><div><div class="nm">${esc(d.n)}</div><div class="ms">${esc(d.via)}</div></div><span class="chip ${d.can==='yes'?'c-ok':d.can==='setup'?'c-half':'c-no'}">${d.can==='yes'?'Ready':d.can==='setup'?'Almost':'Not yet'}</span></div>`).join('')}</div>`;
+  $('t-acc').innerHTML=`<div class="muted" style="margin-bottom:10px">Green = Claude can post there today. Amber = built, needs switching on. Grey = not possible yet.</div><div class="two">${g('football','Football accounts','var(--foot)')}${g('content','Content accounts','var(--cont)')}</div>`}
+function res(){const mx=Math.max(...Object.values(DATA.results).flat().map(r=>r[1]));
+  $('t-res').innerHTML=`<div class="muted" style="margin-bottom:10px">Instagram, last 30 days. Views on each Reel.</div><div class="two">${Object.entries(DATA.results).map(([a,rows],k)=>`<div class="card"><div class="grp"><i style="background:${k?'var(--cont)':'var(--foot)'}"></i>${a}</div>${rows.map(r=>`<div class="bar"><div><div class="l">${esc(r[0])}</div><div class="track"><i style="width:${Math.max(3,100*r[1]/mx)}%;background:${k?'var(--cont)':'var(--foot)'}"></i></div></div><b>${r[1].toLocaleString()}</b></div>`).join('')}</div>`).join('')}</div>
+   <div class="card"><h3>What it tells us</h3>${DATA.lessons.map(l=>`<div class="lesson">${esc(l)}</div>`).join('')}</div>`}
+function next(){const T=[
+ {w:"Switch on the site's Publish tool",d:"Built on 11 Nov in another chat: Admin → Marketing → Publish on knowitball.co.uk. It posts to Instagram, Facebook and YouTube. It's on the live site, but these are still needed (the page lists what's missing):",
+  li:["Supabase → SQL Editor: run supabase/migrations/publishing.sql once (it asks for a secret word: make one up and use it again in the next step).",
+      "Vercel → Settings → Environment Variables: add PUBLISH_TOKEN_KEY, PUBLISH_CRON_SECRET (the same secret word) and PUBLISH_AGENT_TOKEN (any long random text). Then redeploy.",
+      "Meta: make an app at developers.facebook.com, copy its ID and secret into Vercel as META_APP_ID and META_APP_SECRET. Your Instagram must be a Professional account linked to the Facebook Page.",
+      "Google: in console.cloud.google.com, switch on YouTube Data API v3 and YouTube Analytics API, make an OAuth client (Web application), and put its ID and secret in Vercel as GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.",
+      "Open Admin → Marketing → Publish and press Connect Facebook + Instagram, then Connect YouTube."]},
+ {w:"Let Claude use it from the chat",d:"Give the chat the PUBLISH_AGENT_TOKEN from step 1. Claude asks for it with a secure box; you paste it there, never in the chat. After that Claude can post to Facebook and YouTube too."},
+ {w:"YouTube's special check",d:"Until Google approves an audit of the app, YouTube keeps every video posted this way private. Apply from the Google Cloud project: YouTube API Services → audit and quota extension form. It takes days to weeks. Until then, a video posted to YouTube needs you to switch it to Public in YouTube Studio."},
+ {w:"TikTok and your second accounts",d:"The Publish tool holds one Facebook page, one Instagram and one YouTube channel (the football ones). TikTok and the content accounts on Facebook and YouTube aren't in it yet: Claude can add them to the tool next. Tell Claude the names of your content accounts on TikTok, YouTube and Facebook."},
+ {w:"Then, every time you post",d:"Pick a video in ① Post a video, tick the 6 steps, press Send to Claude, and say \"post my videos\" in the chat. Step 8 turns green when each post is live."}];
+ $('t-next').innerHTML=`<div class="card">${T.map((t,i)=>`<div class="todo"><div class="k">${i+1}</div><div><div class="w">${esc(t.w)}</div><div class="d">${esc(t.d)}</div>${t.li?`<ol>${t.li.map(l=>`<li>${esc(l)}</li>`).join('')}</ol>`:''}</div></div>`).join('')}</div>`}
+function rules(){$('t-rules').innerHTML=`<div class="card">${DATA.rules.map(r=>`<details><summary>${esc(r[0])}</summary><div style="color:var(--ink2);padding:0 0 8px">${esc(r[1])}</div></details>`).join('')}</div>`}
+// ---------- saving: your ticks and words go to the page's database, so Claude reads exactly what you approved ----------
+try{ST=JSON.parse(localStorage.getItem('brain2')||'{}')}catch(e){}
+post();acc();res();next();rules();
+(async()=>{try{if(!window.claude||!window.claude.use)return;DB=await window.claude.use('db');if(!DB)return;
+  const typing=()=>{const a=document.activeElement;return a&&['TEXTAREA','INPUT'].includes(a.tagName)};
+  DB.collection('drafts').onSnapshot(snap=>{if(snap.metadata&&snap.metadata.hasPendingWrites)return;snap.docs.forEach(d=>{if(d.exists)ST[d.id]=JSON.parse(JSON.stringify(d.data()))});if(!typing())post()},()=>{});
+  DB.collection('live').onSnapshot(snap=>{const o={};snap.docs.forEach(d=>{if(d.exists)o[d.id]=d.data()});LIVE=o;if(!typing())post()},()=>{});}catch(e){}})();
+</script></body></html>

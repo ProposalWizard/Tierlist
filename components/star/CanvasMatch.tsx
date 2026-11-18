@@ -839,7 +839,6 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
 
 /** The latest minute Play may jump straight to (the v0.25 quick start).
  *  Most first chances come by 7' (measured); a later one is read out. */
-const QUICK_START_MAX = 12;
 
 export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onGoalClip, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot, farewell, plannedOffAt, leadIn, dribbleControl, dribbleOnly = false, vfxOverride, realGoal }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
@@ -9146,29 +9145,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
     const shown = prior ? Math.max(0, prior.queued - queueRef.current.length) : 0;
     if (stretchRef.current) stretchRef.current.queued = events.length;
-    // ── v0.25: Play goes straight into the first chance ──
-    // Mikey, 2 Oct 2026 (review point 30): "as soon as you press Play" the
-    // match should become the chance, not a kick-off card while the clock
-    // walks up to it (measured: about 0.7 s a minute, so a first chance at
-    // 14' was ten seconds of nothing). The first stretch of a match you
-    // start is written straight into the log and the clock jumps to it.
-    // Only when a chance of yours is waiting, and never across half time.
-    // Only a SHORT jump. A first chance at 44' made the jump swallow the whole
-    // first half: Play went straight to 44' with no commentary at all
-    // (Mikey's farewell playtest, 8 Oct 2026). Past QUICK_START_MAX the first
-    // stretch is read out like any other.
-    const quick = quickStartRef.current && !prior && !!step.request && !step.fullTime
-      && st.minute <= QUICK_START_MAX
-      && (st.minute <= HALF_TIME_MINUTE || halfTimeShownRef.current);
+    // ── Every match plays from kick-off (Mikey, 17 Nov 2026) ──
+    // v0.25 (Mikey, 2 Oct 2026) jumped straight to a first chance in the
+    // first 12 minutes, writing that stretch into the log at once. From his
+    // phone test: "There should be no deliberate jump. It should just start
+    // at the beginning of the game and then take you to it." So the first
+    // stretch is read out like any other, at the speed button's setting
+    // (which carries over from the last match).
     quickStartRef.current = false;
-    if (quick) {
-      const lines = linesFrom(events, matchMinuteRef.current);
-      setLog(l => [...l, ...lines]);
-      setQueue([]);
-      setClock(st.minute);
-    } else {
-      setQueue(linesFrom(events.slice(shown), matchMinuteRef.current));
-    }
+    setQueue(linesFrom(events.slice(shown), matchMinuteRef.current));
     setPhase("feed");
 
     simContinueRef.current = () => {
@@ -9317,16 +9302,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         loadScenario(false);
       }
     };
-    if (quick) {
-      const gen = sceneGenRef.current;
-      window.setTimeout(() => {
-        if (sceneGenRef.current !== gen) return;
-        const go = simContinueRef.current;
-        simContinueRef.current = null;
-        stretchRef.current = null;
-        go?.();
-      }, 0);
-    }
   };
 
   /**

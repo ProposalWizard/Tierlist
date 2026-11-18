@@ -225,9 +225,15 @@ const fixture = (opponent: string, home: boolean): Fixture => ({
   // SEAT_CHAIN replaced the weakest-outfielder fallback with a real
   // attacking one, so every shape can seat every role sensibly and the menu
   // is now the same four everywhere.
+  // Mikey, 17 Nov 2026: "why is it giving me fake positions?" Each button
+  // names the slot you would really stand in (its `short`), and two choices
+  // that land in the same kind of slot show once.
   const offered = offeredPositions("ST", shape);
-  check(offered.length === 3,
-    `all three alternates are offered even in a shape with no wide men (${shape.name}: ${offered.map(o => o.role).join(",")})`);
+  check(offered.length >= 1 && offered.length <= 3,
+    `one to three alternates, one per real position (${shape.name}: ${offered.map(o => o.short).join(",")})`);
+  check(offered.every(o => shape.slots.some(sl => (sl.label ?? sl.role) === o.short)),
+    `every button names a position this shape really has (${offered.map(o => o.short).join(",")})`);
+  check(new Set(offered.map(o => o.short)).size === offered.length, "no position offered twice");
   check(offered.every(o => (["CAM", "LW", "RW"] as const).includes(o.role as "CAM" | "LW" | "RW")),
     `nothing outside Striker/Attacking Mid/either wing is ever offered (${offered.map(o => o.role).join(",")})`);
 
@@ -254,7 +260,8 @@ const fixture = (opponent: string, home: boolean): Fixture => ({
   for (const shapeId of ["433", "4231", "442", "352", "4321", "4141", "3421"]) {
     const f = formationOf(shapeId);
     const off = offeredPositions("ST", f);
-    check(off.length === 3, `${f.name}: all three alternates offered (${off.map(o => o.role).join(",")})`);
+    check(off.length >= 1 && off.every(o => f.slots.some(sl => (sl.label ?? sl.role) === o.short)),
+      `${f.name}: only real positions offered (${off.map(o => o.short).join(",")})`);
     check(off.every(o => seatSlotFor(o.role, f) !== null),
       `${f.name}: every offered role has a real seat`);
     for (const real of ["CM", "CB"] as const) {

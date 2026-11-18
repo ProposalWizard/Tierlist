@@ -112,7 +112,7 @@ export interface StrikeStageProps {
   /** Extra line under the rep counter. */
   subtitle?: (rep: number) => string;
   /** The instruction on the FIRST rep of the stage — see `TeachCard`. */
-  teach?: { headline: string; lines: string[]; short?: string };
+  teach?: { headline: string; lines: string[]; short?: string; place?: "middle" | "top" | "bottom" };
   /** Which drill this is, for remembering that its teaching was dismissed. */
   drill: TeachableDrill;
   /** How good this rep's keeper is — handed to the engine. */
@@ -152,7 +152,7 @@ export interface StrikeStageProps {
    * device, like the first card.
    */
   pauseTeach?: Partial<Record<"runup" | "contact", {
-    drill: TeachableDrill; headline: string; lines: string[]; gesture?: TeachGesture; place?: "middle" | "top";
+    drill: TeachableDrill; headline: string; lines: string[]; gesture?: TeachGesture; place?: "middle" | "top" | "bottom";
   }>>;
 }
 
@@ -310,7 +310,7 @@ export function TeachCard(
     /** Where the box sits over the pitch: the middle (default), or high up
      *  when the thing being taught sits in the middle (the strike screen's
      *  ball). Ignored when `inline`. */
-    place?: "middle" | "top";
+    place?: "middle" | "top" | "bottom";
   },
 ) {
   // The one-row form only existed to keep a card along the bottom edge off
@@ -395,7 +395,7 @@ export function TeachCard(
       role="dialog"
       aria-modal="true"
       className={`absolute inset-0 z-40 flex cursor-pointer justify-center bg-black/25 px-4 ${
-        place === "top" ? "items-start pt-[30%]" : "items-center"
+        place === "top" ? "items-start pt-[30%]" : place === "bottom" ? "items-end pb-[22%]" : "items-center"
       }`}
       onPointerDown={e => e.stopPropagation()}
       onClick={onDismiss}
@@ -691,6 +691,7 @@ export function StrikeStage({
             headline={teach.headline}
             lines={teach.lines}
             short={teach.short}
+            place={teach.place}
             compact={forceCompactTeach}
             onDismiss={dismissTeach}
           />

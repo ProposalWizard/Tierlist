@@ -166,6 +166,9 @@ export default function TrialFreeKicks({
       hint="Bend it round the wall or lift it over — sides of the ball curl it, the bottom lifts it."
       teach={{
         headline: "There is no way through the wall.",
+        // Under the ball, so the wall it talks about stays in sight (Mikey's
+        // phone test, 17 Nov 2026, 12:15: "I didn't even see it, it's over the text").
+        place: "bottom",
         // Measured at exactly the row width with nothing to spare, so it is
         // given a shorter form rather than left one font-render away from
         // clipping.

@@ -1,0 +1,160 @@
+[
+{
+"id": "hook",
+"say": "Lewis Hall is likely off to Manchester United. So how do you replace him?",
+"cap": "LEWIS HALL IS LIKELY OFF TO MANCHESTER UNITED. SO HOW DO YOU REPLACE HIM?",
+"sfx": [
+[
+"hit",
+0.0,
+0.7
+],
+[
+"whoosh",
+"MANCHESTER",
+0.6
+],
+[
+"hit",
+"HOW",
+0.7
+]
+],
+"voiceSettings": {
+"speed": 1.1
+},
+"tempo": 1.05
+},
+{
+"id": "profile",
+"say": "Over the last two seasons, among Premier League full-backs, he's first for ball recoveries and blocked shots, and fourth for dribbles. But only thirty-fourth for assists.",
+"cap": "OVER THE LAST TWO SEASONS, AMONG PREMIER LEAGUE FULL-BACKS, HE'S FIRST FOR BALL RECOVERIES AND BLOCKED SHOTS, AND FOURTH FOR DRIBBLES. BUT ONLY THIRTY-FOURTH FOR ASSISTS.",
+"hold": 0.3,
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "method",
+"say": "So we compared him with all 76 left-backs in Europe's top five leagues.",
+"cap": "SO WE COMPARED HIM WITH ALL 76|seventy-six LEFT-BACKS IN EUROPE'S TOP FIVE LEAGUES.",
+"hold": 0.2,
+"sfx": [
+[
+"tick",
+"ALL",
+0.4
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "map",
+"say": "The closest of them all: Nuno Tavares, at Lazio.",
+"cap": "THE CLOSEST OF THEM ALL: NUNO TAVARES, AT LAZIO.",
+"hold": 0.15,
+"sfx": [
+[
+"hit",
+"NUNO",
+0.7
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "opt1",
+"say": "He's twenty-six, an eighty-four percent match, and worth fourteen million euros. Cheaper, and closer to Hall, so he suits Newcastle better.",
+"cap": "HE'S 26|twenty-six, AN 84%|eighty-four-percent MATCH, AND WORTH €14M|fourteen-million-euros. CHEAPER, AND CLOSER TO HALL, SO HE SUITS NEWCASTLE BETTER.",
+"hold": 0.25,
+"sfx": [
+[
+"pop",
+"WORTH",
+0.5
+],
+[
+"hit",
+"CHEAPER,",
+0.6
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "compare",
+"say": "Hall against Tavares, on what makes Hall special: dribbles, ball recoveries, blocked shots and long balls.",
+"cap": "HALL AGAINST TAVARES, ON WHAT MAKES HALL SPECIAL: DRIBBLES, BALL RECOVERIES, BLOCKED SHOTS AND LONG BALLS.",
+"hold": 0.2,
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "filter",
+"say": "But Hall is only twenty-two. So what about twenty-three and under?",
+"cap": "BUT HALL IS ONLY 22|twenty-two. SO WHAT ABOUT 23|twenty-three AND UNDER?",
+"sfx": [
+[
+"whoosh",
+"SO",
+0.6
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "young",
+"say": "The closest is Wesley, at Roma.",
+"cap": "THE CLOSEST IS WESLEY, AT ROMA.",
+"hold": 0.1,
+"sfx": [
+[
+"hit",
+"WESLEY",
+0.7
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "opt2",
+"say": "He's twenty-three, a seventy-two percent match, and worth forty-six million euros. Less like Hall, and pricier, but younger, with real potential.",
+"cap": "HE'S 23|twenty-three, A 72%|seventy-two-percent MATCH, AND WORTH €46M|forty-six-million-euros. LESS LIKE HALL, AND PRICIER, BUT YOUNGER, WITH REAL POTENTIAL.",
+"hold": 0.25,
+"sfx": [
+[
+"pop",
+"WORTH",
+0.5
+],
+[
+"hit",
+"LESS",
+0.6
+]
+],
+"voiceSettings": {
+"speed": 1.08
+}
+},
+{
+"id": "end",
+"say": "So: Tavares to do it now, or Wesley for the future. Who would you sign? Follow for more.",
+"cap": "SO: TAVARES TO DO IT NOW, OR WESLEY FOR THE FUTURE. WHO WOULD YOU SIGN? FOLLOW FOR MORE.",
+"hold": 0.0,
+"voiceSettings": {
+"speed": 1.08
+}
+}
+]

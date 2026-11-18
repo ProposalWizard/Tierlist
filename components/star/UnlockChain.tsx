@@ -187,7 +187,9 @@ export function UnlockPop({ features, onSeeAll, onClose }: { features: Feature[]
  * next thing in, in their own words, with one button that takes you there.
  * No Close: the story moves on only by its button.
  */
-export function StoryBeatPop({ text, onGo }: { text: BeatText; onGo: () => void }) {
+export function StoryBeatPop({ text, onGo, onTry, tryLabel = "Try it now" }: { text: BeatText; onGo: () => void;
+  /** A second button that lets you try the new thing at once (Mikey's phone test, 17 Nov 2026). */
+  onTry?: () => void; tryLabel?: string }) {
   useEffect(() => { sfx("achievement-pop"); }, []);
   return (
     <Sheet z={95}>
@@ -215,7 +217,8 @@ export function StoryBeatPop({ text, onGo }: { text: BeatText; onGo: () => void 
           </div>
         </div>
       )}
-      <PressButton variant="primary" size="none" pulse onClick={onGo} data-tour="beat-go" className="mt-3 w-full rounded-2xl py-2.5 text-[15px] font-black">{text.button}</PressButton>
+      {onTry && <PressButton variant="primary" size="none" pulse onClick={onTry} data-beat-try className="mt-3 w-full rounded-2xl py-2.5 text-[15px] font-black">{tryLabel}</PressButton>}
+      <PressButton variant={onTry ? "secondary" : "primary"} size="none" pulse={!onTry} onClick={onGo} data-tour="beat-go" className={`${onTry ? "mt-2" : "mt-3"} w-full rounded-2xl py-2.5 text-[15px] font-black`}>{text.button}</PressButton>
     </Sheet>
   );
 }
