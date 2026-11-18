@@ -188,7 +188,7 @@ const FORWARD = [
   /^(Claim.*|Collect.*|Sign.*|Accept.*|Agree.*|Shake on it.*|Join .*)$/,
   // the story's pointers: "Go to training", "Open your phone", "See the boss"
   /^(Go to .*|Open .*|See .*|Meet .*|Talk to .*|Read .*|Reply.*|Start drill.*|Play drill.*|Take a look|Tag along|Use the can|Use now|Run the draw|Reveal.*|Play anyway|End of Season|Buy it for ★\d+|BUY & DRINK A CAN ★\d+)$/,
-  /^(Team sheets.*|KICK OFF.*|Play Match.*|Get out there.*|PENALTIES.*|FULL TIME.*)$/,
+  /^(Team sheets.*|KICK OFF.*|Play Match.*|Get out there.*|PENALTIES.*|FULL TIME.*|Second half.*)$/i,
   /^(CONTINUE.*|Continue.*|Carry on.*|Start.*|Begin.*|Enter.*|Take the trial.*|Ready.*|Next season.*|Start next season.*|Back to Home.*)$/,
   // story cards: "… TAP TO HEAR HIM OUT →", "Read it →"
   /(TAP TO .*|→)$/,

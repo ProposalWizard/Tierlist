@@ -146,7 +146,9 @@ export default function PointerTour({ steps, onDone, skippable = false, forced =
       const found = findTarget(step.target);
       if (!found) {
         gone += 1;
-        if (gone > 12) next(); // 1.2 s with no such thing on screen: move on
+        // 1.2 s with no such thing on screen: move on. A swipe step moves on
+        // at once: its target leaving means the swipe turned the page.
+        if (gone > (step.swipe ? 0 : 12)) next();
         return;
       }
       gone = 0;
