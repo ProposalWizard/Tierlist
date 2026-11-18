@@ -2,7 +2,7 @@
 // atlas 0 when the match opens, the others when one of their clips is first asked for (match/sprites.ts).
 import { Image } from "react-native";
 import { Skia } from "@shopify/react-native-skia";
-import { setSpriteSheet, spritesReady, preloadLaterAtlases, type SpriteIndex } from "./sprites";
+import { setSpriteSheet, spritesReady, preloadLaterAtlases, setSheetLoader, type SpriteIndex } from "./sprites";
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 const INDEX = require("./assets/sprites/index.json") as SpriteIndex;
@@ -45,3 +45,4 @@ export function loadSpriteSheet(): Promise<boolean> {
   })();
   return loading;
 }
+setSheetLoader(loadSpriteSheet);

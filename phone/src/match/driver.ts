@@ -114,6 +114,12 @@ import { createShootout, takeNextKick, nextShootoutSide, nextTakerIndex, type Pe
 import { DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import type { MatchSetup, FeatureSpec } from "./setup";
 import { KIB_CANS } from "@/lib/star/shopData";
+import { GoalRecorder } from "@/lib/star/goalClip/recorder";
+import type { GoalTrack, ClipBody, FrameState as ClipFrame } from "@/lib/star/goalClip/track";
+import { lateKindOf } from "@/lib/star/goalClip/commentary";
+import { minuteLabel } from "@/lib/star/addedTime";
+import { footSign, takerFootSign, drawnTakerAt } from "@/lib/star/kickFoot";
+import { keeperKit, type MatchKits } from "@/lib/star/kits";
 import { stageScene } from "@/lib/star/scenePicture";
 import { ballMotionAt, sweepPeriod, liftOf, contactLimitS, lateAirContact, TOO_SLOW_MS, AIR_VERDICT_MS, GROUND_TAP_MS } from "./contactBall";
 
@@ -297,6 +303,16 @@ export class MatchDriver {
   private presserBehind = false;
   runup: Runup | null = null;
   private aerial: Aerial | null = null;
+  /**
+   * GOAL VIDEOS (CanvasMatch onGoalClip): set by the career match screen. Every
+   * goal is recorded frame by frame as it is played (lib/star/goalClip/recorder.ts)
+   * and handed out once cut. Never reads the engine's random numbers or changes
+   * anything: the match plays the same with it or without it.
+   */
+  clipSink: { kits: MatchKits; onClip: (t: GoalTrack) => void } | null = null;
+  private goalRec: GoalRecorder | null = null;
+  private recScene: Scenario | null = null;
+  private recSeen: { ball: Ball | null; seq: number } = { ball: null, seq: 0 };
   private airTapWait: { sc: Scenario; t: number } | null = null;
   private airTapOpened: Scenario | null = null;
   private airTapLead: Scenario | null = null;
@@ -804,6 +820,8 @@ export class MatchDriver {
   /** CanvasMatch's finalize (full time): finaliseMatch, the same arguments. */
   finalize() {
     this.pause = null;
+    // A goal still being recorded when the match closes keeps what it has.
+    if (this.goalRec && this.clipSink) { this.goalRec.finishNow(); this.handOutClips(); }
     const t = this.tally;
     const stats: MatchStats = {
       ...finaliseMatch(
@@ -1954,7 +1972,7 @@ export class MatchDriver {
         if (this.phase !== before) return;
       }
     }
-    if (this.phase === "feed") { this.feedTick(); return; }
+    if (this.phase === "feed") { this.feedTick(); this.recordGoalFrame(FRAME_DT); return; }
     if (this.phase === "done") return;
     // A feature's teaching pause: the run-up and the strike screen's clock stand still.
     if (this.held) { if (this.phase === "contact") this.contactT0 += 1; return; }
@@ -2085,6 +2103,107 @@ export class MatchDriver {
       else this.runOn = null;
     }
     if (this.lead) this.stepLeadIn(replayDt);
+    this.recordGoalFrame(dt);
+  }
+
+  // ── GOAL VIDEOS: what the recorder is told each frame (CanvasMatch clipBodiesFor, clipFrameFor, recordGoalFrame, markGoalClip) ──
+  private kitsNow() {
+    const k = this.clipSink!.kits;
+    const home = this.setup.fixture.home !== false;
+    const ours = home ? k.home : k.away, theirs = home ? k.away : k.home;
+    return { ours, theirs, keeper: k.keeper, ourKeeper: keeperKit(ours.shirt, k.keeper.shirt) };
+  }
+  private clipBodiesFor(sc: Scenario): ClipBody[] {
+    const K = this.kitsNow();
+    const kitOf = (k: { shirt: string; trim: string }) => ({ shirt: k.shirt, shorts: k.trim });
+    const link = (f?: string) => (f && !f.startsWith("data:") ? f : undefined);
+    const us = kitOf(K.ours), them = kitOf(K.theirs);
+    const auto = autoKickOf(sc);
+    const out: ClipBody[] = [auto
+      ? { id: "you", role: auto.side === "them" ? "opp" : "mate", side: auto.side === "them" ? "them" : "us", name: auto.taker.shortName, face: link(auto.taker.face), kit: auto.side === "them" ? them : us }
+      : { id: "you", role: "you", side: "us", name: this.playerLabel(), kit: us }];
+    out.push({ id: "follower", role: "mate", side: "us", name: sc.follower.who?.shortName, face: link(sc.follower.who?.face), kit: us });
+    sc.teammates.forEach((t, i) => out.push({ id: `mate${i}`, role: "mate", side: "us", name: t.who?.shortName, face: link(t.who?.face), kit: us }));
+    [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners].forEach((r, i) =>
+      out.push({ id: `run${i}`, role: "mate", side: "us", name: r.who?.shortName, face: link(r.who?.face), kit: us }));
+    sc.defenders.forEach((d, i) => out.push({ id: `def${i}`, role: "opp", side: "them", name: d.who?.shortName, face: link(d.who?.face), kit: them }));
+    const gk = auto?.side === "them" ? K.ourKeeper : K.keeper;
+    out.push({ id: "keeper", role: "keeper", side: auto?.side === "them" ? "us" : "them", name: sc.keeper.who?.shortName, face: link(sc.keeper.who?.face), kit: kitOf(gk) });
+    return out;
+  }
+  private clipFrameFor(sc: Scenario): ClipFrame {
+    const b = this.ball;
+    const auto = autoKickOf(sc);
+    const foot = auto ? takerFootSign(auto.taker.id || auto.taker.name) : footSign(this.setup.career?.player.preferredFoot);
+    const you = hasRunup(sc.kind) ? drawnTakerAt(sc.ball, sc.player, foot).at : sc.player;
+    const runners = [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners];
+    return {
+      ball: b ? { x: b.pos.x, y: b.pos.y, z: b.z } : { x: sc.ball.x, y: sc.ball.y, z: 0 },
+      bodies: [
+        { x: you.x, y: you.y, z: 0 },
+        { x: sc.follower.x, y: sc.follower.y, z: 0 },
+        ...sc.teammates.map((t) => ({ x: t.x, y: t.y, z: 0 })),
+        ...runners.map((r) => ({ x: r.pos.x, y: r.pos.y, z: 0 })),
+        ...sc.defenders.map((d) => ({ x: d.x, y: d.y, z: d.z ?? 0 })),
+        { x: sc.keeper.x, y: sc.keeper.y, z: 0 },
+      ],
+      keeper: { dive: sc.keeper.dive, lunge: sc.keeper.saveLunge, dir: sc.keeper.saveDir, kind: sc.keeper.saveKind },
+    } as ClipFrame;
+  }
+  private recordGoalFrame(dt: number) {
+    if (!this.clipSink || !this.setup.career) return;
+    const rec = this.goalRec ?? (this.goalRec = new GoalRecorder());
+    const ph = this.phase, sc = this.sc;
+    // Who touched the ball, when (the ball's own log, a moment after the fact).
+    const bl = this.ball;
+    if (bl && bl !== this.recSeen.ball) this.recSeen = { ball: bl, seq: 0 };
+    const live = (ph === "aim" || ph === "runup" || ph === "contact" || ph === "flight" || (ph === "result" && !this.td)) && goalInView(sc.kind);
+    if (live || (rec.recordingGoal && this.recScene === sc && leoUpdateOn("bugFixes"))) {
+      const bodies = 3 + sc.teammates.length + (sc.runner ? 1 : 0) + sc.secondaryRunners.length + sc.defenders.length;
+      if (this.recScene !== sc || rec.bodyIds().length !== bodies) {
+        this.recScene = sc;
+        rec.begin(this.clipBodiesFor(sc));
+      }
+      if (bl?.actionLog) {
+        for (const a of bl.actionLog) {
+          if (a.seq <= this.recSeen.seq) continue;
+          this.recSeen.seq = a.seq;
+          rec.event(a.kind, a.actor, { mode: a.mode, save: a.save }, Math.max(0, (bl.clock ?? 0) - a.t));
+        }
+      }
+      rec.frame(dt, this.clipFrameFor(sc));
+    } else if (rec.recordingGoal) {
+      rec.finishNow();
+    }
+    this.handOutClips();
+  }
+  private handOutClips() {
+    const rec = this.goalRec;
+    if (!rec || !this.clipSink) return;
+    for (const tr of rec.take()) { try { this.clipSink.onClip(tr); } catch { /* a clip never breaks the match */ } }
+  }
+  /** The ball has just gone in: the recorder keeps going a moment for the net, then cuts. Returns the clip's id. */
+  private markGoalClip(scorer: string, scorerShort: string, isYou: boolean, assist: string | undefined, how: string | undefined, scorerBody?: string): string | undefined {
+    const rec = this.goalRec;
+    if (!this.clipSink || !rec?.active) return undefined;
+    const id = `clip-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+    const home = this.setup.fixture.home !== false;
+    const car = this.setup.career;
+    const club = car?.player.club ?? "Home";
+    const opp = this.setup.fixture.opponent ?? "Away";
+    const weather = this.setup.conditions.weather;
+    rec.markGoal({
+      id, minute: this.matchMinute, minuteLabel: minuteLabel(this.matchMinute, this.ADDED, this.MATCH_DURATION),
+      scorer, scorerShort, isYou, assist, how,
+      ...(scorerBody ? { scorerBody } : {}),
+      home: home ? club : opp, away: home ? opp : club, youAreHome: home,
+      scoreAfter: home ? [this.userScore, this.oppScore] : [this.oppScore, this.userScore],
+      competition: this.setup.fixture.competition,
+      weather: weather !== "clear" ? weather : undefined,
+      season: car?.season, week: car?.week,
+      ...(isYou && leoUpdateOn("bigMoments") ? (() => { const late = lateKindOf(this.matchMinute, true, this.userScore, this.oppScore); return late ? { late } : {}; })() : {}),
+    });
+    return id;
   }
 
   /** The flight: the ball and everyone, three steps a frame (CanvasMatch's frame loop, flight branch). */
@@ -2141,7 +2260,7 @@ export class MatchDriver {
     const receiver = this.sc.receiver;
     if (ev === "miscue") { this.pushLine("He's miscued it — it's loose!"); this.showAction("MISCUED"); }
     if (ev === "clearHit") { this.pushLine("Cleared — but it cannons off a body and it's loose!"); this.showAction("DEFLECTED"); }
-    if (ev === "post") { this.pushLine("Off the woodwork — and it's still live!"); this.showAction("POST"); this.postShownAt = this.now; }
+    if (ev === "post") { if (this.clipSink) this.goalRec?.event("post"); this.pushLine("Off the woodwork — and it's still live!"); this.showAction("POST"); this.postShownAt = this.now; }
     if (ev && receiver) {
       const label = receiver.who?.shortName ?? receiver.roleLabel;
       if (ev === "received") { this.pushLine(commentaryReceived(label, this.rng)); this.showAction(this.passBanner()); }
@@ -2279,9 +2398,11 @@ export class MatchDriver {
         const scorerLabel = scorer?.shortName ?? sc.receiver.roleLabel ?? "Team-mate";
         const mateAssist = assist.yours ? undefined : assist.by?.who;
         const mateScorer = scorer?.name ?? sc.receiver.roleLabel ?? "Team-mate";
+        const mateClip = this.markGoalClip(mateScorer, scorerLabel, false, assist.yours ? playerName : mateAssist?.name, how);
         this.goalEvents.push({
           minute: this.matchMinute, scorer: mateScorer, assist: assist.yours ? playerName : mateAssist?.name,
           isUserGoal: false, how, distance: Math.round(distance),
+          ...(mateClip ? { clipId: mateClip } : {}),
           ...(assist.yours && sc.receivedAt ? { passLength: Math.round(Math.hypot(sc.receivedAt.x - sc.ball.x, sc.receivedAt.y - sc.ball.y)) } : {}),
         });
         this.logMoment(`⚽ ${scorerLabel} scores!`, "goal");
@@ -2289,14 +2410,17 @@ export class MatchDriver {
         else if (mateAssist) this.logMoment(`🎯 ${mateAssist.shortName} assists!`, "assist");
       } else if (d.goals === 1) {
         const assister = res === "rebound" ? undefined : creatorOf(sc, squad, rng);
+        const yourClip = this.markGoalClip(playerName, this.playerLabel(), true, assister?.name, how, "you");
         this.goalEvents.push({
           minute: this.matchMinute, scorer: playerName, assist: assister?.name, isUserGoal: true, how, distance: Math.round(distance),
           ...(yourFinish ? { finish: yourFinish } : {}),
+          ...(yourClip ? { clipId: yourClip } : {}),
         });
         this.logMoment(`⚽ ${this.playerLabel()} scores!`, "goal");
         if (assister) this.logMoment(`🎯 ${assister.shortName} assists!`, "assist");
       } else {
-        this.goalEvents.push({ minute: this.matchMinute, scorer: playerName, isUserGoal: true, how, distance: Math.round(distance), ...(yourFinish ? { finish: yourFinish } : {}) });
+        const soloClip = this.markGoalClip(playerName, this.playerLabel(), true, undefined, how, "you");
+        this.goalEvents.push({ minute: this.matchMinute, scorer: playerName, isUserGoal: true, how, distance: Math.round(distance), ...(yourFinish ? { finish: yourFinish } : {}), ...(soloClip ? { clipId: soloClip } : {}) });
         this.logMoment(`⚽ ${this.playerLabel()} scores!`, "goal");
       }
     }
@@ -2309,7 +2433,8 @@ export class MatchDriver {
       const saved = res === "saved" || res === "caught" || res === "tipped";
       if (kind === "goal") {
         this.userScore += 1;
-        this.goalEvents.push({ minute: this.matchMinute, scorer: auto.taker.name, isUserGoal: false, how: "penalty", distance: 11 });
+        const penClip = this.markGoalClip(auto.taker.name, auto.taker.shortName, false, undefined, "penalty", "you");
+        this.goalEvents.push({ minute: this.matchMinute, scorer: auto.taker.name, isUserGoal: false, how: "penalty", distance: 11, ...(penClip ? { clipId: penClip } : {}) });
         this.logMoment(`⚽ ${auto.taker.shortName} scores the penalty!`, "goal");
       } else this.logMoment(`${auto.taker.shortName}'s penalty is ${saved ? "saved" : "missed"}.`, "chance");
       resolveScenario(this.st, kind === "goal" ? "goal" : "saved");

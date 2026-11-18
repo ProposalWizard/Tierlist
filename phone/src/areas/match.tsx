@@ -3,6 +3,7 @@ import { useCallback, useMemo } from "react";
 import { View, Text } from "react-native";
 import type { ScreenMap } from "./types";
 import { Match } from "../screens/Match";
+import { GoalReplays } from "../screens/MatchReplays";
 import { useCareer } from "../game/store";
 import { nextFixture, completeMatch } from "../game/flow";
 import { useNav } from "../nav";
@@ -27,4 +28,8 @@ function MatchScreen() {
   }
   return <Match career={startCareer} fixture={fixture} onFullTime={onFullTime} />;
 }
-export const matchScreens: ScreenMap = { match: MatchScreen };
+function GoalReplaysScreen() {
+  const nav = useNav();
+  return <GoalReplays onBack={() => nav.back()} />;
+}
+export const matchScreens: ScreenMap = { match: MatchScreen, "goal-replays": GoalReplaysScreen };

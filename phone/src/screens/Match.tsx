@@ -17,6 +17,8 @@ import { MatchPitch, BANNER_MS } from "./MatchPitch";
 import { MatchHud } from "./MatchHud";
 import { MatchFeed, MatchPause } from "./MatchFeed";
 import { MatchShootout } from "./MatchShootout";
+import { keepGoalClip } from "../match/goalClip/store";
+import { getCareer } from "../game/store";
 import { C } from "../ui/theme";
 
 export function Match({ career, fixture, onFullTime }: { career: CareerState; fixture: Fixture; onFullTime: (d: MatchDriver) => void }) {
@@ -28,7 +30,13 @@ export function Match({ career, fixture, onFullTime }: { career: CareerState; fi
       ? kitsFor(c.player.club, fixture.opponent, c.clubKits?.[c.player.club], c.clubKits?.[fixture.opponent])
       : kitsFor(fixture.opponent, c.player.club, c.clubKits?.[fixture.opponent], c.clubKits?.[c.player.club]);
   }, [setup, fixture]);
-  const make = useCallback((hw: number) => { const d = new MatchDriver(setup, { hw }); setHud(d); return d; }, [setup]);
+  const make = useCallback((hw: number) => {
+    const d = new MatchDriver(setup, { hw });
+    // Goal videos (CanvasMatch onGoalClip → page.tsx handleGoalClip): every goal recorded as played, kept on the phone.
+    d.clipSink = { kits, onClip: (t) => keepGoalClip(t, getCareer()) };
+    setHud(d);
+    return d;
+  }, [setup, kits]);
 
   const overlay = useCallback((d: MatchDriver) => {
     const banner = d.banner && d.now - d.banner.at < BANNER_MS ? d.banner : null;

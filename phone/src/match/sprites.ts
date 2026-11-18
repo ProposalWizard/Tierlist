@@ -82,6 +82,14 @@ export function setAtlas(n: number, colorImg: SkImage, maskImg: SkImage) {
   warm.add(n);
 }
 export function spritesReady(): boolean { return !!(index && atlases.get(0)); }
+let sheetLoader: (() => Promise<boolean>) | null = null;
+/** How the sheet is fetched (spriteAssets.ts on the phone). */
+export function setSheetLoader(f: () => Promise<boolean>) { sheetLoader = f; }
+/** lib/star/sprites.ts loadSprites: resolves true when drawSprite can draw. */
+export function loadSprites(): Promise<boolean> {
+  if (spritesReady()) return Promise.resolve(true);
+  return sheetLoader ? sheetLoader() : Promise.resolve(false);
+}
 export function spriteIndex(): SpriteIndex | null { return index; }
 
 /** Load atlas n (n ≥ 1) once. Every kit already seen is coloured before its clips switch on. */
