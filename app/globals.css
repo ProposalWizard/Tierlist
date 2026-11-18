@@ -134,3 +134,15 @@ body[data-kib-app] [contenteditable="true"] {
   -webkit-user-select: text;
   user-select: text;
 }
+
+/* THE PACKED PHONE APP ONLY: no frosted-glass blur (Mikey, 18 Nov 2026, "remove
+ * blur so we can see if it helps"). A blurred see-through panel makes the phone
+ * re-blur everything behind it on every frame it moves; 79 panels used it. The
+ * panels keep their own see-through colour, just without the blur. The website
+ * keeps the blur. */
+body[data-kib-app] *,
+body[data-kib-app] *::before,
+body[data-kib-app] *::after {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
