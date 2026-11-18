@@ -1,0 +1,34 @@
+{
+  "_about": "Rooney's first England goal: Macedonia 1-2 England, Euro 2004 qualifier, Skopje, Sat 6 Sep 2003, early second half (52-53 min), 1-0 to 1-1. A first-time shot from about 25 yards, outside the box (RTE, Jim Munro). The knock-back is credited to Heskey in one source only, so the video names no assist. Kits: Macedonia red and yellow; England's change kit in Skopje assumed white with navy shorts (no source names it). Keeper kits assumed.",
+  "teams": {
+    "home": { "name": "Macedonia", "kit": { "shirt": "#D20000", "shorts": "#D20000", "socks": "#D20000" }, "keeperKit": { "shirt": "#2E8B57", "shorts": "#1B1B1B", "socks": "#2E8B57" }, "popupTrim": "#FFE600" },
+    "away": { "name": "England", "kit": { "shirt": "#FFFFFF", "shorts": "#1D2A5C", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#1D2A5C" }
+  },
+  "people": {
+    "rooney":  { "name": "Wayne Rooney", "skin": "#f2c4a6", "hair": "#6b4a2a" },
+    "heskey":  { "name": "Emile Heskey", "skin": "#4a2e1e", "hair": "#0d0a09" },
+    "beckham": { "name": "David Beckham", "skin": "#f0c3a0", "hair": "#c9a27e" },
+    "d1": { "name": "Macedonia defender", "skin": "#e8b994", "hair": "#2a1d15" },
+    "d2": { "name": "Macedonia defender", "skin": "#eac09c", "hair": "#1d1512" },
+    "d3": { "name": "Macedonia defender", "skin": "#e6b48f", "hair": "#2a1d15" },
+    "gk": { "name": "Macedonia keeper", "skin": "#eac09c", "hair": "#2a1d15" }
+  },
+  "clips": [
+    {
+      "id": "rooney-macedonia",
+      "kind": "long_range",
+      "attacking": "away",
+      "scorer": "rooney", "assister": "heskey",
+      "defenders": ["d1", "d2", "d3"],
+      "keeper": "gk",
+      "teammates": ["beckham"],
+      "minute": 53,
+      "scoreBefore": [1, 0], "scoreAfter": [1, 1],
+      "night": true,
+      "celebration": "fist_pump",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "finish": "ground", "height": "mid" },
+      "seed": "rooney-mkd-a"
+    }
+  ]
+}

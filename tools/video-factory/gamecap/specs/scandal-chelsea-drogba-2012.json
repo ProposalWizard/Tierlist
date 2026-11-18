@@ -1,0 +1,31 @@
+{
+  "_about": "Didier Drogba's equaliser, Bayern Munich 1-1 Chelsea, Champions League final, Allianz Arena, 19 May 2012, 88th minute: Juan Mata's corner, Drogba's header at the near post past Neuer's hand (Football Italia, Boston Globe, Scotsman; Goal.com names Lampard as taker, the rest Mata). Bayern led through Mueller (83'). Corner side not confirmed: left to the seed. Kits: Bayern red, Chelsea blue (usual home colours); keeper kits assumed.",
+  "teams": {
+    "home": { "name": "Bayern Munich", "short": "Bayern", "kit": { "shirt": "#DC052D", "shorts": "#DC052D", "socks": "#DC052D" }, "keeperKit": { "shirt": "#2E7D32", "shorts": "#1B1B1B", "socks": "#2E7D32" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Chelsea", "kit": { "shirt": "#034694", "shorts": "#034694", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#F2C230", "shorts": "#F2C230", "socks": "#F2C230" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "drogba":  { "name": "Didier Drogba", "skin": "#3e2618", "hair": "#0d0a09" },
+    "mata":    { "name": "Juan Mata", "skin": "#e0b08a", "hair": "#1d1512" },
+    "lampard": { "name": "Frank Lampard", "skin": "#efc3a0", "hair": "#5b3a22" },
+    "cahill":  { "name": "Gary Cahill", "skin": "#f0c3a0", "hair": "#4a3020" },
+    "torres":  { "name": "Fernando Torres", "skin": "#eac09c", "hair": "#c9a27e" },
+    "boateng": { "name": "Jerome Boateng", "skin": "#6a4430", "hair": "#0d0a09" },
+    "tymo":    { "name": "Anatoliy Tymoshchuk", "skin": "#efc3a0", "hair": "#6b5440" },
+    "lahm":    { "name": "Philipp Lahm", "skin": "#efc3a0", "hair": "#4a3020" },
+    "mueller": { "name": "Thomas Mueller", "skin": "#f2c4a6", "hair": "#6b5440" },
+    "contento":{ "name": "Diego Contento", "skin": "#e0b08a", "hair": "#1d1512" },
+    "neuer":   { "name": "Manuel Neuer", "skin": "#f2c4a6", "hair": "#b08a5a" }
+  },
+  "clips": [{
+    "id": "drogba-header", "kind": "header", "attacking": "away",
+    "scorer": "drogba", "assister": "mata",
+    "defenders": ["boateng", "tymo", "lahm", "mueller", "contento"], "keeper": "neuer",
+    "teammates": ["lampard", "cahill", "torres"],
+    "minute": 88, "scoreBefore": [1, 0], "scoreAfter": [1, 1], "night": true,
+    "celebration": "arms_out",
+    "cameras": ["tv", "high", "tight"],
+    "recreate": { "delivery": "corner", "swing": "in", "scorerStart": [1, 13], "scorerSpot": [2.8, 4.5], "finish": "header", "goalSide": "near", "height": "high" },
+    "seed": "drogba-2012-a"
+  }]
+}

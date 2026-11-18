@@ -1,0 +1,28 @@
+{
+  "_about": "Bayern Munich 5-2 Augsburg, Bundesliga matchday 34, Allianz Arena, Sat 22 May 2021, afternoon. 90th minute: Leroy Sane's shot was saved by Rafal Gikiewicz and Lewandowski was first to the rebound and put it in, his 41st league goal, beating Gerd Muller's 40 from 1971-72 (Fox Sports/AP, FC Bayern 'Golden Boot with a new record', TNT Sports). A rebound is two moves here: Sane's shot saved (save-parry), then Lewandowski's finish from close range. Kits: Bayern red, Augsburg in white (assumed). Score before: 4-2 (Augsburg scored twice after half time; Wikipedia/AP 5-2 final).",
+  "teams": {
+    "home": { "name": "Bayern Munich", "short": "Bayern", "kit": { "shirt": "#DC052D", "shorts": "#FFFFFF", "socks": "#DC052D" }, "keeperKit": { "shirt": "#3aa655", "shorts": "#1b1b1b", "socks": "#3aa655" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Augsburg", "kit": { "shirt": "#FFFFFF", "shorts": "#FFFFFF", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#1b1b1b", "shorts": "#1b1b1b", "socks": "#1b1b1b" }, "popupTrim": "#46714d" }
+  },
+  "people": {
+    "lewandowski": { "name": "Robert Lewandowski", "skin": "#efc4a2", "hair": "#2a1d15" },
+    "sane": { "name": "Leroy Sane", "skin": "#7a4e33", "hair": "#0d0a09", "popupName": "Sané" },
+    "muller": { "name": "Thomas Muller", "skin": "#f2c8a6", "hair": "#6b5440", "popupName": "Müller" },
+    "gikiewicz": { "name": "Rafal Gikiewicz", "skin": "#f2c8a6", "hair": "#4a3426" },
+    "gouweleeuw": { "name": "Jeffrey Gouweleeuw", "skin": "#f2c8a6", "hair": "#8a6a48" },
+    "uduokhai": { "name": "Felix Uduokhai", "skin": "#5e3a24", "hair": "#0d0a09" },
+    "iago": { "name": "Iago", "skin": "#d9a57e", "hair": "#1d1512" }
+  },
+  "clips": [
+    { "id": "sane-saved", "kind": "save", "attacking": "home", "scorer": "sane", "assister": "muller", "keeper": "gikiewicz", "teammates": ["lewandowski"],
+      "defenders": ["gouweleeuw", "uduokhai", "iago"], "minute": 90, "scoreBefore": [4, 2], "night": false,
+      "cameras": ["tv", "high"],
+      "recreate": { "base": "one_on_one", "delivery": "through", "save": "parry", "scorerSpot": [-3, 11], "goalSide": "near", "height": "low" },
+      "seed": "sane-save-a" },
+    { "id": "lewy-41", "kind": "one_on_one", "attacking": "home", "scorer": "lewandowski", "assister": "sane", "keeper": "gikiewicz", "teammates": ["muller"],
+      "defenders": ["gouweleeuw", "uduokhai"], "minute": 90, "scoreBefore": [4, 2], "scoreAfter": [5, 2], "night": false, "celebration": "arms_out",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "through", "passerStart": [-6, 12], "passFrom": [-5, 11], "scorerStart": [2, 13], "scorerSpot": [1, 7], "finish": "right", "goalSide": "left", "height": "low" },
+      "seed": "lewy-41-a" }
+  ]
+}

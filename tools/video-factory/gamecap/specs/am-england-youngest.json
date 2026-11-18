@@ -1,0 +1,33 @@
+{
+  "_about": "Lewis-Skelly's debut goal: England 2-0 Albania, World Cup qualifier, Wembley, Fri 21 Mar 2025, 20th minute, 0-0 to 1-0. Bellingham turned on the edge of the box and slid a through ball; Lewis-Skelly ran in behind and finished first time, left foot, low through Strakosha's legs (Sports Mole, The Star/Reuters). Kits: England white, navy shorts; Albania red and black. Keeper kits assumed.",
+  "teams": {
+    "home": { "name": "England", "kit": { "shirt": "#FFFFFF", "shorts": "#1D2A5C", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#1D2A5C" },
+    "away": { "name": "Albania", "kit": { "shirt": "#E41E20", "shorts": "#111111", "socks": "#E41E20" }, "keeperKit": { "shirt": "#2E8B57", "shorts": "#1B1B1B", "socks": "#2E8B57" }, "popupTrim": "#111111" }
+  },
+  "people": {
+    "mls":     { "name": "Myles Lewis-Skelly", "skin": "#3e2618", "hair": "#0d0a09", "popupName": "Lewis-Skelly" },
+    "jude":    { "name": "Jude Bellingham", "skin": "#7a4e33", "hair": "#120d0a" },
+    "kane":    { "name": "Harry Kane", "skin": "#f2c4a6", "hair": "#8a6a4a" },
+    "d1": { "name": "Albania defender", "skin": "#e8b994", "hair": "#2a1d15" },
+    "d2": { "name": "Albania defender", "skin": "#eac09c", "hair": "#1d1512" },
+    "strakosha": { "name": "Thomas Strakosha", "skin": "#eac09c", "hair": "#2a1d15" }
+  },
+  "clips": [
+    {
+      "id": "mls-albania",
+      "kind": "one_on_one",
+      "attacking": "home",
+      "scorer": "mls", "assister": "jude",
+      "defenders": ["d1", "d2"],
+      "keeper": "strakosha",
+      "teammates": ["kane"],
+      "minute": 20,
+      "scoreBefore": [0, 0], "scoreAfter": [1, 0],
+      "night": true,
+      "celebration": "knee_slide",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "through", "finish": "ground", "height": "low", "goalSide": "centre" },
+      "seed": "mls-alb-a"
+    }
+  ]
+}

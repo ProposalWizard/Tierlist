@@ -1,61 +1,83 @@
 <!doctype html><html><head><meta charset="utf-8"><style>
-@font-face{font-family:Anton;src:url(../assets/Anton.ttf)}@font-face{font-family:Oswald;src:url(../assets/Oswald-Bold.woff2);font-weight:700}@font-face{font-family:Oswald;src:url(../assets/Oswald-Bold.woff2);font-weight:400}
+@font-face{font-family:Anton;src:url(../assets/Anton.ttf)}
+@font-face{font-family:Oswald;src:url(../assets/Oswald-Bold.woff2);font-weight:700}@font-face{font-family:Oswald;src:url(../assets/Oswald-Bold.woff2);font-weight:400}
+@font-face{font-family:KInter;src:url(../assets/Inter-Regular.otf);font-weight:400}@font-face{font-family:KInter;src:url(../assets/Inter-SemiBold.otf);font-weight:600}
+@font-face{font-family:KInter;src:url(../assets/Inter-Bold.otf);font-weight:700}@font-face{font-family:KInter;src:url(../assets/Inter-Black.otf);font-weight:900}
 body{margin:0;background:#000}</style></head><body><canvas id="c" width="1080" height="1920"></canvas>
 <script src="avatars.js"></script>
 <script src="scenes.js"></script>
+<script src="charts.js"></script>
 <script src="timeline.js"></script>
 <script>
-// One video: narrator (voice E look) talking at the bottom, a scene card per line,
-// red-box captions, end card. timeline.js (written by build.py) sets window.STORY and window.TL.
+// Video factory v2 (Mikey, 4 Nov 2026): no narrator. Every scene fills the whole
+// 1080x1920 frame; captions sit in a fixed band (y 1250-1500, 60 px margins) clear
+// of TikTok's right-hand buttons and bottom caption; the end card is the approved
+// United v Roma one. timeline.js (written by make.py) sets window.STORY and window.TL.
 const FPS = 30;
 const cv = document.getElementById("c"), g = cv.getContext("2d");
-
-function narrator(t, f) {
-  const amp = TL.env[f] || 0;
-  const bob = Math.sin(t * 2.1) * 6 + amp * 6;
-  const blink = (t % 3.7) < 0.12;
-  const look = Math.sin(t * 0.7) * 0.35;
-  window.drawAvatar(g, 540, 1395 + bob, 380, PLAYERS.narr, KITS.crew, { noDisc: true, talk: t > TL.end ? null : Math.min(1, amp * 1.6), mouth: "smile", blink, look });
-}
+const CAP = { top: 1250, bottom: 1500, mid: 1388, left: 60, right: 1020 };
 
 function captions(t) {
   const c = TL.chunks.find((k) => t >= k.t0 && t < k.t1); if (!c) return;
-  const size = 82; g.save(); g.font = `${size}px Anton`; g.textBaseline = "alphabetic";
+  const size = 86; g.save(); g.font = `${size}px Anton`; g.textBaseline = "alphabetic"; g.letterSpacing = "1px";
   const words = c.words.map((w) => w.w); const sp = 22;
   const widths = words.map((w) => g.measureText(w).width); const total = widths.reduce((a, b) => a + b, 0) + sp * (words.length - 1);
-  const sc = Math.min(1, 1000 / total); g.translate(540, 1105); g.scale(sc, sc);
-  let x = -total / 2; g.globalAlpha = SC.ez((t - c.t0) * 8);
+  const sc = Math.min(1, (CAP.right - CAP.left - 40) / total); g.translate(540, CAP.mid + size * 0.36); g.scale(sc, sc);
+  const k = SC.ez((t - c.t0) * 8); g.globalAlpha = k; g.translate(0, (1 - k) * 14);
+  let x = -total / 2;
   c.words.forEach((w, i) => {
     const on = t >= w.t0 && t < (c.words[i + 1]?.t0 ?? c.t1);
-    if (on) { g.fillStyle = "#e8263f"; g.beginPath(); g.roundRect(x - 10, -size * 0.86, widths[i] + 20, size * 1.02, 12); g.fill(); }
-    g.lineJoin = "round"; g.lineWidth = 12; g.strokeStyle = "#000"; g.strokeText(words[i], x, 0);
+    if (on) { g.fillStyle = "#e8263f"; g.beginPath(); g.roundRect(x - 12, -size * 0.88, widths[i] + 24, size * 1.06, 14); g.fill(); }
+    g.lineJoin = "round"; g.lineWidth = 13; g.strokeStyle = "#000"; g.strokeText(words[i], x, 0);
     g.fillStyle = "#fff"; g.fillText(words[i], x, 0); x += widths[i] + sp;
   });
   g.restore();
 }
+// a soft dark band behind the captions, so they read over any scene
+function scrim() {
+  const gr = g.createLinearGradient(0, CAP.top - 110, 0, CAP.bottom + 140);
+  gr.addColorStop(0, "rgba(4,6,14,0)"); gr.addColorStop(0.3, "rgba(4,6,14,.5)"); gr.addColorStop(0.7, "rgba(4,6,14,.5)"); gr.addColorStop(1, "rgba(4,6,14,0)");
+  g.fillStyle = gr; g.fillRect(0, CAP.top - 110, 1080, CAP.bottom - CAP.top + 250);
+}
+// the series bug, top left (under TikTok's top bar)
+function bug(t) {
+  const s = String(STORY.series || "").toUpperCase(); if (!s) return;
+  g.save(); g.font = "900 26px KInter"; g.letterSpacing = "3px"; const w = g.measureText(s).width;
+  g.globalAlpha = 0.95; g.fillStyle = "#e8263f"; g.beginPath(); g.roundRect(60, 150, 16, 44, 4); g.fill();
+  g.fillStyle = "rgba(8,12,24,.72)"; g.beginPath(); g.roundRect(82, 150, w + 32, 44, 8); g.fill();
+  g.fillStyle = "#fff"; g.textBaseline = "middle"; g.fillText(s, 98, 173); g.restore();
+}
 
 window.TOTAL = Math.ceil(TL.total * FPS);
 window.SEGS = TL.scenes.length;
-window.ready = (async () => { await document.fonts.load("40px Anton"); await document.fonts.load("700 40px Oswald"); await document.fonts.load("40px 'Noto Color Emoji'"); })();
 window.errorsSeen = [];
+window.ready = (async () => {
+  await Promise.all(["40px Anton", "italic 40px Anton", "700 40px Oswald", "400 40px KInter", "600 40px KInter", "700 40px KInter", "900 40px KInter"].map((f) => document.fonts.load(f)));
+  await SC.preload();
+})();
 
 window.draw = async (f) => {
   const t = f / FPS;
-  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.filter = "none";
-  g.fillStyle = "#000"; g.fillRect(0, 0, 1080, 1920);
-  if (t >= TL.endCard) { SCENES.end(g, t - TL.endCard); return cv.toDataURL("image/jpeg", 0.9); }
-  const s = TL.scenes.find((x) => t >= x.t0 && t < x.t1) || TL.scenes[TL.scenes.length - 1];
-  if (s) {
-    const lt = t - s.t0, dur = s.t1 - s.t0; const k = SC.pop(lt * 5);
-    g.save(); g.beginPath(); g.rect(0, SC.CY, 1080, SC.CH); g.clip();
-    g.translate(540, SC.CY + SC.CH / 2); const sc = 0.94 + 0.06 * k; g.scale(sc, sc); g.translate(-540, -(SC.CY + SC.CH / 2));
-    try { (SCENES[s.scene.type] || SCENES.text)(g, lt, dur, s.scene); } catch (e) { window.errorsSeen.push(s.scene.type + ": " + e.message); }
-    if (s.scene.stamp && s.scene.type !== "stamp") SC.stamp(g, String(s.scene.stamp).toUpperCase(), 540, SC.CY + 230, lt - dur * 0.45, -0.12, SC.COL[s.scene.stampColor] || SC.COL.red, 100);
-    g.restore();
-    if (lt < 0.1) { g.fillStyle = `rgba(255,255,255,${0.5 * (1 - lt / 0.1)})`; g.fillRect(0, SC.CY, 1080, SC.CH); }
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.filter = "none"; g.letterSpacing = "0px";
+  g.fillStyle = "#070a14"; g.fillRect(0, 0, 1080, 1920);
+  const s = TL.scenes.find((x) => t >= x.t0 && t < x.t1);
+  const isEnd = t >= TL.endCard || (s && s.scene.type === "cta") || (!s && t >= TL.scenes[TL.scenes.length - 1].t0);
+  if (isEnd) {
+    const t0 = s && s.scene.type === "cta" ? s.t0 : (TL.scenes.find((x) => x.scene.type === "cta")?.t0 ?? TL.endCard);
+    SCENES.end(g, t - t0); return cv.toDataURL("image/jpeg", 0.92);
   }
-  narrator(t, f);
-  captions(t);
-  return cv.toDataURL("image/jpeg", 0.9);
+  const sc = s || TL.scenes[TL.scenes.length - 1];
+  const lt = t - sc.t0, dur = sc.t1 - sc.t0;
+  // a slow push-in on every scene, and a quick settle as it arrives
+  g.save(); const z = 1 + 0.035 * SC.cl(lt / Math.max(1, dur)) + 0.05 * (1 - SC.ez(lt * 4));
+  g.translate(540, 760); g.scale(z, z); g.translate(-540, -760);
+  try { await (SCENES[sc.scene.type] || SCENES.text)(g, lt, dur, sc.scene); } catch (e) { window.errorsSeen.push(sc.scene.type + ": " + e.message); }
+  if (sc.scene.stamp && sc.scene.type !== "stamp") SC.stamp(g, String(sc.scene.stamp).toUpperCase(), 540, 760, lt - dur * 0.45, -0.12, SC.COL[sc.scene.stampColor] || SC.COL.red, 130);
+  g.restore();
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.letterSpacing = "0px";
+  if (lt < 0.12 && sc.t0 > 0.1) { g.fillStyle = `rgba(255,255,255,${0.45 * (1 - lt / 0.12)})`; g.fillRect(0, 0, 1080, 1920); }
+  if (sc.scene.type !== "gameclip") bug(t);
+  scrim(); captions(t);
+  return cv.toDataURL("image/jpeg", 0.92);
 };
 </script></body></html>

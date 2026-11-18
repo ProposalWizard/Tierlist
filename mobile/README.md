@@ -54,6 +54,31 @@ cd android && ./gradlew assembleDebug     # → app/build/outputs/apk/debug/app-
 iPhone (later, on a Mac or Codemagic): `npx cap add ios` once, then
 `npx cap sync ios` and archive in Xcode (the checklist's step 4.5).
 
+## Release build (Google Play, 18 Nov 2026)
+
+The release build is signed with the **upload key** (Play App Signing: Google
+re-signs for phones). The key and its password are never in git.
+
+1. Put the key details in `mobile/android/keystore.properties` (git-ignored):
+   ```
+   storeFile=/full/path/to/knowitball-upload.jks
+   storePassword=...
+   keyAlias=upload
+   keyPassword=...
+   ```
+   Or set `KIB_KEYSTORE_FILE`, `KIB_KEYSTORE_PASSWORD`, `KIB_KEY_ALIAS`,
+   `KIB_KEY_PASSWORD`. With neither, the release build comes out unsigned.
+2. Steps 1 to 3 above, but **without** `NEXT_PUBLIC_STAR_OFFLINE_DEV`.
+3. `cd mobile/android && ./gradlew bundleRelease assembleRelease`
+   → `app/build/outputs/bundle/release/app-release.aab` (upload to Play) and
+   `app/build/outputs/apk/release/app-release.apk` (install on a phone to test).
+4. Check: `apksigner verify --print-certs app-release.apk` and
+   `jarsigner -verify app-release.aab` both show `CN=Knowitball, O=Knowitball, C=GB`.
+   Raise `versionCode` in `app/build.gradle` for every new upload.
+
+First release (1.0, code 1): AAB 158 MB, Play download about 155 MB (bundletool
+`get-size total`). Play's base-module limit is 500 MB.
+
 ## When the players change
 
 A new season's ratings or a new badge reach the app only in a new app version:

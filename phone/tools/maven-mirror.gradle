@@ -1,0 +1,9 @@
+// Build-only: try Google's mirror of Maven Central first (Maven Central rate-limits this machine).
+def mirror = 'https://maven-central.storage-download.googleapis.com/maven2/'
+beforeSettings { settings ->
+  settings.pluginManagement.repositories { maven { url mirror }; google(); gradlePluginPortal(); mavenCentral() }
+}
+allprojects {
+  buildscript { repositories { maven { url mirror } } }
+  repositories { maven { url mirror } }
+}

@@ -1,0 +1,40 @@
+{
+  "_about": "Andres Iniesta's winner, Netherlands 0-1 Spain (aet), 2010 World Cup final, Soccer City, Johannesburg, 11 July 2010, 116th minute. Fabregas recovered a deflected Torres pass in the centre and passed to Iniesta in space on the right side of the box; one touch, right-footed half-volley past Stekelenburg into the left corner (Wikipedia 2010 FIFA World Cup final; Goal/FourFourTwo retrospectives). Kits: Spain all navy, Netherlands all orange (historicalkits.co.uk, footballkitarchive). Keeper kits assumed (no source). Heitinga had been sent off (109'), so not on the pitch.",
+  "teams": {
+    "home": { "name": "Netherlands", "short": "NED", "kit": { "shirt": "#F36C21", "shorts": "#F36C21", "socks": "#F36C21" }, "keeperKit": { "shirt": "#2B2B2B", "shorts": "#2B2B2B", "socks": "#2B2B2B" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Spain", "short": "ESP", "kit": { "shirt": "#1B2A4A", "shorts": "#1B2A4A", "socks": "#1B2A4A" }, "keeperKit": { "shirt": "#E8C200", "shorts": "#1B1B1B", "socks": "#E8C200" }, "popupTrim": "#C60B1E" }
+  },
+  "people": {
+    "iniesta":   { "name": "Andres Iniesta", "skin": "#f1cbb0", "hair": "#6b4a32", "popupName": "Iniesta" },
+    "fabregas":  { "name": "Cesc Fabregas", "skin": "#e2b48e", "hair": "#2a1d15", "popupName": "Fàbregas" },
+    "torres":    { "name": "Fernando Torres", "skin": "#f2c9a8", "hair": "#d9a35a" },
+    "navas":     { "name": "Jesus Navas", "skin": "#e0b08a", "hair": "#1d1512" },
+    "mathijsen": { "name": "Joris Mathijsen", "skin": "#f0c8aa", "hair": "#c9a27e" },
+    "vanderwiel":{ "name": "Gregory van der Wiel", "skin": "#7a4e33", "hair": "#0d0a09" },
+    "vanbommel": { "name": "Mark van Bommel", "skin": "#efc5a3", "hair": "#4a3222" },
+    "braafheid": { "name": "Edson Braafheid", "skin": "#6a432c", "hair": "#0d0a09" },
+    "stekelenburg": { "name": "Maarten Stekelenburg", "skin": "#f2cbae", "hair": "#b08a5a" }
+  },
+  "popupPosition": "top",
+  "clips": [{
+    "id": "iniesta-winner",
+    "kind": "one_on_one",
+    "attacking": "away",
+    "scorer": "iniesta", "assister": "fabregas",
+    "defenders": ["mathijsen", "vanderwiel", "vanbommel", "braafheid"],
+    "keeper": "stekelenburg",
+    "teammates": ["torres", "navas"],
+    "minute": 116, "minuteLabel": "116",
+    "scoreBefore": [0, 0], "scoreAfter": [0, 1],
+    "night": true,
+    "celebration": "arms_out",
+    "cameras": ["tv", "high", "tight", "fan"],
+    "recreate": {
+      "delivery": "through",
+      "passerStart": [-4, 24], "passFrom": [-2.5, 20],
+      "scorerStart": [9, 21], "scorerSpot": [6, 12],
+      "finish": "right", "goalSide": "left", "height": "mid", "outcome": "goal"
+    },
+    "seed": "iniesta-2010-a"
+  }]
+}

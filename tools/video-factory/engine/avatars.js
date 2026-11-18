@@ -100,13 +100,22 @@ window.drawAvatar = function (g, cx, cy, r, p, kit, opts = {}) {
     g.fill();
     g.strokeStyle = "rgba(255,255,255,.18)"; g.lineWidth = 3; g.beginPath(); g.moveTo(-24, 40); g.lineTo(-6, 104); g.moveTo(24, 40); g.lineTo(6, 104); g.stroke();
   } else {
-  g.fillStyle = k.shirt; g.beginPath(); g.moveTo(-96, 110); g.bezierCurveTo(-92, 58, -60, 44, -30, 40); g.lineTo(30, 40); g.bezierCurveTo(60, 44, 92, 58, 96, 110); g.closePath(); g.fill();
-  if (k.pattern === "sides") { g.fillStyle = k.trim; g.fillRect(-96, 70, 12, 40); g.fillRect(84, 70, 12, 40); }
-  if (k.pattern === "stripes") { g.fillStyle = k.trim; for (const x of [-72, -36, 0, 36, 72]) g.fillRect(x - 9, 40, 18, 72); }
-  if (k.pattern === "halves") { g.fillStyle = k.trim; g.beginPath(); g.moveTo(0, 40); g.lineTo(30, 40); g.bezierCurveTo(60, 44, 92, 58, 96, 110); g.lineTo(0, 110); g.closePath(); g.fill(); }
-  if (k.pattern === "centre") { g.fillStyle = k.trim; g.fillRect(-16, 40, 32, 72); }
-  if (k.pattern === "hoops") { g.fillStyle = k.trim; g.fillRect(-100, 76, 200, 8); g.fillRect(-100, 94, 200, 8); }
-  if (k.pattern === "sash") { g.fillStyle = k.trim; g.beginPath(); g.moveTo(-70, 48); g.lineTo(-50, 44); g.lineTo(60, 110); g.lineTo(36, 110); g.closePath(); g.fill(); }
+  // v2 (4 Nov 2026): the pattern is PART of the shirt. Everything is drawn inside the
+  // shirt's own outline (clipped), so stripes and hoops follow the shoulders and
+  // never sit on top of them as loose lines.
+  const shirt = () => { g.beginPath(); g.moveTo(-96, 110); g.bezierCurveTo(-92, 58, -60, 44, -30, 40); g.lineTo(30, 40); g.bezierCurveTo(60, 44, 92, 58, 96, 110); g.closePath(); };
+  shirt(); g.fillStyle = k.shirt; g.fill();
+  g.save(); shirt(); g.clip(); g.fillStyle = k.trim;
+  if (k.pattern === "sides") { g.fillRect(-100, 40, 22, 80); g.fillRect(78, 40, 22, 80); }
+  if (k.pattern === "stripes") for (const x of [-80, -48, -16, 16, 48, 80]) g.fillRect(x - 8, 30, 16, 90);
+  if (k.pattern === "halves") g.fillRect(0, 30, 100, 90);
+  if (k.pattern === "centre") g.fillRect(-16, 30, 32, 90);
+  if (k.pattern === "hoops") for (const y of [48, 72, 96]) g.fillRect(-100, y - 9, 200, 13);
+  if (k.pattern === "sash") { g.beginPath(); g.moveTo(-70, 30); g.lineTo(-38, 30); g.lineTo(80, 120); g.lineTo(48, 120); g.closePath(); g.fill(); }
+  // a little cloth shading so the shirt reads as fabric, not a flat shape
+  const sh = g.createLinearGradient(-96, 0, 96, 0); sh.addColorStop(0, "rgba(0,0,0,.18)"); sh.addColorStop(0.35, "rgba(0,0,0,0)"); sh.addColorStop(0.7, "rgba(0,0,0,0)"); sh.addColorStop(1, "rgba(0,0,0,.2)");
+  g.fillStyle = sh; g.fillRect(-100, 30, 200, 90);
+  g.restore();
   }
   // neck
   g.fillStyle = dark; g.beginPath(); g.moveTo(-17, 18); g.lineTo(17, 18); g.lineTo(20, 46); g.quadraticCurveTo(0, 56, -20, 46); g.closePath(); g.fill();
