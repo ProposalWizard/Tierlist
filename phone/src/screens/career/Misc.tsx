@@ -10,6 +10,11 @@
  *  - Placeholder: a screen still to come, saying so.
  */
 import { PHOTO_FACES } from "@/lib/star/faceStyle";
+import { ownedPenaltyRunups, ownedFreeKickRunups, careerPenaltyRunup, careerFreeKickRunup } from "@/lib/star/runupStyles";
+import { SKIN_TONES, HAIR_COLOURS, resolveSkinTone } from "@/lib/star/playerIdentity";
+import { TOON_BODIES, TOON_BODY_LABEL, TOON_PLAYER_HEADS, TOON_HEAD_LABEL, yourToonBody, yourToonHead } from "@/lib/star/style3d/toon/bodies";
+import { useCareer, setCareer } from "../../game/store";
+import { Press } from "../../ui/Press";
 import { useEffect, useRef, useState } from "react";
 import { View, Text, Switch } from "react-native";
 import type { CareerState, Fixture } from "@/lib/star/types";
@@ -218,8 +223,11 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onHelp, onFace
 }) {
   const prefs = usePrefs();
   const [sure, setSure] = useState(false);
+  const career = useCareer();
   return (
     <Frame title="Settings" onBack={onBack}>
+      {career && <YourLook career={career} />}
+      {career && <Runups career={career} />}
       <Card>
         {PREF_ROWS.map(([k, label, line]) => (
           <View key={k} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8 }}>
@@ -253,6 +261,56 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onHelp, onFace
           </Card>
         )}
     </Frame>
+  );
+}
+
+/** A row of pick-one chips (the website's Settings pickers). */
+function Pick<T extends string>({ items, value, onPick }: { items: { id: T; label: string; dot?: string }[]; value: T; onPick: (id: T) => void }) {
+  return (
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4, marginBottom: 8 }}>
+      {items.map((it) => (
+        <Press key={it.id} onPress={() => onPick(it.id)} style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, backgroundColor: it.id === value ? C.green : C.panel2 }}>
+          {it.dot ? <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: it.dot, borderWidth: 1, borderColor: "rgba(255,255,255,0.4)" }} /> : null}
+          <Text style={{ color: it.id === value ? "#05261a" : C.text, fontWeight: "900", fontSize: 12 }}>{it.id === value ? "✓ " : ""}{it.label}</Text>
+        </Press>
+      ))}
+    </View>
+  );
+}
+const small = { color: C.dim, fontSize: 11, fontWeight: "900" as const, letterSpacing: 1.2 };
+
+/** Settings → Your look (the website's YourLookPanel): head, build, skin, hair colour, saved on the career. */
+function YourLook({ career }: { career: CareerState }) {
+  const p = career.player;
+  const set = (look: Partial<CareerState["player"]>) => setCareer((c) => ({ ...c, player: { ...c.player, ...look } }));
+  return (
+    <Card>
+      <Text style={{ color: C.text, fontWeight: "900", fontSize: 16 }}>Your look</Text>
+      <Text style={{ color: C.dim, fontSize: 12, marginBottom: 8 }}>How you look in every 3D scene (Player style: New).</Text>
+      <Text style={small}>HEAD</Text>
+      <Pick items={TOON_PLAYER_HEADS.map((h) => ({ id: h, label: TOON_HEAD_LABEL[h] }))} value={yourToonHead(p)} onPick={(h) => set({ head3d: h })} />
+      <Text style={small}>BUILD</Text>
+      <Pick items={TOON_BODIES.map((b) => ({ id: b, label: TOON_BODY_LABEL[b] }))} value={yourToonBody(p)} onPick={(b) => set({ body3d: b })} />
+      <Text style={small}>SKIN</Text>
+      <Pick items={SKIN_TONES.map((t) => ({ id: t.id, label: t.label, dot: t.hex }))} value={resolveSkinTone(p.skinTone)} onPick={(t) => set({ skinTone: t })} />
+      <Text style={small}>HAIR COLOUR</Text>
+      <Pick items={HAIR_COLOURS.map((h) => ({ id: h.id, label: h.label, dot: h.hex }))} value={p.hairColour ?? "brown"} onPick={(h) => set({ hairColour: h })} />
+      <Text style={{ color: C.dim, fontSize: 11 }}>The haircut comes with the head: the colour changes, the cut stays.</Text>
+    </Card>
+  );
+}
+
+/** Settings → Penalties and free kicks: how you run up (looks only). */
+function Runups({ career }: { career: CareerState }) {
+  return (
+    <Card>
+      <Text style={{ color: C.text, fontWeight: "900", fontSize: 16 }}>Penalties and free kicks</Text>
+      <Text style={{ color: C.dim, fontSize: 12, marginBottom: 8 }}>How you run up to the ball. Looks only — the kick is the same.</Text>
+      <Text style={small}>PENALTY RUN-UP</Text>
+      <Pick items={ownedPenaltyRunups(career.ownedAnimations).map((r) => ({ id: r.id, label: r.name }))} value={careerPenaltyRunup(career)} onPick={(id) => setCareer((c) => ({ ...c, penaltyRunup: id }))} />
+      <Text style={small}>FREE-KICK RUN-UP</Text>
+      <Pick items={ownedFreeKickRunups(career.ownedAnimations).map((r) => ({ id: r.id, label: r.name }))} value={careerFreeKickRunup(career)} onPick={(id) => setCareer((c) => ({ ...c, freeKickRunup: id }))} />
+    </Card>
   );
 }
 
