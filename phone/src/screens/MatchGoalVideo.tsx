@@ -23,7 +23,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Pressable } from "react-native";
 import { Canvas, Picture, Group, Skia, createPicture, type SkPicture } from "@shopify/react-native-skia";
-import { useSharedValue } from "react-native-reanimated";
+import Animated, { useSharedValue, useAnimatedStyle } from "react-native-reanimated";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
 import { makeEdit, editDuration, posterMoment, type ClipStyle, type Edit } from "@/lib/star/goalClip/edit";
 import { planAudio } from "@/lib/star/goalClip/audio";
@@ -83,7 +83,9 @@ export function GoalVideo({ clipIds, synth, standIn, style, variant = 0, credit,
   const [boxW, setBoxW] = useState(0);
   const [ready, setReady] = useState(false);
   const [playing, setPlaying] = useState(false);
-  const [played, setPlayed] = useState(0);
+  // How far through: on the graphics side, so the bar moves without drawing the whole post again.
+  const played = useSharedValue(0);
+  const playedBar = useAnimatedStyle(() => ({ width: `${Math.round(played.value * 1000) / 10}%` }));
   const [audible, setAudible] = useState(soundOn());
   const empty = useMemo(() => createPicture(() => {}), []);
   const pic = useSharedValue<SkPicture>(empty);
@@ -131,14 +133,13 @@ export function GoalVideo({ clipIds, synth, standIn, style, variant = 0, credit,
     const stopMe = () => setPlaying(false);
     if (playingNow && playingNow !== stopMe) playingNow();
     playingNow = stopMe;
-    let raf = 0, t0 = 0, lastDraw = -1, lastShown = -1;
+    let raf = 0, t0 = 0, lastDraw = -1;
     const loop = (now: number) => {
       if (!t0) t0 = now;
       const t = ((now - t0) / 1000) % Math.max(0.01, dur);
       const f = Math.floor(t * edit.fps);
       if (f !== lastDraw) { lastDraw = f; pic.value = frameAt(f / edit.fps); snd.at(t); }
-      const shown = Math.round((t / dur) * 100);
-      if (shown !== lastShown) { lastShown = shown; setPlayed(t / dur); }
+      played.value = t / dur;
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
@@ -166,7 +167,7 @@ export function GoalVideo({ clipIds, synth, standIn, style, variant = 0, credit,
           )}
           {!playing && badge ? <Text style={{ position: "absolute", right: 8, top: 8, backgroundColor: "#dc2626", color: "#fff", fontSize: 9, fontWeight: "900", paddingHorizontal: 5, paddingVertical: 2, borderRadius: 3, overflow: "hidden" }}>{badge}</Text> : null}
           <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 3, backgroundColor: "rgba(255,255,255,0.25)" }}>
-            <View style={{ width: `${Math.round(played * 1000) / 10}%`, height: 3, backgroundColor: "#fff" }} />
+            <Animated.View style={[{ height: 3, backgroundColor: "#fff" }, playedBar]} />
           </View>
         </Pressable>
       )}
