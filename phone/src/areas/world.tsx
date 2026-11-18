@@ -11,7 +11,11 @@
 //   cup-draw    { competition, round, onContinue? }  the draw reveal (world/cupDraw.ts drawToShow)
 //   season-review { onClose? }  last season: every trophy (career.lastWorld)
 //   store                       the Store (Coins): specials, run-ups, style, boosts, boots, Coins
-//   investments                 buying and selling a stake in a club
+//   investments { tab?, club?, section? }  stakes, and the boardroom of a club you control
+//   ownership                   the Owner app: reputation, the Rule Book, your clubs
+//   reputation                  fame and reputation, and what each unlocks
+//   rule-book                   governing bodies: influence, rule-change votes, presidencies
+//   vote-ceremony { vote }      a vote (world/politics.ts PendingVote), then back where it came from
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { ScreenMap } from "./types";
@@ -28,6 +32,9 @@ import { CupDrawScreen } from "../screens/world/CupDrawReveal";
 import { WorldPane } from "../screens/world/WorldPane";
 import { StoreScreen } from "../screens/world/Store";
 import { InvestmentsScreen } from "../screens/world/Investments";
+import { OwnershipScreen, ReputationScreen } from "../screens/world/Ownership";
+import { RuleBookScreen } from "../screens/world/RuleBook";
+import { VoteCeremonyScreen } from "../screens/world/VoteCeremony";
 
 function FeedScreen({ params }: { params?: Record<string, unknown> }) {
   const career = useCareer();
@@ -66,4 +73,8 @@ export const worldScreens: ScreenMap = {
   "season-review": SeasonReviewScreen,
   store: StoreScreen,
   investments: InvestmentsScreen,
+  ownership: OwnershipScreen,
+  reputation: ReputationScreen,
+  "rule-book": RuleBookScreen,
+  "vote-ceremony": VoteCeremonyScreen,
 };

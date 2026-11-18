@@ -6,8 +6,7 @@
  * The packed phone app has no casino, so neither does this one (no Casino
  * icon, and the App Store leaves it out).
  *
- * Placeholders: Kickabout (the MATCH area's engine), Store (Coins), Owner
- * (Investments), Garden and Your house (3D) — each shows "coming".
+ * Placeholders: Kickabout (the MATCH area's engine), Store (Coins), Garden and Your house (3D) — each shows "coming".
  * Relationships and Settings open the CAREER area's "relations" / "settings"
  * screens when those exist.
  */
@@ -51,7 +50,7 @@ const APPS: App[] = [
   { id: "store", label: "Store", icon: "🛒", bg: "#7c3aed", screen: "store", soon: "The Store (Coins)" },
   // No casino: the packed phone app has none (Mikey, 5 Nov 2026).
   { id: "sponsors", label: "Sponsors", icon: "🤝", bg: "#0f766e", screen: "sponsors" },
-  { id: "ownership", label: "Owner", icon: "🏛️", bg: "#4338ca", screen: "investments", soon: "Owning clubs (Investments)" },
+  { id: "ownership", label: "Owner", icon: "🏛️", bg: "#4338ca", screen: "ownership" },
   { id: "garden", label: "Garden", icon: "🌳", bg: "#166534", soon: "The 3D garden" },
   { id: "settings", label: "Settings", icon: "⚙️", bg: "#4b5563", screen: "settings", soon: "Settings" },
 ];

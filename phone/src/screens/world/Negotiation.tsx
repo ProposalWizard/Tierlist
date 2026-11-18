@@ -36,6 +36,8 @@ export interface NegotiationProps {
   marketValue: number;
   counterpartLabel?: string;
   initialState?: NegotiationState;
+  /** Step away to check other clubs, keeping these talks as they stand (the boardroom's sale list). */
+  onStepAway?: (state: NegotiationState) => void;
   /** Done: the agreed number, or null (walked away / no deal). */
   onDone: (finalPrice: number | null) => void;
   kicker?: string;
@@ -45,7 +47,7 @@ export interface NegotiationProps {
   note?: string;
 }
 
-export function Negotiation({ mode, playerName, marketValue, counterpartLabel, initialState, onDone, kicker, valueLabel, note, valueIsTheirOffer }: NegotiationProps) {
+export function Negotiation({ mode, playerName, marketValue, counterpartLabel, initialState, onStepAway, onDone, kicker, valueLabel, note, valueIsTheirOffer }: NegotiationProps) {
   const inset = useSafeAreaInsets();
   const [state, setState] = useState<NegotiationState>(() => initialState ?? startNegotiation(marketValue, mode, Math.random));
   const [amount, setAmount] = useState(() => (initialState ? state.yourPosition : state.theirPosition));
@@ -147,6 +149,7 @@ export function Negotiation({ mode, playerName, marketValue, counterpartLabel, i
             <Btn style={{ flex: 1 }} label="📄 Accept offer" onPress={() => propose(state.theirPosition)} />
           </View>
           <Btn tone="red" label="🚪 Walk away" onPress={() => onDone(null)} />
+          {onStepAway ? <Btn tone="plain" label="Step Away (check other interested clubs)" onPress={() => onStepAway(state)} /> : null}
         </>
       )}
 
