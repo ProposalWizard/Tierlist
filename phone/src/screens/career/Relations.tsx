@@ -15,14 +15,14 @@
  *   happiness → Day off: here.
  * Every result goes through flow.relationshipGameDone (handleRelationshipGameComplete).
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text } from "react-native";
 import type { CareerState } from "@/lib/star/types";
 import { actionsLeft } from "@/lib/star/week";
 import { getTuning } from "@/lib/star/tuningStore";
 import { gamePlayedThisWeek } from "@/lib/star/relationships";
 import { fameOf } from "@/lib/star/fame";
-import { brandsOf } from "@/lib/star/sponsorDeals";
+import { brandsOf, type BrandDeal } from "@/lib/star/sponsorDeals";
 import { intlOf, managerLine, SQUAD_AT, START_AT } from "@/lib/star/intl/career";
 import { talkFor, talkGain, talkHits, TALK_ROUNDS, type TalkReply, type Grade } from "@/lib/star/bossTalk";
 import * as flow from "../../game/flow";
@@ -257,6 +257,67 @@ function DayOff({ career, onFinish, onCancel }: { career: CareerState; onFinish:
         );
       })}
       {result && <Result res={result} who="Happiness" current={current} onContinue={() => onFinish(result)} />}
+    </Shell>
+  );
+}
+
+// ── A sponsor's game: Shoot an advert (relgames/AdvertShoot.tsx) ──
+const TAKES = 5;
+const NEED = 3;
+export const ADVERT_WIN = 10;
+export const ADVERT_LOSS = -3;
+export function AdvertShootScreen({ deal, go, onCancel }: { deal: BrandDeal; go: (s: flow.Step) => void; onCancel: () => void }) {
+  const current = deal.happiness;
+  const [take, setTake] = useState(0);
+  const [good, setGood] = useState(0);
+  const [pos, setPos] = useState(0);
+  const [mark, setMark] = useState(() => 0.25 + Math.random() * 0.5);
+  const [flash, setFlash] = useState<"ok" | "bad" | null>(null);
+  const [result, setResult] = useState<flow.RelGameResult | null>(null);
+  const t0 = useRef(Date.now());
+  const speed = 0.55 + take * 0.12;
+  const posRef = useRef(0);
+  useEffect(() => {
+    if (result) return;
+    let raf = 0;
+    const tick = () => {
+      const t = (Date.now() - t0.current) / 1000;
+      const phase = (t * speed) % 2;
+      posRef.current = phase < 1 ? phase : 2 - phase;
+      setPos(posRef.current);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [speed, result]);
+  const width = 0.16 - take * 0.015;
+  const action = () => {
+    if (result) return;
+    const hit = Math.abs(posRef.current - mark) < width / 2;
+    const g = good + (hit ? 1 : 0);
+    setGood(g);
+    setFlash(hit ? "ok" : "bad");
+    setTimeout(() => setFlash(null), 300);
+    const next = take + 1;
+    if (next >= TAKES) {
+      const won = g >= NEED;
+      setResult({ won, gain: won ? ADVERT_WIN : ADVERT_LOSS, line: `${g} good takes out of ${TAKES}.` });
+    } else { setTake(next); setMark(0.2 + Math.random() * 0.6); t0.current = Date.now(); }
+  };
+  return (
+    <Shell title="Shoot an advert" who={`${deal.brand} happiness`} current={current} tone={deal.color} onBack={take === 0 && !result ? onCancel : undefined}>
+      <Text style={{ color: C.text, fontWeight: "700" }}>Hit your mark when the director calls. {NEED} good takes out of {TAKES}.</Text>
+      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <Text style={{ color: C.text, fontWeight: "900" }}>TAKE {Math.min(take + 1, TAKES)} / {TAKES}</Text>
+        <Text style={{ color: C.text, fontWeight: "900" }}>GOOD {good}</Text>
+      </View>
+      <View style={{ height: 70, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.1)", borderWidth: 2, borderColor: flash === "ok" ? "#34d399" : flash === "bad" ? "#ef4444" : "rgba(255,255,255,0.15)" }}>
+        <View style={{ position: "absolute", top: 0, bottom: 0, left: `${(mark - width / 2) * 100}%`, width: `${width * 100}%`, backgroundColor: "rgba(16,185,129,0.5)" }} />
+        <View style={{ position: "absolute", top: -6, bottom: -6, width: 6, marginLeft: -3, left: `${pos * 100}%`, backgroundColor: "#fff" }} />
+        <Text style={{ position: "absolute", left: 0, right: 0, bottom: 4, textAlign: "center", color: C.text, fontSize: 11, fontWeight: "900" }}>🎬 {deal.brand.toUpperCase()}</Text>
+      </View>
+      {!result && <Press onPress={action} style={{ borderRadius: 4, paddingVertical: 16, alignItems: "center", backgroundColor: deal.color }}><Text style={{ color: "#111", fontSize: 18, fontWeight: "900" }}>ACTION!</Text></Press>}
+      {result && <Result res={result} who={`${deal.brand} happiness`} current={current} onContinue={() => go(flow.advertShot(deal.id, result.gain))} />}
     </Shell>
   );
 }

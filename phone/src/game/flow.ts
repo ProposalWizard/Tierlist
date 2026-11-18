@@ -69,6 +69,7 @@ import { applyEffects, pickDilemma, type Dilemma, type DilemmaEffect } from "@/l
 import { pressQuestionFor, type PressQuestion, type PressOption } from "@/lib/star/media";
 import { applyGameGain } from "@/lib/star/relationshipGame";
 import { recordBossMeeting } from "@/lib/star/unlocks";
+import { changeDealHappiness } from "@/lib/star/sponsorDeals";
 import type { FarewellRecord } from "@/lib/star/types";
 import { addToPhoneHall } from "../world/hall";
 
@@ -950,6 +951,17 @@ export function relationshipGameDone(kind: RelKind, res: RelGameResult): Step {
   setCareer(spendAction(updated));
   settle();
   return isStory(career) && kind === "boss" ? HOME : { screen: "career-relations" };
+}
+
+/** A sponsor's advert shot (page.tsx advert-shoot onFinish): the brand's happiness, one day, once a week. */
+export function advertShot(dealId: string, gain: number): Step {
+  const career = need();
+  const p = career.relGamesPlayed;
+  const same = p && p.season === career.season && p.week === career.week;
+  const marked: CareerState = { ...changeDealHappiness(career, dealId, gain), relGamesPlayed: { season: career.season, week: career.week, kinds: [...(same ? p!.kinds : []), "advert"] } };
+  setCareer(spendAction(marked));
+  settle();
+  return { screen: "sponsors" };
 }
 
 // ═══════════════════════════════════════════════════════════════════

@@ -20,7 +20,8 @@ import { DeadlineDayScreen, KnockoutRoundupScreen, PlayOffRoundupScreen, Tournam
 import { WageTalkScreen, RelegationMoveScreen } from "../screens/career/Moves";
 import { FarewellInviteScreen, FarewellSheetsScreen, FarewellResultScreen, LegacyScreen, HallOfFameScreen } from "../screens/career/Farewell";
 import { PressScreen, DilemmaScreen, SeasonReelScreen, HelpScreen, WithPops } from "../screens/career/Moments";
-import { RelationsScreen, RelGameScreen } from "../screens/career/Relations";
+import { RelationsScreen, RelGameScreen, AdvertShootScreen } from "../screens/career/Relations";
+import { brandsOf } from "@/lib/star/sponsorDeals";
 import type { Roundup } from "@/lib/star/knockoutView";
 import type { TransferOffer } from "@/lib/star/transfers";
 import type { PressQuestion } from "@/lib/star/media";
@@ -124,6 +125,11 @@ export const careerScreens: ScreenMap = {
     <RelGameScreen career={c} kind={(p?.kind as flow.RelKind) ?? "boss"} onBack={() => nav.back()}
       go={(s) => { if (s.screen === "career-relations") nav.back(); else go(s); }} />
   )),
+  "advert-shoot": withCareer((c, go, nav, p) => {
+    const deal = brandsOf(c).deals.find((d) => d.id === p?.dealId);
+    if (!deal) return <PlaceholderScreen what="" go={go} />;
+    return <AdvertShootScreen deal={deal} onCancel={() => nav.back()} go={(s) => { if (s.screen === "sponsors") nav.back(); else go(s); }} />;
+  }),
   "career-help": function Help({ params }) { const nav = useNav(); return <HelpScreen screen={params?.topic as HelpName | undefined} onBack={() => nav.back()} />; },
   settings: withCareer((_c, _go, nav) => (
     <SettingsScreen onBack={() => nav.back()} onMainMenu={() => nav.replace("title")} onHelp={() => nav.go("career-help")}
