@@ -16,13 +16,24 @@
  *   - in a feed it plays only when you press play, loops, one at a time;
  *     the speaker mutes every goal video (remembered), sound from the same plan
  *     (lib/star/goalClip/audio.ts planAudio) and the same files (match/goalClip/clipAudio.ts).
- * Different: the website encodes a video file, then plays it; the phone has no
- * encoder, so it draws the frames live (30 a second) as it plays. "Save video"
- * (the share menu) is not here: nothing is encoded to save.
+ * Different: the website encodes a video file, then plays it; the phone draws
+ * the frames live (30 a second) as it plays, and makes the file only for
+ * "Save video".
+ *
+ * "Save video" (the website's button, same place: under the video, after the
+ * speaker): makes the MP4 on the phone (match/goalClip/makeVideo.ts: the same
+ * frames, size, length and sound mix as the website's file), with a progress
+ * bar and % on the video while it is made, then puts it in the phone's
+ * gallery (asking permission the normal way). The website sends the file to
+ * the share menu (where an iPhone keeps "Save Video"); the phone saves it
+ * straight to the gallery and then offers "Share" for that menu. Made once a
+ * session per goal and cut. A phone with no encoder (iPhone for now) says so.
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Pressable } from "react-native";
 import { Canvas, Picture, Group, Skia, createPicture, type SkPicture } from "@shopify/react-native-skia";
+import * as MediaLibrary from "expo-media-library";
+import * as Sharing from "expo-sharing";
 import Animated, { useSharedValue, useAnimatedStyle } from "react-native-reanimated";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
 import { makeEdit, editDuration, posterMoment, type ClipStyle, type Edit } from "@/lib/star/goalClip/edit";
@@ -33,6 +44,7 @@ import { loadSpriteSheet } from "../match/spriteAssets";
 import { drawEditFrame, prepareClipSprites, type ClipCredit } from "../match/goalClip/render";
 import { getClips } from "../match/goalClip/store";
 import { ClipSound } from "../match/goalClip/clipAudio";
+import { canMakeVideo, makeGoalVideo, type MadeVideo } from "../match/goalClip/makeVideo";
 import { installWebStorage } from "../match/webStorage";
 import { recordDrawing } from "../draw/useDrawing";
 import { getPrefs } from "../game/prefs";
@@ -63,6 +75,18 @@ async function tracksFor(clipIds: string[], synth: SynthGoal[] = [], standIn?: S
   return clipIds.length ? [...rec, ...made].sort((a, b) => a.meta.minute - b.meta.minute) : made;
 }
 
+/** Videos made this session (encode.ts's `made`): a second save of the same goal and cut is instant. */
+const madeVideos = new Map<string, MadeVideo>();
+/** One video is made at a time. */
+let makingNow = false;
+
+async function toGallery(v: MadeVideo): Promise<"saved" | "denied"> {
+  const p = await MediaLibrary.requestPermissionsAsync(true, ["video"]);
+  if (!p.granted) return "denied";
+  await MediaLibrary.Asset.create(v.uri);
+  return "saved";
+}
+
 function mmss(s: number) { const t = Math.max(0, Math.round(s)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`; }
 
 export interface GoalVideoProps {
@@ -90,6 +114,12 @@ export function GoalVideo({ clipIds, synth, standIn, style, variant = 0, credit,
   const empty = useMemo(() => createPicture(() => {}), []);
   const pic = useSharedValue<SkPicture>(empty);
   const synthKey = (synth ?? []).map((g) => g.seed).join(",");
+  // Save video: null = idle, 0..1 = making.
+  const [making, setMaking] = useState<number | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [saved, setSaved] = useState<MadeVideo | null>(null);
+  const abort = useRef({ aborted: false });
+  useEffect(() => () => { abort.current.aborted = true; }, []);
 
   useEffect(() => { const f = () => setAudible(soundOn()); soundSubs.add(f); return () => { soundSubs.delete(f); }; }, []);
   useEffect(() => {
@@ -149,6 +179,43 @@ export function GoalVideo({ clipIds, synth, standIn, style, variant = 0, credit,
   useEffect(() => { if (autoStart && ready) setPlaying(true); }, [autoStart, ready]);
   useEffect(() => () => { soundRef.current?.stop(); }, []);
 
+  const videoKey = `${clipIds.join(",")}|${synthKey}|${style}|${variant}|${credit?.handle ?? ""}`;
+  const save = async () => {
+    if (!edit || making !== null) return;
+    if (!canMakeVideo()) { setNote("This phone can't make videos yet."); return; }
+    let v = madeVideos.get(videoKey) ?? null;
+    if (!v) {
+      if (makingNow) { setNote("Another video is being made. Try again in a moment."); return; }
+      makingNow = true;
+      setNote(null);
+      setMaking(0);
+      try {
+        v = await makeGoalVideo(edit, { credit, onProgress: setMaking, signal: abort.current });
+      } catch {
+        v = null;
+        if (!abort.current.aborted) setNote("The video could not be made.");
+      } finally {
+        makingNow = false;
+        if (!abort.current.aborted) setMaking(null);
+      }
+      if (!v) return;
+      madeVideos.set(videoKey, v);
+    }
+    if (abort.current.aborted) return;
+    try {
+      const r = await toGallery(v);
+      setSaved(v);
+      setNote(r === "saved" ? "Saved to your gallery." : "No permission for the gallery. Tap Share to send it.");
+    } catch {
+      setSaved(v);
+      setNote("Could not reach the gallery. Tap Share to send it.");
+    }
+  };
+  const share = async () => {
+    if (!saved) return;
+    try { await Sharing.shareAsync(saved.uri, { mimeType: "video/mp4", dialogTitle: title }); } catch { /* closed */ }
+  };
+
   if (tracks === null) return <View style={{ height: 120, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.05)" }} />;
   if (!edit) return <>{fallback}</>;
   return (
@@ -158,7 +225,17 @@ export function GoalVideo({ clipIds, synth, standIn, style, variant = 0, credit,
           <Canvas style={{ width: dispW, height: dispH }}>
             <Group transform={[{ scale: 1 / pr }]}><Picture picture={pic} /></Group>
           </Canvas>
-          {!playing && (
+          {making !== null && (
+            <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.35)", zIndex: 2 }}>
+              <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 }}>
+                <View style={{ width: 96, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)", overflow: "hidden" }}>
+                  <View style={{ width: `${Math.round(making * 100)}%`, height: 4, backgroundColor: "#fff" }} />
+                </View>
+                <Text style={{ color: "#fff", fontSize: 10, fontWeight: "900", marginTop: 4, letterSpacing: 1 }}>MAKING {Math.round(making * 100)}%</Text>
+              </View>
+            </View>
+          )}
+          {!playing && making === null && (
             <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, alignItems: "center", justifyContent: "center" }}>
               <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: "rgba(0,0,0,0.5)", borderWidth: 2, borderColor: "rgba(255,255,255,0.8)", alignItems: "center", justifyContent: "center" }}>
                 <Text style={{ color: "#fff", fontSize: 22, marginLeft: 3 }}>{ready ? "▶" : "…"}</Text>
@@ -175,9 +252,23 @@ export function GoalVideo({ clipIds, synth, standIn, style, variant = 0, credit,
         <Pressable accessibilityLabel={audible ? "Mute" : "Sound on"} onPress={() => setSoundOn(!audible)} style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: "rgba(255,255,255,0.1)", alignItems: "center", justifyContent: "center" }}>
           <Text style={{ color: "#fff", fontSize: 14 }}>{audible ? "🔊" : "🔇"}</Text>
         </Pressable>
+        <Pressable accessibilityLabel="Save video" onPress={() => void save()} disabled={making !== null} hitSlop={6} style={{ flexDirection: "row", alignItems: "center", gap: 4, opacity: making !== null ? 0.6 : 1 }}>
+          <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: "800" }}>⤓</Text>
+          <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: "800" }}>{making !== null ? `Making ${Math.round(making * 100)}%` : "Save video"}</Text>
+        </Pressable>
         <Text numberOfLines={1} style={{ flex: 1, color: C.dim, fontSize: 12, fontWeight: "700" }}>{title}</Text>
         <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontVariant: ["tabular-nums"] }}>{mmss(editDuration(edit))}</Text>
       </View>
+      {note ? (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 4, width: dispW || undefined }}>
+          <Text style={{ flex: 1, color: note.startsWith("Saved") ? "#6ee7b7" : "#fde68a", fontSize: 12, fontWeight: "700" }}>{note}</Text>
+          {saved ? (
+            <Pressable accessibilityLabel="Share the video" onPress={() => void share()} hitSlop={6} style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.12)" }}>
+              <Text style={{ color: "#fff", fontSize: 12, fontWeight: "800" }}>Share</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 }

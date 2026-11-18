@@ -18,6 +18,9 @@
       },
       "predictiveBackGestureEnabled": false
     },
-    "plugins": ["expo-font"]
+    "plugins": [
+      "expo-font",
+      ["expo-media-library", { "granularPermissions": [], "photosPermission": false, "savePhotosPermission": "Allow KIB Next to save your goal videos to your photos." }]
+    ]
   }
 }

@@ -1,0 +1,15 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'uk.co.knowitball'
+version = '1.0.0'
+
+android {
+  namespace "uk.co.knowitball.goalvideo"
+  defaultConfig {
+    versionCode 1
+    versionName '1.0.0'
+  }
+}

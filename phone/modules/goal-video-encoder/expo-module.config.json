@@ -1,0 +1,5 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": { "modules": ["GoalVideoEncoderModule"] },
+  "android": { "modules": ["uk.co.knowitball.goalvideo.GoalVideoEncoderModule"] }
+}
