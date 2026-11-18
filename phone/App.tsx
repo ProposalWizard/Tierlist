@@ -5,12 +5,16 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import type { CareerState } from "@/lib/star/types";
 import { Title } from "./src/screens/Title";
 import { Home } from "./src/screens/Home";
+import { League } from "./src/screens/League";
+import { TabBar, type Tab } from "./src/ui/TabBar";
+import { View } from "react-native";
 import { loadCareer, saveCareer } from "./src/game/save";
 import { startCareer } from "./src/game/newCareer";
 
 export default function App() {
   const [career, setCareer] = useState<CareerState | null>(() => loadCareer());
   const [screen, setScreen] = useState<"title" | "home">("title");
+  const [tab, setTab] = useState<Tab>("home");
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
@@ -19,7 +23,10 @@ export default function App() {
           ? <Title hasSave={!!career}
               onNew={() => { const c = startCareer("Your", "Player"); saveCareer(c); setCareer(c); setScreen("home"); }}
               onContinue={() => setScreen("home")} />
-          : <Home career={career} onQuit={() => setScreen("title")} />}
+          : <View style={{ flex: 1, backgroundColor: "#0b100e" }}>
+              <View style={{ flex: 1 }}>{tab === "home" ? <Home career={career} onQuit={() => setScreen("title")} /> : <League career={career} />}</View>
+              <TabBar tab={tab} onTab={setTab} />
+            </View>}
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
