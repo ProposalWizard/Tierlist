@@ -1954,6 +1954,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // playtest, 8 Oct 2026: "didn't let me press end the season").
       setCareer(from);
       setActiveNav("home");
+      setHomePage(1);
       setPhase("dashboard");
       return;
     }
@@ -1980,7 +1981,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // DilemmaModal, phase "dilemma") is untouched and ready to switch back on
     // by restoring the roll this used to make here.
 
+    // Always Home after a match (Mikey's phone test, 17 Nov 2026, 39:38: "it
+    // should always start on the homepage when you come back out from the
+    // game"): the swipe pages remembered Stats from before kick-off.
     setActiveNav("home");
+    setHomePage(1);
     setPhase("dashboard");
   }, [endSeason, playedFixture, lastMatchStats]);
 
@@ -5558,7 +5563,16 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       {beat && <StoryBeatPop key={beat} text={beatText(career, beat)} onGo={() => goBeat(beat)} />}
       {mechGuide && (() => {
         const g = mechanicDef(mechGuide).guide;
-        return <StoryBeatPop key={`mech-${mechGuide}`} text={{ who: "New in your game", icon: g.icon, title: g.title, line: g.line, button: "Got it" }}
+        // Headers and volleys: try them straight away in the Aerial drill
+        // (Mikey's phone test, 17 Nov 2026, 47:40: "it should have given me
+        // some sort of tutorial that I could try that feature out").
+        const tryAerial = mechGuide === "aerial" ? () => {
+          setCareer(c => (c ? markSeen(c, `mech-${mechGuide}`) : c));
+          if (trainingLeft(career) > 0 || trainingDayOn(career)) handleTrain("aerial");
+          else { setTrainingTab("training"); setActiveNav("skills"); setPhase("skills"); }
+        } : undefined;
+        return <StoryBeatPop key={`mech-${mechGuide}`} text={{ who: "New in your game", icon: g.icon, title: g.title, line: g.line, button: tryAerial ? "Later" : "Got it" }}
+          onTry={tryAerial} tryLabel="Try a header now"
           onGo={() => setCareer(c => (c ? markSeen(c, `mech-${mechGuide}`) : c))} />;
       })()}
       {askSlot && (
