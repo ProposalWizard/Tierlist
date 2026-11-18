@@ -170,7 +170,9 @@
             "top": "DECEMBER",
             "from": 1,
             "to": 9,
-            "w": 0
+            "w": 0,
+            "calScale": 2.6,
+            "calY": 760
           },
           {
             "type": "picture",
@@ -276,7 +278,9 @@
             "top": "DECEMBER",
             "from": 9,
             "to": 22,
-            "w": 0
+            "w": 0,
+            "calScale": 2.6,
+            "calY": 760
           },
           {
             "type": "grid",

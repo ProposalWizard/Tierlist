@@ -174,7 +174,7 @@ S.counter = (g, t, dur, sc) => {
   bg(g, sc.bg || "teal", t); const k = ez(t / Math.min(1.4, dur * 0.6)); const v = sc.from + (sc.to - sc.from) * k;
   if (sc.prop === "contract") { g.save(); g.translate(540, 760); g.rotate(-0.06 + 0.02 * Math.sin(t)); card(g, -300, -380, 600, 760, "#fbf7ea", 16); for (let i = 0; i < 9; i++) { g.fillStyle = "rgba(0,0,0,.15)"; g.fillRect(-230, -300 + i * 56, i === 8 ? 220 : 460, 14); }
     g.strokeStyle = "#1d3fa0"; g.lineWidth = 8; g.beginPath(); for (let i = 0; i <= 40 * cl(t * 1.2); i++) { const u = i / 40; g.lineTo(-180 + 360 * u, 270 + Math.sin(u * 18) * 24 * (1 - u)); } g.stroke(); g.restore(); }
-  if (sc.prop === "calendar") calendar(g, 540, 700, 1.3, sc.top || "", String(Math.round(v)), { head: "#e2384a" });
+  if (sc.prop === "calendar") calendar(g, 540, sc.calY || 700, sc.calScale || 1.3, sc.top || "", String(Math.round(v)), { head: "#e2384a" });
   const nf = (x) => sc.dec ? x.toFixed(sc.dec) : (sc.comma ? Math.round(x).toLocaleString("en-GB") : String(Math.round(x)));
   const txt = sc.fmt ? sc.fmt.replace("{v}", nf(v)) : nf(v);
   const ty = sc.prop ? 1250 : 1000;
