@@ -10,6 +10,43 @@ import { setPieceDuties, type SetPieceDuties } from "@/lib/star/setPieces";
 import { opponentMatchStrength } from "@/lib/star/matchInputs";
 import { conditionsFor, type Conditions } from "@/lib/star/weather";
 import { pressureForDivision } from "@/lib/star/pressure";
+import { internationalCareer } from "@/lib/star/international";
+import type { Scenario, ScenarioKind, Outcome } from "@/lib/star/canvasEngine";
+import type { ScenePicture } from "@/lib/star/scenePicture";
+import type { PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
+
+/** What the match tells a feature after each chance (CanvasMatch's ChanceResolved). */
+export interface ChanceResolved {
+  outcome: Outcome;
+  kind: ScenarioKind;
+  youShot: boolean;
+  teammateShot: boolean;
+  ball: { x: number; y: number; z: number } | null;
+  autoKick?: "us" | "them";
+  buildUp?: boolean;
+}
+
+/**
+ * A FEATURE BUILT ON THE MATCH (the trial's stages, the training drills):
+ * the website's EngineFeature props on CanvasMatch (openOn, onChanceResolved,
+ * onBallStep, markers, scene, penaltyRead, setPieceSkill, keeperStrength,
+ * holdAt). No career, no fixture, no 90 minutes: one picture at a time.
+ * The getters are read again at every chance, as the website re-reads its
+ * props on every render (a stage's keeper changes kick by kick).
+ */
+export interface FeatureSpec {
+  openOn: () => Scenario;
+  onChanceResolved?: (info: ChanceResolved) => void;
+  onBallStep?: (ball: { x: number; y: number; z: number }) => void;
+  markers?: () => { x: number; y: number; color?: string }[] | undefined;
+  scene?: ScenePicture;
+  keeperStrength: () => number;
+  penaltyRead?: () => Partial<PenaltyReadSettings> | undefined;
+  setPieceSkill?: number;
+  /** A drill's own Aerial handed in on `skills` (the Head & Volley drill). */
+  aerial?: number;
+  holdAt?: (moment: "runup" | "contact", release: () => void) => boolean;
+}
 import { careerPenaltyRunup, careerFreeKickRunup, type PenaltyRunupId, type FreeKickRunupId } from "@/lib/star/runupStyles";
 
 export interface MatchSetup {
@@ -33,6 +70,26 @@ export interface MatchSetup {
   pressure: number;
   penaltyRunup?: PenaltyRunupId;
   freeKickRunup?: FreeKickRunupId;
+  /** Set: a feature (EngineFeature), not a career match. `career` and `fixture` are then stand-ins nothing reads. */
+  feature?: FeatureSpec;
+}
+
+/** EngineFeature's CanvasMatch mount (components/star/EnginePlay.tsx): your skills, no career, no fixture. */
+export function featureSetup(f: FeatureSpec, o: { skills: KickSkills; seed?: number; penaltyRunup?: PenaltyRunupId; freeKickRunup?: FreeKickRunupId }): MatchSetup {
+  return {
+    career: null as unknown as CareerState,
+    fixture: { opponent: "", home: true } as unknown as Fixture,
+    skills: o.skills,
+    canCurve: false, canExtraTouch: false,
+    keeperStrength: f.keeperStrength(), oppStrength: 65,
+    position: "ST", teamRelationship: 60, startMinute: 0,
+    // CanvasMatch: conditions ?? conditionsFor(0, 0) (EngineFeature hands in none).
+    conditions: conditionsFor(0, 0),
+    seed: o.seed ?? 1,
+    pressure: 0,
+    penaltyRunup: o.penaltyRunup, freeKickRunup: o.freeKickRunup,
+    feature: f,
+  };
 }
 
 export function matchSetupFor(career: CareerState, fixture: Fixture): MatchSetup {
@@ -48,7 +105,12 @@ export function matchSetupFor(career: CareerState, fixture: Fixture): MatchSetup
   const canCurve = (bootMatchesLeft && !!career.currentBoot.curve) || !!career.kibAbility?.curve;
   const canExtraTouch = (bootMatchesLeft && !!career.currentBoot.extraTouch) || !!career.kibAbility?.extraTouch;
   return {
-    career, fixture,
+    // An international: the match is handed the national-team career (page.tsx
+    // intlMatchCareer = internationalCareer(career, fixture)): your nation's
+    // squad, both nations' kits and strengths. Everything else above is read
+    // off your own career, as page.tsx reads it.
+    career: fixture.kind === "international" ? internationalCareer(career, fixture) : career,
+    fixture,
     skills: { power: effectivePower, technique: effectiveTechnique },
     canCurve, canExtraTouch,
     keeperStrength: oppStrength,

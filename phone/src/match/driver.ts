@@ -85,7 +85,7 @@ import { airTapOn, airTapAim, airTapStrike, AIR_TAP_OPEN_S, AIR_TAP_OPEN_NO_LEAD
 import { aerialMovesOn, forcedAerialMove, pickAerialMove, aerialStrikeTint, AERIAL_SPECS, CONTACT_SHOW_S, type AerialMove } from "@/lib/star/aerialMoves";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, assistFor, noteMatePlays, probeMatePlays, type MatePlay } from "@/lib/star/credit";
-import { attachAutoKick, autoKickOf, aimFor, planPenalty, takerSkills, takerRating, designatedTaker, AUTO_STAND_MS, type PenaltyTaker } from "@/lib/star/penaltyTaking";
+import { attachAutoKick, autoKickOf, aimFor, planPenalty, takerSkills, takerRating, designatedTaker, yourPenaltyRating, shootoutOrder, clearForShootout, AUTO_STAND_MS, type PenaltyTaker } from "@/lib/star/penaltyTaking";
 import { shortClub } from "@/lib/star/media/grammar";
 import { divisionOf } from "@/lib/star/calendar";
 import type { MatchStats, GoalEvent, OppGoalEvent, SquadPlayer } from "@/lib/star/types";
@@ -110,10 +110,15 @@ import { careerBuildUp } from "@/lib/star/leadInGen";
 import { fhrOn } from "@/lib/star/fhr/toggle";
 import { cameraTilt } from "@/lib/star/cameraTilt";
 import { giveAndGoChance } from "@/lib/star/giveAndGo";
-import { createShootout, takeNextKick, penaltyConversionChance } from "@/lib/star/shootout";
-import type { MatchSetup } from "./setup";
+import { createShootout, takeNextKick, nextShootoutSide, nextTakerIndex, type PenaltyShootoutState, type ShootoutSide } from "@/lib/star/shootout";
+import { DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
+import type { MatchSetup, FeatureSpec } from "./setup";
+import { KIB_CANS } from "@/lib/star/shopData";
+import { stageScene } from "@/lib/star/scenePicture";
 import { ballMotionAt, sweepPeriod, liftOf, contactLimitS, lateAirContact, TOO_SLOW_MS, AIR_VERDICT_MS, GROUND_TAP_MS } from "./contactBall";
 
+/** It IS a Basic can, so it gives what a Basic can gives (CanvasMatch KIB_HALF_TIME_RESTORE). */
+const KIB_HALF_TIME_RESTORE = KIB_CANS.find((c) => c.id === "basic")?.restore ?? 65;
 /** One website frame at 60 fps. */
 export const FRAME_DT = 1 / 60;
 /** One tick of the driver in milliseconds (the website's setTimeouts are counted in these). */
@@ -165,6 +170,14 @@ const SIM_COMMENTARY_USER = [
 ];
 const SIM_COMMENTARY_OPP = SIM_COMMENTARY_USER;
 
+interface ShootoutKeeper { strength: number; id?: string; name?: string; shortName?: string; face?: string }
+export interface LiveShootoutState {
+  homeClub: string; awayClub: string; yourSide: ShootoutSide;
+  home: PenaltyTaker[]; away: PenaltyTaker[];
+  homeKeeper: ShootoutKeeper; awayKeeper: ShootoutKeeper;
+  state: PenaltyShootoutState; final: boolean;
+  upNext: { side: ShootoutSide; name: string } | null;
+}
 export type Phase = "feed" | "aim" | "runup" | "contact" | "flight" | "result" | "tdDribble" | "done";
 interface SimEvent { minute: number; text: string; isGoal?: boolean; isOpponent?: boolean; tone?: LogLine["tone"] }
 export interface Pause { label?: string; cta: string; halfTime?: boolean; onContinue: () => void }
@@ -307,11 +320,17 @@ export class MatchDriver {
   td: FpRunState | null = null;
   tdReady = false;
   private fpDribble: { waveSizes: number[]; seed: number; duels?: boolean } | null = null;
-  /** A shootout kick's callback (unused until the live shootout is ported). */
-  private shootoutKick: null = null;
+  /** A live shootout kick in progress (CanvasMatch shootoutKickRef). */
+  private shootoutKick: { resolve: (scored: boolean) => void } | null = null;
+  /** The live shootout on screen (CanvasMatch liveShootout + LiveShootout's state). */
+  shootout: LiveShootoutState | null = null;
   banner: Banner | null = null;
   /** Bumped whenever something the React side shows (not the pitch) changes. */
   uiVersion = 0;
+  /** Set: a feature on the match (EngineFeature: the trial, a drill), not a career match. */
+  readonly feature: FeatureSpec | null;
+  /** A feature's teaching pause is up (CanvasMatch heldRef): the run-up and the strike screen wait. */
+  held = false;
 
   // ── the clock ──
   /** Driver time in ms (ticks x 1000/60): the website's setTimeouts and performance.now(). */
@@ -325,6 +344,34 @@ export class MatchDriver {
     this.setup = setup;
     this.hw = opts.hw;
     const { career, fixture } = setup;
+    this.feature = setup.feature ?? null;
+    if (this.feature) {
+      // EngineFeature's CanvasMatch: career = null, no fixture, its own keeper salt.
+      const f = this.feature;
+      this.MATCH_DURATION = DEFAULT_MATCH_DURATION;
+      setOffsideRuleEnabled(true);
+      this.ADDED = 0;
+      this.matchCeiling = this.MATCH_DURATION;
+      this.seed = setup.seed;
+      this.st = newMatch(mulberry32(setup.seed));
+      this.startingXI = [] as unknown as ReturnType<typeof startingTeammateRoles>;
+      this.oppXI = null as unknown as ReturnType<typeof opponentStartingXI>;
+      this.oppXIForCast = null;
+      this.strength = f.keeperStrength();
+      this.team = setup.teamRelationship;
+      this.vision = 55;
+      this.oppStrength = setup.oppStrength ?? 65;
+      this.position = setup.position;
+      this.pressure = setup.pressure;
+      this.runupStyle = { pen: penaltyRunupOf(setup.penaltyRunup), fk: freeKickRunupOf(setup.freeKickRunup) };
+      this.energyFactor = 1;
+      this.energy = 100;
+      this.playstyle = "balanced";
+      this.enteredAt = 0;
+      this.keeperSalt = keeperSaltFor(true);
+      this.sc = buildScenario("one_on_one", mulberry32(1), 60, 60, 60);
+      return;
+    }
     this.MATCH_DURATION = ruleBookFor(career, "FA").matchLengthMinutes ?? DEFAULT_MATCH_DURATION;
     setOffsideRuleEnabled(!ruleBookFor(career, "FA").offsideAbolished);
     this.ADDED = rollAddedTime(mulberry32(addedTimeSeed(setup.seed)));
@@ -363,6 +410,7 @@ export class MatchDriver {
   private later(ms: number, fn: () => void) { this.timers.push({ at: this.tickNo + ticksFor(ms), gen: this.gen, fn }); }
   private mechOpen(id: Mechanic) { return mechanicOpen(this.setup.career, id); }
   private onPitch(squad: SquadPlayer[]): SquadPlayer[] {
+    if (this.feature) return [];
     return onPitchToday(fillMissingFromFullRoster(squad, this.startingXI, this.setup.career ?? null), this.startingXI);
   }
   private mayTake(kind: ScenarioKind): boolean {
@@ -386,7 +434,7 @@ export class MatchDriver {
     this.bump();
   }
   showAction(text: string) { this.banner = { text, at: this.now }; this.bump(); }
-  private playerLabel() { return this.setup.career.player.lastName || "you"; }
+  private playerLabel() { return this.setup.career?.player.lastName || "you"; }
   private momentLine() {
     const you = this.playerLabel();
     const pool = [
@@ -528,6 +576,7 @@ export class MatchDriver {
 
   start() {
     this.applyClearanceRules();
+    if (this.feature) { this.startFeature(); return; }
     if (this.setup.startMinute > 0) {
       // Coming off the bench: the match is played without you up to the minute you come on.
       this.seed += 1;
@@ -765,7 +814,7 @@ export class MatchDriver {
       ),
       ...this.matchExtras().extra,
       endEnergy: this.liveEnergyAt(this.hookedAt ?? this.matchMinute),
-      kibCansUsed: 0,
+      kibCansUsed: this.kibUsed,
       playstyle: this.playstyle,
       ...(this.wentToExtraTime ? { wentToExtraTime: true } : {}),
       ...(this.shootoutResult ? { shootout: this.shootoutResult } : {}),
@@ -777,26 +826,127 @@ export class MatchDriver {
   }
 
   /**
-   * NOT THE WEBSITE'S YET. The website plays every shootout kick live on the
-   * pitch (LiveShootout.tsx). Until that is ported, the phone settles it with
-   * the shared shootout rules (lib/star/shootout.ts) on its own seeded stream,
-   * so it never touches the match's.
+   * A KNOCKOUT GOES TO PENALTIES, EVERY KICK PLAYED ON THE PITCH (CanvasMatch
+   * startShootout + LiveShootout.tsx + loadShootoutKick): the real order
+   * (shootoutOrder), each kick a real penalty on the engine (a team-mate's
+   * and theirs struck for them by attachAutoKick), the score kept by
+   * lib/star/shootout.ts's own state machine.
    */
   private runShootout() {
-    const r = mulberry32((this.setup.seed ^ 0x5400) >>> 0);
-    let s = createShootout();
-    const ours = penaltyConversionChance(this.setup.career.skills.freeKick ?? this.setup.skills.technique);
-    const theirs = penaltyConversionChance(this.oppStrength);
     const home = this.setup.fixture.home !== false;
-    while (!s.over && s.kicks.length < 40) {
-      const homeKick = s.kicks.length % 2 === 0;
-      const usKick = homeKick === home;
-      s = takeNextKick(s, r() < (usKick ? ours : theirs));
+    const yourSide: ShootoutSide = home ? "home" : "away";
+    const car = this.setup.career;
+    const homeClub = home ? (car?.player.club ?? "Home") : (this.setup.fixture.opponent ?? "Away");
+    const awayClub = home ? (this.setup.fixture.opponent ?? "Away") : (car?.player.club ?? "Home");
+    const us = this.ourTakers(), them = this.theirTakers();
+    const you: PenaltyTaker | null = this.hooked ? null : {
+      id: "you", name: car ? `${car.player.firstName} ${car.player.lastName}` : "You", shortName: this.playerLabel(),
+      face: car?.player.portrait ?? DEFAULT_FAKE_FACE,
+      rating: yourPenaltyRating({ technique: this.setup.skills.technique, freeKick: car?.skills.freeKick ?? this.setup.skills.technique }, car?.starRating ?? 0),
+      you: true,
+    };
+    const ourOrder = shootoutOrder([...us.outfield, ...(us.keeper ? [us.keeper] : [])], you);
+    const theirOrder = shootoutOrder([...them.outfield, ...(them.keeper ? [them.keeper] : [])]);
+    const ourKeeper: ShootoutKeeper = {
+      strength: Math.max(20, Math.min(99, us.keeper?.overall ?? this.ourClubStrength())),
+      id: us.keeper?.id, name: us.keeper?.name, shortName: us.keeper?.shortName, face: us.keeper?.face,
+    };
+    const theirKeeper: ShootoutKeeper = {
+      strength: this.strength,
+      id: them.keeper?.id, name: them.keeper?.name, shortName: them.keeper?.shortName, face: them.keeper?.face,
+    };
+    this.shootout = {
+      homeClub, awayClub, yourSide,
+      home: home ? ourOrder : theirOrder, away: home ? theirOrder : ourOrder,
+      homeKeeper: home ? ourKeeper : theirKeeper, awayKeeper: home ? theirKeeper : ourKeeper,
+      state: createShootout(), final: false,
+      upNext: null,
+    };
+    this.logMoment("Penalties.", "period");
+    this.nextShootoutKick();
+  }
+  /** LiveShootout's effect: hand the next kick to the pitch, or finish. */
+  private nextShootoutKick() {
+    const so = this.shootout;
+    if (!so) return;
+    const st = so.state;
+    if (st.over) {
+      so.final = true;
+      so.upNext = null;
+      this.bump();
+      this.later(2600, () => {
+        this.shootoutResult = { home: st.homeScore, away: st.awayScore };
+        this.shootout = null;
+        this.log = [...this.log, logLine(`Penalties  ${st.homeScore} - ${st.awayScore}`, "period")];
+        this.finalize();
+      });
+      return;
     }
-    this.shootoutResult = { home: s.homeScore, away: s.awayScore };
-    this.log = [...this.log, logLine(`Penalties  ${s.homeScore} - ${s.awayScore}`, "period")];
-    this.pause = { cta: "Full time →", onContinue: () => this.finalize() };
+    const side = nextShootoutSide(st);
+    const order = side === "home" ? so.home : so.away;
+    const idx = nextTakerIndex(st, side, Math.max(1, order.length));
+    const taker = order[idx];
+    if (!taker) return;
+    so.upNext = { side, name: taker.you ? "You" : taker.shortName };
+    this.loadShootoutKick({ side, taker, round: Math.floor(st.kicks.length / 2) + 1, index: st.kicks.length }, order.length);
+  }
+  /** CanvasMatch loadShootoutKick: one kick of the live shootout, on the pitch. */
+  private loadShootoutKick(kick: { side: ShootoutSide; taker: PenaltyTaker; round: number; index: number }, rosterSize: number) {
+    const info = this.shootout!;
+    this.gen += 1;
+    this.seed += 1;
+    this.rng = countedRng(this.seed, this.rngCalls);
+    const rng = this.rng;
+    this.chain = null;
+    this.fpDribble = null;
+    this.td = null;
+    const ours = kick.side === info.yourSide;
+    const keeper = kick.side === "home" ? info.awayKeeper : info.homeKeeper;
+    const sc = buildScenario("penalty", rng, keeper.strength, this.team, this.vision);
+    enforceHardRules(sc);
+    sc.conditions = this.setup.conditions;
+    initDefenders(sc, rng);
+    stageScene(sc, { teammates: false });
+    clearForShootout(sc);
+    if (keeper.name) sc.keeper.who = { id: keeper.id ?? "gk", name: keeper.name, shortName: keeper.shortName ?? keeper.name, position: "GK", face: keeper.face };
+    if (!kick.taker.you) {
+      const plan = planPenalty(kick.taker.rating, mulberry32((this.seed ^ 0x7a11c) >>> 0));
+      attachAutoKick(sc, { side: ours ? "us" : "them", taker: kick.taker, plan, keeper, context: "shootout" });
+    }
+    this.standBackForRunup(sc);
+    this.setUpKeeper(sc, (this.seed ^ 0x4b7e) >>> 0);
+    this.sc = sc;
+    this.frameScenario(sc);
+    this.resetChanceState();
+    const n = kick.index;
+    this.shootoutKick = {
+      resolve: (scored: boolean) => {
+        const so = this.shootout;
+        if (!so || so.state.kicks.length !== n) return;
+        so.state = takeNextKick(so.state, scored, Math.max(1, rosterSize));
+        this.bump();
+        this.nextShootoutKick();
+      },
+    };
+    this.phase = "aim";
+    this.logMoment(kick.taker.you ? "Your penalty — up to you." : `${kick.taker.shortName} steps up…`, "you");
     this.bump();
+    if (!kick.taker.you) this.scheduleAutoKick();
+  }
+  /** Their eleven, from the real team sheet when there is one (CanvasMatch theirTakers). */
+  private theirTakers(): { outfield: PenaltyTaker[]; keeper: PenaltyTaker | null } {
+    const xi = this.oppXIForCast ?? [];
+    const all: PenaltyTaker[] = xi.map((p) => ({
+      id: p.id, name: p.name, shortName: p.shortName, face: p.face ?? fakeFaceFor(p.id),
+      rating: takerRating({ overall: p.overall }), isGK: p.isGK,
+    }));
+    const outfield = all.filter((t) => !t.isGK);
+    for (let i = outfield.length; i < 5; i++) outfield.push({ id: `opp-${i}`, name: `Their No. ${i + 7}`, shortName: `No. ${i + 7}`, face: fakeFaceFor(`opp-${i}`), rating: 62 });
+    return { outfield, keeper: all.find((t) => t.isGK) ?? null };
+  }
+  private ourClubStrength(): number {
+    const car = this.setup.career;
+    return car?.league.find((t) => t.name === car.player.club)?.strength ?? this.team;
   }
 
   /** Low / Medium / High (CanvasMatch setEnergyMode). */
@@ -810,6 +960,18 @@ export class MatchDriver {
       stretch.changes.push({ minute: this.matchMinute + 1, mode });
       this.startSimulation(true);
     }
+  }
+  /** Basic KIB cans drunk at half time this match (CanvasMatch kibUsedRef). */
+  kibUsed = 0;
+  /** Basic cans you still have for this match. */
+  kibCansLeft(): number { return Math.max(0, (this.setup.career?.kibCans?.basic ?? 0) - this.kibUsed); }
+  /** Half time only: drink a Basic KIB can, +65 energy (CanvasMatch drinkHalfTimeKib). */
+  drinkHalfTimeKib() {
+    const owned = (this.setup.career?.kibCans?.basic ?? 0) - this.kibUsed;
+    if (owned <= 0 || this.energy >= 100) return;
+    this.kibUsed += 1;
+    this.energy = clampEnergy(this.energy + KIB_HALF_TIME_RESTORE);
+    this.bump();
   }
   /** Defensive / Balanced / Attacking (CanvasMatch setPlaystyle). */
   setPlaystyle(ps: Playstyle) {
@@ -907,6 +1069,9 @@ export class MatchDriver {
     this.seed += 1;
     this.rng = countedRng(this.seed, this.rngCalls);
     const rng = this.rng;
+
+    // A feature's own picture (CanvasMatch loadScenario, "PLAYING ONE PARTICULAR PICTURE").
+    if (this.feature) { this.chain = null; this.pendingRequest = null; this.setPieceNext = null; this.loadFeaturePicture(rng); return; }
 
     const rawRequest = attacking ? null : this.pendingRequest;
     this.pendingRequest = null;
@@ -1046,7 +1211,7 @@ export class MatchDriver {
     seed = (seed ^ (this.keeperSalt ?? 0)) >>> 0;
     const opts = brainOptionsHere();
     const facing = autoKickOf(sc)?.keeper?.strength ?? this.strength;
-    opts.penalty = penaltyReadFor(facing, undefined);
+    opts.penalty = penaltyReadFor(facing, this.feature?.penaltyRead?.());
     brainSetup(sc, seed, sc.keeperStrength, opts);
   }
   private runupStyleFor(sc: Scenario): RunupId {
@@ -1059,7 +1224,21 @@ export class MatchDriver {
 
   /** CanvasMatch frameScenario, the new view (the website's default). */
   private frameScenario(sc: Scenario) {
-    turnWideChance(sc, !hasRunup(sc.kind), this.hw);
+    const scene = this.feature?.scene;
+    if (scene?.ownFrame) {
+      // A feature's own close camera (a drill): its frame, given the canvas's shape (CanvasMatch frameScenario).
+      this.facing = sc.facing ?? "up";
+      if (this.facing === "up") {
+        const v = sc.viewport, hw = this.hw, w = v.x2 - v.x1, h = v.y2 - v.y1;
+        if (w > 0 && h > 0 && Math.abs(h / w - hw) > 0.01) {
+          if (h / w < hw) sc.viewport = { ...v, y2: v.y1 + w * hw };
+          else { const cx = (v.x1 + v.x2) / 2, w2 = h / hw; sc.viewport = { ...v, x1: cx - w2 / 2, x2: cx + w2 / 2 }; }
+        }
+      }
+      this.viewport = { ...sc.viewport };
+      return;
+    }
+    if (!scene) turnWideChance(sc, !hasRunup(sc.kind), this.hw);
     this.facing = sc.facing ?? "up";
     this.tiltDeg = this.tiltForChance(sc);
     const wasFacing = sc.facing ?? "up";
@@ -1085,12 +1264,12 @@ export class MatchDriver {
   }
 
   // ── A penalty a team-mate takes, live (CanvasMatch loadTeammatePenalty + scheduleAutoKick) ──
-  private ourTakers(): { outfield: PenaltyTaker[] } {
+  private ourTakers(): { outfield: PenaltyTaker[]; keeper: (PenaltyTaker & { overall?: number }) | null } {
     const squad = this.onPitch(this.setup.career.squad ?? []);
     const all = squad.map((p) => ({ id: p.id, name: p.name, shortName: p.shortName, face: p.imageUrl ?? fakeFaceFor(p.id), rating: takerRating(p), isGK: p.position === "GK", overall: p.overall }));
     const outfield = all.filter((t) => !t.isGK);
     for (let i = outfield.length; i < 5; i++) outfield.push({ id: `mate-${i}`, name: `Team-mate ${i + 1}`, shortName: `No. ${i + 7}`, face: fakeFaceFor(`mate-${i}`), rating: 62, isGK: false, overall: undefined });
-    return { outfield };
+    return { outfield, keeper: all.find((t) => t.isGK) ?? null };
   }
   private loadTeammatePenalty(request: ScenarioRequest, rng: () => number): boolean {
     const us = this.ourTakers();
@@ -1365,7 +1544,7 @@ export class MatchDriver {
   // ════════════════════════════════════════════════════════════════════════
 
   /** Is the captain's armband on? */
-  get isCaptain() { return !!this.setup.career.captain; }
+  get isCaptain() { return !!this.setup.career?.captain; }
   private captainDrag: { target: Runner | "follower"; from: Vec2; to: Vec2 } | null = null;
 
   /**
@@ -1548,6 +1727,7 @@ export class MatchDriver {
     this.aim = { dir: dir0, power };
     this.phase = "runup";
     this.pushLine("He runs up…");
+    this.tryHold("runup");
     this.bump();
   }
   /** Nudge the run-up's aim sideways (metres at the goal line). */
@@ -1572,6 +1752,7 @@ export class MatchDriver {
     this.contactTimedOut = false;
     this.contactSpark = null;
     this.contactFrozen = null;
+    this.tryHold("contact");
     this.bump();
   }
   /** The strike screen's ball right now, as fractions of its area (ContactBall's mover). */
@@ -1637,6 +1818,7 @@ export class MatchDriver {
     this.handleContact(s.contact, { dir: s.dir, power: s.power });
   }
   airAerialNow(): number | undefined {
+    if (!this.setup.career) return this.feature?.aerial;
     return Math.round(aerialOf(this.setup.career.skills) * (1 - fatigueCut(this.liveEnergyAt(this.matchMinute))));
   }
   /** How the strike screen's ball moves (CanvasMatch strikeMotion). */
@@ -1666,7 +1848,7 @@ export class MatchDriver {
     const auto = over?.skills ? { skills: over.skills } : null;
     this.contactTimerS = null;
     const tired = this.tiredSkills();
-    const fkRaw = this.setup.career.skills.freeKick;
+    const fkRaw = this.setup.career?.skills.freeKick ?? this.feature?.setPieceSkill;
     const strikeWith = auto ? auto.skills : setPieceSkills(
       tired,
       fkRaw === undefined ? tired.technique : fkRaw * (1 - fatigueCut(this.liveEnergyAt(this.matchMinute))),
@@ -1676,7 +1858,7 @@ export class MatchDriver {
     const launchWith = feelPow
       ? { ...strikeWith, power: feelPower(strikeWith.power) }
       : switchOn("powerCurve") ? { ...strikeWith, power: strikingPower(strikeWith.power) } : strikeWith;
-    if (contact.air) contact = { ...contact, air: { ...contact.air, tech: launchWith.technique, aerial: Math.round(aerialOf(this.setup.career.skills) * (1 - fatigueCut(this.liveEnergyAt(this.matchMinute)))) } };
+    if (contact.air) contact = { ...contact, air: { ...contact.air, tech: launchWith.technique, aerial: this.setup.career ? Math.round(aerialOf(this.setup.career.skills) * (1 - fatigueCut(this.liveEnergyAt(this.matchMinute)))) : this.feature?.aerial } };
     const shotPro = !auto && shotsPro();
     const shotKnuckle = !auto && knucklePowerOn() && this.mechOpen("knuckle");
     const shotField = !auto && contactFieldOn();
@@ -1706,7 +1888,7 @@ export class MatchDriver {
       brainStrike(this.sc, this.ball, bs);
     } else if (this.sc.kind === "penalty") {
       const facing = autoKickOf(this.sc)?.keeper?.strength ?? this.strength;
-      const read = penaltyReadFor(facing, undefined);
+      const read = penaltyReadFor(facing, this.feature?.penaltyRead?.());
       const r = mulberry32(((this.seed ^ Math.imul(this.rngCalls.current + 1, 0x9e3779b1)) ^ 0x5eed ^ (this.keeperSalt ?? 0)) >>> 0);
       const decision = decidePenaltyRead(this.sc, this.ball, read, [r(), r()]);
       applyPenaltyRead(this.sc, decision);
@@ -1716,7 +1898,7 @@ export class MatchDriver {
     {
       const r = mulberry32(((this.seed ^ Math.imul(this.rngCalls.current + 1, 0x85ebca6b)) ^ 0x6b1d) >>> 0);
       const kd = strikeKind(this.sc, this.ball, r, {
-        keeperStrength: this.strength, setPieceSkill: undefined,
+        keeperStrength: this.strength, setPieceSkill: this.feature?.setPieceSkill,
         power: strikeWith.power, technique: strikeWith.technique,
         ...(!auto && this.runupStyleFor(this.sc) === LEAF_RUNUP ? { runup: LEAF_RUNUP } : {}),
       });
@@ -1733,7 +1915,7 @@ export class MatchDriver {
         const stick = afterPassStickOn() && this.mechOpen("steer");
         const car = this.setup.career;
         this.playOn = startPlayOnRun(sc, this.playOnRng, { x: bl.pos.x + bl.vel.x * 0.8, y: bl.pos.y + bl.vel.y * 0.8 }, {
-          stick, pace: car.skills.pace, energy: this.liveEnergyAt(this.matchMinute), bar: this.bar,
+          stick, pace: car?.skills.pace, energy: this.liveEnergyAt(this.matchMinute), bar: this.bar,
         });
       }
     }
@@ -1773,6 +1955,8 @@ export class MatchDriver {
     }
     if (this.phase === "feed") { this.feedTick(); return; }
     if (this.phase === "done") return;
+    // A feature's teaching pause: the run-up and the strike screen's clock stand still.
+    if (this.held) { if (this.phase === "contact") this.contactT0 += 1; return; }
 
     let dt = FRAME_DT;
     const replayDt = Math.min(Math.max(0, dt), LEAD_REPLAY_MAX_DT);
@@ -1792,7 +1976,7 @@ export class MatchDriver {
         if (!ar || ar.sc !== sc) {
           const kind = sc.kind as "header" | "volley";
           const mate = sc.teammates[0];
-          const tech = this.setup.career.skills.technique ?? this.setup.skills.technique;
+          const tech = this.setup.career?.skills.technique ?? this.setup.skills.technique;
           const move = forcedAerialMove(kind) ?? pickAerialMove({
             kind, ballZ: airZOf(sc),
             inDir: mate ? { x: sc.ball.x - mate.x, y: sc.ball.y - mate.y } : { x: 0, y: -1 },
@@ -1946,6 +2130,9 @@ export class MatchDriver {
         this.showAction("DEFLECTED");
         this.pushLine("Blocked — and it's come off him loose!");
       }
+      if (this.feature?.onBallStep) {
+        try { this.feature.onBallStep({ x: ball.pos.x, y: ball.pos.y, z: ball.z }); } catch { /* an observer never breaks the match */ }
+      }
       if (res === "short") clearLooseWin(ball, sc);
       if (res) { this.resolveOutcome(res); break; }
     }
@@ -1990,6 +2177,18 @@ export class MatchDriver {
     const isSimplePass = !youShot && !receiverShot && sc.passTarget != null;
     const kind = OUTCOME_TEXT[res].kind;
 
+    if (this.feature) {
+      try {
+        this.feature.onChanceResolved?.({
+          outcome: res, kind: sc.kind, youShot, teammateShot: receiverShot,
+          ball: this.ball ? { x: this.ball.pos.x, y: this.ball.pos.y, z: this.ball.z } : null,
+          ...(auto ? { autoKick: auto.side } : {}),
+        });
+      } catch { /* an observer never breaks the match */ }
+      this.featureAfter(res, kind, auto);
+      return;
+    }
+
     const yourFinish: "chip" | "curl" | undefined = (() => {
       if (auto) return undefined;
       if (this.cheekyStrikeKind === "chip") return "chip";
@@ -2005,6 +2204,17 @@ export class MatchDriver {
 
     const assist = assistFor(this.matePlays);
     const d = creditChance(res, { youShot, receiverShot, isSimplePass, assistYours: assist.yours });
+    // A live shootout kick: report the real outcome to the shootout and stop (CanvasMatch isShootoutKick).
+    if (this.shootoutKick) {
+      const cb = this.shootoutKick;
+      this.shootoutKick = null;
+      const scored = kind === "goal";
+      if (scored) this.showAction("GOAL");
+      else this.showAction(res === "saved" || res === "caught" || res === "tipped" ? "SAVED" : "MISSED");
+      this.later(1400, () => cb.resolve(scored));
+      this.bump();
+      return;
+    }
     const t = this.tally;
     if (!auto) {
       t.shots += d.shots; t.goals += d.goals; t.passes += d.passes; t.passesCompleted += d.passesCompleted;
@@ -2144,6 +2354,110 @@ export class MatchDriver {
     if (this.chain) { this.later(quickOn ? 250 : 1600, () => this.loadScenario(true)); return; }
     this.handOver(() => this.startSimulation(), 1800);
     this.bump();
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  A FEATURE ON THE MATCH (EngineFeature: the trial's stages, the drills)
+  // ════════════════════════════════════════════════════════════════════════
+
+  /** CanvasMatch's ref creation + its mount effect, for a feature's opening picture. */
+  private startFeature() {
+    const f = this.feature!;
+    this.rng = countedRng(this.seed, this.rngCalls);
+    const sc = f.openOn();
+    enforceHardRules(sc);
+    stageScene(sc, f.scene);
+    this.sc = sc;
+    this.dressFeature(sc, this.rng, (this.setup.seed ^ 0x4b7e) >>> 0);
+    this.phase = "aim";
+    this.pushLine(commentaryBuildup(sc.kind, this.rng, this.targetName(sc)));
+    this.scheduleAutoKick();
+    this.bump();
+  }
+  /** CanvasMatch loadScenario's openOn branch. */
+  private loadFeaturePicture(rng: () => number) {
+    const f = this.feature!;
+    this.strength = f.keeperStrength();
+    const sc = f.openOn();
+    enforceHardRules(sc);
+    this.sc = sc;
+    sc.conditions = this.setup.conditions;
+    castScenario(sc, this.onPitch([]));
+    initDefenders(sc, rng);
+    castDefence(sc, this.oppXIForCast);
+    stageScene(sc, f.scene);
+    this.dressAutoKeeper(sc);
+    this.standBackForRunup(sc);
+    this.setUpKeeper(sc, (this.seed ^ 0x4b7e) >>> 0);
+    this.frameScenario(sc);
+    this.resetChanceState();
+    this.phase = "aim";
+    this.scheduleAutoKick();
+    this.bump();
+  }
+  /** The mount effect's dressing of the opening picture (cast, shape, keeper, frame). */
+  private dressFeature(sc: Scenario, rng: () => number, keeperSeed: number) {
+    sc.conditions = this.setup.conditions;
+    castScenario(sc, this.onPitch([]));
+    initDefenders(sc, rng);
+    castDefence(sc, this.oppXIForCast);
+    this.dressAutoKeeper(sc);
+    this.standBackForRunup(sc);
+    this.setUpKeeper(sc, keeperSeed);
+    this.frameScenario(sc);
+  }
+  /** CanvasMatch dressAutoKeeper: the keeper an automatic kick names. */
+  private dressAutoKeeper(sc: Scenario) {
+    const k = autoKickOf(sc)?.keeper;
+    if (!k) return;
+    sc.keeperStrength = k.strength;
+    if (k.name) sc.keeper.who = { id: k.id ?? "gk", name: k.name, shortName: k.shortName ?? k.name, position: "GK", face: k.face };
+  }
+  /** CanvasMatch scheduleAutoKick: an automatic kick's taker stands over it, then runs up. */
+  private scheduleAutoKick() {
+    if (!autoKickOf(this.sc)) return;
+    this.later(AUTO_STAND_MS, () => {
+      if (this.phase !== "aim") return;
+      const k = autoKickOf(this.sc);
+      if (!k) return;
+      const a = aimFor(this.sc, k.plan);
+      this.startRunup(a.dir, a.power, { contact: a.contact, skills: takerSkills(k.taker.rating) });
+    });
+  }
+  /** CanvasMatch tryHold: ask the feature whether to freeze here (its teaching card). */
+  private tryHold(moment: "runup" | "contact") {
+    const ask = this.feature?.holdAt;
+    if (!ask) return;
+    let done = false;
+    const release = () => { if (done) return; done = true; this.held = false; this.bump(); };
+    if (ask(moment, release) && !done) { this.held = true; this.bump(); }
+  }
+  /**
+   * The end of resolveOutcome on a feature (no match to credit): the caption,
+   * then the next picture (sandbox mode: CanvasMatch stops after six).
+   */
+  private featureAfter(res: Outcome, kind: string, auto: ReturnType<typeof autoKickOf>) {
+    const sc = this.sc;
+    const banners = this.feature?.scene?.banners !== false;
+    if (banners) {
+      if (auto && kind !== "goal") this.showAction(res === "saved" || res === "caught" || res === "tipped" ? "SAVED" : "MISSED");
+      else if (kind === "goal") this.showAction("GOAL");
+      else if (res === "tackled" || res === "blocked") this.showAction(res === "blocked" ? "BLOCKED" : "INTERCEPTED");
+      else if (res === "out" || res === "wide" || res === "over" || res === "short") this.showAction(res === "wide" ? "WIDE" : res === "over" ? "OVER" : res === "short" ? "NOBODY THERE" : "OUT OF PLAY");
+      else if (res === "saved" || res === "caught") this.showAction("SAVED");
+      else if (res === "post") this.showAction("POST");
+    }
+    if (kind === "goal" && !auto) this.userScore += 1;
+    void sc;
+    if (auto) { this.later(1600, () => this.loadScenario(false)); this.bump(); return; }
+    this.attempts += 1;
+    if (this.attempts >= 6) { this.bump(); return; }
+    this.handOver(() => this.loadScenario(false), 1800);
+    this.bump();
+  }
+  /** A feature's cones on the grass this chance (the markers prop). */
+  markersNow(): { x: number; y: number; color?: string }[] {
+    return this.feature?.markers?.() ?? [];
   }
 
   /** CanvasMatch handOver: after `ms`, or once a cleared ball has left the picture. */
