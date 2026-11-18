@@ -1,0 +1,36 @@
+{
+  "_about": "Euro 96 semi-final, Wembley, 26 June 1996: Alan Shearer heads England ahead from a corner in the third minute (UEFA, FourFourTwo, 90min). England wore the grey/indigo away kit (FourFourTwo, englandfootball.com); Germany their white home shirt and black shorts (historicalkits). Who took and flicked on the corner is not stated in the sources found, so the pop-up shows no assist. Keeper kits assumed.",
+  "teams": {
+    "home": { "name": "England", "short": "England", "kit": { "shirt": "#5a6170", "shorts": "#5a6170", "socks": "#5a6170" }, "keeperKit": { "shirt": "#2E8B57", "shorts": "#111111", "socks": "#2E8B57" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Germany", "short": "Germany", "kit": { "shirt": "#FFFFFF", "shorts": "#111111", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#2b2b2b", "shorts": "#111111", "socks": "#2b2b2b" }, "popupTrim": "#111111" }
+  },
+  "people": {
+    "shearer":  { "name": "Alan Shearer", "skin": "#f0c3a0", "hair": "#3b2a1e" },
+    "adams":    { "name": "Tony Adams", "skin": "#f0c3a0", "hair": "#3b2a1e" },
+    "gascoigne":{ "name": "Paul Gascoigne", "skin": "#f0c3a0", "hair": "#e8d8b0" },
+    "sheringham": { "name": "Teddy Sheringham", "skin": "#f0c3a0", "hair": "#3b2a1e" },
+    "sammer":   { "name": "Matthias Sammer", "skin": "#f0c3a0", "hair": "#c96a3a" },
+    "helmer":   { "name": "Thomas Helmer", "skin": "#f0c3a0", "hair": "#3b2a1e" },
+    "babbel":   { "name": "Markus Babbel", "skin": "#f0c3a0", "hair": "#3b2a1e" },
+    "reuter":   { "name": "Stefan Reuter", "skin": "#f0c3a0", "hair": "#c9a27e" },
+    "kopke":    { "name": "Andreas Kopke", "skin": "#f0c3a0", "hair": "#c9a27e" }
+  },
+  "clips": [
+    {
+      "id": "shearer-1996",
+      "kind": "header",
+      "attacking": "home",
+      "scorer": "shearer", "assister": "gascoigne",
+      "defenders": ["babbel", "reuter", "helmer", "sammer"],
+      "keeper": "kopke",
+      "teammates": ["adams", "sheringham"],
+      "minute": 3, "minuteLabel": "3",
+      "scoreBefore": [0, 0], "scoreAfter": [1, 0],
+      "night": true,
+      "celebration": "hands_up",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "corner", "side": "right", "swing": "in", "scorerStart": [1, 14], "scorerSpot": [1.5, 4.5], "finish": "header", "height": "mid" },
+      "seed": "shearer-1996-a"
+    }
+  ]
+}

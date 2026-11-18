@@ -1,0 +1,32 @@
+{
+  "_about": "ns-bale-brazil. Clip 1 (real): Bale's free kick, Wales 2-1 Slovakia, Euro 2016, Bordeaux, 11 June 2016, 10th minute, from about 30 yards past Matus Kozacik (Reuters, UEFA). Kits as worn: Wales red, Slovakia white. Clip 2 (ALTERNATE WORLD, imagined): Bale in Brazil's yellow scores a long shot against Germany in the 2014 World Cup semi-final in Belo Horizonte. Germany wore white. Keeper kits assumed.",
+  "teams": {
+    "home": { "name": "Brazil", "short": "BRA", "kit": { "shirt": "#FEDD00", "shorts": "#0B3FA8", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#2E2E2E", "shorts": "#2E2E2E", "socks": "#2E2E2E" }, "popupTrim": "#0B9A3C" },
+    "away": { "name": "Germany", "short": "GER", "kit": { "shirt": "#F4F4F4", "shorts": "#F4F4F4", "socks": "#F4F4F4" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#111111" }
+  },
+  "people": {
+    "bale":      { "name": "Gareth Bale", "skin": "#efc19c", "hair": "#4a3020" },
+    "oscar":     { "name": "Oscar", "skin": "#e2b08a", "hair": "#2a1d15" },
+    "hulk":      { "name": "Hulk", "skin": "#c98e66", "hair": "#120d0a" },
+    "fred":      { "name": "Fred", "skin": "#d39e78", "hair": "#1d1512" },
+    "hummels":   { "name": "Mats Hummels", "skin": "#efc4a3", "hair": "#4a3324" },
+    "boateng":   { "name": "Jerome Boateng", "skin": "#6b4430", "hair": "#0d0a09" },
+    "lahm":      { "name": "Philipp Lahm", "skin": "#f0c6a6", "hair": "#5b4030" },
+    "schweini":  { "name": "Bastian Schweinsteiger", "skin": "#f0c6a6", "hair": "#8a6a48" },
+    "neuer":     { "name": "Manuel Neuer", "skin": "#f2c9a8", "hair": "#b08a5a" }
+  },
+  "clips": [
+    {
+      "id": "bale-brazil-longshot",
+      "kind": "long_range", "attacking": "home",
+      "scorer": "bale", "assister": "oscar",
+      "defenders": ["schweini", "hummels", "boateng", "lahm"], "keeper": "neuer",
+      "teammates": ["hulk", "fred"],
+      "minute": 88, "scoreBefore": [1, 1], "scoreAfter": [2, 1],
+      "night": false, "celebration": "arms_out",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "scorerSpot": [-3, 27], "finish": "curl", "goalSide": "left", "height": "high" },
+      "seed": "bale-bra-a"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "_about": "El Clasico, Barcelona 1-2 Real Madrid, Camp Nou, 25 October 2026 (AP via TSN and La Nacion). (1) Late in the first half Fermin Lopez sent Lamine Yamal clean through; from near the corner of the six-yard box he shot wide of the post. (2) 87th minute, 1-1: substitute Eduardo Camavinga chased a long ball, drew Joan Garcia off his line and squared for Kylian Mbappe to tap in. Kits: Barcelona blaugrana (one shirt colour: the sprite has no stripes) and navy, Real Madrid all white (assumed). Night game.",
+  "teams": {
+    "home": { "name": "Barcelona", "kit": { "shirt": "#A50044", "shorts": "#0D1B4B", "socks": "#0D1B4B" }, "keeperKit": { "shirt": "#E6D21E", "shorts": "#E6D21E", "socks": "#E6D21E" }, "popupTrim": "#004D98" },
+    "away": { "name": "Real Madrid", "kit": { "shirt": "#F7F7F7", "shorts": "#F7F7F7", "socks": "#F7F7F7" }, "keeperKit": { "shirt": "#2E2E2E", "shorts": "#2E2E2E", "socks": "#2E2E2E" }, "popupTrim": "#D4AF37" }
+  },
+  "people": {
+    "yamal": { "name": "Lamine Yamal", "skin": "#8a5a3c", "hair": "#120d0a", "popupName": "Yamal" },
+    "fermin": { "name": "Fermin Lopez", "skin": "#e0b090", "hair": "#2a1d15", "popupName": "Fermín" },
+    "raphinha": { "name": "Raphinha", "skin": "#c08a64", "hair": "#1d1512" },
+    "martin": { "name": "Gerard Martin", "skin": "#e8b994", "hair": "#2a1d15" },
+    "cubarsi": { "name": "Pau Cubarsi", "skin": "#e8b994", "hair": "#2a1d15" },
+    "garcia": { "name": "Joan Garcia", "skin": "#f0c8a8", "hair": "#2a1d15" },
+    "mbappe": { "name": "Kylian Mbappe", "skin": "#6b4430", "hair": "#0d0a09", "popupName": "Mbappé" },
+    "camavinga": { "name": "Eduardo Camavinga", "skin": "#4a2e1e", "hair": "#0d0a09" },
+    "cucurella": { "name": "Marc Cucurella", "skin": "#e8b994", "hair": "#2a1d15" },
+    "huijsen": { "name": "Dean Huijsen", "skin": "#f0c8a8", "hair": "#3a2a1d" },
+    "rudiger": { "name": "Antonio Rudiger", "skin": "#3e2618", "hair": "#0d0a09" },
+    "courtois": { "name": "Thibaut Courtois", "skin": "#f0c8a8", "hair": "#3a2a1d" }
+  },
+  "clips": [
+    {
+      "id": "yamal-miss", "kind": "miss", "attacking": "home",
+      "scorer": "yamal", "assister": "fermin", "defenders": ["cucurella", "huijsen", "rudiger"], "keeper": "courtois", "teammates": ["raphinha"],
+      "minute": 43, "night": true,
+      "cameras": ["tv", "fan", "high"],
+      "recreate": { "base": "one_on_one", "delivery": "through", "scorerSpot": [4.5, 6], "outcome": "wide", "goalSide": "far" },
+      "seed": "yamal-miss-a"
+    },
+    {
+      "id": "mbappe-winner", "kind": "tap_in", "attacking": "away",
+      "scorer": "mbappe", "assister": "camavinga", "defenders": ["martin", "cubarsi"], "keeper": "garcia",
+      "minute": 87, "scoreBefore": [1, 1], "scoreAfter": [1, 2], "night": true, "celebration": "arms_out",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "scorerSpot": [0.5, 4], "finish": "ground", "height": "low" },
+      "seed": "mbappe-cn-a"
+    }
+  ]
+}

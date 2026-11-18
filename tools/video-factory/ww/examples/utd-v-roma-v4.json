@@ -1,0 +1,884 @@
+{
+ "id": "utd-v-roma-v4",
+ "about": "Parity example: the approved Who would win? Man United v Roma v4 (0-4, Malen hat-trick, Dalot skies it in the 93rd minute), as data. Build with --no-vo for the original; the vo list is the narrated test.",
+ "title": "WHO WOULD WIN?",
+ "footageRoot": "footage/utd-v-roma",
+ "calm": {
+  "dir": "calm/high"
+ },
+ "music": "09-last-attack.mp3",
+ "competition": {
+  "title": [
+   "CHAMPIONS LEAGUE 26/27",
+   "LEAGUE PHASE · OLD TRAFFORD"
+  ],
+  "tagline": "22 PLAYERS · 1 WINNER",
+  "versus": "UCL LEAGUE PHASE · 3 NOV 2026",
+  "short": "UCL · LEAGUE PHASE"
+ },
+ "venue": {
+  "name": "OLD TRAFFORD",
+  "place": "MANCHESTER · ENGLAND",
+  "lat": 53.463,
+  "lon": -2.291
+ },
+ "globe": {
+  "start": [
+   47.5,
+   5
+  ]
+ },
+ "home": {
+  "name": "MAN UNITED",
+  "full": "MANCHESTER UNITED",
+  "versus": [
+   "MAN",
+   "UNITED"
+  ],
+  "nation": "eng",
+  "founded": 1878,
+  "city": {
+   "label": "MANCHESTER",
+   "sub": "ENGLAND",
+   "lat": 53.463,
+   "lon": -2.291
+  },
+  "formation": "4-2-3-1",
+  "sheetLabel": "HOME KIT · 4-2-3-1",
+  "kit": {
+   "shirt": "#d81e2c",
+   "trim": "#ffffff",
+   "collar": "#111111",
+   "shorts": "#ffffff",
+   "socks": "#d81e2c",
+   "number": "#ffffff",
+   "gk": {
+    "shirt": "#e8e04a",
+    "trim": "#1a1a1a",
+    "collar": "#1a1a1a"
+   }
+  },
+  "crest": {
+   "a": "#d81e2c",
+   "b": "#ffffff",
+   "c": "#111",
+   "t": "MU",
+   "tc": "#fff",
+   "ts": 40
+  },
+  "colors": {
+   "ring": "#e0262f",
+   "pillBg": "#d81e2c",
+   "pillFg": "#fff",
+   "headerBg": "#d81e2c",
+   "headerFg": "#fff",
+   "headerSub": "rgba(255,255,255,.85)",
+   "versusBg": "#7e0f17",
+   "accent": "#ff6b6b",
+   "bar": "#d81e2c",
+   "confetti": [
+    "#d81e2c",
+    "#ffffff",
+    "#111111",
+    "#ffd23f"
+   ],
+   "ribbon": [
+    "#d81e2c",
+    "#ffffff"
+   ]
+  },
+  "grid": [
+   "bruno",
+   "mbeumo",
+   "cunha",
+   "baleba",
+   "amad",
+   "mainoo",
+   "maguire",
+   "yoro",
+   "heaven",
+   "dalot",
+   "lammens"
+  ],
+  "slots": {
+   "cunha": "LW",
+   "lammens": "GK",
+   "dalot": "RB",
+   "maguire": "CB1",
+   "yoro": "CB2",
+   "heaven": "LB",
+   "baleba": "CM1",
+   "mainoo": "CM2",
+   "mbeumo": "ST",
+   "bruno": "CAM",
+   "amad": "RW"
+  },
+  "manager": "carrick"
+ },
+ "away": {
+  "name": "ROMA",
+  "full": "AS ROMA",
+  "versus": [
+   "AS",
+   "ROMA"
+  ],
+  "nation": "ita",
+  "founded": 1927,
+  "city": {
+   "label": "ROME",
+   "sub": "ITALY",
+   "lat": 41.934,
+   "lon": 12.455
+  },
+  "formation": "3-4-2-1",
+  "sheetLabel": "AWAY KIT · 3-4-2-1",
+  "kit": {
+   "shirt": "#efe9dc",
+   "trim": "#a6192e",
+   "collar": "#a6192e",
+   "pattern": "band",
+   "band": [
+    "#f4b223",
+    "#a6192e"
+   ],
+   "shorts": "#efe9dc",
+   "socks": "#efe9dc",
+   "number": "#a6192e",
+   "gk": {
+    "shirt": "#2bb673",
+    "trim": "#0b3d2a",
+    "collar": "#0b3d2a"
+   }
+  },
+  "crest": {
+   "a": "#8e1b2b",
+   "b": "#f4b223",
+   "c": "#3a0a12",
+   "t": "ASR",
+   "tc": "#f4b223",
+   "ts": 30
+  },
+  "colors": {
+   "ring": "#f4b223",
+   "pillBg": "#efe9dc",
+   "pillFg": "#a6192e",
+   "headerBg": "#efe9dc",
+   "headerFg": "#a6192e",
+   "headerSub": "#a6192e",
+   "headerStripes": [
+    "#f4b223",
+    "#a6192e"
+   ],
+   "versusBg": "#5c4208",
+   "accent": "#ffc94d",
+   "bar": "#f4b223",
+   "confetti": [
+    "#a6192e",
+    "#efe9dc",
+    "#f4b223",
+    "#111"
+   ],
+   "ribbon": [
+    "#a6192e",
+    "#f4b223"
+   ]
+  },
+  "grid": [
+   "malen",
+   "soule",
+   "cristante",
+   "deroon",
+   "mora",
+   "wesley",
+   "mancini",
+   "balerdi",
+   "hermoso",
+   "rensch",
+   "gollini"
+  ],
+  "slots": {
+   "malen": "ST",
+   "gollini": "GK",
+   "mancini": "RCB",
+   "balerdi": "CCB",
+   "hermoso": "LCB",
+   "rensch": "RWB",
+   "cristante": "CM1",
+   "deroon": "CM2",
+   "wesley": "LWB",
+   "soule": "RAM",
+   "mora": "LAM"
+  },
+  "manager": "gasperini"
+ },
+ "players": {
+  "bruno": {
+   "name": "BRUNO",
+   "full": "Bruno Fernandes",
+   "num": 8,
+   "skin": "olive",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "full"
+  },
+  "mbeumo": {
+   "name": "MBEUMO",
+   "full": "Bryan Mbeumo",
+   "num": 19,
+   "skin": "brown",
+   "hair": [
+    "bald",
+    "#000"
+   ],
+   "beard": "full"
+  },
+  "cunha": {
+   "name": "CUNHA",
+   "full": "Matheus Cunha",
+   "num": 10,
+   "skin": "brown",
+   "hair": [
+    "curlytop",
+    "#110d0b"
+   ],
+   "beard": "full"
+  },
+  "baleba": {
+   "name": "BALEBA",
+   "full": "Carlos Baleba",
+   "num": 20,
+   "skin": "deep",
+   "hair": [
+    "curlytop",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "amad": {
+   "name": "AMAD",
+   "full": "Amad Diallo",
+   "num": 16,
+   "skin": "dark",
+   "hair": [
+    "curlytop",
+    "#0d0a09"
+   ],
+   "beard": "goatee"
+  },
+  "mainoo": {
+   "name": "MAINOO",
+   "full": "Kobbie Mainoo",
+   "num": 37,
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "maguire": {
+   "name": "MAGUIRE",
+   "full": "Harry Maguire",
+   "num": 5,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#3a2a1e"
+   ],
+   "beard": "stubble"
+  },
+  "yoro": {
+   "name": "YORO",
+   "full": "Leny Yoro",
+   "num": 15,
+   "skin": "brown",
+   "hair": [
+    "locs",
+    "#120e0c"
+   ],
+   "beard": "none"
+  },
+  "heaven": {
+   "name": "HEAVEN",
+   "full": "Ayden Heaven",
+   "num": 26,
+   "skin": "dark",
+   "hair": [
+    "locs",
+    "#120e0c"
+   ],
+   "beard": "none"
+  },
+  "dalot": {
+   "name": "DALOT",
+   "full": "Diogo Dalot",
+   "num": 2,
+   "skin": "olive",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "short"
+  },
+  "lammens": {
+   "name": "LAMMENS",
+   "full": "Senne Lammens",
+   "num": 1,
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#3b2a1e"
+   ],
+   "beard": "stubble",
+   "gk": true
+  },
+  "carrick": {
+   "name": "CARRICK",
+   "full": "Michael Carrick",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#6b5440"
+   ],
+   "beard": "stubble",
+   "suit": {
+    "jacket": "#1f2533",
+    "tie": "#c8102e"
+   }
+  },
+  "malen": {
+   "name": "MALEN",
+   "full": "Donyell Malen",
+   "num": 14,
+   "skin": "tan",
+   "hair": [
+    "bald",
+    "#000"
+   ],
+   "beard": "goatee"
+  },
+  "soule": {
+   "name": "SOULÉ",
+   "full": "Matías Soulé",
+   "num": 18,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#141010"
+   ],
+   "beard": "none"
+  },
+  "cristante": {
+   "name": "CRISTANTE",
+   "full": "Bryan Cristante",
+   "num": 4,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "short"
+  },
+  "deroon": {
+   "name": "DE ROON",
+   "full": "Marten de Roon",
+   "num": 15,
+   "skin": "pink",
+   "hair": [
+    "side",
+    "#6b4a2e"
+   ],
+   "beard": "none"
+  },
+  "mora": {
+   "name": "MORA",
+   "full": "Rodrigo Mora",
+   "num": 86,
+   "skin": "pink",
+   "hair": [
+    "messy",
+    "#6b4a2e"
+   ],
+   "beard": "stubble"
+  },
+  "wesley": {
+   "name": "WESLEY",
+   "full": "Wesley",
+   "num": 43,
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#c9b08a"
+   ],
+   "beard": "short",
+   "beardCol": "#1a1210"
+  },
+  "mancini": {
+   "name": "MANCINI",
+   "full": "Gianluca Mancini",
+   "num": 23,
+   "skin": "light",
+   "hair": [
+    "buzz",
+    "#2a1d15"
+   ],
+   "beard": "stubble"
+  },
+  "balerdi": {
+   "name": "BALERDI",
+   "full": "Leonardo Balerdi",
+   "num": 26,
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#4a3220"
+   ],
+   "beard": "none"
+  },
+  "hermoso": {
+   "name": "HERMOSO",
+   "full": "Mario Hermoso",
+   "num": 22,
+   "skin": "olive",
+   "hair": [
+    "messy",
+    "#2a1d15"
+   ],
+   "beard": "full"
+  },
+  "rensch": {
+   "name": "RENSCH",
+   "full": "Devyne Rensch",
+   "num": 2,
+   "skin": "tan",
+   "hair": [
+    "crop",
+    "#141010"
+   ],
+   "beard": "full"
+  },
+  "gollini": {
+   "name": "GOLLINI",
+   "full": "Pierluigi Gollini",
+   "num": 95,
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#151010"
+   ],
+   "beard": "none",
+   "gk": true
+  },
+  "gasperini": {
+   "name": "GASPERINI",
+   "full": "Gian Piero Gasperini",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#c9c9c4"
+   ],
+   "beard": "none",
+   "suit": {
+    "jacket": "#1c1d24",
+    "tie": "#a6192e"
+   }
+  }
+ },
+ "ratings": {
+  "rows": [
+   [
+    "ATTACK",
+    84,
+    80
+   ],
+   [
+    "MIDFIELD",
+    83,
+    80
+   ],
+   [
+    "DEFENCE",
+    80,
+    81
+   ]
+  ],
+  "starMen": {
+   "home": {
+    "id": "bruno",
+    "rating": 88
+   },
+   "away": {
+    "id": "malen",
+    "rating": 83
+   }
+  },
+  "verdict": "UNITED ARE FAVOURITES"
+ },
+ "events": [
+  {
+   "id": "goalK",
+   "type": "goal",
+   "minute": "23'",
+   "scorer": "malen",
+   "assist": "wesley",
+   "footage": {
+    "parts": [
+     [
+      "goal-r1/tv",
+      20,
+      50
+     ],
+     [
+      "goal-r1/high",
+      50,
+      135
+     ]
+    ],
+    "goalAt": 1.6
+   },
+   "popup": "popup/pop0",
+   "caption": "MALEN STRIKES FIRST",
+   "dur": 3.2,
+   "crowd": "groan",
+   "sfx": [
+    [
+     "kick-soft",
+     0.23,
+     0.6
+    ],
+    [
+     "match-header",
+     1.23,
+     0.7
+    ],
+    [
+     "goal-net",
+     1.6,
+     0.8
+    ],
+    [
+     "crowd-groan",
+     1.68,
+     0.5
+    ],
+    [
+     "ui-confirm",
+     1.63,
+     0.4
+    ]
+   ]
+  },
+  {
+   "id": "goalY1",
+   "type": "goal",
+   "minute": "38'",
+   "scorer": "soule",
+   "assist": "malen",
+   "footage": {
+    "parts": [
+     [
+      "goal-r2/tv",
+      15,
+      40
+     ],
+     [
+      "goal-r2/high",
+      40,
+      118
+     ]
+    ],
+    "goalAt": 1.2
+   },
+   "popup": "popup/pop2",
+   "caption": "SOULÉ MAKES IT 2",
+   "dur": 3.2,
+   "crowd": "groan",
+   "sfx": [
+    [
+     "kick-soft",
+     0.4,
+     0.6
+    ],
+    [
+     "kick-hard",
+     0.97,
+     0.7
+    ],
+    [
+     "goal-net",
+     1.2,
+     0.8
+    ],
+    [
+     "crowd-groan",
+     1.25,
+     0.5
+    ],
+    [
+     "ui-confirm",
+     1.2,
+     0.4
+    ]
+   ]
+  },
+  {
+   "id": "goalM2",
+   "type": "goal",
+   "minute": "57'",
+   "scorer": "malen",
+   "assist": "mora",
+   "footage": {
+    "parts": [
+     [
+      "goal-r3/tv",
+      15,
+      40
+     ],
+     [
+      "goal-r3/high",
+      40,
+      118
+     ]
+    ],
+    "goalAt": 1.2
+   },
+   "popup": "popup/v2pop3",
+   "caption": "MALEN MAKES IT 3",
+   "dur": 3.2,
+   "crowd": "groan",
+   "sfx": [
+    [
+     "kick-soft",
+     0.4,
+     0.6
+    ],
+    [
+     "kick-hard",
+     0.97,
+     0.7
+    ],
+    [
+     "goal-net",
+     1.2,
+     0.8
+    ],
+    [
+     "crowd-groan",
+     1.25,
+     0.5
+    ],
+    [
+     "ui-confirm",
+     1.2,
+     0.4
+    ]
+   ]
+  },
+  {
+   "id": "goalM3",
+   "type": "goal",
+   "minute": "74'",
+   "scorer": "malen",
+   "assist": "cristante",
+   "footage": {
+    "parts": [
+     [
+      "goal-r4/tv",
+      20,
+      44
+     ],
+     [
+      "goal-r4/high",
+      52,
+      153
+     ]
+    ],
+    "goalAt": 1.9333
+   },
+   "popup": "popup/v2pop4",
+   "caption": "MALEN HAT-TRICK!",
+   "captionColor": "#ffd23f",
+   "dur": 3.6,
+   "crowd": "groan",
+   "sfx": [
+    [
+     "kick-soft",
+     0.1,
+     0.6
+    ],
+    [
+     "kick-hard",
+     1.03,
+     0.8
+    ],
+    [
+     "goal-net",
+     1.93,
+     0.9
+    ],
+    [
+     "crowd-groan",
+     2.0,
+     0.6
+    ],
+    [
+     "ui-confirm",
+     1.95,
+     0.4
+    ]
+   ]
+  },
+  {
+   "id": "miss",
+   "type": "miss",
+   "minute": "90+3'",
+   "lateCard": "90+3'",
+   "scorer": "dalot",
+   "assist": "bruno",
+   "footage": {
+    "parts": [
+     [
+      "goal-miss/tv",
+      5,
+      62
+     ],
+     [
+      "goal-miss/high",
+      62,
+      160
+     ]
+    ],
+    "goalAt": 2.9667
+   },
+   "caption": "DALOT SKIES IT!",
+   "dur": 4.2,
+   "crowd": "groan",
+   "sfx": [
+    [
+     "kick-soft",
+     0.2,
+     0.6
+    ],
+    [
+     "kick-hard",
+     2.4,
+     0.8
+    ],
+    [
+     "crowd-groan",
+     2.55,
+     1.0
+    ],
+    [
+     "crowd-groan",
+     2.85,
+     0.7
+    ]
+   ]
+  }
+ ],
+ "fullTime": {
+  "side": "away",
+  "front": "malen",
+  "mates": [
+   "soule",
+   "cristante",
+   "wesley",
+   "mancini",
+   "mora",
+   "deroon"
+  ]
+ },
+ "potm": {
+  "top3": [
+   "malen",
+   "soule",
+   "mora"
+  ],
+  "name": "DONYELL MALEN",
+  "subtitle": "HAT-TRICK HERO"
+ },
+ "vo": [
+  {
+   "seg": "grid",
+   "offset": 0.3,
+   "text": "Manchester United against Roma. Twenty-two players, one winner."
+  },
+  {
+   "seg": "homeSheet",
+   "offset": 0.3,
+   "text": "Carrick's United, with Bruno Fernandes pulling the strings behind Mbeumo.",
+   "say": "Carrick's United, with Bruno Fernandesh pulling the strings behind Embewmo."
+  },
+  {
+   "seg": "awaySheet",
+   "offset": 0.2,
+   "text": "Gasperini's Roma: a back three, and Donyell Malen up top.",
+   "say": "Gasperini's Roma: a back three, and Donyell Mahlen up top."
+  },
+  {
+   "seg": "globe",
+   "offset": 0.6,
+   "text": "A Champions League night at Old Trafford, and on paper, United are favourites."
+  },
+  {
+   "seg": "ratings",
+   "offset": 0.4,
+   "text": "Bruno is rated eighty-eight. Malen, eighty-three. What could go wrong?",
+   "say": "Bruno is rated eighty-eight. Mahlen, eighty-three. What could go wrong?"
+  },
+  {
+   "seg": "goalK",
+   "offset": 0.1,
+   "spill": true,
+   "text": "Twenty-three minutes. Malen heads in the opener.",
+   "say": "Twenty-three minutes. Mahlen heads in the opener."
+  },
+  {
+   "seg": "goalY1",
+   "offset": 0.3,
+   "spill": true,
+   "text": "Soulé makes it two.",
+   "say": "Soolay makes it two."
+  },
+  {
+   "seg": "goalM2",
+   "offset": 0.2,
+   "spill": true,
+   "text": "Then Malen again. Three.",
+   "say": "Then Mahlen again. Three."
+  },
+  {
+   "seg": "goalM3",
+   "offset": 0.1,
+   "spill": true,
+   "text": "And from outside the box... a hat-trick!"
+  },
+  {
+   "seg": "late",
+   "offset": 0.0,
+   "spill": true,
+   "text": "Ninety-third minute. Bruno slips in Dalot, and...",
+   "say": "Ninety-third minute. Bruno slips in Daloh, and..."
+  },
+  {
+   "seg": "fulltime",
+   "offset": 0.5,
+   "text": "Nil-four. Roma have stunned Old Trafford."
+  },
+  {
+   "seg": "potm",
+   "offset": 0.8,
+   "text": "Player of the match? Donyell Malen. Hat-trick hero.",
+   "say": "Player of the match? Donyell Mahlen. Hat-trick hero."
+  },
+  {
+   "seg": "end",
+   "offset": 0.3,
+   "text": "Follow for more, and play Road to Ballon d'Or.",
+   "say": "Follow for more, and play Road to Ballon Dor."
+  }
+ ]
+}

@@ -1,0 +1,35 @@
+{
+  "_about": "Ferran Torres's winner, Spain 1-0 Argentina (aet), 2026 World Cup final, MetLife Stadium, New Jersey, 19 July 2026, 106th minute: Nico Williams set it up (most reports: a header into his path from a Porro cross) and Torres hit a powerful half-volley past Emiliano Martinez (Sky Sports, Jamaica Gleaner, NBC, worldcupranking). gamecap cannot film a knock-down, so this is a lofted ball met first time. Kits: Spain red shirt, navy shorts, blue socks; Argentina home sky blue and white stripes, white shorts, white socks (Bolavip, thesportscast, bemparana); gamecap draws one shirt colour, so Argentina show sky blue. Keeper kits assumed.",
+  "teams": {
+    "home": { "name": "Spain", "short": "ESP", "kit": { "shirt": "#C60B1E", "shorts": "#1B2A4A", "socks": "#1B2A4A" }, "keeperKit": { "shirt": "#1F1F1F", "shorts": "#1F1F1F", "socks": "#1F1F1F" }, "popupTrim": "#FFC400" },
+    "away": { "name": "Argentina", "short": "ARG", "kit": { "shirt": "#75AADB", "shorts": "#FFFFFF", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#2E8B57", "shorts": "#2E8B57", "socks": "#2E8B57" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "torres":    { "name": "Ferran Torres", "skin": "#e8b994", "hair": "#1d1512", "popupName": "Torres" },
+    "nico":      { "name": "Nico Williams", "skin": "#4a2e1e", "hair": "#0d0a09", "popupName": "N. Williams" },
+    "yamal":     { "name": "Lamine Yamal", "skin": "#7a4e33", "hair": "#0d0a09" },
+    "oyarzabal": { "name": "Mikel Oyarzabal", "skin": "#eac09c", "hair": "#2a1d15" },
+    "romero":    { "name": "Cristian Romero", "skin": "#d9a57e", "hair": "#1d1512" },
+    "otamendi":  { "name": "Nicolas Otamendi", "skin": "#d9a57e", "hair": "#1d1512" },
+    "molina":    { "name": "Nahuel Molina", "skin": "#e0b08a", "hair": "#1d1512" },
+    "tagliafico":{ "name": "Nicolas Tagliafico", "skin": "#eac09c", "hair": "#2a1d15" },
+    "martinez":  { "name": "Emiliano Martinez", "skin": "#e2b48e", "hair": "#2a1d15" }
+  },
+  "popupPosition": "top",
+  "clips": [{
+    "id": "torres-winner",
+    "kind": "volley",
+    "attacking": "home",
+    "scorer": "torres", "assister": "nico",
+    "defenders": ["romero", "otamendi", "molina", "tagliafico"],
+    "keeper": "martinez",
+    "teammates": ["yamal", "oyarzabal"],
+    "minute": 106, "minuteLabel": "106",
+    "scoreBefore": [0, 0], "scoreAfter": [1, 0],
+    "night": false,
+    "celebration": "knee_slide",
+    "cameras": ["tv", "high", "tight", "fan"],
+    "recreate": { "delivery": "lofted", "scorerSpot": [-1, 10], "finish": "volley", "height": "mid", "outcome": "goal" },
+    "seed": "torres-2026-a"
+  }]
+}

@@ -1,0 +1,30 @@
+{
+  "_about": "West Germany 1-2 Netherlands, Euro 88 semi-final, Volksparkstadion, Hamburg, Tue 21 June 1988, 20:15. Koeman's 74th-minute penalty after Van Basten went down under Kohler's challenge, past Eike Immel (Wikipedia Euro 88 knockout stage, UEFA 'Van Basten leaves it late', Goal tournament history). Van Basten's 88th-minute winner: Jan Wouters' pass through, Van Basten stretched and beat Immel low into the far corner (UEFA, FourFourTwo). Kits: Netherlands orange shirts, white shorts, orange socks; West Germany white shirts, black shorts, white socks (assumed from the teams' home kits of the time; no source names them for this game). Keeper colours assumed.",
+  "teams": {
+    "home": { "name": "West Germany", "kit": { "shirt": "#FFFFFF", "shorts": "#111111", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#2f6b3a", "shorts": "#111111", "socks": "#2f6b3a" }, "popupTrim": "#111111" },
+    "away": { "name": "Netherlands", "short": "Holland", "kit": { "shirt": "#F36C21", "shorts": "#FFFFFF", "socks": "#F36C21" }, "keeperKit": { "shirt": "#3a3a3a", "shorts": "#111111", "socks": "#3a3a3a" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "koeman": { "name": "Ronald Koeman", "skin": "#f2c8a6", "hair": "#d8b27a" },
+    "vanbasten": { "name": "Marco van Basten", "skin": "#f2c8a6", "hair": "#6b5440", "popupName": "Van Basten" },
+    "wouters": { "name": "Jan Wouters", "skin": "#f0c3a0", "hair": "#5b3a22" },
+    "gullit": { "name": "Ruud Gullit", "skin": "#7a4e33", "hair": "#0d0a09" },
+    "immel": { "name": "Eike Immel", "skin": "#f2c8a6", "hair": "#4a3426" },
+    "kohler": { "name": "Jurgen Kohler", "skin": "#f2c8a6", "hair": "#5b3a22" },
+    "matthaus": { "name": "Lothar Matthaus", "skin": "#f0c3a0", "hair": "#4a3426" },
+    "brehme": { "name": "Andreas Brehme", "skin": "#f2c8a6", "hair": "#d8b27a" }
+  },
+  "clips": [
+    { "id": "koeman-pen", "kind": "penalty", "attacking": "away", "scorer": "koeman", "keeper": "immel", "defenders": ["kohler", "matthaus"], "teammates": ["vanbasten", "gullit"],
+      "minute": 74, "scoreBefore": [1, 0], "scoreAfter": [1, 1], "night": true,
+      "cameras": ["tv", "high", { "angle": "fan", "from": "shot-1", "to": "goal+2", "name": "fan" }],
+      "recreate": { "goalSide": "right", "height": "low" },
+      "seed": "koeman-pen-a" },
+    { "id": "vanbasten-winner", "kind": "one_on_one", "attacking": "away", "scorer": "vanbasten", "assister": "wouters", "teammates": ["gullit"],
+      "defenders": ["kohler", "brehme", "matthaus"], "keeper": "immel",
+      "minute": 88, "scoreBefore": [1, 1], "scoreAfter": [1, 2], "night": true, "celebration": "arms_out",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "through", "passerStart": [-4, 30], "passFrom": [-4, 28], "scorerStart": [3, 20], "scorerSpot": [4, 8], "finish": "right", "goalSide": "far", "height": "low" },
+      "seed": "vanbasten-a" }
+  ]
+}

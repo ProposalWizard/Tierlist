@@ -1,0 +1,220 @@
+{
+ "_about": "The two QPR goals (see city-2012.json for the sources) from the 2011-12 title run, for city-2012-title and city-aguero-2011. (1) Kompany's header v United, 30 Apr 2012, 45+1: copied from examples/kompany-2012.json. (2) Dzeko's header v QPR, 13 May 2012, 90+2: David Silva's in-swinging corner (Wikipedia 'Manchester City F.C. 3-2 QPR', Planet Football); the corner's side is not stated, right is assumed. (3) Aguero 93:20 v QPR: Aguero plays it to Balotelli, Balotelli falls under Anton Ferdinand's challenge and pokes it back, Aguero goes past Taye Taiwo and fires low into the near corner past Paddy Kenny (Wikipedia match article, theScore 'Anatomy of a classic goal'). QPR wore their 2011-12 Lotto third kit (Wikipedia infobox file name): red and white squares (worldsoccertalk); the sprite has one shirt colour, so it is drawn plain red with white shorts. Keeper kit colours assumed.",
+ "teams": {
+  "home": {
+   "name": "Manchester City",
+   "kit": {
+    "shirt": "#6CABDD",
+    "shorts": "#FFFFFF",
+    "socks": "#6CABDD"
+   },
+   "keeperKit": {
+    "shirt": "#1F2A44",
+    "shorts": "#1F2A44",
+    "socks": "#1F2A44"
+   },
+   "popupTrim": "#FFFFFF"
+  },
+  "away": {
+   "name": "Queens Park Rangers",
+   "short": "QPR",
+   "kit": {
+    "shirt": "#D71920",
+    "shorts": "#FFFFFF",
+    "socks": "#FFFFFF"
+   },
+   "keeperKit": {
+    "shirt": "#2B2B2B",
+    "shorts": "#2B2B2B",
+    "socks": "#2B2B2B"
+   },
+   "popupTrim": "#FFFFFF"
+  }
+ },
+ "people": {
+  "silva": {
+   "name": "David Silva",
+   "skin": "#e8b994",
+   "hair": "#2a1d15"
+  },
+  "aguero": {
+   "name": "Sergio Aguero",
+   "skin": "#d9a57e",
+   "hair": "#1d1512",
+   "popupName": "Agüero"
+  },
+  "toure": {
+   "name": "Yaya Toure",
+   "skin": "#4a2e1e",
+   "hair": "#0d0a09"
+  },
+  "lescott": {
+   "name": "Joleon Lescott",
+   "skin": "#f0c3a0",
+   "hair": "#c9a27e"
+  },
+  "kompany": {
+   "name": "Vincent Kompany",
+   "skin": "#5a3826",
+   "hair": "#0d0a09"
+  },
+  "dzeko": {
+   "name": "Edin Dzeko",
+   "skin": "#e8c1a0",
+   "hair": "#2a1d15",
+   "popupName": "Džeko"
+  },
+  "balotelli": {
+   "name": "Mario Balotelli",
+   "skin": "#4a2e1e",
+   "hair": "#151010"
+  },
+  "dejong": {
+   "name": "Nigel de Jong",
+   "skin": "#8a5a3c",
+   "hair": "#7a5038"
+  },
+  "kenny": {
+   "name": "Paddy Kenny",
+   "skin": "#f0c3a0",
+   "hair": "#6b4a2e"
+  },
+  "aferdinand": {
+   "name": "Anton Ferdinand",
+   "skin": "#5e3a24",
+   "hair": "#0d0a09"
+  },
+  "taiwo": {
+   "name": "Taye Taiwo",
+   "skin": "#3e2618",
+   "hair": "#0d0a09"
+  },
+  "onuoha": {
+   "name": "Nedum Onuoha",
+   "skin": "#4a2e1e",
+   "hair": "#0d0a09"
+  },
+  "hill": {
+   "name": "Clint Hill",
+   "skin": "#f0c3a0",
+   "hair": "#8a6a4a"
+  },
+  "derry": {
+   "name": "Shaun Derry",
+   "skin": "#f0c3a0",
+   "hair": "#5b3a22"
+  }
+ },
+ "clips": [
+  {
+   "id": "dzeko-header",
+   "kind": "header",
+   "attacking": "home",
+   "scorer": "dzeko",
+   "assister": "silva",
+   "defenders": [
+    "hill",
+    "onuoha",
+    "aferdinand",
+    "taiwo",
+    "derry"
+   ],
+   "keeper": "kenny",
+   "teammates": [
+    "kompany",
+    "lescott",
+    "aguero"
+   ],
+   "minute": 92,
+   "minuteLabel": "90+2",
+   "scoreBefore": [
+    1,
+    2
+   ],
+   "scoreAfter": [
+    2,
+    2
+   ],
+   "night": false,
+   "cameras": [
+    "tv",
+    "high"
+   ],
+   "recreate": {
+    "delivery": "corner",
+    "side": "right",
+    "swing": "in",
+    "scorerStart": [
+     -3,
+     15
+    ],
+    "scorerSpot": [
+     -0.5,
+     6.8
+    ],
+    "finish": "header",
+    "height": "mid",
+    "goalSide": "far"
+   },
+   "seed": "dzeko-2012-a"
+  },
+  {
+   "id": "aguero-9320",
+   "kind": "one_on_one",
+   "attacking": "home",
+   "scorer": "aguero",
+   "assister": "balotelli",
+   "defenders": [
+    "taiwo",
+    "aferdinand",
+    "onuoha",
+    "hill"
+   ],
+   "keeper": "kenny",
+   "teammates": [
+    "dzeko",
+    "silva"
+   ],
+   "minute": 94,
+   "minuteLabel": "93:20",
+   "scoreBefore": [
+    2,
+    2
+   ],
+   "scoreAfter": [
+    3,
+    2
+   ],
+   "night": false,
+   "celebration": "arms_out",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "delivery": "through",
+    "passerStart": [
+     -2,
+     21
+    ],
+    "passFrom": [
+     -1.5,
+     18
+    ],
+    "scorerStart": [
+     1,
+     25
+    ],
+    "scorerSpot": [
+     7,
+     9.5
+    ],
+    "finish": "ground",
+    "goalSide": "right",
+    "height": "low"
+   },
+   "seed": "aguero-9320-a"
+  }
+ ]
+}

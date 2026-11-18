@@ -1,0 +1,25 @@
+{
+  "_about": "A generic Arsenal one-on-one with a Thierry Henry look (dark skin, shaved head), Arsenal red with white shorts and socks against a plain navy opponent. Not a real goal. The figures cannot show Arsenal's white sleeves.",
+  "teams": {
+    "home": { "name": "Arsenal", "kit": { "shirt": "#EF0107", "shorts": "#FFFFFF", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Rovers", "short": "Rovers", "kit": { "shirt": "#1B2A4A", "shorts": "#1B2A4A", "socks": "#1B2A4A" }, "keeperKit": { "shirt": "#2BB673", "shorts": "#0B3D2A", "socks": "#2BB673" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "henry":    { "name": "Thierry Henry", "skin": "#6e4630", "hair": "#1a120e" },
+    "bergkamp": { "name": "Dennis Bergkamp", "skin": "#f1c7a4", "hair": "#a07850" },
+    "pires":    { "name": "Robert Pires", "skin": "#e8b994", "hair": "#3b2a1e" }
+  },
+  "clips": [
+    {
+      "id": "henry-1v1",
+      "kind": "one_on_one",
+      "attacking": "home",
+      "scorer": "henry", "assister": "bergkamp", "teammates": ["pires"],
+      "minute": 67, "scoreBefore": [1, 0], "scoreAfter": [2, 0],
+      "celebration": "knee_slide",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "through", "goalSide": "far", "finish": "right" },
+      "seed": "henry-a"
+    }
+  ]
+}

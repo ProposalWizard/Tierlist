@@ -1,0 +1,111 @@
+{
+  "_about": "IMAGINED: Salah in a Spain shirt scores the 2026 World Cup final winner in extra time against Argentina (really Ferran Torres, 106'). Not a real goal.",
+  "teams": {
+    "home": {
+      "name": "Spain",
+      "kit": {
+        "shirt": "#C60B1E",
+        "shorts": "#1B2A6B",
+        "socks": "#C60B1E"
+      },
+      "keeperKit": {
+        "shirt": "#E8E04A",
+        "shorts": "#1A1A1A",
+        "socks": "#E8E04A"
+      },
+      "popupTrim": "#FFC400"
+    },
+    "away": {
+      "name": "Argentina",
+      "kit": {
+        "shirt": "#75AADB",
+        "shorts": "#1A1A2E",
+        "socks": "#FFFFFF"
+      },
+      "keeperKit": {
+        "shirt": "#7A3FB0",
+        "shorts": "#2A1640",
+        "socks": "#7A3FB0"
+      },
+      "popupTrim": "#FFFFFF"
+    }
+  },
+  "people": {
+    "salah": {
+      "name": "Mohamed Salah",
+      "skin": "#b98060",
+      "hair": "#1d1510"
+    },
+    "pedri": {
+      "name": "Pedri",
+      "skin": "#efc4a2",
+      "hair": "#2a1d15"
+    },
+    "yamal": {
+      "name": "Lamine Yamal",
+      "skin": "#7a4e33",
+      "hair": "#0d0a09"
+    },
+    "romero_c": {
+      "name": "Cristian Romero",
+      "skin": "#e0b08a",
+      "hair": "#2a1d15"
+    },
+    "otamendi": {
+      "name": "Nicolás Otamendi",
+      "skin": "#e8b994",
+      "hair": "#2a1d15"
+    },
+    "depaul": {
+      "name": "Rodrigo De Paul",
+      "skin": "#efc4a2",
+      "hair": "#2a1d15"
+    },
+    "emi": {
+      "name": "Emiliano Martínez",
+      "skin": "#e8b994",
+      "hair": "#3b2a1e"
+    }
+  },
+  "clips": [
+    {
+      "id": "salah-esp",
+      "kind": "one_on_one",
+      "attacking": "home",
+      "scorer": "salah",
+      "assister": "pedri",
+      "defenders": [
+        "romero_c",
+        "otamendi",
+        "depaul"
+      ],
+      "keeper": "emi",
+      "teammates": [
+        "yamal"
+      ],
+      "minute": 106,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "scoreAfter": [
+        1,
+        0
+      ],
+      "night": true,
+      "celebration": "arms_out",
+      "cameras": [
+        "tv",
+        "high",
+        "tight"
+      ],
+      "recreate": {
+        "delivery": "through",
+        "finish": "ground",
+        "goalSide": "far"
+      },
+      "seed": "salah-esp-a",
+      "popup": false
+    }
+  ]
+}

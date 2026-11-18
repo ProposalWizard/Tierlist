@@ -1,0 +1,99 @@
+{
+ "_about": "Leicester 2-0 Liverpool, King Power Stadium, 2 February 2016. About 60 minutes: Mahrez's long ball into the right channel, Vardy lets it bounce and hits a dipping volley from about 25 yards over Mignolet (AP/Ahram, Leicester City, SI). Liverpool assumed in red. Keeper kits assumed.",
+ "teams": {
+  "home": {
+   "name": "Leicester City",
+   "kit": {
+    "shirt": "#0053A0",
+    "shorts": "#FFFFFF",
+    "socks": "#0053A0"
+   },
+   "keeperKit": {
+    "shirt": "#2B2B2B",
+    "shorts": "#2B2B2B",
+    "socks": "#2B2B2B"
+   },
+   "popupTrim": "#FDBE11",
+   "short": "Leicester"
+  },
+  "away": {
+   "name": "Liverpool",
+   "kit": {
+    "shirt": "#C8102E",
+    "shorts": "#C8102E",
+    "socks": "#FFFFFF"
+   },
+   "keeperKit": {
+    "shirt": "#2E8B57",
+    "shorts": "#2E8B57",
+    "socks": "#2E8B57"
+   },
+   "popupTrim": "#FFFFFF"
+  }
+ },
+ "people": {
+  "vardy": {
+   "name": "Jamie Vardy",
+   "skin": "#f2c6a8",
+   "hair": "#6b4a2e"
+  },
+  "mahrez": {
+   "name": "Riyad Mahrez",
+   "skin": "#c08a62",
+   "hair": "#1a120c"
+  },
+  "d1": {
+   "name": "Liverpool defender"
+  },
+  "d2": {
+   "name": "Liverpool defender"
+  },
+  "mignolet": {
+   "name": "Simon Mignolet",
+   "skin": "#f2d0b4",
+   "hair": "#2a1d15"
+  }
+ },
+ "clips": [
+  {
+   "id": "vardy-volley",
+   "kind": "long_range",
+   "attacking": "home",
+   "scorer": "vardy",
+   "assister": "mahrez",
+   "defenders": [
+    "d1",
+    "d2"
+   ],
+   "keeper": "mignolet",
+   "minute": 60,
+   "scoreBefore": [
+    0,
+    0
+   ],
+   "scoreAfter": [
+    1,
+    0
+   ],
+   "night": true,
+   "celebration": "roar",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "delivery": "lofted",
+    "side": "right",
+    "scorerSpot": [
+     6,
+     24
+    ],
+    "finish": "volley",
+    "goalSide": "far",
+    "height": "high"
+   },
+   "seed": "vardy-2016-a"
+  }
+ ]
+}

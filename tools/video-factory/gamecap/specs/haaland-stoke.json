@@ -1,0 +1,32 @@
+{
+  "_about": "Not a real goal: our prediction for 'could Haaland do it on a cold rainy night in Stoke?'. Stoke City v Manchester City at night in the rain; one chance in the six-yard box, a cut-back tapped in. Stoke's red and white stripes cannot be drawn by the figures, so Stoke wear red with white shorts; City wear sky blue. Pop-up shows 0-1.",
+  "teams": {
+    "home": { "name": "Stoke City", "short": "Stoke", "kit": { "shirt": "#E03A3E", "shorts": "#FFFFFF", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#2E7D32", "shorts": "#1B1B1B", "socks": "#2E7D32" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Manchester City", "short": "Man City", "kit": { "shirt": "#6CABDD", "shorts": "#FFFFFF", "socks": "#6CABDD" }, "keeperKit": { "shirt": "#1F2A44", "shorts": "#1F2A44", "socks": "#1F2A44" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "haaland": { "name": "Erling Haaland", "skin": "#f3cdb0", "hair": "#e8d29a" },
+    "foden":   { "name": "Phil Foden", "skin": "#f2c9a8", "hair": "#c9a27e" },
+    "doku":    { "name": "Jeremy Doku", "skin": "#4a2e1e", "hair": "#0d0a09" },
+    "d1":      { "name": "Stoke Defender", "popupName": "Defender", "skin": "#f1c7a4", "hair": "#3b2a1e" },
+    "d2":      { "name": "Stoke Defender Two", "popupName": "Defender", "skin": "#7a4e33", "hair": "#0d0a09" },
+    "d3":      { "name": "Stoke Defender Three", "popupName": "Defender", "skin": "#e8b994", "hair": "#5b3a22" },
+    "gk":      { "name": "Stoke Keeper", "popupName": "Keeper", "skin": "#f0c3a0", "hair": "#2a1d15" }
+  },
+  "clips": [
+    {
+      "id": "haaland-rain",
+      "kind": "tap_in",
+      "attacking": "away",
+      "scorer": "haaland", "assister": "doku",
+      "defenders": ["d1", "d2", "d3"],
+      "keeper": "gk",
+      "teammates": ["foden"],
+      "minute": 78, "scoreBefore": [0, 0], "scoreAfter": [0, 1],
+      "night": true, "weather": "rain",
+      "celebration": "statue",
+      "cameras": ["tv", "high", "tight"],
+      "seed": "haaland-stoke-a"
+    }
+  ]
+}

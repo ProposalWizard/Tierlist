@@ -1,0 +1,30 @@
+{
+  "_about": "ns-haaland-argentina (ALTERNATE WORLD, imagined): Haaland for Argentina scores against Spain in the 2026 World Cup final (real final: Spain 1-0 aet, Ferran Torres 106', MetLife Stadium, 19 July 2026). Messi plays him through. Argentina's sky-blue and white stripes cannot be drawn by the sprite mask (one shirt colour): sky blue shirt, black shorts. Spain red/blue. Keeper kits assumed.",
+  "teams": {
+    "home": { "name": "Argentina", "short": "ARG", "kit": { "shirt": "#75AADB", "shorts": "#111111", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#2BB673", "shorts": "#0B3D2A", "socks": "#2BB673" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Spain", "short": "ESP", "kit": { "shirt": "#C60B1E", "shorts": "#0B2A6B", "socks": "#C60B1E" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#FFC400" }
+  },
+  "people": {
+    "haaland":  { "name": "Erling Haaland", "skin": "#f2c9a8", "hair": "#d8b878" },
+    "messi":    { "name": "Lionel Messi", "skin": "#e8b994", "hair": "#3a2516" },
+    "alvarez":  { "name": "Julian Alvarez", "skin": "#e2b08a", "hair": "#1d1512" },
+    "laporte":  { "name": "Aymeric Laporte", "skin": "#efc4a3", "hair": "#2a1d15" },
+    "cubarsi":  { "name": "Pau Cubarsi", "skin": "#efc4a3", "hair": "#2a1d15" },
+    "rodri":    { "name": "Rodri", "skin": "#efc4a3", "hair": "#2a1d15" },
+    "simon":    { "name": "Unai Simon", "skin": "#efc4a3", "hair": "#2a1d15" }
+  },
+  "clips": [
+    {
+      "id": "haaland-final-2026",
+      "kind": "one_on_one", "attacking": "home",
+      "scorer": "haaland", "assister": "messi",
+      "defenders": ["laporte", "cubarsi", "rodri"], "keeper": "simon",
+      "teammates": ["alvarez"],
+      "minute": 104, "scoreBefore": [0, 0], "scoreAfter": [1, 0],
+      "night": true, "celebration": "statue",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "delivery": "through", "finish": "ground", "goalSide": "left", "height": "low" },
+      "seed": "haaland-arg-a"
+    }
+  ]
+}
