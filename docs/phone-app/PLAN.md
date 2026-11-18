@@ -54,3 +54,17 @@ a page for Harry and Leo when step 1 is done.
    this machine; the 3D drawing hides everything else in its profiles). The
    phone-built app avoids the whole class: its screens run on the phone's own
    UI thread, and the game's rules run on a separate thread.
+
+## Building the test app (KIB Next)
+```bash
+cd phone && npm install
+CI=1 npx expo prebuild --platform android --no-install   # makes phone/android (not committed)
+cd android && ./gradlew -I ../tools/maven-mirror.gradle assembleRelease -PreactNativeArchitectures=arm64-v8a
+# → app/build/outputs/apk/release/app-release.apk (47 MB), package uk.co.knowitball.game.next
+```
+Needs the Android SDK with NDK 27.1 and CMake 3.22. `maven-mirror.gradle` is only
+for machines Maven Central rate-limits (429). The test build is signed with the
+debug key; the real 2.0 is signed with the upload key under the real package name.
+
+First test build, 18 Nov 2026: title, new career, Home (skills, contract),
+League (table, fixtures), bottom bar, saving. Not yet seen running on a phone.
