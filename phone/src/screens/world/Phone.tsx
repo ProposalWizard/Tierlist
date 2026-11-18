@@ -6,7 +6,8 @@
  * The packed phone app has no casino, so neither does this one (no Casino
  * icon, and the App Store leaves it out).
  *
- * Placeholders: Kickabout (the MATCH area's engine), Store (Coins), Garden and Your house (3D) — each shows "coming".
+ * Kickabout plays on the phone's match (screens/MatchKickabout.tsx).
+ * Placeholders: Garden and Your house (3D) — each shows "coming".
  * Relationships and Settings open the CAREER area's "relations" / "settings"
  * screens when those exist.
  */
@@ -32,6 +33,7 @@ import { useNav } from "../../nav";
 import { SCREENS } from "../../areas/registry";
 import { Press } from "../../ui/Press";
 import { C } from "../../ui/theme";
+import { Kickabout } from "../MatchKickabout";
 import { ClubBadge, Empty, Title, clubGlow, rgba, youRow } from "../../world/ui";
 import { readSeenMsgs, writeSeenMsgs, readSocialSeen, writeSocialSeen } from "../../world/seen";
 import { MediaFeed } from "./Feed";
@@ -98,7 +100,7 @@ export function PhoneScreen() {
       {app.inside === "messages" && <MessagesApp msgs={msgs} onOpen={(to) => (to === "scout" ? setApp(SCOUT_APP) : nav.go("sponsors"))} />}
       {app.inside === "scout" && <ScoutApp career={career} />}
       {app.inside === "appstore" && <AppStoreApp career={career} />}
-      {app.inside === "kickabout" && <Soon text="Kickabout: random highlights played on the real match engine. It arrives with the phone match." />}
+      {app.inside === "kickabout" && <Kickabout onReplays={SCREENS["goal-replays"] ? () => nav.go("goal-replays") : undefined} />}
     </AppShell>
   ) : (
     <Grid career={career} glow={glow} badges={badges} installed={installed} onOpen={open} />

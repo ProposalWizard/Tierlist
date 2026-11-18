@@ -4,9 +4,9 @@
  * Fame (the title screen's door; HallOfFame.tsx).
  *
  * The farewell sides are the game's own (lib/star/farewell.ts farewellSides).
- * The match itself is a STAND-IN until the match area can play a farewell
- * (CanvasMatch with farewell.offAt): flow.playFarewell plays it out with the
- * game's own match simulator on the farewell's stand-in career and seed.
+ * The match itself is played on the phone's match (the match area's
+ * "farewell-match" screen: CanvasMatch with farewell.offAt), every chance
+ * yours, no energy, off at the ovation minute.
  * The guard of honour and the standing ovation are 3D: not on the phone.
  */
 import { useMemo, useState } from "react";
@@ -96,7 +96,7 @@ export function FarewellSheetsScreen({ career, go, onBack }: { career: CareerSta
       <Side title={f.sides.ours.name} club={f.sides.host} list={names(f.sides.ours.lineup.xi, f.sides.ours.players, you)} gold />
       <Side title={`Bench`} club={f.sides.host} list={names(f.sides.ours.lineup.bench ?? [], f.sides.ours.players)} />
       <Side title={f.sides.rivals.name} list={names(f.sides.rivals.lineup.xi, f.sides.rivals.players)} />
-      <StandInNote>Stand-in: the farewell is played out by the game's match simulator until the match area can play it on the phone. The guard of honour and the standing ovation are 3D and not on the phone yet.</StandInNote>
+      <StandInNote>The guard of honour and the standing ovation are 3D and not on the phone yet.</StandInNote>
     </Frame>
   );
 }

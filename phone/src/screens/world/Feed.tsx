@@ -6,8 +6,8 @@
  * ticker, every post with its replies, likes (toggleLike) and the Goal of the
  * Month poll (voteGoalOfMonth, behind the same switch as the website).
  *
- * Placeholder: goal videos show a card with the title, not the video (the
- * recordings and their player are not on the phone yet).
+ * Goal videos play from the goal's recording on this phone (screens/MatchGoalVideo.tsx);
+ * a post whose recordings are not here shows its still, as on the website.
  */
 import { useMemo, useState } from "react";
 import { FlatList, ScrollView, Text, View } from "react-native";
@@ -24,6 +24,10 @@ import { setCareer, getCareer } from "../../game/store";
 import { Press } from "../../ui/Press";
 import { C } from "../../ui/theme";
 import { ClubBadge, Empty, Title } from "../../world/ui";
+import { GoalVideo } from "../MatchGoalVideo";
+import { clipStyleFor, clipVariantFor, type PostAuthor } from "@/lib/star/media/clipStyle";
+import type { ClipStyle } from "@/lib/star/goalClip/edit";
+import { isColdStyle } from "@/lib/star/goalClip/editCold";
 
 const FILTERS: { id: string; label: string; scope?: "club" | "league" }[] = [
   { id: "all", label: "All" }, { id: "england", label: "England", scope: "league" }, { id: "club", label: "Club", scope: "club" },
@@ -135,7 +139,7 @@ export function PostCard({ post, now, onLike, onVote }: { post: StoredPost; now:
         </View>
         <Text style={{ color: C.text, fontSize: 15, lineHeight: 20, marginTop: 2 }}>{post.text}</Text>
         {post.quote && <Quote q={post.quote} />}
-        {post.graphic && <View style={{ marginTop: 8 }}><Graphic spec={post.graphic} onVote={onVote ? (i) => onVote(post.id, i) : undefined} /></View>}
+        {post.graphic && !(post.graphic.type === "thumbnail" && !post.graphic.clips?.length && !post.graphic.synth?.length) && <View style={{ marginTop: 8 }}><Graphic spec={post.graphic} author={{ ...post.author, persona: post.persona }} onVote={onVote ? (i) => onVote(post.id, i) : undefined} /></View>}
         {tiktok && post.sound ? <Text style={{ color: C.text, marginTop: 6, fontSize: 13 }}>♫ {post.sound}</Text> : null}
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 8, paddingRight: 8 }}>
           <Text style={{ color: C.dim, fontSize: 13 }}>💬 {count(post.metrics.replies)}</Text>
@@ -187,7 +191,7 @@ function Replies({ thread }: { thread: PostReply[] }) {
 }
 
 /** The picture under a post, drawn plainly (the website's media/Graphics.tsx, in short). */
-function Graphic({ spec, onVote }: { spec: GraphicSpec; onVote?: (i: number) => void }) {
+function Graphic({ spec, author, onVote }: { spec: GraphicSpec; author?: PostAuthor; onVote?: (i: number) => void }) {
   const box = { backgroundColor: "#111a2b", borderRadius: 16, padding: 12, gap: 4 } as const;
   const rowsOf = (rows: { label: string; value: string; highlight?: boolean }[]) => rows.map((r, i) => (
     <View key={i} style={{ flexDirection: "row", justifyContent: "space-between" }}>
@@ -275,15 +279,28 @@ function Graphic({ spec, onVote }: { spec: GraphicSpec; onVote?: (i: number) => 
     case "potmWinner":
       return <View style={[box, { alignItems: "center" }]}><Text style={{ color: C.gold, fontWeight: "900" }}>PLAYER OF THE MONTH · {spec.month.toUpperCase()}</Text><Text style={{ color: C.text, fontWeight: "900", fontSize: 18 }}>{spec.firstName} {spec.lastName}</Text><Text style={{ color: C.dim }}>{spec.club} · {spec.goals}G {spec.assists}A</Text></View>;
     case "goalVideo":
-    case "thumbnail":
-      // Placeholder: the goal recordings and their player are not on the phone yet.
+      // The goal's recording (Graphics.tsx → GoalVideo): drawn from the frames recorded as it was played.
       return (
-        <View style={[box, { height: 150, alignItems: "center", justifyContent: "center", backgroundColor: "#0b1a12" }]}>
-          <Text style={{ fontSize: 36 }}>▶</Text>
-          <Text style={{ color: C.text, fontWeight: "900", textAlign: "center" }}>{spec.title}</Text>
-          <Text style={{ color: C.dim, fontSize: 11 }}>Goal videos are coming to the phone app</Text>
+        <GoalVideo clipIds={spec.clips} synth={spec.synth} standIn={spec.standIn}
+          style={spec.style && !isColdStyle(spec.style) ? spec.style as ClipStyle : clipStyleFor(author, false, false)}
+          variant={spec.variant ?? clipVariantFor(author)}
+          credit={author ? { handle: author.handle, name: author.name, archetype: author.archetype, platform: author.platform } : undefined}
+          title={spec.title} badge={(spec.clips.length || spec.synth?.length || 0) > 1 ? "HIGHLIGHTS" : "GOAL"} fallback={null} />
+      );
+    case "thumbnail": {
+      // Graphics.tsx Thumbnail: the recording when this phone has it, else the still card.
+      const still = (
+        <View style={[box, { height: 96, justifyContent: "flex-end", backgroundColor: "#1f2937" }]}>
+          <Text style={{ color: C.text, fontWeight: "900", textTransform: "uppercase" }}>{spec.title}</Text>
+          <Text style={{ position: "absolute", right: 8, top: 8, backgroundColor: "#dc2626", color: "#fff", fontSize: 9, fontWeight: "900", paddingHorizontal: 5, paddingVertical: 2, borderRadius: 3, overflow: "hidden" }}>{spec.badge}</Text>
         </View>
       );
+      return (
+        <GoalVideo clipIds={spec.clips ?? []} synth={spec.synth} style={clipStyleFor(author, false, false)} variant={clipVariantFor(author)}
+          credit={author ? { handle: author.handle, name: author.name, archetype: author.archetype, platform: author.platform } : undefined}
+          title={spec.title} badge={spec.badge} fallback={still} />
+      );
+    }
     default:
       return null;
   }

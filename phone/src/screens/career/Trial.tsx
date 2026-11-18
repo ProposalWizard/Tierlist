@@ -6,9 +6,9 @@
  * kicks, through the gate and the shootout are played on the match
  * (screens/MatchStages.tsx, the phone's EngineFeature); no score between
  * stages, a 3-2-1 into the next one, "A scout has spotted you" at the end.
- * Take him on (dribbling) and Find the pass (vision) are not on the match
- * engine on the website either (their own pictures): those two are still
- * STAND-INS scored from your skills (flow.simulateTrialStage).
+ * Take him on (dribbling) and Find the pass (vision) have their own pictures
+ * on the website too (FirstPersonDribble, TrialVision): on the phone
+ * screens/MatchFirstPerson.tsx and screens/MatchVision.tsx, the same drawers.
  * Everything after it (the manager's verdict, the offers, the contract) is
  * the website's own logic.
  */
@@ -21,7 +21,11 @@ import { leagueNameFor } from "@/lib/star/calendar";
 import { POSITION_NAMES } from "@/lib/star/teamsheet";
 import { careerPenaltyRunup, careerFreeKickRunup } from "@/lib/star/runupStyles";
 import * as flow from "../../game/flow";
-import { TrialFreeKicksStage, TrialTechniqueStage, TrialShootoutStage } from "../MatchStages";
+import { TrialFreeKicksStage, TrialTechniqueStage, TrialShootoutStage, TrialDribbleStage } from "../MatchStages";
+import { TrialVisionStage } from "../MatchVision";
+import { Dimensions } from "react-native";
+/** The vision box's cap (TrialVision: 64% of the screen's height). */
+const usePitchHeightOnce = () => Dimensions.get("window").height * 0.64;
 import { Frame, Card, Label, Row, Btn, StandInNote, ClubCrest, money, C } from "./kit";
 
 const COUNTDOWN_FROM = 3;
@@ -103,7 +107,9 @@ export function TrialScreen({ career, go }: { career: CareerState; go: (s: flow.
   if (stage === "freeKicks") return shell(<TrialFreeKicksStage key={stage} trial={trial} skills={skills} freeKickRunup={careerFreeKickRunup(career)} onDone={(q) => finish("freeKicks", q)} />);
   if (stage === "technique") return shell(<TrialTechniqueStage key={stage} trial={trial} skills={skills} onDone={(q) => finish("technique", q)} />);
   if (stage === "shootout") return shell(<TrialShootoutStage key={stage} trial={trial} skills={skills} penaltyRunup={careerPenaltyRunup(career)} onDone={(q, fp) => finish("shootout", q, fp)} />);
-  // Not on the match engine on the website either: still a stand-in here.
+  if (stage === "dribbling") return shell(<TrialDribbleStage key={stage} trial={trial} pace={career.skills.pace} onDone={(q) => finish("dribbling", q)} />);
+  if (stage === "vision") return shell(<TrialVisionStage key={stage} trial={trial} maxHeight={Math.round(usePitchHeightOnce())} onDone={(q) => finish("vision", q)} />);
+  // A stage the website no longer plays (fiveASide): scored from your skills.
   return shell(
     <View style={{ padding: 12, gap: 12 }}>
       <StandInNote>Stand-in: "{STAGE_LABEL[stage]}" is its own picture on the website (not the match), still to come on the phone. It is scored from your skills for now.</StandInNote>

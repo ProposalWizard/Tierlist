@@ -9,11 +9,12 @@ import type { SkCanvas, SkPicture } from "@shopify/react-native-skia";
 import { PITCH_W, HALF_LEN, CX, POST_L, POST_R, SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH, PEN_SPOT_Y, ARC_R, CENTRE_R, NET_DEPTH } from "@/lib/star/pitch";
 import { OUTCOME_TEXT } from "@/lib/star/canvasEngine";
 import { autoKickOf } from "@/lib/star/penaltyTaking";
-import type { MatchKits } from "@/lib/star/kits";
+import { keeperKit, type MatchKits } from "@/lib/star/kits";
 import type { MatchDriver } from "./driver";
 import { toScreen, makeCam, type Cam } from "./view";
 import { sk, fill, stroke } from "./skiaApi";
 import { drawMan, drawKeeperFig, beginFigures, unitPx, type FigureRole } from "./figures";
+import { footSign } from "@/lib/star/kickFoot";
 
 /** The camera the pitch is drawn with this frame. */
 export function camFor(d: MatchDriver, W: number, H: number): Cam {
@@ -91,6 +92,9 @@ export function paintPitch(c: SkCanvas, d: MatchDriver, kits: MatchKits, W: numb
     ball: b ? b.pos : d.phase === "tdDribble" && d.td ? { x: d.td.x, y: d.td.y } : d.sc.ball,
     celebrate: celebrating(d),
     kickT: b ? (d.now - strikeAt) / 1000 : null,
+    live: b, sc: d.phase === "tdDribble" ? null : d.sc,
+    foot: footSign(d.setup.career?.player.preferredFoot),
+    aerial: d.aerialNow(),
   });
 
   if (d.phase === "tdDribble" && d.td) { drawDribble(c, d, cam, kits); return; }
@@ -105,13 +109,14 @@ export function paintPitch(c: SkCanvas, d: MatchDriver, kits: MatchKits, W: numb
   };
   sc.defenders.forEach((df, i) => man(`def${i}`, df, "opp"));
   {
-    const kk = sc.keeper, dive = kk.dive || 0;
-    const at = { x: kk.x + dive, y: kk.y };
-    if (!(scene?.keeper === false)) queue.push({ y: toScreen(cam, at).Y, draw: () => drawKeeperFig(c, cam, at, kk.saveLunge > 0 ? kk.saveLunge : 0, kk.saveLunge > 0 ? (kk.saveDir || 1) : (dive === 0 ? 0 : Math.sign(dive)), kits.keeper) });
+    const kk = sc.keeper;
+    // Their penalty at YOUR keeper (a shootout): he wears your keeper's kit.
+    const gk = autoKickOf(sc)?.side === "them" ? keeperKit(ours.shirt, kits.keeper.shirt) : kits.keeper;
+    if (!(scene?.keeper === false)) queue.push({ y: toScreen(cam, kk).Y, draw: () => drawKeeperFig(c, cam, kk, gk) });
   }
   sc.teammates.forEach((m, i) => man(`mate${i}`, m, "mate"));
-  if (sc.runner) man("runner", sc.runner.pos, "mate", sc.relayTo === sc.runner);
-  sc.secondaryRunners.forEach((r, i) => man(`run2${i}`, r.pos, "mate", sc.relayTo === r));
+  // CanvasMatch's sids (and the engine's actors, canvasEngine runnerActor): run0 the runner, then the others.
+  [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners].forEach((r, i) => man(`run${i}`, r.pos, "mate", sc.relayTo === r));
   if (sc.follower && (sc.follower.active || sc.follower.who)) man("follower", sc.follower, "mate", !!sc.relayToFollower);
   if (scene?.you !== false) man("you", sc.player, "you", true);
   queue.sort((a, q) => a.y - q.y).forEach((f) => f.draw());

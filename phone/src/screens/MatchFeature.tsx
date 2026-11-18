@@ -22,6 +22,7 @@ import { trialInvisibleStats, strikeQuality, teachSeen, markTeachSeen, type Teac
 import { MatchDriver } from "../match/driver";
 import { featureSetup, type ChanceResolved, type FeatureSpec } from "../match/setup";
 import { MatchPitch } from "./MatchPitch";
+import type { Cam } from "../match/view";
 import { C } from "../ui/theme";
 
 /** CanvasMatch's kits with no career and no fixture: the shared role colours. */
@@ -48,6 +49,9 @@ export interface EngineFeatureProps {
   /** The pitch box's height (the website: the real match's canvas, 5:8 and taller). */
   height: number;
   children?: ReactNode;
+  /** The website's EngineFrame observer: every drawn frame and its camera, and `frozen` (hold). */
+  onFrame?: (d: MatchDriver, cam: Cam) => void;
+  frozen?: boolean;
 }
 
 export function EngineFeature(p: EngineFeatureProps) {
@@ -72,7 +76,7 @@ export function EngineFeature(p: EngineFeatureProps) {
   }, []);
   return (
     <View style={{ height: p.height, overflow: "hidden", borderRadius: 12 }}>
-      <MatchPitch make={make} kits={FEATURE_KITS} height={p.height} banners={p.scene?.banners !== false} />
+      <MatchPitch make={make} kits={FEATURE_KITS} height={p.height} banners={p.scene?.banners !== false} onFrame={p.onFrame} frozen={p.frozen} />
       {p.children}
     </View>
   );

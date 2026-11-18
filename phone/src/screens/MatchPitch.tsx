@@ -16,7 +16,7 @@ import { Canvas, Picture, createPicture, Skia } from "@shopify/react-native-skia
 import { useSharedValue } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import * as Haptics from "expo-haptics";
-import type { MatchKits } from "@/lib/star/kits";
+import { keeperKit, type MatchKits } from "@/lib/star/kits";
 import { nudgeFromDrag, RUNUP } from "@/lib/star/penaltyRunup";
 import { MatchDriver, FRAME_DT } from "../match/driver";
 import { drawPitch, camFor } from "../match/drawPitch";
@@ -26,7 +26,7 @@ import { tapToContact } from "../match/contactBall";
 import { matchSounds } from "../match/sound";
 import { setSkia } from "../match/skiaApi";
 import { loadSpriteSheet } from "../match/spriteAssets";
-import { atlasFor } from "../match/sprites";
+import { warmSpriteKits } from "../match/sprites";
 import { installWebStorage } from "../match/webStorage";
 import { C } from "../ui/theme";
 
@@ -52,9 +52,15 @@ export interface PitchProps {
   banners?: boolean;
   /** Fixed height in px (a feature's box); absent: fill the parent. */
   height?: number;
+  /** Every drawn frame, with the camera it was drawn with (the website's EngineFrame observer). */
+  onFrame?: (d: MatchDriver, cam: Cam) => void;
+  /** The match stands still (the observer's `hold`): no more frames stepped, the last picture stays. */
+  frozen?: boolean;
 }
 
-export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, height }: PitchProps) {
+export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, height, onFrame, frozen = false }: PitchProps) {
+  const onFrameRef = useRef(onFrame); onFrameRef.current = onFrame;
+  const frozenRef = useRef(frozen); frozenRef.current = frozen;
   const [size, setSize] = useState<{ W: number; H: number } | null>(null);
   const [, setUi] = useState(0);
   const dRef = useRef<MatchDriver | null>(null);
@@ -70,7 +76,9 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
     let live = true;
     void loadSpriteSheet().then((ok) => {
       if (!ok || !live) return;
-      for (const k of [kits.home, kits.away, kits.keeper]) atlasFor({ shirt: k.shirt, shorts: k.trim, socks: k.shirt });
+      // CanvasMatch warmSpriteKits: both sides, their keeper and ours (a shootout's).
+      const sk = (k: { shirt: string; trim: string }) => ({ shirt: k.shirt, shorts: k.trim, socks: k.shirt });
+      warmSpriteKits([sk(kits.home), sk(kits.away), sk(kits.keeper), sk(keeperKit(kits.home.shirt, kits.keeper.shirt)), sk(keeperKit(kits.away.shirt, kits.keeper.shirt))]);
     });
     return () => { live = false; };
   }, [kits]);
@@ -90,12 +98,14 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
       if (!last) last = t;
       acc += Math.min(0.25, (t - last) / 1000);
       last = t;
+      if (frozenRef.current) { acc = 0; raf = requestAnimationFrame(loop); return; }
       while (acc >= FRAME_DT) { d.tick(); acc -= FRAME_DT; }
       sounds.follow(d);
       const { W, H } = size;
       if (d.phase !== "feed" && d.phase !== "done") {
         camRef.current = camFor(d, W, H);
         pitchPic.value = drawPitch(d, kits, W, H);
+        onFrameRef.current?.(d, camRef.current);
         if (d.phase === "contact") contactPic.value = drawContact(d, W, H);
       }
       if (d.uiVersion !== lastUi) { lastUi = d.uiVersion; setUi(lastUi); onUiRef.current?.(d); }

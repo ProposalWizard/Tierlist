@@ -25,6 +25,15 @@ import { featureSetup, matchSetupFor, type ChanceResolved, type FeatureSpec } fr
 import { buildFreeKickScenario, buildStrikeFrom, buildStrike, DRILL_SCENE, type StrikeKind, type StrikeLevel } from "../src/match/drills";
 import { botAim, botContact, flatPullFor, playWithBot } from "./match-bot";
 import { testCareer } from "./match-run-career";
+import { FRAME_TOP_FOR_GOAL } from "@/lib/star/goalFrame";
+import { touchingFrame } from "@/lib/star/relationships";
+import { loadVisionMoments, visionLevelPicturesAsync, visionAsk, visionScenario, judgeTap } from "@/lib/star/visionRound";
+import type { VisionLevel } from "@/lib/star/trainingLevelData";
+import { SCENARIO_KINDS } from "@/lib/star/canvasEngine";
+import { withoutSwitchedOff } from "@/lib/star/switchedOffKinds";
+import { nextHighlight, newSimMemory, buildSimScenario, pictureKey } from "@/lib/star/gallerySim";
+import { sanitizePlaySettings } from "@/lib/star/playArea";
+import { farewellSides, farewellCareer, farewellFixture, farewellDuties, farewellSeed, FAREWELL_OFF_AT } from "@/lib/star/farewell";
 
 (globalThis as Record<string, unknown>).window ??= {};
 (globalThis as Record<string, unknown>).__KIB_HEADLESS__ = true;
@@ -163,7 +172,67 @@ for (const kind of ["power", "technique", "freeKick", "aerial"] as StrikeKind[])
   sc.ball = { x: CX, y: PEN_SPOT_Y };
   playFeature("trial shootout: your kick", { openOn: () => { const r = mulberry32(3); const s = buildScenario("penalty", r, 60, 60, 55); initDefenders(s, r); s.ball = { x: CX, y: PEN_SPOT_Y }; s.defenders = []; return s; }, keeperStrength: () => 60, scene: { teammates: false } }, 2);
 }
-void playWithBot;
+// ── The relationship games' pictures (screens/MatchRelGames.tsx): built as the website builds them, played to a result ──
+{
+  const goalCam = (sc: Scenario, cx0: number, h: number) => { const w = h * (5 / 8); const cx = Math.max(w / 2, Math.min(68 - w / 2, cx0)); sc.viewport = { x1: cx - w / 2, x2: cx + w / 2, y1: FRAME_TOP_FOR_GOAL, y2: FRAME_TOP_FOR_GOAL + h }; };
+  let k = 0;
+  const pens = playFeature("boss penalties (empty goal, the spot)", {
+    openOn: () => { const sc = buildStrike("power", 1, k, mulberry32(77 + k++ * 977), { trainingLevel: 1, power: 60 }).scenario; sc.ball = { x: CX, y: PEN_SPOT_Y }; sc.player = { x: CX, y: PEN_SPOT_Y + 1.2 }; sc.defenders = []; goalCam(sc, CX, 22); return sc; },
+    keeperStrength: () => 0, scene: { ...DRILL_SCENE.power, keeper: false, ownFrame: true },
+  }, 3);
+  if (pens.length >= 3) console.log(`OK    boss penalties                        ${pens.map((r) => r.outcome).join(", ")}`);
+  let w = 0, frame = 0;
+  const wood = playFeature("woodwork challenge", {
+    openOn: () => { const sc = buildStrike("power", 1, w, mulberry32(55 + w++), { trainingLevel: 1, power: 60 }).scenario; goalCam(sc, (sc.ball.x + CX) / 2, Math.max(22, sc.ball.y + 10)); return sc; },
+    onBallStep: (b) => { if (touchingFrame(b)) frame++; },
+    keeperStrength: () => 0, scene: { ...DRILL_SCENE.power, keeper: false, ownFrame: true },
+  }, 5);
+  if (wood.length >= 5) console.log(`OK    woodwork challenge                    ${wood.map((r) => r.outcome).join(", ")} (frame touched on ${frame} steps)`);
+}
 
-console.log(failures ? `\n${failures} FAILED` : "\nAll feature checks passed.");
-(globalThis as { process?: { exitCode?: number } }).process!.exitCode = failures ? 1 : 0;
+// ── The farewell match (CanvasMatch farewell.offAt): no energy spent, off at the ovation minute ──
+{
+  const career = testCareer();
+  const sides = farewellSides(career, {});
+  const fc = farewellCareer(career, sides), fx = farewellFixture(career, sides);
+  const setup = { ...matchSetupFor(fc, fx), duties: farewellDuties(), seed: farewellSeed(career), keeperStrength: sides.rivals.strength, oppStrength: sides.rivals.strength, teamRelationship: 100, startMinute: 0, plannedOffAt: undefined, pressure: 0.3, farewell: { offAt: FAREWELL_OFF_AT } };
+  const d = new MatchDriver(setup, { hw: 2.0 });
+  const e0 = d.liveEnergyAt(0);
+  const r = playWithBot(d, 909);
+  const s = d.finalStats;
+  if (!s || !d.done) fail("farewell: did not finish");
+  else if (d.hookedAt !== FAREWELL_OFF_AT && d.hookedAt !== null) fail(`farewell: off at ${d.hookedAt}', not ${FAREWELL_OFF_AT}'`);
+  else if (Math.round(d.liveEnergyAt(80)) !== Math.round(e0)) fail(`farewell: energy moved ${e0} → ${d.liveEnergyAt(80)}`);
+  else console.log(`OK    farewell match                        ${d.userScore}-${d.oppScore}, ${r.chances} chances, off at ${d.hookedAt ?? "-"}', goals ${s.goals}`);
+}
+
+// ── Kickabout (screens/MatchKickabout.tsx): random highlights one after another, at the Play Area's dials ──
+{
+  const st = { rng: mulberry32(7), mem: newSimMemory(), last: undefined as string | undefined };
+  const kinds = withoutSwitchedOff(SCENARIO_KINDS);
+  const ps = sanitizePlaySettings(undefined);
+  const seen: string[] = [];
+  const got = playFeature("kickabout (a session: 6 highlights)", {
+    openOn: () => { const spec = nextHighlight(kinds, st.rng, st.mem, st.last); const sc = buildSimScenario(spec ?? ({ kind: "one_on_one", seed: 1 } as never)); st.last = pictureKey(sc); seen.push(sc.kind); return sc; },
+    keeperStrength: () => ps.keeperStrength,
+  }, 6, { power: ps.power, technique: ps.technique });
+  if (got.length >= 6) console.log(`OK    kickabout                             kinds ${[...new Set(seen)].join(", ")}; goals ${got.filter((r) => r.outcome === "goal").length}/${got.length}`);
+}
+
+// ── Training's Vision (screens/MatchVision.tsx VisionDrill): the level's real pictures build and play on the match ──
+void (async () => {
+  await loadVisionMoments();
+  for (const lvl of [1, 20]) {
+    const cfg = levelConfig("vision", lvl) as VisionLevel;
+    const seed = levelSeedOf("vision", lvl, cfg);
+    const pics = await visionLevelPicturesAsync(lvl, (n) => { const c = levelConfig("vision", n) as VisionLevel; return { ask: visionAsk(c), seed: n === lvl ? seed : levelSeedOf("vision", n, c) }; }, 3);
+    if (!pics.length) { fail(`vision level ${lvl}: no pictures`); continue; }
+    const p = pics[0];
+    const got = playFeature(`vision level ${lvl} (${cfg.kick ? "kick" : "tap"}, ${p.source})`, { openOn: () => visionScenario(p, seed >>> 0), keeperStrength: () => 62, scene: { banners: false } }, 1);
+    const tapV = judgeTap(p, p.best);
+    if (!tapV.ok) fail(`vision level ${lvl}: tapping the best man is not ok`);
+    else if (got.length) console.log(`OK    vision level ${lvl}                        ${pics.length} pictures, best man ${p.best} of ${p.options.length}, pass: ${got[0].outcome}`);
+  }
+  console.log(failures ? `\n${failures} FAILED` : "\nAll feature checks passed.");
+  (globalThis as { process?: { exitCode?: number } }).process!.exitCode = failures ? 1 : 0;
+})();

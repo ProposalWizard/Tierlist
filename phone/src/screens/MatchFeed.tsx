@@ -44,19 +44,21 @@ export function MatchFeed({ d }: { d: MatchDriver }) {
         })}
       </View>
       <View style={{ padding: 12, gap: 10, borderTopWidth: 1, borderColor: C.line, backgroundColor: C.panel }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        {/* The farewell match has no energy: no energy panel, no cans (CanvasMatch's farewell). */}
+        {!d.setup.farewell && <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
           <Text style={{ color: C.text, fontWeight: "900", width: 70 }}>ENERGY</Text>
           <View style={{ flex: 1, height: 10, borderRadius: 5, backgroundColor: C.panel2, overflow: "hidden" }}>
             <View style={{ width: `${energy}%`, height: "100%", backgroundColor: energy > 50 ? C.green : energy > 25 ? C.gold : C.red }} />
           </View>
           <Text style={{ color: C.text, fontWeight: "800", width: 40, textAlign: "right" }}>{energy}%</Text>
-        </View>
+        </View>}
         <View style={{ flexDirection: "row", gap: 8 }}>
-          {modes.map((m) => (
+          {!d.setup.farewell && modes.map((m) => (
             <Press key={m} onPress={() => d.setEnergyMode(m)} style={{ flex: 1, paddingVertical: 9, borderRadius: R.pill, backgroundColor: d.energyMode === m ? C.green : C.panel2 }}>
               <Text style={{ textAlign: "center", fontWeight: "900", color: d.energyMode === m ? "#05261a" : C.text }}>{m === "low" ? "Low" : m === "medium" ? "Medium" : "High"}</Text>
             </Press>
           ))}
+          {d.setup.farewell && <View style={{ flex: 1 }} />}
           <Press onPress={() => d.setSpeed(d.speed >= 4 ? 1 : d.speed * 2)} style={{ paddingVertical: 9, paddingHorizontal: 16, borderRadius: R.pill, backgroundColor: C.panel2 }}>
             <Text style={{ fontWeight: "900", color: C.gold }}>{d.speed}x</Text>
           </Press>
@@ -73,10 +75,10 @@ export function MatchPause({ d }: { d: MatchDriver }) {
   return (
     <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, top: 0, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.55)" }}>
       {p.label ? <Text style={{ color: C.text, fontSize: 22, fontWeight: "900", marginBottom: 14 }}>{p.label}</Text> : null}
-      {p.halfTime && <Text style={{ color: C.text, fontWeight: "800", marginBottom: 10 }}>Energy {Math.round(d.liveEnergyAt(d.matchMinute))}%</Text>}
+      {p.halfTime && !d.setup.farewell && <Text style={{ color: C.text, fontWeight: "800", marginBottom: 10 }}>Energy {Math.round(d.liveEnergyAt(d.matchMinute))}%</Text>}
       <View style={{ flexDirection: "row", gap: 10 }}>
         {/* Half time only: drink a Basic KIB can (+65) before the second half (MatchCommentary's "Use can"). */}
-        {p.halfTime && (
+        {p.halfTime && !d.setup.farewell && (
           <Press onPress={() => d.drinkHalfTimeKib()} disabled={d.kibCansLeft() <= 0 || d.energy >= 100}
             style={{ backgroundColor: d.kibCansLeft() <= 0 || d.energy >= 100 ? "#374151" : "#f97316", borderRadius: R.card, paddingVertical: 10, paddingHorizontal: 16, alignItems: "center", justifyContent: "center" }}>
             <Text style={{ color: d.kibCansLeft() <= 0 ? "#fff" : "#030712", fontWeight: "900", fontSize: 11 }}>USE CAN</Text>

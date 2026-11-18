@@ -12,23 +12,38 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { kitsFor } from "@/lib/star/kits";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import { MatchDriver } from "../match/driver";
-import { matchSetupFor } from "../match/setup";
+import { matchSetupFor, type MatchSetup } from "../match/setup";
 import { MatchPitch, BANNER_MS } from "./MatchPitch";
 import { MatchHud } from "./MatchHud";
 import { MatchFeed, MatchPause } from "./MatchFeed";
 import { MatchShootout } from "./MatchShootout";
+import { keepGoalClip } from "../match/goalClip/store";
+import { getCareer } from "../game/store";
 import { C } from "../ui/theme";
 
-export function Match({ career, fixture, onFullTime }: { career: CareerState; fixture: Fixture; onFullTime: (d: MatchDriver) => void }) {
+export function Match({ career, fixture, onFullTime, setupFor, recordGoals = true }: {
+  career: CareerState; fixture: Fixture; onFullTime: (d: MatchDriver) => void;
+  /** A match page.tsx mounts with its own props (the farewell): its setup instead of matchSetupFor. */
+  setupFor?: () => MatchSetup;
+  /** Goal videos (page.tsx hands CanvasMatch onGoalClip on the career match only). */
+  recordGoals?: boolean;
+}) {
   // The match's career: your own, or for an international the national-team swap (setup.ts).
-  const setup = useMemo(() => matchSetupFor(career, fixture), [career, fixture]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const setup = useMemo(() => (setupFor ? setupFor() : matchSetupFor(career, fixture)), [career, fixture]);
   const kits = useMemo(() => {
     const c = setup.career;
     return fixture.home
       ? kitsFor(c.player.club, fixture.opponent, c.clubKits?.[c.player.club], c.clubKits?.[fixture.opponent])
       : kitsFor(fixture.opponent, c.player.club, c.clubKits?.[fixture.opponent], c.clubKits?.[c.player.club]);
   }, [setup, fixture]);
-  const make = useCallback((hw: number) => { const d = new MatchDriver(setup, { hw }); setHud(d); return d; }, [setup]);
+  const make = useCallback((hw: number) => {
+    const d = new MatchDriver(setup, { hw });
+    // Goal videos (CanvasMatch onGoalClip → page.tsx handleGoalClip): every goal recorded as played, kept on the phone.
+    if (recordGoals) d.clipSink = { kits, onClip: (t) => keepGoalClip(t, getCareer()) };
+    setHud(d);
+    return d;
+  }, [setup, kits, recordGoals]);
 
   const overlay = useCallback((d: MatchDriver) => {
     const banner = d.banner && d.now - d.banner.at < BANNER_MS ? d.banner : null;
