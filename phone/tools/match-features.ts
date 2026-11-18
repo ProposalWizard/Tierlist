@@ -27,6 +27,8 @@ import { botAim, botContact, flatPullFor, playWithBot } from "./match-bot";
 import { testCareer } from "./match-run-career";
 import { FRAME_TOP_FOR_GOAL } from "@/lib/star/goalFrame";
 import { touchingFrame } from "@/lib/star/relationships";
+import { loadVisionMoments, visionLevelPicturesAsync, visionAsk, visionScenario, judgeTap } from "@/lib/star/visionRound";
+import type { VisionLevel } from "@/lib/star/trainingLevelData";
 import { farewellSides, farewellCareer, farewellFixture, farewellDuties, farewellSeed, FAREWELL_OFF_AT } from "@/lib/star/farewell";
 
 (globalThis as Record<string, unknown>).window ??= {};
@@ -200,5 +202,20 @@ for (const kind of ["power", "technique", "freeKick", "aerial"] as StrikeKind[])
   else console.log(`OK    farewell match                        ${d.userScore}-${d.oppScore}, ${r.chances} chances, off at ${d.hookedAt ?? "-"}', goals ${s.goals}`);
 }
 
-console.log(failures ? `\n${failures} FAILED` : "\nAll feature checks passed.");
-(globalThis as { process?: { exitCode?: number } }).process!.exitCode = failures ? 1 : 0;
+// ── Training's Vision (screens/MatchVision.tsx VisionDrill): the level's real pictures build and play on the match ──
+void (async () => {
+  await loadVisionMoments();
+  for (const lvl of [1, 20]) {
+    const cfg = levelConfig("vision", lvl) as VisionLevel;
+    const seed = levelSeedOf("vision", lvl, cfg);
+    const pics = await visionLevelPicturesAsync(lvl, (n) => { const c = levelConfig("vision", n) as VisionLevel; return { ask: visionAsk(c), seed: n === lvl ? seed : levelSeedOf("vision", n, c) }; }, 3);
+    if (!pics.length) { fail(`vision level ${lvl}: no pictures`); continue; }
+    const p = pics[0];
+    const got = playFeature(`vision level ${lvl} (${cfg.kick ? "kick" : "tap"}, ${p.source})`, { openOn: () => visionScenario(p, seed >>> 0), keeperStrength: () => 62, scene: { banners: false } }, 1);
+    const tapV = judgeTap(p, p.best);
+    if (!tapV.ok) fail(`vision level ${lvl}: tapping the best man is not ok`);
+    else if (got.length) console.log(`OK    vision level ${lvl}                        ${pics.length} pictures, best man ${p.best} of ${p.options.length}, pass: ${got[0].outcome}`);
+  }
+  console.log(failures ? `\n${failures} FAILED` : "\nAll feature checks passed.");
+  (globalThis as { process?: { exitCode?: number } }).process!.exitCode = failures ? 1 : 0;
+})();

@@ -14,7 +14,7 @@ import type { Skills } from "@/lib/star/types";
 import type { TrialProgress } from "@/lib/star/trial";
 import { difficultyFor } from "@/lib/star/trial";
 import {
-  REPS, ladderLevel, techniqueSetup, freeKickSetup, attemptSeed, shootoutKeeperFor, shootoutOurKeeperFor,
+  REPS, ladderLevel, techniqueSetup, freeKickSetup, attemptSeed, shootoutKeeperFor, shootoutOurKeeperFor, dribbleSetup, dribbleQuality,
   shootoutQuality, shootoutTheirRating, trialInvisibleStats, teachSeen, markTeachSeen,
 } from "@/lib/star/trialStages";
 import {
@@ -27,7 +27,9 @@ import { fakeFaceFor } from "@/lib/star/fakeFaces";
 import { runupName, takerPenaltyRunup, type PenaltyRunupId, type FreeKickRunupId } from "@/lib/star/runupStyles";
 import { gateCrossing, gateQuality, shotQuality } from "@/lib/star/trainingDrills";
 import { starsForTry } from "@/lib/star/trainingLevels";
-import { levelConfig, levelSeedOf, easePowerLevel, type PowerLevel, type FreeKickLevel, type AerialLevel } from "@/lib/star/trainingLevelData";
+import { levelConfig, levelSeedOf, easePowerLevel, type PowerLevel, type FreeKickLevel, type AerialLevel, type PaceLevel } from "@/lib/star/trainingLevelData";
+import { FirstPersonRun, type FpDribbleResult } from "./MatchFirstPerson";
+import { VisionDrill } from "./MatchVision";
 import { markDrillFreeKick } from "@/lib/star/kindRules";
 import type { ChanceResolved } from "../match/setup";
 import { buildStrike, buildStrikeFrom, buildFreeKickScenario, DRILL_SCENE, type StrikeKind, type StrikeSetup, type StrikeLevel } from "../match/drills";
@@ -55,6 +57,31 @@ export function TrialFreeKicksStage({ trial, onDone, skills, freeKickRunup }: { 
       }}
       subtitle={(rep) => { const s = freeKickSetup(trial, rep); return `${Math.round(s.distance)} m out · ${Math.max(1, Math.round(s.wall))} in the wall`; }}
       forceCompactTeach onDone={onDone} />
+  );
+}
+
+// ── Take him on (TrialSequence.tsx's dribbling stage: FirstPersonDribble, embedded, calm camera) ──
+export function TrialDribbleStage({ trial, onDone, pace }: { trial: TrialProgress; onDone: (q: number) => void; pace: number }) {
+  const h = usePitchHeight();
+  const dribble = useMemo(() => dribbleSetup(trial), [trial]);
+  const [teachDone, setTeachDone] = useState(false);
+  useEffect(() => { if (teachSeen("dribbling")) setTeachDone(true); }, []);
+  const dismiss = useCallback(() => { markTeachSeen("dribbling"); setTeachDone(true); }, []);
+  const onDoneRef = useRef(onDone); onDoneRef.current = onDone;
+  const onComplete = useCallback((res: FpDribbleResult) => onDoneRef.current(dribbleQuality(res, dribble)), [dribble]);
+  return (
+    <View>
+      <TrialBoard title="You" centreLabel="Take him on" centreValue={`${dribble.waveSizes.length} waves`} footer={`${dribble.waveSizes.reduce((a, b) => a + b, 0)} men to get past`} />
+      <View style={{ height: h, marginHorizontal: 0 }}>
+        {/* Blue like you are in every other trial stage; the calm camera (CALM_CAMERA). */}
+        <FirstPersonRun height={h} calmCamera kits={{ you: { shirt: "#2563eb", shorts: "#f8fafc" } }} seed={attemptSeed(trial)} pace={pace}
+          oppStrength={dribble.oppStrength} waveSizes={dribble.waveSizes} hideHint hold={!teachDone} onComplete={onComplete} />
+        {!teachDone && (
+          <TeachCard headline="Get past them." lines={["Tap the left or right of the screen to touch the ball that way.", "Flick to burst past him — time it as he commits, not before."]} onDismiss={dismiss} />
+        )}
+      </View>
+      <TrialCaption prompt={teachDone ? "Tap left or right to touch the ball. Flick to burst past him." : ""} />
+    </View>
   );
 }
 
@@ -256,6 +283,84 @@ function useTries(onFinish: (stars: number) => void) {
   const done = results.includes(true) || results.length >= TRIES;
   return { results, attempt, done };
 }
+/** TrainingMinigame's Shell header: the three tries, the drill's name, the level and the stars still to play for. */
+function DrillHeader({ kind, trainingLevel, results }: { kind: keyof Skills; trainingLevel: number; results: boolean[] }) {
+  const onTry = Math.max(0, TRIES - results.length);
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12, marginBottom: 8 }}>
+      <View style={{ flexDirection: "row", gap: 6 }}>
+        {Array.from({ length: TRIES }, (_, i) => {
+          const r = results[i];
+          return (
+            <View key={i} style={{ width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: r === true ? "#34d399" : r === false ? "#ef4444" : "transparent", borderWidth: r === undefined ? 2 : 0, borderColor: i === results.length ? C.gold : "rgba(255,255,255,0.25)" }}>
+              <Text style={{ color: r === true ? "#052e1b" : "#fff", fontWeight: "900" }}>{r === true ? "✓" : r === false ? "✗" : i + 1}</Text>
+            </View>
+          );
+        })}
+      </View>
+      <View style={{ alignItems: "flex-end" }}>
+        <Text style={{ color: C.gold, fontSize: 10, fontWeight: "900", letterSpacing: 1.5 }}>{SKILL_TITLES[kind].toUpperCase()}</Text>
+        <Text style={{ color: "#fff", fontSize: 16, fontWeight: "900" }}>LEVEL {trainingLevel} <Text style={{ color: "#fcd34d" }}>{"★".repeat(onTry)}</Text><Text style={{ color: "rgba(255,255,255,0.25)" }}>{"★".repeat(TRIES - onTry)}</Text></Text>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * PACE — The Gauntlet (TrainingMinigame.tsx GauntletDrill): the run a real
+ * match serves (screens/MatchFirstPerson.tsx), the level's row setting how many
+ * men, how quick, how quick you run, in waves of up to waveMax, knock-on rings
+ * and hand-placed lanes. Passed: you got to the line with the ball.
+ */
+export function DrillPace({ trainingLevel, onFinish }: { trainingLevel: number; onFinish: (stars: number) => void }) {
+  const h = usePitchHeight();
+  const { results, attempt, done } = useTries(onFinish);
+  const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
+  const [runKey, setRunKey] = useState(0);
+  const cfg = levelConfig("pace", trainingLevel) as PaceLevel;
+  const waveSizes = useMemo(() => {
+    const out: number[] = [];
+    const max = Math.max(1, cfg.waveMax);
+    for (let left = cfg.chasers; left > 0; left -= max) out.push(Math.min(max, left));
+    return out;
+  }, [cfg.chasers, cfg.waveMax]);
+  const total = waveSizes.reduce((a, b) => a + b, 0);
+  const onComplete = useCallback((res: FpDribbleResult) => {
+    setFlash({ text: res.cleared ? (res.beaten >= total ? "GONE!" : "THROUGH") : "TACKLED", good: res.cleared });
+    attempt(res.cleared);
+    setTimeout(() => { setFlash(null); setRunKey((k) => k + 1); }, 1000);
+  }, [attempt, total]);
+  return (
+    <View>
+      <DrillHeader kind="pace" trainingLevel={trainingLevel} results={results} />
+      <Text style={{ color: C.text, fontSize: 12, fontWeight: "700", textAlign: "center", paddingHorizontal: 12, marginBottom: 6 }}>One man comes for the ball. Pick the gap, wait for his shoulder, and flick the other way as his ring turns green.</Text>
+      <View style={{ height: h }}>
+        {!done && (
+          <FirstPersonRun key={runKey} height={h} seed={levelSeedOf("pace", trainingLevel, cfg)} pace={cfg.runPace} oppStrength={cfg.oppStrength}
+            waveSizes={waveSizes} chaseEye={5} chasePitchDeg={5} chaseOffset={4} cameraFollowRate={10} knockOn lanes={cfg.lanes} onComplete={onComplete} />
+        )}
+        {flash && (
+          <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ backgroundColor: flash.good ? "rgba(16,185,129,0.85)" : "rgba(220,38,38,0.85)", color: "#fff", fontSize: 30, fontWeight: "900", fontStyle: "italic", paddingHorizontal: 20, paddingVertical: 8, borderRadius: 16, overflow: "hidden" }}>{flash.text}</Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
+/** VISION — Pick the Pass (TrainingMinigame.tsx VisionDrillView), on the match (screens/MatchVision.tsx VisionDrill). */
+export function DrillVision({ trainingLevel, skills, onFinish }: { trainingLevel: number; skills: Skills; onFinish: (stars: number) => void }) {
+  const h = Math.round(usePitchHeight() * 0.94);
+  const { results, attempt } = useTries(onFinish);
+  return (
+    <View>
+      <DrillHeader kind="vision" trainingLevel={trainingLevel} results={results} />
+      <VisionDrill trainingLevel={trainingLevel} skills={skills} height={h} attempt={attempt} results={results} />
+    </View>
+  );
+}
+
 export function DrillStrike({ kind, trainingLevel, skills, onFinish }: { kind: StrikeKind; trainingLevel: number; skills: Skills; onFinish: (stars: number) => void }) {
   const h = usePitchHeight();
   const { results, attempt, done } = useTries(onFinish);
@@ -312,25 +417,9 @@ export function DrillStrike({ kind, trainingLevel, skills, onFinish }: { kind: S
     attempt(ok);
   }, [attempt]);
   const kickSkills = useMemo(() => ({ power: skills.power, technique: skills.technique, aerial: skills.aerial }), [skills.power, skills.technique, skills.aerial]);
-  const onTry = Math.max(0, TRIES - results.length);
   return (
     <View>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12, marginBottom: 8 }}>
-        <View style={{ flexDirection: "row", gap: 6 }}>
-          {Array.from({ length: TRIES }, (_, i) => {
-            const r = results[i];
-            return (
-              <View key={i} style={{ width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: r === true ? "#34d399" : r === false ? "#ef4444" : "transparent", borderWidth: r === undefined ? 2 : 0, borderColor: i === results.length ? C.gold : "rgba(255,255,255,0.25)" }}>
-                <Text style={{ color: r === true ? "#052e1b" : "#fff", fontWeight: "900" }}>{r === true ? "✓" : r === false ? "✗" : i + 1}</Text>
-              </View>
-            );
-          })}
-        </View>
-        <View style={{ alignItems: "flex-end" }}>
-          <Text style={{ color: C.gold, fontSize: 10, fontWeight: "900", letterSpacing: 1.5 }}>{SKILL_TITLES[kind].toUpperCase()}</Text>
-          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "900" }}>LEVEL {trainingLevel} <Text style={{ color: "#fcd34d" }}>{"★".repeat(onTry)}</Text><Text style={{ color: "rgba(255,255,255,0.25)" }}>{"★".repeat(TRIES - onTry)}</Text></Text>
-        </View>
-      </View>
+      <DrillHeader kind={kind} trainingLevel={trainingLevel} results={results} />
       {!done ? (
         <EngineFeature height={h} openOn={openOn} onChanceResolved={onChanceResolved} onBallStep={onBallStep} markers={view.markers}
           skills={kickSkills} setPieceSkill={skills.freeKick} keeperStrength={keeperStrength} seed={seed}
