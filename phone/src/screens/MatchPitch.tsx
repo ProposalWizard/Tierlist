@@ -27,9 +27,12 @@ import { matchSounds } from "../match/sound";
 import { setSkia } from "../match/skiaApi";
 import { loadSpriteSheet } from "../match/spriteAssets";
 import { atlasFor } from "../match/sprites";
+import { installWebStorage } from "../match/webStorage";
 import { C } from "../ui/theme";
 
 setSkia(Skia);
+// The lib's localStorage (picture memory, cards seen) on the phone's storage, before the first chance.
+installWebStorage();
 
 const BALL_GRAB_FRACTION = 0.18;
 const CAPTAIN_GRAB_FRACTION = 0.09;

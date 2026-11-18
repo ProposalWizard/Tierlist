@@ -10,6 +10,7 @@ import { setPieceDuties, type SetPieceDuties } from "@/lib/star/setPieces";
 import { opponentMatchStrength } from "@/lib/star/matchInputs";
 import { conditionsFor, type Conditions } from "@/lib/star/weather";
 import { pressureForDivision } from "@/lib/star/pressure";
+import { internationalCareer } from "@/lib/star/international";
 import type { Scenario, ScenarioKind, Outcome } from "@/lib/star/canvasEngine";
 import type { ScenePicture } from "@/lib/star/scenePicture";
 import type { PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
@@ -104,7 +105,12 @@ export function matchSetupFor(career: CareerState, fixture: Fixture): MatchSetup
   const canCurve = (bootMatchesLeft && !!career.currentBoot.curve) || !!career.kibAbility?.curve;
   const canExtraTouch = (bootMatchesLeft && !!career.currentBoot.extraTouch) || !!career.kibAbility?.extraTouch;
   return {
-    career, fixture,
+    // An international: the match is handed the national-team career (page.tsx
+    // intlMatchCareer = internationalCareer(career, fixture)): your nation's
+    // squad, both nations' kits and strengths. Everything else above is read
+    // off your own career, as page.tsx reads it.
+    career: fixture.kind === "international" ? internationalCareer(career, fixture) : career,
+    fixture,
     skills: { power: effectivePower, technique: effectiveTechnique },
     canCurve, canExtraTouch,
     keeperStrength: oppStrength,

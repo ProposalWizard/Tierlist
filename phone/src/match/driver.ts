@@ -113,9 +113,12 @@ import { giveAndGoChance } from "@/lib/star/giveAndGo";
 import { createShootout, takeNextKick, nextShootoutSide, nextTakerIndex, type PenaltyShootoutState, type ShootoutSide } from "@/lib/star/shootout";
 import { DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import type { MatchSetup, FeatureSpec } from "./setup";
+import { KIB_CANS } from "@/lib/star/shopData";
 import { stageScene } from "@/lib/star/scenePicture";
 import { ballMotionAt, sweepPeriod, liftOf, contactLimitS, lateAirContact, TOO_SLOW_MS, AIR_VERDICT_MS, GROUND_TAP_MS } from "./contactBall";
 
+/** It IS a Basic can, so it gives what a Basic can gives (CanvasMatch KIB_HALF_TIME_RESTORE). */
+const KIB_HALF_TIME_RESTORE = KIB_CANS.find((c) => c.id === "basic")?.restore ?? 65;
 /** One website frame at 60 fps. */
 export const FRAME_DT = 1 / 60;
 /** One tick of the driver in milliseconds (the website's setTimeouts are counted in these). */
@@ -811,7 +814,7 @@ export class MatchDriver {
       ),
       ...this.matchExtras().extra,
       endEnergy: this.liveEnergyAt(this.hookedAt ?? this.matchMinute),
-      kibCansUsed: 0,
+      kibCansUsed: this.kibUsed,
       playstyle: this.playstyle,
       ...(this.wentToExtraTime ? { wentToExtraTime: true } : {}),
       ...(this.shootoutResult ? { shootout: this.shootoutResult } : {}),
@@ -957,6 +960,18 @@ export class MatchDriver {
       stretch.changes.push({ minute: this.matchMinute + 1, mode });
       this.startSimulation(true);
     }
+  }
+  /** Basic KIB cans drunk at half time this match (CanvasMatch kibUsedRef). */
+  kibUsed = 0;
+  /** Basic cans you still have for this match. */
+  kibCansLeft(): number { return Math.max(0, (this.setup.career?.kibCans?.basic ?? 0) - this.kibUsed); }
+  /** Half time only: drink a Basic KIB can, +65 energy (CanvasMatch drinkHalfTimeKib). */
+  drinkHalfTimeKib() {
+    const owned = (this.setup.career?.kibCans?.basic ?? 0) - this.kibUsed;
+    if (owned <= 0 || this.energy >= 100) return;
+    this.kibUsed += 1;
+    this.energy = clampEnergy(this.energy + KIB_HALF_TIME_RESTORE);
+    this.bump();
   }
   /** Defensive / Balanced / Attacking (CanvasMatch setPlaystyle). */
   setPlaystyle(ps: Playstyle) {
