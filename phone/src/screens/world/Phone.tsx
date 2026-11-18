@@ -48,10 +48,10 @@ const APPS: App[] = [
   { id: "fixtures", label: "Fixtures", title: "Fixtures & results", icon: "🏟️", bg: "#0369a1", inside: "fixtures" },
   { id: "messages", label: "Messages", icon: "💌", bg: "#e11d48", inside: "messages" },
   { id: "shop-kib", label: "Shop", icon: "🛍️", bg: "#ea580c", screen: "shop" },
-  { id: "store", label: "Store", icon: "🛒", bg: "#7c3aed", soon: "The Store (Coins)" },
+  { id: "store", label: "Store", icon: "🛒", bg: "#7c3aed", screen: "store", soon: "The Store (Coins)" },
   // No casino: the packed phone app has none (Mikey, 5 Nov 2026).
   { id: "sponsors", label: "Sponsors", icon: "🤝", bg: "#0f766e", screen: "sponsors" },
-  { id: "ownership", label: "Owner", icon: "🏛️", bg: "#4338ca", soon: "Owning clubs (Investments)" },
+  { id: "ownership", label: "Owner", icon: "🏛️", bg: "#4338ca", screen: "investments", soon: "Owning clubs (Investments)" },
   { id: "garden", label: "Garden", icon: "🌳", bg: "#166534", soon: "The 3D garden" },
   { id: "settings", label: "Settings", icon: "⚙️", bg: "#4b5563", screen: "settings", soon: "Settings" },
 ];

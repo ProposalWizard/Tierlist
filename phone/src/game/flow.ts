@@ -59,6 +59,18 @@ import { youthTakerFor, youthWage, startYouthSpell, rollLoanWildcard, startLoanS
 import { managerTalkFor, type ManagerTalk } from "@/lib/star/signingTalk";
 import { FIRST_CONTRACT_WAGE } from "@/lib/star/scoutedPlacement";
 import { getPostMatchReactionsEnabled as getPostMatchReactions } from "@/lib/star/postMatchPrefs";
+import { useSyncExternalStore } from "react";
+import { agreedWeeklyWage } from "@/lib/star/signingTalk";
+import { SOURED_OFFER_SHARE } from "@/lib/star/scoutOffers";
+import { playYouthMatch, applyYouthWeek, readyForPromotion, promoteFromYouth } from "@/lib/star/youth";
+import { startNewWeek, spendAction } from "@/lib/star/week";
+import { farewellSides, farewellCareer, farewellFixture, farewellDuties, farewellSeed, farewellRecordFrom, farewellSkipped, type FarewellSides } from "@/lib/star/farewell";
+import { applyEffects, pickDilemma, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
+import { pressQuestionFor, type PressQuestion, type PressOption } from "@/lib/star/media";
+import { applyGameGain } from "@/lib/star/relationshipGame";
+import { recordBossMeeting } from "@/lib/star/unlocks";
+import type { FarewellRecord } from "@/lib/star/types";
+import { addToPhoneHall } from "../world/hall";
 
 // ═══════════════════════════════════════════════════════════════════
 //  STEPS: where the screens go next
@@ -218,23 +230,33 @@ export function signTrialOffer(offer: ScoutOffer): Step {
 export function resumeStep(): Step {
   const c = getCareer();
   if (!c) return { screen: "career-new" };
-  if (!c.player.club) return c.trial ? afterTrial() : { screen: "career-placeholder", params: { what: "free-agent" } };
+  if (c.retired) return { screen: "career-legacy" };
+  if (!c.player.club) return clublessStep(c);
+  if (c.placement?.kind === "youth") return { screen: "career-youth" };
   return HOME;
+}
+
+/** page.tsx clublessPhaseFor: which screen a career with NO club belongs on. */
+export function clublessStep(c: CareerState): Step {
+  if (c.trial && !trialComplete(c.trial)) return { screen: "career-trial" };
+  if (!c.trial) return { screen: "career-free-agent" };
+  if (c.agreedTerms) return { screen: "career-offers" };
+  return offersForTrial(c).length ? { screen: "career-manager-talk" } : { screen: "career-free-agent" };
 }
 
 /** TrialReward's "done": the signing news, then Home (or the loan brief). */
 export function finishSigning(): Step {
   const c = need();
   pushNews(signingNews(c, c.contract?.club ?? c.player.club));
-  return c.placement?.kind === "loan" ? { screen: "career-placeholder", params: { what: "loan-brief" } } : HOME;
+  return c.placement?.kind === "loan" ? { screen: "career-loan-brief", params: { intro: true } } : HOME;
 }
 
 /** Nobody offered terms: a youth team, or the free-agent life (page.tsx youthOrFreeAgent). */
 export function youthOrFreeAgent(): Step {
   const career = need();
-  if (!career.trial) return { screen: "career-placeholder", params: { what: "free-agent" } };
+  if (!career.trial) return { screen: "career-free-agent" };
   const taker = youthTakerFor(trialScore(career.trial), mulberry32(career.trial.seed ^ 0x9e11));
-  if (!taker) return { screen: "career-placeholder", params: { what: "free-agent" } };
+  if (!taker) return { screen: "career-free-agent" };
   const wage = youthWage(taker.club, taker.division);
   const signed = attachClub(career, taker.club, taker.clubs, taker.division, wage);
   setCareer({
@@ -244,7 +266,7 @@ export function youthOrFreeAgent(): Step {
     placement: startYouthSpell(taker.club, taker.division, "trial"),
   });
   settle();
-  return { screen: "career-placeholder", params: { what: "youth" } };
+  return { screen: "career-youth" };
 }
 
 /** page.tsx's effect: a career with a club and fixtures is brought into step with the international world once a season. */
@@ -280,7 +302,10 @@ export function centralCheck(): string[] {
   const ids = checkNewAchievements(career);
   if (ids.length === 0) return [];
   const unlocked = { ...career, achievements: [...career.achievements, ...ids] };
-  setCareer(withStars({ ...unlocked, starRating: computeStarRating(unlocked) }));
+  const next = withStars({ ...unlocked, starRating: computeStarRating(unlocked) });
+  setCareer(next);
+  // The pop-up shows the star bar moving (page.tsx offMatchAch).
+  pushPop({ kind: "achievements", items: achievementCards(ids), star: { from: starsNow(career), to: starsNow(next), toNext: starStatus(next).toNext } });
   return ids;
 }
 
@@ -352,10 +377,11 @@ export function completeTraining(skill: keyof Skills, level: number, stars: numb
   updated.starRating = computeStarRating(updated);
   const drilled = recordDrill(spendTrainingSession(updated), starStatus(career).total, starsNow(career));
   setCareer(dayDrill ? recordTrainingDayDrill(drilled, skill) : drilled);
+  noteRating(starsNow(career), starsNow(updated));
   const shopOpened = gameFirst(career) && !isStory(career) && career.unlocks!.drills + 1 === DRILLS_TO_OPEN_SHOP;
   setSession({ training: null });
   settle();
-  return { step: career.placement?.kind === "youth" ? { screen: "career-placeholder", params: { what: "youth" } } : { screen: "career-training" }, shopOpened };
+  return { step: career.placement?.kind === "youth" ? { screen: "career-youth" } : { screen: "career-training" }, shopOpened };
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -438,6 +464,7 @@ export function completeMatch(stats: MatchStats): void {
   };
   setSession({ report, ...(potmAwarded?.isYou ? { potmWin: potmAwarded } : {}) });
   setCareer(next);
+  noteRating(starsNow(career), starNext.stars, false);
   settle();
 }
 
@@ -478,6 +505,7 @@ export function watchFromStands(): { step: Step; watched: Fixture | null } {
   if (!f) return { step: HOME, watched: null };
   const { career: next } = simulateMissedFixture(career, f);
   setCareer(next);
+  noteRating(starsNow(career), starsNow(next));
   settle();
   if (f.watch) {
     const watched = next.fixtures.find((x) => x.intlId === f.intlId && x.played) ?? null;
@@ -626,8 +654,9 @@ export function endSeason(): Step {
   const { career: awarded } = awardLeagueTrophyIfWon(from);
   setCareer({ ...awarded, lastSeasonAwardStats: computeSeasonAwardStats(awarded) });
   settle();
-  // leoUpdateOn("seasonReel") shows the season video first: no video maker on the phone yet.
-  return { screen: "career-golden-ball" };
+  // "Your season" first, then the Golden Ball: Leo's update only, as on the
+  // website (off by default there). The phone shows it as a still slideshow.
+  return leoUpdateOn("seasonReel") ? { screen: "career-season-reel" } : { screen: "career-golden-ball" };
 }
 
 /** The Golden Ball night is over (page.tsx handleBallonDorContinue). */
@@ -706,6 +735,7 @@ export function rollOverSeason(from: CareerState, userWon: boolean, forcedRelega
   }
   next.media = generateForRollover({ ...next, media: next.media });
   setCareer(next);
+  noteRating(starsNow(from), starsNow(next));
   settle();
   setSession({ report: null, koShown: [], roundupShown: null });
   if (next.lastSeasonAwardStats) return { screen: "career-season-awards" };
@@ -718,15 +748,233 @@ export function continueAfterRollover(next: CareerState = need()): Step {
   return HOME;
 }
 
-/** The last season is over (page.tsx handleRetire, without the farewell match). */
+/**
+ * "Hang them up" on the final whistle (page.tsx handleHangThemUp): the
+ * farewell match first, once per career; if its sides can't be made, the
+ * career simply retires.
+ */
 export function retireNow(): Step {
   const career = need();
-  const done = retire(career, getSession().wonBallonDor);
+  if (career.farewell) return retireWith();
+  try {
+    const sides = farewellSides(career, { calendarYears: leoUpdateOn("bugFixes") });
+    farewell = { sides, career: farewellCareer(career, sides), fixture: farewellFixture(career, sides), stats: null };
+    return { screen: "career-farewell-invite" };
+  } catch {
+    return retireWith();
+  }
+}
+
+/** page.tsx handleRetire: the career ends, goes in the Hall of Fame, then the overview. */
+export function retireWith(farewellRecord?: FarewellRecord): Step {
+  const career = need();
+  const leaving = farewellRecord ? { ...career, farewell: farewellRecord } : career;
+  const done = retire(leaving, getSession().wonBallonDor);
   done.media = generateForCareer(done, { kind: "retirement", goals: done.careerStats.goals, apps: done.careerStats.appearances, trophies: done.trophies.length }, "retire");
   setCareer(done);
+  addToPhoneHall(done);
+  farewell = null;
   settle();
-  // addToHall / syncHall (the Hall of Fame) and the farewell match: not on the phone yet.
-  return { screen: "career-placeholder", params: { what: "legacy" } };
+  return { screen: "career-legacy" };
+}
+
+// ── The farewell match (page.tsx farewell-invite → sheets → walkout → match → result) ──
+
+export interface Farewell { sides: FarewellSides; career: CareerState; fixture: Fixture; stats: MatchStats | null }
+let farewell: Farewell | null = null;
+/** The farewell being played (null when there is none: the screens go on to the overview). */
+export function currentFarewell(): Farewell | null {
+  if (!farewell && getCareer() && !getCareer()!.retired && !getCareer()!.farewell) {
+    try { const c = getCareer()!; const sides = farewellSides(c, { calendarYears: leoUpdateOn("bugFixes") }); farewell = { sides, career: farewellCareer(c, sides), fixture: farewellFixture(c, sides), stats: null }; } catch { /* no farewell */ }
+  }
+  return farewell;
+}
+/** Skip it: kept, so the game knows it was offered once. */
+export function skipFarewell(): Step { return retireWith(farewellSkipped(need())); }
+/**
+ * STAND-IN for the farewell match on the engine (CanvasMatch with
+ * farewell.offAt): played out by the game's own match simulator on the
+ * farewell's stand-in career and fixture, with the farewell's duties and
+ * seed. Replace with the real match once the match area can play it.
+ */
+export function playFarewell(): Step {
+  const career = need();
+  const f = currentFarewell();
+  if (!f) return retireWith();
+  const sel = selectionFor(f.career);
+  const bootLeft = career.currentBoot.matches > 0;
+  const stats = simulateOwnMatch(f.career, f.fixture, {
+    selection: sel, duties: farewellDuties(), seed: farewellSeed(career),
+    skills: {
+      power: Math.min(100, career.skills.power + (bootLeft ? career.currentBoot.power : 0)),
+      technique: Math.min(100, career.skills.technique + (bootLeft ? career.currentBoot.technique : 0)),
+    },
+  });
+  f.stats = stats;
+  return { screen: "career-farewell-result" };
+}
+export function finishFarewell(): Step {
+  const f = farewell;
+  return f?.stats ? retireWith(farewellRecordFrom(f.stats, f.sides)) : retireWith();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  THE OTHER STEPS (wage talk, youth, loans, round-ups, press, dilemmas,
+//  relationships, the relegation move, the season reel)
+// ═══════════════════════════════════════════════════════════════════
+
+/** The wage haggle is done (page.tsx wage-talk onDone): agreed, or soured to a worse final offer. */
+export function wageTalkDone(finalSeasonPrice: number | null): Step {
+  const career = need();
+  const m = managerTalk(career);
+  if (!m) return { screen: "career-offers" };
+  const weekly = agreedWeeklyWage(finalSeasonPrice, m.talk.club, m.talk.division);
+  setCareer({ ...career, agreedTerms: weekly === null
+    ? { club: m.talk.club, wage: Math.max(1, Math.round(m.offer.wage * SOURED_OFFER_SHARE)), soured: true }
+    : { club: m.talk.club, wage: weekly } });
+  return { screen: "career-offers" };
+}
+
+/** A youth-team week (page.tsx handleYouthWeek). */
+export function youthWeek(): Step {
+  const career = need();
+  if (career.placement?.kind !== "youth") return HOME;
+  const f = nextFixtureFor(career);
+  if (!f && career.fixtures.length > 0) return HOME;
+  let base = career;
+  if (f) base = simulateMissedFixture(career, f).career;
+  else base = { ...career, week: career.week + 1, ...startNewWeek() };
+  const match = playYouthMatch(base, mulberry32(base.season * 10007 + base.week * 131 + 4409));
+  setCareer(applyYouthWeek(base, match));
+  settle();
+  return { screen: "career-youth" };
+}
+/** "Go up" (page.tsx handleYouthPromotion). */
+export function youthPromote(): Step {
+  const career = need();
+  if (!readyForPromotion(career)) return { screen: "career-youth" };
+  setCareer(promoteFromYouth(career));
+  settle();
+  return HOME;
+}
+
+/** The loan brief's weekly reminder: once a week on the way to the match (page.tsx loanBriefWeek). */
+let loanBriefWeek: number | null = null;
+export function loanBriefDue(c: CareerState): boolean { return c.placement?.kind === "loan" && loanBriefWeek !== c.week; }
+export function loanBriefSeen(c: CareerState = need()) { loanBriefWeek = c.week; }
+
+/** Deadline day shown (page.tsx deadline-day onContinue). */
+export function deadlineDayDone(): Step {
+  const c = need();
+  setCareer({ ...c, deadlineDayShownFor: c.lastTransferWindowKey });
+  return continueAfterMatch(true);
+}
+
+/** The relegation move: a club picked, signed straight away (handleChooseTransfer → handleSigningDone). */
+export function chooseRelegationOffer(offer: TransferOffer): Step {
+  return signTransfer(offer, true);
+}
+
+/** The relegation offers, again (for a resumed screen). */
+export function relegationOffers(from: CareerState = need()): TransferOffer[] {
+  const forced = generateRelegationOffers(from, mulberry32(from.season * 8831 + from.fame));
+  const agreed = requestOf(from).agreed;
+  return agreed ? [agreed, ...forced.filter((o) => o.club !== agreed.club)] : forced;
+}
+
+/** The season's reel was watched (page.tsx handleReelDone). */
+export function reelDone(): Step {
+  setCareer((c) => ({ ...c, reelDoneSeason: c.season }));
+  return { screen: "career-golden-ball" };
+}
+
+// ── Press conferences and dilemmas: the website has both turned off ("on
+//    request"; the plumbing kept). The phone keeps the same: the screens work,
+//    the flow does not open them, exactly as continueAfterMatch on page.tsx. ──
+
+export const PRESS_ON = false;
+export const DILEMMAS_ON = false;
+
+/** The press question for the match just played (page.tsx pressQuestionFor), or null. */
+export function pressQuestion(): PressQuestion | null {
+  const c = getCareer();
+  const r = getSession().report;
+  if (!c || !r) return null;
+  return pressQuestionFor(c, r.fixture, r.stats, false, mulberry32(c.season * 977 + c.week));
+}
+/** page.tsx handlePressAnswer. */
+export function answerPress(o: PressOption): Step {
+  const career = need();
+  const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
+  setCareer({
+    ...career,
+    relationships: { ...career.relationships, boss: clamp(career.relationships.boss + o.boss), team: clamp(career.relationships.team + o.team), fans: clamp(career.relationships.fans + o.fans) },
+    happiness: clamp(career.happiness + (o.happiness ?? 0)),
+  });
+  settle();
+  return continueAfterMatch();
+}
+
+/** A dilemma for this career, never a gambling one (the phone app has none: lib/app/packed.ts). */
+export function dilemmaFor(c: CareerState = need()): Dilemma | null {
+  const d = pickDilemma(c, mulberry32(c.season * 4099 + c.week * 37));
+  return d && !/gambl|casino|\bbet\b|betting|poker|card game|wager/i.test(`${d.id} ${d.title} ${d.text}`) ? d : null;
+}
+/** page.tsx handleDilemmaChoose. */
+export function chooseDilemma(d: Dilemma, effects: DilemmaEffect): Step {
+  const career = need();
+  const next = applyEffects(career, effects);
+  next.seenDilemmas = [...next.seenDilemmas, d.id];
+  setCareer(next);
+  settle();
+  return HOME;
+}
+
+// ── Relationships (page.tsx handleRelationshipGameComplete) ──
+
+export type RelKind = "boss" | "team" | "fans" | "happiness";
+export interface RelGameResult { won: boolean; gain: number; cost?: number; line?: string }
+export function relationshipGameDone(kind: RelKind, res: RelGameResult): Step {
+  const career = need();
+  const p = career.relGamesPlayed;
+  const same = p && p.season === career.season && p.week === career.week;
+  let updated: CareerState = {
+    ...career,
+    money: Math.max(0, career.money - (res.cost ?? 0)),
+    energy: Math.max(0, career.energy - TRAINING_ENERGY_COST),
+    relGamesPlayed: { season: career.season, week: career.week, kinds: [...(same ? p!.kinds : []), kind] },
+  };
+  if (kind === "happiness") updated.happiness = applyGameGain(career.happiness, res.gain);
+  else updated.relationships = { ...career.relationships, [kind]: applyGameGain(career.relationships[kind] as number, res.gain) };
+  if (kind === "boss" && career.unlocks && !career.achievements.includes("boss-meeting")) updated = recordBossMeeting(updated);
+  setCareer(spendAction(updated));
+  settle();
+  return isStory(career) && kind === "boss" ? HOME : { screen: "career-relations" };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  POP-UPS: achievements, the star rating going up, every ten a full screen
+//  (page.tsx AchievementToasts / offMatchAch, toastRatingChange, newStar)
+// ═══════════════════════════════════════════════════════════════════
+
+export type Pop =
+  | { kind: "achievements"; items: { label: string; description: string }[]; star?: { from: number; to: number; toNext: number } }
+  | { kind: "rating"; from: number; to: number }
+  | { kind: "milestone"; level: number };
+let pops: Pop[] = [];
+const popSubs = new Set<() => void>();
+function setPops(next: Pop[]) { pops = next; popSubs.forEach((f) => f()); }
+export function pushPop(p: Pop) { setPops([...pops, p]); }
+export function dismissPop() { setPops(pops.slice(1)); }
+export function usePops(): Pop[] {
+  return useSyncExternalStore((f) => { popSubs.add(f); return () => popSubs.delete(f); }, () => pops, () => pops);
+}
+/** page.tsx toastRatingChange: up only; every ten (20, 30…) gets the full screen; `banner` off for a match. */
+export function noteRating(from: number, to: number, banner = true) {
+  const a = Math.floor(from), b = Math.floor(to);
+  if (b <= a) return;
+  if (Math.floor(b / 10) > Math.floor(a / 10)) pushPop({ kind: "milestone", level: Math.floor(b / 10) * 10 });
+  if (banner) pushPop({ kind: "rating", from: a, to: b });
 }
 
 // ── Breaking news (page.tsx pushNews / newsQueue) ──
