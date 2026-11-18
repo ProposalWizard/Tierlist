@@ -27,13 +27,20 @@
  *   blur(), letterSpacing/wordSpacing/direction "rtl", putImageData's "ignore
  *   the clip" rule, shadows exactly in device space under rotation.
  *
+ * SPEED (a phone pays for every call from JS into Skia): the transform is
+ * put on the Skia canvas once and kept until it changes (not saved, set and
+ * restored around every shape); a plain colour's paint is made once and
+ * reused; a path goes to Skia in one call (MakeFromCmds); a path that is just
+ * one full circle, oval or rectangle is drawn as that (drawCircle / drawOval /
+ * drawRect). Measured by tools/goal-video-bench.ts, same pixels.
+ *
  * No Skia import at run time (types only): tools/draw-check.ts runs this file
  * in node against CanvasKit, which is the same Skia.
  */
 import type { Skia as SkiaValue, SkCanvas, SkFont, SkImage, SkPaint, SkShader, SkPath, SkColor } from "@shopify/react-native-skia";
 type SkiaApi = typeof SkiaValue;
 import { parseColor, parseFont, parseFilter, type RGBA, type FontSpec } from "./css";
-import { PathRecorder, IDENTITY, mul, invert, apply, scaleOf, toSkia, transformCmds, type Mat, type DOMPointLike } from "./path";
+import { PathRecorder, IDENTITY, mul, invert, apply, scaleOf, toSkia, transformCmds, arcSweep, type Mat, type DOMPointLike } from "./path";
 
 // Skia's enum numbers (its enums are not importable without React Native).
 const BM = { Clear: 0, Src: 1, SrcOver: 3, DstOver: 4, SrcIn: 5, DstIn: 6, SrcOut: 7, DstOut: 8, SrcATop: 9, DstATop: 10, Xor: 11, Plus: 12, Screen: 14, Overlay: 15, Darken: 16, Lighten: 17, ColorDodge: 18, ColorBurn: 19, HardLight: 20, SoftLight: 21, Difference: 22, Exclusion: 23, Multiply: 24, Hue: 25, Saturation: 26, Color: 27, Luminosity: 28 } as const;
@@ -79,7 +86,21 @@ export class Pattern {
     this.m = t ? [t.a ?? 1, t.b ?? 0, t.c ?? 0, t.d ?? 1, t.e ?? 0, t.f ?? 0] : IDENTITY;
   }
 }
-type Style = { css: string | Gradient | Pattern; rgba: RGBA | null };
+type Style = { css: string | Gradient | Pattern; rgba: RGBA | null; fill1?: SkPaint; fill1Of?: unknown };
+/** One Style per colour word, shared (a crowd sets the same few colours thousands of times). */
+const styleCache = new Map<string, Style | null>();
+function styleOfString(v: string): Style | null {
+  let st = styleCache.get(v);
+  if (st !== undefined) return st;
+  const rgba = parseColor(v);
+  st = rgba ? { css: v, rgba } : null;
+  if (styleCache.size > 4000) styleCache.clear();
+  styleCache.set(v, st);
+  return st;
+}
+/** Paints for plain colours, made once per look and reused (Skia copies a paint when it records). */
+let paintCache = new Map<string, { p: SkPaint; w: number }>();
+let paintCacheOwner: unknown = null;
 
 /** The bits of a DOMMatrix that drawers read back from getTransform(). */
 export class Matrix2D {
@@ -99,7 +120,7 @@ interface State {
   dash: number[]; dashOffset: number;
   alpha: number; op: string;
   shadowColor: string; shadowRGBA: RGBA; shadowBlur: number; shadowOffsetX: number; shadowOffsetY: number;
-  font: string; textAlign: string; textBaseline: string; filter: string;
+  font: string; textAlign: string; textBaseline: string; filter: string; blur: number;
   smoothing: boolean; smoothingQuality: string;
 }
 const BLACK: Style = { css: "#000000", rgba: [0, 0, 0, 1] };
@@ -109,7 +130,7 @@ function freshState(): State {
     lineWidth: 1, lineCap: "butt", lineJoin: "miter", miterLimit: 10, dash: [], dashOffset: 0,
     alpha: 1, op: "source-over",
     shadowColor: "rgba(0, 0, 0, 0)", shadowRGBA: [0, 0, 0, 0], shadowBlur: 0, shadowOffsetX: 0, shadowOffsetY: 0,
-    font: "10px sans-serif", textAlign: "start", textBaseline: "alphabetic", filter: "none",
+    font: "10px sans-serif", textAlign: "start", textBaseline: "alphabetic", filter: "none", blur: 0,
     smoothing: true, smoothingQuality: "low",
   };
 }
@@ -148,6 +169,14 @@ export class Ctx2D {
   version = 0;
   readonly canvas: { width: number; height: number };
   private base: Mat | null;
+  /** The full transform (base x the drawing's own), worked out when the drawing's own changes. */
+  private mFor: Mat | null = null;
+  private mFull: Mat = IDENTITY;
+  /** The transform now set on the Skia canvas (inside one save of ours), or null for none. */
+  private applied: Mat | null = null;
+  /** The current path when it is only one full circle, oval or rectangle, in the drawing's space under `m`. */
+  private prim: { k: "circle"; x: number; y: number; r: number; m: Mat } | { k: "oval"; x: number; y: number; rx: number; ry: number; m: Mat } | { k: "rect"; x: number; y: number; w: number; h: number; m: Mat } | null = null;
+  private clearPaint: SkPaint | null = null;
 
   constructor(private Skia: SkiaApi, private c: SkCanvas, private o: Ctx2DOptions) {
     this.canvas = o.canvasObject ?? { width: o.width, height: o.height };
@@ -155,10 +184,25 @@ export class Ctx2D {
   }
 
   // ── State ──
-  save() { this.stack.push({ ...this.s, dash: [...this.s.dash] }); this.c.save(); }
-  restore() { const p = this.stack.pop(); if (!p) return; this.s = p; this.c.restore(); }
+  save() { this.dropM(); this.stack.push({ ...this.s, dash: [...this.s.dash] }); this.c.save(); }
+  restore() { const p = this.stack.pop(); if (!p) return; this.dropM(); this.s = p; this.c.restore(); }
   /** Back to a fresh canvas state (the clip too); keeps the pixels. */
-  reset() { while (this.stack.length) this.restore(); this.s = freshState(); this.path.reset(); }
+  reset() { while (this.stack.length) this.restore(); this.dropM(); this.s = freshState(); this.path.reset(); this.prim = null; this.pending = null; }
+  /** Put the transform on the Skia canvas (once, until it changes). */
+  private ensureM() {
+    const M = this.M;
+    if (this.applied === M) return;
+    if (this.applied) this.c.restore();
+    this.c.save();
+    this.c.concat(this.Skia.Matrix(toSkia(M)));
+    this.applied = M;
+  }
+  /** Take our transform off the Skia canvas (before the drawer's save, restore, clip, or a pixel write). */
+  private dropM() {
+    if (!this.applied) return;
+    this.c.restore();
+    this.applied = null;
+  }
   getContextAttributes() { return { alpha: true, colorSpace: "srgb", desynchronized: false, willReadFrequently: !!this.o.pixels }; }
   isContextLost() { return false; }
 
@@ -180,7 +224,10 @@ export class Ctx2D {
   }
   resetTransform() { this.s.m = IDENTITY; }
   /** The whole transform: the device's (`base`) and then the drawing's own. */
-  private get M(): Mat { return this.base ? mul(this.base, this.s.m) : this.s.m; }
+  private get M(): Mat {
+    if (this.mFor !== this.s.m) { this.mFor = this.s.m; this.mFull = this.base ? mul(this.base, this.s.m) : this.s.m; }
+    return this.mFull;
+  }
   /** What the canvas would answer: with a `base`, the full transform to device pixels (so a
    *  drawer that sizes a hidden picture by it makes it sharp), and setTransform(thatObject) puts it back. */
   getTransform() { const m = this.M; return new Matrix2D(m[0], m[1], m[2], m[3], m[4], m[5]); }
@@ -191,10 +238,9 @@ export class Ctx2D {
   get strokeStyle(): string | Gradient | Pattern { return this.s.stroke.css; }
   set strokeStyle(v: string | Gradient | Pattern) { const st = this.style(v); if (st) this.s.stroke = st; }
   private style(v: unknown): Style | null {
+    if (typeof v === "string") return styleOfString(v);
     if (v instanceof Gradient || v instanceof Pattern) return { css: v, rgba: null };
-    if (typeof v !== "string") return null;
-    const rgba = parseColor(v);
-    return rgba ? { css: v, rgba } : null;
+    return null;
   }
   get lineWidth() { return this.s.lineWidth; }
   set lineWidth(v: number) { if (v > 0 && Number.isFinite(v)) this.s.lineWidth = v; }
@@ -226,7 +272,9 @@ export class Ctx2D {
   get filter() { return this.s.filter; }
   set filter(v: string) {
     this.s.filter = v;
-    if (v && v !== "none" && !parseFilter(v)) warnOnce(`filter "${v}"`);
+    const f = v && v !== "none" ? parseFilter(v) : null;
+    this.s.blur = f && f.blur > 0 ? f.blur : 0;
+    if (v && v !== "none" && !f) warnOnce(`filter "${v}"`);
   }
   get font() { return this.s.font; }
   set font(v: string) { if (parseFont(v)) this.s.font = v; }
@@ -255,40 +303,88 @@ export class Ctx2D {
   }
 
   // ── The path ──
-  beginPath() { this.path.reset(); }
-  moveTo(x: number, y: number) { this.path.moveTo(this.M, x, y); }
-  lineTo(x: number, y: number) { this.path.lineTo(this.M, x, y); }
-  quadraticCurveTo(cx: number, cy: number, x: number, y: number) { this.path.quadraticCurveTo(this.M, cx, cy, x, y); }
-  bezierCurveTo(a: number, b: number, c: number, d: number, x: number, y: number) { this.path.bezierCurveTo(this.M, a, b, c, d, x, y); }
-  arc(x: number, y: number, r: number, a0: number, a1: number, ccw?: boolean) { this.path.arc(this.M, x, y, r, a0, a1, !!ccw); }
-  arcTo(x1: number, y1: number, x2: number, y2: number, r: number) { this.path.arcTo(this.M, x1, y1, x2, y2, r); }
-  ellipse(x: number, y: number, rx: number, ry: number, rot: number, a0: number, a1: number, ccw?: boolean) { this.path.ellipse(this.M, x, y, rx, ry, rot, a0, a1, !!ccw); }
-  rect(x: number, y: number, w: number, h: number) { this.path.rect(this.M, x, y, w, h); }
-  roundRect(x: number, y: number, w: number, h: number, r?: number | DOMPointLike | (number | DOMPointLike)[]) { this.path.roundRect(this.M, x, y, w, h, r ?? 0); }
-  closePath() { this.path.closePath(); }
+  beginPath() { this.path.reset(); this.prim = null; this.pending = null; }
+  /** A lone full circle is kept as its numbers (`pending`) and only turned into curves if the path goes on. */
+  private pending: { x: number; y: number; r: number; a0: number; a1: number; ccw: boolean; M: Mat } | null = null;
+  private mat() {
+    const q = this.pending;
+    if (!q) return;
+    this.pending = null;
+    this.path.arc(q.M, q.x, q.y, q.r, q.a0, q.a1, q.ccw);
+  }
+  moveTo(x: number, y: number) { this.mat(); this.prim = null; this.path.moveTo(this.M, x, y); }
+  lineTo(x: number, y: number) { this.mat(); this.prim = null; this.path.lineTo(this.M, x, y); }
+  quadraticCurveTo(cx: number, cy: number, x: number, y: number) { this.mat(); this.prim = null; this.path.quadraticCurveTo(this.M, cx, cy, x, y); }
+  bezierCurveTo(a: number, b: number, c: number, d: number, x: number, y: number) { this.mat(); this.prim = null; this.path.bezierCurveTo(this.M, a, b, c, d, x, y); }
+  arc(x: number, y: number, r: number, a0: number, a1: number, ccw?: boolean) {
+    const first = this.path.cmds.length === 0 && !this.pending;
+    if (first && r > 0 && fin(x, y, r, a0, a1) && Math.abs(arcSweep(a0, a1, !!ccw)) === Math.PI * 2) {
+      this.prim = { k: "circle", x, y, r, m: this.s.m };
+      this.pending = { x, y, r, a0, a1, ccw: !!ccw, M: this.M };
+      return;
+    }
+    this.mat();
+    this.prim = null;
+    this.path.arc(this.M, x, y, r, a0, a1, !!ccw);
+  }
+  arcTo(x1: number, y1: number, x2: number, y2: number, r: number) { this.mat(); this.prim = null; this.path.arcTo(this.M, x1, y1, x2, y2, r); }
+  ellipse(x: number, y: number, rx: number, ry: number, rot: number, a0: number, a1: number, ccw?: boolean) {
+    this.mat();
+    const first = this.path.cmds.length === 0;
+    this.prim = null;
+    this.path.ellipse(this.M, x, y, rx, ry, rot, a0, a1, !!ccw);
+    if (first && rot === 0 && rx > 0 && ry > 0 && fin(x, y, rx, ry, a0, a1) && Math.abs(arcSweep(a0, a1, !!ccw)) === Math.PI * 2) this.prim = { k: "oval", x, y, rx, ry, m: this.s.m };
+  }
+  rect(x: number, y: number, w: number, h: number) {
+    this.mat();
+    const first = this.path.cmds.length === 0;
+    this.prim = null;
+    this.path.rect(this.M, x, y, w, h);
+    if (first && w > 0 && h > 0 && fin(x, y, w, h)) this.prim = { k: "rect", x, y, w, h, m: this.s.m };
+  }
+  roundRect(x: number, y: number, w: number, h: number, r?: number | DOMPointLike | (number | DOMPointLike)[]) { this.mat(); this.prim = null; this.path.roundRect(this.M, x, y, w, h, r ?? 0); }
+  /** Closing one full circle or rectangle leaves the same shape, so it keeps `prim`. */
+  closePath() { this.mat(); this.path.closePath(); }
+
+  /** Draw the current path as one shape when it is one full circle, oval or rectangle under this same transform. */
+  private drawPrim(paint: SkPaint): boolean {
+    const pr = this.prim;
+    if (!pr || pr.m !== this.s.m) return false;
+    // Skia's own circle and oval (a browser's arc is Skia's too): closer to the website than our curves.
+    if (pr.k === "circle") this.draw(paint, (c, p) => c.drawCircle(pr.x, pr.y, pr.r, p));
+    else if (pr.k === "oval") this.draw(paint, (c, p) => c.drawOval({ x: pr.x - pr.rx, y: pr.y - pr.ry, width: pr.rx * 2, height: pr.ry * 2 } as never, p));
+    else this.draw(paint, (c, p) => c.drawRect({ x: pr.x, y: pr.y, width: pr.w, height: pr.h } as never, p));
+    return true;
+  }
 
   fill(a?: unknown, b?: unknown) {
     if (a !== undefined && typeof a !== "string") { warnOnce("fill(Path2D)"); return; }
-    const path = this.userPath(typeof a === "string" ? a : (b as string | undefined));
-    if (!path) return;
+    if (!this.path.cmds.length && !this.pending) return;
     const paint = this.paint(this.s.fill, false);
-    if (paint) this.draw(paint, (c, p) => c.drawPath(path, p));
+    if (!paint) return;
+    if (this.drawPrim(paint)) return;
+    this.mat();
+    const path = this.userPath(typeof a === "string" ? a : (b as string | undefined));
+    if (path) this.draw(paint, (c, p) => c.drawPath(path, p));
   }
   stroke(a?: unknown) {
     if (a !== undefined) { warnOnce("stroke(Path2D)"); return; }
-    const path = this.userPath();
-    if (!path) return;
+    if (!this.path.cmds.length && !this.pending) return;
     const paint = this.paint(this.s.stroke, true);
-    if (paint) this.draw(paint, (c, p) => c.drawPath(path, p));
+    if (!paint) return;
+    // A dash starts where the path starts, so a dashed circle keeps its own path.
+    if (!this.s.dash.length && this.drawPrim(paint)) return;
+    this.mat();
+    const path = this.userPath();
+    if (path) this.draw(paint, (c, p) => c.drawPath(path, p));
   }
   clip(a?: unknown, b?: unknown) {
     if (a !== undefined && typeof a !== "string") { warnOnce("clip(Path2D)"); return; }
     const rule = typeof a === "string" ? a : (b as string | undefined);
     // Clipped in picture pixels: the points are already turned.
-    const bld = this.Skia.PathBuilder.Make();
-    this.addCmds(bld, this.path.cmds);
-    if (rule === "evenodd") bld.setFillType(FILL_EVENODD);
-    this.c.clipPath(bld.build(), CLIP_INTERSECT, true);
+    this.mat();
+    this.dropM();
+    this.c.clipPath(this.skPath(this.path.cmds, null, rule === "evenodd"), CLIP_INTERSECT, true);
   }
   isPointInPath() { warnOnce("isPointInPath"); return false; }
   isPointInStroke() { warnOnce("isPointInStroke"); return false; }
@@ -296,25 +392,22 @@ export class Ctx2D {
   fillRect(x: number, y: number, w: number, h: number) {
     if (!fin(x, y, w, h) || !w || !h) return;
     const paint = this.paint(this.s.fill, false);
-    if (paint) this.draw(paint, (c, p) => c.drawRect(this.Skia.XYWHRect(x, y, w, h), p));
+    // A plain {x, y, width, height}: Skia reads it without making a rectangle object first.
+    if (paint) this.draw(paint, (c, p) => c.drawRect({ x, y, width: w, height: h } as never, p));
   }
   strokeRect(x: number, y: number, w: number, h: number) {
     if (!fin(x, y, w, h)) return;
     const paint = this.paint(this.s.stroke, true);
     if (!paint) return;
-    const b = this.Skia.PathBuilder.Make();
-    b.moveTo(x, y).lineTo(x + w, y).lineTo(x + w, y + h).lineTo(x, y + h).close();
-    const path = b.build();
-    this.draw(paint, (c, p) => c.drawPath(path, p));
+    const path = this.Skia.Path.MakeFromCmds([[0, x, y], [1, x + w, y], [1, x + w, y + h], [1, x, y + h], [5]]);
+    if (path) this.draw(paint, (c, p) => c.drawPath(path, p));
   }
   clearRect(x: number, y: number, w: number, h: number) {
     if (!fin(x, y, w, h) || !w || !h) return;
-    const p = this.Skia.Paint();
-    p.setBlendMode(BM.Clear);
-    this.c.save();
-    this.c.concat(this.Skia.Matrix(toSkia(this.M)));
-    this.c.drawRect(this.Skia.XYWHRect(x, y, w, h), p);
-    this.c.restore();
+    let p = this.clearPaint;
+    if (!p) { p = this.Skia.Paint(); p.setBlendMode(BM.Clear); this.clearPaint = p; }
+    this.ensureM();
+    this.c.drawRect({ x, y, width: w, height: h } as never, p);
     this.version++;
   }
 
@@ -373,8 +466,9 @@ export class Ctx2D {
     const paint = this.paint(stroke ? this.s.stroke : this.s.fill, stroke);
     if (!paint) return;
     this.draw(paint, (c, p) => {
-      if (squeeze !== 1) { c.translate(x, 0); c.scale(squeeze, 1); c.translate(-x, 0); }
+      if (squeeze !== 1) { c.save(); c.translate(x, 0); c.scale(squeeze, 1); c.translate(-x, 0); }
       c.drawText(t, x + dx, y + dy, p, font);
+      if (squeeze !== 1) c.restore();
     });
   }
 
@@ -434,6 +528,7 @@ export class Ctx2D {
     const bytes = new Uint8Array(img.data.buffer, img.data.byteOffset, img.data.byteLength);
     const sk = S.Image.MakeImage({ width: img.width, height: img.height, colorType: RGBA_8888, alphaType: UNPREMUL }, S.Data.fromBytes(bytes), img.width * 4);
     if (!sk) return;
+    this.dropM();
     const p = S.Paint();
     p.setBlendMode(BM.Src);
     this.c.drawImage(sk, Math.round(dx), Math.round(dy), p);
@@ -446,21 +541,36 @@ export class Ctx2D {
     if (!this.path.cmds.length) return null;
     const inv = invert(this.M);
     if (!inv) return null;
-    const b = this.Skia.PathBuilder.Make();
-    this.addCmds(b, transformCmds(this.path.cmds, inv));
-    if (rule === "evenodd") b.setFillType(FILL_EVENODD);
-    return b.build();
+    return this.skPath(this.path.cmds, inv, rule === "evenodd");
   }
-  private addCmds(b: ReturnType<SkiaApi["PathBuilder"]["Make"]>, cmds: PathRecorder["cmds"]) {
-    for (const c of cmds) {
-      switch (c.k) {
-        case "M": b.moveTo(c.p[0], c.p[1]); break;
-        case "L": b.lineTo(c.p[0], c.p[1]); break;
-        case "Q": b.quadTo(c.p[0], c.p[1], c.p[2], c.p[3]); break;
-        case "C": b.cubicTo(c.p[0], c.p[1], c.p[2], c.p[3], c.p[4], c.p[5]); break;
-        case "Z": b.close(); break;
+  /** A Skia path from the recorded commands, each point put through `m` (null: as they are), in one call. */
+  private skPath(cmds: PathRecorder["cmds"], m: Mat | null, evenodd: boolean): SkPath {
+    if (evenodd) {
+      // MakeFromCmds has no fill rule: the builder way.
+      const bl = this.Skia.PathBuilder.Make();
+      for (const k of m ? transformCmds(cmds, m) : cmds) {
+        switch (k.k) {
+          case "M": bl.moveTo(k.p[0], k.p[1]); break;
+          case "L": bl.lineTo(k.p[0], k.p[1]); break;
+          case "Q": bl.quadTo(k.p[0], k.p[1], k.p[2], k.p[3]); break;
+          case "C": bl.cubicTo(k.p[0], k.p[1], k.p[2], k.p[3], k.p[4], k.p[5]); break;
+          case "Z": bl.close(); break;
+        }
       }
+      bl.setFillType(FILL_EVENODD);
+      return bl.build();
     }
+    const a = m ? m[0] : 1, b = m ? m[1] : 0, c = m ? m[2] : 0, d = m ? m[3] : 1, e = m ? m[4] : 0, f = m ? m[5] : 0;
+    const out: number[][] = new Array(cmds.length);
+    for (let i = 0; i < cmds.length; i++) {
+      const k = cmds[i];
+      if (k.k === "Z") { out[i] = [5]; continue; }
+      const p = k.p;
+      const row: number[] = [k.k === "M" ? 0 : k.k === "L" ? 1 : k.k === "Q" ? 2 : 4];
+      for (let j = 0; j < p.length; j += 2) row.push(a * p[j] + c * p[j + 1] + e, b * p[j] + d * p[j + 1] + f);
+      out[i] = row;
+    }
+    return this.Skia.Path.MakeFromCmds(out) ?? this.Skia.Path.Make();
   }
   private color(c: RGBA, alpha = 1): SkColor { return Float32Array.of(c[0], c[1], c[2], c[3] * alpha) as unknown as SkColor; }
 
@@ -469,9 +579,10 @@ export class Ctx2D {
     const S = this.Skia;
     const p = S.Paint();
     p.setAntiAlias(true);
+    if (!this.s.blur && !this.hasShadow()) return p;
     const k = scaleOf(this.M) || 1;
-    const blur = parseFilter(this.s.filter);
-    let f = blur && blur.blur > 0 ? S.ImageFilter.MakeBlur(blur.blur / k, blur.blur / k, TILE.Decal, null) : null;
+    const blur = this.s.blur;
+    let f = blur > 0 ? S.ImageFilter.MakeBlur(blur / k, blur / k, TILE.Decal, null) : null;
     const sc = this.s.shadowRGBA;
     if (sc[3] > 0 && (this.s.shadowBlur > 0 || this.s.shadowOffsetX || this.s.shadowOffsetY)) {
       // Shadow offsets are in picture pixels, not turned by the transform.
@@ -483,8 +594,40 @@ export class Ctx2D {
     if (f) p.setImageFilter(f);
     return p;
   }
+  private hasShadow(): boolean {
+    const s = this.s;
+    return s.shadowRGBA[3] > 0 && (s.shadowBlur > 0 || s.shadowOffsetX !== 0 || s.shadowOffsetY !== 0);
+  }
   /** The paint for a fill or a stroke, or null when it would draw nothing. */
   private paint(st: Style, stroke: boolean): SkPaint | null {
+    const s = this.s;
+    // A plain colour with no shadow or blur: one paint per look, made once.
+    if (st.rgba && !s.blur && !this.hasShadow()) {
+      if (st.rgba[3] * s.alpha === 0 && s.op === "source-over") return null;
+      // The commonest case of all (a crowd's shirts): a fill at full strength, kept on the colour itself.
+      if (!stroke && s.alpha === 1 && st.fill1Of === this.Skia) return st.fill1!;
+      if (paintCacheOwner !== this.Skia) { paintCache = new Map(); paintCacheOwner = this.Skia; }
+      // A stroke's width changes shape by shape (net meshes, lines far and near), so it is
+      // set on the kept paint when it differs, not part of what picks the paint.
+      const key = stroke
+        ? `s${st.css as string}|${s.alpha}|${s.lineCap}|${s.lineJoin}|${s.miterLimit}|${s.dash.length ? s.dash.join(",") + "@" + s.dashOffset : ""}`
+        : `f${st.css as string}|${s.alpha}`;
+      const hit = paintCache.get(key);
+      if (hit) {
+        if (stroke && hit.w !== s.lineWidth) { hit.p.setStrokeWidth(s.lineWidth); hit.w = s.lineWidth; }
+        return hit.p;
+      }
+      const made = this.paintNow(st, stroke);
+      if (made && !stroke && s.alpha === 1) { st.fill1 = made; st.fill1Of = this.Skia; }
+      if (made) {
+        if (paintCache.size > 2000) paintCache.clear();
+        paintCache.set(key, { p: made, w: s.lineWidth });
+      }
+      return made;
+    }
+    return this.paintNow(st, stroke);
+  }
+  private paintNow(st: Style, stroke: boolean): SkPaint | null {
     const p = this.basePaint();
     if (st.rgba) {
       if (st.rgba[3] * this.s.alpha === 0 && this.s.op === "source-over") return null;
@@ -541,16 +684,14 @@ export class Ctx2D {
    */
   private draw(p: SkPaint, fn: (c: SkCanvas, p: SkPaint) => void) {
     const c = this.c;
-    const mode = BLEND[this.s.op] ?? BM.SrcOver;
+    this.ensureM();
+    const mode = this.s.op === "source-over" ? BM.SrcOver : BLEND[this.s.op] ?? BM.SrcOver;
     if (mode !== BM.SrcOver) {
       const lp = this.Skia.Paint();
       lp.setBlendMode(mode);
       c.saveLayer(lp);
     }
-    c.save();
-    c.concat(this.Skia.Matrix(toSkia(this.M)));
     fn(c, p);
-    c.restore();
     if (mode !== BM.SrcOver) c.restore();
     this.version++;
   }

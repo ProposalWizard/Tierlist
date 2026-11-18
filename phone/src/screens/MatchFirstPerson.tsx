@@ -83,7 +83,9 @@ export function FirstPersonRun({
   const hudKeyRef = useRef("");
   const phaseRef = useRef<Phase>("ready");
   const [phase, setPhaseState] = useState<Phase>("ready");
-  const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); };
+  /** Starts the frame loop again after it has gone to sleep (see the loop below). */
+  const wakeRef = useRef<() => void>(() => {});
+  const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); wakeRef.current(); };
   const [resultText, setResultText] = useState("");
   const onCompleteRef = useRef(onComplete); onCompleteRef.current = onComplete;
   const [, setLoaded] = useState(0);
@@ -92,7 +94,7 @@ export function FirstPersonRun({
     void Promise.all([
       pics.ball ? pics.ball : loadPic(BALL_FILE, "/star/ball.webp").then((p) => (pics.ball = p)),
       pics.backdrop ? pics.backdrop : loadPic(BACKDROP_FILE, "/home/scene-sunset.webp").then((p) => (pics.backdrop = p)),
-    ]).then(() => { if (live) setLoaded((n) => n + 1); }).catch(() => {});
+    ]).then(() => { if (live) { setLoaded((n) => n + 1); wakeRef.current(); } }).catch(() => {});
     return () => { live = false; };
   }, []);
 
@@ -185,19 +187,26 @@ export function FirstPersonRun({
         });
       }, { pixelRatio: pr, rawPixels: true });
     };
+    // Off the run (waiting to start, or the result showing) the camera and the ball settle for a
+    // moment, then nothing moves: the loop sleeps instead of drawing the same picture 60 times a
+    // second, and wakes on the next start, reset or loaded picture.
+    let still = 0;
+    const SETTLE_FRAMES = 90;
     const frame = (now: number) => {
-      raf = requestAnimationFrame(frame);
       const dt = last ? Math.min(DT_CAP, (now - last) / 1000) : 1 / 60;
       last = now;
       const run = runRef.current;
       if (phaseRef.current === "run" && run) {
+        still = 0;
         const r = stepRun(run, dt);
         if (r !== "running") finishRun(r);
-      }
+      } else still++;
       draw(dt);
+      raf = still > SETTLE_FRAMES ? 0 : requestAnimationFrame(frame);
     };
+    wakeRef.current = () => { still = 0; if (!raf) { last = 0; raf = requestAnimationFrame(frame); } };
     raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
+    return () => { cancelAnimationFrame(raf); raf = -1; wakeRef.current = () => {}; };
   }, [W, H, pr, pic, chaseEye, chasePitchDeg, chaseOffset, cameraFollowRate, ballTouchReach]);
 
   // Touches: a tap on a side touches the ball that way, a drag steers, a flick bursts.

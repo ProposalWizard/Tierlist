@@ -34,8 +34,10 @@ export function StoreScreen() {
   const nav = useNav();
   const [tab, setTab] = useState<Tab>("specials");
   const [note, setNote] = useState<string | null>(null);
+  // The whole Store is drawn again only when the day turns (new specials), not every second:
+  // the countdown ticks on its own (DailyCountdown).
   const [now, setNow] = useState(() => Date.now());
-  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+  useEffect(() => { const t = setTimeout(() => setNow(Date.now()), msUntilReset(now) + 500); return () => clearTimeout(t); }, [now]);
   if (!career) return null;
   const dateKey = dateKeyFor(now);
   const state = careerStoreState(career);
@@ -98,7 +100,7 @@ export function StoreScreen() {
       {note ? <Card tone={C.gold}><Text style={{ color: "#fde68a", fontWeight: "800" }}>{note}</Text></Card> : null}
       {tab === "specials" && (
         <>
-          <Label>{`Daily specials · same for everyone today · new in ${formatCountdown(msUntilReset(now))}`}</Label>
+          <DailyCountdown />
           {dailySpecials(dateKey).map((s, i) => {
             const it = findItem(s.itemId);
             if (!it) return null;
@@ -193,4 +195,11 @@ export function StoreScreen() {
       )}
     </Frame>
   );
+}
+
+/** "new in 3h 12m 05s": the one line that changes every second, on its own. */
+function DailyCountdown() {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+  return <Label>{`Daily specials · same for everyone today · new in ${formatCountdown(msUntilReset(now))}`}</Label>;
 }

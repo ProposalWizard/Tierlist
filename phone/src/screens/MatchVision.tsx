@@ -173,10 +173,16 @@ export function TrialVisionStage({ trial, onDone, maxHeight }: { trial: TrialPro
   useEffect(() => {
     if (!W || !H) return;
     let raf = 0;
+    // Only the clock bar moves while "live"; otherwise the picture is drawn again only when what it
+    // shows changes (the phase, the man picked, a new rep), not 60 times a second at rest.
+    let shown: { phase: string; picked: number | null; layout: unknown; setup: unknown } | null = null;
     const frame = () => {
       raf = requestAnimationFrame(frame);
       const s = setupRef.current;
       if (phaseRef.current === "live" && (Date.now() - startedRef.current) / 1000 >= s.window) settle(null, s.window);
+      const now = { phase: phaseRef.current, picked: pickedRef.current, layout: layoutRef.current, setup: setupRef.current };
+      if (now.phase !== "live" && shown && shown.phase === now.phase && shown.picked === now.picked && shown.layout === now.layout && shown.setup === now.setup) return;
+      shown = now;
       pic.value = recordDrawing(W, H, (ctx) => {
         const camera = cameraContaining(MUST_SEE, W, H);
         camRef.current = camera;
