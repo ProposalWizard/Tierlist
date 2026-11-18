@@ -80,9 +80,7 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
         {over && <Big label="End of Season 🏆" onPress={() => nav.go(flow.endSeason().screen)} gold />}
         {!over && intlDue && <Big label="📞 Your country's manager has named his squad" onPress={() => nav.go("career-callup")} gold />}
         {career.placement?.kind === "youth" && (
-          <View style={{ backgroundColor: C.panel2, borderRadius: 12, padding: 12 }}>
-            <Text style={{ color: C.gold, fontWeight: "800" }}>You are in the youth team. Its own screen is still to come on the phone.</Text>
-          </View>
+          <Big label="🎓 Youth team: this week" onPress={() => nav.go("career-youth")} gold />
         )}
 
         {/* The four numbers in a row (StatTiles). */}
@@ -132,6 +130,7 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
           <Link icon="📱" label="Phone" onPress={() => nav.go("phone")} />
           <Link icon="⭐" label="Star Pass" onPress={() => nav.go("star-pass")} />
           <Link icon="🤝" label="Sponsors" onPress={() => nav.go("sponsors")} />
+          <Link icon="❤️" label="Relations" onPress={() => nav.go("career-relations")} />
         </View>
         <Press onPress={onQuit} style={{ backgroundColor: C.panel2, borderRadius: R.card, paddingVertical: 12, alignItems: "center" }}>
           <Text style={{ color: C.dim, fontWeight: "800" }}>Main menu</Text>

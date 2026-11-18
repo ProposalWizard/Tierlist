@@ -5,7 +5,7 @@
  * (only while lib/star/sponsorDeals SPONSOR_NEGOTIATION is on, as on the
  * website), counter a buy-out, walk away early. Every change is the game's
  * own sponsorDeals function.
- * Not here yet: "Shoot an advert" (a relationship mini-game, not ported).
+ * "Shoot an advert" opens the advert game (screens/career/Relations.tsx, "advert-shoot").
  */
 import { useState } from "react";
 import { Text, View } from "react-native";
@@ -20,6 +20,8 @@ import { formatMoneyPrecise as formatMoney } from "@/lib/star/money";
 import { useCareer, setCareer, getCareer } from "../../game/store";
 import { useNav } from "../../nav";
 import { C } from "../../ui/theme";
+import { gamePlayedThisWeek } from "@/lib/star/relationships";
+import { canAct } from "@/lib/star/week";
 import { ScreenFrame, Seg, Btn, Meter, Note, Title, rgba } from "../../world/ui";
 import { Negotiation } from "./Negotiation";
 
@@ -61,7 +63,7 @@ function Line({ label, value, gold }: { label: string; value: string; gold?: boo
   );
 }
 
-function DealCard({ d, money, onWalkAway }: { d: BrandDeal; money: number; onWalkAway: (id: string) => void }) {
+function DealCard({ d, money, onWalkAway, onAdvert, advertDone }: { d: BrandDeal; money: number; onWalkAway: (id: string) => void; onAdvert?: (id: string) => void; advertDone?: boolean }) {
   const [confirm, setConfirm] = useState(false);
   const mood = moodOf(d.happiness);
   return (
@@ -85,6 +87,12 @@ function DealCard({ d, money, onWalkAway }: { d: BrandDeal; money: number; onWal
           <Meter value={d.happiness} color={mood === "happy" ? "#34d399" : mood === "neutral" ? "#fbbf24" : "#f87171"} height={6} />
         </View>
       </View>
+      {onAdvert ? (
+        <Text onPress={advertDone ? undefined : () => onAdvert(d.id)} style={{ marginTop: 8, textAlign: "center", borderRadius: 12, overflow: "hidden", backgroundColor: "rgba(0,0,0,0.35)", paddingVertical: 8, color: C.text, fontWeight: "900", fontSize: 12, opacity: advertDone ? 0.45 : 1 }}>
+          {advertDone ? "🎬 ADVERT SHOT THIS WEEK" : "🎬 SHOOT AN ADVERT · 1 DAY"}
+        </Text>
+      ) : null}
+      {onAdvert && !advertDone ? <Text style={{ color: C.text, fontWeight: "700", fontSize: 10.5, marginTop: 4 }}>A quick timing game: tap when the marker hits your mark. Land 3 of 5 takes and {d.brand} get happier (+10). Once a week.</Text> : null}
       {d.clause ? <Text style={{ color: C.text, fontWeight: "700", fontSize: 11, marginTop: 8 }}>📎 {clauseText(d.clause, d.category)}</Text> : null}
       {d.category === "Boots" ? <Text style={{ color: C.green, fontWeight: "900", fontSize: 11, marginTop: 4 }}>👟 {Math.round(BOOT_DEAL_DISCOUNT * 100)}% off every pair of boots in the shop</Text> : null}
       {!confirm ? (
@@ -163,6 +171,7 @@ export function SponsorsScreen() {
   if (!career) return null;
   const flash = (t: string) => { setNote(t); setTimeout(() => setNote((n) => (n === t ? null : n)), 4000); };
   const cur = () => getCareer() ?? career;
+  const advertDone = gamePlayedThisWeek(career.relGamesPlayed, career.season, career.week, "advert");
   const act: Acts = {
     sign: (id) => { const r = signOffer(cur(), id); if (r.ok) { setCareer(r.career); flash(r.message); } else flash(r.reason); },
     decline: (id) => setCareer(declineOffer(cur(), id)),
@@ -229,7 +238,7 @@ export function SponsorsScreen() {
 
       {shown === "deals" && (
         <>
-          {b.deals.map(d => <DealCard key={d.id} d={d} money={career.money} onWalkAway={onWalkAway} />)}
+          {b.deals.map(d => <DealCard key={d.id} d={d} money={career.money} onWalkAway={onWalkAway} advertDone={advertDone} onAdvert={(id) => { if (!canAct(career)) { flash("No days left this week."); return; } nav.go("advert-shoot", { dealId: id }); }} />)}
           {b.deals.length === 0 && (
             <View style={{ backgroundColor: C.panel, borderRadius: 18, padding: 16, alignItems: "center" }}>
               <Text style={{ fontSize: 28 }}>🤝</Text>

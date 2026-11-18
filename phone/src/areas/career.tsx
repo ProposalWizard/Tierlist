@@ -15,6 +15,18 @@ import { StatsScreen } from "../screens/career/Stats";
 import { TrainingScreen, LevelSelectScreen, DrillScreen } from "../screens/career/Training";
 import { GoldenBallScreen, SeasonAwardsScreen, FinalSeasonScreen, RetirementScreen } from "../screens/career/SeasonEnd";
 import { PreMatchScreen, WatchedScreen, CallUpScreen, ContractRenewalScreen, SettingsScreen, PlaceholderScreen } from "../screens/career/Misc";
+import { YouthScreen, FreeAgentScreen, LoanBriefScreen } from "../screens/career/Youth";
+import { DeadlineDayScreen, KnockoutRoundupScreen, PlayOffRoundupScreen, TournamentTableScreen } from "../screens/career/Roundups";
+import { WageTalkScreen, RelegationMoveScreen } from "../screens/career/Moves";
+import { FarewellInviteScreen, FarewellSheetsScreen, FarewellResultScreen, LegacyScreen, HallOfFameScreen } from "../screens/career/Farewell";
+import { PressScreen, DilemmaScreen, SeasonReelScreen, HelpScreen, WithPops } from "../screens/career/Moments";
+import { RelationsScreen, RelGameScreen, AdvertShootScreen } from "../screens/career/Relations";
+import { brandsOf } from "@/lib/star/sponsorDeals";
+import type { Roundup } from "@/lib/star/knockoutView";
+import type { TransferOffer } from "@/lib/star/transfers";
+import type { PressQuestion } from "@/lib/star/media";
+import type { Dilemma } from "@/lib/star/dilemmas";
+import type { HelpScreen as HelpName } from "@/lib/star/tours";
 
 // The flow only takes another area's screen once it is registered.
 flow.setScreenCheck((name) => !!SCREENS[name]);
@@ -40,7 +52,7 @@ function withCareer(render: (c: NonNullable<ReturnType<typeof useCareer>>, go: R
     const go = useGo();
     const nav = useNav();
     if (!career) return null;
-    return <>{render(career, go, nav, params)}</>;
+    return <WithPops>{render(career, go, nav, params)}</WithPops>;
   };
 }
 
@@ -70,7 +82,57 @@ export const careerScreens: ScreenMap = {
   "career-final-season": withCareer((c, go) => <FinalSeasonScreen career={c} go={go} />),
   "career-retirement": withCareer((c, go) => <RetirementScreen career={c} go={go} />),
   "career-settings": withCareer((_c, _go, nav) => (
-    <SettingsScreen onBack={() => nav.back()} onMainMenu={() => nav.replace("title")}
+    <SettingsScreen onBack={() => nav.back()} onMainMenu={() => nav.replace("title")} onHelp={() => nav.go("career-help")}
+      onNewCareer={() => { setCareer(null); resetSession(); nav.replace("career-new"); }} />
+  )),
+  // ── Not in the first team ──
+  "career-youth": withCareer((c, go, nav) => <YouthScreen career={c} go={go} onLeague={() => nav.home()} onSettings={() => nav.go("career-settings")} />),
+  "career-free-agent": withCareer((c, go, nav) => <FreeAgentScreen career={c} go={go} onSettings={() => nav.go("career-settings")} />),
+  "career-loan-brief": withCareer((c, go, _nav, p) => (
+    <LoanBriefScreen career={c} intro={!!p?.intro} onContinue={() => { flow.loanBriefSeen(c); go(p?.intro ? flow.HOME : { screen: "career-prematch" }); }} />
+  )),
+  "career-wage-talk": withCareer((c, go) => <WageTalkScreen career={c} go={go} />),
+  // ── Between matches (the names continueAfterMatch asks for) ──
+  "deadline-day": withCareer((c, go) => <DeadlineDayScreen career={c} onContinue={() => go(flow.deadlineDayDone())} />),
+  "knockout-roundup": withCareer((_c, go, _nav, p) => p?.ko
+    ? <KnockoutRoundupScreen ko={p.ko as Roundup} onContinue={() => go(flow.continueAfterMatch())} />
+    : <PlaceholderScreen what="" go={go} />),
+  "playoff-roundup": withCareer((c, go) => <PlayOffRoundupScreen career={c} onContinue={() => go(flow.continueAfterMatch(true))} />),
+  "intl-tournament-table": withCareer((c, go) => <TournamentTableScreen career={c} onContinue={() => go(flow.HOME)} />),
+  // ── The season's end ──
+  "relegation-move": withCareer((c, go, _nav, p) => <RelegationMoveScreen career={c} offers={(p?.offers as TransferOffer[] | undefined) ?? flow.relegationOffers(c)} go={go} />),
+  "career-season-reel": withCareer((c, go) => <SeasonReelScreen career={c} go={go} />),
+  "career-farewell-invite": withCareer((c, go) => <FarewellInviteScreen career={c} go={go} />),
+  "career-farewell-sheets": withCareer((c, go, _nav) => <FarewellSheetsScreen career={c} go={go} onBack={() => go({ screen: "career-farewell-invite" })} />),
+  "career-farewell-result": withCareer((c, go) => <FarewellResultScreen career={c} go={go} />),
+  "career-legacy": withCareer((c, _go, nav) => (
+    <LegacyScreen career={c} onHall={() => nav.go("hall-of-fame")} onMenu={() => nav.replace("title")}
+      onNewCareer={() => { setCareer(null); resetSession(); nav.replace("career-new"); }} />
+  )),
+  "hall-of-fame": function Hall() { const nav = useNav(); return <HallOfFameScreen onBack={() => nav.back()} />; },
+  // ── Moments ──
+  "career-press": withCareer((_c, go, _nav, p) => {
+    const q = (p?.question as PressQuestion | undefined) ?? flow.pressQuestion();
+    return q ? <PressScreen question={q} go={go} /> : <PlaceholderScreen what="" go={go} />;
+  }),
+  "career-dilemma": withCareer((c, go, _nav, p) => {
+    const d = (p?.dilemma as Dilemma | undefined) ?? flow.dilemmaFor(c);
+    return d ? <DilemmaScreen dilemma={d} go={go} /> : <PlaceholderScreen what="" go={go} />;
+  }),
+  "career-relations": withCareer((c, go, nav) => <RelationsScreen career={c} go={go} onBack={() => nav.back()} />),
+  relations: withCareer((c, go, nav) => <RelationsScreen career={c} go={go} onBack={() => nav.back()} />),
+  "career-relationship-game": withCareer((c, go, nav, p) => (
+    <RelGameScreen career={c} kind={(p?.kind as flow.RelKind) ?? "boss"} onBack={() => nav.back()}
+      go={(s) => { if (s.screen === "career-relations") nav.back(); else go(s); }} />
+  )),
+  "advert-shoot": withCareer((c, go, nav, p) => {
+    const deal = brandsOf(c).deals.find((d) => d.id === p?.dealId);
+    if (!deal) return <PlaceholderScreen what="" go={go} />;
+    return <AdvertShootScreen deal={deal} onCancel={() => nav.back()} go={(s) => { if (s.screen === "sponsors") nav.back(); else go(s); }} />;
+  }),
+  "career-help": function Help({ params }) { const nav = useNav(); return <HelpScreen screen={params?.topic as HelpName | undefined} onBack={() => nav.back()} />; },
+  settings: withCareer((_c, _go, nav) => (
+    <SettingsScreen onBack={() => nav.back()} onMainMenu={() => nav.replace("title")} onHelp={() => nav.go("career-help")}
       onNewCareer={() => { setCareer(null); resetSession(); nav.replace("career-new"); }} />
   )),
   "career-placeholder": function Placeholder({ params }) {

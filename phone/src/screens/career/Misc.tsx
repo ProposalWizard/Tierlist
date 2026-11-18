@@ -9,7 +9,7 @@
  *  - Settings: only real preferences.
  *  - Placeholder: a screen still to come, saying so.
  */
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View, Text, Switch } from "react-native";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import { nextFixtureFor, fixtureLabel } from "@/lib/star/competitions";
@@ -27,6 +27,11 @@ import { Frame, Card, Label, Row, Btn, ClubCrest, Fill, StandInNote, money, C } 
 
 // ── Match day ──
 export function PreMatchScreen({ career, go, onBack }: { career: CareerState; go: (s: flow.Step, push?: boolean) => void; onBack: () => void }) {
+  // page.tsx: a youth-team player's match day is his youth week; a loan's
+  // target is shown once a week on the way to the match (LoanBrief).
+  const redirect = career.placement?.kind === "youth" ? "career-youth" : flow.loanBriefDue(career) ? "career-loan-brief" : null;
+  useEffect(() => { if (redirect) go({ screen: redirect }); }, [redirect]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (redirect) return null;
   const f = nextFixtureFor(career);
   if (!f) return <Frame title="No match" onBack={onBack}><Btn label="Home" onPress={onBack} /></Frame>;
   const sel = flow.preMatchSelection(career);
@@ -205,7 +210,7 @@ const PREF_ROWS: [keyof Prefs, string, string][] = [
   ["skipLineup", "Skip the line-up", "Straight to kick-off, no team sheets"],
   ["playerNames", "Player names", "Names over the players in the match"],
 ];
-export function SettingsScreen({ onBack, onMainMenu, onNewCareer }: { onBack: () => void; onMainMenu: () => void; onNewCareer: () => void }) {
+export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onHelp }: { onBack: () => void; onMainMenu: () => void; onNewCareer: () => void; onHelp?: () => void }) {
   const prefs = usePrefs();
   const [sure, setSure] = useState(false);
   return (
@@ -221,6 +226,7 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer }: { onBack: ()
           </View>
         ))}
       </Card>
+      {onHelp && <Btn kind="plain" label="? How it works" onPress={onHelp} />}
       <Btn kind="plain" label="⌂ Main menu" onPress={onMainMenu} />
       {!sure ? <Btn kind="plain" label="Start a new career" onPress={() => setSure(true)} />
         : (
@@ -238,10 +244,6 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer }: { onBack: ()
 
 // ── A screen still to come ──
 const WHAT: Record<string, [string, string]> = {
-  "loan-brief": ["On loan", "Your loan target and the club that owns you: the loan screen is still to come on the phone."],
-  "free-agent": ["No club", "Life as a free agent (the garden gym, another trial) is still to come on the phone."],
-  youth: ["Youth team", "The youth team's own week is still to come on the phone."],
-  legacy: ["Retired", "Your career is over. The Hall of Fame and the farewell match are still to come on the phone."],
 };
 export function PlaceholderScreen({ what, go }: { what: string; go: (s: flow.Step) => void }) {
   const [title, line] = WHAT[what] ?? ["Coming soon", "This screen is still to come on the phone."];

@@ -10,6 +10,8 @@
 //   transfers                   the summer window (League → Club → Negotiate)
 //   cup-draw    { competition, round, onContinue? }  the draw reveal (world/cupDraw.ts drawToShow)
 //   season-review { onClose? }  last season: every trophy (career.lastWorld)
+//   store                       the Store (Coins): specials, run-ups, style, boosts, boots, Coins
+//   investments                 buying and selling a stake in a club
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { ScreenMap } from "./types";
@@ -24,6 +26,8 @@ import { StarPassScreen } from "../screens/world/StarPass";
 import { TransferHubScreen } from "../screens/world/TransferHub";
 import { CupDrawScreen } from "../screens/world/CupDrawReveal";
 import { WorldPane } from "../screens/world/WorldPane";
+import { StoreScreen } from "../screens/world/Store";
+import { InvestmentsScreen } from "../screens/world/Investments";
 
 function FeedScreen({ params }: { params?: Record<string, unknown> }) {
   const career = useCareer();
@@ -60,4 +64,6 @@ export const worldScreens: ScreenMap = {
   transfers: TransferHubScreen,
   "cup-draw": CupDrawScreen,
   "season-review": SeasonReviewScreen,
+  store: StoreScreen,
+  investments: InvestmentsScreen,
 };

@@ -48,6 +48,7 @@ export function ManagerTalkScreen({ career, go }: { career: CareerState; go: (s:
     <Frame kicker="The manager's office" title={offer.club}
       footer={<View style={{ gap: 10 }}>
         <Btn label={`Accept & sign · ${money(talk.openingWeekly)} a week`} onPress={() => go(flow.acceptManagerOffer())} />
+        {!firstContract && <Btn kind="gold" label="Negotiate" onPress={() => go({ screen: "career-wage-talk" })} />}
         {!firstContract && <Btn kind="plain" label="See the other clubs" onPress={() => go({ screen: "career-offers" })} />}
       </View>}>
       <Card style={{ alignItems: "center" }}>
@@ -57,7 +58,6 @@ export function ManagerTalkScreen({ career, go }: { career: CareerState; go: (s:
       <Card>
         {talk.lines.map((l, i) => <Text key={i} style={{ color: C.text, fontSize: 16, lineHeight: 23, marginBottom: 10 }}>{l}</Text>)}
       </Card>
-      {!firstContract && <StandInNote>Haggling over the wage (the negotiation table) is still to come on the phone.</StandInNote>}
     </Frame>
   );
 }
