@@ -44,14 +44,21 @@ export function kick(ch: Chance, dir: { x: number; y: number }, power: number, c
   ch.ball = launch(ch.sc, dir, power, contact, { power: s.power, technique: s.technique }, ch.rng);
 }
 
-/** One 1/60 s step of everything, in the engine's order. Returns the outcome once there is one. */
+/**
+ * One 1/60 s frame of everything, in the engine's order: like the website's
+ * match, three 1/180 s steps a frame (CanvasMatch's frame loop). The real
+ * match uses src/match/driver.ts; this one-chance helper is for the tools.
+ */
 export function step(ch: Chance): Outcome | null {
   const { sc, ball, rng } = ch;
   if (!ball || ch.outcome) return ch.outcome;
-  stepDefenders(sc, DT, ball.pos, false, ball);
-  stepKeeper(sc, DT);
-  stepReactions(sc, ball, DT, rng);
-  ch.outcome = stepBall(ball, sc, rng, DT);
+  for (let i = 0; i < 3 && !ch.outcome; i++) {
+    const h = DT / 3;
+    stepDefenders(sc, h, ball.pos, false, ball);
+    stepKeeper(sc, h);
+    stepReactions(sc, ball, h, rng);
+    ch.outcome = stepBall(ball, sc, rng, h);
+  }
   ch.steps++;
   if (!ch.outcome && ch.steps > 2500) ch.outcome = "saved" as Outcome;
   return ch.outcome;
