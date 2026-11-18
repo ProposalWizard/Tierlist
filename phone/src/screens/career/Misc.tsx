@@ -16,7 +16,8 @@ import { TOON_BODIES, TOON_BODY_LABEL, TOON_PLAYER_HEADS, TOON_HEAD_LABEL, yourT
 import { useCareer, setCareer } from "../../game/store";
 import { Press } from "../../ui/Press";
 import { useEffect, useRef, useState } from "react";
-import { View, Text, Switch } from "react-native";
+import { View, Text, Switch, Platform, BackHandler } from "react-native";
+import { listSlots, loadSlot, newInSlot, deleteSlot, activeSlot } from "../../world/slots";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import { nextFixtureFor, fixtureLabel } from "@/lib/star/competitions";
 import { projectedEnergy } from "@/lib/star/week";
@@ -216,13 +217,15 @@ const PREF_ROWS: [keyof Prefs, string, string][] = [
   ["skipLineup", "Skip the line-up", "Straight to kick-off, no team sheets"],
   ["playerNames", "Player names", "Names over the players in the match"],
 ];
-export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onHelp, onFaceEditor, onFakeFaceEditor }: {
-  onBack: () => void; onMainMenu: () => void; onNewCareer: () => void; onHelp?: () => void;
+export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, onHelp, onFaceEditor, onFakeFaceEditor }: {
+  /** onNewCareer: open the new-career screen (the save it goes in is already chosen and empty).
+   *  onOpenSave: open the career just switched to, where it was left. */
+  onBack: () => void; onMainMenu: () => void; onNewCareer: () => void; onOpenSave?: () => void; onHelp?: () => void;
   /** The website's "Face editors" card: shown only while photo faces are on (PHOTO_FACES). */
   onFaceEditor?: () => void; onFakeFaceEditor?: () => void;
 }) {
   const prefs = usePrefs();
-  const [sure, setSure] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const career = useCareer();
   return (
     <Frame title="Settings" onBack={onBack}>
@@ -250,17 +253,85 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onHelp, onFace
       )}
       {onHelp && <Btn kind="plain" label="? How it works" onPress={onHelp} />}
       <Btn kind="plain" label="⌂ Main menu" onPress={onMainMenu} />
-      {!sure ? <Btn kind="plain" label="Start a new career" onPress={() => setSure(true)} />
-        : (
-          <Card tone={C.red}>
-            <Text style={{ color: C.text, fontWeight: "800", marginBottom: 10 }}>This career will be gone for good. Start a new one?</Text>
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <View style={{ flex: 1 }}><Btn small kind="plain" label="Keep it" onPress={() => setSure(false)} /></View>
-              <View style={{ flex: 1 }}><Btn small kind="danger" label="New career" onPress={onNewCareer} /></View>
-            </View>
-          </Card>
-        )}
+      <SavesCard onStartNew={(slot) => { newInSlot(slot); onNewCareer(); }}
+        onSwitch={(slot) => { if (loadSlot(slot)) (onOpenSave ?? onMainMenu)(); }}
+        onDeleted={(wasActive) => { if (wasActive) onNewCareer(); }} />
+      {/* The website's "Exit career — back to Knowitball" (asks first, in the app). On the phone,
+          Knowitball is outside the app: Android closes the app; iPhone, which never lets an app
+          close itself, goes back to the title. */}
+      {!leaving ? (
+        <View style={{ paddingTop: 4 }}>
+          <Btn kind="danger" label="Exit career — back to Knowitball" onPress={() => setLeaving(true)} />
+          <Text style={{ color: C.text, fontSize: 10, fontWeight: "600", textAlign: "center", marginTop: 6 }}>Your career stays saved. You come back to exactly this.</Text>
+        </View>
+      ) : (
+        <Card tone={C.red}>
+          <Text style={{ color: C.text, fontWeight: "800", marginBottom: 10 }}>Leave the career? It stays saved. You come back to exactly this.</Text>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ flex: 1 }}><Btn small kind="plain" label="Cancel" onPress={() => setLeaving(false)} /></View>
+            <View style={{ flex: 1 }}><Btn small kind="danger" label="Leave" onPress={() => { setLeaving(false); if (Platform.OS === "android") BackHandler.exitApp(); else onMainMenu(); }} /></View>
+          </View>
+        </Card>
+      )}
     </Frame>
+  );
+}
+
+/**
+ * SAVES (components/star/SaveSlotsPanel.tsx): every save, empty or not; the
+ * one being played lit; Switch, Start career in an empty one, Delete (tap
+ * twice; on the one being played it reads "Delete & start over").
+ */
+function SavesCard({ onStartNew, onSwitch, onDeleted }: { onStartNew: (slot: number) => void; onSwitch: (slot: number) => void; onDeleted: (wasActive: boolean) => void }) {
+  const [armed, setArmed] = useState<number | null>(null);
+  const [, bump] = useState(0);
+  const saves = listSlots();
+  const active = activeSlot();
+  return (
+    <Card>
+      <Label>Saves</Label>
+      <Text style={{ color: C.dim, fontSize: 12, marginBottom: 8 }}>Keep up to {saves.length} careers going and switch between them, or start a brand new one without losing the others.</Text>
+      <View style={{ gap: 6 }}>
+        {saves.map((sv) => {
+          const isActive = sv.slot === active;
+          return (
+            <View key={sv.slot} style={{ flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 12, padding: 8, backgroundColor: isActive ? "rgba(16,185,129,0.18)" : "rgba(255,255,255,0.04)", borderWidth: 1, borderColor: isActive ? "rgba(16,185,129,0.7)" : "rgba(255,255,255,0.06)" }}>
+              <View style={{ width: 32, height: 32, borderRadius: 8, alignItems: "center", justifyContent: "center", backgroundColor: isActive ? C.green : "rgba(3,7,18,0.6)" }}>
+                <Text style={{ color: isActive ? "#05261a" : "rgba(255,255,255,0.6)", fontWeight: "900", fontSize: 14 }}>{sv.slot}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: C.text, fontSize: 10, fontWeight: "900", letterSpacing: 1.5 }}>
+                  SAVE {sv.slot}{isActive ? <Text style={{ color: "#a7f3d0" }}>  · PLAYING</Text> : null}{sv.retired ? <Text style={{ color: "#fde68a" }}>  · RETIRED</Text> : null}
+                </Text>
+                {sv.empty ? <Text style={{ color: C.text, fontSize: 11 }}>Empty</Text> : (
+                  <>
+                    <Text numberOfLines={1} style={{ color: C.text, fontSize: 12, fontWeight: "900" }}>{sv.playerName}</Text>
+                    <Text style={{ color: C.text, fontSize: 10.5, fontWeight: "700" }}>
+                      {sv.signed ? `${sv.club} · Season ${sv.season} · ` : "No club yet · "}<Text style={{ color: "#fef08a" }}>★{sv.stars}</Text>
+                    </Text>
+                  </>
+                )}
+              </View>
+              <View style={{ gap: 4 }}>
+                {sv.empty ? <Btn small label="Start career" onPress={() => onStartNew(sv.slot)} /> : (
+                  <>
+                    {!isActive && <Btn small kind="plain" label="Switch" onPress={() => onSwitch(sv.slot)} />}
+                    <Btn small kind="danger" label={armed === sv.slot ? "Sure? Tap again" : isActive ? "Delete & start over" : "Delete"}
+                      onPress={() => {
+                        if (armed !== sv.slot) { setArmed(sv.slot); return; }
+                        setArmed(null);
+                        deleteSlot(sv.slot);
+                        bump((n) => n + 1);
+                        onDeleted(isActive);
+                      }} />
+                  </>
+                )}
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    </Card>
   );
 }
 

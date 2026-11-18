@@ -63,6 +63,12 @@ function NewCareerScreen() {
   return <NewCareer onBack={() => nav.back()} onDone={(p) => go(flow.beginCareer(p))} />;
 }
 
+/** Open a career where it was left (the title's Continue): after switching saves. */
+function openResumed(nav: ReturnType<typeof useNav>) {
+  const s = flow.resumeStep();
+  if (s.screen === "tabs") nav.home(); else nav.replace(s.screen, s.params);
+}
+
 export const careerScreens: ScreenMap = {
   "career-new": NewCareerScreen,
   "career-trial": withCareer((c, go) => <TrialScreen career={c} go={go} />),
@@ -83,7 +89,7 @@ export const careerScreens: ScreenMap = {
   "career-final-season": withCareer((c, go) => <FinalSeasonScreen career={c} go={go} />),
   "career-retirement": withCareer((c, go) => <RetirementScreen career={c} go={go} />),
   "career-settings": withCareer((_c, _go, nav) => (
-    <SettingsScreen onBack={() => nav.back()} onMainMenu={() => nav.replace("title")} onHelp={() => nav.go("career-help")}
+    <SettingsScreen onBack={() => nav.back()} onMainMenu={() => nav.replace("title")} onHelp={() => nav.go("career-help")} onOpenSave={() => openResumed(nav)}
       onFaceEditor={() => nav.go("face-editor")} onFakeFaceEditor={() => nav.go("fake-face-editor")}
       onNewCareer={() => { setCareer(null); resetSession(); nav.replace("career-new"); }} />
   )),
@@ -134,7 +140,7 @@ export const careerScreens: ScreenMap = {
   }),
   "career-help": function Help({ params }) { const nav = useNav(); return <HelpScreen screen={params?.topic as HelpName | undefined} onBack={() => nav.back()} />; },
   settings: withCareer((_c, _go, nav) => (
-    <SettingsScreen onBack={() => nav.back()} onMainMenu={() => nav.replace("title")} onHelp={() => nav.go("career-help")}
+    <SettingsScreen onBack={() => nav.back()} onMainMenu={() => nav.replace("title")} onHelp={() => nav.go("career-help")} onOpenSave={() => openResumed(nav)}
       onFaceEditor={() => nav.go("face-editor")} onFakeFaceEditor={() => nav.go("fake-face-editor")}
       onNewCareer={() => { setCareer(null); resetSession(); nav.replace("career-new"); }} />
   )),
