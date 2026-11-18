@@ -472,7 +472,8 @@ export class MatchDriver {
   private logChance(kind: string, outcome: ChanceOutcome) { this.chanceLog.push({ minute: this.matchMinute, kind, outcome }); }
   private passBanner() { return this.deflections > 0 ? (this.sc.kind === "free_kick" ? "OFF THE WALL" : "DEFLECTED") : "PASS"; }
   liveEnergyAt(minute: number) {
-    if (this.hooked) return this.energy;
+    // A player who has been taken off stops spending energy — and in the farewell match nobody spends any.
+    if (this.hooked || this.setup.farewell) return this.energy;
     const extra = Math.max(0, minute - this.energyClock) * energyPerMinute(this.energyMode, this.energyFactor);
     return clampEnergy(this.energy - extra);
   }
@@ -508,7 +509,7 @@ export class MatchDriver {
       energy: this.liveEnergyAt(this.matchMinute),
       energyMode: this.energyMode,
       impactSub: this.setup.startMinute > 0,
-      farewell: false,
+      farewell: !!this.setup.farewell,
       lateSub: this.subOn
         ? { enteredAt: this.enteredAt, owed: Math.max(0, lateSubQuota(this.enteredAt) - this.subChances), fitness: this.subFitness }
         : undefined,
@@ -681,14 +682,17 @@ export class MatchDriver {
     }
 
     let offAt = Infinity;
-    if (this.subOn && !this.hooked) {
+    // The farewell: off at the ovation minute, whatever happens before it.
+    const fw = this.setup.farewell;
+    if (fw && !this.hooked) offAt = Math.max(st.minute, fw.offAt);
+    else if (this.subOn && !this.hooked) {
       const perMin = energyPerMinute(this.energyMode, this.energyFactor);
       const e = this.liveEnergyAt(st.minute);
       if (perMin > 0) offAt = e <= SUB_OFF_ENERGY ? st.minute : st.minute + Math.ceil((e - SUB_OFF_ENERGY) / perMin);
     }
     let plannedOff = false;
     const po = this.setup.plannedOffAt;
-    if (po && !this.hooked && po < offAt) { offAt = Math.max(st.minute, po); plannedOff = true; }
+    if (!fw && po && !this.hooked && po < offAt) { offAt = Math.max(st.minute, po); plannedOff = true; }
     const stretchEnd = Math.min(this.matchCeiling, offAt);
     const handedOver: HiddenMatchEvent[] = [];
     const handover = prior ? prior.handover ?? null : this.handover;
@@ -721,7 +725,12 @@ export class MatchDriver {
     }
 
     if (!this.hooked && !step.fullTime) {
-      const decision = legsGone && plannedOff
+      const decision = fw
+        // The farewell: nobody takes you off — until the ovation minute.
+        ? (legsGone
+          ? { hooked: true, reason: "rested" as HookReason, message: `${st.minute}' — you come off. The whole ground is on its feet for you.` }
+          : { hooked: false, reason: null, message: "" })
+        : legsGone && plannedOff
         ? { hooked: true, reason: "rested" as HookReason, message: `${st.minute}' — a planned change. The manager wants a look at someone else; you come off.` }
         : legsGone
         ? { hooked: true, reason: "legs" as HookReason, message: `Out on your feet at ${Math.round(this.liveEnergyAt(st.minute))}% energy — you are taken off.` }

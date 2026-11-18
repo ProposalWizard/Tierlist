@@ -8,9 +8,9 @@
  * The games (relgames/RelationshipGame.tsx), ported where they are not played
  * on the match engine:
  *   boss      → pick 1 of 3: Office talk (lib/star/bossTalk.ts) is here;
- *               Penalties and Extra session are played on the match engine
- *               and wait for the match area.
- *   team      → Woodwork challenge: match engine, waits for the match area.
+ *               Penalties and Extra session are played on the match
+ *               (screens/MatchRelGames.tsx, the phone's EngineFeature).
+ *   team      → Woodwork challenge: on the match (screens/MatchRelGames.tsx).
  *   fans      → Signing session: a timed drawing game, still to come.
  *   happiness → Day off: here.
  * Every result goes through flow.relationshipGameDone (handleRelationshipGameComplete).
@@ -28,6 +28,7 @@ import { talkFor, talkGain, talkHits, TALK_ROUNDS, type TalkReply, type Grade } 
 import * as flow from "../../game/flow";
 import { Press } from "../../ui/Press";
 import { Frame, Card, Btn, Fill, StandInNote, C } from "./kit";
+import { BossPenalties, BossExtraSession, WoodworkChallenge } from "../MatchRelGames";
 
 type Kind = flow.RelKind;
 const GAME_LABEL: Record<Kind, string> = { boss: "The manager's penalties", team: "Woodwork challenge", fans: "Signing session", happiness: "Day off" };
@@ -142,20 +143,23 @@ const BOSS_GAMES = [
 ] as const;
 
 export function RelGameScreen({ career, kind, go, onBack }: { career: CareerState; kind: Kind; go: (s: flow.Step) => void; onBack: () => void }) {
-  const [boss, setBoss] = useState<"talk" | null>(null);
+  const [boss, setBoss] = useState<"talk" | "penalties" | "session" | null>(null);
   const finish = (res: flow.RelGameResult) => go(flow.relationshipGameDone(kind, res));
   if (kind === "boss" && boss === "talk") return <OfficeTalk career={career} onFinish={finish} onCancel={() => setBoss(null)} />;
+  if (kind === "boss" && boss === "penalties") return <BossPenalties career={career} onFinish={finish} onCancel={() => setBoss(null)} />;
+  if (kind === "boss" && boss === "session") return <BossExtraSession career={career} onFinish={finish} onCancel={() => setBoss(null)} />;
+  if (kind === "team") return <WoodworkChallenge career={career} onFinish={finish} onCancel={onBack} />;
   if (kind === "boss") {
     return (
       <Shell title="Your manager" who="Boss" current={career.relationships.boss} tone={TONE.boss} onBack={onBack}>
         <Text style={{ color: C.text, fontWeight: "700", fontSize: 15 }}>{career.manager?.name ?? "The manager"} has a few minutes. How do you spend them?</Text>
         {BOSS_GAMES.map((g) => (
-          <Press key={g.id} disabled={g.engine} onPress={() => setBoss("talk")}>
-            <Card tone="#93c5fd" style={{ flexDirection: "row", alignItems: "center", gap: 12, opacity: g.engine ? 0.45 : 1, backgroundColor: "rgba(59,130,246,0.2)" }}>
+          <Press key={g.id} onPress={() => setBoss(g.id)}>
+            <Card tone="#93c5fd" style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "rgba(59,130,246,0.2)" }}>
               <Text style={{ fontSize: 28 }}>{g.icon}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: C.text, fontWeight: "900", fontSize: 16 }}>{g.name.toUpperCase()}</Text>
-                <Text style={{ color: C.text, fontWeight: "700", fontSize: 13 }}>{g.engine ? "Played on the match: coming with the phone match." : g.line}</Text>
+                <Text style={{ color: C.text, fontWeight: "700", fontSize: 13 }}>{g.line}</Text>
               </View>
               <Text style={{ color: "#bfdbfe", fontSize: 18, fontWeight: "900" }}>›</Text>
             </Card>
@@ -167,8 +171,8 @@ export function RelGameScreen({ career, kind, go, onBack }: { career: CareerStat
   }
   if (kind === "happiness") return <DayOff career={career} onFinish={finish} onCancel={onBack} />;
   return (
-    <Shell title={GAME_LABEL[kind]} who={kind === "team" ? "Team" : "Fans"} current={career.relationships[kind]} tone={TONE[kind]} onBack={onBack}>
-      <StandInNote>{kind === "team" ? "The woodwork challenge is played on the real match engine: it comes with the phone match." : "The signing session is still to come on the phone."}</StandInNote>
+    <Shell title={GAME_LABEL[kind]} who="Fans" current={career.relationships[kind]} tone={TONE[kind]} onBack={onBack}>
+      <StandInNote>The signing session is still to come on the phone.</StandInNote>
       <Btn kind="plain" label="Back" onPress={onBack} />
     </Shell>
   );

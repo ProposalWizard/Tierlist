@@ -825,15 +825,16 @@ export function currentFarewell(): Farewell | null {
 /** Skip it: kept, so the game knows it was offered once. */
 export function skipFarewell(): Step { return retireWith(farewellSkipped(need())); }
 /**
- * STAND-IN for the farewell match on the engine (CanvasMatch with
- * farewell.offAt): played out by the game's own match simulator on the
- * farewell's stand-in career and fixture, with the farewell's duties and
- * seed. Replace with the real match once the match area can play it.
+ * The farewell match (page.tsx farewell-match: CanvasMatch with farewell.offAt).
+ * Played on the phone's match (the match area's "farewell-match" screen), then
+ * farewellMatchDone hands its stats back. Headless (no screens): played out by
+ * the game's own match simulator on the farewell's career, duties and seed.
  */
 export function playFarewell(): Step {
   const career = need();
   const f = currentFarewell();
   if (!f) return retireWith();
+  if (screenExists("farewell-match")) return { screen: "farewell-match" };
   const sel = selectionFor(f.career);
   const bootLeft = career.currentBoot.matches > 0;
   const stats = simulateOwnMatch(f.career, f.fixture, {
@@ -843,6 +844,13 @@ export function playFarewell(): Step {
       technique: Math.min(100, career.skills.technique + (bootLeft ? career.currentBoot.technique : 0)),
     },
   });
+  f.stats = stats;
+  return { screen: "career-farewell-result" };
+}
+/** The farewell match's full time (page.tsx onComplete → setFarewellStats, farewell-result). */
+export function farewellMatchDone(stats: MatchStats): Step {
+  const f = currentFarewell();
+  if (!f) return retireWith();
   f.stats = stats;
   return { screen: "career-farewell-result" };
 }

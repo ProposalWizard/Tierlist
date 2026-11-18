@@ -72,6 +72,13 @@ export interface MatchSetup {
   freeKickRunup?: FreeKickRunupId;
   /** Set: a feature (EngineFeature), not a career match. `career` and `fixture` are then stand-ins nothing reads. */
   feature?: FeatureSpec;
+  /**
+   * The farewell match (CanvasMatch's `farewell` prop, page.tsx farewell-match):
+   * the last whistle of a career on its stand-in career (lib/star/farewell.ts).
+   * Nearly every chance is yours, no energy is spent, nobody takes you off
+   * until `offAt` (the standing ovation), and no other scores are shown.
+   */
+  farewell?: { offAt: number };
 }
 
 /** EngineFeature's CanvasMatch mount (components/star/EnginePlay.tsx): your skills, no career, no fixture. */
