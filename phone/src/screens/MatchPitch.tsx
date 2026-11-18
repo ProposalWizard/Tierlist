@@ -12,7 +12,7 @@
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text } from "react-native";
-import { Canvas, Picture, createPicture } from "@shopify/react-native-skia";
+import { Canvas, Picture, createPicture, Skia } from "@shopify/react-native-skia";
 import { useSharedValue } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import * as Haptics from "expo-haptics";
@@ -24,7 +24,12 @@ import { drawContact, contactBallBox } from "../match/drawContact";
 import { fromScreen, screenPull, grabMetres, type Cam } from "../match/view";
 import { tapToContact } from "../match/contactBall";
 import { matchSounds } from "../match/sound";
+import { setSkia } from "../match/skiaApi";
+import { loadSpriteSheet } from "../match/spriteAssets";
+import { atlasFor } from "../match/sprites";
 import { C } from "../ui/theme";
+
+setSkia(Skia);
 
 const BALL_GRAB_FRACTION = 0.18;
 const CAPTAIN_GRAB_FRACTION = 0.09;
@@ -56,6 +61,16 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
   const contactPic = useSharedValue(empty);
   const onDoneRef = useRef(onDone); onDoneRef.current = onDone;
   const onUiRef = useRef(onUi); onUiRef.current = onUi;
+
+  // The players' sprite sheet: decoded once, then coloured once per kit in the match (before kick-off, never mid-frame).
+  useEffect(() => {
+    let live = true;
+    void loadSpriteSheet().then((ok) => {
+      if (!ok || !live) return;
+      for (const k of [kits.home, kits.away, kits.keeper]) atlasFor({ shirt: k.shirt, shorts: k.trim, socks: k.shirt });
+    });
+    return () => { live = false; };
+  }, [kits]);
 
   if (size && !dRef.current) {
     const d = make(size.H / size.W);

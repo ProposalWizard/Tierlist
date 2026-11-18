@@ -1,26 +1,19 @@
 /**
  * ONE FRAME OF THE PITCH, recorded as a Skia picture (no React work per frame).
- * Reads the driver; never changes it.
+ * Reads the driver; never changes it. The players are the website's sprites
+ * (match/figures.ts), the rest the phone's own lines and ball.
+ * Draws with match/skiaApi.ts's Skia, so tools/match-frame.ts can time the
+ * very same code headless.
  */
-import { Skia, PaintStyle, StrokeCap, createPicture, type SkCanvas, type SkPaint, type SkPicture } from "@shopify/react-native-skia";
+import type { SkCanvas, SkPicture } from "@shopify/react-native-skia";
 import { PITCH_W, HALF_LEN, CX, POST_L, POST_R, SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH, PEN_SPOT_Y, ARC_R, CENTRE_R, NET_DEPTH } from "@/lib/star/pitch";
+import { OUTCOME_TEXT } from "@/lib/star/canvasEngine";
+import { autoKickOf } from "@/lib/star/penaltyTaking";
 import type { MatchKits } from "@/lib/star/kits";
 import type { MatchDriver } from "./driver";
 import { toScreen, makeCam, type Cam } from "./view";
-import { drawFigure } from "./figures";
-
-const cache = new Map<string, SkPaint>();
-function fill(color: string): SkPaint {
-  let p = cache.get("f" + color);
-  if (!p) { p = Skia.Paint(); p.setAntiAlias(true); p.setColor(Skia.Color(color)); cache.set("f" + color, p); }
-  return p;
-}
-function stroke(color: string, w: number): SkPaint {
-  const k = `s${color}|${w}`;
-  let p = cache.get(k);
-  if (!p) { p = Skia.Paint(); p.setAntiAlias(true); p.setColor(Skia.Color(color)); p.setStyle(PaintStyle.Stroke); p.setStrokeWidth(w); p.setStrokeCap(StrokeCap.Round); cache.set(k, p); }
-  return p;
-}
+import { sk, fill, stroke } from "./skiaApi";
+import { drawMan, drawKeeperFig, beginFigures, unitPx, type FigureRole } from "./figures";
 
 /** The camera the pitch is drawn with this frame. */
 export function camFor(d: MatchDriver, W: number, H: number): Cam {
@@ -28,99 +21,130 @@ export function camFor(d: MatchDriver, W: number, H: number): Cam {
   return makeCam(lead ?? d.viewport, d.facing, d.tiltDeg, W, H);
 }
 
-function polyline(c: SkCanvas, cam: Cam, pts: { x: number; y: number }[], p: SkPaint, close = false) {
-  const b = Skia.PathBuilder.Make();
+function polyline(c: SkCanvas, cam: Cam, pts: { x: number; y: number }[], p: ReturnType<typeof fill>, close = false) {
+  const b = sk().PathBuilder.Make();
   pts.forEach((q, i) => { const s = toScreen(cam, q); if (i === 0) b.moveTo(s.X, s.Y); else b.lineTo(s.X, s.Y); });
   if (close) b.close();
   c.drawPath(b.build(), p);
 }
-function rectLine(c: SkCanvas, cam: Cam, x1: number, y1: number, x2: number, y2: number, p: SkPaint) {
+function rectLine(c: SkCanvas, cam: Cam, x1: number, y1: number, x2: number, y2: number, p: ReturnType<typeof fill>) {
   polyline(c, cam, [{ x: x1, y: y1 }, { x: x2, y: y1 }, { x: x2, y: y2 }, { x: x1, y: y2 }], p, true);
 }
-function arc(c: SkCanvas, cam: Cam, cx: number, cy: number, r: number, a0: number, a1: number, p: SkPaint) {
+function arc(c: SkCanvas, cam: Cam, cx: number, cy: number, r: number, a0: number, a1: number, p: ReturnType<typeof fill>) {
   const pts = [];
   for (let i = 0; i <= 24; i++) { const a = a0 + (a1 - a0) * i / 24; pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r }); }
   polyline(c, cam, pts, p);
 }
 
-/** A metre on the pitch at this spot, in screen px (perspective included). */
-function mPx(cam: Cam, k: number): number {
-  const across = cam.facing === "up" ? cam.vp.x2 - cam.vp.x1 : cam.vp.y2 - cam.vp.y1;
-  return (cam.W / across) * k;
+/** Which side's men celebrate (CanvasMatch goalSideRef): a goal in the result phase. */
+function celebrating(d: MatchDriver): "us" | "them" | null {
+  if (d.phase !== "result" || !d.outcome || OUTCOME_TEXT[d.outcome].kind !== "goal") return null;
+  return autoKickOf(d.sc)?.side === "them" ? "them" : "us";
+}
+let strikeBall: unknown = null, strikeAt = 0;
+
+/** Record one frame. */
+export function drawPitch(d: MatchDriver, kits: MatchKits, W: number, H: number): SkPicture {
+  const S = sk();
+  const rec = S.PictureRecorder();
+  const c = rec.beginRecording(S.XYWHRect(0, 0, W, H));
+  paintPitch(c, d, kits, W, H);
+  return rec.finishRecordingAsPicture();
 }
 
-export function drawPitch(d: MatchDriver, kits: MatchKits, W: number, H: number): SkPicture {
-  return createPicture((c) => {
-    const cam = camFor(d, W, H);
-    c.drawRect(Skia.XYWHRect(0, 0, W, H), fill("#3f9142"));
-    // Mowing stripes, 6 m bands across the pitch.
-    for (let y = -12; y < 110; y += 12) polyline(c, cam, [{ x: -10, y }, { x: PITCH_W + 10, y }, { x: PITCH_W + 10, y: y + 6 }, { x: -10, y: y + 6 }], fill("#46994a"), true);
-    const line = stroke("rgba(255,255,255,0.88)", 2);
-    polyline(c, cam, [{ x: 0, y: 0 }, { x: PITCH_W, y: 0 }], line);
-    polyline(c, cam, [{ x: 0, y: 0 }, { x: 0, y: 105 }], line);
-    polyline(c, cam, [{ x: PITCH_W, y: 0 }, { x: PITCH_W, y: 105 }], line);
-    polyline(c, cam, [{ x: 0, y: HALF_LEN }, { x: PITCH_W, y: HALF_LEN }], line);
-    arc(c, cam, CX, HALF_LEN, CENTRE_R, Math.PI, 2 * Math.PI, line);
+/** The frame's drawing onto any Skia canvas (a picture on the phone, a surface in the timing tool). */
+export function paintPitch(c: SkCanvas, d: MatchDriver, kits: MatchKits, W: number, H: number) {
+  const S = sk();
+  const cam = camFor(d, W, H);
+  const scene = d.feature?.scene;
+  c.drawRect(S.XYWHRect(0, 0, W, H), fill("#3f9142"));
+  for (let y = -12; y < 110; y += 12) polyline(c, cam, [{ x: -10, y }, { x: PITCH_W + 10, y }, { x: PITCH_W + 10, y: y + 6 }, { x: -10, y: y + 6 }], fill("#46994a"), true);
+  const line = stroke("rgba(255,255,255,0.88)", 2);
+  polyline(c, cam, [{ x: 0, y: 0 }, { x: PITCH_W, y: 0 }], line);
+  polyline(c, cam, [{ x: 0, y: 0 }, { x: 0, y: 105 }], line);
+  polyline(c, cam, [{ x: PITCH_W, y: 0 }, { x: PITCH_W, y: 105 }], line);
+  polyline(c, cam, [{ x: 0, y: HALF_LEN }, { x: PITCH_W, y: HALF_LEN }], line);
+  arc(c, cam, CX, HALF_LEN, CENTRE_R, Math.PI, 2 * Math.PI, line);
+  if (scene?.box !== false) {
     rectLine(c, cam, BOX_L, 0, BOX_R, BOX_DEPTH, line);
     rectLine(c, cam, SIX_L, 0, SIX_R, SIX_DEPTH, line);
     const a = Math.acos((BOX_DEPTH - PEN_SPOT_Y) / ARC_R);
     arc(c, cam, CX, PEN_SPOT_Y, ARC_R, Math.PI / 2 - a, Math.PI / 2 + a, line);
     { const s = toScreen(cam, { x: CX, y: PEN_SPOT_Y }); c.drawCircle(s.X, s.Y, 2.5, fill("#ffffff")); }
-    // The goal: its net behind the line, the posts on it.
+  }
+  if (scene?.goal !== false) {
     polyline(c, cam, [{ x: POST_L, y: 0 }, { x: POST_L, y: -NET_DEPTH - 0.8 }, { x: POST_R, y: -NET_DEPTH - 0.8 }, { x: POST_R, y: 0 }], fill("rgba(255,255,255,0.28)"), true);
     polyline(c, cam, [{ x: POST_L, y: 0 }, { x: POST_R, y: 0 }], stroke("#ffffff", 5));
+  }
+  // A feature's cones on the grass (the markers prop), under everyone.
+  for (const m of d.markersNow()) {
+    const s = toScreen(cam, m), r = Math.max(3, unitPx(cam) * 0.35 * s.k);
+    const p = S.PathBuilder.Make();
+    p.moveTo(s.X, s.Y - r * 1.6); p.lineTo(s.X + r * 0.8, s.Y); p.lineTo(s.X - r * 0.8, s.Y); p.close();
+    c.drawPath(p.build(), fill(m.color ?? "#f97316"));
+  }
 
-    if (d.phase === "tdDribble" && d.td) { drawDribble(c, d, cam, kits); return; }
+  const b = d.ball;
+  if (b !== strikeBall) { strikeBall = b; strikeAt = d.now; }
+  beginFigures(d.phase === "tdDribble" ? d.td : d.sc, {
+    now: d.now / 1000,
+    ball: b ? b.pos : d.phase === "tdDribble" && d.td ? { x: d.td.x, y: d.td.y } : d.sc.ball,
+    celebrate: celebrating(d),
+    kickT: b ? (d.now - strikeAt) / 1000 : null,
+  });
 
-    const sc = d.sc;
-    const home = d.setup.fixture.home !== false;
-    const ours = home ? kits.home : kits.away, theirs = home ? kits.away : kits.home;
-    const r0 = Math.max(4, mPx(cam, 0.42));
-    const fig = (p: { x: number; y: number }, role: "you" | "mate" | "opp" | "keeper", hi = false) => {
-      const s = toScreen(cam, p);
-      drawFigure(c, s.X, s.Y, r0 * s.k, role, role === "opp" ? theirs : role === "keeper" ? kits.keeper : ours, hi);
-    };
-    for (const df of sc.defenders) fig(df, "opp");
-    fig({ x: sc.keeper.x + (sc.keeper.dive || 0), y: sc.keeper.y }, "keeper");
-    for (const m of sc.teammates) fig(m, "mate");
-    if (sc.runner) fig(sc.runner.pos, "mate", sc.relayTo === sc.runner);
-    for (const r of sc.secondaryRunners) fig(r.pos, "mate", sc.relayTo === r);
-    if (sc.follower && (sc.follower.active || sc.follower.who)) fig(sc.follower, "mate", !!sc.relayToFollower);
-    fig(sc.player, "you", true);
+  if (d.phase === "tdDribble" && d.td) { drawDribble(c, d, cam, kits); return; }
 
-    // The ball (and its shadow on the grass).
-    const b = d.ball;
-    const bp = b ? b.pos : sc.ball, bz = b ? b.z : (d.lead ? 0 : 0);
-    const bs = toScreen(cam, bp);
-    const br = Math.max(3, mPx(cam, 0.3) * bs.k);
-    c.drawCircle(bs.X + bz * br * 0.6, bs.Y + bz * br * 0.3, br, fill("rgba(0,0,0,0.3)"));
-    c.drawCircle(bs.X, bs.Y - bz * br * 1.6, br * (1 + bz * 0.06), fill("#ffffff"));
-    c.drawCircle(bs.X, bs.Y - bz * br * 1.6, br * (1 + bz * 0.06), stroke("#222222", 1));
+  const sc = d.sc;
+  const home = d.setup.fixture.home !== false;
+  const ours = home ? kits.home : kits.away, theirs = home ? kits.away : kits.home;
+  // Men are drawn far to near (CanvasMatch's figure queue, sorted by screen y).
+  const queue: { y: number; draw: () => void }[] = [];
+  const man = (id: string, p: { x: number; y: number }, role: FigureRole, hi = false) => {
+    queue.push({ y: toScreen(cam, p).Y, draw: () => drawMan(c, cam, id, p, role, role === "opp" ? theirs : ours, hi) });
+  };
+  sc.defenders.forEach((df, i) => man(`def${i}`, df, "opp"));
+  {
+    const kk = sc.keeper, dive = kk.dive || 0;
+    const at = { x: kk.x + dive, y: kk.y };
+    if (!(scene?.keeper === false)) queue.push({ y: toScreen(cam, at).Y, draw: () => drawKeeperFig(c, cam, at, kk.saveLunge > 0 ? kk.saveLunge : 0, kk.saveLunge > 0 ? (kk.saveDir || 1) : (dive === 0 ? 0 : Math.sign(dive)), kits.keeper) });
+  }
+  sc.teammates.forEach((m, i) => man(`mate${i}`, m, "mate"));
+  if (sc.runner) man("runner", sc.runner.pos, "mate", sc.relayTo === sc.runner);
+  sc.secondaryRunners.forEach((r, i) => man(`run2${i}`, r.pos, "mate", sc.relayTo === r));
+  if (sc.follower && (sc.follower.active || sc.follower.who)) man("follower", sc.follower, "mate", !!sc.relayToFollower);
+  if (scene?.you !== false) man("you", sc.player, "you", true);
+  queue.sort((a, q) => a.y - q.y).forEach((f) => f.draw());
 
-    // The aim: an arrow from the ball the opposite way to the drag, as long as the power.
-    if (d.drag && d.phase === "aim") {
-      const ball = sc.ball;
-      const dir = { x: ball.x - d.drag.x, y: ball.y - d.drag.y };
-      const tip = { x: ball.x + dir.x * 1.6, y: ball.y + dir.y * 1.6 };
-      const s0 = toScreen(cam, ball), s1 = toScreen(cam, tip);
-      c.drawLine(s0.X, s0.Y, s1.X, s1.Y, stroke("#f97316", 6));
-      c.drawCircle(s1.X, s1.Y, 6, fill("#f97316"));
-    }
-  }, { width: W, height: H });
+  // The ball (and its shadow on the grass).
+  const bp = b ? b.pos : sc.ball, bz = b ? b.z : 0;
+  const bs = toScreen(cam, bp);
+  const br = Math.max(3, unitPx(cam) * 0.3 * bs.k);
+  c.drawCircle(bs.X + bz * br * 0.6, bs.Y + bz * br * 0.3, br, fill("rgba(0,0,0,0.3)"));
+  c.drawCircle(bs.X, bs.Y - bz * br * 1.6, br * (1 + bz * 0.06), fill("#ffffff"));
+  c.drawCircle(bs.X, bs.Y - bz * br * 1.6, br * (1 + bz * 0.06), stroke("#222222", 1));
+
+  // The aim: an arrow from the ball the opposite way to the drag, as long as the power.
+  if (d.drag && d.phase === "aim") {
+    const ball = sc.ball;
+    const dir = { x: ball.x - d.drag.x, y: ball.y - d.drag.y };
+    const tip = { x: ball.x + dir.x * 1.6, y: ball.y + dir.y * 1.6 };
+    const s0 = toScreen(cam, ball), s1 = toScreen(cam, tip);
+    c.drawLine(s0.X, s0.Y, s1.X, s1.Y, stroke("#f97316", 6));
+    c.drawCircle(s1.X, s1.Y, 6, fill("#f97316"));
+  }
 }
 
 function drawDribble(c: SkCanvas, d: MatchDriver, cam: Cam, kits: MatchKits) {
   const run = d.td!;
   const home = d.setup.fixture.home !== false;
   const ours = home ? kits.home : kits.away, theirs = home ? kits.away : kits.home;
-  const r0 = Math.max(4, mPx(cam, 0.42));
-  for (const m of run.mates) { const s = toScreen(cam, m); drawFigure(c, s.X, s.Y, r0 * s.k, "mate", ours); }
-  for (const df of run.defenders) {
-    if (df.phase === "beaten") continue;
-    const s = toScreen(cam, df); drawFigure(c, s.X, s.Y, r0 * s.k, "opp", theirs);
-  }
-  const s = toScreen(cam, { x: run.x, y: run.y });
-  drawFigure(c, s.X, s.Y, r0 * s.k, "you", ours, true);
+  const queue: { y: number; draw: () => void }[] = [];
+  run.mates.forEach((m, i) => queue.push({ y: toScreen(cam, m).Y, draw: () => drawMan(c, cam, `mate${i}`, m, "mate", ours) }));
+  run.defenders.forEach((df, i) => { if (df.phase !== "beaten") queue.push({ y: toScreen(cam, df).Y, draw: () => drawMan(c, cam, `chase${i}`, df, "opp", theirs) }); });
+  const you = { x: run.x, y: run.y };
+  queue.push({ y: toScreen(cam, you).Y, draw: () => drawMan(c, cam, "you", you, "you", ours, true) });
+  queue.sort((a, q) => a.y - q.y).forEach((f) => f.draw());
   const bs = toScreen(cam, { x: run.x + 0.3, y: run.y - 0.6 });
-  c.drawCircle(bs.X, bs.Y, Math.max(3, mPx(cam, 0.3) * bs.k), fill("#ffffff"));
+  c.drawCircle(bs.X, bs.Y, Math.max(3, unitPx(cam) * 0.3 * bs.k), fill("#ffffff"));
 }
