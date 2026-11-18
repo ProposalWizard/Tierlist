@@ -107,10 +107,10 @@ export function DeadlineDayScreen({ career, onContinue }: { career: CareerState;
             <Text style={{ color: C.text, fontSize: 18, fontWeight: "900", flex: 1 }}>{active.club}</Text>
           </View>
           <Label color={C.green}>{`In · ${active.in.length}`}</Label>
-          {active.in.length ? active.in.map((d, i) => dealRow(d, "in", i)) : <Text style={{ color: C.dim }}>Nobody in.</Text>}
+          {active.in.length ? active.in.map((d, i) => dealRow(d, "in", i)) : <Text style={{ color: C.dim }}>No incomings.</Text>}
           <View style={{ height: 10 }} />
           <Label color={C.red}>{`Out · ${active.out.length}`}</Label>
-          {active.out.length ? active.out.map((d, i) => dealRow(d, "out", i)) : <Text style={{ color: C.dim }}>Nobody out.</Text>}
+          {active.out.length ? active.out.map((d, i) => dealRow(d, "out", i)) : <Text style={{ color: C.dim }}>No outgoings.</Text>}
         </Card>
       )}
     </Frame>

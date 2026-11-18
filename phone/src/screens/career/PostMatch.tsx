@@ -94,6 +94,7 @@ export function PostMatchScreen({ career, go }: { career: CareerState; go: (s: f
             </View>
             <Text style={{ color: ratingColor, fontSize: 46, fontWeight: "900" }}>{stats.rating.toFixed(1)}</Text>
           </View>
+          {chancesOpen && stats.chanceLog?.length === 0 && <Text style={{ color: C.text, fontWeight: "700", marginTop: 8 }}>No chances came to you.</Text>}
           {chancesOpen && stats.chanceLog?.map((ch, i) => (
             <View key={i} style={{ flexDirection: "row", paddingVertical: 5, borderTopWidth: i ? 0 : 1, borderTopColor: C.line, marginTop: i ? 0 : 8 }}>
               <Text style={{ color: C.dim, width: 40 }}>{ch.minute}'</Text>

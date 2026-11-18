@@ -215,8 +215,7 @@ export function HallOfFameScreen({ onBack }: { onBack: () => void }) {
     );
   }
   return (
-    <Frame kicker="Every retired career" title="Hall of Fame" onBack={onBack}>
-      {book.entries.length === 0 && <Card><Text style={{ color: C.dim, textAlign: "center" }}>Nobody here yet. Every career you finish is kept here for good.</Text></Card>}
+    <Frame kicker="Your careers" title="Hall of Fame" onBack={onBack}>
       {book.entries.map((e) => (
         <Press key={e.id} onPress={() => setOpen(e)}>
           <Card tone={e.card.ballonDors ? C.gold : undefined}>
@@ -239,6 +238,11 @@ export function HallOfFameScreen({ onBack }: { onBack: () => void }) {
             </View>
           </Card>
         </Press>
+      ))}
+      {book.entries.length < 3 && Array.from({ length: 3 - book.entries.length }, (_, k) => (
+        <View key={`empty-${k}`} style={{ height: 78, borderRadius: 4, backgroundColor: "rgba(0,0,0,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.06)", alignItems: "center", justifyContent: "center" }}>
+          {k === 0 ? <Text style={{ color: "rgba(255,255,255,0.45)", fontWeight: "900", fontSize: 12, letterSpacing: 1 }}>RETIRE A CAREER TO FILL THIS</Text> : null}
+        </View>
       ))}
     </Frame>
   );

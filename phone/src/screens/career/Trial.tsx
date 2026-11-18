@@ -171,6 +171,7 @@ export function SignedScreen({ career, go }: { career: CareerState; go: (s: flow
       <Card style={{ alignItems: "center" }}>
         <ClubCrest club={c.club} size={84} />
         <Text style={{ color: C.text, fontSize: 22, fontWeight: "900", marginTop: 10 }}>{career.player.firstName} {career.player.lastName}</Text>
+        <Text style={{ color: C.gold, fontSize: 10, fontWeight: "900", letterSpacing: 2, marginTop: 2 }}>PROFESSIONAL PLAYER</Text>
         <Text style={{ color: C.dim, marginTop: 2 }}>{(POSITION_NAMES as Record<string, string>)[career.player.position] ?? career.player.position}{career.squadNumber ? ` · No. ${career.squadNumber}` : ""}</Text>
       </Card>
       <Card>
