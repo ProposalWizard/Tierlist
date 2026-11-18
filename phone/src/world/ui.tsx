@@ -1,3 +1,4 @@
+import { ClubBadge as DrawnBadge } from "../draw/ClubBadge";
 /**
  * THE WORLD SCREENS' SHARED PIECES: header with back, tab rows, cards, the
  * club badge placeholder, round arrows. Solid colours, no blur, the game's
@@ -43,16 +44,8 @@ export function clubGlow(club: string, career?: Pick<CareerState, "clubKits"> | 
  * the club's shirt and trim with its initials. When the DRAWING area's
  * ClubBadge exists, swap the body of this function for it.
  */
-export function ClubBadge({ club, size = 20, career }: { club: string; size?: number; career?: Pick<CareerState, "clubKits"> | null }) {
-  const kit = kitsOf(club, career?.clubKits?.[club]).home;
-  const words = club.replace(/\b(FC|AFC|F\.C\.)\b/g, "").trim().split(/\s+/).filter(Boolean);
-  const ini = (words.length > 1 ? words[0][0] + words[1][0] : (words[0] ?? "?").slice(0, 2)).toUpperCase();
-  const ink = lum(kit.shirt) > 0.45 ? "#111" : "#fff";
-  return (
-    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: kit.shirt, borderWidth: Math.max(1.5, size / 10), borderColor: kit.trim, alignItems: "center", justifyContent: "center" }}>
-      {size >= 16 && <Text style={{ color: ink, fontSize: size * 0.36, fontWeight: "900" }}>{ini}</Text>}
-    </View>
-  );
+export function ClubBadge({ club, size = 20 }: { club: string; size?: number; career?: Pick<CareerState, "clubKits"> | null }) {
+  return <DrawnBadge club={club} size={size} />;
 }
 
 /** A nation's flag stand-in: the nation's initials on a dark chip. */

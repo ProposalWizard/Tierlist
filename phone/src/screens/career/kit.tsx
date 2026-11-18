@@ -1,3 +1,6 @@
+import { ClubBadge as DrawnBadge } from "../../draw/ClubBadge";
+import { PlayerFigure } from "../../draw/PlayerFigure";
+import { useCareer } from "../../game/store";
 /**
  * The career screens' small parts: frame, cards, rows, buttons, bars, and the
  * stand-ins for the drawings (club badge, player figure) until phone/src/draw
@@ -106,27 +109,16 @@ export function Tile({ label, value, color = C.text, sub }: { label: string; val
  * STAND-IN for the drawing builder's ClubBadge (phone/src/draw): a round
  * crest in the club's home colours with its initials.
  */
+/** The club's drawn badge, as the website draws it (draw/ClubBadge.tsx). */
 export function ClubCrest({ club, size = 36 }: { club: string; size?: number }) {
-  const kit = club ? kitsOf(club).home : { shirt: "#1f2937", trim: "#9ca3af" };
-  const initials = shortClub(club || "?").split(/\s+/).map((w) => w[0]).join("").slice(0, 3).toUpperCase();
-  return (
-    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: kit.shirt, borderWidth: Math.max(2, size / 14), borderColor: kit.trim, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ color: kit.trim, fontWeight: "900", fontSize: size * 0.32 }}>{initials}</Text>
-    </View>
-  );
+  return <DrawnBadge club={club || "?"} size={size} />;
 }
 
-/** STAND-IN for the drawing builder's PlayerFigure: a shirt with your number. */
-export function PlayerStandIn({ club, number, size = 120 }: { club: string; number?: number; size?: number }) {
-  const kit = club ? kitsOf(club).home : { shirt: "#14532d", trim: "#ffffff" };
-  return (
-    <View style={{ width: size, height: size * 1.05, alignItems: "center", justifyContent: "flex-end" }}>
-      <View style={{ width: size * 0.36, height: size * 0.36, borderRadius: size * 0.18, backgroundColor: "#c68863", marginBottom: 4 }} />
-      <View style={{ width: size * 0.78, height: size * 0.56, borderTopLeftRadius: size * 0.2, borderTopRightRadius: size * 0.2, backgroundColor: kit.shirt, borderWidth: 3, borderColor: kit.trim, alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ color: kit.trim, fontWeight: "900", fontSize: size * 0.24 }}>{number ?? ""}</Text>
-      </View>
-    </View>
-  );
+/** Your player in his kit, as the website draws him (draw/PlayerFigure.tsx). */
+export function PlayerStandIn({ size = 120 }: { club: string; number?: number; size?: number }) {
+  const career = useCareer();
+  if (!career) return null;
+  return <PlayerFigure career={career} width={size} height={size * 1.6} />;
 }
 
 /** A note on a stand-in screen saying plainly what is still to come. */

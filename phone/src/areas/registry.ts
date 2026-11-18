@@ -4,5 +4,6 @@ import { coreScreens } from "./core";
 import { matchScreens } from "./match";
 import { worldScreens } from "./world";
 import { careerScreens } from "./career";
+import { artScreens } from "./art";
 import { glueScreens } from "./glue";
-export const SCREENS: ScreenMap = { ...coreScreens, ...matchScreens, ...careerScreens, ...worldScreens, ...glueScreens };
+export const SCREENS: ScreenMap = { ...coreScreens, ...matchScreens, ...careerScreens, ...worldScreens, ...artScreens, ...glueScreens };
