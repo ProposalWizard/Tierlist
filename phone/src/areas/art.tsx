@@ -1,4 +1,6 @@
-// ART AREA: the drawing test screen ("art-test"). Shows the website's own
+// ART AREA: the drawing test screen ("art-test") and the two face editors
+// ("face-editor", "fake-face-editor": draw/FaceEditors.tsx; Settings opens
+// them only while photo faces are on, as the website; art-test always). Shows the website's own
 // drawings (lib/star) drawn on the phone through src/draw: player heads,
 // your player, club badges, and the test pictures that tools/draw-check.ts
 // compares with a real browser. Open it with nav.go("art-test").
@@ -21,6 +23,7 @@ import { ClubBadge } from "../draw/ClubBadge";
 import { Drawn, phoneFontFor } from "../draw/useDrawing";
 import { OffscreenCanvas2D } from "../draw/offscreen";
 import { SCENES } from "../draw/testScenes";
+import { FaceEditor, FakeFaceEditor } from "../draw/FaceEditors";
 
 const CLUBS = ["Arsenal", "Manchester United", "Liverpool", "Chelsea", "Tottenham Hotspur", "Newcastle United",
   "Hampton & Richmond Borough", "Barnet", "Wrexham", "Sunderland", "England", "Brazil"];
@@ -53,6 +56,10 @@ function ArtTest() {
         </Press>
       </View>
       <ScrollView contentContainerStyle={{ padding: 14, gap: 14 }}>
+        <Section title="FACE EDITORS">
+          <Press onPress={() => nav.go("face-editor")} style={{ backgroundColor: C.panel2, borderRadius: R.pill, paddingHorizontal: 14, paddingVertical: 8 }}><Text style={{ color: C.text, fontWeight: "800" }}>Real Photos →</Text></Press>
+          <Press onPress={() => nav.go("fake-face-editor")} style={{ backgroundColor: C.panel2, borderRadius: R.pill, paddingHorizontal: 14, paddingVertical: 8 }}><Text style={{ color: C.text, fontWeight: "800" }}>Fake Faces →</Text></Press>
+        </Section>
         <Section title="PLAYER HEADS (TEAM SHEETS)">
           {PEOPLE.map(([id, club]) => {
             const k = kitsOf(club).home;
@@ -85,4 +92,17 @@ function ArtTest() {
   );
 }
 
-export const artScreens: ScreenMap = { "art-test": ArtTest };
+function FaceEditorScreen() {
+  const nav = useNav();
+  const saved = useCareer();
+  const [career] = useState(() => saved ?? startCareer("Sam", "Carter"));
+  return <FaceEditor career={career} onBack={() => nav.back()} />;
+}
+function FakeFaceEditorScreen() {
+  const nav = useNav();
+  const saved = useCareer();
+  const [career] = useState(() => saved ?? startCareer("Sam", "Carter"));
+  return <FakeFaceEditor career={career} onBack={() => nav.back()} />;
+}
+
+export const artScreens: ScreenMap = { "art-test": ArtTest, "face-editor": FaceEditorScreen, "fake-face-editor": FakeFaceEditorScreen };

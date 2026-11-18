@@ -9,6 +9,7 @@
  *  - Settings: only real preferences.
  *  - Placeholder: a screen still to come, saying so.
  */
+import { PHOTO_FACES } from "@/lib/star/faceStyle";
 import { useEffect, useRef, useState } from "react";
 import { View, Text, Switch } from "react-native";
 import type { CareerState, Fixture } from "@/lib/star/types";
@@ -210,7 +211,11 @@ const PREF_ROWS: [keyof Prefs, string, string][] = [
   ["skipLineup", "Skip the line-up", "Straight to kick-off, no team sheets"],
   ["playerNames", "Player names", "Names over the players in the match"],
 ];
-export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onHelp }: { onBack: () => void; onMainMenu: () => void; onNewCareer: () => void; onHelp?: () => void }) {
+export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onHelp, onFaceEditor, onFakeFaceEditor }: {
+  onBack: () => void; onMainMenu: () => void; onNewCareer: () => void; onHelp?: () => void;
+  /** The website's "Face editors" card: shown only while photo faces are on (PHOTO_FACES). */
+  onFaceEditor?: () => void; onFakeFaceEditor?: () => void;
+}) {
   const prefs = usePrefs();
   const [sure, setSure] = useState(false);
   return (
@@ -226,6 +231,15 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onHelp }: { on
           </View>
         ))}
       </Card>
+      {PHOTO_FACES && onFaceEditor && onFakeFaceEditor && (
+        <Card>
+          <Text style={{ color: C.text, fontWeight: "900", marginBottom: 8 }}>Face editors</Text>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ flex: 1 }}><Btn small label="Real Photos →" onPress={onFaceEditor} /></View>
+            <View style={{ flex: 1 }}><Btn small kind="plain" label="Fake Faces →" onPress={onFakeFaceEditor} /></View>
+          </View>
+        </Card>
+      )}
       {onHelp && <Btn kind="plain" label="? How it works" onPress={onHelp} />}
       <Btn kind="plain" label="⌂ Main menu" onPress={onMainMenu} />
       {!sure ? <Btn kind="plain" label="Start a new career" onPress={() => setSure(true)} />

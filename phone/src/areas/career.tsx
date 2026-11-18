@@ -83,6 +83,7 @@ export const careerScreens: ScreenMap = {
   "career-retirement": withCareer((c, go) => <RetirementScreen career={c} go={go} />),
   "career-settings": withCareer((_c, _go, nav) => (
     <SettingsScreen onBack={() => nav.back()} onMainMenu={() => nav.replace("title")} onHelp={() => nav.go("career-help")}
+      onFaceEditor={() => nav.go("face-editor")} onFakeFaceEditor={() => nav.go("fake-face-editor")}
       onNewCareer={() => { setCareer(null); resetSession(); nav.replace("career-new"); }} />
   )),
   // ── Not in the first team ──
@@ -133,6 +134,7 @@ export const careerScreens: ScreenMap = {
   "career-help": function Help({ params }) { const nav = useNav(); return <HelpScreen screen={params?.topic as HelpName | undefined} onBack={() => nav.back()} />; },
   settings: withCareer((_c, _go, nav) => (
     <SettingsScreen onBack={() => nav.back()} onMainMenu={() => nav.replace("title")} onHelp={() => nav.go("career-help")}
+      onFaceEditor={() => nav.go("face-editor")} onFakeFaceEditor={() => nav.go("fake-face-editor")}
       onNewCareer={() => { setCareer(null); resetSession(); nav.replace("career-new"); }} />
   )),
   "career-placeholder": function Placeholder({ params }) {
