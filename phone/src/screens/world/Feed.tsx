@@ -1,0 +1,340 @@
+/**
+ * THE FEED — the phone port of components/star/MediaFeed.tsx, PostCard.tsx and
+ * TransfersPanel.tsx. It reads and never writes posts: everything on it was
+ * written at full time by lib/star/media (feedFor decides what is visible
+ * now). Feed and Transfers tabs, All / England / Club filters, the trending
+ * ticker, every post with its replies, likes (toggleLike) and the Goal of the
+ * Month poll (voteGoalOfMonth, behind the same switch as the website).
+ *
+ * Placeholder: goal videos show a card with the title, not the video (the
+ * recordings and their player are not on the phone yet).
+ */
+import { useMemo, useState } from "react";
+import { FlatList, ScrollView, Text, View } from "react-native";
+import type { CareerState } from "@/lib/star/types";
+import type { StoredPost, GraphicSpec, PostReply, QuotedPost } from "@/lib/star/media/types";
+import { feedFor, toggleLike, voteGoalOfMonth } from "@/lib/star/media/feed";
+import { formatVolume } from "@/lib/star/media/trending";
+import { relativeTime } from "@/lib/star/media/schedule";
+import { leoUpdateOn } from "@/lib/star/leoUpdate";
+import { seasonStartYear } from "@/lib/star/calendar";
+import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
+import { formatMoneyPrecise } from "@/lib/star/money";
+import { setCareer, getCareer } from "../../game/store";
+import { Press } from "../../ui/Press";
+import { C } from "../../ui/theme";
+import { ClubBadge, Empty, Title } from "../../world/ui";
+
+const FILTERS: { id: string; label: string; scope?: "club" | "league" }[] = [
+  { id: "all", label: "All" }, { id: "england", label: "England", scope: "league" }, { id: "club", label: "Club", scope: "club" },
+];
+const LIKED = "#f91880";
+const count = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e4 ? `${Math.round(n / 1e3)}K` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : String(n));
+
+/** The feed app. `mode` "moment" is the post-match reaction (a Continue button); "browse" is the phone's Social app. */
+export function MediaFeed({ career, mode = "browse", onContinue }: { career: CareerState; mode?: "moment" | "browse"; onContinue?: () => void }) {
+  const [filter, setFilter] = useState("all");
+  const [tab, setTab] = useState<"feed" | "transfers">("feed");
+  const gotmOn = leoUpdateOn("goalOfMonth");
+  const { posts, trends, now } = useMemo(() => feedFor(career, mode === "moment" ? "moment" : "settled"), [career, mode]);
+  const shown = useMemo(() => {
+    const f = FILTERS.find(x => x.id === filter);
+    const all = gotmOn ? posts : posts.filter(p => p.graphic?.type !== "gotmPoll" && !String(p.eventId ?? "").startsWith("gotm-"));
+    return f?.scope ? all.filter(p => p.scope === f.scope) : all;
+  }, [posts, filter, gotmOn]);
+  const like = (id: string) => { const c = getCareer(); if (c) setCareer(toggleLike(c, id)); };
+  const vote = (id: string, i: number) => { const c = getCareer(); if (c) setCareer(voteGoalOfMonth(c, id, i)); };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: "#05080f" }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
+        <View style={{ width: 28, height: 28, borderRadius: 9, backgroundColor: C.green, alignItems: "center", justifyContent: "center" }}><Text>⚽</Text></View>
+        <Text style={{ flex: 1, color: C.text, fontWeight: "900", fontSize: 15 }}>{mode === "moment" ? "Post Match Reactions" : "Matchday"}</Text>
+        {mode === "moment" && onContinue && (
+          <Press onPress={onContinue} style={{ backgroundColor: C.green, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
+            <Text style={{ color: "#05261a", fontWeight: "900" }}>Continue →</Text>
+          </Press>
+        )}
+      </View>
+      {tab === "transfers" ? <TransfersPanel career={career} /> : (
+        <FlatList
+          data={shown}
+          keyExtractor={(p) => p.id}
+          initialNumToRender={6}
+          windowSize={5}
+          ListHeaderComponent={
+            <View>
+              {trends.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, padding: 10 }}>
+                  {trends.map((t) => (
+                    <View key={t.label} style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 }}>
+                      <Text style={{ color: C.text, fontWeight: "900", fontSize: 11 }}>{t.label}{t.hot ? " 🔥" : ""}</Text>
+                      <Text style={{ color: C.dim, fontWeight: "700", fontSize: 10 }}>{formatVolume(t.volume)}</Text>
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
+              {mode === "browse" && (
+                <View style={{ flexDirection: "row", gap: 6, paddingHorizontal: 10, paddingBottom: 6 }}>
+                  {FILTERS.map(f => (
+                    <Press key={f.id} onPress={() => setFilter(f.id)} style={{ borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: filter === f.id ? C.green : "rgba(255,255,255,0.08)" }}>
+                      <Text style={{ color: filter === f.id ? "#05261a" : C.text, fontWeight: "900", fontSize: 11 }}>{f.label.toUpperCase()}</Text>
+                    </Press>
+                  ))}
+                </View>
+              )}
+            </View>
+          }
+          ListEmptyComponent={<View style={{ padding: 16 }}><Empty text="Nothing yet. Play a match and the internet will have something to say." /></View>}
+          ListFooterComponent={shown.length > 0 ? (
+            <View style={{ padding: 24, alignItems: "center" }}>
+              <Text style={{ color: C.dim, fontWeight: "900" }}>You’re all caught up.</Text>
+              <Text style={{ color: "rgba(255,255,255,0.4)", fontWeight: "700", fontSize: 11 }}>Touch grass.</Text>
+            </View>
+          ) : undefined}
+          renderItem={({ item }) => <PostCard post={item} now={now} onLike={like} onVote={gotmOn ? vote : undefined} />}
+        />
+      )}
+      {mode === "browse" && (
+        <View style={{ flexDirection: "row", borderTopWidth: 1, borderTopColor: C.line, backgroundColor: "#0a0f18" }}>
+          {(["feed", "transfers"] as const).map((t) => (
+            <Press key={t} onPress={() => setTab(t)} style={{ flex: 1, alignItems: "center", paddingVertical: 10 }}>
+              <Text style={{ fontSize: 18 }}>{t === "feed" ? "📰" : "🔁"}</Text>
+              <Text style={{ color: tab === t ? C.green : C.dim, fontWeight: "900", fontSize: 11 }}>{t === "feed" ? "Feed" : "Transfers"}</Text>
+            </Press>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function Avatar({ initials, tint, tint2, size }: { initials: string; tint: string; tint2?: string; size: number }) {
+  return (
+    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: tint, borderWidth: tint2 ? 2 : 0, borderColor: tint2, alignItems: "center", justifyContent: "center" }}>
+      <Text style={{ color: "#fff", fontWeight: "900", fontSize: size * 0.38 }}>{initials}</Text>
+    </View>
+  );
+}
+const TICK = { blue: "#1d9bf0", gold: "#e2b719", grey: "#829aab" } as const;
+function Tick({ tick }: { tick?: keyof typeof TICK }) {
+  return <Text style={{ color: TICK[tick ?? "blue"], fontSize: 13 }}>✔︎</Text>;
+}
+
+export function PostCard({ post, now, onLike, onVote }: { post: StoredPost; now: number; onLike?: (id: string) => void; onVote?: (id: string, i: number) => void }) {
+  const likes = post.metrics.likes + (post.liked ? 1 : 0);
+  const tiktok = post.author.platform === "tiktok" && !!post.sound;
+  return (
+    <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
+      <Avatar initials={post.author.initials} tint={post.author.tint} tint2={post.author.tint2} size={40} />
+      <View style={{ flex: 1 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <Text numberOfLines={1} style={{ color: C.text, fontWeight: "800", flexShrink: 1 }}>{post.author.name}</Text>
+          {post.author.verified && <Tick tick={post.author.tick} />}
+          <Text numberOfLines={1} style={{ color: C.dim, flexShrink: 1 }}>{post.author.handle} · {relativeTime(post.at, now)}</Text>
+        </View>
+        <Text style={{ color: C.text, fontSize: 15, lineHeight: 20, marginTop: 2 }}>{post.text}</Text>
+        {post.quote && <Quote q={post.quote} />}
+        {post.graphic && <View style={{ marginTop: 8 }}><Graphic spec={post.graphic} onVote={onVote ? (i) => onVote(post.id, i) : undefined} /></View>}
+        {tiktok && post.sound ? <Text style={{ color: C.text, marginTop: 6, fontSize: 13 }}>♫ {post.sound}</Text> : null}
+        <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 8, paddingRight: 8 }}>
+          <Text style={{ color: C.dim, fontSize: 13 }}>💬 {count(post.metrics.replies)}</Text>
+          <Text style={{ color: C.dim, fontSize: 13 }}>🔁 {count(post.metrics.reposts)}</Text>
+          <Press disabled={!onLike} onPress={() => onLike?.(post.id)} style={{ flexDirection: "row" }}>
+            <Text style={{ color: post.liked ? LIKED : C.dim, fontSize: 13 }}>{post.liked ? "♥" : "♡"} {count(likes)}</Text>
+          </Press>
+          <Text style={{ color: C.dim, fontSize: 13 }}>📊 {post.metrics.views !== undefined ? count(post.metrics.views) : ""}</Text>
+        </View>
+        {!!post.thread?.length && <Replies thread={post.thread} />}
+      </View>
+    </View>
+  );
+}
+
+function Quote({ q }: { q: QuotedPost }) {
+  return (
+    <View style={{ marginTop: 8, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 10 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <Avatar initials={q.initials} tint={q.tint} tint2={q.tint2} size={18} />
+        <Text numberOfLines={1} style={{ color: C.text, fontWeight: "800", flexShrink: 1 }}>{q.name}</Text>
+        <Text numberOfLines={1} style={{ color: C.dim, flexShrink: 1 }}>{q.handle}</Text>
+      </View>
+      <Text numberOfLines={4} style={{ color: C.text, marginTop: 4 }}>{q.text}</Text>
+    </View>
+  );
+}
+
+function Replies({ thread }: { thread: PostReply[] }) {
+  return (
+    <View style={{ marginTop: 8, borderLeftWidth: 2, borderLeftColor: C.line, paddingLeft: 10, gap: 8 }}>
+      {thread.map((r, i) => (
+        <View key={i} style={{ flexDirection: "row", gap: 8, marginLeft: r.to ? 18 : 0 }}>
+          <Avatar initials={r.initials} tint={r.tint} tint2={r.tint2} size={r.to ? 18 : 22} />
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <Text numberOfLines={1} style={{ color: C.text, fontWeight: "800", fontSize: 13, flexShrink: 1 }}>{r.name}</Text>
+              {r.verified && <Tick tick={r.tick} />}
+              <Text numberOfLines={1} style={{ color: C.dim, fontSize: 12, flexShrink: 1 }}>{r.handle}</Text>
+            </View>
+            {r.to ? <Text style={{ color: "rgba(255,255,255,0.45)", fontSize: 12 }}>Replying to <Text style={{ color: "#1d9bf0" }}>{r.to}</Text></Text> : null}
+            <Text style={{ color: C.text, fontSize: 13 }}>{r.text}</Text>
+          </View>
+          <Text style={{ color: C.dim, fontSize: 12 }}>♥ {count(r.likes)}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** The picture under a post, drawn plainly (the website's media/Graphics.tsx, in short). */
+function Graphic({ spec, onVote }: { spec: GraphicSpec; onVote?: (i: number) => void }) {
+  const box = { backgroundColor: "#111a2b", borderRadius: 16, padding: 12, gap: 4 } as const;
+  const rowsOf = (rows: { label: string; value: string; highlight?: boolean }[]) => rows.map((r, i) => (
+    <View key={i} style={{ flexDirection: "row", justifyContent: "space-between" }}>
+      <Text style={{ color: r.highlight ? C.gold : C.text, fontWeight: r.highlight ? "900" : "700" }}>{r.label}</Text>
+      <Text style={{ color: r.highlight ? C.gold : C.text, fontWeight: "900" }}>{r.value}</Text>
+    </View>
+  ));
+  switch (spec.type) {
+    case "scoreline":
+      return (
+        <View style={box}>
+          <Text style={{ color: C.dim, fontSize: 10, fontWeight: "900", letterSpacing: 1.5, textAlign: "center" }}>{spec.competition.toUpperCase()} · FULL TIME</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
+            <View style={{ flex: 1, alignItems: "center", gap: 4 }}><ClubBadge club={spec.home} size={34} /><Text numberOfLines={1} style={{ color: C.text, fontWeight: "800" }}>{spec.home}</Text></View>
+            <Text style={{ color: C.text, fontWeight: "900", fontSize: 26 }}>{spec.hs} - {spec.as}</Text>
+            <View style={{ flex: 1, alignItems: "center", gap: 4 }}><ClubBadge club={spec.away} size={34} /><Text numberOfLines={1} style={{ color: C.text, fontWeight: "800" }}>{spec.away}</Text></View>
+          </View>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <Text style={{ flex: 1, color: C.dim, fontSize: 11, textAlign: "center" }}>{(spec.homeScorers ?? []).join("\n")}</Text>
+            <Text style={{ flex: 1, color: C.dim, fontSize: 11, textAlign: "center" }}>{(spec.awayScorers ?? spec.scorers ?? []).join("\n")}</Text>
+          </View>
+        </View>
+      );
+    case "breaking":
+      return <View style={[box, { backgroundColor: "#7f1d1d" }]}><Text style={{ color: "#fecaca", fontWeight: "900", fontSize: 11, letterSpacing: 2 }}>{spec.strapline.toUpperCase()}</Text><Text style={{ color: "#fff", fontWeight: "900", fontSize: 18 }}>{spec.headline}</Text></View>;
+    case "playerCard":
+      return <View style={box}><Text style={{ color: C.gold, fontWeight: "900", fontSize: 18 }}>{spec.rating} · {spec.name}</Text><Text style={{ color: C.dim }}>#{spec.number} · {spec.position}{spec.context ? ` · ${spec.context}` : ""}</Text>{rowsOf(spec.rows)}</View>;
+    case "statLine":
+      return <View style={box}><Text style={{ color: C.gold, fontWeight: "900" }}>{spec.title}</Text>{rowsOf(spec.rows)}{spec.context ? <Text style={{ color: C.dim, fontSize: 11 }}>{spec.context}</Text> : null}</View>;
+    case "topScorers":
+      return <View style={box}><Text style={{ color: C.gold, fontWeight: "900" }}>{spec.title}</Text>{rowsOf(spec.rows.map(r => ({ ...r, highlight: r.highlight || r.label === spec.highlight })))}</View>;
+    case "tableSnippet":
+      return (
+        <View style={box}>
+          {spec.rows.map((r) => (
+            <View key={r.pos} style={{ flexDirection: "row", gap: 8 }}>
+              <Text style={{ width: 22, color: C.dim, fontWeight: "900" }}>{r.pos}</Text>
+              <Text style={{ flex: 1, color: r.name === spec.highlight ? C.gold : C.text, fontWeight: "800" }}>{r.name}</Text>
+              <Text style={{ width: 28, color: C.dim, textAlign: "right" }}>{r.played}</Text>
+              <Text style={{ width: 34, color: C.dim, textAlign: "right" }}>{r.gd > 0 ? `+${r.gd}` : r.gd}</Text>
+              <Text style={{ width: 30, color: C.text, fontWeight: "900", textAlign: "right" }}>{r.points}</Text>
+            </View>
+          ))}
+        </View>
+      );
+    case "teamOfTheWeek":
+      return <View style={box}><Text style={{ color: C.gold, fontWeight: "900" }}>Team of the Week · {spec.formation}</Text>{spec.players.map((p, i) => <Text key={i} style={{ color: p.isYou ? C.gold : C.text, fontWeight: p.isYou ? "900" : "700" }}>{p.position} {p.name} <Text style={{ color: C.dim }}>{p.note}</Text></Text>)}</View>;
+    case "hatTrick":
+      return <View style={box}><Text style={{ color: C.gold, fontWeight: "900", fontSize: 18 }}>⚽⚽⚽ {spec.name}</Text><Text style={{ color: C.dim }}>{spec.minutes.map(m => `${m}'`).join(" · ")}</Text></View>;
+    case "transfer":
+      return (
+        <View style={[box, { flexDirection: "row", alignItems: "center", gap: 8 }]}>
+          <ClubBadge club={spec.from} size={30} /><Text style={{ color: C.dim, fontSize: 18 }}>→</Text><ClubBadge club={spec.to} size={30} />
+          <View style={{ flex: 1 }}><Text style={{ color: C.text, fontWeight: "900" }}>{spec.player}</Text><Text style={{ color: C.gold, fontWeight: "800" }}>{spec.fee ?? "Done deal"}</Text></View>
+        </View>
+      );
+    case "trophy":
+      return <View style={[box, { alignItems: "center" }]}><Text style={{ fontSize: 36 }}>🏆</Text><Text style={{ color: C.gold, fontWeight: "900" }}>{spec.competition}</Text><Text style={{ color: C.text, fontWeight: "800" }}>{spec.club} · Season {spec.season}</Text></View>;
+    case "poll": {
+      const total = Math.max(1, spec.votes.reduce((a, b) => a + b, 0));
+      return <View style={box}><Text style={{ color: C.text, fontWeight: "900" }}>{spec.question}</Text>{spec.options.map((o, i) => <Text key={i} style={{ color: C.text }}>{o} — {Math.round((spec.votes[i] / total) * 100)}%</Text>)}</View>;
+    }
+    case "gotmPoll": {
+      const votes = spec.fanVotes.map((v, i) => v + (spec.userVote === i ? spec.userWeight : 0));
+      const total = Math.max(1, votes.reduce((a, b) => a + b, 0));
+      return (
+        <View style={box}>
+          <Text style={{ color: C.gold, fontWeight: "900" }}>Goal of the Month · {spec.monthName}</Text>
+          {spec.entries.map((e, i) => (
+            <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 4 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: e.isYou ? C.gold : C.text, fontWeight: "900" }}>{e.scorerShort} · {e.club}{spec.winner === i ? " 🏆" : ""}</Text>
+                <Text style={{ color: C.dim, fontSize: 11 }}>{e.detail}</Text>
+              </View>
+              {spec.userVote !== undefined || spec.closed || !onVote
+                ? <Text style={{ color: C.text, fontWeight: "900" }}>{Math.round((votes[i] / total) * 100)}%</Text>
+                : <Press onPress={() => onVote(i)} style={{ backgroundColor: C.green, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 }}><Text style={{ color: "#05261a", fontWeight: "900" }}>Vote</Text></Press>}
+            </View>
+          ))}
+        </View>
+      );
+    }
+    case "potmNominees":
+      return <View style={box}><Text style={{ color: C.gold, fontWeight: "900" }}>Player of the Month · {spec.month}</Text>{spec.nominees.map((n, i) => <Text key={i} style={{ color: n.isYou ? C.gold : C.text, fontWeight: "800" }}>{n.name} ({n.club}) {n.goals}G {n.assists}A{spec.winner === n.name ? " 🏆" : ""}</Text>)}</View>;
+    case "potmWinner":
+      return <View style={[box, { alignItems: "center" }]}><Text style={{ color: C.gold, fontWeight: "900" }}>PLAYER OF THE MONTH · {spec.month.toUpperCase()}</Text><Text style={{ color: C.text, fontWeight: "900", fontSize: 18 }}>{spec.firstName} {spec.lastName}</Text><Text style={{ color: C.dim }}>{spec.club} · {spec.goals}G {spec.assists}A</Text></View>;
+    case "goalVideo":
+    case "thumbnail":
+      // Placeholder: the goal recordings and their player are not on the phone yet.
+      return (
+        <View style={[box, { height: 150, alignItems: "center", justifyContent: "center", backgroundColor: "#0b1a12" }]}>
+          <Text style={{ fontSize: 36 }}>▶</Text>
+          <Text style={{ color: C.text, fontWeight: "900", textAlign: "center" }}>{spec.title}</Text>
+          <Text style={{ color: C.dim, fontSize: 11 }}>Goal videos are coming to the phone app</Text>
+        </View>
+      );
+    default:
+      return null;
+  }
+}
+
+// ── Transfers (TransfersPanel.tsx) ──────────────────────────────────────────
+
+function TransfersPanel({ career }: { career: CareerState }) {
+  const yours = (club: string) => club === career.player.club;
+  const ret = (s: number) => { const y = seasonStartYear(career.player.startYear, s + 1); return `${y}/${String((y + 1) % 100).padStart(2, "0")}`; };
+  const sales = career.leagueTransferNews ?? [];
+  const loans = career.leagueLoanNews ?? [];
+  const rows = [
+    ...[...sales].sort((a, b) => Number(yours(b.from) || yours(b.to)) - Number(yours(a.from) || yours(a.to)))
+      .map((m, i) => ({ key: `s${i}-${m.player}`, player: m.player, position: m.position, age: m.age, from: m.from, to: m.to, mine: yours(m.from) || yours(m.to), right: m.fee > 0 ? `£${formatMoneyPrecise(m.fee)}` : "Free" })),
+    ...[...loans].sort((a, b) => Number(yours(b.parentClub) || yours(b.loanClub)) - Number(yours(a.parentClub) || yours(a.loanClub)))
+      .map((l, i) => ({ key: `l${i}-${l.playerId}`, player: l.player, position: l.position, age: l.age, from: l.parentClub, to: l.loanClub, mine: yours(l.parentClub) || yours(l.loanClub), right: `Loan · back ${ret(l.returnSeason)}` })),
+  ];
+  const spent = sales.reduce((s, m) => s + m.fee, 0);
+  const dot = (club: string) => club === FREE_AGENTS_CLUB
+    ? <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderStyle: "dashed", borderColor: "rgba(255,255,255,0.4)", alignItems: "center", justifyContent: "center" }}><Text style={{ color: C.dim, fontSize: 8, fontWeight: "900" }}>FA</Text></View>
+    : <ClubBadge club={club} size={24} />;
+  return (
+    <FlatList
+      data={rows}
+      keyExtractor={(r) => r.key}
+      contentContainerStyle={{ padding: 10, gap: 6, paddingBottom: 30 }}
+      ListHeaderComponent={
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <Text style={{ color: C.text, fontWeight: "900", fontSize: 16, fontStyle: "italic" }}>This Window</Text>
+          {spent > 0 ? <Text style={{ backgroundColor: C.green, color: "#05261a", fontWeight: "900", fontSize: 11, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, overflow: "hidden" }}>£{formatMoneyPrecise(spent)} SPENT</Text> : null}
+        </View>
+      }
+      ListEmptyComponent={<Empty text="No business yet. The rest of the division deals in the summer and again in January — check back once a window has opened and closed." />}
+      renderItem={({ item: r }) => (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 12, padding: 10, borderWidth: 1, borderColor: r.mine ? "rgba(52,211,153,0.6)" : C.line, backgroundColor: r.mine ? "rgba(16,185,129,0.12)" : "rgba(255,255,255,0.03)" }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: C.text, fontWeight: "900" }}>{r.player} <Text style={{ color: C.dim, fontSize: 11 }}>{r.position}{r.age ? ` · ${r.age}` : ""}</Text></Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>{dot(r.from)}<Text style={{ color: C.dim }}>→</Text>{dot(r.to)}</View>
+          </View>
+          <Text style={{ color: C.gold, fontWeight: "900", fontSize: 12 }}>{r.right}</Text>
+        </View>
+      )}
+      ListFooterComponent={(career.activeLoans ?? []).length > 0 ? (
+        <View style={{ marginTop: 10, gap: 4 }}>
+          <Title color="#7dd3fc">Currently on loan</Title>
+          {(career.activeLoans ?? []).map((l) => (
+            <Text key={l.playerId} style={{ color: C.text, fontSize: 11, fontWeight: "700" }}>{l.player} — {l.parentClub}’s player, out at {l.loanClub} · back for {ret(l.returnSeason)}</Text>
+          ))}
+        </View>
+      ) : undefined}
+    />
+  );
+}

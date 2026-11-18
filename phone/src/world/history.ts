@@ -3,8 +3,8 @@
  * The website loads each file from data/competition-history when its tab
  * opens (lib/star/world/realHistory.ts loadRealHistory, a dynamic import the
  * phone's bundler cannot follow). The phone has every file inside the app
- * (about 600 KB), so here each one is a plain require, turned into lines by
- * the website's own linesFromFile and joined by its joinHistory.
+ * (about 600 KB), so here each one is a plain require, turned into lines and
+ * joined exactly as realHistory.ts does (its helpers, copied below).
  */
 import { seasonStartYear } from "@/lib/star/calendar";
 
