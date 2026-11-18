@@ -3,4 +3,6 @@ import type { ScreenMap } from "./types";
 import { coreScreens } from "./core";
 import { matchScreens } from "./match";
 import { worldScreens } from "./world";
-export const SCREENS: ScreenMap = { ...coreScreens, ...matchScreens, ...worldScreens };
+import { careerScreens } from "./career";
+import { glueScreens } from "./glue";
+export const SCREENS: ScreenMap = { ...coreScreens, ...matchScreens, ...careerScreens, ...worldScreens, ...glueScreens };

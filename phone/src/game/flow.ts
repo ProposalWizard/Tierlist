@@ -1,21 +1,742 @@
 /**
  * THE CAREER'S FLOW: what happens between screens (owned by the CAREER area).
- * The website's version lives in app/star-dev/page.tsx (handlePlayMatch,
- * handleMatchComplete, the season end). This file is the phone's port of it,
- * calling the same lib/star functions in the same order.
  *
- * The MATCH area calls completeMatch(stats) at full time and nothing else.
+ * The website's version lives in app/star-dev/page.tsx (handleProfileComplete,
+ * the trial's offers, handlePlayMatch, handleMatchComplete, continueAfterMatch,
+ * endSeason, handleBallonDorContinue, rollOverSeason, …). This file is the
+ * phone's port of it, calling the same lib/star functions in the same order.
+ * Where page.tsx only changes what is drawn (toasts, sounds, pop-ups) the
+ * phone keeps the data in game/session.ts and its own screens show it.
+ *
+ * The MATCH area calls completeMatch(stats) at full time and then opens the
+ * "post-match" screen.
+ *
+ * Every function here works on the one career in game/store.ts and returns
+ * the next STEP (a screen name) for the screens to open. A step that belongs
+ * to another area (a cup draw, the transfer window, the phone feed) is only
+ * taken when that area has registered the screen; until then the flow goes
+ * on exactly as page.tsx would after that screen (see `screenExists`).
  */
-import type { MatchStats, Fixture } from "@/lib/star/types";
-import { getCareer } from "./store";
+import type { CareerState, MatchStats, Fixture, StarPlayer, Skills } from "@/lib/star/types";
+import { getCareer, setCareer } from "./store";
+import { getSession, setSession, type MatchReport } from "./session";
 
-/** The fixture the next match is for (null when the season has none left). */
-export function nextFixture(): Fixture | null {
+import { makeIdentity, attachClub, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
+import { startTrial, trialComplete, trialScore, recordStage, trialStagesFor, type TrialStage } from "@/lib/star/trial";
+import { trialOffers, clubsForDivision, SOURED_PITCH, type ScoutOffer } from "@/lib/star/scoutOffers";
+import { scoutedOfferForTrial } from "@/lib/star/scoutedPlacement";
+import { goalBonusFor, assistBonusFor } from "@/lib/star/economy";
+import { mulberry32, sortLeague } from "@/lib/star/season";
+import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
+import { currentRound, lastSixteenIndex } from "@/lib/star/cups";
+import { currentTie } from "@/lib/star/euro";
+import { knockoutRoundupFor } from "@/lib/star/knockoutView";
+import { divisionOf, isRegionalDivision, type CareerDivision } from "@/lib/star/calendar";
+import { generateRelegationOffers } from "@/lib/star/relegationOffers";
+import { rest, projectedEnergy, trainingLeft, spendTrainingSession } from "@/lib/star/week";
+import { acceptOffer, type TransferOffer } from "@/lib/star/transfers";
+import { clearAfterWindow, requestOf } from "@/lib/star/transferRequest";
+import { windowInterest, withRecall } from "@/lib/star/transferInterest";
+import { retirementCheck, retire } from "@/lib/star/retirement";
+import { generateForMatch, generateForInternational, generateForCallUp, generateForCareer, generateForLeagueWeek, generateForRollover, applyGoalOfMonthBoost, hasFreshMedia } from "@/lib/star/media/feed";
+import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
+import { checkNewAchievements, ACHIEVEMENTS } from "@/lib/star/achievements";
+import { computeStarRating } from "@/lib/star/rating";
+import { starsNow, starStatus, matchStarPoints, withStars, starGain } from "@/lib/star/starPoints";
+import { recordFirstMatch, recordDrill, gameFirst, isOpen, DRILLS_TO_OPEN_SHOP } from "@/lib/star/unlocks";
+import { isStory, trainingDayOn, trainingDayLeft, recordTrainingDayDrill } from "@/lib/star/story";
+import { applyLevelResult, levelDifficulty } from "@/lib/star/trainingLevels";
+import { getTuning } from "@/lib/star/tuningStore";
+import { signingNews, newsForMatch, type BreakingNews } from "@/lib/star/breakingNews";
+import { selectionFor } from "@/lib/star/selection";
+import { setPieceDuties } from "@/lib/star/setPieces";
+import { simulateOwnMatch } from "@/lib/star/simMatch";
+import { nationKits, nationStrength } from "@/lib/star/international";
+import { periodDue, decide, applyDecision, syncIntl, type IntlDecision } from "@/lib/star/intl/career";
+import { leoUpdateOn } from "@/lib/star/leoUpdate";
+import { KIB_CANS, kibCanPrice, type KibCan } from "@/lib/star/shopData";
+import { youthTakerFor, youthWage, startYouthSpell, rollLoanWildcard, startLoanSpell, formHasCollapsed, dropToYouth, endLoan, loanRecallOffer } from "@/lib/star/youth";
+import { managerTalkFor, type ManagerTalk } from "@/lib/star/signingTalk";
+import { FIRST_CONTRACT_WAGE } from "@/lib/star/scoutedPlacement";
+import { getPostMatchReactionsEnabled as getPostMatchReactions } from "@/lib/star/postMatchPrefs";
+
+// ═══════════════════════════════════════════════════════════════════
+//  STEPS: where the screens go next
+// ═══════════════════════════════════════════════════════════════════
+
+export interface Step { screen: string; params?: Record<string, unknown> }
+/** The tabbed main screen (Home). */
+export const HOME: Step = { screen: "tabs" };
+
+/** Whether a screen exists in the app; set by areas/career.tsx (headless: none of the others). */
+let screenExists: (name: string) => boolean = () => false;
+export function setScreenCheck(fn: (name: string) => boolean) { screenExists = fn; }
+
+function need(): CareerState {
   const c = getCareer();
-  return c?.fixtures.find((f) => !f.played) ?? null;
+  if (!c) throw new Error("No career");
+  return c;
 }
 
-/** Full time: credit the match to the career. STUB until the career area ports it. */
-export function completeMatch(_stats: MatchStats): void {
-  // ported from page.tsx handleMatchComplete by the career area
+/** The fixture the next match is for (null when the season has none left). page.tsx: nextFixtureFor(career). */
+export function nextFixture(): Fixture | null {
+  const c = getCareer();
+  return c ? nextFixtureFor(c) : null;
+}
+
+/** Every fixture played and the season not rolled over (page.tsx seasonOver). */
+export function seasonOver(c: CareerState | null = getCareer()): boolean {
+  return !!c && c.fixtures.length > 0 && !nextFixtureFor(c);
+}
+
+/** Your side's name for a fixture: your club, or your country (page.tsx myTeam). */
+export function myTeam(c: CareerState, f: Fixture): string {
+  return f.kind === "international" ? nationOf(c) : c.player.club;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  A NEW CAREER (handleProfileComplete → trial → offers → signing)
+// ═══════════════════════════════════════════════════════════════════
+
+/** The profile screens are done: a career with no club, into the trial. */
+export function beginCareer(player: StarPlayer, division: CareerDivision = "premier", seed?: number): Step {
+  const created = { ...makeIdentity(player, division), trial: { ...(seed === undefined ? startTrial() : startTrial(seed)) } };
+  setCareer(created);
+  setSession({ report: null, news: [], potmWin: null, wonBallonDor: false, contractReason: null, koShown: [], roundupShown: null, training: null });
+  // Squad, free-agent and world fetches (fetchFreeAgents, fetchLeagueSquads,
+  // fetchSharedLineups, refreshXpConfig) need the network layer: not on the phone yet.
+  return { screen: "career-trial" };
+}
+
+/**
+ * PLACEHOLDER for a trial stage played on the match engine (TrialSequence):
+ * the stage is scored from your skills and a roll seeded off the trial, then
+ * written with the game's own recordStage. Replace with the real stage once
+ * the match area has the drills.
+ */
+export function simulateTrialStage(stage: TrialStage): void {
+  setCareer((c) => {
+    if (!c.trial) return c;
+    const rng = mulberry32((c.trial.seed ^ stage.length * 7919 ^ Object.keys(c.trial.results).length * 104729) >>> 0);
+    const skill = (c.skills.power + c.skills.technique + c.skills.pace) / 300;
+    const quality = stage === "shootout" ? (rng() < 0.55 + skill * 0.3 ? 2 / 3 : 1 / 3) + (rng() < 0.4 ? 1 / 3 : 0) : 0.35 + 0.35 * skill + 0.3 * rng();
+    return { ...c, trial: recordStage(c.trial, stage, Math.min(1, quality)) };
+  });
+}
+
+export function trialStages(c: CareerState): TrialStage[] {
+  return c.trial ? trialStagesFor(c.trial) : [];
+}
+
+/** The clubs that came in (page.tsx offersForTrial). */
+export function offersForTrial(career: CareerState): ScoutOffer[] {
+  if (!career.trial) return [];
+  if ((career.trialsTaken ?? 1) <= 1) return [scoutedOfferForTrial(career.trial)];
+  return trialOffers(trialScore(career.trial), mulberry32(career.trial.seed ^ 0x5c0a7), { retrial: (career.trialsTaken ?? 1) > 1 });
+}
+/** Which club's manager sits you down (page.tsx talkingClubFor). */
+export function talkingClubFor(career: CareerState, offers: ScoutOffer[]): ScoutOffer | null {
+  if (!offers.length) return null;
+  return offers.find((o) => o.club === career.player.club) ?? offers[0];
+}
+/** page.tsx offersWithAgreedTerms. */
+export function offersWithAgreedTerms(career: CareerState, offers: ScoutOffer[]): ScoutOffer[] {
+  const agreed = career.agreedTerms;
+  if (!agreed) return offers;
+  if (agreed.wage <= 0) {
+    const rest = offers.filter((o) => o.club !== agreed.club);
+    return rest.length ? rest : offers;
+  }
+  return offers.map((o) => (o.club === agreed.club
+    ? { ...o, wage: agreed.wage, goalBonus: goalBonusFor(agreed.wage), assistBonus: assistBonusFor(agreed.wage), ...(agreed.soured ? { pitch: SOURED_PITCH } : {}) }
+    : o));
+}
+
+/** Where a finished trial goes (page.tsx afterTrialPhase). */
+export function afterTrial(): Step {
+  const c = need();
+  if (c.trial && !trialComplete(c.trial)) return { screen: "career-trial" };
+  if (c.agreedTerms) return { screen: "career-offers" };
+  return offersForTrial(c).length ? { screen: "career-manager-talk" } : { screen: "career-offers" };
+}
+
+/** The manager's verdict and opening number (page.tsx manager-talk phase). */
+export function managerTalk(c: CareerState): { talk: ManagerTalk; offer: ScoutOffer; firstContract: boolean } | null {
+  if (!c.trial) return null;
+  const talking = talkingClubFor(c, offersForTrial(c));
+  if (!talking) return null;
+  const talk = managerTalkFor({
+    trial: c.trial, club: talking.club, division: talking.division, clubStrength: talking.strength,
+    playerFirstName: c.player.firstName, scoutNouns: leoUpdateOn("bugFixes"), rng: mulberry32(c.trial.seed ^ 0x1a9b3),
+  });
+  const firstContract = isStory(c);
+  return { talk: firstContract ? { ...talk, openingWeekly: FIRST_CONTRACT_WAGE } : talk, offer: talking, firstContract };
+}
+
+/** "Accept & sign" in the manager's office (ManagerTalk onAccept). */
+export function acceptManagerOffer(): Step {
+  const c = need();
+  const m = managerTalk(c);
+  if (!m) return { screen: "career-offers" };
+  const agreed = { ...c, agreedTerms: { club: m.offer.club, wage: m.talk.openingWeekly } };
+  const offer = offersWithAgreedTerms(agreed, offersForTrial(agreed)).find((o) => o.club === m.offer.club);
+  if (offer) { setCareer(agreed); return signTrialOffer(offer); }
+  setCareer(agreed);
+  return { screen: "career-offers" };
+}
+
+/** Sign for a club from the trial's offers (page.tsx signTrialOffer). */
+export function signTrialOffer(offer: ScoutOffer): Step {
+  const career = need();
+  const loan = rollLoanWildcard(offer.club, offer.division, offer.seasons, mulberry32((career.trial?.seed ?? 1) ^ 0x70a2 ^ offer.club.length));
+  const homeClub = loan ? loan.hostClub : offer.club;
+  const homeDivision = loan ? loan.hostDivision : offer.division;
+  const wage = loan ? loan.wage : offer.wage;
+  const clubs = loan ? loan.hostClubs : clubsForDivision(offer.division);
+  const signed = attachClub(career, homeClub, clubs, homeDivision, wage);
+  const withDeal: CareerState = {
+    ...signed,
+    contract: {
+      club: loan ? loan.parentClub : offer.club,
+      wage,
+      goalBonus: loan ? goalBonusFor(wage) : offer.goalBonus,
+      assistBonus: loan ? assistBonusFor(wage) : offer.assistBonus,
+      seasonsRemaining: offer.seasons,
+    },
+    agreedTerms: undefined,
+    ...(loan ? { placement: startLoanSpell(loan, signed.seasonStats.goals) } : null),
+  };
+  // page.tsx's own effect: a career with a club and fixtures is brought into
+  // step with the international world once.
+  setCareer(withDeal);
+  settle();
+  // fetchRealSquad / fetchLeagueSquads (the real dressing room) need the network layer: not on the phone yet.
+  return { screen: "career-signed" };
+}
+
+/** Where CONTINUE on the title screen lands: Home, or the step a career with no club is at. */
+export function resumeStep(): Step {
+  const c = getCareer();
+  if (!c) return { screen: "career-new" };
+  if (!c.player.club) return c.trial ? afterTrial() : { screen: "career-placeholder", params: { what: "free-agent" } };
+  return HOME;
+}
+
+/** TrialReward's "done": the signing news, then Home (or the loan brief). */
+export function finishSigning(): Step {
+  const c = need();
+  pushNews(signingNews(c, c.contract?.club ?? c.player.club));
+  return c.placement?.kind === "loan" ? { screen: "career-placeholder", params: { what: "loan-brief" } } : HOME;
+}
+
+/** Nobody offered terms: a youth team, or the free-agent life (page.tsx youthOrFreeAgent). */
+export function youthOrFreeAgent(): Step {
+  const career = need();
+  if (!career.trial) return { screen: "career-placeholder", params: { what: "free-agent" } };
+  const taker = youthTakerFor(trialScore(career.trial), mulberry32(career.trial.seed ^ 0x9e11));
+  if (!taker) return { screen: "career-placeholder", params: { what: "free-agent" } };
+  const wage = youthWage(taker.club, taker.division);
+  const signed = attachClub(career, taker.club, taker.clubs, taker.division, wage);
+  setCareer({
+    ...signed,
+    contract: { club: taker.club, wage, goalBonus: goalBonusFor(wage), assistBonus: assistBonusFor(wage), seasonsRemaining: 2 },
+    agreedTerms: undefined,
+    placement: startYouthSpell(taker.club, taker.division, "trial"),
+  });
+  settle();
+  return { screen: "career-placeholder", params: { what: "youth" } };
+}
+
+/** page.tsx's effect: a career with a club and fixtures is brought into step with the international world once a season. */
+export function withIntl(c: CareerState): CareerState {
+  return c.player?.club && c.fixtures?.length && !c.intl?.xi?.[c.season] ? syncIntl(c) : c;
+}
+
+/**
+ * What page.tsx's two effects do after any change outside the match: the
+ * central achievement check, then the international world kept in step.
+ */
+export function settle(): string[] {
+  const ids = centralCheck();
+  const c = getCareer();
+  if (c) { const synced = withIntl(c); if (synced !== c) setCareer(synced); }
+  return ids;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  THE WEEK: training, rest, cans, the central achievement check
+// ═══════════════════════════════════════════════════════════════════
+
+export const TRAINING_ENERGY_COST = getTuning("energy.trainingCost");
+
+/**
+ * THE CENTRAL CHECK (page.tsx useEffect): any change to the career outside a
+ * match unlocks newly earned achievements at once and brings the star rating
+ * up to date. Returns the ids it unlocked.
+ */
+export function centralCheck(): string[] {
+  const career = getCareer();
+  if (!career) return [];
+  const ids = checkNewAchievements(career);
+  if (ids.length === 0) return [];
+  const unlocked = { ...career, achievements: [...career.achievements, ...ids] };
+  setCareer(withStars({ ...unlocked, starRating: computeStarRating(unlocked) }));
+  return ids;
+}
+
+/** Put your feet up (page.tsx handleRest). */
+export function restDay(): void {
+  setCareer((c) => rest(c));
+  settle();
+}
+
+/** Drink a can (page.tsx handleUseCan). */
+export function useCan(id: KibCan["id"]): void {
+  const career = need();
+  if (career.kibCans[id] === 0) return;
+  const can = KIB_CANS.find((c) => c.id === id)!;
+  if (can.effect && career.kibAbility?.[can.effect]) return;
+  if (!can.effect && career.energy >= 100) return;
+  setCareer({
+    ...career,
+    kibCans: { ...career.kibCans, [id]: career.kibCans[id] - 1 },
+    ...(can.effect ? { kibAbility: { ...career.kibAbility, [can.effect]: true } } : {}),
+    energy: Math.min(100, career.energy + can.restore),
+  });
+  settle();
+}
+
+/** Buy a can (page.tsx handleBuyKib). */
+export function buyCan(can: KibCan): void {
+  const career = need();
+  const price = kibCanPrice(can, career.contract.wage ?? 0);
+  if (career.money < price) return;
+  setCareer({ ...career, money: career.money - price, kibCans: { ...career.kibCans, [can.id]: career.kibCans[can.id] + 1 } });
+  settle();
+}
+
+/** Training: a skill picked (page.tsx handleTrain). Null when no session is left. */
+export function pickTraining(skill: keyof Skills): Step | null {
+  const career = need();
+  if (trainingLeft(career) <= 0 && !trainingDayOn(career)) return null;
+  setSession({ training: { skill, level: null } });
+  return { screen: "career-training-levels", params: { skill } };
+}
+
+/**
+ * PLACEHOLDER for the drill on the match engine (TrainingMinigame): three
+ * tries, each passed or not off your skill against the level's difficulty,
+ * seeded so the same level gives the same stars. Returns 0-3 stars.
+ */
+export function simulateDrill(skill: keyof Skills, level: number): number {
+  const c = need();
+  const rng = mulberry32((c.week * 977 + level * 131 + skill.length * 17 + c.season * 7) >>> 0);
+  // levelDifficulty is the skill the level is built for (40-100): at it, a coin flip a try.
+  const chance = Math.max(0.1, Math.min(0.95, 0.5 + (c.skills[skill] - levelDifficulty(level)) / 40));
+  let stars = 0;
+  for (let t = 0; t < 3; t++) if (rng() < chance) stars++;
+  return Math.max(0, Math.min(3, stars));
+}
+
+/** A drill finished with N stars (page.tsx handleTrainingComplete). */
+export function completeTraining(skill: keyof Skills, level: number, stars: number): { step: Step; shopOpened: boolean } {
+  const career = need();
+  const banked = applyLevelResult(career, skill, level, stars).career;
+  const dayDrill = trainingDayOn(career) && trainingDayLeft(career).includes(skill);
+  const updated: CareerState = {
+    ...banked,
+    lastTrainedWeek: { ...career.lastTrainedWeek, [skill]: career.week },
+    energy: Math.max(0, career.energy - TRAINING_ENERGY_COST),
+    starRating: career.starRating,
+  };
+  updated.starRating = computeStarRating(updated);
+  const drilled = recordDrill(spendTrainingSession(updated), starStatus(career).total, starsNow(career));
+  setCareer(dayDrill ? recordTrainingDayDrill(drilled, skill) : drilled);
+  const shopOpened = gameFirst(career) && !isStory(career) && career.unlocks!.drills + 1 === DRILLS_TO_OPEN_SHOP;
+  setSession({ training: null });
+  settle();
+  return { step: career.placement?.kind === "youth" ? { screen: "career-placeholder", params: { what: "youth" } } : { screen: "career-training" }, shopOpened };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  MATCH DAY (handlePlayMatch, handleSimMatch, handleWatchFromStands)
+// ═══════════════════════════════════════════════════════════════════
+
+/** The week as it will be once you play (handlePlayMatch's readying, without saving it). */
+function readied(c: CareerState): CareerState {
+  return { ...c, weekActions: 0, energy: projectedEnergy(c) };
+}
+
+/** Committing to play: the week's actions spent, the rest days' energy banked (handlePlayMatch). */
+export function readyWeek(): Fixture | null {
+  const c = getCareer();
+  const f = c ? nextFixtureFor(c) : null;
+  if (!c || !f) return null;
+  setCareer(readied(c));
+  return f;
+}
+
+/** Who the manager has picked this week, as of kick-off energy (page.tsx preMatchSelection). */
+export function preMatchSelection(c: CareerState) {
+  return selectionFor({ ...c, energy: projectedEnergy(c) });
+}
+
+/**
+ * Full time: credit the match to the career (page.tsx handleMatchComplete).
+ * Called by the match area; then it opens "post-match".
+ */
+export function completeMatch(stats: MatchStats): void {
+  const before = getCareer();
+  const fixture = before ? nextFixtureFor(before) : null;
+  if (!before || !fixture) return;
+  // handlePlayMatch readies the week before kick-off; readying is idempotent,
+  // so a match opened without it is credited the same.
+  const career = readied(before);
+  const credited = creditMatchResult(career, fixture, stats);
+  const bootsWornOut = career.currentBoot.matches > 0 && credited.career.currentBoot.matches === 0;
+  const { newlyUnlocked, potmAwarded } = credited;
+  let next = recordFirstMatch(credited.career);
+  pushNews(...newsForMatch(career, next, fixture, fixture.kind && fixture.kind !== "league" ? fixtureLabel(fixture) : null));
+  const starNext = starStatus(next);
+  const earned = matchStarPoints(career, fixture, stats);
+  const pick = (c: CareerState) => ({ boss: c.relationships.boss, team: c.relationships.team, fans: c.relationships.fans });
+  const gain = starGain(career, next);
+  const energyBack = stats.endEnergy !== undefined ? Math.max(0, Math.round(next.energy - Math.max(0, Math.min(100, stats.endEnergy)))) : null;
+
+  next.media = fixture.kind === "international"
+    ? generateForInternational(career, next, fixture, stats, nationOf(career), nationKits(nationOf(career)).home, nationStrength(nationOf(career)))
+    : generateForMatch(career, next, fixture, stats);
+  if (leoUpdateOn("goalOfMonth")) { const b = applyGoalOfMonthBoost(next); next.relationships = b.relationships; next.media = b.media; }
+  // (leoUpdateOn("feedSpeed") premakes goal videos: the phone has no video maker yet.)
+  const restOfWeek = (next.results ?? []).filter((r) => r.week === fixture.week && r.home !== career.player.club && r.away !== career.player.club);
+  if (restOfWeek.length) next.media = generateForLeagueWeek({ ...next, media: next.media }, restOfWeek);
+  if (potmAwarded) {
+    const place = potmAwarded.isYou ? "won it"
+      : potmAwarded.yourPlace ? `${potmAwarded.yourPlace}${["st", "nd", "rd"][potmAwarded.yourPlace - 1] ?? "th"} on the shortlist`
+      : "not shortlisted";
+    next.media = generateForCareer({ ...next, media: next.media }, {
+      kind: "award", won: potmAwarded.isYou, award: `${potmAwarded.monthName} Player of the Month`,
+      detail: potmAwarded.isYou
+        ? `${potmAwarded.goals} goals and ${potmAwarded.assists} assists in ${potmAwarded.monthName}.`
+        : `${potmAwarded.winner} of ${potmAwarded.club} takes it — ${potmAwarded.goals} goals. You were ${place}.`,
+    }, `potm-${potmAwarded.season}-${potmAwarded.month}`);
+  }
+  next = applyFormCollapse(next);
+
+  const report: MatchReport = {
+    stats, fixture,
+    starFrom: starsNow(career), starTo: starNext.stars,
+    star: {
+      sp: earned.total, base: earned.base, mult: earned.mult, toNext: starNext.toNext, fromNext: starStatus(career).toNext, gate: starNext.gate?.need,
+      total: gain.total, extra: gain.lines.filter((l) => l.cat !== "match").map((l) => ({ label: l.label, sp: l.sp, n: l.n })),
+      held: starNext.held, carried: starNext.carried,
+    },
+    rel: { before: pick(career), after: pick(next) },
+    bootsWornOut, achievements: newlyUnlocked, energyBack,
+    knockout: next.knockoutMessage ?? null,
+    competition: fixture.kind && fixture.kind !== "league" ? fixtureLabel(fixture) : null,
+  };
+  setSession({ report, ...(potmAwarded?.isYou ? { potmWin: potmAwarded } : {}) });
+  setCareer(next);
+  settle();
+}
+
+/** page.tsx applyFormCollapse: a run of bad games and it is the youth team. */
+function applyFormCollapse(next: CareerState): CareerState {
+  return formHasCollapsed(next) ? dropToYouth(next) : next;
+}
+
+/** "Sim this match" (page.tsx handleSimMatch): your chances settled by your skills, credited like a played match. */
+export function simMatch(): Step {
+  const career = getCareer();
+  const fixture = career ? nextFixtureFor(career) : null;
+  if (!career || !fixture) return HOME;
+  const r = readied(career);
+  setCareer(r);
+  completeMatch(simStatsFor(r, fixture));
+  return { screen: "post-match" };
+}
+
+/** The stats the website's Sim button makes (simulateOwnMatch, same inputs as page.tsx). */
+export function simStatsFor(r: CareerState, fixture: Fixture): MatchStats {
+  const sel = selectionFor(r);
+  const bootOn = r.currentBoot.matches > 0;
+  return simulateOwnMatch(r, fixture, {
+    selection: sel,
+    duties: setPieceDuties(r, sel.status),
+    skills: {
+      power: Math.min(100, r.skills.power + (bootOn ? r.currentBoot.power : 0)),
+      technique: Math.min(100, r.skills.technique + (bootOn ? r.currentBoot.technique : 0)),
+    },
+  });
+}
+
+/** Left out of the squad, or your nation on TV (page.tsx handleWatchFromStands). */
+export function watchFromStands(): { step: Step; watched: Fixture | null } {
+  const career = need();
+  const f = nextFixtureFor(career);
+  if (!f) return { step: HOME, watched: null };
+  const { career: next } = simulateMissedFixture(career, f);
+  setCareer(next);
+  settle();
+  if (f.watch) {
+    const watched = next.fixtures.find((x) => x.intlId === f.intlId && x.played) ?? null;
+    return { step: { screen: "career-watched" }, watched };
+  }
+  return { step: afterAnyWeek(next), watched: null };
+}
+
+/** After a week without a match of yours: the season-end prompt or a call-up waits on Home. */
+function afterAnyWeek(c: CareerState): Step {
+  if (periodDue(c) !== null) return { screen: "career-callup" };
+  return HOME;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  AFTER THE MATCH (handlePostMatchContinue → continueAfterMatch)
+// ═══════════════════════════════════════════════════════════════════
+
+/** Out of the ground: the phone's reactions first when there is something to read, then on. */
+export function postMatchContinue(): Step {
+  const career = need();
+  const r = getSession().report;
+  // hasFreshMedia && isOpen(career, "phone") && the per-device preference: the feed is the WORLD area's screen.
+  if (!r?.stats.simmed && getPostMatchReactions() && hasFreshMedia(career) && isOpen(career, "phone") && screenExists("media")) return { screen: "media", params: { afterMatch: true } };
+  return continueAfterMatch();
+}
+
+/**
+ * Everything between the final whistle and the next week (page.tsx
+ * continueAfterMatch). `skipDraw` is set coming back from the draw screen.
+ */
+export function continueAfterMatch(skipDraw = false): Step {
+  const from = need();
+  const s = getSession();
+  const played = s.report?.fixture ?? null;
+
+  if (from.lastTransferWindowKey && from.lastTransferWindowKey !== from.deadlineDayShownFor && screenExists("deadline-day")) {
+    return { screen: "deadline-day" };
+  }
+
+  const ko = played ? knockoutRoundupFor(from, played) : null;
+  if (ko && !s.koShown.includes(ko.key)) {
+    setSession({ koShown: [...s.koShown, ko.key] });
+    if (screenExists("knockout-roundup")) return { screen: "knockout-roundup", params: { ko } };
+  }
+
+  if (played?.kind === "international" && played.round && from.tournament?.season === from.season && played.competition === from.tournament.competition) {
+    const key = `tourn:${from.season}:${played.week}`;
+    if (!s.koShown.includes(key)) {
+      setSession({ koShown: [...getSession().koShown, key] });
+      if (screenExists("intl-tournament-table")) return { screen: "intl-tournament-table" };
+    }
+  }
+
+  if (!skipDraw && played) {
+    const cupCompetition = played.competition === "FA Cup" || played.competition === "League Cup" || played.competition === "Lower League Trophy" ? played.competition : null;
+    if (cupCompetition) {
+      const state = from.cupState?.find((x) => x.competition === cupCompetition);
+      const round = state ? currentRound(state) : null;
+      const freshlyDrawn = round && round.ties.length >= 2 && round.ties.every((t) => t.hs === undefined && !t.legs?.length);
+      const youreIn = !!round && round.ties.some((t) => t.home === from.player.club || t.away === from.player.club);
+      const r16 = state ? lastSixteenIndex(state) : -1;
+      const shownInBracket = !!state && state.rounds.length - 1 > r16;
+      if (freshlyDrawn && round && youreIn && !shownInBracket && screenExists("cup-draw")) {
+        return { screen: "cup-draw", params: { competition: cupCompetition, round } };
+      }
+    }
+    const isEuroKnockout = played.kind === "europe" && (played.competition === "Champions League" || played.competition === "Europa League");
+    if (isEuroKnockout && from.euroState && !from.euroState.bracket) {
+      const tie = currentTie(from.euroState);
+      const freshlyDrawn = tie && tie.legs.every((l) => l.us === undefined);
+      if (freshlyDrawn && tie && screenExists("cup-draw")) {
+        return { screen: "cup-draw", params: { competition: from.euroState.competition, round: { name: tie.round, ties: [{ home: from.player.club, away: tie.opponent }] } } };
+      }
+    }
+  }
+
+  if (from.playOffState) {
+    const upcoming = nextFixtureFor(from);
+    const runOver = !!from.playOffState.yourRunOver && played?.kind === "playoff";
+    const key = upcoming?.kind === "playoff" ? `${from.season}:${upcoming.round}:${upcoming.week}` : runOver ? `${from.season}:end` : null;
+    if (key && s.roundupShown !== key) {
+      setSession({ roundupShown: key });
+      if (screenExists("playoff-roundup")) return { screen: "playoff-roundup" };
+    }
+  }
+
+  // Home, where "End of Season" waits: you end the season yourself.
+  if (from.fixtures.filter((f) => !f.played).length === 0) return HOME;
+
+  if (periodDue(from) !== null) return { screen: "career-callup" };
+
+  const earlyOffer = checkForContractOffer(from);
+  if (earlyOffer) {
+    setCareer(markContractOfferUsed(from, earlyOffer));
+    setSession({ contractReason: earlyOffer });
+    return { screen: "career-contract-renewal" };
+  }
+  return HOME;
+}
+
+// ── The international call-up (page.tsx intl-callup phase) ──
+
+export function callUpDecision(): IntlDecision | null {
+  const c = getCareer();
+  const p = c ? periodDue(c) : null;
+  return c && p ? decide(c, p) : null;
+}
+export function answerCallUp(decision: IntlDecision): Step {
+  const career = need();
+  let next = applyDecision(career, decision);
+  const rec = next.international ?? { decided: [], callUps: 0, snubs: 0, matches: [] };
+  next = { ...next, international: { ...rec, callUps: rec.callUps + (decision.called ? 1 : 0), snubs: rec.snubs + (decision.called ? 0 : 1) } };
+  if (decision.called) {
+    next = { ...next, media: generateForCallUp(next, decision.nation, next.international?.callUps ?? 1, decision.period.label, `callup-${decision.period.key}`) };
+  }
+  setCareer(next);
+  settle();
+  // Another window can already be due (page.tsx's effect re-opens the call-up).
+  return periodDue(next) !== null ? { screen: "career-callup" } : HOME;
+}
+
+// ── A contract (page.tsx handleContractComplete) ──
+
+export function contractComplete(newContract: CareerState["contract"] | null): Step {
+  const career = need();
+  if (newContract) {
+    const signed: CareerState = { ...career, contract: newContract };
+    signed.media = generateForCareer(signed, { kind: "contract", club: newContract.club, wage: newContract.wage, seasons: newContract.seasonsRemaining }, `contract-s${career.season}`);
+    setCareer(signed);
+  }
+  setSession({ contractReason: null });
+  settle();
+  return HOME;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  THE END OF THE SEASON
+//  endSeason → (season reel) → Golden Ball → retirement / final season /
+//  transfer window → rollOverSeason → season awards → contract or Home
+// ═══════════════════════════════════════════════════════════════════
+
+/** "End of Season" pressed on Home (page.tsx endSeason). */
+export function endSeason(): Step {
+  const from = need();
+  const { career: awarded } = awardLeagueTrophyIfWon(from);
+  setCareer({ ...awarded, lastSeasonAwardStats: computeSeasonAwardStats(awarded) });
+  settle();
+  // leoUpdateOn("seasonReel") shows the season video first: no video maker on the phone yet.
+  return { screen: "career-golden-ball" };
+}
+
+/** The Golden Ball night is over (page.tsx handleBallonDorContinue). */
+export function ballonDorContinue(userWon: boolean): Step {
+  const career = need();
+  setSession({ wonBallonDor: userWon });
+  const check = retirementCheck(career);
+  if (check.mustRetire) return { screen: "career-retirement" };
+  if (check.finalSeasonNext) return { screen: "career-final-season" };
+  return openTransferWindowOrRoll(career, userWon);
+}
+
+/** After the final-season notice (page.tsx handlePlayOn). */
+export function playOn(): Step {
+  return openTransferWindowOrRoll(need(), getSession().wonBallonDor);
+}
+
+/** page.tsx openTransferWindowOrRoll. */
+export function openTransferWindowOrRoll(from: CareerState, userWon: boolean): Step {
+  if (isRegionalDivision(divisionOf(from)) && sortLeague(from.league).slice(-4).some((t) => t.name === from.player.club)) {
+    const forced = generateRelegationOffers(from, mulberry32(from.season * 8831 + from.fame));
+    if (forced.length > 0) {
+      const agreed = requestOf(from).agreed;
+      const offers = agreed ? [agreed, ...forced.filter((o) => o.club !== agreed.club)] : forced;
+      if (screenExists("relegation-move")) return { screen: "relegation-move", params: { offers } };
+      // No relegation screen yet: the first club that came in (the move is forced).
+      return signTransfer(offers[0], true);
+    }
+  }
+  const interest = withRecall(windowInterest(from, "summer", { step3Promoted: leoUpdateOn("bugFixes") }), loanRecallOffer(from), from);
+  if (interest.leagues.length > 0) {
+    if (screenExists("season-transfer")) return { screen: "season-transfer" };
+    // No transfer window screen yet: the same as "Stay where you are" (handleStayPut).
+    return rollOverSeason(clearAfterWindow(from), userWon);
+  }
+  return rollOverSeason(from, userWon);
+}
+
+/**
+ * The transfer window's signing done (page.tsx handleSigningDone). For the
+ * WORLD area's transfer screens: call this once the player signs.
+ */
+export function signTransfer(offer: TransferOffer, wasRelegationMove = false): Step {
+  const career = need();
+  const moved = clearAfterWindow(acceptOffer(career, offer));
+  const crossDivision = !!offer.division && offer.division !== divisionOf(career);
+  moved.media = generateForCareer(moved, { kind: "transfer", from: career.player.club, to: offer.club, fee: offer.transferFee ?? offer.signingFee }, "transfer");
+  pushNews(leoUpdateOn("bugFixes")
+    ? signingNews(moved, offer.club, { division: offer.division ?? divisionOf(career), age: moved.player.age + 1 })
+    : signingNews(moved, offer.club));
+  setCareer(moved);
+  return rollOverSeason(moved, getSession().wonBallonDor, wasRelegationMove || crossDivision, true);
+}
+
+/** Stay where you are (page.tsx handleStayPut). For the WORLD area's transfer screens. */
+export function stayPut(): Step {
+  return rollOverSeason(clearAfterWindow(need()), getSession().wonBallonDor);
+}
+
+/** Into the next season (page.tsx rollOverSeason). */
+export function rollOverSeason(from: CareerState, userWon: boolean, forcedRelegationMove = false, justTransferred = false): Step {
+  const { career: rolled } = advanceSeason(from, userWon, justTransferred, { noSackAfterPromotion: leoUpdateOn("bugFixes") });
+  const next = endLoan(rolled);
+  next.lastSeasonRecords = from.seasonRecords ?? [];
+  next.seasonRecords = [];
+  if (forcedRelegationMove && next.ladderNews) next.ladderNews = { ...next.ladderNews, yourMove: null };
+  if (userWon) next.media = generateForCareer(next, { kind: "ballon-dor", won: true, total: next.ballonDorWins }, "bdor");
+  for (const a of (next.awards ?? []).filter((x) => x.season === from.season)) {
+    next.media = generateForCareer({ ...next, media: next.media }, { kind: "award", won: true, award: a.kind, detail: a.detail }, `award-${a.kind}`);
+  }
+  if (next.managerNews && next.manager) {
+    next.media = generateForCareer({ ...next, media: next.media }, { kind: "manager-out", name: from.manager?.name ?? "The manager", incoming: next.manager.name, reason: next.managerNews }, "gaffer");
+  }
+  if (next.lastSeasonJudgement) {
+    next.media = generateForCareer({ ...next, media: next.media }, { kind: "season-end", position: leaguePosition(from), headline: next.lastSeasonJudgement.headline, detail: next.lastSeasonJudgement.detail }, "review");
+  }
+  next.media = generateForRollover({ ...next, media: next.media });
+  setCareer(next);
+  settle();
+  setSession({ report: null, koShown: [], roundupShown: null });
+  if (next.lastSeasonAwardStats) return { screen: "career-season-awards" };
+  return continueAfterRollover(next);
+}
+
+/** page.tsx continueAfterRollover / handleSeasonAwardsContinue. */
+export function continueAfterRollover(next: CareerState = need()): Step {
+  if (next.contract.seasonsRemaining <= 0) return { screen: "career-contract-renewal" };
+  return HOME;
+}
+
+/** The last season is over (page.tsx handleRetire, without the farewell match). */
+export function retireNow(): Step {
+  const career = need();
+  const done = retire(career, getSession().wonBallonDor);
+  done.media = generateForCareer(done, { kind: "retirement", goals: done.careerStats.goals, apps: done.careerStats.appearances, trophies: done.trophies.length }, "retire");
+  setCareer(done);
+  settle();
+  // addToHall / syncHall (the Hall of Fame) and the farewell match: not on the phone yet.
+  return { screen: "career-placeholder", params: { what: "legacy" } };
+}
+
+// ── Breaking news (page.tsx pushNews / newsQueue) ──
+
+export function pushNews(...n: BreakingNews[]) {
+  if (n.length) setSession((s) => ({ news: [...s.news, ...n] }));
+}
+export function dismissNews() { setSession((s) => ({ news: s.news.slice(1) })); }
+
+/** Achievement names, for the post-match screen. */
+export function achievementCards(ids: string[]): { label: string; description: string }[] {
+  return ids.flatMap((id) => { const a = ACHIEVEMENTS.find((x) => x.id === id); return a ? [{ label: a.label, description: a.description }] : []; });
 }
