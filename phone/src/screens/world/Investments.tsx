@@ -12,9 +12,10 @@
  * Every action is the game's own (world/politics.ts → lib/star). Params:
  * { tab?, club?, section? } open it where page.tsx's investmentsEntry would.
  *
- * Different from the website: kit colours are picked from swatches (the
- * website's colour picker takes any colour); the lineup editor is a simple
- * tap-a-slot list (the website reuses its full LineupBuilder, with bench).
+ * Kit colours: swatches or any colour ("＋ Any", ui/ColourPicker.tsx), as the
+ * website's colour picker. The lineup editor is the website's LineupBuilder as
+ * tap-a-slot lists: the XI by formation, then the bench of nine; tap a place,
+ * then the man for it (a man already on the sheet swaps with the one there).
  */
 import { useMemo, useState } from "react";
 import { Text, View } from "react-native";
@@ -501,50 +502,94 @@ function LineupPreview({ career, club, squad, run, setFull }: { career: CareerSt
   );
 }
 
-/** Edit lineup — this save only (OwnedLineupEditor): formation, then tap a slot and pick his man. */
+/** LineupBuilder's bench: nine places. */
+const BENCH_SIZE = 9;
+/** LineupBuilder's auto bench: the best nine not in the XI. */
+function autoBench(pickable: Pickable[], xi: (string | null)[]): (string | null)[] {
+  const inXi = new Set(xi.filter(Boolean) as string[]);
+  const best = pickable.filter((p) => !inXi.has(p.id)).sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0)).slice(0, BENCH_SIZE).map((p) => p.id);
+  return Array.from({ length: BENCH_SIZE }, (_, i) => best[i] ?? null);
+}
+
+type Place = { kind: "xi" | "bench"; i: number };
+
+/** Edit lineup — this save only (OwnedLineupEditor → LineupBuilder): formation, the XI, the bench. */
 function LineupEditor({ club, squad, onClose, run }: { club: string; squad: LeagueSquad; onClose: () => void; run: (r: P.ActionResult) => void }) {
   const career = useCareer()!;
   const start = currentLineup(career, club, squad);
+  const known = new Set(start.pickable.map((p) => p.id));
   const [formationId, setFormationId] = useState(start.formation.id);
   const [xi, setXi] = useState<(string | null)[]>(start.xi);
-  const [slot, setSlot] = useState<number | null>(null);
+  const [bench, setBench] = useState<(string | null)[]>(() => {
+    // A saved bench (men still in the squad and not in the XI, nine at most), else the auto bench.
+    if (start.bench) {
+      const inXi = new Set(start.xi.filter(Boolean) as string[]);
+      const kept = start.bench.filter((id) => known.has(id) && !inXi.has(id)).slice(0, BENCH_SIZE);
+      return Array.from({ length: BENCH_SIZE }, (_, i) => kept[i] ?? null);
+    }
+    return autoBench(start.pickable, start.xi);
+  });
+  const [sel, setSel] = useState<Place | null>(null);
   const formation = formationOf(formationId);
   const byId = new Map(start.pickable.map((p) => [p.id, p]));
-  const place = (id: string) => {
-    if (slot === null) return;
-    setXi((cur) => { const next = [...cur]; const was = next.indexOf(id); if (was >= 0) next[was] = next[slot]; next[slot] = id; return next; });
-    setSlot(null);
+  const place = (id: string | null) => {
+    if (!sel) return;
+    const x = [...xi], b = [...bench];
+    const here = sel.kind === "xi" ? x[sel.i] : b[sel.i];
+    if (id) {
+      // Wherever he is now, the man in the chosen place goes there (a swap); a reserve just comes in.
+      const inX = x.indexOf(id), inB = b.indexOf(id);
+      if (inX >= 0) x[inX] = here ?? null;
+      else if (inB >= 0) b[inB] = here ?? null;
+    }
+    if (sel.kind === "xi") x[sel.i] = id; else b[sel.i] = id;
+    setXi(x); setBench(b); setSel(null);
   };
+  const repick = (f: string) => { const nx = autoPick(start.pickable, formationOf(f)); setXi(nx); setBench(autoBench(start.pickable, nx)); setSel(null); };
   const save = () => {
-    const lineup: SavedLineup = { formation: formationId, xi: formation.slots.map((_, i) => xi[i] ?? null), bench: start.bench };
+    const lineup: SavedLineup = { formation: formationId, xi: formation.slots.map((_, i) => xi[i] ?? null), bench: bench.filter((id): id is string => !!id) };
     run(P.setLineup(club, lineup));
     onClose();
   };
+  const where = (id: string) => (xi.includes(id) ? " (in the XI)" : bench.includes(id) ? " (on the bench)" : "");
+  const row = (key: string, label: string, id: string | null, on: boolean, onPress: () => void, top: boolean) => {
+    const p = id ? byId.get(id) : undefined;
+    return (
+      <Press key={key} onPress={onPress} style={{ flexDirection: "row", alignItems: "center", gap: 8, padding: 10, borderTopWidth: top ? 1 : 0, borderTopColor: C.line, backgroundColor: on ? "rgba(16,185,129,0.25)" : "transparent" }}>
+        <Text style={{ color: C.gold, fontWeight: "900", width: 40 }}>{label}</Text>
+        <Text numberOfLines={1} style={{ flex: 1, color: p ? C.text : C.dim, fontWeight: "800" }}>{p ? p.name : "— empty —"}</Text>
+        {p ? <Text style={{ color: C.dim }}>{p.position} {p.overall}</Text> : null}
+      </Press>
+    );
+  };
+  const tap = (pl: Place) => setSel(sel && sel.kind === pl.kind && sel.i === pl.i ? null : pl);
   return (
     <Frame title="Edit lineup — this save only" onBack={onClose} footer={<Btn label="Save" onPress={save} />}>
       <Small color={C.text}>Changes here decide this club's real matchday XI from now on — but only in THIS career. Every other save (and the global lineup template) is completely untouched.</Small>
       <Line>
-        <Choose value={formationId} onChange={(f) => { setFormationId(f); setXi(autoPick(start.pickable, formationOf(f))); }} options={FORMATIONS.map((f) => [f.id, f.name ?? f.id] as const)} />
-        <SmallBtn flex={false} label="Auto-pick" onPress={() => setXi(autoPick(start.pickable, formation))} />
+        <Choose value={formationId} onChange={(f) => { setFormationId(f); repick(f); }} options={FORMATIONS.map((f) => [f.id, f.name ?? f.id] as const)} />
+        <SmallBtn flex={false} label="Auto-pick" onPress={() => repick(formationId)} />
       </Line>
       <Card style={{ padding: 0 }}>
-        {formation.slots.map((s, i) => {
-          const p = xi[i] ? byId.get(xi[i]!) : undefined;
-          return (
-            <Press key={i} onPress={() => setSlot(slot === i ? null : i)} style={{ flexDirection: "row", alignItems: "center", gap: 8, padding: 10, borderTopWidth: i ? 1 : 0, borderTopColor: C.line, backgroundColor: slot === i ? "rgba(16,185,129,0.25)" : "transparent" }}>
-              <Text style={{ color: C.gold, fontWeight: "900", width: 40 }}>{s.label ?? s.role}</Text>
-              <Text numberOfLines={1} style={{ flex: 1, color: C.text, fontWeight: "800" }}>{p ? p.name : "— empty —"}</Text>
-              {p ? <Text style={{ color: C.dim }}>{p.position} {p.overall}</Text> : null}
-            </Press>
-          );
-        })}
+        {formation.slots.map((s, i) => row(`x${i}`, s.label ?? s.role, xi[i] ?? null, sel?.kind === "xi" && sel.i === i, () => tap({ kind: "xi", i }), i > 0))}
       </Card>
-      {slot !== null && (
+      <Text style={{ color: C.dim, fontSize: 10, fontWeight: "900", letterSpacing: 1.5 }}>BENCH · {bench.filter(Boolean).length}/{BENCH_SIZE}</Text>
+      <Card style={{ padding: 0 }}>
+        {bench.map((id, i) => row(`b${i}`, `S${i + 1}`, id, sel?.kind === "bench" && sel.i === i, () => tap({ kind: "bench", i }), i > 0))}
+      </Card>
+      {sel !== null && (
         <Card style={{ padding: 0 }}>
-          <Text style={{ color: C.dim, fontSize: 10, fontWeight: "900", letterSpacing: 1.5, padding: 10 }}>PICK FOR {formation.slots[slot].role}</Text>
+          <Text style={{ color: C.dim, fontSize: 10, fontWeight: "900", letterSpacing: 1.5, padding: 10 }}>
+            PICK FOR {sel.kind === "xi" ? formation.slots[sel.i].role : `THE BENCH (S${sel.i + 1})`}
+          </Text>
+          {sel.kind === "bench" && bench[sel.i] && (
+            <Press onPress={() => place(null)} style={{ padding: 10, borderTopWidth: 1, borderTopColor: C.line }}>
+              <Text style={{ color: C.red, fontWeight: "800" }}>Take him off the bench</Text>
+            </Press>
+          )}
           {[...start.pickable].sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0)).map((p) => (
             <Press key={p.id} onPress={() => place(p.id)} style={{ flexDirection: "row", padding: 10, borderTopWidth: 1, borderTopColor: C.line }}>
-              <Text style={{ flex: 1, color: xi.includes(p.id) ? C.dim : C.text, fontWeight: "700" }}>{p.name}{xi.includes(p.id) ? " (in the XI)" : ""}</Text>
+              <Text style={{ flex: 1, color: where(p.id) ? C.dim : C.text, fontWeight: "700" }}>{p.name}{where(p.id)}</Text>
               <Text style={{ color: C.dim }}>{p.position} {p.overall}</Text>
             </Press>
           ))}

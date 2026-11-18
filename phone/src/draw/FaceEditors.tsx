@@ -24,8 +24,9 @@
  * drawn, so the photo does not show in the preview either). The drawing test
  * screen (art-test) opens them regardless.
  *
- * Different from the website: colours are picked from swatches (the website's
- * colour picker takes any colour); the squad player is picked with ‹ ›.
+ * Colours: quick swatches, or any colour with "＋ Any" (hue and shade bars,
+ * ui/ColourPicker.tsx), as the website's colour picker. Different from the
+ * website: the squad player is picked with ‹ ›.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PanResponder, ScrollView, Text, View, type LayoutChangeEvent } from "react-native";
@@ -45,6 +46,7 @@ import { C } from "../ui/theme";
 import { Drawn } from "./useDrawing";
 import { loadPicture } from "./PlayerFigure";
 import { faceRef, loadedFace, type FacePicture } from "./offscreen";
+import { ColourChoice } from "../ui/ColourPicker";
 
 const SIZE = 260;
 const FIGURE_R = 72;
@@ -153,14 +155,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 }
 const SWATCHES = ["#c68642", "#8d5524", "#e0ac69", "#f1c27d", "#ffffff", "#000000", "#111827", "#1f2937", "#dc2626", "#16a34a", "#2563eb", "#facc15", "#7c3aed", "#ec4899"];
 function Swatches({ value, onChange, disabled }: { value: string; onChange: (c: string) => void; disabled?: boolean }) {
-  const list = SWATCHES.includes(value.toLowerCase()) ? SWATCHES : [value, ...SWATCHES];
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ opacity: disabled ? 0.4 : 1 }} contentContainerStyle={{ gap: 6, paddingVertical: 4 }}>
-      {list.map((c) => (
-        <Press key={c} disabled={disabled} onPress={() => onChange(c)} style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: c, borderWidth: c.toLowerCase() === value.toLowerCase() ? 3 : 1, borderColor: c.toLowerCase() === value.toLowerCase() ? C.gold : "rgba(255,255,255,0.3)" }}>{null}</Press>
-      ))}
-    </ScrollView>
-  );
+  return <ColourChoice value={value} onChange={onChange} swatches={SWATCHES} disabled={disabled} />;
 }
 function Panel({ children }: { children: React.ReactNode }) {
   return <View style={{ backgroundColor: C.panel, borderRadius: 14, borderWidth: 1, borderColor: C.line, padding: 12, gap: 12 }}>{children}</View>;

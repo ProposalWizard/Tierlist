@@ -2,7 +2,7 @@
  * Small parts for the Ownership, Investments, Rule Book and vote screens: a
  * money box (typed with thousands commas, like the website's text+numeric
  * inputs), a pick-one list (the website's <select>), a red message line, a
- * colour row (the website's colour inputs, as swatches) and the kit shirt.
+ * colour row (the website's colour inputs: swatches and any colour) and the kit shirt.
  */
 import { useState, type ReactNode } from "react";
 import { ScrollView, Text, TextInput, View } from "react-native";
@@ -10,6 +10,7 @@ import { Canvas, Group, Path } from "@shopify/react-native-skia";
 import type { Kit } from "@/lib/star/kits";
 import { Press } from "../../ui/Press";
 import { C } from "../../ui/theme";
+import { ColourChoice } from "../../ui/ColourPicker";
 
 /** A money/number box: shows 1,000,000 and keeps only the digits. */
 export function NumBox({ value, onChange, placeholder, prefix = "★" }: { value: number | null; onChange: (n: number | null) => void; placeholder?: string; prefix?: string }) {
@@ -108,22 +109,15 @@ export function KitSwatch({ kit, size = 44 }: { kit: Kit; size?: number }) {
   );
 }
 
-/** The colours offered for a kit (the website lets you type any colour). */
+/** The quick colours offered for a kit (any other through "＋ Any"). */
 export const KIT_COLOURS = [
   "#ffffff", "#111827", "#dc2626", "#b91c1c", "#7f1d1d", "#f97316", "#facc15", "#eab308",
   "#16a34a", "#065f46", "#0ea5e9", "#1d4ed8", "#1e3a8a", "#6cabdd", "#7c3aed", "#6b0f2b",
   "#ec4899", "#9ca3af", "#a16207", "#0f766e",
 ];
-/** One row of colour swatches; the chosen one is ringed. */
+/** The kit colours: the swatches, and "＋ Any" for any colour (ui/ColourPicker.tsx), as the website's colour input. */
 export function ColourRow({ value, onChange }: { value: string; onChange: (c: string) => void }) {
-  const list = KIT_COLOURS.includes(value.toLowerCase()) ? KIT_COLOURS : [value, ...KIT_COLOURS];
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingVertical: 2 }}>
-      {list.map((c) => (
-        <Press key={c} onPress={() => onChange(c)} style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: c, borderWidth: c.toLowerCase() === value.toLowerCase() ? 3 : 1, borderColor: c.toLowerCase() === value.toLowerCase() ? C.gold : "rgba(255,255,255,0.3)" }}>{null}</Press>
-      ))}
-    </ScrollView>
-  );
+  return <ColourChoice value={value} onChange={onChange} swatches={KIT_COLOURS} />;
 }
 
 export const pctText = (p: number) => `${p.toFixed(p < 1 ? 3 : 1)}%`;
