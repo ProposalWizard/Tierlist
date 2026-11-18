@@ -11,7 +11,9 @@
  * Face fit, as on the website: his photo (career.player.portrait, else the
  * website's default fake face) is loaded and fitted to the body by
  * lib/star/faceFit.ts `fitFace`. Until it has loaded (or if it cannot be
- * loaded, e.g. offline) he has the plain drawn head, as on the website.
+ * loaded) he has the plain drawn head, as on the website. Real photos and the
+ * default faces are packed inside the app (data/packed.ts), so they load
+ * with no signal.
  *
  * Props (PlayerAvatar's)
  *   career      the career (club, kit, skin tone, squad number, photo)
@@ -37,21 +39,26 @@ import { fitFace, type FittedHead } from "@/lib/star/faceFit";
 import { Drawn, phoneFontFor } from "./useDrawing";
 import { OffscreenCanvas2D, faceRef, loadedFace, withCanvasDocument, absoluteUrl, type FacePicture } from "./offscreen";
 import { ClubBadge } from "./ClubBadge";
+import { packedPicture } from "../data/packed";
 import { AVATAR_STYLE, paintPlayerFigure, crestPlace } from "./figurePaint";
 
 export { AVATAR_STYLE };
 // ── Photos: loaded once per address, and fitted once ────────────────────────
 
 const photos = new Map<string, Promise<SkImage | null>>();
-/** Load a picture (https address, a site path, or a data: URL) as a Skia image. */
+/** Load a picture (https address, a site path, or a data: URL) as a Skia image; its packed copy when the app has one. */
 export function loadPicture(url: string): Promise<SkImage | null> {
   let p = photos.get(url);
   if (!p) {
     p = (async () => {
       try {
+        // A picture packed inside the app (player photos, badges, flags, the
+        // default faces: data/packed.ts) opens with no signal; anything else
+        // comes from its address, as before.
+        const packed = packedPicture(url);
         const data = url.startsWith("data:")
           ? Skia.Data.fromBase64(url.slice(url.indexOf(",") + 1))
-          : await Skia.Data.fromURI(absoluteUrl(url));
+          : await Skia.Data.fromURI(packed ?? absoluteUrl(url));
         return Skia.Image.MakeImageFromEncoded(data);
       } catch { return null; }
     })();

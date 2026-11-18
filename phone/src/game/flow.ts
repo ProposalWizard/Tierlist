@@ -20,6 +20,7 @@
 import type { CareerState, MatchStats, Fixture, StarPlayer, Skills } from "@/lib/star/types";
 import { getCareer, setCareer } from "./store";
 import { getSession, setSession, type MatchReport } from "./session";
+import { afterNewCareer, afterSigning, afterTransfer, afterLoad, keepSquadsInStep, resetSquadEffects } from "./squads";
 
 import { makeIdentity, attachClub, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { startTrial, trialComplete, trialScore, recordStage, trialStagesFor, type TrialStage } from "@/lib/star/trial";
@@ -103,8 +104,10 @@ export function beginCareer(player: StarPlayer, division: CareerDivision = "prem
   const created = { ...makeIdentity(player, division), trial: { ...(seed === undefined ? startTrial() : startTrial(seed)) } };
   setCareer(created);
   setSession({ report: null, news: [], potmWin: null, wonBallonDor: false, contractReason: null, koShown: [], roundupShown: null, training: null });
-  // Squad, free-agent and world fetches (fetchFreeAgents, fetchLeagueSquads,
-  // fetchSharedLineups, refreshXpConfig) need the network layer: not on the phone yet.
+  // The team sheets, the XP Book, free agents and the wider world (page.tsx
+  // handleProfileComplete), answered from the packed files (game/squads.ts).
+  resetSquadEffects();
+  void afterNewCareer([]);
   return { screen: "career-trial" };
 }
 
@@ -209,15 +212,19 @@ export function signTrialOffer(offer: ScoutOffer): Step {
   // page.tsx's own effect: a career with a club and fixtures is brought into
   // step with the international world once.
   setCareer(withDeal);
+  // The real dressing room, now that there is one (page.tsx: fetchRealSquad + fetchLeagueSquads).
+  void afterSigning(homeClub, clubs);
   settle();
-  // fetchRealSquad / fetchLeagueSquads (the real dressing room) need the network layer: not on the phone yet.
   return { screen: "career-signed" };
 }
 
 /** Where CONTINUE on the title screen lands: Home, or the step a career with no club is at. */
+let loadedOnce = false;
 export function resumeStep(): Step {
   const c = getCareer();
   if (!c) return { screen: "career-new" };
+  // page.tsx's save load: an existing career gets the real dressing rooms (game/squads.ts).
+  if (!loadedOnce) { loadedOnce = true; void afterLoad(c); void keepSquadsInStep(c); }
   if (!c.player.club) return c.trial ? afterTrial() : { screen: "career-placeholder", params: { what: "free-agent" } };
   return HOME;
 }
@@ -243,6 +250,7 @@ export function youthOrFreeAgent(): Step {
     agreedTerms: undefined,
     placement: startYouthSpell(taker.club, taker.division, "trial"),
   });
+  void afterSigning(taker.club, taker.clubs);
   settle();
   return { screen: "career-placeholder", params: { what: "youth" } };
 }
@@ -260,6 +268,8 @@ export function settle(): string[] {
   const ids = centralCheck();
   const c = getCareer();
   if (c) { const synced = withIntl(c); if (synced !== c) setCareer(synced); }
+  // page.tsx's squad effects: missing division squads, your club's full roster, free agents.
+  void keepSquadsInStep();
   return ids;
 }
 
@@ -673,6 +683,8 @@ export function openTransferWindowOrRoll(from: CareerState, userWon: boolean): S
 export function signTransfer(offer: TransferOffer, wasRelegationMove = false): Step {
   const career = need();
   const moved = clearAfterWindow(acceptOffer(career, offer));
+  // New club, new team-mates: the real squad lands a moment later (page.tsx handleSigningDone).
+  void afterTransfer(offer.club);
   const crossDivision = !!offer.division && offer.division !== divisionOf(career);
   moved.media = generateForCareer(moved, { kind: "transfer", from: career.player.club, to: offer.club, fee: offer.transferFee ?? offer.signingFee }, "transfer");
   pushNews(leoUpdateOn("bugFixes")

@@ -2,6 +2,10 @@
 // so a fix to the rules reaches the website, the packed app and this app alike.
 const path = require("path");
 const { getDefaultConfig } = require("expo/metro-config");
+// Every bundle (expo start, and the release build's bundling step) first puts
+// the packed app's squads, settings and pictures in place (mobile/packed/ →
+// phone/src/data/generated + phone/assets/packed; scripts/data-pack.js).
+require("./scripts/data-pack").ensurePacked();
 const root = path.resolve(__dirname, "..");
 const config = getDefaultConfig(__dirname);
 config.watchFolders = [path.join(root, "lib"), path.join(root, "data"), path.join(root, "node_modules")];
