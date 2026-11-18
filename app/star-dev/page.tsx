@@ -5463,7 +5463,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     else if (b === "phone") point("nav-phone", "");
     else if (b === "shop") { setActiveNav("home"); setPhase(shopLookNow === "new" ? "shop-kib" : "dashboard"); if (shopLookNow !== "new") setHomePage(2); }
     // "Got it", then the finger on the words that lead to your card.
-    else if (b === "stats") point("tab-0", "");
+    // Swipe right to your card, the main way; a tap on the words works too
+    // (Mikey's phone test, 17 Nov 2026).
+    else if (b === "stats") setHelpTour([{ target: "tab-0", text: "", press: true, swipe: "right" }]);
     // The offer is in your messages: the phone, then Messages, then the offer.
     else if (b === "sponsor") {
       handleNavigate("media");

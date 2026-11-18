@@ -219,8 +219,10 @@ export default function PointerTour({ steps, onDone, skippable = false, forced =
     ? { left: handLeft, top: hole.y - HAND_H - 2, ["--hy" as string]: "8px" }
     : { left: handLeft, top: hole.y + hole.h + 2, ["--hy" as string]: "-8px" };
 
+  // A swipe step lets the page under the dim take the swipe.
+  const swipe = step.swipe;
   const panel = (key: string, s: React.CSSProperties) => (
-    <div key={key} className="fixed" style={{ background: DIM, pointerEvents: "auto", ...s }} onClick={press ? undefined : next} />
+    <div key={key} className="fixed" style={{ background: DIM, pointerEvents: swipe ? "none" : "auto", ...s }} onClick={press ? undefined : next} />
   );
 
   return createPortal(
@@ -239,7 +241,20 @@ export default function PointerTour({ steps, onDone, skippable = false, forced =
           style={{ left: hole.x, top: hole.y, width: hole.w, height: hole.h, borderRadius: 4, pointerEvents: press ? "none" : "auto" }}
           onClick={press ? undefined : next}
         />
-        {place !== "inside" && <div className="kit-hand-bob fixed pointer-events-none" style={handStyle}><Hand down={above} /></div>}
+        {place !== "inside" && !swipe && <div className="kit-hand-bob fixed pointer-events-none" style={handStyle}><Hand down={above} /></div>}
+        {/* The swipe: a hand drawing a stroke across the middle of the page. */}
+        {swipe && (
+          <>
+            <style>{`@keyframes kit-hand-swipe { 0% { transform: translateX(var(--sx0)); opacity: 0 } 15% { opacity: 1 } 75% { opacity: 1 } 100% { transform: translateX(var(--sx1)); opacity: 0 } }
+              .kit-hand-swipe { animation: kit-hand-swipe 1300ms ease-in-out infinite; }
+              @media (prefers-reduced-motion: reduce) { .kit-hand-swipe { animation: none; opacity: 1 } }`}</style>
+            <div data-tour-swipe={swipe} className="kit-hand-swipe fixed pointer-events-none" style={{ left: vp.w / 2 - 17, top: vp.h * 0.42,
+              ["--sx0" as string]: swipe === "right" ? `${-vp.w * 0.28}px` : `${vp.w * 0.28}px`,
+              ["--sx1" as string]: swipe === "right" ? `${vp.w * 0.28}px` : `${-vp.w * 0.28}px` }}>
+              <Hand down={false} />
+            </div>
+          </>
+        )}
       </>)}
       {/* A press step with no words is the finger and the glow alone (Mikey:
           "we have enough with the finger being pointed there"). */}
