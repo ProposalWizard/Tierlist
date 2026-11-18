@@ -80,6 +80,7 @@ import { fakeFaceFor } from "@/lib/star/fakeFaces";
 import { penaltyRunupOf, freeKickRunupOf, takerRunupFor, yourRunupFor, standBackFor, planRunup, runupPositionAt, RUNUP_MOTION, LEAF_RUNUP, type RunupId, type StyledRunup } from "@/lib/star/runupStyles";
 import { airborneOn, airborneMotion, applyAirborne, type StrikeContact } from "@/lib/star/airborneChance";
 import { isAirKind, airZOf } from "@/lib/star/airDrawings";
+import { crossDrawT } from "@/lib/star/headerBeat";
 import { airTapOn, airTapAim, airTapStrike, AIR_TAP_OPEN_S, AIR_TAP_OPEN_NO_LEAD_S, type AirKind } from "@/lib/star/airTap";
 import { aerialMovesOn, forcedAerialMove, pickAerialMove, aerialStrikeTint, AERIAL_SPECS, CONTACT_SHOW_S, type AerialMove } from "@/lib/star/aerialMoves";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
@@ -117,6 +118,8 @@ import { ballMotionAt, sweepPeriod, liftOf, contactLimitS, lateAirContact, TOO_S
 export const FRAME_DT = 1 / 60;
 /** One tick of the driver in milliseconds (the website's setTimeouts are counted in these). */
 export const TICK_MS = 1000 / 60;
+/** A setTimeout of `ms` at 60 frames a second: how many frames later it runs. */
+export const ticksFor = (ms: number) => Math.max(1, Math.ceil((ms * 60) / 1000 - 1e-9));
 
 // ── Numbers copied from CanvasMatch.tsx ──────────────────────────────────────
 const DEFAULT_MATCH_DURATION = 90;
@@ -314,6 +317,8 @@ export class MatchDriver {
   /** Driver time in ms (ticks x 1000/60): the website's setTimeouts and performance.now(). */
   now = 0;
   private timers: Timer[] = [];
+  /** Frames since kick-off. */
+  tickNo = 0;
   private gen = 0;
 
   constructor(setup: MatchSetup, opts: { hw: number }) {
@@ -354,7 +359,8 @@ export class MatchDriver {
   // ════════════════════════════════════════════════════════════════════════
 
   private bump() { this.uiVersion++; }
-  private later(ms: number, fn: () => void) { this.timers.push({ at: this.now + ms, gen: this.gen, fn }); }
+  /** A website setTimeout(fn, ms): fires on the tick `ticksFor(ms)` after this one. */
+  private later(ms: number, fn: () => void) { this.timers.push({ at: this.tickNo + ticksFor(ms), gen: this.gen, fn }); }
   private mechOpen(id: Mechanic) { return mechanicOpen(this.setup.career, id); }
   private onPitch(squad: SquadPlayer[]): SquadPlayer[] {
     return onPitchToday(fillMissingFromFullRoster(squad, this.startingXI, this.setup.career ?? null), this.startingXI);
@@ -1159,7 +1165,7 @@ export class MatchDriver {
     if (!L) return;
     const sc = this.sc;
     L.ents.forEach((e) => { const p = L.lead.posAt(e.key, L.t); if (p) e.set(p); });
-    const b = L.lead.ballAt(L.t);
+    const b = L.lead.ballAt(sc.kind === "header" ? crossDrawT(L.t, L.lead.durS) : L.t);
     sc.ball.x = b.x; sc.ball.y = b.y; L.z = b.z;
   }
   /** The lead-in's camera this frame (picture only). */
@@ -1561,16 +1567,17 @@ export class MatchDriver {
   contactSpark: { cx: number; cy: number } | null = null;
   private openContact() {
     this.phase = "contact";
-    this.contactT0 = this.now;
+    this.contactT0 = this.tickNo;
     this.contactLocked = false;
     this.contactTimedOut = false;
     this.contactSpark = null;
+    this.contactFrozen = null;
     this.bump();
   }
   /** The strike screen's ball right now, as fractions of its area (ContactBall's mover). */
   contactBallNow(): { x: number; y: number } {
     if (this.contactLocked && this.contactFrozen) return this.contactFrozen;
-    return ballMotionAt(this.strikeMotion(), (this.now - this.contactT0) / 1000, sweepPeriod(this.setup.skills.technique));
+    return ballMotionAt(this.strikeMotion(), (this.tickNo - this.contactT0) / 60, sweepPeriod(this.setup.skills.technique));
   }
   private contactFrozen: { x: number; y: number } | null = null;
   /** The countdown in seconds (null = none), and how much is left (0..1). */
@@ -1578,16 +1585,16 @@ export class MatchDriver {
     const limitS = contactLimitS(this.strikeMotion(), this.contactTimerS, this.airAerialNow());
     if (!limitS) return null;
     // The clock starts on the second frame the screen is drawn (ContactBall `started`).
-    const t = Math.max(0, (this.now - this.contactT0) / 1000 - 2 / 60);
+    const t = Math.max(0, (this.tickNo - this.contactT0) / 60 - 2 / 60);
     return { limitS, left: Math.max(0, 1 - t / limitS) };
   }
   /** A touch on the strike screen's ball: (cx, cy) on it, +right/+down, in ball radii. */
   tapContact(cx: number, cy: number) {
     if (this.phase !== "contact" || this.contactLocked) return;
-    this.contactLocked = true;
     const motion = this.strikeMotion();
     const at = this.contactBallNow();
     this.contactFrozen = at;
+    this.contactLocked = true;
     this.contactSpark = { cx, cy };
     const air = motion === "float" || motion === "bounce";
     const lift = liftOf(motion, at.y);
@@ -1750,13 +1757,18 @@ export class MatchDriver {
   // ════════════════════════════════════════════════════════════════════════
 
   tick() {
-    this.now += TICK_MS;
+    this.tickNo += 1;
+    this.now = this.tickNo * TICK_MS;
     // Timers due (the website's setTimeouts): a timer from a superseded scene is dropped (sceneGenRef).
+    // A setTimeout runs BETWEEN two frames, so a tick whose timer moved the match on to
+    // another phase does nothing else: the next frame is the first of the new phase.
     if (this.timers.length) {
-      const due = this.timers.filter((t) => t.at <= this.now);
+      const due = this.timers.filter((t) => t.at <= this.tickNo);
       if (due.length) {
-        this.timers = this.timers.filter((t) => t.at > this.now);
+        const before = this.phase;
+        this.timers = this.timers.filter((t) => t.at > this.tickNo);
         for (const t of due) if (t.gen === this.gen) t.fn();
+        if (this.phase !== before) return;
       }
     }
     if (this.phase === "feed") { this.feedTick(); return; }
