@@ -1,0 +1,21 @@
+{
+ "player": "Alisson Becker",
+ "season": "2025/26",
+ "short": "Alisson",
+ "from": "Liverpool",
+ "to": "",
+ "toId": 0,
+ "positions": [
+  11,
+  0
+ ],
+ "posWord": "goalkeeper",
+ "maxAge": 23,
+ "seasons": [
+  "2025/26",
+  "2026/27"
+ ],
+ "series": "WHO REPLACES HIM?",
+ "mapN": 90,
+ "hookSay": "x"
+}
