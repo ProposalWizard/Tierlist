@@ -29,6 +29,10 @@ import { FRAME_TOP_FOR_GOAL } from "@/lib/star/goalFrame";
 import { touchingFrame } from "@/lib/star/relationships";
 import { loadVisionMoments, visionLevelPicturesAsync, visionAsk, visionScenario, judgeTap } from "@/lib/star/visionRound";
 import type { VisionLevel } from "@/lib/star/trainingLevelData";
+import { SCENARIO_KINDS } from "@/lib/star/canvasEngine";
+import { withoutSwitchedOff } from "@/lib/star/switchedOffKinds";
+import { nextHighlight, newSimMemory, buildSimScenario, pictureKey } from "@/lib/star/gallerySim";
+import { sanitizePlaySettings } from "@/lib/star/playArea";
 import { farewellSides, farewellCareer, farewellFixture, farewellDuties, farewellSeed, FAREWELL_OFF_AT } from "@/lib/star/farewell";
 
 (globalThis as Record<string, unknown>).window ??= {};
@@ -200,6 +204,19 @@ for (const kind of ["power", "technique", "freeKick", "aerial"] as StrikeKind[])
   else if (d.hookedAt !== FAREWELL_OFF_AT && d.hookedAt !== null) fail(`farewell: off at ${d.hookedAt}', not ${FAREWELL_OFF_AT}'`);
   else if (Math.round(d.liveEnergyAt(80)) !== Math.round(e0)) fail(`farewell: energy moved ${e0} → ${d.liveEnergyAt(80)}`);
   else console.log(`OK    farewell match                        ${d.userScore}-${d.oppScore}, ${r.chances} chances, off at ${d.hookedAt ?? "-"}', goals ${s.goals}`);
+}
+
+// ── Kickabout (screens/MatchKickabout.tsx): random highlights one after another, at the Play Area's dials ──
+{
+  const st = { rng: mulberry32(7), mem: newSimMemory(), last: undefined as string | undefined };
+  const kinds = withoutSwitchedOff(SCENARIO_KINDS);
+  const ps = sanitizePlaySettings(undefined);
+  const seen: string[] = [];
+  const got = playFeature("kickabout (a session: 6 highlights)", {
+    openOn: () => { const spec = nextHighlight(kinds, st.rng, st.mem, st.last); const sc = buildSimScenario(spec ?? ({ kind: "one_on_one", seed: 1 } as never)); st.last = pictureKey(sc); seen.push(sc.kind); return sc; },
+    keeperStrength: () => ps.keeperStrength,
+  }, 6, { power: ps.power, technique: ps.technique });
+  if (got.length >= 6) console.log(`OK    kickabout                             kinds ${[...new Set(seen)].join(", ")}; goals ${got.filter((r) => r.outcome === "goal").length}/${got.length}`);
 }
 
 // ── Training's Vision (screens/MatchVision.tsx VisionDrill): the level's real pictures build and play on the match ──

@@ -22,6 +22,9 @@ import { EngineFeature } from "./MatchFeature";
 import { usePitchHeight } from "./MatchStages";
 import { C } from "../ui/theme";
 
+/** CanvasMatch's sandbox session: six chances, then the summary (its PostMatch "Training Session"). */
+const SESSION = 6;
+
 export function Kickabout({ height: given, onReplays }: { height?: number; onReplays?: () => void }) {
   const fit = usePitchHeight();
   const height = given ?? Math.round(fit * 0.92);
@@ -37,9 +40,17 @@ export function Kickabout({ height: given, onReplays }: { height?: number; onRep
     return sc;
   }, [kinds]);
   const [score, setScore] = useState({ goals: 0, chances: 0 });
+  // CanvasMatch with no fixture (sandbox mode): after SESSION chances the session's summary, then Continue starts the next one.
+  const [session, setSession] = useState(0);
+  const [summary, setSummary] = useState<{ goals: number } | null>(null);
+  const inSession = useRef({ goals: 0, chances: 0 });
   const onResolved = useCallback((r: ChanceResolved) => {
     setScore((x) => ({ goals: x.goals + (r.outcome === "goal" ? 1 : 0), chances: x.chances + 1 }));
+    const s = inSession.current;
+    s.goals += r.outcome === "goal" ? 1 : 0; s.chances += 1;
+    if (s.chances >= SESSION) setTimeout(() => setSummary({ goals: s.goals }), 1800);
   }, []);
+  const next = () => { inSession.current = { goals: 0, chances: 0 }; setSummary(null); setSession((n) => n + 1); };
   return (
     <View style={{ flex: 1 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 12, paddingVertical: 6 }}>
@@ -50,9 +61,21 @@ export function Kickabout({ height: given, onReplays }: { height?: number; onRep
         ) : <View />}
         <Text style={{ color: "#d1fae5", fontSize: 11, fontWeight: "900", backgroundColor: "rgba(16,185,129,0.25)", paddingHorizontal: 10, paddingVertical: 3, borderRadius: 99, overflow: "hidden" }}>⚽ {score.goals} / {score.chances}</Text>
       </View>
-      <EngineFeature height={height} openOn={openOn} onChanceResolved={onResolved}
-        skills={{ power: s.power, technique: s.technique }} keeperStrength={s.keeperStrength}
-        penaltyRunup={s.penaltyRunup} freeKickRunup={s.freeKickRunup} seed={(Date.now() & 0xffff) + 1} />
+      <View style={{ height }}>
+        <EngineFeature key={session} height={height} openOn={openOn} onChanceResolved={onResolved}
+          skills={{ power: s.power, technique: s.technique }} keeperStrength={s.keeperStrength}
+          penaltyRunup={s.penaltyRunup} freeKickRunup={s.freeKickRunup} seed={(Date.now() & 0xffff) + 1 + session} />
+        {summary && (
+          <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(3,7,18,0.92)", alignItems: "center", justifyContent: "center", gap: 10 }}>
+            <Text style={{ color: C.gold, fontSize: 12, fontWeight: "900", letterSpacing: 2 }}>TRAINING SESSION</Text>
+            <Text style={{ color: C.text, fontSize: 40, fontWeight: "900" }}>{summary.goals} / {SESSION}</Text>
+            <Text style={{ color: C.dim, fontWeight: "700" }}>goals from {SESSION} chances</Text>
+            <Pressable onPress={next} style={{ marginTop: 8, backgroundColor: C.green, borderRadius: 99, paddingHorizontal: 26, paddingVertical: 12 }}>
+              <Text style={{ color: "#05261a", fontWeight: "900" }}>Continue</Text>
+            </Pressable>
+          </View>
+        )}
+      </View>
     </View>
   );
 }
