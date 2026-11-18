@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { NavProvider, useNav } from "./src/nav";
 import { SCREENS } from "./src/areas/registry";
 import { C } from "./src/ui/theme";
+import { ToonYouSync } from "./src/three/youSync";
 
 function Router() {
   const { stack, back } = useNav();
@@ -24,6 +25,7 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <StatusBar style="light" />
+        <ToonYouSync />
         <NavProvider initial={{ name: "title" }}><Router /></NavProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -7,7 +7,7 @@
  * "End of Season" waits here: you end it yourself.
  */
 import { useEffect } from "react";
-import { ScrollView, View, Text } from "react-native";
+import { ScrollView, View, Text, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import { nextFixtureFor, byFixtureDate, fixtureLabel } from "@/lib/star/competitions";
@@ -26,6 +26,7 @@ import { SCREENS } from "../areas/registry";
 import { Press } from "../ui/Press";
 import { C, R } from "../ui/theme";
 import { ClubCrest, Fill, money, ordinal } from "./career/kit";
+import { HomePlayer } from "../three/HomePlayer";
 
 export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit: () => void; onLeague?: () => void }) {
   const nav = useNav();
@@ -36,6 +37,8 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
   const st = starStatus(career);
   const ps = career.seasonStats;
   const intlDue = periodDue(career) !== null;
+  const { width: screenW } = useWindowDimensions();
+  const heroW = Math.round(Math.min(287, screenW * 0.66));
   // page.tsx's central check: anything earned away from a match unlocks on Home.
   useEffect(() => { flow.settle(); }, [career]);
 
@@ -75,6 +78,11 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
             <Text style={{ color: C.text, marginTop: 4 }}>{session.potmWin.goals} goals and {session.potmWin.assists} assists. Tap to close.</Text>
           </Press>
         )}
+
+        {/* You, the star of the screen (HomeHub HeroNew): your 3D player, drag to turn him. */}
+        <View style={{ alignItems: "center", paddingTop: 2 }}>
+          <HomePlayer career={career} where="home" width={heroW} height={Math.round(heroW * 1.18)} />
+        </View>
 
         <NextMatch career={career} next={next} />
         {over && <Big label="End of Season 🏆" onPress={() => nav.go(flow.endSeason().screen)} gold />}

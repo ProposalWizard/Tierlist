@@ -21,12 +21,16 @@ import { keepGoalClip } from "../match/goalClip/store";
 import { getCareer } from "../game/store";
 import { C } from "../ui/theme";
 
-export function Match({ career, fixture, onFullTime, setupFor, recordGoals = true }: {
+export function Match({ career, fixture, onFullTime, setupFor, recordGoals = true, watch, frozen = false }: {
   career: CareerState; fixture: Fixture; onFullTime: (d: MatchDriver) => void;
   /** A match page.tsx mounts with its own props (the farewell): its setup instead of matchSetupFor. */
   setupFor?: () => MatchSetup;
   /** Goal videos (page.tsx hands CanvasMatch onGoalClip on the career match only). */
   recordGoals?: boolean;
+  /** Told of every change the screen sees (the farewell watches for the minute you come off). */
+  watch?: (d: MatchDriver) => void;
+  /** Hold the pitch still (something full-screen plays over it: the standing ovation). */
+  frozen?: boolean;
 }) {
   // The match's career: your own, or for an international the national-team swap (setup.ts).
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -81,7 +85,8 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: C.bg }}>
       <HudSlot />
-      <MatchPitch make={make} kits={kits} onDone={onFullTime} overlay={overlay} onUi={setHud} />
+      <MatchPitch make={make} kits={kits} onDone={onFullTime} overlay={overlay} frozen={frozen}
+        onUi={watch ? (d) => { setHud(d); watch(d); } : setHud} />
     </SafeAreaView>
   );
 }

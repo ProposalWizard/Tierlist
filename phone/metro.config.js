@@ -15,4 +15,25 @@ config.resolver.extraNodeModules = {
   react: path.join(__dirname, "node_modules/react"),
   "react-native": path.join(__dirname, "node_modules/react-native"),
 };
+// 3D (phone/src/three): the website's 3D files (copies in assets/3d) are bundled as files,
+// and two browser-only pieces of the 3D code are swapped for the phone's own, for every
+// importer (lib/star included): three's GLTFLoader (files from the app, pictures through
+// Skia) and lib/star/three3d/meshopt.ts (the same files, a plain-JavaScript decoder:
+// the phone has no WebAssembly). Everything else in three and lib/star runs as is.
+config.resolver.assetExts = [...config.resolver.assetExts, "glb"];
+const PHONE_GLTF = path.join(__dirname, "src/three/GLTFLoader.ts");
+const PHONE_MESHOPT = path.join(__dirname, "src/three/meshopt.ts");
+const LIB_MESHOPT = path.join(root, "lib/star/three3d/meshopt");
+const upstream = config.resolver.resolveRequest;
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  const from = context.originModulePath || "";
+  if (moduleName === "three/examples/jsm/loaders/GLTFLoader.js" && from !== PHONE_GLTF) {
+    return { type: "sourceFile", filePath: PHONE_GLTF };
+  }
+  if (/(^|\/)meshopt(\.ts)?$/.test(moduleName)) {
+    const abs = moduleName.startsWith("@/") ? path.join(root, moduleName.slice(2)) : moduleName.startsWith(".") ? path.resolve(path.dirname(from), moduleName) : "";
+    if (abs.replace(/\.ts$/, "") === LIB_MESHOPT) return { type: "sourceFile", filePath: PHONE_MESHOPT };
+  }
+  return upstream ? upstream(context, moduleName, platform) : context.resolveRequest(context, moduleName, platform);
+};
 module.exports = config;
