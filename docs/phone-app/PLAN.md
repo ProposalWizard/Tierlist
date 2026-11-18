@@ -13,16 +13,19 @@ should not affect the website or the packed app."
   same upload key), so testers, reviews and the listing carry over.
 
 ## Steps
-| # | Step | State |
+| # | Step | State (18 Nov 2026, evening) |
 |---|---|---|
-| 0 | Measure the current app | done (below) |
-| 1 | Foundations: project, shared rules, saving, screens, design kit | started |
-| 2 | The 2D match on phone graphics, same physics | |
-| 3 | Career screens | |
-| 4 | Shop, phone feed, Star Pass, sponsors, sound, music, vibration | |
-| 5 | 3D (garden, 3D shop, 3D match): last, Mikey decides | |
-| 6 | Checks: same save gives same results; real-phone playtests; frame rate | |
-| 7 | Release as 2.0 | |
+| 0 | Measure the current app | done |
+| 1 | Foundations: project, shared rules, saving, screens, design kit | done |
+| 2 | The match on phone graphics, same physics | done: full 90 min, every chance kind, strike screen, curve, passing, shootouts, internationals, sprites with the 20° tilt, sound; `tools/match-parity.ts` identical to the website's call order |
+| 3 | Career screens | done: every page.tsx phase except 3D ones (see below) |
+| 4 | Shop, phone feed, Star Pass, sponsors, Owner app, boardroom, goal videos | done (no "Save video": needs a native video encoder) |
+| 5 | 3D (garden, 3D shop, house, 3D training, farewell walk-out) | not started: Mikey decides |
+| 6 | Checks: same save gives same results; real-phone playtests; frame rate | headless checks done; nothing seen on a real phone yet |
+| 7 | Release as 2.0 | not started |
+
+Checks to keep passing (phone/tools): match-parity, match-features, career-flow-check,
+screens-check, world-check, data-check, draw-check, slots-check, screens-politics-check.
 
 Defaults taken while Mikey was away (change any): measure first; same Play
 listing; 3D last; Android first (iPhone later needs a Mac or a build service);
