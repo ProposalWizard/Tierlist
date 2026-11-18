@@ -5,7 +5,9 @@
  * played on the match engine on the website (TrainingMinigame): on the phone
  * it is a STAND-IN until the match area has the drills.
  */
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { DrillStrike } from "../MatchStages";
 import { View, Text } from "react-native";
 import type { CareerState, Skills } from "@/lib/star/types";
 import { starsOf, totalStars, highestUnlocked, TRAINING_LEVELS } from "@/lib/star/trainingLevels";
@@ -106,16 +108,29 @@ export function LevelSelectScreen({ career, skill, onBack, go }: { career: Caree
   );
 }
 
-/** STAND-IN for the drill (TrainingMinigame on the match engine). */
+/**
+ * The drill (TrainingMinigame). Power, Technique, Free Kick and Aerial strike
+ * on the match (screens/MatchStages.tsx DrillStrike, the phone's
+ * EngineFeature). Pace (the Gauntlet) and Vision (Pick the Pass) have their
+ * own pictures on the website, not the match: still STAND-INS here.
+ */
 export function DrillScreen({ career, skill, level, go }: { career: CareerState; skill: keyof Skills; level: number; go: (s: flow.Step) => void }) {
   const [stars, setStars] = useState<number | null>(null);
   const label = SKILL_LABELS.find((s) => s[0] === skill)?.[1] ?? skill;
+  const onFinish = useCallback((n: number) => go(flow.completeTraining(skill, level, n).step), [go, skill, level]);
+  if (skill === "power" || skill === "technique" || skill === "freeKick" || skill === "aerial") {
+    return (
+      <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: C.bg, paddingTop: 8 }}>
+        <DrillStrike kind={skill} trainingLevel={level} skills={career.skills} onFinish={onFinish} />
+      </SafeAreaView>
+    );
+  }
   return (
     <Frame kicker={`${label} · level ${level}`} title="The drill"
       footer={stars === null
         ? <Btn label="Play the drill" onPress={() => setStars(flow.simulateDrill(skill, level))} />
         : <Btn label="Done" onPress={() => go(flow.completeTraining(skill, level, stars).step)} />}>
-      <StandInNote>Stand-in: the drill itself needs the match on the phone (coming with the match area). Three tries are scored from your {label.toLowerCase()} against the level for now.</StandInNote>
+      <StandInNote>Stand-in: this drill is its own picture on the website (not the match), still to come on the phone. Three tries are scored from your {label.toLowerCase()} against the level for now.</StandInNote>
       <Card style={{ alignItems: "center" }}>
         <Text style={{ color: C.dim }}>Your {label.toLowerCase()}: {career.skills[skill]}</Text>
         <Text style={{ color: C.gold, fontSize: 48, marginTop: 10 }}>{stars === null ? "☆☆☆" : "★".repeat(stars) + "☆".repeat(3 - stars)}</Text>

@@ -22,7 +22,7 @@ import { getCareer, setCareer } from "./store";
 import { getSession, setSession, type MatchReport } from "./session";
 
 import { makeIdentity, attachClub, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
-import { startTrial, trialComplete, trialScore, recordStage, trialStagesFor, type TrialStage } from "@/lib/star/trial";
+import { startTrial, trialComplete, trialScore, recordStage, beginStage, trialStagesFor, type TrialStage } from "@/lib/star/trial";
 import { trialOffers, clubsForDivision, SOURED_PITCH, type ScoutOffer } from "@/lib/star/scoutOffers";
 import { scoutedOfferForTrial } from "@/lib/star/scoutedPlacement";
 import { goalBonusFor, assistBonusFor } from "@/lib/star/economy";
@@ -109,10 +109,27 @@ export function beginCareer(player: StarPlayer, division: CareerDivision = "prem
 }
 
 /**
- * PLACEHOLDER for a trial stage played on the match engine (TrialSequence):
- * the stage is scored from your skills and a roll seeded off the trial, then
- * written with the game's own recordStage. Replace with the real stage once
- * the match area has the drills.
+ * A trial stage played on the match (TrialSequence finishStage): written to
+ * the career the instant it exists, with the game's own recordStage.
+ */
+export function finishTrialStage(stage: TrialStage, quality: number, finalPenScored?: boolean): void {
+  setCareer((c) => {
+    if (!c.trial) return c;
+    const from = c.trial.fiveASide !== undefined ? { ...c.trial, fiveASide: undefined } : c.trial;
+    const recorded = recordStage(from, stage, quality);
+    return { ...c, trial: finalPenScored === undefined ? recorded : { ...recorded, finalPenScored } };
+  });
+}
+/** TrialSequence's effect: the stage a screen is showing is marked open (the anti-cheat's beginStage). */
+export function beginTrialStage(stage: TrialStage): void {
+  setCareer((c) => (c.trial ? { ...c, trial: beginStage(c.trial, stage) } : c));
+}
+
+/**
+ * STILL A STAND-IN for the two stages the website does not play on the
+ * match engine (dribbling: FirstPersonDribble's own first-person picture;
+ * vision: TrialVision's own picture): scored from your skills and a roll
+ * seeded off the trial, then written with the game's own recordStage.
  */
 export function simulateTrialStage(stage: TrialStage): void {
   setCareer((c) => {
@@ -324,9 +341,12 @@ export function pickTraining(skill: keyof Skills): Step | null {
 }
 
 /**
- * PLACEHOLDER for the drill on the match engine (TrainingMinigame): three
- * tries, each passed or not off your skill against the level's difficulty,
- * seeded so the same level gives the same stars. Returns 0-3 stars.
+ * STILL A STAND-IN for the two drills the website does not play on the
+ * match engine (Pace: the Gauntlet, FirstPersonDribble; Vision: Pick the
+ * Pass, its own picture). Power, Technique, Free Kick and Aerial are played
+ * on the match (screens/MatchStages.tsx DrillStrike). Three tries, each
+ * passed or not off your skill against the level's difficulty, seeded so
+ * the same level gives the same stars. Returns 0-3 stars.
  */
 export function simulateDrill(skill: keyof Skills, level: number): number {
   const c = need();
