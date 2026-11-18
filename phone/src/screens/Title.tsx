@@ -17,7 +17,7 @@ export function Title({ hasSave, onNew, onContinue }: { hasSave: boolean; onNew:
         <Press disabled={!hasSave} onPress={onContinue} style={{ backgroundColor: C.panel2, borderRadius: R.card, paddingVertical: 18, alignItems: "center", borderWidth: 1, borderColor: C.line }}>
           <Text style={{ color: C.text, fontSize: 20, fontWeight: "800" }}>CONTINUE</Text>
         </Press>
-        <Text style={{ color: C.dim, textAlign: "center", fontSize: 12, marginTop: 6 }}>Phone-built test version · step 1</Text>
+        <Text style={{ color: C.dim, textAlign: "center", fontSize: 12, marginTop: 6 }}>Phone-built test version · step 3 (career)</Text>
       </View>
     </SafeAreaView>
   );

@@ -2,4 +2,5 @@
 import type { ScreenMap } from "./types";
 import { coreScreens } from "./core";
 import { matchScreens } from "./match";
-export const SCREENS: ScreenMap = { ...coreScreens, ...matchScreens };
+import { careerScreens } from "./career";
+export const SCREENS: ScreenMap = { ...coreScreens, ...matchScreens, ...careerScreens };

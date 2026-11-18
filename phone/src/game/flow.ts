@@ -214,6 +214,14 @@ export function signTrialOffer(offer: ScoutOffer): Step {
   return { screen: "career-signed" };
 }
 
+/** Where CONTINUE on the title screen lands: Home, or the step a career with no club is at. */
+export function resumeStep(): Step {
+  const c = getCareer();
+  if (!c) return { screen: "career-new" };
+  if (!c.player.club) return c.trial ? afterTrial() : { screen: "career-placeholder", params: { what: "free-agent" } };
+  return HOME;
+}
+
 /** TrialReward's "done": the signing news, then Home (or the loan brief). */
 export function finishSigning(): Step {
   const c = need();
@@ -323,10 +331,10 @@ export function pickTraining(skill: keyof Skills): Step | null {
 export function simulateDrill(skill: keyof Skills, level: number): number {
   const c = need();
   const rng = mulberry32((c.week * 977 + level * 131 + skill.length * 17 + c.season * 7) >>> 0);
-  const ability = c.skills[skill] / 100;
-  const diff = levelDifficulty(level);
+  // levelDifficulty is the skill the level is built for (40-100): at it, a coin flip a try.
+  const chance = Math.max(0.1, Math.min(0.95, 0.5 + (c.skills[skill] - levelDifficulty(level)) / 40));
   let stars = 0;
-  for (let t = 0; t < 3; t++) if (rng() < 0.35 + ability * 0.55 - diff * 0.5) stars++;
+  for (let t = 0; t < 3; t++) if (rng() < chance) stars++;
   return Math.max(0, Math.min(3, stars));
 }
 

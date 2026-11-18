@@ -13,6 +13,7 @@
  * the dice (Math.random) and the clock (Date.now) are fixed, so both runs see
  * the same numbers in the same order.
  */
+import "./career-rn-globals";
 import type { CareerState, Fixture, MatchStats, StarPlayer } from "@/lib/star/types";
 import * as flow from "../src/game/flow";
 import { getCareer, setCareer } from "../src/game/store";
@@ -43,6 +44,12 @@ import { windowInterest, withRecall } from "@/lib/star/transferInterest";
 import { acceptOffer } from "@/lib/star/transfers";
 import { clubsForDivision } from "@/lib/star/scoutOffers";
 import { trialComplete } from "@/lib/star/trial";
+import { careerOverview } from "@/lib/star/careerOverview";
+import { RECORDS } from "@/lib/star/records";
+import { clauseSummary } from "@/lib/star/contracts";
+import { starStatus } from "@/lib/star/starPoints";
+import { trophyWinners } from "@/lib/star/seasonAwards";
+import { fixtureDateLabel } from "@/lib/star/calendar";
 
 const SEASONS = Number(process.argv[2] ?? 2);
 
@@ -214,9 +221,26 @@ function phoneSeason(): void {
   if (s.screen !== "career-golden-ball") fail(`season end opened ${s.screen}`);
   const won = computeBallonDorShortlist(getCareer()!).playerRank === 1;
   s = flow.ballonDorContinue(won);
-  if (s.screen === "career-final-season") s = flow.playOn();
+  if (s.screen === "career-retirement") { retired = true; s = flow.retireNow(); return; }
+  if (s.screen === "career-final-season") { ok("final-season notice shown"); s = flow.playOn(); }
   if (s.screen === "career-season-awards") s = flow.continueAfterRollover();
   if (s.screen === "career-contract-renewal") s = flow.contractComplete(null);
+}
+let retired = false;
+
+/** Every lib call the career SCREENS make, on the career as it is now (no crash, sane numbers). */
+function screensSmoke(c: CareerState) {
+  const o = careerOverview(c);
+  if (!o.seasons.length) fail("careerOverview: no seasons");
+  for (const r of RECORDS) { const p = r.progress(c); if (!Number.isFinite(p)) fail(`record ${r.id} progress ${p}`); }
+  clauseSummary(c.contract);
+  starStatus(c);
+  if (c.lastSeasonAwardStats) trophyWinners(c, c.lastSeasonAwardStats);
+  const f = nextFixtureFor(c);
+  if (f) fixtureDateLabel(c.player.startYear, c.season, f.week, f.kind, divisionOf(c));
+  flow.preMatchSelection(c);
+  flow.callUpDecision();
+  computeBallonDorShortlist(c);
 }
 
 // ═══ 4. Run both, season by season, and compare ═══
@@ -242,7 +266,12 @@ for (let season = 1; season <= SEASONS; season++) {
   web = webSeason(web);
   const phone = getCareer()!;
   const last = phone.lastSeasonAwardStats;
-
+  if (retired) {
+    if (!phone.retired) fail("retirement screen did not retire the career");
+    else ok(`retired after season ${season}: ${phone.careerStats.goals} goals in ${phone.careerStats.appearances} games`);
+    break;
+  }
+  screensSmoke(phone);
 
   ok(`phone season played in ${Math.round(phoneMs)} ms; now season ${phone.season}, ${phone.player.club}, goals ${phone.careerStats.goals}, apps ${phone.careerStats.appearances}, money ★${Math.round(phone.money)}`);
   if (phone.season !== season + 1) fail(`season did not advance (is ${phone.season})`);
