@@ -727,7 +727,7 @@ export function checkSave(prevIn: unknown, nextIn: unknown, ctx: GuardContext): 
   }
   const pb = num(prev.ballonDorWins), nb = num(next.ballonDorWins);
   if (nb - pb > seasons + 1 || nb > num(next.season, 1)) {
-    flag("ballonDorWins", "cheat", pb, nb, Math.min(pb + seasons + 1, num(next.season, 1)), "more Ballon d'Or wins than seasons");
+    flag("ballonDorWins", "cheat", pb, nb, Math.min(pb + seasons + 1, num(next.season, 1)), "more Golden Ball wins than seasons");
     putBack("ballonDorWins", pb);
   }
   const pAch = arr(prev.achievements).length, nAch = arr(next.achievements).length;

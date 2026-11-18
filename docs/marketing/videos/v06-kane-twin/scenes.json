@@ -1,0 +1,633 @@
+{
+"meta": {
+"targetShort": "Kane",
+"targetClub": "Bayern Munich",
+"series": "STAT TWINS · EP 5",
+"source": "Data: Opta via FotMob · top 5 leagues, 900+ mins",
+"engine": "video_full.html",
+"layout": "poster",
+"imgDir": "/tmp/claude-0/-home-user-Tierlist/84a0c395-3776-5543-b933-7d1eba9d58ff/scratchpad/img",
+"clubColors": {
+"t8472": "rgb(203,102,112)",
+"t8650": "rgb(231,26,35)",
+"t10260": "rgb(216,111,16)",
+"t8197": "rgb(106,151,198)",
+"t8634": "rgb(165,0,68)",
+"t178475": "rgb(242,143,168)",
+"t8586": "rgb(9,25,70)",
+"t10261": "rgb(0,148,179)",
+"t8178": "rgb(181,171,3)",
+"t9937": "rgb(198,12,12)",
+"t9847": "rgb(6,69,120)",
+"t8678": "rgb(204,19,24)",
+"t8686": "rgb(148,11,42)",
+"t8668": "rgb(48,49,176)",
+"t8456": "rgb(22,68,123)",
+"t9825": "rgb(237,4,7)",
+"t10269": "rgb(233,138,150)",
+"t9823": "rgb(220,5,45)",
+"t8524": "rgb(8,101,175)",
+"t9902": "rgb(244,86,101)",
+"t8455": "rgb(7,19,149)",
+"t10252": "rgb(251,227,7)",
+"t8633": "rgb(177,152,44)"
+}
+},
+"lists": {
+"top8": {
+"title": "The top eight.",
+"sub": "",
+"target": {
+"name": "Harry Kane",
+"season": "2025/26",
+"face": "p194165",
+"club": "t9823",
+"flag": "cENG"
+},
+"rows": [
+{
+"name": "Kylian Mbappé",
+"season": "2023/24",
+"face": "p701154",
+"club": "t9847",
+"flag": "cFRA",
+"match": 81.5,
+"excluded": false,
+"rank": 1,
+"twin": true
+},
+{
+"name": "Ousmane Dembélé",
+"season": "2024/25",
+"face": "p692984",
+"club": "t9847",
+"flag": "cFRA",
+"match": 76.7,
+"excluded": false,
+"rank": 2
+},
+{
+"name": "Kylian Mbappé",
+"season": "2022/23",
+"face": "p701154",
+"club": "t9847",
+"flag": "cFRA",
+"match": 75.7,
+"excluded": false,
+"rank": 3
+},
+{
+"name": "Deniz Undav",
+"season": "2023/24",
+"face": "p661519",
+"club": "t10269",
+"flag": "cGER",
+"match": 74.6,
+"excluded": false,
+"rank": 4
+},
+{
+"name": "Kylian Mbappé",
+"season": "2024/25",
+"face": "p701154",
+"club": "t8633",
+"flag": "cFRA",
+"match": 73.6,
+"excluded": false,
+"rank": 5
+},
+{
+"name": "Karim Benzema",
+"season": "2022/23",
+"face": "p26166",
+"club": "t8633",
+"flag": "cFRA",
+"match": 73.0,
+"excluded": false,
+"rank": 6
+},
+{
+"name": "Serhou Guirassy",
+"season": "2023/24",
+"face": "p448540",
+"club": "t10269",
+"flag": "cGUI",
+"match": 70.9,
+"excluded": false,
+"rank": 7
+}
+]
+},
+"top": {
+"title": "The top seven.",
+"sub": "",
+"target": {
+"name": "Harry Kane",
+"season": "2025/26",
+"face": "p194165",
+"club": "t9823",
+"flag": "cENG"
+},
+"rows": [
+{
+"name": "Kylian Mbappé",
+"season": "2023/24",
+"face": "p701154",
+"club": "t9847",
+"flag": "cFRA",
+"match": 81.5,
+"excluded": false,
+"rank": 1,
+"twin": true
+},
+{
+"name": "Ousmane Dembélé",
+"season": "2024/25",
+"face": "p692984",
+"club": "t9847",
+"flag": "cFRA",
+"match": 76.7,
+"excluded": false,
+"rank": 2
+},
+{
+"name": "Kylian Mbappé",
+"season": "2022/23",
+"face": "p701154",
+"club": "t9847",
+"flag": "cFRA",
+"match": 75.7,
+"excluded": false,
+"rank": 3
+},
+{
+"name": "Deniz Undav",
+"season": "2023/24",
+"face": "p661519",
+"club": "t10269",
+"flag": "cGER",
+"match": 74.6,
+"excluded": false,
+"rank": 4
+},
+{
+"name": "Kylian Mbappé",
+"season": "2024/25",
+"face": "p701154",
+"club": "t8633",
+"flag": "cFRA",
+"match": 73.6,
+"excluded": false,
+"rank": 5
+},
+{
+"name": "Karim Benzema",
+"season": "2022/23",
+"face": "p26166",
+"club": "t8633",
+"flag": "cFRA",
+"match": 73.0,
+"excluded": false,
+"rank": 6
+},
+{
+"name": "Serhou Guirassy",
+"season": "2023/24",
+"face": "p448540",
+"club": "t10269",
+"flag": "cGUI",
+"match": 70.9,
+"excluded": false,
+"rank": 7
+}
+]
+},
+"now": {
+"title": "Right now.",
+"sub": "",
+"target": {
+"name": "Harry Kane",
+"season": "2025/26",
+"face": "p194165",
+"club": "t9823",
+"flag": "cENG"
+},
+"rows": [
+{
+"name": "Kylian Mbappé",
+"season": "2026/27",
+"face": "p701154",
+"club": "t8633",
+"flag": "cFRA",
+"match": 70.3
+},
+{
+"name": "Erling Haaland",
+"season": "2026/27",
+"face": "p737066",
+"club": "t8456",
+"flag": "cNOR",
+"match": 69.3
+},
+{
+"name": "Nikola Krstović",
+"season": "2026/27",
+"face": "p833638",
+"club": "t8524",
+"flag": "cMNE",
+"match": 64.0
+},
+{
+"name": "Donyell Malen",
+"season": "2026/27",
+"face": "p660301",
+"club": "t8686",
+"flag": "cNED",
+"match": 62.1
+},
+{
+"name": "Patrik Schick",
+"season": "2026/27",
+"face": "p540097",
+"club": "t8178",
+"flag": "cCZE",
+"match": 60.8
+}
+]
+}
+},
+"scenes": {
+"intro": {
+"type": "intro",
+"face": "p194165",
+"club": "t9823",
+"flag": "cENG",
+"name": "KANE",
+"season": "2025/26",
+"facts": [],
+"at": [
+0.3,
+0.9,
+1.5
+],
+"mystery": [
+{
+"face": "p701154",
+"label": "LAST 5 YEARS",
+"delay": 0
+},
+{
+"face": "p701154",
+"label": "CURRENT",
+"delay": 0
+}
+],
+"instant": true,
+"kicker": "HIS TWIN IS NOT WHO YOU THINK",
+"kickerAt": "NOT",
+"award": {
+"at": "BALLON",
+"label": "BALLON D'OR"
+}
+},
+"c7": {
+"type": "cd2",
+"list": "top",
+"show": [
+7
+],
+"before": [],
+"prevShow": [],
+"at": 0.0,
+"cont": true,
+"from": 1,
+"pop": {
+"big": "2.16",
+"label": "chances created per 90",
+"rank": "1st of 29 Bundesliga strikers",
+"at": "SERHOU"
+},
+"fromClub": "t9823"
+},
+"c6": {
+"type": "cd2",
+"list": "top",
+"show": [
+6
+],
+"before": [
+7
+],
+"prevShow": [
+7
+],
+"at": 0.0,
+"cont": true,
+"from": -1,
+"pop": {
+"big": "0.62",
+"label": "big chances made per 90",
+"rank": "1st of 26 La Liga strikers",
+"at": "KARIM"
+},
+"fromClub": "t10269"
+},
+"surprise": {
+"type": "cd2",
+"list": "top",
+"show": [],
+"before": [
+7,
+6
+],
+"prevShow": [
+6
+],
+"at": 0.0,
+"aside": {
+"name": "Erling Haaland",
+"season": "2026/27",
+"face": "p737066",
+"club": "t8456",
+"flag": "cNOR",
+"rank": 14,
+"match": 69.3,
+"text": "Not even top 10"
+},
+"cont": true,
+"from": 1,
+"pop": {
+"big": "1.01",
+"label": "goals per 90 (no pens)",
+"rank": "1st of 20 Premier League strikers",
+"at": "HE'S"
+},
+"fromClub": "t8633"
+},
+"c4": {
+"type": "cd2",
+"list": "top",
+"show": [
+4
+],
+"before": [
+7,
+6
+],
+"prevShow": [
+6
+],
+"at": 0.0,
+"cont": true,
+"from": -1,
+"pop": {
+"big": "0.64",
+"label": "big chances made per 90",
+"rank": "1st of 26 Bundesliga strikers",
+"at": "DENIZ"
+},
+"fromClub": "t8456"
+},
+"c2": {
+"type": "cd2",
+"list": "top",
+"show": [
+2
+],
+"before": [
+7,
+6,
+4
+],
+"prevShow": [
+4
+],
+"at": 0.0,
+"cont": true,
+"from": 1,
+"pop": {
+"big": "1.04",
+"label": "goals per 90 (no pens)",
+"rank": "1st of 17 Ligue 1 strikers",
+"at": "OUSMANE"
+},
+"sticker": {
+"text": "GUESS THE TWIN IN THE COMMENTS",
+"at": "GUESS"
+},
+"fromClub": "t10269"
+},
+"c5": {
+"type": "cd2",
+"list": "top",
+"show": [
+1,
+3,
+5
+],
+"before": [
+7,
+6,
+4,
+2
+],
+"prevShow": [
+2
+],
+"at": "KYLIAN",
+"cont": true,
+"from": -1,
+"pop": {
+"big": "0.88",
+"label": "goals per 90 (no pens)",
+"rank": "1st of 26 Ligue 1 strikers",
+"at": "KYLIAN"
+},
+"twinAt": "THAT",
+"fromClub": "t9847"
+},
+"why": {
+"type": "compare",
+"kicker": "Why Mbappé",
+"title": "Almost the same.",
+"a": {
+"name": "Harry Kane",
+"season": "2025/26",
+"face": "p194165"
+},
+"b": {
+"name": "Kylian Mbappé",
+"season": "2023/24",
+"face": "p701154"
+},
+"rows": [
+{
+"label": "Shots on target",
+"a": 2.5,
+"b": 2.5
+},
+{
+"label": "Expected goals",
+"a": 0.72,
+"b": 0.68
+}
+],
+"at": [
+"SHOTS",
+"EXPECTED"
+]
+},
+"diff": {
+"type": "compare",
+"kicker": "But…",
+"title": "Not the same player.",
+"a": {
+"name": "Harry Kane",
+"season": "2025/26",
+"face": "p194165"
+},
+"b": {
+"name": "Kylian Mbappé",
+"season": "2023/24",
+"face": "p701154"
+},
+"rows": [
+{
+"label": "Dribbles",
+"a": 1.2,
+"b": 2.5
+},
+{
+"label": "Big chances made",
+"a": 0.68,
+"b": 0.33
+}
+],
+"at": [
+"MBAPPÉ",
+"KANE"
+]
+},
+"n0": {
+"type": "countdown",
+"list": "now",
+"upto": 6,
+"at": 0.0
+},
+"n5": {
+"type": "countdown",
+"list": "now",
+"upto": 5,
+"at": 0.0,
+"cont": true,
+"fromClub": "t9823"
+},
+"n4": {
+"type": "countdown",
+"list": "now",
+"upto": 4,
+"at": 0.0,
+"cont": true,
+"fromClub": "t8178"
+},
+"n3": {
+"type": "countdown",
+"list": "now",
+"upto": 3,
+"at": 0.0,
+"cont": true,
+"fromClub": "t8686"
+},
+"n2": {
+"type": "countdown",
+"list": "now",
+"upto": 2,
+"at": 0.0,
+"cont": true,
+"fromClub": "t8524"
+},
+"now1": {
+"type": "countdown",
+"list": "now",
+"upto": 1,
+"at": "KYLIAN",
+"cont": true,
+"fromClub": "t8456"
+},
+"nowcmp": {
+"type": "compare",
+"kicker": "This season",
+"title": "Kane vs Mbappé.",
+"a": {
+"name": "Harry Kane",
+"season": "2025/26",
+"face": "p194165"
+},
+"b": {
+"name": "Kylian Mbappé",
+"season": "2026/27",
+"face": "p701154"
+},
+"rows": [
+{
+"label": "Goals",
+"a": 0.98,
+"b": 0.84,
+"sub": "per 90 minutes · no penalties"
+},
+{
+"label": "Expected goals",
+"a": 0.72,
+"b": 1.03,
+"sub": "per 90 minutes · no penalties"
+},
+{
+"label": "Shots",
+"a": 4.5,
+"b": 5.4,
+"sub": "per 90 minutes"
+},
+{
+"label": "Assists",
+"a": 0.19,
+"b": 0.17,
+"sub": "per 90 minutes"
+}
+],
+"at": [
+"GOALS",
+"EXPECTED",
+"SHOTS",
+"ASSISTS"
+]
+},
+"end": {
+"type": "end2",
+"captions": true,
+"at": [
+"KYLIAN",
+"RIGHT"
+],
+"pairs": [
+{
+"label": "Last 5 seasons",
+"a": "p194165",
+"b": "p701154",
+"aName": "KANE 25/26",
+"bName": "MBAPPÉ 23/24",
+"aClub": "t9823",
+"bClub": "t9847"
+},
+{
+"label": "This season",
+"a": "p194165",
+"b": "p701154",
+"aName": "KANE 25/26",
+"bName": "MBAPPÉ",
+"aClub": "t9823",
+"bClub": "t8633"
+}
+]
+}
+}
+}

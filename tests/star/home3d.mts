@@ -78,13 +78,13 @@ const w = winsOf(full);
 check(w.get("Premier League") === 2, "two league titles count as 2");
 check(w.get("FA Cup") === 1, "a trophy stored twice counts once");
 check(w.get("Player of the Month") === 2, "two different months count as 2");
-check(w.get("Ballon d'Or") === 1, "the Ballon d'Or counts from ballonDorWins");
+check(w.get("Golden Ball") === 1, "the Ballon d'Or counts from ballonDorWins");
 const fs = cabinetSlots(full, 12);
 const won = fs.filter((s) => s.won);
 check(won.length === 6, `full: 6 different things won on the shelves (got ${won.length})`);
 check(fs.some((s) => s.name === "League One" && s.won), "a non-target win (League One) still gets a spot");
 check(fs.some((s) => !s.won), "spots left over show targets to win");
-check(fs[0].name === "Ballon d'Or" && fs[0].won, "the biggest win comes first");
+check(fs[0].name === "Golden Ball" && fs[0].won, "the biggest win comes first");
 // a tiny cabinet: wins first, empty spots give way
 const tiny = cabinetSlots(full, 3);
 check(tiny.length === 3 && tiny.every((s) => s.won), "small cabinet: only wins, the empty spots give way");

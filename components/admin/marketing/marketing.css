@@ -48,6 +48,8 @@
 .mk-links { display: flex; flex-wrap: wrap; gap: 6px; }
 .mk-links a { font-size: 12px; font-weight: 800; color: var(--bc-ink); text-decoration: none; padding: 6px 10px; min-height: 32px; display: inline-flex; align-items: center;
   border-radius: 3px; border: 1px solid var(--bc-line); background: rgba(255, 255, 255, 0.04); }
+.mk-links a.mk-play { border-color: var(--bc-accent, #34e08b); color: var(--bc-accent, #34e08b); }
+.mk-links a.mk-novideo { border-style: dashed; color: var(--bc-ink2); font-weight: 700; }
 .mk-log { font-size: 12px; color: var(--bc-ink2); }
 .mk-log summary { cursor: pointer; font-weight: 800; }
 .mk-log ol { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
@@ -65,3 +67,39 @@
 .mk-note small code { font-weight: 900; color: var(--bc-ink2); }
 .mk-draft { font-weight: 900; color: #1a1300; background: var(--bc-amber); padding: 0 5px; border-radius: 2px; text-transform: uppercase; letter-spacing: .04em; }
 .mk-plain { margin: 0; font-size: 12.5px; color: var(--bc-ink3); font-style: italic; }
+
+/* ── Knowitball, THE admin look (12 Nov 2026; rules in components/admin/shell/houseTokens.css):
+   one type scale (12 / 14), 6 px controls, 8 px boxes, no tracked capitals, green only for the open tab, Posted and Play. ── */
+.bc[data-look="house"] .mk-tabs, .bc[data-look="house"] .mk-filter, .bc[data-look="house"] .mk-links, .bc[data-look="house"] .mk-chips { gap: 8px; }
+.bc[data-look="house"] .mk-tab { padding: 4px 12px; border-radius: var(--kh-r1); border-color: var(--kh-line2); background: var(--kh-panel); color: var(--kh-ink2); font-size: 14px; font-weight: 600; }
+.bc[data-look="house"] .mk-tab[aria-current="page"] { background: var(--kh-accent); border-color: var(--kh-accent); color: #fff; }
+.bc[data-look="house"] .mk-soon, .bc[data-look="house"] .mk-status, .bc[data-look="house"] .mk-empty, .bc[data-look="house"] .mk-emptyline, .bc[data-look="house"] .mk-from, .bc[data-look="house"] .mk-meta, .bc[data-look="house"] .mk-log, .bc[data-look="house"] .mk-note small { font-size: 12px; color: var(--kh-ink2); }
+.bc[data-look="house"] .mk-problems { border-color: var(--kh-amber); background: var(--kh-amber-soft); color: #6b4500; border-radius: var(--kh-r1); padding: 8px 12px; font-size: 12px; }
+.bc[data-look="house"] .mk-filter b { opacity: 1; font-weight: 400; }
+.bc[data-look="house"] .mk-cols { gap: 12px; }
+.bc[data-look="house"] .mk-col { border-radius: var(--kh-r2); padding: 8px; gap: 8px; }
+.bc[data-look="house"] .mk-col h3 { font-size: 14px; font-weight: 600; font-style: normal; text-transform: none; letter-spacing: 0; padding: 4px; }
+.bc[data-look="house"] .mk-col h3 b { color: var(--kh-ink2); font-weight: 500; font-variant-numeric: tabular-nums; }
+.bc[data-look="house"] .mk-col[data-stage="posted"] h3 span { color: var(--kh-accent2); }
+.bc[data-look="house"] .mk-empty { padding: 0 4px 4px; }
+.bc[data-look="house"] .mk-card { padding: 12px; gap: 8px; border-radius: var(--kh-r1); background: #fff; border: 1px solid var(--kh-line); }
+.bc[data-look="house"] .mk-card-top { gap: 12px; }
+.bc[data-look="house"] .mk-card-main { gap: 4px; }
+.bc[data-look="house"] .mk-cover { border-radius: 4px; }
+.bc[data-look="house"] .mk-title { font-size: 14px; font-weight: 600; line-height: 1.3; }
+.bc[data-look="house"] .mk-stage { font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0; padding: 0 8px; border-radius: 4px; background: var(--kh-panel2); color: var(--kh-ink); }
+.bc[data-look="house"] .mk-card[data-stage="posted"] .mk-stage { background: var(--kh-accent-soft); color: var(--kh-accent2); }
+.bc[data-look="house"] .mk-line { font-size: 12px; line-height: 1.5; }
+.bc[data-look="house"] .mk-links a { font-size: 14px; font-weight: 600; padding: 4px 12px; border-radius: var(--kh-r1); border-color: var(--kh-line2); background: var(--kh-panel); }
+.bc[data-look="house"] .mk-links a:hover { border-color: var(--kh-ink3); }
+.bc[data-look="house"] .mk-links a.mk-play { border-color: var(--kh-accent); color: var(--kh-accent2); }
+.bc[data-look="house"] .mk-links a.mk-novideo { font-weight: 500; color: var(--kh-ink2); }
+.bc[data-look="house"] .mk-log summary { font-weight: 600; }
+.bc[data-look="house"] .mk-intro { font-size: 14px; }
+.bc[data-look="house"] .mk-chip { font-size: 12px; font-weight: 500; padding: 0 8px; border-radius: 4px; border-color: var(--kh-line2); }
+.bc[data-look="house"] .mk-note { gap: 4px; padding-bottom: 12px; }
+.bc[data-look="house"] .mk-note b { font-weight: 600; }
+.bc[data-look="house"] .mk-note p, .bc[data-look="house"] .mk-plain { font-size: 12px; }
+.bc[data-look="house"] .mk-note small code { font-weight: 600; }
+.bc[data-look="house"] .mk-draft { font-weight: 600; color: #6b4500; background: var(--kh-amber-soft); padding: 0 8px; border-radius: 4px; text-transform: none; letter-spacing: 0; }
+.bc[data-look="house"] .mk-plain { font-style: normal; color: var(--kh-ink2); }

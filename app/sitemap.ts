@@ -18,6 +18,7 @@
 
 import type { MetadataRoute } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
+import { RANKINGS_PAUSED, isRankingsPath } from "@/lib/rankingsPaused";
 
 // Generated on demand so newly created tierlists appear without a redeploy.
 // (Kept dynamic rather than ISR because the DB isn't reachable at build time.)
@@ -32,7 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },
     { url: `${BASE_URL}/find`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
-    { url: `${BASE_URL}/road-to-ballon-dor`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
+    { url: `${BASE_URL}/road-to-the-golden-ball`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
     { url: `${BASE_URL}/draft`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 },
     { url: `${BASE_URL}/draft/records`, lastModified: new Date(), changeFrequency: "daily", priority: 0.6 },
     { url: `${BASE_URL}/tic-tac-toe`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
@@ -80,5 +81,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  // Rankings pause (lib/rankingsPaused.ts): no Rankings links for search engines.
+  if (RANKINGS_PAUSED) return staticRoutes.filter((r) => !isRankingsPath(new URL(r.url).pathname));
   return [...staticRoutes, ...tierlistRoutes, ...voteRoutes, ...blindRoutes];
 }

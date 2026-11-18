@@ -145,10 +145,10 @@ export const ACHIEVEMENTS: Achievement[] = [
   A("potm", "Player of the Month", "Win Player of the Month", "medium", "Awards", "📅", (c) => awardCount(c, "Player of the Month") >= 1),
   A("golden-boot", "Golden Boot", "Finish a season as your league's top scorer", "medium", "Awards", "👢", (c) => awardCount(c, "Golden Boot") >= 1),
   A("player-of-season", "Player of the Season", "Win Player of the Season", "hard", "Awards", "🏅", (c) => awardCount(c, "Player of the Season") >= 1),
-  A("ballon-podium", "Ballon d'Or Podium", "Finish in the Ballon d'Or top three", "hard", "Awards", "🥉",
+  A("ballon-podium", "Golden Ball Podium", "Finish in the Golden Ball top three", "hard", "Awards", "🥉",
     (c) => c.ballonDorWins >= 1 || history(c).some(r => !!r.ballonDor && r.ballonDor.yourRank >= 1 && r.ballonDor.yourRank <= 3)),
-  A("ballon-dor", "Ballon d'Or Winner", "Win the Ballon d'Or", "legendary", "Awards", "🏆", (c) => c.ballonDorWins >= 1),
-  A("ballon-dor-3", "Three-Time Ballon d'Or", "Win the Ballon d'Or three times", "legendary", "Awards", "🏆", (c) => c.ballonDorWins >= 3, (c) => n(c.ballonDorWins, 3)),
+  A("ballon-dor", "Golden Ball Winner", "Win the Golden Ball", "legendary", "Awards", "🏆", (c) => c.ballonDorWins >= 1),
+  A("ballon-dor-3", "Three-Time Golden Ball", "Win the Golden Ball three times", "legendary", "Awards", "🏆", (c) => c.ballonDorWins >= 3, (c) => n(c.ballonDorWins, 3)),
 
   // ── Trophies ──
   A("promoted", "Going Up", "Win promotion", "medium", "Trophies", "⬆️", (c) => promotions(c) >= 1),

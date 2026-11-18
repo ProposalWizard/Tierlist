@@ -53,8 +53,17 @@ function Card({ p, group }: { p: AdminPage; group: AdminGroup }) {
   const pic = ADMIN_PREVIEW[p.url];
   return (
     <Link href={p.url} className="agp-card" title={`${p.name}: ${p.purpose}`}>
-      <span className="agp-pic">
-        {pic ? <img src={pic} alt="" loading="lazy" /> : <img src={groupIcon(group)} alt="" className="agp-icon" />}
+      {/* Every card has a picture (Harry, 12 Nov 2026, 19:04: "I don't like how
+          some of them have images on the front, some of them don't"): the
+          page's still, else the same drawn tile for every page without one. */}
+      <span className="agp-pic" data-drawn={pic ? undefined : "true"}>
+        {pic ? <img src={pic} alt="" loading="lazy" /> : (
+          <span className="agp-drawn" aria-hidden>
+            <span className="agp-drawn-bar"><i /><i /><i /></span>
+            <img src={groupIcon(group)} alt="" className="agp-icon" />
+            <span className="agp-drawn-name">{p.name}</span>
+          </span>
+        )}
       </span>
       <span className="agp-body">
         <b>{p.name}</b>

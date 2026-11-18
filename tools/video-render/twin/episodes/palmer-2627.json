@@ -1,0 +1,34 @@
+{
+ "player": "Cole Palmer",
+ "season": "2026/27",
+ "short": "Palmer",
+ "series": "STAT TWINS",
+ "leagues": [
+  "Premier League"
+ ],
+ "group": "AMW",
+ "compareSeasons": [
+  "2021/22",
+  "2022/23",
+  "2023/24",
+  "2024/25",
+  "2025/26"
+ ],
+ "top": 7,
+ "surprise": [
+  "Antony"
+ ],
+ "surpriseAnyPlace": true,
+ "stories": {
+  "Antony": "Manchester United's"
+ },
+ "prefix": "Current",
+ "award": {
+  "at": "CURRENT",
+  "kind": "now",
+  "label": "RIGHT NOW",
+  "x": 300,
+  "y": 610
+ },
+ "spoken": {}
+}

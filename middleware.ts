@@ -17,6 +17,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { guestAccountsOn } from "@/lib/guest/config";
 import { campaignFor } from "@/lib/campaigns";
+import { RANKINGS_PAUSED, isRankingsPath } from "@/lib/rankingsPaused";
 
 const SKIP_USERNAME_PREFIXES = [
   "/setup-username",
@@ -60,6 +61,21 @@ export async function middleware(request: NextRequest) {
       response.cookies.getAll().forEach((c) => rewritten.cookies.set(c));
       return rewritten;
     }
+  }
+
+  // Rankings pause (lib/rankingsPaused.ts): every Rankings page shows the
+  // "not running right now" page instead; its data route answers 503.
+  // Nothing is deleted. Runs after the /play/<campaign> ad pages above.
+  if (RANKINGS_PAUSED && isRankingsPath(pathname)) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Rankings is not running right now" }, { status: 503 });
+    }
+    const url = request.nextUrl.clone();
+    url.pathname = "/paused";
+    url.search = "";
+    const rewritten = NextResponse.rewrite(url);
+    response.cookies.getAll().forEach((c) => rewritten.cookies.set(c));
+    return rewritten;
   }
 
   if (pathname.startsWith("/tierlist") || pathname.startsWith("/create")) {
@@ -112,6 +128,9 @@ export const config = {
     // Also skips the game's own files in public/star, public/sfx and public/models
     // (3D models, sounds, music, JSON): plain files that need no login check.
     // No page lives under those three paths (/star-dev is "star-", not "star/").
-    "/((?!_next/static|_next/image|favicon.ico|star/|sfx/|models/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Also skips the two squad routes (6 Nov 2026): they never ask who you
+    // are, and a login cookie refreshed on their answer would stop Vercel's
+    // CDN keeping it (they are the same for every player).
+    "/((?!_next/static|_next/image|favicon.ico|star/|sfx/|models/|api/star/league-squads|api/draft/roster|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

@@ -20,6 +20,8 @@ const ART: Record<string, string> = {
   "Champions League": "champions-league",
   "Europa League": "europa-league",
   "World Cup": "world-cup",
+  "Golden Ball": "ballon-dor",
+  // The award's old name (the frozen Old UI, components/star/legacy, still asks for it).
   "Ballon d'Or": "ballon-dor",
   "Golden Boot": "golden-boot",
   "Player of the Month": "player-of-the-month",

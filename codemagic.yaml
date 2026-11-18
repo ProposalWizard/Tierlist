@@ -1,0 +1,76 @@
+# Codemagic builds the PACKED PHONE APP (mobile/README.md): a Mac in the cloud,
+# so no Mac is needed for the iPhone version. Checklist for Mikey:
+# https://claude.ai/artifact/1SM2hTVXv7mbNgTKZxxbb3 (step 4.5, route A).
+#
+# NOT RUN YET (written 10 Nov 2026 on a Linux machine, which cannot build for
+# iPhone). Expect to fix small things on the first run; paste the log to Claude.
+#
+# Set up once in Codemagic:
+#  1. Team settings -> Integrations -> Developer Portal: add the App Store
+#     Connect key, and name it "knowitball" (used below).
+#  2. App settings -> Environment variables, group "knowitball": add
+#     NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY (the two
+#     public values the website already uses; the packing step reads players
+#     and badges with them).
+definitions:
+  pack_and_build_www: &pack_and_build_www
+    - name: Install the website's packages
+      script: npm ci --no-audit --no-fund
+    - name: Pack the game's data (players, badges, photos, settings)
+      script: |
+        printf 'NEXT_PUBLIC_SUPABASE_URL=%s\nNEXT_PUBLIC_SUPABASE_ANON_KEY=%s\n' "$NEXT_PUBLIC_SUPABASE_URL" "$NEXT_PUBLIC_SUPABASE_ANON_KEY" > .env.local
+        (cd mobile && npm ci --no-audit --no-fund)
+        npx next dev -p 3000 > /tmp/site.log 2>&1 &
+        for i in $(seq 1 90); do curl -s -o /dev/null http://localhost:3000/api/star/lineups && break; sleep 2; done
+        npx tsx mobile/scripts/pack.mts --base http://localhost:3000
+        kill %1 || true
+    - name: Build the app's files (the game alone, offline)
+      script: cd mobile && node scripts/build-www.mjs
+
+workflows:
+  iphone:
+    name: iPhone app -> TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: knowitball
+    environment:
+      groups: [knowitball]
+      node: 22
+      xcode: latest
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: uk.co.knowitball.game
+    scripts:
+      - *pack_and_build_www
+      - name: Put the files in the iPhone app
+        script: cd mobile && npx cap sync ios
+      - name: Sign and build
+        script: |
+          cd mobile/ios/App
+          xcode-project use-profiles
+          agvtool new-version -all $(($(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0) + 1)) || true
+          xcode-project build-ipa --project App.xcodeproj --scheme App
+    artifacts:
+      - mobile/ios/App/build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+
+  android:
+    name: Android app (install file)
+    max_build_duration: 60
+    instance_type: linux_x2
+    environment:
+      groups: [knowitball]
+      node: 22
+      java: 21
+    scripts:
+      - *pack_and_build_www
+      - name: Put the files in the Android app and build
+        script: |
+          cd mobile && npx cap sync android
+          cd android && ./gradlew assembleDebug
+    artifacts:
+      - mobile/android/app/build/outputs/apk/debug/*.apk

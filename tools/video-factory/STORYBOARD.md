@@ -42,9 +42,9 @@ python3 tools/video-factory/sheet.py --video tools/video-factory/out/<id>.mp4   
   (when the words differ, timings are spread proportionally).
 - Every fact checked against two sources; list them in `sources`. Unsure = leave it out.
 - No "you" (the player's own footballer) in story videos.
-- The LAST line is always `{ "text": "Follow for more, and play Road to Ballon d'Or.", "scene": { "type": "cta" } }`
-  (added if missing; an old CTA that reads the website is replaced). The voice never reads
-  the website or "link in bio": the end card shows them.
+- The LAST line is always `{ "text": "Follow for more.", "scene": { "type": "cta" } }`
+  (Mikey, 7 Nov 2026: the voice says only this; the end card on screen stays the same).
+  It is added if missing; an old CTA that reads the website or "play Road to ..." is replaced.
 
 ## pronounce.json
 `tools/video-factory/pronounce.json` → `names`: written name → spoken respelling, e.g.
@@ -103,3 +103,43 @@ Any scene can add `"stamp": "ROBBED"` (shown halfway through) and most take a `k
 
 `gameclip` reads `meta.json` for `fps` (default 30) and `goalAt` (seconds) or `goalFrame`.
 The pop-up flips from `hs0-as0` to `hs-as` as it lands; the caption comes in 0.25 s after the goal.
+
+## Layout "chess": analysed like chess (Mikey, 7 Nov 2026)
+
+Football first, chess on top (FACT-KIB-011): a real pitch in metres with
+correct markings, every player a drawn icon in his kit with his name, a camera
+that moves to the action; then the chess layer: a move card on top that types
+the voice's words as they are said, a grade badge next to the player who made
+the move, the evaluation bar on the left, both managers and the score at the
+bottom. Never a chessboard with pieces. Set `"layout": "chess"`.
+Engine: `engine/chess.html` + `engine/chess.js`. First video:
+`stories/ch-mourinho-pep-2010.json` (copy it for the next one).
+
+Story fields: `people` (the two managers, `kit: "suit"`, `club`), `players`
+(id -> name, short?, club, skin, hair, beard, gk?), `clubs` (c1, c2, pattern,
+collar?, gk colour), `shapes` (name -> { playerId: [x, y] } in metres: x 0-68
+across, y 0-105 down; the "black" side defends the top goal). A player in one
+scene's shape and not the next fades out (subs, red cards); new ones fade in.
+Each line may add `"say"`: what the voice reads when it differs from the text
+on screen (text "3-1", say "three-one"; text "Eto'o", say "Etto").
+
+Every scene is `{ "type": "move", ... }`:
+| field | meaning |
+|---|---|
+| `n`, `who`, `title`, `hook` | "MOVE n · who's name" and the coloured title. `who`: a manager id, `result` or `next`. `hook: true` on line 1. |
+| `badge`, `on` | brilliant, great, best, excellent, book, inaccuracy, mistake, blunder, checkmate, nogoal; `on` = the player id it lands beside |
+| `flip`, `flipWord` | swap to a second badge when the voice reaches that word (Bojan: brilliant to nogoal at "handball", with a NO GOAL stamp) |
+| `eval`, `evalAfter` | the bar: a number (+ = the bottom side better) or "M" for mate; `evalAfter` moves it again at `flipWord` |
+| `shape` | one or more shape names (both teams) |
+| `cam` | `cx`, `cy` (metres), `len` (metres of pitch shown top to bottom; 40 = close, 110 = whole pitch), `push` (slow zoom) |
+| `focus` | player ids lit up; everyone else dims |
+| `ball` | `{ path: [[x, y], ...], at, dur }` seconds into the line; `pass`: ids the ball circles between; `sway`: a club whose players shuffle |
+| `runs` | `[{ id, to: [x, y], at, dur }]` |
+| `goal`, `goalWord` | GOAL! flash when the voice says that word |
+| `red`, `redAt` | red card, "10 MEN", the player walks off |
+| `banks` | yellow bands behind the two banks of four |
+| `arrows` | `[{ from: [x, y], to: [x, y], at }]` |
+| `overlay` | hook (manager v manager), coach (map inset), possession, sprinklers (full time run), trophy, next |
+| `where`, `score` | venue tag; `score` = { h, a, min, agg, names? } |
+
+The end line's voice says only "Follow for more." (RUL-KIB-005).

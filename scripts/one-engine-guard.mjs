@@ -154,7 +154,11 @@ export const CANARY_CLEAN = [
   `${CANARY_DIR}/typeOnly.ts`,         // ComponentProps<typeof CanvasMatch>
 ];
 
-const SKIP_DIRS = new Set(["node_modules", ".next", ".git", "public", "supabase", "patch-notes", "scripts", "tests"]);
+// mobile/: the packed phone app's build tools and their generated output (its
+// built copy of the game in mobile/www, like .next). No game source lives
+// there: the app is built from the same app/, components/ and lib/ this guard
+// already reads (mobile/README.md).
+const SKIP_DIRS = new Set(["node_modules", ".next", ".git", "public", "supabase", "patch-notes", "scripts", "tests", "mobile"]);
 function walk(dir, out = []) {
   for (const name of readdirSync(dir)) {
     if (name.startsWith(".") || SKIP_DIRS.has(name)) continue;

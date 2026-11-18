@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
-  MEDIA_TYPES, decideServe, isMediaRel, isSafeRel, keyOf, planUploads, runBatch, signedGet,
+  CRON_DEFAULTS, MEDIA_TYPES, cronAllowed, decideServe, isMediaRel, isSafeRel, keyOf, planUploads, runBatch, signedGet,
   type LocalFile, type MigrateDeps, type ServeDeps,
 } from "@/lib/patchNoteMedia";
 import type { ListedObject, R2Config } from "@/lib/marketing/r2";
@@ -133,6 +133,19 @@ console.log("The 🔔 Inbox's headlines");
   ok(bytes < 60_000, `small: ${(bytes / 1024).toFixed(1)} KB (the full notes are ${(fs.statSync(path.join(process.cwd(), "lib/patchNotesData.ts")).size / 1024).toFixed(0)} KB)`);
   const bell = fs.readFileSync(path.join(process.cwd(), "components/teamRoom/InboxBell.tsx"), "utf8");
   ok(!/patchNotesData/.test(bell.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "")), "the bell no longer imports the full notes");
+}
+
+console.log("The timed job (vercel.json crons)");
+{
+  const vercel = JSON.parse(fs.readFileSync(path.join(process.cwd(), "vercel.json"), "utf8"));
+  ok(vercel.git?.deploymentEnabled?.main === true && vercel.git?.deploymentEnabled?.["**"] === false, "only main still deploys");
+  ok((vercel.crons ?? []).some((c: { path: string; schedule: string }) => c.path === "/api/admin/patch-notes/media-sync" && /^\*\/\d+ \* \* \* \*$/.test(c.schedule)), "the media-sync route runs every few minutes");
+  const CRON_UA = "vercel-cron/1.0";
+  ok(cronAllowed({ userAgent: CRON_UA }, undefined), "no CRON_SECRET: Vercel's timed call gets in");
+  ok(!cronAllowed({ userAgent: "Mozilla/5.0" }, undefined) && !cronAllowed({}, ""), "no CRON_SECRET: a browser does not (it goes through the admin check)");
+  ok(cronAllowed({ authorization: "Bearer abc123", userAgent: CRON_UA }, "abc123"), "CRON_SECRET set: the right Bearer gets in");
+  ok(!cronAllowed({ userAgent: CRON_UA }, "abc123") && !cronAllowed({ authorization: "Bearer nope", userAgent: CRON_UA }, "abc123"), "CRON_SECRET set: the user agent alone, or a wrong secret, does not");
+  ok(CRON_DEFAULTS.budgetMs <= 45_000, "a timed batch stops well inside the route's 60 s");
 }
 
 console.log(failed ? `\n${failed} FAILED` : "\nAll patch-note media checks passed.");

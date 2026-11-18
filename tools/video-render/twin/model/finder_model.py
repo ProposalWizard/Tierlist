@@ -1,0 +1,143 @@
+"""METHOD v2 (Mikey, 9 Nov 2026, after Ronaldo 17/18 -> Gabriel Jesus 18/19 looked wrong): each stat is measured as how far
+above or below the average of its league + season + position group the player is (standard deviations, capped at +-4),
+not as a 0-100 rank, so "best by a mile" stays far from "quite good". Match % = closer than that share of random same-position pairs
+(GAPS): a typical pair is 50%. Seasons under 1,500 minutes are flagged as short (mostly bench minutes).
+
+The Twin Finder method in Python, so a video and the Finder page give the same answer (Mikey, 9 Nov 2026).
+Reads the packed data from tools/twin-finder/pack.py (top 5 leagues). Same rules as tools/twin-finder/index.html:
+same position group only; stats per 90; ranked 0-100 within league + season + group (900+ minutes, 450+ this season);
+weighted gap, skipping stats either side lacks; a candidate must share 60% of the weight; match % = 100 - gap;
+2,000 tests with every weight shuffled to between 0.5 and 1.5 times."""
+import json, math, random, collections, bisect
+
+W = {
+ 'ST': {'npG': 3, 'npxG': 3, 'shots': 2, 'SoT': 1.5, 'conv': 1, 'bigMiss': 1, 'A': 1, 'xA': 1, 'chances': 1, 'bigCC': 1, 'drib': .5, 'passes': .5, 'pass%': .5, 'wonHigh': .5, 'def': .25, 'rec': .25, 'penWon': .5},
+ 'AMW': {'npG': 3, 'npxG': 3, 'shots': 2, 'SoT': 1, 'conv': 1, 'A': 2, 'xA': 2, 'chances': 2, 'bigCC': 2, 'drib': 1.5, 'drib%': .5, 'passes': 1, 'pass%': 1, 'long': .5, 'def': .5, 'rec': .5, 'wonHigh': .5, 'bigMiss': 1, 'penWon': .5, 'tkl': .25, 'int': .25},
+ 'MID': {'passes': 2, 'pass%': 2, 'long': 1.5, 'long%': 1, 'chances': 1.5, 'bigCC': 1, 'A': 1, 'xA': 1, 'npG': 1, 'npxG': 1, 'shots': .5, 'drib': 1, 'def': 1.5, 'tkl': 1.5, 'int': 1.5, 'rec': 1.5, 'wonHigh': 1, 'fouls': .5},
+ 'FB': {'def': 1.5, 'tkl': 1.5, 'int': 1.5, 'rec': 1, 'clear': 1, 'block': .5, 'chances': 1.5, 'bigCC': 1, 'A': 1, 'xA': 1, 'drib': 1, 'passes': 1, 'pass%': 1, 'long': 1, 'npG': .5, 'wonHigh': .5},
+ 'CB': {'def': 2, 'int': 2, 'tkl': 1, 'rec': 1, 'clear': 2, 'block': 1.5, 'passes': 2, 'pass%': 2, 'long': 2, 'long%': 1.5, 'npG': 1, 'A': .5, 'fouls': .5},
+ 'GK': {'save%': 3, 'prevented': 3, 'saves': 2, 'cs': 1.5, 'conceded': 1, 'long': 1.5, 'long%': 1, 'passes': 1, 'pass%': 1}}
+W['ATT'] = W['AMW']
+GROUP_NAME = {'GK': 'goalkeeper', 'CB': 'centre-back', 'FB': 'full-back', 'MID': 'midfielder', 'AMW': 'attacker', 'ST': 'striker', 'ATT': 'attacker'}
+
+def group(pos):
+    if pos == 11: return 'GK'
+    if pos in (32, 38, 62, 68, 71, 72, 39, 31): return 'FB'
+    if 30 <= pos < 40: return 'CB'
+    if 60 <= pos < 80: return 'MID'
+    if 80 <= pos < 100 or pos in (103, 104, 106, 107): return 'AMW'
+    if pos >= 100: return 'ST'
+    return 'MID'
+
+def feats(r):
+    p = (r.get('mins') or 0) / 90 or 1; pens = r.get('pens') or 0
+    per = lambda k: None if r.get(k) is None else r[k] / p
+    f = {'npG': ((r.get('G') or 0) - pens) / p, 'npxG': None if r.get('xG') is None else max(r['xG'] - 0.79 * pens, 0) / p,
+         'A': (r.get('A') or 0) / p, 'xA': per('xA'), 'chances': per('CC'), 'bigCC': per('bigCC'), 'bigMiss': per('bigMiss'),
+         'penWon': per('penWon'), 'prevented': per('prevented'), 'cs': per('cs')}
+    for k in ('shots', 'SoT', 'conv', 'drib', 'drib%', 'passes', 'pass%', 'long', 'long%', 'def', 'tkl', 'int', 'rec', 'wonHigh', 'fouls', 'clear', 'block', 'saves', 'save%', 'conceded'):
+        f[k] = r.get(k)
+    # v2.1 (10 Nov 2026): FotMob's lists leave a player out when his number is 0 (pens won: 6 in 10 players). A player who is on
+    # the main lists (has a passes number) but not on one of these has a real 0, not "no data"; before, he was skipped on that stat.
+    if r.get('passes') is not None:
+        for k in ZERO_OK:
+            if f.get(k) is None: f[k] = 0.0
+    return f
+ZERO_OK = ('penWon', 'bigMiss', 'block', 'wonHigh', 'SoT', 'bigCC')
+
+TOT = ['mins', 'apps', 'G', 'pens', 'A', 'xG', 'xA', 'xGOT', 'bigCC', 'CC', 'bigMiss', 'penWon', 'prevented', 'cs']
+
+class Data:
+    def __init__(self, path):
+        D = json.load(open(path)); self.D = D; cols = D['cols']; self.CUR = len(D['seasons']) - 1
+        self.rows = []
+        for i in range(len(D['L'])):
+            r = dict(zip(cols, D['X'][i]))
+            o = {'i': i, 'name': D['names'][D['N'][i]], 'season': D['seasons'][D['S'][i]], 's': D['S'][i], 'league': D['L'][i],
+                 'leagueName': D['leagues'][str(D['L'][i])] if str(D['L'][i]) in D['leagues'] else D['leagues'].get(D['L'][i]),
+                 'teamId': D['T'][i], 'id': str(D['id'][i]), 'pos': D['P'][i], 'raw': r,
+                 'group': ('GK' if r.get('saves') is not None else 'MID') if not D['P'][i] else group(D['P'][i]),   # v2.1: a keeper with no position on file is a keeper
+                 'mins_played': r.get('mins') or 0, 'goals': r.get('G'), 'goal_assist': r.get('A'), 'rating': r.get('rating')}
+            o['f'] = feats(r); self.rows.append(o)
+        # one spelling per player (10 Nov 2026): FotMob writes 79 players two ways across seasons ("Luka Modric" / "Luka Modrić"),
+        # which made them two different people. The newest season's spelling is used for every row.
+        latest = {}
+        for o in sorted(self.rows, key=lambda o: o['s']): latest[o['id']] = o['name']
+        for o in self.rows: o['name'] = latest[o['id']]
+        # two different players with one name (e.g. the two Vítinhas) must not be added together: the one with fewer minutes
+        # gets an invisible mark on his name (a zero-width space), so he looks the same on screen but is a different player.
+        tot = collections.Counter(); who = collections.defaultdict(set)
+        for o in self.rows: tot[o['id']] += o['mins_played']; who[o['name']].add(o['id'])
+        for nm, ids_ in who.items():
+            if len(ids_) > 1:
+                for n_, pid in enumerate(sorted(ids_, key=lambda i: -tot[i])[1:], 1):
+                    for o in self.rows:
+                        if o['id'] == pid: o['name'] = nm + '\u200b' * n_
+        self.namesakes = sorted(nm for nm, ids_ in who.items() if len(ids_) > 1)
+        self._pools = {}
+    def min_ok(self, o): return o['mins_played'] >= (450 if o['s'] == self.CUR else 900)
+    def in_group(self, o, g): return o['group'] in ('AMW', 'ST') if g == 'ATT' else o['group'] == g
+    def pool(self, league, s, g):
+        """-> (players, {stat: (mean, sd)}) for league + season + group"""
+        k = (league, s, g)
+        if k not in self._pools:
+            ids = [o for o in self.rows if o['league'] == league and o['s'] == s and self.in_group(o, g) and self.min_ok(o)]
+            ms = {}
+            for key in W[g]:
+                vals = [o['f'][key] for o in ids if o['f'][key] is not None]
+                if len(vals) >= 4:
+                    m = sum(vals) / len(vals); sd = (sum((v - m) ** 2 for v in vals) / len(vals)) ** 0.5
+                    ms[key] = (m, sd if sd > 1e-9 else 1.0)
+            self._pools[k] = (ids, ms)
+        return self._pools[k]
+    @staticmethod
+    def z(ms, key, x):
+        if x is None or key not in ms: return None
+        m, sd = ms[key]; return max(-4.0, min(4.0, (x - m) / sd))
+    def pct_of(self, f, pool_, g): return {k: self.z(pool_[1], k, f[k]) for k in W[g]}   # (name kept: the "position" of a player in his pool)
+    @staticmethod
+    def dist(a, b, w):
+        s = t = tot = 0
+        for k, x in w.items():
+            tot += x
+            if a.get(k) is None or b.get(k) is None: continue
+            s += x * (a[k] - b[k]) ** 2; t += x
+        return math.sqrt(s / t) if t and t >= 0.6 * tot else 99
+    # match % = how many random pairs of players in the same position group are further apart than these two
+    # (measured over 120,000 pairs; 50% = a typical pair, 90% = closer than 9 in 10 pairs)
+    GAPS = {"ST": [0.334, 0.505, 0.548, 0.576, 0.601, 0.62, 0.64, 0.655, 0.668, 0.682, 0.693, 0.703, 0.713, 0.724, 0.733, 0.742, 0.751, 0.759, 0.767, 0.774, 0.781, 0.789, 0.796, 0.803, 0.809, 0.816, 0.823, 0.83, 0.836, 0.842, 0.849, 0.855, 0.861, 0.868, 0.874, 0.879, 0.886, 0.891, 0.897, 0.902, 0.907, 0.913, 0.919, 0.924, 0.929, 0.935, 0.941, 0.946, 0.952, 0.957, 0.963, 0.969, 0.973, 0.979, 0.984, 0.989, 0.994, 0.999, 1.003, 1.009, 1.015, 1.02, 1.025, 1.03, 1.035, 1.04, 1.045, 1.05, 1.055, 1.06, 1.066, 1.071, 1.076, 1.081, 1.086, 1.091, 1.096, 1.1, 1.106, 1.111, 1.116, 1.122, 1.127, 1.132, 1.137, 1.143, 1.148, 1.153, 1.159, 1.163, 1.169, 1.174, 1.179, 1.184, 1.189, 1.194, 1.199, 1.205, 1.21, 1.216, 1.222, 1.228, 1.233, 1.238, 1.244, 1.249, 1.254, 1.26, 1.266, 1.271, 1.277, 1.283, 1.29, 1.296, 1.302, 1.308, 1.315, 1.322, 1.328, 1.335, 1.342, 1.348, 1.354, 1.361, 1.369, 1.376, 1.383, 1.39, 1.396, 1.402, 1.409, 1.417, 1.425, 1.431, 1.438, 1.447, 1.454, 1.464, 1.471, 1.478, 1.486, 1.496, 1.503, 1.512, 1.519, 1.529, 1.537, 1.546, 1.555, 1.565, 1.574, 1.584, 1.593, 1.603, 1.613, 1.623, 1.635, 1.646, 1.658, 1.668, 1.68, 1.692, 1.706, 1.718, 1.732, 1.747, 1.76, 1.772, 1.787, 1.8, 1.815, 1.827, 1.843, 1.861, 1.882, 1.901, 1.921, 1.937, 1.958, 1.983, 2.005, 2.027, 2.053, 2.08, 2.106, 2.136, 2.163, 2.195, 2.235, 2.275, 2.318, 2.364, 2.415, 2.465, 2.526, 2.591, 2.676, 2.777, 2.912, 3.109, 4.198], "AMW": [0.348, 0.551, 0.597, 0.628, 0.655, 0.676, 0.693, 0.706, 0.722, 0.734, 0.748, 0.759, 0.77, 0.78, 0.789, 0.798, 0.807, 0.816, 0.823, 0.83, 0.838, 0.845, 0.852, 0.859, 0.865, 0.871, 0.878, 0.884, 0.89, 0.897, 0.902, 0.909, 0.915, 0.921, 0.928, 0.933, 0.938, 0.944, 0.949, 0.956, 0.962, 0.967, 0.972, 0.977, 0.984, 0.989, 0.995, 1.0, 1.004, 1.011, 1.017, 1.021, 1.026, 1.031, 1.035, 1.04, 1.045, 1.049, 1.055, 1.06, 1.065, 1.069, 1.074, 1.078, 1.083, 1.088, 1.092, 1.097, 1.102, 1.106, 1.11, 1.114, 1.119, 1.123, 1.129, 1.134, 1.138, 1.143, 1.148, 1.152, 1.157, 1.161, 1.166, 1.171, 1.175, 1.18, 1.185, 1.19, 1.194, 1.199, 1.204, 1.208, 1.212, 1.217, 1.222, 1.228, 1.232, 1.237, 1.243, 1.248, 1.254, 1.26, 1.265, 1.27, 1.275, 1.281, 1.287, 1.292, 1.298, 1.304, 1.31, 1.314, 1.32, 1.326, 1.331, 1.337, 1.342, 1.347, 1.353, 1.358, 1.363, 1.37, 1.376, 1.381, 1.387, 1.394, 1.4, 1.405, 1.413, 1.418, 1.425, 1.431, 1.438, 1.445, 1.452, 1.459, 1.467, 1.474, 1.483, 1.491, 1.498, 1.505, 1.512, 1.519, 1.527, 1.535, 1.541, 1.548, 1.556, 1.564, 1.572, 1.581, 1.59, 1.599, 1.608, 1.617, 1.625, 1.635, 1.645, 1.654, 1.662, 1.671, 1.682, 1.691, 1.701, 1.714, 1.726, 1.737, 1.749, 1.761, 1.775, 1.789, 1.801, 1.814, 1.827, 1.844, 1.858, 1.872, 1.888, 1.903, 1.92, 1.938, 1.961, 1.983, 2.004, 2.026, 2.051, 2.08, 2.108, 2.138, 2.175, 2.215, 2.25, 2.294, 2.352, 2.417, 2.498, 2.602, 2.739, 2.949, 4.105], "MID": [0.367, 0.572, 0.62, 0.649, 0.672, 0.692, 0.713, 0.73, 0.745, 0.757, 0.769, 0.783, 0.791, 0.801, 0.813, 0.822, 0.833, 0.841, 0.85, 0.858, 0.865, 0.873, 0.88, 0.888, 0.895, 0.903, 0.91, 0.917, 0.923, 0.93, 0.937, 0.943, 0.948, 0.955, 0.961, 0.968, 0.974, 0.979, 0.984, 0.99, 0.996, 1.001, 1.007, 1.013, 1.018, 1.023, 1.029, 1.034, 1.04, 1.044, 1.051, 1.055, 1.061, 1.066, 1.071, 1.076, 1.081, 1.086, 1.091, 1.096, 1.101, 1.106, 1.111, 1.116, 1.12, 1.125, 1.131, 1.135, 1.14, 1.145, 1.15, 1.154, 1.159, 1.164, 1.168, 1.173, 1.177, 1.181, 1.185, 1.19, 1.195, 1.199, 1.204, 1.209, 1.214, 1.219, 1.223, 1.228, 1.233, 1.239, 1.243, 1.248, 1.251, 1.256, 1.26, 1.265, 1.27, 1.274, 1.279, 1.283, 1.288, 1.293, 1.298, 1.304, 1.309, 1.314, 1.318, 1.324, 1.329, 1.333, 1.338, 1.343, 1.348, 1.354, 1.358, 1.363, 1.368, 1.373, 1.378, 1.383, 1.389, 1.395, 1.4, 1.405, 1.411, 1.416, 1.421, 1.427, 1.432, 1.439, 1.445, 1.451, 1.458, 1.465, 1.472, 1.478, 1.483, 1.491, 1.497, 1.503, 1.508, 1.514, 1.522, 1.528, 1.536, 1.542, 1.549, 1.556, 1.563, 1.571, 1.579, 1.587, 1.594, 1.602, 1.608, 1.616, 1.624, 1.632, 1.639, 1.648, 1.657, 1.665, 1.674, 1.684, 1.694, 1.702, 1.71, 1.72, 1.729, 1.739, 1.749, 1.761, 1.772, 1.785, 1.797, 1.807, 1.82, 1.833, 1.847, 1.861, 1.875, 1.891, 1.905, 1.922, 1.942, 1.96, 1.981, 2.004, 2.027, 2.051, 2.079, 2.102, 2.136, 2.167, 2.202, 2.248, 2.306, 2.375, 2.484, 2.605, 3.361], "FB": [0.33, 0.555, 0.608, 0.643, 0.67, 0.695, 0.712, 0.727, 0.74, 0.755, 0.768, 0.78, 0.792, 0.803, 0.812, 0.819, 0.829, 0.838, 0.847, 0.855, 0.863, 0.871, 0.879, 0.887, 0.895, 0.903, 0.909, 0.916, 0.923, 0.93, 0.936, 0.942, 0.949, 0.956, 0.961, 0.967, 0.973, 0.979, 0.986, 0.992, 0.998, 1.004, 1.009, 1.014, 1.019, 1.025, 1.029, 1.034, 1.04, 1.046, 1.052, 1.057, 1.062, 1.067, 1.073, 1.078, 1.083, 1.088, 1.094, 1.099, 1.103, 1.108, 1.112, 1.117, 1.123, 1.128, 1.132, 1.137, 1.143, 1.148, 1.154, 1.159, 1.164, 1.17, 1.174, 1.179, 1.184, 1.189, 1.193, 1.198, 1.202, 1.207, 1.212, 1.217, 1.221, 1.226, 1.231, 1.237, 1.241, 1.246, 1.251, 1.257, 1.26, 1.265, 1.271, 1.275, 1.28, 1.287, 1.292, 1.296, 1.301, 1.306, 1.312, 1.317, 1.321, 1.326, 1.331, 1.337, 1.341, 1.346, 1.351, 1.357, 1.362, 1.368, 1.373, 1.379, 1.384, 1.389, 1.394, 1.4, 1.406, 1.41, 1.416, 1.422, 1.427, 1.433, 1.438, 1.445, 1.45, 1.457, 1.463, 1.468, 1.474, 1.481, 1.488, 1.494, 1.5, 1.507, 1.512, 1.519, 1.526, 1.532, 1.537, 1.544, 1.551, 1.558, 1.565, 1.572, 1.58, 1.587, 1.596, 1.605, 1.612, 1.619, 1.629, 1.638, 1.643, 1.652, 1.66, 1.669, 1.678, 1.688, 1.697, 1.706, 1.715, 1.726, 1.735, 1.746, 1.755, 1.765, 1.777, 1.785, 1.797, 1.808, 1.819, 1.828, 1.842, 1.857, 1.87, 1.885, 1.898, 1.915, 1.932, 1.945, 1.966, 1.986, 2.005, 2.028, 2.051, 2.077, 2.102, 2.13, 2.165, 2.202, 2.247, 2.293, 2.348, 2.42, 2.512, 2.67, 3.41], "CB": [0.331, 0.563, 0.611, 0.638, 0.666, 0.692, 0.712, 0.731, 0.746, 0.76, 0.774, 0.788, 0.797, 0.808, 0.816, 0.827, 0.837, 0.846, 0.856, 0.863, 0.872, 0.879, 0.887, 0.896, 0.904, 0.911, 0.919, 0.927, 0.934, 0.94, 0.946, 0.952, 0.958, 0.963, 0.97, 0.977, 0.983, 0.989, 0.996, 1.002, 1.008, 1.015, 1.02, 1.025, 1.031, 1.036, 1.041, 1.046, 1.052, 1.057, 1.063, 1.068, 1.074, 1.08, 1.085, 1.091, 1.097, 1.101, 1.107, 1.113, 1.119, 1.124, 1.129, 1.134, 1.138, 1.142, 1.147, 1.151, 1.156, 1.161, 1.166, 1.171, 1.176, 1.181, 1.187, 1.192, 1.197, 1.201, 1.207, 1.213, 1.217, 1.222, 1.227, 1.232, 1.236, 1.24, 1.246, 1.251, 1.257, 1.262, 1.267, 1.271, 1.277, 1.282, 1.287, 1.292, 1.297, 1.301, 1.306, 1.311, 1.315, 1.32, 1.324, 1.329, 1.335, 1.339, 1.344, 1.35, 1.355, 1.359, 1.365, 1.37, 1.376, 1.381, 1.387, 1.393, 1.398, 1.404, 1.408, 1.414, 1.419, 1.425, 1.43, 1.436, 1.441, 1.446, 1.452, 1.458, 1.464, 1.468, 1.475, 1.482, 1.49, 1.495, 1.5, 1.507, 1.513, 1.52, 1.527, 1.534, 1.54, 1.547, 1.553, 1.56, 1.567, 1.573, 1.58, 1.586, 1.593, 1.599, 1.606, 1.613, 1.619, 1.627, 1.633, 1.641, 1.647, 1.656, 1.663, 1.672, 1.68, 1.689, 1.698, 1.705, 1.714, 1.723, 1.732, 1.741, 1.752, 1.762, 1.774, 1.784, 1.794, 1.804, 1.817, 1.829, 1.84, 1.853, 1.867, 1.881, 1.896, 1.91, 1.926, 1.94, 1.957, 1.974, 1.996, 2.017, 2.038, 2.059, 2.082, 2.104, 2.138, 2.164, 2.197, 2.237, 2.289, 2.347, 2.443, 2.614, 3.24], "GK": [0.121, 0.324, 0.374, 0.407, 0.437, 0.456, 0.481, 0.502, 0.521, 0.537, 0.552, 0.568, 0.583, 0.594, 0.607, 0.619, 0.63, 0.641, 0.65, 0.66, 0.67, 0.678, 0.689, 0.698, 0.708, 0.716, 0.726, 0.734, 0.741, 0.749, 0.757, 0.764, 0.771, 0.778, 0.788, 0.796, 0.804, 0.811, 0.817, 0.824, 0.831, 0.837, 0.844, 0.852, 0.86, 0.866, 0.873, 0.881, 0.887, 0.894, 0.902, 0.908, 0.916, 0.924, 0.93, 0.937, 0.946, 0.953, 0.959, 0.966, 0.973, 0.979, 0.987, 0.994, 1.0, 1.007, 1.013, 1.021, 1.028, 1.034, 1.041, 1.046, 1.053, 1.059, 1.066, 1.073, 1.079, 1.085, 1.091, 1.095, 1.102, 1.109, 1.116, 1.121, 1.128, 1.135, 1.141, 1.147, 1.154, 1.16, 1.169, 1.177, 1.184, 1.191, 1.198, 1.204, 1.209, 1.215, 1.222, 1.228, 1.234, 1.242, 1.249, 1.255, 1.262, 1.269, 1.275, 1.282, 1.288, 1.294, 1.301, 1.307, 1.314, 1.321, 1.328, 1.334, 1.343, 1.349, 1.356, 1.364, 1.371, 1.378, 1.385, 1.393, 1.401, 1.408, 1.416, 1.422, 1.429, 1.437, 1.444, 1.452, 1.462, 1.468, 1.478, 1.487, 1.494, 1.501, 1.511, 1.517, 1.528, 1.536, 1.545, 1.553, 1.563, 1.571, 1.581, 1.591, 1.6, 1.609, 1.62, 1.628, 1.638, 1.648, 1.658, 1.669, 1.677, 1.686, 1.701, 1.713, 1.722, 1.735, 1.747, 1.756, 1.766, 1.779, 1.793, 1.805, 1.818, 1.834, 1.848, 1.86, 1.876, 1.891, 1.908, 1.925, 1.94, 1.958, 1.979, 2.003, 2.021, 2.041, 2.062, 2.078, 2.102, 2.121, 2.147, 2.176, 2.206, 2.23, 2.261, 2.305, 2.337, 2.387, 2.435, 2.49, 2.563, 2.648, 2.769, 2.91, 3.769], "ATT": [0.325, 0.535, 0.575, 0.604, 0.631, 0.65, 0.669, 0.686, 0.7, 0.713, 0.727, 0.737, 0.747, 0.756, 0.766, 0.776, 0.785, 0.794, 0.804, 0.811, 0.82, 0.828, 0.834, 0.842, 0.848, 0.856, 0.863, 0.869, 0.876, 0.882, 0.889, 0.895, 0.901, 0.907, 0.912, 0.917, 0.923, 0.929, 0.935, 0.94, 0.945, 0.951, 0.958, 0.963, 0.968, 0.973, 0.978, 0.984, 0.989, 0.994, 0.998, 1.004, 1.01, 1.015, 1.02, 1.025, 1.03, 1.035, 1.041, 1.046, 1.05, 1.055, 1.06, 1.064, 1.069, 1.074, 1.079, 1.084, 1.089, 1.094, 1.099, 1.105, 1.11, 1.114, 1.119, 1.124, 1.13, 1.135, 1.14, 1.144, 1.15, 1.155, 1.16, 1.165, 1.17, 1.176, 1.182, 1.187, 1.192, 1.197, 1.202, 1.207, 1.211, 1.217, 1.222, 1.226, 1.231, 1.236, 1.241, 1.247, 1.252, 1.258, 1.263, 1.268, 1.274, 1.279, 1.284, 1.289, 1.294, 1.3, 1.306, 1.312, 1.319, 1.324, 1.331, 1.336, 1.341, 1.347, 1.353, 1.358, 1.364, 1.371, 1.377, 1.383, 1.389, 1.396, 1.403, 1.408, 1.415, 1.422, 1.427, 1.434, 1.44, 1.447, 1.453, 1.461, 1.468, 1.474, 1.481, 1.488, 1.496, 1.504, 1.511, 1.518, 1.526, 1.534, 1.542, 1.548, 1.557, 1.566, 1.574, 1.582, 1.59, 1.599, 1.608, 1.617, 1.626, 1.637, 1.647, 1.657, 1.667, 1.676, 1.685, 1.695, 1.709, 1.721, 1.73, 1.741, 1.755, 1.767, 1.78, 1.791, 1.807, 1.821, 1.834, 1.848, 1.863, 1.881, 1.901, 1.919, 1.936, 1.952, 1.97, 1.991, 2.012, 2.039, 2.061, 2.088, 2.113, 2.147, 2.182, 2.224, 2.267, 2.314, 2.36, 2.416, 2.484, 2.574, 2.699, 2.9, 3.867]}   # per position group: gap at 0%, 0.5%, ... 100% of pairs
+    @staticmethod
+    def match(d, g=None):
+        """The plain scale (Mikey, 9 Nov 2026): 100% = identical stats, minus 25 points for every step (SD) of gap.
+        A typical pair of strikers is about 70%; Kane 25/26 vs Mbappe 23/24 81%. (The share-of-pairs table GAPS is kept for reference.)"""
+        return 0.0 if d >= 99 else max(0.0, 100 - 25 * d)
+    def combine(self, rows):
+        out = {}
+        for c in self.D['cols']:
+            if c in TOT:
+                have = [o for o in rows if o['raw'].get(c) is not None]; out[c] = sum(o['raw'][c] for o in have) if have else None
+                if have and c in ('xG', 'xA', 'xGOT'):   # v2.1: a season with no xG at all (before 2019/20) must not count as minutes with 0 xG
+                    out[c] *= sum(o['mins_played'] for o in rows) / max(1, sum(o['mins_played'] for o in have))
+            else:
+                s = w = 0
+                for o in rows:
+                    if o['raw'].get(c) is not None: s += o['raw'][c] * o['mins_played']; w += o['mins_played']
+                out[c] = s / w if w else None
+        return out
+    def find(self, name, season):
+        return [o for o in self.rows if o['name'] == name and o['season'] == season]
+    def rank(self, target_rows, seasons, leagues, g=None, include_own=True, n=2000, seed=7):
+        """-> (order [(dist, row)], wins {(name, season): count}, target pct, group, candidates)"""
+        ref = sorted(target_rows, key=lambda o: o['s'])[-1]; g = g or ref['group']; w = W[g]
+        tf = feats(self.combine(target_rows)); tp = self.pct_of(tf, self.pool(ref['league'], ref['s'], g), g)
+        ids = {o['i'] for o in target_rows}; name = ref['name']
+        cand = [o for o in self.rows if o['league'] in leagues and o['season'] in seasons and self.in_group(o, g) and self.min_ok(o)
+                and o['i'] not in ids and (include_own or o['name'] != name)]
+        cp = {o['i']: self.pct_of(o['f'], self.pool(o['league'], o['s'], g), g) for o in cand}
+        order = sorted(((self.dist(tp, cp[o['i']], w), o) for o in cand), key=lambda x: x[0]); order = [x for x in order if x[0] < 99]
+        others = [o for d, o in order if o['name'] != name][:60]; rnd = random.Random(seed); wins = collections.Counter()
+        for _ in range(n):
+            wr = {k: x * (0.5 + rnd.random()) for k, x in w.items()}
+            b = min(others, key=lambda o: self.dist(tp, cp[o['i']], wr)); wins[(b['name'], b['season'])] += 1
+        for o in cand: o['_pct'] = cp[o['i']]
+        return order, wins, tp, tf, g, cand

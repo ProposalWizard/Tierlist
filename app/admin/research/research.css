@@ -25,3 +25,12 @@
   clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
 .bc[data-look="ops"] .rs-open { color: #04180d; background: #34e08b; }
 @media (max-width: 640px) { .rs-card { padding: 13px 13px 12px; } .rs-title { font-size: 17px; } }
+/* Knowitball (THE admin look, 12 Nov 2026): the shared rules in components/admin/shell/houseTokens.css. */
+.bc[data-look="house"] .rs-pills { gap: 8px; }
+.bc[data-look="house"] .rs-grid { gap: 16px; }
+.bc[data-look="house"] .rs-card { border-radius: var(--kh-r2); border-top: 1px solid var(--kh-line); box-shadow: none; padding: 16px; gap: 8px; }
+.bc[data-look="house"] .rs-card:hover { border-color: var(--kh-ink3); }
+.bc[data-look="house"] .rs-topic { font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; padding: 0 8px; border-radius: 4px; background: var(--kh-panel2); }
+.bc[data-look="house"] .rs-date, .bc[data-look="house"] .rs-by { font-size: 12px; font-weight: 500; color: var(--kh-ink2); }
+.bc[data-look="house"] .rs-title { font-size: 16px; font-weight: 600; line-height: 1.25; }
+.bc[data-look="house"] .rs-open { font-size: 14px; font-weight: 600; padding: 4px 12px; border-radius: var(--kh-r1); }

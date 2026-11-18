@@ -1,3 +1,4 @@
+import { readSaveBody } from "@/lib/star/saveBodyServer";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isTester } from "@/lib/admin";
@@ -137,7 +138,9 @@ export async function POST(req: Request) {
   const mode = guardModeFrom(process.env.STAR_SAVE_GUARD);
 
   let career: unknown;
-  try { career = await req.json(); } catch {
+  // Squeezed (gzip) or plain: lib/star/saveBodyServer.ts.
+  try { career = await readSaveBody(req);
+  } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
   if (!career || typeof career !== "object" || Array.isArray(career)) {

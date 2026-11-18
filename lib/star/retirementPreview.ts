@@ -32,7 +32,7 @@ import {
 export type PreviewShape = "legend" | "journeyman" | "oneClub" | "grafter" | "quiet";
 
 export const PREVIEW_SHAPES: { id: PreviewShape; label: string; line: string }[] = [
-  { id: "legend", label: "Legend", line: "Ballon d'Ors and a big club" },
+  { id: "legend", label: "Legend", line: "Golden Balls and a big club" },
   { id: "oneClub", label: "One club", line: "One shirt, a testimonial" },
   { id: "journeyman", label: "Journeyman", line: "Seven clubs, up and down" },
   { id: "grafter", label: "Lower leagues", line: "League Two to the Championship" },

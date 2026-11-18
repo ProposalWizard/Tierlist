@@ -1,3 +1,4 @@
+import { gzipText, SAVE_BODY_HEADER } from "./saveBody";
 import { withStars, isOldStarScale, starLevel } from "./starPoints";
 import { INJURIES_ON, isRolledInjury } from "./injurySwitch";
 import { migrateReputation } from "./reputation";
@@ -811,7 +812,17 @@ export async function saveCareerToCloud(
       saveSyncRecord(opts.scope, recordAfterSend(rec, sent));
     }
     const body = JSON.stringify(payload);
-    const res = await fetch(`/api/star/career?slot=${slot}`, {
+    // Sent squeezed (gzip) where the browser can: a 180-550 KB save goes up
+    // as about a quarter of that (Mikey, 10 Nov 2026: the site's data between
+    // Vercel and its server was at 6.6 of 10 GB, mostly saves). Not when
+    // leaving the page: squeezing takes a moment the page may not have, so
+    // that save goes exactly as it always did. The route reads both.
+    const packed = opts.leavingPage || typeof document === "undefined" ? null : await gzipText(body);
+    const res = await fetch(`/api/star/career?slot=${slot}`, packed ? {
+      method: "POST",
+      headers: { "Content-Type": "application/octet-stream", [SAVE_BODY_HEADER]: "gzip" },
+      body: packed,
+    } : {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body,

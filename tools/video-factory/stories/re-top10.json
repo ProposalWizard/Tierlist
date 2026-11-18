@@ -99,6 +99,6 @@
     { "text": "So the rules say the next winner is Lamine Yamal. Would anyone bet against him?",
       "say": "So the rules say the next winner is Lameen Yamal. Would anyone bet against him?",
       "scene": { "type": "person", "person": "yamal", "label": "The rules pick Lamine Yamal", "mood": "happy" } },
-    { "text": "Follow for more, and play Road to Ballon d'Or.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

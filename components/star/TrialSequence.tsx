@@ -1,4 +1,5 @@
 "use client";
+import { PACKED_APP } from "@/lib/app/packed";
 import { ScoutBackdrop, ScoutFigure } from "./ScoutArt";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -310,12 +311,24 @@ export default function TrialSequence({
        *  this flow), so a real route away is safe: reopening /star-dev later
        *  resumes exactly here via the phase-derivation at the top of
        *  page.tsx, same as a refresh already does today. */}
+      {/* The packed phone app has only this one page, so a link to "/" would
+       *  do nothing: there it reloads, which lands on the title screen. */}
+      {PACKED_APP ? (
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="shrink-0 rounded-full bg-black/30 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white/70 hover:bg-black/45 hover:text-white"
+        >
+          ✕ Exit
+        </button>
+      ) : (
       <Link
         href="/"
         className="shrink-0 rounded-full bg-black/30 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white/70 hover:bg-black/45 hover:text-white"
       >
         ✕ Exit
       </Link>
+      )}
       <div className="flex flex-1 items-center gap-1">
         {stages.map(s => {
           const r = trial.results[s];

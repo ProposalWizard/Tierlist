@@ -319,5 +319,12 @@ export async function GET(request: NextRequest) {
     // What actually came back, so the caller can fall back per club rather than
     // guessing. The FC 26 import is known to be partial.
     found: Object.fromEntries(clubs.map(c => [c, squads[c].length])),
+  }, {
+    // The same answer for every player: Vercel's CDN keeps it for an hour and
+    // serves it with no server work (Mikey, 6 Nov 2026: the ~190-club ask at
+    // the start of every career cost ~330 ms of server time each). After the
+    // hour, the next ask gets the kept copy at once while one fresh read runs
+    // in the background, so a rating changed in admin shows within the hour.
+    headers: { "Cache-Control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400" },
   });
 }

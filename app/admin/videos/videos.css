@@ -37,6 +37,24 @@
 .vt-small { font-size: 12.5px; }
 .vt-self { align-self: flex-start; }
 
+/* Recent recordings (Harry, 12 Nov 2026): team storage, kept 30 days. */
+.vt-also { font-size: 13px; padding: 7px 12px; }
+.rl-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.rl-head .vt-label { margin: 0; }
+.rl-kept { font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ash-ink2); border: 1px solid var(--ash-line2); border-radius: 99px; padding: 4px 10px; white-space: nowrap; }
+.rl { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.rl-row { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-top: 1px solid var(--ash-line); }
+.rl-row:first-child { border-top: 0; padding-top: 4px; }
+.rl-what { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rl-what b { font-size: 14.5px; font-weight: 700; overflow-wrap: anywhere; }
+.rl-what b::first-letter { text-transform: uppercase; }
+.rl-what span { font-size: 12.5px; color: var(--ash-ink3); font-variant-numeric: tabular-nums; }
+.rl-what i { font-style: normal; color: var(--ash-ink2); }
+.rl-what i[data-keep="true"] { color: var(--ash-accent); font-weight: 700; }
+.rl-acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rl-btn { font-size: 13px; padding: 7px 12px; }
+.rl-keep { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font-size: 13px; font-weight: 700; color: var(--ash-ink2); cursor: pointer; }
+
 /* Live share (test), Harry 20 Oct 2026. */
 .ls-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .ls-head .vt-label { margin: 0; }

@@ -1,0 +1,231 @@
+[
+{
+"id": "intro",
+"say": "Who is prime Erling Haaland's statistical twin? From the last five seasons.",
+"cap": "WHO IS PRIME ERLING HAALAND'S STATISTICAL TWIN? FROM THE LAST FIVE SEASONS.",
+"sfx": [
+[
+"hit",
+0.05,
+0.6
+]
+],
+"voiceSettings": {
+"speed": 1.1
+},
+"tempo": 1.05,
+"gapDb": -33,
+"maxGap": 0.06
+},
+{
+"id": "own",
+"say": "First, Haaland himself. Two of his own seasons made the top eight. They don't count. So that leaves six.",
+"cap": "FIRST, HAALAND HIMSELF. TWO OF HIS OWN SEASONS MADE THE TOP EIGHT. THEY DON'T COUNT. SO THAT LEAVES SIX.",
+"hold": 0.9,
+"sfx": [
+[
+"pop",
+"HAALAND",
+0.5
+],
+[
+"whoosh",
+"LEAVES",
+0.5
+]
+]
+},
+{
+"id": "c6",
+"say": "Number six: Darwin Noonyez. Liverpool. Seventy-nine percent.",
+"cap": "NUMBER SIX: DARWIN NÚÑEZ. LIVERPOOL. 79%|seventy-nine-percent.",
+"hold": 0.9,
+"sfx": [
+[
+"pop",
+"DARWIN",
+0.5
+]
+]
+},
+{
+"id": "c5",
+"say": "Five: Nicolas Jackson. Chelsea. Eighty percent.",
+"cap": "FIVE: NICOLAS JACKSON. CHELSEA. 80%|eighty-percent.",
+"hold": 0.9,
+"sfx": [
+[
+"pop",
+"NICOLAS",
+0.5
+]
+]
+},
+{
+"id": "surprise",
+"say": "You'd think Harry Kane would be up here? He's twenty-ninth.",
+"cap": "YOU'D THINK HARRY KANE WOULD BE UP HERE? HE'S 29TH.",
+"hold": 0.9,
+"sfx": [
+[
+"hit",
+"HE'S",
+0.5
+]
+]
+},
+{
+"id": "c4",
+"say": "Four: Alexander Isak. Newcastle. Eighty percent.",
+"cap": "FOUR: ALEXANDER ISAK. NEWCASTLE. 80%|eighty-percent.",
+"hold": 0.9,
+"sfx": [
+[
+"pop",
+"ALEXANDER",
+0.5
+]
+]
+},
+{
+"id": "c3",
+"say": "Three and two: Ollie Watkins. Villa. Twice. Eighty-five percent. Guess the twin in the comments.",
+"cap": "THREE AND TWO: OLLIE WATKINS. VILLA. TWICE. 85%|eighty-five-percent. GUESS THE TWIN IN THE COMMENTS.",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"OLLIE",
+0.5
+],
+[
+"pop",
+"GUESS",
+0.45
+]
+]
+},
+{
+"id": "c1",
+"say": "And number one... Callum Wilson. Newcastle. Ninety percent. That makes him Haaland's statistical twin.",
+"cap": "AND NUMBER ONE... CALLUM WILSON. NEWCASTLE. 90%|ninety-percent. THAT MAKES HIM HAALAND'S STATISTICAL TWIN.",
+"hold": 0.4,
+"sfx": [
+[
+"hit",
+"CALLUM",
+0.7
+],
+[
+"hit",
+"THAT",
+0.5
+]
+]
+},
+{
+"id": "tests",
+"say": "We changed how much each stat counts, two thousand times. Wilson came first in every single one.",
+"cap": "WE CHANGED HOW MUCH EACH STAT COUNTS, 2,000|two-thousand TIMES. WILSON CAME FIRST IN EVERY SINGLE ONE.",
+"sfx": [
+[
+"tick",
+"WILSON",
+0.4
+]
+]
+},
+{
+"id": "why",
+"say": "Why? Almost the same expected goals and assists, every ninety minutes.",
+"cap": "WHY? ALMOST THE SAME EXPECTED GOALS AND ASSISTS, EVERY 90|ninety MINUTES.",
+"hold": 0.2
+},
+{
+"id": "diff",
+"say": "The difference? Haaland passes more. Wilson dribbles more.",
+"cap": "THE DIFFERENCE? HAALAND PASSES MORE. WILSON DRIBBLES MORE.",
+"hold": 0.35
+},
+{
+"id": "n0",
+"say": "And this season only?",
+"cap": "AND THIS SEASON ONLY?",
+"hold": 0.3
+},
+{
+"id": "n5",
+"say": "Five: Evanilson.",
+"cap": "FIVE: EVANILSON.",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"EVANILSON",
+0.5
+]
+]
+},
+{
+"id": "n4",
+"say": "Four: Bryan Mbeumo.",
+"cap": "FOUR: BRYAN MBEUMO.",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"BRYAN",
+0.5
+]
+]
+},
+{
+"id": "n3",
+"say": "Three: Brian Brobbey.",
+"cap": "THREE: BRIAN BROBBEY.",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"BRIAN",
+0.5
+]
+]
+},
+{
+"id": "n2",
+"say": "Two: Thierno Barry.",
+"cap": "TWO: THIERNO BARRY.",
+"hold": 0.6,
+"sfx": [
+[
+"pop",
+"THIERNO",
+0.5
+]
+]
+},
+{
+"id": "now1",
+"say": "And number one, after about ten games... João Pedro. Seventy-three percent.",
+"cap": "AND NUMBER ONE, AFTER ABOUT TEN GAMES... JOÃO PEDRO. 73%|seventy-three-percent.",
+"hold": 0.3,
+"sfx": [
+[
+"hit",
+"JOÃO",
+0.7
+]
+]
+},
+{
+"id": "nowcmp",
+"say": "João Pedro against Haaland: goals and chances created, every ninety minutes.",
+"cap": "JOÃO PEDRO AGAINST HAALAND: GOALS AND CHANCES CREATED, EVERY 90|ninety MINUTES."
+},
+{
+"id": "end",
+"say": "So Haaland's twin is Callum Wilson. And right now, it's João Pedro. Follow for more.",
+"cap": "SO HAALAND'S TWIN IS CALLUM WILSON. AND RIGHT NOW, IT'S JOÃO PEDRO. FOLLOW FOR MORE."
+}
+]

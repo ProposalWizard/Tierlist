@@ -1,0 +1,639 @@
+{
+"meta": {
+"targetShort": "Haaland",
+"targetClub": "Man City",
+"series": "STAT TWINS · EP 3",
+"source": "Data: Opta via FotMob · PL attackers 900+ mins",
+"engine": "video_full.html",
+"layout": "poster",
+"imgDir": "/tmp/claude-0/-home-user-Tierlist/84a0c395-3776-5543-b933-7d1eba9d58ff/scratchpad/img",
+"clubColors": {
+"t8472": "rgb(203,102,112)",
+"t8650": "rgb(231,26,35)",
+"t10260": "rgb(216,111,16)",
+"t8197": "rgb(106,151,198)",
+"t8586": "rgb(9,25,70)",
+"t10261": "rgb(0,148,179)",
+"t9937": "rgb(198,12,12)",
+"t8678": "rgb(204,19,24)",
+"t8668": "rgb(48,49,176)",
+"t8456": "rgb(22,68,123)",
+"t9825": "rgb(237,4,7)",
+"t9902": "rgb(244,86,101)",
+"t8455": "rgb(7,19,149)",
+"t10252": "rgb(251,227,7)"
+}
+},
+"lists": {
+"top8": {
+"title": "The top eight.",
+"sub": "",
+"target": {
+"name": "Erling Haaland",
+"season": "2022/23",
+"face": "p737066",
+"club": "t8456",
+"flag": "cNOR"
+},
+"rows": [
+{
+"name": "Callum Wilson",
+"season": "2022/23",
+"face": "p184321",
+"club": "t10261",
+"flag": "cENG",
+"match": 89.6,
+"excluded": false,
+"rank": 1,
+"twin": true
+},
+{
+"name": "Erling Haaland",
+"season": "2025/26",
+"face": "p737066",
+"club": "t8456",
+"flag": "cNOR",
+"match": 86.6,
+"excluded": true
+},
+{
+"name": "Ollie Watkins",
+"season": "2024/25",
+"face": "p540088",
+"club": "t10252",
+"flag": "cENG",
+"match": 85.3,
+"excluded": false,
+"rank": 2
+},
+{
+"name": "Erling Haaland",
+"season": "2023/24",
+"face": "p737066",
+"club": "t8456",
+"flag": "cNOR",
+"match": 85.1,
+"excluded": true
+},
+{
+"name": "Ollie Watkins",
+"season": "2023/24",
+"face": "p540088",
+"club": "t10252",
+"flag": "cENG",
+"match": 83.7,
+"excluded": false,
+"rank": 3
+},
+{
+"name": "Alexander Isak",
+"season": "2024/25",
+"face": "p690107",
+"club": "t10261",
+"flag": "cSWE",
+"match": 80.3,
+"excluded": false,
+"rank": 4
+},
+{
+"name": "Nicolas Jackson",
+"season": "2024/25",
+"face": "p1197347",
+"club": "t8455",
+"flag": "cSEN",
+"match": 79.6,
+"excluded": false,
+"rank": 5
+},
+{
+"name": "Darwin Núñez",
+"season": "2023/24",
+"face": "p950561",
+"club": "t8650",
+"flag": "cURU",
+"match": 78.7,
+"excluded": false,
+"rank": 6
+}
+]
+},
+"top": {
+"title": "The top six.",
+"sub": "",
+"target": {
+"name": "Erling Haaland",
+"season": "2022/23",
+"face": "p737066",
+"club": "t8456",
+"flag": "cNOR"
+},
+"rows": [
+{
+"name": "Callum Wilson",
+"season": "2022/23",
+"face": "p184321",
+"club": "t10261",
+"flag": "cENG",
+"match": 89.6,
+"excluded": false,
+"rank": 1,
+"twin": true
+},
+{
+"name": "Ollie Watkins",
+"season": "2024/25",
+"face": "p540088",
+"club": "t10252",
+"flag": "cENG",
+"match": 85.3,
+"excluded": false,
+"rank": 2
+},
+{
+"name": "Ollie Watkins",
+"season": "2023/24",
+"face": "p540088",
+"club": "t10252",
+"flag": "cENG",
+"match": 83.7,
+"excluded": false,
+"rank": 3
+},
+{
+"name": "Alexander Isak",
+"season": "2024/25",
+"face": "p690107",
+"club": "t10261",
+"flag": "cSWE",
+"match": 80.3,
+"excluded": false,
+"rank": 4
+},
+{
+"name": "Nicolas Jackson",
+"season": "2024/25",
+"face": "p1197347",
+"club": "t8455",
+"flag": "cSEN",
+"match": 79.6,
+"excluded": false,
+"rank": 5
+},
+{
+"name": "Darwin Núñez",
+"season": "2023/24",
+"face": "p950561",
+"club": "t8650",
+"flag": "cURU",
+"match": 78.7,
+"excluded": false,
+"rank": 6
+}
+]
+},
+"now": {
+"title": "Right now.",
+"sub": "",
+"target": {
+"name": "Erling Haaland",
+"season": "2022/23",
+"face": "p737066",
+"club": "t8456",
+"flag": "cNOR"
+},
+"rows": [
+{
+"name": "João Pedro",
+"season": "2026/27",
+"face": "p1021382",
+"club": "t8455",
+"flag": "cBRA",
+"match": 73.4
+},
+{
+"name": "Thierno Barry",
+"season": "2026/27",
+"face": "p1398392",
+"club": "t8668",
+"flag": "cFRA",
+"match": 72.8
+},
+{
+"name": "Brian Brobbey",
+"season": "2026/27",
+"face": "p940446",
+"club": "t8472",
+"flag": "cNED",
+"match": 71.6
+},
+{
+"name": "Bryan Mbeumo",
+"season": "2026/27",
+"face": "p923312",
+"club": "t10260",
+"flag": "cCMR",
+"match": 71.1
+},
+{
+"name": "Evanilson",
+"season": "2026/27",
+"face": "p1098096",
+"club": "t8678",
+"flag": "cBRA",
+"match": 69.4
+}
+]
+}
+},
+"scenes": {
+"intro": {
+"type": "intro",
+"face": "p737066",
+"club": "t8456",
+"flag": "cNOR",
+"name": "HAALAND",
+"season": "2022/23",
+"facts": [
+[
+"5",
+"seasons · 22/23 to 26/27"
+],
+[
+"465",
+"Premier League attacker seasons"
+],
+[
+"23",
+"stats, all per 90 minutes"
+]
+],
+"at": [
+0.3,
+0.9,
+1.5
+],
+"mystery": [
+{
+"face": "p184321",
+"label": "LAST 5 YEARS"
+},
+{
+"face": "p1021382",
+"label": "CURRENT"
+}
+]
+},
+"own": {
+"type": "cd2",
+"list": "top8",
+"show": [
+2,
+4
+],
+"before": [],
+"prevShow": [],
+"at": "HAALAND",
+"collapse": {
+"at": "LEAVES"
+}
+},
+"c6": {
+"type": "cd2",
+"list": "top",
+"show": [
+6
+],
+"before": [],
+"prevShow": [],
+"at": "DARWIN",
+"cont": true,
+"from": 1,
+"pop": {
+"big": "4.80",
+"label": "shots per 90",
+"rank": "1st of 101 PL attackers",
+"at": "LIVERPOOL"
+}
+},
+"c5": {
+"type": "cd2",
+"list": "top",
+"show": [
+5
+],
+"before": [
+6
+],
+"prevShow": [
+6
+],
+"at": "NICOLAS",
+"cont": true,
+"from": -1,
+"pop": {
+"big": "0.49",
+"label": "xG per 90 (no pens)",
+"rank": "7th of 96 PL attackers",
+"at": "CHELSEA"
+}
+},
+"surprise": {
+"type": "cd2",
+"list": "top",
+"show": [],
+"before": [
+6,
+5
+],
+"prevShow": [
+5
+],
+"at": "HARRY",
+"aside": {
+"name": "Harry Kane",
+"season": "2022/23",
+"face": "p194165",
+"club": "t8586",
+"flag": "cENG",
+"rank": 29,
+"match": 71.6,
+"text": "Not even top 25"
+},
+"cont": true,
+"from": 1,
+"pop": {
+"big": "0.66",
+"label": "goals per 90 (no pens)",
+"rank": "4th of 94 PL attackers",
+"at": "HE'S"
+}
+},
+"c4": {
+"type": "cd2",
+"list": "top",
+"show": [
+4
+],
+"before": [
+6,
+5
+],
+"prevShow": [
+5
+],
+"at": "ALEXANDER",
+"cont": true,
+"from": -1,
+"pop": {
+"big": "0.62",
+"label": "goals per 90 (no pens)",
+"rank": "3rd of 96 PL attackers",
+"at": "NEWCASTLE"
+}
+},
+"c3": {
+"type": "cd2",
+"list": "top",
+"show": [
+2,
+3
+],
+"before": [
+6,
+5,
+4
+],
+"prevShow": [
+4
+],
+"at": "OLLIE",
+"cont": true,
+"from": 1,
+"pop": {
+"big": "0.48",
+"label": "goals per 90 (no pens)",
+"rank": "10th of 96 PL attackers",
+"at": "VILLA"
+},
+"sticker": {
+"text": "GUESS THE TWIN IN THE COMMENTS",
+"at": "GUESS"
+}
+},
+"c1": {
+"type": "cd2",
+"list": "top",
+"show": [
+1
+],
+"before": [
+6,
+5,
+4,
+3,
+2
+],
+"prevShow": [
+2
+],
+"at": "CALLUM",
+"cont": true,
+"from": -1,
+"pop": {
+"big": "0.72",
+"label": "xG per 90 (no pens)",
+"rank": "2nd of 94 PL attackers",
+"at": "NEWCASTLE"
+},
+"twinAt": "THAT"
+},
+"tests": {
+"type": "statement",
+"face": "p184321",
+"lines": [
+[
+"CALLUM WILSON · 22/23",
+48,
+"#141414"
+],
+[
+"FIRST IN 100% OF TESTS",
+72,
+"#c8102e"
+],
+[
+"each test counts the stats differently",
+30,
+"#5b564d"
+]
+],
+"at": [
+0.1,
+"WILSON",
+"CHANGED"
+]
+},
+"why": {
+"type": "compare",
+"kicker": "Why Wilson",
+"title": "Almost the same.",
+"a": {
+"name": "Erling Haaland",
+"season": "2022/23",
+"face": "p737066"
+},
+"b": {
+"name": "Callum Wilson",
+"season": "2022/23",
+"face": "p184321"
+},
+"rows": [
+{
+"label": "Expected goals",
+"a": 0.74,
+"b": 0.72
+},
+{
+"label": "Assists",
+"a": 0.26,
+"b": 0.24
+}
+],
+"at": [
+"EXPECTED",
+"ASSISTS"
+]
+},
+"diff": {
+"type": "compare",
+"kicker": "But…",
+"title": "Not the same player.",
+"a": {
+"name": "Erling Haaland",
+"season": "2022/23",
+"face": "p737066"
+},
+"b": {
+"name": "Callum Wilson",
+"season": "2022/23",
+"face": "p184321"
+},
+"rows": [
+{
+"label": "Passes",
+"a": 11.6,
+"b": 7.6
+},
+{
+"label": "Dribbles",
+"a": 0.4,
+"b": 0.6
+}
+],
+"at": [
+"HAALAND",
+"WILSON"
+]
+},
+"n0": {
+"type": "countdown",
+"list": "now",
+"upto": 6,
+"at": 0.0
+},
+"n5": {
+"type": "countdown",
+"list": "now",
+"upto": 5,
+"at": "EVANILSON",
+"cont": true
+},
+"n4": {
+"type": "countdown",
+"list": "now",
+"upto": 4,
+"at": "BRYAN",
+"cont": true
+},
+"n3": {
+"type": "countdown",
+"list": "now",
+"upto": 3,
+"at": "BRIAN",
+"cont": true
+},
+"n2": {
+"type": "countdown",
+"list": "now",
+"upto": 2,
+"at": "THIERNO",
+"cont": true
+},
+"now1": {
+"type": "countdown",
+"list": "now",
+"upto": 1,
+"at": "JOÃO",
+"cont": true
+},
+"nowcmp": {
+"type": "compare",
+"kicker": "This season",
+"title": "Haaland vs João Pedro.",
+"a": {
+"name": "Erling Haaland",
+"season": "2022/23",
+"face": "p737066"
+},
+"b": {
+"name": "João Pedro",
+"season": "2026/27",
+"face": "p1021382"
+},
+"rows": [
+{
+"label": "Goals",
+"a": 0.94,
+"b": 0.86
+},
+{
+"label": "Chances created",
+"a": 0.97,
+"b": 1.21
+}
+],
+"at": [
+"GOALS",
+"CHANCES"
+]
+},
+"end": {
+"type": "end2",
+"captions": true,
+"at": [
+"CALLUM",
+"RIGHT"
+],
+"pairs": [
+{
+"label": "Last 5 seasons",
+"a": "p737066",
+"b": "p184321",
+"aName": "HAALAND 22/23",
+"bName": "WILSON 22/23",
+"aClub": "t8456",
+"bClub": "t10261"
+},
+{
+"label": "This season",
+"a": "p737066",
+"b": "p1021382",
+"aName": "HAALAND 22/23",
+"bName": "JOÃO PEDRO",
+"aClub": "t8456",
+"bClub": "t8455"
+}
+]
+}
+}
+}

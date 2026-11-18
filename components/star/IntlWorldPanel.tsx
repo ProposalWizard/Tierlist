@@ -124,7 +124,7 @@ export default function IntlWorldPanel({ career }: { career: CareerState }) {
                 </div>
               );
             })}
-            <div className="px-1.5 pt-1.5 text-[10px] font-bold text-white/80">Every match in the world since last season&apos;s Ballon d&apos;Or night. These count towards this year&apos;s.</div>
+            <div className="px-1.5 pt-1.5 text-[10px] font-bold text-white/80">Every match in the world since last season&apos;s Golden Ball night. These count towards this year&apos;s.</div>
           </Card>
         </RiseIn>
       )}

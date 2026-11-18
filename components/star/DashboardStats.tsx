@@ -1,4 +1,5 @@
 "use client";
+import { PACKED_APP } from "@/lib/app/packed";
 import { fameOf, fameLevel } from "@/lib/star/fame";
 import { useState } from "react";
 import type React from "react";
@@ -247,7 +248,7 @@ export default function DashboardStats({ career, onRenew, view }: Props) {
             </Panel>
           )}
 
-          {(career.betNews ?? []).length > 0 && (
+          {!PACKED_APP && (career.betNews ?? []).length > 0 && (
             <Panel tone="#34d399" title="🏆 Casino — Competition Bets">
               <div className="mt-1 space-y-0.5">
                 {(career.betNews ?? []).map((n, i) => (

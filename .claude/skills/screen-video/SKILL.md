@@ -36,7 +36,7 @@ duplicates (213 pictures down to 124 on that ad, all 6 opening cuts kept).
 
 ```bash
 bash scripts/screen-video/setup.sh                      # once per machine / container
-python3 scripts/screen-video/fetch.py "<Drive file id | Drive/Dropbox link | Loom/TikTok/YouTube link | direct .mp4 link>" --name <short-name>
+python3 scripts/screen-video/fetch.py "<Knowitball recording link | Drive file id | Drive/Dropbox link | Loom/TikTok/YouTube link | direct .mp4 link>" --name <short-name>
 ```
 
 A file already in `.recordings/<name>/` (for example dropped there by hand):
@@ -50,15 +50,30 @@ skip to step 2. A file anywhere else: copy it to `.recordings/<name>/video.mp4`.
 | Knowitball playtest recordings | `1w_AJFndensiBWMicxiSReM9ZDlyQfBik` | recordings to break down |
 | Breakdowns (Claude writes here) | `18Gn5Q-pluXr_FjBTqtvADLOwq-oMAq87` | every breakdown goes here, automatically (step 5) |
 
-**Recorded on the site (18 Oct 2026).** Admin → Videos records the screen and
-voice in the browser and saves the file into the recorder's OWN Drive, folder
-"Knowitball screen recordings" → <who> (in Harry's Drive that folder sits
-inside "Knowitball playtest recordings"), already set to "anyone with the link" and
-named `date · who · what (length).webm`. The person pastes
-"Watch this recording: <link>"; pass that link straight to `fetch.py`.
-Since 19 Oct 2026 nobody has to paste it: the recorder also stores the link
-(/api/dev-recordings) and the UserPromptSubmit hook
-(`scripts/hooks/recordings-hook.mjs`) adds it to that person's next message
+**Recorded on the site (18 Oct 2026; R2 first since 12 Nov 2026).** Admin →
+Videos records the screen and voice in the browser. On Stop the recording goes
+to team storage (Cloudflare R2, `recordings/<who>/…`, `docs/r2-layout.md`), with
+no Google involved. The link it gives is a Knowitball link:
+
+`https://knowitball.co.uk/api/dev-recordings/watch?k=<who>/<date>-<what>-<length>-<4 letters>.webm&t=<token>`
+
+The person pastes "Watch this recording: <link>"; pass that link straight to
+`fetch.py` (quote it: it has an `&`). No sign-in is needed: the token in the
+link is the permission, and the site redirects to the video in R2. If this
+session's network can't reach R2, `fetch.py` tries the same link through the
+site by itself. **Recordings are deleted after 30 days unless Keep is on**
+(Admin → Videos → Recent recordings): a link that answers "No such recording"
+or 404 is a recording that has gone; say so and ask for the Drive copy.
+
+**Drive is the copy.** When the recorder has Drive connected, the same file
+also goes into their OWN Drive, folder "Knowitball screen recordings" → <who>
+(in Harry's Drive that folder sits inside "Knowitball playtest recordings"),
+set to "anyone with the link" and named `date · who · what (length).webm`. A
+Drive link still works with `fetch.py`; use it when the R2 one has gone.
+
+Since 19 Oct 2026 nobody has to paste the link: the site hands that person's
+unread recordings (/api/dev-recordings/claim) to the UserPromptSubmit hook
+(`scripts/hooks/recordings-hook.mjs`), which adds them to that person's next message
 with "break it down first". Treat that note exactly like a pasted link. Use the
 file's name for the breakdown's name (it already follows the rule in step 5).
 

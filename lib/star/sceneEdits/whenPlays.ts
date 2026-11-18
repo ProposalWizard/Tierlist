@@ -28,7 +28,7 @@ export const WHEN_PLAYS: WhenRow[] = [
   { kind: "debut", moment: "Your first match for a club", today: "Nothing special", wired: false },
   { kind: "walkout", moment: "The teams walk out before a big match: a final or a derby", today: "The line-up intro", wired: false },
   { kind: "press-conference", moment: "A press question before or after a big match", today: "The press conference screen (drawn)", wired: false },
-  { kind: "award", moment: "You win Player of the Month, the Golden Boot or the Ballon d'Or", today: "Award cards; the 3D Ballon d'Or night (its own hand-built scene)", wired: false },
+  { kind: "award", moment: "You win Player of the Month, the Golden Boot or the Golden Ball", today: "Award cards; the 3D Golden Ball night (its own hand-built scene)", wired: false },
   { kind: "promoted", moment: "Your club goes up at the end of the season", today: "The season-end screens", wired: false },
   { kind: "relegated", moment: "Your club goes down at the end of the season", today: "The season-end screens", wired: false },
   { kind: "retired", moment: "You retire: the farewell match", today: "The farewell match, the 3D guard of honour and the ovation (their own scenes)", wired: false },

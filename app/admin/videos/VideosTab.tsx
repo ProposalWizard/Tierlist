@@ -1,141 +1,40 @@
 "use client";
 /**
  * The Videos tab (Harry, 18 Oct 2026): record your screen and voice right
- * here, and the recording goes straight to your Drive with a clear name and a
- * line to paste to Claude. A phone records with its own screen recorder and
+ * here. On Stop it saves itself to team storage (Cloudflare R2, kept 30 days,
+ * no Google needed) with a line to paste to Claude; a copy also goes to your
+ * Drive when Drive is connected (Harry, 12 Nov 2026). A phone records with its own screen recorder and
  * uploads the file here. The breakdown itself runs in a Claude chat
  * (skill screen-video).
+ *
+ * The recorder itself lives above every page (components/admin/recorder/
+ * RecorderProvider.tsx, Harry 12 Nov 2026: leaving this page stopped the
+ * recording). This page is its controls; the recording carries on if you
+ * leave, with a pill at the bottom of every page.
  */
 import { useEffect, useRef, useState } from "react";
 import AdminShell from "@/components/admin/shell/AdminShell";
-import {
-  RECORDERS, DRIVE_CLIENT_ID, DRIVE_FOLDER_NAME, canRecordScreen, connectDrive, lengthLabel,
-  recordingName, startRecording, starterFor, uploadToDrive, type LiveRecording, type Recorder,
-} from "@/lib/recording";
-import { uploadToMarketing, suiteLink } from "@/lib/marketing/uploadClient";
+import { RECORDERS, DRIVE_CLIENT_ID, DRIVE_FOLDER_NAME, canRecordScreen, driveWasGranted, lengthLabel, starterFor } from "@/lib/recording";
+import { useRecorder } from "@/components/admin/recorder/RecorderProvider";
 import LiveShareCard from "./LiveShareCard";
+import RecordingsList from "./RecordingsList";
 import "./videos.css";
 
-type Take = { blob: Blob; ext: string; seconds: number; at: Date; url: string };
-type Upload = { state: "idle" } | { state: "sending"; share: number } | { state: "done"; link: string } | { state: "failed"; why: string };
-
-const WHO_KEY = "kib-rec-who";
-const read = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
-const write = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* private window */ } };
-
 export default function VideosTab({ role }: { role: "admin" | "tester" }) {
-  const [who, setWho] = useState<Recorder>("Harry");
-  const [about, setAbout] = useState("");
-  const [mic, setMic] = useState(true);
+  const {
+    who, pickWho, about, setAbout, mic, setMic, live, secs, take, name, driveOk, cloud, cloudOn, savedCount, upload, mk, error,
+    begin: startRec, stop, connect, saveToDrive, saveToTeam, fromFile: takeFile, sendToMarketing, download,
+  } = useRecorder();
   const [canScreen, setCanScreen] = useState(true);
-  const [live, setLive] = useState<LiveRecording | null>(null);
-  const [secs, setSecs] = useState(0);
-  const [take, setTake] = useState<Take | null>(null);
-  const [drive, setDrive] = useState<{ token: string; until: number } | null>(null);
-  const [upload, setUpload] = useState<Upload>({ state: "idle" });
-  const [error, setError] = useState<string | null>(null);
+  const [granted, setGranted] = useState(false);
   const [copied, setCopied] = useState(false);
-  // "Send to Marketing" (22 Oct 2026): admins only; the take goes into the Marketing video storage.
-  const [mk, setMk] = useState<Upload>({ state: "idle" });
   const fileRef = useRef<HTMLInputElement>(null);
-  const t0 = useRef(0);
-  // The name is read when the upload starts, so a change typed mid-recording counts.
-  const latest = useRef({ who, about });
-  latest.current = { who, about };
 
-  useEffect(() => {
-    const w = read(WHO_KEY);
-    if (w && (RECORDERS as string[]).includes(w)) setWho(w as Recorder);
-    setCanScreen(canRecordScreen());
-  }, []);
-  useEffect(() => {
-    if (!live) return;
-    const id = setInterval(() => setSecs((performance.now() - t0.current) / 1000), 250);
-    return () => clearInterval(id);
-  }, [live]);
-  useEffect(() => () => { if (take) URL.revokeObjectURL(take.url); }, [take]);
+  useEffect(() => { setCanScreen(canRecordScreen()); setGranted(driveWasGranted()); }, []);
+  useEffect(() => { if (driveOk) setGranted(true); }, [driveOk]);
 
-  const driveOk = !!drive && drive.until > Date.now();
-  const name = take ? recordingName({ at: take.at, who, about, seconds: take.seconds, ext: take.ext }) : "";
-
-  const pickWho = (w: Recorder) => { setWho(w); write(WHO_KEY, w); };
-
-  const connect = async () => {
-    setError(null);
-    try { setDrive(await connectDrive()); } catch (e) { setError((e as Error).message); }
-  };
-
-  const send = async (t: Take, token: string) => {
-    setUpload({ state: "sending", share: 0 });
-    try {
-      const n = recordingName({ at: t.at, ...latest.current, seconds: t.seconds, ext: t.ext });
-      const who = latest.current.who;
-      const { link } = await uploadToDrive(token, t.blob, n, (share) => setUpload({ state: "sending", share }), who);
-      setUpload({ state: "done", link });
-      // The recorder's own chats pick it up next time they're messaged (recordings-hook.mjs).
-      fetch("/api/dev-recordings", { method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ person: who, title: n.replace(/\.[a-z0-9]+$/, ""), link }) }).catch(() => {});
-    } catch (e) {
-      setUpload({ state: "failed", why: (e as Error).message });
-    }
-  };
-
-  const begin = async () => {
-    setError(null); setUpload({ state: "idle" }); setMk({ state: "idle" }); setCopied(false);
-    if (take) { URL.revokeObjectURL(take.url); setTake(null); }
-    try {
-      const r = await startRecording(mic);
-      t0.current = performance.now(); setSecs(0); setLive(r);
-      if (mic && !r.mic) setError("The microphone wasn't allowed, so this records the screen only.");
-      const out = await r.done;
-      setLive(null);
-      const t: Take = { ...out, at: new Date(), url: URL.createObjectURL(out.blob) };
-      setTake(t);
-      // Straight to Drive when it is connected.
-      if (drive && drive.until > Date.now()) void send(t, drive.token);
-    } catch (e) {
-      setLive(null);
-      setError((e as Error).message);
-    }
-  };
-
-  const saveToDrive = async () => {
-    if (!take) return;
-    let d = drive;
-    if (!d || d.until <= Date.now()) {
-      try { d = await connectDrive(); setDrive(d); } catch (e) { setUpload({ state: "failed", why: (e as Error).message }); return; }
-    }
-    await send(take, d.token);
-  };
-
-  const fromFile = (f: File | undefined) => {
-    if (!f) return;
-    setError(null); setUpload({ state: "idle" }); setMk({ state: "idle" }); setCopied(false);
-    if (take) URL.revokeObjectURL(take.url);
-    const url = URL.createObjectURL(f);
-    const ext = (f.name.split(".").pop() || "mp4").toLowerCase();
-    // Read the length from the file itself so the name is right.
-    const v = document.createElement("video");
-    v.preload = "metadata";
-    v.onloadedmetadata = () => setTake({ blob: f, ext, seconds: isFinite(v.duration) ? v.duration : 0, at: new Date(f.lastModified || Date.now()), url });
-    v.onerror = () => setTake({ blob: f, ext, seconds: 0, at: new Date(), url });
-    v.src = url;
-  };
-
-  const sendToMarketing = async () => {
-    if (!take) return;
-    setMk({ state: "sending", share: 0 });
-    try {
-      const { key } = await uploadToMarketing(take.blob, name, null, (share) => setMk({ state: "sending", share }));
-      setMk({ state: "done", link: suiteLink(key) });
-    } catch (e) { setMk({ state: "failed", why: (e as Error).message }); }
-  };
-
-  const download = () => {
-    if (!take) return;
-    const a = document.createElement("a");
-    a.href = take.url; a.download = name; a.click();
-  };
+  const begin = () => { setCopied(false); void startRec(); };
+  const fromFile = (f: File | undefined) => { setCopied(false); takeFile(f); };
 
   const copy = (text: string) => navigator.clipboard?.writeText(text).then(() => setCopied(true), () => setCopied(false));
 
@@ -144,7 +43,7 @@ export default function VideosTab({ role }: { role: "admin" | "tester" }) {
       <div className="vt">
         <div>
           <h1 className="ash-h1">Videos</h1>
-          <p className="ash-sub">Record the game while you talk. It goes to your Drive with a clear name, ready for Claude.</p>
+          <p className="ash-sub">Record the game while you talk. It saves itself when you stop, with a link ready for Claude.</p>
         </div>
 
         <section className="ash-panel vt-card">
@@ -163,7 +62,7 @@ export default function VideosTab({ role }: { role: "admin" | "tester" }) {
             live ? (
               <div className="vt-live">
                 <span className="vt-rec"><i /> Recording · {lengthLabel(secs)}</span>
-                <button className="vt-stop" onClick={() => live.stop()}>Stop</button>
+                <button className="vt-stop" onClick={stop}>Stop</button>
               </div>
             ) : (
               <div className="vt-go">
@@ -179,9 +78,12 @@ export default function VideosTab({ role }: { role: "admin" | "tester" }) {
           )}
 
           <div className="vt-drive">
-            {DRIVE_CLIENT_ID ? (
+            {cloudOn ? (
+              <span className="vt-ok">● Saves by itself when you press Stop. Kept 30 days.{DRIVE_CLIENT_ID && (driveOk || granted) ? ` A copy also goes to your Drive (“${DRIVE_FOLDER_NAME}” → ${who}).` : ""}</span>
+            ) : DRIVE_CLIENT_ID ? (
               driveOk ? <span className="vt-ok">● Drive connected. Each recording goes into “{DRIVE_FOLDER_NAME}” → {who}, and {who}’s Claude chats read it next time you message them.</span>
-                : <><button className="ash-btn ghost" onClick={connect}>Connect Drive</button><span className="vt-hint">Do this first, and each recording saves itself.</span></>
+                : granted ? <span className="vt-ok">● Drive remembered on this device. When you press Stop, the site asks Google for a fresh key without the Allow box.</span>
+                : <><button className="ash-btn ghost" onClick={connect}>Connect Drive</button><span className="vt-hint">Do this once on this device, and each recording saves itself.</span></>
             ) : (
               <span className="vt-hint">Drive isn't switched on yet. Recordings download to this device for now.</span>
             )}
@@ -195,13 +97,28 @@ export default function VideosTab({ role }: { role: "admin" | "tester" }) {
         {take && (
           <section className="ash-panel vt-card">
             <video className="vt-video" src={take.url} controls playsInline />
-            <p className="vt-name" title="The file name in Drive">{name}</p>
+            <p className="vt-name" title="The recording's name">{name}</p>
             <p className="vt-meta">{lengthLabel(take.seconds)} · {(take.blob.size / 1e6).toFixed(1)} MB</p>
 
-            {upload.state === "sending" && (
-              <div className="vt-progress"><span><i style={{ width: `${Math.round(upload.share * 100)}%` }} /></span><b>Saving to Drive · {Math.round(upload.share * 100)}%</b></div>
+            {cloud.state === "sending" && (
+              <div className="vt-progress"><span><i style={{ width: `${Math.round(cloud.share * 100)}%` }} /></span><b>Saving · {Math.round(cloud.share * 100)}%</b></div>
             )}
-            {upload.state === "done" && (
+            {cloud.state === "done" && (
+              <div className="vt-done">
+                <b>Saved · kept 30 days</b>
+                <code className="ash-mono">{starterFor(cloud.link)}</code>
+                <div className="vt-row">
+                  <button className="ash-btn" onClick={() => copy(starterFor(cloud.link))}>{copied ? "Copied" : "Copy for Claude"}</button>
+                  {upload.state === "done" && <a className="ash-btn ghost" href={upload.link} target="_blank" rel="noreferrer">Open in Drive ↗</a>}
+                </div>
+              </div>
+            )}
+            {cloud.state === "failed" && <p className="vt-err">{cloud.why}</p>}
+            {upload.state === "sending" && (
+              <div className="vt-progress"><span><i style={{ width: `${Math.round(upload.share * 100)}%` }} /></span><b>{cloud.state === "done" ? "Copy to Drive" : "Saving to Drive"} · {Math.round(upload.share * 100)}%</b></div>
+            )}
+            {upload.state === "done" && cloud.state === "done" && <span className="vt-ok">● Copy in Drive</span>}
+            {upload.state === "done" && cloud.state !== "done" && (
               <div className="vt-done">
                 <b>Saved to Drive</b>
                 <code className="ash-mono">{starterFor(upload.link)}</code>
@@ -219,8 +136,11 @@ export default function VideosTab({ role }: { role: "admin" | "tester" }) {
             {mk.state === "failed" && <p className="vt-err">{mk.why}</p>}
 
             <div className="vt-row">
-              {DRIVE_CLIENT_ID && upload.state !== "sending" && upload.state !== "done" && (
-                <button className="ash-btn" onClick={saveToDrive}>Save to Drive</button>
+              {cloud.state === "failed" && <button className="ash-btn" onClick={saveToTeam}>Save again</button>}
+              {DRIVE_CLIENT_ID && upload.state !== "sending" && upload.state !== "done" && cloud.state !== "sending" && (
+                cloud.state === "done"
+                  ? <button className="ash-btn ghost vt-also" onClick={saveToDrive} title="Puts a second copy in your own Google Drive">Also save to Drive</button>
+                  : <button className="ash-btn" onClick={saveToDrive}>Save to Drive</button>
               )}
               {role === "admin" && mk.state !== "sending" && mk.state !== "done" && (
                 <button className="ash-btn ghost" onClick={sendToMarketing} title="Into the Marketing tab's video storage, for the editing suite">Send to Marketing</button>
@@ -229,6 +149,8 @@ export default function VideosTab({ role }: { role: "admin" | "tester" }) {
             </div>
           </section>
         )}
+
+        <RecordingsList reloadOn={savedCount} />
 
         {/* Live share (test), Harry 20 Oct 2026: admins only. */}
         {role === "admin" && <LiveShareCard who={who} />}

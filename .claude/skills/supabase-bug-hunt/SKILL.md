@@ -1,6 +1,6 @@
 ---
 name: supabase-bug-hunt
-description: Find and fix a player's bug using the live Supabase data as a layer - read the bug report, find that player's career save, compare it with normal saves, spot the impossible state, reproduce it with the career soak or the star sandbox, then fix the code and test. Load when someone says "bug report", "find this bug", "why did this career break", "look at the saves", "my career didn't save", "check the feedback", or pastes a player's complaint about Road to Ballon d'Or. Look-only queries; nothing in the database changes without Harry's yes.
+description: Find and fix a player's bug using the live Supabase data as a layer - read the bug report, find that player's career save, compare it with normal saves, spot the impossible state, reproduce it with the career soak or the star sandbox, then fix the code and test. Load when someone says "bug report", "find this bug", "why did this career break", "look at the saves", "my career didn't save", "check the feedback", or pastes a player's complaint about Road to the Golden Ball (was Road to Ballon d'Or). Look-only queries; nothing in the database changes without Harry's yes.
 ---
 
 Standing rules: search the Brain first (grep brain/_index*.md), cite codes. This skill's note: PRO-DAT-002.

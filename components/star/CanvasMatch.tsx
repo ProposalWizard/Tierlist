@@ -1075,6 +1075,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const newView = newViewRef.current;
   /** New view: the pitch box's height in CSS px (fills the phone; see newViewCanvasHeight). */
   const [newViewH, setNewViewH] = useState<number | null>(null);
+  /** When "POST" was last called live (the ball off the woodwork), so the chance's ending does not call it again. */
+  const postShownAtRef = useRef(-1e9);
   const newViewHRef = useRef<number | null>(null);
   newViewHRef.current = newViewH;
   /** New view: the sandbox's commentary and hint sit at the top of the pitch
@@ -2934,6 +2936,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         if (oy !== "hidden" && oy !== "clip") continue;
         const b = el.getBoundingClientRect().bottom;
         if (b > rootBottom + 1 && b < window.innerHeight) room = Math.min(room, b - rootTop - above - 4);
+      }
+      // A page that puts its OWN things above and below this match (the trial:
+      // its scoreboard above, two caption lines below) marks itself with
+      // data-pitch-fit="<px kept free below>". Those count as well, so the
+      // pitch fits that page the way it fits a league match (Mikey, 13 Nov
+      // 2026: on a phone the trial's pitch took the whole screen and pushed
+      // the page 197 px off the bottom). No marker (every real match): nothing changes.
+      const fit = root.closest<HTMLElement>("[data-pitch-fit]");
+      if (fit) {
+        const below = Number(fit.dataset.pitchFit) || 0;
+        const pageTop = rootTop + window.scrollY;
+        room = Math.min(room, window.innerHeight - pageTop - above - below - 4);
       }
       setNewViewH(newViewCanvasHeight(w, room));
     };
@@ -7538,6 +7552,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           if (onGoalClipRef.current) goalRecRef.current?.event("post");
           pushLine("Off the woodwork — and it's still live!");
           showAction("POST");
+          postShownAtRef.current = performance.now();
           nudge(0.28, 0.25);
           playPost();
           playCrowdSwell("groan");
@@ -7731,7 +7746,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (leadRef.current) stepLeadIn(replayDt);
       if (liveRef.current) stepLive(dt);
       recordGoalFrame(dt);
-      render();
+      // During the commentary the pitch is completely covered (MatchCommentary is an
+      // opaque panel over it), so drawing it is wasted work on every frame: most of
+      // a match. Measured at phone speed, 13 Nov 2026: the commentary ran at 36
+      // frames a second with the hidden pitch still being drawn. Everything is still
+      // stepped; the first frame after the commentary draws as before. A frame
+      // reader (test screens) still gets every frame.
+      if (phaseRef.current !== "feed" || frameObsRef.current) render();
       rafRef.current = requestAnimationFrame(loop);
     };
     rafRef.current = requestAnimationFrame(loop);
@@ -8239,11 +8260,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       showAction(res === "wide" ? "WIDE" : res === "over" ? "OVER" : res === "short" ? "NOBODY THERE" : "OUT OF PLAY");
     } else if (res === "post") {
       // Your shot's ending says what happened like every other (sweep, 29 Oct 2026:
-      // a saved penalty ended in 3 s of silence).
-      showAction("POST");
-      nudge(0.28, 0.25);
-      playPost();
-      playCrowdSwell("groan");
+      // a saved penalty ended in 3 s of silence). Not a second time when the woodwork
+      // was just called as it happened (Mikey's phone test, 11 Nov 2026: "why did it
+      // say post twice? It didn't hit the post twice").
+      if (performance.now() - postShownAtRef.current > 4000) {
+        showAction("POST");
+        nudge(0.28, 0.25);
+        playPost();
+        playCrowdSwell("groan");
+      }
     } else if (res === "saved") {
       showAction("SAVED");
       nudge(0.18, 0.14);

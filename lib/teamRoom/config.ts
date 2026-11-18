@@ -44,7 +44,7 @@ export const TEAM_ROOM = {
   /** Chat bubble shows on these pages (plus every page in the admin list). */
   bubblePrefixes: ["/admin"],
   /** …but never on these (the game itself, the home page). */
-  bubbleNever: ["/", "/star-dev", "/road-to-ballon-dor"],
+  bubbleNever: ["/", "/star-dev", "/road-to-ballon-dor", "/road-to-the-golden-ball"],
   /**
    * Jobs that arrive by push (Harry, 20 Oct 2026: "just use pushes"). The
    * site reads `path` from GitHub on each of `branches`, about once a minute,
@@ -56,8 +56,12 @@ export const TEAM_ROOM = {
     branches: ["main", "Harry", "Mikey", "Leo"],
     /** The site's own route that reads them (admins only). */
     api: "/api/admin/team/jobs",
-    /** How long the site keeps one read, and how often the board asks again. */
+    /** How long the site keeps one read, and how often the team board page asks again. */
     refreshMs: 60_000,
+    /** How often the chat bubble (on every page, for admins) asks: 10 minutes,
+     *  and never while its tab is hidden (Mikey, 6 Nov 2026: the bubble's
+     *  once-a-minute ask cost 1,440 server calls a day per open tab). */
+    bubblePollMs: 600_000,
   },
   /**
    * Phone notifications (Web Push; Harry, 20 Oct 2026: "when I @Leo @Mikey,

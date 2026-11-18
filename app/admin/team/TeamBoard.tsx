@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminShell, { type RoomTab } from "@/components/admin/shell/AdminShell";
 import { useAdminLook } from "@/lib/adminLook";
+import { ADMIN_HUB } from "@/lib/adminRegistry";
 import ChatPage from "@/components/teamRoom/ChatPage";
 import { NoteCount, NotesThread } from "@/components/teamRoom/parts";
 import { newGivenTasks, unreadNotes } from "@/lib/teamRoom/logic";
@@ -29,6 +30,7 @@ import { OPEN_PATCH_EVENT } from "@/components/teamRoom/InboxBell";
 import HEADLINES from "@/lib/patchNoteHeadlines.json";
 import "@/components/teamRoom/teamRoom.css";
 import PatchNotesArchive from "@/app/admin/patch-notes/PatchNotesArchive";
+import MediaSyncPanel from "@/app/admin/patch-notes/MediaSyncPanel";
 import { perDay, type Person, type PullRequest, type Push, type PushCount, type TeamBoardData } from "@/lib/teamBoard";
 import type { DevStatus } from "@/lib/devStatus";
 import "./teamBoard.css";
@@ -67,7 +69,7 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage, 
   /** ?m=<id>: a phone notification opened the chat on this message. */
   initialMessage?: number | null;
   /** ?ch= / ?dm= / ?t=: the channel, DM or thread the chat opens on (23 Oct 2026). */
-  initialPlace?: { ch: string | null; dm: string | null; t: number | null };
+  initialPlace?: { ch: string | null; dm: string | null; t: number | null; pn?: string | null; bot?: string | null; view?: string | null; tb?: string | null };
 }) {
   const [tab, setTab] = useState<RoomTab>(initialTab);
   const room = useTeamRoom();
@@ -90,7 +92,8 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage, 
     }
   }, []);
 
-  useEffect(() => { load(); const id = setInterval(load, REFRESH_MS); return () => clearInterval(id); }, [load]);
+  // Not while the tab is hidden (6 Nov 2026: server time).
+  useEffect(() => { load(); const id = setInterval(() => { if (document.visibilityState === "visible") load(); }, REFRESH_MS); return () => clearInterval(id); }, [load]);
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 15_000); return () => clearInterval(id); }, []);
 
   // The address follows the tab, so a link to a patch note can be shared.
@@ -144,9 +147,12 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage, 
     const fromLink = initialTab === tab;
     return (
       <div className="tr-vars trr-page" data-look={look}>
-        <ChatPage onOpenPatch={openNote} onHome={() => setTab("team")} pushes={lastPushes} first={{
+        <ChatPage onOpenPatch={openNote} homeHref={ADMIN_HUB} pushes={lastPushes} first={{
           place, m: fromLink ? initialMessage ?? null : null, t: fromLink ? initialPlace?.t ?? null : null, v: fromLink ? initialVersion ?? null : null,
-          tab: tab === "chat" ? "messages" : "tool",
+          // &tb=<tab id> opens one of the channel's own tabs (e.g. &ch=bugs&tb=fixed); else its first.
+          tab: (fromLink && initialPlace?.tb) || "tool",
+          // &pn=<version>: a patch note's thread; &bot=<name>: a bot's own page (12 Nov 2026).
+          pn: fromLink ? initialPlace?.pn ?? null : null, bot: fromLink ? initialPlace?.bot ?? null : null, view: fromLink ? initialPlace?.view ?? null : null,
         }} />
       </div>
     );
@@ -154,7 +160,11 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage, 
   return (
     <AdminShell tab={tab} role="admin" badges={badges} onTab={(t) => { setTab(t); if (t !== "notes") setVersion(undefined); }}>
       {tab === "notes" ? (
-        <div className="tb-notes"><PatchNotesArchive key={version ?? "latest"} initialVersion={version} /></div>
+        <div className="tb-notes">
+          {/* The Cloudflare move card, here too: this tab is the Patch notes Harry opens (12 Nov 2026). */}
+          <MediaSyncPanel />
+          <PatchNotesArchive key={version ?? "latest"} initialVersion={version} />
+        </div>
       ) : (
         <div className="tb" data-tab={tab}>
           {tab === "team" && <PitchLines />}

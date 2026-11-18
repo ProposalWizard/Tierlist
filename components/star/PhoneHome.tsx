@@ -1,4 +1,5 @@
 "use client";
+import { PACKED_APP } from "@/lib/app/packed";
 
 /**
  * THE PHONE AS A HOME SCREEN — apps, not just a feed.
@@ -64,7 +65,8 @@ const APPS: App[] = [
   { id: "messages", label: "Messages", icon: "💌", bg: ["#f472b6", "#e11d48"] },
   { id: "shop-kib", label: "Shop", icon: "🛍️", bg: ["#fb923c", "#ea580c"] },
   { id: "store", label: "Store", icon: "🛒", bg: ["#fcd34d", "#7c3aed"] },
-  { id: "casino-menu", label: "Casino", icon: "🎰", bg: ["#facc15", "#dc2626"] },
+  // Not in the packed phone app: no casino there at all (Mikey, 5 Nov 2026).
+  ...(PACKED_APP ? [] : [{ id: "casino-menu", label: "Casino", icon: "🎰", bg: ["#facc15", "#dc2626"] } as App]),
   { id: "sponsors", label: "Sponsors", icon: "🤝", bg: ["#2dd4bf", "#0f766e"] },
   { id: "ownership", label: "Owner", icon: "🏛️", bg: ["#818cf8", "#4338ca"] },
   { id: "garden", label: "Garden", icon: "🌳", bg: ["#22c55e", "#166534"] },

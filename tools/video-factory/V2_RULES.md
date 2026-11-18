@@ -15,7 +15,7 @@ Where this file and STORYBOARD.md disagree, this file wins.
   - Look up how each name is said: Wikipedia IPA, a "how to pronounce" source, or club/broadcast usage.
   - Write a sound-alike spelling in the line's `say` field, e.g. `"say": "Soolay"` while `text` keeps "Soulé". Write each name as ONE joined word, no hyphens, no inner capitals: voice D pauses at hyphens and spells out capitals ("tee-AIR-ee" came out as "TARE").
   - Keep the shared dictionary `pronounce.json` up to date. Check by transcribing and by reading the respelling aloud in your head; it must be unambiguous English.
-- **Last spoken line:** "Follow for more, and play Road to Ballon d'Or."
+- **Last spoken line:** "Follow for more." (Mikey, 7 Nov 2026, merged from main)
 - **End card on screen:** it still shows KNOWITBALL / ROAD TO BALLON D'OR / KNOWITBALL.CO.UK / FOLLOW FOR THE NEXT ONE / **LINK IN BIO**, the same as the approved United v Roma end card.
 
 ## Look

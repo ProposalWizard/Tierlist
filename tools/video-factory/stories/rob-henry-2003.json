@@ -79,6 +79,6 @@
       "scene": { "type": "list", "kicker": "One year later", "title": "Ballon d'Or 2004", "rows": [ { "name": "Andriy Shevchenko", "value": "175", "club": "mil" }, { "name": "Deco", "value": "139", "club": "por" }, { "name": "Ronaldinho", "value": "133", "club": "bar" }, { "name": "Thierry Henry", "value": "80", "club": "ars", "hl": true } ] } },
     { "text": "Second, in the best season of his life, while the winner missed the final. That's the robbery.",
       "scene": { "type": "stamp", "text": "ROBBED", "sub": "Henry · Ballon d'Or 2003", "person": "henry", "color": "red" } },
-    { "text": "Follow for more, and play Road to Ballon d'Or.", "scene": { "type": "cta" } }
+    { "text": "Follow for more.", "scene": { "type": "cta" } }
   ]
 }

@@ -74,7 +74,7 @@ export const TWITTER_TEMPLATES: Template[] = [
     { events: ["went-top"], requires: ["clubS", "competition"], weight: 3,
       body: "{clubS} go top of the {competition} 🔝" },
     { events: ["ballon-dor"], requires: ["player"], weight: 4,
-      body: "BREAKING: {player} has won the Ballon d'Or 🏆✨" },
+      body: "BREAKING: {player} has won the Golden Ball 🏆✨" },
     { events: ["award-won"], requires: ["player", "award"], weight: 3,
       body: "{player} has won the {award} 🏅" },
     { events: ["first-call-up"], requires: ["player", "nation"], weight: 3,
@@ -267,7 +267,7 @@ export const TWITTER_TEMPLATES: Template[] = [
     { events: ["hat-trick", "four-goals"], subject: "club", requires: ["player", "clubS"], weight: 2, body: "{player} with a hat-trick for {clubS}. different breed 🥶" },
     { events: ["masterclass"], subject: "you", requires: ["short", "rating"], weight: 3, body: "{rating} rating. {short} is not human 👽" },
     { events: ["goal-milestone"], subject: "you", requires: ["short", "total"], weight: 3, body: "{total} career goals. {short} is HIM. say it back." },
-    { events: ["ballon-dor"], subject: "you", requires: ["short"], weight: 4, body: "BALLON D'OR WINNER {short|caps}. HE'S HIM. HE'S ALWAYS BEEN HIM 🐐👑" },
+    { events: ["ballon-dor"], subject: "you", requires: ["short"], weight: 4, body: "GOLDEN BALL WINNER {short|caps}. HE'S HIM. HE'S ALWAYS BEEN HIM 🐐👑" },
   ]),
 
   // ── The TikTok edits page (video posts) ───────────────────────────────

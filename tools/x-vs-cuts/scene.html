@@ -1,0 +1,224 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>
+html,body{margin:0;background:#000;overflow:hidden}
+#stage{position:relative;width:540px;height:960px;overflow:hidden}
+canvas{display:block}
+.ov{position:absolute;left:0;right:0;text-align:center;font-family:'Inter Display','Inter',sans-serif;pointer-events:none}
+.num{font-weight:900;color:#f6f1e7;font-size:66px;line-height:1;letter-spacing:-1.5px;text-shadow:0 3px 14px rgba(0,0,0,.55)}
+.lab{font-weight:800;color:#e3a83a;font-size:19px;letter-spacing:.5px;margin-top:3px;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+#top{top:78px}#bot{bottom:58px}
+#bot .num{font-size:42px}#bot .lab{font-size:15px}
+#grad{position:absolute;left:0;right:0;bottom:0;height:300px;background:linear-gradient(to bottom,rgba(10,8,6,0),rgba(10,8,6,.78))}
+#tag{position:absolute;bottom:148px;left:0;right:0;text-align:center;font:600 12px 'Inter',sans-serif;color:rgba(255,255,255,.55);letter-spacing:.3px}
+#ill{position:absolute;top:22px;right:20px;font:700 10px 'Inter',sans-serif;color:rgba(255,255,255,.45);letter-spacing:1.5px}
+</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head><body><div id="stage"><canvas id="c"></canvas><div id="grad"></div>
+<div class="ov" id="top"><div class="num" id="cuts">0</div><div class="lab">CUTS</div></div>
+<div id="tag">@knowitball</div>
+<div class="ov" id="bot"><div class="num" id="cubes">0</div><div class="lab">CUBES</div></div>
+<div id="ill">ILLUSTRATION</div></div>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const W=540,H=960,R=1;
+const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true,preserveDrawingBuffer:true});
+renderer.setPixelRatio(2);renderer.setSize(W,H);
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
+renderer.localClippingEnabled=true;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x15120f);
+const pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
+scene.environmentIntensity=0.55;
+
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+// ---------- football pattern (truncated icosahedron) ----------
+const phi=(1+Math.sqrt(5))/2;const PEN=[],HEX=[];
+for(const s1 of[-1,1])for(const s2 of[-1,1]){PEN.push(new THREE.Vector3(0,s1,s2*phi),new THREE.Vector3(s1,s2*phi,0),new THREE.Vector3(s1*phi,0,s2));}
+for(const a of[-1,1])for(const b of[-1,1])for(const c of[-1,1])HEX.push(new THREE.Vector3(a,b,c));
+for(const s1 of[-1,1])for(const s2 of[-1,1]){HEX.push(new THREE.Vector3(0,s1/phi,s2*phi),new THREE.Vector3(s1/phi,s2*phi,0),new THREE.Vector3(s1*phi,0,s2/phi));}
+PEN.forEach(v=>v.normalize());HEX.forEach(v=>v.normalize());
+const DP=1.0265;
+function ballFace(x,y,z){let b=-9,s=-9,bi=0;
+  for(let i=0;i<12;i++){const v=(PEN[i].x*x+PEN[i].y*y+PEN[i].z*z)/DP;if(v>b){s=b;b=v;bi=i}else if(v>s)s=v}
+  for(let i=0;i<20;i++){const v=HEX[i].x*x+HEX[i].y*y+HEX[i].z*z;if(v>b){s=b;b=v;bi=12+i}else if(v>s)s=v}
+  return [bi<12,b-s];}
+
+// ---------- textures ----------
+function canvasTex(w,h,draw){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t}
+const goldTex=canvasTex(2048,1024,(g,w,h)=>{const im=g.createImageData(w,h),d=im.data;
+  for(let j=0;j<h;j++){const th=(j+.5)/h*Math.PI;for(let i=0;i<w;i++){const ph=(i+.5)/w*2*Math.PI;
+    const x=-Math.cos(ph)*Math.sin(th),y=Math.cos(th),z=Math.sin(ph)*Math.sin(th);const[p,e]=ballFace(x,y,z);
+    let r=255,gg=214,bb=120; if(p){r=226;gg=170;bb=62}
+    const seam=e<0.006?1:(e<0.012?(0.012-e)/0.006:0); r=r*(1-.62*seam);gg=gg*(1-.66*seam);bb=bb*(1-.7*seam);
+    const k=(j*w+i)*4;d[k]=r;d[k+1]=gg;d[k+2]=bb;d[k+3]=255}}g.putImageData(im,0,0)});
+const wallTex=canvasTex(1024,1024,(g,w,h)=>{const r=rng(7);g.fillStyle='#1b1916';g.fillRect(0,0,w,h);
+  const bh=64,bw=170;for(let row=0;row<h/bh;row++){const off=row%2?bw/2:0;for(let x=-bw;x<w+bw;x+=bw){const v=34+r()*14;g.fillStyle=`rgb(${v},${v-3},${v-6})`;g.fillRect(x+off+4,row*bh+4,bw-8,bh-8);}}
+  for(let i=0;i<9000;i++){const v=r()*30;g.fillStyle=`rgba(${v},${v},${v},.25)`;g.fillRect(r()*w,r()*h,2,2)}});
+wallTex.wrapS=wallTex.wrapT=THREE.RepeatWrapping;wallTex.repeat.set(3,2);
+const woodTex=canvasTex(2048,512,(g,w,h)=>{const r=rng(3);const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#dcb47a');gr.addColorStop(1,'#d2a86c');g.fillStyle=gr;g.fillRect(0,0,w,h);
+  for(let i=0;i<260;i++){const y=r()*h,a=.05+r()*.12;g.strokeStyle=`rgba(${120+r()*40|0},${80+r()*20|0},40,${a})`;g.lineWidth=.6+r()*2.2;g.beginPath();g.moveTo(0,y);for(let x=0;x<=w;x+=64)g.lineTo(x,y+Math.sin(x*.004+i)*4+r()*1.5);g.stroke()}});
+const topTex=canvasTex(512,512,(g,w,h)=>{const r=rng(5);g.fillStyle='#2e2924';g.fillRect(0,0,w,h);for(let i=0;i<5000;i++){const v=30+r()*25;g.fillStyle=`rgba(${v+8},${v+3},${v},.5)`;g.fillRect(r()*w,r()*h,2,2)}});
+topTex.wrapS=topTex.wrapT=THREE.RepeatWrapping;topTex.repeat.set(4,4);
+
+// ---------- set ----------
+const wall=new THREE.Mesh(new THREE.PlaneGeometry(26,12),new THREE.MeshStandardMaterial({map:wallTex,roughness:.95}));wall.position.set(0,3.5,-4.2);scene.add(wall);
+const counter=new THREE.Mesh(new THREE.PlaneGeometry(26,14),new THREE.MeshStandardMaterial({map:topTex,roughness:.9}));counter.rotation.x=-Math.PI/2;counter.position.y=-0.16;counter.receiveShadow=true;scene.add(counter);
+const table=new THREE.Group();table.rotation.y=-0.42;scene.add(table);
+const board=new THREE.Mesh(new THREE.BoxGeometry(5.0,0.16,3.4),[0,0,0,0,0,0].map((_,i)=>new THREE.MeshStandardMaterial({map:woodTex,roughness:.75,color:i===2?0xffffff:0xd9c3a0})));
+board.position.y=-0.08;board.receiveShadow=true;board.castShadow=true;table.add(board);
+
+const key=new THREE.DirectionalLight(0xffe6c4,3.2);key.position.set(-3.5,7,3.2);key.castShadow=true;
+key.shadow.mapSize.set(2048,2048);Object.assign(key.shadow.camera,{left:-4,right:4,top:4,bottom:-4,near:1,far:20});key.shadow.bias=-0.0004;key.shadow.normalBias=0.02;scene.add(key);
+scene.add(new THREE.HemisphereLight(0xfff1dc,0x2a2018,0.55));
+const fill=new THREE.DirectionalLight(0xbfd2ff,0.35);fill.position.set(4,3,5);scene.add(fill);
+
+// ---------- ball shell ----------
+const lineU={uSx:{value:1},uNx:{value:0},uSy:{value:1},uNy:{value:0},uSz:{value:1},uNz:{value:0}};
+const shellMat=new THREE.MeshPhysicalMaterial({map:goldTex,metalness:1,roughness:.24,clearcoat:.6,clearcoatRoughness:.2,side:THREE.DoubleSide});
+const clip=new THREE.Plane(new THREE.Vector3(0,0,-1),10);shellMat.clippingPlanes=[clip];shellMat.clipShadows=true;
+shellMat.onBeforeCompile=sh=>{Object.assign(sh.uniforms,lineU);
+  sh.vertexShader='varying vec3 vLoc;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvLoc=position;');
+  sh.fragmentShader='varying vec3 vLoc;uniform float uSx,uNx,uSy,uNy,uSz,uNz;\nfloat cutLine(float c,float s,float n){float f=(c+1.0)/s;float i=floor(f+.5);float d=abs(f-i)*s;float w=max(0.0035,0.06*s);float aa=fwidth(c)*1.2;float on=step(.5,i)*step(i,n+.001);float dens=clamp((s/max(fwidth(c),1e-5)-2.0)/10.0,0.12,1.0);return on*dens*(1.0-smoothstep(w*.5,w*.5+aa,d));}\n'+
+  sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\nfloat L=max(cutLine(vLoc.x,uSx,uNx),max(cutLine(vLoc.y,uSy,uNy),cutLine(vLoc.z,uSz,uNz)));diffuseColor.rgb*=1.0-0.82*L;');};
+const shell=new THREE.Mesh(new THREE.SphereGeometry(R*1.012,160,120),shellMat);shell.castShadow=true;shell.position.y=R;table.add(shell);
+
+
+// ---------- cut face (cap) ----------
+const capU={uZ:{value:0},uRC:{value:0.64},uPen:{value:PEN},uHex:{value:HEX},...lineU};
+const capMat=new THREE.MeshPhysicalMaterial({color:0xffffff,metalness:1,roughness:.38});
+capMat.onBeforeCompile=sh=>{Object.assign(sh.uniforms,capU);
+  sh.vertexShader='varying vec3 vC;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvC=position;');
+  sh.fragmentShader='varying vec3 vC;uniform float uZ,uRC,uSx,uNx,uSy,uNy;uniform vec3 uPen[12];uniform vec3 uHex[20];\n'+
+  'float cutLine(float c,float s,float n){float f=(c+1.0)/s;float i=floor(f+.5);float d=abs(f-i)*s;float w=max(0.0035,0.05*s);float aa=fwidth(c)*1.2;float on=step(.5,i)*step(i,n+.001);float dens=clamp((s/max(fwidth(c),1e-5)-2.0)/10.0,0.12,1.0);return on*dens*(1.0-smoothstep(w*.5,w*.5+aa,d));}\n'+
+  sh.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+  float rr=sqrt(max(0.0,1.0-uZ*uZ));vec3 P=vec3(vC.x*rr,vC.y*rr,uZ);float d=length(P);vec3 gold=vec3(0.93,0.66,0.24);
+  if(d<uRC){vec3 n=normalize(P);float b=-9.,s2=-9.;int pi=0;
+    for(int i=0;i<12;i++){float v=dot(uPen[i],n)/1.0265;if(v>b){s2=b;b=v;pi=1;}else if(v>s2)s2=v;}
+    for(int i=0;i<20;i++){float v=dot(uHex[i],n);if(v>b){s2=b;b=v;pi=0;}else if(v>s2)s2=v;}
+    float k=smoothstep(uRC-0.03,uRC-0.01,d);
+    vec3 cc=(b-s2<0.012)?vec3(0.1):(pi==1?vec3(0.05):vec3(0.92));diffuseColor.rgb=mix(cc,gold,k);}
+  else diffuseColor.rgb=gold*(0.93+0.07*sin(d*90.0));
+  float L=max(cutLine(P.x,uSx,uNx),cutLine(P.y,uSy,uNy));diffuseColor.rgb*=1.0-0.8*L;`)
+  .replace('#include <metalnessmap_fragment>','#include <metalnessmap_fragment>\n{float rr2=sqrt(max(0.0,1.0-uZ*uZ));vec3 P2=vec3(vC.x*rr2,vC.y*rr2,uZ);if(length(P2)<uRC){metalnessFactor=0.0;roughnessFactor=0.55;}}');};
+const capMesh=new THREE.Mesh(new THREE.CircleGeometry(1,128),capMat);capMesh.receiveShadow=true;table.add(capMesh);
+// ---------- knife ----------
+const knife=new THREE.Group();
+{const s=new THREE.Shape();s.moveTo(0,0);s.lineTo(2.35,0);s.quadraticCurveTo(2.5,0.02,2.55,0.06);s.quadraticCurveTo(2.2,0.36,1.7,0.40);s.lineTo(0,0.40);s.lineTo(0,0);
+ const g=new THREE.ExtrudeGeometry(s,{depth:0.014,bevelEnabled:true,bevelThickness:0.004,bevelSize:0.006,bevelSegments:1,curveSegments:16});g.translate(0,0,-0.007);
+ const blade=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:0xdfe3e6,metalness:1,roughness:.28}));blade.castShadow=true;knife.add(blade);
+ const handle=new THREE.Mesh(new THREE.BoxGeometry(0.95,0.2,0.08),new THREE.MeshStandardMaterial({color:0x5a3018,roughness:.55}));handle.position.set(-0.47,0.24,0);handle.castShadow=true;knife.add(handle);
+ for(const x of[-0.2,-0.47,-0.74]){const r=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,0.09,12),new THREE.MeshStandardMaterial({color:0xc9c9c9,metalness:1,roughness:.3}));r.rotation.x=Math.PI/2;r.position.set(x,0.24,0);knife.add(r);}}
+table.add(knife);
+const ghosts=[];for(let i=0;i<4;i++){const g=knife.clone(true);g.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.transparent=true;o.castShadow=false;}});ghosts.push(g);table.add(g)}
+function basis(x,y){x=new THREE.Vector3(...x).normalize();y=new THREE.Vector3(...y).normalize();const z=new THREE.Vector3().crossVectors(x,y);return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x,y,z))}
+const tA=0.36,QA=basis([0,-Math.sin(tA),-Math.cos(tA)],[0,Math.cos(tA),-Math.sin(tA)]);
+const QB=basis([0,0,-1],[1,0,0]);
+const QC=basis([-0.96,-0.28,0],[-0.28,0.96,0]);
+function placeKnife(obj,q,edgePt,anchorX){const off=new THREE.Vector3(anchorX,0,0).applyQuaternion(q);obj.quaternion.copy(q);obj.position.copy(edgePt).sub(off);}
+
+// ---------- round state ----------
+let RD=null;const dummy=new THREE.Object3D();let goldIM=null,coreIM=null;
+function setRound(n,seed){
+  const r=rng(seed||11);
+  const kx=Math.round(n/3),ky=Math.round(n/3),kz=n-kx-ky;
+  const G=46;const gx=Math.min(kx+1,G),gy=Math.min(ky+1,G),gz=Math.min(kz+1,G);
+  const sx=2*R/gx,sy=2*R/gy,sz=2*R/gz;const s=Math.min(sx,sy,sz);
+  const cells=[];const RC=0.64;
+  for(let i=0;i<gx;i++)for(let j=0;j<gy;j++)for(let k=0;k<gz;k++){const x=-R+(i+.5)*sx,y=-R+(j+.5)*sy,z=-R+(k+.5)*sz;const d=Math.hypot(x,y,z);if(d>R-0.25*s)continue;
+    let core=d<RC,col=null;if(core){const[p,e]=ballFace(x/d||0,y/d||1,z/d||0);col=e<0.012?[0.12,0.12,0.12]:(p?[0.07,0.07,0.08]:[0.93,0.93,0.9]);}
+    else{const v=0.92+r()*0.16;col=[v,v*0.97,v*0.9];}
+    cells.push({x,y,z,core,col,j:r(),r2:r(),r3:r()});}
+  cells.sort((a,b)=>b.z-a.z);
+  const exact=(kx+1<=G&&ky+1<=G&&kz+1<=G);
+  const total=exact?cells.length:Math.round((kx+1)*(ky+1)*(kz+1)*Math.PI/6);
+  // timeline
+  const P={10:[1.25,.9,1.3],100:[2.7,2.3,3.6],1000:[3.6,2.9,5.6]}[n]||[2,2,3];
+  const T={}; T.a0=0.35;T.a1=T.a0+P[0];T.p1=T.a1+0.85;T.b1=T.p1+P[1];T.p2=T.b1+0.85;T.c1=T.p2+P[2];T.end=T.c1+0.9;
+  // release times + pile targets
+  const szT=2*R/(kz+1);const b=s;const hf=new Map();const key=(a,c)=>a+','+c;
+  for(const c of cells){const need=Math.min(kz,Math.ceil((R-c.z)/szT));c.tr=T.p2+(need-0.5)/kz*P[2]+c.j*0.03;
+    let bx=Math.round((c.x*1.12+(c.r2-.5)*0.6*s)/b),bz=Math.round((c.z+0.32+(c.y+R)*0.3+(c.r3-.5)*0.6*s)/b);
+    for(let it=0;it<40;it++){const h=hf.get(key(bx,bz))||0;let best=null,bh=h;for(const[dx,dz]of[[1,0],[-1,0],[0,1],[0,-1]]){const hn=hf.get(key(bx+dx,bz+dz))||0;if(hn<bh-1.6*b){bh=hn;best=[dx,dz]}}if(!best)break;bx+=best[0];bz+=best[1];}
+    const h=hf.get(key(bx,bz))||0;c.tx=bx*b+(c.r2-.5)*0.2*b;c.tz=bz*b+(c.r3-.5)*0.2*b;c.ty=h+0.5*b;hf.set(key(bx,bz),h+b*0.9);
+    c.dur=0.32+0.22*c.j;c.q=new THREE.Quaternion().setFromEuler(new THREE.Euler((c.r2-.5)*2.4,(c.j-.5)*1.6,(c.r3-.5)*2.4));}
+  if(goldIM){table.remove(goldIM);table.remove(coreIM);goldIM.dispose();coreIM.dispose();}
+  const cg=new THREE.BoxGeometry(1,1,1);
+  const gold=cells.filter(c=>!c.core),core=cells.filter(c=>c.core);
+  goldIM=new THREE.InstancedMesh(cg,new THREE.MeshPhysicalMaterial({color:0xf2c75c,metalness:1,roughness:.26,clearcoat:.4}),Math.max(1,gold.length));
+  coreIM=new THREE.InstancedMesh(cg,new THREE.MeshStandardMaterial({roughness:.5,metalness:0}),Math.max(1,core.length));
+  for(const[im,list]of[[goldIM,gold],[coreIM,core]]){im.castShadow=true;im.receiveShadow=true;list.forEach((c,i)=>{c.im=im;c.idx=i;im.setColorAt(i,new THREE.Color(...c.col));});im.count=list.length;table.add(im);}
+  const cam={10:1.0,100:0.97,1000:0.93}[n]||1;
+  RD={n,kx,ky,kz,sx:2*R/(kx+1),sy:2*R/(ky+1),sz:szT,cells,total,T,P,cube:s*0.93,cam};
+  return {T,n,total,cells:cells.length};
+}
+const camera=new THREE.PerspectiveCamera(30,W/H,0.1,60);
+
+function chopCycle(u){ // u in [0,1): returns depth of edge 0=top..1=through
+  return u<0.55?Math.pow(u/0.55,1.6):1-(u-0.55)/0.45;}
+
+function frame(t){
+  const {T,P,kx,ky,kz,cells,cam}=RD;const yTop=2*R+0.75;
+  camera.position.set(0.3*cam,5.6*cam,10.6*cam);camera.lookAt(0,0.55,-0.2);
+  let nx=0,ny=0,nz=0;let ghostOn=0;let rate=0;
+  // phase A
+  const q=new THREE.Quaternion();const pt=new THREE.Vector3();let anchor=1.25;
+  if(t<T.a1){const u=Math.max(0,(t-T.a0)/P[0]);const f=u*kx;nx=Math.min(kx,Math.floor(f));rate=kx/P[0];
+    const cu=t<T.a0?0:f-Math.floor(f);const ci=Math.min(kx,Math.floor(f)+1);const x=-R+ci*RD.sx;
+    const depth=t<T.a0?0:chopCycle(cu);q.copy(QA);pt.set(x,yTop-(yTop+0.02)*depth,0.05);
+  }else if(t<T.p1){nx=kx;const u=(t-T.a1)/(T.p1-T.a1);const e=u*u*(3-2*u);
+    q.copy(QA).slerp(QB,Math.min(1,e*1.6));pt.set(R+1.6-0.9*e,R*0.25,0.0);rate=0;
+  }else if(t<T.b1){nx=kx;const u=(t-T.p1)/P[1];const f=u*ky;ny=Math.min(ky,Math.floor(f));rate=ky/P[1];
+    const cu=f-Math.floor(f);const ci=Math.min(ky,Math.floor(f)+1);const y=-R+ci*RD.sy+R;
+    q.copy(QB);pt.set(R+0.7-(2*R+1.1)*Math.min(1,cu/0.7),y,0);
+  }else if(t<T.p2){nx=kx;ny=ky;const u=(t-T.b1)/(T.p2-T.b1);const e=u*u*(3-2*u);
+    q.copy(QB).slerp(QC,Math.min(1,e*1.4));pt.set(0.1,R*2+0.5-0.25*e+(1-e)*0,R+0.25-0.2*e);anchor=1.25;
+  }else if(t<T.c1){nx=kx;ny=ky;const u=(t-T.p2)/P[2];const f=u*kz;nz=Math.min(kz,Math.floor(f));rate=kz/P[2];
+    const cu=f-Math.floor(f);const ci=Math.min(kz,Math.floor(f)+1);const z=R-ci*RD.sz;
+    const depth=chopCycle(cu);q.copy(QC);pt.set(0.1,yTop-(yTop+0.02)*depth,z);
+  }else{nx=kx;ny=ky;nz=kz;const u=Math.min(1,(t-T.c1)/0.5);q.copy(QC);pt.set(0.1,yTop+0.2*u,-R-0.15);}
+  placeKnife(knife,q,pt,anchor);
+  // ghosts for blur when fast
+  const blur=Math.min(1,Math.max(0,(rate-6)/18));
+  ghosts.forEach((g,i)=>{if(blur<=0){g.visible=false;return}g.visible=true;
+    const back=(i+1)*0.09;const t2=t-back/Math.max(rate,1);frameKnifeOnly(t2,g);
+    g.traverse(o=>{if(o.isMesh)o.material.opacity=0.2*blur*(1-i/5)});});
+  knife.traverse(o=>{if(o.isMesh){o.material.transparent=blur>0.5;o.material.opacity=1-0.35*blur}});
+  // lines + clip
+  lineU.uSx.value=RD.sx;lineU.uNx.value=nx;lineU.uSy.value=RD.sy;lineU.uNy.value=ny;lineU.uSz.value=RD.sz;lineU.uNz.value=0;
+  const zc=t<T.p2?10:R-((t-T.p2)/P[2])*kz*RD.sz;table.updateMatrixWorld(true);clip.set(new THREE.Vector3(0,0,-1),Math.min(10,zc)).applyMatrix4(table.matrixWorld);shell.visible=zc>-R&&t<T.c1-0.04;
+  if(t<T.c1-0.04&&zc<R&&zc>-R){const rr=Math.sqrt(R*R-zc*zc);capMesh.visible=true;capMesh.scale.setScalar(rr);capMesh.position.set(0,R,zc);capU.uZ.value=zc;}else capMesh.visible=false;
+  // cubes
+  let released=0;const sc=RD.cube;
+  for(const c of cells){let x=c.x,y=c.y+R,z=c.z;dummy.quaternion.identity();let vis=t>=c.tr;
+    if(t>=c.tr){released++;const u=Math.min(1,(t-c.tr)/c.dur);const uh=1-Math.pow(1-u,1.4);
+      x=c.x+(c.tx-c.x)*uh;z=c.z+(c.tz-c.z)*uh;y=(c.y+R)+(c.ty-(c.y+R))*(u*u);if(u>=1)y=c.ty;
+      dummy.quaternion.identity().slerp(c.q,u);}
+    dummy.position.set(x,y,z);dummy.scale.setScalar(vis?sc:0);dummy.updateMatrix();c.im.setMatrixAt(c.idx,dummy.matrix);}
+  goldIM.instanceMatrix.needsUpdate=true;coreIM.instanceMatrix.needsUpdate=true;
+  // counters
+  const cuts=nx+ny+nz;document.getElementById('cuts').textContent=cuts.toLocaleString('en-GB');
+  const cub=released===cells.length?RD.total:Math.round(released/cells.length*RD.total);
+  document.getElementById('cubes').textContent=(cub>=10000?'≈ '+(Math.round(cub/1000)*1000).toLocaleString('en-GB'):cub.toLocaleString('en-GB'));
+  renderer.render(scene,camera);
+  return {cuts,cubes:cub};
+}
+function frameKnifeOnly(t,obj){ // pose only, reusing frame math by temporarily computing
+  const save=knife.position.clone(),sq=knife.quaternion.clone();const s2=frameStub(t);obj.position.copy(s2.p);obj.quaternion.copy(s2.q);}
+function frameStub(t){const {T,P,kx,ky,kz}=RD;const yTop=2*R+0.75;const q=new THREE.Quaternion(),pt=new THREE.Vector3();
+  if(t<T.a1){const u=Math.max(0,(t-T.a0)/P[0]);const f=u*kx;const cu=f-Math.floor(f);const ci=Math.min(kx,Math.floor(f)+1);q.copy(QA);pt.set(-R+ci*RD.sx,yTop-(yTop+.02)*chopCycle(cu),0.05);}
+  else if(t>=T.p1&&t<T.b1){const u=(t-T.p1)/P[1];const f=u*ky;const cu=f-Math.floor(f);const ci=Math.min(ky,Math.floor(f)+1);q.copy(QB);pt.set(R+0.7-(2*R+1.1)*Math.min(1,cu/0.7),-R+ci*RD.sy+R,0);}
+  else if(t>=T.p2&&t<T.c1){const u=(t-T.p2)/P[2];const f=u*kz;const cu=f-Math.floor(f);const ci=Math.min(kz,Math.floor(f)+1);q.copy(QC);pt.set(0.1,yTop-(yTop+.02)*chopCycle(cu),R-ci*RD.sz);}
+  else{q.copy(knife.quaternion);pt.copy(knife.position);const o=new THREE.Object3D();return {p:pt,q}}
+  const off=new THREE.Vector3(1.25,0,0).applyQuaternion(q);return {p:pt.sub(off),q};}
+function events(){const {T,P,kx,ky,kz,cells}=RD;const ev=[];
+  for(let i=1;i<=kx;i++)ev.push(['chop',T.a0+(i-1+0.55)/kx*P[0]]);
+  for(let i=1;i<=ky;i++)ev.push(['slice',T.p1+(i-1+0.45)/ky*P[1]]);
+  for(let i=1;i<=kz;i++)ev.push(['dice',T.p2+(i-1+0.55)/kz*P[2]]);
+  const step=Math.max(1,Math.floor(cells.length/1500));for(let i=0;i<cells.length;i+=step){const c=cells[i];ev.push(['land',c.tr+c.dur,c.core?1:0]);}
+  return {ev,T,step};}
+window.dbg=()=>({v:capMesh.visible,s:capMesh.scale.x,z:capMesh.position.z,clip:clip.constant});window.setRound=setRound;window.frame=frame;window.events=events;window.ready=true;
+</script></body></html>

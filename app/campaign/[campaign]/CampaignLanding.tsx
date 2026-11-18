@@ -55,7 +55,7 @@ export function CampaignLandingView({ campaign: c, busy, error, onPlay }: {
       </svg>
 
       <main className="relative mx-auto flex min-h-[100dvh] max-w-md flex-col px-4 pb-8 pt-10">
-        <p className="text-center text-[11px] font-black uppercase tracking-[0.25em] text-white/60">Knowitball · Road to Ballon d&apos;Or</p>
+        <p className="text-center text-[11px] font-black uppercase tracking-[0.25em] text-white/60">Knowitball · Road to the Golden Ball</p>
         <h1 className="mt-6 text-center text-[44px] uppercase leading-[0.95] tracking-wide" style={{ fontFamily: "var(--font-pitch), Impact, sans-serif" }}>
           {c.headline}
         </h1>

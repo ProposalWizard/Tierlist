@@ -1,0 +1,1322 @@
+{
+ "clubs": {
+  "int": {
+   "name": "Inter",
+   "short": "INT",
+   "c1": "#1f4fb3",
+   "c2": "#0b0b0b",
+   "pattern": "stripes",
+   "gk": "#e8e04a"
+  },
+  "bar": {
+   "name": "Barcelona",
+   "short": "BAR",
+   "c1": "#a50044",
+   "c2": "#004d98",
+   "pattern": "stripes",
+   "collar": "#edbb00",
+   "gk": "#2bb673"
+  }
+ },
+ "people": {
+  "mourinho": {
+   "name": "José Mourinho",
+   "short": "Mourinho",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#4a4440"
+   ],
+   "beard": "stubble",
+   "beardCol": "#5a5450",
+   "kit": "suit",
+   "club": "int"
+  },
+  "pep": {
+   "name": "Pep Guardiola",
+   "short": "Guardiola",
+   "skin": "light",
+   "hair": [
+    "bald",
+    "#000"
+   ],
+   "beard": "stubble",
+   "beardCol": "#6a5a4a",
+   "kit": "suit",
+   "club": "bar"
+  }
+ },
+ "players": {
+  "julio": {
+   "name": "Júlio César",
+   "club": "int",
+   "skin": "tan",
+   "hair": [
+    "crop",
+    "#1a1410"
+   ],
+   "beard": "stubble",
+   "gk": true
+  },
+  "maicon": {
+   "name": "Maicon",
+   "club": "int",
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "none"
+  },
+  "lucio": {
+   "name": "Lúcio",
+   "club": "int",
+   "skin": "tan",
+   "hair": [
+    "buzz",
+    "#1a1410"
+   ],
+   "beard": "goatee"
+  },
+  "samuel": {
+   "name": "Samuel",
+   "club": "int",
+   "skin": "olive",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "short"
+  },
+  "zanetti": {
+   "name": "Zanetti",
+   "club": "int",
+   "skin": "olive",
+   "hair": [
+    "slick",
+    "#111111"
+   ],
+   "beard": "none"
+  },
+  "cambiasso": {
+   "name": "Cambiasso",
+   "club": "int",
+   "skin": "light",
+   "hair": [
+    "bald",
+    "#000000"
+   ],
+   "beard": "none"
+  },
+  "motta": {
+   "name": "Motta",
+   "club": "int",
+   "skin": "olive",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "short"
+  },
+  "chivu": {
+   "name": "Chivu",
+   "club": "int",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "none"
+  },
+  "etoo": {
+   "name": "Eto'o",
+   "club": "int",
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "sneijder": {
+   "name": "Sneijder",
+   "club": "int",
+   "skin": "light",
+   "hair": [
+    "buzz",
+    "#8a6440"
+   ],
+   "beard": "none"
+  },
+  "milito": {
+   "name": "Milito",
+   "club": "int",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "short"
+  },
+  "pandev": {
+   "name": "Pandev",
+   "club": "int",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "stubble"
+  },
+  "muntari": {
+   "name": "Muntari",
+   "club": "int",
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "cordoba": {
+   "name": "Córdoba",
+   "club": "int",
+   "skin": "brown",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "none"
+  },
+  "mariga": {
+   "name": "Mariga",
+   "club": "int",
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "valdes": {
+   "name": "Valdés",
+   "club": "bar",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "stubble",
+   "gk": true
+  },
+  "alves": {
+   "name": "Dani Alves",
+   "club": "bar",
+   "skin": "brown",
+   "hair": [
+    "crop",
+    "#120e0c"
+   ],
+   "beard": "goatee",
+   "short": "Alves"
+  },
+  "pique": {
+   "name": "Piqué",
+   "club": "bar",
+   "skin": "light",
+   "hair": [
+    "side",
+    "#5a3e28"
+   ],
+   "beard": "stubble"
+  },
+  "gmilito": {
+   "name": "G. Milito",
+   "club": "bar",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "none"
+  },
+  "puyol": {
+   "name": "Puyol",
+   "club": "bar",
+   "skin": "light",
+   "hair": [
+    "bigcurl",
+    "#5a3e28"
+   ],
+   "beard": "none"
+  },
+  "maxwell": {
+   "name": "Maxwell",
+   "club": "bar",
+   "skin": "tan",
+   "hair": [
+    "buzz",
+    "#111111"
+   ],
+   "beard": "none"
+  },
+  "keita": {
+   "name": "Keita",
+   "club": "bar",
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none"
+  },
+  "xavi": {
+   "name": "Xavi",
+   "club": "bar",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "stubble"
+  },
+  "busquets": {
+   "name": "Busquets",
+   "club": "bar",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "none"
+  },
+  "toure": {
+   "name": "Yaya Touré",
+   "club": "bar",
+   "skin": "deep",
+   "hair": [
+    "buzz",
+    "#0d0a09"
+   ],
+   "beard": "none",
+   "short": "Touré"
+  },
+  "pedro": {
+   "name": "Pedro",
+   "club": "bar",
+   "skin": "olive",
+   "hair": [
+    "crop",
+    "#1d1512"
+   ],
+   "beard": "none"
+  },
+  "messi": {
+   "name": "Messi",
+   "club": "bar",
+   "skin": "light",
+   "hair": [
+    "messy",
+    "#5a3e28"
+   ],
+   "beard": "none"
+  },
+  "ibra": {
+   "name": "Ibrahimović",
+   "club": "bar",
+   "skin": "olive",
+   "hair": [
+    "slick",
+    "#1d1512"
+   ],
+   "beard": "stubble",
+   "short": "Ibra"
+  },
+  "bojan": {
+   "name": "Bojan",
+   "club": "bar",
+   "skin": "light",
+   "hair": [
+    "crop",
+    "#2a1d15"
+   ],
+   "beard": "none"
+  },
+  "jeffren": {
+   "name": "Jeffrén",
+   "club": "bar",
+   "skin": "brown",
+   "hair": [
+    "crop",
+    "#120e0c"
+   ],
+   "beard": "none"
+  }
+ },
+ "shapes": {
+  "inter_leg1": {
+   "julio": [
+    34,
+    101
+   ],
+   "maicon": [
+    58,
+    90
+   ],
+   "lucio": [
+    42,
+    94
+   ],
+   "samuel": [
+    26,
+    94
+   ],
+   "zanetti": [
+    10,
+    90
+   ],
+   "cambiasso": [
+    27,
+    80
+   ],
+   "motta": [
+    41,
+    80
+   ],
+   "pandev": [
+    12,
+    67
+   ],
+   "sneijder": [
+    34,
+    67
+   ],
+   "etoo": [
+    56,
+    67
+   ],
+   "milito": [
+    34,
+    56
+   ]
+  },
+  "barca_leg1": {
+   "valdes": [
+    34,
+    4
+   ],
+   "alves": [
+    8,
+    20
+   ],
+   "pique": [
+    26,
+    14
+   ],
+   "puyol": [
+    42,
+    14
+   ],
+   "maxwell": [
+    60,
+    20
+   ],
+   "xavi": [
+    27,
+    30
+   ],
+   "busquets": [
+    41,
+    30
+   ],
+   "pedro": [
+    10,
+    42
+   ],
+   "messi": [
+    34,
+    44
+   ],
+   "keita": [
+    58,
+    42
+   ],
+   "ibra": [
+    34,
+    52
+   ]
+  },
+  "inter_ko": {
+   "julio": [
+    34,
+    101
+   ],
+   "maicon": [
+    58,
+    92
+   ],
+   "lucio": [
+    42,
+    95
+   ],
+   "samuel": [
+    26,
+    95
+   ],
+   "zanetti": [
+    10,
+    92
+   ],
+   "cambiasso": [
+    28,
+    84
+   ],
+   "motta": [
+    40,
+    84
+   ],
+   "chivu": [
+    14,
+    80
+   ],
+   "sneijder": [
+    34,
+    73
+   ],
+   "etoo": [
+    56,
+    75
+   ],
+   "milito": [
+    42,
+    64
+   ]
+  },
+  "barca_siege": {
+   "valdes": [
+    34,
+    24
+   ],
+   "pique": [
+    25,
+    52
+   ],
+   "gmilito": [
+    43,
+    52
+   ],
+   "alves": [
+    4,
+    72
+   ],
+   "keita": [
+    64,
+    72
+   ],
+   "busquets": [
+    30,
+    60
+   ],
+   "xavi": [
+    19,
+    70
+   ],
+   "toure": [
+    49,
+    70
+   ],
+   "messi": [
+    26,
+    78
+   ],
+   "ibra": [
+    44,
+    79
+   ],
+   "pedro": [
+    65,
+    82
+   ]
+  },
+  "inter_441": {
+   "julio": [
+    34,
+    101
+   ],
+   "maicon": [
+    58,
+    93
+   ],
+   "lucio": [
+    42,
+    96
+   ],
+   "samuel": [
+    26,
+    96
+   ],
+   "zanetti": [
+    10,
+    93
+   ],
+   "etoo": [
+    58,
+    84
+   ],
+   "sneijder": [
+    42,
+    86
+   ],
+   "cambiasso": [
+    26,
+    86
+   ],
+   "chivu": [
+    10,
+    84
+   ],
+   "milito": [
+    34,
+    69
+   ]
+  },
+  "barca_60": {
+   "valdes": [
+    34,
+    28
+   ],
+   "pique": [
+    26,
+    56
+   ],
+   "toure": [
+    42,
+    56
+   ],
+   "alves": [
+    4,
+    74
+   ],
+   "maxwell": [
+    64,
+    74
+   ],
+   "busquets": [
+    27,
+    62
+   ],
+   "xavi": [
+    19,
+    72
+   ],
+   "keita": [
+    49,
+    72
+   ],
+   "messi": [
+    26,
+    78
+   ],
+   "ibra": [
+    44,
+    79
+   ],
+   "pedro": [
+    65,
+    82
+   ]
+  },
+  "inter_84": {
+   "julio": [
+    34,
+    101
+   ],
+   "maicon": [
+    58,
+    93
+   ],
+   "lucio": [
+    42,
+    96
+   ],
+   "samuel": [
+    26,
+    96
+   ],
+   "zanetti": [
+    10,
+    93
+   ],
+   "cordoba": [
+    34,
+    92
+   ],
+   "etoo": [
+    58,
+    84
+   ],
+   "muntari": [
+    42,
+    86
+   ],
+   "cambiasso": [
+    26,
+    86
+   ],
+   "chivu": [
+    10,
+    84
+   ]
+  },
+  "barca_84": {
+   "valdes": [
+    34,
+    32
+   ],
+   "toure": [
+    34,
+    62
+   ],
+   "alves": [
+    4,
+    74
+   ],
+   "maxwell": [
+    64,
+    74
+   ],
+   "xavi": [
+    20,
+    74
+   ],
+   "keita": [
+    48,
+    73
+   ],
+   "messi": [
+    30,
+    79
+   ],
+   "jeffren": [
+    16,
+    78
+   ],
+   "pedro": [
+    65,
+    81
+   ],
+   "bojan": [
+    18,
+    90
+   ],
+   "pique": [
+    49,
+    90
+   ]
+  },
+  "inter_90": {
+   "julio": [
+    34,
+    101
+   ],
+   "maicon": [
+    58,
+    93
+   ],
+   "lucio": [
+    42,
+    96
+   ],
+   "samuel": [
+    26,
+    96
+   ],
+   "zanetti": [
+    10,
+    93
+   ],
+   "cordoba": [
+    34,
+    92
+   ],
+   "mariga": [
+    58,
+    84
+   ],
+   "muntari": [
+    42,
+    86
+   ],
+   "cambiasso": [
+    26,
+    86
+   ],
+   "chivu": [
+    10,
+    84
+   ]
+  }
+ },
+ "layout": "chess",
+ "music": "05-under-the-cosh.mp3",
+ "id": "ch-sim-test-pique",
+ "series": "Analysed like chess",
+ "title": "Simulation test: Pique 84'",
+ "sources": [
+  "https://www.inter.it/en/news/2020/04/28/barcelona-1-0-inter-2010-champions-league-semi-final.html",
+  "https://www.inter.it/en/news/2020/04/20/inter-3-1-barcelona-champions-league-2010-highlights-photos.html",
+  "https://www.skysports.com/football/barcelona-vs-inter/212464",
+  "https://www.fcbarcelona.com/en/news/1647162/barca-rewind-the-ash-cloud",
+  "https://sport.sky.it/calcio/champions-league/2020/04/10/inter-barcellona-trasferta-viaggio-15-ore",
+  "https://www.eurosport.com/football/champions-league/2009-2010/retro-report-jose-mourinho-mastermind-as-10-man-inter-reach-final-at-barcelonas-expense_sto7737119/story.shtml",
+  "https://www.republicworld.com/sports/football/jose-mourinho-run-camp-nou-after-inter-knock-out-barcelona-apr-28-2010",
+  "https://www.pulsesports.ug/football/story/the-most-beautiful-defeat-of-my-career-mourinho-reflects-on-barcelona-vs-inter-milan-clash-in-2010-2025042512301760462",
+  "https://www.fourfourtwo.com/news/jose-sweetest-defeat-my-life",
+  "https://www.inter.it/en/match_center/3829",
+  "https://www.inter.it/en/match_center/3828",
+  "https://www.rte.ie/sport/soccer/2010/0428/264407-barcelona_intermilan"
+ ],
+ "checked": "Choreographed from the ITV highlights of the 2nd leg.",
+ "lines": [
+  {
+   "text": "Eighty-four minutes. Piqué, a centre-back thrown up front, scores. 1-0. One more goal and Barça are through on away goals.",
+   "say": "Eighty-four minutes. Piqué, a centre-back thrown up front, scores. One-nil. One more goal and Barça are through on away goals.",
+   "scene": {
+    "type": "move",
+    "n": "4",
+    "who": "pep",
+    "title": "Piqué up front",
+    "badge": "great",
+    "on": "pique",
+    "eval": -0.4,
+    "goal": true,
+    "goalWord": "scores",
+    "shape": [
+     "inter_84",
+     "barca_84"
+    ],
+    "score": {
+     "h": 1,
+     "a": 0,
+     "min": "84'",
+     "agg": "AGG 2-3"
+    },
+    "focus": [
+     "pique"
+    ],
+    "tracks": {
+     "messi": [
+      [
+       0,
+       30,
+       80
+      ],
+      [
+       0.5,
+       32,
+       81
+      ],
+      [
+       3,
+       34,
+       86
+      ],
+      [
+       6,
+       40,
+       92
+      ]
+     ],
+     "xavi": [
+      [
+       0,
+       44,
+       82
+      ],
+      [
+       0.6,
+       46,
+       84
+      ],
+      [
+       1.5,
+       49,
+       88
+      ],
+      [
+       2.2,
+       48,
+       89
+      ],
+      [
+       4.2,
+       52,
+       95
+      ],
+      [
+       6,
+       56,
+       98
+      ]
+     ],
+     "pique": [
+      [
+       0,
+       40,
+       88
+      ],
+      [
+       1.4,
+       39,
+       92
+      ],
+      [
+       1.9,
+       38,
+       94
+      ],
+      [
+       2.5,
+       36,
+       95.5
+      ],
+      [
+       2.9,
+       35.5,
+       96
+      ],
+      [
+       3.6,
+       40,
+       97
+      ],
+      [
+       5.2,
+       56,
+       99
+      ],
+      [
+       6.5,
+       60,
+       100
+      ]
+     ],
+     "keita": [
+      [
+       0,
+       48,
+       73
+      ],
+      [
+       2,
+       40,
+       86
+      ],
+      [
+       3.6,
+       42,
+       94
+      ],
+      [
+       6,
+       52,
+       97
+      ]
+     ],
+     "bojan": [
+      [
+       0,
+       18,
+       90
+      ],
+      [
+       2,
+       24,
+       93
+      ],
+      [
+       3.6,
+       30,
+       96
+      ],
+      [
+       6,
+       46,
+       97
+      ]
+     ],
+     "pedro": [
+      [
+       0,
+       65,
+       81
+      ],
+      [
+       2,
+       60,
+       88
+      ],
+      [
+       6,
+       58,
+       96
+      ]
+     ],
+     "jeffren": [
+      [
+       0,
+       16,
+       78
+      ],
+      [
+       2,
+       20,
+       86
+      ],
+      [
+       6,
+       40,
+       94
+      ]
+     ],
+     "maxwell": [
+      [
+       0,
+       64,
+       74
+      ],
+      [
+       2,
+       62,
+       80
+      ],
+      [
+       6,
+       60,
+       88
+      ]
+     ],
+     "alves": [
+      [
+       0,
+       4,
+       74
+      ],
+      [
+       2,
+       8,
+       80
+      ],
+      [
+       6,
+       30,
+       88
+      ]
+     ],
+     "toure": [
+      [
+       0,
+       34,
+       62
+      ],
+      [
+       2,
+       34,
+       70
+      ],
+      [
+       6,
+       42,
+       82
+      ]
+     ],
+     "valdes": [
+      [
+       0,
+       34,
+       32
+      ],
+      [
+       6,
+       34,
+       40
+      ]
+     ],
+     "julio": [
+      [
+       0,
+       34,
+       101
+      ],
+      [
+       2.4,
+       35,
+       101
+      ],
+      [
+       2.95,
+       35,
+       101.5
+      ],
+      [
+       3.2,
+       32.5,
+       103.2
+      ],
+      [
+       6,
+       33,
+       103
+      ]
+     ],
+     "cordoba": [
+      [
+       0,
+       34,
+       92
+      ],
+      [
+       1.6,
+       37,
+       94
+      ],
+      [
+       2.4,
+       37.5,
+       95.5
+      ],
+      [
+       2.8,
+       38.5,
+       96.5
+      ],
+      [
+       6,
+       37,
+       97
+      ]
+     ],
+     "lucio": [
+      [
+       0,
+       42,
+       96
+      ],
+      [
+       1.6,
+       41,
+       95
+      ],
+      [
+       2.6,
+       38.5,
+       97
+      ],
+      [
+       6,
+       38,
+       98
+      ]
+     ],
+     "samuel": [
+      [
+       0,
+       26,
+       96
+      ],
+      [
+       2,
+       30,
+       97
+      ],
+      [
+       6,
+       31,
+       98
+      ]
+     ],
+     "maicon": [
+      [
+       0,
+       58,
+       93
+      ],
+      [
+       1.4,
+       53,
+       91
+      ],
+      [
+       6,
+       50,
+       94
+      ]
+     ],
+     "muntari": [
+      [
+       0,
+       42,
+       86
+      ],
+      [
+       1.2,
+       46,
+       86
+      ],
+      [
+       6,
+       46,
+       90
+      ]
+     ],
+     "zanetti": [
+      [
+       0,
+       10,
+       93
+      ],
+      [
+       6,
+       18,
+       95
+      ]
+     ],
+     "cambiasso": [
+      [
+       0,
+       26,
+       86
+      ],
+      [
+       2,
+       32,
+       90
+      ],
+      [
+       6,
+       32,
+       93
+      ]
+     ],
+     "chivu": [
+      [
+       0,
+       10,
+       84
+      ],
+      [
+       6,
+       16,
+       88
+      ]
+     ],
+     "etoo": [
+      [
+       0,
+       58,
+       84
+      ],
+      [
+       1.5,
+       55,
+       87
+      ],
+      [
+       6,
+       54,
+       92
+      ]
+     ]
+    },
+    "ballTrack": [
+     [
+      0,
+      30,
+      81,
+      0
+     ],
+     [
+      0.55,
+      45,
+      84,
+      0
+     ],
+     [
+      1.45,
+      49,
+      88,
+      0
+     ],
+     [
+      1.95,
+      38.6,
+      94.4,
+      0
+     ],
+     [
+      2.3,
+      37.6,
+      95.2,
+      0
+     ],
+     [
+      2.85,
+      35.6,
+      96.4,
+      0
+     ],
+     [
+      3.25,
+      33.2,
+      104.4,
+      0.6
+     ],
+     [
+      3.6,
+      33,
+      104.8,
+      0
+     ],
+     [
+      6,
+      33,
+      104.8,
+      0
+     ]
+    ],
+    "camTrack": [
+     [
+      0,
+      40,
+      85,
+      46
+     ],
+     [
+      1.5,
+      42,
+      90,
+      38
+     ],
+     [
+      2.6,
+      37,
+      96,
+      28
+     ],
+     [
+      3.6,
+      36,
+      97,
+      30
+     ],
+     [
+      6,
+      46,
+      95,
+      44
+     ]
+    ]
+   }
+  }
+ ]
+}

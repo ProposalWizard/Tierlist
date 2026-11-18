@@ -2,7 +2,7 @@
 /**
  * THE back arrow on every admin and test page (Harry, 20 Oct 2026: "Always top
  * left … always the same"). One look per admin skin (Broadcast, Bento, Ops
- * room, Clean light), one place: the top-left corner of the page.
+ * room, Clean light; and Knowitball, the default since 12 Nov 2026), one place: the top-left corner of the page.
  *
  *  - BroadcastPage puts it first in its title bar; the admin shell puts it in
  *    the side menu's top (computer) and the top bar (phone).
@@ -18,6 +18,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { backFor, type AdminRole } from "@/lib/adminRegistry";
 import { useAdminLook } from "@/lib/adminLook";
+import "./shell/houseTokens.css";
 import "./backArrow.css";
 
 export default function BackArrow({ to, onClick, label, floating, role }: {

@@ -11,7 +11,8 @@
  * for our testers to be able to have god mode too". `useIsTester` is true for
  * testers AND admins (lib/roles.ts).
  *
- * Asks /api/profile/admin-check once per page load and shares the answer.
+ * Asks /api/profile/admin-check once per page load and shares the answer:
+ * only for a signed-in person, and kept for 10 minutes per tab.
  * A local build that allows offline dev play (`next dev`, the sandbox and the
  * playtest agents, who cannot sign in — see lib/star/devMode.ts) always counts
  * as admin; the deployed app never does unless the server says so.
@@ -21,6 +22,7 @@
  */
 import { useEffect, useState } from "react";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
+import { createClient } from "@/lib/supabase/client";
 import type { Role } from "@/lib/roles";
 
 const DEV_BUILD = offlineDevPlayEnabled();
@@ -31,12 +33,40 @@ const NOBODY: Answer = { isAdmin: false, isTester: false };
 let answer: Answer | null = DEV_BUILD ? { isAdmin: true, isTester: true } : null;
 let pending: Promise<Answer> | null = null;
 
+// The answer kept for this tab, per account, so moving between pages does not
+// ask the server again each time (Mikey, 6 Nov 2026: server time). 10 minutes,
+// so a role given or taken shows soon enough.
+const KEEP_KEY = "kib-admin-check";
+const KEEP_MS = 10 * 60_000;
+function kept(userId: string): Answer | null {
+  try {
+    const k = JSON.parse(sessionStorage.getItem(KEEP_KEY) ?? "null") as { id: string; at: number; a: Answer } | null;
+    return k && k.id === userId && Date.now() - k.at < KEEP_MS ? k.a : null;
+  } catch { return null; }
+}
+function keep(userId: string, a: Answer) {
+  try { sessionStorage.setItem(KEEP_KEY, JSON.stringify({ id: userId, at: Date.now(), a })); } catch { /* private mode */ }
+}
+
 function ask(): Promise<Answer> {
   if (answer !== null) return Promise.resolve(answer);
   if (!pending) {
-    pending = fetch("/api/profile/admin-check")
-      .then(res => (res.ok ? res.json() : NOBODY))
-      .then((d: { isAdmin?: boolean; isTester?: boolean }) => (answer = { isAdmin: !!d.isAdmin, isTester: !!d.isAdmin || !!d.isTester }))
+    // Signed out (most visitors): nobody, with no server call. The login
+    // cookie is read in the browser.
+    pending = createClient().auth.getSession()
+      .then(({ data }) => {
+        const id = data.session?.user.id;
+        if (!id) return (answer = NOBODY);
+        const hit = kept(id);
+        if (hit) return (answer = hit);
+        return fetch("/api/profile/admin-check")
+          .then(res => (res.ok ? res.json() : NOBODY))
+          .then((d: { isAdmin?: boolean; isTester?: boolean }) => {
+            answer = { isAdmin: !!d.isAdmin, isTester: !!d.isAdmin || !!d.isTester };
+            keep(id, answer);
+            return answer;
+          });
+      })
       .catch(() => NOBODY)
       .finally(() => { pending = null; });
   }

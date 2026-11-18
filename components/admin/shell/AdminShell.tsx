@@ -3,7 +3,7 @@
  * The admin pages' frame: one tab per GAME across the top (Harry, 19 Oct
  * 2026: "stuff on the wider website should be on a completely different tab
  * than road to ballon dor stuff"), a side menu and the Look switch
- * (Broadcast, Bento, Ops room, Clean light). Games and groups come from
+ * (Knowitball, the default since 12 Nov 2026, then Broadcast, Bento, Ops room, Clean light). Games and groups come from
  * lib/adminRegistry.ts (GAMES, GROUPS). Used by /admin/star (and its game
  * and group pages), /admin/team and /admin/videos. On a phone the menu hides
  * behind "☰ Menu"; on a computer « folds it to a thin strip of icons
@@ -23,15 +23,18 @@
  */
 import "./adminShell.css";
 import "./skin.css";
+import "./houseTokens.css";
+import "./house.css";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useState, type ReactNode } from "react";
-import { ADMIN_PAGES, GAMES, TEAM_HOME, gameForPath, gameOf, gamesFor, groupGame, groupIcon, groupsOf, visibleTo, type AdminGameKey, type AdminGroup } from "@/lib/adminRegistry";
+import { ADMIN_HUB, ADMIN_PAGES, GAMES, TEAM_HOME, gameForPath, gameOf, gamesFor, groupGame, groupIcon, groupsOf, visibleTo, type AdminGameKey, type AdminGroup } from "@/lib/adminRegistry";
 import { ADMIN_LOOKS, setAdminLook, setAdminMode, useAdminLook, useAdminMode } from "@/lib/adminLook";
 import BackArrow from "@/components/admin/BackArrow";
 import InboxBell from "@/components/teamRoom/InboxBell";
 
-export type ShellTab = "home" | "team" | "notes" | "videos" | "ideas" | "chat" | "todo";
+/** "hub" = the admin home at /admin (Harry, 12 Nov 2026): no game lit, every area listed. */
+export type ShellTab = "hub" | "home" | "team" | "notes" | "videos" | "ideas" | "chat" | "todo";
 export type RoomTab = "team" | "ideas" | "chat" | "todo" | "notes";
 /** The Team area's views, in the side menu's order (the brief: Team board,
  *  Team chat, Ideas, My to-do, Patch notes). */
@@ -93,6 +96,8 @@ export default function AdminShell({ tab, role, children, onTab, badges, game: g
   const G = gameOf(game) ?? GAMES[0];
   // In the Team area (admins only): Team is lit, no game is.
   const inTeam = role === "admin" && (TEAM_VIEWS.some((v) => v.tab === tab) || ROOM_TABS.includes(tab as RoomTab));
+  // On the admin home itself: every game is listed, none is lit.
+  const atHub = tab === "hub";
   const pages = visibleTo(role);
   // Same count as the home's tiles and search (the admin home itself is not a page to open).
   const count = (g: string) => pages.filter((p) => p.group === g && p.url !== "/admin/star").length;
@@ -133,6 +138,11 @@ export default function AdminShell({ tab, role, children, onTab, badges, game: g
             </button>
           </div>
 
+          {/* The admin home (Harry, 12 Nov 2026: "there should be a home page for the admin"). First line, for everyone. */}
+          <Link className="ash-nav ash-area" data-on={atHub} aria-current={atHub ? "page" : undefined} href={ADMIN_HUB} title="Admin home: every area in one place">
+            <span className="ash-navl"><Icon name="home" /><span className="ash-navt">Admin home</span></span>
+          </Link>
+
           {/* Team: its own tab, first, for admins (Harry, 20 Oct 2026). Lit
               while you are anywhere in the Team area. */}
           {role === "admin" && (inTeam && onTab ? (
@@ -145,11 +155,13 @@ export default function AdminShell({ tab, role, children, onTab, badges, game: g
             </Link>
           ))}
 
-          {inTeam ? (<>
+          {inTeam || atHub ? (<>
             {/* The Team area's views. */}
-            <div className="ash-subs" role="group" aria-label="Team">
-              {TEAM_VIEWS.map((v) => <Fragment key={v.tab}>{navTab(v.tab, v.label, v.icon)}</Fragment>)}
-            </div>
+            {inTeam && (
+              <div className="ash-subs" role="group" aria-label="Team">
+                {TEAM_VIEWS.map((v) => <Fragment key={v.tab}>{navTab(v.tab, v.label, v.icon)}</Fragment>)}
+              </div>
+            )}
             {/* One line per game: its home. */}
             <div className="ash-navh">Games</div>
             <div className="ash-glist">
@@ -206,7 +218,7 @@ export default function AdminShell({ tab, role, children, onTab, badges, game: g
           {/* One tab per game; inside a tab you only see that game's pages. */}
           <nav className="ash-games" aria-label="Games">
             {gamesFor(role).map((g) => (
-              <Link key={g.key} href={g.home} className="ash-game" aria-current={!inTeam && g.key === game ? "page" : undefined} title={`${g.name}: ${gameCount(g.key)} pages`}>
+              <Link key={g.key} href={g.home} className="ash-game" aria-current={!inTeam && !atHub && g.key === game && tab !== "videos" ? "page" : undefined} title={`${g.name}: ${gameCount(g.key)} pages`}>
                 <span className="ash-game-full">{g.name}</span><span className="ash-game-short">{g.short}</span>
                 <span className="ash-game-n">{gameCount(g.key)}</span>
               </Link>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Knowitball video library</title>
+<style>
+:root{--bg:#0b1020;--card:#141c33;--card2:#1b2542;--line:#2a3658;--ink:#f3f6ff;--ink2:#aeb9d6;--ink3:#7482a8;--gold:#ffd23f;--green:#3ddc84}
+*{box-sizing:border-box}html,body{margin:0;max-width:100%;overflow-x:hidden}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:18px 14px 80px}
+h1{font-size:26px;margin:4px 0 2px;letter-spacing:-.02em}.sub{color:var(--ink3);font-size:13px;margin:0 0 14px}
+input{width:100%;background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 14px}
+.chip{border:1px solid var(--line);background:var(--card2);color:var(--ink2);border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer;user-select:none}
+.chip.on{background:var(--gold);color:#111;border-color:var(--gold);font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.it{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;min-width:0}
+.it .pic{position:relative;aspect-ratio:9/16;background:#000}
+.it img{width:100%;height:100%;object-fit:cover;display:block}
+.it .len{position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.7);border-radius:6px;padding:1px 6px;font-size:12px;font-weight:700}
+.it .tag{position:absolute;left:6px;top:6px;background:var(--green);color:#062;border-radius:6px;padding:1px 6px;font-size:11px;font-weight:800}
+.it .nm{padding:8px 9px 2px;font-weight:800;font-size:13px;line-height:1.25}
+.it .meta{padding:0 9px 9px;color:var(--ink3);font-size:11px}
+.empty{color:var(--ink3);padding:30px 0;text-align:center}
+#pl{position:fixed;inset:0;background:rgba(5,7,15,.94);display:none;z-index:9;align-items:center;justify-content:center;flex-direction:column;padding:12px}
+#pl.on{display:flex}#pl video{max-height:72vh;max-width:100%;border-radius:12px;background:#000}
+#pl .bar{width:min(420px,100%);margin-top:10px}#pl .t{font-weight:800}#pl .m{color:var(--ink3);font-size:12px;margin:2px 0 8px;word-break:break-all}
+#pl a{color:var(--gold);font-weight:700;margin-right:14px;font-size:14px}
+#x{position:absolute;right:14px;top:10px;background:none;border:0;color:#fff;font-size:30px;cursor:pointer}
+</style></head><body><div class="wrap">
+<h1>Knowitball videos</h1>
+<p class="sub">Every video we've made, newest first. Tap one to play. <span id="n"></span></p>
+<input id="q" type="search" placeholder="Search a player, club or video, e.g. Palmer, Kane, Hall" autocomplete="off">
+<div class="chips" id="f"></div>
+<div class="grid" id="g"></div>
+</div>
+<div id="pl"><button id="x" aria-label="Close">×</button><video id="vid" controls playsinline preload="none"></video>
+<div class="bar"><div class="t" id="pt"></div><div class="m" id="pm"></div><div id="pa"></div></div></div>
+<script>
+const V=/*DATA*/[];
+const $=id=>document.getElementById(id);
+const F=[['all','All'],['Stat Twins','Stat Twins'],['Replace him','Replace him'],['Other','Other'],['posted','Posted'],['notposted','Not posted']];
+let on='all';
+$('f').innerHTML=F.map(([k,l])=>`<span class="chip${k==='all'?' on':''}" data-k="${k}">${l}</span>`).join('');
+$('f').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{on=c.dataset.k;$('f').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c));draw();});
+const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function draw(){const q=norm($('q').value.trim());
+  const L=V.filter(v=>(on==='all'||v.kind===on||(on==='posted'&&v.posted)||(on==='notposted'&&!v.posted))&&(!q||norm(v.title+' '+v.folder+' '+v.file).includes(q)));
+  $('n').textContent=`${L.length} of ${V.length}.`;
+  $('g').innerHTML=L.map(v=>`<div class="it" data-id="${v.id}"><div class="pic"><img loading="lazy" src="${v.p}" alt="">${v.posted?'<span class="tag">POSTED</span>':''}<span class="len">${Math.floor(v.secs/60)}:${String(v.secs%60).padStart(2,'0')}</span></div>
+    <div class="nm">${esc(v.title)}</div><div class="meta">${esc(v.folder)}${v.date?' · '+v.date:''}</div></div>`).join('')||'<div class="empty">No video matches.</div>';
+  $('g').querySelectorAll('.it').forEach(el=>el.onclick=()=>open_(V.find(v=>v.id===el.dataset.id)));}
+function open_(v){$('vid').src=v.v;$('pt').textContent=v.title;$('pm').textContent=v.file;
+  $('pa').innerHTML=v.links.map(l=>`<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`).join('')+`<a href="${esc(v.full)}" target="_blank" rel="noopener">Full quality ↗</a>`;
+  $('pl').classList.add('on');location.hash=v.id;$('vid').play().catch(()=>{});}
+function close_(){$('vid').pause();$('vid').removeAttribute('src');$('vid').load();$('pl').classList.remove('on');history.replaceState(null,'',' ');}
+$('x').onclick=close_;$('pl').onclick=e=>{if(e.target.id==='pl')close_();};
+$('q').oninput=draw;draw();
+const h=location.hash.slice(1);if(h){const v=V.find(x=>x.id===h);if(v)open_(v);}
+</script></body></html>

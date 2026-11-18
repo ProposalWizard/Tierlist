@@ -1,0 +1,15 @@
+{
+  "appId": "uk.co.knowitball.game",
+  "appName": "KnowItBall",
+  "webDir": "www",
+  "backgroundColor": "#0b100e",
+  "android": {
+    "backgroundColor": "#0b100e",
+    "adjustMarginsForEdgeToEdge": "force"
+  },
+  "ios": {
+    "backgroundColor": "#0b100e",
+    "contentInset": "never",
+    "limitsNavigationsToAppBoundDomains": false
+  }
+}
