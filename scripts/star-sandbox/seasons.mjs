@@ -42,7 +42,10 @@ const log = (s) => { const l = `[${new Date().toISOString().slice(11, 19)}] ${s}
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /** The screen's height, the page's height (TALL when the page is taller than the phone) and the pitch's size. */
 const sizes = () => page.evaluate(() => { const c = document.querySelector("canvas")?.getBoundingClientRect(); const d = document.documentElement.scrollHeight;
-  return `screen ${innerWidth}x${innerHeight} · page ${d}${d > innerHeight + 1 ? " TALL by " + (d - innerHeight) : ""}${c ? ` · pitch ${Math.round(c.width)}x${Math.round(c.height)}` : ""}`; });
+  // Boxes that scroll inside the screen (Mikey, 17 Nov 2026: "no page really needs to scroll"): the worst one, and by how much.
+  let worst = 0, who = "";
+  for (const el of document.querySelectorAll("*")) { const cs = getComputedStyle(el); if (!/(auto|scroll)/.test(cs.overflowY)) continue; const r = el.getBoundingClientRect(); if (r.width < 40 || r.right <= 2 || r.left >= innerWidth - 2 || r.bottom <= 0 || r.top >= innerHeight || cs.visibility === "hidden") continue; const over = el.scrollHeight - el.clientHeight; if (el.clientHeight > 40 && over > worst) { worst = over; who = (el.getAttribute("data-screen") || el.className || el.tagName).toString().slice(0, 40); } }
+  return `screen ${innerWidth}x${innerHeight} · page ${d}${d > innerHeight + 1 ? " TALL by " + (d - innerHeight) : ""}${worst > 4 ? ` · SCROLLS by ${worst} (${who})` : ""}${c ? ` · pitch ${Math.round(c.width)}x${Math.round(c.height)}` : ""}`; });
 
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || "/opt/pw-browsers/chromium" });
 const VP = (val("--viewport", "") || "").match(/^(\d+)x(\d+)$/); // e.g. --viewport 360x752: a real Android phone's room for the app
@@ -242,6 +245,7 @@ while (Date.now() - t0 < MAX_MS) {
     const lines = await bodyLines();
     const f = await still(`${phase}`);
     log(`SCREEN ${phase} (${f}): ${lines.slice(0, 30).join(" | ").slice(0, 900)}`);
+    log(`  SIZE ${await sizes()}`);
     log(`  SIZE ${await sizes()}`);
     lastPhase = phase;
   }

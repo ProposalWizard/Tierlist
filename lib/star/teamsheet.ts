@@ -76,6 +76,7 @@ export interface Matchday {
 // back through this file — re-exported here so every existing importer of
 // `formationForClub` FROM "./teamsheet" keeps working unchanged.
 import { formationForClub } from "./clubFormation";
+import { inventedSquadFor } from "./leagueSquads";
 export { formationForClub } from "./clubFormation";
 
 /**
@@ -808,7 +809,19 @@ export function matchdayFor(
   // that's merely thin at one position — bestFitness's own flat 22-point
   // floor already reassigns a real teammate out of position for that; this
   // is only for when there simply are not eleven real men to reassign.
-  if (oppPool.length < formationForClub(theirs).slots.length) {
+  // A club the career holds (almost) no players for at all, such as a cup
+  // opponent from another division, gets an invented squad at its own level,
+  // never the free-agent list: that filled a whole National League cup side
+  // with famous released players (Mikey's phone test, 17 Nov 2026, 52:35).
+  // Free agents still top up a real squad that is a man or two short.
+  const REAL_SQUAD_MIN = 7;
+  // Only once squads have loaded: before then the sheet says it cannot scout.
+  const squadsLoaded = (career.leagueSquads?.length ?? 0) > 0;
+  if (oppPool.length < REAL_SQUAD_MIN && !squadsLoaded) {
+    // Nothing loaded yet: leave it empty ("unable to scout"), as before.
+  } else if (oppPool.length < REAL_SQUAD_MIN) {
+    oppPool = withFullRosterFallback(oppPool, fromLeagueSquad(inventedSquadFor(theirs)));
+  } else if (oppPool.length < formationForClub(theirs).slots.length) {
     oppPool = withFullRosterFallback(oppPool, fromLeagueSquad({ club: theirs, players: career.freeAgents ?? [] }));
   }
   const them = build(theirs, oppPool, false, effectiveOppSaved?.bench, effectiveOppSavedXI, rotation);

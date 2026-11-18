@@ -6,6 +6,7 @@
  */
 import { newMatch, advanceUntilInvolved, resolveScenario, type HiddenMatchInputs } from "../../lib/star/hiddenMatch";
 import { mulberry32 } from "../../lib/star/season";
+import { runStretch } from "../../lib/star/stretchRun";
 
 let fails = 0;
 const check = (ok: boolean, what: string) => { if (!ok) { fails++; console.log("  ✗", what); } else console.log("  ✓", what); };
@@ -44,6 +45,29 @@ for (const mode of ["medium", "high"] as const) {
     if (b === 0) emptyHalves++;
   }
   check(true, `low: no guarantee (${emptyHalves} of 600 halves empty, as before)`);
+}
+// A set piece somebody else takes is not your chance (Mikey's phone test,
+// 17 Nov 2026: a half whose only "chance" was a free kick someone else took).
+// Every free kick and penalty handed over; your own chances still come each half.
+{
+  let emptyHalves = 0, handed = 0;
+  for (let seed = 1; seed <= 300; seed++) {
+    const rng = mulberry32(seed);
+    const state = newMatch(rng);
+    const inputs = { ...base, energyMode: "medium" } as HiddenMatchInputs;
+    const per: [number, number] = [0, 0];
+    while (state.minute < 90) {
+      const step = runStretch(state, inputs, rng, 90, () => false);
+      handed += step.events.filter(e => /someone else steps up|Your side score the/.test(e.text)).length;
+      if (step.fullTime || !step.request) break;
+      if (state.minute < 90) per[state.minute < 45 ? 0 : 1]++;
+      resolveScenario(state, "saved");
+    }
+    if (per[0] === 0) emptyHalves++;
+    if (per[1] === 0) emptyHalves++;
+  }
+  check(handed > 0, `set pieces were handed over (${handed}), so this is a real test`);
+  check(emptyHalves === 0, `handed-over set pieces never use up a half's chance (${emptyHalves} of 600 halves empty)`);
 }
 if (fails) { console.log(`FAIL (${fails})`); process.exit(1); }
 console.log("PASS — at least one chance in each half of normal time on Medium and High");

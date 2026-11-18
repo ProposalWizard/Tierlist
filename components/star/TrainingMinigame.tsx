@@ -623,7 +623,9 @@ function StrikeDrill({
           scene={view.openGoal ? { ...DRILL_SCENE.power, keeper: false } : DRILL_SCENE[kind]}
         />}
         {brief && (
-          <div className="pointer-events-none absolute top-2 left-2 z-30 rounded-md bg-black/55 px-2 py-1 text-[11px] font-black uppercase tracking-wide text-amber-200">
+          // Bottom-left, on the grass (Mikey's phone test, 17 Nov 2026: at the top
+          // it sat over the goal, then over "Where do you strike it?").
+          <div data-drill-brief className="pointer-events-none absolute bottom-2 left-2 z-30 rounded-md bg-black/55 px-2 py-1 text-[11px] font-black uppercase tracking-wide text-amber-200">
             {brief}
           </div>
         )}
