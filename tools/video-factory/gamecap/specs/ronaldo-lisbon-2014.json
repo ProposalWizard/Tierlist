@@ -1,0 +1,73 @@
+{
+ "_about": "Ronaldo's penalty, Real Madrid 4-1 Atletico (aet), Champions League final, Lisbon, 24 May 2014, 120 min. Real all white, Atletico red (stripes not drawable) and blue shorts.",
+ "teams": {
+  "home": {
+   "name": "Real Madrid",
+   "kit": {
+    "shirt": "#FFFFFF",
+    "shorts": "#FFFFFF",
+    "socks": "#FFFFFF"
+   },
+   "keeperKit": {
+    "shirt": "#1F2A44",
+    "shorts": "#1F2A44",
+    "socks": "#1F2A44"
+   },
+   "popupTrim": "#FEBE10"
+  },
+  "away": {
+   "name": "Atlético Madrid",
+   "short": "Atlético",
+   "kit": {
+    "shirt": "#CB3524",
+    "shorts": "#1B3C8E",
+    "socks": "#CB3524"
+   },
+   "keeperKit": {
+    "shirt": "#2BB673",
+    "shorts": "#0B3D2A",
+    "socks": "#2BB673"
+   },
+   "popupTrim": "#FFFFFF"
+  }
+ },
+ "people": {
+  "ronaldo": {
+   "name": "Cristiano Ronaldo",
+   "skin": "#c8986e",
+   "hair": "#2a1c12"
+  },
+  "courtois": {
+   "name": "Thibaut Courtois",
+   "skin": "#f0c9a8",
+   "hair": "#3a2a1c"
+  }
+ },
+ "clips": [
+  {
+   "id": "ronaldo-pen",
+   "kind": "penalty",
+   "attacking": "home",
+   "scorer": "ronaldo",
+   "keeper": "courtois",
+   "minute": 90,
+   "scoreBefore": [
+    3,
+    1
+   ],
+   "scoreAfter": [
+    4,
+    1
+   ],
+   "night": true,
+   "celebration": "roar",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "seed": "ronaldo-lis-a",
+   "minuteLabel": "120"
+  }
+ ]
+}

@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "KIB Next",
+    "slug": "knowitball-phone",
+    "version": "2.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0b100e",
+    "android": {
+      "package": "uk.co.knowitball.game.next",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#0b100e",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": ["expo-font"]
+  }
+}

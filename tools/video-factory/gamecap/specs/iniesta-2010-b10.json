@@ -1,0 +1,113 @@
+{
+ "_about": "2010 World Cup final, Johannesburg, 11 July 2010: Netherlands 0-1 Spain after extra time. 116th minute: Fabregas slides the ball to Iniesta inside the box on the right, Iniesta shoots first time past Stekelenburg (UEFA, UPI). Spain in their dark blue change kit, the Netherlands orange. Keeper kits assumed.",
+ "teams": {
+  "home": {
+   "name": "Netherlands",
+   "kit": {
+    "shirt": "#F36C21",
+    "shorts": "#F36C21",
+    "socks": "#F36C21"
+   },
+   "keeperKit": {
+    "shirt": "#2B2B2B",
+    "shorts": "#2B2B2B",
+    "socks": "#2B2B2B"
+   },
+   "popupTrim": "#FFFFFF"
+  },
+  "away": {
+   "name": "Spain",
+   "kit": {
+    "shirt": "#1B2A5A",
+    "shorts": "#1B2A5A",
+    "socks": "#1B2A5A"
+   },
+   "keeperKit": {
+    "shirt": "#E8E04A",
+    "shorts": "#1A1A1A",
+    "socks": "#E8E04A"
+   },
+   "popupTrim": "#C8102E"
+  }
+ },
+ "people": {
+  "iniesta": {
+   "name": "Andres Iniesta",
+   "skin": "#f2cdb0",
+   "hair": "#3a2a1e"
+  },
+  "fabregas": {
+   "name": "Cesc Fabregas",
+   "skin": "#e8bd98",
+   "hair": "#1d1512"
+  },
+  "heitinga": {
+   "name": "John Heitinga",
+   "skin": "#e8bd98",
+   "hair": "#2a1d15"
+  },
+  "mathijsen": {
+   "name": "Joris Mathijsen",
+   "skin": "#f4d0b4",
+   "hair": "#c9a27e"
+  },
+  "stekelenburg": {
+   "name": "Maarten Stekelenburg",
+   "skin": "#f4d0b4",
+   "hair": "#d9b97a"
+  }
+ },
+ "clips": [
+  {
+   "id": "iniesta-116",
+   "kind": "one_on_one",
+   "attacking": "away",
+   "scorer": "iniesta",
+   "assister": "fabregas",
+   "defenders": [
+    "heitinga",
+    "mathijsen"
+   ],
+   "keeper": "stekelenburg",
+   "minute": 116,
+   "scoreBefore": [
+    0,
+    0
+   ],
+   "scoreAfter": [
+    0,
+    1
+   ],
+   "night": true,
+   "celebration": "arms_out",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "delivery": "through",
+    "passerStart": [
+     -2,
+     24
+    ],
+    "passFrom": [
+     -1,
+     19
+    ],
+    "scorerStart": [
+     6,
+     20
+    ],
+    "scorerSpot": [
+     5,
+     12
+    ],
+    "finish": "right",
+    "goalSide": "far",
+    "height": "mid"
+   },
+   "seed": "iniesta-2010-a"
+  }
+ ]
+}

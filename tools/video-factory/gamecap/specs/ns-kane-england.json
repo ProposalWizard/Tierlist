@@ -1,0 +1,23 @@
+{
+  "_about": "ns-kane-france, real miss: Kane's second penalty, England 1-2 France, 2022 World Cup quarter-final, Al Bayt Stadium, 10 December 2022, 84th minute, blazed over the bar past Hugo Lloris (BBC, Guardian). Kits as worn: England white shirts, navy shorts; France navy blue. Keeper kits assumed.",
+  "teams": {
+    "home": { "name": "England", "short": "ENG", "kit": { "shirt": "#F4F4F4", "shorts": "#1B2A4A", "socks": "#F4F4F4" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#C8102E" },
+    "away": { "name": "France", "short": "FRA", "kit": { "shirt": "#1B2A55", "shorts": "#1B2A55", "socks": "#1B2A55" }, "keeperKit": { "shirt": "#2E2E2E", "shorts": "#2E2E2E", "socks": "#2E2E2E" }, "popupTrim": "#E1000F" }
+  },
+  "people": {
+    "kane":   { "name": "Harry Kane", "skin": "#f2c9a8", "hair": "#6b4a2e" },
+    "lloris": { "name": "Hugo Lloris", "skin": "#efc4a3", "hair": "#2a1d15" }
+  },
+  "clips": [
+    {
+      "id": "kane-pen-miss-2022",
+      "kind": "miss", "attacking": "home",
+      "scorer": "kane", "keeper": "lloris",
+      "minute": 84, "scoreBefore": [1, 2],
+      "night": true,
+      "cameras": ["tv", "high", "fan"],
+      "recreate": { "base": "penalty", "outcome": "over" },
+      "seed": "kane-pen-a"
+    }
+  ]
+}

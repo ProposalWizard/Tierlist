@@ -1,0 +1,111 @@
+{
+  "_about": "IMAGINED: Son in a Germany shirt scores against Korea in Kazan, 2018 (really Korea won 2-0 and Son scored into an empty net). A curler from the edge, his trademark. Not a real goal.",
+  "teams": {
+    "home": {
+      "name": "South Korea",
+      "kit": {
+        "shirt": "#D0021B",
+        "shorts": "#111111",
+        "socks": "#D0021B"
+      },
+      "keeperKit": {
+        "shirt": "#E8E04A",
+        "shorts": "#1A1A1A",
+        "socks": "#E8E04A"
+      },
+      "popupTrim": "#111111"
+    },
+    "away": {
+      "name": "Germany",
+      "kit": {
+        "shirt": "#FFFFFF",
+        "shorts": "#111111",
+        "socks": "#FFFFFF"
+      },
+      "keeperKit": {
+        "shirt": "#2BB673",
+        "shorts": "#0B3D2A",
+        "socks": "#2BB673"
+      },
+      "popupTrim": "#111111"
+    }
+  },
+  "people": {
+    "son": {
+      "name": "Son Heung-min",
+      "skin": "#f1c9a5",
+      "hair": "#151515"
+    },
+    "kroos": {
+      "name": "Toni Kroos",
+      "skin": "#f2c4a6",
+      "hair": "#8a6a4a"
+    },
+    "werner": {
+      "name": "Timo Werner",
+      "skin": "#f2c4a6",
+      "hair": "#6b4a2e"
+    },
+    "kim": {
+      "name": "Kim Young-gwon",
+      "skin": "#efc4a2",
+      "hair": "#151515"
+    },
+    "jang": {
+      "name": "Jang Hyun-soo",
+      "skin": "#efc4a2",
+      "hair": "#151515"
+    },
+    "ki": {
+      "name": "Ki Sung-yueng",
+      "skin": "#efc4a2",
+      "hair": "#151515"
+    },
+    "cho": {
+      "name": "Cho Hyun-woo",
+      "skin": "#efc4a2",
+      "hair": "#151515"
+    }
+  },
+  "clips": [
+    {
+      "id": "son-ger",
+      "kind": "long_range",
+      "attacking": "away",
+      "scorer": "son",
+      "assister": "kroos",
+      "defenders": [
+        "kim",
+        "jang",
+        "ki"
+      ],
+      "keeper": "cho",
+      "teammates": [
+        "werner"
+      ],
+      "minute": 90,
+      "scoreBefore": [
+        0,
+        0
+      ],
+      "scoreAfter": [
+        0,
+        1
+      ],
+      "night": false,
+      "celebration": "fist_pump",
+      "cameras": [
+        "tv",
+        "high",
+        "tight"
+      ],
+      "recreate": {
+        "finish": "curl",
+        "goalSide": "far",
+        "height": "mid"
+      },
+      "seed": "son-ger-a",
+      "popup": false
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "_about": "Mohamed Salah's penalty after 24 seconds' play (2nd minute), Tottenham Hotspur 0-2 Liverpool, Champions League final, Estadio Metropolitano, Madrid, 1 June 2019. Moussa Sissoko was penalised for handball; Salah shot to the right (Wikipedia); Hugo Lloris in goal. Sources: Wikipedia 2019 UCL final, FIFA 'Liverpool sink Spurs for sixth European crown'. Tottenham were the designated home side. Kits: Liverpool red, Spurs white shirts, navy shorts (both home kits; socks assumed). Keeper kits assumed.",
+  "teams": {
+    "home": { "name": "Tottenham Hotspur", "short": "Spurs", "kit": { "shirt": "#F4F4F4", "shorts": "#132257", "socks": "#F4F4F4" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#132257" },
+    "away": { "name": "Liverpool", "kit": { "shirt": "#C8102E", "shorts": "#C8102E", "socks": "#C8102E" }, "keeperKit": { "shirt": "#2BB673", "shorts": "#0B3D2A", "socks": "#2BB673" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "salah":  { "name": "Mohamed Salah", "skin": "#b07a56", "hair": "#1a120e" },
+    "lloris": { "name": "Hugo Lloris", "skin": "#eec29e", "hair": "#3b2a1e" }
+  },
+  "clips": [
+    {
+      "id": "salah-penalty",
+      "kind": "penalty",
+      "attacking": "away",
+      "scorer": "salah",
+      "keeper": "lloris",
+      "minute": 2, "scoreBefore": [0, 0], "scoreAfter": [0, 1],
+      "night": true,
+      "celebration": "arms_out",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "goalSide": "right", "height": "mid" },
+      "seed": "salah-2019-a"
+    }
+  ]
+}

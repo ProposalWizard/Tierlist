@@ -1,0 +1,167 @@
+{
+  "_about": "Real goals, England 1-2 Argentina, World Cup semi-final, Atlanta, 15 July 2026. 85': Messi's pass, Enzo Fernández curls in from range. 90+2': Messi's cross, Lautaro Martínez heads in (Sports Mole, Outlook India). Exact positions not in the reports: the pass and cross sides are left to the seed. Argentina's stripes can't be drawn.",
+  "teams": {
+    "home": {
+      "name": "England",
+      "kit": {
+        "shirt": "#FFFFFF",
+        "shorts": "#1D2C5E",
+        "socks": "#FFFFFF"
+      },
+      "keeperKit": {
+        "shirt": "#2BB673",
+        "shorts": "#0B3D2A",
+        "socks": "#2BB673"
+      },
+      "popupTrim": "#1D2C5E"
+    },
+    "away": {
+      "name": "Argentina",
+      "kit": {
+        "shirt": "#75AADB",
+        "shorts": "#1A1A2E",
+        "socks": "#FFFFFF"
+      },
+      "keeperKit": {
+        "shirt": "#7A3FB0",
+        "shorts": "#2A1640",
+        "socks": "#7A3FB0"
+      },
+      "popupTrim": "#FFFFFF"
+    }
+  },
+  "people": {
+    "messi": {
+      "name": "Lionel Messi",
+      "skin": "#e8b48f",
+      "hair": "#4a3220"
+    },
+    "enzo": {
+      "name": "Enzo Fernández",
+      "skin": "#e6b48f",
+      "hair": "#3b2a1e"
+    },
+    "lautaro": {
+      "name": "Lautaro Martínez",
+      "skin": "#c99573",
+      "hair": "#1a120e"
+    },
+    "mac": {
+      "name": "Alexis Mac Allister",
+      "skin": "#efc4a2",
+      "hair": "#b07a4a"
+    },
+    "alvarez": {
+      "name": "Julián Álvarez",
+      "skin": "#e0b08a",
+      "hair": "#2a1d15"
+    },
+    "stones": {
+      "name": "John Stones",
+      "skin": "#f2c4a6",
+      "hair": "#3b2a1e"
+    },
+    "guehi": {
+      "name": "Marc Guéhi",
+      "skin": "#4a2e1e",
+      "hair": "#0d0a09"
+    },
+    "rice": {
+      "name": "Declan Rice",
+      "skin": "#f2c4a6",
+      "hair": "#6b4a2e"
+    },
+    "walker": {
+      "name": "Kyle Walker",
+      "skin": "#6e4630",
+      "hair": "#0d0a09"
+    },
+    "pickford": {
+      "name": "Jordan Pickford",
+      "skin": "#f2c4a6",
+      "hair": "#c9a27e"
+    }
+  },
+  "clips": [
+    {
+      "id": "enzo-curler",
+      "kind": "long_range",
+      "attacking": "away",
+      "scorer": "enzo",
+      "assister": "messi",
+      "defenders": [
+        "rice",
+        "stones",
+        "guehi"
+      ],
+      "keeper": "pickford",
+      "teammates": [
+        "mac"
+      ],
+      "minute": 85,
+      "scoreBefore": [
+        1,
+        0
+      ],
+      "scoreAfter": [
+        1,
+        1
+      ],
+      "night": true,
+      "celebration": "arms_out",
+      "cameras": [
+        "tv",
+        "high",
+        "tight"
+      ],
+      "recreate": {
+        "finish": "curl",
+        "height": "mid",
+        "outcome": "goal"
+      },
+      "seed": "enzo-2026-a",
+      "popup": false
+    },
+    {
+      "id": "lautaro-header",
+      "kind": "header",
+      "attacking": "away",
+      "scorer": "lautaro",
+      "assister": "messi",
+      "defenders": [
+        "guehi",
+        "stones",
+        "walker",
+        "rice"
+      ],
+      "keeper": "pickford",
+      "teammates": [
+        "alvarez",
+        "mac"
+      ],
+      "minute": 92,
+      "minuteLabel": "90+2",
+      "scoreBefore": [
+        1,
+        1
+      ],
+      "scoreAfter": [
+        1,
+        2
+      ],
+      "night": true,
+      "celebration": "roar",
+      "cameras": [
+        "tv",
+        "high",
+        "tight"
+      ],
+      "recreate": {
+        "delivery": "cross",
+        "finish": "header"
+      },
+      "seed": "lautaro-2026-a",
+      "popup": false
+    }
+  ]
+}

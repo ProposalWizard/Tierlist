@@ -1,0 +1,32 @@
+{
+  "_about": "Jamie Vardy's volley, Leicester City 2-0 Liverpool, King Power Stadium, 2 Feb 2016, 60th minute. Riyad Mahrez swept a long lofted ball over the top from deep on the right; Vardy ran onto it and hit it first time over Simon Mignolet from long range (reports say 22 to 30 yards). Sources: FourFourTwo, LCFC.com 'Classic Encounter', Irish Times, theScore. Kits: Leicester blue home; Liverpool red home (no clash; assumed, no source names the strip). Keeper colours assumed. Used in al-pl-golden-boot.",
+  "teams": {
+    "home": { "name": "Leicester City", "short": "Leicester", "kit": { "shirt": "#003090", "shorts": "#003090", "socks": "#003090" }, "keeperKit": { "shirt": "#2E8B57", "shorts": "#2E8B57", "socks": "#2E8B57" }, "popupTrim": "#FDBE11" },
+    "away": { "name": "Liverpool", "short": "Liverpool", "kit": { "shirt": "#C8102E", "shorts": "#C8102E", "socks": "#C8102E" }, "keeperKit": { "shirt": "#222222", "shorts": "#222222", "socks": "#222222" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "vardy": { "name": "Jamie Vardy", "skin": "#efc4a0", "hair": "#6b4a2e", "popupName": "Vardy" },
+    "mahrez": { "name": "Riyad Mahrez", "skin": "#c99872", "hair": "#1a120c" },
+    "okazaki": { "name": "Shinji Okazaki", "skin": "#e8c09a", "hair": "#111111" },
+    "mignolet": { "name": "Simon Mignolet", "skin": "#efc4a0", "hair": "#3a2a1c" },
+    "sakho": { "name": "Mamadou Sakho", "skin": "#3e2618", "hair": "#111111" },
+    "toure": { "name": "Kolo Toure", "skin": "#4a2e1e", "hair": "#111111" },
+    "clyne": { "name": "Nathaniel Clyne", "skin": "#6a4430", "hair": "#111111" }
+  },
+  "clips": [{
+    "id": "vardy-volley",
+    "kind": "one_on_one",
+    "attacking": "home",
+    "scorer": "vardy", "assister": "mahrez",
+    "defenders": ["sakho", "toure", "clyne"],
+    "keeper": "mignolet",
+    "teammates": ["okazaki"],
+    "minute": 60,
+    "scoreBefore": [0, 0], "scoreAfter": [1, 0],
+    "night": true,
+    "celebration": "fist_pump",
+    "cameras": ["tv", "high", "tight"],
+    "recreate": { "delivery": "lofted", "side": "right", "passerStart": [24, 52], "passFrom": [26, 50], "scorerStart": [2, 34], "scorerSpot": [3, 23], "finish": "volley", "goalSide": "far", "height": "high" },
+    "seed": "vardy-2016-a"
+  }]
+}

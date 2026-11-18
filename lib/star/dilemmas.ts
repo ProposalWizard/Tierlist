@@ -1,6 +1,7 @@
 import type { CareerState } from "./types";
 import { formatMoney } from "./money";
 import { tierWeeklyIncome } from "./economy";
+import { PACKED_APP } from "../app/packed";
 
 /**
  * A dilemma's money, on the income ladder the rest of the game is priced
@@ -234,6 +235,9 @@ export const DILEMMAS: Dilemma[] = [
     category: "lifestyle",
     title: "Card Night",
     text: "A senior player invites you to a private card game after training.",
+    // Never in the phone app: Google Play's age rating counts any gambling theme
+    // (Mikey, 18 Nov 2026), and the app already has no casino.
+    when: () => !PACKED_APP,
     choices: [
       { label: "Play a few hands", effects: { money: cash(-5), team: 4 }, narrative: "Small loss but you fit in." },
       { label: "Decline", effects: { team: -2 } },

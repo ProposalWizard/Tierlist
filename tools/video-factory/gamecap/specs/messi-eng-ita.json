@@ -1,0 +1,116 @@
+{
+  "_about": "IMAGINED: Messi in an England shirt wins the Euro 2020 final against Italy at Wembley with an extra-time free kick. Not a real goal.",
+  "teams": {
+    "home": {
+      "name": "England",
+      "kit": {
+        "shirt": "#FFFFFF",
+        "shorts": "#1D2C5E",
+        "socks": "#FFFFFF"
+      },
+      "keeperKit": {
+        "shirt": "#2BB673",
+        "shorts": "#0B3D2A",
+        "socks": "#2BB673"
+      },
+      "popupTrim": "#1D2C5E"
+    },
+    "away": {
+      "name": "Italy",
+      "kit": {
+        "shirt": "#1F5FBF",
+        "shorts": "#FFFFFF",
+        "socks": "#1F5FBF"
+      },
+      "keeperKit": {
+        "shirt": "#E8E04A",
+        "shorts": "#1A1A1A",
+        "socks": "#E8E04A"
+      },
+      "popupTrim": "#FFFFFF"
+    }
+  },
+  "people": {
+    "messi": {
+      "name": "Lionel Messi",
+      "skin": "#e8b48f",
+      "hair": "#4a3220"
+    },
+    "kane": {
+      "name": "Harry Kane",
+      "skin": "#f2c4a6",
+      "hair": "#8a6a4a"
+    },
+    "sterling": {
+      "name": "Raheem Sterling",
+      "skin": "#4a2e1e",
+      "hair": "#0d0a09"
+    },
+    "chiellini": {
+      "name": "Giorgio Chiellini",
+      "skin": "#e8b994",
+      "hair": "#2a1d15"
+    },
+    "bonucci": {
+      "name": "Leonardo Bonucci",
+      "skin": "#e8b994",
+      "hair": "#2a1d15"
+    },
+    "jorginho": {
+      "name": "Jorginho",
+      "skin": "#e0b08a",
+      "hair": "#2a1d15"
+    },
+    "verratti": {
+      "name": "Marco Verratti",
+      "skin": "#efc4a2",
+      "hair": "#3b2a1e"
+    },
+    "donnarumma": {
+      "name": "Gianluigi Donnarumma",
+      "skin": "#e8b994",
+      "hair": "#1a120e"
+    }
+  },
+  "clips": [
+    {
+      "id": "messi-eng-fk",
+      "kind": "free_kick",
+      "attacking": "home",
+      "scorer": "messi",
+      "assister": "kane",
+      "defenders": [
+        "chiellini",
+        "bonucci",
+        "jorginho",
+        "verratti"
+      ],
+      "keeper": "donnarumma",
+      "teammates": [
+        "sterling"
+      ],
+      "minute": 118,
+      "scoreBefore": [
+        1,
+        1
+      ],
+      "scoreAfter": [
+        2,
+        1
+      ],
+      "night": true,
+      "celebration": "arms_out",
+      "cameras": [
+        "tv",
+        "high",
+        "tight"
+      ],
+      "recreate": {
+        "goalSide": "far",
+        "height": "high"
+      },
+      "seed": "messi-eng-a",
+      "popup": false
+    }
+  ]
+}

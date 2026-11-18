@@ -1,0 +1,118 @@
+{
+ "_about": "Bruno's record 21st assist: his corner, Dorgu's header, Brighton 0-3 Man United, 24 May 2026, 33 min. Brighton blue (stripes not drawable), United red/white/black.",
+ "teams": {
+  "home": {
+   "name": "Brighton & Hove Albion",
+   "short": "Brighton",
+   "kit": {
+    "shirt": "#0057B8",
+    "shorts": "#0057B8",
+    "socks": "#FFFFFF"
+   },
+   "keeperKit": {
+    "shirt": "#2B2B2B",
+    "shorts": "#2B2B2B",
+    "socks": "#2B2B2B"
+   },
+   "popupTrim": "#FFFFFF"
+  },
+  "away": {
+   "name": "Manchester United",
+   "kit": {
+    "shirt": "#DA291C",
+    "shorts": "#FFFFFF",
+    "socks": "#111111"
+   },
+   "keeperKit": {
+    "shirt": "#2BB673",
+    "shorts": "#0B3D2A",
+    "socks": "#2BB673"
+   },
+   "popupTrim": "#FFFFFF"
+  }
+ },
+ "people": {
+  "bruno": {
+   "name": "Bruno Fernandes",
+   "skin": "#d7a888",
+   "hair": "#2a1c12",
+   "popupName": "Fernandes"
+  },
+  "dorgu": {
+   "name": "Patrick Dorgu",
+   "skin": "#5a3a28",
+   "hair": "#120c08"
+  },
+  "verbruggen": {
+   "name": "Bart Verbruggen",
+   "skin": "#f0c9a8",
+   "hair": "#3a2a1c"
+  },
+  "d0": {
+   "name": "Player",
+   "skin": "#e8bf9c",
+   "hair": "#3a2a1c"
+  },
+  "d1": {
+   "name": "Player",
+   "skin": "#d9a98a",
+   "hair": "#1a1410"
+  },
+  "d2": {
+   "name": "Player",
+   "skin": "#6b4630",
+   "hair": "#120c08"
+  },
+  "d3": {
+   "name": "Player",
+   "skin": "#f0c9a8",
+   "hair": "#7a5a3a"
+  },
+  "d4": {
+   "name": "Player",
+   "skin": "#c99a76",
+   "hair": "#1a1410"
+  }
+ },
+ "clips": [
+  {
+   "id": "bruno-corner",
+   "kind": "header",
+   "attacking": "away",
+   "scorer": "dorgu",
+   "assister": "bruno",
+   "defenders": [
+    "d0",
+    "d1",
+    "d3"
+   ],
+   "keeper": "verbruggen",
+   "teammates": [
+    "d2",
+    "d4"
+   ],
+   "minute": 33,
+   "scoreBefore": [
+    0,
+    0
+   ],
+   "scoreAfter": [
+    0,
+    1
+   ],
+   "night": false,
+   "celebration": "jump",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "delivery": "corner",
+    "height": "high",
+    "goalSide": "centre"
+   },
+   "seed": "bruno-bha-a"
+  }
+ ]
+}

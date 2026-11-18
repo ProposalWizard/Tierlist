@@ -1,0 +1,24 @@
+{
+  "_about": "Lamine Yamal's Euro 2024 semi-final goal: Spain 2-1 France, Munich, 9 July 2024, 21st minute, 1-1 equaliser. From about 25 yards, he shifted the ball onto his left foot and curled it past Mike Maignan in off the post (Sky Sports, NBC Sports). Aged 16 years 362 days: youngest scorer in Euros history (UEFA). Pass before it not confirmed; a team-mate lays it off. Kits: Spain red/navy, France navy/white (assumed). Night game.",
+  "teams": {
+    "home": { "name": "Spain", "kit": { "shirt": "#C8102E", "shorts": "#1B2A55", "socks": "#1B2A55" }, "keeperKit": { "shirt": "#1E8F4E", "shorts": "#1E8F4E", "socks": "#1E8F4E" }, "popupTrim": "#F1BF00" },
+    "away": { "name": "France", "kit": { "shirt": "#1D2A5B", "shorts": "#FFFFFF", "socks": "#C8102E" }, "keeperKit": { "shirt": "#E6D21E", "shorts": "#E6D21E", "socks": "#E6D21E" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "yamal": { "name": "Lamine Yamal", "skin": "#8a5a3c", "hair": "#120d0a", "popupName": "Yamal" },
+    "olmo": { "name": "Dani Olmo", "skin": "#e8b994", "hair": "#2a1d15" },
+    "morata": { "name": "Alvaro Morata", "skin": "#e8b994", "hair": "#2a1d15" },
+    "rabiot": { "name": "Adrien Rabiot", "skin": "#f0c8a8", "hair": "#3a2a1d" },
+    "upamecano": { "name": "Dayot Upamecano", "skin": "#3e2618", "hair": "#0d0a09" },
+    "saliba": { "name": "William Saliba", "skin": "#4a2e1e", "hair": "#0d0a09" },
+    "maignan": { "name": "Mike Maignan", "skin": "#4a2e1e", "hair": "#0d0a09" }
+  },
+  "clips": [{
+    "id": "yamal-curler", "kind": "long_range", "attacking": "home",
+    "scorer": "yamal", "assister": "olmo", "defenders": ["rabiot", "upamecano", "saliba"], "keeper": "maignan", "teammates": ["morata"],
+    "minute": 21, "scoreBefore": [0, 1], "scoreAfter": [1, 1], "night": true, "celebration": "jump",
+    "cameras": ["tv", "high", "tight", "fan"],
+    "recreate": { "scorerSpot": [7, 21], "finish": "curl", "goalSide": "left", "height": "high" },
+    "seed": "yamal-fra-a"
+  }]
+}

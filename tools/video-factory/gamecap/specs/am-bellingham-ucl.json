@@ -1,0 +1,34 @@
+{
+  "_about": "Bellingham's first Clásico goal: Barcelona 1-2 Real Madrid, La Liga, Estadi Olímpic Lluís Companys (Montjuïc), Sat 28 Oct 2023, afternoon kick-off. Gündoğan 6; Bellingham 68 from about 30 yards into the top corner for 1-1 (FourFourTwo, Football España, The National). The pass before it is not sourced, so the assister is a generic team-mate and the video's pop-up names no assist. Kits: Barcelona 2023-24 home (the figures cannot draw stripes, so claret shirt, blue shorts), Real Madrid white. Keeper kits assumed.",
+  "teams": {
+    "home": { "name": "Barcelona", "kit": { "shirt": "#A50044", "shorts": "#004D98", "socks": "#004D98" }, "keeperKit": { "shirt": "#E8E04A", "shorts": "#1A1A1A", "socks": "#E8E04A" }, "popupTrim": "#EDBB00" },
+    "away": { "name": "Real Madrid", "kit": { "shirt": "#FFFFFF", "shorts": "#FFFFFF", "socks": "#FFFFFF" }, "keeperKit": { "shirt": "#2E8B57", "shorts": "#1B1B1B", "socks": "#2E8B57" }, "popupTrim": "#FEBE10" }
+  },
+  "people": {
+    "jude":   { "name": "Jude Bellingham", "skin": "#7a4e33", "hair": "#120d0a" },
+    "mate":   { "name": "Real Madrid player", "skin": "#e8b994", "hair": "#3b2a1e" },
+    "vini":   { "name": "Vinicius Junior", "skin": "#5e3a24", "hair": "#0d0a09" },
+    "araujo": { "name": "Ronald Araujo", "skin": "#c99a74", "hair": "#1d1512" },
+    "christensen": { "name": "Andreas Christensen", "skin": "#f2c4a6", "hair": "#c9a27e" },
+    "gundogan": { "name": "Ilkay Gundogan", "skin": "#e8b994", "hair": "#2a1d15" },
+    "terstegen": { "name": "Marc-Andre ter Stegen", "skin": "#f2c4a6", "hair": "#c9a27e" }
+  },
+  "clips": [
+    {
+      "id": "jude-clasico",
+      "kind": "long_range",
+      "attacking": "away",
+      "scorer": "jude", "assister": "mate",
+      "defenders": ["araujo", "christensen", "gundogan"],
+      "keeper": "terstegen",
+      "teammates": ["vini"],
+      "minute": 68,
+      "scoreBefore": [1, 0], "scoreAfter": [1, 1],
+      "night": false,
+      "celebration": "arms_out",
+      "cameras": ["tv", "high", "tight"],
+      "recreate": { "finish": "curl", "height": "high", "outcome": "goal" },
+      "seed": "jude-clasico-a"
+    }
+  ]
+}

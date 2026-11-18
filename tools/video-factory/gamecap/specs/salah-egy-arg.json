@@ -1,0 +1,107 @@
+{
+  "_about": "Egypt's 2-0 against Argentina, World Cup round of 16, Atlanta, 7 July 2026, 67': a quick counter, Salah involved (Al-Monitor). Exact build-up not reported: this is a generic counter and cut-back with Salah giving the pass; the scorer is not named on screen.",
+  "teams": {
+    "home": {
+      "name": "Egypt",
+      "kit": {
+        "shirt": "#C8102E",
+        "shorts": "#FFFFFF",
+        "socks": "#111111"
+      },
+      "keeperKit": {
+        "shirt": "#2BB673",
+        "shorts": "#0B3D2A",
+        "socks": "#2BB673"
+      },
+      "popupTrim": "#FFFFFF"
+    },
+    "away": {
+      "name": "Argentina",
+      "kit": {
+        "shirt": "#75AADB",
+        "shorts": "#1A1A2E",
+        "socks": "#FFFFFF"
+      },
+      "keeperKit": {
+        "shirt": "#7A3FB0",
+        "shorts": "#2A1640",
+        "socks": "#7A3FB0"
+      },
+      "popupTrim": "#FFFFFF"
+    }
+  },
+  "people": {
+    "salah": {
+      "name": "Mohamed Salah",
+      "skin": "#b98060",
+      "hair": "#1d1510"
+    },
+    "ziko": {
+      "name": "Egypt forward",
+      "skin": "#a8714f",
+      "hair": "#1a120e"
+    },
+    "marmoush": {
+      "name": "Omar Marmoush",
+      "skin": "#c99573",
+      "hair": "#1a120e"
+    },
+    "romero_c": {
+      "name": "Cristian Romero",
+      "skin": "#e0b08a",
+      "hair": "#2a1d15"
+    },
+    "otamendi": {
+      "name": "Nicolás Otamendi",
+      "skin": "#e8b994",
+      "hair": "#2a1d15"
+    },
+    "depaul": {
+      "name": "Rodrigo De Paul",
+      "skin": "#efc4a2",
+      "hair": "#2a1d15"
+    },
+    "emi": {
+      "name": "Emiliano Martínez",
+      "skin": "#e8b994",
+      "hair": "#3b2a1e"
+    }
+  },
+  "clips": [
+    {
+      "id": "egypt-2-0",
+      "kind": "tap_in",
+      "attacking": "home",
+      "scorer": "ziko",
+      "assister": "salah",
+      "defenders": [
+        "romero_c",
+        "otamendi",
+        "depaul"
+      ],
+      "keeper": "emi",
+      "teammates": [
+        "marmoush"
+      ],
+      "minute": 67,
+      "scoreBefore": [
+        1,
+        0
+      ],
+      "scoreAfter": [
+        2,
+        0
+      ],
+      "night": false,
+      "celebration": "roar",
+      "cameras": [
+        "tv",
+        "high",
+        "tight"
+      ],
+      "recreate": {},
+      "seed": "egypt-2026-b",
+      "popup": false
+    }
+  ]
+}

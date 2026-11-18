@@ -1,0 +1,42 @@
+{
+  "_about": "Vincent Kompany's header, Manchester City 1-0 Manchester United, Etihad Stadium, Mon 30 April 2012, first-half stoppage time. David Silva's in-swinging corner from the right; Kompany lost Chris Smalling on the run from the edge of the box and headed in from about six yards past David de Gea. Sources: Sky Sports 'Kompany takes City top' (Silva corner, beat Smalling, 'from six yards', stroke of half-time), Fox News/AP (Silva 'whipped in a corner kick from the right flank', first-half stoppage time), Irish Times and Arab News (Silva corner, Smalling). Kits: City home sky blue/white; United did not need a change kit (red v sky blue) - assumed their 2011-12 home (red, white shorts, black socks): no source found naming the strip. De Gea's keeper kit colour is assumed.",
+  "teams": {
+    "home": { "name": "Manchester City", "kit": { "shirt": "#6CABDD", "shorts": "#FFFFFF", "socks": "#6CABDD" }, "keeperKit": { "shirt": "#1F2A44", "shorts": "#1F2A44", "socks": "#1F2A44" }, "popupTrim": "#FFFFFF" },
+    "away": { "name": "Manchester United", "kit": { "shirt": "#DA020E", "shorts": "#FFFFFF", "socks": "#111111" }, "keeperKit": { "shirt": "#2E8B57", "shorts": "#1B1B1B", "socks": "#2E8B57" }, "popupTrim": "#FFFFFF" }
+  },
+  "people": {
+    "kompany":   { "name": "Vincent Kompany", "skin": "#5a3826", "hair": "#0d0a09" },
+    "silva":     { "name": "David Silva", "skin": "#e8b994", "hair": "#2a1d15" },
+    "lescott":   { "name": "Joleon Lescott", "skin": "#f0c3a0", "hair": "#c9a27e" },
+    "toure":     { "name": "Yaya Toure", "skin": "#4a2e1e", "hair": "#0d0a09" },
+    "aguero":    { "name": "Sergio Aguero", "skin": "#d9a57e", "hair": "#1d1512" },
+    "smalling":  { "name": "Chris Smalling", "skin": "#7a4e33", "hair": "#0d0a09" },
+    "giggs":     { "name": "Ryan Giggs", "skin": "#e6b48f", "hair": "#2a1d15" },
+    "ferdinand": { "name": "Rio Ferdinand", "skin": "#5e3a24", "hair": "#0d0a09" },
+    "jones":     { "name": "Phil Jones", "skin": "#f2c4a6", "hair": "#5b3a22" },
+    "evra":      { "name": "Patrice Evra", "skin": "#3e2618", "hair": "#0d0a09" },
+    "degea":     { "name": "David de Gea", "skin": "#eac09c", "hair": "#2a1d15" }
+  },
+  "clips": [
+    {
+      "id": "kompany-header",
+      "kind": "header",
+      "attacking": "home",
+      "scorer": "kompany", "assister": "silva",
+      "defenders": ["smalling", "giggs", "ferdinand", "jones", "evra"],
+      "keeper": "degea",
+      "teammates": ["lescott", "toure", "aguero"],
+      "minute": 45, "minuteLabel": "45+1",
+      "scoreBefore": [0, 0], "scoreAfter": [1, 0],
+      "night": true,
+      "celebration": "roar",
+      "cameras": ["tv", "high", "tight", "fan"],
+      "recreate": {
+        "delivery": "corner", "side": "right", "swing": "in",
+        "scorerStart": [-2, 16.5], "scorerSpot": [0.5, 6.5],
+        "finish": "header", "height": "mid"
+      },
+      "seed": "kompany-2012-a"
+    }
+  ]
+}

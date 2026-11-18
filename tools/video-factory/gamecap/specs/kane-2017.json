@@ -1,0 +1,105 @@
+{
+ "_about": "Tottenham 5-2 Southampton, Wembley, 26 December 2017. 22nd minute: Kane heads in Eriksen's cross from close range, the first of his hat-trick and of the three goals that took him to 39 Premier League goals in 2017 (Tottenham, Goal.com, FourFourTwo). Southampton's red and white stripes cannot be drawn: red shirt, black shorts. Keeper kits assumed; cross side not known.",
+ "teams": {
+  "home": {
+   "name": "Tottenham Hotspur",
+   "kit": {
+    "shirt": "#FFFFFF",
+    "shorts": "#132257",
+    "socks": "#FFFFFF"
+   },
+   "keeperKit": {
+    "shirt": "#E8E04A",
+    "shorts": "#1A1A1A",
+    "socks": "#E8E04A"
+   },
+   "popupTrim": "#132257",
+   "short": "Spurs"
+  },
+  "away": {
+   "name": "Southampton",
+   "kit": {
+    "shirt": "#D71920",
+    "shorts": "#111111",
+    "socks": "#FFFFFF"
+   },
+   "keeperKit": {
+    "shirt": "#2B2B2B",
+    "shorts": "#2B2B2B",
+    "socks": "#2B2B2B"
+   },
+   "popupTrim": "#FFFFFF"
+  }
+ },
+ "people": {
+  "kane": {
+   "name": "Harry Kane",
+   "skin": "#f2c6a8",
+   "hair": "#8a6a48"
+  },
+  "eriksen": {
+   "name": "Christian Eriksen",
+   "skin": "#f4d0b4",
+   "hair": "#d9b97a"
+  },
+  "alli": {
+   "name": "Dele Alli",
+   "skin": "#a8724e",
+   "hair": "#1a120c"
+  },
+  "d1": {
+   "name": "Saints defender"
+  },
+  "d2": {
+   "name": "Saints defender"
+  },
+  "forster": {
+   "name": "Fraser Forster",
+   "skin": "#f4d0b4",
+   "hair": "#4a3424"
+  }
+ },
+ "clips": [
+  {
+   "id": "kane-header",
+   "kind": "header",
+   "attacking": "home",
+   "scorer": "kane",
+   "assister": "eriksen",
+   "teammates": [
+    "alli"
+   ],
+   "defenders": [
+    "d1",
+    "d2"
+   ],
+   "keeper": "forster",
+   "minute": 22,
+   "scoreBefore": [
+    0,
+    0
+   ],
+   "scoreAfter": [
+    1,
+    0
+   ],
+   "night": false,
+   "celebration": "fist_pump",
+   "cameras": [
+    "tv",
+    "high",
+    "tight"
+   ],
+   "recreate": {
+    "delivery": "cross",
+    "scorerSpot": [
+     0.5,
+     5.5
+    ],
+    "finish": "header",
+    "height": "mid"
+   },
+   "seed": "kane-2017-c"
+  }
+ ]
+}
