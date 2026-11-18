@@ -93,6 +93,9 @@ const S = {
   glove: (k: number, held: boolean) => play("glove", `glove-${held ? "hold" : "parry"}-${nearest(k * 100, [40, 100])}`),
 };
 
+/** The crowd's cheer on its own (the ceremonies' swell as a name is read out). */
+export function playCheer() { preload(); S.cheer(); }
+
 /** Follows one match's driver frame by frame and plays what the website plays when. */
 export function matchSounds() {
   preload();

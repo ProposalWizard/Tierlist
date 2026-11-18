@@ -13,7 +13,8 @@ import { TrialScreen, ManagerTalkScreen, OffersScreen, SignedScreen } from "../s
 import { PostMatchScreen } from "../screens/career/PostMatch";
 import { StatsScreen } from "../screens/career/Stats";
 import { TrainingScreen, LevelSelectScreen, DrillScreen } from "../screens/career/Training";
-import { GoldenBallScreen, SeasonAwardsScreen, FinalSeasonScreen, RetirementScreen } from "../screens/career/SeasonEnd";
+import { FinalSeasonScreen, RetirementScreen } from "../screens/career/SeasonEnd";
+import { GoldenBallNight, SeasonAwardsNight } from "../screens/career/Ceremonies";
 import { PreMatchScreen, WatchedScreen, CallUpScreen, ContractRenewalScreen, SettingsScreen, PlaceholderScreen } from "../screens/career/Misc";
 import { YouthScreen, FreeAgentScreen, LoanBriefScreen } from "../screens/career/Youth";
 import { DeadlineDayScreen, KnockoutRoundupScreen, PlayOffRoundupScreen, TournamentTableScreen } from "../screens/career/Roundups";
@@ -77,8 +78,8 @@ export const careerScreens: ScreenMap = {
   "career-drill": withCareer((c, go, nav, p) => <DrillScreen career={c} skill={p?.skill as keyof Skills} level={Number(p?.level ?? 1)} go={(s) => { if (s.screen === "career-training") nav.back(); else go(s); }} />),
   "career-callup": withCareer((_c, go) => <CallUpScreen go={go} />),
   "career-contract-renewal": withCareer((c, go) => <ContractRenewalScreen career={c} go={go} />),
-  "career-golden-ball": withCareer((c, go) => <GoldenBallScreen career={c} go={go} />),
-  "career-season-awards": withCareer((c, go) => <SeasonAwardsScreen career={c} go={go} />),
+  "career-golden-ball": withCareer((c, go) => <GoldenBallNight career={c} go={go} />),
+  "career-season-awards": withCareer((c, go) => <SeasonAwardsNight career={c} go={go} />),
   "career-final-season": withCareer((c, go) => <FinalSeasonScreen career={c} go={go} />),
   "career-retirement": withCareer((c, go) => <RetirementScreen career={c} go={go} />),
   "career-settings": withCareer((_c, _go, nav) => (

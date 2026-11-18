@@ -1,14 +1,13 @@
 /**
- * THE END OF THE SEASON, in page.tsx's order: the Golden Ball night (a text
- * version of BallonDorNight / BallonDor: the shortlist from tenth to first),
- * the final-season notice or the final whistle, then (after the rollover) the
- * season's awards (SeasonAwardsScreen: the individual awards, every trophy
- * handed out, the Team of the Season).
+ * THE END OF THE SEASON, in page.tsx's order: the Golden Ball night
+ * (Ceremonies.tsx), the final-season notice or the final whistle, then (after
+ * the rollover) the Season Awards night (Ceremonies.tsx) and this page after
+ * it (SeasonAwardsScreen: the individual awards, every trophy handed out, the
+ * Team of the Season).
  */
 import { useMemo, useState } from "react";
 import { View, Text } from "react-native";
 import type { CareerState } from "@/lib/star/types";
-import { computeBallonDorShortlist } from "@/lib/star/ballonDor";
 import { trophyWinners } from "@/lib/star/seasonAwards";
 import { careerVerdict, testimonialFor, CAREER_SEASONS } from "@/lib/star/retirement";
 import { shortClub } from "@/lib/star/media/grammar";
@@ -17,42 +16,6 @@ import { clubGlow } from "../../world/ui";
 import * as flow from "../../game/flow";
 import { useNav } from "../../nav";
 import { Frame, Card, Label, Row, Btn, ClubCrest, money, C } from "./kit";
-
-export function GoldenBallScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
-  const result = useMemo(() => computeBallonDorShortlist(career), [career]);
-  const { entries, playerRank, playerNominated } = result;
-  const [shown, setShown] = useState(entries.length < 3 ? entries.length : 0);
-  const won = playerRank === 1;
-  const all = shown >= entries.length;
-  // Revealed from the bottom of the list up, the winner last.
-  const revealed = entries.slice(entries.length - shown);
-  return (
-    <Frame kicker={`Season ${career.season}`} title="The Golden Ball"
-      footer={all ? <Btn kind="gold" label="Continue" onPress={() => go(flow.ballonDorContinue(won))} />
-        : <Btn kind="gold" label={shown === entries.length - 1 ? "And the winner is…" : `Reveal ${ordinalPlace(entries.length - shown)}`} onPress={() => setShown((n) => n + 1)} />}>
-      <Card tone={C.gold}>
-        <Text style={{ color: C.text, fontSize: 15 }}>
-          {playerNominated ? `You are on the shortlist of ${entries.length}.` : "You are not on the shortlist this year."}
-        </Text>
-      </Card>
-      {[...revealed].reverse().map((e) => (
-        <Card key={`${e.rank}-${e.name}`} tone={e.rank === 1 ? C.gold : e.isPlayer ? C.green : undefined}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <Text style={{ color: e.rank === 1 ? C.gold : C.dim, fontSize: 22, fontWeight: "900", width: 34 }}>{e.rank}</Text>
-            <ClubCrest club={e.club} size={34} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: e.isPlayer ? C.green : C.text, fontWeight: "900", fontSize: 16 }}>{e.name}{e.isPlayer ? " (you)" : ""}</Text>
-              <Text style={{ color: C.dim, fontSize: 12 }}>{shortClub(e.club)} · {e.goals} goals · {e.assists} assists · {e.rating.toFixed(1)}</Text>
-              {e.trophies.length > 0 && <Text style={{ color: C.gold, fontSize: 12 }}>{e.trophies.join(" · ")}</Text>}
-            </View>
-          </View>
-        </Card>
-      ))}
-      {all && won && <Text style={{ color: C.gold, fontSize: 22, fontWeight: "900", textAlign: "center" }}>🏆 You have won the Golden Ball!</Text>}
-    </Frame>
-  );
-}
-const ordinalPlace = (n: number) => `${n}${n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th"} place`;
 
 export function SeasonAwardsScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
   const nav = useNav();
