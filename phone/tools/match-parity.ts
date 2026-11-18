@@ -731,6 +731,10 @@ function websiteMatch(setup: MatchSetup, hw: number, botSeed: number): Out {
     if (!el.extraTime) { shootout = settleShootout(); break; }
     wentET = true; etStage = 1; ceiling = MATCH_DURATION + ADDED + 15; next = startSimulation();
   }
+  // OUT OF DATE: the phone's driver now plays a shootout live, kick by kick
+  // (CanvasMatch startShootout / LiveShootout); tools/match-features.ts checks
+  // that. The matches this check plays are league games and never reach
+  // penalties; a knockout case here would need the bot to take your kick.
   function settleShootout() {
     const r = mulberry32((setup.seed ^ 0x5400) >>> 0);
     let s = createShootout();
