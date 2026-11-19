@@ -10,7 +10,8 @@
  * and TeachCard, ported from the website line for line in what they decide.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, type ViewStyle } from "react-native";
+import { Canvas, Circle, Line, Path, Group, DashPathEffect, Skia, vec } from "@shopify/react-native-skia";
 import { ROLE_KIT } from "@/lib/star/fiveASide/render";
 import type { MatchKits } from "@/lib/star/kits";
 import type { Outcome, Scenario } from "@/lib/star/canvasEngine";
@@ -24,6 +25,7 @@ import { featureSetup, type ChanceResolved, type FeatureSpec } from "../match/se
 import { MatchPitch } from "./MatchPitch";
 import type { Cam } from "../match/view";
 import { C } from "../ui/theme";
+import { FONT } from "../ui/look";
 
 /** CanvasMatch's kits with no career and no fixture: the shared role colours. */
 export const FEATURE_KITS: MatchKits = {
@@ -75,7 +77,7 @@ export function EngineFeature(p: EngineFeatureProps) {
     return new MatchDriver(featureSetup(spec, { skills: { power: P.skills.power, technique: P.skills.technique }, seed: P.seed, penaltyRunup: P.penaltyRunup, freeKickRunup: P.freeKickRunup }), { hw });
   }, []);
   return (
-    <View style={{ height: p.height, overflow: "hidden", borderRadius: 12 }}>
+    <View style={{ height: p.height, marginHorizontal: 12, borderRadius: 12, borderWidth: 2, borderColor: "rgba(6,95,70,0.8)", overflow: "hidden", backgroundColor: "#22920b", boxShadow: "0px 18px 40px -12px rgba(2,44,34,0.6)" } as ViewStyle}>
       <MatchPitch make={make} kits={FEATURE_KITS} height={p.height} banners={p.scene?.banners !== false} onFrame={p.onFrame} frozen={p.frozen} />
       {p.children}
     </View>
@@ -85,40 +87,82 @@ export function EngineFeature(p: EngineFeatureProps) {
 // ── The trial's look (stages/TrialFrame.tsx): the board over the pitch, the slots, the caption ──
 
 export type SlotState = "scored" | "close" | "missed";
-export function TrialSlots({ states, total }: { states: SlotState[]; total: number }) {
+/** TrialFrame.tsx TrialSlot: ✓ green, ✗ red, ~ amber, or an empty ring still to come (★ in yours). */
+export function TrialSlots({ states, total, youAt }: { states: SlotState[]; total: number; youAt?: number }) {
+  const FILL: Record<SlotState, { bg: string; ink: string; mark: string; glow: string }> = {
+    scored: { bg: "#10b981", ink: "#fff", mark: "✓", glow: "0px 0px 8px rgba(16,185,129,0.7)" },
+    close: { bg: "#fbbf24", ink: "#030712", mark: "~", glow: "0px 0px 8px rgba(251,191,36,0.6)" },
+    missed: { bg: "#f43f5e", ink: "#fff", mark: "✗", glow: "0px 0px 8px rgba(244,63,94,0.6)" },
+  };
   return (
-    <View style={{ flexDirection: "row", gap: 4 }}>
+    <View style={{ flexDirection: "row", gap: 4, marginTop: 2 }}>
       {Array.from({ length: total }, (_, i) => {
-        const s = states[i];
-        return <View key={i} style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: !s ? "transparent" : s === "scored" ? "#10b981" : s === "close" ? "#f59e0b" : "#dc2626", borderWidth: s ? 0 : 1.5, borderColor: "rgba(255,255,255,0.35)" }} />;
+        const st = states[i];
+        const you = youAt !== undefined && i === youAt;
+        if (!st) {
+          return (
+            <View key={i} style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: you ? "#7dd3fc" : "rgba(255,255,255,0.45)", backgroundColor: "rgba(255,255,255,0.1)", alignItems: "center", justifyContent: "center" }}>
+              {you ? <Text style={{ color: "#bae6fd", fontSize: 10, fontWeight: "900" }}>★</Text> : null}
+            </View>
+          );
+        }
+        const f = FILL[st];
+        return (
+          <View key={i} style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: f.bg, alignItems: "center", justifyContent: "center", boxShadow: f.glow } as ViewStyle}>
+            <Text style={{ color: f.ink, fontSize: 12, fontWeight: "900" }}>{f.mark}</Text>
+          </View>
+        );
       })}
     </View>
   );
 }
+/** TrialFrame.tsx TrialBoard: the stage's scoreboard strip right above the pitch. */
 export function TrialBoard({ title, left, centreLabel, centreValue, right, footer }: { title: string; left?: ReactNode; centreLabel: string; centreValue: ReactNode; right?: ReactNode; footer?: ReactNode }) {
   return (
-    <View style={{ marginHorizontal: 12, marginBottom: 8, borderRadius: 12, backgroundColor: "rgba(8,14,28,0.9)", padding: 10 }}>
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: "#7dd3fc", fontSize: 11, fontWeight: "900", textTransform: "uppercase" }}>{title}</Text>
-          <View style={{ marginTop: 3 }}>{left}</View>
+    <View style={{ marginHorizontal: 12, marginBottom: 6, borderRadius: 12, paddingHorizontal: 12, paddingTop: 4, paddingBottom: 6,
+      backgroundImage: "linear-gradient(180deg, rgba(8,14,28,0.9), rgba(8,14,28,0.78))",
+      boxShadow: "0px 6px 16px -6px rgba(0,0,0,0.8), inset 0px 1px 0px rgba(255,255,255,0.12)" } as ViewStyle}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text numberOfLines={1} style={{ color: "#7dd3fc", fontSize: 11, fontWeight: "900", letterSpacing: 0.3, textTransform: "uppercase" }}>{title}</Text>
+          {left}
         </View>
-        <View style={{ alignItems: "center", paddingHorizontal: 8 }}>
-          <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 9, fontWeight: "900", letterSpacing: 1.5, textTransform: "uppercase" }}>{centreLabel}</Text>
-          <Text style={{ color: "#fff", fontSize: 20, fontWeight: "900" }}>{centreValue}</Text>
+        <View style={{ alignItems: "center" }}>
+          <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 9, fontWeight: "900", letterSpacing: 1.8, textTransform: "uppercase" }}>{centreLabel}</Text>
+          {typeof centreValue === "string"
+            ? <Text style={{ color: "#fff", fontFamily: FONT.display, fontSize: 26, lineHeight: 30 }}>{centreValue}</Text>
+            : centreValue}
         </View>
-        <View style={{ flex: 1, alignItems: "flex-end" }}>{right}</View>
+        <View style={{ flex: 1, minWidth: 0, alignItems: "flex-end" }}>{right}</View>
       </View>
-      {footer ? <Text style={{ marginTop: 5, textAlign: "center", color: "rgba(255,255,255,0.75)", fontSize: 11, fontWeight: "700" }}>{footer}</Text> : null}
+      <Text style={{ marginTop: 3, minHeight: 14, textAlign: "center", color: "rgba(255,255,255,0.75)", fontSize: 10.5, fontWeight: "900", letterSpacing: 0.3, textTransform: "uppercase" }}>{footer ?? ""}</Text>
     </View>
   );
 }
+/** TrialFrame.tsx TrialCaption: what just happened, then what to do. */
 export function TrialCaption({ line, prompt }: { line?: string; prompt?: string }) {
   return (
-    <View style={{ minHeight: 44, paddingHorizontal: 16, paddingTop: 8, alignItems: "center" }}>
-      {line ? <Text style={{ color: "#fff", fontSize: 16, fontWeight: "900" }}>{line}</Text> : null}
-      {prompt ? <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 13, fontWeight: "700", textAlign: "center" }}>{prompt}</Text> : null}
+    <View style={{ paddingHorizontal: 12, paddingTop: 6, alignItems: "center" }}>
+      <Text style={{ minHeight: 16, color: "rgba(255,255,255,0.75)", fontSize: 12, fontWeight: "700", textAlign: "center" }}>{line ?? ""}</Text>
+      <Text style={{ minHeight: 16, color: "#fff", fontSize: 13, fontWeight: "900", textAlign: "center" }}>{prompt ?? ""}</Text>
     </View>
+  );
+}
+
+/** TrialPenalties.tsx TeachGlyph "drag": pull back from the ball, the shot goes the other way. Drawn once. */
+function DragGlyph() {
+  const head = useMemo(() => { const b = Skia.PathBuilder.Make(); b.moveTo(46, 5); b.lineTo(51, 14); b.lineTo(41, 14); b.close(); return b.build(); }, []);
+  return (
+    <Canvas style={{ width: 32, height: 24 }}>
+      <Group transform={[{ scale: 0.5 }]}>
+        <Line p1={vec(46, 30)} p2={vec(12, 42)} color="#fbbf24" style="stroke" strokeWidth={2.5} strokeCap="round"><DashPathEffect intervals={[4, 3]} /></Line>
+        <Circle cx={12} cy={42} r={4.5} color="#fbbf24" style="stroke" strokeWidth={2} />
+        <Line p1={vec(46, 30)} p2={vec(46, 10)} color="#f97316" style="stroke" strokeWidth={3} strokeCap="round" />
+        <Path path={head} color="#f97316" />
+        <Circle cx={46} cy={30} r={6} color="#f8fafc" />
+        <Circle cx={46} cy={30} r={6} color="#0f172a" style="stroke" strokeWidth={1.5} />
+      </Group>
+    </Canvas>
   );
 }
 
@@ -128,15 +172,20 @@ export function TeachCard({ headline, lines, short, compact = false, place = "mi
 }) {
   void compact; void short;
   return (
-    <Pressable onPress={onDismiss} style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.25)", paddingHorizontal: 16, justifyContent: place === "top" ? "flex-start" : place === "bottom" ? "flex-end" : "center", paddingTop: place === "top" ? "30%" : 0, paddingBottom: place === "bottom" ? "22%" : 0 }}>
-      <View style={{ borderRadius: 12, borderWidth: 2, borderColor: "rgba(251,191,36,0.7)", backgroundColor: "rgba(255,255,255,0.88)", paddingHorizontal: 12, paddingVertical: 9 }}>
-        <View style={{ alignSelf: "flex-start", backgroundColor: "#fbbf24", borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
-          <Text style={{ fontSize: 9, fontWeight: "900", letterSpacing: 1.5, color: "#000" }}>HOW TO PLAY</Text>
+    <Pressable onPress={onDismiss} style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.25)", paddingHorizontal: 16, alignItems: "center", justifyContent: place === "top" ? "flex-start" : place === "bottom" ? "flex-end" : "center", paddingTop: place === "top" ? "30%" : 0, paddingBottom: place === "bottom" ? "22%" : 0 }}>
+      <View style={{ width: "100%", maxWidth: 320 }}>
+        <View style={{ borderRadius: 12, borderWidth: 2, borderColor: "rgba(251,191,36,0.7)", backgroundColor: "rgba(255,255,255,0.75)", paddingHorizontal: 12, paddingVertical: 8, boxShadow: "0px 10px 18px rgba(0,0,0,0.25)" } as ViewStyle}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <DragGlyph />
+            <View style={{ backgroundColor: "#fbbf24", borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+              <Text style={{ fontSize: 9, fontWeight: "900", letterSpacing: 1.6, color: "#000" }}>HOW TO PLAY</Text>
+            </View>
+          </View>
+          <Text style={{ marginTop: 6, fontSize: 12, fontWeight: "900", color: "#111827", lineHeight: 15 }}>{headline}</Text>
+          {lines.map((l) => <Text key={l} style={{ marginTop: 2, fontSize: 10.5, fontWeight: "700", color: "#374151", lineHeight: 14 }}>{l}</Text>)}
         </View>
-        <Text style={{ marginTop: 6, fontSize: 13, fontWeight: "900", color: "#111827" }}>{headline}</Text>
-        {lines.map((l) => <Text key={l} style={{ marginTop: 2, fontSize: 11.5, fontWeight: "700", color: "#374151" }}>{l}</Text>)}
+        <Text style={{ marginTop: 8, textAlign: "center", fontSize: 10, fontWeight: "700", letterSpacing: 2, color: "rgba(255,255,255,0.45)" }}>TAP ANYWHERE TO CONTINUE</Text>
       </View>
-      <Text style={{ marginTop: 8, textAlign: "center", fontSize: 10, fontWeight: "700", letterSpacing: 2, color: "rgba(255,255,255,0.5)" }}>TAP ANYWHERE TO CONTINUE</Text>
     </Pressable>
   );
 }

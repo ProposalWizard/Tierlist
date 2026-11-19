@@ -38,6 +38,10 @@ Out (all in `phone/tools/look/out/`, git-ignored):
 
 What looks different is written up in `DIFFERENCES.md` (redo it after a look change).
 
+The match's drawing cost, headless (the phone's own drawing code on CanvasKit):
+`cd phone && npx tsx tools/match-frame.ts` (a whole match, per frame) and
+`npx tsx tools/look/ground-bench.ts [--png DIR]` (the grass, lines and goal alone).
+
 ## The screens
 
 `title`, `new-career-1` (details), `new-career-2` (style), `new-career-photo`

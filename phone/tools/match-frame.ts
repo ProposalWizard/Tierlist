@@ -19,6 +19,7 @@ import { kitsFor } from "@/lib/star/kits";
 import { setSkia } from "../src/match/skiaApi";
 import { setSpriteSheet, setAtlas, atlasFor, tintTimes, type SpriteIndex } from "../src/match/sprites";
 import { drawPitch, paintPitch } from "../src/match/drawPitch";
+import { groundStats } from "../src/match/drawGround";
 import { MatchDriver } from "../src/match/driver";
 import { matchSetupFor } from "../src/match/setup";
 import { botAim, botContact, flatPullFor } from "./match-bot";
@@ -90,6 +91,7 @@ async function main() {
   const q = (xs: number[], p: number) => { const s = [...xs].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(p * s.length))]; };
   console.log(`${drawn} pitch frames over ${chances} chances`);
   console.log(`record a frame (picture):  median ${q(rec, 0.5).toFixed(2)} ms   p95 ${q(rec, 0.95).toFixed(2)} ms   max ${Math.max(...rec).toFixed(2)} ms`);
+  console.log(`ground: grass+lines recorded ${groundStats.recorded} times, the goal ${groundStats.goals} times, in ${drawn} frames (goal ${(groundStats.goalMs / Math.max(1, groundStats.goals)).toFixed(2)} ms each)`);
   console.log(`driver tick:               median ${q(tick, 0.5).toFixed(2)} ms   p95 ${q(tick, 0.95).toFixed(2)} ms   max ${Math.max(...tick).toFixed(2)} ms`);
   // Raster cost of playing that picture back (on the phone this is the graphics chip, not JS).
   const r: number[] = [];
