@@ -7,6 +7,7 @@ import { NavProvider, useNav } from "./src/nav";
 import { SCREENS } from "./src/areas/registry";
 import { C } from "./src/ui/theme";
 import { ToonYouSync } from "./src/three/youSync";
+import { useLookFonts } from "./src/ui/look/fonts";
 
 function Router() {
   const { stack, back } = useNav();
@@ -21,6 +22,9 @@ function Router() {
 }
 
 export default function App() {
+  // the look's fonts (Anton, Cinzel): a moment at start, never more than 1.5 s
+  const fonts = useLookFonts();
+  if (!fonts) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

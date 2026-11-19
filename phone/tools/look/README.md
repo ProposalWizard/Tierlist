@@ -41,7 +41,7 @@ What looks different is written up in `DIFFERENCES.md` (redo it after a look cha
 ## The screens
 
 `title`, `new-career-1` (details), `new-career-2` (style), `new-career-photo`
-(packed only), `trial-howto`, `trial-aim`, `strike` (the "where do you strike it?"
+(your photo), `trial-howto`, `trial-aim`, `strike` (the "where do you strike it?"
 screen, reached by pulling back from the trial's free kick), `home`, `stats`,
 `league`, `phone`, `shop`, `star-pass`, `transfers` (the summer window), `pre-match`
 (Play pressed), `match-feed` (on the bench), `match-pitch` (your chance, after the

@@ -6,6 +6,11 @@ Not counted as differences: random content (a free kick's distance, which chance
 comes), and the harness limits in README.md (no 3D on KIB Next's web build; emoji
 are the browser's).
 
+**Round 1 (19 Nov 2026, later):** the look kit is built (`phone/src/ui/look`, read
+its README): fonts, backgrounds, top bar, bottom bar, glass cards, buttons. Title,
+new career (with the photo step) and Home use it; their sections below say what
+still differs. Every other screen still has the differences listed.
+
 ## Across every screen (fix these once, every screen moves closer)
 
 1. **Backgrounds.** Packed screens sit on pictures: a stadium at sunset (title,
@@ -34,31 +39,28 @@ are the browser's).
    drawings: KIB cans (photos vs a drawn tin), the shop items, Star Pass rewards
    (3D renders on podiums vs emoji in a list), the 3D player on Home/title/Stats.
 
-## Title (main menu)
-- Packed: stadium-at-sunset picture fills the screen, your player stands on the
-  pitch with a ball; logo KNOWITBALL in grey 3D Anton with "EVERY LEGEND STARTS
-  WITH A TRIAL"; menu buttons are slanted parallelogram tabs stacked on the right
-  (NEW GAME green, LOAD GAME dark green, HALL OF FAME brown/gold, TUTORIAL, SETTINGS).
-- KIB Next: black screen, white italic logo, no player, no picture; full-width
-  rounded buttons at the bottom, Tutorial and Settings side by side.
-- Missing in KIB Next: HALL OF FAME button, the tagline.
+## Title (main menu) — round 1: close
+- Same now: the stadium at sunset, KNOWITBALL in grey Anton with the tagline and
+  "EVERY LEGEND STARTS WITH A TRIAL", you on the left with the ball, slanted tabs
+  on the right (NEW GAME green, LOAD GAME, HALL OF FAME gold, TUTORIAL), CREDITS.
+- Still different: the logo's letters are taller and narrower (Anton; the website's
+  are a wider heavy italic with a metallic sheen); no SETTINGS with no save (KIB
+  Next has no settings to open without a career; with a save it shows); the
+  player is the drawn figure in the web build (3D on the phone).
 
-## New career: your details / your style
-- Packed: green gradient page, "‹ Main menu" bar at top, a "ROAD TO THE GOLDEN
-  BALL" pill, Anton title, all fields in ONE glassy green card, white input boxes,
-  centred small caps labels; England row is a bright green bar with a CHANGE
-  button; bottom: two buttons "← Back" (navy) and "Continue →" (green).
-- KIB Next: black page, "STEP 1 OF 2" above title, fields in dark cards with dark
-  inputs, labels left-aligned; England row dark with yellow "Change"; one button "Next".
-- Style step: packed skin tones are big rounded squares (2 rows of 4) with a tick,
-  hair styles as square tiles, hair colours as wide bars, foot as two big buttons,
-  number in a white box; KIB Next uses round dots and small pills.
-- Packed says "Step 1 of 2" on both steps and has a third page.
+## New career: your details / your style — round 1: close
+- Same now: green page, "‹ Main menu" bar, ROAD TO THE GOLDEN BALL tag, Anton
+  title, "Step 1 of 2 · your details/style", one green card, white centred boxes,
+  green England bar with ✓ and CHANGE, square skin/hair tiles, LEFT/RIGHT tiles,
+  the number in a white box, "← Back" (navy) and "Continue →" (green).
+- Still different: a few px of spacing; the nationality list opens inside the card
+  as on the website (flags are emoji in KIB Next, pictures on the website).
 
-## New career: your photo (packed only)
-- KIB Next has no photo step: no "Add a photo / Take a photo / Using your shirt",
-  no "OR PICK A FACE" row of 7 faces. Packed's last button is "✓ Start Career";
-  KIB Next goes straight to "Start the trial".
+## New career: your photo — round 1: added, close
+- Same now: "Step 2 of 2", YOUR PHOTO / Optional, the shirt tile with your number,
+  the note, "✓ Using your shirt", OR PICK A FACE with the seven faces, "✓ Start Career".
+- Still different: "Add a photo" and "Take a photo" are greyed with a note (the
+  phone app has no photo picker installed yet; expo-image-picker would add it).
 
 ## Trial (how to play, ready to aim)
 - Pitch: packed has a textured diamond-pattern grass, a goal with a drawn net and
@@ -81,18 +83,20 @@ are the browser's).
 - Title "STRIKE IT?": packed grey metallic Anton with a bar under; KIB Next white italic.
 - Packed's screen sits inside the framed pitch; KIB Next fills the width.
 
-## Home
-- Biggest difference of all. Packed: stadium picture behind everything, your 3D
-  player juggling a ball in the middle, the next-match card, REP/FAME/GOALS/ASSISTS
-  as glassy tiles with pictures (globe, crown, ball, boot), "PREMIER LEAGUE 1st ▾"
-  as one line, the three KIB can cards with photos and FULL/USE buttons at the
-  bottom, "‹ STATS" and "SHOP ›" swipe hints.
-- KIB Next: black page, the drawn player in a red glow at the top (web build: 3D
-  not shown), cards stacked below (next match, 4 tiles with coloured outlines,
-  a 3-row table); cans and the rest further down the scroll (Stats, Training,
-  Shop, Phone, Star Pass, Sponsors, Relations as buttons).
-- Packed Home is one fixed screen with Stats on the left and Shop on the right
-  (swipe); KIB Next is a long scrolling page.
+## Home — round 1: close
+- Same now: one fixed screen. The glass top bar (name, AGE, ★, ?, ⚙; the star badge
+  on a gold bar, the lightning on the energy bar), the stadium scene behind
+  everything, the faint next-match panel, REP/FAME/GOALS/ASSISTS glass tiles with
+  their pictures, "🏆 PREMIER LEAGUE 1st ▾" (opens five rows and FULL TABLE ›),
+  you in the middle with the ball, the boots line, the three cans with their
+  photos and USE/FULL and ★price, ‹ STATS / SHOP › (a swipe does the same), and
+  the bottom bar League · Training (⚡2) · Home · Phone (3) · round glowing PLAY.
+- Still different: the player is the drawn figure in the web build (3D on the
+  phone; the drawn one has a red glow); the top bar is a solid blue band (the
+  website's is frosted); small spacing.
+- Moved off Home, as on the website: Training and Phone are in the bottom bar,
+  the Star Pass opens from the star, Sponsors and Relations from the Phone, the
+  main menu from Settings.
 
 ## Stats
 - Packed: a FIFA-style bronze player card (58 ST, flag, badge, your figure,

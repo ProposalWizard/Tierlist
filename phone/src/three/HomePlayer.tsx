@@ -9,7 +9,9 @@ import { useRiskyPart } from "../safety";
  * - Old: the drawn figure (draw/PlayerFigure.tsx).
  * The glow and the pool are drawn once (no animation: nothing redraws).
  */
-import { View } from "react-native";
+import { Image, View } from "react-native";
+import { ICON } from "../ui/look/pictures";
+const BALL = ICON.ball;
 import { Canvas, Circle, Oval, RadialGradient, vec } from "@shopify/react-native-skia";
 import type { CareerState } from "@/lib/star/types";
 import { kitsOf } from "@/lib/star/kits";
@@ -23,13 +25,17 @@ function rgba(hex: string, a: number): string {
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
 }
 
-export function HomePlayer({ career, width, height, where }: { career: CareerState; width: number; height: number; where: "home" | "title" }) {
+export function HomePlayer({ career, width, height, where, ball }: { career: CareerState; width: number; height: number; where: "home" | "title"; /** The ball at his feet when he is DRAWN (the 3D player brings his own). */ ball?: boolean }) {
   const style = usePlayerStyleLook();
   // 3D starts a moment after the rest of Home, so a crash in it is named on its own (safety.ts)
   const ok3d = useRiskyPart("3d", { delayMs: 2500, settleMs: 6000 });
   const club = career.player.club;
   const kit = kitsOf(club, career.clubKits?.[club]).home;
-  const drawn = <PlayerFigure career={career} width={width} height={height} />;
+  const figure = <PlayerFigure career={career} width={width} height={height} />;
+  // the ball: beside him on the title (TitleScreen TitleBall), at his feet on Home
+  const bs = Math.round(height * (where === "title" ? 0.145 : 0.11));
+  const bx = width * (where === "title" ? 0.29 : 0.4) - bs / 2;
+  const drawn = ball ? <View style={{ width, height }}>{figure}<Image source={BALL} style={{ position: "absolute", width: bs, height: bs, left: bx, bottom: where === "title" ? 0 : -bs * 0.15 }} /></View> : figure;
   const gw = width * 0.95, gh = height * 0.55, poolW = width * 1.25, poolH = Math.max(14, height * 0.09);
   return (
     <View style={{ width, height }}>
