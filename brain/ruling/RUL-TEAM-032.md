@@ -5,7 +5,7 @@ client: team
 tags: [data, process, team]
 status: live
 date: 2026-11-19
-source: "docs/brain-sources/harry-chat-2026-11-19.md:24-26"
+source: "docs/brain-sources/harry-chat-2026-11-19.md:25-27"
 summary: Harry's chats: say before starting any task that needs the Supabase connector (real saves, bug hunts, migrations, real players/badges); wait for Harry, do not start and find out halfway.
 ---
 Harry, 19 Nov 2026: "from now on tell me when u need the connector for
