@@ -44,6 +44,7 @@ import { playerOf } from "@/lib/star/potm";
 import { playCheer } from "../../match/sound";
 import * as flow from "../../game/flow";
 import { ClubCrest } from "./kit";
+import { Backdrop, glassStyle } from "../../ui/look";
 import { SeasonAwardsScreen } from "./SeasonEnd";
 
 const GOLD = "#fbbf24";
@@ -397,12 +398,13 @@ function GoldenBallResult({ career, result, go }: { career: CareerState; result:
   const winner = entries[0];
   const playerWon = playerRank === 1;
   const playerEntry = entries.find((e) => e.isPlayer);
-  const card = { backgroundColor: "rgba(255,255,255,0.05)", borderRadius: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", padding: 16 } as const;
+  const card = { ...glassStyle("glass"), borderRadius: 16, padding: 16 } as const;
   const small = { color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: "900", letterSpacing: 2, textTransform: "uppercase" } as const;
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#070b16" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#0b1a2e" }}>
+      <Backdrop kind="stadium" />
       <Animated.ScrollView contentContainerStyle={{ padding: 12, paddingTop: 24, gap: 16, paddingBottom: 40 }}>
-        <Animated.View entering={FadeInDown.duration(400)} style={[card, { padding: 24, alignItems: "center" }, playerWon ? { borderColor: "rgba(251,191,36,0.6)" } : null]}>
+        <Animated.View entering={FadeInDown.duration(400)} style={[card, { padding: 24, alignItems: "center" }, playerWon ? { borderWidth: 1, borderColor: "rgba(251,191,36,0.6)" } : null]}>
           {playerWon ? (
             <>
               <TrophyImage name="Golden Ball" height={96} fallback="🏅" />

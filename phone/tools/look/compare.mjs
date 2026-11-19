@@ -173,16 +173,41 @@ const SCENES = [
     next: async (p) => { await kibContinue(p); await kib(p, "transfers"); } },
   { id: "pre-match", title: "Before the match (Play pressed)", save: true,
     packed: async (p) => { await click(p, /^PLAY$/); await wait(p, 200); },
-    next: async (p) => { await kibContinue(p); await click(p, /PLAY/); } },
+    // KIB Next kicks off by itself after 3.8 s, as the website; under load that can come before the shot, so Substitutes is tapped twice (it stops the timer; the drawer opens and shuts).
+    next: async (p) => { await kibContinue(p); await p.getByText(/^PLAY$/i).first().click(); const s = p.getByText(/^SUBSTITUTES$/i).first(); await s.click(); await s.click(); await wait(p, 1800); } },
   { id: "match-feed", title: "Match: the feed (on the bench)", save: true,
     packed: async (p) => { await click(p, /^PLAY$/); await wait(p, 4000); },
-    next: async (p) => { await kibContinue(p); await click(p, /PLAY/); await click(p, /^▶ Play$/); await wait(p, 4000); } },
+    next: async (p) => { await kibContinue(p); await p.getByText(/^PLAY$/i).first().click(); await p.getByText(/^KICK OFF$/i).first().click({ timeout: 4000 }).catch(() => {}); await wait(p, 4000); } }, // the line-up kicks off by itself too
   { id: "match-pitch", title: "Match: the pitch (your chance)", save: true,
     packed: async (p) => { await scene("match-feed").packed(p); await click(p, /get out there/i); await skipBuildUp(p); },
     next: async (p) => { await scene("match-feed").next(p); await click(p, /get out there/i); await skipBuildUp(p); } },
   { id: "post-match", title: "Post-match (match simmed)", save: true,
     packed: async (p) => { await click(p, /^PLAY$/); await wait(p, 200); await p.locator('[aria-label="Sim this match"]').first().click(); await wait(p, 5000); },
-    next: async (p) => { await kibContinue(p); await click(p, /PLAY/); await click(p, /Sim this match/i); await wait(p, 5000); } },
+    next: async (p) => { await kibContinue(p); await p.getByText(/^PLAY$/i).first().click(); await p.getByText("⏩").first().click(); await wait(p, 5000); } },
+  // ── round 2 (career screens) ──
+  { id: "training", title: "Training", save: true,
+    packed: async (p) => { await click(p, /^Training/); },
+    next: async (p) => { await kibContinue(p); await kib(p, "career-training"); } },
+  { id: "settings", title: "Settings", save: true,
+    packed: async (p) => { await p.locator('[aria-label="Settings"]').first().click(); await wait(p, 1800); },
+    next: async (p) => { await kibContinue(p); await kib(p, "career-settings"); } },
+  // KIB Next only (the packed app needs a long career to reach these): the look in the kit, to check by eye.
+  ...[
+    ["contract", "Contract renewal", "career-contract-renewal"],
+    ["season-awards", "Season awards", "career-season-awards"],
+    ["golden-ball", "Golden Ball night", "career-golden-ball"],
+    ["callup", "International call-up", "career-callup"],
+    ["offers", "Trial: offers", "career-offers"],
+    ["manager-talk", "Trial: manager talk", "career-manager-talk"],
+    ["signed", "Trial: signed", "career-signed"],
+    ["youth", "Youth team", "career-youth"],
+    ["free-agent", "Free agent", "career-free-agent"],
+    ["loan", "Loan brief", "career-loan-brief"],
+    ["hall-of-fame", "Hall of Fame", "hall-of-fame"],
+    ["retirement", "Retirement", "career-retirement"],
+    ["final-season", "Final season", "career-final-season"],
+  ].map(([id, title, screen]) => ({ id, title: `${title} (KIB Next only)`, save: true, packed: null,
+    next: async (p) => { await kibContinue(p); await kib(p, screen); } })),
 ];
 
 const scene = (id) => SCENES.find((s) => s.id === id);
