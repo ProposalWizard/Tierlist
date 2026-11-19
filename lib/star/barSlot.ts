@@ -20,22 +20,7 @@ let current: { owner: number; props: BarProps } | null = null;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((f) => f());
 
-/** What the bar LOOKS like; the click handlers are read live (latest()), so a
- *  screen redraw that only makes new handler functions does not redraw the bar
- *  (measured 19 Nov 2026: re-sending every render slowed taps by up to 148 ms). */
-function looksSame(a: BarProps, b: BarProps): boolean {
-  return a.activeNav === b.activeNav && a.atHome === b.atHome && a.mediaUnread === b.mediaUnread
-    && JSON.stringify(a.locked ?? null) === JSON.stringify(b.locked ?? null)
-    && JSON.stringify(a.badges ?? null) === JSON.stringify(b.badges ?? null);
-}
-let latestProps: BarProps | null = null;
-/** The newest handlers, for the bar's buttons. */
-export function latest(): BarProps | null { return latestProps; }
-
 export function setBar(owner: number, props: BarProps): void {
-  latestProps = props;
-  const same = current && current.owner === owner && looksSame(current.props, props);
-  if (same) return;
   current = { owner, props };
   emit();
 }
