@@ -127,13 +127,17 @@ export function daysToNext(career: CareerState, next: Fixture): number {
 // still has to show all of it. Home measures the room it was given (the
 // swipe page's scroll box) and sizes the league table and the player to
 // what is left.
+/** The last measured room, kept between visits to Home (tap speed, 19 Nov 2026):
+ *  Home used to open at the default size and resize a moment later, and that
+ *  size change made the 3D player build itself twice on every return. */
+let lastRoom: number | null = null;
 function useRoom() {
   const ref = useRef<HTMLDivElement>(null);
-  const [room, setRoom] = useState<number | null>(null);
+  const [room, setRoom] = useState<number | null>(lastRoom);
   useLayoutEffect(() => {
     const root = ref.current?.closest("[data-scroll-root]") as HTMLElement | null;
     if (!root) return;
-    const read = () => setRoom(root.clientHeight);
+    const read = () => { lastRoom = root.clientHeight; setRoom(lastRoom); };
     read();
     const ro = new ResizeObserver(read);
     ro.observe(root);
