@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import MainBar from "./MainBar";
-import { useBar, setBar, clearBar, type BarProps } from "@/lib/star/barSlot";
+import { useBar, setBar, clearBar, latest, type BarProps } from "@/lib/star/barSlot";
 
 /**
  * THE ONE BOTTOM BAR (lib/star/barSlot.ts). Mounted once in the game's layout:
@@ -15,15 +15,23 @@ export default function PersistentBar() {
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof ResizeObserver !== "function") return;
+    // Only a real, new height: a hidden bar (0) must not change the page's
+    // variable, or every style on the page is re-checked twice per tap.
+    let last = 0;
     const ro = new ResizeObserver(() => {
-      document.documentElement.style.setProperty("--kib-bar-h", `${el.offsetHeight}px`);
+      const h = el.offsetHeight;
+      if (h <= 0 || h === last) return;
+      last = h;
+      document.documentElement.style.setProperty("--kib-bar-h", `${h}px`);
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
   return (
     <div className="fixed inset-x-0 bottom-0 z-40" data-main-bar-fixed data-persistent-bar style={props ? undefined : { display: "none" }}>
-      <div ref={ref} className="mx-auto w-full max-w-md">{props && <MainBar {...props} />}</div>
+      <div ref={ref} className="mx-auto w-full max-w-md">{props && <MainBar {...props}
+        onNavigate={(t) => (latest() ?? props).onNavigate(t)}
+        onHome={() => (latest() ?? props).onHome?.()} />}</div>
     </div>
   );
 }
