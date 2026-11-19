@@ -36,6 +36,7 @@ import type { ChanceResolved } from "../match/setup";
 import { buildStrike, buildStrikeFrom, buildFreeKickScenario, DRILL_SCENE, type StrikeKind, type StrikeSetup, type StrikeLevel } from "../match/drills";
 import { EngineFeature, StrikeStage, TrialBoard, TrialCaption, TrialSlots, TeachCard, type SlotState } from "./MatchFeature";
 import { C } from "../ui/theme";
+import { FONT } from "../ui/look";
 
 /** TrialFrame.tsx TrialPitchBox: the pitch in its frame (ring-2 emerald-800/80, a deep shadow). */
 export const TRIAL_PITCH_BOX = (h: number): ViewStyle => ({ height: h, marginHorizontal: 12, borderRadius: 12, borderWidth: 2, borderColor: "rgba(6,95,70,0.8)", overflow: "hidden", boxShadow: "0px 18px 40px -12px rgba(2,44,34,0.6)" } as ViewStyle);
@@ -301,7 +302,10 @@ function useTries(onFinish: (stars: number) => void) {
 function DrillHeader({ kind, trainingLevel, results }: { kind: keyof Skills; trainingLevel: number; results: boolean[] }) {
   const onTry = Math.max(0, TRIES - results.length);
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12, marginBottom: 8 }}>
+    // The drill's board, in the trial board's look (TrialFrame.tsx): dark glass over the pitch's page.
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 12, marginBottom: 6, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8,
+      backgroundImage: "linear-gradient(180deg, rgba(8,14,28,0.9), rgba(8,14,28,0.78))",
+      boxShadow: "0px 6px 16px -6px rgba(0,0,0,0.8), inset 0px 1px 0px rgba(255,255,255,0.12)" } as ViewStyle}>
       <View style={{ flexDirection: "row", gap: 6 }}>
         {Array.from({ length: TRIES }, (_, i) => {
           const r = results[i];
@@ -313,8 +317,8 @@ function DrillHeader({ kind, trainingLevel, results }: { kind: keyof Skills; tra
         })}
       </View>
       <View style={{ alignItems: "flex-end" }}>
-        <Text style={{ color: C.gold, fontSize: 10, fontWeight: "900", letterSpacing: 1.5 }}>{SKILL_TITLES[kind].toUpperCase()}</Text>
-        <Text style={{ color: "#fff", fontSize: 16, fontWeight: "900" }}>LEVEL {trainingLevel} <Text style={{ color: "#fcd34d" }}>{"★".repeat(onTry)}</Text><Text style={{ color: "rgba(255,255,255,0.25)" }}>{"★".repeat(TRIES - onTry)}</Text></Text>
+        <Text style={{ color: "#7dd3fc", fontSize: 10, fontWeight: "900", letterSpacing: 1.5 }}>{SKILL_TITLES[kind].toUpperCase()}</Text>
+        <Text style={{ color: "#fff", fontFamily: FONT.display, fontSize: 20, lineHeight: 24 }}>LEVEL {trainingLevel} <Text style={{ color: "#fcd34d" }}>{"★".repeat(onTry)}</Text><Text style={{ color: "rgba(255,255,255,0.25)" }}>{"★".repeat(TRIES - onTry)}</Text></Text>
       </View>
     </View>
   );

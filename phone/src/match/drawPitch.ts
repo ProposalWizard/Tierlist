@@ -15,6 +15,12 @@ import { sk, fill, stroke } from "./skiaApi";
 import { drawMan, drawKeeperFig, beginFigures, unitPx, type FigureRole } from "./figures";
 import { footSign } from "@/lib/star/kickFoot";
 import { drawGround } from "./drawGround";
+import { drawMatchBall } from "@/lib/star/matchBall";
+import { NEW_BALL_SCALE, NEW_VIEW_WIDTH_M, REFERENCE_CAMERA_M } from "@/lib/star/matchView";
+import { createCtx2D } from "../draw/ctx2d";
+
+/** CanvasMatch's figure zoom divisor in the new view (figures.ts FIG_DIV). */
+const BALL_DIV = NEW_VIEW_WIDTH_M / REFERENCE_CAMERA_M;
 
 /** The camera the pitch is drawn with this frame. */
 export function camFor(d: MatchDriver, W: number, H: number): Cam {
@@ -89,13 +95,9 @@ export function paintPitch(c: SkCanvas, d: MatchDriver, kits: MatchKits, W: numb
   if (scene?.you !== false) man("you", sc.player, "you", true);
   queue.sort((a, q) => a.y - q.y).forEach((f) => f.draw());
 
-  // The ball (and its shadow on the grass).
+  // The ball (and its shadow on the grass): the website's drawn match ball (lib/star/matchBall.ts).
   const bp = b ? b.pos : sc.ball, bz = b ? b.z : 0;
-  const bs = toScreen(cam, bp);
-  const br = Math.max(3, unitPx(cam) * 0.3 * bs.k);
-  c.drawCircle(bs.X + bz * br * 0.6, bs.Y + bz * br * 0.3, br, fill("rgba(0,0,0,0.3)"));
-  c.drawCircle(bs.X, bs.Y - bz * br * 1.6, br * (1 + bz * 0.06), fill("#ffffff"));
-  c.drawCircle(bs.X, bs.Y - bz * br * 1.6, br * (1 + bz * 0.06), stroke("#222222", 1));
+  paintBall(c, cam, bp, bz, W, H);
 
   // The aim: an arrow from the ball the opposite way to the drag, as long as the power.
   if (d.drag && d.phase === "aim") {
@@ -108,6 +110,21 @@ export function paintPitch(c: SkCanvas, d: MatchDriver, kits: MatchKits, W: numb
   }
 }
 
+/**
+ * The new view's ball (CanvasMatch drawBall → drawMatchBall): CanvasMatch's BALL_PX
+ * (a man's scale: unit / the zoom divisor × 0.5 × NEW_BALL_SCALE), lifted by its height
+ * and grown a little as it climbs, the panels turned by how far it has rolled.
+ */
+function paintBall(c: SkCanvas, cam: Cam, p: { x: number; y: number }, z: number, W: number, H: number) {
+  const s = toScreen(cam, p);
+  const h = Math.max(0, z);
+  const r = Math.max(3, (unitPx(cam) / BALL_DIV) * 0.5 * NEW_BALL_SCALE * s.k) * (1 + Math.min(h, 8) * 0.09);
+  // Height drawn straight up the screen at the pitch's own scale (CanvasMatch heightScale).
+  const up = h * unitPx(cam) * s.k;
+  const g = createCtx2D(sk(), c, { width: W, height: H }) as unknown as CanvasRenderingContext2D;
+  drawMatchBall(g, s.X, s.Y, s.Y - up, r, (p.x + p.y) * 1.7, h, 1);
+}
+
 function drawDribble(c: SkCanvas, d: MatchDriver, cam: Cam, kits: MatchKits) {
   const run = d.td!;
   const home = d.setup.fixture.home !== false;
@@ -118,6 +135,5 @@ function drawDribble(c: SkCanvas, d: MatchDriver, cam: Cam, kits: MatchKits) {
   const you = { x: run.x, y: run.y };
   queue.push({ y: toScreen(cam, you).Y, draw: () => drawMan(c, cam, "you", you, "you", ours, true) });
   queue.sort((a, q) => a.y - q.y).forEach((f) => f.draw());
-  const bs = toScreen(cam, { x: run.x + 0.3, y: run.y - 0.6 });
-  c.drawCircle(bs.X, bs.Y, Math.max(3, unitPx(cam) * 0.3 * bs.k), fill("#ffffff"));
+  paintBall(c, cam, { x: run.x + 0.3, y: run.y - 0.6 }, 0, cam.W, cam.H);
 }
