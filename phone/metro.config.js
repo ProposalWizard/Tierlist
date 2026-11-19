@@ -24,6 +24,8 @@ config.resolver.assetExts = [...config.resolver.assetExts, "glb"];
 const PHONE_GLTF = path.join(__dirname, "src/three/GLTFLoader.ts");
 const PHONE_MESHOPT = path.join(__dirname, "src/three/meshopt.ts");
 const LIB_MESHOPT = path.join(root, "lib/star/three3d/meshopt");
+const WEB_DIR = path.join(__dirname, "src/web") + path.sep;
+const WEB_SKIA = path.join(WEB_DIR, "skia.tsx");
 const upstream = config.resolver.resolveRequest;
 // ONE React: the game's files in lib/ sit next to the WEBSITE's packages (React 18),
 // so `import "react"` from lib/ found that copy while the app runs its own (React 19).
@@ -37,6 +39,11 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     return upstream ? upstream(ctx, moduleName, platform) : context.resolveRequest(ctx, moduleName, platform);
   }
   const from = context.originModulePath || "";
+  // Browser only (the look check, tools/look): Skia's Canvas through src/web/skia.tsx.
+  // The Android bundle is never redirected.
+  if (platform === "web" && moduleName === "@shopify/react-native-skia" && !from.startsWith(WEB_DIR) && !from.includes(`${path.sep}node_modules${path.sep}`)) {
+    return { type: "sourceFile", filePath: WEB_SKIA };
+  }
   if (moduleName === "three/examples/jsm/loaders/GLTFLoader.js" && from !== PHONE_GLTF) {
     return { type: "sourceFile", filePath: PHONE_GLTF };
   }
