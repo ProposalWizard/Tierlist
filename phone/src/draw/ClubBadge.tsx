@@ -1,3 +1,4 @@
+import { useRiskyPart } from "../safety";
 /**
  * <ClubBadge club kit? size? shadow? />: A CLUB'S BADGE, AS THE WEBSITE DRAWS IT.
  *
@@ -37,7 +38,13 @@ function svgObject(club: string, size: number) {
   return { svg: o, w, h };
 }
 
-export function ClubBadge({ club, size = 28, shadow = false }: { club: string; kit?: Kit; size?: number; shadow?: boolean }) {
+export function ClubBadge(props: { club: string; kit?: Kit; size?: number; shadow?: boolean }) {
+  const ok = useRiskyPart("badges", { settleMs: 3000 });
+  const size = props.size ?? 28;
+  if (!ok) return <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: "#1a2b24", borderWidth: 2, borderColor: "#f5c542" }} />;
+  return <DrawnClubBadge {...props} />;
+}
+function DrawnClubBadge({ club, size = 28, shadow = false }: { club: string; kit?: Kit; size?: number; shadow?: boolean }) {
   const { svg, w, h } = useMemo(() => svgObject(club, size), [club, size]);
   if (!svg) return <View style={{ width: size, height: size }} />;
   const pad = shadow ? 2 : 0;

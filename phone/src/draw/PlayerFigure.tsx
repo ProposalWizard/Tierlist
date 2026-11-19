@@ -1,3 +1,4 @@
+import { useRiskyPart } from "../safety";
 /**
  * <PlayerFigure career width height ... />: YOUR PLAYER IN HIS CLUB KIT — the
  * website's PlayerAvatar (components/star/PlayerAvatar.tsx: the Home hero
@@ -82,7 +83,12 @@ export function fittedHead(url: string): Promise<FittedHead | null> {
   return p;
 }
 
-export function PlayerFigure({ career, width, height, ball = true, look = AVATAR_STYLE, celebrate = false, view = "front", faceFit = true }: {
+export function PlayerFigure(props: Parameters<typeof DrawnPlayerFigure>[0]) {
+  const ok = useRiskyPart("player-drawing", { delayMs: 300, settleMs: 3000 });
+  if (!ok) return <View style={{ width: props.width, height: props.height }} />;
+  return <DrawnPlayerFigure {...props} />;
+}
+function DrawnPlayerFigure({ career, width, height, ball = true, look = AVATAR_STYLE, celebrate = false, view = "front", faceFit = true }: {
   career: CareerState; width: number; height: number; ball?: boolean;
   look?: AvatarStyle; celebrate?: boolean; view?: "front" | "back"; faceFit?: boolean;
 }) {

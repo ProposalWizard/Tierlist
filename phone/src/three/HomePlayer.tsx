@@ -1,3 +1,4 @@
+import { useRiskyPart } from "../safety";
 /**
  * YOUR PLAYER ON HOME AND THE TITLE SCREEN — the one hook (the website's
  * components/star/HomePlayer.tsx): a box (width × height, his boots on its
@@ -24,6 +25,8 @@ function rgba(hex: string, a: number): string {
 
 export function HomePlayer({ career, width, height, where }: { career: CareerState; width: number; height: number; where: "home" | "title" }) {
   const style = usePlayerStyleLook();
+  // 3D starts a moment after the rest of Home, so a crash in it is named on its own (safety.ts)
+  const ok3d = useRiskyPart("3d", { delayMs: 2500, settleMs: 6000 });
   const club = career.player.club;
   const kit = kitsOf(club, career.clubKits?.[club]).home;
   const drawn = <PlayerFigure career={career} width={width} height={height} />;
@@ -40,7 +43,7 @@ export function HomePlayer({ career, width, height, where }: { career: CareerSta
           <RadialGradient c={vec(poolW / 2, height)} r={poolW / 2} colors={[rgba("#ffffff", 0.5), rgba(kit.shirt, 0.45), rgba(kit.shirt, 0)]} positions={[0, 0.55, 1]} />
         </Oval>
       </Canvas>
-      {style === "new"
+      {style === "new" && ok3d
         ? <HomePlayer3D career={career} width={width} height={height} where={where} kitShirt={kit.shirt} kitTrim={kit.trim} fallback={drawn} />
         : drawn}
     </View>

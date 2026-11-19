@@ -1,3 +1,4 @@
+import { partOff } from "../safety";
 /**
  * A PLAYER'S HEADSHOT, SHOT FROM THE 3D MODEL (the website's
  * components/star/Headshot3D.tsx, on the phone).
@@ -106,6 +107,7 @@ export function Headshot3D({ id, you, position, skin, kit, size, frame = "head",
   /** What shows until the headshot lands (his drawn head). */
   fallback: ReactNode;
 }) {
+  if (partOff("3d")) return <>{fallback}</>;
   const yourPick = useSyncExternalStore(subscribeToonYou, toonYou, toonYou);
   const isYou = !!you || id === "you";
   const look = useMemo(
