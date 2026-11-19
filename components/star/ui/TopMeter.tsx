@@ -2,6 +2,7 @@
 import type React from "react";
 import { useId, useState } from "react";
 import { SquareBar } from "./Flat";
+import { MONEY_SIGN } from "@/lib/star/money";
 
 /**
  * THE TOP-OF-SCREEN METER (Harry, 2 Oct 2026, v0.24, P1-37/P1-38: "have the
@@ -119,13 +120,13 @@ function DrawnIcon({ name }: { name: HudIconName }) {
       <circle cx="16" cy="16" r="3" fill="#fff" opacity=".8" />
     </svg>
   );
-  // money: a gold coin with the game's ★.
+  // money: a gold coin with the game's $.
   return (
     <svg viewBox="0 0 32 32" className="absolute inset-0 h-full w-full" style={shadow}>
       <defs><radialGradient id={`m${id}`} cx=".35" cy=".3" r=".85"><stop offset="0" stopColor="#fef08a" /><stop offset=".6" stopColor="#f59e0b" /><stop offset="1" stopColor="#92400e" /></radialGradient></defs>
       <circle cx="16" cy="16" r="13" fill={`url(#m${id})`} stroke="#5b3a00" strokeWidth="1.6" />
       <circle cx="16" cy="16" r="9.5" fill="none" stroke="#fff7d6" strokeOpacity=".55" strokeWidth="1" />
-      <path d="M16 9.5l1.9 3.9 4.3.6-3.1 3 .7 4.3L16 19.3l-3.8 2 .7-4.3-3.1-3 4.3-.6Z" fill="#fffbeb" stroke="#92400e" strokeWidth=".8" strokeLinejoin="round" />
+      <text x="16" y="21.6" textAnchor="middle" fontSize="15" fontWeight="900" fill="#fffbeb" stroke="#92400e" strokeWidth=".8">{MONEY_SIGN}</text>
     </svg>
   );
 }

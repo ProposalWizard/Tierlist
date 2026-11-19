@@ -14,7 +14,7 @@ import { kitsOf, type Kit } from "@/lib/star/kits";
 import { facilitiesFor } from "@/lib/star/facilities";
 import { playerMarketValue } from "@/lib/star/marketValue";
 import { interestedClubs, type TransferInterest } from "@/lib/star/transferMarket";
-import { formatMoney, formatMoneyPrecise } from "@/lib/star/money";
+import { formatMoney, formatMoneyPrecise, MONEY_SIGN } from "@/lib/star/money";
 import NegotiationScreen from "./NegotiationScreen";
 import OwnedLineupEditor from "./OwnedLineupEditor";
 import type { NegotiationState } from "@/lib/star/negotiation";
@@ -243,7 +243,7 @@ function Market({
             onClick={() => setSortBy("value")}
             className={`px-2.5 py-2 text-[10px] font-black ${sortBy === "value" ? "bg-emerald-600 text-white" : "bg-gray-800 text-white/70"}`}
           >
-            ★ Value
+            $ Value
           </button>
         </div>
       </div>
@@ -347,10 +347,10 @@ function StakeControls({
       {stake && (
         <div className="text-[11px] text-white font-semibold">
           You own <span className="text-white font-bold">{stakePct.toFixed(stakePct < 1 ? 3 : 1)}%</span>, bought in at{" "}
-          <span className="text-white font-bold">★{money(stake.avgBuyValuation)}</span> full value —
+          <span className="text-white font-bold">{MONEY_SIGN}{money(stake.avgBuyValuation)}</span> full value —
           {" "}
           <span className={profit >= 0 ? "text-emerald-300 font-bold" : "text-red-300 font-bold"}>
-            {profit >= 0 ? "+" : ""}★{money(Math.abs(profit))} unrealised
+            {profit >= 0 ? "+" : ""}{MONEY_SIGN}{money(Math.abs(profit))} unrealised
           </span>
         </div>
       )}
@@ -358,7 +358,7 @@ function StakeControls({
       {pending && (
         <div className="kit-slam rounded-xl bg-amber-950/70 p-3 space-y-2" style={{ boxShadow: "inset 0 0 0 2px rgba(251,191,36,.8), 0 0 22px rgba(251,191,36,.25)" }}>
           <div className="text-sm font-black text-white text-center">
-            {pending.kind === "buy" ? "Buy" : "Sell"} {pending.pct.toFixed(pending.pct < 1 ? 3 : 1)}% of {club} for ★{money(pending.amount)}?
+            {pending.kind === "buy" ? "Buy" : "Sell"} {pending.pct.toFixed(pending.pct < 1 ? 3 : 1)}% of {club} for {MONEY_SIGN}{money(pending.amount)}?
           </div>
           {pending.kind === "buy" && stakePct + pending.pct >= MAJORITY_THRESHOLD && stakePct < MAJORITY_THRESHOLD && (
             <div className="text-[11px] font-black text-emerald-300 text-center">This makes you the majority owner.</div>
@@ -385,7 +385,7 @@ function StakeControls({
       <div>
         <div className="mb-1 text-[10px] font-black uppercase tracking-widest text-white font-semibold">Buy</div>
         <div className="flex items-center gap-2">
-          <span className="text-yellow-300 font-black text-sm">★</span>
+          <span className="text-yellow-300 font-black text-sm">{MONEY_SIGN}</span>
           {/* Reported directly: a plain `type="number"` input can never
               show thousands separators at all — a browser number input
               rejects any non-digit character in its own displayed value,
@@ -429,11 +429,11 @@ function StakeControls({
           onClick={() => setPending({ kind: "buy", pct: buyPct, amount: clampedBuy })}
           className="mt-2 w-full py-2 rounded-lg kit-btn kit-btn-green disabled:opacity-40 font-black text-xs"
         >
-          Buy ★{money(clampedBuy)} ({buyPct.toFixed(buyPct < 1 ? 3 : 1)}%)
+          Buy {MONEY_SIGN}{money(clampedBuy)} ({buyPct.toFixed(buyPct < 1 ? 3 : 1)}%)
         </button>
         {maxBuySpend < Math.round(valuation) && (
           <div className="mt-1 text-[9px] text-center text-white font-semibold">
-            Most you can afford: ★{money(maxBuySpend)} ({((maxBuySpend / valuation) * 100).toFixed(2)}%)
+            Most you can afford: {MONEY_SIGN}{money(maxBuySpend)} ({((maxBuySpend / valuation) * 100).toFixed(2)}%)
           </div>
         )}
       </div>
@@ -468,7 +468,7 @@ function StakeControls({
             onClick={() => setPending({ kind: "sell", pct: sellPct, amount: sellAmount })}
             className="mt-2 w-full py-2 rounded-lg kit-btn kit-btn-red font-black text-xs"
           >
-            Sell {Math.round(sellFraction * 100)}% of your stake ({sellPct.toFixed(sellPct < 1 ? 3 : 1)}% of the club) for ★{money(sellAmount)}
+            Sell {Math.round(sellFraction * 100)}% of your stake ({sellPct.toFixed(sellPct < 1 ? 3 : 1)}% of the club) for {MONEY_SIGN}{money(sellAmount)}
           </button>
         </div>
       )}
@@ -513,7 +513,7 @@ function Portfolio({
           <div className="text-lg font-black text-yellow-300 flex items-center gap-1"><StarIcon />{money(totalValue)}</div>
         </div>
         <div className={`text-sm font-black ${totalProfit >= 0 ? "text-emerald-300" : "text-red-300"}`}>
-          {totalProfit >= 0 ? "+" : ""}★{money(Math.abs(totalProfit))}
+          {totalProfit >= 0 ? "+" : ""}{MONEY_SIGN}{money(Math.abs(totalProfit))}
         </div>
       </div>
       <div className="space-y-1.5">
@@ -531,9 +531,9 @@ function Portfolio({
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-black text-yellow-300">★{money(value * (i.percent / 100))}</div>
+                  <div className="text-xs font-black text-yellow-300">{MONEY_SIGN}{money(value * (i.percent / 100))}</div>
                   <div className={`text-[10px] font-bold ${profit >= 0 ? "text-emerald-300" : "text-red-300"}`}>
-                    {profit >= 0 ? "+" : ""}★{money(Math.abs(profit))}
+                    {profit >= 0 ? "+" : ""}{MONEY_SIGN}{money(Math.abs(profit))}
                   </div>
                 </div>
               </div>
@@ -663,7 +663,7 @@ function BoardroomList({ clubs, career, onOpen }: { clubs: string[]; career: Car
         >
           <div>
             <div className="font-black text-white text-sm">{club}</div>
-            <div className="text-[10px] text-white/90">Budget: ★{money(ownedClubState(career, club).budget)}</div>
+            <div className="text-[10px] text-white/90">Budget: {MONEY_SIGN}{money(ownedClubState(career, club).budget)}</div>
           </div>
           <span className="text-white font-semibold">→</span>
         </button>
@@ -775,7 +775,7 @@ function Boardroom({
           <div className="text-[10px] font-black uppercase tracking-widest text-white/80 mb-1">Confirm sale</div>
           <div className="font-black text-white text-lg">{pendingSale.playerName}</div>
           <div className="text-[10px] font-bold text-white/70 mt-1">to {pendingSale.buyerClub}</div>
-          <div className="text-yellow-300 font-black text-sm mt-1">for ★{money(pendingSale.fee)}</div>
+          <div className="text-yellow-300 font-black text-sm mt-1">for {MONEY_SIGN}{money(pendingSale.fee)}</div>
         </div>
         <button
           onClick={() => { const sale = pendingSale; setPendingSale(null); runAction(onSellPlayer(club, sale.playerId, sale.fee, sale.buyerClub)); }}
@@ -853,8 +853,8 @@ function Boardroom({
                   <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">
                     Wants him as a {i.roleIntent} ·{" "}
                     {inTalks
-                      ? `★${money(inTalks.theirPosition)} current offer`
-                      : `★${money(i.expectedOffer)} expected offer`}
+                      ? `${MONEY_SIGN}${money(inTalks.theirPosition)} current offer`
+                      : `${MONEY_SIGN}${money(i.expectedOffer)} expected offer`}
                   </div>
                 </div>
                 <button
@@ -899,7 +899,7 @@ function Boardroom({
         <div className="mt-2 flex items-center gap-2">
           <div className="flex-1 kit-input rounded-lg px-2 py-1.5 flex items-center justify-between">
             <span className="text-[10px] font-bold text-white font-semibold">Budget</span>
-            <span className="font-black text-yellow-300 text-sm">★{money(state.budget)}</span>
+            <span className="font-black text-yellow-300 text-sm">{MONEY_SIGN}{money(state.budget)}</span>
           </div>
         </div>
         <div className="mt-2 flex items-center gap-2">
@@ -1011,7 +1011,7 @@ function Boardroom({
                 </div>
               </div>
               <span className={`shrink-0 font-black text-sm ${t.direction === "in" ? "text-red-300" : "text-emerald-300"}`}>
-                {t.direction === "in" ? "-" : "+"}★{formatMoneyPrecise(t.fee)}
+                {t.direction === "in" ? "-" : "+"}{MONEY_SIGN}{formatMoneyPrecise(t.fee)}
               </span>
             </div>
           ))}
@@ -1680,7 +1680,7 @@ function SignPlayerPanel({
                   would show you every player within that limit... but would
                   show everyone below" — a single ceiling, no minimum. */}
               <div className="flex items-center gap-1">
-                <span className="text-yellow-300 font-black text-xs">★</span>
+                <span className="text-yellow-300 font-black text-xs">{MONEY_SIGN}</span>
                 <input
                   type="text" inputMode="numeric"
                   placeholder="No cap"
@@ -1733,7 +1733,7 @@ function SignPlayerPanel({
             <div>
               <div className="text-sm font-bold text-white">{p.name}</div>
               <div className="text-[10px] text-white font-semibold">
-                {p.position} · OVR {p.overall} · ★{formatMoney(p.marketValue)} · {p.fromClub === FREE_AGENTS_CLUB ? "Free agent" : p.fromClub}
+                {p.position} · OVR {p.overall} · {MONEY_SIGN}{formatMoney(p.marketValue)} · {p.fromClub === FREE_AGENTS_CLUB ? "Free agent" : p.fromClub}
               </div>
             </div>
             <button

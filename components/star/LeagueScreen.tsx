@@ -13,7 +13,7 @@ import { sortEuro, knockoutSlots } from "@/lib/star/euro";
 import { goldenBootRace, assistRace } from "@/lib/star/recognition";
 import { groupedGoalLines, shortClub } from "@/lib/star/media/grammar";
 import { playerMarketValue } from "@/lib/star/marketValue";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import { faceOrFake } from "@/lib/star/fakeFaces";
 import { kitsOf } from "@/lib/star/kits";
 import ImageWithFallback from "@/components/ImageWithFallback";
@@ -918,7 +918,7 @@ function ClubLeagueScreen({ career, compact = false, view: forcedView, hideTabs 
                     <div className="truncate">
                       <div className="truncate font-black">{p.name}{p.isYou ? " ★" : ""}</div>
                       <div className="truncate text-[8px] font-bold text-white/70">
-                        {p.age !== undefined ? `Age ${p.age}` : ""}{p.age !== undefined ? " · " : ""}★{formatMoney(p.marketValue)}
+                        {p.age !== undefined ? `Age ${p.age}` : ""}{p.age !== undefined ? " · " : ""}{MONEY_SIGN}{formatMoney(p.marketValue)}
                       </div>
                     </div>
                     <div className="flex justify-center">

@@ -7,7 +7,7 @@
  *
  *   <ShakeX trigger={lost}>…the table…</ShakeX>          a loss: a sideways shudder
  *   <LossFlash trigger={lost} />                          …and a red edge flash
- *   <WinCelebration trigger={won} amount={500} format={(n) => `+★${formatMoney(n)}`} colors={[…]} />
+ *   <WinCelebration trigger={won} amount={500} format={(n) => `+$${formatMoney(n)}`} colors={[…]} />
  *   <Badge count={3} />                                   a notification badge that pops in
  *   const [flyLayer, fly] = useFly();  fly(fromEl, toEl, <KibCanIcon …/>)  an item flying into your inventory
  *

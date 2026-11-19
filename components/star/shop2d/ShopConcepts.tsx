@@ -4,7 +4,7 @@
  * SHOP LAYOUT CONCEPTS — throwaway look prototypes (Harry, 9 Oct 2026, on the
  * new 2D shop: "70% of this isn't even the shop, we need to think outside the
  * box"). /star-dev/media-lab?shopmock=A|B|C|D. Not the real shop: same items,
- * prices and pictures, a sample ★1,000,000 balance, and a fake buy sheet.
+ * prices and pictures, a sample $1,000,000 balance, and a fake buy sheet.
  *
  *   A  Showroom swipe   one item fills the screen, swipe sideways, dock at the bottom
  *   B  Dense grid       one 48 px strip on top, three-across grid under it
@@ -17,7 +17,7 @@
 import { useMemo, useRef, useState } from "react";
 import { KIB_CANS, kibCanPrice, kibCanEffectLabel, BOOTS_ALL_LEVELS, LIFESTYLE_ALL_LEVELS, baseIdOf } from "@/lib/star/shopData";
 import { styleGroupOf, levelName } from "@/lib/star/lifestyleLevels";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import { art, tierColour } from "./parts";
 
 export type MockId = "A" | "B" | "C" | "D";
@@ -66,7 +66,7 @@ function buildItems(): MockItem[] {
   return out;
 }
 
-const money = (n: number) => `★${formatMoney(n)}`;
+const money = (n: number) => `${MONEY_SIGN}${formatMoney(n)}`;
 
 /** The fake buy sheet every concept shares (the real one would be ConfirmSheet). */
 function BuySheet({ item, onClose }: { item: MockItem | null; onClose: () => void }) {

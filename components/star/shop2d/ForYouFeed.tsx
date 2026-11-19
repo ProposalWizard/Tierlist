@@ -15,6 +15,7 @@
 import { useEffect, useRef, useState } from "react";
 import GoalVideo from "../media/GoalVideoSwitch";
 import type { CatId, View } from "./ShowroomShop";
+import { MONEY_SIGN } from "@/lib/star/money";
 
 export interface FeedItem { cat: CatId; key: string; accent: string; label: string }
 export type FeedEntry = { ad: false; item: FeedItem } | { ad: true; id: string };
@@ -143,7 +144,7 @@ function ItemPost({ item, v, own, lock, onDetails, onSeeAll }: {
         <RoundButton onClick={onSeeAll} data="see-all" icon={<span className="text-[15px] leading-none">▦</span>} label="See all" />
         {!locked && (
           <RoundButton gold={!v.button.disabled} disabled={v.button.disabled} onClick={v.button.run} data="buy"
-            icon={<span className="text-[14px] leading-none">{v.button.label === "Upgrade" ? "▲" : "★"}</span>}
+            icon={<span className="text-[14px] leading-none">{v.button.label === "Upgrade" ? "▲" : MONEY_SIGN}</span>}
             label={v.button.disabled ? (v.button.price !== undefined ? "Save up" : "Owned") : v.button.label} />
         )}
       </div>

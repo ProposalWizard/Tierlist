@@ -40,6 +40,7 @@ import { owns, priceNow, type StoreState, type Currency } from "@/lib/star/store
 import {
   COIN_PACKS, coinsToStars, coinValueLine, packBonusPercent, packCoinsNow, formatPounds, COINS_PER_WAGE_WEEK,
 } from "@/lib/star/store/coins";
+import { MONEY_SIGN } from "@/lib/star/money";
 
 export type StoreTab = "daily" | "animations" | "accessories" | "boosts" | "coins";
 const TABS: { id: StoreTab; label: string }[] = [
@@ -132,7 +133,7 @@ function useDelta(v: number): { n: number; text: string; up: boolean } {
 }
 
 function Stars({ v, className = "" }: { v: number; className?: string }) {
-  return <span className={`tabular-nums ${className}`}><span className="text-yellow-300">★</span>{n(v)}</span>;
+  return <span className={`tabular-nums ${className}`}><span className="text-yellow-300">{MONEY_SIGN}</span>{n(v)}</span>;
 }
 function Coins({ v, className = "" }: { v: number; className?: string }) {
   return <span className={`inline-flex items-center gap-1 tabular-nums ${className}`}><CoinIcon className="h-3.5 w-3.5" />{n(v)}</span>;
@@ -300,7 +301,7 @@ export default function StoreView(p: StoreViewProps) {
             <h1 className="text-[20px] font-black uppercase tracking-wide" style={{ textShadow: `0 2px 10px rgba(0,0,0,.7), 0 0 18px ${rgba(glow, 0.5)}` }}>Store</h1>
             {testArea && <span className="rounded-md bg-rose-500/20 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-rose-200">Test</span>}
             <div className="ml-auto flex items-center gap-1.5">
-              <WalletPill value={state.stars} format={n} spent={starsDelta.n} spentText={`${starsDelta.text.slice(0, 1)}★${starsDelta.text.slice(1)}`} spentColor={starsDelta.up ? "#6ee7b7" : "#fca5a5"} />
+              <WalletPill value={state.stars} format={n} spent={starsDelta.n} spentText={`${starsDelta.text.slice(0, 1)}${MONEY_SIGN}${starsDelta.text.slice(1)}`} spentColor={starsDelta.up ? "#6ee7b7" : "#fca5a5"} />
               <WalletPill
                 value={state.coins}
                 format={(v) => `${n(v)} +`}
@@ -412,7 +413,7 @@ export default function StoreView(p: StoreViewProps) {
           {tab === "coins" && (
             <CoinsTab state={state} wage={ctx.weeklyWage} value={value} packs={p.packs}
               onPack={(id) => { const r = p.onPack(id); setToast({ text: r.ok ? "Coins added — test, nothing charged" : r.reason ?? "", ok: r.ok }); }}
-              onSwap={(c) => { const r = p.onSwap(c); setToast({ text: r.ok ? `+★${n(coinsToStars(c, ctx.weeklyWage))}` : r.reason ?? "", ok: r.ok }); }}
+              onSwap={(c) => { const r = p.onSwap(c); setToast({ text: r.ok ? `+${MONEY_SIGN}${n(coinsToStars(c, ctx.weeklyWage))}` : r.reason ?? "", ok: r.ok }); }}
             />
           )}
         </div>
@@ -640,7 +641,7 @@ function CoinsTab({ state, wage, value, packs, onPack, onSwap }: {
       </div>
 
       <div className="mt-5 rounded-2xl p-3" style={cardLook("#fbbf24", 0.2)}>
-        <div className="text-[14px] font-black">Swap Coins for ★</div>
+        <div className="text-[14px] font-black">Swap Coins for {MONEY_SIGN}</div>
         <div className="mb-2 text-[11.5px] font-semibold text-slate-400">At your wage of <Stars v={wage} /> a week.</div>
         <div className="grid grid-cols-3 gap-2">
           {[100, 500, 1000].map((c) => (
@@ -729,7 +730,7 @@ function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote,
                   className="relative overflow-hidden rounded-2xl py-3 text-[15px] font-black text-slate-900 disabled:opacity-35">
                   {state.stars >= price.stars && <Shine loop every={3.5} />}
                   <Stars v={price.stars} className="[&>span]:text-slate-900" />
-                  {percentOff > 0 && <div className="text-[10px] font-bold line-through opacity-60">★{n(full.stars)}</div>}
+                  {percentOff > 0 && <div className="text-[10px] font-bold line-through opacity-60">{MONEY_SIGN}{n(full.stars)}</div>}
                 </PressButton>
                 <PressButton variant="accent" accent="#f59e0b" size="none" onClick={() => onBuy(item.id, "coins")} disabled={state.coins < price.coins}
                   className="rounded-2xl py-3 text-[15px] font-black text-amber-950 disabled:opacity-35">
@@ -739,7 +740,7 @@ function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote,
               </div>
               {state.stars < price.stars && state.coins < price.coins && (
                 <div className="rounded-xl bg-rose-500/15 px-3 py-2 text-center text-[12px] font-black text-rose-200">
-                  Not enough yet: you need ★{n(price.stars - state.stars)} more, or {n(price.coins - state.coins)} more Coins
+                  Not enough yet: you need {MONEY_SIGN}{n(price.stars - state.stars)} more, or {n(price.coins - state.coins)} more Coins
                 </div>
               )}
               <div className="text-center text-[11px] font-semibold text-slate-500">

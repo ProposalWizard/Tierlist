@@ -12,7 +12,7 @@
  *   const [won, fireWon] = useTrigger();
  *   <div className="relative">
  *     <Burst trigger={won} colors={[theme.shirt, theme.trim, "#fde047"]} />
- *     <FloatText trigger={won} text="+★500" color="#fde047" />
+ *     <FloatText trigger={won} text="+$500" color="#fde047" />
  *   </div>
  *   <Shake trigger={used}><KibCanIcon … /></Shake>
  *   <Pop value={count}>×{count}</Pop>              bounces whenever count changes
@@ -65,7 +65,7 @@ export function Burst({ trigger = 1, colors, count = 22, spread = 1, className =
 }
 
 /**
- * A FLOATING LABEL — "+★500", "−1", "+3 PWR" — that pops up and drifts
+ * A FLOATING LABEL — "+$500", "−1", "+3 PWR" — that pops up and drifts
  * away. Centred on `className`'s point inside a `relative` parent.
  * `motion="tick"` is the can's small "−1": a short rise from `className`'s
  * point, not centred.

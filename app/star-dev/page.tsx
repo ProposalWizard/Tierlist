@@ -221,6 +221,7 @@ import CallUpScreen from "@/components/star/CallUpScreen";
 import { tournamentDue, openTournament, applyTournament } from "@/lib/star/tournament";
 import TournamentScreen from "@/components/star/TournamentScreen";
 import { GAME_PATH } from "@/lib/star/gamePath";
+import { MONEY_SIGN } from "@/lib/star/money";
 
 // ── Screens that download only when first opened (speed job D, 9 Oct 2026;
 // lib/star/lazyScreen.ts). Home, the title screen and the match stay in the
@@ -5076,11 +5077,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           marketValue: Math.round(o.weekly * 1.2), mode: "selling", round: 0,
           yourPosition: Math.max(o.weekly + 1, Math.round(o.weekly * 1.25)), theirPosition: o.weekly,
           moodScore: 60, status: "negotiating",
-          log: [`${o.brand} open at ★${o.weekly.toLocaleString()} a week.`],
+          log: [`${o.brand} open at ${MONEY_SIGN}${o.weekly.toLocaleString()} a week.`],
         }}
         onDone={(weekly) => {
           setCareer(settleNegotiation(career, o.id, weekly));
-          noteSponsor(weekly === null ? `${o.brand} walked away.` : `Agreed: ★${Math.round(weekly).toLocaleString()} a week. Sign it to make it yours.`);
+          noteSponsor(weekly === null ? `${o.brand} walked away.` : `Agreed: ${MONEY_SIGN}${Math.round(weekly).toLocaleString()} a week. Sign it to make it yours.`);
           setSponsorNegId(null);
           setPhase("sponsors");
         }}

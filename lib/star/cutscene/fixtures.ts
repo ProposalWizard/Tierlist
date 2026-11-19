@@ -62,7 +62,7 @@ function signing(): CutsceneScript {
     id: "fixture-signing", title: "Contract signing (hand-made)", duration: c.duration,
     set: { location: "office", mood: "golden-hour" }, cast: c.cast, props: c.props, beats: c.beats,
     tracks: [...c.tracks, ...cams, ...frameTracks(c.duration, ev.stakes), { type: "caption", at: b4.at + 0.4, dur: 2.6, text: "{player} · {club}", style: "lower-third" }],
-    seed: 4, text: { seasons: "3", wage: "★2,500" }, source: { kind: "fixture", event: ev },
+    seed: 4, text: { seasons: "3", wage: "$2,500" }, source: { kind: "fixture", event: ev },
   };
 }
 

@@ -29,7 +29,7 @@ import { LIFESTYLE_ALL_LEVELS, baseIdOf } from "@/lib/star/shopData";
 import { fameGainFromBuying, isWornOut, itemLifeSeasons, ownedFame, OWNED_FAME_MAX } from "@/lib/star/fame";
 import { SHOP_TIERS, weeksOfWallet } from "@/lib/star/economy";
 import { divisionOf } from "@/lib/star/calendar";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import { STYLE_GROUPS, styleGroupOf, levelName, familyName, fameFromOwned, fameText, type StyleGroup } from "@/lib/star/lifestyleLevels";
 import StylePicture, { LEVEL_TILE } from "./StylePicture";
 import ShopSheet, { weeksText } from "./ShopSheet";
@@ -220,7 +220,7 @@ function ItemCard({ base, item, mine, ownLv, worn, fame, price, onOpen, lock = n
           <span className="text-[10.5px] font-black text-amber-300">{fameText(fame)} fame</span>
         </div>
         <div className="text-[10px] font-black text-yellow-200/90">
-          {yours ? (price === null ? "Top level" : `Next ★${formatMoney(price)}`) : `★${formatMoney(price ?? item.price)}`}
+          {yours ? (price === null ? "Top level" : `Next ${MONEY_SIGN}${formatMoney(price)}`) : `${MONEY_SIGN}${formatMoney(price ?? item.price)}`}
         </div>
       </div>
     </button>
@@ -319,7 +319,7 @@ function ItemSheet({ career, levels, level, setLevel, onClose, onBuy }: {
       )}
 
       <div className="mt-2 flex items-center justify-between px-1">
-        <div className="text-[18px] font-black text-yellow-300">★{formatMoney(it.price)}</div>
+        <div className="text-[18px] font-black text-yellow-300">{MONEY_SIGN}{formatMoney(it.price)}</div>
         <div className="text-[10px] font-bold text-white/70">{weeksText(weeksOfWallet(it.price, career.contract.wage))} of your income</div>
       </div>
       <PressButton
@@ -331,7 +331,7 @@ function ItemSheet({ career, levels, level, setLevel, onClose, onBuy }: {
         className="relative mt-1.5 w-full overflow-hidden rounded-2xl py-3 text-[14px] font-black"
       >
         {canBuy && <Shine loop every={4.5} />}
-        {blocked ? (ownLv === lv ? "You own this one" : `You own level ${ownLv}`) : career.money < it.price ? "Not enough money" : `${mine && !worn ? "Upgrade" : mine && worn && levels.length === 1 ? "Repair" : "Buy"} — ★${formatMoney(it.price)}`}
+        {blocked ? (ownLv === lv ? "You own this one" : `You own level ${ownLv}`) : career.money < it.price ? "Not enough money" : `${mine && !worn ? "Upgrade" : mine && worn && levels.length === 1 ? "Repair" : "Buy"} — ${MONEY_SIGN}${formatMoney(it.price)}`}
       </PressButton>
       {mine && !worn && !blocked && <div className="mt-1 text-center text-[10px] font-bold text-white/70">Replaces your {levelName(mine)}.</div>}
     </ShopSheet>
@@ -386,13 +386,13 @@ export function SaveUp({ have, need, wage }: { have: number; need: number; wage:
   return (
     <div className="mt-2 rounded-xl bg-red-500/10 p-2 ring-1 ring-red-400/40">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[12px] font-black text-white">You need ★{formatMoney(short)} more</span>
+        <span className="text-[12px] font-black text-white">You need {MONEY_SIGN}{formatMoney(short)} more</span>
         <span className="text-[10.5px] font-bold text-white/80">{weeksText(weeks)} of income</span>
       </div>
       <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-black/40">
         <div className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-300" style={{ width: `${pct}%` }} />
       </div>
-      <div className="mt-1 text-[10px] font-bold text-white/80">You have ★{formatMoney(have)}. Play matches to earn your wage.</div>
+      <div className="mt-1 text-[10px] font-bold text-white/80">You have {MONEY_SIGN}{formatMoney(have)}. Play matches to earn your wage.</div>
     </div>
   );
 }

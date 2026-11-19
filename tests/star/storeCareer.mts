@@ -78,7 +78,7 @@ check(ownedFreeKickRunups(e2.career.ownedAnimations).some((s) => s.id === fkId),
 // ── Not enough money ──────────────────────────────────────────────────────
 const poor = { ...c0, money: 0, coins: 0 };
 const f1 = careerStoreBuy(poor, penaltyId, "stars", DAY);
-check(!f1.ok && f1.career === poor && f1.reason === "Not enough ★.", "can't buy with no ★, and nothing changes");
+check(!f1.ok && f1.career === poor && f1.reason === "Not enough money.", "can't buy with no ★, and nothing changes");
 check(!careerStoreBuy(poor, penaltyId, "coins", DAY).ok, "can't buy with no Coins");
 
 // ── A KIB can lands in kibCans, at the real shop's price ──────────────────

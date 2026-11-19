@@ -6,6 +6,7 @@ import { rgba } from "./theme";
 import BackButton from "./BackButton";
 import { useCountUp } from "./motion";
 import { FloatText, Pop } from "./juice";
+import { MONEY_SIGN } from "@/lib/star/money";
 
 /**
  * A FULL SCREEN IN THE HOME SCREEN'S LOOK — for the screens that replace the
@@ -92,7 +93,7 @@ export default function ScreenShell({ glow, title, icon, onBack, backLabel = "Ba
 
 /**
  * YOUR MONEY, in a gold pill that counts down when you spend and floats the
- * amount up off it. `spent` is a counter; `spentText` the label ("−★12k").
+ * amount up off it. `spent` is a counter; `spentText` the label ("−$12k").
  * The ref is the target an item flies into when there is no better one.
  */
 export const WalletPill = forwardRef<HTMLDivElement, {
@@ -114,7 +115,7 @@ export const WalletPill = forwardRef<HTMLDivElement, {
         className={`${onClick ? "kib-press " : ""}flex items-center gap-1 rounded-full bg-gradient-to-b from-white/[0.16] to-white/[0.05] px-2.5 py-1.5 text-[13px] font-black tabular-nums text-yellow-200`}
         style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px rgba(253,224,71,.28), 0 6px 14px -8px rgba(0,0,0,.9)" }}
       >
-        {icon ?? <span className="text-yellow-300">★</span>}
+        {icon ?? <span className="text-yellow-300">{MONEY_SIGN}</span>}
         <Pop value={spent} className="leading-none">{format(Math.round(shown))}</Pop>
       </Tag>
       <FloatText trigger={spent} text={spentText} color={spentColor} className="left-1/2 top-[115%]" size={15} />

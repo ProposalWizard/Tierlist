@@ -5,7 +5,7 @@ import { kitsOf } from "@/lib/star/kits";
 import { seasonStartYear } from "@/lib/star/calendar";
 import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
 import { shortClub } from "@/lib/star/media/grammar";
-import { formatMoneyPrecise } from "@/lib/star/money";
+import { formatMoneyPrecise, MONEY_SIGN } from "@/lib/star/money";
 import { KitStyles, PressButton, Shine, CountUp } from "./ui";
 import { useLater } from "./ui/Screen";
 
@@ -33,7 +33,7 @@ interface Deal {
   player: string;
   counterpart: string;
   overall: number;
-  detail: string; // "★28m" / "Free Transfer" / "Loan, back 2028/29"
+  detail: string; // "$28m" / "Free Transfer" / "Loan, back 2028/29"
   loan: boolean;
   unhappy: boolean;
 }
@@ -82,7 +82,7 @@ function buildBusiness(career: CareerState): ClubBusiness[] {
   for (const t of career.league) get(t.name);
 
   for (const m of career.leagueTransferNews ?? []) {
-    const detail = m.fee > 0 ? `★${formatMoneyPrecise(m.fee)}` : "Free Transfer";
+    const detail = m.fee > 0 ? `${MONEY_SIGN}${formatMoneyPrecise(m.fee)}` : "Free Transfer";
     if (m.to !== FREE_AGENTS_CLUB) get(m.to)?.in.push({ player: m.player, counterpart: m.from, overall: m.overall, detail, loan: false, unhappy: m.unhappy });
     if (m.from !== FREE_AGENTS_CLUB) get(m.from)?.out.push({ player: m.player, counterpart: m.to, overall: m.overall, detail, loan: false, unhappy: m.unhappy });
   }
@@ -218,7 +218,7 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
           </h1>
           <p className="mt-1.5 text-[11px] font-bold text-white/80" style={{ textShadow: NAME_OUTLINE }}>
             <span className="font-black text-amber-300"><CountUp value={countIn ? totalDeals : 0} ms={700} /></span> deal{totalDeals === 1 ? "" : "s"} done across the division
-            {totalSpend > 0 ? ` · ★${formatMoneyPrecise(totalSpend)} changed hands` : ""}.
+            {totalSpend > 0 ? ` · ${MONEY_SIGN}${formatMoneyPrecise(totalSpend)} changed hands` : ""}.
           </p>
         </div>
 

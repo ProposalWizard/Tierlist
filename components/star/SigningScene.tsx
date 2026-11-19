@@ -13,6 +13,7 @@ import ClubBadge from "./ClubBadge";
 import { Burst, KitStyles } from "./ui";
 import { useScannedPortrait } from "./useScannedPortrait";
 import { SIGNATURE_D, type ContractTerms } from "./TrialReward";
+import { MONEY_SIGN } from "@/lib/star/money";
 
 /**
  * THE SIGNING — you and the manager, sat across a desk, and you sign.
@@ -57,7 +58,7 @@ const ZOOM_MS = 450, SIGN_MS = 1200, OUT_MS = 450, CHEER_MS = 500;
 
 type Beat = "idle" | "zoom" | "sign" | "shake" | "done";
 
-const money = (n: number) => `★${Math.round(n).toLocaleString("en-GB")}`;
+const money = (n: number) => `${MONEY_SIGN}${Math.round(n).toLocaleString("en-GB")}`;
 
 /** Bumps when the readable copies of these pictures have loaded. */
 function useFaceTicks(urls: string[]): number {

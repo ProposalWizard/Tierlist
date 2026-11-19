@@ -26,7 +26,7 @@ import { hasBootDeal, bootPrice } from "@/lib/star/sponsorDeals";
 import { divisionOf } from "@/lib/star/calendar";
 import { SHOP_TIERS, weeksOfWallet } from "@/lib/star/economy";
 import { ruleBookFor } from "@/lib/star/ruleBook";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import { blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
 import { fameGainFromBuying, isWornOut, itemLifeSeasons, ownedFame, OWNED_FAME_MAX } from "@/lib/star/fame";
 import { STYLE_GROUPS, styleGroupOf, levelName, familyName, fameFromOwned, fameText, type StyleGroup } from "@/lib/star/lifestyleLevels";
@@ -97,9 +97,9 @@ export default function StoreShop({ career, kind, onBack, onBuyKib, onBuyBoot, o
   const setTab = (t: StoreTab) => { if (onKind) onKind(t); else setTabLocal(t); };
   const homeLevel = Math.max(1, SHOP_TIERS.findIndex((t) => t.anchor === divisionOf(career)) + 1);
 
-  // ── Spending: the balance counts down and "−★X" floats off it ───────────
+  // ── Spending: the balance counts down and "−$X" floats off it ───────────
   const [spent, setSpent] = useState({ n: 0, text: "" });
-  const spend = (price: number) => setSpent((s) => ({ n: s.n + 1, text: `−★${formatMoney(price)}` }));
+  const spend = (price: number) => setSpent((s) => ({ n: s.n + 1, text: `−${MONEY_SIGN}${formatMoney(price)}` }));
   const [confirm, setConfirm] = useState<null | { info: ConfirmInfo; run: (lawyers: boolean) => string | void }>(null);
   const [moment, setMoment] = useState<Moment | null>(null);
   /** Boot levels bought on this visit: "Sold out" until you leave (as the old shelf). */
@@ -393,9 +393,9 @@ function BootsTab({ career, homeLevel, focus, soldOut, ask, onOpen3D }: {
               {sold ? (
                 <div className="rounded-[4px] bg-white/[0.06] py-3 text-center text-[13px] font-black uppercase tracking-wide text-red-300 ring-1 ring-red-400/40">Sold out — back next visit</div>
               ) : isBanned ? (
-                <GoldButton danger onClick={() => { setSheet(null); ask(b, true); }}>Buy from shady guys ★{formatMoney(blackMarketPrice(b.price))}</GoldButton>
+                <GoldButton danger onClick={() => { setSheet(null); ask(b, true); }}>Buy from shady guys {MONEY_SIGN}{formatMoney(blackMarketPrice(b.price))}</GoldButton>
               ) : (
-                <GoldButton disabled={!can} onClick={() => { setSheet(null); ask(b, false); }}>{can ? `Buy now ★${formatMoney(b.price)}` : "Not enough money"}</GoldButton>
+                <GoldButton disabled={!can} onClick={() => { setSheet(null); ask(b, false); }}>{can ? `Buy now ${MONEY_SIGN}${formatMoney(b.price)}` : "Not enough money"}</GoldButton>
               )}
             </div>
           </StoreSheet>
@@ -609,7 +609,7 @@ function StyleTab({ career, focus, homeLevel, ask, onOpen3D }: {
             {IN_3D.has(base) && onOpen3D && <div className="mt-2 flex justify-end"><ThreeDLink onOpen3D={onOpen3D} /></div>}
             <div className="mt-2">
               <GoldButton disabled={!canBuy} onClick={() => { setSheet(null); ask(it, mine); }}>
-                {blocked ? (ownLv === lv ? "You own this one" : `You own level ${ownLv}`) : career.money < it.price ? "Not enough money" : `${verb} ★${formatMoney(it.price)}`}
+                {blocked ? (ownLv === lv ? "You own this one" : `You own level ${ownLv}`) : career.money < it.price ? "Not enough money" : `${verb} ${MONEY_SIGN}${formatMoney(it.price)}`}
               </GoldButton>
             </div>
           </StoreSheet>

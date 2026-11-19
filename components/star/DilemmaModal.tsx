@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { Dilemma, DilemmaEffect } from "@/lib/star/dilemmas";
+import { MONEY_SIGN } from "@/lib/star/money";
 
 interface Props {
   dilemma: Dilemma;
@@ -78,7 +79,7 @@ export default function DilemmaModal({ dilemma, onChoose }: Props) {
 function formatEffects(effects: DilemmaEffect): React.ReactElement[] {
   const entries: React.ReactElement[] = [];
   const labels: Record<string, string> = {
-    money: "★", happiness: "Happy", matchFitness: "Sharpness",
+    money: MONEY_SIGN, happiness: "Happy", matchFitness: "Sharpness",
     boss: "Boss", team: "Team", fans: "Fans", sponsors: "Sponsors", fame: "Fame", reputation: "Rep",
     pace: "Pace", power: "Power", technique: "Tech", vision: "Vision", freeKick: "FK", aerial: "Aerial",
   };

@@ -14,6 +14,7 @@ import { SquareBar } from "./ui/Flat";
 import { FillStar } from "./ui/TopMeter";
 import { Screen, Kicker, SectionLabel, useLater } from "./ui/Screen";
 import FastForward, { ffTimeout } from "./ui/fastForward";
+import { MONEY_SIGN } from "@/lib/star/money";
 /** Achievement names, to give each pop-up its own gold medal. */
 const ACH_LABELS = new Set(ACHIEVEMENTS.map(a => a.label));
 
@@ -240,7 +241,7 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
             <div className="flex-1 text-sm font-black text-white">Total Cash</div>
             <div className="relative flex items-center gap-1 text-[17px] font-black tabular-nums text-white">
               <StarIcon /> <CountUp value={moneyIn ? stats.totalCash : 0} ms={900} format={exact} />
-              <FloatText trigger={moneyIn && stats.totalCash > 0 ? 1 : 0} text={`+★${exact(stats.totalCash)}`} color="#fde047" className="left-1/2 -top-3" size={13} />
+              <FloatText trigger={moneyIn && stats.totalCash > 0 ? 1 : 0} text={`+${MONEY_SIGN}${exact(stats.totalCash)}`} color="#fde047" className="left-1/2 -top-3" size={13} />
             </div>
           </div>
         </ClubCard>

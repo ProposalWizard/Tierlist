@@ -32,7 +32,7 @@ import type { Display, DisplayId } from "./catalogue";
 import { CAN_COLOURS } from "./catalogue";
 import { kitMasks, type V3 } from "./kit";
 import { floorCanvas, numberCanvas, labelCanvas, blobCanvas, neonCanvas, poolCanvas } from "./textures";
-import { formatMoney } from "../money";
+import { formatMoney, MONEY_SIGN } from "../money";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D } from "../people3d";
 import { people3dLook } from "../look3d";
 import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ } from "../tapWalk";
@@ -483,7 +483,7 @@ async function buildShop(
   const fromPrice = (display: DisplayId, index: number) => {
     const it = displays[display].items[index];
     const p = Math.min(...it.levels.map((l) => l.price));
-    return `${it.levels.length > 1 ? "from " : ""}★${formatMoney(p)}`;
+    return `${it.levels.length > 1 ? "from " : ""}${MONEY_SIGN}${formatMoney(p)}`;
   };
   const tagText = (display: DisplayId, index: number) => {
     const it = displays[display].items[index];

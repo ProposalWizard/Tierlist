@@ -35,7 +35,7 @@ import { SCENARIO_KINDS, type Scenario } from "@/lib/star/canvasEngine";
 import { withoutSwitchedOff } from "@/lib/star/switchedOffKinds";
 import { nextHighlight, newSimMemory, buildSimScenario, pictureKey } from "@/lib/star/gallerySim";
 import { mulberry32 } from "@/lib/star/season";
-import { formatMoney, formatWallet } from "@/lib/star/money";
+import { formatMoney, formatWallet, MONEY_SIGN } from "@/lib/star/money";
 import { SOCIAL_SEEN, MSGS_SEEN, readLS, writeLS, buildMessages, msgKey, socialUnread, type Msg } from "@/lib/star/phoneUnread";
 import { brandsOf } from "@/lib/star/sponsorDeals";
 import PhoneFrame from "./PhoneFrame";
@@ -288,7 +288,7 @@ function Grid({ career, glow, badges, onOpen, onClose, installed, isNew }: {
       {next ? <NextMatchWidget career={career} next={next} /> : (
         <ClubCard glow={glow} className="rounded-[20px] px-3 py-2">
           <div className="text-[9px] font-black uppercase tracking-[0.18em] text-amber-200">Season complete</div>
-          <div className="text-[11px] font-bold text-white/75">★ {formatWallet(career.money)} in the bank</div>
+          <div className="text-[11px] font-bold text-white/75">{MONEY_SIGN}{formatWallet(career.money)} in the bank</div>
         </ClubCard>
       )}
       <div className="mt-3 grid grid-cols-4 gap-x-2 gap-y-2.5">
@@ -333,7 +333,7 @@ function NextMatchWidget({ career, next }: { career: CareerState; next: CareerSt
         <Crest club={away} kit={ak} />
       </div>
       <div className="mt-1 text-center text-[10px] font-bold text-white/65">
-        ★ <CountUp value={career.money} format={(n) => formatMoney(Math.round(n))} className="font-black text-yellow-200" /> in the bank
+        {MONEY_SIGN}<CountUp value={career.money} format={(n) => formatMoney(Math.round(n))} className="font-black text-yellow-200" /> in the bank
       </div>
     </ClubCard>
   );

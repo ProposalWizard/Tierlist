@@ -6,7 +6,7 @@
  * The same screen as the test area (StoreView), fed by the career instead of
  * a test wallet. Every button runs lib/star/store/career.ts, which runs the
  * test area's own rules on a view of the save and writes the result back:
- * ★ is your money, a run-up you buy is yours in Settings → Run-ups and in the
+ * $ is your money, a run-up you buy is yours in Settings → Run-ups and in the
  * match, a KIB can lands on the Home cans card, and a boot goes on your feet
  * the way the Boots shop does it.
  *

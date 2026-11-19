@@ -7,6 +7,7 @@ import { divisionOf, divisionRank, leagueNameFor } from "@/lib/star/calendar";
 import ClubBadge from "./ClubBadge";
 import { Glow, clubTheme } from "./ui";
 import { Screen, Kicker } from "./ui/Screen";
+import { MONEY_SIGN } from "@/lib/star/money";
 
 /**
  * THE OLD CLUB IS GONE. WHO NEXT?
@@ -64,9 +65,9 @@ export default function RelegationMove({ career, offers, onAccept }: Props) {
                 <p className="mt-1 text-xs text-white">{o.pitch}</p>
 
                 <div className="mt-3 grid grid-cols-4 gap-1.5 text-center">
-                  <Cell label="Wage" value={`★${o.wage}`} highlight={o.wage > career.contract.wage} />
-                  <Cell label="Goal" value={`★${o.goalBonus}`} highlight={o.goalBonus > career.contract.goalBonus} />
-                  <Cell label="Signing" value={`★${o.signingFee}`} highlight />
+                  <Cell label="Wage" value={`${MONEY_SIGN}${o.wage}`} highlight={o.wage > career.contract.wage} />
+                  <Cell label="Goal" value={`${MONEY_SIGN}${o.goalBonus}`} highlight={o.goalBonus > career.contract.goalBonus} />
+                  <Cell label="Signing" value={`${MONEY_SIGN}${o.signingFee}`} highlight />
                   <Cell label="Years" value={`${o.seasons}`} />
                 </div>
 

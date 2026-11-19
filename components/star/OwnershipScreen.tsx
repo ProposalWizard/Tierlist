@@ -5,7 +5,7 @@ import type { CareerState } from "@/lib/star/types";
 import { MAJORITY_THRESHOLD, clubValuation } from "@/lib/star/investments";
 import { GOVERNING_BODIES, influenceIn, canProposeRuleChange } from "@/lib/star/governingBodies";
 import { isBodyPresident } from "@/lib/star/leadership";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import ClubBadge from "./ClubBadge";
 import { CountUp, Glow, PressButton, Shine, StatBar, clubTheme } from "./ui";
 import { Screen, ScreenHeader, SectionLabel, useLater } from "./ui/Screen";
@@ -146,7 +146,7 @@ export default function OwnershipScreen({
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
-                    <div className="text-[12px] font-black text-yellow-300 tabular-nums">★<CountUp value={countIn ? holdingValue : 0} ms={800} format={(n) => money(Math.round(n))} /></div>
+                    <div className="text-[12px] font-black text-yellow-300 tabular-nums">{MONEY_SIGN}<CountUp value={countIn ? holdingValue : 0} ms={800} format={(n) => money(Math.round(n))} /></div>
                     <div className="text-[9px] font-bold text-white/80">{majority ? "Boardroom →" : "Portfolio →"}</div>
                   </div>
                 </button>

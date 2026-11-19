@@ -182,7 +182,7 @@ export default function RuleBookScreen({
           </div>
           <label className="flex items-center gap-2 text-[10px] text-white">
             <input type="checkbox" checked={useLawyers} onChange={e => setUseLawyers(e.target.checked)} />
-            Hire lawyers first (★5000 — cuts the risk of getting caught, doesn&apos;t remove it)
+            Hire lawyers first ($5000 — cuts the risk of getting caught, doesn&apos;t remove it)
           </label>
           <div className="mt-1.5 text-[9px] text-white font-semibold">
             {bribeAmount > 0 ? "Any proposal below will try to sway real votes toward yes, at a real risk." : "Leave at 0 to just propose honestly."}

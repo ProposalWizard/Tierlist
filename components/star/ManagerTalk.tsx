@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import { leagueNameFor } from "@/lib/star/calendar";
 import type { ManagerTalk as Talk } from "@/lib/star/signingTalk";
 import ClubBadge from "./ClubBadge";
@@ -150,7 +150,7 @@ export default function ManagerTalk({
               <div>
                 <div className="text-[10px] font-black uppercase tracking-widest text-emerald-300">The offer</div>
                 <div className="text-[30px] font-black leading-none tabular-nums">
-                  ★{formatMoney(talk.openingWeekly)}
+                  {MONEY_SIGN}{formatMoney(talk.openingWeekly)}
                   <span className="ml-1 text-sm font-black text-white">a week</span>
                 </div>
               </div>

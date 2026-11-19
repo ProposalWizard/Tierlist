@@ -1,6 +1,6 @@
 "use client";
 import type { CareerState } from "@/lib/star/types";
-import { formatMoney, formatWallet } from "@/lib/star/money";
+import { formatMoney, formatWallet, MONEY_SIGN } from "@/lib/star/money";
 import { useCountUp } from "./motion";
 
 /**
@@ -44,7 +44,7 @@ export default function GameBar({ career, onHelp, onSettings }: {
         <span className="sk-num text-[13px] font-black leading-none tabular-nums" style={{ color: "var(--sk-top-ink)" }}>{career.player.age}</span>
       </div>
       <div data-money-chip data-tour="money" aria-label={`Money ${formatWallet(career.money)}`} className="sk-top-chip flex shrink-0 items-center gap-1 rounded-[3px] px-1.5 py-1">
-        <span className="text-[12px] leading-none text-amber-500">★</span>
+        <span className="text-[12px] leading-none text-amber-500">{MONEY_SIGN}</span>
         <span className="sk-num text-[13px] font-black leading-none tabular-nums" style={{ color: "var(--sk-top-ink)" }}>{formatWallet(Math.round(money))}</span>
       </div>
       {onHelp ? (

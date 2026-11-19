@@ -4,7 +4,7 @@ import { useCountUp } from "./motion";
 /**
  * A NUMBER THAT COUNTS TO ITS NEW VALUE instead of jumping.
  *
- *   <CountUp value={career.money} format={(n) => `★ ${formatMoney(Math.round(n))}`} />
+ *   <CountUp value={career.money} format={(n) => `$ ${formatMoney(Math.round(n))}`} />
  *   const shown = useCountUp(rating);          // the hook, when you need the number
  *
  * Starts at the real value (no count from zero on every open) and snaps for

@@ -203,7 +203,7 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   // The phone step says its price and the shortfall.
   const price = phonePrice();
   check(price > 0, `the first phone has a price (★${price})`);
-  check(phoneShortfall({ money: 0 }) === price && phoneStepLine({ money: 0 }).includes(`★${price - 0} more`), "broke: says how much more");
+  check(phoneShortfall({ money: 0 }) === price && phoneStepLine({ money: 0 }).includes(`$${price - 0} more`), "broke: says how much more");
   check(phoneShortfall({ money: price }) === 0 && /buy it now/.test(phoneStepLine({ money: price })), "enough: says you can buy it");
   check(phoneShortfall({ money: price - 40 }) === 40, "the shortfall is the difference");
 }

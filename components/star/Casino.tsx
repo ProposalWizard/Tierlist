@@ -7,7 +7,7 @@ import {
   BET_COMPETITIONS, oddsFor, entrantsFor, canPlaceCompetitionBet, type BetCompetition, type CompetitionBet, type BetEntrant,
 } from "@/lib/star/competitionBetting";
 import { getTuning } from "@/lib/star/tuningStore";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import { horseRacePrize, horseUpkeep } from "@/lib/star/horse";
 // The rules live in one place, shared with the server (Harry, 8 Oct 2026:
 // "move the casino to the server"). Signed in, the server rolls; signed out
@@ -29,7 +29,7 @@ import {
 const FELT = "#10b981";
 const GOLD = "#f59e0b";
 const WIN_COLORS = ["#fde047", "#f59e0b", "#34d399", "#ffffff"];
-const winText = (n: number) => `+★${formatMoney(n)}`;
+const winText = (n: number) => `+${MONEY_SIGN}${formatMoney(n)}`;
 
 /** The juice every game fires: a big win, or a loss (a shudder and a red flash). */
 function useCasinoFx() {
@@ -298,8 +298,8 @@ function CasinoFrame({ bank, bet, onExit, onChangeBet, title, icon, fx, note, ch
   /** A problem reaching the server's casino (nothing was charged). */
   note?: string | null;
 }) {
-  // Float every change of the bank off it: "−★2k" as a stake goes down,
-  // "+★4k" as winnings come in.
+  // Float every change of the bank off it: "−$2k" as a stake goes down,
+  // "+$4k" as winnings come in.
   const hud = useContext(HudCtx);
   const backLabel = useContext(BackLabelCtx);
   const prev = useRef(bank);
@@ -307,7 +307,7 @@ function CasinoFrame({ bank, bet, onExit, onChangeBet, title, icon, fx, note, ch
   useEffect(() => {
     const d = bank - prev.current;
     prev.current = bank;
-    if (d !== 0) setDelta((x) => ({ n: x.n + 1, text: `${d > 0 ? "+" : "−"}★${formatMoney(Math.abs(d))}`, up: d > 0 }));
+    if (d !== 0) setDelta((x) => ({ n: x.n + 1, text: `${d > 0 ? "+" : "−"}${MONEY_SIGN}${formatMoney(Math.abs(d))}`, up: d > 0 }));
   }, [bank]);
   return (
     <ScreenShell
@@ -343,7 +343,7 @@ function BetBar({ bet, bank, onChangeBet }: { bet: number; bank: number; onChang
       <div className="ml-auto flex items-center gap-2">
         <PressButton variant="secondary" size="none" aria-label="Lower bet" onClick={() => onChangeBet(-1)} className="grid h-8 w-8 place-items-center rounded-full text-[13px] font-black text-red-300">▼</PressButton>
         <span className="min-w-[78px] text-center text-[17px] font-black tabular-nums text-yellow-200" style={{ textShadow: "0 0 12px rgba(253,224,71,.4)" }}>
-          <Pop value={bet}>★{formatMoney(bet)}</Pop>
+          <Pop value={bet}>{MONEY_SIGN}{formatMoney(bet)}</Pop>
         </span>
         <PressButton variant="secondary" size="none" aria-label="Raise bet" disabled={bet >= bank} onClick={() => onChangeBet(1)} className="grid h-8 w-8 place-items-center rounded-full text-[13px] font-black text-emerald-300">▲</PressButton>
       </div>
@@ -582,13 +582,13 @@ function HorseRacingGame(props: HorseRacingProps) {
                       {ordinal(result.finish)} Place
                     </div>
                     <div className="text-sm font-bold mt-1">
-                      {result.payout > 0 ? <span className="text-emerald-300">Won ★{formatMoney(result.payout)}!</span> : <span className="text-white/75">Out of the money.</span>}
+                      {result.payout > 0 ? <span className="text-emerald-300">Won {MONEY_SIGN}{formatMoney(result.payout)}!</span> : <span className="text-white/75">Out of the money.</span>}
                     </div>
                   </>
                 ) : (
                   <>
                     <div className={`text-2xl font-black ${result.payout > 0 ? "text-yellow-300" : "text-red-400"}`}>
-                      {result.payout > 0 ? `YOU WIN! +★${formatMoney(result.payout)}` : "No luck!"}
+                      {result.payout > 0 ? `YOU WIN! +${MONEY_SIGN}${formatMoney(result.payout)}` : "No luck!"}
                     </div>
                     <div className="text-sm text-white/85 mt-1">Winner: {result.winnerName}</div>
                   </>
@@ -660,7 +660,7 @@ function HorseRacingGame(props: HorseRacingProps) {
               onClick={() => void placeBet()}
               className="w-full rounded-2xl py-3 font-black"
             >
-              {busy ? "…" : `Place Bet — ★${formatMoney(props.bet)}`}
+              {busy ? "…" : `Place Bet — ${MONEY_SIGN}${formatMoney(props.bet)}`}
             </PressButton>
           </>
         )}
@@ -763,17 +763,17 @@ function HorseRacingGame(props: HorseRacingProps) {
                     </div>
                     <div className="bg-gray-900/50 rounded-lg py-1.5">
                       <div className="text-white/75 font-bold">Winnings</div>
-                      <div className="text-white font-black">★{formatMoney(myHorse.earnings)}</div>
+                      <div className="text-white font-black">{MONEY_SIGN}{formatMoney(myHorse.earnings)}</div>
                     </div>
                   </div>
                   <div className="mt-2 flex items-center justify-between rounded-lg bg-red-950/40 border border-red-500/30 px-2.5 py-1.5 text-[10px] font-bold text-red-200">
                     <span>Upkeep — feed, keep, vet</span>
-                    <span className="font-black">-★{formatMoney(horseUpkeep(myHorse))}/week</span>
+                    <span className="font-black">-{MONEY_SIGN}{formatMoney(horseUpkeep(myHorse))}/week</span>
                   </div>
                 </div>
 
                 <div className="text-[10px] text-center text-white/75 mb-2">
-                  Prize — 1st: ★{formatMoney(horseRacePrize(1, myHorse))} · 2nd: ★{formatMoney(horseRacePrize(2, myHorse))} · 3rd: ★{formatMoney(horseRacePrize(3, myHorse))}
+                  Prize — 1st: {MONEY_SIGN}{formatMoney(horseRacePrize(1, myHorse))} · 2nd: {MONEY_SIGN}{formatMoney(horseRacePrize(2, myHorse))} · 3rd: {MONEY_SIGN}{formatMoney(horseRacePrize(3, myHorse))}
                 </div>
 
                 <PressButton
@@ -879,7 +879,7 @@ function CompetitionBetting(props: CompetitionBettingProps) {
           ))}
         </div>
         <div className="mt-2 text-[10px] text-center text-white/65">
-          Tap a club to bet ★{formatMoney(props.bet)} on them to win the {BET_COMPETITIONS.find(c => c.id === tab)?.label}.
+          Tap a club to bet {MONEY_SIGN}{formatMoney(props.bet)} on them to win the {BET_COMPETITIONS.find(c => c.id === tab)?.label}.
         </div>
 
         {pending.length > 0 && (
@@ -897,7 +897,7 @@ function CompetitionBetting(props: CompetitionBettingProps) {
                       <span className="text-white/55"> — {label}</span>
                     </div>
                     <div className="font-black text-yellow-300 tabular-nums">
-                      ★{formatMoney(b.stake)} @ {b.odds.toFixed(2)} → ★{formatMoney(Math.round(b.stake * b.odds))}
+                      {MONEY_SIGN}{formatMoney(b.stake)} @ {b.odds.toFixed(2)} → {MONEY_SIGN}{formatMoney(Math.round(b.stake * b.odds))}
                     </div>
                   </div>
                 );
@@ -1131,7 +1131,7 @@ function Blackjack(props: CasinoGameProps) {
             onClick={() => void deal()}
             className="mt-3 w-full rounded-2xl py-3 font-black"
           >
-            {busy ? "…" : `Deal — ★${formatMoney(props.bet)}`}
+            {busy ? "…" : `Deal — ${MONEY_SIGN}${formatMoney(props.bet)}`}
           </PressButton>
         )}
         {phase === "play" && (
@@ -1220,7 +1220,7 @@ function Roulette(props: CasinoGameProps) {
       setResult(winner);
       setSpinning(false);
       if (win > 0) {
-        setMessage(`WIN! +★${formatMoney(win - stake)}`);
+        setMessage(`WIN! +${MONEY_SIGN}${formatMoney(win - stake)}`);
         props.onSetBank(bank0 - stake + win);
         fx.win(win - stake);
       } else {
@@ -1329,7 +1329,7 @@ function Roulette(props: CasinoGameProps) {
           onClick={spin}
           className="mt-3 w-full rounded-2xl py-3 font-black"
         >
-          {spinning ? "Spinning..." : `Spin — ★${formatMoney(props.bet)}`}
+          {spinning ? "Spinning..." : `Spin — ${MONEY_SIGN}${formatMoney(props.bet)}`}
         </PressButton>
     </CasinoFrame>
   );
@@ -1372,7 +1372,7 @@ function Slots(props: CasinoGameProps) {
         setSpinning(false);
         const win = played.result.payout;
         if (win > 0) {
-          setMessage(`WIN! +★${formatMoney(win - stake)}`);
+          setMessage(`WIN! +${MONEY_SIGN}${formatMoney(win - stake)}`);
           props.onSetBank(bank0 - stake + win);
           if (win > stake) fx.win(win - stake);
         } else {
@@ -1414,7 +1414,7 @@ function Slots(props: CasinoGameProps) {
           className="relative mt-3 w-full overflow-hidden rounded-2xl py-3 text-[15px] font-black"
         >
           {!spinning && <Shine loop every={3.5} />}
-          {spinning ? "Spinning..." : `Pull the Lever — ★${formatMoney(props.bet)}`}
+          {spinning ? "Spinning..." : `Pull the Lever — ${MONEY_SIGN}${formatMoney(props.bet)}`}
         </PressButton>
     </CasinoFrame>
   );
