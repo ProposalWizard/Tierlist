@@ -50,3 +50,11 @@ if (nav && typeof nav.userAgent !== "string") {
       : "Mozilla/5.0 (Linux; Android) KIBNext Mobile";
   } catch { /* read-only: left as it is */ }
 }
+
+// React Native's `window` has no browser events. Game files that listen for
+// them as they load (lib/star/figureSkin.ts listens for "storage") crashed the
+// app on opening (Mikey, 19 Nov 2026). The phone has no such events, so
+// listening does nothing, as on a browser tab where they never fire.
+const ev = globalThis as unknown as Record<string, unknown>;
+for (const k of ["addEventListener", "removeEventListener"]) if (typeof ev[k] !== "function") ev[k] = () => {};
+if (typeof ev.dispatchEvent !== "function") ev.dispatchEvent = () => true;
