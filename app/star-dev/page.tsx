@@ -5522,6 +5522,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           screen={((): HudScreen => {
             if (swipeActive) return homePage === 0 ? "stats" : homePage === 1 ? "home" : "shop";
             if (phase === "skills") return trainingTab === "life" ? "relations" : "training";
+            if (phase === "media" && activeNav === "media") return "phone"; // Level + Money (RUL-UI-009)
             return "other";
           })()}
           onUseCan={handleUseCan}

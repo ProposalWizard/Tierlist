@@ -96,6 +96,10 @@ export function niceMoneyStep(amount: number): number {
  * the default everywhere else; this is opt-in, for the one place a rounded
  * number would visibly contradict a number just shown seconds earlier.
  */
+/** The money sign, everywhere money is shown (Harry, 19 Nov 2026: "Switch to $
+ *  everywhere"; RUL-UI-009). ★ is then only the star level. */
+export const MONEY_SIGN = "$";
+
 export function formatMoneyPrecise(n: number): string {
   const negative = n < 0;
   const value = Math.abs(n);

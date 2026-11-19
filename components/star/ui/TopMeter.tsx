@@ -47,7 +47,7 @@ export function TopMeter({ icon, value, colors, children, className = "", barCla
 }
 
 /** The Blender icons builder F renders into public/icons3d/<name>.png (happiness is the smiley; heart is spare). Until a picture loads, happiness draws a heart. */
-export type HudIconName = "energy" | "world" | "fame" | "happiness" | "heart" | "money";
+export type HudIconName = "energy" | "world" | "fame" | "happiness" | "heart" | "money" | "cash";
 
 /** Pictures that failed once this session: don't ask for them again. */
 const missing = new Set<string>();
