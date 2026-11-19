@@ -34,3 +34,4 @@ taps and page moves feel slow next to NSS. Two read-only audits ran
    we need to do this for every page (have the relevant stats as the top 2 bars)".
 10. Money sign: "Switch to $ everywhere". Bars per page: the table in the chat,
    with "Phone should be level + money" and "relations ... should be happiness+ rep".
+11. "I prefer navy btw" and "the icons should be still be smaller and in the top left hovering over the bar".

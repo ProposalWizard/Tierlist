@@ -18,4 +18,4 @@ shop; the Showroom moves to the 3D phone (RUL-UI-008). Not built yet.
   under frosted glass. No stadium, no pitch, no sky.
 - Top bar on the shop: Back, SHOP in the middle, ? and settings; no age, no
   stars; the second row is the two bars (RUL-UI-009: Fame + Money).
-- Glass colour: still to pick (navy, champagne gold, emerald, plum shown).
+- Glass colour: NAVY (Harry, 19 Nov: "I prefer navy"). Bar icons small, top left, hovering over the start of each bar (source line 36).
