@@ -1,9 +1,6 @@
-import './src/appFlags';
 import { registerRootComponent } from 'expo';
+import Boot from './src/Boot';
 
-import App from './App';
-
-// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
-// It also ensures that whether you load the app in Expo Go or in a native build,
-// the environment is set up appropriately
-registerRootComponent(App);
+// Boot loads the phone settings (src/appFlags.ts) and then the game, and shows
+// any fault on screen instead of closing the app.
+registerRootComponent(Boot);
