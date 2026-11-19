@@ -197,6 +197,7 @@ export const ASSET_VERSIONS: Record<string, string> = {
   "/star/scout/gold-frame.webp": "24f5c33b",
   "/star/scout/red-frame.png": "93ef5c49",
   "/star/scout/red-frame.webp": "3cbeb882",
+  "/star/shop/bg-store-navy.webp": "a798fabe",
   "/star/shop3d/anims.glb": "d0131182",
   "/star/shop3d/character.glb": "091851ba",
   "/star/shop3d/draco/draco_decoder.wasm": "11866a89",
