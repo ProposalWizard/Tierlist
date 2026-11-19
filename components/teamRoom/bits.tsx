@@ -83,7 +83,7 @@ export function BotFace({ bot, className = "tr-botav" }: { bot: string; classNam
 
 const LINK = /(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"])/g;
 // A bot's name first, so "@Harry bot" lights up whole (and is not read as Harry).
-const AT = /(@(?:patch(?:[ -]?notes?)?[ -]?bot|bugs?[ -]?bot|health[ -]?bot|today[ -]?bot|jobs?[ -]?bot|claude(?:[ -]?bot)?|(?:harry|mikey|leo)[ -]?bot|Harry|Mikey|Leo|everyone|all|team)\b)/gi;
+const AT = /(@(?:patch(?:[ -]?notes?)?[ -]?bot|bugs?[ -]?bot|health[ -]?bot|today[ -]?bot|jobs?[ -]?bot|claude(?:[ -]?bot)?|(?:harry|mikey|leo)[ -]?bot|Harry|Mikey|Leo|everyone|all|team)\b|(?<![\w@.])(?:Harry|Mikey|Leo)\b(?![ -]?bot\b)(?![@.]\w))/gi;
 
 /** Text with web links clickable and @Harry / @Mikey / @Leo lit up (yours brighter). */
 export function Linked({ text, me }: { text: string; me?: TeamPerson | null }) {
@@ -93,7 +93,7 @@ export function Linked({ text, me }: { text: string; me?: TeamPerson | null }) {
       {parts.map((x, i) => (i % 2
         ? <a key={i} href={x} target="_blank" rel="noreferrer">{x}</a>
         : <Fragment key={i}>{x.split(AT).map((y, j) => (j % 2
-          ? <span key={j} className={`tr-at${me && y.slice(1).toLowerCase() === me.toLowerCase() ? " me" : ""}${/bot$|^@claude/i.test(y) ? " bot" : ""}`}>{y}</span>
+          ? <span key={j} className={`tr-at${me && y.replace(/^@/, "").toLowerCase() === me.toLowerCase() ? " me" : ""}${/bot$|^@claude/i.test(y) ? " bot" : ""}`}>{y}</span>
           : y))}</Fragment>))}
     </>
   );
