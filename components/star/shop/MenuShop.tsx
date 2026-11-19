@@ -365,7 +365,10 @@ export default function MenuShop({ career, onBack, onBuyKib, onBuyBoot, onBuyIte
       {/* ── Category chips ── */}
       <div className="ms-chips" role="tablist">
         {MENU_CATS.map((c) => (
-          <button key={c.id} type="button" className="ms-chip kib-press" aria-pressed={c.id === cat} data-chip={c.id} onClick={() => goCat(c.id)}>{c.label}</button>
+          <button key={c.id} type="button" className="ms-chip kib-press" aria-pressed={c.id === cat} data-chip={c.id}
+            // The story and help tours point here (lib/star/tours.ts STORY_SHOP_TOUR: "cat-cans", "shop-tab-boots").
+            data-tour={c.id === "cans" ? "cat-cans" : c.id === "boots" ? "shop-tab-boots" : undefined}
+            onClick={() => goCat(c.id)}>{c.label}</button>
         ))}
       </div>
 

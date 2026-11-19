@@ -270,6 +270,7 @@ const BallonDor = lazyScreen(() => import("@/components/star/BallonDor"));
 // The Ballon d'Or night: the ceremony (New) or the screen above (Old) — Settings → Look.
 const BallonDorNight = lazyScreen(() => import("@/components/star/BallonDorNight"));
 const Shop = lazyScreen(() => import("@/components/star/Shop"));
+const MenuShop = lazyScreen(() => import("@/components/star/shop/MenuShop"));
 const ShowroomShop = lazyScreen(() => import("@/components/star/shop2d/ShowroomShop"));
 const Shop3D = lazyScreen(() => import("@/components/star/Shop3D"));
 const CareerStore = lazyScreen(() => import("@/components/star/store/CareerStore"));
@@ -308,7 +309,7 @@ const LAZY_PRELOAD = [
   VersusScreen, MatchWeek, LineupIntro, SettingsScreen, LadderScreen, MediaFeed, PressConference,
   TrainingLevelSelect, TrainingMinigame, TrainingPitchScreen, CupDrawReveal, KnockoutRoundup, PlayOffRoundup,
   DeadlineDayRoundup, SeasonAwardsScreen, SeasonAwardsNight, SeasonReel, BallonDor, BallonDorNight, PotmWinModal, DilemmaModal,
-  ShowroomShop, Shop, CareerStore, AchievementsScreen, TrophiesScreen, ReputationScreen, SponsorsScreen,
+  MenuShop, ShowroomShop, Shop, CareerStore, AchievementsScreen, TrophiesScreen, ReputationScreen, SponsorsScreen,
   TransferHub, TransferSigning, RelegationMove, NegotiationScreen, LoanBrief, YouthTeam,
   ContractInOffice, ManagerNewsInOffice, CaptainInOffice, GlobalSettingsScreen, Casino, Investments,
   OwnershipScreen, VoteCeremony, RuleBookScreen, RelationshipGame, AdvertShoot, GoalClipViewer, HallOfFame,
@@ -4892,28 +4893,21 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       <>
         {shopLookNow === "new" ? (
           <SwipeBack onBack={() => { if (goBackRemembered()) return; setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}>
-          <ShowroomShop
+          {/* The menu shop (Harry, 19 Nov 2026, RUL-UI-010: layout B on the navy store blur,
+              Fame + Money bars). The old Showroom moves to the 3D phone (RUL-UI-008);
+              Sponsors, Casino and Store are phone apps, so the shop has no doors to them. */}
+          <MenuShop
             career={career}
-            kind={kind}
+            startCat={kind === "kib" ? "cans" : kind === "boots" ? "boots" : "drip"}
             mainBar={mainBarRaw(null)}
             onBack={() => { if (goBackRemembered()) return; setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}
-            links={[
-              // Locked means locked: no way into Sponsors before your first offer (Mikey's playtest, 24 Oct 2026).
-              { id: "sponsors", icon: "🤝", label: "Sponsors", locked: !isOpen(career, "sponsors"), onClick: () => { if (!isOpen(career, "sponsors")) { showLock(`Sponsors open with your first offer. ${LOCK_HINT.sponsors}.`); return; } pushFrom({ phase, nav: "home" }, "sponsors"); setPhase("sponsors"); } },
-              // Not in the packed phone app: no casino there (Mikey, 5 Nov 2026).
-              ...(PACKED_APP ? [] : [{ id: "casino", icon: "🎰", label: "Casino", onClick: () => { pushFrom({ phase, nav: "home" }, "casino-menu"); setPhase("casino-menu"); } }]),
-              { id: "store", icon: "🛒", label: "Store", onClick: () => { pushFrom({ phase, nav: "home" }, "store"); setPhase("store"); } },
-              { id: "shop3d", icon: "🕶️", label: "3D shop", onClick: () => { setShopAtDoor(false); setPhase("shop-3d"); } },
-            ]}
             onBuyKib={handleBuyKib}
             onBuyBoot={handleBuyBoot}
             onBuyItem={handleBuyItem}
             onBuyFromBlackMarket={handleBuyFromBlackMarket}
-            focus={shopFocus && shopFocus.phase === phase ? shopFocus : null}
-            onKind={(k) => { const to = k === "kib" ? "shop-kib" : k === "boots" ? "shop-boots" : "shop-lifestyle"; lastShowroom.current = to; setPhase(to); }}
             onUseCan={handleUseCan}
-            onOpen3D={() => { setShopAtDoor(false); setPhase("shop-3d"); }}
-            onOpenHome={HOME3D_IN_CAREER ? () => { setHomeFromGarden(false); setPhase("home-3d"); } : undefined}
+            onHelp={() => setHelpTour(HELP_TOURS[shopHelp])}
+            onSettings={() => setPhase("settings")}
           />
           </SwipeBack>
         ) : (
