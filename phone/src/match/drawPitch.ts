@@ -6,7 +6,6 @@
  * very same code headless.
  */
 import type { SkCanvas, SkPicture } from "@shopify/react-native-skia";
-import { PITCH_W, HALF_LEN, CX, POST_L, POST_R, SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH, PEN_SPOT_Y, ARC_R, CENTRE_R, NET_DEPTH } from "@/lib/star/pitch";
 import { OUTCOME_TEXT } from "@/lib/star/canvasEngine";
 import { autoKickOf } from "@/lib/star/penaltyTaking";
 import { keeperKit, type MatchKits } from "@/lib/star/kits";
@@ -15,26 +14,12 @@ import { toScreen, makeCam, type Cam } from "./view";
 import { sk, fill, stroke } from "./skiaApi";
 import { drawMan, drawKeeperFig, beginFigures, unitPx, type FigureRole } from "./figures";
 import { footSign } from "@/lib/star/kickFoot";
+import { drawGround } from "./drawGround";
 
 /** The camera the pitch is drawn with this frame. */
 export function camFor(d: MatchDriver, W: number, H: number): Cam {
   const lead = d.leadCamera();
   return makeCam(lead ?? d.viewport, d.facing, d.tiltDeg, W, H);
-}
-
-function polyline(c: SkCanvas, cam: Cam, pts: { x: number; y: number }[], p: ReturnType<typeof fill>, close = false) {
-  const b = sk().PathBuilder.Make();
-  pts.forEach((q, i) => { const s = toScreen(cam, q); if (i === 0) b.moveTo(s.X, s.Y); else b.lineTo(s.X, s.Y); });
-  if (close) b.close();
-  c.drawPath(b.build(), p);
-}
-function rectLine(c: SkCanvas, cam: Cam, x1: number, y1: number, x2: number, y2: number, p: ReturnType<typeof fill>) {
-  polyline(c, cam, [{ x: x1, y: y1 }, { x: x2, y: y1 }, { x: x2, y: y2 }, { x: x1, y: y2 }], p, true);
-}
-function arc(c: SkCanvas, cam: Cam, cx: number, cy: number, r: number, a0: number, a1: number, p: ReturnType<typeof fill>) {
-  const pts = [];
-  for (let i = 0; i <= 24; i++) { const a = a0 + (a1 - a0) * i / 24; pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r }); }
-  polyline(c, cam, pts, p);
 }
 
 /** Which side's men celebrate (CanvasMatch goalSideRef): a goal in the result phase. */
@@ -58,25 +43,8 @@ export function paintPitch(c: SkCanvas, d: MatchDriver, kits: MatchKits, W: numb
   const S = sk();
   const cam = camFor(d, W, H);
   const scene = d.feature?.scene;
-  c.drawRect(S.XYWHRect(0, 0, W, H), fill("#3f9142"));
-  for (let y = -12; y < 110; y += 12) polyline(c, cam, [{ x: -10, y }, { x: PITCH_W + 10, y }, { x: PITCH_W + 10, y: y + 6 }, { x: -10, y: y + 6 }], fill("#46994a"), true);
-  const line = stroke("rgba(255,255,255,0.88)", 2);
-  polyline(c, cam, [{ x: 0, y: 0 }, { x: PITCH_W, y: 0 }], line);
-  polyline(c, cam, [{ x: 0, y: 0 }, { x: 0, y: 105 }], line);
-  polyline(c, cam, [{ x: PITCH_W, y: 0 }, { x: PITCH_W, y: 105 }], line);
-  polyline(c, cam, [{ x: 0, y: HALF_LEN }, { x: PITCH_W, y: HALF_LEN }], line);
-  arc(c, cam, CX, HALF_LEN, CENTRE_R, Math.PI, 2 * Math.PI, line);
-  if (scene?.box !== false) {
-    rectLine(c, cam, BOX_L, 0, BOX_R, BOX_DEPTH, line);
-    rectLine(c, cam, SIX_L, 0, SIX_R, SIX_DEPTH, line);
-    const a = Math.acos((BOX_DEPTH - PEN_SPOT_Y) / ARC_R);
-    arc(c, cam, CX, PEN_SPOT_Y, ARC_R, Math.PI / 2 - a, Math.PI / 2 + a, line);
-    { const s = toScreen(cam, { x: CX, y: PEN_SPOT_Y }); c.drawCircle(s.X, s.Y, 2.5, fill("#ffffff")); }
-  }
-  if (scene?.goal !== false) {
-    polyline(c, cam, [{ x: POST_L, y: 0 }, { x: POST_L, y: -NET_DEPTH - 0.8 }, { x: POST_R, y: -NET_DEPTH - 0.8 }, { x: POST_R, y: 0 }], fill("rgba(255,255,255,0.28)"), true);
-    polyline(c, cam, [{ x: POST_L, y: 0 }, { x: POST_R, y: 0 }], stroke("#ffffff", 5));
-  }
+  // The grass, lines and goal: recorded once per camera, stamped here (drawGround.ts).
+  drawGround(c, cam, scene);
   // A feature's cones on the grass (the markers prop), under everyone.
   for (const m of d.markersNow()) {
     const s = toScreen(cam, m), r = Math.max(3, unitPx(cam) * 0.35 * s.k);
