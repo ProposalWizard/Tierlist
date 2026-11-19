@@ -29,7 +29,7 @@ export function shopLevelFor(division: CareerDivision): number {
   return Math.max(1, SHOP_TIERS.findIndex((t) => t.anchor === division) + 1);
 }
 
-/** An ordinary first-teamer's wage in this division, rounded to a whole $. */
+/** An ordinary first-teamer's wage in this division, rounded to a whole £. */
 export function typicalWageFor(division: CareerDivision): number {
   return Math.round(typicalWeeklyWage(division));
 }

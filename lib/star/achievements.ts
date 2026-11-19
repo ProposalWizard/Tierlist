@@ -39,7 +39,7 @@ export interface Achievement {
   check: (c: CareerState) => boolean;
   /** How far along you are, for the ones with a number to chase: [have, need]. */
   progress?: (c: CareerState) => [number, number];
-  /** The number is money ($), shown short: $420k / $1m. */
+  /** The number is money (£), shown short: £420k / £1m. */
   money?: boolean;
 }
 
@@ -191,9 +191,9 @@ export const ACHIEVEMENTS: Achievement[] = [
 
   // ── Life ──
   // Money: real savings at each level of the game (★100/★500 until 11 Oct 2026).
-  A("rich", "Comfortable Living", "Save $10,000", "easy", "Life", "💷", (c) => c.money >= 10_000, (c) => n(Math.floor(c.money), 10_000), true),
+  A("rich", "Comfortable Living", "Save £10,000", "easy", "Life", "💷", (c) => c.money >= 10_000, (c) => n(Math.floor(c.money), 10_000), true),
   A("first-purchase", "Treat Yourself", "Buy something in the shop", "easy", "Life", "🛍️", (c) => (c.ownedItems ?? []).length >= 1),
-  A("millionaire", "Millionaire", "Save $1,000,000", "hard", "Life", "💰", (c) => c.money >= 1_000_000, (c) => n(Math.floor(c.money), 1_000_000), true),
+  A("millionaire", "Millionaire", "Save £1,000,000", "hard", "Life", "💰", (c) => c.money >= 1_000_000, (c) => n(Math.floor(c.money), 1_000_000), true),
   A("top-of-range", "Top of the Range", "Own a top-level item", "hard", "Life", "🏎️", (c) => (c.ownedItems ?? []).some(i => i.level === 5)),
   // Fame levels (lib/star/fame.ts FAME_LEVELS), by name.
   A("fame-icon", "Icon", "Become an Icon", "legendary", "Life", "🌠", (c) => c.fame >= 80, (c) => n(Math.floor(c.fame), 80)),

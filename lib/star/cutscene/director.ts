@@ -161,7 +161,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
   const txt: PropText = {
     club: club.name, player: career?.player?.name ?? "The New Signing", surname: career?.player?.surname ?? career?.player?.name?.split(" ").slice(-1)[0] ?? "Signing",
     manager: career?.manager?.name ?? "The Manager", number: career?.player?.number ?? 9, shirt: club.shirt, trim: club.trim,
-    rows: [["Seasons", String(script.text?.seasons ?? "3")], ["Weekly wage", script.text?.wage ?? "$2,500"], ["Shirt number", String(career?.player?.number ?? 9)]],
+    rows: [["Seasons", String(script.text?.seasons ?? "3")], ["Weekly wage", script.text?.wage ?? "£2,500"], ["Shirt number", String(career?.player?.number ?? 9)]],
   };
   const sig = makeSignature(txt.player);
   const props = new Map<string, PropObj>();

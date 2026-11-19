@@ -243,7 +243,7 @@ function Market({
             onClick={() => setSortBy("value")}
             className={`px-2.5 py-2 text-[10px] font-black ${sortBy === "value" ? "bg-emerald-600 text-white" : "bg-gray-800 text-white/70"}`}
           >
-            $ Value
+            £ Value
           </button>
         </div>
       </div>

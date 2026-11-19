@@ -5154,6 +5154,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return (
       <OwnershipScreen
         career={career}
+        hud={screenHud("investments")}
         onBack={handleBackToDashboard}
         onReputation={() => setPhase("reputation")}
         onRuleBook={() => setPhase("rule-book")}

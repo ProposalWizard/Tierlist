@@ -4,18 +4,18 @@
  * Harry, 27 Sep 2026: "a section to buy coins for real money that work with
  * in game scaling."
  *
- * $ (stars) is the money you earn by playing, and it is priced in WEEKS OF
- * YOUR OWN INCOME (economy.ts). A National League player earns $25 a week, a
- * Premier League first-teamer $6,336. If a Coin were worth a fixed number of
+ * £ (stars) is the money you earn by playing, and it is priced in WEEKS OF
+ * YOUR OWN INCOME (economy.ts). A National League player earns £25 a week, a
+ * Premier League first-teamer £6,336. If a Coin were worth a fixed number of
  * stars, the same £0.99 pack would be a fortune at the bottom and pocket
  * change at the top.
  *
  * So a Coin is pinned to TIME, not to stars:
  *
- *     COINS_PER_WAGE_WEEK Coins  =  one week of your current wage, in $
+ *     COINS_PER_WAGE_WEEK Coins  =  one week of your current wage, in £
  *
- * With 50 per week, 100 Coins is two weeks' wages whoever you are: $50 in the
- * National League, $512 in League One, $12,672 in the Premier League. The
+ * With 50 per week, 100 Coins is two weeks' wages whoever you are: £50 in the
+ * National League, £512 in League One, £12,672 in the Premier League. The
  * Coin price of anything sold for stars follows the same rule, so a boost
  * that costs you three weeks of wages costs 150 Coins at every stage.
  *
@@ -60,7 +60,7 @@ export function coinPriceForWeeks(weeks: number): number {
 }
 
 /**
- * A price written in weeks of wages, as a $ price for this player. Rounded to
+ * A price written in weeks of wages, as a £ price for this player. Rounded to
  * a clean step the same shape economy.ts's `priceStep` uses, so it reads like
  * every other price in the shop.
  */

@@ -75,7 +75,7 @@ export default function MediaLab() {
   // `?training=vision&level=1` plays one training level with every skill at
   // 40, for judging the level-1 how-it-works card and the vision countdown.
   // `?shop=kib|boots|lifestyle|landing` (+ `&look=old`) shows the shop with a
-  // sample National League career and $1,000,000; buying works on the sample.
+  // sample National League career and £1,000,000; buying works on the sample.
   // `?contact=float` (or bounce / bobble / still) shows the strike screen with
   // the ball moving that way, for judging the movement. A tap resets it.
   // `&aerial=30` (header/volley): your Aerial, which sizes the perfect circle (22 Oct 2026).
@@ -367,7 +367,7 @@ export default function MediaLab() {
 
           {showGroup("shop") && (
             <section>
-              <div className="ml-group"><h2>Shop</h2><span>sample National League career, $1,000,000 · nothing is bought</span></div>
+              <div className="ml-group"><h2>Shop</h2><span>sample National League career, £1,000,000 · nothing is bought</span></div>
               <div className="ml-wall" data-screens="true">
                 {screen("shop-landing", "Shop · first page", "", "shop-landing", <>{go("?shop=landing", "New", true)}{go("?shop=landing&look=old", "Old")}</>)}
                 {screen("shop-kib", "Shop · KIB cans", "", "shop-kib", <>{go("?shop=kib", "New", true)}{go("?shop=kib&look=old", "Old")}</>)}

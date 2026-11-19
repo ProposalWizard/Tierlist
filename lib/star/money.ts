@@ -3,8 +3,8 @@
  *
  * Reverted 14 Sep 2026, reported directly as messy in practice: the
  * original version of this (see git history) showed every remaining digit
- * as a decimal — a balance of $10,000,003 read as "10.000003m", a club
- * worth $311,798 read as "311.798k". Real, but cluttered. The real amount
+ * as a decimal — a balance of £10,000,003 read as "10.000003m", a club
+ * worth £311,798 read as "311.798k". Real, but cluttered. The real amount
  * is still tracked exactly everywhere in the game's own state (balances,
  * fees, valuations) — this function only ever governs the DISPLAY string,
  * so nothing is actually lost by rounding it away here; it just isn't
@@ -87,7 +87,7 @@ export function niceMoneyStep(amount: number): number {
 /**
  * Like formatMoney, but keeps one real decimal digit instead of flooring it
  * away — requested directly for the negotiation screen: agreeing a deal at
- * $2,500,000 should read "Deal agreed — $2.5m", not "$2m", since the whole
+ * £2,500,000 should read "Deal agreed — £2.5m", not "£2m", since the whole
  * negotiation up to that point was conducted in real, non-round numbers.
  * Deliberately a SEPARATE function from formatMoney rather than a shared
  * option — formatMoney's own whole-number rounding was a direct, explicit
@@ -96,9 +96,10 @@ export function niceMoneyStep(amount: number): number {
  * the default everywhere else; this is opt-in, for the one place a rounded
  * number would visibly contradict a number just shown seconds earlier.
  */
-/** The money sign, everywhere money is shown (Harry, 19 Nov 2026: "Switch to $
- *  everywhere"; RUL-UI-009). ★ is then only the star level. */
-export const MONEY_SIGN = "$";
+/** The money sign, everywhere money is shown. Harry, 19 Nov 2026: first "$"
+ *  ("Switch to $ everywhere"), then "£" the same day (the football is English).
+ *  ★ means only the star level (RUL-UI-011). */
+export const MONEY_SIGN = "£";
 
 export function formatMoneyPrecise(n: number): string {
   const negative = n < 0;
@@ -122,8 +123,8 @@ export function formatMoneyPrecise(n: number): string {
 
 /**
  * What you have in the bank, for the money chips: one decimal, rounded DOWN, so
- * $1,999,930 reads "1.9m" and $1,620,460 "1.6m" (formatMoney showed both as
- * "1m": spending $70 looked like losing half your money; overnight sweep, 29 Oct
+ * £1,999,930 reads "1.9m" and £1,620,460 "1.6m" (formatMoney showed both as
+ * "1m": spending £70 looked like losing half your money; overnight sweep, 29 Oct
  * 2026). Never shows more than you have.
  */
 export function formatWallet(n: number): string {

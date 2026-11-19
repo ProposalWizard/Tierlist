@@ -93,7 +93,7 @@ export default function ScreenShell({ glow, title, icon, onBack, backLabel = "Ba
 
 /**
  * YOUR MONEY, in a gold pill that counts down when you spend and floats the
- * amount up off it. `spent` is a counter; `spentText` the label ("−$12k").
+ * amount up off it. `spent` is a counter; `spentText` the label ("−£12k").
  * The ref is the target an item flies into when there is no better one.
  */
 export const WalletPill = forwardRef<HTMLDivElement, {

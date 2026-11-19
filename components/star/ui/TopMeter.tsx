@@ -120,7 +120,7 @@ function DrawnIcon({ name }: { name: HudIconName }) {
       <circle cx="16" cy="16" r="3" fill="#fff" opacity=".8" />
     </svg>
   );
-  // money: a gold coin with the game's $.
+  // money: a gold coin with the game's £.
   return (
     <svg viewBox="0 0 32 32" className="absolute inset-0 h-full w-full" style={shadow}>
       <defs><radialGradient id={`m${id}`} cx=".35" cy=".3" r=".85"><stop offset="0" stopColor="#fef08a" /><stop offset=".6" stopColor="#f59e0b" /><stop offset="1" stopColor="#92400e" /></radialGradient></defs>

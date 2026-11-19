@@ -4,7 +4,7 @@
  * A POLISHED STAT PILL — a value over a small caps label.
  *
  *   <Pill gold label="Rating" value="★ 7.2" />
- *   <Pill label="Money" value="$ 185k" valueClass="text-yellow-200" />
+ *   <Pill label="Money" value="£ 185k" valueClass="text-yellow-200" />
  *
  * `gold` is the one to lead with (the rating on home). Sits in a flex row;
  * each pill takes an equal share.

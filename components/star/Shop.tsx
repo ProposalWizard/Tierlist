@@ -25,7 +25,7 @@ import {
   useClubTheme, rgba, tint, FloatText,
 } from "./ui";
 
-/** "−$12k" floating up off the HUD's money when you spend. */
+/** "−£12k" floating up off the HUD's money when you spend. */
 function SpentFloat({ n, text }: { n: number; text: string }) {
   return <div className="relative h-0 w-0"><FloatText trigger={n} text={text} color="#fca5a5" className="right-3 top-1" size={15} /></div>;
 }
@@ -60,7 +60,7 @@ interface Props {
  * Reskinned 28 Sep 2026 (Harry: "that can animation is elite, we need stuff
  * like that all over"). Buying anything plays the can's kind of reward: the
  * item flies into your inventory (its Owned count, your current boots, the
- * item's own row), "−$X" floats up off your money, and the money counts
+ * item's own row), "−£X" floats up off your money, and the money counts
  * down to its new value. Every price, level, rule and handler is unchanged.
  */
 export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, hud, onHome, focus }: Props) {
@@ -88,7 +88,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
   const ownedRefs = useRef<Record<string, HTMLElement | null>>({});
   const bootRef = useRef<HTMLDivElement>(null);
   const canArtRefs = useRef<Record<string, HTMLElement | null>>({});
-  /** Spend: "−$X" floats off the money (which counts down), and a copy of
+  /** Spend: "−£X" floats off the money (which counts down), and a copy of
    *  what you bought flies into where it now lives. `holdCount` keeps a
    *  can's Owned count from ticking until its can lands. */
   const reward = (price: number, from: Element | null, to: Element | null, node: React.ReactNode, color: string, key: string, holdCount = false) => {

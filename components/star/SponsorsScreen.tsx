@@ -227,8 +227,7 @@ export default function SponsorsScreen({ career, onBack, act, startTab, hud }: {
     <Screen glow={theme.glow}>
       {hud && <div className="sticky top-0 z-30 -mx-3 -mt-3 mb-2">{hud}</div>}
       <div className="w-full flex-1">
-        <ScreenHeader title="Sponsors" kicker="Your deals" onBack={onBack}
-          right={<div className="rounded-full bg-amber-400/15 px-2 py-1 text-[10px] font-black text-amber-300 ring-1 ring-amber-300/30">★ {Math.round(fame)} fame</div>} />
+        <ScreenHeader title="Sponsors" kicker="Your deals" onBack={onBack} />
 
         {/* The summary: weekly money and your deal slots. */}
         <ClubCard glow={theme.glow} className="relative overflow-hidden p-3">

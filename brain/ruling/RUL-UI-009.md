@@ -3,7 +3,8 @@ id: RUL-UI-009
 type: ruling
 client: ui
 tags: [three-d, economy, ui]
-status: live
+status: superseded
+superseded_by: RUL-UI-011
 date: 2026-11-19
 source: "docs/brain-sources/harry-chat-2026-11-19.md:31-35"
 summary: Every page has the relevant stats as the top 2 bars, in the Home bar style (3D icon over the bar): shop fame + money with a dollar bill icon; phone level + money; relations happiness + rep.

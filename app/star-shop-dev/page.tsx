@@ -114,7 +114,7 @@ export default function ShopTestPage() {
       {tools && (
         <div className="fixed left-1/2 top-[64px] z-[60] w-[260px] -translate-x-1/2 rounded-2xl bg-[#0d1426] p-3 text-white shadow-2xl ring-1 ring-white/20" data-test-tools>
           <div className="text-[12px] font-black uppercase tracking-wide text-white/70">Test page only</div>
-          <button type="button" className="mt-2 w-full rounded-xl bg-white/10 py-2 text-[13px] font-black" onClick={() => setCareer((k) => ({ ...k, money: k.money + 50_000 }))}>+$50k money</button>
+          <button type="button" className="mt-2 w-full rounded-xl bg-white/10 py-2 text-[13px] font-black" onClick={() => setCareer((k) => ({ ...k, money: k.money + 50_000 }))}>+£50k money</button>
           <button type="button" className="mt-2 w-full rounded-xl bg-white/10 py-2 text-[13px] font-black" onClick={() => { setCareer(sampleCareer()); setN((x) => x + 1); setTools(false); }}>Start the sample again</button>
           <button type="button" className="mt-2 w-full rounded-xl py-1.5 text-[12px] font-bold text-white/60" onClick={() => setTools(false)}>Close</button>
         </div>

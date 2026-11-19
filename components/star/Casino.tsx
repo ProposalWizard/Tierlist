@@ -298,8 +298,8 @@ function CasinoFrame({ bank, bet, onExit, onChangeBet, title, icon, fx, note, ch
   /** A problem reaching the server's casino (nothing was charged). */
   note?: string | null;
 }) {
-  // Float every change of the bank off it: "−$2k" as a stake goes down,
-  // "+$4k" as winnings come in.
+  // Float every change of the bank off it: "−£2k" as a stake goes down,
+  // "+£4k" as winnings come in.
   const hud = useContext(HudCtx);
   const backLabel = useContext(BackLabelCtx);
   const prev = useRef(bank);

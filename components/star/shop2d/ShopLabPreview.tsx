@@ -3,7 +3,7 @@
 /**
  * The media lab's shop bench (/star-dev/media-lab?shop=kib|boots|lifestyle|landing
  * &look=new|old|grid&cat=cans|boots|drip|gadgets|cars|homes|holiday). New = the
- * Showroom + Feed shop; grid = the earlier card store (StoreShop), only here now. A sample National League career with $1,000,000, a few cans,
+ * Showroom + Feed shop; grid = the earlier card store (StoreShop), only here now. A sample National League career with £1,000,000, a few cans,
  * a phone and a car; buying works on this sample only (nothing is saved).
  */
 import { useEffect, useState } from "react";

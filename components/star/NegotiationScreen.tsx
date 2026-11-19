@@ -33,8 +33,8 @@ import { Screen } from "./ui/Screen";
  */
 
 // Requested directly: this whole screen is about real, non-round numbers
-// being haggled over — a rounded "$2m" reads as a different deal from the
-// "$2,500,000" the negotiation was actually conducted in. formatMoneyPrecise
+// being haggled over — a rounded "£2m" reads as a different deal from the
+// "£2,500,000" the negotiation was actually conducted in. formatMoneyPrecise
 // (money.ts) keeps one real decimal digit instead of flooring it away, only
 // here — every other screen's own money() still uses the coarser
 // formatMoney, which was a deliberate revert for balances/valuations.

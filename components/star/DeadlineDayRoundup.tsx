@@ -33,7 +33,7 @@ interface Deal {
   player: string;
   counterpart: string;
   overall: number;
-  detail: string; // "$28m" / "Free Transfer" / "Loan, back 2028/29"
+  detail: string; // "£28m" / "Free Transfer" / "Loan, back 2028/29"
   loan: boolean;
   unhappy: boolean;
 }

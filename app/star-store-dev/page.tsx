@@ -125,7 +125,7 @@ export default function StoreTestPage() {
             )}
           </div>
           <button
-            onClick={() => { if (window.confirm("Reset purchases? Wallet goes back to $5,000 and 300 Coins.")) setState(START_STATE); }}
+            onClick={() => { if (window.confirm("Reset purchases? Wallet goes back to £5,000 and 300 Coins.")) setState(START_STATE); }}
             className="st-reset"
           >Reset purchases</button>
           <Note>A test wallet on this device only. Buying Coins adds them free; no real money is taken.</Note>

@@ -42,9 +42,11 @@ function RepBar({ label, value }: { label: string; value: number }) {
 }
 
 export default function OwnershipScreen({
-  career, onBack, onReputation, onRuleBook, onOpenMarket, onOpenBoardroom,
+  career, onBack, onReputation, onRuleBook, onOpenMarket, onOpenBoardroom, hud,
 }: {
   career: CareerState;
+  /** The top bars: Money + Reputation (RUL-UI-011). */
+  hud?: React.ReactNode;
   onBack: () => void;
   onReputation: () => void;
   onRuleBook: () => void;
@@ -60,6 +62,7 @@ export default function OwnershipScreen({
 
   return (
     <Screen glow={theme.glow}>
+      {hud && <div className="sticky top-0 z-30 -mx-3 -mt-3 mb-2">{hud}</div>}
       <div className="w-full">
         <ScreenHeader title="Ownership" kicker="Your empire" onBack={onBack} />
 

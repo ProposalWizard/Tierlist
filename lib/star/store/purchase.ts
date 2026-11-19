@@ -1,5 +1,5 @@
 /**
- * THE STORE'S RULES — buying, equipping, Coin packs and swapping Coins for $.
+ * THE STORE'S RULES — buying, equipping, Coin packs and swapping Coins for £.
  *
  * Pure reducers over a small wallet-and-locker state. The test page
  * (/star-store-dev) keeps this state in its own browser storage and never
@@ -151,7 +151,7 @@ export function buyCoinPack(state: StoreState, packId: string, now = Date.now())
   };
 }
 
-/** Swap Coins for $ at this player's rate. */
+/** Swap Coins for £ at this player's rate. */
 export function convertCoins(state: StoreState, coins: number, weeklyWage: number, now = Date.now()): Result {
   const n = Math.floor(coins);
   if (!(n > 0)) return { ok: false, state, reason: "Pick an amount." };

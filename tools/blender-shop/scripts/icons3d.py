@@ -267,8 +267,8 @@ def make_money():
 
 
 def make_cash():
-    """A short stack of green notes with a paper band and a raised $ (Harry, 19 Nov 2026:
-    money is shown as a dollar bill, and the game's money sign becomes $)."""
+    """A short stack of green notes with a paper band and a raised £ (Harry, 19 Nov 2026:
+    money on the bar is a banknote; the game's money sign is £)."""
     note = S.principled('Note', '#38c26a', rough=0.3, coat=1.0, coat_rough=0.06)
     noteDeep = S.principled('NoteDeep', '#1f7a41', rough=0.5, coat=0.4)
     paper = S.principled('Band', '#f3e7c4', rough=0.55, coat=0.3)
@@ -286,7 +286,7 @@ def make_cash():
     med = cyl('Medal', (0, top_y - T / 2 - 0.02, 0), 0.30, 0.03, axis='Y', verts=64, mat=note, bevel=0.01)
     parts.append(med)
     bpy.ops.object.text_add(location=(0, top_y - T / 2 - 0.05, -0.02))
-    t = bpy.context.object; t.data.body = '$'; t.data.align_x = 'CENTER'; t.data.align_y = 'CENTER'
+    t = bpy.context.object; t.data.body = '£'; t.data.align_x = 'CENTER'; t.data.align_y = 'CENTER'
     t.data.size = 0.55; t.data.extrude = 0.025; t.data.bevel_depth = 0.008
     t.rotation_euler = (math.radians(90), 0, 0)
     t.data.materials.append(ink)

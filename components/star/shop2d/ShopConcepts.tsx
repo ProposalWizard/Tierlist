@@ -4,7 +4,7 @@
  * SHOP LAYOUT CONCEPTS — throwaway look prototypes (Harry, 9 Oct 2026, on the
  * new 2D shop: "70% of this isn't even the shop, we need to think outside the
  * box"). /star-dev/media-lab?shopmock=A|B|C|D. Not the real shop: same items,
- * prices and pictures, a sample $1,000,000 balance, and a fake buy sheet.
+ * prices and pictures, a sample £1,000,000 balance, and a fake buy sheet.
  *
  *   A  Showroom swipe   one item fills the screen, swipe sideways, dock at the bottom
  *   B  Dense grid       one 48 px strip on top, three-across grid under it

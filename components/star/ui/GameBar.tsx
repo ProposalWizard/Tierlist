@@ -43,9 +43,9 @@ export default function GameBar({ career, onHelp, onSettings }: {
         <span className="text-[9px] font-black uppercase leading-none tracking-[0.12em]" style={{ color: "var(--sk-top-soft)" }}>Age</span>
         <span className="sk-num text-[13px] font-black leading-none tabular-nums" style={{ color: "var(--sk-top-ink)" }}>{career.player.age}</span>
       </div>
-      <div data-money-chip data-tour="money" aria-label={`Money ${formatWallet(career.money)}`} className="sk-top-chip flex shrink-0 items-center gap-1 rounded-[3px] px-1.5 py-1">
-        <span className="text-[12px] leading-none text-amber-500">{MONEY_SIGN}</span>
-        <span className="sk-num text-[13px] font-black leading-none tabular-nums" style={{ color: "var(--sk-top-ink)" }}>{formatWallet(Math.round(money))}</span>
+      <div data-money-chip data-tour="money" aria-label={`Money ${formatWallet(career.money)}`} className="sk-top-chip flex shrink-0 items-center rounded-[3px] px-1.5 py-1">
+        {/* "£12.4k" as one word (Harry, 19 Nov 2026: the sign sat apart, "£ 12.4k"). */}
+        <span className="sk-num text-[13px] font-black leading-none tabular-nums" style={{ color: "var(--sk-top-ink)" }}><span className="text-amber-500">{MONEY_SIGN}</span>{formatWallet(Math.round(money))}</span>
       </div>
       {onHelp ? (
         <button onClick={onHelp} data-help-button aria-label="Help — show me around" className="kib-press sk-top-btn flex h-8 w-8 shrink-0 items-center justify-center rounded-[3px] text-[17px] font-black leading-none" style={{ color: "#b45309" }}>?</button>

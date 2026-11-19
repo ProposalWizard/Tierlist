@@ -97,7 +97,7 @@ export default function StoreShop({ career, kind, onBack, onBuyKib, onBuyBoot, o
   const setTab = (t: StoreTab) => { if (onKind) onKind(t); else setTabLocal(t); };
   const homeLevel = Math.max(1, SHOP_TIERS.findIndex((t) => t.anchor === divisionOf(career)) + 1);
 
-  // ── Spending: the balance counts down and "−$X" floats off it ───────────
+  // ── Spending: the balance counts down and "−£X" floats off it ───────────
   const [spent, setSpent] = useState({ n: 0, text: "" });
   const spend = (price: number) => setSpent((s) => ({ n: s.n + 1, text: `−${MONEY_SIGN}${formatMoney(price)}` }));
   const [confirm, setConfirm] = useState<null | { info: ConfirmInfo; run: (lawyers: boolean) => string | void }>(null);
