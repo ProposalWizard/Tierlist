@@ -2,11 +2,11 @@
 id: RUL-TEAM-031
 type: ruling
 client: team
-tags: [three-d, process, team]
+tags: [three-d, team]
 status: live
 date: 2026-11-19
 source: "docs/brain-sources/harry-chat-2026-11-19.md:22-24"
-summary: Harry's chats: propose designs as pictures at every step, say before Higgsfield is used, and the 5-minute updates carry images (stills, mock-ups), not text only.
+summary: Propose designs to Harry throughout, tell him if Higgsfield is ever used, and show updates every 5 mins using images and visuals.
 ---
 Harry, 19 Nov 2026: "make sure to propose designs to me throughout - tell me if
 higgsfeild is ever used and show me updates every 5 mins using images and visuals".

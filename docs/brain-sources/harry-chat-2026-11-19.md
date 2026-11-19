@@ -20,7 +20,7 @@ taps and page moves feel slow next to NSS. Two read-only audits ran
 5. "SUPER HARD AND BIG BUILDS - take time with each phase - confirm looks and
    drafts with me - ask any questions needed"
 6. Later the same day: "make sure to propose designs to me throughout - tell me
-   if higgsfeild is ever used and show me updates every 5 mins using images and
+   if higgsfeild (Higgsfield) is ever used and show me updates every 5 mins using images and
    visuals"
 7. On the Supabase connector (it is linked to another project, not
    Knowitball's): "Okay from now on tell me when u need the connector for
