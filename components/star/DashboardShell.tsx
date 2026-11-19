@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { HomeFxStyles } from "./HomeFx";
 import GameBar from "./ui/GameBar";
-import { type NavTab } from "./MainBar";
-import { BarSlot } from "./PersistentBar";
+import MainBar, { type NavTab } from "./MainBar";
 import type { BarBadges } from "@/lib/star/needsYou";
 import { preloadSfx, sfx } from "@/lib/star/sfx";
 
@@ -151,9 +150,7 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
         )}
 
         {/* The bottom bar (MainBar.tsx), the same on every screen. */}
-        {/* The one bar (components/star/PersistentBar.tsx) is drawn over this space, so it is never rebuilt. */}
-        <BarSlot activeNav={activeNav} onNavigate={onNavigate} onHome={onHome ?? (() => onNavigate("home"))} atHome={atHome} locked={locked} badges={badges} mediaUnread={mediaUnread} />
-        <div aria-hidden className="shrink-0" style={{ height: "var(--kib-bar-h, 64px)" }} />
+        <MainBar activeNav={activeNav} onNavigate={onNavigate} onHome={onHome ?? (() => onNavigate("home"))} atHome={atHome} locked={locked} badges={badges} mediaUnread={mediaUnread} />
       </div>
     </div>
   );

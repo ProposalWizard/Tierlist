@@ -141,7 +141,6 @@ import SwipeBack from "@/components/star/SwipeBack";
 import SwipePages from "@/components/star/SwipePages";
 import HomeHub, { daysToNext } from "@/components/star/HomeHub";
 import TopHud, { type HudScreen } from "@/components/star/ui/TopHud";
-import PersistentBar, { BarSlot } from "@/components/star/PersistentBar";
 import GameBar from "@/components/star/ui/GameBar";
 import { PHONE_SEEN_EVENT, phoneUnreadCount } from "@/lib/star/phoneUnread";
 import StatsTabs from "@/components/star/StatsTabs";
@@ -445,8 +444,6 @@ function NewUiStarDevPage() {
   return (
     <div className={`select-none [&_input]:select-text [&_textarea]:select-text star-root ${pitchFont.variable} ${look === "pitch" ? "star-look-pitch" : ""}${look === "pitch" && skin === "glass" ? " star-skin-glass" : ""}`}>
       <StarDevInner immersive={immersive} />
-      {/* The one bottom bar, built once and kept, inside the look's classes (components/star/PersistentBar.tsx). */}
-      <PersistentBar />
     </div>
   );
 }
@@ -4823,9 +4820,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const passBar = (close: () => void) => (
     <MainBar activeNav={null} onNavigate={(t) => { close(); navTo(t); }} onHome={() => { close(); handleNavigate("home"); }} locked={navLocked} mediaUnread={phoneUnread > 0} />
   );
-  // The one bar (components/star/PersistentBar.tsx): a screen only says which tab is lit.
   const mainBar = (active: NavTab | null) => (
-    <BarSlot activeNav={active} onNavigate={navTo} onHome={() => handleNavigate("home")} locked={navLocked} mediaUnread={phoneUnread > 0} />
+    <div className="fixed inset-x-0 bottom-0 z-40" data-main-bar-fixed>
+      <div className="mx-auto w-full max-w-md">{mainBarRaw(active)}</div>
+    </div>
   );
   // The league and the fixtures on ONE page, with the live-score bell in the
   // bottom bar (v0.23 W7, P90) — components/star/MatchWeek.tsx. A full screen
