@@ -1,0 +1,202 @@
+[
+ {
+  "id": "hook",
+  "say": "Let's say Vinícius Júnior leaves Real Madrid this summer. Where should he go?",
+  "cap": "LET'S SAY VINÍCIUS JÚNIOR LEAVES REAL MADRID THIS SUMMER. WHERE SHOULD HE GO?",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "sfx": [
+   [
+    "hit",
+    0.0,
+    0.7
+   ],
+   [
+    "pop",
+    "LEAVES",
+    0.6
+   ],
+   [
+    "hit",
+    "WHERE",
+    0.7
+   ]
+  ],
+  "hold": 0.1
+ },
+ {
+  "id": "method",
+  "say": "We put him into every club in Europe's top five leagues, and played the season four hundred times at each, with the match engine from our game, Road to Ballon d'Or. Then we checked how big each club really is: ten years of finishes and trophies.",
+  "cap": "WE PUT HIM INTO EVERY CLUB IN EUROPE'S TOP FIVE LEAGUES, AND PLAYED THE SEASON FOUR HUNDRED TIMES AT EACH, WITH THE MATCH ENGINE FROM OUR GAME, ROAD TO BALLON D'OR. THEN WE CHECKED HOW BIG EACH CLUB REALLY IS: TEN YEARS OF FINISHES AND TROPHIES.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "sfx": [
+   [
+    "tick",
+    "EVERY",
+    0.4
+   ],
+   [
+    "pop",
+    "PLAYED",
+    0.5
+   ],
+   [
+    "pop",
+    "BIG",
+    0.5
+   ]
+  ],
+  "hold": 0.1
+ },
+ {
+  "id": "c5",
+  "say": "Number five: Manchester City. He'd replace Phil Foden, they win the league in twenty-eight percent of seasons, and the Champions League in seven.",
+  "cap": "NUMBER FIVE: MANCHESTER CITY. HE'D REPLACE PHIL FODEN, THEY WIN THE LEAGUE IN TWENTY-EIGHT PERCENT OF SEASONS, AND THE CHAMPIONS LEAGUE IN SEVEN.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "sfx": [
+   [
+    "hit",
+    0.0,
+    0.6
+   ],
+   [
+    "pop",
+    "LEAGUE",
+    0.45
+   ],
+   [
+    "pop",
+    "CHAMPIONS",
+    0.45
+   ]
+  ],
+  "hold": 0.1
+ },
+ {
+  "id": "c4",
+  "say": "Number four: Inter. He'd replace Henrikh Mkhitaryan, they win Serie A in fifty-five percent of seasons, but the Champions League in only three.",
+  "cap": "NUMBER FOUR: INTER. HE'D REPLACE HENRIKH MKHITARYAN, THEY WIN SERIE A IN FIFTY-FIVE PERCENT OF SEASONS, BUT THE CHAMPIONS LEAGUE IN ONLY THREE.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "sfx": [
+   [
+    "hit",
+    0.0,
+    0.6
+   ],
+   [
+    "pop",
+    "SERIE",
+    0.45
+   ],
+   [
+    "pop",
+    "CHAMPIONS",
+    0.45
+   ]
+  ],
+  "hold": 0.1
+ },
+ {
+  "id": "c3",
+  "say": "Number three: Barcelona. He'd replace Anthony Gordon, they win La Liga in forty-six percent of seasons, and the Champions League in ten: the best chance of any club.",
+  "cap": "NUMBER THREE: BARCELONA. HE'D REPLACE ANTHONY GORDON, THEY WIN LA LIGA IN FORTY-SIX PERCENT OF SEASONS, AND THE CHAMPIONS LEAGUE IN TEN: THE BEST CHANCE OF ANY CLUB.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "sfx": [
+   [
+    "hit",
+    0.0,
+    0.6
+   ],
+   [
+    "pop",
+    "LIGA",
+    0.45
+   ],
+   [
+    "pop",
+    "CHAMPIONS",
+    0.45
+   ]
+  ],
+  "hold": 0.1
+ },
+ {
+  "id": "c2",
+  "say": "Number two: Arsenal. He'd replace Eberechi Eze, they win the Premier League in forty-nine percent of seasons, and the Champions League in eight.",
+  "cap": "NUMBER TWO: ARSENAL. HE'D REPLACE EBERECHI EZE, THEY WIN THE PREMIER LEAGUE IN FORTY-NINE PERCENT OF SEASONS, AND THE CHAMPIONS LEAGUE IN EIGHT.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "sfx": [
+   [
+    "hit",
+    0.0,
+    0.6
+   ],
+   [
+    "pop",
+    "PREMIER",
+    0.45
+   ],
+   [
+    "pop",
+    "CHAMPIONS",
+    0.45
+   ]
+  ],
+  "hold": 0.1
+ },
+ {
+  "id": "c1",
+  "say": "And number one: Bayern Munich. He'd replace Luis Díaz, they win the Bundesliga in three seasons out of four, and they've finished first in nine of the last ten.",
+  "cap": "AND NUMBER ONE: BAYERN MUNICH. HE'D REPLACE LUIS DÍAZ, THEY WIN THE BUNDESLIGA IN THREE SEASONS OUT OF FOUR, AND THEY'VE FINISHED FIRST IN NINE OF THE LAST TEN.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "sfx": [
+   [
+    "hit",
+    0.0,
+    0.6
+   ],
+   [
+    "pop",
+    "BUNDESLIGA",
+    0.45
+   ],
+   [
+    "pop",
+    "FIRST",
+    0.45
+   ]
+  ],
+  "hold": 0.1
+ },
+ {
+  "id": "reel",
+  "say": "And in his best season there, Bayern won the double, and Vinícius scored in the Champions League final.",
+  "cap": "AND IN HIS BEST SEASON THERE, BAYERN WON THE DOUBLE, AND VINÍCIUS SCORED IN THE CHAMPIONS LEAGUE FINAL.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "hold": 6.75
+ },
+ {
+  "id": "end",
+  "say": "Would you send him to Bayern? Follow for more.",
+  "cap": "WOULD YOU SEND HIM TO BAYERN? FOLLOW FOR MORE.",
+  "voiceSettings": {
+   "speed": 1.1
+  },
+  "hold": 0.0
+ }
+]

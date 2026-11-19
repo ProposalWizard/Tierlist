@@ -367,6 +367,15 @@ function avgOverallFor(club: string): number {
  * `62 + (hash % 22)` is exactly what falls out of the default (73), kept
  * byte-identical for every existing caller that doesn't pass one.
  */
+/**
+ * An invented squad for a club the career holds no players for, centred on
+ * its division's level (Mikey's phone test, 17 Nov 2026: a cup opponent
+ * fielded "every single free agent that was available").
+ */
+export function inventedSquadFor(club: string): LeagueSquad {
+  return generatedSquad(club, avgOverallFor(club));
+}
+
 function generatedSquad(club: string, avgOverall = 73): LeagueSquad {
   const low = Math.max(30, Math.round(avgOverall) - 11);
   return {

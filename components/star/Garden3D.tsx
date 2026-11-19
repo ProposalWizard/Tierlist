@@ -303,6 +303,17 @@ function SpotCard({ spot, career, info, visitors, onClose, onShop, onCasino, onT
       </div>
     );
   }
+  if (spot === "casino" && !onCasino) {
+    // The casino is shut in this version (the phone app): say so on the door
+    // rather than saying nothing (Mikey's phone test, 17 Nov 2026, 41:30).
+    return (
+      <div data-casino-locked style={{ ...card, display: "flex", alignItems: "center", gap: 10 }}>
+        <span aria-hidden style={{ fontSize: 24 }}>🔒</span>
+        <div style={{ fontWeight: 900, fontSize: 15 }}>Casino · Locked</div>
+        {close}
+      </div>
+    );
+  }
   if (spot === "casino" || spot === "training") {
     const go = spot === "casino" ? onCasino : onTraining;
     if (!go) return null;

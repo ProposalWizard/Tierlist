@@ -37,6 +37,13 @@ export const HANDED_FK_CONVERT = 0.09;
  * set piece already handed over before the run). Returns the final step with
  * EVERY line of the stretch in `events`, in order.
  */
+/** Take back the half's chance count for a set piece somebody else took. */
+export function uncountHalfChance(st: HiddenMatchState): void {
+  const h = st.minute < 45 ? 0 : st.minute < 90 ? 1 : null;
+  if (h === null || !st.halfChances) return;
+  st.halfChances[h] = Math.max(0, st.halfChances[h] - 1);
+}
+
 export function runStretch(
   st: HiddenMatchState,
   inputs: HiddenMatchInputs,
@@ -63,9 +70,13 @@ export function runStretch(
     // resolveScenario is the one place that increments the score for a goal.
     const line: HiddenMatchEvent = scored
       ? { minute: st.minute, text: `⚽ Your side score the ${label}!`, isGoal: true, teammateGoal: true }
-      : { minute: st.minute, text: `A ${label} — someone else steps up, and it comes to nothing.` };
+      : { minute: st.minute, text: `A ${label} — someone else steps up, and it comes to nothing.`, isOpponent: false };
     all.push(line);
     handedOver.push(line);
+    // Not your chance: it does not use up this half's guaranteed one
+    // (Mikey's phone test, 17 Nov 2026: a half whose only "chance" was a
+    // free kick somebody else took gave him none of his own).
+    uncountHalfChance(st);
     resolveScenario(st, scored ? "goal" : "saved");
     step = advanceUntilInvolved(st, inputs, rng, stretchEnd);
   }

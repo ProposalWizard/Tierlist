@@ -158,7 +158,10 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
           <div>
             {index > 0 ? <SwipeHint onGo={() => { setFromDrag(false); onIndex(index - 1); }} side="left" tour={`tab-${index - 1}`} icon={arrows.icons[index - 1]} label={labels[index - 1]} /> : null}
           </div>
-          <div>
+          {/* Clear of the round Play button, which sits over the bottom-right
+              corner (Mikey's phone test, 17 Nov 2026: "the shop is partly
+              covered by the play button"). */}
+          <div className="mr-[84px]">
             {index < 2 ? <SwipeHint onGo={() => { setFromDrag(false); onIndex(index + 1); }} side="right" tour={`tab-${index + 1}`} icon={arrows.icons[index + 1]} label={labels[index + 1]} /> : null}
           </div>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useState } from "react";
+import { ENERGY_BACK_EVENT } from "./ui/TopHud";
 
 /** How long the toast stays before the next thing on Home (a tour) gets its turn. */
 export const ENERGY_BACK_TOAST_MS = 3200;
@@ -45,6 +46,9 @@ export default function EnergyBackToast({ amount, onDone }: { amount: number; on
   const [top, setTop] = useState<number | null>(null);
   useLayoutEffect(() => {
     setTop(spotOnHome());
+    // The energy bar in the top block fills by the same amount (TopHud.tsx).
+    window.dispatchEvent(new CustomEvent(ENERGY_BACK_EVENT, { detail: amount }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     const t = window.setTimeout(onDone, ENERGY_BACK_TOAST_MS);

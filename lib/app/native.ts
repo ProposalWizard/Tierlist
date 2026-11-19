@@ -75,6 +75,7 @@ export function installNative(): void {
     const t = e.target as HTMLElement | null;
     if (e.key === "Enter" && t && t.tagName === "INPUT") (t as HTMLInputElement).blur();
   });
+  speedReadout();
   const haptics = plugin("Haptics");
   if (haptics?.vibrate) {
     try {
@@ -85,4 +86,40 @@ export function installNative(): void {
       };
     } catch { /* navigator.vibrate is read-only here: the game's own buzz still works on Android */ }
   }
+}
+
+/**
+ * A SPEED READOUT FOR TESTING ON A REAL PHONE. Touch the screen with THREE
+ * fingers at once to show or hide it (it stays as set between launches). It
+ * shows frames a second and the slowest frame of the last two seconds, so a
+ * tester can say "the match runs at 38, worst 120" instead of "it feels slow".
+ */
+function speedReadout(): void {
+  const KEY = "kib-speed-readout";
+  let box: HTMLDivElement | null = null, raf = 0;
+  const show = () => {
+    if (box) return;
+    box = document.createElement("div");
+    box.style.cssText = "position:fixed;left:6px;top:calc(6px + env(safe-area-inset-top,0px));z-index:2147483647;background:rgba(0,0,0,.78);color:#7CFC9A;font:800 12px/1.2 ui-monospace,monospace;padding:4px 7px;border-radius:6px;pointer-events:none";
+    document.body.appendChild(box);
+    let last = performance.now(), frames: number[] = [], shown = last;
+    const step = (now: number) => {
+      frames.push(now - last); last = now;
+      if (now - shown >= 500) {
+        const recent = frames.slice(-120), sum = recent.reduce((a, b) => a + b, 0);
+        if (box) box.textContent = `${Math.round((1000 * recent.length) / sum)} fps · worst ${Math.round(Math.max(...recent))} ms`;
+        frames = recent; shown = now;
+      }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+  };
+  const hide = () => { cancelAnimationFrame(raf); box?.remove(); box = null; };
+  try { if (localStorage.getItem(KEY) === "1") show(); } catch { /* no storage: off */ }
+  window.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 3) return;
+    const on = !box;
+    if (on) show(); else hide();
+    try { localStorage.setItem(KEY, on ? "1" : "0"); } catch { /* not kept */ }
+  }, { passive: true });
 }

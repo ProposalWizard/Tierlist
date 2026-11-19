@@ -7,9 +7,10 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 /**
- * A game, not a web page: the clock / battery bar at the top is hidden (swipe
- * down from the top to see it for a moment), like other football games
- * (Mikey, 11 Nov 2026). The back / home buttons at the bottom stay, dark.
+ * A game, not a web page: the clock / battery bar at the top AND the back /
+ * home buttons at the bottom are hidden, so the game has the whole screen
+ * (Mikey, 11 and 13 Nov 2026). A flick from the top or bottom edge shows them
+ * for a moment, see-through over the game, as in other full-screen apps.
  */
 public class MainActivity extends BridgeActivity {
     @Override
@@ -26,7 +27,7 @@ public class MainActivity extends BridgeActivity {
 
     private void hideTopBar() {
         WindowInsetsControllerCompat c = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
-        c.hide(WindowInsetsCompat.Type.statusBars());
+        c.hide(WindowInsetsCompat.Type.systemBars());
         c.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
         c.setAppearanceLightNavigationBars(false);
         c.setAppearanceLightStatusBars(false);

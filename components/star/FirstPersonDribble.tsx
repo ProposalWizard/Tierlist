@@ -958,7 +958,9 @@ export default function FirstPersonDribble({
             <span className="bg-emerald-500 px-6 py-3 text-base font-black uppercase tracking-widest text-emerald-950 motion-safe:animate-pulse" style={{ boxShadow: "inset 0 0 0 1.5px rgba(255,255,255,.92), 0 2px 8px rgba(0,0,0,.5)" }}>
               Tap to start
             </span>
-            <span className="px-3 py-1.5 text-[12px] font-bold leading-snug text-white" style={HUD_BOX}>
+            {/* Not when the hint lives under the pitch (the trial): it said the
+                same words twice (Mikey's phone test, 17 Nov 2026, 14:16). */}
+            {!hideHint && <span className="px-3 py-1.5 text-[12px] font-bold leading-snug text-white" style={HUD_BOX}>
               {duels
                 ? "He backs off and shows you one way. Sell him a step-over or a dropped shoulder, then go the other way — or flick past him the moment he plants. Tap a team-mate to pass."
                 : knockOn
@@ -966,7 +968,7 @@ export default function FirstPersonDribble({
                 : passOptions > 0
                 ? "Flick to burst past him. Tap a team-mate to pass: green is on, red is risky."
                 : "Tap left or right to touch the ball. Flick to burst past him."}
-            </span>
+            </span>}
           </span>
         </button>
       )}
