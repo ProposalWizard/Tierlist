@@ -19,3 +19,6 @@ taps and page moves feel slow next to NSS. Two read-only audits ran
    voices, random events, a story element baked into a random career).
 5. "SUPER HARD AND BIG BUILDS - take time with each phase - confirm looks and
    drafts with me - ask any questions needed"
+6. Later the same day: "make sure to propose designs to me throughout - tell me
+   if higgsfeild is ever used and show me updates every 5 mins using images and
+   visuals"
