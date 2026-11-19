@@ -72,7 +72,30 @@ Copied from the website's `public/` (only what a screen uses; add a line in
 - The seven default faces of the photo step are already in the app's packed
   pictures (`data/packed.ts packedPicture`, from `lib/star/fakeFaces.ts`).
 
+## Added in round 2 (world screens, 19 Nov 2026)
+
+| Piece | Use | Website source |
+|---|---|---|
+| `<BackPill onPress tone? label? />` | "◂ BACK": `dark` (the shop's) or `glass` (every glass screen) | `ShowroomShop.tsx`, `ui/BackButton.tsx` |
+| `<ScreenHeader title kicker onBack right />` | glass BACK, the kicker + Anton title on a small dark plaque in the middle, a chip right | `ui/Screen.tsx ScreenHeader` + glassLook `[data-sk-header]` |
+| `<PageTitle>` `<CloseSquare>` | an Anton page heading; the glass ✕ square | |
+| `<CapsTabs value onChange tabs />` | TABLE · RESULTS · GOALS…: glass track, spaced caps, emerald line under the chosen one | WorldPane / glassLook `.kit-tabs` |
+| `<AntonTabs … lead size />` | the shop's word tabs (Cans Drip Gadgets…), sideways scroll | `ShowroomShop CatStrip` |
+| `worldPics.ts` `SHOP_PIC`, `STAR_PASS_PIC` | the shop's item stills (640×480, from `public/star/shop2d/items`) and the Star Pass art (`public/star/star-pass`: podiums, rewards, backgrounds, star badge) | made by `tools/look/make-world-pics.py` (never edit by hand) |
+
+The world screens' own glue (not the kit): `world/ui.tsx` (ScreenFrame, Card,
+Seg, Chips, Btn in this look, `bar` puts the bottom bar under a screen),
+`world/lookKit.tsx` (the career kit's Frame/Card/Label/Btn API with the glass
+header, for Store, Owner, Investments, Rule Book, votes), `world/chrome.tsx`
+(`GameTop`: the top bar wired to help, settings, Star Pass).
+
 ## Screens done in this look (19 Nov 2026)
+
+Round 2: League (`screens/League.tsx`, `screens/world/WorldPane.tsx`), Phone and
+its apps (`screens/world/Phone.tsx`, `Feed.tsx`), Shop, Star Pass, Transfers,
+Sponsors, Store, Owner, Investments, Rule Book, votes, cup draw, negotiation
+(`screens/world/*`).
+
 
 Title (`screens/career/TitleMenu.tsx`), new career incl. the photo step
 (`screens/career/NewCareer.tsx`), Home (`screens/Home.tsx`) with the bottom bar

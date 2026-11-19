@@ -11,6 +11,10 @@ its README): fonts, backgrounds, top bar, bottom bar, glass cards, buttons. Titl
 new career (with the photo step) and Home use it; their sections below say what
 still differs. Every other screen still has the differences listed.
 
+**Round 2 (19 Nov 2026, world screens):** League, Phone and its apps, Shop, Star
+Pass, Transfers, Sponsors, Store, Owner, Investments, cup draw and negotiation use
+the kit; their sections below say what still differs.
+
 ## Across every screen (fix these once, every screen moves closer)
 
 1. **Backgrounds.** Packed screens sit on pictures: a stadium at sunset (title,
@@ -108,42 +112,56 @@ still differs. Every other screen still has the differences listed.
   slots and a GOALS & ASSISTS chart; KIB Next shows "Nothing on the shelf yet",
   no chart.
 
-## League table
-- Closest screen. Same layout (Premier League card with YOURS + Change ▾, tabs,
-  the table with coloured edges for places).
-- Packed: HUD on top, "LEAGUE 🔔 ?" title, glassy rows over a blurred stadium,
-  Arsenal row in red; tabs in caps. KIB Next: big "LEAGUE" title, flat rows,
-  tabs in sentence case ("Table", "Results").
+## League table — round 2: close
+- Same now: the top bar, LEAGUE in Anton with ?, the Premier League chooser lit in
+  your club's colour with the gold YOURS, TABLE · RESULTS · GOALS · ASSISTS · HISTORY
+  as glass caps tabs, see-through rows over the blurred stadium with the coloured
+  place edges, your row in red, the bottom bar.
+- Still different: no 🔔 (the website's live-score bell has nothing to do here);
+  rows a little taller, so 17 rows show instead of 18.
 
-## Phone
-- Packed draws an actual phone: rounded frame, a notch, status icons, a red
-  wallpaper glow, HOME and BACK at its bottom, and the game's HUD + bar around it.
-  KIB Next is the phone's contents full screen on black, with Android-like
-  ‹ ○ ✕ buttons at the bottom.
-- Packed app icons are glossy 3D squircles; KIB Next flat rounded squares.
-- Missing in KIB Next: "Your house" icon.
+## Phone — round 2: close
+- Same now: a drawn phone (graphite bezel lit in your club's colour, side buttons,
+  the dynamic island, status bar with the date, signal, wifi, battery), the club
+  wallpaper, the next-match widget, glossy two-colour squircle icons with their
+  shine and red badges, "Your house" (as the website shows it; taps say the 3D
+  house is coming), the dock, ⌂ HOME / BACK ‹, the top bar and bottom bar around it.
+- Apps: Social (Matchday header, ALL/ENGLAND/CLUB pills, the empty feed's ghost
+  rows and mailbox, FEED/TRANSFERS), Squad (one glass table, OVR chips by level),
+  Fixtures (the next game glowing blue), Messages (gradient avatars and bubbles): close.
+- Still different: the Social bar's icons are text glyphs (the website's are SVG
+  line icons); Squad shows no headshots (no photos on the phone yet).
 
-## Shop
-- Packed: Anton category tabs (Cans, Drip, Gadgets, Cars, Homes…) as text with an
-  underline; each item a dark glass card with a big product photo; top: BACK pill,
-  a 1/3/5 level picker, ★0 and 👑1; its own bottom shop bar (Shop, For You, a
-  TikTok-style "3D" button, Boots, Sponsors) above the game's bar.
-- KIB Next: emoji pills for categories, a drawn tin per can, more text per card
-  (owned, energy, effect) and two buttons ("Not enough · ★12k", "Use one"),
-  a Sponsors button top-right; no level picker, no 3D button, no bottom bars.
+## Shop — round 2: close
+- Same now: the dark room, ◂ BACK, the 1 | 3 | 5 picker (all three work), ★money
+  and 👑fame, the Anton category words with the bar under the chosen one, item
+  cards with the website's own product stills (cans, boots, cars, homes…), "NOT
+  ENOUGH ★12k", the chosen card lit in the category colour; 3 on screen: the item
+  big with its neighbours peeking, ×0 OWNED, CANS · 1/3, ⌃ next category, Use one
+  and the red Buy pill; the shop's own bar (Shop · For You · 3D · Boots · Sponsors)
+  over the game's bar. For You works (every item, one a screen).
+- Still different: the shop bar's icons are emoji (website: line icons); 3D is
+  greyed (no 3D shop in this app); the item sheet is one layout for every item
+  (the website gives cans their own three-box sheet); no "⋯ More" menu.
 
-## Star Pass
-- Packed: a big gold star with "1", "STAR PASS" in gold Cinzel, a vertical timeline
-  with numbers 2/4/6 and 3D rewards standing on purple glowing podiums (a figure
-  celebrating, tape, a ball), LOCKER and PTS buttons, your face at the bottom.
-- KIB Next: a summary card (★1, 0 Star Points, 12,000 to ★2, five counters) and a
-  plain list of rewards from ★100 down with emoji and padlocks.
+## Star Pass — round 2: close
+- Same now: the gold star badge with your level, STAR PASS in gold Cinzel, your
+  title, LOCKER and PTS (PTS opens the points table), the gold rule; the road with
+  the website's own backgrounds per 20 levels, the rail filling gold, diamond marks
+  with the level numbers, the reward renders standing on their purple podiums
+  (2, 4, 6…), your face on the rail, CLAIM / SOON / ✓, the bottom bar.
+- Still different: the road's background crop differs a little (a bright band at
+  the left edge); the two moving run-up rewards are their first frame (nothing
+  moves at rest); Locker says it is coming; tapping a reward shows the still, not
+  the website's 3D spin; the title is solid gold, not the website's gradient.
 
-## Transfer window
-- Same content and order. Packed: black-and-yellow diagonal slash background,
-  heavy italic "TRANSFER WINDOW", a "TRANSFERS" strip down the left edge, a
-  scrolling yellow ticker ("21 CLUBS WANT YOU · SEASON GRADE D …") above full-width
-  STAY / NEGOTIATE buttons. KIB Next: plain black, normal title, two rounded buttons.
+## Transfer window — round 2: close
+- Same now: the night lit in your club's colour, floodlights, the diagonal gold
+  slab with its slashes, the TRANSFERS tab down the left edge, the kicker pill,
+  TRANSFER WINDOW in heavy italic gold with a black outline, the season letter,
+  LEAGUE / CLUB tiles in Anton, the ticker, full-width STAY / NEGOTIATE.
+- Still different: the ticker does not scroll and the slab does not shine (nothing
+  moves at rest); no dot texture at the top.
 
 ## Before the match (Play pressed)
 - Packed opens a line-up: both badges, formations (4-3-3 HOLDING / 4-2-3-1),
@@ -179,3 +197,25 @@ still differs. Every other screen still has the differences listed.
   show here (1 → 3 ⬆ with "+ Community Shield + Achievements ×3", BOSS/TEAM/FANS
   bars, "+28 energy back", the first achievement card under the result; packed shows
   achievements as a pop-up after).
+
+## Sponsors — round 2: close
+- Same now: the stadium, glass BACK, the YOUR DEALS / SPONSORS plaque, the fame
+  chip, the SPONSOR MONEY card (★ in Anton, deal slots, next-slot bar), DEALS ·
+  OFFERS · BRANDS tabs, the glass "No deals yet" card, the bottom bar.
+
+## Owner, Investments — round 2: close
+- Same: plaque header, glass cards, the green BROWSE CLUBS button; Investments'
+  MARKET · PORTFOLIO · BOARDROOM tabs and the club list.
+- Still different: Investments shows BALANCE inside the plaque (the website puts
+  it in its own wide box); KIB Next shows club badges in the list (the website
+  does not); the green button's words are not in caps.
+
+## Store — round 2: partly
+- Same: stadium, glass cards, gold/green buttons, the tabs as pills.
+- Still different: no top bar; KIB Next is a list of cards with no pictures (the
+  website shows a TODAY'S PICK card with the run-up/item render and a 2-wide grid
+  of item cards with rarity and % off tags). Needs the store's pictures copied.
+
+## Cup draw, negotiation
+- Restyled (stadium, glass card lit blue, Anton round name, the pot's shiny balls)
+  but not on the sheets: the packed app is hard to walk to a draw.

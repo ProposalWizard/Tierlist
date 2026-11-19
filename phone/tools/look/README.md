@@ -45,7 +45,10 @@ What looks different is written up in `DIFFERENCES.md` (redo it after a look cha
 screen, reached by pulling back from the trial's free kick), `home`, `stats`,
 `league`, `phone`, `shop`, `star-pass`, `transfers` (the summer window), `pre-match`
 (Play pressed), `match-feed` (on the bench), `match-pitch` (your chance, after the
-build-up), `post-match` (the match simmed).
+build-up), `post-match` (the match simmed). Round 2 added `phone-social`,
+`phone-squad`, `phone-fixtures`, `phone-messages` (the phone's apps), `sponsors`,
+`store`, `owner` (each opened from the phone), `investments` (Owner → browse
+clubs), `shop-3` (3 items on screen), `shop-sheet` (an item's sheet).
 
 To add one: a line in `SCENES` in `compare.mjs` with how to reach it in each app
 (`null` for an app that has no such screen).
