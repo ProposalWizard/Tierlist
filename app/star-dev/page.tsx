@@ -5018,6 +5018,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return (
       <Investments
         career={career}
+        hud={screenHud("investments")}
         initialTab={investmentsEntry?.tab}
         initialBoardroomClub={investmentsEntry?.club}
         initialBoardroomSection={investmentsEntry?.section}
@@ -5055,7 +5056,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   if (phase === "sponsors") return (
     <>
-      {withBar(<SponsorsScreen career={career} onBack={handleBackToDashboard} act={sponsorActions} />)}
+      {withBar(<SponsorsScreen career={career} onBack={handleBackToDashboard} act={sponsorActions} hud={screenHud("sponsors")} />)}
       {firstHelp("sponsors") && <PointerTour forced={!!career?.unlocks?.story} key="first-sponsors" steps={HELP_TOURS.sponsors} onDone={helpSeen("sponsors")} />}
       {sponsorNote && (
         <div className="pointer-events-none fixed inset-x-0 top-3 z-[90] mx-auto w-fit max-w-[90%] rounded-xl border border-amber-300 bg-gray-950 px-4 py-2 text-center text-[13px] font-black text-white shadow-[0_0_18px_rgba(251,191,36,.45)]">{sponsorNote}</div>

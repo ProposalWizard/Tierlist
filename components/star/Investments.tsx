@@ -41,6 +41,8 @@ interface ActionResult {
 
 interface Props {
   career: CareerState;
+  /** The top bars: Money + Reputation (RUL-UI-009). */
+  hud?: React.ReactNode;
   onBack: () => void;
   /** Deep-link straight into a tab (and, for "boardroom", a specific club)
    *  instead of always opening on Market — lets OwnershipScreen's hub jump a
@@ -134,6 +136,7 @@ export default function Investments(props: Props) {
 
   return (
     <Screen glow={theme.glow}>
+      {props.hud && <div className="sticky top-0 z-30 -mx-3 -mt-3 mb-2">{props.hud}</div>}
       <div className="w-full">
         <div className="flex items-center gap-2 mb-3">
           <BackButton onClick={props.onBack} />

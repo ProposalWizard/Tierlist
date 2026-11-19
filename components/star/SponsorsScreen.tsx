@@ -206,8 +206,10 @@ function Row({ label, value, gold = false }: { label: string; value: string; gol
   );
 }
 
-export default function SponsorsScreen({ career, onBack, act, startTab }: {
+export default function SponsorsScreen({ career, onBack, act, startTab, hud }: {
   career: CareerState; onBack: () => void; act: SponsorActions; startTab?: Tab;
+  /** The top bars: Fame + Money (RUL-UI-009). */
+  hud?: React.ReactNode;
 }) {
   const b = brandsOf(career);
   const [tab, setTab] = useState<Tab>(startTab ?? (b.offers.length ? "offers" : "deals"));
@@ -223,6 +225,7 @@ export default function SponsorsScreen({ career, onBack, act, startTab }: {
   const nextPct = next ? Math.max(0, Math.min(100, ((fame - curMin) / Math.max(1, next.min - curMin)) * 100)) : 100;
   return (
     <Screen glow={theme.glow}>
+      {hud && <div className="sticky top-0 z-30 -mx-3 -mt-3 mb-2">{hud}</div>}
       <div className="w-full flex-1">
         <ScreenHeader title="Sponsors" kicker="Your deals" onBack={onBack}
           right={<div className="rounded-full bg-amber-400/15 px-2 py-1 text-[10px] font-black text-amber-300 ring-1 ring-amber-300/30">★ {Math.round(fame)} fame</div>} />
