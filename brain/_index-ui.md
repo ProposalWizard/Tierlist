@@ -29,3 +29,4 @@ RUL-UI-004 | "Preview" (game version) is used only when someone asks for it in t
 RUL-UI-005 | Harry's changes go straight into the game when he says push: no new New/Old row, no Preview entry. | deploy,ui
 RUL-UI-006 | "No scroll wheel inside a screen: just show it and you scroll down; never add a scroll wheel unless Mikey specifically says." | team,rule,ui
 RUL-UI-007 | Decide, don't toggle, EXCEPT skins: a whole-UI skin (e.g. Glass stadium) may be a Settings choice; gameplay and single-feature looks still get no New/Old row. | ui
+RUL-UI-008 | The 3D phone: Phone tab = eye-blink into a 3D phone in your hands (the phone UI on it); Home goes to Home, Put phone away leaves you in your 3D house; today's Showroom shop moves onto the 3D phone, the menus get a new plain unified shop. | three-d,economy,ui

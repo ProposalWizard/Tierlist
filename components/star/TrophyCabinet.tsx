@@ -10,7 +10,7 @@ import type React from "react";
 import TrophyImage from "./TrophyImage";
 import type { Trophy } from "@/lib/star/types";
 import { Burst, CountUp, Shine, KitStyles } from "./ui";
-import { Rays, useLater, SCREEN_CSS } from "./ui/Screen";
+import { Rays, useLater } from "./ui/Screen";
 
 /** How individual honours read in the cabinet, rarest first — Ballon d'Or
  *  itself sits in its own hero tile above this list, not counted twice
@@ -43,7 +43,6 @@ export default function TrophyCabinet({ trophies, ballonDors, awards }: {
   return (
     <div data-trophy-cabinet style={{ ["--kit-glow" as string]: "#d4a017" } as React.CSSProperties}>
       <KitStyles />
-      <style>{SCREEN_CSS}</style>
       {/* The Ballon d'Or: rising into turning light, a shine across the
           case, and the count ticking up to the real number. */}
       <div className="kit-card relative mb-3 overflow-hidden p-4 text-center" style={{ boxShadow: "inset 0 0 0 1px rgba(251,191,36,.55), 0 0 30px rgba(251,191,36,.2)" }}>

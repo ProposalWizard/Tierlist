@@ -4,6 +4,7 @@ import { favouriteClipIds, toggleFavourite } from "@/lib/star/favouriteGoals";
 import { publishFavourites, unpublishFavourites } from "@/lib/star/favouriteGoalsStore";
 import { leoUpdateOn, useLeoUpdate, leoUpdateLocal, adoptLeoUpdate, LEO_UPDATE_EVENT } from "@/lib/star/leoUpdate";
 import { preloadScene } from "@/lib/star/three3d/perf";
+import { installTapFeel } from "@/lib/star/tapFeel";
 import { useUiLook, useUiVersionOrNull } from "@/lib/star/uiLook";
 import { useUiSkin } from "@/lib/star/uiSkin";
 import { pitchFont } from "@/components/star/ui/pitchFont";
@@ -474,6 +475,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // mount the engine without the save). Looks only — lib/star/kickFoot.ts.
   const careerFoot = career?.player.preferredFoot;
   useEffect(() => { setActiveFoot(careerFoot); }, [careerFoot]);
+  // Every tap is felt on finger-down: press-in look + light haptic (lib/star/tapFeel.ts).
+  useEffect(() => { installTapFeel(); }, []);
   const [phase, setPhase] = useState<StarPhase>("profile-setup");
   const [activeNav, setActiveNav] = useState<NavTab | null>(null);
   const [trainingTab, setTrainingTab] = useState<"training" | "life">("training");

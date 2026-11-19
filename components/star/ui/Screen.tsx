@@ -12,7 +12,7 @@
  *
  * `Screen` is the night-stadium backdrop (the sky warming into the club
  * colour, a faint crowd, two floodlight halos) with the page on top in the
- * game's usual narrow column. It renders <KitStyles /> and the classes
+ * game's usual narrow column. Its classes load once from ./kit.css; the classes
  * below, so any screen that uses it gets the kit's motion too.
  *
  * The classes are for screens with many cards and buttons (the Boardroom,
@@ -30,38 +30,13 @@
  */
 import type React from "react";
 import { useEffect, useState } from "react";
-import { KitStyles, prefersReducedMotion } from "./motion";
+import { prefersReducedMotion } from "./motion";
 import { ffTimeout } from "./fastForward";
 import { rgba } from "./theme";
 import PressButton from "./PressButton";
 import BackButton from "./BackButton";
 
-export const SCREEN_CSS = `
-  .kit-card {
-    border-radius: 1rem;
-    background:
-      radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--kit-glow, #2F6F4E) 26%, transparent) 0%, transparent 55%),
-      var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96)));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.10), inset 0 0 0 1px color-mix(in srgb, var(--kit-glow, #2F6F4E) 22%, transparent), 0 10px 24px -12px rgba(0,0,0,.8), 0 2px 6px rgba(0,0,0,.35);
-  }
-  .kit-row { background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.025)); box-shadow: inset 0 1px 0 rgba(255,255,255,.06), inset 0 0 0 1px rgba(255,255,255,.05); }
-  .kit-input { background: rgba(3,7,18,.72); box-shadow: inset 0 2px 4px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.10); border: 0 !important; color: #fff; }
-  .kit-input:focus { outline: none; box-shadow: inset 0 2px 4px rgba(0,0,0,.6), inset 0 0 0 1px color-mix(in srgb, var(--kit-glow, #34d399) 70%, white 10%); }
-  .kit-btn { font-weight: 900; color: #fff; transition: transform 70ms ease, filter 70ms ease; }
-  .kit-btn:active:not(:disabled) { transform: scale(.95); filter: brightness(.92); }
-  .kit-btn:disabled { opacity: .42; }
-  .kit-btn-green  { background: linear-gradient(180deg, #4ade80, #10b981 55%, #047857); box-shadow: inset 0 1px 0 rgba(255,255,255,.45), inset 0 -2px 0 rgba(0,0,0,.18), 0 6px 14px -6px rgba(16,185,129,.75); }
-  .kit-btn-blue   { background: linear-gradient(180deg, #7cb4ff, #3b82f6 55%, #1d4ed8); box-shadow: inset 0 1px 0 rgba(255,255,255,.45), inset 0 -2px 0 rgba(0,0,0,.18), 0 6px 14px -6px rgba(59,130,246,.75); }
-  .kit-btn-red    { background: linear-gradient(180deg, #f87171, #dc2626 55%, #991b1b); box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 6px 14px -6px rgba(220,38,38,.7); }
-  .kit-btn-gold   { color: #111827; background: linear-gradient(180deg, #fde68a, #fbbf24 55%, #d97706); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 6px 14px -6px rgba(245,158,11,.7); }
-  .kit-btn-amber  { background: linear-gradient(180deg, #fbbf24, #d97706 55%, #92400e); box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 6px 14px -6px rgba(217,119,6,.7); }
-  .kit-btn-violet { background: linear-gradient(180deg, #c4b5fd, #8b5cf6 55%, #6d28d9); box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 6px 14px -6px rgba(139,92,246,.7); }
-  .kit-btn-glass  { background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.05)); box-shadow: inset 0 1px 0 rgba(255,255,255,.2), inset 0 0 0 1px rgba(255,255,255,.12), 0 6px 14px -10px rgba(0,0,0,.9); }
-  .kit-tabs { display: flex; gap: 2px; border-radius: .9rem; padding: 3px; background: rgba(3,7,18,.6); box-shadow: inset 0 1px 3px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.06); }
-  .kit-tab { flex: 1; border-radius: .7rem; padding: .4rem .25rem; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; color: rgba(255,255,255,.55); }
-  .kit-tab-on { color: #fff; background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.06)); box-shadow: inset 0 1px 0 rgba(255,255,255,.18), inset 0 -2px 0 color-mix(in srgb, var(--kit-glow, #34d399) 85%, white 10%); }
-  @media (prefers-reduced-motion: reduce) { .kit-btn:active:not(:disabled) { transform: none; } }
-`;
+/* SCREEN_CSS moved to ./kit.css (loaded once, 19 Nov 2026). */
 
 /** The night-stadium backdrop: sky warming into the club colour, a faint
  *  crowd, floodlight halos in the two top corners and a vignette. Fixed, so
@@ -107,9 +82,6 @@ export function Screen({ glow, tone, className = "max-w-sm px-3 py-3", center = 
     // phone's height and the page itself never scrolls. A screen taller than
     // the phone scrolls inside this box, so a sticky HUD stays on top.
     <div data-screen-frame className={`relative h-[100dvh] overflow-hidden bg-[#05070d] text-white${stadium ? " sk-stadium-screen" : ""}`} style={{ ["--kit-glow" as string]: glow } as React.CSSProperties}>
-      <KitStyles />
-      <style>{SCREEN_CSS}</style>
-      <style>{`.kib-screen-body::-webkit-scrollbar{display:none}.kib-screen-body{scrollbar-width:none}`}</style>
       <Backdrop glow={glow} tone={tone} />
       <div data-screen-body className="kib-screen-body relative h-full overflow-y-auto overscroll-contain">
         <div className={`relative mx-auto w-full ${center ? "flex min-h-full flex-col justify-center" : ""} ${className}`}>
