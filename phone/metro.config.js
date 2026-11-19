@@ -25,7 +25,17 @@ const PHONE_GLTF = path.join(__dirname, "src/three/GLTFLoader.ts");
 const PHONE_MESHOPT = path.join(__dirname, "src/three/meshopt.ts");
 const LIB_MESHOPT = path.join(root, "lib/star/three3d/meshopt");
 const upstream = config.resolver.resolveRequest;
+// ONE React: the game's files in lib/ sit next to the WEBSITE's packages (React 18),
+// so `import "react"` from lib/ found that copy while the app runs its own (React 19).
+// Two Reacts crash the first game hook on a screen (Mikey, 19 Nov 2026: Home after
+// the trial, "useSyncExternalStore of null"). Every React import resolves from the app.
+const PHONE_ENTRY = path.join(__dirname, "index.ts");
+const ONE_COPY = /^(react|react-native|react-dom|scheduler)(\/.*)?$/;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (ONE_COPY.test(moduleName) && !(context.originModulePath || "").startsWith(path.join(__dirname, "node_modules"))) {
+    const ctx = { ...context, originModulePath: PHONE_ENTRY };
+    return upstream ? upstream(ctx, moduleName, platform) : context.resolveRequest(ctx, moduleName, platform);
+  }
   const from = context.originModulePath || "";
   if (moduleName === "three/examples/jsm/loaders/GLTFLoader.js" && from !== PHONE_GLTF) {
     return { type: "sourceFile", filePath: PHONE_GLTF };
