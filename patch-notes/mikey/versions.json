@@ -1,178 +1,187 @@
 [
-  {
-    "version": "0.1",
-    "date": "2026-09-21",
-    "fromCommit": "88c1966",
-    "toCommit": "a406c46",
-    "url": "https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6",
-    "headline": "Economy, fame and reputation rebuild: Premier League wages to â˜…100k, fame levels, one reputation number, 50-season careers"
-  },
-  {
-    "version": "0.2",
-    "date": "2026-09-22",
-    "fromCommit": "a406c46",
-    "toCommit": "0220a83",
-    "url": "https://claude.ai/artifact/4fuKfUh73WvRmxLdiU9tPu",
-    "headline": "Energy master plan: in-match energy modes, a real ticking clock, half-time KIB cans, rest days, tougher fatigue rules"
-  },
-  {
-    "version": "0.3",
-    "date": "2026-09-25",
-    "fromCommit": "0220a83",
-    "toCommit": "846abc5",
-    "url": "https://claude.ai/artifact/SoBMWDhZGj58LXwP4CFARm",
-    "headline": "What you see on the pitch matches where people stand: nearer players and the ball drawn right, corners from the flag; trophy pictures, instant energy modes, feed likes"
-  },
-  {
-    "version": "0.4",
-    "date": "2026-09-25",
-    "fromCommit": "846abc5",
-    "toCommit": "d7e8cd1",
-    "url": "https://claude.ai/artifact/FYpjCv5GQ4NPTN9qv4BhwQ",
-    "headline": "Training rebuilt the New Star Soccer way: 30 fixed levels, three tries, stars raise the skill; pace, vision and free kick matter in matches"
-  },
-  {
-    "version": "0.5",
-    "date": "2026-09-26",
-    "fromCommit": "d7e8cd1",
-    "toCommit": "210ad41",
-    "url": "https://claude.ai/artifact/Q681hvwMs83X9895Aevav7",
-    "headline": "How you get picked: win your shirt from a better-rated rival, form over 3 games, subs when the score says, cup rotation"
-  },
-  {
-    "version": "0.6",
-    "date": "2026-09-27",
-    "fromCommit": "210ad41",
-    "toCommit": "a7017811",
-    "url": "https://claude.ai/artifact/XCqpEXqtnZ7Dp4yf4vyTue",
-    "headline": "Five levels of every boot and lifestyle item, a moving ball on the strike screen, commentary that barely repeats, new chants"
-  },
-  {
-    "version": "0.7",
-    "date": "2026-09-30",
-    "fromCommit": "a7017811",
-    "toCommit": "bffca8f7",
-    "url": "https://claude.ai/artifact/YYDBCrSHUiCb8kKSe9vVfo",
-    "headline": "A new 1-10 star career rating separate from overall, 7 boots, dearer Style, 2 training sessions a week, restyled training, contract terms"
-  },
-  {
-    "version": "0.8",
-    "date": "2026-09-30",
-    "fromCommit": "bffca8f7",
-    "toCommit": "5bf61571",
-    "url": "https://claude.ai/artifact/6degCbK833CTu3YAZtoyCz",
-    "headline": "Sponsors Revamp: brands send offers, deal slots by fame, weekly fees, targets, brand happiness, bidding wars, buy-outs and scandals"
-  },
-  {
-    "version": "0.9",
-    "date": "2026-10-03",
-    "fromCommit": "5bf61571",
-    "toCommit": "41d20ef3",
-    "url": "https://claude.ai/artifact/UTFsvaBcLbYJjWmnYtXLHg",
-    "headline": "XP rebuilt (slower start, XP by the minute, no double pay) and the XP Book to edit every amount; 3D garden, North/South 2026/27, Club Data"
-  },
-  {
-    "version": "0.10",
-    "date": "2026-10-04",
-    "fromCommit": "41d20ef3",
-    "toCommit": "15393ac6",
-    "url": "https://claude.ai/artifact/26Lh4jWsraDKYSaZZpqWWk",
-    "headline": "Relationships rebuilt: bars that move slowly, one game per relationship, happiness decides recovery, no Sponsors bar; injuries switched off"
-  },
-  {
-    "version": "0.11",
-    "date": "2026-10-08",
-    "fromCommit": "15393ac6",
-    "toCommit": "5304e530",
-    "url": "https://claude.ai/artifact/23eP6tYuyTjuvAbBisnkCj",
-    "headline": "3D standing ovation; centre-back Golden Boot and day-one line-ups fixed; more assists; clearances, negotiations and Relations reworked"
-  },
-  {
-    "version": "0.12",
-    "date": "2026-10-08",
-    "fromCommit": "5304e530",
-    "toCommit": "86ee3024",
-    "url": "https://claude.ai/artifact/6tgaVydhSjEeQea6tkA3oX",
-    "headline": "The ovation's hugs, dap-ups, pat and claps made in Blender; the farewell's 3D ovation checked in a real match"
-  },
-  {
-    "version": "0.13",
-    "date": "2026-10-08",
-    "fromCommit": "86ee3024",
-    "toCommit": "db7bb13c",
-    "url": "https://claude.ai/artifact/D2mVBLe6QDF2jqzHnrjiWt",
-    "headline": "Play-off, cup and European round-ups with animated brackets; the real UEFA knockout; two-legged League Cup semis; ±25% wage when your club goes down or up; relegation day"
-  },
-  {
-    "version": "0.14",
-    "date": "2026-10-09",
-    "fromCommit": "db7bb13c",
-    "toCommit": "6bde251c",
-    "url": "https://claude.ai/artifact/843j4zo8tXx2CKCzYceAFh",
-    "headline": "Real Premier League shots playable as test chances; Chances (testing): about 9 Kane-style highlights a match, Old still the default"
-  },
-  {
-    "version": "0.15",
-    "date": "2026-10-13",
-    "fromCommit": "6bde251c",
-    "toCommit": "855bd36a",
-    "url": "https://claude.ai/artifact/1VrPsvpikmWNaxcTFzpgGt",
-    "headline": "International football: call-ups, duty mode, watching on TV, scorers for every goal; the Ballon d'Or counts club and country (Star Man out); casino scandals"
-  },
-  {
-    "version": "0.16",
-    "date": "2026-10-13",
-    "fromCommit": "855bd36a",
-    "toCommit": "4e0e809d",
-    "url": "https://claude.ai/artifact/S5EvHkuf7wJTaGPeXd3WeM",
-    "headline": "Gameplay review: fewer feed videos that wait for ▶, upright goal posts, achievements unlock and level you up at once; test switches for new framing and headers/volleys"
-  },
-  {
-    "version": "0.17",
-    "date": "2026-10-18",
-    "fromCommit": "4e0e809d",
-    "toCommit": "38ebe9c4",
-    "url": "https://claude.ai/artifact/1A6Wc8XFM2pu2ftCZcymQU",
-    "headline": "The new transfer window (clubs come to you, season letters S to D), the world ages (decline from 31, retire 35–41, replacements), real kits for 211 nations, 1–2 post-match videos"
-  },
-  {
-    "version": "0.18",
-    "date": "2026-10-19",
-    "fromCommit": "38ebe9c4",
-    "toCommit": "8d730e61",
-    "url": "https://claude.ai/artifact/6Gz5vvm7PVwXUrJ3ZMBB7V",
-    "headline": "The world season: every league, cup and European competition played for real, week by week, with a screen to see them all; transfer talk fixes"
-  },
-  {
-    "version": "0.19",
-    "date": "2026-10-20",
-    "fromCommit": "8d730e61",
-    "toCommit": "d6fe204d",
-    "url": "https://claude.ai/artifact/QsxGeWuEK6C7GwcCQJSD3r",
-    "headline": "Mikey's new pop-ups (scoreboard goals, TV captions), the real 10-round FA Cup, team-mate goals kept on reload, PL Draft FC 27 back to 20 clubs"
-  },
-  {
-    "version": "0.20",
-    "date": "2026-10-21",
-    "fromCommit": "d6fe204d",
-    "toCommit": "06a9f8de",
-    "url": "https://claude.ai/artifact/DrwirnxpBBqLzqqjmfipd3",
-    "headline": "Game music: 11 original orchestral tracks for home, matches, full time and the Ballon d'Or night, behind a Settings switch"
-  },
-  {
-    "version": "0.21",
-    "date": "2026-10-23",
-    "fromCommit": "06a9f8de",
-    "toCommit": "e45a92d1",
-    "url": "https://claude.ai/artifact/J1GDXrx1SSHrLTroCa3C2K",
-    "headline": "The master plan built: one bottom bar, a Stats page with your card and four tabs, League as one page for every competition, a Phone with Relationships, Squad, Fixtures & results and real messages"
-  },
-  {
-    "version": "0.22",
-    "date": "2026-10-26",
-    "fromCommit": "e45a92d1",
-    "toCommit": "010e2a08ab4dfdafd15ecfe56c931037dbaf900e",
-    "url": "https://claude.ai/artifact/PYipsSX5z6VbYPQqUoXKm2",
-    "headline": "A new career's first hour as a story, Power 40 clearly weaker with a Power curve test box, chances that follow your play style, a short option on every byline cross, room to pull back on every chance"
-  }
+ {
+  "version": "0.1",
+  "date": "2026-09-21",
+  "fromCommit": "88c1966",
+  "toCommit": "a406c46",
+  "url": "https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6",
+  "headline": "Economy, fame and reputation rebuild: Premier League wages to â˜…100k, fame levels, one reputation number, 50-season careers"
+ },
+ {
+  "version": "0.2",
+  "date": "2026-09-22",
+  "fromCommit": "a406c46",
+  "toCommit": "0220a83",
+  "url": "https://claude.ai/artifact/4fuKfUh73WvRmxLdiU9tPu",
+  "headline": "Energy master plan: in-match energy modes, a real ticking clock, half-time KIB cans, rest days, tougher fatigue rules"
+ },
+ {
+  "version": "0.3",
+  "date": "2026-09-25",
+  "fromCommit": "0220a83",
+  "toCommit": "846abc5",
+  "url": "https://claude.ai/artifact/SoBMWDhZGj58LXwP4CFARm",
+  "headline": "What you see on the pitch matches where people stand: nearer players and the ball drawn right, corners from the flag; trophy pictures, instant energy modes, feed likes"
+ },
+ {
+  "version": "0.4",
+  "date": "2026-09-25",
+  "fromCommit": "846abc5",
+  "toCommit": "d7e8cd1",
+  "url": "https://claude.ai/artifact/FYpjCv5GQ4NPTN9qv4BhwQ",
+  "headline": "Training rebuilt the New Star Soccer way: 30 fixed levels, three tries, stars raise the skill; pace, vision and free kick matter in matches"
+ },
+ {
+  "version": "0.5",
+  "date": "2026-09-26",
+  "fromCommit": "d7e8cd1",
+  "toCommit": "210ad41",
+  "url": "https://claude.ai/artifact/Q681hvwMs83X9895Aevav7",
+  "headline": "How you get picked: win your shirt from a better-rated rival, form over 3 games, subs when the score says, cup rotation"
+ },
+ {
+  "version": "0.6",
+  "date": "2026-09-27",
+  "fromCommit": "210ad41",
+  "toCommit": "a7017811",
+  "url": "https://claude.ai/artifact/XCqpEXqtnZ7Dp4yf4vyTue",
+  "headline": "Five levels of every boot and lifestyle item, a moving ball on the strike screen, commentary that barely repeats, new chants"
+ },
+ {
+  "version": "0.7",
+  "date": "2026-09-30",
+  "fromCommit": "a7017811",
+  "toCommit": "bffca8f7",
+  "url": "https://claude.ai/artifact/YYDBCrSHUiCb8kKSe9vVfo",
+  "headline": "A new 1-10 star career rating separate from overall, 7 boots, dearer Style, 2 training sessions a week, restyled training, contract terms"
+ },
+ {
+  "version": "0.8",
+  "date": "2026-09-30",
+  "fromCommit": "bffca8f7",
+  "toCommit": "5bf61571",
+  "url": "https://claude.ai/artifact/6degCbK833CTu3YAZtoyCz",
+  "headline": "Sponsors Revamp: brands send offers, deal slots by fame, weekly fees, targets, brand happiness, bidding wars, buy-outs and scandals"
+ },
+ {
+  "version": "0.9",
+  "date": "2026-10-03",
+  "fromCommit": "5bf61571",
+  "toCommit": "41d20ef3",
+  "url": "https://claude.ai/artifact/UTFsvaBcLbYJjWmnYtXLHg",
+  "headline": "XP rebuilt (slower start, XP by the minute, no double pay) and the XP Book to edit every amount; 3D garden, North/South 2026/27, Club Data"
+ },
+ {
+  "version": "0.10",
+  "date": "2026-10-04",
+  "fromCommit": "41d20ef3",
+  "toCommit": "15393ac6",
+  "url": "https://claude.ai/artifact/26Lh4jWsraDKYSaZZpqWWk",
+  "headline": "Relationships rebuilt: bars that move slowly, one game per relationship, happiness decides recovery, no Sponsors bar; injuries switched off"
+ },
+ {
+  "version": "0.11",
+  "date": "2026-10-08",
+  "fromCommit": "15393ac6",
+  "toCommit": "5304e530",
+  "url": "https://claude.ai/artifact/23eP6tYuyTjuvAbBisnkCj",
+  "headline": "3D standing ovation; centre-back Golden Boot and day-one line-ups fixed; more assists; clearances, negotiations and Relations reworked"
+ },
+ {
+  "version": "0.12",
+  "date": "2026-10-08",
+  "fromCommit": "5304e530",
+  "toCommit": "86ee3024",
+  "url": "https://claude.ai/artifact/6tgaVydhSjEeQea6tkA3oX",
+  "headline": "The ovation's hugs, dap-ups, pat and claps made in Blender; the farewell's 3D ovation checked in a real match"
+ },
+ {
+  "version": "0.13",
+  "date": "2026-10-08",
+  "fromCommit": "86ee3024",
+  "toCommit": "db7bb13c",
+  "url": "https://claude.ai/artifact/D2mVBLe6QDF2jqzHnrjiWt",
+  "headline": "Play-off, cup and European round-ups with animated brackets; the real UEFA knockout; two-legged League Cup semis; ±25% wage when your club goes down or up; relegation day"
+ },
+ {
+  "version": "0.14",
+  "date": "2026-10-09",
+  "fromCommit": "db7bb13c",
+  "toCommit": "6bde251c",
+  "url": "https://claude.ai/artifact/843j4zo8tXx2CKCzYceAFh",
+  "headline": "Real Premier League shots playable as test chances; Chances (testing): about 9 Kane-style highlights a match, Old still the default"
+ },
+ {
+  "version": "0.15",
+  "date": "2026-10-13",
+  "fromCommit": "6bde251c",
+  "toCommit": "855bd36a",
+  "url": "https://claude.ai/artifact/1VrPsvpikmWNaxcTFzpgGt",
+  "headline": "International football: call-ups, duty mode, watching on TV, scorers for every goal; the Ballon d'Or counts club and country (Star Man out); casino scandals"
+ },
+ {
+  "version": "0.16",
+  "date": "2026-10-13",
+  "fromCommit": "855bd36a",
+  "toCommit": "4e0e809d",
+  "url": "https://claude.ai/artifact/S5EvHkuf7wJTaGPeXd3WeM",
+  "headline": "Gameplay review: fewer feed videos that wait for ▶, upright goal posts, achievements unlock and level you up at once; test switches for new framing and headers/volleys"
+ },
+ {
+  "version": "0.17",
+  "date": "2026-10-18",
+  "fromCommit": "4e0e809d",
+  "toCommit": "38ebe9c4",
+  "url": "https://claude.ai/artifact/1A6Wc8XFM2pu2ftCZcymQU",
+  "headline": "The new transfer window (clubs come to you, season letters S to D), the world ages (decline from 31, retire 35–41, replacements), real kits for 211 nations, 1–2 post-match videos"
+ },
+ {
+  "version": "0.18",
+  "date": "2026-10-19",
+  "fromCommit": "38ebe9c4",
+  "toCommit": "8d730e61",
+  "url": "https://claude.ai/artifact/6Gz5vvm7PVwXUrJ3ZMBB7V",
+  "headline": "The world season: every league, cup and European competition played for real, week by week, with a screen to see them all; transfer talk fixes"
+ },
+ {
+  "version": "0.19",
+  "date": "2026-10-20",
+  "fromCommit": "8d730e61",
+  "toCommit": "d6fe204d",
+  "url": "https://claude.ai/artifact/QsxGeWuEK6C7GwcCQJSD3r",
+  "headline": "Mikey's new pop-ups (scoreboard goals, TV captions), the real 10-round FA Cup, team-mate goals kept on reload, PL Draft FC 27 back to 20 clubs"
+ },
+ {
+  "version": "0.20",
+  "date": "2026-10-21",
+  "fromCommit": "d6fe204d",
+  "toCommit": "06a9f8de",
+  "url": "https://claude.ai/artifact/DrwirnxpBBqLzqqjmfipd3",
+  "headline": "Game music: 11 original orchestral tracks for home, matches, full time and the Ballon d'Or night, behind a Settings switch"
+ },
+ {
+  "version": "0.21",
+  "date": "2026-10-23",
+  "fromCommit": "06a9f8de",
+  "toCommit": "e45a92d1",
+  "url": "https://claude.ai/artifact/J1GDXrx1SSHrLTroCa3C2K",
+  "headline": "The master plan built: one bottom bar, a Stats page with your card and four tabs, League as one page for every competition, a Phone with Relationships, Squad, Fixtures & results and real messages"
+ },
+ {
+  "version": "0.22",
+  "date": "2026-10-26",
+  "fromCommit": "e45a92d1",
+  "toCommit": "010e2a08ab4dfdafd15ecfe56c931037dbaf900e",
+  "url": "https://claude.ai/artifact/PYipsSX5z6VbYPQqUoXKm2",
+  "headline": "A new career's first hour as a story, Power 40 clearly weaker with a Power curve test box, chances that follow your play style, a short option on every byline cross, room to pull back on every chance"
+ },
+ {
+  "version": "0.23",
+  "date": "2026-11-19",
+  "fromCommit": "925a08ad",
+  "toCommit": "05d7cca65fc58fec11e43abf97da6db3d2146a93",
+  "url": "https://claude.ai/artifact/6yuGfXVSuSWYN3i6Jrc7nP",
+  "siteVersion": "0.139",
+  "headline": "Getting the app ready: Google Play (account, signed app, store page in 86 languages, pictures, privacy policy), why the app lags, and KIB Next, a phone-built app that plays the same game"
+ }
 ]

@@ -27,6 +27,186 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.139",
+      "title": "Mikey's patch notes: Getting the app ready for phones",
+      "author": "Mikey",
+      "publishedAt": "2026-11-19T16:18:51Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/6yuGfXVSuSWYN3i6Jrc7nP",
+      "summary": "The packed app is signed and its Google Play page is done (86 languages, icon, feature graphic, screenshots, privacy policy). It still felt laggy, so KIB Next was built: a separate app made for the phone that plays the same game with the same rules (100 of 100 test matches identical). Honest: KIB Next has never run on a real phone yet.",
+      "stats": [
+        {
+          "value": "86",
+          "label": "languages on the Play Store page"
+        },
+        {
+          "value": "100 / 100",
+          "label": "phone matches identical to the website"
+        },
+        {
+          "value": "0",
+          "label": "changes to the website's game rules"
+        },
+        {
+          "value": "14 days",
+          "label": "closed test before the public launch"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The privacy policy's phone app section",
+              "detail": "knowitball.co.uk/legal → \"Our Phone App\"."
+            },
+            {
+              "title": "Store listing text in 86 languages",
+              "detail": "Play Console → Store presence → Store listings."
+            },
+            {
+              "title": "Icon, feature graphic, 8 screenshots, AI labels",
+              "detail": "Play Console → Default store listing."
+            },
+            {
+              "title": "App 1.1: no frosted-glass blur",
+              "detail": "Install the 1.1 APK, compare scrolling with 1.0."
+            },
+            {
+              "title": "KIB Next: start a career, play a full match",
+              "detail": "Install KIB Next → New game → Play."
+            },
+            {
+              "title": "KIB Next: League, Phone, Shop, Star Pass, transfers",
+              "detail": "KIB Next → bottom bar and Home links."
+            },
+            {
+              "title": "KIB Next: your 3D player, Save video, the farewell walk-out",
+              "detail": "KIB Next → Home; Kickabout → Goal replays; your last match."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: Google Play",
+          "items": [
+            {
+              "title": "Developer account",
+              "detail": "Personal, non-trader, ID verified."
+            },
+            {
+              "title": "A signed app ready to upload",
+              "detail": "app-release.aab (about 158 MB), signed with Knowitball's own upload key."
+            },
+            {
+              "title": "Store page in 86 languages",
+              "detail": "Inside every length limit; not checked by native speakers."
+            },
+            {
+              "title": "Icon, feature graphic, screenshots",
+              "detail": "Mikey's 8 screenshots made Play-ready (1080 × 1920), plus 8 captioned ones."
+            },
+            {
+              "title": "Play's forms",
+              "detail": "No data collected, no ads, 13+, no gambling, AI labels on 3 pictures."
+            },
+            {
+              "title": "Privacy policy covers the phone app",
+              "detail": "Live at knowitball.co.uk/legal."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: the packed app",
+          "items": [
+            {
+              "title": "App 1.1: no frosted-glass blur",
+              "detail": "In the app only; Mikey: not a huge change for the lag."
+            },
+            {
+              "title": "No Card Night in the phone app",
+              "detail": "Keeps Play's age rating low."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Found: why the app lags",
+          "items": [
+            {
+              "title": "Hidden work stutters untouched screens",
+              "detail": "Mikey's phone: 2D match 171 stutters in 40 s, garden 90 and feed 87 in 30 s; the Home 3D player redrew 30 times a second."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: KIB Next, the phone-built app",
+          "items": [
+            {
+              "title": "A separate app built for the phone",
+              "detail": "Reads the game's rules from the same files as the website, never changes them."
+            },
+            {
+              "title": "Matches exactly as on the website",
+              "detail": "100 of 100 test matches identical."
+            },
+            {
+              "title": "The whole career and everything around it",
+              "detail": "Trial to Hall of Fame, every league and cup, phone, shop, Owner app; no casino."
+            },
+            {
+              "title": "Real players offline, the website's drawings",
+              "detail": "Same squads and photos as the packed app."
+            },
+            {
+              "title": "Goal videos with Save video, 3D player, farewell walk-out",
+              "detail": "Not yet seen on a phone."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "KIB Next has never run on a phone (HIGH)",
+              "detail": "All checks headless or in a browser."
+            },
+            {
+              "title": "Save video untested on a device (HIGH)",
+              "detail": "iPhone has no video maker yet."
+            },
+            {
+              "title": "Extra permissions in the KIB Next test build (LOW)",
+              "detail": "Remove before any release."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Closed test of the packed app",
+              "detail": "12+ testers, 14 days."
+            },
+            {
+              "title": "Playtest KIB Next on real phones",
+              "detail": "Mikey, Harry, Leo."
+            },
+            {
+              "title": "KIB Next as version 2.0",
+              "detail": "Mikey: keep testing first."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+    {
       "version": "0.138",
       "title": "Harry's patch notes: New home, Team room, bots, admin",
       "author": "Harry",
