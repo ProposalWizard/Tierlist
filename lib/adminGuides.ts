@@ -1793,6 +1793,37 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-wallet-dev/ · lib/star/wallet.ts, lib/star/useWallet.ts · app/api/star/wallet (GET), /buy, /webhook (refuses all) · app/api/admin/wallet/grant · supabase/migrations/star_wallet.sql (spend_gems, grant_gems, grant_item) · tests/star/wallet.mts · PAID_ITEMS.md",
   },
+  "/star-shop-dev": {
+    title: "Menu shop (test)",
+    what: "The new shop for the menus (Harry, 19 Nov 2026: layout B on the navy store background), on a made-up career, so it can be looked at and bought from before it goes into the game.",
+    buttons: [
+      { group: "The top", items: [
+        ["Back", "In the game it goes back to where you came from. Here it only says so."],
+        ["?", "Shows one line on how the shop works. Tap again to hide it."],
+        ["Settings (the cog)", "In the game: the game's settings. Here it opens the test tools: \"+$50k money\" adds money to the sample career, \"Start the sample again\" puts everything back as it started."],
+        ["The two bars (Fame, Money)", "Your fame and your money. The light piece on Fame is what the picked item would add; the stripes on Money are what it costs."],
+      ] },
+      { group: "The shop", items: [
+        ["Cans, Boots, Drip, Gadgets, Cars, Homes, Holiday", "The categories. Each opens on the cheapest thing you don't own yet."],
+        ["The big picture", "Swipe it left or right for the next item. Tap it to open the item's sheet."],
+        ["The gold price", "Opens the item's sheet (nothing is bought from the card itself). Red = a banned boot, black market only."],
+        ["The small pictures", "Every item in the category. Tap one to show it big. OWNED = you have it."],
+      ] },
+      { group: "The item sheet", items: [
+        ["A level row", "Picks that level to buy. Green Owned = you have it; Next = the one the shop offers."],
+        ["Buy level N · $X", "Buys it with the game's own rules and prices: the money goes down, the level turns Owned. A pair of boots you just bought is sold out until your next visit."],
+        ["Use lawyers", "Only on a banned boot: pay the lawyers' fee too, for less chance of getting caught."],
+        ["Use one", "Only on a can: drinks one."],
+        ["Close (or swipe the top of the sheet down, or tap outside)", "Shuts the sheet."],
+      ] },
+      { group: "The bottom bar", items: [
+        ["League, Training, Home, Phone, PLAY", "The game's own bar. Here a tap only says where it would go."],
+      ] },
+    ],
+    saving: ["Nothing is saved. Buying changes only the sample career on this page; reload the page and it starts again."],
+    inGame: ["Not in the game yet. Harry looks at it here first; then it replaces the Showroom as the shop in the menus (the Showroom moves to the 3D phone)."],
+    dev: "app/star-shop-dev/page.tsx · components/star/shop/MenuShop.tsx + menuShop.css · background baked by scripts/perf2d/bake-shop-bg.py → public/star/shop/bg-store-navy.webp · buy sums copied from app/star-dev/page.tsx handleBuyKib/Boot/Item/FromBlackMarket · ?cat=cans|boots|drip|gadgets|cars|homes|holiday",
+  },
   "/star-store-dev": {
     title: "Store (test)",
     what: "A test version of an in-game store: daily specials, penalty run-ups, accessories, boosts that help you win, and Coins bought with real money. Nothing here reaches a career, and no real money is ever taken.",

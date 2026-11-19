@@ -1,0 +1,155 @@
+/* THE MENU SHOP (components/star/shop/MenuShop.tsx), RUL-UI-010: layout B on
+   G1 navy. Loaded once with the component (never an inline <style>).
+   No backdrop-filter anywhere (the app strips it): the "frost" is see-through
+   navy over a background whose blur is already baked into the picture
+   (scripts/perf2d/bake-shop-bg.py → public/star/shop/bg-store-navy.webp).
+   No entrance animations (Harry, 14 Oct 2026: a tap shows the next screen at once). */
+
+.ms-root {
+  --ms-display: var(--font-pitch), Anton, Impact, "Arial Narrow", sans-serif;
+  --ms-glass: rgba(255, 255, 255, .08);
+  --ms-edge: rgba(255, 255, 255, .18);
+  --ms-gold: #fde047;
+  --ms-sky: #7dd3fc;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  color: #fff;
+  background: #0b1a33 url(/star/shop/bg-store-navy.webp) center 20% / cover no-repeat;
+  isolation: isolate;
+}
+@media (min-width: 640px) {
+  .ms-root { max-width: 480px; margin: 0 auto; box-shadow: 0 0 0 1px rgba(255, 255, 255, .12); }
+}
+
+/* ── The top: title row + the two bars, one navy panel ── */
+.ms-top {
+  flex: none;
+  background: #0d1426;
+  border-radius: 0 0 26px 26px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .12);
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.ms-title-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 10px 12px 2px; }
+.ms-title { font-family: var(--ms-display); font-size: 30px; line-height: 1; letter-spacing: .04em; text-align: center; }
+.ms-title-right { display: flex; justify-content: flex-end; gap: 6px; }
+.ms-sq {
+  width: 34px; height: 34px; border-radius: 10px;
+  display: grid; place-items: center;
+  background: rgba(255, 255, 255, .12); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3);
+  font-weight: 900; font-size: 16px; color: #fff;
+}
+/* The game's TopHud sits in the navy panel: no grey slab of its own. */
+.ms-top .sk-top { --sk-top-bg: transparent; background: transparent !important; box-shadow: none !important; padding-top: 14px; }
+.ms-tip { margin: 0 14px 10px; font-size: 12px; font-weight: 700; color: rgba(255, 255, 255, .8); }
+
+/* ── Category chips ── */
+.ms-chips { flex: none; display: flex; gap: 6px; padding: 12px 14px 10px; overflow-x: auto; scrollbar-width: none; }
+.ms-chips::-webkit-scrollbar { display: none; }
+.ms-chip {
+  flex: none; white-space: nowrap;
+  font-size: 13px; font-weight: 800; padding: 7px 12px; border-radius: 999px;
+  background: var(--ms-glass); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22); color: rgba(255, 255, 255, .85);
+}
+.ms-chip[aria-pressed="true"] { background: #fff; color: #0b1a2e; box-shadow: none; }
+
+/* ── The body (scrolls on a short phone) ── */
+.ms-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 12px; }
+
+/* ── The big product card ── */
+.ms-hero {
+  position: relative; display: block; width: calc(100% - 24px); margin: 0 12px; height: 300px;
+  border-radius: 20px; overflow: hidden; text-align: left; color: #fff;
+  background: radial-gradient(70% 60% at 50% 42%, rgba(125, 211, 252, .14), transparent 70%), linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .04));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), 0 0 0 1px var(--ms-edge);
+  touch-action: pan-y; user-select: none; -webkit-user-select: none;
+}
+.ms-hero-pic { position: absolute; left: 0; right: 0; top: 12px; height: 210px; display: grid; place-items: center; pointer-events: none; }
+.ms-hero-pic img { max-height: 210px; max-width: 300px; object-fit: contain; }
+.ms-hero-pic .ms-can { height: 190px; max-height: 190px; width: auto; }
+.ms-hero-pic.ms-locked img { filter: grayscale(1); opacity: .35; }
+.ms-lock { position: absolute; inset: 0; display: grid; place-items: center; font-size: 44px; pointer-events: none; }
+.ms-cap { position: absolute; left: 14px; bottom: 12px; right: 120px; pointer-events: none; }
+.ms-name { font-family: var(--ms-display); font-size: 28px; line-height: 1.02; letter-spacing: .02em; text-transform: uppercase; overflow-wrap: anywhere; }
+.ms-lv { margin-top: 4px; font-size: 10.5px; font-weight: 800; letter-spacing: .06em; color: var(--ms-sky); text-transform: uppercase; }
+.ms-price {
+  position: absolute; right: 12px; bottom: 12px;
+  min-width: 64px; padding: 11px 16px; border-radius: 12px;
+  font-size: 16px; font-weight: 900; color: #0b1a2e;
+}
+.ms-price-off { background: rgba(255, 255, 255, .12) !important; color: rgba(255, 255, 255, .7) !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18) !important; }
+.ms-price-own { background: rgba(74, 222, 128, .16) !important; color: #4ade80 !important; box-shadow: inset 0 0 0 1px rgba(74, 222, 128, .45) !important; }
+.ms-price-black { background: linear-gradient(180deg, #f87171, #dc2626 55%, #991b1b) !important; color: #fff !important; }
+
+.ms-dots { display: flex; justify-content: center; gap: 6px; margin: 10px 0 8px; }
+.ms-dots i { width: 7px; height: 7px; border-radius: 9px; background: rgba(255, 255, 255, .35); }
+.ms-dots i[data-on] { width: 18px; background: #fff; }
+
+/* ── The thumbnails (a row that scrolls when a category has more than four) ── */
+.ms-rail { display: flex; gap: 8px; padding: 0 12px 2px; overflow-x: auto; scrollbar-width: none; scroll-padding: 12px; }
+.ms-rail::-webkit-scrollbar { display: none; }
+.ms-th {
+  position: relative; flex: none; width: 84px; height: 84px; border-radius: 16px;
+  display: grid; place-items: center;
+  background: var(--ms-glass); box-shadow: inset 0 0 0 1px var(--ms-edge);
+}
+.ms-th[aria-current="true"] { box-shadow: inset 0 0 0 2px #fff; }
+.ms-th img { max-width: 64px; max-height: 56px; object-fit: contain; margin-top: -10px; }
+.ms-th .ms-can { height: 54px; width: auto; }
+.ms-th b { position: absolute; bottom: 5px; left: 0; right: 0; text-align: center; font-size: 10px; font-weight: 900; color: var(--ms-gold); }
+
+.ms-gives {
+  margin: 12px 12px 0; padding: 10px 12px; border-radius: 14px;
+  font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, .88);
+  background: var(--ms-glass); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14);
+}
+
+/* ── The game's bottom bar ── */
+.ms-bar { flex: none; position: relative; z-index: 5; }
+
+/* ── The item sheet ── */
+.ms-dim { position: absolute; inset: 0; z-index: 40; background: rgba(2, 6, 14, .6); }
+.ms-sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 92%;
+  display: flex; flex-direction: column;
+  background: linear-gradient(180deg, #15294a, #0b1628);
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -1px 0 rgba(255, 255, 255, .2), 0 -20px 40px rgba(0, 0, 0, .5);
+  padding: 8px 14px calc(16px + env(safe-area-inset-bottom, 0px));
+}
+.ms-grab-zone { touch-action: none; flex: none; }
+.ms-grab-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+.ms-grab { width: 42px; height: 5px; border-radius: 5px; background: rgba(255, 255, 255, .35); margin: 4px auto 6px; }
+.ms-close { justify-self: end; font-size: 12px; font-weight: 800; color: rgba(255, 255, 255, .7); padding: 4px 6px; }
+.ms-shead { display: flex; gap: 12px; align-items: center; padding-bottom: 2px; }
+.ms-shead-pic { width: 110px; height: 80px; flex: none; display: grid; place-items: center; }
+.ms-shead-pic img { max-width: 110px; max-height: 80px; object-fit: contain; }
+.ms-shead-pic .ms-can { height: 80px; width: auto; }
+.ms-sname { font-family: var(--ms-display); font-size: 26px; line-height: 1.02; letter-spacing: .02em; text-transform: uppercase; }
+.ms-sline { margin-top: 3px; font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, .8); }
+.ms-sbody { min-height: 0; overflow-y: auto; }
+.ms-lad { margin-top: 10px; border-radius: 16px; background: rgba(255, 255, 255, .04); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12); }
+.ms-lr { display: flex; width: 100%; align-items: center; gap: 10px; padding: 7px 10px; text-align: left; color: #fff; border-top: 1px solid rgba(255, 255, 255, .08); }
+.ms-lr:first-child { border-top: 0; }
+.ms-lr img { width: 52px; height: 36px; object-fit: contain; flex: none; }
+.ms-lr-t { min-width: 0; flex: 1; }
+.ms-lr-t b { display: block; font-size: 14px; font-weight: 900; }
+.ms-lr-t span { display: block; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, .72); }
+.ms-lr em { margin-left: auto; flex: none; font-style: normal; font-size: 12.5px; font-weight: 900; color: var(--ms-gold); }
+.ms-lr[data-state="owned"] b, .ms-lr[data-state="owned"] em { color: #4ade80; }
+.ms-lr[data-state="locked"] { opacity: .6; }
+.ms-lr[data-state="pick"] { background: rgba(125, 211, 252, .12); box-shadow: inset 3px 0 0 var(--ms-sky); border-radius: 10px; }
+.ms-lr[data-state="pick"] em { color: var(--ms-sky); }
+.ms-note { margin-top: 10px; padding: 8px 10px; border-radius: 12px; font-size: 12.5px; font-weight: 700; background: rgba(255, 255, 255, .06); color: rgba(255, 255, 255, .85); }
+.ms-note-red { background: rgba(220, 38, 38, .18); color: #fecaca; box-shadow: inset 0 0 0 1px rgba(248, 113, 113, .35); }
+.ms-check { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12.5px; font-weight: 700; }
+.ms-check input { width: 18px; height: 18px; accent-color: #fbbf24; }
+.ms-buy { flex: none; margin-top: 12px; text-align: center; }
+.ms-bigbuy { display: block; width: 100%; padding: 14px; border-radius: 16px; font-size: 17px; font-weight: 900; color: #0b1a2e; }
+.ms-after { margin-top: 6px; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, .65); }
+.ms-after[data-done] { color: #4ade80; font-weight: 800; }
+.ms-use { display: block; width: 100%; margin-top: 8px; padding: 10px; border-radius: 14px; font-size: 14px; font-weight: 900; color: #fff; background: rgba(255, 255, 255, .1); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2); }
+.ms-use:disabled { opacity: .4; }
