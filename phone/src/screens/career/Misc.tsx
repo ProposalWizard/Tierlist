@@ -16,7 +16,9 @@ import { TOON_BODIES, TOON_BODY_LABEL, TOON_PLAYER_HEADS, TOON_HEAD_LABEL, yourT
 import { useCareer, setCareer } from "../../game/store";
 import { Press } from "../../ui/Press";
 import { useEffect, useRef, useState } from "react";
-import { View, Text, Switch, Platform, BackHandler } from "react-native";
+import { View, Text, Platform, BackHandler, type ViewStyle } from "react-native";
+import { FONT, LOOK, LookButton } from "../../ui/look";
+import { clubGlow } from "./lookBits";
 import { listSlots, loadSlot, newInSlot, deleteSlot, activeSlot } from "../../world/slots";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import { nextFixtureFor, fixtureLabel } from "@/lib/star/competitions";
@@ -31,46 +33,6 @@ import * as flow from "../../game/flow";
 import { useSession } from "../../game/session";
 import { usePrefs, setPref, type Prefs } from "../../game/prefs";
 import { Frame, Card, Label, Row, Btn, ClubCrest, Fill, StandInNote, money, C } from "./kit";
-
-// ── Match day ──
-export function PreMatchScreen({ career, go, onBack }: { career: CareerState; go: (s: flow.Step, push?: boolean) => void; onBack: () => void }) {
-  // page.tsx: a youth-team player's match day is his youth week; a loan's
-  // target is shown once a week on the way to the match (LoanBrief).
-  const redirect = career.placement?.kind === "youth" ? "career-youth" : flow.loanBriefDue(career) ? "career-loan-brief" : null;
-  useEffect(() => { if (redirect) go({ screen: redirect }); }, [redirect]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (redirect) return null;
-  const f = nextFixtureFor(career);
-  if (!f) return <Frame title="No match" onBack={onBack}><Btn label="Home" onPress={onBack} /></Frame>;
-  const sel = flow.preMatchSelection(career);
-  const status = sel.status;
-  const watching = !!f.watch || status === "Squad" || status === "Injured";
-  const mine = flow.myTeam(career, f);
-  const energy = projectedEnergy(career);
-  return (
-    <Frame kicker={f.kind && f.kind !== "league" ? fixtureLabel(f) : "Match day"} title={`${f.home ? "v" : "@"} ${shortClub(f.opponent)}`} onBack={onBack}
-      footer={watching
-        ? <Btn kind="plain" label={f.watch ? "📺 Watch on TV" : "🏟️ Watch from the stands"} onPress={() => { const r = flow.watchFromStands(); go(r.step, false); }} />
-        : <View style={{ gap: 10 }}>
-            <Btn label="▶ Play" onPress={() => { flow.readyWeek(); go({ screen: "match" }); }} />
-            <Btn kind="plain" label="⏩ Sim this match" onPress={() => go(flow.simMatch())} />
-          </View>}>
-      <Card style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-around" }}>
-        <View style={{ alignItems: "center" }}><ClubCrest club={f.home ? mine : f.opponent} size={56} /><Text style={{ color: C.text, fontWeight: "900", marginTop: 6 }}>{shortClub(f.home ? mine : f.opponent)}</Text></View>
-        <Text style={{ color: C.text, fontSize: 22, fontWeight: "900" }}>v</Text>
-        <View style={{ alignItems: "center" }}><ClubCrest club={f.home ? f.opponent : mine} size={56} /><Text style={{ color: C.text, fontWeight: "900", marginTop: 6 }}>{shortClub(f.home ? f.opponent : mine)}</Text></View>
-      </Card>
-      <Card>
-        <Label>{status === "Injured" ? "You're injured" : sel.away ? "Away with your country" : status === "Squad" ? "Not in the squad" : status}</Label>
-        <Text style={{ color: C.text }}>{sel.reason}</Text>
-        {!watching && sel.onAt > 0 && sel.onAt < 90 && <Text style={{ color: C.dim, marginTop: 6 }}>On from the bench.</Text>}
-        <View style={{ marginTop: 12 }}>
-          <Text style={{ color: C.dim, fontSize: 11, fontWeight: "800", letterSpacing: 1, marginBottom: 4 }}>⚡ ENERGY AT KICK-OFF {Math.round(energy)}</Text>
-          <Fill value={energy} color={energy >= 50 ? C.green : energy >= 25 ? C.gold : C.red} />
-        </View>
-      </Card>
-    </Frame>
-  );
-}
 
 export function WatchedScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
   const f: Fixture | undefined = [...career.fixtures].reverse().find((x) => x.kind === "international" && x.played && x.watch);
@@ -226,54 +188,111 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, on
 }) {
   const prefs = usePrefs();
   const [leaving, setLeaving] = useState(false);
+  const [open, setOpen] = useState(false);
   const career = useCareer();
+  const glow = career ? clubGlow(career.player.club, career) : "#34d399";
+  // The website's Settings (SettingsScreen.tsx): the top bar, Back · the club over SETTINGS · Main menu,
+  // QUICK (the switches), then MORE with "Career & saves" folded (your look, run-ups, saves, exit).
   return (
-    <Frame title="Settings" onBack={onBack}>
-      {career && <YourLook career={career} />}
-      {career && <Runups career={career} />}
-      <Card>
-        {PREF_ROWS.map(([k, label, line]) => (
-          <View key={k} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: C.text, fontWeight: "800", fontSize: 16 }}>{label}</Text>
-              <Text style={{ color: C.dim, fontSize: 12 }}>{line}</Text>
-            </View>
-            <Switch value={prefs[k]} onValueChange={(v) => setPref(k, v)} trackColor={{ true: C.green, false: "#374151" }} />
+    <Frame title="Settings" top={!!career} bare backdrop="navy">
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <Press onPress={onBack} style={{ height: 38, paddingHorizontal: 14, borderRadius: 19, flexDirection: "row", alignItems: "center", gap: 6, backgroundImage: `linear-gradient(180deg, ${LOOK.navy}, ${LOOK.navyDeep})`, boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.14), inset 0px 0px 0px 1px rgba(255,255,255,0.22)" } as ViewStyle}>
+          <Text style={{ color: "#fbbf24", fontSize: 11 }}>◀</Text>
+          <Text style={{ color: "#fff", fontSize: 14, fontWeight: "900", letterSpacing: 0.6 }}>BACK</Text>
+        </Press>
+        <View style={{ flex: 1, alignItems: "center" }}>
+          <View style={{ alignItems: "center", paddingHorizontal: 12, paddingVertical: 3, borderRadius: 6, backgroundColor: "rgba(3,7,18,0.6)", borderWidth: 1, borderColor: "rgba(255,255,255,0.2)" }}>
+            {career ? <Text numberOfLines={1} style={{ color: glow, fontSize: 9.5, fontWeight: "900", letterSpacing: 1.8 }}>{career.player.club.toUpperCase()}</Text> : null}
+            <Text style={{ color: "#e5e7eb", fontFamily: FONT.display, fontSize: 22, lineHeight: 26, letterSpacing: 0.4 }}>SETTINGS</Text>
           </View>
+        </View>
+        <LookButton kind="navy" small onPress={onMainMenu} style={{ paddingHorizontal: 10, paddingVertical: 8 }}>
+          <Text style={{ color: "#fff", fontSize: 12, fontWeight: "900" }}>⌂ Main menu</Text>
+        </LookButton>
+      </View>
+
+      <Section>Quick</Section>
+      <Card style={{ paddingVertical: 4, paddingHorizontal: 12 }}>
+        {PREF_ROWS.map(([k, label, line], i) => (
+          <Press key={k} onPress={() => setPref(k, !prefs[k])} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 11, borderBottomWidth: i < PREF_ROWS.length - 1 ? 1 : 0, borderBottomColor: "rgba(255,255,255,0.1)" }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{label}</Text>
+              <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: "600" }}>{line}</Text>
+            </View>
+            <Track on={prefs[k]} />
+          </Press>
         ))}
       </Card>
-      {PHOTO_FACES && onFaceEditor && onFakeFaceEditor && (
-        <Card>
-          <Text style={{ color: C.text, fontWeight: "900", marginBottom: 8 }}>Face editors</Text>
-          <View style={{ flexDirection: "row", gap: 10 }}>
-            <View style={{ flex: 1 }}><Btn small label="Real Photos →" onPress={onFaceEditor} /></View>
-            <View style={{ flex: 1 }}><Btn small kind="plain" label="Fake Faces →" onPress={onFakeFaceEditor} /></View>
+
+      <Section>More</Section>
+      <Card style={{ padding: 0 }}>
+        <Press onPress={() => setOpen((o) => !o)} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 12 }}>
+          <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: glow }} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: "#fff", fontWeight: "900", fontSize: 15 }}>Career &amp; saves</Text>
+            <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: "600" }}>{PHOTO_FACES ? "Photo, run-ups, face editors, saves, exit" : "Your look, run-ups, saves, exit"}</Text>
           </View>
-        </Card>
+          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>{open ? "▾" : "▸"}</Text>
+        </Press>
+      </Card>
+      {open && (
+        <View style={{ gap: 10 }}>
+          {career && <YourLook career={career} />}
+          {career && <Runups career={career} />}
+          {PHOTO_FACES && onFaceEditor && onFakeFaceEditor && (
+            <Card>
+              <Text style={{ color: C.text, fontWeight: "900", marginBottom: 8 }}>Face editors</Text>
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flex: 1 }}><Btn small label="Real Photos →" onPress={onFaceEditor} /></View>
+                <View style={{ flex: 1 }}><Btn small kind="plain" label="Fake Faces →" onPress={onFakeFaceEditor} /></View>
+              </View>
+            </Card>
+          )}
+          <SavesCard onStartNew={(slot) => { newInSlot(slot); onNewCareer(); }}
+            onSwitch={(slot) => { if (loadSlot(slot)) (onOpenSave ?? onMainMenu)(); }}
+            onDeleted={(wasActive) => { if (wasActive) onNewCareer(); }} />
+          {/* The website's "Exit career — back to Knowitball" (asks first, in the app). On the phone,
+              Knowitball is outside the app: Android closes the app; iPhone, which never lets an app
+              close itself, goes back to the title. */}
+          {!leaving ? (
+            <View style={{ paddingTop: 4 }}>
+              <Btn kind="danger" label="Exit career — back to Knowitball" onPress={() => setLeaving(true)} />
+              <Text style={{ color: C.text, fontSize: 10, fontWeight: "600", textAlign: "center", marginTop: 6 }}>Your career stays saved. You come back to exactly this.</Text>
+            </View>
+          ) : (
+            <Card tone="#ef4444">
+              <Text style={{ color: C.text, fontWeight: "800", marginBottom: 10 }}>Leave the career? It stays saved. You come back to exactly this.</Text>
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flex: 1 }}><Btn small kind="plain" label="Cancel" onPress={() => setLeaving(false)} /></View>
+                <View style={{ flex: 1 }}><Btn small kind="danger" label="Leave" onPress={() => { setLeaving(false); if (Platform.OS === "android") BackHandler.exitApp(); else onMainMenu(); }} /></View>
+              </View>
+            </Card>
+          )}
+        </View>
       )}
       {onHelp && <Btn kind="plain" label="? How it works" onPress={onHelp} />}
-      <Btn kind="plain" label="⌂ Main menu" onPress={onMainMenu} />
-      <SavesCard onStartNew={(slot) => { newInSlot(slot); onNewCareer(); }}
-        onSwitch={(slot) => { if (loadSlot(slot)) (onOpenSave ?? onMainMenu)(); }}
-        onDeleted={(wasActive) => { if (wasActive) onNewCareer(); }} />
-      {/* The website's "Exit career — back to Knowitball" (asks first, in the app). On the phone,
-          Knowitball is outside the app: Android closes the app; iPhone, which never lets an app
-          close itself, goes back to the title. */}
-      {!leaving ? (
-        <View style={{ paddingTop: 4 }}>
-          <Btn kind="danger" label="Exit career — back to Knowitball" onPress={() => setLeaving(true)} />
-          <Text style={{ color: C.text, fontSize: 10, fontWeight: "600", textAlign: "center", marginTop: 6 }}>Your career stays saved. You come back to exactly this.</Text>
-        </View>
-      ) : (
-        <Card tone={C.red}>
-          <Text style={{ color: C.text, fontWeight: "800", marginBottom: 10 }}>Leave the career? It stays saved. You come back to exactly this.</Text>
-          <View style={{ flexDirection: "row", gap: 10 }}>
-            <View style={{ flex: 1 }}><Btn small kind="plain" label="Cancel" onPress={() => setLeaving(false)} /></View>
-            <View style={{ flex: 1 }}><Btn small kind="danger" label="Leave" onPress={() => { setLeaving(false); if (Platform.OS === "android") BackHandler.exitApp(); else onMainMenu(); }} /></View>
-          </View>
-        </Card>
-      )}
     </Frame>
+  );
+}
+
+/** A section header above a group of cards: white capitals and a rule fading out (settingsKit SetSection). */
+function Section({ children }: { children: string }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6, marginBottom: -4, paddingHorizontal: 2 }}>
+      <Text style={{ color: "#fff", fontSize: 12, fontWeight: "900", letterSpacing: 2.2 }}>{children.toUpperCase()}</Text>
+      <View style={{ flex: 1, height: 1, backgroundImage: "linear-gradient(90deg, rgba(255,255,255,0.35), rgba(255,255,255,0))" } as ViewStyle} />
+    </View>
+  );
+}
+
+/** The switch's look: a glossy track that lights green, a white knob (settingsKit Track). Drawn once per change. */
+function Track({ on }: { on: boolean }) {
+  return (
+    <View style={[{ width: 46, height: 26, borderRadius: 13 },
+      (on ? { backgroundImage: "linear-gradient(180deg, #4ade80, #10b981 60%, #047857)", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.4), 0px 0px 14px -2px rgba(16,185,129,0.8)" }
+        : { backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))", boxShadow: "inset 0px 2px 4px rgba(0,0,0,0.55), inset 0px 0px 0px 1px rgba(255,255,255,0.12)" }) as ViewStyle]}>
+      <View style={{ position: "absolute", top: 3, left: on ? 23 : 3, width: 20, height: 20, borderRadius: 10, backgroundImage: "linear-gradient(180deg, #ffffff, #e5e7eb)", boxShadow: "0px 2px 5px rgba(0,0,0,0.45)" } as ViewStyle} />
+    </View>
   );
 }
 
