@@ -25,3 +25,12 @@ taps and page moves feel slow next to NSS. Two read-only audits ran
 7. On the Supabase connector (it is linked to another project, not
    Knowitball's): "Okay from now on tell me when u need the connector for
    supabase before starting a task that needs it"
+8. Shop design picks (drafts in the chat): "I think B" (big picture + thumbnails),
+   "doesn't need the pitch background", then G1 (the 3D store blurred behind
+   frosted glass) "is good", top bar: "move money up to where fitness is" and
+   "put shop up to top middle (age and stars not needed on this page)".
+9. Top bars: "fame + money but make money into the bar style with a dollar bill
+   icon"; "for the bars it should be like this [the Home star/energy bars] ...
+   we need to do this for every page (have the relevant stats as the top 2 bars)".
+10. Money sign: "Switch to $ everywhere". Bars per page: the table in the chat,
+   with "Phone should be level + money" and "relations ... should be happiness+ rep".

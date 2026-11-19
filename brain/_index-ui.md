@@ -30,3 +30,5 @@ RUL-UI-005 | Harry's changes go straight into the game when he says push: no new
 RUL-UI-006 | "No scroll wheel inside a screen: just show it and you scroll down; never add a scroll wheel unless Mikey specifically says." | team,rule,ui
 RUL-UI-007 | Decide, don't toggle, EXCEPT skins: a whole-UI skin (e.g. Glass stadium) may be a Settings choice; gameplay and single-feature looks still get no New/Old row. | ui
 RUL-UI-008 | The 3D phone: Phone tab = eye-blink into a 3D phone in your hands (the phone UI on it); Home goes to Home, Put phone away leaves you in your 3D house; today's Showroom shop moves onto the 3D phone, the menus get a new plain unified shop. | three-d,economy,ui
+RUL-UI-009 | Every page has the relevant stats as the top 2 bars, in the Home bar style (3D icon over the bar): shop fame + money with a dollar bill icon; phone level + money; relations happiness + rep. | three-d,economy,ui
+RUL-UI-010 | The menu shop is B (big picture + thumbnails) on G1 (the 3D store blurred behind frosted glass), no pitch background, SHOP at top middle, money up where fitness is, age and stars not needed on this page. | three-d,economy,ui

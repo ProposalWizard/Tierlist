@@ -8,7 +8,7 @@ no floor and no shadow, transparent background. Rendered at 512 and scaled to
 256 in post (crisper edges than rendering at 256).
 
 usage: python icons3d.py -- <name> <out.png> [samples] [size]
-names: energy world fame happiness money heart star-full star-empty
+names: energy world fame happiness money cash heart star-full star-empty
 Everything is modelled in code. No brands, no outside files.
 """
 import sys, os, math
@@ -266,6 +266,37 @@ def make_money():
     return parts, dict(turn=-28, tilt=8, frame=[body], fill=0.84, expo=-0.10)
 
 
+def make_cash():
+    """A short stack of green notes with a paper band and a raised $ (Harry, 19 Nov 2026:
+    money is shown as a dollar bill, and the game's money sign becomes $)."""
+    note = S.principled('Note', '#38c26a', rough=0.3, coat=1.0, coat_rough=0.06)
+    noteDeep = S.principled('NoteDeep', '#1f7a41', rough=0.5, coat=0.4)
+    paper = S.principled('Band', '#f3e7c4', rough=0.55, coat=0.3)
+    ink = S.principled('Ink', '#155c30', rough=0.4, coat=0.8)
+    parts = []
+    W, H, T = 1.9, 0.92, 0.07
+    for k, (dx, dz, rz) in enumerate([(0.10, -0.10, 4), (0.05, -0.05, 2), (0.0, 0.0, 0)]):
+        y = 0.18 - k * 0.09
+        b = box(f'Note{k}', (dx, y, dz), (W, T, H), note, bevel=0.025)
+        b.rotation_euler = (0, math.radians(rz), 0)
+        parts.append(b)
+    top_y = 0.18 - 2 * 0.09
+    # the printed panel and the medallion on the front note
+    parts.append(box('Panel', (0, top_y - T / 2 - 0.004, 0), (W * 0.84, 0.01, H * 0.72), noteDeep, bevel=0.01))
+    med = cyl('Medal', (0, top_y - T / 2 - 0.02, 0), 0.30, 0.03, axis='Y', verts=64, mat=note, bevel=0.01)
+    parts.append(med)
+    bpy.ops.object.text_add(location=(0, top_y - T / 2 - 0.05, -0.02))
+    t = bpy.context.object; t.data.body = '$'; t.data.align_x = 'CENTER'; t.data.align_y = 'CENTER'
+    t.data.size = 0.55; t.data.extrude = 0.025; t.data.bevel_depth = 0.008
+    t.rotation_euler = (math.radians(90), 0, 0)
+    t.data.materials.append(ink)
+    bpy.ops.object.convert(target='MESH')
+    parts.append(bpy.context.object)
+    # the paper band round the stack
+    parts.append(box('BandF', (-0.62, top_y - T / 2 - 0.012, 0), (0.30, 0.02, H + 0.04), paper, bevel=0.01))
+    return parts, dict(turn=-26, tilt=10, fill=0.86, expo=-0.25)
+
+
 def make_star(full=True):
     if full:
         m = S.principled('StarGold', (*S.srgb((1.0, 0.82, 0.16)), 1), rough=0.2, metal=0.45, coat=1.0, coat_rough=0.03, emission='#ffb300', emission_strength=0.35)
@@ -277,7 +308,7 @@ def make_star(full=True):
 
 MAKERS = {
     'energy': make_energy, 'world': make_world, 'fame': make_fame, 'happiness': make_happiness,
-    'heart': make_heart, 'money': make_money,
+    'heart': make_heart, 'money': make_money, 'cash': make_cash,
     'star-full': lambda: make_star(True), 'star-empty': lambda: make_star(False),
 }
 
