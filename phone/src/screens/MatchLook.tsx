@@ -6,7 +6,6 @@
  *   - EnergyIcon: Low / Medium / High as the split ring and bolt (EnergyModeIcon.tsx)
  *   - GoalBoard / Caption: Mikey's pop-ups (MikeyPopup.tsx), a goal as a scoreboard
  *     with the scorer and assist, any other word as a TV caption
- *   - LiveCommentary: the compact strip over the pitch (CanvasMatch commentaryBox)
  *   - StaminaBox: the corner box (CanvasMatch B14), its bar moved on the UI thread
  */
 import { useMemo } from "react";
@@ -180,26 +179,6 @@ export function Caption({ text }: { text: string }) {
       <View style={{ height: 40, justifyContent: "center", paddingLeft: 12, paddingRight: 18, backgroundImage: "linear-gradient(180deg, rgba(14,22,40,0.96), rgba(6,10,20,0.96))", boxShadow: `inset 0px -3px 0px ${c.edge}` } as ViewStyle}>
         <Text style={{ fontFamily: FONT.display, fontSize: 24, letterSpacing: 1.9, color: "#fff", textTransform: "uppercase" }}>{text}</Text>
       </View>
-    </View>
-  );
-}
-
-// ── The commentary on the pitch (CanvasMatch commentaryBox, overlay form) ──
-
-export function LiveCommentary({ lines }: { lines: string[] }) {
-  return (
-    <View style={{ borderRadius: 8, backgroundColor: "rgba(3,7,18,0.6)", paddingHorizontal: 10, paddingVertical: 6 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 }}>
-        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: "#ef4444" }} />
-        <Text style={{ fontSize: 8, fontWeight: "900", letterSpacing: 1.8, color: "rgba(255,255,255,0.7)" }}>LIVE COMMENTARY</Text>
-      </View>
-      {lines.length === 0 && <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", fontStyle: "italic" }}>Kick-off…</Text>}
-      {lines.map((l, i) => {
-        const last = i === lines.length - 1;
-        return (
-          <Text key={i} style={{ fontSize: 11, lineHeight: 15, paddingLeft: 8, borderLeftWidth: 2, borderColor: last ? "rgba(16,185,129,0.8)" : "transparent", color: last ? "#fff" : "rgba(255,255,255,0.7)", fontWeight: last ? "700" : "400" }}>{l}</Text>
-        );
-      })}
     </View>
   );
 }

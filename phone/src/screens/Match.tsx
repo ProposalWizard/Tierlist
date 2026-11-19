@@ -19,15 +19,13 @@ import type { CareerState, Fixture } from "@/lib/star/types";
 import { MatchDriver } from "../match/driver";
 import { matchSetupFor, type MatchSetup } from "../match/setup";
 import { MatchPitch, BANNER_MS } from "./MatchPitch";
-import { camFor } from "../match/drawPitch";
-import { toScreen } from "../match/view";
 import { MatchHud } from "./MatchHud";
 import { MatchFeed, MatchPause } from "./MatchFeed";
 import { MatchShootout } from "./MatchShootout";
 import { keepGoalClip } from "../match/goalClip/store";
 import { getCareer } from "../game/store";
 import { C } from "../ui/theme";
-import { PitchPage, GoalBoard, LiveCommentary, StaminaBox } from "./MatchLook";
+import { PitchPage, GoalBoard, StaminaBox } from "./MatchLook";
 
 export function Match({ career, fixture, onFullTime, setupFor, recordGoals = true, watch, frozen = false }: {
   career: CareerState; fixture: Fixture; onFullTime: (d: MatchDriver) => void;
@@ -64,7 +62,7 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
     stamina.value = legs ? legs.stamina.v : 1;
   }, [stamina]);
 
-  const overlay = useCallback((d: MatchDriver, size: { W: number; H: number }) => {
+  const overlay = useCallback((d: MatchDriver) => {
     const banner = d.banner && d.now - d.banner.at < BANNER_MS ? d.banner : null;
     const lastGoal = d.goalEvents[d.goalEvents.length - 1];
     const home = d.setup.fixture.home !== false;
@@ -76,13 +74,8 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
     return (
       <>
         {d.phase === "feed" && <View style={StyleSheet.absoluteFill}><MatchFeed d={d} kits={kits} /></View>}
-        {d.phase !== "feed" && d.feed.length > 0 && (
-          // CanvasMatch's commentary strip: at the bottom, or at the top when the ball is down there.
-          <View pointerEvents="none" style={[{ position: "absolute", left: 8, right: 8 },
-            toScreen(camFor(d, size.W, size.H), d.ball ? d.ball.pos : d.sc.ball).Y > size.H * 0.55 ? { top: d.lead ? 40 : 8 } : { bottom: showStamina ? 66 : 8 }]}>
-            <LiveCommentary lines={d.feed.slice(-2)} />
-          </View>
-        )}
+        {/* No commentary written on the pitch: the website shows none over your chance in a real match
+            (CanvasMatch: the overlay strip is the sandbox's only); the lines are in the feed. */}
         {showStamina && <StaminaBox fill={stamina} cap={legs ? legs.cap : barCap(d.liveEnergyAt(d.matchMinute))} label={legs ? (legs.sprinting ? "SPRINT" : "RUN") : undefined} />}
         {d.phase === "tdDribble" && d.tdReady && (
           <View pointerEvents="none" style={{ position: "absolute", top: "40%", left: 20, right: 20, backgroundColor: "rgba(10,16,14,0.9)", borderRadius: 14, padding: 14, borderWidth: 2, borderColor: C.gold }}>

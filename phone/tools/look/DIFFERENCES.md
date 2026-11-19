@@ -6,6 +6,10 @@ Not counted as differences: random content (a free kick's distance, which chance
 comes), and the harness limits in README.md (no 3D on KIB Next's web build; emoji
 are the browser's).
 
+**Round 2 (19 Nov 2026, the match):** the trial, the strike screen, the match pitch,
+the feed, the goal pop-up and the drills' boards are in the packed app's look; see
+their sections. Frame cost: `npx tsx tools/match-frame.ts` and `tools/look/ground-bench.ts`.
+
 **Round 1 (19 Nov 2026, later):** the look kit is built (`phone/src/ui/look`, read
 its README): fonts, backgrounds, top bar, bottom bar, glass cards, buttons. Title,
 new career (with the photo step) and Home use it; their sections below say what
@@ -62,26 +66,25 @@ still differs. Every other screen still has the differences listed.
 - Still different: "Add a photo" and "Take a photo" are greyed with a note (the
   phone app has no photo picker installed yet; expo-image-picker would add it).
 
-## Trial (how to play, ready to aim)
-- Pitch: packed has a textured diamond-pattern grass, a goal with a drawn net and
-  posts, thick white lines, the pitch inside a rounded frame with a green glow;
-  KIB Next has flat stripes, a pale rectangle for the goal (no net), thin lines,
-  no frame, edge to edge.
-- Packed has "✕ EXIT" top-left; KIB Next has none.
-- Packed heading text is Anton caps ("16 M OUT · 2 IN THE WALL"); KIB Next plain
-  ("16 m out · 2 in the wall").
-- The how-to card: packed is a pale see-through green card with a little picture;
-  KIB Next a near-white card, no picture.
-- Players: both have sprites; packed's are bigger and sharper.
+## Trial (how to play, ready to aim) — round 2: close
+- Same now: the dark-green page, "✕ EXIT" with the stage pips and "1/5", the dark
+  board (YOU and the attempt rings, FREE KICKS, the score in Anton, "16 M OUT · 2 IN
+  THE WALL" in caps), the pitch in its rounded green frame down to the two caption
+  lines, the website's grass (big diamonds, worn goalmouth, thin crisp lines), the
+  goal with posts, bar and net (lib/star/matchGoal.ts itself), the drawn match ball
+  (lib/star/matchBall.ts), the pale see-through how-to card with its little drag picture.
+- Still different: KIB Next's camera is tipped back 20° (the driver's own camera, not
+  changed here), so the far end is narrower; a free kick's distance and so the
+  framing are random in both.
 
-## Strike screen (where do you strike it?)
-- The ball: packed is a real photo-like football with KNOWITBALL on it, inside a
-  glowing ring with a red marker; KIB Next is a flat white circle with spokes and
-  a dark centre, an orange arc for the timer.
-- Power: packed has a gradient POWER bar (red→green) with "100%"; KIB Next a plain
-  red bar, no label, no %.
-- Title "STRIKE IT?": packed grey metallic Anton with a bar under; KIB Next white italic.
-- Packed's screen sits inside the framed pitch; KIB Next fills the width.
+## Strike screen (where do you strike it?) — round 2: close
+- Same now: the blue sky and green strip, the club's own ball photo (KNOWITBALL) at the
+  website's size resting on the grass with its shadows, the countdown ring round it,
+  the bar under the title, POWER with the red-yellow-green bar and "100%", "WHERE DO
+  YOU / STRIKE IT?" in heavy italic, all inside the framed pitch.
+- Still different: the title is one flat light grey (the website's is a metallic
+  gradient clipped to the letters); the spark where you hit it is a drawn bolt (the
+  website's is the ⚡ emoji).
 
 ## Home — round 1: close
 - Same now: one fixed screen. The glass top bar (name, AGE, ★, ?, ⚙; the star badge
@@ -153,23 +156,28 @@ still differs. Every other screen still has the differences listed.
   card ("Form has dipped…"), energy, and two buttons "▶ Play" / "⏩ Sim this match".
   No line-up, no players, no formations.
 
-## Match: the feed (on the bench)
-- Packed: scoreboard as two coloured team bars (red Arsenal, sky-blue Man City)
-  with white score boxes, a stats strip (SHIELD, GOALS, ASSISTS, PASS, RATING, 2D,
-  ⚙, sound); every feed line is a solid red or blue bar by team; the minute in a
-  dark box; a yellow "GET OUT THERE" bar in the panel; three 3D lightning badges
-  for LOW / MEDIUM / HIGH.
-- KIB Next: plain "Arsenal 2-0 Man City" header; feed lines as plain text on black
-  (goals in yellow); "You are going on / Get out there →" floats over the middle
-  of the feed; Low / Medium / High as pills, plus a "1x" speed pill.
+## Match: the feed (on the bench) — round 2: close
+- Same now: the green mown page, the scoreboard as two kit-coloured bars with the
+  score in white boxes (Anton), the plate (SHIELD, GOALS, ASSISTS, PASS, RATING, 2D,
+  ⚙, the speaker), every line a glossy bar in its team's kit with the minute in a
+  black chip, assists indented, the minute and speed plate top-right, the three
+  playstyle pictures, the amber "YOU ARE GOING ON" bar with the yellow GET OUT THERE,
+  the energy bar, and the three lightning badges LOW / MEDIUM / HIGH
+  (EnergyModeIcon.tsx redrawn once in Skia).
+- Still different: "2D" is a label and ⚙ opens nothing (KIB Next has no in-match
+  settings and draws only the 2D players); the website's goal-line flash is left out
+  (nothing moves at rest); KIB Next shows the KICK OFF row the website hides.
 
-## Match: the pitch (your chance)
-- Packed keeps the team-colour scoreboard and stats strip on top and frames the
-  pitch; diamond-pattern grass, STAMINA box bottom-left. (Packed was caught while
-  its camera turns: the pitch looks slanted.)
-- KIB Next: stripes, pale goal with no net, thinner lines, the commentary
-  ("You drop in and demand the ball…") written on the pitch, no STAMINA box,
-  no 2D / ⚙ / sound buttons.
+## Match: the pitch (your chance) — round 2: close
+- Same now: the scoreboard and plate on top, the framed pitch with the website's
+  grass, lines, goal and net and ball, the STAMINA box bottom-left, the "Tap to skip"
+  pill, the goal as Mikey's scoreboard pop-up (GOAL tag, kit blocks, score, scorer and
+  assist) and every other word as a TV caption.
+- Gone, as on the website: the commentary written on the pitch over your chance (the
+  website shows it only in its sandbox).
+- Still different: KIB Next's camera is tipped back 20° and holds still (the packed
+  shot caught the website's camera mid-turn); the pop-ups' roll and shine are left
+  out (nothing moves at rest); random content (which chance comes) differs.
 
 ## Post-match (match simmed)
 - Same parts. Packed: glassy cards over the stadium/pitch picture, team names in
