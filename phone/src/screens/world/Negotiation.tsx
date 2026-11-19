@@ -15,8 +15,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { niceMoneyStep, formatMoneyPrecise } from "@/lib/star/money";
 import { startNegotiation, makeOffer, moodToFace, type NegotiationMode, type NegotiationState, type CounterpartMood } from "@/lib/star/negotiation";
 import { Press } from "../../ui/Press";
-import { C } from "../../ui/theme";
+import { C } from "../../world/lookKit";
 import { Btn, rgba, clubGlow } from "../../world/ui";
+import { Backdrop } from "../../ui/look";
 
 const money = (n: number) => formatMoneyPrecise(n);
 const MOOD_LABEL: Record<CounterpartMood, string> = { happy: "Feeling good about this", neutral: "Getting down to business", angry: "Losing patience" };
@@ -67,7 +68,9 @@ export function Negotiation({ mode, playerName, marketValue, counterpartLabel, i
   const counterpartName = counterpartLabel ?? (mode === "buying" ? "Their Agent" : "Interested Buyer");
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 16, paddingTop: inset.top + 16, paddingBottom: inset.bottom + 30, gap: 12 }}>
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+    <Backdrop kind="stadium" />
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingTop: inset.top + 16, paddingBottom: inset.bottom + 30, gap: 12 }}>
       <View style={{ alignItems: "center" }}>
         <Text style={{ color: "#7dd3fc", fontWeight: "900", fontSize: 11, letterSpacing: 3 }}>{(kicker ?? (mode === "buying" ? "Negotiating a Signing" : "Negotiating a Sale")).toUpperCase()}</Text>
         <Text style={{ color: C.text, fontWeight: "900", fontSize: 22, textAlign: "center", marginTop: 4 }}>{playerName.toUpperCase()}</Text>
@@ -166,5 +169,6 @@ export function Negotiation({ mode, playerName, marketValue, counterpartLabel, i
         </>
       )}
     </ScrollView>
+    </View>
   );
 }

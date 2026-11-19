@@ -24,7 +24,7 @@ import { formatMoney } from "@/lib/star/money";
 import { useCareer } from "../../game/store";
 import { useNav } from "../../nav";
 import { Press } from "../../ui/Press";
-import { Frame, Card, C } from "../career/kit";
+import { Frame, Card, C } from "../../world/lookKit";
 import { Seg } from "../../world/ui";
 import { NumBox, TextBox, Choose, Problem, SmallBtn, Line, Small, Head } from "./politicsKit";
 import * as P from "../../world/politics";

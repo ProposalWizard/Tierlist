@@ -19,7 +19,8 @@ import { fameOf, fameLevel, FAME_LEVELS } from "@/lib/star/fame";
 import { formatMoneyPrecise as formatMoney } from "@/lib/star/money";
 import { useCareer, setCareer, getCareer } from "../../game/store";
 import { useNav } from "../../nav";
-import { C } from "../../ui/theme";
+import { C } from "../../world/lookKit";
+import { FONT, glassStyle } from "../../ui/look";
 import { gamePlayedThisWeek } from "@/lib/star/relationships";
 import { canAct } from "@/lib/star/week";
 import { ScreenFrame, Seg, Btn, Meter, Note, Title, rgba } from "../../world/ui";
@@ -208,13 +209,13 @@ export function SponsorsScreen() {
   const nextPct = next ? Math.max(0, Math.min(100, ((fame - curMin) / Math.max(1, next.min - curMin)) * 100)) : 100;
 
   return (
-    <ScreenFrame title="Sponsors" kicker="Your deals" onBack={() => nav.back()}
-      right={<Text style={{ color: C.gold, fontWeight: "900", backgroundColor: "rgba(251,191,36,0.15)", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, overflow: "hidden" }}>★ {Math.round(fame)} fame</Text>}>
+    <ScreenFrame title="Sponsors" kicker="Your deals" onBack={() => nav.back()} bar={null}
+      right={<Text style={{ color: "#fde68a", fontWeight: "900", fontSize: 12, backgroundColor: "rgba(251,191,36,0.18)", borderWidth: 1, borderColor: "rgba(253,224,71,0.3)", paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, overflow: "hidden" }}>★ {Math.round(fame)} fame</Text>}>
       <Note text={note} />
-      <View style={{ backgroundColor: C.panel, borderRadius: 18, padding: 12, flexDirection: "row", justifyContent: "space-between", gap: 10 }}>
+      <View style={[glassStyle("glass"), { borderRadius: 16, padding: 12, flexDirection: "row", justifyContent: "space-between", gap: 10 }]}>
         <View style={{ flex: 1 }}>
           <Title color={C.green}>Sponsor money</Title>
-          <Text style={{ color: C.gold, fontWeight: "900", fontSize: 26 }}>★{formatMoney(total)}</Text>
+          <Text style={{ color: "#fcd34d", fontFamily: FONT.display, fontSize: 30, lineHeight: 36 }}>★{formatMoney(total)}</Text>
           <Text style={{ color: C.text, fontWeight: "700", fontSize: 11 }}>a week, paid with your wage</Text>
         </View>
         <View style={{ width: "46%", alignItems: "flex-end" }}>

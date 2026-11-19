@@ -9,7 +9,7 @@ import { ScrollView, Text, TextInput, View } from "react-native";
 import { Canvas, Group, Path } from "@shopify/react-native-skia";
 import type { Kit } from "@/lib/star/kits";
 import { Press } from "../../ui/Press";
-import { C } from "../../ui/theme";
+import { C } from "../../world/lookKit";
 import { ColourChoice } from "../../ui/ColourPicker";
 
 /** A money/number box: shows 1,000,000 and keeps only the digits. */
@@ -49,7 +49,7 @@ export function Choose<T extends string>({ value, options, onChange, label }: { 
         <Text style={{ color: C.dim, fontWeight: "900" }}>{open ? "˄" : "˅"}</Text>
       </Press>
       {open && (
-        <ScrollView nestedScrollEnabled style={{ maxHeight: 240, backgroundColor: "#0d1713", borderRadius: 10, marginTop: 4, borderWidth: 1, borderColor: C.line }}>
+        <ScrollView nestedScrollEnabled style={{ maxHeight: 240, backgroundColor: "#0b1626", borderRadius: 10, marginTop: 4, borderWidth: 1, borderColor: C.line }}>
           {options.map(([k, l]) => (
             <Press key={k} onPress={() => { onChange(k); setOpen(false); }} style={{ paddingHorizontal: 10, paddingVertical: 9, backgroundColor: k === value ? C.panel2 : "transparent" }}>
               <Text style={{ color: k === value ? C.gold : C.text, fontWeight: "700", fontSize: 13 }}>{l}</Text>

@@ -14,7 +14,7 @@
  * of history).
  */
 import { useMemo, useState, type ReactNode } from "react";
-import { FlatList, Modal, ScrollView, Text, View } from "react-native";
+import { FlatList, Modal, ScrollView, Text, View, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { CareerState, LeagueTeam, LeagueResult } from "@/lib/star/types";
 import { ALL_DIVISIONS, divisionOf, leagueNameFor, seasonStartYear, type CareerDivision } from "@/lib/star/calendar";
@@ -37,7 +37,8 @@ import type { WorldState, WorldSummary } from "@/lib/star/world/types";
 import { shortClub, groupedGoalLines } from "@/lib/star/media/grammar";
 import { realHistory, joinHistory, careerFirstYear, type HistoryLine } from "../../world/history";
 import { Press } from "../../ui/Press";
-import { C } from "../../ui/theme";
+import { C } from "../../world/lookKit";
+import { Backdrop, PageTitle, glassStyle } from "../../ui/look";
 import { ClubBadge, Flag, Seg, Chips, RoundNav, Empty, Title, youRow, clubGlow, rgba } from "../../world/ui";
 
 type Comp =
@@ -108,7 +109,7 @@ function RowList({ header, rows }: { header: ReactNode; rows: Row[] }) {
     <FlatList
       data={rows}
       keyExtractor={(r) => r.key}
-      renderItem={({ item }) => <View style={{ marginBottom: 4 }}>{item.node}</View>}
+      renderItem={({ item }) => <View style={{ marginBottom: 2 }}>{item.node}</View>}
       ListHeaderComponent={<View style={{ gap: 8, marginBottom: 8 }}>{header}</View>}
       contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 110 }}
       initialNumToRender={14}
@@ -141,13 +142,13 @@ function NowPane({ career, final, onLast }: { career: CareerState; final: boolea
   const you = career.player.club;
 
   const chooser = (
-    <Press onPress={() => setChoosing(true)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, backgroundColor: rgba(glow, 0.28), borderWidth: 1, borderColor: rgba(glow, 0.7) }}>
+    <Press onPress={() => setChoosing(true)} style={[glassStyle("glass", glow.startsWith("#") ? glow : undefined), { flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 }]}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
         <Text style={{ fontSize: 18 }}>{comp.kind === "league" ? "🏆" : comp.kind === "euro" ? "⭐" : comp.kind === "nation" || comp.kind === "intl" || comp.kind === "ranking" ? "🌍" : "🥇"}</Text>
         <Text numberOfLines={1} style={{ color: C.text, fontWeight: "900", fontSize: 16, flexShrink: 1 }}>{comp.label}</Text>
-        {comp.kind === "league" && comp.division === yours && <Text style={{ backgroundColor: C.gold, color: "#111", fontWeight: "900", fontSize: 10, paddingHorizontal: 6, borderRadius: 8, overflow: "hidden" }}>YOURS</Text>}
+        {comp.kind === "league" && comp.division === yours && <View style={{ backgroundImage: "linear-gradient(180deg, #fde047, #f59e0b)", paddingHorizontal: 7, paddingVertical: 1, borderRadius: 6 } as ViewStyle}><Text style={{ color: "#111", fontWeight: "900", fontSize: 10 }}>YOURS</Text></View>}
       </View>
-      <Text style={{ color: C.dim, fontWeight: "800" }}>Change ▾</Text>
+      <Text style={{ color: "rgba(255,255,255,0.85)", fontWeight: "800", fontSize: 13 }}>Change ▾</Text>
     </Press>
   );
   const top = (
@@ -188,9 +189,10 @@ function Chooser({ open, onClose, glow, groups, all, current, yours, onPick, onL
   const inset = useSafeAreaInsets();
   return (
     <Modal visible={open} animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: "#071a10", paddingTop: inset.top + 8 }}>
+      <View style={{ flex: 1, backgroundColor: "#0b1a2e", paddingTop: inset.top + 8 }}>
+        <Backdrop kind="stadium" />
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, marginBottom: 8 }}>
-          <Text style={{ color: C.text, fontSize: 19, fontWeight: "900" }}>Every league and cup</Text>
+          <PageTitle size={22}>Every league and cup</PageTitle>
           <Press onPress={onClose} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" }}>
             <Text style={{ color: C.text, fontSize: 18, fontWeight: "900" }}>✕</Text>
           </Press>
@@ -209,7 +211,7 @@ function Chooser({ open, onClose, glow, groups, all, current, yours, onPick, onL
                 const c = all.find(x => x.key === k)!;
                 const on = c.key === current;
                 return (
-                  <Press key={k} onPress={() => onPick(k)} style={[{ flexDirection: "row", justifyContent: "space-between", borderRadius: 10, padding: 14, marginBottom: 4, backgroundColor: "rgba(255,255,255,0.06)" }, on && youRow(glow)]}>
+                  <Press key={k} onPress={() => onPick(k)} style={[glassStyle("glass"), { flexDirection: "row", justifyContent: "space-between", borderRadius: 12, padding: 14, marginBottom: 5 }, on && youRow(glow)]}>
                     <Text style={{ color: C.text, fontWeight: "800", fontSize: 15 }}>{c.label}</Text>
                     {c.kind === "league" && c.division === yours && <Text style={{ color: C.gold, fontWeight: "900", fontSize: 11 }}>YOURS</Text>}
                   </Press>
@@ -227,15 +229,15 @@ function Chooser({ open, onClose, glow, groups, all, current, yours, onPick, onL
 
 const W = [24, 0, 26, 26, 26, 26, 32, 34];
 function TableHead() {
-  return <Cells head cells={["#", "CLUB", "P", "W", "D", "L", "GD", "PTS"]} />;
+  return <View style={{ borderTopLeftRadius: 12, borderTopRightRadius: 12, backgroundColor: "rgba(10,22,40,0.72)", borderTopWidth: 1, borderColor: "rgba(255,255,255,0.2)" }}><Cells head cells={["#", "CLUB", "P", "W", "D", "L", "GD", "PTS"]} /></View>;
 }
 function Cells({ cells, head, bold, lead }: { cells: ReactNode[]; head?: boolean; bold?: boolean; lead?: ReactNode }) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: head ? 6 : 8, paddingHorizontal: 6 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: head ? 6 : 6, paddingHorizontal: 6 }}>
       {cells.map((c, i) => (
         <View key={i} style={{ width: W[i] || undefined, flex: W[i] ? undefined : 1, alignItems: i === 1 ? "flex-start" : "center", flexDirection: "row", gap: 6 }}>
           {i === 1 && lead}
-          <Text numberOfLines={1} style={{ color: head ? C.dim : C.text, fontWeight: head ? "800" : i === 7 || bold ? "900" : "700", fontSize: head ? 10 : 13, flexShrink: 1 }}>{c}</Text>
+          <Text numberOfLines={1} style={{ color: head ? "rgba(255,255,255,0.7)" : C.text, fontWeight: head ? "900" : i === 7 || bold ? "900" : "800", fontSize: head ? 9.5 : 12.5, letterSpacing: head ? 0.8 : 0, flexShrink: 1 }}>{c}</Text>
         </View>
       ))}
     </View>
@@ -246,7 +248,7 @@ function tableRows(prefix: string, rows: LeagueTeam[], glow: string, you: string
     const z = zone?.(i + 1, rows.length) ?? null;
     const isYou = t.name === you;
     return row(`${prefix}-${t.name}`, (
-      <View style={[{ borderRadius: 8, backgroundColor: i % 2 === 0 ? "rgba(255,255,255,0.04)" : "transparent", borderLeftWidth: 3, borderLeftColor: z ?? "transparent" }, isYou && youRow(glow)]}>
+      <View style={[{ borderRadius: 6, backgroundColor: i % 2 === 0 ? "rgba(10,22,40,0.46)" : "rgba(10,22,40,0.36)", borderLeftWidth: 3, borderLeftColor: z ?? "transparent" }, isYou && youRow(glow)]}>
         <Cells bold={isYou} lead={<ClubBadge club={t.name} size={16} />} cells={[String(i + 1), shortClub(t.name), t.played, t.won, t.drawn, t.lost, t.goalsFor - t.goalsAgainst, t.points]} />
       </View>
     ));
@@ -261,7 +263,7 @@ function Score({ text }: { text: string }) {
 }
 function MatchLine({ home, away, score, mine, glow, homeWin, awayWin, under }: { home: string; away: string; score: string; mine: boolean; glow: string; homeWin?: boolean; awayWin?: boolean; under?: ReactNode }) {
   return (
-    <View style={[{ borderRadius: 10, paddingHorizontal: 8, paddingVertical: 8, backgroundColor: "rgba(255,255,255,0.05)" }, mine && youRow(glow)]}>
+    <View style={[{ borderRadius: 10, paddingHorizontal: 8, paddingVertical: 8, backgroundColor: "rgba(10,22,40,0.6)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" }, mine && youRow(glow)]}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <Text numberOfLines={1} style={{ flex: 1, textAlign: "right", color: C.text, fontWeight: homeWin ? "900" : "700", opacity: awayWin ? 0.7 : 1 }}>{home}</Text>
         <Score text={score} />
@@ -285,7 +287,7 @@ function resultRows(prefix: string, results: LeagueResult[], glow: string, you: 
 function scorerRows(prefix: string, rows: ScorerRow[], glow: string, label: string, youBelow?: { row: ScorerRow; rank: number } | null): Row[] {
   if (!rows.length && !youBelow) return [row(`${prefix}-empty`, <Empty text="No named players here yet." />)];
   const line = (r: ScorerRow, rank: number, mine: boolean) => (
-    <View style={[{ flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: "rgba(255,255,255,0.05)" }, mine && youRow(glow)]}>
+    <View style={[{ flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: "rgba(10,22,40,0.6)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" }, mine && youRow(glow)]}>
       <Text style={{ width: 24, textAlign: "center", color: C.text, fontWeight: "900" }}>{rank}</Text>
       {r.club ? <ClubBadge club={r.club} size={16} /> : null}
       <Text numberOfLines={1} style={{ flex: 1, color: C.text, fontWeight: "800" }}>{r.player}</Text>
@@ -310,7 +312,7 @@ function historyRows(prefix: string, lines: HistoryLine[], glow: string, mine: (
     const lit = !r.real && !!r.winner && (mine(r.winner) || (!!r.runnerUp && mine(r.runnerUp)));
     const extra = !r.notHeld && (r.scorers?.length || r.assisters?.length || r.best);
     return row(`${prefix}-${r.real ? "r" : "c"}${r.label}`, (
-      <View style={[{ borderRadius: 10, padding: 9, backgroundColor: "rgba(255,255,255,0.05)" }, lit && youRow(glow)]}>
+      <View style={[{ borderRadius: 10, padding: 9, backgroundColor: "rgba(10,22,40,0.6)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" }, lit && youRow(glow)]}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
           <Text style={{ color: C.gold, fontWeight: "900", fontSize: 10.5, letterSpacing: 1 }}>{r.label}{r.score ? ` · FINAL ${r.score}` : ""}</Text>
           {r.real && <Text style={{ color: C.dim, fontSize: 9, fontWeight: "900", backgroundColor: "rgba(255,255,255,0.1)", paddingHorizontal: 4, borderRadius: 3, overflow: "hidden" }}>REAL</Text>}
@@ -638,7 +640,7 @@ function IntlCompView({ top, career, comp, nation }: { top: ReactNode; career: C
   else if (tab === "goals" || tab === "assists") {
     const list = tab === "goals" ? sc.goals : sc.assists;
     body = list.length ? list.map((x, i) => row(`s${i}`, (
-      <View style={[{ flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: "rgba(255,255,255,0.05)" }, x.nation === nation && youRow(NATION_GLOW)]}>
+      <View style={[{ flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: "rgba(10,22,40,0.6)" }, x.nation === nation && youRow(NATION_GLOW)]}>
         <Text style={{ width: 22, textAlign: "center", color: C.text, fontWeight: "900" }}>{i + 1}</Text>
         <Flag nation={x.nation} size={13} />
         <Text numberOfLines={1} style={{ flex: 1, color: C.text, fontWeight: "800" }}>{x.name}</Text>

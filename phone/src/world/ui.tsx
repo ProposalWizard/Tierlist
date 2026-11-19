@@ -11,6 +11,7 @@ import { kitsOf } from "@/lib/star/kits";
 import type { CareerState } from "@/lib/star/types";
 import { Press } from "../ui/Press";
 import { C, R } from "../ui/theme";
+import { Backdrop, BottomBar, CapsTabs, LOOK, LookButton, ScreenHeader, glassStyle, type BackdropKind, type BarTab } from "../ui/look";
 
 // ── Colours ─────────────────────────────────────────────────────────────────
 
@@ -59,75 +60,69 @@ export function Flag({ nation, size = 18 }: { nation: string; size?: number }) {
 
 // ── Layout ──────────────────────────────────────────────────────────────────
 
-/** A full screen with a title, a back arrow and (optionally) something on the right. */
-export function ScreenFrame({ title, kicker, onBack, right, children, scroll = true, footer }: {
+/**
+ * A full screen in the website's look: a picture behind (the blurred stadium
+ * by default, `backdrop`), the shop's ◂ BACK pill, the title in Anton caps
+ * with its kicker over it, and (optionally) the game's bottom bar (`bar`).
+ */
+export function ScreenFrame({ title, kicker, onBack, right, children, scroll = true, footer, backdrop = "stadium", bar }: {
   title: string; kicker?: string; onBack?: () => void; right?: ReactNode; children: ReactNode; scroll?: boolean; footer?: ReactNode;
+  backdrop?: BackdropKind; bar?: BarTab | null;
 }) {
   const inset = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: inset.top }}>
-      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 8, gap: 10 }}>
-        {onBack ? (
-          <Press onPress={onBack} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.panel2, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color: C.gold, fontSize: 22, fontWeight: "900", marginTop: -2 }}>‹</Text>
-          </Press>
-        ) : null}
-        <View style={{ flex: 1 }}>
-          {kicker ? <Text style={{ color: C.green, fontSize: 11, fontWeight: "800", letterSpacing: 2 }}>{kicker.toUpperCase()}</Text> : null}
-          <Text numberOfLines={1} style={{ color: C.text, fontSize: 22, fontWeight: "900" }}>{title}</Text>
-        </View>
-        {right}
-      </View>
+    <View style={{ flex: 1, backgroundColor: "#0b1a2e", paddingTop: inset.top }}>
+      <Backdrop kind={backdrop} />
+      <ScreenHeader title={title} kicker={kicker} onBack={onBack} right={right} />
       {scroll ? (
-        <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 40 + inset.bottom, gap: 10 }}>{children}</ScrollView>
+        <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: (bar !== undefined ? 30 : 40 + inset.bottom), gap: 10 }}>{children}</ScrollView>
       ) : <View style={{ flex: 1 }}>{children}</View>}
-      {footer ? <View style={{ paddingBottom: Math.max(inset.bottom, 8), backgroundColor: "#0f1a16", borderTopWidth: 1, borderTopColor: C.line }}>{footer}</View> : null}
+      {footer ? <View style={[{ paddingBottom: bar !== undefined ? 8 : Math.max(inset.bottom, 8), paddingTop: 8 }, { backgroundImage: "linear-gradient(180deg, rgba(10,22,40,0.85), rgba(6,14,26,0.96))", borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.18)" } as ViewStyle]}>{footer}</View> : null}
+      {bar !== undefined ? <BottomBar active={bar} /> : null}
     </View>
   );
 }
 
+/** A glass panel (the website's frosted card); `glow` lights its top and rim in a colour. */
 export function Card({ children, glow, style }: { children: ReactNode; glow?: string; style?: StyleProp<ViewStyle> }) {
   return (
-    <View style={[{ backgroundColor: C.panel, borderRadius: R.card - 4, borderWidth: 1, borderColor: glow ? rgba(glow, 0.55) : C.line, padding: 8, overflow: "hidden" }, style]}>
+    <View style={[glassStyle("glass", glow && glow.startsWith("#") ? glow : undefined), { borderRadius: 16, padding: 10, overflow: "hidden" }, style]}>
       {children}
     </View>
   );
 }
 
-export function Title({ children, color = C.gold, style }: { children: ReactNode; color?: string; style?: StyleProp<TextStyle> }) {
-  return <Text style={[{ color, fontSize: 11, fontWeight: "900", letterSpacing: 1.6, textTransform: "uppercase", marginBottom: 6 }, style]}>{children}</Text>;
+export function Title({ children, color = LOOK.emerald300, style }: { children: ReactNode; color?: string; style?: StyleProp<TextStyle> }) {
+  return <Text style={[{ color, fontSize: 10.5, fontWeight: "900", letterSpacing: 1.8, textTransform: "uppercase", marginBottom: 6, textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }, style]}>{children}</Text>;
 }
 
 export function Empty({ text }: { text: string }) {
   return (
-    <View style={{ backgroundColor: C.panel, borderRadius: 14, padding: 16 }}>
+    <View style={[glassStyle("glass"), { borderRadius: 14, padding: 16 }]}>
       <Text style={{ color: C.text, fontWeight: "700", textAlign: "center", fontSize: 13 }}>{text}</Text>
     </View>
   );
 }
 
-/** One row of tabs (the website's SegTabs). Wraps onto two lines rather than scrolling. */
+/** One row of tabs (the website's SegTabs): a glass track, small capitals. */
 export function Seg<T extends string>({ value, onChange, tabs }: { value: T; onChange: (t: T) => void; tabs: readonly (readonly [T, string])[] }) {
-  return (
-    <View style={{ flexDirection: "row", backgroundColor: C.panel, borderRadius: R.pill, padding: 3 }}>
-      {tabs.map(([k, label]) => (
-        <Press key={k} onPress={() => onChange(k)} style={{ flex: 1, paddingVertical: 8, borderRadius: R.pill, alignItems: "center", backgroundColor: value === k ? C.panel2 : "transparent" }}>
-          <Text numberOfLines={1} style={{ color: value === k ? C.gold : C.dim, fontWeight: "900", fontSize: 12 }}>{label}</Text>
-        </Press>
-      ))}
-    </View>
-  );
+  return <CapsTabs value={value} onChange={onChange} tabs={tabs} />;
 }
 
-/** Chips that wrap (no sideways scrolling). */
+/** Chips that wrap (no sideways scrolling): glass pills, the chosen one gold. */
 export function Chips<T extends string>({ value, onChange, items }: { value: T; onChange: (t: T) => void; items: readonly (readonly [T, string])[] }) {
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-      {items.map(([k, label]) => (
-        <Press key={k} onPress={() => onChange(k)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: R.pill, backgroundColor: value === k ? C.gold : "rgba(255,255,255,0.1)" }}>
-          <Text style={{ color: value === k ? "#111" : C.text, fontWeight: "900", fontSize: 12 }}>{label}</Text>
-        </Press>
-      ))}
+      {items.map(([k, label]) => {
+        const on = value === k;
+        return (
+          <Press key={k} onPress={() => onChange(k)} style={[{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: R.pill }, on
+            ? ({ backgroundImage: "linear-gradient(180deg, #fde047, #f59e0b)", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.5)" } as ViewStyle)
+            : ({ backgroundColor: "rgba(10,22,40,0.6)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.22)" } as ViewStyle)]}>
+            <Text style={{ color: on ? "#111" : C.text, fontWeight: "900", fontSize: 12 }}>{label}</Text>
+          </Press>
+        );
+      })}
     </View>
   );
 }
@@ -135,7 +130,7 @@ export function Chips<T extends string>({ value, onChange, items }: { value: T; 
 /** ‹ Round 8 ›: back through played rounds, on to future ones. */
 export function RoundNav({ label, sub, onPrev, onNext }: { label: string; sub?: string; onPrev?: () => void; onNext?: () => void }) {
   const btn = (txt: string, on?: () => void) => (
-    <Press disabled={!on} onPress={on} style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: C.panel2, alignItems: "center", justifyContent: "center" }}>
+    <Press disabled={!on} onPress={on} style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: "rgba(255,255,255,0.28)", alignItems: "center", justifyContent: "center", opacity: on ? 1 : 0.4 }}>
       <Text style={{ color: C.text, fontSize: 22, fontWeight: "900", marginTop: -2 }}>{txt}</Text>
     </Press>
   );
@@ -153,17 +148,17 @@ export function RoundNav({ label, sub, onPrev, onNext }: { label: string; sub?: 
 
 /** Your club's row: lit in your club's colour. */
 export function youRow(glow: string): ViewStyle {
-  return { backgroundColor: rgba(glow.startsWith("#") ? glow : C.green, 0.28), borderWidth: 1, borderColor: rgba(glow.startsWith("#") ? glow : C.green, 0.8) };
+  const g = glow.startsWith("#") ? glow : C.green;
+  return { backgroundImage: `linear-gradient(90deg, ${rgba(g, 0.85)}, ${rgba(g, 0.5)})`, borderWidth: 1, borderColor: "rgba(255,255,255,0.45)", boxShadow: `0px 0px 10px ${rgba(g, 0.5)}` } as ViewStyle;
 }
 
-/** A big button: gold (primary), green, red or plain. */
+/** A big button in the website's 3D look: gold, green (primary), red or glass. */
 export function Btn({ label, onPress, tone = "gold", disabled, style }: { label: string; onPress: () => void; tone?: "gold" | "green" | "red" | "plain"; disabled?: boolean; style?: StyleProp<ViewStyle> }) {
-  const bg = tone === "gold" ? C.gold : tone === "green" ? C.green : tone === "red" ? "#7f1d1d" : C.panel2;
-  const ink = tone === "gold" || tone === "green" ? "#111" : C.text;
+  const kind = tone === "gold" ? "gold" : tone === "green" ? "primary" : tone === "red" ? "danger" : "glass";
   return (
-    <Press disabled={disabled} onPress={onPress} style={[{ backgroundColor: bg, borderRadius: 14, paddingVertical: 13, paddingHorizontal: 12, alignItems: "center", justifyContent: "center" }, style]}>
-      <Text style={{ color: ink, fontWeight: "900", fontSize: 14, textAlign: "center" }}>{label}</Text>
-    </Press>
+    <LookButton kind={kind} disabled={disabled} onPress={onPress} style={[{ borderRadius: 14, paddingVertical: 13, paddingHorizontal: 12, opacity: disabled ? 0.55 : 1 }, style]}>
+      <Text style={{ color: kind === "gold" ? "#111827" : "#fff", fontWeight: "900", fontSize: 14, textAlign: "center" }}>{label}</Text>
+    </LookButton>
   );
 }
 
@@ -171,8 +166,8 @@ export function Btn({ label, onPress, tone = "gold", disabled, style }: { label:
 export function Meter({ value, color = C.green, height = 8 }: { value: number; color?: string; height?: number }) {
   const v = Math.max(0, Math.min(100, value));
   return (
-    <View style={{ height, borderRadius: height / 2, backgroundColor: "rgba(255,255,255,0.1)", overflow: "hidden" }}>
-      <View style={{ width: `${v}%`, height: "100%", backgroundColor: color }} />
+    <View style={{ height, borderRadius: height / 2, backgroundColor: "rgba(255,255,255,0.16)", borderWidth: 1, borderColor: "rgba(255,255,255,0.18)", overflow: "hidden" }}>
+      <View style={{ width: `${v}%`, height: "100%", borderRadius: height / 2, backgroundColor: color, boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.4)" } as ViewStyle} />
     </View>
   );
 }
@@ -181,7 +176,7 @@ export function Meter({ value, color = C.green, height = 8 }: { value: number; c
 export function Note({ text }: { text: string | null }) {
   if (!text) return null;
   return (
-    <View style={{ backgroundColor: "#111", borderColor: C.gold, borderWidth: 1, borderRadius: 12, padding: 10, marginBottom: 6 }}>
+    <View style={{ backgroundColor: "rgba(3,7,18,0.92)", borderColor: "rgba(252,211,77,0.5)", borderWidth: 1, borderRadius: 12, padding: 10, marginBottom: 6 }}>
       <Text style={{ color: C.text, fontWeight: "800", textAlign: "center" }}>{text}</Text>
     </View>
   );

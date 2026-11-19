@@ -8,7 +8,8 @@
  * Who wants you: lib/star/transferInterest.ts (via world/transfers.ts).
  */
 import { useMemo, useState, type ReactNode } from "react";
-import { FlatList, Text, View } from "react-native";
+import { ScrollView, Text, View, type ViewStyle } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { INTEREST_STEPS, levelOf, type InterestLevel, type InterestedClub, type SeasonGrade } from "@/lib/star/transferInterest";
 import { leagueNameFor, divisionOf, type CareerDivision } from "@/lib/star/calendar";
 import { formatMoney, formatMoneyPrecise } from "@/lib/star/money";
@@ -16,8 +17,9 @@ import { shortClub } from "@/lib/star/media/grammar";
 import { useCareer, setCareer, getCareer } from "../../game/store";
 import { useNav } from "../../nav";
 import { Press } from "../../ui/Press";
-import { C } from "../../ui/theme";
-import { ScreenFrame, ClubBadge, Btn, rgba, clubGlow } from "../../world/ui";
+import { C } from "../../world/lookKit";
+import { ClubBadge, rgba, clubGlow } from "../../world/ui";
+import { FONT } from "../../ui/look";
 import { summerInterest, afterTalks } from "../../world/transfers";
 import { transferHandlers } from "../../world/transferHandlers";
 import { Negotiation } from "./Negotiation";
@@ -45,7 +47,7 @@ function EuroTag({ comp }: { comp: string }) {
 }
 function Fact({ k, v, gold }: { k: string; v: string; gold?: boolean }) {
   return (
-    <View style={{ flexBasis: "48%", flexGrow: 1, backgroundColor: "rgba(0,0,0,0.4)", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 }}>
+    <View style={{ flexBasis: "48%", flexGrow: 1, backgroundColor: "rgba(0,0,0,0.4)", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}>
       <Text style={{ color: C.dim, fontSize: 9, fontWeight: "900", letterSpacing: 1.2 }}>{k.toUpperCase()}</Text>
       <Text numberOfLines={1} style={{ color: gold ? C.gold : C.text, fontWeight: "900", fontSize: 14 }}>{v}</Text>
     </View>
@@ -53,12 +55,116 @@ function Fact({ k, v, gold }: { k: string; v: string; gold?: boolean }) {
 }
 function Chooser({ label, glow, onPress, children }: { label: string; glow: string; onPress: () => void; children: ReactNode }) {
   return (
-    <Press onPress={onPress} style={{ flexDirection: "row", alignItems: "center", gap: 10, height: 60, borderRadius: 14, paddingHorizontal: 12, backgroundColor: C.panel, borderWidth: 1.5, borderColor: rgba(glow.startsWith("#") ? glow : C.gold, 0.6) }}>
-      <Text style={{ width: 54, color: C.dim, fontWeight: "900", fontSize: 10, letterSpacing: 1.2 }}>{label.toUpperCase()}</Text>
+    <Press onPress={onPress} style={[tile(glow, 0.32), { flexDirection: "row", alignItems: "center", gap: 10, height: 60, borderRadius: 12, paddingHorizontal: 12 }]}>
+      <Text style={{ width: 50, color: "rgba(255,255,255,0.85)", fontWeight: "900", fontSize: 10, letterSpacing: 1.4 }}>{label.toUpperCase()}</Text>
       <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 8 }}>{children}</View>
-      <Text style={{ color: C.text, fontSize: 22, fontWeight: "900" }}>›</Text>
+      <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 20, fontWeight: "900" }}>›</Text>
     </Press>
   );
+}
+
+// ── The window's stage (TransferHub.tsx WindowFrame) ────────────────────────
+
+/** The Home screen's tile: dark glass lit from the top in one colour (TransferHub.tsx tile). */
+function tile(color: string, strength = 0.38): ViewStyle {
+  const c = color.startsWith("#") ? color : "#fbbf24";
+  return {
+    backgroundImage: `radial-gradient(90% 80% at 50% 0%, ${rgba(c, strength)} 0%, ${rgba(c, 0)} 75%), linear-gradient(180deg, rgba(9,13,26,0.95), rgba(9,13,26,0.95))`,
+    boxShadow: `inset 0px 1px 0px rgba(255,255,255,0.14), inset 0px 0px 0px 1.5px ${rgba(c, 0.6)}, 0px 8px 18px -8px rgba(0,0,0,0.9)`,
+  } as ViewStyle;
+}
+
+/** Words with a hard black outline (the website's 4-way text-shadow), so gold and white read over the slab. */
+function Outlined({ children, size, color, font, italic, lineHeight, width = 2 }: { children: string; size: number; color: string; font?: string; italic?: boolean; lineHeight?: number; width?: number }) {
+  const st = { fontSize: size, lineHeight: lineHeight ?? Math.round(size * 1.15), fontFamily: font, fontWeight: font ? undefined : ("900" as const) };
+  return (
+    <View style={italic ? { transform: [{ skewX: "-9deg" }] } : undefined}>
+      {[[-width, -width], [width, -width], [-width, width], [width, width]].map(([x, y]) => (
+        <Text key={`${x},${y}`} numberOfLines={1} style={[st, { position: "absolute", left: x, top: y, color: "#000" }]}>{children}</Text>
+      ))}
+      <Text numberOfLines={1} style={[st, { color }]}>{children}</Text>
+    </View>
+  );
+}
+
+/**
+ * Deadline Day's stage with the Home screen's lights: the night lit in your
+ * club's colour, the diagonal gold slab on the right with its slashes, the
+ * "TRANSFERS" tab down the left edge, a gold heavy-italic title, and a ticker
+ * over the full-width buttons. Still: the website's shine and scrolling ticker
+ * are left out (nothing moves at rest).
+ */
+function WindowFrame({ glow, kicker, title, sub, right, ticker, bottom, children }: {
+  glow: string; kicker: string; title: string; sub?: string; right?: ReactNode; ticker: string; bottom?: ReactNode; children: ReactNode;
+}) {
+  const inset = useSafeAreaInsets();
+  const [box, setBox] = useState<{ w: number; h: number } | null>(null);
+  const g = glow.startsWith("#") ? glow : "#fbbf24";
+  const slabW = box ? box.w * 0.46 : 0;
+  const lean = Math.atan2(slabW * 0.3, box?.h ?? 1);
+  return (
+    <View style={{ flex: 1, backgroundColor: "#070b16" }} onLayout={(e) => { const { width, height } = e.nativeEvent.layout; if (!box || box.w !== width || box.h !== height) setBox({ w: width, h: height }); }}>
+      <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, overflow: "hidden" }}>
+        <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundImage: `radial-gradient(95% 42% at 35% -6%, ${rgba(g, 0.55)} 0%, ${rgba(g, 0)} 72%), radial-gradient(70% 40% at 80% 105%, rgba(245,197,24,0.18), rgba(245,197,24,0) 70%), linear-gradient(180deg, #0a1120, #070b16 55%, #05070d)` } as ViewStyle} />
+        {[0.12, 0.88].map((x) => box && (
+          <View key={x} style={{ position: "absolute", left: box.w * x - 48, top: box.h * 0.02, width: 96, height: 96, borderRadius: 48, backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.12) 25%, rgba(255,255,255,0) 65%)" } as ViewStyle} />
+        ))}
+        {box && (
+          <>
+            {/* the gold slab: its left edge leans in, 30% across at the top */}
+            <View style={{ position: "absolute", top: -2, bottom: -2, left: box.w - slabW + slabW * 0.15, width: slabW * 1.4, transform: [{ skewX: `${-lean}rad` }],
+              backgroundImage: "linear-gradient(115deg, #d99a00 0%, #f5c518 38%, #ffe066 62%, #f0b400 100%)" } as ViewStyle} />
+            <View style={{ position: "absolute", top: -2, bottom: -2, left: box.w - slabW + slabW * 0.15, width: slabW * 1.4, transform: [{ skewX: `${-lean}rad` }],
+              backgroundImage: "linear-gradient(115deg, rgba(0,0,0,0) 55%, rgba(0,0,0,0.4) 100%)" } as ViewStyle} />
+            {[0, 1, 2].map((i) => {
+              const s = box.h * 0.7;
+              return <View key={i} style={{ position: "absolute", width: s, height: s, top: box.h / 2 - s / 2, right: box.w * (-0.34 + i * 0.16), borderRightWidth: 3, borderColor: "rgba(251,191,36,0.25)", transform: [{ rotate: "18deg" }] }} />;
+            })}
+          </>
+        )}
+      </View>
+
+      {/* the TRANSFERS tab down the left edge */}
+      <View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 28, backgroundColor: "rgba(0,0,0,0.75)", zIndex: 2 }}>
+        <View style={{ position: "absolute", top: inset.top + 16, left: 14 - 60, width: 120, height: 14, alignItems: "center", justifyContent: "center", transform: [{ translateY: 46 }, { rotate: "-90deg" }] }}>
+          <Text style={{ color: "#fcd34d", fontSize: 9, fontWeight: "900", letterSpacing: 2.7 }}>TRANSFERS</Text>
+        </View>
+      </View>
+
+      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, paddingTop: inset.top + 20, paddingLeft: 40, paddingRight: 12, paddingBottom: 8, zIndex: 3 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={{ alignSelf: "flex-start", borderRadius: 999, borderWidth: 1, borderColor: "rgba(251,191,36,0.6)", backgroundColor: "rgba(0,0,0,0.6)", paddingHorizontal: 10, paddingVertical: 4 }}>
+            <Text style={{ color: "#fcd34d", fontSize: 9, fontWeight: "900", letterSpacing: 1.8, textTransform: "uppercase" }}>{kicker}</Text>
+          </View>
+          <View style={{ marginTop: 8 }}><Outlined size={33} lineHeight={38} color="#ffd23f" font={FONT.display} italic>{title.toUpperCase()}</Outlined></View>
+          {sub ? <View style={{ marginTop: 4 }}><Outlined size={12} color="#fff" width={1}>{sub}</Outlined></View> : null}
+        </View>
+        {right}
+      </View>
+
+      <ScrollView style={{ flex: 1, zIndex: 3 }} contentContainerStyle={{ paddingLeft: 40, paddingRight: 12, paddingTop: 4, paddingBottom: 16, gap: 8 }}>{children}</ScrollView>
+
+      <View style={{ zIndex: 4, backgroundColor: "rgba(0,0,0,0.9)", borderTopWidth: 1, borderTopColor: "rgba(251,191,36,0.3)" }}>
+        <Text numberOfLines={1} style={{ paddingLeft: 40, paddingVertical: 6, color: "rgba(252,211,77,0.9)", fontSize: 9, fontWeight: "900", letterSpacing: 1.6, textTransform: "uppercase" }}>{ticker}{ticker}</Text>
+        {bottom ? <View style={{ paddingBottom: inset.bottom }}>{bottom}</View> : null}
+      </View>
+    </View>
+  );
+}
+
+/** The bar's full-width buttons (ui/Nav.tsx BarButton): plain dark, or gold. */
+function BarButton({ icon, label, onPress, primary, disabled, flex }: { icon: ReactNode; label: string; onPress: () => void; primary?: boolean; disabled?: boolean; flex: number }) {
+  return (
+    <Press disabled={disabled} onPress={onPress} style={[{ flex, height: 54, alignItems: "center", justifyContent: "center", gap: 2, opacity: disabled ? 0.4 : 1 },
+      primary ? ({ backgroundImage: "linear-gradient(180deg, #fde047, #f59e0b)", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.5)" } as ViewStyle) : { backgroundColor: "rgba(255,255,255,0.04)" }]}>
+      {typeof icon === "string" ? <Text style={{ fontSize: 17, color: primary ? "#030712" : "#fff" }}>{icon}</Text> : icon}
+      <Text numberOfLines={1} style={{ color: primary ? "#030712" : "#fff", fontSize: 12, fontWeight: "900", letterSpacing: 0.6, textTransform: "uppercase" }}>{label}</Text>
+    </Press>
+  );
+}
+
+function CloseBtn({ onPress }: { onPress: () => void }) {
+  return <Press onPress={onPress} style={[tile("#ffffff", 0.12), { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" }]}><Text style={{ color: "#fff", fontSize: 20, fontWeight: "900" }}>✕</Text></Press>;
 }
 
 type Page = "hub" | "league" | "club";
@@ -85,6 +191,7 @@ export function TransferHubScreen() {
   const wantText = total === 0 ? "No club has come in for you" : `${total} ${total === 1 ? "club wants" : "clubs want"} you`;
   const glow = clubGlow(career.player.club, career);
   const close = () => { setBrowsing(null); setPage("hub"); };
+  const ticker = `Transfer Centre · ${wantText} · Season grade ${r.grade} · ${leagues.length} ${leagues.length === 1 ? "league" : "leagues"} · `;
 
   // Talks with the club you picked: a WEEKLY wage, as on the website.
   if (talking) {
@@ -105,15 +212,13 @@ export function TransferHubScreen() {
 
   if (page === "league") {
     return (
-      <ScreenFrame title="Pick a league" kicker={kicker} onBack={close} scroll={false}>
-        <Text style={{ color: C.text, fontWeight: "800", paddingHorizontal: 14 }}>{wantText}</Text>
-        <FlatList data={leagues} keyExtractor={(l) => l.division} contentContainerStyle={{ padding: 12, gap: 8 }}
-          renderItem={({ item: l }) => {
+      <WindowFrame glow={glow} kicker={kicker} title="Pick a league" sub={wantText} ticker={ticker} right={<CloseBtn onPress={close} />}>
+        {leagues.map((l) => {
             const up = levelOf(l.division) - levelOf(own);
             const accent = up > 0 ? "#34d399" : up < 0 ? "#f97316" : C.gold;
             return (
-              <Press onPress={() => { setBrowsing(l.division); setPage("club"); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 14, padding: 12, backgroundColor: C.panel, borderWidth: 1.5, borderColor: rgba(accent, l.division === league?.division ? 0.9 : 0.5) }}>
-                <View style={{ width: 46, height: 46, borderRadius: 10, backgroundColor: C.gold, alignItems: "center", justifyContent: "center" }}>
+              <Press key={l.division} onPress={() => { setBrowsing(l.division); setPage("club"); }} style={[tile(accent, l.division === league?.division ? 0.55 : 0.38), { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 12, padding: 12 }]}>
+                <View style={{ width: 44, height: 44, borderRadius: 8, alignItems: "center", justifyContent: "center", backgroundImage: "linear-gradient(180deg, #ffe066, #f0b400)", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.6)" } as ViewStyle}>
                   <Text style={{ color: "#111", fontWeight: "900", fontSize: 20 }}>{l.clubs.length}</Text>
                   <Text style={{ color: "#111", fontWeight: "900", fontSize: 7 }}>{l.clubs.length === 1 ? "CLUB" : "CLUBS"}</Text>
                 </View>
@@ -122,24 +227,22 @@ export function TransferHubScreen() {
                   {l.division === own && <Text style={{ color: C.text, fontWeight: "900", fontSize: 11, letterSpacing: 1 }}>YOUR LEAGUE</Text>}
                 </View>
                 {l.division === league?.division && <Text style={{ color: C.green, fontSize: 18, fontWeight: "900" }}>✓</Text>}
-                <Text style={{ color: C.text, fontSize: 22, fontWeight: "900" }}>›</Text>
+                <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 20, fontWeight: "900" }}>›</Text>
               </Press>
             );
-          }} />
-      </ScreenFrame>
+          })}
+      </WindowFrame>
     );
   }
 
   if (page === "club" && browseLeague) {
     return (
-      <ScreenFrame title={leagueNameFor(browseLeague.division)} kicker={kicker} onBack={close} scroll={false}>
-        <Text style={{ color: C.text, fontWeight: "800", paddingHorizontal: 14 }}>{browseLeague.clubs.length} {browseLeague.clubs.length === 1 ? "club is" : "clubs are"} interested · A to Z</Text>
-        <FlatList data={browseLeague.clubs} keyExtractor={(c) => c.club} contentContainerStyle={{ padding: 12, gap: 8 }}
-          renderItem={({ item: c }) => {
+      <WindowFrame glow={glow} kicker={kicker} title={leagueNameFor(browseLeague.division)} sub={`${browseLeague.clubs.length} ${browseLeague.clubs.length === 1 ? "club is" : "clubs are"} interested · A to Z`} ticker={ticker} right={<CloseBtn onPress={close} />}>
+        {browseLeague.clubs.map((c) => {
             const picked = c.club === club?.club && browseLeague.division === league?.division;
             const g = clubGlow(c.club, career);
             return (
-              <Press onPress={() => { setDivision(browseLeague.division); setClubName(c.club); close(); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 14, padding: 10, backgroundColor: C.panel, borderWidth: 1.5, borderColor: rgba(g.startsWith("#") ? g : C.gold, picked ? 0.95 : 0.5) }}>
+              <Press key={c.club} onPress={() => { setDivision(browseLeague.division); setClubName(c.club); close(); }} style={[tile(g, picked ? 0.6 : 0.45), { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 }]}>
                 <ClubBadge club={c.club} size={36} career={career} />
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
@@ -152,25 +255,24 @@ export function TransferHubScreen() {
                 {picked && <Text style={{ color: C.green, fontSize: 18, fontWeight: "900" }}>✓</Text>}
               </Press>
             );
-          }} />
-      </ScreenFrame>
+          })}
+      </WindowFrame>
     );
   }
 
   const grade = GRADE_COLOUR[r.grade];
   const clubGlowNow = club ? clubGlow(club.club, career) : glow;
   return (
-    <ScreenFrame title="Transfer window" kicker={kicker} onBack={() => nav.back()}
-      footer={
-        <View style={{ flexDirection: "row", gap: 8, padding: 10 }}>
-          <Btn style={{ flex: 1 }} tone="plain" label="✕ Stay" onPress={() => transferHandlers().onStay(getCareer() ?? career, nav)} />
-          <Btn style={{ flex: 1.6 }} tone="green" disabled={!club} label={club ? `✓ Negotiate · ${shortClub(club.club)}` : "✓ Negotiate"} onPress={() => club && setTalking(club)} />
+    <WindowFrame glow={glow} kicker={kicker} title="Transfer window" sub={wantText} ticker={ticker}
+      bottom={
+        <View style={{ flexDirection: "row", gap: 1 }}>
+          <BarButton flex={1} icon={<Text style={{ color: "#f87171", fontSize: 17 }}>✕</Text>} label="Stay" onPress={() => transferHandlers().onStay(getCareer() ?? career, nav)} />
+          <BarButton flex={1.6} primary icon="✓" disabled={!club} label={club ? `Negotiate · ${shortClub(club.club)}` : "Negotiate"} onPress={() => club && setTalking(club)} />
         </View>
       }>
-      <Text style={{ color: C.text, fontWeight: "800" }}>{wantText}</Text>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 16, padding: 12, backgroundColor: C.panel, borderWidth: 1.5, borderColor: rgba(grade, 0.7) }}>
-        <View style={{ width: 64, height: 64, borderRadius: 14, backgroundColor: grade, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ color: "#fff", fontWeight: "900", fontSize: 42, fontStyle: "italic", textShadowColor: "#000", textShadowRadius: 3 }}>{r.grade}</Text>
+      <View style={[tile(grade, 0.5), { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 12, padding: 12 }]}>
+        <View style={{ width: 64, height: 64, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundImage: `linear-gradient(180deg, ${grade}, ${rgba(grade, 0.7)})`, boxShadow: `0px 0px 22px ${rgba(grade, 0.7)}, inset 0px 1px 0px rgba(255,255,255,0.45)` } as ViewStyle}>
+          <Outlined size={44} lineHeight={50} color="#fff" italic>{r.grade}</Outlined>
         </View>
         <View style={{ flex: 1 }}>
           <Text style={{ color: grade, fontWeight: "900", fontSize: 10, letterSpacing: 1.5 }}>YOUR SEASON</Text>
@@ -187,22 +289,22 @@ export function TransferHubScreen() {
 
       {league ? (
         <>
-          <Chooser label="League" glow={C.gold} onPress={() => setPage("league")}>
-            <Text numberOfLines={1} style={{ color: C.text, fontWeight: "900", fontSize: 16, flex: 1 }}>{leagueNameFor(league.division).toUpperCase()}</Text>
-            <Text style={{ backgroundColor: C.gold, color: "#111", fontWeight: "900", fontSize: 11, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, overflow: "hidden" }}>{league.clubs.length}</Text>
+          <Chooser label="League" glow="#fbbf24" onPress={() => setPage("league")}>
+            <Text numberOfLines={1} style={{ color: C.text, fontFamily: FONT.display, fontSize: 18, lineHeight: 24, letterSpacing: 0.4, flex: 1 }}>{leagueNameFor(league.division).toUpperCase()}</Text>
+            <Text style={{ backgroundColor: "#fbbf24", color: "#000", fontWeight: "900", fontSize: 11, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, overflow: "hidden" }}>{league.clubs.length}</Text>
           </Chooser>
           <Chooser label="Club" glow={clubGlowNow} onPress={() => { setBrowsing(league.division); setPage("club"); }}>
             {club ? (
               <>
                 <ClubBadge club={club.club} size={30} career={career} />
-                <Text numberOfLines={1} style={{ color: C.text, fontWeight: "900", fontSize: 16, flex: 1 }}>{club.club.toUpperCase()}</Text>
+                <Text numberOfLines={1} style={{ color: C.text, fontFamily: FONT.display, fontSize: 18, lineHeight: 24, letterSpacing: 0.4, flex: 1 }}>{club.club.toUpperCase()}</Text>
                 {club.europe ? <EuroTag comp={club.europe} /> : null}
               </>
-            ) : <Text style={{ color: C.dim, fontWeight: "900", fontSize: 16 }}>CHOOSE</Text>}
+            ) : <Text style={{ color: "rgba(255,255,255,0.7)", fontFamily: FONT.display, fontSize: 18, lineHeight: 24, letterSpacing: 0.4 }}>CHOOSE</Text>}
           </Chooser>
-          {!club && <Text style={{ color: C.text, fontWeight: "700", fontSize: 14 }}>Pick a club to see what they offer.</Text>}
+          {!club && <View style={{ marginTop: 8 }}><Outlined size={14} color="#fff" width={1}>Pick a club to see what they offer.</Outlined></View>}
           {club && (
-            <View style={{ borderRadius: 16, padding: 12, backgroundColor: C.panel, borderWidth: 1.5, borderColor: rgba(clubGlowNow.startsWith("#") ? clubGlowNow : C.gold, 0.8), gap: 10 }}>
+            <View style={[tile(clubGlowNow, 0.6), { borderRadius: 12, padding: 12, gap: 10 }]}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                 <ClubBadge club={club.club} size={52} career={career} />
                 <View style={{ flex: 1 }}>
@@ -222,7 +324,7 @@ export function TransferHubScreen() {
             </View>
           )}
         </>
-      ) : <Text style={{ color: C.text, fontWeight: "700", fontSize: 14, marginTop: 10 }}>Have a better season and the clubs will come.</Text>}
-    </ScreenFrame>
+      ) : <View style={{ marginTop: 16 }}><Outlined size={14} color="#fff" width={1}>Have a better season and the clubs will come.</Outlined></View>}
+    </WindowFrame>
   );
 }

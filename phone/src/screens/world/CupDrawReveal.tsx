@@ -12,6 +12,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
+import type { ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeIn, ZoomIn } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
@@ -19,8 +20,9 @@ import { kitsFor } from "@/lib/star/kits";
 import { useCareer } from "../../game/store";
 import { useNav } from "../../nav";
 import { Press } from "../../ui/Press";
-import { C } from "../../ui/theme";
+import { C } from "../../world/lookKit";
 import { ClubBadge, Btn } from "../../world/ui";
+import { Backdrop, FONT, glassStyle } from "../../ui/look";
 import type { DrawRound } from "../../world/cupDraw";
 
 const AWAY_BALL_MS = 700;
@@ -64,16 +66,26 @@ export function CupDrawReveal({ competition, round, yourClub, onContinue }: { co
   const left = Math.max(0, total * 2 - revealed * 2 - (homeShown ? 2 : 1));
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#06101f", paddingTop: inset.top }}>
-      <View style={{ alignItems: "center", paddingTop: 18, paddingBottom: 8 }}>
-        <Text style={{ color: "#7dd3fc", fontWeight: "900", fontSize: 11, letterSpacing: 4 }}>{competition.toUpperCase()} DRAW</Text>
-        <Text style={{ color: C.text, fontWeight: "900", fontSize: 22, marginTop: 4 }}>{round.name.toUpperCase()}</Text>
+    <View style={{ flex: 1, backgroundColor: "#0b1a2e", paddingTop: inset.top }}>
+      <Backdrop kind="stadium" />
+      {/* the website's card: glass lit blue from the top (kit-card, --kit-glow #3b82f6) */}
+      <View style={[glassStyle("glass", "#3b82f6"), { flex: 1, margin: 12, marginBottom: 0, borderRadius: 18, overflow: "hidden" }]}>
+      <View style={{ alignItems: "center", paddingTop: 18, paddingBottom: 10 }}>
+        <Text style={{ color: "rgba(125,211,252,0.75)", fontWeight: "900", fontSize: 10, letterSpacing: 3.5 }}>{competition.toUpperCase()} DRAW</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 6 }}>
+          <View style={{ width: 40, height: 1, backgroundImage: "linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.25))" } as ViewStyle} />
+          <Text style={{ color: C.text, fontFamily: FONT.display, fontSize: 24, lineHeight: 30, letterSpacing: 0.4, textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 }}>{round.name.toUpperCase()}</Text>
+          <View style={{ width: 40, height: 1, backgroundImage: "linear-gradient(270deg, rgba(255,255,255,0), rgba(255,255,255,0.25))" } as ViewStyle} />
+        </View>
       </View>
-      <ScrollView contentContainerStyle={{ padding: 14, gap: 8, flexGrow: 1 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 14, gap: 8, flexGrow: 1 }}>
         {!started ? (
-          <View style={{ alignItems: "center", gap: 18, paddingTop: 30 }}>
-            <Text style={{ fontSize: 90 }}>🏆</Text>
-            <Text style={{ color: C.text, fontWeight: "800", textAlign: "center", fontSize: 15 }}>
+          <View style={{ alignItems: "center", gap: 18, paddingTop: 12 }}>
+            <View style={{ alignSelf: "stretch", alignItems: "center", paddingVertical: 26, borderRadius: 12, backgroundImage: "radial-gradient(65% 90% at 50% 15%, rgba(56,132,255,0.28), rgba(56,132,255,0) 70%)" } as ViewStyle}>
+              <Text style={{ fontSize: 90, textShadowColor: "rgba(251,191,36,0.5)", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 26 }}>🏆</Text>
+              <Text style={{ fontSize: 28, marginTop: -6, transform: [{ rotate: "-8deg" }] }}>🎟️</Text>
+            </View>
+            <Text style={{ color: "rgba(255,255,255,0.8)", fontWeight: "800", textAlign: "center", fontSize: 14, paddingHorizontal: 12 }}>
               <Text style={{ color: "#fb7185" }}>{total}</Text> {total === 1 ? "tie" : "ties"} to be drawn for the <Text style={{ color: "#fb7185" }}>{round.name}</Text>.
             </Text>
             <Btn label="⚡ Run the Draw ⚡" tone="green" onPress={() => { setStarted(true); setRevealed(0); setHomeShown(false); }} style={{ paddingHorizontal: 30 }} />
@@ -81,8 +93,8 @@ export function CupDrawReveal({ competition, round, yourClub, onContinue }: { co
         ) : (
           <>
             {!done && (
-              <View style={{ alignSelf: "center", width: 170, height: 60, borderBottomLeftRadius: 60, borderBottomRightRadius: 60, borderTopLeftRadius: 10, borderTopRightRadius: 10, backgroundColor: "rgba(147,197,253,0.12)", borderWidth: 1.5, borderColor: "rgba(191,219,254,0.35)", flexDirection: "row", flexWrap: "wrap", justifyContent: "center", alignItems: "flex-end", padding: 6, gap: 3, marginBottom: 6 }}>
-                {Array.from({ length: Math.min(14, left) }, (_, i) => <View key={i} style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: "#cbd5e1" }} />)}
+              <View style={{ alignSelf: "center", width: 170, height: 60, borderBottomLeftRadius: 60, borderBottomRightRadius: 60, borderTopLeftRadius: 10, borderTopRightRadius: 10, backgroundImage: "radial-gradient(120% 90% at 50% 10%, rgba(255,255,255,0.14), rgba(147,197,253,0.05) 60%, rgba(0,0,0,0.25))", borderWidth: 1.5, borderColor: "rgba(191,219,254,0.35)", flexDirection: "row", flexWrap: "wrap", justifyContent: "center", alignItems: "flex-end", padding: 6, gap: 3, marginBottom: 6 }}>
+                {Array.from({ length: Math.min(14, left) }, (_, i) => <View key={i} style={{ width: 14, height: 14, borderRadius: 7, backgroundImage: "radial-gradient(circle at 35% 30%, #ffffff, #cbd5e1 55%, #64748b)" } as ViewStyle} />)}
               </View>
             )}
             {round.ties.map((tie, i) => {
@@ -93,7 +105,7 @@ export function CupDrawReveal({ competition, round, yourClub, onContinue }: { co
               const kits = kitsFor(tie.home, tie.away);
               return (
                 <Animated.View key={`${tie.home}-${tie.away}-${i}`} entering={isCurrent ? FadeIn.duration(300) : undefined}
-                  style={{ flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: mine ? "rgba(120,53,15,0.75)" : "rgba(0,0,0,0.55)", borderWidth: 1, borderColor: mine ? "rgba(251,191,36,0.7)" : "rgba(255,255,255,0.1)" }}>
+                  style={{ flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: mine ? "rgba(69,26,3,0.7)" : "rgba(0,0,0,0.55)", borderWidth: 1, borderColor: mine ? "rgba(251,191,36,0.7)" : "rgba(255,255,255,0.1)", boxShadow: mine ? "0px 0px 16px rgba(251,191,36,0.28)" : undefined } as ViewStyle}>
                   <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 6 }}>
                     <Animated.View entering={isCurrent ? ZoomIn.duration(POP_MS) : undefined}><Dot shirt={kits.home.shirt} trim={kits.home.trim} club={tie.home} /></Animated.View>
                     <Text numberOfLines={1} style={{ flex: 1, color: mine ? C.gold : C.text, fontWeight: "800" }}>{tie.home}</Text>
@@ -118,7 +130,8 @@ export function CupDrawReveal({ competition, round, yourClub, onContinue }: { co
           </>
         )}
       </ScrollView>
-      <View style={{ padding: 14, paddingBottom: Math.max(inset.bottom, 14), borderTopWidth: 1, borderTopColor: C.line }}>
+      </View>
+      <View style={{ padding: 14, paddingBottom: Math.max(inset.bottom, 14) }}>
         {done && <Text style={{ color: "#7dd3fc", fontWeight: "900", letterSpacing: 3, fontSize: 11, textAlign: "center", marginBottom: 8 }}>DRAW COMPLETE</Text>}
         <Btn label="Continue" tone="green" disabled={!done} onPress={onContinue} />
       </View>

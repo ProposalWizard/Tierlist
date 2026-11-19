@@ -12,8 +12,7 @@
  * screens when those exist.
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { FlatList, ScrollView, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { FlatList, ScrollView, Text, View, type ViewStyle } from "react-native";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import { phoneClockLabel } from "@/lib/star/phoneClock";
 import { nextFixtureFor, byFixtureDate } from "@/lib/star/competitions";
@@ -32,39 +31,43 @@ import { useCareer, setCareer, getCareer } from "../../game/store";
 import { useNav } from "../../nav";
 import { SCREENS } from "../../areas/registry";
 import { Press } from "../../ui/Press";
-import { C } from "../../ui/theme";
+import { C } from "../../world/lookKit";
 import { Kickabout } from "../MatchKickabout";
 import { ClubBadge, Empty, Title, clubGlow, rgba, youRow } from "../../world/ui";
 import { readSeenMsgs, writeSeenMsgs, readSocialSeen, writeSocialSeen } from "../../world/seen";
 import { MediaFeed } from "./Feed";
+import { kitsOf } from "@/lib/star/kits";
+import { Backdrop, BottomBar, LOOK, glassStyle } from "../../ui/look";
+import { GameTop } from "../../world/chrome";
 
 type Inside = "social" | "squad" | "fixtures" | "messages" | "appstore" | "scout" | "kickabout";
-interface App { id: string; label: string; icon: string; bg: string; title?: string; /** A screen of its own (nav name), or an app inside the phone. */ screen?: string; inside?: Inside; soon?: string }
+interface App { id: string; label: string; icon: string; bg: string; /** The icon's lighter top colour (PhoneHome bg[0]). */ hi?: string; title?: string; /** A screen of its own (nav name), or an app inside the phone. */ screen?: string; inside?: Inside; soon?: string }
 
 const APPS: App[] = [
-  { id: "social", label: "Social", icon: "💬", bg: "#059669", inside: "social" },
-  { id: "kickabout", label: "Kickabout", icon: "⚽", bg: "#4d7c0f", inside: "kickabout" },
-  { id: "relations", label: "Relationships", icon: "❤️", bg: "#be123c", screen: "relations", soon: "Relationships" },
-  { id: "squad", label: "Squad", icon: "👥", bg: "#d97706", inside: "squad" },
-  { id: "fixtures", label: "Fixtures", title: "Fixtures & results", icon: "🏟️", bg: "#0369a1", inside: "fixtures" },
-  { id: "messages", label: "Messages", icon: "💌", bg: "#e11d48", inside: "messages" },
-  { id: "shop-kib", label: "Shop", icon: "🛍️", bg: "#ea580c", screen: "shop" },
-  { id: "store", label: "Store", icon: "🛒", bg: "#7c3aed", screen: "store", soon: "The Store (Coins)" },
+  { id: "social", label: "Social", icon: "💬", hi: "#34d399", bg: "#047857", inside: "social" },
+  { id: "kickabout", label: "Kickabout", icon: "⚽", hi: "#a3e635", bg: "#15803d", inside: "kickabout" },
+  { id: "relations", label: "Relationships", icon: "❤️", hi: "#fb7185", bg: "#be123c", screen: "relations", soon: "Relationships" },
+  { id: "squad", label: "Squad", icon: "👥", hi: "#fcd34d", bg: "#d97706", inside: "squad" },
+  { id: "fixtures", label: "Fixtures", title: "Fixtures & results", icon: "🏟️", hi: "#38bdf8", bg: "#0369a1", inside: "fixtures" },
+  { id: "messages", label: "Messages", icon: "💌", hi: "#f472b6", bg: "#e11d48", inside: "messages" },
+  { id: "shop-kib", label: "Shop", icon: "🛍️", hi: "#fb923c", bg: "#ea580c", screen: "shop" },
+  { id: "store", label: "Store", icon: "🛒", hi: "#fcd34d", bg: "#7c3aed", screen: "store", soon: "The Store (Coins)" },
   // No casino: the packed phone app has none (Mikey, 5 Nov 2026).
-  { id: "sponsors", label: "Sponsors", icon: "🤝", bg: "#0f766e", screen: "sponsors" },
-  { id: "ownership", label: "Owner", icon: "🏛️", bg: "#4338ca", screen: "ownership" },
-  { id: "garden", label: "Garden", icon: "🌳", bg: "#166534", soon: "The 3D garden" },
-  { id: "settings", label: "Settings", icon: "⚙️", bg: "#4b5563", screen: "settings", soon: "Settings" },
+  { id: "sponsors", label: "Sponsors", icon: "🤝", hi: "#2dd4bf", bg: "#0f766e", screen: "sponsors" },
+  { id: "ownership", label: "Owner", icon: "🏛️", hi: "#818cf8", bg: "#4338ca", screen: "ownership" },
+  { id: "garden", label: "Garden", icon: "🌳", hi: "#22c55e", bg: "#166534", soon: "The 3D garden" },
+  // Shown as the website's phone shows it (lib/star/home3d/flag.ts HOME3D_IN_CAREER); the 3D house is not in this app.
+  { id: "home-3d", label: "Your house", icon: "🏠", hi: "#f59e0b", bg: "#92400e", soon: "Your 3D house" },
+  { id: "settings", label: "Settings", icon: "⚙️", hi: "#9ca3af", bg: "#4b5563", screen: "settings", soon: "Settings" },
 ];
 const DOCK = new Set(["social", "messages", "fixtures", "kickabout"]);
-const APP_STORE_ICON: App = { id: "appstore", label: "App Store", icon: "🅰️", bg: "#1d4ed8", inside: "appstore" };
-const SCOUT_APP: App = { id: "scout", label: "Scout report", icon: "🔍", bg: "#047857", inside: "scout" };
+const APP_STORE_ICON: App = { id: "appstore", label: "App Store", icon: "🅰️", hi: "#60a5fa", bg: "#1d4ed8", inside: "appstore" };
+const SCOUT_APP: App = { id: "scout", label: "Scout report", icon: "🔍", hi: "#34d399", bg: "#047857", inside: "scout" };
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 
 export function PhoneScreen() {
   const career = useCareer();
   const nav = useNav();
-  const inset = useSafeAreaInsets();
   const [app, setApp] = useState<App | null>(null);
   const [soon, setSoon] = useState<string | null>(null);
   const msgs = useMemo(() => (career ? buildMessages(career, null) : []), [career]);
@@ -92,9 +95,8 @@ export function PhoneScreen() {
     setSoon(a.soon ?? a.label);
   };
 
-  const body = app ? (
+  const body = app?.inside === "social" ? <MediaFeed career={career} mode="browse" /> : app ? (
     <AppShell app={app}>
-      {app.inside === "social" && <MediaFeed career={career} mode="browse" />}
       {app.inside === "squad" && <SquadApp career={career} glow={glow} />}
       {app.inside === "fixtures" && <FixturesApp career={career} />}
       {app.inside === "messages" && <MessagesApp msgs={msgs} onOpen={(to) => (to === "scout" ? setApp(SCOUT_APP) : nav.go("sponsors"))} />}
@@ -106,23 +108,107 @@ export function PhoneScreen() {
     <Grid career={career} glow={glow} badges={badges} installed={installed} onOpen={open} />
   );
 
+  const kit = kitsOf(career.player.club, career.clubKits?.[career.player.club]).home;
   return (
-    <View style={{ flex: 1, backgroundColor: "#05080f", paddingTop: inset.top }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 6 }}>
-        <Text style={{ color: C.text, fontWeight: "900" }}>{phoneClockLabel(career)}</Text>
-        <Text style={{ color: C.dim, fontWeight: "800" }}>📶 🔋</Text>
-      </View>
-      <View style={{ flex: 1 }}>{body}</View>
-      {soon && (
-        <Press onPress={() => setSoon(null)} style={{ position: "absolute", left: 20, right: 20, bottom: 120, backgroundColor: "#111", borderColor: C.gold, borderWidth: 1, borderRadius: 14, padding: 14 }}>
-          <Text style={{ color: C.text, fontWeight: "800", textAlign: "center" }}>{soon} is coming to the phone app.</Text>
-        </Press>
+    <View style={{ flex: 1, backgroundColor: "#0b1a2e" }}>
+      <Backdrop kind="stadium" />
+      <GameTop career={career} help="phone" />
+      <PhoneBody glow={glow} trim={kit.trim} clock={phoneClockLabel(career)} onHome={app ? () => setApp(null) : undefined} onBack={() => (app ? setApp(null) : nav.back())}>
+        <View style={[{ flex: 1 }, app ? ({ borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: "hidden", backgroundImage: `radial-gradient(110% 38% at 50% 0%, ${rgba(glow, 0.24)} 0%, rgba(0,0,0,0) 70%), linear-gradient(180deg, #0b1220, #05080f)` } as ViewStyle) : null]}>{body}</View>
+        {soon && (
+          <Press onPress={() => setSoon(null)} style={{ position: "absolute", left: 14, right: 14, bottom: 110, backgroundColor: "rgba(3,7,18,0.95)", borderColor: "rgba(252,211,77,0.5)", borderWidth: 1, borderRadius: 14, padding: 14 }}>
+            <Text style={{ color: C.text, fontWeight: "800", textAlign: "center" }}>{soon} is coming to the phone app.</Text>
+          </Press>
+        )}
+      </PhoneBody>
+      <BottomBar active="phone" />
+    </View>
+  );
+}
+
+/**
+ * THE DRAWN PHONE (components/star/PhoneFrame.tsx): a graphite bezel edge-lit
+ * in your club's colour, the screen with its wallpaper (your club's colours
+ * glowing out of the dark), the status bar (date, signal, wifi, battery), the
+ * dynamic island, and the nav bar: ⌂ HOME on the left, BACK ‹ on the right.
+ * Sized as the website: as tall as the room, at most 0.6 as wide as tall.
+ */
+function PhoneBody({ glow, trim, clock, onHome, onBack, children }: { glow: string; trim: string; clock: string; onHome?: () => void; onBack: () => void; children: ReactNode }) {
+  const [room, setRoom] = useState<{ w: number; h: number } | null>(null);
+  const g = glow.startsWith("#") ? glow : "#10b981";
+  const second = trim.startsWith("#") && lum(trim) < 0.85 && lum(trim) > 0.04 ? trim : g;
+  const h = room ? room.h - 12 : 0;
+  const w = room ? Math.min(room.w - 16, Math.round(h * 0.6)) : 0;
+  return (
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }} onLayout={(e) => { const { width, height } = e.nativeEvent.layout; if (!room || room.w !== width || room.h !== height) setRoom({ w: width, h: height }); }}>
+      {room && (
+        <View style={{
+          width: w, height: h, borderRadius: 42, borderWidth: 3, borderColor: "#3a3a3f", padding: 3,
+          backgroundImage: "linear-gradient(155deg, #232327 0%, #131316 40%, #0a0a0c 100%)",
+          boxShadow: `0px 30px 70px -20px rgba(0,0,0,0.75), 0px 0px 34px -6px ${rgba(g, 0.4)}, inset 0px 0px 0px 1.5px rgba(255,255,255,0.08)`,
+        } as ViewStyle}>
+          <View style={{
+            flex: 1, borderRadius: 37, overflow: "hidden", backgroundColor: "#000",
+            backgroundImage: `radial-gradient(120% 55% at 15% 0%, ${rgba(g, 0.62)} 0%, rgba(0,0,0,0) 62%), radial-gradient(100% 50% at 100% 100%, ${rgba(second, 0.38)} 0%, rgba(0,0,0,0) 60%), linear-gradient(165deg, #0c1629 0%, #05080f 70%)`,
+          } as ViewStyle}>
+            {/* status bar */}
+            <View style={{ height: 30, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 22, paddingTop: 4 }}>
+              <Text numberOfLines={1} style={{ color: "#fff", fontSize: 11, fontWeight: "800", maxWidth: "36%" }}>{clock}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><Signal /><Wifi /><Battery /></View>
+            </View>
+            {/* the dynamic island */}
+            <View pointerEvents="none" style={{ position: "absolute", top: 6, alignSelf: "center", width: 86, height: 20, borderRadius: 10, backgroundColor: "#000", zIndex: 5 }} />
+            <View style={{ flex: 1 }}>{children}</View>
+            {/* the nav bar */}
+            <View style={{ height: 50, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 26, paddingBottom: 4, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)", backgroundImage: "linear-gradient(180deg, rgba(17,24,39,0.85), rgba(3,7,18,0.95))" } as ViewStyle}>
+              <Press disabled={!onHome} onPress={onHome} style={{ flexDirection: "row", alignItems: "center", gap: 7, opacity: onHome ? 1 : 0.35 }}>
+                <HouseGlyph />
+                <Text style={{ color: "#fff", fontSize: 13, fontWeight: "900", letterSpacing: 0.6 }}>HOME</Text>
+              </Press>
+              <Press onPress={onBack} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Text style={{ color: "#fff", fontSize: 13, fontWeight: "900", letterSpacing: 0.6 }}>BACK</Text>
+                <Text style={{ color: "#fff", fontSize: 24, fontWeight: "900", marginTop: -3 }}>‹</Text>
+              </Press>
+            </View>
+          </View>
+          {/* side buttons */}
+          <View style={{ position: "absolute", left: -6, top: 96, width: 3, height: 24, borderTopLeftRadius: 2, borderBottomLeftRadius: 2, backgroundColor: "#3a3a3f" }} />
+          <View style={{ position: "absolute", left: -6, top: 128, width: 3, height: 40, borderTopLeftRadius: 2, borderBottomLeftRadius: 2, backgroundColor: "#3a3a3f" }} />
+          <View style={{ position: "absolute", left: -6, top: 176, width: 3, height: 40, borderTopLeftRadius: 2, borderBottomLeftRadius: 2, backgroundColor: "#3a3a3f" }} />
+          <View style={{ position: "absolute", right: -6, top: 128, width: 3, height: 56, borderTopRightRadius: 2, borderBottomRightRadius: 2, backgroundColor: "#3a3a3f" }} />
+        </View>
       )}
-      <View style={{ flexDirection: "row", justifyContent: "space-around", paddingBottom: Math.max(inset.bottom, 10), paddingTop: 8, backgroundColor: "#0a0f18", borderTopWidth: 1, borderTopColor: C.line }}>
-        <Press onPress={() => (app ? setApp(null) : nav.back())} style={{ paddingHorizontal: 22, paddingVertical: 6 }}><Text style={{ color: C.text, fontSize: 20, fontWeight: "900" }}>‹</Text></Press>
-        <Press onPress={() => setApp(null)} style={{ paddingHorizontal: 22, paddingVertical: 6 }}><View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2.5, borderColor: C.text }} /></Press>
-        <Press onPress={() => nav.back()} style={{ paddingHorizontal: 22, paddingVertical: 6 }}><Text style={{ color: C.text, fontSize: 16, fontWeight: "900" }}>✕</Text></Press>
-      </View>
+    </View>
+  );
+}
+
+function lum(hex: string): number {
+  const n = parseInt(hex.replace("#", "").slice(0, 6).padEnd(6, "0"), 16);
+  return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+}
+
+/** The status bar's signal bars, wifi and battery (PhoneFrame's SVGs, drawn with boxes). */
+function Signal() {
+  return <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 1.5, height: 11 }}>{[4, 6, 8, 11].map((hh) => <View key={hh} style={{ width: 3, height: hh, borderRadius: 0.5, backgroundColor: "#fff" }} />)}</View>;
+}
+function Wifi() {
+  const arc = (d: number) => <View style={{ position: "absolute", left: (14 - d) / 2, top: 1 + (14 - d) / 4, width: d, height: d, borderRadius: d / 2, borderWidth: 1.6, borderColor: "transparent", borderTopColor: "#fff" }} />;
+  return <View style={{ width: 14, height: 11 }}>{arc(15)}{arc(9.5)}<View style={{ position: "absolute", left: 5.5, top: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: "#fff" }} /></View>;
+}
+function Battery() {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
+      <View style={{ width: 20, height: 11, borderRadius: 3, borderWidth: 1.2, borderColor: "rgba(255,255,255,0.55)", padding: 1 }}><View style={{ flex: 1, borderRadius: 1.5, backgroundColor: "#fff" }} /></View>
+      <View style={{ width: 2, height: 4, borderRadius: 1, backgroundColor: "rgba(255,255,255,0.55)" }} />
+    </View>
+  );
+}
+/** The nav bar's house outline. */
+function HouseGlyph() {
+  return (
+    <View style={{ width: 18, height: 17, alignItems: "center" }}>
+      <View style={{ position: "absolute", top: 2, width: 11, height: 11, borderLeftWidth: 2.4, borderTopWidth: 2.4, borderColor: "#fff", transform: [{ rotate: "45deg" }] }} />
+      <View style={{ position: "absolute", bottom: 0, width: 12, height: 9, borderLeftWidth: 2.4, borderRightWidth: 2.4, borderBottomWidth: 2.4, borderColor: "#fff" }} />
     </View>
   );
 }
@@ -132,18 +218,22 @@ function Soon({ text }: { text: string }) {
 }
 
 function AppIcon({ app, badge, off, fresh, onOpen }: { app: App; badge: number; off: boolean; fresh: boolean; onOpen: () => void }) {
+  const size = 50;
   return (
-    <Press onPress={onOpen} style={{ width: "25%", alignItems: "center", paddingVertical: 6 }}>
-      <View style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: off ? "#05070b" : app.bg, alignItems: "center", justifyContent: "center", borderWidth: off ? 1 : 0, borderColor: "rgba(255,255,255,0.07)" }}>
-        <Text style={{ fontSize: 26, opacity: off ? 0.25 : 1 }}>{app.icon}</Text>
+    <Press onPress={onOpen} style={{ width: "25%", alignItems: "center", paddingVertical: 5 }}>
+      <View style={[{ width: size, height: size, borderRadius: size * 0.28, alignItems: "center", justifyContent: "center" }, off
+        ? ({ backgroundImage: "linear-gradient(160deg, #0b0f17, #020304)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.07), 0px 7px 14px -6px rgba(0,0,0,0.8)" } as ViewStyle)
+        : ({ backgroundImage: `linear-gradient(160deg, ${app.hi ?? app.bg}, ${app.bg})`, boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.5), inset 0px -3px 6px rgba(0,0,0,0.25), 0px 7px 14px -6px rgba(0,0,0,0.8)" } as ViewStyle)]}>
+        {!off && <View pointerEvents="none" style={{ position: "absolute", left: "6%", right: "6%", top: "4%", height: "46%", borderTopLeftRadius: size * 0.22, borderTopRightRadius: size * 0.22, backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0))" } as ViewStyle} />}
+        <Text style={{ fontSize: size * 0.46, opacity: off ? 0.18 : 1, textShadowColor: "rgba(0,0,0,0.35)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 2 }}>{app.icon}</Text>
         {badge > 0 && !off && (
-          <View style={{ position: "absolute", top: -5, right: -5, minWidth: 20, height: 20, borderRadius: 10, backgroundColor: "#ef4444", alignItems: "center", justifyContent: "center", paddingHorizontal: 4 }}>
-            <Text style={{ color: "#fff", fontWeight: "900", fontSize: 11 }}>{badge}</Text>
+          <View style={{ position: "absolute", top: -6, right: -6, minWidth: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center", paddingHorizontal: 4, backgroundImage: "linear-gradient(180deg, #f87171, #dc2626)", boxShadow: "0px 0px 0px 2px rgba(0,0,0,0.55), 0px 3px 8px -2px rgba(239,68,68,0.8)" } as ViewStyle}>
+            <Text style={{ color: "#fff", fontWeight: "900", fontSize: 10.5 }}>{badge > 99 ? "99+" : badge}</Text>
           </View>
         )}
-        {fresh && badge === 0 && !off && <Text style={{ position: "absolute", top: -6, right: -8, backgroundColor: C.gold, color: "#111", fontWeight: "900", fontSize: 9, paddingHorizontal: 5, borderRadius: 8, overflow: "hidden" }}>NEW</Text>}
+        {fresh && badge === 0 && !off && <Text style={{ position: "absolute", top: -6, right: -8, backgroundColor: "#fbbf24", color: "#030712", fontWeight: "900", fontSize: 8.5, paddingHorizontal: 5, paddingVertical: 1, borderRadius: 8, overflow: "hidden" }}>NEW</Text>}
       </View>
-      <Text numberOfLines={1} style={{ color: off ? "rgba(255,255,255,0.25)" : C.text, fontWeight: "700", fontSize: 11, marginTop: 4 }}>{off ? "???" : app.label}</Text>
+      <Text numberOfLines={1} style={{ color: off ? "rgba(255,255,255,0.25)" : C.text, fontWeight: "700", fontSize: 9.5, marginTop: 4, textShadowColor: "rgba(0,0,0,0.9)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>{off ? "???" : app.label}</Text>
     </Press>
   );
 }
@@ -157,16 +247,16 @@ function Grid({ career, glow, badges, installed, onOpen }: { career: CareerState
     return <AppIcon key={a.id} app={a} badge={badges[a.id] ?? 0} off={off} fresh={!!career.unlocks && appIsNew(career, a.id)} onOpen={() => (off ? onOpen(APP_STORE_ICON) : onOpen(a))} />;
   };
   return (
-    <ScrollView contentContainerStyle={{ padding: 12, flexGrow: 1 }}>
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 10, paddingTop: 6, paddingBottom: 4, flexGrow: 1 }}>
       {next ? <NextMatchWidget career={career} next={next} /> : (
-        <View style={{ backgroundColor: C.panel, borderRadius: 20, padding: 12, borderWidth: 1, borderColor: rgba(glow.startsWith("#") ? glow : C.green, 0.5) }}>
+        <View style={[glassStyle("glass", glow.startsWith("#") ? glow : undefined), { borderRadius: 20, padding: 12 }]}>
           <Text style={{ color: "#fde68a", fontWeight: "900", fontSize: 10, letterSpacing: 2 }}>SEASON COMPLETE</Text>
           <Text style={{ color: C.dim, fontWeight: "700" }}>★ {formatWallet(career.money)} in the bank</Text>
         </View>
       )}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 12 }}>{grid.map(icon)}</View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 8 }}>{grid.map(icon)}</View>
       <View style={{ flex: 1 }} />
-      <View style={{ flexDirection: "row", backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 22, paddingVertical: 4, marginTop: 12 }}>{dock.map(icon)}</View>
+      <View style={{ flexDirection: "row", backgroundColor: "rgba(255,255,255,0.11)", borderRadius: 22, paddingVertical: 4, marginTop: 10, boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.18), 0px 8px 20px -10px rgba(0,0,0,0.8)" } as ViewStyle}>{dock.map(icon)}</View>
     </ScrollView>
   );
 }
@@ -176,17 +266,17 @@ function NextMatchWidget({ career, next }: { career: CareerState; next: Fixture 
   const home = next.home ? me : next.opponent;
   const away = next.home ? next.opponent : me;
   return (
-    <View style={{ backgroundColor: C.panel, borderRadius: 20, padding: 12, borderWidth: 1, borderColor: C.line }}>
+    <View style={[{ borderRadius: 20, paddingHorizontal: 12, paddingTop: 7, paddingBottom: 8 }, glassStyle("dark"), { boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.14), inset 0px 0px 0px 1px rgba(255,255,255,0.22)" } as ViewStyle]}>
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Text style={{ color: C.green, fontWeight: "900", fontSize: 10, letterSpacing: 2 }}>NEXT MATCH</Text>
-        <Text style={{ color: C.dim, fontWeight: "800", fontSize: 11 }}>{fixtureDateLabel(career.player.startYear, career.season, next.week, next.kind, divisionOf(career))}</Text>
+        <Text style={{ color: LOOK.emerald300, fontWeight: "900", fontSize: 8.5, letterSpacing: 1.8 }}>NEXT MATCH</Text>
+        <Text style={{ color: "rgba(255,255,255,0.7)", fontWeight: "900", fontSize: 9.5 }}>{fixtureDateLabel(career.player.startYear, career.season, next.week, next.kind, divisionOf(career))}</Text>
       </View>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 }}>
-        <ClubBadge club={home} size={30} career={career} />
-        <Text numberOfLines={1} style={{ flex: 1, textAlign: "center", color: C.text, fontWeight: "900", fontSize: 15 }}>{short(home)} <Text style={{ color: C.dim }}>v</Text> {short(away)}</Text>
-        <ClubBadge club={away} size={30} career={career} />
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 }}>
+        <ClubBadge club={home} size={28} career={career} />
+        <Text numberOfLines={1} style={{ flex: 1, textAlign: "center", color: C.text, fontWeight: "900", fontSize: 13 }}>{short(home)} <Text style={{ color: C.dim }}>v</Text> {short(away)}</Text>
+        <ClubBadge club={away} size={28} career={career} />
       </View>
-      <Text style={{ color: C.dim, fontWeight: "700", textAlign: "center", marginTop: 6 }}>★ <Text style={{ color: "#fde68a", fontWeight: "900" }}>{formatMoney(Math.round(career.money))}</Text> in the bank</Text>
+      <Text style={{ color: "rgba(255,255,255,0.65)", fontWeight: "700", fontSize: 10, textAlign: "center", marginTop: 4 }}>★ <Text style={{ color: "#fef08a", fontWeight: "900" }}>{formatMoney(Math.round(career.money))}</Text> in the bank</Text>
     </View>
   );
 }
@@ -194,9 +284,9 @@ function NextMatchWidget({ career, next }: { career: CareerState; next: Fixture 
 function AppShell({ app, children }: { app: App; children: ReactNode }) {
   return (
     <View style={{ flex: 1 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
-        <View style={{ width: 30, height: 30, borderRadius: 9, backgroundColor: app.bg, alignItems: "center", justifyContent: "center" }}><Text>{app.icon}</Text></View>
-        <Text style={{ color: C.text, fontWeight: "900", fontSize: 16 }}>{app.title ?? app.label}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingTop: 6, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.1)" }}>
+        <View style={{ width: 28, height: 28, borderRadius: 9, alignItems: "center", justifyContent: "center", backgroundImage: `linear-gradient(160deg, ${app.hi ?? app.bg}, ${app.bg})`, boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.45), 0px 4px 8px -3px rgba(0,0,0,0.7)" } as ViewStyle}><Text style={{ fontSize: 15 }}>{app.icon}</Text></View>
+        <Text style={{ color: C.text, fontWeight: "900", fontSize: 14, letterSpacing: -0.2 }}>{app.title ?? app.label}</Text>
       </View>
       <View style={{ flex: 1 }}>{children}</View>
     </View>
@@ -205,6 +295,15 @@ function AppShell({ app, children }: { app: App; children: ReactNode }) {
 
 // ── Squad (LeagueScreen's squad view, inside the phone) ─────────────────────
 
+function ovrChip(o?: number): { bg: string; ink: string } {
+  if (o === undefined) return { bg: "linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.1))", ink: "rgba(255,255,255,0.7)" };
+  return o >= 85 ? { bg: "linear-gradient(180deg, #fde047, #f59e0b)", ink: "#030712" }
+    : o >= 75 ? { bg: "linear-gradient(180deg, #34d399, #059669)", ink: "#fff" }
+    : o >= 65 ? { bg: "linear-gradient(180deg, #38bdf8, #0284c7)", ink: "#fff" }
+    : { bg: "linear-gradient(180deg, #6b7280, #374151)", ink: "#fff" };
+}
+
+/** LeagueScreen's squad view inside the phone: one glass table, a row per player, OVR chips by level. */
 function SquadApp({ career, glow }: { career: CareerState; glow: string }) {
   const rows = useMemo(() => {
     const you = {
@@ -217,24 +316,34 @@ function SquadApp({ career, glow }: { career: CareerState; glow: string }) {
       marketValue: playerMarketValue({ ...p, overall: p.overall ?? 65 }, career.player.club, career),
     }))].sort((a, b) => ((b.seasonGoals + b.seasonAssists) - (a.seasonGoals + a.seasonAssists)) || ((b.overall ?? 0) - (a.overall ?? 0)));
   }, [career]);
+  const W = [34, 38, 26, 26];
   return (
-    <FlatList data={rows} keyExtractor={(p) => p.id} contentContainerStyle={{ padding: 8, gap: 3 }}
-      ListHeaderComponent={<View style={{ flexDirection: "row", paddingHorizontal: 8, paddingBottom: 4 }}>
-        <Text style={{ flex: 1, color: C.dim, fontWeight: "900", fontSize: 10 }}>NAME</Text>
-        {["OVR", "POS", "G", "A"].map(h => <Text key={h} style={{ width: 36, textAlign: "center", color: C.dim, fontWeight: "900", fontSize: 10 }}>{h}</Text>)}
-      </View>}
-      renderItem={({ item: p, index }) => (
-        <View style={[{ flexDirection: "row", alignItems: "center", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, backgroundColor: index % 2 === 0 ? "rgba(255,255,255,0.045)" : "transparent" }, p.isYou && youRow(glow)]}>
-          <View style={{ flex: 1 }}>
-            <Text numberOfLines={1} style={{ color: C.text, fontWeight: "900" }}>{p.name}{p.isYou ? " ★" : ""}</Text>
-            <Text style={{ color: C.dim, fontWeight: "700", fontSize: 10 }}>{p.age !== undefined ? `Age ${p.age} · ` : ""}★{formatMoney(p.marketValue)}</Text>
-          </View>
-          <Text style={{ width: 36, textAlign: "center", color: p.isYou ? "#111" : C.text, backgroundColor: p.isYou ? C.gold : "transparent", fontWeight: "900", borderRadius: 6, overflow: "hidden" }}>{p.isYou ? `★${starLevel(career)}` : p.overall ?? "—"}</Text>
-          <Text style={{ width: 36, textAlign: "center", color: C.text, fontWeight: "700" }}>{p.position}</Text>
-          <Text style={{ width: 36, textAlign: "center", color: p.seasonGoals > 0 ? "#fde047" : C.dim, fontWeight: "900" }}>{p.seasonGoals}</Text>
-          <Text style={{ width: 36, textAlign: "center", color: p.seasonAssists > 0 ? "#93c5fd" : C.dim, fontWeight: "900" }}>{p.seasonAssists}</Text>
-        </View>
-      )} />
+    <View style={{ flex: 1, margin: 8, borderRadius: 12, overflow: "hidden", backgroundColor: "rgba(10,22,40,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.14)" }}>
+      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 6, backgroundColor: "rgba(0,0,0,0.3)", borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.1)" }}>
+        <Text style={{ flex: 1, color: "rgba(255,255,255,0.55)", fontWeight: "900", fontSize: 9, letterSpacing: 1 }}>NAME</Text>
+        {["OVR", "POS", "G", "A"].map((h, k) => <Text key={h} style={{ width: W[k], textAlign: "center", color: h === "G" ? "#fde047" : h === "A" ? "#93c5fd" : "rgba(255,255,255,0.55)", fontWeight: "900", fontSize: 9, letterSpacing: 1 }}>{h}</Text>)}
+      </View>
+      <FlatList data={rows} keyExtractor={(p) => p.id} contentContainerStyle={{ padding: 4, gap: 3 }}
+        renderItem={({ item: p }) => {
+          const chip = ovrChip(p.overall);
+          return (
+            <View style={[{ flexDirection: "row", alignItems: "center", borderRadius: 8, paddingHorizontal: 6, paddingVertical: 5, backgroundColor: "rgba(255,255,255,0.05)" }, p.isYou && youRow(glow)]}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={1} style={{ color: C.text, fontWeight: "900", fontSize: 11.5 }}>{p.name}{p.isYou ? " ★" : ""}</Text>
+                <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.7)", fontWeight: "700", fontSize: 8.5 }}>{p.age !== undefined ? `Age ${p.age} · ` : ""}★{formatMoney(p.marketValue)}</Text>
+              </View>
+              <View style={{ width: W[0], alignItems: "center" }}>
+                {p.isYou
+                  ? <Text style={{ minWidth: 24, textAlign: "center", color: "#030712", backgroundColor: "#fbbf24", fontWeight: "900", fontSize: 10, borderRadius: 6, overflow: "hidden", paddingHorizontal: 3, paddingVertical: 1 }}>★{starLevel(career)}</Text>
+                  : <View style={{ minWidth: 24, borderRadius: 6, paddingHorizontal: 3, paddingVertical: 1, backgroundImage: chip.bg } as ViewStyle}><Text style={{ textAlign: "center", color: chip.ink, fontWeight: "900", fontSize: 10 }}>{p.overall ?? "—"}</Text></View>}
+              </View>
+              <Text style={{ width: W[1], textAlign: "center", color: "rgba(255,255,255,0.9)", fontWeight: "700", fontSize: 10.5 }}>{p.position}</Text>
+              <Text style={{ width: W[2], textAlign: "center", color: p.seasonGoals > 0 ? "#fde047" : "rgba(255,255,255,0.6)", fontWeight: "900", fontSize: 10.5 }}>{p.seasonGoals}</Text>
+              <Text style={{ width: W[3], textAlign: "center", color: p.seasonAssists > 0 ? "#93c5fd" : "rgba(255,255,255,0.6)", fontWeight: "900", fontSize: 10.5 }}>{p.seasonAssists}</Text>
+            </View>
+          );
+        }} />
+    </View>
   );
 }
 
@@ -263,7 +372,7 @@ function FixturesApp({ career }: { career: CareerState }) {
   if (!list.length) return <Soon text="No fixtures yet." />;
   return (
     <FlatList ref={ref} data={list} keyExtractor={(f, i) => `${f.week}-${f.opponent}-${f.kind}-${i}`} contentContainerStyle={{ padding: 8, gap: 4 }}
-      getItemLayout={(_, i) => ({ length: 52, offset: 52 * i, index: i })}
+      getItemLayout={(_, i) => ({ length: 48, offset: 48 * i, index: i })}
       onScrollToIndexFailed={() => {}}
       renderItem={({ item: f, index: i }) => {
         const us = f.home ? f.homeScore : f.awayScore, them = f.home ? f.awayScore : f.homeScore;
@@ -272,15 +381,15 @@ function FixturesApp({ career }: { career: CareerState }) {
         const next = i === nextIdx;
         const lab = fixtureLabel(f);
         return (
-          <View style={{ height: 48, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 10, borderRadius: 12, backgroundColor: next ? "rgba(14,165,233,0.15)" : f.played ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.025)", borderWidth: next ? 1.5 : 0, borderColor: "rgba(56,189,248,0.9)" }}>
+          <View style={[{ height: 44, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 10, borderRadius: 12, backgroundColor: next ? "rgba(14,165,233,0.15)" : f.played ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.03)", borderWidth: next ? 1.5 : 1, borderColor: next ? "rgba(56,189,248,0.9)" : "rgba(255,255,255,0.06)" }, next && ({ boxShadow: "0px 0px 14px rgba(56,189,248,0.55)" } as ViewStyle)]}>
             <View style={{ width: 52 }}>
-              <Text numberOfLines={1} style={{ color: "#fde68a", fontWeight: "900", fontSize: 10 }}>{lab.top}</Text>
-              {lab.sub ? <Text numberOfLines={1} style={{ color: "rgba(253,230,138,0.7)", fontWeight: "900", fontSize: 9 }}>{lab.sub}</Text> : null}
+              <Text numberOfLines={1} style={{ color: "#fde68a", fontWeight: "900", fontSize: 9 }}>{lab.top}</Text>
+              {lab.sub ? <Text numberOfLines={1} style={{ color: "rgba(253,230,138,0.7)", fontWeight: "900", fontSize: 8 }}>{lab.sub}</Text> : null}
             </View>
             <ClubBadge club={f.opponent} size={20} career={career} />
             <View style={{ flex: 1 }}>
-              <Text numberOfLines={1} style={{ color: C.text, fontWeight: "900" }}>{short(f.opponent)} <Text style={{ color: C.dim }}>({f.home ? "H" : "A"})</Text></Text>
-              {!f.played && <Text numberOfLines={1} style={{ color: C.dim, fontSize: 10, fontWeight: "700" }}>{fixtureDateLabel(career.player.startYear, career.season, f.week, f.kind, divisionOf(career))}</Text>}
+              <Text numberOfLines={1} style={{ color: C.text, fontWeight: "900", fontSize: 12 }}>{short(f.opponent)} <Text style={{ color: "rgba(255,255,255,0.6)" }}>({f.home ? "H" : "A"})</Text></Text>
+              {!f.played && <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.6)", fontSize: 9, fontWeight: "700" }}>{fixtureDateLabel(career.player.startYear, career.season, f.week, f.kind, divisionOf(career))}</Text>}
             </View>
             {res ? <Text style={{ backgroundColor: tone, color: "#fff", fontWeight: "900", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6, overflow: "hidden" }}>{us}-{them} {res}</Text> : null}
           </View>
@@ -298,16 +407,16 @@ function MessagesApp({ msgs, onOpen }: { msgs: Msg[]; onOpen: (to: "scout" | "sp
       <Text style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", fontWeight: "900", fontSize: 10, letterSpacing: 2 }}>TODAY</Text>
       {msgs.map((m, i) => (
         <View key={i} style={{ flexDirection: "row", alignItems: "flex-end", gap: 8 }}>
-          <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: m.tone[1], alignItems: "center", justifyContent: "center" }}><Text>{m.icon}</Text></View>
+          <View style={{ width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundImage: `linear-gradient(160deg, ${m.tone[0]}, ${m.tone[1]})`, boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.4), 0px 4px 8px -3px rgba(0,0,0,0.7)" } as ViewStyle}><Text style={{ fontSize: 15 }}>{m.icon}</Text></View>
           <View style={{ maxWidth: "82%" }}>
-            <Text style={{ color: C.dim, fontWeight: "900", fontSize: 10, marginLeft: 4, marginBottom: 2 }}>{m.from}</Text>
+            <Text style={{ color: "rgba(255,255,255,0.6)", fontWeight: "900", fontSize: 9.5, marginLeft: 4, marginBottom: 2 }}>{m.from}</Text>
             {m.open ? (
-              <Press onPress={() => onOpen(m.open!)} style={{ backgroundColor: "rgba(16,185,129,0.25)", borderRadius: 16, borderBottomLeftRadius: 4, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: "rgba(52,211,153,0.4)" }}>
-                <Text style={{ color: C.text, fontWeight: "700" }}>{m.text} <Text style={{ color: "#a7f3d0", fontWeight: "900" }}>→</Text></Text>
+              <Press onPress={() => onOpen(m.open!)} style={{ backgroundImage: "linear-gradient(180deg, rgba(52,211,153,0.32), rgba(16,185,129,0.16))", borderRadius: 16, borderBottomLeftRadius: 6, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: "rgba(52,211,153,0.4)" } as ViewStyle}>
+                <Text style={{ color: C.text, fontWeight: "700", fontSize: 11.5, lineHeight: 15 }}>{m.text} <Text style={{ color: "#a7f3d0", fontWeight: "900" }}>→</Text></Text>
               </Press>
             ) : (
-              <View style={{ backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 16, borderBottomLeftRadius: 4, paddingHorizontal: 12, paddingVertical: 7 }}>
-                <Text style={{ color: C.text, fontWeight: "700" }}>{m.text}</Text>
+              <View style={{ backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.07))", borderRadius: 16, borderBottomLeftRadius: 6, paddingHorizontal: 12, paddingVertical: 6 } as ViewStyle}>
+                <Text style={{ color: C.text, fontWeight: "700", fontSize: 11.5, lineHeight: 15 }}>{m.text}</Text>
               </View>
             )}
           </View>

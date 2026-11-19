@@ -11,6 +11,7 @@
  */
 import { useMemo, useState } from "react";
 import { FlatList, ScrollView, Text, View } from "react-native";
+import type { ViewStyle } from "react-native";
 import type { CareerState } from "@/lib/star/types";
 import type { StoredPost, GraphicSpec, PostReply, QuotedPost } from "@/lib/star/media/types";
 import { feedFor, toggleLike, voteGoalOfMonth } from "@/lib/star/media/feed";
@@ -22,7 +23,7 @@ import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
 import { formatMoneyPrecise } from "@/lib/star/money";
 import { setCareer, getCareer } from "../../game/store";
 import { Press } from "../../ui/Press";
-import { C } from "../../ui/theme";
+import { C } from "../../world/lookKit";
 import { ClubBadge, Empty, Title } from "../../world/ui";
 import { GoalVideo } from "../MatchGoalVideo";
 import { clipStyleFor, clipVariantFor, type PostAuthor } from "@/lib/star/media/clipStyle";
@@ -50,13 +51,13 @@ export function MediaFeed({ career, mode = "browse", onContinue }: { career: Car
   const vote = (id: string, i: number) => { const c = getCareer(); if (c) setCareer(voteGoalOfMonth(c, id, i)); };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#05080f" }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
-        <View style={{ width: 28, height: 28, borderRadius: 9, backgroundColor: C.green, alignItems: "center", justifyContent: "center" }}><Text>⚽</Text></View>
-        <Text style={{ flex: 1, color: C.text, fontWeight: "900", fontSize: 15 }}>{mode === "moment" ? "Post Match Reactions" : "Matchday"}</Text>
+    <View style={{ flex: 1 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingTop: 6, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.1)" }}>
+        <View style={{ width: 28, height: 28, borderRadius: 9, alignItems: "center", justifyContent: "center", backgroundImage: "linear-gradient(160deg, #34d399, #047857)", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.45), 0px 4px 8px -3px rgba(0,0,0,0.7)" } as ViewStyle}><Text style={{ fontSize: 14 }}>⚽</Text></View>
+        <Text style={{ flex: 1, color: C.text, fontWeight: "900", fontSize: 14 }}>{mode === "moment" ? "Post Match Reactions" : "Matchday"}</Text>
         {mode === "moment" && onContinue && (
-          <Press onPress={onContinue} style={{ backgroundColor: C.green, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-            <Text style={{ color: "#05261a", fontWeight: "900" }}>Continue →</Text>
+          <Press onPress={onContinue} style={{ backgroundImage: "linear-gradient(180deg, #34d399, #10b981)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.35)" } as ViewStyle}>
+            <Text style={{ color: "#fff", fontWeight: "900" }}>Continue →</Text>
           </Press>
         )}
       </View>
@@ -79,17 +80,19 @@ export function MediaFeed({ career, mode = "browse", onContinue }: { career: Car
                 </ScrollView>
               )}
               {mode === "browse" && (
-                <View style={{ flexDirection: "row", gap: 6, paddingHorizontal: 10, paddingBottom: 6 }}>
+                <View style={{ flexDirection: "row", gap: 6, paddingHorizontal: 10, paddingTop: 8, paddingBottom: 6 }}>
                   {FILTERS.map(f => (
-                    <Press key={f.id} onPress={() => setFilter(f.id)} style={{ borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: filter === f.id ? C.green : "rgba(255,255,255,0.08)" }}>
-                      <Text style={{ color: filter === f.id ? "#05261a" : C.text, fontWeight: "900", fontSize: 11 }}>{f.label.toUpperCase()}</Text>
+                    <Press key={f.id} onPress={() => setFilter(f.id)} style={[{ borderRadius: 999, paddingHorizontal: 13, paddingVertical: 5 }, filter === f.id
+                      ? ({ backgroundImage: "linear-gradient(180deg, #34d399, #059669)", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.35), 0px 0px 10px rgba(52,211,153,0.45)" } as ViewStyle)
+                      : ({ backgroundColor: "rgba(255,255,255,0.08)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.12)" } as ViewStyle)]}>
+                      <Text style={{ color: filter === f.id ? "#022c22" : "rgba(255,255,255,0.85)", fontWeight: "900", fontSize: 10.5, letterSpacing: 0.4 }}>{f.label.toUpperCase()}</Text>
                     </Press>
                   ))}
                 </View>
               )}
             </View>
           }
-          ListEmptyComponent={<View style={{ padding: 16 }}><Empty text="Nothing yet. Play a match and the internet will have something to say." /></View>}
+          ListEmptyComponent={<EmptyFeed />}
           ListFooterComponent={shown.length > 0 ? (
             <View style={{ padding: 24, alignItems: "center" }}>
               <Text style={{ color: C.dim, fontWeight: "900" }}>You’re all caught up.</Text>
@@ -100,15 +103,33 @@ export function MediaFeed({ career, mode = "browse", onContinue }: { career: Car
         />
       )}
       {mode === "browse" && (
-        <View style={{ flexDirection: "row", borderTopWidth: 1, borderTopColor: C.line, backgroundColor: "#0a0f18" }}>
+        <View style={{ flexDirection: "row", gap: 6, padding: 6, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)" }}>
           {(["feed", "transfers"] as const).map((t) => (
-            <Press key={t} onPress={() => setTab(t)} style={{ flex: 1, alignItems: "center", paddingVertical: 10 }}>
-              <Text style={{ fontSize: 18 }}>{t === "feed" ? "📰" : "🔁"}</Text>
-              <Text style={{ color: tab === t ? C.green : C.dim, fontWeight: "900", fontSize: 11 }}>{t === "feed" ? "Feed" : "Transfers"}</Text>
+            <Press key={t} onPress={() => setTab(t)} style={[{ flex: 1, alignItems: "center", justifyContent: "center", height: 42, borderRadius: 12 }, tab === t && ({ backgroundColor: "rgba(255,255,255,0.08)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.12)" } as ViewStyle)]}>
+              <Text style={{ fontSize: 15, color: tab === t ? "#fff" : "rgba(255,255,255,0.45)" }}>{t === "feed" ? "⌂" : "⇄"}</Text>
+              <Text style={{ color: tab === t ? "#fff" : "rgba(255,255,255,0.45)", fontWeight: "900", fontSize: 9.5, letterSpacing: 0.8 }}>{t === "feed" ? "FEED" : "TRANSFERS"}</Text>
             </Press>
           ))}
         </View>
       )}
+    </View>
+  );
+}
+
+/** Nothing posted yet: the website's empty feed (ghost post rows and a mailbox). */
+function EmptyFeed() {
+  return (
+    <View style={{ paddingHorizontal: 14, paddingTop: 14, gap: 18 }}>
+      {[0, 1, 2, 3].map((i) => (
+        <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 12, opacity: 1 - i * 0.18 }}>
+          <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(255,255,255,0.06)" }} />
+          <View style={{ flex: 1, gap: 8 }}>
+            <View style={{ width: "48%", height: 7, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.07)" }} />
+            <View style={{ width: "88%", height: 7, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.05)" }} />
+          </View>
+        </View>
+      ))}
+      <Text style={{ position: "absolute", alignSelf: "center", top: 70, fontSize: 30 }}>📭</Text>
     </View>
   );
 }

@@ -13,7 +13,7 @@ import { Text, View } from "react-native";
 import { OVERRULE_REPUTATION_COST } from "@/lib/star/voting";
 import { useCareer } from "../../game/store";
 import { useNav } from "../../nav";
-import { Frame, Card, Btn, C } from "../career/kit";
+import { Frame, Card, Btn, C } from "../../world/lookKit";
 import { canOverrule, resolveVote, voteBack, voteScope, voteSuccessId, type PendingVote } from "../../world/politics";
 
 const BAR: [string, string][] = [["#10b981", "#6ee7b7"], ["#ef4444", "#fca5a5"], ["#3b82f6", "#93c5fd"], ["#f59e0b", "#fde68a"], ["#8b5cf6", "#c4b5fd"]];

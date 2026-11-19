@@ -8,3 +8,5 @@ export { Display, Kicker, SectionHeading, Pill, Tag } from "./Text";
 export { LookButton, SlantButton, PlayButton, type ButtonKind } from "./Buttons";
 export { TopBar, Bar, FillStar, levelColors } from "./TopBar";
 export { BottomBar, useMainBarActions, type BarTab } from "./BottomBar";
+export { BackPill, CloseSquare, PageTitle, ScreenHeader } from "./BackPill";
+export { CapsTabs, AntonTabs } from "./CapsTabs";

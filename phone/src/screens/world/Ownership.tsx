@@ -15,7 +15,7 @@ import { formatMoney } from "@/lib/star/money";
 import { useCareer } from "../../game/store";
 import { useNav } from "../../nav";
 import { Press } from "../../ui/Press";
-import { Frame, Card, Label, Btn, ClubCrest, Fill, C } from "../career/kit";
+import { Frame, Card, Label, Btn, ClubCrest, Fill, C } from "../../world/lookKit";
 import { pctText } from "./politicsKit";
 
 function RepBar({ label, value }: { label: string; value: number }) {

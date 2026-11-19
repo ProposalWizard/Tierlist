@@ -22,7 +22,7 @@ import { useCareer, setCareer } from "../../game/store";
 import { settle } from "../../game/flow";
 import { useNav } from "../../nav";
 import { Press } from "../../ui/Press";
-import { Frame, Card, Label, Btn, C } from "../career/kit";
+import { Frame, Card, Label, Btn, C } from "../../world/lookKit";
 
 // The website's tabs (StoreView.tsx): Daily, Animations (run-ups and goal
 // celebrations), Accessories, Boots (cans live in the Shop) and Coins.

@@ -37,7 +37,7 @@ import type { NegotiationState } from "@/lib/star/negotiation";
 import { useCareer } from "../../game/store";
 import { useNav } from "../../nav";
 import { Press } from "../../ui/Press";
-import { Frame, Card, Btn, ClubCrest, C } from "../career/kit";
+import { Frame, Card, Btn, ClubCrest, C } from "../../world/lookKit";
 import { Seg } from "../../world/ui";
 import { Negotiation } from "./Negotiation";
 import { NumBox, TextBox, Choose, Problem, SmallBtn, Line, Small, Head, KitSwatch, ColourRow, pctText } from "./politicsKit";
