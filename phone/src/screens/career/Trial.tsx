@@ -13,7 +13,7 @@
  * the website's own logic.
  */
 import { useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView, Pressable, type ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { CareerState } from "@/lib/star/types";
 import { STAGE_LABEL, trialComplete, nextStage, adversityOn, type TrialStage } from "@/lib/star/trial";
@@ -28,6 +28,8 @@ import { Dimensions } from "react-native";
 const usePitchHeightOnce = () => Dimensions.get("window").height * 0.64;
 import { Frame, Card, Label, Row, Btn, StandInNote, ClubCrest, money, C } from "./kit";
 
+/** TrialFrame.tsx TRIAL_PAGE_BG. */
+const TRIAL_PAGE_BG = "radial-gradient(90% 50% at 50% 30%, #14532d, #052e16 70%, #02140a)";
 const COUNTDOWN_FROM = 3;
 const COUNTDOWN_STEP_MS = 550;
 
@@ -59,8 +61,12 @@ export function TrialScreen({ career, go }: { career: CareerState; go: (s: flow.
   };
   const skills = { power: career.skills.power, technique: career.skills.technique };
   const done = stages.filter((s) => trial.results[s]);
+  // TrialSequence.tsx: ONE row: ✕ Exit, the stage pips, "2/5".
   const progress = (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 8 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8 }}>
+      <Pressable onPress={() => go({ screen: "title" })} hitSlop={8} style={{ borderRadius: 99, backgroundColor: "rgba(0,0,0,0.3)", paddingHorizontal: 8, paddingVertical: 4 }}>
+        <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: "900", letterSpacing: 0.4 }}>✕ EXIT</Text>
+      </Pressable>
       <View style={{ flex: 1, flexDirection: "row", gap: 4 }}>
         {stages.map((s) => <View key={s} style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: trial.results[s] ? "#10b981" : s === stage ? "#fff" : "rgba(255,255,255,0.2)" }} />)}
       </View>
@@ -69,7 +75,8 @@ export function TrialScreen({ career, go }: { career: CareerState; go: (s: flow.
   );
   const event = stage ? adversityOn(trial, stage) : null;
   const shell = (body: React.ReactNode) => (
-    <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: C.bg }}>
+    // TrialFrame.tsx TrialPage: the dark-green page every stage sits on.
+    <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: "#052e16", backgroundImage: TRIAL_PAGE_BG } as ViewStyle}>
       {progress}
       {event && (
         <View style={{ marginHorizontal: 12, marginBottom: 6, borderRadius: 12, borderWidth: 1, borderColor: event.flavour ? "rgba(255,255,255,0.15)" : "rgba(251,191,36,0.5)", backgroundColor: event.flavour ? "rgba(0,0,0,0.3)" : "rgba(245,158,11,0.15)", padding: 8 }}>

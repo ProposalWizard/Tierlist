@@ -11,7 +11,7 @@
  * refresh rate.
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text } from "react-native";
+import { View, Text, Image, type ViewStyle } from "react-native";
 import { Canvas, Picture, createPicture, Skia } from "@shopify/react-native-skia";
 import { useSharedValue } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -20,7 +20,7 @@ import { keeperKit, type MatchKits } from "@/lib/star/kits";
 import { nudgeFromDrag, RUNUP } from "@/lib/star/penaltyRunup";
 import { MatchDriver, FRAME_DT } from "../match/driver";
 import { drawPitch, camFor } from "../match/drawPitch";
-import { drawContact, contactBallBox } from "../match/drawContact";
+import { drawContact, contactBallBox, setContactBallImage } from "../match/drawContact";
 import { fromScreen, screenPull, grabMetres, type Cam } from "../match/view";
 import { tapToContact } from "../match/contactBall";
 import { matchSounds } from "../match/sound";
@@ -29,8 +29,21 @@ import { loadSpriteSheet } from "../match/spriteAssets";
 import { warmSpriteKits } from "../match/sprites";
 import { installWebStorage } from "../match/webStorage";
 import { C } from "../ui/theme";
+import { ICON } from "../ui/look";
+import { Caption } from "./MatchLook";
 
 setSkia(Skia);
+// The strike screen's ball: the club's own photo (public/star/ball.webp), decoded once.
+let ballLoading: Promise<void> | null = null;
+function loadContactBall() {
+  ballLoading ??= (async () => {
+    try {
+      const uri = Image.resolveAssetSource(ICON.ball)?.uri;
+      if (!uri) return;
+      setContactBallImage(Skia.Image.MakeImageFromEncoded(await Skia.Data.fromURI(uri)));
+    } catch { ballLoading = null; }
+  })();
+}
 // The lib's localStorage (picture memory, cards seen) on the phone's storage, before the first chance.
 installWebStorage();
 
@@ -58,6 +71,39 @@ export interface PitchProps {
   frozen?: boolean;
 }
 
+/** ContactBall's words and POWER bar over the strike screen (plain views: they hold still for the whole screen). */
+function StrikeWords({ d, motion }: { d: MatchDriver; motion: string }) {
+  const pct = Math.round((d.aim?.power ?? 0) * 100);
+  const glow = pct < 40 ? "#22c55e" : pct < 75 ? "#eab308" : "#ef4444";
+  const shadow = { textShadowColor: "rgba(0,0,0,0.8)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 };
+  return (
+    <>
+      <View pointerEvents="none" style={{ position: "absolute", top: 12, left: 0, right: 0, alignItems: "center" }}>
+        <Text style={{ color: "rgba(255,255,255,0.9)", fontWeight: "900", fontSize: 13, letterSpacing: 0.4, ...shadow }}>WHERE DO YOU</Text>
+        <Text style={{ marginTop: 2, color: "#d6dde9", fontWeight: "900", fontStyle: "italic", fontSize: 38, lineHeight: 40, letterSpacing: -0.4,
+          textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 6 }}>
+          {motion === "float" ? "HEAD IT?" : motion === "bounce" ? "VOLLEY IT?" : "STRIKE IT?"}
+        </Text>
+        {d.contactCountdown() && <View style={{ marginTop: 8, width: "60%", height: 8, borderRadius: 4, backgroundColor: "rgba(0,0,0,0.4)", borderWidth: 1, borderColor: "rgba(255,255,255,0.15)" }} />}
+      </View>
+      <View pointerEvents="none" style={{ position: "absolute", right: 10, top: 0, bottom: 0, justifyContent: "center", alignItems: "center" }}>
+        <Text style={{ color: "#fff", fontSize: 9, fontWeight: "900", letterSpacing: 1.4, marginBottom: 6, ...shadow }}>POWER</Text>
+        <View style={{ height: 112, width: 12, borderRadius: 6, backgroundColor: "rgba(0,0,0,0.5)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", overflow: "hidden", justifyContent: "flex-end" }}>
+          <View style={{ height: `${pct}%`, borderRadius: 6, backgroundImage: "linear-gradient(0deg, #22c55e, #eab308, #ef4444)", boxShadow: `0px 0px 8px ${glow}99` } as ViewStyle} />
+        </View>
+        <Text style={{ color: "#fff", fontSize: 12, fontWeight: "900", marginTop: 6, ...shadow }}>{pct}%</Text>
+      </View>
+      {d.contactTimedOut && (
+        <View pointerEvents="none" style={{ position: "absolute", top: "34%", left: 0, right: 0, alignItems: "center" }}>
+          <Text style={{ backgroundColor: "rgba(0,0,0,0.7)", borderRadius: 12, overflow: "hidden", paddingHorizontal: 16, paddingVertical: 8, color: "#fca5a5", fontSize: 30, fontWeight: "900", fontStyle: "italic", letterSpacing: 2 }}>
+            {motion === "float" || motion === "bounce" ? "TOO LATE!" : "TOO SLOW!"}
+          </Text>
+        </View>
+      )}
+    </>
+  );
+}
+
 export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, height, onFrame, frozen = false }: PitchProps) {
   const onFrameRef = useRef(onFrame); onFrameRef.current = onFrame;
   const frozenRef = useRef(frozen); frozenRef.current = frozen;
@@ -74,6 +120,7 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
   // The players' sprite sheet: decoded once, then coloured once per kit in the match (before kick-off, never mid-frame).
   useEffect(() => {
     let live = true;
+    loadContactBall();
     void loadSpriteSheet().then((ok) => {
       if (!ok || !live) return;
       // CanvasMatch warmSpriteKits: both sides, their keeper and ours (a shootout's).
@@ -188,7 +235,9 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
           <View style={{ flex: 1 }}>
             <Canvas style={{ width: size.W, height: size.H }}><Picture picture={pitchPic} /></Canvas>
             {d.lead && d.lead.lead.skippable && (
-              <Text pointerEvents="none" style={{ position: "absolute", top: 10, right: 12, color: C.text, fontWeight: "800", opacity: 0.8 }}>Tap to skip ›</Text>
+              <View pointerEvents="none" style={{ position: "absolute", top: 8, right: 8, borderRadius: 99, backgroundColor: "rgba(0,0,0,0.55)", paddingHorizontal: 10, paddingVertical: 5 }}>
+                <Text style={{ color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 0.4 }}>Tap to skip ›</Text>
+              </View>
             )}
           </View>
         </GestureDetector>
@@ -197,17 +246,14 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
         <GestureDetector gesture={tap}>
           <View style={{ position: "absolute", left: 0, top: 0, width: size.W, height: size.H }}>
             <Canvas style={{ width: size.W, height: size.H }}><Picture picture={contactPic} /></Canvas>
-            <View pointerEvents="none" style={{ position: "absolute", top: 14, left: 0, right: 0, alignItems: "center" }}>
-              <Text style={{ color: "rgba(255,255,255,0.9)", fontWeight: "900", fontSize: 13, letterSpacing: 1 }}>WHERE DO YOU</Text>
-              <Text style={{ color: C.text, fontWeight: "900", fontStyle: "italic", fontSize: 38 }}>{motion === "float" ? "HEAD IT?" : motion === "bounce" ? "VOLLEY IT?" : "STRIKE IT?"}</Text>
-              {d.contactTimedOut && <Text style={{ color: "#fca5a5", fontWeight: "900", fontSize: 22, marginTop: 6 }}>TOO SLOW</Text>}
-            </View>
+            <StrikeWords d={d} motion={motion} />
           </View>
         </GestureDetector>
       )}
       {banner && banner.text !== "GOAL" && (
-        <View pointerEvents="none" style={{ position: "absolute", top: "30%", left: 0, right: 0, alignItems: "center" }}>
-          <Text style={{ backgroundColor: "rgba(0,0,0,0.7)", color: C.text, fontWeight: "900", fontSize: 30, paddingHorizontal: 18, paddingVertical: 6, borderRadius: 6, overflow: "hidden" }}>{banner.text}</Text>
+        // Mikey's pop-ups: every word but a goal is a TV caption (MikeyPopup.tsx Caption).
+        <View pointerEvents="none" style={{ position: "absolute", top: "14%", left: 0, right: 0, alignItems: "center" }}>
+          <Caption text={banner.text} />
         </View>
       )}
       {d && size && overlay?.(d, size)}

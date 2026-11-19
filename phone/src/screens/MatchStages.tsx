@@ -5,7 +5,8 @@
  * Same pictures (match/drills.ts), same lib/star scoring, same reps and tries.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, useWindowDimensions } from "react-native";
+import { View, Text, useWindowDimensions, type ViewStyle } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Scenario } from "@/lib/star/canvasEngine";
 import { buildScenario, initDefenders } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
@@ -36,15 +37,28 @@ import { buildStrike, buildStrikeFrom, buildFreeKickScenario, DRILL_SCENE, type 
 import { EngineFeature, StrikeStage, TrialBoard, TrialCaption, TrialSlots, TeachCard, type SlotState } from "./MatchFeature";
 import { C } from "../ui/theme";
 
+/** TrialFrame.tsx TrialPitchBox: the pitch in its frame (ring-2 emerald-800/80, a deep shadow). */
+export const TRIAL_PITCH_BOX = (h: number): ViewStyle => ({ height: h, marginHorizontal: 12, borderRadius: 12, borderWidth: 2, borderColor: "rgba(6,95,70,0.8)", overflow: "hidden", boxShadow: "0px 18px 40px -12px rgba(2,44,34,0.6)" } as ViewStyle);
+
 /** The pitch box: the screen's width, a little taller than 5:8 (the website's new-view canvas), leaving room for the board. */
 export function usePitchHeight(): number {
   const { width, height } = useWindowDimensions();
   return Math.round(Math.min(width * 1.45, height - 260));
 }
+/**
+ * A trial stage's pitch: down to the two caption lines, as the website's TrialPage
+ * fits it (data-pitch-fit 56: the captions and the page's padding under the pitch;
+ * above it the stage pips, the board and the safe area).
+ */
+export function useTrialPitchHeight(): number {
+  const { width, height } = useWindowDimensions();
+  const { top, bottom } = useSafeAreaInsets();
+  return Math.round(Math.max(width * 1.2, Math.min(width * 1.9, height - top - bottom - 118 - 60)));
+}
 
 // ── Free kicks (stages/TrialFreeKicks.tsx) ──
 export function TrialFreeKicksStage({ trial, onDone, skills, freeKickRunup }: { trial: TrialProgress; onDone: (q: number) => void; skills: { power: number; technique: number }; freeKickRunup?: FreeKickRunupId }) {
-  const h = usePitchHeight();
+  const h = useTrialPitchHeight();
   const build = useCallback((rep: number, rng: () => number) => buildFreeKickScenario(trial, rep, rng), [trial]);
   return (
     <StrikeStage height={h} reps={REPS.freeKicks} build={build} skills={skills} seed={(trial.seed ^ 0x5f5e) >>> 0} drill="freeKicks"
@@ -62,7 +76,7 @@ export function TrialFreeKicksStage({ trial, onDone, skills, freeKickRunup }: { 
 
 // ── Take him on (TrialSequence.tsx's dribbling stage: FirstPersonDribble, embedded, calm camera) ──
 export function TrialDribbleStage({ trial, onDone, pace }: { trial: TrialProgress; onDone: (q: number) => void; pace: number }) {
-  const h = usePitchHeight();
+  const h = useTrialPitchHeight();
   const dribble = useMemo(() => dribbleSetup(trial), [trial]);
   const [teachDone, setTeachDone] = useState(false);
   useEffect(() => { if (teachSeen("dribbling")) setTeachDone(true); }, []);
@@ -72,7 +86,7 @@ export function TrialDribbleStage({ trial, onDone, pace }: { trial: TrialProgres
   return (
     <View>
       <TrialBoard title="You" centreLabel="Take him on" centreValue={`${dribble.waveSizes.length} waves`} footer={`${dribble.waveSizes.reduce((a, b) => a + b, 0)} men to get past`} />
-      <View style={{ height: h, marginHorizontal: 0 }}>
+      <View style={TRIAL_PITCH_BOX(h)}>
         {/* Blue like you are in every other trial stage; the calm camera (CALM_CAMERA). */}
         <FirstPersonRun height={h} calmCamera kits={{ you: { shirt: "#2563eb", shorts: "#f8fafc" } }} seed={attemptSeed(trial)} pace={pace}
           oppStrength={dribble.oppStrength} waveSizes={dribble.waveSizes} hideHint hold={!teachDone} onComplete={onComplete} />
@@ -88,7 +102,7 @@ export function TrialDribbleStage({ trial, onDone, pace }: { trial: TrialProgres
 // ── Through the gate (stages/TrialTechnique.tsx) ──
 const repRng = (seed: number, rep: number) => mulberry32((seed ^ ((rep + 1) * 0x9e3779b1)) >>> 0);
 export function TrialTechniqueStage({ trial, onDone, skills }: { trial: TrialProgress; onDone: (q: number) => void; skills: { power: number; technique: number } }) {
-  const h = usePitchHeight();
+  const h = useTrialPitchHeight();
   const seed = (trial.seed ^ 0x7e4c) >>> 0;
   const level = ladderLevel(difficultyFor(trial, "technique"));
   const setupRef = useRef<StrikeSetup | null>(null);
@@ -149,7 +163,7 @@ function takersFor(trial: TrialProgress, seed: number): { them: PenaltyTaker[]; 
   return { them: side((trial.seed ^ 0x51ee) >>> 0, SHOOTOUT_KICKS, "academy", 0), mates: side((trial.seed ^ 0x3a7e) >>> 0, MATE_KICKS, "trialist", SHOOTOUT_KICKS) };
 }
 export function TrialShootoutStage({ trial, onDone, skills, penaltyRunup }: { trial: TrialProgress; onDone: (q: number, finalPenScored: boolean) => void; skills: { power: number; technique: number }; penaltyRunup?: PenaltyRunupId }) {
-  const h = usePitchHeight();
+  const h = useTrialPitchHeight();
   const seed = attemptSeed(trial);
   const { them: takers, mates } = useMemo(() => takersFor(trial, seed), [trial, seed]);
   const script = useMemo<RigScript>(() => createRigScript(seed), [seed]);

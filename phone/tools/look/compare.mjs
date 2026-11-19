@@ -84,6 +84,30 @@ async function findBall(p, loose = false) {
       const w = x1 - x0 + 1, h = y1 - y0 + 1;
       if (w >= (loose ? 5 : 6) && h >= (loose ? 5 : 6) && w <= 20 && h <= 20 && Math.abs(w - h) <= (loose ? 3 : 2) && n >= (loose ? 0.25 : 0.35) * w * h) out.push({ x: (x0 + x1) / 2, y: (y0 + y1) / 2, n });
     }
+    if (out.length || !loose) return out.sort((a, b) => b.n - a.n)[0] ?? null;
+    // A ball lying on a painted line joins the line's blob. Grey-white pixels whose
+    // whole 3×3 is grey-white: thin lines melt away, the ball's middle stays.
+    const grey = (i) => { const mx = Math.max(d[i], d[i + 1], d[i + 2]), mn = Math.min(d[i], d[i + 1], d[i + 2]); return mn > 90 && mx - mn < 40; };
+    const core = new Uint8Array(W * H);
+    for (let y = Math.floor(H * 0.12); y < H * 0.95; y++) for (let x = 1; x < W - 1; x++) {
+      let ok = 1;
+      for (let dy = -1; dy <= 1 && ok; dy++) for (let dx = -1; dx <= 1 && ok; dx++) if (!grey(((y + dy) * W + x + dx) * 4)) ok = 0;
+      core[y * W + x] = ok;
+    }
+    const seen2 = new Uint8Array(W * H);
+    for (let k = 0; k < W * H; k++) {
+      if (!core[k] || seen2[k]) continue;
+      const st = [k]; seen2[k] = 1; let n = 0, x0 = W, x1 = 0, y0 = H, y1 = 0;
+      while (st.length) {
+        const q = st.pop(); n++; const qx = q % W, qy = (q / W) | 0;
+        x0 = Math.min(x0, qx); x1 = Math.max(x1, qx); y0 = Math.min(y0, qy); y1 = Math.max(y1, qy);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nk = (qy + dy) * W + qx + dx; if (nk >= 0 && nk < W * H && core[nk] && !seen2[nk]) { seen2[nk] = 1; st.push(nk); }
+        }
+      }
+      const w = x1 - x0 + 1, h = y1 - y0 + 1;
+      if (w >= 2 && h >= 2 && w <= 12 && h <= 12 && Math.abs(w - h) <= 3 && n >= 0.4 * w * h) out.push({ x: (x0 + x1) / 2, y: (y0 + y1) / 2, n });
+    }
     return out.sort((a, b) => b.n - a.n)[0] ?? null;
   }, [b64, loose]);
   return r;

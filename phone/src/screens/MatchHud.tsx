@@ -1,37 +1,71 @@
-// The scoreboard and the stats row above the pitch, like the website's match (team names, score, minute; goals, assists, pass %, rating).
-import { View, Text } from "react-native";
+// The scoreboard and the stats plate above the pitch, in the packed app's look (CanvasMatch's
+// career scoreboard: two team bars in their kits with the score in white boxes; the plate:
+// competition, goals, assists, pass %, rating, 2D, ⚙, sound).
+import { View, Text, Pressable, type ViewStyle } from "react-native";
 import { shortClub } from "@/lib/star/media/grammar";
-import { minuteLabel } from "@/lib/star/addedTime";
+import { competitionAbbrev } from "@/lib/star/competitions";
+import { divisionOf } from "@/lib/star/calendar";
+import type { MatchKits } from "@/lib/star/kits";
 import type { MatchDriver } from "../match/driver";
-import { C } from "../ui/theme";
+import { usePrefs, setPref } from "../game/prefs";
+import { FONT } from "../ui/look";
+import { LineIcon } from "./MatchLook";
 
-export function MatchHud({ d }: { d: MatchDriver }) {
+/** A crisp black outline round white club names, so they read on a light kit (NAME_OUTLINE). */
+const OUTLINE = { textShadowColor: "#000", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 2 };
+
+export function MatchHud({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
+  const prefs = usePrefs();
   const home = d.setup.fixture.home !== false;
   const us = shortClub(d.setup.career.player.club), them = shortClub(d.setup.fixture.opponent);
   const t = d.tally;
   const passPct = t.passes > 0 ? Math.round((t.passesCompleted / t.passes) * 100) : 0;
   const rating = d.ratingSoFar();
-  const cell = (label: string, value: string) => (
-    <View style={{ flex: 1, alignItems: "center" }}>
-      <Text style={{ color: C.text, fontSize: 10, fontWeight: "800", letterSpacing: 0.5 }}>{label}</Text>
-      <Text style={{ color: C.gold, fontSize: 14, fontWeight: "900" }}>{value}</Text>
+  const comp = d.setup.farewell ? "Farewell" : competitionAbbrev(d.setup.fixture, divisionOf(d.setup.career));
+  const bar = (name: string, kit: { shirt: string; trim: string }, right: boolean) => (
+    <View style={{ flex: 1, minWidth: 0, justifyContent: "center", paddingHorizontal: 8, paddingVertical: 6, backgroundColor: kit.shirt, borderWidth: 1, borderColor: kit.trim,
+      borderTopLeftRadius: right ? 0 : 8, borderBottomLeftRadius: right ? 0 : 8, borderTopRightRadius: right ? 8 : 0, borderBottomRightRadius: right ? 8 : 0 }}>
+      <Text numberOfLines={1} style={{ color: "#fff", fontWeight: "900", fontSize: 12, textAlign: right ? "right" : "left", ...OUTLINE }}>{name.toUpperCase()}</Text>
     </View>
   );
+  const score = (n: number) => (
+    <View style={{ backgroundColor: "#fff", borderRadius: 4, paddingHorizontal: 11, minWidth: 34, alignItems: "center", justifyContent: "center", boxShadow: "0px 1px 3px rgba(0,0,0,0.35)" } as ViewStyle}>
+      <Text style={{ color: "#000", fontFamily: FONT.display, fontSize: 22, lineHeight: 30 }}>{n}</Text>
+    </View>
+  );
+  const cell = (label: string, value: string, colour: string) => (
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 4, borderLeftWidth: 1, borderColor: "rgba(255,255,255,0.05)" }}>
+      <Text numberOfLines={1} style={{ color: "#fff", fontSize: 10.5, fontWeight: "700", letterSpacing: -0.2 }}>{label}</Text>
+      <Text style={{ color: colour, fontSize: 12, fontWeight: "900" }}>{value}</Text>
+    </View>
+  );
+  const chip = (child: React.ReactNode, onPress?: () => void, label?: string) => (
+    <Pressable onPress={onPress} disabled={!onPress} accessibilityLabel={label} style={{ minWidth: 34, paddingHorizontal: 6, alignItems: "center", justifyContent: "center", borderLeftWidth: 1, borderColor: "rgba(255,255,255,0.1)" }}>
+      {child}
+    </Pressable>
+  );
   return (
-    <View style={{ backgroundColor: C.panel, borderBottomWidth: 1, borderColor: C.line }}>
-      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingTop: 8, paddingBottom: 6 }}>
-        <Text numberOfLines={1} style={{ flex: 1, color: C.text, fontWeight: "900", fontSize: 15, textAlign: "right" }}>{home ? us : them}</Text>
-        <View style={{ marginHorizontal: 10, backgroundColor: "#000", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 3 }}>
-          <Text style={{ color: C.text, fontWeight: "900", fontSize: 20 }}>{home ? d.userScore : d.oppScore} - {home ? d.oppScore : d.userScore}</Text>
-        </View>
-        <Text numberOfLines={1} style={{ flex: 1, color: C.text, fontWeight: "900", fontSize: 15 }}>{home ? them : us}</Text>
+    <View style={{ paddingHorizontal: 12, paddingTop: 6 }}>
+      <View style={{ flexDirection: "row", alignItems: "stretch", gap: 4, marginBottom: 8 }}>
+        {bar(home ? us : them, kits.home, false)}
+        {score(home ? d.userScore : d.oppScore)}
+        {score(home ? d.oppScore : d.userScore)}
+        {bar(home ? them : us, kits.away, true)}
       </View>
-      <Text style={{ color: C.green, textAlign: "center", fontWeight: "900", fontSize: 12 }}>{minuteLabel(d.matchMinute, d.ADDED, d.MATCH_DURATION)}'</Text>
-      <View style={{ flexDirection: "row", paddingVertical: 6 }}>
-        {cell("GOALS", String(t.goals))}
-        {cell("ASSISTS", String(t.assists))}
-        {cell("PASS %", t.passes > 0 ? `${passPct}%` : "–")}
-        {cell("RATING", rating.toFixed(1))}
+      {/* The plate: in the pitch look gray-950/900 are its deep greens; square corners (pitch scope). */}
+      <View style={{ flexDirection: "row", alignItems: "stretch", marginBottom: 8, borderRadius: 2, borderWidth: 1, borderColor: "rgba(6,95,70,0.7)", overflow: "hidden",
+        backgroundImage: "linear-gradient(90deg, rgb(12,71,38), rgb(16,82,47), rgb(12,71,38))", boxShadow: "0px 6px 12px rgba(0,0,0,0.25)" } as ViewStyle}>
+        <View style={{ paddingHorizontal: 9, justifyContent: "center" }}>
+          <Text style={{ color: "rgba(110,231,183,0.9)", fontSize: 11, fontWeight: "900", letterSpacing: 0.9 }}>{comp.toUpperCase()}</Text>
+        </View>
+        {cell("GOALS", String(t.goals), "#fcd34d")}
+        {cell("ASSISTS", String(t.assists), "#6ee7b7")}
+        {cell("PASS", `${passPct}%`, "#c4b5fd")}
+        {cell("RATING", rating.toFixed(1), "#7dd3fc")}
+        {/* The players' look: the phone draws the 2D sprites (the website's toggle shows "2D" for them). */}
+        {chip(<Text style={{ color: "#fff", fontSize: 11, fontWeight: "900" }}>2D</Text>)}
+        {chip(<LineIcon kind="gear" />)}
+        {chip(<LineIcon kind={prefs.sound ? "sound" : "muted"} />,() => setPref("sound", !prefs.sound), prefs.sound ? "Mute sound" : "Unmute sound")}
       </View>
     </View>
   );
