@@ -7,6 +7,7 @@ const P = new Proxy(fn, {
     if (k === "default") return P;
     if (k === Symbol.toPrimitive) return () => "";
     if (k === "then") return undefined;
+    if (typeof k === "string" && /Async$/.test(k)) return () => Promise.resolve(P);
     if (k === "OS") return "android";
     if (k === "select") return (o) => (o && (o.android ?? o.native ?? o.default));
     if (k === "create" || k === "flatten") return (x) => x;
