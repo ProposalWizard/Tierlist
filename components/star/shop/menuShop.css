@@ -14,7 +14,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  /* The game: the whole phone. A test page sets --ms-h to fit its phone box. */
+  height: var(--ms-h, 100dvh);
   width: 100%;
   overflow: hidden;
   color: #fff;

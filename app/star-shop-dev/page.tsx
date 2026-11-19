@@ -13,6 +13,7 @@
  */
 import { useEffect, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage } from "@/components/admin/broadcast/BroadcastPage";
 import { pitchFont } from "@/components/star/ui/pitchFont";
 import "@/components/star/ui/pitchLook.css";
 import "@/components/star/ui/flat.css";
@@ -101,7 +102,11 @@ export default function ShopTestPage() {
   const bar = <MainBar activeNav={null} onNavigate={(t) => setSay(`In the game this opens ${t === "skills" ? "Training" : t === "media" ? "the Phone" : t === "play" ? "the next match" : "League"}.`)} onHome={() => setSay("In the game this goes Home.")} />;
 
   return (
-    <div className={`select-none star-root ${pitchFont.variable} star-look-pitch star-skin-glass`}>
+    // The admin frame (scripts/admin-look-guard.mjs); the shop sits in a phone-sized box.
+    // translateZ(0) keeps the shop's own fixed layers (sheet, bar) inside the box.
+    <BroadcastPage title="Menu shop" sub="The new menu shop on a sample career: look and try buying. Nothing here reaches a career.">
+    <div className={`select-none star-root ${pitchFont.variable} star-look-pitch star-skin-glass`}
+      style={{ position: "relative", transform: "translateZ(0)", overflow: "hidden", width: "100%", maxWidth: 430, height: "min(844px, calc(100dvh - 150px))", minHeight: 560, margin: "0 auto", borderRadius: 18, ["--ms-h" as string]: "100%" } as React.CSSProperties}>
       {ready && <MenuShop key={n} career={career} startCat={startCat} mainBar={bar}
         onBack={() => setSay("In the game Back goes to where you came from.")}
         onSettings={() => setTools((t) => !t)}
@@ -117,7 +122,8 @@ export default function ShopTestPage() {
       {say && (
         <button type="button" onClick={() => setSay(null)} className="fixed bottom-[96px] left-1/2 z-[60] -translate-x-1/2 rounded-xl bg-black/85 px-3 py-2 text-[12px] font-bold text-white ring-1 ring-white/20">{say}</button>
       )}
-      <PageGuide page="/star-shop-dev" />
     </div>
+    <PageGuide page="/star-shop-dev" />
+    </BroadcastPage>
   );
 }
