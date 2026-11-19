@@ -60,11 +60,10 @@ export function PostMatchScreen({ career, go }: { career: CareerState; go: (s: f
   const allSeen = seen >= achs.length;
 
   const starBar = <StarBar from={report.starFrom} to={report.starTo} toNext={report.star.toNext} held={report.star.held} gate={report.star.gate} extra={report.star.extra} />;
-  const rating = (
-    <Press disabled={!stats.chanceLog || stats.simmed} onPress={() => setChancesOpen((o) => !o)}>
-      <RatingHero value={stats.rating} starMan={stats.starMan} tap={!!stats.chanceLog && !stats.simmed} open={chancesOpen} />
-    </Press>
-  );
+  // Only a played match with a chance log opens on a tap (a disabled Press would fade the rating).
+  const canTap = !!stats.chanceLog && !stats.simmed;
+  const hero = <RatingHero value={stats.rating} starMan={stats.starMan} tap={canTap} open={chancesOpen} />;
+  const rating = canTap ? <Press onPress={() => setChancesOpen((o) => !o)}>{hero}</Press> : hero;
   const rel = (
     <View style={{ flexDirection: "row", gap: 6 }}>
       <RelBar label="Boss" from={report.rel.before.boss} to={report.rel.after.boss} />
