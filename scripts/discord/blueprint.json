@@ -1,0 +1,127 @@
+{
+  "_about": "The Knowitball Discord: every role, channel and welcome message. Built by setup-server.mjs (read README.md). Names are matched, so running it again adds only what is missing. Leo, 19 Nov 2026.",
+  "roles": [
+    { "key": "staff", "name": "Knowitball Team", "color": "#3ddc84", "hoist": true, "mentionable": false },
+    { "key": "mod", "name": "Moderator", "color": "#6fb8ff", "hoist": true, "mentionable": false },
+    { "key": "tester", "name": "Playtester", "color": "#f5b942", "hoist": true, "mentionable": true },
+    { "key": "creator", "name": "Creator", "color": "#ff6b9a", "hoist": true, "mentionable": false },
+    { "key": "pings_updates", "name": "Update pings", "color": "#8a8f98", "mentionable": true },
+    { "key": "pings_events", "name": "Event pings", "color": "#8a8f98", "mentionable": true },
+    { "key": "pings_daily", "name": "Daily challenge pings", "color": "#8a8f98", "mentionable": true },
+    { "key": "game_career", "name": "Golden Ball career", "color": "#e6c35c" },
+    { "key": "game_tierlists", "name": "Tierlist maker", "color": "#b48cff" },
+    { "key": "game_draft", "name": "Drafter", "color": "#5ad1c9" }
+  ],
+  "categories": [
+    {
+      "name": "👋 START HERE",
+      "channels": [
+        { "key": "welcome", "name": "welcome", "readOnly": true, "topic": "What Knowitball is and how to get going. Play free at knowitball.co.uk" },
+        { "key": "rules", "name": "rules", "readOnly": true, "topic": "Five rules. Be decent." },
+        { "key": "announcements", "name": "announcements", "type": "announcement", "readOnly": true, "topic": "Big news only. Follow this channel into your own server." },
+        { "key": "updates", "name": "updates", "type": "announcement", "readOnly": true, "webhook": "Knowitball Updates", "topic": "Every new update to the game, posted automatically. ▶ knowitball.co.uk" }
+      ]
+    },
+    {
+      "name": "⚽ PLAY",
+      "channels": [
+        { "key": "play", "name": "play-now", "readOnly": true, "topic": "Links to every game. All free, in your browser." },
+        { "key": "careers", "name": "my-career", "topic": "Post your Road to the Golden Ball careers: trophies, Ballon d'Or nights, transfers, disasters." },
+        { "key": "goals", "name": "goal-of-the-week", "topic": "Share your best goal clip. Best one each week gets pinned and shown on our socials." },
+        { "key": "tierlists", "name": "tierlists", "topic": "Share your tierlists and argue about them." },
+        { "key": "draft", "name": "draft-and-daily", "topic": "Draft results, daily tic-tac-toe grids and scores." }
+      ]
+    },
+    {
+      "name": "💬 COMMUNITY",
+      "channels": [
+        { "key": "general", "name": "general", "topic": "Anything football or Knowitball." },
+        { "key": "intro", "name": "introduce-yourself", "topic": "Who do you support? What do you play?" },
+        { "key": "football", "name": "football-talk", "topic": "Real football: matches, transfers, takes." },
+        { "key": "memes", "name": "memes", "topic": "Football memes. Keep it clean." }
+      ]
+    },
+    {
+      "name": "🛠️ HELP BUILD THE GAME",
+      "channels": [
+        { "key": "ideas", "name": "suggestions", "type": "forum", "topic": "One idea per post. React 👍 on the ones you want. We read every one." },
+        { "key": "bugs", "name": "bug-reports", "type": "forum", "topic": "One bug per post: what you did, what went wrong, phone or computer, a screenshot if you can." },
+        { "key": "testers", "name": "playtesters", "private": ["tester", "staff", "mod"], "topic": "First looks at new updates before they go live. Tell us what feels wrong." }
+      ]
+    },
+    {
+      "name": "🏆 EVENTS",
+      "channels": [
+        { "key": "events", "name": "events", "readOnly": true, "topic": "Weekly challenges and competitions." },
+        { "key": "challenge", "name": "weekly-challenge", "topic": "This week's challenge: post your screenshot as proof." },
+        { "key": "stage", "name": "Matchday Live", "type": "voice", "topic": "Watch-alongs and dev Q&As." }
+      ]
+    },
+    {
+      "name": "🔒 TEAM",
+      "channels": [
+        { "key": "staffchat", "name": "team-chat", "private": ["staff", "mod"] },
+        { "key": "modlog", "name": "mod-log", "private": ["staff", "mod"] }
+      ]
+    }
+  ],
+  "messages": {
+    "welcome": [
+      {
+        "title": "Welcome to Knowitball ⚽",
+        "description": "Free football games in your browser, made by three fans: **Harry, Mikey and Leo**.\n\n**Road to the Golden Ball**: start as a nobody, take every chance yourself, chase the Ballon d'Or.\n**Tierlists**, **Draft**, **daily grids** and more.\n\n**▶ Play now: https://knowitball.co.uk**\n\nYou are early. What you say in this server changes the game: we read every suggestion and bug report and we ship updates most days.",
+        "color": "#3ddc84"
+      },
+      {
+        "title": "Get going in 60 seconds",
+        "description": "1. Read <#rules>\n2. Pick your games and pings in **Channels & Roles** (top of the channel list)\n3. Say hi in <#intro>\n4. Play, then post your career in <#careers>\n5. Found a bug? <#bugs>. Got an idea? <#ideas>.",
+        "color": "#6fb8ff"
+      }
+    ],
+    "rules": [
+      {
+        "title": "The rules",
+        "description": "**1.** Be decent. Banter about clubs is fine; abuse, racism, sexism or homophobia is an instant ban.\n**2.** No spam, scams, ads or self-promo outside <#careers> and <#goals>.\n**3.** Keep it safe for younger fans: no NSFW, no gore.\n**4.** No cheating tools or save editing shared publicly.\n**5.** The mods have the final say. Follow Discord's Terms: https://discord.com/terms",
+        "color": "#f5b942"
+      }
+    ],
+    "play": [
+      {
+        "title": "Every game, free",
+        "description": "**Road to the Golden Ball** (career): https://knowitball.co.uk\n**Tierlists**: make and share your own\n**Draft**: build a squad from a real season\n**Daily grid**: a new one every day\n\nAll on **https://knowitball.co.uk**. Sign in with Google to keep your saves on any device.",
+        "color": "#e6c35c"
+      }
+    ],
+    "events": [
+      {
+        "title": "Weekly challenge",
+        "description": "Every week a new challenge in <#challenge>: e.g. *win the league with a League Two club*, *score 50 in one season*, *best tierlist of all-time strikers*. Winners get a shout-out, a role, and their name in the next update.",
+        "color": "#ff6b9a"
+      }
+    ]
+  },
+  "onboarding": {
+    "prompts": [
+      {
+        "title": "Which Knowitball games do you play?",
+        "single": false,
+        "options": [
+          { "title": "Road to the Golden Ball", "description": "The career game", "emoji": "🏆", "roles": ["game_career"], "channels": ["careers", "goals"] },
+          { "title": "Tierlists", "description": "Make and vote on tierlists", "emoji": "📊", "roles": ["game_tierlists"], "channels": ["tierlists"] },
+          { "title": "Draft and daily grids", "description": "Squad drafts and the daily game", "emoji": "🧩", "roles": ["game_draft"], "channels": ["draft"] },
+          { "title": "None yet", "description": "I'm new: show me where to start", "emoji": "👀", "roles": [], "channels": ["play"] }
+        ]
+      },
+      {
+        "title": "What should we ping you about?",
+        "single": false,
+        "options": [
+          { "title": "New updates", "description": "When the game gets something new", "emoji": "🆕", "roles": ["pings_updates"], "channels": [] },
+          { "title": "Events and challenges", "description": "Weekly challenges and competitions", "emoji": "🎯", "roles": ["pings_events"], "channels": ["events", "challenge"] },
+          { "title": "Daily challenge", "description": "A nudge when the daily grid drops", "emoji": "📅", "roles": ["pings_daily"], "channels": ["draft"] }
+        ]
+      }
+    ],
+    "defaultChannels": ["welcome", "rules", "announcements", "updates", "play", "general", "intro", "football", "memes", "ideas", "bugs"]
+  }
+}
