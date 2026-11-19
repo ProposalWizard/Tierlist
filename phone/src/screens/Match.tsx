@@ -19,6 +19,8 @@ import type { CareerState, Fixture } from "@/lib/star/types";
 import { MatchDriver } from "../match/driver";
 import { matchSetupFor, type MatchSetup } from "../match/setup";
 import { MatchPitch, BANNER_MS } from "./MatchPitch";
+import { camFor } from "../match/drawPitch";
+import { toScreen } from "../match/view";
 import { MatchHud } from "./MatchHud";
 import { MatchFeed, MatchPause } from "./MatchFeed";
 import { MatchShootout } from "./MatchShootout";
@@ -62,7 +64,7 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
     stamina.value = legs ? legs.stamina.v : 1;
   }, [stamina]);
 
-  const overlay = useCallback((d: MatchDriver) => {
+  const overlay = useCallback((d: MatchDriver, size: { W: number; H: number }) => {
     const banner = d.banner && d.now - d.banner.at < BANNER_MS ? d.banner : null;
     const lastGoal = d.goalEvents[d.goalEvents.length - 1];
     const home = d.setup.fixture.home !== false;
@@ -75,7 +77,9 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
       <>
         {d.phase === "feed" && <View style={StyleSheet.absoluteFill}><MatchFeed d={d} kits={kits} /></View>}
         {d.phase !== "feed" && d.feed.length > 0 && (
-          <View pointerEvents="none" style={{ position: "absolute", left: 8, right: 8, bottom: showStamina ? 66 : 8 }}>
+          // CanvasMatch's commentary strip: at the bottom, or at the top when the ball is down there.
+          <View pointerEvents="none" style={[{ position: "absolute", left: 8, right: 8 },
+            toScreen(camFor(d, size.W, size.H), d.ball ? d.ball.pos : d.sc.ball).Y > size.H * 0.55 ? { top: d.lead ? 40 : 8 } : { bottom: showStamina ? 66 : 8 }]}>
             <LiveCommentary lines={d.feed.slice(-2)} />
           </View>
         )}
