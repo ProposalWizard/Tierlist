@@ -40,7 +40,7 @@ import { withMocapOwn } from "./three3d/footballAnims";
 import { motionLook } from "./motionLook";
 import { playerStyleLook, type PlayerStyleLook } from "./style3d/toon/look";
 import { matchPlayerStyle } from "./style3d/toon/matchLook";
-import { TOON_HEADS, toonFileFor, toonFileIsJudged, TOON_BUILD_SCALE, TOON_SUIT_HEADS, TOON_HEM_FIX, hashId, toonBodyFor, toonHeadFor, toonYou, toonWearsSuit, toonKey, type ToonBody, type ToonHead } from "./style3d/toon/bodies";
+import { TOON_HEADS, TOON_ALL_HEADS, toonHeadIsSuit, toonFileFor, toonFileIsJudged, TOON_BUILD_SCALE, TOON_SUIT_HEADS, TOON_HEM_FIX, hashId, toonBodyFor, toonHeadFor, toonYou, toonWearsSuit, toonKey, type ToonBody, type ToonHead } from "./style3d/toon/bodies";
 import { patchToonBody, toonUniforms, toonShirtLayout } from "./style3d/toon/shader";
 import { toonProportions, warpToonBody, type ToonPropId } from "./style3d/toon/proportions";
 import { SMALL_INK } from "./style3d/smallMen";
@@ -226,8 +226,8 @@ export function loadToonHead(loader: { loadAsync(url: string): Promise<unknown> 
   }
   return g.then((one) => {
     const set: GLTF[] = [];
-    set[TOON_HEADS.indexOf(head)] = one;
-    return { ...one, toonBodies: set, toonWhich: TOON_SUIT_HEADS.includes(head) ? "manager" : "player" } as GLTF;
+    set[TOON_ALL_HEADS.indexOf(head)] = one;
+    return { ...one, toonBodies: set, toonWhich: toonHeadIsSuit(head) ? "manager" : "player" } as GLTF;
   });
 }
 
@@ -253,7 +253,7 @@ export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>;
   if (which !== "anims" && style === "new") {
     // only the heads this scene needs (a manager: the suits); a head not loaded falls back (makePerson3d)
     const want = heads ?? (which === "manager" ? TOON_SUIT_HEADS : TOON_HEADS);
-    const all = Promise.all(TOON_HEADS.map((b) => {
+    const all = Promise.all(TOON_ALL_HEADS.map((b) => {
       if (!want.includes(b)) return Promise.resolve(undefined as unknown as GLTF);
       const url = toonFileFor(b);
       let g = cache.get(url);
@@ -663,14 +663,14 @@ export function makePerson3d(
     const suitWanted = opts.suit ?? toonWearsSuit(role, opts.human?.outfit);
     toon = opts.toonBody ?? (opts.you ? toonYou().body : toonBodyFor(id));
     toonHead = opts.toonHead ?? (opts.you && !suitWanted ? toonYou().head : toonHeadFor(id, suitWanted));
-    if (!tg.toonBodies[TOON_HEADS.indexOf(toonHead)]) {
+    if (!tg.toonBodies[TOON_ALL_HEADS.indexOf(toonHead)]) {
       // that head was not loaded for this scene: the nearest loaded one of the same kind (kit or suit)
-      const same = (h: ToonHead) => TOON_SUIT_HEADS.includes(h) === suitWanted;
-      const loaded = TOON_HEADS.filter((h) => tg.toonBodies![TOON_HEADS.indexOf(h)]);
+      const same = (h: ToonHead) => toonHeadIsSuit(h) === suitWanted;
+      const loaded = TOON_ALL_HEADS.filter((h) => tg.toonBodies![TOON_ALL_HEADS.indexOf(h)]);
       const pool = loaded.filter(same).length ? loaded.filter(same) : loaded;
       toonHead = pool[hashId(`${id}#head`) % pool.length];
     }
-    model = tg.toonBodies[TOON_HEADS.indexOf(toonHead)];
+    model = tg.toonBodies[TOON_ALL_HEADS.indexOf(toonHead)];
   } else {
     const which = (model as GLTF & { humanWhich?: string }).humanWhich;
     if (which) return makeHuman(T, SkeletonUtils, model, anims, opts.human ?? defaultHumanSpec(which), opts);
@@ -678,7 +678,7 @@ export function makePerson3d(
   let meta = model.scene.userData as PersonMeta;
   if (meta.quant) dequantize(T, model, meta.quant);
   // the suit heads are modelled in their suits; a player head is in a kit
-  const suit = !!toonHead && TOON_SUIT_HEADS.includes(toonHead);
+  const suit = !!toonHead && toonHeadIsSuit(toonHead);
   if (toon) meta = { ...meta, file: String(meta.model), model: suit ? "manager" : "player" };
   if (toon && toonHead && TOON_HEM_FIX[toonHead] && !toonFileIsJudged(toonHead)) meta = { ...meta, kit: { ...meta.kit, hemY: TOON_HEM_FIX[toonHead]! } };
   const root = new T.Group();

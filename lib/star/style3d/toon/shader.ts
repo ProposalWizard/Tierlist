@@ -519,7 +519,7 @@ if (typeof window !== "undefined") {
  */
 export const TOON_RIM_OFF = { color: "#ffffff", strength: 0 } as const;
 let rimU: { uRimFx: { value: THREE.Vector4 }; uRimDirV: { value: THREE.Vector3 } } | null = null;
-function toonRimUniforms(T: Three) {
+export function toonRimUniforms(T: Three) {
   rimU ??= { uRimFx: { value: new T.Vector4(1, 1, 1, 0) }, uRimDirV: { value: new T.Vector3(0.3, 0.5, -1).normalize() } };
   return rimU;
 }

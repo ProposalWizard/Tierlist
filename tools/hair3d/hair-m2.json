@@ -1,0 +1,92 @@
+{
+ "locsShort": {
+  "tris": 2888,
+  "verts": 1580,
+  "crossing": 0,
+  "leastMm": 0.81
+ },
+ "locsLong": {
+  "tris": 3798,
+  "verts": 2042,
+  "crossing": 0,
+  "leastMm": 0.82
+ },
+ "locsBun": {
+  "tris": 3788,
+  "verts": 2053,
+  "crossing": 0,
+  "leastMm": 0.82
+ },
+ "afro": {
+  "tris": 1740,
+  "verts": 901,
+  "crossing": 0,
+  "leastMm": 0.84
+ },
+ "highTop": {
+  "tris": 1092,
+  "verts": 573,
+  "crossing": 0,
+  "leastMm": 0.87
+ },
+ "twists": {
+  "tris": 2024,
+  "verts": 1215,
+  "crossing": 0,
+  "leastMm": 1.0
+ },
+ "braids": {
+  "tris": 3835,
+  "verts": 1949,
+  "crossing": 0,
+  "leastMm": 0.82
+ },
+ "curlyTop": {
+  "tris": 2688,
+  "verts": 1421,
+  "crossing": 0,
+  "leastMm": 0.95
+ },
+ "crew": {
+  "tris": 540,
+  "verts": 289,
+  "crossing": 0,
+  "leastMm": 0.85
+ },
+ "slickBack": {
+  "tris": 720,
+  "verts": 385,
+  "crossing": 0,
+  "leastMm": 0.8
+ },
+ "ponytail": {
+  "tris": 944,
+  "verts": 506,
+  "crossing": 0,
+  "leastMm": 0.8
+ },
+ "manBun": {
+  "tris": 1124,
+  "verts": 592,
+  "crossing": 0,
+  "leastMm": 0.8
+ },
+ "mullet": {
+  "tris": 1314,
+  "verts": 714,
+  "crossing": 0,
+  "leastMm": 0.2
+ },
+ "thinning": {
+  "tris": 408,
+  "verts": 245,
+  "crossing": 0,
+  "leastMm": 0.85
+ },
+ "receding": {
+  "tris": 660,
+  "verts": 353,
+  "crossing": 0,
+  "leastMm": 0.96
+ }
+}

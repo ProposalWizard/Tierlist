@@ -10,22 +10,24 @@ import {
   type PersonRole,
 } from "../../lib/star/people/presets";
 import { SKIN_TONES } from "../../lib/star/playerIdentity";
-import { TOON_HEADS, TOON_PLAYER_HEADS } from "../../lib/star/style3d/toon/bodies";
+import { TOON_ALL_HEADS, TOON_PLAYER_HEADS, TOON_SHAPE_HEADS, toonHeadIsSuit, toonHeadFor } from "../../lib/star/style3d/toon/bodies";
+import { TOON_HAIRS, TOON_HAIR_INFO, COILY_HAIRS, toonHairFits, toonHairFile, type ToonHair } from "../../lib/star/style3d/toon/hairStyles";
+import fs from "node:fs";
 import { managerLook } from "../../lib/star/managerFace";
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
-const sig = (l: ReturnType<typeof personLook>) => JSON.stringify([l.preset, l.head, l.build, l.skin, l.hairColour, l.cut, l.suit, l.kit, l.accessories, l.age]);
+const sig = (l: ReturnType<typeof personLook>) => JSON.stringify([l.preset, l.head, l.build, l.skin, l.hairColour, l.cut, l.hairMesh, l.suit, l.kit, l.accessories, l.age]);
 
 // 1. Library size and shape
 const mgrStaff = STAFF_PRESETS.filter((p) => p.roles.includes("manager") || p.roles.includes("staff"));
 check(mgrStaff.length >= 24, `only ${mgrStaff.length} manager/staff presets (want 24+)`);
-check(PLAYER_PRESETS.length >= 48, `only ${PLAYER_PRESETS.length} player presets (want 48+)`);
+check(PLAYER_PRESETS.length >= 72, `only ${PLAYER_PRESETS.length} player presets (want 72+)`);
 check(new Set(ALL_PRESETS.map((p) => p.id)).size === ALL_PRESETS.length, "two presets share an id");
 check(new Set(ALL_PRESETS.map((p) => p.name)).size === ALL_PRESETS.length, "two presets share a name");
 for (const p of ALL_PRESETS) {
-  check(TOON_HEADS.includes(p.head), `${p.id}: head ${p.head} is not a Style A head`);
-  check(p.outfit !== "kit" || TOON_PLAYER_HEADS.includes(p.head), `${p.id}: a kit on a suit head`);
+  check(TOON_ALL_HEADS.includes(p.head), `${p.id}: head ${p.head} is not a Style A head`);
+  check(p.outfit !== "kit" || !toonHeadIsSuit(p.head), `${p.id}: a kit on a suit head`);
   check(CUTS[p.cut].scalp === 0 || CLOSE_CUT_HEADS.includes(p.head), `${p.id}: bald/shaved on ${p.head}, whose hair is not close cut`);
   check(p.skin >= 0 && p.skin < 8, `${p.id}: skin index ${p.skin}`);
 }
@@ -36,7 +38,15 @@ for (const p of ALL_PRESETS) {
   const H = HERITAGE[p.heritage];
   const cut = CUTS[p.cut];
   check(H.textures.includes(p.texture), `${p.id}: ${p.texture} hair is not a ${p.heritage} texture`);
-  check(styleTextures(p.head, cut).includes(p.texture), `${p.id}: ${p.head}/${p.cut} does not suit ${p.texture} hair`);
+  check(styleTextures(p.head, cut, p.hairMesh).includes(p.texture), `${p.id}: ${p.head}/${p.cut}/${p.hairMesh ?? "own hair"} does not suit ${p.texture} hair`);
+  // a modelled hairstyle: only on a head that wears one; locs, afro, high-top, twists and braids only on coily hair,
+  // so only on Black and mixed-race people; the straight styles never on coily hair
+  if (p.hairMesh) {
+    check(toonHairFits(p.head), `${p.id}: ${p.hairMesh} on ${p.head}, which wears no modelled hair`);
+    check(TOON_HAIR_INFO[p.hairMesh].textures.includes(p.texture), `${p.id}: ${p.hairMesh} on ${p.texture} hair`);
+    if (COILY_HAIRS.includes(p.hairMesh)) check(p.texture === "coily" && (p.heritage === "black" || p.heritage === "mixed"), `${p.id}: ${p.hairMesh} on a ${p.heritage} person with ${p.texture} hair`);
+    if (p.texture === "coily") check(TOON_HAIR_INFO[p.hairMesh].textures.includes("coily"), `${p.id}: coily hair in ${p.hairMesh}`);
+  }
   check(p.skin >= H.skin[0] && p.skin <= H.skin[1], `${p.id}: skin ${p.skin} outside ${p.heritage}'s range`);
   check(H.hair.includes(p.hair), `${p.id}: hair ${p.hair} is not a ${p.heritage} colour`);
   if (p.texture === "coily") check(!STRAIGHT_ONLY.includes(p.head) && !(p.head === "h6" && cut.scalp < 0.9), `${p.id}: coily hair in a straight-hair style (${p.head})`);
@@ -59,8 +69,29 @@ for (const role of ["manager", "staff", "player", "agent", "journalist", "fan"] 
   }
 }
 
-const playerKeys = new Set(PLAYER_PRESETS.map((p) => `${p.head}|${p.cut}|${p.build}|${p.skin}|${p.hair}`));
-check(PLAYER_PRESETS.filter((p) => p.heritage === "black" || p.heritage === "mixed").length >= 16, "too few Black and mixed-race players");
+// 1c. The modelled hairstyles and the new head shapes are all in use, and every file is there
+for (const want of ["locsShort", "locsLong", "locsBun", "afro", "highTop", "twists", "braids"] as ToonHair[]) check(COILY_HAIRS.includes(want), `${want} is not a coily-only style`);
+for (const h of TOON_HAIRS) {
+  check(ALL_PRESETS.some((p) => p.hairMesh === h), `no preset wears ${h}`);
+  for (const head of ["h3", "m2"] as const) check(fs.existsSync(`public${toonHairFile(h, head)}`), `missing ${toonHairFile(h, head)}`);
+}
+for (const h of COILY_HAIRS) check(PLAYER_PRESETS.some((p) => p.hairMesh === h), `no player wears ${h}`);
+for (const h of TOON_SHAPE_HEADS) check(ALL_PRESETS.some((p) => p.head === h), `no preset has the ${h} head`);
+// nobody in the game changes: the seeded pools still hold only the first eight heads
+for (let i = 0; i < 400; i++) check(!TOON_SHAPE_HEADS.includes(toonHeadFor(`g${i}`)) && !TOON_SHAPE_HEADS.includes(toonHeadFor(`g${i}`, true)), `a seeded pick gave a new head shape`);
+// every person anyone gets: his modelled hair suits his texture, and thinning or receding hair is never called bald
+for (const role of ["manager", "staff", "player", "agent", "journalist", "fan"] as PersonRole[]) {
+  for (let i = 0; i < 300; i++) {
+    const l = personLook(`m${i}`, role);
+    const p = ALL_PRESETS.find((x) => x.id === l.preset)!;
+    if (!l.hairMesh) continue;
+    check(TOON_HAIR_INFO[l.hairMesh].textures.includes(p.texture) && l.dress.hairMesh === l.hairMesh, `${role} m${i}: ${l.hairMesh} on ${p.texture} hair`);
+    check(l.hairStyle !== "none" && l.cut.scalp === Math.max(CUTS[p.cut].scalp, TOON_HAIR_INFO[l.hairMesh].scalp), `${role} m${i}: ${l.hairMesh} scalp`);
+  }
+}
+
+const playerKeys = new Set(PLAYER_PRESETS.map((p) => `${p.head}|${p.cut}|${p.hairMesh ?? ""}|${p.build}|${p.skin}|${p.hair}`));
+check(PLAYER_PRESETS.filter((p) => p.heritage === "black" || p.heritage === "mixed").length >= 24, "too few Black and mixed-race players");
 check(playerKeys.size === PLAYER_PRESETS.length, `player presets: ${PLAYER_PRESETS.length - playerKeys.size} are the same look`);
 for (let s = 0; s < 8; s++) {
   check(PLAYER_PRESETS.some((p) => p.skin === s), `no player preset at skin ${SKIN_TONES[s].label}`);

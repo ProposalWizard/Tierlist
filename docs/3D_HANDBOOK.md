@@ -111,7 +111,7 @@ exactly today's bodies. You never pick a file yourself:
 - Only one person on screen (Home, title)? `loadToonHead(loader, head)` fetches
   one head file instead of all eight.
 - People presets (20 Nov 2026, not wired into scenes yet): `personLook(id, role, { club, known })`
-  in `lib/star/people/presets.ts` picks one of 43 staff/press/fan and 48 player presets by the
+  in `lib/star/people/presets.ts` picks one of 60 staff/press/fan and 72 player presets by the
   id's hash, with small per-person touches. Each preset has a heritage that sets skin range, hair
   texture and colours; a style only goes on a texture it suits (`styleTextures`: no quiff, bun or
   fringe on coily hair; waves and cornrows, painted on the close crops h3/m2, only on coily hair); `castScene([...])` keeps five people in one shot
@@ -123,6 +123,15 @@ exactly today's bodies. You never pick a file yourself:
   skin left pale smudges) and the skin round the eyes is never hair (m2's mask). Contact sheet: `/star-3d-bench-dev/people`
   (`node scripts/bench3d/people-sheet.mjs OUTDIR`). The suit heads' shirt V is now always shirt
   (their masks call it skin). Test: `tests/star/peoplePresets.mts`.
+- Modelled hair and new head shapes (20 Nov 2026, presets only, not in the game's seeded pools): 15 hairstyles
+  (locs short / shoulder / tied up, short afro, high-top, twists, braids, curly top, crew cut, slick back, tied
+  back, man bun, mullet, thinning, receding) worn on the close-cut heads, skinned on the wearer's own skeleton:
+  `lib/star/style3d/toon/hairStyles.ts` (list, hair textures, which head wears which set) and
+  `lib/star/style3d/toon/hair.ts` (`wearToonHair(T, loader, person, hair)` after `makePerson3d`; it takes the
+  body's hair colour and cel light). Four re-shaped heads: h7 Broad jaw, h8 Long face, h9 Round face, m3 Older,
+  lined (`TOON_SHAPE_HEADS`; `TOON_ALL_HEADS` is every head file). Built by `tools/hair3d/` (read its README:
+  Blender `build_hair.py`, `reshape_heads.mjs`, the 0-crossing check). Files: `public/star/people3d/hair/`.
+  Sheets: `/star-3d-bench-dev/people?set=hair` and `?set=heads`.
 - A new head: concept picture → Higgsfield image-to-3D (Tripo H3.1, face limit
   15000) → `tools/modeltest/fit.py` → `scripts/people3d/build_toon_bodies.py <dir>
   tag:dir/fit.glb[:suit]` (it also weights the fingers: `weight_fingers`) →
@@ -370,6 +379,7 @@ Your session is a cloud container that clones the repo. **Anything only in your 
 
 What landed today on Harry, newest first, one line each.
 
+- Toon hair and head shapes (20 Nov 2026, Harry: "still more hairstyles, dreads are common in football, try and model new head shapes and hair"): 15 modelled hairstyles and 4 re-shaped heads for the people presets (section 2 "Modelled hair and new head shapes"; `tools/hair3d/README.md`). Presets grew to 72 player and 60 staff looks; locs, afro, high-top, twists and braids only on coily hair (`tests/star/peoplePresets.mts`). Nobody in the game changes yet.
 - The 3D phone, live (20 Nov 2026, Harry, RUL-UI-008; test page `/star-phone3d-dev` only, not in the game): the house can open in his eyes (`Home3D` `pov`, `chrome={false}`, `onReady`; `startHome` option `pov`). `HomeController.setPov(k)` puts the camera on the straight line from his eyes (k 1, he is hidden) to the normal camera (k 0; he fades in once the camera is 0.75 m clear of his head), `null` = off; `hold(true)` draws one frame and stops the loop (the house behind the phone), `renderOnce()` draws one frame (filming). In pov he starts up to 1.4 m further into the room so the camera he pulls back to frames him. Absent, the house is exactly as before. The real phone (`PhoneHome` `fill`, `onPhoneHome`) sits on the glass with a CSS matrix3d. Videos are made frame by frame on `?film=1` (`window.__phone3dStep(ms)`).
 - Goal celebrations in the 3D match view (22 Oct 2026, Leo, chat 1 "After you score"): after YOUR goal the 2D match runs you to the nearer corner and plays the celebration equipped in the shop (`lib/star/celebration.ts`: `CELEB_SPECS` maps each move to its `anims3d/mocap.glb` clip — celebrate_safe, celebrate_airplane, knee_slide, celebrate_pump, celebrate_jump, celebrate_roar, celebrate_fist). The frame carries it as `EngineFrameFigure.celeb` (clip + seconds in); `engineView.ts` plays exactly that frame of it with the hips pinned (state `celeb:<clip>`); the 2D moves him along the grass (a knee slide, the hands-up jog). The six 2D sprite clips are atlas 2 (`tools/sprites/new/bake-new.mjs celebs`). Test: `tests/star/celebration.mts`.
 - Your 3D footballer on the FIFA player card (23 Oct 2026, Harry: "add the 3d model to the fifa card"): the card (`components/star/PlayerCard.tsx`) shows your own Style A man (Settings → Your look, your club's home kit) head to waist, a still from the same headshot maker (`<Headshot3D frame="card" />`; `CARD_SHOT` in `lib/star/headshot3d/look.ts`: 320 px, the same lens, pose, smile and light, the camera stood back until crown and waistband fit, measured off his head and hips bones; kept under its own key, bump `CARD_SHOT_VERSION` to re-make). Transparent, so the tier colour shows behind; the card's soft-edge mask fades the waist. "Save image" draws the same still (`playerCardImage.ts`). No WebGL or a failed load: the drawn head stays as before.

@@ -11,6 +11,10 @@ export const ASSETS_3D: Asset3dFolder[] = [
     "note": "Sit above the top bars as a 3D overlay. 256 px, transparent.",
     "files": [
       {
+        "path": "/icons3d/cash.png",
+        "bytes": 40517
+      },
+      {
         "path": "/icons3d/energy.png",
         "bytes": 17981
       },
@@ -1114,7 +1118,7 @@ export const ASSETS_3D: Asset3dFolder[] = [
     "files": [
       {
         "path": "/star/people3d/anims.glb",
-        "bytes": 256512
+        "bytes": 215992
       },
       {
         "path": "/star/people3d/manager.glb",
@@ -1182,6 +1186,10 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 210536
       },
       {
+        "path": "/star/people3d/toon-mgr3.glb",
+        "bytes": 265204
+      },
+      {
         "path": "/star/people3d/toon-p1.glb",
         "bytes": 223228
       },
@@ -1204,6 +1212,18 @@ export const ASSETS_3D: Asset3dFolder[] = [
       {
         "path": "/star/people3d/toon-p6.glb",
         "bytes": 231648
+      },
+      {
+        "path": "/star/people3d/toon-p7.glb",
+        "bytes": 281284
+      },
+      {
+        "path": "/star/people3d/toon-p8.glb",
+        "bytes": 281264
+      },
+      {
+        "path": "/star/people3d/toon-p9.glb",
+        "bytes": 281284
       },
       {
         "path": "/star/people3d/toon-q1.glb",

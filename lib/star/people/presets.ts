@@ -13,7 +13,12 @@
  * the office or the cut scenes yet (step 2, after Harry's OK).
  *
  * Built only from what the toon people already have:
- *   heads     the 8 Style A heads (bodies.ts TOON_HEADS): 6 kit heads, 2 suit heads
+ *   heads     the 8 Style A heads (bodies.ts TOON_HEADS): 6 kit heads, 2 suit heads; and the 4
+ *             re-shaped heads (TOON_SHAPE_HEADS: broad jaw, long face, round face, older and lined)
+ *   hair      15 modelled hairstyles worn on the close-cut heads (style3d/toon/hairStyles.ts: locs
+ *             short, shoulder-length and tied up, short afro, high-top, twists, braids, curly top,
+ *             crew cut, slick back, tied back, man bun, mullet, thinning, receding), each only on
+ *             the hair texture it suits
  *   builds    Slim / Strong / Tall (TOON_BUILD_SCALE)
  *   skin      the game's 8 tones (playerIdentity.ts SKIN_TONES)
  *   hair      the game's 4 colours plus the manager drawings' 3 (managerFace.ts), and grey
@@ -30,6 +35,8 @@ import { SKIN_TONES, type HairStyle, type SkinTone } from "../playerIdentity";
 import { MANAGER_HAIR_COLOURS, type ManagerBeard, type ManagerLook } from "../managerFace";
 import { hashId, type ToonBody, type ToonHead } from "../style3d/toon/bodies";
 import { kitsOf } from "../kits";
+import { TOON_HAIR_INFO, toonHairFits, type ToonHair, type HairTexture } from "../style3d/toon/hairStyles";
+export type { HairTexture };
 
 export type PersonRole = "manager" | "staff" | "player" | "journalist" | "agent" | "fan";
 export type PresetOutfit = "suit" | "tracksuit" | "smart" | "casual" | "kit";
@@ -47,7 +54,6 @@ const HAIR_ORDER: readonly HairId[] = ["black", "darkBrown", "brown", "chestnut"
  * inside each group: several styles, beards, ages and builds each, none of them "the" look.
  */
 export type Heritage = "black" | "mixed" | "white" | "southAsian" | "eastAsian" | "mena" | "latin";
-export type HairTexture = "straight" | "wavy" | "curly" | "coily";
 export const HERITAGE: Record<Heritage, { label: string; skin: [number, number]; textures: readonly HairTexture[]; hair: readonly HairId[] }> = {
   black: { label: "Black African / Caribbean", skin: [4, 7], textures: ["coily"], hair: ["black", "black", "darkBrown"] },
   mixed: { label: "Mixed (Black and white)", skin: [3, 5], textures: ["curly", "coily"], hair: ["black", "darkBrown", "darkBrown", "brown"] },
@@ -81,11 +87,11 @@ export const CUTS = {
 export type CutId = keyof typeof CUTS;
 
 /** Heads with a beard modelled in, and what it is. */
-export const HEAD_BEARD: Partial<Record<ToonHead, ManagerBeard>> = { h3: "short", h6: "short", m1: "short", m2: "full" };
+export const HEAD_BEARD: Partial<Record<ToonHead, ManagerBeard>> = { h3: "short", h6: "short", m1: "short", m2: "full", h7: "short", h8: "short", h9: "short", m3: "full" };
 /** Heads whose hair sits close to the skull: the only ones that may go bald or shaved. */
-export const CLOSE_CUT_HEADS: readonly ToonHead[] = ["h3", "h6", "m2"];
+export const CLOSE_CUT_HEADS: readonly ToonHead[] = ["h3", "h6", "m2", "h7", "h8", "h9", "m3"];
 /** Heads whose close cut may carry a pattern (waves, cornrows): the tight crops. */
-export const PATTERN_HEADS: readonly ToonHead[] = ["h3", "m2"];
+export const PATTERN_HEADS: readonly ToonHead[] = ["h3", "m2", "h7", "h8", "h9", "m3"];
 
 /**
  * Which hair textures a head and cut suit. The modelled hair decides: Curls (h1) is a curly or
@@ -93,11 +99,13 @@ export const PATTERN_HEADS: readonly ToonHead[] = ["h3", "m2"];
  * straight or wavy hair; the close buzz with a line-up (h3) and the fade (m2) suit every texture;
  * bald suits everyone; waves and cornrows are coily (waves also curly) hair.
  */
-export function styleTextures(head: ToonHead, cut: HairCut): readonly HairTexture[] {
+export function styleTextures(head: ToonHead, cut: HairCut, hairMesh?: ToonHair): readonly HairTexture[] {
+  // a modelled hairstyle decides for itself (locs, afro, high-top, twists and braids are coily hair only)
+  if (hairMesh) return toonHairFits(head) ? TOON_HAIR_INFO[hairMesh].textures : [];
   if (cut.pattern === 2) return ["coily"];
   if (cut.pattern === 1) return ["coily"];
   if (cut.scalp >= 0.9) return ["straight", "wavy", "curly", "coily"];
-  if (head === "h3" || head === "m2") return ["straight", "wavy", "curly", "coily"];
+  if (toonHairFits(head)) return ["straight", "wavy", "curly", "coily"]; // the buzz, the fade and their re-shaped heads
   if (head === "h1") return ["curly", "coily"];
   return ["straight", "wavy"];
 }
@@ -132,6 +140,8 @@ export interface PeoplePreset {
   /** 0 none … 1 white. */
   grey: number;
   cut: CutId;
+  /** A modelled hairstyle on top (only on a head that wears one: hairStyles.ts toonHairFits). */
+  hairMesh?: ToonHair;
   age: number;
   coat?: CoatId | "club";
   trousers?: CoatId;
@@ -143,6 +153,9 @@ export interface PeoplePreset {
 const S = (id: string, name: string, roles: PersonRole[], outfit: PresetOutfit, heritage: Heritage, texture: HairTexture, head: ToonHead, build: ToonBody, skin: number, hair: HairId, grey: number, cut: CutId, age: number,
   coat: CoatId | "club", shirt: ShirtId | "trim", tie: TieId, trousers?: CoatId): PeoplePreset =>
   ({ id, name, roles, outfit, heritage, texture, head, build, skin, hair, grey, cut, age, coat, shirt, tie, trousers });
+
+/** The same preset wearing a modelled hairstyle. */
+const W = (hairMesh: ToonHair, p: PeoplePreset): PeoplePreset => ({ ...p, hairMesh });
 
 const MS: PersonRole[] = ["manager", "staff"];
 /** Managers, staff, agents, journalists and fans (31 manager/staff looks). */
@@ -194,10 +207,46 @@ export const STAFF_PRESETS: readonly PeoplePreset[] = [
   S("fan-season", "Season-ticket Holder", ["fan"], "casual", "black", "coily", "h3", "c3", 6, "black", 0.5, "clean", 58, "green", "white", "club", "charcoal"),
   S("fan-away", "Away End", ["fan"], "casual", "white", "straight", "h5", "c1", 0, "fair", 0, "stubble", 24, "club", "trim", "club", "blue"),
   S("fan-ultra", "Ultra", ["fan"], "casual", "white", "wavy", "h6", "c2", 2, "black", 0, "shaved", 27, "black", "black", "club", "black"),
+  // the modelled hairstyles and the re-shaped heads (20 Nov 2026: h7 broad jaw, h8 long face, h9 round face, m3 older and lined)
+  W("thinning", S("mgr-veteran-gaffer", "Veteran Gaffer", MS, "suit", "white", "straight", "m3", "c2", 1, "fair", 0.9, "clean", 66, "charcoal", "white", "maroon")),
+  W("receding", S("mgr-elder-statesman", "Elder Statesman", MS, "suit", "black", "coily", "m3", "c3", 6, "black", 0.8, "as", 67, "navy", "white", "gold")),
+  W("slickBack", S("mgr-weathered-boss", "Weathered Boss", MS, "suit", "white", "wavy", "m3", "c2", 2, "darkBrown", 0.6, "cleanStubble", 60, "black", "white", "silver")),
+  W("locsBun", S("trk-locs-coach", "Locs Coach", MS, "tracksuit", "black", "coily", "h3", "c2", 6, "black", 0.15, "as", 43, "club", "trim", "club", "black")),
+  W("locsLong", S("mgr-locs-boss", "Locs & Suit", MS, "suit", "black", "coily", "m2", "c3", 7, "black", 0.3, "as", 49, "charcoal", "white", "club")),
+  W("afro", S("trk-first-team-coach", "First-team Coach", MS, "tracksuit", "black", "coily", "h9", "c2", 5, "black", 0.1, "as", 39, "club", "trim", "club", "black")),
+  W("receding", S("mgr-receding-gaffer", "Receding Gaffer", MS, "suit", "latin", "wavy", "m2", "c2", 3, "black", 0.45, "cleanStubble", 53, "slate", "paleBlue", "navy")),
+  W("twists", S("smt-data-analyst", "Data Analyst", ["staff"], "smart", "mixed", "coily", "h8", "c1", 4, "darkBrown", 0, "cleanStubble", 29, "grey", "white", "open", "navy")),
+  W("slickBack", S("smt-sporting-director", "Sporting Director", ["staff"], "suit", "mena", "wavy", "h7", "c3", 3, "black", 0.25, "as", 47, "navy", "white", "open")),
+  W("crew", S("trk-set-piece-coach", "Set-piece Coach", MS, "tracksuit", "white", "straight", "h7", "c2", 1, "brown", 0.1, "clean", 35, "club", "trim", "club", "black")),
+  W("thinning", S("trk-old-physio", "Long-serving Physio", ["staff"], "tracksuit", "white", "straight", "h9", "c2", 1, "brown", 0.75, "clean", 61, "navy", "white", "open", "navy")),
+  W("ponytail", S("agt-boutique", "Boutique Agent", ["agent"], "smart", "latin", "straight", "h8", "c1", 3, "black", 0.1, "stubble", 38, "cream", "black", "open", "charcoal")),
+  W("curlyTop", S("agt-young", "Young Agent", ["agent"], "smart", "mixed", "curly", "h7", "c1", 3, "darkBrown", 0, "clean", 30, "burgundy", "black", "open", "black")),
+  W("braids", S("prs-podcast-host", "Podcast Host", ["journalist"], "smart", "black", "coily", "h3", "c1", 5, "black", 0, "clean", 27, "green", "cream", "open", "charcoal")),
+  W("locsShort", S("prs-columnist", "Columnist", ["journalist"], "smart", "black", "coily", "h9", "c2", 6, "black", 0.2, "as", 44, "tan", "white", "open", "navy")),
+  W("mullet", S("fan-terrace-mullet", "Terrace Mullet", ["fan"], "casual", "white", "straight", "h9", "c2", 0, "fair", 0, "cleanStubble", 33, "club", "trim", "club", "blue")),
+  W("highTop", S("fan-young", "Young Fan", ["fan"], "casual", "mixed", "coily", "h7", "c1", 4, "black", 0, "clean", 19, "grey", "trim", "club", "black")),
 ];
 
-/** The head-and-haircut looks a player can have (6 heads, beards on and off, shaved, stubble, waves, cornrows). */
-const PLAYER_VARIANTS: readonly [ToonHead, CutId, string][] = [
+/**
+ * The head-and-haircut looks a player can have: the 6 heads (beards on and off, shaved, stubble,
+ * waves, cornrows), the 3 re-shaped kit heads, and the modelled hairstyles on the close-cut heads.
+ */
+const PLAYER_VARIANTS: readonly [ToonHead, CutId, string, ToonHair?][] = [
+  ["h3", "as", "Short Locs & Beard", "locsShort"], ["h8", "clean", "Short Locs", "locsShort"],
+  ["h3", "clean", "Shoulder Locs", "locsLong"], ["h7", "as", "Shoulder Locs & Beard", "locsLong"],
+  ["h9", "clean", "Locs Tied Up", "locsBun"], ["h3", "as", "Locs Tied Up & Beard", "locsBun"],
+  ["h3", "clean", "Short Afro", "afro"], ["h9", "as", "Short Afro & Beard", "afro"],
+  ["h7", "clean", "High-top", "highTop"], ["h3", "as", "High-top & Beard", "highTop"],
+  ["h3", "cleanStubble", "Twists", "twists"], ["h8", "as", "Twists & Beard", "twists"],
+  ["h3", "clean", "Braids", "braids"], ["h7", "as", "Braids & Beard", "braids"],
+  ["h3", "clean", "Curly Top", "curlyTop"], ["h8", "cleanStubble", "Curly Top & Stubble", "curlyTop"], ["h9", "as", "Curly Top & Beard", "curlyTop"],
+  ["h7", "clean", "Crew Cut", "crew"], ["h9", "cleanStubble", "Crew Cut & Stubble", "crew"], ["h3", "as", "Crew Cut & Beard", "crew"],
+  ["h8", "clean", "Slick Back", "slickBack"], ["h7", "as", "Slick Back & Beard", "slickBack"],
+  ["h3", "clean", "Tied Back", "ponytail"], ["h8", "as", "Tied Back & Beard", "ponytail"],
+  ["h9", "clean", "Man Bun", "manBun"], ["h3", "as", "Man Bun & Beard", "manBun"],
+  ["h7", "cleanStubble", "Mullet", "mullet"],
+  ["h7", "clean", "Broad-jaw Buzz"], ["h7", "as", "Broad-jaw Buzz & Beard"], ["h8", "as", "Long-face Buzz & Beard"], ["h8", "baldClean", "Long-face Shaved Head"],
+  ["h9", "clean", "Round-face Buzz"], ["h9", "wavesClean", "Round-face Waves"], ["h7", "cornrowsClean", "Broad-jaw Cornrows"],
   ["h1", "as", "Curls"], ["h1", "stubble", "Curls & Stubble"],
   ["h2", "as", "Quiff"], ["h2", "stubble", "Quiff & Stubble"],
   ["h3", "as", "Buzz & Beard"], ["h3", "clean", "Buzz"], ["h3", "bald", "Shaved & Beard"], ["h3", "baldClean", "Shaved Head"],
@@ -208,25 +257,32 @@ const PLAYER_VARIANTS: readonly [ToonHead, CutId, string][] = [
 ];
 const BUILD_WORD: Record<ToonBody, string> = { c1: "Slim", c2: "Strong", c3: "Tall" };
 const EXTRAS: readonly PlayerExtra[] = ["none", "sleeves", "none", "tape", "none", "headband", "none", "snood", "sleevesTape", "none", "tape", "none"];
-/** A squad's heritage mix, roughly a Premier League dressing room's (48 slots). */
-const SQUAD_HERITAGE: readonly [Heritage, number][] = [["black", 14], ["white", 14], ["mixed", 8], ["mena", 4], ["southAsian", 3], ["latin", 3], ["eastAsian", 2]];
+/** A squad's heritage mix, roughly a Premier League dressing room's (72 slots). */
+const SQUAD_HERITAGE: readonly [Heritage, number][] = [["black", 21], ["white", 21], ["mixed", 12], ["mena", 6], ["southAsian", 4], ["latin", 5], ["eastAsian", 3]];
 
 /**
- * 48 player looks: each heritage's share of a squad, each player a style his hair texture suits,
+ * 72 player looks: each heritage's share of a squad, each player a style his hair texture suits,
  * spread over the three builds, the heritage's skin range and hair colours, and the usual extras.
  */
 export const PLAYER_PRESETS: readonly PeoplePreset[] = (() => {
   const out: PeoplePreset[] = [];
   const seen = new Set<string>();
+  const turn = new Map<string, number>();
+  const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
   let i = 0;
   for (const [heritage, n] of SQUAD_HERITAGE) {
     const H = HERITAGE[heritage];
     for (let k = 0; k < n; k++, i++) {
       const texture = H.textures[k % H.textures.length];
-      const fits = PLAYER_VARIANTS.filter(([h, c]) => styleTextures(h, CUTS[c]).includes(texture));
+      const fits = PLAYER_VARIANTS.filter(([h, c, , m]) => styleTextures(h, CUTS[c], m).includes(texture));
+      // walk the fitting looks with a stride that visits every one before any repeats (per heritage and texture)
+      let stride = Math.max(1, Math.round(fits.length * 0.38));
+      while (gcd(stride, fits.length) !== 1) stride++;
+      const nth = (turn.get(`${heritage}|${texture}`) ?? 0);
+      turn.set(`${heritage}|${texture}`, nth + 1);
       const span = H.skin[1] - H.skin[0] + 1;
       for (let bump = 0; ; bump++) {
-        const [head, cut, look] = fits[(k * 3 + bump) % fits.length];
+        const [head, cut, look, hairMesh] = fits[(nth * stride + SQUAD_HERITAGE.findIndex(([h]) => h === heritage) * 5 + bump) % fits.length];
         const build = (["c1", "c2", "c3"] as const)[(i + k + bump) % 3];
         const skin = H.skin[0] + ((k + Math.floor(k / span) + bump) % span);
         const hair = H.hair[(k * 5 + i) % H.hair.length];
@@ -235,7 +291,7 @@ export const PLAYER_PRESETS: readonly PeoplePreset[] = (() => {
         seen.add(name);
         out.push({
           id: `ply-${String(i + 1).padStart(2, "0")}`, name, outfit: "kit", roles: ["player"], heritage, texture,
-          head, build, skin, hair, grey: 0, cut, age: 20 + ((i * 7) % 14), extra: EXTRAS[(i * 5 + k) % EXTRAS.length],
+          head, build, skin, hair, grey: 0, cut, hairMesh, age: 20 + ((i * 7) % 14), extra: EXTRAS[(i * 5 + k) % EXTRAS.length],
         });
         break;
       }
@@ -273,6 +329,8 @@ export interface PersonLookResult {
   beard: ManagerBeard;
   age: number;
   cut: HairCut;
+  /** A modelled hairstyle worn on top of the head (style3d/toon/hair.ts wearToonHair); none = the head's own hair. */
+  hairMesh?: ToonHair;
   /** Smart clothes (suit, tracksuit, smart, casual). */
   suit?: { coat: string; trousers: string; shirt: string; tie: string; shoes: string };
   /** Players: the club's home kit. */
@@ -280,7 +338,7 @@ export interface PersonLookResult {
   accessories: { slot: string; color: string }[];
   /** Ready for people3d.ts dressPerson3d (plus a number, badge or name if the scene has them). */
   dress: {
-    skin: string; hair: string; grey: number; hairCut: HairCut;
+    skin: string; hair: string; grey: number; hairCut: HairCut; hairMesh?: ToonHair;
     suit?: PersonLookResult["suit"]; kit?: PersonLookResult["kit"]; accessories: { slot: string; color: string }[];
   };
 }
@@ -323,9 +381,10 @@ export function beardOf(head: ToonHead, cut: HairCut): ManagerBeard {
   return cut.stubble > 0.3 ? "stubble" : "none";
 }
 /** The game's hair-style word for a head and cut. */
-export function hairStyleOf(head: ToonHead, cut: HairCut): HairStyle {
+export function hairStyleOf(head: ToonHead, cut: HairCut, hairMesh?: ToonHair): HairStyle {
+  if (hairMesh) return TOON_HAIR_INFO[hairMesh].word;
   if (cut.scalp >= 0.9) return "none";
-  if (cut.scalp >= 0.5 || cut.pattern || head === "h3") return "buzz";
+  if (cut.scalp >= 0.5 || cut.pattern || head === "h3" || head === "h7" || head === "h8" || head === "h9") return "buzz";
   if (head === "h4") return "long";
   return "short";
 }
@@ -334,7 +393,7 @@ export function hairStyleOf(head: ToonHead, cut: HairCut): HairStyle {
 function fitsKnown(p: PeoplePreset, k: ManagerLook): boolean {
   const cut = CUTS[p.cut];
   const bald = k.hair === "bald";
-  if (bald !== cut.scalp >= 0.9) return false;
+  if (bald !== (cut.scalp >= 0.9 && !p.hairMesh)) return false;
   const b = beardOf(p.head, cut);
   if (k.beard === "none" && b !== "none") return false;
   if (k.beard === "stubble" && b !== "stubble") return false;
@@ -390,6 +449,8 @@ export function presetLook(preset: PeoplePreset, id: string, role: PersonRole, o
 
   // the haircut: the preset's, with stubble now and then on a clean face (never on a known manager)
   const cut: HairCut = { ...CUTS[preset.cut] };
+  // a modelled hairstyle that is all the hair there is (thinning, receding): the head's own scalp hair is painted as skin
+  if (preset.hairMesh) cut.scalp = Math.max(cut.scalp, TOON_HAIR_INFO[preset.hairMesh].scalp);
   const bare = beardOf(preset.head, cut) === "none";
   if (!known && !exact && bare && unit(id, "stubble") < 0.2) cut.stubble = 0.55;
   if (cut.stubble > 0 && !exact) cut.stubble = Math.min(0.95, cut.stubble + (unit(id, "stubk") - 0.5) * 0.2);
@@ -429,15 +490,15 @@ export function presetLook(preset: PeoplePreset, id: string, role: PersonRole, o
   return {
     id, role, preset: preset.id, presetName: preset.name, outfit: preset.outfit,
     head: preset.head, build: preset.build, skin: skinTone.hex, skinId: skinTone.id,
-    hairColour, hairId, grey, hairStyle: hairStyleOf(preset.head, cut), beard: beardOf(preset.head, cut), age, cut,
+    hairColour, hairId, grey, hairStyle: hairStyleOf(preset.head, cut, preset.hairMesh), beard: beardOf(preset.head, cut), age, cut, hairMesh: preset.hairMesh,
     suit, kit: preset.outfit === "kit" ? kit : undefined, accessories,
-    dress: { skin: skinTone.hex, hair: hairColour, grey: 0, hairCut: cut, suit, kit: preset.outfit === "kit" ? kit : undefined, accessories },
+    dress: { skin: skinTone.hex, hair: hairColour, grey: 0, hairCut: cut, hairMesh: preset.hairMesh, suit, kit: preset.outfit === "kit" ? kit : undefined, accessories },
   };
 }
 
 /** What two people in one picture must not share: the same head in the same coat (or kit). */
 export function lookKey(l: PersonLookResult): string {
-  return `${l.head}|${l.suit?.coat ?? l.kit?.shirt ?? "kit"}`;
+  return `${l.head}${l.hairMesh ? `:${l.hairMesh}` : ""}|${l.suit?.coat ?? l.kit?.shirt ?? "kit"}`;
 }
 
 /**
