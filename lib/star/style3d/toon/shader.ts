@@ -25,6 +25,7 @@
  */
 import type * as THREE from "three";
 import { SMALL_INK } from "../smallMen";
+import { FI_HEAD, FI_CANVAS, FI_DRAW } from "./faceIdShader";
 
 type Three = typeof import("three");
 
@@ -80,6 +81,8 @@ uniform vec4 uTfOn;       // the moving face (TOON_FACE): on (0/1), blink (0 ope
 uniform vec4 uTfEyeR, uTfEyeL; // each eye opening: centre x, y, half width, half height (rest metres)
 uniform vec4 uTfGaze;     // gaze x, y (-1..1), upper lid open (1 = as painted, under 1 heavier), lower lid up (0..1)
 uniform vec4 uTfMouth;    // the mouth: centre x, the line between the lips (y), half width, -
+uniform vec4 uTfIrisA;    // each iris's centre: his right x, y, his left x, y (rest metres)
+uniform vec2 uTfIrisB;    // each iris's radius (0 = not measured)
 uniform vec3 uTfWhite, uTfLidC, uTfLash; // the eye white, the lid (the picture's own skin, linear), the lash line
 float tnSkin = 0.0;       // this point is bare skin (face, neck, arms, hands): set in the body
 float tfEyesK = 0.0;      // this point is in a moving face's eye (TOON_FACE)
@@ -247,7 +250,18 @@ const TOON_BODY = `
   float shade = clamp(pow(max(c.g, 1e-4), 1.0 / 2.2) / 0.7, 0.25, 1.4);
   float head = smoothstep(uFaceF.x - 0.045, uFaceF.x - 0.025, r.y);
   vec3 col = c;
+  // never the iris: the mask half calls it skin and a brown iris is skin-coloured, so it took the picked tone
+  // and every eye was the colour of its face (Harry's faces, 20 Nov 2026). Inside each measured iris
+  // (faceLandmarks.ts) the head's own paint stays.
+  float tnIris = max(uTfIrisB.x > 0.0 ? 1.0 - smoothstep(0.86, 1.0, length(r.xy - uTfIrisA.xy) / uTfIrisB.x) : 0.0, uTfIrisB.y > 0.0 ? 1.0 - smoothstep(0.86, 1.0, length(r.xy - uTfIrisA.zw) / uTfIrisB.y) : 0.0)
+    * step(uFaceF.w - 0.08, r.z) * head;
+  skin *= 1.0 - tnIris;
+#ifdef TOON_FACEID
+${FI_CANVAS}
+  col = mix(col, mix(tnSkinOf(c), fiSkinC, fiCan), skin);
+#else
   col = mix(col, tnSkinOf(c), skin);
+#endif
   tnSkin = skin * (1.0 - hairM);
   if (uSkinFx.w > 0.5) {
     // on the head, what the mask leaves to the file's own paint and is skin-coloured (the lips, the line
@@ -258,6 +272,7 @@ const TOON_BODY = `
     float tnMx = max(c.r, max(c.g, c.b));
     float tnSat = (tnMx - min(c.r, min(c.g, c.b))) / max(tnMx, 1e-4);
     float tnLike = clamp(1.0 - kit - skin - hairM, 0.0, 1.0) * head * smoothstep(0.3, 0.5, tnL) * smoothstep(0.2, 0.35, tnSat);
+    tnLike *= 1.0 - tnIris;
     col = mix(col, tnSkinOf(c), tnLike);
     tnSkin = max(tnSkin, tnLike);
   }
@@ -306,26 +321,30 @@ const TOON_BODY = `
       col = mix(col, mix(braid, uSkinTone * 0.6, part), scalp);
     }
   }
-  if (uHairCut.x + uHairCut.y + uHairCut.z > 0.0) {
+  if (uHairCut.x + TN_BEARD_OFF + TN_STUBBLE > 0.0) {
     // a person preset's haircut on a head whose hair is modelled in: the scalp shaved or bald, the beard
     // shaved off, or stubble painted on (the hair under the eyes, front half = the beard; the rest = scalp)
     float lowFront = step(r.y, uFaceF.y - 0.03) * step(uNeck.z - 0.01, r.z);
-    float cut = smoothstep(0.02, 0.45, hairM) * mix(uHairCut.x, uHairCut.y, lowFront);
+    float cut = smoothstep(0.02, 0.45, hairM) * mix(uHairCut.x, TN_BEARD_OFF, lowFront);
     // never the brows: a bald or shaved head lost them with its scalp (they are hair in the mask), and a
     // light-skinned bald man's face read bleached, with no features
     cut *= 1.0 - step(uFaceF.y - 0.03, r.y) * step(r.y, uFaceF.y + 0.05) * step(uFaceF.w - 0.075, r.z) * step(abs(r.x), 0.09);
     // the beard's own drawn edge where the mask already says skin (dark lines left round a shaved jaw)
     float lumK = dot(c, vec3(0.2126, 0.7152, 0.0722)) / max(dot(uSkinAvg, vec3(0.2126, 0.7152, 0.0722)), 1e-4);
-    cut = max(cut, uHairCut.y * lowFront * head * (1.0 - hairM) * smoothstep(0.5, 0.25, lumK) * step(0.025, abs(r.y - uTfMouth.y) + step(0.03, abs(r.x))));
+    cut = max(cut, TN_BEARD_OFF * lowFront * head * (1.0 - hairM) * smoothstep(0.5, 0.25, lumK) * step(0.025, abs(r.y - uTfMouth.y) + step(0.03, abs(r.x))));
     vec3 bare = uSkinTone * 0.75;
     col = mix(col, bare, cut);
     tnSkin = max(tnSkin, cut);
     // stubble: the jaw, chin and upper lip, never the lips
     vec2 mo = vec2(r.x / 0.03, (r.y - uTfMouth.y) / 0.014);
     float jaw = skin * head * smoothstep(uFaceF.y - 0.03, uFaceF.y - 0.065, r.y) * smoothstep(0.0, 0.25, vRestN.z) * step(uNeck.z - 0.01, r.z) * step(1.0, length(mo));
-    col = mix(col, col * mix(vec3(1.0), min(uHairK * 2.2 + 0.25, vec3(0.85)), 0.55), uHairCut.z * jaw);
+    col = mix(col, col * mix(vec3(1.0), min(uHairK * 2.2 + 0.25, vec3(0.85)), 0.55), TN_STUBBLE * jaw);
   }
+#ifdef TOON_FACEID
+${FI_DRAW}
+#else
 ${TOON_FACE}
+#endif
   float shirtW = step(uLines.x, r.y);
   float bootW = 1.0 - step(uLines.z, r.y);
   float shortsW = step(uLines.y, r.y) * (1.0 - shirtW);
@@ -594,8 +613,17 @@ export function toonUniforms(T: Three, mask: THREE.Texture, kit: { collarY?: num
     // the moving face (TOON_FACE, toon/face.ts): off until a face is added
     uTfOn: { value: new T.Vector4(0, 0, 0, 0) },
     uTfEyeR: { value: new T.Vector4(-0.045, 1.65, 0.016, 0.009) }, uTfEyeL: { value: new T.Vector4(0.045, 1.65, 0.016, 0.009) },
+    uTfIrisA: { value: new T.Vector4(0, 0, 0, 0) }, uTfIrisB: { value: new T.Vector2(0, 0) },
     uTfGaze: { value: new T.Vector4(0, 0, 1, 0) }, uTfMouth: { value: new T.Vector4(0, 1.57, 0.022, 0) },
     uTfWhite: { value: new T.Color(0.86, 0.84, 0.8) }, uTfLidC: { value: new T.Color(0.6, 0.4, 0.3) }, uTfLash: { value: new T.Color(0.05, 0.03, 0.025) },
+    // the drawn face (TOON_FACEID, faceIdApply.ts): read only by a person given a FaceId
+    uFiLm1: { value: new T.Vector4(0, 0.046, 1.65, 1.68) }, uFiLm2: { value: new T.Vector4(1.6, 0.19, 1.57, 1.51) }, uFiLm3: { value: new T.Vector4(0.028, 0.045, 0, 1) },
+    uFiEye: { value: new T.Vector4(0.0178, 0.0085, 0.0052, 0.06) }, uFiEye2: { value: new T.Vector4(0, 0, 0.0074, 1) }, uFiEye3: { value: new T.Vector4(0, 0.3, 1, 0) }, uFiEye4: { value: new T.Vector4(0.6, 0, 0, 0) },
+    uFiBrowA: { value: new T.Vector4(0.0215, 0.0058, 0.0035, 0.003) }, uFiBrowB: { value: new T.Vector4(2.3, 0.02, 0.45, 0.8) },
+    uFiMouth: { value: new T.Vector4(0.028, 0.0045, 0.006, 0.8) }, uFiMarks: { value: new T.Vector4(0, 0, 0, 0) }, uFiMole: { value: new T.Vector4(0, 0, 0, 1) },
+    uFiBeard: { value: new T.Vector4(0, 0, 0, 0) }, uFiBeard2: { value: new T.Vector4(0.5, 0, 0, 0) },
+    uFiIris: { value: new T.Color("#4a2c17") }, uFiLip: { value: new T.Color("#9a5a4a") }, uFiBrowC: { value: new T.Color("#17120f") },
+    uFiExA: { value: new T.Vector4(1, 0, 0, 0) }, uFiExB: { value: new T.Vector4(0, 0, 0, 0) }, uFiExC: { value: new T.Vector4(0.04, 0, 0, 0) }, uFiExD: { value: new T.Vector4(0, 0, 0, 0) },
   };
 }
 
@@ -628,7 +656,7 @@ export function patchToonBody(T: Three, mat: THREE.MeshStandardMaterial, u: Reco
       .replace("#include <common>", "#include <common>\nvarying vec3 vRest;\nvarying vec3 vRestN;\n#ifdef TOON_AREST\nattribute vec3 aRest;\n#endif")
       .replace("#include <begin_vertex>", "#include <begin_vertex>\n#ifdef TOON_AREST\nvRest = aRest;\n#else\nvRest = position;\n#endif\nvRestN = normal;");
     sh.fragmentShader = sh.fragmentShader
-      .replace("#include <common>", `#include <common>${head}${TOON_HEAD}`)
+      .replace("#include <common>", `#include <common>${head}${TOON_HEAD}${FI_HEAD}`)
       // a far, small man (smallMen.ts SMALL_INK): the skin/hair map's mip bias fades out below fromPx drawing
       // pixels tall (the far mip is already coarse; the extra bias turned faces and hair into flat blocks)
       .replace("#include <map_fragment>", `float tnSmallFar = 1.0 - smoothstep(${SMALL_INK.toPx.toFixed(1)}, ${SMALL_INK.fromPx.toFixed(1)}, 1.8 / max(max(length(dFdx(vViewPosition)), length(dFdy(vViewPosition))), 1e-5));
@@ -683,5 +711,5 @@ if (uSkinFx.y > 1.5) gl_FragColor = tnSkin > 0.5 ? vec4(tnRegion == 1.0 ? vec3(0
 else if (uSkinFx.y > 0.5 && tnSkin > 0.5) gl_FragColor = vec4(3.0, 0.0, 3.0, 1.0);
 else if (uSkinFx.x > 0.5 && uHome.x < 0.5 && tnTone > 0.5) gl_FragColor.a = ${TOON_SKIN_MARK.toFixed(2)};`);
   };
-  mat.customProgramCacheKey = () => "people3d-toon-v14";
+  mat.customProgramCacheKey = () => "people3d-toon-v15";
 }

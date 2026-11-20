@@ -21,13 +21,16 @@ import type { Person3D } from "../../people3d";
 import { buildFaceShapes, blendExpressions, NEUTRAL_FACE, type FaceLandmarks, type FaceParams, type ExpressionName } from "../../cutscene/face";
 import { TOON_FACE_LANDMARKS, type ToonFaceLandmarks } from "./faceLandmarks";
 import { TOON_FACE_FILE_LANDMARKS } from "./faceFileLandmarks";
+import { hasToonFaceId } from "./faceIdApply";
+import type { FaceEmotion } from "./faceId";
 
 type Three = typeof import("three");
 
 /** Everything the face does this frame. */
 export interface ToonFaceState {
-  /** The expression (cutscene/face.ts FaceParams; NEUTRAL_FACE = calm). */
-  face: FaceParams;
+  /** The expression (cutscene/face.ts FaceParams; NEUTRAL_FACE = calm). A drawn face (a FaceId) also reads
+   *  an emotion's two extra numbers (faceId.ts FaceEmotion: smirk, browAsym). */
+  face: FaceParams & Partial<Pick<FaceEmotion, "smirk" | "browAsym">>;
   /** 0 open … 1 shut. */
   blink: number;
   /** Where the eyes look: −1..1 across (his left +), −1..1 up. */
@@ -90,11 +93,28 @@ export function addToonFace(T: Three, p: Person3D): ToonFaceRig | null {
   u.uTfLash.value = new T.Color(lm.colors.lash);
 
   const state: ToonFaceState = { face: { ...NEUTRAL_FACE }, blink: 0, gaze: [0, 0], talk: 0 };
+  // a drawn face (a FaceId, faceIdApply.ts): the shader draws the brows, lids and mouth from the numbers;
+  // the shapes only carry the skin with them (cheeks up in a smile, the jaw down as the mouth opens)
+  const drawn = hasToonFaceId(p);
   const push = () => {
     const f = state.face;
     const inf = body.morphTargetInfluences!;
     const pos = (x: number) => Math.max(0, x);
     const open = Math.min(1, f.open + state.talk * 0.75);
+    if (drawn) {
+      inf[0] = Math.min(1, pos(f.smile) * 0.3 + f.cheek * 0.35);
+      inf[1] = pos(-f.smile) * 0.25;
+      inf[2] = open * 0.45;
+      inf[3] = f.browUp * 0.25;
+      inf[4] = Math.max(f.browAngry, f.browSad * 0.25) * 0.3;
+      inf[5] = 0;
+      u.uTfOn.value.set(1, Math.min(1, Math.max(0, state.blink)), open, f.wide);
+      u.uFiExA.value.set(f.lid, Math.min(1, f.lidLow + f.cheek * 0.2), state.gaze[0], state.gaze[1]);
+      u.uFiExB.value.set(f.browUp, f.browSad, f.browAngry, f.browAsym ?? 0);
+      u.uFiExC.value.set(f.smile, open, f.wide, f.smirk ?? 0);
+      u.uFiExD.value.set(f.teeth, f.press * (1 - Math.min(1, state.talk)), f.tear, Math.min(1, Math.max(0, state.blink)));
+      return;
+    }
     inf[0] = Math.min(1, pos(f.smile) * 0.9 + f.cheek * 0.35);
     inf[1] = pos(-f.smile) * 0.9;
     // no jaw shape: the opening is drawn over the lips (TOON_FACE), where the jaw shape would carry

@@ -49,6 +49,8 @@ export interface FaceShape {
   faceW?: number;
   /** The jaw tapering in towards the chin (+, a V) or squaring out (−), a share. */
   taper?: number;
+  /** The lower face longer (+) or shorter, metres at the chin (the mouth and nose move their share); not multiplied by FACE_GAIN. */
+  faceLen?: number;
 }
 
 export type ToonFaceId =
@@ -136,7 +138,10 @@ export function faceShapePoint(p: readonly [number, number, number], F: FaceFram
   // (a wider face is bone, not jowl: the widening is over by the jaw's lower edge, so nothing hangs over the neck)
   const bone = sm(F.chinY - 0.012, F.chinY + 0.03, y);
   const x = x0 * (1 + O * (Math.max(0, S.faceW ?? 0) * bone + Math.min(0, S.faceW ?? 0) - (S.taper ?? 0) * sm(F.mouthY + 0.03, F.chinY + 0.005, y) * ((S.taper ?? 0) < 0 ? bone : 1)));
-  if (W <= 0) return [x, y, z];
+  // a longer or shorter lower face: the chin moves the most, the mouth and the nose their share, the eyes not at all
+  const lenZone = Math.max(O, faceZone(p, F) * k * sm(F.eyeY - 0.02, F.eyeY - 0.06, y));
+  const yLen = (S.faceLen ?? 0) * lenZone * sm(F.eyeY - 0.02, F.chinY, y);
+  if (W <= 0) return [x, y - yLen, z];
   const s = x < 0 ? -1 : 1, ax = Math.abs(x);
   let dx = 0, dy = 0, dz = 0;
   const v = (n: number | undefined) => n ?? 0;
@@ -164,7 +169,7 @@ export function faceShapePoint(p: readonly [number, number, number], F: FaceFram
   dx += x * v(S.jawW) * sm(F.mouthY + 0.035, F.mouthY - 0.015, y) * (v(S.jawW) > 0 ? bone : 1);
   const gCh = bell(y - F.chinY, 0.024) * sm(0.065, 0.015, ax);
   dy -= v(S.chinLen) * gCh; dz += v(S.chinZ) * gCh; dx += x * v(S.chinW) * bell(y - F.chinY, 0.026);
-  return [x + dx * W, y + dy * W, z + dz * W];
+  return [x + dx * W, y - yLen + dy * W, z + dz * W];
 }
 
 /** A stable 32-bit hash (FNV-1a; as bodies.ts hashId, kept here so this file stays on its own). */

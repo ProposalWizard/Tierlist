@@ -40,6 +40,7 @@ import { withMocapOwn } from "./three3d/footballAnims";
 import { motionLook } from "./motionLook";
 import { playerStyleLook, type PlayerStyleLook } from "./style3d/toon/look";
 import { matchPlayerStyle } from "./style3d/toon/matchLook";
+import { TOON_FACE_LANDMARKS } from "./style3d/toon/faceLandmarks";
 import { TOON_HEADS, TOON_ALL_HEADS, toonHeadIsSuit, toonFileFor, toonFileIsJudged, TOON_BUILD_SCALE, TOON_SUIT_HEADS, TOON_HEM_FIX, hashId, toonBodyFor, toonHeadFor, toonYou, toonWearsSuit, toonKey, type ToonBody, type ToonHead } from "./style3d/toon/bodies";
 import { patchToonBody, toonUniforms, toonShirtLayout } from "./style3d/toon/shader";
 import { toonProportions, warpToonBody, type ToonPropId } from "./style3d/toon/proportions";
@@ -709,6 +710,9 @@ export function makePerson3d(
     const tk = meta.kit as PersonMeta["kit"] & { collarY?: number };
     const lay = toonShirtLayout({ shoulderY: meta.joints.LeftArm?.[1] ?? 1.4, collarY: tk.collarY ?? (meta.joints.neck?.[1] ?? 1.5) - 0.03 });
     const tu = u as Record<string, { value: any }>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    // where this head's painted irises are, so the shader keeps their own paint (an iris is not skin)
+    const eyeLm = toonHead ? TOON_FACE_LANDMARKS[toonHead] : undefined;
+    if (eyeLm) { tu.uTfIrisA.value.set(eyeLm.iris[0][0], eyeLm.iris[0][1], eyeLm.iris[1][0], eyeLm.iris[1][1]); tu.uTfIrisB.value.set(eyeLm.iris[0][2], eyeLm.iris[1][2]); }
     tu.uNumBox.value.set(lay.number.x, lay.number.y, lay.number.size, lay.number.size);
     tu.uNameBox.value.set(lay.name.x, lay.name.y, lay.name.w, lay.name.h);
     tu.uFrontNum.value.set(lay.front.x, lay.front.y, lay.front.size, 1);

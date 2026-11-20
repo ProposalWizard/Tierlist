@@ -37,6 +37,7 @@ import { hashId, type ToonBody, type ToonHead } from "../style3d/toon/bodies";
 import { kitsOf } from "../kits";
 import { TOON_HAIR_INFO, toonHairFits, type ToonHair, type HairTexture } from "../style3d/toon/hairStyles";
 import { faceFor, type ToonFaceId } from "../style3d/toon/faceShape";
+import { faceIdFor, type FaceId } from "../style3d/toon/faceId";
 export type { HairTexture };
 
 export type PersonRole = "manager" | "staff" | "player" | "journalist" | "agent" | "fan";
@@ -335,6 +336,8 @@ export interface PersonLookResult {
   /** His face type (style3d/toon/faceShape.ts: nose, lips, eyes, brow, cheekbones, jaw, chin), one of his heritage's, and how strong (0.8 … 1.2). Put on with faceShapeApply.ts applyToonFaceShape. */
   face: ToonFaceId;
   faceK: number;
+  /** His own drawn face (the face system, style3d/toon/faceId.ts): the same id, the same face. Put on with applyToonFaceId. */
+  faceId: FaceId;
   /** Smart clothes (suit, tracksuit, smart, casual). */
   suit?: { coat: string; trousers: string; shirt: string; tie: string; shoes: string };
   /** Players: the club's home kit. */
@@ -508,7 +511,13 @@ export function presetLook(preset: PeoplePreset, id: string, role: PersonRole, o
     if (ex === "snood") accessories.push({ slot: "neck", color: "#141416" });
   }
 
+  const beard = beardOf(preset.head, cut);
+  const faceId = faceIdFor(exact ? preset.id : id, preset.heritage, {
+    skin: toonSkinHex(skinIdx), hair: hairColour, hairBase: MANAGER_HAIR_COLOURS[hairId], hairId, age, beard, faceType: fc.face, faceK: fc.k,
+  });
+
   return {
+    faceId,
     id, role, preset: preset.id, presetName: preset.name, outfit: preset.outfit,
     head: preset.head, build: preset.build, skin: toonSkinHex(skinIdx), skinId: skinTone.id,
     hairColour, hairId, grey, hairStyle: hairStyleOf(preset.head, cut, preset.hairMesh), beard: beardOf(preset.head, cut), age, cut, hairMesh: preset.hairMesh, face: fc.face, faceK: fc.k,

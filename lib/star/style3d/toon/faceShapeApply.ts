@@ -13,13 +13,19 @@ import type { Person3D } from "../../people3d";
 import { TOON_FACE_LANDMARKS } from "./faceLandmarks";
 import { TOON_SHAPE_HEADS } from "./bodies";
 import { TOON_FACE_FILE_LANDMARKS } from "./faceFileLandmarks";
-import { TOON_FACE_TYPES, faceFrame, faceShapePoint, faceZone, faceOutlineZone, type ToonFaceId } from "./faceShape";
+import { TOON_FACE_TYPES, faceFrame, faceShapePoint, faceZone, faceOutlineZone, type FaceShape, type ToonFaceId } from "./faceShape";
 
 type Three = typeof THREE;
 
 export function applyToonFaceShape(T: Three, p: Person3D, face: ToonFaceId, k = 1): boolean {
   const shape = TOON_FACE_TYPES[face]?.shape;
   if (!shape || face === "base" || !p.toonHead) return false;
+  return applyToonFaceShapeRaw(T, p, shape, k);
+}
+
+/** The same, for any set of changes (a FaceId's own mould, faceIdApply.ts). */
+export function applyToonFaceShapeRaw(T: Three, p: Person3D, shape: FaceShape, k = 1): boolean {
+  if (!p.toonHead) return false;
   const lm = TOON_FACE_FILE_LANDMARKS[p.meta.file ?? ""] ?? TOON_FACE_LANDMARKS[p.toonHead];
   const geo0 = p.body.geometry;
   if (!lm || geo0.getAttribute("aRest")) return false;

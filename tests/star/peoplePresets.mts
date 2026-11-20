@@ -16,6 +16,8 @@ import fs from "node:fs";
 import { TOON_FACE_TYPES, TOON_FACE_IDS, HERITAGE_FACES, faceFor, faceFrame, faceShapePoint, faceZone, faceOutlineZone } from "../../lib/star/style3d/toon/faceShape";
 import { TOON_FACE_LANDMARKS } from "../../lib/star/style3d/toon/faceLandmarks";
 import { managerLook } from "../../lib/star/managerFace";
+import { faceIdFor, faceIdKey, FACE_LIMITS, HERITAGE_FEATURES, FACE_EMOTIONS, EMOTION_NAMES, blendEmotions, NEUTRAL_EMOTION } from "../../lib/star/style3d/toon/faceId";
+import { presetById } from "../../lib/star/people/presets";
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -207,6 +209,44 @@ for (let i = 0; i < 100; i++) {
   const m = personLook(`x${i}`, "manager", { club: "Liverpool" });
   check(!!m.suit && !m.kit, `manager x${i}: no suit`);
   check(m.beard === beardOf(m.head, m.cut), `manager x${i}: beard word disagrees`);
+}
+
+// THE FACE SYSTEM (style3d/toon/faceId.ts): the same id → the same face; features only from his heritage's
+// pools and every number inside FACE_LIMITS (RUL-3D-010: never caricature); many different faces; 8 emotions
+{
+  const looks = Array.from({ length: 500 }, (_, i) => personLook(`player-${i}`, "player", { club: "Arsenal" }));
+  const inR = (x: number, r: readonly number[]) => x >= r[0] - 1e-9 && x <= r[1] + 1e-9;
+  for (const l of looks) {
+    const f = l.faceId, her = presetById(l.preset)!.heritage, H = HERITAGE_FEATURES[her];
+    check(JSON.stringify(f) === JSON.stringify(personLook(l.id, "player", { club: "Arsenal" }).faceId), `face ${l.id}: not the same face twice`);
+    check(H.eyes.some(([e]) => e === f.eyeShape) && H.brows.some(([b]) => b === f.browStyle), `face ${l.id}: an eye or brow shape outside ${her}'s`);
+    check(H.iris.some(([c]) => c === f.irisName) || her === "white", `face ${l.id}: iris ${f.irisName} outside ${her}'s`);
+    for (const k of ["eyeW", "eyeUp", "eyeLow", "eyeTilt", "eyeGap", "irisR", "browH", "browT", "browArch", "browTilt", "browLen", "mouthW", "lipUp", "lipLow"] as const) check(inR(f[k], FACE_LIMITS[k]), `face ${l.id}: ${k} ${f[k]} outside its limits`);
+    for (const [k, r] of Object.entries(FACE_LIMITS.shape)) check(inR((f.shape as unknown as Record<string, number>)[k], r), `face ${l.id}: mould ${k} outside its limits`);
+    check((f.beardStyle === "none") === (l.beard === "none"), `face ${l.id}: beard ${f.beardStyle} against the look's ${l.beard}`);
+    check(/^#[0-9a-f]{6}$/.test(f.iris) && /^#[0-9a-f]{6}$/.test(f.lip) && /^#[0-9a-f]{6}$/.test(f.brow), `face ${l.id}: a colour is not a hex`);
+  }
+  const words = new Set(looks.map((l) => faceIdKey(l.faceId))).size;
+  const four = new Set(looks.map((l) => [l.faceId.eyeShape, l.faceId.irisName, l.faceId.browStyle, l.faceId.beardStyle].join())).size;
+  check(words >= 450 && four >= 300, `500 players have only ${words} distinct faces (${four} on eyes, iris, brows and beard alone; want 450+ and 300+)`);
+  // every heritage has several eye shapes, and no shape belongs to one heritage alone except by count
+  for (const [her, H] of Object.entries(HERITAGE_FEATURES)) check(H.eyes.length >= 5 && H.brows.length >= 5 && H.iris.length >= 3, `${her}: too few eye, brow or iris choices`);
+  check(EMOTION_NAMES.length === 8 && Object.keys(NEUTRAL_EMOTION).length === 14, `emotions: ${EMOTION_NAMES.length} of 8, ${Object.keys(NEUTRAL_EMOTION).length} numbers of 14`);
+  const half = blendEmotions({ happy: 0.5, angry: 0.5 });
+  check(Math.abs(half.smile - (NEUTRAL_EMOTION.smile + (FACE_EMOTIONS.happy.smile - NEUTRAL_EMOTION.smile) * 0.5 + (FACE_EMOTIONS.angry.smile - NEUTRAL_EMOTION.smile) * 0.5)) < 1e-9, "emotions do not blend");
+  check(JSON.stringify(blendEmotions({})) === JSON.stringify(NEUTRAL_EMOTION), "no emotion is not neutral");
+  // a face's own mould moves nothing outside the face (the modelled hair still fits), and no more than 5 cm on this grid
+  const lm = TOON_FACE_LANDMARKS.h3!, F = faceFrame(lm, { chinY: lm.chinY, eyeY: lm.eyes[0][1], browY: lm.browY, frontZ: lm.nose[2] - 0.02 }, lm.chinY - 0.03);
+  let most = 0;
+  for (const l of looks.slice(0, 60)) for (let x = -0.1; x <= 0.1; x += 0.01) for (let y = lm.chinY - 0.08; y <= lm.browY + 0.06; y += 0.01) for (const z of [F.frontZ - 0.22, F.frontZ - 0.15, F.frontZ - 0.08, F.frontZ - 0.02]) {
+    const q: [number, number, number] = [x, y, z];
+    const o = faceShapePoint(q, F, l.faceId.shape, 1);
+    const d = Math.hypot(o[0] - q[0], o[1] - q[1], o[2] - q[2]);
+    most = Math.max(most, d);
+    if (faceZone(q, F) === 0 && faceOutlineZone(q, F) === 0) check(d === 0, `face ${l.id}: its mould moved the head outside the face`);
+  }
+  check(most > 0.004 && most < 0.05, `the moulds move the face by at most ${(most * 1000).toFixed(1)} mm (want 4 to 50, on a grid that also samples the air round the face)`);
+  console.log(`  face system: ${words} of 500 players have a face of their own (${four} on eye shape, iris, brows and beard alone); the mould moves up to ${(most * 1000).toFixed(1)} mm`);
 }
 
 if (problems.length) {
