@@ -52,7 +52,7 @@ export function hundredMarkers(f: Feed): DrillMarker[] | undefined {
     // Two cones on the line marking the corner he called.
     const a = t.side === "L" ? POST_L + 0.15 : POST_R - 0.15;
     const b = t.side === "L" ? POST_L + 1.4 : POST_R - 1.4;
-    return [{ x: a, y: 0.6, color: "#22c55e" }, { x: b, y: 0.6, color: "#22c55e" }];
+    return [{ x: a, y: 0.6, color: "#86efac" }, { x: b, y: 0.6, color: "#86efac" }];
   }
   return undefined;
 }

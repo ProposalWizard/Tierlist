@@ -11431,6 +11431,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         )}
         {phase === "contact" && aim && !powerStrike && (
           <ContactBall
+            night={sceneRef.current?.night === true}
             power={aim.power}
             grades={shotsPro() && aimedAtGoal(scenarioRef.current, aim.dir)}
             knuckles={knucklePowerOn() && mechOpen("knuckle")}

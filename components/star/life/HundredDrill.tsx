@@ -182,10 +182,20 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
   const ballAt = toPct(CX + feed.x, feed.dist);
   const goalAt = toPct(CX, -0.6);
   const dark = light === "out";
-  const lamp = `radial-gradient(ellipse 85% 60% at ${goalAt.left * 0.6 + ballAt.left * 0.4}% ${(goalAt.top + ballAt.top) / 2}%, rgba(255,226,160,.10) 0%, rgba(0,0,0,0) 55%, rgba(2,6,12,.62) 100%)`;
-  const darkMask = `radial-gradient(circle at ${ballAt.left}% ${ballAt.top}%, transparent 0, transparent 26px, #000 70px), radial-gradient(ellipse 34% 9% at ${goalAt.left}% ${goalAt.top}%, transparent 0, transparent 40%, #000 100%)`;
+  // The pool: over the goal and the ball, soft at the edge. Fixed shares of the box (the goal sits at
+  // the top, you in the lower fifth on every ball).
+  const poolX = 50, poolY = 46;
+  const lampMask = `radial-gradient(ellipse 62% 52% at ${poolX}% ${poolY}%, transparent 0, transparent 30%, #000 92%)`;
+  // In the dark: a glint low in the middle where the ball and you stand (the close camera always puts
+  // you in the lower fifth), and a faint goal mouth at the top. Fixed shares of the box: the engine's
+  // tilted camera does not map pitch metres to the screen in a straight line.
+  const darkMask = `radial-gradient(ellipse 48% 13% at 45% 81%, transparent 0, transparent 35%, #000 100%), radial-gradient(ellipse 50% 12% at 50% 9%, transparent 0, transparent 30%, #000 100%)`;
 
   const target = feed.target;
+  // Where the target sits on the screen (the test driver aims at it; nothing in the game reads it).
+  const aimX = target.kind === "corner" || target.kind === "half" ? (target.side === "L" ? POST_L + 0.7 : POST_R - 0.7)
+    : target.kind === "tyre" || target.kind === "bucket" ? target.x : target.kind === "past" ? (feed.x >= 0 ? POST_R - 0.7 : POST_L + 0.7) : CX;
+  const aimAt = toPct(aimX, 0);
   const markers = useMemo(() => (feed.dark && !shout ? undefined : hundredMarkers(feed)), [feed, shout]);
   const prompt = feed.dark ? (shout ? `${shout.replace(/[.!]/g, "").toUpperCase()} CORNER, LOW` : "WAIT FOR HIS SHOUT")
     : target.kind === "corner" ? `${target.side === "L" ? "LEFT" : "RIGHT"} CORNER, LOW`
@@ -195,7 +205,7 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
     : feed.double ? "BEAT DEN · TWENTY OR TEN OFF" : "BEAT DEN";
 
   return (
-    <div className="dd" data-activity="strike-drill" data-round={feed.round} data-phase={phase} data-light={light} style={{ background: "#040a08", display: "flex", flexDirection: "column", minHeight: "100%" }}>
+    <div className="dd" data-activity="strike-drill" data-round={feed.round} data-ball={ball} data-aim={feed.dark && !shout ? "" : `${aimAt.left.toFixed(1)},${aimAt.top.toFixed(1)}`} data-ballpct={`${ballAt.left.toFixed(1)},${ballAt.top.toFixed(1)}`} data-phase={phase} data-light={light} style={{ background: "#040a08", display: "flex", flexDirection: "column", minHeight: "100%" }}>
       {/* Head: stop, the name, the ten balls in their six rounds */}
       <div style={{ padding: "8px 12px 7px", background: "linear-gradient(180deg,#0a1511,#040a08)" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
@@ -236,17 +246,18 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
             keeperStrength={feed.keeper?.strength ?? 0}
             seed={seed0 * 7 + ball * 13}
             markers={markers}
-            scene={{ teammates: false, banners: false, ownFrame: true, keeper: !!feed.keeper }}
+            scene={{ teammates: false, banners: false, ownFrame: true, keeper: !!feed.keeper, night: true }}
             career={ball > 0 ? careerSeen : career}
             fixture={kitFixture}
           />
         )}
-        {/* The shed light: one warm pool on the goal and the ball, the rest of the night dark. Look only. */}
-        <div aria-hidden data-lamp style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 20, background: lamp, mixBlendMode: "multiply", transition: "opacity .2s" }} />
-        <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 20, background: "linear-gradient(180deg, rgba(10,20,40,.28), rgba(0,0,0,0) 40%, rgba(0,0,0,.35))" }} />
+        {/* The shed light: the night everywhere, one warm pool over the goal and the ball. Look only. */}
+        <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 24, background: "rgba(3,8,18,.30)" }} />
+        <div aria-hidden data-lamp={`${poolX.toFixed(0)},${poolY.toFixed(0)}`} style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 24, background: "rgba(2,5,12,.72)", WebkitMaskImage: lampMask, maskImage: lampMask }} />
+        <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 24, background: `radial-gradient(ellipse 70% 40% at ${poolX}% ${poolY}%, rgba(255,214,140,.13), rgba(255,214,140,0) 70%)` }} />
         {/* Lights out: dark everywhere but a glint on the ball and the goal mouth; a flicker as it goes. */}
         <div aria-hidden data-dark style={{
-          position: "absolute", inset: 0, pointerEvents: "none", zIndex: 21, background: "rgba(1,3,6,.86)",
+          position: "absolute", inset: 0, pointerEvents: "none", zIndex: 25, background: "rgba(1,3,6,.86)",
           WebkitMaskImage: darkMask, maskImage: darkMask, WebkitMaskComposite: "source-in", maskComposite: "intersect",
           opacity: dark ? 1 : light === "flicker" ? 0.6 : 0,
           animation: light === "flicker" ? "hd-flicker .9s steps(6) 1" : undefined, transition: dark ? "opacity .08s" : "opacity .4s",
@@ -263,7 +274,7 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
         </div>
 
         {/* The target card: this ball's target on the goal, and where the last ones went */}
-        <div aria-hidden className="dd-glass" style={{ position: "absolute", right: 10, top: "24%", padding: "6px 8px", pointerEvents: "none", borderRadius: 10, zIndex: 30 }} data-target={target.kind}>
+        <div aria-hidden className="dd-glass" style={{ position: "absolute", right: 10, top: "24%", padding: "6px 8px", pointerEvents: "none", borderRadius: 10, zIndex: 30, opacity: phase === "round" || phase === "call" ? 0 : 1, transition: "opacity .25s" }} data-target={target.kind}>
           <div className="dd-kick" style={{ fontSize: 8, color: "rgba(255,255,255,.75)" }}>Aim here</div>
           <svg width="112" height="46" viewBox="0 0 112 46" style={{ display: "block", marginTop: 3 }}>
             {(() => {
