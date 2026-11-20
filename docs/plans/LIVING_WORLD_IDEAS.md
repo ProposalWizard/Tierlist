@@ -69,3 +69,9 @@ have this level of 3d throughout the game this is gonna be insane, the environme
 better but could still improve, also remember there is gonna be like 2-8 house options and we need 3D FOR ALL OF them."
 => Every house tier (starter, flat, penthouse, house, villa, estate, and any later ones) gets the full 3D treatment:
 its own rooms, look pass, and usable things (sofa, TV, fridge, bed, mirror, shower, gym, pool…) from the world kit.
+
+## Decision and talk screens (Harry, 20 Nov 2026, 15:05)
+"look more in depth in walking dead telltale games and sims for the options to talk to people, I think the screens
+could be way better when making decisions even maybe with the timed slow motion effect"
+=> Research Telltale (The Walking Dead) choice screens and The Sims social menus; propose better decision/talk screens
+for the living-world events and team-mate chats, including a timed choice with the world slowing down behind it.
