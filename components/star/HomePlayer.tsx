@@ -64,9 +64,8 @@ export default function HomePlayer(p: HomePlayerProps) {
       {/* soft glow behind his chest */}
       <div aria-hidden className="pointer-events-none absolute left-1/2 top-[18%] -translate-x-1/2 rounded-full blur-2xl"
         style={{ width: width * 0.95, height: height * 0.55, background: `radial-gradient(closest-side, ${rgba(glow, 0.55)}, transparent)` }} />
-      {/* the pool of light he stands in */}
-      <div aria-hidden className="hp-pool pointer-events-none absolute left-1/2 rounded-[50%]"
-        style={{ bottom: -height * 0.02, width: width * 1.25, height: Math.max(14, height * 0.09), background: `radial-gradient(closest-side, ${rgba("#ffffff", 0.5)}, ${rgba(glow, 0.45)} 55%, transparent)` }} />
+      {/* (No coloured pool of light under his feet: Harry, 20 Nov 2026, "I don't like this coloured
+          shadow under the player". The 3D player keeps his own soft dark shadow, lib/star/homeSet3d.ts.) */}
       <div className="hp-bob relative" style={{ width, height }}>
         <HomePlayerFigure {...p} />
       </div>

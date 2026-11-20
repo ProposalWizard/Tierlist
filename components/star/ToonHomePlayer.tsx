@@ -64,8 +64,10 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
         const { loadAnims3d, addClips, clipInfo } = await import("@/lib/star/three3d/footballAnims");
         const { addToonFace, toonFaceFor, blinkAt, wanderGaze } = await import("@/lib/star/style3d/toon/face");
         const { setToonRim } = await import("@/lib/star/style3d/toon/shader");
-        const { homeIdleAt, homeSway, HOME_BALL_REST } = await import("@/lib/star/homeIdle");
-        const { makeHomeSet, juggleSpot } = await import("@/lib/star/homeSet3d");
+        const { homeIdleAt, homeSway, HOME_IDLE_BEATS, HOME_IDLE_ROUND } = await import("@/lib/star/homeIdle");
+        const jb = HOME_IDLE_BEATS.find((b) => b.clip === "juggle");
+        const JUGGLE_BEAT = { from: jb?.from ?? 6, dur: jb?.dur ?? 6, round: HOME_IDLE_ROUND };
+        const { makeHomeSet, homeBallAt } = await import("@/lib/star/homeSet3d");
         const { numberTexture } = await import("@/lib/star/style3d/gameplay");
         if (dead) return;
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
@@ -130,7 +132,8 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
           // the face: the beat's look, the eyes wandering (down to his ball in the keepy-uppies), blinks, the lips
           const gz = wanderGaze(t, 11);
           face?.set({ face: toonFaceFor(st.face), blink: blinkAt(t, 5), talk: st.talk, gaze: st.juggle > 0.5 ? [gz[0] * 0.3, -0.75] : gz });
-          homeSet.place(p, tr.yaw, st.juggle, juggleSpot(jInfo, st.juggleT) ?? HOME_BALL_REST, t);
+          // the ball moves like a ball: flicked up, kept up, dropped with a bounce (homeBallAt)
+          { const bp = homeBallAt(jInfo, t, JUGGLE_BEAT); homeSet.place(p, tr.yaw, 1, bp, t, bp[1] > 0.115 ? 1 : 0); }
           renderer.render(scene, cam);
           // keep this first picture for the next visit's wait (read straight after the draw),
           // only when the kept one is missing or out of date: encoding it cost 1.6 s on every
